@@ -43,10 +43,10 @@
 //usage:#define echo_trivial_usage
 //usage:	IF_FEATURE_FANCY_ECHO("[-neE] ") "[ARG]..."
 //usage:#define echo_full_usage "\n\n"
-//usage:       "Print the specified ARGs to stdout"
+//usage:       "Print ARGs to stdout"
 //usage:	IF_FEATURE_FANCY_ECHO( "\n"
-//usage:     "\n	-n	Suppress trailing newline"
-//usage:     "\n	-e	Interpret backslash escapes (i.e., \\t=tab)"
+//usage:     "\n	-n	No trailing newline"
+//usage:     "\n	-e	Interpret backslash escapes (\\t=tab etc)"
 //usage:     "\n	-E	Don't interpret backslash escapes (default)"
 //usage:	)
 //usage:
@@ -87,6 +87,7 @@ int echo_main(int argc UNUSED_PARAM, char **argv)
 	char *out;
 	char *buffer;
 	unsigned buflen;
+	int err;
 #if !ENABLE_FEATURE_FANCY_ECHO
 	enum {
 		eflag = 0,  /* 0 -- disable escape sequences */
@@ -185,13 +186,12 @@ int echo_main(int argc UNUSED_PARAM, char **argv)
  do_write:
 	/* Careful to error out on partial writes too (think ENOSPC!) */
 	errno = 0;
-	/*r =*/ full_write(STDOUT_FILENO, buffer, out - buffer);
-	free(buffer);
-	if (/*WRONG:r < 0*/ errno) {
+	err = full_write(STDOUT_FILENO, buffer, out - buffer) != out - buffer;
+	if (err) {
 		bb_simple_perror_msg(bb_msg_write_error);
-		return 1;
 	}
-	return 0;
+	free(buffer);
+	return err;
 }
 
 /*

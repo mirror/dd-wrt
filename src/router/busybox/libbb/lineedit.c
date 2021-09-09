@@ -312,7 +312,7 @@ static void BB_PUTCHAR(wchar_t c)
 		ssize_t len = wcrtomb(buf, c, &mbst);
 		if (len > 0) {
 			buf[len] = '\0';
-			fputs(buf, stdout);
+			fputs_stdout(buf);
 		}
 	} else {
 		/* In this case, c is always one byte */
@@ -460,7 +460,7 @@ static void beep(void)
  */
 static void put_prompt_custom(bool is_full)
 {
-	fputs((is_full ? cmdedit_prompt : prompt_last_line), stdout);
+	fputs_stdout((is_full ? cmdedit_prompt : prompt_last_line));
 	cursor = 0;
 	cmdedit_y = cmdedit_prmt_len / cmdedit_termw; /* new quasireal y */
 	cmdedit_x = cmdedit_prmt_len % cmdedit_termw;
@@ -769,8 +769,6 @@ static unsigned path_parse(char ***p)
 		if (!tmp)
 			break;
 		tmp++;
-		if (*tmp == '\0')
-			break;  /* :<empty> */
 		npth++;
 	}
 
@@ -782,8 +780,6 @@ static unsigned path_parse(char ***p)
 		if (!tmp)
 			break;
 		*tmp++ = '\0'; /* ':' -> '\0' */
-		if (*tmp == '\0')
-			break; /* :<empty> */
 		res[npth++] = tmp;
 	}
 	/* special case: "match subdirectories of the current directory" */
@@ -854,6 +850,7 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 		struct dirent *next;
 		struct stat st;
 		char *found;
+		const char *lpath;
 
 		if (paths[i] == NULL) { /* path_parse()'s last component? */
 			/* in PATH completion, current dir's subdir names
@@ -863,7 +860,8 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 			paths[i] = (char *)".";
 		}
 
-		dir = opendir(paths[i]);
+		lpath = *paths[i] ? paths[i] : ".";
+		dir = opendir(lpath);
 		if (!dir)
 			continue; /* don't print an error */
 
@@ -878,7 +876,7 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 			if (strncmp(basecmd, name_found, baselen) != 0)
 				continue; /* no */
 
-			found = concat_path_file(paths[i], name_found);
+			found = concat_path_file(lpath, name_found);
 			/* NB: stat() first so that we see is it a directory;
 			 * but if that fails, use lstat() so that
 			 * we still match dangling links */
@@ -1073,7 +1071,7 @@ static NOINLINE int build_match_prefix(char *match_buf)
 		continue;
 	for (--i; i >= 0; i--) {
 		int cur = int_buf[i];
-		if (cur == ' ' || cur == '<' || cur == '>' || cur == '|' || cur == '&') {
+		if (cur == ' ' || cur == '<' || cur == '>' || cur == '|' || cur == '&' || cur == '=') {
 			remove_chunk(int_buf, 0, i + 1);
 			break;
 		}
@@ -1316,7 +1314,7 @@ static NOINLINE void input_tab(smallint *lastWasTab)
 			strcpy(&command[cursor_mb], chosen_match + match_pfx_len);
 			len = load_string(command);
 			/* add match and tail */
-			sprintf(&command[cursor_mb], "%s%s", chosen_match + match_pfx_len, match_buf);
+			stpcpy(stpcpy(&command[cursor_mb], chosen_match + match_pfx_len), match_buf);
 			command_len = load_string(command);
 			/* write out the matched command */
 			/* paranoia: load_string can return 0 on conv error,
@@ -1851,7 +1849,7 @@ static void ask_terminal(void)
 	pfd.events = POLLIN;
 	if (safe_poll(&pfd, 1, 0) == 0) {
 		S.sent_ESC_br6n = 1;
-		fputs(ESC"[6n", stdout);
+		fputs_stdout(ESC"[6n");
 		fflush_all(); /* make terminal see it ASAP! */
 	}
 }
@@ -2957,7 +2955,7 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 #undef read_line_input
 int FAST_FUNC read_line_input(const char* prompt, char* command, int maxsize)
 {
-	fputs(prompt, stdout);
+	fputs_stdout(prompt);
 	fflush_all();
 	if (!fgets(command, maxsize, stdin))
 		return -1;

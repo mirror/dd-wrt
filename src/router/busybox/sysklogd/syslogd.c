@@ -854,7 +854,7 @@ static void timestamp_and_log(int pri, char *msg, int len)
 #if ENABLE_FEATURE_SYSLOGD_PRECISE_TIMESTAMPS
 	if (!timestamp) {
 		struct timeval tv;
-		gettimeofday(&tv, NULL);
+		xgettimeofday(&tv);
 		now = tv.tv_sec;
 		if (G.adjustTimezone) {
 			nowtm = localtime(&now);

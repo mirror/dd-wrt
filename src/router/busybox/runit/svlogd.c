@@ -140,12 +140,12 @@ log message, you can use a pattern like this instead
 //usage:#define svlogd_full_usage "\n\n"
 //usage:       "Read log data from stdin and write to rotated log files in DIRs"
 //usage:   "\n"
-//usage:   "\n""-r C		Replace non-printable characters with C"
-//usage:   "\n""-R CHARS	Also replace CHARS with C (default _)"
-//usage:   "\n""-t		Timestamp with @tai64n"
-//usage:   "\n""-tt		Timestamp with yyyy-mm-dd_hh:mm:ss.sssss"
-//usage:   "\n""-ttt		Timestamp with yyyy-mm-ddThh:mm:ss.sssss"
-//usage:   "\n""-v		Verbose"
+//usage:   "\n""	-r C	Replace non-printable characters with C"
+//usage:   "\n""	-R CHARS Also replace CHARS with C (default _)"
+//usage:   "\n""	-t	Timestamp with @tai64n"
+//usage:   "\n""	-tt	Timestamp with yyyy-mm-dd_hh:mm:ss.sssss"
+//usage:   "\n""	-ttt	Timestamp with yyyy-mm-ddThh:mm:ss.sssss"
+//usage:   "\n""	-v	Verbose"
 //usage:   "\n"
 //usage:   "\n""DIR/config file modifies behavior:"
 //usage:   "\n""sSIZE - when to rotate logs (default 1000000, 0 disables)"
@@ -351,7 +351,7 @@ static void fmt_time_human_30nul(char *s, char dt_delim)
 	struct tm *ptm;
 	struct timeval tv;
 
-	gettimeofday(&tv, NULL);
+	xgettimeofday(&tv);
 	ptm = gmtime_r(&tv.tv_sec, &tm);
 	/* ^^^ using gmtime_r() instead of gmtime() to not use static data */
 	sprintf(s, "%04u-%02u-%02u%c%02u:%02u:%02u.%06u000",
@@ -376,7 +376,7 @@ static void fmt_time_bernstein_25(char *s)
 	struct timeval tv;
 	unsigned sec_hi;
 
-	gettimeofday(&tv, NULL);
+	xgettimeofday(&tv);
 	sec_hi = (0x400000000000000aULL + tv.tv_sec) >> 32;
 	tv.tv_sec = (time_t)(0x400000000000000aULL) + tv.tv_sec;
 	tv.tv_usec *= 1000;
@@ -412,19 +412,32 @@ static void processorstart(struct logdir *ld)
 		int fd;
 
 		/* child */
-		/* Non-ignored signals revert to SIG_DFL on exec anyway */
+		/* Non-ignored signals revert to SIG_DFL on exec anyway.
+		 * But we can get signals BEFORE execl(), this is unlikely
+		 * but wouldn't be good...
+		 */
 		/*bb_signals(0
 			+ (1 << SIGTERM)
+			//+ (1 << SIGCHLD)
 			+ (1 << SIGALRM)
 			+ (1 << SIGHUP)
 			, SIG_DFL);*/
-		sig_unblock(SIGTERM);
-		sig_unblock(SIGALRM);
-		sig_unblock(SIGHUP);
+		/* runit 2.1.2 does not unblock SIGCHLD, a bug? we do: */
+		sigprocmask(SIG_UNBLOCK, &blocked_sigset, NULL);
 
 		if (verbose)
 			bb_error_msg(INFO"processing: %s/%s", ld->name, ld->fnsave);
-		fd = xopen(ld->fnsave, O_RDONLY|O_NDELAY);
+
+		fd = open_or_warn(ld->fnsave, O_RDONLY|O_NDELAY);
+		/* Used to have xopen() above, but it causes infinite restarts of processor
+		 * if file is gone - which can happen even because of _us_!
+		 * Users report that if on reboot, time is reset to before existing
+		 * logfiles creation time, rmoldest() deletes the newest logfile (!)
+		 * and we end up here trying to open this now-deleted file.
+		 */
+		if (fd < 0)
+			_exit(0); /* fake "success": do not run processor again */
+
 		xmove_fd(fd, 0);
 		ld->fnsave[26] = 't'; /* <- that's why we need sv_ch! */
 		fd = xopen(ld->fnsave, O_WRONLY|O_NDELAY|O_TRUNC|O_CREAT);
@@ -1098,10 +1111,10 @@ int svlogd_main(int argc, char **argv)
 	sigaddset(&blocked_sigset, SIGALRM);
 	sigaddset(&blocked_sigset, SIGHUP);
 	sigprocmask(SIG_BLOCK, &blocked_sigset, NULL);
-	bb_signals_recursive_norestart(1 << SIGTERM, sig_term_handler);
-	bb_signals_recursive_norestart(1 << SIGCHLD, sig_child_handler);
-	bb_signals_recursive_norestart(1 << SIGALRM, sig_alarm_handler);
-	bb_signals_recursive_norestart(1 << SIGHUP, sig_hangup_handler);
+	bb_signals_norestart(1 << SIGTERM, sig_term_handler);
+	bb_signals_norestart(1 << SIGCHLD, sig_child_handler);
+	bb_signals_norestart(1 << SIGALRM, sig_alarm_handler);
+	bb_signals_norestart(1 << SIGHUP, sig_hangup_handler);
 
 	/* Without timestamps, we don't have to print each line
 	 * separately, so we can look for _last_ newline, not first,

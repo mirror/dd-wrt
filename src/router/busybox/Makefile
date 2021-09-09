@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 33
-SUBLEVEL = 1
+PATCHLEVEL = 34
+SUBLEVEL = 0
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -612,6 +612,7 @@ quiet_cmd_busybox__ ?= LINK    $@
       "$(core-y)" \
       "$(libs-y)" \
       "$(LDLIBS)" \
+      "$(CONFIG_EXTRA_LDLIBS)" \
       && $(srctree)/scripts/generate_BUFSIZ.sh --post include/common_bufsiz.h
 
 # Generate System.map
