@@ -935,7 +935,7 @@ static void *handle_request(void *arg)
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Illegal filename. (filename will threat local filesystem)");
+		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Illegal filename. (filename will threaten local filesystem)");
 		goto out;
 	}
 
