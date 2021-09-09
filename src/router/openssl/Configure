@@ -2925,7 +2925,7 @@ _____
 #
 #       cflags => picker(default => "-Wall",
 #                        debug   => "-g -O0",
-#                        release => "-O3")
+#                        release => "")
 #
 sub picker {
     my %opts = @_;
