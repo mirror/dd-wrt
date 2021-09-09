@@ -1,7 +1,7 @@
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -15,11 +15,15 @@
  * 1.1 added norm_expand_bits
  * 1.0 First working version
  */
+
+/*
+ * DES low level APIs are deprecated for public use, but still ok for internal
+ * use.
+ */
+#include "internal/deprecated.h"
+
 #include <openssl/crypto.h>
 #include "des_local.h"
-
-/* defaults to false */
-OPENSSL_IMPLEMENT_GLOBAL(int, DES_check_key, 0)
 
 static const unsigned char odd_parity[256] = {
     1, 1, 2, 2, 4, 4, 7, 7, 8, 8, 11, 11, 13, 13, 14, 14,
@@ -277,12 +281,7 @@ static const DES_LONG des_skb[8][64] = {
 
 int DES_set_key(const_DES_cblock *key, DES_key_schedule *schedule)
 {
-    if (DES_check_key) {
-        return DES_set_key_checked(key, schedule);
-    } else {
-        DES_set_key_unchecked(key, schedule);
-        return 0;
-    }
+    return DES_set_key_checked(key, schedule);
 }
 
 /*-
@@ -302,23 +301,17 @@ int DES_set_key_checked(const_DES_cblock *key, DES_key_schedule *schedule)
 
 void DES_set_key_unchecked(const_DES_cblock *key, DES_key_schedule *schedule)
 {
-#ifndef OCTEON_OPENSSL
     static const int shifts2[16] =
         { 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0 };
     register DES_LONG c, d, t, s, t2;
     register const unsigned char *in;
     register DES_LONG *k;
     register int i;
-#endif
+
 #ifdef OPENBSD_DEV_CRYPTO
     memcpy(schedule->key, key, sizeof(schedule->key));
     schedule->session = NULL;
 #endif
-#ifdef OCTEON_OPENSSL
-	memcpy(&(schedule->cvmkey),key,sizeof(schedule->cvmkey));
-	/* schedule->cvmkey = *(uint64_t *)key[0]; */
-#endif
-#ifndef OCTEON_OPENSSL
     k = &schedule->ks->deslong[0];
     in = &(*key)[0];
 
@@ -370,7 +363,6 @@ void DES_set_key_unchecked(const_DES_cblock *key, DES_key_schedule *schedule)
         t2 = ((s >> 16L) | (t & 0xffff0000L));
         *(k++) = ROTATE(t2, 26) & 0xffffffffL;
     }
-#endif
 }
 
 int DES_key_sched(const_DES_cblock *key, DES_key_schedule *schedule)
