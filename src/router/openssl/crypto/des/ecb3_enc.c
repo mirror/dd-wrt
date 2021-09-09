@@ -19,6 +19,23 @@ void DES_ecb3_encrypt(const_DES_cblock *input, DES_cblock *output,
                       DES_key_schedule *ks1, DES_key_schedule *ks2,
                       DES_key_schedule *ks3, int enc)
 {
+#ifdef OCTEON_OPENSSL
+  CVMX_MT_3DES_KEY (ks1->cvmkey, 0);
+  CVMX_MT_3DES_KEY (ks2->cvmkey, 1);
+  CVMX_MT_3DES_KEY (ks3->cvmkey, 2);
+
+  if (enc) {
+      register uint64_t inp = *(uint64_t *)input;
+      CVMX_MT_3DES_ENC (inp);
+      CVMX_MF_3DES_RESULT (inp);
+      *(uint64_t *)output = inp;
+  } else {
+      register uint64_t inp = *(uint64_t *)input;
+      CVMX_MT_3DES_DEC (inp);
+      CVMX_MF_3DES_RESULT (inp);
+      *(uint64_t *)output = inp;
+  }
+#else
     register DES_LONG l0, l1;
     DES_LONG ll[2];
     const unsigned char *in = &(*input)[0];
@@ -36,4 +53,5 @@ void DES_ecb3_encrypt(const_DES_cblock *input, DES_cblock *output,
     l1 = ll[1];
     l2c(l0, out);
     l2c(l1, out);
+#endif
 }
