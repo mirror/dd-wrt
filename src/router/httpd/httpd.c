@@ -484,7 +484,7 @@ static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
-	send_error(conn_fp, 0, 401, "UNAUTHORIZED", header, "Authorization required. Wrong username and/or password!");
+	send_error(conn_fp, 0, 401, " UNAUTHORIZED", header, "Authorization required. Wrong username and/or password!");
 	free(header);
 }
 
@@ -824,7 +824,7 @@ static void *handle_request(void *arg)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
-			send_error(conn_fp, 0, 408, "TCP Error", NULL, "Unexpected connection close in intitial request");
+			send_error(conn_fp, 0, 408, " TCP Error", NULL, "Unexpected connection close in intitial request");
 			goto out;
 		}
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
@@ -838,7 +838,7 @@ static void *handle_request(void *arg)
 		break;
 	}
 	if (!*(line)) {
-		send_error(conn_fp, 0, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
+		send_error(conn_fp, 0, 408, " REQUEST TIMEOUT", NULL, "No request appeared within a reasonable time period.");
 
 		goto out;
 	}
@@ -850,7 +850,7 @@ static void *handle_request(void *arg)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Can't parse request. (no path given)");
+		send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Can't parse request. (no path given)");
 		goto out;
 	}
 	while (*path == ' ')
@@ -858,7 +858,7 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Can't parse request. (no protocol given)");
+		send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Can't parse request. (no protocol given)");
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -871,7 +871,7 @@ static void *handle_request(void *arg)
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
-			send_error(conn_fp, 0, 408, "TCP Error", NULL, "Unexpected connection close");
+			send_error(conn_fp, 0, 408, " TCP ERROR", NULL, "Unexpected connection close");
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -924,18 +924,18 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 0, 501, "Not Implemented", NULL, "Method %s is not implemented.", method);
+		send_error(conn_fp, 0, 501, " NOT IMPLEMENTED", NULL, "Method %s is not implemented", method);
 		goto out;
 	}
 
 	if (path[0] != '/') {
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Bad filename. (no leading slash)");
+		send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Bad filename. (no leading slash)");
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Illegal filename. (filename will threaten local filesystem)");
+		send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Illegal filename. (filename will threaten local filesystem)");
 		goto out;
 	}
 
@@ -1009,7 +1009,7 @@ static void *handle_request(void *arg)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
-		send_error(conn_fp, 0, 400, "Bad Request", NULL, "Cross Site Action detected!");
+		send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Cross Site Action detected!");
 		goto out;
 	}
 
@@ -1037,11 +1037,11 @@ static void *handle_request(void *arg)
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(conn_fp, 0, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
+					send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Cross Site Action detected! (referer %s)", referer);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(conn_fp, 0, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
+					send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Cross Site Action detected! (referer %s)", referer);
 					goto out;
 				}
 				if (c == hlen) {
@@ -1050,7 +1050,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(conn_fp, 0, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
+				send_error(conn_fp, 0, 400, " BAD REQUEST", NULL, "Cross Site Action detected! (referer %s)", referer);
 				goto out;
 			}
 		}
@@ -1250,7 +1250,7 @@ static void *handle_request(void *arg)
 		}
 #endif
 		if (check_connect_type(conn_fp) < 0) {
-			send_error(conn_fp, 0, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
+			send_error(conn_fp, 0, 401, " BAD REQUEST", NULL, "Can't use wireless interface to access GUI.");
 			goto out;
 		}
 		if (handler->send_headers) {
@@ -1265,7 +1265,7 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
-	send_error(conn_fp, noheader, 404, "Not Found", NULL, "File %s not found.", file);
+	send_error(conn_fp, noheader, 404, " NOT FOUND", NULL, "File %s not found.", file);
 
       out:;
 	setnaggle(conn_fp, 0);
