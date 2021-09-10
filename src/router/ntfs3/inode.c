@@ -1624,7 +1624,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 
 	/* Write non resident data. */
 	if (nsize) {
-		err = ntfs_sb_write_run(sbi, &ni->file.run, 0, rp, nsize);
+		err = ntfs_sb_write_run(sbi, &ni->file.run, 0, rp, nsize, 0);
 		if (err)
 			goto out7;
 	}
