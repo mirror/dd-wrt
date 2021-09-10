@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
  *
  * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
@@ -21,7 +20,7 @@
 #define NTFS_NAME_LEN 255
 
 /* ntfs.sys used 500 maximum links on-disk struct allows up to 0xffff. */
-#define NTFS_LINK_MAX 0x400
+#define NTFS_LINK_MAX 4000
 //#define NTFS_LINK_MAX 0xffff
 
 /*
