@@ -962,11 +962,6 @@
     border-color: var(--v0-8) !important;
     background-color: var(--bg-2) !important;
   }
-  input[type='checkbox'i]:indeterminate {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect x="128" y="128" width="256" height="256" fill="\%2315ff15"/></svg>') !important;
-    border-color: var(--v1-6) !important;
-    background-color: var(--v1-4) !important;
-  }
   input[type='file'i]::file-selector-button {
     background-color: var(--bg-5);
     border: 2px solid var(--bg-5);
