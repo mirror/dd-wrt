@@ -563,7 +563,7 @@ ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void **,
                     int, long, void *)
 #else
 static int
-ssl_dupAclChecklist(CRYPTO_EX_DATA *, CRYPTO_EX_DATA *, void **,
+ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void **,
                     int, long, void *)
 #endif
 {
