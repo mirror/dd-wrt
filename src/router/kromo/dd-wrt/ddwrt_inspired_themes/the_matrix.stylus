@@ -1,13 +1,8 @@
-<!--
- dd-wrt-inspired-themes
- © 2021 Style-it-themes - the-j0k3r
- License: MIT
- URL: https://github.com/style-it-themes/dd-wrt-inspired-themes
--->
 <style id="stylus-1" type="text/css" class="stylus">:root {
-    --style-name: 'DD-WRT Inspired Themes v3.2.2';
-    --copyright: '© 2021 Style-it-themes: the-j0k3r';
-    --home-url: 'https://github.com/style-it-themes/dd-wrt-inspired-themes';
+    --style-name: DD-WRT Inspired Themes v4.0.9;
+    --copyright: © 2021 Style-it-themes: the-j0k3r;
+    --license: MIT;
+    --home-url: https://github.com/style-it-themes/dd-wrt-inspired-themes;
     --bg-0: hsla(0,0%,0%,1);
     --bg-1: hsla(0,0%,0%,1);
     --bg-2: hsla(0,0%,3.93%,1);
@@ -130,6 +125,12 @@
     --v0-7: #0c0;
     --v0-8: #00e500;
     --v0-9: #0f0;
+    --rgba-bg-01: rgba(0,0,0,0.1);
+    --rgba-bg-03: rgba(0,0,0,0.3);
+    --rgba-bg-04: rgba(0,0,0,0.4);
+    --rgba-bg-05: rgba(0,0,0,0.5);
+    --rgba-bg-075: rgba(0,0,0,0.075);
+    --rgba-ac-06: rgba(0,255,0,0.6);
   }
   ::selection {
     background-color: var(--v0-6);
@@ -234,11 +235,11 @@
     color: var(--v9-9);
   }
   body input.button[disabled] {
+    color: var(--v9-9) !important;
     border-color: var(--bg-3) !important;
-    background-color: var(--v0-6) !important;
-    color: var(--v9-5);
+    background-color: var(--v0-5) !important;
     box-shadow: none;
-    opacity: 0.5;
+    opacity: 0.6;
   }
   body input[name*="apply"] {
     background: none repeat scroll 0 0 var(--v4-2);
@@ -265,7 +266,7 @@
     color: var(--v9-9) !important;
   }
   body input[name*="refresh"][style*="background"] {
-    background-color: var(--bg-1) !important;
+    background: var(--v0-5) !important;
   }
   body input[name*="reboot"] {
     background: none repeat scroll 0 0 var(--v1-4);
@@ -307,7 +308,7 @@
     content: '%d\A';
     font-size: 7rem;
     line-height: 10rem;
-    text-shadow: 0 -1px 0 var(--v9-9), 0 1px 0 var(--v9-4), 0 2px 0 var(--v9-4), 0 3px 0 var(--v9-4), 0 4px 0 var(--v9-4), 0 5px 0 var(--v9-4), 0 6px 0 var(--v9-4), 0 7px 0 var(--v9-4), 0 8px 0 var(--v9-4), 0 10px 5px rgba(40,42,54,0.4), 0 20px 10px rgba(40,42,54,0.4);
+    text-shadow: 0 -1px 0 var(--v9-9), 0 1px 0 var(--v9-4), 0 2px 0 var(--v9-4), 0 3px 0 var(--v9-4), 0 4px 0 var(--v9-4), 0 5px 0 var(--v9-4), 0 6px 0 var(--v9-4), 0 7px 0 var(--v9-4), 0 8px 0 var(--v9-4), 0 10px 5px var(--rgba-bg-04), 0 20px 10px var(--rgba-bg-04);
     white-space: pre-wrap;
   }
   body[bgcolor="#cc9999"] h4::after {
@@ -327,7 +328,7 @@
     white-space: pre;
   }
   form[name='wds'] .label {
-    margin-right: 20px;
+    margin-right: 24px;
   }
   form[name='wds'] select {
     margin-right: 6px;
@@ -364,7 +365,7 @@
     margin: 0 0 0.8em 0;
   }
   input.button[onclick*='copy'],
-  input.button[onclick*='past'] {
+  input.button[onclick*='paste'] {
     margin: 0 0 0.8em 0;
   }
   input.button[onclick*='vifs_add'] {
@@ -376,18 +377,21 @@
   input.button[onclick*='gen_wg_key'] {
     margin: 0 0 6px -32%;
   }
+  input.button[name*='import_tunnel'] {
+    margin-left: 6px;
+  }
   input.button[onclick*='add_peer'] {
     margin: 0 0 -6px -35%;
   }
-  input.button[onclick*="previewStyle"] {
+  input.button[onclick*='previewStyle'] {
     padding: 0.362em 1.087em;
   }
-  input.button[onclick*="vlan_add"],
-  input.button[onclick*="bridge_add"],
-  input.button[onclick*="bridgeif_add"],
-  input.button[onclick*="ipvs_add"],
-  input.button[onclick*="bond_add"],
-  input.button[onclick*="mdhcp_add"] {
+  input.button[onclick*='vlan_add'],
+  input.button[onclick*='bridge_add'],
+  input.button[onclick*='bridgeif_add'],
+  input.button[onclick*='ipvs_add'],
+  input.button[onclick*='bond_add'],
+  input.button[onclick*='mdhcp_add'] {
     padding: 0.2em 0.95em;
   }
   input[type='checkbox'i][onclick*='setElementMask'] {
@@ -611,6 +615,7 @@
     background: var(--v1-1);
     border: 2px dashed var(--v1-5);
     text-shadow: 0 1px 0 var(--v1-0);
+    border-radius: 4px;
   }
   .warning #warning_text,
   .warning p b {
@@ -673,9 +678,10 @@
     letter-spacing: 0.95px;
   }
   .submitFooter {
-    background-color: rgba(0,0,0,0.5);
+    background: var(--rgba-bg-05);
     border: 1px solid var(--bg-4);
     color: var(--fg-1);
+    border-radius: 4px;
   }
   .meter {
     background-color: var(--bg-4);
@@ -692,7 +698,7 @@
     line-height: 2.2rem;
   }
   #header {
-    background: bg;
+    background: var(--bg-2);
   }
   #header #logo {
     filter: contrast(1.2);
@@ -827,7 +833,7 @@
     outline-offset: -2px;
   }
   #t-graph li .bar {
-    color: rgba(0,0,0,0.5);
+    color: var(--rgba-bg-05);
     outline: 0;
   }
   #t-graph #ticks .tick {
@@ -884,13 +890,14 @@
   }
   input {
     border: 1px solid var(--bg-4);
-    box-shadow: 0 1px 1px rgba(0,0,0,0.075);
+    box-shadow: 0 1px 1px var(--rgba-bg-075);
     transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
     padding: 7px;
     line-height: 1.2em;
     appearance: none;
     -moz-appearance: none;
     -webkit-appearance: none;
+    border-radius: 4px;
   }
   input:hover,
   input:focus-within {
@@ -1011,8 +1018,8 @@
   }
   .progress {
     background-color: var(--bg-4);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-    -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: inset 0 1px 2px var(--rgba-bg-01);
+    -webkit-box-shadow: inset 0 1px 2px var(--rgba-bg-01);
     border-radius: 4px;
   }
   .progress-bar.odd {
@@ -1022,7 +1029,7 @@
     background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%23c3c3c3" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
     background-color: var(--bg-0) !important;
     border: 1px solid var(--bg-4);
-    box-shadow: 0px 1px 1px rgba(0,0,0,0.075);
+    box-shadow: 0px 1px 1px var(--rgba-bg-075);
     color: var(--v9-8);
     appearance: none;
     -moz-appearance: none;
@@ -1061,24 +1068,24 @@
     background-color: var(--bg-0) !important;
     opacity: 0.5;
   }
-  [name='ServiceTable'] {
+  select[name='ServiceTable'] {
     background: none !important;
     background-color: var(--bg-0) !important;
     border: 1px solid var(--bg-4);
     width: inherit;
     height: inherit;
   }
-  [name='ServiceTable'] option {
+  select[name='ServiceTable'] option {
     width: 200%;
   }
-  [name='ServiceTable'] option:hover {
+  select[name='ServiceTable'] option:hover {
     background-color: var(--v0-2) !important;
   }
-  [name='ServiceTable'] option:checked {
+  select[name='ServiceTable'] option:checked {
     background-color: var(--v0-5) !important;
     box-shadow: 0 0 10px 100px var(--v0-6) inset;
   }
-  [name='ServiceTable']:hover {
+  select[name='ServiceTable']:hover {
     background: none !important;
     background-color: var(--bg-0) !important;
   }
