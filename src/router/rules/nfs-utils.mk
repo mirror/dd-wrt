@@ -1,4 +1,4 @@
-nfs-utils-configure: libtirpc lvm2 keyutils krb5
+nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
 	cd nfs-utils && ./autogen.sh
 	cd nfs-utils && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
 		--with-rpcgen=internal --disable-uuid --disable-gssapi --disable-static --prefix=/usr \
