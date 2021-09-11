@@ -127,7 +127,7 @@ int init_smb_rsp_hdr(struct ksmbd_work *work)
 
 	/* remove 4 byte direct TCP header, add 1 byte wc and 2 byte bcc */
 	rsp_hdr->smb_buf_length =
-		cpu_to_be32(smb2_hdr_size_no_buflen(conn->vals) + 2);
+		cpu_to_be32(conn->vals->header_size + 2);
 	memcpy(rsp_hdr->Protocol, rcv_hdr->Protocol, 4);
 	rsp_hdr->Command = rcv_hdr->Command;
 
