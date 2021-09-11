@@ -2220,13 +2220,13 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	}
 	websWrite(wp, "</title>\n");
 	if (wp->path) {
-		websWrite(wp,"<script type=\"text/javascript\">");
+		websWrite(wp, "<script type=\"text/javascript\">");
 		if (!*(argv[0])) {
 			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", wp->path, nvram_safe_get("router_name"), SVN_REVISION, wp->path);
 		} else {
 			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s) - %s\", '%s')\n", wp->path, nvram_safe_get("router_name"), SVN_REVISION, live_translate(wp, argv[0]), wp->path);
 		}
-		websWrite(wp,"</script>");
+		websWrite(wp, "</script>");
 	}
 }
 
