@@ -489,7 +489,9 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"center\">\n");
 				{
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-					websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n", tun);
+					websWrite(wp,
+						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n",
+						  tun);
 					websWrite(wp, "//]]>\n</script>\n");
 				}
 				websWrite(wp, "</div>\n");
@@ -580,7 +582,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_button\\\" value=\\\"\" + eoip.add + \"\\\" onclick=\\\"add_tunnel(this.form)\\\" />\");\n");
 		//show filepicker
-		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"import_tunnel_button\\\" value=\\\"\" + eoip.importt + \"\\\" onclick=\\\"show_layer_ext(this.form, 'idwgimport', true);\\\" />\");\n");
+		websWrite(wp,
+			  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"import_tunnel_button\\\" value=\\\"\" + eoip.importt + \"\\\" onclick=\\\"show_layer_ext(this.form, 'idwgimport', true);\\\" />\");\n");
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 	websWrite(wp, "</div>\n");
@@ -599,8 +602,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>\n");
 	//hide file picker 
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
-		websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
+	//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
+	websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
 	websWrite(wp, "//]]>\n</script>\n");
 
 	websWrite(wp, "<br />\n");
