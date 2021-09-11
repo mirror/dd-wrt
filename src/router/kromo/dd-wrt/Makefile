@@ -1155,7 +1155,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
 
 
 removepwc:
@@ -1167,7 +1167,7 @@ else
 endif
 
 cleanup:
-	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.html *.css *.js *.ico help/*.asp help/*.png help/*.css images/*.gif ddwrt_inspired_themes/*.stylus images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*.jpg style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/*
+	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.html *.css *.js *.ico help/*.asp help/*.png help/*.css images/*.gif ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*.jpg style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/*
 	rm -rf $(INSTALLDIR)/www/images
 	rm -rf $(INSTALLDIR)/www/help
 	rm -rf $(INSTALLDIR)/www/js
