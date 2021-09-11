@@ -296,11 +296,11 @@ am__squid_SOURCES_DIST = AclRegs.cc AuthReg.cc BandwidthBucket.cc \
 	RemovalPolicy.cc RemovalPolicy.h RequestFlags.cc \
 	RequestFlags.h ResolvedPeers.cc ResolvedPeers.h \
 	SBufStatsAction.cc SBufStatsAction.h SquidMath.cc SquidMath.h \
-	SquidNew.cc StatCounters.cc StatCounters.h StatHist.cc \
-	StatHist.h Store.h StoreClient.h StoreFileSystem.cc \
-	StoreFileSystem.h StoreIOBuffer.h StoreIOState.cc \
-	StoreIOState.h StoreMetaUnpacker.cc StoreMetaUnpacker.h \
-	StoreSearch.h StoreStats.cc StoreStats.h StoreSwapLogData.cc \
+	StatCounters.cc StatCounters.h StatHist.cc StatHist.h Store.h \
+	StoreClient.h StoreFileSystem.cc StoreFileSystem.h \
+	StoreIOBuffer.h StoreIOState.cc StoreIOState.h \
+	StoreMetaUnpacker.cc StoreMetaUnpacker.h StoreSearch.h \
+	StoreStats.cc StoreStats.h StoreSwapLogData.cc \
 	StoreSwapLogData.h StrList.cc StrList.h String.cc TimeOrTag.h \
 	Transients.cc Transients.h XactionInitiator.cc \
 	XactionInitiator.h XactionStep.h cache_cf.cc cache_cf.h \
@@ -381,7 +381,7 @@ am_squid_OBJECTS = $(am__objects_1) $(am__objects_3) $(am__objects_4) \
 	Pipeline.$(OBJEXT) RemovalPolicy.$(OBJEXT) \
 	RequestFlags.$(OBJEXT) ResolvedPeers.$(OBJEXT) \
 	SBufStatsAction.$(OBJEXT) SquidMath.$(OBJEXT) \
-	SquidNew.$(OBJEXT) StatCounters.$(OBJEXT) StatHist.$(OBJEXT) \
+	StatCounters.$(OBJEXT) StatHist.$(OBJEXT) \
 	StoreFileSystem.$(OBJEXT) StoreIOState.$(OBJEXT) \
 	StoreMetaUnpacker.$(OBJEXT) StoreStats.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) StrList.$(OBJEXT) String.$(OBJEXT) \
@@ -2078,19 +2078,18 @@ tests_test_http_range_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(LDFLAGS) -o $@
 am__ufsdump_SOURCES_DIST = win32.cc ClientInfo.h \
 	tests/stub_HelperChildConfig.cc MemBuf.cc MemBuf.h Parsing.h \
-	RemovalPolicy.cc SquidNew.cc tests/stub_StoreMeta.cc \
-	StoreMetaUnpacker.cc String.cc cbdata.cc cbdata.h debug.cc \
-	dlink.cc dlink.h tests/stub_fd.cc fd.h helper/ChildConfig.h \
-	int.cc int.h mem/forward.h store_key_md5.cc store_key_md5.h \
+	RemovalPolicy.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
+	String.cc cbdata.cc cbdata.h debug.cc dlink.cc dlink.h \
+	tests/stub_fd.cc fd.h helper/ChildConfig.h int.cc int.h \
+	mem/forward.h store_key_md5.cc store_key_md5.h \
 	tests/stub_time.cc ufsdump.cc
 am_ufsdump_OBJECTS = $(am__objects_12) \
 	tests/stub_HelperChildConfig.$(OBJEXT) MemBuf.$(OBJEXT) \
-	RemovalPolicy.$(OBJEXT) SquidNew.$(OBJEXT) \
-	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
-	String.$(OBJEXT) cbdata.$(OBJEXT) debug.$(OBJEXT) \
-	dlink.$(OBJEXT) tests/stub_fd.$(OBJEXT) int.$(OBJEXT) \
-	store_key_md5.$(OBJEXT) tests/stub_time.$(OBJEXT) \
-	ufsdump.$(OBJEXT)
+	RemovalPolicy.$(OBJEXT) tests/stub_StoreMeta.$(OBJEXT) \
+	StoreMetaUnpacker.$(OBJEXT) String.$(OBJEXT) cbdata.$(OBJEXT) \
+	debug.$(OBJEXT) dlink.$(OBJEXT) tests/stub_fd.$(OBJEXT) \
+	int.$(OBJEXT) store_key_md5.$(OBJEXT) \
+	tests/stub_time.$(OBJEXT) ufsdump.$(OBJEXT)
 nodist_ufsdump_OBJECTS = globals.$(OBJEXT)
 ufsdump_OBJECTS = $(am_ufsdump_OBJECTS) $(nodist_ufsdump_OBJECTS)
 am_unlinkd_OBJECTS = unlinkd_daemon.$(OBJEXT)
@@ -2146,20 +2145,20 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	./$(DEPDIR)/RemovalPolicy.Po ./$(DEPDIR)/RequestFlags.Po \
 	./$(DEPDIR)/ResolvedPeers.Po ./$(DEPDIR)/SBufStatsAction.Po \
 	./$(DEPDIR)/SquidConfig.Plo ./$(DEPDIR)/SquidMath.Po \
-	./$(DEPDIR)/SquidNew.Po ./$(DEPDIR)/StatCounters.Po \
-	./$(DEPDIR)/StatHist.Po ./$(DEPDIR)/StoreFileSystem.Po \
-	./$(DEPDIR)/StoreIOState.Po ./$(DEPDIR)/StoreMeta.Po \
-	./$(DEPDIR)/StoreMetaMD5.Po ./$(DEPDIR)/StoreMetaSTD.Po \
-	./$(DEPDIR)/StoreMetaSTDLFS.Po ./$(DEPDIR)/StoreMetaURL.Po \
-	./$(DEPDIR)/StoreMetaUnpacker.Po ./$(DEPDIR)/StoreMetaVary.Po \
-	./$(DEPDIR)/StoreStats.Po ./$(DEPDIR)/StoreSwapLogData.Po \
-	./$(DEPDIR)/StrList.Po ./$(DEPDIR)/String.Po \
-	./$(DEPDIR)/Transients.Po ./$(DEPDIR)/WinSvc.Po \
-	./$(DEPDIR)/XactionInitiator.Po ./$(DEPDIR)/cache_cf.Po \
-	./$(DEPDIR)/cache_manager.Po ./$(DEPDIR)/carp.Po \
-	./$(DEPDIR)/cbdata.Po ./$(DEPDIR)/cf_gen.Po \
-	./$(DEPDIR)/clientStream.Po ./$(DEPDIR)/client_db.Po \
-	./$(DEPDIR)/client_side.Po ./$(DEPDIR)/client_side_reply.Po \
+	./$(DEPDIR)/StatCounters.Po ./$(DEPDIR)/StatHist.Po \
+	./$(DEPDIR)/StoreFileSystem.Po ./$(DEPDIR)/StoreIOState.Po \
+	./$(DEPDIR)/StoreMeta.Po ./$(DEPDIR)/StoreMetaMD5.Po \
+	./$(DEPDIR)/StoreMetaSTD.Po ./$(DEPDIR)/StoreMetaSTDLFS.Po \
+	./$(DEPDIR)/StoreMetaURL.Po ./$(DEPDIR)/StoreMetaUnpacker.Po \
+	./$(DEPDIR)/StoreMetaVary.Po ./$(DEPDIR)/StoreStats.Po \
+	./$(DEPDIR)/StoreSwapLogData.Po ./$(DEPDIR)/StrList.Po \
+	./$(DEPDIR)/String.Po ./$(DEPDIR)/Transients.Po \
+	./$(DEPDIR)/WinSvc.Po ./$(DEPDIR)/XactionInitiator.Po \
+	./$(DEPDIR)/cache_cf.Po ./$(DEPDIR)/cache_manager.Po \
+	./$(DEPDIR)/carp.Po ./$(DEPDIR)/cbdata.Po \
+	./$(DEPDIR)/cf_gen.Po ./$(DEPDIR)/clientStream.Po \
+	./$(DEPDIR)/client_db.Po ./$(DEPDIR)/client_side.Po \
+	./$(DEPDIR)/client_side_reply.Po \
 	./$(DEPDIR)/client_side_request.Po ./$(DEPDIR)/comm.Plo \
 	./$(DEPDIR)/debug.Po ./$(DEPDIR)/delay_pools.Po \
 	./$(DEPDIR)/dlink.Po ./$(DEPDIR)/dns_internal.Po \
@@ -3114,11 +3113,11 @@ squid_SOURCES = $(ACL_REGISTRATION_SOURCES) $(DELAY_POOL_SOURCE) \
 	RemovalPolicy.cc RemovalPolicy.h RequestFlags.cc \
 	RequestFlags.h ResolvedPeers.cc ResolvedPeers.h \
 	SBufStatsAction.cc SBufStatsAction.h SquidMath.cc SquidMath.h \
-	SquidNew.cc StatCounters.cc StatCounters.h StatHist.cc \
-	StatHist.h Store.h StoreClient.h StoreFileSystem.cc \
-	StoreFileSystem.h StoreIOBuffer.h StoreIOState.cc \
-	StoreIOState.h StoreMetaUnpacker.cc StoreMetaUnpacker.h \
-	StoreSearch.h StoreStats.cc StoreStats.h StoreSwapLogData.cc \
+	StatCounters.cc StatCounters.h StatHist.cc StatHist.h Store.h \
+	StoreClient.h StoreFileSystem.cc StoreFileSystem.h \
+	StoreIOBuffer.h StoreIOState.cc StoreIOState.h \
+	StoreMetaUnpacker.cc StoreMetaUnpacker.h StoreSearch.h \
+	StoreStats.cc StoreStats.h StoreSwapLogData.cc \
 	StoreSwapLogData.h StrList.cc StrList.h String.cc TimeOrTag.h \
 	Transients.cc Transients.h XactionInitiator.cc \
 	XactionInitiator.h XactionStep.h cache_cf.cc cache_cf.h \
@@ -3215,7 +3214,6 @@ ufsdump_SOURCES = \
 	MemBuf.h \
 	Parsing.h \
 	RemovalPolicy.cc \
-	SquidNew.cc \
 	tests/stub_StoreMeta.cc \
 	StoreMetaUnpacker.cc \
 	String.cc \
@@ -6517,7 +6515,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SBufStatsAction.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SquidConfig.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SquidMath.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SquidNew.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatCounters.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatHist.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StoreFileSystem.Po@am__quote@ # am--include-marker
@@ -7514,7 +7511,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/SBufStatsAction.Po
 	-rm -f ./$(DEPDIR)/SquidConfig.Plo
 	-rm -f ./$(DEPDIR)/SquidMath.Po
-	-rm -f ./$(DEPDIR)/SquidNew.Po
 	-rm -f ./$(DEPDIR)/StatCounters.Po
 	-rm -f ./$(DEPDIR)/StatHist.Po
 	-rm -f ./$(DEPDIR)/StoreFileSystem.Po
@@ -7847,7 +7843,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/SBufStatsAction.Po
 	-rm -f ./$(DEPDIR)/SquidConfig.Plo
 	-rm -f ./$(DEPDIR)/SquidMath.Po
-	-rm -f ./$(DEPDIR)/SquidNew.Po
 	-rm -f ./$(DEPDIR)/StatCounters.Po
 	-rm -f ./$(DEPDIR)/StatHist.Po
 	-rm -f ./$(DEPDIR)/StoreFileSystem.Po

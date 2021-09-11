@@ -182,8 +182,8 @@ am_pinger_OBJECTS = Icmp4.$(OBJEXT) Icmp6.$(OBJEXT) \
 	IcmpPinger.$(OBJEXT) pinger.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = debug.$(OBJEXT) globals.$(OBJEXT) \
-	SquidConfig.$(OBJEXT) SquidNew.$(OBJEXT) \
-	tests/stub_fd.$(OBJEXT) tests/stub_HelperChildConfig.$(OBJEXT) \
+	SquidConfig.$(OBJEXT) tests/stub_fd.$(OBJEXT) \
+	tests/stub_HelperChildConfig.$(OBJEXT) \
 	tests/stub_libmem.$(OBJEXT) tests/stub_SBuf.$(OBJEXT) \
 	time.$(OBJEXT)
 nodist_pinger_OBJECTS = $(am__objects_1)
@@ -216,10 +216,10 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/Icmp.Plo ./$(DEPDIR)/Icmp4.Po \
 	./$(DEPDIR)/Icmp6.Po ./$(DEPDIR)/IcmpConfig.Plo \
 	./$(DEPDIR)/IcmpPinger.Po ./$(DEPDIR)/IcmpSquid.Plo \
-	./$(DEPDIR)/SquidConfig.Po ./$(DEPDIR)/SquidNew.Po \
-	./$(DEPDIR)/debug.Po ./$(DEPDIR)/globals.Po \
-	./$(DEPDIR)/net_db.Plo ./$(DEPDIR)/pinger.Po \
-	./$(DEPDIR)/time.Po tests/$(DEPDIR)/stub_HelperChildConfig.Po \
+	./$(DEPDIR)/SquidConfig.Po ./$(DEPDIR)/debug.Po \
+	./$(DEPDIR)/globals.Po ./$(DEPDIR)/net_db.Plo \
+	./$(DEPDIR)/pinger.Po ./$(DEPDIR)/time.Po \
+	tests/$(DEPDIR)/stub_HelperChildConfig.Po \
 	tests/$(DEPDIR)/stub_SBuf.Po tests/$(DEPDIR)/stub_fd.Po \
 	tests/$(DEPDIR)/stub_libmem.Po
 am__mv = mv -f
@@ -788,7 +788,6 @@ COPIED_SOURCE = \
 	debug.cc \
 	globals.cc \
 	SquidConfig.cc \
-	SquidNew.cc \
 	tests/stub_fd.cc \
 	tests/stub_HelperChildConfig.cc \
 	tests/stub_libmem.cc \
@@ -960,7 +959,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IcmpPinger.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IcmpSquid.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SquidConfig.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SquidNew.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/globals.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_db.Plo@am__quote@ # am--include-marker
@@ -1313,7 +1311,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/IcmpPinger.Po
 	-rm -f ./$(DEPDIR)/IcmpSquid.Plo
 	-rm -f ./$(DEPDIR)/SquidConfig.Po
-	-rm -f ./$(DEPDIR)/SquidNew.Po
 	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/globals.Po
 	-rm -f ./$(DEPDIR)/net_db.Plo
@@ -1375,7 +1372,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/IcmpPinger.Po
 	-rm -f ./$(DEPDIR)/IcmpSquid.Plo
 	-rm -f ./$(DEPDIR)/SquidConfig.Po
-	-rm -f ./$(DEPDIR)/SquidNew.Po
 	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/globals.Po
 	-rm -f ./$(DEPDIR)/net_db.Plo
@@ -1442,9 +1438,6 @@ time.cc: $(top_srcdir)/src/time.cc
 
 SquidConfig.cc: $(top_srcdir)/src/SquidConfig.cc
 	cp $(top_srcdir)/src/SquidConfig.cc $@
-
-SquidNew.cc: $(top_srcdir)/src/SquidNew.cc
-	cp $(top_srcdir)/src/SquidNew.cc $@
 
 tests/stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
 	cp $(top_srcdir)/src/tests/stub_HelperChildConfig.cc $@
