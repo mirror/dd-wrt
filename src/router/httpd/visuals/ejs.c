@@ -348,7 +348,6 @@ int nvram_selmatch(webs_t wp, char *name, char *match)
 
 EJ_VISIBLE void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
 		websWrite(wp, argv[2]);
 	}
@@ -418,7 +417,6 @@ EJ_VISIBLE void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
  */
 EJ_VISIBLE void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1]))
 		websWrite(wp, argv[2]);
 	else
@@ -431,7 +429,6 @@ EJALIAS(ej_nvram_else_match, ej_nvem);
 
 EJ_VISIBLE void ej_startswith(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (startswith(nvram_safe_get(argv[0]), argv[1]))
 		websWrite(wp, argv[2]);
 
@@ -449,7 +446,6 @@ static int rule_ismini(char *name)
 		return 1;
 	}
 	return 0;
-
 }
 
 static int rule_isvpn(char *name)
@@ -480,7 +476,6 @@ static int rule_wanvlan(char *name)
 	if (!*wan_iface)
 		wan_iface = nvram_safe_get("wan_ifname2");
 	return isvlan(wan_iface);
-
 }
 
 static int rule_fa(char *name)
@@ -722,7 +717,6 @@ EJ_VISIBLE void ej_ifndef(webs_t wp, int argc, char_t ** argv)
  */
 EJ_VISIBLE void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1]))
 		websWrite(wp, argv[2]);
 
@@ -840,7 +834,6 @@ EJ_VISIBLE void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 			strcpy(ipaddr, nvram_safe_get("lan_ipaddr"));
 		strcpy(port, "");
 	} else {
-
 		if (nvram_match("wan_proto", "pptp"))
 			strcpy(ipaddr, nvram_safe_get("pptp_get_ip"));
 		else if (nvram_match("wan_proto", "l2tp"))
@@ -1039,7 +1032,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	/* todo, read dir content and generate this */
 	char buf[128];
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "management.inspired_theme"));
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "management.inspired_themes"));
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.theme"));
 	websWrite(wp, "<select name=\"stylus\">\n");
@@ -2352,7 +2345,6 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
  */
 EJ_VISIBLE void ej_nvram_selected(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1])) {
 		websWrite(wp, "selected=\"selected\"");
 	}
@@ -2363,7 +2355,6 @@ EJALIAS(ej_nvram_selected, ej_nvs);
 
 EJ_VISIBLE void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1])) {
 		websWrite(wp, "selected=\\\"selected\\\"");
 	}
@@ -2413,7 +2404,6 @@ EJ_VISIBLE void ej_tran(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1])) {
 		websWrite(wp, "checked=\"checked\"");
 	}
@@ -2425,7 +2415,6 @@ EJALIAS(ej_nvram_checked, ej_nvc);
 
 EJ_VISIBLE void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
-
 	if (nvram_match(argv[0], argv[1])) {
 		websWrite(wp, "checked=\\\"checked\\\"");
 	}
@@ -2671,7 +2660,6 @@ EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " & ");
 	if (showap)
 		websWrite(wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
-
 }
 
 EJ_VISIBLE void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
@@ -2725,7 +2713,6 @@ EJ_VISIBLE void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 {
-
 	char netmode[32];
 	char mode[32];
 	char m[32];
