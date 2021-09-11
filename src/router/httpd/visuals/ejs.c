@@ -1077,6 +1077,29 @@ void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 	fread(mem, 1, len, web);
 	fclose(web);
 	mem[len] = 0;
+	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
+	wfwrite(mem, 1, len, wp);
+	free(mem);
+	sprintf(path, "ddwrt_inspired_themes/core.css");
+	web = _getWebsFile(wp, path, &len);
+	if (!web)
+		return;
+	if (!len) {
+		fclose(web);
+		return;
+	}
+	if (status)
+		mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
+	else
+		mem = malloc(len + 1);
+
+	if (!mem) {
+		fclose(web);
+		return;
+	}
+	fread(mem, 1, len, web);
+	fclose(web);
+	mem[len] = 0;
 	if (status) {
 		int i;
 		char stat[32];
@@ -1107,6 +1130,7 @@ void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 	}
 	wfwrite(mem, 1, len, wp);
 	free(mem);
+	websWrite(wp, "</style>\n");
 }
 #else
 void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
