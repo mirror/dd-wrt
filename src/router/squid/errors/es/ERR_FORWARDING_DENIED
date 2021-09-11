@@ -24,7 +24,7 @@ body
 <p><b>Reenv&iacute;o denegado.</b></p>
 </blockquote>
 
-<p>Este caché no transmitirá su solicitud, ya que intenta imponer una relación de conexión. Quizás el cliente en% i es un caché que se ha desconfigurado.</p>
+<p>Este caché no transmitirá su solicitud, ya que intenta imponer una relación de conexión. Quizás el cliente en %i es un caché que se ha desconfigurado.</p>
 
 <p>Su administrador del cach&eacute; es <a href="mailto:%w%W">%w</a>.</p>
 
