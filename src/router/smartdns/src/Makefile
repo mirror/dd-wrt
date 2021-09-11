@@ -20,9 +20,9 @@ OBJS=smartdns.o fast_ping.o dns_client.o dns_server.o dns.o util.o tlog.o dns_co
 
 # cflags
 ifndef CFLAGS
-CFLAGS =-O2 -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing 
+CFLAGS =-O2 -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables
 endif
-override CFLAGS +=-Iinclude
+override CFLAGS +=-Iinclude $(LTO)
 override CFLAGS += -DBASE_FILE_NAME=\"$(notdir $<)\"
 ifdef VER
 override CFLAGS += -DSMARTDNS_VERION=\"$(VER)\"
@@ -32,6 +32,7 @@ CXXFLAGS=-O2 -g -Wall -std=c++11
 override CXXFLAGS +=-Iinclude
 
 # ldflags
+override LDFLAGS += $(LDLTO)
 ifeq ($(STATIC), yes)
 override LDFLAGS += -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -ldl -static
 else
