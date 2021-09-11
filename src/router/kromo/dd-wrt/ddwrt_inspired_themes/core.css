@@ -162,37 +162,6 @@ body[bgcolor="#cc9999"] {
   cursor: auto;
   overflow: hidden !important;
 }
-body[bgcolor="#cc9999"] h4 {
-  margin-top: 3rem;
-  font-size: 0;
-}
-body[bgcolor="#cc9999"] h4:hover {
-  animation: move-it 1.2s ease-in-out;
-  cursor: not-allowed;
-}
-body[bgcolor="#cc9999"] h4::before {
-  content: '%d\A';
-  font-size: 7rem;
-  line-height: 10rem;
-  text-shadow: 0 -1px 0 var(--v9-9), 0 1px 0 var(--v9-4), 0 2px 0 var(--v9-4), 0 3px 0 var(--v9-4), 0 4px 0 var(--v9-4), 0 5px 0 var(--v9-4), 0 6px 0 var(--v9-4), 0 7px 0 var(--v9-4), 0 8px 0 var(--v9-4), 0 10px 5px var(--rgba-bg-04), 0 20px 10px var(--rgba-bg-04);
-  white-space: pre-wrap;
-}
-body[bgcolor="#cc9999"] h4::after {
-  content: '%s';
-  animation: color_change 1s ease-in-out infinite alternate;
-  font-variant: small-caps;
-  font-size: 1.8rem;
-  letter-spacing: 1px;
-  line-height: 2rem;
-}
-body[bgcolor="#cc9999"]::after {
-  content: '\A \24D8 %s';
-  color: var(--v9-9);
-  font-size: 1rem;
-  line-height: 1.3rem;
-  text-shadow: 0 1px 0 var(--v1-1);
-  white-space: pre;
-}
 form[name='wds'] .label {
   margin-right: 24px;
 }
