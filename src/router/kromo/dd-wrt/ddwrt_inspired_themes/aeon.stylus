@@ -132,7 +132,7 @@
     --rgba-bg-075: rgba(17,26,34,0.075);
     --rgba-ac-06: rgba(79,116,227,0.6);
   }
-@import url(core.css);
+@import url(/ddwrt_inspired_themes/core.css);
 body[bgcolor="#cc9999"] h4 {
   margin-top: 3rem;
   font-size: 0;
