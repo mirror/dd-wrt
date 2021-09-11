@@ -81,7 +81,7 @@ EJ_VISIBLE void ej_onload(webs_t wp, int argc, char_t ** argv)
 
 /*
  * Meta tag command that will no allow page cached by browsers. The will
- * force the page to be refreshed when visited. 
+ * force the page to be refreshed when visited.
  */
 EJ_VISIBLE void ej_no_cache(webs_t wp, int argc, char_t ** argv)
 {
@@ -290,7 +290,7 @@ EJ_VISIBLE void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
 
 /*
  * Example: wan_mac = 00:11:22:33:44:55 get_single_mac("wan_mac", 1);
- * produces "11" 
+ * produces "11"
  */
 int get_single_mac(char *macaddr, int which)
 {
@@ -763,7 +763,7 @@ EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t ** argv)
 
 /*
  * Example: wan_dns = 1.2.3.4 10.20.30.40 15.25.35.45 get_dns_ip("wan_dns",
- * 1, 2); produces "20" 
+ * 1, 2); produces "20"
  */
 int get_dns_ip(char *name, int which, int count)
 {
@@ -784,7 +784,7 @@ int get_dns_ip(char *name, int which, int count)
 /*
  * Example: wan_dns = 168.95.1.1 210.66.161.125 168.95.192.1 <%
  * get_dns_ip("wan_dns", "1", "2"); %> produces "161" <%
- * get_dns_ip("wan_dns", "2", "3"); %> produces "1" 
+ * get_dns_ip("wan_dns", "2", "3"); %> produces "1"
  */
 EJ_VISIBLE void ej_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 {
@@ -1037,6 +1037,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.theme"));
 	websWrite(wp, "<select name=\"stylus\">\n");
 	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, "share.off"));
+	websWrite(wp, "<option value=\"aeon\" %s>Aeon</option>\n", nvram_match("stylus", "aeon") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material\" %s>Material</option>\n", nvram_match("stylus", "material") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material_darker\" %s>Material Darker</option>\n", nvram_match("stylus", "material_darker") ? "selected=\"selected\"" : "");
@@ -1651,7 +1652,7 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "", "", "", "", "", "", "", "", "", "", "", "", "" }	//
 	};
 	/*
-	 * real name is bmenu.menuname[i][j] 
+	 * real name is bmenu.menuname[i][j]
 	 */
 	static char *menuname_s[8][14] = {
 		{ "setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -1669,7 +1670,7 @@ static struct menucontext *init_menu(webs_t wp)
 #endif
 
 	static char *menu_t[8][13] = {
-		{ "index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", "" },	// 
+		{ "index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", "" },	//
 		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "", "" },	//
 		{ "Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", "" },	//
 		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -1679,7 +1680,7 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp" }	//
 	};
 	/*
-	 * real name is bmenu.menuname[i][j] 
+	 * real name is bmenu.menuname[i][j]
 	 */
 	static char *menuname_t[8][14] = {
 		{ "setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", "" },	//
@@ -1695,7 +1696,7 @@ static struct menucontext *init_menu(webs_t wp)
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", "" },	//
 		{ "services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", "" },	//
-		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	// 
+		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "applications", "applicationspforwarding", "applicationsprforwarding", "applicationsipforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "" },	//
 		{ "admin", "adminManagement", "adminAlive", "adminSysctl", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "" },	//
@@ -1925,11 +1926,11 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// build
 					j++;
 #else
-				if (!strcmp_pnt(m->menu[i][j], "SuperChannel.asp") && (wp->issuperchannel || !wifi))	// jump 
-					// over 
-					// PPTP 
-					// in 
-					// micro 
+				if (!strcmp_pnt(m->menu[i][j], "SuperChannel.asp") && (wp->issuperchannel || !wifi))	// jump
+					// over
+					// PPTP
+					// in
+					// micro
 					// build
 					j++;
 #endif
@@ -1945,8 +1946,8 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// WiMAX
 					j++;
 #else
-				if (!wimaxwifi && !strcmp_pnt(m->menu[i][j], "WiMAX.asp"))	// jump 
-					// over 
+				if (!wimaxwifi && !strcmp_pnt(m->menu[i][j], "WiMAX.asp"))	// jump
+					// over
 					// WiMAX
 					j++;
 #endif
@@ -1961,11 +1962,11 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 #endif
 #ifdef HAVE_MADWIFI
-				if (!wifi && !strcmp_pnt(m->menu[i][j], "WL_WPATable.asp"))	// jump 
-					// over 
-					// PPTP 
-					// in 
-					// micro 
+				if (!wifi && !strcmp_pnt(m->menu[i][j], "WL_WPATable.asp"))	// jump
+					// over
+					// PPTP
+					// in
+					// micro
 					// build
 					j++;
 				if (!strcmp_pnt(m->menu[i][j], "Wireless_radauth.asp"))
@@ -1981,12 +1982,12 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 
 #endif
-				if ((!vlan_supp) && !strcmp_pnt(m->menu[i][j], "Vlan.asp"))	// jump 
-					// over 
-					// VLANs 
-					// if 
-					// vlan 
-					// not 
+				if ((!vlan_supp) && !strcmp_pnt(m->menu[i][j], "Vlan.asp"))	// jump
+					// over
+					// VLANs
+					// if
+					// vlan
+					// not
 					// supported
 					j++;
 #ifndef HAVE_FREERADIUS
@@ -2073,24 +2074,24 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp_pnt(m->menu[i][j], "P2P.asp"))
 					j++;
 #endif
-				if ((!sputnik) && !strcmp_pnt(m->menu[i][j], "Status_SputnikAPD.asp"))	// jump 
-					// over 
+				if ((!sputnik) && !strcmp_pnt(m->menu[i][j], "Status_SputnikAPD.asp"))	// jump
+					// over
 					// Sputnik
 					j++;
-				if ((!openvpn) && !strcmp_pnt(m->menu[i][j], "Status_OpenVPN.asp"))	// jump 
-					// over 
+				if ((!openvpn) && !strcmp_pnt(m->menu[i][j], "Status_OpenVPN.asp"))	// jump
+					// over
 					// OpenVPN
 					j++;
-				if ((!auth) && !strcmp_pnt(m->menu[i][j], "Info.htm"))	// jump 
-					// over 
+				if ((!auth) && !strcmp_pnt(m->menu[i][j], "Info.htm"))	// jump
+					// over
 					// Sys-Info
 					j++;
-				if ((registered) && !cpeonly && !strcmp_pnt(m->menu[i][j], "register.asp"))	// jump 
-					// over 
+				if ((registered) && !cpeonly && !strcmp_pnt(m->menu[i][j], "register.asp"))	// jump
+					// over
 					// register.asp
 					j++;
-				if ((!*(nvram_safe_get("mypage_scripts"))) && !strcmp_pnt(m->menu[i][j], "MyPage.asp"))	// jump 
-					// over 
+				if ((!*(nvram_safe_get("mypage_scripts"))) && !strcmp_pnt(m->menu[i][j], "MyPage.asp"))	// jump
+					// over
 					// MyPage.asp
 					j++;
 #ifndef HAVE_STATUS_GPIO
@@ -2328,7 +2329,7 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 	if (!ipv6addr)
-		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails   
+		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
 	if (ipv6addr)
 		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 #endif
@@ -2985,7 +2986,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			strcpy(hostname, "*");	// set name to *
 
 			/*
-			 * count open connections per IP 
+			 * count open connections per IP
 			 */
 			if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
 				strcpy(ip2, ip);
@@ -2999,25 +3000,25 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			}
 
 			/*
-			 * end count 
+			 * end count
 			 */
 
 			/*
-			 * do nslookup 
+			 * do nslookup
 			 */
 
 			// struct servent *servp;
 			// char buf1[256];
-			// 
+			//
 			// getHostName (buf1, ip);
 			// if (strcmp(buf1, "unknown"))
 			// strcpy (hostname, buf1);
 			/*
-			 * end nslookup 
+			 * end nslookup
 			 */
 
 			/*
-			 * look into hosts file for hostnames (static leases) 
+			 * look into hosts file for hostnames (static leases)
 			 */
 			if ((host = fopen("/tmp/hosts", "r")) != NULL && !strcmp(hostname, "*")) {
 				while (fgets(buf, sizeof(buf), host)) {
@@ -3030,12 +3031,12 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 				fclose(host);
 			}
 			/*
-			 * end hosts file lookup 
+			 * end hosts file lookup
 			 */
 
 			/*
 			 * check for dnsmasq leases in /tmp/dnsmasq.leases and /jffs/ if
-			 * hostname is still unknown 
+			 * hostname is still unknown
 			 */
 
 			if (!strcmp(hostname, "*")
@@ -3061,7 +3062,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
 			}
 			/*
-			 * end nvram check 
+			 * end nvram check
 			 */
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
@@ -3143,7 +3144,7 @@ static void readhosts(struct arptable *tbl, int tablelen)
 	char buf[256];
 	char r_hostname[128];
 	/*
-	 * look into hosts file for hostnames (static leases) 
+	 * look into hosts file for hostnames (static leases)
 	 */
 	if ((host = fopen("/tmp/hosts", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), host)) {
