@@ -2,7 +2,7 @@
 
 **[English](ReadMe_en.md)**
 
-![SmartDNS](https://github.com/pymumu/test/releases/download/blob/smartdns-banner.png)  
+![SmartDNS](doc/smartdns-banner.png)  
 SmartDNS是一个运行在本地的DNS服务器，SmartDNS接受本地客户端的DNS查询请求，从多个上游DNS服务器获取DNS查询结果，并将访问速度最快的结果返回给客户端，提高网络访问速度。
 同时支持指定特定域名IP地址，并高性匹配，达到过滤广告的效果。  
 与dnsmasq的all-servers不同，smartdns返回的是访问速度最快的解析结果。 (详细差异请看[FAQ](#faq))  
@@ -11,19 +11,26 @@ SmartDNS是一个运行在本地的DNS服务器，SmartDNS接受本地客户端�
 
 ## 目录
 
-1. [软件效果展示](#软件效果展示)
-1. [特性](#特性)
-1. [架构](#架构)
-1. [使用](#使用)  
-    1. [下载配套安装包](#下载配套安装包)
-    1. [标准Linux系统安装](#标准linux系统安装树莓派x86_64系统)
-    1. [openwrt/LEDE](#openwrt)
-    1. [华硕路由器原生固件/梅林固件](#华硕路由器原生固件梅林固件)
-    1. [optware/entware](#optwareentware)
-    1. [Windows 10 WSL安装/WSL ubuntu](#windows-10-wsl安装wsl-ubuntu)
-1. [配置参数](#配置参数)
-1. [捐助](#donate)
-1. [FAQ](#faq)
+- [SmartDNS](#smartdns)
+  - [目录](#目录)
+  - [软件效果展示](#软件效果展示)
+  - [特性](#特性)
+  - [架构](#架构)
+  - [使用](#使用)
+    - [下载配套安装包](#下载配套安装包)
+    - [标准Linux系统安装/树莓派/X86_64系统](#标准linux系统安装树莓派x86_64系统)
+    - [openwrt](#openwrt)
+    - [华硕路由器原生固件/梅林固件](#华硕路由器原生固件梅林固件)
+    - [optware/entware](#optwareentware)
+    - [Windows 10 WSL安装/WSL ubuntu](#windows-10-wsl安装wsl-ubuntu)
+  - [配置参数](#配置参数)
+  - [FAQ](#faq)
+  - [编译](#编译)
+  - [Donate](#donate)
+    - [PayPal](#paypal)
+    - [Alipay 支付宝](#alipay-支付宝)
+    - [Wechat 微信](#wechat-微信)
+  - [开源声明](#开源声明)
 
 ## 软件效果展示
 
@@ -526,7 +533,7 @@ https://github.com/pymumu/smartdns/releases
 |speed-check-mode|测速模式选择|无|[ping\|tcp:[80]\|none]|speed-check-mode ping,tcp:80
 |address|指定域名IP地址|无|address /domain/[ip\|-\|-4\|-6\|#\|#4\|#6] <br>`-`表示忽略 <br>`#`表示返回SOA <br>`4`表示IPV4 <br>`6`表示IPV6| address /www.example.com/1.2.3.4
 |nameserver|指定域名使用server组解析|无|nameserver /domain/[group\|-], `group`为组名，`-`表示忽略此规则，配套server中的`-group`参数使用| nameserver /www.example.com/office
-|ipset|域名IPSET|None|ipset /domain/[ipset\|-], `-`表示忽略|ipset /www.example.com/pass
+|ipset|域名IPSET|None|ipset /domain/[ipset\|-\|#[4\|6]:[ipset\|-][,#[4\|6]:[ipset\|-]]], `-`表示忽略|ipset /www.example.com/#4:dns4,#6:-
 |ipset-timeout|设置IPSET超时功能启用|auto|[yes]|ipset-timeout yes
 |domain-rules|设置域名规则|无|domain-rules /domain/ [-rules...]<br>`[-c\|-speed-check-mode]`: 测速模式，参考`speed-check-mode`配置<br>`[-a\|-address]`: 参考`address`配置<br>`[-n\|-nameserver]`: 参考`nameserver`配置<br>`[-p\|-ipset]`:参考`ipset`配置<br>`[-d\|-dualstack-ip-selection]`: 参考`dualstack-ip-selection`|domain-rules /www.example.com/ -speed-check-mode none
 |bogus-nxdomain|假冒IP地址过滤|无|[ip/subnet]，可重复| bogus-nxdomain 1.2.3.4/16
@@ -664,11 +671,11 @@ smartdns包含了编译软件包的脚本，支持编译luci，debian，openwrt�
 
 ### Alipay 支付宝
 
-![alipay](https://github.com/pymumu/test/releases/download/blob/alipay_donate.jpg)
+![alipay](doc/alipay_donate.jpg)
 
 ### Wechat 微信
   
-![wechat](https://github.com/pymumu/test/releases/download/blob/wechat_donate.jpg)
+![wechat](doc/wechat_donate.jpg)
 
 ## 开源声明
 
