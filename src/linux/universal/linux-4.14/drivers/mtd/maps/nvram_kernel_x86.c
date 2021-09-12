@@ -289,6 +289,7 @@ int nvram_commit(void)
 	struct nvram_header *header;
 	unsigned long flags;
 	u_int32_t offset;
+	static int waiting=0;
 	struct file *srcf;
 	printk(KERN_EMERG "commit\n");
 
@@ -297,12 +298,18 @@ int nvram_commit(void)
 		return -EINVAL;
 	}
 
+	if (waiting > 1) {
+		printk("nvram_commit: commit still pending, cancle new one\n");
+		return 0; // we can ignore it, since another commit is still waiting
+	}
+	waiting++;
 	mutex_lock(&nvram_sem);
 	/* Backup sector blocks to be erased */
 	erasesize = NVRAM_SPACE;
 	if (!(buf = MALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
+		waiting--;
 		return -ENOMEM;
 	}
 
@@ -342,6 +349,7 @@ int nvram_commit(void)
 	set_fs(old_fs);
 done:
 	mutex_unlock(&nvram_sem);
+	waiting--;
 	MFREE(buf);
 	return ret;
 }

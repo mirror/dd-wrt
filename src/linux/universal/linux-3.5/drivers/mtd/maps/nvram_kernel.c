@@ -162,6 +162,7 @@ int nvram_commit(void)
 	int ret;
 	struct nvram_header *header;
 	unsigned long flags;
+	static int waiting=0;
 	u_int32_t offset;
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
@@ -177,13 +178,17 @@ int nvram_commit(void)
 		printk("nvram_commit: not committing in interrupt\n");
 		return -EINVAL;
 	}
-
+	if ((waiting++) > 2) {
+		printk("nvram_commit: commit still pending, cancle new one\n");
+		return 0; // we can ignore it, since another commit is still waiting
+	}
 	mutex_lock(&nvram_sem);
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
 	if (!(buf = vmalloc(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
+		waiting--;
 		return -ENOMEM;
 	}
 
@@ -254,6 +259,7 @@ int nvram_commit(void)
 	ret = mtd_read(nvram_mtd, offset, 4, &len, buf);
 
 done:
+	waiting--;
 	mutex_unlock(&nvram_sem);
 	vfree(buf);
 	return ret;
