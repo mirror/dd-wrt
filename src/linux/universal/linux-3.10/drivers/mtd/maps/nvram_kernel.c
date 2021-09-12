@@ -194,10 +194,11 @@ int nvram_commit(void)
 		printk("nvram_commit: not committing in interrupt\n");
 		return -EINVAL;
 	}
-	if ((waiting++) > 2) {
+	if (waiting > 1) {
 		printk("nvram_commit: commit still pending, cancle new one\n");
 		return 0; // we can ignore it, since another commit is still waiting
 	}
+	waiting++;
 	mutex_lock(&nvram_sem);
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
