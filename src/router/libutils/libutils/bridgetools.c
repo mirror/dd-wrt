@@ -250,7 +250,7 @@ int br_add_bridge(const char *brname)
 	if (!strcmp(mcast, "1"))
 		eval("igs", "add", "bridge", brname);
 #else
-	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
+	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 #endif
 
 	if (nvram_exists(ipaddr) && nvram_exists(netmask)
