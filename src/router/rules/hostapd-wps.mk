@@ -25,7 +25,7 @@ ATH9K_LDCFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sec
 
 ifeq ($(CONFIG_WPA3),y)
 ifeq ($(CONFIG_OPENSSL),y)
-ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext -latomic
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
