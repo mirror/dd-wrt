@@ -475,7 +475,6 @@ static int add_extension(struct ast_context *context, const char *exten,
 
 	if (ast_add_extension2_nolock(context, 0, exten, priority, NULL, NULL,
 			app, data, free_ptr, BASE_REGISTRAR, NULL, 0)) {
-		ast_free(data);
 		return -1;
 	}
 
@@ -765,18 +764,8 @@ static int handle_identify(const struct ast_sorcery *sorcery, struct object_type
 
 	if (!ast_variable_find_last_in_list(vars, "match")) {
 		for (host_counter = 0; host_counter < host_count; host_counter++) {
-			char *rhost = AST_VECTOR_GET(remote_hosts_vector, host_counter);
-			char host[strlen(rhost) + 1];
-			char *colon;
-
-			/* If there's a :port specified, we have to remove it. */
-			strcpy(host, rhost); /* Safe */
-			colon = strchr(host, ':');
-			if (colon) {
-				*colon = '\0';
-			}
-
-			variable_list_append_return(&vars, "match", host);
+			variable_list_append_return(&vars, "match",
+				AST_VECTOR_GET(remote_hosts_vector, host_counter));
 		}
 	}
 

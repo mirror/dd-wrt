@@ -76,6 +76,9 @@ struct pjsip_tpselector;
 /*! \brief Maximum number of ciphers supported for a TLS transport */
 #define SIP_TLS_MAX_CIPHERS 64
 
+/*! Maximum number of challenges before assuming that we are in a loop */
+#define MAX_RX_CHALLENGES	10
+
 AST_VECTOR(ast_sip_service_route_vector, char *);
 
 /*!
@@ -648,6 +651,8 @@ struct ast_sip_endpoint_id_configuration {
 	unsigned int send_connected_line;
 	/*! When performing connected line update, which method should be used */
 	enum ast_sip_session_refresh_method refresh_method;
+	/*! Do we add History-Info headers to applicable outgoing requests/responses? */
+	unsigned int send_history_info;
 };
 
 /*!
@@ -910,6 +915,8 @@ struct ast_sip_endpoint {
 	unsigned int ignore_183_without_sdp;
 	/*! Enable STIR/SHAKEN support on this endpoint */
 	unsigned int stir_shaken;
+	/*! Should we authenticate OPTIONS requests per RFC 3261? */
+	unsigned int allow_unauthenticated_options;
 };
 
 /*! URI parameter for symmetric transport */
@@ -1015,6 +1022,17 @@ enum ast_sip_contact_filter {
 	/*! \brief Return only reachable or unknown contacts */
 	AST_SIP_CONTACT_FILTER_REACHABLE = (1 << 0),
 };
+
+/*!
+ * \brief Adds a Date header to the tdata, formatted like:
+ * Date: Wed, 01 Jan 2021 14:53:01 GMT
+ * \since 16.19.0
+ *
+ * \note There is no checking done to see if the header already exists
+ * before adding it. It's up to the caller of this function to determine
+ * if that needs to be done or not.
+ */
+void ast_sip_add_date_header(pjsip_tx_data *tdata);
 
 /*!
  * \brief Register a SIP service in Asterisk.
@@ -1780,6 +1798,12 @@ enum ast_sip_scheduler_task_flags {
 	AST_SIP_SCHED_TASK_VARIABLE = (1 << 0),
 
 	/*!
+	 * Run just once.
+	 * Return values are ignored.
+	 */
+	AST_SIP_SCHED_TASK_ONESHOT = (1 << 6),
+
+	/*!
 	 * The task data is not an AO2 object.
 	 */
 	AST_SIP_SCHED_TASK_DATA_NOT_AO2 = (0 << 1),
@@ -1901,6 +1925,26 @@ int ast_sip_sched_task_get_times(struct ast_sip_sched_task *schtd,
 	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end);
 
 /*!
+ * \brief Gets the queued, last start, last_end, time left, interval, next run
+ * \since 16.15.0
+ * \since 18.1.0
+ *
+ * \param schtd The task structure pointer
+ * \param[out] when_queued Pointer to a timeval structure to contain the time when queued
+ * \param[out] last_start Pointer to a timeval structure to contain the time when last started
+ * \param[out] last_end Pointer to a timeval structure to contain the time when last ended
+ * \param[out] interval Pointer to an int to contain the interval in ms
+ * \param[out] time_left Pointer to an int to contain the ms left to the next run
+ * \param[out] last_end Pointer to a timeval structure to contain the next run time
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Any of the pointers can be NULL if you don't need them.
+ */
+int ast_sip_sched_task_get_times2(struct ast_sip_sched_task *schtd,
+	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end,
+	int *interval, int *time_left, struct timeval *next_start);
+
+/*!
  * \brief Gets the last start and end times of the task by name
  * \since 13.9.0
  *
@@ -1914,6 +1958,26 @@ int ast_sip_sched_task_get_times(struct ast_sip_sched_task *schtd,
  */
 int ast_sip_sched_task_get_times_by_name(const char *name,
 	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end);
+
+/*!
+ * \brief Gets the queued, last start, last_end, time left, interval, next run by task name
+ * \since 16.15.0
+ * \since 18.1.0
+ *
+ * \param name The task name
+ * \param[out] when_queued Pointer to a timeval structure to contain the time when queued
+ * \param[out] last_start Pointer to a timeval structure to contain the time when last started
+ * \param[out] last_end Pointer to a timeval structure to contain the time when last ended
+ * \param[out] interval Pointer to an int to contain the interval in ms
+ * \param[out] time_left Pointer to an int to contain the ms left to the next run
+ * \param[out] last_end Pointer to a timeval structure to contain the next run time
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Any of the pointers can be NULL if you don't need them.
+ */
+int ast_sip_sched_task_get_times_by_name2(const char *name,
+	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end,
+	int *interval, int *time_left, struct timeval *next_start);
 
 /*!
  * \brief Gets the number of milliseconds until the next invocation
@@ -1998,11 +2062,54 @@ pjsip_dialog *ast_sip_create_dialog_uac(const struct ast_sip_endpoint *endpoint,
 /*!
  * \brief General purpose method for creating a UAS dialog with an endpoint
  *
+ * \deprecated This function is unsafe (due to the returned object not being locked nor
+ *             having its reference incremented) and should no longer be used. Instead
+ *             use ast_sip_create_dialog_uas_locked so a properly locked and referenced
+ *             object is returned.
+ *
  * \param endpoint A pointer to the endpoint
  * \param rdata The request that is starting the dialog
  * \param[out] status On failure, the reason for failure in creating the dialog
  */
 pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata, pj_status_t *status);
+
+/*!
+ * \brief General purpose method for creating a UAS dialog with an endpoint
+ *
+ * This function creates and returns a locked, and referenced counted pjsip
+ * dialog object. The caller is thus responsible for freeing the allocated
+ * memory, decrementing the reference, and releasing the lock when done with
+ * the returned object.
+ *
+ * \note The safest way to unlock the object, and decrement its reference is by
+ *       calling pjsip_dlg_dec_lock. Alternatively, pjsip_dlg_dec_session can be
+ *       used to decrement the reference only.
+ *
+ * The dialog is returned locked and with a reference in order to ensure that the
+ * dialog object, and any of its associated objects (e.g. transaction) are not
+ * untimely destroyed. For instance, that could happen when a transport error
+ * occurs.
+ *
+ * As long as the caller maintains a reference to the dialog there should be no
+ * worry that it might unknowningly be destroyed. However, once the caller unlocks
+ * the dialog there is a danger that some of the dialog's internal objects could
+ * be lost and/or compromised. For example, when the aforementioned transport error
+ * occurs the dialog's associated transaction gets destroyed (see pjsip_dlg_on_tsx_state
+ * in sip_dialog.c, and mod_inv_on_tsx_state in sip_inv.c).
+ *
+ * In this case and before using the dialog again the caller should re-lock the
+ * dialog, check to make sure the dialog is still established, and the transaction
+ * still exists and has not been destroyed.
+ *
+ * \param endpoint A pointer to the endpoint
+ * \param rdata The request that is starting the dialog
+ * \param[out] status On failure, the reason for failure in creating the dialog
+ *
+ * \retval A locked, and reference counted pjsip_dialog object.
+ * \retval NULL on failure
+ */
+pjsip_dialog *ast_sip_create_dialog_uas_locked(const struct ast_sip_endpoint *endpoint,
+	pjsip_rx_data *rdata, pj_status_t *status);
 
 /*!
  * \brief General purpose method for creating an rdata structure using specific information
@@ -2403,10 +2510,46 @@ int ast_sip_retrieve_auths(const struct ast_sip_auth_vector *auths, struct ast_s
  * Call this function once you have completed operating on auths
  * retrieved from \ref ast_sip_retrieve_auths
  *
- * \param auths An vector of auth structures to clean up
- * \param num_auths The number of auths in the vector
+ * \param auths An array of auth object pointers to clean up
+ * \param num_auths The number of auths in the array
  */
 void ast_sip_cleanup_auths(struct ast_sip_auth *auths[], size_t num_auths);
+
+/*!
+ * \brief Retrieve relevant SIP auth structures from sorcery as a vector
+ *
+ * \param auth_ids Vector of sorcery IDs of auth credentials to retrieve
+ * \param[out] auth_objects A pointer ast_sip_auth_objects_vector to hold the objects
+ *
+ * \retval 0 Success
+ * \retval -1 Number of auth objects found is less than the number of names supplied.
+ *
+ * \WARNING The number of auth objects retrieved may be less than the
+ * number of auth ids supplied if auth objects couldn't be found for
+ * some of them.
+ *
+ * \NOTE Since the ref count on all auith objects returned has been
+ * bumped, you must call ast_sip_cleanup_auth_objects_vector() to decrement
+ * the ref count on all of the auth objects in the vector,
+ * then call AST_VECTOR_FREE() on the vector itself.
+ *
+ */
+AST_VECTOR(ast_sip_auth_objects_vector, struct ast_sip_auth *);
+int ast_sip_retrieve_auths_vector(const struct ast_sip_auth_vector *auth_ids,
+	struct ast_sip_auth_objects_vector *auth_objects);
+
+/*!
+ * \brief Clean up retrieved auth objects in vector
+ *
+ * Call this function once you have completed operating on auths
+ * retrieved from \ref ast_sip_retrieve_auths_vector.  All
+ * auth objects will have their reference counts decremented and
+ * the vector size will be reset to 0.  You must still call
+ * AST_VECTOR_FREE() on the vector itself.
+ *
+ * \param auth_objects A vector of auth structures to clean up
+ */
+#define ast_sip_cleanup_auth_objects_vector(auth_objects) AST_VECTOR_RESET(auth_objects, ao2_cleanup)
 
 /*!
  * \brief Checks if the given content type matches type/subtype.

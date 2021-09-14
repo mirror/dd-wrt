@@ -32,13 +32,13 @@
 
 #include "asterisk.h"
 
+#include "asterisk/logger.h"
+#include "asterisk/logger_category.h"
 #include "asterisk/_private.h"
 #include "asterisk/stun.h"
 #include "asterisk/cli.h"
 #include "asterisk/utils.h"
 #include "asterisk/channel.h"
-
-static int stundebug;			/*!< Are we debugging stun? */
 
 /*!
  * \brief STUN support code
@@ -120,6 +120,8 @@ struct stun_addr {
 #define STUN_UNKNOWN_ATTRIBUTES	0x000a
 #define STUN_REFLECTED_FROM	0x000b
 
+#define STUN_MAX_RETRIES 3
+
 /*! \brief helper function to print message names */
 static const char *stun_msg2str(int msg)
 {
@@ -178,9 +180,10 @@ struct stun_state {
 
 static int stun_process_attr(struct stun_state *state, struct stun_attr *attr)
 {
-	if (stundebug)
+	if (ast_debug_stun_packet_is_allowed) {
 		ast_verbose("Found STUN Attribute %s (%04x), length %d\n",
-			    stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
+			stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
+	}
 	switch (ntohs(attr->attr)) {
 	case STUN_USERNAME:
 		state->username = (const char *) (attr->value);
@@ -189,10 +192,12 @@ static int stun_process_attr(struct stun_state *state, struct stun_attr *attr)
 		state->password = (const char *) (attr->value);
 		break;
 	default:
-		if (stundebug)
+		if (ast_debug_stun_packet_is_allowed) {
 			ast_verbose("Ignoring STUN attribute %s (%04x), length %d\n",
-				    stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
+				stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr), ntohs(attr->len));
+		}
 	}
+
 	return 0;
 }
 
@@ -229,6 +234,22 @@ static void append_attr_address(struct stun_attr **attr, int attrval, struct soc
 		(*attr) = (struct stun_attr *)((*attr)->value + 8);
 		*len += size;
 		*left -= size;
+	}
+}
+
+static void handle_stun_timeout(int retry, struct sockaddr_in *dst)
+{
+	if (retry < STUN_MAX_RETRIES) {
+		ast_log(LOG_NOTICE,
+			"Attempt %d to send STUN request to '%s' timed out.",
+			retry,
+			ast_inet_ntoa(dst->sin_addr));
+	} else {
+		ast_log(LOG_WARNING,
+			"Attempt %d to send STUN request to '%s' timed out."
+			"Check that the server address is correct and reachable.\n",
+			retry,
+			ast_inet_ntoa(dst->sin_addr));
 	}
 }
 
@@ -275,35 +296,35 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 	 * while 'data' is advanced accordingly.
 	 */
 	if (len < sizeof(struct stun_header)) {
-		ast_debug(1, "Runt STUN packet (only %d, wanting at least %d)\n", (int) len, (int) sizeof(struct stun_header));
+		ast_debug_stun(1, "Runt STUN packet (only %d, wanting at least %d)\n", (int) len, (int) sizeof(struct stun_header));
 		return -1;
 	}
 	len -= sizeof(struct stun_header);
 	data += sizeof(struct stun_header);
 	x = ntohs(hdr->msglen);	/* len as advertised in the message */
-	if (stundebug)
+	if (ast_debug_stun_packet_is_allowed)
 		ast_verbose("STUN Packet, msg %s (%04x), length: %d\n", stun_msg2str(ntohs(hdr->msgtype)), (unsigned)ntohs(hdr->msgtype), x);
 	if (x > len) {
-		ast_debug(1, "Scrambled STUN packet length (got %d, expecting %d)\n", x, (int)len);
+		ast_debug_stun(1, "Scrambled STUN packet length (got %d, expecting %d)\n", x, (int)len);
 	} else
 		len = x;
 	memset(&st, 0, sizeof(st));
 	while (len) {
 		if (len < sizeof(struct stun_attr)) {
-			ast_debug(1, "Runt Attribute (got %d, expecting %d)\n", (int)len, (int) sizeof(struct stun_attr));
+			ast_debug_stun(1, "Runt Attribute (got %d, expecting %d)\n", (int)len, (int) sizeof(struct stun_attr));
 			break;
 		}
 		attr = (struct stun_attr *)data;
 		/* compute total attribute length */
 		x = ntohs(attr->len) + sizeof(struct stun_attr);
 		if (x > len) {
-			ast_debug(1, "Inconsistent Attribute (length %d exceeds remaining msg len %d)\n", x, (int)len);
+			ast_debug_stun(1, "Inconsistent Attribute (length %d exceeds remaining msg len %d)\n", x, (int)len);
 			break;
 		}
 		if (stun_cb)
 			stun_cb(attr, arg);
 		if (stun_process_attr(&st, attr)) {
-			ast_debug(1, "Failed to handle attribute %s (%04x)\n", stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr));
+			ast_debug_stun(1, "Failed to handle attribute %s (%04x)\n", stun_attr2str(ntohs(attr->attr)), (unsigned)ntohs(attr->attr));
 			break;
 		}
 		/* Clear attribute id: in case previous entry was a string,
@@ -337,7 +358,7 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 		attr = (struct stun_attr *)resp->ies;
 		switch (ntohs(hdr->msgtype)) {
 		case STUN_BINDREQ:
-			if (stundebug)
+			if (ast_debug_stun_packet_is_allowed)
 				ast_verbose("STUN Bind Request, username: %s\n",
 					    st.username ? st.username : "<none>");
 			if (st.username) {
@@ -355,7 +376,7 @@ int ast_stun_handle_packet(int s, struct sockaddr_in *src, unsigned char *data, 
 			ret = AST_STUN_ACCEPT;
 			break;
 		default:
-			if (stundebug)
+			if (ast_debug_stun_packet_is_allowed)
 				ast_verbose("Dunno what to do with STUN message %04x (%s)\n", (unsigned)ntohs(hdr->msgtype), stun_msg2str(ntohs(hdr->msgtype)));
 		}
 	}
@@ -407,7 +428,7 @@ int ast_stun_request(int s, struct sockaddr_in *dst,
 	req->msglen = htons(reqlen);
 	req->msgtype = htons(STUN_BINDREQ);
 
-	for (retry = 0; retry++ < 3;) {	/* XXX make retries configurable */
+	for (retry = 0; retry++ < STUN_MAX_RETRIES;) {	/* XXX make retries configurable */
 		/* send request, possibly wait for reply */
 		struct sockaddr_in src;
 		socklen_t srclen;
@@ -416,7 +437,7 @@ int ast_stun_request(int s, struct sockaddr_in *dst,
 		/* Send STUN message. */
 		res = stun_send(s, dst, req);
 		if (res < 0) {
-			ast_debug(1, "stun_send try %d failed: %s\n", retry, strerror(errno));
+			ast_debug_stun(1, "stun_send try %d failed: %s\n", retry, strerror(errno));
 			break;
 		}
 		if (!answer) {
@@ -435,6 +456,7 @@ try_again:
 			ms = ast_remaining_ms(start, 3000);
 			if (ms <= 0) {
 				/* No response, timeout */
+				handle_stun_timeout(retry, dst);
 				res = 1;
 				continue;
 			}
@@ -445,6 +467,7 @@ try_again:
 			}
 			if (!res) {
 				/* No response, timeout */
+				handle_stun_timeout(retry, dst);
 				res = 1;
 				continue;
 			}
@@ -459,7 +482,7 @@ try_again:
 		res = recvfrom(s, rsp_buf, sizeof(rsp_buf) - 1,
 			0, (struct sockaddr *) &src, &srclen);
 		if (res < 0) {
-			ast_debug(1, "recvfrom try %d failed: %s\n", retry, strerror(errno));
+			ast_debug_stun(1, "recvfrom try %d failed: %s\n", retry, strerror(errno));
 			break;
 		}
 
@@ -500,13 +523,13 @@ static char *handle_cli_stun_set_debug(struct ast_cli_entry *e, int cmd, struct 
 		return CLI_SHOWUSAGE;
 
 	if (!strncasecmp(a->argv[e->args-1], "on", 2))
-		stundebug = 1;
+		ast_debug_category_set_sublevel(AST_LOG_CATEGORY_STUN_PACKET, AST_LOG_CATEGORY_ENABLED);
 	else if (!strncasecmp(a->argv[e->args-1], "off", 3))
-		stundebug = 0;
+		ast_debug_category_set_sublevel(AST_LOG_CATEGORY_STUN_PACKET, AST_LOG_CATEGORY_DISABLED);
 	else
 		return CLI_SHOWUSAGE;
 
-	ast_cli(a->fd, "STUN Debugging %s\n", stundebug ? "Enabled" : "Disabled");
+	ast_cli(a->fd, "STUN Debugging %s\n", ast_debug_stun_packet_is_allowed ? "Enabled" : "Disabled");
 	return CLI_SUCCESS;
 }
 
@@ -514,9 +537,26 @@ static struct ast_cli_entry cli_stun[] = {
 	AST_CLI_DEFINE(handle_cli_stun_set_debug, "Enable/Disable STUN debugging"),
 };
 
+static uintmax_t debug_category_stun_id;
+
+uintmax_t ast_debug_category_stun_id(void)
+{
+	return debug_category_stun_id;
+}
+
+static uintmax_t debug_category_stun_packet_id;
+
+uintmax_t ast_debug_category_stun_packet_id(void)
+{
+	return debug_category_stun_packet_id;
+}
+
 static void stun_shutdown(void)
 {
 	ast_cli_unregister_multiple(cli_stun, sizeof(cli_stun) / sizeof(struct ast_cli_entry));
+
+	ast_debug_category_unregister(AST_LOG_CATEGORY_STUN_PACKET);
+	ast_debug_category_unregister(AST_LOG_CATEGORY_STUN);
 }
 
 /*! \brief Initialize the STUN system in Asterisk */
@@ -524,4 +564,7 @@ void ast_stun_init(void)
 {
 	ast_cli_register_multiple(cli_stun, sizeof(cli_stun) / sizeof(struct ast_cli_entry));
 	ast_register_cleanup(stun_shutdown);
+
+	debug_category_stun_id = ast_debug_category_register(AST_LOG_CATEGORY_STUN);
+	debug_category_stun_packet_id = ast_debug_category_register(AST_LOG_CATEGORY_STUN_PACKET);
 }

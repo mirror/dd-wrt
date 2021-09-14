@@ -147,7 +147,7 @@ static struct ast_channel *audiosocket_request(const char *type,
 	struct ast_format_cap *caps = NULL;
 	struct ast_format *fmt = NULL;
 	uuid_t uu;
-	int fd;
+	int fd = -1;
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(destination);
 		AST_APP_ARG(idStr);
@@ -292,8 +292,7 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER,
-	"AudioSocket Channel",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "AudioSocket Channel",
 	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,

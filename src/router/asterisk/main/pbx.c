@@ -7346,6 +7346,10 @@ static int ast_add_extension2_lockopt(struct ast_context *con,
 	if (ast_strlen_zero(extension)) {
 		ast_log(LOG_ERROR,"You have to be kidding-- add exten '' to context %s? Figure out a name and call me back. Action ignored.\n",
 				con->name);
+		/* We always need to deallocate 'data' on failure */
+		if (datad) {
+			datad(data);
+		}
 		return -1;
 	}
 
@@ -7401,8 +7405,14 @@ static int ast_add_extension2_lockopt(struct ast_context *con,
 	}
 
 	/* Be optimistic:  Build the extension structure first */
-	if (!(tmp = ast_calloc(1, length)))
+	tmp = ast_calloc(1, length);
+	if (!tmp) {
+		/* We always need to deallocate 'data' on failure */
+		if (datad) {
+			datad(data);
+		}
 		return -1;
+	}
 
 	if (ast_strlen_zero(label)) /* let's turn empty labels to a null ptr */
 		label = 0;
@@ -8265,7 +8275,7 @@ void wait_for_hangup(struct ast_channel *chan, const void *data)
 		waitsec = -1;
 	if (waitsec > -1) {
 		waittime = waitsec * 1000.0;
-		ast_safe_sleep(chan, waittime);
+		ast_safe_sleep_without_silence(chan, waittime);
 	} else do {
 		res = ast_waitfor(chan, -1);
 		if (res < 0)
