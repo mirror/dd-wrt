@@ -665,6 +665,10 @@
 					<synopsis>Send the Diversion header, conveying the diversion
 					information to the called user agent</synopsis>
 				</configOption>
+				<configOption name="send_history_info" default="no">
+					<synopsis>Send the History-Info header, conveying the diversion
+					information to the called and calling user agents</synopsis>
+				</configOption>
 				<configOption name="send_pai" default="no">
 					<synopsis>Send the P-Asserted-Identity header</synopsis>
 				</configOption>
@@ -1468,6 +1472,23 @@
 						INVITEs, an Identity header will be added.</para>
 					</description>
 				</configOption>
+				<configOption name="allow_unauthenticated_options" default="no">
+					<synopsis>Skip authentication when receiving OPTIONS requests</synopsis>
+					<description><para>
+						RFC 3261 says that the response to an OPTIONS request MUST be the
+						same had the request been an INVITE. Some UAs use OPTIONS requests
+						like a 'ping' and the expectation is that they will return a
+						200 OK.</para>
+						<para>Enabling <literal>allow_unauthenticated_options</literal>
+						will skip authentication of OPTIONS requests for the given
+						endpoint.</para>
+						<para>There are security implications to enabling this setting as
+						it can allow information disclosure to occur - specifically, if
+						enabled, an external party could enumerate and find the endpoint
+						name by sending OPTIONS requests and examining the
+						responses.</para>
+					</description>
+				</configOption>
 			</configObject>
 			<configObject name="auth">
 				<synopsis>Authentication type</synopsis>
@@ -1483,21 +1504,75 @@
 						This option specifies which of the password style config options should be read
 						when trying to authenticate an endpoint inbound request. If set to <literal>userpass</literal>
 						then we'll read from the 'password' option. For <literal>md5</literal> we'll read
-						from 'md5_cred'. If set to <literal>google_oauth</literal> then we'll read from the refresh_token/oauth_clientid/oauth_secret fields.
+						from 'md5_cred'. If set to <literal>google_oauth</literal> then we'll read from the
+						refresh_token/oauth_clientid/oauth_secret fields. The following values are valid:
 						</para>
 						<enumlist>
 							<enum name="md5"/>
 							<enum name="userpass"/>
 							<enum name="google_oauth"/>
 						</enumlist>
+						<para>
+						</para>
+						<note>
+							<para>
+								This setting only describes whether the password is in
+								plain text or has been pre-hashed with MD5.  It doesn't describe
+								the acceptable digest algorithms we'll accept in a received
+								challenge.
+							</para>
+						</note>
 					</description>
 				</configOption>
 				<configOption name="nonce_lifetime" default="32">
 					<synopsis>Lifetime of a nonce associated with this authentication config.</synopsis>
 				</configOption>
-				<configOption name="md5_cred">
+				<configOption name="md5_cred" default="">
 					<synopsis>MD5 Hash used for authentication.</synopsis>
-					<description><para>Only used when auth_type is <literal>md5</literal>.</para></description>
+					<description><para>
+						Only used when auth_type is <literal>md5</literal>.
+						As an alternative to specifying a plain text password,
+						you can hash the username, realm and password
+						together one time and place the hash value here.
+						The input to the hash function must be in the
+						following format:
+						</para>
+						<para>
+						</para>
+						<para>
+						&lt;username&gt;:&lt;realm&gt;:&lt;password&gt;
+						</para>
+						<para>
+						</para>
+						<para>
+						For incoming authentication (asterisk is the server),
+						the realm must match either the realm set in this object
+						or the <variable>default_realm</variable> set in in the
+						<replaceable>global</replaceable> object.
+						</para>
+						<para>
+						</para>
+						<para>
+						For outgoing authentication (asterisk is the UAC),
+						the realm must match what the server will be sending
+						in their WWW-Authenticate header.  It can't be blank
+						unless you expect the server to be sending a blank
+						realm in the header.  You can't use pre-hashed
+						paswords with a wildcard auth object.
+						You can generate the hash with the following shell
+						command:
+						</para>
+						<para>
+						</para>
+						<para>
+						$ echo -n "myname:myrealm:mypassword" | md5sum
+						</para>
+						<para>
+						</para>
+						<para>
+						Note the '-n'.  You don't want a newline to be part
+						of the hash.
+					</para></description>
 				</configOption>
 				<configOption name="password">
 					<synopsis>Plain text password used for authentication.</synopsis>
@@ -1512,29 +1587,44 @@
 				<configOption name="oauth_secret">
 					<synopsis>OAuth 2.0 application's secret</synopsis>
 				</configOption>
-				<configOption name="realm">
+				<configOption name="realm" default="">
 					<synopsis>SIP realm for endpoint</synopsis>
 					<description><para>
-						The treatment of this value depends upon how the authentication
-						object is used.
-						</para><para>
-						When used as an inbound authentication object, the realm is sent
-						as part of the challenge so the peer can know which key to use
-						when responding.  An empty value will use the
-						<replaceable>global</replaceable> section's
-						<literal>default_realm</literal> value when issuing a challenge.
-						</para><para>
-						When used as an outbound authentication object, the realm is
-						matched with the received challenge realm to determine which
-						authentication object to use when responding to the challenge.  An
-						empty value matches any challenging realm when determining
-						which authentication object matches a received challenge.
+						For incoming authentication (asterisk is the UAS),
+						this is the realm to be sent on WWW-Authenticate
+						headers.  If not specified, the <replaceable>global</replaceable>
+						object's <variable>default_realm</variable> will be used.
 						</para>
-						<note><para>
+						<para>
+						</para>
+						<para>
+						For outgoing authentication (asterisk is the UAS), this
+						must either be the realm the server is expected to send,
+						or left blank or contain a single '*' to automatically
+						use the realm sent by the server. If you have multiple
+						auth object for an endpoint, the realm is also used to
+						match the auth object to the realm the server sent.
+						</para>
+						<para>
+						</para>
+						<note>
+						<para>
 						Using the same auth section for inbound and outbound
 						authentication is not recommended.  There is a difference in
 						meaning for an empty realm setting between inbound and outbound
-						authentication uses.</para></note>
+						authentication uses.
+						</para>
+						</note>
+						<para>
+						</para>
+						<note>
+							<para>
+								If more than one auth object with the same realm or
+								more than one wildcard auth object associated to
+								an endpoint, we can only use the first one of
+								each defined on the endpoint.
+							</para>
+						</note>
 					</description>
 				</configOption>
 				<configOption name="type">
@@ -3195,6 +3285,18 @@ static pj_sockaddr host_ip_ipv6;
 /*! Local host address for IPv6 (string form) */
 static char host_ip_ipv6_string[PJ_INET6_ADDRSTRLEN];
 
+void ast_sip_add_date_header(pjsip_tx_data *tdata)
+{
+	char date[256];
+	struct tm tm;
+	time_t t = time(NULL);
+
+	gmtime_r(&t, &tm);
+	strftime(date, sizeof(date), "%a, %d %b %Y %T GMT", &tm);
+
+	ast_sip_add_header(tdata, "Date", date);
+}
+
 static int register_service(void *data)
 {
 	pjsip_module **module = data;
@@ -3258,6 +3360,12 @@ void ast_sip_unregister_authenticator(struct ast_sip_authenticator *auth)
 
 int ast_sip_requires_authentication(struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata)
 {
+	if (endpoint->allow_unauthenticated_options
+		&& !pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_options_method)) {
+		ast_debug(3, "Skipping OPTIONS authentication due to endpoint configuration\n");
+		return 0;
+	}
+
 	if (!registered_authenticator) {
 		ast_log(LOG_WARNING, "No SIP authenticator registered. Assuming authentication is not required\n");
 		return 0;
@@ -3745,6 +3853,17 @@ static int sip_dialog_create_from(pj_pool_t *pool, pj_str_t *from, const char *u
 		type |= PJSIP_TRANSPORT_IPV6;
 	}
 
+	/* In multidomain scenario, username may contain @ with domain info */
+	if (!ast_sip_get_disable_multi_domain() && strchr(user, '@')) {
+		from->ptr = pj_pool_alloc(pool, PJSIP_MAX_URL_SIZE);
+		from->slen = pj_ansi_snprintf(from->ptr, PJSIP_MAX_URL_SIZE,
+				"<sip:%s%s%s>",
+				user,
+				(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? ";transport=" : "",
+				(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? pjsip_transport_get_type_name(type) : "");
+		return 0;
+	}
+
 	if (!ast_strlen_zero(domain)) {
 		from->ptr = pj_pool_alloc(pool, PJSIP_MAX_URL_SIZE);
 		from->slen = pj_ansi_snprintf(from->ptr, PJSIP_MAX_URL_SIZE,
@@ -3894,7 +4013,7 @@ void ast_sip_add_usereqphone(const struct ast_sip_endpoint *endpoint, pj_pool_t 
 
 	/* Test URI user against allowed characters in AST_DIGIT_ANY */
 	for (; i < pj_strlen(&sip_uri->user); i++) {
-		if (!strchr(AST_DIGIT_ANYNUM, pj_strbuf(&sip_uri->user)[i])) {
+		if (!strchr(AST_DIGIT_ANY, pj_strbuf(&sip_uri->user)[i])) {
 			break;
 		}
 	}
@@ -4052,7 +4171,11 @@ static int uas_use_sips_contact(pjsip_rx_data *rdata)
 	return 0;
 }
 
-pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata, pj_status_t *status)
+typedef pj_status_t (*create_dlg_uac)(pjsip_user_agent *ua, pjsip_rx_data *rdata,
+	const pj_str_t *contact, pjsip_dialog **p_dlg);
+
+static pjsip_dialog *create_dialog_uas(const struct ast_sip_endpoint *endpoint,
+	pjsip_rx_data *rdata, pj_status_t *status, create_dlg_uac create_fun)
 {
 	pjsip_dialog *dlg;
 	pj_str_t contact;
@@ -4087,11 +4210,7 @@ pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint,
 			(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? ";transport=" : "",
 			(type != PJSIP_TRANSPORT_UDP && type != PJSIP_TRANSPORT_UDP6) ? pjsip_transport_get_type_name(type) : "");
 
-#ifdef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
-	*status = pjsip_dlg_create_uas_and_inc_lock(pjsip_ua_instance(), rdata, &contact, &dlg);
-#else
-	*status = pjsip_dlg_create_uas(pjsip_ua_instance(), rdata, &contact, &dlg);
-#endif
+	*status = create_fun(pjsip_ua_instance(), rdata, &contact, &dlg);
 	if (*status != PJ_SUCCESS) {
 		char err[PJ_ERR_MSG_SIZE];
 
@@ -4108,12 +4227,46 @@ pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint,
 
 	ast_sip_tpselector_unref(&selector);
 
-#ifdef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
-	pjsip_dlg_dec_lock(dlg);
-#endif
-
 	return dlg;
 }
+
+pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata, pj_status_t *status)
+{
+#ifdef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
+	pjsip_dialog *dlg;
+
+	dlg = create_dialog_uas(endpoint, rdata, status, pjsip_dlg_create_uas_and_inc_lock);
+	if (dlg) {
+		pjsip_dlg_dec_lock(dlg);
+	}
+
+	return dlg;
+#else
+	return create_dialog_uas(endpoint, rdata, status, pjsip_dlg_create_uas);
+#endif
+}
+
+pjsip_dialog *ast_sip_create_dialog_uas_locked(const struct ast_sip_endpoint *endpoint,
+	pjsip_rx_data *rdata, pj_status_t *status)
+{
+#ifdef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
+	return create_dialog_uas(endpoint, rdata, status, pjsip_dlg_create_uas_and_inc_lock);
+#else
+	/*
+	 * This is put here in order to be compatible with older versions of pjproject.
+	 * Best we can do in this case is immediately lock after getting the dialog.
+	 * However, that does leave a "gap" between creating and locking.
+	 */
+	pjsip_dialog *dlg;
+
+	dlg = create_dialog_uas(endpoint, rdata, status, pjsip_dlg_create_uas);
+	if (dlg) {
+		pjsip_dlg_inc_lock(dlg);
+	}
+
+	return dlg;
+#endif
+ }
 
 int ast_sip_create_rdata_with_contact(pjsip_rx_data *rdata, char *packet, const char *src_name, int src_port,
 	char *transport_type, const char *local_name, int local_port, const char *contact)
@@ -4411,8 +4564,6 @@ static pj_bool_t does_method_match(const pj_str_t *message_method, const char *s
 	return pj_stristr(&method, message_method) ? PJ_TRUE : PJ_FALSE;
 }
 
-/*! Maximum number of challenges before assuming that we are in a loop */
-#define MAX_RX_CHALLENGES	10
 #define TIMER_INACTIVE		0
 #define TIMEOUT_TIMER2		5
 
@@ -5806,6 +5957,6 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_
 	.unload = unload_module,
 	.reload = reload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DEPEND - 5,
-	.requires = "dnsmgr,res_pjproject",
+	.requires = "dnsmgr,res_pjproject,res_sorcery_config,res_sorcery_memory,res_sorcery_astdb",
 	.optional_modules = "res_statsd",
 );

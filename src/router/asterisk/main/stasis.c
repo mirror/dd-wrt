@@ -120,6 +120,7 @@
 							<enum name="ast_channel_hangup_request_type" />
 							<enum name="ast_channel_dtmf_begin_type" />
 							<enum name="ast_channel_dtmf_end_type" />
+							<enum name="ast_channel_flash_type" />
 							<enum name="ast_channel_hold_type" />
 							<enum name="ast_channel_unhold_type" />
 							<enum name="ast_channel_chanspy_start_type" />
@@ -130,6 +131,9 @@
 							<enum name="ast_channel_moh_stop_type" />
 							<enum name="ast_channel_monitor_start_type" />
 							<enum name="ast_channel_monitor_stop_type" />
+							<enum name="ast_channel_mixmonitor_start_type" />
+							<enum name="ast_channel_mixmonitor_stop_type" />
+							<enum name="ast_channel_mixmonitor_mute_type" />
 							<enum name="ast_channel_agent_login_type" />
 							<enum name="ast_channel_agent_logoff_type" />
 							<enum name="ast_channel_talking_start" />

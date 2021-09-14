@@ -670,20 +670,15 @@ static int transport_apply(const struct ast_sorcery *sorcery, void *obj)
 			return 0;
 		}
 
-		if (!transport->allow_reload && !transport->flow) {
-			if (!perm_state->change_detected) {
-				perm_state->change_detected = 1;
-				ast_log(LOG_WARNING, "Transport '%s' is not reloadable, maintaining previous values\n", transport_id);
-			}
-			/* In case someone is using the deprecated fields, reset them */
-			transport->state = perm_state->state;
-			copy_state_to_transport(transport);
-			ao2_replace(perm_state->transport, transport);
-			return 0;
+		/* If we aren't allowed to reload then we copy values that can't be changed from perm_state */
+		if (!transport->allow_reload) {
+			memcpy(&temp_state->state->host, &perm_state->state->host, sizeof(temp_state->state->host));
+			memcpy(&temp_state->state->tls, &perm_state->state->tls, sizeof(temp_state->state->tls));
+			memcpy(&temp_state->state->ciphers, &perm_state->state->ciphers, sizeof(temp_state->state->ciphers));
 		}
 	}
 
-	if (!transport->flow) {
+	if (!transport->flow && (!perm_state || transport->allow_reload)) {
 		if (temp_state->state->host.addr.sa_family != PJ_AF_INET && temp_state->state->host.addr.sa_family != PJ_AF_INET6) {
 			ast_log(LOG_ERROR, "Transport '%s' could not be started as binding not specified\n", transport_id);
 			return -1;
@@ -738,6 +733,14 @@ static int transport_apply(const struct ast_sorcery *sorcery, void *obj)
 		pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&address, "0.0.0.0"), &temp_state->state->host);
 
 		temp_state->state->flow = 1;
+		res = PJ_SUCCESS;
+	} else if (!transport->allow_reload && perm_state) {
+		/* We inherit the transport from perm state, untouched */
+		ast_log(LOG_WARNING, "Transport '%s' is not fully reloadable, not reloading: protocol, bind, TLS, TCP, ToS, or CoS options.\n", transport_id);
+		temp_state->state->transport = perm_state->state->transport;
+		perm_state->state->transport = NULL;
+		temp_state->state->factory = perm_state->state->factory;
+		perm_state->state->factory = NULL;
 		res = PJ_SUCCESS;
 	} else if (transport->type == AST_TRANSPORT_UDP) {
 
@@ -800,6 +803,7 @@ static int transport_apply(const struct ast_sorcery *sorcery, void *obj)
 				&temp_state->state->factory);
 		}
 	} else if (transport->type == AST_TRANSPORT_TLS) {
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 		static int option = 1;
 
 		if (transport->async_operations > 1 && ast_compare_versions(pj_get_version(), "2.5.0") < 0) {
@@ -829,6 +833,11 @@ static int transport_apply(const struct ast_sorcery *sorcery, void *obj)
 				&temp_state->state->host, NULL, transport->async_operations,
 				&temp_state->state->factory);
 		}
+#else
+		ast_log(LOG_ERROR, "Transport: %s: PJSIP has not been compiled with TLS transport support, ensure OpenSSL development packages are installed\n",
+			ast_sorcery_object_get_id(obj));
+		return -1;
+#endif
 	} else if ((transport->type == AST_TRANSPORT_WS) || (transport->type == AST_TRANSPORT_WSS)) {
 		if (transport->cos || transport->tos) {
 			ast_log(LOG_WARNING, "TOS and COS values ignored for websocket transport\n");
@@ -1166,6 +1175,7 @@ static int tls_method_to_str(const void *obj, const intptr_t *args, char **buf)
 }
 
 /*! \brief Helper function which turns a cipher name into an identifier */
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static pj_ssl_cipher cipher_name_to_id(const char *name)
 {
 	pj_ssl_cipher ciphers[PJ_SSL_SOCK_MAX_CIPHERS];
@@ -1185,6 +1195,7 @@ static pj_ssl_cipher cipher_name_to_id(const char *name)
 
 	return 0;
 }
+#endif
 
 /*!
  * \internal
@@ -1196,6 +1207,7 @@ static pj_ssl_cipher cipher_name_to_id(const char *name)
  * \retval 0 on success.
  * \retval -1 on error.
  */
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static int transport_cipher_add(struct ast_sip_transport_state *state, const char *name)
 {
 	pj_ssl_cipher cipher;
@@ -1226,8 +1238,10 @@ static int transport_cipher_add(struct ast_sip_transport_state *state, const cha
 		return -1;
 	}
 }
+#endif
 
 /*! \brief Custom handler for TLS cipher setting */
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static int transport_tls_cipher_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
 {
 	struct ast_sip_transport *transport = obj;
@@ -1254,7 +1268,9 @@ static int transport_tls_cipher_handler(const struct aco_option *opt, struct ast
 	}
 	return res ? -1 : 0;
 }
+#endif
 
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static void cipher_to_str(char **buf, const pj_ssl_cipher *ciphers, unsigned int cipher_num)
 {
 	struct ast_str *str;
@@ -1276,7 +1292,9 @@ static void cipher_to_str(char **buf, const pj_ssl_cipher *ciphers, unsigned int
 	*buf = ast_strdup(ast_str_buffer(str));
 	ast_free(str);
 }
+#endif
 
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static int transport_tls_cipher_to_str(const void *obj, const intptr_t *args, char **buf)
 {
 	const struct ast_sip_transport *transport = obj;
@@ -1289,7 +1307,9 @@ static int transport_tls_cipher_to_str(const void *obj, const intptr_t *args, ch
 	cipher_to_str(buf, state->ciphers, state->tls.ciphers_num);
 	return *buf ? 0 : -1;
 }
+#endif
 
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 static char *handle_pjsip_list_ciphers(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	pj_ssl_cipher ciphers[PJ_SSL_SOCK_MAX_CIPHERS];
@@ -1320,6 +1340,7 @@ static char *handle_pjsip_list_ciphers(struct ast_cli_entry *e, int cmd, struct 
 	ast_free(buf);
 	return CLI_SUCCESS;
 }
+#endif
 
 /*! \brief Custom handler for localnet setting */
 static int transport_localnet_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
@@ -1519,7 +1540,9 @@ static int cli_print_body(void *obj, void *arg, int flags)
 }
 
 static struct ast_cli_entry cli_commands[] = {
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 	AST_CLI_DEFINE(handle_pjsip_list_ciphers, "List available OpenSSL cipher names"),
+#endif
 	AST_CLI_DEFINE(ast_sip_cli_traverse_objects, "List PJSIP Transports",
 		.command = "pjsip list transports",
 		.usage = "Usage: pjsip list transports [ like <pattern> ]\n"
@@ -1631,7 +1654,9 @@ int ast_sip_initialize_sorcery_transport(void)
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "verify_client", "", transport_tls_bool_handler, verify_client_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "require_client_cert", "", transport_tls_bool_handler, require_client_cert_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "method", "", transport_tls_method_handler, tls_method_to_str, NULL, 0, 0);
+#if defined(PJ_HAS_SSL_SOCK) && PJ_HAS_SSL_SOCK != 0
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "cipher", "", transport_tls_cipher_handler, transport_tls_cipher_to_str, NULL, 0, 0);
+#endif
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "local_net", "", transport_localnet_handler, localnet_to_str, localnet_to_vl, 0, 0);
 	ast_sorcery_object_field_register_custom(sorcery, "transport", "tos", "0", transport_tos_handler, tos_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register(sorcery, "transport", "cos", "0", OPT_UINT_T, 0, FLDSET(struct ast_sip_transport, cos));

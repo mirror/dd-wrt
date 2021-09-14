@@ -135,6 +135,10 @@
 						<para>Accept digits for a new extension in context <replaceable>c</replaceable>,
 						if played during the greeting. Context defaults to the current context.</para>
 					</option>
+					<option name="e">
+						<para>Play greetings as early media -- only answer the channel just
+						before accepting the voice message.</para>
+					</option>
 					<option name="g">
 						<argument name="#" required="true" />
 						<para>Use the specified amount of gain when recording the voicemail
@@ -144,6 +148,11 @@
 					<option name="s">
 						<para>Skip the playback of instructions for leaving a message to the
 						calling party.</para>
+					</option>
+					<option name="t">
+						<argument name="x" required="false" />
+						<para>Play a custom beep tone to the caller instead of the default one.
+						If this option is used but no file is specified, the beep is suppressed.</para>
 					</option>
 					<option name="u">
 						<para>Play the <literal>unavailable</literal> greeting.</para>
@@ -315,6 +324,9 @@
 		<description>
 			<para>This application will say the recorded name of the voicemail user specified as the
 			argument to this application. If no context is provided, <literal>default</literal> is assumed.</para>
+			<para>Similar to the Background() application, playback of the recorded
+			name can be interrupted by entering an extension, which will be searched
+			for in the current context.</para>
 		</description>
 	</application>
 	<function name="VM_INFO" language="en_US">
@@ -574,15 +586,18 @@ enum vm_option_flags {
 	OPT_AUTOPLAY =         (1 << 6),
 	OPT_DTMFEXIT =         (1 << 7),
 	OPT_MESSAGE_Urgent =   (1 << 8),
-	OPT_MESSAGE_PRIORITY = (1 << 9)
+	OPT_MESSAGE_PRIORITY = (1 << 9),
+	OPT_EARLYM_GREETING =  (1 << 10),
+	OPT_BEEP =             (1 << 11)
 };
 
 enum vm_option_args {
 	OPT_ARG_RECORDGAIN = 0,
 	OPT_ARG_PLAYFOLDER = 1,
 	OPT_ARG_DTMFEXIT   = 2,
+	OPT_ARG_BEEP_TONE  = 3,
 	/* This *must* be the last value in this enum! */
-	OPT_ARG_ARRAY_SIZE = 3,
+	OPT_ARG_ARRAY_SIZE = 4,
 };
 
 enum vm_passwordlocation {
@@ -600,7 +615,9 @@ AST_APP_OPTIONS(vm_app_options, {
 	AST_APP_OPTION('p', OPT_PREPEND_MAILBOX),
 	AST_APP_OPTION_ARG('a', OPT_AUTOPLAY, OPT_ARG_PLAYFOLDER),
 	AST_APP_OPTION('U', OPT_MESSAGE_Urgent),
-	AST_APP_OPTION('P', OPT_MESSAGE_PRIORITY)
+	AST_APP_OPTION('P', OPT_MESSAGE_PRIORITY),
+	AST_APP_OPTION('e', OPT_EARLYM_GREETING),
+	AST_APP_OPTION_ARG('t', OPT_BEEP, OPT_ARG_BEEP_TONE)
 });
 
 static const char * const mailbox_folders[] = {
@@ -3825,6 +3842,7 @@ static int retrieve_file(char *dir, int msgnum)
 	char fn[PATH_MAX];
 	char full_fn[PATH_MAX];
 	char msgnums[80];
+	char msg_id[MSG_ID_LEN] = "";
 	char *argv[] = { dir, msgnums };
 	struct generic_prepare_struct gps = { .sql = sql, .argc = 2, .argv = argv };
 	struct odbc_obj *obj;
@@ -3929,10 +3947,10 @@ static int retrieve_file(char *dir, int msgnum)
 		} else {
 			res = SQLGetData(stmt, x + 1, SQL_CHAR, rowdata, sizeof(rowdata), NULL);
 			if (res == SQL_NULL_DATA && !strcasecmp(coltitle, "msg_id")) {
-				char msg_id[MSG_ID_LEN];
+				/* Generate msg_id now, but don't store it until we're done with this
+				   connection */
 				generate_msg_id(msg_id);
 				snprintf(rowdata, sizeof(rowdata), "%s", msg_id);
-				odbc_update_msg_id(dir, msgnum, msg_id);
 			} else if (res == SQL_NULL_DATA && !strcasecmp(coltitle, "category")) {
 				/* Ignore null column value for category */
 				ast_debug(3, "Ignoring null category column in ODBC voicemail retrieve_file.\n");
@@ -3957,6 +3975,13 @@ bail:
 		close(fd);
 
 	ast_odbc_release_obj(obj);
+
+	/* If res_odbc is configured to only allow a single database connection, we
+	   will deadlock if we try to do this before releasing the connection we
+	   were just using. */
+	if (!ast_strlen_zero(msg_id)) {
+		odbc_update_msg_id(dir, msgnum, msg_id);
+	}
 
 	return x - 1;
 }
@@ -6260,6 +6285,7 @@ struct leave_vm_options {
 	unsigned int flags;
 	signed char record_gain;
 	char *exitcontext;
+	char *beeptone;
 };
 
 static void generate_msg_id(char *dst)
@@ -6851,6 +6877,9 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 		return -1;
 	}
 	/* The meat of recording the message...  All the announcements and beeps have been played*/
+	if (ast_channel_state(chan) != AST_STATE_UP) {
+		ast_answer(chan);
+	}
 	ast_copy_string(fmt, vmfmts, sizeof(fmt));
 	if (!ast_strlen_zero(fmt)) {
 		char msg_id[MSG_ID_LEN] = "";
@@ -6918,7 +6947,10 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 		/* Now play the beep once we have the message number for our next message. */
 		if (res >= 0) {
 			/* Unless we're *really* silent, try to send the beep */
-			res = ast_stream_and_wait(chan, "beep", "");
+			/* Play default or custom beep, unless no beep desired */
+			if (!ast_strlen_zero(options->beeptone)) {
+				res = ast_stream_and_wait(chan, options->beeptone, "");
+			}
 		}
 
 		/* Store information in real-time storage */
@@ -8453,6 +8485,7 @@ static int forward_message(struct ast_channel *chan, char *context, struct vm_st
 		/* Send VoiceMail */
 		memset(&leave_options, 0, sizeof(leave_options));
 		leave_options.record_gain = record_gain;
+		leave_options.beeptone = "beep";
 		cmd = leave_voicemail(chan, mailbox, &leave_options);
 	} else {
 		/* Forward VoiceMail */
@@ -11195,7 +11228,7 @@ static int vm_authenticate(struct ast_channel *chan, char *mailbox, int mailbox_
 			int skipuser, int max_logins, int silent)
 {
 	int useadsi = 0, valid = 0, logretries = 0;
-	char password[AST_MAX_EXTENSION], *passptr;
+	char password[AST_MAX_EXTENSION], *passptr = NULL;
 	struct ast_vm_user vmus, *vmu = NULL;
 
 	/* If ADSI is supported, setup login screen */
@@ -12256,9 +12289,6 @@ static int vm_exec(struct ast_channel *chan, const char *data)
 
 	memset(&leave_options, 0, sizeof(leave_options));
 
-	if (ast_channel_state(chan) != AST_STATE_UP)
-		ast_answer(chan);
-
 	if (!ast_strlen_zero(data)) {
 		tmp = ast_strdupa(data);
 		AST_STANDARD_APP_ARGS(args, tmp);
@@ -12281,6 +12311,11 @@ static int vm_exec(struct ast_channel *chan, const char *data)
 					leave_options.exitcontext = opts[OPT_ARG_DTMFEXIT];
 			}
 		}
+		if (ast_test_flag(&flags, OPT_BEEP)) { /* Use custom beep (or none at all) */
+			leave_options.beeptone = opts[OPT_ARG_BEEP_TONE];
+		} else { /* Use default beep */
+			leave_options.beeptone = "beep";
+		}
 	} else {
 		char temp[256];
 		res = ast_app_getdata(chan, "vm-whichbox", temp, sizeof(temp) - 1, 0);
@@ -12289,6 +12324,14 @@ static int vm_exec(struct ast_channel *chan, const char *data)
 		if (ast_strlen_zero(temp))
 			return 0;
 		args.argv0 = ast_strdupa(temp);
+	}
+
+	if (ast_channel_state(chan) != AST_STATE_UP) {
+		if (ast_test_flag(&flags, OPT_EARLYM_GREETING)) {
+			ast_indicate(chan, AST_CONTROL_PROGRESS);
+		} else {
+			ast_answer(chan);
+		}
 	}
 
 	res = leave_voicemail(chan, args.argv0, &leave_options);
@@ -15425,6 +15468,7 @@ static int advanced_options(struct ast_channel *chan, struct ast_vm_user *vmu, s
 
 				memset(&leave_options, 0, sizeof(leave_options));
 				leave_options.record_gain = record_gain;
+				leave_options.beeptone = "beep";
 				res = leave_voicemail(chan, mailbox, &leave_options);
 				if (!res)
 					res = 't';

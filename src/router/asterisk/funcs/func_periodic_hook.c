@@ -26,11 +26,11 @@
  */
 
 /*** MODULEINFO
-	<support_level>core</support_level>
 	<depend>app_chanspy</depend>
 	<depend>func_cut</depend>
 	<depend>func_groupcount</depend>
 	<depend>func_uri</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
@@ -519,4 +519,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS, "Periodic dialplan
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
+	.requires = "app_chanspy,func_cut,func_groupcount,func_uri",
 );

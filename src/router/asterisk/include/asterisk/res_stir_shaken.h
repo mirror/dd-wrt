@@ -18,9 +18,6 @@
 #ifndef _RES_STIR_SHAKEN_H
 #define _RES_STIR_SHAKEN_H
 
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-
 #define STIR_SHAKEN_ENCRYPTION_ALGORITHM "ES256"
 #define STIR_SHAKEN_PPT "shaken"
 #define STIR_SHAKEN_TYPE "passport"
@@ -46,13 +43,13 @@ struct ast_json;
 unsigned char *ast_stir_shaken_payload_get_signature(const struct ast_stir_shaken_payload *payload);
 
 /*!
- * \brief Retrieve the value for 'public_key_url' from an ast_stir_shaken_payload
+ * \brief Retrieve the value for 'public_cert_url' from an ast_stir_shaken_payload
  *
  * \param payload The payload
  *
  * \retval The public key URL
  */
-char *ast_stir_shaken_payload_get_public_key_url(const struct ast_stir_shaken_payload *payload);
+char *ast_stir_shaken_payload_get_public_cert_url(const struct ast_stir_shaken_payload *payload);
 
 /*!
  * \brief Retrieve the value for 'signature_timeout' from 'general' config object
@@ -82,13 +79,13 @@ int ast_stir_shaken_add_verification(struct ast_channel *chan, const char *ident
  * \param payload The payload section
  * \param signature The payload signature
  * \param algorithm The signature algorithm
- * \param public_key_url The public key URL
+ * \param public_cert_url The public key URL
  *
  * \retval ast_stir_shaken_payload on success
  * \retval NULL on failure
  */
 struct ast_stir_shaken_payload *ast_stir_shaken_verify(const char *header, const char *payload, const char *signature,
-	const char *algorithm, const char *public_key_url);
+	const char *algorithm, const char *public_cert_url);
 
 /*!
  * \brief Retrieve the stir/shaken sorcery context

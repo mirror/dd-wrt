@@ -1292,3 +1292,27 @@ ALTER TABLE ps_endpoints ADD COLUMN stir_shaken ENUM('0','1','off','on','false',
 
 UPDATE alembic_version SET version_num='61797b9fced6' WHERE alembic_version.version_num = 'b80485ff4dd0';
 
+-- Running upgrade 61797b9fced6 -> 1ae0609b6646
+
+ALTER TABLE ps_contacts MODIFY reg_server VARCHAR(255) NULL;
+
+UPDATE alembic_version SET version_num='1ae0609b6646' WHERE alembic_version.version_num = '61797b9fced6';
+
+-- Running upgrade 1ae0609b6646 -> e658c26033ca
+
+ALTER TABLE ps_endpoints ADD COLUMN send_history_info ENUM('0','1','off','on','false','true','no','yes');
+
+UPDATE alembic_version SET version_num='e658c26033ca' WHERE alembic_version.version_num = '1ae0609b6646';
+
+-- Running upgrade e658c26033ca -> 8915fcc5766f
+
+ALTER TABLE queue_members ADD COLUMN ringinuse ENUM('0','1','off','on','false','true','no','yes');
+
+UPDATE alembic_version SET version_num='8915fcc5766f' WHERE alembic_version.version_num = 'e658c26033ca';
+
+-- Running upgrade 8915fcc5766f -> c20d6e3992f4
+
+ALTER TABLE ps_endpoints ADD COLUMN allow_unauthenticated_options ENUM('0','1','off','on','false','true','no','yes');
+
+UPDATE alembic_version SET version_num='c20d6e3992f4' WHERE alembic_version.version_num = '8915fcc5766f';
+

@@ -2051,6 +2051,7 @@ int ast_res_pjsip_initialize_configuration(void)
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "send_rpid", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, id.send_rpid));
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "rpid_immediate", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, id.rpid_immediate));
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "send_diversion", "yes", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, id.send_diversion));
+	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "send_history_info", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, id.send_history_info));
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "mailboxes", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_sip_endpoint, subscription.mwi.mailboxes));
 	ast_sorcery_object_field_register_custom(sip_sorcery, "endpoint", "voicemail_extension", "", voicemail_extension_handler, voicemail_extension_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "aggregate_mwi", "yes", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, subscription.mwi.aggregate));
@@ -2152,6 +2153,7 @@ int ast_res_pjsip_initialize_configuration(void)
 		"prefer: pending, operation: intersect, keep: all",
 		codec_prefs_handler, outgoing_answer_codec_prefs_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "stir_shaken", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, stir_shaken));
+	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "allow_unauthenticated_options", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, allow_unauthenticated_options));
 
 	if (ast_sip_initialize_sorcery_transport()) {
 		ast_log(LOG_ERROR, "Failed to register SIP transport support with sorcery\n");
@@ -2378,6 +2380,25 @@ void ast_sip_cleanup_auths(struct ast_sip_auth *auths[], size_t num_auths)
 	for (i = 0; i < num_auths; ++i) {
 		ao2_cleanup(auths[i]);
 	}
+}
+
+int ast_sip_retrieve_auths_vector(const struct ast_sip_auth_vector *auth_ids,
+	struct ast_sip_auth_objects_vector *auth_objects)
+{
+	int i;
+
+	for (i = 0; i < AST_VECTOR_SIZE(auth_ids); ++i) {
+		/* Using AST_VECTOR_GET is safe since the vector is immutable */
+		const char *name = AST_VECTOR_GET(auth_ids, i);
+		struct ast_sip_auth *auth_object = ast_sorcery_retrieve_by_id(ast_sip_get_sorcery(), SIP_SORCERY_AUTH_TYPE, name);
+		if (!auth_object) {
+			ast_log(LOG_WARNING, "Auth object '%s' could not be found\n", name);
+		} else {
+			AST_VECTOR_APPEND(auth_objects, auth_object);
+		}
+	}
+
+	return AST_VECTOR_SIZE(auth_objects) == AST_VECTOR_SIZE(auth_ids) ? 0 : -1;
 }
 
 struct ast_sorcery *ast_sip_get_sorcery(void)

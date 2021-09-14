@@ -1491,7 +1491,7 @@ int ast_is_deferrable_frame(const struct ast_frame *frame)
 }
 
 /*! \brief Wait, look for hangups and condition arg */
-int ast_safe_sleep_conditional(struct ast_channel *chan, int timeout_ms, int (*cond)(void*), void *data)
+static int safe_sleep_conditional(struct ast_channel *chan, int timeout_ms, int (*cond)(void*), void *data, unsigned int generate_silence)
 {
 	struct ast_frame *f;
 	struct ast_silence_generator *silgen = NULL;
@@ -1503,7 +1503,7 @@ int ast_safe_sleep_conditional(struct ast_channel *chan, int timeout_ms, int (*c
 	AST_LIST_HEAD_INIT_NOLOCK(&deferred_frames);
 
 	/* If no other generator is present, start silencegen while waiting */
-	if (ast_opt_transmit_silence && !ast_channel_generatordata(chan)) {
+	if (generate_silence && ast_opt_transmit_silence && !ast_channel_generatordata(chan)) {
 		silgen = ast_channel_start_silence_generator(chan);
 	}
 
@@ -1561,10 +1561,20 @@ int ast_safe_sleep_conditional(struct ast_channel *chan, int timeout_ms, int (*c
 	return res;
 }
 
+int ast_safe_sleep_conditional(struct ast_channel *chan, int timeout_ms, int (*cond)(void*), void *data)
+{
+	return safe_sleep_conditional(chan, timeout_ms, cond, data, 1);
+}
+
 /*! \brief Wait, look for hangups */
 int ast_safe_sleep(struct ast_channel *chan, int ms)
 {
-	return ast_safe_sleep_conditional(chan, ms, NULL, NULL);
+	return safe_sleep_conditional(chan, ms, NULL, NULL, 1);
+}
+
+int ast_safe_sleep_without_silence(struct ast_channel *chan, int ms)
+{
+	return safe_sleep_conditional(chan, ms, NULL, NULL, 0);
 }
 
 struct ast_channel *ast_channel_release(struct ast_channel *chan)
@@ -3315,6 +3325,7 @@ int ast_waitfordigit_full(struct ast_channel *c, int timeout_ms, const char *bre
 				case AST_CONTROL_UPDATE_RTP_PEER:
 				case AST_CONTROL_HOLD:
 				case AST_CONTROL_UNHOLD:
+				case AST_CONTROL_FLASH:
 				case -1:
 					/* Unimportant */
 					break;
@@ -3391,6 +3402,11 @@ static void send_dtmf_end_event(struct ast_channel *chan,
 	}
 
 	ast_channel_publish_blob(chan, ast_channel_dtmf_end_type(), blob);
+}
+
+static void send_flash_event(struct ast_channel *chan)
+{
+	ast_channel_publish_blob(chan, ast_channel_flash_type(), NULL);
 }
 
 static void ast_read_generator_actions(struct ast_channel *chan, struct ast_frame *f)
@@ -3859,6 +3875,8 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio, int
 				 */
 				ast_frfree(f);
 				f = &ast_null_frame;
+			} else if (f->subclass.integer == AST_CONTROL_FLASH) {
+				send_flash_event(chan);
 			}
 			break;
 		case AST_FRAME_DTMF_END:
@@ -5709,11 +5727,15 @@ static int set_format(struct ast_channel *chan, struct ast_format_cap *cap_set, 
 		if (!direction) {
 			/* reading */
 			trans_pvt = ast_translator_build_path(best_set_fmt, best_native_fmt);
-			trans_pvt->interleaved_stereo = 0;
+			if (trans_pvt) {
+				trans_pvt->interleaved_stereo = 0;
+			}
 		} else {
 			/* writing */
 			trans_pvt = ast_translator_build_path(best_native_fmt, best_set_fmt);
-			trans_pvt->interleaved_stereo = interleaved_stereo;
+			if (trans_pvt) {
+				trans_pvt->interleaved_stereo = interleaved_stereo;
+			}
 		}
 		access->set_trans(chan, trans_pvt);
 		res = trans_pvt ? 0 : -1;
@@ -6260,8 +6282,13 @@ static struct ast_channel *request_channel(const char *type, struct ast_format_c
 
 		/* find the best audio format to use */
 		tmp_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
-		if (tmp_cap) {
-			ast_format_cap_append_from_cap(tmp_cap, request_cap, AST_MEDIA_TYPE_AUDIO);
+		if (!tmp_cap) {
+			AST_RWLIST_UNLOCK(&backends);
+			return NULL;
+		}
+
+		ast_format_cap_append_from_cap(tmp_cap, request_cap, AST_MEDIA_TYPE_AUDIO);
+		if (!ast_format_cap_empty(tmp_cap)) {
 			/* We have audio - is it possible to connect the various calls to each other?
 				(Avoid this check for calls without audio, like text+video calls)
 			*/
@@ -6292,7 +6319,9 @@ static struct ast_channel *request_channel(const char *type, struct ast_format_c
 		}
 		ast_format_cap_append_from_cap(joint_cap, request_cap, AST_MEDIA_TYPE_UNKNOWN);
 		ast_format_cap_remove_by_type(joint_cap, AST_MEDIA_TYPE_AUDIO);
-		ast_format_cap_append(joint_cap, best_audio_fmt, 0);
+		if (best_audio_fmt) { /* text+video call? then, this is NULL */
+			ast_format_cap_append(joint_cap, best_audio_fmt, 0);
+		}
 		ao2_cleanup(tmp_converted_cap);
 
 		c = chan->tech->requester(type, joint_cap, assignedids, requestor, addr, cause);
@@ -6464,7 +6493,29 @@ int ast_call(struct ast_channel *chan, const char *addr, int timeout)
 */
 int ast_transfer(struct ast_channel *chan, char *dest)
 {
+	int protocol;
+	return ast_transfer_protocol(chan, dest, &protocol);
+}
+
+/*!
+  \brief Transfer a call to dest, if the channel supports transfer
+
+  \param chan channel to transfer
+  \param dest destination to transfer to
+  \param protocol is the protocol result
+  SIP example, 0=success, 3xx-6xx is SIP error code
+
+  Called by:
+	\arg app_transfer
+	\arg the manager interface
+*/
+int ast_transfer_protocol(struct ast_channel *chan, char *dest, int *protocol)
+{
 	int res = -1;
+
+	if (protocol) {
+		*protocol = 0;
+	}
 
 	/* Stop if we're a zombie or need a soft hangup */
 	ast_channel_lock(chan);
@@ -6499,6 +6550,13 @@ int ast_transfer(struct ast_channel *chan, char *dest)
 				res = 1;
 			} else {
 				res = -1;
+				/* Message can contain a protocol specific code
+				   AST_TRANSFER_SUCCESS indicates success
+				   Else, failure.  Protocol will be set to the failure reason.
+				   SIP example, 0 is success, else error code 3xx-6xx */
+				if (protocol) {
+					*protocol = *message;
+				}
 			}
 
 			ast_frfree(fr);
@@ -10805,6 +10863,9 @@ static struct ast_frame *suppress_framehook_event_cb(struct ast_channel *chan, s
 	if (suppress_frame) {
 		switch (frame->frametype) {
 		case AST_FRAME_VOICE:
+			if (event == AST_FRAMEHOOK_EVENT_READ) {
+				ast_frfree(frame);
+			}
 			frame = &ast_null_frame;
 			break;
 		default:
@@ -11029,8 +11090,10 @@ int ast_channel_request_stream_topology_change(struct ast_channel *chan,
 	}
 
 	if (ast_stream_topology_equal(ast_channel_get_stream_topology(chan), topology)) {
-		ast_debug(3, "Topology of %s already matches what is requested so ignoring topology change request\n",
-				ast_channel_name(chan));
+		ast_debug(2, "%s: Topologies already match. Current: %s  Requested: %s\n",
+				ast_channel_name(chan),
+				ast_str_tmp(256, ast_stream_topology_to_str(ast_channel_get_stream_topology(chan), &STR_TMP)),
+				ast_str_tmp(256, ast_stream_topology_to_str(topology, &STR_TMP)));
 		ast_channel_unlock(chan);
 		return 0;
 	}

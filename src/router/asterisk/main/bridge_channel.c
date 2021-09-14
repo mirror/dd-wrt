@@ -208,6 +208,17 @@ static void bridge_sync_signal(struct bridge_sync *sync_struct)
 	ast_sem_post(&sync_struct->sem);
 }
 
+struct ast_channel *ast_bridge_channel_get_chan(struct ast_bridge_channel *bridge_channel)
+{
+	struct ast_channel *chan;
+
+	ao2_lock(bridge_channel);
+	chan = ao2_bump(bridge_channel->chan);
+	ao2_unlock(bridge_channel);
+
+	return chan;
+}
+
 void ast_bridge_channel_lock_bridge(struct ast_bridge_channel *bridge_channel)
 {
 	struct ast_bridge *bridge;
@@ -646,8 +657,13 @@ static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel,
 
 	ast_bridge_channel_lock_bridge(bridge_channel);
 
-	/* Map the frame to the bridge. */
-	if (ast_channel_is_multistream(bridge_channel->chan)) {
+	/*
+	 * Map the frame to the bridge.
+	 * We need to lock the bridge_channel to make sure that bridge_channel->chan
+	 * isn't NULL and keep it locked while we do multistream processing.
+	 */
+	ast_bridge_channel_lock(bridge_channel);
+	if (bridge_channel->chan && ast_channel_is_multistream(bridge_channel->chan)) {
 		unmapped_stream_num = frame->stream_num;
 		switch (frame->frametype) {
 		case AST_FRAME_VOICE:
@@ -661,12 +677,10 @@ static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel,
 				frame->stream_num = -1;
 				break;
 			}
-			ast_bridge_channel_lock(bridge_channel);
 			if (frame->stream_num < (int)AST_VECTOR_SIZE(&bridge_channel->stream_map.to_bridge)) {
 				frame->stream_num = AST_VECTOR_GET(
 					&bridge_channel->stream_map.to_bridge, frame->stream_num);
 				if (0 <= frame->stream_num) {
-					ast_bridge_channel_unlock(bridge_channel);
 					break;
 				}
 			}
@@ -692,6 +706,7 @@ static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel,
 		unmapped_stream_num = -1;
 		frame->stream_num = -1;
 	}
+	ast_bridge_channel_unlock(bridge_channel);
 
 	deferred = bridge_channel->bridge->technology->write(bridge_channel->bridge, bridge_channel, frame);
 	if (deferred) {
@@ -1177,7 +1192,14 @@ int ast_bridge_channel_write_hold(struct ast_bridge_channel *bridge_channel, con
 
 int ast_bridge_channel_write_unhold(struct ast_bridge_channel *bridge_channel)
 {
-	ast_channel_publish_cached_blob(bridge_channel->chan, ast_channel_unhold_type(), NULL);
+	struct ast_channel *chan = ast_bridge_channel_get_chan(bridge_channel);
+
+	if (!chan) {
+		return -1;
+	}
+
+	ast_channel_publish_cached_blob(chan, ast_channel_unhold_type(), NULL);
+	ao2_ref(chan, -1);
 
 	return ast_bridge_channel_write_control_data(bridge_channel, AST_CONTROL_UNHOLD, NULL, 0);
 }

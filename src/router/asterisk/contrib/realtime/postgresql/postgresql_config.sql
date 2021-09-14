@@ -1402,5 +1402,29 @@ ALTER TABLE ps_endpoints ADD COLUMN stir_shaken ast_bool_values;
 
 UPDATE alembic_version SET version_num='61797b9fced6' WHERE alembic_version.version_num = 'b80485ff4dd0';
 
+-- Running upgrade 61797b9fced6 -> 1ae0609b6646
+
+ALTER TABLE ps_contacts ALTER COLUMN reg_server TYPE VARCHAR(255);
+
+UPDATE alembic_version SET version_num='1ae0609b6646' WHERE alembic_version.version_num = '61797b9fced6';
+
+-- Running upgrade 1ae0609b6646 -> e658c26033ca
+
+ALTER TABLE ps_endpoints ADD COLUMN send_history_info ast_bool_values;
+
+UPDATE alembic_version SET version_num='e658c26033ca' WHERE alembic_version.version_num = '1ae0609b6646';
+
+-- Running upgrade e658c26033ca -> 8915fcc5766f
+
+ALTER TABLE queue_members ADD COLUMN ringinuse ast_bool_values;
+
+UPDATE alembic_version SET version_num='8915fcc5766f' WHERE alembic_version.version_num = 'e658c26033ca';
+
+-- Running upgrade 8915fcc5766f -> c20d6e3992f4
+
+ALTER TABLE ps_endpoints ADD COLUMN allow_unauthenticated_options ast_bool_values;
+
+UPDATE alembic_version SET version_num='c20d6e3992f4' WHERE alembic_version.version_num = '8915fcc5766f';
+
 COMMIT;
 
