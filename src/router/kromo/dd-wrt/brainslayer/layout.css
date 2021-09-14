@@ -1,249 +1,244 @@
- 
 html {
-	height:			100%;
-	padding:		0;
-	margin:			0;
+  height: 100%;
+  padding: 0;
+  margin: 0;
 }
 body {
-	height:			100%;
-	padding:		0;
-	margin:			0;
-	font-family:	Verdana,Sans-serif;
-	font-size:		90%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: Verdana, Sans-serif;
+  font-size: 90%;
 }
 form {
-	margin:			0;
-	display:		inline;
+  margin: 0;
+  display: inline;
 }
 input, select, option, button {
-	font-weight:	bold;
+  font-weight: bold;
 }
 input.num {
-	width:			auto;
+  width: auto;
 }
 input.ipnum {
-	text-transform:	uppercase;
-	text-align:		center;
+  text-transform: uppercase;
+  text-align: center;
 }
 h1, h2, h3, h4, h5, h6, legend, label {
-	margin:			1em 0 0.5em 0;
+  margin: 1em 0 0.5em 0;
 }
 legend, label {
-	 font-weight: bold;
+  font-weight: bold;
 }
 sup {
-	font-size: 70%;
+  font-size: 70%;
 }
 :link {
-	font-weight: bold;
+  font-weight: bold;
 }
 :visited {
-	font-weight: bold;
+  font-weight: bold;
 }
 hr {
-	padding: 0;
-	height: 4px;
-	border: 0;
-	margin: 2em 0;
+  padding: 0;
+  height: 4px;
+  border: 0;
+  margin: 2em 0;
 }
 table {
-	width: 600px;
-	border-size: 0px;
+  width: 600px;
+  border: 0px;
 }
- 
-
 #buttons {
-	padding-bottom:			20px;
-	margin-bottom:			20px;
-	border-bottom:			solid 3px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: solid 3px;
 }
 #wrapper {
-	position:				absolute;
-	top:					0px;
-	left:					0px;
-	height:					100%;
-	width:					100%;
-	margin:					0;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 100%;
+  width: 100%;
+  margin: 0;
 }
 #header {
-	position:				absolute;
-	top:					0px;
-	left:					0px;
-	width:					100%;
-	height:					80px;
-	margin:					0;
-	padding:				0;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 80px;
+  margin: 0;
+  padding: 0;
 }
-#header div.logo  {
-	margin-left:			30px;
+#header div.logo {
+  margin-left: 30px;
 }
 #main {
-	height:					100%;
-	margin:					0;
-	margin-left: 			200px;
-	padding:				1.5em;
-	padding-top:			90px;
+  height: 100%;
+  margin: 0;
+  margin-left: 200px;
+  padding: 1.5em;
+  padding-top: 90px;
 }
 #content, #contentInfo {
-	margin:					0;
-	padding:				0;
+  margin: 0;
+  padding: 0;
 }
 #helpContainer {
-	display:				none;
+  display: none;
 }
 #statusInfo {
-	display:				none;
+  display: none;
 }
 #main .submitFooter {
-	position:				absolute;
-	top:					85px;
-	left:					0px;
-	width:					200px;
-	text-align:				center;
-	display:				block;
-	margin:					0;
-	padding:				0;
+  position: absolute;
+  top: 85px;
+  left: 0px;
+  width: 200px;
+  text-align: center;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
-#main .submitFooter input,
-.submitFooterCmd input {
-	padding:				2px;
-	margin:					2px;	
-	width:					90%;
+#main .submitFooter input, .submitFooterCmd input {
+  padding: 2px;
+  margin: 2px;
+  width: 90%;
 }
 div.setting {
-	margin:					1px;
-	margin-top:				6px;
-	padding:				1px;	
-	padding-left:			0px;	
-	clear:both;
+  margin: 1px;
+  margin-top: 6px;
+  padding: 1px;
+  padding-left: 0px;
+  clear: both;
 }
 .label {
-	width:					14em;
-	float:					left;
+  width: 14em;
+  float: left;
 }
 #menu {
-	position:			absolute;
-	top:				228px;
-	left:				10px;
-	height:				2em;
+  position: absolute;
+  top: 228px;
+  left: 10px;
+  height: 2em;
 }
-#menu,#menuMain {
-	width:				180px;
-	max-width:			180px;
+#menu, #menuMain {
+  width: 180px;
+  max-width: 180px;
 }
 #menu {
-	border-top:			solid 2px;
-	padding-top:		1em;
+  border-top: solid 2px;
+  padding-top: 1em;
 }
 #menuMain {
-	border:				solid 1px;
+  border: solid 1px;
 }
 #menu * {
-	margin:				0px;
-	padding:			0px;
+  margin: 0px;
+  padding: 0px;
 }
 #menuMainList li {
-	list-style:			none;
-	margin:				0;
-
-	background-image:	none;
-	padding:			0 0 1px 0;
-	line-height:		1.0;
+  list-style: none;
+  margin: 0;
+  background-image: none;
+  padding: 0 0 1px 0;
+  line-height: 1.0;
 }
 #menuMainList :link, #menuMainList :visited, #menuMainList span {
-	font-weight:		normal;
-	line-height:		1.0;
-	display:			block;
-	text-decoration:	none;
-	background:			transparent;
-	border:				solid 1px;
-	margin:				0;
-	padding:			5px 10px 5px 0.5em;
+  font-weight: normal;
+  line-height: 1.0;
+  display: block;
+  text-decoration: none;
+  background: transparent;
+  border: solid 1px;
+  margin: 0;
+  padding: 5px 10px 5px 0.5em;
 }
 #menuMainList :link:hover, #menuMainList :visited:hover {
-	border:				solid 1px;
+  border: solid 1px;
 }
 #menuMainList ul {
-	margin:				0;
-	padding:			0;
-	border:				solid 1px;
+  margin: 0;
+  padding: 0;
+  border: solid 1px;
 }
 #menuMainList ul :link, #menuMainList ul :visited, #menuMainList ul span {
-	background-image:	none;
-	padding:			4px 10px 4px 1.5em;
-	border:				0;
+  background-image: none;
+  padding: 4px 10px 4px 1.5em;
+  border: 0;
 }
 #menuMainList ul :link:hover, #menuMainList ul :visited:hover {
-	background-image:	none;
-	border:				0;
+  background-image: none;
+  border: 0;
 }
 .warning {
-	color:#f00;
-	text-align:center;
+  color: #f00;
+  text-align: center;
 }
 .meter {
-	float:right;
-	position:relative;
-	height:16px;
-	width:220px;
-	background:#999;
-	border:solid 1px #999;
+  float: right;
+  position: relative;
+  height: 16px;
+  width: 220px;
+  background: #999;
+  border: solid 1px #999;
 }
 .meter .bar {
-	height:16px;
+  height: 16px;
 }
 .meter .text {
-	position:absolute;
-	top:0;
-	width:100%;
-	height:16px;
-	text-align:center;
-	line-height:15px;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 16px;
+  text-align: center;
+  line-height: 15px;
 }
 td .meter {
-	float:none !important;
-	margin-top:0 !important;
-	width:99% !important;
+  float: none !important;
+  margin-top: 0 !important;
+  width: 99% !important;
 }
 .progressbar {
-	visibility: visible;
-	position: relative;
-	overflow:hidden;
-	border-style:solid;
+  visibility: visible;
+  position: relative;
+  overflow: hidden;
+  border-style: solid;
 }
 .progressbarblock {
-	position:absolute;
+  position: absolute;
 }
 .bin {
-	background:url(/images/bin_bt.gif) center no-repeat;
-	cursor:pointer;
+  background: url(/images/bin_bt.gif) center no-repeat;
+  cursor: pointer;
 }
 input.spaceradio {
-	margin-right:.4em;
+  margin-right: .4em;
 }
 #score {
-	color: #000;
-	font-size: 85%;
-	position:absolute;
-	text-align: center;
-	width: 100px;
-	z-index: 10;
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
 }
-#score,#rating,#standards {
-	font-weight: bold;
+#score, #rating, #standards {
+  font-weight: bold;
 }
 #scorebar {
-	background-image: url(/style/gradient.jpg);
-	background-repeat: no-repeat;
-	background-position: 0 0;
-	position:absolute;
-	width: 100px;
-	z-index: 0;
+  background-image: url(/style/gradient.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
 }
 #scorebarBorder {
-	background: #333;
-	border: 1px #000 solid;
-	height: 16px;
-	margin-bottom: 2px;
-	width: 100px;
+  background: #333;
+  border: 1px #000 solid;
+  height: 16px;
+  margin-bottom: 2px;
+  width: 100px;
 }

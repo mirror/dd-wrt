@@ -1,51 +1,51 @@
-@import url(../common.css); 
-#menuSub, 
-#menuMainList li span, 
-#help h2 { 
-background:#f26522; 
-color:#fff; 
-border-color:#ff8400; 
-} 
-#menuSubList li a { 
-background:#ff8400; 
-color:#fff; 
-border-color:#feb311; 
-} 
-#menuSubList li a:hover { 
-background:#ff9000; 
-color:#fff; 
-border-color:#ffa200; 
-} 
-fieldset legend { 
-color:#f26522; 
-} 
-#help a { 
-color:#fff; 
-} 
-#help a:hover { 
-color:#fff; 
+@import url(../common.css);
+@import url(../error_root_common.css);
+@import url(../error_common.css);
+#menuSub, #menuMainList li span, #help h2 {
+  background: #f26522;
+  color: #fff;
+  border-color: #ff8400;
+}
+#menuSubList li a {
+  background: #ff8400;
+  color: #fff;
+  border-color: #feb311;
+}
+#menuSubList li a:hover {
+  background: #ff9000;
+  color: #fff;
+  border-color: #ffa200;
+}
+fieldset legend {
+  color: #f26522;
+}
+#help a {
+  color: #fff;
+}
+#help a:hover {
+  color: #fff;
 }
 .meter .bar {
-background-color: #ff8400;
+  background-color: #ff8400;
 }
 .meter .text {
-color:#fff;
+  color: #fff;
 }
 .progressbar {
-background-color: #fff;
-border-color: #999;
-font-size:.09em;
-border-width:.09em;
+  background-color: #fff;
+  border-color: #999;
+  font-size: .09em;
+  border-width: .09em;
 }
 .progressbarblock {
-background-color: #ff8400;
-font-size:.09em;
+  background-color: #ff8400;
+  font-size: .09em;
 }
 input.button {
-background: #ff8400;
-color: #fff;
+  background: #ff8400;
+  color: #fff;
 }
 input.button:hover {
-background: #ff9000;
-color: #fff;
+  background: #ff9000;
+  color: #fff;
 }

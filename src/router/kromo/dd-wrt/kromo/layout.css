@@ -1,283 +1,244 @@
- 
-html,body,#wrapper {
-	height:					100%;
-	margin:					0px;
-	padding:				0px;
+html, body, #wrapper {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
 }
 th {
-	padding-left:			3px;
-	padding-right:			3px;
+  padding-left: 3px;
+  padding-right: 3px;
 }
-
-input,select {
-	 margin:				2px;
-	 margin-left:			0.3em;
-	 margin-right:			0.3em;
+input, select {
+  margin: 2px;
+  margin-left: 0.3em;
+  margin-right: 0.3em;
 }
-
 #wrapper {
-	margin-left:					2px;
-	margin-right:					2px;
+  margin-left: 2px;
+  margin-right: 2px;
 }
-
 #content {
-	padding-top:			0em;
-	padding-bottom:			0em;
+  padding-top: 0em;
+  padding-bottom: 0em;
 }
-
 div.message {
-	margin:					0px;
-	padding:				0px;
-	height:					100%;
-	width:					100%;
+  margin: 0px;
+  padding: 0px;
+  height: 100%;
+  width: 100%;
 }
-
 div.popup {
-	margin:					3em;
+  margin: 3em;
 }
-
 div.message form {
-	display:				inline;
-	margin:					0px;
-	padding:				0px;
+  display: inline;
+  margin: 0px;
+  padding: 0px;
 }
-
 div.message div {
-	text-align:				center;
-	vertical-align:			middle;
+  text-align: center;
+  vertical-align: middle;
 }
-
 div.message div {
-	position:				absolute;
-	top:					50%;
-	left:					50%;
-	width:					700px;
-	height:					400px;
-	margin-left:			-350px;
-	margin-top:				-200px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 400px;
+  margin-left: -350px;
+  margin-top: -200px;
 }
-
 div.message div form {
-	position:				absolute;
-	top:					50%;
-	left:					50%;
-	width:					400px;
-	height:					100px;
-	margin-left:			-200px;
-	margin-top:				-40px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 100px;
+  margin-left: -200px;
+  margin-top: -40px;
 }
-
 div.setting {
-	margin:					0px;
-	padding:				3px;	
-	padding-left:			0px;
-	clear:					both;
+  margin: 0px;
+  padding: 3px;
+  padding-left: 0px;
+  clear: both;
 }
-
- 
-
 fieldset {
-	padding-left:			10px;
+  padding-left: 10px;
 }
-
 #main {
-	margin:					0px;
-	margin-right:			190px;
-	margin-bottom:			1em;
+  margin: 0px;
+  margin-right: 190px;
+  margin-bottom: 1em;
 }
-
 #header {
-	top:					0px;
-	margin:					0px;
-	padding:				0px;
+  top: 0px;
+  margin: 0px;
+  padding: 0px;
 }
-
-#header div#logo  {
-	z-index:				30;
+#header div#logo {
+  z-index: 30;
 }
-
-
 #helpContainer {
-	position:				absolute;
-	top:					0px;
-	right:					10px;
-	width:					190px;
-	min-height:				100%;
-	z-index:				3;
+  position: absolute;
+  top: 0px;
+  right: 10px;
+  width: 190px;
+  min-height: 100%;
+  z-index: 3;
 }
-
 #help {
-	margin-top:				9.0em;
-	padding:				7px;
+  margin-top: 9.0em;
+  padding: 7px;
 }
-
-#help div#logo  {
-	text-align:				center;
-	padding-right:			20px;
+#help div#logo {
+  text-align: center;
+  padding-right: 20px;
 }
-
-#statusInfo  {
-	position:				absolute;
-	top:					5px;
-	right:					5px;
-	height: 				5em;
-	width:	 				25em;
-	margin:	 				0px;
-	padding: 				0px;
-	z-index:				30;
+#statusInfo {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  height: 5em;
+  width: 25em;
+  margin: 0px;
+  padding: 0px;
+  z-index: 30;
 }
-
-.submitFooter,
-.submitFooterCmd {
-	margin:					1em;	
-	padding-top:			0.5em;	
-	padding-bottom:			0.5em;	
-	text-align:				center;
+.submitFooter, .submitFooterCmd {
+  margin: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  text-align: center;
 }
-
- 
-
 #main {
-	clear:				both;
-	padding-top:		1.7em;
+  clear: both;
+  padding-top: 1.7em;
 }
-
 #contents {
-	padding:			1.3em;
-	padding-bottom:		0.1em;
-	min-height:			300px;
+  padding: 1.3em;
+  padding-bottom: 0.1em;
+  min-height: 300px;
 }
-
 #menuMain {
-	position:			relative;
-	height:				2em;
+  position: relative;
+  height: 2em;
 }
-
 #menuMain ul#menuMainList {
-	margin:				0;
-	padding:			0;
-	position:			absolute;
-	bottom:				-1px;
-	width: 100%;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  bottom: -1px;
+  width: 100%;
 }
-
-#menuMain ul#menuMainList li  {
-	display:			inline;
-	list-style:			none;
+#menuMain ul#menuMainList li {
+  display: inline;
+  list-style: none;
 }
-
-#menuMain ul#menuMainList a,#menuMain ul#menuMainList span,#menuMain ul#menuMainList a.current {
-	padding:			4px 10px;
-	margin:				1px 2px 0 0;
-	display:			block;
-	float:				left;
-	text-align:			center;
-	font-family:		AvantGarde, tahoma, verdana, sans-serif;
-	font-size:			85%;
+#menuMain ul#menuMainList a, #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current {
+  padding: 4px 10px;
+  margin: 1px 2px 0 0;
+  display: block;
+  float: left;
+  text-align: center;
+  font-family: AvantGarde, tahoma, verdana, sans-serif;
+  font-size: 85%;
 }
-
-#menuMain ul#menuMainList span,#menuMain ul#menuMainList a.current,#menuMain ul#menuMainList a.current:hover {
-	margin-top:			0;
-	padding-bottom:		6px;
+#menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
+  margin-top: 0;
+  padding-bottom: 6px;
 }
-
 #menuMain ul#menuMainList a:hover {
-	margin-top:			0;
-	padding-bottom:		5px;
+  margin-top: 0;
+  padding-bottom: 5px;
 }
-
 #menuMain ul#menuSubList {
-	position:			absolute;
-	margin:				0;
-	padding:			0;
-	bottom:				-1.3em;
-	left:				1px;
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  bottom: -1.3em;
+  left: 1px;
 }
-
-#menuMain ul#menuSubList li a,#menuMain ul#menuSubList li span {
-	padding:			0 10px;
-	margin:				0;
-	display:			block;
-	float:				left;
-	text-align:			auto;
+#menuMain ul#menuSubList li a, #menuMain ul#menuSubList li span {
+  padding: 0 10px;
+  margin: 0;
+  display: block;
+  float: left;
+  text-align: auto;
 }
-
 #menuMain ul#menuSubList li a:hover {
-	padding:			0 10px;
+  padding: 0 10px;
 }
-
 * #contentsInfo {
-position:relative;
-z-index:0;
-padding:.906em;
+  position: relative;
+  z-index: 0;
+  padding: .906em;
 }
-
 .meter {
-float:right;
-position:relative;
-top:-.09em;
-height: 1.268em;
-width: 14.49em;
-background:#999;
-border-style:solid;
-border-width:.09em;
-border-color:#666 #ccc #ccc #666;
+  float: right;
+  position: relative;
+  top: -.09em;
+  height: 1.268em;
+  width: 14.49em;
+  background: #999;
+  border-style: solid;
+  border-width: .09em;
+  border-color: #666 #ccc #ccc #666;
 }
 .meter .bar {
-height: 1.268em;
+  height: 1.268em;
 }
 .meter .text {
-position:absolute;
-top:0;
-width:100%;
-height:1.268em;
-text-align:center;
-line-height:1.181em;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.268em;
+  text-align: center;
+  line-height: 1.181em;
 }
 td .meter {
-float:none !important;
-margin-top:0 !important;
-width:99% !important;
+  float: none !important;
+  margin-top: 0 !important;
+  width: 99% !important;
 }
 .progressbar {
   visibility: visible;
   position: relative;
-  overflow:hidden;
-  border-style:solid;
+  overflow: hidden;
+  border-style: solid;
 }
 .progressbarblock {
-  position:absolute;
+  position: absolute;
 }
 .bin {
-background:url(/images/bin_bt.gif) center no-repeat;
-cursor:pointer;
+  background: url(/images/bin_bt.gif) center no-repeat;
+  cursor: pointer;
 }
 input.spaceradio {
-margin-right:.4em;
+  margin-right: .4em;
 }
 #score {
-	color: #000;
-	font-size: 85%;
-	position:absolute;
-	text-align: center;
-	width: 100px;
-	z-index: 10;
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
 }
-#score,#rating,#standards {
-	font-weight: bold;
+#score, #rating, #standards {
+  font-weight: bold;
 }
 #scorebar {
-	background-image: url(/style/gradient.jpg);
-	background-repeat: no-repeat;
-	background-position: 0 0;
-	position:absolute;
-	width: 100px;
-	z-index: 0;
+  background-image: url(/style/gradient.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
 }
 #scorebarBorder {
-	background: #333;
-	border: 1px #000 solid;
-	height: 16px;
-	margin-bottom: 2px;
-	width: 100px;
+  background: #333;
+  border: 1px #000 solid;
+  height: 16px;
+  margin-bottom: 2px;
+  width: 100px;
 }

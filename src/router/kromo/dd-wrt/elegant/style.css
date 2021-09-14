@@ -1,51 +1,51 @@
 @import url(../common.css);
-#menuSub, 
-#menuMainList li span, 
-#help h2 { 
-background:#30519c; 
-color:#fff; 
-border-color:#496fc7; 
-} 
-#menuSubList li a { 
-background:#496fc7; 
-color:#fff; 
-border-color:#6384cf; 
-} 
-#menuSubList li a:hover { 
-background:#6384cf; 
-color:#fff; 
-border-color:#849dd9; 
-} 
-fieldset legend { 
-color:#30519c; 
-} 
-#help a { 
-color:#fff; 
+@import url(../error_root_common.css);
+@import url(../error_common.css);
+#menuSub, #menuMainList li span, #help h2 {
+  background: #30519c;
+  color: #fff;
+  border-color: #496fc7;
 }
-#help a:hover { 
-color:#fff; 
+#menuSubList li a {
+  background: #496fc7;
+  color: #fff;
+  border-color: #6384cf;
+}
+#menuSubList li a:hover {
+  background: #6384cf;
+  color: #fff;
+  border-color: #849dd9;
+}
+fieldset legend {
+  color: #30519c;
+}
+#help a {
+  color: #fff;
+}
+#help a:hover {
+  color: #fff;
 }
 .meter .bar {
-background-color: #496fc7;
+  background-color: #496fc7;
 }
 .meter .text {
-color:#fff;
+  color: #fff;
 }
 .progressbar {
-background-color: #fff;
-border-color: #999;
-font-size:.09em;
-border-width:.09em;
+  background-color: #fff;
+  border-color: #999;
+  font-size: .09em;
+  border-width: .09em;
 }
 .progressbarblock {
-background-color: #496fc7;
-font-size:.09em;
+  background-color: #496fc7;
+  font-size: .09em;
 }
 input.button {
-background: #496fc7;
-color: #fff;
+  background: #496fc7;
+  color: #fff;
 }
 input.button:hover {
-background: #6384cf;
-color: #fff;
+  background: #6384cf;
+  color: #fff;
 }

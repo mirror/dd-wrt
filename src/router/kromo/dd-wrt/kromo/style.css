@@ -1,3 +1,5 @@
 @import url(layout.css);
 @import url(look.css);
 @import url(colors.css);
+@import url(../error_root_common.css);
+@import url(../error_common.css);
