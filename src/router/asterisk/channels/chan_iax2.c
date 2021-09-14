@@ -68,7 +68,6 @@
 #include <netinet/ip.h>
 #include <sys/time.h>
 #include <signal.h>
-#include <strings.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -433,6 +432,7 @@ static int amaflags = 0;
 static int adsi = 0;
 static int delayreject = 0;
 static int iax2_encryption = 0;
+static int iax2_authmethods = 0;
 
 static struct ast_flags64 globalflags = { 0 };
 
@@ -2800,7 +2800,7 @@ static int add_calltoken_ignore(const char *addr)
 	int error = 0;
 
 	if (ast_strlen_zero(addr)) {
-		ast_log(LOG_WARNING, "invalid calltokenoptional %s\n", addr);
+		ast_log(LOG_WARNING, "invalid calltokenoptional (null)\n");
 		return -1;
 	}
 
@@ -4132,6 +4132,7 @@ static void __get_from_jb(const void *p)
 	long ms;
 	long next;
 	struct timeval now = ast_tvnow();
+	struct ast_format *voicefmt;
 
 	/* Make sure we have a valid private structure before going on */
 	ast_mutex_lock(&iaxsl[callno]);
@@ -4151,10 +4152,9 @@ static void __get_from_jb(const void *p)
 
 	ms = ast_tvdiff_ms(now, pvt->rxcore);
 
-	if(ms >= (next = jb_next(pvt->jb))) {
-		struct ast_format *voicefmt;
-		voicefmt = ast_format_compatibility_bitfield2format(pvt->voiceformat);
-		ret = jb_get(pvt->jb, &frame, ms, voicefmt ? ast_format_get_default_ms(voicefmt) : 20);
+	voicefmt = ast_format_compatibility_bitfield2format(pvt->voiceformat);
+	if (voicefmt && ms >= (next = jb_next(pvt->jb))) {
+		ret = jb_get(pvt->jb, &frame, ms, ast_format_get_default_ms(voicefmt));
 		switch(ret) {
 		case JB_OK:
 			fr = frame.data;
@@ -4182,7 +4182,7 @@ static void __get_from_jb(const void *p)
 				pvt = iaxs[callno];
 			}
 		}
-			break;
+		break;
 		case JB_DROP:
 			iax2_frame_free(frame.data);
 			break;
@@ -4589,6 +4589,7 @@ struct create_addr_info {
 	struct iax2_codec_pref prefs;
 	int maxtime;
 	int encmethods;
+	int authmethods;
 	int found;
 	int sockfd;
 	int adsi;
@@ -4664,6 +4665,7 @@ static int create_addr(const char *peername, struct ast_channel *c, struct ast_s
 	cai->maxtime = peer->maxms;
 	cai->capability = peer->capability;
 	cai->encmethods = peer->encmethods;
+	cai->authmethods = peer->authmethods;
 	cai->sockfd = peer->sockfd;
 	cai->adsi = peer->adsi;
 	cai->prefs = peer->prefs;
@@ -5097,6 +5099,7 @@ static int iax2_call(struct ast_channel *c, const char *dest, int timeout)
 
 	memset(&cai, 0, sizeof(cai));
 	cai.encmethods = iax2_encryption;
+	cai.authmethods = iax2_authmethods;
 
 	memset(&pds, 0, sizeof(pds));
 	tmpstr = ast_strdupa(dest);
@@ -5113,15 +5116,21 @@ static int iax2_call(struct ast_channel *c, const char *dest, int timeout)
 		ast_log(LOG_WARNING, "No address associated with '%s'\n", pds.peer);
 		return -1;
 	}
-	if (ast_test_flag64(iaxs[callno], IAX_FORCE_ENCRYPT) && !cai.encmethods) {
-		ast_log(LOG_WARNING, "Encryption forced for call, but not enabled\n");
-		ast_channel_hangupcause_set(c, AST_CAUSE_BEARERCAPABILITY_NOTAVAIL);
-		return -1;
+
+	if (ast_test_flag64(&cai, IAX_FORCE_ENCRYPT) ||
+		ast_test_flag64(iaxs[callno], IAX_FORCE_ENCRYPT)) {
+		if (!cai.encmethods) {
+			ast_log(LOG_WARNING, "Encryption forced for call, but not enabled\n");
+			ast_channel_hangupcause_set(c, AST_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+			return -1;
+		}
+		if (((cai.authmethods & IAX_AUTH_MD5) || (cai.authmethods & IAX_AUTH_PLAINTEXT)) &&
+			ast_strlen_zero(cai.secret) && ast_strlen_zero(pds.password)) {
+		        ast_log(LOG_WARNING, "Call terminated. Encryption forced but no secret provided\n");
+		        return -1;
+		}
 	}
-	if (ast_strlen_zero(cai.secret) && ast_test_flag64(iaxs[callno], IAX_FORCE_ENCRYPT)) {
-		ast_log(LOG_WARNING, "Call terminated. No secret given and force encrypt enabled\n");
-		return -1;
-	}
+
 	if (!pds.username && !ast_strlen_zero(cai.username))
 		pds.username = cai.username;
 	if (!pds.password && !ast_strlen_zero(cai.secret))
@@ -6442,8 +6451,14 @@ static int decode_frame(ast_aes_decrypt_key *dcx, struct ast_iax2_full_hdr *fh, 
 		f->frametype = fh->type;
 		if (f->frametype == AST_FRAME_VIDEO) {
 			f->subclass.format = ast_format_compatibility_bitfield2format(uncompress_subclass(fh->csub & ~0x40) | ((fh->csub >> 6) & 0x1));
+			if (!f->subclass.format) {
+				f->subclass.format = ast_format_none;
+			}
 		} else if (f->frametype == AST_FRAME_VOICE) {
 			f->subclass.format = ast_format_compatibility_bitfield2format(uncompress_subclass(fh->csub));
+			if (!f->subclass.format) {
+				f->subclass.format = ast_format_none;
+			}
 		} else {
 			f->subclass.integer = uncompress_subclass(fh->csub);
 		}
@@ -8475,6 +8490,11 @@ static int authenticate_reply(struct chan_iax2_pvt *p, struct ast_sockaddr *addr
 	}
 
 	if (ies->encmethods) {
+		if (ast_strlen_zero(p->secret) &&
+			((ies->authmethods & IAX_AUTH_MD5) || (ies->authmethods & IAX_AUTH_PLAINTEXT))) {
+			ast_log(LOG_WARNING, "Call terminated. Encryption requested by peer but no secret available locally\n");
+			return -1;
+		}
 		ast_set_flag64(p, IAX_ENCRYPTED | IAX_KEYPOPULATED);
 	} else if (ast_test_flag64(iaxs[callno], IAX_FORCE_ENCRYPT)) {
 		ast_log(LOG_NOTICE, "Call initiated without encryption while forceencryption=yes option is set\n");
@@ -9915,8 +9935,8 @@ static int socket_process_meta(int packet_len, struct ast_iax2_meta_hdr *meta, s
 		} else if (iaxs[fr->callno]->voiceformat == 0) {
 			ast_log(LOG_WARNING, "Received trunked frame before first full voice frame\n");
 			iax2_vnak(fr->callno);
-		} else {
-			f.subclass.format = ast_format_compatibility_bitfield2format(iaxs[fr->callno]->voiceformat);
+		} else if ((f.subclass.format = ast_format_compatibility_bitfield2format(
+						iaxs[fr->callno]->voiceformat))) {
 			f.datalen = len;
 			if (f.datalen >= 0) {
 				if (f.datalen)
@@ -10159,11 +10179,17 @@ static int socket_process_helper(struct iax2_thread *thread)
 		f.frametype = fh->type;
 		if (f.frametype == AST_FRAME_VIDEO) {
 			f.subclass.format = ast_format_compatibility_bitfield2format(uncompress_subclass(fh->csub & ~0x40));
+			if (!f.subclass.format) {
+				return 1;
+			}
 			if ((fh->csub >> 6) & 0x1) {
 				f.subclass.frame_ending = 1;
 			}
 		} else if (f.frametype == AST_FRAME_VOICE) {
 			f.subclass.format = ast_format_compatibility_bitfield2format(uncompress_subclass(fh->csub));
+			if (!f.subclass.format) {
+				return 1;
+			}
 		} else {
 			f.subclass.integer = uncompress_subclass(fh->csub);
 		}
@@ -11781,6 +11807,11 @@ immediatedial:
 				f.subclass.frame_ending = 1;
 			}
 			f.subclass.format = ast_format_compatibility_bitfield2format(iaxs[fr->callno]->videoformat);
+			if (!f.subclass.format) {
+				ast_variables_destroy(ies.vars);
+				ast_mutex_unlock(&iaxsl[fr->callno]);
+				return 1;
+			}
 		} else {
 			ast_log(LOG_WARNING, "Received mini frame before first full video frame\n");
 			iax2_vnak(fr->callno);
@@ -11802,9 +11833,14 @@ immediatedial:
 	} else {
 		/* A mini frame */
 		f.frametype = AST_FRAME_VOICE;
-		if (iaxs[fr->callno]->voiceformat > 0)
+		if (iaxs[fr->callno]->voiceformat > 0) {
 			f.subclass.format = ast_format_compatibility_bitfield2format(iaxs[fr->callno]->voiceformat);
-		else {
+			if (!f.subclass.format) {
+				ast_variables_destroy(ies.vars);
+				ast_mutex_unlock(&iaxsl[fr->callno]);
+				return 1;
+			}
+		} else {
 			ast_debug(1, "Received mini frame before first full voice frame\n");
 			iax2_vnak(fr->callno);
 			ast_variables_destroy(ies.vars);
@@ -12813,6 +12849,7 @@ static struct iax2_peer *build_peer(const char *name, struct ast_variable *v, st
 		if (firstpass) {
 			ast_copy_flags64(peer, &globalflags, IAX_USEJITTERBUF | IAX_SENDCONNECTEDLINE | IAX_RECVCONNECTEDLINE | IAX_FORCE_ENCRYPT);
 			peer->encmethods = iax2_encryption;
+			peer->authmethods = iax2_authmethods;
 			peer->adsi = adsi;
 			ast_string_field_set(peer, secret, "");
 			if (!found) {
@@ -13146,6 +13183,7 @@ static struct iax2_user *build_user(const char *name, struct ast_variable *v, st
 			user->prefs = prefs_global;
 			user->capability = iax2_capability;
 			user->encmethods = iax2_encryption;
+			user->authmethods = iax2_authmethods;
 			user->adsi = adsi;
 			user->calltoken_required = CALLTOKEN_DEFAULT;
 			ast_string_field_set(user, name, name);
@@ -13538,6 +13576,7 @@ static int set_config(const char *config_file, int reload, int forced)
 	maxauthreq = 3;
 
 	srvlookup = 0;
+	iax2_authmethods = 0;
 
 	v = ast_variable_browse(cfg, "general");
 
@@ -13645,6 +13684,11 @@ static int set_config(const char *config_file, int reload, int forced)
 				} else {
 					ast_log(LOG_WARNING, "Invalid address '%s' specified, at line %d\n", v->value, v->lineno);
 				}
+			}
+		} else if (!strcasecmp(v->name, "auth")) {
+			iax2_authmethods = get_auth_methods(v->value);
+			if (iax2_authmethods & IAX_AUTH_PLAINTEXT) {
+				ast_log(LOG_WARNING, "Default auth method is set to deprecated 'plaintext' at line %d of iax.conf\n", v->lineno);
 			}
 		} else if (!strcasecmp(v->name, "authdebug")) {
 			authdebug = ast_true(v->value);

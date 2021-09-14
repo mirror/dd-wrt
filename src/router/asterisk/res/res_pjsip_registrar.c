@@ -247,19 +247,6 @@ static int registrar_add_contact(void *obj, void *arg, int flags)
 	return 0;
 }
 
-/*! \brief Helper function which adds a Date header to a response */
-static void registrar_add_date_header(pjsip_tx_data *tdata)
-{
-	char date[256];
-	struct tm tm;
-	time_t t = time(NULL);
-
-	gmtime_r(&t, &tm);
-	strftime(date, sizeof(date), "%a, %d %b %Y %T GMT", &tm);
-
-	ast_sip_add_header(tdata, "Date", date);
-}
-
 static const pj_str_t path_hdr_name = { "Path", 4 };
 
 static int build_path_data(pjsip_rx_data *rdata, struct ast_str **path_str)
@@ -682,8 +669,9 @@ static void register_aor_core(pjsip_rx_data *rdata,
 	if (contact_count > aor->max_contacts) {
 		/* Enforce the maximum number of contacts */
 		ast_sip_report_failed_acl(endpoint, rdata, "registrar_attempt_exceeds_maximum_configured_contacts");
-		ast_log(LOG_WARNING, "Registration attempt from endpoint '%s' to AOR '%s' will exceed max contacts of %u\n",
-				ast_sorcery_object_get_id(endpoint), aor_name, aor->max_contacts);
+		ast_log(LOG_WARNING, "Registration attempt from endpoint '%s' (%s:%d) to AOR '%s' will exceed max contacts of %u\n",
+				ast_sorcery_object_get_id(endpoint), rdata->pkt_info.src_name, rdata->pkt_info.src_port,
+				aor_name, aor->max_contacts);
 		response->code = 403;
 		pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), details.pool);
 		ao2_cleanup(existing_contacts);
@@ -897,7 +885,7 @@ static void register_aor_core(pjsip_rx_data *rdata,
 	ao2_cleanup(response_contact);
 
 	/* Add the date header to the response, some UAs use this to set their date and time */
-	registrar_add_date_header(tdata);
+	ast_sip_add_date_header(tdata);
 
 	ao2_callback(contacts, 0, registrar_add_contact, tdata);
 
@@ -1077,8 +1065,9 @@ static struct ast_sip_aor *find_registrar_aor(struct pjsip_rx_data *rdata, struc
 		/* The provided AOR name was not found (be it within the configuration or sorcery itself) */
 		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 404, NULL, NULL, NULL);
 		ast_sip_report_req_no_support(endpoint, rdata, "registrar_requested_aor_not_found");
-		ast_log(LOG_WARNING, "AOR '%s' not found for endpoint '%s'\n",
-			aor_name ?: "", ast_sorcery_object_get_id(endpoint));
+		ast_log(LOG_WARNING, "AOR '%s' not found for endpoint '%s' (%s:%d)\n",
+			aor_name ?: "", ast_sorcery_object_get_id(endpoint),
+			rdata->pkt_info.src_name, rdata->pkt_info.src_port);
 	}
 	ast_free(aor_name);
 	return aor;
@@ -1099,14 +1088,16 @@ static pj_bool_t registrar_on_rx_request(struct pjsip_rx_data *rdata)
 		/* Short circuit early if the endpoint has no AORs configured on it, which means no registration possible */
 		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 403, NULL, NULL, NULL);
 		ast_sip_report_failed_acl(endpoint, rdata, "registrar_attempt_without_configured_aors");
-		ast_log(LOG_WARNING, "Endpoint '%s' has no configured AORs\n", ast_sorcery_object_get_id(endpoint));
+		ast_log(LOG_WARNING, "Endpoint '%s' (%s:%d) has no configured AORs\n", ast_sorcery_object_get_id(endpoint),
+			rdata->pkt_info.src_name, rdata->pkt_info.src_port);
 		return PJ_TRUE;
 	}
 
 	if (!PJSIP_URI_SCHEME_IS_SIP(rdata->msg_info.to->uri) && !PJSIP_URI_SCHEME_IS_SIPS(rdata->msg_info.to->uri)) {
 		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 416, NULL, NULL, NULL);
 		ast_sip_report_failed_acl(endpoint, rdata, "registrar_invalid_uri_in_to_received");
-		ast_log(LOG_WARNING, "Endpoint '%s' attempted to register to an AOR with a non-SIP URI\n", ast_sorcery_object_get_id(endpoint));
+		ast_log(LOG_WARNING, "Endpoint '%s' (%s:%d) attempted to register to an AOR with a non-SIP URI\n", ast_sorcery_object_get_id(endpoint),
+			rdata->pkt_info.src_name, rdata->pkt_info.src_port);
 		return PJ_TRUE;
 	}
 
@@ -1122,8 +1113,9 @@ static pj_bool_t registrar_on_rx_request(struct pjsip_rx_data *rdata)
 		/* Registration is not permitted for this AOR */
 		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 403, NULL, NULL, NULL);
 		ast_sip_report_req_no_support(endpoint, rdata, "registrar_attempt_without_registration_permitted");
-		ast_log(LOG_WARNING, "AOR '%s' has no configured max_contacts. Endpoint '%s' unable to register\n",
-			aor_name, ast_sorcery_object_get_id(endpoint));
+		ast_log(LOG_WARNING, "AOR '%s' has no configured max_contacts. Endpoint '%s' (%s:%d) unable to register\n",
+			aor_name, ast_sorcery_object_get_id(endpoint),
+			rdata->pkt_info.src_name, rdata->pkt_info.src_port);
 	} else {
 		register_aor(rdata, endpoint, aor, aor_name);
 	}

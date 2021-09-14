@@ -52,6 +52,7 @@
 #include "asterisk/module.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_LOG_DIR */
 #include "asterisk/logger.h"
+#include "asterisk/logger_category.h"
 #include "asterisk/lock.h"
 #include "asterisk/channel.h"
 #include "asterisk/config.h"
@@ -676,6 +677,23 @@ static struct logchannel *make_logchannel(const char *channel, const char *compo
 	make_components(chan);
 
 	return chan;
+}
+
+void ast_init_logger_for_socket_console(void)
+{
+	struct ast_config *cfg;
+	const char *s;
+	struct ast_flags config_flags = { 0 };
+
+	if (!(cfg = ast_config_load2("logger.conf", "logger", config_flags)) || cfg == CONFIG_STATUS_FILEINVALID) {
+		return;
+	}
+
+	if ((s = ast_variable_retrieve(cfg, "general", "dateformat"))) {
+		ast_copy_string(dateformat, s, sizeof(dateformat));
+	}
+
+	ast_config_destroy(cfg);
 }
 
 /*!
@@ -1671,6 +1689,11 @@ static struct logmsg * __attribute__((format(printf, 7, 0))) format_log_message_
 		return NULL;
 	}
 
+	/* Automatically add a newline to format strings that don't have one */
+	if (!ast_ends_with(ast_str_buffer(buf), "\n")) {
+		ast_str_append(&buf, 0, "\n");
+	}
+
 	/* Create a new logging message */
 	if (!(logmsg = ast_calloc_with_stringfields(1, struct logmsg, res + 128))) {
 		return NULL;
@@ -1868,12 +1891,16 @@ int init_logger(void)
 		ast_log(LOG_ERROR, "Errors detected in logger.conf.  Default console logging is being used.\n");
 	}
 
+	ast_logger_category_load();
+
 	return 0;
 }
 
 void close_logger(void)
 {
 	struct logchannel *f = NULL;
+
+	ast_logger_category_unload();
 
 	ast_cli_unregister_multiple(cli_logger, ARRAY_LEN(cli_logger));
 

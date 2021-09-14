@@ -1970,6 +1970,17 @@ int ast_is_deferrable_frame(const struct ast_frame *frame);
 int ast_safe_sleep(struct ast_channel *chan, int ms);
 
 /*!
+ * \brief Wait for a specified amount of time, looking for hangups, and do not generate silence
+ * \param chan channel to wait for
+ * \param ms length of time in milliseconds to sleep. This should never be less than zero.
+ * \details
+ * Waits for a specified amount of time, servicing the channel as required.
+ * \return returns -1 on hangup, otherwise 0.
+ * \note Unlike ast_safe_sleep this will not generate silence if Asterisk is configured to do so.
+ */
+int ast_safe_sleep_without_silence(struct ast_channel *chan, int ms);
+
+/*!
  * \brief Wait for a specified amount of time, looking for hangups and a condition argument
  * \param chan channel to wait for
  * \param ms length of time in milliseconds to sleep.
@@ -2639,6 +2650,18 @@ int ast_settimeout_full(struct ast_channel *c, unsigned int rate, int (*func)(co
  * \param dest destination extension for transfer
  */
 int ast_transfer(struct ast_channel *chan, char *dest);
+
+/*!
+ * \brief Transfer a channel (if supported) receieve protocol result.
+ * \retval -1 on error
+ * \retval 0 if not supported
+ * \retval 1 if supported and requested
+ * \param chan current channel
+ * \param dest destination extension for transfer
+ * \param protocol specific error code in case of failure
+ * Example, sip 0 success, else sip error code
+ */
+int ast_transfer_protocol(struct ast_channel *chan, char *dest, int *protocol);
 
 /*!
  * \brief Inherits channel variable from parent to child channel

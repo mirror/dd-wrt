@@ -1729,7 +1729,10 @@ int ast_bridge_join(struct ast_bridge *bridge,
 	ast_channel_lock(chan);
 	ast_channel_internal_bridge_channel_set(chan, NULL);
 	ast_channel_unlock(chan);
+	/* Due to a race condition, we lock the bridge channel here for ast_bridge_channel_get_chan */
+	ao2_lock(bridge_channel);
 	bridge_channel->chan = NULL;
+	ao2_unlock(bridge_channel);
 	/* If bridge_channel->swap is not NULL then the join failed. */
 	ao2_t_cleanup(bridge_channel->swap, "Bridge complete: join failed");
 	bridge_channel->swap = NULL;
@@ -1798,7 +1801,10 @@ static void *bridge_channel_ind_thread(void *data)
 	ast_channel_lock(chan);
 	ast_channel_internal_bridge_channel_set(chan, NULL);
 	ast_channel_unlock(chan);
+	/* Lock here for ast_bridge_channel_get_chan */
+	ao2_lock(bridge_channel);
 	bridge_channel->chan = NULL;
+	ao2_unlock(bridge_channel);
 	/* If bridge_channel->swap is not NULL then the join failed. */
 	ao2_t_cleanup(bridge_channel->swap, "Bridge complete: Independent impart join failed");
 	bridge_channel->swap = NULL;
@@ -1899,7 +1905,10 @@ static int bridge_impart_internal(struct ast_bridge *bridge,
 		ast_channel_lock(chan);
 		ast_channel_internal_bridge_channel_set(chan, NULL);
 		ast_channel_unlock(chan);
+		/* Lock here for ast_bridge_channel_get_chan */
+		ao2_lock(bridge_channel);
 		bridge_channel->chan = NULL;
+		ao2_unlock(bridge_channel);
 		ao2_t_cleanup(bridge_channel->swap, "Bridge complete: Impart failed");
 		bridge_channel->swap = NULL;
 		ast_bridge_features_destroy(bridge_channel->features);
@@ -3809,13 +3818,15 @@ void ast_bridge_set_single_src_video_mode(struct ast_bridge *bridge, struct ast_
 	ast_bridge_lock(bridge);
 	cleanup_video_mode(bridge);
 	bridge->softmix.video_mode.mode = AST_BRIDGE_VIDEO_MODE_SINGLE_SRC;
-	bridge->softmix.video_mode.mode_data.single_src_data.chan_vsrc = ast_channel_ref(video_src_chan);
-	ast_verb(5, "Video source in bridge '%s' (%s) is now '%s' (%s)\n",
-		bridge->name, bridge->uniqueid,
-		ast_channel_name(video_src_chan),
-		ast_channel_uniqueid(video_src_chan));
+	if (video_src_chan) {
+		bridge->softmix.video_mode.mode_data.single_src_data.chan_vsrc = ast_channel_ref(video_src_chan);
+		ast_verb(5, "Video source in bridge '%s' (%s) is now '%s' (%s)\n",
+			bridge->name, bridge->uniqueid,
+			ast_channel_name(video_src_chan),
+			ast_channel_uniqueid(video_src_chan));
+		ast_indicate(video_src_chan, AST_CONTROL_VIDUPDATE);
+	}
 	ast_bridge_publish_state(bridge);
-	ast_indicate(video_src_chan, AST_CONTROL_VIDUPDATE);
 	ast_bridge_unlock(bridge);
 }
 
@@ -3857,6 +3868,15 @@ void ast_brige_set_remb_behavior(struct ast_bridge *bridge, enum ast_bridge_vide
 
 	ast_bridge_lock(bridge);
 	bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior = behavior;
+	ast_bridge_unlock(bridge);
+}
+
+void ast_bridge_set_remb_estimated_bitrate(struct ast_bridge *bridge, float estimated_bitrate)
+{
+	ast_assert(bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_SFU);
+
+	ast_bridge_lock(bridge);
+	bridge->softmix.video_mode.mode_data.sfu_data.estimated_bitrate = estimated_bitrate;
 	ast_bridge_unlock(bridge);
 }
 
@@ -4752,14 +4772,22 @@ enum ast_transfer_result ast_bridge_transfer_attended(struct ast_channel *to_tra
 
 	if (to_transferee_bridge_channel) {
 		/* Take off hold if they are on hold. */
-		ast_bridge_channel_write_unhold(to_transferee_bridge_channel);
+		if (ast_bridge_channel_write_unhold(to_transferee_bridge_channel)) {
+			ast_log(LOG_ERROR, "Transferee channel disappeared during transfer!\n");
+			res = AST_BRIDGE_TRANSFER_FAIL;
+			goto end;
+		}
 	}
 
 	if (to_target_bridge_channel) {
 		const char *target_complete_sound;
 
 		/* Take off hold if they are on hold. */
-		ast_bridge_channel_write_unhold(to_target_bridge_channel);
+		if (ast_bridge_channel_write_unhold(to_target_bridge_channel)) {
+			ast_log(LOG_ERROR, "Target channel disappeared during transfer!\n");
+			res = AST_BRIDGE_TRANSFER_FAIL;
+			goto end;
+		}
 
 		/* Is there a courtesy sound to play to the target? */
 		ast_channel_lock(to_transfer_target);
