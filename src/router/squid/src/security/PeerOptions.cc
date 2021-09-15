@@ -327,100 +327,100 @@ static struct ssl_option {
         "TLS_BLOCK_PADDING_BUG", SSL_OP_TLS_BLOCK_PADDING_BUG
     },
 #endif
-#ifdef SSL_OP_TLS_ROLLBACK_BUG
+#if SSL_OP_TLS_ROLLBACK_BUG
     {
         "TLS_ROLLBACK_BUG", SSL_OP_TLS_ROLLBACK_BUG
     },
 #endif
-#ifdef SSL_OP_ALL
+#if SSL_OP_ALL
     {
         "ALL", (long)SSL_OP_ALL
     },
 #endif
-#ifdef SSL_OP_SINGLE_DH_USE
+#if SSL_OP_SINGLE_DH_USE
     {
         "SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE
     },
 #endif
-#ifdef SSL_OP_EPHEMERAL_RSA
+#if SSL_OP_EPHEMERAL_RSA
     {
         "EPHEMERAL_RSA", SSL_OP_EPHEMERAL_RSA
     },
 #endif
-#ifdef SSL_OP_PKCS1_CHECK_1
+#if SSL_OP_PKCS1_CHECK_1
     {
         "PKCS1_CHECK_1", SSL_OP_PKCS1_CHECK_1
     },
 #endif
-#ifdef SSL_OP_PKCS1_CHECK_2
+#if SSL_OP_PKCS1_CHECK_2
     {
         "PKCS1_CHECK_2", SSL_OP_PKCS1_CHECK_2
     },
 #endif
-#ifdef SSL_OP_NETSCAPE_CA_DN_BUG
+#if SSL_OP_NETSCAPE_CA_DN_BUG
     {
         "NETSCAPE_CA_DN_BUG", SSL_OP_NETSCAPE_CA_DN_BUG
     },
 #endif
-#ifdef SSL_OP_NON_EXPORT_FIRST
+#if SSL_OP_NON_EXPORT_FIRST
     {
         "NON_EXPORT_FIRST", SSL_OP_NON_EXPORT_FIRST
     },
 #endif
-#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+#if SSL_OP_CIPHER_SERVER_PREFERENCE
     {
         "CIPHER_SERVER_PREFERENCE", SSL_OP_CIPHER_SERVER_PREFERENCE
     },
 #endif
-#ifdef SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
+#if SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
     {
         "NETSCAPE_DEMO_CIPHER_CHANGE_BUG", SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
     },
 #endif
-#ifdef SSL_OP_NO_SSLv3
+#if SSL_OP_NO_SSLv3
     {
         "NO_SSLv3", SSL_OP_NO_SSLv3
     },
 #endif
-#ifdef SSL_OP_NO_TLSv1
+#if SSL_OP_NO_TLSv1
     {
         "NO_TLSv1", SSL_OP_NO_TLSv1
     },
 #else
     { "NO_TLSv1", 0 },
 #endif
-#ifdef SSL_OP_NO_TLSv1_1
+#if SSL_OP_NO_TLSv1_1
     {
         "NO_TLSv1_1", SSL_OP_NO_TLSv1_1
     },
 #else
     { "NO_TLSv1_1", 0 },
 #endif
-#ifdef SSL_OP_NO_TLSv1_2
+#if SSL_OP_NO_TLSv1_2
     {
         "NO_TLSv1_2", SSL_OP_NO_TLSv1_2
     },
 #else
     { "NO_TLSv1_2", 0 },
 #endif
-#ifdef SSL_OP_NO_TLSv1_3
+#if SSL_OP_NO_TLSv1_3
     {
         "NO_TLSv1_3", SSL_OP_NO_TLSv1_3
     },
 #else
     { "NO_TLSv1_3", 0 },
 #endif
-#ifdef SSL_OP_NO_COMPRESSION
+#if SSL_OP_NO_COMPRESSION
     {
         "No_Compression", SSL_OP_NO_COMPRESSION
     },
 #endif
-#ifdef SSL_OP_NO_TICKET
+#if SSL_OP_NO_TICKET
     {
         "NO_TICKET", SSL_OP_NO_TICKET
     },
 #endif
-#ifdef SSL_OP_SINGLE_ECDH_USE
+#if SSL_OP_SINGLE_ECDH_USE
     {
         "SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE
     },
