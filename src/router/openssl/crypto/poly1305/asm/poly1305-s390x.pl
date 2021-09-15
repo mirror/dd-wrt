@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2016 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -45,7 +45,7 @@
 use strict;
 use FindBin qw($Bin);
 use lib "$Bin/../..";
-use perlasm::s390x qw(:DEFAULT :GE :EI :MI1 :VX AUTOLOAD LABEL INCLUDE);
+use perlasm::s390x qw(:DEFAULT :LD :GE :EI :MI1 :VX AUTOLOAD LABEL INCLUDE);
 
 # $output is the last argument if it looks like a file (it has an extension)
 # $flavour is the first argument if it doesn't look like a file

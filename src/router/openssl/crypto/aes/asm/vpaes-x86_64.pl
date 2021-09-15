@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2011-2020 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2011-2016 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -698,7 +698,6 @@ _vpaes_schedule_mangle:
 .align	16
 ${PREFIX}_set_encrypt_key:
 .cfi_startproc
-	endbranch
 ___
 $code.=<<___ if ($win64);
 	lea	-0xb8(%rsp),%rsp
@@ -749,7 +748,6 @@ $code.=<<___;
 .align	16
 ${PREFIX}_set_decrypt_key:
 .cfi_startproc
-	endbranch
 ___
 $code.=<<___ if ($win64);
 	lea	-0xb8(%rsp),%rsp
@@ -805,7 +803,6 @@ $code.=<<___;
 .align	16
 ${PREFIX}_encrypt:
 .cfi_startproc
-	endbranch
 ___
 $code.=<<___ if ($win64);
 	lea	-0xb8(%rsp),%rsp
@@ -851,7 +848,6 @@ $code.=<<___;
 .align	16
 ${PREFIX}_decrypt:
 .cfi_startproc
-	endbranch
 ___
 $code.=<<___ if ($win64);
 	lea	-0xb8(%rsp),%rsp
@@ -903,7 +899,6 @@ $code.=<<___;
 .align	16
 ${PREFIX}_cbc_encrypt:
 .cfi_startproc
-	endbranch
 	xchg	$key,$len
 ___
 ($len,$key)=($key,$len);

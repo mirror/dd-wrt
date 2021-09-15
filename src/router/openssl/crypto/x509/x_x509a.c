@@ -1,7 +1,7 @@
 /*
- * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1999-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -125,8 +125,6 @@ int X509_add1_reject_object(X509 *x, const ASN1_OBJECT *obj)
 {
     X509_CERT_AUX *aux;
     ASN1_OBJECT *objtmp;
-    int res = 0;
-
     if ((objtmp = OBJ_dup(obj)) == NULL)
         return 0;
     if ((aux = aux_get(x)) == NULL)
@@ -134,13 +132,10 @@ int X509_add1_reject_object(X509 *x, const ASN1_OBJECT *obj)
     if (aux->reject == NULL
         && (aux->reject = sk_ASN1_OBJECT_new_null()) == NULL)
         goto err;
-    if (sk_ASN1_OBJECT_push(aux->reject, objtmp) > 0)
-        res = 1;
-
+    return sk_ASN1_OBJECT_push(aux->reject, objtmp);
  err:
-    if (!res)
-        ASN1_OBJECT_free(objtmp);
-    return res;
+    ASN1_OBJECT_free(objtmp);
+    return 0;
 }
 
 void X509_trust_clear(X509 *x)

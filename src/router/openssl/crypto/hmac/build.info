@@ -1,6 +1,3 @@
 LIBS=../../libcrypto
-
-$COMMON=hmac.c
-
-SOURCE[../../libcrypto]=$COMMON
-SOURCE[../../providers/libfips.a]=$COMMON
+SOURCE[../../libcrypto]=\
+        hmac.c hm_ameth.c hm_pmeth.c

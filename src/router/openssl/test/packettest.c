@@ -1,13 +1,13 @@
 /*
  * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
-#include "internal/packet.h"
+#include "../ssl/packet_local.h"
 #include "testutil.h"
 
 #define BUF_LEN 255
@@ -350,9 +350,8 @@ static int test_PACKET_get_length_prefixed_1(void)
     unsigned char buf1[BUF_LEN];
     const size_t len = 16;
     unsigned int i;
-    PACKET pkt, short_pkt, subpkt;
+    PACKET pkt, short_pkt, subpkt = {0};
 
-    memset(&subpkt, 0, sizeof(subpkt));
     buf1[0] = (unsigned char)len;
     for (i = 1; i < BUF_LEN; i++)
         buf1[i] = (i * 2) & 0xff;
@@ -375,9 +374,8 @@ static int test_PACKET_get_length_prefixed_2(void)
     unsigned char buf1[1024];
     const size_t len = 516;  /* 0x0204 */
     unsigned int i;
-    PACKET pkt, short_pkt, subpkt;
+    PACKET pkt, short_pkt, subpkt = {0};
 
-    memset(&subpkt, 0, sizeof(subpkt));
     for (i = 1; i <= 1024; i++)
         buf1[i - 1] = (i * 2) & 0xff;
 
@@ -399,9 +397,8 @@ static int test_PACKET_get_length_prefixed_3(void)
     unsigned char buf1[1024];
     const size_t len = 516;  /* 0x000204 */
     unsigned int i;
-    PACKET pkt, short_pkt, subpkt;
+    PACKET pkt, short_pkt, subpkt = {0};
 
-    memset(&subpkt, 0, sizeof(subpkt));
     for (i = 0; i < 1024; i++)
         buf1[i] = (i * 2) & 0xff;
 
@@ -423,9 +420,8 @@ static int test_PACKET_as_length_prefixed_1(void)
     unsigned char buf1[BUF_LEN];
     const size_t len = 16;
     unsigned int i;
-    PACKET pkt, exact_pkt, subpkt;
+    PACKET pkt, exact_pkt, subpkt = {0};
 
-    memset(&subpkt, 0, sizeof(subpkt));
     buf1[0] = (unsigned char)len;
     for (i = 1; i < BUF_LEN; i++)
         buf1[i] = (i * 2) & 0xff;
@@ -447,9 +443,8 @@ static int test_PACKET_as_length_prefixed_2(void)
     unsigned char buf[1024];
     const size_t len = 516;  /* 0x0204 */
     unsigned int i;
-    PACKET pkt, exact_pkt, subpkt;
+    PACKET pkt, exact_pkt, subpkt = {0};
 
-    memset(&subpkt, 0, sizeof(subpkt));
     for (i = 1; i <= 1024; i++)
         buf[i-1] = (i * 2) & 0xff;
 
