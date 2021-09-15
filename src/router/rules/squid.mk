@@ -31,7 +31,7 @@ endif
 ifeq ($(ARCH),armbe)
 SQUID_BIGENDIAN = yes
 endif
-squid-configure:
+squid-configure: openssl
 	cd squid && ./bootstrap.sh
 	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
 	CC="$(ARCH)-linux-uclibc-gcc $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -82,7 +82,7 @@ squid-configure:
 	--with-maxfd=4096 \
 	--with-filedescriptors=4096
 	
-squid:
+squid: openssl
 	make -C squid
 #	make -C squid/plugins/squid_radius_auth 
 
