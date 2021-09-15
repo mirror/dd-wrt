@@ -133,11 +133,11 @@ endif
 ifeq ($(ARCH),mipsel)
 	cd openssl && patch -p0 < mips.diff
 endif
-ifeq ($(ARCH),mips64)
-	rm openssl/crypto/aes/build.info
-	svn up openssl
-	cd openssl && patch -p0 < octeon.patch
-endif
+#ifeq ($(ARCH),mips64)
+#	rm openssl/crypto/aes/build.info
+#	svn up openssl
+#	cd openssl && patch -p0 < octeon.patch
+#endif
 
 	$(MAKE) -C openssl clean
 	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
