@@ -1,7 +1,7 @@
 /*
- * Copyright 2000-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2000-2018 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -16,13 +16,11 @@
 #include "asn1_local.h"
 
 static int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it,
-                               int embed, OSSL_LIB_CTX *libctx,
-                               const char *propq);
+                               int embed);
 static int asn1_primitive_new(ASN1_VALUE **pval, const ASN1_ITEM *it,
                               int embed);
 static void asn1_item_clear(ASN1_VALUE **pval, const ASN1_ITEM *it);
-static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt,
-                             OSSL_LIB_CTX *libctx, const char *propq);
+static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt);
 static void asn1_template_clear(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt);
 static void asn1_primitive_clear(ASN1_VALUE **pval, const ASN1_ITEM *it);
 
@@ -34,31 +32,14 @@ ASN1_VALUE *ASN1_item_new(const ASN1_ITEM *it)
     return NULL;
 }
 
-ASN1_VALUE *ASN1_item_new_ex(const ASN1_ITEM *it, OSSL_LIB_CTX *libctx,
-                             const char *propq)
-{
-    ASN1_VALUE *ret = NULL;
-    if (asn1_item_embed_new(&ret, it, 0, libctx, propq) > 0)
-        return ret;
-    return NULL;
-}
-
 /* Allocate an ASN1 structure */
-
-
-int ossl_asn1_item_ex_new_intern(ASN1_VALUE **pval, const ASN1_ITEM *it,
-                                 OSSL_LIB_CTX *libctx, const char *propq)
-{
-    return asn1_item_embed_new(pval, it, 0, libctx, propq);
-}
 
 int ASN1_item_ex_new(ASN1_VALUE **pval, const ASN1_ITEM *it)
 {
-    return asn1_item_embed_new(pval, it, 0, NULL, NULL);
+    return asn1_item_embed_new(pval, it, 0);
 }
 
-int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
-                        OSSL_LIB_CTX *libctx, const char *propq)
+int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed)
 {
     const ASN1_TEMPLATE *tt = NULL;
     const ASN1_EXTERN_FUNCS *ef;
@@ -71,24 +52,23 @@ int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
     else
         asn1_cb = 0;
 
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_push(it->sname ? it->sname : "asn1_item_embed_new");
+#endif
+
     switch (it->itype) {
 
     case ASN1_ITYPE_EXTERN:
         ef = it->funcs;
-        if (ef != NULL) {
-            if (ef->asn1_ex_new_ex != NULL) {
-                if (!ef->asn1_ex_new_ex(pval, it, libctx, propq))
-                    goto memerr;
-            } else if (ef->asn1_ex_new != NULL) {
-                if (!ef->asn1_ex_new(pval, it))
-                    goto memerr;
-            }
+        if (ef && ef->asn1_ex_new) {
+            if (!ef->asn1_ex_new(pval, it))
+                goto memerr;
         }
         break;
 
     case ASN1_ITYPE_PRIMITIVE:
         if (it->templates) {
-            if (!asn1_template_new(pval, it->templates, libctx, propq))
+            if (!asn1_template_new(pval, it->templates))
                 goto memerr;
         } else if (!asn1_primitive_new(pval, it, embed))
             goto memerr;
@@ -105,6 +85,9 @@ int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
             if (!i)
                 goto auxerr;
             if (i == 2) {
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+                OPENSSL_mem_debug_pop();
+#endif
                 return 1;
             }
         }
@@ -115,7 +98,7 @@ int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
             if (*pval == NULL)
                 goto memerr;
         }
-        ossl_asn1_set_choice_selector(pval, -1, it);
+        asn1_set_choice_selector(pval, -1, it);
         if (asn1_cb && !asn1_cb(ASN1_OP_NEW_POST, pval, it, NULL))
             goto auxerr2;
         break;
@@ -127,6 +110,9 @@ int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
             if (!i)
                 goto auxerr;
             if (i == 2) {
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+                OPENSSL_mem_debug_pop();
+#endif
                 return 1;
             }
         }
@@ -138,35 +124,44 @@ int asn1_item_embed_new(ASN1_VALUE **pval, const ASN1_ITEM *it, int embed,
                 goto memerr;
         }
         /* 0 : init. lock */
-        if (ossl_asn1_do_lock(pval, 0, it) < 0) {
+        if (asn1_do_lock(pval, 0, it) < 0) {
             if (!embed) {
                 OPENSSL_free(*pval);
                 *pval = NULL;
             }
             goto memerr;
         }
-        ossl_asn1_enc_init(pval, it);
+        asn1_enc_init(pval, it);
         for (i = 0, tt = it->templates; i < it->tcount; tt++, i++) {
-            pseqval = ossl_asn1_get_field_ptr(pval, tt);
-            if (!asn1_template_new(pseqval, tt, libctx, propq))
+            pseqval = asn1_get_field_ptr(pval, tt);
+            if (!asn1_template_new(pseqval, tt))
                 goto memerr2;
         }
         if (asn1_cb && !asn1_cb(ASN1_OP_NEW_POST, pval, it, NULL))
             goto auxerr2;
         break;
     }
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_pop();
+#endif
     return 1;
 
  memerr2:
-    ossl_asn1_item_embed_free(pval, it, embed);
+    asn1_item_embed_free(pval, it, embed);
  memerr:
-    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+    ASN1err(ASN1_F_ASN1_ITEM_EMBED_NEW, ERR_R_MALLOC_FAILURE);
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_pop();
+#endif
     return 0;
 
  auxerr2:
-    ossl_asn1_item_embed_free(pval, it, embed);
+    asn1_item_embed_free(pval, it, embed);
  auxerr:
-    ERR_raise(ERR_LIB_ASN1, ASN1_R_AUX_ERROR);
+    ASN1err(ASN1_F_ASN1_ITEM_EMBED_NEW, ASN1_R_AUX_ERROR);
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_pop();
+#endif
     return 0;
 
 }
@@ -204,8 +199,7 @@ static void asn1_item_clear(ASN1_VALUE **pval, const ASN1_ITEM *it)
     }
 }
 
-static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt,
-                             OSSL_LIB_CTX *libctx, const char *propq)
+static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt)
 {
     const ASN1_ITEM *it = ASN1_ITEM_ptr(tt->item);
     int embed = tt->flags & ASN1_TFLG_EMBED;
@@ -225,12 +219,16 @@ static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt,
         *pval = NULL;
         return 1;
     }
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_push(tt->field_name
+            ? tt->field_name : "asn1_template_new");
+#endif
     /* If SET OF or SEQUENCE OF, its a STACK */
     if (tt->flags & ASN1_TFLG_SK_MASK) {
         STACK_OF(ASN1_VALUE) *skval;
         skval = sk_ASN1_VALUE_new_null();
         if (!skval) {
-            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+            ASN1err(ASN1_F_ASN1_TEMPLATE_NEW, ERR_R_MALLOC_FAILURE);
             ret = 0;
             goto done;
         }
@@ -239,8 +237,11 @@ static int asn1_template_new(ASN1_VALUE **pval, const ASN1_TEMPLATE *tt,
         goto done;
     }
     /* Otherwise pass it back to the item routine */
-    ret = asn1_item_embed_new(pval, it, embed, libctx, propq);
+    ret = asn1_item_embed_new(pval, it, embed);
  done:
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+    OPENSSL_mem_debug_pop();
+#endif
     return ret;
 }
 
@@ -299,7 +300,7 @@ static int asn1_primitive_new(ASN1_VALUE **pval, const ASN1_ITEM *it,
 
     case V_ASN1_ANY:
         if ((typ = OPENSSL_malloc(sizeof(*typ))) == NULL) {
-            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+            ASN1err(ASN1_F_ASN1_PRIMITIVE_NEW, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         typ->value.ptr = NULL;

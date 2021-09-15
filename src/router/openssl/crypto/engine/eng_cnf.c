@@ -1,18 +1,16 @@
 /*
- * Copyright 2002-2020 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
-/* We need to use some engine deprecated APIs */
-#define OPENSSL_SUPPRESS_DEPRECATED
-
 #include "eng_local.h"
 #include <openssl/conf.h>
-#include <openssl/trace.h>
+
+/* #define ENGINE_CONF_DEBUG */
 
 /* ENGINE config module */
 
@@ -52,12 +50,15 @@ static int int_engine_configure(const char *name, const char *value, const CONF 
     int soft = 0;
 
     name = skip_dot(name);
-    OSSL_TRACE1(CONF, "Configuring engine %s\n", name);
+#ifdef ENGINE_CONF_DEBUG
+    fprintf(stderr, "Configuring engine %s\n", name);
+#endif
     /* Value is a section containing ENGINE commands */
     ecmds = NCONF_get_section(cnf, value);
 
     if (!ecmds) {
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_ENGINE_SECTION_ERROR);
+        ENGINEerr(ENGINE_F_INT_ENGINE_CONFIGURE,
+                  ENGINE_R_ENGINE_SECTION_ERROR);
         return 0;
     }
 
@@ -65,8 +66,10 @@ static int int_engine_configure(const char *name, const char *value, const CONF 
         ecmd = sk_CONF_VALUE_value(ecmds, i);
         ctrlname = skip_dot(ecmd->name);
         ctrlvalue = ecmd->value;
-        OSSL_TRACE2(CONF, "ENGINE: doing ctrl(%s,%s)\n",
-                    ctrlname, ctrlvalue);
+#ifdef ENGINE_CONF_DEBUG
+        fprintf(stderr, "ENGINE conf: doing ctrl(%s,%s)\n", ctrlname,
+                ctrlvalue);
+#endif
 
         /* First handle some special pseudo ctrls */
 
@@ -115,7 +118,8 @@ static int int_engine_configure(const char *name, const char *value, const CONF 
                     if (!int_engine_init(e))
                         goto err;
                 } else if (do_init != 0) {
-                    ERR_raise(ERR_LIB_ENGINE, ENGINE_R_INVALID_INIT_VALUE);
+                    ENGINEerr(ENGINE_F_INT_ENGINE_CONFIGURE,
+                              ENGINE_R_INVALID_INIT_VALUE);
                     goto err;
                 }
             } else if (strcmp(ctrlname, "default_algorithms") == 0) {
@@ -133,12 +137,12 @@ static int int_engine_configure(const char *name, const char *value, const CONF 
     ret = 1;
  err:
     if (ret != 1) {
-        if (ecmd == NULL)
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_ENGINE_CONFIGURATION_ERROR);
-        else
-            ERR_raise_data(ERR_LIB_ENGINE, ENGINE_R_ENGINE_CONFIGURATION_ERROR,
-                           "section=%s, name=%s, value=%s",
-                           ecmd->section, ecmd->name, ecmd->value);
+        ENGINEerr(ENGINE_F_INT_ENGINE_CONFIGURE,
+                  ENGINE_R_ENGINE_CONFIGURATION_ERROR);
+        if (ecmd)
+            ERR_add_error_data(6, "section=", ecmd->section,
+                               ", name=", ecmd->name,
+                               ", value=", ecmd->value);
     }
     ENGINE_free(e);
     return ret;
@@ -149,13 +153,16 @@ static int int_engine_module_init(CONF_IMODULE *md, const CONF *cnf)
     STACK_OF(CONF_VALUE) *elist;
     CONF_VALUE *cval;
     int i;
-    OSSL_TRACE2(CONF, "Called engine module: name %s, value %s\n",
-                CONF_imodule_get_name(md), CONF_imodule_get_value(md));
+#ifdef ENGINE_CONF_DEBUG
+    fprintf(stderr, "Called engine module: name %s, value %s\n",
+            CONF_imodule_get_name(md), CONF_imodule_get_value(md));
+#endif
     /* Value is a section containing ENGINEs to configure */
     elist = NCONF_get_section(cnf, CONF_imodule_get_value(md));
 
     if (!elist) {
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_ENGINES_SECTION_ERROR);
+        ENGINEerr(ENGINE_F_INT_ENGINE_MODULE_INIT,
+                  ENGINE_R_ENGINES_SECTION_ERROR);
         return 0;
     }
 

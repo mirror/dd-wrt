@@ -1,29 +1,19 @@
 #! /usr/bin/env perl
 # -*- mode: Perl -*-
-# Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016 The OpenSSL Project Authors. All Rights Reserved.
 #
-# Licensed under the Apache License 2.0 (the "License").  You may not use
+# Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
 # in the file LICENSE in the source distribution or at
 # https://www.openssl.org/source/license.html
 
 use strict;
 use File::Spec::Functions qw(devnull);
-use OpenSSL::Test qw(:DEFAULT srctop_file srctop_dir bldtop_dir bldtop_file);
+use OpenSSL::Test qw(:DEFAULT srctop_file bldtop_dir bldtop_file);
 use OpenSSL::Test::Utils;
 
-BEGIN {
-    setup("test_symbol_presence");
-}
+setup("test_symbol_presence");
 
-use lib srctop_dir('Configurations');
-use lib bldtop_dir('.');
-use platform;
-
-plan skip_all => "Test is disabled on NonStop" if config('target') =~ m|^nonstop|;
-# MacOS arranges symbol names differently
-plan skip_all => "Test is disabled on MacOS" if config('target') =~ m|^darwin|;
-plan skip_all => "Test is disabled on MinGW" if config('target') =~ m|^mingw|;
 plan skip_all => "Only useful when building shared libraries"
     if disabled("shared");
 
@@ -42,8 +32,7 @@ note
 foreach my $libname (@libnames) {
  SKIP:
     {
-        my $shlibname = platform->sharedlib("lib$libname");
-        my $shlibpath = bldtop_file($shlibname);
+        my $shlibpath = bldtop_file("lib" . $libname . ".so");
         *OSTDERR = *STDERR;
         *OSTDOUT = *STDOUT;
         open STDERR, ">", devnull();
@@ -60,9 +49,8 @@ foreach my $libname (@libnames) {
         my @def_lines;
         indir $bldtop => sub {
             my $mkdefpath = srctop_file("util", "mkdef.pl");
-            my $libnumpath = srctop_file("util", "lib$libname.num");
-            @def_lines = map { s|\R$||; $_ } `$^X $mkdefpath --ordinals $libnumpath --name $libname --OS linux 2> /dev/null`;
-            ok($? == 0, "running 'cd $bldtop; $^X $mkdefpath --ordinals $libnumpath --name $libname --OS linux' => $?");
+            @def_lines = map { s|\R$||; $_ } `$^X $mkdefpath $libname linux 2> /dev/null`;
+            ok($? == 0, "running 'cd $bldtop; $^X $mkdefpath $libname linux' => $?");
         }, create => 0, cleanup => 0;
 
         note "Number of lines in \@nm_lines before massaging: ", scalar @nm_lines;
@@ -111,18 +99,18 @@ foreach my $libname (@libnames) {
         }
 
         if (scalar @missing) {
-            note "The following symbols are missing in ${shlibname}:";
+            note "The following symbols are missing in lib$libname.so:";
             foreach (@missing) {
                 note "  $_";
             }
         }
         if (scalar @extra) {
-            note "The following symbols are extra in ${shlibname}:";
+            note "The following symbols are extra in lib$libname.so:";
             foreach (@extra) {
                 note "  $_";
             }
         }
         ok(scalar @missing == 0,
-           "check that there are no missing symbols in ${shlibname}");
+           "check that there are no missing symbols in lib$libname.so");
     }
 }

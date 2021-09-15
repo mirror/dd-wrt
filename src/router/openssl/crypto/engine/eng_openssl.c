@@ -1,21 +1,12 @@
 /*
- * Copyright 2001-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
-/* We need to use some engine deprecated APIs */
-#define OPENSSL_SUPPRESS_DEPRECATED
-
-/*
- * RC4 and SHA-1 low level APIs and EVP _meth_ APISs are deprecated for public
- * use, but still ok for internal use.
- */
-#include "internal/deprecated.h"
 
 #include <stdio.h>
 #include <openssl/crypto.h>
@@ -98,7 +89,9 @@ static int bind_helper(ENGINE *e)
         || !ENGINE_set_name(e, engine_openssl_name)
         || !ENGINE_set_destroy_function(e, openssl_destroy)
 #ifndef TEST_ENG_OPENSSL_NO_ALGORITHMS
+# ifndef OPENSSL_NO_RSA
         || !ENGINE_set_RSA(e, RSA_get_default_method())
+# endif
 # ifndef OPENSSL_NO_DSA
         || !ENGINE_set_DSA(e, DSA_get_default_method())
 # endif
@@ -150,20 +143,13 @@ void engine_load_openssl_int(void)
     ENGINE *toadd = engine_openssl();
     if (!toadd)
         return;
-
-    ERR_set_mark();
     ENGINE_add(toadd);
     /*
      * If the "add" worked, it gets a structural reference. So either way, we
      * release our just-created reference.
      */
     ENGINE_free(toadd);
-    /*
-     * If the "add" didn't work, it was probably a conflict because it was
-     * already added (eg. someone calling ENGINE_load_blah then calling
-     * ENGINE_load_builtin_engines() perhaps).
-     */
-    ERR_pop_to_mark();
+    ERR_clear_error();
 }
 
 /*
@@ -181,7 +167,7 @@ static int bind_fn(ENGINE *e, const char *id)
 }
 
 IMPLEMENT_DYNAMIC_CHECK_FN()
-    IMPLEMENT_DYNAMIC_BIND_FN(bind_fn)
+IMPLEMENT_DYNAMIC_BIND_FN(bind_fn)
 #endif                          /* ENGINE_DYNAMIC_SUPPORT */
 #ifdef TEST_ENG_OPENSSL_RC4
 /*-
@@ -205,15 +191,12 @@ typedef struct {
 static int test_rc4_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
                              const unsigned char *iv, int enc)
 {
-    const int n = EVP_CIPHER_CTX_get_key_length(ctx);
-
 # ifdef TEST_ENG_OPENSSL_RC4_P_INIT
     fprintf(stderr, "(TEST_ENG_OPENSSL_RC4) test_init_key() called\n");
 # endif
-    if (n <= 0)
-        return n;
-    memcpy(&test(ctx)->key[0], key, n);
-    RC4_set_key(&test(ctx)->ks, n, test(ctx)->key);
+    memcpy(&test(ctx)->key[0], key, EVP_CIPHER_CTX_key_length(ctx));
+    RC4_set_key(&test(ctx)->ks, EVP_CIPHER_CTX_key_length(ctx),
+                test(ctx)->key);
     return 1;
 }
 
@@ -285,9 +268,9 @@ static int test_cipher_nids(const int **nids)
     if (!init) {
         const EVP_CIPHER *cipher;
         if ((cipher = test_r4_cipher()) != NULL)
-            cipher_nids[pos++] = EVP_CIPHER_get_nid(cipher);
+            cipher_nids[pos++] = EVP_CIPHER_nid(cipher);
         if ((cipher = test_r4_40_cipher()) != NULL)
-            cipher_nids[pos++] = EVP_CIPHER_get_nid(cipher);
+            cipher_nids[pos++] = EVP_CIPHER_nid(cipher);
         cipher_nids[pos] = 0;
         init = 1;
     }
@@ -328,7 +311,7 @@ static int test_sha1_init(EVP_MD_CTX *ctx)
 # ifdef TEST_ENG_OPENSSL_SHA_P_INIT
     fprintf(stderr, "(TEST_ENG_OPENSSL_SHA) test_sha1_init() called\n");
 # endif
-    return SHA1_Init(EVP_MD_CTX_get0_md_data(ctx));
+    return SHA1_Init(EVP_MD_CTX_md_data(ctx));
 }
 
 static int test_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
@@ -336,7 +319,7 @@ static int test_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 # ifdef TEST_ENG_OPENSSL_SHA_P_UPDATE
     fprintf(stderr, "(TEST_ENG_OPENSSL_SHA) test_sha1_update() called\n");
 # endif
-    return SHA1_Update(EVP_MD_CTX_get0_md_data(ctx), data, count);
+    return SHA1_Update(EVP_MD_CTX_md_data(ctx), data, count);
 }
 
 static int test_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
@@ -344,7 +327,7 @@ static int test_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
 # ifdef TEST_ENG_OPENSSL_SHA_P_FINAL
     fprintf(stderr, "(TEST_ENG_OPENSSL_SHA) test_sha1_final() called\n");
 # endif
-    return SHA1_Final(md, EVP_MD_CTX_get0_md_data(ctx));
+    return SHA1_Final(md, EVP_MD_CTX_md_data(ctx));
 }
 
 static EVP_MD *sha1_md = NULL;
@@ -383,7 +366,7 @@ static int test_digest_nids(const int **nids)
     if (!init) {
         const EVP_MD *md;
         if ((md = test_sha_md()) != NULL)
-            digest_nids[pos++] = EVP_MD_get_type(md);
+            digest_nids[pos++] = EVP_MD_type(md);
         digest_nids[pos] = 0;
         init = 1;
     }
@@ -451,7 +434,7 @@ static int ossl_hmac_init(EVP_PKEY_CTX *ctx)
     OSSL_HMAC_PKEY_CTX *hctx;
 
     if ((hctx = OPENSSL_zalloc(sizeof(*hctx))) == NULL) {
-        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+        ENGINEerr(ENGINE_F_OSSL_HMAC_INIT, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     hctx->ktmp.type = V_ASN1_OCTET_STRING;
@@ -522,7 +505,7 @@ static int ossl_hmac_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
 
 static int ossl_int_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-    OSSL_HMAC_PKEY_CTX *hctx = EVP_PKEY_CTX_get_data(EVP_MD_CTX_get_pkey_ctx(ctx));
+    OSSL_HMAC_PKEY_CTX *hctx = EVP_PKEY_CTX_get_data(EVP_MD_CTX_pkey_ctx(ctx));
     if (!HMAC_Update(hctx->ctx, data, count))
         return 0;
     return 1;
@@ -540,7 +523,7 @@ static int ossl_hmac_signctx(EVP_PKEY_CTX *ctx, unsigned char *sig,
 {
     unsigned int hlen;
     OSSL_HMAC_PKEY_CTX *hctx = EVP_PKEY_CTX_get_data(ctx);
-    int l = EVP_MD_CTX_get_size(mctx);
+    int l = EVP_MD_CTX_size(mctx);
 
     if (l < 0)
         return 0;
@@ -639,8 +622,7 @@ static int ossl_pkey_meths(ENGINE *e, EVP_PKEY_METHOD **pmeth,
         EVP_PKEY_HMAC,
         0
     };
-
-    if (pmeth == NULL) {
+    if (!pmeth) {
         *nids = ossl_pkey_nids;
         return 1;
     }

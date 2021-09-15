@@ -1,7 +1,7 @@
 /*
- * Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -25,33 +25,17 @@
 #  define ASYNC_POSIX
 #  define ASYNC_ARCH
 
-#  ifdef __CET__
-/*
- * When Intel CET is enabled, makecontext will create a different
- * shadow stack for each context.  async_fibre_swapcontext cannot
- * use _longjmp.  It must call swapcontext to swap shadow stack as
- * well as normal stack.
- */
-#   define USE_SWAPCONTEXT
-#  endif
 #  include <ucontext.h>
-#  ifndef USE_SWAPCONTEXT
-#   include <setjmp.h>
-#  endif
+#  include <setjmp.h>
 
 typedef struct async_fibre_st {
     ucontext_t fibre;
-#  ifndef USE_SWAPCONTEXT
     jmp_buf env;
     int env_init;
-#  endif
 } async_fibre;
 
 static ossl_inline int async_fibre_swapcontext(async_fibre *o, async_fibre *n, int r)
 {
-#  ifdef USE_SWAPCONTEXT
-    swapcontext(&o->fibre, &n->fibre);
-#  else
     o->env_init = 1;
 
     if (!r || !_setjmp(o->env)) {
@@ -60,7 +44,6 @@ static ossl_inline int async_fibre_swapcontext(async_fibre *o, async_fibre *n, i
         else
             setcontext(&n->fibre);
     }
-#  endif
 
     return 1;
 }

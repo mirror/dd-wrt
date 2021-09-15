@@ -1,15 +1,12 @@
 #! /usr/bin/env perl
-# Copyright 2000-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
 #
-# Licensed under the Apache License 2.0 (the "License").  You may not use
+# Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
 # in the file LICENSE in the source distribution or at
 # https://www.openssl.org/source/license.html
 
 use strict;
-use FindBin;
-use lib "$FindBin::Bin/../../util/perl";
-use OpenSSL::copyright;
 
 my ($i, @arr);
 
@@ -85,9 +82,8 @@ $arr[ord("?")] |= $PSTRING_CHAR;
 
 # Now generate the C code
 
-# Year the file was generated.
-my $YEAR = OpenSSL::copyright::year_of($0);
-
+# Output year depends on the year of the script.
+my $YEAR = [localtime([stat($0)]->[9])]->[5] + 1900;
 print <<EOF;
 /*
  * WARNING: do not edit!
@@ -95,7 +91,7 @@ print <<EOF;
  *
  * Copyright 2000-$YEAR The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html

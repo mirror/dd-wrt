@@ -1,14 +1,11 @@
 /*
- * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
-/* We need to use some engine deprecated APIs */
-#define OPENSSL_SUPPRESS_DEPRECATED
 
 #include "e_os.h"               /* for strncasecmp */
 #include "internal/cryptlib.h"
@@ -59,7 +56,6 @@ static const EVP_PKEY_ASN1_METHOD *pkey_asn1_find(int type)
 {
     EVP_PKEY_ASN1_METHOD tmp;
     const EVP_PKEY_ASN1_METHOD *t = &tmp, **ret;
-
     tmp.pkey_id = type;
     if (app_methods) {
         int idx;
@@ -68,7 +64,7 @@ static const EVP_PKEY_ASN1_METHOD *pkey_asn1_find(int type)
             return sk_EVP_PKEY_ASN1_METHOD_value(app_methods, idx);
     }
     ret = OBJ_bsearch_ameth(&t, standard_methods, OSSL_NELEM(standard_methods));
-    if (ret == NULL || *ret == NULL)
+    if (!ret || !*ret)
         return NULL;
     return *ret;
 }
@@ -156,7 +152,7 @@ int EVP_PKEY_asn1_add0(const EVP_PKEY_ASN1_METHOD *ameth)
            && (ameth->pkey_flags & ASN1_PKEY_ALIAS) != 0)
           || (ameth->pem_str != NULL
               && (ameth->pkey_flags & ASN1_PKEY_ALIAS) == 0))) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_PASSED_INVALID_ARGUMENT);
+        EVPerr(EVP_F_EVP_PKEY_ASN1_ADD0, ERR_R_PASSED_INVALID_ARGUMENT);
         return 0;
     }
 
@@ -168,8 +164,8 @@ int EVP_PKEY_asn1_add0(const EVP_PKEY_ASN1_METHOD *ameth)
 
     tmp.pkey_id = ameth->pkey_id;
     if (sk_EVP_PKEY_ASN1_METHOD_find(app_methods, &tmp) >= 0) {
-        ERR_raise(ERR_LIB_EVP,
-                  EVP_R_PKEY_APPLICATION_ASN1_METHOD_ALREADY_REGISTERED);
+        EVPerr(EVP_F_EVP_PKEY_ASN1_ADD0,
+               EVP_R_PKEY_APPLICATION_ASN1_METHOD_ALREADY_REGISTERED);
         return 0;
     }
 
@@ -223,10 +219,8 @@ EVP_PKEY_ASN1_METHOD *EVP_PKEY_asn1_new(int id, int flags,
 {
     EVP_PKEY_ASN1_METHOD *ameth = OPENSSL_zalloc(sizeof(*ameth));
 
-    if (ameth == NULL) {
-        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+    if (ameth == NULL)
         return NULL;
-    }
 
     ameth->pkey_id = id;
     ameth->pkey_base_id = id;
@@ -234,13 +228,13 @@ EVP_PKEY_ASN1_METHOD *EVP_PKEY_asn1_new(int id, int flags,
 
     if (info) {
         ameth->info = OPENSSL_strdup(info);
-        if (ameth->info == NULL)
+        if (!ameth->info)
             goto err;
     }
 
     if (pem_str) {
         ameth->pem_str = OPENSSL_strdup(pem_str);
-        if (ameth->pem_str == NULL)
+        if (!ameth->pem_str)
             goto err;
     }
 
@@ -248,27 +242,46 @@ EVP_PKEY_ASN1_METHOD *EVP_PKEY_asn1_new(int id, int flags,
 
  err:
     EVP_PKEY_asn1_free(ameth);
-    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
     return NULL;
+
 }
 
 void EVP_PKEY_asn1_copy(EVP_PKEY_ASN1_METHOD *dst,
                         const EVP_PKEY_ASN1_METHOD *src)
 {
-    int pkey_id = dst->pkey_id;
-    int pkey_base_id = dst->pkey_base_id;
-    unsigned long pkey_flags = dst->pkey_flags;
-    char *pem_str = dst->pem_str;
-    char *info = dst->info;
 
-    *dst = *src;
+    dst->pub_decode = src->pub_decode;
+    dst->pub_encode = src->pub_encode;
+    dst->pub_cmp = src->pub_cmp;
+    dst->pub_print = src->pub_print;
 
-    /* We only copy the function pointers so restore the other values */
-    dst->pkey_id = pkey_id;
-    dst->pkey_base_id = pkey_base_id;
-    dst->pkey_flags = pkey_flags;
-    dst->pem_str = pem_str;
-    dst->info = info;
+    dst->priv_decode = src->priv_decode;
+    dst->priv_encode = src->priv_encode;
+    dst->priv_print = src->priv_print;
+
+    dst->old_priv_encode = src->old_priv_encode;
+    dst->old_priv_decode = src->old_priv_decode;
+
+    dst->pkey_size = src->pkey_size;
+    dst->pkey_bits = src->pkey_bits;
+
+    dst->param_decode = src->param_decode;
+    dst->param_encode = src->param_encode;
+    dst->param_missing = src->param_missing;
+    dst->param_copy = src->param_copy;
+    dst->param_cmp = src->param_cmp;
+    dst->param_print = src->param_print;
+
+    dst->pkey_free = src->pkey_free;
+    dst->pkey_ctrl = src->pkey_ctrl;
+
+    dst->item_sign = src->item_sign;
+    dst->item_verify = src->item_verify;
+
+    dst->siginf_set = src->siginf_set;
+
+    dst->pkey_check = src->pkey_check;
+
 }
 
 void EVP_PKEY_asn1_free(EVP_PKEY_ASN1_METHOD *ameth)
@@ -282,7 +295,7 @@ void EVP_PKEY_asn1_free(EVP_PKEY_ASN1_METHOD *ameth)
 
 void EVP_PKEY_asn1_set_public(EVP_PKEY_ASN1_METHOD *ameth,
                               int (*pub_decode) (EVP_PKEY *pk,
-                                                 const X509_PUBKEY *pub),
+                                                 X509_PUBKEY *pub),
                               int (*pub_encode) (X509_PUBKEY *pub,
                                                  const EVP_PKEY *pk),
                               int (*pub_cmp) (const EVP_PKEY *a,
@@ -363,13 +376,13 @@ void EVP_PKEY_asn1_set_security_bits(EVP_PKEY_ASN1_METHOD *ameth,
 void EVP_PKEY_asn1_set_item(EVP_PKEY_ASN1_METHOD *ameth,
                             int (*item_verify) (EVP_MD_CTX *ctx,
                                                 const ASN1_ITEM *it,
-                                                const void *data,
-                                                const X509_ALGOR *a,
-                                                const ASN1_BIT_STRING *sig,
+                                                void *asn,
+                                                X509_ALGOR *a,
+                                                ASN1_BIT_STRING *sig,
                                                 EVP_PKEY *pkey),
                             int (*item_sign) (EVP_MD_CTX *ctx,
                                               const ASN1_ITEM *it,
-                                              const void *data,
+                                              void *asn,
                                               X509_ALGOR *alg1,
                                               X509_ALGOR *alg2,
                                               ASN1_BIT_STRING *sig))

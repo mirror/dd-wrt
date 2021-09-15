@@ -1,7 +1,7 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -52,7 +52,7 @@ OPENSSL_LHASH *OPENSSL_LH_new(OPENSSL_LH_HASHFUNC h, OPENSSL_LH_COMPFUNC c)
         /*
          * Do not set the error code, because the ERR code uses LHASH
          * and we want to avoid possible endless error loop.
-         * ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+         * CRYPTOerr(CRYPTO_F_OPENSSL_LH_NEW, ERR_R_MALLOC_FAILURE);
          */
         return NULL;
     }
@@ -75,16 +75,6 @@ err:
 
 void OPENSSL_LH_free(OPENSSL_LHASH *lh)
 {
-    if (lh == NULL)
-        return;
-
-    OPENSSL_LH_flush(lh);
-    OPENSSL_free(lh->b);
-    OPENSSL_free(lh);
-}
-
-void OPENSSL_LH_flush(OPENSSL_LHASH *lh)
-{
     unsigned int i;
     OPENSSL_LH_NODE *n, *nn;
 
@@ -98,8 +88,9 @@ void OPENSSL_LH_flush(OPENSSL_LHASH *lh)
             OPENSSL_free(n);
             n = nn;
         }
-        lh->b[i] = NULL;
     }
+    OPENSSL_free(lh->b);
+    OPENSSL_free(lh);
 }
 
 void *OPENSSL_LH_insert(OPENSSL_LHASH *lh, void *data)
@@ -360,7 +351,7 @@ unsigned long OPENSSL_LH_strhash(const char *c)
     return (ret >> 16) ^ ret;
 }
 
-unsigned long ossl_lh_strcasehash(const char *c)
+unsigned long openssl_lh_strcasehash(const char *c)
 {
     unsigned long ret = 0;
     long n;

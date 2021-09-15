@@ -2,9 +2,8 @@ ${-
   use File::Spec::Functions qw(rel2abs);
 
   my $bldtop = rel2abs($config{builddir});
-  our %names = ( map { platform->sharedname($_) =>
-                           $bldtop.platform->sharedlib($_) }
-                 grep { !$unified_info{attributes}->{libraries}->{$_}->{noinst} }
+  our %names = ( map { $_ => $bldtop.$_.".EXE" }
+                 map { $unified_info{sharednames}->{$_} || () }
                  @{$unified_info{libraries}} );
   "" -}
 $       ! Create a local environment with the shared library logical names
@@ -16,8 +15,8 @@ $       DEFINE/TABLE='OPENSSL_NAMES' OSSL_FLAG YES
 $
 $       NAMES := {- join(",", keys %names); -}
 {-
-  join("\n", map { "\$       __$_ = \"".$names{$_}."\"" } sort keys %names);
--}      
+  join("\n", map { "\$       __$_ = \"".$names{$_}."\"" } keys %names);
+-}
 $       I = 0
 $       LOOP:
 $           E = F$ELEMENT(I,",",NAMES)

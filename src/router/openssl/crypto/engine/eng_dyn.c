@@ -1,14 +1,11 @@
 /*
- * Copyright 2001-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
-/* We need to use some engine deprecated APIs */
-#define OPENSSL_SUPPRESS_DEPRECATED
 
 #include "eng_local.h"
 #include "internal/dso.h"
@@ -157,22 +154,22 @@ static void dynamic_data_ctx_free_func(void *parent, void *ptr,
 static int dynamic_set_data_ctx(ENGINE *e, dynamic_data_ctx **ctx)
 {
     dynamic_data_ctx *c = OPENSSL_zalloc(sizeof(*c));
-    int ret = 0;
+    int ret = 1;
 
     if (c == NULL) {
-        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+        ENGINEerr(ENGINE_F_DYNAMIC_SET_DATA_CTX, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     c->dirs = sk_OPENSSL_STRING_new_null();
     if (c->dirs == NULL) {
-        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
-        goto end;
+        ENGINEerr(ENGINE_F_DYNAMIC_SET_DATA_CTX, ERR_R_MALLOC_FAILURE);
+        OPENSSL_free(c);
+        return 0;
     }
     c->DYNAMIC_F1 = "v_check";
     c->DYNAMIC_F2 = "bind_engine";
     c->dir_load = 1;
-    if (!CRYPTO_THREAD_write_lock(global_engine_lock))
-        goto end;
+    CRYPTO_THREAD_write_lock(global_engine_lock);
     if ((*ctx = (dynamic_data_ctx *)ENGINE_get_ex_data(e,
                                                        dynamic_ex_data_idx))
         == NULL) {
@@ -184,13 +181,11 @@ static int dynamic_set_data_ctx(ENGINE *e, dynamic_data_ctx **ctx)
         }
     }
     CRYPTO_THREAD_unlock(global_engine_lock);
-    ret = 1;
     /*
      * If we lost the race to set the context, c is non-NULL and *ctx is the
      * context of the thread that won.
      */
-end:
-    if (c != NULL)
+    if (c)
         sk_OPENSSL_STRING_free(c->dirs);
     OPENSSL_free(c);
     return ret;
@@ -212,11 +207,10 @@ static dynamic_data_ctx *dynamic_get_data_ctx(ENGINE *e)
         int new_idx = ENGINE_get_ex_new_index(0, NULL, NULL, NULL,
                                               dynamic_data_ctx_free_func);
         if (new_idx == -1) {
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_NO_INDEX);
+            ENGINEerr(ENGINE_F_DYNAMIC_GET_DATA_CTX, ENGINE_R_NO_INDEX);
             return NULL;
         }
-        if (!CRYPTO_THREAD_write_lock(global_engine_lock))
-            return NULL;
+        CRYPTO_THREAD_write_lock(global_engine_lock);
         /* Avoid a race by checking again inside this lock */
         if (dynamic_ex_data_idx < 0) {
             /* Good, someone didn't beat us to it */
@@ -260,8 +254,6 @@ void engine_load_dynamic_int(void)
     ENGINE *toadd = engine_dynamic();
     if (!toadd)
         return;
-
-    ERR_set_mark();
     ENGINE_add(toadd);
     /*
      * If the "add" worked, it gets a structural reference. So either way, we
@@ -273,7 +265,7 @@ void engine_load_dynamic_int(void)
      * already added (eg. someone calling ENGINE_load_blah then calling
      * ENGINE_load_builtin_engines() perhaps).
      */
-    ERR_pop_to_mark();
+    ERR_clear_error();
 }
 
 static int dynamic_init(ENGINE *e)
@@ -300,13 +292,13 @@ static int dynamic_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
     int initialised;
 
     if (!ctx) {
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_NOT_LOADED);
+        ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_NOT_LOADED);
         return 0;
     }
     initialised = ((ctx->dynamic_dso == NULL) ? 0 : 1);
     /* All our control commands require the ENGINE to be uninitialised */
     if (initialised) {
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_ALREADY_LOADED);
+        ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_ALREADY_LOADED);
         return 0;
     }
     switch (cmd) {
@@ -335,7 +327,7 @@ static int dynamic_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
         return (ctx->engine_id ? 1 : 0);
     case DYNAMIC_CMD_LIST_ADD:
         if ((i < 0) || (i > 2)) {
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_INVALID_ARGUMENT);
+            ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_INVALID_ARGUMENT);
             return 0;
         }
         ctx->list_add_value = (int)i;
@@ -344,26 +336,26 @@ static int dynamic_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
         return dynamic_load(e, ctx);
     case DYNAMIC_CMD_DIR_LOAD:
         if ((i < 0) || (i > 2)) {
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_INVALID_ARGUMENT);
+            ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_INVALID_ARGUMENT);
             return 0;
         }
         ctx->dir_load = (int)i;
         return 1;
     case DYNAMIC_CMD_DIR_ADD:
         /* a NULL 'p' or a string of zero-length is the same thing */
-        if (p == NULL || (strlen((const char *)p) < 1)) {
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_INVALID_ARGUMENT);
+        if (!p || (strlen((const char *)p) < 1)) {
+            ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_INVALID_ARGUMENT);
             return 0;
         }
         {
             char *tmp_str = OPENSSL_strdup(p);
             if (tmp_str == NULL) {
-                ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+                ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ERR_R_MALLOC_FAILURE);
                 return 0;
             }
             if (!sk_OPENSSL_STRING_push(ctx->dirs, tmp_str)) {
                 OPENSSL_free(tmp_str);
-                ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+                ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ERR_R_MALLOC_FAILURE);
                 return 0;
             }
         }
@@ -371,7 +363,7 @@ static int dynamic_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
     default:
         break;
     }
-    ERR_raise(ERR_LIB_ENGINE, ENGINE_R_CTRL_COMMAND_NOT_IMPLEMENTED);
+    ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ENGINE_R_CTRL_COMMAND_NOT_IMPLEMENTED);
     return 0;
 }
 
@@ -419,7 +411,7 @@ static int dynamic_load(ENGINE *e, dynamic_data_ctx *ctx)
             DSO_convert_filename(ctx->dynamic_dso, ctx->engine_id);
     }
     if (!int_load(ctx)) {
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_DSO_NOT_FOUND);
+        ENGINEerr(ENGINE_F_DYNAMIC_LOAD, ENGINE_R_DSO_NOT_FOUND);
         DSO_free(ctx->dynamic_dso);
         ctx->dynamic_dso = NULL;
         return 0;
@@ -432,7 +424,7 @@ static int dynamic_load(ENGINE *e, dynamic_data_ctx *ctx)
         ctx->bind_engine = NULL;
         DSO_free(ctx->dynamic_dso);
         ctx->dynamic_dso = NULL;
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_DSO_FAILURE);
+        ENGINEerr(ENGINE_F_DYNAMIC_LOAD, ENGINE_R_DSO_FAILURE);
         return 0;
     }
     /* Do we perform version checking? */
@@ -458,7 +450,8 @@ static int dynamic_load(ENGINE *e, dynamic_data_ctx *ctx)
             ctx->v_check = NULL;
             DSO_free(ctx->dynamic_dso);
             ctx->dynamic_dso = NULL;
-            ERR_raise(ERR_LIB_ENGINE, ENGINE_R_VERSION_INCOMPATIBILITY);
+            ENGINEerr(ENGINE_F_DYNAMIC_LOAD,
+                      ENGINE_R_VERSION_INCOMPATIBILITY);
             return 0;
         }
     }
@@ -489,7 +482,7 @@ static int dynamic_load(ENGINE *e, dynamic_data_ctx *ctx)
         ctx->v_check = NULL;
         DSO_free(ctx->dynamic_dso);
         ctx->dynamic_dso = NULL;
-        ERR_raise(ERR_LIB_ENGINE, ENGINE_R_INIT_FAILED);
+        ENGINEerr(ENGINE_F_DYNAMIC_LOAD, ENGINE_R_INIT_FAILED);
         /* Copy the original ENGINE structure back */
         memcpy(e, &cpy, sizeof(ENGINE));
         return 0;
@@ -505,7 +498,8 @@ static int dynamic_load(ENGINE *e, dynamic_data_ctx *ctx)
                  * created leaks. We just have to fail where we are, after
                  * the ENGINE has changed.
                  */
-                ERR_raise(ERR_LIB_ENGINE, ENGINE_R_CONFLICTING_ENGINE_ID);
+                ENGINEerr(ENGINE_F_DYNAMIC_LOAD,
+                          ENGINE_R_CONFLICTING_ENGINE_ID);
                 return 0;
             }
             /* Tolerate */

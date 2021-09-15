@@ -1,7 +1,7 @@
 /*
- * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -13,35 +13,49 @@
  * is used to search it.
  */
 static const EVP_PKEY_ASN1_METHOD *standard_methods[] = {
-    &ossl_rsa_asn1_meths[0],
-    &ossl_rsa_asn1_meths[1],
+#ifndef OPENSSL_NO_RSA
+    &rsa_asn1_meths[0],
+    &rsa_asn1_meths[1],
+#endif
 #ifndef OPENSSL_NO_DH
-    &ossl_dh_asn1_meth,
+    &dh_asn1_meth,
 #endif
 #ifndef OPENSSL_NO_DSA
-    &ossl_dsa_asn1_meths[0],
-    &ossl_dsa_asn1_meths[1],
-    &ossl_dsa_asn1_meths[2],
-    &ossl_dsa_asn1_meths[3],
-    &ossl_dsa_asn1_meths[4],
+    &dsa_asn1_meths[0],
+    &dsa_asn1_meths[1],
+    &dsa_asn1_meths[2],
+    &dsa_asn1_meths[3],
+    &dsa_asn1_meths[4],
 #endif
 #ifndef OPENSSL_NO_EC
-    &ossl_eckey_asn1_meth,
+    &eckey_asn1_meth,
 #endif
-    &ossl_rsa_pss_asn1_meth,
+    &hmac_asn1_meth,
+#ifndef OPENSSL_NO_CMAC
+    &cmac_asn1_meth,
+#endif
+#ifndef OPENSSL_NO_RSA
+    &rsa_pss_asn1_meth,
+#endif
 #ifndef OPENSSL_NO_DH
-    &ossl_dhx_asn1_meth,
+    &dhx_asn1_meth,
 #endif
 #ifndef OPENSSL_NO_EC
-    &ossl_ecx25519_asn1_meth,
-    &ossl_ecx448_asn1_meth,
+    &ecx25519_asn1_meth,
+    &ecx448_asn1_meth,
+#endif
+#ifndef OPENSSL_NO_POLY1305
+    &poly1305_asn1_meth,
+#endif
+#ifndef OPENSSL_NO_SIPHASH
+    &siphash_asn1_meth,
 #endif
 #ifndef OPENSSL_NO_EC
-    &ossl_ed25519_asn1_meth,
-    &ossl_ed448_asn1_meth,
+    &ed25519_asn1_meth,
+    &ed448_asn1_meth,
 #endif
 #ifndef OPENSSL_NO_SM2
-    &ossl_sm2_asn1_meth,
+    &sm2_asn1_meth,
 #endif
 };
 
