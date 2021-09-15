@@ -165,8 +165,23 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 
 	argv += optind;
 	do {
-		int result = utimensat(AT_FDCWD, *argv, timebuf,
+	    int result;
+#if __UCLIBC__
+#if !defined(ENABLE_FEATURE_TOUCH_SUSV3)
+	char *reference_file = NULL;
+	char *date_str = NULL;
+	struct timespec timebuf[2];
+#endif
+
+		result = (
+#if ENABLE_FEATURE_TOUCH_NODEREF
+			(opts & OPT_h) ? lutimes :
+#endif
+			utimes)(*argv, (reference_file || date_str) ? timebuf : NULL);
+#else
+		result = utimensat(AT_FDCWD, *argv, timebuf,
 				(opts & OPT_h) ? AT_SYMLINK_NOFOLLOW : 0);
+#endif
 		if (result != 0) {
 			if (errno == ENOENT) { /* no such file? */
 				if (opts & OPT_c) {
