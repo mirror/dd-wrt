@@ -559,11 +559,11 @@ Ssl::VerifyCallbackParameters::At(Security::Connection &sconn)
 // "dup" function for SSL_get_ex_new_index("cert_err_check")
 #if SQUID_USE_CONST_CRYPTO_EX_DATA_DUP
 static int
-ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void **,
+ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void *,
                     int, long, void *)
 #else
 static int
-ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void **,
+ssl_dupAclChecklist(CRYPTO_EX_DATA *, CRYPTO_EX_DATA *, void *,
                     int, long, void *)
 #endif
 {
