@@ -1,17 +1,11 @@
 /*
- * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
-/*
- * DSA low level APIs are deprecated for public use, but still ok for
- * internal use.
- */
-#include "internal/deprecated.h"
 
 #include <stdio.h>
 #include "internal/cryptlib.h"
@@ -53,7 +47,7 @@ static int pkey_dsa_init(EVP_PKEY_CTX *ctx)
     return 1;
 }
 
-static int pkey_dsa_copy(EVP_PKEY_CTX *dst, const EVP_PKEY_CTX *src)
+static int pkey_dsa_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
 {
     DSA_PKEY_CTX *dctx, *sctx;
 
@@ -81,14 +75,9 @@ static int pkey_dsa_sign(EVP_PKEY_CTX *ctx, unsigned char *sig,
     int ret;
     unsigned int sltmp;
     DSA_PKEY_CTX *dctx = ctx->data;
-    /*
-     * Discard const. Its marked as const because this may be a cached copy of
-     * the "real" key. These calls don't make any modifications that need to
-     * be reflected back in the "original" key.
-     */
-    DSA *dsa = (DSA *)EVP_PKEY_get0_DSA(ctx->pkey);
+    DSA *dsa = ctx->pkey->pkey.dsa;
 
-    if (dctx->md != NULL && tbslen != (size_t)EVP_MD_get_size(dctx->md))
+    if (dctx->md != NULL && tbslen != (size_t)EVP_MD_size(dctx->md))
         return 0;
 
     ret = DSA_sign(0, tbs, tbslen, sig, &sltmp, dsa);
@@ -105,14 +94,9 @@ static int pkey_dsa_verify(EVP_PKEY_CTX *ctx,
 {
     int ret;
     DSA_PKEY_CTX *dctx = ctx->data;
-    /*
-     * Discard const. Its marked as const because this may be a cached copy of
-     * the "real" key. These calls don't make any modifications that need to
-     * be reflected back in the "original" key.
-     */
-    DSA *dsa = (DSA *)EVP_PKEY_get0_DSA(ctx->pkey);
+    DSA *dsa = ctx->pkey->pkey.dsa;
 
-    if (dctx->md != NULL && tbslen != (size_t)EVP_MD_get_size(dctx->md))
+    if (dctx->md != NULL && tbslen != (size_t)EVP_MD_size(dctx->md))
         return 0;
 
     ret = DSA_verify(0, tbs, tbslen, sig, siglen, dsa);
@@ -138,28 +122,28 @@ static int pkey_dsa_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
         return 1;
 
     case EVP_PKEY_CTRL_DSA_PARAMGEN_MD:
-        if (EVP_MD_get_type((const EVP_MD *)p2) != NID_sha1 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha224 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha256) {
-            ERR_raise(ERR_LIB_DSA, DSA_R_INVALID_DIGEST_TYPE);
+        if (EVP_MD_type((const EVP_MD *)p2) != NID_sha1 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha224 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha256) {
+            DSAerr(DSA_F_PKEY_DSA_CTRL, DSA_R_INVALID_DIGEST_TYPE);
             return 0;
         }
         dctx->pmd = p2;
         return 1;
 
     case EVP_PKEY_CTRL_MD:
-        if (EVP_MD_get_type((const EVP_MD *)p2) != NID_sha1 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_dsa &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_dsaWithSHA &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha224 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha256 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha384 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha512 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha3_224 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha3_256 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha3_384 &&
-            EVP_MD_get_type((const EVP_MD *)p2) != NID_sha3_512) {
-            ERR_raise(ERR_LIB_DSA, DSA_R_INVALID_DIGEST_TYPE);
+        if (EVP_MD_type((const EVP_MD *)p2) != NID_sha1 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_dsa &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_dsaWithSHA &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha224 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha256 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha384 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha512 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_224 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_256 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_384 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_512) {
+            DSAerr(DSA_F_PKEY_DSA_CTRL, DSA_R_INVALID_DIGEST_TYPE);
             return 0;
         }
         dctx->md = p2;
@@ -175,7 +159,8 @@ static int pkey_dsa_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
         return 1;
 
     case EVP_PKEY_CTRL_PEER_KEY:
-        ERR_raise(ERR_LIB_DSA, EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
+        DSAerr(DSA_F_PKEY_DSA_CTRL,
+               EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
         return -2;
     default:
         return -2;
@@ -199,7 +184,7 @@ static int pkey_dsa_ctrl_str(EVP_PKEY_CTX *ctx,
         const EVP_MD *md = EVP_get_digestbyname(value);
 
         if (md == NULL) {
-            ERR_raise(ERR_LIB_DSA, DSA_R_INVALID_DIGEST_TYPE);
+            DSAerr(DSA_F_PKEY_DSA_CTRL_STR, DSA_R_INVALID_DIGEST_TYPE);
             return 0;
         }
         return EVP_PKEY_CTX_set_dsa_paramgen_md(ctx, md);
@@ -212,7 +197,7 @@ static int pkey_dsa_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
     DSA *dsa = NULL;
     DSA_PKEY_CTX *dctx = ctx->data;
     BN_GENCB *pcb;
-    int ret, res;
+    int ret;
 
     if (ctx->pkey_gencb) {
         pcb = BN_GENCB_new();
@@ -226,14 +211,10 @@ static int pkey_dsa_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
         BN_GENCB_free(pcb);
         return 0;
     }
-    if (dctx->md != NULL)
-        ossl_ffc_set_digest(&dsa->params, EVP_MD_get0_name(dctx->md), NULL);
-
-    ret = ossl_ffc_params_FIPS186_4_generate(NULL, &dsa->params,
-                                             FFC_PARAM_TYPE_DSA, dctx->nbits,
-                                             dctx->qbits, &res, pcb);
+    ret = dsa_builtin_paramgen(dsa, dctx->nbits, dctx->qbits, dctx->pmd,
+                               NULL, 0, NULL, NULL, NULL, pcb);
     BN_GENCB_free(pcb);
-    if (ret > 0)
+    if (ret)
         EVP_PKEY_assign_DSA(pkey, dsa);
     else
         DSA_free(dsa);
@@ -245,7 +226,7 @@ static int pkey_dsa_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
     DSA *dsa = NULL;
 
     if (ctx->pkey == NULL) {
-        ERR_raise(ERR_LIB_DSA, DSA_R_NO_PARAMETERS_SET);
+        DSAerr(DSA_F_PKEY_DSA_KEYGEN, DSA_R_NO_PARAMETERS_SET);
         return 0;
     }
     dsa = DSA_new();
@@ -255,10 +236,10 @@ static int pkey_dsa_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
     /* Note: if error return, pkey is freed by parent routine */
     if (!EVP_PKEY_copy_parameters(pkey, ctx->pkey))
         return 0;
-    return DSA_generate_key((DSA *)EVP_PKEY_get0_DSA(pkey));
+    return DSA_generate_key(pkey->pkey.dsa);
 }
 
-static const EVP_PKEY_METHOD dsa_pkey_meth = {
+const EVP_PKEY_METHOD dsa_pkey_meth = {
     EVP_PKEY_DSA,
     EVP_PKEY_FLAG_AUTOARGLEN,
     pkey_dsa_init,
@@ -290,8 +271,3 @@ static const EVP_PKEY_METHOD dsa_pkey_meth = {
     pkey_dsa_ctrl,
     pkey_dsa_ctrl_str
 };
-
-const EVP_PKEY_METHOD *ossl_dsa_pkey_method(void)
-{
-    return &dsa_pkey_meth;
-}

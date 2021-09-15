@@ -1,3 +1,9 @@
+#
+# SSLeay example configuration file.
+# This is mostly being used for generation of certificate requests.
+#
+
+RANDFILE		= ./.rnd
 
 ####################################################################
 [ ca ]
@@ -16,6 +22,7 @@ certificate	= $dir/CAcert.pem 	# The CA certificate
 serial		= $dir/serial 		# The current serial number
 crl		= $dir/crl.pem 		# The current CRL
 private_key	= $dir/private/CAkey.pem# The private key
+RANDFILE	= $dir/private/.rand	# private random number file
 
 default_days	= 365			# how long to certify for
 default_crl_days= 30			# how long before next CRL
@@ -49,26 +56,33 @@ emailAddress		= optional
 
 ####################################################################
 [ req ]
-distinguished_name	= req_distinguished_name
-encrypt_rsa_key		= no
-
-# Make altreq be identical to req
-[ altreq ]
+default_bits		= 2048
+default_keyfile 	= testkey.pem
 distinguished_name	= req_distinguished_name
 encrypt_rsa_key		= no
 
 [ req_distinguished_name ]
-countryName			= C field
+countryName			= Country Name (2 letter code)
+countryName_default		= AU
 countryName_value		= AU
-stateOrProvinceName		= SP field
+
+stateOrProvinceName		= State or Province Name (full name)
+stateOrProvinceName_default	= Queensland
 stateOrProvinceName_value	=
-localityName			= L field
+
+localityName			= Locality Name (eg, city)
 localityName_value		= Brisbane
-organizationName		= O field
+
+organizationName		= Organization Name (eg, company)
+organizationName_default	= 
 organizationName_value		= CryptSoft Pty Ltd
-organizationalUnitName		= OU field
+
+organizationalUnitName		= Organizational Unit Name (eg, section)
+organizationalUnitName_default	=
 organizationalUnitName_value	= .
-commonName			= CN field
+
+commonName			= Common Name (eg, YOUR name)
 commonName_value		= Eric Young
-emailAddress			= email field
+
+emailAddress			= Email Address
 emailAddress_value		= eay@mincom.oz.au

@@ -1,3 +1,2 @@
 LIBS=../../libcrypto
 SOURCE[../../libcrypto]=buffer.c buf_err.c
-SOURCE[../../providers/libfips.a]=buffer.c

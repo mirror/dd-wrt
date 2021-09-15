@@ -1,7 +1,7 @@
 /*
  * Copyright 2001-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -17,9 +17,9 @@ int OPENSSL_issetugid(void)
     return 0;
 }
 
-#elif defined(__OpenBSD__) || (defined(__FreeBSD__) && __FreeBSD__ > 2) || defined(__DragonFly__) || (defined(__GLIBC__) && defined(__FreeBSD_kernel__))
+#elif defined(__OpenBSD__) || (defined(__FreeBSD__) && __FreeBSD__ > 2) || defined(__DragonFly__)
 
-# include <unistd.h>
+# include OPENSSL_UNISTD
 
 int OPENSSL_issetugid(void)
 {
@@ -28,7 +28,7 @@ int OPENSSL_issetugid(void)
 
 #else
 
-# include <unistd.h>
+# include OPENSSL_UNISTD
 # include <sys/types.h>
 
 # if defined(__GLIBC__) && defined(__GLIBC_PREREQ)

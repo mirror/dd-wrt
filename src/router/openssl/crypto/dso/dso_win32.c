@@ -1,7 +1,7 @@
 /*
  * Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -100,23 +100,23 @@ static int win32_load(DSO *dso)
     char *filename = DSO_convert_filename(dso, NULL);
 
     if (filename == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_NO_FILENAME);
+        DSOerr(DSO_F_WIN32_LOAD, DSO_R_NO_FILENAME);
         goto err;
     }
     h = LoadLibraryA(filename);
     if (h == NULL) {
-        ERR_raise_data(ERR_LIB_DSO, DSO_R_LOAD_FAILED,
-                       "filename(%s)", filename);
+        DSOerr(DSO_F_WIN32_LOAD, DSO_R_LOAD_FAILED);
+        ERR_add_error_data(3, "filename(", filename, ")");
         goto err;
     }
     p = OPENSSL_malloc(sizeof(*p));
     if (p == NULL) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+        DSOerr(DSO_F_WIN32_LOAD, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     *p = h;
     if (!sk_void_push(dso->meth_data, p)) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_STACK_ERROR);
+        DSOerr(DSO_F_WIN32_LOAD, DSO_R_STACK_ERROR);
         goto err;
     }
     /* Success */
@@ -135,18 +135,18 @@ static int win32_unload(DSO *dso)
 {
     HINSTANCE *p;
     if (dso == NULL) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_PASSED_NULL_PARAMETER);
+        DSOerr(DSO_F_WIN32_UNLOAD, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
     if (sk_void_num(dso->meth_data) < 1)
         return 1;
     p = sk_void_pop(dso->meth_data);
     if (p == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_NULL_HANDLE);
+        DSOerr(DSO_F_WIN32_UNLOAD, DSO_R_NULL_HANDLE);
         return 0;
     }
     if (!FreeLibrary(*p)) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNLOAD_FAILED);
+        DSOerr(DSO_F_WIN32_UNLOAD, DSO_R_UNLOAD_FAILED);
         /*
          * We should push the value back onto the stack in case of a retry.
          */
@@ -167,21 +167,22 @@ static DSO_FUNC_TYPE win32_bind_func(DSO *dso, const char *symname)
     } sym;
 
     if ((dso == NULL) || (symname == NULL)) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_PASSED_NULL_PARAMETER);
+        DSOerr(DSO_F_WIN32_BIND_FUNC, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
     if (sk_void_num(dso->meth_data) < 1) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_STACK_ERROR);
+        DSOerr(DSO_F_WIN32_BIND_FUNC, DSO_R_STACK_ERROR);
         return NULL;
     }
     ptr = sk_void_value(dso->meth_data, sk_void_num(dso->meth_data) - 1);
     if (ptr == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_NULL_HANDLE);
+        DSOerr(DSO_F_WIN32_BIND_FUNC, DSO_R_NULL_HANDLE);
         return NULL;
     }
     sym.f = GetProcAddress(*ptr, symname);
     if (sym.p == NULL) {
-        ERR_raise_data(ERR_LIB_DSO, DSO_R_SYM_FAILURE, "symname(%s)", symname);
+        DSOerr(DSO_F_WIN32_BIND_FUNC, DSO_R_SYM_FAILURE);
+        ERR_add_error_data(3, "symname(", symname, ")");
         return NULL;
     }
     return (DSO_FUNC_TYPE)sym.f;
@@ -209,13 +210,13 @@ static struct file_st *win32_splitter(DSO *dso, const char *filename,
     char last;
 
     if (!filename) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_NO_FILENAME);
+        DSOerr(DSO_F_WIN32_SPLITTER, DSO_R_NO_FILENAME);
         return NULL;
     }
 
     result = OPENSSL_zalloc(sizeof(*result));
     if (result == NULL) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+        DSOerr(DSO_F_WIN32_SPLITTER, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -234,7 +235,7 @@ static struct file_st *win32_splitter(DSO *dso, const char *filename,
         switch (last) {
         case ':':
             if (position != IN_DEVICE) {
-                ERR_raise(ERR_LIB_DSO, DSO_R_INCORRECT_FILE_SYNTAX);
+                DSOerr(DSO_F_WIN32_SPLITTER, DSO_R_INCORRECT_FILE_SYNTAX);
                 OPENSSL_free(result);
                 return NULL;
             }
@@ -307,7 +308,7 @@ static char *win32_joiner(DSO *dso, const struct file_st *file_split)
     const char *start;
 
     if (!file_split) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_PASSED_NULL_PARAMETER);
+        DSOerr(DSO_F_WIN32_JOINER, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
     if (file_split->node) {
@@ -328,13 +329,13 @@ static char *win32_joiner(DSO *dso, const struct file_st *file_split)
     len += file_split->filelen;
 
     if (!len) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_EMPTY_FILE_STRUCTURE);
+        DSOerr(DSO_F_WIN32_JOINER, DSO_R_EMPTY_FILE_STRUCTURE);
         return NULL;
     }
 
     result = OPENSSL_malloc(len + 1);
     if (result == NULL) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+        DSOerr(DSO_F_WIN32_JOINER, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -394,30 +395,30 @@ static char *win32_merger(DSO *dso, const char *filespec1,
     struct file_st *filespec2_split = NULL;
 
     if (!filespec1 && !filespec2) {
-        ERR_raise(ERR_LIB_DSO, ERR_R_PASSED_NULL_PARAMETER);
+        DSOerr(DSO_F_WIN32_MERGER, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
     if (!filespec2) {
         merged = OPENSSL_strdup(filespec1);
         if (merged == NULL) {
-            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+            DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
             return NULL;
         }
     } else if (!filespec1) {
         merged = OPENSSL_strdup(filespec2);
         if (merged == NULL) {
-            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+            DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
             return NULL;
         }
     } else {
         filespec1_split = win32_splitter(dso, filespec1, 0);
         if (!filespec1_split) {
-            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+            DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
             return NULL;
         }
         filespec2_split = win32_splitter(dso, filespec2, 1);
         if (!filespec2_split) {
-            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+            DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
             OPENSSL_free(filespec1_split);
             return NULL;
         }
@@ -465,7 +466,7 @@ static char *win32_name_converter(DSO *dso, const char *filename)
         /* We will simply duplicate filename */
         translated = OPENSSL_malloc(len + 1);
     if (translated == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_NAME_TRANSLATION_FAILED);
+        DSOerr(DSO_F_WIN32_NAME_CONVERTER, DSO_R_NAME_TRANSLATION_FAILED);
         return NULL;
     }
     if (transform)
@@ -521,7 +522,7 @@ static int win32_pathbyaddr(void *addr, char *path, int sz)
 
     dll = LoadLibrary(TEXT(DLLNAME));
     if (dll == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_PATHBYADDR, DSO_R_UNSUPPORTED);
         return -1;
     }
 
@@ -529,7 +530,7 @@ static int win32_pathbyaddr(void *addr, char *path, int sz)
         GetProcAddress(dll, "CreateToolhelp32Snapshot");
     if (create_snap == NULL) {
         FreeLibrary(dll);
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_PATHBYADDR, DSO_R_UNSUPPORTED);
         return -1;
     }
     /* We take the rest for granted... */
@@ -549,7 +550,7 @@ static int win32_pathbyaddr(void *addr, char *path, int sz)
     hModuleSnap = (*create_snap) (TH32CS_SNAPMODULE, 0);
     if (hModuleSnap == INVALID_HANDLE_VALUE) {
         FreeLibrary(dll);
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_PATHBYADDR, DSO_R_UNSUPPORTED);
         return -1;
     }
 
@@ -558,7 +559,7 @@ static int win32_pathbyaddr(void *addr, char *path, int sz)
     if (!(*module_first) (hModuleSnap, &me32)) {
         (*close_snap) (hModuleSnap);
         FreeLibrary(dll);
-        ERR_raise(ERR_LIB_DSO, DSO_R_FAILURE);
+        DSOerr(DSO_F_WIN32_PATHBYADDR, DSO_R_FAILURE);
         return -1;
     }
 
@@ -620,7 +621,7 @@ static void *win32_globallookup(const char *name)
 
     dll = LoadLibrary(TEXT(DLLNAME));
     if (dll == NULL) {
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_GLOBALLOOKUP, DSO_R_UNSUPPORTED);
         return NULL;
     }
 
@@ -628,7 +629,7 @@ static void *win32_globallookup(const char *name)
         GetProcAddress(dll, "CreateToolhelp32Snapshot");
     if (create_snap == NULL) {
         FreeLibrary(dll);
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_GLOBALLOOKUP, DSO_R_UNSUPPORTED);
         return NULL;
     }
     /* We take the rest for granted... */
@@ -644,7 +645,7 @@ static void *win32_globallookup(const char *name)
     hModuleSnap = (*create_snap) (TH32CS_SNAPMODULE, 0);
     if (hModuleSnap == INVALID_HANDLE_VALUE) {
         FreeLibrary(dll);
-        ERR_raise(ERR_LIB_DSO, DSO_R_UNSUPPORTED);
+        DSOerr(DSO_F_WIN32_GLOBALLOOKUP, DSO_R_UNSUPPORTED);
         return NULL;
     }
 

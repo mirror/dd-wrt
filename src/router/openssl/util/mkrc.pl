@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 # Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
-# Licensed under the Apache License 2.0 (the "License").  You may not use
+# Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
 # in the file LICENSE in the source distribution or at
 # https://www.openssl.org/source/license.html
@@ -10,14 +10,33 @@ use strict;
 use warnings;
 use lib ".";
 use configdata;
+use File::Spec::Functions;
 
-my $cversion = "$config{version}";
-my $version = "$config{full_version}";
+my $versionfile = catfile( $config{sourcedir}, "include/openssl/opensslv.h" );
 
-# RC syntax for versions uses commas as separators, rather than period,
-# and it must have exactly 4 numbers (16-bit integers).
-my @vernums = ( split(/\./, $cversion), 0, 0, 0, 0 );
-$cversion = join(',', @vernums[0..3]);
+my ( $ver, $v1, $v2, $v3, $v4, $beta, $version );
+
+open FD, $versionfile or die "Couldn't open include/openssl/opensslv.h: $!\n";
+while (<FD>) {
+    if (/OPENSSL_VERSION_NUMBER\s+(0x[0-9a-f]+)/i) {
+        $ver     = hex($1);
+        $v1      = ( $ver >> 28 );
+        $v2      = ( $ver >> 20 ) & 0xff;
+        $v3      = ( $ver >> 12 ) & 0xff;
+        $v4      = ( $ver >>  4 ) & 0xff;
+        $beta    = $ver & 0xf;
+        $version = "$v1.$v2.$v3";
+        if ( $beta == 0xf ) {
+            $version .= chr( ord('a') + $v4 - 1 ) if ($v4);
+        } elsif ( $beta == 0 ) {
+            $version .= "-dev";
+        } else {
+            $version .= "-beta$beta";
+        }
+        last;
+    }
+}
+close(FD);
 
 my $filename = $ARGV[0];
 my $description = "OpenSSL library";
@@ -34,8 +53,8 @@ print <<___;
 LANGUAGE 0x09,0x01
 
 1 VERSIONINFO
-  FILEVERSION $cversion
-  PRODUCTVERSION $cversion
+  FILEVERSION $v1,$v2,$v3,$v4
+  PRODUCTVERSION $v1,$v2,$v3,$v4
   FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
   FILEFLAGS 0x01L
