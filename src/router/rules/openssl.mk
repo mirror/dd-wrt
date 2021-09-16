@@ -74,8 +74,8 @@ openssl-apps-static:
 
 openssl-install:
 #ifeq ($(CONFIG_MADWIFI),y)
-	-install -D openssl/libcrypto.so.3 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.3
-	-install -D openssl/libssl.so.3 $(INSTALLDIR)/openssl/usr/lib/libssl.so.3
+	-install -D openssl/libcrypto.so.1 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.1
+	-install -D openssl/libssl.so.1 $(INSTALLDIR)/openssl/usr/lib/libssl.so.1
 #endif
 #ifneq ($(ARCH),mipsel)
 #	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
