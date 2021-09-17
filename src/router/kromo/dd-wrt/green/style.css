@@ -1,6 +1,4 @@
 @import url(../common.css);
-@import url(../error_root_common.css);
-@import url(../error_common.css);
 #menuSub, #menuMainList li span, #help h2 {
   background: #090;
   color: #fff;

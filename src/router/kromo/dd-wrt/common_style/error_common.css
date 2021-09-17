@@ -1,5 +1,15 @@
-/* error page redesign */
-/* IMPORTANT import to all styles */
+/*Error redesign CSS */
+:root {
+  /* bare minimum CSS vars required; immutable colors */
+  --v1-0: hsla(0,60.87%,9.02%,1);
+  --v1-1: hsla(0,59.43%,14.53%,1);
+  --v1-2: hsla(0,60.44%,19.85%,1);
+  --v1-6: hsla(0,59.79%,42.08%,1);
+  --v9-4: hsla(0,0%,50.99%,1);
+  --v9-8: hsla(0,0%,85.1%,1);
+  --v9-9: hsla(0,0%,93.34%,1);
+  --rgba-bg-04: rgba(17,26,34,0.4);
+}
 body[bgcolor="#cc9999"] {
   background-color: var(--v1-1);
   color: var(--v9-8);

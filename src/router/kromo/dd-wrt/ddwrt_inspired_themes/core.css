@@ -919,4 +919,3 @@ select[name='ServiceTable']:hover {
 iframe[height='250'][src*='speedchecker'] {
   height: 293px;
 }
-@import url(/common_style/error_common.css);
