@@ -578,7 +578,7 @@ int dns_to_resolv(void)
 		perror(RESOLV_FILE);
 		return errno;
 	}
-	if (nvram_invmatch("wan_get_domain", "")) {
+	if (nvram_invmatch("wan_get_domain", "") && nvram_matchi("ignore_wan_dns", 0)) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("wan_get_domain"));
 	} else if (nvram_invmatch("wan_domain", "")) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("wan_domain"));
