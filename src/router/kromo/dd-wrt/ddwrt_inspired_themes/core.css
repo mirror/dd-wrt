@@ -458,7 +458,7 @@ div .bulle {
   background-color: var(--bg-5);
   color: var(--v9-9);
 }
-div .note {
+div.note {
   background: var(--v7-1);
   border-color: var(--v7-5);
   margin-top: 0.5rem;
