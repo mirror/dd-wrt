@@ -117,7 +117,7 @@
   text-align: center;
   width: 100%;
   height: 30px;
-  background: transparent url('ddwrt/progress.gif') no-repeat center center;
+  background: transparent url('ddwrt/progress.svg') no-repeat center center;
 }
 .ddwrt_wired_frame {
   background: #fff;
