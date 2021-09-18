@@ -1,70 +1,124 @@
 <% do_hpagehead("doctype_only"); %>
 <html>
   <head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<link type="text/css" rel="stylesheet" href="help/help.css">
+    <title>About DD-WRT</title>
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+    <link type="text/css" rel="stylesheet" href="help/help.css">
+    <style type="text/css">
+    * {
+      font-family:Tahoma, Arial, Helvetica, sans-serif;
+      font-size: 1em;
+      text-align: center;
+      line-height: 1.7em;
+    }
+    body {
+      font-size: 69%;
+      margin: .906em;
+    }
+    .t-border {
+      border: 1px solid #222;
+      border-radius: 4px;
+    }
+    th {
+      font-size: .88rem;
+      padding: 2px;
+    }
+    .thc {
+      background-color: #ccc;
+    }
+    td {
+      text-align: start;
+      padding: 3px;
+    }
+    a {
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: .88rem;
+    }
+    .table-props {
+      max-width: 80%;
+      margin: auto;
+    }
+    .about-bg {
+      background-color: #fff;
+    }
+    </style>
+  </head>
+  <body class="about-bg">
+    <div id="content">
+      <p><img src="/<% ifdef("MICRO", "style/logo.png"); %><% ifndef("MICRO", "images/dd-logo.png"); %>" alt="DD-WRT logo" /><br /><b><% get_firmware_version(); %><br /></b></p>
+      <h1>About DD-WRT's distributions</h1>
+      <table class="table-props t-border">
+        <tr>
+          <th class="t-border thc">The <b>Mini</b></th>
+        </tr>
+        <tr>
+          <td>Includes the same features of the standard distribution, with the exception of chillispot, nocat, rflow, kaid, CIFS client, SNMP, IPv6, and MMC/SD card support.</td>
+        </tr>
+        <tr>
+          <th class="t-border thc">The <b>Standard</b></th>
+        </tr>
+        <tr>
+          <td>The (std) includes all features, with the exception of VOIP.</td>
+        </tr>
+        <tr>
+          <th class="t-border thc">The <b>Standard Nokaid</b></th>
+        </tr>
+        <tr>
+          <td>The (std-nokaid) includes the same features of the standard distribution, <i>with kaid removed</i> to free some flash space.</td>
+        </tr>
+        <tr>
+          <th class="t-border thc">The <b>VOIP</b></th>
+        </tr>
+        <tr>
+          <td>This includes all features, <i>with kaid removed</i> to make room for Milkfish.</td>
+        </tr>
+        <tr>
+          <th class="t-border thc">The <b>VPN</b></th>
+        </tr>
+        <tr>
+          <td>It includes OpenVPN but <i>does not</i> include IPv6, CIFS client, or kaid.</td>
+        </tr>
+        <tr>
+          <th class="t-border thc">The <b>Micro</b></th>
+        </tr>
+        <tr>
+          <td>This is a stripped down version designed for the WRT54G v5 and other 2MB router models.</td>
+        </tr>
+      </table>
+      <p><b>Special thanks to our translators:</b>
+        <div>Chinese : <i>JnJn, bbyel, a9988cd</i></div>
+        <div>Croatian : <i>Silvio Pe&#154;a</i></div>
+        <div>Czech : <i>Tom&#225;&#353; Mark</i></div>
+        <div>French : <i>Sylvain Bothorel (Botho)</i></div>
+        <div>Dutch : <i>Fabian, Blackraven, Michael Zoon (Dutchman01)</i></div>
+        <div>German : <i>Sebastian Gottschall (BrainSlayer), Sash</i></div>
+        <div>Hungarian : <i>Jedlik Team</i></div>
+        <div>Italian : <i>CoffeEbuyer, Piega</i></div>
+        <div>Japanese : <i>d-yama (Buffalo Inc.)</i></div>
+        <div>Latvian : <i>Janis Veits</i></div>
+        <div>Polish : <i>stegano</i></div>
+        <div>Portuguese : <i>aledr</i></div>
+        <div>Romanian : <i>Daniel Al&#259;mi&#355;&#259;</i></div>
+        <div>Russian : <i>Yuri Krasilnikov</i></div>
+        <div>Slovenian : <i>Ale&#154; Majdi&#269; (Eko)</i></div>
+        <div>Spanish : <i>SuperWebon</i></div>
+        <div>Swedish : <i>Joensson Joergen, Shervin Babavand</i></div>
+      </p>
+      <p><a href="https://github.com/style-it-themes/dd-wrt-inspired-themes" target="_new"><b>DD-WRT Inspired Themes</b></a> &copy; 2021 Style-it-themes: the-j0k3r</p>
 
-		<title>About DD-WRT</title>
-		<style type="text/css">
-			* {
-				font-family:Tahoma, Arial, Helvetica, sans-serif;
-				font-size: 1em;
-				text-align: center;
-				line-height: 1.7em;
-			}
-			body {
-				margin: .906em;
-				font-size: 69%;
-			}
-			a {
-				text-decoration: none;
-			}
-			a:hover {
-				text-decoration: underline;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="content">
-		<p><img src="/<% ifdef("MICRO", "style/logo.png"); %><% ifndef("MICRO", "images/dd-logo.png"); %>" alt="DD-WRT logo" /><br /><b><% get_firmware_version(); %><br /></b></p>
-		<p>There are several different distributions of the DD-WRT firmware. The <b>mini</b> contains all the features of the standard distribution,
-		with the exception of chillispot, nocat, rflow, kaid, CIFS client, SNMP, IPv6, and MMC/SD card support. The <b>standard</b> (std) distribution includes all features,
-		with the exception of VOIP. The <b>standard-nokaid</b> (std-nokaid) distribution includes all features of standard, with kaid removed to free some flash space.
-		The <b>VOIP</b> distribution includes all features, with kaid removed to make room for Milkfish.
-		The <b>VPN</b> edition includes OpenVPN but does not include IPv6, CIFS client, or kaid.
-		The <b>micro</b> edition is a stripped down version designed for the WRT54G v5 and other 2MB router models.</p>
-
-		<p><b>Special thanks to our translators:</b>
-		<div>Chinese : <i>JnJn, bbyel, a9988cd</i></div>
-		<div>Croatian : <i>Silvio Pe&#154;a</i></div>
-		<div>Czech : <i>Tom&#225;&#353; Mark</i></div>
-		<div>French : <i>Sylvain Bothorel (Botho)</i></div>
-		<div>Dutch : <i>Fabian, Blackraven, Michael Zoon (Dutchman01)</i></div>
-		<div>German : <i>Sebastian Gottschall (BrainSlayer), Sash</i></div>
-		<div>Hungarian : <i>Jedlik Team</i></div>
-		<div>Italian : <i>CoffeEbuyer, Piega</i></div>
-		<div>Japanese : <i>d-yama (Buffalo Inc.)</i></div>
-		<div>Latvian : <i>Janis Veits</i></div>
-		<div>Polish : <i>stegano</i></div>
-		<div>Portuguese : <i>aledr</i></div>
-		<div>Romanian : <i>Daniel Al&#259;mi&#355;&#259;</i></div>
-		<div>Russian : <i>Yuri Krasilnikov</i></div>
-		<div>Slovenian : <i>Ale&#154; Majdi&#269; (Eko)</i></div>
-		<div>Spanish : <i>SuperWebon</i></div>
-		<div>Swedish : <i>Joensson Joergen, Shervin Babavand</i></div>
-
-		</p>
-
-		<p><b>DD-WRT Inspired Themes &copy; 2021 Style-it-themes - the-j0k3r</b>
-
-		<p><a href="https://www.dd-wrt.com" target="_new">DD-WRT Homepage</a> - <a href="https://forum.dd-wrt.com/phpBB2/" target="_new">Forum</a> - <a href="https://forum.dd-wrt.com/wiki/index.php/Main_Page" target="_new">Wiki</a> - <a href="https://svn.dd-wrt.com/" target="_new">Bugtracker</a><br /><br />
-		<% ifdef("MICRO", "<!--"); %>
-		<img src="images/valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" />
-		<% ifdef("MICRO", "-->"); %>
-		<% ifndef("MICRO", "<!--"); %>
-		<img src="http://www.w3.org/Icons/valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" height="31" width="88" />
-		<% ifndef("MICRO", "-->"); %>
-		</p>
-		</div>
-	</body>
+      <p><a href="https://www.dd-wrt.com" target="_new">DD-WRT Homepage</a> - <a href="https://forum.dd-wrt.com/phpBB2/" target="_new">Forum</a> - <a href="https://forum.dd-wrt.com/wiki/index.php/Main_Page" target="_new">Wiki</a> - <a href="https://svn.dd-wrt.com/" target="_new">Bugtracker</a><br /><br />
+        <% ifdef("MICRO", "<!--"); %>
+        <img src="images/valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" />
+        <% ifdef("MICRO", "-->"); %>
+        <% ifndef("MICRO", "<!--"); %>
+        <img src="http://www.w3.org/Icons/valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" height="31" width="88" />
+        <% ifndef("MICRO", "-->"); %>
+      </p>
+    </div>
+  </body>
 </html>
