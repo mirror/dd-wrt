@@ -1030,7 +1030,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 void do_error_style(webs_t wp, int status, char *title, char *text)
 {
 	size_t len = 0;
-	FILE *web = _getWebsFile(wp, "common_style/error_common.css", &len);
+	FILE *web = _getWebsFile(wp, "style/error_common.css", &len);
 	if (!web)
 		return;
 	if (!len) {
