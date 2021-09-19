@@ -1071,6 +1071,7 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 			len += strlen(text);
 		}
 	}
+	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
 	wfwrite(mem, 1, len, wp);
 	free(mem);
 	websWrite(wp, "</style>\n");
