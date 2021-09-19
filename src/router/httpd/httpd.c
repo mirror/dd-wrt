@@ -488,7 +488,7 @@ static void send_authenticate(webs_t conn_fp)
 	free(header);
 }
 
-void do_ddwrt_inspired_themes(webs_t wp, int code, char *title, char *text);
+void do_error_style(webs_t wp, int code, char *title, char *text);
 
 static void send_error(webs_t conn_fp, int noheader, int status, char *title, char *extra_header, const char *fmt, ...)
 {
