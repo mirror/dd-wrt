@@ -870,7 +870,8 @@ endif
 ifeq ($(CONFIG_SPEEDCHECKER),y)
 	-install $(TOP)/private/shownf/icons/shownf-sc.png $(INSTALLDIR)/www/images/shownf-sc.png
 endif
-	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
+	cp common_style/gradient.svg $(INSTALLDIR)/www/style
+	cp common_style/error_common.css $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_DNSCRYPT),y)
 #	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
 endif

@@ -1,176 +1,132 @@
- 
 body {
-	background-color:		#CCC;
+  background-color: #CCC;
 }
-
 table.table {
-	border-color:			#333;
+  border-color: #333;
 }
-
 table.table th {
-	border-color:			#999;
-	background-color:		#DDD;
+  border-color: #999;
+  background-color: #DDD;
 }
-
 #left {
-	background-color:		#888888;
+  background-color: #888888;
 }
-
- 
 body.gui {
-	background-color:		#888888;
+  background-color: #888888;
 }
-
- 
 #help {
-	background-color:		#FFFEC1;
-	border-color:			#111;
+  background-color: #FFFEC1;
+  border-color: #111;
 }
-
- 
-#statusInfo  {
-	background:				#CCCCDD URL(../../images/dd-wrt.png) bottom right no-repeat;
-	border-color:			#000;
+#statusInfo {
+  background: #CCCCDD URL(../../images/dd-wrt.png) bottom right no-repeat;
+  border-color: #000;
 }
-
- 
 input[type!="radio"] {
-	background-color:		#EEEEF3;
-	border-color:			#003399;
+  background-color: #EEEEF3;
+  border-color: #003399;
 }
-
 input[type="radio"] {
-	background-color:		#EEEEF3;
-	border-color:			#003399;
+  background-color: #EEEEF3;
+  border-color: #003399;
 }
-
 select {
-	background-color:		#EEEEF3;
-	border-color:			#003399;
+  background-color: #EEEEF3;
+  border-color: #003399;
 }
-
 div.message div {
-	background-color:		#DDDDEE;
-	border-color:			#EAEAEA;
+  background-color: #DDDDEE;
+  border-color: #EAEAEA;
 }
-
 div.message div {
-	background:				url(images/message_bg.png);
+  background: url(images/message_bg.png);
 }
-
 #footer {
-	background-image:		url(images/footer.png);
+  background-image: url(images/footer.png);
 }
-
-	
- 
 body {
-	color:					#115B80;
+  color: #115B80;
 }
-
-td,th {
-	color:					#115B80;
+td, th {
+  color: #115B80;
 }
-
-input,select {
-	color:					#115B80;
+input, select {
+  color: #115B80;
 }
-
- 
 a:link {
-	color:					#167DAF;
+  color: #167DAF;
 }
-
 a:visited {
-	color:					#167DAF;
+  color: #167DAF;
 }
-
 a:hover {
-	color:					#167DAF;
+  color: #167DAF;
 }
-
 a:active {
-	color: 					#167DAF;
+  color: #167DAF;
 }
-
 .section {
-	color:					#9CCCFF;
-	border-color:			#EAEAEA;
+  color: #9CCCFF;
+  border-color: #EAEAEA;
 }
 .info {
-	color:					#669;
+  color: #669;
 }
 div.warning {
-	color:					#EE3333;
+  color: #EE3333;
 }
-
- 
-
 #main {
-	border-color:			#666;
-	background:				#FFF3B3;
+  border-color: #666;
+  background: #FFF3B3;
 }
-
- 
 #contents {
-	background:				#DDD;
+  background: #DDD;
 }
-
-#menuMain ul#menuMainList a,#menuMain ul#menuMainList span,#menuMain ul#menuMainList a.current {
-	color:	 				#333;
+#menuMain ul#menuMainList a, #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current {
+  color: #333;
 }
-
-#menuMain ul#menuMainList span,#menuMain ul#menuMainList a.current,#menuMain ul#menuMainList a.current:hover {
-	background:				#FFF3B3;
-	border-color:			#666;
+#menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
+  background: #FFF3B3;
+  border-color: #666;
 }
-
 #menuMain ul#menuMainList a {
-	background:				#FFFAE1;
-	border-color:			#AAA;
+  background: #FFFAE1;
+  border-color: #AAA;
 }
-
 #menuMain ul#menuMainList a:hover {
-	background-color:		#FFF7CD;
+  background-color: #FFF7CD;
 }
-
-#menuMain ul#menuSubList li a,#menuMain ul#menuSubList li span {
-	border-right-color:		#AAA;
-	background:				none;
+#menuMain ul#menuSubList li a, #menuMain ul#menuSubList li span {
+  border-right-color: #AAA;
+  background: none;
 }
-
 #menuMain ul#menuSubList li a {
-	color:					#333399;
+  color: #333399;
 }
-
 #menuMain ul#menuSubList li a:hover {
-	color:					#333;
-	background:				transparent;
+  color: #333;
+  background: transparent;
 }
-
 #menuMain ul#menuSubList li a:active {
-	color:					#000;
-	background:				transparent;
+  color: #000;
+  background: transparent;
 }
-
 .meter .bar {
   background-color: #FFF7CD;
-
 }
 .meter .text {
   color: #115B80;
 }
-
 .progressbar {
-background-color: #fff;
-border-color: #999;
-font-size:.09em;
-border-width:.09em;
+  background-color: #fff;
+  border-color: #999;
+  font-size: .09em;
+  border-width: .09em;
 }
 .progressbarblock {
-background-color: #FFF7CD;
-font-size:.09em;
+  background-color: #FFF7CD;
+  font-size: .09em;
 }
 .textblink {
-  text-decoration:blink;
+  text-decoration: blink;
 }

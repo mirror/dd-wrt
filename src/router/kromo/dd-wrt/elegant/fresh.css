@@ -1,212 +1,201 @@
-h2,
-h3,
-.submitFooter {
-padding: 4px 12px;
-font-size: 12px;
-line-height: 1.42857;
-color: #fff;  
-background-color: #777674;  
-background-image: none;
-border-radius: 4px;
-border-color: none;
-border-style: none;
+h2, h3, .submitFooter {
+  padding: 4px 12px;
+  font-size: 12px;
+  line-height: 1.42857;
+  color: #fff;
+  background-color: #777674;
+  background-image: none;
+  border-radius: 4px;
+  border-color: none;
+  border-style: none;
 }
 table tr th {
-background-color: #777674;
-border-color: #777674;
-border-radius: 3px;
-background-image: none;
+  background-color: #777674;
+  border-color: #777674;
+  border-radius: 3px;
+  background-image: none;
 }
 table tr:hover {
-background-color: #f1f1f1;  
+  background-color: #f1f1f1;
 }
 .submitFooter {
-background-color: #CCC;
+  background-color: #CCC;
 }
 .submitFooter .button {
-margin:.362em .362em;  
+  margin: .362em .362em;
 }
 #menuSub {
-border-radius: 4px 4px 0px 0px;
-border-width: 0;  
-border-style: none;  
+  border-radius: 4px 4px 0px 0px;
+  border-width: 0;
+  border-style: none;
 }
 li.current {
-margin-top:2px;
+  margin-top: 2px;
 }
-#menuMainList li span,
-#menuSubList li span,
-#menuMainList li a,
-#menuSubList li a {
-border-radius: 4px 4px 0px 0px;
-border-style: solid solid none;
-border-width: 0.09em;
-border-width: 1px;  
-display: block;
-margin-left: 0.362em;
-text-decoration: none;
+#menuMainList li span, #menuSubList li span, #menuMainList li a, #menuSubList li a {
+  border-radius: 4px 4px 0px 0px;
+  border-style: solid solid none;
+  border-width: 0.09em;
+  border-width: 1px;
+  display: block;
+  margin-left: 0.362em;
+  text-decoration: none;
 }
-
 fieldset {
-border-radius: 4px;
-border-width: 1px;  
+  border-radius: 4px;
+  border-width: 1px;
 }
 fieldset legend {
-left: 0px;
-padding-bottom: 4px;
-margin-bottom: 0px;    
+  left: 0px;
+  padding-bottom: 4px;
+  margin-bottom: 0px;
 }
 textarea {
-padding: 4px;
-font-size: 12px;
-line-height: 1.42857;
-color: #555;
-background-color: #FFF;
-background-image: none;
-border: 1px solid #CCC;
-border-radius: 4px;
-box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
-transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
--webkit-box-sizing: border-box;
--moz-box-sizing: border-box;
-box-sizing: border-box;
-width: 100%;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  color: #555;
+  background-color: #FFF;
+  background-image: none;
+  border: 1px solid #CCC;
+  border-radius: 4px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
+  transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
 }
-textarea:focus,
-textarea.focus {
-border: solid 1px #707070;
-box-shadow: 0 0 5px 1px #969696;
+textarea:focus, textarea.focus {
+  border: solid 1px #707070;
+  box-shadow: 0 0 5px 1px #969696;
 }
 input {
-padding: 4px;
-font-size: 12px;
-line-height: 1.42857;
-color: #555;
-background-color: #FFF;
-background-image: none;
-border: 1px solid #CCC;
-border-radius: 4px;
-box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
-transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  color: #555;
+  background-color: #FFF;
+  background-image: none;
+  border: 1px solid #CCC;
+  border-radius: 4px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
+  transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
-input[name="apply_button"]{
-background: none repeat scroll 0 0 #696969;
-color: #FFF;
+input[name="apply_button"] {
+  background: none repeat scroll 0 0 #696969;
+  color: #FFF;
 }
-input[name="apply_button"]:hover{
-background: none repeat scroll 0 0 #777674;
-color: #000;
+input[name="apply_button"]:hover {
+  background: none repeat scroll 0 0 #777674;
+  color: #000;
 }
 input[name="reset_button"] {
-background: none repeat scroll 0 0 #fff;
-color: #000;
+  background: none repeat scroll 0 0 #fff;
+  color: #000;
 }
 input[name="reset_button"]:hover {
-background: none repeat scroll 0 0 #FFA500;
-color: #000;
+  background: none repeat scroll 0 0 #FFA500;
+  color: #000;
 }
-input[name="reboot_button"]{
-background: none repeat scroll 0 0 #FF0000;
-color:#FFF;
+input[name="reboot_button"] {
+  background: none repeat scroll 0 0 #FF0000;
+  color: #FFF;
 }
-input[name="reboot_button"]:hover{
-background: none repeat scroll 0 0 #FF7C7C;
-color:#000;
+input[name="reboot_button"]:hover {
+  background: none repeat scroll 0 0 #FF7C7C;
+  color: #000;
 }
-input:focus,
-input.focus {
-border: solid 1px #707070;
-box-shadow: 0 0 5px 1px #969696;
+input:focus, input.focus {
+  border: solid 1px #707070;
+  box-shadow: 0 0 5px 1px #969696;
 }
 input.button[disabled] {
-cursor: default;
-color: #000;
-background-color: #DADADA;
+  cursor: default;
+  color: #000;
+  background-color: #DADADA;
 }
 select {
-padding: 4px 4px;
-font-size: 12px;
-line-height: 1.42857;
-color: #555;
-background-color: #FFF;
-background-image: none;
-border: 1px solid #CCC;
-border-radius: 4px;
-box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
-transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+  padding: 4px 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  color: #555;
+  background-color: #FFF;
+  background-image: none;
+  border: 1px solid #CCC;
+  border-radius: 4px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
+  transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
 }
-button:hover,
-button:focus {
-color: #333;
-text-decoration: none;
+button:hover, button:focus {
+  color: #333;
+  text-decoration: none;
 }
 button {
-display: inline-block;
-margin-bottom: 0px;
-font-weight: normal;
-text-align: center;
-vertical-align: middle;
-cursor: pointer;
-background-image: none;
-border: 1px solid transparent;
-white-space: nowrap;
-padding: 6px 12px;
-font-size: 12px;
-line-height: 1.42857;
-border-radius: 4px;
--moz-user-select: none;
+  display: inline-block;
+  margin-bottom: 0px;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -moz-user-select: none;
 }
-#content.infopage{
-	background-color: transparent;
+#content.infopage {
+  background-color: transparent;
 }
-#content.infopage #main{
-	background-color: #FFF;
-	border-radius: 5px;
-	border: 1px solid #111111;  
+#content.infopage #main {
+  background-color: #FFF;
+  border-radius: 5px;
+  border: 1px solid #111111;
 }
 input.button {
-	box-shadow: 2px 2px 2px gray;
+  box-shadow: 2px 2px 2px gray;
 }
 input.button[disabled] {
-	box-shadow: none;
+  box-shadow: none;
 }
 #content {
-	border-radius: 0 0 5px 5px;
-	margin-bottom: 1em;
-	border: 1px solid #111111;  
+  border-radius: 0 0 5px 5px;
+  margin-bottom: 1em;
+  border: 1px solid #111111;
 }
- 
-table[summary="ports forwardig table"] .num[size="15"]{ 
-	max-width: 100px;
+table[summary="ports forwardig table"] .num[size="15"] {
+  max-width: 100px;
 }
-table[summary="ports forwardig table"] .num[size="5"]{
-	max-width: 50px;
+table[summary="ports forwardig table"] .num[size="5"] {
+  max-width: 50px;
 }
-table[summary="ports forwardig table"] input[size="10"]{
-	max-width: 79px;
+table[summary="ports forwardig table"] input[size="10"] {
+  max-width: 79px;
 }
- 
-#header {   
-	height:9.240em;
+#header {
+  height: 9.240em;
 }
 .message {
-	border-radius: 6px;
+  border-radius: 6px;
 }
 .meter {
-	border-radius: 3px;
-	border-width: 1px;
+  border-radius: 3px;
+  border-width: 1px;
 }
 .progressbar {
-	border-radius: 4px;
+  border-radius: 4px;
 }
 .warning {
-	border-radius: 6px;
-	border-width: 2px;
+  border-radius: 6px;
+  border-width: 2px;
 }
-.off {   
-	background-color: #e0e0e0;
+.off {
+  background-color: #e0e0e0;
 }
-.odd {   
-	background-color: #f1f1f1;
-	border-radius: 2px;
+.odd {
+  background-color: #f1f1f1;
+  border-radius: 2px;
 }
