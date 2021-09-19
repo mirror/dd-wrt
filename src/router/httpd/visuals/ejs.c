@@ -1025,6 +1025,57 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
+
+void do_error_style(webs_t wp, int status, char *title, char *text)
+{
+	size_t len = 0;
+	FILE *web = _getWebsFile(wp, "common_style/error_common.css", &len);
+	if (!web)
+		return;
+	if (!len) {
+		fclose(web);
+		return;
+	}
+	char *mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
+
+	if (!mem) {
+		fclose(web);
+		return;
+	}
+	fread(mem, 1, len, web);
+	fclose(web);
+	int i;
+	char stat[32];
+	sprintf(stat, "%d", status);
+	for (i = 0; i < len; i++) {
+		if (mem[i] == '%' && mem[i + 1] == 'd') {
+			memmove(&mem[i + strlen(stat)], &mem[i + 2], len - i);
+			memcpy(&mem[i], stat, strlen(stat));
+			len += strlen(stat);
+			break;
+		}
+	}
+	for (i = 0; i < len; i++) {
+		if (mem[i] == '%' && mem[i + 1] == 's') {
+			memmove(&mem[i + strlen(title)], &mem[i + 2], len - i);
+			memcpy(&mem[i], title, strlen(title));
+			len += strlen(title);
+			break;
+		}
+	}
+	for (i = 0; i < len; i++) {
+		if (mem[i] == '%' && mem[i + 1] == 's') {
+			memmove(&mem[i + strlen(text)], &mem[i + 2], len - i);
+			memcpy(&mem[i], text, strlen(text));
+			len += strlen(text);
+		}
+	}
+	wfwrite(mem, 1, len, wp);
+	free(mem);
+	websWrite(wp, "</style>\n");
+}
+
 #ifndef HAVE_MICRO
 #ifndef HAVE_NO_STYLUS
 EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** argv)
@@ -1051,9 +1102,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	return;
 }
 
-size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
-
-void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
+void do_ddwrt_inspired_themes(webs_t wp)
 {
 	char path[128];
 	size_t len = 0;
@@ -1083,10 +1132,7 @@ void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 		fclose(web);
 		return;
 	}
-	if (status)
-		mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
-	else
-		mem = malloc(len + 1);
+	mem = malloc(len + 1);
 
 	if (!mem) {
 		fclose(web);
@@ -1094,40 +1140,12 @@ void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 	}
 	fread(mem, 1, len, web);
 	fclose(web);
-	if (status) {
-		int i;
-		char stat[32];
-		sprintf(stat, "%d", status);
-		for (i = 0; i < len; i++) {
-			if (mem[i] == '%' && mem[i + 1] == 'd') {
-				memmove(&mem[i + strlen(stat)], &mem[i + 2], len - i);
-				memcpy(&mem[i], stat, strlen(stat));
-				len += strlen(stat);
-				break;
-			}
-		}
-		for (i = 0; i < len; i++) {
-			if (mem[i] == '%' && mem[i + 1] == 's') {
-				memmove(&mem[i + strlen(title)], &mem[i + 2], len - i);
-				memcpy(&mem[i], title, strlen(title));
-				len += strlen(title);
-				break;
-			}
-		}
-		for (i = 0; i < len; i++) {
-			if (mem[i] == '%' && mem[i + 1] == 's') {
-				memmove(&mem[i + strlen(text)], &mem[i + 2], len - i);
-				memcpy(&mem[i], text, strlen(text));
-				len += strlen(text);
-			}
-		}
-	}
 	wfwrite(mem, 1, len, wp);
 	free(mem);
 	websWrite(wp, "</style>\n");
 }
 #else
-void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
+void do_ddwrt_inspired_themes(webs_t wp)
 {
 }
 #endif
