@@ -1,0 +1,99 @@
+/*Error redesign CSS */
+:root {
+  /* bare minimum CSS vars required; immutable colors */
+  --v1-0: hsla(0,60.87%,9.02%,1);
+  --v1-1: hsla(0,59.43%,14.53%,1);
+  --v1-2: hsla(0,60.44%,19.85%,1);
+  --v1-6: hsla(0,59.79%,42.08%,1);
+  --v9-4: hsla(0,0%,50.99%,1);
+  --v9-8: hsla(0,0%,85.1%,1);
+  --v9-9: hsla(0,0%,93.34%,1);
+  --rgba-bg-04: rgba(17,26,34,0.4);
+}
+body[bgcolor="#cc9999"] {
+  background-color: var(--v1-1);
+  color: var(--v9-8);
+  font-size: 0;
+  font-family: Verdana, Helvetica;
+  text-align: center;
+  cursor: auto;
+  overflow: hidden !important;
+}
+body[bgcolor="#cc9999"] h4 {
+  margin-top: 3rem;
+  font-size: 0;
+}
+body[bgcolor="#cc9999"] h4:hover {
+  animation: move-it 1.2s ease-in-out;
+  cursor: not-allowed;
+}
+body[bgcolor="#cc9999"] h4::before {
+  content: '%d\A';
+  font-size: 7rem;
+  line-height: 10rem;
+  text-shadow: 0 -1px 0 var(--v9-9),
+               0 1px 0 var(--v9-4),
+               0 2px 0 var(--v9-4),
+               0 3px 0 var(--v9-4),
+               0 4px 0 var(--v9-4),
+               0 5px 0 var(--v9-4),
+               0 6px 0 var(--v9-4),
+               0 7px 0 var(--v9-4),
+               0 8px 0 var(--v9-4),
+               0 10px 5px var(--rgba-bg-04),
+               0 20px 10px var(--rgba-bg-04);
+  white-space: pre-wrap;
+}
+body[bgcolor="#cc9999"] h4::after {
+  content: '%s';
+  animation: color_change 1s ease-in-out infinite alternate;
+  font-variant: small-caps;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+  line-height: 2rem;
+}
+body[bgcolor="#cc9999"]::after {
+  content: '\A \24D8 %s';
+  color: var(--v9-9);
+  font-size: 1rem;
+  line-height: 1.3rem;
+  text-shadow: 0 1px 0 var(--v1-1);
+  white-space: pre;
+}
+@keyframes color_change {
+  0% {
+    color: var(--v1-0);
+    text-shadow: 0 1px 0 var(--v1-2),
+                 0 -1px 0 var(--v1-2),
+                 1px 0 0 var(--v1-2),
+                 -1px 0 0 var(--v1-2),
+                 0 -5px 5px var(--v1-0),
+                 0 5px 5px var(--v1-0);
+  }
+  50%, 100% {
+    color: var(--v1-2);
+    text-shadow: 0 1px 0 var(--v1-6),
+                 0 -1px 0 var(--v1-6),
+                 1px 0 0 var(--v1-6),
+                 -1px 0 0 var(--v1-6),
+                 0 -5px 5px var(--v1-1),
+                 0 5px 5px var(--v1-1);
+  }
+}
+@keyframes move-it {
+  0% {
+    transform: scale(1, 1) translateY(0);
+  }
+  10% {
+    transform: scale(1.1, 0.9) translateY(0);
+  }
+  30% {
+    transform: scale(0.9, 1.1) translateY(-10px);
+  }
+  50% {
+    transform: scale(1, 1) translateY(0);
+  }
+  100% {
+    transform: scale(1, 1) translateY(0);
+  }
+}
