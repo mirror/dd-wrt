@@ -791,6 +791,8 @@ static void *handle_request(void *arg)
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
+	if (!conn_fp->p->filter_id)
+		conn_fp->p->filter_id = 1;
 
 	PTHREAD_MUTEX_LOCK(&input_mutex);	// barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
