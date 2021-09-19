@@ -502,9 +502,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	websWrite(conn_fp, "<HTML>\n");
-#ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(conn_fp, status, title, text);
-#endif
+	do_error_style(conn_fp, status, title, text);
 	websWrite(conn_fp, "<HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</BODY>");
