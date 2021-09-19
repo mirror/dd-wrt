@@ -1,300 +1,232 @@
- 
-
 * {
-	padding: 0;
-	margin: 0;
-	font-family: verdana, arial, helvetica, sans-serif;
-	font-size: 12px;
+  padding: 0;
+  margin: 0;
+  font-family: verdana, arial, helvetica, sans-serif;
+  font-size: 12px;
 }
-
-p { 
-	color: #000;
+p {
+  color: #000;
 }
-
 h1 {
-	font-size: 24px;
+  font-size: 24px;
 }
-
 h2, h3, dt {
-	padding: 0px 0px 5px 0px;
-	font-weight: bold;
+  padding: 0px 0px 5px 0px;
+  font-weight: bold;
 }
-
 hr {
-	display: none;
+  display: none;
 }
-
 input.num {
-	width: auto;
+  width: auto;
 }
-
 input.ipnum {
-	text-transform:	uppercase;
-	text-align: center;
+  text-transform: uppercase;
+  text-align: center;
 }
-
 th, td {
-	padding: 0px 10px 0px 0px;	
+  padding: 0px 10px 0px 0px;
 }
-
 dd {
-	padding: 0px 0px 5px 0px;
+  padding: 0px 0px 5px 0px;
 }
-
 select, option {
-	width: auto;
-	min-width: 30px;
+  width: auto;
+  min-width: 30px;
 }
-
- 
-
 .gui {
-	background-color: #fff;
+  background-color: #fff;
 }
-
- 
-
 #content {
-	background-color: #000;
+  background-color: #000;
 }
-
 * #contentsInfo {
-position:relative;
-z-index:0;
-padding:.906em;
+  position: relative;
+  z-index: 0;
+  padding: .906em;
 }
- 
-
 #header {
-	height: 65px;	
-	background-color: #000;
+  height: 65px;
+  background-color: #000;
 }
-
- 
-
 #header #logo {
-	background-color: #2b226f;
-	color: #0f0;
-	padding: 0px 5px 0px 5px;
+  background-color: #2b226f;
+  color: #0f0;
+  padding: 0px 5px 0px 5px;
 }
-
- 
-
 #header #menu {
-	background-color: #2b226f;
-	border-bottom: solid 1px #4336af;
-	color: #fff;
-	padding: 0px 5px 0px 5px;
+  background-color: #2b226f;
+  border-bottom: solid 1px #4336af;
+  color: #fff;
+  padding: 0px 5px 0px 5px;
 }
-
 #header #menu ul {
-	list-style-type: none;
+  list-style-type: none;
 }
-
 #header #menu li {
-	display: inline;
-	padding: 0px 3px 0px 3px;
+  display: inline;
+  padding: 0px 3px 0px 3px;
 }
-
 #header #menu li a {
-	color: #fff;
-	text-decoration: none;
+  color: #fff;
+  text-decoration: none;
 }
-
 #header #menu li a:hover {
-	text-decoration: underline;
+  text-decoration: underline;
 }
-
- 
-
 #header #menu #menuMain {
-	width: 100%;
-	padding: 2px 0px 3px 0px;
+  width: 100%;
+  padding: 2px 0px 3px 0px;
 }
-
 #header #menu .current {
-	border-bottom: solid 1px #0f0;
+  border-bottom: solid 1px #0f0;
 }
-
 #header #menu a.current {
-	border-bottom: none;
+  border-bottom: none;
 }
-
- 
-
 #header #menu #menuSub {
-	width: 100%;
-	background-color: #000;
-	margin: 4px 0px 0px 0px;
-	padding: 2px 0px 3px 0px;
-	float: left;
+  width: 100%;
+  background-color: #000;
+  margin: 4px 0px 0px 0px;
+  padding: 2px 0px 3px 0px;
+  float: left;
 }
-
 #header #menu #menuSub span {
-	border-bottom: solid 1px #0f0;
+  border-bottom: solid 1px #0f0;
 }
-
- 
-
 #main {
-	background-color: #fff;
-	border-top: solid 1px #ddd;
-	clear: both;
-	padding: 5px 5px 5px 5px;
+  background-color: #fff;
+  border-top: solid 1px #ddd;
+  clear: both;
+  padding: 5px 5px 5px 5px;
 }
-
 #main fieldset {
-	margin: 0px 150px 0px 0px;
-	color: #2300af;
-	padding: 5px 5px 5px 5px;
+  margin: 0px 150px 0px 0px;
+  color: #2300af;
+  padding: 5px 5px 5px 5px;
 }
-
 #main .comment {
-	font-style: italic;
-	color: #000;
-	padding: 0px 0px 5px 0px;
+  font-style: italic;
+  color: #000;
+  padding: 0px 0px 5px 0px;
 }
-
 #main .label {
-	width: 16em;
-	color: #000;
-	padding: 0px 0px 5px 0px;
-	float: left;
-	clear: both;
+  width: 16em;
+  color: #000;
+  padding: 0px 0px 5px 0px;
+  float: left;
+  clear: both;
 }
-
-#main .label input{
-	float: left;
+#main .label input {
+  float: left;
 }
-
 #main .setting {
-	color: #000;
-	padding: 0px 0px 5px 0px;
+  color: #000;
+  padding: 0px 0px 5px 0px;
 }
-
 #main .setting input, #main .setting option {
-	margin: 0px 2px 0px 0px;
+  margin: 0px 2px 0px 0px;
 }
-
- 
-
-.submitFooter,
-.submitFooterCmd {
-	padding: 5px 5px 5px 5px;
+.submitFooter, .submitFooterCmd {
+  padding: 5px 5px 5px 5px;
 }
-
- 
-
 #statusInfo {
-	position: absolute;
-	top: 100px;
-	right: 5px;
-	width: 130px;
-	padding: 5px 5px 5px 5px;
+  position: absolute;
+  top: 100px;
+  right: 5px;
+  width: 130px;
+  padding: 5px 5px 5px 5px;
 }
-
- 
-
 #helpContainer {
-	position: absolute;
-	top: 240px;
-	right: 5px;
-	width: 130px;
-	padding: 5px 5px 5px 5px;
+  position: absolute;
+  top: 240px;
+  right: 5px;
+  width: 130px;
+  padding: 5px 5px 5px 5px;
 }
-
- 
-
 .warning {
-	font-weight: bold;
+  font-weight: bold;
 }
-
 .warning input {
-	margin: 5px 0px 5px 0px;
-	color: #2b226f;
+  margin: 5px 0px 5px 0px;
+  color: #2b226f;
 }
-
 .meter {
-float:right;
-position:relative;
-top:-.09em;
-height: 1.1em;
-width: 14.49em;
-background:#999;
-border-style:solid;
-border-width:.09em;
-border-color:#666 #ccc #ccc #666;
+  float: right;
+  position: relative;
+  top: -.09em;
+  height: 1.1em;
+  width: 14.49em;
+  background: #999;
+  border-style: solid;
+  border-width: .09em;
+  border-color: #666 #ccc #ccc #666;
 }
 .meter .bar {
-height: 1.1em;
-background:#2b226f;
+  height: 1.1em;
+  background: #2b226f;
 }
 .meter .text {
-position:absolute;
-top:0;
-width:100%;
-height:1.1em;
-text-align:center;
-line-height:1.1em;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.1em;
+  text-align: center;
+  line-height: 1.1em;
 }
 td .meter {
-float:none !important;
-margin-top:0 !important;
-width:99% !important;
+  float: none !important;
+  margin-top: 0 !important;
+  width: 99% !important;
 }
-
 .progressbar {
   visibility: visible;
   position: relative;
-  overflow:hidden;
-  border-style:solid;
+  overflow: hidden;
+  border-style: solid;
   background-color: #fff;
   border-color: #999;
-  font-size:.09em;
-  border-width:.09em;
+  font-size: .09em;
+  border-width: .09em;
 }
-
 .progressbarblock {
   background-color: #2b226f;
-  position:absolute;
-  font-size:.09em;  
+  position: absolute;
+  font-size: .09em;
 }
-
 .textblink {
-  text-decoration:blink;
+  text-decoration: blink;
 }
-
 .bin {
-background:url(/images/bin_bt.gif) center no-repeat;
-cursor:pointer;
+  background: url(/images/bin_bt.gif) center no-repeat;
+  cursor: pointer;
 }
-
 input.spaceradio, .submitFooter input.button {
-margin-right:.4em;
-#score {
-	color: #000;
-	font-size: 85%;
-	position:absolute;
-	text-align: center;
-	width: 100px;
-	z-index: 10;
-}
-#score,#rating,#standards {
-	font-weight: bold;
-}
-#scorebar {
-	background-image: url(/style/gradient.jpg);
-	background-repeat: no-repeat;
-	background-position: 0 0;
-	position:absolute;
-	width: 100px;
-	z-index: 0;
-}
-#scorebarBorder {
-	background: #333;
-	border: 1px #000 solid;
-	height: 16px;
-	margin-bottom: 2px;
-	width: 100px;
-}
+  margin-right: .4em;
+  #score {
+    color: #000;
+    font-size: 85%;
+    position: absolute;
+    text-align: center;
+    width: 100px;
+    z-index: 10;
+  }
+  #score, #rating, #standards {
+    font-weight: bold;
+  }
+  #scorebar {
+    background-image: url(/style/gradient.jpg);
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    position: absolute;
+    width: 100px;
+    z-index: 0;
+  }
+  #scorebarBorder {
+    background: #333;
+    border: 1px #000 solid;
+    height: 16px;
+    margin-bottom: 2px;
+    width: 100px;
+  }
 }

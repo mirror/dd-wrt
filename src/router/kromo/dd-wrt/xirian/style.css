@@ -1,309 +1,308 @@
 body {
-background:#dde;
-margin:12px;
+  background: #dde;
+  margin: 12px;
 }
 #wrapper {
-position:relative;
-margin:0 auto;
-width:900px;
-border:solid 1px #99b;
-background:#ccd;
+  position: relative;
+  margin: 0 auto;
+  width: 900px;
+  border: solid 1px #99b;
+  background: #ccd;
 }
 body, th, td, a, input, select, textarea {
-font-family:Verdana, Arial, Helvetica, sans-serif;
-font-size:11px;
-color:#115B80;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  color: #115B80;
 }
 #content {
-background:url(/style/xirian/help_bg.png) top right repeat-y;
+  background: url(/style/xirian/help_bg.png) top right repeat-y;
 }
 #content.infopage {
-background-image:none;
+  background-image: none;
 }
 input {
-margin:0px;
-margin-left:1px;
-margin-right:1px;
+  margin: 0px;
+  margin-left: 1px;
+  margin-right: 1px;
 }
 div.message {
-margin:0;
-padding:0;
-height:100%;
-width:100%;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
 }
 form {
-margin:0;
-padding:0;
+  margin: 0;
+  padding: 0;
 }
 div.message div {
-position:absolute;
-top:50%;
-left:50%;
-width:700px;
-height:400px;
-margin-left:-350px;
-margin-top:-200px;
-border-width:1px;
-border-style:solid;
-text-align:center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 400px;
+  margin-left: -350px;
+  margin-top: -200px;
+  border-width: 1px;
+  border-style: solid;
+  text-align: center;
 }
-div.message div form{
-position:absolute;
-top:50%;
-left:50%;
-width:400px;
-height:100px;
-margin-left:-200px;
-margin-top:-40px;
+div.message div form {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 100px;
+  margin-left: -200px;
+  margin-top: -40px;
 }
 #header {
-height:115px;
-background:url(/style/xirian/header_bg.png) top left repeat-x;
-border-bottom:solid 1px #ccc;
+  height: 115px;
+  background: url(/style/xirian/header_bg.png) top left repeat-x;
+  border-bottom: solid 1px #ccc;
 }
 div.infopage #header {
-height:92px;
+  height: 92px;
 }
-#header div#logo  {
-height: 67px;
-width:228px;
-background:url(/style/xirian/logo.png) top left no-repeat;
+#header div#logo {
+  height: 67px;
+  width: 228px;
+  background: url(/style/xirian/logo.png) top left no-repeat;
 }
 #header div#logo h1 {
-display:none;
+  display: none;
 }
 #menu {
-border-top:solid 1px #ccc;
-position:relative;
-width:100%;
+  border-top: solid 1px #ccc;
+  position: relative;
+  width: 100%;
 }
-#menuMain, #menuSub{
-}
+#menuMain, #menuSub {}
 #menuSub {
-position:absolute;
-top:23px;
-left:0;
-width:100%;
-border-top:solid 1px #ccc;
+  position: absolute;
+  top: 23px;
+  left: 0;
+  width: 100%;
+  border-top: solid 1px #ccc;
 }
 #menuMainList, #menuSubList {
-width:100%;
-height:23px;
-margin:0 auto;
-padding:0;
-background:url(/style/xirian/nav_bar.png) top left repeat-x;
+  width: 100%;
+  height: 23px;
+  margin: 0 auto;
+  padding: 0;
+  background: url(/style/xirian/nav_bar.png) top left repeat-x;
 }
 #menu li {
-display:inline;
+  display: inline;
 }
 #menu li a, #menu li span {
-float:left;
-display:block;
-height:23px;
-line-height:23px;
-margin:0;
-padding:0 8px;
-border-right:solid 1px #ccc;
-text-decoration:none;
+  float: left;
+  display: block;
+  height: 23px;
+  line-height: 23px;
+  margin: 0;
+  padding: 0 8px;
+  border-right: solid 1px #ccc;
+  text-decoration: none;
 }
 #menu li span {
-font-weight:bold;
-background:url(/style/xirian/nav_bar_rev.png) top left repeat-x;
+  font-weight: bold;
+  background: url(/style/xirian/nav_bar_rev.png) top left repeat-x;
 }
 #menu li a:hover {
-background:url(/style/xirian/nav_bar_rev.png) top left repeat-x;
-} 
+  background: url(/style/xirian/nav_bar_rev.png) top left repeat-x;
+}
 #contents {
-margin:12px 192px 0 12px;
+  margin: 12px 192px 0 12px;
 }
 #contentsInfo {
-margin:12px 12px 0 12px;
+  margin: 12px 12px 0 12px;
 }
 #contentsInfo .col2l {
-float:left;
-width:49%;
+  float: left;
+  width: 49%;
 }
 #contentsInfo .col2r {
-float:right;
-width:49%;
+  float: right;
+  width: 49%;
 }
 h2, h3 {
-margin:0 0 12px 0;
-font-size:12px;
+  margin: 0 0 12px 0;
+  font-size: 12px;
 }
 fieldset legend {
-font-weight:bold;
+  font-weight: bold;
 }
 table {
-width:100%;
+  width: 100%;
 }
 table th {
-background:#bbc;
-padding:1px 4px;
+  background: #bbc;
+  padding: 1px 4px;
 }
 div.center {
-text-align:center;
+  text-align: center;
 }
 #helpContainer {
-position:absolute;
-top:116px;
-right:0;
-width:180px;
-background:url(/style/xirian/help_bg.png);
+  position: absolute;
+  top: 116px;
+  right: 0;
+  width: 180px;
+  background: url(/style/xirian/help_bg.png);
 }
 #help {
-padding:7px;
+  padding: 7px;
 }
-#help div#logo  {
-height:54px;
-width:100%;
-background:url(/style/xirian/help.png) top center no-repeat;
+#help div#logo {
+  height: 54px;
+  width: 100%;
+  background: url(/style/xirian/help.png) top center no-repeat;
 }
 #help div#logo * {
-display:none;
+  display: none;
 }
 #help dl, #help dd {
-margin:0;
+  margin: 0;
 }
 #help dt {
-font-weight:bold;
-margin-top:14px;
-margin-bottom:6px;
+  font-weight: bold;
+  margin-top: 14px;
+  margin-bottom: 6px;
 }
 #help dd, #help dd * {
-font-size:10px;
+  font-size: 10px;
 }
 #help a {
-text-decoration:none;
-font-weight:bold;
+  text-decoration: none;
+  font-weight: bold;
 }
 #help a:hover {
-text-decoration:underline;
+  text-decoration: underline;
 }
-#statusInfo  {
-position:absolute;
-top:7px;
-left:228px;
-height:65px;
-width:400px;
+#statusInfo {
+  position: absolute;
+  top: 7px;
+  left: 228px;
+  height: 65px;
+  width: 400px;
 }
 #statusInfo div.info {
-font-size:10px;
-margin-bottom:2px;
+  font-size: 10px;
+  margin-bottom: 2px;
 }
 #statusInfo a {
-font-size:10px;
-text-decoration:none;
+  font-size: 10px;
+  text-decoration: none;
 }
 #statusInfo a:hover {
-text-decoration:underline;
+  text-decoration: underline;
 }
 .submitFooter {
-text-align:center;
+  text-align: center;
 }
 .gui .submitFooter {
-margin:0 -12px;
-padding:6px 0;
-background:url(/style/xirian/footer.png) top left;
+  margin: 0 -12px;
+  padding: 6px 0;
+  background: url(/style/xirian/footer.png) top left;
 }
 div.setting {
-clear:both;
-margin:0;
-padding:4px 0;
-line-height:20px;
+  clear: both;
+  margin: 0;
+  padding: 4px 0;
+  line-height: 20px;
 }
 .setting .label {
-float:left;
-width:180px;
+  float: left;
+  width: 180px;
 }
 .setting .default {
-color:#889;
+  color: #889;
 }
 fieldset {
-padding-left:10px;
+  padding-left: 10px;
 }
 div.warning {
-padding:10px;
-text-align:center;
+  padding: 10px;
+  text-align: center;
 }
 div.warning * {
-color:#f33;
+  color: #f33;
 }
 .meter {
-float:right;
-position:relative;
-top:-1px;
-height:14px;
-width:160px;
-background:#bbc;
-border-style:solid;
-border-width:1px;
+  float: right;
+  position: relative;
+  top: -1px;
+  height: 14px;
+  width: 160px;
+  background: #bbc;
+  border-style: solid;
+  border-width: 1px;
 }
 .meter .bar {
-background:url(/style/xirian/help_bg.png);
-height:14px;
+  background: url(/style/xirian/help_bg.png);
+  height: 14px;
 }
 .meter .text {
-position:absolute;
-top:0;
-width:100%;
-height:1.268em;
-text-align:center;
-line-height:1.181em;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.268em;
+  text-align: center;
+  line-height: 1.181em;
 }
 td .meter {
-float:none !important;
-margin-top:0 !important;
-width:99% !important;
+  float: none !important;
+  margin-top: 0 !important;
+  width: 99% !important;
 }
 .progressbar {
-visibility: visible;
-position: relative;
-overflow:hidden;
-border-style:solid;
-background-color:#fff;
-border-color:#999;
-font-size:1px;
-border-width:1px;
+  visibility: visible;
+  position: relative;
+  overflow: hidden;
+  border-style: solid;
+  background-color: #fff;
+  border-color: #999;
+  font-size: 1px;
+  border-width: 1px;
 }
 .progressbarblock {
-position:absolute;
-background-image: url(/style/xirian/help_bg.png);
-font-size:1px;
+  position: absolute;
+  background-image: url(/style/xirian/help_bg.png);
+  font-size: 1px;
 }
 .bin {
-background:url(/images/bin_bt.gif) center center no-repeat;
-cursor:pointer;
+  background: url(/images/bin_bt.gif) center center no-repeat;
+  cursor: pointer;
 }
 .textblink {
-text-decoration:blink;
+  text-decoration: blink;
 }
 input.spaceradio {
-margin-right:.4em;
+  margin-right: .4em;
 }
 #score {
-	color: #000;
-	font-size: 85%;
-	position:absolute;
-	text-align: center;
-	width: 100px;
-	z-index: 10;
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
 }
-#score,#rating,#standards {
-	font-weight: bold;
+#score, #rating, #standards {
+  font-weight: bold;
 }
 #scorebar {
-	background-image: url(/style/gradient.jpg);
-	background-repeat: no-repeat;
-	background-position: 0 0;
-	position:absolute;
-	width: 100px;
-	z-index: 0;
+  background-image: url(/style/gradient.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
 }
 #scorebarBorder {
-	background: #333;
-	border: 1px #000 solid;
-	height: 16px;
-	margin-bottom: 2px;
-	width: 100px;
+  background: #333;
+  border: 1px #000 solid;
+  height: 16px;
+  margin-bottom: 2px;
+  width: 100px;
 }
