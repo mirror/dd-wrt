@@ -43,12 +43,15 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int lanports = 4;
 	if (nvram_exists("sw_lan6"))
 		lanports = 6;
-	if (!*nvram_safe_get("sw_lan4"))
-		lanports = 3;
-	if (!*nvram_safe_get("sw_lan3"))
-		lanports = 2;
-	if (!*nvram_safe_get("sw_lan2"))
-		lanports = 1;
+
+	if (*nvram_safe_get("sw_lan1")) {
+		if (!*nvram_safe_get("sw_lan4"))
+			lanports = 3;
+		if (!*nvram_safe_get("sw_lan3"))
+			lanports = 2;
+		if (!*nvram_safe_get("sw_lan2"))
+			lanports = 1;
+	}
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
 	for (i = 0; i < 8; i++)
