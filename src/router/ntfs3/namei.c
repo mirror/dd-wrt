@@ -99,15 +99,10 @@ static struct dentry *ntfs_lookup(struct inode *dir, struct dentry *dentry,
 static int ntfs_create(struct inode *dir,
 		       struct dentry *dentry, umode_t mode, bool excl)
 {
-	struct ntfs_inode *ni = ntfs_i(dir);
 	struct inode *inode;
-
-	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFREG | mode,
 				  0, NULL, 0, NULL);
-
-	ni_unlock(ni);
 
 	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
@@ -120,15 +115,10 @@ static int ntfs_create(struct inode *dir,
 static int ntfs_mknod(struct inode *dir,
 		      struct dentry *dentry, umode_t mode, dev_t rdev)
 {
-	struct ntfs_inode *ni = ntfs_i(dir);
 	struct inode *inode;
-
-	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, mode, rdev,
 				  NULL, 0, NULL);
-	ni_unlock(ni);
-
 	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
 
@@ -199,14 +189,9 @@ static int ntfs_symlink(struct inode *dir,
 {
 	u32 size = strlen(symname);
 	struct inode *inode;
-	struct ntfs_inode *ni = ntfs_i(dir);
-
-	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFLNK | 0777,
 				  0, symname, size, NULL);
-
-	ni_unlock(ni);
 
 	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
@@ -218,14 +203,9 @@ static int ntfs_mkdir(struct inode *dir,
 		      struct dentry *dentry, umode_t mode)
 {
 	struct inode *inode;
-	struct ntfs_inode *ni = ntfs_i(dir);
-
-	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFDIR | mode,
 				  0, NULL, -1, NULL);
-
-	ni_unlock(ni);
 
 	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
