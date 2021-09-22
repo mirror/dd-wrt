@@ -3608,6 +3608,7 @@ void start_dtag(void)
 
 char *set_wan_state(int state)
 {
+#ifdef HAVE_SWCONFIG
 	char *v1 = nvram_safe_get("vlan0ports");
 	char *v2 = nvram_safe_get("vlan1ports");
 	int vlan2_supp = 0;
@@ -3656,6 +3657,7 @@ char *set_wan_state(int state)
 		}
 		eval("swconfig", "dev", "switch0", "set", "apply");
 	}
+#endif
 	return NULL;
 }
 
