@@ -1622,7 +1622,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 	if (!S_ISLNK(mode) && (sb->s_flags & SB_POSIXACL)) {
 		err = ntfs_init_acl(inode, dir);
 		if (err)
-			goto out6;
+			goto out7;
 	} else
 #endif
 	{
