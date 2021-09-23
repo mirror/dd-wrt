@@ -3055,10 +3055,6 @@ void start_sysinit(void)
 		nvram_set("vlan2ports", "1 8");
 	}
 
-#ifdef HAVE_SWCONFIG
-	insmod("b5301x_common");
-	insmod("b5301x_srab");
-
 	char *v1 = nvram_safe_get("vlan0ports");
 	char *v2 = nvram_safe_get("vlan1ports");
 	int vlan2_supp = 0;
@@ -3083,6 +3079,11 @@ void start_sysinit(void)
 		nvram_default_get("port5vlans", "1 2 16000");
 
 	}
+
+#ifdef HAVE_SWCONFIG
+	insmod("b5301x_common");
+	insmod("b5301x_srab");
+
 	char vlan2buf[64];
 	char vlan1buf[64];
 	char *vlan2 = brcm_to_swconfig(v2, vlan2buf);
