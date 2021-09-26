@@ -1380,7 +1380,7 @@ static struct gozila_action *handle_gozila_action(char *name, char *type)
 	return NULL;
 }
 
-static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path)
+static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, struct mime_handler *handler)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
@@ -1435,21 +1435,21 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	} else
 		sprintf(path, "%s.asp", submit_button);
 	if (!strncmp(path, "WL_FilterTable", 14))
-		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
+		do_filtertable(METHOD_GET, handler, path, wp);	// refresh
 #ifdef HAVE_FREERADIUS
 	else if (!strncmp(path, "FreeRadiusCert", 14))
-		do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh
+		do_radiuscert(METHOD_GET, handler, path, wp);	// refresh
 #endif
 	// #ifdef HAVE_MADWIFI
 	else if (!strncmp(path, "WL_ActiveTable", 14))
-		do_activetable(METHOD_GET, NULL, path, wp);	// refresh
+		do_activetable(METHOD_GET, handler, path, wp);	// refresh
 	else if (!strncmp(path, "Wireless_WDS", 12))
-		do_wds(METHOD_GET, NULL, path, wp);	// refresh
+		do_wds(METHOD_GET, handler, path, wp);	// refresh
 	// #endif
 	else if (!strncmp(path, "Wireless_Advanced", 17))
-		do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
+		do_wireless_adv(METHOD_GET, handler, path, wp);	// refresh
 	else
-		do_ej(METHOD_GET, NULL, path, wp);	// refresh
+		do_ej(METHOD_GET, handler, path, wp);	// refresh
 
 #ifdef HAVE_ANTAIRA
 	// @markus. this is wrong here, it works as a hack but structural it should use handlers
@@ -1590,7 +1590,7 @@ static void do_logout(webs_t conn_fp)	// static functions are not exportable,
 	send_authenticate(conn_fp);
 }
 
-static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query)
+static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query, struct mime_handler *handler)
 {
 	int action = NOTHING;
 	char *value;
@@ -1627,7 +1627,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	if (value && !strcmp(value, "gozila_cgi")) {
 		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", NULL));
-		gozila_cgi(wp, urlPrefix, webDir, arg, url, path);
+		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
 		return 1;
 	}
 
@@ -1825,11 +1825,11 @@ footer:
 		else {
 			sprintf(path, "%s.asp", submit_button);
 		}
-		do_redirect(METHOD_GET, NULL, path, wp);
+		do_redirect(METHOD_GET, handler, path, wp);
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
-		do_redirect(METHOD_GET, NULL, "Reboot.asp", wp);
+		do_redirect(METHOD_GET, handler, "Reboot.asp", wp);
 		websDone(wp, 200);
 #endif
 		sys_reboot();
@@ -2707,7 +2707,7 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 	if (!query)
 		return -1;
 
-	apply_cgi(stream, NULL, NULL, 0, url, path, query);
+	apply_cgi(stream, NULL, NULL, 0, url, path, query, handler);
 	init_cgi(stream, NULL);
 	return 0;
 }
