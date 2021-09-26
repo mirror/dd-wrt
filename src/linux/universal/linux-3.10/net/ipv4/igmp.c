@@ -2370,7 +2370,7 @@ int ip_check_mc_rcu(struct in_device *in_dev, __be32 mc_addr, __be32 src_addr, u
 		rv = 1;
 	} else if (im) {
 		if (src_addr) {
-+			spin_lock_bh(&im->lock);
+			spin_lock_bh(&im->lock);
 			for (psf=im->sources; psf; psf=psf->sf_next) {
 				if (psf->sf_inaddr == src_addr)
 					break;
