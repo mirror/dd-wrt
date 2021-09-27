@@ -1442,9 +1442,6 @@ int ntfs_discard(struct ntfs_sb_info *sbi, CLST lcn, CLST len)
 	if (err == -EOPNOTSUPP)
 		sbi->flags |= NTFS_FLAGS_NODISCARD;
 
-	/* Restore fc->s_fs_info to free memory allocated in ntfs_init_fs_context. */
-	fc->s_fs_info = sbi;
-
 	return err;
 }
 
