@@ -2273,8 +2273,61 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle = argv[0];
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-	if (!strcmp(htitle, "doctype_only"))
+	if (!strcmp(htitle, "doctype_only")) {
+		websWrite(wp, "<html>\n");
+		websWrite(wp, "\t<head>\n");
+		websWrite(wp, "<title>About DD-WRT</title>\n");
+		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
+		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
+		websWrite(wp, "<style type=\"text/css\">\n");
+		websWrite(wp, "* {\n");
+		websWrite(wp, "  font-family:Tahoma, Arial, Helvetica, sans-serif;\n");
+		websWrite(wp, "  font-size: 1em;\n");
+		websWrite(wp, "  text-align: center;\n");
+		websWrite(wp, "  line-height: 1.7em;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "body {\n");
+		websWrite(wp, "  font-size: 69%%;\n");
+		websWrite(wp, "  margin: .906em;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, ".t-border {\n");
+		websWrite(wp, "  border: 1px solid #222;\n");
+		websWrite(wp, "  border-radius: 4px;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "th {\n");
+		websWrite(wp, "  font-size: .88rem;\n");
+		websWrite(wp, "  padding: 2px;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, ".thc {\n");
+		websWrite(wp, "  background-color: #ccc;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "td {\n");
+		websWrite(wp, "  text-align: start;\n");
+		websWrite(wp, "  padding: 3px;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "a {\n");
+		websWrite(wp, "  text-decoration: none;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "a:hover {\n");
+		websWrite(wp, "  text-decoration: underline;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "h1 {\n");
+		websWrite(wp, "  font-size: .88rem;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, ".table-props {\n");
+		websWrite(wp, "  max-width: 80%%;\n");
+		websWrite(wp, "  margin: auto;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, ".about-bg {\n");
+		websWrite(wp, "  background-color: #fff;\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "</style>\n");
+#ifndef HAVE_MICRO
+		do_ddwrt_inspired_themes(wp);
+#endif
+		websWrite(wp, "</head>\n");
 		return;		// stop here, for About.htm
+	}
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "\t<head>\n");
 	websWrite(wp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate(wp, "lang_charset.set"));
@@ -2284,6 +2337,9 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
+#ifndef HAVE_MICRO
+	do_ddwrt_inspired_themes(wp);
+#endif
 	websWrite(wp, "\t\t<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
 	websWrite(wp, "\t</head>\n");
