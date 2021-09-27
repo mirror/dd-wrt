@@ -14,40 +14,41 @@ body > fieldset:first-child {
   background-color: var(--bg-0);
 }
 body {
-  background-color: var(--bg-1);
+  background: var(--bg-1);
   color: var(--v9-6);
   text-rendering: optimizeLegibility;
 }
-[onunload*="location.href='Filters.asp'"] {
+body[onunload*="location.href='Filters.asp'"] {
   height: 180% !important;
   background-color: var(--bg-0);
 }
-[onunload*="location.href='Filters.asp'"] td[width="70"] input[type='checkbox'i][name*='sum'] {
+body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'i][name*='sum'] {
   margin-bottom: -2px;
 }
-[onunload*="location.href='Filters.asp'"] h2 {
+body[onunload*="location.href='Filters.asp'"] h2 {
   background: var(--bg-5);
 }
 body.gui {
   background: var(--bg-0);
   color: var(--v9-6);
 }
-fieldset {
+body fieldset {
   background: var(--bg-2);
   border-color: var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
   border-width: 1px;
 }
-fieldset legend {
+body fieldset legend {
   background: transparent;
   color: var(--v0-9);
   text-shadow: 0 1px 0 var(--bg-0);
 }
 body #content {
   background: transparent;
-  border: 1px solid var(--bg-0);
+  border: 1px solid transparent;
   color: var(--v9-8);
+  border-radius: 0 0 4px 4px;
 }
 body #content #help {
   background: var(--bg-1);
@@ -107,40 +108,43 @@ body input.button[disabled] {
   box-shadow: none;
   opacity: 0.6;
 }
-body input[name*="apply"] {
+body input[name*='apply'] {
   background: none repeat scroll 0 0 var(--v4-2);
   border-color: var(--v4-2);
-  color: var(--fg-1);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
 }
-body input[name*="apply"]:hover,
-body input[name*="apply"]:focus-within {
+body input[name*='apply']:hover,
+body input[name*='apply']:focus-within {
   background: none repeat scroll 0 0 var(--v4-3) !important;
   border-color: var(--v4-3) !important;
   box-shadow: 0 0 10px 0 var(--v4-3);
   color: var(--v9-9) !important;
 }
-body input[name*="reset"] {
+body input[name*='reset'] {
   background: none repeat scroll 0 0 var(--bg-3);
   border-color: var(--bg-4);
-  color: var(--fg-1);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
 }
-body input[name*="reset"]:hover,
-body input[name*="reset"]:focus-within {
+body input[name*='reset']:hover,
+body input[name*='reset']:focus-within {
   background: none repeat scroll 0 0 var(--bg-5) !important;
   border-color: var(--bg-5) !important;
   box-shadow: 0 0 10px 0 var(--bg-5);
   color: var(--v9-9) !important;
 }
-body input[name*="refresh"][style*="background"] {
+body input[name*='refresh'][style*='background'] {
   background: var(--v0-5) !important;
 }
-body input[name*="reboot"] {
+body input[name*='reboot'] {
   background: none repeat scroll 0 0 var(--v1-4);
   border-color: var(--v1-5);
   color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
 }
-body input[name*="reboot"]:hover,
-body input[name*="reboot"]:focus-within {
+body input[name*='reboot']:hover,
+body input[name*='reboot']:focus-within {
   background: none repeat scroll 0 0 var(--v1-6) !important;
   border-color: var(--v1-7) !important;
   box-shadow: 0 0 10px 0 var(--v1-6);
@@ -153,6 +157,25 @@ body div.progressbar {
 body dd {
   border-bottom: 0.123rem dotted var(--bg-5);
 }
+body.about-bg, body.help-bg {
+  background: var(--bg-2);
+}
+body.about-bg #content {
+  border-color: transparent;
+}
+body.help-bg #content {
+  background: transparent;
+  border-color: transparent;
+  color: var(--v9-8);
+}
+body.about-bg #content table.t-border {
+  border-color: var(--bg-4);
+}
+body div.message {
+  background-color: var(--bg-1);
+  border-color: var(--bg-3);
+  border-radius: 4px;
+}
 form[name='wds'] .label {
   margin-right: 24px;
 }
@@ -161,6 +184,12 @@ form[name='wds'] select {
 }
 pre {
   background-color: var(--bg-0);
+}
+pre[style*='height:530px'],
+pre[style*='height:413px'] {
+  border: 1px solid var(--bg-4);
+  cursor: copy;
+  border-radius: 4px;
 }
 #wrapper #content {
   background-color: var(--bg-1);
@@ -172,11 +201,6 @@ pre {
 hr {
   color: var(--bg-5) !important;
   background-color: var(--bg-5) !important;
-}
-.message {
-  background: var(--bg-1) !important;
-  border-color: var(--bg-3) !important;
-  border-radius: 4px !important;
 }
 #statusInfo {
   color: var(--v0-9);
@@ -683,8 +707,8 @@ svg {
   color: var(--fg-1);
 }
 .ddwrt_progress {
-  filter: invert(1) grayscale(1);
-  mix-blend-mode: exclusion;
+  margin-top: 8px;
+  mix-blend-mode: lighten;
 }
 .ddwrt_wired_frame {
   background: var(--bg-4);
@@ -788,6 +812,9 @@ input[type='checkbox'i]:hover {
   border-color: var(--v0-8) !important;
   background-color: var(--bg-2) !important;
 }
+input.num[name*='lease'][size='10'] {
+  margin-right: 4px;
+}
 input[type='file'i]::file-selector-button {
   background-color: var(--bg-5);
   border: 2px solid var(--bg-5);
@@ -795,6 +822,7 @@ input[type='file'i]::file-selector-button {
   border-radius: 0.32em;
   padding: 0.2rem 0.4rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  text-shadow: 0 1px 0 var(--bg-0);
   cursor: pointer;
 }
 input[type='file'i]::file-selector-button:hover {
@@ -810,6 +838,7 @@ input[type='file'i]::-webkit-file-upload-button {
   border-radius: 0.32em;
   padding: 0.2rem 0.4rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  text-shadow: 0 1px 0 var(--bg-0);
   cursor: pointer;
 }
 input[type='file'i]::-webkit-file-upload-button:hover {
@@ -834,7 +863,7 @@ input[disabled] {
 .num.off {
   opacity: 0.5;
 }
-.row[role="controls"] {
+.row[role='controls'] {
   border-color: var(--bg-4);
 }
 .progress {
