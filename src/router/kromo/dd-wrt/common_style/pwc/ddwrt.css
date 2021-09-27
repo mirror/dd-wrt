@@ -114,6 +114,7 @@
 .ddwrt_progress {
   float: left;
   margin: auto;
+  margin-top: 8px;
   text-align: center;
   width: 100%;
   height: 30px;
