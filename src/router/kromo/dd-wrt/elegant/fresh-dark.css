@@ -39,9 +39,27 @@ body #content {
   background: #1a1a1a;
   border: 1px solid #111111;
 }
+body.help-bg #content {
+  color: #999;
+  background: transparent;
+  border: 1px solid transparent;
+}
 body #content.infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
+}
+body.about-bg, body.help-bg {
+  background: #1a1a1a;
+}
+body.about-bg #content {
+  border-color: transparent;
+}
+body.about-bg #content table.t-border {
+  border-color: #333;
+}
+#header .logo {
+  filter: invert(0.95) hue-rotate(180deg);
+  mix-blend-mode: lighten;
 }
 body fieldset {
   background-color: #222222;

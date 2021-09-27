@@ -6,12 +6,18 @@
 tt {
   font-family: Courier, Courier New
 }
-body {
+body.help-bg {
   background: #fff;
   margin: .906em;
   font-size: 69%;
 }
+body.help-bg #content {
+  background: transparent;
+  border-color: transparent;
+  color: #eee;
+}
 #header {
+  background: #fff;
   position: relative;
   height: 4.257em;
 }
