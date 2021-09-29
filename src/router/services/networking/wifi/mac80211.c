@@ -1352,7 +1352,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		ieee80211_aton(nvram_safe_get("def_whwaddr"), hwbuff);
 	} else {
 		char *wifimac = nvram_nget("%s_hwaddr", maininterface);
-		if (*wifimac) {
+		if (*wifimac && ether_aton(wifimac)) {
 			memcpy(hwbuff, ether_aton(wifimac), 6);
 		} else {
 			int i = wl_hwaddr(maininterface, hwbuff);
@@ -1361,7 +1361,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 	if (vapid > 0) {
 		char *wifimac = nvram_nget("%s_hwaddr", ifname);
-		if (*wifimac) {
+		if (*wifimac && ether_aton(wifimac)) {
 			memcpy(hwbuff, ether_aton(wifimac), 6);
 		} else {
 			int brand = getRouterBrand();
