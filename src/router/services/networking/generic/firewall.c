@@ -2495,12 +2495,12 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("1", "%s_isolation", var)) {
+/*			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
 				save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
 				save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
 				save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
-			}
+			}*/
 			if (isstandalone(var)) {
 				save2file_A_input("-i %s -j %s", var, log_accept);
 			}
@@ -2945,12 +2945,12 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		foreach(var, vifs, next) {
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-				if (nvram_nmatch("1", "%s_isolation", var)) {
+/*				if (nvram_nmatch("1", "%s_isolation", var)) {
 					save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
 					save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
 					save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
 					save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
-				}
+				}*/
 				if (isstandalone(var)) {
 					save2file_A_input("-i %s -j %s", var, log_accept);
 				}
