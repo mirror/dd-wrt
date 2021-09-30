@@ -50,6 +50,7 @@ body #content.infopage #main {
 }
 body.about-bg, body.help-bg {
   background: #1a1a1a;
+  color: #eee;
 }
 body.about-bg #content {
   border-color: transparent;
@@ -62,8 +63,8 @@ body.about-bg #content table.t-border {
   mix-blend-mode: lighten;
 }
 body fieldset {
-  background-color: #222222;
   background-color: #1a1a1a;
+  background-color: #222222;
   border: 1px solid #333;
 }
 body fieldset legend {
@@ -82,9 +83,11 @@ body input {
   background-color: #333;
   border-color: #454545;
 }
+/* try to override inline background-color style
+ * i.e. refresh button when dark is anabled */
 body input[disabled], body select[disabled] {
   color: #666;
-  background-color: #1a1a1a;
+  background-color: #1a1a1a !important;
   border-color: #111111;
 }
 body input[name="save_button"]:hover {
@@ -131,8 +134,32 @@ table tr th {
   background-color: #333;
   border-color: #333;
 }
+/* fix broken filter background color when dark */
+table tr[bgcolor="#CCCCCC"] {
+  background-color: #222;
+}
+table tr[bgcolor="#CCCCCC"]:hover {
+  background-color: #1a1a1a;
+}
 table tr:hover {
   background: #1a1a1a;
+}
+/* filters weekday background-color */
+[bgcolor="#FFFFFF"] {
+  background-color: #292929;
+}
+[bordercolor="#000000"] {
+  border-color: #333;
+}
+td[bgcolor="#C0C0C0"] {
+	background-color: #383838;
+}
+td[bgcolor="#C0C0C0"]:hover {
+	background-color: #1a1a1a;
+}
+/* form select wds margin fix */
+form[name="wds"] select {
+	margin-right: 6px;
 }
 .submitFooter {
   background-color: #222;
@@ -149,7 +176,23 @@ table tr:hover {
 }
 fieldset.off {
   border-color: #333;
+  opacity: .7;
 }
 .odd {
-  background-color: #222;
+  background-color: #212121;
+}
+.warning {
+  background: #351212;
+  border-color: #b53030;
+}
+div.note {
+  background: #380c55;
+  border-color: #8030b5;
+  margin-top: 0.5rem;
+  border-radius: 4px;
+}
+div.also {
+  background: #1a1a1a;
+  border-color: #333;
+  border-radius: 4px;
 }
