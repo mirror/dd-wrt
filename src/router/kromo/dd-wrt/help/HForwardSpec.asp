@@ -11,22 +11,16 @@
 				<% tran("bmenu.applicationsprforwarding"); %>				<% tran("hpforward.page2"); %>
 				<dt><% tran("pforward.app"); %></dt>
 				<% tran("hpforward.page3"); %>
-				
 				<dt><% tran("share.proto"); %></dt>
 				<% tran("hpforward.page4"); %>
-
 				<dt><% tran("pforward.src"); %></dt>
 				<% tran("hpforward.page5"); %>
-
 				<dt><% tran("pforward.from"); %></dt>
 				<% tran("hpforward.page6"); %>
-								
 				<dt><% tran("share.ip"); %></dt>
 				<% tran("hpforward.page7"); %>
-
 				<dt><% tran("pforward.to"); %></dt>
 				<% tran("hpforward.page8"); %>
-				
 				<dt><% tran("share.enable"); %></dt>
 				<% tran("hpforward.page9"); %>
 			</dl>

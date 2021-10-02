@@ -8,25 +8,18 @@
 			<h2><% tran("status_wireless.h2"); %></h2>
 			<dl>
 				<% tran("hstatus_wireless.page1"); %>
-				
 				<dt><% tran("share.mac"); %></dt>
 				<% tran("hstatus_wireless.page2"); %>
-				
 				<dt><% tran("share.mode"); %></dt>
 				<% tran("hstatus_wireless.page3"); %>
-				
 				<dt><% tran("share.ssid"); %></dt>
 				<% tran("hstatus_wireless.page4"); %>
-				
 				<dt><% tran("share.channel"); %></dt>
 				<% tran("hstatus_wireless.page5"); %>
-				
 				<dt><% tran("wl_basic.TXpower"); %></dt>
 				<% tran("hstatus_wireless.page6"); %>
-				
 				<dt><% tran("share.rates"); %></dt>
 				<% tran("hstatus_wireless.page7"); %>
-				
 				<dt><% tran("share.encrypt"); %></dt>
 				<% tran("hstatus_wireless.page8"); %>
 			</dl>

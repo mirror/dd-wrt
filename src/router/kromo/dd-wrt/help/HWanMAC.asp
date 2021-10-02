@@ -8,9 +8,7 @@
 			<h2><% tran("wanmac.h2"); %></h2>
 			<dl>
 				<% tran("hwanmac.page1"); %>
-				
 				<dt><% tran("wanmac.legend"); %></dt>
-
 				<% tran("hwanmac.page2"); %>
 			</dl>
 		</div>

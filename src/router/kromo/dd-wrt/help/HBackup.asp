@@ -10,7 +10,7 @@
 				<dt><% tran("hconfig.page1"); %></dt>
 				<dt><% tran("config.legend"); %></dt>
 				<dt><% tran("hconfig.page2"); %></dt>
-        <dt><% tran("config.legend2"); %></dt>
+				<dt><% tran("config.legend2"); %></dt>
 				<dt><% tran("hconfig.page3"); %></dt>
 			</dl>
 		</div>

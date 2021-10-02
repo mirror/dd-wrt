@@ -8,13 +8,10 @@
 			<h2><% tran("vpn.legend"); %></h2>
 			<dl>
 				<% tran("hvpn.page1"); %>
-				
 				<dt><% tran("vpn.ipsec"); %></dt>
 				<% tran("hvpn.page2"); %>
-				
 				<dt><% tran("vpn.pptp"); %></dt>
 				<% tran("hvpn.page3"); %>
-				
 				<dt><% tran("vpn.l2tp"); %></dt>
 				<% tran("hvpn.page4"); %>
 			</dl>

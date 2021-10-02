@@ -7,10 +7,8 @@
 		<div id="content">
 			<h2><% tran("eoip.legend"); %></h2>
 			<dl>
-				
 				<dt><% tran("eoip.legend"); %></dt>
-				<% tran("heoip.page1"); %> 
-				
+				<% tran("heoip.page1"); %>
 			</dl>
 		</div>
 		<div class="also">

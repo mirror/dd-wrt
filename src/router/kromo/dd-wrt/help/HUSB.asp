@@ -7,7 +7,6 @@
 		<div id="content">
 			<h2><% tran("usb.titl"); %></h2>
 			<dl>
-				
 				<dt><% tran("usb.usb_core"); %></dt>
 				<% tran("husb.page1"); %>
 				<dt><% tran("usb.usb_printer"); %></dt>
@@ -19,8 +18,6 @@
 				<% tran("husb.page5"); %>
 				<dt><% tran("usb.usb_diskinfo"); %></dt>
 				<% tran("husb.page6"); %>
-				
-
 			</dl>
 		</div>
 		<div class="also">

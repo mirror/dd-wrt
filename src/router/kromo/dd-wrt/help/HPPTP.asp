@@ -9,12 +9,9 @@
 			<dl>
 				<dt><% tran("service.pptp_legend"); %> Server</dt>
 				<% tran("hstatus_vpn.page1"); %>
-				
 				<dt><% tran("service.pptpd_legend"); %></dt>
 				<% tran("hstatus_vpn.page2"); %>
-			
 			</dl>
-						
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

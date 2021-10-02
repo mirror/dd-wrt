@@ -7,7 +7,6 @@
 		<div id="content">
 			<h2><% tran("privoxy.titl"); %></h2>
 			<dl>
-				
 				<dt><% tran("privoxy.server"); %></dt>
 				<% tran("hprivoxy.page1"); %>
 				<dt><% tran("privoxy.pac"); %></dt>

@@ -8,16 +8,12 @@
 			<h2><% tran("upnp.h2"); %></h2>
 			<dl>
 				<% tran("hupnp.page1"); %>
-				
 				<dt><% tran("upnp.legend"); %></dt>
 				<% tran("hupnp.page2"); %>
-				
 				<dt><% tran("upnp.serv"); %></dt>
 				<% tran("hupnp.page3"); %>
-				
 				<dt><% tran("upnp.clear"); %></dt>
 				<% tran("hupnp.page4"); %>
-				
 			</dl>
 		</div>
 		<div class="also">

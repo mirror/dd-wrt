@@ -7,7 +7,6 @@
 		<div id="content">
 			<h2><% tran("nas.titl"); %></h2>
 			<dl>
-				
 				<dt><% tran("nas.proftpd_srv"); %></dt>
 				<% tran("hnas.page1"); %>
 				<dt><% tran("nas.dlna_legend"); %></dt>
