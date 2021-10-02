@@ -789,7 +789,7 @@ function submitSavePrevButtons() {
 									<div class="label"><% tran("share.domainname"); %></div>
 									<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value="<% nvram_selget("wan_domain"); %>" />
 								</div>
-								<!--table class="table center" cellspacing="5" summary="ports forwardig table">
+								<!--table class="table center" cellspacing="5" summary="ports forwarding table">
 									<tr>
 										<th><% tran("pforward.app"); %></th>
 										<th><% tran("pforward.from"); %></th>
