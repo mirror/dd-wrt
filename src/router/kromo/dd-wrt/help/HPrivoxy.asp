@@ -16,7 +16,7 @@
 				<% tran("hprivoxy.page3"); %>
 				<dt><% tran("privoxy.custom"); %></dt>
 				<% tran("hprivoxy.page4"); %>
-				
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

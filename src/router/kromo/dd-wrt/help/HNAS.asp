@@ -15,7 +15,7 @@
 				<dt><% tran("nas.samba3"); %></dt>
 				<% tran("hnas.page3"); %>
 				<% tran("hnas.page4"); %>
-				
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

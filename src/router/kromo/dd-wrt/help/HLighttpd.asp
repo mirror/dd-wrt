@@ -23,6 +23,7 @@
 				lighttpd.conf and php.ini in directory /jffs/etc .
 				</dd> 
 				
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

@@ -14,6 +14,7 @@
 						<br></div>
 					</div><br />
 				<% tran("service.hmilkfish_page2"); %>
+			</dl>
 	</body>
 </html>
 

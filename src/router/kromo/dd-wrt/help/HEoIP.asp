@@ -11,6 +11,7 @@
 				<dt><% tran("eoip.legend"); %></dt>
 				<% tran("heoip.page1"); %> 
 				
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

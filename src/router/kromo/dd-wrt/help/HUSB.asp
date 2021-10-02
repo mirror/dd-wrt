@@ -21,6 +21,7 @@
 				<% tran("husb.page6"); %>
 				
 
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
