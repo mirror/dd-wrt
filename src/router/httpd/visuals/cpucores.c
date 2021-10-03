@@ -323,6 +323,17 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "Features", "fastmult", "FASTMULT" },
 	{ "Features", "half", "HALF" },
 	{ "Features", "tls", "TLS" },
+	{ "Features", "swp", "SWP" },
+	{ "Features", "thumbee", "THUMBEE" },
+	{ "Features", "thumb", "THUMB" },
+	{ "Features", "26bit", "26BIT" },
+	{ "Features", "fpa", "FPA" },
+	{ "Features", "java", "JAVA" },
+	{ "Features", "iwmmx", "IWMMX" },
+	{ "Features", "crunch", "CRUNCH" },
+	{ "Features", "idiva", "IDIVA" },
+	{ "Features", "idivt", "IDIVT" },
+	{ "Features", "evtstrm", "EVTSTRM" },
 //mips
 
 /*	{"isa", "mips1", "MIPS1"},
