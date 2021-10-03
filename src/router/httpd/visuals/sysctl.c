@@ -47,6 +47,7 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 	if (!path) {
 		if (p->cnt)
 			websWrite(wp, "</fieldset>\n");
+			websWrite(wp, "<br />\n");
 		p->cnt = 0;
 		return;
 	}
