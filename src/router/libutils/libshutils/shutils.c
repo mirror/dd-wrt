@@ -199,8 +199,20 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
-	fprintf(stdout, "%s : %s", servicename, str);
-	dd_syslog(LOG_INFO, "%s : %s", servicename, str);
+	fprintf(stdout, "[%s] : %s", servicename, str);
+	dd_syslog(LOG_INFO, "[%s] : %s", servicename, str);
+	free(str);
+}
+
+void dd_logdebug(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	fprintf(stdout, "[%s] : %s", servicename, str);
+	dd_debug(DEBUG_SERVICE, "[%s] : %s", servicename, str);
 	free(str);
 }
 
@@ -211,8 +223,8 @@ void dd_logerror(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
-	fprintf(stderr, "%s : %s", servicename, str);
-	dd_syslog(LOG_ERR, "%s : %s", servicename, str);
+	fprintf(stderr, "[%s] : %s", servicename, str);
+	dd_syslog(LOG_ERR, "[%s] : %s", servicename, str);
 	free(str);
 }
 
