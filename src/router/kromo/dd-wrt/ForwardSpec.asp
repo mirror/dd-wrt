@@ -65,7 +65,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("pforward.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("pforward.legend"); %></legend>
-								<table class="table center" cellspacing="5" summary="ports forwardig table">
+								<table class="table center" cellspacing="5" summary="ports forwarding table">
 									<tr>
 										<th><% tran("pforward.app"); %></th>
 										<th><% tran("share.proto"); %></th>

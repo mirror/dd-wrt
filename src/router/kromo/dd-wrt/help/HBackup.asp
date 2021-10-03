@@ -1,5 +1,5 @@
 <% do_hpagehead("config.titl"); %>
-	<body>
+	<body class"help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -10,7 +10,7 @@
 				<dt><% tran("hconfig.page1"); %></dt>
 				<dt><% tran("config.legend"); %></dt>
 				<dt><% tran("hconfig.page2"); %></dt>
-        <dt><% tran("config.legend2"); %></dt>
+				<dt><% tran("config.legend2"); %></dt>
 				<dt><% tran("hconfig.page3"); %></dt>
 			</dl>
 		</div>

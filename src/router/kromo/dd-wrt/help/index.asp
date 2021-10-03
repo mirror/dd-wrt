@@ -1,5 +1,5 @@
 <% do_hpagehead("idx.titl"); %>
-	<body>
+	<body class"help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -91,10 +91,10 @@
 				<dt>Online / DD-WRT Community</dt>
 				<dd>
 					<ul>
-						<li><a href="http://www.dd-wrt.com" target="_new">DD-WRT Homepage</a></li>
-						<li><a href="http://www.dd-wrt.com/forum" target="_new">Forum</a></li>
-						<li><a href="http://www.dd-wrt.com/wiki" target="_new">Wiki</a></li>
-						<li><a href="http://www.dd-wrt.com/bugtracker" target="_new">Bugtracker</a></li>
+						<li><a href="https://dd-wrt.com" target="_new">DD-WRT Homepage</a></li>
+						<li><a href="https://forum.dd-wrt.com" target="_new">Forum</a></li>
+						<li><a href="https://www.dd-wrt.com/wiki" target="_new">Wiki</a></li>
+						<li><a href="https://svn.dd-wrt.com/" target="_new">Bugtracker</a></li>
 					</ul>
 				</dd>
 			</dl>

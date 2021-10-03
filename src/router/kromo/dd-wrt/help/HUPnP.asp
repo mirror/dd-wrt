@@ -1,5 +1,5 @@
 <% do_hpagehead("upnp.titl"); %>
-	<body>
+	<body class"help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -8,16 +8,12 @@
 			<h2><% tran("upnp.h2"); %></h2>
 			<dl>
 				<% tran("hupnp.page1"); %>
-				
 				<dt><% tran("upnp.legend"); %></dt>
 				<% tran("hupnp.page2"); %>
-				
 				<dt><% tran("upnp.serv"); %></dt>
 				<% tran("hupnp.page3"); %>
-				
 				<dt><% tran("upnp.clear"); %></dt>
 				<% tran("hupnp.page4"); %>
-				
 			</dl>
 		</div>
 		<div class="also">
