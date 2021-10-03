@@ -974,11 +974,11 @@ static void *handle_request(void *arg)
 			{
 			 "pl", "polish" },	//
 			{
-			 "pt", "portuguese_braz" },	// 
+			 "pt", "portuguese_braz" },	//
 			{
 			 "ro", "romanian" },	//
 			{
-			 "ru", "russian", "RU" },	// 
+			 "ru", "russian", "RU" },	//
 			{
 			 "sl", "slovenian" },	//
 			{
