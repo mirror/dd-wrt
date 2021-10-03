@@ -147,7 +147,7 @@ static void load_compressor(void)
 
 static void setRTS(char *use)
 {
-	ETHER;
+	ENTER;
 	char rts[32];
 
 	sprintf(rts, "%s_protmode", use);
