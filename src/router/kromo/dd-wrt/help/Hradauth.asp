@@ -1,5 +1,5 @@
 <% do_hpagehead("radius.legend"); %>
-	<body>
+	<body class"help-bg">
 	<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -8,22 +8,16 @@
 			<h2><% tran("radius.h2"); %></h2>
 			<dl>
 				<% tran("hradauth.page1"); %>
-				
 				<dt><% tran("radius.label2"); %></dt>
 				<% tran("hradauth.page2"); %>
-				
 				<dt><% tran("radius.label3"); %> - <% tran("radius.label4"); %></dt>
 				<% tran("hradauth.page3"); %>
-				
 				<dt><% tran("radius.label5"); %></dt>
 				<% tran("hradauth.page4"); %>
-				
 				<dt><% tran("radius.label6"); %></dt>
 				<% tran("hradauth.page5"); %>
-				
 				<dt><% tran("radius.label7"); %></dt>
 				<% tran("hradauth.page6"); %>
-				
 				<dt><% tran("radius.label8"); %></dt>
 				<% tran("hradauth.page7"); %>
 			</dl>
