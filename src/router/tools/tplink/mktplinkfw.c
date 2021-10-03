@@ -76,6 +76,7 @@
 #define HWID_TL_WR841ND_V8	0x08410008
 #define HWID_TL_WR841ND_V9	0x08410009
 #define HWID_TL_WR841ND_V10	0x08410010
+#define HWID_TL_WR841HP_V3	0x08411003
 #define HWID_TL_WR841ND_V11	0x08410011
 #define HWID_TL_WR841ND_V12	0x08410012
 #define HWID_TL_WR941ND_V2	0x09410002
@@ -391,6 +392,14 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR841ND_V7,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "TL-WR841HPv3",
+		.hw_id		= HWID_TL_WR841HP_V3,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
