@@ -1,5 +1,5 @@
 <% do_hpagehead("usb.titl"); %>
-	<body>
+	<body class"help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -7,7 +7,6 @@
 		<div id="content">
 			<h2><% tran("usb.titl"); %></h2>
 			<dl>
-				
 				<dt><% tran("usb.usb_core"); %></dt>
 				<% tran("husb.page1"); %>
 				<dt><% tran("usb.usb_printer"); %></dt>
@@ -19,8 +18,7 @@
 				<% tran("husb.page5"); %>
 				<dt><% tran("usb.usb_diskinfo"); %></dt>
 				<% tran("husb.page6"); %>
-				
-
+			</dl>
 		</div>
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>

@@ -1,5 +1,5 @@
 <% do_hpagehead("wanmac.titl"); %>
-	<body>
+	<body class"help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -8,9 +8,7 @@
 			<h2><% tran("wanmac.h2"); %></h2>
 			<dl>
 				<% tran("hwanmac.page1"); %>
-				
 				<dt><% tran("wanmac.legend"); %></dt>
-
 				<% tran("hwanmac.page2"); %>
 			</dl>
 		</div>

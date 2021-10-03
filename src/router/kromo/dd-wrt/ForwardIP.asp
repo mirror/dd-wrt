@@ -65,7 +65,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("pforwardip.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("pforwardip.legend"); %></legend>
-								<table class="table center" cellspacing="5" summary="ports forwardig table">
+								<table class="table center" cellspacing="5" summary="ports forwarding table">
 									<tr>
 										<th><% tran("pforwardip.name"); %></th>
 										<th><% tran("pforwardip.src"); %></th>

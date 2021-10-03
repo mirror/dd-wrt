@@ -19,7 +19,7 @@ table tr:hover {
   background-color: #f1f1f1;
 }
 .submitFooter {
-  background-color: #CCC;
+  background-color: #ccc;
 }
 .submitFooter .button {
   margin: .362em .362em;
@@ -55,7 +55,7 @@ textarea {
   font-size: 12px;
   line-height: 1.42857;
   color: #555;
-  background-color: #FFF;
+  background-color: #fff;
   background-image: none;
   border: 1px solid #CCC;
   border-radius: 4px;
@@ -146,6 +146,7 @@ button {
   line-height: 1.42857;
   border-radius: 4px;
   -moz-user-select: none;
+  user-select: none;
 }
 #content.infopage {
   background-color: transparent;
@@ -166,14 +167,18 @@ input.button[disabled] {
   margin-bottom: 1em;
   border: 1px solid #111111;
 }
-table[summary="ports forwardig table"] .num[size="15"] {
+table[summary="ports forwarding table"] .num[size="15"] {
   max-width: 100px;
 }
-table[summary="ports forwardig table"] .num[size="5"] {
+table[summary="ports forwarding table"] .num[size="5"] {
   max-width: 50px;
 }
-table[summary="ports forwardig table"] input[size="10"] {
+table[summary="ports forwarding table"] input[size="10"] {
   max-width: 79px;
+}
+/* form select wds margin fix */
+form[name="wds"] select {
+	margin-right: 6px;
 }
 #header {
   height: 9.240em;
@@ -189,7 +194,7 @@ table[summary="ports forwardig table"] input[size="10"] {
   border-radius: 4px;
 }
 .warning {
-  border-radius: 6px;
+  border-radius: 4px;
   border-width: 2px;
 }
 .off {
