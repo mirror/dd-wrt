@@ -321,7 +321,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = GPIO_LOW | 0x12;
 		cfg->diag_gpio = 0x12;
 
-#elif HAVE_WR841V3
+#elif HAVE_WR841HPV3
 		cfg->power_gpio = GPIO_LOW | 0x10;
 		cfg->diag_gpio = 0x10;
 		cfg->ses_gpio = GPIO_LOW | 0x4;

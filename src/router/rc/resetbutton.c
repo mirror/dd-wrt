@@ -429,6 +429,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(1);
 }
+#elif defined(HAVE_WR841HPV3)
+static int getbuttonstate()
+{
+	return !get_gpio(11);
+}
 #elif defined(HAVE_WR841V9)
 static int getbuttonstate()
 {
@@ -1303,6 +1308,11 @@ static void resetbtn_period_check(int sig)
 #elif defined(HAVE_ARCHERC25)
 	sesgpio = 0x116;
 	val |= get_gpio(22) << 22;	//aoss pushbutton
+#elif defined(HAVE_WR841HPV3)
+	sesgpio = 0x102;
+	val |= get_gpio(2) << 2;	//aoss pushbutton
+	wifi24gpio = 0x100;
+	val |= get_gpio(0);
 #elif defined(HAVE_WR841V9)
 	sesgpio = 0x111;
 	val |= get_gpio(17) << 17;	//aoss pushbutton
