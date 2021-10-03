@@ -319,6 +319,10 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "Features", "asimd", "ASIMD" },
 	{ "Features", "crc32", "CRC32" },
 	{ "Features", "fp", "FP" },
+// Northstar prototype RT-AC68U also has these
+	{ "Features", "fastmult", "FASTMULT" },
+	{ "Features", "half", "HALF" },
+	{ "Features", "tls", "TLS" },
 //mips
 
 /*	{"isa", "mips1", "MIPS1"},
