@@ -1,7 +1,7 @@
 <% do_pagehead("qos.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		
+
 function svcs_grey(sw_disabled,F) {
 	F.add_svc.disabled = sw_disabled;
 	for (i=0; i<F.svqos_nosvcs.value; i++) {
@@ -26,7 +26,7 @@ function macs_grey(sw_disabled,F,overwrite) {
 	F.svqos_hwaddr4.disabled = sw_disabled;
 	F.svqos_hwaddr5.disabled = sw_disabled;
 	F.add_macprio_button.disabled = sw_disabled;
-	
+
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_nomacs.value; i++){
 			eval("F.svqos_macdel" + i).disabled = sw_disabled;
@@ -46,9 +46,9 @@ function macs_grey(sw_disabled,F,overwrite) {
 }
 
 function maclvl_grey(num,field,F,overwrite) {
-	if (overwrite) var sw_disabled = false; 
+	if (overwrite) var sw_disabled = false;
 	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
-		
+
 	eval("F.svqos_macup" + num).disabled = sw_disabled;
 	eval("F.svqos_macdown" + num).disabled = sw_disabled;
 	eval("F.svqos_maclanlvl" + num).disabled = sw_disabled;
@@ -68,7 +68,7 @@ function port_grey(sw_disabled,F) {
 function devs_grey(sw_disabled,F,overwrite) {
 	F.svqos_dev.disabled = sw_disabled;
 	F.add_devsprio_button.disabled = sw_disabled;
-	
+
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_nodevs.value; i++){
 			eval("F.svqos_devdel" + i).disabled = sw_disabled;
@@ -92,7 +92,7 @@ function devs_grey(sw_disabled,F,overwrite) {
 function devlvl_grey(num,field,F,overwrite) {
 	if (overwrite) var sw_disabled = false;
 	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
-		
+
 	eval("F.svqos_devup" + num).disabled = sw_disabled;
 	eval("F.svqos_devdown" + num).disabled = sw_disabled;
 	eval("F.svqos_devlanlvl" + num).disabled = sw_disabled;
@@ -106,7 +106,7 @@ function ips_grey(sw_disabled,F,overwrite) {
 	F.svqos_ipaddr3.disabled = sw_disabled;
 	F.svqos_netmask.disabled = sw_disabled;
 	F.add_ipsprio_button.disabled = sw_disabled;
-	
+
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_noips.value; i++){
 			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
@@ -128,7 +128,7 @@ function ips_grey(sw_disabled,F,overwrite) {
 function iplvl_grey(num,field,F,overwrite) {
 	if (overwrite) var sw_disabled = false;
 	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
-		
+
 	eval("F.svqos_ipup" + num).disabled = sw_disabled;
 	eval("F.svqos_ipdown" + num).disabled = sw_disabled;
 	eval("F.svqos_iplanlvl" + num).disabled = sw_disabled;
@@ -136,7 +136,7 @@ function iplvl_grey(num,field,F,overwrite) {
 
 function defaultlvl_grey(sw_disabled,F) {
 	var sw_disabled = (sw_disabled == true) ? false : true;
-	
+
 	F.default_uplevel.disabled = sw_disabled;
 	F.default_downlevel.disabled = sw_disabled;
 	F.default_lanlevel.disabled = sw_disabled;
@@ -158,11 +158,11 @@ function qos_grey(num,F) {
 	devs_grey(sw_disabled, F, false);
 	macs_grey(sw_disabled, F, false);
 	ips_grey(sw_disabled, F, false);
-	svcs_grey(sw_disabled, F);		
+	svcs_grey(sw_disabled, F);
 	F.svqos_defaults.disabled = sw_disabled;
 	if (sw_disabled == true) defaultlvl_grey(false, F);
 	<% nvm("svqos_defaults","0","/"); %><% nvm("svqos_defaults","0","*"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);<% nvm("svqos_defaults","0","*"); %><% nvm("svqos_defaults","0","/"); %>
-} 
+}
 
 function service(id, name, port_start, port_end, protocol, servicename) {
 	this.id = id;
@@ -175,7 +175,7 @@ function service(id, name, port_start, port_end, protocol, servicename) {
 var sorton = function(x,y){
 	if(x.name <  y.name) {
 	    return -1;
-	} else { 
+	} else {
 		if (x.name == y.name) {
 		    return 0;
 		} else {
@@ -218,7 +218,7 @@ function submitcheck(F) {
 	devs_grey(false, F, true);
 	ips_grey(false, F, true);
 	macs_grey(false, F, true);
-	
+
 	if (F.default_uplevel) {
 		F.default_uplevel.disabled = false;
 		F.default_downlevel.disabled = false;
@@ -242,9 +242,9 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	
+
 	qos_grey(<% nvg("wshaper_enable"); %>,document.QoS);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 
@@ -254,13 +254,13 @@ addEvent(window, "unload", function() {
 	update.stop();
 
 });
-	
+
 			//]]>
 		</script>
 	</head>
 
 	<body class="gui">
-		
+
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -275,9 +275,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							
+
 							<h2><% tran("qos.h2"); %></h2>
-							
+
 							<fieldset>
   								<legend><% tran("qos.legend"); %></legend>
   								<div class="setting">
@@ -309,7 +309,7 @@ addEvent(window, "unload", function() {
 									<input type="number" min="100" max="1000000" step="10" class="num" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
 								</div>
 							</fieldset><br />
-                            
+
                             <fieldset>
                                 <legend><% tran("qos.legend7"); %></legend>
                                 <table class="table" summary="packet-type priority table">
@@ -319,7 +319,7 @@ addEvent(window, "unload", function() {
                                     <% get_qospkts(); %>
                                 </table>
                             </fieldset><br />
-							
+
 							<fieldset>
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
@@ -362,11 +362,11 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 430);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 450);\" />");
 									//]]>
 									</script>&nbsp;&nbsp;&nbsp;
 								</div>
-								
+
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend8"); %></legend>
@@ -388,7 +388,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
+
 							<fieldset>
 								<legend><% tran("qos.legend3"); %></legend>
 								<table class="table" summary="IP addresses priority table">
@@ -407,7 +407,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
+
 							<fieldset>
 								<legend><% tran("qos.legend4"); %></legend>
 								<table class="table" summary="MAC priority table">
@@ -426,7 +426,7 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							<% show_default_level(); %>
-<% nvm("portprio_support","0","<!--"); %>							
+<% nvm("portprio_support","0","<!--"); %>
 							<fieldset>
 								<legend><% tran("qos.legend5"); %></legend>
 								<table>
@@ -637,7 +637,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-<% nvm("portprio_support","0","-->"); %>							
+<% nvm("portprio_support","0","-->"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
@@ -671,7 +671,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+				<div class="info"><% tran("share.firmware"); %>:
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");

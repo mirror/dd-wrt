@@ -62,7 +62,7 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
 	websWrite(wp,
-		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindow('WL_FilterTable-%s.asp', 1000, 740,'MACList');\\\" />\");\n",
+		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindow('WL_FilterTable-%s.asp', 1128, 740,'MACList');\\\" />\");\n",
 		  ifname);
 	websWrite(wp, "//]]>\n");
 	websWrite(wp, "</script>\n");
