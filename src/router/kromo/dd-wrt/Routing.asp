@@ -2,12 +2,12 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-<% ifdef("QUAGGA", "/*"); %>	
+<% ifdef("QUAGGA", "/*"); %>
 route.zebra_copt = route.bird_copt;
 route.zebra_legend = route.bird_legend;
 route.zebra_log = route.bird_log;
 <% ifdef("QUAGGA", "*/"); %>
-		
+
 function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {
 		if(!valid_ip(F,"F.route_ipaddr","IP",0))
@@ -74,7 +74,7 @@ function submitcheck(F) {
 	if (F.routing_bgp_neighbor_ip != null) {
 		F.routing_bgp_neighbor_ip.value = F.routing_bgp_neighbor_ip_0.value+'.'+F.routing_bgp_neighbor_ip_1.value+'.'+F.routing_bgp_neighbor_ip_2.value+'.'+F.routing_bgp_neighbor_ip_3.value;
 	}
-	
+
 	if(!valid_value(F)) return;
 	if(F._route_nat){
 		F.route_nat.value = F._route_nat.checked ? 1 : 0;
@@ -157,11 +157,11 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	
+
 	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvem("ospfd_copt", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.static.ripd_copt, 'idripd', <% nvem("ripd_copt", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.static.zebra_copt, 'idzebra', <% nvem("zebra_copt", "1", "1", "0"); %> == 1);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 
@@ -171,13 +171,13 @@ addEvent(window, "unload", function() {
 	update.stop();
 
 });
-	
+
 		//]]>
 		</script>
 	</head>
 
 	<body class="gui">
-		
+
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -265,7 +265,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("route.bgp_as"); %></div>
 									<input size="10" name="routing_bgp_neighbor_as" value="<% nvg("routing_bgp_neighbor_as"); %>" />
 								</div>
-							</fieldset><br/>							
+							</fieldset><br/>
 							<% has_routing("bgp","-->"); %>
 							<% has_routing("router","<!--"); %>
 							<legend><% tran("route.rip2_legend"); %></legend>
@@ -314,7 +314,7 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvc("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								</div>
-							</fieldset><br />						
+							</fieldset><br />
 							<% has_routing("zebra","-->"); %>
 							<% has_routing("gateway", "<!--"); %>
 							<fieldset>
@@ -338,7 +338,7 @@ addEvent(window, "unload", function() {
 								</div>
 							 </fieldset><br/>
 							 <% has_routing("gateway", "-->"); %>
-							 
+
 							 <fieldset>
 								<legend><% tran("route.static_legend"); %></legend>
 								<div class="setting">
@@ -419,7 +419,7 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 720, 600);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 790, 600);\" />");
 									//]]>
 									</script>
 									<input type="hidden" value="0" name="Route_reload" />
@@ -585,7 +585,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% ifndef("HAVE_PBR", "-->"); %>
-							
+
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
@@ -616,7 +616,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+				<div class="info"><% tran("share.firmware"); %>:
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
