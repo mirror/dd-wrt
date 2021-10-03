@@ -1349,21 +1349,21 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
 	    && !strcmp(maininterface, "wlan0")) {
-		ieee80211_aton(nvram_safe_get("def_whwaddr"), hwbuff);
+		strcpy(macaddr, nvram_safe_get("def_whwaddr"));
 	} else {
 		char *wifimac = nvram_nget("%s_hwaddr", maininterface);
-		if (*wifimac && ether_aton(wifimac)) {
-			memcpy(hwbuff, ether_aton(wifimac), 6);
-		} else {
-			int i = wl_hwaddr(maininterface, hwbuff);
+		if (!*wifimac || ieee80211_aton(wifimac, hwbuff)<0) {
+			wl_hwaddr(maininterface, hwbuff);
+			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+		} else{
+			strcpy(macaddr, wifimac);
 		}
+		
 	}
 
 	if (vapid > 0) {
 		char *wifimac = nvram_nget("%s_hwaddr", ifname);
-		if (*wifimac && ether_aton(wifimac)) {
-			memcpy(hwbuff, ether_aton(wifimac), 6);
-		} else {
+		if (!*wifimac) {
 			int brand = getRouterBrand();
 			if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
 				hwbuff[0] |= 0x2;
@@ -1371,10 +1371,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			} else {
 				hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
 			}
+			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+		} else {
+			strcpy(macaddr, wifimac);
 		}
 
 	}
-	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 //              MAC_ADD(macaddr);
 	if (!has_ad(maininterface) && !is_brcmfmac(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
