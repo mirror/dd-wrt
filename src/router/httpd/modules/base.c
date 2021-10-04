@@ -114,7 +114,7 @@ static int _sys_commit(int noasync)
 /*
  * DD-WRT enhancement by seg This functions parses all
  * /etc/config/xxxxx.nvramconfig files and creates the web var tab. so these
- * vars arent defined anymore staticly 
+ * vars arent defined anymore statically
  */
 
 #include <stdlib.h>
@@ -573,10 +573,10 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 	else
 		asprintf(&extra, "%s", options);
 	if (method == METHOD_OPTIONS) {
-		send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+		send_headers(stream, 200, "OK", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
 		goto ret;
 	} else {
-		send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
+		send_headers(stream, 200, "OK", extra, handler->mime_type, filesize, "bigfile.bin", 1);
 	}
 	// send body in 64 KiB chunks based on random values
 	FILE *fp;
@@ -643,8 +643,8 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 	char *temp = insert(stream, ifname, "0", "WL_FilterTable.asp");
 	if (!temp)
 		return -1;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -879,8 +879,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		return -1;
 	}
 	char *buffer = malloc(65536 + 1);
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
 	int result = 0;
 	while (!feof(fp)) {
@@ -939,8 +939,8 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	if (!temp)
 		return -1;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -958,8 +958,8 @@ static int do_sitesurvey(unsigned char method, struct mime_handler *handler, cha
 	char *temp = insert(stream, ifname, "0", "Site_Survey.asp");
 	if (!temp)
 		return -1;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -979,8 +979,8 @@ static int do_wds(unsigned char method, struct mime_handler *handler, char *path
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	if (!temp)
 		return -1;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -1005,8 +1005,8 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	char *temp = insert(stream, ifname, index, "Wireless_Advanced.asp");
 	if (!temp)
 		return -1;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -1789,7 +1789,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	}
 
 				/** GUI Logout **/
-	// Experimental, not work yet ... 
+	// Experimental, does not work yet ...
 	else if (!strncmp(value, "Logout", 6)) {
 		do_ej(METHOD_GET, NULL, "Logout.asp", wp);
 		websDone(wp, 200);
@@ -2168,8 +2168,8 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 			}
 
 			fclose(out);
-			if (handler && !handler->send_headers) 
-				send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+			if (handler && !handler->send_headers)
+				send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			ret = do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
@@ -2239,8 +2239,8 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 	fclose(in);
 
 	buffer[strbuffer] = 0;
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "%s", buffer);
 	free(buffer);
 	return 0;
@@ -2486,8 +2486,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	if (!query || sscanf(query + 1, "%d", &offset) != 1)
 		return -1;
 
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
@@ -2506,14 +2506,14 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
 					// a few sample colors
 					if (strstr(line, ".warn")) {
-						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#ffed00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
 						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "mounting unchecked fs")
 						   || strstr(line, "httpd login failure")
 						   || strstr(line, "auth-failure")
 						   || strstr(line, ".err")) {
-						websWrite(stream, "<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#ea0707\" color=\"#eeeeee\"><td>%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
 					}
@@ -2610,8 +2610,8 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	char *incom = live_translate(stream, "status_inet.traffin");
 	char *outcom = live_translate(stream, "status_inet.traffout");
 	char *monthname = live_translate(stream, months[month - 1]);
-	if (handler && !handler->send_headers) 
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
