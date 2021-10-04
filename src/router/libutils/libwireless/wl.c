@@ -3192,41 +3192,18 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 		return 1;
 	return (flags & flag);
 }
+#define FLAGCHECK(name, flag, nullvalid) \
+	int has_ ##name (const char *prefix) { \
+	       return flagcheck(prefix, flag , nullvalid); \
+	}
 
-int has_channelsurvey(const char *prefix)
-{
-	return flagcheck(prefix, CHANNELSURVEY, 1);
-}
-
-int has_nolivesurvey(const char *prefix)
-{
-	return flagcheck(prefix, SURVEY_NOPERIOD, 1);
-}
-
-int has_qboost(const char *prefix)
-{
-	return flagcheck(prefix, QBOOST, 0);
-}
-
-int has_qboost_tdma(const char *prefix)
-{
-	return flagcheck(prefix, TDMA, 0);
-}
-
-int has_qam256(const char *prefix)
-{
-	return flagcheck(prefix, QAM256, 0);
-}
-
-int has_beacon_limit(const char *prefix)
-{
-	return flagcheck(prefix, BEACONVAP100, 0);
-}
-
-int has_fwswitch(const char *prefix)
-{
-	return flagcheck(prefix, FWSWITCH, 0);
-}
+FLAGCHECK(channelsurvey, CHANNELSURVEY, 1);
+FLAGCHECK(nolivesurvey, SURVEY_NOPERIOD, 1);
+FLAGCHECK(qboost, QBOOST, 0);
+FLAGCHECK(qboost_tdma, TDMA, 0);
+FLAGCHECK(qam256, QAM256, 0);
+FLAGCHECK(beacon_limit, BEACONVAP100, 0);
+FLAGCHECK(fwswitch, FWSWITCH, 0);
 
 int has_quarter(const char *prefix)
 {
