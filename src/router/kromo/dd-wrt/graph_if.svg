@@ -41,8 +41,8 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='graph_in_txt'  x='70' y='15' fill='green'>--</text>
 	<text id='graph_out_txt' x='70' y='35' fill='red'>--</text>
 
-	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to kbyte/s</text>
-	<text id='switch_scale' x='250' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
+	<text id='switch_unit'  x='250' y='15' fill='#2e81c9' cursor='pointer'>Switch to kbyte/s</text>
+	<text id='switch_scale' x='250' y='35' fill='#2e81c9' cursor='pointer'>Autoscale (follow)</text>
 
 	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
 	<text id='collect_initial' x='300' y='125' text-anchor='middle' visibility='hidden' fill='gray'>Collecting initial data, please wait...</text>
@@ -55,8 +55,8 @@ POSSIBILITY OF SUCH DAMAGE.
 	<path id='graph_out' d='' fill='none' stroke='red' stroke-width='1' stroke-opacity='0.8' />
 	<path id='graph_in'  d='' fill='none' stroke='green' stroke-width='1' stroke-opacity='0.8' />
 
-	<line id='axis_x' x1='2' y1='299' x2='700' y2='299' stroke='black' />
-	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='black' />
+	<line id='axis_x' x1='2' y1='299' x2='700' y2='299' stroke='#111' stroke-opacity='0.8' />
+	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='#111' stroke-opacity='0.8' />
 </g>
 <script type="text/ecmascript" xlink:href="/lang_pack/english.js" />
 <script type="text/ecmascript" xlink:href="/lang_pack/language.js" />
