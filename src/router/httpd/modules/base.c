@@ -89,7 +89,7 @@ char *live_translate(webs_t wp, const char *tran);
 int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 #endif
 /*
- * Deal with side effects before committing 
+ * Deal with side effects before committing
  */
 static int _sys_commit(int noasync)
 {
@@ -1073,7 +1073,7 @@ enum {
 };
 static struct gozila_action gozila_actions[] = {
 	/*
-	 * SETUP 
+	 * SETUP
 	 */
 	{ "index", "wan_proto", "", REFRESH, "wan_proto" },
 	{ "index", "dhcpfwd", "", REFRESH, "dhcpfwd" },
@@ -1095,38 +1095,38 @@ static struct gozila_action gozila_actions[] = {
 	// {"Status", "release", "dhcp_release", SYS_RESTART, "dhcp_release"},
 	// {"Status", "renew", "", REFRESH, "dhcp_renew"},
 	// {"Status", "Connect", "start_pppoe", RESTART, NULL},
-	{ "Status_Internet", "release", "dhcp_release", SERVICE_RESTART, "dhcp_release" },	// for 
+	{ "Status_Internet", "release", "dhcp_release", SERVICE_RESTART, "dhcp_release" },	// for
 	{ "Status_Internet", "renew", "", REFRESH, "dhcp_renew" },	// for cisco
-	{ "Status_Internet", "Disconnect", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for 
+	{ "Status_Internet", "Disconnect", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for
 #ifdef HAVE_3G
-	{ "Status_Internet", "Connect_3g", "start_3g", RESTART, NULL },	// for 
-	{ "Status_Internet", "Disconnect_3g", "stop_3g", SERVICE_RESTART, "stop_ppp" },	// for 
+	{ "Status_Internet", "Connect_3g", "start_3g", RESTART, NULL },	// for
+	{ "Status_Internet", "Disconnect_3g", "stop_3g", SERVICE_RESTART, "stop_ppp" },	// for
 #endif
 #ifdef HAVE_PPPOATM
-	{ "Status_Internet", "Connect_pppoa", "start_pppoa", RESTART, NULL },	// for 
-	{ "Status_Internet", "Disconnect_pppoa", "stop_pppoa", SERVICE_RESTART, "stop_ppp" },	// for 
+	{ "Status_Internet", "Connect_pppoa", "start_pppoa", RESTART, NULL },	// for
+	{ "Status_Internet", "Disconnect_pppoa", "stop_pppoa", SERVICE_RESTART, "stop_ppp" },	// for
 #endif
-	{ "Status_Internet", "Connect_pppoe", "start_pppoe", RESTART, NULL },	// for 
-	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for 
+	{ "Status_Internet", "Connect_pppoe", "start_pppoe", RESTART, NULL },	// for
+	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for
 
-	{ "Status_Internet", "Connect_pptp", "start_pptp", RESTART, NULL },	// for 
-	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", SERVICE_RESTART, "stop_ppp" },	// for 
-	{ "Status_Internet", "Connect_l2tp", "start_l2tp", RESTART, NULL },	// for 
-	{ "Status_Internet", "Disconnect_l2tp", "stop_l2tp", SERVICE_RESTART, "stop_ppp" },	// for 
-	// cisco 
-	// style{ 
-	// "Status_Router", 
-	// "Connect_heartbeat", 
-	// "start_heartbeat", 
-	// 1, 
-	// RESTART, 
-	// NULL}, 
-	// // 
-	// for 
-	// cisco 
+	{ "Status_Internet", "Connect_pptp", "start_pptp", RESTART, NULL },	// for
+	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Connect_l2tp", "start_l2tp", RESTART, NULL },	// for
+	{ "Status_Internet", "Disconnect_l2tp", "stop_l2tp", SERVICE_RESTART, "stop_ppp" },	// for
+	// cisco
+	// style{
+	// "Status_Router",
+	// "Connect_heartbeat",
+	// "start_heartbeat",
+	// 1,
+	// RESTART,
+	// NULL},
+	// //
+	// for
+	// cisco
 	// style
-	{ "Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", SERVICE_RESTART, "stop_ppp" },	// for 
-	// cisco 
+	{ "Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", SERVICE_RESTART, "stop_ppp" },	// for
+	// cisco
 	// style
 	{ "Status_Internet", "delete_ttraffdata", "", REFRESH,
 	 "ttraff_erase" },
@@ -1148,11 +1148,11 @@ static struct gozila_action gozila_actions[] = {
 	{ "WL_WPATable", "keysize", "wireless_2", REFRESH, "security_save" },
 	{ "WL_ActiveTable", "add_mac", "", REFRESH, "add_active_mac" },
 	/*
-	 * Siafu addition 
+	 * Siafu addition
 	 */
 	{ "Wol", "wol", "", REFRESH, "ping_wol" },
 	/*
-	 * Sveasoft addition 
+	 * Sveasoft addition
 	 */
 	// {"Wireless_WDS", "save", "", REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
@@ -1182,7 +1182,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "QoS", "add_dev", "", REFRESH, "qos_add_dev" },
 	{ "QoS", "save", "filters", REFRESH, "qos_save" },
 	/*
-	 * end Sveasoft addition 
+	 * end Sveasoft addition
 	 */
 	{ "Forward", "add_forward", "", REFRESH, "forward_add" },
 	{ "Forward", "remove_forward", "", REFRESH, "forward_remove" },
@@ -1387,7 +1387,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	struct gozila_action *act;
 
 	wp->gozila_action = 1;
-	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html 
+	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html
 								 * must have
 								 * the name */
 	submit_type = websGetVar(wp, "submit_type", NULL);	/* add, del,
@@ -1475,11 +1475,11 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 
 static struct apply_action apply_actions[] = {
 	/*
-	 * name, service, action, function_to_execute 
+	 * name, service, action, function_to_execute
 	 */
 
 	/*
-	 * SETUP 
+	 * SETUP
 	 */
 	{ "index", "index", SERVICE_RESTART, NULL },
 	{ "DDNS", "ddns", SERVICE_RESTART, "ddns_save_value" },
@@ -1488,11 +1488,11 @@ static struct apply_action apply_actions[] = {
 	{ "eop-tunnel", "eop", SERVICE_RESTART, NULL },
 
 	/*
-	 * WIRELESS 
+	 * WIRELESS
 	 */
 	{ "Wireless_Basic", "wireless", SERVICE_RESTART, NULL },	// Only for
-	// V23, since 
-	// V24 it's a 
+	// V23, since
+	// V24 it's a
 	// gozilla
 	// save
 	{ "Wireless_Advanced-wl0", "wireless_2", SERVICE_RESTART,
@@ -1507,7 +1507,7 @@ static struct apply_action apply_actions[] = {
 	{ "WL_WPATable", "wireless_2", SERVICE_RESTART, NULL },
 
 	/*
-	 * MANAGEMENT 
+	 * MANAGEMENT
 	 */
 	{ "Management", "management", SYS_RESTART, NULL },
 	{ "Services", "services", SERVICE_RESTART, NULL },
@@ -1517,7 +1517,7 @@ static struct apply_action apply_actions[] = {
 #endif
 
 	/*
-	 * SERVICES 
+	 * SERVICES
 	 */
 	{ "PPPoE_Server", "services", SERVICE_RESTART, NULL },
 	{ "PPTP", "pptp", SERVICE_RESTART, NULL },
@@ -1529,7 +1529,7 @@ static struct apply_action apply_actions[] = {
 	{ "Nintendo", "nintendo", SERVICE_RESTART, NULL },
 
 	/*
-	 * APP & GAMING 
+	 * APP & GAMING
 	 */
 	{ "Forward", "forward", SERVICE_RESTART, NULL },
 	{ "ForwardSpec", "forward", SERVICE_RESTART, NULL },
@@ -1541,7 +1541,7 @@ static struct apply_action apply_actions[] = {
 	{ "UPnP", "forward_upnp", SERVICE_RESTART, "tf_upnp" },
 #endif
 	/*
-	 * SECURITY 
+	 * SECURITY
 	 */
 	{ "Firewall", "filters", SERVICE_RESTART, NULL },
 	{ "VPN", "filters", SERVICE_RESTART, NULL },
@@ -1557,9 +1557,9 @@ static struct apply_action apply_actions[] = {
 	 * "dhcp", SERVICE_RESTART, NULL}, {"FilterIP", "filters",
 	 * SERVICE_RESTART, NULL}, {"FilterMAC", "filters", SERVICE_RESTART,
 	 * NULL}, {"FilterPort", "filters", SERVICE_RESTART, NULL},
-	 * {"Wireless", "wireless", SERVICE_RESTART, NULL}, {"Log", "logging", 
+	 * {"Wireless", "wireless", SERVICE_RESTART, NULL}, {"Log", "logging",
 	 * 0, SERVICE_RESTART, NULL}, //moved to Firewall {"QoS", "qos",
-	 * SERVICE_RESTART, NULL}, //gozilla does the save 
+	 * SERVICE_RESTART, NULL}, //gozilla does the save
 	 */
 	{ "InternetAtStart", "finish", SYS_RESTART, NULL },
 #ifdef HAVE_SPEEDCHECKER
@@ -1798,7 +1798,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	}
 
 	/*
-	 * DEBUG : Invalid action 
+	 * DEBUG : Invalid action
 	 */
 	else
 		websDebugWrite(wp, "Invalid action %s<br />", value);
@@ -1809,7 +1809,7 @@ footer:
 		action = REBOOT;
 	}
 	/*
-	 * The will let PC to re-get a new IP Address automatically 
+	 * This will let PC to re-get a new IP Address automatically
 	 */
 	if (need_reboot)
 		action = REBOOT;
@@ -1924,14 +1924,14 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 			return -1;
 		}
 		/*
-		 * Get query 
+		 * Get query
 		 */
 		if (!(count = wfread(stream->post_buf, 1, len, stream)))
 			return -1;
 		stream->post_buf[count] = '\0';;
 		len -= strlen(stream->post_buf);
 		/*
-		 * Slurp anything remaining in the request 
+		 * Slurp anything remaining in the request
 		 */
 		if (len) {
 			char *buf = malloc(len);
@@ -2098,7 +2098,7 @@ static int do_stylecss(unsigned char method, struct mime_handler *handler, char 
 		  sdata[6], sdata[7], sdata[8], sdata[9], sdata[10], sdata[11], sdata[12],	//
 		  sdata[13], sdata[14], sdata[15], sdata[16], sdata[17], sdata[18],	//
 		  sdata[19], sdata[20], sdata[21], sdata[22],	//
-		  sdata[23], sdata[24], sdata[25], sdata[26], sdata[27], sdata[28],	// 
+		  sdata[23], sdata[24], sdata[25], sdata[26], sdata[27], sdata[28],	//
 		  sdata[29], sdata[30], sdata[31], sdata[32]);
 	return 0;
 }
@@ -2131,9 +2131,9 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 
 #endif
 /*
- * static void do_style (char *url, webs_t stream, char *query) { char *style 
+ * static void do_style (char *url, webs_t stream, char *query) { char *style
  * = nvram_get ("router_style"); if (style == NULL || strlen (style) == 0)
- * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
+ * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); }
  */
 
 static int do_mypage(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
@@ -2380,7 +2380,7 @@ static char *private_live_translate(webs_t wp, const char *tran)
 	if (result)
 		return result;
 
-	strcpy(buf, "lang_pack/english.js");	// if string not found, try english 
+	strcpy(buf, "lang_pack/english.js");	// if string not found, try english
 	result = scanfile(wp, buf, tran);
 	if (result)
 		return result;
@@ -2641,7 +2641,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
 
 	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n"	//
-		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n"	// 
+		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n"	//
 		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"	//
 		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
 		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
@@ -2717,8 +2717,8 @@ extern int getdevicecount(void);
 #endif
 
 #ifdef HAVE_LANGUAGE
-static int do_language(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, 
-	    // https, 
+static int do_language(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy,
+	    // https,
 	    // 8/4/2003
 {
 	char *langname = getLanguageName();
