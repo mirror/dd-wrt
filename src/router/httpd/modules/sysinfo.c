@@ -74,9 +74,9 @@ void show_default_info(webs_t wp)
 
 	websWrite(wp, "\n-----Dynamic Information\n");
 
-	websWrite(wp, "RF Mac Address:%s\n", nvram_safe_get("wl0_hwaddr"));
-	websWrite(wp, "LAN Mac Address:%s\n", nvram_safe_get("lan_hwaddr"));
-	websWrite(wp, "WAN Mac Address:%s\n", nvram_safe_get("wan_hwaddr"));
+	websWrite(wp, "RF MAC Address:%s\n", nvram_safe_get("wl0_hwaddr"));
+	websWrite(wp, "LAN MAC Address:%s\n", nvram_safe_get("lan_hwaddr"));
+	websWrite(wp, "WAN MAC Address:%s\n", nvram_safe_get("wan_hwaddr"));
 	if (check_hw_type() == BCM4702_CHIP)
 		websWrite(wp, "Hardware Version:1.x\n");
 	else
@@ -117,7 +117,7 @@ void show_other_info(webs_t wp)
 	websWrite(wp, "language = %s\n", nvram_safe_get("language"));
 	websWrite(wp, "Flash Type = %s\n", nvram_safe_get("flash_type"));
 
-	websWrite(wp, "Write Mac Address = %s\n", nvram_safe_get("et0macaddr"));
+	websWrite(wp, "Write MAC Address = %s\n", nvram_safe_get("et0macaddr"));
 	websWrite(wp, "\n");
 	websWrite(wp, "get wl_gmode = %s\n", nvram_safe_get("wl_gmode"));
 	websWrite(wp, "wl_gmode = %s\n", exec_cmd("wl gmode", line));
@@ -180,7 +180,7 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "sdram_config = %s\n", nvram_safe_get("sdram_config"));
 	websWrite(wp, "sdram_ncdl = %s\n", nvram_safe_get("sdram_ncdl"));
 
-	websWrite(wp, "Write Mac Address = %s\n", nvram_safe_get("et0macaddr"));
+	websWrite(wp, "Write MAC Address = %s\n", nvram_safe_get("et0macaddr"));
 
 	websWrite(wp, "SWAT&Tstatus = 0\n");
 
