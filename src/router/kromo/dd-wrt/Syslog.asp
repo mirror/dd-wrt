@@ -61,8 +61,8 @@ addEvent(window, "unload", function() {
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" value=\"<-- Prev\" onclick=\"do_show_prev();\">");
-								document.write("<input class=\"button\" type=\"button\" value=\"Next -->\" onclick=\"do_show_next();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"‹ Prev\" onclick=\"do_show_prev();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"Next ›\" onclick=\"do_show_next();\">");
 								//]]>
 								</script>
 							</div>
