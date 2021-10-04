@@ -43,7 +43,7 @@ void show_default_info(webs_t wp)
 	websWrite(wp, "#:%s\n", SERIAL_NUMBER);
 	websWrite(wp, "Boot Version:%s\n", nvram_safe_get("boot_ver"));
 	/*
-	 * begin Svbeasoft modifications 
+	 * begin Svbeasoft modifications
 	 */
 	// ret = websWrite(wp, "CodePattern:%s\n", CODE_PATTERN);
 	// #if LOCALE == EUROPE
@@ -238,7 +238,7 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "SWwlEncryption = aes\n");
 
 	/*
-	 * Below for RF test 2003-10-29 
+	 * Below for RF test 2003-10-29
 	 */
 
 	websWrite(wp, "WL_tssi_result = %s\n", nvram_safe_get("wl_tssi_result"));
