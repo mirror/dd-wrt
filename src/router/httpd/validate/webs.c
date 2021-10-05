@@ -67,7 +67,6 @@
 #include <syslog.h>
 #include <shutils.h>
 
-
 char *cidr_to_nm(char *netmask, unsigned int netmask_cidr);
 
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *lanip, char *netmask);
@@ -2074,7 +2073,7 @@ POST data are written to stdin retrieve with wfgets (router/httpd/httpd.c line 1
 Need parsing to get the file data out of the POST data
 */
 	char buf[128] = { 0 };
-	FILE* fp;
+	FILE *fp;
 	char output[64] = { 0 };
 	char *endp_address;
 	char *endp_port;
@@ -2096,7 +2095,7 @@ Need parsing to get the file data out of the POST data
 		dd_loginfo("WireGuard", "WireGuard import tunnel config file does not exist\n");
 	} else {
 		add_tunnel(wp);
-		
+
 		tunnel_save(wp);
 		int key = websGetVari(wp, "keyindex", -1);
 		if (key < 0)
@@ -2105,13 +2104,13 @@ Need parsing to get the file data out of the POST data
 		sprintf(idx, "oet%d_peers", key);
 		nvram_default_geti(idx, 0);
 		int peer = nvram_geti(idx);
-		
+
 		/*debug
-		dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
-		char val[32];
-		sprintf(val, "key: %d; peer: %d", key, peer);
-		nvram_nset(val, "oet%d_upload%d", key, peer);
-		*/
+		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
+		   char val[32];
+		   sprintf(val, "key: %d; peer: %d", key, peer);
+		   nvram_nset(val, "oet%d_upload%d", key, peer);
+		 */
 		while (fgets(buf, sizeof buf, fp) != NULL) {
 			if (sscanf(buf, "PrivateKey = %s", output) == 1)
 				nvram_nset(output, "oet%d_private", key);
@@ -2125,12 +2124,11 @@ Need parsing to get the file data out of the POST data
 				nvram_nset(output, "oet%d_dns", key);
 			if (sscanf(buf, "PublicKey = %s", output) == 1)
 				upload_set("peerkey", output);
-			if (sscanf(buf, "PresharedKey = %s", output) == 1)
-			{
+			if (sscanf(buf, "PresharedKey = %s", output) == 1) {
 				upload_set("usepsk", "1");
 				upload_set("psk", output);
 			}
-			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) //scans until newline otherwise will scan until space
+			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1)	//scans until newline otherwise will scan until space
 				upload_set("aip", output);
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
 				if ((endp_address = strtok(output, ":")) != NULL) {
@@ -2138,7 +2136,7 @@ Need parsing to get the file data out of the POST data
 					upload_set("endpoint", "1");
 					upload_set("rem", endp_address);
 					upload_set("peerport", endp_port);
-					
+
 				}
 			}
 			if (sscanf(buf, "PersistentKeepalive = %s", output) == 1)
@@ -2159,7 +2157,7 @@ void del_tunnel(webs_t wp)
 	int tun = websGetVari(wp, "keyindex", -1);
 	int tunnels = nvram_geti("oet_tunnels");
 	int i;
-	
+
 	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
@@ -3152,8 +3150,8 @@ static char *vapsettings[] = {
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
-	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as"
-	"bgscan_mode", "bgscan_short_int", "bgscan_threshold", "bgscan_long_int"
+	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "bgscan_mode", "bgscan_short_int", "bgscan_threshold",
+	"bgscan_long_int"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
