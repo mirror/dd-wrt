@@ -18,6 +18,9 @@ table tr th {
 table tr:hover {
   background-color: #f1f1f1;
 }
+table tr:not([bgcolor]):hover {
+  background-color: #fff;
+}
 .submitFooter {
   background-color: #ccc;
 }
@@ -32,7 +35,8 @@ table tr:hover {
 li.current {
   margin-top: 2px;
 }
-#menuMainList li span, #menuSubList li span, #menuMainList li a, #menuSubList li a {
+#menuMainList li span, #menuSubList li span,
+#menuMainList li a, #menuSubList li a {
   border-radius: 4px 4px 0px 0px;
   border-style: solid solid none;
   border-width: 0.09em;
@@ -57,7 +61,7 @@ textarea {
   color: #555;
   background-color: #fff;
   background-image: none;
-  border: 1px solid #CCC;
+  border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
   transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
@@ -81,6 +85,13 @@ input {
   border-radius: 4px;
   box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
   transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+}
+input.button {
+  height: 1.6rem;
+  vertical-align: middle
+}
+input.button[name="preview_button"] {
+  padding: 0 .6rem 0 .6rem
 }
 input[name="apply_button"] {
   background: none repeat scroll 0 0 #696969;
@@ -115,17 +126,21 @@ input.button[disabled] {
   color: #000;
   background-color: #DADADA;
 }
+input.num {
+  vertical-align: middle
+}
 select {
   padding: 4px 4px;
   font-size: 12px;
-  line-height: 1.42857;
+  height: 1.5rem;
   color: #555;
-  background-color: #FFF;
+  background-color: #fff;
   background-image: none;
-  border: 1px solid #CCC;
+  border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.075) inset;
   transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+  vertical-align: middle
 }
 button:hover, button:focus {
   color: #333;
