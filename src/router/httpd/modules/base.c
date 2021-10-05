@@ -1875,7 +1875,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1883,7 +1883,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2470,6 +2470,7 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 	}
 	return entry->translation;
 }
+
 void do_ddwrt_inspired_themes(webs_t wp);
 
 static char *charset = NULL;
