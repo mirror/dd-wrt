@@ -303,6 +303,7 @@ static char *filter[] = {
 	"wl0id",
 	"wl1id",
 	"wl2id",
+	"ctf_fa_cap",
 	NULL
 };
 
