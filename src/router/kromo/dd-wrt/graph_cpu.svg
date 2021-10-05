@@ -41,8 +41,8 @@ POSSIBILITY OF SUCH DAMAGE.
 <g id='graph'>
 	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' />
 
-	<text id='graph_lbl'  x='50' y='15' fill='blue' text-anchor='end'>CPU</text>
-	<text id='graph_txt'  x='54' y='15' fill='blue'>--</text>
+	<text id='graph_lbl'  x='50' y='15' fill='#2e81c9' text-anchor='end'>CPU</text>
+	<text id='graph_txt'  x='54' y='15' fill='#2e81c9'>--</text>
 
 	<text id='error' x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
 	<text id='collect_initial' x='300' y='125' text-anchor='middle' visibility='hidden' fill='gray'>Collecting initial data, please wait...</text>
@@ -54,8 +54,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 	<path id='graph_cpu'  d='' fill='none' stroke='blue' stroke-width='1' stroke-opacity='0.8' />
 
-	<line id='axis_x' x1='1' y1='299' x2='600' y2='299' stroke='black' />
-	<line id='axis_y' x1='1' y1='299.5' x2='1' y2='0' stroke='black' />
+	<line id='axis_x' x1='1' y1='299' x2='600' y2='299' stroke='#111' stroke-opacity='0.8' />
+	<line id='axis_y' x1='1' y1='299.5' x2='1' y2='0' stroke='#111' stroke-opacity='0.8' />
 </g>
 <script type="text/ecmascript">
 <![CDATA[

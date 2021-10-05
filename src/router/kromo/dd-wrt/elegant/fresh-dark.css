@@ -39,23 +39,26 @@ body #content {
   background: #1a1a1a;
   border: 1px solid #111111;
 }
-body.help-bg #content {
-  color: #999;
-  background: transparent;
-  border: 1px solid transparent;
-}
 body #content.infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
 }
-body.about-bg, body.help-bg {
+.help-bg a {
+  color: #0087ff
+}
+.help-bg #content {
+  color: #999;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.about-bg, .help-bg {
   background: #1a1a1a;
   color: #eee;
 }
-body.about-bg #content {
+.about-bg #content {
   border-color: transparent;
 }
-body.about-bg #content table.t-border {
+.about-bg #content .t-border {
   border-color: #333;
 }
 #header .logo {
@@ -63,12 +66,10 @@ body.about-bg #content table.t-border {
   mix-blend-mode: lighten;
 }
 body fieldset {
-  background-color: #1a1a1a;
   background-color: #222222;
   border: 1px solid #333;
 }
 body fieldset legend {
-  background-color: #1a1a1a;
   background-color: transparent;
 }
 body #help dd.definition {
@@ -83,8 +84,6 @@ body input {
   background-color: #333;
   border-color: #454545;
 }
-/* try to override inline background-color style
- * i.e. refresh button when dark is anabled */
 body input[disabled], body select[disabled] {
   color: #666;
   background-color: #1a1a1a !important;
@@ -134,7 +133,6 @@ table tr th {
   background-color: #333;
   border-color: #333;
 }
-/* fix broken filter background color when dark */
 table tr[bgcolor="#CCCCCC"] {
   background-color: #222;
 }
@@ -144,7 +142,6 @@ table tr[bgcolor="#CCCCCC"]:hover {
 table tr:hover {
   background: #1a1a1a;
 }
-/* filters weekday background-color */
 [bgcolor="#FFFFFF"] {
   background-color: #292929;
 }
@@ -157,7 +154,6 @@ td[bgcolor="#C0C0C0"] {
 td[bgcolor="#C0C0C0"]:hover {
 	background-color: #1a1a1a;
 }
-/* form select wds margin fix */
 form[name="wds"] select {
 	margin-right: 6px;
 }
