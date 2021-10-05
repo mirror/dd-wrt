@@ -31,7 +31,7 @@ addEvent(window, "load", function() {
 		document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -44,7 +44,7 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
+
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -52,7 +52,7 @@ addEvent(window, "unload", function() {
 				<% do_menu("Status_Router.asp","Syslog.asp"); %>
 				</div>
 				<div id="mainno">
-					<div id="contents">						
+					<div id="contents">
 							<script type="text/javascript">
 								//<![CDATA[
 								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"800\" frameborder=\"0\" type=\"text/html\"></iframe>");
@@ -61,8 +61,8 @@ addEvent(window, "unload", function() {
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" value=\"<-- Prev\" onclick=\"do_show_prev();\">");
-								document.write("<input class=\"button\" type=\"button\" value=\"Next -->\" onclick=\"do_show_next();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"‹ Prev\" onclick=\"do_show_prev();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"Next ›\" onclick=\"do_show_next();\">");
 								//]]>
 								</script>
 							</div>
@@ -79,7 +79,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+				<div class="info"><% tran("share.firmware"); %>:
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
