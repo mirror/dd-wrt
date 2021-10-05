@@ -84,6 +84,13 @@ body input {
   background-color: #333;
   border-color: #454545;
 }
+input.button {
+  height: 1.6rem;
+  vertical-align: middle
+}
+input.button[name="preview_button"] {
+  padding: 0 .6rem 0 .6rem
+}
 body input[disabled], body select[disabled] {
   color: #666;
   background-color: #1a1a1a !important;
@@ -108,6 +115,9 @@ body input[name="reset_button"]:hover {
 body input[name="reboot_button"]:hover {
   background: none repeat scroll 0 0 #FF7C7C;
   color: #eee;
+}
+input.button[onclick*="delete"] {
+	margin: 0 0.2em 0 0.4em;
 }
 textarea {
   color: #e0e0e0;
@@ -141,6 +151,9 @@ table tr[bgcolor="#CCCCCC"]:hover {
 }
 table tr:hover {
   background: #1a1a1a;
+}
+table tr:not([bgcolor]):hover {
+  background-color: #222;
 }
 [bgcolor="#FFFFFF"] {
   background-color: #292929;
