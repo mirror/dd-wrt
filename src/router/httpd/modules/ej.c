@@ -377,8 +377,8 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	len = 0;
 	fp = _getWebsFile(stream, path, &len);
 	if (fp) {
-		if (handler && !handler->send_headers) 
-			send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		if (handler && !handler->send_headers)
+			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		stream->path = path;
 		do_ej_file(fp, len, stream);
 		fclose(fp);

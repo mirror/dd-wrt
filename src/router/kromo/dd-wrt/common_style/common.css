@@ -428,15 +428,16 @@ td.bulle {
   border: 0em;
 }
 .status_red {
-  background: #f00;
+  background: #ea0707;
+  color: #eee
   text-align: center;
 }
 .status_green {
-  background: #0f0;
+  background: #07ef07;
   text-align: center;
 }
 .status_yellow {
-  background: #ff0;
+  background: #ffed00;
   text-align: center;
 }
 .status_orange {

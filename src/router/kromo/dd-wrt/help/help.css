@@ -6,12 +6,14 @@
 tt {
   font-family: Courier, Courier New
 }
-body.help-bg {
-  background: #fff;
+body {
   margin: .906em;
   font-size: 69%;
 }
-body.help-bg #content {
+.help-bg {
+  background: #fff;
+}
+.help-bg #content {
   background: transparent;
   border-color: transparent;
   color: #eee;
@@ -45,7 +47,7 @@ h2 {
   padding: .181em .725em;
   border-style: solid;
   border-color: #ddd #999 #999 #ddd;
-  border-width: .09em;
+  border-width: 1px;
   border-radius: 4px;
 }
 dl {
@@ -58,7 +60,7 @@ dt {
 }
 dd {
   padding-bottom: .908em;
-  border-bottom: dotted .09em #ccc;
+  border-bottom: dotted 1px #ccc;
   margin: 0 0 .908em 0;
 }
 ul, ol {
@@ -91,7 +93,7 @@ a:hover {
 div.also, div.note {
   padding: .725em;
   border-style: solid;
-  border-width: .09em;
+  border-width: 1px;
   border-radius: 4px;
 }
 div.also {
