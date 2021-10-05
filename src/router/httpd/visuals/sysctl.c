@@ -45,9 +45,10 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 	struct sysctl_priv *p = (struct sysctl_priv *)priv;
 	webs_t wp = p->wp;
 	if (!path) {
-		if (p->cnt)
+		if (p->cnt) {
 			websWrite(wp, "</fieldset>\n");
 			websWrite(wp, "<br />\n");
+		}
 		p->cnt = 0;
 		return;
 	}
