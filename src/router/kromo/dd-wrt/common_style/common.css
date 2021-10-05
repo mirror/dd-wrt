@@ -130,7 +130,8 @@ input.num {
   float: left;
   list-style-type: none;
 }
-#menuMainList li span, #menuSubList li span, #menuMainList li a, #menuSubList li a {
+#menuMainList li span, #menuSubList li span,
+#menuMainList li a, #menuSubList li a {
   display: block;
   margin-left: .362em;
   border-style: solid solid none solid;
@@ -162,7 +163,8 @@ input.num {
 #menuSubList li a {
   font-weight: normal;
 }
-#menuMainList li a:hover, #menuSubList li a:hover {
+#menuMainList li a:hover,
+#menuSubList li a:hover {
   margin-top: 0;
   padding-bottom: .543em;
 }
@@ -260,6 +262,9 @@ table tr th {
 table tr:hover {
   background: #e8e8e8;
 }
+table tr:not([bgcolor]):hover {
+  background-color: #fff;
+}
 table td {
   padding: 0;
 }
@@ -297,7 +302,8 @@ table td {
   margin: 0;
   text-align: center;
 }
-.submitFooter .button, .message div input {
+.submitFooter .button,
+.message div input {
   padding: .362em 1.087em;
   margin: 0 .362em;
 }
@@ -405,6 +411,9 @@ input.four_column {
 }
 input.four_column_last {
   margin-right: 0px;
+}
+input.button[onclick*="delete"] {
+	margin: 0 0.4em 0 0.4em;
 }
 div.bulle {
   width: auto;

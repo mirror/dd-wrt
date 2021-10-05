@@ -76,7 +76,7 @@ body input.focus {
   box-shadow: 0 0 5px 1px var(--v0-8);
 }
 body input[disabled] {
-  background-color: var(--bg-0);
+  background-color: var(--bg-0) !important;
   border-color: var(--bg-2);
   color: var(--v9-4);
 }
@@ -87,12 +87,13 @@ body input[disabled]:hover {
 }
 body input.button {
   background: var(--v0-6);
-  border-color: var(--v0-4);
+  border-color: var(--v0-7);
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  outline: 0;
+  padding: 0 .462rem 0 .462rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  outline: 0;
 }
 body input.button:hover,
 body input.button:focus-within {
@@ -103,7 +104,7 @@ body input.button:focus-within {
 }
 body input.button[disabled] {
   color: var(--v9-9) !important;
-  border-color: var(--bg-3) !important;
+  border-color: var(--v0-6) !important;
   background-color: var(--v0-5) !important;
   box-shadow: none;
   opacity: 0.6;
@@ -381,16 +382,16 @@ table tr:not([bgcolor]) th {
   border-color: var(--bg-4);
   color: var(--fg-1);
 }
-[bgcolor='#FFFF00'] {
+[bgcolor='#ffed00'] {
   background-color: var(--v3-3);
 }
-[bgcolor='#FFFF00']:hover {
+[bgcolor='#ffed00']:hover {
   background-color: var(--v3-4);
 }
-[bgcolor='#FF0000'] {
+[bgcolor='#ea0707'] {
   background-color: var(--v1-4);
 }
-[bgcolor='#FF0000']:hover {
+[bgcolor='#ea0707']:hover {
   background-color: var(--v1-5);
 }
 [title*='Search']:hover,
