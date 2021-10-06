@@ -11,7 +11,7 @@ h1 {
   font-size: 24px;
 }
 h2, h3, dt {
-  padding: 0px 0px 5px 0px;
+  padding: 0 0 5px 0;
   font-weight: bold;
 }
 hr {
@@ -25,10 +25,10 @@ input.ipnum {
   text-align: center;
 }
 th, td {
-  padding: 0px 10px 0px 0px;
+  padding: 0 10px 0 0;
 }
 dd {
-  padding: 0px 0px 5px 0px;
+  padding: 0 0 5px 0;
 }
 select, option {
   width: auto;
@@ -52,20 +52,20 @@ select, option {
 #header #logo {
   background-color: #2b226f;
   color: #0f0;
-  padding: 0px 5px 0px 5px;
+  padding: 0 5px 0 5px;
 }
 #header #menu {
   background-color: #2b226f;
   border-bottom: solid 1px #4336af;
   color: #fff;
-  padding: 0px 5px 0px 5px;
+  padding: 0 5px 0 5px;
 }
 #header #menu ul {
   list-style-type: none;
 }
 #header #menu li {
   display: inline;
-  padding: 0px 3px 0px 3px;
+  padding: 0 3px 0 3px;
 }
 #header #menu li a {
   color: #fff;
@@ -76,7 +76,7 @@ select, option {
 }
 #header #menu #menuMain {
   width: 100%;
-  padding: 2px 0px 3px 0px;
+  padding: 2px 0 3px 0;
 }
 #header #menu .current {
   border-bottom: solid 1px #0f0;
@@ -87,8 +87,8 @@ select, option {
 #header #menu #menuSub {
   width: 100%;
   background-color: #000;
-  margin: 4px 0px 0px 0px;
-  padding: 2px 0px 3px 0px;
+  margin: 4px 0 0 0;
+  padding: 2px 0 3px 0;
   float: left;
 }
 #header #menu #menuSub span {
@@ -101,19 +101,19 @@ select, option {
   padding: 5px 5px 5px 5px;
 }
 #main fieldset {
-  margin: 0px 150px 0px 0px;
+  margin: 0 150px 0 0;
   color: #2300af;
   padding: 5px 5px 5px 5px;
 }
 #main .comment {
   font-style: italic;
   color: #000;
-  padding: 0px 0px 5px 0px;
+  padding: 0 0 5px 0;
 }
 #main .label {
   width: 16em;
   color: #000;
-  padding: 0px 0px 5px 0px;
+  padding: 0 0 5px 0;
   float: left;
   clear: both;
 }
@@ -122,10 +122,10 @@ select, option {
 }
 #main .setting {
   color: #000;
-  padding: 0px 0px 5px 0px;
+  padding: 0 0 5px 0;
 }
 #main .setting input, #main .setting option {
-  margin: 0px 2px 0px 0px;
+  margin: 0 2px 0 0;
 }
 .submitFooter, .submitFooterCmd {
   padding: 5px 5px 5px 5px;
@@ -148,7 +148,7 @@ select, option {
   font-weight: bold;
 }
 .warning input {
-  margin: 5px 0px 5px 0px;
+  margin: 5px 0 5px 0;
   color: #2b226f;
 }
 .meter {

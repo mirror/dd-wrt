@@ -4,7 +4,7 @@
   text-align: justify;
 }
 tt {
-  font-family: Courier, Courier New
+  font-family: Courier, 'Courier New';
 }
 body {
   margin: .906em;
