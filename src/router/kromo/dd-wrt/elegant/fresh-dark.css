@@ -12,7 +12,7 @@ body a:hover {
 }
 body, body.gui, .popup {
   color: #999;
-  background: #111111;
+  background: #111;
 }
 body div.message {
   background-color: #1a1a1a;
@@ -32,19 +32,19 @@ body input.button[disabled] {
   cursor: default;
   color: #999;
   background-color: #1a1a1a;
-  border-color: #111111;
+  border-color: #111;
 }
 body #content {
   color: #999;
   background: #1a1a1a;
-  border: 1px solid #111111;
+  border: 1px solid #111;
 }
 body #content.infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
 }
 .help-bg a {
-  color: #0087ff
+  color: #0087ff;
 }
 .help-bg #content {
   color: #999;
@@ -62,11 +62,11 @@ body #content.infopage #main {
   border-color: #333;
 }
 #header .logo {
-  filter: invert(0.95) hue-rotate(180deg);
+  filter: invert(.95) hue-rotate(180deg);
   mix-blend-mode: lighten;
 }
 body fieldset {
-  background-color: #222222;
+  background-color: #222;
   border: 1px solid #333;
 }
 body fieldset legend {
@@ -86,21 +86,21 @@ body input {
 }
 input.button {
   height: 1.6rem;
-  vertical-align: middle
+  vertical-align: middle;
 }
 input.button[name="preview_button"] {
-  padding: 0 .6rem 0 .6rem
+  padding: 0 .6rem 0 .6rem;
 }
 body input[disabled], body select[disabled] {
   color: #666;
   background-color: #1a1a1a !important;
-  border-color: #111111;
+  border-color: #111;
 }
 body input[name="save_button"]:hover {
   color: #eee;
 }
 body input[name="apply_button"]:hover {
-  background: none repeat scroll 0 0 #78D98D;
+  background: none repeat scroll 0 0 #78d98d;
   color: #fff;
 }
 body input[name="reset_button"] {
@@ -109,15 +109,15 @@ body input[name="reset_button"] {
   color: #ccc;
 }
 body input[name="reset_button"]:hover {
-  background: none repeat scroll 0 0 #FFA500;
+  background: none repeat scroll 0 0 #ffa500;
   color: #fff;
 }
 body input[name="reboot_button"]:hover {
-  background: none repeat scroll 0 0 #FF7C7C;
+  background: none repeat scroll 0 0 #ff7c7c;
   color: #eee;
 }
 input.button[onclick*="delete"] {
-	margin: 0 0.2em 0 0.4em;
+  margin: 0 .2em 0 .4em;
 }
 textarea {
   color: #e0e0e0;
@@ -137,7 +137,7 @@ select {
 select[disabled] {
   color: #666;
   background-color: #1a1a1a;
-  border-color: #111111;
+  border-color: #111;
 }
 table tr th {
   background-color: #333;
@@ -162,13 +162,13 @@ table tr:not([bgcolor]):hover {
   border-color: #333;
 }
 td[bgcolor="#C0C0C0"] {
-	background-color: #383838;
+  background-color: #383838;
 }
 td[bgcolor="#C0C0C0"]:hover {
-	background-color: #1a1a1a;
+  background-color: #1a1a1a;
 }
 form[name="wds"] select {
-	margin-right: 6px;
+  margin-right: 6px;
 }
 .submitFooter {
   background-color: #222;
@@ -181,7 +181,7 @@ form[name="wds"] select {
 .off {
   color: #666;
   background-color: #1a1a1a;
-  border-color: #111111;
+  border-color: #111;
 }
 fieldset.off {
   border-color: #333;
@@ -197,7 +197,7 @@ fieldset.off {
 div.note {
   background: #380c55;
   border-color: #8030b5;
-  margin-top: 0.5rem;
+  margin-top: .5rem;
   border-radius: 4px;
 }
 div.also {

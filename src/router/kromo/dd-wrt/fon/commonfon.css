@@ -24,8 +24,8 @@ pre {
   overflow: scroll;
   padding: 1em;
   margin: 0;
-  font-family: Courier New, Courier;
-  background-color: #F7F7F7;
+  font-family: 'Courier New', Courier;
+  background-color: #f7f7f7;
 }
 form {
   margin: 0;
@@ -44,7 +44,7 @@ input.num {
 }
 #header {
   width: 72.464em;
-  height: 9.340em;
+  height: 9.34em;
   background: #111;
   padding-top: .908em;
 }
@@ -98,7 +98,8 @@ input.num {
   float: left;
   list-style-type: none;
 }
-#menuMainList li span, #menuSubList li span, #menuMainList li a, #menuSubList li a {
+#menuMainList li span, #menuSubList li span,
+#menuMainList li a, #menuSubList li a {
   display: block;
   margin-left: .362em;
   border-style: solid solid none solid;
@@ -233,7 +234,7 @@ table td {
   padding: 0;
 }
 #help {
-  width: 17.210em;
+  width: 17.21em;
   padding: .906em 0;
 }
 #help dl {
@@ -253,7 +254,7 @@ table td {
   display: block;
   position: absolute;
   top: 1.178em;
-  right: 0.901em;
+  right: .901em;
   text-align: right;
   text-decoration: none;
   text-transform: lowercase;
@@ -344,7 +345,7 @@ td .meter {
 input.spaceradio {
   margin-right: .4em;
 }
-@media all and (min-width: 0px) {
+@media all and (min-width: 0) {
 fieldset {
   padding-top: 0;
 }
