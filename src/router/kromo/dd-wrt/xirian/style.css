@@ -12,7 +12,7 @@ body {
 body, th, td, a, input, select, textarea {
   font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 11px;
-  color: #115B80;
+  color: #115b80;
 }
 #content {
   background: url(/style/xirian/help_bg.png) top right repeat-y;
@@ -21,7 +21,7 @@ body, th, td, a, input, select, textarea {
   background-image: none;
 }
 input {
-  margin: 0px;
+  margin: 0;
   margin-left: 1px;
   margin-right: 1px;
 }

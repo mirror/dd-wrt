@@ -1,14 +1,14 @@
 .overlay_ddwrt {
   background-color: #ddd;
   filter: alpha(opacity=60);
-  opacity: 0.6;
+  opacity: .6;
 }
 .ddwrt_close {
   width: 23px;
   height: 23px;
   background: transparent url(ddwrt/button-close-focus.png) no-repeat 0 0;
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 11px;
   cursor: pointer;
   z-index: 1000;
@@ -18,7 +18,7 @@
   height: 23px;
   background: transparent url(ddwrt/button-min-focus.png) no-repeat 0 0;
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 55px;
   cursor: pointer;
   z-index: 1000;
@@ -28,7 +28,7 @@
   height: 23px;
   background: transparent url(ddwrt/button-max-focus.png) no-repeat 0 0;
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 33px;
   cursor: pointer;
   z-index: 1000;
@@ -98,7 +98,7 @@
   width: 400px;
 }
 .ddwrt_message {
-  font: 14px arial;
+  font: 14px Arial;
   text-align: center;
   width: 100%;
   padding-bottom: 10px;
@@ -123,5 +123,5 @@
 .ddwrt_wired_frame {
   background: #fff;
   filter: alpha(opacity=60);
-  opacity: 0.6;
+  opacity: .6;
 }

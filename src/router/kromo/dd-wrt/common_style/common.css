@@ -24,13 +24,12 @@ pre {
   padding: 1em;
   margin: 0;
   font-family: "Courier New", Courier, monospace;
-  background-color: #F7F7F7;
+  background-color: #f7f7f7;
   white-space: pre-wrap;
 }
 form {
   margin: 0;
 }
-/* form select wds margin fix */
 form[name="wds"] select {
 	margin-right: 6px;
 }
@@ -76,7 +75,7 @@ input.num {
 }
 #header {
   width: 89.464em;
-  height: 9.340em;
+  height: 9.34em;
   background: #111;
   padding-top: .908em;
 }
@@ -269,7 +268,7 @@ table td {
   padding: 0;
 }
 #help {
-  width: 17.210em;
+  width: 17.21em;
   padding: .906em 0;
 }
 #help dl {
@@ -289,7 +288,7 @@ table td {
   display: block;
   position: absolute;
   top: 1.478em;
-  right: 0.901em;
+  right: .901em;
   text-align: right;
   text-decoration: none;
   text-transform: lowercase;
@@ -386,38 +385,38 @@ body input.button {
   border-bottom-color: #ccc;
   border-right-color: #ccc;
   border-left-color: #ddd;
-  border-top-color: #ddd
+  border-top-color: #ddd;
 }
 body input.button[disabled] {
   cursor: default;
   color: #000;
-  background-color: #DADADA;
+  background-color: #dadada;
 }
 input.spaceradio {
   margin-right: .4em;
 }
 input.three_column {
   width: 150px;
-  margin-left: 0px;
+  margin-left: 0;
   margin-right: 10px;
 }
 input.three_column_last {
-  margin-right: 0px;
+  margin-right: 0;
 }
 input.four_column {
   width: 115px;
-  margin-left: 0px;
+  margin-left: 0;
   margin-right: 10px;
 }
 input.four_column_last {
-  margin-right: 0px;
+  margin-right: 0;
 }
 input.button[onclick*="delete"] {
-	margin: 0 0.4em 0 0.4em;
+  margin: 0 .4em 0 .4em;
 }
 div.bulle {
   width: auto;
-  background-color: #FFFFE1;
+  background-color: #ffffe1;
   position: absolute;
   visibility: hidden;
   z-index: 2000;
@@ -425,20 +424,20 @@ div.bulle {
 table.bulle {
   width: auto;
   height: auto;
-  margin: 0em;
-  padding: 0em;
-  border: 0.09em solid #000000;
+  margin: 0;
+  padding: 0;
+  border: .09em solid #000;
   text-align: justify;
 }
 td.bulle {
   width: auto;
   height: auto;
-  padding: 0.09em;
-  border: 0em;
+  padding: .09em;
+  border: 0;
 }
 .status_red {
   background: #ea0707;
-  color: #eee
+  color: #eee;
   text-align: center;
 }
 .status_green {
