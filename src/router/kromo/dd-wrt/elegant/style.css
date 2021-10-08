@@ -18,13 +18,13 @@ fieldset legend {
   color: #30519c;
 }
 #help a {
-  color: #fff;
+  color: #eee;
 }
 #help a:hover {
   color: #fff;
 }
 .meter .bar {
-  background-color: #496fc7;
+  background-color: #36f;
 }
 .meter .text {
   color: #fff;
@@ -36,11 +36,11 @@ fieldset legend {
   border-width: .09em;
 }
 .progressbarblock {
-  background-color: #496fc7;
+  background-color: #36f;
   font-size: .09em;
 }
 input.button {
-  background: #496fc7;
+  background: #36f;
   color: #fff;
 }
 input.button:hover {

@@ -6,7 +6,6 @@ h2, h3, .submitFooter {
   background-color: #777674;
   background-image: none;
   border-radius: 4px;
-  border-color: none;
   border-style: none;
 }
 table tr th {
@@ -19,7 +18,7 @@ table tr:hover {
   background-color: #f1f1f1;
 }
 table tr:not([bgcolor]):hover {
-  background-color: #fff;
+  background-color: #f9f9f9;
 }
 .submitFooter {
   background-color: #ccc;
@@ -37,10 +36,8 @@ li.current {
 }
 #menuMainList li span, #menuSubList li span,
 #menuMainList li a, #menuSubList li a {
-  border-radius: 4px 4px 0px 0px;
   border-radius: 4px 4px 0 0;
   border-style: solid solid none;
-  border-width: .09em;
   border-width: 1px;
   display: block;
   margin-left: .362em;
@@ -65,7 +62,7 @@ textarea {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
-  transition: border-color .15s ease-in-out 0s, box-shadow .15s ease-in-out 0s;
+  transition: all .15s ease-in-out 0s;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -85,37 +82,37 @@ input {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
-  transition: border-color .15s ease-in-out 0s, box-shadow .15s ease-in-out 0s;
+  transition: all .15s ease-in-out 0s;
 }
 input.button {
   height: 1.6rem;
   vertical-align: middle;
   box-shadow: 2px 2px 2px #808080;
 }
-input.button[name="preview_button"] {
+input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
 }
-input[name="apply_button"] {
+input[name='apply_button'] {
   background: none repeat scroll 0 0 #696969;
   color: #fff;
 }
-input[name="apply_button"]:hover {
+input[name='apply_button']:hover {
   background: none repeat scroll 0 0 #777674;
   color: #000;
 }
-input[name="reset_button"] {
+input[name='reset_button'] {
   background: none repeat scroll 0 0 #fff;
   color: #000;
 }
-input[name="reset_button"]:hover {
+input[name='reset_button']:hover {
   background: none repeat scroll 0 0 #ffa500;
   color: #000;
 }
-input[name="reboot_button"] {
+input[name='reboot_button'] {
   background: none repeat scroll 0 0 #f00;
   color: #fff;
 }
-input[name="reboot_button"]:hover {
+input[name='reboot_button']:hover {
   background: none repeat scroll 0 0 #ff7c7c;
   color: #000;
 }
@@ -135,7 +132,7 @@ input.num {
 select {
   padding: 4px 4px;
   font-size: 12px;
-  height: 1.5rem;
+  height: 1.6rem;
   color: #555;
   background-color: #fff;
   background-image: none;
@@ -170,7 +167,7 @@ button {
   background-color: transparent;
 }
 #content.infopage #main {
-  background-color: #fff;
+  background-color: #f9f9f9;
   border-radius: 5px;
   border: 1px solid #111;
 }
@@ -179,16 +176,16 @@ button {
   margin-bottom: 1em;
   border: 1px solid #111;
 }
-table[summary="ports forwarding table"] .num[size="15"] {
+table[summary='ports forwarding table'] .num[size='15'] {
   max-width: 100px;
 }
-table[summary="ports forwarding table"] .num[size="5"] {
+table[summary='ports forwarding table'] .num[size='5'] {
   max-width: 50px;
 }
-table[summary="ports forwarding table"] input[size="10"] {
+table[summary='ports forwarding table'] input[size='10'] {
   max-width: 79px;
 }
-form[name="wds"] select {
+form[name='wds'] select {
 	margin-right: 6px;
 }
 #header {
