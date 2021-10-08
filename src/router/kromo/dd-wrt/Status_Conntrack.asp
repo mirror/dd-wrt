@@ -1,8 +1,9 @@
 <% do_pagehead("status_conn.titl"); %>
 
 <style type="text/css">
-A:link {text-decoration: none; color: black;}
-A:hover {text-decoration: underline; color: black;}
+a:link {text-decoration: none; color: #000;}
+a:hover {text-decoration: underline; color: #000;}
+.iplookup {overflow-x: hidden;}
 </style>
 
 <script type="text/javascript">
@@ -19,7 +20,7 @@ function openGeotool(IP) {
 //]]>
 </script>
 	</head>
-	<body>
+	<body class="iplookup">
 		<div class="popup">
 			<form>
 				<div id="bulle" class="bulle"></div>
@@ -44,7 +45,7 @@ function openGeotool(IP) {
 				//<![CDATA[
 				var t = new SortableTable(document.getElementById('conntrack_table'), 4000);
 				//]]>
-				</script>				
+				</script>
 				<br />
 				<div class="submitFooter">
 					<script type="text/javascript">
