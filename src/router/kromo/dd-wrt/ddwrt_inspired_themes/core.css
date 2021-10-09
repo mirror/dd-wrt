@@ -1,3 +1,9 @@
+/*
+ * style-name: DD-WRT Inspired Themes v5.0.0
+ * copyright: © 2021 Style-it-themes: the-j0k3r
+ * license: MIT https://git.io/JrzcO
+ * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
+*/
 ::selection {
   background-color: var(--v0-6);
   color: var(--v9-9);
@@ -12,7 +18,7 @@
 }
 body {
   background: var(--bg-1);
-  color: var(--v9-6);
+  color: var(--v9-7);
   text-rendering: optimizeLegibility;
 }
 body > fieldset:first-child {
@@ -22,7 +28,7 @@ body[onunload*="location.href='Filters.asp'"] {
   height: 180% !important;
   background-color: var(--bg-0);
 }
-body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'i][name*='sum'] {
+body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'][name*='sum'] {
   margin-bottom: -2px;
 }
 body[onunload*="location.href='Filters.asp'"] h2 {
@@ -86,19 +92,20 @@ body input[disabled]:hover {
   background-color: var(--bg-0) !important;
 }
 body input.button {
-  background: var(--v0-6);
-  border-color: var(--v0-7);
+  background: var(--v0-4);
+  border: 1px solid var(--v0-6);
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  padding: 0 .462rem 0 .462rem;
+  height: 1.7rem;
+  padding: 0 0.462rem 0 0.462rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
 }
 body input.button:hover,
 body input.button:focus-within {
-  background: var(--v0-8) !important;
-  border-color: var(--v0-8);
+  background: var(--v0-7);
+  border-color: var(--v0-7);
   box-shadow: 0 0 10px 0 var(--v0-4);
   color: var(--v9-9);
 }
@@ -111,7 +118,7 @@ body input.button[disabled] {
 }
 body input[name*='apply'] {
   background: none repeat scroll 0 0 var(--v4-2);
-  border-color: var(--v4-2);
+  border-color: var(--v4-3);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
@@ -220,9 +227,15 @@ hr {
 div.center input.button[name='add_button']:not([onclick*='_add']) {
   margin: 0 0 0.8em 0;
 }
+div.center input.button[name='add_button'][onclick*='_add'] {
+  margin: 0 0.7em 0.8em 0;
+}
 input.button[onclick*='copy'],
 input.button[onclick*='paste'] {
-  margin: 0 0 0.8em 0;
+  margin: 0 0.362em 1em 0;
+}
+input.button[onclick*='vifs_add'] {
+  margin: 0.4em 0 0 0;
 }
 input.button[onclick*='vifs_add'] {
   margin: 0.4em 0 0 0;
@@ -230,8 +243,23 @@ input.button[onclick*='vifs_add'] {
 input.button[onclick*='delete'] {
   margin: 0 0.4em 0 0.4em;
 }
+input.button[onclick*='DeleteEntry'] {
+  vertical-align: 0.04rem;
+}
+input.button[onclick*='to_delete'] {
+  margin: 0 0.5rem 0 0.4rem;
+}
+input.button[onclick*="filter_remove"] {
+  margin: 0 0.5rem 0 0.3rem;
+}
+input.button[onclick*="filter_del"] {
+  margin: 0 0.5rem 0 0;
+}
 input.button[onclick*='gen_wg_key'] {
   margin: 0 0 6px -32%;
+}
+input.button[onclick*='do_show_prev'] {
+  margin: 0.5rem 0.5rem 0 0;
 }
 input.button[name*='import_tunnel'] {
   margin-left: 6px;
@@ -240,7 +268,7 @@ input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -35%;
 }
 input.button[onclick*='previewStyle'] {
-  padding: 0.362em 1.087em;
+  vertical-align: 0.04rem;
 }
 input.button[onclick*='vlan_add'],
 input.button[onclick*='bridge_add'],
@@ -250,19 +278,30 @@ input.button[onclick*='bond_add'],
 input.button[onclick*='mdhcp_add'] {
   padding: 0.2em 0.95em;
 }
-input[type='checkbox'i][onclick*='setElementMask'] {
+input.button[onclick*='bridge_add'],
+input.button[onclick*='bridgeif_add'],
+input.button[onclick*='ipvs_add'] {
+  margin-top: 0.2rem;
+}
+input.button[onclick*='release'] {
+  margin-right: 0.5rem;
+}
+input[type='checkbox'][onclick*='setElementMask'] {
   margin-top: 6px;
 }
-input[type='checkbox'i][name*='svqos_'],
-input[type='checkbox'i][name='_dhcpd_usenvram'] {
+input[type='checkbox'][name*='svqos_'],
+input[type='checkbox'][name='_dhcpd_usenvram'] {
   margin-bottom: -1px;
   margin-left: 0;
 }
-input[type='radio'i][onclick*='timeall'][value='0'] {
+input[type='radio'][onclick*='timeall'][value='0'] {
   margin-top: 4px;
 }
 input[name='_filter_p2p'] {
   margin-left: calc(2% - 0.3rem);
+}
+.table[summary='ports forwarding table'] input[type='checkbox'] {
+  margin-top: 0.4333rem;
 }
 #menu #menuMainList li span {
   background: var(--bg-1) !important;
@@ -279,8 +318,20 @@ input[name='_filter_p2p'] {
   color: var(--v9-8);
   outline: 0;
 }
+#menu #menuMainList li a:hover {
+  background: var(--v0-7);
+  border-color: var(--v0-7);
+  color: var(--v9-9);
+}
 #menu #menuMainList li.current span {
   background: var(--bg-1) !important;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+}
+#menu #menuMainList li.current span:hover {
+  background: var(--v0-4) !important;
+  border: 1px solid var(--v0-6);
+  padding-top: 0.3rem !important;
+  cursor: default;
 }
 #menuSub {
   background: var(--bg-3) !important;
@@ -379,8 +430,9 @@ table tr:not([bgcolor]):focus-within {
 }
 table tr:not([bgcolor]) th {
   background-color: var(--bg-5);
-  border-color: var(--bg-4);
+  border-color: var(--bg-5);
   color: var(--fg-1);
+  padding-bottom: 2px;
 }
 [bgcolor='#ffed00'] {
   background-color: var(--v3-3);
@@ -390,6 +442,7 @@ table tr:not([bgcolor]) th {
 }
 [bgcolor='#ea0707'] {
   background-color: var(--v1-4);
+  color: var(--v9-8);
 }
 [bgcolor='#ea0707']:hover {
   background-color: var(--v1-5);
@@ -539,11 +592,19 @@ h3 {
   letter-spacing: 0.95px;
   border-radius: 4px;
 }
+h2 {
+  padding-bottom: 0.3rem;
+}
 .submitFooter {
   background: var(--rgba-bg-05);
   border: 1px solid var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
+  padding-top: 0.233rem;
+  padding-bottom: 0.2333rem;
+}
+.submitFooter .button {
+  margin-right: 0.362em;
 }
 .meter {
   background-color: var(--bg-4);
@@ -645,10 +706,12 @@ svg {
 #graph text[fill='red'] {
   fill: var(--v1-6) !important;
 }
-#graph text[fill='#435370'] {
+#graph text[fill='#435370'],
+#graph text[fill='#2e81c9'] {
   fill: var(--v6-8) !important;
 }
-#graph text[fill='blue'] {
+#graph text[fill='blue'],
+#graph text[fill='#2e81c9'] {
   fill: var(--v6-5) !important;
 }
 #graph text[fill='gray'] {
@@ -664,11 +727,12 @@ svg {
   stroke: var(--bg-5) !important;
   stroke-opacity: 0.5;
 }
-#graph rect#bg[fill='white'] {
+#graph rect #bg[fill='white'] {
   fill: var(--bg-2) !important;
   fill-opacity: 1;
 }
-#graph line[stroke='black'] {
+#graph line[stroke='black'],
+#graph line[stroke='#111'] {
   stroke: var(--bg-5) !important;
 }
 #t-graph {
@@ -755,7 +819,7 @@ input {
   box-shadow: 0 1px 1px var(--rgba-bg-075);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   padding: 7px;
-  line-height: 1.2em;
+  line-height: 1.4em;
   appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
