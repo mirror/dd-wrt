@@ -76,7 +76,9 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
+						<!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
 						<div><h2><% tran("share.help"); %></h2></div>
+						-->
 						<dl>
 							<dt class="term"><% tran("management.ipv6_srv"); %></dt>
 							<dd class="definition"><% tran("hipv6.right2"); %></dd>
