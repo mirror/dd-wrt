@@ -47,3 +47,7 @@ input.button:hover {
   background: #ff9000;
   color: #fff;
 }
+input:focus-visible, textarea:focus-visible {
+  box-shadow: 0 0 5px 1px #ff9000 !important;
+  outline: 2px solid #ff9000 !important;
+}

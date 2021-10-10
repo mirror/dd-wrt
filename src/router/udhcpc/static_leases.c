@@ -104,9 +104,9 @@ void printStaticLeases(struct static_lease **arg)
 	while(cur != NULL)
 	{
 		/* printf("PrintStaticLeases: Lease mac Address: %x\n", cur->mac); */
-		printf("PrintStaticLeases: Lease mac Value: %x\n", *(cur->mac));
+		printf("PrintStaticLeases: Lease MAC Value: %x\n", *(cur->mac));
 		/* printf("PrintStaticLeases: Lease ip Address: %x\n", cur->ip); */
-		printf("PrintStaticLeases: Lease ip Value: %x\n", *(cur->ip));
+		printf("PrintStaticLeases: Lease IP Value: %x\n", *(cur->ip));
 
 		cur = cur->next;
 	}

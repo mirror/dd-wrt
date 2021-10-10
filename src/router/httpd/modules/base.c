@@ -2514,7 +2514,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 						   || strstr(line, "httpd login failure")
 						   || strstr(line, "auth-failure")
 						   || strstr(line, ".err")) {
-						websWrite(stream, "<tr bgcolor=\"#ea0707\" color=\"#eeeeee\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#ea0707\"><td style=\"color=\"#eeeeee\"\">%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
 					}
