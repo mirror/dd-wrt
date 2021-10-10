@@ -41,9 +41,16 @@ fieldset legend {
 }
 input.button {
   background: #d55;
+  border: 1px solid #d55;
   color: #fcc;
 }
 input.button:hover {
   background: #e77;
+  border: 1px solid #e77;
   color: #fff;
 }
+input:focus-visible, textarea:focus-visible {
+  box-shadow: 0 0 5px 1px #e77 !important;
+  outline: 2px solid #e77 !important;
+}
+

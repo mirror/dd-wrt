@@ -2,17 +2,17 @@
 #menuSub, #menuMainList li span, #help h2 {
   background: #099;
   color: #fff;
-  border-color: #3bb #066 #066 #3bb;
+  border-color: #3bb;
 }
 #menuSubList li a {
   background: #3bb;
   color: #cff;
-  border-color: #4cc #1aa #1aa #4cc;
+  border-color: #4cc;
 }
 #menuSubList li a:hover {
   background: #6cc;
   color: #fff;
-  border-color: #8dd #5bb #5bb #8dd;
+  border-color: #8dd;
 }
 fieldset legend {
   color: #099;
@@ -41,9 +41,15 @@ fieldset legend {
 }
 input.button {
   background: #3bb;
+  border: 1px solid #3bb;
   color: #cff;
 }
 input.button:hover {
   background: #6cc;
+  border: 1px solid #6cc;
   color: #fff;
+}
+input:focus-visible, textarea:focus-visible {
+  box-shadow: 0 0 5px 1px #6cc !important;
+  outline: 2px solid #6cc !important;
 }

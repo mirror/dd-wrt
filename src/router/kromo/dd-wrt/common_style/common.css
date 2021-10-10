@@ -3,7 +3,7 @@
   font-size: 1em;
 }
 body {
-  background: #fff;
+  background: #f9f9f9;
   margin: .906em;
   font-size: 69%;
 }
@@ -23,15 +23,15 @@ pre {
   overflow: auto;
   padding: 1em;
   margin: 0;
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
   background-color: #f7f7f7;
   white-space: pre-wrap;
 }
 form {
   margin: 0;
 }
-form[name="wds"] select {
-	margin-right: 6px;
+form[name='wds'] select {
+  margin-right: 6px;
 }
 input.num {
   padding-left: 1px;
@@ -240,7 +240,7 @@ fieldset legend {
   font-weight: bold;
   margin-left: -.362em;
   padding: 0 .272em;
-  background: #fff;
+  background: #f9f9f9;
 }
 table {
   margin: 0 auto;
@@ -262,7 +262,7 @@ table tr:hover {
   background: #e8e8e8;
 }
 table tr:not([bgcolor]):hover {
-  background-color: #fff;
+  background-color: #f9f9f9;
 }
 table td {
   padding: 0;
@@ -377,15 +377,11 @@ td .meter {
   background: url(/images/bin_bt.gif) center no-repeat;
   cursor: pointer;
 }
-body input.button {
+input.button {
   padding: .2em .362em;
   margin: 0 .3em 0 0;
   cursor: pointer;
-  border-width: 1px;
-  border-bottom-color: #ccc;
-  border-right-color: #ccc;
-  border-left-color: #ddd;
-  border-top-color: #ddd;
+  border: 1px solid #ccc;
 }
 body input.button[disabled] {
   cursor: default;
@@ -411,7 +407,7 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
-input.button[onclick*="delete"] {
+input.button[onclick*='delete'] {
   margin: 0 .4em 0 .4em;
 }
 div.bulle {
@@ -453,7 +449,7 @@ td.bulle {
   text-align: center;
 }
 .off {
-  background: #e0e0e0;
+  opacity: .6;
 }
 .odd {
   background: #ccc;
