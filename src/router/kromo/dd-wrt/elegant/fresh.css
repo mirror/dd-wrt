@@ -88,36 +88,43 @@ input.button {
   height: 1.6rem;
   vertical-align: middle;
   box-shadow: 2px 2px 2px #808080;
+  border-color: #ccc;
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
 }
 input[name='apply_button'] {
   background: none repeat scroll 0 0 #696969;
+  border-color: #ccc;
   color: #fff;
 }
 input[name='apply_button']:hover {
   background: none repeat scroll 0 0 #777674;
+  border-color: #ccc;
   color: #000;
 }
 input[name='reset_button'] {
   background: none repeat scroll 0 0 #fff;
+  border-color: #ccc;
   color: #000;
 }
 input[name='reset_button']:hover {
   background: none repeat scroll 0 0 #ffa500;
+  border-color: #ccc;
   color: #000;
 }
 input[name='reboot_button'] {
   background: none repeat scroll 0 0 #f00;
+  border-color: #ccc;
   color: #fff;
 }
 input[name='reboot_button']:hover {
   background: none repeat scroll 0 0 #ff7c7c;
+  border-color: #ccc;
   color: #000;
 }
 input:focus, input.focus {
-  border: solid 1px #707070;
+  border: 1px solid #707070;
   box-shadow: 0 0 5px 1px #969696;
 }
 input.button[disabled] {
@@ -128,6 +135,9 @@ input.button[disabled] {
 }
 input.num {
   vertical-align: middle;
+}
+input.num[name*='lease'][size='10'] {
+	margin-right: 4px;
 }
 select {
   padding: 4px 4px;
@@ -206,7 +216,7 @@ form[name='wds'] select {
   border-width: 2px;
 }
 .off {
-  background-color: #e0e0e0;
+  opacity: .6;
 }
 .odd {
   background-color: #f1f1f1;

@@ -24,9 +24,7 @@ body div.progressbar {
   border-radius: 4px;
   border: 1px solid #333;
 }
-body input.button {
-  background: #36f;
-  border: 1px solid #4171ff;
+input.button {
   color: #eee;
   box-shadow: none;
 }
@@ -81,11 +79,9 @@ body input[disabled], body select[disabled] {
   border-color: #111;
 }
 body input[name="save_button"] {
-  border-color: #4171ff;
   color: #eee;
 }
 body input[name="save_button"]:hover {
-  border-color: #78f;
   color: #fff;
 }
 body input[name="apply_button"] {
