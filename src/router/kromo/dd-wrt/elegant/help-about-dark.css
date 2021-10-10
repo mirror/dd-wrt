@@ -1,0 +1,29 @@
+.about-bg, .help-bg {
+  background: #1a1a1a;
+  color: #eee;
+}
+.help-bg a {
+  color: #0087ff;
+}
+.help-bg #content {
+  color: #999;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.about-bg #content {
+  border-color: transparent;
+}
+.about-bg #content .t-border {
+  border-color: #333;
+}
+div.note {
+  background: #380c55;
+  border-color: #8030b5;
+  margin-top: .5rem;
+  border-radius: 4px;
+}
+div.also {
+  background: #1a1a1a;
+  border-color: #333;
+  border-radius: 4px;
+}
