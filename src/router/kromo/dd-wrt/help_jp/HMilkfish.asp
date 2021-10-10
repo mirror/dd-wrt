@@ -1,5 +1,5 @@
 <% do_hpagehead("bmenu.servicesMilkfish"); %>
-	<body>
+	<body class="help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
@@ -43,7 +43,7 @@
 					<div class="note">
 						<h4>Legal</h4>
 						<div>
-						Copyright © 2005-2007 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
+						Copyright ï¿½ 2005-2007 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
 						Logos and trademarks are the property of their respective owners.<br />
 						The Milkfish software is licensed under the <a href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a>.<br />
 						Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div>
