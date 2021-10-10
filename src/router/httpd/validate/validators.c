@@ -2391,7 +2391,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 
 		if (mac == NULL) {
 			free(leases);
-			websError(wp, 400, "%s is not a valid mac adress\n", hwaddr);
+			websError(wp, 400, "%s is not a valid MAC adress\n", hwaddr);
 			return;
 		}
 		snprintf(lease_hostname, sizeof(lease_hostname), "lease%d_hostname", i);

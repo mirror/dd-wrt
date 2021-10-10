@@ -24,9 +24,7 @@ body div.progressbar {
   border-radius: 4px;
   border: 1px solid #333;
 }
-body input.button {
-  background: #36f;
-  border: 1px solid #4171ff;
+input.button {
   color: #eee;
   box-shadow: none;
 }
@@ -44,24 +42,6 @@ body #content {
 body #content.infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
-}
-.help-bg a {
-  color: #0087ff;
-}
-.help-bg #content {
-  color: #999;
-  background: transparent;
-  border: 1px solid transparent;
-}
-.about-bg, .help-bg {
-  background: #1a1a1a;
-  color: #eee;
-}
-.about-bg #content {
-  border-color: transparent;
-}
-.about-bg #content .t-border {
-  border-color: #333;
 }
 #header .logo {
   filter: invert(.95) hue-rotate(180deg);
@@ -99,11 +79,9 @@ body input[disabled], body select[disabled] {
   border-color: #111;
 }
 body input[name="save_button"] {
-  border-color: #4171ff;
   color: #eee;
 }
 body input[name="save_button"]:hover {
-  border-color: #78f;
   color: #fff;
 }
 body input[name="apply_button"] {
@@ -112,8 +90,8 @@ body input[name="apply_button"] {
   color: #fff;
 }
 body input[name="apply_button"]:hover {
-  background: none repeat scroll 0 0 #25b545;
-  border-color: #25b545;
+  background: none repeat scroll 0 0 #199235;
+  border-color: #199235;
   color: #fff;
 }
 body input[name="reset_button"] {
@@ -122,19 +100,19 @@ body input[name="reset_button"] {
   color: #ccc;
 }
 body input[name="reset_button"]:hover {
-  background: none repeat scroll 0 0 #d38f12;
-  border-color: #d38f12;
+  background: none repeat scroll 0 0 #d6951e;
+  border-color: #d0911d;
   color: #fff;
 }
 body input[name="reboot_button"] {
-  background: none repeat scroll 0 0 #f00;
-  border-color: #f00;
-  color: #fff;
+  background: none repeat scroll 0 0 #c11616;
+  border-color: #c11616;
+  color: #f8f8f8;
 }
 body input[name="reboot_button"]:hover {
-  background: none repeat scroll 0 0 #e14242;
-  border-color: #e14242;
-  color: #f8f8f8;
+  background: none repeat scroll 0 0 #d82828;
+  border-color: #d82828;
+  color: #fff;
 }
 input.button[onclick*="delete"] {
   margin: 0 .2em 0 .4em;
@@ -213,15 +191,4 @@ fieldset.off {
 .warning {
   background: #351212;
   border-color: #b53030;
-}
-div.note {
-  background: #380c55;
-  border-color: #8030b5;
-  margin-top: .5rem;
-  border-radius: 4px;
-}
-div.also {
-  background: #1a1a1a;
-  border-color: #333;
-  border-radius: 4px;
 }

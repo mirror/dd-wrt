@@ -1280,6 +1280,9 @@ hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only 
 hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal DNSmasq server.</dd>";
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
+var hipv6=new Object();
+hipv6.right2="Internet Protocol version 6 (IPv6) is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
+
 // ** DSL ** //
 var dsl=new Object();
 dsl.status="DSL Status";

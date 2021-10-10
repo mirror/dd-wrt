@@ -727,7 +727,7 @@ function openHelpWindowExt(url) {
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = Math.floor(screen.availWidth * .33);
 	var height = Math.floor(screen.availHeight * .9) - 30;
-	var win = window.open("http://www.dd-wrt.com/help/english/" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	var win = window.open("https://forum.dd-wrt.com/wiki/index.php/Main_Page" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	win.focus();
 }
 
@@ -1015,7 +1015,7 @@ function applytake(form, text,seconds, delay) {
 		
 		if(delay) {
 			setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
-    		}
+    }
 	}
 }
 

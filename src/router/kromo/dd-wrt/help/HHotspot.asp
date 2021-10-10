@@ -1,5 +1,5 @@
 <% do_hpagehead("hotspot.titl"); %>
-	<body class"help-bg">
+	<body class="help-bg">
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
