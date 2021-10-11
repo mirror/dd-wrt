@@ -258,7 +258,8 @@ input.button[onclick*="filter_del"] {
 input.button[onclick*='gen_wg_key'] {
   margin: 0 0 6px -32%;
 }
-input.button[onclick*='do_show_prev'] {
+input.button[onclick*='do_show_prev'],
+input.button[onclick*='do_show_next'] {
   margin: 0.5rem 0.5rem 0 0;
 }
 input.button[name*='import_tunnel'] {
