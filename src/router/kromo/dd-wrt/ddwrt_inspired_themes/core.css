@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.0.0
+ * style-name: DD-WRT Inspired Themes v5.0.1
  * copyright: © 2021 Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -97,15 +97,15 @@ body input.button {
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  height: 1.7rem;
+  height: 1.41rem;
   padding: 0 0.462rem 0 0.462rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
 }
 body input.button:hover,
 body input.button:focus-within {
-  background: var(--v0-7);
-  border-color: var(--v0-7);
+  background: var(--v0-7) !important;
+  border-color: var(--v0-7) !important;
   box-shadow: 0 0 10px 0 var(--v0-4);
   color: var(--v9-9);
 }
@@ -129,14 +129,14 @@ body input[name*='apply']:focus-within {
   box-shadow: 0 0 10px 0 var(--v4-3);
   color: var(--v9-9) !important;
 }
-body input[name*='reset'] {
+body input[name*='reset']:not([type="radio"]) {
   background: none repeat scroll 0 0 var(--bg-3);
   border-color: var(--bg-4);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-body input[name*='reset']:hover,
-body input[name*='reset']:focus-within {
+body input[name*='reset']:not([type="radio"]):hover,
+body input[name*='reset']:not([type="radio"]):focus-within {
   background: none repeat scroll 0 0 var(--bg-5) !important;
   border-color: var(--bg-5) !important;
   box-shadow: 0 0 10px 0 var(--bg-5);
@@ -228,7 +228,10 @@ div.center input.button[name='add_button']:not([onclick*='_add']) {
   margin: 0 0 0.8em 0;
 }
 div.center input.button[name='add_button'][onclick*='_add'] {
-  margin: 0 0.7em 0.8em 0;
+  margin: 0 0.5em 0;
+}
+input.num {
+  vertical-align: unset;
 }
 input.button[onclick*='copy'],
 input.button[onclick*='paste'] {
@@ -237,8 +240,8 @@ input.button[onclick*='paste'] {
 input.button[onclick*='vifs_add'] {
   margin: 0.4em 0 0 0;
 }
-input.button[onclick*='vifs_add'] {
-  margin: 0.4em 0 0 0;
+input.button[onclick*='vifs_remove'] {
+  margin: -0.95em 0.362em 0 0;
 }
 input.button[onclick*='delete'] {
   margin: 0 0.4em 0 0.4em;
@@ -247,7 +250,7 @@ input.button[onclick*='DeleteEntry'] {
   vertical-align: 0.04rem;
 }
 input.button[onclick*='to_delete'] {
-  margin: 0 0.5rem 0 0.4rem;
+  margin: 0 0.4rem 0 0.362rem;
 }
 input.button[onclick*="filter_remove"] {
   margin: 0 0.5rem 0 0.3rem;
@@ -269,7 +272,9 @@ input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -35%;
 }
 input.button[onclick*='previewStyle'] {
-  vertical-align: 0.04rem;
+  vertical-align: middle;
+  height: 1.56rem;
+  margin-left: 0.362em;
 }
 input.button[onclick*='vlan_add'],
 input.button[onclick*='bridge_add'],
@@ -301,11 +306,15 @@ input[type='radio'][onclick*='timeall'][value='0'] {
 input[name='_filter_p2p'] {
   margin-left: calc(2% - 0.3rem);
 }
-.table[summary='ports forwarding table'] input[type='checkbox'] {
-  margin-top: 0.4333rem;
+select[onchange*='SelRoute'] {
+  margin-top: -0.2rem;
+}
+.table[summary='ports forwarding table'] input[type='checkbox'],
+.table[summary="ports triggering table"] input[type='checkbox'] {
+  margin-top: 0.4rem;
 }
 #menu #menuMainList li span {
-  background: var(--bg-1) !important;
+  background: var(--bg-1);
   border-color: var(--bg-5);
   outline: 0;
 }
@@ -324,14 +333,21 @@ input[name='_filter_p2p'] {
   border-color: var(--v0-7);
   color: var(--v9-9);
 }
+#menu #menuMainList li a:focus,
+#menu #menuMainList li a:focus-within,
+#menu #menuMainList li a:focus-visible {
+  background: var(--v0-7);
+  border-color: var(--v0-7);
+  outline: 0;
+}
 #menu #menuMainList li.current span {
-  background: var(--bg-1) !important;
+  background: var(--bg-1);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 #menu #menuMainList li.current span:hover {
-  background: var(--v0-4) !important;
+  background: var(--v0-4);
   border: 1px solid var(--v0-6);
-  padding-top: 0.3rem !important;
+  padding-top: 0.3rem;
   cursor: default;
 }
 #menuSub {
@@ -417,12 +433,19 @@ input[name='_filter_p2p'] {
 textarea {
   background-color: var(--bg-0);
   border-color: var(--bg-4);
-  color: var(--v9-8);
+  line-height: 1.8em;
+  color: var(--v9-6);
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
+textarea:hover,
+textarea.focus,
 textarea:focus,
-textarea.focus {
-  border-color: var(--v0-9);
-  box-shadow: 0 0 5px 1px var(--v0-8);
+textarea:focus-within,
+textarea:focus-visible {
+  color: var(--v9-8) !important;
+  border-color: var(--v0-8) !important;
+  background-color: var(--bg-1) !important;
+  box-shadow: 0 0 10px 0 var(--v0-4);
   outline: 0;
 }
 table tr:not([bgcolor]):hover,
@@ -606,6 +629,7 @@ h2 {
 }
 .submitFooter .button {
   margin-right: 0.362em;
+  height: 1.7rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -821,32 +845,33 @@ input {
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   padding: 7px;
   line-height: 1.4em;
+  height: 0.7rem;
   appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
   border-radius: 4px;
 }
 input:hover,
-input:focus-within {
-  border-color: var(--v0-8);
-  background-color: var(--bg-1);
+input:focus,
+input:focus-within,
+input:focus-visible {
+  border-color: var(--v0-8) !important;
+  background-color: var(--v0-1) !important;
+  box-shadow: 0 0 6px 0 var(--v0-3);
+  outline: 0;
 }
 input[type='radio'],
 input[type='checkbox'],
-input[type='radio']:focus,
-input[type='checkbox']:focus,
 input[type='radio']:hover:active,
 input[type='checkbox']:hover:active {
-  color: var(--v9-5) !important;
-  border-color: var(--bg-5) !important;
-  background-color: var(--bg-1) !important;
-  bottom: 0.15rem;
+  background-color: var(--bg-1);
+  border-color: b;
+  bottom: 0.1rem;
   background-size: cover;
   cursor: pointer;
   position: relative;
   height: 0.88rem;
   width: 0.88rem;
-  vertical-align: middle;
 }
 input[type='radio']:disabled,
 input[type='checkbox']:disabled,
@@ -860,7 +885,19 @@ input[type='checkbox']:disabled:hover {
   opacity: 0.7;
   cursor: default;
 }
+input[type='radio']:checked:focus,
+input[type='checkbox']:checked:focus,
+input[type='radio']:checked:focus-within,
+input[type='checkbox']:checked:focus-within,
+input[type='radio']:checked:focus-visible,
+input[type='checkbox']:checked:focus-visible {
+  border-color: var(--v0-9) !important;
+  background-color: var(--v0-1) !important;
+  box-shadow: 0 0 10px 0 var(--v0-4);
+  outline: 0;
+}
 input[type='radio'] {
+  vertical-align: -0.32rem;
   border-radius: 50%;
 }
 input[type='radio']:checked {
@@ -869,15 +906,13 @@ input[type='radio']:checked {
   background-color: var(--v0-7) !important;
   padding: 7px;
 }
-input[type='radio']:focus {
-  border-radius: 50%;
-}
 input[type='radio']:hover {
   border-color: var(--v0-8) !important;
   background-color: var(--v0-3) !important;
   box-shadow: 0 0 8px 0 var(--v0-4);
 }
 input[type='checkbox'] {
+  vertical-align: -0.488rem;
   border-radius: 2px;
 }
 input[type='checkbox']:checked {
@@ -963,10 +998,10 @@ select {
   appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
-  height: 1.7rem;
   max-width: 100%;
   outline: 0;
   padding-right: 1.5rem;
+  vertical-align: middle;
 }
 select > option {
   background-color: var(--bg-0) !important;
@@ -979,15 +1014,17 @@ select > option:hover {
   background-color: var(--v0-6) !important;
   box-shadow: 0 0 10px 100px var(--v0-6) inset !important;
 }
-select:focus > option:hover,
-select:focus-within {
+select:focus,
+select:focus-within,
+select:focus-visible {
   border-color: var(--v0-8) !important;
-  background-color: var(--bg-1) !important;
+  background-color: var(--v0-1) !important;
+  box-shadow: 0 0 10px 0 var(--v0-4);
 }
 select:hover {
   background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%23eee" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
   border-color: var(--v0-8) !important;
-  background-color: var(--bg-1) !important;
+  background-color: var(--v0-1) !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 select[disabled] {
