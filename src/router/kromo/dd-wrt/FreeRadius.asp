@@ -212,7 +212,9 @@ addEvent(window, "unload", function() {
 							<dl>
 								<dd class="definition"><% tran("hfreeradius.right2"); %></dd>
 							</dl><br />
+						  <!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
 							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HFreeRadius.asp');"><% tran("share.more"); %></a>
+						  -->
 					</div>
 				</div>
 				<div id="floatKiller"></div>

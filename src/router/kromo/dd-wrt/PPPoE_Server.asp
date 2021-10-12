@@ -325,7 +325,9 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("service.pppoesrv_chaps"); %>:</dt>
 							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
 						</dl><br />
+						  <!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
 							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hpppoesrv.asp');"><% tran("share.more"); %></a>
+							-->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
