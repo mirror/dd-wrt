@@ -187,7 +187,7 @@ int ksmbd_conn_write(struct ksmbd_work *work)
 
 	if (work->tr_buf) {
 		iov[iov_idx] = (struct kvec) { work->tr_buf,
-				sizeof(struct smb2_transform_hdr) + 4 };
+				sizeof(struct smb2_transform_hdr) };
 		len += iov[iov_idx++].iov_len;
 	}
 

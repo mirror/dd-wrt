@@ -127,7 +127,7 @@ int init_smb_rsp_hdr(struct ksmbd_work *work)
 
 	/* remove 4 byte direct TCP header, add 1 byte wc and 2 byte bcc */
 	rsp_hdr->smb_buf_length =
-		cpu_to_be32(conn->vals->header_size + 2);
+		cpu_to_be32(smb2_hdr_size_no_buflen(conn->vals) + 2);
 	memcpy(rsp_hdr->Protocol, rcv_hdr->Protocol, 4);
 	rsp_hdr->Command = rcv_hdr->Command;
 
@@ -598,7 +598,7 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
 	struct smb_hdr *rsp_hdr = (struct smb_hdr *)work->response_buf;
 	bool is_unicode = is_smbreq_unicode(req_hdr);
-	char *name, *unixname;
+	char *name, *unixname, *norm_name;
 	char *wild_card_pos;
 
 	if (converted)
@@ -620,8 +620,11 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 	}
 
 	/* change it to absolute unix name */
-	ksmbd_conv_path_to_unix(name);
-	ksmbd_strip_last_slash(name);
+	norm_name = ksmbd_conv_path_to_unix(name);
+	if (IS_ERR(norm_name)) {
+		kfree(name);
+		return norm_name;
+	}
 
 	/*Handling of dir path in FIND_FIRST2 having '*' at end of path*/
 	wild_card_pos = strrchr(name, '*');
@@ -671,7 +674,7 @@ static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
 	struct smb_hdr *rsp_hdr = (struct smb_hdr *)work->response_buf;
 	bool is_unicode = is_smbreq_unicode(req_hdr);
-	char *name, *unixname;
+	char *name, *unixname, *norm_name;
 	char *pattern_pos, *pattern = NULL;
 	int pattern_len, rc;
 
@@ -684,8 +687,11 @@ static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
 	}
 
 	/* change it to absolute unix name */
-	ksmbd_conv_path_to_unix(name);
-	ksmbd_strip_last_slash(name);
+	norm_name = ksmbd_conv_path_to_unix(name);
+	if (IS_ERR(norm_name)) {
+		kfree(name);
+		return norm_name;
+	}
 
 	pattern_pos = strrchr(name, '/');
 
@@ -6077,7 +6083,7 @@ static int find_first(struct ksmbd_work *work)
 	if (rc < 0) {
 		ksmbd_debug(SMB, "cannot create vfs root path <%s> %d\n",
 				dirpath, rc);
-		goto err_out;
+		goto err_free_dirpath;
 	} else {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		if (inode_permission(mnt_user_ns(path.mnt),
@@ -6089,7 +6095,7 @@ static int find_first(struct ksmbd_work *work)
 #endif
 			rc = -EACCES;
 			path_put(&path);
-			goto err_out;
+			goto err_free_dirpath;
 		}
 	}
 
@@ -6097,16 +6103,16 @@ static int find_first(struct ksmbd_work *work)
 		if (d_is_symlink(path.dentry)) {
 			rc = -EACCES;
 			path_put(&path);
-			goto err_out;
+			goto err_free_dirpath;
 		}
 	}
 
 	dir_fp = ksmbd_vfs_dentry_open(work, &path, O_RDONLY, 0, 1);
-	if (!dir_fp) {
+	if (IS_ERR(dir_fp)) {
 		ksmbd_debug(SMB, "dir dentry open failed with rc=%d\n", rc);
 		path_put(&path);
 		rc = -EINVAL;
-		goto err_out;
+		goto err_free_dirpath;
 	}
 
 	write_lock(&dir_fp->f_ci->m_lock);
@@ -6121,7 +6127,7 @@ static int find_first(struct ksmbd_work *work)
 	dir_fp->readdir_data.dirent = (void *)__get_free_page(GFP_KERNEL);
 	if (!dir_fp->readdir_data.dirent) {
 		rc = -ENOMEM;
-		goto err_out;
+		goto err_free_dirpath;
 	}
 
 	dir_fp->filename = dirpath;
@@ -6306,6 +6312,8 @@ static int find_first(struct ksmbd_work *work)
 	ksmbd_revert_fsids(work);
 	return 0;
 
+err_free_dirpath:
+	kfree(dirpath);
 err_out:
 	if (rc == -EINVAL)
 		rsp_hdr->Status.CifsError = STATUS_INVALID_PARAMETER;
@@ -6630,6 +6638,7 @@ static int smb_set_alloc_size(struct ksmbd_work *work)
 	err = ksmbd_vfs_getattr(&fp->filp->f_path, &stat);
 	if (err) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
+		ksmbd_fd_put(work, fp);
 		return err;
 	}
 
@@ -8363,7 +8372,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	/* open  file and get FID */
 	fp = ksmbd_vfs_dentry_open(work, &path, open_flags,
 			0, file_present);
-	if (!fp)
+	if (IS_ERR(fp))
 		goto free_path;
 	fp->filename = name;
 	fp->pid = le16_to_cpu(req->hdr.Pid);
