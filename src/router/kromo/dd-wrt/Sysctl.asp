@@ -65,7 +65,9 @@ addEvent(window, "unload", function() {
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 						</dl><br />
+						<!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HSysctl.asp');"><% tran("share.more"); %></a>
+					  -->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
