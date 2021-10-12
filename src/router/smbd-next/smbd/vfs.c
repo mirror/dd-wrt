@@ -1968,7 +1968,7 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
 		loff_t off, loff_t len)
 {
 	smb_break_all_levII_oplock(work, fp, 1);
-	if (fp->f_ci->m_fattr & FILE_ATTRIBUTE_SPARSE_FILE_LE)
+	if (fp->f_ci->m_fattr & ATTR_SPARSE_FILE_LE)
 		return vfs_fallocate(fp->filp,
 			FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, off, len);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
@@ -2101,7 +2101,7 @@ out:
  * @option:	file access pattern options for fadvise
  * @fexist:	file already present or not
  *
- * Return:	0 on success, otherwise error
+ * Return:	allocated struct ksmbd_file on success, otherwise error pointer
  */
 struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
 					 const struct path *path, int flags,
@@ -2145,15 +2145,6 @@ err_out:
 		pr_err("err : %d\n", err);
 	}
 	return fp;
-}
-#else
-struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
-					 const struct path *path,
-					 int flags,
-					 __le32 option,
-					 int fexist)
-{
-	return NULL;
 }
 #endif
 
@@ -2362,67 +2353,68 @@ int ksmbd_vfs_kern_path(char *name, unsigned int flags, struct path *path,
 			bool caseless)
 {
 	int err;
+	bool caseless_lookup = false;
+	char *filepath;
+	struct path parent;
+	size_t path_len, remain_len;
 
 	if (name[0] != '/')
 		return -EINVAL;
+retry:
+	filepath = kstrdup(name, GFP_KERNEL);
+	if (!filepath)
+		return -ENOMEM;
 
-	err = kern_path(name, flags, path);
-	if (!err)
-		return 0;
+	path_len = strlen(filepath);
+	remain_len = path_len - 1;
 
-	if (caseless) {
-		char *filepath;
-		struct path parent;
-		size_t path_len, remain_len;
+	err = kern_path("/", flags, &parent);
+	if (err)
+		goto out;
 
-		filepath = kstrdup(name, GFP_KERNEL);
-		if (!filepath)
-			return -ENOMEM;
+	while (d_can_lookup(parent.dentry)) {
+		char *filename = filepath + path_len - remain_len;
+		char *next = strchrnul(filename, '/');
+		size_t filename_len = next - filename;
+		bool is_last = !next[0];
 
-		path_len = strlen(filepath);
-		remain_len = path_len - 1;
+		if (filename_len == 0)
+			break;
 
-		err = kern_path("/", flags, &parent);
-		if (err)
-			goto out;
-
-		while (d_can_lookup(parent.dentry)) {
-			char *filename = filepath + path_len - remain_len;
-			char *next = strchrnul(filename, '/');
-			size_t filename_len = next - filename;
-			bool is_last = !next[0];
-
-			if (filename_len == 0)
-				break;
-
+		if (caseless_lookup) {
 			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
-						      filename_len);
+					filename_len);
 			if (err) {
 				path_put(&parent);
 				goto out;
 			}
-
-			path_put(&parent);
-			next[0] = '\0';
-
-			err = kern_path(filepath, flags, &parent);
-			if (err)
-				goto out;
-
-			if (is_last) {
-				path->mnt = parent.mnt;
-				path->dentry = parent.dentry;
-				goto out;
-			}
-
-			next[0] = '/';
-			remain_len -= filename_len + 1;
 		}
 
 		path_put(&parent);
-		err = -EINVAL;
+		next[0] = '\0';
+
+		err = kern_path(filepath, flags, &parent);
+		if (err)
+			goto out;
+
+		if (is_last) {
+			path->mnt = parent.mnt;
+			path->dentry = parent.dentry;
+			goto out;
+		}
+
+		next[0] = '/';
+		remain_len -= filename_len + 1;
+	}
+
+	path_put(&parent);
+	err = -EINVAL;
 out:
-		kfree(filepath);
+	kfree(filepath);
+	if (err && caseless) {
+		caseless_lookup = true;
+		caseless = false;
+		goto retry;
 	}
 	return err;
 }
@@ -2447,7 +2439,7 @@ void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat)
 	time = ksmbd_UnixTimeToNT(kstat->ctime);
 	info->ChangeTime = cpu_to_le64(time);
 
-	if (ksmbd_kstat->file_attributes & FILE_ATTRIBUTE_DIRECTORY_LE) {
+	if (ksmbd_kstat->file_attributes & ATTR_DIRECTORY_LE) {
 		info->EndOfFile = 0;
 		info->AllocationSize = 0;
 	} else {
@@ -2481,9 +2473,9 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 	 * or that acl is disable in server's filesystem and the config is yes.
 	 */
 	if (S_ISDIR(ksmbd_kstat->kstat->mode))
-		ksmbd_kstat->file_attributes = FILE_ATTRIBUTE_DIRECTORY_LE;
+		ksmbd_kstat->file_attributes = ATTR_DIRECTORY_LE;
 	else
-		ksmbd_kstat->file_attributes = FILE_ATTRIBUTE_ARCHIVE_LE;
+		ksmbd_kstat->file_attributes = ATTR_ARCHIVE_LE;
 
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {

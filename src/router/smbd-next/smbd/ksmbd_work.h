@@ -92,7 +92,7 @@ struct ksmbd_work {
  */
 static inline void *ksmbd_resp_buf_next(struct ksmbd_work *work)
 {
-	return work->response_buf + work->next_smb2_rsp_hdr_off + 4;
+	return work->response_buf + work->next_smb2_rsp_hdr_off;
 }
 
 /**
@@ -101,7 +101,7 @@ static inline void *ksmbd_resp_buf_next(struct ksmbd_work *work)
  */
 static inline void *ksmbd_req_buf_next(struct ksmbd_work *work)
 {
-	return work->request_buf + work->next_smb2_rcv_hdr_off + 4;
+	return work->request_buf + work->next_smb2_rcv_hdr_off;
 }
 
 struct ksmbd_work *ksmbd_alloc_work_struct(void);
