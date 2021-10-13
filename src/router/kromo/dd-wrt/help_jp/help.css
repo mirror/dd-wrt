@@ -3,23 +3,23 @@
   font-size: 1em;
   text-align: justify;
 }
-tt {
-  font-family: Courier, 'Courier New';
-}
 body {
   margin: .906em;
   font-size: 69%;
 }
+tt {
+  font-family: Courier, 'Courier New';
+}
 .help-bg {
-  background: #fff;
+  background: #f9f9f9;
 }
 .help-bg #content {
   background: transparent;
   border-color: transparent;
-  color: #eee;
+  color: #111;
 }
 #header {
-  background: #fff;
+  background: #f9f9f9;
   position: relative;
   height: 4.257em;
 }
@@ -45,9 +45,7 @@ h2 {
   margin: 0 0 .906em 0;
   background: #ccc;
   padding: .181em .725em;
-  border-style: solid;
-  border-color: #ddd #999 #999 #ddd;
-  border-width: 1px;
+  border-style: 1px solid #999;
   border-radius: 4px;
 }
 dl {
@@ -60,7 +58,7 @@ dt {
 }
 dd {
   padding-bottom: .908em;
-  border-bottom: dotted 1px #ccc;
+  border-bottom: 1px dotted #aaa;
   margin: 0 0 .908em 0;
 }
 ul, ol {
@@ -92,17 +90,15 @@ a:hover {
 }
 div.also, div.note {
   padding: .725em;
-  border-style: solid;
-  border-width: 1px;
   border-radius: 4px;
 }
 div.also {
   background: #ddd;
-  border-color: #eee #aaa #aaa #eee;
+  border: 1px solid #aaa;
 }
 div.note {
   background: #ddf;
-  border-color: #eef #aaf #aaf #eef;
+  border: 1px solid #aaf;
 }
 div.note h4, div.also h4 {
   float: left;

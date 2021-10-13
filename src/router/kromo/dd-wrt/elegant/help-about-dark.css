@@ -6,9 +6,9 @@
   color: #0087ff;
 }
 .help-bg #content {
-  color: #999;
   background: transparent;
   border: 1px solid transparent;
+  color: #eee;
 }
 .about-bg #content {
   border-color: transparent;

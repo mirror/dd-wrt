@@ -85,13 +85,8 @@ input {
   transition: all .15s ease-in-out 0s;
 }
 input.button {
-  height: 1.6rem;
-  vertical-align: middle;
   box-shadow: 2px 2px 2px #808080;
   border-color: #ccc;
-}
-input.button[name='preview_button'] {
-  padding: 0 .6rem 0 .6rem;
 }
 input[name='apply_button'] {
   background: none repeat scroll 0 0 #696969;
@@ -137,7 +132,7 @@ input.num {
   vertical-align: middle;
 }
 input.num[name*='lease'][size='10'] {
-	margin-right: 4px;
+  margin-right: 4px;
 }
 select {
   padding: 4px 4px;
@@ -196,7 +191,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   max-width: 79px;
 }
 form[name='wds'] select {
-	margin-right: 6px;
+  margin-right: 6px;
 }
 #header {
   height: 9.24em;
@@ -214,9 +209,6 @@ form[name='wds'] select {
 .warning {
   border-radius: 4px;
   border-width: 2px;
-}
-.off {
-  opacity: .6;
 }
 .odd {
   background-color: #f1f1f1;

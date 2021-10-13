@@ -268,7 +268,8 @@ table td {
   padding: 0;
 }
 #help {
-  width: 17.21em;
+  width: 21.333em;
+  margin: 0 auto;
   padding: .906em 0;
 }
 #help dl {
@@ -366,9 +367,12 @@ td .meter {
   position: relative;
   overflow: hidden;
   border-style: solid;
+  font-size: .09em;
+  border-width: .09em;
 }
 .progressbarblock {
   position: absolute;
+  font-size: .09em;
 }
 .textblink {
   text-decoration: blink;
@@ -380,6 +384,8 @@ td .meter {
 input.button {
   padding: .2em .362em;
   margin: 0 .3em 0 0;
+  height: 1.6rem;
+  vertical-align: middle;
   cursor: pointer;
   border: 1px solid #ccc;
 }
@@ -407,8 +413,11 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
-input.button[onclick*='delete'] {
-  margin: 0 .4em 0 .4em;
+input.button[onclick*="delete"] {
+  margin: 0 .2em 0 .4em;
+}
+input.button[name='preview_button'] {
+  padding: 0 .6rem 0 .6rem;
 }
 div.bulle {
   width: auto;

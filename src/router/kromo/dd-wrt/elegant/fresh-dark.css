@@ -11,7 +11,7 @@ body a:hover {
   color: #fff;
 }
 body, body.gui, .popup {
-  color: #999;
+  color: #ccc;
   background: #111;
 }
 body div.message {
@@ -25,8 +25,8 @@ body div.progressbar {
   border: 1px solid #333;
 }
 input.button {
-  color: #eee;
   box-shadow: none;
+  border: 1px solid transparent;
 }
 body input.button[disabled] {
   cursor: default;
@@ -35,9 +35,9 @@ body input.button[disabled] {
   border-color: #111;
 }
 body #content {
-  color: #999;
   background: #1a1a1a;
   border: 1px solid #111;
+  color: #ccc;
 }
 body #content.infopage #main {
   background-color: #1a1a1a;
@@ -55,7 +55,7 @@ body fieldset legend {
   background-color: transparent;
 }
 body #help dd.definition {
-  border-bottom: dotted .09em #333;
+  border-bottom: 1px dotted #333;
 }
 body hr {
   color: #333;
@@ -66,23 +66,10 @@ body input {
   background-color: #333;
   border-color: #454545;
 }
-input.button {
-  height: 1.6rem;
-  vertical-align: middle;
-}
-input.button[name="preview_button"] {
-  padding: 0 .6rem 0 .6rem;
-}
 body input[disabled], body select[disabled] {
   color: #666;
   background-color: #1a1a1a !important;
   border-color: #111;
-}
-body input[name="save_button"] {
-  color: #eee;
-}
-body input[name="save_button"]:hover {
-  color: #fff;
 }
 body input[name="apply_button"] {
   background: none repeat scroll 0 0 #166f2a;
@@ -113,9 +100,6 @@ body input[name="reboot_button"]:hover {
   background: none repeat scroll 0 0 #d82828;
   border-color: #d82828;
   color: #fff;
-}
-input.button[onclick*="delete"] {
-  margin: 0 .2em 0 .4em;
 }
 textarea {
   color: #e0e0e0;
@@ -175,15 +159,6 @@ form[name="wds"] select {
 .meter {
   background-color: #666;
   border-color: #999;
-}
-.off {
-  color: #666;
-  background-color: #1a1a1a;
-  border-color: #111;
-}
-fieldset.off {
-  border-color: #333;
-  opacity: .7;
 }
 .odd {
   background-color: #212121;
