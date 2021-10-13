@@ -32,20 +32,17 @@ fieldset legend {
 .progressbar {
   background-color: #fff;
   border-color: #999;
-  font-size: .09em;
-  border-width: .09em;
 }
 .progressbarblock {
   background-color: #ff8400;
-  font-size: .09em;
 }
 input.button {
   background: #ff8400;
-  color: #fff;
+  color: #111;
 }
 input.button:hover {
   background: #ff9000;
-  color: #fff;
+  color: #000;
 }
 input:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 5px 1px #ff9000 !important;
