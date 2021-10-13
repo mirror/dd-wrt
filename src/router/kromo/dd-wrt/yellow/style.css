@@ -2,7 +2,7 @@
 #menuSub, #menuMainList li span, #help h2 {
   background: #eec900;
   color: #000;
-  border-color: #ee33;
+  border-color: #ee3;
 }
 #menuSubList li a {
   background: #ffd700;
@@ -32,17 +32,14 @@ fieldset legend {
 .progressbar {
   background-color: #fff;
   border-color: #999;
-  font-size: .09em;
-  border-width: .09em;
 }
 .progressbarblock {
   background-color: #ffd700;
-  font-size: .09em;
 }
 input.button {
   background: #eec900;
   border: 1px solid #eec900;
-  color: #660;
+  color: #1f1f03;
 }
 input.button:hover {
   background: #ffd700;

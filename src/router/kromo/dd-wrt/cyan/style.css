@@ -32,12 +32,9 @@ fieldset legend {
 .progressbar {
   background-color: #fff;
   border-color: #999;
-  font-size: .09em;
-  border-width: .09em;
 }
 .progressbarblock {
   background-color: #3bb;
-  font-size: .09em;
 }
 input.button {
   background: #3bb;
