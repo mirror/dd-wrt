@@ -2806,7 +2806,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 
 #endif
-#ifdef HAVE_ROUTERSTYLE
+/*#ifdef HAVE_ROUTERSTYLE
 	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
@@ -2823,7 +2823,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-#endif
+#endif*/
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
