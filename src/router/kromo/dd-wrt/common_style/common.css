@@ -387,8 +387,7 @@ input.button {
 }
 body input.button[disabled] {
   cursor: default;
-  color: #000;
-  background-color: #dadada;
+  opacity: .6
 }
 input.spaceradio {
   margin-right: .4em;

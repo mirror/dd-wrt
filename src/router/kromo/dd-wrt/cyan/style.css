@@ -41,7 +41,7 @@ input.button {
   border: 1px solid #3bb;
   color: #043535;
 }
-input.button:hover {
+input.button:not([disabled]):hover {
   background: #6cc;
   border: 1px solid #6cc;
   color: #000;
