@@ -2807,7 +2807,7 @@ static struct mime_handler mime_handlers[] = {
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-	{ "common_style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
