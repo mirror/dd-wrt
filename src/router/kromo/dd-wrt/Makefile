@@ -63,6 +63,8 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 else
 ifneq ($(CONFIG_EXTHELP),y)
 	cp -a help $(INSTALLDIR)/www
+	mkdir -p $(INSTALLDIR)/www/common_style
+	cp common_style/
 endif
 endif
 	mkdir -p $(INSTALLDIR)/www/js
@@ -288,8 +290,9 @@ endif
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
 ifneq ($(CONFIG_ROUTERSTYLE),y)	
+	mkdir $(INSTALLDIR)/www/common_style
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
-	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
+	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
 else
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
@@ -874,6 +877,7 @@ ifeq ($(CONFIG_SPEEDCHECKER),y)
 endif
 	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
 	cp common_style/error_common.css $(INSTALLDIR)/www/style
+	cp common_style/common_help.css $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_DNSCRYPT),y)
 #	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
 endif
