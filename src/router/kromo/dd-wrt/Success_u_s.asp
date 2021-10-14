@@ -12,11 +12,7 @@ var browserName=navigator.appName;
 
 function to_submit()
 {
-	if(submit_button == ".asp"){
-		history.go(-1);
-	}else{
-		document.location.href =  submit_button;
-	}
+	document.location.href =  "index.asp";
 }
 
 function message()
