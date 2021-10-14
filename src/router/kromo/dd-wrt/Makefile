@@ -63,8 +63,6 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 else
 ifneq ($(CONFIG_EXTHELP),y)
 	cp -a help $(INSTALLDIR)/www
-	mkdir -p $(INSTALLDIR)/www/common_style
-	cp common_style/
 endif
 endif
 	mkdir -p $(INSTALLDIR)/www/js
