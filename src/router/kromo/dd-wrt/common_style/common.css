@@ -118,7 +118,7 @@ input.num {
   width: 89.283em;
   padding-top: .362em;
   border-style: solid solid none solid;
-  border-width: .09em;
+  border-width: 1px;
 }
 #menuMainList, #menuSubList {
   margin: 0;
@@ -134,7 +134,7 @@ input.num {
   display: block;
   margin-left: .362em;
   border-style: solid solid none solid;
-  border-width: .09em;
+  border-width: 1px;
   padding: .453em .906em;
   text-decoration: none;
 }
@@ -144,9 +144,9 @@ input.num {
   margin-top: 0;
 }
 #menuSubList li span {
-  background: #fff;
+  background: #f9f9f9;
   color: #000;
-  border-color: #fff #ccc #000 #fff;
+  border-color: #ccc;
   font-weight: normal;
   padding-bottom: .543em;
 }
@@ -156,7 +156,7 @@ input.num {
 #menuMainList li a {
   background: #333;
   color: #999;
-  border-color: #555 #222 #000 #555;
+  border-color: #555;
   font-weight: bold;
 }
 #menuSubList li a {
@@ -170,7 +170,7 @@ input.num {
 #menuMainList li a:hover {
   background: #666;
   color: #ccc;
-  border-color: #888 #444 #000 #888;
+  border-color: #888;
 }
 #main, #helpContainer {
   position: relative;
@@ -194,13 +194,11 @@ input.num {
   margin-left: .906em;
 }
 h2, h3, .submitFooter {
-  margin: 0 0 .906em 0;
   background: #ccc;
-  padding: .181em .725em;
-  border-style: solid;
-  border-color: #ddd #999 #999 #ddd;
-  border-width: .09em;
+  border: 1px solid #999;
   color: #000;
+  margin: 0 0 .906em 0;
+  padding: .181em .725em;
   letter-spacing: .09em;
 }
 .setting {
@@ -233,7 +231,7 @@ fieldset .setting .label {
 }
 fieldset {
   background: #f6f6f6;
-  border: solid .09em #ccc;
+  border: 1px solid #ccc;
   padding: .725em;
   margin: 0;
 }
@@ -249,14 +247,14 @@ table {
   border-spacing: .3em;
 }
 table tr th {
+  background: #999;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #ccc #666 #666 #ccc;
   color: #fff;
   font-weight: normal;
-  border-style: solid;
-  border-width: .09em;
-  border-color: #ccc #666 #666 #ccc;
-  text-align: left;
   padding: .09em .543em;
-  background: #999;
+  text-align: left;
   vertical-align: bottom;
 }
 table tr:hover {
@@ -324,7 +322,7 @@ div.center {
   text-align: center;
   border-style: solid;
   border-color: #ddd #999 #999 #ddd;
-  border-width: .09em;
+  border-width: 1px;
   background: #ccc;
 }
 .message div input {
@@ -332,19 +330,17 @@ div.center {
   font-weight: normal;
 }
 .popup {
-  background: #fff;
+  background: #f9f9f9;
   padding: .906em;
 }
 .meter {
+  background: #aaa;
+  border: 1px solid #888;
   position: relative;
   float: right;
-  margin-top: .09em;
+  margin-top: 1px;
   width: 14.49em;
   height: 1.268em;
-  background: #aaa;
-  border-style: solid;
-  border-width: .09em;
-  border-color: #777 #ccc #ccc #777;
 }
 .meter .bar {
   height: 1.268em;
@@ -368,7 +364,7 @@ td .meter {
   overflow: hidden;
   border-style: solid;
   font-size: .09em;
-  border-width: .09em;
+  border-width: 1px;
 }
 .progressbarblock {
   position: absolute;
@@ -382,17 +378,16 @@ td .meter {
   cursor: pointer;
 }
 input.button {
-  padding: .2em .362em;
+  border: 1px solid #ccc;
+  padding: .2em .6em;
   margin: 0 .3em 0 0;
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;
-  border: 1px solid #ccc;
 }
 body input.button[disabled] {
   cursor: default;
-  color: #000;
-  background-color: #dadada;
+  opacity: .6
 }
 input.spaceradio {
   margin-right: .4em;
@@ -413,17 +408,23 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
-input.button[onclick*="delete"] {
-  margin: 0 .2em 0 .4em;
+input.button[onclick*='delete'] {
+  margin: 0 .2rem 0 .3rem;
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
 }
+input.button[value='Copy'], input.button[value='Paste'] {
+  margin-bottom: .6rem
+}
+input.button[value='Remove'], input.button[onclick*='lease_add'] {
+  margin-top: -.6rem
+}
 div.bulle {
-  width: auto;
   background-color: #ffffe1;
   position: absolute;
   visibility: hidden;
+  width: auto;
   z-index: 2000;
 }
 table.bulle {
@@ -431,7 +432,7 @@ table.bulle {
   height: auto;
   margin: 0;
   padding: 0;
-  border: .09em solid #000;
+  border: 1px solid #000;
   text-align: justify;
 }
 td.bulle {

@@ -124,8 +124,7 @@ input:focus, input.focus {
 }
 input.button[disabled] {
   cursor: default;
-  color: #000;
-  background-color: #dadada;
+  opacity: .6;
   box-shadow: none;
 }
 input.num {

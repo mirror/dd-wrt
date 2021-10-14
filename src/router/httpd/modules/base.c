@@ -2507,7 +2507,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
 					// a few sample colors
 					if (strstr(line, ".warn")) {
-						websWrite(stream, "<tr bgcolor=\"#ffed00\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#eec900\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
 						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "mounting unchecked fs")
