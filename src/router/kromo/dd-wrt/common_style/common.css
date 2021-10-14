@@ -162,8 +162,7 @@ input.num {
 #menuSubList li a {
   font-weight: normal;
 }
-#menuMainList li a:hover,
-#menuSubList li a:hover {
+#menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
   padding-bottom: .543em;
 }
@@ -300,8 +299,7 @@ table td {
   margin: 0;
   text-align: center;
 }
-.submitFooter .button,
-.message div input {
+.submitFooter .button, .message div input {
   padding: .362em 1.087em;
   margin: 0 .362em;
 }
@@ -414,11 +412,13 @@ input.button[onclick*='delete'] {
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
 }
-input.button[value='Copy'], input.button[value='Paste'] {
+input.button[value='Copy'],
+input.button[value='Paste'] {
   margin-bottom: .6rem
 }
-input.button[value='Remove'], input.button[onclick*='lease_add'] {
-  margin-top: -.6rem
+input.button[onclick*='vifs_remove'],
+input.button[onclick*='lease_add'] {
+  margin-top: -.6rem;
 }
 div.bulle {
   background-color: #ffffe1;
