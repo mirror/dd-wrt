@@ -30,9 +30,7 @@ input.button {
 }
 body input.button[disabled] {
   cursor: default;
-  color: #999;
-  background-color: #1a1a1a;
-  border-color: #111;
+  opacity: .6;
 }
 body #content {
   background: #1a1a1a;
@@ -64,12 +62,13 @@ body hr {
 body input {
   color: #e0e0e0;
   background-color: #333;
-  border-color: #454545;
+  border: 1px solid #454545;
+}
+body select[onchange*='blockedServices'] {
+  margin-right: .362em;
 }
 body input[disabled], body select[disabled] {
-  color: #666;
-  background-color: #1a1a1a !important;
-  border-color: #111;
+  opacity: .6;
 }
 body input[name="apply_button"] {
   background: none repeat scroll 0 0 #166f2a;
@@ -117,9 +116,7 @@ select {
   border: 1px solid #454545;
 }
 select[disabled] {
-  color: #666;
-  background-color: #1a1a1a;
-  border-color: #111;
+  opacity: .6;
 }
 table tr th {
   background-color: #333;
