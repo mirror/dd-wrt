@@ -220,14 +220,20 @@ EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
 EJ_VISIBLE void ej_get_firmware_svnrev(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", SVN_REVISION);
-} EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t ** argv)
+}
+
+EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s.asp", websGetVar(wp, "submit_button", "index"));
-} EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
+}
+
+EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
 {
 	// return websWrite(wp,"%s",MODEL_NAME);
 	websWrite(wp, "%s", nvram_safe_get("router_name"));
-} EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t ** argv)
+}
+
+EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }
