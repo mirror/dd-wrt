@@ -83,6 +83,7 @@ static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, ch
 	if (stream->upgrade_ret == 0) {
 		// sleep (10);
 		nvram_set("shutdown", "fast");
+		sleep(1);
 		sys_reboot();
 		sleep(10);
 		writeproc("/proc/sysrq-trigger", "b");
