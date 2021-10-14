@@ -24,7 +24,7 @@ tt {
   height: 4.257em;
 }
 #header .logo {
-  background: url(logo-help.png) left center no-repeat;
+  background: url(../help/logo-help.png) left center no-repeat;
   height: 4.076em;
   width: 314px;
 }
