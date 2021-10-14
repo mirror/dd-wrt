@@ -232,6 +232,7 @@ fieldset .setting .label {
   text-align: center;
 }
 fieldset {
+  background: #f6f6f6;
   border: solid .09em #ccc;
   padding: .725em;
   margin: 0;
@@ -269,7 +270,6 @@ table td {
 }
 #help {
   width: 21.333em;
-  margin: 0 auto;
   padding: .906em 0;
 }
 #help dl {

@@ -1,6 +1,6 @@
 :root {
-  --style-name: DD-WRT Inspired Themes v5.0.0;
-  --copyright: © 2021 Style-it-themes: the-j0k3r;
+  --style-name: DD-WRT Inspired Themes v5.0.3;
+  --copyright: \24B8\00A02021 Style-it-themes: the-j0k3r;
   --license: MIT;
   --home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes;
   --bg-0: hsla(330, 73.92%, 9.02%, 1);

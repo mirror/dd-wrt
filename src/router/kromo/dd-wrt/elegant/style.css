@@ -24,7 +24,7 @@ fieldset legend {
   color: #fff;
 }
 .meter .bar {
-  background-color: #36f;
+  background-color: #6384cf;
 }
 .meter .text {
   color: #fff;
@@ -34,11 +34,11 @@ fieldset legend {
   border-color: #999;
 }
 .progressbarblock {
-  background-color: #36f;
+  background-color: #6384cf;
 }
 input.button {
-  background: #36f;
-  border: 1px solid #36f;
+  background: #30519c;
+  border: 1px solid #30519c;
   color: #fff;
 }
 input.button:hover {
@@ -47,6 +47,6 @@ input.button:hover {
   color: #fff;
 }
 input:focus-visible, textarea:focus-visible {
-  box-shadow: 0 0 5px 1px #5781ff !important;
-  outline: 2px solid #5781ff !important;
+  box-shadow: 0 0 5px 1px #6384cf !important;
+  outline: 2px solid #6384cf !important;
 }
