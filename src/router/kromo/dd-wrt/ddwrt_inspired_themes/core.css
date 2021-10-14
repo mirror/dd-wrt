@@ -228,7 +228,7 @@ div.center input.button[name='add_button']:not([onclick*='_add']) {
   margin: 0 0 0.8em 0;
 }
 div.center input.button[name='add_button'][onclick*='_add'] {
-  margin: 0 0.5em 0;
+  margin: -0.6rem 0.5em 0;
 }
 input.num {
   vertical-align: unset;
@@ -458,20 +458,16 @@ table tr:not([bgcolor]) th {
   color: var(--fg-1);
   padding-bottom: 2px;
 }
-[bgcolor='#FFFF00'],
-[bgcolor='#ffed00'] {
+[bgcolor='#eec900'] {
   background-color: var(--v3-3);
 }
-[bgcolor='#FFFF00']:hover,
-[bgcolor='#ffed00']:hover {
+[bgcolor='#eec900']:hover {
   background-color: var(--v3-4);
 }
-[bgcolor='#FF0000'],
 [bgcolor='#ea0707'] {
   background-color: var(--v1-4);
   color: var(--v9-8);
 }
-[bgcolor='#FF0000']:hover,
 [bgcolor='#ea0707']:hover {
   background-color: var(--v1-5);
 }
