@@ -2807,23 +2807,7 @@ static struct mime_handler mime_handlers[] = {
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-/*	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-*/
-	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "common_style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
