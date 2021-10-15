@@ -1,10 +1,15 @@
-#header[src*='dd-logo.png'] {
-  filter: invert(.95) hue-rotate(180deg)
-  mix-blend-mode: lighten
+/*! about/help */
+#header .logo,
+#content [src*='dd-logo.png'] {
+  filter: invert(.95) hue-rotate(180deg) !important;
+  mix-blend-mode: lighten !important;
 }
-.about-bg, .help-bg {
+.about-bg, .help-bg, #header {
   background: #1a1a1a !important;
   color: #eee;
+}
+.help-bg a, .about-bg a {
+  color: #0087ff !important;
 }
 /*! about */
 .about-bg #content {
@@ -14,11 +19,18 @@
   border-color: #333 !important;
 }
 .thc {
-  background-color: #222 !important;
+  background-color: #282828 !important;
 }
 /*! help */
-.help-bg a {
-  color: #0087ff !important;
+#header .navig a {
+  color: #eee !important;
+}
+#header .navig a:hover {
+  color: #ddd !important;
+}
+.help-bg h2 {
+  background-color: #777674 !important;
+  color: #fff !important;
 }
 .help-bg #content {
   background: transparent !important;
@@ -29,7 +41,7 @@ div.note {
   background: #380c55 !important;
   border-color: #8030b5 !important;
 }
-div.also {
+div.also, div#also {
   background: #222 !important;
-  border-color: #333 !important;
+  border: 1px solid #333 !important;
 }
