@@ -28,10 +28,6 @@ input.button {
   box-shadow: none;
   border: 1px solid transparent;
 }
-body input.button[disabled] {
-  cursor: default;
-  opacity: .6;
-}
 body #content {
   background: #1a1a1a;
   border: 1px solid #111;
@@ -67,35 +63,32 @@ body input {
 body select[onchange*='blockedServices'] {
   margin-right: .362em;
 }
-body input[disabled], body select[disabled] {
-  opacity: .6;
-}
-body input[name="apply_button"] {
+body input[name='apply_button'] {
   background: none repeat scroll 0 0 #166f2a;
   border-color: #1a6d2d;
   color: #fff;
 }
-body input[name="apply_button"]:hover {
+body input[name='apply_button']:hover {
   background: none repeat scroll 0 0 #199235;
   border-color: #199235;
   color: #fff;
 }
-body input[name="reset_button"] {
+body input[name='reset_button'] {
   background: none repeat scroll 0 0 #595959;
   border-color: #656565;
   color: #ccc;
 }
-body input[name="reset_button"]:hover {
+body input[name='reset_button']:hover {
   background: none repeat scroll 0 0 #d6951e;
   border-color: #d0911d;
   color: #fff;
 }
-body input[name="reboot_button"] {
+body input[name='reboot_button'] {
   background: none repeat scroll 0 0 #c11616;
   border-color: #c11616;
   color: #f8f8f8;
 }
-body input[name="reboot_button"]:hover {
+body input[name='reboot_button']:hover {
   background: none repeat scroll 0 0 #d82828;
   border-color: #d82828;
   color: #fff;
@@ -115,17 +108,14 @@ select {
   background-color: #333;
   border: 1px solid #454545;
 }
-select[disabled] {
-  opacity: .6;
-}
 table tr th {
   background-color: #333;
   border-color: #333;
 }
-table tr[bgcolor="#CCCCCC"] {
+table tr[bgcolor='#CCCCCC'] {
   background-color: #222;
 }
-table tr[bgcolor="#CCCCCC"]:hover {
+table tr[bgcolor='#CCCCCC']:hover {
   background-color: #1a1a1a;
 }
 table tr:hover {
@@ -134,19 +124,19 @@ table tr:hover {
 table tr:not([bgcolor]):hover {
   background-color: #222;
 }
-[bgcolor="#FFFFFF"] {
+[bgcolor='#FFFFFF'] {
   background-color: #292929;
 }
-[bordercolor="#000000"] {
+[bordercolor='#000000'] {
   border-color: #333;
 }
-td[bgcolor="#C0C0C0"] {
+td[bgcolor='#C0C0C0'] {
   background-color: #383838;
 }
-td[bgcolor="#C0C0C0"]:hover {
+td[bgcolor='#C0C0C0']:hover {
   background-color: #1a1a1a;
 }
-form[name="wds"] select {
+form[name='wds'] select {
   margin-right: 6px;
 }
 .submitFooter {

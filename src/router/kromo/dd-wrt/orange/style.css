@@ -1,4 +1,5 @@
 @import url(../common.css);
+/*! Orange */
 #menuSub, #menuMainList li span, #help h2 {
   background: #f26522;
   color: #fff;
@@ -40,9 +41,12 @@ input.button {
   background: #ff8400;
   color: #111;
 }
-input.button:hover {
+input.button:not([disabled]):hover {
   background: #ff9000;
   color: #000;
+}
+input[name*='refresh'][style*='background'] {
+  background: #ff8400 !important;
 }
 input:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 5px 1px #ff9000 !important;
