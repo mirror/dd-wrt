@@ -2281,7 +2281,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/help-about-dark.css\" />\n");
+			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
 		}
 		websWrite(wp, "<style type=\"text/css\">\n");
 		websWrite(wp, "* {\n");
@@ -2342,7 +2342,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/help-about-dark.css\" />\n");
+			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
 		}
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
