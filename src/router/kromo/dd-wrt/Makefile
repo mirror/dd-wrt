@@ -298,6 +298,7 @@ else
 	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
 	touch $(INSTALLDIR)/www/style/elegant/style.css
 endif
+	cp elegant/help-about-dark.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
 	cp elegant/logo-trial.png $(INSTALLDIR)/www/style
