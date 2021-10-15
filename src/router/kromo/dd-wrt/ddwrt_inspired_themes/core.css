@@ -184,6 +184,9 @@ body.help-bg #content {
   border-color: transparent;
   color: var(--v9-8);
 }
+body.help-bg #content h2 {
+  padding-top: 0.3rem;
+}
 body div.message {
   background-color: var(--bg-1);
   border-color: var(--bg-3);
@@ -561,7 +564,7 @@ table .bulle {
   margin-bottom: -0.8rem;
 }
 div.also {
-  background: var(--bg-2);
+  background: var(--bg-3);
   border-color: var(--bg-4);
   border-radius: 4px;
 }
@@ -657,10 +660,14 @@ h2 {
   filter: invert(0.95) hue-rotate(180deg);
   mix-blend-mode: lighten;
 }
+#header .navig {
+  top: 4.737em;
+}
 #header .navig a {
   color: var(--fg-3);
 }
 #header .navig a:hover,
+#header .navig a:focus,
 #header .navig a:focus-within {
   color: var(--fg-1);
 }
@@ -689,15 +696,22 @@ img[src*='hotspotsystem'] {
   width: 0;
 }
 [type='image'i][src*='paypal'] {
-  background: transparent;
-  border-color: transparent;
+  background: transparent !important;
+  border-color: transparent !important;
   filter: invert(0.9) hue-rotate(180deg);
   margin-bottom: -0.5rem;
-  mix-blend-mode: exclusion;
+  height: 54px;
+  width: 90px;
+  mix-blend-mode: lighten;
 }
-[type='image'i][src*='paypal']:hover {
-  background: var(--fg-1);
-  border-color: transparent;
+[type='image'i][src*='paypal']:hover,
+[type='image'i][src*='paypal']:focus,
+[type='image'i][src*='paypal']:focus-within,
+[type='image'i][src*='paypal']:focus-visible {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  mix-blend-mode: exclusion;
 }
 .logo[src*='wiviz'] {
   filter: invert(0.95) hue-rotate(180deg) contrast(1.6);
