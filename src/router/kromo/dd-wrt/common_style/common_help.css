@@ -88,11 +88,11 @@ a:hover {
   text-decoration: underline;
   color: #33f;
 }
-div.also, div.note {
+div.also, div#also, div.note {
   padding: .725em;
   border-radius: 4px;
 }
-div.also {
+div.also, div#also {
   background: #ddd;
   border: 1px solid #aaa;
 }
@@ -101,13 +101,20 @@ div.note {
   border: 1px solid #aaf;
   margin-top: .5rem;
 }
-div.note h4, div.also h4 {
+div.note h4, div.also h4, div#also a {
   float: left;
-  margin: 0;
+  margin: 0 ;
+}
+div#also a {
+  margin-top: -.7rem
 }
 div.note div {
   margin-left: 3.4em;
 }
-div.also ul {
-  margin-left: 5em;
+div.also ul, div#also ul {
+  margin-left: 4.4em;
+}
+div#also ul li {
+  margin-top: -.8rem;
+  margin-bottom: .8rem;
 }
