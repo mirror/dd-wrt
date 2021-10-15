@@ -228,7 +228,7 @@ div.center input.button[name='add_button']:not([onclick*='_add']) {
   margin: 0 0 0.8em 0;
 }
 div.center input.button[name='add_button'][onclick*='_add'] {
-  margin: -0.6rem 0.5em 0;
+  margin: 0 0.5em 0;
 }
 input.num {
   vertical-align: unset;

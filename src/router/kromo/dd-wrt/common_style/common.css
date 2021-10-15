@@ -162,8 +162,7 @@ input.num {
 #menuSubList li a {
   font-weight: normal;
 }
-#menuMainList li a:hover,
-#menuSubList li a:hover {
+#menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
   padding-bottom: .543em;
 }
@@ -280,7 +279,7 @@ table td {
 }
 #help dd.definition {
   padding-bottom: .908em;
-  border-bottom: dotted .09em #ccc;
+  border-bottom: 1px dotted #ccc;
   margin: 0 0 .908em 0;
 }
 #help a {
@@ -321,7 +320,7 @@ div.center {
   font-weight: bold;
   text-align: center;
   border-style: solid;
-  border-color: #ddd #999 #999 #ddd;
+  border-color: #ddd;
   border-width: 1px;
   background: #ccc;
 }
@@ -413,12 +412,6 @@ input.button[onclick*='delete'] {
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
-}
-input.button[value='Copy'], input.button[value='Paste'] {
-  margin-bottom: .6rem
-}
-input.button[value='Remove'], input.button[onclick*='lease_add'] {
-  margin-top: -.6rem
 }
 div.bulle {
   background-color: #ffffe1;
