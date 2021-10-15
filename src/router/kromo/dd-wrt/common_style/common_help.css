@@ -99,6 +99,7 @@ div.also {
 div.note {
   background: #ddf;
   border: 1px solid #aaf;
+  margin-top: .5rem;
 }
 div.note h4, div.also h4 {
   float: left;

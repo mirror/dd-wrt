@@ -1,4 +1,5 @@
 @import url(../common.css);
+/*! Elegant */
 #menuSub, #menuMainList li span, #help h2 {
   background: #30519c;
   color: #fff;
@@ -41,10 +42,13 @@ input.button {
   border: 1px solid #30519c;
   color: #fff;
 }
-input.button:hover {
+input.button:not([disabled]):hover {
   background: #6384cf;
   border: 1px solid #6384cf;
   color: #fff;
+}
+input[name*='refresh'][style*='background'] {
+  background: #30519c !important;
 }
 input:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 5px 1px #6384cf !important;

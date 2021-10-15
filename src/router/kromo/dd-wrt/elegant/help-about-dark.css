@@ -1,29 +1,35 @@
+#header[src*='dd-logo.png'] {
+  filter: invert(.95) hue-rotate(180deg)
+  mix-blend-mode: lighten
+}
 .about-bg, .help-bg {
-  background: #1a1a1a;
+  background: #1a1a1a !important;
   color: #eee;
 }
-.help-bg a {
-  color: #0087ff;
-}
-.help-bg #content {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #eee;
-}
+/*! about */
 .about-bg #content {
-  border-color: transparent;
+  border-color: transparent !important;
 }
 .about-bg #content .t-border {
-  border-color: #333;
+  border-color: #333 !important;
+}
+.thc {
+  background-color: #222 !important;
+}
+/*! help */
+.help-bg a {
+  color: #0087ff !important;
+}
+.help-bg #content {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #eee !important;
 }
 div.note {
-  background: #380c55;
-  border-color: #8030b5;
-  margin-top: .5rem;
-  border-radius: 4px;
+  background: #380c55 !important;
+  border-color: #8030b5 !important;
 }
 div.also {
-  background: #1a1a1a;
-  border-color: #333;
-  border-radius: 4px;
+  background: #222 !important;
+  border-color: #333 !important;
 }
