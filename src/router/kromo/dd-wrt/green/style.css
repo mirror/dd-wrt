@@ -1,4 +1,5 @@
 @import url(../common.css);
+/*! Green */
 #menuSub, #menuMainList li span, #help h2 {
   background: #090;
   color: #fff;
@@ -41,10 +42,13 @@ input.button {
   border: 1px solid #3b3;
   color: #111;
 }
-input.button:hover {
+input.button:not([disabled]):hover {
   background: #6c6;
   border: 1px solid #6c6;
   color: #000;
+}
+input[name*='refresh'][style*='background'] {
+  background: #3b3 !important;
 }
 input:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 5px 1px #6c6 !important;

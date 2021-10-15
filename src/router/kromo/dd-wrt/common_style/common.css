@@ -388,6 +388,9 @@ body input.button[disabled] {
   cursor: default;
   opacity: .6
 }
+body input[disabled], body select[disabled] {
+  opacity: .6;
+}
 input.spaceradio {
   margin-right: .4em;
 }
