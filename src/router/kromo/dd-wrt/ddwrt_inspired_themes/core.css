@@ -238,13 +238,13 @@ input.num {
 }
 input.button[onclick*='copy'],
 input.button[onclick*='paste'] {
-  margin: 0 0.362em 1em 0;
+  margin: 0 0.362em 0 0;
 }
 input.button[onclick*='vifs_add'] {
   margin: 0.4em 0 0 0;
 }
 input.button[onclick*='vifs_remove'] {
-  margin: -0.95em 0.362em 0 0;
+  margin: 0 0.362em 0 0;
 }
 input.button[onclick*='delete'] {
   margin: 0 0.4em 0 0.4em;
