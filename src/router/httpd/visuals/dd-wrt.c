@@ -4771,14 +4771,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	websWrite(wp, "</div>\n");
 #endif				// end BUFFALO
-	websWrite(wp, "</fieldset>\n");
-	websWrite(wp, "<br />\n");
 #ifdef HAVE_ATH9K
 	int inst;
 	char radio_timer[32];
 	sscanf(prefix, "wlan%d", &inst);
 	sprintf(radio_timer, "radio%d_timer_enable", inst);
-	websWrite(wp, "<fieldset>\n");
 	show_caption_legend(wp, "wl_basic.legend2");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.radiotimer", NULL);
@@ -4801,7 +4798,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</fieldset><br/>\n");
 #endif
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
@@ -4809,6 +4805,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 		  prefix);
+	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "<br />\n");
 	if (!has_no_apmode(prefix)) {
 #ifdef HAVE_REGISTER
 		if (!iscpe())
