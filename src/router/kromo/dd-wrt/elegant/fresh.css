@@ -171,6 +171,10 @@ button {
   -moz-user-select: none;
   user-select: none;
 }
+.progressbar {
+  background-color: #fff;
+  border-color: #999;
+}
 #content.infopage {
   background-color: transparent;
 }
