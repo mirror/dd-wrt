@@ -42,15 +42,20 @@ input.button {
   border: 1px solid #30519c;
   color: #fff;
 }
-input.button:not([disabled]):hover {
+input.button:hover {
   background: #6384cf;
   border: 1px solid #6384cf;
+  color: #fff;
+}
+input.button[disabled]:hover {
+  background: #30519c;
+  border: 1px solid #30519c;
   color: #fff;
 }
 input[name*='refresh'][style*='background'] {
   background: #30519c !important;
 }
 input:focus-visible, textarea:focus-visible {
-  box-shadow: 0 0 5px 1px #6384cf !important;
-  outline: 2px solid #6384cf !important;
+  box-shadow: 0 0 5px 1px #6384cf;
+  outline: 2px solid #6384cf;
 }

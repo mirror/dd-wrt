@@ -40,17 +40,22 @@ fieldset legend {
 input.button {
   background: #3bb;
   border: 1px solid #3bb;
-  color: #043535;
+  color: #000;
 }
-input.button:not([disabled]):hover {
+input.button:hover {
   background: #6cc;
   border: 1px solid #6cc;
+  color: #000;
+}
+input.button[disabled]:hover {
+  background: #3bb;
+  border: 1px solid #3bb;
   color: #000;
 }
 input[name*='refresh'][style*='background'] {
   background: #3bb !important;
 }
 input:focus-visible, textarea:focus-visible {
-  box-shadow: 0 0 5px 1px #6cc !important;
-  outline: 2px solid #6cc !important;
+  box-shadow: 0 0 5px 1px #6cc;
+  outline: 2px solid #6cc;
 }

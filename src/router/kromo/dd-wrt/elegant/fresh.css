@@ -122,6 +122,10 @@ input:focus, input.focus {
   border: 1px solid #707070;
   box-shadow: 0 0 5px 1px #969696;
 }
+input.button, input.button:hover {
+	box-shadow: 2px 2px 2px #808080;
+	border-color: #ccc;
+}
 input.button[disabled] {
   cursor: default;
   opacity: .6;

@@ -103,10 +103,10 @@ div.note {
 }
 div.note h4, div.also h4, div#also a {
   float: left;
-  margin: 0 ;
+  margin: 0;
 }
 div#also a {
-  margin-top: -.7rem
+  margin-top: -.7rem;
 }
 div.note div {
   margin-left: 3.4em;
