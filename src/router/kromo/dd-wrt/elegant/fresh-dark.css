@@ -16,12 +16,10 @@ body, body.gui, .popup {
 }
 body div.message {
   background-color: #1a1a1a;
-  border-radius: 6px;
   border: 1px solid #333;
 }
 body div.progressbar {
   background-color: #333;
-  border-radius: 4px;
   border: 1px solid #333;
 }
 input.button {
