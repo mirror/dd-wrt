@@ -30,27 +30,28 @@ fieldset legend {
 .meter .text {
   color: #fff;
 }
-.progressbar {
-  background-color: #fff;
-  border-color: #999;
-}
 .progressbarblock {
   background-color: #36f;
 }
 input.button {
   background: #36f;
-  border: 1px solid #4171ff;
-  color: #f8f8f8;
+  border: 1px solid #36f;
+  color: #fff;
 }
-input.button:not([disabled]):hover {
+input.button:hover {
   background: #5781ff;
   border: 1px solid #5781ff;
+  color: #fff;
+}
+input.button[disabled]:hover {
+  background: #36f;
+  border: 1px solid #36f;
   color: #fff;
 }
 input[name*='refresh'][style*='background'] {
   background: #36f !important;
 }
 input:focus-visible, textarea:focus-visible {
-  box-shadow: 0 0 5px 1px #5781ff !important;
-  outline: 2px solid #5781ff !important;
+  box-shadow: 0 0 5px 1px #5781ff;
+  outline: 2px solid #5781ff;
 }
