@@ -19,6 +19,16 @@ hr {
   width: 100%;
   height: .09em;
 }
+textarea {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
+}
 pre {
   overflow: auto;
   padding: 1em;
@@ -33,10 +43,24 @@ form {
 form[name='wds'] select {
   margin-right: 6px;
 }
+input {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+}
 input.num {
   padding-left: 1px;
   padding-right: 1px;
   text-align: center;
+  vertical-align: middle;
+}
+select {
+  padding: 4px 4px;
+  font-size: 12px;
+  height: 1.6rem;
+  border-radius: 4px;
+  vertical-align: middle;
 }
 #score {
   color: #000;
@@ -227,14 +251,21 @@ fieldset .setting .label {
   font-weight: bold;
   padding: .725em;
   text-align: center;
+  border-radius: 4px;
 }
 fieldset {
   background: #f6f6f6;
   border: 1px solid #ccc;
+  border-radius: 4px;
   padding: .725em;
   margin: 0;
 }
 fieldset legend {
+  padding-bottom: 4px;
+  margin-bottom: 0;
+}
+fieldset legend {
+  left: 0;
   font-weight: bold;
   margin-left: -.362em;
   padding: 0 .272em;
@@ -264,6 +295,15 @@ table tr:not([bgcolor]):hover {
 }
 table td {
   padding: 0;
+}
+table[summary='ports forwarding table'] .num[size='15'] {
+  max-width: 100px;
+}
+table[summary='ports forwarding table'] .num[size='5'] {
+  max-width: 50px;
+}
+table[summary='ports forwarding table'] input[size='10'] {
+  max-width: 79px;
 }
 #help {
   width: 21.333em;
@@ -314,27 +354,22 @@ div.center {
   text-align: center;
 }
 .message {
+  border-radius: 6px;
   max-width: 72.464em;
   margin: 0 auto;
   padding: 1.812em;
   font-weight: bold;
   text-align: center;
-  border-style: solid;
-  border-color: #ddd;
-  border-width: 1px;
-  background: #ccc;
 }
 .message div input {
   margin-top: 1.449em;
   font-weight: normal;
 }
 .popup {
-  background: #f9f9f9;
   padding: .906em;
 }
 .meter {
-  background: #aaa;
-  border: 1px solid #888;
+  border-radius: 3px;
   position: relative;
   float: right;
   margin-top: 1px;
@@ -364,6 +399,7 @@ td .meter {
   border-style: solid;
   font-size: .09em;
   border-width: 1px;
+  border-radius: 4px;
 }
 .progressbarblock {
   position: absolute;
@@ -376,6 +412,22 @@ td .meter {
   background: url(/images/bin_bt.gif) center no-repeat;
   cursor: pointer;
 }
+/*! Find out where this is called from if at all extracted from of fresh.css */
+button {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: normal;
+  font-size: 12px;
+  text-align: center;
+  padding: 6px 12px;
+  line-height: 1.42857;
+  cursor: pointer;
+  border-radius: 4px;
+  -moz-user-select: none;
+  user-select: none;
+  vertical-align: middle;
+  white-space: nowrap;
+}
 input.button {
   border: 1px solid #ccc;
   padding: .2em .6em;
@@ -383,6 +435,10 @@ input.button {
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;
+}
+input.button:hover, input.button:focus,
+button:hover, button:focus {
+  text-decoration: none;
 }
 body input.button[disabled] {
   cursor: default;
@@ -459,4 +515,5 @@ td.bulle {
 }
 .odd {
   background: #ccc;
+  border-radius: 2px;
 }

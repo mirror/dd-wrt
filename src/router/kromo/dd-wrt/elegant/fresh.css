@@ -43,50 +43,25 @@ li.current {
   margin-left: .362em;
   text-decoration: none;
 }
-fieldset {
-  border-radius: 4px;
-  border-width: 1px;
-}
-fieldset legend {
-  left: 0;
-  padding-bottom: 4px;
-  margin-bottom: 0;
-}
 textarea {
-  padding: 4px;
-  font-size: 12px;
-  line-height: 1.42857;
   color: #555;
   background-color: #fff;
   background-image: none;
   border: 1px solid #ccc;
-  border-radius: 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  width: 100%;
 }
 textarea:focus, textarea.focus {
   border: solid 1px #707070;
   box-shadow: 0 0 5px 1px #969696;
 }
 input {
-  padding: 4px;
-  font-size: 12px;
-  line-height: 1.42857;
   color: #555;
   background-color: #fff;
   background-image: none;
   border: 1px solid #ccc;
-  border-radius: 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
-}
-input.button {
-  box-shadow: 2px 2px 2px #808080;
-  border-color: #ccc;
 }
 input[name='apply_button'] {
   background: none repeat scroll 0 0 #696969;
@@ -122,50 +97,38 @@ input:focus, input.focus {
   border: 1px solid #707070;
   box-shadow: 0 0 5px 1px #969696;
 }
+input.button, input.button:hover {
+	box-shadow: 2px 2px 2px #808080;
+	border-color: #ccc;
+}
 input.button[disabled] {
   cursor: default;
   opacity: .6;
-  box-shadow: none;
 }
-input.num {
-  vertical-align: middle;
+input.button[disabled]:hover {
+  border-color: transparent;
 }
 input.num[name*='lease'][size='10'] {
   margin-right: 4px;
 }
 select {
-  padding: 4px 4px;
-  font-size: 12px;
-  height: 1.6rem;
   color: #555;
   background-color: #fff;
   background-image: none;
   border: 1px solid #ccc;
-  border-radius: 4px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: border-color .15s ease-in-out 0s, box-shadow .15s ease-in-out 0s;
-  vertical-align: middle;
 }
 button:hover, button:focus {
   color: #333;
-  text-decoration: none;
 }
 button {
-  display: inline-block;
-  margin-bottom: 0;
-  font-weight: normal;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
   background-image: none;
   border: 1px solid transparent;
-  white-space: nowrap;
-  padding: 6px 12px;
-  font-size: 12px;
-  line-height: 1.42857;
-  border-radius: 4px;
-  -moz-user-select: none;
-  user-select: none;
+}
+.progressbar {
+  background-color: #fff;
+  border-color: #999;
 }
 #content.infopage {
   background-color: transparent;
@@ -180,36 +143,20 @@ button {
   margin-bottom: 1em;
   border: 1px solid #111;
 }
-table[summary='ports forwarding table'] .num[size='15'] {
-  max-width: 100px;
-}
-table[summary='ports forwarding table'] .num[size='5'] {
-  max-width: 50px;
-}
-table[summary='ports forwarding table'] input[size='10'] {
-  max-width: 79px;
-}
-form[name='wds'] select {
-  margin-right: 6px;
-}
 #header {
   height: 9.24em;
 }
 .message {
-  border-radius: 6px;
+  background: #ccc;
+  border: 1px solid #ddd;
+}
+.popup {
+  background: #f9f9f9;
 }
 .meter {
-  border-radius: 3px;
-  border-width: 1px;
-}
-.progressbar {
-  border-radius: 4px;
-}
-.warning {
-  border-radius: 4px;
-  border-width: 2px;
+  background: #aaa;
+  border: 1px solid #888;
 }
 .odd {
   background-color: #f1f1f1;
-  border-radius: 2px;
 }
