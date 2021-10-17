@@ -30,10 +30,6 @@ fieldset legend {
 .meter .text {
   color: #000;
 }
-.progressbar {
-  background-color: #fff;
-  border-color: #999;
-}
 .progressbarblock {
   background-color: #ffd700;
 }
@@ -42,10 +38,15 @@ input.button {
   border: 1px solid #eec900;
   color: #1f1f03;
 }
-input.button:not([disabled]):hover {
+input.button:hover {
   background: #ffd700;
-  border: 1px solid #ffd700;
+  border: 1px solid #fdd700;
   color: #000;
+}
+input.button[disabled]:hover {
+  background: #eec900;
+  border: 1px solid #eec900;
+  color: #1f1f03;
 }
 input[name*='refresh'][style*='background'] {
   background: #eec900 !important;

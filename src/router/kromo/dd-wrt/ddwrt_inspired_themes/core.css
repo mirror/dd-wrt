@@ -106,7 +106,7 @@ body input.button:hover,
 body input.button:focus-within {
   background: var(--v0-7) !important;
   border-color: var(--v0-7) !important;
-  box-shadow: 0 0 10px 0 var(--v0-4);
+  box-shadow: 0 0 10px 0 var(--v0-4) !important;
   color: var(--v9-9);
 }
 body input.button[disabled] {
@@ -114,6 +114,13 @@ body input.button[disabled] {
   border-color: var(--v0-6) !important;
   background-color: var(--v0-5) !important;
   box-shadow: none;
+  opacity: 0.6;
+}
+body input.button[disabled]:hover {
+  color: var(--v9-9) !important;
+  border-color: var(--v0-6) !important;
+  background-color: var(--v0-5) !important;
+  box-shadow: none !important;
   opacity: 0.6;
 }
 body input[name*='apply'] {
@@ -126,7 +133,7 @@ body input[name*='apply']:hover,
 body input[name*='apply']:focus-within {
   background: none repeat scroll 0 0 var(--v4-3) !important;
   border-color: var(--v4-3) !important;
-  box-shadow: 0 0 10px 0 var(--v4-3);
+  box-shadow: 0 0 10px 0 var(--v4-3) !important;
   color: var(--v9-9) !important;
 }
 body input[name*='reset']:not([type="radio"]) {
@@ -139,7 +146,7 @@ body input[name*='reset']:not([type="radio"]):hover,
 body input[name*='reset']:not([type="radio"]):focus-within {
   background: none repeat scroll 0 0 var(--bg-5) !important;
   border-color: var(--bg-5) !important;
-  box-shadow: 0 0 10px 0 var(--bg-5);
+  box-shadow: 0 0 10px 0 var(--bg-5) !important;
   color: var(--v9-9) !important;
 }
 body input[name*='refresh'][style*='background'] {
@@ -155,7 +162,7 @@ body input[name*='reboot']:hover,
 body input[name*='reboot']:focus-within {
   background: none repeat scroll 0 0 var(--v1-6) !important;
   border-color: var(--v1-7) !important;
-  box-shadow: 0 0 10px 0 var(--v1-6);
+  box-shadow: 0 0 10px 0 var(--v1-6) !important;
 }
 body div.progressbar {
   background-color: var(--bg-4);
@@ -870,9 +877,9 @@ input:hover,
 input:focus,
 input:focus-within,
 input:focus-visible {
-  border-color: var(--v0-8) !important;
-  background-color: var(--v0-1) !important;
-  box-shadow: 0 0 6px 0 var(--v0-3) !important;
+  background: var(--v0-1);
+  border-color: var(--v0-8);
+  box-shadow: 0 0 6px 0 var(--v0-3);
   outline: 0 !important;
 }
 input[type='radio'],
@@ -982,7 +989,7 @@ input[type='file']::-webkit-file-upload-button:hover {
   color: 98;
 }
 input[disabled] {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 .off {
   background: var(--bg-2);
