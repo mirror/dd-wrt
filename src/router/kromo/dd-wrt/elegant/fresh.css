@@ -106,7 +106,7 @@ input.button[disabled] {
   opacity: .6;
 }
 input.button[disabled]:hover {
-  border-color: transparent;
+  border-color: #ccc;
 }
 input.num[name*='lease'][size='10'] {
   margin-right: 4px;

@@ -22,7 +22,8 @@ body div.progressbar {
   background-color: #333;
   border: 1px solid #333;
 }
-input.button {
+input.button, input.button:hover,
+input.button[disabled]:hover {
   box-shadow: none;
   border: 1px solid transparent;
 }
