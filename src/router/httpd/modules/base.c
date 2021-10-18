@@ -2507,14 +2507,14 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
 					// a few sample colors
 					if (strstr(line, ".warn")) {
-						websWrite(stream, "<tr bgcolor=\"#eec900\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#eec900\"><td style=\"color:#000\">>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
-						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#35ee00\"><td style=\"color:#000\">>%s</td></tr>", line);
 					} else if (strstr(line, "mounting unchecked fs")
 						   || strstr(line, "httpd login failure")
 						   || strstr(line, "auth-failure")
 						   || strstr(line, ".err")) {
-						websWrite(stream, "<tr bgcolor=\"#ea0707\"><td style=\"color:#eeeeee\">%s</td></tr>", line);
+						websWrite(stream, "<tr bgcolor=\"#ff6666\"><td style=\"color:#000\">%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
 					}
