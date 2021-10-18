@@ -216,13 +216,13 @@ select {
   width: 43em;
   margin-left: .906em;
 }
-h2, h3, .submitFooter {
-  background: #ccc;
-  border: 1px solid #999;
-  color: #000;
-  margin: 0 0 .906em 0;
-  padding: .181em .725em;
+h2, h3 {
+  padding: 4px 12px;
+  font-size: 12px;
+  line-height: 1.42857;
   letter-spacing: .09em;
+  margin: 0 0 .906em 0;
+  border-radius: 4px;
 }
 .setting {
   position: relative;
@@ -246,30 +246,19 @@ fieldset .setting .label {
   width: 17em;
 }
 .warning {
-  background: #fcc;
-  border: 2px dashed #f99;
-  font-weight: bold;
   padding: .725em;
   text-align: center;
   border-radius: 4px;
 }
 fieldset {
-  background: #f6f6f6;
-  border: 1px solid #ccc;
   border-radius: 4px;
   padding: .725em;
   margin: 0;
 }
 fieldset legend {
-  padding-bottom: 4px;
-  margin-bottom: 0;
-}
-fieldset legend {
-  left: 0;
   font-weight: bold;
   margin-left: -.362em;
   padding: 0 .272em;
-  background: #f9f9f9;
 }
 table {
   margin: 0 auto;
@@ -335,7 +324,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: underline;
 }
 .submitFooter {
-  padding: .725em;
+  padding: 4px 12px;
   margin: 0;
   text-align: center;
 }
@@ -429,7 +418,7 @@ button {
   white-space: nowrap;
 }
 input.button {
-  border: 1px solid #ccc;
+  border: 1px solid;
   padding: .2em .6em;
   margin: 0 .3em 0 0;
   height: 1.6rem;
@@ -440,12 +429,10 @@ input.button:hover, input.button:focus,
 button:hover, button:focus {
   text-decoration: none;
 }
-body input.button[disabled] {
+body input.button[disabled],
+body input[disabled], body select[disabled] {
   cursor: default;
   opacity: .6
-}
-body input[disabled], body select[disabled] {
-  opacity: .6;
 }
 input.spaceradio {
   margin-right: .4em;
@@ -497,18 +484,26 @@ td.bulle {
   background: #ea0707;
   color: #eee;
   text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_green {
   background: #07ef07;
   text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_yellow {
   background: #ffed00;
   text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_orange {
   background: #f80;
   text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .off {
   opacity: .6;

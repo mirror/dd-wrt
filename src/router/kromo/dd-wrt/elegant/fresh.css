@@ -1,12 +1,15 @@
-h2, h3, .submitFooter {
-  padding: 4px 12px;
-  font-size: 12px;
-  line-height: 1.42857;
-  color: #fff;
+fieldset legend {
+  background: transparent;
+}
+fieldset {
+  background: #f6f6f6;
+  border: 1px solid #ccc;
+}
+h2, h3 {
   background-color: #777674;
   background-image: none;
-  border-radius: 4px;
   border-style: none;
+  color: #fff;
 }
 table tr th {
   background-color: #777674;
@@ -22,6 +25,8 @@ table tr:not([bgcolor]):hover {
 }
 .submitFooter {
   background-color: #ccc;
+  border-color: #999;
+  color: #000;
 }
 .submitFooter .button {
   margin: .362em .362em;
@@ -101,10 +106,6 @@ input.button, input.button:hover {
 	box-shadow: 2px 2px 2px #808080;
 	border-color: #ccc;
 }
-input.button[disabled] {
-  cursor: default;
-  opacity: .6;
-}
 input.button[disabled]:hover {
   border-color: #ccc;
 }
@@ -159,4 +160,9 @@ button {
 }
 .odd {
   background-color: #f1f1f1;
+}
+.warning {
+  background: #fcc;
+  border: 2px dashed #f99;
+  font-weight: bold;
 }
