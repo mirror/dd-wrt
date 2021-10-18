@@ -46,6 +46,7 @@ body fieldset {
 }
 body fieldset legend {
   background-color: transparent;
+  filter: brightness(1.8);
 }
 body #help dd.definition {
   border-bottom: 1px dotted #333;
