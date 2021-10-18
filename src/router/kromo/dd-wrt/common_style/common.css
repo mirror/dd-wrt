@@ -480,27 +480,33 @@ td.bulle {
   padding: .09em;
   border: 0;
 }
+/*! status is common to light/dark */
+/*! these colors pass all color contrast tests */
+
 .status_red {
-  background: #ea0707;
-  color: #eee;
+  background: #ff6666;
+  color: #000;
   text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_green {
-  background: #07ef07;
+  background: #35ee00;
+  color: #000;
   text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_yellow {
-  background: #ffed00;
+  background: #eec900;
+  color: #000;
   text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_orange {
-  background: #f80;
+  background: #fea543;
+  color: #000;
   text-align: center;
   padding: 2px;
   border-radius: 2px;
