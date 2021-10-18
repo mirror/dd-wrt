@@ -470,16 +470,24 @@ table tr:not([bgcolor]) th {
 }
 [bgcolor='#eec900'] {
   background-color: var(--v3-3);
+  color: var(--v9-9);
 }
 [bgcolor='#eec900']:hover {
   background-color: var(--v3-4);
 }
-[bgcolor='#ea0707'] {
+[bgcolor='#ff6666'] {
   background-color: var(--v1-4);
-  color: var(--v9-8);
+  color: var(--v9-9);
 }
-[bgcolor='#ea0707']:hover {
+[bgcolor='#ff6666']:hover {
   background-color: var(--v1-5);
+}
+[bgcolor='#35ee00'] {
+  background-color: var(--v4-4);
+  color: var(--v9-9);
+}
+[bgcolor='#35ee00']:hover {
+  background-color: var(--v4-5);
 }
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
