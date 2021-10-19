@@ -528,7 +528,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
@@ -612,7 +612,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 	websWrite(wp, "<input type=\"hidden\" name=\"drivecount\" id=\"drivecount\" value=\"%d\">\n", idx);
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 }
 
 #endif
