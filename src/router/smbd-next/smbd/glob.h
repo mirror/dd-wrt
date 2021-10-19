@@ -17,6 +17,45 @@
 
 #define KSMBD_VERSION	"3.4.2"
 
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+/**
+ * strchrnul - Find and return a character in a string, or end of string
+ * @s: The string to be searched
+ * @c: The character to search for
+ *
+ * Returns pointer to first occurrence of 'c' in s. If c is not found, then
+ * return a pointer to the null byte at the end of s.
+ */
+static char *strchrnul(const char *s, int c)
+{
+	while (*s && *s != (char)c)
+		s++;
+	return (char *)s;
+}
+
+static inline int can_lookup(struct inode *inode)
+{
+	if (likely(inode->i_opflags & IOP_LOOKUP))
+		return 1;
+	if (likely(!inode->i_op->lookup))
+		return 0;
+
+	/* We do this once for the lifetime of the inode */
+	spin_lock(&inode->i_lock);
+	inode->i_opflags |= IOP_LOOKUP;
+	spin_unlock(&inode->i_lock);
+	return 1;
+}
+
+
+static inline bool d_can_lookup(const struct dentry *dentry)
+{
+	return can_lookup(dentry->d_inode);
+}
+
+#endif
+
 extern int ksmbd_debug_types;
 
 #define KSMBD_DEBUG_SMB		BIT(0)
