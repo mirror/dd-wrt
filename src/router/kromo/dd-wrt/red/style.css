@@ -33,7 +33,7 @@ fieldset legend {
 .progressbarblock {
   background-color: #d55;
 }
-input.button {
+input.button, input.button[disabled]:hover {
   background: #c00;
   border: 1px solid #c00;
   color: #fff;
@@ -41,11 +41,6 @@ input.button {
 input.button:hover {
   background: #d55;
   border: 1px solid #d55;
-  color: #fff;
-}
-input.button[disabled]:hover] {
-  background: #c00;
-  border: 1px solid #c00;
   color: #fff;
 }
 input[name*='refresh'][style*='background'] {
