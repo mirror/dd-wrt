@@ -468,26 +468,26 @@ table tr:not([bgcolor]) th {
   color: var(--fg-1);
   padding-bottom: 2px;
 }
-[bgcolor='#eec900'] {
-  background-color: var(--v3-3);
-  color: var(--v9-9);
+table tr[bgcolor='#eec900'] {
+  background-color: var(--v3-6);
 }
-[bgcolor='#eec900']:hover {
-  background-color: var(--v3-4);
+table tr[bgcolor='#eec900']:hover {
+  background-color: var(--v3-5);
 }
-[bgcolor='#ff6666'] {
-  background-color: var(--v1-4);
-  color: var(--v9-9);
+table tr[bgcolor='#ff6666'] {
+  background-color: var(--v1-8);
 }
-[bgcolor='#ff6666']:hover {
-  background-color: var(--v1-5);
+table tr[bgcolor='#ff6666']:hover {
+  background-color: var(--v1-7);
 }
-[bgcolor='#35ee00'] {
-  background-color: var(--v4-4);
-  color: var(--v9-9);
-}
-[bgcolor='#35ee00']:hover {
+table tr[bgcolor='#35ee00'] {
   background-color: var(--v4-5);
+}
+table tr[bgcolor='#35ee00']:hover {
+  background-color: var(--v4-4);
+}
+table tr td[style='color:#000'] {
+  color: var(--v9-0) !important;
 }
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
