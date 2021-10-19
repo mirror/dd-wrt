@@ -294,7 +294,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "//]]>\n</script>\n");
 #endif
 
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	      skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");

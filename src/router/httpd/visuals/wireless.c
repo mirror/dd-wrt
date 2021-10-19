@@ -168,7 +168,7 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 		}
 
-		websWrite(wp, "</fieldset></div>\n");
+		websWrite(wp, "</fieldset><br /></div>\n");
 		websWrite(wp, "<div class=\"col2r\">\n");
 		websWrite(wp, "<fieldset><legend>Table 2</legend>\n");
 
@@ -186,7 +186,7 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 		}
 
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br />\n");
 		websWrite(wp, "</div><br clear=\"all\" /><br />\n");
 
 	}
@@ -695,7 +695,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	     || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled")
 									 || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix, 0);
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 	if (!strstr(security_mode, "disabled"))
 		websWrite(wp, "<fieldset>\n");
 	int show = 0;
@@ -825,7 +825,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 
 #ifdef HAVE_MADWIFI
 	if (!strstr(security_mode, "disabled")) ;
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 #endif
 	return;
 }
