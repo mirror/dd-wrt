@@ -400,6 +400,7 @@ struct sock {
 	struct timer_list	sk_timer;
 	__u32			sk_priority;
 	__u32			sk_mark;
+	spinlock_t		sk_peer_lock;
 	u32			sk_pacing_rate; /* bytes per second */
 	u32			sk_max_pacing_rate;
 	struct page_frag	sk_frag;
