@@ -124,7 +124,7 @@ function setFirewall(F, val) {
 var update;
 
 addEvent(window, "load", function() {
-	setFirewall(this.form, "<% nvg("filter"); %>");
+	setFirewall(this.document.form, "<% nvg("filter"); %>");
 	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvem("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvem("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.warn_enabled, 'idwarn', <% nvem("warn_enabled", "1", "1", "0"); %> == 1);
