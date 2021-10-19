@@ -1100,7 +1100,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<option value=\"ubuntu\" %s>Ubuntu</option>\n", nvram_match("stylus", "ubuntu") ? "selected=\"selected\"" : "");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 	return;
 }
 

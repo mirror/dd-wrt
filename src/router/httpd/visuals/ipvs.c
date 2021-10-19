@@ -125,7 +125,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 
 		char var[32];
 		sprintf(var, "%d", totalcount);
@@ -149,7 +149,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_config", "<legend>", "</legend>\n");
 	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup", nvram_default_match("ipvs_role", "master", "master") ? "Master" : "Backup");
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br/>\n");
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
@@ -246,7 +246,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvs_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-	websWrite(wp, "</fieldset><br />\n");
+	websWrite(wp, "</fieldset><br/>\n");
 
 	char var[32];
 	sprintf(var, "%d", totalcount);
