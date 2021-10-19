@@ -1449,7 +1449,7 @@ void show_bgscan_options(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wl_adv.bgscan_long_int", NULL);
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal, nvram_default_get(signal, "300"));
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br/>\n");
 }
 
 #ifdef HAVE_USB
@@ -2770,7 +2770,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
 				websWrite(wp, "</div>\n");
 
-				websWrite(wp, "</fieldset>\n");
+				websWrite(wp, "</fieldset><br/>\n");
 			} else if (is_supplicant(var)) {
 				show_bgscan_options(wp, var);
 			}
@@ -3867,7 +3867,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			show_caption(wp, "label", "wl_adv.strikes", NULL);
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
 			websWrite(wp, "</div>\n");
-			websWrite(wp, "</fieldset>\n");
+			websWrite(wp, "</fieldset><br/>\n");
 		} else if (is_supplicant(prefix)) {
 			show_bgscan_options(wp, prefix);
 		}
@@ -4365,7 +4365,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num(wp, prefix, "mesh_plink_timeout", 6, 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_gate", 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_as", 0);
-			websWrite(wp, "</fieldset>\n");
+			websWrite(wp, "</fieldset><br/>\n");
 		}
 	}
 	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
@@ -4751,7 +4751,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			show_caption(wp, "label", "wl_adv.strikes", NULL);
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
 			websWrite(wp, "</div>\n");
-			websWrite(wp, "</fieldset>\n");
+			websWrite(wp, "</fieldset><br/>\n");
 		} else if (is_supplicant(prefix)) {
 			show_bgscan_options(wp, prefix);
 		}
@@ -5761,7 +5761,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 	}
 	// peap authentication
 	if (nvhas(akm, "peap")) {
@@ -5806,7 +5806,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 	}
 	// leap authentication
 	if (nvhas(akm, "leap")) {
@@ -5892,7 +5892,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 	}
 }
 #endif
