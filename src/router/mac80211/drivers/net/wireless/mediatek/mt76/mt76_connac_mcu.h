@@ -124,6 +124,8 @@ struct sta_rec_state {
 	u8 rsv[1];
 } __packed;
 
+#define RA_LEGACY_OFDM GENMASK(13, 6)
+#define RA_LEGACY_CCK  GENMASK(3, 0)
 #define HT_MCS_MASK_NUM 10
 struct sta_rec_ra_info {
 	__le16 tag;
@@ -140,6 +142,13 @@ struct sta_rec_phy {
 	u8 ampdu;
 	u8 rts_policy;
 	u8 rcpi;
+	u8 rsv[2];
+} __packed;
+
+struct sta_rec_he_6g_capa {
+	__le16 tag;
+	__le16 len;
+	__le16 capa;
 	u8 rsv[2];
 } __packed;
 
@@ -301,6 +310,7 @@ struct wtbl_raw {
 					 sizeof(struct sta_rec_vht) +	\
 					 sizeof(struct sta_rec_uapsd) + \
 					 sizeof(struct sta_rec_amsdu) +	\
+					 sizeof(struct sta_rec_he_6g_capa) + \
 					 sizeof(struct tlv) +		\
 					 MT76_CONNAC_WTBL_UPDATE_MAX_SIZE)
 
@@ -327,6 +337,7 @@ enum {
 	STA_REC_MUEDCA,
 	STA_REC_BFEE,
 	STA_REC_PHY = 0x15,
+	STA_REC_HE_6G = 0x17,
 	STA_REC_MAX_NUM
 };
 
@@ -657,10 +668,14 @@ struct mt76_connac_bss_basic_tlv {
 		     * bit(3): GN
 		     * bit(4): AN
 		     * bit(5): AC
+		     * bit(6): AX2
+		     * bit(7): AX5
+		     * bit(8): AX6
 		     */
 	__le16 sta_idx;
-	u8 nonht_basic_phy;
-	u8 pad[3];
+	__le16 nonht_basic_phy;
+	u8 phymode_ext; /* bit(0) AX_6G */
+	u8 pad[1];
 } __packed;
 
 struct mt76_connac_bss_qos_tlv {
@@ -803,7 +818,9 @@ struct mt76_connac_sched_scan_req {
 		} mt7663;
 		struct {
 			u8 bss_idx;
-			u8 pad2[19];
+			u8 pad1[3];
+			__le32 delay;
+			u8 pad2[12];
 			u8 random_mac[ETH_ALEN];
 			u8 pad3[38];
 		} mt7921;
@@ -962,7 +979,7 @@ struct mt76_connac_tx_power_limit_tlv {
 	__le16 len;
 	/* DW1 - cmd hint */
 	u8 n_chan; /* # channel */
-	u8 band; /* 2.4GHz - 5GHz */
+	u8 band; /* 2.4GHz - 5GHz - 6GHz */
 	u8 last_msg;
 	u8 pad1;
 	/* DW3 */
@@ -1094,4 +1111,6 @@ int mt76_connac_mcu_set_deep_sleep(struct mt76_dev *dev, bool enable);
 void mt76_connac_mcu_coredump_event(struct mt76_dev *dev, struct sk_buff *skb,
 				    struct mt76_connac_coredump *coredump);
 int mt76_connac_mcu_set_rate_txpower(struct mt76_phy *phy);
+int mt76_connac_mcu_set_p2p_oppps(struct ieee80211_hw *hw,
+				  struct ieee80211_vif *vif);
 #endif /* __MT76_CONNAC_MCU_H */

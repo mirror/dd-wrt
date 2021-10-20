@@ -809,7 +809,8 @@ mt7615_mcu_ctrl_pm_state(struct mt7615_dev *dev, int band, int state)
 
 static int
 mt7615_mcu_bss_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
-			 struct ieee80211_sta *sta, bool enable)
+			 struct ieee80211_sta *sta, struct mt7615_phy *phy,
+			 bool enable)
 {
 	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
 	u32 type = vif->p2p ? NETWORK_P2P : NETWORK_INFRA;
@@ -822,6 +823,7 @@ mt7615_mcu_bss_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
 	switch (vif->type) {
 	case NL80211_IFTYPE_MESH_POINT:
 	case NL80211_IFTYPE_AP:
+	case NL80211_IFTYPE_MONITOR:
 		break;
 	case NL80211_IFTYPE_STATION:
 		/* TODO: enable BSS_INFO_UAPSD & BSS_INFO_PM */
@@ -841,13 +843,18 @@ mt7615_mcu_bss_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
 	}
 
 	bss = (struct bss_info_basic *)tlv;
-	memcpy(bss->bssid, vif->bss_conf.bssid, ETH_ALEN);
-	bss->bcn_interval = cpu_to_le16(vif->bss_conf.beacon_int);
 	bss->network_type = cpu_to_le32(type);
-	bss->dtim_period = vif->bss_conf.dtim_period;
 	bss->bmc_tx_wlan_idx = wlan_idx;
 	bss->wmm_idx = mvif->mt76.wmm_idx;
 	bss->active = enable;
+
+	if (vif->type != NL80211_IFTYPE_MONITOR) {
+		memcpy(bss->bssid, vif->bss_conf.bssid, ETH_ALEN);
+		bss->bcn_interval = cpu_to_le16(vif->bss_conf.beacon_int);
+		bss->dtim_period = vif->bss_conf.dtim_period;
+	} else {
+		memcpy(bss->bssid, phy->mt76->macaddr, ETH_ALEN);
+	}
 
 	return 0;
 }
@@ -864,6 +871,7 @@ mt7615_mcu_bss_omac_tlv(struct sk_buff *skb, struct ieee80211_vif *vif)
 	tlv = mt76_connac_mcu_add_tlv(skb, BSS_INFO_OMAC, sizeof(*omac));
 
 	switch (vif->type) {
+	case NL80211_IFTYPE_MONITOR:
 	case NL80211_IFTYPE_MESH_POINT:
 	case NL80211_IFTYPE_AP:
 		if (vif->p2p)
@@ -930,7 +938,7 @@ mt7615_mcu_add_bss(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 	if (enable)
 		mt7615_mcu_bss_omac_tlv(skb, vif);
 
-	mt7615_mcu_bss_basic_tlv(skb, vif, sta, enable);
+	mt7615_mcu_bss_basic_tlv(skb, vif, sta, phy, enable);
 
 	if (enable && mvif->mt76.omac_idx >= EXT_BSSID_START &&
 	    mvif->mt76.omac_idx < REPEATER_BSSID_START)
@@ -2764,28 +2772,6 @@ int mt7615_mcu_set_roc(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 	phy->roc_grant = false;
 
 	return mt76_mcu_send_msg(&dev->mt76, MCU_CMD_SET_ROC, &req,
-				 sizeof(req), false);
-}
-
-int mt7615_mcu_set_p2p_oppps(struct ieee80211_hw *hw,
-			     struct ieee80211_vif *vif)
-{
-	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
-	int ct_window = vif->bss_conf.p2p_noa_attr.oppps_ctwindow;
-	struct mt7615_dev *dev = mt7615_hw_dev(hw);
-	struct {
-		__le32 ct_win;
-		u8 bss_idx;
-		u8 rsv[3];
-	} __packed req = {
-		.ct_win = cpu_to_le32(ct_window),
-		.bss_idx = mvif->mt76.idx,
-	};
-
-	if (!mt7615_firmware_offload(dev))
-		return -ENOTSUPP;
-
-	return mt76_mcu_send_msg(&dev->mt76, MCU_CMD_SET_P2P_OPPPS, &req,
 				 sizeof(req), false);
 }
 

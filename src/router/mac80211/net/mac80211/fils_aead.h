@@ -7,7 +7,7 @@
 #ifndef FILS_AEAD_H
 #define FILS_AEAD_H
 
-#if 0 /* LINUX_VERSION_IS_GEQ(4,3,0) */
+#if LINUX_VERSION_IS_GEQ(4,3,0)
 int fils_encrypt_assoc_req(struct sk_buff *skb,
 			   struct ieee80211_mgd_assoc_data *assoc_data);
 int fils_decrypt_assoc_resp(struct ieee80211_sub_if_data *sdata,

@@ -658,12 +658,14 @@ static int sta_info_insert_finish(struct sta_info *sta) __acquires(RCU)
 
 	/* check if STA exists already */
 	if (sta_info_get_bss(sdata, sta->sta.addr)) {
+		sta_info_free(local, sta);
 		err = -EEXIST;
 		goto out_err;
 	}
 
 	sinfo = kzalloc(sizeof(struct station_info), GFP_KERNEL);
 	if (!sinfo) {
+		sta_info_free(local, sta);
 		err = -ENOMEM;
 		goto out_err;
 	}

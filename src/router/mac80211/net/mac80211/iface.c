@@ -2172,7 +2172,10 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 		ndev->min_mtu = 256;
 #endif
 #if LINUX_VERSION_IS_GEQ(4,10,0)
-		ndev->max_mtu = local->hw.max_mtu;
+		if (type == NL80211_IFTYPE_MONITOR)
+			ndev->max_mtu = 0;
+		else
+			ndev->max_mtu = local->hw.max_mtu;
 #endif
 
 		ret = register_netdevice(ndev);

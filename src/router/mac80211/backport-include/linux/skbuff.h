@@ -371,7 +371,7 @@ static inline void skb_put_u8(struct sk_buff *skb, u8 val)
 }
 #endif
 
-#if LINUX_VERSION_IS_LESS(4,4,0)
+#if LINUX_VERSION_IS_LESS(3,10,0)
 static inline __u32 skb_queue_len_lockless(const struct sk_buff_head *list_)
 {
 	return READ_ONCE(list_->qlen);
