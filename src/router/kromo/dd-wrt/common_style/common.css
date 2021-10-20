@@ -34,7 +34,6 @@ pre {
   padding: 1em;
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
-  background-color: #f7f7f7;
   white-space: pre-wrap;
 }
 form {
@@ -83,7 +82,7 @@ select {
 }
 #scorebarBorder {
   background: #333;
-  border: 1px #000 solid;
+  border: 1px solid #000;
   height: 16px;
   margin-bottom: 2px;
   width: 100px;
@@ -93,9 +92,6 @@ select {
   text-align: left;
   width: 89.464em;
   margin: 0 auto;
-}
-#content {
-  background: #f9f9f9;
 }
 #header {
   width: 89.464em;
@@ -195,6 +191,9 @@ select {
   color: #ccc;
   border-color: #888;
 }
+li.current {
+  margin-top: 2px;
+}
 #main, #helpContainer {
   position: relative;
   float: left;
@@ -265,21 +264,12 @@ table {
   border-spacing: .3em;
 }
 table tr th {
-  background: #999;
   border-style: solid;
   border-width: 1px;
-  border-color: #ccc #666 #666 #ccc;
-  color: #fff;
   font-weight: normal;
   padding: .09em .543em;
   text-align: left;
   vertical-align: bottom;
-}
-table tr:hover {
-  background: #e8e8e8;
-}
-table tr:not([bgcolor]):hover {
-  background-color: #f9f9f9;
 }
 table td {
   padding: 0;
@@ -327,7 +317,10 @@ table[summary='ports forwarding table'] input[size='10'] {
   margin: 0;
   text-align: center;
 }
-.submitFooter .button,
+.submitFooter .button {
+  padding: .362em 1.087em;
+  margin: .362em .362em;
+}
 .message div input {
   padding: .362em 1.087em;
   margin: 0 .362em;
@@ -400,7 +393,11 @@ td .meter {
   background: url(/images/bin_bt.gif) center no-repeat;
   cursor: pointer;
 }
-/*! Find out where this is called from if at all extracted from of fresh.css */
+/*! fix spacing between dd-wrt link above paypal and top*/
+.center a[href="http://www.dd-wrt.com/"] {
+	line-height: 2.2rem;
+}
+/*! Find out where this is called from, if at all; extracted from of fresh.css */
 button {
   display: inline-block;
   margin-bottom: 0;
@@ -432,6 +429,9 @@ body input.button[disabled],
 body input[disabled], body select[disabled] {
   cursor: default;
   opacity: .6
+}
+[type='image'][src*='paypal'] {
+  margin-bottom: -0.5rem;
 }
 input.spaceradio {
   margin-right: .4em;

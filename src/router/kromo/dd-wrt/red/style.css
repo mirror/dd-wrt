@@ -3,17 +3,17 @@
 #menuSub, #menuMainList li span, #help h2 {
   background: #c00;
   color: #fff;
-  border-color: #e33 #800 #800 #e33;
+  border-color: #e33;
 }
 #menuSubList li a {
   background: #d55;
   color: #fcc;
-  border-color: #e77 #c44 #c44 #e77;
+  border-color: #e77;
 }
 #menuSubList li a:hover {
   background: #e77;
   color: #fff;
-  border-color: #f99 #d55 #d55 #f99;
+  border-color: #f99;
 }
 fieldset legend {
   color: #c00;
@@ -25,13 +25,13 @@ fieldset legend {
   color: #fff;
 }
 .meter .bar {
-  background-color: #d55;
+  background-color: #e33;
 }
 .meter .text {
   color: #fff;
 }
 .progressbarblock {
-  background-color: #d55;
+  background-color: #e33;
 }
 input.button, input.button[disabled]:hover {
   background: #c00;
