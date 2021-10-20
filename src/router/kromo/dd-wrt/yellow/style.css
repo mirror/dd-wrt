@@ -25,18 +25,18 @@ fieldset legend {
   color: #000;
 }
 .meter .bar {
-  background-color: #ffd700;
+  background-color: #ee3;
 }
 .meter .text {
   color: #000;
 }
 .progressbarblock {
-  background-color: #ffd700;
+  background-color: #ee3;
 }
 input.button, input.button[disabled]:hover {
   background: #eec900;
   border: 1px solid #eec900;
-  color: #1f1f03;
+  color: #000;
 }
 input.button:hover {
   background: #ffd700;
