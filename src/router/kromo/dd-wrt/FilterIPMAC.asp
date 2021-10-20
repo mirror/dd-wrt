@@ -97,9 +97,9 @@ function to_apply(F) {
 					<input class="num" size="3" maxlength="3" name="ip_range0_1" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_1",6); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range0_2" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_2",6); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range0_3" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_3",6); %>" />~
-					<input class="num" size="3" maxlength="3" name="ip_range0_4" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_4",6); %>" />
-					<input class="num" size="3" maxlength="3" name="ip_range0_5" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_5",6); %>" />
-					<input class="num" size="3" maxlength="3" name="ip_range0_6" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_6",6); %>" />
+					<input class="num" size="3" maxlength="3" name="ip_range0_4" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_4",6); %>" />.
+					<input class="num" size="3" maxlength="3" name="ip_range0_5" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_5",6); %>" />.
+					<input class="num" size="3" maxlength="3" name="ip_range0_6" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_6",6); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range0_7" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_7",6); %>" />
 				</div>
 				<div class="setting">
@@ -108,9 +108,9 @@ function to_apply(F) {
 					<input class="num" size="3" maxlength="3" name="ip_range1_1" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_1",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_2" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_2",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_3" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_3",7); %>" />~
-					<input class="num" size="3" maxlength="3" name="ip_range1_4" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_4",7); %>" />
-					<input class="num" size="3" maxlength="3" name="ip_range1_5" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_5",7); %>" />
-					<input class="num" size="3" maxlength="3" name="ip_range1_6" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_6",7); %>" />
+					<input class="num" size="3" maxlength="3" name="ip_range1_4" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_4",7); %>" />.
+					<input class="num" size="3" maxlength="3" name="ip_range1_5" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_5",7); %>" />.
+					<input class="num" size="3" maxlength="3" name="ip_range1_6" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_6",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_7" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_7",7); %>" />
 				</div>
 			</div>
