@@ -205,7 +205,6 @@ body.help-bg #content {
   color: var(--v9-8);
 }
 body.help-bg #content h2 {
-  padding-top: 0.3rem;
   background: var(--bg-5) !important;
   color: var(--fg-1) !important;
 }
