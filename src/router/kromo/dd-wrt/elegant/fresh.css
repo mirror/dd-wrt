@@ -28,16 +28,10 @@ table tr:not([bgcolor]):hover {
   border-color: #999;
   color: #000;
 }
-.submitFooter .button {
-  margin: .362em .362em;
-}
 #menuSub {
   border-radius: 4px 4px 0 0;
   border-width: 0;
   border-style: none;
-}
-li.current {
-  margin-top: 2px;
 }
 #menuMainList li span, #menuSubList li span,
 #menuMainList li a, #menuSubList li a {
@@ -131,6 +125,9 @@ button {
   background-color: #fff;
   border-color: #999;
 }
+#content {
+  background: #f9f9f9;
+}
 #content.infopage {
   background-color: transparent;
 }
@@ -165,4 +162,7 @@ button {
   background: #fcc;
   border: 2px dashed #f99;
   font-weight: bold;
+}
+pre {
+  background-color: #fff;
 }
