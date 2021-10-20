@@ -136,9 +136,40 @@ int mt7921_mac_init(struct mt7921_dev *dev)
 	return mt76_connac_mcu_set_rts_thresh(&dev->mt76, 0x92b, 0);
 }
 
+static int __mt7921_init_hardware(struct mt7921_dev *dev)
+{
+	struct mt76_dev *mdev = &dev->mt76;
+	int ret;
+
+	/* force firmware operation mode into normal state,
+	 * which should be set before firmware download stage.
+	 */
+	mt76_wr(dev, MT_SWDEF_MODE, MT_SWDEF_NORMAL_MODE);
+	ret = mt7921_mcu_init(dev);
+	if (ret)
+		goto out;
+
+	ret = mt7921_eeprom_init(dev);
+	if (ret)
+		goto out;
+
+	ret = mt7921_mcu_set_eeprom(dev);
+	if (ret)
+		goto out;
+
+	ret = mt7921_mac_init(dev);
+out:
+	if (ret && mdev->eeprom.data) {
+		devm_kfree(mdev->dev, mdev->eeprom.data);
+		mdev->eeprom.data = NULL;
+	}
+
+	return ret;
+}
+
 static int mt7921_init_hardware(struct mt7921_dev *dev)
 {
-	int ret, idx;
+	int ret, idx, i;
 
 	ret = mt7921_dma_init(dev);
 	if (ret)
@@ -146,22 +177,18 @@ static int mt7921_init_hardware(struct mt7921_dev *dev)
 
 	set_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 
-	/* force firmware operation mode into normal state,
-	 * which should be set before firmware download stage.
-	 */
-	mt76_wr(dev, MT_SWDEF_MODE, MT_SWDEF_NORMAL_MODE);
+	for (i = 0; i < MT7921_MCU_INIT_RETRY_COUNT; i++) {
+		ret = __mt7921_init_hardware(dev);
+		if (!ret)
+			break;
 
-	ret = mt7921_mcu_init(dev);
-	if (ret)
-		return ret;
+		mt7921_wpdma_reset(dev, true);
+	}
 
-	ret = mt7921_eeprom_init(dev);
-	if (ret < 0)
+	if (i == MT7921_MCU_INIT_RETRY_COUNT) {
+		dev_err(dev->mt76.dev, "hardware init failed\n");
 		return ret;
-
-	ret = mt7921_mcu_set_eeprom(dev);
-	if (ret)
-		return ret;
+	}
 
 	/* Beacon and mgmt frames should occupy wcid 0 */
 	idx = mt76_wcid_alloc(dev->mt76.wcid_mask, MT7921_WTBL_STA - 1);
@@ -173,7 +200,7 @@ static int mt7921_init_hardware(struct mt7921_dev *dev)
 	dev->mt76.global_wcid.tx_info |= MT_WCID_TX_INFO_SET;
 	rcu_assign_pointer(dev->mt76.wcid[idx], &dev->mt76.global_wcid);
 
-	return mt7921_mac_init(dev);
+	return 0;
 }
 
 int mt7921_register_device(struct mt7921_dev *dev)
@@ -192,7 +219,6 @@ int mt7921_register_device(struct mt7921_dev *dev)
 	mutex_init(&dev->pm.mutex);
 	init_waitqueue_head(&dev->pm.wait);
 	spin_lock_init(&dev->pm.txq_lock);
-	INIT_LIST_HEAD(&dev->phy.stats_list);
 	INIT_DELAYED_WORK(&dev->mphy.mac_work, mt7921_mac_work);
 	INIT_DELAYED_WORK(&dev->phy.scan_work, mt7921_scan_work);
 	INIT_DELAYED_WORK(&dev->coredump.work, mt7921_coredump_work);
@@ -252,8 +278,17 @@ int mt7921_register_device(struct mt7921_dev *dev)
 
 void mt7921_unregister_device(struct mt7921_dev *dev)
 {
+	int i;
+	struct mt76_connac_pm *pm = &dev->pm;
+
 	mt76_unregister_device(&dev->mt76);
+	mt76_for_each_q_rx(&dev->mt76, i)
+		napi_disable(&dev->mt76.napi[i]);
+	cancel_delayed_work_sync(&pm->ps_work);
+	cancel_work_sync(&pm->wake_work);
+
 	mt7921_tx_token_put(dev);
+	mt7921_mcu_drv_pmctrl(dev);
 	mt7921_dma_cleanup(dev);
 	mt7921_mcu_exit(dev);
 

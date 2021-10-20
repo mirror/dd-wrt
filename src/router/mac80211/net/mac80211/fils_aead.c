@@ -1,4 +1,4 @@
-#if 0 /* LINUX_VERSION_IS_GEQ(4,3,0) */
+#if LINUX_VERSION_IS_GEQ(4,3,0)
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * FILS AEAD for (Re)Association Request/Response frames

@@ -43,6 +43,7 @@ enum {
 	MCU_EXT_EVENT_ASSERT_DUMP = 0x23,
 	MCU_EXT_EVENT_RDD_REPORT = 0x3a,
 	MCU_EXT_EVENT_CSA_NOTIFY = 0x4f,
+	MCU_EXT_EVENT_BCC_NOTIFY = 0x75,
 };
 
 enum {
@@ -276,12 +277,22 @@ enum {
 	MCU_EXT_CMD_MWDS_SUPPORT = 0x80,
 	MCU_EXT_CMD_SET_SER_TRIGGER = 0x81,
 	MCU_EXT_CMD_SCS_CTRL = 0x82,
+	MCU_EXT_CMD_TWT_AGRT_UPDATE = 0x94,
 	MCU_EXT_CMD_FW_DBG_CTRL = 0x95,
 	MCU_EXT_CMD_SET_RDD_TH = 0x9d,
+	MCU_EXT_CMD_MURU_CTRL = 0x9f,
 	MCU_EXT_CMD_SET_SPR = 0xa8,
 	MCU_EXT_CMD_GROUP_PRE_CAL_INFO = 0xab,
 	MCU_EXT_CMD_DPD_PRE_CAL_INFO = 0xac,
 	MCU_EXT_CMD_PHY_STAT_INFO = 0xad,
+};
+
+enum {
+	MCU_TWT_AGRT_ADD,
+	MCU_TWT_AGRT_MODIFY,
+	MCU_TWT_AGRT_DELETE,
+	MCU_TWT_AGRT_TEARDOWN,
+	MCU_TWT_AGRT_GET_TSF,
 };
 
 enum {
@@ -502,6 +513,14 @@ struct bss_info_hw_amsdu {
 	u8 rsv;
 } __packed;
 
+struct bss_info_color {
+	__le16 tag;
+	__le16 len;
+	u8 disable;
+	u8 color;
+	u8 rsv[2];
+} __packed;
+
 struct bss_info_he {
 	__le16 tag;
 	__le16 len;
@@ -520,14 +539,7 @@ struct bss_info_bcn {
 	__le16 sub_ntlv;
 } __packed __aligned(4);
 
-struct bss_info_bcn_csa {
-	__le16 tag;
-	__le16 len;
-	u8 cnt;
-	u8 rsv[3];
-} __packed __aligned(4);
-
-struct bss_info_bcn_bcc {
+struct bss_info_bcn_cntdwn {
 	__le16 tag;
 	__le16 len;
 	u8 cnt;
@@ -947,6 +959,7 @@ struct sta_rec_ra_fixed {
 #define RATE_CFG_STBC			GENMASK(19, 16)
 #define RATE_CFG_LDPC			GENMASK(23, 20)
 #define RATE_CFG_PHY_TYPE		GENMASK(27, 24)
+#define RATE_CFG_HE_LTF			GENMASK(31, 28)
 
 struct sta_rec_bf {
 	__le16 tag;
@@ -1115,8 +1128,7 @@ enum {
 					 sizeof(struct bss_info_ext_bss))
 
 #define MT7915_BEACON_UPDATE_SIZE	(sizeof(struct sta_req_hdr) +	\
-					 sizeof(struct bss_info_bcn_csa) + \
-					 sizeof(struct bss_info_bcn_bcc) + \
+					 sizeof(struct bss_info_bcn_cntdwn) + \
 					 sizeof(struct bss_info_bcn_mbss) + \
 					 sizeof(struct bss_info_bcn_cont))
 
