@@ -218,7 +218,6 @@ select {
 }
 h2, h3 {
   padding: 4px 12px;
-  font-size: 12px;
   line-height: 1.42857;
   letter-spacing: .09em;
   margin: 0 0 .906em 0;
@@ -314,7 +313,7 @@ table[summary='ports forwarding table'] input[size='10'] {
 #help a {
   display: block;
   position: absolute;
-  top: 1.478em;
+  top: 1.378em;
   right: .901em;
   text-align: right;
   text-decoration: none;

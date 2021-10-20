@@ -30,7 +30,7 @@ tt {
 }
 #header .navig {
   position: absolute;
-  top: 4.537em;
+  top: 4.737em;
   right: .815em;
 }
 #header .navig a {
@@ -42,11 +42,13 @@ tt {
   color: #000;
 }
 h2 {
-  margin: 0 0 .906em 0;
   background: #ccc;
-  padding: .181em .725em;
   border-style: 1px solid #999;
   border-radius: 4px;
+  padding: 4px 12px;
+  line-height: 1.42857;
+  letter-spacing: .08em;
+  margin: 0 0 .906em 0;
 }
 dl {
   padding: 0;
