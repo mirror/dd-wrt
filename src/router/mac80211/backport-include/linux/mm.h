@@ -12,7 +12,7 @@
 void kvfree(const void *addr);
 #endif /* < 3.15 */
 
-#if LINUX_VERSION_IS_LESS(4,12,0)
+#if LINUX_VERSION_IS_LESS(4,4,0)
 #define kvmalloc LINUX_BACKPORT(kvmalloc)
 static inline void *kvmalloc(size_t size, gfp_t flags)
 {
@@ -31,7 +31,8 @@ static inline void *kvmalloc(size_t size, gfp_t flags)
 
 	return vmalloc(size);
 }
-
+#endif
+#if LINUX_VERSION_IS_LESS(4,14,0)
 #define kvmalloc_array LINUX_BACKPORT(kvmalloc_array)
 static inline void *kvmalloc_array(size_t n, size_t size, gfp_t flags)
 {
