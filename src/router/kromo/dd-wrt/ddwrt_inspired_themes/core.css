@@ -29,7 +29,7 @@ body[onunload*="location.href='Filters.asp'"] {
   background-color: var(--bg-0);
 }
 body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'][name*='sum'] {
-  margin-bottom: -2px;
+  margin-bottom: 0;
 }
 body[onunload*="location.href='Filters.asp'"] h2 {
   background: var(--bg-5);
@@ -49,6 +49,7 @@ body fieldset legend {
   background: transparent;
   color: var(--v0-9);
   text-shadow: 0 1px 0 var(--bg-0);
+  filter: none;
 }
 body #content {
   background: transparent;
@@ -64,7 +65,7 @@ body #content.infopage #main {
   border: 1px solid var(--bg-4);
 }
 body #content #header {
-  background: var(--bg-0);
+  background: var(--bg-0) !important;
 }
 body #main #contents {
   background: var(--bg-1);
@@ -173,17 +174,29 @@ body dd {
   border-bottom: 0.123rem dotted var(--bg-5);
 }
 body.about-bg {
-  background: var(--bg-2);
-  color: var(--v9-6);
+  background: var(--bg-2) !important;
+  color: var(--v9-6) !important;
 }
 body.about-bg #content {
   border-color: transparent;
 }
 body.about-bg #content table.t-border {
-  border-color: var(--bg-4);
+  border-color: var(--bg-4) !important;
+}
+body.about-bg #content .thc {
+  background-color: var(--bg-5) !important;
+}
+body.about-bg #content .t-border {
+  border-color: var(--bg-4) !important;
+}
+body.about-bg a {
+  color: var(--v0-9) !important;
+}
+body.about-bg a:hover {
+  color: var(--v0-8) !important;
 }
 body.help-bg {
-  background: var(--bg-2);
+  background: var(--bg-2) !important;
   color: var(--v9-6);
 }
 body.help-bg #content {
@@ -193,6 +206,14 @@ body.help-bg #content {
 }
 body.help-bg #content h2 {
   padding-top: 0.3rem;
+  background: var(--bg-5) !important;
+  color: var(--fg-1) !important;
+}
+body.help-bg a {
+  color: var(--v0-9) !important;
+}
+body.help-bg a:hover {
+  color: var(--v0-8) !important;
 }
 body div.message {
   background-color: var(--bg-1);
@@ -301,6 +322,12 @@ input.button[onclick*='ipvs_add'] {
 }
 input.button[onclick*='release'] {
   margin-right: 0.5rem;
+}
+input.button[onclick*='traffdata.bak'] {
+  margin: 0 0.62em 0 0;
+}
+input.button[onclick*='ttraff_remove'] {
+  margin: 0 0 0 0.362em;
 }
 input[type='checkbox'][onclick*='setElementMask'] {
   margin-top: 6px;
@@ -458,6 +485,12 @@ textarea:focus-visible {
   box-shadow: 0 0 10px 0 var(--v0-4) !important;
   outline: 0 !important;
 }
+table[bgcolor='#FFFFFF'] {
+  background-color: var(--bg-0);
+}
+table[bordercolor='#000000'] {
+  border-color: var(--bg-4);
+}
 table tr:not([bgcolor]):hover,
 table tr:not([bgcolor]):focus-within {
   background: var(--bg-2);
@@ -474,20 +507,25 @@ table tr[bgcolor='#eec900'] {
 table tr[bgcolor='#eec900']:hover {
   background-color: var(--v3-5);
 }
+table tr[bgcolor='#ea0707'],
 table tr[bgcolor='#ff6666'] {
+  background-color: var(--v1-9);
+}
+table tr[bgcolor='#ea0707']:hover,
+table tr[bgcolor='#ff6666']:hover {
   background-color: var(--v1-8);
 }
-table tr[bgcolor='#ff6666']:hover {
-  background-color: var(--v1-7);
-}
 table tr[bgcolor='#35ee00'] {
-  background-color: var(--v4-5);
+  background-color: var(--v4-6);
 }
 table tr[bgcolor='#35ee00']:hover {
-  background-color: var(--v4-4);
+  background-color: var(--v4-5);
 }
 table tr td[style='color:#000'] {
   color: var(--v9-0) !important;
+}
+table tr td[bgcolor='#FFFFFF'] {
+  background-color: var(--bg-0);
 }
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
@@ -503,17 +541,11 @@ table tr td[style='color:#000'] {
 [style*='background-color: rgb(205, 0, 0)'] {
   background-color: var(--v1-5) !important;
 }
-[bgcolor='#C0C0C0'] {
+table td[bgcolor='#C0C0C0'] {
   background-color: var(--bg-2);
 }
-[bgcolor='#C0C0C0']:hover {
+table td[bgcolor='#C0C0C0']:hover {
   background-color: var(--bg-3);
-}
-[bgcolor='#FFFFFF'] {
-  background-color: var(--bg-0);
-}
-[bordercolor='#000000'] {
-  border-color: var(--bg-4);
 }
 table tr[bgcolor='#CCCCCC'] {
   background-color: var(--bg-2);
@@ -579,8 +611,8 @@ table .bulle {
   margin-bottom: -0.8rem;
 }
 div.also {
-  background: var(--bg-3);
-  border-color: var(--bg-4);
+  background: var(--bg-3) !important;
+  border-color: var(--bg-4) !important;
   border-radius: 4px;
 }
 div .bulle {
@@ -588,8 +620,8 @@ div .bulle {
   color: var(--v9-9);
 }
 div.note {
-  background: var(--v7-1);
-  border-color: var(--v7-5);
+  background: var(--v7-1) !important;
+  border-color: var(--v7-5) !important;
   margin-top: 0.5rem;
   border-radius: 4px;
 }
@@ -665,7 +697,7 @@ h2 {
   line-height: 2.2rem;
 }
 #header {
-  background: var(--bg-2);
+  background: var(--bg-2) !important;
 }
 #header #logo {
   filter: contrast(1.2);
@@ -679,12 +711,12 @@ h2 {
   top: 4.737em;
 }
 #header .navig a {
-  color: var(--fg-3);
+  color: var(--v0-9) !important;
 }
 #header .navig a:hover,
 #header .navig a:focus,
 #header .navig a:focus-within {
-  color: var(--fg-1);
+  color: var(--v0-8) !important;
 }
 [src*='dd-logo.png'] {
   filter: invert(0.95) hue-rotate(180deg);
