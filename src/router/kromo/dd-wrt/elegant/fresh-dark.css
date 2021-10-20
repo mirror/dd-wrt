@@ -93,6 +93,22 @@ body input[name='reboot_button']:hover {
   border-color: #d82828;
   color: #fff;
 }
+/*! darken paypal logo */
+[type='image'][src*='paypal'] {
+  background: transparent;
+  border-color: transparent;
+  filter: invert(0.9) hue-rotate(180deg);
+  mix-blend-mode: lighten;
+}
+[type='image'][src*='paypal']:hover,
+[type='image'][src*='paypal']:focus,
+[type='image'][src*='paypal']:focus-within,
+[type='image'][src*='paypal']:focus-visible {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  mix-blend-mode: exclusion;
+}
 textarea {
   color: #e0e0e0;
   background-color: #333;

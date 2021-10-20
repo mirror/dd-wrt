@@ -400,6 +400,10 @@ td .meter {
   background: url(/images/bin_bt.gif) center no-repeat;
   cursor: pointer;
 }
+/*! fix spacing between dd-wrt link above paypal and top*/
+.center a[href="http://www.dd-wrt.com/"] {
+	line-height: 2.2rem;
+}
 /*! Find out where this is called from if at all extracted from of fresh.css */
 button {
   display: inline-block;
@@ -432,6 +436,9 @@ body input.button[disabled],
 body input[disabled], body select[disabled] {
   cursor: default;
   opacity: .6
+}
+[type='image'][src*='paypal'] {
+  margin-bottom: -0.5rem;
 }
 input.spaceradio {
   margin-right: .4em;
