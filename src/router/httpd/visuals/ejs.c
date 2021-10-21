@@ -1106,6 +1106,8 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 
 void do_ddwrt_inspired_themes(webs_t wp)
 {
+	if (nvram_match("router_style", "kromo") || nvram_match("router_style", "brainslayer") || nvram_match("router_style", "wikar") || nvram_match("router_style", "xirian"))
+		return;
 	char path[128];
 	size_t len = 0;
 	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
@@ -2226,8 +2228,8 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_FREECWMP
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
-	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style,
-		  style);
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
+		  style, style);
 #ifdef HAVE_ROUTERSTYLE
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
@@ -2341,9 +2343,9 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
-		}
+	if (style_dark != NULL && !strcmp(style_dark, "1")) {
+		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
+	}
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
 #endif
