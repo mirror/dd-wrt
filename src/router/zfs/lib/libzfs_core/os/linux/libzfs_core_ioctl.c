@@ -2,9 +2,8 @@
  * CDDL HEADER START
  *
  * The contents of this file are subject to the terms of the
- * Common Development and Distribution License, Version 1.0 only
- * (the "License").  You may not use this file except in compliance
- * with the License.
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
  * or http://www.opensolaris.org/os/licensing.
@@ -19,17 +18,13 @@
  *
  * CDDL HEADER END
  */
-
-#include <unistd.h>
+#include <sys/types.h>
 #include <sys/param.h>
+#include <sys/zfs_ioctl.h>
+#include <libzfs_core.h>
 
-static size_t pagesize = 0;
-
-size_t
-spl_pagesize(void)
+int
+lzc_ioctl_fd(int fd, unsigned long request, zfs_cmd_t *zc)
 {
-	if (pagesize == 0)
-		pagesize = sysconf(_SC_PAGESIZE);
-
-	return (pagesize);
+	return (ioctl(fd, request, zc));
 }
