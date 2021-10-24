@@ -3,10 +3,10 @@
   font-size: 1em;
 }
 body {
-  background: #f9f9f9;
   margin: .906em;
   font-size: 69%;
 }
+/*! Common to light and dark for now */
 body.gui {
   text-align: center;
   background: #111;
@@ -14,8 +14,6 @@ body.gui {
 }
 hr {
   border: none;
-  color: #ccc;
-  background: #ccc;
   width: 100%;
   height: .09em;
 }
@@ -35,6 +33,7 @@ pre {
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
   white-space: pre-wrap;
+  border-radius: 4px;
 }
 form {
   margin: 0;
@@ -54,12 +53,18 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
+input.num[name*='lease'][size='10'] {
+  margin-right: 4px;
+}
 select {
   padding: 4px 4px;
   font-size: 12px;
   height: 1.6rem;
   border-radius: 4px;
   vertical-align: middle;
+}
+select[onchange*='blockedServices'] {
+  margin-right: .362em;
 }
 #score {
   color: #000;
@@ -230,7 +235,7 @@ h2, h3 {
 }
 .setting .label {
   float: left;
-  width: 18.931em;
+  width: 18.116em;
 }
 fieldset .setting .label {
   width: 18.116em;
@@ -238,7 +243,6 @@ fieldset .setting .label {
 .setting .default {
   display: block;
   position: absolute;
-  color: #666;
   top: 0;
   right: 0;
   width: 17em;
@@ -297,7 +301,6 @@ table[summary='ports forwarding table'] input[size='10'] {
 }
 #help dd.definition {
   padding-bottom: .908em;
-  border-bottom: 1px dotted #ccc;
   margin: 0 0 .908em 0;
 }
 #help a {
@@ -395,7 +398,7 @@ td .meter {
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href="http://www.dd-wrt.com/"] {
-	line-height: 2.2rem;
+  line-height: 2.2rem;
 }
 /*! Find out where this is called from, if at all; extracted from of fresh.css */
 button {
@@ -457,6 +460,7 @@ input.button[onclick*='delete'] {
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
+  margin-left: .362em;
 }
 div.bulle {
   background-color: #ffffe1;

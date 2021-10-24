@@ -1,9 +1,20 @@
-fieldset legend {
-  background: transparent;
+body, .popup {
+  background: #f9f9f9;
+  color: #000;
 }
 fieldset {
   background: #f6f6f6;
   border: 1px solid #ccc;
+}
+fieldset legend {
+  background: transparent;
+}
+#help dd.definition {
+  border-bottom: 1px dotted #333;
+}
+hr {
+  background: #ccc;
+  color: #ccc;
 }
 h2, h3 {
   background-color: #777674;
@@ -103,8 +114,10 @@ input.button, input.button:hover {
 input.button[disabled]:hover {
   border-color: #ccc;
 }
-input.num[name*='lease'][size='10'] {
-  margin-right: 4px;
+#ip_count:hover,
+[title*="Search"]:hover,
+[title*="Monitoring"]:hover {
+	color: #00f;
 }
 select {
   color: #555;
@@ -148,9 +161,6 @@ button {
   background: #ccc;
   border: 1px solid #ddd;
 }
-.popup {
-  background: #f9f9f9;
-}
 .meter {
   background: #aaa;
   border: 1px solid #888;
@@ -165,4 +175,8 @@ button {
 }
 pre {
   background-color: #fff;
+  border: 1px solid transparent;
+}
+.setting .default {
+  color: #666;
 }
