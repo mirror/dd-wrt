@@ -9,7 +9,7 @@
   color: #eee;
 }
 .help-bg a, .about-bg a {
-  color: #0087ff !important;
+  color: #5cb3ff !important;
 }
 /*! about */
 .about-bg #content {
@@ -23,10 +23,10 @@
 }
 /*! help */
 #header .navig a {
-  color: #eee !important;
+  color: #fff !important;
 }
 #header .navig a:hover {
-  color: #ddd !important;
+  color: #ccc !important;
 }
 .help-bg h2 {
   background-color: #777674 !important;
