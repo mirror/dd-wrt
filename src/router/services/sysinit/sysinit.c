@@ -3386,6 +3386,18 @@ void start_nvram(void)
 
 	nvram_set("filter_port", "");	// The name have been disbaled from
 
+#ifdef HAVE_WIREGUARD
+	//egc reset WireGuard failstate on boot
+	int iw = 0; 
+	int iend = 0;
+	char ftemp[32] = { 0 };
+	iend = nvram_geti("oet_tunnels");
+	for (iw = 1; iw <= iend; iw++) {
+		snprintf(ftemp, sizeof(ftemp), "oet%d_failstate", iw);  //default failstate = 0 tunnel can start; 1 = failed; if set to 2, the tunnel is the one to start in the fail group
+		nvram_seti(ftemp, 0);
+	}
+#endif
+
 #ifdef HAVE_UPNP
 	if ((nvram_matchi("restore_defaults", 1))
 	    || (nvram_matchi("upnpcas", 1))) {

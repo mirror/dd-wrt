@@ -22,7 +22,7 @@ if [ -z "$($nv get oet$1_dns$2)" ]
 then
 	nvram set oet$1_dns$2=0.0.0.0
 fi
-overhead=40
+overhead=60
 if [ "$($nv get ipv6_enable)" == "1" ]
 then
 	overhead=80
