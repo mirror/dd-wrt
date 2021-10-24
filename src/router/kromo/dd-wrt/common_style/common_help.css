@@ -27,6 +27,7 @@ tt {
   background: url(../help/logo-help.png) left center no-repeat;
   height: 4.076em;
   width: 314px;
+  mix-blend-mode: darken;
 }
 #header .navig {
   position: absolute;
@@ -36,15 +37,16 @@ tt {
 #header .navig a {
   font-weight: bold;
   text-decoration: none;
-  color: #666;
+  color: #fff;
 }
 #header .navig a:hover {
-  color: #000;
+  color: #ccc;
 }
 h2 {
-  background: #ccc;
+  background: #777674;
   border-style: 1px solid #999;
   border-radius: 4px;
+  color: #fff;
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .08em;

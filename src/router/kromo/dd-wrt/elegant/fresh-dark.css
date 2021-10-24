@@ -1,3 +1,7 @@
+body, .popup {
+  background: #111;
+  color: #ccc;
+}
 body a {
   color: #fff;
 }
@@ -5,14 +9,14 @@ body a:visited {
   color: #eee;
 }
 body a:link {
-  color: #999;
-}
-body a:hover {
   color: #fff;
 }
-body, body.gui, .popup {
-  color: #ccc;
-  background: #111;
+body a:hover,
+body a:link:hover,
+#ip_count:hover,
+[title*="Search"]:hover,
+[title*="Monitoring"]:hover {
+  color: #5cb3ff;
 }
 body div.message {
   background-color: #1a1a1a;
@@ -49,19 +53,16 @@ body fieldset legend {
   filter: brightness(1.8);
 }
 body #help dd.definition {
-  border-bottom: 1px dotted #333;
+  border-bottom: 1px dotted #ccc;
 }
 body hr {
-  color: #333;
   background: #333;
+  color: #333;
 }
 body input {
-  color: #e0e0e0;
   background-color: #333;
   border: 1px solid #454545;
-}
-body select[onchange*='blockedServices'] {
-  margin-right: .362em;
+  color: #e0e0e0;
 }
 body input[name='apply_button'] {
   background: none repeat scroll 0 0 #166f2a;
@@ -115,9 +116,8 @@ textarea {
   border: 1px solid #454545;
 }
 pre {
-  border: 1px solid transparent;
   background-color: #333;
-  border-radius: 4px;
+  border: 1px solid transparent;
 }
 select {
   color: #e0e0e0;
@@ -152,9 +152,6 @@ td[bgcolor='#C0C0C0'] {
 td[bgcolor='#C0C0C0']:hover {
   background-color: #1a1a1a;
 }
-form[name='wds'] select {
-  margin-right: 6px;
-}
 .submitFooter {
   background-color: #222;
   border: 1px solid #333;
@@ -169,4 +166,7 @@ form[name='wds'] select {
 .warning {
   background: #351212;
   border-color: #b53030;
+}
+.setting .default {
+  color: #888;
 }
