@@ -218,7 +218,7 @@ libzpool_la_LIBADD = \
 	$(abs_top_builddir)/lib/libzstd/libzstd.la \
 	$(abs_top_builddir)/lib/libzutil/libzutil.la
 
-libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm -latomic
 
 libzpool_la_LDFLAGS = -pthread
 
