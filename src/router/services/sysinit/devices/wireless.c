@@ -447,7 +447,16 @@ static void detect_wireless_devices(int mask)
 		wificnt = 0;
 		wificnt += detectchange("mt7603e");
 		wificnt += detectchange("mt7915e");
+		total += wificnt;
+		wificnt = 0;
+		insmod("mt7921-common");
 		wificnt += detectchange("mt7921e");
+		wificnt += detectchange("mt7921s");
+		if (!wificnt) {
+			rmmod("mt7921s");
+			rmmod("mt7921e");
+			rmmod("mt7921-common");
+		}
 		total += wificnt;
 		if (!total) {
 			rmmod("mt76-usb");
