@@ -5,9 +5,9 @@
 		<script type="text/javascript">
 		//<![CDATA[
 		if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
-		  document.write(wp, "<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
+		  document.write("<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
 		} else {
-		  document.write(wp, "<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
+		  document.write("<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
 		}
 		//]]>
 		</script>
