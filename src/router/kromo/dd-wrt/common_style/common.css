@@ -233,11 +233,8 @@ h2, h3 {
   line-height: 1.993em;
   width: 100%;
 }
-.setting .label {
-  float: left;
-  width: 18.116em;
-}
 fieldset .setting .label {
+  float: left;
   width: 18.116em;
 }
 .setting .default {
@@ -245,7 +242,7 @@ fieldset .setting .label {
   position: absolute;
   top: 0;
   right: 0;
-  width: 17em;
+  width: 19em;
 }
 .warning {
   padding: .725em;
@@ -270,6 +267,7 @@ table {
 table tr th {
   border-style: solid;
   border-width: 1px;
+  border-radius: 3px;
   font-weight: normal;
   padding: .09em .543em;
   text-align: left;
@@ -288,7 +286,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   max-width: 79px;
 }
 #help {
-  width: 21.333em;
+  width: 21em;
   padding: .906em 0;
 }
 #help dl {
