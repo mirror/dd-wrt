@@ -8,6 +8,7 @@ if [[ $deb -eq 1 ]]; then
 fi
 
 i=$1
+fset=$2
 # egc Start with PBR to make sure killswitch is working
 TID=$((20+$i))
 if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
@@ -136,7 +137,6 @@ if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then	# conside
 		fi
 	done
 	logger -p user.info "WireGuard waited $SLEEPDNSCT sec. for DNSMasq"
-	
 	if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
 		cat /tmp/resolv.dnsmasq_oet${i} | while read -r  remdns; do
 			sed -i "/$remdns/d" /tmp/resolv.dnsmasq
@@ -168,3 +168,17 @@ if [[ ! -z "$($nv get oet${i}_rtupscript | sed '/^[[:blank:]]*#/d')" ]]; then
 fi
 ip route flush cache
 # end route-up
+# execute watchdog script
+if [[ $($nv get oet${i}_failstate) -eq 2 ]]; then
+	# only start if not already running
+	if ! ps | grep -q "[w]ireguard-fwatchdog\.sh $i"; then
+		logger "WireGuard: wireguard-fwatchdog $i not running yet"
+	else
+		logger "WireGuard: wireguard-fwatchdog $i already running will be killed first"
+		ps | grep "[w]ireguard-fwatchdog\.sh $i" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	fi
+	# send tunnelnumber, sleeptime (sec), ping address, reset (1=Yes)
+	sh /usr/bin/wireguard-fwatchdog.sh $i 29 8.8.8.8 $fset &
+fi
+
+#end watchdog

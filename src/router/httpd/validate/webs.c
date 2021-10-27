@@ -1818,6 +1818,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_fwmark", i);
 		copytonv(wp, "oet%d_killswitch", i);
 		copytonv(wp, "oet%d_firewallin", i);
+		copytonv(wp, "oet%d_failgrp", i);
+		copytonv(wp, "oet%d_failstate", i);
 		copytonv(wp, "oet%d_ipaddrmask", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
@@ -2043,6 +2045,8 @@ void add_tunnel(webs_t wp)
 	default_set("fwmark", "");
 	default_seti("killswitch", 0);
 	default_seti("firewallin", 1);
+	default_seti("failgrp", 0);
+	default_seti("failstate", 0);
 	default_set("ipaddrmask", "");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
@@ -2172,6 +2176,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("fwmark", i, i - 1);
 		copytunvalue("killswitch", i, i - 1);
 		copytunvalue("firewallin", i, i - 1);
+		copytunvalue("failgrp", i, i - 1);
+		copytunvalue("failstate", i, i - 1);
 		copytunvalue("ipaddrmask", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
@@ -2214,6 +2220,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("fwmark", tunnels);
 	deltunvalue("killswitch", tunnels);
 	deltunvalue("firewallin", tunnels);
+	deltunvalue("failgrp", tunnels);
+	deltunvalue("failstate", tunnels);
 	deltunvalue("ipaddrmask", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
@@ -2226,15 +2234,22 @@ void del_tunnel(webs_t wp)
 	deltunvalue("port", tunnels);
 #ifdef HAVE_WIREGUARD
 	deltunvalue("peers", tunnels);
+	//egc delete resolv.dnsmasq_oet(x) will be recreated on restart
+	char oldfile[32];
+	sprintf(oldfile, "/tmp/resolv.dnsmasq_oet%d", tunnels);
+	remove(oldfile);
+	//egc delete interface of last tunnel, interfaces will be recreated on start
+	char oetint[6] = { 0 };
+	sprintf(oetint, "oet%d", tunnels);
+	eval("ip", "link", "del", oetint);
 #endif
-	// todo Delete interface of tunnel which is deleted
-	char thisoet[6] = { 0 };
-	sprintf(thisoet, "oet%d", tunnels);
-	eval("ip", "link", "del", thisoet);
 
 	tunnels--;
 	nvram_seti("oet_tunnels", tunnels);
 
+	//restart dnsmasq
+	nvram_set("wg_get_dns", "");
+	eval("restart", "dnsmasq"); //alternatively use restart_dns_main(); or stop_dnsmasq(); start_dnsmasq();
 }
 
 #ifdef HAVE_WIREGUARD

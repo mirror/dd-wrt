@@ -7,22 +7,54 @@ deb=$(nvram get console_debug)
 if [[ $deb -eq 1 ]]; then
 	set -x
 fi
-
 cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
-# todo move $nv unset wg_get_dns here and restart dnsmasq here instead of using resolv.dnsmasq,oet${i} check with openvpn
 tunnels=`$nv get oet_tunnels`
+# set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
+fset=0
+#if tunnel is enabled and part of fail group and marked as running use this for startup
 for i in `seq 1 $tunnels`
 do
-	if test -e "${i}.pid" 
+	if [[ $($nv get oet${i}_en) -eq 1 && $($nv get oet${i}_failgrp) -eq 1 && $($nv get oet${i}_failstate) -eq 2  ]]; then
+		fset=$((fset+1))
+		logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
+	fi
+done
+for i in `seq 1 $tunnels`
+do
+	if [[ $($nv get oet${i}_en) -ne 1 ]]; then #non enabled tunnels reset
+		$nv set oet${i}_failstate=0
+	else #enabled tunnels
+		if [[ $($nv get oet${i}_failgrp) -eq 1 ]]; then
+			#search for first tunnel with failgroup enabled which is not failed and set to 2
+			if [[ $($nv get oet${i}_failstate) -eq 0 ]]; then #non failed tunnels
+				if [[ $fset -eq 0 ]]; then
+					fset=$((fset+1))
+					#set this tunnel to start the fail over group
+					logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
+					$nv set oet${i}_failstate=2
+				else  #number of failgroup running or standby
+					fset=$((fset+1))
+					#$nv set oet${i}_failstate=0
+				fi
+			fi
+		else #enabled tunnels not part of fail group reset
+			$nv set oet${i}_failstate=0
+		fi
+	fi
+done
+logger -p user.info "WireGuard number of non failed tunnels in fail set: $fset"
+for i in `seq 1 $tunnels`
+do
+	if [[ -e "${i}.pid" ]] 
 	then
 		{
-	    emf del iface $(getbridge oet${i}) oet${i}
-	    brctl delif $(getbridge oet${i}) oet${i}
-	    ip tunnel del oet${i}
-	    ip link del oet${i}
-	    #wg set oet${i} peer $($nv get oet${i}_peerkey) remove >/dev/null 2>&1  #Does not work peerkey needs index
-	    rm -f ${i}.pid
+		emf del iface $(getbridge oet${i}) oet${i}
+		brctl delif $(getbridge oet${i}) oet${i}
+		ip tunnel del oet${i}
+		ip link del oet${i}
+		#wg set oet${i} peer $($nv get oet${i}_peerkey) remove >/dev/null 2>&1  #Does not work peerkey needs index
+		rm -f ${i}.pid
 		#remove DNS
 		} >/dev/null 2>&1
 		$nv unset wg_get_dns
@@ -37,13 +69,15 @@ do
 		while ip rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
 		ip route flush table $TID
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
+		# kill existing watchdog scripts
+		ps | grep "[w]ireguard-fwatchdog" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 #use [w] to exclude the ps line
 		# execute route down script
 		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
 		ip route flush cache
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		if [ `$nv get oet${i}_proto` -eq 2 ]
+		if [[ `$nv get oet${i}_proto` -eq 2 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]
 		then
 			{
 			mkdir -p /tmp/wireguard
@@ -63,9 +97,9 @@ do
 				fi
 				if [ "$($nv get wan_proto)" != "disabled" ]
 				then
-					nvram set oet${i}_mtu=$(($($nv get wan_mtu) - $overhead))
+					$nv set oet${i}_mtu=$(($($nv get wan_mtu) - $overhead))
 				else
-					nvram set oet${i}_mtu=$((1500 - $overhead))
+					$nv set oet${i}_mtu=$((1500 - $overhead))
 				fi
 			fi
 			ip link add oet${i} type wireguard
@@ -158,8 +192,8 @@ do
 			
 			echo enable > ${i}.pid
 			# add routes based on allowed IP's has to be after interface is up
-			# spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
-			/usr/bin/eop-tunnel-raip.sh $i &
+			# spawn process so that it does not stop, tunnel is send as parameter maybe use nohup, added fset
+			/usr/bin/eop-tunnel-raip.sh $i $fset &
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then

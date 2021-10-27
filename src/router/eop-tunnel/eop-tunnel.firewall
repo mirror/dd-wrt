@@ -43,8 +43,7 @@ do
 done
 for i in `seq 1 $tunnels`
 do
-	if [ `$nv get oet${i}_en` -eq 1 ]
-	then
+	if [[ $($nv get oet${i}_en) -eq 1 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
 			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
