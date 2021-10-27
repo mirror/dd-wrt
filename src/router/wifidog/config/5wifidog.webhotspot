@@ -1,7 +1,14 @@
 
 <fieldset>
 	<legend><% tran("hotspot.wifidog_legend"); %></legend>
-	<div class="center"><img src="images/wifidog.png" alt="wifidog logo" /></div><br />
+	<div class="center">
+	  //<![CDATA[
+		if (style_dark != NULL && !strcmp(style_dark, "1"))
+		  document.write(wp, "<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
+		else
+	    document.write(wp, "<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
+	  //]]>
+	</div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspot.wifidog_srv"); %></div>
 		<input class="spaceradio" type="radio" name="wd_enable" value="1" <% nvc("wd_enable", "1"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
@@ -26,9 +33,9 @@
 			<div class="label"><% tran("hotspot.nocat_extifname"); %></div>
 			<% show_ifselect("wd_extiface"); %>
 		</div>
-		<div class="setting"> 
-			<div class="label"><% tran("hotspot.nocat_ifname"); %></div> 
-			<% show_ifselect("wd_iface"); %> 
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nocat_ifname"); %></div>
+			<% show_ifselect("wd_iface"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_port"); %></div>
@@ -40,7 +47,7 @@
 			</script>
 			</span>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_httpdconn"); %></div>
 			<input class="num" maxlength="2" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvg("wd_httpdcon"); %>" />
 			<span class="default"><script type="text/javascript">
@@ -50,7 +57,7 @@
 			</script>
 			</span>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_checkinter"); %></div>
 			<input class="num" maxlength="4" size="5" onblur="valid_range(this,1,3600,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvg("wd_interval"); %>" />
 			<span class="default"><script type="text/javascript">
@@ -60,7 +67,7 @@
 			</script>
 			</span>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_checktimeout"); %></div>
 			<input class="num" maxlength="2" size="5" onblur="valid_range(this,1,99,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvg("wd_timeout"); %>" />
 			<span class="default"><script type="text/javascript">
@@ -70,7 +77,7 @@
 			</script>
 			</span>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_tmaclist"); %></div>
 			<input class="text" maxlength="200" size="39" name="wd_maclist" value="<% nvg("wd_maclist"); %>" />
 		</div>
@@ -78,13 +85,13 @@
 			<div class="label"><% tran("hotspot.wifidog_authsrv"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_hostname" value="<% nvg("wd_hostname"); %>" />
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_authsrvssl"); %></div>
 			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvc("wd_sslavailable", "1"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvc("wd_sslavailable", "0"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idwifidogssl">
-			<div class="setting">	
+			<div class="setting">
 				<div class="label"><% tran("hotspot.wifidog_authsrvsslport"); %></div>
 				<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvsslport)" name="wd_sslport" value="<% nvg("wd_sslport"); %>" />
 				<span class="default"><script type="text/javascript">
@@ -95,7 +102,7 @@
 				</span>
 			</div>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_authsrvhttpport"); %></div>
 			<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvhttpport)" name="wd_httpport" value="<% nvg("wd_httpport"); %>" />
 			<span class="default"><script type="text/javascript">
@@ -105,14 +112,14 @@
 				</script>
 			</span>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_authsrvpath"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_path" value="<% nvg("wd_path"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_auth"); %></div>
 			<input class="spaceradio" type="radio" name="wd_auth" value="1" <% nvc("wd_auth","1"); %> onclick="show_layer_ext(this, 'idauth', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="wd_auth" value="0" <% nvc("wd_auth","0"); %> onclick="show_layer_ext(this, 'idauth', false)" /><% tran("share.disable"); %> 
+			<input class="spaceradio" type="radio" name="wd_auth" value="0" <% nvc("wd_auth","0"); %> onclick="show_layer_ext(this, 'idauth', false)" /><% tran("share.disable"); %>
 			<div id="idauth">
 				<div class="setting">
 					<div class="label"><% tran("hotspot.wifidog_realm"); %></div>
@@ -124,7 +131,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="setting">	
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_messagefile"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_messagefile" value="<% nvg("wd_messagefile"); %>" />
 		</div>
