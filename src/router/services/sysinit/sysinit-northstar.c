@@ -6493,7 +6493,7 @@ void start_sysinit(void)
 			// do nothing loop
 		}
 	}
-	next:;
+      next:;
 
 	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
