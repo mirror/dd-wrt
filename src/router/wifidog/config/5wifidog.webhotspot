@@ -3,10 +3,10 @@
 	<legend><% tran("hotspot.wifidog_legend"); %></legend>
 	<div class="center">
 	  //<![CDATA[
-		if (style_dark != NULL && !strcmp(style_dark, "1"))
+		if (<% nvem("router_style_dark", "1", "1", "0"); %>)
 		  document.write(wp, "<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
 		else
-	    document.write(wp, "<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
+		  document.write(wp, "<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
 	  //]]>
 	</div><br />
 	<div class="setting">
