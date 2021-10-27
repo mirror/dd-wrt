@@ -3388,13 +3388,11 @@ void start_nvram(void)
 
 #ifdef HAVE_WIREGUARD
 	//egc reset WireGuard failstate on boot
-	int iw = 0; 
+	int iw; 
 	int iend = 0;
-	char ftemp[32] = { 0 };
 	iend = nvram_geti("oet_tunnels");
 	for (iw = 1; iw <= iend; iw++) {
-		snprintf(ftemp, sizeof(ftemp), "oet%d_failstate", iw);  //default failstate = 0 tunnel can start; 1 = failed; if set to 2, the tunnel is the one to start in the fail group
-		nvram_seti(ftemp, 0);
+		nvram_nseti(0, "oet%d_failstate", iw);
 	}
 #endif
 
