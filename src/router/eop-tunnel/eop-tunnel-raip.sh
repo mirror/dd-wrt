@@ -1,12 +1,5 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
-
-#debug
-deb=$(nvram get console_debug)
-if [[ $deb -eq 1 ]]; then
-	set -x
-fi
-
 i=$1
 fset=$2
 # egc Start with PBR to make sure killswitch is working

@@ -1,12 +1,6 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
-
-#debug
-deb=$(nvram get console_debug)
-if [[ $deb -eq 1 ]]; then
-	set -x
-fi
 cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
 tunnels=`$nv get oet_tunnels`

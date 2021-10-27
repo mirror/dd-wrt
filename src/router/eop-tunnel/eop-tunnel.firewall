@@ -2,13 +2,6 @@
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
 tunnels=`$nv get oet_tunnels`
-
-#debug
-deb=$(nvram get console_debug)
-if [[ $deb -eq 1 ]]; then
-	set -x
-fi
-
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
