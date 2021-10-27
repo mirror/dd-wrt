@@ -18,10 +18,7 @@
 fieldset legend {
   color: #c00;
 }
-#help a {
-  color: #fcc;
-}
-#help a:hover {
+#help a, #help a:hover {
   color: #fff;
 }
 .meter .bar {

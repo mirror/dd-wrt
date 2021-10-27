@@ -18,15 +18,13 @@ hr {
 }
 h2, h3 {
   background-color: #777674;
-  background-image: none;
   border-style: none;
   color: #fff;
 }
 table tr th {
   background-color: #777674;
   border-color: #777674;
-  border-radius: 3px;
-  background-image: none;
+  color: #fff;
 }
 table tr:hover {
   background-color: #f1f1f1;

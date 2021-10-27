@@ -125,8 +125,9 @@ select {
   border: 1px solid #454545;
 }
 table tr th {
-  background-color: #333;
-  border-color: #333;
+  background-color: #777674;
+  border-color: #777674;
+  color: #fff;
 }
 table tr[bgcolor='#CCCCCC'] {
   background-color: #222;
