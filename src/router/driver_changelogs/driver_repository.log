@@ -1,4 +1,46 @@
 ------------------------------------------------------------------------
+r6368 | brainslayer | 2021-10-29 11:28:43 +0700 (Fri, 29 Oct 2021) | 39 lines
+
+mac80211: fix rx blockack session race condition
+
+When the mac80211 layer is used with ath10k, the following may happen:
+
+a) radio card firmware receives ADDBA-REQ from peer
+b) radio sends back ADDBA-RESP to peer and signals the ath10k driver
+c) ath10k calls back ieee80211_manage_rx_ba_offl() in mac80211
+   to signal rx ba offloading
+d) mac80211::agg-rx.c::ieee80211_manage_rx_ba_offl()
+  d1) sets a flag: sta->ampdu_mlme.tid_rx_manage_offl
+  d2) queues a call to ht.c::ieee80211_ba_session_work()
+e) ...scheduler runs...
+f) ht.c::ieee80211_ba_session_work() checks the flag, clears it
+   and sets up the rx ba session.
+
+During (e), a fast peer may already have sent a BAREQ which is
+propagated to rx.c::ieee80211_rx_h_ctrl(). Since the session is not
+yet established, mac80211 sends back a DELBA to the peer, which can
+hang the BA session.
+
+The phenomenon can be observed between two QCA988X fw 10.2.4 radios,
+using a loop of associate/arping from client to AP/disconnect. After
+a few thousand loops, arping does not get a response and a sniffer
+detects a DELBA action frame from the client, following an ADDBA.
+
+Fix:
+1) check the offload flag in addition to the check for a valid
+   aggregation session
+2) protect the paired checks of (offload flag, valid aggregation session)
+   with a spinlock against interference from ieee80211_ba_session_work().
+
+Note 1: there is another dubious DELBA generation in
+ieee80211_rx_reorder_ampdu(), where the same kind of fix should fit,
+but I did not fix it since I knew no easy way to test.
+
+Note 2: this fix was tested against a wireless backport from 5.4-rc8.
+
+Signed-off-by: Jean-Pierre Tosoni <jp.tosoni@acksys.fr>
+
+------------------------------------------------------------------------
 r6367 | brainslayer | 2021-10-24 21:11:25 +0700 (Sun, 24 Oct 2021) | 1 line
 
 fix
