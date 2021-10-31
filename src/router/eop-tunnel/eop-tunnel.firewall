@@ -1,21 +1,12 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
-tunnels=`$nv get oet_tunnels`
-
-#debug
-deb=$(nvram get console_debug)
-if [[ $deb -eq 1 ]]; then
-	set -x
-fi
-
+tunnels=$($nv get oet_tunnels)
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
-for i in `seq 1 $tunnels`
-do
-	if test -e "/tmp/oet/pid/${i}.pid"
-	then 
+for i in $(seq 1 $tunnels); do
+	if [[ -e "/tmp/oet/pid/${i}.pid" ]]; then
 		FW_CHAIN="blocked-oet${i}"
 		WGDELRT="/tmp/wgdelrt_oet${i}"
 		{
@@ -25,9 +16,6 @@ do
 		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT
 		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT
-		$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
-		#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
-		#$ipt -t nat -D POSTROUTING -o oet${i} -j MASQUERADE
 		$ipt -t nat -D POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr)
 		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 		$ipt -F $FW_CHAIN
@@ -38,43 +26,37 @@ do
 		fi
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT
+		rm -f /tmp/oet/pid/${i}.pid
 		} >/dev/null 2>&1
 	fi
 done
-for i in `seq 1 $tunnels`
-do
+for i in $(seq 1 $tunnels); do
 	if [[ $($nv get oet${i}_en) -eq 1 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
-		if [ `$nv get oet${i}_proto` -eq 1 ]
-		then
+		echo enable > /tmp/oet/pid/${i}.pid
+		WGDELRT="/tmp/wgdelrt_oet${i}"
+		if [ $($nv get oet${i}_proto) -eq 1 ]; then
 			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
 		fi
-		if [ `$nv get oet${i}_proto` -eq 0 ]
-		then
+		if [ $($nv get oet${i}_proto) -eq 0 ]; then
 			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
 		fi
-		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]
-		then
+		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]; then
 			$ipt -I FORWARD -i oet${i} -j ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j ACCEPT >/dev/null 2>&1
 		fi
-		if [ `$nv get oet${i}_proto` -eq 2 ]
-		then
-			if [ `$nv get oet${i}_mit` -eq 1 ]
-			then
-				insmod xt_addrtype
+		if [ $($nv get oet${i}_proto) -eq 2 ]; then
+			if [ $($nv get oet${i}_mit) -eq 1 ]; then
+				insmod xt_addrtype >/dev/null 2>&1
+				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP" >> $WGDELRT
 				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
 				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
 			fi
-			#egc: add NAT out for DDWRT client
-			# Controlled by nvram parameter oet${i}_natout
-			if [[ $($nv get oet${i}_natout) -eq 1 ]]
-			then
-				#$ipt -t nat -I POSTROUTING -o oet${i} -j MASQUERADE >/dev/null 2>&1
+			#add NAT out for DDWRT client
+			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
 			fi
-			#egc: killswitch controled by nvram parameter oet${i}_killswitch
-			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]
-			then
+			#killswitch
+			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]; then
 				#For WAP or Bridge, use br0 as IN_IF
 				[[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
 				if [[ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]]; then
@@ -101,9 +83,6 @@ do
 					$ipt -I FORWARD $IN_IF -o $WAN_IF -j $FW_CHAIN
 				else
 					#general killswitch
-					#logger -p user.info "WireGuard Killswitch on br0 activated for all clients!"
-					#echo "$ipt -D FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT" >> $WGDELRT
-					#$ipt -I FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT
 					logger -p user.info "WireGuard Killswitch activated for all clients!"
 					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j REJECT" >> $WGDELRT
 					$ipt -I FORWARD $IN_IF -o $WAN_IF -j REJECT
@@ -114,8 +93,7 @@ do
 			fi
 			#end kill switch
 			#New Inbound opening of firewall for site-to-site
-			if [[ $($nv get oet${i}_firewallin) -eq 0 ]]
-			then
+			if [[ $($nv get oet${i}_firewallin) -eq 0 ]]; then
 				echo "$ipt -D INPUT -i $(get_wanface) -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT

@@ -1,9 +1,4 @@
 #!/bin/sh
-#debug
-deb=$(nvram get console_debug)
-if [[ $deb -eq 1 ]]; then
-	set -x
-fi
 i=$1
 [[ -z "$i" ]] && i=1
 SLEEP=$2
@@ -36,9 +31,9 @@ while sleep $SLEEP; do
 					nvram set oet${i}_failstate=0
 				done
 			fi
-			/etc/config/eop-tunnel.prewall  >/dev/null 2>&1
-			/etc/config/eop-tunnel.firewall  >/dev/null 2>&1
-		fi	
+			sh /usr/bin/wireguard-restart.sh &
+			exit
+		fi
 		break
 	done
 done
