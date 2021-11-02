@@ -30,7 +30,7 @@ table tr:hover {
   background-color: #f1f1f1;
 }
 table tr:not([bgcolor]):hover {
-  background-color: #f9f9f9;
+  background-color: #f6f6f6;
 }
 .submitFooter {
   background-color: #ccc;
@@ -123,7 +123,7 @@ select {
   background-image: none;
   border: 1px solid #ccc;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
-  transition: border-color .15s ease-in-out 0s, box-shadow .15s ease-in-out 0s;
+  transition: all .15s ease-in-out 0s;
 }
 button:hover, button:focus {
   color: #333;
