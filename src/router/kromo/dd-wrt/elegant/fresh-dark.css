@@ -145,7 +145,7 @@ table tr:not([bgcolor]):hover {
   background-color: #292929;
 }
 [bordercolor='#000000'] {
-  border-color: #333;
+  border-color: #777674;
 }
 td[bgcolor='#C0C0C0'] {
   background-color: #383838;
