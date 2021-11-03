@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.0.3
+ * style-name: DD-WRT Inspired Themes v5.0.5
  * copyright: \24B8\00A02021 Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -260,6 +260,9 @@ div.center input.button[name='add_button']:not([onclick*='_add']) {
 div.center input.button[name='add_button'][onclick*='_add'] {
   margin: 0 0.5em 0;
 }
+div.center input.button[name='add_button'][onclick*='add_tunnel'] {
+  margin: 0 0.5em 0;
+}
 input.num {
   vertical-align: unset;
 }
@@ -294,9 +297,6 @@ input.button[onclick*='gen_wg_key'] {
 input.button[onclick*='do_show_prev'],
 input.button[onclick*='do_show_next'] {
   margin: 0.5rem 0.5rem 0 0;
-}
-input.button[name*='import_tunnel'] {
-  margin-left: 6px;
 }
 input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -35%;
@@ -399,7 +399,7 @@ select[onchange*='SelRoute'] {
   outline: 0;
 }
 #help a {
-  color: var(--fg-2);
+  color: var(--fg-1);
 }
 #help a:hover {
   color: var(--fg-1);
@@ -526,6 +526,7 @@ table tr td[style='color:#000'] {
 table tr td[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
 }
+#ip_count:hover,
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
   color: var(--v0-8);
@@ -690,7 +691,8 @@ h2 {
   text-shadow: 0 1px 0 var(--v9-0);
 }
 .meter .bar {
-  background-color: var(--v0-5);
+  background: var(--v0-5);
+  border-radius: 2px;
 }
 .center a[href='http://www.dd-wrt.com/'] {
   line-height: 2.2rem;
