@@ -30,7 +30,7 @@ table tr:hover {
   background-color: #f1f1f1;
 }
 table tr:not([bgcolor]):hover {
-  background-color: #f6f6f6;
+  background-color: transparent;
 }
 .submitFooter {
   background-color: #ccc;
