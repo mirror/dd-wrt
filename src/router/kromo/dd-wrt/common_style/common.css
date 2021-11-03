@@ -233,7 +233,7 @@ h2, h3 {
   line-height: 1.993em;
   width: 100%;
 }
-fieldset .setting .label {
+.setting .label {
   float: left;
   width: 18.116em;
 }
