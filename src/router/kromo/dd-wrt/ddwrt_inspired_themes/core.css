@@ -526,6 +526,7 @@ table tr td[style='color:#000'] {
 table tr td[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
 }
+#ip_count:hover,
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
   color: var(--v0-8);
