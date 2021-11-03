@@ -360,6 +360,7 @@ div.center {
 }
 .meter .bar {
   height: 1.268em;
+  border-radius: 2px;
 }
 .meter .text {
   position: absolute;
