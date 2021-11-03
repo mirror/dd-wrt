@@ -492,7 +492,7 @@ table[bordercolor='#000000'] {
 }
 table tr:not([bgcolor]):hover,
 table tr:not([bgcolor]):focus-within {
-  background: var(--bg-2);
+  background-color: transparent;
 }
 table tr:not([bgcolor]) th {
   background-color: var(--bg-5);
