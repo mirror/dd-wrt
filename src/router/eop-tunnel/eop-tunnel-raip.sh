@@ -55,8 +55,8 @@ else
 fi
 #debug
 #logger -p user.info "WireGuard debug at end of time check: ntp_success: $(nvram get ntp_success); ntp_done:$(nvram get ntp_done) "
-peers=$((`$nv get oet${i}_peers` - 1))
-for p in `seq 0 $peers`; do
+peers=$(($($nv get oet${i}_peers) - 1))
+for p in $(seq 0 $peers); do
 		# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
 		if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]] 
 		then 
@@ -90,7 +90,7 @@ if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
 fi
 # check how many tunnels, for last active tunnel copy local routes to all existing PBR tables
 for x in $(seq $(nvram get oet_tunnels) -1 1); do 
-	if [[ $(nvram get oet${x}_en) -eq 1 ]]; then
+	if [[ $(nvram get oet${x}_en) -eq 1 ]] && [[ $($nv get oet${x}_failgrp) -ne 1 || $($nv get oet${x}_failstate) -eq 2 ]]; then
 		break
 	fi
 done
@@ -154,9 +154,9 @@ ip route flush cache
 if [[ $($nv get oet${i}_failstate) -eq 2 ]]; then
 	# only start if not already running
 	if ! ps | grep -q "[w]ireguard-fwatchdog\.sh $i"; then
-		logger "WireGuard: wireguard-fwatchdog $i not running yet"
+		logger -p user.info "WireGuard: wireguard-fwatchdog $i not running yet"
 	else
-		logger "WireGuard: wireguard-fwatchdog $i already running will be killed first"
+		logger -p user.info "WireGuard: wireguard-fwatchdog $i already running will be killed first"
 		ps | grep "[w]ireguard-fwatchdog\.sh $i" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
 	fi
 	# send tunnelnumber, sleeptime (sec), ping address, reset (1=Yes)

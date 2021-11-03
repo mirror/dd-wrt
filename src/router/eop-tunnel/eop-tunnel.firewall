@@ -6,7 +6,7 @@ tunnels=$($nv get oet_tunnels)
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
 for i in $(seq 1 $tunnels); do
-	if [[ -e "/tmp/oet/pid/${i}.pid" ]]; then
+	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
 		FW_CHAIN="blocked-oet${i}"
 		WGDELRT="/tmp/wgdelrt_oet${i}"
 		{
@@ -26,14 +26,12 @@ for i in $(seq 1 $tunnels); do
 		fi
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT
-		rm -f /tmp/oet/pid/${i}.pid
+		rm -f /tmp/oet/pid/f${i}.pid
 		} >/dev/null 2>&1
 	fi
 done
 for i in $(seq 1 $tunnels); do
-	if [[ $($nv get oet${i}_en) -eq 1 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
-		echo enable > /tmp/oet/pid/${i}.pid
-		WGDELRT="/tmp/wgdelrt_oet${i}"
+	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
 		if [ $($nv get oet${i}_proto) -eq 1 ]; then
 			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
 		fi
@@ -44,7 +42,8 @@ for i in $(seq 1 $tunnels); do
 			$ipt -I FORWARD -i oet${i} -j ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j ACCEPT >/dev/null 2>&1
 		fi
-		if [ $($nv get oet${i}_proto) -eq 2 ]; then
+		if [ $($nv get oet${i}_proto) -eq 2 ] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
+			WGDELRT="/tmp/wgdelrt_oet${i}"
 			if [ $($nv get oet${i}_mit) -eq 1 ]; then
 				insmod xt_addrtype >/dev/null 2>&1
 				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP" >> $WGDELRT
@@ -104,5 +103,6 @@ for i in $(seq 1 $tunnels); do
 			fi
 			#end inbound firewall
 		fi
+		echo enable > /tmp/oet/pid/f${i}.pid
 	fi
 done
