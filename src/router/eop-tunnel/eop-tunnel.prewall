@@ -43,7 +43,7 @@ for i in $(seq 1 $tunnels); do
 		brctl delif $(getbridge oet${i}) oet${i}
 		ip tunnel del oet${i}
 		ip link del oet${i}
-		# rm -f ${i}.pid # done in firewall
+		rm -f ${i}.pid
 		} >/dev/null 2>&1
 		$nv unset wg_get_dns
 		if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
@@ -117,6 +117,7 @@ for i in $(seq 1 $tunnels); do
 			done
 			ifconfig oet${i} promisc up >/dev/null 2>&1
 			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
+			echo enable > ${i}.pid
 			# alternative input with ipaddrmask
 			if [[ ! -z "$($nv get oet${i}_ipaddrmask)" ]]
 			then
@@ -154,8 +155,6 @@ for i in $(seq 1 $tunnels); do
 				logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
 				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
-			
-			#echo enable > ${i}.pid #done in firewall
 			/usr/bin/eop-tunnel-raip.sh $i $fset &
 		fi
 		if [ $($nv get oet${i}_proto) -eq 1 ]; then
