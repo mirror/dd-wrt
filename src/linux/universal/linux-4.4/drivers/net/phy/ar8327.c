@@ -37,12 +37,9 @@ static u32
 ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 {
 	u32 t;
-	
+
 	if (!cfg)
 		return 0;
-
-	if (cfg->value)
-	    return cfg->value;
 
 	t = 0;
 	switch (cfg->mode) {
@@ -498,20 +495,14 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	if (!pdata)
 		return -EINVAL;
 
-
 	priv->get_port_link = pdata->get_port_link;
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
-	data->port5_status = ar8327_get_port_init_status(&pdata->port5_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
-	if (pdata->e4)
-	    ar8xxx_write(priv, 0xe4, pdata->e4);
-	
+
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
-#ifndef CONFIG_ARCH_ALPINE
 	if (chip_is_ar8337(priv) && !pdata->pad0_cfg->mac06_exchange_dis)
-		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-#endif
+	    t |= AR8337_PAD_MAC06_EXCHANGE_EN;
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
 
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
@@ -547,19 +538,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		if (new_pos != pos)
 			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
 	}
-#ifdef CONFIG_ARCH_ALPINE
-//	$ssdk_sh_id 0 debug reg set 0x10 0x002613a0 4
-//	printk(KERN_EMERG "SGMII cfg %X %X\n",ar8xxx_read(priv,AR8327_REG_SGMII_CTRL), priv->chip_rev);
-//	ar8xxx_write(priv, 0x10, 0x002613a0);
-	ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, 0xc74164de);
-//	$ssdk_sh_id 0 debug reg set 0x624 0x007f7f7f 4
-//	ar8xxx_write(priv, 0x624, 0x007f7f7f);
 
-//	ar8xxx_write(priv, 0x7c, 0x4e);
-//	ar8xxx_write(priv, 0x90, 0x4e);
-//	ar8xxx_write(priv, 0x94, 0x7e);
-
-#endif
 	if (pdata->sgmii_cfg) {
 		t = pdata->sgmii_cfg->sgmii_ctrl;
 		if (priv->chip_rev == 1)
@@ -579,6 +558,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
 	}
 
+	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 
 	if (pdata->leds && pdata->num_leds) {
 		int i;
@@ -621,9 +601,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 		case AR8327_REG_PORT_STATUS(0):
 			data->port0_status = val;
 			break;
-		case AR8327_REG_PORT_STATUS(5):
-			data->port5_status = val;
-			break;
 		case AR8327_REG_PORT_STATUS(6):
 			data->port6_status = val;
 			break;
@@ -652,17 +629,16 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->phy->dev.of_node)
-		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
+	if (priv->phy->mdio.dev.of_node)
+		ret = ar8327_hw_config_of(priv, priv->phy->mdio.dev.of_node);
 	else
 		ret = ar8327_hw_config_pdata(priv,
-					     priv->phy->dev.platform_data);
+					     priv->phy->mdio.dev.platform_data);
 
-#ifndef CONFIG_ARCH_ALPINE
 	if (ret)
 		return ret;
+
 	ar8327_leds_init(priv);
-#endif
 
 	ar8xxx_phy_init(priv);
 
@@ -751,16 +727,10 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 		t = data->port0_status;
 	else if (port == 6)
 		t = data->port6_status;
-	else if (port == 5)
-		t = data->port5_status;
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-#if CONFIG_ARCH_ALPINE
-	if (port != AR8216_PORT_CPU && port != 6 && port != 5) {
-#else
 	if (port != AR8216_PORT_CPU && port != 6) {
-#endif
 		/*hw limitation:if configure mac when there is traffic,
 		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
@@ -770,6 +740,7 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	} else {
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
 	}
+
 	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), 0);
@@ -1124,7 +1095,6 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 	if (!timeout)
 		pr_err("ar8327: timeout waiting for atu to become ready\n");
 }
-
 
 static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 				 struct arl_entry *a, u32 *status, enum arl_op op)
@@ -1619,9 +1589,7 @@ const struct ar8xxx_chip ar8337_chip = {
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
-#if 0
 	.get_arl_entry = ar8327_get_arl_entry,
-#endif
 	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
