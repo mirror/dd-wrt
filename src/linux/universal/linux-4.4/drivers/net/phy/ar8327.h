@@ -343,7 +343,6 @@ struct ar8327_led {
 
 struct ar8327_data {
 	u32 port0_status;
-	u32 port5_status;
 	u32 port6_status;
 
 	struct ar8327_led **leds;
