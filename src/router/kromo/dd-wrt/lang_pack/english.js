@@ -1250,7 +1250,7 @@ hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
-hidx.right18="Choose the time zone you are in. Leave Server IP/Name blank so that built-in IP addresses of time servers are used (recommended)";
+hidx.right18="Choose the time zone you are in. If the server IP/Name field is left blank, the internal IP address of the time server will be used instead (recommended)";
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
