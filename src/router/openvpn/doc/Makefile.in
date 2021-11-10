@@ -99,7 +99,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@HAVE_PYDOCUTILS_TRUE@am__append_1 = openvpn.8
+@HAVE_PYDOCUTILS_TRUE@am__append_1 = $(build_man_pages)
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
@@ -173,15 +173,16 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
+man5dir = $(mandir)/man5
+am__installdirs = "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man8dir)" \
+	"$(DESTDIR)$(docdir)" "$(DESTDIR)$(htmldir)"
 man8dir = $(mandir)/man8
-am__installdirs = "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(htmldir)"
 NROFF = nroff
 MANS = $(dist_man_MANS)
-am__dist_html_DATA_DIST = openvpn.8.html
+am__dist_html_DATA_DIST = openvpn.8.html openvpn-examples.5.html
 am__dist_noinst_DATA_DIST = README.plugins \
 	interactive-service-notes.rst openvpn.8.rst \
-	man-sections/advanced-options.rst \
+	openvpn-examples.5.rst man-sections/advanced-options.rst \
 	man-sections/client-options.rst \
 	man-sections/connection-profiles.rst \
 	man-sections/encryption-options.rst man-sections/examples.rst \
@@ -198,7 +199,7 @@ am__dist_noinst_DATA_DIST = README.plugins \
 	man-sections/unsupported-options.rst \
 	man-sections/virtual-routing-and-forwarding.rst \
 	man-sections/vpn-network-options.rst \
-	man-sections/windows-options.rst openvpn.8
+	man-sections/windows-options.rst openvpn.8 openvpn-examples.5
 DATA = $(dist_doc_DATA) $(dist_html_DATA) $(dist_noinst_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -437,15 +438,22 @@ tmpfilesdir = @tmpfilesdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-MAINTAINERCLEANFILES = \
-	$(srcdir)/Makefile.in
-
 SUBDIRS = doxygen
+
+#
+# List of man and HTML pages we build when rst2man/rst2html is available
+#
+# NOTE: Remember to add source .rst files to $(dist_noinst_DATA) below
+#       This could be automated with GNU Make, but we need BSD Make support
+#
+build_man_pages = openvpn.8 openvpn-examples.5
+build_html_pages = openvpn.8.html openvpn-examples.5.html
 dist_doc_DATA = \
 	management-notes.txt gui-notes.txt
 
 dist_noinst_DATA = README.plugins interactive-service-notes.rst \
-	openvpn.8.rst man-sections/advanced-options.rst \
+	openvpn.8.rst openvpn-examples.5.rst \
+	man-sections/advanced-options.rst \
 	man-sections/client-options.rst \
 	man-sections/connection-profiles.rst \
 	man-sections/encryption-options.rst man-sections/examples.rst \
@@ -463,16 +471,21 @@ dist_noinst_DATA = README.plugins interactive-service-notes.rst \
 	man-sections/virtual-routing-and-forwarding.rst \
 	man-sections/vpn-network-options.rst \
 	man-sections/windows-options.rst $(am__append_1)
-@HAVE_PYDOCUTILS_TRUE@dist_html_DATA = openvpn.8.html
+
+######  GENERIC  RULES  ##########
+SUFFIXES = .8.rst .8 .8.html .5.rst .5 .5.html
+MAINTAINERCLEANFILES = \
+	$(srcdir)/Makefile.in
+
+@HAVE_PYDOCUTILS_TRUE@dist_html_DATA = $(build_html_pages)
 
 # Failsafe - do not delete these files unless we can recreate them
-@HAVE_PYDOCUTILS_TRUE@CLEANFILES = \
-@HAVE_PYDOCUTILS_TRUE@	 openvpn.8 openvpn.8.html
-
-@WIN32_FALSE@dist_man_MANS = openvpn.8
+@HAVE_PYDOCUTILS_TRUE@CLEANFILES = $(build_man_pages) $(build_html_pages)
+@WIN32_FALSE@dist_man_MANS = $(build_man_pages)
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .8.rst .8 .8.html .5.rst .5 .5.html
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -508,6 +521,49 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+install-man5: $(dist_man_MANS)
+	@$(NORMAL_INSTALL)
+	@list1=''; \
+	list2='$(dist_man_MANS)'; \
+	test -n "$(man5dir)" \
+	  && test -n "`echo $$list1$$list2`" \
+	  || exit 0; \
+	echo " $(MKDIR_P) '$(DESTDIR)$(man5dir)'"; \
+	$(MKDIR_P) "$(DESTDIR)$(man5dir)" || exit 1; \
+	{ for i in $$list1; do echo "$$i"; done;  \
+	if test -n "$$list2"; then \
+	  for i in $$list2; do echo "$$i"; done \
+	    | sed -n '/\.5[a-z]*$$/p'; \
+	fi; \
+	} | while read p; do \
+	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; echo "$$p"; \
+	done | \
+	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^5][0-9a-z]*$$,5,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
+	sed 'N;N;s,\n, ,g' | { \
+	list=; while read file base inst; do \
+	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
+	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man5dir)/$$inst'"; \
+	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man5dir)/$$inst" || exit $$?; \
+	  fi; \
+	done; \
+	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
+	while read files; do \
+	  test -z "$$files" || { \
+	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man5dir)'"; \
+	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man5dir)" || exit $$?; }; \
+	done; }
+
+uninstall-man5:
+	@$(NORMAL_UNINSTALL)
+	@list=''; test -n "$(man5dir)" || exit 0; \
+	files=`{ for i in $$list; do echo "$$i"; done; \
+	l2='$(dist_man_MANS)'; for i in $$l2; do echo "$$i"; done | \
+	  sed -n '/\.5[a-z]*$$/p'; \
+	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^5][0-9a-z]*$$,5,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
+	dir='$(DESTDIR)$(man5dir)'; $(am__uninstall_files_from_dir)
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
@@ -759,7 +815,7 @@ check: check-recursive
 all-am: Makefile $(MANS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(htmldir)"; do \
+	for dir in "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(htmldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -831,7 +887,7 @@ install-info: install-info-recursive
 
 install-info-am:
 
-install-man: install-man8
+install-man: install-man5 install-man8
 
 install-pdf: install-pdf-recursive
 
@@ -862,7 +918,7 @@ ps-am:
 uninstall-am: uninstall-dist_docDATA uninstall-dist_htmlDATA \
 	uninstall-man
 
-uninstall-man: uninstall-man8
+uninstall-man: uninstall-man5 uninstall-man8
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
@@ -874,26 +930,27 @@ uninstall-man: uninstall-man8
 	install-data-am install-dist_docDATA install-dist_htmlDATA \
 	install-dvi install-dvi-am install-exec install-exec-am \
 	install-html install-html-am install-info install-info-am \
-	install-man install-man8 install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_docDATA uninstall-dist_htmlDATA \
-	uninstall-man uninstall-man8
+	install-man install-man5 install-man8 install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_docDATA \
+	uninstall-dist_htmlDATA uninstall-man uninstall-man5 \
+	uninstall-man8
 
 .PRECIOUS: Makefile
 
 
-openvpn.8 :
-@HAVE_PYDOCUTILS_TRUE@	$(RST2MAN) $(srcdir)/$@.rst > $@
-@HAVE_PYDOCUTILS_FALSE@	@echo "Missing python-docutils - skipping man page generation"
+.8.rst.8 .5.rst.5 :
+@HAVE_PYDOCUTILS_TRUE@	$(RST2MAN) $< > $@
+@HAVE_PYDOCUTILS_FALSE@	@echo "Missing python-docutils - skipping man page generation ($@)"
 
-openvpn.8.html:
-@HAVE_PYDOCUTILS_TRUE@	$(RST2HTML) $(srcdir)/openvpn.8.rst > $@
-@HAVE_PYDOCUTILS_FALSE@	@echo "Missing python-docutils - skipping man/html page generation"
+.8.rst.8.html .5.rst.5.html :
+@HAVE_PYDOCUTILS_TRUE@	$(RST2HTML) $< > $@
+@HAVE_PYDOCUTILS_FALSE@	@echo "Missing python-docutils - skipping html page generation ($@)"
 
-dist-hook : openvpn.8 openvpn.8.html
+dist-hook : $(build_man_pages) $(build_html_pages)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
