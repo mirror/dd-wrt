@@ -298,7 +298,7 @@ static void checkupgrade(void)
 		fseek(in, 0, SEEK_END);
 		size_t len = ftell(in);
 		fclose(in);
-		unlink("rm /tmp/cron.d/check_ps");	// deleting cron file to
+		unlink("/tmp/cron.d/check_ps");	// deleting cron file to
 		// prevent double call of
 		// this
 		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
