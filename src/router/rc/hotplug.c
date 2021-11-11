@@ -34,30 +34,29 @@
 static int hotplug_main(int argc, char **argv)
 {
 	if (argc >= 2) {
+		char *action = getenv("ACTION");
+		char *devpath = getenv("BUTTON");
+		char *button = getenv("DEVPATH");
+		dd_logdebug("hotplug", "event %s, ACTION %s BUTTON %s DEVPATH %s\n", argv[1], action ? action : "none", button ? button : "none", devpath ? devpath : "none");
 		if (!strcmp(argv[1], "net")) {
 			start_service_force_f("hotplug_net");
 
 			return 0;
 		}
 		if (!strcmp(argv[1], "button")) {
-			char *action;
-			if ((action = getenv("ACTION"))) {
-				char *button = getenv("BUTTON");
-				if (button) {
-					char name[32];
-					sprintf(name, "/tmp/.button_%s", button);
-					FILE *fp = fopen(name, "wb");
-					if (fp) {
-						if (!strcmp(action, "pressed")) {
-							putc(1, fp);
-						} else {
-							putc(0, fp);
-						}
-
-						fclose(fp);
+			if (action && button) {
+				char name[32];
+				sprintf(name, "/tmp/.button_%s", button);
+				FILE *fp = fopen(name, "wb");
+				if (fp) {
+					if (!strcmp(action, "pressed")) {
+						putc(1, fp);
+					} else {
+						putc(0, fp);
 					}
-
+					fclose(fp);
 				}
+
 			}
 		}
 #ifdef HAVE_USB
@@ -81,12 +80,8 @@ static int hotplug_main(int argc, char **argv)
 			return r;
 		}
 		if (!strcmp(argv[1], "platform")) {
-			char *action;
-			char *devicepath;
-			if ((action = getenv("ACTION"))
-			    && (devicepath = getenv("DEVPATH"))
-			    && !strcmp(action, "change")
-			    && !strcmp(devicepath, "/devices/platform/regulatory.0")) {
+			if (action && devpath && !strcmp(action, "change")
+			    && !strcmp(devpath, "/devices/platform/regulatory.0")) {
 				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
 				int r = eval("/sbin/crda");
 				unlink("/tmp/.crdalock");
