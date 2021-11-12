@@ -326,6 +326,9 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("startservice", "rsync", "-f");
 	eval("startservice", "ftpsrv", "-f");
 	eval("startservice", "dlna", "-f");
+	nvram_set("usb_reason", "blockdev_add");
+	nvram_set("usb_dev", mount_point);
+	eval("startservice", "run_rc_usb", "-f");
 	if (ret == 0)
 		run_on_mount(path);
 	return ret;
@@ -384,6 +387,9 @@ static void usb_unmount(char *path)
 		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 	else
 		strcpy(mount_point, path);
+	nvram_set("usb_reason", "blockdev_remove");
+	nvram_set("usb_dev", mount_point);
+	eval("startservice", "run_rc_usb", "-f");
 	eval("/bin/umount", mount_point);
 	unlink(DUMPFILE);
 	eval("startservice", "samba3", "-f");
@@ -391,7 +397,7 @@ static void usb_unmount(char *path)
 	eval("startservice", "nfs", "-f");
 	eval("startservice", "rsync", "-f");
 	eval("startservice", "dlna", "-f");
-	eval("startservice", "run_rc_usb", "-f");
+	eval("stopservice", "run_rc_usb");
 	return;
 }
 
