@@ -69,7 +69,7 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 	}
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", name);
-	websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
+	websWrite(wp, "<input style=\"margin-left: 2.2em\" maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
 	websWrite(wp, "</div>\n");
 	p->cnt++;
 	return;
