@@ -263,7 +263,6 @@ void start_raid(void)
 					sysprintf("mkfs.btrfs -f -d raid6 %s", raid);
 				if (!strcmp(level, "10"))
 					sysprintf("mkfs.btrfs -f -d raid10 %s", raid);
-
 			}
 			if (!strcmp(type, "zfs")) {
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
@@ -312,6 +311,10 @@ void start_raid(void)
 				sysprintf("zfs set dedup=on %s", poolname);
 			else
 				sysprintf("zfs set dedup=off %s", poolname);
+
+			nvram_set("usb_reason", "zfs_pool_add");
+			nvram_set("usb_dev", raid);
+			eval("startservice", "run_rc_usb", "-f");
 		}
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
@@ -357,6 +360,9 @@ void start_raid(void)
 				sysprintf("zpool import -a -d /dev");
 				sysprintf("zfs mount %s", poolname);
 			}
+			nvram_set("usb_reason", "md_raid_add");
+			nvram_set("usb_dev", poolname);
+			eval("startservice", "run_rc_usb", "-f");
 		}
 		if (!strcmp(type, "btrfs")) {
 			char *r = strdup(raid);
@@ -376,6 +382,9 @@ void start_raid(void)
 			} else
 				sysprintf("mount -t btrfs %s \"/tmp/mnt/%s\"", r, poolname);
 			free(r);
+			nvram_set("usb_reason", "btrfs_raid_add");
+			nvram_set("usb_dev", poolname);
+			eval("startservice", "run_rc_usb", "-f");
 		}
 
 		if (!strcmp(done, "0")) {
@@ -402,7 +411,6 @@ void start_raid(void)
 #ifdef HAVE_PLEX
 		eval("restart_f", "plex");
 #endif
-		eval("startservice", "run_rc_usb", "-f");
 	}
 
 }

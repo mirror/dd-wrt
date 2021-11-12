@@ -81,7 +81,7 @@ static bool usb_stopservices()
 }
 
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
-static bool usb_startservices()
+static bool usb_startservices(void)
 {
 	eval("startservice", "cron", "-f");
 	eval("startservice", "samba3", "-f");
@@ -98,7 +98,6 @@ static bool usb_startservices()
 #ifdef HAVE_PLEX
 	eval("startservice", "plex", "-f");
 #endif
-	eval("startservice", "run_rc_usb", "-f");
 	return 0;
 }
 
@@ -363,6 +362,10 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
 	} else {
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+		nvram_set("usb_reason", "blockdev_add");
+		nvram_set("usb_dev", mount_point);
+		eval("startservice", "run_rc_usb", "-f");
+
 	}
 	if (!ret)
 		run_on_mount(path);

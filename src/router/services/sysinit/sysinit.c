@@ -852,7 +852,9 @@ void start_run_rc_usb(void)
 	create_rc_file(RC_USB);
 
 	if (f_exists("/tmp/.rc_usb"))
-		eval("/tmp/.rc_usb");
+		eval("/tmp/.rc_usb", nvram_safe_get("usb_reason",nvram_safe_get("usb_dev"));
+	nvram_unset("usb_reason");
+	nvram_unset("usb_dev");		
 }
 
 void stop_run_rc_startup(void)
