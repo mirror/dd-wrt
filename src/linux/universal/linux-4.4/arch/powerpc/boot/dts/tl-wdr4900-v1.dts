@@ -54,12 +54,12 @@
 				};
 
 				kernel@60000 {
-					reg = <0x00060000 0x00220000>;
+					reg = <0x00060000 0x00210000>;
 					label = "kernel";
 				};
 
-				rootfs@280000 {
-					reg = <0x00280000 0x00d40000>;
+				rootfs@270000 {
+					reg = <0x00270000 0x00d50000>;
 					label = "rootfs";
 				};
 
@@ -87,7 +87,7 @@
 			};
 		};
 
-		gpio0: gpio-controller@f000 {
+		gpio0: gpio-controller@fc00 {
 		};
 
 		usb@22000 {
@@ -220,22 +220,6 @@
 		usbpower {
 			gpios = <&gpio0 10 1>;
 			label = "tp-link:usb:power";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		reset {
-			label = "Reset button";
-			gpios = <&gpio0 5 1>; /* active low */
-			linux,code = <0x198>; /* KEY_RESTART */
-		};
-
-		wifi {
-			label = "Wifi button";
-			gpios = <&gpio0 11 1>; /* active low */
-			linux,code = <0x161>; /* KEY_RESTART */
 		};
 	};
 };
