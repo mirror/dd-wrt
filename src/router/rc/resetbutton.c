@@ -161,7 +161,7 @@ static int getbuttonstate()
 #elif defined(HAVE_WDR4900)
 static int getbuttonstate()
 {
-	return get_gpio(3);
+	return !get_gpio(5);
 }
 #elif defined(HAVE_MVEBU)
 static int getbuttonstate()
@@ -1180,7 +1180,7 @@ static void resetbtn_period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || defined(HAVE_VENTANA)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || defined(HAVE_VENTANA) || defined(HAVE_WDR4900)
 	state = val;
 	int sesgpio = 0xfff;
 	int wifi24gpio = 0xfff;
