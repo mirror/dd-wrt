@@ -38,8 +38,15 @@ pre {
 form {
   margin: 0;
 }
+form[name='wds'] .label {
+  margin-right: 24px;
+}
 form[name='wds'] select {
-  margin-right: 6px;
+  margin-right: .562em;
+  margin-top: .1rem;
+}
+form[name='wds'] input[size='25'] {
+  vertical-align: middle;
 }
 input {
   padding: 4px;
@@ -427,10 +434,16 @@ input.button:hover, input.button:focus,
 button:hover, button:focus {
   text-decoration: none;
 }
-body input.button[disabled],
-body input[disabled], body select[disabled] {
+input.button[disabled],
+input[disabled], select[disabled] {
   cursor: default;
   opacity: .6
+}
+input.button[onclick*='add_peer'] {
+  margin: 0 0 -6px -34.5%;
+}
+input.button[onclick*='gen_wg_key'] {
+  margin: 0 0 6px -31.5%;
 }
 [type='image'][src*='paypal'] {
   margin-bottom: -0.5rem;
@@ -482,6 +495,12 @@ td.bulle {
   padding: .09em;
   border: 0;
 }
+.off {
+  opacity: .6;
+}
+.odd {
+  border-radius: 2px;
+}
 /*! status is common to light/dark */
 /*! these colors pass all color contrast tests */
 
@@ -511,12 +530,5 @@ td.bulle {
   color: #000;
   text-align: center;
   padding: 2px;
-  border-radius: 2px;
-}
-.off {
-  opacity: .6;
-}
-.odd {
-  background: #ccc;
   border-radius: 2px;
 }

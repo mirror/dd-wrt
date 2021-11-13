@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.0.5
+ * style-name: DD-WRT Inspired Themes v5.1.2
  * copyright: \24B8\00A02021 Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -23,6 +23,12 @@ body {
 }
 body > fieldset:first-child {
   background-color: var(--bg-0);
+}
+body a:link {
+  color: var(--v9-8);
+}
+body a:link:hover {
+  color: var(--v0-9);
 }
 body[onunload*="location.href='Filters.asp'"] {
   height: 180% !important;
@@ -223,7 +229,11 @@ form[name='wds'] .label {
   margin-right: 24px;
 }
 form[name='wds'] select {
-  margin-right: 6px;
+  margin-right: 0.562em;
+  margin-top: -0.1rem;
+}
+form[name='wds'] input[size="25"] {
+  vertical-align: 0;
 }
 pre {
   background-color: var(--bg-0);
@@ -232,7 +242,6 @@ pre[style*='height:530px'],
 pre[style*='height:413px'] {
   border: 1px solid var(--bg-4);
   cursor: copy;
-  border-radius: 4px;
 }
 #wrapper #content {
   background-color: var(--bg-1);
@@ -292,14 +301,14 @@ input.button[onclick*="filter_del"] {
   margin: 0 0.5rem 0 0;
 }
 input.button[onclick*='gen_wg_key'] {
-  margin: 0 0 6px -32%;
+  margin: 0 0 6px -31.5%;
 }
 input.button[onclick*='do_show_prev'],
 input.button[onclick*='do_show_next'] {
   margin: 0.5rem 0.5rem 0 0;
 }
 input.button[onclick*='add_peer'] {
-  margin: 0 0 -6px -35%;
+  margin: 0 0 -6px -34.5%;
 }
 input.button[onclick*='previewStyle'] {
   vertical-align: middle;
@@ -328,19 +337,8 @@ input.button[onclick*='traffdata.bak'] {
 input.button[onclick*='ttraff_remove'] {
   margin: 0 0 0 0.362em;
 }
-input[type='checkbox'][onclick*='setElementMask'] {
-  margin-top: 6px;
-}
-input[type='checkbox'][name*='svqos_'],
-input[type='checkbox'][name='_dhcpd_usenvram'] {
-  margin-bottom: -1px;
-  margin-left: 0;
-}
-input[type='radio'][onclick*='timeall'][value='0'] {
-  margin-top: 4px;
-}
-input[name='_filter_p2p'] {
-  margin-left: calc(2% - 0.3rem);
+input[type='checkbox'][name='_filter_p2p'] {
+  vertical-align: -0.45rem;
 }
 select[onchange*='SelRoute'] {
   margin-top: -0.2rem;
@@ -379,12 +377,6 @@ select[onchange*='SelRoute'] {
 #menu #menuMainList li.current span {
   background: var(--bg-1);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-}
-#menu #menuMainList li.current span:hover {
-  background: var(--v0-4);
-  border: 1px solid var(--v0-6);
-  padding-top: 0.3rem;
-  cursor: default;
 }
 #menuSub {
   background: var(--bg-3) !important;
@@ -526,10 +518,16 @@ table tr td[style='color:#000'] {
 table tr td[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
 }
+#ip_count,
+[title*='Search'],
+[title*='Monitoring'] {
+  text-decoration: none !important;
+}
 #ip_count:hover,
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
-  color: var(--v0-8);
+  color: var(--v0-9);
+  text-decoration: underline !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 [summary='week days table'] {
@@ -980,8 +978,8 @@ input[type='checkbox'] {
 }
 input[type='checkbox']:checked {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="\%23eee" d="M99 213l-1 89 104 102 205-201v-91L203 315 99 213z"/></svg>') !important;
-  border-color: var(--v0-7) !important;
-  background-color: var(--v0-7) !important;
+  border-color: var(--v0-9) !important;
+  background-color: var(--v0-5) !important;
   border-radius: 3px;
 }
 input[type='checkbox']:hover {
