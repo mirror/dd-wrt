@@ -317,7 +317,7 @@ static void checkupgrade(void)
 		eval("write", "/tmp/firmware.bin", "rootfs");
 #elif defined(HAVE_VENTANA)
 		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile");
-#elif defined(HAVE_X86) || defined(HAVE_RB600)
+#elif defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #else
 		eval("fischecksum");
