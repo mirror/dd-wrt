@@ -208,7 +208,7 @@ static int button_hotplug_create_event(const char *name, unsigned long seen,
 
 /* -------------------------------------------------------------------------*/
 
-#ifdef	CONFIG_HOTPLUG
+#if 1 //def	CONFIG_HOTPLUG
 static int button_get_index(unsigned int code)
 {
 	int i;
