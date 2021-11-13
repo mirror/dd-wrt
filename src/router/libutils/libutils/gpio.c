@@ -131,24 +131,7 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	FILE *fp = NULL;
-	int value;
-	switch (gpio) {
-	case 3:
-		fp = fopen("/tmp/.button_reset", "rb");
-		break;
-	case 4:
-		fp = fopen("/tmp/.button_wifi", "rb");
-		break;
-	}
-	if (fp) {
-		value = getc(fp);
-		fclose(fp);
-		if (value == EOF)
-			return 0;
-		return value;
-	}
-	return 0;
+	return get_linux_gpio(480+gpio);
 }
 
 #elif HAVE_WRT1900AC
