@@ -13,7 +13,7 @@ installwebfiles:
 	cp common.js $(INSTALLDIR)/www/common.js
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
-	
+
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
@@ -59,7 +59,7 @@ ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 	cp -a help_jp $(INSTALLDIR)/www
-	mv $(INSTALLDIR)/www/help_jp $(INSTALLDIR)/www/help 
+	mv $(INSTALLDIR)/www/help_jp $(INSTALLDIR)/www/help
 else
 ifneq ($(CONFIG_EXTHELP),y)
 	cp -a help $(INSTALLDIR)/www
@@ -76,9 +76,9 @@ endif
 
 
 	mkdir -p $(INSTALLDIR)/www/lang_pack
-	cp lang_pack/*.js $(INSTALLDIR)/www/lang_pack	
-	rm -f $(INSTALLDIR)/www/lang_pack/arabic.js	
-	
+	cp lang_pack/*.js $(INSTALLDIR)/www/lang_pack
+	rm -f $(INSTALLDIR)/www/lang_pack/arabic.js
+
 ifneq ($(CONFIG_LANGUAGE),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
 	cp lang_pack/english.js $(INSTALLDIR)/www/lang_pack/
@@ -103,7 +103,7 @@ ifeq ($(CONFIG_HOTSPOT),y)
 endif
 
 ifeq ($(CONFIG_3COM),y)
-	
+
 	mkdir $(INSTALLDIR)/www/style/3com
 	cp 3com/style.css $(INSTALLDIR)/www/style/3com
 	cp 3com/images/* $(INSTALLDIR)/www/images
@@ -111,7 +111,7 @@ endif
 
 ifeq ($(CONFIG_BUFFALO),y)
 ifneq ($(CONFIG_SPOTPASS),y)
-	
+
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
@@ -287,7 +287,7 @@ endif
 
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
-ifneq ($(CONFIG_ROUTERSTYLE),y)	
+ifneq ($(CONFIG_ROUTERSTYLE),y)
 	mkdir $(INSTALLDIR)/www/common_style
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
@@ -644,7 +644,7 @@ ifeq ($(CONFIG_TMK),y)
 	mkdir -p $(INSTALLDIR)/sbin
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 ifeq ($(CONFIG_VENTANA),y)
-	rm $(INSTALLDIR)/etc/config/kmtdefaults.startup		
+	rm $(INSTALLDIR)/etc/config/kmtdefaults.startup
 endif
 endif
 ifeq ($(CONFIG_BKM),y)
@@ -694,10 +694,10 @@ ifeq ($(CONFIG_WIRCOM),y)
 	cp wircom/common.css $(INSTALLDIR)/www/style/wircom
 endif
 ifneq ($(CONFIG_STATUS_GPIO),y)
-	rm -f $(INSTALLDIR)/www/Gpio.asp 
+	rm -f $(INSTALLDIR)/www/Gpio.asp
 endif
 ifneq ($(CONFIG_WAVESAT),y)
-	rm -f $(INSTALLDIR)/www/WiMAX.asp 
+	rm -f $(INSTALLDIR)/www/WiMAX.asp
 endif
 ifeq ($(CONFIG_ERC),y)
 	mkdir $(INSTALLDIR)/www/style/erc-machinery
@@ -769,7 +769,7 @@ ifneq ($(CONFIG_MSSID),y)
 	cp WL_WPATable.v23 $(INSTALLDIR)/www/WL_WPATable.asp
 #	cp WPA.v23 $(INSTALLDIR)/www/WPA.asp
 	cp WPA_Preshared.v23 $(INSTALLDIR)/www/WPA_Preshared.asp
-	cp WPA_Radius.v23 $(INSTALLDIR)/www/WPA_Radius.asp	
+	cp WPA_Radius.v23 $(INSTALLDIR)/www/WPA_Radius.asp
 	cp Wireless_Basic.v23 $(INSTALLDIR)/www/Wireless_Basic.asp
 	cp Wireless_Advanced.v23 $(INSTALLDIR)/www/Wireless_Advanced.asp
 endif
@@ -1018,7 +1018,7 @@ endif
 ifneq ($(CONFIG_MSSID),y)
 	cp Status_Wireless.asp.v23 $(INSTALLDIR)/www/Status_Wireless.asp
 	cp Status_Wireless.live.asp.v23 $(INSTALLDIR)/www/Status_Wireless.live.asp
-endif	
+endif
 ifneq ($(CONFIG_WIVIZ),y)
 	rm -f $(INSTALLDIR)/www/Wiviz_Survey.asp
 	rm -f $(INSTALLDIR)/www/Wiviz.live.asp
@@ -1032,18 +1032,18 @@ ifneq ($(CONFIG_PPPOESERVER),y)
 	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
 	rm -f $(INSTALLDIR)/www/help/HPPPoE_Server.asp
 endif
-ifneq ($(CONFIG_MILKFISH),y)
-	rm -f $(INSTALLDIR)/www/Milkfish.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_aliases.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_dynsip.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_siptrace.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_status.asp
-	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
-	rm -f $(INSTALLDIR)/www/images/sipwerk.png
-endif
+#ifneq ($(CONFIG_MILKFISH),y)
+#	rm -f $(INSTALLDIR)/www/Milkfish.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_aliases.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_dynsip.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_siptrace.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_status.asp
+#	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
+#	rm -f $(INSTALLDIR)/www/images/sipwerk.png
+#endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
 endif
@@ -1061,11 +1061,11 @@ endif
 	rm -f $(INSTALLDIR)/www/About_test.htm
 	rm -f $(INSTALLDIR)/www/Logout.asp
 	rm -f $(INSTALLDIR)/www/SysInfo.htm
-	rm -f $(INSTALLDIR)/www/graph_cpu.svg	
+	rm -f $(INSTALLDIR)/www/graph_cpu.svg
 	rm -f $(INSTALLDIR)/www/AnchorFree.asp
 	rm -f $(INSTALLDIR)/www/AnchorFree.live.asp
 	rm -f $(INSTALLDIR)/www/help/HAnchorFree.asp
-	
+
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
 else
@@ -1090,7 +1090,7 @@ ifeq ($(CONFIG_IPR),y)
 else
 ifeq ($(CONFIG_ONNET),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/onnet/common/ install
-else 
+else
 ifeq ($(CONFIG_RAYTRONIK),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/raytronik/common/ install
 else
@@ -1161,7 +1161,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www
 
 
 removepwc:
