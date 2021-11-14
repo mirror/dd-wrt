@@ -1915,7 +1915,6 @@ service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Client";
 service.vpn_mit="CVE-2019-14899 Mitigation";
 service.vpn_srv="Start OpenVPN Client";
-service.vpn_ipname="Server IP/Name";
 service.vpn_mtu="Tunnel MTU setting";
 service.vpn_mss="Tunnel UDP MSS-Fix";
 service.vpn_fragment="Tunnel UDP Fragment";
@@ -1949,6 +1948,9 @@ service.vpn_dc1="First Data Cipher";
 service.vpn_dc2="Second Data Cipher";
 service.vpn_dc3="Third Data Cipher";
 service.vpn_killswitch="Killswitch";
+service.vpn_ipnameport="Server IP/Name : Port";
+service.vpn_multiaddress="Enable Multiple Servers";
+service.vpn_randomsrv="Choose random Server";
 
 //help page
 var hservice=new Object();

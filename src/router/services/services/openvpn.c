@@ -50,7 +50,7 @@ static void run_openvpn(char *prg, char *path)
 int cleanup_pbr(char *tablenr)
 {
 	int limit = 1000;
-	char cmd[256] = { 0 };
+	//char cmd[256] = { 0 };
 	eval("ip", "route", "flush", "table", tablenr);
 	//this is no longer necessary as the bug in OpenVPN about misdetection of default route is resolved in 2.5.2
 	//eval("ip", "route", "flush", "table", "9");
@@ -696,6 +696,19 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_upauth", 1))
 		fprintf(fp, "auth-user-pass %s\n", "/tmp/openvpncl/credentials");
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"), nvram_safe_get("openvpncl_remoteport"));
+	if (nvram_matchi("openvpncl_multirem", 1)) {
+		if (nvram_matchi("openvpncl_randomsrv", 1))
+			fprintf(fp, "remote random\n");
+		int i;
+		char tempip[32] = { 0 };
+		char tempport[32] = { 0 };
+		for ( i = 2; i < 6; i++) {
+			sprintf(tempip, "openvpncl_remoteip%d", i);
+			sprintf(tempport, "openvpncl_remoteport%d", i);
+			if (nvram_invmatch(tempip, "") && nvram_invmatch(tempport, ""))
+				fprintf(fp, "remote %s %s\n", nvram_safe_get(tempip), nvram_safe_get(tempport));
+		}
+	}
 	if (nvram_invmatch("openvpncl_scramble", "off")) {
 		if (nvram_match("openvpncl_scramble", "obfuscate"))
 			fprintf(fp, "scramble %s %s\n", nvram_safe_get("openvpncl_scramble"), nvram_safe_get("openvpncl_scrmblpw"));
