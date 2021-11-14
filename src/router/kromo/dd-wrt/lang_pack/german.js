@@ -1658,7 +1658,6 @@ service.vpn_redirgate="&Uuml;bernehme Standartgateway";
 service.vpn_legend="OpenVPN-Client";
 service.vpn_mit="CVE-2019-14899 Entsch&auml;rfung";
 service.vpn_srv="Starte OpenVPN";
-service.vpn_ipname="Server-IP/Name";
 service.vpn_mtu="TUN-MTU-Einstellungen";
 service.vpn_mss="TCP-MSS";
 service.vpn_compress="Nutze Kompression";
@@ -1687,6 +1686,9 @@ service.vpn_dc1="Erste Data Cipher";
 service.vpn_dc1="Zweite Data Cipher";
 service.vpn_dc1="Dritte Data Cipher";
 service.vpn_killswitch="Killswitch";
+service.vpn_ipnameport="Server-IP/Name : Port";
+service.vpn_multiaddress="Erlaube mehrere Server";
+service.vpn_randomsrv="W&auml;hle zuf&auml;lligen Server";
 
 //help container
 hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standartgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
