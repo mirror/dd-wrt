@@ -70,6 +70,12 @@ body #content.infopage #main {
   background-color: var(--bg-1);
   border: 1px solid var(--bg-4);
 }
+body #content.infopage #main #contentsInfo h2 {
+  padding-top: 0.3rem;
+}
+body #content.infopage #main #contentsInfo h2 input {
+  vertical-align: -0.03rem;
+}
 body #content #header {
   background: var(--bg-0) !important;
 }
@@ -130,14 +136,17 @@ body input.button[disabled]:hover {
   box-shadow: none !important;
   opacity: 0.6;
 }
-body input[name*='apply'] {
+body input[name*='apply'],
+body input[name='changepassword'] {
   background: none repeat scroll 0 0 var(--v4-2);
   border-color: var(--v4-3);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
 body input[name*='apply']:hover,
-body input[name*='apply']:focus-within {
+body input[name='changepassword']:hover,
+body input[name*='apply']:focus-within,
+body input[name='changepassword']:focus-within {
   background: none repeat scroll 0 0 var(--v4-3) !important;
   border-color: var(--v4-3) !important;
   box-shadow: 0 0 10px 0 var(--v4-3) !important;
@@ -232,8 +241,17 @@ form[name='wds'] select {
   margin-right: 0.562em;
   margin-top: -0.1rem;
 }
-form[name='wds'] input[size="25"] {
+form[name='wds'] input[size='25'] {
   vertical-align: 0;
+}
+form[name='changepassword'] .warning #warning_text,
+form[name='changepassword'] p b {
+  font-size: 1rem;
+  letter-spacing: 0rem;
+  margin-bottom: 0.8rem;
+}
+form[name='nvramrestore'] .warning p {
+  margin-bottom: 1rem;
 }
 pre {
   background-color: var(--bg-0);
@@ -339,6 +357,14 @@ input.button[onclick*='ttraff_remove'] {
 }
 input[type='checkbox'][name='_filter_p2p'] {
   vertical-align: -0.45rem;
+}
+input[type='checkbox'][onclick*='edit_wol_host'] {
+  margin-bottom: 0;
+  vertical-align: -0.45rem;
+}
+input[type='button'][name='changepassword'],
+input[type='button'][value='activate'i] {
+  height: initial;
 }
 select[onchange*='SelRoute'] {
   margin-top: -0.2rem;
@@ -492,23 +518,31 @@ table tr:not([bgcolor]) th {
   color: var(--fg-1);
   padding-bottom: 2px;
 }
+table tr[bgcolor='#ffff00'i],
+table tr[bgcolor='#ffed00'],
 table tr[bgcolor='#eec900'] {
   background-color: var(--v3-6);
 }
+table tr[bgcolor='#ffff00'i]:hover,
+table tr[bgcolor='#ffed00']:hover,
 table tr[bgcolor='#eec900']:hover {
   background-color: var(--v3-5);
 }
+table tr[bgcolor='#ff0000'i],
 table tr[bgcolor='#ea0707'],
 table tr[bgcolor='#ff6666'] {
   background-color: var(--v1-9);
 }
+table tr[bgcolor='#ff0000'i]:hover,
 table tr[bgcolor='#ea0707']:hover,
 table tr[bgcolor='#ff6666']:hover {
   background-color: var(--v1-8);
 }
+table tr[bgcolor='#7cfc00'i],
 table tr[bgcolor='#35ee00'] {
   background-color: var(--v4-6);
 }
+table tr[bgcolor='#7cfc00'i]:hover,
 table tr[bgcolor='#35ee00']:hover {
   background-color: var(--v4-5);
 }

@@ -20,7 +20,7 @@ function to_submit(F) {
 	</head>
 
 	<body class="gui">
-		
+
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -38,16 +38,16 @@ function to_submit(F) {
 					<input type="hidden" name="action" value="Apply" />
 					<fieldset>
 					<legend>SuperChannel feature activation</legend>
-					SuperChannel allows you to use special frequencies from 2192 Mhz - 2732 Mhz (802.11g capable devices only) and 4915 Mhz - 6100 Mhz (802.11a capable devices only). This feature is not yet enabled.<br />
+					SuperChannel allows you to use special frequencies from 2192 Mhz - 2732 Mhz (802.11g capable devices only) and 4915 Mhz - 6100 Mhz (802.11a capable devices only). This feature is not yet enabled.<br /><br />
 					<h2>Disclaimer</h2>
-					Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.<br />		    			    
+					Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.<br />
 						<div class="setting">
 						<div class="label">System Key</div>
-						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" > 
-						<% getregcode(); %>						
+						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" >
+						<% getregcode(); %>
 						</textarea>
 						</div>
-						<div class="setting">		
+						<div class="setting">
 						<div class="label">Activation Key</div>
 						<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
 						<script type="text/javascript">
@@ -76,7 +76,7 @@ function to_submit(F) {
 			</div>
 			<div id="floatKiller"></div>
 			<div id="statusInfo">
-			<div class="info"><% tran("share.firmware"); %>: 
+			<div class="info"><% tran("share.firmware"); %>:
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
