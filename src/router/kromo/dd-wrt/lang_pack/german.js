@@ -1099,7 +1099,7 @@ hidx.right10="Dies ist die Netzmaske Ihres Routers.";
 hidx.right12="Erlaubt dem Router, Ihre IP-Adressen zu verwalten.";
 hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
 hidx.right16="Sie k&ouml;nnen hier die Anzahl der IP-Adressen einschr&auml;nken, die der Router maximal vergeben kann. 0 bedeutet das nur vordefinierte statische Leases zur Vergabe verwendet werden.";
-hidx.right18="W&auml;hlen Sie hier Ihre Zeitzone und die Sommerzeit-Einstellungen. Der Router kann auch die Lokalzeit nutzen.";
+hidx.right18="W&auml;hlen Sie hier die Zeitzone in der Sie sich befinden. Wenn das Server IP/Name Feld nicht gesetzt ist, wird die interne Adresse fuer den Zeitserver verwendet (Empfohlen)";
 hidx.sas="Der Setup Assistent leitet Sie durch die Vereinfachten Einstellungen um ihren Router einzurichten.";
 
 // ** DSL ** //
