@@ -1032,18 +1032,18 @@ ifneq ($(CONFIG_PPPOESERVER),y)
 	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
 	rm -f $(INSTALLDIR)/www/help/HPPPoE_Server.asp
 endif
-ifneq ($(CONFIG_MILKFISH),y)
-	rm -f $(INSTALLDIR)/www/Milkfish.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_aliases.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_dynsip.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_siptrace.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_status.asp
-	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
-	rm -f $(INSTALLDIR)/www/images/sipwerk.png
-endif
+#ifneq ($(CONFIG_MILKFISH),y)
+#	rm -f $(INSTALLDIR)/www/Milkfish.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_aliases.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_dynsip.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_siptrace.asp
+#	rm -f $(INSTALLDIR)/www/Milkfish_status.asp
+#	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
+#	rm -f $(INSTALLDIR)/www/images/sipwerk.png
+#endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
 endif
