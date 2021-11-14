@@ -23,6 +23,9 @@ function to_submit(F) {
 	if (F._openvpncl_certtype) {
 		F.openvpncl_certtype.value = F._openvpncl_certtype.checked ? 1 : 0;
 	}
+	if (F._openvpncl_randomsrv) {
+		F.openvpncl_randomsrv.value = F._openvpncl_randomsrv.checked ? 1 : 0;
+	}
 	if (F._openvpncl_fw) {
 		F.openvpncl_fw.value = F._openvpncl_fw.checked ? 1 : 0;
 	}
@@ -41,6 +44,9 @@ function to_apply(F) {
 	F.save_button.value = sbutton.saving;
 	if (F._openvpncl_certtype) {
 		F.openvpncl_certtype.value = F._openvpncl_certtype.checked ? 1 : 0;
+	}
+	if (F._openvpncl_randomsrv) {
+		F.openvpncl_randomsrv.value = F._openvpncl_randomsrv.checked ? 1 : 0;
 	}
 	if (F._openvpncl_fw) {
 		F.openvpncl_fw.value = F._openvpncl_fw.checked ? 1 : 0;
@@ -77,6 +83,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_tuntap", "tap", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_tuntap, 'idsec', <% nvem("openvpncl_tuntap", "tun", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_dh_btn, 'iddhpem', <% nvem("openvpn_dh_btn", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
@@ -109,6 +116,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="openvpncl_certtype" />
+							<input type="hidden" name="openvpncl_randomsrv" />
 							<input type="hidden" name="openvpncl_fw" />
 							<input type="hidden" name="openvpncl_killswitch" />
 							<input type="hidden" name="openvpn_fw" />
