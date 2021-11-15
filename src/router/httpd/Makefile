@@ -1331,10 +1331,10 @@ CFLAGS += -DHAVE_PPPOESERVER
 VISOBJS += chaps.o
 endif
 
-ifeq ($(CONFIG_MILKFISH),y)
-CFLAGS += -DHAVE_MILKFISH
-VISOBJS += milkfish.o
-endif
+#ifeq ($(CONFIG_MILKFISH),y)
+#CFLAGS += -DHAVE_MILKFISH
+#VISOBJS += milkfish.o
+#endif
 
 ifeq ($(CONFIG_RT2880),y)
 ifneq ($(CONFIG_MT76),y)
