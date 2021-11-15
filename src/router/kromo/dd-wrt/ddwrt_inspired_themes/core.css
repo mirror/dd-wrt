@@ -16,6 +16,13 @@
   border: 1px solid var(--bg-4);
   border-radius: 4px;
 }
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  color: var(--v9-8);
+  text-align: right;
+  vertical-align: middle;
+}
 body {
   background: var(--bg-1);
   color: var(--v9-7);
@@ -518,18 +525,12 @@ table tr:not([bgcolor]) th {
   color: var(--fg-1);
   padding-bottom: 2px;
 }
-table tr[bgcolor='#ffff00'i],
-table tr[bgcolor='#ffed00'],
 table tr[bgcolor='#eec900'] {
   background-color: var(--v3-6);
 }
-table tr[bgcolor='#ffff00'i]:hover,
-table tr[bgcolor='#ffed00']:hover,
 table tr[bgcolor='#eec900']:hover {
   background-color: var(--v3-5);
 }
-table tr[bgcolor='#ff0000'i],
-table tr[bgcolor='#ea0707'],
 table tr[bgcolor='#ff6666'] {
   background-color: var(--v1-9);
 }
