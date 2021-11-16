@@ -1579,6 +1579,8 @@ int check_blocklist(const char *service, char *ip)
 	if (change)
 		dump_blocklist();
 	pthread_mutex_unlock(&mutex_block);
+	if (nvram_match("ignore_blocklist", "1"))
+		return 0;
 	return ret;
 }
 
