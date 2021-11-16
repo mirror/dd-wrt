@@ -171,3 +171,25 @@ td[bgcolor='#C0C0C0']:hover {
 .setting .default {
   color: #888;
 }
+/*! modal popup */
+.ddwrt_content {
+  background: #222;
+  color: #fff;
+}
+.ddwrt_wired_frame {
+  background: #333;
+}
+.ddwrt_window {
+  background: #1a1a1a;
+  border: 1px solid #888;
+}
+.ddwrt_title {
+  color: #fff;
+}
+.ddwrt_nw, .ddwrt_n,
+.ddwrt_e, .ddwrt_sw,
+.ddwrt_ne, .ddwrt_w,
+.ddwrt_s, .ddwrt_se,
+.ddwrt_sizer {
+  background: #222;
+}
