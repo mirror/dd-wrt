@@ -900,8 +900,9 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 }
 #endif
 
-static void getiffromurl(char *ifname, int len, char *path)
+static void getiffromurl(char *ifname, int len, char *ori_path)
 {
+	char *path = strdup(ori_path);
 	bzero(ifname, len);
 	char *idx = strchr(path, '-');
 	if (idx) {
@@ -912,6 +913,7 @@ static void getiffromurl(char *ifname, int len, char *path)
 		*idx = 0;
 		strlcpy(ifname, temp2, len - 1);
 	}
+	free(path);
 }
 
 static int sanitize_ifname(char *ifname)
