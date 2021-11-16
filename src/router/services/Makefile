@@ -1833,10 +1833,10 @@ CFLAGS_EXTRA += -DHAVE_OLSRD
 OBJS += olsrd.o
 endif
 
-ifeq ($(CONFIG_MILKFISH),y)
-CFLAGS_EXTRA += -DHAVE_MILKFISH
-OBJS += milkfish.o
-endif
+#ifeq ($(CONFIG_MILKFISH),y)
+#CFLAGS_EXTRA += -DHAVE_MILKFISH
+#OBJS += milkfish.o
+#endif
 
 ifeq ($(CONFIG_ALLNET11N),y)
 CFLAGS_EXTRA += -DHAVE_ALLNET11N
