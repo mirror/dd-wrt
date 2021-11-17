@@ -687,6 +687,28 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
 #ifdef HAVE_MADWIFI
+	int showfieldset = 0;
+	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
+		showfieldset = 1;
+	if ((strstr(akm, "owe"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled")))
+		showfieldset = 1;
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
+		showfieldset = 1;
+	if (strstr(security_mode, "wep"))
+		showfieldset = 1;
+	if (strstr(security_mode, "radius"))
+		showfieldset = 1;
+#ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
+	if (strstr(security_mode, "8021X")) {
+		showfieldset = 1;
+	}
+#endif
+#endif
+
 	char vakm[32];
 	sprintf(vakm, "%s_akm", prefix);
 	char *akm = nvram_safe_get(vakm);
@@ -696,7 +718,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 									 || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix, 0);
 	websWrite(wp, "</fieldset><br />\n");
-	if (!strstr(security_mode, "disabled"))
+	if (showfieldset)
 		websWrite(wp, "<fieldset>\n");
 	int show = 0;
 	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
@@ -824,8 +846,8 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 #endif
 
 #ifdef HAVE_MADWIFI
-	if (!strstr(security_mode, "disabled")) ;
-	websWrite(wp, "</fieldset><br />\n");
+	if (showfieldset)
+		websWrite(wp, "</fieldset><br />\n");
 #endif
 	return;
 }

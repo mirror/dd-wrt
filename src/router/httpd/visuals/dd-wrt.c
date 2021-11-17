@@ -5835,6 +5835,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 	}
 	// tls authentication
 	if (nvhas(akm, "tls")) {
