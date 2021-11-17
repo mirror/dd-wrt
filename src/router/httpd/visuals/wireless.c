@@ -725,7 +725,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 									 || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix, 0);
 	websWrite(wp, "</fieldset><br />\n");
-	if (v_showpreshared || v_show_owe || v_show_wparadius)
+	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		websWrite(wp, "<fieldset>\n");
 	if (v_show_preshared) {
 		show_preshared(wp, prefix);
@@ -736,7 +736,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	if (v_show_wparadius) {
 		show_wparadius(wp, prefix);
 	}
-	if (v_showpreshared || v_show_owe || v_show_wparadius) {
+	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.rekey", NULL);
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
@@ -750,7 +750,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		}
 	}
 #ifdef HAVE_80211R
-	if (v_showpreshared || v_show_owe || v_show_wparadius) {
+	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		char vvar[32];
 		strcpy(vvar, prefix);
 		rep(vvar, '.', 'X');
@@ -785,7 +785,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 
 	}
 #endif
-	if (v_showpreshared || v_show_owe || v_show_wparadius) {
+	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		if (is_ap(prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
@@ -813,7 +813,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	}
 #endif
 #endif
-	if (v_showpreshared || v_show_owe || v_show_wparadius)
+	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		show_addconfig(wp, prefix);
 #else
 	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk2-sha256") || strstr(security_mode, "psk3")) {
@@ -846,7 +846,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 #endif
 
 #ifdef HAVE_MADWIFI
-	if (v_showpreshared || v_show_owe || v_show_wparadius)
+	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		websWrite(wp, "</fieldset><br />\n");
 #endif
 	return;
