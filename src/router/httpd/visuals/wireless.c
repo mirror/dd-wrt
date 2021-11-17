@@ -687,6 +687,9 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
 #ifdef HAVE_MADWIFI
+	char vakm[32];
+	sprintf(vakm, "%s_akm", prefix);
+	char *akm = nvram_safe_get(vakm);
 	int showfieldset = 0;
 	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
 	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
@@ -709,9 +712,6 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 #endif
 #endif
 
-	char vakm[32];
-	sprintf(vakm, "%s_akm", prefix);
-	char *akm = nvram_safe_get(vakm);
 	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256")
 	     || strstr(akm, "wpa3")
 	     || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled")
