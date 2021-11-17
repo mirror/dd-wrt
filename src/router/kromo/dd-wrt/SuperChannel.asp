@@ -37,10 +37,13 @@ function to_submit(F) {
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 					<fieldset>
-					<legend>SuperChannel feature activation</legend>
-					SuperChannel allows you to use special frequencies from 2192 Mhz - 2732 Mhz (802.11g capable devices only) and 4915 Mhz - 6100 Mhz (802.11a capable devices only). This feature is not yet enabled.<br /><br />
+					<legend>SuperChannel Activation</legend>
+					<h2>Feature</h2>
+					<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />
+					These frequencies range between 2192Mhz to 2732Mhz for the 802.11g band or 4915Mhz to 6100Mhz for the 802.11a band.<br />
+					<b>This feature is not yet enabled.</b></p>
 					<h2>Disclaimer</h2>
-					Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.<br />
+					<p>Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.</p>
 						<div class="setting">
 						<div class="label">System Key</div>
 						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" >
@@ -57,7 +60,7 @@ function to_submit(F) {
 						//]]>
 						</script>
 						</div>
-					</fieldset>
+					</fieldset><br />
 					<div class="submitFooter">
 							<script type="text/javascript">
 							//<![CDATA[
