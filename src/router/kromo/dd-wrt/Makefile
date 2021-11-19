@@ -291,6 +291,8 @@ ifneq ($(CONFIG_ROUTERSTYLE),y)
 	mkdir $(INSTALLDIR)/www/common_style
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
+	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
 else
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
