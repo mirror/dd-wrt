@@ -173,23 +173,23 @@ td[bgcolor='#C0C0C0']:hover {
 }
 /*! modal popup */
 .ddwrt_content {
-  background: #222;
-  color: #fff;
+  background: #222 !important;
+  color: #fff !important;
 }
 .ddwrt_wired_frame {
-  background: #333;
+  background: #333 !important;
 }
 .ddwrt_window {
-  background: #1a1a1a;
-  border: 1px solid #888;
+  background: #1a1a1a !important;
+  border: 1px solid #888 !important;
 }
 .ddwrt_title {
-  color: #fff;
+  color: #fff !important;
 }
 .ddwrt_nw, .ddwrt_n,
 .ddwrt_e, .ddwrt_sw,
 .ddwrt_ne, .ddwrt_w,
 .ddwrt_s, .ddwrt_se,
 .ddwrt_sizer {
-  background: #222;
+  background: #222 !important;
 }
