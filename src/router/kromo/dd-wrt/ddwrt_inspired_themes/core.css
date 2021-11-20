@@ -14,7 +14,10 @@
 #scorebarBorder {
   background: var(--bg-0);
   border: 1px solid var(--bg-4);
-  border-radius: 4px;
+  border-radius: 2px;
+}
+#scorebar {
+  border-radius: 2px;
 }
 #tablePwdCheck tr th {
   background-color: transparent;
@@ -117,7 +120,7 @@ body input.button {
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  height: 1.41rem;
+  height: 1.433rem;
   padding: 0 0.462rem 0 0.462rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
@@ -253,9 +256,9 @@ form[name='wds'] input[size='25'] {
 }
 form[name='changepassword'] .warning #warning_text,
 form[name='changepassword'] p b {
-  font-size: 1rem;
-  letter-spacing: 0rem;
-  margin-bottom: 0.8rem;
+  font-size: 0.8rem;
+  letter-spacing: unset;
+  margin-bottom: -0.5rem;
 }
 form[name='nvramrestore'] .warning p {
   margin-bottom: 1rem;
@@ -368,10 +371,6 @@ input[type='checkbox'][name='_filter_p2p'] {
 input[type='checkbox'][onclick*='edit_wol_host'] {
   margin-bottom: 0;
   vertical-align: -0.45rem;
-}
-input[type='button'][name='changepassword'],
-input[type='button'][value='activate'i] {
-  height: initial;
 }
 select[onchange*='SelRoute'] {
   margin-top: -0.2rem;
@@ -707,13 +706,11 @@ h2 {
   border: 1px solid var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
-  padding-top: 0.362em;
-  padding-bottom: 0.362em;
 }
 .submitFooter .button {
-  padding: 0.333rem 1rem;
+  padding: 0 1rem;
   margin: 0.362em;
-  height: 1.733rem;
+  height: 1.533rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -892,6 +889,14 @@ svg {
 .overlay___invisible__ {
   background-color: var(--bg-4) !important;
 }
+.overlay_ddwrt {
+  background-color: var(--bg-3);
+  opacity: 0.5;
+}
+[id*="modal_dialog_"].dialog {
+  border: 1px solid var(--bg-3);
+  border-radius: 4px;
+}
 .dialog_ {
   filter: invert(1);
 }
@@ -928,12 +933,20 @@ svg {
 .ddwrt_sizer {
   background: var(--bg-1);
 }
+.ddwrt_nw {
+  border-radius: 4px 0 0 0;
+}
+.ddwrt_ne {
+  border-radius: 0 4px 0 0;
+}
+.ddwrt_se {
+  border-radius: 0 0 4px 0;
+}
+.ddwrt_sw {
+  border-radius: 0 0 0 4px;
+}
 .progressbarblock {
   background-color: var(--v0-9);
-}
-.overlay_ddwrt {
-  background-color: var(--bg-3);
-  opacity: 0.5;
 }
 input {
   border: 1px solid var(--bg-4);
