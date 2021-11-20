@@ -1034,11 +1034,11 @@ static struct platform_device tl_wr2543n_rtl8367_device = {
 
 #if (defined(CONFIG_RTL8366_SMI) || defined(CONFIG_RTL8366_SMI_MODULE)) && !defined(CONFIG_WDR2543)
 
-#ifdef CONFIG_TPLINK
+#if defined(CONFIG_TPLINK)
 /* TL-WR1043ND */
 #define GPIO_RTL8366_SDA 18//gpio 19
 #define GPIO_RTL8366_SCK 19//gpio 20
-#elif CONFIG_BUFFALO
+#elif defined(CONFIG_BUFFALO)
 /* WZR-HP-G300NH */
 
 #define GPIO_RTL8366_SDA 19//gpio 19
