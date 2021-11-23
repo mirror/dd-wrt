@@ -2865,7 +2865,7 @@ void run_wan(int status)
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_R9000
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_MVEBU
 	char *pppoe_wan_ifname;
 	if (getRouterBrand() == ROUTER_WRT_1900AC)
