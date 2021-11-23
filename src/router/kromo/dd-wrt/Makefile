@@ -287,16 +287,14 @@ endif
 
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
+	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 ifneq ($(CONFIG_ROUTERSTYLE),y)	
 	mkdir $(INSTALLDIR)/www/common_style
-	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
-	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 #	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
 else
-	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
-	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
 	touch $(INSTALLDIR)/www/style/elegant/style.css
 endif
