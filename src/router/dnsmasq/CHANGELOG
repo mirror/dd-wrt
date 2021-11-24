@@ -1,3 +1,14 @@
+version 2.87
+        Allow arbitrary prefix lengths in --rev-server and
+	--domain=....,local
+
+	Replace --address=/#/..... functionality which got
+	missed in the 2.86 domain search rewrite.
+
+	Add --nftset option, like --ipset but for the newer nftables.
+	Thanks to Chen Zhenge for the patch.
+	
+	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
 	Thanks to Aichun Li for spotting this omission, and the initial
@@ -91,6 +102,9 @@ version 2.86
 	files within that directory are read (alphabetical order
 	of filename). Thanks to Ed Wildgoose for the initial patch
 	and motivation for this.
+
+	Allow adding IP address to nftables set in addition to
+	ipset.
 
 	
 version 2.85
