@@ -884,6 +884,7 @@ void start_dnsmasq(void)
 	}
 	fprintf(fp, "bogus-priv\n");
 	fprintf(fp, "conf-file=/etc/rfc6761.conf\n");
+	fprintf(fp, "clear-on-reload\n");
 #ifdef HAVE_DNSSEC
 	if (nvram_matchi("dnssec", 1)) {
 		fprintf(fp, "conf-file=/etc/trust-anchors.conf\n");
