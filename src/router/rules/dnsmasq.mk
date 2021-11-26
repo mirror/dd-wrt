@@ -27,7 +27,11 @@ endif
 ifeq ($(ARCH),aarch64)
 DNSMASQ_COPTS += -DNEED_PRINTF
 endif
-
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
+DNSMASQ_COPTS += -DNO_INOTIFY
+endif
+endif
 ifeq ($(CONFIG_DNSSEC),y)
 export DNSSEC_MAKEFLAGS +=-DHAVE_DNSSEC -DNO_NETTLE_ECC -DHAVE_NETTLEHASH -I$(TOP) -I$(TOP)/gmp
 #export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz -L$(TOP)/nettle/.lib -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp
