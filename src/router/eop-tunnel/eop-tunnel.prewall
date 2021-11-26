@@ -7,7 +7,7 @@ tunnels=$($nv get oet_tunnels)
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 fset=0
 for i in $(seq 1 $tunnels); do
-	[[ -z $($nv get oet${i}_failgrp) ]] && $nv set oet${i}_failgrp=0 #add missing default
+	[[ -z $($nv get oet${i}_failgrp) ]] && $nv set oet${i}_failgrp=0 #add missing default delete in future version
 	if [[ $($nv get oet${i}_en) -eq 1 && $($nv get oet${i}_failgrp) -eq 1 && $($nv get oet${i}_failstate) -eq 2  ]]; then
 		fset=$((fset+1))
 		logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
@@ -36,6 +36,13 @@ for i in $(seq 1 $tunnels); do
 	fi
 done
 logger -p user.info "WireGuard number of non failed tunnels in fail set: $fset"
+#reset dns
+if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
+	logger -p user.info "WireGuard DNS reset"
+	cp -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
+	rm -f /tmp/resolv.dnsmasq_oet
+fi
+$nv unset wg_get_dns
 for i in $(seq 1 $tunnels); do
 	if [[ -e "${i}.pid" ]]; then
 		{
@@ -45,19 +52,18 @@ for i in $(seq 1 $tunnels); do
 		ip link del oet${i}
 		rm -f ${i}.pid
 		} >/dev/null 2>&1
-		$nv unset wg_get_dns
-		if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
-			cat /tmp/resolv.dnsmasq_oet${i} | while read -r  remdns; do
-				sed -i "/$remdns/d" /tmp/resolv.dnsmasq
-			done
-			rm /tmp/resolv.dnsmasq_oet${i}
-		fi
 		TID=$((20+$i))
 		while ip rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
 		ip route flush table $TID
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
 		ps | grep "[w]ireguard-fwatchdog" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 #use [w] to exclude the ps line
 		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
+		# remove destination routes
+		WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
+		if [[ -f "$WGDELDPBR" ]]; then
+			(while read route; do $route >/dev/null 2>&1; done < $WGDELDPBR)
+			rm $WGDELDPBR
+		fi
 		#todo remove route to endpoint
 		ip route flush cache
 	fi
@@ -181,7 +187,7 @@ for i in $(seq 1 $tunnels); do
 				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			else
 				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} on address $($nv get oet${i}_local) with peer $($nv get oet${i}_rem)"
-				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)			
+				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			fi
 			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
 				ip link set dev oet${i} up

@@ -106,6 +106,26 @@ function gen_wg_psk(F,keyindex,peer)
 	apply(F);
 }
 
+function changespbr(F, index, value)
+{
+	//alert(" F:" + F.name + "; tun: " + index + "; value: " + value);
+	if (value == 1 || value == 2) {
+		show_layer_ext(F, "idoet" + index + "_spbr", true);
+	} else {
+		show_layer_ext(F, "idoet" + index + "_spbr", false);
+	}
+}
+
+function changedpbr(F, index, value)
+{
+	//alert(" F:" + F.name + "; tun: " + index + "; value: " + value);
+	if (value == 1 || value == 2) {
+		show_layer_ext(F, "idoet" + index + "_dpbr", true);
+	} else {
+		show_layer_ext(F, "idoet" + index + "_dpbr", false);
+	}
+}
+
 function changeproto(F, index, value, brvalue)
 {
 if (value == 1) {

@@ -535,7 +535,8 @@ struct dns_lists *get_dns_list(int v6)
 	}
 	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns, 0, 0);
-	if (*wan_dns) {
+	//egc if DNS server from WG exist do not add existing DNS server from Static DNS to stop DNS leak
+	if (*wan_dns && ! *wg_get_dns) {
 		add_dnslist(dns_list, wan_dns, 0, 0);
 	}
 	if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {

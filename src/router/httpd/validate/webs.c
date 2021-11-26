@@ -1808,7 +1808,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_bridged", i);
 		copytonv(wp, "oet%d_port", i);
 		copytonv(wp, "oet%d_mtu", i);
-		copytonv(wp, "oet%d_pbr", i);
+		copytonv(wp, "oet%d_spbr_ip", i);
+		copytonv(wp, "oet%d_dpbr_ip", i);
 		copytonv(wp, "oet%d_dns", i);
 		copytonv(wp, "oet%d_public", i);
 		copytonv(wp, "oet%d_private", i);
@@ -1817,6 +1818,9 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_rtdownscript", i);
 		copytonv(wp, "oet%d_fwmark", i);
 		copytonv(wp, "oet%d_killswitch", i);
+		copytonv(wp, "oet%d_spbr", i);
+		copytonv(wp, "oet%d_dnspbr", i);
+		copytonv(wp, "oet%d_dpbr", i);
 		copytonv(wp, "oet%d_firewallin", i);
 		copytonv(wp, "oet%d_failgrp", i);
 		copytonv(wp, "oet%d_failstate", i);
@@ -2035,7 +2039,8 @@ void add_tunnel(webs_t wp)
 	default_seti("en", 1);
 	default_seti("mit", 1);
 	default_seti("natout", 1);
-	default_set("pbr", "");
+	default_set("spbr_ip", "");
+	default_set("dpbr_ip", "");
 	default_set("dns", "");
 	default_set("public", "");
 	default_set("private", "");
@@ -2044,6 +2049,9 @@ void add_tunnel(webs_t wp)
 	default_set("rtdownscript", "");
 	default_set("fwmark", "");
 	default_seti("killswitch", 0);
+	default_seti("spbr", 0);
+	default_seti("dnspbr", 0);
+	default_seti("dpbr", 0);
 	default_seti("firewallin", 1);
 	default_seti("failgrp", 0);
 	default_seti("failstate", 0);
@@ -2166,7 +2174,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
 		copytunvalue("natout", i, i - 1);
-		copytunvalue("pbr", i, i - 1);
+		copytunvalue("spbr_ip", i, i - 1);
+		copytunvalue("dpbr_ip", i, i - 1);
 		copytunvalue("dns", i, i - 1);
 		copytunvalue("public", i, i - 1);
 		copytunvalue("private", i, i - 1);
@@ -2175,6 +2184,9 @@ void del_tunnel(webs_t wp)
 		copytunvalue("rtdownscript", i, i - 1);
 		copytunvalue("fwmark", i, i - 1);
 		copytunvalue("killswitch", i, i - 1);
+		copytunvalue("spbr", i, i - 1);
+		copytunvalue("dnspbr", i, i - 1);
+		copytunvalue("dpbr", i, i - 1);
 		copytunvalue("firewallin", i, i - 1);
 		copytunvalue("failgrp", i, i - 1);
 		copytunvalue("failstate", i, i - 1);
@@ -2210,7 +2222,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("en", tunnels);
 	deltunvalue("mit", tunnels);
 	deltunvalue("natout", tunnels);
-	deltunvalue("pbr", tunnels);
+	deltunvalue("spbr_ip", tunnels);
+	deltunvalue("dpbr_ip", tunnels);
 	deltunvalue("dns", tunnels);
 	deltunvalue("public", tunnels);
 	deltunvalue("private", tunnels);
@@ -2219,6 +2232,9 @@ void del_tunnel(webs_t wp)
 	deltunvalue("rtdownscript", tunnels);
 	deltunvalue("fwmark", tunnels);
 	deltunvalue("killswitch", tunnels);
+	deltunvalue("spbr", tunnels);
+	deltunvalue("dnspbr", tunnels);
+	deltunvalue("dpbr", tunnels);
 	deltunvalue("firewallin", tunnels);
 	deltunvalue("failgrp", tunnels);
 	deltunvalue("failstate", tunnels);

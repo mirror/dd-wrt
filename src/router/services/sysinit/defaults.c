@@ -2279,7 +2279,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnssec_cu", "0" },
 	{ "dnssec_proxy", "0" },
 	{ "dnsmasq_no_dns_rebind", "1" },
-	{ "dnsmasq_strict", "1" },
+	{ "dnsmasq_strict", "0" },
 	{ "dnsmasq_rc", "0" },
 	{ "dnsmasq_cachesize", "1500" },
 	{ "dnsmasq_add_mac", "0" },
