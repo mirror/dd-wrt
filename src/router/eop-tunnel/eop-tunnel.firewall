@@ -7,7 +7,7 @@ WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
 for i in $(seq 1 $tunnels); do
 	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
-		FW_CHAIN="blocked-oet${i}"
+		FW_CHAIN="pbr-oet${i}"
 		WGDELRT="/tmp/wgdelrt_oet${i}"
 		{
 		$ipt -D FORWARD -i oet${i} -j ACCEPT
@@ -54,34 +54,37 @@ for i in $(seq 1 $tunnels); do
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
 			fi
+			#split DNS tunnel for PBR
+			if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]] && [[ $($nv get oet${i}_spbr) -ne 0 && $($nv get oet${i}_dnspbr) -eq 1 ]]; then
+				logger -p user.info "WireGuard Split DNS tunnel for PBR"
+				[[ $($nv get oet${i}_spbr) -eq 1 ]] && { dnsserver=$($nv get oet${i}_dns); dnsserver=${dnsserver%%,*}; } || { dnsserver=$($nv get wan_dns); dnsserver=${dnsserver%% *}; }
+				echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do
+					pbrip=$(echo $pbrip)
+					#todo simplify and make function to use in PBR killswitch and splitdns
+						case $pbrip in
+						 [0-9]*)
+							sourcepbr="-s"
+							;;
+						 iif*)
+							sourcepbr="-i"
+							#pbrip=${pbrip#* }
+							pbrip="${pbrip#iif }"
+							;;
+						 *)
+							continue
+							;;
+						esac
+					echo "$ipt -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dnsserver" >> $WGDELRT
+					echo "$ipt -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dnsserver" >> $WGDELRT
+					$ipt -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dnsserver
+					$ipt -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dnsserver
+				done
+			fi
 			#killswitch
 			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]; then
 				#For WAP or Bridge, use br0 as IN_IF
 				[[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
-				if [[ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]]; then
-					#PBR killswitch
-					logger -p user.info "WireGuard Killswitch on PBR activated for oet${i}"
-					# create firewall chain for blocked IPs
-					$ipt -N $FW_CHAIN
-					echo $($nv get oet${i}_pbr), | while read -d ',' line; do  	# added "," so that last entry is read
-						line=$(echo $line | sed -e 's/^[[:space:]]*//')
-						if [ ${line:0:1} = "#" ]; then
-							continue
-						fi
-						#check if ip address is used then block
-						case $line in
-						 [0-9]*)
-							$ipt -A $FW_CHAIN -s $line -j REJECT >/dev/null 2>&1
-							;;
-						 *)
-							# do nothing
-							;;
-						esac
-					done
-					# begin blocking: force LAN->WAN traffic through firewall chain for inspection
-					$ipt -I FORWARD $IN_IF -o $WAN_IF -j $FW_CHAIN
-				else
-					#general killswitch
+				if [[ $($nv get oet${i}_spbr) -ne 1 ]]; then
 					logger -p user.info "WireGuard Killswitch activated for all clients!"
 					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j REJECT" >> $WGDELRT
 					$ipt -I FORWARD $IN_IF -o $WAN_IF -j REJECT
@@ -89,16 +92,44 @@ for i in $(seq 1 $tunnels); do
 					#cat /proc/net/ip_conntrack_flush 2>&1
 					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
 				fi
+				if [[ $($nv get oet${i}_spbr) -eq 2 ]]; then  # alternatively use -ne 0 so that block is alos set but should not be necessary as PBR table with prohibited default takes care of this
+					#PBR killswitch
+					logger -p user.info "WireGuard firewall on PBR activated for oet${i}"
+					FW_CHAIN="pbr-oet${i}"
+					$ipt -N $FW_CHAIN
+					echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do	# added "," so that last entry is read
+						pbrip=$(echo $pbrip)
+						case $pbrip in
+						 [0-9]*)
+							sourcepbr="-s"
+							;;
+						 iif*)
+							sourcepbr="-i"
+							#pbrip=${pbrip#* }
+							pbrip="${pbrip#iif }"
+							;;
+						 *)
+							continue
+							;;
+						esac
+						#if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
+						#	$ipt -A $FW_CHAIN $sourcepbr $pbrip -j REJECT >/dev/null 2>&1
+						#elif [[ $($nv get oet${i}_spbr) -eq 2 ]]; then
+							$ipt -A $FW_CHAIN $sourcepbr $pbrip -j ACCEPT >/dev/null 2>&1
+						#fi
+					done
+					$ipt -I FORWARD $IN_IF -o $WAN_IF -j $FW_CHAIN
+				fi
 			fi
 			#end kill switch
 			#New Inbound opening of firewall for site-to-site
 			if [[ $($nv get oet${i}_firewallin) -eq 0 ]]; then
-				echo "$ipt -D INPUT -i $(get_wanface) -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
+				echo "$ipt -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
-				$ipt -I INPUT -i $(get_wanface) -p udp --dport $($nv get oet${i}_port) -j ACCEPT > /dev/null 2>&1
-				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
-				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
+				$ipt -I INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT >/dev/null 2>&1
+				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
+				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
 			#end inbound firewall
