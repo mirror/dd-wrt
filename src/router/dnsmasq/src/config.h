@@ -356,9 +356,9 @@ HAVE_SOCKADDR_SA_LEN
 #undef HAVE_LOOP
 #endif
 
-//#if defined (HAVE_LINUX_NETWORK) && !defined(NO_INOTIFY)
-//#define HAVE_INOTIFY
-//#endif
+#if defined (HAVE_LINUX_NETWORK) && !defined(NO_INOTIFY)
+#define HAVE_INOTIFY
+#endif
 
 /* Define a string indicating which options are in use.
    DNSMASQ_COMPILE_OPTS is only defined in dnsmasq.c */
