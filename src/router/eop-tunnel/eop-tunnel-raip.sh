@@ -4,13 +4,16 @@ i=$1
 fset=$2
 # Start with PBR to make sure killswitch is working
 TID=$((20+$i))
-if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
+#if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
+if [[ $($nv get oet${i}_spbr) -ne 0 ]]; then
 	logger -p user.info "WireGuard PBR via oet${i} table $TID"
-	echo $($nv get oet${i}_pbr), | while read -d ',' line; do
-		line=$(echo $line | sed -e 's/^[[:space:]]*//')
-		[ ${line:0:1} = "#" ] && continue
-		#check if ip addres is used then add "from"
+	echo $($nv get oet${i}_spbr_ip), | while read -d ',' line; do
+		line=$(echo $line)
+		#[ ${line:0:1} = "#" ] && continue
 		case $line in
+		 "#"*)
+			continue
+			;;
 		 [0-9]*)
 			ip rule add table $TID from $line
 			;;
@@ -24,23 +27,23 @@ if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
 		ip rule del prior $z
 		logger -p user.info "WireGuard ERROR: non-valid IP address in PBR, tunnel oet${i}"
 	done
-	if [[ $($nv get oet${i}_killswitch) -eq 1 ]]; then
+	if [[ $($nv get oet${i}_killswitch) -eq 1 && $($nv get oet${i}_spbr) -eq 1 ]]; then
 		logger -p user.info "WireGuard Killswitch on PBR activated for oet${i}"
 		ip route add prohibit default table $TID
 	else
-		ip route add default via $(nvram get wan_gateway) table $TID
+		ip route add default via $($nv get wan_gateway) table $TID
 	fi
 	ip route flush cache
 fi
 #debug todo check if nvram get ntp_succes and/or ntp_done can be used to see if time is set
-#logger -p user.info "WireGuard debug st start of time check: ntp_success: $(nvram get ntp_success); ntp_done:$(nvram get ntp_done) "
+#logger -p user.info "WireGuard debug st start of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done)"
 MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=1
 sleep $MINTIME
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
 [[ -z $MAXTIME ]] && MAXTIME=90
 SLEEPCT=$MINTIME
-#while [[ $(nvram get ntp_done) -ne 1 ]]; do
+#while [[ $($nv get ntp_done) -ne 1 ]]; do
 while [[ $(date +%Y) -lt 2020 ]]; do
 	sleep 2
 	SLEEPCT=$((SLEEPCT+2)) 
@@ -54,17 +57,16 @@ else
 	logger -p user.info "WireGuard waited $SLEEPCT seconds to set routes for oet${i}"
 fi
 #debug
-#logger -p user.info "WireGuard debug at end of time check: ntp_success: $(nvram get ntp_success); ntp_done:$(nvram get ntp_done) "
+#logger -p user.info "WireGuard debug at end of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done) "
 peers=$(($($nv get oet${i}_peers) - 1))
 for p in $(seq 0 $peers); do
 		# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
-		if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]] 
-		then 
+		if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]]; then
 			#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1
-			for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g") ; do
+			for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g"); do
 				# check if PBR is set then skip default gateway, if default route without endpoint then warning
 				if [[ ! -z "$(echo $aip |  grep -e '/0\|/1')" ]]; then
-					if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
+					if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
 						continue
 					elif [ $($nv get oet${i}_endpoint${p}) -eq 0 ]; then
 						logger -p user.info "WireGuard WARNING default route detected without endpoint for peer $($nv get oet${i}_namep${p}) in tunnel oet${i}, consult the manual!"
@@ -73,7 +75,22 @@ for p in $(seq 0 $peers); do
 				logger -p user.info "WireGuard route $aip added via oet${i}"
 				ip route add $aip dev oet${i} >/dev/null 2>&1
 			done
-		fi			
+		fi
+done
+# Destination based routing
+WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
+for dpbr in $($nv get oet${i}_dpbr_ip | sed "s/,/ /g"); do
+	if [[ ${dpbr:0:1} != "#" ]]; then
+		#echo dpbr to file to remove
+		echo "ip route del $dpbr" >> $WGDELDPBR
+		if [[ $($nv get oet${i}_dpbr) -eq 1 ]]; then
+			#route via vpn
+			ip route add $dpbr dev oet${i} >/dev/null 2>&1
+		elif [[ $($nv get oet${i}_dpbr) -eq 2 ]]; then
+			#route via WAN
+			ip route add $dpbr via $($nv get wan_gateway) >/dev/null 2>&1
+		fi
+	fi
 done
 #add route to DNS server via tunnel
 if [ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]; then
@@ -83,14 +100,14 @@ if [ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]; then
 	done
 fi
 # add routes to PBR table
-if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
+if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
 	#add default routes
 	ip route add 0.0.0.0/1 dev oet${i} table $TID >/dev/null 2>&1
 	ip route add 128.0.0.0/1 dev oet${i} table $TID >/dev/null 2>&1
 fi
 # check how many tunnels, for last active tunnel copy local routes to all existing PBR tables
-for x in $(seq $(nvram get oet_tunnels) -1 1); do 
-	if [[ $(nvram get oet${x}_en) -eq 1 ]] && [[ $($nv get oet${x}_failgrp) -ne 1 || $($nv get oet${x}_failstate) -eq 2 ]]; then
+for x in $(seq $($nv get oet_tunnels) -1 1); do
+	if [[ $($nv get oet${x}_en) -eq 1 ]] && [[ $($nv get oet${x}_failgrp) -ne 1 || $($nv get oet${x}_failstate) -eq 2 ]]; then
 		break
 	fi
 done
@@ -109,7 +126,7 @@ fi
 DNSTIME=$($nv get wg_dnstime)
 [[ -z $DNSTIME ]] && DNSTIME=1
 sleep $DNSTIME
-if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then	# consider not adding when PBR is used
+if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
 	SLEEPDNSCT=0
 	MAXDNSTIME=45
 	while [[ ! -f /tmp/resolv.dnsmasq ]]; do
@@ -121,26 +138,28 @@ if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then	# conside
 		fi
 	done
 	logger -p user.info "WireGuard waited $SLEEPDNSCT sec. for DNSMasq"
-	if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
-		cat /tmp/resolv.dnsmasq_oet${i} | while read -r  remdns; do
-			sed -i "/$remdns/d" /tmp/resolv.dnsmasq
-		done
-		rm /tmp/resolv.dnsmasq_oet${i}
+	# check if other instances did not set already
+	if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
+		logger -p user.info "WireGuard DNS ERROR, already set when running oet${i} will overwrite"
+		#mv -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
 	fi
-	nvram_dns="$($nv get wg_get_dns)"
-	for wgdns in $($nv get oet${i}_dns | sed "s/,/ /g"); do
-		# add to wg_get_dns to add when DNSMasq restarts
-		nvram_dns=${nvram_dns//$wgdns/}
-		nvram_dns="$wgdns $nvram_dns"
-		if [[ -s /tmp/resolv.dnsmasq ]]; then
-			#is not empty insert else append
-			sed -i "1s/^/nameserver $wgdns\n/" /tmp/resolv.dnsmasq
-		else
+	#if PBR is used with split DNS
+	if [[ $($nv get oet${i}_spbr) -eq 1 && $($nv get oet${i}_dnspbr) -eq 1 && ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
+		logger -p user.info "WireGuard DNS Split tunnel for PBR oet${i}"
+	else
+		cp -n /tmp/resolv.dnsmasq /tmp/resolv.dnsmasq_oet
+		rm -f /tmp/resolv.dnsmasq
+		for wgdns in $($nv get oet${i}_dns | sed "s/,/ /g"); do
+			#nvram_dns="$wgdns $nvram_dns"
+			nvram_dns="$nvram_dns $wgdns"
 			echo -e "nameserver $wgdns" >> /tmp/resolv.dnsmasq
-		fi
-		echo "nameserver $wgdns" >> /tmp/resolv.dnsmasq_oet${i}
-	done
-	$nv set wg_get_dns="$nvram_dns"
+		done
+		$nv set wg_get_dns="$nvram_dns"
+		#if [[ $($nv get wgtouchdns) -eq 1 ]]; then
+		#	sleep 1
+		#	touch /tmp/resolv.dnsmasq
+		#fi
+	fi
 fi
 # execute route-up script
 if [[ ! -z "$($nv get oet${i}_rtupscript | sed '/^[[:blank:]]*#/d')" ]]; then
@@ -162,3 +181,7 @@ if [[ $($nv get oet${i}_failstate) -eq 2 ]]; then
 	# send tunnelnumber, sleeptime (sec), ping address, reset (1=Yes)
 	sh /usr/bin/wireguard-fwatchdog.sh $i 29 8.8.8.8 $fset &
 fi
+#restart dnsmasq when the last tunnel has been setup to reread resolv.dnsmasq, due to a bug this does not happen on change of resolv.dnsmasq
+# for now disabled waiting for DNSMasq to be repaired
+restart=$(nvram get wg_restart_dnsmasq)
+[[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; restart dnsmasq; }
