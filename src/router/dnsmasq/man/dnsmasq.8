@@ -505,20 +505,21 @@ source address specified but the port may be specified directly as
 part of the source address. Forcing queries to an interface is not
 implemented on all platforms supported by dnsmasq.
 .TP
-.B --rev-server=<ip-address>[/<prefix-len>][,<ipaddr>][#<port>][@<interface>][@<source-ip>[#<port>]]
+.B --rev-server=<ip-address>/<prefix-len>[,<ipaddr>][#<port>][@<interface>][@<source-ip>[#<port>]]
 This is functionally the same as 
 .B --server, 
 but provides some syntactic sugar to make specifying address-to-name queries easier. For example
 .B --rev-server=1.2.3.0/24,192.168.0.1
 is exactly equivalent to 
 .B --server=/3.2.1.in-addr.arpa/192.168.0.1
-Allowed prefix lengths are 1-32 (IPv4) and 1-128 (IPv6). If the prefix length is omitted, dnsmasq substitutes either 32 (IPv4) or 128 (IPv6).
 .TP
 .B \-A, --address=/<domain>[/<domain>...]/[<ipaddr>]
 Specify an IP address to return for any host in the given domains.
 Queries in the domains are never forwarded and always replied to
 with the specified IP address which may be IPv4 or IPv6. To give
-multiple addresses or both IPv4 and IPv6 addresses for a domain, use repeated \fB--address\fP flags.
+both IPv4 and IPv6 addresses for a domain, use repeated \fB--address\fP flags.
+To include multiple IP addresses for a single query, use
+\fB--addn-hosts=<path>\fP instead.
 Note that /etc/hosts and DHCP leases override this for individual
 names. A common use of this is to redirect the entire doubleclick.net
 domain to some friendly local web server to avoid banner ads. The
@@ -547,15 +548,6 @@ versa).  Domains and subdomains are matched in the same way as
 These IP sets must already exist. See
 .BR ipset (8)
 for more details.
-.TP
-.B --nftset=/<domain>[/<domain>...]/[(6|4)#[<family>#]<table>#<set>[,[(6|4)#[<family>#]<table>#<set>]...]
-Similar to the \fB--ipset\fP option, but accepts one or more nftables 
-sets to add IP addresses into.
-These sets must already exist. See
-.BR nft (8)
-for more details. The family, table and set are passed directly to the nft. If the spec starts with 4# or 6# then
-only A or AAAA records respectively are added to the set. Since an nftset can hold only IPv4 or IPv6 addresses, this
-avoids errors being logged for addresses of the wrong type.
 .TP
 .B --connmark-allowlist-enable[=<mask>]
 Enables filtering of incoming DNS queries with associated Linux connection track marks
@@ -1044,7 +1036,7 @@ is also included, as described in RFC-3775 section 7.3.
 tells dnsmasq to advertise the prefix without the on-link (aka L) bit set.
 
 .TP
-.B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][,tag:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
+.B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][tag:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
 Specify per host parameters for the DHCP server. This allows a machine
 with a particular hardware address to be always allocated the same
 hostname, IP address and lease time. A hostname specified like this
@@ -1143,10 +1135,7 @@ ignore requests from unknown machines using
 If the host matches only a \fB--dhcp-host\fP directive which cannot
 be used because it specifies an address on different subnet, the tag "known-othernet" is set.
 
-The tag:<tag> construct filters which dhcp-host directives are used; more than
-one can be provided, in this case the request must match all of them. Tagged
-directives are used in preference to untagged ones. Note that one of <hwaddr>,
-<client_id> or <hostname> still needs to be specified (can be a wildcard).
+The tag:<tag> construct filters which dhcp-host directives are used. Tagged directives are used in preference to untagged ones.
 
 Ethernet addresses (but not client-ids) may have
 wildcard bytes, so for example 
@@ -1934,6 +1923,7 @@ additional flag "local" may be supplied which has the effect of adding
 is identical to
 .B --domain=thekelleys.org.uk,192.168.0.0/24
 .B --local=/thekelleys.org.uk/ --local=/0.168.192.in-addr.arpa/
+The network size must be 8, 16 or 24 for this to be legal.
 .TP
 .B --dhcp-fqdn
 In the default mode, dnsmasq inserts the unqualified names of

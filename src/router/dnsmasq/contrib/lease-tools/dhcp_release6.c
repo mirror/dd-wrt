@@ -318,12 +318,6 @@ void usage(const char* arg, FILE* stream)
   fprintf (stream, "Usage: %s %s\n", arg, usage_string);   
 }
 
-static void fail_fatal(const char *errstr, int exitcode)
-{
-  perror(errstr);
-  exit(exitcode);
-}
-
 int send_release_packet(const char* iface, struct dhcp6_packet* packet)
 {
   struct sockaddr_in6 server_addr, client_addr;
@@ -349,19 +343,18 @@ int send_release_packet(const char* iface, struct dhcp6_packet* packet)
     client_addr.sin6_port = htons(DHCP6_CLIENT_PORT);
     client_addr.sin6_flowinfo = 0;
     client_addr.sin6_scope_id =0;
-    if (inet_pton(AF_INET6, "::", &client_addr.sin6_addr) <= 0)
-      fail_fatal("inet_pton", 5);
-    if (bind(sock, (struct sockaddr*)&client_addr, sizeof(struct sockaddr_in6)) != 0)
-      perror("bind"); /* continue on bind error */
-    if (inet_pton(AF_INET6, DHCP6_MULTICAST_ADDRESS, &server_addr.sin6_addr) <= 0)
-      fail_fatal("inet_pton", 5);
+    inet_pton(AF_INET6, "::", &client_addr.sin6_addr);
+    bind(sock, (struct sockaddr*)&client_addr, sizeof(struct sockaddr_in6));
+    inet_pton(AF_INET6, DHCP6_MULTICAST_ADDRESS, &server_addr.sin6_addr);
     server_addr.sin6_port = htons(DHCP6_SERVER_PORT);
-    ssize_t recv_size = 0;
-    int result;
+    int16_t recv_size = 0;
     for (i = 0; i < 5; i++)
       {
         if (sendto(sock, packet->buf, packet->len, 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-	  fail_fatal("sendto failed", 4);
+	  {
+	    perror("sendto failed");
+            exit(4);
+	  }
 	
         recv_size = recvfrom(sock, response, sizeof(response), MSG_DONTWAIT, NULL, 0);
         if (recv_size == -1)
@@ -374,18 +367,16 @@ int send_release_packet(const char* iface, struct dhcp6_packet* packet)
 	    else
 	      {
                 perror("recvfrom");
-		result = UNSPEC_FAIL;
 	      }
 	  }
-	else
+	
+        int16_t result = parse_packet(response, recv_size);
+        if (result == NOT_REPLY_CODE)
 	  {
-	    result = parse_packet(response, recv_size);
-	    if (result == NOT_REPLY_CODE)
-	      {
-		sleep(1);
-		continue;
-	      }
+            sleep(1);
+            continue;
 	  }
+
         close(sock);
         return result;
       }
