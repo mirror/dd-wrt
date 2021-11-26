@@ -114,7 +114,7 @@ static dbus_bool_t add_watch(DBusWatch *watch, void *data)
   w->next = daemon->watches;
   daemon->watches = w;
 
-  (void)data; /* no warning */
+  w = data; /* no warning */
   return TRUE;
 }
 
@@ -134,20 +134,16 @@ static void remove_watch(DBusWatch *watch, void *data)
 	up = &(w->next);
     }
 
-  (void)data; /* no warning */
+  w = data; /* no warning */
 }
 
-static DBusMessage* dbus_read_servers(DBusMessage *message)
+static void dbus_read_servers(DBusMessage *message)
 {
   DBusMessageIter iter;
   union  mysockaddr addr, source_addr;
   char *domain;
   
-  if (!dbus_message_iter_init(message, &iter))
-    {
-      return dbus_message_new_error(message, DBUS_ERROR_INVALID_ARGS,
-                                    "Failed to initialize dbus message iter");
-    }
+  dbus_message_iter_init(message, &iter);
 
   mark_servers(SERV_FROM_DBUS);
   
@@ -226,7 +222,6 @@ static DBusMessage* dbus_read_servers(DBusMessage *message)
    
   /* unlink and free anything still marked. */
   cleanup_servers();
-  return NULL;
 }
 
 #ifdef HAVE_LOOP
@@ -550,10 +545,6 @@ static DBusMessage *dbus_add_lease(DBusMessage* message)
 					 "Invalid IP address '%s'", ipaddr);
    
   hw_len = parse_hex((char*)hwaddr, dhcp_chaddr, DHCP_CHADDR_MAX, NULL, &hw_type);
-  if (hw_len < 0)
-    return dbus_message_new_error_printf(message, DBUS_ERROR_INVALID_ARGS,
-					 "Invalid HW address '%s'", hwaddr);
-
   if (hw_type == 0 && hw_len != 0)
     hw_type = ARPHRD_ETHER;
   
@@ -677,7 +668,7 @@ DBusHandlerResult message_handler(DBusConnection *connection,
 #endif
   else if (strcmp(method, "SetServers") == 0)
     {
-      reply = dbus_read_servers(message);
+      dbus_read_servers(message);
       new_servers = 1;
     }
   else if (strcmp(method, "SetServersEx") == 0)
@@ -728,7 +719,7 @@ DBusHandlerResult message_handler(DBusConnection *connection,
   if (clear_cache)
     clear_cache_and_reload(dnsmasq_time());
   
-  (void)user_data; /* no warning */
+  method = user_data; /* no warning */
 
   /* If no reply or no error, return nothing */
   if (!reply)

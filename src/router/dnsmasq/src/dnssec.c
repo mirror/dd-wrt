@@ -731,8 +731,7 @@ static int validate_rrset(time_t now, struct dns_header *header, size_t plen, in
       
       /* namebuff used for workspace above, restore to leave unchanged on exit */
       p = (unsigned char*)(rrset[0]);
-      if (!extract_name(header, plen, &p, name, 1, 0))
-	return STAT_BOGUS;
+      extract_name(header, plen, &p, name, 1, 0);
 
       if (key)
 	{
@@ -962,9 +961,9 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
 			  a.log.keytag = keytag;
 			  a.log.algo = algo;
 			  if (algo_digest_name(algo))
-			    log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu", 0);
+			    log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu");
 			  else
-			    log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu (not supported)", 0);
+			    log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu (not supported)");
 			}
 		    }
 		}
@@ -981,7 +980,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
       return STAT_OK;
     }
 
-  log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DNSKEY", 0);
+  log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DNSKEY");
   return STAT_BOGUS | failflags;
 }
 
@@ -1020,14 +1019,12 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
   if (STAT_ISEQUAL(rc, STAT_INSECURE))
     {
       my_syslog(LOG_WARNING, _("Insecure DS reply received for %s, check domain configuration and upstream DNS server DNSSEC support"), name);
-      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS - not secure", 0);
+      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS - not secure");
       return STAT_BOGUS | DNSSEC_FAIL_INDET;
     }
   
   p = (unsigned char *)(header+1);
-  if (!extract_name(header, plen, &p, name, 1, 4))
-      return STAT_BOGUS;
-
+  extract_name(header, plen, &p, name, 1, 4);
   p += 4; /* qtype, qclass */
   
   /* If the key needed to validate the DS is on the same domain as the DS, we'll
@@ -1035,7 +1032,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
      from the DS's zone, and not the parent zone. */
   if (STAT_ISEQUAL(rc, STAT_NEED_KEY) && hostname_isequal(name, keyname))
     {
-      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS", 0);
+      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS");
       return STAT_BOGUS;
     }
   
@@ -1091,9 +1088,9 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
 		      a.log.algo = algo;
 		      a.log.digest = digest;
 		      if (ds_digest_name(digest) && algo_digest_name(algo))
-			log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %hu, algo %hu, digest %hu", 0);
+			log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %hu, algo %hu, digest %hu");
 		      else
-			log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %hu, algo %hu, digest %hu (not supported)", 0);
+			log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS keytag %hu, algo %hu, digest %hu (not supported)");
 		    } 
 		}
 	      
@@ -1126,7 +1123,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
       
       cache_end_insert();  
       
-      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, nons ? "no DS/cut" : "no DS", 0);
+      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, nons ? "no DS/cut" : "no DS");
     }
       
   return STAT_OK;
