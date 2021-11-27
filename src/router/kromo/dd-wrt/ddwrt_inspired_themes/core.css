@@ -710,7 +710,6 @@ h2 {
 .submitFooter .button {
   padding: 0 1rem;
   margin: 0.362em;
-  height: 1.533rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -890,7 +889,6 @@ svg {
   background-color: var(--bg-4) !important;
 }
 .overlay_ddwrt {
-  background-color: var(--bg-3);
   background-color: var(--bg-3) !important;
   opacity: 0.5;
 }
@@ -910,29 +908,7 @@ svg {
   color: var(--fg-1) !important;
 }
 .ddwrt_progress {
-  margin-top: 8px;
   mix-blend-mode: lighten;
-}
-.ddwrt_wired_frame {
-  background: var(--bg-4) !important;
-}
-.ddwrt_window {
-  background: var(--bg-0) !important;
-  border: 1px solid var(--v1-6) !important;
-}
-.ddwrt_title {
-  color: var(--v6-5);
-}
-.ddwrt_nw,
-.ddwrt_n,
-.ddwrt_e,
-.ddwrt_sw,
-.ddwrt_ne,
-.ddwrt_w,
-.ddwrt_s,
-.ddwrt_se,
-.ddwrt_sizer {
-  background: var(--bg-1) !important;
 }
 .progressbarblock {
   background-color: var(--v0-9);

@@ -172,24 +172,10 @@ td[bgcolor='#C0C0C0']:hover {
   color: #888;
 }
 /*! modal popup */
+.overlay_ddwrt {
+  background-color: #1a1a1a !important;
+}
 .ddwrt_content {
   background: #222 !important;
   color: #fff !important;
-}
-.ddwrt_wired_frame {
-  background: #333 !important;
-}
-.ddwrt_window {
-  background: #1a1a1a !important;
-  border: 1px solid #888 !important;
-}
-.ddwrt_title {
-  color: #fff !important;
-}
-.ddwrt_nw, .ddwrt_n,
-.ddwrt_e, .ddwrt_sw,
-.ddwrt_ne, .ddwrt_w,
-.ddwrt_s, .ddwrt_se,
-.ddwrt_sizer {
-  background: #222 !important;
 }
