@@ -648,6 +648,7 @@ MODULE_SOFTDEP("pre: sha512");
 MODULE_SOFTDEP("pre: aead2");
 MODULE_SOFTDEP("pre: ccm");
 MODULE_SOFTDEP("pre: gcm");
+MODULE_SOFTDEP("pre: crc32");
 #endif
 module_init(ksmbd_server_init)
 module_exit(ksmbd_server_exit)

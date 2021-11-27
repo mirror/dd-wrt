@@ -632,7 +632,7 @@ int ksmbd_ipc_tree_disconnect_request(unsigned long long session_id,
 	return ret;
 }
 
-int ksmbd_ipc_logout_request(const char *account)
+int ksmbd_ipc_logout_request(const char *account, int flags)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_logout_request *req;
@@ -649,6 +649,7 @@ int ksmbd_ipc_logout_request(const char *account)
 
 	msg->type = KSMBD_EVENT_LOGOUT_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	req->account_flags = flags;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
 	strlcpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
 #else

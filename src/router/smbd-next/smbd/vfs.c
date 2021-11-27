@@ -198,7 +198,7 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 	struct dentry *dentry;
 	int err;
 
-	dentry = kern_path_create(AT_FDCWD, name, &path, 0);
+	dentry = kern_path_create(AT_FDCWD, name, &path, LOOKUP_NO_SYMLINKS);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		if (err != -ENOENT)
@@ -257,7 +257,8 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	struct dentry *dentry;
 	int err;
 
-	dentry = kern_path_create(AT_FDCWD, name, &path, LOOKUP_DIRECTORY);
+	dentry = kern_path_create(AT_FDCWD, name, &path,
+				  LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		if (err != -EEXIST)
@@ -976,18 +977,13 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 	struct path path;
 	struct dentry *dentry, *parent;
 	int err;
-	int flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
-		flags = LOOKUP_FOLLOW;
-
-	err = kern_path(name, flags, &path);
+	err = kern_path(name, LOOKUP_NO_SYMLINKS, &path);
 	if (err) {
 		ksmbd_debug(VFS, "can't get %s, err %d\n", name, err);
 		ksmbd_revert_fsids(work);
@@ -1057,18 +1053,14 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	struct path oldpath, newpath;
 	struct dentry *dentry;
 	int err;
-	int flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
-		flags = LOOKUP_FOLLOW;
+	err = kern_path(oldname, LOOKUP_NO_SYMLINKS, &oldpath);
 
-	err = kern_path(oldname, flags, &oldpath);
 	if (err) {
 		pr_err("cannot get linux path for %s, err = %d\n",
 		       oldname, err);
@@ -1076,7 +1068,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	}
 
 	dentry = kern_path_create(AT_FDCWD, newname, &newpath,
-				  flags | LOOKUP_REVAL);
+				  LOOKUP_NO_SYMLINKS | LOOKUP_REVAL);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		pr_err("path create err for %s, err %d\n", newname, err);
@@ -1207,7 +1199,6 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	struct dentry *src_dent, *trap_dent, *src_child;
 	char *dst_name;
 	int err;
-	int flags;
 
 	dst_name = extract_last_component(newname);
 	if (!dst_name)
@@ -1216,12 +1207,8 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	src_dent_parent = dget_parent(fp->filp->f_path.dentry);
 	src_dent = fp->filp->f_path.dentry;
 
-	flags = LOOKUP_DIRECTORY;
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
-		flags |= LOOKUP_FOLLOW;
-
-	err = kern_path(newname, flags, &dst_path);
+	err = kern_path(newname, LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
+			&dst_path);
 	if (err) {
 		ksmbd_debug(VFS, "Cannot get path for %s [%d]\n", newname, err);
 		goto out;
@@ -1348,7 +1335,7 @@ int ksmbd_vfs_truncate(struct ksmbd_work *work, const char *name,
 	int err = 0;
 
 	if (name) {
-		err = kern_path(name, 0, &path);
+		err = kern_path(name, LOOKUP_NO_SYMLINKS, &path);
 		if (err) {
 			pr_err("cannot get linux path for %s, err %d\n",
 			       name, err);
@@ -1979,8 +1966,8 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
 }
 
 int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
-		struct file_allocated_range_buffer *ranges, int in_count,
-		int *out_count)
+		struct file_allocated_range_buffer *ranges,
+			 unsigned int in_count, unsigned int *out_count)
 {
 	struct file *f = fp->filp;
 	struct inode *inode = file_inode(fp->filp);
@@ -2315,68 +2302,67 @@ int ksmbd_vfs_kern_path(char *name, unsigned int flags, struct path *path,
 			bool caseless)
 {
 	int err;
-	bool caseless_lookup = false;
-	char *filepath;
-	struct path parent;
-	size_t path_len, remain_len;
 
 	if (name[0] != '/')
 		return -EINVAL;
-retry:
-	filepath = kstrdup(name, GFP_KERNEL);
-	if (!filepath)
-		return -ENOMEM;
 
-	path_len = strlen(filepath);
-	remain_len = path_len - 1;
+	err = kern_path(name, flags, path);
+	if (!err)
+		return 0;
 
-	err = kern_path("/", flags, &parent);
-	if (err)
-		goto out;
+	if (caseless) {
+		char *filepath;
+		struct path parent;
+		size_t path_len, remain_len;
 
-	while (d_can_lookup(parent.dentry)) {
-		char *filename = filepath + path_len - remain_len;
-		char *next = strchrnul(filename, '/');
-		size_t filename_len = next - filename;
-		bool is_last = !next[0];
+		filepath = kstrdup(name, GFP_KERNEL);
+		if (!filepath)
+			return -ENOMEM;
 
-		if (filename_len == 0)
-			break;
+		path_len = strlen(filepath);
+		remain_len = path_len - 1;
 
-		if (caseless_lookup) {
+		err = kern_path("/", flags, &parent);
+		if (err)
+			goto out;
+
+		while (d_can_lookup(parent.dentry)) {
+			char *filename = filepath + path_len - remain_len;
+			char *next = strchrnul(filename, '/');
+			size_t filename_len = next - filename;
+			bool is_last = !next[0];
+
+			if (filename_len == 0)
+				break;
+
 			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
-					filename_len);
+						      filename_len);
 			if (err) {
 				path_put(&parent);
 				goto out;
 			}
+
+			path_put(&parent);
+			next[0] = '\0';
+
+			err = kern_path(filepath, flags, &parent);
+			if (err)
+				goto out;
+
+			if (is_last) {
+				path->mnt = parent.mnt;
+				path->dentry = parent.dentry;
+				goto out;
+			}
+
+			next[0] = '/';
+			remain_len -= filename_len + 1;
 		}
 
 		path_put(&parent);
-		next[0] = '\0';
-
-		err = kern_path(filepath, flags, &parent);
-		if (err)
-			goto out;
-
-		if (is_last) {
-			path->mnt = parent.mnt;
-			path->dentry = parent.dentry;
-			goto out;
-		}
-
-		next[0] = '/';
-		remain_len -= filename_len + 1;
-	}
-
-	path_put(&parent);
-	err = -EINVAL;
+		err = -EINVAL;
 out:
-	kfree(filepath);
-	if (err && caseless) {
-		caseless_lookup = true;
-		caseless = false;
-		goto retry;
+		kfree(filepath);
 	}
 	return err;
 }
