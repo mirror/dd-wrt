@@ -3,87 +3,21 @@
   filter: alpha(opacity=60);
   opacity: .6;
 }
-.ddwrt_title {
-  float: left;
-  height: 14px;
-  font-family: Tahoma, Arial, sans-serif;
-  font-size: 14px;
-  text-align: center;
-  margin-top: 2px;
-  width: 100%;
-  color: #123456;
-}
 .ddwrt_content {
-  overflow: auto;
+  background: #fdfdfd;
   color: #000;
+  border-radius: 4px;
+  height: 8rem !important;
   font-family: Tahoma, Arial, sans-serif;
   font: 12px arial;
-  background: #fdfdfd;
-}
-.ddwrt_nw {
-  width: 10px;
-  height: 25px;
-  background: #fdfdfd;
-  border-radius: 4px 0 0 0;
-}
-.ddwrt_n {
-  height: 25px;
-  background: #fdfdfd;
-}
-.ddwrt_ne {
-  width: 10px;
-  height: 25px;
-  background: #fdfdfd;
-  border-radius: 0 4px 0 0;
-}
-.ddwrt_w {
-  width: 7px;
-  background: #fdfdfd;
-}
-.ddwrt_e {
-  width: 7px;
-  background: #fdfdfd;
-}
-.ddwrt_sw {
-  width: 7px;
-  height: 7px;
-  background: #fdfdfd;
-  border-radius: 0 0 0 4px;
-}
-.ddwrt_s {
-  height: 7px;
-  background: #fdfdfd;
-}
-.ddwrt_se, .ddwrt_sizer {
-  width: 7px;
-  height: 7px;
-  background: #fdfdfd;
-  border-radius: 0 0 4px 0;
-}
-.ddwrt_sizer {
-  cursor: se-resize;
-}
-.ddwrt_window {
-  border: 1px solid #f00;
-  background: #fff;
-  padding: 20px;
-  margin-left: auto;
-  margin-right: auto;
-  width: 400px;
+  overflow: auto;
 }
 .ddwrt_message {
   font: 14px Arial;
   text-align: center;
   width: 100%;
   padding-bottom: 10px;
-}
-.ddwrt_buttons {
-  text-align: center;
-  width: 100%;
-}
-.ddwrt_buttons input {
-  width: 20%;
-  margin: 10px;
+  padding-top: 33px
 }
 .ddwrt_progress {
   float: left;
