@@ -450,11 +450,13 @@ static void detect_wireless_devices(int mask)
 		total += wificnt;
 		wificnt = 0;
 		insmod("mt7921-common");
+		insmod("mt76-sdio");
 		wificnt += detectchange("mt7921e");
 		wificnt += detectchange("mt7921s");
 		if (!wificnt) {
 			rmmod("mt7921s");
 			rmmod("mt7921e");
+			rmmod("mt76-sdio");
 			rmmod("mt7921-common");
 		}
 		total += wificnt;
