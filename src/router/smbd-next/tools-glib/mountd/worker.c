@@ -204,7 +204,7 @@ static int logout_request(struct ksmbd_ipc_msg *msg)
 	if (!VALID_IPC_MSG(msg, struct ksmbd_logout_request))
 		return -EINVAL;
 
-	return 0;
+	return usm_handle_logout_request(KSMBD_IPC_MSG_PAYLOAD(msg));
 }
 
 static int heartbeat_request(struct ksmbd_ipc_msg *msg)

@@ -145,6 +145,9 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 		goto out_error;
 	}
 
+	user->failed_login_count = 0;
+	user->flags &= ~KSMBD_USER_FLAG_DELAY_SESSION;
+
 	if (test_user_flag(user, KSMBD_USER_FLAG_GUEST_ACCOUNT))
 		set_conn_flag(conn, KSMBD_TREE_CONN_FLAG_GUEST_ACCOUNT);
 
