@@ -132,6 +132,7 @@ struct ksmbd_tree_disconnect_request {
 
 struct ksmbd_logout_request {
 	__s8	account[KSMBD_REQ_MAX_ACCOUNT_NAME_SZ];
+	__u32	account_flags;
 } ____ksmbd_align;
 
 struct ksmbd_rpc_command {
@@ -213,6 +214,7 @@ enum KSMBD_TREE_CONN_STATUS {
 #define KSMBD_USER_FLAG_BAD_UID		BIT(2)
 #define KSMBD_USER_FLAG_BAD_USER	BIT(3)
 #define KSMBD_USER_FLAG_GUEST_ACCOUNT	BIT(4)
+#define KSMBD_USER_FLAG_DELAY_SESSION	BIT(5)
 
 /*
  * Share config flags.

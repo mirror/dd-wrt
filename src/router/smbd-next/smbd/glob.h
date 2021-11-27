@@ -97,4 +97,9 @@ extern int ksmbd_debug_types;
 /* ksmbd misc functions */
 extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #endif
+
+#ifndef LOOKUP_NO_SYMLINKS
+#define LOOKUP_NO_SYMLINKS 0
+#endif
+
 #endif /* __KSMBD_GLOB_H */

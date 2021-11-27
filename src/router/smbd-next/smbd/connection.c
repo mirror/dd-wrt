@@ -65,6 +65,8 @@ struct ksmbd_conn *ksmbd_conn_alloc(void)
 		conn->local_nls = load_nls_default();
 	atomic_set(&conn->req_running, 0);
 	atomic_set(&conn->r_count, 0);
+	conn->total_credits = 1;
+
 	init_waitqueue_head(&conn->req_running_q);
 	INIT_LIST_HEAD(&conn->conns_list);
 	INIT_LIST_HEAD(&conn->sessions);
@@ -319,6 +321,10 @@ int ksmbd_conn_handler_loop(void *p)
 				    pdu_size);
 			continue;
 		}
+
+		if (pdu_size > MAX_STREAM_PROT_LEN)
+                        continue;
+
 		/* 4 for rfc1002 length field */
 		size = pdu_size + 4;
 		conn->request_buf = ksmbd_alloc_request(size);
