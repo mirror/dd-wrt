@@ -388,7 +388,7 @@ static void parse_dacl(struct user_namespace *user_ns,
 {
 	int i, ret;
 	int num_aces = 0;
-	int acl_size;
+	unsigned int acl_size;
 	char *acl_base;
 	struct smb_ace **ppace;
 	struct posix_acl_entry *cf_pace, *cf_pdace;
@@ -439,13 +439,23 @@ static void parse_dacl(struct user_namespace *user_ns,
 	 * user/group/other have no permissions
 	 */
 	for (i = 0; i < num_aces; ++i) {
-		ppace[i] = (struct smb_ace *)(acl_base + acl_size);
-		acl_base = (char *)ppace[i];
-		acl_size = le16_to_cpu(ppace[i]->size);
-
-		if (acl_base + acl_size > end_of_acl)
+		if (end_of_acl - acl_base < acl_size)
 			break;
 
+		ppace[i] = (struct smb_ace *)(acl_base + acl_size);
+		acl_base = (char *)ppace[i];
+		acl_size = offsetof(struct smb_ace, sid) +
+			offsetof(struct smb_sid, sub_auth);
+
+		if (end_of_acl - acl_base < acl_size ||
+		    ppace[i]->sid.num_subauth > SID_MAX_SUB_AUTHORITIES ||
+		    (end_of_acl - acl_base <
+		     acl_size + sizeof(__le32) * ppace[i]->sid.num_subauth) ||
+		    (le16_to_cpu(ppace[i]->size) <
+		     acl_size + sizeof(__le32) * ppace[i]->sid.num_subauth))
+			break;
+
+		acl_size = le16_to_cpu(ppace[i]->size);
 		ppace[i]->access_req =
 			smb_map_generic_desired_access(ppace[i]->access_req);
 

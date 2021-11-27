@@ -556,8 +556,8 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 				   int blob_len, struct ksmbd_session *sess)
 {
 	char *domain_name;
-	unsigned int lm_off, nt_off;
-	unsigned short nt_len;
+	unsigned int lm_off, nt_off, dn_off;
+	unsigned short nt_len, dn_len;
 	int ret;
 
 	if (blob_len < sizeof(struct authenticate_message)) {
@@ -576,6 +576,12 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 	nt_off = le32_to_cpu(authblob->NtChallengeResponse.BufferOffset);
 	nt_len = le16_to_cpu(authblob->NtChallengeResponse.Length);
 
+	dn_off = le32_to_cpu(authblob->DomainName.BufferOffset);
+	dn_len = le16_to_cpu(authblob->DomainName.Length);
+
+	if (blob_len < (u64)dn_off + dn_len || blob_len < (u64)nt_off + nt_len)
+		return -EINVAL;
+
 	/* process NTLM authentication */
 	if (nt_len == CIFS_AUTH_RESP_SIZE) {
 		if (le32_to_cpu(authblob->NegotiateFlags) &
@@ -588,10 +594,8 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 	}
 
 	/* TODO : use domain name that imported from configuration file */
-	domain_name = smb_strndup_from_utf16((const char *)authblob +
-			le32_to_cpu(authblob->DomainName.BufferOffset),
-			le16_to_cpu(authblob->DomainName.Length), true,
-			sess->conn->local_nls);
+	domain_name = smb_strndup_from_utf16((const char *)authblob + dn_off,
+					     dn_len, true, sess->conn->local_nls);
 	if (IS_ERR(domain_name))
 		return PTR_ERR(domain_name);
 

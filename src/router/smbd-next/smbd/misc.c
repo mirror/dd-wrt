@@ -215,8 +215,6 @@ char *ksmbd_conv_path_to_unix(char *path)
 	strreplace(path, '\\', '/');
 	path_len = strlen(path);
 	remain_path_len = path_len;
-	if (path_len == 0)
-		return ERR_PTR(-EINVAL);
 
 	out_path = kzalloc(path_len + 2, GFP_KERNEL);
 	if (!out_path)
