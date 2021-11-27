@@ -8,7 +8,7 @@ wireguard-install:
 	#install -d wireguard/$(INSTALLDIR)/usr/bin
 	install -c wireguard/$(MODULE)*.sh $(INSTALLDIR)/wireguard/usr/bin
 	#install -c will set x 
-	ln -s $(INSTALLDIR)/wireguard/usr/bin/is-mounted.sh $(INSTALLDIR)/wireguard/usr/bin/is-mounted
+	cd $(INSTALLDIR)/wireguard/usr/bin && ln -f -s is-mounted.sh is-mounted
 	#cp wireguard/$(MODULE)*.sh $(INSTALLDIR)/wireguard/usr/bin
 	#chmod 700 $(INSTALLDIR)/wireguard/usr/bin/$(MODULE)*.sh
 
