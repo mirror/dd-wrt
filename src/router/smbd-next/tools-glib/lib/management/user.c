@@ -387,3 +387,22 @@ int usm_handle_login_request(struct ksmbd_login_request *req,
 	put_ksmbd_user(user);
 	return 0;
 }
+
+int usm_handle_logout_request(struct ksmbd_logout_request *req)
+{
+	struct ksmbd_user *user;
+
+	user = usm_lookup_user(req->account);
+	if (!user)
+		return -ENOENT;
+
+	if (req->account_flags & KSMBD_USER_FLAG_BAD_PASSWORD) {
+		if (user->failed_login_count < 10)
+			user->failed_login_count++;
+		else
+			user->flags |= KSMBD_USER_FLAG_DELAY_SESSION;
+	} else {
+		user->failed_login_count = 0;
+		user->flags &= ~KSMBD_USER_FLAG_DELAY_SESSION;
+	}
+}
