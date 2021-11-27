@@ -109,6 +109,11 @@ A value of
 .Sy 100
 disables this feature.
 .
+.It Sy l2arc_exclude_special Ns = Ns Sy 0 Ns | Ns 1 Pq int
+Controls whether buffers present on special vdevs are eligibile for caching
+into L2ARC.
+If set to 1, exclude dbufs on special vdevs from being cached to L2ARC.
+.
 .It Sy l2arc_mfuonly Ns = Ns Sy 0 Ns | Ns 1 Pq  int
 Controls whether only MFU metadata and data are cached from ARC into L2ARC.
 This may be desired to avoid wasting space on L2ARC when reading/writing large
@@ -1586,7 +1591,7 @@ Allow no-operation writes.
 The occurrence of nopwrites will further depend on other pool properties
 .Pq i.a. the checksumming and compression algorithms .
 .
-.It Sy zfs_dmu_offset_next_sync Ns = Ns Sy 0 Ns | ns 1 Pq int
+.It Sy zfs_dmu_offset_next_sync Ns = Ns Sy 0 Ns | Ns 1 Pq int
 Enable forcing TXG sync to find holes.
 When enabled forces ZFS to act like prior versions when
 .Sy SEEK_HOLE No or Sy SEEK_DATA
