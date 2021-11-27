@@ -1,6 +1,6 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.1.2
- * copyright: \24B8\00A02021 Style-it-themes: the-j0k3r
+ * style-name: DD-WRT Inspired Themes v5.1.4
+ * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
 */
@@ -891,6 +891,7 @@ svg {
 }
 .overlay_ddwrt {
   background-color: var(--bg-3);
+  background-color: var(--bg-3) !important;
   opacity: 0.5;
 }
 [id*="modal_dialog_"].dialog {
@@ -905,19 +906,19 @@ svg {
   background-color: var(--bg-0);
 }
 .ddwrt_content {
-  background: var(--bg-1);
-  color: var(--fg-1);
+  background: var(--bg-1) !important;
+  color: var(--fg-1) !important;
 }
 .ddwrt_progress {
   margin-top: 8px;
   mix-blend-mode: lighten;
 }
 .ddwrt_wired_frame {
-  background: var(--bg-4);
+  background: var(--bg-4) !important;
 }
 .ddwrt_window {
-  background: var(--bg-0);
-  border: 1px solid var(--v1-6);
+  background: var(--bg-0) !important;
+  border: 1px solid var(--v1-6) !important;
 }
 .ddwrt_title {
   color: var(--v6-5);
@@ -931,19 +932,7 @@ svg {
 .ddwrt_s,
 .ddwrt_se,
 .ddwrt_sizer {
-  background: var(--bg-1);
-}
-.ddwrt_nw {
-  border-radius: 4px 0 0 0;
-}
-.ddwrt_ne {
-  border-radius: 0 4px 0 0;
-}
-.ddwrt_se {
-  border-radius: 0 0 4px 0;
-}
-.ddwrt_sw {
-  border-radius: 0 0 0 4px;
+  background: var(--bg-1) !important;
 }
 .progressbarblock {
   background-color: var(--v0-9);
