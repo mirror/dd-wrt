@@ -221,6 +221,7 @@ AC_CONFIG_FILES([
 	tests/zfs-tests/cmd/mktree/Makefile
 	tests/zfs-tests/cmd/mmap_exec/Makefile
 	tests/zfs-tests/cmd/mmap_libaio/Makefile
+	tests/zfs-tests/cmd/mmap_seek/Makefile
 	tests/zfs-tests/cmd/mmapwrite/Makefile
 	tests/zfs-tests/cmd/nvlist_to_lua/Makefile
 	tests/zfs-tests/cmd/randfree_file/Makefile
@@ -287,6 +288,7 @@ AC_CONFIG_FILES([
 	tests/zfs-tests/tests/functional/cli_root/zfs_unshare/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_upgrade/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_wait/Makefile
+	tests/zfs-tests/tests/functional/cli_root/zhack/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zpool/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zpool_add/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zpool_attach/Makefile
