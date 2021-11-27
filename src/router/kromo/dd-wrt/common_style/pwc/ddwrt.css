@@ -3,36 +3,6 @@
   filter: alpha(opacity=60);
   opacity: .6;
 }
-.ddwrt_close {
-  width: 23px;
-  height: 23px;
-  background: transparent url(ddwrt/button-close-focus.png) no-repeat 0 0;
-  position: absolute;
-  top: 0;
-  right: 11px;
-  cursor: pointer;
-  z-index: 1000;
-}
-.ddwrt_minimize {
-  width: 23px;
-  height: 23px;
-  background: transparent url(ddwrt/button-min-focus.png) no-repeat 0 0;
-  position: absolute;
-  top: 0;
-  right: 55px;
-  cursor: pointer;
-  z-index: 1000;
-}
-.ddwrt_maximize {
-  width: 23px;
-  height: 23px;
-  background: transparent url(ddwrt/button-max-focus.png) no-repeat 0 0;
-  position: absolute;
-  top: 0;
-  right: 33px;
-  cursor: pointer;
-  z-index: 1000;
-}
 .ddwrt_title {
   float: left;
   height: 14px;
@@ -51,50 +21,42 @@
   background: #fdfdfd;
 }
 .ddwrt_nw {
-  /*background: transparent url(ddwrt/left-top.png) no-repeat 0 0;
   width: 10px;
-  height: 25px;*/
+  height: 25px;
   background: #fdfdfd;
   border-radius: 4px 0 0 0;
 }
 .ddwrt_n {
-  /*background: transparent url(ddwrt/top-middle.png) repeat-x 0 0;
-  height: 25px; */
+  height: 25px;
   background: #fdfdfd;
 }
 .ddwrt_ne {
-  /*background: transparent url(ddwrt/right-top.png) no-repeat 0 0;
   width: 10px;
-  height: 25px;*/
+  height: 25px;
   background: #fdfdfd;
   border-radius: 0 4px 0 0;
 }
 .ddwrt_w {
-  /*background: transparent url(ddwrt/frame-left.gif) repeat-y top left;
-  width: 7px;*/
+  width: 7px;
   background: #fdfdfd;
 }
 .ddwrt_e {
-  /*background: transparent url(ddwrt/frame-right.gif) repeat-y top right;
-  width: 7px;*/
+  width: 7px;
   background: #fdfdfd;
 }
 .ddwrt_sw {
-  /*background: transparent url(ddwrt/bottom-left-c.gif) no-repeat 0 0;
   width: 7px;
-  height: 7px;*/
+  height: 7px;
   background: #fdfdfd;
   border-radius: 0 0 0 4px;
 }
 .ddwrt_s {
-  /*background: transparent url(ddwrt/bottom-middle.gif) repeat-x 0 0;
-  height: 7px;*/
+  height: 7px;
   background: #fdfdfd;
 }
 .ddwrt_se, .ddwrt_sizer {
-  /*background: transparent url(ddwrt/bottom-right-c.gif) no-repeat 0 0;
   width: 7px;
-  height: 7px;*/
+  height: 7px;
   background: #fdfdfd;
   border-radius: 0 0 4px 0;
 }
