@@ -254,11 +254,17 @@ function plot_data(obj)
 		var x = step * i;
 		var y_in = 298 - (plot_in[i] * scale);
 		var y_out = 298 - (plot_out[i] * scale);
-		path_in += " L" + x + " " + y_in;
-		path_out += " L" + x + " " + y_out;
+		var fy_in = y_in;
+		var fy_out = y_out;
+		if (i < plot_in.length-1) {
+			var fy_in = 298 - (plot_in[i+1] * scale);
+			var fy_out = 298 - (plot_out[i+1] * scale);
+		}
+		path_in += " Q" + x + " " + y_in + " " + (x + step / 2) + " " + ((y_in + fy_in) / 2);
+		path_out += " Q" + x + " " + y_out+ " " + (x + step / 2) + " " + ((y_out + fy_out) / 2);
 	}
-		path_in += " L" + x + " 298 L 0 298 Z";
-		path_out += " L" + x + " 298 L 0 298 Z";
+	path_in += " L" + x + " 298 L 0 298 Z";
+	path_out += " L" + x + " 298 L 0 298 Z";
 
 	SVGDoc.getElementById('error').setAttributeNS(null, 'visibility', 'hidden');
 	SVGDoc.getElementById('graph_in').setAttributeNS(null, 'd', path_in);
