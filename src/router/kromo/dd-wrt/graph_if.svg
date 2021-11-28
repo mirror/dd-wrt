@@ -52,8 +52,8 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='grid_txt2' x='700' y='148' fill='gray' text-anchor='end'>--</text>
 	<text id='grid_txt1' x='700' y='73' fill='gray' text-anchor='end'>--</text>
 
-	<path id='graph_out' d='' fill='none' stroke='red' stroke-width='1' stroke-opacity='0.8' />
-	<path id='graph_in'  d='' fill='none' stroke='green' stroke-width='1' stroke-opacity='0.8' />
+	<path id='graph_out' d='' fill='red' fill-opacity='0.5' stroke='red' stroke-width='1' stroke-opacity='1' />
+	<path id='graph_in'  d='' fill='green' fill-opacity='0.5' stroke='green' stroke-width='1' stroke-opacity='1' />
 
 	<line id='axis_x' x1='2' y1='299' x2='700' y2='299' stroke='#111' stroke-opacity='0.8' />
 	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='#111' stroke-opacity='0.8' />
@@ -254,9 +254,11 @@ function plot_data(obj)
 		var x = step * i;
 		var y_in = 298 - (plot_in[i] * scale);
 		var y_out = 298 - (plot_out[i] * scale);
-		path_in += " L" + x + " " + y_in + " L" + x + " 298" + " L"+ " 0"+ " 298Z";
-		path_out += " L" + x + " " + y_out + " L" + x + " 298" + " L"+ " 0"+ " 298Z";
+		path_in += " L" + x + " " + y_in;
+		path_out += " L" + x + " " + y_out;
 	}
+		path_in += " L" + x + " 298 L 0 298 Z";
+		path_out += " L" + x + " 298 L 0 298 Z";
 
 	SVGDoc.getElementById('error').setAttributeNS(null, 'visibility', 'hidden');
 	SVGDoc.getElementById('graph_in').setAttributeNS(null, 'd', path_in);
