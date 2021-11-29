@@ -2295,7 +2295,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  line-height: 1.7em;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "body {\n");
-		websWrite(wp, "  font-size: 69%%;\n");
+		websWrite(wp, "  font-size: .75em;\n");
 		websWrite(wp, "  margin: .906em;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, ".t-border {\n");
