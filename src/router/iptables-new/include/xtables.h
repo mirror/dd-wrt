@@ -497,8 +497,11 @@ xtables_parse_interface(const char *arg, char *vianame, unsigned char *mask);
 #define aligned_u64 uint64_t __attribute__((aligned(8)))
 
 extern struct xtables_globals *xt_params;
+#ifdef NEED_PRINTF
 #define xtables_error (xt_params->exit_err)
-
+#else
+#define xtables_error(type, fmt, ...) exit(-1)
+#endif
 extern void xtables_param_act(unsigned int, const char *, ...);
 
 extern const char *xtables_ipaddr_to_numeric(const struct in_addr *);
