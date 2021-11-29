@@ -4,7 +4,7 @@
 }
 body {
   margin: .906em;
-  font-size: 69%;
+  font-size: .75em;
 }
 /*! Common to light and dark for now */
 body.gui {
