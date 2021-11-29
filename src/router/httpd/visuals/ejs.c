@@ -1472,7 +1472,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	char buf[128];
 	websWrite(wp, "<h2>%s - %s</h2>\n", tran_string(buf, "status_band.h2"), name);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"789\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
+	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"655\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
 	websWrite(wp, "</iframe>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
