@@ -706,7 +706,7 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
-		while (len) {
+		while (len && !feof(web)) {
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			if (ferror(web)) {
 				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
