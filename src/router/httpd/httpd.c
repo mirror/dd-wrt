@@ -708,12 +708,14 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 		char *buffer = malloc(4096);
 		while (len) {
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
-			if (!ret) {
-				dd_loginfo("httpd", "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
+			if (ferror(web)) {
+				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
 				break;	// deadlock prevention
 			}
-			len -= ret;
-			wfwrite(buffer, ret, 1, stream);
+			if (ret > 0) {
+				len -= ret;
+				wfwrite(buffer, ret, 1, stream);
+			}
 		}
 		free(buffer);
 	} else {
