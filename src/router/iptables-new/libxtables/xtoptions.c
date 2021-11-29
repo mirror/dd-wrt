@@ -185,7 +185,7 @@ static void xtopt_parse_int(struct xt_option_call *cb)
 		lmax = cb->entry->max;
 
 	if (!xtables_strtoul(cb->arg, NULL, &value, lmin, lmax))
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: bad value for option \"--%s\", "
 			"or out of range (%ju-%ju).\n",
 			cb->ext_name, entry->name, lmin, lmax);
@@ -222,7 +222,7 @@ static void xtopt_parse_float(struct xt_option_call *cb)
 	if (end == cb->arg || *end != '\0' ||
 	    (entry->min != entry->max &&
 	    (value < entry->min || value > entry->max)))
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: bad value for option \"--%s\", "
 			"or out of range (%u-%u).\n",
 			cb->ext_name, entry->name, entry->min, entry->max);
@@ -299,13 +299,13 @@ static void xtopt_parse_mint(struct xt_option_call *cb)
 	if (maxiter == 0)
 		maxiter = ARRAY_SIZE(cb->val.u32_range);
 	if (entry->size % esize != 0)
-		xt_params->exit_err(OTHER_PROBLEM, "%s: memory block does "
+		xtables_error(OTHER_PROBLEM, "%s: memory block does "
 			"not have proper size\n", __func__);
 
 	cb->nvals = 0;
 	for (arg = cb->arg, end = (char *)arg; ; arg = end + 1) {
 		if (cb->nvals == maxiter)
-			xt_params->exit_err(PARAMETER_PROBLEM, "%s: Too many "
+			xtables_error(PARAMETER_PROBLEM, "%s: Too many "
 				"components for option \"--%s\" (max: %u)\n",
 				cb->ext_name, entry->name, maxiter);
 		if (*arg == '\0' || *arg == sep) {
@@ -314,12 +314,12 @@ static void xtopt_parse_mint(struct xt_option_call *cb)
 			value = (cb->nvals == 1) ? lmax : 0;
 		} else {
 			if (!xtables_strtoul(arg, &end, &value, 0, lmax))
-				xt_params->exit_err(PARAMETER_PROBLEM,
+				xtables_error(PARAMETER_PROBLEM,
 					"%s: bad value for option \"--%s\" near "
 					"\"%s\", or out of range (0-%ju).\n",
 					cb->ext_name, entry->name, arg, lmax);
 			if (*end != '\0' && *end != sep)
-				xt_params->exit_err(PARAMETER_PROBLEM,
+				xtables_error(PARAMETER_PROBLEM,
 					"%s: Argument to \"--%s\" has "
 					"unexpected characters near \"%s\".\n",
 					cb->ext_name, entry->name, end);
@@ -339,11 +339,11 @@ static void xtopt_parse_string(struct xt_option_call *cb)
 	char *p;
 
 	if (entry->min != 0 && z < entry->min)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"Argument must have a minimum length of "
 			"%u characters\n", entry->min);
 	if (entry->max != 0 && z > entry->max)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"Argument must have a maximum length of "
 			"%u characters\n", entry->max);
 	if (!(entry->flags & XTOPT_PUT))
@@ -463,7 +463,7 @@ static void xtopt_parse_sysloglevel(struct xt_option_call *cb)
 		e = bsearch(cb->arg, log_names, ARRAY_SIZE(log_names),
 			    sizeof(*log_names), xtopt_sysloglvl_compare);
 		if (e == NULL)
-			xt_params->exit_err(PARAMETER_PROBLEM,
+			xtables_error(PARAMETER_PROBLEM,
 				"log level \"%s\" unknown\n", cb->arg);
 		num = e->level;
 	}
@@ -504,7 +504,7 @@ static void xtopt_parse_host(struct xt_option_call *cb)
 
 	ret = getaddrinfo(cb->arg, NULL, &hints, &res);
 	if (ret != 0)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"getaddrinfo: %s\n", gai_strerror(ret));
 
 	memset(&cb->val.hmask, 0xFF, sizeof(cb->val.hmask));
@@ -522,7 +522,7 @@ static void xtopt_parse_host(struct xt_option_call *cb)
 		if (memcmp(&cb->val.haddr,
 		    xtables_sa_host(p->ai_addr, p->ai_family),
 		    xtables_sa_hostlen(p->ai_family)) != 0)
-			xt_params->exit_err(PARAMETER_PROBLEM,
+			xtables_error(PARAMETER_PROBLEM,
 				"%s resolves to more than one address\n",
 				cb->arg);
 	}
@@ -586,7 +586,7 @@ static void xtopt_parse_port(struct xt_option_call *cb)
 
 	ret = xtables_getportbyname(cb->arg);
 	if (ret < 0)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"Port \"%s\" does not resolve to anything.\n",
 			cb->arg);
 	if (entry->flags & XTOPT_NBO)
@@ -606,13 +606,13 @@ static void xtopt_parse_mport(struct xt_option_call *cb)
 
 	wp_arg = lo_arg = strdup(cb->arg);
 	if (lo_arg == NULL)
-		xt_params->exit_err(RESOURCE_PROBLEM, "strdup");
+		xtables_error(RESOURCE_PROBLEM, "strdup");
 
 	maxiter = entry->size / esize;
 	if (maxiter == 0)
 		maxiter = 2; /* ARRAY_SIZE(cb->val.port_range) */
 	if (entry->size % esize != 0)
-		xt_params->exit_err(OTHER_PROBLEM, "%s: memory block does "
+		xtables_error(OTHER_PROBLEM, "%s: memory block does "
 			"not have proper size\n", __func__);
 
 	cb->val.port_range[0] = 0;
@@ -621,7 +621,7 @@ static void xtopt_parse_mport(struct xt_option_call *cb)
 
 	while ((arg = strsep(&wp_arg, ":")) != NULL) {
 		if (cb->nvals == maxiter)
-			xt_params->exit_err(PARAMETER_PROBLEM, "%s: Too many "
+			xtables_error(PARAMETER_PROBLEM, "%s: Too many "
 				"components for option \"--%s\" (max: %u)\n",
 				cb->ext_name, entry->name, maxiter);
 		if (*arg == '\0') {
@@ -631,7 +631,7 @@ static void xtopt_parse_mport(struct xt_option_call *cb)
 
 		value = xtables_getportbyname(arg);
 		if (value < 0)
-			xt_params->exit_err(PARAMETER_PROBLEM,
+			xtables_error(PARAMETER_PROBLEM,
 				"Port \"%s\" does not resolve to "
 				"anything.\n", arg);
 		if (entry->flags & XTOPT_NBO)
@@ -693,7 +693,7 @@ static void xtopt_parse_plen(struct xt_option_call *cb)
 		if (xtopt_parse_mask(cb))
 			return;
 
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: bad value for option \"--%s\", "
 			"neither a valid network mask "
 			"nor valid CIDR (%u-%u).\n",
@@ -749,7 +749,7 @@ static void xtopt_parse_hostmask(struct xt_option_call *cb)
 	}
 	work = strdup(orig_arg);
 	if (work == NULL)
-		xt_params->exit_err(PARAMETER_PROBLEM, "strdup");
+		xtables_error(PARAMETER_PROBLEM, "strdup");
 	p = strchr(work, '/'); /* by def this can't be NULL now */
 	*p++ = '\0';
 	/*
@@ -786,7 +786,7 @@ static void xtopt_parse_ethermac(struct xt_option_call *cb)
 		       sizeof(cb->val.ethermac));
 	return;
  out:
-	xt_params->exit_err(PARAMETER_PROBLEM, "Invalid MAC address specified.");
+	xtables_error(PARAMETER_PROBLEM, "Invalid MAC address specified.");
 }
 
 static void (*const xtopt_subparse[])(struct xt_option_call *) = {
@@ -831,15 +831,15 @@ void xtables_option_parse(struct xt_option_call *cb)
 	 */
 	if ((!(entry->flags & XTOPT_MULTI) || (entry->excl & eflag)) &&
 	    cb->xflags & eflag)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: option \"--%s\" can only be used once.\n",
 			cb->ext_name, cb->entry->name);
 	if (cb->invert && !(entry->flags & XTOPT_INVERT))
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: option \"--%s\" cannot be inverted.\n",
 			cb->ext_name, entry->name);
 	if (entry->type != XTTYPE_NONE && optarg == NULL)
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: option \"--%s\" requires an argument.\n",
 			cb->ext_name, entry->name);
 	/*
@@ -866,12 +866,12 @@ void xtables_option_metavalidate(const char *name,
 	for (; entry->name != NULL; ++entry) {
 		if (entry->id >= CHAR_BIT * sizeof(unsigned int) ||
 		    entry->id >= XT_OPTION_OFFSET_SCALE)
-			xt_params->exit_err(OTHER_PROBLEM,
+			xtables_error(OTHER_PROBLEM,
 				"Extension %s uses invalid ID %u\n",
 				name, entry->id);
 		if (!(entry->flags & XTOPT_PUT)) {
 			if (entry->ptroff != 0)
-				xt_params->exit_err(OTHER_PROBLEM,
+				xtables_error(OTHER_PROBLEM,
 					"%s: ptroff for \"--%s\" is non-"
 					"zero but no XTOPT_PUT is specified. "
 					"Oversight?", name, entry->name);
@@ -879,13 +879,13 @@ void xtables_option_metavalidate(const char *name,
 		}
 		if (entry->type >= ARRAY_SIZE(xtopt_psize) ||
 		    xtopt_psize[entry->type] == 0)
-			xt_params->exit_err(OTHER_PROBLEM,
+			xtables_error(OTHER_PROBLEM,
 				"%s: entry type of option \"--%s\" cannot be "
 				"combined with XTOPT_PUT\n",
 				name, entry->name);
 		if (xtopt_psize[entry->type] != -1 &&
 		    xtopt_psize[entry->type] != entry->size)
-			xt_params->exit_err(OTHER_PROBLEM,
+			xtables_error(OTHER_PROBLEM,
 				"%s: option \"--%s\" points to a memory block "
 				"of wrong size (expected %zu, got %zu)\n",
 				name, entry->name,
@@ -991,7 +991,7 @@ xtables_option_fcheck2(const char *name, const struct xt_option_entry *entry,
 	unsigned int ef = 1 << entry->id, of = 1 << other->id;
 
 	if (entry->also & of && !(xflags & of))
-		xt_params->exit_err(PARAMETER_PROBLEM,
+		xtables_error(PARAMETER_PROBLEM,
 			"%s: option \"--%s\" also requires \"--%s\".\n",
 			name, entry->name, other->name);
 
@@ -1002,7 +1002,7 @@ xtables_option_fcheck2(const char *name, const struct xt_option_entry *entry,
 		/* Conflicting options were not used. */
 		return;
 
-	xt_params->exit_err(PARAMETER_PROBLEM,
+	xtables_error(PARAMETER_PROBLEM,
 		"%s: option \"--%s\" cannot be used together with \"--%s\".\n",
 		name, entry->name, other->name);
 }
@@ -1024,7 +1024,7 @@ void xtables_options_fcheck(const char *name, unsigned int xflags,
 	for (entry = table; entry->name != NULL; ++entry) {
 		if (entry->flags & XTOPT_MAND &&
 		    !(xflags & (1 << entry->id)))
-			xt_params->exit_err(PARAMETER_PROBLEM,
+			xtables_error(PARAMETER_PROBLEM,
 				"%s: option \"--%s\" must be specified\n",
 				name, entry->name);
 		if (!(xflags & (1 << entry->id)))
