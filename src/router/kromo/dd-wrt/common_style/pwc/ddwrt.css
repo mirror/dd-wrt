@@ -10,7 +10,7 @@
   height: 8rem !important;
   font-family: Tahoma, Arial, sans-serif;
   font: 12px arial;
-  overflow: auto;
+  overflow: hidden;
 }
 .ddwrt_message {
   font: 14px Arial;
@@ -28,8 +28,6 @@
   height: 30px;
   background: transparent url('ddwrt/progress.svg') no-repeat center center;
 }
-.ddwrt_wired_frame {
-  background: #fff;
-  filter: alpha(opacity=60);
-  opacity: .6;
+.ddwrt_window, .ddwrt_title {
+  display: none;
 }
