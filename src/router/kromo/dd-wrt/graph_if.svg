@@ -33,7 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 -->
 <svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100%' height='100%' viewBox='0 0 700 300' preserveAspectRatio='none' onload='init(evt)' encoding='UTF-8'>
 <g id='graph'>
-	<rect id='bg' x1='0' y1='0' width='700' height='300' fill='white' fill-opacity='0.0'/>
+	<rect id='bg' x1='0' y1='0' width='750' height='300' fill='white' fill-opacity='0.0'/>
 
 	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
 	<text id='graph_out_lbl' x='60' y='35' fill='red' text-anchor='end'>Out</text>
