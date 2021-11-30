@@ -1810,8 +1810,6 @@ int internal_getRouterBrand()
 	nvram_default_get("wlan0_rxantenna", "1");
 	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_NS5M;
-#elif HAVE_UBNTTI
-	return ROUTER_BOARD_TI;
 #elif HAVE_DAP3310
 	setRouter("DLink DAP3310");
 	return ROUTER_BOARD_NS5M;
@@ -1892,14 +1890,14 @@ int internal_getRouterBrand()
 		{ -1, "Rocket M2", 0xe1b2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10 },	//
 		{ -1, "Rocket M2", 0xe1c2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10 },	//
 		{ -1, "Rocket M2 XW", 0xe868, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 7 },	//
-		{ -1, "Rocket M2 Titanium XW", 0xe1d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10 },	// Titanium
-		{ -1, "Rocket M5 Titanium XW", 0xe4d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 5 },	// Titanium
+		{ -1, "Rocket M2 Titanium XW", 0xe1d2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10 },	// Titanium
+		{ -1, "Rocket M5 Titanium XW", 0xe4d5, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 5 },	// Titanium
 		{ -1, "Rocket M5", 0xe105, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
 		{ -1, "Rocket M5", 0xe1b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
 		{ -1, "Rocket M5 XW", 0xe6b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
 		{ -1, "Rocket M5", 0xe8b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
 		{ -1, "Rocket M5", 0xe1c5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
-		{ -1, "Rocket M5 Titanium XW", 0xe1d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 5 },	// Titanium
+		{ -1, "Rocket M5 Titanium XW", 0xe1d5, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 5 },	// Titanium
 		{ -1, "Rocket M6", 0xe1b6, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 5 },	//
 		{ -1, "Rocket M3", 0xe1c3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 3 },	//
 		{ -1, "Rocket M3", 0xe1e3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 3 },	//
@@ -1913,11 +1911,11 @@ int internal_getRouterBrand()
 		{ -1, "Bullet M2", 0xe2c3, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 6 },	//
 		{ -1, "Bullet M2", 0xe2c4, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 6 },	//
 		{ -1, "Bullet M2 XW", 0xe869, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 2 },	//
-		{ -1, "Bullet M2", 0xe2d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 12 },	// Titanium
-		{ -1, "Bullet M2", 0xe2d4, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 6 },	// Titanium
+		{ -1, "Bullet M2", 0xe2d2, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 12 },	// Titanium
+		{ -1, "Bullet M2", 0xe2d4, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 6 },	// Titanium
 		{ -1, "Bullet M5", 0xe205, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 6 },	//
-		{ -1, "Bullet M5", 0xe2d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 6 },	// Titanium
-		{ -1, "Bullet M2 Titanium", 0xe879, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 2 },	// Titanium
+		{ -1, "Bullet M5", 0xe2d5, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 6 },	// Titanium
+		{ -1, "Bullet M2 Titanium", 0xe879, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 2 },	// Titanium
 		{ -1, "Airgrid M2", 0xe212, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 1 },	//
 		{ -1, "Airgrid M2", 0xe242, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 9 },	//
 		{ -1, "Airgrid M2HP", 0xe252, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 9 },	//
