@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <linux/capability.h>
+#include <linux/limits.h>
 #include <linux/netlink.h>
 #include <netinet/tcp.h>
 #include <openssl/crypto.h>
@@ -517,6 +518,7 @@ static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int
 	ssize_t rc;
 	int af = 0;
 	static const struct sockaddr_nl snl = {.nl_family = AF_NETLINK};
+	uint32_t expire;
 
 	if (addr_len != IPV4_ADDR_LEN && addr_len != IPV6_ADDR_LEN) {
 		errno = EINVAL;
@@ -571,8 +573,8 @@ static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int
 	nested[1]->len = (void *)buffer + NETLINK_ALIGN(netlink_head->nlmsg_len) - (void *)nested[1];
 
 	if (timeout > 0 && _ipset_support_timeout(ipsetname) == 0) {
-		timeout = htonl(timeout);
-		_ipset_add_attr(netlink_head, IPSET_ATTR_TIMEOUT | NLA_F_NET_BYTEORDER, sizeof(timeout), &timeout);
+		expire = htonl(timeout);
+		_ipset_add_attr(netlink_head, IPSET_ATTR_TIMEOUT | NLA_F_NET_BYTEORDER, sizeof(expire), &expire);
 	}
 
 	nested[0]->len = (void *)buffer + NETLINK_ALIGN(netlink_head->nlmsg_len) - (void *)nested[0];
