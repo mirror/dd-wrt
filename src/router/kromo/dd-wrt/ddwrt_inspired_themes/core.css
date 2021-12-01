@@ -661,18 +661,25 @@ div.gridpoint {
   background-color: var(--fg-1);
 }
 div.slidingheader {
-  background-color: var(--bg-2);
+  background-color: var(--v0-4);
   background-image: none;
-  border: 1px solid var(--bg-4);
+  border: 1px solid var(--v0-6);
+  border-radius: 4px;
+}
+div.slidingheader:hover {
+  background-color: var(--v0-7);
+  background-image: none;
+  border: 1px solid var(--v0-7);
+  color: var(--v9-9);
 }
 div.slidingbodyshow {
   background-color: var(--bg-2);
 }
 div.slidingbodyshow center {
-  border-color: var(--bg-4);
+  border-color: var(--bg-5);
 }
 div.slidingbody {
-  background-color: var(--bg-5);
+  background-color: var(--bg-4);
 }
 span.title3d {
   background-color: var(--bg-0);
@@ -710,6 +717,7 @@ h2 {
 .submitFooter .button {
   padding: 0 1rem;
   margin: 0.362em;
+  height: 1.533rem;
 }
 .meter {
   background-color: var(--bg-4);
