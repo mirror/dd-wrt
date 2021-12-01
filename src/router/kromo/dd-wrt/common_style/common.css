@@ -326,8 +326,9 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
 }
 .submitFooter .button {
-  padding: .362em 1.087em;
-  margin: .362em .362em;
+  padding: 0 1rem;
+  margin: .362em;
+  height: 1.533rem;
 }
 .message div input {
   padding: .362em 1.087em;
