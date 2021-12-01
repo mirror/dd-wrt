@@ -33,7 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 -->
 <svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100%' height='100%' viewBox='0 0 700 300' preserveAspectRatio='none' onload='init(evt)' encoding='UTF-8'>
 <g id='graph'>
-	<rect id='bg' x1='0' y1='0' width='750' height='300' fill='white' fill-opacity='0.0'/>
+	<rect id='bg' x1='0' y1='0' width='100%' height='300' fill='white' fill-opacity='0.0'/>
 
 	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
 	<text id='graph_out_lbl' x='60' y='35' fill='red' text-anchor='end'>Out</text>
@@ -44,13 +44,13 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='switch_unit'  x='250' y='15' fill='#2e81c9' cursor='pointer'>Switch to kbyte/s</text>
 	<text id='switch_scale' x='250' y='35' fill='#2e81c9' cursor='pointer'>Autoscale (follow)</text>
 
-	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
+	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='#2e81c9'>Cannot get data about interface</text>
 	<text id='collect_initial' x='300' y='125' text-anchor='middle' visibility='hidden' fill='gray'>Collecting initial data, please wait...</text>
 
 	<path id='grid' d='M 2 75 L 700 75 M 2 150 L 700 150 M 2 225 L 700 225' stroke='gray' stroke-opacity='0.5' />
-	<text id='grid_txt3' x='700' y='223' fill='gray' text-anchor='end'>--</text>
-	<text id='grid_txt2' x='700' y='148' fill='gray' text-anchor='end'>--</text>
-	<text id='grid_txt1' x='700' y='73' fill='gray' text-anchor='end'>--</text>
+	<text id='grid_txt3' x='100%' y='223' fill='gray' text-anchor='end'>--</text>
+	<text id='grid_txt2' x='100%' y='148' fill='gray' text-anchor='end'>--</text>
+	<text id='grid_txt1' x='100%' y='73' fill='gray' text-anchor='end'>--</text>
 
 	<path id='graph_out' d='' fill='red' fill-opacity='0.5' stroke='red' stroke-width='1' stroke-opacity='1' />
 	<path id='graph_in'  d='' fill='green' fill-opacity='0.5' stroke='green' stroke-width='1' stroke-opacity='1' />
