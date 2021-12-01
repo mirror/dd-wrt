@@ -2207,6 +2207,8 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 	char *date_fmt = "%a %b %e %H:%M:%S %Z %Y";
 	int baselen = 64;
 	buffer = malloc(baselen);
+	if (!buffer)
+		return -1;
 	strftime(buffer, 200, date_fmt, &tm_time);
 	strbuffer = strlen(buffer);
 	buffer[strbuffer++] = '\n';
