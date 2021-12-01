@@ -844,7 +844,9 @@ static void *handle_request(void *arg)
 		break;
 	}
 	if (!*(line)) {
-		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, live_translate(conn_fp, "share.request_timeout_desc"));
+		char debug[128];
+		sprintf(debug, "%s errno %d, cnt %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt);
+		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, debug);
 
 		goto out;
 	}
