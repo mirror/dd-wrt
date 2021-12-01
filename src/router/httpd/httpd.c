@@ -409,10 +409,24 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 	return listen_fd;
 }
+#ifdef __UCLIBC__
+struct crypt_data {
+	char __buf[256];
+};
+
+static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data) {
+	CRYPT_MUTEX_LOCK(&crypt_mutex);
+	char *enc1 = crypt(authinfo, authdata);
+	strcpy(data->__buf, enc1);
+	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
+	return data->__buf;
+}
+#endif
+
+
 
 static int auth_check(webs_t conn_fp)
 {
-	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *authinfo;
 	char *authpass;
 	int l;
@@ -445,12 +459,8 @@ static int auth_check(webs_t conn_fp)
 
 	char *enc1;
 	char *enc2;
-#ifdef __UCLIBC__
-	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
-#else
 	struct crypt_data data;
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
-#endif
 	char dummy[128];
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
@@ -459,11 +469,7 @@ static int auth_check(webs_t conn_fp)
 		}
 		goto out;
 	}
-#ifdef __UCLIBC__
-	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
-#else
 	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
-#endif
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
@@ -475,7 +481,6 @@ static int auth_check(webs_t conn_fp)
 	ret = 1;
       out:;
 	free(authinfo);
-	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 
 	return ret;
 }
