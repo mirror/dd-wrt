@@ -825,12 +825,14 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	int eof = 0;
 	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
+	PTHREAD_MUTEX_LOCK(&input_mutex);
 	for (;;) {
 		if (cnt == 5000)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
+			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
@@ -843,6 +845,7 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
+	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 	if (!*(line)) {
 		char debug[128];
 		sprintf(debug, "%s errno %d, cnt %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt);
@@ -876,10 +879,12 @@ static void *handle_request(void *arg)
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
+	PTHREAD_MUTEX_LOCK(&input_mutex);
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2"));
+			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -923,6 +928,7 @@ static void *handle_request(void *arg)
 		}
 #endif
 	}
+	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
 		method_type = METHOD_GET;
@@ -1222,7 +1228,9 @@ static void *handle_request(void *arg)
 			if (authorization)
 				conn_fp->authorization = strdup(authorization);
 
+			PTHREAD_MUTEX_LOCK(&input_mutex);
 			int result = handler->auth(conn_fp, auth_check);
+			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
 #ifdef HAVE_IAS
 			if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
