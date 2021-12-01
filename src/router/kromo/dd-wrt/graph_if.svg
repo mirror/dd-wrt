@@ -94,7 +94,7 @@ if (typeof getURL == 'undefined') {
 		}
 
 		http_request.onreadystatechange = function() {
-			if (http_request.readyState == 4) {
+			if (http_request.readyState == 4 && http_request.status == 200) {
 				callback( 
 					{
 						success : true,
