@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6381 | brainslayer | 2021-12-01 19:08:39 +0700 (Wed, 01 Dec 2021) | 1 line
+
+mac80211: fix rate control for retransmitted frames (thx nbd)
+------------------------------------------------------------------------
+r6380 | brainslayer | 2021-12-01 19:08:04 +0700 (Wed, 01 Dec 2021) | 1 line
+
+mac80211: set up the fwd_skb->dev for mesh forwarding (thx nbd)
+------------------------------------------------------------------------
 r6379 | brainslayer | 2021-12-01 19:05:58 +0700 (Wed, 01 Dec 2021) | 1 line
 
  mac80211: fix regression in SSN handling of addba tx (thx nbd)
