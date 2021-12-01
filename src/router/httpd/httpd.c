@@ -779,6 +779,7 @@ int ias_sid_timeout;
 void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
+static int threadnum=0;
 static persistent_vars global_vars;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
@@ -812,6 +813,7 @@ static void *handle_request(void *arg)
 #ifdef HAVE_SUPERCHANNEL
 	conn_fp->issuperchannel = superchannel;
 #endif
+	threadnum++;
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 
 	setnaggle(conn_fp, 1);
@@ -825,17 +827,15 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	int eof = 0;
 	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
-	PTHREAD_MUTEX_LOCK(&input_mutex);
 	for (;;) {
 		if (cnt == 5000)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
-			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
-		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
+		if (!*(line) && (errno == EINTR || errno == EAGAIN || errno == 9 || errno == 2)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
 			tim.tv_nsec = 1000000L;
@@ -845,10 +845,9 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
-	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 	if (!*(line)) {
 		char debug[128];
-		sprintf(debug, "%s errno %d, cnt %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt);
+		sprintf(debug, "%s errno %d, cnt %d thread %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt, threadnum);
 		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, debug);
 
 		goto out;
@@ -879,12 +878,10 @@ static void *handle_request(void *arg)
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
-	PTHREAD_MUTEX_LOCK(&input_mutex);
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2"));
-			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -928,7 +925,6 @@ static void *handle_request(void *arg)
 		}
 #endif
 	}
-	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
 		method_type = METHOD_GET;
@@ -1228,9 +1224,7 @@ static void *handle_request(void *arg)
 			if (authorization)
 				conn_fp->authorization = strdup(authorization);
 
-			PTHREAD_MUTEX_LOCK(&input_mutex);
 			int result = handler->auth(conn_fp, auth_check);
-			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
 #ifdef HAVE_IAS
 			if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
@@ -1303,6 +1297,7 @@ static void *handle_request(void *arg)
 #ifdef HAVE_ISSUPERCHANNEL
 	superchannel = conn_fp->issuperchannel;
 #endif
+	threadnum--;
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
@@ -1684,7 +1679,6 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
@@ -1731,7 +1725,7 @@ int main(int argc, char **argv)
 			}
 			perror("select");
 			SEM_POST(&semaphore);
-			return errno;
+			continue;
 		}
 
 		sz = sizeof(usa);
@@ -1752,7 +1746,7 @@ int main(int argc, char **argv)
 		if (conn_fp->conn_fd < 0) {
 			perror("accept");
 			SEM_POST(&semaphore);
-			return errno;
+			continue;
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
@@ -1761,8 +1755,9 @@ int main(int argc, char **argv)
 		int action = check_action();
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
+			close(conn_fp->conn_fd);
 			SEM_POST(&semaphore);
-			return -1;
+			continue;
 		}
 		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
@@ -1774,8 +1769,9 @@ int main(int argc, char **argv)
 		if (SSL_ENABLED() && DO_SSL(conn_fp)) {
 			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "httpsd: nothing to do...\n");
+				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
-				return -1;
+				continue;
 			}
 #ifdef HAVE_OPENSSL
 			const char *allowedCiphers =
@@ -1851,14 +1847,16 @@ int main(int argc, char **argv)
 		} else {
 			if (SSL_ENABLED() && action == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
+				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
-				return -1;
+				continue;
 			}
 
 			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
 				perror("fdopen");
+				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
-				return errno;
+				continue;
 			}
 		}
 
