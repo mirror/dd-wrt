@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.1.4
+ * style-name: DD-WRT Inspired Themes v5.1.5
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -822,11 +822,8 @@ img[src*='hotspotsystem'] {
 svg {
   shape-rendering: geometricPrecision;
 }
-#graph {
-  width: clamp(200px, 70%, 800px);
-}
 #graph text[fill='green'] {
-  fill: var(--v4-6) !important;
+  fill: var(--v4-5) !important;
 }
 #graph text[fill='red'] {
   fill: var(--v1-6) !important;
@@ -850,11 +847,14 @@ svg {
 }
 #graph path[stroke='gray'] {
   stroke: var(--bg-5) !important;
-  stroke-opacity: 0.5;
 }
-#graph rect #bg[fill='white'] {
-  fill: var(--bg-2) !important;
-  fill-opacity: 1;
+#graph path[fill='green'] {
+  fill: var(--v4-6) !important;
+  fill-opacity: 0.4 !important;
+}
+#graph path[fill='red'] {
+  fill: var(--v1-6) !important;
+  fill-opacity: 0.4 !important;
 }
 #graph line[stroke='black'],
 #graph line[stroke='#111'] {
