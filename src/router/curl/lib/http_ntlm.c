@@ -100,17 +100,17 @@ CURLcode Curl_input_ntlm(struct Curl_easy *data,
     }
     else {
       if(*state == NTLMSTATE_LAST) {
-        infof(data, "NTLM auth restarted\n");
+        infof(data, "NTLM auth restarted");
         Curl_http_auth_cleanup_ntlm(conn);
       }
       else if(*state == NTLMSTATE_TYPE3) {
-        infof(data, "NTLM handshake rejected\n");
+        infof(data, "NTLM handshake rejected");
         Curl_http_auth_cleanup_ntlm(conn);
         *state = NTLMSTATE_NONE;
         return CURLE_REMOTE_ACCESS_DENIED;
       }
       else if(*state >= NTLMSTATE_TYPE1) {
-        infof(data, "NTLM handshake failure (internal error)\n");
+        infof(data, "NTLM handshake failure (internal error)");
         return CURLE_REMOTE_ACCESS_DENIED;
       }
 
@@ -198,6 +198,12 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
 #endif
 
   Curl_bufref_init(&ntlmmsg);
+
+  /* connection is already authenticated, don't send a header in future
+   * requests so go directly to NTLMSTATE_LAST */
+  if(*state == NTLMSTATE_TYPE3)
+    *state = NTLMSTATE_LAST;
+
   switch(*state) {
   case NTLMSTATE_TYPE1:
   default: /* for the weird cases we (re)start here */
@@ -246,11 +252,6 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
     }
     break;
 
-  case NTLMSTATE_TYPE3:
-    /* connection is already authenticated,
-     * don't send a header in future requests */
-    *state = NTLMSTATE_LAST;
-    /* FALLTHROUGH */
   case NTLMSTATE_LAST:
     Curl_safefree(*allocuserpwd);
     authp->done = TRUE;

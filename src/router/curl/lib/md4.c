@@ -27,6 +27,7 @@
 #include "curl_md4.h"
 #include "warnless.h"
 
+
 #ifdef USE_OPENSSL
 #include <openssl/opensslconf.h>
 #if defined(OPENSSL_VERSION_MAJOR) && (OPENSSL_VERSION_MAJOR >= 3)
@@ -35,9 +36,20 @@
 #endif
 #endif /* USE_OPENSSL */
 
+#ifdef USE_WOLFSSL
+#include <wolfssl/options.h>
+#ifdef NO_MD4
+#define OPENSSL_NO_MD4
+#endif
+#endif
+
 #ifdef USE_MBEDTLS
-#include <mbedtls/config.h>
 #include <mbedtls/version.h>
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+#include <mbedtls/mbedtls_config.h>
+#else
+#include <mbedtls/config.h>
+#endif
 
 #if(MBEDTLS_VERSION_NUMBER >= 0x02070000)
   #define HAS_MBEDTLS_RESULT_CODE_BASED_FUNCTIONS
@@ -70,8 +82,9 @@ static void MD4_Final(unsigned char *result, MD4_CTX *ctx)
   md4_digest(ctx, MD4_DIGEST_SIZE, result);
 }
 
-#elif defined(USE_OPENSSL) && !defined(OPENSSL_NO_MD4)
-/* When OpenSSL is available we use the MD4-functions from OpenSSL */
+#elif (defined(USE_OPENSSL) || defined(USE_WOLFSSL)) && \
+      !defined(OPENSSL_NO_MD4)
+/* When OpenSSL or wolfSSL is available, we use their MD4 functions. */
 #include <openssl/md4.h>
 
 #elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \

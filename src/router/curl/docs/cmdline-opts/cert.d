@@ -5,11 +5,13 @@ Help: Client certificate file and password
 Protocols: TLS
 See-also: cert-type key key-type
 Category: tls
+Example: --cert certfile --key keyfile $URL
+Added: 5.0
 ---
 Tells curl to use the specified client certificate file when getting a file
 with HTTPS, FTPS or another SSL-based protocol. The certificate must be in
 PKCS#12 format if using Secure Transport, or PEM format if using any other
-engine.  If the optional password isn't specified, it will be queried for on
+engine.  If the optional password is not specified, it will be queried for on
 the terminal. Note that this option assumes a \&"certificate" file that is the
 private key and the client certificate concatenated! See --cert and --key to
 specify them independently.

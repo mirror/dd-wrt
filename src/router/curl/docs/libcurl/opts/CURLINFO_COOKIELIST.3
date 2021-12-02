@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_COOKIELIST 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_getinfo options"
+.TH CURLINFO_COOKIELIST 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_COOKIELIST \- get all known cookies
@@ -31,7 +31,7 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_COOKIELIST,
                            struct curl_slist **cookies);
 .SH DESCRIPTION
 Pass a pointer to a 'struct curl_slist *' to receive a linked-list of all
-cookies curl knows (expired ones, too). Don't forget to call
+cookies curl knows (expired ones, too). do not forget to call
 \fIcurl_slist_free_all(3)\fP on the list after it has been used.  If there are
 no cookies (cookies for the handle have not been enabled or simply none have
 been received) 'struct curl_slist *' will be set to point to NULL.
@@ -62,7 +62,7 @@ if(curl) {
         printf("%s\\n", each->data);
         each = each->next;
       }
-      /* we must free these cookies when we're done */
+      /* we must free these cookies when we are done */
       curl_slist_free_all(cookies);
     }
   }

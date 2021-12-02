@@ -19,14 +19,14 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_multi_setopt 3 "December 31, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_multi_setopt 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_multi_setopt \- set options for a curl multi handle
 .SH SYNOPSIS
 #include <curl/curl.h>
 
-CURLMcode curl_multi_setopt(CURLM * multi_handle, CURLMoption option, param);
+CURLMcode curl_multi_setopt(CURLM *multi_handle, CURLMoption option, param);
 .SH DESCRIPTION
 \fIcurl_multi_setopt(3)\fP is used to tell a libcurl multi handle how to
 behave. By using the appropriate options to \fIcurl_multi_setopt(3)\fP, you
@@ -70,12 +70,17 @@ See \fICURLMOPT_TIMERFUNCTION(3)\fP
 See \fICURLMOPT_TIMERDATA(3)\fP
 .IP CURLMOPT_MAX_CONCURRENT_STREAMS
 See \fICURLMOPT_MAX_CONCURRENT_STREAMS(3)\fP
-.SH RETURNS
+.SH EXAMPLE
+.fi
+  /* Limit the amount of simultaneous connections curl should allow: */
+  curl_multi_setopt(handle, CURLMOPT_MAXCONNECTS, (long)MAX_PARALLEL);
+.nf
+.SH AVAILABILITY
+Added in 7.15.4
+.SH RETURN VALUE
 The standard CURLMcode for multi interface error codes. Note that it returns a
 CURLM_UNKNOWN_OPTION if you try setting an option that this version of libcurl
-doesn't know of.
-.SH AVAILABILITY
-This function was added in libcurl 7.15.4.
+does not know of.
 .SH "SEE ALSO"
 .BR curl_multi_cleanup "(3), " curl_multi_init "(3), "
 .BR curl_multi_socket "(3), " curl_multi_info_read "(3)"

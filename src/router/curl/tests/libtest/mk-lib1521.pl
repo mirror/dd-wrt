@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2017 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 2017 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -136,6 +136,7 @@ static curl_xferinfo_callback xferinfocb;
 static curl_hstsread_callback hstsreadcb;
 static curl_hstswrite_callback hstswritecb;
 static curl_resolver_start_callback resolver_start_cb;
+static curl_prereq_callback prereqcb;
 
 int test(char *URL)
 {

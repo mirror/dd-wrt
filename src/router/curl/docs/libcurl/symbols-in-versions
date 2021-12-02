@@ -10,7 +10,7 @@
  for a few symbols the last version that featured it. The names appear in
  alphabetical order.
 
- Name                           Introduced  Deprecated  Removed
+ Name                           Introduced  Deprecated  Last
 
 CURLALTSVC_H1                   7.64.1
 CURLALTSVC_H2                   7.64.1
@@ -120,6 +120,7 @@ CURLE_RTSP_CSEQ_ERROR           7.20.0
 CURLE_RTSP_SESSION_ERROR        7.20.0
 CURLE_SEND_ERROR                7.10
 CURLE_SEND_FAIL_REWIND          7.12.3
+CURLE_SETOPT_OPTION_SYNTAX      7.78.0
 CURLE_SHARE_IN_USE              7.9.6         7.17.0
 CURLE_SSH                       7.16.1
 CURLE_SSL_CACERT                7.10          7.62.0
@@ -498,6 +499,7 @@ CURLOPT_MAXAGE_CONN             7.65.0
 CURLOPT_MAXCONNECTS             7.7
 CURLOPT_MAXFILESIZE             7.10.8
 CURLOPT_MAXFILESIZE_LARGE       7.11.0
+CURLOPT_MAXLIFETIME_CONN        7.80.0
 CURLOPT_MAXREDIRS               7.5
 CURLOPT_MAX_RECV_SPEED_LARGE    7.15.5
 CURLOPT_MAX_SEND_SPEED_LARGE    7.15.5
@@ -530,6 +532,8 @@ CURLOPT_POSTFIELDSIZE_LARGE     7.11.1
 CURLOPT_POSTQUOTE               7.1
 CURLOPT_POSTREDIR               7.19.1
 CURLOPT_PREQUOTE                7.9.5
+CURLOPT_PREREQDATA              7.80.0
+CURLOPT_PREREQFUNCTION          7.80.0
 CURLOPT_PRE_PROXY               7.52.0
 CURLOPT_PRIVATE                 7.10.3
 CURLOPT_PROGRESSDATA            7.1
@@ -612,6 +616,7 @@ CURLOPT_SOURCE_USERPWD          7.12.1        -           7.15.5
 CURLOPT_SSH_AUTH_TYPES          7.16.1
 CURLOPT_SSH_COMPRESSION         7.56.0
 CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 7.17.1
+CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256 7.80.0
 CURLOPT_SSH_KEYDATA             7.19.6
 CURLOPT_SSH_KEYFUNCTION         7.19.6
 CURLOPT_SSH_KNOWNHOSTS          7.19.6
@@ -814,7 +819,7 @@ CURLSSLBACKEND_NSS              7.34.0
 CURLSSLBACKEND_OPENSSL          7.34.0
 CURLSSLBACKEND_POLARSSL         7.34.0       7.69.0
 CURLSSLBACKEND_RUSTLS           7.76.0
-CURLSSLBACKEND_QSOSSL           7.34.0        -           7.38.1
+CURLSSLBACKEND_QSOSSL           7.34.0        -           7.38.0
 CURLSSLBACKEND_SCHANNEL         7.34.0
 CURLSSLBACKEND_SECURETRANSPORT  7.64.1
 CURLSSLBACKEND_WOLFSSL          7.49.0
@@ -864,6 +869,7 @@ CURLUSESSL_ALL                  7.17.0
 CURLUSESSL_CONTROL              7.17.0
 CURLUSESSL_NONE                 7.17.0
 CURLUSESSL_TRY                  7.17.0
+CURLU_ALLOW_SPACE               7.78.0
 CURLU_APPENDQUERY               7.62.0
 CURLU_DEFAULT_PORT              7.62.0
 CURLU_DEFAULT_SCHEME            7.62.0
@@ -961,6 +967,8 @@ CURL_POLL_INOUT                 7.14.0
 CURL_POLL_NONE                  7.14.0
 CURL_POLL_OUT                   7.14.0
 CURL_POLL_REMOVE                7.14.0
+CURL_PREREQFUNC_ABORT           7.79.0
+CURL_PREREQFUNC_OK              7.79.0
 CURL_PROGRESSFUNC_CONTINUE      7.68.0
 CURL_PROGRESS_BAR               7.1.1         -           7.4.1
 CURL_PROGRESS_STATS             7.1.1         -           7.4.1

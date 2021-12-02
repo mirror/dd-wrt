@@ -4058,11 +4058,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_main.c"
+				RelativePath="..\..\..\..\src\tool_listhelp.c"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_metalink.c"
+				RelativePath="..\..\..\..\src\tool_main.c"
 			>
 			</File>
 			<File
@@ -4263,10 +4263,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_main.h"
-			>
-			</File>
-			<File
-				RelativePath="..\..\..\..\src\tool_metalink.h"
 			>
 			</File>
 			<File

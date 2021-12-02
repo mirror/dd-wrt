@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_escape 3 "November 09, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_easy_escape 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_escape - URL encodes the given string
@@ -40,7 +40,7 @@ If \fIlength\fP is set to 0 (zero), \fIcurl_easy_escape(3)\fP uses strlen() on
 the input \fIstring\fP to find out the size. This function does not accept
 input strings longer than \fBCURL_MAX_INPUT_LENGTH\fP (8 MB).
 
-You must \fIcurl_free(3)\fP the returned string when you're done with it.
+You must \fIcurl_free(3)\fP the returned string when you are done with it.
 .SH ENCODING
 libcurl is typically not aware of, nor does it care about, character
 encodings. \fIcurl_easy_escape(3)\fP encodes the data byte-by-byte into the
@@ -50,10 +50,6 @@ uses.
 
 The caller of \fIcurl_easy_escape(3)\fP must make sure that the data passed in
 to the function is encoded correctly.
-.SH AVAILABILITY
-Added in 7.15.4 and replaces the old \fIcurl_escape(3)\fP function.
-.SH RETURN VALUE
-A pointer to a null-terminated string or NULL if it failed.
 .SH EXAMPLE
 .nf
 CURL *curl = curl_easy_init();
@@ -65,5 +61,9 @@ if(curl) {
   }
 }
 .fi
+.SH AVAILABILITY
+Added in 7.15.4 and replaces the old \fIcurl_escape(3)\fP function.
+.SH RETURN VALUE
+A pointer to a null-terminated string or NULL if it failed.
 .SH "SEE ALSO"
 .BR curl_easy_unescape "(3), " curl_free "(3), " RFC 3986

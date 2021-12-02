@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_CONTENT_LENGTH_UPLOAD 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_getinfo options"
+.TH CURLINFO_CONTENT_LENGTH_UPLOAD 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_CONTENT_LENGTH_UPLOAD \- get the specified size of the upload
@@ -31,7 +31,7 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_CONTENT_LENGTH_UPLOAD,
                            double *content_length);
 .SH DESCRIPTION
 Pass a pointer to a double to receive the specified size of the upload.  Since
-7.19.4, this returns -1 if the size isn't known.
+7.19.4, this returns -1 if the size is not known.
 
 \fICURLINFO_CONTENT_LENGTH_UPLOAD_T(3)\fP is a newer replacement that returns a
 more sensible variable type.

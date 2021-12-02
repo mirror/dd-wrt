@@ -236,29 +236,21 @@ bool Curl_recv_has_postponed_data(struct connectdata *conn, int sockindex)
 #endif /* ! USE_RECV_BEFORE_SEND_WORKAROUND */
 
 /* Curl_infof() is for info message along the way */
+#define MAXINFO 2048
 
 void Curl_infof(struct Curl_easy *data, const char *fmt, ...)
 {
+  DEBUGASSERT(!strchr(fmt, '\n'));
   if(data && data->set.verbose) {
     va_list ap;
     size_t len;
-    char print_buffer[2048 + 1];
+    char buffer[MAXINFO + 2];
     va_start(ap, fmt);
-    len = mvsnprintf(print_buffer, sizeof(print_buffer), fmt, ap);
-    /*
-     * Indicate truncation of the input by replacing the last 3 characters
-     * with "...", and transfer the newline over in case the format had one.
-     */
-    if(len >= sizeof(print_buffer)) {
-      len = strlen(fmt);
-      if(fmt[--len] == '\n')
-        msnprintf(print_buffer + (sizeof(print_buffer) - 5), 5, "...\n");
-      else
-        msnprintf(print_buffer + (sizeof(print_buffer) - 4), 4, "...");
-    }
+    len = mvsnprintf(buffer, MAXINFO, fmt, ap);
     va_end(ap);
-    len = strlen(print_buffer);
-    Curl_debug(data, CURLINFO_TEXT, print_buffer, len);
+    buffer[len++] = '\n';
+    buffer[len] = '\0';
+    Curl_debug(data, CURLINFO_TEXT, buffer, len);
   }
 }
 
@@ -274,14 +266,14 @@ void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
     size_t len;
     char error[CURL_ERROR_SIZE + 2];
     va_start(ap, fmt);
-    (void)mvsnprintf(error, CURL_ERROR_SIZE, fmt, ap);
-    len = strlen(error);
+    len = mvsnprintf(error, CURL_ERROR_SIZE, fmt, ap);
 
     if(data->set.errorbuffer && !data->state.errorbuf) {
       strcpy(data->set.errorbuffer, error);
       data->state.errorbuf = TRUE; /* wrote error string */
     }
     error[len++] = '\n';
+    error[len] = '\0';
     Curl_debug(data, CURLINFO_TEXT, error, len);
     va_end(ap);
   }
@@ -616,7 +608,7 @@ static CURLcode chop_write(struct Curl_easy *data,
 /* Curl_client_write() sends data to the write callback(s)
 
    The bit pattern defines to what "streams" to write to. Body and/or header.
-   The defines are in sendf.h of course. "len" is not allowed to be 0.
+   The defines are in sendf.h of course.
 
    If CURL_DO_LINEEND_CONV is enabled, data is converted IN PLACE to the
    local character encoding.  This is a problem and should be changed in
@@ -629,8 +621,10 @@ CURLcode Curl_client_write(struct Curl_easy *data,
 {
   struct connectdata *conn = data->conn;
 
-  DEBUGASSERT(len);
-  DEBUGASSERT(type <= 3);
+  DEBUGASSERT(!(type & ~CLIENTWRITE_BOTH));
+
+  if(!len)
+    return CURLE_OK;
 
   /* FTP data may need conversion. */
   if((type & CLIENTWRITE_BODY) &&

@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -71,6 +71,9 @@ TEST_E = -a -e
 
 # !flaky means that it'll skip all tests using the flaky keyword
 TEST_NF = -a -p !flaky
+
+# special CI target derived from nonflaky with CI-specific flags
+TEST_CI = $(TEST_NF) -r -rm
 endif
 
 # make sure that PERL is pointing to an executable
@@ -85,6 +88,9 @@ quiet-test: perlcheck all
 
 am-test: perlcheck all
 	$(TEST) $(TEST_AM) $(TFLAGS)
+
+ci-test: perlcheck all
+	$(TEST) $(TEST_CI) $(TFLAGS)
 
 full-test: perlcheck all
 	$(TEST) $(TEST_F) $(TFLAGS)
