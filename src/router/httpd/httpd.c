@@ -828,7 +828,7 @@ static void *handle_request(void *arg)
 	int eof = 0;
 	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
 	for (;;) {
-		if (cnt == 5000)
+		if (cnt == 500)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
@@ -838,7 +838,7 @@ static void *handle_request(void *arg)
 		if (!*(line) && (errno == EINTR || errno == EAGAIN || errno == 9 || errno == 2)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
-			tim.tv_nsec = 1000000L;
+			tim.tv_nsec = 10000000L;
 			nanosleep(&tim, &tim2);
 			cnt++;
 			continue;
