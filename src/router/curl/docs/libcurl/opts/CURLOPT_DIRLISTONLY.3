@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_DIRLISTONLY 3 "December 31, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_DIRLISTONLY 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_DIRLISTONLY \- ask for names only in a directory listing
@@ -43,7 +43,7 @@ that some FTP servers list only files in their response to NLST; they might not
 include subdirectories and symbolic links.
 
 Setting this option to 1 also implies a directory listing even if the URL
-doesn't end with a slash, which otherwise is necessary.
+does not end with a slash, which otherwise is necessary.
 
 Do NOT use this option if you also use \fICURLOPT_WILDCARDMATCH(3)\fP as it
 will effectively break that feature then.

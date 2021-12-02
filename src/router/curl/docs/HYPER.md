@@ -14,9 +14,7 @@ changes.
 
 ## Hyper version
 
-The C API for Hyper is brand new and under development. This description
-assumes that you get and build that C API off [the branch in Hyper's git
-repository](https://github.com/hyperium/hyper/tree/hyper-capi).
+The C API for Hyper is brand new and is still under development.
 
 ## build curl with hyper
 
@@ -46,6 +44,16 @@ The API in Hyper delivers received HTTP headers as (cleaned up) name=value
 pairs, making it impossible for curl to know the exact byte representation
 over the wire with Hyper.
 
+## Limitations
+
+The hyper backend does not support
+
+- `CURLOPT_IGNORE_CONTENT_LENGTH`
+- `--raw` and disabling `CURLOPT_HTTP_TRANSFER_DECODING`
+- RTSP
+- hyper is much stricter about what HTTP header contents it allow in requests
+- HTTP/0.9
+
 ## Remaining issues
 
 This backend is still not feature complete with the native backend. Areas that
@@ -54,11 +62,6 @@ still need attention and verification include:
 - multiplexed HTTP/2
 - h2 Upgrade:
 - pausing transfers
-- co-exist with a HTTP/3 build
 - receiving HTTP/1 trailers
 - sending HTTP/1 trailers
-- accept-encoding
-- transfer encoding
-- alt-svc
-- hsts
-- DoH ([#6389](https://github.com/curl/curl/issues/6389))
+

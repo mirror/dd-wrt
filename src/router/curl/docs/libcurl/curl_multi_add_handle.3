@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_multi_add_handle 3 "November 05, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_multi_add_handle 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_multi_add_handle - add an easy handle to a multi session
@@ -48,7 +48,7 @@ handles will not affect the pool of connections or the ability to do
 connection re-use.
 
 If you have \fICURLMOPT_TIMERFUNCTION(3)\fP set in the multi handle (and you
-really should if you're working event-based with
+really should if you are working event-based with
 \fIcurl_multi_socket_action(3)\fP and friends), that callback will be called
 from within this function to ask for an updated timer so that your main event
 loop will get the activity on this handle to get started.
@@ -65,6 +65,17 @@ first the easy handle and then the multi handle:
 2 - \fIcurl_easy_cleanup(3)\fP
 
 3 - \fIcurl_multi_cleanup(3)\fP
+.SH EXAMPLE
+.nf
+  /* init a multi stack */
+  multi_handle = curl_multi_init();
+
+  /* add individual transfers */
+  curl_multi_add_handle(multi_handle, http_handle);
+  curl_multi_add_handle(multi_handle, http_handle2);
+.fi
+.SH AVAILABILITY
+ADded in 7.9.6
 .SH RETURN VALUE
 CURLMcode type, general libcurl multi interface error code.
 .SH "SEE ALSO"

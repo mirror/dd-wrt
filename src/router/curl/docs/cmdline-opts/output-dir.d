@@ -4,6 +4,7 @@ Help: Directory to save files in
 Added: 7.73.0
 See-also: remote-name remote-header-name
 Category: curl
+Example: --output-dir "tmp" -O $URL
 ---
 
 This option specifies the directory in which files should be stored, when
@@ -12,7 +13,7 @@ This option specifies the directory in which files should be stored, when
 The given output directory is used for all URLs and output options on the
 command line, up until the first --next.
 
-If the specified target directory doesn't exist, the operation will fail
+If the specified target directory does not exist, the operation will fail
 unless --create-dirs is also used.
 
 If this option is used multiple times, the last specified directory will be

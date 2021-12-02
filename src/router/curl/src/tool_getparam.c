@@ -36,7 +36,6 @@
 #include "tool_getparam.h"
 #include "tool_helpers.h"
 #include "tool_libinfo.h"
-#include "tool_metalink.h"
 #include "tool_msgs.h"
 #include "tool_paramhlp.h"
 #include "tool_parsecfg.h"
@@ -242,6 +241,7 @@ static const struct LongShort aliases[]= {
   {"Eg", "capath",                   ARG_FILENAME},
   {"Eh", "pubkey",                   ARG_STRING},
   {"Ei", "hostpubmd5",               ARG_STRING},
+  {"EF", "hostpubsha256",            ARG_STRING},
   {"Ej", "crlfile",                  ARG_FILENAME},
   {"Ek", "tlsuser",                  ARG_STRING},
   {"El", "tlspassword",              ARG_STRING},
@@ -1007,8 +1007,9 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         config->ftp_filemethod = ftpfilemethod(config, nextarg);
         break;
       case 's': { /* --local-port */
-        char lrange[7];  /* 16bit base 10 is 5 digits, but we allow 6 so that
-                            this catches overflows, not just truncates */
+        /* 16bit base 10 is 5 digits, but we allow 6 so that this catches
+           overflows, not just truncates */
+        char lrange[7]="";
         char *p = nextarg;
         while(ISDIGIT(*p))
           p++;
@@ -1140,29 +1141,8 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         GetStr(&config->mail_auth, nextarg);
         break;
       case 'J': /* --metalink */
-        {
-#ifdef USE_METALINK
-          int mlmaj, mlmin, mlpatch;
-          metalink_get_version(&mlmaj, &mlmin, &mlpatch);
-          if((mlmaj*10000)+(mlmin*100) + mlpatch < CURL_REQ_LIBMETALINK_VERS) {
-            warnf(global,
-                  "--metalink option cannot be used because the version of "
-                  "the linked libmetalink library is too old. "
-                  "Required: %d.%d.%d, found %d.%d.%d\n",
-                  CURL_REQ_LIBMETALINK_MAJOR,
-                  CURL_REQ_LIBMETALINK_MINOR,
-                  CURL_REQ_LIBMETALINK_PATCH,
-                  mlmaj, mlmin, mlpatch);
-            return PARAM_BAD_USE;
-          }
-          else
-            config->use_metalink = toggle;
-#else
-          warnf(global, "--metalink option is ignored because the binary is "
-                "built without the Metalink support.\n");
-#endif
-          break;
-        }
+        errorf(global, "--metalink is disabled\n");
+        return PARAM_BAD_USE;
       case '6': /* --sasl-authzid */
         GetStr(&config->sasl_authzid, nextarg);
         break;
@@ -1451,7 +1431,7 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
           char *enc = curl_easy_escape(NULL, postdata, (int)size);
           Curl_safefree(postdata); /* no matter if it worked or not */
           if(enc) {
-            /* replace (in-place) '%20' by '+' acording to RFC1866 */
+            /* replace (in-place) '%20' by '+' according to RFC1866 */
             size_t enclen = replace_url_encoded_space_by_plus(enc);
             /* now make a string with the name from above and append the
                encoded string */
@@ -1622,6 +1602,9 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         GetStr(&config->hostpubmd5, nextarg);
         if(!config->hostpubmd5 || strlen(config->hostpubmd5) != 32)
           return PARAM_BAD_USE;
+        break;
+      case 'F': /* --hostpubsha256 sha256 of the host public key */
+        GetStr(&config->hostpubsha256, nextarg);
         break;
       case 'j': /* CRL file */
         GetStr(&config->crlfile, nextarg);
@@ -1911,11 +1894,6 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
       }
       break;
     case 'i':
-      if(config->content_disposition) {
-        warnf(global,
-              "--include and --remote-header-name cannot be combined.\n");
-        return PARAM_BAD_USE;
-      }
       config->show_headers = toggle; /* show the headers as well in the
                                         general output stream */
       break;
@@ -1931,11 +1909,6 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         return PARAM_BAD_USE;
       break;
     case 'J': /* --remote-header-name */
-      if(config->show_headers) {
-        warnf(global,
-              "--include and --remote-header-name cannot be combined.\n");
-        return PARAM_BAD_USE;
-      }
       config->content_disposition = toggle;
       break;
     case 'k': /* allow insecure SSL connects */
@@ -2109,7 +2082,7 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         if(!config->range)
           return PARAM_NO_MEM;
       }
-      {
+      else {
         /* byte range requested */
         const char *tmp_range = nextarg;
         while(*tmp_range != '\0') {
@@ -2122,7 +2095,6 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
           }
           tmp_range++;
         }
-        /* byte range requested */
         GetStr(&config->range, nextarg);
       }
       break;
@@ -2413,6 +2385,13 @@ ParameterError parse_args(struct GlobalConfig *global, int argc,
 
     if(!result)
       curlx_unicodefree(orig_opt);
+  }
+
+  if(!result && config->content_disposition) {
+    if(config->show_headers)
+      result = PARAM_CONTDISP_SHOW_HEADER;
+    else if(config->resume_from_current)
+      result = PARAM_CONTDISP_RESUME_FROM;
   }
 
   if(result && result != PARAM_HELP_REQUESTED &&

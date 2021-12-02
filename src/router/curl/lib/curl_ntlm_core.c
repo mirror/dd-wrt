@@ -49,7 +49,14 @@
      in NTLM type-3 messages.
  */
 
-#if defined(USE_OPENSSL) || defined(USE_WOLFSSL)
+#if defined(USE_OPENSSL)
+  #include <openssl/opensslconf.h>
+  #if !defined(OPENSSL_NO_DES) && !defined(OPENSSL_NO_DEPRECATED_3_0)
+    #define USE_OPENSSL_DES
+  #endif
+#endif
+
+#if defined(USE_OPENSSL_DES) || defined(USE_WOLFSSL)
 
 #ifdef USE_WOLFSSL
 #include <wolfssl/options.h>
@@ -86,7 +93,6 @@
 #elif defined(USE_MBEDTLS)
 
 #  include <mbedtls/des.h>
-#  include "curl_md4.h"
 
 #elif defined(USE_SECTRANSP)
 
@@ -98,7 +104,7 @@
 #elif defined(USE_WIN32_CRYPTO)
 #  include <wincrypt.h>
 #else
-#  error "Can't compile NTLM support without a crypto library."
+#  error "Can't compile NTLM support without a crypto library with DES."
 #endif
 
 #include "urldata.h"
@@ -134,7 +140,7 @@ static void extend_key_56_to_64(const unsigned char *key_56, char *key)
   key[7] = (unsigned char) ((key_56[6] << 1) & 0xFF);
 }
 
-#if defined(USE_OPENSSL) || defined(USE_WOLFSSL)
+#if defined(USE_OPENSSL_DES) || defined(USE_WOLFSSL)
 /*
  * Turns a 56 bit key into the 64 bit, odd parity key and sets the key.  The
  * key schedule ks is also set.
@@ -151,7 +157,7 @@ static void setup_des_key(const unsigned char *key_56,
   DES_set_odd_parity(&key);
 
   /* Set the key */
-  DES_set_key(&key, ks);
+  DES_set_key_unchecked(&key, ks);
 }
 
 #elif defined(USE_GNUTLS)
@@ -363,7 +369,7 @@ void Curl_ntlm_core_lm_resp(const unsigned char *keys,
                             const unsigned char *plaintext,
                             unsigned char *results)
 {
-#if defined(USE_OPENSSL) || defined(USE_WOLFSSL)
+#if defined(USE_OPENSSL_DES) || defined(USE_WOLFSSL)
   DES_key_schedule ks;
 
   setup_des_key(keys, DESKEY(ks));
@@ -421,7 +427,7 @@ CURLcode Curl_ntlm_core_mk_lm_hash(struct Curl_easy *data,
   {
     /* Create LanManager hashed password. */
 
-#if defined(USE_OPENSSL) || defined(USE_WOLFSSL)
+#if defined(USE_OPENSSL_DES) || defined(USE_WOLFSSL)
     DES_key_schedule ks;
 
     setup_des_key(pw, DESKEY(ks));
@@ -498,17 +504,14 @@ CURLcode Curl_ntlm_core_mk_nt_hash(struct Curl_easy *data,
    * network encoding not the host encoding.
    */
   result = Curl_convert_to_network(data, (char *)pw, len * 2);
-  if(result)
-    return result;
-
-  /* Create NT hashed password. */
-  Curl_md4it(ntbuffer, pw, 2 * len);
-
-  memset(ntbuffer + 16, 0, 21 - 16);
-
+  if(!result) {
+    /* Create NT hashed password. */
+    Curl_md4it(ntbuffer, pw, 2 * len);
+    memset(ntbuffer + 16, 0, 21 - 16);
+  }
   free(pw);
 
-  return CURLE_OK;
+  return result;
 }
 
 #if defined(USE_NTLM_V2) && !defined(USE_WINDOWS_SSPI)

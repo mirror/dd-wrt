@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_mime_free 3 "November 05, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_mime_free 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_mime_free - free a previously built mime structure
@@ -43,6 +43,16 @@ not be explicitly freed as they are by the top structure freeing.
 
 Passing in a NULL pointer in \fImime\fP will make this function return
 immediately with no action.
+.SH EXAMPLE
+.nf
+  /* Build the mime message. */
+  mime = curl_mime_init(curl);
+
+  /* ... */
+
+  /* Free multipart message. */
+  curl_mime_free(mime);
+.fi
 .SH AVAILABILITY
 As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 .SH RETURN VALUE

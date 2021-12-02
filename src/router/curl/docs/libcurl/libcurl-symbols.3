@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl-symbols 3 "May 26, 2021" "libcurl 7.41.0" "libcurl symbols"
+.TH libcurl-symbols 3 "Nov 10, 2021" "libcurl 7.41.0" "libcurl symbols"
 .SH NAME
 libcurl-symbols \- libcurl symbol version information
 .SH "libcurl symbols"
@@ -275,6 +275,8 @@ Introduced in 7.20.0
 Introduced in 7.10
 .IP CURLE_SEND_FAIL_REWIND
 Introduced in 7.12.3
+.IP CURLE_SETOPT_OPTION_SYNTAX
+Introduced in 7.78.0
 .IP CURLE_SHARE_IN_USE
 Introduced in 7.9.6
 Deprecated since 7.17.0
@@ -392,11 +394,11 @@ Deprecated since 7.56.0
 .IP CURLFORM_ARRAY_END
 Introduced in 7.9.1
 Deprecated since 7.9.5
-Last used in 7.9.5
+Last used in 7.9.6
 .IP CURLFORM_ARRAY_START
 Introduced in 7.9.1
 Deprecated since 7.9.5
-Last used in 7.9.5
+Last used in 7.9.6
 .IP CURLFORM_BUFFER
 Introduced in 7.9.8
 Deprecated since 7.56.0
@@ -834,7 +836,7 @@ Introduced in 7.21.0
 .IP CURLOPT_CLOSEFUNCTION
 Introduced in 7.7
 Deprecated since 7.11.1
-Last used in 7.11.1
+Last used in 7.15.5
 .IP CURLOPT_CLOSEPOLICY
 Introduced in 7.7
 Deprecated since 7.16.1
@@ -940,7 +942,7 @@ Deprecated since 7.16.4
 .IP CURLOPT_FTPASCII
 Introduced in 7.1
 Deprecated since 7.11.1
-Last used in 7.11.1
+Last used in 7.15.5
 .IP CURLOPT_FTPLISTONLY
 Introduced in 7.1
 Deprecated since 7.16.4
@@ -1080,6 +1082,8 @@ Introduced in 7.7
 Introduced in 7.10.8
 .IP CURLOPT_MAXFILESIZE_LARGE
 Introduced in 7.11.0
+.IP CURLOPT_MAXLIFETIME_CONN
+Introduced in 7.80.0
 .IP CURLOPT_MAXREDIRS
 Introduced in 7.5
 .IP CURLOPT_MAX_RECV_SPEED_LARGE
@@ -1091,7 +1095,7 @@ Introduced in 7.56.0
 .IP CURLOPT_MUTE
 Introduced in 7.1
 Deprecated since 7.8
-Last used in 7.8
+Last used in 7.15.5
 .IP CURLOPT_NETRC
 Introduced in 7.1
 .IP CURLOPT_NETRC_FILE
@@ -1111,7 +1115,7 @@ Introduced in 7.10
 .IP CURLOPT_NOTHING
 Introduced in 7.1.1
 Deprecated since 7.11.1
-Last used in 7.11.1
+Last used in 7.11.0
 .IP CURLOPT_OPENSOCKETDATA
 Introduced in 7.17.1
 .IP CURLOPT_OPENSOCKETFUNCTION
@@ -1119,17 +1123,17 @@ Introduced in 7.17.1
 .IP CURLOPT_PASSWDDATA
 Introduced in 7.4.2
 Deprecated since 7.11.1
-Last used in 7.11.1
+Last used in 7.15.5
 .IP CURLOPT_PASSWDFUNCTION
 Introduced in 7.4.2
 Deprecated since 7.11.1
-Last used in 7.11.1
+Last used in 7.15.5
 .IP CURLOPT_PASSWORD
 Introduced in 7.19.1
 .IP CURLOPT_PASV_HOST
 Introduced in 7.12.1
 Deprecated since 7.16.0
-Last used in 7.16.0
+Last used in 7.15.5
 .IP CURLOPT_PATH_AS_IS
 Introduced in 7.42.0
 .IP CURLOPT_PINNEDPUBLICKEY
@@ -1155,6 +1159,10 @@ Introduced in 7.1
 Introduced in 7.19.1
 .IP CURLOPT_PREQUOTE
 Introduced in 7.9.5
+.IP CURLOPT_PREREQDATA
+Introduced in 7.80.0
+.IP CURLOPT_PREREQFUNCTION
+Introduced in 7.80.0
 .IP CURLOPT_PRE_PROXY
 Introduced in 7.52.0
 .IP CURLOPT_PRIVATE
@@ -1321,6 +1329,8 @@ Introduced in 7.16.1
 Introduced in 7.56.0
 .IP CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
 Introduced in 7.17.1
+.IP CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256
+Introduced in 7.80.0
 .IP CURLOPT_SSH_KEYDATA
 Introduced in 7.19.6
 .IP CURLOPT_SSH_KEYFUNCTION
@@ -1830,6 +1840,8 @@ Introduced in 7.17.0
 Introduced in 7.17.0
 .IP CURLUSESSL_TRY
 Introduced in 7.17.0
+.IP CURLU_ALLOW_SPACE
+Introduced in 7.78.0
 .IP CURLU_APPENDQUERY
 Introduced in 7.62.0
 .IP CURLU_DEFAULT_PORT
@@ -2032,6 +2044,10 @@ Introduced in 7.14.0
 Introduced in 7.14.0
 .IP CURL_POLL_REMOVE
 Introduced in 7.14.0
+.IP CURL_PREREQFUNC_ABORT
+Introduced in 7.79.0
+.IP CURL_PREREQFUNC_OK
+Introduced in 7.79.0
 .IP CURL_PROGRESSFUNC_CONTINUE
 Introduced in 7.68.0
 .IP CURL_PROGRESS_BAR
@@ -2104,28 +2120,28 @@ Introduced in 7.9.2
 Introduced in 7.54.0
 .IP CURL_SSLVERSION_MAX_NONE
 Introduced in 7.54.0
-.IP CURL_SSLVERSION_MAX_TLS
-Introduced in 
-.IP CURL_SSLVERSION_MAX_TLS
-Introduced in 
-.IP CURL_SSLVERSION_MAX_TLS
-Introduced in 
-.IP CURL_SSLVERSION_MAX_TLS
-Introduced in 
-.IP CURL_SSLVERSION_SSL
-Introduced in 
-.IP CURL_SSLVERSION_SSL
-Introduced in 
-.IP CURL_SSLVERSION_TLS
-Introduced in 
-.IP CURL_SSLVERSION_TLS
-Introduced in 
-.IP CURL_SSLVERSION_TLS
-Introduced in 
-.IP CURL_SSLVERSION_TLS
-Introduced in 
-.IP CURL_SSLVERSION_TLS
-Introduced in 
+.IP CURL_SSLVERSION_MAX_TLSv1_0
+Introduced in 7.54.0
+.IP CURL_SSLVERSION_MAX_TLSv1_1
+Introduced in 7.54.0
+.IP CURL_SSLVERSION_MAX_TLSv1_2
+Introduced in 7.54.0
+.IP CURL_SSLVERSION_MAX_TLSv1_3
+Introduced in 7.54.0
+.IP CURL_SSLVERSION_SSLv2
+Introduced in 7.9.2
+.IP CURL_SSLVERSION_SSLv3
+Introduced in 7.9.2
+.IP CURL_SSLVERSION_TLSv1
+Introduced in 7.9.2
+.IP CURL_SSLVERSION_TLSv1_0
+Introduced in 7.34.0
+.IP CURL_SSLVERSION_TLSv1_1
+Introduced in 7.34.0
+.IP CURL_SSLVERSION_TLSv1_2
+Introduced in 7.34.0
+.IP CURL_SSLVERSION_TLSv1_3
+Introduced in 7.52.0
 .IP CURL_STRICTER
 Introduced in 7.50.2
 .IP CURL_TIMECOND_IFMODSINCE

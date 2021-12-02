@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_global_init 3 "November 04, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_global_init 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_global_init - Global libcurl initialisation
@@ -40,13 +40,13 @@ effect as one call.
 
 The flags option is a bit pattern that tells libcurl exactly what features to
 init, as described below. Set the desired bits by ORing the values together.
-In normal operation, you must specify CURL_GLOBAL_ALL.  Don't use any other
-value unless you are familiar with it and mean to control internal operations of
-libcurl.
+In normal operation, you must specify CURL_GLOBAL_ALL.  Do not use any other
+value unless you are familiar with it and mean to control internal operations
+of libcurl.
 
 \fBThis function is not thread safe.\fP You must not call it when any other
 thread in the program (i.e. a thread sharing the same memory) is running.
-This doesn't just mean no other thread that is using libcurl.  Because
+This does not just mean no other thread that is using libcurl.  Because
 \fIcurl_global_init(3)\fP calls functions of other libraries that are
 similarly thread unsafe, it could conflict with any other thread that uses
 these other libraries.
@@ -93,6 +93,16 @@ This bit has no point since 7.69.0 but its behavior is instead the default.
 Before 7.69.0: when this flag is set, curl will acknowledge EINTR condition
 when connecting or when waiting for data.  Otherwise, curl waits until full
 timeout elapses. (Added in 7.30.0)
+.SH EXAMPLE
+.nf
+ curl_global_init(CURL_GLOBAL_DEFAULT);
+
+ /* use libcurl, then before exiting... */
+
+ curl_global_cleanup();
+.fi
+.SH AVAILABILITY
+Added in 7.8
 .SH RETURN VALUE
 If this function returns non-zero, something went wrong and you cannot use the
 other curl functions.

@@ -235,43 +235,6 @@ AC_DEFUN([CURL_CHECK_NATIVE_WINDOWS], [
 ])
 
 
-dnl CURL_CHECK_HEADER_WINSOCK
-dnl -------------------------------------------------
-dnl Check for compilable and valid winsock.h header
-
-AC_DEFUN([CURL_CHECK_HEADER_WINSOCK], [
-  AC_REQUIRE([CURL_CHECK_HEADER_WINDOWS])dnl
-  AC_CACHE_CHECK([for winsock.h], [curl_cv_header_winsock_h], [
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
-#undef inline
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <winsock.h>
-      ]],[[
-#if defined(__CYGWIN__) || defined(__CEGCC__)
-        HAVE_WINSOCK_H shall not be defined.
-#else
-        int dummy=WSACleanup();
-#endif
-      ]])
-    ],[
-      curl_cv_header_winsock_h="yes"
-    ],[
-      curl_cv_header_winsock_h="no"
-    ])
-  ])
-  case "$curl_cv_header_winsock_h" in
-    yes)
-      AC_DEFINE_UNQUOTED(HAVE_WINSOCK_H, 1,
-        [Define to 1 if you have the winsock.h header file.])
-      ;;
-  esac
-])
-
-
 dnl CURL_CHECK_HEADER_WINSOCK2
 dnl -------------------------------------------------
 dnl Check for compilable and valid winsock2.h header
@@ -1043,7 +1006,6 @@ dnl and RECV_TYPE_ARG4, defining the type of the function
 dnl return value in RECV_TYPE_RETV.
 
 AC_DEFUN([CURL_CHECK_FUNC_RECV], [
-  AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK])dnl
   AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK2])dnl
   AC_CHECK_HEADERS(sys/types.h sys/socket.h)
   #
@@ -1058,10 +1020,6 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
@@ -1106,10 +1064,6 @@ struct Library *SocketBase = NULL;
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #define RECVCALLCONV PASCAL
 #else
@@ -1187,7 +1141,6 @@ dnl return value in SEND_TYPE_RETV, and also defining the
 dnl type qualifier of second argument in SEND_QUAL_ARG2.
 
 AC_DEFUN([CURL_CHECK_FUNC_SEND], [
-  AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK])dnl
   AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK2])dnl
   AC_CHECK_HEADERS(sys/types.h sys/socket.h)
   #
@@ -1202,10 +1155,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
@@ -1250,10 +1199,6 @@ struct Library *SocketBase = NULL;
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #define SENDCALLCONV PASCAL
 #else
@@ -1368,10 +1313,6 @@ AC_DEFUN([CURL_CHECK_MSG_NOSIGNAL], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
@@ -1408,7 +1349,6 @@ dnl -------------------------------------------------
 dnl Check for timeval struct
 
 AC_DEFUN([CURL_CHECK_STRUCT_TIMEVAL], [
-  AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK])dnl
   AC_REQUIRE([CURL_CHECK_HEADER_WINSOCK2])dnl
   AC_CHECK_HEADERS(sys/types.h sys/time.h sys/socket.h)
   AC_CACHE_CHECK([for struct timeval], [curl_cv_struct_timeval], [
@@ -1422,10 +1362,6 @@ AC_DEFUN([CURL_CHECK_STRUCT_TIMEVAL], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
@@ -1458,50 +1394,6 @@ AC_DEFUN([CURL_CHECK_STRUCT_TIMEVAL], [
 ])
 
 
-dnl TYPE_SIG_ATOMIC_T
-dnl -------------------------------------------------
-dnl Check if the sig_atomic_t type is available, and
-dnl verify if it is already defined as volatile.
-
-AC_DEFUN([TYPE_SIG_ATOMIC_T], [
-  AC_CHECK_HEADERS(signal.h)
-  AC_CHECK_TYPE([sig_atomic_t],[
-    AC_DEFINE(HAVE_SIG_ATOMIC_T, 1,
-      [Define to 1 if sig_atomic_t is an available typedef.])
-  ], ,[
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-  ])
-  case "$ac_cv_type_sig_atomic_t" in
-    yes)
-      #
-      AC_MSG_CHECKING([if sig_atomic_t is already defined as volatile])
-      AC_LINK_IFELSE([
-        AC_LANG_PROGRAM([[
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-        ]],[[
-          static volatile sig_atomic_t dummy = 0;
-        ]])
-      ],[
-        AC_MSG_RESULT([no])
-        curl_cv_sig_atomic_t_volatile="no"
-      ],[
-        AC_MSG_RESULT([yes])
-        curl_cv_sig_atomic_t_volatile="yes"
-      ])
-      #
-      if test "$curl_cv_sig_atomic_t_volatile" = "yes"; then
-        AC_DEFINE(HAVE_SIG_ATOMIC_T_VOLATILE, 1,
-          [Define to 1 if sig_atomic_t is already defined as volatile.])
-      fi
-      ;;
-  esac
-])
-
-
 dnl TYPE_IN_ADDR_T
 dnl -------------------------------------------------
 dnl Check for in_addr_t: it is used to receive the return code of inet_addr()
@@ -1525,10 +1417,6 @@ AC_DEFUN([TYPE_IN_ADDR_T], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #else
 #ifdef HAVE_SYS_TYPES_H
@@ -1571,10 +1459,6 @@ AC_DEFUN([TYPE_IN_ADDR_T], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #else
 #ifdef HAVE_SYS_TYPES_H
@@ -1867,10 +1751,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
@@ -1925,10 +1805,6 @@ struct Library *SocketBase = NULL;
 #include <windows.h>
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
-#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #endif
 #define SELECTCALLCONV PASCAL
 #endif
@@ -2151,8 +2027,8 @@ dnl regarding the paths this will scan:
 dnl /etc/ssl/certs/ca-certificates.crt Debian systems
 dnl /etc/pki/tls/certs/ca-bundle.crt Redhat and Mandriva
 dnl /usr/share/ssl/certs/ca-bundle.crt old(er) Redhat
-dnl /usr/local/share/certs/ca-root-nss.crt FreeBSD
-dnl /etc/ssl/cert.pem OpenBSD, FreeBSD (symlink)
+dnl /usr/local/share/certs/ca-root-nss.crt FreeBSD, MidnightBSD
+dnl /etc/ssl/cert.pem OpenBSD, FreeBSD, MidnightBSD (symlink)
 dnl /etc/ssl/certs/ (ca path) SUSE
 
 AC_DEFUN([CURL_CHECK_CA_BUNDLE], [

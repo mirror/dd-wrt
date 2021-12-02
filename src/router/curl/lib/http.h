@@ -93,11 +93,14 @@ CURLcode Curl_http_statusline(struct Curl_easy *data,
                               struct connectdata *conn);
 CURLcode Curl_http_header(struct Curl_easy *data, struct connectdata *conn,
                           char *headp);
+CURLcode Curl_transferencode(struct Curl_easy *data);
 CURLcode Curl_http_body(struct Curl_easy *data, struct connectdata *conn,
                         Curl_HttpReq httpreq,
                         const char **teep);
 CURLcode Curl_http_bodysend(struct Curl_easy *data, struct connectdata *conn,
                             struct dynbuf *r, Curl_HttpReq httpreq);
+bool Curl_use_http_1_1plus(const struct Curl_easy *data,
+                           const struct connectdata *conn);
 #ifndef CURL_DISABLE_COOKIES
 CURLcode Curl_http_cookies(struct Curl_easy *data,
                            struct connectdata *conn,
@@ -285,6 +288,8 @@ struct http_conn {
   int unused; /* prevent a compiler warning */
 #endif
 };
+
+CURLcode Curl_http_size(struct Curl_easy *data);
 
 CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
                                      struct connectdata *conn,

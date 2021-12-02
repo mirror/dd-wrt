@@ -20,10 +20,10 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_UPLOAD_BUFFERSIZE 3 "May 06, 2021" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_UPLOAD_BUFFERSIZE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
-CURLOPT_UPLOAD_BUFFERSIZE \- set preferred upload buffer size
+CURLOPT_UPLOAD_BUFFERSIZE \- upload buffer size
 .SH SYNOPSIS
 #include <curl/curl.h>
 
@@ -43,7 +43,7 @@ allowed to be set is 2 megabytes. The minimum buffer size allowed to be set is
 16 kilobytes.
 
 Since curl 7.61.1 the upload buffer is allocated on-demand - so if the handle
-isn't used for upload, this buffer will not be allocated at all.
+is not used for upload, this buffer will not be allocated at all.
 
 DO NOT set this option on a handle that is currently used for an active
 transfer as that may lead to unintended consequences.

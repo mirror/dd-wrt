@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CONV_FROM_UTF8_FUNCTION 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_CONV_FROM_UTF8_FUNCTION 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_CONV_FROM_UTF8_FUNCTION \- convert data from UTF8 to host encoding
@@ -49,7 +49,7 @@ should be returned if an error was encountered.
 \fBCURLOPT_CONV_FROM_UTF8_FUNCTION\fP converts to host encoding from UTF8
 encoding. It is required only for SSL processing.
 
-If you set a callback pointer to NULL, or don't set it at all, the built-in
+If you set a callback pointer to NULL, or do not set it at all, the built-in
 libcurl iconv functions will be used.  If HAVE_ICONV was not defined when
 libcurl was built, and no callback has been established, conversion will
 return the CURLE_CONV_REQD error code.

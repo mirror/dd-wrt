@@ -34,7 +34,7 @@
  1.15 Monitor connections in the connection pool
  1.16 Try to URL encode given URL
  1.17 Add support for IRIs
- 1.18 try next proxy if one doesn't work
+ 1.18 try next proxy if one does not work
  1.19 provide timing info for each redirect
  1.20 SRV and URI DNS records
  1.21 netrc caching and sharing
@@ -46,6 +46,8 @@
  1.28 FD_CLOEXEC
  1.29 Upgrade to websockets
  1.30 config file parsing
+ 1.31 erase secrets from heap/stack after use
+ 1.32 add asynch getaddrinfo support
 
  2. libcurl - multi interface
  2.1 More non-blocking
@@ -58,6 +60,7 @@
  2.8 dynamically decide to use socketpair
 
  3. Documentation
+ 3.1 Improve documentation about fork safety
  3.2 Provide cmake config-file
 
  4. FTP
@@ -75,7 +78,7 @@
  5.3 Rearrange request header order
  5.4 Allow SAN names in HTTP/2 server push
  5.5 auth= in URLs
- 5.6 alt-svc should fallback if alt-svc doesn't work
+ 5.6 alt-svc should fallback if alt-svc does not work
 
  6. TELNET
  6.1 ditch stdin
@@ -109,7 +112,6 @@
  13. SSL
  13.1 TLS-PSK with OpenSSL
  13.2 Provide mutex locking API
- 13.3 Support in-memory certs/ca certs/keys
  13.4 Cache/share OpenSSL contexts
  13.5 Export session ids
  13.6 Provide callback for cert verification
@@ -131,12 +133,10 @@
  16. SASL
  16.1 Other authentication mechanisms
  16.2 Add QOP support to GSSAPI authentication
- 16.3 Support binary messages (i.e.: non-base64)
 
  17. SSH protocols
  17.1 Multiplexing
  17.2 Handle growing SFTP files
- 17.3 Support better than MD5 hostkey hash
  17.4 Support CURLOPT_PREQUOTE
  17.5 SSH over HTTPS proxy with more backends
 
@@ -170,8 +170,9 @@
  19. Build
  19.1 roffit
  19.2 Enable PIE and RELRO by default
- 19.3 Don't use GNU libtool on OpenBSD
+ 19.3 Do not use GNU libtool on OpenBSD
  19.4 Package curl for Windows in a signed installer
+ 19.5 make configure use --cache-file more and better
 
  20. Test suite
  20.1 SSL tunnel
@@ -183,6 +184,9 @@
  20.7 Support LD_PRELOAD on macOS
  20.8 Run web-platform-tests url tests
  20.9 Bring back libssh tests on Travis
+
+ 21. MQTT
+ 21.1 Support rate-limiting
 
 ==============================================================================
 
@@ -197,7 +201,7 @@
 
 1.2 Consult %APPDATA% also for .netrc
 
- %APPDATA%\.netrc is not considered when running on Windows. Shouldn't it?
+ %APPDATA%\.netrc is not considered when running on Windows. should not it?
 
  See https://github.com/curl/curl/issues/4016
 
@@ -221,7 +225,7 @@
 
  Currently the libssh2 SSH based code uses it, but to remove PATH_MAX from
  there we need libssh2 to properly tell us when we pass in a too small buffer
- and its current API (as of libssh2 1.2.7) doesn't.
+ and its current API (as of libssh2 1.2.7) does not.
 
 1.6 native IDN support on macOS
 
@@ -278,7 +282,7 @@
  is may cause name resolves to fail unless res_init() is called. We should
  consider calling res_init() + retry once unconditionally on all name resolve
  failures to mitigate against this. Firefox works like that. Note that Windows
- doesn't have res_init() or an alternative.
+ does not have res_init() or an alternative.
 
  https://github.com/curl/curl/issues/2251
 
@@ -288,7 +292,7 @@
  close them with the CURLOPT_CLOSESOCKETFUNCTION callback. However, c-ares
  does not use those functions and instead opens and closes the sockets
  itself. This means that when curl passes the c-ares socket to the
- CURLMOPT_SOCKETFUNCTION it isn't owned by the application like other sockets.
+ CURLMOPT_SOCKETFUNCTION it is not owned by the application like other sockets.
 
  See https://github.com/curl/curl/issues/2734
 
@@ -318,7 +322,7 @@
  reuse purpose it is verified that it is still alive.
 
  Those connections may get closed by the server side for idleness or they may
- get a HTTP/2 ping from the peer to verify that they're still alive. By adding
+ get a HTTP/2 ping from the peer to verify that they are still alive. By adding
  monitoring of the connections while in the pool, libcurl can detect dead
  connections (and close them) better and earlier, and it can handle HTTP/2
  pings to keep such ones alive even when not actively doing transfers on them.
@@ -341,7 +345,7 @@
  To make that work smoothly for curl users even on Windows, curl would
  probably need to be able to convert from several input encodings.
 
-1.18 try next proxy if one doesn't work
+1.18 try next proxy if one does not work
 
  Allow an application to specify a list of proxies to try, and failing to
  connect to the first go on and try the next instead until the list is
@@ -431,11 +435,29 @@
 
  See https://github.com/curl/curl/issues/3698
 
+1.31 erase secrets from heap/stack after use
+
+ Introducing a concept and system to erase secrets from memory after use, it
+ could help mitigate and lessen the impact of (future) security problems etc.
+ However: most secrets are passed to libcurl as clear text from the
+ application and then clearing them within the library adds nothing...
+
+ https://github.com/curl/curl/issues/7268
+
+1.32 add asynch getaddrinfo support
+
+ Use getaddrinfo_a() to provide an asynch name resolver backend to libcurl
+ that does not use threads and does not depend on c-ares. The getaddrinfo_a
+ function is (probably?) glibc specific but that is a widely used libc among
+ our users.
+
+ https://github.com/curl/curl/pull/6746
+
 2. libcurl - multi interface
 
 2.1 More non-blocking
 
- Make sure we don't ever loop because of non-blocking sockets returning
+ Make sure we do not ever loop because of non-blocking sockets returning
  EWOULDBLOCK or similar. Blocking cases include:
 
  - Name resolves on non-windows unless c-ares or the threaded resolver is used.
@@ -474,7 +496,7 @@
 2.4 Split connect and authentication process
 
  The multi interface treats the authentication process as part of the connect
- phase. As such any failures during authentication won't trigger the relevant
+ phase. As such any failures during authentication will not trigger the relevant
  QUIT or LOGOFF for protocols such as IMAP, POP3 and SMTP.
 
 2.5 Edge-triggered sockets should work
@@ -503,13 +525,17 @@
 
 2.8 dynamically decide to use socketpair
 
- For users who don't use curl_multi_wait() or don't care for
+ For users who do not use curl_multi_wait() or do not care for
  curl_multi_wakeup(), we could introduce a way to make libcurl NOT
  create a socketpair in the multi handle.
 
  See https://github.com/curl/curl/issues/4829
 
 3. Documentation
+
+3.1 Improve documentation about fork safety
+
+ See https://github.com/curl/curl/issues/6968
 
 3.2 Provide cmake config-file
 
@@ -540,7 +566,7 @@
 
 4.5 ASCII support
 
- FTP ASCII transfers do not follow RFC959. They don't convert the data
+ FTP ASCII transfers do not follow RFC959. They do not convert the data
  accordingly.
 
 4.6 GSSAPI via Windows SSPI
@@ -610,7 +636,7 @@
 
  Additionally this should be implemented for proxy base URLs as well.
 
-5.6 alt-svc should fallback if alt-svc doesn't work
+5.6 alt-svc should fallback if alt-svc does not work
 
  The alt-svc: header provides a set of alternative services for curl to use
  instead of the original. If the first attempted one fails, it should try the
@@ -629,7 +655,7 @@
 6.2 ditch telnet-specific select
 
  Move the telnet support's network select() loop go away and merge the code
- into the main transfer loop. Until this is done, the multi interface won't
+ into the main transfer loop. Until this is done, the multi interface will not
  work for telnet.
 
 6.3 feature negotiation debug data
@@ -709,7 +735,7 @@
 11.4 Create remote directories
 
  Support for creating remote directories when uploading a file to a directory
- that doesn't exist on the server, just like --ftp-create-dirs.
+ that does not exist on the server, just like --ftp-create-dirs.
 
 
 12. FILE
@@ -737,20 +763,12 @@
  library, so that the same application code can use mutex-locking
  independently of OpenSSL or GnutTLS being used.
 
-13.3 Support in-memory certs/ca certs/keys
-
- You can specify the private and public keys for SSH/SSL as file paths. Some
- programs want to avoid using files and instead just pass them as in-memory
- data blobs. There's probably a challenge to make this work across the
- plethora of different TLS and SSH backends that curl supports.
- https://github.com/curl/curl/issues/2310
-
 13.4 Cache/share OpenSSL contexts
 
  "Look at SSL cafile - quick traces look to me like these are done on every
  request as well, when they should only be necessary once per SSL context (or
  once per handle)". The major improvement we can rather easily do is to make
- sure we don't create and kill a new SSL "context" for every request, but
+ sure we do not create and kill a new SSL "context" for every request, but
  instead make one for every connection and re-use that SSL context in the same
  style connections are re-used. It will make us use slightly more memory but
  it will libcurl do less creations and deletions of SSL contexts.
@@ -772,7 +790,7 @@
 13.6 Provide callback for cert verification
 
  OpenSSL supports a callback for customised verification of the peer
- certificate, but this doesn't seem to be exposed in the libcurl APIs. Could
+ certificate, but this does not seem to be exposed in the libcurl APIs. Could
  it be? There's so much that could be done if it were!
 
 13.8 Support DANE
@@ -802,7 +820,7 @@
 
  AIA can provide various things like CRLs but more importantly information
  about intermediate CA certificates that can allow validation path to be
- fulfilled when the HTTPS server doesn't itself provide them.
+ fulfilled when the HTTPS server does not itself provide them.
 
  Since AIA is about downloading certs on demand to complete a TLS handshake,
  it is probably a bit tricky to get done right.
@@ -814,7 +832,7 @@
  CURLOPT_PINNEDPUBLICKEY does not consider the hashes of intermediate & root
  certificates when comparing the pinned keys. Therefore it is not compatible
  with "HTTP Public Key Pinning" as there also intermediate and root
- certificates can be pinned. This is very useful as it prevents webadmins from
+ certificates can be pinned. This is useful as it prevents webadmins from
  "locking themselves out of their servers".
 
  Adding this feature would make curls pinning 100% compatible to HPKP and
@@ -883,10 +901,6 @@
  with integrity protection) and auth-conf (Authentication with integrity and
  privacy protection).
 
-16.3 Support binary messages (i.e.: non-base64)
-
-  Mandatory to support LDAP SASL authentication.
-
 
 17. SSH protocols
 
@@ -905,20 +919,11 @@
 
  The SFTP code in libcurl checks the file size *before* a transfer starts and
  then proceeds to transfer exactly that amount of data. If the remote file
- grows while the transfer is in progress libcurl won't notice and will not
+ grows while the transfer is in progress libcurl will not notice and will not
  adapt. The OpenSSH SFTP command line tool does and libcurl could also just
  attempt to download more to see if there is more to get...
 
  https://github.com/curl/curl/issues/4344
-
-17.3 Support better than MD5 hostkey hash
-
- libcurl offers the CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 option for verifying the
- server's key. MD5 is generally being deprecated so we should implement
- support for stronger hashing algorithms. libssh2 itself is what provides this
- underlying functionality and it supports at least SHA-1 as an alternative.
- SHA-1 is also being deprecated these days so we should consider working with
- libssh2 to instead offer support for SHA-256 or similar.
 
 17.4 Support CURLOPT_PREQUOTE
 
@@ -927,7 +932,7 @@
 
 17.5 SSH over HTTPS proxy with more backends
 
- The SSH based protocols SFTP and SCP didn't work over HTTPS proxy at
+ The SSH based protocols SFTP and SCP did not work over HTTPS proxy at
  all until PR https://github.com/curl/curl/pull/6021 brought the
  functionality with the libssh2 backend. Presumably, this support
  can/could be added for the other backends as well.
@@ -976,8 +981,8 @@
 18.6 Option to make -Z merge lined based outputs on stdout
 
  When a user requests multiple lined based files using -Z and sends them to
- stdout, curl will not "merge" and send complete lines fine but may very well
- send partial lines from several sources.
+ stdout, curl will not "merge" and send complete lines fine but may send
+ partial lines from several sources.
 
  https://github.com/curl/curl/issues/5175
 
@@ -1064,7 +1069,7 @@
 
  When --retry is used and curl actually retries transfer, it should use the
  already transferred data and do a resumed transfer for the rest (when
- possible) so that it doesn't have to transfer the same data again that was
+ possible) so that it does not have to transfer the same data again that was
  already transferred before the retry.
 
  See https://github.com/curl/curl/issues/1084
@@ -1091,7 +1096,7 @@
  provides the "may overwrite any file" risk.
 
  This is extra tricky if the original URL has no file name part at all since
- then the current code path will error out with an error message, and we can't
+ then the current code path will error out with an error message, and we cannot
  *know* already at that point if curl will be redirected to a URL that has a
  file name...
 
@@ -1156,7 +1161,7 @@
  - If splitting up the work improves the transfer rate, it could then be done
    again. Then again, etc up to a limit.
 
- This way, if transfer B fails (because Range: isn't supported) it will let
+ This way, if transfer B fails (because Range: is not supported) it will let
  transfer A remain the single one. N and M could be set to some sensible
  defaults.
 
@@ -1174,7 +1179,7 @@
 
  Users who are for example doing large downloads in CI or remote setups might
  want the occasional progress meter update to see that the transfer is
- progressing and hasn't stuck, but they may not appreciate the
+ progressing and has not stuck, but they may not appreciate the
  many-times-a-second frequency curl can end up doing it with now.
 
 19. Build
@@ -1196,7 +1201,7 @@
  to no impact, neither on the performance nor on the general functionality of
  curl.
 
-19.3 Don't use GNU libtool on OpenBSD
+19.3 Do not use GNU libtool on OpenBSD
  When compiling curl on OpenBSD with "--enable-debug" it will give linking
  errors when you use GNU libtool. This can be fixed by using the libtool
  provided by OpenBSD itself. However for this the user always needs to invoke
@@ -1210,6 +1215,13 @@
 
  See https://github.com/curl/curl/issues/5424
 
+19.5 make configure use --cache-file more and better
+
+ The configure script can be improved to cache more values so that repeated
+ invokes run much faster.
+
+ See https://github.com/curl/curl/issues/7753
+
 20. Test suite
 
 20.1 SSL tunnel
@@ -1220,8 +1232,8 @@
 
 20.2 nicer lacking perl message
 
- If perl wasn't found by the configure script, don't attempt to run the tests
- but explain something nice why it doesn't.
+ If perl was not found by the configure script, do not attempt to run the tests
+ but explain something nice why it does not.
 
 20.3 more protocols supported
 
@@ -1236,15 +1248,15 @@
 20.5 Add support for concurrent connections
 
  Tests 836, 882 and 938 were designed to verify that separate connections
- aren't used when using different login credentials in protocols that
- shouldn't re-use a connection under such circumstances.
+ are not used when using different login credentials in protocols that
+ should not re-use a connection under such circumstances.
 
- Unfortunately, ftpserver.pl doesn't appear to support multiple concurrent
+ Unfortunately, ftpserver.pl does not appear to support multiple concurrent
  connections. The read while() loop seems to loop until it receives a
  disconnect from the client, where it then enters the waiting for connections
  loop. When the client opens a second connection to the server, the first
- connection hasn't been dropped (unless it has been forced - which we
- shouldn't do in these tests) and thus the wait for connections loop is never
+ connection has not been dropped (unless it has been forced - which we
+ should not do in these tests) and thus the wait for connections loop is never
  entered to receive the second connection.
 
 20.6 Use the RFC6265 test suite
@@ -1258,7 +1270,7 @@
 
 20.7 Support LD_PRELOAD on macOS
 
- LD_RELOAD doesn't work on macOS, but there are tests which require it to run
+ LD_RELOAD does not work on macOS, but there are tests which require it to run
  properly. Look into making the preload support in runtests.pl portable such
  that it uses DYLD_INSERT_LIBRARIES on macOS.
 
@@ -1276,3 +1288,11 @@
  In https://github.com/curl/curl/pull/7012 we remove the libssh builds and
  tests from Travis CI due to them not working. This should be remedied and
  libssh builds be brought back.
+
+
+21. MQTT
+
+21.1 Support rate-limiting
+
+ The rate-limiting logic is done in the PERFORMING state in multi.c but MQTT
+ is not (yet) implemented to use that!

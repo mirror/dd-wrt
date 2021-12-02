@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_cleanup 3 "November 04, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_easy_cleanup 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_cleanup - End a libcurl easy handle
@@ -35,7 +35,7 @@ same \fIhandle\fP as input that a \fIcurl_easy_init(3)\fP call returned.
 
 This might close all connections this handle has used and possibly has kept
 open until now - unless it was attached to a multi handle while doing the
-transfers. Don't call this function if you intend to transfer more files,
+transfers. Do not call this function if you intend to transfer more files,
 re-using handles is a key to good performance with libcurl.
 
 Occasionally you may get your progress callback or header callback called from
@@ -50,12 +50,6 @@ memory associated with it!
 
 Passing in a NULL pointer in \fIhandle\fP will make this function return
 immediately with no action.
-.SH "OLD TIMES"
-For libcurl versions before 7.17,: after you've called this function, you can
-safely remove all the strings you've previously told libcurl to use, as it
-won't use them anymore now.
-.SH RETURN VALUE
-None
 .SH EXAMPLE
 .nf
 CURL *curl = curl_easy_init();
@@ -66,6 +60,10 @@ if(curl) {
   curl_easy_cleanup(curl);
 }
 .fi
+.SH AVAILABILITY
+Added in 7.1
+.SH RETURN VALUE
+None
 .SH "SEE ALSO"
 .BR curl_easy_init "(3), " curl_easy_duphandle "(3), "
 .BR curl_easy_reset "(3), "

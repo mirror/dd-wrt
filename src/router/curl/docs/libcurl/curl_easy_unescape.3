@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_unescape 3 "November 04, 2020" "libcurl 7.77.0" "libcurl Manual"
+.TH curl_easy_unescape 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_unescape - URL decodes the given string
@@ -46,7 +46,21 @@ pointer to an \fIint\fP type, it can only return a value up to INT_MAX so no
 longer string can be unescaped if the string length is returned in this
 parameter.
 
-You must \fIcurl_free(3)\fP the returned string when you're done with it.
+You must \fIcurl_free(3)\fP the returned string when you are done with it.
+.SH EXAMPLE
+.nf
+CURL *curl = curl_easy_init();
+if(curl) {
+  int decodelen;
+  char *decoded = curl_easy_unescape(curl, "%63%75%72%6c", 12, &decodelen);
+  if(decoded) {
+    /* do not assume printf() works on the decoded data! */
+    printf("Decoded: ");
+    /* ... */
+    curl_free(decoded);
+  }
+}
+.fi
 .SH AVAILABILITY
 Added in 7.15.4 and replaces the old \fIcurl_unescape(3)\fP function.
 .SH RETURN VALUE

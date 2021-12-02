@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FTP_SSL_CCC 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_FTP_SSL_CCC 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_FTP_SSL_CCC \- switch off SSL again with FTP after auth
@@ -35,7 +35,7 @@ shuts down the SSL/TLS layer after authenticating. The rest of the control
 channel communication will be unencrypted. This allows NAT routers to follow
 the FTP transaction. Pass a long using one of the values below
 .IP CURLFTPSSL_CCC_NONE
-Don't attempt to use CCC.
+do not attempt to use CCC.
 .IP CURLFTPSSL_CCC_PASSIVE
 Do not initiate the shutdown, but wait for the server to do it. Do not send a
 reply.
