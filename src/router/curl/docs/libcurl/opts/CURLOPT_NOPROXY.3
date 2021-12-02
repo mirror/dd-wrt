@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_NOPROXY 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_NOPROXY 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_NOPROXY \- disable proxy use for specific hosts
@@ -51,7 +51,7 @@ brackets:
  "example.com,::1,localhost"
 
 IPv6 numerical addresses are compared as strings, so they will only match if
-the representations are the same: "::1" is the same as "::0:1" but they don't
+the representations are the same: "::1" is the same as "::0:1" but they do not
 match.
 
 The application does not have to keep the string around after setting this

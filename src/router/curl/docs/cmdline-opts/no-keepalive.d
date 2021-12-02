@@ -1,6 +1,8 @@
 Long: no-keepalive
 Help: Disable TCP keepalive on the connection
 Category: connection
+Example: --no-keepalive $URL
+Added: 7.18.0
 ---
 Disables the use of keepalive messages on the TCP connection. curl otherwise
 enables them by default.

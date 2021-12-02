@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_LASTSOCKET 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_getinfo options"
+.TH CURLINFO_LASTSOCKET 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_LASTSOCKET \- get the last socket used
@@ -47,7 +47,7 @@ All
 .nf
 CURL *curl = curl_easy_init();
 if(curl) {
-  long sockfd; /* doesn't work on win64! */
+  long sockfd; /* does not work on win64! */
   curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
   /* Do not do the transfer - only connect to host */

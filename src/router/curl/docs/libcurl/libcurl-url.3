@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl 3 "May 05, 2021" "libcurl 7.77.0" "libcurl url interface"
+.TH libcurl 3 "October 31, 2021" "libcurl 7.80.0" "libcurl url interface"
 
 .SH NAME
 libcurl-url \- URL interface overview
@@ -84,7 +84,7 @@ pieces from the handle at any time.
 Extracted parts are not URL decoded unless the user also asks for it with the
 CURLU_URLDECODE flag set in the fourth bitmask argument.
 
-Remember to free the returned string with \fIcurl_free(3)\fP when you're done
+Remember to free the returned string with \fIcurl_free(3)\fP when you are done
 with it!
 .SH "SET PARTS"
 A user set individual URL parts, either after having parsed a full URL or
@@ -136,4 +136,5 @@ Now the URL looks like
 The URL API was introduced in libcurl 7.62.0.
 .SH "SEE ALSO"
 .BR curl_url "(3), " curl_url_cleanup "(3), " curl_url_get "(3), "
-.BR curl_url_dup "(3), " curl_url_set "(3), " CURLOPT_URL "(3), "
+.BR curl_url_dup "(3), " curl_url_set "(3), " curl_url_strerror "(3), "
+.BR CURLOPT_URL "(3)"

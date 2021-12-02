@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,10 +20,10 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SHARE 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_SHARE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
-CURLOPT_SHARE \- specify share handle to use
+CURLOPT_SHARE \- share handle to use
 .SH SYNOPSIS
 #include <curl/curl.h>
 
@@ -39,7 +39,7 @@ data. If the curl handles are used simultaneously in multiple threads, you
 
 If you add a share that is set to share cookies, your easy handle will use
 that cookie cache and get the cookie engine enabled. If you unshare an object
-that was using cookies (or change to another object that doesn't share
+that was using cookies (or change to another object that does not share
 cookies), the easy handle will get its cookie engine disabled.
 
 Data that the share object is not set to share will be dealt with the usual

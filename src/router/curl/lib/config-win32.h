@@ -36,14 +36,8 @@
 /* Define if you have the <assert.h> header file. */
 #define HAVE_ASSERT_H 1
 
-/* Define if you have the <crypto.h> header file. */
-/* #define HAVE_CRYPTO_H 1 */
-
 /* Define if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
-
-/* Define if you have the <err.h> header file. */
-/* #define HAVE_ERR_H 1 */
 
 /* Define if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
@@ -82,9 +76,6 @@
 
 /* Define if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
-
-/* Define if you have the <sgtty.h> header file. */
-/* #define HAVE_SGTTY_H 1 */
 
 /* Define if you have the <ssl.h> header file. */
 /* #define HAVE_SSL_H 1 */
@@ -141,9 +132,6 @@
 /* Define if you have the <windows.h> header file. */
 #define HAVE_WINDOWS_H 1
 
-/* Define if you have the <winsock.h> header file. */
-#define HAVE_WINSOCK_H 1
-
 /* Define if you have the <winsock2.h> header file. */
 #ifndef __SALFORDC__
 #define HAVE_WINSOCK2_H 1
@@ -157,9 +145,6 @@
 /* ---------------------------------------------------------------- */
 /*                        OTHER HEADER INFO                         */
 /* ---------------------------------------------------------------- */
-
-/* Define if sig_atomic_t is an available typedef. */
-#define HAVE_SIG_ATOMIC_T 1
 
 /* Define if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -191,9 +176,6 @@
 /* Define to 1 if you have the getsockname function. */
 #define HAVE_GETSOCKNAME 1
 
-/* Define if you have the gethostbyaddr function. */
-#define HAVE_GETHOSTBYADDR 1
-
 /* Define if you have the gethostname function. */
 #define HAVE_GETHOSTNAME 1
 
@@ -217,9 +199,6 @@
 
 /* Define if you have a working ioctlsocket FIONBIO function. */
 #define HAVE_IOCTLSOCKET_FIONBIO 1
-
-/* Define if you have the perror function. */
-#define HAVE_PERROR 1
 
 /* Define if you have the RAND_screen function when using SSL. */
 #define HAVE_RAND_SCREEN 1
@@ -399,7 +378,6 @@
 
 #ifdef USE_LWIPSOCK
 #  undef USE_WINSOCK
-#  undef HAVE_WINSOCK_H
 #  undef HAVE_WINSOCK2_H
 #  undef HAVE_WS2TCPIP_H
 #  undef HAVE_ERRNO_H
@@ -430,7 +408,6 @@
   #undef byte
   #undef word
   #undef USE_WINSOCK
-  #undef HAVE_WINSOCK_H
   #undef HAVE_WINSOCK2_H
   #undef HAVE_WS2TCPIP_H
   #define HAVE_GETADDRINFO
@@ -693,22 +670,8 @@ Vista
 #define USE_WIN32_CRYPTO
 #endif
 
-/* On MinGW the ADDRESS_FAMILY typedef was committed alongside LUP_SECURE,
-   so we use it to check for the presence of the typedef. */
-#include <ws2tcpip.h>
-#if !defined(__MINGW32__) || defined(LUP_SECURE)
 /* Define to use Unix sockets. */
 #define USE_UNIX_SOCKETS
-#if !defined(UNIX_PATH_MAX)
-  /* Replicating logic present in afunix.h of newer Windows 10 SDK versions */
-# define UNIX_PATH_MAX 108
-  /* !checksrc! disable TYPEDEFSTRUCT 1 */
-  typedef struct sockaddr_un {
-    ADDRESS_FAMILY sun_family;
-    char sun_path[UNIX_PATH_MAX];
-  } SOCKADDR_UN, *PSOCKADDR_UN;
-#endif
-#endif
 
 /* ---------------------------------------------------------------- */
 /*                       ADDITIONAL DEFINITIONS                     */

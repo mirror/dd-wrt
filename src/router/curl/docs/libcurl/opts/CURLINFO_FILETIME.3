@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_FILETIME 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_getinfo options"
+.TH CURLINFO_FILETIME 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_FILETIME \- get the remote time of the retrieved document
@@ -32,7 +32,7 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_FILETIME, long *timep);
 Pass a pointer to a long to receive the remote time of the retrieved document
 (in number of seconds since 1 jan 1970 in the GMT/UTC time zone). If you get
 -1, it can be because of many reasons (it might be unknown, the server might
-hide it or the server doesn't support the command that tells document time
+hide it or the server does not support the command that tells document time
 etc) and the time of the document is unknown.
 
 You must tell libcurl to collect this information before the transfer is made,

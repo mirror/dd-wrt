@@ -118,7 +118,7 @@ static void memory_tracking_init(void)
     curl_free(env);
     curl_dbg_memdebug(fname);
     /* this weird stuff here is to make curl_free() get called before
-       curl_gdb_memdebug() as otherwise memory tracking will log a free()
+       curl_dbg_memdebug() as otherwise memory tracking will log a free()
        without an alloc! */
   }
   /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
@@ -212,10 +212,9 @@ static void main_free(struct GlobalConfig *config)
   /* Main cleanup */
   curl_global_cleanup();
   convert_cleanup();
-  metalink_cleanup();
 #ifdef USE_NSS
   if(PR_Initialized()) {
-    /* prevent valgrind from reporting still reachable mem from NSRP arenas */
+    /* prevent valgrind from reporting still reachable mem from NSPR arenas */
     PL_ArenaFinish();
     /* prevent valgrind from reporting possibly lost memory (fd cache, ...) */
     PR_Cleanup();

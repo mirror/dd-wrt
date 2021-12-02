@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -55,7 +55,7 @@ DEVELOPER_PATH=`xcode-select --print-path`
 if test -d "$DEVELOPER_PATH/Platforms/MacOSX.platform/Developer/SDKs"; then
  SDK_PATH="$DEVELOPER_PATH/Platforms/MacOSX.platform/Developer/SDKs"
 else
- SDK_PATH="$DEVELOPER_PATH/SDKs";
+ SDK_PATH="$DEVELOPER_PATH/SDKs"
 fi
 OLD_SDK=`ls  $SDK_PATH|head -1`
 NEW_SDK=`ls -r $SDK_PATH|head -1`

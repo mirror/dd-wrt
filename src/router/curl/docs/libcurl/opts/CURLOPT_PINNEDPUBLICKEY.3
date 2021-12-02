@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2019, 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,10 +20,10 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PINNEDPUBLICKEY 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_PINNEDPUBLICKEY 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
-CURLOPT_PINNEDPUBLICKEY \- set pinned public key
+CURLOPT_PINNEDPUBLICKEY \- pinned public key
 .SH SYNOPSIS
 #include <curl/curl.h>
 
@@ -65,14 +65,14 @@ if(curl) {
 If you do not have the server's public key file you can extract it from the
 server's certificate.
 .nf
-# retrieve the server's certificate if you don't already have it
+# retrieve the server's certificate if you do not already have it
 #
 # be sure to examine the certificate to see if it is what you expected
 #
 # Windows-specific:
 # - Use NUL instead of /dev/null.
 # - OpenSSL may wait for input instead of disconnecting. Hit enter.
-# - If you don't have sed, then just copy the certificate into a file:
+# - If you do not have sed, then just copy the certificate into a file:
 #   Lines from -----BEGIN CERTIFICATE----- to -----END CERTIFICATE-----.
 #
 openssl s_client -servername www.example.com -connect www.example.com:443 < /dev/null | sed -n "/-----BEGIN/,/-----END/p" > www.example.com.pem

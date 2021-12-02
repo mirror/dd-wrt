@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_COOKIESESSION 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
+.TH CURLOPT_COOKIESESSION 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_COOKIESESSION \- start a new cookie session
@@ -48,7 +48,7 @@ CURL *curl = curl_easy_init();
 if(curl) {
   curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
 
-  /* new "session", don't load session cookies */
+  /* new "session", do not load session cookies */
   curl_easy_setopt(curl, CURLOPT_COOKIESESSION, 1L);
 
   /* get the (non session) cookies from this file */

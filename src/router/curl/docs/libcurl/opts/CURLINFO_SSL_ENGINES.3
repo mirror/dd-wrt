@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_SSL_ENGINES 3 "November 04, 2020" "libcurl 7.77.0" "curl_easy_getinfo options"
+.TH CURLINFO_SSL_ENGINES 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_SSL_ENGINES \- get an slist of OpenSSL crypto-engines
@@ -34,7 +34,7 @@ Pass the address of a 'struct curl_slist *' to receive a linked-list of
 OpenSSL crypto-engines supported. Note that engines are normally implemented
 in separate dynamic libraries. Hence not all the returned engines may be
 available at run-time. \fBNOTE:\fP you must call \fIcurl_slist_free_all(3)\fP
-on the list pointer once you're done with it, as libcurl will not free the
+on the list pointer once you are done with it, as libcurl will not free the
 data for you.
 .SH PROTOCOLS
 All TLS based ones.

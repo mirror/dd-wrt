@@ -1689,7 +1689,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_SSLCERT_BLOB:
     /*
-     * Blob that holds file name of the SSL certificate to use
+     * Blob that holds file content of the SSL certificate to use
      */
     result = Curl_setblobopt(&data->set.blobs[BLOB_CERT],
                              va_arg(param, struct curl_blob *));
@@ -1704,7 +1704,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_PROXY_SSLCERT_BLOB:
     /*
-     * Blob that holds file name of the SSL certificate to use for proxy
+     * Blob that holds file content of the SSL certificate to use for proxy
      */
     result = Curl_setblobopt(&data->set.blobs[BLOB_CERT_PROXY],
                              va_arg(param, struct curl_blob *));
@@ -1735,7 +1735,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_SSLKEY_BLOB:
     /*
-     * Blob that holds file name of the SSL key to use
+     * Blob that holds file content of the SSL key to use
      */
     result = Curl_setblobopt(&data->set.blobs[BLOB_KEY],
                              va_arg(param, struct curl_blob *));
@@ -1750,7 +1750,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_PROXY_SSLKEY_BLOB:
     /*
-     * Blob that holds file name of the SSL key to use for proxy
+     * Blob that holds file content of the SSL key to use for proxy
      */
     result = Curl_setblobopt(&data->set.blobs[BLOB_KEY_PROXY],
                              va_arg(param, struct curl_blob *));
@@ -1872,7 +1872,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_DOH_SSL_VERIFYPEER:
     /*
-     * Enable peer SSL verifying for DOH.
+     * Enable peer SSL verifying for DoH.
      */
     data->set.doh_verifypeer = (0 != va_arg(param, long)) ?
       TRUE : FALSE;
@@ -1911,7 +1911,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_DOH_SSL_VERIFYHOST:
     /*
-     * Enable verification of the host name in the peer certificate for DOH
+     * Enable verification of the host name in the peer certificate for DoH
      */
     arg = va_arg(param, long);
 
@@ -1955,7 +1955,7 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     break;
   case CURLOPT_DOH_SSL_VERIFYSTATUS:
     /*
-     * Enable certificate status verifying for DOH.
+     * Enable certificate status verifying for DoH.
      */
     if(!Curl_ssl_cert_status_request()) {
       result = CURLE_NOT_BUILT_IN;
@@ -2477,6 +2477,15 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
                             va_arg(param, char *));
     break;
 
+  case CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256:
+    /*
+     * Option to allow for the SHA256 of the host public key to be checked
+     * for validation purposes.
+     */
+    result = Curl_setstropt(&data->set.str[STRING_SSH_HOST_PUBLIC_KEY_SHA256],
+                            va_arg(param, char *));
+    break;
+
   case CURLOPT_SSH_KNOWNHOSTS:
     /*
      * Store the file name to read known hosts from.
@@ -2507,8 +2516,12 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     /*
      * disable libcurl transfer encoding is used
      */
+#ifndef USE_HYPER
     data->set.http_te_skip = (0 == va_arg(param, long)) ? TRUE : FALSE;
     break;
+#else
+    return CURLE_NOT_BUILT_IN; /* hyper doesn't support */
+#endif
 
   case CURLOPT_HTTP_CONTENT_DECODING:
     /*
@@ -2929,6 +2942,12 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
       return CURLE_BAD_FUNCTION_ARGUMENT;
     data->set.maxage_conn = arg;
     break;
+  case CURLOPT_MAXLIFETIME_CONN:
+    arg = va_arg(param, long);
+    if(arg < 0)
+      return CURLE_BAD_FUNCTION_ARGUMENT;
+    data->set.maxlifetime_conn = arg;
+    break;
   case CURLOPT_TRAILERFUNCTION:
 #ifndef CURL_DISABLE_HTTP
     data->set.trailer_callback = va_arg(param, curl_trailer_callback);
@@ -3004,6 +3023,12 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
       return result;
     break;
 #endif
+  case CURLOPT_PREREQFUNCTION:
+    data->set.fprereq = va_arg(param, curl_prereq_callback);
+    break;
+  case CURLOPT_PREREQDATA:
+    data->set.prereq_userp = va_arg(param, void *);
+    break;
   default:
     /* unknown tag and its companion, just ignore: */
     result = CURLE_UNKNOWN_OPTION;

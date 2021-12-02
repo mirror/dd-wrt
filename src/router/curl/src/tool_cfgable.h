@@ -23,7 +23,6 @@
  ***************************************************************************/
 #include "tool_setup.h"
 #include "tool_sdecls.h"
-#include "tool_metalink.h"
 #include "tool_urlglob.h"
 #include "tool_formparse.h"
 
@@ -159,6 +158,7 @@ struct OperationConfig {
   char *proxy_key_passwd;
   char *pubkey;
   char *hostpubmd5;
+  char *hostpubsha256;
   char *engine;
   char *etag_save_file;
   char *etag_compare_file;
@@ -175,7 +175,7 @@ struct OperationConfig {
   bool use_httpget;
   bool insecure_ok;         /* set TRUE to allow insecure SSL connects */
   bool doh_insecure_ok;     /* set TRUE to allow insecure SSL connects
-                               for DOH */
+                               for DoH */
   bool proxy_insecure_ok;   /* set TRUE to allow insecure SSL connects
                                for proxy */
   bool terminal_binary_ok;
@@ -270,10 +270,6 @@ struct OperationConfig {
   bool ssl_auto_client_cert;   /* automatically locate and use a client
                                   certificate for authentication (Schannel) */
   bool proxy_ssl_auto_client_cert; /* proxy version of ssl_auto_client_cert */
-
-  bool use_metalink;        /* process given URLs as metalink XML file */
-  struct metalinkfile *metalinkfile_list; /* point to the first node */
-  struct metalinkfile *metalinkfile_last; /* point to the last/current node */
   char *oauth_bearer;             /* OAuth 2.0 bearer token */
   bool nonpn;                     /* enable/disable TLS NPN extension */
   bool noalpn;                    /* enable/disable TLS ALPN extension */

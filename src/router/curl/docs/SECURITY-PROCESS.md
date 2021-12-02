@@ -62,19 +62,20 @@ announcement.
 - Request a CVE number from
   [HackerOne](https://docs.hackerone.com/programs/cve-requests.html)
 
-- Consider informing
-  [distros@openwall](https://oss-security.openwall.org/wiki/mailing-lists/distros)
-  to prepare them about the upcoming public security vulnerability
-  announcement - attach the advisory draft for information. Note that
-  'distros' won't accept an embargo longer than 14 days and they do not care
-  for Windows-specific flaws.
-
 - Update the "security advisory" with the CVE number.
 
 - The security team commits the fix in a private branch. The commit message
-  should ideally contain the CVE number. This fix is usually also distributed
-  to the 'distros' mailing list to allow them to use the fix prior to the
-  public announcement.
+  should ideally contain the CVE number.
+
+- The security team also decides on and delivers a monetary reward to the
+  reporter as per the bug-bounty polices.
+
+- No more than 10 days before release, inform
+  [distros@openwall](https://oss-security.openwall.org/wiki/mailing-lists/distros)
+  to prepare them about the upcoming public security vulnerability
+  announcement - attach the advisory draft for information with CVE and
+  current patch. 'distros' does not accept an embargo longer than 14 days and
+  they do not care for Windows-specific flaws.
 
 - No more than 48 hours before the release, the private branch is merged into
   the master branch and pushed. Once pushed, the information is accessible to
@@ -91,18 +92,18 @@ announcement.
 - The security web page on the website should get the new vulnerability
   mentioned.
 
-curl-security (at haxx dot se)
+security (at curl dot se)
 ------------------------------
 
 This is a private mailing list for discussions on and about curl security
 issues.
 
 Who is on this list? There are a couple of criteria you must meet, and then we
-might ask you to join the list or you can ask to join it. It really isn't very
-formal. We basically only require that you have a long-term presence in the
-curl project and you have shown an understanding for the project and its way
-of working. You must've been around for a good while and you should have no
-plans in vanishing in the near future.
+might ask you to join the list or you can ask to join it. It really is not a
+formal process. We basically only require that you have a long-term presence
+in the curl project and you have shown an understanding for the project and
+its way of working. You must have been around for a good while and you should
+have no plans in vanishing in the near future.
 
 We do not make the list of participants public mostly because it tends to vary
 somewhat over time and a list somewhere will only risk getting outdated.
