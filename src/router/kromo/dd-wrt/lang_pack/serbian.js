@@ -391,7 +391,7 @@ errmsg.err102="Надоградња фирмвера...<br />Молим, сач�
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Подешавања";
 bmenu.setupbasic="Основна подешавања";
-bmenu.setupipv6="IPV6";
+bmenu.setupipv6="IPv6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Клонирање MAC адресе";
 bmenu.setuprouting="Напредно рутирање";

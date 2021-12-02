@@ -408,7 +408,7 @@ errmsg.err102="升级固件中...<br />请稍候";
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="设置";
 bmenu.setupbasic="基本设置";
-bmenu.setupipv6="IPV6";
+bmenu.setupipv6="IPv6";
 bmenu.setupddns="动态DNS（DDNS）";
 bmenu.setupmacclone="MAC地址克隆";
 bmenu.setuprouting="高级路由";

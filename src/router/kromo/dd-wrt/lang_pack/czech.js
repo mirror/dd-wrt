@@ -412,7 +412,7 @@ errmsg.err102="Upgrade firmware...<br />Počkejte prosím.";
 //
 bmenu.setup="Nastavení";
 bmenu.setupbasic="Základní nastavení";
-bmenu.setupipv6="IPV6";
+bmenu.setupipv6="IPv6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Klonování MAC";
 bmenu.setuprouting="Pokročilé routování";
