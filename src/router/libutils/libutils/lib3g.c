@@ -978,6 +978,7 @@ static struct DEVICES devicelist[] = {
 	{ 0x1410, 0x7042, option, 0, 0, 2, NULL, "Novatel Ovation MC545/MC547" },	//
 	{ 0x1410, 0x9010, option, 1, 0, 2 | QMI, NULL, "Novatel E362" },	//
 	{ 0x1410, 0x9011, option, 1, 0, 2 | QMI, NULL, "Novatel E371" },	//
+	{ 0x1410, 0x9032, option, 1, 0, 2 | QMI, NULL, "Novatel E730" },	//
 	{ 0x1410, 0xa001, qcserial, 1, 0, 2 | QMI, NULL, "Novatel USB1000" },	//
 	{ 0x1410, 0xa021, qcserial, 1, 0, 2 | QMI, NULL, "Novatel E396" },	//
 	{ 0x1410, 0xb001, option, 1, 0, 2 | QMI, NULL, "Novatel MC551/USB551L" },	//
