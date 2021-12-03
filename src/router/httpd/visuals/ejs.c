@@ -1597,7 +1597,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				sprintf(name, "%s (%s)", tran_string(buf, "share.wireless"), ifname + 1);
 				show_bwif(wp, ifname + 1, name);
 			}
-			globdebug_free(&globbuf);
+			globfree(&globbuf);
 			debug_free(globstring);
 		}
 	}
