@@ -70,7 +70,7 @@ COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
-COPTS +=$(call cc-option,-Werror=return-local-addr,)
+COPTS +=$(call cc-option,-Werror=return-local-addr,) -g
 
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
