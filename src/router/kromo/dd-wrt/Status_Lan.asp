@@ -279,15 +279,15 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="16%"><% tran("share.hostname"); %></th>
-										<th width="20%"><% tran("share.ip"); %></th>
-										<th width="16%"><% tran("share.mac"); %></th>
-										<th width="5%">If</th>
-										<th width="5%">In</th>
-										<th width="5%">Out</th>
-										<th width="5%">Total</th>
-										<th width="12%"><% tran("status_lan.concount"); %></th>
-										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
+										<th sortdir="up" width="16%"><% tran("share.hostname"); %></th>
+										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
+										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
+										<th sortdir="up" width="5%">If</th>
+										<th sortdir="up" width="5%">In</th>
+										<th sortdir="up" width="5%">Out</th>
+										<th sortdir="up" width="5%">Total</th>
+										<th sortdir="up" width="12%"><% tran("status_lan.concount"); %></th>
+										<th sortdir="up" width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
 								<script type="text/javascript">
@@ -325,11 +325,11 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
-											<th width="35%"><% tran("share.hostname"); %></th>
-											<th width="17%"><% tran("share.ip"); %></th>
-											<th width="17%"><% tran("share.mac"); %></th>
-											<th width="20%"><% tran("idx.dhcp_lease"); %></th>
-											<th width="10%"><% tran("share.del"); %></th>
+											<th sortdir="up" width="35%"><% tran("share.hostname"); %></th>
+											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
+											<th sortdir="up" width="17%"><% tran("share.mac"); %></th>
+											<th sortdir="up" width="20%"><% tran("idx.dhcp_lease"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
@@ -346,11 +346,11 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend5"); %></legend>
 									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
 										<tr>
-											<th width="15%"><% tran("share.intrface"); %></th>
-											<th width="51%"><% tran("share.usrname"); %></th>
-											<th width="17%"><% tran("share.localip"); %></th>
-											<th width="17%"><% tran("share.remoteip"); %></th>
-											<th><% tran("share.del"); %></th>
+											<th sortdir="up" width="15%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="51%"><% tran("share.usrname"); %></th>
+											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
+											<th sortdir="up" width="17%"><% tran("share.remoteip"); %></th>
+											<th sortdir="up"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
@@ -367,10 +367,10 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend6"); %></legend>
 									<table class="table center" cellspacing="6" id="pppoe_table" summary="pppoe table">
 										<tr>
-											<th width="15%"><% tran("share.intrface"); %></th>
-											<th width="68%"><% tran("share.usrname"); %></th>
-											<th width="17%"><% tran("share.localip"); %></th>
-											<th><% tran("share.del"); %></th>
+											<th sortdir="up" width="15%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="68%"><% tran("share.usrname"); %></th>
+											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
+											<th sortdir="up"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">

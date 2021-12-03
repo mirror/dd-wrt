@@ -31,13 +31,13 @@ function openGeotool(IP) {
 				</div><br />
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
 					<tr>
-						<th><% tran("filterSum.polnum"); %></th>
-						<th><% tran("share.proto"); %></th>
-						<th><% tran("share.timeout"); %></th>
-						<th><% tran("share.src"); %></th>
-						<th><% tran("share.dst"); %></th>
-						<th><% tran("share.srv"); %></th>
-						<th><% tran("share.state"); %></th>
+						<th sortdir="up">  <% tran("filterSum.polnum"); %></th>
+						<th sortdir="up">  <% tran("share.proto"); %></th>
+						<th sortdir="up">  <% tran("share.timeout"); %></th>
+						<th sortdir="up">  <% tran("share.src"); %></th>
+						<th sortdir="up">  <% tran("share.dst"); %></th>
+						<th sortdir="up">  <% tran("share.srv"); %></th>
+						<th sortdir="up">  <% tran("share.state"); %></th>
 					</tr>
 					<% ip_conntrack_table(); %>
 				</table>
