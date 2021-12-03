@@ -2433,10 +2433,12 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
-	if (!ipv6addr)
-		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
-	if (ipv6addr)
-		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
+	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") || nvram_match("ipv6_typ", "ipv6native")) {
+		if (!ipv6addr)
+			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
+		if (ipv6addr)
+			websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
+	}
 #endif
 
 	return;
