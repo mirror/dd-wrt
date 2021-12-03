@@ -49,7 +49,7 @@ static void add_server(FILE * fp, char *server)
 
 static void add_ubnt_telemetry(FILE * fp)
 {
-	static unsigned char *servers[] = {
+	static char *servers[] = {
 		"trace.svc.ui.com",
 		"trace.dev.svc.ui.com",
 		"trace.stg.svc.ui.com",
@@ -64,7 +64,7 @@ static void add_ubnt_telemetry(FILE * fp)
 
 static void add_ms_telemetry(FILE * fp)
 {
-	static unsigned char *servers[] = {
+	static char *servers[] = {
 		"a.ads1.msn.com",
 		"a.ads2.msads.net",
 		"a.ads2.msn.com",
