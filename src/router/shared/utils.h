@@ -837,7 +837,15 @@ extern int C_led(int i);
 extern int get_single_ip(char *ipaddr, int which);
 extern char *get_mac_from_ip(char *mac, char *ip);
 extern int dns_to_resolv(void);
-extern char *get_wan_face(void);
+extern char *safe_get_wan_face(char *buffer);
+
+#define get_wan_face() \
+	({ \
+		char wan_if_buffer[16 + 1]; \
+		safe_get_wan_face(wan_if_buffer); \
+		wan_if_buffer; \
+	})
+	
 extern int getBridgeSTP(char *br, char *word);
 extern char *getBridgeSTPType(char *br, char *word);
 

@@ -104,28 +104,28 @@ char *qos_nfmark(uint32 x)
 	return get_NFServiceMark("QOS", x);
 }
 
-static char
-*get_wshaper_dev(void)
+static char *get_wshaper_dev(char *buf)
 {
+	strcpy(buf,"br0");
 	if (nvram_match("wshaper_dev", "WAN"))
-		return get_wan_face();
-	else
-		return "br0";
+		return safe_get_wan_face(buf);
+	return buf;
 }
 
 int get_mtu_val(void)
 {
 	char buf[32];
+	char ifname[16 + 1];
 	if (nvram_match("wshaper_dev", "WAN")
-	    && !strcmp(get_wshaper_dev(), "ppp0"))
+	    && !strcmp(get_wshaper_dev(ifname), "ppp0"))
 		return nvram_geti("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
 		if (nvram_matchi("wan_mtu", 1500))
-			return atoi(getMTU(get_wshaper_dev()));
+			return atoi(getMTU(get_wshaper_dev(ifname)));
 		else
 			return nvram_geti("wan_mtu");
 	} else
-		return atoi(getBridgeMTU(get_wshaper_dev(), buf));
+		return atoi(getBridgeMTU(get_wshaper_dev(ifname), buf));
 }
 
 struct namemaps {
