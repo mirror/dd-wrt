@@ -212,8 +212,11 @@ function plot_data(obj)
 	}
 	var i = 0;
 	while (i < max_num_points) {
-	plot_in[i] = plot_in[i+1];
-		plot_out[i] = plot_out[++i];
+		plot_in[i] = plot_in[i+1];
+		plot_out[i] = plot_out[i+1];
+		if (plot_in[i] == undefined) plot_in[i] = 0;
+		if (plot_out[i] == undefined) plot_out[i] = 0;
+		i++;
 	}
 	plot_in.length--;
 	plot_out.length--;
