@@ -311,7 +311,7 @@ int check_blocklist(const char *service, char *ip);
 void add_blocklist_sock(const char *service, int socket);
 int check_blocklist_sock(const char *service, int socket);
 char *get_ipfromsock(int socket, char *ip);
-void airbag_setpostinfo(char *string);
+void airbag_setpostinfo(const char *string);
 
 #define debug_free(ptr) { \
 	airbag_setpostinfo(__func__); \
