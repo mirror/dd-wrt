@@ -279,14 +279,14 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="20%"><% tran("share.hostname"); %></th>
-										<th width="10%"><% tran("share.ip"); %></th>
+										<th width="16%"><% tran("share.hostname"); %></th>
+										<th width="20%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
 										<th width="5%">If</th>
 										<th width="5%">In</th>
 										<th width="5%">Out</th>
 										<th width="5%">Total</th>
-										<th width="10%"><% tran("status_lan.concount"); %></th>
+										<th width="12%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
@@ -325,11 +325,11 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
-											<th width="46%"><% tran("share.hostname"); %></th>
+											<th width="35%"><% tran("share.hostname"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
 											<th width="17%"><% tran("share.mac"); %></th>
 											<th width="20%"><% tran("idx.dhcp_lease"); %></th>
-											<th><% tran("share.del"); %></th>
+											<th width="10%"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
