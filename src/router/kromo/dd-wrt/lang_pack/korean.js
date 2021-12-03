@@ -385,7 +385,7 @@ errmsg.err102="펌웨어를 업그레이드하고 있습니다...<br />잠시만
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="설정";
 bmenu.setupbasic="기본 설정";
-bmenu.setupipv6="IPV6";
+bmenu.setupipv6="IPv6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC 주소 클론";
 bmenu.setuprouting="고급 라우팅";

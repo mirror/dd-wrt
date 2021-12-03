@@ -1708,7 +1708,7 @@ service.kaid_orbdeepport="ORB Deep Port";
 //DHCPd
 service.dhcp_legend="Klient DHCP";
 service.dhcp_vendor="Ustaw klasę producenta";
-service.dhcp6c_vendor="Klasa producenta DHCP IPV6";
+service.dhcp6c_vendor="Klasa producenta DHCP IPv6";
 service.dhcp_reqip="Żądanie adresu IP";
 service.dhcp_legend2="Serwer DHCP";
 service.dhcp_srv="Demon DHCP";
