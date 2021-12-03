@@ -738,7 +738,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 
 err:
 	if (buf)
-		free(buf);
+		debug_free(buf);
 	if (fifo)
 		fclose(fifo);
 	if (fifo2)
@@ -778,7 +778,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
-			free(buf);
+			debug_free(buf);
 			return -1;
 		}
 
@@ -788,14 +788,14 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
-						free(buf);
+						debug_free(buf);
 						return -1;
 					}
 
 					len -= strlen(buf);
 				}
 				if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
-					free(buf);
+					debug_free(buf);
 					return -1;
 				}
 				len -= strlen(buf);
@@ -814,7 +814,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
-			free(buf);
+			debug_free(buf);
 			return -1;
 		}
 
@@ -848,7 +848,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 
 	wfgets(buf, len, stream, NULL);
-	free(buf);
+	debug_free(buf);
 #endif
 	return 0;
 }

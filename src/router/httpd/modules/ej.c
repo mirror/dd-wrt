@@ -272,7 +272,7 @@ static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2
 		dlclose(global_handle);
 	global_handle = NULL;
 #endif
-	free(pattern);
+	debug_free(pattern);
 	memdebug_leave();
 }
 
@@ -292,7 +292,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 	stream->s_filecount = 0;
 	fread(stream->s_filebuffer, 1, len, fp);
 	do_ej_s(&buffer_get, stream);
-	free(stream->s_filebuffer);
+	debug_free(stream->s_filebuffer);
 #else
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
@@ -329,7 +329,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 				goto err;
 			fseek(web, curoffset, SEEK_SET);
 			//      fprintf(stderr, "found %s\n", path);
-			free(path);
+			debug_free(path);
 			return web;
 		}
 		curoffset += *len;
@@ -346,7 +346,7 @@ err:
 	*len = ftell(web);
 	fseek(web, 0, SEEK_SET);
 err2:
-	free(path);
+	debug_free(path);
 	return web;
 }
 

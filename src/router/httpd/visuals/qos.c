@@ -162,7 +162,7 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 
 	}
 	if (counts)
-		free(counts);
+		debug_free(counts);
 
 	return;
 }

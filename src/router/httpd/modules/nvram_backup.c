@@ -148,7 +148,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);
-	free(mem);
+	debug_free(mem);
 
 #ifdef HAVE_ANTAIRA
 	if (nvram_matchi("xor_backup", 1))
@@ -233,7 +233,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, 2048), wp, NULL)) {
-			free(buf);
+			debug_free(buf);
 			return -1;
 		}
 		len -= strlen(buf);
@@ -248,7 +248,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, 2048, wp, NULL)) {
-			free(buf);
+			debug_free(buf);
 			return -1;
 		}
 		len -= strlen(buf);
@@ -283,7 +283,7 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	 */
 	wfgets(buf, len, wp, NULL);
 	nvram_commit();
-	free(buf);
+	debug_free(buf);
 	return 0;
 }
 

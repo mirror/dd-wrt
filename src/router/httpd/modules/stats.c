@@ -74,7 +74,7 @@ int http_stats(const char *url)
 	for (cur = files; *cur; cur++) {
 		if ((contents = file2str(*cur))) {
 			s += snprintf(s, buf + BUFSPACE - s, "%s=%s&", *cur, contents);
-			free(contents);
+			debug_free(contents);
 		}
 	}
 
@@ -94,6 +94,6 @@ int http_stats(const char *url)
 	 */
 	http_post(url ? : nvram_safe_get("stats_server"), buf, BUFSPACE);
 
-	free(buf);
+	debug_free(buf);
 	return 0;
 }

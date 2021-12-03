@@ -62,7 +62,7 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 	int len = strlen(printname);
 	char *target = malloc(len * 3 + 1);
 	if (!target) {
-		free(printname);
+		debug_free(printname);
 		return;
 	}
 	int i, t = 0;
@@ -75,9 +75,9 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 			target[t++] = printname[i];
 	}
 	target[t++] = 0;
-	free(printname);
+	debug_free(printname);
 	websWrite(wp, "%s", target);
-	free(target);
+	debug_free(target);
 }
 
 #ifndef HAVE_SPECIALEDITION

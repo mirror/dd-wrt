@@ -370,9 +370,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "              </tr>");
 #endif
 	for (i = 0; i < 7; i++)
-		free(vlans[i]);
-	free(vlanlist);
+		debug_free(vlans[i]);
+	debug_free(vlanlist);
 	nvram_default_get("portvlanlist", deflist);
-	free(deflist);
+	debug_free(deflist);
 	return;
 }

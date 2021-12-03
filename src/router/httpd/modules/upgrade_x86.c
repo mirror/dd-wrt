@@ -131,7 +131,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 		fflush(in);
 		fsync(fileno(in));
 		fclose(in);
-		free(mem);
+		debug_free(mem);
 	}
 #endif
 
@@ -239,7 +239,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 	ret = 0;
 err:
 	if (buf)
-		free(buf);
+		debug_free(buf);
 
 	// diag_led(DIAG, STOP_LED);
 	// C_led (0);

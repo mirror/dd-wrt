@@ -142,7 +142,7 @@ static char *getFileString(FILE * in)
 	for (i = 0; i < 1024; i++) {
 		b = getc(in);
 		if (b == EOF) {
-			free(buf);
+			debug_free(buf);
 			return NULL;
 		}
 		if (b == '"') {
@@ -300,7 +300,7 @@ void Initnvramtab()
 				in = fopen(buf, "rb");
 				line = 0;
 				if (in == NULL) {
-					free(buf);
+					debug_free(buf);
 					return;
 				}
 				while (1) {
@@ -321,7 +321,7 @@ void Initnvramtab()
 #ifdef HAVE_SPUTNIK_APD
 					if (!strcasecmp(tmpstr, "MJIDTYPE")) {
 						tmp->validatename = "validate_choice";
-						free(tmpstr);
+						debug_free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
@@ -342,7 +342,7 @@ void Initnvramtab()
 								tmp->validatename = simpleval[scount].validator;	//
 								int arglen = 0;
 								if (simpleval[scount].args == -1) {	//
-									free(tmpstr);
+									debug_free(tmpstr);
 									tmpstr = getFileString(in);	//
 									arglen = atoi(tmpstr);	//
 								}
@@ -368,14 +368,14 @@ void Initnvramtab()
 //                                                              tmpstr);
 //                                              }
 					}
-					free(tmpstr);
+					debug_free(tmpstr);
 					tmpstr = getFileString(in);
 					if (!strcasecmp(tmpstr, "TRUE")) {
 						tmp->nullok = TRUE;
 					} else {
 						tmp->nullok = FALSE;
 					}
-					free(tmpstr);
+					debug_free(tmpstr);
 					skipFileString(in);	// todo: remove it
 					checkError(in, buf, line++);
 					// tmpstr = getFileString (in);
@@ -386,7 +386,7 @@ void Initnvramtab()
 					variables[varcount++] = tmp;
 					variables[varcount] = NULL;
 				}
-				free(buf);
+				debug_free(buf);
 				fclose(in);
 			}
 		}
@@ -505,7 +505,7 @@ static char *insert(webs_t wp, char *ifname, char *index, char *filename)
 		} else
 			temp[ai++] = webfile[i];
 	}
-	free(webfile);
+	debug_free(webfile);
 	return temp;
 }
 
@@ -590,7 +590,7 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 		fp = fopen("/tmp/bigfilemem.bin", "wb");
 		fwrite(test, 1, 65536, fp);
 		fclose(fp);
-		free(test);
+		debug_free(test);
 	}
 	wfflush(stream);
 	fp = fopen("/tmp/bigfilemem.bin", "rb");
@@ -601,7 +601,7 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 	fclose(fp);
 
       ret:;
-	free(extra);
+	debug_free(extra);
 	return 0;
 
 }
@@ -646,7 +646,7 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
-	free(temp);
+	debug_free(temp);
 	return 0;
 }
 
@@ -799,8 +799,8 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 					fclose(fp);
 				}
 			}
-			free(output);
-			free(serial);
+			debug_free(output);
+			debug_free(serial);
 		}
 		eval("/jffs/etc/freeradius/certs/doclientcert",
 		     expiration_days,
@@ -873,9 +873,9 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 
 	fp = popen(exec, "rb");
 //      FILE *fp = fopen(json_cache, "rb");
-	free(exec);
+	debug_free(exec);
 	if (!fp) {
-		free(path);
+		debug_free(path);
 		return -1;
 	}
 	char *buffer = malloc(65536 + 1);
@@ -892,8 +892,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	sprintf(dest, "%s/spectral_scan_ctl", path);
 	writestr(dest, "disable");
 
-	free(buffer);
-	free(path);
+	debug_free(buffer);
+	debug_free(path);
 
 	websWrite(stream, "}");
 	return 0;
@@ -913,7 +913,7 @@ static void getiffromurl(char *ifname, int len, char *ori_path)
 		*idx = 0;
 		strlcpy(ifname, temp2, len - 1);
 	}
-	free(path);
+	debug_free(path);
 }
 
 static int sanitize_ifname(char *ifname)
@@ -944,7 +944,7 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
-	free(temp);
+	debug_free(temp);
 	return 0;
 }
 
@@ -963,7 +963,7 @@ static int do_sitesurvey(unsigned char method, struct mime_handler *handler, cha
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
-	free(temp);
+	debug_free(temp);
 	return 0;
 }
 
@@ -984,7 +984,7 @@ static int do_wds(unsigned char method, struct mime_handler *handler, char *path
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
-	free(temp);
+	debug_free(temp);
 	return 0;
 }
 
@@ -1010,7 +1010,7 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
-	free(temp);
+	debug_free(temp);
 	return 0;
 }
 
@@ -1942,7 +1942,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 				return -1;
 			}
 			wfgets(buf, len, stream, NULL);
-			free(buf);
+			debug_free(buf);
 		}
 		init_cgi(stream, stream->post_buf);
 	}
@@ -2246,7 +2246,7 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "%s", buffer);
-	free(buffer);
+	debug_free(buffer);
 	return 0;
 }
 
@@ -2287,8 +2287,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 				prev = val;
 				val = getc(fp);
 				if (val == EOF) {
-					free(temp);
-					free(temp1);
+					debug_free(temp);
+					debug_free(temp1);
 					fclose(fp);
 					return NULL;
 				}
@@ -2300,8 +2300,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					prev = v;
 					v = getc(fp);
 					if (v == EOF) {
-						free(temp);
-						free(temp1);
+						debug_free(temp);
+						debug_free(temp1);
 						return NULL;
 					}
 					if (v == '"' && prev != '\\') {
@@ -2316,8 +2316,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 						goto again;
 					}
 				}
-				free(temp);
-				free(temp1);
+				debug_free(temp);
+				debug_free(temp1);
 				fclose(fp);
 				return NULL;
 			}
@@ -2347,8 +2347,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					if ((memcmp(temp, temp1, len)) == 0) {
 						temp2 = strtok(temp, "\"");
 						temp2 = strdup(strtok(NULL, "\""));
-						free(temp);
-						free(temp1);
+						debug_free(temp);
+						debug_free(temp1);
 						fclose(fp);
 						return temp2;
 					}
@@ -2356,10 +2356,10 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 			}
 
 		}
-		free(temp1);
+		debug_free(temp1);
 		fclose(fp);
 	}
-	free(temp);
+	debug_free(temp);
 	return NULL;
 }
 
@@ -2378,7 +2378,7 @@ static char *private_live_translate(webs_t wp, const char *tran)
 	char *lang = getLanguageName();
 	char buf[64];
 	sprintf(buf, "%s", lang);
-	free(lang);
+	debug_free(lang);
 
 	char *result = scanfile(wp, buf, tran);
 	if (result)
@@ -2398,13 +2398,13 @@ static void clear_translationcache(void)
 	if (translationcache && cachecount > 0) {
 		for (i = 0; i < cachecount; i++) {
 			if (translationcache[i].request != NULL) {
-				free(translationcache[i].request);
-				free(translationcache[i].translation);
+				debug_free(translationcache[i].request);
+				debug_free(translationcache[i].translation);
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
 		}
-		free(translationcache);
+		debug_free(translationcache);
 		translationcache = NULL;
 		cachecount = 0;
 	}
@@ -2437,8 +2437,8 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 				translationcache[i].time = cur;
 			}
 			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
-				free(translationcache[i].translation);
-				free(translationcache[i].request);
+				debug_free(translationcache[i].translation);
+				debug_free(translationcache[i].request);
 				translation = NULL;
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
@@ -2734,9 +2734,9 @@ static int do_language(unsigned char method, struct mime_handler *handler, char 
 	asprintf(&lang, "%s%s", prefix, langname);
 	int ret = do_file(method, handler, lang, stream);
 
-	free(lang);
-	free(prefix);
-	free(langname);
+	debug_free(lang);
+	debug_free(prefix);
+	debug_free(langname);
 	return ret;
 }
 #endif

@@ -195,9 +195,9 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		servp = my_getservbyport(htons(_dport), protocol);
 		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
 		if (servp) {
-			free(servp->s_proto);
-			free(servp->s_name);
-			free(servp);
+			debug_free(servp->s_proto);
+			debug_free(servp->s_name);
+			debug_free(servp);
 		}
 		// State
 		if (string_search(line, "ESTABLISHED"))
@@ -220,7 +220,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		ip_count++;
 	}
-	free(line);
+	debug_free(line);
 
 	fclose(fp);
 	unlock();

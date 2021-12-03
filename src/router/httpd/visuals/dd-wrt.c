@@ -128,7 +128,7 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 	}
 	if (buf) {
 		websWrite(wp, buf);
-		free(buf);
+		debug_free(buf);
 	}
 
 }
@@ -657,7 +657,7 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 	cprintf("collection result %s", u);
 	if (u != NULL) {
 		userlist = strdup(u);
-		free(u);
+		debug_free(u);
 		o = userlist;
 	} else {
 		userlist = NULL;
@@ -719,7 +719,7 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td></tr>\n");
 	}
 	if (o != NULL)
-		free(o);
+		debug_free(o);
 	return;
 }
 
@@ -758,7 +758,7 @@ EJ_VISIBLE void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n", password, pass);
 		websWrite(wp, "</td></tr>\n");
 	}
-	free(o);
+	debug_free(o);
 	return;
 }
 
@@ -801,7 +801,7 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /><script type=\"text/javascript\">Capture(share.minutes)</script></td></tr>\n",
 			  i, sep != NULL ? sep : "");
 	}
-	free(originalpointer);
+	debug_free(originalpointer);
 	return;
 }
 
@@ -1783,7 +1783,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}
 		if (gotchannels)
-			free(chan);
+			debug_free(chan);
 #else
 		int instance = 0;
 
@@ -2267,7 +2267,7 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n", nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
 			websWrite(wp, "</div>\n");
-			free(m);
+			debug_free(m);
 
 		}
 		websWrite(wp, "<div id=\"%s_idairtimeweight\">\n", vvar);
@@ -5250,9 +5250,9 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 
 	websWrite(wp, "</table>\n");
 	websWrite(wp, "</div>\n");
-	free(authpair_wpa);
-	free(authmethod);
-	free(cryptopair);
+	debug_free(authpair_wpa);
+	debug_free(authmethod);
+	debug_free(cryptopair);
 }
 
 #endif
@@ -6762,7 +6762,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n", nvgpio, nvram_matchi(nvgpio, 0) ? "checked=\"checked\"" : "");
 			}
 		}
-		free(var);
+		debug_free(var);
 	}
 }
 

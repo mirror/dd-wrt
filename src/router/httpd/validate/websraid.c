@@ -230,7 +230,7 @@ void add_raid_member(webs_t wp)
 	else
 		asprintf(&newv, "%s none", raid);
 	nvram_nset(newv, "raid%d", idx);
-	free(newv);
+	debug_free(newv);
 }
 
 void del_raid_member(webs_t wp)
@@ -265,7 +265,7 @@ void del_raid_member(webs_t wp)
 
 	nvram_nset(a, "raid%d", idx);
 	if (a)
-		free(a);
+		debug_free(a);
 }
 
 void raid_save(webs_t wp)
@@ -335,7 +335,7 @@ void raid_save(webs_t wp)
 		}
 		nvram_nset(a, "raid%d", idx);
 		if (a)
-			free(a);
+			debug_free(a);
 		idx++;
 
 	}

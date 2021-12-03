@@ -63,6 +63,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <shutils.h>
 
 #define	MAXALIASES	35
 
@@ -151,8 +152,8 @@ struct servent *my_getservbyport(int port, const char *proto)
 	char *line = malloc(BUFSIZ + 1);
 	while ((my_getservent(servf, serv, serv_aliases, line)) != NULL) {
 		if (serv->s_port != port) {
-			free(serv->s_proto);
-			free(serv->s_name);
+			debug_free(serv->s_proto);
+			debug_free(serv->s_name);
 			continue;
 		}
 		if (proto == 0 || strcasecmp(serv->s_proto, proto) == 0) {
@@ -162,10 +163,10 @@ struct servent *my_getservbyport(int port, const char *proto)
 	}
 	my_endservent();
 	if (!found) {
-		free(serv);
+		debug_free(serv);
 		serv = NULL;
 	}
-	free(line);
+	debug_free(line);
 	if (serv) {
 		return (serv);
 	}
