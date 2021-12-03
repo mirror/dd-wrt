@@ -532,7 +532,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "//]]>\n");
 							websWrite(wp, "</script>\n");
 							websWrite(wp, "</div>\n");
-							free(buf);
+							debug_free(buf);
 							hasqr = 1;
 						}
 					}

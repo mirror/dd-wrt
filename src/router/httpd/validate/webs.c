@@ -454,8 +454,8 @@ static void validate_services_port(webs_t wp)
 	if (*(cur)) {
 		nvram_set("filter_services_1", cur);
 	}
-	free(services);
-	free(buf);
+	debug_free(services);
+	debug_free(buf);
 	// nvram_set ("filter_services", cur);
 	D("okay");
 }
@@ -521,7 +521,7 @@ static void s_addDeletion(char *word, char *arg)
 
 		sprintf(newarg, "%s %s", oldarg, word);
 		nvram_set(arg, newarg);
-		free(newarg);
+		debug_free(newarg);
 	} else
 		nvram_set(arg, word);
 }
@@ -717,8 +717,8 @@ void delete_static_route(webs_t wp)
 
 	nvram_set("static_route", buf);
 	nvram_set("static_route_name", buf_name);
-	free(buf_name);
-	free(buf);
+	debug_free(buf_name);
+	debug_free(buf);
 	applytake(value);
 	return;
 }
@@ -775,8 +775,8 @@ void delete_pbr_rule(webs_t wp)
 	fclose(backup);
 	nvram_set("pbr_rule", buf);
 	nvram_set("pbr_rule_name", buf_name);
-	free(buf_name);
-	free(buf);
+	debug_free(buf_name);
+	debug_free(buf);
 	applytake(value);
 	return;
 }
@@ -1376,7 +1376,7 @@ void add_active_mac(webs_t wp)
 	nvram_set(acmac, buf);
 	if (!strcmp(ifname, "wl0"))
 		nvram_set("wl_active_mac", buf);
-	free(buf);
+	debug_free(buf);
 }
 
 void removeLineBreak(char *startup)
@@ -1646,16 +1646,16 @@ int get_svc(char *svc, char *protocol, char *ports)
 		ports[len] = '\0';
 
 		if (sscanf(ports, "%d:%d", &from, &to) != 2) {
-			free(services);
+			debug_free(services);
 			return -1;
 		}
 
 		if (strcasecmp(name, svc) == 0) {
-			free(services);
+			debug_free(services);
 			return 0;
 		}
 	}
-	free(services);
+	debug_free(services);
 
 	return -1;
 }
@@ -1705,7 +1705,7 @@ void qos_add_svc(webs_t wp)
 
 	nvram_set("svqos_svcs", new_svcs);
 	nvram_async_commit();
-	free(new_svcs);
+	debug_free(new_svcs);
 }
 
 void qos_add_dev(webs_t wp)
@@ -1726,7 +1726,7 @@ void qos_add_dev(webs_t wp)
 	asprintf(&new_ip, "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
 
 	nvram_set("svqos_devs", new_ip);
-	free(new_ip);
+	debug_free(new_ip);
 }
 
 void qos_add_ip(webs_t wp)
@@ -1757,7 +1757,7 @@ void qos_add_ip(webs_t wp)
 	asprintf(&new_ip, "%s %s 100 100 0 0 |", svqos_ips, add_ip);
 
 	nvram_set("svqos_ips", new_ip);
-	free(new_ip);
+	debug_free(new_ip);
 
 }
 
@@ -1789,7 +1789,7 @@ void qos_add_mac(webs_t wp)
 	asprintf(&new_mac, "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
 
 	nvram_set("svqos_macs", new_mac);
-	free(new_mac);
+	debug_free(new_mac);
 
 }
 
@@ -2421,7 +2421,7 @@ void qos_save(webs_t wp)
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
 			strcpy(svqos_var, tmp);
-			free(tmp);
+			debug_free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s %s |", name, protocol, ports, level);
 
@@ -2474,7 +2474,7 @@ void qos_save(webs_t wp)
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
 			strcpy(svqos_var, tmp);
-			free(tmp);
+			debug_free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
@@ -2521,7 +2521,7 @@ void qos_save(webs_t wp)
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
-			free(tmp);
+			debug_free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 
@@ -2568,14 +2568,14 @@ void qos_save(webs_t wp)
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
-			free(tmp);
+			debug_free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s user %s %s |", data, level, level2, lanlevel, prio);
 
 	}
 
 	nvram_set("svqos_macs", svqos_var);
-	free(svqos_var);
+	debug_free(svqos_var);
 	// nvram_async_commit ();
 
 	/*
@@ -2649,7 +2649,7 @@ static void macro_rem(char *a, char *nv)
 				}
 				b[i] = 0;
 				nvram_set(nv, b);
-				free(b);
+				debug_free(b);
 			}
 
 		}
@@ -2807,7 +2807,7 @@ void add_mdhcpd(char *iface, int start, int max, int leasetime)
 	mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + strlen(mdhcpd) + 2);
 	sprintf(mdhcpds, "%s%s", nvram_safe_get("mdhcpd"), mdhcpd);
 	nvram_set("mdhcpd", mdhcpds);
-	free(mdhcpds);
+	debug_free(mdhcpds);
 
 	sprintf(var, "%d", nvram_geti("mdhcpd_count") + 1);
 	nvram_set("mdhcpd_count", var);
@@ -2850,7 +2850,7 @@ void remove_mdhcp(char *iface)
 			suff[0] = '\0';
 		}
 
-		free(mdhcpds);
+		debug_free(mdhcpds);
 
 		//fprintf(stderr, "[PREF/SUFF] %s %s\n", pref, suff);   
 		len = strlen(pref) + strlen(suff);
@@ -2868,9 +2868,9 @@ void remove_mdhcp(char *iface)
 			nvram_set("mdhcpd_count", var);
 		}
 
-		free(mdhcpds);
-		free(pref);
-		free(suff);
+		debug_free(mdhcpds);
+		debug_free(pref);
+		debug_free(suff);
 	}
 }
 
@@ -2892,7 +2892,7 @@ void move_mdhcp(char *siface, char *tiface)
 		}
 		//fprintf(stderr, "[MDHCPD] %s->%s %d %s\n", siface, tiface, pos, mdhcpds);
 		nvram_set("mdhcpd", mdhcpds);
-		free(mdhcpds);
+		debug_free(mdhcpds);
 	}
 }
 
@@ -3073,7 +3073,7 @@ void add_vifs_single(char *prefix, int device)
 #endif
 
 	// nvram_async_commit ();
-	free(n);
+	debug_free(n);
 }
 
 void add_vifs(webs_t wp)
@@ -3236,7 +3236,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			strcat(copy, prio);
 		}
 		nvram_set("vlan_tags", copy);
-		free(copy);
+		debug_free(copy);
 	}
 	wordlist = nvram_safe_get("bridgesif");
 	int count = nvram_geti("bridgesif_count");
@@ -3282,7 +3282,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 		}
 		nvram_set("bridgesif", copy);
 		nvram_seti("bridgesif_count", count);
-		free(copy);
+		debug_free(copy);
 	}
 	wordlist = nvram_safe_get("mdhcpd");
 	if (*wordlist) {
@@ -3316,7 +3316,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			strcat(copy, leasetime);
 		}
 		nvram_set("mdhcp", copy);
-		free(copy);
+		debug_free(copy);
 
 	}
 
@@ -3437,7 +3437,7 @@ void remove_vifs_single(char *prefix, int vap)
 		nvram_async_commit();
 	}
 #endif
-	free(copy);
+	debug_free(copy);
 }
 
 void remove_vifs(webs_t wp)
@@ -3487,7 +3487,7 @@ static void pasteval(char *prefix, char *val)
 			v[len] = 0;
 			fread(v, len, 1, fp);
 			nvram_set(nv, v);
-			free(v);
+			debug_free(v);
 		}
 		fclose(fp);
 	}
@@ -3581,7 +3581,7 @@ void del_bond(webs_t wp)
 	nvram_set("bonding_count", var);
 	nvram_set("bondings", newwordlist);
 	nvram_async_commit();
-	free(newwordlist);
+	debug_free(newwordlist);
 
 	return;
 }
@@ -3605,7 +3605,7 @@ void add_olsrd(webs_t wp)
 	}
 	nvram_set("olsrd_interfaces", newadd);
 	nvram_async_commit();
-	free(newadd);
+	debug_free(newadd);
 	return;
 }
 
@@ -3631,7 +3631,7 @@ void del_olsrd(webs_t wp)
 	}
 	nvram_set("olsrd_interfaces", newlist);
 	nvram_async_commit();
-	free(newlist);
+	debug_free(newlist);
 	return;
 }
 
@@ -3680,11 +3680,11 @@ void save_olsrd(webs_t wp)
 		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
 			 linkqualitymult);
 		strcpy(newlist, tmp);
-		free(tmp);
+		debug_free(tmp);
 	}
 	nvram_set("olsrd_interfaces", newlist);
 	nvram_async_commit();
-	free(newlist);
+	debug_free(newlist);
 	return;
 }
 #endif
@@ -3717,7 +3717,7 @@ void gpios_save(webs_t wp)
 				}
 			}
 		}
-		free(var);
+		debug_free(var);
 	}
 	gpios = nvram_safe_get("gpio_inputs");
 	var = (char *)malloc(strlen(gpios) + 1);
@@ -3734,7 +3734,7 @@ void gpios_save(webs_t wp)
 
 			}
 		}
-		free(var);
+		debug_free(var);
 	}
 	applytake(value);
 }
@@ -4214,7 +4214,7 @@ void del_vlan(webs_t wp)
 	nvram_set("vlan_tagcount", var);
 	nvram_set("vlan_tags", newwordlist);
 	nvram_async_commit();
-	free(newwordlist);
+	debug_free(newwordlist);
 
 	return;
 }
@@ -4272,7 +4272,7 @@ void del_mdhcp(webs_t wp)
 	nvram_set("mdhcpd_count", var);
 	nvram_set("mdhcpd", newwordlist);
 	nvram_async_commit();
-	free(newwordlist);
+	debug_free(newwordlist);
 
 	return;
 }
@@ -4315,7 +4315,7 @@ void del_bridge(webs_t wp)
 	nvram_set("bridges_count", var);
 	nvram_set("bridges", newwordlist);
 	nvram_async_commit();
-	free(newwordlist);
+	debug_free(newwordlist);
 
 	return;
 }
@@ -4373,7 +4373,7 @@ void del_bridgeif(webs_t wp)
 	nvram_set("bridgesif_count", var);
 	nvram_set("bridgesif", newwordlist);
 	nvram_async_commit();
-	free(newwordlist);
+	debug_free(newwordlist);
 
 	return;
 }
@@ -4463,7 +4463,7 @@ void del_ipvs(webs_t wp)
 	nvram_set("ipvs", newwordlist);
 	nvram_async_commit();
 	if (newwordlist)
-		free(newwordlist);
+		debug_free(newwordlist);
 	return;
 }
 
@@ -4525,7 +4525,7 @@ void del_ipvstarget(webs_t wp)
 	nvram_set("ipvstarget", newwordlist);
 	nvram_async_commit();
 	if (newwordlist)
-		free(newwordlist);
+		debug_free(newwordlist);
 	return;
 }
 
@@ -4626,7 +4626,7 @@ static void save_prefix(webs_t wp, char *prefix)
 					slc[i] = ' ';
 			}
 			nvram_set(n, slc);
-			free(slc);
+			debug_free(slc);
 		}
 	}
 #ifdef HAVE_MAKSAT
@@ -5367,7 +5367,7 @@ char *request_freedns(char *user, char *password)
 	char *hash = safe_malloc(64);
 
 	if (feof(in)) {
-		free(hash);
+		debug_free(hash);
 		fclose(in);
 		return NULL;
 	}
@@ -5508,7 +5508,7 @@ void ddns_save_value(webs_t wp)
 		if (hash) {
 			sprintf(hostn, "%s,%s", hostname, hash);
 			nvram_set(_hostname, hostn);
-			free(hash);
+			debug_free(hash);
 		} else {
 			nvram_set(_hostname, "User/Password wrong");
 		}
@@ -5580,13 +5580,13 @@ void portvlan_remove(webs_t wp)
 
 					}
 					nvram_nset(newlist, "port%dvlans", a);
-					free(newlist);
+					debug_free(newlist);
 				}
 			}
 			i++;
 		}
 		nvram_safe_set("portvlanlist", vlanlist);
-		free(vlanlist);
+		debug_free(vlanlist);
 	}
 	blen--;
 	nvram_seti("portvlan_count", blen);
@@ -5629,7 +5629,7 @@ void port_vlan_table_save(webs_t wp)
 			sprintf(vlanlist, "%d", num);
 	}
 	nvram_set("portvlanlist", vlanlist);
-	free(vlanlist);
+	debug_free(vlanlist);
 	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < max; vlan++) {
 			int flag = vlan;
@@ -5710,7 +5710,7 @@ void port_vlan_table_save(webs_t wp)
 			strcat(portvlan, buff);
 		}
 	}
-	free(vlans);
+	debug_free(vlans);
 	if (ports == 5)
 		nvram_set("port5vlans", portvlan);
 	else

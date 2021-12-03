@@ -60,7 +60,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
-		free(var);
+		debug_free(var);
 	}
 }
 
@@ -89,7 +89,7 @@ EJ_VISIBLE void ej_show_status_gpio_input(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
-		free(var);
+		debug_free(var);
 	}
 }
 

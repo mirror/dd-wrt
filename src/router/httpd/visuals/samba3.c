@@ -159,7 +159,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 		rows++;
 		csnext = cs->next;
-		free(cs);
+		debug_free(cs);
 	}
 
 	websWrite(wp, "		</table>\n");
@@ -170,7 +170,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
-		free(current);
+		debug_free(current);
 	}
 }
 
@@ -289,15 +289,15 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		rows++;
 
 		cunext = cu->next;
-		free(cu);
+		debug_free(cu);
 	}
 	for (cs = samba3shares; cs; cs = csnext) {
 		for (csu = cs->users; csu; csu = csunext) {
 			csunext = csu->next;
-			free(csu);
+			debug_free(csu);
 		}
 		csnext = cs->next;
-		free(cs);
+		debug_free(cs);
 	}
 
 	websWrite(wp, "		</table>\n");

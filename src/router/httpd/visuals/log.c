@@ -63,7 +63,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 	// if (klogctl(3, buf, 4096) < 0) {
 	if (klogctl(3, buf, LOG_BUF) < 0) {
 		websError(wp, 400, "Insufficient memory\n");
-		free(buf);
+		debug_free(buf);
 		return;
 	}
 	cprintf("log: %s\n", buf);
@@ -186,14 +186,14 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			count++;
 		}
 		if (servp) {
-			free(servp->s_name);
-			free(servp->s_proto);
-			free(servp);
+			debug_free(servp->s_name);
+			debug_free(servp->s_proto);
+			debug_free(servp);
 		}
-		// if(s_service) free(s_service);
-		// if(d_service) free(d_service);
+		// if(s_service) debug_free(s_service);
+		// if(d_service) debug_free(d_service);
 	}
-	free(buf);
+	debug_free(buf);
 	return;
 
 }

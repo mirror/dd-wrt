@@ -480,7 +480,7 @@ static int auth_check(webs_t conn_fp)
 	}
 	ret = 1;
       out:;
-	free(authinfo);
+	debug_free(authinfo);
 
 	return ret;
 }
@@ -490,7 +490,7 @@ static void send_authenticate(webs_t conn_fp)
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
 	send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.unauthorized"), header, live_translate(conn_fp, "share.auth_required"));
-	free(header);
+	debug_free(header);
 }
 
 void do_error_style(webs_t wp, int code, char *title, char *text);
@@ -514,7 +514,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	websWrite(conn_fp, "</HTML>\n");
 
 	(void)wfflush(conn_fp);
-	free(text);
+	debug_free(text);
 }
 
 static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache)
@@ -557,7 +557,7 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 		}
 		newname[cnt++] = 0;
 		websWrite(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", newname);
-		free(newname);
+		debug_free(newname);
 	}
 	if (extra_header != NULL && *extra_header)
 		websWrite(conn_fp, "%s\r\n", extra_header);
@@ -658,11 +658,11 @@ static int match(const char *pattern, const char *string)
 		or = strchr(pattern, '|');
 		if (or == NULL) {
 			int ret = match_one(pattern, strlen(pattern), path);
-			free(path);
+			debug_free(path);
 			return ret;
 		}
 		if (match_one(pattern, or - pattern, path)) {
-			free(path);
+			debug_free(path);
 			return 1;
 		}
 		pattern = or + 1;
@@ -722,7 +722,7 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 				wfwrite(buffer, ret, 1, stream);
 			}
 		}
-		free(buffer);
+		debug_free(buffer);
 	} else {
 		wfflush(stream);
 		wfsendfile(fileno(web), ftell(web), len, stream);
@@ -763,11 +763,11 @@ static int check_connect_type(webs_t wp)
 		for (i = 0; i < count_wl; i++) {
 			if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
 				cprintf("Can't accept wireless access\n");
-				free(wlmac);
+				debug_free(wlmac);
 				return -1;
 			}
 		}
-		free(wlmac);
+		debug_free(wlmac);
 	}
 
 	return 0;
@@ -1280,15 +1280,15 @@ static void *handle_request(void *arg)
       out:;
 	setnaggle(conn_fp, 0);
 
-	free(line);
+	debug_free(line);
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)
-		free(conn_fp->request_url);
+		debug_free(conn_fp->request_url);
 	if (conn_fp->authorization)
-		free(conn_fp->authorization);
+		debug_free(conn_fp->authorization);
 	if (conn_fp->post_buf)
-		free(conn_fp->post_buf);
+		debug_free(conn_fp->post_buf);
 	PTHREAD_MUTEX_LOCK(&httpd_mutex);
 #ifdef HAVE_REGISTER
 	registered = conn_fp->isregistered;
@@ -1301,7 +1301,7 @@ static void *handle_request(void *arg)
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
-	free(conn_fp);
+	debug_free(conn_fp);
 	SEM_POST(&semaphore);
 	return NULL;
 }
@@ -1363,12 +1363,12 @@ static void sslbufferflush(struct sslbuffer *buffer)
 
 static void sslbufferfree(struct sslbuffer *buffer)
 {
-	free(buffer->sslbuffer);
+	debug_free(buffer->sslbuffer);
 	int sockfd = SSL_get_fd(buffer->ssl);
 	SSL_shutdown(buffer->ssl);
 	close(sockfd);
 	SSL_free(buffer->ssl);
-	free(buffer);
+	debug_free(buffer);
 }
 
 static int sslbufferread(struct sslbuffer *buffer, char *data, size_t datalen)
@@ -2000,7 +2000,7 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 #endif
 	} else
 		ret = fprintf(fp, "%s", buf);
-	free(buf);
+	debug_free(buf);
 
 	return ret;
 }

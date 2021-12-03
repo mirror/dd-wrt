@@ -201,7 +201,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 	ret = 0;
 err:
 	if (buf)
-		free(buf);
+		debug_free(buf);
 	if (fifo)
 		fclose(fifo);
 	unlink(upload_fifo);

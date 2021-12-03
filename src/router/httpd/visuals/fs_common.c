@@ -47,7 +47,7 @@ static struct fsentry *parsefsentry(char line[256])
 			strcpy(entry->fs, token);
 		} else if (tokcount == 2) {
 			if (!strncmp(token, "/tmp/proftpd", 12)) {
-				free(entry);
+				debug_free(entry);
 				return NULL;	//skip it
 			}
 			if (!strncmp(token, "/tmp/mnt/", 9)) {

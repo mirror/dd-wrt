@@ -1352,7 +1352,7 @@ int getmaxvaps(const char *prefix);
 #else
 static inline int getmaxvaps(const char *prefix)
 {
-	return 0;
+	return 16;
 }
 #endif
 

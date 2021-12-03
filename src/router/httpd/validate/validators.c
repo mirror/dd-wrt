@@ -1306,7 +1306,7 @@ EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 	rep(ifname, 'X', '.');
 	bzero(buf, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
 	if (ifname == NULL) {
-		free(buf);
+		debug_free(buf);
 		return;
 	}
 #ifdef HAVE_SPOTPASS
@@ -1385,7 +1385,7 @@ EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		if (!strcmp(ifname, "wl0"))
 			nvram_set("wl_active_mac", "");
 	}
-	free(buf);
+	debug_free(buf);
 }
 
 /*
@@ -1523,7 +1523,7 @@ EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 }
 
 /*
@@ -1602,7 +1602,7 @@ void validate_forward_ip(webs_t wp, char *value, struct variable *v)
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 }
 
 /*
@@ -1735,7 +1735,7 @@ EJ_VISIBLE void validate_forward_spec(webs_t wp, char *value, struct variable *v
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 }
 
 EJ_VISIBLE void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
@@ -2090,7 +2090,7 @@ EJ_VISIBLE void validate_chaps(webs_t wp, char *value, struct variable *v)
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 }
 #endif
 #ifdef HAVE_MILKFISH
@@ -2148,7 +2148,7 @@ EJ_VISIBLE void validate_aliases(webs_t wp, char *value, struct variable *v)
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 
 }
 
@@ -2205,7 +2205,7 @@ EJ_VISIBLE void validate_subscribers(webs_t wp, char *value, struct variable *v)
 	}
 	if (!error)
 		nvram_set(v->name, buf);
-	free(buf);
+	debug_free(buf);
 
 }
 #endif
@@ -2280,7 +2280,7 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 	sprintf(nr, "%d", leasen);
 	nvram_set("iradius_count", nr);
 	nvram_async_commit();
-	free(leases);
+	debug_free(leases);
 }
 #endif
 
@@ -2313,7 +2313,7 @@ EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 	}
 	nvram_set("fon_userlist", leases);
 	nvram_async_commit();
-	free(leases);
+	debug_free(leases);
 }
 
 #endif
@@ -2345,7 +2345,7 @@ char *buildmac(char *in)
 	filterstring(mac, '-');
 	filterstring(mac, ' ');
 	if (strlen(mac) != 12) {
-		free(outmac);
+		debug_free(outmac);
 		return NULL;	// error. invalid mac
 	}
 	int i;
@@ -2390,7 +2390,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		char *mac = buildmac(hwaddr);
 
 		if (mac == NULL) {
-			free(leases);
+			debug_free(leases);
 			websError(wp, 400, "%s is not a valid MAC adress\n", hwaddr);
 			return;
 		}
@@ -2412,7 +2412,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		if (!leases)
 			return;
 		strcat(leases, mac);
-		free(mac);
+		debug_free(mac);
 		strcat(leases, "=");
 		strcat(leases, hostname);
 		strcat(leases, "=");
@@ -2423,7 +2423,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 	}
 	nvram_set("static_leases", leases);
 	nvram_async_commit();
-	free(leases);
+	debug_free(leases);
 }
 
 EJ_VISIBLE void validate_dhcp_check(webs_t wp, char *value, struct variable *v)
@@ -3124,15 +3124,15 @@ EJ_VISIBLE void validate_port_trigger(webs_t wp, char *value, struct variable *v
 		newbuf = (char *)safe_malloc(strlen(buf) + len + 1);
 		strcpy(newbuf, buf);
 		strcat(newbuf, entry);
-		free(entry);
-		free(buf);
+		debug_free(entry);
+		debug_free(buf);
 		buf = newbuf;
 	}
 
 	if (!error) {
 		nvram_set(v->name, buf);
 	}
-	free(buf);
+	debug_free(buf);
 }
 
 EJ_VISIBLE void validate_blocked_service(webs_t wp, char *value, struct variable *v)
@@ -3240,10 +3240,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 				strcat(ipaddr, ".");
 		} else {
 			// free (ipaddr);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
+			debug_free(old_name);
+			debug_free(old);
+			debug_free(buf_name);
+			debug_free(buf);
 			return;
 		}
 	}
@@ -3268,10 +3268,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 			// free (gateway);
 			// free (netmask);
 			// free (ipaddr);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
+			debug_free(old_name);
+			debug_free(old);
+			debug_free(buf_name);
+			debug_free(buf);
 			return;
 		}
 	}
@@ -3309,10 +3309,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	char *mtu = websGetVar(wp, "route_mtu", "1500");
 	char *advmss = websGetVar(wp, "route_advmss", "1460");
 	if (!page || !metric || !ifname) {
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
+		debug_free(old_name);
+		debug_free(old);
+		debug_free(buf_name);
+		debug_free(buf);
 		return;
 	}
 	// Allow Defaultroute here
@@ -3338,10 +3338,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
+		debug_free(old_name);
+		debug_free(old);
+		debug_free(buf_name);
+		debug_free(buf);
 
 		return;
 	}
@@ -3350,10 +3350,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
+		debug_free(old_name);
+		debug_free(old);
+		debug_free(buf_name);
+		debug_free(buf);
 
 		return;
 	}
@@ -3361,10 +3361,10 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
+		debug_free(old_name);
+		debug_free(old);
+		debug_free(buf_name);
+		debug_free(buf);
 
 		return;
 	}
@@ -3441,10 +3441,10 @@ write_nvram:
 #ifdef HAVE_MICRO
 	nvram_async_commit();
 #endif
-	free(old_name);
-	free(old);
-	free(buf_name);
-	free(buf);
+	debug_free(old_name);
+	debug_free(old);
+	debug_free(buf_name);
+	debug_free(buf);
 
 	// if (ipaddr)
 	// free (ipaddr);
@@ -3527,10 +3527,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	flags |= oif_en ? 1 << 15 : 0;
 	char *page = websGetVar(wp, "rule_page", NULL);
 	if (!name[0] || !flags || !page) {
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
+		debug_free(old_name);
+		debug_free(old);
+		debug_free(buf_name);
+		debug_free(buf);
 		return;		//nothing stored, we ignore it
 	}
 	char *priority = websGetVar(wp, "rule_priority", "0");
@@ -3573,10 +3573,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 				strcat(from, "/");
 		} else {
 			// free (from);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
+			debug_free(old_name);
+			debug_free(old);
+			debug_free(buf_name);
+			debug_free(buf);
 			return;
 		}
 	}
@@ -3594,10 +3594,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 				strcat(to, "/");
 		} else {
 			// free (to);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
+			debug_free(old_name);
+			debug_free(old);
+			debug_free(buf_name);
+			debug_free(buf);
 			return;
 		}
 	}
@@ -3613,10 +3613,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 				strcat(nat, ".");
 		} else {
 			// free (nat);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
+			debug_free(old_name);
+			debug_free(old);
+			debug_free(buf_name);
+			debug_free(buf);
 			return;
 		}
 	}
@@ -3689,9 +3689,9 @@ write_nvram:
 	nvram_set("pbr_rule_name", buf_name);
 	nvram_async_commit();
 
-	free(old_name);
-	free(old);
-	free(buf_name);
-	free(buf);
+	debug_free(old_name);
+	debug_free(old);
+	debug_free(buf_name);
+	debug_free(buf);
 }
 #endif

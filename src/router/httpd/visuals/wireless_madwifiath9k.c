@@ -160,7 +160,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 //              }
 	}
 	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
+	debug_free(mac80211_info);
 	return globalcnt;
 }
 
@@ -300,7 +300,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 	}
 	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
 		dd_list_del(&f->list);
-		free(f);
+		debug_free(f);
 	}
 
 }

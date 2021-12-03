@@ -796,7 +796,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 			count++;
 
 		}
-		free(services);
+		debug_free(services);
 
 		websWrite(wp, "services_length = %d;\n", count);
 	} else if (!strcmp(type, "service")) {
