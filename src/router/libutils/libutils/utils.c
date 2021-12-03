@@ -1856,11 +1856,12 @@ int buf_to_file(char *path, char *buf)
 #include <net/if.h>
 #endif
 
-char *get_wan_face(void)
+char *safe_get_wan_face(char *localwanface)
 {
-	static char localwanface[IFNAMSIZ];
-	if (nvram_match("wan_proto", "disabled"))
-		return "br0";
+	if (nvram_match("wan_proto", "disabled")) {
+		strcpy(localwanface, "br0");
+		return localwanface;
+	}
 
 	/*
 	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
