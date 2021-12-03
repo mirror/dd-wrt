@@ -29,6 +29,7 @@
 #include <wait.h>
 #include <ctype.h>
 #include <shutils.h>
+#include <utils.h>
 #include <upnp.h>
 
 #define BCMUPMP_PID_FILE_PATH	"/tmp/bcmupnp.pid"
@@ -61,7 +62,6 @@ wan_primary_ifunit(void)
 
 	return 0;
 }
-extern char *get_wan_face(void);
 
 int
 main(int argc, char *argv[])
