@@ -323,7 +323,7 @@ static void save_hostname_ip(webs_t wp)
 		}
 		fclose(fp_w);
 	}
-	free(wl_clients);
+	debug_free(wl_clients);
 
 }
 

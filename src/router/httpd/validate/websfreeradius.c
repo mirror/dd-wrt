@@ -147,7 +147,7 @@ void del_radius_user(webs_t wp)
 	if (db->usercount > 0)
 		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount));
 	else {
-		free(db->users);
+		debug_free(db->users);
 		db->users = NULL;
 	}
 	writeradiusdb(db);
@@ -190,7 +190,7 @@ void del_radius_client(webs_t wp)
 	if (db->usercount > 0)
 		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount));
 	else {
-		free(db->users);
+		debug_free(db->users);
 		db->users = NULL;
 	}
 	writeradiusclientdb(db);

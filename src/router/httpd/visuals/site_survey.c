@@ -236,7 +236,7 @@ EJ_VISIBLE void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 		}
 
 	}
-	free(site_survey_lists)
+	debug_free(site_survey_lists)
 }
 
 #endif
@@ -428,7 +428,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			  rates);
 
 	}
-	free(site_survey_lists);
+	debug_free(site_survey_lists);
 
 	return;
 }

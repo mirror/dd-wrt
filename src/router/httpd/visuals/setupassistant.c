@@ -987,7 +987,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			}
 		}
 		if (gotchannels)
-			free(chan);
+			debug_free(chan);
 
 #else
 

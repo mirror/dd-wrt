@@ -203,7 +203,7 @@ EJ_VISIBLE void ej_nvram_mac_get(webs_t wp, int argc, char_t ** argv)
 				*(mac + i) = '-';
 		}
 		websWrite(wp, "%s", mac);
-		free(mac);	// leak, thx tofu
+		debug_free(mac);	// leak, thx tofu
 	}
 
 	return;
@@ -1073,7 +1073,7 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 	}
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
 	wfwrite(mem, 1, len, wp);
-	free(mem);
+	debug_free(mem);
 	websWrite(wp, "</style>\n");
 }
 
@@ -1127,7 +1127,7 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	fclose(web);
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
 	wfwrite(mem, 1, len, wp);
-	free(mem);
+	debug_free(mem);
 	sprintf(path, "ddwrt_inspired_themes/core.css");
 	web = _getWebsFile(wp, path, &len);
 	if (!web)
@@ -1145,7 +1145,7 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	fread(mem, 1, len, web);
 	fclose(web);
 	wfwrite(mem, 1, len, wp);
-	free(mem);
+	debug_free(mem);
 	websWrite(wp, "</style>\n");
 }
 #else
@@ -1197,7 +1197,7 @@ static int checkandadd(char *name, char **lst)
 	char *list = *lst;
 	if (!name) {
 		if (list)
-			free(list);
+			debug_free(list);
 		list = NULL;
 		return 0;
 	}
@@ -1299,7 +1299,7 @@ EJ_VISIBLE void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 			do_ej(METHOD_GET, NULL, buf, wp);
 		}
 		for (i = 0; i < resultcount; i++) {
-			free(result[i]);
+			debug_free(result[i]);
 		}
 		resultcount = 0;
 		result[0] = NULL;
@@ -1591,14 +1591,14 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				char *ifname;
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
 				if (!ifname) {
-					free(globstring);
+					debug_free(globstring);
 					continue;
 				}
 				sprintf(name, "%s (%s)", tran_string(buf, "share.wireless"), ifname + 1);
 				show_bwif(wp, ifname + 1, name);
 			}
-			globfree(&globbuf);
-			free(globstring);
+			globdebug_free(&globbuf);
+			debug_free(globstring);
 		}
 	}
 
@@ -1648,8 +1648,8 @@ static void free_menu(struct menucontext *m)
 		sprintf(check, "wlan%d", a);
 		if (has_ad(check))
 			continue;
-		free(m->menu[MENU_WIRELESS][count + 8]);
-		free(m->menuname[MENU_WIRELESS][count + 9]);
+		debug_free(m->menu[MENU_WIRELESS][count + 8]);
+		debug_free(m->menuname[MENU_WIRELESS][count + 9]);
 		count++;
 	}
 #endif
@@ -1662,10 +1662,10 @@ static void free_menu(struct menucontext *m)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			free(m->menu[MENU_WIRELESS][a * 2 + 7]);
-			free(m->menu[MENU_WIRELESS][a * 2 + 8]);
-			free(m->menuname[MENU_WIRELESS][a * 2 + 8]);
-			free(m->menuname[MENU_WIRELESS][a * 2 + 9]);
+			debug_free(m->menu[MENU_WIRELESS][a * 2 + 7]);
+			debug_free(m->menu[MENU_WIRELESS][a * 2 + 8]);
+			debug_free(m->menuname[MENU_WIRELESS][a * 2 + 8]);
+			debug_free(m->menuname[MENU_WIRELESS][a * 2 + 9]);
 		}
 #ifdef HAVE_ERC
 	}
@@ -2679,7 +2679,7 @@ static void showencstatus(webs_t wp, char *prefix)
 		websWrite(wp, "Capture(share.enabled)");
 		websWrite(wp, "</script>,&nbsp;");
 		websWrite(wp, enc);
-		free(enc);
+		debug_free(enc);
 	} else {
 		websWrite(wp, "Capture(share.disabled)");
 		websWrite(wp, "</script>");
@@ -2909,7 +2909,7 @@ EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 		wfputs(buffer, wp);
 	}
 	pclose(in);
-	free(buffer);
+	debug_free(buffer);
 	websWrite(wp, "</fieldset><br />");
 
 }
@@ -3208,7 +3208,7 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 			table[i].total += total;
 			char *oldip = table[i].ip;
 			asprintf(&table[i].ip, "%s<br>%s", oldip, ip);
-			free(oldip);
+			debug_free(oldip);
 			if (strlen(ip) < 16) {
 				table[i].proto |= 1;
 				inet_aton(ip, (struct in_addr *)&table[i].v4);
@@ -3406,13 +3406,13 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		for (i = 0; i < tablelen; i++) {
 			websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname, table[i].in, table[i].out,
 				  table[i].total);
-			free(table[i].hostname);
-			free(table[i].ip);
-			free(table[i].mac);
-			free(table[i].ifname);
+			debug_free(table[i].hostname);
+			debug_free(table[i].ip);
+			debug_free(table[i].mac);
+			debug_free(table[i].ifname);
 			++count;
 		}
-		free(table);
+		debug_free(table);
 	}
 }
 #endif

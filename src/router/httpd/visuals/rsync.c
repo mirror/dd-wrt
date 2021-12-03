@@ -137,7 +137,7 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 		rows++;
 		csnext = cs->next;
-		free(cs);
+		debug_free(cs);
 	}
 
 	websWrite(wp, "		</table>\n");
@@ -148,7 +148,7 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
-		free(current);
+		debug_free(current);
 	}
 }
 

@@ -552,7 +552,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 		websWrite(wp, ")");
-		free(interface);
+		debug_free(interface);
 
 	} else
 		websWrite(wp, "%s", live_translate(wp, "share.unknown"));

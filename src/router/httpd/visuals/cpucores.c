@@ -397,7 +397,7 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 
 		}
 	}
-	free(line);
+	debug_free(line);
 	fclose(fp);
 	if (result && *(result)) {
 		char buf[128];
@@ -407,5 +407,5 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 	}
 	if (result)
-		free(result);
+		debug_free(result);
 }

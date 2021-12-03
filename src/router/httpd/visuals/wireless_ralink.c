@@ -368,7 +368,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *c
 
 		strcpy(mac, ieee80211_ntoa(sta->mac));
 		websWrite(wp, "'%s','N/A','%s','N/A','%s','%s','N/A','%d','%d','%d','%d','0','0','0','0'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
-		free(sta);
+		debug_free(sta);
 
 	}
 
@@ -444,7 +444,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			return;
 		}
 		int freq = interface->freq;
-		free(interface);
+		debug_free(interface);
 		websWrite(wp, "%d", channel);
 		if (has_mimo(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
