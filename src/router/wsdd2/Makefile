@@ -25,8 +25,8 @@ wsdd2: $(OBJFILES)
 $(OBJFILES): $(HEADERS) Makefile
 
 install: wsdd2
-	install -d $(DESTDIR)$(SBINDIR)
-	install wsdd2 $(DESTDIR)$(SBINDIR)
+	install -d $(INSTALLDIR)$(SBINDIR)
+	install wsdd2 $(INSTALLDIR)$(SBINDIR)
 
 clean:
 	rm -f wsdd2 nl_debug $(OBJFILES)
