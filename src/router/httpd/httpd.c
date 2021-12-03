@@ -845,6 +845,7 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
+
 	if (!*(line)) {
 		char debug[128];
 		sprintf(debug, "%s errno %d, cnt %d thread %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt, threadnum);

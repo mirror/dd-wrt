@@ -283,6 +283,9 @@ table tr th {
   text-align: left;
   vertical-align: bottom;
 }
+table tr th[sortdir] {
+  cursor: pointer;
+}
 #active_clients_table,
 #dhcp_leases_table {
   table-layout: fixed;
@@ -292,11 +295,15 @@ table tr th {
   text-overflow: ellipsis;
   overflow: hidden;
 }
-#active_clients_table th:first-of-type::after,
-#dhcp_leases_table th:first-of-type::after,
-#wireless_table th:first-of-type::after {
-  content: '\00A0\23F6\23F7';
-  cursor: pointer;
+#active_clients_table th[sortdir='down']::after,
+#dhcp_leases_table th[sortdir='down']::after,
+#wireless_table th[sortdir='down']::after {
+  content: '\00A0\23F7';
+}
+#active_clients_table th[sortdir='up']::after,
+#dhcp_leases_table th[sortdir='up']::after,
+#wireless_table th[sortdir='up']::after {
+  content: '\00A0\23F6';
 }
 table[summary='ports forwarding table'] .num[size='15'] {
   max-width: 100px;
