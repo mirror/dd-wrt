@@ -252,6 +252,17 @@ static void select_config3(int needreset, int devicecount)
 	eval("usb_modeswitch", "-c", "/tmp/usb_modeswitch.conf");
 }
 
+static void select_config4(int needreset, int devicecount)
+{
+	FILE *out;
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
+	fprintf(out, "Configuration=4\n");
+	fclose(out);
+	eval("usb_modeswitch", "-c", "/tmp/usb_modeswitch.conf");
+}
+
 static void modeswitch_std_eject(int needreset, int devicecount)
 {
 	FILE *out;
@@ -978,7 +989,8 @@ static struct DEVICES devicelist[] = {
 	{ 0x1410, 0x7042, option, 0, 0, 2, NULL, "Novatel Ovation MC545/MC547" },	//
 	{ 0x1410, 0x9010, option, 1, 0, 2 | QMI, NULL, "Novatel E362" },	//
 	{ 0x1410, 0x9011, option, 1, 0, 2 | QMI, NULL, "Novatel E371" },	//
-	{ 0x1410, 0x9032, option, 1, 0, 2 | QMI, NULL, "Novatel E730" },	//
+	{ 0x1410, 0x9030, option, 1, 0, 2, &select_config4, "Novatel E730" },	//
+	{ 0x1410, 0x9032, option, 0, 0, 2, NULL, "Novatel E730" },	//
 	{ 0x1410, 0xa001, qcserial, 1, 0, 2 | QMI, NULL, "Novatel USB1000" },	//
 	{ 0x1410, 0xa021, qcserial, 1, 0, 2 | QMI, NULL, "Novatel E396" },	//
 	{ 0x1410, 0xb001, option, 1, 0, 2 | QMI, NULL, "Novatel MC551/USB551L" },	//
