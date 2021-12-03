@@ -2233,8 +2233,10 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 			if (llen) {
 				baselen += llen;
 				buffer = realloc(buffer, baselen + 1);
-				memcpy(&buffer[strbuffer], line, llen);
-				strbuffer += llen;
+				if (buffer != NULL)
+					memcpy(&buffer[strbuffer], line, llen);
+					strbuffer += llen;
+				}
 			}
 			break;
 		}
