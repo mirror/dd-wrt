@@ -350,7 +350,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="51%"><% tran("share.usrname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.remoteip"); %></th>
-											<th sortdir="up"><% tran("share.del"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
@@ -370,7 +370,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="15%"><% tran("share.intrface"); %></th>
 											<th sortdir="up" width="68%"><% tran("share.usrname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
-											<th sortdir="up"><% tran("share.del"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
