@@ -7,13 +7,13 @@
 			<h2><% tran("routetbl.h2"); %></h2>
 			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
 				<tr>
-					<th><% tran("routetbl.th1"); %></th>
-					<th><% tran("share.gateway"); %></th>
-					<th><% tran("routetbl.table"); %></th>
-					<th><% tran("routetbl.scope"); %></th>
-					<th><% tran("route.metric"); %></th>
-					<th><% tran("share.intrface"); %></th>
-					<th><% tran("routetbl.src"); %></th>
+					<th sortdir="up"> <% tran("routetbl.th1"); %></th>
+					<th sortdir="up"> <% tran("share.gateway"); %></th>
+					<th sortdir="up"> <% tran("routetbl.table"); %></th>
+					<th sortdir="up"> <% tran("routetbl.scope"); %></th>
+					<th sortdir="up"> <% tran("route.metric"); %></th>
+					<th sortdir="up"> <% tran("share.intrface"); %></th>
+					<th sortdir="up"> <% tran("routetbl.src"); %></th>
 				</tr>
 				<script type="text/javascript">
 				//<![CDATA[

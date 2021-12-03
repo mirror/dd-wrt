@@ -259,17 +259,17 @@ addEvent(window, "unload", function() {
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="12%"><% tran("share.mac"); %></th>
-										<th width="8%"><% tran("share.radioname"); %></th>
-										<th width="8%"><% tran("share.intrface"); %></th>
-										<th width="7%"><% tran("status_router.sys_up"); %></th>
-										<th width="7%"><% tran("share.txrate"); %></th>
-										<th width="7%"><% tran("share.rxrate"); %></th>
-										<th width="15%">Info</th>
-										<th width="8%"><% tran("share.signal"); %></th>
-										<th width="8%"><% tran("share.noise"); %></th>
-										<th width="8%">SNR</th>
-										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
+										<th sortdir="up" width="12%"><% tran("share.mac"); %></th>
+										<th sortdir="up" width="8%"><% tran("share.radioname"); %></th>
+										<th sortdir="up" width="8%"><% tran("share.intrface"); %></th>
+										<th sortdir="up" width="7%"><% tran("status_router.sys_up"); %></th>
+										<th sortdir="up" width="7%"><% tran("share.txrate"); %></th>
+										<th sortdir="up" width="7%"><% tran("share.rxrate"); %></th>
+										<th sortdir="up" width="15%">Info</th>
+										<th sortdir="up" width="8%"><% tran("share.signal"); %></th>
+										<th sortdir="up" width="8%"><% tran("share.noise"); %></th>
+										<th sortdir="up" width="8%">SNR</th>
+										<th sortdir="up" width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
 								<script type="text/javascript">
@@ -284,13 +284,13 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table center" cellspacing="5" id="wds_table" summary="wds clients table">
 										<tr>
-											<th width="16%"><% tran("share.mac"); %></th>
-											<th width="10%"><% tran("share.intrface"); %></th>
-											<th width="26%"><% tran("share.descr"); %></th>
-											<th width="8%"><% tran("share.signal"); %></th>
-											<th width="8%"><% tran("share.noise"); %></th>
-											<th width="8%">SNR</th>
-											<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
+											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="26%"><% tran("share.descr"); %></th>
+											<th sortdir="up" width="8%"><% tran("share.signal"); %></th>
+											<th sortdir="up" width="8%"><% tran("share.noise"); %></th>
+											<th sortdir="up" width="8%">SNR</th>
+											<th sortdir="up" width="24%"><% tran("status_wireless.signal_qual"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">

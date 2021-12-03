@@ -10,14 +10,14 @@
 			<h2><% tran("survey.h3"); %></h2>
 			<table class="center table" cellspacing="5" id="survey_table">
 				<tr>
-				   <th width="4%"><% tran("share.frequency"); %></th>
-				   <th width="3%"><% tran("share.channel"); %></th>
-				   <th width="3%"><% tran("share.noise"); %></th>
-				   <th width="3%"><% tran("share.quality"); %></th>
-				   <th width="5%"><% tran("status_wireless.active"); %></th>
-				   <th width="5%"><% tran("status_wireless.busy"); %></th>
-				   <th width="5%"><% tran("status_wireless.rx_time"); %></th>
-				   <th width="5%"><% tran("status_wireless.tx_time"); %></th>
+				   <th sortdir="up" width="4%"><% tran("share.frequency"); %></th>
+				   <th sortdir="up" width="3%"><% tran("share.channel"); %></th>
+				   <th sortdir="up" width="3%"><% tran("share.noise"); %></th>
+				   <th sortdir="up" width="3%"><% tran("share.quality"); %></th>
+				   <th sortdir="up" width="5%"><% tran("status_wireless.active"); %></th>
+				   <th sortdir="up" width="5%"><% tran("status_wireless.busy"); %></th>
+				   <th sortdir="up" width="5%"><% tran("status_wireless.rx_time"); %></th>
+				   <th sortdir="up" width="5%"><% tran("status_wireless.tx_time"); %></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[
