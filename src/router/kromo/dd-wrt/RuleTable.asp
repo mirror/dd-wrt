@@ -7,19 +7,19 @@
 			<h2><% tran("routetbl.h3"); %></h2>
 			<table class="table" cellspacing="4" id="pbr_table" summary="pbr table">
 				<tr>
-					<th><% tran("routetbl.priority"); %></th>
-					<th><% tran("routetbl.not"); %></th>
-					<th><% tran("routetbl.from"); %></th>
-					<th><% tran("routetbl.to"); %></th>
-					<th><% tran("routetbl.tos"); %></th>
-					<th><% tran("routetbl.fwmark"); %></th>
-					<th><% tran("routetbl.ipproto"); %></th>
-					<th><% tran("routetbl.sport"); %></th>
-					<th><% tran("routetbl.dport"); %></th>
-					<th><% tran("routetbl.iif"); %></th>
-					<th><% tran("routetbl.oif"); %></th>
-					<th><% tran("routetbl.table"); %></th>
-					<th><% tran("routetbl.nat"); %></th>
+					<th sortdir="up"><% tran("routetbl.priority"); %></th>
+					<th sortdir="up"><% tran("routetbl.not"); %></th>
+					<th sortdir="up"><% tran("routetbl.from"); %></th>
+					<th sortdir="up"><% tran("routetbl.to"); %></th>
+					<th sortdir="up"><% tran("routetbl.tos"); %></th>
+					<th sortdir="up"><% tran("routetbl.fwmark"); %></th>
+					<th sortdir="up"><% tran("routetbl.ipproto"); %></th>
+					<th sortdir="up"><% tran("routetbl.sport"); %></th>
+					<th sortdir="up"><% tran("routetbl.dport"); %></th>
+					<th sortdir="up"><% tran("routetbl.iif"); %></th>
+					<th sortdir="up"><% tran("routetbl.oif"); %></th>
+					<th sortdir="up"><% tran("routetbl.table"); %></th>
+					<th sortdir="up"><% tran("routetbl.nat"); %></th>
 				</tr>
 				<script type="text/javascript">
 				//<![CDATA[
