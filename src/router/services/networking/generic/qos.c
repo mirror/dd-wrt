@@ -37,12 +37,12 @@
 #include <services.h>
 #include <broadcom.h>
 
-static char *get_wanface(void)
+static char *get_wanface(char *buf)
 {
-	char *dev = get_wan_face();
+	char *dev = safe_get_wan_face(buf);
 
 	if (!strcmp(dev, "br0"))
-		dev = NULL;
+		return NULL;
 	return dev;
 }
 
@@ -557,7 +557,8 @@ static int svqos_iptables(void)
 	char name[32], type[32], data[32], pkt_filter[5];
 	int level;
 	char *wshaper_dev = nvram_safe_get("wshaper_dev");
-	char *wan_dev = get_wanface();
+	char ifbuf[16+1];
+	char *wan_dev = get_wanface(ifbuf);
 
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
@@ -914,7 +915,8 @@ void start_qos(void)
 	char *wshaper_dev;
 	char *wan_dev;
 	char *aqd;
-	wan_dev = get_wanface();
+	char ifbuf[16+1];
+	wan_dev = get_wanface(ifbuf);
 	if (!wan_dev)
 		wan_dev = "xx";
 	if (!nvram_match("tcp_congestion_control", "bbr"))
