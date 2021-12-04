@@ -12,7 +12,7 @@
 					<th sortdir="up"> <% tran("routetbl.table"); %></th>
 					<th sortdir="up"> <% tran("routetbl.scope"); %></th>
 					<th sortdir="up"> <% tran("route.metric"); %></th>
-					<th sortdir="up"> <% tran("share.intrface"); %></th>
+					<th sortdir="up"> <% tran("share.iftbl"); %></th>
 					<th sortdir="up"> <% tran("routetbl.src"); %></th>
 				</tr>
 				<script type="text/javascript">

@@ -346,7 +346,7 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend5"); %></legend>
 									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
 										<tr>
-											<th sortdir="up" width="15%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="51%"><% tran("share.usrname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.remoteip"); %></th>
@@ -367,7 +367,7 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend6"); %></legend>
 									<table class="table center" cellspacing="6" id="pppoe_table" summary="pppoe table">
 										<tr>
-											<th sortdir="up" width="15%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="68%"><% tran("share.usrname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
