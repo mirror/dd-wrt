@@ -180,7 +180,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "<tr>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
-		  "<th><script type=\"text/javascript\">Capture(share.intrface)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(share.iftbl)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
