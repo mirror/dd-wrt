@@ -282,7 +282,7 @@ addEvent(window, "unload", function() {
 										<th sortdir="up" width="15%"><% tran("share.hostname"); %></th>
 										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
 										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
-										<th sortdir="up" width="5%">IF</th>
+										<th sortdir="up" width="5%"><% tran("share.iftbl"); %></th>
 										<th sortdir="up" width="5%">In</th>
 										<th sortdir="up" width="5%">Out</th>
 										<th sortdir="up" width="5%">Total</th>
