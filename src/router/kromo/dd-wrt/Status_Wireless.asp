@@ -261,7 +261,7 @@ addEvent(window, "unload", function() {
 									<tr>
 										<th sortdir="up" width="15%"><% tran("share.mac"); %></th>
 										<th sortdir="up" width="12%"><% tran("share.radioname"); %></th>
-										<th sortdir="up" width="9%"><% tran("share.intrface"); %></th>
+										<th sortdir="up" width="9%"><% tran("share.iftbl"); %></th>
 										<th sortdir="up" width="7%"><% tran("status_router.sys_up"); %></th>
 										<th sortdir="up" width="7%"><% tran("share.txrate"); %></th>
 										<th sortdir="up" width="7%"><% tran("share.rxrate"); %></th>
@@ -285,7 +285,7 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="5" id="wds_table" summary="wds clients table">
 										<tr>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
-											<th sortdir="up" width="10%"><% tran("share.intrface"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="26%"><% tran("share.descr"); %></th>
 											<th sortdir="up" width="8%"><% tran("share.signal"); %></th>
 											<th sortdir="up" width="8%"><% tran("share.noise"); %></th>
