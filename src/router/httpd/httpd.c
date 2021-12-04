@@ -1859,6 +1859,7 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
+			setvbuf(conn_fp->fp, NULL, _IONBF, 0);
 		}
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
