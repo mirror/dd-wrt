@@ -269,7 +269,7 @@ fieldset legend {
 table {
   margin: 0 auto;
   width: 100%;
-  border-spacing: .3em;
+  border-spacing: .1em;
 }
 table td {
   padding: 0;
@@ -299,11 +299,15 @@ table tr th[sortdir] {
 #dhcp_leases_table th[sortdir='down']::after,
 #wireless_table th[sortdir='down']::after {
   content: '\00A0\23F7';
+  font-size: 8px;
+  vertical-align: middle;
 }
 #active_clients_table th[sortdir='up']::after,
 #dhcp_leases_table th[sortdir='up']::after,
 #wireless_table th[sortdir='up']::after {
   content: '\00A0\23F6';
+  font-size: 8px;
+  vertical-align: middle;
 }
 table[summary='ports forwarding table'] .num[size='15'] {
   max-width: 100px;
