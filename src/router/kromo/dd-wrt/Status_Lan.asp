@@ -283,9 +283,9 @@ addEvent(window, "unload", function() {
 										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
 										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 										<th sortdir="up" width="5%"><% tran("share.iftbl"); %></th>
-										<th sortdir="up" width="5%">In</th>
-										<th sortdir="up" width="5%">Out</th>
-										<th sortdir="up" width="5%">Total</th>
+										<th sortdir="up" width="5%"><% tran("share.input"); %></th>
+										<th sortdir="up" width="5%"><% tran("share.output"); %></th>
+										<th sortdir="up" width="5%"><% tran("share.total"); %></th>
 										<th sortdir="up" width="13%"><% tran("status_lan.concount"); %></th>
 										<th sortdir="up" width="15%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
