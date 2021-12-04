@@ -142,6 +142,7 @@ share.port_range="Диапазон портов";
 share.priority="Приоритет";
 share.gateway="Шлюз";
 share.intrface="Интерфейс";
+share.itf="IF";
 share.ccq="CCQ";
 share.pintrface="Физический интерфейс";
 share.vintrface="Виртуальный интерфейс";
