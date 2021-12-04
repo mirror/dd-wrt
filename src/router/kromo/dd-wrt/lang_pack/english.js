@@ -152,6 +152,7 @@ share.port_range="Port Range";
 share.priority="Priority";
 share.gateway="Gateway";
 share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
+share.iftbl="IF";
 share.radioname="Radioname";
 share.ccq="CCQ";
 share.pintrface="Physical Interface";
