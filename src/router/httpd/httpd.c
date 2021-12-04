@@ -835,7 +835,7 @@ static void *handle_request(void *arg)
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
 			goto out;
 		}
-		if (!*(line) && (errno == EINTR || errno == EAGAIN || errno == 9 || errno == 2)) {
+		if (!*(line) && (errno == EINTR || errno == EAGAIN || (cnt < 3 && errno == 9)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
 			tim.tv_nsec = 10000000L;
