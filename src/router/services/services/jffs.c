@@ -83,10 +83,10 @@ void start_jffs2(void)
 #endif
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
-			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL, NULL);
+			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
@@ -98,11 +98,11 @@ void start_jffs2(void)
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubiattach", "-p", dev);
-			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL, NULL);
+			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
 #else
 			itworked = eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
