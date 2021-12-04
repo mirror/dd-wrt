@@ -279,15 +279,15 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th sortdir="up" width="16%"><% tran("share.hostname"); %></th>
+										<th sortdir="up" width="15%"><% tran("share.hostname"); %></th>
 										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
 										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
-										<th sortdir="up" width="5%">If</th>
+										<th sortdir="up" width="5%">IF</th>
 										<th sortdir="up" width="5%">In</th>
 										<th sortdir="up" width="5%">Out</th>
 										<th sortdir="up" width="5%">Total</th>
-										<th sortdir="up" width="12%"><% tran("status_lan.concount"); %></th>
-										<th sortdir="up" width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
+										<th sortdir="up" width="13%"><% tran("status_lan.concount"); %></th>
+										<th sortdir="up" width="15%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
 								<script type="text/javascript">
