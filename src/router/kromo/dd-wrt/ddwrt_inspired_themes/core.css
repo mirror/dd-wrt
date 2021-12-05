@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.1.5
+ * style-name: DD-WRT Inspired Themes v5.1.6
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -1020,8 +1020,9 @@ input[type='file']::file-selector-button {
   background-color: var(--bg-5);
   border: 2px solid var(--bg-5);
   color: var(--v9-8);
-  border-radius: 0.32em;
-  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  padding: 0.18rem 0.4rem;
+  margin-top: -0.02rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   text-shadow: 0 1px 0 var(--bg-0);
   cursor: pointer;
@@ -1036,8 +1037,9 @@ input[type='file']::-webkit-file-upload-button {
   background-color: var(--bg-5);
   border: 2px solid var(--bg-5);
   color: var(--v9-8);
-  border-radius: 0.32em;
-  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  padding: 0.18rem 0.4rem;
+  margin-top: -0.02rem;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   text-shadow: 0 1px 0 var(--bg-0);
   cursor: pointer;
