@@ -176,6 +176,7 @@ share.connected="Connected";
 share.disconnect="Disconnect";
 share.disconnected="Disconnected";
 share.info="Information";
+share.infotbl="Info";
 share.state="State";
 share.mode="Mode";
 share.encrypt="Encryption";
