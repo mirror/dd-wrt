@@ -109,7 +109,7 @@ function setPacketInfo(val) {
 
 function OpenSiteSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Site_Survey.asp', 760, 700);
+		openWindow('Site_Survey.asp', 900, 700);
 	}
 	else {
 		alert(errmsg.err59);
@@ -118,7 +118,7 @@ function OpenSiteSurvey () {
 
 function OpenChannelSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Channel_Survey.asp', 760, 700);
+		openWindow('Channel_Survey.asp', 900, 700);
 	}
 	else {
 		alert(errmsg.err59);
@@ -136,7 +136,7 @@ function OpenSpectral () {
 
 function OpenWiwizSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Wiviz_Survey.asp', 760, 700);
+		openWindow('Wiviz_Survey.asp', 900, 700);
 	}
 	else {
 		alert(errmsg.err59);
@@ -241,7 +241,6 @@ addEvent(window, "unload", function() {
 									<span id="assoc_count"><% assoc_count(); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_wireless.legend2"); %></legend>
 								<div class="setting">
@@ -259,17 +258,17 @@ addEvent(window, "unload", function() {
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th sortdir="up" width="15%"><% tran("share.mac"); %></th>
-										<th sortdir="up" width="12%"><% tran("share.radioname"); %></th>
-										<th sortdir="up" width="9%"><% tran("share.iftbl"); %></th>
-										<th sortdir="up" width="7%"><% tran("status_router.sys_up"); %></th>
-										<th sortdir="up" width="7%"><% tran("share.txrate"); %></th>
-										<th sortdir="up" width="7%"><% tran("share.rxrate"); %></th>
-										<th sortdir="up" width="15%">Info</th>
+										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
+										<th sortdir="up" width="10%"><% tran("share.radioname"); %></th>
+										<th sortdir="up" width="7%"><% tran("share.iftbl"); %></th>
+										<th sortdir="up" width="8%"><% tran("status_router.sys_up"); %></th>
+										<th sortdir="up" width="8%"><% tran("share.txrate"); %></th>
+										<th sortdir="up" width="8%"><% tran("share.rxrate"); %></th>
+										<th sortdir="up" width="11%"><% tran("share.infotbl"); %></th>
 										<th sortdir="up" width="8%"><% tran("share.signal"); %></th>
-										<th sortdir="up" width="8%"><% tran("share.noise"); %></th>
+										<th sortdir="up" width="7%"><% tran("share.noise"); %></th>
 										<th sortdir="up" width="5%">SNR</th>
-										<th sortdir="up" width="8%"><% tran("status_wireless.signal_qual"); %></th>
+										<th sortdir="up" width="12%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
 								<script type="text/javascript">
