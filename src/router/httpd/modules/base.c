@@ -2498,6 +2498,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n"
@@ -2506,7 +2507,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n",
 #endif
 		  charset);
-
 	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
 		  style);
 #ifdef HAVE_MICRO
@@ -2519,7 +2519,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		}
 	}
 #endif
-
 	websWrite(stream,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "%s" //
@@ -2537,7 +2536,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
-			websWrite(stream, "<div style=\"height:740px; overflow-y:auto;\"><table>");
+			websWrite(stream, "<div style=\"height:730px; overflow-y:auto;\"><table>");
 			while (fgets(line, sizeof line, fp) != NULL) {
 				count++;
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
@@ -2564,7 +2563,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	} else {
 		websWrite(stream, "<table><tr align=\"center\"><td>%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
 	}
-	websWrite(stream, "</fieldset><br /></body>");
+	websWrite(stream, "</fieldset><p></body>");
 	websWrite(stream, "</html>");
 	return 0;
 }
