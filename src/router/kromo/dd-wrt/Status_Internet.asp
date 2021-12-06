@@ -4,6 +4,8 @@
 
 var update;
 
+var dummy="";
+
 function DHCPAction(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = I;
