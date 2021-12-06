@@ -280,7 +280,7 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
-	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 && nvram_match("reset_gpio","11")) {
+	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 && nvram_match("reset_gpio", "11")) {
 		setRouter("TP-Link Archer C8");
 
 		return ROUTER_TPLINK_ARCHERC8;
@@ -1142,8 +1142,8 @@ int internal_getRouterBrand()
 	fclose(fp);
 	if (len < 1)
 		goto generic;
-	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string",14)) {
-		name[0]=0;
+	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string", 14)) {
+		name[0] = 0;
 		len = 0;
 	}
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
@@ -1160,7 +1160,7 @@ int internal_getRouterBrand()
 	}
 	fclose(fp);
 	name[len] = 0;
-	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string",14)) {
+	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string", 14)) {
 #ifdef HAVE_X64
 		setRouter("Generic X86_64");
 #else
