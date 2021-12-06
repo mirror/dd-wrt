@@ -504,8 +504,6 @@ nla_put_failure:
 	return 0;
 }
 
-
-
 int mac80211_get_maxpower(char *interface)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -516,12 +514,12 @@ int mac80211_get_maxpower(char *interface)
 	struct nlattr *nl_band;
 	struct nlattr *nl_freq;
 	static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-		[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
-		[NL80211_FREQUENCY_ATTR_DISABLED] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_NO_IR] = { .type = NLA_FLAG },
-		[__NL80211_FREQUENCY_ATTR_NO_IBSS] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_RADAR] = { .type = NLA_FLAG },
-		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
+		[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32 },
+		[NL80211_FREQUENCY_ATTR_DISABLED] = {.type = NLA_FLAG },
+		[NL80211_FREQUENCY_ATTR_NO_IR] = {.type = NLA_FLAG },
+		[__NL80211_FREQUENCY_ATTR_NO_IBSS] = {.type = NLA_FLAG },
+		[NL80211_FREQUENCY_ATTR_RADAR] = {.type = NLA_FLAG },
+		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {.type = NLA_U32 },
 	};
 	int rem_band, rem_freq, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
 	int phy;
@@ -552,25 +550,21 @@ int mac80211_get_maxpower(char *interface)
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (tb[NL80211_ATTR_WIPHY_BANDS]) {
 		nla_for_each_nested(nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band),
-				  nla_len(nl_band), NULL);
+			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band), nla_len(nl_band), NULL);
 			if (tb_band[NL80211_BAND_ATTR_FREQS]) {
 				nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
-					nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq),
-						  nla_len(nl_freq), freq_policy);
+					nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq), nla_len(nl_freq), freq_policy);
 					if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
 						continue;
-					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] &&
-					    !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
+					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] && !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
 						int p = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]) / 100;
-						if (p>maxpower)
-						    maxpower=p;
+						if (p > maxpower)
+							maxpower = p;
 					}
 				}
 			}
 		}
 	}
-
 
 	nlmsg_free(msg);
 	unlock();

@@ -25,7 +25,7 @@
 
 #define GPIO_VOID	0xffff
 #define GPIO_LOW	0x1000
-#define GPIO_IN		0x2000 // even if gpio is written, it must be set to input
+#define GPIO_IN		0x2000	// even if gpio is written, it must be set to input
 
 #define GPIO_MASK	0xfff
 static void getledconfig(struct ledconfig *cfg)
