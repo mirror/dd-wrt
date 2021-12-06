@@ -877,6 +877,8 @@ endif
 	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
 	cp common_style/error_common.css $(INSTALLDIR)/www/style
 	cp common_style/common_help.css $(INSTALLDIR)/www/style
+	cp syslogd/syslogd.css $(INSTALLDIR)/www/style
+	cp syslogd/syslogd_dark.css $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_DNSCRYPT),y)
 #	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
 endif
