@@ -2485,6 +2485,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 {
 
 	static const char filename[] = "/var/log/messages";
+	char *style = nvram_safe_get("router_style");
+	char *style_dark = nvram_safe_get("router_style_dark");
 	char buf[128];
 	if (!charset)
 		charset = strdup(live_translate(stream, "lang_charset.set"));
@@ -2501,16 +2503,31 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n\t\t"
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
 #ifdef HAVE_LANGUAGE
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
+		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n",
 #endif
-		  "%s"		//
+		  charset);
+
+	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
+		  style);
+#ifdef HAVE_MICRO
+	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+#else
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+		websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+		if (style_dark != NULL && !strcmp(style_dark, "1")) {
+			websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
+		}
+	}
+#endif
+
+	websWrite(stream,
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
+		  "%s" //
 		  "</head>\n<body>\n"	//
 		  "<fieldset class=\"syslog_bg\">"	//
 		  "<legend class=\"syslog_legend\">"	//
 		  "%s"		//
 		  "</legend>",	//
-		  charset,	//
 		  nvram_matchi("router_style_dark", 1) ?	//
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
 		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
