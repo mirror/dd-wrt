@@ -2506,7 +2506,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "%s"		//
 		  "</legend>",	//
 		  charset,	//
-		  nvram_matchi("router_style_dark", 1)) ?	//
+		  nvram_matchi("router_style_dark", 1) ?	//
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog.css\" />\n" : "",	//
 		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
