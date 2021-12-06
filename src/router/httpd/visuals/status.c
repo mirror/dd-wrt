@@ -194,6 +194,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	} else if (!strcmp(type, "wan_ipv6addr")) {
 		const char *ipv6addr = NULL;
 		char buf[INET6_ADDRSTRLEN];
+		char strbuf[128];
 		if (nvram_match("ipv6_typ", "ipv6native"))
 			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4"))
@@ -203,7 +204,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		if (!ipv6addr)
 			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", trans == 2 ? tran_string(buf, sizeof(buf), "share.disabled") : live_translate(wp, "share.disabled"));
+			websWrite(wp, "%s", trans == 2 ? tran_string(buf, sizeof(strbuf), "share.disabled") : live_translate(wp, "share.disabled"));
 		} else {
 			websWrite(wp, "%s", ipv6addr);
 		}
