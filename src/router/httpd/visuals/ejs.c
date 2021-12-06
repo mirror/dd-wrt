@@ -1077,8 +1077,8 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 	websWrite(wp, "</style>\n");
 }
 
-#ifndef HAVE_MICRO
-#ifndef HAVE_NO_STYLUS
+#if !defined(HAVE_MICRO) && !defined(HAVE_NO_STYLUS)
+
 EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** argv)
 {
 	/* todo, read dir content and generate this */
@@ -1153,7 +1153,7 @@ void do_ddwrt_inspired_themes(webs_t wp)
 {
 }
 #endif
-#endif
+
 #include "../webs.h"
 extern const websRomPageIndexType websRomPageIndex[];
 
@@ -2246,9 +2246,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
-#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
-#endif
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD
@@ -2330,9 +2328,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  background-color: #fff;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "</style>\n");
-#ifndef HAVE_MICRO
 		do_ddwrt_inspired_themes(wp);
-#endif
 		websWrite(wp, "</head>\n");
 		return;		// stop here, for About.htm
 	}
