@@ -2501,7 +2501,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "%s"		//
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog_dark.css\" />\n"	//
 		  "</head>\n<body>\n"	//
-		  "<fieldset class=\"syslog_\">"	//
+		  "<fieldset class=\"syslog_bg\">"	//
 		  "<legend class=\"syslog_legend\">"	//
 		  "%s"		//
 		  "</legend>",	//
