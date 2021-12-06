@@ -154,7 +154,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		else if (string_search(line, "sctp"))
 			protocol = "SCTP";
 		else
-			protocol = tran_string(buf, "share.unknown");
+			protocol = tran_string(buf, sizeof(buf), "share.unknown");
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout

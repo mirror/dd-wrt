@@ -447,9 +447,9 @@ static void filteralphanum(char *str)
 	}
 }
 
-static char *_tran_string(char *buf, char *str)
+static char *_tran_string(char *buf, size_t len, char *str)
 {
-	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	sprintf(buf, len - 1, "<script type=\"text/javascript\">Capture(%s)</script>", str);
 	return buf;
 }
 
@@ -714,7 +714,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 			  "Error: please specify a value username and password\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, "freeradius.clientcert"));
+			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
 		websWrite(stream, "</html>");
 		goto out;
 	}
@@ -813,7 +813,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 		"freeradius.clientcert"
 	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", _tran_string(buf, "freeradius.clientcert"));
+	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
 	sprintf(filename, "ca.pem");
 	show_certfield(wp, "CA Certificate", filename);
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
