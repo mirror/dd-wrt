@@ -2500,9 +2500,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
 		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
 		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
-#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(stream);
-#endif
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
@@ -2652,9 +2650,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"	//
 		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
 		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
-#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(stream);
-#endif
 	websWrite(stream, "<body>\n" "<ul id=\"t-graph\">\n");
 	for (i = 0; i < days; i++) {
 		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
