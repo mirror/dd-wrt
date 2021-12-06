@@ -82,9 +82,9 @@ void start_sysinit(void)
 	} else {
 		sprintf(drive, "/dev/mmcblk0p3");
 	}
-	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL)) {
+	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, NULL)) {
 		eval("mkfs.btrfs", drive, "-f");
-		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
+		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, NULL);
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
 
