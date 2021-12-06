@@ -658,7 +658,7 @@ void start_sysinit(void)
 #endif
 	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_RAMBUTAN
-	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
+	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 #ifdef HAVE_PERU
 	insmod("ledtrig-netdev");
