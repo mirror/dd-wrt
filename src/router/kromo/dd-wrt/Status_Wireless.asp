@@ -118,7 +118,7 @@ function OpenSiteSurvey () {
 
 function OpenChannelSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Channel_Survey.asp', 900, 700);
+		openWindow('Channel_Survey.asp', 980, 700);
 	}
 	else {
 		alert(errmsg.err59);
