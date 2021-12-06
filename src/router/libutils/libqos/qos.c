@@ -106,7 +106,7 @@ char *qos_nfmark(uint32 x)
 
 static char *get_wshaper_dev(char *buf)
 {
-	strcpy(buf,"br0");
+	strcpy(buf, "br0");
 	if (nvram_match("wshaper_dev", "WAN"))
 		return safe_get_wan_face(buf);
 	return buf;

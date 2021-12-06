@@ -131,7 +131,7 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	return get_linux_gpio(480+gpio);
+	return get_linux_gpio(480 + gpio);
 }
 
 #elif HAVE_WRT1900AC

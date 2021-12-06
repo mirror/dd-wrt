@@ -1108,13 +1108,13 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			airbag_printf(" due to %s (%x).\n", faultReason, si->si_code);
 		}
 	}
-	for (i=postindex+1;i<32;i++) {
+	for (i = postindex + 1; i < 32; i++) {
 		if (postinfo[i])
-			airbag_printf("Postinfo: %s\n", postinfo[i]);		
+			airbag_printf("Postinfo: %s\n", postinfo[i]);
 	}
-	for (i=0;i<postindex+1;i++) {
+	for (i = 0; i < postindex + 1; i++) {
 		if (postinfo[i])
-			airbag_printf("Postinfo: %s\n", postinfo[i]);		
+			airbag_printf("Postinfo: %s\n", postinfo[i]);
 	}
 #ifdef __linux__
 	{
@@ -1383,16 +1383,19 @@ AIRBAG_EXPORT void airbag_deinit()
 {
 	deinitCrashHandlers();
 }
-void airbag_setpostinfo(const char *string) {
+
+void airbag_setpostinfo(const char *string)
+{
 	postindex++;
 	postindex = postindex % 32;
 	postinfo[postindex] = string;
 }
 #else
-void airbag_setpostinfo(char *string) {
-
+void airbag_setpostinfo(char *string)
+{
 
 }
+
 int airbag_init(void)
 {
 }

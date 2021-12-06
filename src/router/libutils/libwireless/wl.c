@@ -3192,6 +3192,7 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 		return 1;
 	return (flags & flag);
 }
+
 #define FLAGCHECK(name, flag, nullvalid) \
 	int has_ ##name (const char *prefix) { \
 	       return flagcheck(prefix, flag , nullvalid); \
