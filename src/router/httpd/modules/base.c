@@ -2485,6 +2485,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 {
 
 	static const char filename[] = "/var/log/messages";
+	char buf[128];
 	if (!charset)
 		charset = strdup(live_translate(stream, "lang_charset.set"));
 	int offset = 0;
@@ -2499,11 +2500,15 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "%s"		//
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog_dark.css\" />\n"	//
-		  "</head>\n<body>\n<fieldset class=\"syslog_\"><legend class=\"syslog_legend\">"	//
-		  "<script type=\"text/javascript\">Capture(share.sysloglegend)</script>%s</legend>", charset, (style_dark != NULL
-														&& !strcmp(style_dark,
-															   "1")) ?
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog.css\" />\n" : "");
+		  "</head>\n<body>\n"	//
+		  "<fieldset class=\"syslog_\">"	//
+		  "<legend class=\"syslog_legend\">"	//
+		  "%s"		//
+		  "</legend>",	//
+		  charset,	//
+		  (style_dark != NULL && !strcmp(style_dark, "1")) ?	//
+		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog.css\" />\n" : "",	//
+		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
@@ -2535,7 +2540,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			fclose(fp);
 		}
 	} else {
-		websWrite(stream, "<table><tr align=\"center\"><td><script type=\"text/javascript\">Capture(share.syslogdisabled)</script>%s</td></tr></table>");
+		websWrite(stream, "<table><tr align=\"center\"><td>%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
 	}
 	websWrite(stream, "</fieldset><br /></body>");
 	websWrite(stream, "</html>");
