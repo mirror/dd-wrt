@@ -702,7 +702,7 @@ void start_openvpn(void)
 		int i;
 		char tempip[32] = { 0 };
 		char tempport[32] = { 0 };
-		for ( i = 2; i < 6; i++) {
+		for (i = 2; i < 6; i++) {
 			sprintf(tempip, "openvpncl_remoteip%d", i);
 			sprintf(tempport, "openvpncl_remoteport%d", i);
 			if (nvram_invmatch(tempip, "") && nvram_invmatch(tempport, ""))

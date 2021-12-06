@@ -852,9 +852,9 @@ void start_run_rc_usb(void)
 	create_rc_file(RC_USB);
 
 	if (f_exists("/tmp/.rc_usb"))
-		eval("/tmp/.rc_usb", nvram_safe_get("usb_reason"),nvram_safe_get("usb_dev"));
+		eval("/tmp/.rc_usb", nvram_safe_get("usb_reason"), nvram_safe_get("usb_dev"));
 	nvram_unset("usb_reason");
-	nvram_unset("usb_dev");		
+	nvram_unset("usb_dev");
 }
 
 void stop_run_rc_startup(void)
@@ -3390,7 +3390,7 @@ void start_nvram(void)
 
 #ifdef HAVE_WIREGUARD
 	//egc reset WireGuard failstate on boot
-	int iw; 
+	int iw;
 	int iend = 0;
 	iend = nvram_geti("oet_tunnels");
 	for (iw = 1; iw <= iend; iw++) {
