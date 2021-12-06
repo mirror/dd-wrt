@@ -940,7 +940,7 @@ EJ_VISIBLE void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 	if (!chipset)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "wl_basic.chipset"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "wl_basic.chipset"));
 	websWrite(wp, "%s&nbsp;\n", chipset);
 	websWrite(wp, "</div>\n");
 }
@@ -955,7 +955,7 @@ EJ_VISIBLE void ej_get_status_curchannel(webs_t wp, int argc, char_t ** argv)
 		return;
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.channel"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "share.channel"));
 	websWrite(wp, "<span id=\"wl_channel\">");
 	ej_get_curchannel(wp, argc, argc);
 	websWrite(wp, "</span>&nbsp;</div>\n");

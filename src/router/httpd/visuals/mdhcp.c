@@ -28,8 +28,8 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 	char *next, *wordlist;
 
-	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, "networking.h5"));
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.legend5"));
+	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, sizeof(buf), "networking.h5"));
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.legend5"));
 
 	bzero(buffer, 256);
 	getIfList(buffer, NULL);

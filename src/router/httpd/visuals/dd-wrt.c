@@ -858,7 +858,7 @@ static char *wpa_enc_label(char *buf, char *value)
 	 */
 	if (value) {
 		if (!strcmp(value, "disabled")) {
-			return tran_string(buf, "share.disabled");
+			return tran_string(buf, sizeof(buf), "share.disabled");
 		} else if (!strcmp(value, "psk")) {
 			return "WPA-PSK";
 		} else if (!strcmp(value, "psk2")) {
@@ -6368,7 +6368,7 @@ EJ_VISIBLE void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 	char *argument = argv[0];
 	if (argc == 1) {
 		getHostName(buf, argument);
-		websWrite(wp, "%s", strcmp(buf, "unknown") ? buf : tran_string(buf, "share.unknown"));
+		websWrite(wp, "%s", strcmp(buf, "unknown") ? buf : tran_string(buf, sizeof(buf), "share.unknown"));
 	}
 
 	return;

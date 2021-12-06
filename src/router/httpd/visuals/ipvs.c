@@ -196,7 +196,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			char translate[32];
 			char *sched = schedulers[scount++];
 			sprintf(translate, "networking.%s", sched);
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, scheduler) ? "selected=\\\"selected\\\"" : "", tran_string(buf, translate));
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, scheduler) ? "selected=\\\"selected\\\"" : "", tran_string(buf, sizeof(buf), translate));
 		}
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</td>");
@@ -231,7 +231,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			char translate[32];
 			char *sched = schedulers[scount++];
 			sprintf(translate, "networking.%s", sched);
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, "wrr") ? "selected=\\\"selected\\\"" : "", tran_string(buf, translate));
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, "wrr") ? "selected=\\\"selected\\\"" : "", tran_string(buf, sizeof(buf), translate));
 		}
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</td>");

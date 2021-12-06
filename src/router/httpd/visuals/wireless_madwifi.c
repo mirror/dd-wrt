@@ -431,7 +431,7 @@ EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 		return;
 	char buf[128];
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.acktiming"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "share.acktiming"));
 	websWrite(wp, "<span id=\"wl_ack\">\n");
 	ej_update_acktiming(wp, argc, argv);
 	websWrite(wp, "</span> &nbsp;\n");
