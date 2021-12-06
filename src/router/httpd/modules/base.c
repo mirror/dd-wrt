@@ -2497,9 +2497,14 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
-		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
-		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
-		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
+		  "%s"		//
+		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog_dark.css\" />\n"	//
+		  "</head>\n<body>\n<fieldset class=\"syslog_\"><legend class=\"syslog_legend\">"	//
+		  "<script type=\"text/javascript\">Capture(share.sysloglegend)</script>%s</legend>", charset, (style_dark != NULL
+														&& !strcmp(style_dark,
+															   "1")) ?
+		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/syslogd/syslog.css\" />\n" : "");
+
 	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
@@ -2530,9 +2535,9 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			fclose(fp);
 		}
 	} else {
-		websWrite(stream, "<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
+		websWrite(stream, "<table><tr align=\"center\"><td><script type=\"text/javascript\">Capture(share.syslogdisabled)</script>%s</td></tr></table>");
 	}
-	websWrite(stream, "</fieldset><p></body>");
+	websWrite(stream, "</fieldset><br /></body>");
 	websWrite(stream, "</html>");
 	return 0;
 }
