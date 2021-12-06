@@ -38,10 +38,10 @@ void start_mmc(void)
 			// device detected
 			insmod("mbcache ext2");
 
-			if (mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL)) {
+			if (mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL)) {
 				// device not formated
 				eval("mkfs.ext2", "-F", "-b", "1024", "/dev/mmc");
-				mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
+				mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 		}
 #else
@@ -112,10 +112,10 @@ void start_mmc(void)
 			// device detected
 			insmod("ext2");
 
-			if (mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL)) {
+			if (mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL)) {
 				// device not formated
 				eval("mkfs.ext2", "-F", "-b", "1024", "/dev/mmc/disc0/part1");
-				mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL | MS_LAZYTIME | MS_NOATIME, NULL);
+				mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 		}
 #endif
