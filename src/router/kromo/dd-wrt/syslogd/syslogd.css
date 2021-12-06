@@ -1,0 +1,12 @@
+body {
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 14px !important;
+  color: #111;
+}
+fieldset {
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+.syslog_bg {
+  background: #f6f6f6;
+}
