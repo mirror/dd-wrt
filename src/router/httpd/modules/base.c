@@ -449,7 +449,7 @@ static void filteralphanum(char *str)
 
 static char *_tran_string(char *buf, size_t len, char *str)
 {
-	sprintf(buf, len - 1, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	snprintf(buf, len - 1, "<script type=\"text/javascript\">Capture(%s)</script>", str);
 	return buf;
 }
 
