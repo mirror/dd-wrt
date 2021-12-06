@@ -15,7 +15,7 @@
   color: #fff;
   border-color: #ffa200;
 }
-fieldset legend {
+fieldset legend, .syslog_legend {
   color: #f26522;
 }
 #help a {

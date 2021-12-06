@@ -261,6 +261,8 @@ share.threaten_fs=" Illegal filename. (filename will threaten local filesystem)"
 share.cross_site=" Cross Site Action detected!";
 share.cross_site_ref=" Cross Site Action detected! (referer %s)";
 share.no_wifi_access=" Can't use wireless interface to access GUI.";
+share.sysloglegend="System Log";
+share.syslogdisabled="No messages available! Syslogd is not enabled!";
 
 var sbutton=new Object();
 sbutton.save="Save";
