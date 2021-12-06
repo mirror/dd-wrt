@@ -2265,7 +2265,7 @@ void del_tunnel(webs_t wp)
 
 	//restart dnsmasq
 	nvram_set("wg_get_dns", "");
-	eval("restart", "dnsmasq"); //alternatively use restart_dns_main(); or stop_dnsmasq(); start_dnsmasq();
+	eval("restart", "dnsmasq");	//alternatively use restart_dns_main(); or stop_dnsmasq(); start_dnsmasq();
 }
 
 #ifdef HAVE_WIREGUARD

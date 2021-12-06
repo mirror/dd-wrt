@@ -409,12 +409,14 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 	return listen_fd;
 }
+
 #ifdef __UCLIBC__
 struct crypt_data {
 	char __buf[256];
 };
 
-static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data) {
+static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data)
+{
 	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *enc1 = crypt(authinfo, authdata);
 	strcpy(data->__buf, enc1);
@@ -422,8 +424,6 @@ static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_da
 	return data->__buf;
 }
 #endif
-
-
 
 static int auth_check(webs_t conn_fp)
 {
@@ -779,7 +779,7 @@ int ias_sid_timeout;
 void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
-static int threadnum=0;
+static int threadnum = 0;
 static persistent_vars global_vars;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
