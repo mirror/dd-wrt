@@ -204,7 +204,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		if (!ipv6addr)
 			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", trans == 2 ? tran_string(buf, sizeof(strbuf), "share.disabled") : live_translate(wp, "share.disabled"));
+			websWrite(wp, "%s", trans == 2 ? tran_string(strbuf, sizeof(strbuf), "share.disabled") : live_translate(wp, "share.disabled"));
 		} else {
 			websWrite(wp, "%s", ipv6addr);
 		}
