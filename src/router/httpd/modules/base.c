@@ -2504,7 +2504,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
 #endif
 		  "%s"		//
-		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n"	//
+		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "</head>\n<body>\n"	//
 		  "<fieldset class=\"syslog_bg\">"	//
 		  "<legend class=\"syslog_legend\">"	//
@@ -2512,7 +2512,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "</legend>",	//
 		  charset,	//
 		  nvram_matchi("router_style_dark", 1) ?	//
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n" : "",	//
+		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
 		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
