@@ -204,7 +204,7 @@ int br_add_interface(const char *bridge, const char *dev)
 
 	sprintf(netmask, "%s_netmask", dev);
 
-	if (strncmp(dev, "wlan", 4) != 0) {	// this is not an ethernet driver
+	if (strncmp(dev, "wl", 2) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	}
 	if (nvram_exists(ipaddr) && nvram_exists(netmask)
@@ -214,7 +214,7 @@ int br_add_interface(const char *bridge, const char *dev)
 	} else
 		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge, tmp));
 
-	if (strncmp(dev, "wlan", 4) != 0) {	// this is not an ethernet driver
+	if (strncmp(dev, "wl", 2) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");
 	}
 
