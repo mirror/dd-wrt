@@ -253,6 +253,7 @@ share.threaten_fs=" Illegaler Dateiname. (Dateiname beeinflusst das lokale Datei
 share.cross_site=" Webseiten&uuml;bergreifende Aktion erkannt!";
 share.cross_site_ref=" Webseiten&uuml;bergreifende Aktion erkannt! (Verweis %s)";
 share.no_wifi_access=" Die Drahtlose Schnittstelle kann nicht f&uuml;r den Zugriff auf die Oberfl&auml;che verwendet werden.";
+share.syslogdisabled="Keine Nachrichten verf&uuml;gbar! Syslogd ist nicht eingeschaltet!";
 
 sbutton.save="Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
