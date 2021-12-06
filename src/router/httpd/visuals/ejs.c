@@ -1084,11 +1084,11 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	/* todo, read dir content and generate this */
 	char buf[128];
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "management.inspired_themes"));
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "management.inspired_themes"));
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.theme"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "share.theme"));
 	websWrite(wp, "<select name=\"stylus\">\n");
-	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, "share.off"));
+	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, sizeof(buf), "share.off"));
 	websWrite(wp, "<option value=\"aeon\" %s>Aeon</option>\n", nvram_match("stylus", "aeon") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"duo_cocoa\" %s>Duo Cocoa</option>\n", nvram_match("stylus", "duo_cocoa") ? "selected=\"selected\"" : "");
@@ -1470,7 +1470,7 @@ EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 void show_bwif(webs_t wp, char *ifname, char *name)
 {
 	char buf[128];
-	websWrite(wp, "<h2>%s - %s</h2>\n", tran_string(buf, "status_band.h2"), name);
+	websWrite(wp, "<h2>%s - %s</h2>\n", tran_string(buf, sizeof(buf), "status_band.h2"), name);
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"100%%\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
 	websWrite(wp, "</iframe>\n");
@@ -1536,7 +1536,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, get_wan_face()));
+			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, get_wan_face()));
 		} else
 			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, get_wan_face()));
 
@@ -1559,14 +1559,14 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(dev, "wlan%d", i);
 
-		snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, dev));
+		snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, dev));
 		show_bwif(wp, dev, name);
 		char *vifs = nvram_nget("%s_vifs", dev);
 
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
-			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, var));
+			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, var));
 			show_bwif(wp, var, name);
 		}
 		int s;
@@ -1579,7 +1579,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
-			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, wdsdev));
+			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
 
@@ -1594,7 +1594,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 					debug_free(globstring);
 					continue;
 				}
-				sprintf(name, "%s (%s)", tran_string(buf, "share.wireless"), ifname + 1);
+				sprintf(name, "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), ifname + 1);
 				show_bwif(wp, ifname + 1, name);
 			}
 			globfree(&globbuf);
@@ -1604,13 +1604,13 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 #else
 	for (c = 0; c < cnt; c++) {
-		snprintf(name, sizeof(name), "%s (wl%d)", tran_string(buf, "share.wireless"), c);
+		snprintf(name, sizeof(name), "%s (wl%d)", tran_string(buf, sizeof(buf), "share.wireless"), c);
 		show_bwif(wp, get_wl_instance_name(c), name);
 	}
 #endif
 #ifdef HAVE_WAVESAT
 
-	sprintf(name, "%s", tran_string(buf, "wl_wimax.titl"));
+	sprintf(name, "%s", tran_string(buf, sizeof(buf), "wl_wimax.titl"));
 	show_bwif(wp, "ofdm", name);
 #endif
 }
@@ -2486,16 +2486,16 @@ EJ_VISIBLE void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-char *tran_string(char *buf, char *str)
+char *tran_string(char *buf, size_t len, char *str)
 {
-	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	snprintf(buf, len - 1, "<script type=\"text/javascript\">Capture(%s)</script>", str);
 	return buf;
 }
 
 EJ_VISIBLE void ej_tran(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
-	websWrite(wp, "%s", tran_string(buf, argv[0]));
+	websWrite(wp, "%s", tran_string(buf, sizeof(buf), argv[0]));
 }
 
 /*
@@ -2552,32 +2552,32 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"setting\">");
 	show_caption(wp, "label", "service.dhcp_legend2", NULL);
 	if (nvram_match("lan_proto", "dhcp")) {
-		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
+		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
 		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {
-			websWrite(wp, " - %s", tran_string(buf, "diag.running"));
+			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.running"));
 		} else {
-			websWrite(wp, " - %s", tran_string(buf, "diag.stopped"));
+			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.stopped"));
 		}
 	} else {
-		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
+		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.disabled"));
 	}
 	websWrite(wp, "&nbsp;</div>");
 
 #ifdef HAVE_SAMBA_SERVER
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, "service.samba3_srv"));
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, sizeof(buf), "service.samba3_srv"));
 	if (nvram_matchi("samba3_enable", 1)) {
-		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
+		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
 #ifdef HAVE_SMBD
 		if (pidof("ksmbd.mountd") > 0) {
 #else
 		if (pidof("smbd") > 0) {
 #endif
-			websWrite(wp, " - %s", tran_string(buf, "diag.running"));
+			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.running"));
 		} else {
-			websWrite(wp, " - %s", tran_string(buf, "diag.stopped"));
+			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.stopped"));
 		}
 	} else {
-		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
+		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.disabled"));
 	}
 	websWrite(wp, "&nbsp;</div>");
 #endif

@@ -187,7 +187,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	char buf[128];
 	if (!strcmp(type, "wan_ipaddr")) {
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
+			websWrite(wp, "%s", trans == 2 ? tran_string(buf, sizeof(buf), "share.disabled") : live_translate(wp, "share.disabled"));
 		} else
 			websWrite(wp, "%s/%d", wan_ipaddr, getmask(wan_netmask));
 #ifdef HAVE_IPV6
@@ -203,7 +203,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		if (!ipv6addr)
 			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
+			websWrite(wp, "%s", trans == 2 ? tran_string(buf, sizeof(buf), "share.disabled") : live_translate(wp, "share.disabled"));
 		} else {
 			websWrite(wp, "%s", ipv6addr);
 		}
@@ -220,12 +220,12 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 			websWrite(wp, "%s", entry->ip);
 		free_dns_list(dns_list);
 	} else if (!strcmp(type, "status1"))
-		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, status1) : live_translate(wp, status1));
+		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, sizeof(buf), status1) : live_translate(wp, status1));
 	else if (!strcmp(type, "status2"))
-		websWrite(wp, "%s", trans == 3 ? status2 : trans == 2 ? tran_string(buf, status2) : live_translate(wp, status2));
+		websWrite(wp, "%s", trans == 3 ? status2 : trans == 2 ? tran_string(buf, sizeof(buf), status2) : live_translate(wp, status2));
 	else if (!strcmp(type, "button1")) {
 		if (trans)
-			websWrite(wp, "%s", trans == 3 ? button1 : trans == 2 ? tran_string(buf, button1) : live_translate(wp, button1));
+			websWrite(wp, "%s", trans == 3 ? button1 : trans == 2 ? tran_string(buf, sizeof(buf), button1) : live_translate(wp, button1));
 		else
 			websWrite(wp, "%s", button1);
 	} else if (!strcmp(type, "hidden1"))
@@ -277,9 +277,9 @@ EJ_VISIBLE void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		char buf[64];
 		if (entry->type && !entry->ipv6)
-			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", ipv4count++, tran_string(buf, "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", ipv4count++, tran_string(buf, sizeof(buf), "share.sttic"));
 		if (entry->type && entry->ipv6)
-			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6count++, tran_string(buf, "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6count++, tran_string(buf, sizeof(buf), "share.sttic"));
 		if (!entry->type && !entry->ipv6)
 			websWrite(wp, "<div class=\"label\">IPv4 DNS %d</div>\n", ipv4count++);
 		if (!entry->type && entry->ipv6)
