@@ -2661,7 +2661,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		  "#t-graph {position: relative; width: %upx; height: 300px;\n"	//
 		  "  margin: 1.1em 0 3.5em; padding: 0;\n"	//
 		  "  border: 1px solid gray; list-style: none;\n"	//
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 20; list-style: none;}\n"	//
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; list-style: none;}\n"	//
 		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n"	//
 		  "  margin: 0; padding: 0;\n"	//
 		  "  text-align: center; list-style: none;}\n"	//
