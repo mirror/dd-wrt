@@ -1988,11 +1988,11 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 	int ret;
 	if (!wp)
 		return -1;
-	if (ferror(fp))
-		return 0;
 
 	airbag_setpostinfo(fmt);
 	FILE *fp = wp->fp;
+	if (ferror(fp))
+		return 0;
 
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
