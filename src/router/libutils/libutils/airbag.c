@@ -419,7 +419,7 @@ static int is_lost_conn(int e)
 #define SOCK_NONBLOCK  04000
 #endif
 static int postindex = -1;
-static const char *postinfo[33];
+static char *postinfo[33];
 static void slog(int priority, const char *message)
 {
 	char *buf;
@@ -1356,6 +1356,9 @@ static void deinitCrashHandlers()
 
 AIRBAG_EXPORT int airbag_init(void)
 {
+	int i;
+	for (i = 0; i < 32; i++)
+		postinfo[i] = NULL;
 	return initCrashHandlers();
 }
 
@@ -1388,7 +1391,13 @@ void airbag_setpostinfo(const char *string)
 {
 	postindex++;
 	postindex = postindex % 32;
-	postinfo[postindex] = string;
+	if (!postinfo[postindex])
+		postinfo[postindex] = strdup(string);
+	else {
+		postinfo[postindex] = realloc(postinfo[postindex], strlen(string) + 1);
+		strcpy(postinfo[postindex], string);
+	}
+
 }
 #else
 void airbag_setpostinfo(char *string)
