@@ -1357,7 +1357,7 @@ static void deinitCrashHandlers()
 AIRBAG_EXPORT int airbag_init(void)
 {
 	int i;
-	for (i = 0; i < 32; i++)
+	for (i = 0; i < 33; i++)
 		postinfo[i] = NULL;
 	return initCrashHandlers();
 }
