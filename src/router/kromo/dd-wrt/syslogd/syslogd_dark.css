@@ -1,14 +1,27 @@
-body {
-	font-family: Tahoma, Arial, sans-serif;
-	font-size: 14px !important;
+.syslog_bd {
+  background: #1a1a1a;
 	color: #aaa;
-}
-fieldset {
-	border: 1px solid #333;
-	border-radius: 4px;
+  font-size: 14px
 }
 .syslog_bg {
   background: #111;
+  padding-top: .1rem;
+}
+.syslog_bg tr:not([bgcolor]):hover {
+  background: #222;
+  color: #eee;
+}
+.syslog_bg tr[bgcolor='#eec900']:hover {
+  background: #dbba02;
+}
+.syslog_bg tr[bgcolor='#ff6666']:hover {
+  background: #fc5a5a;
+}
+.syslog_bg tr[bgcolor='#ff6666']:hover {
+  background: #fc5a5a;
+}
+.syslog_bg tr[bgcolor='#35ee00']:hover {
+  background: #32e202;
 }
 .syslog_legend {
 	background-color: transparent;
