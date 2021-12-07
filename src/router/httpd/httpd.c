@@ -377,11 +377,9 @@ static void set_ndelay(int fd)
 {
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
-		dd_logerror("httpd", "fcntl F_GETFL - %m");
+		return;
 	}
-	if (fcntl(fd, F_SETFL, flags | O_NDELAY) < 0) {
-		dd_logerror("httpd", "fcntl O_NDELAY - %m");
-	}
+	fcntl(fd, F_SETFL, flags | O_NDELAY);
 }
 
 static void clear_ndelay(int fd)
@@ -389,13 +387,11 @@ static void clear_ndelay(int fd)
 	int newflags;
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
-		dd_logerror("httpd", "fcntl F_GETFL - %m");
+		return;
 	}
 	newflags = flags & ~(int)O_NDELAY;
 	if (newflags != flags) {
-
-		if (fcntl(fd, F_SETFL, newflags) < 0)
-			dd_logerror("httpd", "fcntl O_NDELAY - %m");
+		fcntl(fd, F_SETFL, newflags);
 	}
 }
 
@@ -865,10 +861,11 @@ static void *handle_request(void *arg)
 	}
 
 	if (!*(line)) {
+#if 0
 		char debug[128];
 		sprintf(debug, "%s errno %d, cnt %d thread %d\n", live_translate(conn_fp, "share.request_timeout_desc"), errno, cnt, threadnum);
 		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, debug);
-
+#endif
 		goto out;
 	}
 
