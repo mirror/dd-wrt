@@ -216,7 +216,7 @@ static void *handle_request(void *conn_fp);
 #define SEM_POST sem_post
 #define SEM_INIT sem_init
 
-#define HTTP_MAXCONN 5
+#define HTTP_MAXCONN 16
 static sem_t semaphore;
 #ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
@@ -377,7 +377,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 {
 	int listen_fd;
 	int i;
-
+	int flags;
 	/* Check sockaddr. */
 	if (!sockaddr_check(usaP)) {
 		return -1;
@@ -398,6 +398,18 @@ static int initialize_listen_socket(usockaddr * usaP)
 	}
 
 	if (bind(listen_fd, &usaP->sa, sockaddr_len(usaP)) < 0) {
+		return -1;
+	}
+
+	flags = fcntl(listen_fd, F_GETFL, 0);
+	if (flags == -1) {
+		dd_logerror("httpd", "fcntl F_GETFL - %m");
+		(void)close(listen_fd);
+		return -1;
+	}
+	if (fcntl(listen_fd, F_SETFL, flags | O_NDELAY) < 0) {
+		dd_logerror("httpd", "fcntl O_NDELAY - %m");
+		(void)close(listen_fd);
 		return -1;
 	}
 
@@ -497,6 +509,15 @@ void do_error_style(webs_t wp, int code, char *title, char *text);
 
 static void send_error(webs_t conn_fp, int noheader, int status, char *title, char *extra_header, const char *fmt, ...)
 {
+	int flags, newflags;
+
+	flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
+	if (flags != -1) {
+		newflags = flags & ~(int)O_NDELAY;
+		if (newflags != flags)
+			(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
+	}
+
 	char *text;
 	va_list args;
 	va_start(args, (char *)fmt);
@@ -795,13 +816,13 @@ static void *handle_request(void *arg)
 	int len;
 	struct mime_handler *handler;
 	size_t content_length = 0;
-	int flags;
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
 	if (!conn_fp->p->filter_id)
 		conn_fp->p->filter_id = 1;
 
+		dd_debug(DEBUG_HTTPD, "thread start\n");
 	PTHREAD_MUTEX_LOCK(&input_mutex);	// barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
@@ -827,6 +848,7 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	int eof = 0;
 	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
+		dd_debug(DEBUG_HTTPD, "parse line\n");
 	for (;;) {
 		if (cnt == 500)
 			break;
@@ -1213,9 +1235,19 @@ static void *handle_request(void *arg)
 			}
 		}
 	}
+
 	FILE *fp;
 	int file_error;
 	int noheader;
+	int flags, newflags;
+
+	flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
+	if (flags != -1) {
+		newflags = flags & ~(int)O_NDELAY;
+		if (newflags != flags)
+			(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
+	}
+
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (!match(handler->pattern, file))
 			continue;
@@ -1719,6 +1751,7 @@ int main(int argc, char **argv)
 			}
 #endif
 		}
+		dd_debug(DEBUG_HTTPD, "select() %d\n", maxfd + 1);
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				SEM_POST(&semaphore);
@@ -1732,22 +1765,34 @@ int main(int argc, char **argv)
 		sz = sizeof(usa);
 #ifdef USE_IPV6
 		if (no_ssl && listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset)) {
+			dd_debug(DEBUG_HTTPD, "accept6() %d\n", listen6_fd);
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
+			dd_debug(DEBUG_HTTPD, "accept6_ssl() %d\n", ssl_listen6_fd);
 			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		} else
 #endif
 		if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
+			dd_debug(DEBUG_HTTPD, "accept4() %d\n", listen4_fd);
 			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
+			dd_debug(DEBUG_HTTPD, "accept4_ssl() %d\n", ssl_listen4_fd);
 			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		}
 		if (conn_fp->conn_fd < 0) {
+			dd_debug(DEBUG_HTTPD, "error on accept errno %d\n", errno);
 			perror("accept");
 			SEM_POST(&semaphore);
 			continue;
+		}
+		int newflags;
+		int flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
+		if (flags != -1) {
+			newflags = flags | (int)O_NDELAY;
+			if (newflags != flags)
+				(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
@@ -1853,13 +1898,14 @@ int main(int argc, char **argv)
 				continue;
 			}
 
+			dd_debug(DEBUG_HTTPD, "fdopen()\n");
 			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
-				perror("fdopen");
+				dd_debug(DEBUG_HTTPD, "fd error error %d\n", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
 			}
-			setvbuf(conn_fp->fp, NULL, _IONBF, 0);
+//			setvbuf(conn_fp->fp, NULL, _IONBF, 0);
 		}
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
@@ -1868,6 +1914,7 @@ int main(int argc, char **argv)
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 //              pthread_attr_setstacksize(&attr, 4096);
 		pthread_t thread;
+		dd_debug(DEBUG_HTTPD, "createthread()\n");
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
 			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");
