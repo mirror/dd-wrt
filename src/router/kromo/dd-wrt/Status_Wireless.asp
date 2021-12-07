@@ -109,7 +109,7 @@ function setPacketInfo(val) {
 
 function OpenSiteSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Site_Survey.asp', 900, 700);
+		openWindow('Site_Survey.asp', 980, 700);
 	}
 	else {
 		alert(errmsg.err59);

@@ -263,6 +263,7 @@ share.cross_site_ref=" Cross Site Action detected! (referer %s)";
 share.no_wifi_access=" Can't use wireless interface to access GUI.";
 share.sysloglegend="System Log";
 share.syslogdisabled="No messages available! Syslogd is not enabled!";
+share.actiontbl="Action";
 
 var sbutton=new Object();
 sbutton.save="Save";
