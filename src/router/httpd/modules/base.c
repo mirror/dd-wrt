@@ -2522,7 +2522,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	websWrite(stream,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "%s" //
-		  "</head>\n<body>\n"	//
+		  "</head>\n<body class=\"syslog_bd\">\n"	//
 		  "<fieldset class=\"syslog_bg\">"	//
 		  "<legend class=\"syslog_legend\">"	//
 		  "%s"		//
@@ -2536,7 +2536,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
-			websWrite(stream, "<div style=\"height:730px; overflow-y:auto;\"><table>");
+			websWrite(stream, "<div style=\"height:750px; overflow-y:auto;\"><table>");
 			while (fgets(line, sizeof(line), fp) != NULL) {
 				count++;
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
@@ -2563,7 +2563,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	} else {
 		websWrite(stream, "<table><tr align=\"center\"><td>%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
 	}
-	websWrite(stream, "</fieldset><p></body>");
+	websWrite(stream, "</fieldset></body>");
 	websWrite(stream, "</html>");
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v5.1.6
+ * style-name: DD-WRT Inspired Themes v5.2.0
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -31,9 +31,6 @@ body {
   color: var(--v9-7);
   text-rendering: optimizeLegibility;
 }
-body > fieldset:first-child {
-  background-color: var(--bg-0);
-}
 body a:link {
   color: var(--v9-8);
 }
@@ -61,7 +58,8 @@ body fieldset {
   border-radius: 4px;
   border-width: 1px;
 }
-body fieldset legend {
+body fieldset legend,
+body fieldset .syslog_legend {
   background: transparent;
   color: var(--v0-9);
   text-shadow: 0 1px 0 var(--bg-0);
@@ -331,8 +329,8 @@ input.button[onclick*="filter_del"] {
 input.button[onclick*='gen_wg_key'] {
   margin: 0 0 6px -31.5%;
 }
-input.button[onclick*='do_show_prev'],
-input.button[onclick*='do_show_next'] {
+input.button[onclick*='show_prev'],
+input.button[onclick*='show_next'] {
   margin: 0.5rem 0.5rem 0 0;
 }
 input.button[onclick*='add_peer'] {
@@ -508,6 +506,36 @@ textarea:focus-visible {
   box-shadow: 0 0 10px 0 var(--v0-4) !important;
   outline: 0 !important;
 }
+.syslog_bd {
+  background: var(--bg-1);
+}
+.syslog_bg {
+  background: var(--syslog-bd);
+  color: var(--v9-7);
+  padding-top: 0.1rem;
+}
+.syslog_bg tr:not([bgcolor]):hover {
+  background: var(--bg-2);
+  color: var(--v9-9);
+}
+.syslog_bg tr[bgcolor='#eec900'] {
+  background-color: var(--v3-6);
+}
+.syslog_bg tr[bgcolor='#eec900']:hover {
+  background-color: var(--v3-5);
+}
+.syslog_bg tr[bgcolor='#ff6666'] {
+  background-color: var(--v1-9);
+}
+.syslog_bg tr[bgcolor='#ff6666']:hover {
+  background-color: var(--v1-8);
+}
+.syslog_bg tr[bgcolor='#35ee00'] {
+  background-color: var(--v4-6);
+}
+.syslog_bg tr[bgcolor='#35ee00']:hover {
+  background-color: var(--v4-5);
+}
 table[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
 }
@@ -523,28 +551,6 @@ table tr:not([bgcolor]) th {
   border-color: var(--bg-5);
   color: var(--fg-1);
   padding-bottom: 2px;
-}
-table tr[bgcolor='#eec900'] {
-  background-color: var(--v3-6);
-}
-table tr[bgcolor='#eec900']:hover {
-  background-color: var(--v3-5);
-}
-table tr[bgcolor='#ff6666'] {
-  background-color: var(--v1-9);
-}
-table tr[bgcolor='#ff0000'i]:hover,
-table tr[bgcolor='#ea0707']:hover,
-table tr[bgcolor='#ff6666']:hover {
-  background-color: var(--v1-8);
-}
-table tr[bgcolor='#7cfc00'i],
-table tr[bgcolor='#35ee00'] {
-  background-color: var(--v4-6);
-}
-table tr[bgcolor='#7cfc00'i]:hover,
-table tr[bgcolor='#35ee00']:hover {
-  background-color: var(--v4-5);
 }
 table tr td[style='color:#000'] {
   color: var(--v9-0) !important;
@@ -709,7 +715,7 @@ h2 {
   padding-bottom: 0.3rem;
 }
 .submitFooter {
-  background: var(--rgba-bg-05);
+  background: var(--bg-0);
   border: 1px solid var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
