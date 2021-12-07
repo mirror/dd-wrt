@@ -311,9 +311,10 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
-										<th width="35%"><% tran("share.hostname"); %></th>
-										<th width="20%"><% tran("wol.broadcast"); %></th>
-										<th><% tran("share.remove"); %></th>
+										<th width="25%"><% tran("share.hostname"); %></th>
+										<th width="25%"><% tran("wol.broadcast"); %></th>
+										<th width="10%"><% tran("share.remove"); %></th>
+										<th width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<tr>
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" onchange="this.value=this.value.toUpperCase()" /></td>
