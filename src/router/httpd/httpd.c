@@ -417,16 +417,15 @@ struct crypt_data {
 
 static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data)
 {
-	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *enc1 = crypt(authinfo, authdata);
 	strcpy(data->__buf, enc1);
-	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 	return data->__buf;
 }
 #endif
 
 static int auth_check(webs_t conn_fp)
 {
+	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *authinfo;
 	char *authpass;
 	int l;
@@ -481,6 +480,7 @@ static int auth_check(webs_t conn_fp)
 	ret = 1;
       out:;
 	debug_free(authinfo);
+	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 
 	return ret;
 }
@@ -835,7 +835,7 @@ static void *handle_request(void *arg)
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
 			goto out;
 		}
-		if (!*(line) && (errno == EINTR || errno == EAGAIN || (cnt < 3 && errno == 9))) {
+		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
 			struct timespec tim, tim2;
 			tim.tv_sec = 0;
 			tim.tv_nsec = 10000000L;
