@@ -491,7 +491,7 @@ static int auth_check(webs_t conn_fp)
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp, NULL) > 0) {
+		while (wfgets(dummy, 64, conn_fp, NULL)) {
 		}
 		goto out;
 	}
@@ -500,7 +500,7 @@ static int auth_check(webs_t conn_fp)
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp, NULL) > 0) {
+		while (wfgets(dummy, 64, conn_fp, NULL)) {
 		}
 		goto out;
 	}
@@ -857,25 +857,11 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	int eof = 0;
-	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
 	dd_debug(DEBUG_HTTPD, "parse line\n");
-	for (;;) {
-		if (cnt == 500)
-			break;
-		wfgets(line, LINE_LEN, conn_fp, &eof);
-		if (eof) {
-			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
-			goto out;
-		}
-		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
-			struct timespec tim, tim2;
-			tim.tv_sec = 0;
-			tim.tv_nsec = 10000000L;
-			nanosleep(&tim, &tim2);
-			cnt++;
-			continue;
-		}
-		break;
+	wfgets(line, LINE_LEN, conn_fp, &eof);
+	if (eof) {
+		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
+		goto out;
 	}
 
 	if (!*(line)) {
@@ -1951,53 +1937,74 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
-	if (DO_SSL(wp)) {
+	int i;
+	errno = 0;
+	for (i = 0; i < 500; i++) {
+		if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		int eof = 1;
-		int i;
-		char c;
-		int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
-		if (sr <= 0) {
-			if (sr == 0 && rfeof)
-				*rfeof = 1;
-			goto out;
-		}
-		for (i = 0; i < len; i++) {
-			c = buf[i];
-			if (c == '\n' || c == 0) {
-				eof = 0;
-				break;
+			int eof = 1;
+			int i;
+			char c;
+			int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
+			if (sr <= 0) {
+				if (sr == 0 && rfeof)
+					*rfeof = 1;
+				else
+					*rfeof = 0;
+				goto out;
 			}
-		}
-		sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
-		if (sr <= 0) {
-			if (sr == 0 && rfeof)
-				*rfeof = 1;
-			goto out;
-		}
-		if (!eof) {
-			buf[i + 1] = 0;
-			ret = buf;
-			goto out;
-		} else {
-			if (rfeof)
-				*rfeof = 1;
-			goto out;
-		}
+			for (i = 0; i < len; i++) {
+				c = buf[i];
+				if (c == '\n' || c == 0) {
+					eof = 0;
+					break;
+				}
+			}
+			sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
+			if (sr <= 0) {
+				if (sr == 0 && rfeof)
+					*rfeof = 1;
+				else
+					*rfeof = 0;
+				goto out;
+			}
+			if (!eof) {
+				buf[i + 1] = 0;
+				ret = buf;
+				goto out;
+			} else {
+				if (rfeof)
+					*rfeof = 1;
+				else
+					*rfeof = 0;
+				goto out;
+			}
 
 #elif defined(HAVE_MATRIXSSL)
-		ret = (char *)matrixssl_gets(fp, buf, len);
+			ret = (char *)matrixssl_gets(fp, buf, len);
 #elif defined(HAVE_POLARSSL)
 
-		int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
-		ret = buf;
+			int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
+			ret = buf;
 #endif
-	} else {
-		if (feof(fp))
-			*rfeof = 1;
-		ret = fgets(buf, len, fp);
+		} else {
+			if (feof(fp))
+				*rfeof = 1;
+			else
+				*rfeof = 0;
+			ret = fgets(buf, len, fp);
+		}
+	      out:;
+		if (!*(buf) && (errno == EINTR || errno == EAGAIN)) {
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 10000000L;
+			nanosleep(&tim, &tim2);
+			continue;
+		}
+		break;
 	}
-      out:;
+
 	return ret;
 }
 
@@ -2099,30 +2106,42 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 	char *buf = (void *)p;
 	size_t ret;
 	FILE *fp = wp->fp;
-
-	if (DO_SSL(wp)) {
+	int i;
+	errno = 0;
+	for (i = 0; i < 500; i++) {
+		if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
+			ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
-		//do it in chains
-		size_t cnt = (size * n) / 0x4000;
-		size_t i;
-		size_t len = 0;
+			//do it in chains
+			size_t cnt = (size * n) / 0x4000;
+			size_t i;
+			size_t len = 0;
 
-		for (i = 0; i < cnt; i++) {
-			len += matrixssl_read(fp, buf, 0x4000);
-			*buf += 0x4000;
-		}
-		len += matrixssl_read(fp, buf, (size * n) % 0x4000);
+			for (i = 0; i < cnt; i++) {
+				len += matrixssl_read(fp, buf, 0x4000);
+				*buf += 0x4000;
+			}
+			len += matrixssl_read(fp, buf, (size * n) % 0x4000);
 
-		ret = len;
+			ret = len;
 #elif defined(HAVE_POLARSSL)
-		size_t len = n * size;
-		fprintf(stderr, "read SSL %d\n", len);
-		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
+			size_t len = n * size;
+			fprintf(stderr, "read SSL %d\n", len);
+			ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
-	} else
-		ret = fread(buf, size, n, fp);
+		} else {
+			ret = fread(buf, size, n, fp);
+		}
+		if (!ret && (errno == EINTR || errno == EAGAIN)) {
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 10000000L;
+			nanosleep(&tim, &tim2);
+			continue;
+		}
+		break;
+	}
 	return ret;
 }
 
