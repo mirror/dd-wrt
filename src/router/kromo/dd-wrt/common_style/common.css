@@ -106,8 +106,8 @@ select[onchange*='blockedServices'] {
   margin: 0 auto;
 }
 #header {
-  width: 89.464em;
-  height: 9.34em;
+  width: 89.35em;
+  height: 9.24em;
   background: #111;
   padding-top: .908em;
 }
@@ -147,7 +147,7 @@ select[onchange*='blockedServices'] {
   position: absolute;
   top: 2.265em;
   left: 0;
-  width: 89.283em;
+  width: 89.35em;
   padding-top: .362em;
   border-style: solid solid none solid;
   border-width: 1px;
@@ -209,6 +209,10 @@ li.current {
 #main, #helpContainer {
   position: relative;
   float: left;
+}
+#content {
+  border-radius: 0 0 5px 5px;
+  margin-bottom: 1em;
 }
 #main #contents {
   width: 65.536em;
@@ -336,6 +340,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   padding: 4px 12px;
   margin: 0;
   text-align: center;
+  border-radius: 4px;
 }
 .submitFooter .button {
   padding: 0 1rem;

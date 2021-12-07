@@ -28,7 +28,7 @@ var update;
 addEvent(window, "load", function() {
 	if(document.getElementsByName("refresh_button").length) {
 		document.getElementsByName("refresh_button")[0].disabled = true;
-		document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
+		//document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
 
@@ -55,10 +55,10 @@ addEvent(window, "unload", function() {
 					<div id="contents">
 							<script type="text/javascript">
 								//<![CDATA[
-								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"800\" frameborder=\"0\" type=\"text/html\"></iframe>");
+								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"805\" frameborder=\"0\" type=\"text/html\"></iframe>");
 								//]]>
 							</script>
-							<div class="center">
+							<div class="center" style="padding-bottom: 1.5em">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" value=\"&lsaquo; Prev\" onclick=\"do_show_prev();\">");
@@ -66,7 +66,6 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 							</div>
-							<p><p>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

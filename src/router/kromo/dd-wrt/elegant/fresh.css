@@ -138,6 +138,7 @@ button {
 }
 #content {
   background: #f9f9f9;
+  border: 1px solid #111;
 }
 #content.infopage {
   background-color: transparent;
@@ -146,14 +147,6 @@ button {
   background-color: #f9f9f9;
   border-radius: 5px;
   border: 1px solid #111;
-}
-#content {
-  border-radius: 0 0 5px 5px;
-  margin-bottom: 1em;
-  border: 1px solid #111;
-}
-#header {
-  height: 9.24em;
 }
 .message {
   background: #ccc;
