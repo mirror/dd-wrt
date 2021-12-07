@@ -1,5 +1,5 @@
 :root {
-  --style-name: DD-WRT Inspired Themes v5.0.3;
+  --style-name: DD-WRT Inspired Themes v5.2.0;
   --copyright: \24B8\00A02021 Style-it-themes: the-j0k3r;
   --license: MIT;
   --home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes;
@@ -121,4 +121,5 @@
   --rgba-bg-05: rgba(20, 20, 20, 0.5);
   --rgba-bg-075: rgba(20, 20, 20, 0.075);
   --rgba-ac-06: rgba(143, 157, 106, 0.6);
+  --syslog-bd: #0f0f0f;
 }
