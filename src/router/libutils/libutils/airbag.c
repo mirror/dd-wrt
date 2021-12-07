@@ -1357,7 +1357,7 @@ static pthread_mutex_t postinfo_mutex;
 
 AIRBAG_EXPORT int airbag_init(void)
 {
-	pthread_mutex_init(&postinfo_mutex);
+	pthread_mutex_init(&postinfo_mutex, NULL);
 	int i;
 	for (i = 0; i < 33; i++)
 		postinfo[i] = NULL;
