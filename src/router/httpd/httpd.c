@@ -373,6 +373,32 @@ static void setnaggle(webs_t wp, int on)
 
 }
 
+static void set_ndelay(int fd)
+{
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		dd_logerror("httpd", "fcntl F_GETFL - %m");
+	}
+	if (fcntl(fd, F_SETFL, flags | O_NDELAY) < 0) {
+		dd_logerror("httpd", "fcntl O_NDELAY - %m");
+	}
+}
+
+static void clear_ndelay(int fd)
+{
+	int newflags;
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		dd_logerror("httpd", "fcntl F_GETFL - %m");
+	}
+	newflags = flags & ~(int)O_NDELAY;
+	if (newflags != flags) {
+
+		if (fcntl(fd, F_SETFL, newflags) < 0)
+			dd_logerror("httpd", "fcntl O_NDELAY - %m");
+	}
+}
+
 static int initialize_listen_socket(usockaddr * usaP)
 {
 	int listen_fd;
@@ -401,18 +427,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 		return -1;
 	}
 
-	flags = fcntl(listen_fd, F_GETFL, 0);
-	if (flags == -1) {
-		dd_logerror("httpd", "fcntl F_GETFL - %m");
-		(void)close(listen_fd);
-		return -1;
-	}
-	if (fcntl(listen_fd, F_SETFL, flags | O_NDELAY) < 0) {
-		dd_logerror("httpd", "fcntl O_NDELAY - %m");
-		(void)close(listen_fd);
-		return -1;
-	}
-
+	set_ndelay(listen_fd);
 	if (listen(listen_fd, 1024) < 0) {
 		dd_logerror("httpd", "listen - %m");
 		perror("listen");
@@ -511,12 +526,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 {
 	int flags, newflags;
 
-	flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
-	if (flags != -1) {
-		newflags = flags & ~(int)O_NDELAY;
-		if (newflags != flags)
-			(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
-	}
+	clear_ndelay(conn_fp->conn_fd);
 
 	char *text;
 	va_list args;
@@ -822,7 +832,7 @@ static void *handle_request(void *arg)
 	if (!conn_fp->p->filter_id)
 		conn_fp->p->filter_id = 1;
 
-		dd_debug(DEBUG_HTTPD, "thread start\n");
+	dd_debug(DEBUG_HTTPD, "thread start\n");
 	PTHREAD_MUTEX_LOCK(&input_mutex);	// barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
@@ -848,7 +858,7 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	int eof = 0;
 	errno = 0;		//make sure errno was not set by any other instance since we have no return code to check here
-		dd_debug(DEBUG_HTTPD, "parse line\n");
+	dd_debug(DEBUG_HTTPD, "parse line\n");
 	for (;;) {
 		if (cnt == 500)
 			break;
@@ -1239,14 +1249,7 @@ static void *handle_request(void *arg)
 	FILE *fp;
 	int file_error;
 	int noheader;
-	int flags, newflags;
-
-	flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
-	if (flags != -1) {
-		newflags = flags & ~(int)O_NDELAY;
-		if (newflags != flags)
-			(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
-	}
+	clear_ndelay(conn_fp->conn_fd);
 
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (!match(handler->pattern, file))
@@ -1787,13 +1790,7 @@ int main(int argc, char **argv)
 			SEM_POST(&semaphore);
 			continue;
 		}
-		int newflags;
-		int flags = fcntl(conn_fp->conn_fd, F_GETFL, 0);
-		if (flags != -1) {
-			newflags = flags | (int)O_NDELAY;
-			if (newflags != flags)
-				(void)fcntl(conn_fp->conn_fd, F_SETFL, newflags);
-		}
+		set_ndelay(conn_fp->conn_fd);
 
 		/* Make sure we don't linger a long time if the other end disappears */
 		settimeouts(conn_fp, timeout);
@@ -1905,7 +1902,7 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
-//			setvbuf(conn_fp->fp, NULL, _IONBF, 0);
+//                      setvbuf(conn_fp->fp, NULL, _IONBF, 0);
 		}
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
