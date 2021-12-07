@@ -1949,8 +1949,6 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 		ret = buf;
 #endif
 	} else {
-		if (ferror(fp))
-			return 0;
 		if (feof(fp))
 			*rfeof = 1;
 		ret = fgets(buf, len, fp);
@@ -1991,8 +1989,6 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 
 	airbag_setpostinfo(fmt);
 	FILE *fp = wp->fp;
-	if (ferror(fp))
-		return 0;
 
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
@@ -2042,8 +2038,6 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 		}
 #endif
 	} else {
-		if (ferror(fp))
-			return 0;
 		ret = fwrite(buf, size, n, fp);
 	}
 	return ret;
@@ -2105,8 +2099,6 @@ static int wfflush(webs_t wp)
 		ret = 1;
 #endif
 	} else {
-		if (ferror(fp))
-			return -1;
 		ret = fflush(fp);
 	}
 
