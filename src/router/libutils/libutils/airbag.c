@@ -1353,9 +1353,11 @@ static void deinitCrashHandlers()
 		s_altStackSpace = 0;
 	}
 }
+static pthread_mutex_t postinfo_mutex;
 
 AIRBAG_EXPORT int airbag_init(void)
 {
+	pthread_mutex_init(&postinfo_mutex);
 	int i;
 	for (i = 0; i < 33; i++)
 		postinfo[i] = NULL;
@@ -1387,16 +1389,17 @@ AIRBAG_EXPORT void airbag_deinit()
 	deinitCrashHandlers();
 }
 
+
 void airbag_setpostinfo(const char *string)
 {
+	pthread_mutex_lock(&postinfo_mutex);
 	postindex++;
 	postindex = postindex % 32;
-	if (!postinfo[postindex])
-		postinfo[postindex] = strdup(string);
-	else {
-		postinfo[postindex] = realloc(postinfo[postindex], strlen(string) + 1);
-		strcpy(postinfo[postindex], string);
+	if (postinfo[postindex]) {
+		free(postinfo[postindex]);
 	}
+	postinfo[postindex] = strdup(string);
+	pthread_mutex_unlock(&postinfo_mutex);
 
 }
 #else
