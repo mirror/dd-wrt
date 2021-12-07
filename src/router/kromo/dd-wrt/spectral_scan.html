@@ -12,8 +12,8 @@
 window.setTimeout(
   function () {
     var options = {
-	legend: { show: true }, 
-	grid: { color: "#ffffff" , backgroundColor: { colors: ["#000", "#000"] } },
+        legend: { show: true }, 
+        grid: { color: "#ffffff" , backgroundColor: { colors: ["#000", "#000"] } },
         lines: { show: false },
         points: { show: true, fill: false, radius: 0.5 }, 
         series: { shadowSize: 0 },
@@ -37,14 +37,13 @@ window.setTimeout(
     		axisLabelPadding: 6,
     		zoomRange: false
     		},
-	zoom: {
-		interactive: true
-	},
-	pan: {
-		interactive: true
-	},
+        zoom: {
+        interactive: true
+        },
+        pan: {
+        interactive: true
+        },
         colors: [ "rgba(255,0,0,0.9)","rgba(0,0,255,0.9)", "rgba(0,0,225,0.4)", "rgba(0,0,200,0.4)", "rgba(0,0,175,0.4)", "rgba(0,0,150,0.4)", "rgba(0,0,125,0.4)", "rgba(0,0,100,0.4)", "rgba(0,0,75,0.4)", "rgba(0,0,50,0.4)", "rgba(0,0,50,0.4)", "rgba(0,0,00,0.4)" ]
-
     };
     var data = [];
     var placeholder = $("#placeholder");
@@ -97,15 +96,15 @@ window.setTimeout(
 );
 </script>
  </head>
-<body>
-	<div id="header">
-	    <h2>Spectral Scan</h2>
+<body class="spectral">
+	<div id="header" class="spectral">
+	  <h2>Spectral Scan</h2>
 	</div>
 	<div id="content">
-	    <div class="demo-container">
-		<div id="placeholder" class="demo-placeholder"></div>
-	    </div>
-	<p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+		<div class="demo-container">
+		  <div id="placeholder" class="demo-placeholder"></div>
+	  </div>
+	  <p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
 	</div>
  </body>
 </html>
