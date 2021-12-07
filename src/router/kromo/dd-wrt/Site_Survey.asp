@@ -41,7 +41,7 @@ function do_join (F,SSID) {
 				   <th sortdir="up" width="5%"><%% tran("share.openn"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.dtim"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
-				   <th sortdir="up" width="7%"></th>
+				   <th sortdir="up" width="7%"><%% tran("share.actiontbl"); %%></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[

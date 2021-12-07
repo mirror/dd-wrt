@@ -8,7 +8,7 @@
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="commit" value="1" />
 			<h2><% tran("survey.h3"); %></h2>
-			<table class="center table" cellspacing="5" id="survey_table">
+			<table class="table center" cellspacing="5" id="survey_table">
 				<tr>
 				   <th sortdir="up" width="4%"><% tran("share.frequency"); %></th>
 				   <th sortdir="up" width="3%"><% tran("share.channel"); %></th>
@@ -32,18 +32,17 @@
 					else {
 						for (var i = 0; i < table.length; i = i + 8) {
 							document.write("<tr>");
-							document.write("<td align=\"right\">"+table[i]+"</td>");
-							document.write("<td align=\"right\">"+table[i+1]+"</td>");
-							document.write("<td align=\"right\">"+table[i+2]+"</td>");
-							document.write("<td align=\"right\">"+table[i+3]+"</td>");
-							document.write("<td align=\"right\">"+table[i+4]+"</td>");
-							document.write("<td align=\"right\">"+table[i+5]+"</td>");
-							document.write("<td align=\"right\">"+table[i+6]+"</td>");
-							document.write("<td align=\"right\">"+table[i+7]+"</td>");
+							document.write("<td align=\"center\">"+table[i]+"</td>");
+							document.write("<td align=\"center\">"+table[i+1]+"</td>");
+							document.write("<td align=\"center\">"+table[i+2]+"</td>");
+							document.write("<td align=\"center\">"+table[i+3]+"</td>");
+							document.write("<td align=\"center\">"+table[i+4]+"</td>");
+							document.write("<td align=\"center\">"+table[i+5]+"</td>");
+							document.write("<td align=\"center\">"+table[i+6]+"</td>");
+							document.write("<td align=\"center\">"+table[i+7]+"</td>");
 							document.write("<\/tr>");
 						}
 					}
-					
 					//]]>
 					</script>
 			</table>
