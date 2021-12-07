@@ -2504,7 +2504,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n"
 		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
 #ifdef HAVE_LANGUAGE
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n",
+		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
 #endif
 		  charset);
 	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
