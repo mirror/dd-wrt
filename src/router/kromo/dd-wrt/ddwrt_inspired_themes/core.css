@@ -173,9 +173,6 @@ body input[name*='reset']:not([type="radio"]):focus-within {
   box-shadow: 0 0 10px 0 var(--bg-5) !important;
   color: var(--v9-9) !important;
 }
-body input[name*='refresh'][style*='background'] {
-  background: var(--v0-5) !important;
-}
 body input[name*='reboot'] {
   background: none repeat scroll 0 0 var(--v1-4);
   border-color: var(--v1-5);
