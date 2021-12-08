@@ -331,7 +331,7 @@ input.button[onclick*='gen_wg_key'] {
 }
 input.button[onclick*='show_prev'],
 input.button[onclick*='show_next'] {
-  margin: 0.5rem 0.5rem 0 0;
+  margin: -0.333rem 0.362rem 0 0;
 }
 input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -34.5%;
