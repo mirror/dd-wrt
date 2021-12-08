@@ -7,7 +7,7 @@
 [![Coverage Status](https://coveralls.io/repos/proftpd/proftpd/badge.svg?branch=master&service=github)](https://coveralls.io/github/proftpd/proftpd?branch=master)
 [![Coverity Scan Status](https://scan.coverity.com/projects/198/badge.svg)](https://scan.coverity.com/projects/198)
 [![C/C++ Language Grade](https://img.shields.io/lgtm/grade/cpp/g/proftpd/proftpd.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/proftpd/proftpd/context:cpp)
-[![Release](https://img.shields.io/badge/release-1.3.7-brightgreen)](https://github.com/proftpd/proftpd/releases/latest)
+[![Release](https://img.shields.io/badge/release-1.3.7b-brightgreen)](https://github.com/proftpd/proftpd/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://img.shields.io/badge/license-GPL-brightgreen.svg)
 
 ## Introduction

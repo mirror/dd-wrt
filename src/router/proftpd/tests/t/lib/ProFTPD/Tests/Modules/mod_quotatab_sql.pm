@@ -1299,7 +1299,7 @@ EOS
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
     TraceLog => $log_file,
-    Trace => 'DEFAULT:10',
+    Trace => 'DEFAULT:10 jot:30 sql:20',
 
     DefaultChdir => '~',
 

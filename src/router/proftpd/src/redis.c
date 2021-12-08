@@ -49,6 +49,11 @@ struct redis_rec {
    */
   unsigned int refcount;
 
+  /* Redis server version. */
+  unsigned int major_version;
+  unsigned int minor_version;
+  unsigned int patch_version;
+
   /* Table mapping modules to their namespaces */
   pr_table_t *namespace_tab;
 };
@@ -59,6 +64,7 @@ static const char *redis_sentinel_master = NULL;
 static const char *redis_server = NULL;
 static int redis_port = -1;
 static unsigned long redis_flags = 0UL;
+static const char *redis_username = NULL;
 static const char *redis_password = NULL;
 static const char *redis_db_idx = NULL;
 
@@ -68,6 +74,8 @@ static unsigned long redis_connect_millis = 500;
 static unsigned long redis_io_millis = 500;
 
 static const char *trace_channel = "redis";
+
+static const char *get_reply_type(int reply_type);
 
 static void millis2timeval(struct timeval *tv, unsigned long millis) {
   tv->tv_sec = (millis / 1000);
@@ -194,6 +202,48 @@ static int ping_server(pr_redis_t *redis) {
   return 0;
 }
 
+static void parse_redis_version(pr_redis_t *redis, redisReply *info) {
+  pool *tmp_pool;
+  unsigned int major, minor, patch;
+  char *text, *version_text;
+
+  if (info->type != REDIS_REPLY_STRING) {
+    pr_trace_msg(trace_channel, 1, "expected STRING reply for INFO, got %s",
+      get_reply_type(info->type));
+    return;
+  }
+
+  tmp_pool = make_sub_pool(redis->pool);
+  pr_pool_tag(tmp_pool, "Redis version parsing pool");
+  text = pstrndup(tmp_pool, info->str, info->len);
+
+  /* Scan the entire INFO string for "redis_version:N.N.N". */
+
+  version_text = strstr(text, "redis_version:");
+  if (version_text == NULL) {
+    pr_trace_msg(trace_channel, 1, "no `redis_version` found in INFO reply");
+    destroy_pool(tmp_pool);
+    return;
+  }
+
+  if (sscanf(version_text, "redis_version:%u.%u.%u", &major, &minor,
+      &patch) == 3) {
+    redis->major_version = major;
+    redis->minor_version = minor;
+    redis->patch_version = patch;
+
+    pr_trace_msg(trace_channel, 9,
+      "parsed Redis version %u (major), %u (minor), %u (patch) out of INFO",
+      redis->major_version, redis->minor_version, redis->patch_version);
+
+  } else {
+    pr_trace_msg(trace_channel, 1, "failed to scan Redis version '%s'",
+      version_text);
+  }
+
+  destroy_pool(tmp_pool);
+}
+
 static int stat_server(pr_redis_t *redis, const char *section) {
   const char *cmd;
   redisReply *reply;
@@ -212,6 +262,18 @@ static int stat_server(pr_redis_t *redis, const char *section) {
   } else {
     pr_trace_msg(trace_channel, 7, "%s reply: (text, %lu bytes)", cmd,
       (unsigned long) reply->len);
+  }
+
+  if (redis->major_version == 0 &&
+      (strcmp(section, "server") == 0 || strcmp(section, "") == 0)) {
+    /* We are particularly interested in the Redis server version; we key
+     * off of this version to detect when to change our command semantics,
+     * such as for AUTH.
+     *
+     * Thus we parse the server version out of the "server" info, unless
+     * the version is already known.
+     */
+    parse_redis_version(redis, reply);
   }
 
   freeReplyObject(reply);
@@ -508,7 +570,13 @@ pr_redis_t *pr_redis_conn_new(pool *p, module *m, unsigned long flags) {
   }
 
   if (redis_password != NULL) {
-    res = pr_redis_auth(redis, redis_password);
+    if (redis_username != NULL) {
+      res = pr_redis_auth2(redis, redis_username, redis_password);
+
+    } else {
+      res = pr_redis_auth(redis, redis_password);
+    }
+
     if (res < 0) {
       xerrno = errno;
 
@@ -677,6 +745,36 @@ int pr_redis_conn_set_namespace(pr_redis_t *redis, module *m,
   } else {
     /* A NULL prefix means the caller is removing their namespace mapping. */
     (void) pr_table_kremove(redis->namespace_tab, m, sizeof(module *), NULL);
+  }
+
+  return 0;
+}
+
+int pr_redis_conn_get_version(pr_redis_t *redis, unsigned int *major_version,
+    unsigned int *minor_version, unsigned int *patch_version) {
+
+  if (redis == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (major_version == NULL &&
+      minor_version == NULL &&
+      patch_version == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (major_version != NULL) {
+    *major_version = redis->major_version;
+  }
+
+  if (minor_version != NULL) {
+    *minor_version = redis->minor_version;
+  }
+
+  if (patch_version != NULL) {
+    *patch_version = redis->patch_version;
   }
 
   return 0;
@@ -2003,12 +2101,14 @@ int pr_redis_command(pr_redis_t *redis, const array_header *args,
   return 0;
 }
 
-int pr_redis_auth(pr_redis_t *redis, const char *password) {
+int pr_redis_auth2(pr_redis_t *redis, const char *username,
+    const char *password) {
   const char *cmd;
   pool *tmp_pool;
   redisReply *reply;
 
   if (redis == NULL ||
+      username == NULL ||
       password == NULL) {
     errno = EINVAL;
     return -1;
@@ -2019,7 +2119,15 @@ int pr_redis_auth(pr_redis_t *redis, const char *password) {
 
   cmd = "AUTH";
   pr_trace_msg(trace_channel, 7, "sending command: %s", cmd);
-  reply = redisCommand(redis->ctx, "%s %s", cmd, password);
+
+  /* Redis 6.x changed the AUTH semantics, now requiring a username. */
+  if (redis->major_version >= 6) {
+    reply = redisCommand(redis->ctx, "%s %s %s", cmd, username, password);
+
+  } else {
+    reply = redisCommand(redis->ctx, "%s %s", cmd, password);
+  }
+
   reply = handle_reply(redis, cmd, reply);
   if (reply == NULL) {
     pr_trace_msg(trace_channel, 2,
@@ -2051,6 +2159,10 @@ int pr_redis_auth(pr_redis_t *redis, const char *password) {
   freeReplyObject(reply);
   destroy_pool(tmp_pool);
   return 0;
+}
+
+int pr_redis_auth(pr_redis_t *redis, const char *password) {
+  return pr_redis_auth2(redis, "default", password);
 }
 
 int pr_redis_select(pr_redis_t *redis, const char *db_idx) {
@@ -5632,8 +5744,8 @@ int pr_redis_sentinel_get_masters(pool *p, pr_redis_t *redis,
   return res;
 }
 
-int redis_set_server(const char *server, int port, unsigned long flags,
-    const char *password, const char *db_idx) {
+int redis_set_server2(const char *server, int port, unsigned long flags,
+    const char *username, const char *password, const char *db_idx) {
 
   if (server == NULL) {
     /* By using a port of -2 specifically, we can use this function to
@@ -5649,10 +5761,16 @@ int redis_set_server(const char *server, int port, unsigned long flags,
   redis_server = server;
   redis_port = port;
   redis_flags = flags;
+  redis_username = username;
   redis_password = password;
   redis_db_idx = db_idx;
 
   return 0;
+}
+
+int redis_set_server(const char *server, int port, unsigned long flags,
+    const char *password, const char *db_idx) {
+  return redis_set_server2(server, port, flags, "default", password, db_idx);
 }
 
 int redis_set_sentinels(array_header *sentinels, const char *name) {

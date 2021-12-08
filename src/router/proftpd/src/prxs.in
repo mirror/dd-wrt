@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # ---------------------------------------------------------------------------
-# Copyright (C) 2008-2012 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2008-2020 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
-#
-#  $Id: prxs.in,v 1.10 2012-09-19 00:11:39 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -101,7 +99,11 @@ if (defined($opts->{c})) {
 
       if ($file =~ /\/?mod_[^\/]+\.c$/) {
         $configure_script = $file;
-        $configure_script =~ s/\/?mod_[^\/]+\.c$/\/configure/;
+        $configure_script =~ s/(\/?)mod_[^\/]+\.c$/\1configure/;
+
+        if ($configure_script !~ /^\//) {
+          $configure_script = './' . $configure_script;
+        }
       }
 
       my $obj = $file;
@@ -123,7 +125,17 @@ if (defined($opts->{c})) {
     # Check for any configure script for this module.  If present, error out
     # for now.
     if (-f $configure_script) {
-      print STDERR "Cannot compile $mod_name using prxs; use $configure_script instead\n";
+      print STDERR "\nCannot compile $mod_name using prxs.  Use existing $configure_script script instead:\n\n";
+
+      if ($configure_script ne './configure') {
+        my $mod_dir = $configure_script;
+        $mod_dir =~ s/configure$//g;
+        print STDERR "  cd $mod_dir\n";
+      }
+
+      print STDERR "  ./configure\n";
+      print STDERR "  make\n";
+      print STDERR "  make install\n";
       exit 1;
     }
   }

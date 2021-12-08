@@ -2864,12 +2864,12 @@ static int write_newkeys_reply(struct ssh2_packet *pkt) {
   return 0;
 }
 
-static int write_ext_info_server_sig_algs(struct ssh2_packet *pkt, char **buf,
-    uint32_t *buflen) {
+static int write_ext_info_server_sig_algs(struct ssh2_packet *pkt,
+    unsigned char **buf, uint32_t *buflen) {
   char *sig_algs = "";
 
 #if defined(PR_USE_SODIUM)
-  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "ssh-ec25519",
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "ssh-ed25519",
     NULL);
 #endif /* PR_USE_SODIUM */
 

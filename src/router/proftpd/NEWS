@@ -15,6 +15,64 @@
   where `N' is the issue number.
 -----------------------------------------------------------------------------
 
+1.3.7c - Released 29-Aug-2021
+--------------------------------
+- Issue 1273 - Improve mod_tls log messages for unsupported older TLS protocol
+  requests.
+- Issue 1284 - Fix memory disclosure to RADIUS servers by mod_radius.
+- Issue 1282 - Properly handle <VirtualHost> sections that use interface/device
+  names.
+- Issue 1300 - PCRE expressions with capture groups are not being handled
+  properly.
+- Issue 1307 - AuthUserFile permissions check fails during SIGHUP, causing
+  ProFTPD to stop.
+
+1.3.7b - Released 13-Jun-2021
+--------------------------------
+- Issue 1063 - FTPS data transfers using TLSv1.3 might segfault when session
+  tickets cannot be decrypted.
+- Issue 1070 - Implement support for Redis 6.x AUTH semantics.
+- Bug 4405 - Memory use-after-free in mod_sftp causes unexpected
+  login/authentication issues.
+- Issue 1079 - prxs fails to detect module-specific configure/Makefile,
+  leading to unexpected module load errors.
+- Issue 1074 - TLS SNI connections to name-based VirtualHosts with
+  TLSCertificateChainFile fail unexpectedly.
+- Issue 1106 - TLS SNI can cause mod_quotatab to crash due to null pointer
+  dereferences.
+- Issue 1076 - TLS client-initiated renegotiations are supported unexpectedly.
+- Issue 1105 - Improper handling of multiple IP addresses, ServerAliases in
+  <VirtualHost> sections.
+- Issue 1149 - mod_quotatab_sql failing due to SQL syntax errors.  This is
+  a regression caused by Issue #392.
+- Issue 1061 - Freeing uninitialized memory causes SFTP issues with ed25519
+  keys.
+- Issue 1111 - "Corrupted MAC on input" errors using SFTP umac-64@openssh.com
+  digest.
+- Issue 1171 - PassivePort randomization is broken due to SO_REUSEPORT option.
+- Issue 1134 - AuthUserFile-based logins, directory listings are very slow due
+  to unbuffered reads.
+- Issue 1193 - Improper checking for reused TLS session for data transfers
+  using OpenSSL 1.1.1.
+- Issue 1168 - Improve error handling of OpenSSH host keys converted to PEM
+  format.
+- Issue 1179 - TLSRSACertificateKeyFile sanity checks fail unexpectedly for
+  passphrase-protected keys.
+- Issue 1174 - ftptop segfaults when using libncursesw on Gentoo.
+- Issue 1204 - Once TLSTimeoutHandshake is reached, internal "timed out" flag
+  never reset.
+- Issue 1207 - On Gentoo, "./configure --disable-ncurses" fails to link ftptop,
+  due to "undefined reference to symbol 'stdscr'" error.
+- Issue 1212 - mod_sql_mysql needs to quote table names due to reserved MySQL
+  keywords.
+- Issue 754 - Some mod_snmp counters were not being incremented properly.
+- Bug 4428 - <VirtualHost> name resolution does not include all associated
+  IPv6 records.
+- Issue 1230 - Stack overflow due to unlimited recursion possible when parsing
+  JSON text.
+- Issue 1232 - Unable to use %{env:FTPS} in a SQLNamedQuery.  The fix is to now
+  use %{note:FTPS} instead.
+
 1.3.7a - Released 21-Jul-2020
 --------------------------------
 - Issue 1055 - Fix build-time regression when using the --localstatedir

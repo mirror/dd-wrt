@@ -306,12 +306,6 @@
 /* Define if you have the fdatasync function.  */
 #undef HAVE_FDATASYNC
 
-/* Define if you have the fgetgrent function.  */
-#undef HAVE_FGETGRENT
-
-/* Define if you have the fgetpwent function.  */
-#undef HAVE_FGETPWENT
-
 /* Define if you have the flock function.  */
 #undef HAVE_FLOCK
 
@@ -971,6 +965,9 @@
 
 /* Define if you have the libtinfo library (-ltinfo).  */
 #undef HAVE_LIBTINFO
+
+/* Define if you have the libtinfow library (-ltinfow).  */
+#undef HAVE_LIBTINFOW
 
 /* Define if you have the addrinfo struct.  */
 #undef HAVE_STRUCT_ADDRINFO

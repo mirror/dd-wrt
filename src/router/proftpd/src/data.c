@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -133,14 +133,14 @@ static int data_passive_open(const char *reason, off_t size) {
   /* Protocol and socket options should be set before handshaking. */
 
   if (session.xfer.direction == PR_NETIO_IO_RD) {
-    pr_inet_set_socket_opts(session.d->pool, session.d,
+    pr_inet_set_socket_opts2(session.d->pool, session.d,
       (main_server->tcp_rcvbuf_override ? main_server->tcp_rcvbuf_len : 0), 0,
-      main_server->tcp_keepalive);
+      main_server->tcp_keepalive, 0);
 
   } else {
-    pr_inet_set_socket_opts(session.d->pool, session.d,
+    pr_inet_set_socket_opts2(session.d->pool, session.d,
       0, (main_server->tcp_sndbuf_override ? main_server->tcp_sndbuf_len : 0),
-      main_server->tcp_keepalive);
+      main_server->tcp_keepalive, 0);
   }
 
   c = pr_inet_accept(session.pool, session.d, session.c, -1, -1, TRUE);
@@ -311,14 +311,14 @@ static int data_active_open(const char *reason, off_t size) {
   /* Protocol and socket options should be set before handshaking. */
 
   if (session.xfer.direction == PR_NETIO_IO_RD) {
-    pr_inet_set_socket_opts(session.d->pool, session.d,
+    pr_inet_set_socket_opts2(session.d->pool, session.d,
       (main_server->tcp_rcvbuf_override ? main_server->tcp_rcvbuf_len : 0), 0,
-      main_server->tcp_keepalive);
+      main_server->tcp_keepalive, 1);
     
   } else {
-    pr_inet_set_socket_opts(session.d->pool, session.d,
+    pr_inet_set_socket_opts2(session.d->pool, session.d,
       0, (main_server->tcp_sndbuf_override ? main_server->tcp_sndbuf_len : 0),
-      main_server->tcp_keepalive);
+      main_server->tcp_keepalive, 1);
   }
 
   /* Make sure that the necessary socket options are set on the socket prior

@@ -1539,10 +1539,10 @@ START_TEST (uid2str_test) {
   const char *res;
 
   res = pr_uid2str(NULL, (uid_t) 1);
-  fail_unless(strcmp(res, "1") == 0);
+  fail_unless(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
 
   res = pr_uid2str(NULL, (uid_t) -1);
-  fail_unless(strcmp(res, "-1") == 0);
+  fail_unless(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
 }
 END_TEST
 
@@ -1550,10 +1550,10 @@ START_TEST (gid2str_test) {
   const char *res;
 
   res = pr_gid2str(NULL, (gid_t) 1);
-  fail_unless(strcmp(res, "1") == 0);
+  fail_unless(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
 
   res = pr_gid2str(NULL, (gid_t) -1);
-  fail_unless(strcmp(res, "-1") == 0);
+  fail_unless(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
 }
 END_TEST
 

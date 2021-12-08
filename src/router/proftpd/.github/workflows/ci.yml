@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - 1.3.7
+  pull_request:
+    branches:
+      - master
+      - 1.3.7
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        # Docker Hub image
+        image: redis:5-alpine
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    environment: CI
+
+    env:
+      PACKAGE_VERSION: 1.3.7b
+      REDIS_HOST: redis
+
+    strategy:
+      matrix:
+        compiler:
+          - gcc
+          - clang
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Whitespace check
+        run: |
+          if [[ -n $(git diff --check HEAD^) ]]; then
+            echo "You must remove whitespace before submitting a pull request"
+            echo ""
+            git diff --check HEAD^
+            exit 1
+          fi
+
+      - name: Install packages
+        run: |
+          # Need to add other repos for e.g. libsodium
+          sudo apt-get update -qq
+          # for unit tests
+          sudo apt-get install -y check
+          sudo apt-get install -y libsubunit-dev
+          # for mod_lang
+          sudo apt-get install -y gettext
+          # for xattr support
+          sudo apt-get install -y libattr1-dev
+          # for mod_cap
+          sudo apt-get install -y libcap-dev
+          # for mod_geoip
+          sudo apt-get install -y libgeoip-dev
+          # for mod_ldap
+          sudo apt-get install -y libldap2-dev libsasl2-dev
+          # for mod_ldap runtime support for SCRAM
+          sudo apt-get install -y libsasl2-modules-gssapi-mit
+          # for memcache support
+          sudo apt-get install -y libmemcached-dev
+          # for redis support
+          sudo apt-get install -y libhiredis-dev
+          # for mod_sql_mysql
+          sudo apt-get install -y libmysqlclient-dev
+          # for PAM support
+          sudo apt-get install -y libpam-dev
+          # for mod_sql_postgres
+          sudo apt-get install -y libpq-dev
+          # for mod_sql_odbc
+          sudo apt-get install -y unixodbc-dev
+          # for OpenSSL support
+          sudo apt-get install -y libssl-dev
+          # for Sodium support
+          sudo apt-get install -y --force-yes libsodium-dev
+          # for mod_sql_sqlite
+          sudo apt-get install -y libsqlite3-dev sqlite3
+          # for mod_wrap
+          sudo apt-get install -y libwrap0-dev
+          # for PCRE support
+          sudo apt-get install -y libpcre3-dev
+          # for ftptop
+          sudo apt-get install -y ncurses-dev
+          # for zlib support
+          sudo apt-get install -y zlib1g-dev
+          # for static code analysis
+          # - sudo apt-get install -y cppcheck
+          # - sudo apt-get install rats
+          # for integration/regression test
+          # for test code coverage
+          sudo apt-get install -y lcov
+          sudo gem install coveralls-lcov
+          # for HTML validation
+          sudo apt-get install -y tidy
+          # for clang
+          sudo apt-get install -y clang
+          # for debugging
+          clang --version
+          gcc --version
+          openssl version -a
+
+      - name: Prepare code coverage
+        run: |
+          lcov --directory . --zerocounters
+
+      - name: Build with static modules
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel=coverage --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-redis --enable-tests --with-modules=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
+          make
+
+      - name: Run unit tests
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          make TEST_VERBOSE=1 check-api
+
+      - name: Install with static modules
+        run: |
+          sudo make install
+
+      - name: Build with shared modules
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          make clean
+          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel --enable-ctrls --enable-dso --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-tests --with-shared=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
+          make
+
+      - name: Install with shared modules
+        run: |
+          sudo make install
+
+      - name: Upload code coverage
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ matrix.compiler == 'gcc' }}
+        run: |
+          lcov --ignore-errors gcov,source --directory . --capture --output-file coverage.info
+          # filter out system and test code
+          lcov --remove coverage.info 'lib/glibc-glob.*' 'lib/ccan-json.*' 'lib/hanson-tpl.*' 'lib/openbsd-*' 'lib/pr_fnmatch_loop.*' 'tests/*' '/usr/*' --output-file coverage.info
+          # debug before upload
+          lcov --list coverage.info
+          # upload coverage info to coveralls
+          coveralls-lcov --repo-token="$COVERALLS_REPO_TOKEN" --service-name=github --service-job-id="$GITHUB_RUN_ID" --branch="$GITHUB_REF" coverage.info
+
+      - name: Check Perl scripts
+        run: |
+          perl -cw contrib/ftpasswd
+          perl -cw contrib/ftpquota
+
+      - name: Check HTML docs
+        run: |
+          for f in $(/bin/ls doc/contrib/*.html doc/howto/*.html doc/modules/*.html doc/utils/*.html); do echo "Processing $f"; tidy -errors -omit -q $f; done || exit 0

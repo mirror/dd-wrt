@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  * code.
  */
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
 # include <pcre.h>
 # include <pcreposix.h>
 

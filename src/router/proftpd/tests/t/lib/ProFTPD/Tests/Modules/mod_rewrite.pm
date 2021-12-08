@@ -213,6 +213,11 @@ my $TESTS = {
     test_class => [qw(bug feature_pcre forking rootprivs)],
   },
 
+  rewrite_using_pcre_issue1300 => {
+    order => ++$order,
+    test_class => [qw(bug feature_pcre forking)],
+  },
+
 };
 
 sub new {
@@ -2966,23 +2971,8 @@ sub rewrite_cond_nc_flags {
 sub rewrite_map_fifo_bug3611 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'rewrite');
 
-  my $config_file = "$tmpdir/rewrite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/rewrite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/rewrite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/rewrite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/rewrite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
- 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/tmp");
   mkpath($sub_dir);
 
@@ -3003,37 +2993,33 @@ sub rewrite_map_fifo_bug3611 {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $sub_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
+    unless (chmod(0755, $sub_dir)) {
+      die("Can't set perms on $sub_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $sub_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
+      die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
 
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $fifo_script = File::Spec->rel2abs('t/etc/modules/mod_rewrite/reverse.pl');
 
-  my $fifo = File::Spec->rel2abs("$home_dir/test.fifo");
+  my $fifo = File::Spec->rel2abs("$setup->{home_dir}/test.fifo");
   unless (POSIX::mkfifo($fifo, 0666)) {
     die("Can't create fifo $fifo: $!");
   }
 
-  my $fifo_pidfile = File::Spec->rel2abs("$home_dir/fifo.pid");
+  my $fifo_pidfile = File::Spec->rel2abs("$setup->{home_dir}/fifo.pid");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'DEFAULT:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -3042,7 +3028,7 @@ sub rewrite_map_fifo_bug3611 {
 
       'mod_rewrite.c' => [
         'RewriteEngine on',
-        "RewriteLog $log_file",
+        "RewriteLog $setup->{log_file}",
 
         'RewriteCondition %m !PASS',
         "RewriteMap reverse fifo:$fifo",
@@ -3051,7 +3037,8 @@ sub rewrite_map_fifo_bug3611 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3068,26 +3055,24 @@ sub rewrite_map_fifo_bug3611 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my $name = join('', reverse(split//, $user));
-      $client->login($name, $passwd);
+      my $name = join('', reverse(split//, $setup->{user}));
+      $client->login($name, $setup->{passwd});
       $client->type('binary');
 
       # Send the path in reverse; the rewrite FIFO should reverse
       # everything.
-      my ($resp_code, $resp_msg);
-
       my $path = join('', reverse(split(//, $test_file)));
-      ($resp_code, $resp_msg) = $client->stat($path);
+      my ($resp_code, $resp_msg) = $client->stat($path);
       
-      my $expected;
-
-      $expected = 211;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -3097,9 +3082,9 @@ sub rewrite_map_fifo_bug3611 {
 
   } else {
     # Start the FIFO script
-    `$fifo_script --verbose --fifo $fifo --pidfile $fifo_pidfile >> $log_file 2>&1 &`;
+    `$fifo_script --verbose --fifo $fifo --pidfile $fifo_pidfile >> $setup->{log_file} 2>&1 &`;
 
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
 
@@ -3125,9 +3110,6 @@ sub rewrite_map_fifo_bug3611 {
     exit 0;
   }
 
-  # Stop server
-  server_stop($pid_file);
-
   if (open(my $fh, "< $fifo_pidfile")) {
     my $fifo_pid = <$fh>;
     chomp($fifo_pid);
@@ -3136,16 +3118,11 @@ sub rewrite_map_fifo_bug3611 {
     close($fh);
   }
 
+  # Stop server
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub rewrite_rule_replaceall_backslash_with_slash {
@@ -3439,23 +3416,8 @@ sub rewrite_map_max_replace_bug3721 {
 sub rewrite_cond_time_var_bug3673 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'rewrite');
 
-  my $config_file = "$tmpdir/rewrite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/rewrite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/rewrite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/rewrite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/rewrite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
- 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/tmp");
   mkpath($sub_dir);
 
@@ -3476,34 +3438,32 @@ sub rewrite_cond_time_var_bug3673 {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $sub_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
+    unless (chmod(0755, $sub_dir)) {
+      die("Can't set perms on $sub_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $sub_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
+      die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
 
   require DateTime;
 
   my $dt = DateTime->now();
   $dt->set_time_zone('America/Los_Angeles');
-  $dt->subtract(seconds => 3);
+  $dt->add(seconds => 30);
 
   my $timestamp = ($dt->ymd('') . $dt->hms(''));
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'regexp:20 rewrite:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -3512,7 +3472,7 @@ sub rewrite_cond_time_var_bug3673 {
 
       'mod_rewrite.c' => [
         'RewriteEngine on',
-        "RewriteLog $log_file",
+        "RewriteLog $setup->{log_file}",
 
         'RewriteMap replace int:replaceall',
 
@@ -3523,7 +3483,8 @@ sub rewrite_cond_time_var_bug3673 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3540,27 +3501,26 @@ sub rewrite_cond_time_var_bug3673 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
 
       # Send the path with spaces; the rewrite rules should handle it
-      ($resp_code, $resp_msg) = $client->size("tmp/test file here.txt");
+      my ($resp_code, $resp_msg) = $client->size("tmp/test file here.txt");
 
-      my $expected;
-
-      $expected = 213;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = '14';
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -3569,7 +3529,7 @@ sub rewrite_cond_time_var_bug3673 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3579,18 +3539,10 @@ sub rewrite_cond_time_var_bug3673 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub rewrite_cond_time_year_var_bug3673 {
@@ -5994,6 +5946,99 @@ sub rewrite_using_pcre_bug4017 {
   }
 
   unlink($log_file);
+}
+
+sub rewrite_using_pcre_issue1300 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'rewrite');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/folder1/folder2");
+  mkpath($test_dir);
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'regexp:20 rewrite:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultChdir => '~',
+
+    DenyFilter => '\*.*/',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_rewrite.c' => [
+        'RewriteEngine on',
+        "RewriteLog $setup->{log_file}",
+        'RewriteMap replace int:replaceall',
+
+        'RewriteCondition %m RETR|SIZE|LIST|CWD',
+        'RewriteRule (.*) "${replace:!$1!\\\\!/}"',
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Allow server to start up
+      sleep(1);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my ($resp_code, $resp_msg) = $client->cwd('folder1\folder2');
+
+      my $expected = 250;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;
