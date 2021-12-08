@@ -15024,6 +15024,30 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C compiler accepts -fno-strict-aliasing" >&5
+$as_echo_n "checking whether the C compiler accepts -fno-strict-aliasing... " >&6; }
+  CFLAGS="-fno-strict-aliasing"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; fullCFLAGS="$fullCFLAGS $CFLAGS"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
   CFLAGS="$fullCFLAGS"
 fi
 
@@ -16285,7 +16309,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 16288 "configure"
+#line 16311 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -21177,7 +21201,7 @@ done
 
 
 
-for ac_func in bcopy crypt ctime_r fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp gmtime_r localtime_r mkdtemp nl_langinfo
+for ac_func in bcopy crypt ctime_r fdatasync fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp gmtime_r localtime_r mkdtemp nl_langinfo
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -22947,7 +22971,7 @@ $as_echo "#define SETGRENT_VOID 1" >>confdefs.h
 fi
 
 
-if test x"$ac_cv_header_curses_h" = xyes; then
+if test x"$enable_curses" != xno ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lcurses" >&5
 $as_echo_n "checking for initscr in -lcurses... " >&6; }
 if ${ac_cv_lib_curses_initscr+:} false; then :
@@ -22990,12 +23014,154 @@ if test "x$ac_cv_lib_curses_initscr" = xyes; then :
 $as_echo "#define HAVE_LIBCURSES 1" >>confdefs.h
 
 
-fi
+$as_echo "#define PR_USE_CURSES 1" >>confdefs.h
+
 
 fi
 
-pr_have_ncursesw="no"
-if test x"$ac_cv_header_ncurses_h" = xyes; then
+
+          if test x"$enable_nls" = xyes ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfow" >&5
+$as_echo_n "checking for halfdelay in -ltinfow... " >&6; }
+if ${ac_cv_lib_tinfow_halfdelay+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfow  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tinfow_halfdelay=yes
+else
+  ac_cv_lib_tinfow_halfdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfow_halfdelay" >&5
+$as_echo "$ac_cv_lib_tinfow_halfdelay" >&6; }
+if test "x$ac_cv_lib_tinfow_halfdelay" = xyes; then :
+   UTILS_LIBS="$UTILS_LIBS -ltinfow"
+
+$as_echo "#define HAVE_LIBTINFOW 1" >>confdefs.h
+
+
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfo" >&5
+$as_echo_n "checking for halfdelay in -ltinfo... " >&6; }
+if ${ac_cv_lib_tinfo_halfdelay+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfo  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tinfo_halfdelay=yes
+else
+  ac_cv_lib_tinfo_halfdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfo_halfdelay" >&5
+$as_echo "$ac_cv_lib_tinfo_halfdelay" >&6; }
+if test "x$ac_cv_lib_tinfo_halfdelay" = xyes; then :
+   UTILS_LIBS="$UTILS_LIBS -ltinfo"
+
+$as_echo "#define HAVE_LIBTINFO 1" >>confdefs.h
+
+
+fi
+
+
+fi
+
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfo" >&5
+$as_echo_n "checking for halfdelay in -ltinfo... " >&6; }
+if ${ac_cv_lib_tinfo_halfdelay+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfo  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tinfo_halfdelay=yes
+else
+  ac_cv_lib_tinfo_halfdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfo_halfdelay" >&5
+$as_echo "$ac_cv_lib_tinfo_halfdelay" >&6; }
+if test "x$ac_cv_lib_tinfo_halfdelay" = xyes; then :
+   UTILS_LIBS="$UTILS_LIBS -ltinfo"
+
+$as_echo "#define HAVE_LIBTINFO 1" >>confdefs.h
+
+
+fi
+
+  fi
+fi
+
+if test x"$enable_ncurses" != xno ; then
+  pr_have_ncursesw="no"
+
 
   if test x"$enable_nls" = xyes ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
@@ -23137,27 +23303,56 @@ $as_echo "#define HAVE_LIBNCURSES 1" >>confdefs.h
 fi
 
   fi
-fi
 
-if test x"$enable_curses" != xno ; then
 
-$as_echo "#define PR_USE_CURSES 1" >>confdefs.h
-
-fi
-
-if test x"$enable_ncurses" != xno ; then
   if test x"$pr_have_ncursesw" = xyes ; then
 
 $as_echo "#define PR_USE_NCURSESW 1" >>confdefs.h
 
-  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfow" >&5
+$as_echo_n "checking for halfdelay in -ltinfow... " >&6; }
+if ${ac_cv_lib_tinfow_halfdelay+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfow  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-$as_echo "#define PR_USE_NCURSES 1" >>confdefs.h
-
-  fi
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tinfow_halfdelay=yes
+else
+  ac_cv_lib_tinfow_halfdelay=no
 fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfow_halfdelay" >&5
+$as_echo "$ac_cv_lib_tinfow_halfdelay" >&6; }
+if test "x$ac_cv_lib_tinfow_halfdelay" = xyes; then :
+   UTILS_LIBS="$UTILS_LIBS -ltinfow"
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfo" >&5
+$as_echo "#define HAVE_LIBTINFOW 1" >>confdefs.h
+
+
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfo" >&5
 $as_echo_n "checking for halfdelay in -ltinfo... " >&6; }
 if ${ac_cv_lib_tinfo_halfdelay+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -23201,6 +23396,59 @@ $as_echo "#define HAVE_LIBTINFO 1" >>confdefs.h
 
 fi
 
+
+fi
+
+  else
+
+$as_echo "#define PR_USE_NCURSES 1" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for halfdelay in -ltinfo" >&5
+$as_echo_n "checking for halfdelay in -ltinfo... " >&6; }
+if ${ac_cv_lib_tinfo_halfdelay+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfo  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tinfo_halfdelay=yes
+else
+  ac_cv_lib_tinfo_halfdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfo_halfdelay" >&5
+$as_echo "$ac_cv_lib_tinfo_halfdelay" >&6; }
+if test "x$ac_cv_lib_tinfo_halfdelay" = xyes; then :
+   UTILS_LIBS="$UTILS_LIBS -ltinfo"
+
+$as_echo "#define HAVE_LIBTINFO 1" >>confdefs.h
+
+
+fi
+
+  fi
+fi
 
 if test x"$enable_nonblocking_log_open" != xno; then
 

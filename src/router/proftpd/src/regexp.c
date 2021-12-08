@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 
 #ifdef PR_USE_REGEX
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
 #include <pcre.h>
 
 struct regexp_rec {
@@ -77,7 +77,7 @@ static array_header *regexp_list = NULL;
 static const char *trace_channel = "regexp";
 
 static void regexp_free(pr_regex_t *pre) {
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   if (pre->pcre != NULL) {
 # if defined(HAVE_PCRE_PCRE_FREE_STUDY)
     pcre_free_study(pre->pcre_extra);
@@ -176,7 +176,7 @@ void pr_regexp_free(module *m, pr_regex_t *pre) {
   }
 }
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
 static int regexp_compile_pcre(pr_regex_t *pre, const char *pattern,
     int flags) {
   int err_offset, study_flags = 0;
@@ -237,6 +237,11 @@ int pr_regexp_compile_posix(pr_regex_t *pre, const char *pattern, int flags) {
     pattern);
   pre->pattern = pstrdup(pre->regex_pool, pattern);
 
+#if defined(REG_EXTENDED)
+  /* Enable modern ("extended") POSIX regular expressions by default. */
+  flags |= REG_EXTENDED;
+#endif /* REG_EXTENDED */
+
   pre->re = pcalloc(pre->regex_pool, sizeof(regex_t));
   res = regcomp(pre->re, pattern, flags);
 
@@ -244,7 +249,7 @@ int pr_regexp_compile_posix(pr_regex_t *pre, const char *pattern, int flags) {
 }
 
 int pr_regexp_compile(pr_regex_t *pre, const char *pattern, int flags) {
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   int pcre_flags = 0;
 
   /* Provide a simple mapping of POSIX regcomp(3) flags to
@@ -271,7 +276,7 @@ size_t pr_regexp_error(int errcode, const pr_regex_t *pre, char *buf,
     return 0;
   }
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   if (pre->pcre_errstr != NULL) {
     sstrncpy(buf, pre->pcre_errstr, bufsz);
     return strlen(pre->pcre_errstr) + 1; 
@@ -301,130 +306,184 @@ const char *pr_regexp_get_pattern(const pr_regex_t *pre) {
   return pre->pattern;
 }
 
-#ifdef PR_USE_PCRE
-static int regexp_exec_pcre(pr_regex_t *pre, const char *str,
+#if defined(PR_USE_PCRE)
+static int regexp_exec_pcre(pr_regex_t *pre, const char *text,
     size_t nmatches, regmatch_t *matches, int flags, unsigned long match_limit,
     unsigned long match_limit_recursion) {
+  int res, ovector_count = 0, *ovector = NULL;
+  size_t text_len;
+  pool *tmp_pool = NULL;
 
-  if (pre->pcre != NULL) {
-    int res;
-    size_t str_len;
+  if (pre->pcre == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
-    str_len = strlen(str);
+  text_len = strlen(text);
 
-    /* Use the default match limits, if set and if the caller did not
-     * explicitly provide limits.
-     */
-    if (match_limit == 0) {
-      match_limit = pcre_match_limit;
+  /* Use the default match limits, if set and if the caller did not
+   * explicitly provide limits.
+   */
+  if (match_limit == 0) {
+    match_limit = pcre_match_limit;
+  }
+
+  if (match_limit_recursion == 0) {
+    match_limit_recursion = pcre_match_limit_recursion;
+  }
+
+  if (match_limit > 0) {
+    if (pre->pcre_extra == NULL) {
+      pre->pcre_extra = pcalloc(pre->regex_pool, sizeof(pcre_extra));
     }
 
-    if (match_limit_recursion == 0) {
-      match_limit_recursion = pcre_match_limit_recursion;
+    pre->pcre_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
+    pre->pcre_extra->match_limit = match_limit;
+  }
+
+  if (match_limit_recursion > 0) {
+    if (pre->pcre_extra == NULL) {
+      pre->pcre_extra = pcalloc(pre->regex_pool, sizeof(pcre_extra));
     }
 
-    if (match_limit > 0) {
-      if (pre->pcre_extra == NULL) {
-        pre->pcre_extra = pcalloc(pre->regex_pool, sizeof(pcre_extra));
+    pre->pcre_extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+    pre->pcre_extra->match_limit_recursion = match_limit_recursion;
+  }
+
+  if (nmatches > 0 &&
+      matches != NULL) {
+    tmp_pool = make_sub_pool(pre->regex_pool);
+    pr_pool_tag(tmp_pool, "regexp tmp pool");
+
+    ovector_count = nmatches;
+    ovector = pcalloc(tmp_pool, sizeof(int) * nmatches * 3);
+  }
+
+  pr_trace_msg(trace_channel, 9,
+    "executing PCRE regex '%s' against subject '%s'",
+    pr_regexp_get_pattern(pre), text);
+  res = pcre_exec(pre->pcre, pre->pcre_extra, text, text_len, 0, flags,
+    ovector, ovector_count);
+
+  if (res < 0) {
+    if (tmp_pool != NULL) {
+      destroy_pool(tmp_pool);
+    }
+
+    if (pr_trace_get_level(trace_channel) >= 9) {
+      const char *reason = "unknown";
+
+      switch (res) {
+        case PCRE_ERROR_NOMATCH:
+          reason = "subject did not match pattern";
+          break;
+
+        case PCRE_ERROR_NULL:
+          reason = "null regex or subject";
+          break;
+
+        case PCRE_ERROR_BADOPTION:
+          reason = "unsupported options bit";
+          break;
+
+        case PCRE_ERROR_BADMAGIC:
+          reason = "bad magic number in regex";
+          break;
+
+        case PCRE_ERROR_UNKNOWN_OPCODE:
+        case PCRE_ERROR_INTERNAL:
+          reason = "internal PCRE error or corrupted regex";
+          break;
+
+        case PCRE_ERROR_NOMEMORY:
+          reason = "not enough memory for backreferences";
+          break;
+
+        case PCRE_ERROR_MATCHLIMIT:
+          reason = "match limit reached/exceeded";
+          break;
+
+        case PCRE_ERROR_RECURSIONLIMIT:
+          reason = "match limit recursion reached/exceeded";
+          break;
+
+        case PCRE_ERROR_BADUTF8:
+          reason = "invalid UTF8 subject used";
+          break;
+
+        case PCRE_ERROR_PARTIAL:
+          reason = "subject matched only partially; PCRE_PARTIAL flag not used";
+          break;
       }
 
-      pre->pcre_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
-      pre->pcre_extra->match_limit = match_limit;
-    }
-
-    if (match_limit_recursion > 0) {
-      if (pre->pcre_extra == NULL) {
-        pre->pcre_extra = pcalloc(pre->regex_pool, sizeof(pcre_extra));
-      }
-
-      pre->pcre_extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-      pre->pcre_extra->match_limit_recursion = match_limit_recursion;
-    }
-
-    pr_trace_msg(trace_channel, 9,
-      "executing PCRE regex '%s' against subject '%s'",
-      pr_regexp_get_pattern(pre), str);
-    res = pcre_exec(pre->pcre, pre->pcre_extra, str, str_len, 0, flags,
-      NULL, 0);
-
-    if (res < 0) {
-      if (pr_trace_get_level(trace_channel) >= 9) {
-        const char *reason = "unknown";
-
-        switch (res) {
-          case PCRE_ERROR_NOMATCH:
-            reason = "subject did not match pattern";
-            break;
-
-          case PCRE_ERROR_NULL:
-            reason = "null regex or subject";
-            break;
-
-          case PCRE_ERROR_BADOPTION:
-            reason = "unsupported options bit";
-            break;
-
-          case PCRE_ERROR_BADMAGIC:
-            reason = "bad magic number in regex";
-            break;
-
-          case PCRE_ERROR_UNKNOWN_OPCODE:
-          case PCRE_ERROR_INTERNAL:
-            reason = "internal PCRE error or corrupted regex";
-            break;
-
-          case PCRE_ERROR_NOMEMORY:
-            reason = "not enough memory for backreferences";
-            break;
-
-          case PCRE_ERROR_MATCHLIMIT:
-            reason = "match limit reached/exceeded";
-            break;
-
-          case PCRE_ERROR_RECURSIONLIMIT:
-            reason = "match limit recursion reached/exceeded";
-            break;
-
-          case PCRE_ERROR_BADUTF8:
-            reason = "invalid UTF8 subject used";
-            break;
-
-          case PCRE_ERROR_PARTIAL:
-            reason = "subject matched only partially; PCRE_PARTIAL flag not used";
-            break;
-        }
-
-        pr_trace_msg(trace_channel, 9,
-          "PCRE regex '%s' failed to match subject '%s': %s",
-          pr_regexp_get_pattern(pre), str, reason);
-
-      } else {
-        pr_trace_msg(trace_channel, 9,
-          "PCRE regex '%s' successfully matched subject '%s'",
-          pr_regexp_get_pattern(pre), str);
-      }
+      pr_trace_msg(trace_channel, 9,
+        "PCRE regex '%s' failed to match subject '%s': %s",
+        pr_regexp_get_pattern(pre), text, reason);
     }
 
     return res;
   }
 
-  errno = EINVAL;
-  return -1;
+  pr_trace_msg(trace_channel, 9,
+    "PCRE regex '%s' successfully matched subject '%s'",
+    pr_regexp_get_pattern(pre), text);
+
+  if (ovector_count > 0) {
+    /* Populate the provided POSIX regmatch_t array with the PCRE data. */
+    register unsigned int i;
+
+    for (i = 0; i < res; i++) {
+      matches[i].rm_so = ovector[i * 2];
+      matches[i].rm_eo = ovector[(i * 2) + 1];
+    }
+
+    /* Ensure the remaining items are set to proper defaults as well. */
+    for (; i < nmatches; i++) {
+      matches[i].rm_so = matches[i].rm_eo = -1;
+    }
+  }
+
+  destroy_pool(tmp_pool);
+
+  if (matches != NULL &&
+      pr_trace_get_level(trace_channel) >= 20) {
+    register unsigned int i;
+
+    for (i = 0; i < nmatches; i++) {
+      int match_len;
+      const char *match_text;
+
+      if (matches[i].rm_so == -1 ||
+          matches[i].rm_eo == -1) {
+        break;
+      }
+
+      match_text = &(text[matches[i].rm_so]);
+      match_len = matches[i].rm_eo - matches[i].rm_so;
+
+      pr_trace_msg(trace_channel, 20,
+        "PCRE regex '%s' match #%u: %.*s (start %ld, len %d)",
+        pr_regexp_get_pattern(pre), i, (int) match_len, match_text,
+        (long) matches[i].rm_so, match_len);
+    }
+  }
+
+  return 0;
 }
 #endif /* PR_USE_PCRE */
 
-static int regexp_exec_posix(pr_regex_t *pre, const char *str,
+static int regexp_exec_posix(pr_regex_t *pre, const char *text,
     size_t nmatches, regmatch_t *matches, int flags) {
   int res;
 
   pr_trace_msg(trace_channel, 9,
     "executing POSIX regex '%s' against subject '%s'",
-    pr_regexp_get_pattern(pre), str);
-  res = regexec(pre->re, str, nmatches, matches, flags);
+    pr_regexp_get_pattern(pre), text);
+  res = regexec(pre->re, text, nmatches, matches, flags);
   if (res == 0) {
     pr_trace_msg(trace_channel, 9,
       "POSIX regex '%s' successfully matched subject '%s'",
-      pr_regexp_get_pattern(pre), str);
+      pr_regexp_get_pattern(pre), text);
 
      if (matches != NULL &&
          pr_trace_get_level(trace_channel) >= 20) {
@@ -439,7 +498,7 @@ static int regexp_exec_posix(pr_regex_t *pre, const char *str,
            break;
          }
 
-         match_text = &(str[matches[i].rm_so]);
+         match_text = &(text[matches[i].rm_so]);
          match_len = matches[i].rm_eo - matches[i].rm_so;
 
          pr_trace_msg(trace_channel, 20,
@@ -450,43 +509,41 @@ static int regexp_exec_posix(pr_regex_t *pre, const char *str,
      }
 
   } else {
-    const char *reason = "unknown";
-
     if (pr_trace_get_level(trace_channel) >= 9) {
-      switch (res) {
-        case REG_NOMATCH:
-          reason = "subject did not match pattern";
-          break;
-      }
-    }
+      const char *reason = "subject did not match pattern";
 
-    pr_trace_msg(trace_channel, 9,
-      "POSIX regex '%s' failed to match subject '%s': %s",
-       pr_regexp_get_pattern(pre), str, reason);
+      /* NOTE: Expectation of `res` values here are mixed when PCRE
+       * support, and the <pcreposix.h> header, are involved.
+       */
+
+      pr_trace_msg(trace_channel, 9,
+        "POSIX regex '%s' failed to match subject '%s': %s (%d)",
+         pr_regexp_get_pattern(pre), text, reason, res);
+    }
   }
 
   return res;
 }
 
-int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
+int pr_regexp_exec(pr_regex_t *pre, const char *text, size_t nmatches,
     regmatch_t *matches, int flags, unsigned long match_limit,
     unsigned long match_limit_recursion) {
   int res;
 
   if (pre == NULL ||
-      str == NULL) {
+      text == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   if (pre->pcre != NULL) {
-    return regexp_exec_pcre(pre, str, nmatches, matches, flags, match_limit,
+    return regexp_exec_pcre(pre, text, nmatches, matches, flags, match_limit,
       match_limit_recursion);
   }
 #endif /* PR_USE_PCRE */
 
-  res = regexp_exec_posix(pre, str, nmatches, matches, flags);
+  res = regexp_exec_posix(pre, text, nmatches, matches, flags);
 
   /* Make sure that we return a negative value to indicate a failed match;
    * PCRE already does this.
@@ -501,7 +558,7 @@ int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
 int pr_regexp_set_limits(unsigned long match_limit,
     unsigned long match_limit_recursion) {
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   pcre_match_limit = match_limit;
   pcre_match_limit_recursion = match_limit_recursion;
 #endif
@@ -521,7 +578,7 @@ void init_regexp(void) {
   pr_event_register(NULL, "core.restart", regexp_restart_ev, NULL);
   pr_event_register(NULL, "core.exit", regexp_exit_ev, NULL);
 
-#ifdef PR_USE_PCRE
+#if defined(PR_USE_PCRE)
   pr_log_debug(DEBUG2, "using PCRE %s", pcre_version());
 #endif /* PR_USE_PCRE */
 }

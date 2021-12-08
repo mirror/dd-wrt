@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -375,7 +375,22 @@ MODRET auth_err_pass(cmd_rec *cmd) {
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (user != NULL) {
-    login_failed(cmd->tmp_pool, user);
+    const void *hint;
+
+    /* Look for any notes/hints attached to this command which might indicate
+     * that it is not a real PASS command error, but rather a fake command
+     * dispatched for e.g. logging/handling by other modules.  We pay attention
+     * to this here due to e.g. AIX loginfailed(3) semantics (Issue #693).
+     */
+    hint = pr_table_get(cmd->notes, "mod_sftp.nonfatal-attempt", NULL);
+    if (hint == NULL) {
+      login_failed(cmd->tmp_pool, user);
+
+    } else {
+      pr_trace_msg("auth", 19,
+        "ignoring non-fatal %s auth attempt for user '%s' from mod_sftp",
+        (const char *) hint, user);
+    }
   }
 
   /* Remove the stashed original USER name here in a LOG_CMD_ERR handler, so

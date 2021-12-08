@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,20 +97,20 @@ START_TEST (set_create_test) {
   fail_unless(errno == EPERM, "Failed to set errno to EPERM");
 
   res = xaset_create(p, NULL);
-  fail_unless(res != NULL);
+  fail_unless(res != NULL, "Expected non-null result");
   fail_unless(res->pool == p, "Expected %p, got %p", p, res->pool);
 
   permanent_pool = make_sub_pool(p);
 
   res = xaset_create(NULL, NULL);
-  fail_unless(res != NULL);
+  fail_unless(res != NULL, "Expected non-null result");
   fail_unless(res->pool == permanent_pool, "Expected %p, got %p",
     permanent_pool, res->pool);
   fail_unless(res->xas_compare == NULL, "Expected NULL, got %p",
     res->xas_compare);
 
   res = xaset_create(p, (XASET_COMPARE) item_cmp);
-  fail_unless(res != NULL);
+  fail_unless(res != NULL, "Expected non-null result");
   fail_unless(res->pool == p, "Expected %p, got %p", p, res->pool);
   fail_unless(res->xas_compare == (XASET_COMPARE) item_cmp,
     "Expected %p, got %p", item_cmp, res->xas_compare);
@@ -355,12 +355,12 @@ START_TEST (set_remove_test) {
   fail_unless(res == 0, "Failed to add item2");
 
   member = (xasetmember_t *) item1;
-  fail_unless(member->next == NULL);
-  fail_unless(member->prev != NULL);
+  fail_unless(member->next == NULL, "Expected member->next to be null");
+  fail_unless(member->prev != NULL, "Expected member->prev to not be null");
 
   member = (xasetmember_t *) item2;
-  fail_unless(member->next != NULL);
-  fail_unless(member->prev == NULL);
+  fail_unless(member->next != NULL, "Expected member->next to not be null");
+  fail_unless(member->prev == NULL, "Expected member->prev to be null");
 
   member = set->xas_list;
   fail_unless(member == (xasetmember_t *) item2,
@@ -371,8 +371,8 @@ START_TEST (set_remove_test) {
     strerror(errno));
 
   member = (xasetmember_t *) item2;
-  fail_unless(member->next == NULL);
-  fail_unless(member->prev == NULL);
+  fail_unless(member->next == NULL, "Expected member->next to be null");
+  fail_unless(member->prev == NULL, "Expected member->prev to be null");
 
   member = set->xas_list;
   fail_unless(member == (xasetmember_t *) item1,
@@ -383,8 +383,8 @@ START_TEST (set_remove_test) {
     strerror(errno));
 
   member = (xasetmember_t *) item1;
-  fail_unless(member->next == NULL);
-  fail_unless(member->prev == NULL);
+  fail_unless(member->next == NULL, "Expected member->next to be null");
+  fail_unless(member->prev == NULL, "Expected member->prev to be null");
 
   member = set->xas_list;
   fail_unless(member == NULL, "Expected list to be empty, got %p", member);

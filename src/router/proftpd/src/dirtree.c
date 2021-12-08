@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2545,7 +2545,12 @@ int fixup_servers(xaset_t *list) {
       }
  
     } else {
-      s->addr = pr_netaddr_get_addr(s->pool, s->ServerAddress, NULL);
+      int flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE;
+
+      /* Make sure we properly handle a ServerAddress that is an
+       * interface/device name here (Issue #1282).
+       */
+      s->addr = pr_netaddr_get_addr2(s->pool, s->ServerAddress, NULL, flags);
     }
 
     if (s->addr == NULL) {

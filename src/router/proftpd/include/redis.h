@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017 The ProFTPD Project team
+ * Copyright (c) 2017-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,8 +55,14 @@ int pr_redis_conn_destroy(pr_redis_t *redis);
 int pr_redis_conn_set_namespace(pr_redis_t *redis, module *m,
   const void *prefix, size_t prefixsz);
 
+/* Redis server version. */
+int pr_redis_conn_get_version(pr_redis_t *redis, unsigned int *major_version,
+  unsigned int *minor_version, unsigned int *patch_version);
+
 /* Authenticate to a password-protected Redis server. */
 int pr_redis_auth(pr_redis_t *redis, const char *password);
+int pr_redis_auth2(pr_redis_t *redis, const char *username,
+  const char *password);
 
 /* Select the database used by the Redis server. */
 int pr_redis_select(pr_redis_t *redis, const char *db_idx);
@@ -304,6 +310,8 @@ int pr_redis_sentinel_get_masters(pool *p, pr_redis_t *redis,
 /* For internal use only */
 int redis_set_server(const char *server, int port, unsigned long flags,
   const char *password, const char *db_idx);
+int redis_set_server2(const char *server, int port, unsigned long flags,
+  const char *username, const char *password, const char *db_idx);
 int redis_set_sentinels(array_header *sentinels, const char *name);
 int redis_set_timeouts(unsigned long connect_millis, unsigned long io_millis);
 

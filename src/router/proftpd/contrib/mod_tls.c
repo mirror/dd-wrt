@@ -2,7 +2,7 @@
  * mod_tls - An RFC2228 SSL/TLS module for ProFTPD
  *
  * Copyright (c) 2000-2002 Peter 'Luna' Runestig <peter@runestig.com>
- * Copyright (c) 2002-2020 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2002-2021 TJ Saunders <tj@castaglia.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modifi-
@@ -673,6 +673,7 @@ static int tls_openlog(void);
 static int tls_seed_prng(void);
 static int tls_sess_init(void);
 static void tls_setup_environ(pool *, SSL *);
+static void tls_setup_notes(pool *, SSL *);
 static int tls_verify_cb(int, X509_STORE_CTX *);
 static int tls_verify_crl(int, X509_STORE_CTX *);
 static int tls_verify_ocsp(int, X509_STORE_CTX *);
@@ -1026,6 +1027,10 @@ static void tls_info_cb(const SSL *ssl, int where, int ret) {
         ssl_state == SSL23_ST_SR_CLNT_HELLO_A) {
 #endif /* OpenSSL-1.1.x and later */
 
+      if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
+        tls_log("[info] %s: %s", str, SSL_state_string_long(ssl));
+      }
+
       /* If we have already completed our initial handshake, then this might
        * a session renegotiation.
        */
@@ -1063,6 +1068,10 @@ static void tls_info_cb(const SSL *ssl, int where, int ret) {
 #if OPENSSL_VERSION_NUMBER >= 0x009080cfL && \
     OPENSSL_VERSION_NUMBER < 0x10100000L
     } else if (ssl_state & SSL_ST_RENEGOTIATE) {
+      if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
+        tls_log("[info] %s: %s", str, SSL_state_string_long(ssl));
+      }
+
       if ((ssl == ctrl_ssl && !tls_ctrl_need_init_handshake) ||
           (ssl != ctrl_ssl && !tls_data_need_init_handshake)) {
 
@@ -1099,17 +1108,22 @@ static void tls_info_cb(const SSL *ssl, int where, int ret) {
 #endif
     }
 
-    if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
-      tls_log("[info] %s: %s", str, SSL_state_string_long(ssl));
-    }
-
   } else if (where & SSL_CB_HANDSHAKE_START) {
     if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
-      tls_log("[info] %s: %s", str, SSL_state_string_long(ssl));
+      tls_log("[info] %s: %s (HANDSHAKE_START)", str,
+        SSL_state_string_long(ssl));
     }
 
   } else if (where & SSL_CB_HANDSHAKE_DONE) {
-    if (ssl == ctrl_ssl) {
+    if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
+      tls_log("[info] %s: %s (HANDSHAKE_DONE)", str,
+        SSL_state_string_long(ssl));
+    }
+
+    /* ctrl_ssl is NULL if this is our initial ctrl SSL, and the handshake has
+     * not be completed yet.
+     */
+    if (ctrl_ssl == NULL) {
       if (tls_ctrl_need_init_handshake == FALSE) {
         int reused;
 
@@ -1146,10 +1160,6 @@ static void tls_info_cb(const SSL *ssl, int where, int ret) {
 
     if (tls_flags & ~TLS_SESS_DATA_RENEGOTIATING) {
       tls_flags &= ~TLS_SESS_DATA_RENEGOTIATING;
-    }
-
-    if (tls_opts & TLS_OPT_ENABLE_DIAGS) {
-      tls_log("[info] %s: %s", str, SSL_state_string_long(ssl));
     }
 
   } else if (where & SSL_CB_LOOP) {
@@ -6833,14 +6843,23 @@ static SSL_TICKET_RETURN tls_decrypt_session_ticket_data_upload_cb(SSL *ssl,
     SSL_SESSION *ssl_session, const unsigned char *key_name, size_t key_namelen,
     SSL_TICKET_STATUS status, void *user_data) {
   SSL_TICKET_RETURN res;
-  int ssl_version, renew_tickets = TRUE;
+  int renew_tickets = TRUE;
 
-  ssl_version = SSL_SESSION_get_protocol_version(ssl_session);
+  /* Avoid using the given SSL_SESSION pointer unless the status indicates that
+   * that pointer is valid (Issue #1063).
+   */
+
+  if (status != SSL_TICKET_EMPTY &&
+      status != SSL_TICKET_NO_DECRYPT) {
+    int ssl_version;
+
+    ssl_version = SSL_SESSION_get_protocol_version(ssl_session);
 # if defined(TLS1_3_VERSION)
-  if (ssl_version == TLS1_3_VERSION) {
-    pr_trace_msg(trace_channel, 29,
-      "suppressing renewal of TLSv1.3 tickets for data transfers");
-    renew_tickets = FALSE;
+    if (ssl_version == TLS1_3_VERSION) {
+      pr_trace_msg(trace_channel, 29,
+        "suppressing renewal of TLSv1.3 tickets for data transfers");
+      renew_tickets = FALSE;
+    }
   }
 # endif /* TLS1_3_VERSION */
 
@@ -7087,10 +7106,6 @@ static SSL_CTX *tls_init_ctx(server_rec *s) {
     ssl_opts |= SSL_OP_CIPHER_SERVER_PREFERENCE;
   }
 #endif /* SSL_OP_CIPHER_SERVER_PREFERENCE */
-
-#if defined(SSL_OP_PRIORITIZE_CHACHA)
-  ssl_opts |= SSL_OP_PRIORITIZE_CHACHA;
-#endif /* SSL_OP_PRIORITIZE_CHACHA */
 
   SSL_CTX_set_options(ctx, ssl_opts);
 
@@ -7379,6 +7394,7 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
 
   /* If configured, set a timer for the handshake. */
   if (tls_handshake_timeout) {
+    tls_handshake_timed_out = FALSE;
     tls_handshake_timer_id = pr_timer_add(tls_handshake_timeout, -1,
       &tls_module, tls_handshake_timeout_cb, "SSL/TLS handshake");
   }
@@ -7581,7 +7597,7 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
 
             ssl_opts = SSL_get_options(ssl);
 
-#ifdef SSL_OP_NO_SSLv2
+#if SSL_OP_NO_SSLv2
             if (ssl_opts & SSL_OP_NO_SSLv2) {
               proto_str = pstrcat(tmp_pool, proto_str, *proto_str ? ", " : "",
                 "SSLv2", NULL);
@@ -7638,6 +7654,60 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
             }
             break;
           }
+
+#if defined(SSL_R_VERSION_TOO_LOW)
+          case SSL_R_VERSION_TOO_LOW: {
+            int client_version;
+
+            client_version = SSL_client_version(ssl);
+            switch (client_version) {
+# if defined(SSL3_VERSION) && defined(OPENSSL_NO_SSL3)
+              case SSL3_VERSION:
+                tls_log("%s: %s lacks support for client requested TLS "
+                  "protocol version: %s", msg, OPENSSL_VERSION_TEXT,
+                  SSL_get_version(ssl));
+                break;
+# endif /* SSLv3 and OPENSSL_NO_SSL3 */
+
+# if defined(TLS1_VERSION) && defined(OPENSSL_NO_TLS1)
+              case TLS1_VERSION:
+                tls_log("%s: %s lacks support for client requested TLS "
+                  "protocol version: %s", msg, OPENSSL_VERSION_TEXT,
+                  SSL_get_version(ssl));
+                break;
+# endif /* TLSv1 and OPENSSL_NO_TLS1 */
+
+# if defined(TLS1_1_VERSION) && defined(OPENSSL_NO_TLS1_1)
+              case TLS1_1_VERSION:
+                tls_log("%s: %s lacks support for client requested TLS "
+                  "protocol version: %s", msg, OPENSSL_VERSION_TEXT,
+                  SSL_get_version(ssl));
+                break;
+# endif /* TLSv1.1 and OPENSSL_NO_TLS1_1 */
+
+# if defined(TLS1_2_VERSION) && defined(OPENSSL_NO_TLS1_2)
+              case TLS1_2_VERSION:
+                tls_log("%s: %s lacks support for client requested TLS "
+                  "protocol version: %s", msg, OPENSSL_VERSION_TEXT,
+                  SSL_get_version(ssl));
+                break;
+# endif /* TLSv1.2 and OPENSSL_NO_TLS1_2 */
+
+# if defined(TLS1_3_VERSION) && defined(OPENSSL_NO_TLS1_3)
+              case TLS1_3_VERSION:
+                tls_log("%s: %s lacks support for client requested TLS "
+                  "protocol version: %s", msg, OPENSSL_VERSION_TEXT,
+                  SSL_get_version(ssl));
+                break;
+# endif /* TLSv1.3 and OPENSSL_NO_TLS1_3 */
+
+              default:
+                tls_log("%s: perhaps client requested unsupported TLS protocol "
+                  "version: %s", msg, SSL_get_version(ssl));
+            }
+            break;
+          }
+#endif /* SSL_R_VERSION_TOO_LOW */
 
           default:
             break;
@@ -7853,8 +7923,9 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
       SSL_get_cipher_bits(ssl, NULL),
       reused > 0 ? ", resumed session" : "");
 
-    /* Setup the TLS environment variables, if requested. */
+    /* Setup the TLS environment variables and notes. */
     tls_setup_environ(session.pool, ssl);
+    tls_setup_notes(session.pool, ssl);
 
     if (reused > 0) {
       pr_log_writefile(tls_logfd, MOD_TLS_VERSION, "%s",
@@ -7923,10 +7994,13 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
            * in the control session tickets; the data session tickets presented
            * should have the exact same appdata, if they are coming from our
            * expected control session.
+           *
+           * However, we cannot just assume that session tickets will be used
+           * only for TLSv1.3 sessions.  It is possible that session tickets,
+           * rather than session IDs, will be used for TLSv1.2 and earlier
+           * sessions as well.
            */
-          if (matching_sess != 0 &&
-              SSL_version(ctrl_ssl) == TLS1_3_VERSION &&
-              SSL_version(ssl) == TLS1_3_VERSION) {
+          if (matching_sess != 0) {
 
 # if defined(PR_USE_OPENSSL_SSL_SESSION_TICKET_CALLBACK)
             if (tls_ctrl_ticket_appdata_len > 0 &&
@@ -8110,6 +8184,7 @@ static int tls_connect(conn_t *conn) {
 
   /* If configured, set a timer for the handshake. */
   if (tls_handshake_timeout) {
+    tls_handshake_timed_out = FALSE;
     tls_handshake_timer_id = pr_timer_add(tls_handshake_timeout, -1,
       &tls_module, tls_handshake_timeout_cb, "SSL/TLS handshake");
   }
@@ -9834,8 +9909,30 @@ static void tls_setup_environ(pool *p, SSL *ssl) {
     tls_log("unable to set client certificate environ variables: "
       "Client certificate unavailable");
   }
+}
 
-  return;
+static void tls_setup_notes(pool *p, SSL *ssl) {
+  SSL_CIPHER *cipher = NULL;
+  const char *sni = NULL;
+
+  (void) pr_table_add_dup(session.notes, "FTPS", "1", 0);
+  (void) pr_table_add_dup(session.notes, "TLS_PROTOCOL", SSL_get_version(ssl),
+    0);
+
+  /* Process the TLS cipher-related values. */
+  cipher = (SSL_CIPHER *) SSL_get_current_cipher(ssl);
+  if (cipher != NULL) {
+    (void) pr_table_add_dup(session.notes, "TLS_CIPHER",
+      SSL_CIPHER_get_name(cipher), 0);
+
+    sni = pr_table_get(session.notes, "mod_tls.sni", NULL);
+    if (sni != NULL) {
+      (void) pr_table_add_dup(session.notes, "TLS_SERVER_NAME", sni, 0);
+    }
+
+    (void) pr_table_add_dup(session.notes, "TLS_LIBRARY_VERSIONS",
+      OPENSSL_VERSION_TEXT, 0);
+  }
 }
 
 static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
@@ -10036,10 +10133,10 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_CTX_get1_crls(store_ctx, subject);
+  crls = X509_STORE_CTX_get1_crls(store_ctx, issuer);
 #elif OPENSSL_VERSION_NUMBER >= 0x10000000L && \
       !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_get1_crls(store_ctx, subject);
+  crls = X509_STORE_get1_crls(store_ctx, issuer);
 #else
   /* Your OpenSSL is before 1.0.0.  You really need to upgrade. */
   crls = NULL;
@@ -10158,6 +10255,9 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
         ASN1_INTEGER *sn;
 
         revoked = sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), j);
+        if (revoked == NULL) {
+          continue;
+        }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
         sn = X509_REVOKED_get0_serialNumber(revoked);
@@ -11691,38 +11791,30 @@ static int tls_netio_close_cb(pr_netio_stream_t *nstrm) {
 
   ssl = (SSL *) pr_table_get(nstrm->notes, TLS_NETIO_NOTE, NULL);
   if (ssl != NULL) {
-    if (nstrm->strm_type == PR_NETIO_STRM_CTRL &&
-        nstrm->strm_mode == PR_NETIO_IO_WR) {
-      if (tls_ctrl_rd_nstrm != NULL) {
-        pr_table_remove(tls_ctrl_rd_nstrm->notes, TLS_NETIO_NOTE, NULL);
+    if (nstrm->strm_type == PR_NETIO_STRM_CTRL) {
+      if (nstrm->strm_mode == PR_NETIO_IO_RD) {
         tls_ctrl_rd_nstrm = NULL;
-      }
 
-      if (tls_ctrl_wr_nstrm != NULL) {
-        pr_table_remove(tls_ctrl_wr_nstrm->notes, TLS_NETIO_NOTE, NULL);
+      } else if (nstrm->strm_mode == PR_NETIO_IO_WR) {
         tls_ctrl_wr_nstrm = NULL;
-      }
 
-      tls_end_sess(ssl, session.c, 0);
-      tls_ctrl_netio = NULL;
-      tls_flags &= ~TLS_SESS_ON_CTRL;
+        tls_end_sess(ssl, session.c, 0);
+        tls_ctrl_netio = NULL;
+        tls_flags &= ~TLS_SESS_ON_CTRL;
+      }
     }
 
-    if (nstrm->strm_type == PR_NETIO_STRM_DATA &&
-        nstrm->strm_mode == PR_NETIO_IO_WR) {
-      if (tls_data_rd_nstrm != NULL) {
-        pr_table_remove(tls_data_rd_nstrm->notes, TLS_NETIO_NOTE, NULL);
+    if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
+      if (nstrm->strm_mode == PR_NETIO_IO_RD) {
         tls_data_rd_nstrm = NULL;
-      }
 
-      if (tls_data_wr_nstrm != NULL) {
-        pr_table_remove(tls_data_wr_nstrm->notes, TLS_NETIO_NOTE, NULL);
+      } else if (nstrm->strm_mode == PR_NETIO_IO_WR) {
         tls_data_wr_nstrm = NULL;
-      }
 
-      tls_end_sess(ssl, session.d, 0);
-      tls_data_netio = NULL;
-      tls_flags &= ~TLS_SESS_ON_DATA;
+        tls_end_sess(ssl, session.d, 0);
+        tls_data_netio = NULL;
+        tls_flags &= ~TLS_SESS_ON_DATA;
+      }
     }
   }
 
@@ -13531,11 +13623,20 @@ MODRET set_tlsdsakeyfile(cmd_rec *cmd) {
       unsigned long err_code;
 
       err_code = ERR_peek_error();
-      if (ERR_GET_REASON(err_code) != PEM_R_BAD_PASSWORD_READ) {
-        PRIVS_RELINQUISH
+      switch (ERR_GET_REASON(err_code)) {
+        /* These are "expected" error codes from working with
+         * passphrase-protected keys.
+         */
+        case EVP_R_BAD_DECRYPT:
+        case PEM_R_BAD_PASSWORD_READ:
+          break;
 
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
-          tls_get_errors2(cmd->tmp_pool), NULL));
+        default: {
+          PRIVS_RELINQUISH
+
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
+            tls_get_errors2(cmd->tmp_pool), NULL));
+        }
       }
     }
 
@@ -13621,11 +13722,20 @@ MODRET set_tlseckeyfile(cmd_rec *cmd) {
       unsigned long err_code;
 
       err_code = ERR_peek_error();
-      if (ERR_GET_REASON(err_code) != PEM_R_BAD_PASSWORD_READ) {
-        PRIVS_RELINQUISH
+      switch (ERR_GET_REASON(err_code)) {
+        /* These are "expected" error codes from working with
+         * passphrase-protected keys.
+         */
+        case EVP_R_BAD_DECRYPT:
+        case PEM_R_BAD_PASSWORD_READ:
+          break;
 
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
-          tls_get_errors2(cmd->tmp_pool), NULL));
+        default: {
+          PRIVS_RELINQUISH
+
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
+            tls_get_errors2(cmd->tmp_pool), NULL));
+        }
       }
     }
 
@@ -14377,11 +14487,20 @@ MODRET set_tlsrsakeyfile(cmd_rec *cmd) {
       unsigned long err_code;
 
       err_code = ERR_peek_error();
-      if (ERR_GET_REASON(err_code) != PEM_R_BAD_PASSWORD_READ) {
-        PRIVS_RELINQUISH
+      switch (ERR_GET_REASON(err_code)) {
+        /* These are "expected" error codes from working with
+         * passphrase-protected keys.
+         */
+        case EVP_R_BAD_DECRYPT:
+        case PEM_R_BAD_PASSWORD_READ:
+          break;
 
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
-          tls_get_errors2(cmd->tmp_pool), NULL));
+        default: {
+          PRIVS_RELINQUISH
+
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path, "': ",
+            tls_get_errors2(cmd->tmp_pool), NULL));
+        }
       }
     }
 
@@ -16163,6 +16282,30 @@ static void tls_lookup_all(server_rec *s) {
 
 /* SSL setters */
 
+static int tls_ssl_set_cert_chain(SSL *ssl) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  int res;
+
+  if (tls_ca_chain == NULL) {
+    return 0;
+  }
+
+  tls_log("adding certs from '%s' to SSL certificate chain", tls_ca_chain);
+  PRIVS_ROOT
+  res = SSL_use_certificate_chain_file(ssl, tls_ca_chain);
+  PRIVS_RELINQUISH
+
+  if (res != 1) {
+    tls_log("unable to read certificate chain '%s': %s", tls_ca_chain,
+      tls_get_errors());
+    return -1;
+  }
+#endif /* OpenSSL 1.1.x and later */
+
+  return 0;
+}
+
 static int tls_ssl_set_ciphers(SSL *ssl) {
   SSL_set_cipher_list(ssl, tls_cipher_suite);
   return 0;
@@ -16251,10 +16394,6 @@ static int tls_ssl_set_options(SSL *ssl) {
     SSL_set_options(ssl, ssl_opts);
   }
 #endif /* SSL_OP_CIPHER_SERVER_PREFERENCE */
-
-#if defined(SSL_OP_PRIORITIZE_CHACHA)
-  SSL_set_options(ssl, SSL_OP_PRIORITIZE_CHACHA);
-#endif /* SSL_OP_PRIORITIZE_CHACHA */
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
   /* Install a callback for logging OpenSSL message information, if requested.
@@ -16677,6 +16816,13 @@ static int tls_ssl_set_all(server_rec *s, SSL *ssl) {
    */
   if (tls_ssl_set_session_id_context(s, ssl) < 0 ||
       tls_ctx_set_session_id_context(s, ctx) < 0) {
+    return -1;
+  }
+
+  /* Inexplicable OpenSSL errors occur if the cert chain is updated after
+   * calling SSL_set_SSL_CTX, so we do it beforehand.
+   */
+  if (tls_ssl_set_cert_chain(ssl) < 0) {
     return -1;
   }
 
@@ -17324,10 +17470,10 @@ static int tls_ctx_set_rsa_cert(SSL_CTX *ctx, X509 **rsa_cert) {
 
 static int tls_ctx_set_cert_chain(SSL_CTX *ctx, X509 *dsa_cert, X509 *ec_cert,
     X509 *rsa_cert) {
+#if defined(SSL_CTRL_CHAIN_CERT)
   BIO *bio;
   X509 *cert;
   unsigned int count = 0;
-  int res;
 
   if (tls_ca_chain == NULL) {
     return 0;
@@ -17335,12 +17481,18 @@ static int tls_ctx_set_cert_chain(SSL_CTX *ctx, X509 *dsa_cert, X509 *ec_cert,
 
   PRIVS_ROOT
   bio = BIO_new_file(tls_ca_chain, "r");
-  if (bio == NULL) {
-    PRIVS_RELINQUISH
+  PRIVS_RELINQUISH
 
+  if (bio == NULL) {
     tls_log("unable to read certificate chain '%s': %s", tls_ca_chain,
       tls_get_errors());
     return 0;
+  }
+
+  if (SSL_CTX_clear_chain_certs(ctx) != 1) {
+    tls_log("error clearing SSL_CTX chain certs: %s", tls_get_errors());
+    BIO_free(bio);
+    return -1;
   }
 
   cert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
@@ -17374,9 +17526,9 @@ static int tls_ctx_set_cert_chain(SSL_CTX *ctx, X509 *dsa_cert, X509 *ec_cert,
       }
     }
 
-    res = SSL_CTX_add_extra_chain_cert(ctx, cert);
-    if (res != 1) {
-      tls_log("error adding cert to certificate chain: %s", tls_get_errors());
+    if (SSL_CTX_add1_chain_cert(ctx, cert) != 1) {
+      tls_log("error adding cert to SSL_CTX certificate chain: %s",
+        tls_get_errors());
       X509_free(cert);
       break;
     }
@@ -17385,10 +17537,13 @@ static int tls_ctx_set_cert_chain(SSL_CTX *ctx, X509 *dsa_cert, X509 *ec_cert,
     cert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
   }
 
-  PRIVS_RELINQUISH
   BIO_free(bio);
+  ERR_clear_error();
 
-  tls_log("added %u certs from '%s' to certificate chain", count, tls_ca_chain);
+  tls_log("added %u certs from '%s' to SSL_CTX certificate chain", count,
+    tls_ca_chain);
+#endif /* SSL_CTRL_CHAIN_CERT */
+
   return 0;
 }
 

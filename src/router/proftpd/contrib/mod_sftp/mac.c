@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp MACs
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include "umac.h"
 
 struct sftp_mac {
+  pool *pool;
   const char *algo;
   int algo_type;
 
@@ -64,15 +65,15 @@ struct sftp_mac {
  */
 
 static struct sftp_mac read_macs[] = {
-  { NULL, 0, NULL, NULL, 0 },
-  { NULL, 0, NULL, NULL, 0 }
+  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_read_ctxs[2];
 static struct umac_ctx *umac_read_ctxs[2];
 
 static struct sftp_mac write_macs[] = {
-  { NULL, 0, NULL, NULL, 0 },
-  { NULL, 0, NULL, NULL, 0 }
+  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_write_ctxs[2];
 static struct umac_ctx *umac_write_ctxs[2];
@@ -687,7 +688,18 @@ int sftp_mac_set_read_algo(const char *algo) {
     return -1;
   }
 
-  read_macs[idx].algo = algo;
+  /* Note that we use a new pool, each time the algorithm is set (which
+   * happens during key exchange) to prevent undue memory growth for
+   * long-lived sessions with many rekeys.
+   */
+  if (read_macs[idx].pool != NULL) {
+    destroy_pool(read_macs[idx].pool);
+  }
+
+  read_macs[idx].pool = make_sub_pool(sftp_pool);
+  pr_pool_tag(read_macs[idx].pool, "SFTP MAC read pool");
+  read_macs[idx].algo = pstrdup(read_macs[idx].pool, algo);
+
   if (strncmp(read_macs[idx].algo, "umac-64@openssh.com", 12) == 0) {
     read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
     umac_read_ctxs[idx] = umac_alloc();
@@ -820,7 +832,18 @@ int sftp_mac_set_write_algo(const char *algo) {
     return -1;
   }
 
-  write_macs[idx].algo = algo;
+  /* Note that we use a new pool, each time the algorithm is set (which
+   * happens during key exchange) to prevent undue memory growth for
+   * long-lived sessions with many rekeys.
+   */
+  if (write_macs[idx].pool != NULL) {
+    destroy_pool(write_macs[idx].pool);
+  }
+
+  write_macs[idx].pool = make_sub_pool(sftp_pool);
+  pr_pool_tag(write_macs[idx].pool, "SFTP MAC write pool");
+  write_macs[idx].algo = pstrdup(write_macs[idx].pool, algo);
+
   if (strncmp(write_macs[idx].algo, "umac-64@openssh.com", 12) == 0) {
     write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
     umac_write_ctxs[idx] = umac_alloc();

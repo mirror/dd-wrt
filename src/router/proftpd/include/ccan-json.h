@@ -26,6 +26,10 @@
 
 #include <stddef.h>
 
+#ifndef CCAN_JSON_MAX_DEPTH
+# define CCAN_JSON_MAX_DEPTH	16
+#endif /* CCAN_JSON_MAX_DEPTH */
+
 typedef enum {
 	JSON_NULL,
 	JSON_BOOL,

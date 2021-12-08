@@ -2241,6 +2241,19 @@ your <code>proftpd.conf</code>:
 This trace logging can generate large files; it is intended for debugging use
 only, and should be removed from any production configuration.
 
+<p>
+<b>Note Variables</b><br>
+The <code>mod_tls</code> module provides the following <em>notes</em>, for use
+via the <code>%{note:...}</code> syntax:
+<ul>
+  <li><code>FTPS</code>
+  <li><code>TLS_PROTOCOL</code>
+  <li><code>TLS_CIPHER</code>
+  <li><code>TLS_LIBRARY_VERSION</code>
+</ul>
+These <em>notes</em> are similar to the environment variables provided when
+<code>TLSOptions StdEnvVars</code> is used.
+
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
@@ -2324,7 +2337,7 @@ in your <code>configure</code> command, <i>e.g.</i>:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2020 TJ Saunders<br>
+&copy; Copyright 2002-2021 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

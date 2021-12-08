@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2020 The ProFTPD Project team
+ * Copyright (c) 2020-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 #include "buildstamp.h"
 
 /* Application version (in various forms) */
-#define PROFTPD_VERSION_NUMBER		0x0001030706
-#define PROFTPD_VERSION_TEXT		"1.3.7a"
+#define PROFTPD_VERSION_NUMBER		0x0001030708
+#define PROFTPD_VERSION_TEXT		"1.3.7c"
 
 /* Module API version */
 #define PR_MODULE_API_VERSION		0x20

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
- * Copyright (c) 2001-2020 TJ Saunders
+ * Copyright (c) 2001-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2319,21 +2319,28 @@ static void radius_add_passwd(radius_packet_t *packet, unsigned char type,
 
   pwlen = strlen((const char *) passwd);
 
+  /* Clear the buffers. */
+  memset(pwhash, '\0', sizeof(pwhash));
+
   if (pwlen == 0) {
     pwlen = RADIUS_PASSWD_LEN;
 
-  } if ((pwlen & (RADIUS_PASSWD_LEN - 1)) != 0) {
+  } else if ((pwlen & (RADIUS_PASSWD_LEN - 1)) != 0) {
+    /* pwlen is not a multiple of RADIUS_PASSWD_LEN, need to prepare a proper
+     * buffer.
+     */
+    memcpy(pwhash, passwd, pwlen);
 
     /* Round up the length. */
     pwlen += (RADIUS_PASSWD_LEN - 1);
 
     /* Truncate the length, as necessary. */
     pwlen &= ~(RADIUS_PASSWD_LEN - 1);
-  }
 
-  /* Clear the buffers. */
-  memset(pwhash, '\0', sizeof(pwhash));
-  memcpy(pwhash, passwd, pwlen);
+  } else {
+    /* pwlen is a multiple of RADIUS_PASSWD_LEN, we can just use it. */
+    memcpy(pwhash, passwd, pwlen);
+  }
 
   /* Find the password attribute. */
   attrib = radius_get_attrib(packet, RADIUS_PASSWORD);

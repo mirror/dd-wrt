@@ -75,6 +75,17 @@ static void assert_jot_class_filter(const char *class_name) {
   (void) pr_jot_filters_destroy(filters);
 }
 
+static void assert_jot_command_with_class_filter(const char *rules) {
+  pr_jot_filters_t *filters;
+
+  mark_point();
+  filters = pr_jot_filters_create(p, rules,
+    PR_JOT_FILTER_TYPE_COMMANDS_WITH_CLASSES, 0);
+  fail_unless(filters != NULL, "Failed to create filters from '%s': %s",
+    rules, strerror(errno));
+  (void) pr_jot_filters_destroy(filters);
+}
+
 START_TEST (jot_filters_create_test) {
   pr_jot_filters_t *filters;
   const char *rules;
@@ -158,12 +169,34 @@ START_TEST (jot_filters_create_test) {
   /* Rules with commands and classes */
 
   rules = "CONNECT,RETR,STOR,DISCONNECT";
-  mark_point();
-  filters = pr_jot_filters_create(p, rules,
-    PR_JOT_FILTER_TYPE_COMMANDS_WITH_CLASSES, 0);
-  fail_unless(filters != NULL, "Failed to create filters from '%s': %s",
-    rules, strerror(errno));
-  (void) pr_jot_filters_destroy(filters);
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,STOR,AUTH";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,STOR,DIRS";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,STOR,INFO";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,STOR,MISC";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "READ,RETR,STOR";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,SEC,STOR";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,SFTP,STOR";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,SSH,STOR";
+  assert_jot_command_with_class_filter(rules);
+
+  rules = "RETR,STOR,WRITE";
+  assert_jot_command_with_class_filter(rules);
 
   rules = "ALL";
   mark_point();

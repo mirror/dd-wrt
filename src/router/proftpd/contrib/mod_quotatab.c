@@ -465,12 +465,16 @@ static int quotatab_close(quota_tabtype_t tab_type) {
   int res = 0;
 
   if (tab_type == TYPE_TALLY) {
-    res = tally_tab->tab_close(tally_tab);
-    tally_tab = NULL;
+    if (tally_tab != NULL) {
+      res = tally_tab->tab_close(tally_tab);
+      tally_tab = NULL;
+    }
 
   } else if (tab_type == TYPE_LIMIT) {
-    res = limit_tab->tab_close(limit_tab); 
-    limit_tab = NULL;
+    if (limit_tab != NULL) {
+      res = limit_tab->tab_close(limit_tab);
+      limit_tab = NULL;
+    }
   }
 
   return res;

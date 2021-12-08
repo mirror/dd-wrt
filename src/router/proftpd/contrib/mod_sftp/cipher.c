@@ -32,6 +32,7 @@
 #include "interop.h"
 
 struct sftp_cipher {
+  pool *pool;
   const char *algo;
   const EVP_CIPHER *cipher;
 
@@ -51,14 +52,14 @@ struct sftp_cipher {
  */
 
 static struct sftp_cipher read_ciphers[2] = {
-  { NULL, NULL, NULL, 0, NULL, 0, 0 },
-  { NULL, NULL, NULL, 0, NULL, 0, 0 }
+  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0 },
+  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0 }
 };
 static EVP_CIPHER_CTX *read_ctxs[2];
 
 static struct sftp_cipher write_ciphers[2] = {
-  { NULL, NULL, NULL, 0, NULL, 0, 0 },
-  { NULL, NULL, NULL, 0, NULL, 0, 0 }
+  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0 },
+  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0 }
 };
 static EVP_CIPHER_CTX *write_ctxs[2];
 
@@ -387,7 +388,18 @@ int sftp_cipher_set_read_algo(const char *algo) {
       (unsigned long) discard_len);
   }
 
-  read_ciphers[idx].algo = algo;
+  /* Note that we use a new pool, each time the algorithm is set (which
+   * happens during key exchange) to prevent undue memory growth for
+   * long-lived sessions with many rekeys.
+   */
+  if (read_ciphers[idx].pool != NULL) {
+    destroy_pool(read_ciphers[idx].pool);
+  }
+
+  read_ciphers[idx].pool = make_sub_pool(sftp_pool);
+  pr_pool_tag(read_ciphers[idx].pool, "SFTP cipher read pool");
+  read_ciphers[idx].algo = pstrdup(read_ciphers[idx].pool, algo);
+
   read_ciphers[idx].key_len = (uint32_t) key_len;
   read_ciphers[idx].discard_len = discard_len;
   return 0;
@@ -586,7 +598,18 @@ int sftp_cipher_set_write_algo(const char *algo) {
       (unsigned long) discard_len);
   }
 
-  write_ciphers[idx].algo = algo;
+  /* Note that we use a new pool, each time the algorithm is set (which
+   * happens during key exchange) to prevent undue memory growth for
+   * long-lived sessions with many rekeys.
+   */
+  if (write_ciphers[idx].pool != NULL) {
+    destroy_pool(write_ciphers[idx].pool);
+  }
+
+  write_ciphers[idx].pool = make_sub_pool(sftp_pool);
+  pr_pool_tag(write_ciphers[idx].pool, "SFTP cipher write pool");
+  write_ciphers[idx].algo = pstrdup(write_ciphers[idx].pool, algo);
+
   write_ciphers[idx].key_len = (uint32_t) key_len;
   write_ciphers[idx].discard_len = discard_len;
   return 0;

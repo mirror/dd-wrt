@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2020 TJ Saunders
+ * Copyright (c) 2004-2021 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -547,6 +547,7 @@ MODRET cmd_open(cmd_rec *cmd) {
     return mr;
   }
 
+  sql_log(DEBUG_FUNC, "MySQL version ID: %d", MYSQL_VERSION_ID);
   sql_log(DEBUG_FUNC, "MySQL client version: %s", mysql_get_client_info());
   sql_log(DEBUG_FUNC, "MySQL server version: %s",
     mysql_get_server_info(conn->mysql));
@@ -1117,7 +1118,11 @@ MODRET cmd_select(cmd_rec *cmd) {
     query = pstrcat(cmd->tmp_pool, "SELECT ", cmd->argv[1], NULL);
 
   } else {
-    query = pstrcat(cmd->tmp_pool, cmd->argv[2], " FROM ", cmd->argv[1], NULL);
+    /* Make sure to properly quote the table name, as it might be a reserved
+     * keyword; see Issue #1212.
+     */
+    query = pstrcat(cmd->tmp_pool, cmd->argv[2], " FROM `", cmd->argv[1], "`",
+      NULL);
 
     if (cmd->argc > 3 &&
         cmd->argv[3]) {
@@ -1256,7 +1261,10 @@ MODRET cmd_insert(cmd_rec *cmd) {
     query = pstrcat(cmd->tmp_pool, "INSERT ", cmd->argv[1], NULL);
 
   } else {
-    query = pstrcat(cmd->tmp_pool, "INSERT INTO ", cmd->argv[1], " (",
+    /* Make sure to properly quote the table name, as it might be a reserved
+     * keyword; see Issue #1212.
+     */
+    query = pstrcat(cmd->tmp_pool, "INSERT INTO `", cmd->argv[1], "` (",
       cmd->argv[2], ") VALUES (", cmd->argv[3], ")", NULL);
   }
 
@@ -1352,7 +1360,10 @@ MODRET cmd_update(cmd_rec *cmd) {
     query = pstrcat(cmd->tmp_pool, "UPDATE ", cmd->argv[1], NULL);
 
   } else {
-    query = pstrcat(cmd->tmp_pool, "UPDATE ", cmd->argv[1], " SET ",
+    /* Make sure to properly quote the table name, as it might be a reserved
+     * keyword; see Issue #1212.
+     */
+    query = pstrcat(cmd->tmp_pool, "UPDATE `", cmd->argv[1], "` SET ",
       cmd->argv[2], NULL);
     if (cmd->argc > 3 &&
         cmd->argv[3]) {

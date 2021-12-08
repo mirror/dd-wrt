@@ -158,7 +158,7 @@ int pr_namebind_close(const char *name, const pr_netaddr_t *addr);
  * resolve).
  */
 int pr_namebind_create(server_rec *server, const char *name,
-  const pr_netaddr_t *addr, unsigned int port);
+  pr_ipbind_t *ipbind, const pr_netaddr_t *addr, unsigned int port);
 
 /* Search the Bindings layer, and return the pr_namebind_t associated with
  * the given addr, port, and name.  If requested, skip over inactive

@@ -1464,7 +1464,8 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
      * expected.
      */
 
-    exit(0);
+    pr_session_disconnect(NULL, PR_SESS_DISCONNECT_CONFIG_ACL,
+      "Blocked by <Limit LOGIN>");
   }
 
   /* Create a table for modules to use. */
@@ -2102,7 +2103,11 @@ static void show_settings(void) {
 # ifdef PR_USE_OPENSSL_FIPS
     printf("    + OpenSSL support (%s, FIPS enabled)\n", OPENSSL_VERSION_TEXT);
 # else
+#  ifdef LIBRESSL_VERSION_NUMBER
+    printf("    + OpenSSL support (%s, LibreSSL)\n", OPENSSL_VERSION_TEXT);
+#  else
     printf("    + OpenSSL support (%s)\n", OPENSSL_VERSION_TEXT);
+#  endif /* Have LibreSSL */
 # endif /* PR_USE_OPENSSL_FIPS */
 #else
   printf("%s", "    - OpenSSL support\n");

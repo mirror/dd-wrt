@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp user authentication
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -299,7 +299,7 @@ static void set_userauth_methods(void) {
   }
 }
 
-static int setup_env(pool *p, char *user) {
+static int setup_env(pool *p, const char *user) {
   struct passwd *pw;
   config_rec *c;
   int login_acl, i, res, root_revoke = TRUE, show_symlinks = FALSE, xerrno;
@@ -1038,6 +1038,36 @@ static int send_userauth_methods(char partial_success) {
   return 0;
 }
 
+static void add_cmd_note(cmd_rec *cmd, const char *key, const char *val) {
+  int res;
+
+  res = pr_table_add(cmd->notes, key, val, 0);
+  if (res < 0 &&
+      errno != EEXIST) {
+    pr_trace_msg(trace_channel, 19, "error adding '%s' command note: %s",
+      key, strerror(errno));
+  }
+}
+
+static void remove_cmd_note(cmd_rec *cmd, const char *key) {
+  (void) pr_table_remove(cmd->notes, key, NULL);
+}
+
+static void dispatch_cmd_err(cmd_rec *cmd) {
+  pr_response_add_err(R_530, "Login incorrect.");
+  pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+  pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+  pr_response_clear(&resp_err_list);
+}
+
+static void dispatch_nonfatal_pass(cmd_rec *cmd, const char *method) {
+  const char *note = "mod_sftp.nonfatal-attempt";
+
+  add_cmd_note(cmd, note, method);
+  dispatch_cmd_err(cmd);
+  remove_cmd_note(cmd, note);
+}
+
 static void incr_auth_attempts(const char *user, cmd_rec *pass_cmd) {
   auth_attempts++;
 
@@ -1050,22 +1080,27 @@ static void incr_auth_attempts(const char *user, cmd_rec *pass_cmd) {
       "Maximum login attempts (%u) exceeded, refusing connection for user '%s'",
       auth_attempts_max, user);
 
-    pr_response_add_err(R_530, "Login incorrect.");
-    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-    pr_response_clear(&resp_err_list);
+    /* Ensure that the "mod_auth.orig_user" session note exists before
+     * dispatching to the PASS error handlers.  Some of them look for this
+     * session note (Issue #693).
+     */
+    if (pr_table_add_dup(session.notes, "mod_auth.orig-user", user, 0) < 0 &&
+        errno != EEXIST) {
+      pr_log_debug(DEBUG3, "error stashing 'mod_auth.orig-user' in "
+        "session.notes: %s", strerror(errno));
+    }
 
+    dispatch_cmd_err(pass_cmd);
     pr_event_generate("mod_auth.max-login-attempts", session.c);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
-
-  return;
 }
 
 /* Return -1 on error, 0 to continue, and 1 if the authentication succeeded. */
 static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   unsigned char *buf;
-  char *orig_user, *user, *method;
+  const char *orig_user, *user;
+  char *method;
   uint32_t buflen;
   cmd_rec *cmd, *user_cmd, *pass_cmd;
   int res, send_userauth_fail = FALSE;
@@ -1078,7 +1113,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
 
   user_cmd = pr_cmd_alloc(pkt->pool, 2, pstrdup(pkt->pool, C_USER), orig_user);
   user_cmd->cmd_class = CL_AUTH|CL_SSH;
-  user_cmd->arg = orig_user;
+  user_cmd->arg = (char *) orig_user;
 
   pass_cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, C_PASS));
   pass_cmd->cmd_class = CL_AUTH|CL_SSH;
@@ -1092,11 +1127,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       "authentication request for user '%s' blocked by '%s' handler",
       orig_user, (char *) user_cmd->argv[0]);
 
-    pr_response_add_err(R_530, "Login incorrect.");
-    pr_cmd_dispatch_phase(user_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(user_cmd, LOG_CMD_ERR, 0);
-    pr_response_clear(&resp_err_list);
-
+    dispatch_cmd_err(user_cmd);
     return -1;
   }
 
@@ -1117,11 +1148,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
         "client used different user name '%s' in USERAUTH_REQUEST (was '%s'), "
         "disconnecting", orig_user, auth_user);
 
-      pr_response_add_err(R_530, "Login incorrect.");
-      pr_cmd_dispatch_phase(user_cmd, POST_CMD_ERR, 0);
-      pr_cmd_dispatch_phase(user_cmd, LOG_CMD_ERR, 0);
-      pr_response_clear(&resp_err_list);
-
+      dispatch_cmd_err(user_cmd);
       return -1;
     }
 
@@ -1140,11 +1167,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
         "client used different service name '%s' in USERAUTH_REQUEST (was "
         "'%s'), disconnecting", *service, auth_service);
 
-      pr_response_add_err(R_530, "Login incorrect.");
-      pr_cmd_dispatch_phase(user_cmd, POST_CMD_ERR, 0);
-      pr_cmd_dispatch_phase(user_cmd, LOG_CMD_ERR, 0);
-      pr_response_clear(&resp_err_list);
-
+      dispatch_cmd_err(user_cmd);
       return -1;
     }
 
@@ -1170,11 +1193,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
         "client requested unknown/unsupported service name '%s' in "
         "USERAUTH_REQUEST, disconnecting", *service);
 
-      pr_response_add_err(R_530, "Login incorrect.");
-      pr_cmd_dispatch_phase(user_cmd, POST_CMD_ERR, 0);
-      pr_cmd_dispatch_phase(user_cmd, LOG_CMD_ERR, 0);
-      pr_response_clear(&resp_err_list);
-
+      dispatch_cmd_err(user_cmd);
       return -1;
     }
   }
@@ -1190,7 +1209,8 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
     "using method '%s'", user, *service, method);
 
   (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
-  if (pr_table_add_dup(session.notes, "mod_auth.orig-user", user, 0) < 0) {
+  if (pr_table_add_dup(session.notes, "mod_auth.orig-user", user, 0) < 0 &&
+      errno != EEXIST) {
     pr_log_debug(DEBUG3, "error stashing 'mod_auth.orig-user' in "
       "session.notes: %s", strerror(errno));
   }
@@ -1209,11 +1229,17 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       "Maximum login attempts (%u) exceeded, refusing connection for user '%s'",
       auth_attempts_max, user);
 
-    pr_response_add_err(R_530, "Login incorrect.");
-    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-    pr_response_clear(&resp_err_list);
+    /* Ensure that the "mod_auth.orig_user" session note exists before
+     * dispatching to the PASS error handlers.  Some of them look for this
+     * session note (Issue #693).
+     */
+    if (pr_table_add_dup(session.notes, "mod_auth.orig-user", user, 0) < 0 &&
+        errno != EEXIST) {
+      pr_log_debug(DEBUG3, "error stashing 'mod_auth.orig-user' in "
+        "session.notes: %s", strerror(errno));
+    }
 
+    dispatch_cmd_err(pass_cmd);
     pr_event_generate("mod_auth.max-login-attempts", session.c);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
@@ -1228,6 +1254,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   if (strcmp(method, "none") != 0) {
     pr_env_unset(cmd->pool, "SFTP_USER_AUTH_METHOD");
     pr_env_set(cmd->pool, "SFTP_USER_AUTH_METHOD", method);
+    (void) pr_table_add_dup(session.notes, "SFTP_USER_AUTH_METHOD", method, 0);
   }
 
   /* In order for the actual user password (if any) to be populated properly
@@ -1248,7 +1275,6 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
     if (send_userauth_methods(FALSE) < 0) {
       pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
       pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
       return -1;
     }
 
@@ -1281,7 +1307,6 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       if (send_userauth_methods(FALSE) < 0) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         return -1;
       }
 
@@ -1315,7 +1340,6 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       if (send_userauth_methods(FALSE) < 0) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         return -1;
       }
 
@@ -1349,7 +1373,6 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       if (send_userauth_methods(FALSE) < 0) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         return -1;
       }
 
@@ -1383,7 +1406,6 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       if (send_userauth_methods(FALSE) < 0) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         return -1;
       }
 
@@ -1413,15 +1435,17 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   if (res <= 0) {
     int xerrno = errno;
 
-    /* Only indicate that our fake PASS command failed on error.  If the
-     * result indicates that more attempts can continue, then the login
-     * has not failed yet.
+    /* For a failed authentication _attempt_ (but not yet a real error), we
+     * attach a note to this fake PASS "error" command dispatch, so that
+     * interested handlers can use it to determine if the command they receive
+     * is a real error or not, for e.g. logging/accounting purposes
+     * (Issue #693).
      */
     if (res < 0) {
-      pr_response_add_err(R_530, "Login incorrect.");
-      pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-      pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-      pr_response_clear(&resp_err_list);
+      dispatch_cmd_err(pass_cmd);
+
+    } else {
+      dispatch_nonfatal_pass(pass_cmd, method);
     }
 
     pr_cmd_dispatch_phase(cmd, res == 0 ? POST_CMD : POST_CMD_ERR, 0);
@@ -1459,10 +1483,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
    */
 
   if (setup_env(pkt->pool, user) < 0) {
-    pr_response_add_err(R_530, "Login incorrect.");
-    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-    pr_response_clear(&resp_err_list);
+    dispatch_cmd_err(pass_cmd);
 
     pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
@@ -1475,10 +1496,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   }
 
   if (send_userauth_success() < 0) {
-    pr_response_add_err(R_530, "Login incorrect.");
-    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-    pr_response_clear(&resp_err_list);
+    dispatch_cmd_err(pass_cmd);
 
     pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
