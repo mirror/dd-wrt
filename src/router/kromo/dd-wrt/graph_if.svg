@@ -33,6 +33,10 @@ POSSIBILITY OF SUCH DAMAGE.
 -->
 <svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100%' height='100%' viewBox='0 0 700 300' preserveAspectRatio='none' onload='init(evt)' encoding='UTF-8'>
 <g id='graph' style='font-family: monospace; font-weight: 600'>
+
+	<path id='graph_out' d='' fill='red' fill-opacity='0.5' stroke='red' stroke-width='1' stroke-opacity='1' />
+	<path id='graph_in'  d='' fill='green' fill-opacity='0.5' stroke='green' stroke-width='1' stroke-opacity='1' />
+
 	<rect id='bg' x1='0' y1='0' width='100%' height='300' fill='white' fill-opacity='0.0'/>
 
 	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
@@ -52,8 +56,6 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='grid_txt2' x='100%' y='148' fill='gray' text-anchor='end'>--</text>
 	<text id='grid_txt1' x='100%' y='73' fill='gray' text-anchor='end'>--</text>
 
-	<path id='graph_out' d='' fill='red' fill-opacity='0.5' stroke='red' stroke-width='1' stroke-opacity='1' />
-	<path id='graph_in'  d='' fill='green' fill-opacity='0.5' stroke='green' stroke-width='1' stroke-opacity='1' />
 
 	<line id='axis_x' x1='2' y1='299' x2='700' y2='299' stroke='#111' stroke-opacity='0.8' />
 	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='#111' stroke-opacity='0.8' />
