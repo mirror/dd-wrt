@@ -522,8 +522,9 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 {
 	int flags, newflags;
 
-	clear_ndelay(conn_fp->conn_fd);
-
+	if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+		clear_ndelay(conn_fp->conn_fd);
+	}
 	char *text;
 	va_list args;
 	va_start(args, (char *)fmt);
@@ -1232,8 +1233,9 @@ static void *handle_request(void *arg)
 	FILE *fp;
 	int file_error;
 	int noheader;
-	clear_ndelay(conn_fp->conn_fd);
-
+	if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+		clear_ndelay(conn_fp->conn_fd);
+	}
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (!match(handler->pattern, file))
 			continue;
@@ -1773,7 +1775,9 @@ int main(int argc, char **argv)
 			SEM_POST(&semaphore);
 			continue;
 		}
-		set_ndelay(conn_fp->conn_fd);
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			set_ndelay(conn_fp->conn_fd);
+		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
 		settimeouts(conn_fp, timeout);
@@ -1954,9 +1958,10 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 				c = buf[i];
 				if (c == '\n' || c == 0) {
 					eof = 0;
-					break;
+					goto next;
 				}
 			}
+			next:;
 			sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
