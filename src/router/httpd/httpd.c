@@ -1950,8 +1950,6 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
-				else
-					*rfeof = 0;
 				goto out;
 			}
 			for (i = 0; i < len; i++) {
@@ -1966,8 +1964,6 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
-				else
-					*rfeof = 0;
 				goto out;
 			}
 			if (!eof) {
@@ -1977,8 +1973,6 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			} else {
 				if (rfeof)
 					*rfeof = 1;
-				else
-					*rfeof = 0;
 				goto out;
 			}
 
@@ -1990,11 +1984,11 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			ret = buf;
 #endif
 		} else {
-			if (feof(fp))
-				*rfeof = 1;
-			else
-				*rfeof = 0;
-			ret = fgets(buf, len, fp);
+			if (feof(fp)) {
+				if (rfeof)
+					*rfeof = 1;
+			} else
+				ret = fgets(buf, len, fp);
 		}
 	      out:;
 		if (!*(buf) && (errno == EINTR || errno == EAGAIN)) {
