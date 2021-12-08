@@ -1,11 +1,12 @@
 .syslog_bd {
   background: #1a1a1a;
-	color: #aaa;
+  color: #aaa;
   font-size: 14px
 }
 .syslog_bg {
   background: #111;
-  padding-top: .1rem;
+  padding: .3rem;
+  margin: -.8rem -.8rem 0 -.8rem;
 }
 .syslog_bg tr:not([bgcolor]):hover {
   background: #222;
@@ -24,6 +25,6 @@
   background: #32e202;
 }
 .syslog_legend {
-	background-color: transparent;
+  background-color: transparent;
   filter: brightness(1.8);
 }
