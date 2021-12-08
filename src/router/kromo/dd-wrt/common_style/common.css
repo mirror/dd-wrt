@@ -73,6 +73,10 @@ select {
 select[onchange*='blockedServices'] {
   margin-right: .362em;
 }
+select[onchange='ServiceTable'] {
+  width: inherit;
+  height: inherit;
+}
 #score {
   color: #000;
   font-size: 85%;
@@ -521,7 +525,6 @@ td.bulle {
 }
 /*! status is common to light/dark */
 /*! these colors pass all color contrast tests */
-
 .status_red {
   background: #ff6666;
   color: #000;
