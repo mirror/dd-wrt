@@ -673,10 +673,13 @@ void start_openvpn(void)
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
 	}
 #ifdef HAVE_ERC
-	fprintf(fp, "management 127.0.0.1 5001\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
+	fprintf(fp, "management 127.0.0.1 5001\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #else
-	fprintf(fp, "management 127.0.0.1 16\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
+	fprintf(fp, "management 127.0.0.1 16\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #endif
+	if (!nvram_matchi("openvpncl_statickey", 1)) {
+		fprintf(fp, "client\n");
+	}
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	if (nvram_invmatch("openvpncl_cipher", ""))
