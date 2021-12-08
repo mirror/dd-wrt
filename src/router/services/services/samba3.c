@@ -147,7 +147,7 @@ void start_samba3(void)
 			"workgroup = %s\n"	//
 			"bind interfaces only = yes\n"	//
 			"guest account = nobody\n"	//
-			"map to guest = bad user\n"	//
+			"map to guest = %s\n"	//
 			"smb passwd file = /var/samba/smbpasswd\n"	//
 			"private dir = /var/samba\n"	//
 			"passdb backend = smbpasswd\n"	//
@@ -171,7 +171,7 @@ void start_samba3(void)
 			"printing = none\n"
 #endif
 			"load printers = No\n"	//
-			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
+			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_guest"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
 #ifdef HAVE_SMBD
 		if (!strncmp(smbmaxproto, "SMB3", 4))
