@@ -933,6 +933,13 @@ static int fuse_try_move_page(struct fuse_copy_state *cs, struct page **pagep)
 	if (!(buf->flags & PIPE_BUF_FLAG_LRU))
 		lru_cache_add_file(newpage);
 
+	/*
+	 * Release while we have extra ref on stolen page.  Otherwise
+	 * anon_pipe_buf_release() might think the page can be reused.
+	 */
+	buf->ops->release(cs->pipe, buf);
+	buf->ops = NULL;
+
 	err = 0;
 	spin_lock(&cs->req->waitq.lock);
 	if (test_bit(FR_ABORTED, &cs->req->flags))
@@ -2096,7 +2103,8 @@ static ssize_t fuse_dev_splice_write(struct pipe_inode_info *pipe,
 out_free:
 	for (idx = 0; idx < nbuf; idx++) {
 		struct pipe_buffer *buf = &bufs[idx];
-		buf->ops->release(pipe, buf);
+		if (buf->ops)
+			buf->ops->release(pipe, buf);
 	}
 	pipe_unlock(pipe);
 
