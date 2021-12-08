@@ -3516,6 +3516,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_SMBD
 	{ "samba3_min_proto", "SMB2_10" },
 	{ "samba3_max_proto", "SMB3_11" },
+	{ "samba3_guest", "bad user" },
 #else
 	{ "samba3_min_proto", "SMB2" },
 	{ "samba3_max_proto", "SMB2" },

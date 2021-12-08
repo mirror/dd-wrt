@@ -10,6 +10,7 @@
  "samba3_pass2"  "ksmbd Pass2"  "NULL"  "FALSE" "0"
  "samba3_pubacl"  "ksmbd Public ACL" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_advanced"  "ksmbd Advanced" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "samba3_guest"  "ksmbd SMB guest access" "CHOICE" "2"  "bad user"  "never"  "FALSE" "0"
  "samba3_encrypt"  "ksmbd SMB Encryption" "CHOICE" "2"  "off"  "on"  "FALSE" "0"
  "samba3_min_proto"  "ksmbd protocol version"  "CHOICE" "11" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
  "samba3_max_proto"  "ksmbd protocol version"  "CHOICE" "11" "NT1" "SMB2" "SMB2_02" "SMB2_10" "SMB2_22" "SMB2_24" "SMB3" "SMB3_00" "SMB3_02" "SMB3_10" "SMB3_11" "FALSE" "0"
