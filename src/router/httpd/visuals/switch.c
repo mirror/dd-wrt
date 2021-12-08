@@ -170,7 +170,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<th rowspan=\"2\">&nbsp;</th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<th>W</th>\n");
+	websWrite(wp, "<th>WAN</th>\n");
 	websWrite(wp, "<th>1</th>\n");
 	websWrite(wp, "<th>2</th>\n");
 	websWrite(wp, "<th>3</th>\n");
