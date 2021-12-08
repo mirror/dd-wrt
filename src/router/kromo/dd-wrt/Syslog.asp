@@ -52,13 +52,16 @@ addEvent(window, "unload", function() {
 				<% do_menu("Status_Router.asp","Syslog.asp"); %>
 				</div>
 				<div id="mainno">
-					<div id="contents">
+					<!-- add padding to #contents so that submitfooter has padding on sides/bottom -->
+					<div id="contents" style="padding: .906em;">
+						  <!-- see syslogd dir stylesheets for .syslog_bg padding/margins -->
 							<script type="text/javascript">
 								//<![CDATA[
 								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"805\" frameborder=\"0\" type=\"text/html\"></iframe>");
 								//]]>
 							</script>
-							<div class="center" style="padding-bottom: 1.5em">
+							<!-- add padding margin so that prev/next buttons are dead dcenter of perceived space between log/footer -->
+							<div class="center" style="padding-bottom: 1.5em; margin-top: -1.1em">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" value=\"&lsaquo; Prev\" onclick=\"do_show_prev();\">");

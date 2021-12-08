@@ -40,9 +40,6 @@ input.button:hover {
   border: 1px solid #6c6;
   color: #000;
 }
-input[name*='refresh'][style*='background'] {
-  background: #3b3 !important;
-}
 input:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 5px 1px #6c6;
   outline: 2px solid #6c6;
