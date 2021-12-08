@@ -9,6 +9,7 @@ use File::Copy;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
+use IPC::Open3;
 use Socket;
 
 use ProFTPD::TestSuite::FTP;
@@ -311,7 +312,12 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
-  tls_passphraseprovider => {
+  tls_passphraseprovider_rsacertfile => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_passphraseprovider_rsakeyfile_issue1179 => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -469,6 +475,10 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  tls_old_protocols_issue1273 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
 };
 
 sub new {
@@ -9289,55 +9299,24 @@ sub tls_sess_cache_internal_bug3580 {
   unlink($log_file);
 }
 
-sub tls_passphraseprovider {
+sub tls_passphraseprovider_rsacertfile {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/tls.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/tls.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/tls.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/tls.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/tls.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'tls');
 
   my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert-passwd.pem');
   my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
   my $passphrase_provider = File::Spec->rel2abs('t/etc/modules/mod_tls/tls-get-passphrase.pl');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'DEFAULT:20 tls:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -9346,8 +9325,9 @@ sub tls_passphraseprovider {
 
       'mod_tls.c' => {
         TLSEngine => 'on',
-        TLSLog => $log_file,
+        TLSLog => $setup->{log_file},
         TLSRequired => 'on',
+        TLSOptions => 'AllowWeakSecurity',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
 
@@ -9356,7 +9336,8 @@ sub tls_passphraseprovider {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -9387,11 +9368,10 @@ sub tls_passphraseprovider {
         die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
       }
 
-      unless ($client->login($user, $passwd)) {
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
         die("Can't login: " . $client->last_message());
       }
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -9400,7 +9380,7 @@ sub tls_passphraseprovider {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -9410,18 +9390,109 @@ sub tls_passphraseprovider {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-    die($ex);
+sub tls_passphraseprovider_rsakeyfile_issue1179 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert-passwd.pem');
+  my $key_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert-passwd.key');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+  my $passphrase_provider = File::Spec->rel2abs('t/etc/modules/mod_tls/tls-get-passphrase.pl');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'DEFAULT:20 tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSOptions => 'AllowWeakSecurity',
+        TLSRSACertificateFile => $cert_file,
+        TLSRSACertificateKeyFile => $key_file,
+        TLSCACertificateFile => $ca_file,
+
+        TLSPassPhraseProvider => $passphrase_provider,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
   }
 
-  unlink($log_file);
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(5);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+      );
+
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client->last_message());
+      }
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub tls_verify_order_crl_bug3658 {
@@ -13419,6 +13490,177 @@ sub tls_fxp_issue618 {
   # Stop server
   server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_old_protocols_issue1273 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $tls_opts = 'NoSessionReuseRequired UseImplicitSSL';
+  if ($ENV{TEST_VERBOSE}) {
+    $tls_opts .= ' EnableDiags';
+  }
+
+  my $timeout_idle = 15;
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'command:20 response:20 data:20 netio:20 tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    AllowForeignAddress => 'on',
+    AllowOverwrite => 'on',
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSProtocol => 'SSLv23',
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => $tls_opts,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(2);
+
+      # We use an older OpenSSL version for the older protocols.
+      # Allow server to start up
+      my $openssl = '/Users/tj/local/openssl-0.9.8d/bin/openssl';
+
+      # Explicitly use SSLv3, which has been disabled by default in
+      # OpenSSL-1.1.x; see:
+      #   https://github.com/openssl/openssl/issues/4989
+
+      my @cmd = (
+        $openssl,
+        's_client',
+        '-connect',
+        "127.0.0.1:$port",
+        '-ssl3',
+      );
+
+      my $tls_rh = IO::Handle->new();
+      my $tls_wh = IO::Handle->new();
+      my $tls_eh = IO::Handle->new();
+
+      $tls_wh->autoflush(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $tls_pid = open3($tls_wh, $tls_rh, $tls_eh, @cmd);
+      print $tls_wh "quit\n";
+      waitpid($tls_pid, 0);
+
+      my ($res, $cipher_str, $err_str, $out_str);
+      if ($? >> 8) {
+        $err_str = join('', <$tls_eh>);
+        $res = 0;
+
+      } else {
+        my $output = [<$tls_rh>];
+
+        if ($ENV{TEST_VERBOSE}) {
+          $out_str = join('', @$output);
+          print STDERR "Stdout: $out_str\n";
+
+          $err_str = join('', <$tls_eh>);
+          print STDERR "Stderr: $err_str\n";
+        }
+
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't talk to server: $err_str");
+      }
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, $timeout_idle + 5) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+  test_cleanup($setup->{log_file}, $ex) if $ex;
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $seen = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($line =~ /OpenSSL.*?lacks support for client requested/) {
+          $seen = 1;
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($seen, test_msg("Did not see expected log message"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
   test_cleanup($setup->{log_file}, $ex);
 }

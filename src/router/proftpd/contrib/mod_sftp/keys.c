@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key mgmt (keys)
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,6 +115,15 @@ struct sftp_pkey_data {
 static int keys_rsa_min_nbits = 768;
 static int keys_dsa_min_nbits = 384;
 static int keys_ec_min_nbits = 160;
+
+/* Public key files start with "BEGIN ... PUBLIC KEY" and "END ... PUBLIC KEY"
+ * lines.  Note that the "..." can be multiple different values ("RSA", "SSH2",
+ * etc).
+ */
+#define SFTP_PUBLICKEY_BEGIN		"BEGIN PUBLIC KEY"
+#define SFTP_PUBLICKEY_BEGIN_LEN	(sizeof(SFTP_PUBLICKEY_BEGIN) - 1)
+#define SFTP_PUBLICKEY_END		"END PUBLIC KEY"
+#define SFTP_PUBLICKEY_END_LEN		(sizeof(SFTP_PUBLICKEY_BEGIN) - 1)
 
 /* OpenSSH's homegrown private key file format.
  *
@@ -619,6 +628,39 @@ static unsigned char *decode_base64(pool *p, unsigned char *text,
   return data;
 }
 
+static int is_public_key(int fd) {
+  struct stat st;
+  char begin_buf[SFTP_PUBLICKEY_BEGIN_LEN+20];
+  ssize_t len;
+  off_t minsz;
+
+  if (fstat(fd, &st) < 0) {
+    return -1;
+  }
+
+  minsz = SFTP_PUBLICKEY_BEGIN_LEN + SFTP_PUBLICKEY_END_LEN;
+  if (st.st_size < minsz) {
+    return FALSE;
+  }
+
+  len = pread(fd, begin_buf, sizeof(begin_buf), 0);
+  if (len != sizeof(begin_buf)) {
+    return FALSE;
+  }
+
+  begin_buf[len-1] = '\0';
+
+  if (strstr(begin_buf, "PUBLIC KEY") == NULL) {
+    return FALSE;
+  }
+
+  if (strstr(begin_buf, "BEGIN") == NULL) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 static int is_openssh_private_key(int fd) {
   struct stat st;
   char begin_buf[SFTP_OPENSSH_BEGIN_LEN], end_buf[SFTP_OPENSSH_END_LEN];
@@ -643,7 +685,7 @@ static int is_openssh_private_key(int fd) {
     return FALSE;
   }
 
-  len = pread(fd, end_buf, sizeof(end_buf),  st.st_size - SFTP_OPENSSH_END_LEN);
+  len = pread(fd, end_buf, sizeof(end_buf), st.st_size - SFTP_OPENSSH_END_LEN);
   if (len != sizeof(end_buf)) {
     return FALSE;
   }
@@ -741,7 +783,8 @@ static int get_passphrase(struct sftp_pkey *k, const char *path) {
   EVP_PKEY *pkey = NULL;
   unsigned char *key_data = NULL;
   uint32_t key_datalen = 0;
-  int fd, prompt_fd = -1, res, xerrno, openssh_format = FALSE;
+  int fd, prompt_fd = -1, res, xerrno, openssh_format = FALSE,
+    public_key_format = FALSE;
   struct sftp_pkey_data pdata;
   register unsigned int attempt;
 
@@ -773,6 +816,17 @@ static int get_passphrase(struct sftp_pkey *k, const char *path) {
     }
   }
 
+  public_key_format = is_public_key(fd);
+  if (public_key_format == TRUE) {
+    pr_trace_msg(trace_channel, 3, "hostkey file '%s' uses a public key format",
+      path);
+    (void) pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+      ": unable to use public key '%s' for SFTPHostKey", path);
+    (void) close(fd);
+    errno = EINVAL;
+    return -1;
+  }
+
   openssh_format = is_openssh_private_key(fd);
   if (openssh_format != TRUE) {
     fp = fdopen(fd, "r");
@@ -790,6 +844,7 @@ static int get_passphrase(struct sftp_pkey *k, const char *path) {
      * around in stdio buffers.
      */
     (void) setvbuf(fp, NULL, _IONBF, 0);
+
   } else {
     pr_trace_msg(trace_channel, 9,
       "handling host key '%s' as an OpenSSH-formatted private key", path);
@@ -3361,7 +3416,7 @@ static int load_openssh_hostkey(pool *p, const char *path, int fd) {
 }
 
 static int load_file_hostkey(pool *p, const char *path) {
-  int fd, xerrno = 0, openssh_format = FALSE;
+  int fd, xerrno = 0, openssh_format = FALSE, public_key_format = FALSE;
   FILE *fp;
   EVP_PKEY *pkey;
 
@@ -3404,7 +3459,20 @@ static int load_file_hostkey(pool *p, const char *path) {
     server_pkey = lookup_pkey();
   }
 
-  /* If this loops to be in the OpenSSH private key format, handle it
+  /* Make sure this is not a public key inadvertently configured as a hostkey.
+   */
+  public_key_format = is_public_key(fd);
+  if (public_key_format == TRUE) {
+    pr_trace_msg(trace_channel, 3, "hostkey file '%s' uses a public key format",
+      path);
+    (void) pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+      ": unable to use public key '%s' for SFTPHostKey", path);
+    (void) close(fd);
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* If this happens to be in the OpenSSH private key format, handle it
    * separately.
    */
   openssh_format = is_openssh_private_key(fd);
@@ -4453,7 +4521,7 @@ const unsigned char *sftp_keys_sign_data(pool *p,
 
 int sftp_keys_verify_pubkey_type(pool *p, unsigned char *pubkey_data,
     uint32_t pubkey_len, enum sftp_key_type_e pubkey_type) {
-  EVP_PKEY *pkey;
+  EVP_PKEY *pkey = NULL;
   int res = FALSE;
   uint32_t len;
 
@@ -4542,7 +4610,10 @@ int sftp_keys_verify_pubkey_type(pool *p, unsigned char *pubkey_data,
       break;
   }
 
-  EVP_PKEY_free(pkey);
+  if (pkey != NULL) {
+    EVP_PKEY_free(pkey);
+  }
+
   return res;
 }
 

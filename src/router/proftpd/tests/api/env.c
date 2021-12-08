@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2015 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,11 +61,13 @@ START_TEST (env_get_test) {
   pr_env_unset(p, key);
 
   res = pr_env_get(p, key);
-  fail_unless(res == NULL);
+  fail_unless(res == NULL, "Unexpectedly found value '%s' for key '%s'",
+    res, key);
 
   /* XXX PATH should always be set in the environment, right? */
   res = pr_env_get(p, "PATH");
-  fail_unless(res != NULL);
+  fail_unless(res != NULL, "Failed to get value for 'PATH': %s",
+    strerror(errno));
 
 #else
   res = pr_env_get(p, key);

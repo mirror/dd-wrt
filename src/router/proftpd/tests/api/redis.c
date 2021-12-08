@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2017-2020 The ProFTPD Project team
+ * Copyright (c) 2017-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ static int redis_port = 6379;
 /* Fixtures */
 
 static void set_up(void) {
+  char *redis_host = NULL;
+
   if (p == NULL) {
     p = permanent_pool = make_sub_pool(NULL);
   }
@@ -103,7 +105,8 @@ START_TEST (redis_conn_new_test) {
   res = pr_redis_conn_destroy(redis);
   fail_unless(res == TRUE, "Failed to close redis: %s", strerror(errno));
 
-  if (getenv("CIRRUS_CLONE_DEPTH") == NULL &&
+  if (getenv("CI") == NULL &&
+      getenv("CIRRUS_CLONE_DEPTH") == NULL &&
       getenv("TRAVIS") == NULL) {
     /* Now deliberately set the wrong server and port. */
     redis_set_server("127.1.2.3", redis_port, 0UL, NULL, NULL);
@@ -222,11 +225,44 @@ START_TEST (redis_conn_set_namespace_test) {
 }
 END_TEST
 
+START_TEST (redis_conn_get_version_test) {
+  int res;
+  pr_redis_t *redis;
+  unsigned int major = 0, minor = 0, patch = 0;
+
+  mark_point();
+  res = pr_redis_conn_get_version(NULL, NULL, NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null redis");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  redis = pr_redis_conn_new(p, NULL, 0);
+  fail_unless(redis != NULL, "Failed to open connection to Redis: %s",
+    strerror(errno));
+
+  mark_point();
+  res = pr_redis_conn_get_version(redis, NULL, NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null version arguments");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  res = pr_redis_conn_get_version(redis, &major, &minor, &patch);
+  fail_unless(res == 0, "Failed to get Redis version: %s", strerror(errno));
+
+  mark_point();
+  res = pr_redis_conn_destroy(redis);
+  fail_unless(res == TRUE, "Failed to close redis: %s", strerror(errno));
+}
+END_TEST
+
 START_TEST (redis_conn_auth_test) {
   int res;
   pr_redis_t *redis;
   const char *text;
   array_header *args;
+  unsigned int major_version = 0;
 
   mark_point();
   res = pr_redis_auth(NULL, NULL);
@@ -245,52 +281,167 @@ START_TEST (redis_conn_auth_test) {
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  /* What happens if we try to AUTH to a non-password-protected Redis?
+   * Answer: Redis returns an error indicating that no password is required.
+   *
+   * Note that this behavior changed with Redis 6.x.  In particular, any
+   * "AUTH default ..." command automatically succeeds with Redis 6.x,
+   * regardless of the actual password given.  Sigh.
+   */
+
+  mark_point();
+  res = pr_redis_conn_get_version(redis, &major_version, NULL, NULL);
+  fail_unless(res == 0, "Failed to get Redis version: %s", strerror(errno));
+
+  mark_point();
   text = "password";
+  res = pr_redis_auth(redis, text);
+
+  if (major_version < 6) {
+    fail_unless(res < 0, "Failed to handle lack of need for authentication");
+    fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+      strerror(errno), errno);
+
+    /* Use CONFIG SET to require a password. */
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "CONFIG");
+    *((char **) push_array(args)) = pstrdup(p, "SET");
+    *((char **) push_array(args)) = pstrdup(p, "requirepass");
+    *((char **) push_array(args)) = pstrdup(p, text);
+
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
+    fail_unless(res == 0, "Failed to enable authentication: %s",
+      strerror(errno));
+
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "TIME");
+
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_ARRAY);
+    fail_unless(res < 0, "Failed to handle required authentication");
+    fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+      strerror(errno), errno);
+
+    mark_point();
+    res = pr_redis_auth(redis, text);
+    fail_unless(res == 0, "Failed to authenticate client: %s", strerror(errno));
+
+    /* Don't forget to remove the password. */
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "CONFIG");
+    *((char **) push_array(args)) = pstrdup(p, "SET");
+    *((char **) push_array(args)) = pstrdup(p, "requirepass");
+    *((char **) push_array(args)) = pstrdup(p, "");
+
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
+    fail_unless(res == 0, "Failed to remove password authentication: %s",
+      strerror(errno));
+
+  } else {
+    fail_unless(res == 0, "Failed to handle AUTH command: %s",
+      strerror(errno));
+  }
+
+  mark_point();
+  res = pr_redis_conn_destroy(redis);
+  fail_unless(res == TRUE, "Failed to close redis: %s", strerror(errno));
+}
+END_TEST
+
+START_TEST (redis_conn_auth2_test) {
+  int res;
+  pr_redis_t *redis;
+  const char *username, *password;
+  array_header *args;
+  unsigned int major_version = 0;
+
+  mark_point();
+  res = pr_redis_auth2(NULL, NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null redis");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  redis = pr_redis_conn_new(p, NULL, 0);
+  fail_unless(redis != NULL, "Failed to open connection to Redis: %s",
+    strerror(errno));
+
+  mark_point();
+  res = pr_redis_auth2(redis, NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null username");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  /* Note: Do NOT use "default" as the initial username; that name has
+   * specific semantics for Redis 6.x and later.
+   */
+  username = "foobar";
+
+  mark_point();
+  res = pr_redis_auth2(redis, username, NULL);
+  fail_unless(res < 0, "Failed to handle null password");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
 
   /* What happens if we try to AUTH to a non-password-protected Redis?
    * Answer: Redis returns an error indicating that no password is required.
+   *
+   * Note that this behavior changed with Redis 6.x.  In particular, any
+   * "AUTH default ..." command automatically succeeds with Redis 6.x,
+   * regardless of the actual password given.  Sigh.
    */
+
   mark_point();
-  res = pr_redis_auth(redis, text);
+  res = pr_redis_conn_get_version(redis, &major_version, NULL, NULL);
+  fail_unless(res == 0, "Failed to get Redis version: %s", strerror(errno));
+
+  mark_point();
+  password = "password";
+  res = pr_redis_auth2(redis, username, password);
   fail_unless(res < 0, "Failed to handle lack of need for authentication");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
-  /* Use CONFIG SET to require a password. */
-  args = make_array(p, 0, sizeof(char *));
-  *((char **) push_array(args)) = pstrdup(p, "CONFIG");
-  *((char **) push_array(args)) = pstrdup(p, "SET");
-  *((char **) push_array(args)) = pstrdup(p, "requirepass");
-  *((char **) push_array(args)) = pstrdup(p, text);
+  if (major_version < 6) {
+    /* Use CONFIG SET to require a password. */
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "CONFIG");
+    *((char **) push_array(args)) = pstrdup(p, "SET");
+    *((char **) push_array(args)) = pstrdup(p, "requirepass");
+    *((char **) push_array(args)) = pstrdup(p, password);
 
-  mark_point();
-  res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
-  fail_unless(res == 0, "Failed to enable authentication: %s", strerror(errno));
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
+    fail_unless(res == 0, "Failed to enable authentication: %s",
+      strerror(errno));
 
-  args = make_array(p, 0, sizeof(char *));
-  *((char **) push_array(args)) = pstrdup(p, "TIME");
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "TIME");
 
-  mark_point();
-  res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_ARRAY);
-  fail_unless(res < 0, "Failed to handle required authentication");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno);
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_ARRAY);
+    fail_unless(res < 0, "Failed to handle required authentication");
+    fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+      strerror(errno), errno);
 
-  mark_point();
-  res = pr_redis_auth(redis, text);
-  fail_unless(res == 0, "Failed to authenticate client: %s", strerror(errno));
+    mark_point();
+    res = pr_redis_auth2(redis, username, password);
+    fail_unless(res == 0, "Failed to authenticate client: %s", strerror(errno));
 
-  /* Don't forget to remove the password. */
-  args = make_array(p, 0, sizeof(char *));
-  *((char **) push_array(args)) = pstrdup(p, "CONFIG");
-  *((char **) push_array(args)) = pstrdup(p, "SET");
-  *((char **) push_array(args)) = pstrdup(p, "requirepass");
-  *((char **) push_array(args)) = pstrdup(p, "");
+    /* Don't forget to remove the password. */
+    args = make_array(p, 0, sizeof(char *));
+    *((char **) push_array(args)) = pstrdup(p, "CONFIG");
+    *((char **) push_array(args)) = pstrdup(p, "SET");
+    *((char **) push_array(args)) = pstrdup(p, "requirepass");
+    *((char **) push_array(args)) = pstrdup(p, "");
 
-  mark_point();
-  res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
-  fail_unless(res == 0, "Failed to remove password authentication: %s",
-    strerror(errno));
+    mark_point();
+    res = pr_redis_command(redis, args, PR_REDIS_REPLY_TYPE_STATUS);
+    fail_unless(res == 0, "Failed to remove password authentication: %s",
+      strerror(errno));
+  }
 
   mark_point();
   res = pr_redis_conn_destroy(redis);
@@ -573,7 +724,8 @@ START_TEST (redis_sentinel_conn_new_test) {
 
   sentinels = make_array(p, 0, sizeof(pr_netaddr_t *));
 
-  if (getenv("CIRRUS_CLONE_DEPTH") != NULL ||
+  if (getenv("CI") != NULL ||
+      getenv("CIRRUS_CLONE_DEPTH") != NULL ||
       getenv("TRAVIS") != NULL) {
     /* Treat the local Redis server as a Sentinel. */
     addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
@@ -1987,7 +2139,7 @@ START_TEST (redis_hash_keys_test) {
   mark_point();
   res = pr_redis_hash_keys(p, redis, &m, key, &fields);
   fail_unless(res == 0, "Failed to handle existing fields: %s", strerror(errno));
-  fail_unless(fields != NULL);
+  fail_unless(fields != NULL, "Failed to get hash fields");
   fail_unless(fields->nelts == 2, "Expected 2, got %u", fields->nelts);
 
   (void) pr_redis_remove(redis, &m, key);
@@ -2074,7 +2226,7 @@ START_TEST (redis_hash_values_test) {
   mark_point();
   res = pr_redis_hash_values(p, redis, &m, key, &values);
   fail_unless(res == 0, "Failed to handle existing values: %s", strerror(errno));
-  fail_unless(values != NULL);
+  fail_unless(values != NULL, "Failed to get hash values");
   fail_unless(values->nelts == 2, "Expected 2, got %u", values->nelts);
 
   (void) pr_redis_remove(redis, &m, key);
@@ -2161,7 +2313,7 @@ START_TEST (redis_hash_getall_test) {
   mark_point();
   res = pr_redis_hash_getall(p, redis, &m, key, &hash);
   fail_unless(res == 0, "Failed to handle existing fields: %s", strerror(errno));
-  fail_unless(hash != NULL);
+  fail_unless(hash != NULL, "Failed to get hash");
   res = pr_table_count(hash);
   fail_unless(res == 2, "Expected 2, got %d", res);
 
@@ -4743,7 +4895,9 @@ Suite *tests_get_redis_suite(void) {
   tcase_add_test(testcase, redis_conn_new_test);
   tcase_add_test(testcase, redis_conn_get_test);
   tcase_add_test(testcase, redis_conn_set_namespace_test);
+  tcase_add_test(testcase, redis_conn_get_version_test);
   tcase_add_test(testcase, redis_conn_auth_test);
+  tcase_add_test(testcase, redis_conn_auth2_test);
   tcase_add_test(testcase, redis_conn_select_test);
   tcase_add_test(testcase, redis_conn_reconnect_test);
   tcase_add_test(testcase, redis_command_test);

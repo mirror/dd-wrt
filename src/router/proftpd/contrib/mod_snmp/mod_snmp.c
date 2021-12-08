@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2210,7 +2210,7 @@ MODRET snmp_pre_list(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTP_XFERS_F_DIR_LIST_COUNT,
       1);
     if (res < 0) {
@@ -2219,7 +2219,7 @@ MODRET snmp_pre_list(cmd_rec *cmd) {
         "ftp.dataTransfers.dirListCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_XFERS_F_DIR_LIST_COUNT,
       1);
     if (res < 0) {
@@ -2228,7 +2228,7 @@ MODRET snmp_pre_list(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.dirListCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_SFTP_XFERS_F_DIR_LIST_COUNT,
       1);
     if (res < 0) {
@@ -2250,7 +2250,7 @@ MODRET snmp_log_list(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTP_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2267,7 +2267,7 @@ MODRET snmp_log_list(cmd_rec *cmd) {
         "ftp.dataTransfers.dirListTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2284,7 +2284,7 @@ MODRET snmp_log_list(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.dirListTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_SFTP_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2315,7 +2315,7 @@ MODRET snmp_err_list(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTP_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2332,7 +2332,7 @@ MODRET snmp_err_list(cmd_rec *cmd) {
         "ftp.dataTranfers.dirListFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2349,7 +2349,7 @@ MODRET snmp_err_list(cmd_rec *cmd) {
         "ftps.tlsDataTranfers.dirListFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_SFTP_XFERS_F_DIR_LIST_COUNT,
       -1);
     if (res < 0) {
@@ -2380,7 +2380,7 @@ MODRET snmp_log_pass(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTP_SESS_F_SESS_COUNT, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -2420,7 +2420,7 @@ MODRET snmp_log_pass(cmd_rec *cmd) {
       }
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_LOGINS_F_TOTAL, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -2445,7 +2445,7 @@ MODRET snmp_err_pass(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTP_LOGINS_F_ERR_TOTAL, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -2453,7 +2453,7 @@ MODRET snmp_err_pass(cmd_rec *cmd) {
         strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_LOGINS_F_ERR_TOTAL, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -2477,7 +2477,7 @@ MODRET snmp_pre_retr(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_DOWNLOAD_COUNT, 1);
     if (res < 0) {
@@ -2486,7 +2486,7 @@ MODRET snmp_pre_retr(cmd_rec *cmd) {
         "ftp.dataTransfers.fileDownloadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_DOWNLOAD_COUNT, 1);
     if (res < 0) {
@@ -2495,7 +2495,7 @@ MODRET snmp_pre_retr(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.fileDownloadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_DOWNLOAD_COUNT, 1);
     if (res < 0) {
@@ -2504,7 +2504,7 @@ MODRET snmp_pre_retr(cmd_rec *cmd) {
         "sftp.sftpDataTransfers.fileDownloadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_DOWNLOAD_COUNT, 1);
     if (res < 0) {
@@ -2529,7 +2529,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2573,7 +2573,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
 
     snmp_retr_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2617,7 +2617,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
 
     snmp_retr_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2661,7 +2661,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
 
     snmp_retr_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2719,7 +2719,7 @@ MODRET snmp_err_retr(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2736,7 +2736,7 @@ MODRET snmp_err_retr(cmd_rec *cmd) {
         "ftp.dataTransfers.fileDownloadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2753,7 +2753,7 @@ MODRET snmp_err_retr(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.fileDownloadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2770,7 +2770,7 @@ MODRET snmp_err_retr(cmd_rec *cmd) {
         "sftp.sftpDataTransfers.fileDownloadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_DOWNLOAD_COUNT, -1);
     if (res < 0) {
@@ -2800,7 +2800,7 @@ MODRET snmp_pre_stor(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_UPLOAD_COUNT, 1);
     if (res < 0) {
@@ -2809,7 +2809,7 @@ MODRET snmp_pre_stor(cmd_rec *cmd) {
         "ftp.dataTransfers.fileUploadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_UPLOAD_COUNT, 1);
     if (res < 0) {
@@ -2818,7 +2818,7 @@ MODRET snmp_pre_stor(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.fileUploadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_UPLOAD_COUNT, 1);
     if (res < 0) {
@@ -2827,7 +2827,7 @@ MODRET snmp_pre_stor(cmd_rec *cmd) {
         "sftp.sftpDataTransfers.fileUploadCount: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_UPLOAD_COUNT, 1);
     if (res < 0) {
@@ -2852,7 +2852,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -2896,7 +2896,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
 
     snmp_stor_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -2940,7 +2940,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
 
     snmp_stor_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -2984,7 +2984,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
 
     snmp_stor_bytes = rem_bytes;
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -3042,7 +3042,7 @@ MODRET snmp_err_stor(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftp", 4) == 0) {
+  if (strcmp(proto, "ftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -3059,7 +3059,7 @@ MODRET snmp_err_stor(cmd_rec *cmd) {
         "ftp.dataTransfers.fileUploadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "ftps", 5) == 0) {
+  } else if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_FTPS_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -3076,7 +3076,7 @@ MODRET snmp_err_stor(cmd_rec *cmd) {
         "ftps.tlsDataTransfers.fileUploadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "sftp", 5) == 0) {
+  } else if (strcmp(proto, "sftp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SFTP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -3093,7 +3093,7 @@ MODRET snmp_err_stor(cmd_rec *cmd) {
         "sftp.sftpDataTransfers.fileUploadFailedTotal: %s", strerror(errno));
     }
 
-  } else if (strncmp(proto, "scp", 4) == 0) {
+  } else if (strcmp(proto, "scp") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool,
       SNMP_DB_SCP_XFERS_F_FILE_UPLOAD_COUNT, -1);
     if (res < 0) {
@@ -3134,9 +3134,8 @@ MODRET snmp_log_auth(cmd_rec *cmd) {
    */
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
-    res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_SESS_COUNT,
-      1);
+  if (strcmp(proto, "ftps") == 0) {
+    res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_SESS_COUNT, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
         "error incrementing SNMP database for "
@@ -3167,7 +3166,7 @@ MODRET snmp_log_ccc(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_CCC_TOTAL, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -3188,7 +3187,7 @@ MODRET snmp_err_ccc(cmd_rec *cmd) {
   }
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_CCC_ERR_TOTAL,
       1);
     if (res < 0) {
@@ -3236,7 +3235,7 @@ static void snmp_auth_code_ev(const void *event_data, void *user_data) {
   /* Any notifications we generate here may depend on the protocol in use. */
   proto = pr_session_get_protocol(0);
 
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     is_ftps = TRUE;
   }
 
@@ -3327,30 +3326,43 @@ static void snmp_exit_ev(const void *event_data, void *user_data) {
 
   ev_incr_value(SNMP_DB_DAEMON_F_CONN_COUNT, "daemon.connectionCount", -1);
 
-  if (session.disconnect_reason == PR_SESS_DISCONNECT_SESSION_INIT_FAILED) {
-    ev_incr_value(SNMP_DB_DAEMON_F_CONN_REFUSED_TOTAL,
-      "daemon.connectionRefusedTotal", 1);
+  switch (session.disconnect_reason) {
+    case PR_SESS_DISCONNECT_BANNED:
+    case PR_SESS_DISCONNECT_CONFIG_ACL:
+    case PR_SESS_DISCONNECT_MODULE_ACL:
+    case PR_SESS_DISCONNECT_SESSION_INIT_FAILED:
+      ev_incr_value(SNMP_DB_DAEMON_F_CONN_REFUSED_TOTAL,
+        "daemon.connectionRefusedTotal", 1);
+      break;
 
-  } else {
-    const char *proto;
+    case PR_SESS_DISCONNECT_SEGFAULT:
+      ev_incr_value(SNMP_DB_DAEMON_F_SEGFAULT_COUNT,
+        "daemon.segfaultCount", 1);
+      break;
 
-    proto = pr_session_get_protocol(0);
+    default: {
+      const char *proto;
 
-    if (strncmp(proto, "ftp", 4) == 0) {
-      ev_incr_value(SNMP_DB_FTP_SESS_F_SESS_COUNT,
-        "ftp.sessions.sessionCount", -1);
+      proto = pr_session_get_protocol(0);
 
-      if (session.anon_config != NULL) {
-        ev_incr_value(SNMP_DB_FTP_LOGINS_F_ANON_COUNT,
-          "ftp.logins.anonLoginCount", -1);
+      if (strcmp(proto, "ftp") == 0) {
+        ev_incr_value(SNMP_DB_FTP_SESS_F_SESS_COUNT,
+          "ftp.sessions.sessionCount", -1);
+
+        if (session.anon_config != NULL) {
+          ev_incr_value(SNMP_DB_FTP_LOGINS_F_ANON_COUNT,
+            "ftp.logins.anonLoginCount", -1);
+        }
+
+      } else if (strcmp(proto, "ftps") == 0) {
+        ev_incr_value(SNMP_DB_FTPS_SESS_F_SESS_COUNT,
+          "ftps.tlsSessions.sessionCount", -1);
+
+      } else {
+        /* XXX ssh2/sftp/scp session end */
       }
 
-    } else if (strncmp(proto, "ftps", 5) == 0) {
-      ev_incr_value(SNMP_DB_FTPS_SESS_F_SESS_COUNT,
-        "ftps.tlsSessions.sessionCount", -1);
-
-    } else {
-      /* XXX ssh2/sftp/scp session end */
+      break;
     }
   }
 
@@ -3391,7 +3403,7 @@ static void snmp_max_inst_ev(const void *event_data, void *user_data) {
 
 #if defined(PR_SHARED_MODULE)
 static void snmp_mod_unload_ev(const void *event_data, void *user_data) {
-  if (strncmp((const char *) event_data, "mod_snmp.c", 11) == 0) {
+  if (strcmp((const char *) event_data, "mod_snmp.c") == 0) {
     register unsigned int i;
 
     /* Unregister ourselves from all events. */
@@ -4014,6 +4026,8 @@ static int snmp_init(void) {
   snmp_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(snmp_pool, MOD_SNMP_VERSION);
 
+  pr_event_register(&snmp_module, "core.max-instances",
+    snmp_max_inst_ev, NULL);
 #if defined(PR_SHARED_MODULE)
   pr_event_register(&snmp_module, "core.module-unload", snmp_mod_unload_ev,
     NULL);
@@ -4062,7 +4076,7 @@ static int snmp_sess_init(void) {
   int res;
 
   c = find_config(main_server->conf, CONF_PARAM, "SNMPEnable", FALSE);
-  if (c) {
+  if (c != NULL) {
     snmp_enabled = *((int *) c->argv[0]);
   }
 
@@ -4073,8 +4087,6 @@ static int snmp_sess_init(void) {
 
   pr_event_register(&snmp_module, "core.invalid-command",
     snmp_cmd_invalid_ev, NULL);
-  pr_event_register(&snmp_module, "core.max-instances",
-    snmp_max_inst_ev, NULL);
   pr_event_register(&snmp_module, "core.timeout-idle",
     snmp_timeout_idle_ev, NULL);
   pr_event_register(&snmp_module, "core.timeout-login",
@@ -4287,4 +4299,3 @@ module snmp_module = {
   /* Module version */
   MOD_SNMP_VERSION
 };
-

@@ -351,11 +351,11 @@ static void to_surrogate_pair(uint32_t unicode, uint16_t *uc, uint16_t *lc)
 #define is_space(c) ((c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == ' ')
 #define is_digit(c) ((c) >= '0' && (c) <= '9')
 
-static int parse_value      (const char **sp, JsonNode        **out);
+static int parse_value      (const char **sp, JsonNode        **out, unsigned int depth);
 static int parse_string     (const char **sp, char            **out);
 static int parse_number     (const char **sp, double           *out);
-static int parse_array      (const char **sp, JsonNode        **out);
-static int parse_object     (const char **sp, JsonNode        **out);
+static int parse_array      (const char **sp, JsonNode        **out, unsigned int depth);
+static int parse_object     (const char **sp, JsonNode        **out, unsigned int depth);
 static int parse_hex16      (const char **sp, uint16_t         *out);
 
 static int expect_literal   (const char **sp, const char *str);
@@ -391,7 +391,7 @@ JsonNode *json_decode(const char *json)
 	JsonNode *ret;
 	
 	skip_space(&s);
-	if (!parse_value(&s, &ret))
+	if (!parse_value(&s, &ret, 0))
 		return NULL;
 	
 	skip_space(&s);
@@ -468,7 +468,7 @@ int json_validate(const char *json)
 	const char *s = json;
 	
 	skip_space(&s);
-	if (!parse_value(&s, NULL))
+	if (!parse_value(&s, NULL, 0))
 		return FALSE;
 	
 	skip_space(&s);
@@ -655,10 +655,14 @@ void json_remove_from_parent(JsonNode *node)
 	}
 }
 
-static int parse_value(const char **sp, JsonNode **out)
+static int parse_value(const char **sp, JsonNode **out, unsigned int depth)
 {
 	const char *s = *sp;
-	
+
+	if (depth > CCAN_JSON_MAX_DEPTH) {
+		return FALSE;
+	}
+
 	switch (*s) {
 		case 'n':
 			if (expect_literal(&s, "null")) {
@@ -699,14 +703,14 @@ static int parse_value(const char **sp, JsonNode **out)
 		}
 		
 		case '[':
-			if (parse_array(&s, out)) {
+			if (parse_array(&s, out, depth)) {
 				*sp = s;
 				return TRUE;
 			}
 			return FALSE;
 		
 		case '{':
-			if (parse_object(&s, out)) {
+			if (parse_object(&s, out, depth)) {
 				*sp = s;
 				return TRUE;
 			}
@@ -725,12 +729,13 @@ static int parse_value(const char **sp, JsonNode **out)
 	}
 }
 
-static int parse_array(const char **sp, JsonNode **out)
+static int parse_array(const char **sp, JsonNode **out, unsigned int depth)
 {
 	const char *s = *sp;
 	JsonNode *ret = out ? json_mkarray() : NULL;
 	JsonNode *element;
-	
+
+	depth++;
 	if (*s++ != '[')
 		goto failure;
 	skip_space(&s);
@@ -741,7 +746,7 @@ static int parse_array(const char **sp, JsonNode **out)
 	}
 	
 	for (;;) {
-		if (!parse_value(&s, out ? &element : NULL))
+		if (!parse_value(&s, out ? &element : NULL, depth))
 			goto failure;
 		skip_space(&s);
 		
@@ -759,23 +764,26 @@ static int parse_array(const char **sp, JsonNode **out)
 	}
 	
 success:
+	depth--;
 	*sp = s;
 	if (out)
 		*out = ret;
 	return TRUE;
 
 failure:
+	depth--;
 	json_delete(ret);
 	return FALSE;
 }
 
-static int parse_object(const char **sp, JsonNode **out)
+static int parse_object(const char **sp, JsonNode **out, unsigned int depth)
 {
 	const char *s = *sp;
 	JsonNode *ret = out ? json_mkobject() : NULL;
 	char *key;
 	JsonNode *value;
-	
+
+	depth++;
 	if (*s++ != '{')
 		goto failure;
 	skip_space(&s);
@@ -794,7 +802,7 @@ static int parse_object(const char **sp, JsonNode **out)
 			goto failure_free_key;
 		skip_space(&s);
 		
-		if (!parse_value(&s, out ? &value : NULL))
+		if (!parse_value(&s, out ? &value : NULL, depth))
 			goto failure_free_key;
 		skip_space(&s);
 		
@@ -812,6 +820,7 @@ static int parse_object(const char **sp, JsonNode **out)
 	}
 	
 success:
+	depth--;
 	*sp = s;
 	if (out)
 		*out = ret;
@@ -821,6 +830,7 @@ failure_free_key:
 	if (out)
 		free(key);
 failure:
+	depth--;
 	json_delete(ret);
 	return FALSE;
 }

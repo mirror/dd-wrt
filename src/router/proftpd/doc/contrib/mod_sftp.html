@@ -799,6 +799,29 @@ you wish to disable in all vhosts, you might use the "NoRSA" flag, <i>e.g.</i>:
 </pre>
 
 <p>
+OpenSSH started using an OpenSSH-specific private key format in version 7.8.
+ProFTPD did not support reading this OpenSSH-specific format until 1.3.7.  Thus
+if you need to use SSH hostkeys in the OpenSSH-specific private key format
+with ProFTPD prior to 1.3.7, you will need to convert those private keys to
+the more conventional PEM format that <code>mod_sftp</code> supported.  If
+your <code>SFTPHostKey</code> file starts with:
+<pre>
+-----BEGIN OPENSSH PRIVATE KEY-----
+</pre>
+then it is using the OpenSSH-specific private key format.  To convert this
+private key to a PEM private key, use <i>e.g.</i>:
+<pre>
+$ cp /etc/ssh/ssh_host_rsa_key /etc/proftpd/ssh_host_rsa_key
+$ ssh-keygen -p -f /etc/proftpd/ssh_host_rsa_key -m PEM
+</pre>
+<b>Note</b> that you <b>cannot</b> use the <code>-e</code> option for this:
+<pre>
+$ ssh-keygen -e -f /etc/ssh/ssh_host_rsa_key -m PEM > /etc/proftpd/ssh_host_rsa_key
+</pre>
+Since that "exports" the corresponding <b><i>public key</i></b>, not the
+<em>private key</em> as you would want for a hostkey.
+
+<p>
 <hr>
 <h3><a name="SFTPKeyBlacklist">SFTPKeyBlacklist</a></h3>
 <strong>Syntax:</strong> SFTPKeyBlacklist <em>"none"|path</em><br>
@@ -1579,8 +1602,10 @@ is intentional; the logs may be used to help troubleshoot <i>failed</i>
 authentication attempts, as well as successful authentications.
 
 <p>
-These environment variables are intended for informational purposes,
-<i>e.g.</i> <code>ExtendedLog</code> or <code>SQLLog</code> directives.
+These values are also available in the <code>session.notes</code> table,
+under keys of the names above.  These note variables are intended for
+informational purposes, <i>e.g.</i> <code>ExtendedLog</code> or
+<code>SQLLog</code> directives via the <code>%{note:...}</code> syntax.
 
 <p><a name="UsageRFC4716Format">
 <b>SSH2 Public Key Formats</b><br>
@@ -2617,7 +2642,7 @@ deal with this issue, then, you can hopefully upgrade to ProFTPD 1.3.6 or later,
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2008-2020 TJ Saunders<br>
+&copy; Copyright 2008-2021 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

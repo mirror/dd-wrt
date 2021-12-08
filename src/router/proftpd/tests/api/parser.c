@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2020 The ProFTPD Project team
+ * Copyright (c) 2014-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@ static pool *p = NULL;
 
 static const char *config_path = "/tmp/prt-parser.conf";
 static const char *config_path2 = "/tmp/prt-parser2.conf";
+static const char *config_path3 = "/tmp/prt-parser3.d";
 static const char *config_tmp_path = "/tmp/prt-parser.conf~";
 
 static void set_up(void) {
   (void) unlink(config_path);
   (void) unlink(config_path2);
+  (void) rmdir(config_path3);
   (void) unlink(config_tmp_path);
 
   if (p == NULL) {
@@ -56,6 +58,7 @@ static void tear_down(void) {
 
   (void) unlink(config_path);
   (void) unlink(config_path2);
+  (void) rmdir(config_path3);
   (void) unlink(config_tmp_path);
 
   if (getenv("TEST_VERBOSE") != NULL) {
@@ -85,6 +88,35 @@ START_TEST (parser_prepare_test) {
   fail_unless(res == 0, "Failed to handle null pool: %s", strerror(errno));
 
   (void) pr_parser_cleanup();
+}
+END_TEST
+
+START_TEST (parser_cleanup_test) {
+  int res;
+  server_rec *ctx;
+
+  mark_point();
+  res = pr_parser_cleanup();
+  fail_unless(res == 0, "Failed to handle unprepared parser: %s",
+    strerror(errno));
+
+  pr_parser_prepare(NULL, NULL);
+
+  mark_point();
+  ctx = pr_parser_server_ctxt_open("127.0.0.1");
+  fail_unless(ctx != NULL, "Failed to open server context: %s",
+    strerror(errno));
+
+  mark_point();
+  res = pr_parser_cleanup();
+  fail_unless(res < 0, "Failed to handle existing contexts");
+  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+    strerror(errno), errno);
+
+  mark_point();
+  (void) pr_parser_server_ctxt_close();
+  res = pr_parser_cleanup();
+  fail_unless(res == 0, "Failed to cleanup parser: %s", strerror(errno));
 }
 END_TEST
 
@@ -184,6 +216,13 @@ START_TEST (parser_config_ctxt_test) {
   fail_unless(ctx == res, "Expected config context %p, got %p", res, ctx);
 
   mark_point();
+  (void) pr_parser_config_ctxt_close(&is_empty);
+  fail_unless(is_empty == TRUE, "Expected config context to be empty");
+
+  mark_point();
+  res = pr_parser_config_ctxt_open("<Global>");
+  fail_unless(res != NULL, "Failed to open config context: %s",
+    strerror(errno));
   (void) pr_parser_config_ctxt_close(&is_empty);
   fail_unless(is_empty == TRUE, "Expected config context to be empty");
 
@@ -294,6 +333,23 @@ START_TEST (parser_parse_line_test) {
   lineno = pr_parser_get_lineno();
   fail_unless(lineno != 2, "Expected lineno 2, got %u", lineno);
 
+  /* Deliberately omit the trailing '}', to test our handling of malformed
+   * inputs.
+   */
+  mark_point();
+  text = pstrdup(p, "BarBaz %{env:FOO_TEST");
+  cmd = pr_parser_parse_line(p, text, 0);
+  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+    strerror(errno));
+  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+    "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
+  fail_unless(strcmp(cmd->arg, "%{env:FOO_TEST") == 0,
+    "Expected '%{env:FOO_TEST', got '%s'", cmd->arg);
+  lineno = pr_parser_get_lineno();
+  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+
+  mark_point();
   pr_env_set(p, "FOO_TEST", "BAR");
   text = pstrdup(p, "BarBaz %{env:FOO_TEST}");
   cmd = pr_parser_parse_line(p, text, 0);
@@ -403,35 +459,50 @@ START_TEST (parse_config_path_test) {
 
   (void) pr_parser_cleanup();
 
+  mark_point();
   res = parse_config_path(NULL, NULL);
   fail_unless(res < 0, "Failed to handle null pool");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = parse_config_path2(p, NULL, 0);
   fail_unless(res < 0, "Failed to handle null path");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   path = "foo";
   fail_unless(res < 0, "Failed to handle relative path");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = parse_config_path2(p, path, 1024);
   fail_unless(res < 0, "Failed to handle excessive depth");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = parse_config_path2(p, path, 0);
   fail_unless(res < 0, "Failed to handle invalid path");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
-  path = "/tmp";
-  res = lstat(path, &st);
-  fail_unless(res == 0, "Failed lstat(2) on '/tmp': %s", strerror(errno));
+  mark_point();
 
+  /* Note that `/tmp/` may be a large/wide directory on some systems; we
+   * thus make a more predictable directory for our testing.
+   */
+  res = mkdir(config_path3, 0775);
+  fail_unless(res == 0, "Failed to mkdir '%s': %s", config_path3,
+    strerror(errno));
+
+  path = config_path3;
+  res = lstat(path, &st);
+  fail_unless(res == 0, "Failed lstat(2) on '%s': %s", path, strerror(errno));
+
+  mark_point();
   res = parse_config_path2(p, path, 0);
   if (S_ISLNK(st.st_mode)) {
     fail_unless(res < 0, "Failed to handle uninitialized parser");
@@ -442,6 +513,7 @@ START_TEST (parse_config_path_test) {
     fail_unless(res == 0, "Failed to handle empty directory");
   }
 
+  mark_point();
   pr_parser_prepare(p, NULL);
   pr_parser_server_ctxt_open("127.0.0.1");
 
@@ -454,6 +526,10 @@ START_TEST (parse_config_path_test) {
   } else if (S_ISDIR(st.st_mode)) {
     fail_unless(res == 0, "Failed to handle empty directory");
   }
+
+  res = rmdir(config_path3);
+  fail_unless(res == 0, "Failed to rmdir '%s': %s", config_path3,
+    strerror(errno));
 
   mark_point();
   path = config_path;
@@ -674,6 +750,7 @@ Suite *tests_get_parser_suite(void) {
   tcase_add_checked_fixture(testcase, set_up, tear_down);
 
   tcase_add_test(testcase, parser_prepare_test);
+  tcase_add_test(testcase, parser_cleanup_test);
   tcase_add_test(testcase, parser_server_ctxt_test);
   tcase_add_test(testcase, parser_server_ctxt_push_test);
   tcase_add_test(testcase, parser_config_ctxt_test);
@@ -683,6 +760,9 @@ Suite *tests_get_parser_suite(void) {
   tcase_add_test(testcase, parser_parse_line_test);
   tcase_add_test(testcase, parse_config_path_test);
   tcase_add_test(testcase, parser_parse_file_test);
+
+  /* Some of these tests may take a little longer. */
+  tcase_set_timeout(testcase, 30);
 
   suite_add_tcase(suite, testcase);
   return suite;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,6 +99,7 @@ int sftp_ssh2_packet_handle(void);
  */
 void sftp_ssh2_packet_handle_debug(struct ssh2_packet *);
 void sftp_ssh2_packet_handle_disconnect(struct ssh2_packet *);
+void sftp_ssh2_packet_handle_ext_info(struct ssh2_packet *);
 void sftp_ssh2_packet_handle_ignore(struct ssh2_packet *);
 void sftp_ssh2_packet_handle_unimplemented(struct ssh2_packet *);
 

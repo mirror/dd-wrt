@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2020 The ProFTPD Project team
+dnl Copyright (c) 2001-2021 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -129,6 +129,13 @@ if test $ac_cv_prog_gcc = yes; then
   dnl test for -fno-omit-frame-pointer
   AC_MSG_CHECKING([whether the C compiler accepts -fno-omit-frame-pointer])
   CFLAGS="-fno-omit-frame-pointer"
+  AC_TRY_COMPILE(,,
+    AC_MSG_RESULT(yes); fullCFLAGS="$fullCFLAGS $CFLAGS",
+    AC_MSG_RESULT(no))
+
+  dnl test for -fno-strict-aliasing
+  AC_MSG_CHECKING([whether the C compiler accepts -fno-strict-aliasing])
+  CFLAGS="-fno-strict-aliasing"
   AC_TRY_COMPILE(,,
     AC_MSG_RESULT(yes); fullCFLAGS="$fullCFLAGS $CFLAGS",
     AC_MSG_RESULT(no))
@@ -1903,7 +1910,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 
-AC_CHECK_FUNCS(bcopy crypt ctime_r fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp gmtime_r localtime_r mkdtemp nl_langinfo)
+AC_CHECK_FUNCS(bcopy crypt ctime_r fdatasync fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp gmtime_r localtime_r mkdtemp nl_langinfo)
 
 AC_CHECK_FUNC(gai_strerror,
   AC_DEFINE(HAVE_GAI_STRERROR, 1,
@@ -2742,17 +2749,38 @@ fi
 dnl Custom-rolled macro for checking return type of setgrent(3)
 PR_FUNC_SETGRENT_VOID
 
-dnl Perform checks for curses/ncurses libraries only if the corresponding
-dnl headers have been found.
-if test x"$ac_cv_header_curses_h" = xyes; then
+if test x"$enable_curses" != xno ; then
   AC_CHECK_LIB(curses, initscr,
     [ CURSES_LIBS="-lcurses"
       AC_DEFINE(HAVE_LIBCURSES, 1, [Define if you have curses])
+      AC_DEFINE(PR_USE_CURSES, 1, [Define if using curses support])
     ])
+
+  dnl Check for the libtinfo library, which contains the stdscr symbol,
+  dnl halfdelay curses function on some systems (e.g. Gentoo); see
+  dnl Issue #1207.  Note that on some systems, this may need to be libtinfow
+  dnl instead.
+  if test x"$enable_nls" = xyes ; then
+    AC_CHECK_LIB(tinfow, halfdelay,
+      [ UTILS_LIBS="$UTILS_LIBS -ltinfow"
+        AC_DEFINE(HAVE_LIBTINFOW, 1, [Define if you have libtinfow])
+      ],
+      [ AC_CHECK_LIB(tinfo, halfdelay,
+        [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
+          AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
+        ])
+      ])
+  else
+    AC_CHECK_LIB(tinfo, halfdelay,
+      [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
+        AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
+      ])
+  fi
 fi
 
-pr_have_ncursesw="no"
-if test x"$ac_cv_header_ncurses_h" = xyes; then
+if test x"$enable_ncurses" != xno ; then
+  pr_have_ncursesw="no"
+
   dnl If NLS support has been enabled, then check for the locale-sensitive
   dnl libncursesw library first; if not found, or if no NLS support, then
   dnl check for libncurses.
@@ -2769,32 +2797,36 @@ if test x"$ac_cv_header_ncurses_h" = xyes; then
           ])
       ])
 
-  else 
+  else
     AC_CHECK_LIB(ncurses, initscr,
       [ CURSES_LIBS="-lncurses"
         AC_DEFINE(HAVE_LIBNCURSES, 1, [Define if you have ncurses])
       ])
   fi
-fi
 
-if test x"$enable_curses" != xno ; then
-  AC_DEFINE(PR_USE_CURSES, 1, [Define if using curses support])
-fi
+  dnl Check for the libtinfo library, which contains the halfdelay() curses
+  dnl function on some systems (e.g. OpenSuSE); see Bug#3718.  Note that on
+  dnl some systems, this may need to be libtinfow instead; see Issue #1174.
 
-if test x"$enable_ncurses" != xno ; then
   if test x"$pr_have_ncursesw" = xyes ; then
     AC_DEFINE(PR_USE_NCURSESW, 1, [Define if using ncursesw support])
+    AC_CHECK_LIB(tinfow, halfdelay,
+      [ UTILS_LIBS="$UTILS_LIBS -ltinfow"
+        AC_DEFINE(HAVE_LIBTINFOW, 1, [Define if you have libtinfow])
+      ],
+      [ AC_CHECK_LIB(tinfo, halfdelay,
+        [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
+          AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
+        ])
+      ])
   else
     AC_DEFINE(PR_USE_NCURSES, 1, [Define if using ncurses support])
+    AC_CHECK_LIB(tinfo, halfdelay,
+      [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
+        AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
+      ])
   fi
 fi
-
-dnl Check for the libtinfo library, which contains the halfdelay() curses
-dnl function on some systems (e.g. OpenSuSE); see Bug#3718.
-AC_CHECK_LIB(tinfo, halfdelay,
-  [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
-    AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
-  ])
 
 if test x"$enable_nonblocking_log_open" != xno; then
   AC_DEFINE(PR_USE_NONBLOCKING_LOG_OPEN, 1, [Define if using nonblocking open of log files])

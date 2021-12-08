@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -323,21 +323,6 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEADDR: %s",
         strerror(errno));
     }
-
-#ifdef SO_REUSEPORT
-    /* Note that we only want to use this socket option if we are NOT the
-     * master/parent daemon.  Otherwise, we would allow multiple daemon
-     * processes to bind to the same socket, causing unexpected terror
-     * and madness (see Issue #622).
-     */
-    if (!is_master) {
-      if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (void *) &on,
-          sizeof(on)) < 0) {
-        pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEPORT: %s",
-          strerror(errno));
-      }
-    }
-#endif /* SO_REUSEPORT */
 
     /* Allow socket keepalive messages by default.  However, if
      * "SocketOptions keepalive off" is in effect, then explicitly
@@ -941,8 +926,8 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
 }
 
 /* Set socket options on a connection.  */
-int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
-    struct tcp_keepalive *tcp_keepalive) {
+int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
+    struct tcp_keepalive *tcp_keepalive, int reuse_port) {
 
   if (c == NULL) {
     errno = EINVAL;
@@ -982,7 +967,7 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
       if (tcp_keepalive != NULL) {
         int val = 0;
 
-#ifdef TCP_KEEPIDLE
+#if defined(TCP_KEEPIDLE)
         val = tcp_keepalive->keepalive_idle;
         if (val != -1) {
 # ifdef __DragonFly__
@@ -1002,7 +987,7 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
         }
 #endif /* TCP_KEEPIDLE */
 
-#ifdef TCP_KEEPCNT
+#if defined(TCP_KEEPCNT)
         val = tcp_keepalive->keepalive_count;
         if (val != -1) {
           if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPCNT, (void *)
@@ -1018,7 +1003,7 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
         }
 #endif /* TCP_KEEPCNT */
 
-#ifdef TCP_KEEPINTVL
+#if defined(TCP_KEEPINTVL)
         val = tcp_keepalive->keepalive_intvl;
         if (val != -1) {
 # ifdef __DragonFly__
@@ -1108,7 +1093,34 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
     c->rcvbuf = (rcvbuf ? rcvbuf : crcvbuf);
   }
 
+#if defined(SO_REUSEPORT)
+  if (reuse_port != -1) {
+    /* Note that we only want to use this socket option if we are NOT the
+     * master/parent daemon.  Otherwise, we would allow multiple daemon
+     * processes to bind to the same socket, causing unexpected terror
+     * and madness (see Issue #622).
+     */
+    if (!is_master) {
+      if (setsockopt(c->listen_fd, SOL_SOCKET, SO_REUSEPORT,
+          (void *) &reuse_port, sizeof(reuse_port)) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "error setting SO_REUSEPORT on fd %d: %s", c->listen_fd,
+          strerror(errno));
+
+      } else {
+        pr_trace_msg("data", 8,
+          "set socket fd %d reuseport = %d", c->listen_fd, reuse_port);
+      }
+    }
+  }
+#endif /* SO_REUSEPORT */
+
   return 0;
+}
+
+int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
+    struct tcp_keepalive *tcp_keepalive) {
+  return pr_inet_set_socket_opts2(p, c, rcvbuf, sndbuf, tcp_keepalive, -1);
 }
 
 #ifdef SO_OOBINLINE

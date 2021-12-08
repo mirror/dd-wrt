@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2020 The ProFTPD Project team
+ * Copyright (c) 2008-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -834,7 +834,8 @@ START_TEST (fsio_sys_access_dir_test) {
   fail_unless(res == 0, "Failed to check for write access on directory: %s",
     strerror(errno));
 
-  if (getenv("CIRRUS_CLONE_DEPTH") == NULL &&
+  if (getenv("CI") == NULL &&
+      getenv("CIRRUS_CLONE_DEPTH") == NULL &&
       getenv("TRAVIS") == NULL) {
     uid_t other_uid;
     gid_t other_gid;

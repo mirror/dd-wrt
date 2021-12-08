@@ -3067,12 +3067,48 @@ static array_header *filter_get_cmd_ids(pool *p, array_header *names,
             *included_classes |= (CL_CONNECT|CL_DISCONNECT);
           }
 
+        } else if (strcmp(name, "AUTH") == 0) {
+          *included_classes |= CL_AUTH;
+          valid = TRUE;
+
         } else if (strcmp(name, "CONNECT") == 0) {
           *included_classes |= CL_CONNECT;
           valid = TRUE;
 
+        } else if (strcmp(name, "DIRS") == 0) {
+          *included_classes |= CL_DIRS;
+          valid = TRUE;
+
         } else if (strcmp(name, "DISCONNECT") == 0) {
           *included_classes |= CL_DISCONNECT;
+          valid = TRUE;
+
+        } else if (strcmp(name, "INFO") == 0) {
+          *included_classes |= CL_INFO;
+          valid = TRUE;
+
+        } else if (strcmp(name, "MISC") == 0) {
+          *included_classes |= CL_MISC;
+          valid = TRUE;
+
+        } else if (strcmp(name, "READ") == 0) {
+          *included_classes |= CL_READ;
+          valid = TRUE;
+
+        } else if (strcmp(name, "SEC") == 0) {
+          *included_classes |= CL_SEC;
+          valid = TRUE;
+
+        } else if (strcmp(name, "SFTP") == 0) {
+          *included_classes |= CL_SFTP;
+          valid = TRUE;
+
+        } else if (strcmp(name, "SSH") == 0) {
+          *included_classes |= CL_SSH;
+          valid = TRUE;
+
+        } else if (strcmp(name, "WRITE") == 0) {
+          *included_classes |= CL_WRITE;
           valid = TRUE;
         }
       }

@@ -195,6 +195,7 @@ static int sftp_get_client_version(conn_t *conn) {
       v = pstrdup(session.pool, banner);
       pr_env_unset(session.pool, k);
       pr_env_set(session.pool, k, v);
+      (void) pr_table_add(session.notes, k, v, 0);
     }
 
     if (bad_proto) {
@@ -276,10 +277,12 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
   k = pstrdup(session.pool, "SFTP");
   v = pstrdup(session.pool, "1");
   pr_env_set(session.pool, k, v);
+  (void) pr_table_add(session.notes, k, v, 0);
 
   k = pstrdup(session.pool, "SFTP_LIBRARY_VERSION");
   v = pstrdup(session.pool, OPENSSL_VERSION_TEXT);
   pr_env_set(session.pool, k, v);
+  (void) pr_table_add(session.notes, k, v, 0);
 
   memset(buf, '\0', sizeof(buf));
   k = pstrdup(session.pool, "SSH_CONNECTION");
@@ -288,6 +291,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
     pr_netaddr_get_ipstr(conn->local_addr), conn->local_port);
   v = pstrdup(session.pool, buf);
   pr_env_set(session.pool, k, v);
+  (void) pr_table_add(session.notes, k, v, 0);
 
   /* If we didn't send our KEXINIT earlier, send it now. */
   if (sftp_opts & SFTP_OPT_PESSIMISTIC_KEXINIT) {
@@ -298,7 +302,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
     }
   }
 
-  while (1) {
+  while (TRUE) {
     pr_signals_handle();
 
     res = sftp_ssh2_packet_handle();

@@ -231,7 +231,7 @@ to the <code>SQLAuthenticate</code> directive, you should create both the
 <p>
 To create a user table:
 <pre>
-  CREATE TABLE users (
+  CREATE TABLE `users` (
     userid VARCHAR(30) NOT NULL UNIQUE,
     passwd VARCHAR(80) NOT NULL,
     uid INTEGER UNIQUE,
@@ -241,13 +241,12 @@ To create a user table:
   );
 
   CREATE INDEX users_userid_idx ON users (userid);
-
 </pre>
 (<i>Note</i>: if you plan to reuse the same UID for multiple users, then you
 will need to remove the <code>UNIQUE</code> from the <code>uid</code> column
 description).  To create a group table:
 <pre>
-  CREATE TABLE groups (
+  CREATE TABLE `groups` (
     groupname VARCHAR(30) NOT NULL,
     gid INTEGER NOT NULL,
     members VARCHAR(255)
@@ -942,7 +941,7 @@ compiled with SSL support.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017-2020 The ProFTPD Project<br>
+&copy; Copyright 2017-2021 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

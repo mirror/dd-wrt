@@ -157,7 +157,7 @@ START_TEST (timer_remove_test) {
   int res;
 
   res = pr_timer_remove(0, NULL);
-  fail_unless(res == 0);
+  fail_unless(res == 0, "Failed to remove timer: %s", strerror(errno));
 
   res = pr_timer_add(1, 0, NULL, timers_test_cb, "test");
   fail_unless(res == 0, "Failed to add timer (%d): %s", res, strerror(errno));

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2020 The ProFTPD Project team
+ * Copyright (c) 2003-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -594,10 +594,10 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
   struct addrinfo hints, *info = NULL;
 
   memset(&hints, 0, sizeof(hints));
-
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
+  info = NULL;
 
   xerrno = errno;
   pr_trace_msg(trace_channel, 7,
@@ -614,20 +614,19 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
           "unable to resolve '%s' to an IPv4 address: %s", name,
           pr_gai_strerror(res));
 
-        info = NULL;
-
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET6;
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_protocol = IPPROTO_TCP;
+        info = NULL;
 
         pr_trace_msg(trace_channel, 7,
           "attempting to resolve '%s' to IPv6 address via DNS", name);
         errno = xerrno;
         res = pr_getaddrinfo(name, NULL, &hints, &info);
-        if (res != 0) {
-          xerrno = errno;
+        xerrno = errno;
 
+        if (res != 0) {
           if (res != EAI_SYSTEM) {
             pr_trace_msg(trace_channel, 5,
               "unable to resolve '%s' to an IPv6 address: %s", name,
@@ -760,17 +759,17 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
      */
 
     memset(&hints, 0, sizeof(hints));
-
     hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
+    info = NULL;
 
     pr_trace_msg(trace_channel, 7,
       "attempting to resolve '%s' to IPv6 address via DNS", name);
     res = pr_getaddrinfo(name, NULL, &hints, &info);
-    if (res != 0) {
-      xerrno = errno;
+    xerrno = errno;
 
+    if (res != 0) {
       if (res != EAI_SYSTEM) {
         pr_trace_msg(trace_channel, 1, "IPv6 getaddrinfo '%s' error: %s",
           name, pr_gai_strerror(res));
@@ -794,7 +793,12 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
           *addrs = make_array(p, 0, sizeof(pr_netaddr_t *));
         }
 
-        next_info = info->ai_next;
+        /* Note that for this subsequent IPv6 lookup, we need to treat the
+         * first struct addrinfo as an "additional" record, unlike our handling
+         * of IPv4 results.  Failure to do so means we might miss some IPv6
+         * addresses; see Bug#4428.
+         */
+        next_info = info;
         while (next_info != NULL) {
           pr_netaddr_t **elt;
 

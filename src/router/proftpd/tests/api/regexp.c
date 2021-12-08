@@ -242,7 +242,7 @@ START_TEST (regexp_exec_test) {
   pre = pr_regexp_alloc(NULL);
 
   pattern = "^foo";
-  res = pr_regexp_compile(pre, pattern, 0);
+  res = pr_regexp_compile(pre, pattern, REG_ICASE);
   fail_unless(res == 0, "Failed to compile regex pattern '%s'", pattern);
 
   res = pr_regexp_exec(pre, NULL, 0, NULL, 0, 0, 0);
@@ -256,8 +256,11 @@ START_TEST (regexp_exec_test) {
   res = pr_regexp_exec(pre, str, 0, NULL, 0, 0, 0);
   fail_unless(res == 0, "Failed to match string");
 
-  pr_regexp_free(NULL, pre);
+  str = "FOOBAR";
+  res = pr_regexp_exec(pre, str, 0, NULL, 0, 0, 0);
+  fail_unless(res == 0, "Failed to match string");
 
+  pr_regexp_free(NULL, pre);
   pre = pr_regexp_alloc(NULL);
 
   pattern = "^foo";
@@ -271,13 +274,122 @@ START_TEST (regexp_exec_test) {
   res = pr_regexp_exec(pre, str, 0, NULL, 0, 0, 0);
   fail_unless(res != 0, "Matched string unexpectedly");
 
+  str = "foobar";
+  res = pr_regexp_exec(pre, str, 0, NULL, 0, 0, 0);
+  fail_unless(res == 0, "Failed to match string");
+
+#if !defined(PR_USE_PCRE)
+  /* Note that when PCRE support is used, behavior of POSIX matching may be
+   * surprising; I suspect it relates to the overrides in <pcreposix.h>.
+   */
   str = "FOOBAR";
   res = pr_regexp_exec(pre, str, 0, NULL, 0, 0, 0);
   fail_unless(res == 0, "Failed to match string");
+#endif /* PR_USE_PCRE */
 
   pr_regexp_free(NULL, pre);
 }
 END_TEST
+
+#if !defined(PR_USE_PCRE)
+START_TEST (regexp_capture_posix_test) {
+  register unsigned int i;
+  pr_regex_t *pre = NULL;
+  int captured = FALSE, res;
+  char *pattern, *str;
+  size_t nmatches;
+  regmatch_t *matches;
+
+  pre = pr_regexp_alloc(NULL);
+
+  pattern = "(.*)";
+  res = pr_regexp_compile_posix(pre, pattern, 0);
+  fail_unless(res == 0, "Failed to compile regex pattern '%s'", pattern);
+
+  nmatches = 10;
+  matches = pcalloc(p, sizeof(regmatch_t) * nmatches);
+
+  str = "foobar";
+  res = pr_regexp_exec(pre, str, nmatches, matches, 0, 0, 0);
+  fail_unless(res == 0, "Failed to match string");
+
+  for (i = 0; i < nmatches; i++) {
+    int match_len;
+    const char *match_text;
+
+    if (matches[i].rm_so == -1 ||
+        matches[i].rm_eo == -1) {
+      break;
+    }
+
+    match_text = &(str[matches[i].rm_so]);
+    match_len = matches[i].rm_eo - matches[i].rm_so;
+
+    fail_unless(strcmp(match_text, str) == 0,
+      "Expected matched text '%s', got '%s'", str, match_text);
+    fail_unless(match_len == 6,
+      "Expected match text len 6, got %d", match_len);
+
+    captured = TRUE;
+  }
+
+  fail_unless(captured == TRUE,
+    "POSIX regex failed to capture expected groups");
+
+  pr_regexp_free(NULL, pre);
+}
+END_TEST
+#endif /* PR_USE_PCRE */
+
+#if defined(PR_USE_PCRE)
+START_TEST (regexp_capture_pcre_test) {
+  register unsigned int i;
+  pr_regex_t *pre = NULL;
+  int captured = FALSE, res;
+  char *pattern, *str;
+  size_t nmatches;
+  regmatch_t *matches;
+
+  pre = pr_regexp_alloc(NULL);
+
+  pattern = "(.*)";
+  res = pr_regexp_compile(pre, pattern, 0);
+  fail_unless(res == 0, "Failed to compile regex pattern '%s'", pattern);
+
+  nmatches = 10;
+  matches = pcalloc(p, sizeof(regmatch_t) * nmatches);
+
+  str = "foobar";
+  res = pr_regexp_exec(pre, str, nmatches, matches, 0, 0, 0);
+  fail_unless(res == 0, "Failed to match string");
+
+  for (i = 0; i < nmatches; i++) {
+    int match_len;
+    const char *match_text;
+
+    if (matches[i].rm_so == -1 ||
+        matches[i].rm_eo == -1) {
+      break;
+    }
+
+    match_text = &(str[matches[i].rm_so]);
+    match_len = matches[i].rm_eo - matches[i].rm_so;
+
+    fail_unless(strcmp(match_text, str) == 0,
+      "Expected matched text '%s', got '%s' (i = %u)", str, match_text, i);
+    fail_unless(match_len == 6,
+      "Expected match text len 6, got %d (i = %u)", match_len, i);
+
+    captured = TRUE;
+  }
+
+  fail_unless(captured == TRUE,
+    "PCRE regex failed to capture expected groups");
+
+  pr_regexp_free(NULL, pre);
+}
+END_TEST
+#endif /* PR_USE_PCRE */
 
 START_TEST (regexp_cleanup_test) {
   pr_regex_t *pre, *pre2, *pre3;
@@ -329,6 +441,12 @@ Suite *tests_get_regexp_suite(void) {
   tcase_add_test(testcase, regexp_compile_test);
   tcase_add_test(testcase, regexp_compile_posix_test);
   tcase_add_test(testcase, regexp_exec_test);
+#if !defined(PR_USE_PCRE)
+  tcase_add_test(testcase, regexp_capture_posix_test);
+#endif /* !PR_USE_PCRE */
+#if defined(PR_USE_PCRE)
+  tcase_add_test(testcase, regexp_capture_pcre_test);
+#endif /* PR_USE_PCRE */
   tcase_add_test(testcase, regexp_get_pattern_test);
   tcase_add_test(testcase, regexp_set_limits_test);
   tcase_add_test(testcase, regexp_cleanup_test);
