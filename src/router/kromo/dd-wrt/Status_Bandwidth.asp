@@ -7,7 +7,7 @@ var update;
 addEvent(window, "load", function() {
 	if(document.getElementsByName("refresh_button").length) {
 		document.getElementsByName("refresh_button")[0].disabled = true;
-		document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
+		//document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
 	
