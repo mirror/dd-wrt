@@ -2682,7 +2682,8 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
 		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
 	do_ddwrt_inspired_themes(stream);
-	websWrite(stream, "<body>\n" "<ul id=\"t-graph\">\n");
+	// add body class to target background in internal inspired themes
+	websWrite(stream, "<body class=\"t-graph-bg\">\n" "<ul id=\"t-graph\">\n");
 	for (i = 0; i < days; i++) {
 		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
 		wd++;

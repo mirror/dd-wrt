@@ -128,7 +128,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
-		websWrite(wp, "<th>W</th>\n");
+		websWrite(wp, "<th>WAN</th>\n");
 	for (a = 1; a < lanports + 1; a++) {
 		websWrite(wp, "<th>%d</th>\n", a);
 	}
