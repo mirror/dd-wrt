@@ -349,7 +349,7 @@ errmsg.err47="SSID Inválida.";
 errmsg.err48="WDS é incompatível com a configuração atual do roteador. Verifique os seguintes itens:\n * O Modo Wireless deve ser Ponto de Acesso \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius está disponível apenas no modo Ponto de Acesso.";
+errmsg.err49="RADIUS está disponível apenas no modo Ponto de Acesso.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Insira um SSID.";
@@ -401,7 +401,7 @@ bmenu.networking="Interligações";
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Configurações Básicas";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Segurança Wireless";
@@ -790,12 +790,12 @@ hotspot.h2="Portal do Hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="c";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="IP/DNS do Servidor Radius Primário";
-hotspot.bserver="IP/DNS do Servidor Radius Backup";
+hotspot.pserver="IP/DNS do Servidor RADIUS Primário";
+hotspot.bserver="IP/DNS do Servidor RADIUS Backup";
 hotspot.dns="Endereço IP do Servidor DNS";
 hotspot.url="URL de Redirecionamento";
 hotspot.dhcp="Interface DHCP";
-hotspot.radnas="ID NAS do Radius";
+hotspot.radnas="ID NAS do RADIUS";
 hotspot.net="Rede Hotspot";
 hotspot.uam="Segredo UAM";
 hotspot.uamserver="Servidor UAM";
@@ -868,7 +868,7 @@ hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
 //help container 
-hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do Radius primário para 127.0.0.1";
+hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do RADIUS primário para 127.0.0.1";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1383,10 +1383,10 @@ service.pppoesrv_lcpef="Falha de Eco LCP";
 service.pppoesrv_limit="Limite de Sessão por MAC";
 service.pppoesrv_idlet="Tempo Ocioso de Cliente";
 service.pppoesrv_auth="Autenticação";
-service.pppoesrv_radip="Endereço IP do Servidor Radius";
-service.pppoesrv_radauthport="Porta de Auteticação Radius";
-service.pppoesrv_radaccport="Porta Radius Accounting";
-service.pppoesrv_radkey="Chave Compartilhada Radius ";
+service.pppoesrv_radip="Endereço IP do Servidor RADIUS";
+service.pppoesrv_radauthport="Porta de Auteticação RADIUS";
+service.pppoesrv_radaccport="Porta RADIUS Accounting";
+service.pppoesrv_radkey="Chave Compartilhada RADIUS ";
 service.pppoesrv_chaps="Gerenciamento Local de Usuário (Segredos CHAP)";
 
 //help container
@@ -1883,7 +1883,7 @@ wpa.h2="Segurança Wireless";
 wpa.secmode="Modo de Segurança";
 wpa.legend="Criptografia Wireless";
 wpa.auth_mode="Autenticação de Rede";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Intervalo de Renovação da Chave WPA do Grupo";
 wpa.rekey="Intervalo de Renovação da Chave (em segundos)";
 wpa.radius_ipaddr="Endereço do Servidor RADIUS";
@@ -1977,26 +1977,26 @@ wds.legend2="Opções Extras";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Serviço de Autenticação Remota de Usuários Discados";
-radius.legend="Radius";
-radius.label="Cliente Radius MAC";
+radius.legend="RADIUS";
+radius.label="Cliente RADIUS MAC";
 radius.label2="Formato do MAC";
-radius.label3="IP do Servidor Radius";
-radius.label4="Porta do Servidor Radius";
-radius.label7="Segredo Compartilhado Radius";
+radius.label3="IP do Servidor RADIUS";
+radius.label4="Porta do Servidor RADIUS";
+radius.label7="Segredo Compartilhado RADIUS";
 
-radius.label23="IP do Servidor Radius Backup";
-radius.label24="Porta do Servidor Radius Backup";
-radius.label27="Segredo Compartilhado Radius Backup";
+radius.label23="IP do Servidor RADIUS Backup";
+radius.label24="Porta do Servidor RADIUS Backup";
+radius.label27="Segredo Compartilhado RADIUS Backup";
 
 radius.label5="Máximo de Usuários Não Autenticados";
 radius.label6="Formato da Senha";
-radius.label8="Suprimir Radius se o servidor estiver indisponível";
-radius.label13="Endereço do Servidor da Conta Radius";
-radius.label14="Porta do Servidor da Conta Radius";
-radius.label17="Segredo Compartilhado da Conta Radius";
-radius.label18="Radius Accounting";
+radius.label8="Suprimir RADIUS se o servidor estiver indisponível";
+radius.label13="Endereço do Servidor da Conta RADIUS";
+radius.label14="Porta do Servidor da Conta RADIUS";
+radius.label17="Segredo Compartilhado da Conta RADIUS";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="Filtro de MACs";
@@ -2049,7 +2049,7 @@ freeradius.expiration="Expira (Dias)";
 freeradius.passphrase="Senha";
 //freeradius.generate="Gerar Certificado";
 freeradius.cert_status="Status do Certificado";
-freeradius.port="Porta Radius";
+freeradius.port="Porta RADIUS";
 
 //help container
 hfreeradius.right2="Habilite o JFFS antes de iniciar o FreeRadius.";

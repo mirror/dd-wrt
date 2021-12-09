@@ -346,7 +346,7 @@ errmsg.err47="SSID invàlid.";
 errmsg.err48="WDS no és compatible amb la configuració actual del encaminador. Sis plau, comproveu els punts següents :\n * Mode Sense Fil ha d'ésser AP \n * WPA2 no es suporta baix WDS \n * Mode Només B de Xarxa Sense Fil no es suporta baix WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius només se dispon en mode AP.";
+errmsg.err49="RADIUS només se dispon en mode AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Heu d'entrar una SSID.";
@@ -398,7 +398,7 @@ bmenu.networking="Xarxes";
 
 bmenu.wireless="Sense Fil";
 bmenu.wirelessBasic="Paràmetres Bàsics";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperCanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Seguretat Sense Fil";
@@ -736,12 +736,12 @@ hotspot.h2="Portal Hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Separar el Wifi del Pont LAN";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="IP/DNS del Servei Radius Primari";
-hotspot.bserver="IP/DNS del Servei Radius Secondari";
+hotspot.pserver="IP/DNS del Servei RADIUS Primari";
+hotspot.bserver="IP/DNS del Servei RADIUS Secondari";
 hotspot.dns="IP del Servidor DNS";
 hotspot.url="URL de Redirecció";
 hotspot.dhcp="Interfície DHCP";
-hotspot.radnas="ID NAS Radius";
+hotspot.radnas="ID NAS RADIUS";
 hotspot.net="Xarxa Hotspot";
 hotspot.uam="Secret UAM";
 hotspot.uamserver="Servidor UAM";
@@ -814,7 +814,7 @@ hotspot.wifidog_password="Contrasenya del Servidor HTTP";
 hotspot.wifidog_auth="Suport d'Autenticació del Servidor HTTP";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>Quan USB o JFFS està muntat a jffs, scripts de connexió es poden utilitzar en /jffs/etc/chilli/</i><br />Usuaris Locals:<br /><i>Quan només usuaris locals s'utilitzen, establiu el radius primari com a 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Quan USB o JFFS està muntat a jffs, scripts de connexió es poden utilitzar en /jffs/etc/chilli/</i><br />Usuaris Locals:<br /><i>Quan només usuaris locals s'utilitzen, establiu el RADIUS primari com a 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Sistema Hotspot";
@@ -1313,10 +1313,10 @@ service.pppoesrv_lcpef="Fracàs d'Eco LCP";
 service.pppoesrv_limit="Límit de Sessió per MAC";
 service.pppoesrv_idlet="Temps d'Inactivitat de Client";
 service.pppoesrv_auth="Autenticació";
-service.pppoesrv_radip="IP de Servidor de Radius";
-service.pppoesrv_radauthport="Port d'Autenticació de Radius";
-service.pppoesrv_radaccport="Port de Comptabilitat de Radius";
-service.pppoesrv_radkey="Clau Compartida de Radius";
+service.pppoesrv_radip="IP de Servidor de RADIUS";
+service.pppoesrv_radauthport="Port d'Autenticació de RADIUS";
+service.pppoesrv_radaccport="Port de Comptabilitat de RADIUS";
+service.pppoesrv_radkey="Clau Compartida de RADIUS";
 service.pppoesrv_chaps="Administració d'Usuaris Local (Secrets CHAP)";
 
 //help container
@@ -1807,7 +1807,7 @@ wpa.h2="Seguretat Sense Fil";
 wpa.secmode="Mode de Seguretat";
 wpa.legend="Xifració Sense Fil";
 wpa.auth_mode="Autenticació de Xarxa";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Interval de Canviar de Clau del Grup WPA";
 wpa.rekey="Interval de Renovació de Clau (en segons)";
 wpa.radius_ipaddr="Adreça del Servidor de RADIUS";
@@ -1901,26 +1901,26 @@ wds.legend2="Opcions Extres";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Servei d'Usuari d'Autenticació Remota per Trucada";
-radius.legend="Radius";
-radius.label="Client de Radius MAC";
+radius.legend="RADIUS";
+radius.label="Client de RADIUS MAC";
 radius.label2="Format MAC";
-radius.label3="Adreça del Servidor d'Autenticació de Radius";
-radius.label4="Port del Servidor d'Autenticació de Radius";
-radius.label7="Secret Compartit d'Autenticació de Radius";
+radius.label3="Adreça del Servidor d'Autenticació de RADIUS";
+radius.label4="Port del Servidor d'Autenticació de RADIUS";
+radius.label7="Secret Compartit d'Autenticació de RADIUS";
 
-radius.label23="Adreça del Servidor Secondari d'Autenticació de Radius";
-radius.label24="Port del Servidor Secondari d'Autenticació de Radius";
-radius.label27="Secret Compartit del Servidor Secondari d'Autenticació de Radius";
+radius.label23="Adreça del Servidor Secondari d'Autenticació de RADIUS";
+radius.label24="Port del Servidor Secondari d'Autenticació de RADIUS";
+radius.label27="Secret Compartit del Servidor Secondari d'Autenticació de RADIUS";
 
 radius.label5="Màxim d'Usuaris No Autenticats";
 radius.label6="Format de Contrasenya";
-radius.label8="Supera el Radius si el servidor no és disponible";
-radius.label13="Adreça del Servidor de Comptabilitat de Radius";
-radius.label14="Port del Servidor de Comptabilitat de Radius";
-radius.label17="Secret Compartit del Servidor de Comptabilitat de Radius";
-radius.label18="Comptabilitat de Radius";
+radius.label8="Supera el RADIUS si el servidor no és disponible";
+radius.label13="Adreça del Servidor de Comptabilitat de RADIUS";
+radius.label14="Port del Servidor de Comptabilitat de RADIUS";
+radius.label17="Secret Compartit del Servidor de Comptabilitat de RADIUS";
+radius.label18="Comptabilitat de RADIUS";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="Filtre MAC";
@@ -1973,7 +1973,7 @@ freeradius.expiration="Caduca (Dies)";
 freeradius.passphrase="Frase de Contrasenya";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Estatus de Certificat";
-freeradius.port="Port de Radius";
+freeradius.port="Port de RADIUS";
 
 //help container
 hfreeradius.right2="Heu de habilitar JFFS abans d'iniciar el FreeRadius.";

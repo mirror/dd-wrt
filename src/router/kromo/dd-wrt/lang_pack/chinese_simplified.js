@@ -365,7 +365,7 @@ errmsg.err47="无效SSID。";
 errmsg.err48="WDS与路由器当前的配置不兼容。请检查以下几点 :\n * 无线模式必须被设置为AP\n * WDS下不支持WPA2 \n * WDS下不支持使用 仅B 模式的无线网络";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius仅在AP模式下可用。";
+errmsg.err49="RADIUS仅在AP模式下可用。";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="您必须输入一个SSID。";
@@ -417,7 +417,7 @@ bmenu.setupeop="Tunnels";
 bmenu.networking="网络";
 bmenu.wireless="无线";
 bmenu.wirelessBasic="基本设置";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="无线安全";
@@ -882,12 +882,12 @@ hotspot.h2="热点入口";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="从LAN Bridge隔离出Wifi";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="主用Radius服务器IP/DNS";
-hotspot.bserver="备用Radius服务器IP/DNS";
+hotspot.pserver="主用RADIUS服务器IP/DNS";
+hotspot.bserver="备用RADIUS服务器IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="重定向URL";
 hotspot.dhcp="DHCP 接口";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="远程网络";
 hotspot.uam="UAM秘密";
 hotspot.uamserver="UAM服务器";
@@ -960,10 +960,10 @@ hotspot.wifidog_password="HTTP服务器密码";
 hotspot.wifidog_auth="HTTP服务器认证方式支持";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary radius to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
 
 // help page
-hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (Radius). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite radius server.</dd>";
+hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
 hstatus_hots.page2="<dd>You can have your hotspot portal managed by HotspotSystem.com. They provide free and pay-per-use hotspot solutions with billing. For more information please visit <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>The Operator Username which you have registered at <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>The number of the location you would like to set up.</dd>";
@@ -971,10 +971,10 @@ hstatus_hots.page5="<dd>If this option is enabled (default), then WiFi and LAN a
 hstatus_hots.page6="<dd>This has to be the interface you would like to use for the hotspot portal.</dd>";
 hstatus_hots.page7="<dd>Network mask where you wish to run the hotspot service.</dd>";
 hstatus_hots.page8="<dd>Here you can make changes on your splash page. You can add more sites for free browsing. If you are a White Label operator you can use your own domain name on your splash pages. Options are:<ul><li>White Label Protocol: choose HTTPS if you have an SSL certificate installed on the White Label domain.</li><li>White Label Domain: Put your White Label domain here or other servers (for example asia server) provided by HotspotSystem.com</li><li>Login on Splash Page: You can have the login box displayed on the main splash page. You also need to set this behavior in HotspotSystem.com Control Center, on Manage > Locations > click on location > Modify Hotspot Settings > Splash Page Settings!</li><li>Custom Splash Page (Walled Garden): You can forward users to your own splash page first. For this option you have to add your domain to the UAM allowed list below, and set it in the Control Center. You also have to put a backlink to our splash page so your customers will be able to log in or buy access/use a voucher.</li><li>UAM Allowed: IP addresses or network segments the client can access without first authenticating (Comma separated list of domain names). Example: www.chillispot.info,10.11.12.0/24</li></ul></dd>";
-hstatus_hots.page9="<dd>The IP addresses of radius server 1 and 2.</dd>";
+hstatus_hots.page9="<dd>The IP addresses of RADIUS server 1 and 2.</dd>";
 hstatus_hots.page10="<dd>DNS Server IP. It is used to inform the client about the DNS address to use for host name resolution. If this option is not given the system primary DNS is used.</dd>";
 hstatus_hots.page11="<dd>URL of web server to use for authenticating clients.</dd>";
-hstatus_hots.page12="<dd>Radius shared secret for both servers. This secret should be changed in order not to compromise security.</dd>";
+hstatus_hots.page12="<dd>RADIUS shared secret for both servers. This secret should be changed in order not to compromise security.</dd>";
 hstatus_hots.page13="<dd>Ethernet interface to listen to for the downlink interface. This option must be specified.</dd>";
 hstatus_hots.page14="<dd>Network access server identifier.</dd>";
 hstatus_hots.page15="<dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>";
@@ -1697,10 +1697,10 @@ service.pppoesrv_lcpef="LCP回应失败";
 service.pppoesrv_limit="每个MAC的会话限制";
 service.pppoesrv_idlet="空闲时间";
 service.pppoesrv_auth="鉴权";
-service.pppoesrv_radip="Radius服务器IP";
-service.pppoesrv_radauthport="Radius鉴权端口";
-service.pppoesrv_radaccport="Radius计账端口";
-service.pppoesrv_radkey="Radius共享秘钥";
+service.pppoesrv_radip="RADIUS服务器IP";
+service.pppoesrv_radauthport="RADIUS鉴权端口";
+service.pppoesrv_radaccport="RADIUS计账端口";
+service.pppoesrv_radkey="RADIUS共享秘钥";
 service.pppoesrv_chaps="本地用户管理（CHAP Secrets）";
 
 //help container
@@ -2358,12 +2358,12 @@ wpa.secmode="安全模式";
 wpa.legend="无线加密";
 wpa.auth_mode="网络鉴权";
 wpa.mfp="802.11w管理帧保护";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA组重新获取秘钥间隔";
 wpa.rekey="秘钥更新时间间隔（秒）";
-wpa.radius_ipaddr="Radius服务器地址";
-wpa.radius_port="Radius服务器端口";
-wpa.radius_key="Radius秘钥";
+wpa.radius_ipaddr="RADIUS服务器地址";
+wpa.radius_port="RADIUS服务器端口";
+wpa.radius_key="RADIUS秘钥";
 wpa.algorithms="WPA算法";
 wpa.shared_key="WPA共享秘钥";
 wpa.sae_key="SAE Passphrase";
@@ -2490,37 +2490,37 @@ wds.legend2="其它选项";
 hwds.page1="<dd>WDS (Wireless Distribution System) is a Wireless Access Point mode that enables wireless bridging in which WDS APs communicate only with each other only (without allowing for wireless clients or stations to access them), and/or wireless repeating in which APs communicate both with each other and with wireless stations (at the expense of half the throughput). This firmware currently supports two types of WDS, LAN and Point to Point.</dd><dt>LAN-type WDS</dt><dd>This is the easiest, and currently most common, type of WDS used for linking LANs. It is very simple to setup and requires no extra routing protocols or knowledge of networking. Simply put, it is pure bridging. A simple example would be extending the range of an existing AP by setting up a 2nd AP and connecting it to the first using LAN-type WDS.<ol class=\"wide\"><li>Make sure you are using the same <a href=\"HWireless.asp\">Wireless Settings</a> on both routers and not any type of <a href=\"HWPA.asp\">Wireless Security</a>.</li><li>Find a drop-down selection that has <i>Disabled</i> displayed. Click this and select <i>LAN</i>, do the same on the other router.</li><li>On the first router, take the numbers next to <i>Wireless MAC</i> and enter them in to the second router on the same line that you set to \"LAN\".</li><li>Take the Wireless MAC from the second router and enter them on the first router.</li><li>Check for any typing errors and then click <i>Save Settings</i>.</li><li>Go to the <a href=\"HStatusWireless.asp\">Wireless Status</a> page. You should see <i>WDS Link</i> and the Wireless MAC of the other router listed, with a signal reading. If the signal is \"0dBm\" then there may be something wrong. Check your antenna connections and configuration settings, and try again.</li><li>Once you have a good signal (-70dBm to -30dBm, -70dBm being lowest), you can change the <i>Internet Connection Type</i> on the <a href=\"HSetup.asp\">Basic Setup</a> page of the second router to <i>Disabled</i> and set the <em>Gateway</em> to the LAN IP Address of the first router. You can now run normal tests to check if you are connected (like <tt>ping</tt>).</li></ol><br /><br /><div class=\"note\"><h4>Note</h4><div>WDS is only available in <em>AP</em> mode. Also Wireless encryption <em>WPA2</em> and Wireless network mode <em>B-Only</em> are not supported under WDS.</div></div></dd>";
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
-radius.h2="远程授权拨入用户服务（Radius）";
-radius.legend="Radius";
+radius.titl="RADIUS";
+radius.h2="远程授权拨入用户服务（RADIUS）";
+radius.legend="RADIUS";
 radius.retry="主服务器重试限制";
-radius.label="MAC Radius客户端";
+radius.label="MAC RADIUS客户端";
 radius.label2="MAC格式";
-radius.label3="Radius鉴权服务器地址";
-radius.label4="Radius鉴权服务器端口";
-radius.label7="Radius鉴权共享密钥";
+radius.label3="RADIUS鉴权服务器地址";
+radius.label4="RADIUS鉴权服务器端口";
+radius.label7="RADIUS鉴权共享密钥";
 
-radius.label23="Radius鉴权备用服务器地址";
-radius.label24="Radius鉴权备用服务器端口";
-radius.label27="Radius鉴权备用服务器密钥";
+radius.label23="RADIUS鉴权备用服务器地址";
+radius.label24="RADIUS鉴权备用服务器端口";
+radius.label27="RADIUS鉴权备用服务器密钥";
 
 radius.label5="最大非授权用户数";
 radius.label6="密码格式";
-radius.label8="如果服务器不可用则越过Radius";
-radius.label13="Radius计账服务器地址";
-radius.label14="Radius计账服务器端口";
-radius.label17="Radius计账共享秘钥";
-radius.label18="Radius计账";
+radius.label8="如果服务器不可用则越过RADIUS";
+radius.label13="RADIUS计账服务器地址";
+radius.label14="RADIUS计账服务器端口";
+radius.label17="RADIUS计账共享秘钥";
+radius.label18="RADIUS计账";
 radius.local_ip="强制客户端IP";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
 hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
-hradauth.page3="<dd>The radius server IP address and TCP port.</dd>";
-hradauth.page4="<dd>Sets a amount of users which ran access without any valid radius authentication</dd>";
-hradauth.page5="<dd>Sets the property which radius password should be used, the shared key or the mac address itself</dd>";
+hradauth.page3="<dd>The RADIUS server IP address and TCP port.</dd>";
+hradauth.page4="<dd>Sets a amount of users which ran access without any valid RADIUS authentication</dd>";
+hradauth.page5="<dd>Sets the property which RADIUS password should be used, the shared key or the mac address itself</dd>";
 hradauth.page6="<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>";
-hradauth.page7="<dd>If the Radius server becomes unavailable, the radius authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
+hradauth.page7="<dd>If the RADIUS server becomes unavailable, the RADIUS authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="MAC过滤";
@@ -2576,7 +2576,7 @@ freeradius.expiration="Expires (Days)";
 freeradius.passphrase="Passphrase";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.port="Radius Port";
+freeradius.port="RADIUS Port";
 
 //help container
 hfreeradius.right2="You must enable JFFS before starting FreeRadius.";

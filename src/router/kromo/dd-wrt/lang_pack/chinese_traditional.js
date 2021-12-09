@@ -313,7 +313,7 @@ errmsg.err47="無效SSID.";
 errmsg.err48="WDS與目前路由器的設定不相容. 請檢查以下幾點 :\n * 無線模式必須被設定為AP（接入點） \n * WDS下不支援WPA2 \n * WDS下不支援僅B模式的無線網路";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius 必須在 AP 模式下使用.";
+errmsg.err49="RADIUS 必須在 AP 模式下使用.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="必須輸入一個SSID.";
@@ -365,7 +365,7 @@ bmenu.networking="網路";
 
 bmenu.wireless="無線網路";
 bmenu.wirelessBasic="基本設定";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="無線安全";
@@ -673,12 +673,12 @@ hotspot.h2="Hotspot 入口";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="把無線與區域網橋接分開";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="主要Radius IP/DNS";
-hotspot.bserver="備用Radius IP/DNS";
+hotspot.pserver="主要RADIUS IP/DNS";
+hotspot.bserver="備用RADIUS IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="重新導向URL";
 hotspot.dhcp="DHCP 介面";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="遠端 Network";
 hotspot.uam="UAM 秘密";
 hotspot.uamdns="UAM任意DNS";
@@ -1183,10 +1183,10 @@ service.pppoesrv_lcpei="LCP回應間隔";
 service.pppoesrv_lcpef="LCP回應失敗";
 service.pppoesrv_idlet="閒置的時間";
 service.pppoesrv_auth="驗證";
-service.pppoesrv_radip="Radius 伺服器 IP";
-service.pppoesrv_radauthport="Radius 驗證埠";
-service.pppoesrv_radaccport="Radius 計數埠";
-service.pppoesrv_radkey="Radius 共用金鑰";
+service.pppoesrv_radip="RADIUS 伺服器 IP";
+service.pppoesrv_radauthport="RADIUS 驗證埠";
+service.pppoesrv_radaccport="RADIUS 計數埠";
+service.pppoesrv_radkey="RADIUS 共用金鑰";
 service.pppoesrv_chaps="本地 User 管理 (CHAP Secrets)";
 
 //snmp.webservices
@@ -1611,7 +1611,7 @@ wpa.h2="無線安全";
 wpa.secmode="加密模式";
 wpa.legend="無線加密";
 wpa.auth_mode="網路授權";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA 群組重新獲取金鑰間隔";
 wpa.rekey="金鑰更新間歇（秒）";
 wpa.radius_ipaddr="RADIUS伺服器位址";
@@ -1663,21 +1663,21 @@ wds.legend2="其它選項";
 
 // ** Wireless_radauth.asp **//
 //
-radius.titl="Radius";
-radius.h2="遠端授權撥入用戶伺服器（Radius）";
-radius.legend="Radius";
-radius.label="MAC Radius用戶端";
+radius.titl="RADIUS";
+radius.h2="遠端授權撥入用戶伺服器（RADIUS）";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS用戶端";
 radius.label2="MAC格式";
 radius.label3="RADIUS 伺服器IP";
 radius.label4="RADIUS 伺服器埠";
 radius.label5="最大非授權用戶數";
 radius.label6="密碼格式";
-radius.label7="Radius Auth Shared Secret";
-radius.label8="Override Radius if server is unavailable";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label7="RADIUS Auth Shared Secret";
+radius.label8="Override RADIUS if server is unavailable";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 //

@@ -350,7 +350,7 @@ errmsg.err47="неверный SSID.";
 errmsg.err48="WDS несовместим с текущей конфигурацией роутера. Проверьте нижеследующие условия:\n * Должен быть установлен тип беспроводной сети &#39;Точка доступа&#39; \n * WPA2 не поддерживается в WDS \n * Режим беспроводной сети &#39;Только B&#39; не поддерживается в WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius возможен только в режиме точки доступа.";
+errmsg.err49="RADIUS возможен только в режиме точки доступа.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Вы должны ввести SSID.";
@@ -402,7 +402,7 @@ bmenu.networking="Сеть";
 
 bmenu.wireless="Wi-Fi";
 bmenu.wirelessBasic="Основное";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="Суперканал";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Безопасность";
@@ -743,12 +743,12 @@ hotspot.h2="Портал хот-спота ";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="Отделить Wifi от моста LAN ";
 hotspot.hotspot="Chillispot";
-hotspot.pserver="IP/DNS основного сервера Radius";
-hotspot.bserver="IP/DNS резервного сервера Radius";
+hotspot.pserver="IP/DNS основного сервера RADIUS";
+hotspot.bserver="IP/DNS резервного сервера RADIUS";
 hotspot.dns="IP-адрес DNS";
 hotspot.url="Перенаправление URL";
 hotspot.dhcp="Интерфейс DHCP";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Удаленная сеть";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
@@ -1319,10 +1319,10 @@ service.pppoesrv_lcpei="Интервал эха LCP";
 service.pppoesrv_lcpef="Неуспешное эхо LCP";
 service.pppoesrv_idlet="Время бездействия";
 service.pppoesrv_auth="Аутентификация";
-service.pppoesrv_radip="IP сервера Radius";
-service.pppoesrv_radauthport="Порт аутентификации Radius";
-service.pppoesrv_radaccport="Порт учета Radius";
-service.pppoesrv_radkey="Разделяемый ключ Radius";
+service.pppoesrv_radip="IP сервера RADIUS";
+service.pppoesrv_radauthport="Порт аутентификации RADIUS";
+service.pppoesrv_radaccport="Порт учета RADIUS";
+service.pppoesrv_radkey="Разделяемый ключ RADIUS";
 service.pppoesrv_chaps="Локальные пользователи (CHAP Secrets)";
 service.pppoesrv_limit="Лимит сессий на MAC адрес";
 
@@ -1818,7 +1818,7 @@ wpa.secmode="Режим безопасности";
 wpa.legend="Шифрование";
 wpa.auth_mode="Сетевая аутентификация";
 wpa.wpa="WPA";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Интервал смены ключей WPA";
 wpa.rekey="Интервал обновления ключей (с)";
 wpa.radius_ipaddr="Адрес сервера RADIUS";
@@ -1900,24 +1900,24 @@ wds.subnet="Подсеть";
 wds.legend2="Дополнительные опции";
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
-radius.label="MAC-авторизация клиента Radius";
+radius.legend="RADIUS";
+radius.label="MAC-авторизация клиента RADIUS";
 radius.label2="Формат MAC";
-radius.label3="Адрес сервера аутентификации Radius";
-radius.label4="Порт сервера аутентификации Radius";
+radius.label3="Адрес сервера аутентификации RADIUS";
+radius.label4="Порт сервера аутентификации RADIUS";
 radius.label5="Максимум неаутентиф.пользователей";
 radius.label6="Формат пароля";
-radius.label7="Общий секрет аутентификации Radius";
-radius.label8="Игнор. Radius, если сервер недоступен";
-radius.label13="Адрес сервера учета Radius";
-radius.label14="Порт сервера учета Radius";
-radius.label17="Общий секрет сервера учета Radius";
-radius.label18="Учет Radius";
-radius.label23="Адрес резервного сервера Radius";
-radius.label24="Порт резервного сервера Radius ";
-radius.label27="Общий пароль резервного сервера Radius ";
+radius.label7="Общий секрет аутентификации RADIUS";
+radius.label8="Игнор. RADIUS, если сервер недоступен";
+radius.label13="Адрес сервера учета RADIUS";
+radius.label14="Порт сервера учета RADIUS";
+radius.label17="Общий секрет сервера учета RADIUS";
+radius.label18="Учет RADIUS";
+radius.label23="Адрес резервного сервера RADIUS";
+radius.label24="Порт резервного сервера RADIUS ";
+radius.label27="Общий пароль резервного сервера RADIUS ";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="MAC-фильтр";

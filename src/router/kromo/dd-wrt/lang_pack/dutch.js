@@ -326,7 +326,7 @@ errmsg.err47="ongeldig SSID.";
 errmsg.err48="WDS is niet compatibel met de huidige configuratie van de router. Gelieve de volgende punten te controleren :\n * Draadloze Mode dient ingesteld te zijn op AP \n * WPA2 wordt niet ondersteund door WDS \n * Draadloos Netwerk Alleen-B mode wordt niet ondersteund door WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius is alleen beschikbaar in de AP mode.";
+errmsg.err49="RADIUS is alleen beschikbaar in de AP mode.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="U dient een SSID naam op te geven.";
@@ -379,7 +379,7 @@ bmenu.networking="Netwerken";
 
 bmenu.wireless="Draadloos";
 bmenu.wirelessBasic="Basis Instellingen";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperKanaal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Draadloze Beveiliging";
@@ -721,12 +721,12 @@ hotspot.h2="Hotspot Portaal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Splits WiFi van het LAN Netwerk af";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Primary Radius Server IP/DNS";
-hotspot.bserver="Backup Radius Server IP/DNS";
+hotspot.pserver="Primary RADIUS Server IP/DNS";
+hotspot.bserver="Backup RADIUS Server IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="Redirect URL";
 hotspot.dhcp="DHCP Interface";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Remote Netwerk";
 hotspot.uam="UAM Geheim";
 hotspot.uamdns="UAM elk DNS";
@@ -1270,10 +1270,10 @@ service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Fout";
 service.pppoesrv_idlet="Idle Tijd";
 service.pppoesrv_auth="Authenticatie";
-service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Radius Authenticatie Poort";
-service.pppoesrv_radaccport="Radius Accounting Poort";
-service.pppoesrv_radkey="Radius Gedeelde Sleutel";
+service.pppoesrv_radip="RADIUS Server IP";
+service.pppoesrv_radauthport="RADIUS Authenticatie Poort";
+service.pppoesrv_radaccport="RADIUS Accounting Poort";
+service.pppoesrv_radkey="RADIUS Gedeelde Sleutel";
 service.pppoesrv_chaps="Lokaal Gebruikers Management (CHAP Geheimen)"; 
 
 //snmp.webservices
@@ -1725,7 +1725,7 @@ wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Mode";
 wpa.legend="Draadloos Encryptie";
 wpa.auth_mode="Netwerk Authenticatie";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Groep Hersleutel Interval";
 wpa.rekey="Sleutel Vernieuwings Interval(in seconden)";
 wpa.radius_ipaddr="RADIUS Server Adres";
@@ -1783,26 +1783,26 @@ wds.legend2="Extra Opties";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authenticatie Dial-In Gebruikers Dienst";
-radius.legend="Radius";
-radius.label="MAC Radius Cli&euml;nt";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS Cli&euml;nt";
 radius.label2="MAC Formaat";
-radius.label3="Radius Auth Server Adres";
-radius.label4="Radius Auth Server Poort";
-radius.label7="Radius Auth Gedeeld Geheim";
+radius.label3="RADIUS Auth Server Adres";
+radius.label4="RADIUS Auth Server Poort";
+radius.label7="RADIUS Auth Gedeeld Geheim";
 
-radius.label23="Radius Auth Backup Server Adres";
-radius.label24="Radius Auth Backup Server Poort";
-radius.label27="Radius Auth Backup Gedeeld Geheim";
+radius.label23="RADIUS Auth Backup Server Adres";
+radius.label24="RADIUS Auth Backup Server Poort";
+radius.label27="RADIUS Auth Backup Gedeeld Geheim";
 
 radius.label5="Maximum Ongeautoriseerde Gebruikers";
 radius.label6="Wachtwoord Formaat";
-radius.label8="Overschrijf Radius indien de server niet beschikbaar is";
-radius.label13="Radius Acct Server Adres";
-radius.label14="Radius Acct Server Poort";
-radius.label17="Radius Acct Gedeeld Geheim";
-radius.label18="Radius Boekhouding"; 
+radius.label8="Overschrijf RADIUS indien de server niet beschikbaar is";
+radius.label13="RADIUS Acct Server Adres";
+radius.label14="RADIUS Acct Server Poort";
+radius.label17="RADIUS Acct Gedeeld Geheim";
+radius.label18="RADIUS Boekhouding"; 
 
 
 
@@ -1854,7 +1854,7 @@ freeradius.expiration="Verloop (Dagen)";
 freeradius.passphrase="Wachtzin";
 freeradius.generate="Genereer Certificaat";
 freeradius.cert_status="Certificaat Status";
-freeradius.port="Radius Poort"; 
+freeradius.port="RADIUS Poort"; 
 
 
 // ******************************************* Wireless_Advanced.asp *******************************************//

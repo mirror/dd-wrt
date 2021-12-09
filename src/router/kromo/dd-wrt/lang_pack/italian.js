@@ -353,7 +353,7 @@ errmsg.err47="SSID errato.";
 errmsg.err48="WDS non &egrave; compatibile con la configurazione corrente del router. Contolla i seguenti punti :\n * La modalit&agrave; wireless deve essere AP \n * WPA2 non &egrave; supportato sotto WDS \n * La modalit&agrave; wireless solo-B non &egrave; supportata sotto WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius disponibile solo in modalit&agrave; AP.";
+errmsg.err49="RADIUS disponibile solo in modalit&agrave; AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Devi inserire un SSID.";
@@ -407,7 +407,7 @@ bmenu.networking="Networking";
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Impostazioni di base";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Sicurezza Wireless";
@@ -885,12 +885,12 @@ hotspot.h2="Portale Dell&apos;Hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Separa il Wifi dal Bridge della LAN ";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Server Radius Primario IP/DNS";
-hotspot.bserver="Server Radius Di Backup IP/DNS";
+hotspot.pserver="Server RADIUS Primario IP/DNS";
+hotspot.bserver="Server RADIUS Di Backup IP/DNS";
 hotspot.dns="IP Del DNS";
 hotspot.url="URL Di Redirezione";
 hotspot.dhcp="Interfaccia DHCP";
-hotspot.radnas="ID NAS Radius";
+hotspot.radnas="ID NAS RADIUS";
 hotspot.net="Hotspot Network";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="Server UAM";
@@ -964,10 +964,10 @@ hotspot.wifidog_auth="Supporto Autenticazione Server HTTP";
 
 //help container
 //var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>Quando una memoria USB o la JFFS &egrave; montata su /jffs, possono essere salvati ed utilizzati degli script di connessione in /jffs/etc/chilli/</i><br />Utenti Locali:<br /><i>Quando sono utilizzati solo utenti locali viene impostato il server radius primaro su 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Quando una memoria USB o la JFFS &egrave; montata su /jffs, possono essere salvati ed utilizzati degli script di connessione in /jffs/etc/chilli/</i><br />Utenti Locali:<br /><i>Quando sono utilizzati solo utenti locali viene impostato il server RADIUS primaro su 127.0.0.1</i>";
 
 // help page
-hstatus_hots.page1="<dd>&Egrave; possibile utilizzare il router come un Hotspot (CoovaChilli) con autenticazione e accounting (Radius). CoovaChilli &egrave; un open source captive portal o un gestore di un access point wireless. Viene utilizzato per autenticare gli utenti di una Wireless LAN. Supporta l&apos;accesso degli utenti tramite pagina WEB che &egrave; ormai uno standard per gli access point pubblici e supporta il protocollo Wireless Protected Access (WPA) che &egrave; lo standard del futuro. L&apos;autenticazione, l&apos;autorizzazione e l&apos;accounting (AAA) sono gestiti dal vostro server RADIUS.</dd>";
+hstatus_hots.page1="<dd>&Egrave; possibile utilizzare il router come un Hotspot (CoovaChilli) con autenticazione e accounting (RADIUS). CoovaChilli &egrave; un open source captive portal o un gestore di un access point wireless. Viene utilizzato per autenticare gli utenti di una Wireless LAN. Supporta l&apos;accesso degli utenti tramite pagina WEB che &egrave; ormai uno standard per gli access point pubblici e supporta il protocollo Wireless Protected Access (WPA) che &egrave; lo standard del futuro. L&apos;autenticazione, l&apos;autorizzazione e l&apos;accounting (AAA) sono gestiti dal vostro server RADIUS.</dd>";
 hstatus_hots.page2="<dd>Il vostro hotspot pu&ograve; essere gestito da HotspotSystem.com. Loro forniscono delle soluzioni gratuite per la gestione degli hotspot, ma anche delle soluzioni pay-per-use. Per maggiori informazioni visitare il sito <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>Il nome utente operatore che avete registrato su <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>IL numero della posizione geografica in cui si trova l&apos;hotspot che si sta configurando.</dd>";
@@ -1604,10 +1604,10 @@ service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Limite Sessioni per MAC";
 service.pppoesrv_idlet="tempo Inattivit&agrave;";
 service.pppoesrv_auth="Autenticazione";
-service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Porta Autenticazione Radius";
-service.pppoesrv_radaccport="Porta Accounting Radius";
-service.pppoesrv_radkey="Chiave condivisa Radius";
+service.pppoesrv_radip="RADIUS Server IP";
+service.pppoesrv_radauthport="Porta Autenticazione RADIUS";
+service.pppoesrv_radaccport="Porta Accounting RADIUS";
+service.pppoesrv_radkey="Chiave condivisa RADIUS";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
@@ -2146,7 +2146,7 @@ wpa.h2="Sicurezza Wireless";
 wpa.secmode="Modalit&agrave; Sicura";
 wpa.legend="Crittografia Wireless";
 wpa.auth_mode="Autenticazione Di Rete";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Intervallo Reinvio Gruppo Chiavi WPA";
 wpa.rekey="Intervallo Rinnovo Chiave (in secondi)";
 wpa.radius_ipaddr="Indirizzo Server RADIUS";
@@ -2246,26 +2246,26 @@ wds.legend2="Opzioni Extra";
 
 // ** Wireless_radauth.asp **//
 //var radius=new Object();
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Servizio Autenticazione Remota Utente";
-radius.legend="Radius";
-radius.label="MAC Del Client Radius";
+radius.legend="RADIUS";
+radius.label="MAC Del Client RADIUS";
 radius.label2="Formato MAC";
-radius.label3="IP Del Server Radius";
-radius.label4="Porta Del Server Radius";
+radius.label3="IP Del Server RADIUS";
+radius.label4="Porta Del Server RADIUS";
 radius.label7="RADIUS Secret Condiviso";
 
-radius.label23="Radius Auth Backup Server Address";
-radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label23="RADIUS Auth Backup Server Address";
+radius.label24="RADIUS Auth Backup Server Port";
+radius.label27="RADIUS Auth Backup Shared Secret";
 
 radius.label5="Max Utenti Non Autenticati";
 radius.label6="Formato Della Password";
-radius.label8="Sovrascrivi Radius se il server non &egrave; disponibile";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label8="Sovrascrivi RADIUS se il server non &egrave; disponibile";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 //var wl_mac=new Object();

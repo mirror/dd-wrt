@@ -305,7 +305,7 @@ bmenu.networking="Hálózatok";
 
 bmenu.wireless="Vezetéknélküli ";
 bmenu.wirelessBasic="Alap beálltások";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSecurity="Vezetéknélküli biztonság";
 bmenu.wirelessMac="MAC filter";
 bmenu.wirelessAdvanced="Haladó beállítások";
@@ -1040,10 +1040,10 @@ service.pppoesrv_lcpei="LCP Echo Idõtartom";
 service.pppoesrv_lcpef="LCP Echo Hibák";
 service.pppoesrv_idlet="Tétlen idõ";
 service.pppoesrv_radauth="Azonosítás";
-service.pppoesrv_radip="Radius Szerver IP";
-service.pppoesrv_radauthport="Radius azonosítási Port";
-service.pppoesrv_radaccport="Radius felhasználókezelési Port";
-service.pppoesrv_radkey="Radius megosztott kulcs";
+service.pppoesrv_radip="RADIUS Szerver IP";
+service.pppoesrv_radauthport="RADIUS azonosítási Port";
+service.pppoesrv_radaccport="RADIUS felhasználókezelési Port";
+service.pppoesrv_radkey="RADIUS megosztott kulcs";
 service.pppoesrv_chaps="Helyi felhasználó menedzselés (CHAP Secrets)";
 
 //snmp.webservices
@@ -1416,7 +1416,7 @@ sec80211x.clientcertif="Kliens tanusítvány";
 //help container
 
 hwpa.right1="Biztonsági mód";
-hwpa.right2="A következõ lehetõségek közül választhat: letiltva, WEP, WPA Personal, WPA Enterpreise vagy Radius. A hálózat összes eszközén ugyanazokat a beállításokat kell alkalmaznia!";
+hwpa.right2="A következõ lehetõségek közül választhat: letiltva, WEP, WPA Personal, WPA Enterpreise vagy RADIUS. A hálózat összes eszközén ugyanazokat a beállításokat kell alkalmaznia!";
 
 
 
@@ -1465,7 +1465,7 @@ radius.label4="RADIUS-Szerver Port";
 radius.label5="Nem hitelesített felhasználók maximális száma";
 radius.label6="Jelszó-formátuma";
 radius.label7="RADIUS megosztott kulcs";
-radius.label8="Radius felülbírálása, ha a szerver elérhetetlen";
+radius.label8="RADIUS felülbírálása, ha a szerver elérhetetlen";
 
 
 
