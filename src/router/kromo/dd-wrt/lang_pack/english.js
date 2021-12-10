@@ -3171,7 +3171,7 @@ hwl_basic.antaira="<dt class=\"term\"><b>AP mode</b></dt><dd class=\"definition\
 var superchan=new Object();
 superchan.legend="SuperChannel Activation";
 superchan.h2feat="Feature";
-superchan.featxt="<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />These frequencies range between 2192Mhz to 2732Mhz for the 802.11g band or 4915Mhz to 6100Mhz for the 802.11a band.<br /><b>This feature is not yet enabled.</b></p>";
+superchan.featxt="<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />These frequencies range between 2192Mhz to 2732Mhz for the 802.11g band and 4915Mhz to 6100Mhz for the 802.11a band.<br /><b>This feature is not yet enabled.</b></p>";
 superchan.h2disc="Disclaimer";
 superchan.lgltxt="<p>Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.</p>";
 superchan.lsyskey="System Key";

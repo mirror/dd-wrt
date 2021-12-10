@@ -2694,6 +2694,14 @@ hwl_basic.right3="Empfindlichkeitsbereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing auf Broadcom Ger&auml;ten komplett ab. Auf Atheros Ger&auml;ten wechselt eine 0 in den Auto ACK Timing Modus";
 hwl_basic.right6="Klick auf irgendeine Stunde um das WLAN Signal an- oder abzuschalten (<em>Gr&uuml;n</em> zeigt den erlaubten Zugriff an, <em>Rot</em> zeigt den blockierten Zugriff an)";
 
+superchan.legend="SuperChannel Activation";
+superchan.h2feat="Eigenschaft";
+superchan.featxt="<p>SuperChannel erlaubt auf <b>kompatiblen Ger&auml;ten<b> die Nutzung von speziellen Frequenzen.<br />Der m&ouml;gliche Frequenzbereich liegt zwischen 2192Mhz und 2732Mhz f&uuml;r 802.11g und 4915Mhz bis 6100Mhz f&uuml;r 802.11a.<br /><b>Diese Eigenschaft ist noch noch freigeschaltet.</b></p>";
+superchan.h2disc="Haftungsausschluss";
+superchan.lgltxt="<p>Beachten Sie das es in vielen L&auml;ndern nicht gestattet ist diese Frequenzen zu nutzen. DD-WRT / NewMedia-NET GmbH übernimmt keinerlei direkte oder indirekte Verantwortung f&uuml;nr die Nutzung dieser Eigenschaft.</p>";
+superchan.lsyskey="Systemschl&uuml;ssel";
+superchan.lactkey="Aktivierungsschl&uuml;ssel";
+
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 
 fail.mess1="Die angegebenen Werte sind nicht korrekt! Bitte versuchen Sie es erneut.";
