@@ -449,7 +449,7 @@ bmenu.adminBackup="Copie de siguranță";
 
 bmenu.services="Servicii";
 bmenu.servicesServices="Servicii";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Server PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1960,8 +1960,8 @@ gpio.oplegend="Ieșiri Gpio";
 gpio.iplegend="Intrări Gpio";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certificat server";
 freeradius.cert="Generează certificat";
 freeradius.clientcert="Certificate client";
@@ -1986,7 +1986,7 @@ freeradius.cert_status="Stare certificat";
 freeradius.port="Port Radius";
 
 //help container
-hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRadius.";
+hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Setări avansate rețea fără fir";

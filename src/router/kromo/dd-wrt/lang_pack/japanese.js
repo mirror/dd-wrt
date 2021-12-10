@@ -1824,8 +1824,8 @@ wl_wimax.duplex="Duplex Mode";
 wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="サーバー証明書";
 freeradius.cert="証明書作成";
 freeradius.clientcert="クライアント証明書";

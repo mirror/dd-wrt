@@ -430,7 +430,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
 bmenu.servicesServices="Services";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1829,8 +1829,8 @@ wl_wimax.mac="Abonnee MAC-Adres";
 
 // ******************************************* FreeRadius.asp *******************************************//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certificaat";
 freeradius.cert="Certificaat Maken";
 freeradius.clientcert="Cli&euml;nt Certificaten";

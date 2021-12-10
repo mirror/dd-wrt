@@ -450,7 +450,7 @@ bmenu.adminBackup="백업";
 
 bmenu.services="서비스";
 bmenu.servicesServices="서비스";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE 서버";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2330,8 +2330,8 @@ gpio.oplegend="Gpio 출력";
 gpio.iplegend="Gpio 입력";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="서버 증명서";
 freeradius.cert="증명서 생성";
 freeradius.clientcert="클라이언트 증명서";
@@ -2358,7 +2358,7 @@ freeradius.cert_status="증명서 상태";
 freeradius.port="RADIUS 포트";
 
 //help container
-hfreeradius.right2="FreeRadius를 시작하기 전에 JFFS를 반드시 활성화해야 합니다.";
+hfreeradius.right2="FreeRADIUS를 시작하기 전에 JFFS를 반드시 활성화해야 합니다.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="고급 무선 설정";

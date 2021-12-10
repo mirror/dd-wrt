@@ -455,7 +455,7 @@ bmenu.adminBackup="Резервирование";
 
 bmenu.services="Службы";
 bmenu.servicesServices="Службы";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Сервер PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1945,8 +1945,8 @@ gpio.oplegend=" GPIO Выводы";
 gpio.iplegend=" GPIO Вводы";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Сертификат сервера";
 freeradius.cert="Сгенерировать сертификат";
 freeradius.clientcert="Клиентский сертификат";
@@ -1970,7 +1970,7 @@ freeradius.passphrase="Контрольная фраза";
 freeradius.cert_status="Состояние сертификата";
 freeradius.port="Порт Radius";
 //help container
-hfreeradius.right2="Необходимо включить JFFS перед запуском FreeRadius.";
+hfreeradius.right2="Необходимо включить JFFS перед запуском FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Дополнительные параметры беспроводной сети";

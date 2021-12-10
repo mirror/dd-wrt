@@ -443,7 +443,7 @@ bmenu.adminBackup="Yedek";
 
 bmenu.services="Servisler";
 bmenu.servicesServices="Servisler";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Sunucusu";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1868,8 +1868,8 @@ gpio.oplegend="Gpio Çıkışları";
 gpio.iplegend="Gpio Girişleri";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Sunucu Sertifikası";
 freeradius.cert="Sertifika Oluştur";
 freeradius.clientcert="İstemci Sertifikaları";
@@ -1896,7 +1896,7 @@ freeradius.cert_status="Sertifika Durumu";
 freeradius.port="RADIUS Portu";
 
 //help container
-hfreeradius.right2="FreeRadius'u başlatmadan önce JFFS'yi etkinleştirmelisiniz.";
+hfreeradius.right2="FreeRADIUS'u başlatmadan önce JFFS'yi etkinleştirmelisiniz.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Gelişmiş Kablosuz Ayarlar";

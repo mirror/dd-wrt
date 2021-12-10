@@ -477,7 +477,7 @@ bmenu.adminBackup="Zálohování";
 
 bmenu.services="Služby";
 bmenu.servicesServices="Služby";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2643,8 +2643,8 @@ gpio.iplegend="GPIO Vstupy";
 
 // ** FreeRadius.asp **//
 //
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikát serveru";
 freeradius.cert="Gen cert";
 freeradius.clientcert="Klient certifikát";
@@ -2672,7 +2672,7 @@ freeradius.port="RADIUS port";
 
 //help container
 //
-hfreeradius.right2="Musíte povolit JFFS před startem FreeRadius.";
+hfreeradius.right2="Musíte povolit JFFS před startem FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 //

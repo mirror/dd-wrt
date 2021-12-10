@@ -465,7 +465,7 @@ bmenu.adminUpgrade="固件升级";
 bmenu.adminBackup="备份";
 bmenu.services="服务";
 bmenu.servicesServices="服务";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE服务器";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2551,8 +2551,8 @@ gpio.oplegend="GPIO输出";
 gpio.iplegend="GPIO输入";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certificate";
 freeradius.cert="Gen Cert";
 freeradius.clientcert="Client Certificates";
@@ -2579,7 +2579,7 @@ freeradius.cert_status="Certificate Status";
 freeradius.port="RADIUS Port";
 
 //help container
-hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="高级无线设置";

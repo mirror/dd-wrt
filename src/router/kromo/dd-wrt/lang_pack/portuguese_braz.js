@@ -454,7 +454,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Serviços";
 bmenu.servicesServices="Serviços";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Servidor PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2024,8 +2024,8 @@ gpio.oplegend="Saídas Gpio";
 gpio.iplegend="Entradas Gpio";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certificado do Servidor";
 freeradius.cert="Gerar Cert";
 freeradius.clientcert="Certificados dos Clientes";
@@ -2052,7 +2052,7 @@ freeradius.cert_status="Status do Certificado";
 freeradius.port="Porta RADIUS";
 
 //help container
-hfreeradius.right2="Habilite o JFFS antes de iniciar o FreeRadius.";
+hfreeradius.right2="Habilite o JFFS antes de iniciar o FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Configurações Wireless Avançadas";

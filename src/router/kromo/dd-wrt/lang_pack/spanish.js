@@ -444,7 +444,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Servicios";
 bmenu.servicesServices="Servicios";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Servidor PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1805,8 +1805,8 @@ gpio.iplegend="Gpio Entradas";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certificado del servidor";
 freeradius.cert="Crear certificado";
 freeradius.clientcert="Certificado del cliente";

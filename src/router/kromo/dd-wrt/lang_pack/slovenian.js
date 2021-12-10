@@ -456,7 +456,7 @@ bmenu.adminBackup="Varnostna kop.";
 
 bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE strežnik";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2046,8 +2046,8 @@ gpio.iplegend="Gpio vhodi";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikat strežnika";
 freeradius.cert="Naredi certifikate";
 freeradius.clientcert="Odjemalčevi certifikati";

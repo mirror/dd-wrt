@@ -511,7 +511,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
 bmenu.servicesServices="Services";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2818,8 +2818,8 @@ gpio.iplegend="GPIO Inputs";
 
 // ** FreeRadius.asp **//
 var freeradius=new Object();
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certificate";
 freeradius.cert="Gen Cert";
 freeradius.clientcert="Client Certificates";
@@ -2847,7 +2847,7 @@ freeradius.port="RADIUS Port";
 
 //help container
 var hfreeradius=new Object();
-hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv=new Object();

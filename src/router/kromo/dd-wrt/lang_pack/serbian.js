@@ -454,7 +454,7 @@ bmenu.adminBackup="Резервно коп.";
 
 bmenu.services="Сервиси";
 bmenu.servicesServices="Services";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Сервер";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -2013,8 +2013,8 @@ gpio.oplegend="Gpio Излази";
 gpio.iplegend="Gpio Улази";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Сертификат Сервера";
 freeradius.cert="Gen Cert";
 freeradius.clientcert="Сертификати Клијента";
@@ -2041,7 +2041,7 @@ freeradius.cert_status="Статус Сертификата";
 freeradius.port="RADIUS Порт";
 
 //help container
-hfreeradius.right2="Морате омогућити JFFS пре стартовања FreeRadius-а.";
+hfreeradius.right2="Морате омогућити JFFS пре стартовања FreeRADIUS-а.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Напредна Бежична Подешавања";

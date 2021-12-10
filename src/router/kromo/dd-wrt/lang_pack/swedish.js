@@ -434,7 +434,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Tj&auml;nster";
 bmenu.servicesServices="Tj&auml;nster";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -1745,8 +1745,8 @@ wl_wimax.mode="Operativt l&auml;ge";
 wl_wimax.mac="Abonnent MAC Address";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certifikat";
 freeradius.cert="Skapa Certifikat";
 freeradius.clientcert="Klient Certifikat";
