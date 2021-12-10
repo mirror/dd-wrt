@@ -37,21 +37,19 @@ function to_submit(F) {
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 					<fieldset>
-					<legend>SuperChannel Activation</legend>
-					<h2>Feature</h2>
-					<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />
-					These frequencies range between 2192Mhz to 2732Mhz for the 802.11g band or 4915Mhz to 6100Mhz for the 802.11a band.<br />
-					<b>This feature is not yet enabled.</b></p>
-					<h2>Disclaimer</h2>
-					<p>Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.</p>
+					<legend><% tran("superchan.legend"); %></legend>
+					<h2><% tran("superchan.h2feat"); %></h2>
+					<% tran("superchan.featxt"); %>
+					<h2><% tran("superchan.h2disc"); %></h2>
+					<% tran("superchan.lgltxt"); %>
 						<div class="setting">
-						<div class="label">System Key</div>
+						<div class="label"><% tran("superchan.lsyskey"); %></div>
 						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" >
 						<% getregcode(); %>
 						</textarea>
 						</div>
 						<div class="setting">
-						<div class="label">Activation Key</div>
+						<div class="label"><% tran("superchan.lactkey"); %></div>
 						<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
 						<script type="text/javascript">
 						//<![CDATA[
