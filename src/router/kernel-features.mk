@@ -41,6 +41,9 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NETFILTER_XT_MATCH_ADDRTYPE is not set/CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=m/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_SCREEN)" = "y" ]; then \
+		sed -i 's/\# CONFIG_USB_SERIAL_FTDI_SIO is not set/CONFIG_USB_SERIAL_FTDI_SIO=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_HTOP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_TASKSTATS is not set/CONFIG_TASKSTATS=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_TASK_DELAY_ACCT=y" >> $(LINUXDIR)/.config; \
