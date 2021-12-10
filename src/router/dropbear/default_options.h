@@ -320,6 +320,7 @@ Homedir is prepended unless path begins with / */
  * OpenSSH), set the path below. If the path isn't defined, sftp will not
  * be enabled */
 #ifndef SFTPSERVER_PATH
+#define DROPBEAR_SFTPSERVER 1
 #define SFTPSERVER_PATH "/usr/libexec/sftp-server"
 #endif
 
