@@ -893,6 +893,9 @@ svg {
 #t-graph #ticks .tick {
   border-bottom: 1px solid var(--bg-5);
 }
+.t-graph-bg {
+  background: var(--bg-2);
+}
 .overlay_dialog {
   background-color: var(--bg-4) !important;
 }

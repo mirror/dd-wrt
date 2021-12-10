@@ -19,6 +19,7 @@
 				<dt>RADIUS</dt>
 				<% tran("hwpa.page6"); %>
 				<dt>WEP</dt>
+				<% tran("hwpa.page7"); %>
 			</dl>
 		</div>
 		<div class="also">

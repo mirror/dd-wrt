@@ -3167,6 +3167,16 @@ hwl_basic.page7="<dd>Check all values and click <i>Save Settings</i> to save you
 
 hwl_basic.antaira="<dt class=\"term\"><b>AP mode</b></dt><dd class=\"definition\">This is the default mode, also called Infrastructure mode</dd><dt class=\"term\"><b>Client mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Client bridged (Routed no NAT) mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Ad-Hoc mode</b></dt><dd class=\"definition\">This is for peer to peer wireless connections.</dd><dt class=\"term\"><b>Wireless Channel</b></dt><dd class=\"definition\">Select the appropriate channel top operate on.</dd><dt class=\"term\"><b>Wireless SSID Broadcast</b></dt><dd class=\"definition\">When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router.</dd><dt class=\"term\"><b>Sensitivity Range (ACK Timing)</b></dt><dd class=\"definition\">Adjusts the ACK timing based on the maximum distance in meters.</dd> ";
 
+// SuperChannel **//
+var superchan=new Object();
+superchan.legend="SuperChannel Activation";
+superchan.h2feat="Feature";
+superchan.featxt="<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />These frequencies range between 2192Mhz to 2732Mhz for the 802.11g band or 4915Mhz to 6100Mhz for the 802.11a band.<br /><b>This feature is not yet enabled.</b></p>";
+superchan.h2disc="Disclaimer";
+superchan.lgltxt="<p>Consider that in many countries it is not allowed to use these frequencies. DD-WRT / NewMedia-NET GmbH assumes no liability whatsoever, expressed or implied, for the use of this feature.</p>";
+superchan.lsyskey="System Key";
+superchan.lactkey="Activation Key";
+
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 var fail=new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
