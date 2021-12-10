@@ -368,7 +368,7 @@ errmsg.err47="neplatné SSID.";
 errmsg.err48="WDS není kompatibilní s aktuální konfigurací Routeru. Prověřte prosím následující body :\n * Bezdrátový režim musí být nastaven na AP \n * WPA2 není pro WDS podporován \n * Režim bezdrátové sítě B-Pouze není pro WDS možné použít.";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius je k dispozici pouze v režimu AP.";
+errmsg.err49="RADIUS je k dispozici pouze v režimu AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Musíte zadat SSID.";
@@ -422,7 +422,7 @@ bmenu.networking="Síťování";
 
 bmenu.wireless="Bezdrát";
 bmenu.wirelessBasic="Základní nastavení";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="Super Kanál";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Bezdrátová zabezpečení";
@@ -477,7 +477,7 @@ bmenu.adminBackup="Zálohování";
 
 bmenu.services="Služby";
 bmenu.servicesServices="Služby";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -919,12 +919,12 @@ hotspot.h2="Hotspot portál";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="Oddělit Wifi od mostu LAN";
 hotspot.hotspot="Chillispot";
-hotspot.pserver="Primární Radius Server IP/DNS";
-hotspot.bserver="Záložní Radius Server IP/DNS";
+hotspot.pserver="Primární RADIUS Server IP/DNS";
+hotspot.bserver="Záložní RADIUS Server IP/DNS";
 hotspot.dns="DNS server IP";
 hotspot.url="Přesměrovat URL";
 hotspot.dhcp="DHCP Rozhraní";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Síť Hotspot";
 hotspot.uam="UAM tajné";
 hotspot.uamserver="UAM Server";
@@ -998,9 +998,9 @@ hotspot.wifidog_auth="HTTP Server podpora autentifikace";
 
 //help container
 //
-hstatus_hots.right1="conup/condown:<br /><i>Když je USB nebo JFFS připojeno k jffs, mohou být připojovací skripty použity v /jffs/etc/chilli/</i><br />Místní uživatelé:<br /><i>Pokud se používají pouze místní uživatelé, nastavte primární Radius na 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Když je USB nebo JFFS připojeno k jffs, mohou být připojovací skripty použity v /jffs/etc/chilli/</i><br />Místní uživatelé:<br /><i>Pokud se používají pouze místní uživatelé, nastavte primární RADIUS na 127.0.0.1</i>";
 // help page
-hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení Chillispot) s ověřováním, účtu (Radius). ChilliSpot je open source captive portál, nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů v bezdrátové síťi LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a práci s účty (AAA) zajišťuje váš oblíbený server s Radiusem.</dd>";
+hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení Chillispot) s ověřováním, účtu (RADIUS). ChilliSpot je open source captive portál, nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů v bezdrátové síťi LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a práci s účty (AAA) zajišťuje váš oblíbený server s RADIUSem.</dd>";
 hstatus_hots.page2="<dd>Můžete si nechat spravovat váš hotspotový portál pomocí HotspotSystem.com. Poskytují bezplatná hotspotová řešení s placením za použití ​​fakturací. Pro více informací navštivte <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>Uživatelské jméno operátora, které jste zaregistrovali na <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>" ;
 hstatus_hots.page4="<dd>Číslo umístění, které chcete nastavit.</dd>";
@@ -1008,10 +1008,10 @@ hstatus_hots.page5="<dd>Je-li tato možnost povolena (výchozí), pak se s WiFi 
 hstatus_hots.page6="<dd>Toto musí být rozhraní, které chcete použít pro portál hotspot.</dd>";
 hstatus_hots.page7="<dd>Síťová maska, na které chcete spustit službu hotspot.</dd>";
 hstatus_hots.page8="<dd>Zde můžete provést změny na úvodní stránce. Můžete zdarma přidat další weby. Pokud jste operátorem White Label, můžete na úvodních stránkách použít vlastní název domény. Možnosti jsou: <ul><li> Protokol White Label: vyberte HTTPS, pokud máte v doméně White Label nainstalován SSL certifikát.</li><li>Doména White Label: Sem umístěte svoji doménu White Label nebo jiné servery (pro příklad serveru Asie) poskytovaného HotspotSystem.com</li><li>Přihlášení na úvodní stránce: Na hlavní úvodní stránce můžete mít přihlašovací pole. Toto chování musíte také nastavit v ovládacím centru HotspotSystem.com, v části Správa > Umístění > a kliknout na umístění > Upravit nastavení Hotspotu > Nastavení úvodní stránky!</li><li>Vlastní úvodní stránka (Walled Garden): Můžete uživatele přeposlat dále nejprve na vlastní úvodní stránku. Pro tuto možnost musíte přidat svoji doménu do níže uvedeného seznamu povolených UAM a nastavit ji v Řídicím centru. Musíte také umístit zpětný odkaz na naši úvodní stránku, aby se vaši zákazníci mohli přihlásit nebo koupit přístup/používat poukaz.</li><li>Povoleno UAM: IP Adresy nebo segmenty sítě, ke kterým má klient přístup, aniž by nejprve ověřili totožnost (Seznam doménových jmen oddělených čárkami). Příklad: www.chillispot.info,10.11.12.0/24</li></ul></dd>";
-hstatus_hots.page9="<dd>IP Adresy serveru Radius 1 a Radius 2.</dd>";
+hstatus_hots.page9="<dd>IP Adresy serveru RADIUS 1 a RADIUS 2.</dd>";
 hstatus_hots.page10="<dd>IP adresa serveru DNS. Slouží k informování klienta o adrese DNS, která se použije pro rozlišení názvu hostitele. Není-li tato možnost zadána, použije se primární systém DNS.</dd>";
 hstatus_hots.page11="<dd>URL webového serveru, který se použije k ověření klientů.</dd>";
-hstatus_hots.page12="<dd>Radius sdílené tajemství pro oba servery. Toto tajemství by mělo být změněno, aby nebyla ohrožena bezpečnost.</dd>";
+hstatus_hots.page12="<dd>RADIUS sdílené tajemství pro oba servery. Toto tajemství by mělo být změněno, aby nebyla ohrožena bezpečnost.</dd>";
 hstatus_hots.page13="<dd>Rozhraní Ethernet, které má poslouchat rozhraní downlink. Tuto možnost je nutné zadat.</dd>";
 hstatus_hots.page14="<dd>Identifikátor serveru síťového přístupu.</dd>";
 hstatus_hots.page15="<dd>Sdílené tajemství mezi UAM serverem a Chilli. Toto tajemství by mělo být nastaveno, aby nebyla ohrožena bezpečnost.</dd>";
@@ -1742,10 +1742,10 @@ service.pppoesrv_lcpef="LCP Selhání echa";
 service.pppoesrv_limit="Limit sezení dle MAC";
 service.pppoesrv_idlet="Doba nečinosti klienta";
 service.pppoesrv_auth="Autentifikace";
-service.pppoesrv_radip="Radius server IP";
-service.pppoesrv_radauthport="Radius port autentifikace";
-service.pppoesrv_radaccport="Radius port účtů";
-service.pppoesrv_radkey="Radius sdílený klíč";
+service.pppoesrv_radip="RADIUS server IP";
+service.pppoesrv_radauthport="RADIUS port autentifikace";
+service.pppoesrv_radaccport="RADIUS port účtů";
+service.pppoesrv_radkey="RADIUS sdílený klíč";
 service.pppoesrv_chaps="Správa lokálních uživatelů (CHAP Secrets)";
 
 //help container
@@ -2434,7 +2434,7 @@ wpa.secmode="Režim zabezpečení";
 wpa.legend="Bezdrátové šifrování";
 wpa.auth_mode="Síťová autentifikace";
 wpa.mfp="802.11w Správa ochrany rámce";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Interval skupinového klíče";
 wpa.rekey="Interval obnovení klíče (ve vteřinách)";
 wpa.radius_ipaddr="RADIUS Adresa serveru";
@@ -2577,37 +2577,37 @@ hwds.page1="<dd>WDS (Wireless Distribution System) je bezdrátový přístupový
 
 // ** Wireless_radauth.asp **//
 //
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Uivatelská služba vzdáleného ověřování Dial-In";
-radius.legend="Radius";
+radius.legend="RADIUS";
 radius.retry="Limit opakování primárního serveru";
-radius.label="MAC Klienta Radius";
+radius.label="MAC Klienta RADIUS";
 radius.label2="MAC Formát";
-radius.label3="Radius Autent. server adresa";
-radius.label4="Radius Autent. server port";
-radius.label7="Radius Autent. sdílené tajemství";
+radius.label3="RADIUS Autent. server adresa";
+radius.label4="RADIUS Autent. server port";
+radius.label7="RADIUS Autent. sdílené tajemství";
 
-radius.label23="Radius Autent. záložní server adresa";
-radius.label24="Radius Autent. záložní server port";
-radius.label27="Radius Autent. záložní sdílené tajemství";
+radius.label23="RADIUS Autent. záložní server adresa";
+radius.label24="RADIUS Autent. záložní server port";
+radius.label27="RADIUS Autent. záložní sdílené tajemství";
 
 radius.label5="Maximum neověřených uživatelů";
 radius.label6="Formát hesla";
-radius.label8="Pokud je server nedostupný, přepsat Radius";
-radius.label13="Radius Acct server addresa";
-radius.label14="Radius Acct server port";
-radius.label17="Radius Acct sdílené tajemství";
-radius.label18="Radius účty";
+radius.label8="Pokud je server nedostupný, přepsat RADIUS";
+radius.label13="RADIUS Acct server addresa";
+radius.label14="RADIUS Acct server port";
+radius.label17="RADIUS Acct sdílené tajemství";
+radius.label18="RADIUS účty";
 radius.local_ip="Vynutit IP Klienta";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) je bezpečnostní služba pro ověřování a autorizaci dial-up uživatelů. Typická podniková síť může mít přístupový server připojený k fondu modemů spolu s RADIUS server pro poskytování ověřovacích služeb. Vzdálení uživatelé vytáčejí přístupový server a přístupový server odešle požadavky na ověřování serveru RADIUS. Server RADIUS ověřuje uživatele a autorizuje přístup k interním síťovým prostředkům. Vzdálení uživatelé jsou klienti přístupového serveru a přístupu server je klientem serveru RADIUS.<br /><br /><div class =\"note\"><h4>Poznámka</h4><div>RADIUS je k dispozici pouze v <em>AP</ em > režimu. </div></div></dd>";
 hradauth.page2="<dd>Při odesílání požadavku na ověření na server RADIUS použije bezdrátový klient jako uživatelské jméno MAC Adresu. Tu server RADIUS obdrží v následujícím formátu: <ulclass=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></ul></d>> ";
-hradauth.page3="<dd>IP Adresa serveru Radius a TCP port.</dd>";
-hradauth.page4="<dd>Nastavuje množství uživatelů, kteří spustili přístup bez platného ověřování Radius</dd>";
+hradauth.page3="<dd>IP Adresa serveru RADIUS a TCP port.</dd>";
+hradauth.page4="<dd>Nastavuje množství uživatelů, kteří spustili přístup bez platného ověřování RADIUS</dd>";
 hradauth.page5="<dd>Nastavuje vlastností, které by se měly použít pro heslo RADIUS, sdílený klíč nebo samotná adresa MAC</dd>";
 hradauth.page6="<dd>Transakce mezi klientem a účtu serveru RADIUS jsou ověřovány pomocí sdíleného klíče, které se nikdy neposílají přes síť.</dd>";
-hradauth.page7="<dd>Pokud bude server Radius nedostupný, bude ověřování deaktivováno, dokud nebude znovu dosažitelný. To umožňuje bezdrátovou vzdálenou správu přístupového bodu ve scénářích selhání.</dd>";
+hradauth.page7="<dd>Pokud bude server RADIUS nedostupný, bude ověřování deaktivováno, dokud nebude znovu dosažitelný. To umožňuje bezdrátovou vzdálenou správu přístupového bodu ve scénářích selhání.</dd>";
 
 // ** Wireless_MAC.asp **//
 //
@@ -2643,8 +2643,8 @@ gpio.iplegend="GPIO Vstupy";
 
 // ** FreeRadius.asp **//
 //
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikát serveru";
 freeradius.cert="Gen cert";
 freeradius.clientcert="Klient certifikát";
@@ -2668,11 +2668,11 @@ freeradius.expiration="Vyprší (Dny)";
 freeradius.passphrase="Fráze hesla";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Status certifikátu";
-freeradius.port="Radius port";
+freeradius.port="RADIUS port";
 
 //help container
 //
-hfreeradius.right2="Musíte povolit JFFS před startem FreeRadius.";
+hfreeradius.right2="Musíte povolit JFFS před startem FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 //

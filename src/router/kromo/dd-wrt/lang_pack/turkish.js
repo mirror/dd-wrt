@@ -338,7 +338,7 @@ errmsg.err47="Geçersiz SSID.";
 errmsg.err48="WDS geçerli yönlendirici yapılandırmayla uyumlu değil. Lütfen şu noktaları kontrol edin:\n * Kablosuz Mod, AP'ye ayarlanmalıdır \n * WPA2, WDS altında desteklenmez \n * Kablosuz Ağ B-Salt modu WDS altında desteklenmez";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius yalnızca AP modunda vardır.";
+errmsg.err49="RADIUS yalnızca AP modunda vardır.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Bir SSID girmelisiniz.";
@@ -390,7 +390,7 @@ bmenu.networking="Ağ Oluşturma";
 
 bmenu.wireless="Kablosuz";
 bmenu.wirelessBasic="Temel Ayarlar";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="Süper Kanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Kablosuz Güvenlik";
@@ -443,7 +443,7 @@ bmenu.adminBackup="Yedek";
 
 bmenu.services="Servisler";
 bmenu.servicesServices="Servisler";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Sunucusu";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -705,12 +705,12 @@ hotspot.h2="Hotspot Portalı";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Wifi'yi LAN Bridge'den ayır";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Birincil Radius Sunucusu IP/DNS";
-hotspot.bserver="Yedek Radius Sunucusu IP/DNS";
+hotspot.pserver="Birincil RADIUS Sunucusu IP/DNS";
+hotspot.bserver="Yedek RADIUS Sunucusu IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="URL'yi Yeniden Yönlendir";
 hotspot.dhcp="DHCP Arayüzü";
-hotspot.radnas="Radius NAS Kimliği";
+hotspot.radnas="RADIUS NAS Kimliği";
 hotspot.net="Uzaktan Ağ";
 hotspot.uam="UAM Secret";
 hotspot.uamdns="UAM Any DNS";
@@ -1252,10 +1252,10 @@ service.pppoesrv_lcpef="LCP Echo Arıza";
 service.pppoesrv_limit="MAC başına Oturum Sınırı";
 service.pppoesrv_idlet="Boş Süre";
 service.pppoesrv_auth="Kimlik doğrulama";
-service.pppoesrv_radip="Radius Sunucusu IP";
-service.pppoesrv_radauthport="Radius Kimlik Doğrulama Portu";
-service.pppoesrv_radaccport="Radius Hesap Oluşturma Portu";
-service.pppoesrv_radkey="Radius Paylaşılan Anahtar";
+service.pppoesrv_radip="RADIUS Sunucusu IP";
+service.pppoesrv_radauthport="RADIUS Kimlik Doğrulama Portu";
+service.pppoesrv_radaccport="RADIUS Hesap Oluşturma Portu";
+service.pppoesrv_radkey="RADIUS Paylaşılan Anahtar";
 service.pppoesrv_chaps="Yerel Kullanıcı Yönetimi (CHAP Secrets)";
 
 //help container
@@ -1729,7 +1729,7 @@ wpa.h2="Kablosuz Güvenlik";
 wpa.secmode="Güvenlik Modu";
 wpa.legend="Kablosuz Şifreleme";
 wpa.auth_mode="Ağ Kimlik Doğrulaması";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Grup Yeniden Anahtarlama Aralığı";
 wpa.rekey="Anahtar Yenileme Aralığı (saniye cinsinden)";
 wpa.radius_ipaddr="RADIUS Sunucu Adresi";
@@ -1821,26 +1821,26 @@ wds.legend2="Ekstra Seçenekler";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Arayan Kullanıcının Uzaktan Kimliğini Doğrulama Servisi";
-radius.legend="Radius";
-radius.label="MAC Radius İstemcisi";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS İstemcisi";
 radius.label2="MAC Formatı";
-radius.label3="Radius Kimlik Doğrulama Sunucu Adresi";
-radius.label4="Radius Kimlik Doğrulama Sunucu Portu";
-radius.label7="Radius Kimlik Doğrulama Paylaşılan Gizliliği";
+radius.label3="RADIUS Kimlik Doğrulama Sunucu Adresi";
+radius.label4="RADIUS Kimlik Doğrulama Sunucu Portu";
+radius.label7="RADIUS Kimlik Doğrulama Paylaşılan Gizliliği";
 
-radius.label23="Radius Kimlik Doğrulama Yedek Sunucu Adresi";
-radius.label24="Radius Kimlik Doğrulama Yedek Sunucu Portu";
-radius.label27="Radius Kimlik Doğrulama Yedek Paylaşılan Gizliliği";
+radius.label23="RADIUS Kimlik Doğrulama Yedek Sunucu Adresi";
+radius.label24="RADIUS Kimlik Doğrulama Yedek Sunucu Portu";
+radius.label27="RADIUS Kimlik Doğrulama Yedek Paylaşılan Gizliliği";
 
 radius.label5="Maksimum Kimliği Doğrulanmamış Kullanıcı";
 radius.label6="Şifre Formatı";
-radius.label8="Sunucu kullanılamıyorsa, Radius'u geçersiz kıl";
-radius.label13="Radius Acct Sunucu Adresi";
-radius.label14="Radius Acct Sunucu Portu";
-radius.label17="Radius Acct Paylaşılan Gizliliği";
-radius.label18="Radius Hesap Oluşturma";
+radius.label8="Sunucu kullanılamıyorsa, RADIUS'u geçersiz kıl";
+radius.label13="RADIUS Acct Sunucu Adresi";
+radius.label14="RADIUS Acct Sunucu Portu";
+radius.label17="RADIUS Acct Paylaşılan Gizliliği";
+radius.label18="RADIUS Hesap Oluşturma";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="MAC Filtresi";
@@ -1868,8 +1868,8 @@ gpio.oplegend="Gpio Çıkışları";
 gpio.iplegend="Gpio Girişleri";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Sunucu Sertifikası";
 freeradius.cert="Sertifika Oluştur";
 freeradius.clientcert="İstemci Sertifikaları";
@@ -1893,10 +1893,10 @@ freeradius.expiration="Süre Sonu (Gün)";
 freeradius.passphrase="Parola";
 freeradius.generate="Sertifika Oluştur";
 freeradius.cert_status="Sertifika Durumu";
-freeradius.port="Radius Portu";
+freeradius.port="RADIUS Portu";
 
 //help container
-hfreeradius.right2="FreeRadius'u başlatmadan önce JFFS'yi etkinleştirmelisiniz.";
+hfreeradius.right2="FreeRADIUS'u başlatmadan önce JFFS'yi etkinleştirmelisiniz.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Gelişmiş Kablosuz Ayarlar";

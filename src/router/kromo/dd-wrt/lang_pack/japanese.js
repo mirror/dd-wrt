@@ -1796,14 +1796,14 @@ radius.label4="RADIUS認証サーバーポート";
 radius.label5="未認証で通信可能なクライアントの台数";
 radius.label6="認証パスワード";
 radius.label7="RADIUS Shared Secret";
-radius.label23="Radius Auth Backup Server Address";
-radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label23="RADIUS Auth Backup Server Address";
+radius.label24="RADIUS Auth Backup Server Port";
+radius.label27="RADIUS Auth Backup Shared Secret";
 radius.label8="サーバーと通信できない場合は認証を停止";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 
@@ -1824,8 +1824,8 @@ wl_wimax.duplex="Duplex Mode";
 wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="サーバー証明書";
 freeradius.cert="証明書作成";
 freeradius.clientcert="クライアント証明書";
@@ -1849,7 +1849,7 @@ freeradius.expiration="有効期限(日)";
 freeradius.passphrase="パスフレーズ";
 freeradius.generate="証明書生成";
 freeradius.cert_status="証明書のステータス";
-freeradius.port="Radiusポート";
+freeradius.port="RADIUSポート";
 // ** Wireless_Advanced.asp **//
 
 wl_adv.titl="詳細";

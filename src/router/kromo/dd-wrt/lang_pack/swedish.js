@@ -324,7 +324,7 @@ errmsg.err47="Felaktigt SSID.";
 errmsg.err48="WDS &auml;r inte kompatibel med aktuell konfiguration av routern. Kontrollera f&ouml;ljande punkter :\n * Tr&aring;dl&ouml;st L&auml;ge satt till AP \n * WPA2 st&ouml;ds inte i WDS \n * Tr&aring;dl&ouml;st Network B-Only l&auml;ge ej supporterat i WDS";
 
 //wireless_radauth.asp error messages
-errmsg.err49="Radius endast tillg&auml;ngligt i AP mode.";
+errmsg.err49="RADIUS endast tillg&auml;ngligt i AP mode.";
 
 //wireless_Basic.asp error messages
 errmsg.err50="Ange SSID.";
@@ -382,7 +382,7 @@ bmenu.networking="N&auml;tverk";
 
 bmenu.wireless="Tr&aring;dl&ouml;st";
 bmenu.wirelessBasic="Grundinst&auml;llningar";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="Superkanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Tr&aring;dl&ouml;st s&auml;kerhet";
@@ -434,7 +434,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Tj&auml;nster";
 bmenu.servicesServices="Tj&auml;nster";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -683,12 +683,12 @@ hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Separera Wifi fr&aring;n LAN Bryggan";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Prim&auml;r Radius Server IP/DNS";
-hotspot.bserver="Backup Radius Server IP/DNS";
+hotspot.pserver="Prim&auml;r RADIUS Server IP/DNS";
+hotspot.bserver="Backup RADIUS Server IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="Omdirigera URL";
 hotspot.dhcp="DHCP Interface";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Fj&auml;rrn&auml;tverk";
 hotspot.uam="UAM Hemlighet";
 hotspot.uamdns="UAM Any DNS";
@@ -1215,10 +1215,10 @@ service.pppoesrv_lcpei="LCP Echo Intervall";
 service.pppoesrv_lcpef="LCP Echo Fel";
 service.pppoesrv_idlet="Vilotid";
 service.pppoesrv_auth="Beh&ouml;righet";
-service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Radius Autentiserings Port";
-service.pppoesrv_radaccport="Radius Accounting Port";
-service.pppoesrv_radkey="Radius Delad Nyckel";
+service.pppoesrv_radip="RADIUS Server IP";
+service.pppoesrv_radauthport="RADIUS Autentiserings Port";
+service.pppoesrv_radaccport="RADIUS Accounting Port";
+service.pppoesrv_radkey="RADIUS Delad Nyckel";
 service.pppoesrv_chaps="Local Anv&auml;ndaradministration (CHAP Hemligheter)";
 
 //snmp.webservices
@@ -1639,7 +1639,7 @@ wpa.h2="Tr&aring;dl&ouml;st S&auml;kerhet";
 wpa.secmode="Wifi Kryptering";
 wpa.legend="Tr&aring;dl&ouml;st Kryptering";
 wpa.auth_mode="N&auml;tverks Verifiering";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Grupp f&ouml;rnyelse Intervall";
 wpa.rekey="Nyckelns f&ouml;rnyelse Intervall (in sekunder)";
 wpa.radius_ipaddr="RADIUS Server Adress";
@@ -1703,26 +1703,26 @@ wds.legend2="Extra Alternativ";
 
 
 // ** Tr&aring;dl&ouml;st_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Fj&auml;rrverifikation Ring-In Anv&auml;ndar Tj&auml;nst";
-radius.legend="Radius";
-radius.label="MAC Radius Klient";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS Klient";
 radius.label2="MAC Format";
 radius.label3="RADIUS Server Adress";
 radius.label4="RADIUS Server Port";
 radius.label7="RADIUS delad hemlighet";
 
-radius.label23="Radius Auth Backup Server Address";
-radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup Delade Hemligheter";
+radius.label23="RADIUS Auth Backup Server Address";
+radius.label24="RADIUS Auth Backup Server Port";
+radius.label27="RADIUS Auth Backup Delade Hemligheter";
 
 radius.label5="Max Overifierade Anv&auml;ndare";
 radius.label6="L&ouml;senords Format";
-radius.label8="Ignorera Radius om servern otillg&auml;nglig";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label8="Ignorera RADIUS om servern otillg&auml;nglig";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 
 // ** Tr&aring;dl&ouml;st_MAC.asp **//
@@ -1745,8 +1745,8 @@ wl_wimax.mode="Operativt l&auml;ge";
 wl_wimax.mac="Abonnent MAC Address";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certifikat";
 freeradius.cert="Skapa Certifikat";
 freeradius.clientcert="Klient Certifikat";
@@ -1770,7 +1770,7 @@ freeradius.expiration="Utl&ouml;pande (Dagar)";
 freeradius.passphrase="L&ouml;senords Fras";
 freeradius.generate="Generera Certifikat";
 freeradius.cert_status="Certifikat Status";
-freeradius.port="Radius Port";
+freeradius.port="RADIUS Port";
 
 // ** Tr&aring;dl&ouml;st_Advanced.asp **//
 wl_adv.titl="Avancerade Tr&aring;dl&ouml;sa Inst&auml;llningar";

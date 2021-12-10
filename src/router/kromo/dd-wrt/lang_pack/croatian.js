@@ -455,7 +455,7 @@ bmenu.adminBackup="Konfiguracija";
 
 bmenu.services="Usluge";
 bmenu.servicesServices="Usluge";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Poslužitelj";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -759,7 +759,7 @@ hotspot.bserver="IP/DNS Pričuvnog RADIUS Poslužitelja";
 hotspot.dns="DNS IP";
 hotspot.url="Redirect URL";
 hotspot.dhcp="DHCP Sučelje";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Remote Network";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
@@ -1339,10 +1339,10 @@ service.pppoesrv_lcpef="LCP Echo Pogreška";
 service.pppoesrv_limit="Session Limit per MAC";
 service.pppoesrv_idlet="Vrijeme Mirovanja Klijenta";
 service.pppoesrv_auth="Autentifikacija";
-service.pppoesrv_radip="IP Adresa Radius Poslužitelja";
-service.pppoesrv_radauthport="Vrata Radius Ovjere";
-service.pppoesrv_radaccport="Vrata Radius Računovodstva";
-service.pppoesrv_radkey="Dijeljeni Radius Ključ";
+service.pppoesrv_radip="IP Adresa RADIUS Poslužitelja";
+service.pppoesrv_radauthport="Vrata RADIUS Ovjere";
+service.pppoesrv_radaccport="Vrata RADIUS Računovodstva";
+service.pppoesrv_radkey="Dijeljeni RADIUS Ključ";
 service.pppoesrv_chaps="Lokalno Upravljanje Korisnicima (CHAP Secrets)";
 
 //help container
@@ -1962,23 +1962,23 @@ wds.legend2="Posebne Opcije";
 radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="RADIUS";
-radius.label="MAC Radius Client";
+radius.label="MAC RADIUS Client";
 radius.label2="MAC Format";
-radius.label3="Radius Auth Server Address";
-radius.label4="Radius Auth Server Port";
-radius.label7="Radius Auth Shared Secret";
+radius.label3="RADIUS Auth Server Address";
+radius.label4="RADIUS Auth Server Port";
+radius.label7="RADIUS Auth Shared Secret";
 
-radius.label23="Radius Auth Backup Server Address";
-radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label23="RADIUS Auth Backup Server Address";
+radius.label24="RADIUS Auth Backup Server Port";
+radius.label27="RADIUS Auth Backup Shared Secret";
 
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label8="Override Radius if server is unavailable";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label8="Override RADIUS if server is unavailable";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 
@@ -2010,8 +2010,8 @@ gpio.iplegend="Gpio Inputs";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikat Poslužitelja";
 freeradius.cert="Generiraj Certifikat";
 freeradius.clientcert="Certifikati Klijenata";
@@ -2035,11 +2035,11 @@ freeradius.expiration="Expires (Days)";
 freeradius.passphrase="Passphrase";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.port="Radius Port";
+freeradius.port="RADIUS Port";
 
 //help container
 
-hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 

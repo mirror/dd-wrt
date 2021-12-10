@@ -345,7 +345,7 @@ errmsg.err47="SSID nepermis.";
 errmsg.err48="WDS nu este compatibil cu configurația curentă a ruterului. Verificați următoarele lucruri :\n * Mod fără fir trebuie setat ca AP \n * WPA2 nu este compatibil cu WDS \n * Modul rețea fără fir Doar-B nu funcționează cu WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius este disponibil doar în modul AP.";
+errmsg.err49="RADIUS este disponibil doar în modul AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Trebuie să introduceți un SSID.";
@@ -397,7 +397,7 @@ bmenu.networking="Rețelistică";
 
 bmenu.wireless="Fără fir";
 bmenu.wirelessBasic="Setări de bază";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Securitate";
@@ -449,7 +449,7 @@ bmenu.adminBackup="Copie de siguranță";
 
 bmenu.services="Servicii";
 bmenu.servicesServices="Servicii";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Server PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -748,12 +748,12 @@ hotspot.h2="Portal hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Separă Wifi de punte LAN";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="IP / DNS server Radius primar";
-hotspot.bserver="IP / DNS server Radius de rezervă";
+hotspot.pserver="IP / DNS server RADIUS primar";
+hotspot.bserver="IP / DNS server RADIUS de rezervă";
 hotspot.dns="IP server DNS";
 hotspot.url="Redirecționează URL";
 hotspot.dhcp="Interfață DHCP";
-hotspot.radnas="ID NAS Radius";
+hotspot.radnas="ID NAS RADIUS";
 hotspot.net="Hotspot la distanță";
 hotspot.uam="Secret UAM";
 hotspot.uamserver="Server UAM";
@@ -825,7 +825,7 @@ hotspot.wifidog_username="Nume utilizator server HTTP";
 hotspot.wifidog_password="Parolă server HTTP";
 hotspot.wifidog_auth="Posibilitate de autentificare prin HTTP";
 
-hstatus_hots.right1="conup/condown:<br /><i>Când USB sau JFFS este montat în jffs, scripturi pentru conexiune pot fi folosite în /jffs/etc/chilli/</i><br />Utilizatori locali:<br /><i>Când se folosesc doar utilizatori locali setați radius primar la 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Când USB sau JFFS este montat în jffs, scripturi pentru conexiune pot fi folosite în /jffs/etc/chilli/</i><br />Utilizatori locali:<br /><i>Când se folosesc doar utilizatori locali setați RADIUS primar la 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1320,10 +1320,10 @@ service.pppoesrv_lcpef="Eșuare repetare LCP";
 service.pppoesrv_limit="Limită sesiune per MAC";
 service.pppoesrv_idlet="Timp inactivitate client";
 service.pppoesrv_auth="Autentificare";
-service.pppoesrv_radip="IP server Radius";
-service.pppoesrv_radauthport="Port autentificare Radius";
-service.pppoesrv_radaccport="Port registru Radius";
-service.pppoesrv_radkey="Cheie partajată Radius";
+service.pppoesrv_radip="IP server RADIUS";
+service.pppoesrv_radauthport="Port autentificare RADIUS";
+service.pppoesrv_radaccport="Port registru RADIUS";
+service.pppoesrv_radkey="Cheie partajată RADIUS";
 service.pppoesrv_chaps="Administrare utilizator local (secrete CHAP)";
 
 //help container
@@ -1821,7 +1821,7 @@ wpa.h2="Securitate rețea fără fir";
 wpa.secmode="Mod de securitate";
 wpa.legend="Criptare rețea fără fir";
 wpa.auth_mode="Autentificare rețea";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Interval refacere cheie grup WPA";
 wpa.rekey="Interval de reînoire cheie (în secunde)";
 wpa.radius_ipaddr="Adresă server RADIUS";
@@ -1913,26 +1913,26 @@ wds.legend2="Extraopțiuni";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Serviciu de autentificare la distanță pentru apelare";
-radius.legend="Radius";
-radius.label="MAC client Radius";
+radius.legend="RADIUS";
+radius.label="MAC client RADIUS";
 radius.label2="Format MAC";
-radius.label3="Adresă server de autentificare Radius";
-radius.label4="Port server de autentificare Radius";
-radius.label7="Secret partajat autentificare Radius";
+radius.label3="Adresă server de autentificare RADIUS";
+radius.label4="Port server de autentificare RADIUS";
+radius.label7="Secret partajat autentificare RADIUS";
 
-radius.label23="Adresă server backup de autentificare Radius";
-radius.label24="Port server backup de autentificare Radius";
-radius.label27="Backup secret partajat autentificare Radius";
+radius.label23="Adresă server backup de autentificare RADIUS";
+radius.label24="Port server backup de autentificare RADIUS";
+radius.label27="Backup secret partajat autentificare RADIUS";
 
 radius.label5="Maxim de utilizatori neautentificați";
 radius.label6="Format parolă";
-radius.label8="Renunță la Radius dacă serverul nu este disponibil";
-radius.label13="Adresă cont server Radius";
-radius.label14="Port cont server Radius";
-radius.label17="Secret partajat cont Radius";
-radius.label18="Registru Radius";
+radius.label8="Renunță la RADIUS dacă serverul nu este disponibil";
+radius.label13="Adresă cont server RADIUS";
+radius.label14="Port cont server RADIUS";
+radius.label17="Secret partajat cont RADIUS";
+radius.label18="Registru RADIUS";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="Filtrare MAC";
@@ -1960,8 +1960,8 @@ gpio.oplegend="Ieșiri Gpio";
 gpio.iplegend="Intrări Gpio";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certificat server";
 freeradius.cert="Generează certificat";
 freeradius.clientcert="Certificate client";
@@ -1986,7 +1986,7 @@ freeradius.cert_status="Stare certificat";
 freeradius.port="Port Radius";
 
 //help container
-hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRadius.";
+hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Setări avansate rețea fără fir";
