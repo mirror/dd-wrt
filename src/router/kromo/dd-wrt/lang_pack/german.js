@@ -2698,7 +2698,7 @@ superchan.legend="SuperChannel Activation";
 superchan.h2feat="Eigenschaft";
 superchan.featxt="<p>SuperChannel erlaubt auf <b>kompatiblen Ger&auml;ten<b> die Nutzung von speziellen Frequenzen.<br />Der m&ouml;gliche Frequenzbereich liegt zwischen 2192Mhz und 2732Mhz f&uuml;r 802.11g und 4915Mhz bis 6100Mhz f&uuml;r 802.11a.<br /><b>Diese Eigenschaft ist noch noch freigeschaltet.</b></p>";
 superchan.h2disc="Haftungsausschluss";
-superchan.lgltxt="<p>Beachten Sie das es in vielen L&auml;ndern nicht gestattet ist diese Frequenzen zu nutzen. DD-WRT / NewMedia-NET GmbH übernimmt keinerlei direkte oder indirekte Verantwortung f&uuml;nr die Nutzung dieser Eigenschaft.</p>";
+superchan.lgltxt="<p>Beachten Sie das es in vielen L&auml;ndern nicht gestattet ist diese Frequenzen zu nutzen. DD-WRT / NewMedia-NET GmbH &uuml;bernimmt keinerlei direkte oder indirekte Verantwortung f&uuml;nr die Nutzung dieser Eigenschaft.</p>";
 superchan.lsyskey="Systemschl&uuml;ssel";
 superchan.lactkey="Aktivierungsschl&uuml;ssel";
 
