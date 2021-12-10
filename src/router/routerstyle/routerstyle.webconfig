@@ -130,4 +130,3 @@ document.forms[0].onreset = function() {
 
 </fieldset><br />
 <% show_ddwrt_inspired_themes(); %>
-<br />
