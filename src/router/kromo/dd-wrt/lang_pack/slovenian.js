@@ -350,7 +350,7 @@ errmsg.err47="nepravilen SSID.";
 errmsg.err48="WDS ni združljiv s trenutno konfiguracijo usmerjevalnika. Prosimo, da preverite naslednje :\n * Brezžični način mora biti AP \n * WPA2 ni podprta pod WDS \n * Brežično omrežje v načinu samo-B ni podprto pod WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius je na volju samo v načinu AP.";
+errmsg.err49="RADIUS je na volju samo v načinu AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Vnesti morate SSID.";
@@ -403,7 +403,7 @@ bmenu.networking="Omreženje";
 
 bmenu.wireless="Brezžično";
 bmenu.wirelessBasic="Osnovne nastavitve";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperKanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Brezžična zaščita";
@@ -456,7 +456,7 @@ bmenu.adminBackup="Varnostna kop.";
 
 bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE strežnik";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -759,12 +759,12 @@ hotspot.h2="Hotspot portal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Loči WiFi od LAN mosta";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="IP/DNS glavnega Radius strežnika";
-hotspot.bserver="IP/DNS nadomestnega Radius strežnika";
+hotspot.pserver="IP/DNS glavnega RADIUS strežnika";
+hotspot.bserver="IP/DNS nadomestnega RADIUS strežnika";
 hotspot.dns="DNS strežnik IP";
 hotspot.url="Preusmerjeni URL";
 hotspot.dhcp="DHCP vmesnik";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Oddaljena mreža";
 hotspot.uam="UAM skrivnost";
 hotspot.uamserver="UAM strežnik";
@@ -838,7 +838,7 @@ hotspot.wifidog_auth="HTTP strežnik: podpora overjanju";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br />Lokalni uporabniki:<br /><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni radius na 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br />Lokalni uporabniki:<br /><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni RADIUS na 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 
@@ -1364,10 +1364,10 @@ service.pppoesrv_lcpef="LCP Echo neuspeh";
 service.pppoesrv_limit="Meja seje po MACu";
 service.pppoesrv_idlet="Nedejavni čas";
 service.pppoesrv_auth="Overjanje";
-service.pppoesrv_radip="Radius strežnikov IP";
-service.pppoesrv_radauthport="Radius vrata za overjanje";
-service.pppoesrv_radaccport="Radius vrata za račune";
-service.pppoesrv_radkey="Radius deljeni ključ";
+service.pppoesrv_radip="RADIUS strežnikov IP";
+service.pppoesrv_radauthport="RADIUS vrata za overjanje";
+service.pppoesrv_radaccport="RADIUS vrata za račune";
+service.pppoesrv_radkey="RADIUS deljeni ključ";
 service.pppoesrv_chaps="Lokalno upr. računov (CHAP skrivnosti)";
 
 //help container
@@ -1891,7 +1891,7 @@ wpa.h2="Brezžična zaščita";
 wpa.secmode="Način zaščite";
 wpa.legend="Brezžično šifriranje";
 wpa.auth_mode="Mrežno overjanje";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA interval izmenjave ključev";
 wpa.rekey="Interval izmenjave ključev (v sekundah)";
 wpa.radius_ipaddr="RADIUS naslov strežnika";
@@ -1995,26 +1995,26 @@ wds.legend2="Dodatne možnosti";
 
 // ** Wireless_radauth.asp **//
 
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
-radius.label="MAC Radius odjemalec";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS odjemalec";
 radius.label2="MAC format";
-radius.label3="Radius Auth strežnikov naslov";
-radius.label4="Radius Auth strežnikova vrata";
-radius.label7="Radius Auth deljena skrivnost";
+radius.label3="RADIUS Auth strežnikov naslov";
+radius.label4="RADIUS Auth strežnikova vrata";
+radius.label7="RADIUS Auth deljena skrivnost";
 
-radius.label23="Radius Auth naslov rezervnega strežnika";
-radius.label24="Radius Auth vrata rezervnega strežnika";
-radius.label27="Radius Auth deljena skrivnost rezervnega strežnika";
+radius.label23="RADIUS Auth naslov rezervnega strežnika";
+radius.label24="RADIUS Auth vrata rezervnega strežnika";
+radius.label27="RADIUS Auth deljena skrivnost rezervnega strežnika";
 
 radius.label5="Največje št. neoverjenih uporabnikov";
 radius.label6="Format gesla";
-radius.label8="Razveljavi Radius, če strežnik ni na voljo";
-radius.label13="Radius Acct strežnikov naslov";
-radius.label14="Radius Acct strežnikova vrata";
-radius.label17="Radius Acct deljena skrivnost";
-radius.label18="Radius Accounting";
+radius.label8="Razveljavi RADIUS, če strežnik ni na voljo";
+radius.label13="RADIUS Acct strežnikov naslov";
+radius.label14="RADIUS Acct strežnikova vrata";
+radius.label17="RADIUS Acct deljena skrivnost";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 
@@ -2046,8 +2046,8 @@ gpio.iplegend="Gpio vhodi";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikat strežnika";
 freeradius.cert="Naredi certifikate";
 freeradius.clientcert="Odjemalčevi certifikati";
@@ -2071,11 +2071,11 @@ freeradius.expiration="Rok veljavnosti (dni)";
 freeradius.passphrase="Geslo";
 //freeradius.generate="Izdelaj certifikat";
 freeradius.cert_status="Status certifikata";
-freeradius.port="Radius vrata";
+freeradius.port="RADIUS vrata";
 
 //help container
 
-hfreeradius.right2="Preden zaženete FreeRadius morate omogočiti JFFS.";
+hfreeradius.right2="Preden zaženete FreeRADIUS morate omogočiti JFFS.";
 
 // ** Wireless_Advanced.asp **//
 

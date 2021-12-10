@@ -496,7 +496,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Dienste";
 bmenu.servicesServices="Dienste";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -938,7 +938,7 @@ hotspot.wifidog_auth="HTTP Authentication Unterst&uuml;tzung";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>Wenn USB or JFFS als /jffs eingebungen ist, k&ouml;nnen Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Locale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der prim&auml;re Radiusserver auf 127.0.0.1 gesetzt werden.</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Wenn USB or JFFS als /jffs eingebungen ist, k&ouml;nnen Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Locale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der prim&auml;re RADIUSserver auf 127.0.0.1 gesetzt werden.</i>";
 
 // ** Hotspotsystem **//
 
@@ -1609,10 +1609,10 @@ service.pppoesrv_lcpef="LCP Echo Fehler";
 service.pppoesrv_limit="Verbindungs Limit pro MAC";
 service.pppoesrv_idlet="Idle Time";
 service.pppoesrv_radauth="Authentication";
-service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Radius Authentication Port";
-service.pppoesrv_radaccport="Radius Accounting Port";
-service.pppoesrv_radkey="Radius Shared Key";
+service.pppoesrv_radip="RADIUS Server IP";
+service.pppoesrv_radauthport="RADIUS Authentication Port";
+service.pppoesrv_radaccport="RADIUS Accounting Port";
+service.pppoesrv_radkey="RADIUS Shared Key";
 service.pppoesrv_chaps="Lokale Benutzer Verwaltung (CHAP Secrets)";
 
 //help container
@@ -2367,27 +2367,27 @@ wds.legend2="Erweiterte Optionen";
 
 // ** Wireless_radauth.asp **//
 
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Fern-Authentifizierungs Einwahl Nutzer Dienst";
-radius.legend="Radius";
+radius.legend="RADIUS";
 radius.retry="Prim&auml;re Server Versuche";
-radius.label="Radius Client MAC";
+radius.label="RADIUS Client MAC";
 radius.label2="MAC-Format";
-radius.label3="Radius Auth Server IP";
-radius.label4="Radius Auth Server Port";
-radius.label7="Radius Auth geteilter Schl&uuml;ssel";
+radius.label3="RADIUS Auth Server IP";
+radius.label4="RADIUS Auth Server Port";
+radius.label7="RADIUS Auth geteilter Schl&uuml;ssel";
 
-radius.label23="Radius Auth Backup Server IP";
-radius.label24="Radius Auth Backup Server Port";
+radius.label23="RADIUS Auth Backup Server IP";
+radius.label24="RADIUS Auth Backup Server Port";
 radius.label27="Gemeinsames Kennwort";
 
 radius.label5="Erlaubte unauthentifizierte Benutzer";
 radius.label6="Kennwort-Format";
 radius.label8="Umgehen, wenn Server nicht verf&uuml;gbar";
-radius.label13="Radius Acct Server IP";
-radius.label14="Radius Acct Server Port";
+radius.label13="RADIUS Acct Server IP";
+radius.label14="RADIUS Acct Server Port";
 radius.label17="Gemeinsames Kennwort";
-radius.label18="Radius Accounting";
+radius.label18="RADIUS Accounting";
 radius.local_ip="Erzwinge Client IP";
 
 // ** Wireless_MAC.asp **//
@@ -2421,8 +2421,8 @@ gpio.inputlegend="GPIO Eing&auml;nge";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Zertifikate";
 freeradius.cert="Erstelle Zertifikat";
 freeradius.clientcert="Client Zertifikate";
@@ -2446,11 +2446,11 @@ freeradius.expiration="Verfall in Tagen";
 freeradius.passphrase="Kennwort";
 freeradius.generate="Erzeuge Certificate";
 freeradius.cert_status="Zertifikat Status";
-freeradius.port="Radius Port";
+freeradius.port="RADIUS Port";
 
 //help container
 
-hfreeradius.right2="Bitte JFFS einschalten, bevor sie Radius nutzen.";
+hfreeradius.right2="Bitte JFFS einschalten, bevor sie RADIUS nutzen.";
 
 // ** Wireless_Advanced.asp **//
 

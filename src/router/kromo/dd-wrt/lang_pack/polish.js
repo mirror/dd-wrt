@@ -367,7 +367,7 @@ errmsg.err47="nieprawidłowy SSID.";
 errmsg.err48="WDS nie jest kompatybilny z obecną konfiguracją routera. Sprawdź następujące punkty :\n * Tryb bezprzewodowy musi być ustawiony na AP \n * WPA2 nie jest obsługiwany przez WDS \n * Tryb sieci bezprzewodowej B-Only nie jest obsługiwany przez WDS ";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius jest dostępny tylko w trybie punku dostępu (AP).";
+errmsg.err49="RADIUS jest dostępny tylko w trybie punku dostępu (AP).";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Musisz wprowadzić SSID.";
@@ -421,7 +421,7 @@ bmenu.networking="Sieci";
 
 bmenu.wireless="Sieci bezprzewodowe";
 bmenu.wirelessBasic="Ustawienia podstawowe";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Zabezpieczenia bezprzewodowe";
@@ -477,7 +477,7 @@ bmenu.adminBackup="Kopia zapasowa";
 
 bmenu.services="Usługi";
 bmenu.servicesServices="Usługi";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Serwer PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -929,12 +929,12 @@ hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Oddziel WiFi od mostu LAN";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Primary Radius Server IP/DNS";
-hotspot.bserver="Backup Radius Server IP/DNS";
+hotspot.pserver="Primary RADIUS Server IP/DNS";
+hotspot.bserver="Backup RADIUS Server IP/DNS";
 hotspot.dns="Adres IP serwera DNS";
 hotspot.url="Redirect URL";
 hotspot.dhcp="Interfejs DHCP";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Sieć Hotspot'a";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="Serwer UAM";
@@ -1008,10 +1008,10 @@ hotspot.wifidog_auth="HTTP Server Authentication Support";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary radius to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
 
 // help page
-hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (Radius). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite radius server.</dd>";
+hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
 hstatus_hots.page2="<dd>You can have your hotspot portal managed by HotspotSystem.com. They provide free and pay-per-use hotspot solutions with billing. For more information please visit <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>The Operator Username which you have registered at <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>The number of the location you would like to set up.</dd>";
@@ -1019,10 +1019,10 @@ hstatus_hots.page5="<dd>If this option is enabled (default), then WiFi and LAN a
 hstatus_hots.page6="<dd>This has to be the interface you would like to use for the hotspot portal.</dd>";
 hstatus_hots.page7="<dd>Network mask where you wish to run the hotspot service.</dd>";
 hstatus_hots.page8="<dd>Here you can make changes on your splash page. You can add more sites for free browsing. If you are a White Label operator you can use your own domain name on your splash pages. Options are:<ul><li>White Label Protocol: choose HTTPS if you have an SSL certificate installed on the White Label domain.</li><li>White Label Domain: Put your White Label domain here or other servers (for example asia server) provided by HotspotSystem.com</li><li>Login on Splash Page: You can have the login box displayed on the main splash page. You also need to set this behavior in HotspotSystem.com Control Center, on Manage > Locations > click on location > Modify Hotspot Settings > Splash Page Settings!</li><li>Custom Splash Page (Walled Garden): You can forward users to your own splash page first. For this option you have to add your domain to the UAM allowed list below, and set it in the Control Center. You also have to put a backlink to our splash page so your customers will be able to log in or buy access/use a voucher.</li><li>UAM Allowed: IP addresses or network segments the client can access without first authenticating (Comma separated list of domain names). Example: www.chillispot.info,10.11.12.0/24</li></ul></dd>";
-hstatus_hots.page9="<dd>The IP addresses of radius server 1 and 2.</dd>";
+hstatus_hots.page9="<dd>The IP addresses of RADIUS server 1 and 2.</dd>";
 hstatus_hots.page10="<dd>DNS Server IP. It is used to inform the client about the DNS address to use for host name resolution. If this option is not given the system primary DNS is used.</dd>";
 hstatus_hots.page11="<dd>URL of web server to use for authenticating clients.</dd>";
-hstatus_hots.page12="<dd>Radius shared secret for both servers. This secret should be changed in order not to compromise security.</dd>";
+hstatus_hots.page12="<dd>RADIUS shared secret for both servers. This secret should be changed in order not to compromise security.</dd>";
 hstatus_hots.page13="<dd>Ethernet interface to listen to for the downlink interface. This option must be specified.</dd>";
 hstatus_hots.page14="<dd>Network access server identifier.</dd>";
 hstatus_hots.page15="<dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>";
@@ -1799,10 +1799,10 @@ service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Session Limit per MAC";
 service.pppoesrv_idlet="Client Idle Time";
 service.pppoesrv_auth="Uwieżytelnienie";
-service.pppoesrv_radip="Adres IP serwera Radius";
-service.pppoesrv_radauthport="Port uwieżytelnienia Radius";
-service.pppoesrv_radaccport="Radius Accounting Port";
-service.pppoesrv_radkey="Radius Shared Key";
+service.pppoesrv_radip="Adres IP serwera RADIUS";
+service.pppoesrv_radauthport="Port uwieżytelnienia RADIUS";
+service.pppoesrv_radaccport="RADIUS Accounting Port";
+service.pppoesrv_radkey="RADIUS Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
@@ -2511,7 +2511,7 @@ wpa.secmode="Tryb zabezpieczeń";
 wpa.legend="Szyfrowanie sieci bezprzewodowej";
 wpa.auth_mode="Network Authentication";
 wpa.mfp="802.11w Management Frame Protection";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.wpa_strict_rekey="WPA Strict Rekeying";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
@@ -2651,38 +2651,38 @@ hwds.page1="<dd>WDS (Wireless Distribution System) is a Wireless Access Point mo
 
 // ** Wireless_radauth.asp **//
 
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
+radius.legend="RADIUS";
 radius.retry="Primary Server Retry Limit";
-radius.label="MAC Radius Client";
+radius.label="MAC RADIUS Client";
 radius.label2="Format adresu MAC";
-radius.label3="Radius Auth Server Address";
-radius.label4="Radius Auth Server Port";
-radius.label7="Radius Auth Shared Secret";
+radius.label3="RADIUS Auth Server Address";
+radius.label4="RADIUS Auth Server Port";
+radius.label7="RADIUS Auth Shared Secret";
 
-radius.label23="Radius Auth Backup Server Address";
-radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label23="RADIUS Auth Backup Server Address";
+radius.label24="RADIUS Auth Backup Server Port";
+radius.label27="RADIUS Auth Backup Shared Secret";
 
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Format hasła";
-radius.label8="Override Radius if server is unavailable";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label8="Override RADIUS if server is unavailable";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 radius.local_ip="Force Client IP";
 
 // help page
 
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
 hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
-hradauth.page3="<dd>The radius server IP address and TCP port.</dd>";
-hradauth.page4="<dd>Sets a amount of users which ran access without any valid radius authentication</dd>";
-hradauth.page5="<dd>Sets the property which radius password should be used, the shared key or the mac address itself</dd>";
+hradauth.page3="<dd>The RADIUS server IP address and TCP port.</dd>";
+hradauth.page4="<dd>Sets a amount of users which ran access without any valid RADIUS authentication</dd>";
+hradauth.page5="<dd>Sets the property which RADIUS password should be used, the shared key or the mac address itself</dd>";
 hradauth.page6="<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>";
-hradauth.page7="<dd>If the Radius server becomes unavailable, the radius authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
+hradauth.page7="<dd>If the RADIUS server becomes unavailable, the RADIUS authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
 
 // ** Wireless_MAC.asp **//
 
@@ -2718,8 +2718,8 @@ gpio.iplegend="GPIO Inputs";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certyfikat serwera";
 freeradius.cert="Wygeneruj certyfikat";
 freeradius.clientcert="Certyfikaty klienta";
@@ -2746,7 +2746,7 @@ freeradius.port="Port Radius'a";
 
 //help container
 
-hfreeradius.right2="Musisz włączyć JFFS przed uruchomieniem FreeRadius.";
+hfreeradius.right2="Musisz włączyć JFFS przed uruchomieniem FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 
