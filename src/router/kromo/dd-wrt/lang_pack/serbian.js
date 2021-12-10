@@ -348,7 +348,7 @@ errmsg.err47="Неважећи SSID.";
 errmsg.err48="WDS није компатибилан са тренутном конфигурацијом рутера. Проверите следеће ставке :\n * Бежични режим мора бити постављен на AP \n * WPA2 није подржан у WDS-у \n * Wireless Network B-Only мод није подржан у WDS режиму";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius је доступан само у AP моду.";
+errmsg.err49="RADIUS је доступан само у AP моду.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Морате унети SSID.";
@@ -401,7 +401,7 @@ bmenu.networking="Умрежавање";
 
 bmenu.wireless="Бежичне мреже";
 bmenu.wirelessBasic="Основно";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Безбедност";
@@ -454,7 +454,7 @@ bmenu.adminBackup="Резервно коп.";
 
 bmenu.services="Сервиси";
 bmenu.servicesServices="Services";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="PPPoE Сервер";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -774,12 +774,12 @@ hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Одвој Wifi од LAN Bridge-а";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Примарни Radius Server IP/DNS";
-hotspot.bserver="Резервни Radius Server IP/DNS";
+hotspot.pserver="Примарни RADIUS Server IP/DNS";
+hotspot.bserver="Резервни RADIUS Server IP/DNS";
 hotspot.dns="IP адреса DNS Сервера";
 hotspot.url="Преусмери URL";
 hotspot.dhcp="DHCP Интерфејс";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Hotspot Network";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
@@ -1872,7 +1872,7 @@ wpa.h2="Wi-Fi Безбедност";
 wpa.secmode="Безбедносни Режим";
 wpa.legend="Wi-Fi Шифровање";
 wpa.auth_mode="Мрежна Аутентификација";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Интервал WPA Group Rekey-а";
 wpa.rekey="Интервал Key Renewal-а (у секундама)";
 wpa.radius_ipaddr="RADIUS Server Address";
@@ -1966,26 +1966,26 @@ wds.legend2="Додатне опције";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
-radius.label="MAC Radius Client";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS Client";
 radius.label2="MAC Формат";
-radius.label3="Адреса Radius Auth Server-а";
-radius.label4="Порт Radius Auth Server-а";
-radius.label7="Radius Auth Shared Secret";
+radius.label3="Адреса RADIUS Auth Server-а";
+radius.label4="Порт RADIUS Auth Server-а";
+radius.label7="RADIUS Auth Shared Secret";
 
-radius.label23="Адреса Radius Auth Backup Server-а";
-radius.label24="Порт Radius Auth Backup Server-а";
-radius.label27="Radius Auth Backup Shared Secret";
+radius.label23="Адреса RADIUS Auth Backup Server-а";
+radius.label24="Порт RADIUS Auth Backup Server-а";
+radius.label27="RADIUS Auth Backup Shared Secret";
 
 radius.label5="Максимум неаутентификованих корисника";
 radius.label6="Формат Лозинке";
-radius.label8="Превазиђи Radius ако је сервер недоступан";
-radius.label13="Адреса Radius Acct Server-а";
-radius.label14="Порт Radius Acct Server-а";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Налози";
+radius.label8="Превазиђи RADIUS ако је сервер недоступан";
+radius.label13="Адреса RADIUS Acct Server-а";
+radius.label14="Порт RADIUS Acct Server-а";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Налози";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="MAC Филтер";
@@ -2013,8 +2013,8 @@ gpio.oplegend="Gpio Излази";
 gpio.iplegend="Gpio Улази";
 
 // ** FreeRadius.asp **//
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Сертификат Сервера";
 freeradius.cert="Gen Cert";
 freeradius.clientcert="Сертификати Клијента";
@@ -2038,10 +2038,10 @@ freeradius.expiration="Истиче (Дана)";
 freeradius.passphrase="Фраза";
 //freeradius.generate="Генериши Сертификат";
 freeradius.cert_status="Статус Сертификата";
-freeradius.port="Radius Порт";
+freeradius.port="RADIUS Порт";
 
 //help container
-hfreeradius.right2="Морате омогућити JFFS пре стартовања FreeRadius-а.";
+hfreeradius.right2="Морате омогућити JFFS пре стартовања FreeRADIUS-а.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Напредна Бежична Подешавања";

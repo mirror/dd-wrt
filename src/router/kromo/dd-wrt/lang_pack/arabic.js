@@ -306,7 +306,7 @@ errmsg.err47="invalid SSID.";
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius is only available in AP mode.";
+errmsg.err49="RADIUS is only available in AP mode.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="You must input a SSID.";
@@ -358,7 +358,7 @@ bmenu.networking="Networking";
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Basic Settings";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Wireless Security";
@@ -651,12 +651,12 @@ hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Primary Radius Server IP/DNS";
-hotspot.bserver="Backup Radius Server IP/DNS";
+hotspot.pserver="Primary RADIUS Server IP/DNS";
+hotspot.bserver="Backup RADIUS Server IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="Redirect URL";
 hotspot.dhcp="DHCP Interface";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="Remote Network";
 hotspot.uam="UAM Secret";
 hotspot.uamdns="UAM Any DNS";
@@ -1168,10 +1168,10 @@ service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_idlet="Idle Time";
 service.pppoesrv_auth="Authentication";
-service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Radius Authentication Port";
-service.pppoesrv_radaccport="Radius Accounting Port";
-service.pppoesrv_radkey="Radius Shared Key";
+service.pppoesrv_radip="RADIUS Server IP";
+service.pppoesrv_radauthport="RADIUS Authentication Port";
+service.pppoesrv_radaccport="RADIUS Accounting Port";
+service.pppoesrv_radkey="RADIUS Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //snmp.webservices
@@ -1605,7 +1605,7 @@ wpa.h2="Wireless Security";
 wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
 wpa.radius_ipaddr="RADIUS Server Address";
@@ -1657,21 +1657,21 @@ wds.legend2="Extra Options";
 
 // ** Wireless_radauth.asp **//
 
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
-radius.label="MAC Radius Client";
+radius.legend="RADIUS";
+radius.label="MAC RADIUS Client";
 radius.label2="MAC Format";
-radius.label3="Radius Auth Server Address";
-radius.label4="Radius Auth Server Port";
+radius.label3="RADIUS Auth Server Address";
+radius.label4="RADIUS Auth Server Port";
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label7="Radius Auth Shared Secret";
-radius.label8="Override Radius if server is unavailable";
-radius.label13="Radius Acct Server Address";
-radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
-radius.label18="Radius Accounting";
+radius.label7="RADIUS Auth Shared Secret";
+radius.label8="Override RADIUS if server is unavailable";
+radius.label13="RADIUS Acct Server Address";
+radius.label14="RADIUS Acct Server Port";
+radius.label17="RADIUS Acct Shared Secret";
+radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 

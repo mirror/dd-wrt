@@ -339,7 +339,7 @@ errmsg.err47="SSID incorrecta.";
 errmsg.err48="WDS no es compatible con la configuraci&oacute;n actual del router. Por favor compruebe los siguientes puntos :\n * El modo inal&aacute;mbrico debe ser AP (Punto Acceso) \n * WPA2 no est&aacute; soportado bajo WDS \n * La Red Inal&aacute;mbrica en modo S&oacute;lo-B no est&aacute; soportada bajo WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius solo est&aacute; disponible en modo AP.";
+errmsg.err49="RADIUS solo est&aacute; disponible en modo AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Debes introducir una SSID.";
@@ -392,7 +392,7 @@ bmenu.networking="Redes";
 
 bmenu.wireless="Inal&aacute;mbrico";
 bmenu.wirelessBasic="Config B&aacute;sica";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Seguridad Inal&aacute;mbrica";
@@ -444,7 +444,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Servicios";
 bmenu.servicesServices="Servicios";
-bmenu.servicesRadius="FreeRadius";
+bmenu.servicesRadius="FreeRADIUS";
 bmenu.servicesPppoesrv="Servidor PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -709,12 +709,12 @@ hotspot.h2="Portal Hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.hotspot="CoovaChilli";
 hotspot.nowifibridge="Separar Wifi del puente LAN";
-hotspot.pserver="IP/DNS Principal del Servidor Radius";
-hotspot.bserver="Backup de la IP/DNS del Servidor Radius";
+hotspot.pserver="IP/DNS Principal del Servidor RADIUS";
+hotspot.bserver="Backup de la IP/DNS del Servidor RADIUS";
 hotspot.dns="IP DNS";
 hotspot.url="Redirigir URL";
 hotspot.dhcp="Interfaz DHCP";
-hotspot.radnas="ID NAS de Radius";
+hotspot.radnas="ID NAS de RADIUS";
 hotspot.net="Red Remota";
 hotspot.uam="Secreto UAM";
 hotspot.uamdns="Cualquier DNS para UAM";
@@ -1257,10 +1257,10 @@ service.pppoesrv_lcpef="Fallo de eco LCP";
 service.pppoesrv_limit="L&iacute;mite de sesi&oacute;n por MAC";
 service.pppoesrv_idlet="Tiempo de espera";
 service.pppoesrv_auth="Autentificaci&oacute;n";
-service.pppoesrv_radip="IP del servidor Radius";
-service.pppoesrv_radauthport="Puerto de autentificaci&oacute;n Radius";
-service.pppoesrv_radaccport="Puerto de las cuentas Radius";
-service.pppoesrv_radkey="Clave compartida Radius";
+service.pppoesrv_radip="IP del servidor RADIUS";
+service.pppoesrv_radauthport="Puerto de autentificaci&oacute;n RADIUS";
+service.pppoesrv_radaccport="Puerto de las cuentas RADIUS";
+service.pppoesrv_radkey="Clave compartida RADIUS";
 service.pppoesrv_chaps="Administraci&oacute;n local de usuario (Secreto CHAP)";
 
 //snmp.webservices
@@ -1690,7 +1690,7 @@ wpa.h2="Seguridad WIFI";
 wpa.secmode="Modo de Seguridad";
 wpa.legend="Encriptaci&oacute;n Inal&aacute;mbrica";
 wpa.auth_mode="Autenticaci&oacute;n de red";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="Intervalo Rotaci&oacute;n Clave WPA";
 wpa.rekey="Intervalo Renovaci&oacute;n Clave (en Segs)";
 wpa.radius_ipaddr="Direcci&oacute;n Servidor RADIUS";
@@ -1757,26 +1757,26 @@ wds.legend2="Opciones Extra";
 
 
 // ** Wireless_radauth.asp **//
-radius.titl="Radius";
+radius.titl="RADIUS";
 radius.h2="Servicio de Usuario Dial-In de Autenticaci&oacute;n Remota";
-radius.legend="Radius";
-radius.label="MAC de Cliente Radius";
+radius.legend="RADIUS";
+radius.label="MAC de Cliente RADIUS";
 radius.label2="Formato MAC";
-radius.label3="IP Servidor Radius";
-radius.label4="Puerto Servidor Radius";
+radius.label3="IP Servidor RADIUS";
+radius.label4="Puerto Servidor RADIUS";
 radius.label7="Secreto Compartido RADIUS";
 
-radius.label23="IP Servidor de respaldo Radius ";
-radius.label24="Puerto Servidor de respaldo Radius";
-radius.label27="Secreto Compartido del servidor de respaldo Radius";
+radius.label23="IP Servidor de respaldo RADIUS ";
+radius.label24="Puerto Servidor de respaldo RADIUS";
+radius.label27="Secreto Compartido del servidor de respaldo RADIUS";
 
 radius.label5="Usuarios autentificados m&aacute;ximo";
 radius.label6="Formato de la contrase&ntilde;a";
-radius.label8="No usar Radius si el servidor no est&aacute; disponible";
-radius.label13="Direcci&oacute;n del servidor de activaci&oacute;n Radius";
-radius.label14="Puerto del servidor de activaci&oacute;n Radius";
-radius.label17="Secreto compartido del servidor de activaci&oacute;n Radius";
-radius.label18="Contabilizaci&oacute;n Radius";
+radius.label8="No usar RADIUS si el servidor no est&aacute; disponible";
+radius.label13="Direcci&oacute;n del servidor de activaci&oacute;n RADIUS";
+radius.label14="Puerto del servidor de activaci&oacute;n RADIUS";
+radius.label17="Secreto compartido del servidor de activaci&oacute;n RADIUS";
+radius.label18="Contabilizaci&oacute;n RADIUS";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="Filtrado MAC";
@@ -1805,8 +1805,8 @@ gpio.iplegend="Gpio Entradas";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRadius";
-freeradius.h2="FreeRadius";
+freeradius.titl="FreeRADIUS";
+freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certificado del servidor";
 freeradius.cert="Crear certificado";
 freeradius.clientcert="Certificado del cliente";
@@ -1830,7 +1830,7 @@ freeradius.expiration="Expiraci&oacute;n (D&iacute;as)";
 freeradius.passphrase="Clave de paso";
 freeradius.generate="Generar certificado";
 freeradius.cert_status="Estado del certificado";
-freeradius.port="Puerto de Radius";
+freeradius.port="Puerto de RADIUS";
 
 
 // ** Wireless_Advanced.asp **//

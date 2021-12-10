@@ -306,7 +306,7 @@ errmsg.err47="SSID invalide.";
 errmsg.err48="WDS n\&apos;est pas compatible avec la configuration courante du routeur. Merci de v&eacute;rifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\&apos;est pas support&eacute; sous WDS \n * Le mode sans fil B-Only n\&apos;est pas support&eacute; sous WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius n\&apos;est seulement disponible qu\&apos;en mode AP.";
+errmsg.err49="RADIUS n\&apos;est seulement disponible qu\&apos;en mode AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Vous devez saisir un SSID.";
@@ -357,7 +357,7 @@ bmenu.networking="R&eacute;seau";
 
 bmenu.wireless="Sans fil";
 bmenu.wirelessBasic="Param&egrave;tres de base";
-bmenu.wirelessRadius="Radius";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="Supercanal";
 bmenu.wirelessSecurity="S&eacute;curit&eacute; sans fil";
 bmenu.wirelessMac="Filtrage MAC";
@@ -624,12 +624,12 @@ hotspot.h2="Portail Hotspot";
 hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="S&eacute;parer sans fil du Pont LAN";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="IP/DNS Serveur Radius primaire";
-hotspot.bserver="IP/DNS Serveur Radius secondaire";
+hotspot.pserver="IP/DNS Serveur RADIUS primaire";
+hotspot.bserver="IP/DNS Serveur RADIUS secondaire";
 hotspot.dns="IP / DNS";
 hotspot.url="URL de redirection";
 hotspot.dhcp="Interface DHCP";
-hotspot.radnas="Radius NAS ID";
+hotspot.radnas="RADIUS NAS ID";
 hotspot.net="R&eacute;seau distant";
 hotspot.uam="UAM Secret";
 hotspot.uamdns="DNS du UAM";
@@ -1094,10 +1094,10 @@ service.pppoesrv_lcpei="LPC Intervalle de r&eacute;p&eacute;tition";
 service.pppoesrv_lcpef="LCP R&eacute;p&eacute;tition d&apos;erreur";
 service.pppoesrv_idlet="Temps inoccup&eacute;";
 service.pppoesrv_auth="Authentification";
-service.pppoesrv_radip="Serveur IP Radius";
-service.pppoesrv_radauthport="Port d&apos;authentification Radius";
-service.pppoesrv_radaccport="Port de comptabilit&eacute; Radius";
-service.pppoesrv_radkey="Cl&eacute; Partag&eacute;e Radius";
+service.pppoesrv_radip="Serveur IP RADIUS";
+service.pppoesrv_radauthport="Port d&apos;authentification RADIUS";
+service.pppoesrv_radaccport="Port de comptabilit&eacute; RADIUS";
+service.pppoesrv_radkey="Cl&eacute; Partag&eacute;e RADIUS";
 service.pppoesrv_chaps="Gestion locale des utilisateurs (CHAP Secrets)";
 
 //snmp.webservices
@@ -1471,7 +1471,7 @@ wpa.h2="S&eacute;curit&eacute; sans fil";
 wpa.secmode="Mode de S&eacute;curit&eacute;";
 wpa.legend="Cryptage sans fil";
 wpa.auth_mode="Authentification r&eacute;seau";
-wpa.radius="Radius";
+wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="D&eacute;lai de renouvellement des cl&eacute;s (en secondes)";
 wpa.radius_ipaddr="IP du serveur RADIUS";
