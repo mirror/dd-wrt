@@ -79,7 +79,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			line = strchr(line, ']');
 			if (!line)
 				continue;
-			line++;
+			line+=2;
 			if (!strncmp(line, "DROP", 4))
 				verdict = "Dropped";
 			else if (!strncmp(line, "ACCEPT", 6))
