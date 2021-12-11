@@ -74,7 +74,21 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			verdict = "Accepted";
 		else if (!strncmp(line, "<4>REJECT", 9))
 			verdict = "Rejected";
-		else
+		else if (!strncmp(line, "<4>[", 4)) {
+			// kernel timings included
+			line = strchr(line, ']');
+			if (!line)
+				continue;
+			line++;
+			if (!strncmp(line, "DROP", 4))
+				verdict = "Dropped";
+			else if (!strncmp(line, "ACCEPT", 6))
+				verdict = "Accepted";
+			else if (!strncmp(line, "REJECT", 6))
+				verdict = "Rejected";
+			else
+				continue;
+		} else
 			continue;
 
 		/*
