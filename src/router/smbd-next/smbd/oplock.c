@@ -712,7 +712,10 @@ static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 
 static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
 {
-	work->response_buf = ksmbd_alloc_response(MAX_CIFS_SMALL_BUFFER_SIZE);
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
+		work->response_buf = ksmbd_find_buffer(MAX_CIFS_SMALL_BUFFER_SIZE);
+	else
+		work->response_buf = ksmbd_alloc_response(MAX_CIFS_SMALL_BUFFER_SIZE);
 	if (!work->response_buf) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
