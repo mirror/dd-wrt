@@ -1,0 +1,357 @@
+diff --git a/cmd/zed/agents/fmd_api.c b/cmd/zed/agents/fmd_api.c
+index c9231fba2..ab97ca3ec 100644
+--- a/cmd/zed/agents/fmd_api.c
++++ b/cmd/zed/agents/fmd_api.c
+@@ -36,7 +36,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/fm/protocol.h>
+-#include <uuid/uuid.h>
++#include <uuid.h>
+ #include <signal.h>
+ #include <strings.h>
+ #include <time.h>
+diff --git a/cmd/zpool/os/linux/zpool_vdev_os.c b/cmd/zpool/os/linux/zpool_vdev_os.c
+index 10929fa65..8c22ff870 100644
+--- a/cmd/zpool/os/linux/zpool_vdev_os.c
++++ b/cmd/zpool/os/linux/zpool_vdev_os.c
+@@ -83,8 +83,8 @@
+ #include <sys/stat.h>
+ #include <sys/vtoc.h>
+ #include <sys/mntent.h>
+-#include <uuid/uuid.h>
+-#include <blkid/blkid.h>
++#include <uuid.h>
++#include <blkid.h>
+ 
+ typedef struct vdev_disk_db_entry
+ {
+diff --git a/config/kernel-kuidgid.m4 b/config/kernel-kuidgid.m4
+index b7e441408..82685d263 100644
+--- a/config/kernel-kuidgid.m4
++++ b/config/kernel-kuidgid.m4
+@@ -1,21 +1,28 @@
+ dnl #
+-dnl # 3.8 API change,
+-dnl # User namespaces, use kuid_t in place of uid_t where available.
++dnl # User namespaces, use kuid_t in place of uid_t
++dnl # where available. Not strictly a user namespaces thing
++dnl # but it should prevent surprises
+ dnl #
+-AC_DEFUN([ZFS_AC_KERNEL_SRC_KUIDGID_T], [
+-	ZFS_LINUX_TEST_SRC([kuidgid_t], [
++AC_DEFUN([ZFS_AC_KERNEL_KUIDGID_T], [
++	AC_MSG_CHECKING([whether kuid_t/kgid_t is available])
++	ZFS_LINUX_TRY_COMPILE([
+ 		#include <linux/uidgid.h>
+ 	], [
+ 		kuid_t userid __attribute__ ((unused)) = KUIDT_INIT(0);
+ 		kgid_t groupid __attribute__ ((unused)) = KGIDT_INIT(0);
+-	])
+-])
+-
+-AC_DEFUN([ZFS_AC_KERNEL_KUIDGID_T], [
+-	AC_MSG_CHECKING([whether kuid_t/kgid_t is available])
+-	ZFS_LINUX_TEST_RESULT([kuidgid_t], [
+-		AC_MSG_RESULT(yes)
+ 	],[
+-		ZFS_LINUX_TEST_ERROR([kuid_t/kgid_t])
++		ZFS_LINUX_TRY_COMPILE([
++			#include <linux/uidgid.h>
++		], [
++			kuid_t userid __attribute__ ((unused)) = 0;
++			kgid_t groupid __attribute__ ((unused)) = 0;
++		],[
++			AC_MSG_RESULT(yes; optional)
++		],[
++			AC_MSG_RESULT(yes; mandatory)
++			AC_DEFINE(HAVE_KUIDGID_T, 1, [kuid_t/kgid_t in use])
++		])
++	],[
++		AC_MSG_RESULT(no)
+ 	])
+ ])
+diff --git a/config/kernel.m4 b/config/kernel.m4
+index bdd3caed2..67e3869b5 100644
+--- a/config/kernel.m4
++++ b/config/kernel.m4
+@@ -112,7 +112,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+ 	ZFS_AC_KERNEL_SRC_GENERIC_IO_ACCT
+ 	ZFS_AC_KERNEL_SRC_FPU
+ 	ZFS_AC_KERNEL_SRC_FMODE_T
+-	ZFS_AC_KERNEL_SRC_KUIDGID_T
+ 	ZFS_AC_KERNEL_SRC_KUID_HELPERS
+ 	ZFS_AC_KERNEL_SRC_MODULE_PARAM_CALL_CONST
+ 	ZFS_AC_KERNEL_SRC_RENAME
+diff --git a/config/user-libblkid.m4 b/config/user-libblkid.m4
+index f2016dcb1..729f5ec60 100644
+--- a/config/user-libblkid.m4
++++ b/config/user-libblkid.m4
+@@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detecting ZFS pools
+ dnl # has existing in blkid since 2008.
+ dnl #
+ AC_DEFUN([ZFS_AC_CONFIG_USER_LIBBLKID], [
+-	ZFS_AC_FIND_SYSTEM_LIBRARY(LIBBLKID, [blkid], [blkid/blkid.h], [], [blkid], [], [], [
+-		AC_MSG_FAILURE([
+-		*** blkid.h missing, libblkid-devel package required])])
++	LIBBLKID=
++
++	AC_CHECK_HEADER([blkid.h], [], [AC_MSG_FAILURE([
++	*** blkid.h missing, libblkid-devel package required])])
++
++	AC_SUBST([LIBBLKID_LIBS], ["-lblkid"])
++	AC_DEFINE([HAVE_LIBBLKID], 1, [Define if you have libblkid])
+ ])
+diff --git a/config/user-libuuid.m4 b/config/user-libuuid.m4
+index 0cfa83c99..71838e5db 100644
+--- a/config/user-libuuid.m4
++++ b/config/user-libuuid.m4
+@@ -2,7 +2,17 @@ dnl #
+ dnl # Check for libuuid
+ dnl #
+ AC_DEFUN([ZFS_AC_CONFIG_USER_LIBUUID], [
+-	ZFS_AC_FIND_SYSTEM_LIBRARY(LIBUUID, [uuid], [uuid/uuid.h], [], [uuid], [uuid_generate uuid_is_null], [], [
+-	    AC_MSG_FAILURE([*** libuuid-devel package required])
+-	])
++	LIBUUID=
++
++	AC_CHECK_HEADER([uuid.h], [], [AC_MSG_FAILURE([
++	*** uuid/uuid.h missing, libuuid-devel package required])])
++
++	AC_SEARCH_LIBS([uuid_generate], [uuid], [], [AC_MSG_FAILURE([
++	*** uuid_generate() missing, libuuid-devel package required])])
++
++	AC_SEARCH_LIBS([uuid_is_null], [uuid], [], [AC_MSG_FAILURE([
++	*** uuid_is_null() missing, libuuid-devel package required])])
++
++	AC_SUBST([LIBUUID], ["-luuid"])
++	AC_DEFINE([HAVE_LIBUUID], 1, [Define if you have libuuid])
+ ])
+diff --git a/etc/systemd/system-generators/zfs-mount-generator.c b/etc/systemd/system-generators/zfs-mount-generator.c
+index f4c6c26a0..3c2368e25 100644
+--- a/etc/systemd/system-generators/zfs-mount-generator.c
++++ b/etc/systemd/system-generators/zfs-mount-generator.c
+@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags,
+ 	return (fdopen(fd, stream_mode));
+ }
+ 
++#define	my_strndupa(x,y)	strncpy(alloca(y),x,y)
++
+ static int
+ line_worker(char *line, const char *cachefile)
+ {
+@@ -226,7 +228,7 @@ line_worker(char *line, const char *cachefile)
+ 
+ 	const char *pool = dataset;
+ 	if ((toktmp = strchr(pool, '/')) != NULL)
+-		pool = strndupa(pool, toktmp - pool);
++		pool = my_strndupa(pool, toktmp - pool);
+ 
+ 	if (p_nbmand == NULL) {
+ 		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
+diff --git a/include/os/linux/spl/sys/cred.h b/include/os/linux/spl/sys/cred.h
+index 9cc85deb5..d15d700a8 100644
+--- a/include/os/linux/spl/sys/cred.h
++++ b/include/os/linux/spl/sys/cred.h
+@@ -39,12 +39,24 @@ typedef struct cred cred_t;
+ #define	GROUP_AT(gi, i)	((gi)->gid[i])
+ #endif
+ 
++#ifdef HAVE_KUIDGID_T
++
+ #define	KUID_TO_SUID(x)		(__kuid_val(x))
+ #define	KGID_TO_SGID(x)		(__kgid_val(x))
+ #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
+ #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
+ #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
+ 
++#else /* HAVE_KUIDGID_T */
++
++#define	KUID_TO_SUID(x)		(x)
++#define	KGID_TO_SGID(x)		(x)
++#define	SUID_TO_KUID(x)		(x)
++#define	SGID_TO_KGID(x)		(x)
++#define	KGIDP_TO_SGIDP(x)	(x)
++
++#endif /* HAVE_KUIDGID_T */
++
+ extern void crhold(cred_t *cr);
+ extern void crfree(cred_t *cr);
+ extern uid_t crgetuid(const cred_t *cr);
+diff --git a/include/os/linux/spl/sys/mutex.h b/include/os/linux/spl/sys/mutex.h
+index 047607f82..2b63d7511 100644
+--- a/include/os/linux/spl/sys/mutex.h
++++ b/include/os/linux/spl/sys/mutex.h
+@@ -27,6 +27,7 @@
+ #include <sys/types.h>
+ #include <linux/sched.h>
+ #include <linux/mutex.h>
++#include <linux/sched.h>
+ #include <linux/lockdep.h>
+ #include <linux/compiler_compat.h>
+ 
+diff --git a/lib/libefi/rdwr_efi.c b/lib/libefi/rdwr_efi.c
+index fd243e230..0921a7a8e 100644
+--- a/lib/libefi/rdwr_efi.c
++++ b/lib/libefi/rdwr_efi.c
+@@ -31,7 +31,7 @@
+ #include <string.h>
+ #include <strings.h>
+ #include <unistd.h>
+-#include <uuid/uuid.h>
++#include <uuid.h>
+ #include <zlib.h>
+ #include <libintl.h>
+ #include <sys/types.h>
+diff --git a/lib/libshare/os/linux/nfs.c b/lib/libshare/os/linux/nfs.c
+index 4f754aabd..63cb40122 100644
+--- a/lib/libshare/os/linux/nfs.c
++++ b/lib/libshare/os/linux/nfs.c
+@@ -30,6 +30,7 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <strings.h>
++#include <fcntl.h>
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <sys/file.h>
+diff --git a/lib/libuutil/Makefile.am b/lib/libuutil/Makefile.am
+index 5a911f85f..25eca09ac 100644
+--- a/lib/libuutil/Makefile.am
++++ b/lib/libuutil/Makefile.am
+@@ -21,7 +21,7 @@ libuutil_la_LIBADD = \
+ 
+ libuutil_la_LIBADD += $(LTLIBINTL)
+ 
+-libuutil_la_LDFLAGS = -pthread
++libuutil_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libuutil_la_LDFLAGS += -Wl,-z,defs
+diff --git a/lib/libzfs_core/Makefile.am b/lib/libzfs_core/Makefile.am
+index 64cb76f19..61d32d977 100644
+--- a/lib/libzfs_core/Makefile.am
++++ b/lib/libzfs_core/Makefile.am
+@@ -35,7 +35,7 @@ libzfs_core_la_LIBADD = \
+ 
+ libzfs_core_la_LIBADD += $(LTLIBINTL)
+ 
+-libzfs_core_la_LDFLAGS = -pthread
++libzfs_core_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libzfs_core_la_LDFLAGS += -Wl,-z,defs
+diff --git a/lib/libzpool/Makefile.am b/lib/libzpool/Makefile.am
+index dce3f81b8..d4c174bf7 100644
+--- a/lib/libzpool/Makefile.am
++++ b/lib/libzpool/Makefile.am
+@@ -220,7 +220,7 @@ libzpool_la_LIBADD = \
+ 
+ libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+ 
+-libzpool_la_LDFLAGS = -pthread
++libzpool_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libzpool_la_LDFLAGS += -Wl,-z,defs
+diff --git a/lib/libzutil/os/linux/zutil_import_os.c b/lib/libzutil/os/linux/zutil_import_os.c
+index ab692401d..ad68d464d 100644
+--- a/lib/libzutil/os/linux/zutil_import_os.c
++++ b/lib/libzutil/os/linux/zutil_import_os.c
+@@ -73,7 +73,7 @@
+ #include <libudev.h>
+ #include <sched.h>
+ #endif
+-#include <blkid/blkid.h>
++#include <blkid.h>
+ 
+ #define	DEV_BYID_PATH	"/dev/disk/by-id/"
+ 
+@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
+ int
+ zpool_label_disk_wait(const char *path, int timeout_ms)
+ {
+-#ifdef HAVE_LIBUDEV
++#if 0 //def HAVE_LIBUDEV
+ 	struct udev *udev;
+ 	struct udev_device *dev = NULL;
+ 	char nodepath[MAXPATHLEN];
+diff --git a/module/icp/Makefile.in b/module/icp/Makefile.in
+index 858c5a610..9fed58ba0 100644
+--- a/module/icp/Makefile.in
++++ b/module/icp/Makefile.in
+@@ -63,6 +63,22 @@ $(MODULE)-$(CONFIG_X86) += algs/modes/gcm_pclmulqdq.o
+ $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_aesni.o
+ $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_x86-64.o
+ 
++$(obj)/algs/modes/gcm_pclmulqdq.o: c_flags += -fno-lto
++$(obj)/algs/modes/gcm.o: c_flags += -fno-lto
++$(obj)/algs/modes/gcm_generic.o: c_flags += -fno-lto
++$(obj)/algs/modes/ccm.o: c_flags += -fno-lto
++$(obj)/algs/modes/ctr.o: c_flags += -fno-lto
++$(obj)/algs/modes/cbc.o: c_flags += -fno-lto
++$(obj)/algs/modes/ecb.o: c_flags += -fno-lto
++$(obj)/algs/modes/modes.o: c_flags += -fno-lto
++$(obj)/algs/aes/aes_modes.o: c_flags += -fno-lto
++$(obj)/algs/aes/aes_impl.o: c_flags += -fno-lto
++$(obj)/algs/aes/aes_impl_aesni.o: c_flags += -fno-lto
++$(obj)/algs/aes/aes_impl_x86-64.o: c_flags += -fno-lto
++$(obj)/algs/aes/aes_impl_generic.o: c_flags += -fno-lto
++$(obj)/core/kcf_prov_lib.o: c_flags += -fno-lto
++$(obj)/asm-x86_64/aes/aeskey.o: c_flags += -fno-lto
++
+ # Suppress objtool "can't find jump dest instruction at" warnings.  They
+ # are caused by the constants which are defined in the text section of the
+ # assembly file using .byte instructions (e.g. bswap_mask).  The objtool
+diff --git a/module/lua/Makefile.in b/module/lua/Makefile.in
+index 0a74c17e6..002312286 100644
+--- a/module/lua/Makefile.in
++++ b/module/lua/Makefile.in
+@@ -7,7 +7,7 @@ MODULE := zlua
+ 
+ obj-$(CONFIG_ZFS) := $(MODULE).o
+ 
+-ccflags-y := -DLUA_USE_LONGLONG
++ccflags-y := -DLUA_USE_LONGLONG -fno-lto
+ 
+ $(MODULE)-objs += lapi.o
+ $(MODULE)-objs += lauxlib.o
+diff --git a/module/zfs/Makefile.in b/module/zfs/Makefile.in
+index 653ea0da9..5b0b568f4 100644
+--- a/module/zfs/Makefile.in
++++ b/module/zfs/Makefile.in
+@@ -147,10 +147,10 @@ $(MODULE)-$(CONFIG_X86) += vdev_raidz_math_avx512bw.o
+ $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neon.o
+ $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neonx2.o
+ 
++ifeq ($(CONFIG_ALTIVEC),y)
+ $(MODULE)-$(CONFIG_PPC) += vdev_raidz_math_powerpc_altivec.o
+ $(MODULE)-$(CONFIG_PPC64) += vdev_raidz_math_powerpc_altivec.o
+ 
+-ifeq ($(CONFIG_ALTIVEC),y)
+ $(obj)/vdev_raidz_math_powerpc_altivec.o: c_flags += -maltivec
+ endif
+ 
+diff --git a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
+index f476e1dba..917e978d0 100644
+--- a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
++++ b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
+@@ -31,6 +31,18 @@
+ #include <sys/mman.h>
+ #include <errno.h>
+ 
++#ifndef SEEK_DATA
++#define SEEK_DATA 3
++#endif
++
++#ifndef SEEK_HOLE
++#define SEEK_HOLE 4
++#endif
++
++#ifndef P2ROUNDUP
++#define	P2ROUNDUP(x, align)	((((x) - 1) | ((align) - 1)) + 1)
++#endif
++
+ static void
+ seek_data(int fd, off_t offset, off_t expected)
+ {
