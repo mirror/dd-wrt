@@ -429,6 +429,7 @@ errmsg.err62=" wurde bereits als statisches Lease definiert.";
 errmsg.err100="In Bearbeitung...<br />Bitte Warten.";
 errmsg.err101="Stelle Konfiguration wieder her...<br />Bitte Warten.";
 errmsg.err102="Upgrade Firmware...<br />Bitte Warten.";
+errmsg.err103="Ung&uuml;ltiges Zeichen";
 
 // **  COMMON MENU ENTRIES  **//
 
