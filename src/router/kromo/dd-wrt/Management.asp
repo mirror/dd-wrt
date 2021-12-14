@@ -32,7 +32,6 @@ function port_enable_disable(F,I) {
 	if(F._http_enable.checked == true && F._https_enable.checked == false)
 		choose_disable(F._remote_mgt_https);
 }
-
 function ChangePasswd(F) {
 	if((F.PasswdModify.value==1 && F.http_passwd.value == "d6nw5v1x2pc7st9m") || F.http_passwd.value == "admin") {
 		if(confirm(errmsg.err51)) {
@@ -43,9 +42,9 @@ function ChangePasswd(F) {
 			return false;
 		}
 	}
-
 	return true;
 }
+
 
 function valid_password(F) {
 	if (F.http_passwd.value != F.http_passwdConfirm.value) {
@@ -108,7 +107,6 @@ function submitcheck(F) {
 		F.http_passwd.focus();
 		return false;
 	}
-
 	valid_password(F);
 
 	if(F.remote_management)

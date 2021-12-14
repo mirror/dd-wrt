@@ -381,6 +381,21 @@ function ignoreSpaces(string) {
 	return temp;
 }
 
+function check_char(I,M1,c) {
+
+	M = unescape(M1);
+	for(i=0 ; i<I.value.length; i++){
+		ch = I.value.charAt(i);
+		if(ch == c) {
+			alert(M+errmsg.err103 + " \""+c+"\"");
+			I.value = I.defaultValue;
+			return false;
+		}
+	}
+
+	return true;
+
+}
 function check_space(I,M1){
 	M = unescape(M1);
 	for(i=0 ; i<I.value.length; i++){
@@ -414,13 +429,14 @@ function valid_key(I,l){
 }
 
 function valid_name(I,M,flag) {
+	var invalid = "^:*";
 	result = isascii(I,M);
-
-	var bbb = I.value.replace(/^\s*/,"");
-        var ccc = bbb.replace(/\s*$/,"");
-
-        I.value = ccc;
-
+	for (i=0;i<invalid.length;i++) {
+		if (!check_char(I,M, invalid.charAt(i))) {
+		    return false;
+		}
+	
+	}
 	if(flag & SPACE_NO){
 		result = check_space(I,M);
 	}
