@@ -11,7 +11,7 @@ share.interipaddr="Adresse IP WAN";
 share.more="Plus...";
 share.help="Aide";
 share.enable="Activer";
-share.enabled="Activ&amp;#233;"; //Activ&eacute;
+share.enabled="Actif";
 share.disable="D&eacute;sactiver";
 share.disabled="D&eacute;sactiv&eacute;";
 share.usrname="Nom d&apos;utilisateur";
@@ -472,13 +472,13 @@ ddns.options="Options suppl&eacute;mentaires";
 ddns.forceupd="Intervalle de mise &agrave; jour forc&eacute;e";
 
 
-ddnsm.all_closed="Le serveur DDNS est actuellement ferm&amp;#233;.";
-ddnsm.all_resolving="R&amp;#233;solution du nom de domaine en cours ...";
-ddnsm.all_errresolv="La r&amp;#233;solution du nom de domaine a &eacute;chou&amp;#233;.";
+ddnsm.all_closed="Le serveur DDNS est actuellement ferm&eacute;.";
+ddnsm.all_resolving="R&eacute;esolution du nom de domaine en cours ...";
+ddnsm.all_errresolv="La r&eacute;esolution du nom de domaine a &eacute;echouer.";
 ddnsm.all_connecting="Connexion en cours...";
-ddnsm.all_connectfail="La connexion au serveur a &amp;#233;chou&amp;#233;";
-ddnsm.all_disabled="DDNS est d&eacute;sactiv&amp;#233;";
-ddnsm.all_noip="Connexion WAN non d&eacute;tect&amp;#233;e";
+ddnsm.all_connectfail="La connexion au serveur a &eacute;echouer;";
+ddnsm.all_disabled="DDNS est d&eacute;sactiv&eacute;e";
+ddnsm.all_noip="Connexion WAN non d&eacute;tect&eacute;";
 
 //help container
 hddns.right2="DDNS vous permet d&apos;attribuer un nom de domaine et d&apos;h&ocirc;te fixe &agrave; une adresse IP Internet dynamique. Cela peut s&apos;av&eacute;rer utile si vous h&eacute;bergez votre propre site Web, un serveur FTP ou tout autre type de serveur derri&egrave;re le routeur. <br /><br />Avant d&apos;opter pour cette fonctionnalit&eacute;, vous devez souscrire &agrave; un service DDNS aupr&egrave;s de fournisseurs sp&eacute;cialis&eacute;s, tel que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalis&eacute;</em> si vous connaissez tous les param&egrave;tres.";
@@ -1617,8 +1617,8 @@ wl_basic.n="N-uniquement";
 wl_basic.legend2="Plages horaires de fonctionnement";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Programmation sans fil";
-wl_basic.radio_on="Sans fil activ&amp;#233;";
-wl_basic.radio_off="Sans fil d&eacute;sactiv&amp;#233;";
+wl_basic.radio_on="Sans fil activ&eacute;";
+wl_basic.radio_off="Sans fil d&eacute;sactiv&eacute;";
 
 wl_basic.h2_v24="Interface sans fil";
 wl_basic.h2_vi="Interfaces virtuelles";
