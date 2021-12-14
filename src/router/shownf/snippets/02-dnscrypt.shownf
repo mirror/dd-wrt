@@ -1,0 +1,9 @@
+<fieldset style="width: 366px; display: inline-block;">
+    <div style="display: block; height: 32px;">
+      <center><h4 style="font-size: 18px; background-color: transparent; font-weight: 500; line-height: 1.1; padding: auto 0; margin-bottom: 0; margin-top: 0;">DNSCRYPT</h4></center>
+    </div>
+    <div style="display: block; margin-bottom: 1em;">
+      <h4 style="font-size: 12px; background-color: transparent; font-weight: 500; line-height: 1.1; padding: 0; margin-top: 0.7em; margin-bottom: 1.4em;"><a>DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.</h4>
+      <center><input class="button" type="button" value="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;" onclick="location.href='/Services.asp'"></center>
+    </div>
+</fieldset>

@@ -1,0 +1,4 @@
+<div id="contentsInfo">
+<div>
+<h2>Please check out our new Features!&nbsp;&nbsp;<input class="button" type="button" value="hide this Box" onclick="location.href='/Management.asp#wcshownf'">
+</div>
