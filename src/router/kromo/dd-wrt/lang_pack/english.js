@@ -1956,8 +1956,9 @@ service.vpn_dc1="First Data Cipher";
 service.vpn_dc2="Second Data Cipher";
 service.vpn_dc3="Third Data Cipher";
 service.vpn_killswitch="Killswitch";
+service.vpn_splitdns="Split DNS";
 service.vpn_ipnameport="Server IP/Name : Port";
-service.vpn_multiaddress="Enable Multiple Servers";
+service.vpn_multiaddress="Set Multiple Servers";
 service.vpn_randomsrv="Choose random Server";
 
 //help page
@@ -2201,7 +2202,7 @@ eoip.wireguard_peerdns="Peer Tunnel DNS";
 eoip.wireguard_localkey="Local Public Key";
 eoip.wireguard_localprivatekey="Local Private Key";
 eoip.wireguard_killswitch="Kill Switch";
-eoip.wireguard_dnspbr="Split DNS tunnel";
+eoip.wireguard_dnspbr="Split DNS";
 eoip.wireguard_spbr="Source routing (PBR)";
 eoip.wireguard_spbr0="Route all sources via VPN";
 eoip.wireguard_spbr1="Route selected sources via VPN";

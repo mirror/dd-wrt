@@ -32,6 +32,9 @@ function to_submit(F) {
 	if (F._openvpncl_killswitch) {
 		F.openvpncl_killswitch.value = F._openvpncl_killswitch.checked ? 1 : 0;
 	}
+	if (F._openvpncl_splitdns) {
+		F.openvpncl_splitdns.value = F._openvpncl_splitdns.checked ? 1 : 0;
+	}
 	if (F._openvpn_fw) {
 		F.openvpn_fw.value = F._openvpn_fw.checked ? 1 : 0;
 	}
@@ -54,11 +57,24 @@ function to_apply(F) {
 	if (F._openvpncl_killswitch) {
 		F.openvpncl_killswitch.value = F._openvpncl_killswitch.checked ? 1 : 0;
 	}
+	if (F._openvpncl_splitdns) {
+		F.openvpncl_splitdns.value = F._openvpncl_splitdns.checked ? 1 : 0;
+	}
 	if (F._openvpn_fw) {
 		F.openvpn_fw.value = F._openvpn_fw.checked ? 1 : 0;
 	}
 	
 	applytake(F);
+}
+
+function changevpnpbr(F, value)
+{
+	//alert(" F:" + F.name + "; value: " + value);
+	if (value == 1 || value == 2) {
+		show_layer_ext(F, "idpbr", true);
+	} else {
+		show_layer_ext(F, "idpbr", false);
+	}
 }
 
 var update;
@@ -84,6 +100,8 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpncl_tuntap, 'idsec', <% nvem("openvpncl_tuntap", "tun", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_dh_btn, 'iddhpem', <% nvem("openvpn_dh_btn", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
+		// if nvram match with arg 1 then arg 2 otherwise arg 3
+		show_layer_ext(document.setup.openvpncl_spbr, 'idpbr', <% nvem("openvpncl_spbr", "0", "0", "1"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
@@ -119,6 +137,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="openvpncl_randomsrv" />
 							<input type="hidden" name="openvpncl_fw" />
 							<input type="hidden" name="openvpncl_killswitch" />
+							<input type="hidden" name="openvpncl_splitdns" />
 							<input type="hidden" name="openvpn_fw" />
 							
 							<h2><% tran("service.pptp_srv"); %></h2>

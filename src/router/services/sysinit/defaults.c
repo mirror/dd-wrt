@@ -3146,6 +3146,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_dc2", "AES-128-GCM" },
 	{ "openvpncl_dc3", "AES-256-GCM" },
 	{ "openvpncl_killswitch", "0" },
+	{ "openvpncl_spbr", "0" },
+	{ "openvpncl_splitdns", "0" },
 	{ "openvpncl_upauth", "0" },
 	{ "openvpncl_multirem", "0" },
 	{ "openvpncl_randomsrv", "0" },
