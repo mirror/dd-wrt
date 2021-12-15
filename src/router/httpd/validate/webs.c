@@ -4748,7 +4748,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #endif
 	copytonv_prefix(wp, "closed", prefix);
-	if ((has_ac(prefix) && has_qam256(prefix)) && has_2ghz(prefix)) {
+	if (has_qam256(prefix) && has_2ghz(prefix)) {
 		copytonv_prefix(wp, "turbo_qam", prefix);
 	}
 	if (is_ath10k(prefix)) {
