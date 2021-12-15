@@ -1694,7 +1694,7 @@ service.vpn_dc1="Dritte Data Cipher";
 service.vpn_killswitch="Killswitch";
 service.vpn_splitdns="Split DNS";
 service.vpn_ipnameport="Server-IP/Name : Port";
-service.vpn_multiaddress="Weitere Servers";
+service.vpn_multiaddress="Weitere Server";
 service.vpn_randomsrv="W&auml;hle zuf&auml;lligen Server";
 
 //help container
