@@ -204,6 +204,31 @@
 				<div class="label"><% tran("service.vpn_killswitch"); %></div>
 				<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_killswitch" <% nvc("openvpncl_killswitch","1"); %> />
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("eoip.wireguard_spbr"); %></div>
+				<select name="openvpncl_spbr" onclick="changevpnpbr(this, this.value)">
+				<!--  <select name="openvpncl_spbr">  -->
+					<option value="0" <% nvram_selected("openvpncl_spbr","0"); %>>Route all sources via VPN</option>
+					<option value="1" <% nvram_selected("openvpncl_spbr","1"); %>>Route selected sources via VPN</option>
+					<option value="2" <% nvram_selected("openvpncl_spbr","2"); %>>Route selected sources via WAN</option>
+				</select>
+			</div>
+			<div id="idpbr">
+				<div class="setting">
+					<div class="label"><% tran("service.vpn_splitdns"); %></div>
+					<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_splitdns" <% nvc("openvpncl_splitdns","1"); %> />
+				</div>
+				<div class="setting">		
+					<div class="label"><% tran("service.vpn_route"); %></div>
+					<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+						var openvpncl_config = fix_cr( '<% nvg("openvpncl_route"); %>' );
+						document.getElementById("openvpncl_route").value = openvpncl_config;
+					//]]>
+					</script>
+				</div>
+			</div>
 			<div id="idnat">
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_bridge"); %></div>
@@ -270,18 +295,6 @@
 					document.getElementById("openvpncl_config").value = openvpncl_config;
 				//]]>
 				</script>
-			</div>
-			<div id="idpbr">
-				<div class="setting">		
-					<div class="label"><% tran("service.vpn_route"); %></div>
-					<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
-					<script type="text/javascript">
-					//<![CDATA[
-						var openvpncl_config = fix_cr( '<% nvg("openvpncl_route"); %>' );
-						document.getElementById("openvpncl_route").value = openvpncl_config;
-					//]]>
-					</script>
-				</div>
 			</div>
 			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_pkcs"); %></div>
