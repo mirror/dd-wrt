@@ -33,6 +33,10 @@
 #include <utils.h>
 #ifdef HAVE_OPENVPN
 
+//use in interfrace when WAP is detected
+char IN_IF[8] = { 0 };
+
+
 static void run_openvpn(char *prg, char *path)
 {
 	char *conf;
@@ -154,7 +158,7 @@ void setroute_pbr(char *tablenr)
 
 	cleanup_pbr(tablenr);
 
-	if (nvram_matchi("openvpncl_killswitch", 1)) {
+	if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 1)) {
 		eval("ip", "route", "add", "prohibit", "default", "table", tablenr);
 		dd_loginfo("openvpn", "PBR killswitch is active using: %s", curline);
 		// need table with a number below table 10 with default gateway to let OpenVPN get default route, possible bug where OpenVPN uses default route from lowest table but not from main table resolved in OpenVPN 2.5.2
@@ -219,8 +223,8 @@ void create_openvpnrules(FILE * fp)
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
-	    && nvram_match("openvpncl_tuntap", "tap")
-	    && nvram_matchi("openvpncl_bridge", 1)) {
+		&& nvram_match("openvpncl_tuntap", "tap")
+		&& nvram_matchi("openvpncl_bridge", 1)) {
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
 //                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
@@ -234,17 +238,88 @@ void create_openvpnrules(FILE * fp)
 		}
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
-	fprintf(fp, "/tmp/openvpncl_fw.sh\n");
+
 	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
-		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
-		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
-		fprintf(fp, "nvram set openvpn_get_dns=\"$(env | grep 'dhcp-option DNS' | awk '{ printf \"\%%s \",$3 }')\"\n");
-		//egc route only pushed DNS servers and not client set DNS servers
-		fprintf(fp,
-			"env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
+		//use awk print*f* to skip newline
+		//fprintf(fp, "alldns=$(env | grep 'dhcp-option DNS' | awk '{print $NF}')\n"
+		fprintf(fp, "alldns=\"$(env | grep 'dhcp-option DNS' |  awk '{ printf \"%%s \",$3 }')\"\n"); //do not forget to escape %s with %%s
+			// might reverse dns servers in string: alldns=echo "alldns" | awk '{ for (i=NF; i>1; i--) printf("%s ",$i); print $1; }'
+			//"nvram set openvpn_get_dns=\"$alldns\"\n"
+		fprintf(fp, "if [[ ! -z \"$alldns\" ]]; then\n"
+			"spbr=\"$(nvram get openvpncl_spbr)\"\n" "splitdns=\"$(nvram get openvpncl_splitdns)\"\n"
+			"cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n"
+			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && { rm -f /tmp/resolv.dnsmasq; nvram set openvpn_get_dns=\"$alldns\"; }\n"
+			"set=0\n"
+			"for dns in $alldns;do\n"
+			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && echo \"nameserver $dns\" >> /tmp/resolv.dnsmasq\n"
+			//route only the pushed DNS servers via the tunnel the added ones must be routed manually if required
+			"grep -q \"^dhcp-option DNS $dns\" /tmp/openvpncl/openvpn.conf || ip route add $dns via $route_vpn_gateway dev $dev 2> /dev/null\n");
+			//"ip route add $dns via $route_vpn_gateway dev $dev 2> /dev/null\n"
+		if (nvram_matchi("openvpncl_splitdns", 1) && nvram_invmatch("openvpncl_spbr", "0")) {
+			fprintf(fp, 
+				"if [[ $set -eq 0 ]]; then\n"
+				"logger -p user.info \"OpenVPN split DNS invoked\"\n"
+				"[[ $spbr =  \"2\" ]] && { dns=$(nvram get wan_dns); dns=${dns%%%% *}; }\n"
+				"sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read pbrip; do\n"
+				"case $pbrip in\n"
+				"[0-9]*)\n"
+				"sourcepbr=\"-s\"\n"
+				";;\n"
+				"iif*)\n"
+				"sourcepbr=\"-i\"\n"
+				//"#pbrip=${pbrip#* }"
+				"pbrip=\"${pbrip#iif }\"\n"
+				";;\n"
+				"*)\n"
+				"continue\n"
+				";;\n"
+				"esac\n"
+				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"done\n" "set=1\n" "fi\n");
+		}
+		fprintf(fp,	"done\n" "else\n" "logger -p user.info \"OpenVPN No VPN DNS servers available\"\n" "fi\n");
+		//escape general killswitch if PBR via WAN  //todo move this to up.sh instead of rout-up.sh so that it runs when the OVPN is not connecting
+		if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 2)) {
+			fprintf(fp, "logger -p user.info \"OpenVPN firewall PBR via WAN escape\"\n");
+			fprintf(fp, "echo \"iptables -N vpn-pbr\" >> /tmp/openvpncl_fw.sh\n");
+			fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read pbrip; do\n"
+				"case $pbrip in\n"
+				"[0-9]*)\n"
+				"sourcepbr=\"-s\"\n"
+				";;\n"
+				"iif*)\n"
+				"sourcepbr=\"-i\"\n"
+				"pbrip=\"${pbrip#iif }\"\n"
+				";;\n"
+				"*port*)\n"
+				"sourcepbr=\"port\"\n"
+				"pbrip=\"--$pbrip\"\n"
+				";;\n"
+				"*)\n"
+				"continue\n"
+				";;\n"
+				"esac\n"
+				"if [[ $sourcepbr = \"port\" ]];then\n"
+				"echo \"iptables -A vpn-pbr -p tcp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -A vpn-pbr -p udp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				"else\n"
+				"echo \"iptables -A vpn-pbr $sourcepbr $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				"fi\n"
+			"done\n");
+			//fprintf(fp, "[[ $($nv get wan_proto) = \"disabled\" ]] && { IN_IF=\"-i br0\"; logger -p user.info \"VPN Killswitch for WAP\"; } || IN_IF=\"\"\n");
+			//IN_IF is declared global scope and made line 720
+			fprintf(fp, "echo \"iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n", IN_IF);
+			fprintf(fp, "echo \"iptables -I FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n", IN_IF);
+		}
+		fprintf(fp,	"/tmp/openvpncl_fw.sh\n");
 	}
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {	//policy based routing
+	//if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0 && nvram_invmatch("openvpncl_spbr", "0")) {	//policy based routing
+	if (*(nvram_safe_get("openvpncl_route")) && nvram_invmatch("openvpncl_spbr", "0")) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		//fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");  //rules added in setroute_pbr
 		//remove possible wrong from all (bug in ip rule command where it can add garbage), courtesy of @eibgrad
@@ -254,8 +329,10 @@ void create_openvpnrules(FILE * fp)
                 else */
 		if (!nvram_match("openvpncl_tuntap", "tap")) {
 			//fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
-			fprintf(fp, "ip route add 0.0.0.0/1 via $route_vpn_gateway table 10\n");
-			fprintf(fp, "ip route add 128.0.0.0/1 via $route_vpn_gateway table 10\n");
+			if (nvram_matchi("openvpncl_spbr", 1)) {  //PBR via VPN openvpncl_spbr=1
+				fprintf(fp, "ip route add 0.0.0.0/1 via $route_vpn_gateway table 10\n");
+				fprintf(fp, "ip route add 128.0.0.0/1 via $route_vpn_gateway table 10\n");
+			}
 			//Adding local routes to alternate PBR routing table by egc
 			fprintf(fp, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do\n" "\t ip route add $route table 10 >/dev/null 2>&1\n" "done\n");
 		}
@@ -504,11 +581,11 @@ void start_openvpnserver(void)
 #endif
 	// remove ebtales rules
 	if (nvram_matchi("block_multicast", 0)
-	    && nvram_match("openvpn_tuntap", "tap"))
+		&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1)
-	    && nvram_match("openvpn_tuntap", "tap")
-	    && nvram_matchi("openvpn_proxy", 0))
+		&& nvram_match("openvpn_tuntap", "tap")
+		&& nvram_matchi("openvpn_proxy", 0))
 		fprintf(fp,
 			"ebtables -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
@@ -536,8 +613,6 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 	run_openvpn("/tmp/openvpnserver", "openvpn");
-//      eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
-//      eval("startservice", "wshaper");
 }
 
 void stop_openvpnserver(void)
@@ -554,8 +629,6 @@ void stop_openvpnserver(void)
 	}
 #endif
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
-//              eval("stopservice", "wshaper");
-//              eval("startservice", "wshaper");
 		//remove ebtables rules on shutdown     
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
@@ -621,16 +694,23 @@ void start_openvpn(void)
 	chmod("/tmp/openvpn/client.key", 0600);
 
 	//Start PBR routing and general killswitch if appropriate
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {
-		dd_loginfo("openvpn", "PBR is not empty or does not start with a # now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route"));
+	if (*(nvram_safe_get("openvpncl_route")) && nvram_invmatch("openvpncl_spbr", "0")) {
+		dd_loginfo("openvpn", "PBR via tunnel now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route"));
 		setroute_pbr("10");
-	} else if (nvram_matchi("openvpncl_killswitch", 1)) {	//if no PBR and killswitch active, activate general killswitch
+	}
+	//In interface
+	if (nvram_match("wan_proto", "disabled")) {
+		dd_loginfo("openvpn", "Router is not in Gateway mode, WAP detected will try to adjust firewall rules but checking is necessary!");
+		strcpy(IN_IF, "-i br0");
+	}
+	if (nvram_matchi("openvpncl_killswitch", 1) && nvram_invmatch("openvpncl_spbr", "1")) {	//if no VPN PBR and killswitch active, activate general killswitch
 		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN ");
 		//eval("restart" , "firewall");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
 		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//todo set IN_IF to deal with WAP
 		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
@@ -729,7 +809,7 @@ void start_openvpn(void)
 			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
 				nvram_safe_get("openvpncl_lzo"));
 	}
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {	//policy routing: we need redirect-gw so we get gw info
+	if (*(nvram_safe_get("openvpncl_route")) && nvram_matchi("openvpncl_spbr", 1)) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
 			fprintf(fp, "ifconfig-noexec\n");
@@ -843,7 +923,18 @@ void start_openvpn(void)
 		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	}
-	fprintf(fp, "exit 0\n");
+	if (nvram_match("openvpncl_splitdns", "1")) {
+		fprintf(fp, "ovpndel=\"/tmp/OVPNDEL\"\n"
+			"if [[ -f \"$ovpndel\" ]]; then\n"
+			"(while read line; do $line >/dev/null 2>&1; done < $ovpndel)\n"
+			"rm -f $ovpndel\n" "fi\n");
+	}
+	//code to delete chains for PBR via WAN
+	if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 2)) {
+		fprintf(fp, "iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\n", IN_IF);
+		fprintf(fp, "iptables -F vpn-pbr\n" "iptables -X vpn-pbr\n");
+	}
+	fprintf(fp, "ip route flush cache\n" "exit 0\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
@@ -877,6 +968,7 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");	//remove created firewall rules to prevent used by Firewall if VPN is down
+		unlink("/tmp/OVPNDEL");
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
@@ -915,6 +1007,7 @@ void stop_openvpn_wandone(void)
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");
+		unlink("/tmp/OVPNDEL");
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
