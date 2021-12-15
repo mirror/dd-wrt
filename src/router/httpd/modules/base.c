@@ -2479,7 +2479,6 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 
 void do_ddwrt_inspired_themes(webs_t wp);
 
-static char *charset = NULL;
 #ifdef HAVE_STATUS_SYSLOG
 static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
@@ -2488,8 +2487,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
 	char buf[128];
-	if (!charset)
-		charset = strdup(live_translate(stream, "lang_charset.set"));
+	char *charset = live_translate(stream, "lang_charset.set");
 	int offset = 0;
 	int count = 0;
 	char *query = strchr(url, '?');
@@ -2571,8 +2569,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	if (!charset)
-		charset = strdup(live_translate(stream, "lang_charset.set"));
+	char *charset = live_translate(stream, "lang_charset.set");
 
 #define COL_WIDTH 16		/* single column width */
 
