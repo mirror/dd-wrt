@@ -26,6 +26,9 @@ set_lladdr(openvpn_net_ctx_t *ctx, const char *ifname, const char *lladdr,
     }
 
 #if defined(TARGET_LINUX)
+#ifndef ETH_ALEN
+#define ETH_ALEN	6		/* Octets in one ethernet addr	 */
+#endif
     uint8_t addr[ETH_ALEN];
 
     sscanf(lladdr, MAC_FMT, MAC_SCAN_ARG(addr));
