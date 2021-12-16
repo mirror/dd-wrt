@@ -4763,6 +4763,9 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
 	copytonv_prefix(wp, "wmf_bss_enable", prefix);
+	if (has_ac(prefix) && has_2ghz(prefix)) {
+		copytonv_prefix(wp, "turbo_qam", prefix);
+	}
 	if (has_ac(prefix)) {
 		copytonv_prefix(wp, "nitro_qam", prefix);
 	}
