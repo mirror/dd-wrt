@@ -91,9 +91,11 @@ endif
 
 openvpn-conf-prep:
 	-rm -f openvpn/Makefile
+	cd openvpn && libtoolize
 	cd openvpn && aclocal
 	cd openvpn && autoconf
-	cd openvpn && automake
+	cd openvpn && autoheader
+	cd openvpn && automake --add-missing
 
 openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
