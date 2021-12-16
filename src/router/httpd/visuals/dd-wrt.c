@@ -3779,6 +3779,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 	}
 #endif
+	if (has_ac(prefix) && has_2ghz(prefix)) {
+		char wl_turboqam[32];
+		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
+		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
+	}
 	if (has_ac(prefix) && nvram_nmatch("15", "%s_hw_rxchain", prefix)) {
 		char wl_nitroqam[16];
 		sprintf(wl_nitroqam, "%s_nitro_qam", prefix);
