@@ -13,6 +13,14 @@
 #include <linux/siphash.h>
 #include <asm/unaligned.h>
 
+#ifndef fallthrough
+#if __has_attribute(__fallthrough__)
+# define fallthrough                    __attribute__((__fallthrough__))
+#else
+# define fallthrough                    do {} while (0)  /* fallthrough */
+#endif
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
 #ifdef __LITTLE_ENDIAN
 #define bytemask_from_count(cnt)	(~(~0ul << (cnt)*8))
