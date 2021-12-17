@@ -776,13 +776,6 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #endif
 	{ "http_method", "post" },	/* HTTP method */
-#ifdef HAVE_SAGAR
-	{ "wl0_web_filter", "1" },	/* Allow/Deny Wireless Access Web */
-#else
-	{ "wl0_web_filter", "0" },	/* Allow/Deny Wireless Access Web */
-	{ "wl1_web_filter", "0" },
-	{ "wl2_web_filter", "0" },
-#endif
 	/*
 	 * PPPoE parameters 
 	 */
