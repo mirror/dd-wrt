@@ -532,16 +532,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script></span>
 								</div>
-								<div class="setting">
-									<div class="label"><%% tran("wl_adv.label17"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_web_filter" value="0" <%% nvc("%s_web_filter", "0"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_web_filter" value="1" <%% nvc("%s_web_filter", "1"); %%> /><%% tran("share.disable"); %%>
-									<span class="default"><script type="text/javascript">
-									//<![CDATA[
-									document.write("(" + share.deflt + ": " + share.enable + ")");
-									//]]>
-									</script></span>
-								</div>
 							</fieldset><br />
 							
 							<fieldset>
