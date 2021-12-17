@@ -354,7 +354,7 @@ _12+=splitstring[i];
 return _12;
 };
 function check_char(I,M1,c) {
-
+	var i;
 	M = unescape(M1);
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
@@ -398,19 +398,22 @@ alert(errmsg.err26);
 I.value=I.defaultValue;
 }
 };
-function valid_name(I,M,_13){
-var invalid = "^:*";
-result = isascii(I,M);
-for (i=0;i<invalid.length;i++) {
-	if (!check_char(I,M, invalid.charAt(i))) {
-	    return false;
+function valid_name(I,M,flag) {
+	var invalid = "^:*";
+	var len = invalid.length;
+	var i;
+	result = isascii(I,M);
+	for (i=0;i<len;i++) {
+		if (!check_char(I,M, invalid.charAt(i))) {
+		    return false;
+		}
+	
 	}
+	if(flag & SPACE_NO){
+		result = check_space(I,M);
+	}
+	return result;
 }
-if(_13&SPACE_NO){
-result=check_space(I,M);
-}
-return result;
-};
 function valid_mask(F,N,_14){
 var _15=-1;
 var _16=-1;
