@@ -2591,6 +2591,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 //              sprintf(wmm, "%s_wmm", var);
 //              showRadio(wp, "wl_adv.label18", wmm);
 #endif
+		char webfilter[32];
+		sprintf(webfilter, "%s_web_filter", var);
+		showRadioDefaultOff(wp, "wl_adv.label17", webfilter);
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 		showbridgesettings(wp, getRADev(var), 1, 0);
 #else
@@ -2775,6 +2778,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				show_bgscan_options(wp, var);
 			}
 		}
+		char webfilter[32];
+		sprintf(webfilter, "%s_web_filter", var);
+		showRadioDefaultOff(wp, "wl_adv.label17", webfilter);
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 		showbridgesettings(wp, getRADev(var), 1, 0);
 #else
@@ -3877,6 +3883,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			show_bgscan_options(wp, prefix);
 		}
 	}
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", prefix);
+	showRadioDefaultOff(wp, "wl_adv.label17", webfilter);
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
@@ -4762,6 +4771,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 
 	}
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", prefix);
+	showRadioDefaultOff(wp, "wl_adv.label17", webfilter);
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
