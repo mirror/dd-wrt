@@ -4815,6 +4815,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #else
 
+	copytonv_prefix(wp, "web_filter", prefix);
 	copytonv_prefix(wp, "multicast", prefix);
 	copytonv_prefix(wp, "multicast_to_unicast", prefix);
 	copytonv_prefix(wp, "bridged", prefix);
