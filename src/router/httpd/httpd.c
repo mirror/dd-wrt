@@ -787,7 +787,7 @@ static int check_connect_type_vap(char *prefix, webs_t wp)
 	wlmac = get_wl_assoc_mac(prefix, &count_wl);
 
 	for (i = 0; i < count_wl; i++) {
-		if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
+		if (!strcasecmp(wlmac[i].mac, wp->http_client_mac)) {
 			cprintf("Can't accept wireless access\n");
 			debug_free(wlmac);
 			return -1;
