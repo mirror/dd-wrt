@@ -3848,6 +3848,20 @@ void start_nvram(void)
 		nvram_set("wifi_display", "wlan0");
 #endif
 	}
+	if (nvram_geti("nvram_ver") < 8) {
+		nvram_seti("nvram_ver", 8);
+#ifndef HAVE_MADWIFI
+		if (nvram_match("wl0_web_filter", "1"))
+			nvram_set("wl0_web_ftiler", "0");
+		else
+			nvram_set("wl0_web_ftiler", "1");
+
+		if (nvram_match("wl1_web_filter", "1"))
+			nvram_set("wl1_web_ftiler", "0");
+		else
+			nvram_set("wl1_web_ftiler", "1");
+#endif
+	}
 
 	return;
 }
