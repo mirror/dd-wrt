@@ -949,7 +949,7 @@ extern unsigned int get_register_value(unsigned short id, unsigned short num);
 int ct_openlog(const char *ident, int option, int facility, char *log_name);
 void ct_syslog(int level, int enable, const char *fmt, ...);
 void ct_logger(int level, const char *fmt, ...);
-struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c);
+struct wl_assoc_mac *get_wl_assoc_mac(char *prefix, int *c);
 
 extern struct detect_wans *detect_protocol(char *wan_face, char *lan_face, char *type);
 
