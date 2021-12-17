@@ -773,6 +773,30 @@ static int do_file_attach(struct mime_handler *handler, char *path, webs_t strea
 	return do_file_2(handler, path, stream, attachment);
 }
 
+static int check_connect_type_vap(char *prefix, webs_t wp)
+{
+	struct wl_assoc_mac *wlmac = NULL;
+	int count_wl = 0;
+	int i, j;
+	char temp[32];
+	sprintf(temp, "%s_web_filter", prefix);
+	if (nvram_invmatchi(temp, 1))
+		return 0;
+
+	wlmac = get_wl_assoc_mac(prefix, &count_wl);
+
+	for (i = 0; i < count_wl; i++) {
+		if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
+			cprintf("Can't accept wireless access\n");
+			debug_free(wlmac);
+			return -1;
+		}
+	}
+	debug_free(wlmac);
+
+	return 0;
+}
+
 static int check_connect_type(webs_t wp)
 {
 	struct wl_assoc_mac *wlmac = NULL;
@@ -780,22 +804,21 @@ static int check_connect_type(webs_t wp)
 	int i, j;
 	char temp[32];
 	int c = getdevicecount();
-
 	for (j = 0; j < c; j++) {
-		sprintf(temp, "wl%d_web_filter", j);
-		if (nvram_invmatchi(temp, 1))
-			continue;
-
-		wlmac = get_wl_assoc_mac(j, &count_wl);
-
-		for (i = 0; i < count_wl; i++) {
-			if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
-				cprintf("Can't accept wireless access\n");
-				debug_free(wlmac);
+#ifdef HAVE_ATH9K
+		sprintf(temp, "wlan%d", j);
+#else
+		sprintf(temp, "wl%d", j);
+#endif
+		if (check_connect_type_vap(temp, wp))
+			return -1;
+		char *names = nvram_nget("%s_vifs", temp);
+		char *next;
+		char var[32];
+		foreach(var, names, next) {
+			if (check_connect_type_vap(var, wp))
 				return -1;
-			}
 		}
-		debug_free(wlmac);
 	}
 
 	return 0;
@@ -1959,7 +1982,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 					goto next;
 				}
 			}
-			next:;
+		      next:;
 			sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
