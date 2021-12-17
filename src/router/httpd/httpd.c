@@ -780,7 +780,7 @@ static int check_connect_type_vap(char *prefix, webs_t wp)
 	int i, j;
 	char temp[32];
 	sprintf(temp, "%s_web_filter", prefix);
-	if (nvram_invmatchi(temp, 1))
+	if (nvram_invmatchi(temp, 0))
 		return 0;
 
 	wlmac = get_wl_assoc_mac(prefix, &count_wl);
