@@ -4656,7 +4656,7 @@ char *getWET()
 
 #endif
 
-struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
+struct wl_assoc_mac *get_wl_assoc_mac(char *prefix, int *c)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count;
@@ -4665,42 +4665,33 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 	wlmac = NULL;
 	count = *c = 0;
 
-	int ifcnt = 4;
 	int i;
 	int gotit = 0;
 
 	// fprintf(stderr,"assoclist\n");
 
-	for (i = 0; i < ifcnt; i++) {
-		if (i == 0)
-			strcpy(checkif, get_wl_instance_name(instance));
-		else
-			sprintf(checkif, "wl%d.%d", instance, i);
-		if (!ifexists(checkif))
-			break;
-		unsigned char *buf = malloc(8192);
-		struct maclist *maclist = (struct maclist *)buf;
-		int cnt = getassoclist(checkif, buf);
-		if (cnt > 0) {
-			gotit = 1;
-			wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
-			int a;
-			for (a = 0; a < cnt; a++) {
-				bzero(&wlmac[count + a], sizeof(struct wl_assoc_mac));
-				unsigned char *m = (unsigned char *)&maclist->ea[a];
-				sprintf(wlmac[count + a].mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0] & 0xff, m[1] & 0xff, m[2] & 0xff, m[3] & 0xff, m[4] & 0xff, m[5] & 0xff);
-			}
-			count += cnt;
+	if (!ifexists(prefix))
+		return NULL;
+	unsigned char *buf = malloc(8192);
+	struct maclist *maclist = (struct maclist *)buf;
+	int cnt = getassoclist(prefix, buf);
+	if (cnt > 0) {
+		gotit = 1;
+		wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
+		int a;
+		for (a = 0; a < cnt; a++) {
+			bzero(&wlmac[count + a], sizeof(struct wl_assoc_mac));
+			unsigned char *m = (unsigned char *)&maclist->ea[a];
+			sprintf(wlmac[count + a].mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0] & 0xff, m[1] & 0xff, m[2] & 0xff, m[3] & 0xff, m[4] & 0xff, m[5] & 0xff);
 		}
-		free(buf);
-	}
-
-	if (gotit) {
+		count += cnt;
 		// cprintf("Count of wl assoclist mac is %d\n", count);
 		*c = count;
+		free(buf);
 		return wlmac;
-	} else
-		return NULL;
+	}
+	free(buf);
+	return NULL;
 }
 
 int getdevicecount(void)
