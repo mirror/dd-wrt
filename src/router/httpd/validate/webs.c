@@ -3166,7 +3166,7 @@ static char *vapsettings[] = {
 	"radius_retry", "radmacpassword", "radmactype", "rate", "rateset", "reg_mode", "regdomain", "regulatory", "rifs_advert", "rts", "rts rtsvalue", "rtsvalue", "rx_amsdu_in_ampdu", "rxantenna", "rxchain",
 	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
 	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
-	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain", "txchain_pwrsave_enable", "txpwr",
+	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "nitro_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain", "txchain_pwrsave_enable", "txpwr",
 	"txpwrdbm", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if",
 	"wds10_ipaddr",
 	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
