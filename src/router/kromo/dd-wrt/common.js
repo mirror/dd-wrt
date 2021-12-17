@@ -382,7 +382,7 @@ function ignoreSpaces(string) {
 }
 
 function check_char(I,M1,c) {
-
+	var i;
 	M = unescape(M1);
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
@@ -430,8 +430,10 @@ function valid_key(I,l){
 
 function valid_name(I,M,flag) {
 	var invalid = "^:*";
+	var len = invalid.length;
+	var i;
 	result = isascii(I,M);
-	for (i=0;i<invalid.length;i++) {
+	for (i=0;i<len;i++) {
 		if (!check_char(I,M, invalid.charAt(i))) {
 		    return false;
 		}
