@@ -432,8 +432,8 @@ void configure_single_ath9k(int count)
 #else
 	int cpeonly = 0;
 #endif
-	int maxrxchain = mac80211_get_avail_rx_antenna(phy_idx);
-	int maxtxchain = mac80211_get_avail_tx_antenna(phy_idx);
+	int maxrxchain = mac80211_get_avail_rx_antenna(dev);
+	int maxtxchain = mac80211_get_avail_tx_antenna(dev);
 	int txchain;
 	int rxchain;
 	if (!*(nvram_safe_get(rxantenna)) || !*(nvram_safe_get(txantenna))) {
@@ -465,7 +465,7 @@ void configure_single_ath9k(int count)
 		nvram_default_get(rxantenna, rxdefstr);
 	}
 	if (!has_ad(dev))
-		mac80211_set_antennas(phy_idx, txchain, rxchain);
+		mac80211_set_antennas(dev, txchain, rxchain);
 
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");

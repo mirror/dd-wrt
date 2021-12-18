@@ -1182,7 +1182,7 @@ static inline int is_wil6210(const char *prefix)
 
 #ifdef HAVE_ATH9K
 extern int is_mac80211(const char *prefix);
-extern int is_ap8x(void);
+extern int is_ap8x(char *prefix);
 extern int has_channelsurvey(const char *prefix);
 extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
@@ -1202,7 +1202,7 @@ static inline int is_mac80211(const char *prefix)
 	return 0;
 }
 
-static inline int is_ap8x(void)
+static inline int is_ap8x(char *prefix)
 {
 	return 0;
 }
