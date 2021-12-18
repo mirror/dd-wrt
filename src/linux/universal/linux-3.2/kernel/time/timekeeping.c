@@ -1182,6 +1182,31 @@ ktime_t ktime_get_boottime(void)
 }
 EXPORT_SYMBOL_GPL(ktime_get_boottime);
 
+ktime_t ktime_get_coarse_boottime(void)
+{
+	struct timespec ts;
+	struct timespec tomono, sleep;
+	unsigned int seq;
+	s64 nsecs;
+
+	WARN_ON(timekeeping_suspended);
+
+	do {
+		seq = read_seqbegin(&xtime_lock);
+		ts = xtime;
+		tomono = wall_to_monotonic;
+		sleep = total_sleep_time;
+		nsecs = timekeeper.xtime_nsec >> timekeeper.shift;
+
+	} while (read_seqretry(&xtime_lock, seq));
+
+	set_normalized_timespec(&ts, ts.tv_sec + tomono.tv_sec + sleep.tv_sec,
+		(s64)ts.tv_nsec + tomono.tv_nsec + sleep.tv_nsec + nsecs);
+
+	return timespec_to_ktime(ts);
+}
+EXPORT_SYMBOL_GPL(ktime_get_coarse_boottime);
+
 /**
  * monotonic_to_bootbased - Convert the monotonic time to boot based.
  * @ts:		pointer to the timespec to be converted
