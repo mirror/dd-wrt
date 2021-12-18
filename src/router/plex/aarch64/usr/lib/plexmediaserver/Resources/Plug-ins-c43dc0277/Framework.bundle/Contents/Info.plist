@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.plexapp.framework</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>AAPL</string>
+	<key>CFBundleSignature</key>
+	<string>hook</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>PlexPluginMode</key>
+	<string>AlwaysOn</string>
+	<key>PlexPluginDevMode</key>
+	<string>0</string>
+	<key>PlexPluginDebug</key>
+	<string>1</string>
+	<key>PlexPluginClass</key>
+	<string>System</string>
+	<key>PlexShortBundleVersion</key>
+	<string>2.6.3</string>
+	<key>PlexBundleVersion</key>
+	<string>2.6.3</string>
+</dict>
+</plist>

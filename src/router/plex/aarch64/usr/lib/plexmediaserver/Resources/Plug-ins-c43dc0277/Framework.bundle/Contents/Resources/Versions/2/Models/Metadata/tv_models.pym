@@ -1,0 +1,172 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_records import MetadataRecord, Person
+from common_templates import MediaProxyContainer
+from extra_models import Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other
+
+
+class Episode(MetadataRecord):
+  title                     = Template.String()
+  summary                   = Template.String()
+  originally_available_at   = Template.Date()
+  rating                    = Template.Float()
+  duration                  = Template.Integer()
+  content_rating            = Template.String()
+  content_rating_age        = Template.Integer()
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  guest_stars               = Template.Set(Person())
+  thumbs                    = MediaProxyContainer()
+  absolute_index            = Template.Integer()
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  
+  # Interface settings
+  writers.xml_tag           = 'Writer'
+  directors.xml_tag         = 'Director'
+  producers.xml_tag         = 'Producer'
+  guest_stars.xml_tag       = 'Role'
+
+  xml_tag                   = 'Video'
+  xml_attributes            =  dict(type = 'episode')
+  
+  key                       = Template.String()
+  key.is_synthetic
+  
+  index                     = Template.Integer()
+  index.is_synthetic
+  
+  show                      = Template.String()
+  show.is_synthetic
+  show.xml_attr_name        = 'grandparentTitle'
+  
+  season                    = Template.Integer()
+  season.is_synthetic
+  season.xml_attr_name      = 'parentIndex'
+  
+  thumbs.exclude_from_interface
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art                       = Template.String()
+  art.is_synthetic
+  
+  source_title              = Template.String()
+  source_title.is_synthetic
+  
+  duration                  = Template.Integer()
+  duration.is_synthetic
+  
+  tags                      = Template.Set(Template.String())
+  tags.xml_tag              = 'Tag'
+  
+  rating_key                = Template.String()
+  rating_key.is_synthetic
+
+  
+
+class Season(MetadataRecord):
+  summary                   = Template.String()
+  posters                   = MediaProxyContainer()
+  banners                   = MediaProxyContainer()
+  art                       = MediaProxyContainer()
+  episodes                  = Template.Map(Episode())
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  episodes.save_items_externally
+  
+  
+  # Interface settings
+  
+  xml_tag                   = 'Directory'
+  xml_attributes            =  dict(type = 'season')
+  
+  episodes.exclude_from_interface
+  
+  key                       = Template.String()
+  key.is_synthetic
+  
+  index                     = Template.Integer()
+  index.is_synthetic
+  
+  title                     = Template.String()
+  title.is_synthetic
+  
+  show                      = Template.String()
+  show.is_synthetic
+  show.xml_attr_name        = 'parentTitle'
+  
+  posters.exclude_from_interface
+  banners.exclude_from_interface
+  
+  episode_count             = Template.Integer()
+  episode_count.is_synthetic
+  episode_count.xml_attr_name = 'leafCount'
+  
+  source_title              = Template.String()
+  source_title.is_synthetic
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+
+  rating_key                = Template.String()
+  rating_key.is_synthetic
+
+  
+  
+class TV_Show(MetadataModel):
+  title                     = Template.String()
+  summary                   = Template.String()
+  originally_available_at   = Template.Date()
+  content_rating            = Template.String()
+  studio                    = Template.String()
+  posters                   = MediaProxyContainer()
+  banners                   = MediaProxyContainer()
+  art                       = MediaProxyContainer()
+  themes                    = MediaProxyContainer()
+  seasons                   = Template.Map(Season())
+  roles                     = Template.Set(Person())
+  countries                 = Template.Set(Template.String())
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  similar                   = Template.Set(Template.String())
+  
+  seasons.save_items_externally
+  
+  # Interface settings
+  xml_tag                   = 'Directory'
+  countries.xml_tag         = 'Country'
+  xml_attributes            =  dict(type = 'show')
+  
+  seasons.exclude_from_interface
+  
+  posters.exclude_from_interface
+  art.exclude_from_interface
+  banners.exclude_from_interface
+  themes.exclude_from_interface
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+  
+  episode_count             = Template.Integer()
+  episode_count.is_synthetic
+  episode_count.xml_attr_name = 'leafCount'
+  
+  viewed_episode_count      = Template.Integer()
+  viewed_episode_count.is_synthetic
+  viewed_episode_count.allows_null
+  viewed_episode_count.xml_attr_name = 'viewedLeafCount'
+
+  
+  
+  
