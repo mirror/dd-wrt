@@ -3341,7 +3341,7 @@ int has_spectralscanning(const char *prefix)
 #ifdef HAVE_ATH9K
 int has_airtime_fairness(const char *prefix)
 {
-	return (is_ath10k(prefix) || is_ath9k(prefix));
+	return (is_ath10k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
 }
 
 #endif
