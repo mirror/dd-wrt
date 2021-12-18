@@ -2800,7 +2800,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  var);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-		if (is_ap8x() && count == 4) {
+		if (is_ap8x(prefix) && count == 4) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
 			websWrite(wp, "</div>\n<br>\n");
@@ -3523,11 +3523,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		int maxrx = 7;
 		int maxtx = 7;
 #ifdef HAVE_ATH9K
-		int prefixcount;
-		sscanf(prefix, "wlan%d", &prefixcount);
-		int phy_idx = get_ath9k_phy_idx(prefixcount);
-		maxrx = mac80211_get_avail_rx_antenna(phy_idx);
-		maxtx = mac80211_get_avail_tx_antenna(phy_idx);
+		maxrx = mac80211_get_avail_rx_antenna(prefix);
+		maxtx = mac80211_get_avail_tx_antenna(prefix);
 #endif
 		if (maxtx > 1) {
 			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n", wl_txantenna);
