@@ -3889,8 +3889,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", prefix);
+	showRadioDefaultOn(wp, "wl_adv.label17", webfilter);
 	showbridgesettings(wp, getRADev(prefix), 1, 1);
 #else
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", prefix);
+	showRadioDefaultOn(wp, "wl_adv.label17", webfilter);
 	if (!strcmp(prefix, "wl0"))
 		showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
 	if (!strcmp(prefix, "wl1"))
@@ -4777,8 +4783,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", var);
+	showRadioDefaultOn(wp, "wl_adv.label17", webfilter);
 	showbridgesettings(wp, getRADev(prefix), 1, 1);
 #else
+	char webfilter[32];
+	sprintf(webfilter, "%s_web_filter", var);
+	showRadioDefaultOn(wp, "wl_adv.label17", webfilter);
 	if (!strcmp(prefix, "wl0"))
 		showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
 	if (!strcmp(prefix, "wl1"))
