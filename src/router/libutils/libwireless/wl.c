@@ -3401,14 +3401,18 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 
 }
 
-#ifdef HAVE_ATH5K
-int is_ath5k_pci(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:ath5k"));
-	EXITVALUECACHE();
-	return ret;
+#define IS_DRIVER(name, desc)  \
+int is_##name(const char *prefix) \
+{ \
+	INITVALUECACHE(); \
+	RETURNVALUE(devicecountbydriver(prefix, desc)); \
+	EXITVALUECACHE(); \
+	return ret; \
 }
+
+
+#ifdef HAVE_ATH5K
+IS_DRIVER(ath5k_pci,"pci:ath5k");
 
 int is_ath5k_ahb(const char *prefix)
 {
@@ -3425,107 +3429,26 @@ int is_ath5k(const char *prefix)
 
 #endif
 #ifdef HAVE_ATH9K
-int is_ath9k(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:ath9k"));
-	EXITVALUECACHE();
-	return ret;
-}
+IS_DRIVER(ath9k,"pci:ath9k");
 #endif
 #ifdef HAVE_MVEBU
-int is_mvebu(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mwlwifi"));
-	EXITVALUECACHE();
-	return ret;
-}
+IS_DRIVER(mvebu,"pci:mwlwifi");
 #endif
 #ifdef HAVE_ATH10K
-int is_ath10k(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:ath10k_pci"));
-	EXITVALUECACHE();
-	return ret;
-}
-
+IS_DRIVER(ath10k,"pci:ath10k_pci");
 #endif
 #ifdef HAVE_BRCMFMAC
-int is_brcmfmac(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:brcmfmac"));
-	EXITVALUECACHE();
-	return ret;
-}
-
+IS_DRIVER(brcmfmac,"pci:brcmfmac");
 #endif
 #ifdef HAVE_MT76
-int is_mt7615(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7615e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_mt7915(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7915e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_mt7921(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7921e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_mt7603(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7603e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_mt76x0(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt76x0e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_mt76x2(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:mt76x2e"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_rt2880_wmac(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "rt2880_wmac"));
-	EXITVALUECACHE();
-	return ret;
-}
-
-int is_rt2880_pci(const char *prefix)
-{
-	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "pci:rt2880pci"));
-	EXITVALUECACHE();
-	return ret;
-}
+IS_DRIVER(mt7615,"pci:mt7615e");
+IS_DRIVER(mt7915,"pci:mt7915e");
+IS_DRIVER(mt7921,"pci:mt7921e");
+IS_DRIVER(mt7603,"pci:mt7603e");
+IS_DRIVER(mt76x0,"pci:mt76x0e");
+IS_DRIVER(mt76x2,"pci:mt76x2e");
+IS_DRIVER(rt2880_wmac,"pci:rt2880_wmac");
+IS_DRIVER(rt2880_pci,"pci:rt2880pci");
 
 int is_mt76(const char *prefix)
 {
