@@ -172,7 +172,7 @@ void runStartup(char *extension)
 		internal_runStartup("/tmp/etc/config", extension);
 		internal_runStartup("/usr/local/etc/config", extension);
 		internal_runStartup("/sd/etc/config", extension);
-		internal_runStartup("/opt/etc/unit.d", extension);
+		internal_runStartup("/opt/etc/init.d", extension);
 #ifdef HAVE_REGISTER
 	}
 #endif
@@ -865,7 +865,7 @@ void run_opt(void)
 {
 
 	eval("/opt/etc/init.d/rcS");
-	internal_runStartup("/opt/etc/unit.d", "S**");
+	internal_runStartup("/opt/etc/init.d", "S**");
 }
 
 void start_run_rc_startup(void)
@@ -874,7 +874,7 @@ void start_run_rc_startup(void)
 	create_rc_file(RC_STARTUP);
 	if (f_exists("/tmp/.rc_startup"))
 		eval("/tmp/.rc_startup");
-	internal_runStartup("/opt/etc/unit.d", "S**");
+	internal_runStartup("/opt/etc/init.d", "S**");
 #endif
 }
 
