@@ -2234,7 +2234,7 @@ int gettxantenna(char *ifname)
 		if (!registered_has_cap(20))
 			return (1);
 #endif
-		return (mac80211_get_avail_tx_antenna(get_ath9k_phy_ifname(ifname)));
+		return (mac80211_get_avail_tx_antenna(ifname));
 	} else
 		return (7);
 }
@@ -2246,7 +2246,7 @@ int getrxantenna(char *ifname)
 		if (!registered_has_cap(20))
 			return (1);
 #endif
-		return (mac80211_get_avail_rx_antenna(get_ath9k_phy_ifname(ifname)));
+		return (mac80211_get_avail_rx_antenna(ifname));
 	} else
 		return (7);
 }
@@ -3430,6 +3430,18 @@ int is_ath5k(const char *prefix)
 #endif
 #ifdef HAVE_ATH9K
 IS_DRIVER(ath9k,"pci:ath9k");
+int is_ap8x(char *prefix)
+{
+	INITVALUECACHE();
+	char *dev = getWifiDeviceName("wlan0", NULL);
+	if (dev && !strcmp(dev, "AR9100 802.11n")) {
+	    ret = 1;
+	}
+	RETURNVALUE(ret);
+	EXITVALUECACHE();
+	return ret;
+
+}
 #endif
 #ifdef HAVE_MVEBU
 IS_DRIVER(mvebu,"pci:mwlwifi");
@@ -3455,6 +3467,7 @@ int is_mt76(const char *prefix)
 	return (is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix) || is_rt2880_pci(prefix) || is_rt2880_wmac(prefix));
 }
 #endif
+
 #ifdef HAVE_WPA3
 int has_airtime_policy(const char *prefix)
 {

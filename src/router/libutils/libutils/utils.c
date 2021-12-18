@@ -1176,20 +1176,6 @@ char *cpustring(void)
 #endif
 }
 
-#if defined(HAVE_ATH9K)
-int is_ap8x(void)
-{
-#define CPUSTR "Atheros AR91"
-	char *str = cpustring();
-	if (str && !strncmp(str, CPUSTR, 12))
-		return 1;
-	else
-		return 0;
-#undef CPUSTR
-
-}
-#endif
-
 int _domod(char *module, char *loader)
 {
 	char word[256];
