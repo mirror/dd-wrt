@@ -1957,6 +1957,7 @@ static int do_cfebackup(unsigned char method, struct mime_handler *handler, char
 		FILE *out = fopen("/tmp/cfe.bin", "wb");
 		fseek(fp, 0, SEEK_END);
 		size_t len = ftell(fp);
+		rewind(fp);
 		int i;
 		for (i = 0; i < len; i++)
 			putc(getc(fp), out);
