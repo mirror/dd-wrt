@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Czech reference translation file - DD-WRT V24 SP2       24/MAY/2020				//
+//		Czech reference translation file - DD-WRT V24 SP2       29/08/2020
 //////////////////////////////////////////////////////////////////////////////////////////////
-// CZ Translation - Tomáš Mark 2020 - Feedback post to ddwrt@raspirarium.com - private v0.0.3
+// Author: Tomáš Mark - ddwrt@raspirarium.com - v0.0.6
 // ** COMMON SHARE LABEL **//
 //
 lang_charset.set="utf-8";
@@ -52,6 +52,7 @@ share.start="Začátek";
 share.end="Konec";
 share.proto="Protokol";
 share.ip="IP Adresa";
+share.ipaddrmask="IP Adresa/Maska";
 share.ipv4="IPv4 Adresa";
 share.ipv6="IPv6 Adresa";
 share.localip="Lokální IP";
@@ -108,8 +109,8 @@ share.filter="Filtr";
 share.deny="Odmítnout";
 share.range="Rozsah";
 share.use="Využití";
-share.mins="Min.";
-share.secs="Sek.";
+share.mins="min";
+share.secs="s";
 share.routername="Název Routeru";
 share.manual="Ručně";
 share.port="Port";
@@ -224,8 +225,8 @@ share.standard="Standardní";
 share.execscript="Spouštěcí skript";
 share.user="Uživatel";
 share.privatekey="Privátní klíč";
-share.bytes="bajty";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Přednost";
@@ -263,13 +264,14 @@ sbutton.runcmd="Spustit příkazy";
 sbutton.startup="Uložit spuštění";
 sbutton.shutdown="Uložit ukončení";
 sbutton.firewall="Uložit FireWall";
-sbutton.custom="Uložit vastní skript";
+sbutton.custom="Uložit vlastní";
+sbutton.usb="Uložit USB";
 sbutton.wol="Probudit";
 sbutton.add_wol="Přidat hosta";
 sbutton.manual_wol="Ručně probudit";
 sbutton.summary="Souhrn";
 sbutton.filterIP="Upravit seznam klientů";
-sbutton.filterMac="Uprtavit seznam MAC filtrů";
+sbutton.filterMac="Upravit seznam MAC filtrů";
 sbutton.filterSer="Přidat/Upravit službu";
 sbutton.reboot="Restartování routeru";
 sbutton.help="   Nápověda  ";
@@ -280,6 +282,7 @@ sbutton.log_in="Příchozí log";
 sbutton.log_out="Odchozí log";
 sbutton.edit_srv="Přidat/Upravit službu";
 sbutton.routingtab="Zobrazit routovací tabulku";
+sbutton.policytab="Zobrazit tabulku zásad";
 sbutton.wanmac="Získat aktuální MAC adresu z PC";
 sbutton.dhcprel="DHCP uvolnit";
 sbutton.dhcpren="DHCP obnovit";
@@ -368,7 +371,7 @@ errmsg.err47="neplatné SSID.";
 errmsg.err48="WDS není kompatibilní s aktuální konfigurací Routeru. Prověřte prosím následující body :\n * Bezdrátový režim musí být nastaven na AP \n * WPA2 není pro WDS podporován \n * Režim bezdrátové sítě B-Pouze není pro WDS možné použít.";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS je k dispozici pouze v režimu AP.";
+errmsg.err49="Radius je k dispozici pouze v režimu AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Musíte zadat SSID.";
@@ -412,7 +415,7 @@ errmsg.err102="Upgrade firmware...<br />Počkejte prosím.";
 //
 bmenu.setup="Nastavení";
 bmenu.setupbasic="Základní nastavení";
-bmenu.setupipv6="IPv6";
+bmenu.setupipv6="IPV6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Klonování MAC";
 bmenu.setuprouting="Pokročilé routování";
@@ -422,7 +425,7 @@ bmenu.networking="Síťování";
 
 bmenu.wireless="Bezdrát";
 bmenu.wirelessBasic="Základní nastavení";
-bmenu.wirelessRadius="RADIUS";
+bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="Super Kanál";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Bezdrátová zabezpečení";
@@ -454,6 +457,7 @@ bmenu.webaccess="Přístup WAN";
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Přesměrování rozsahu portů";
 bmenu.applicationspforwarding="Přesměrování portů";
+bmenu.applicationsipforwarding="IP Přesměrování (1:1 NAT)";
 bmenu.applicationsptriggering="Spouštěče portu";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
@@ -468,6 +472,7 @@ bmenu.sipathstatus="Status";
 bmenu.admin="Administrace";
 bmenu.adminManagement="Správa";
 bmenu.adminAlive="Zůstat naživu";
+bmenu.adminSysctl="Sysctl";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Příkazy";
 bmenu.adminWol="Probouzení (WOL)";
@@ -477,7 +482,7 @@ bmenu.adminBackup="Zálohování";
 
 bmenu.services="Služby";
 bmenu.servicesServices="Služby";
-bmenu.servicesRadius="FreeRADIUS";
+bmenu.servicesRadius="FreeRadius";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -506,6 +511,8 @@ bmenu.statuSyslog="Syslog";
 
 bmenu.setupnetw="Síť";
 bmenu.adminman="Správa";
+
+sysctl.titl="Sysctl Konfigurace";
 
 // ** Alive.asp **//
 alive.titl="Zůstat naživu";
@@ -599,6 +606,7 @@ diag.cmd="Příkazy";
 diag.startup="StartUp";
 diag.shutdown="Shutdown";
 diag.firewall="Firewall";
+diag.usb="USB Skript";
 diag.custom="Vlastní skript";
 diag.running="Běh";
 diag.stopped="Zastavení";
@@ -612,7 +620,7 @@ hdiag.page1="<dd>Příkazy můžete spouštět přímo přes webové rozhraní.<
 hdiag.page2="<dd>Vyplňte textovou oblast příkazem, klikněte na <em>Spustit příkazy</em> a odešlete.</dd>";
 hdiag.page3="<dd>Můžete uložit některé příkazové řádky, které se mají spustit při spuštění Routeru. Naplňte textovou oblast příkazy (pouze jeden příkaz po řádku) a klikněte na <em>Uložit spuštění</em>.</dd>";
 hdiag.page4="<dd>Při každém spuštění brány firewall může spustit některé vlastní instrukce iptables. Do textové oblasti vyplňte pokyny brány firewall (pouze jeden příkaz po řádku) a klikněte na <em>Uložit bránu firewall</em>.<br /><br />";
-hdiag.page5="<dd>Vlastní skript je uložen v souboru /tmp/custom.sh. Můžete jej spustit ručně nebo jej použít k vyvolání pomocí cronu. Vyplňte textovou oblast podle pokynů skriptu (pouze jeden příkaz na řádek) a klikněte na <em>Uložit vlastní skript</em>. <br /><br /><div class=\"note\"><h4>Poznámka</h4><div><ul class=\"wide\"><li>Spouštěcí příkazy jsou uloženy v proměnné nvram rc_startup</li><li>Firewall příkazy jsou uloženy v proměnné nvram rc_firewall</li><li>Vlastní skript je uložen v proměnné nvram rc_custom</li></ul></div></div></dd>";
+hdiag.page5="<dd>Vlastní skript je uložen v souboru /tmp/.rc_custom. Můžete jej spustit ručně nebo jej použít k vyvolání pomocí cronu. Vyplňte textovou oblast podle pokynů skriptu (pouze jeden příkaz na řádek) a klikněte na <em>Uložit vlastní skript</em>. <br /><br /><div class=\"note\"><h4>Poznámka</h4><div><ul class=\"wide\"><li>Spouštěcí příkazy jsou uloženy v proměnné nvram rc_startup</li><li>Firewall příkazy jsou uloženy v proměnné nvram rc_firewall</li><li>Vlastní skript je uložen v proměnné nvram rc_custom</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
 //
@@ -797,6 +805,13 @@ hpforward.page7="<dd>Zadejte IP adresu počítače, na kterém je spuštěna apl
 hpforward.page8="<dd>Zadejte číslo interního portu (číslo portu používané aplikací).</dd>";
 hpforward.page9="<dd>Zaškrtnutím políčka <i>Povolit</i> povolíte předávání portů pro aplikaci.</dd><dd>Zkontrolujte všechny hodnoty a klikněte na <i>Uložit nastavení</i> uložte vaše nastavení. Kliknutím na tlačítko <i>Zrušit změny</i> zrušíte neuložené změny.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Než přidáte další pravidlo pro předávání, nezapomeňte své změny vždy uložit.</div></div></dd>";
 
+// ** IP Forward - 1:1 NAT **//
+pforwardip.h2="IP Forward - 1:1 NAT";
+pforwardip.legend="Forwardy";
+pforwardip.name="Jméno";
+pforwardip.src="Zdrojová IP";
+pforwardip.dest="Cílová IP";
+
 // ** USB.asp **
 //
 usb.titl="USB";
@@ -916,15 +931,15 @@ hlighttpd.right2="Zapněte lighttpd a nakonfigurujte porty HTTP/HTTPS. Lighttpd 
 //
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot portál";
-hotspot.legend="Chillispot";
+hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Oddělit Wifi od mostu LAN";
-hotspot.hotspot="Chillispot";
-hotspot.pserver="Primární RADIUS Server IP/DNS";
-hotspot.bserver="Záložní RADIUS Server IP/DNS";
+hotspot.hotspot="CoovaChilli";
+hotspot.pserver="Primární Radius Server IP/DNS";
+hotspot.bserver="Záložní Radius Server IP/DNS";
 hotspot.dns="DNS server IP";
 hotspot.url="Přesměrovat URL";
 hotspot.dhcp="DHCP Rozhraní";
-hotspot.radnas="RADIUS NAS ID";
+hotspot.radnas="Radius NAS ID";
 hotspot.net="Síť Hotspot";
 hotspot.uam="UAM tajné";
 hotspot.uamserver="UAM Server";
@@ -935,8 +950,8 @@ hotspot.allowuad="UAM Domény (oddělit čárkou)";
 hotspot.macauth="MAC Ověřování";
 hotspot.macpasswd="MAC Heslo";
 hotspot.sec8021Xauth="802.1X Ověřování (EAP)";
-hotspot.option="Rozšířené volby Chillispot";
-hotspot.fon_chilli="Správa lokálního uživatele Chillispot";
+hotspot.option="Rozšířené volby CoovaChilli";
+hotspot.fon_chilli="Správa lokálního uživatele CoovaChilli";
 hotspot.fon_user="Seznam uživatelů";
 hotspot.http_legend="HTTP Přesměrování";
 hotspot.http_srv="HTTP Přesměrování";
@@ -981,7 +996,7 @@ hotspot.wifidog_url="URL portálů";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Název Webserveru";
 hotspot.wifidog_httpdconn="Max uživatelů";
-hotspot.wifidog_checkinter="Kontrolní interval (vteřiny)";
+hotspot.wifidog_checkinter="Kontrolní interval (s)";
 hotspot.wifidog_checktimeout="Časový limit klienta";
 hotspot.wifidog_tmaclist="Seznam důvěrných MAC";
 hotspot.wifidog_authsrv="AuthServer hostname";
@@ -998,9 +1013,9 @@ hotspot.wifidog_auth="HTTP Server podpora autentifikace";
 
 //help container
 //
-hstatus_hots.right1="conup/condown:<br /><i>Když je USB nebo JFFS připojeno k jffs, mohou být připojovací skripty použity v /jffs/etc/chilli/</i><br />Místní uživatelé:<br /><i>Pokud se používají pouze místní uživatelé, nastavte primární RADIUS na 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Když je USB nebo JFFS připojeno k jffs, mohou být připojovací skripty použity v /jffs/etc/chilli/</i><br />Místní uživatelé:<br /><i>Pokud se používají pouze místní uživatelé, nastavte primární Radius na 127.0.0.1</i>";
 // help page
-hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení Chillispot) s ověřováním, účtu (RADIUS). ChilliSpot je open source captive portál, nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů v bezdrátové síťi LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a práci s účty (AAA) zajišťuje váš oblíbený server s RADIUSem.</dd>";
+hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení CoovaChilli) s ověřováním, účtu (Radius). CoovaChilli je open source captive portál, nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů v bezdrátové síťi LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a práci s účty (AAA) zajišťuje váš oblíbený server s Radiusem.</dd>";
 hstatus_hots.page2="<dd>Můžete si nechat spravovat váš hotspotový portál pomocí HotspotSystem.com. Poskytují bezplatná hotspotová řešení s placením za použití ​​fakturací. Pro více informací navštivte <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>Uživatelské jméno operátora, které jste zaregistrovali na <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>" ;
 hstatus_hots.page4="<dd>Číslo umístění, které chcete nastavit.</dd>";
@@ -1008,17 +1023,17 @@ hstatus_hots.page5="<dd>Je-li tato možnost povolena (výchozí), pak se s WiFi 
 hstatus_hots.page6="<dd>Toto musí být rozhraní, které chcete použít pro portál hotspot.</dd>";
 hstatus_hots.page7="<dd>Síťová maska, na které chcete spustit službu hotspot.</dd>";
 hstatus_hots.page8="<dd>Zde můžete provést změny na úvodní stránce. Můžete zdarma přidat další weby. Pokud jste operátorem White Label, můžete na úvodních stránkách použít vlastní název domény. Možnosti jsou: <ul><li> Protokol White Label: vyberte HTTPS, pokud máte v doméně White Label nainstalován SSL certifikát.</li><li>Doména White Label: Sem umístěte svoji doménu White Label nebo jiné servery (pro příklad serveru Asie) poskytovaného HotspotSystem.com</li><li>Přihlášení na úvodní stránce: Na hlavní úvodní stránce můžete mít přihlašovací pole. Toto chování musíte také nastavit v ovládacím centru HotspotSystem.com, v části Správa > Umístění > a kliknout na umístění > Upravit nastavení Hotspotu > Nastavení úvodní stránky!</li><li>Vlastní úvodní stránka (Walled Garden): Můžete uživatele přeposlat dále nejprve na vlastní úvodní stránku. Pro tuto možnost musíte přidat svoji doménu do níže uvedeného seznamu povolených UAM a nastavit ji v Řídicím centru. Musíte také umístit zpětný odkaz na naši úvodní stránku, aby se vaši zákazníci mohli přihlásit nebo koupit přístup/používat poukaz.</li><li>Povoleno UAM: IP Adresy nebo segmenty sítě, ke kterým má klient přístup, aniž by nejprve ověřili totožnost (Seznam doménových jmen oddělených čárkami). Příklad: www.chillispot.info,10.11.12.0/24</li></ul></dd>";
-hstatus_hots.page9="<dd>IP Adresy serveru RADIUS 1 a RADIUS 2.</dd>";
+hstatus_hots.page9="<dd>IP Adresy serveru Radius 1 a Radius 2.</dd>";
 hstatus_hots.page10="<dd>IP adresa serveru DNS. Slouží k informování klienta o adrese DNS, která se použije pro rozlišení názvu hostitele. Není-li tato možnost zadána, použije se primární systém DNS.</dd>";
 hstatus_hots.page11="<dd>URL webového serveru, který se použije k ověření klientů.</dd>";
-hstatus_hots.page12="<dd>RADIUS sdílené tajemství pro oba servery. Toto tajemství by mělo být změněno, aby nebyla ohrožena bezpečnost.</dd>";
+hstatus_hots.page12="<dd>Radius sdílené tajemství pro oba servery. Toto tajemství by mělo být změněno, aby nebyla ohrožena bezpečnost.</dd>";
 hstatus_hots.page13="<dd>Rozhraní Ethernet, které má poslouchat rozhraní downlink. Tuto možnost je nutné zadat.</dd>";
 hstatus_hots.page14="<dd>Identifikátor serveru síťového přístupu.</dd>";
-hstatus_hots.page15="<dd>Sdílené tajemství mezi UAM serverem a Chilli. Toto tajemství by mělo být nastaveno, aby nebyla ohrožena bezpečnost.</dd>";
+hstatus_hots.page15="<dd>Sdílené tajemství mezi UAM serverem a chilli. Toto tajemství by mělo být nastaveno, aby nebyla ohrožena bezpečnost.</dd>";
 hstatus_hots.page16="<dd>Povolit jakýkoli server DNS. Normálně neověření klienti mohou komunikovat pouze se servery DNS určenými možnostmi DNS1 a DNS2. Tato možnost umožní klientovi používat všechny servery DNS. To je výhodné pro klienty, které jsou nakonfigurovány pro použití pevné sady serverů DNS.<br /><br /><div class=\"note\"><h4> Poznámka </h4><div>Z bezpečnostních důvodů by měla být tato možnost kombinována s cílem Pravidlo brány firewall NAT, které předává všechny požadavky DNS na daný server DNS.</div></div></dd>";
 hstatus_hots.page17="<dd>IP adresy nebo segmenty sítě, ke kterým může klient přistupovat bez předchozího ověření (seznam názvů domén oddělených čárkami). Příklad: www.chillispot.info,10.11.12.0/24</dd>";
-hstatus_hots.page18="<dd>Pokud je tato možnost zadána, ChilliSpot se pokusí autentizovat všechny uživatele pouze na základě své mac adresy.</dd>";
-hstatus_hots.page19="<dd>Zde můžete zadat další možnosti.<br /><br /><div class=\"note\"><h4> Poznámka </h4><div>Další informace o různých možnostech:<a href=\"http:\/\/www.chillispot.info/chilli.html\">www.chillispot.info</a>.</div></div></dd>";
+hstatus_hots.page18="<dd>Pokud je tato možnost zadána, CoovaChilli se pokusí autentizovat všechny uživatele pouze na základě své mac adresy.</dd>";
+hstatus_hots.page19="<dd>Zde můžete zadat další možnosti.<br /><br /><div class=\"note\"><h4> Poznámka </h4><div>Další informace o různých možnostech:<a href=\"https:\/\/coova.github.io\">coova.github.io</a>.</div></div></dd>";
 hstatus_hots.page20="<dd>Povolení použití NoCatSplash vám umožňuje přesměrovat klienta na konkrétní webovou stránku při připojení pomocí bezdrátového nebo kabelového připojení.</dd>";
 hstatus_hots.page21="<dd>Název brány. Cokoli chcete nazvat.\"Joe's Pizza Shop a bezplatná kavárna DSL\". Použijte proměnnou $GatewayName na stránce splash.html.</dd>";
 hstatus_hots.page22="<dd>Nakonfiguruje URL přesměrování po úvodním přihlášení</dd>";
@@ -1155,11 +1170,11 @@ idx.timeset="Časová zóna";
 idx.static_ip="Statická IP";
 idx.dhcp="Automatická konfigurace - DHCP";
 idx.dhcp_auth="DHCP Autentifikace";
-idx.dhcp6c_auth="DHCP IPv6 Autentifikace";
+idx.dhcp6c_auth="DHCP IPV6 Autentifikace";
 idx.dhcp_userclass="DHCP Userclass";
-idx.dhcp6c_userclass="DHCP IPv6 Userclass";
+idx.dhcp6c_userclass="DHCP IPV6 Userclass";
 idx.dhcp_clientid="DHCP Klient ID";
-idx.dhcp6c_clientid="DHCP IPv6 Klient ID";
+idx.dhcp6c_clientid="DHCP IPV6 Klient ID";
 idx.dhcp_legend="Nastavení sítové adresy serverem (DHCP)";
 idx.dhcp_type="Typ DHCP";
 idx.dhcp_srv="DHCP Server";
@@ -1188,6 +1203,7 @@ idx.summt_opt10="třetí neděle říjen - třetí neděle únor";
 idx.portsetup="Nastavení portu";
 idx.wanport="Přiřazení portu WAN";
 idx.ntp_client="NTP Klient";
+idx.ignore_wan_dns="Ignorovat WAN DNS";
 
 //help container
 //
@@ -1225,7 +1241,7 @@ hidx.page19="<dd>Čas zápůjčky klienta je doba, po kterou bude uživateli sí
 hidx.page20="<dd>Systém názvů domén (DNS) je způsob, jakým internet převádí názvy domén, nebo webových stránek na internetové adresy nebo adresy URL. Váš poskytovatel internetových služeb vám poskytne alespoň jednu adresu IP serveru DNS. Pokud chcete použít jinou adresu DNS serveru, zadejte tuto adresu IP do jednoho z těchto polí. Zde můžete zadat až tři adresy IP serveru DNS. Router je použije pro rychlejší přístup k fungujícím serverům DNS.</dd>";
 hidx.page21="<dd>Služba Windows Internet Naming Service (WINS) řídí interakci každého počítače s internetem. Pokud používáte server WINS, zadejte zde IP Adresu tohoto serveru. V opačném případě ponechte tyto hodnoty prázdné.</dd>";
 hidx.dns_dnsmasq="<dd>Lokální server DNS společnosti Dnsmasq řeší všechny názvy hostitelů známé z Routeru z DHCP (dynamických a statických) a dále předává a ukládá položky DNS ze vzdálených serverů DNS. Povolení DNSMasq pro DNS umožňuje klientům DHCP v síti LAN řešit lokální názvy hostitelů, včetně statických a dynamických přiřazení IP.</dd>";
-hidx.auth_dnsmasq="<dd><Autoritativní DHCP by měla být nastavena, když DD-WRT je jediný DHCP server ve svém síťovém segmentu (jako ve většině běžných nastavení). DHCP server vrátí odpověď NAK klientům, kteří se pokouší zaregistrovat pomocí IP z jiného netblocku.</dd>";
+hidx.auth_dnsmasq="<dd>Autoritativní DHCP by měla být nastavena, když DD-WRT je jediný DHCP server ve svém síťovém segmentu (jako ve většině běžných nastavení). DHCP server vrátí odpověď NAK klientům, kteří se pokouší zaregistrovat pomocí IP z jiného netblocku.</dd>";
 hidx.force_dnsmasq="<dd>Toto nastavení způsobí, že všechny požadavky na port 53 DNS ze sítě LAN na externí servery DNS budou přesměrovány na interní server DNSmasq DD-WRT.</dd>";
 hidx.page22="<dd>Vyberte časové pásmo pro vaši polohu, nebo požadované místo.</dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <i>Uložit nastavení</i>. Klikněte na <i>Zrušit změny</i> a zruší se neuložené změny. Nastavení můžete vyzkoušet připojením k internetu.</dd>";
 
@@ -1321,6 +1337,7 @@ management.ipv6_radconf="Konfigurace Radvd";
 management.ipv6_dns="Statická DNS";
 management.ipv6_prefix="Přiřazený / Směrovaný prefix";
 management.ipv6_addr="Adresa Routeru IPv6";
+management.ipv6_dhcp6c_norelease="Vyhnout se klientovi DHCP6 při opětovném připojení";
 management.ipv6_dhcp6c_cust="Vlastní Dhcp6c";
 management.ipv6_dhcp6c_conf="Konfigurace Dhcp6c";
 management.ipv6_dhcp6s="Dhcp6s";
@@ -1390,6 +1407,24 @@ management.strong="Silné";
 management.very_strong="Velmi odolné";
 management.score="Score:";
 management.complexity="Složitost:";
+management.bootconfig="Boot Konfigurace (Grub)";
+management.disable_msi="Zakázat MSI Interrupt handling.";
+management.pci_tuning="PCI/PCI-E ladění sběrnice";
+management.pcie_aer="PCI-E Rozšířený report chyb";
+management.pcie_ari="PCI-E Alternativní interpretace routování";
+management.pci_noacpi="Zakázat routování ACPI Irq";
+management.bus_tune_off="Zakázat ladění sběrnice";
+management.bus_safe="Bezpečné ladění sběrnice";
+management.bus_perf="Výkoné ladění sběrnice";
+management.bus_peer2peer="Ladění sběrnice Peer2Peer";
+management.nospectre_v1="Zmírnění spektra V1";
+management.nospectre_v2="Zmírnění spektra V2";
+management.mds="MDS Zmírnění";
+management.srbds="SRBDS Zmírnění";
+management.l1tf="L1TF Zmírnění";
+management.nospec_store_bypass_disable="Spekulativní zmírnění Store Bypass";
+management.tsx_async_abort="TSX Zmírnění asynchronního přerušení";
+management.nopti="Izolace tobulky stránek";
 
 //help container
 //
@@ -1408,7 +1443,7 @@ hmanagement.page8="<dd>Povolit / zakázat rozhraní loopback. Rozhraní zpětné
 hmanagement.page9="<dd>Omezený server 802.1x potřebný ke splnění požadavků handshake WPA, aby klienti Windows XP mohli pracovat s WPA.</dd>";
 hmanagement.page10="<dd>Tato funkce řídí proces resetbuttond. Tlačítko reset inicializuje akce v závislosti na tom, jak dlouho je stisknete. <ul><li>Krátké stisknutí &ndash; Reset Routeru (restartování)</li><li>Dlouhé stisknutí (*gt; 5s) &ndash; Restart a obnovení výchozí tovární konfigurace.</li></ul></dd>";
 hmanagement.page11="<dd>Routing umožňuje routování démonů OSPF a RIP, pokud jste nastavili routování OSPF, nebo RIP na stránce Pokorčilé Routování.</dd>";
-hmanagement.page12="<dd>Pokud máte ve vaší síti spuštěny nějaké aplikace typu peer-to-peer (P2P), zvyšte prosím maximální počet portů a zkraťte časové limity TCP/UDP. To je nutné k udržení stability routeru, protože peerové aplikace otevírají mnoho připojení a nezavírají je správně. Zvažte jejich použití ve starších Routerech nižší řady: <ul><li>Maximum portů: 4096</li><li>Časový limit TCP: 300 vteřin</li><li > UDP Časový limit: 60 vteřin</li></ul></dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <em>Uložit nastavení</em>. Klikněte na <em>Zrušit změny</em> a zrušíte neuložené změny. Kliknutím na <em>Restartovat Router</em> okamžitě restartujete Router.</dd>";
+hmanagement.page12="<dd>Pokud máte ve vaší síti spuštěny nějaké aplikace typu peer-to-peer (P2P), zvyšte prosím maximální počet portů a zkraťte časové limity TCP/UDP. To je nutné k udržení stability routeru, protože peerové aplikace otevírají mnoho připojení a nezavírají je správně. Zvažte jejich použití ve starších Routerech nižší řady: <ul><li>Maximum portů: 4096</li><li>Časový limit TCP: 300&nbsp;s</li><li > UDP Časový limit: 60&nbsp;s</li></ul></dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <em>Uložit nastavení</em>. Klikněte na <em>Zrušit změny</em> a zrušíte neuložené změny. Kliknutím na <em>Restartovat Router</em> okamžitě restartujete Router.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 //
@@ -1498,8 +1533,8 @@ qos.aqd_fqcodel="FQ_CODEL";
 qos.aqd_fqcodel_fast="FQ_CODEL_FAST";
 qos.aqd_cake="CAKE";
 qos.aqd_pie="PIE";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
+qos.uplink="Uplink (kbit/s)";
+qos.dnlink="Downlink (kbit/s)";
 qos.legend2="Priorita služeb";
 qos.prio_m="Ručně";
 qos.prio_exempt="Exempt";
@@ -1509,7 +1544,7 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Priorita síťové masky";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="Max kbits";
+qos.maxrate_b="Max kbit/s";
 qos.maxuprate_b="WAN Max nahoru";
 qos.maxdownrate_b="WAN Max dolů";
 qos.maxlanrate_b="LAN Max";
@@ -1526,7 +1561,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.pkticmp="ICMP";
 qos.enabledefaultlvls="Povolit výchozí limity na uživatele";
-qos.bandwidth="Šířka pásma kBity";
+qos.bandwidth="Šířka pásma v kbit/s";
 qos.up="Nahoru";
 qos.down="Dolů";
 qos.service="Služba";
@@ -1552,12 +1587,44 @@ hqos.page5="<dd>Klasifikace šířky pásma založená na čtyřech kategoriích
 //
 routetbl.titl="Routovací tabulka";
 routetbl.h2="Vstupní seznam routovací tabulky";
+routetbl.h3="Seznam pravidel pro pravidla";
 routetbl.th1="Cílová síť LAN";
-routetbl.nat="Maškaráda Routování  (NAT)";
+routetbl.masquerade="Maškaráda Routování  (NAT)";
+routetbl.scope="Rozsah";
+routetbl.advmss="Inzerční MSS";
+routetbl.table="Tabulka";
+routetbl.src="Zdroj";
+routetbl.not="Ne";
+routetbl.from="Od";
+routetbl.to="k";
+routetbl.priority="Priorita";
+routetbl.tos="Tos/Dsfield";
+routetbl.fwmark="Fwmark";
+routetbl.realms="Realms";
+routetbl.table="Tabulka";
+routetbl.suppress_prefixlength="Potlačit délku předpony";
+routetbl.iif="Příchozí If";
+routetbl.oif="Odchozí If";
+routetbl.nat="Nat Adresa";
+routetbl.type="Typ";
+routetbl.sport="Rozsah zdrojového portu";
+routetbl.dport="Rozsah cílového portu";
+routetbl.ipproto="IP Protokol";
 
 
 // ** Routing.asp **//
 //
+route.rule_name="Pravidlo jméno";
+route.global="Globální";
+route.nowhere="Nikde";
+route.host="Host";
+route.link="Odkaz";
+route.site="Stránka";
+route.unicast="Unicast";
+route.blackhole="Černá díra";
+route.unreachable="Nedostupný";
+route.prohibit="Zakázat";
+route.nat="Nat";
 route.titl="Routování";
 route.h2="Pokročilé  Routování";
 route.metric="Metrika";
@@ -1602,10 +1669,14 @@ route.rip2_conf="RIP2 Konfigurace";
 route.rip2_copt="Druh RIP2 Konfigurace";
 
 route.gateway_legend="Dynamické Routování";
-route.static_legend="Statické Routování";
-route.static_setno="Výběr nastaveného čísla";
+route.static_legend="Routovací Tabulky";
+route.static_setno="Výběr Trasy";
+route.policy_setno="Výběr Pravidla";
 route.static_name="Název Routeru";
 route.static_ip="Cílová síť LAN";
+route.rules="Pravidla Routování";
+route.static_name="Trasa Jméno";
+
 
 //help container
 //
@@ -1650,7 +1721,7 @@ service.kaid_orbdeepport="ORB Hluboký port";
 //DHCPd
 service.dhcp_legend="DHCP Klient";
 service.dhcp_vendor="DHCP Vendorclass";
-service.dhcp6c_vendor="DHCP IPv6 Vendorclass";
+service.dhcp6c_vendor="DHCP IPV6 Vendorclass";
 service.dhcp_reqip="Požadavek IP";
 service.dhcp_legend2="DHCP Server";
 service.dhcp_srv="DHCP Démon";
@@ -1742,10 +1813,10 @@ service.pppoesrv_lcpef="LCP Selhání echa";
 service.pppoesrv_limit="Limit sezení dle MAC";
 service.pppoesrv_idlet="Doba nečinosti klienta";
 service.pppoesrv_auth="Autentifikace";
-service.pppoesrv_radip="RADIUS server IP";
-service.pppoesrv_radauthport="RADIUS port autentifikace";
-service.pppoesrv_radaccport="RADIUS port účtů";
-service.pppoesrv_radkey="RADIUS sdílený klíč";
+service.pppoesrv_radip="Radius server IP";
+service.pppoesrv_radauthport="Radius port autentifikace";
+service.pppoesrv_radaccport="Radius port účtů";
+service.pppoesrv_radkey="Radius sdílený klíč";
 service.pppoesrv_chaps="Správa lokálních uživatelů (CHAP Secrets)";
 
 //help container
@@ -1772,6 +1843,8 @@ service.vpnd_srv="OpenVPN";
 service.vpnd_starttype="Typ zahájení";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="Systém";
+service.vpnd_gui="GUI(server)";
+service.vpnd_text="Text";
 service.vpnd_crl="Seznam zrušených certifikátů";
 service.vpnd_config="Přídavná konfigurace";
 service.vpnd_dhpem="DH PEM";
@@ -1786,12 +1859,13 @@ service.vpnd_startip="Začátek rozsahu IP";
 service.vpnd_endip="Konec rozsahu IP";
 service.vpnd_cl2cl="Povolit spojení klient na klienta";
 service.vpnd_switch="Konfigurace jako";
-service.vpnd_dupcn="Povolit duplikování cn";
+service.vpnd_dupcn="Povolit duplikování klientů";
 service.vpnd_proxy="Režim DHCP-Proxy";
 service.vpnd_clcon="Skript připojení klienta";
 service.vpnd_cldiscon="Skript odpojení klienta";
 service.vpnd_ccddef="CCD-Dir Výchozí soubor";
 service.vpnd_dhcpbl="Blokovat DHCP při průchodu tunelem";
+service.vpnd_dh="Místo DH.PEM použije ECDH";
 service.vpnd_static="Statický klíč";
 service.vpn_redirgate="Přesměrovat výchozí bránu";
 service.vpn_legend="OpenVPN Klient";
@@ -1827,6 +1901,10 @@ service.vpnd_lzoadaptive="Adaptivní";
 service.vpn_tls_btn="TLS Výběr klíče";
 service.vpn_tls_crypt="TLS Crypt";
 service.vpn_tls_auth="TLS Auth";
+service.vpn_dc1="První datová šifra";
+service.vpn_dc2="Druhá datová šifra";
+service.vpn_dc3="Třetí datová šifra";
+
 
 //help page
 //
@@ -1979,6 +2057,7 @@ service.samba3_srvstr="Řětězec serveru";
 service.samba3_pub="Veřejné sdílení";
 service.samba3_config="Vlastní konfigurace";
 service.samba3_workgrp="Pracovní skupina";
+service.samba3_interfaces="Zařízení";
 service.samba3_dirpath="Cesta k souborům";
 service.samba3_usr1="Uživatel1";
 service.samba3_pass1=" Heslo1";
@@ -2041,7 +2120,13 @@ eoip.proto="Typ protokolu";
 eoip.mtik="Mikrotik";
 eoip.genkey="Generování klíče";
 eoip.wireguard="WireGuard";
+eoip.wireguard_oet_pbr="Směrování na základě zásad";
+eoip.wireguard_oet_dns="DNS servers via tunnel";
 eoip.wireguard_oet_natout ="NAT přes tunel";
+eoip.wireguard_showadvanced="Pokročilé nastavení";
+eoip.wireguard_rtupscript="Route up skript";
+eoip.wireguard_rtdownscript="Route down skript";
+eoip.wireguard_fwmark="Firewall Mark";
 eoip.wireguard_route_allowedip="Routovat povolené IP Tunelem";
 eoip.wireguard_localport="Lokální port";
 eoip.wireguard_ka="Trvalé udržení na živu";
@@ -2052,8 +2137,11 @@ eoip.wireguard_peerip="IP Tunelu druha";
 eoip.wireguard_peerdns="DNS Tunelu druha";
 eoip.wireguard_localkey="Lokální veřejný klíč";
 eoip.wireguard_localprivatekey="Lokální privátní klíč";
+eoip.wireguard_killswitch="Zabít přepínač";
+eoip.wireguard_firewallin="Příchozí firewall";
 eoip.wireguard_usepsk="Použít před-sdílený klíč";
 eoip.wireguard_genpsk="Generovat před-sdílený klíč";
+eoip.wireguard_oet_status="WireGuard Stav (F5 pro obnovení)";
 eoip.wireguard_psk="Před-sdílený klíč";
 eoip.wireguard_addpeer="Přídat druha";
 eoip.wireguard_delpeer="Odebrat druha";
@@ -2126,7 +2214,7 @@ status_band.up="nahoru";
 //help container
 //
 hstatus_band.svg="Pro zobrazení grafů šířky pásma je vyžadován prohlížeč, který podporuje formát SVG.";
-hstatus_band.right1="Klepnutím na štítek přepínáte mezi (bajty/s, bity/s).";
+hstatus_band.right1="Klepnutím na štítek přepínáte mezi (B/s nebo bity/s).";
 hstatus_band.right2="Klepnutím na štítek zvolte typ měřítka grafu.";
 
 // ** Status_Router.asp **//
@@ -2434,7 +2522,8 @@ wpa.secmode="Režim zabezpečení";
 wpa.legend="Bezdrátové šifrování";
 wpa.auth_mode="Síťová autentifikace";
 wpa.mfp="802.11w Správa ochrany rámce";
-wpa.radius="RADIUS";
+wpa.radius="Radius";
+wpa.wpa_strict_rekey="WPA Přísné Překlíčování";
 wpa.gtk_rekey="WPA Interval skupinového klíče";
 wpa.rekey="Interval obnovení klíče (ve vteřinách)";
 wpa.radius_ipaddr="RADIUS Adresa serveru";
@@ -2577,37 +2666,37 @@ hwds.page1="<dd>WDS (Wireless Distribution System) je bezdrátový přístupový
 
 // ** Wireless_radauth.asp **//
 //
-radius.titl="RADIUS";
+radius.titl="Radius";
 radius.h2="Uivatelská služba vzdáleného ověřování Dial-In";
-radius.legend="RADIUS";
+radius.legend="Radius";
 radius.retry="Limit opakování primárního serveru";
-radius.label="MAC Klienta RADIUS";
+radius.label="MAC Klienta Radius";
 radius.label2="MAC Formát";
-radius.label3="RADIUS Autent. server adresa";
-radius.label4="RADIUS Autent. server port";
-radius.label7="RADIUS Autent. sdílené tajemství";
+radius.label3="Radius Autent. server adresa";
+radius.label4="Radius Autent. server port";
+radius.label7="Radius Autent. sdílené tajemství";
 
-radius.label23="RADIUS Autent. záložní server adresa";
-radius.label24="RADIUS Autent. záložní server port";
-radius.label27="RADIUS Autent. záložní sdílené tajemství";
+radius.label23="Radius Autent. záložní server adresa";
+radius.label24="Radius Autent. záložní server port";
+radius.label27="Radius Autent. záložní sdílené tajemství";
 
 radius.label5="Maximum neověřených uživatelů";
 radius.label6="Formát hesla";
-radius.label8="Pokud je server nedostupný, přepsat RADIUS";
-radius.label13="RADIUS Acct server addresa";
-radius.label14="RADIUS Acct server port";
-radius.label17="RADIUS Acct sdílené tajemství";
-radius.label18="RADIUS účty";
+radius.label8="Pokud je server nedostupný, přepsat Radius";
+radius.label13="Radius Acct server addresa";
+radius.label14="Radius Acct server port";
+radius.label17="Radius Acct sdílené tajemství";
+radius.label18="Radius účty";
 radius.local_ip="Vynutit IP Klienta";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) je bezpečnostní služba pro ověřování a autorizaci dial-up uživatelů. Typická podniková síť může mít přístupový server připojený k fondu modemů spolu s RADIUS server pro poskytování ověřovacích služeb. Vzdálení uživatelé vytáčejí přístupový server a přístupový server odešle požadavky na ověřování serveru RADIUS. Server RADIUS ověřuje uživatele a autorizuje přístup k interním síťovým prostředkům. Vzdálení uživatelé jsou klienti přístupového serveru a přístupu server je klientem serveru RADIUS.<br /><br /><div class =\"note\"><h4>Poznámka</h4><div>RADIUS je k dispozici pouze v <em>AP</ em > režimu. </div></div></dd>";
 hradauth.page2="<dd>Při odesílání požadavku na ověření na server RADIUS použije bezdrátový klient jako uživatelské jméno MAC Adresu. Tu server RADIUS obdrží v následujícím formátu: <ulclass=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></ul></d>> ";
-hradauth.page3="<dd>IP Adresa serveru RADIUS a TCP port.</dd>";
-hradauth.page4="<dd>Nastavuje množství uživatelů, kteří spustili přístup bez platného ověřování RADIUS</dd>";
+hradauth.page3="<dd>IP Adresa serveru Radius a TCP port.</dd>";
+hradauth.page4="<dd>Nastavuje množství uživatelů, kteří spustili přístup bez platného ověřování Radius</dd>";
 hradauth.page5="<dd>Nastavuje vlastností, které by se měly použít pro heslo RADIUS, sdílený klíč nebo samotná adresa MAC</dd>";
 hradauth.page6="<dd>Transakce mezi klientem a účtu serveru RADIUS jsou ověřovány pomocí sdíleného klíče, které se nikdy neposílají přes síť.</dd>";
-hradauth.page7="<dd>Pokud bude server RADIUS nedostupný, bude ověřování deaktivováno, dokud nebude znovu dosažitelný. To umožňuje bezdrátovou vzdálenou správu přístupového bodu ve scénářích selhání.</dd>";
+hradauth.page7="<dd>Pokud bude server Radius nedostupný, bude ověřování deaktivováno, dokud nebude znovu dosažitelný. To umožňuje bezdrátovou vzdálenou správu přístupového bodu ve scénářích selhání.</dd>";
 
 // ** Wireless_MAC.asp **//
 //
@@ -2643,8 +2732,8 @@ gpio.iplegend="GPIO Vstupy";
 
 // ** FreeRadius.asp **//
 //
-freeradius.titl="FreeRADIUS";
-freeradius.h2="FreeRADIUS";
+freeradius.titl="FreeRadius";
+freeradius.h2="FreeRadius";
 freeradius.certificate="Certifikát serveru";
 freeradius.cert="Gen cert";
 freeradius.clientcert="Klient certifikát";
@@ -2668,11 +2757,11 @@ freeradius.expiration="Vyprší (Dny)";
 freeradius.passphrase="Fráze hesla";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Status certifikátu";
-freeradius.port="RADIUS port";
+freeradius.port="Radius port";
 
 //help container
 //
-hfreeradius.right2="Musíte povolit JFFS před startem FreeRADIUS.";
+hfreeradius.right2="Musíte povolit JFFS před startem FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 //
@@ -2743,7 +2832,7 @@ wl_adv.row4="Hlas";
 wl_adv.table2="EDCA STA parametry (Klient na AP)";
 wl_adv.lng="Dlouhý"; 					//************* don't use .long! *************
 wl_adv.shrt="Krátký"; 				//************* don't use .short! **************
-wl_adv.mpbs="Mbps";
+wl_adv.mpbs="Mbit/s";
 
 //help container
 //
@@ -2752,8 +2841,8 @@ hwl_adv.right2="Můžete si vybrat z automatického nebo sdíleného klíče. Ov
 //help page
 hwl_adv.page1="<dd>Obrazovka Pokročilá nastavení bezdrátového připojení umožňuje přizpůsobit nastavení přenosu dat. Ve většině případů by pokročilá nastavení na této obrazovce měla zůstat na svých výchozích hodnotách.</dd>";
 hwl_adv.page2="<dd>Výchozí nastavení je <i>Auto</i>, které umožňuje použití autentizace Otevřený Systém nebo Sdílený klíč. Pro autentizaci Otevřený Systém odesílatel a příjemce NEPOUŽÍVÁ WEP klíč pro ověřování. Pro ověřování pomocí sdíleného klíče odesílatel a příjemce používají pro ověřování klíč WEP. Pokud chcete použít pouze ověřování pomocí sdíleného klíče, vyberte <i>sdílený klíč</i>.</dd>";
-hwl_adv.page3="<dd>Výchozí hodnota je nastavena na <i>Výchozí</i>. V závislosti na zvoleném bezdrátovém režimu bude vybrána výchozí sada podporovaných datových rychlostí. Výchozí nastavení zajistí maximální kompatibilitu se všemi zařízeními. Můžete také zvolit povolení všech přenosových rychlostí výběrem <i>Všechny</i>. Pro kompatibilitu se staršími zařízeními Wireless-B vyberte <i>1-2Mbps</i>.</dd>";
-hwl_adv.page4="<dd>Výchozí nastavení je <i>Auto</i>. Rozsah je od 1 do 54 Mb/s. Rychlost přenosu dat by měla být nastavena v závislosti na rychlosti vaší bezdrátové sítě. Můžete si vybrat z rozsah přenosových rychlostí, nebo zachovat výchozí nastavení <i>Auto</i>, aby Router automaticky používal nejrychlejší možnou rychlost přenosu dat a aktivoval funkci automatického zpětného volání. Funkce automatického výpadku vyjednává nejlepší možnou rychlost připojení mezi Routerem a bezdrátovým klientem.</dd>";
+hwl_adv.page3="<dd>Výchozí hodnota je nastavena na <i>Výchozí</i>. V závislosti na zvoleném bezdrátovém režimu bude vybrána výchozí sada podporovaných datových rychlostí. Výchozí nastavení zajistí maximální kompatibilitu se všemi zařízeními. Můžete také zvolit povolení všech přenosových rychlostí výběrem <i>Všechny</i>. Pro kompatibilitu se staršími zařízeními Wireless-B vyberte <i>1-2&nbsp;Mbit/s</i>.</dd>";
+hwl_adv.page4="<dd>Výchozí nastavení je <i>Auto</i>. Rozsah je od 1 do 54&nbsp;Mbit/s. Rychlost přenosu dat by měla být nastavena v závislosti na rychlosti vaší bezdrátové sítě. Můžete si vybrat z rozsah přenosových rychlostí, nebo zachovat výchozí nastavení <i>Auto</i>, aby Router automaticky používal nejrychlejší možnou rychlost přenosu dat a aktivoval funkci automatického zpětného volání. Funkce automatického výpadku vyjednává nejlepší možnou rychlost připojení mezi Routerem a bezdrátovým klientem.</dd>";
 hwl_adv.page5="<dd>Výchozí hodnota je <i>Zakázáno</i>. Pokud je nastavena na <i>Auto</i>, mechanismus ochrany zajistí, že se vaše zařízení Wireless-B připojí k bezdrátové síti- G router, pokud je k dispozici mnoho zařízení Wireless-G. Výkon vašich zařízení Wireless-G však může být snížen.</dd>";
 hwl_adv.page6="<dd>Výchozí hodnota je <i>Zakázáno</i>. Sériové snímání umožňuje praskání paketů, které zvýší celkovou rychlost sítě, i když je to doporučeno pouze pro přibližně 1-3 bezdrátové klienty, někteří klienti mohou mít negativní výsledek a propustnost bude ovlivněna.</dd>";
 hwl_adv.page7="<dd>Výchozí hodnota je 100. Zadejte hodnotu mezi 1 a 65 535 milisekundami. Hodnota Intervalu Majáku udává frekvenční interval majáku. Maják je paket vysílaný Routerem pro synchronizaci bezdrátové sítě. 50 je doporučeno při špatném příjmu.</dd>";
@@ -2763,7 +2852,7 @@ hwl_adv.page10="<dd>Tato hodnota by měla zůstat ve výchozím nastavení 2347.
 hwl_adv.page11="<dd>Výchozí hodnota je <i>Vypnuto</i>. Toto nastavení izoluje bezdrátové klienty, takže přístup k jiným bezdrátovým klientům a od nich je zastaven.</dd>";
 hwl_adv.page12="<dd>Hodnoty jsou <i>Auto</i>, <i>Vlevo</i>, <i>Vpravo</i>, výchozí hodnota je <i>Auto</i>. Používá se ve spojení s externími anténami, aby jim poskytoval optimální výkon. U některých modelů Routerů mohou být levá a pravá anténa obráceny v závislosti na vašem úhlu pohledu.</dd>";
 hwl_adv.page13="<dd>Hodnoty jsou <i>Dlouhé</i> a <i>Krátké</i>, výchozí hodnota je <i>Dlouhá</i>. Pokud vaše bezdrátové zařízení podporuje krátkou preambuli a vy máte potíže s komunikací s dalšími zařízeními 802.11b, ujistěte se, že je nastavena na použití dlouhé preambule.</dd>";
-hwl_adv.page14="<dd>Tato hodnota se pohybuje v rozmezí 1 - 1000 mw. Výchozí nastavení TXPWR je zvoleno za účelem dosažení souladu s regulačními zásadami a stabilitou bezdrátové sítě. Vyšší nastavení výkonu se uživatelům nedoporučuje z důvodu nadměrného tepla generovaného vysílačem. Chipset, což může ovlivnit život Routeru.</dd>";
+hwl_adv.page14="<dd>Tato hodnota se pohybuje v rozmezí 1 - 1000 mW. Výchozí nastavení TXPWR je zvoleno za účelem dosažení souladu s regulačními zásadami a stabilitou bezdrátové sítě. Vyšší nastavení výkonu se uživatelům nedoporučuje z důvodu nadměrného tepla generovaného vysílačem. Chipset, což může ovlivnit život Routeru.</dd>";
 hwl_adv.page15="<dd>Výchozí hodnota je <i>Vypnuto</i>. Tuto hodnotu byste měli použít pouze u modelů WRT54GS a pouze ve spojení s dalšími bezdrátovými klienty Linksys \"GS\", kteří také podporují Linksys \"Speedbooster\" technologie.</dd>";
 hwl_adv.page16="<dd>Výchozí hodnota je <i> Povoleno </i>. Toto nastavení umožňuje přístup k nastavení routerů (GUI) z bezdrátových klientů. Zakažte toto, pokud chcete zablokovat přístup všem klientům bezdrátové sítě k nastavení stránky.</dd> ";
 hwl_adv.page17="<dd>Zařízení <em>Radio Times Restriction</em> představuje časový spínač pro vysílač. Ve výchozím nastavení není časový spínač aktivní a WLAN je trvale zapnutá. Povolte časový spínač, pokud chcete vypnout WLAN během několika hodin dne. Hodiny, během kterých je WLAN zapnutá, jsou označeny zeleně, zatímco červená znamená, že je vysílač vypnut. Kliknutím na příslušnou hodinu přepínáte mezi zapnutím a vypnutím.</dd>";
@@ -2813,6 +2902,7 @@ wl_basic.wdssta="WDS Stanice";
 wl_basic.wdssta_mtik="WDS Stanice (Mikrotik)";
 wl_basic.wdsap="WDS AP";
 wl_basic.mesh="Mesh / 802.11s";
+wl_basic.fw_type="Typ Firmwaru";
 wl_basic.tdma="TDMA";
 wl_basic.mixed="Smíšené";
 wl_basic.bft="Explicitní Beamforming";
@@ -2919,15 +3009,53 @@ wl_basic.mhz="MHz";
 wl_basic.tbqam="TurboQAM";
 wl_basic.upper="vyšší";
 wl_basic.lower="nižší";
+wl_basic.ldpc="LDPC (Vypnout pro ESP8266)";
 wl_basic.uapsd="U-APSD (Automatická úspora energie)";
+wl_basic.disassoc_low_ack="Disassoc nízké Ack";
 wl_basic.smps="Úsporná multiplexní úspora energie";
 wl_basic.add="Přidat virtuální AP";
 wl_basic.airtime_policy="Zásady vysílacího času";
 wl_basic.airtime_dynamic="Dynamický režim";
 wl_basic.airtime_limit="Limitní režim";
-wl_basic.airtime_weight="Airtime Weight";
+wl_basic.airtime_weight="Airtime Hmotnost";
 wl_basic.airtime_dolimit="Airtime Limit";
-
+wl_basic.mesh_settings="Nastavení 802.11s Mesh";
+wl_basic.mesh_fwding="Forwarding Vrstva 2";
+wl_basic.mesh_retry_timeout="Časový limit Opakování";
+wl_basic.mesh_confirm_timeout="Časový limit Potvrzení";
+wl_basic.mesh_holding_timeout="Časový limit Vypršení";
+wl_basic.mesh_max_peer_links="Maximum vzájemných odkazů";
+wl_basic.mesh_max_retries="Maximum Pokusů";
+wl_basic.mesh_ttl="TTL";
+wl_basic.mesh_element_ttl="Element TTL";
+wl_basic.mesh_auto_open_plinks="Auto Otevření Plinks";
+wl_basic.mesh_hwmp_max_preq_retries="HWMP Maximum Pokusů Preq";
+wl_basic.mesh_path_refresh_time="Čas obnovy cesty";
+wl_basic.mesh_min_discovery_timeout="Minimální Časový Limit pro Discovery";
+wl_basic.mesh_hwmp_active_path_timeout="HWMP Časový limit aktivní cesty";
+wl_basic.mesh_hwmp_preq_min_interval="HWMP Preq Minimum Interval";
+wl_basic.mesh_hwmp_net_diameter_traversal_time="HWMP Doba průchodu čistého průměru";
+wl_basic.mesh_hwmp_rootmode="HWMP Rootmode";
+wl_basic.mesh_hwmp_rann_interval="HWMP Rann Interval";
+wl_basic.mesh_gate_announcements="Oznámení o bráně";
+wl_basic.mesh_sync_offset_max_neighor="Sync Offset Max Soused";
+wl_basic.mesh_rssi_threshold="Práh Rssi";
+wl_basic.mesh_hwmp_active_path_to_root_timeout="HWMP Časový Limit Aktivní Cesta k Root";
+wl_basic.mesh_hwmp_root_interval="HWMP Root Interval";
+wl_basic.mesh_hwmp_confirmation_interval="HWMP Konfirmační Interval";
+wl_basic.mesh_power_mode="Power Mód";
+wl_basic.mesh_awake_window="Okno Probuzení";
+wl_basic.mesh_plink_timeout="Časový limit Plink";
+wl_basic.mesh_no_root="Žádný Root";
+wl_basic.mesh_preq_no_prep="Preq Žádný Prep";
+wl_basic.mesh_preq_with_prep="Preq s Prep";
+wl_basic.mesh_rann="Běh";
+wl_basic.mesh_active="Aktivní";
+wl_basic.mesh_deep="Hluboký spánek";
+wl_basic.mesh_light="Lehká spínek";
+wl_basic.mesh_nolearn="Vyhnout se Multi-Hop Path Discovery";
+wl_basic.mesh_connected_to_gate="Oznámení o připojení k bráně";
+wl_basic.mesh_connected_to_as="Oznámení o připojení k Auth-Server";
 //help container
 //
 hwl_basic.right2="Pozor: Doporučujeme, abyste po změně hodnoty stiskli <em>Použít nastavení</em>, abyste aktualizovali pole s odpovídajícími parametry.";
