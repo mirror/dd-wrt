@@ -431,8 +431,8 @@ mt76_phy_init(struct mt76_phy *phy, struct ieee80211_hw *hw)
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_AIRTIME_FAIRNESS);
 //	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_AQL);
 
-	wiphy->available_antennas_tx = dev->phy.antenna_mask;
-	wiphy->available_antennas_rx = dev->phy.antenna_mask;
+	wiphy->available_antennas_tx = phy->antenna_mask;
+	wiphy->available_antennas_rx = phy->antenna_mask;
 
 	hw->txq_data_size = sizeof(struct mt76_txq);
 	hw->uapsd_max_sp_len = IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL;
@@ -1223,10 +1223,12 @@ mt76_check_sta(struct mt76_dev *dev, struct sk_buff *skb)
 
 	if (ps)
 		set_bit(MT_WCID_FLAG_PS, &wcid->flags);
-	else
-		clear_bit(MT_WCID_FLAG_PS, &wcid->flags);
 
 	dev->drv->sta_ps(dev, sta, ps);
+
+	if (!ps)
+		clear_bit(MT_WCID_FLAG_PS, &wcid->flags);
+
 	ieee80211_sta_ps_transition(sta, ps);
 }
 
@@ -1566,7 +1568,6 @@ EXPORT_SYMBOL_GPL(mt76_init_queue);
 u16 mt76_calculate_default_rate(struct mt76_phy *phy, int rateidx)
 {
 	int offset = 0;
-	struct ieee80211_rate *rate;
 
 	if (phy->chandef.chan->band != NL80211_BAND_2GHZ)
 		offset = 4;
@@ -1575,8 +1576,38 @@ u16 mt76_calculate_default_rate(struct mt76_phy *phy, int rateidx)
 	if (rateidx < 0)
 		rateidx = 0;
 
-	rate = &mt76_rates[offset + rateidx];
+	rateidx += offset;
+	if (rateidx >= ARRAY_SIZE(mt76_rates))
+		rateidx = offset;
 
-	return rate->hw_value;
+	return mt76_rates[rateidx].hw_value;
 }
 EXPORT_SYMBOL_GPL(mt76_calculate_default_rate);
+
+void mt76_ethtool_worker(struct mt76_ethtool_worker_info *wi,
+			 struct mt76_sta_stats *stats)
+{
+	int i, ei = wi->initial_stat_idx;
+	u64 *data = wi->data;
+
+	wi->sta_count++;
+
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_CCK];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_OFDM];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HT];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HT_GF];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_VHT];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HE_SU];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HE_EXT_SU];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HE_TB];
+	data[ei++] += stats->tx_mode[MT_PHY_TYPE_HE_MU];
+
+	for (i = 0; i < ARRAY_SIZE(stats->tx_bw); i++)
+		data[ei++] += stats->tx_bw[i];
+
+	for (i = 0; i < 12; i++)
+		data[ei++] += stats->tx_mcs[i];
+
+	wi->worker_stat_count = ei - wi->initial_stat_idx;
+}
+EXPORT_SYMBOL_GPL(mt76_ethtool_worker);
