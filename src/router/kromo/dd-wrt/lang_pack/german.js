@@ -1661,7 +1661,7 @@ service.vpnd_dhcpbl="Blockiere DHCP &uuml;ber den Tunnel";
 service.vpnd_dh="Benutze ECDH anstelle von DH.PEM";
 service.vpnd_static="Statischer Schl&uuml;ssel";
 service.vpn_redirgate="Push Client route";
-service.vpn_defgateway="Standartgateway";
+service.vpn_defgateway="Standardgateway";
 service.vpn_srvroute="Servers subnet";
 service.vpn_legend="OpenVPN-Client";
 service.vpn_mit="CVE-2019-14899 Entsch&auml;rfung";
@@ -1700,7 +1700,7 @@ service.vpn_multiaddress="Weitere Server";
 service.vpn_randomsrv="W&auml;hle zuf&auml;lligen Server";
 
 //help container
-hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standartgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
+hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standardgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
 hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br />Ordner f&uuml;r Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verf&uuml;gbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
