@@ -259,7 +259,7 @@ void create_openvpnrules(FILE * fp)
 			fprintf(fp, 
 				"if [[ $set -eq 0 ]]; then\n"
 				"logger -p user.info \"OpenVPN split DNS invoked\"\n"
-				"[[ $spbr =  \"2\" ]] && { dns=$(nvram get wan_dns); dns=${dns%%%% *}; }\n"
+				"[[ $spbr =  \"2\" ]] && { dns=$(nvram get wan_dns); [[ -z \"$dns\" ]] && dns=$(nvram get wan_get_dns); dns=${dns%%%% *}; }\n"
 				"sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read pbrip; do\n"
 				"case $pbrip in\n"
 				"[0-9]*)\n"
@@ -487,8 +487,21 @@ void start_openvpnserver(void)
 			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_matchi("openvpn_cl2cl", 1))
 			fprintf(fp, "client-to-client\n");
-		if (nvram_matchi("openvpn_redirgate", 1))
+		if (nvram_matchi("openvpn_redirgate", 1)) {
 			fprintf(fp, "push \"redirect-gateway def1\"\n");
+		} else if (nvram_matchi("openvpn_redirgate", 2)) {
+			char lanaddr[32] = { 0 };
+			char *mypoint;
+			char srvnetwork[32] = { 0 };
+			snprintf(lanaddr, sizeof(lanaddr), "%s", nvram_safe_get("lan_ipaddr"));
+			//truncate and replace with .0
+			mypoint=strrchr(lanaddr, '.');
+			if (mypoint != NULL) {
+				*mypoint='\0';
+				snprintf(srvnetwork, sizeof(srvnetwork), "%s%s", lanaddr, ".0");
+				fprintf(fp, "push \"route %s %s vpn_gateway\"\n", srvnetwork, nvram_safe_get("lan_netmask"));
+			}
+		}
 		if (nvram_invmatchi("openvpn_tlscip", 0))
 			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6"))
@@ -691,7 +704,7 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/ta.key", "openvpncl_tlsauth");
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
-	chmod("/tmp/openvpn/client.key", 0600);
+	chmod("/tmp/openvpncl/client.key", 0600);
 
 	//Start PBR routing and general killswitch if appropriate
 	if (*(nvram_safe_get("openvpncl_route")) && nvram_invmatch("openvpncl_spbr", "0")) {
