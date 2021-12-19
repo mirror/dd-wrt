@@ -30,7 +30,7 @@
  "openvpn_dc2" "Data Cipher 2" "CHOICE" "8" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "" "FALSE" "0"
  "openvpn_dc3" "Data Cipher 3" "CHOICE" "8" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "" "FALSE" "0"
  "openvpn_auth" "Hash Algorithmus" "CHOICE" "7" "sha512" "sha256" "sha1" "md5" "md4" "none" "" "FALSE" "0" 
- "openvpn_redirgate"  "redirect Gateway"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpn_redirgate"  "redirect Gateway"   "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "openvpn_mssfix" "UDP MSS" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_fragment" "UDP Fragment" "NULL" "FALSE" "0"
  "openvpn_mtu" "TUN MTU" "NULL" "FALSE" "0"

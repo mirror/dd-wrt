@@ -197,8 +197,9 @@
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_redirgate"); %></div>
-					<input class="spaceradio" type="radio" name="openvpn_redirgate" value="1" <% nvc("openvpn_redirgate", "1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="openvpn_redirgate" value="0" <% nvc("openvpn_redirgate", "0"); %> /><% tran("share.disable"); %>
+					<input class="spaceradio" type="radio" name="openvpn_redirgate" value="1" <% nvc("openvpn_redirgate", "1"); %> /><% tran("service.vpn_defgateway"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpn_redirgate" value="2" <% nvc("openvpn_redirgate", "2"); %> /><% tran("service.vpn_srvroute"); %>
+					<input class="spaceradio" type="radio" name="openvpn_redirgate" value="0" <% nvc("openvpn_redirgate", "0"); %> /><% tran("share.none"); %>&nbsp;
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_cl2cl"); %></div>
