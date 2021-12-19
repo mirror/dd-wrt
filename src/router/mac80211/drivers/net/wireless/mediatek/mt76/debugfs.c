@@ -56,7 +56,7 @@ static int mt76_rx_queues_read(struct seq_file *s, void *data)
 
 		queued = mt76_is_usb(dev) ? q->ndesc - q->queued : q->queued;
 		seq_printf(s, " %9d | %9d | %9d | %9d |\n",
-			   i, q->queued, q->head, q->tail);
+			   i, queued, q->head, q->tail);
 	}
 
 	return 0;
@@ -92,13 +92,14 @@ static int mt76_read_rate_txpower(struct seq_file *s, void *data)
 }
 
 struct dentry *
-mt76_register_debugfs_fops(struct mt76_dev *dev,
+mt76_register_debugfs_fops(struct mt76_phy *phy,
 			   const struct file_operations *ops)
 {
 	const struct file_operations *fops = ops ? ops : &fops_regval;
+	struct mt76_dev *dev = phy->dev;
 	struct dentry *dir;
 
-	dir = debugfs_create_dir("mt76", dev->hw->wiphy->debugfsdir);
+	dir = debugfs_create_dir("mt76", phy->hw->wiphy->debugfsdir);
 	if (!dir)
 		return NULL;
 

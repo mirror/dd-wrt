@@ -133,13 +133,15 @@ void mt7603_init_edcca(struct mt7603_dev *dev)
 }
 
 static int
-mt7603_set_channel(struct mt7603_dev *dev, struct cfg80211_chan_def *def)
+mt7603_set_channel(struct ieee80211_hw *hw, struct cfg80211_chan_def *def)
 {
+	struct mt7603_dev *dev = hw->priv;
 	u8 *rssi_data = (u8 *)dev->mt76.eeprom.data;
 	int idx, ret;
 	u8 bw = MT_BW_20;
 	bool failed = false;
 
+	ieee80211_stop_queues(hw);
 	cancel_delayed_work_sync(&dev->mphy.mac_work);
 	tasklet_disable(&dev->mt76.pre_tbtt_tasklet);
 
@@ -205,8 +207,11 @@ out:
 	if (failed)
 		mt7603_mac_work(&dev->mphy.mac_work.work);
 
+	ieee80211_wake_queues(hw);
+
 	return ret;
 }
+
 
 static int
 mt7603_config(struct ieee80211_hw *hw, u32 changed)
@@ -215,11 +220,8 @@ mt7603_config(struct ieee80211_hw *hw, u32 changed)
 	int ret = 0;
 
 	if (changed & (IEEE80211_CONF_CHANGE_CHANNEL |
-		       IEEE80211_CONF_CHANGE_POWER)) {
-		ieee80211_stop_queues(hw);
-		ret = mt7603_set_channel(dev, &hw->conf.chandef);
-		ieee80211_wake_queues(hw);
-	}
+		       IEEE80211_CONF_CHANGE_POWER))
+		ret = mt7603_set_channel(hw, &hw->conf.chandef);
 
 	if (changed & IEEE80211_CONF_CHANGE_MONITOR) {
 		mutex_lock(&dev->mt76.mutex);

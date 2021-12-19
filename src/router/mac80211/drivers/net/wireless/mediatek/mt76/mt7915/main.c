@@ -172,6 +172,9 @@ static void mt7915_init_bitrate_mask(struct ieee80211_vif *vif)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(mvif->bitrate_mask.control); i++) {
+		mvif->bitrate_mask.control[i].gi = NL80211_TXRATE_DEFAULT_GI;
+		mvif->bitrate_mask.control[i].he_gi = GENMASK(7, 0);
+		mvif->bitrate_mask.control[i].he_ltf = GENMASK(7, 0);
 		mvif->bitrate_mask.control[i].legacy = GENMASK(31, 0);
 		memset(mvif->bitrate_mask.control[i].ht_mcs, GENMASK(7, 0),
 		       sizeof(mvif->bitrate_mask.control[i].ht_mcs));
@@ -200,8 +203,8 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 	    is_zero_ether_addr(vif->addr))
 		phy->monitor_vif = vif;
 
-	mvif->idx = ffs(~dev->mt76.vif_mask) - 1;
-	if (mvif->idx >= MT7915_MAX_INTERFACES) {
+	mvif->mt76.idx = ffs(~dev->mt76.vif_mask) - 1;
+	if (mvif->mt76.idx >= MT7915_MAX_INTERFACES) {
 		ret = -ENOSPC;
 		goto out;
 	}
@@ -211,29 +214,27 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 		ret = -ENOSPC;
 		goto out;
 	}
-	mvif->omac_idx = idx;
+	mvif->mt76.omac_idx = idx;
 	mvif->phy = phy;
-	mvif->band_idx = ext_phy;
+	mvif->mt76.band_idx = ext_phy;
 
-	if (dev->mt76.phy2)
-		mvif->wmm_idx = ext_phy * (MT7915_MAX_WMM_SETS / 2) +
-				mvif->idx % (MT7915_MAX_WMM_SETS / 2);
-	else
-		mvif->wmm_idx = mvif->idx % MT7915_MAX_WMM_SETS;
+	mvif->mt76.wmm_idx = vif->type != NL80211_IFTYPE_AP;
+	if (ext_phy)
+		mvif->mt76.wmm_idx += 2;
 
 	ret = mt7915_mcu_add_dev_info(phy, vif, true);
 	if (ret)
 		goto out;
 
-	dev->mt76.vif_mask |= BIT(mvif->idx);
-	phy->omac_mask |= BIT_ULL(mvif->omac_idx);
+	dev->mt76.vif_mask |= BIT(mvif->mt76.idx);
+	phy->omac_mask |= BIT_ULL(mvif->mt76.omac_idx);
 
-	idx = MT7915_WTBL_RESERVED - mvif->idx;
+	idx = MT7915_WTBL_RESERVED - mvif->mt76.idx;
 
 	INIT_LIST_HEAD(&mvif->sta.rc_list);
 	INIT_LIST_HEAD(&mvif->sta.poll_list);
 	mvif->sta.wcid.idx = idx;
-	mvif->sta.wcid.ext_phy = mvif->band_idx;
+	mvif->sta.wcid.ext_phy = mvif->mt76.band_idx;
 	mvif->sta.wcid.hw_key_idx = -1;
 	mvif->sta.wcid.tx_info |= MT_WCID_TX_INFO_SET;
 	mt76_packet_id_init(&mvif->sta.wcid);
@@ -248,11 +249,12 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 	}
 
 	if (vif->type != NL80211_IFTYPE_AP &&
-	    (!mvif->omac_idx || mvif->omac_idx > 3))
+	    (!mvif->mt76.omac_idx || mvif->mt76.omac_idx > 3))
 		vif->offload_flags = 0;
 	vif->offload_flags |= IEEE80211_OFFLOAD_ENCAP_4ADDR;
 
 	mt7915_init_bitrate_mask(vif);
+	memset(&mvif->cap, -1, sizeof(mvif->cap));
 
 out:
 	mutex_unlock(&dev->mt76.mutex);
@@ -284,8 +286,8 @@ static void mt7915_remove_interface(struct ieee80211_hw *hw,
 	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
 
 	mutex_lock(&dev->mt76.mutex);
-	dev->mt76.vif_mask &= ~BIT(mvif->idx);
-	phy->omac_mask &= ~BIT_ULL(mvif->omac_idx);
+	dev->mt76.vif_mask &= ~BIT(mvif->mt76.idx);
+	phy->omac_mask &= ~BIT_ULL(mvif->mt76.omac_idx);
 	mutex_unlock(&dev->mt76.mutex);
 
 	spin_lock_bh(&dev->sta_poll_lock);
@@ -552,7 +554,7 @@ mt7915_update_bss_color(struct ieee80211_hw *hw,
 	case NL80211_IFTYPE_AP: {
 		struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
 
-		if (mvif->omac_idx > HW_BSSID_MAX)
+		if (mvif->mt76.omac_idx > HW_BSSID_MAX)
 			return;
 		fallthrough;
 	}
@@ -651,7 +653,7 @@ int mt7915_mac_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	msta->vif = mvif;
 	msta->wcid.sta = 1;
 	msta->wcid.idx = idx;
-	msta->wcid.ext_phy = mvif->band_idx;
+	msta->wcid.ext_phy = mvif->mt76.band_idx;
 	msta->wcid.tx_info |= MT_WCID_TX_INFO_SET;
 	msta->jiffies = jiffies;
 
@@ -662,7 +664,7 @@ int mt7915_mac_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	if (ret)
 		return ret;
 
-	return mt7915_mcu_add_sta_adv(dev, vif, sta, true);
+	return mt7915_mcu_add_rate_ctrl(dev, vif, sta, false);
 }
 
 void mt7915_mac_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
@@ -672,7 +674,6 @@ void mt7915_mac_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
 	int i;
 
-	mt7915_mcu_add_sta_adv(dev, vif, sta, false);
 	mt7915_mcu_add_sta(dev, vif, sta, false);
 
 	mt7915_mac_wtbl_update(dev, msta->wcid.idx,
@@ -811,12 +812,11 @@ mt7915_get_stats(struct ieee80211_hw *hw,
 	struct mib_stats *mib = &phy->mib;
 
 	mutex_lock(&dev->mt76.mutex);
+
 	stats->dot11RTSSuccessCount = mib->rts_cnt;
 	stats->dot11RTSFailureCount = mib->rts_retries_cnt;
 	stats->dot11FCSErrorCount = mib->fcs_err_cnt;
 	stats->dot11ACKFailureCount = mib->ack_fail_cnt;
-
-	memset(mib, 0, sizeof(*mib));
 
 	mutex_unlock(&dev->mt76.mutex);
 
@@ -836,7 +836,8 @@ u64 __mt7915_get_tsf(struct ieee80211_hw *hw, struct mt7915_vif *mvif)
 
 	lockdep_assert_held(&dev->mt76.mutex);
 
-	n = mvif->omac_idx > HW_BSSID_MAX ? HW_BSSID_0 : mvif->omac_idx;
+	n = mvif->mt76.omac_idx > HW_BSSID_MAX ? HW_BSSID_0
+					       : mvif->mt76.omac_idx;
 	/* TSF software read */
 	mt76_rmw(dev, MT_LPON_TCR(band, n), MT_LPON_TCR_SW_MODE,
 		 MT_LPON_TCR_SW_READ);
@@ -876,7 +877,8 @@ mt7915_set_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 
 	mutex_lock(&dev->mt76.mutex);
 
-	n = mvif->omac_idx > HW_BSSID_MAX ? HW_BSSID_0 : mvif->omac_idx;
+	n = mvif->mt76.omac_idx > HW_BSSID_MAX ? HW_BSSID_0
+					       : mvif->mt76.omac_idx;
 	mt76_wr(dev, MT_LPON_UTTR0(band), tsf.t32[0]);
 	mt76_wr(dev, MT_LPON_UTTR1(band), tsf.t32[1]);
 	/* TSF software overwrite */
@@ -902,7 +904,8 @@ mt7915_offset_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 
 	mutex_lock(&dev->mt76.mutex);
 
-	n = mvif->omac_idx > HW_BSSID_MAX ? HW_BSSID_0 : mvif->omac_idx;
+	n = mvif->mt76.omac_idx > HW_BSSID_MAX ? HW_BSSID_0
+					       : mvif->mt76.omac_idx;
 	mt76_wr(dev, MT_LPON_UTTR0(band), tsf.t32[0]);
 	mt76_wr(dev, MT_LPON_UTTR1(band), tsf.t32[1]);
 	/* TSF software adjust*/
@@ -995,7 +998,6 @@ static void mt7915_sta_rc_work(void *data, struct ieee80211_sta *sta)
 {
 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
 	struct mt7915_dev *dev = msta->vif->phy->dev;
-	struct ieee80211_hw *hw = msta->vif->phy->mt76->hw;
 	u32 *changed = data;
 
 	spin_lock_bh(&dev->sta_poll_lock);
@@ -1003,8 +1005,6 @@ static void mt7915_sta_rc_work(void *data, struct ieee80211_sta *sta)
 	if (list_empty(&msta->rc_list))
 		list_add_tail(&msta->rc_list, &dev->sta_rc_list);
 	spin_unlock_bh(&dev->sta_poll_lock);
-
-	ieee80211_queue_work(hw, &dev->rc_work);
 }
 
 static void mt7915_sta_rc_update(struct ieee80211_hw *hw,
@@ -1012,7 +1012,11 @@ static void mt7915_sta_rc_update(struct ieee80211_hw *hw,
 				 struct ieee80211_sta *sta,
 				 u32 changed)
 {
+	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+	struct mt7915_dev *dev = phy->dev;
+
 	mt7915_sta_rc_work(&changed, sta);
+	ieee80211_queue_work(hw, &dev->rc_work);
 }
 
 static int
@@ -1020,22 +1024,22 @@ mt7915_set_bitrate_mask(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			const struct cfg80211_bitrate_mask *mask)
 {
 	struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
-	enum nl80211_band band = mvif->phy->mt76->chandef.chan->band;
-	u32 changed;
+	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+	struct mt7915_dev *dev = phy->dev;
+	u32 changed = IEEE80211_RC_SUPP_RATES_CHANGED;
 
-	if (mask->control[band].gi == NL80211_TXRATE_FORCE_LGI)
-		return -EINVAL;
-
-	changed = IEEE80211_RC_SUPP_RATES_CHANGED;
 	mvif->bitrate_mask = *mask;
 
-	/* Update firmware rate control to add a boundary on top of table
-	 * to limit the rate selection for each peer, so when set bitrates
-	 * vht-mcs-5 1:9, which actually means nss = 1 mcs = 0~9. This only
-	 * applies to data frames as for the other mgmt, mcast, bcast still
-	 * use legacy rates as it is.
+	/* if multiple rates across different preambles are given we can
+	 * reconfigure this info with all peers using sta_rec command with
+	 * the below exception cases.
+	 * - single rate : if a rate is passed along with different preambles,
+	 * we select the highest one as fixed rate. i.e VHT MCS for VHT peers.
+	 * - multiple rates: if it's not in range format i.e 0-{7,8,9} for VHT
+	 * then multiple MCS setting (MCS 4,5,6) is not supported.
 	 */
 	ieee80211_iterate_stations_atomic(hw, mt7915_sta_rc_work, &changed);
+	ieee80211_queue_work(hw, &dev->rc_work);
 
 	return 0;
 }
@@ -1187,45 +1191,15 @@ int mt7915_get_et_sset_count(struct ieee80211_hw *hw,
 	return 0;
 }
 
-struct mt7915_ethtool_worker_info {
-	u64 *data;
-	struct mt7915_vif *mvif;
-	int initial_stat_idx;
-	int worker_stat_count;
-	int sta_count;
-};
-
 static void mt7915_ethtool_worker(void *wi_data, struct ieee80211_sta *sta)
 {
-	struct mt7915_ethtool_worker_info *wi = wi_data;
+	struct mt76_ethtool_worker_info *wi = wi_data;
 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
-	int ei = wi->initial_stat_idx;
-	int q;
-	u64 *data = wi->data;
-	struct mt7915_sta_stats *mstats = &msta->stats;
 
-	if (msta->vif != wi->mvif)
+	if (msta->vif->mt76.idx != wi->idx)
 		return;
 
-	wi->sta_count++;
-
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_CCK];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_OFDM];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HT];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HT_GF];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_VHT];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HE_SU];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HE_EXT_SU];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HE_TB];
-	data[ei++] += mstats->tx_mode[MT_PHY_TYPE_HE_MU];
-
-	for (q = 0; q < ARRAY_SIZE(mstats->tx_bw); q++)
-		data[ei++] += mstats->tx_bw[q];
-
-	for (q = 0; q < 12; q++)
-		data[ei++] += mstats->tx_mcs[q];
-
-	wi->worker_stat_count = ei - wi->initial_stat_idx;
+	mt76_ethtool_worker(wi, &msta->stats);
 }
 
 static
@@ -1236,16 +1210,18 @@ void mt7915_get_et_stats(struct ieee80211_hw *hw,
 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
 	struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
-	struct mt7915_ethtool_worker_info wi;
+	struct mt76_ethtool_worker_info wi = {
+		.data = data,
+		.idx = mvif->mt76.idx,
+	};
 	struct mib_stats *mib = &phy->mib;
-
 	/* See mt7915_ampdu_stat_read_phy, etc */
 	bool ext_phy = phy != &dev->phy;
-	int i, n;
-	int ei = 0;
+	int i, n, ei = 0;
 
-	if (!phy)
-		return;
+	mutex_lock(&dev->mt76.mutex);
+
+	mt7915_mac_update_stats(phy);
 
 	data[ei++] = mib->tx_ampdu_cnt;
 	data[ei++] = mib->tx_stop_q_empty_cnt;
@@ -1288,8 +1264,8 @@ void mt7915_get_et_stats(struct ieee80211_hw *hw,
 	data[ei++] = mib->tx_su_acked_mpdu_cnt;
 
 	/* Tx amsdu info (pack-count histogram) */
-	for (i = 0; i < 8; i++)
-		data[ei++] = mt76_rr(dev,  MT_PLE_AMSDU_PACK_MSDU_CNT(i));
+	for (i = 0; i < ARRAY_SIZE(mib->tx_amsdu); i++)
+		data[ei++] = mib->tx_amsdu[i];
 
 	/* rx counters */
 	data[ei++] = mib->rx_fifo_full_cnt;
@@ -1307,13 +1283,10 @@ void mt7915_get_et_stats(struct ieee80211_hw *hw,
 	data[ei++] = mib->rx_ba_cnt;
 
 	/* Add values for all stations owned by this vif */
-	wi.data = data;
-	wi.mvif = mvif;
 	wi.initial_stat_idx = ei;
-	wi.worker_stat_count = 0;
-	wi.sta_count = 0;
-
 	ieee80211_iterate_stations_atomic(hw, mt7915_ethtool_worker, &wi);
+
+	mutex_unlock(&dev->mt76.mutex);
 
 	if (wi.sta_count == 0)
 		return;

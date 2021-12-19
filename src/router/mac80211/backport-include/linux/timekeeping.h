@@ -6,6 +6,17 @@
 #if LINUX_VERSION_IS_GEQ(3,17,0)
 #include_next <linux/timekeeping.h>
 #endif
+#if LINUX_VERSION_IS_LESS(3,17,0)
+#include_next <linux/hrtimer.h>
+#endif
+#if LINUX_VERSION_IS_GEQ(3,2,0)
+extern ktime_t ktime_get_coarse_boottime(void);
+
+static inline u64 ktime_get_coarse_boottime_ns(void)
+{
+	return ktime_to_ns(ktime_get_coarse_boottime());
+}
+#endif
 
 #if LINUX_VERSION_IS_LESS(3,17,0)
 #define ktime_get_ns LINUX_BACKPORT(ktime_get_ns)
