@@ -4603,13 +4603,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	} else {
-		int maxrx = 7;
-		int maxtx = 7;
-		int prefixcount;
-		sscanf(prefix, "wlan%d", &prefixcount);
-		int phy_idx = get_ath9k_phy_idx(prefixcount);
-		maxrx = mac80211_get_avail_rx_antenna(phy_idx);
-		maxtx = mac80211_get_avail_tx_antenna(phy_idx);
+		int maxrx = mac80211_get_avail_rx_antenna(prefix);
+		int maxtx = mac80211_get_avail_tx_antenna(prefix);
 		if (maxtx > 0) {
 			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n", wl_txantenna);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
