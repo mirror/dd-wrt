@@ -152,7 +152,7 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.passwd"); %></div>
-				<input size="48" maxlength="64" class="text" name="openvpncl_pass" value="<% nvg("openvpncl_pass"); %>" />
+				<input size="48" type="password" maxlength="64" class="text" name="openvpncl_pass" onmouseover="this.type='text'" onmouseout="this.type='password'" value="<% nvg("openvpncl_pass"); %>" />
 			</div>
 		</div>
 		<div class="setting">
