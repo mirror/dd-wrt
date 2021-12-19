@@ -3433,7 +3433,7 @@ IS_DRIVER(ath9k,"pci:ath9k");
 int is_ap8x(char *prefix)
 {
 	INITVALUECACHE();
-	char *dev = getWifiDeviceName("wlan0", NULL);
+	char *dev = getWifiDeviceName(prefix, NULL);
 	if (dev && !strcmp(dev, "AR9100 802.11n")) {
 	    ret = 1;
 	}
