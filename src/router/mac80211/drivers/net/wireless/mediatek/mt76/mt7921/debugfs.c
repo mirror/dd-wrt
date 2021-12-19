@@ -95,29 +95,26 @@ static int
 mt7921_tx_stats_show(struct seq_file *file, void *data)
 {
 	struct mt7921_dev *dev = file->private;
-	int stat[8], i, n;
+	struct mt7921_phy *phy = &dev->phy;
+	struct mib_stats *mib = &phy->mib;
+	int i;
 
 	mt7921_mutex_acquire(dev);
 
-	mt7921_ampdu_stat_read_phy(&dev->phy, file);
+	mt7921_ampdu_stat_read_phy(phy, file);
 
-	/* Tx amsdu info */
 	seq_puts(file, "Tx MSDU stat:\n");
-	for (i = 0, n = 0; i < ARRAY_SIZE(stat); i++) {
-		stat[i] = mt76_rr(dev,  MT_PLE_AMSDU_PACK_MSDU_CNT(i));
-		n += stat[i];
-	}
-
-	mt7921_mutex_release(dev);
-
-	for (i = 0; i < ARRAY_SIZE(stat); i++) {
-		seq_printf(file, "AMSDU pack count of %d MSDU in TXD: 0x%x ",
-			   i + 1, stat[i]);
-		if (n != 0)
-			seq_printf(file, "(%d%%)\n", stat[i] * 100 / n);
+	for (i = 0; i < ARRAY_SIZE(mib->tx_amsdu); i++) {
+		seq_printf(file, "AMSDU pack count of %d MSDU in TXD: %8d ",
+			   i + 1, mib->tx_amsdu[i]);
+		if (mib->tx_amsdu_cnt)
+			seq_printf(file, "(%3d%%)\n",
+				   mib->tx_amsdu[i] * 100 / mib->tx_amsdu_cnt);
 		else
 			seq_puts(file, "\n");
 	}
+
+	mt7921_mutex_release(dev);
 
 	return 0;
 }
@@ -506,11 +503,25 @@ static const struct file_operations fops_turboqam = {
 	.llseek = default_llseek,
 };
 
+static int
+mt7921s_sched_quota_read(struct seq_file *s, void *data)
+{
+	struct mt7921_dev *dev = dev_get_drvdata(s->private);
+	struct mt76_sdio *sdio = &dev->mt76.sdio;
+
+	seq_printf(s, "pse_data_quota\t%d\n", sdio->sched.pse_data_quota);
+	seq_printf(s, "ple_data_quota\t%d\n", sdio->sched.ple_data_quota);
+	seq_printf(s, "pse_mcu_quota\t%d\n", sdio->sched.pse_mcu_quota);
+	seq_printf(s, "sched_deficit\t%d\n", sdio->sched.deficit);
+
+	return 0;
+}
+
 int mt7921_init_debugfs(struct mt7921_dev *dev)
 {
 	struct dentry *dir;
 
-	dir = mt76_register_debugfs_fops(&dev->mt76, &fops_regval);
+	dir = mt76_register_debugfs_fops(&dev->mphy, &fops_regval);
 	if (!dir)
 		return -ENOMEM;
 
@@ -532,6 +543,9 @@ int mt7921_init_debugfs(struct mt7921_dev *dev)
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir, dev, &fops_turboqam);
 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, dir,
 			    dev, &fops_chanbw);
+	if (mt76_is_sdio(&dev->mt76))
+		debugfs_create_devm_seqfile(dev->mt76.dev, "sched-quota", dir,
+					    mt7921s_sched_quota_read);
 
 	return 0;
 }

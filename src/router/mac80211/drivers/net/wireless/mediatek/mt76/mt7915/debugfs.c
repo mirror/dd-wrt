@@ -82,7 +82,226 @@ DEFINE_DEBUGFS_ATTRIBUTE(fops_radar_trigger, NULL,
 			 mt7915_radar_trigger, "%lld\n");
 
 static int
-mt7915_fw_debug_set(void *data, u64 val)
+mt7915_muru_debug_set(void *data, u64 val)
+{
+	struct mt7915_dev *dev = data;
+
+	dev->muru_debug = val;
+	mt7915_mcu_muru_debug_set(dev, data);
+
+	return 0;
+}
+
+static int
+mt7915_muru_debug_get(void *data, u64 *val)
+{
+	struct mt7915_dev *dev = data;
+
+	*val = dev->muru_debug;
+
+	return 0;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(fops_muru_debug, mt7915_muru_debug_get,
+			 mt7915_muru_debug_set, "%lld\n");
+
+static int mt7915_muru_stats_show(struct seq_file *file, void *data)
+{
+	struct mt7915_phy *phy = file->private;
+	struct mt7915_dev *dev = phy->dev;
+	struct mt7915_mcu_muru_stats mu_stats = {};
+	static const char * const dl_non_he_type[] = {
+		"CCK", "OFDM", "HT MIX", "HT GF",
+		"VHT SU", "VHT 2MU", "VHT 3MU", "VHT 4MU"
+	};
+	static const char * const dl_he_type[] = {
+		"HE SU", "HE EXT", "HE 2MU", "HE 3MU", "HE 4MU",
+		"HE 2RU", "HE 3RU", "HE 4RU", "HE 5-8RU", "HE 9-16RU",
+		"HE >16RU"
+	};
+	static const char * const ul_he_type[] = {
+		"HE 2MU", "HE 3MU", "HE 4MU", "HE SU", "HE 2RU",
+		"HE 3RU", "HE 4RU", "HE 5-8RU", "HE 9-16RU", "HE >16RU"
+	};
+	int ret, i;
+	u64 total_ppdu_cnt, sub_total_cnt;
+
+	if (!dev->muru_debug) {
+		seq_puts(file, "Please enable muru_debug first.\n");
+		return 0;
+	}
+
+	mutex_lock(&dev->mt76.mutex);
+
+	ret = mt7915_mcu_muru_debug_get(phy, &mu_stats);
+	if (ret)
+		goto exit;
+
+	/* Non-HE Downlink*/
+	seq_puts(file, "[Non-HE]\nDownlink\nData Type:  ");
+
+	for (i = 0; i < 5; i++)
+		seq_printf(file, "%8s | ", dl_non_he_type[i]);
+
+#define __dl_u32(s)     le32_to_cpu(mu_stats.dl.s)
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | %8u | %8u | ",
+		   __dl_u32(cck_cnt),
+		   __dl_u32(ofdm_cnt),
+		   __dl_u32(htmix_cnt),
+		   __dl_u32(htgf_cnt),
+		   __dl_u32(vht_su_cnt));
+
+	seq_puts(file, "\nDownlink MU-MIMO\nData Type:  ");
+
+	for (i = 5; i < 8; i++)
+		seq_printf(file, "%8s | ", dl_non_he_type[i]);
+
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | ",
+		   __dl_u32(vht_2mu_cnt),
+		   __dl_u32(vht_3mu_cnt),
+		   __dl_u32(vht_4mu_cnt));
+
+	sub_total_cnt = __dl_u32(vht_2mu_cnt) +
+		__dl_u32(vht_3mu_cnt) +
+		__dl_u32(vht_4mu_cnt);
+
+	seq_printf(file, "\nTotal non-HE MU-MIMO DL PPDU count: %lld",
+		   sub_total_cnt);
+
+	total_ppdu_cnt = sub_total_cnt +
+		__dl_u32(cck_cnt) +
+		__dl_u32(ofdm_cnt) +
+		__dl_u32(htmix_cnt) +
+		__dl_u32(htgf_cnt) +
+		__dl_u32(vht_su_cnt);
+
+	seq_printf(file, "\nAll non-HE DL PPDU count: %lld", total_ppdu_cnt);
+
+	/* HE Downlink */
+	seq_puts(file, "\n\n[HE]\nDownlink\nData Type:  ");
+
+	for (i = 0; i < 2; i++)
+		seq_printf(file, "%8s | ", dl_he_type[i]);
+
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | ",
+		   __dl_u32(he_su_cnt),
+		   __dl_u32(he_ext_su_cnt));
+
+	seq_puts(file, "\nDownlink MU-MIMO\nData Type:  ");
+
+	for (i = 2; i < 5; i++)
+		seq_printf(file, "%8s | ", dl_he_type[i]);
+
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | ",
+		   __dl_u32(he_2mu_cnt),
+		   __dl_u32(he_3mu_cnt),
+		   __dl_u32(he_4mu_cnt));
+
+	seq_puts(file, "\nDownlink OFDMA\nData Type:  ");
+
+	for (i = 5; i < 11; i++)
+		seq_printf(file, "%8s | ", dl_he_type[i]);
+
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | %8u | %9u | %8u | ",
+		   __dl_u32(he_2ru_cnt),
+		   __dl_u32(he_3ru_cnt),
+		   __dl_u32(he_4ru_cnt),
+		   __dl_u32(he_5to8ru_cnt),
+		   __dl_u32(he_9to16ru_cnt),
+		   __dl_u32(he_gtr16ru_cnt));
+
+	sub_total_cnt = __dl_u32(he_2mu_cnt) +
+		__dl_u32(he_3mu_cnt) +
+		__dl_u32(he_4mu_cnt);
+	total_ppdu_cnt = sub_total_cnt;
+
+	seq_printf(file, "\nTotal HE MU-MIMO DL PPDU count: %lld",
+		   sub_total_cnt);
+
+	sub_total_cnt = __dl_u32(he_2ru_cnt) +
+		__dl_u32(he_3ru_cnt) +
+		__dl_u32(he_4ru_cnt) +
+		__dl_u32(he_5to8ru_cnt) +
+		__dl_u32(he_9to16ru_cnt) +
+		__dl_u32(he_gtr16ru_cnt);
+	total_ppdu_cnt += sub_total_cnt;
+
+	seq_printf(file, "\nTotal HE OFDMA DL PPDU count: %lld",
+		   sub_total_cnt);
+
+	total_ppdu_cnt += __dl_u32(he_su_cnt) +
+		__dl_u32(he_ext_su_cnt);
+
+	seq_printf(file, "\nAll HE DL PPDU count: %lld", total_ppdu_cnt);
+#undef __dl_u32
+
+	/* HE Uplink */
+	seq_puts(file, "\n\nUplink");
+	seq_puts(file, "\nTrigger-based Uplink MU-MIMO\nData Type:  ");
+
+	for (i = 0; i < 3; i++)
+		seq_printf(file, "%8s | ", ul_he_type[i]);
+
+#define __ul_u32(s)     le32_to_cpu(mu_stats.ul.s)
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | ",
+		   __ul_u32(hetrig_2mu_cnt),
+		   __ul_u32(hetrig_3mu_cnt),
+		   __ul_u32(hetrig_4mu_cnt));
+
+	seq_puts(file, "\nTrigger-based Uplink OFDMA\nData Type:  ");
+
+	for (i = 3; i < 10; i++)
+		seq_printf(file, "%8s | ", ul_he_type[i]);
+
+	seq_puts(file, "\nTotal Count:");
+	seq_printf(file, "%8u | %8u | %8u | %8u | %8u | %9u |  %7u | ",
+		   __ul_u32(hetrig_su_cnt),
+		   __ul_u32(hetrig_2ru_cnt),
+		   __ul_u32(hetrig_3ru_cnt),
+		   __ul_u32(hetrig_4ru_cnt),
+		   __ul_u32(hetrig_5to8ru_cnt),
+		   __ul_u32(hetrig_9to16ru_cnt),
+		   __ul_u32(hetrig_gtr16ru_cnt));
+
+	sub_total_cnt = __ul_u32(hetrig_2mu_cnt) +
+		__ul_u32(hetrig_3mu_cnt) +
+		__ul_u32(hetrig_4mu_cnt);
+	total_ppdu_cnt = sub_total_cnt;
+
+	seq_printf(file, "\nTotal HE MU-MIMO UL TB PPDU count: %lld",
+		   sub_total_cnt);
+
+	sub_total_cnt = __ul_u32(hetrig_2ru_cnt) +
+		__ul_u32(hetrig_3ru_cnt) +
+		__ul_u32(hetrig_4ru_cnt) +
+		__ul_u32(hetrig_5to8ru_cnt) +
+		__ul_u32(hetrig_9to16ru_cnt) +
+		__ul_u32(hetrig_gtr16ru_cnt);
+	total_ppdu_cnt += sub_total_cnt;
+
+	seq_printf(file, "\nTotal HE OFDMA UL TB PPDU count: %lld",
+		   sub_total_cnt);
+
+	total_ppdu_cnt += __ul_u32(hetrig_su_cnt);
+
+	seq_printf(file, "\nAll HE UL TB PPDU count: %lld\n", total_ppdu_cnt);
+#undef __ul_u32
+
+exit:
+	mutex_unlock(&dev->mt76.mutex);
+
+	return ret;
+}
+DEFINE_SHOW_ATTRIBUTE(mt7915_muru_stats);
+
+static int
+mt7915_fw_debug_wm_set(void *data, u64 val)
 {
 	struct mt7915_dev *dev = data;
 	enum {
@@ -92,40 +311,111 @@ mt7915_fw_debug_set(void *data, u64 val)
 		DEBUG_SPL,
 		DEBUG_RPT_RX,
 	} debug;
+	int ret;
 
-	dev->fw_debug = !!val;
+	dev->fw_debug_wm = val ? MCU_FW_LOG_TO_HOST : 0;
 
-	mt7915_mcu_fw_log_2_host(dev, dev->fw_debug ? 2 : 0);
+	ret = mt7915_mcu_fw_log_2_host(dev, MCU_FW_LOG_WM, dev->fw_debug_wm);
+	if (ret)
+		return ret;
 
-	for (debug = DEBUG_TXCMD; debug <= DEBUG_RPT_RX; debug++)
-		mt7915_mcu_fw_dbg_ctrl(dev, debug, dev->fw_debug);
+	for (debug = DEBUG_TXCMD; debug <= DEBUG_RPT_RX; debug++) {
+		ret = mt7915_mcu_fw_dbg_ctrl(dev, debug, !!dev->fw_debug_wm);
+		if (ret)
+			return ret;
+	}
+
+	/* WM CPU info record control */
+	mt76_clear(dev, MT_CPU_UTIL_CTRL, BIT(0));
+	mt76_wr(dev, MT_DIC_CMD_REG_CMD, BIT(2) | BIT(13) | !dev->fw_debug_wm);
+	mt76_wr(dev, MT_MCU_WM_CIRQ_IRQ_MASK_CLR_ADDR, BIT(5));
+	mt76_wr(dev, MT_MCU_WM_CIRQ_IRQ_SOFT_ADDR, BIT(5));
 
 	return 0;
 }
 
 static int
-mt7915_fw_debug_get(void *data, u64 *val)
+mt7915_fw_debug_wm_get(void *data, u64 *val)
 {
 	struct mt7915_dev *dev = data;
 
-	*val = dev->fw_debug;
+	*val = dev->fw_debug_wm;
 
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_fw_debug, mt7915_fw_debug_get,
-			 mt7915_fw_debug_set, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_fw_debug_wm, mt7915_fw_debug_wm_get,
+			 mt7915_fw_debug_wm_set, "%lld\n");
+
+static int
+mt7915_fw_debug_wa_set(void *data, u64 val)
+{
+	struct mt7915_dev *dev = data;
+	int ret;
+
+	dev->fw_debug_wa = val ? MCU_FW_LOG_TO_HOST : 0;
+
+	ret = mt7915_mcu_fw_log_2_host(dev, MCU_FW_LOG_WA, dev->fw_debug_wa);
+	if (ret)
+		return ret;
+
+	return mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(SET), MCU_WA_PARAM_PDMA_RX,
+				 !!dev->fw_debug_wa, 0);
+}
+
+static int
+mt7915_fw_debug_wa_get(void *data, u64 *val)
+{
+	struct mt7915_dev *dev = data;
+
+	*val = dev->fw_debug_wa;
+
+	return 0;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(fops_fw_debug_wa, mt7915_fw_debug_wa_get,
+			 mt7915_fw_debug_wa_set, "%lld\n");
+
+static int
+mt7915_fw_util_wm_show(struct seq_file *file, void *data)
+{
+	struct mt7915_dev *dev = file->private;
+
+	if (dev->fw_debug_wm) {
+		seq_printf(file, "Busy: %u%%  Peak busy: %u%%\n",
+			   mt76_rr(dev, MT_CPU_UTIL_BUSY_PCT),
+			   mt76_rr(dev, MT_CPU_UTIL_PEAK_BUSY_PCT));
+		seq_printf(file, "Idle count: %u  Peak idle count: %u\n",
+			   mt76_rr(dev, MT_CPU_UTIL_IDLE_CNT),
+			   mt76_rr(dev, MT_CPU_UTIL_PEAK_IDLE_CNT));
+	}
+
+	return 0;
+}
+
+DEFINE_SHOW_ATTRIBUTE(mt7915_fw_util_wm);
+
+static int
+mt7915_fw_util_wa_show(struct seq_file *file, void *data)
+{
+	struct mt7915_dev *dev = file->private;
+
+	if (dev->fw_debug_wa)
+		return mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(QUERY),
+					 MCU_WA_PARAM_CPU_UTIL, 0, 0);
+
+	return 0;
+}
+
+DEFINE_SHOW_ATTRIBUTE(mt7915_fw_util_wa);
 
 static void
 mt7915_ampdu_stat_read_phy(struct mt7915_phy *phy,
 			   struct seq_file *file)
 {
-	struct mt7915_dev *dev = file->private;
+	struct mt7915_dev *dev = phy->dev;
 	bool ext_phy = phy != &dev->phy;
 	int bound[15], range[4], i, n;
-
-	if (!phy)
-		return;
 
 	/* Tx ampdu stat */
 	for (i = 0; i < ARRAY_SIZE(range); i++)
@@ -156,12 +446,7 @@ mt7915_txbf_stat_read_phy(struct mt7915_phy *phy, struct seq_file *s)
 	static const char * const bw[] = {
 		"BW20", "BW40", "BW80", "BW160"
 	};
-	struct mib_stats *mib;
-
-	if (!phy)
-		return;
-
-	mib = &phy->mib;
+	struct mib_stats *mib = &phy->mib;
 
 	/* Tx Beamformer monitor */
 	seq_puts(s, "\nTx Beamformer applied PPDU counts: ");
@@ -205,30 +490,30 @@ mt7915_txbf_stat_read_phy(struct mt7915_phy *phy, struct seq_file *s)
 static int
 mt7915_tx_stats_show(struct seq_file *file, void *data)
 {
-	struct mt7915_dev *dev = file->private;
-	int stat[8], i, n;
+	struct mt7915_phy *phy = file->private;
+	struct mt7915_dev *dev = phy->dev;
+	struct mib_stats *mib = &phy->mib;
+	int i;
 
-	mt7915_ampdu_stat_read_phy(&dev->phy, file);
-	mt7915_txbf_stat_read_phy(&dev->phy, file);
+	mutex_lock(&dev->mt76.mutex);
 
-	mt7915_ampdu_stat_read_phy(mt7915_ext_phy(dev), file);
-	mt7915_txbf_stat_read_phy(mt7915_ext_phy(dev), file);
+	mt7915_ampdu_stat_read_phy(phy, file);
+	mt7915_mac_update_stats(phy);
+	mt7915_txbf_stat_read_phy(phy, file);
 
 	/* Tx amsdu info */
 	seq_puts(file, "Tx MSDU statistics:\n");
-	for (i = 0, n = 0; i < ARRAY_SIZE(stat); i++) {
-		stat[i] = mt76_rr(dev,  MT_PLE_AMSDU_PACK_MSDU_CNT(i));
-		n += stat[i];
-	}
-
-	for (i = 0; i < ARRAY_SIZE(stat); i++) {
-		seq_printf(file, "AMSDU pack count of %d MSDU in TXD: 0x%x ",
-			   i + 1, stat[i]);
-		if (n != 0)
-			seq_printf(file, "(%d%%)\n", stat[i] * 100 / n);
+	for (i = 0; i < ARRAY_SIZE(mib->tx_amsdu); i++) {
+		seq_printf(file, "AMSDU pack count of %d MSDU in TXD: %8d ",
+			   i + 1, mib->tx_amsdu[i]);
+		if (mib->tx_amsdu_cnt)
+			seq_printf(file, "(%3d%%)\n",
+				   mib->tx_amsdu[i] * 100 / mib->tx_amsdu_cnt);
 		else
 			seq_puts(file, "\n");
 	}
+
+	mutex_unlock(&dev->mt76.mutex);
 
 	return 0;
 }
@@ -239,7 +524,8 @@ static void
 mt7915_hw_queue_read(struct seq_file *s, u32 base, u32 size,
 		     const struct hw_queue_map *map)
 {
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
+	struct mt7915_phy *phy = s->private;
+	struct mt7915_dev *dev = phy->dev;
 	u32 i, val;
 
 	val = mt76_rr(dev, base + MT_FL_Q_EMPTY);
@@ -288,46 +574,46 @@ mt7915_sta_hw_queue_read(void *data, struct ieee80211_sta *sta)
 		qlen = mt76_get_field(dev, MT_PLE_BASE + MT_FL_Q3_CTRL,
 				      GENMASK(11, 0));
 		seq_printf(s, "\tSTA %pM wcid %d: AC%d%d queued:%d\n",
-			   sta->addr, msta->wcid.idx, msta->vif->wmm_idx,
-			   ac, qlen);
+			   sta->addr, msta->wcid.idx,
+			   msta->vif->mt76.wmm_idx, ac, qlen);
 	}
 }
 
 static int
-mt7915_hw_queues_read(struct seq_file *s, void *data)
+mt7915_hw_queues_show(struct seq_file *file, void *data)
 {
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
-	struct mt7915_phy *phy = mt7915_ext_phy(dev);
+	struct mt7915_phy *phy = file->private;
+	struct mt7915_dev *dev = phy->dev;
 	static const struct hw_queue_map ple_queue_map[] = {
-		{"CPU_Q0",  0,  1, MT_CTX0},
-		{"CPU_Q1",  1,  1, MT_CTX0 + 1},
-		{"CPU_Q2",  2,  1, MT_CTX0 + 2},
-		{"CPU_Q3",  3,  1, MT_CTX0 + 3},
-		{"ALTX_Q0", 8,  2, MT_LMAC_ALTX0},
-		{"BMC_Q0",  9,  2, MT_LMAC_BMC0},
-		{"BCN_Q0",  10, 2, MT_LMAC_BCN0},
-		{"PSMP_Q0", 11, 2, MT_LMAC_PSMP0},
-		{"ALTX_Q1", 12, 2, MT_LMAC_ALTX0 + 4},
-		{"BMC_Q1",  13, 2, MT_LMAC_BMC0 + 4},
-		{"BCN_Q1",  14, 2, MT_LMAC_BCN0 + 4},
-		{"PSMP_Q1", 15, 2, MT_LMAC_PSMP0 + 4},
+		{ "CPU_Q0",  0,  1, MT_CTX0	      },
+		{ "CPU_Q1",  1,  1, MT_CTX0 + 1	      },
+		{ "CPU_Q2",  2,  1, MT_CTX0 + 2	      },
+		{ "CPU_Q3",  3,  1, MT_CTX0 + 3	      },
+		{ "ALTX_Q0", 8,  2, MT_LMAC_ALTX0     },
+		{ "BMC_Q0",  9,  2, MT_LMAC_BMC0      },
+		{ "BCN_Q0",  10, 2, MT_LMAC_BCN0      },
+		{ "PSMP_Q0", 11, 2, MT_LMAC_PSMP0     },
+		{ "ALTX_Q1", 12, 2, MT_LMAC_ALTX0 + 4 },
+		{ "BMC_Q1",  13, 2, MT_LMAC_BMC0  + 4 },
+		{ "BCN_Q1",  14, 2, MT_LMAC_BCN0  + 4 },
+		{ "PSMP_Q1", 15, 2, MT_LMAC_PSMP0 + 4 },
 	};
 	static const struct hw_queue_map pse_queue_map[] = {
-		{"CPU Q0",  0,  1, MT_CTX0},
-		{"CPU Q1",  1,  1, MT_CTX0 + 1},
-		{"CPU Q2",  2,  1, MT_CTX0 + 2},
-		{"CPU Q3",  3,  1, MT_CTX0 + 3},
-		{"HIF_Q0",  8,  0, MT_HIF0},
-		{"HIF_Q1",  9,  0, MT_HIF0 + 1},
-		{"HIF_Q2",  10, 0, MT_HIF0 + 2},
-		{"HIF_Q3",  11, 0, MT_HIF0 + 3},
-		{"HIF_Q4",  12, 0, MT_HIF0 + 4},
-		{"HIF_Q5",  13, 0, MT_HIF0 + 5},
-		{"LMAC_Q",  16, 2, 0},
-		{"MDP_TXQ", 17, 2, 1},
-		{"MDP_RXQ", 18, 2, 2},
-		{"SEC_TXQ", 19, 2, 3},
-		{"SEC_RXQ", 20, 2, 4},
+		{ "CPU Q0",  0,  1, MT_CTX0	      },
+		{ "CPU Q1",  1,  1, MT_CTX0 + 1	      },
+		{ "CPU Q2",  2,  1, MT_CTX0 + 2	      },
+		{ "CPU Q3",  3,  1, MT_CTX0 + 3	      },
+		{ "HIF_Q0",  8,  0, MT_HIF0	      },
+		{ "HIF_Q1",  9,  0, MT_HIF0 + 1	      },
+		{ "HIF_Q2",  10, 0, MT_HIF0 + 2	      },
+		{ "HIF_Q3",  11, 0, MT_HIF0 + 3	      },
+		{ "HIF_Q4",  12, 0, MT_HIF0 + 4	      },
+		{ "HIF_Q5",  13, 0, MT_HIF0 + 5	      },
+		{ "LMAC_Q",  16, 2, 0		      },
+		{ "MDP_TXQ", 17, 2, 1		      },
+		{ "MDP_RXQ", 18, 2, 2		      },
+		{ "SEC_TXQ", 19, 2, 3		      },
+		{ "SEC_RXQ", 20, 2, 4		      },
 	};
 	u32 val, head, tail;
 
@@ -335,61 +621,58 @@ mt7915_hw_queues_read(struct seq_file *s, void *data)
 	val = mt76_rr(dev, MT_PLE_FREEPG_CNT);
 	head = mt76_get_field(dev, MT_PLE_FREEPG_HEAD_TAIL, GENMASK(11, 0));
 	tail = mt76_get_field(dev, MT_PLE_FREEPG_HEAD_TAIL, GENMASK(27, 16));
-	seq_puts(s, "PLE page info:\n");
-	seq_printf(s, "\tTotal free page: 0x%08x head: 0x%03x tail: 0x%03x\n",
+	seq_puts(file, "PLE page info:\n");
+	seq_printf(file,
+		   "\tTotal free page: 0x%08x head: 0x%03x tail: 0x%03x\n",
 		   val, head, tail);
 
 	val = mt76_rr(dev, MT_PLE_PG_HIF_GROUP);
 	head = mt76_get_field(dev, MT_PLE_HIF_PG_INFO, GENMASK(11, 0));
 	tail = mt76_get_field(dev, MT_PLE_HIF_PG_INFO, GENMASK(27, 16));
-	seq_printf(s, "\tHIF free page: 0x%03x res: 0x%03x used: 0x%03x\n",
+	seq_printf(file, "\tHIF free page: 0x%03x res: 0x%03x used: 0x%03x\n",
 		   val, head, tail);
 
-	seq_puts(s, "PLE non-empty queue info:\n");
-	mt7915_hw_queue_read(s, MT_PLE_BASE, ARRAY_SIZE(ple_queue_map),
+	seq_puts(file, "PLE non-empty queue info:\n");
+	mt7915_hw_queue_read(file, MT_PLE_BASE, ARRAY_SIZE(ple_queue_map),
 			     &ple_queue_map[0]);
 
 	/* iterate per-sta ple queue */
-	ieee80211_iterate_stations_atomic(dev->mphy.hw,
-					  mt7915_sta_hw_queue_read, s);
-	if (phy)
-		ieee80211_iterate_stations_atomic(phy->mt76->hw,
-						  mt7915_sta_hw_queue_read, s);
-
+	ieee80211_iterate_stations_atomic(phy->mt76->hw,
+					  mt7915_sta_hw_queue_read, file);
 	/* pse queue */
-	seq_puts(s, "PSE non-empty queue info:\n");
-	mt7915_hw_queue_read(s, MT_PSE_BASE, ARRAY_SIZE(pse_queue_map),
+	seq_puts(file, "PSE non-empty queue info:\n");
+	mt7915_hw_queue_read(file, MT_PSE_BASE, ARRAY_SIZE(pse_queue_map),
 			     &pse_queue_map[0]);
 
 	return 0;
 }
 
+DEFINE_SHOW_ATTRIBUTE(mt7915_hw_queues);
+
 static int
-mt7915_queues_read(struct seq_file *s, void *data)
+mt7915_xmit_queues_show(struct seq_file *file, void *data)
 {
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
-	struct mt76_phy *mphy_ext = dev->mt76.phy2;
-	struct mt76_queue *ext_q = mphy_ext ? mphy_ext->q_tx[MT_TXQ_BE] : NULL;
+	struct mt7915_phy *phy = file->private;
+	struct mt7915_dev *dev = phy->dev;
 	struct {
 		struct mt76_queue *q;
 		char *queue;
 	} queue_map[] = {
-		{ dev->mphy.q_tx[MT_TXQ_BE],	 "MAIN" },
-		{ ext_q,			 "EXT" },
-		{ dev->mt76.q_mcu[MT_MCUQ_WM],	 "MCUWM"  },
-		{ dev->mt76.q_mcu[MT_MCUQ_WA],	 "MCUWA"  },
+		{ phy->mt76->q_tx[MT_TXQ_BE],	 "   MAIN"  },
+		{ dev->mt76.q_mcu[MT_MCUQ_WM],	 "  MCUWM"  },
+		{ dev->mt76.q_mcu[MT_MCUQ_WA],	 "  MCUWA"  },
 		{ dev->mt76.q_mcu[MT_MCUQ_FWDL], "MCUFWDL" },
 	};
 	int i;
 
+	seq_puts(file, "     queue | hw-queued |      head |      tail |\n");
 	for (i = 0; i < ARRAY_SIZE(queue_map); i++) {
 		struct mt76_queue *q = queue_map[i].q;
 
 		if (!q)
 			continue;
 
-		seq_printf(s,
-			   "%s:	queued=%d head=%d tail=%d\n",
+		seq_printf(file, "   %s | %9d | %9d | %9d |\n",
 			   queue_map[i].queue, q->queued, q->head,
 			   q->tail);
 	}
@@ -397,8 +680,10 @@ mt7915_queues_read(struct seq_file *s, void *data)
 	return 0;
 }
 
-static void
-mt7915_puts_rate_txpower(struct seq_file *s, struct mt7915_phy *phy)
+DEFINE_SHOW_ATTRIBUTE(mt7915_xmit_queues);
+
+static int
+mt7915_rate_txpower_show(struct seq_file *file, void *data)
 {
 	static const char * const sku_group_name[] = {
 		"CCK", "OFDM", "HT20", "HT40",
@@ -406,14 +691,11 @@ mt7915_puts_rate_txpower(struct seq_file *s, struct mt7915_phy *phy)
 		"RU26", "RU52", "RU106", "RU242/SU20",
 		"RU484/SU40", "RU996/SU80", "RU2x996/SU160"
 	};
+	struct mt7915_phy *phy = file->private;
 	s8 txpower[MT7915_SKU_RATE_NUM], *buf;
 	int i;
 
-	if (!phy)
-		return;
-
-	seq_printf(s, "\nBand %d\n", phy != &phy->dev->phy);
-
+	seq_printf(file, "\nBand %d\n", phy != &phy->dev->phy);
 	mt7915_mcu_get_txpower_sku(phy, txpower, sizeof(txpower));
 	for (i = 0, buf = txpower; i < ARRAY_SIZE(mt7915_sku_group_len); i++) {
 		u8 mcs_num = mt7915_sku_group_len[i];
@@ -421,21 +703,14 @@ mt7915_puts_rate_txpower(struct seq_file *s, struct mt7915_phy *phy)
 		if (i >= SKU_VHT_BW20 && i <= SKU_VHT_BW160)
 			mcs_num = 10;
 
-		mt76_seq_puts_array(s, sku_group_name[i], buf, mcs_num);
+		mt76_seq_puts_array(file, sku_group_name[i], buf, mcs_num);
 		buf += mt7915_sku_group_len[i];
 	}
-}
-
-static int
-mt7915_read_rate_txpower(struct seq_file *s, void *data)
-{
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
-
-	mt7915_puts_rate_txpower(s, &dev->phy);
-	mt7915_puts_rate_txpower(s, mt7915_ext_phy(dev));
 
 	return 0;
 }
+
+DEFINE_SHOW_ATTRIBUTE(mt7915_rate_txpower);
 
 static ssize_t read_file_chan_bw(struct file *file, char __user *user_buf,
 			     size_t count, loff_t *ppos)
@@ -556,31 +831,43 @@ mt7915_twt_stats(struct seq_file *s, void *data)
 	return 0;
 }
 
-int mt7915_init_debugfs(struct mt7915_dev *dev)
+int mt7915_init_debugfs(struct mt7915_phy *phy)
 {
+	struct mt7915_dev *dev = phy->dev;
+	bool ext_phy = phy != &dev->phy;
 	struct dentry *dir;
 
-	dir = mt76_register_debugfs(&dev->mt76);
+	dir = mt76_register_debugfs_fops(phy->mt76, NULL);
 	if (!dir)
 		return -ENOMEM;
-
-	debugfs_create_devm_seqfile(dev->mt76.dev, "tx-queues", dir,
-				    mt7915_queues_read);
-	debugfs_create_devm_seqfile(dev->mt76.dev, "hw-queues", dir,
-				    mt7915_hw_queues_read);
-	debugfs_create_file("tx_stats", 0400, dir, dev, &mt7915_tx_stats_fops);
-	debugfs_create_file("fw_debug", 0600, dir, dev, &fops_fw_debug);
+	debugfs_create_file("muru_debug", 0600, dir, dev, &fops_muru_debug);
+	debugfs_create_file("muru_stats", 0400, dir, phy,
+			    &mt7915_muru_stats_fops);
+	debugfs_create_file("hw-queues", 0400, dir, phy,
+			    &mt7915_hw_queues_fops);
+	debugfs_create_file("xmit-queues", 0400, dir, phy,
+			    &mt7915_xmit_queues_fops);
+	debugfs_create_file("tx_stats", 0400, dir, phy, &mt7915_tx_stats_fops);
+	debugfs_create_file("fw_debug_wm", 0600, dir, dev, &fops_fw_debug_wm);
+	debugfs_create_file("fw_debug_wa", 0600, dir, dev, &fops_fw_debug_wa);
+	debugfs_create_file("fw_util_wm", 0400, dir, dev,
+			    &mt7915_fw_util_wm_fops);
+	debugfs_create_file("fw_util_wa", 0400, dir, dev,
+			    &mt7915_fw_util_wa_fops);
 	debugfs_create_file("implicit_txbf", 0600, dir, dev,
 			    &fops_implicit_txbf);
-	debugfs_create_u32("dfs_hw_pattern", 0400, dir, &dev->hw_pattern);
+	debugfs_create_file("txpower_sku", 0400, dir, phy,
+			    &mt7915_rate_txpower_fops);
 	debugfs_create_devm_seqfile(dev->mt76.dev, "twt_stats", dir,
 				    mt7915_twt_stats);
 	/* test knobs */
-	debugfs_create_file("radar_trigger", 0200, dir, dev,
-			    &fops_radar_trigger);
 	debugfs_create_file("ser_trigger", 0200, dir, dev, &fops_ser_trigger);
-	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower_sku", dir,
-				    mt7915_read_rate_txpower);
+	if (!dev->dbdc_support || ext_phy) {
+		debugfs_create_u32("dfs_hw_pattern", 0400, dir,
+				   &dev->hw_pattern);
+		debugfs_create_file("radar_trigger", 0200, dir, dev,
+				    &fops_radar_trigger);
+	}
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir, dev, &fops_turboqam);
 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, dir,
 			    dev, &fops_chanbw);
@@ -591,19 +878,71 @@ int mt7915_init_debugfs(struct mt7915_dev *dev)
 #ifdef CPTCFG_MAC80211_DEBUGFS
 /** per-station debugfs **/
 
-static int mt7915_sta_fixed_rate_set(void *data, u64 rate)
+static ssize_t mt7915_sta_fixed_rate_set(struct file *file,
+					 const char __user *user_buf,
+					 size_t count, loff_t *ppos)
 {
-	struct ieee80211_sta *sta = data;
+	struct ieee80211_sta *sta = file->private_data;
 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+	struct mt7915_dev *dev = msta->vif->phy->dev;
+	struct ieee80211_vif *vif;
+	struct sta_phy phy = {};
+	char buf[100];
+	int ret;
+	u32 field;
+	u8 i, gi, he_ltf;
 
-	/* usage: <he ltf> <tx mode> <ldpc> <stbc> <bw> <gi> <nss> <mcs>
-	 * <tx mode>: see enum mt76_phy_type
+	if (count >= sizeof(buf))
+		return -EINVAL;
+
+	if (copy_from_user(buf, user_buf, count))
+		return -EFAULT;
+
+	if (count && buf[count - 1] == '\n')
+		buf[count - 1] = '\0';
+	else
+		buf[count] = '\0';
+
+	/* mode - cck: 0, ofdm: 1, ht: 2, gf: 3, vht: 4, he_su: 8, he_er: 9
+	 * bw - bw20: 0, bw40: 1, bw80: 2, bw160: 3
+	 * nss - vht: 1~4, he: 1~4, others: ignore
+	 * mcs - cck: 0~4, ofdm: 0~7, ht: 0~32, vht: 0~9, he_su: 0~11, he_er: 0~2
+	 * gi - (ht/vht) lgi: 0, sgi: 1; (he) 0.8us: 0, 1.6us: 1, 3.2us: 2
+	 * ldpc - off: 0, on: 1
+	 * stbc - off: 0, on: 1
+	 * he_ltf - 1xltf: 0, 2xltf: 1, 4xltf: 2
 	 */
-	return mt7915_mcu_set_fixed_rate(msta->vif->phy->dev, sta, rate);
+	if (sscanf(buf, "%hhu %hhu %hhu %hhu %hhu %hhu %hhu %hhu",
+		   &phy.type, &phy.bw, &phy.nss, &phy.mcs, &gi,
+		   &phy.ldpc, &phy.stbc, &he_ltf) != 8) {
+		dev_warn(dev->mt76.dev,
+			 "format: Mode BW NSS MCS (HE)GI LDPC STBC HE_LTF\n");
+		field = RATE_PARAM_AUTO;
+		goto out;
+	}
+
+	phy.ldpc = (phy.bw || phy.ldpc) * GENMASK(2, 0);
+	for (i = 0; i <= phy.bw; i++) {
+		phy.sgi |= gi << (i << sta->he_cap.has_he);
+		phy.he_ltf |= he_ltf << (i << sta->he_cap.has_he);
+	}
+	field = RATE_PARAM_FIXED;
+
+out:
+	vif = container_of((void *)msta->vif, struct ieee80211_vif, drv_priv);
+	ret = mt7915_mcu_set_fixed_rate_ctrl(dev, vif, sta, &phy, field);
+	if (ret)
+		return -EFAULT;
+
+	return count;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(fops_fixed_rate, NULL,
-			 mt7915_sta_fixed_rate_set, "%llx\n");
+static const struct file_operations fops_fixed_rate = {
+	.write = mt7915_sta_fixed_rate_set,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
 
 static int
 mt7915_queues_show(struct seq_file *s, void *data)

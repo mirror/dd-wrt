@@ -169,22 +169,16 @@ static int
 mt7915_tm_set_tam_arb(struct mt7915_phy *phy, bool enable, bool mu)
 {
 	struct mt7915_dev *dev = phy->dev;
-	struct {
-		__le32 cmd;
-		u8 op_mode;
-	} __packed req = {
-		.cmd = cpu_to_le32(MURU_SET_ARB_OP_MODE),
-	};
+	u32 op_mode;
 
 	if (!enable)
-		req.op_mode = TAM_ARB_OP_MODE_NORMAL;
+		op_mode = TAM_ARB_OP_MODE_NORMAL;
 	else if (mu)
-		req.op_mode = TAM_ARB_OP_MODE_TEST;
+		op_mode = TAM_ARB_OP_MODE_TEST;
 	else
-		req.op_mode = TAM_ARB_OP_MODE_FORCE_SU;
+		op_mode = TAM_ARB_OP_MODE_FORCE_SU;
 
-	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(MURU_CTRL), &req,
-				 sizeof(req), false);
+	return mt7915_mcu_set_muru_ctrl(dev, MURU_SET_ARB_OP_MODE, op_mode);
 }
 
 static int
@@ -367,16 +361,15 @@ mt7915_tm_reg_backup_restore(struct mt7915_phy *phy)
 		return;
 	}
 
-	if (b)
-		return;
+	if (!b) {
+		b = devm_kzalloc(dev->mt76.dev, 4 * n_regs, GFP_KERNEL);
+		if (!b)
+			return;
 
-	b = devm_kzalloc(dev->mt76.dev, 4 * n_regs, GFP_KERNEL);
-	if (!b)
-		return;
-
-	phy->test.reg_backup = b;
-	for (i = 0; i < n_regs; i++)
-		b[i] = mt76_rr(dev, reg_backup_list[i].band[ext_phy]);
+		phy->test.reg_backup = b;
+		for (i = 0; i < n_regs; i++)
+			b[i] = mt76_rr(dev, reg_backup_list[i].band[ext_phy]);
+	}
 
 	mt76_clear(dev, MT_AGG_PCR0(ext_phy, 0), MT_AGG_PCR0_MM_PROT |
 		   MT_AGG_PCR0_GF_PROT | MT_AGG_PCR0_ERP_PROT |

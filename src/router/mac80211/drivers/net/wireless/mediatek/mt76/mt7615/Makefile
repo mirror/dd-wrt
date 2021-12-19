@@ -19,5 +19,5 @@ mt7615e-$(CPTCFG_MT7622_WMAC) += soc.o
 
 mt7663-usb-sdio-common-y := usb_sdio.o
 mt7663u-y := usb.o usb_mcu.o
-mt7663s-y := sdio.o sdio_mcu.o sdio_txrx.o
+mt7663s-y := sdio.o sdio_mcu.o
 

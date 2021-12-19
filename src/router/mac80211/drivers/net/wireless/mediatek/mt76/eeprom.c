@@ -116,8 +116,13 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
 		dev_info(dev->dev, "Read calibration data from part %s, offset 0x%08X, len 0x%08X\n", part, offset, len);
 		ret = mtd_read(mtd, offset, len, &retlen, eep);
 		put_mtd_device(mtd);
-		if (ret)
+		if (mtd_is_bitflip(ret))
+			ret = 0;
+		if (ret) {
+			dev_err(dev->dev, "reading EEPROM from mtd %s failed: %i\n",
+				part, ret);
 			goto out_put_node;
+		}
 
 		if (retlen < len) {
 			ret = -EINVAL;
