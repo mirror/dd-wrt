@@ -1515,7 +1515,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		}
 		if (!strcmp("etherip0", var))
 			continue;
-		if (!strncmp("wlan", var, 4))
+		if (!strncmp("wl", var, 2))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
