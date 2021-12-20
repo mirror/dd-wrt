@@ -1250,6 +1250,8 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, WIFINAME "%d", i);
+		if (nvram_nmatch("disabled", "%s_mode", var))
+			continue;
 		if (has_ad(var))
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		else
@@ -1257,6 +1259,8 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 		char *names = nvram_nget(WIFINAME "%d_vifs", i);
 
 		foreach(var, names, next) {
+			if (nvram_nmatch("disabled", "%s_net_mode", var))
+				continue;
 			if (has_ad(var))
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 			else
