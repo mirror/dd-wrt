@@ -1556,9 +1556,9 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < c; i++) {
 		char dev[32];
-
 		sprintf(dev, "wlan%d", i);
-
+		if (nvram_nmatch("disabled", "%s_net_mode", dev))
+			continue;
 		snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, dev));
 		show_bwif(wp, dev, name);
 		char *vifs = nvram_nget("%s_vifs", dev);
@@ -1566,6 +1566,8 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
+			if (nvram_nmatch("disabled", "%s_mode", var))
+				continue;
 			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, var));
 			show_bwif(wp, var, name);
 		}
@@ -1604,8 +1606,19 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 #else
 	for (c = 0; c < cnt; c++) {
+		if (nvram_nmatch("disabled", "wl%d_net_mode", c))
+			continue;
 		snprintf(name, sizeof(name), "%s (wl%d)", tran_string(buf, sizeof(buf), "share.wireless"), c);
 		show_bwif(wp, get_wl_instance_name(c), name);
+		char *vifs = nvram_nget("wl%d_vifs", c);
+		if (vifs == NULL)
+			continue;
+		foreach(var, vifs, next) {
+			if (nvram_nmatch("disabled", "%s_mode", var))
+				continue;
+			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, var));
+			show_bwif(wp, var, name);
+		}
 	}
 #endif
 #ifdef HAVE_WAVESAT
