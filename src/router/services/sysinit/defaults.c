@@ -3144,6 +3144,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_upauth", "0" },
 	{ "openvpncl_multirem", "0" },
 	{ "openvpncl_randomsrv", "0" },
+	{ "openvpncl_blockmulticast", "0" },
 	{ "openvpn_enable", "0" },
 	{ "openvpn_mit", "1" },
 	{ "openvpn_net", "0.0.0.0" },
@@ -3191,6 +3192,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_dc3", "AES-256-GCM" },
 	{ "openvpn_dh_btn", "0" },
 	{ "openvpn_allowcnwan", "0" },
+	{ "openvpn_blockmulticast", "0" },
 #endif
 #ifdef HAVE_KODATA
 	{ "newhttp_username", "bJ/GddyoJuiU2" },

@@ -1658,6 +1658,7 @@ service.vpnd_proxy="DHCP-Proxy Modus";
 service.vpnd_clcon="Client Verbindungsskript";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
 service.vpnd_dhcpbl="Blockiere DHCP &uuml;ber den Tunnel";
+service.vpnd_blockmulticast="Blockiere multicast &uuml;ber den Tunnel";
 service.vpnd_dh="Benutze ECDH anstelle von DH.PEM";
 service.vpnd_static="Statischer Schl&uuml;ssel";
 service.vpn_redirgate="Push Client route";
