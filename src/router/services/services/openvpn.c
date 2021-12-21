@@ -222,12 +222,12 @@ void create_openvpnrules(FILE * fp)
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
-	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
+	if (nvram_matchi("openvpncl_blockmulticast", 1)	//block multicast on bridged vpns, when wan multicast is enabled
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_matchi("openvpncl_bridge", 1)) {
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
-//                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
-//                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
+//			"ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
+//			"ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	}
 	if (nvram_matchi("openvpncl_fw", 0)) {
@@ -316,8 +316,8 @@ void create_openvpnrules(FILE * fp)
 			fprintf(fp, "echo \"iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n", IN_IF);
 			fprintf(fp, "echo \"iptables -I FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n", IN_IF);
 		}
-		fprintf(fp,	"/tmp/openvpncl_fw.sh\n");
 	}
+	fprintf(fp,	"/tmp/openvpncl_fw.sh\n");
 	//if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0 && nvram_invmatch("openvpncl_spbr", "0")) {	//policy based routing
 	if (*(nvram_safe_get("openvpncl_route")) && nvram_invmatch("openvpncl_spbr", "0")) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -344,7 +344,7 @@ void create_openvpnrules(FILE * fp)
 void create_openvpnserverrules(FILE * fp)
 {
 	fprintf(fp, "cat << EOF > /tmp/openvpnsrv_fw.sh\n" "#!/bin/sh\n");	// write firewall rules on route up to separate script to expand env. parameters
-	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
+	if (nvram_matchi("openvpn_blockmulticast", 1)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
 			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
@@ -593,7 +593,7 @@ void start_openvpnserver(void)
 	}
 #endif
 	// remove ebtales rules
-	if (nvram_matchi("block_multicast", 0)
+	if (nvram_matchi("openvpn_blockmulticast", 1)
 		&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1)
@@ -642,8 +642,8 @@ void stop_openvpnserver(void)
 	}
 #endif
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
-		//remove ebtables rules on shutdown     
-		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
+		//remove ebtables rules on shutdown done with route-down script
+		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
 		system("/usr/sbin/ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
 		unlink("/tmp/openvpn/ccd/DEFAULT");
@@ -947,16 +947,22 @@ void start_openvpn(void)
 		fprintf(fp, "iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\n", IN_IF);
 		fprintf(fp, "iptables -F vpn-pbr\n" "iptables -X vpn-pbr\n");
 	}
+	// remove ebtales rules
+	if (nvram_matchi("openvpncl_blockmulticast", 1)
+		&& nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1))
+			fprintf(fp, "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
+/*
+	if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
+				&& nvram_match("openvpncl_tuntap", "tap")
+				&& nvram_matchi("openvpncl_bridge",1)) {
+				fprintf(fp,
+-						"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n"
+-						"ebtables -t nat -D PREROUTING -i $dev --pkttype-type multicast -j DROP\n"
+						"if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
+						"then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
+		} 
+*/
 	fprintf(fp, "ip route flush cache\n" "exit 0\n");
-/*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
-                && nvram_match("openvpncl_tuntap", "tap")
-                && nvram_matchi("openvpncl_bridge",1)) {
-                fprintf(fp,
--                       "ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n"
--                       "ebtables -t nat -D PREROUTING -i $dev --pkttype-type multicast -j DROP\n"
-                        "if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
-                        "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
-                } */
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
@@ -969,8 +975,8 @@ void stop_openvpn(void)
 {
 	nvram_unset("openvpn_get_dns");
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-		//remove ebtables rules on shutdown
-		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
+		//remove ebtables rules on shutdown. done with route-down script
+		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 		unlink("/tmp/openvpncl/ca.crt");
 		unlink("/tmp/openvpncl/client.crt");
 		unlink("/tmp/openvpncl/client.key");
@@ -1008,8 +1014,8 @@ void stop_openvpn_wandone(void)
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-		//remove ebtables rules on shutdown     
-		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
+		//remove ebtables rules on shutdown done with route-down script
+		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 		unlink("/tmp/openvpncl/ca.crt");
 		unlink("/tmp/openvpncl/client.crt");
 		unlink("/tmp/openvpncl/client.key");

@@ -1917,6 +1917,7 @@ service.vpnd_clcon="Client connect script";
 service.vpnd_cldiscon="Client disconnect script";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
 service.vpnd_dhcpbl="Block DHCP across the tunnel";
+service.vpnd_blockmulticast="Block multicast across the tunnel";
 service.vpnd_dh="Use ECDH instead of DH.PEM";
 service.vpnd_static="Static Key";
 service.vpn_redirgate="Push Client route";
