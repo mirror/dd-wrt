@@ -644,8 +644,8 @@ void stop_openvpnserver(void)
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
 		//remove ebtables rules on shutdown done with route-down script
 		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
-		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
-		system("/usr/sbin/ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
+		eval("ebtables","-t","nat","-D","POSTROUTING","-o","tap2","-p","ipv4","--ip-proto","udp","--ip-sport","67:68","--ip-dport","67:68","-j","DROP");
+		eval("ebtables","-t","nat","-D","PREROUTING","-i","tap2","-p","ipv4","--ip-proto","udp","--ip-sport","67:68","--ip-dport","67:68","-j","DROP");
 		unlink("/tmp/openvpn/ccd/DEFAULT");
 		unlink("/tmp/openvpn/dh.pem");
 		unlink("/tmp/openvpn/ca.crt");
