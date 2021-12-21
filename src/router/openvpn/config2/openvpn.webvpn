@@ -70,6 +70,11 @@
 						<input class="spaceradio" type="radio" name="openvpn_dhcpbl" value="1" <% nvc("openvpn_dhcpbl", "1"); %> /><% tran("share.enable"); %>&nbsp;
 						<input class="spaceradio" type="radio" name="openvpn_dhcpbl" value="0" <% nvc("openvpn_dhcpbl", "0"); %> /><% tran("share.disable"); %>
 					</div>						
+					<div class="setting">
+						<div class="label"><% tran("service.vpnd_blockmulticast"); %></div>
+						<input class="spaceradio" type="radio" name="openvpn_blockmulticast" value="1" <% nvc("openvpn_blockmulticast", "1"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" name="openvpn_blockmulticast" value="0" <% nvc("openvpn_blockmulticast", "0"); %> /><% tran("share.disable"); %>
+					</div>						
 				</div>
 			</div>
 			<div class="setting">

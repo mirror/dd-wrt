@@ -36,6 +36,7 @@
  "openvpncl_dc3" "Data Cipher 3" "CHOICE" "8" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "" "FALSE" "0"
  "openvpncl_auth" "Hash Algorithmus" "CHOICE" "7" "sha512" "sha256" "sha1" "md5" "md4" "none" "" "FALSE" "0"
  "openvpncl_bridge" "Bridge Tap to br0" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "openvpncl_blockmulticast" "Block multicast" "CHOICE" "2" "0" "1" "TRUE" "0"
  "openvpncl_adv"   "Advanced options"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpncl_tlscip"   "TLS Cipher" "CHOICE" "9"  "0" "TLS-RSA-WITH-AES-128-CBC-SHA" "TLS-RSA-WITH-AES-256-CBC-SHA256" "TLS-RSA-WITH-AES-256-GCM-SHA384" "TLS-DHE-RSA-WITH-AES-128-CBC-SHA" "TLS-DHE-RSA-WITH-AES-256-CBC-SHA256" "TLS-DHE-RSA-WITH-AES-256-GCM-SHA384" "TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384" "TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384" "FALSE" "0"
  "openvpncl_scramble" "scramble method" "CHOICE" "4" "off" "xorptrpos" "reverse" "obfuscate" "FALSE" "0"

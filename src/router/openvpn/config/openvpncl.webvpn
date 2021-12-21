@@ -235,6 +235,11 @@
       				<input class="spaceradio" type="radio" name="openvpncl_bridge" value="1" <% nvc("openvpncl_bridge", "1"); %> /><% tran("share.enable"); %>&nbsp; 
 					<input class="spaceradio" type="radio" name="openvpncl_bridge" value="0" <% nvc("openvpncl_bridge", "0"); %> /><% tran("share.disable"); %> 
 				</div>
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_blockmulticast"); %></div>
+      				<input class="spaceradio" type="radio" name="openvpncl_blockmulticast" value="1" <% nvc("openvpncl_blockmulticast", "1"); %> /><% tran("share.enable"); %>&nbsp; 
+					<input class="spaceradio" type="radio" name="openvpncl_blockmulticast" value="0" <% nvc("openvpncl_blockmulticast", "0"); %> /><% tran("share.disable"); %> 
+				</div>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
