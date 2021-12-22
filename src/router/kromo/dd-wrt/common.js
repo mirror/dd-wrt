@@ -22,6 +22,7 @@ var BCST_OK = 32;	// 0x0010 0000
 
 var SPACE_NO = 1;
 var SPACE_OK = 2;
+var CHECK = 4;
 
 function addClass(element, classToAdd) {
     var currentClassValue = element.className;
@@ -387,7 +388,7 @@ function check_char(I,M1,c) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch == c) {
-			alert(M+errmsg.err103 + " \""+c+"\"");
+			alert(M+" "+errmsg.err103 + " \""+c+"\"");
 			I.value = I.defaultValue;
 			return false;
 		}
@@ -433,11 +434,13 @@ function valid_name(I,M,flag) {
 	var len = invalid.length;
 	var i;
 	result = isascii(I,M);
+	if(flag & CHECK){
 	for (i=0;i<len;i++) {
 		if (!check_char(I,M, invalid.charAt(i))) {
 		    return false;
 		}
 	
+	}
 	}
 	if(flag & SPACE_NO){
 		result = check_space(I,M);
