@@ -302,15 +302,15 @@ if (valid_password(F))
                <tr>
                 <tr>
                     <th><% tran("management.psswd_user"); %></th>
-                    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO)" /></td>
+                    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO|CHECK)" /></td>
                 </tr>
                 <tr>
                     <th><% tran("management.psswd_pass"); %></th>
-		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO)" onkeyup="chkPass(this.value)" /></td>
+		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO|CHECK)" onkeyup="chkPass(this.value)" /></td>
                 </tr>
                 <tr>
                     <th><% tran("management.pass_conf"); %></th>
-		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO)" /></td>
+		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO|CHECK)" /></td>
                 </tr>
             	    <tr>
                     <th><% tran("management.score"); %></th>
