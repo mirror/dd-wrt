@@ -138,8 +138,8 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	return;
 #endif
 #ifdef HAVE_OCTEON
-	cpufound |= show_temp(wp, 0, 1, "B1 %d.%d &#176;C");
-	cpufound |= show_temp(wp, 1, 1, " / B2 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 0, 1, "BOARD %d.%d &#176;C");
+	cpufound |= show_temp(wp, 1, 1, " / CPU %d.%d &#176;C");
 	cpufound |= show_temp(wp, 0, 2, " / PHY1 %d.%d &#176;C");
 	cpufound |= show_temp(wp, 1, 2, " / PHY2 %d.%d &#176;C");
 #endif
