@@ -67,6 +67,15 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function changevpnclprot(F, value)
+{
+	if (value == "tap" ) {
+		show_layer_ext(F, "idnat", true);
+	} else {
+		show_layer_ext(F, "idnat", false);
+	}
+}
+
 function changevpnpbr(F, value)
 {
 	//alert(" F:" + F.name + "; value: " + value);

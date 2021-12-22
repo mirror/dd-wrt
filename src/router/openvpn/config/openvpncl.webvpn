@@ -57,20 +57,20 @@
 		
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tuntap"); %></div>
-			<select name="openvpncl_tuntap">
-			    <option value="tun" <% nvram_selected("openvpncl_tuntap","tun"); %>>TUN</option>
-			    <option value="tap" <% nvram_selected("openvpncl_tuntap","tap"); %>>TAP</option>
+			<select name="openvpncl_tuntap" onchange="changevpnclprot(this, this.value)">
+				<option value="tun" <% nvram_selected("openvpncl_tuntap","tun"); %>>TUN</option>
+				<option value="tap" <% nvram_selected("openvpncl_tuntap","tap"); %>>TAP</option>
 			</select>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tunnel"); %></div>
 			<select name="openvpncl_proto">
-			    <option value="udp4" <% nvram_selected("openvpncl_proto","udp4"); %>>udp4</option>
-			    <option value="udp6" <% nvram_selected("openvpncl_proto","udp6"); %>>udp6</option>
-			    <option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>udp</option>
-			    <option value="tcp4-client" <% nvram_selected("openvpncl_proto","tcp4-client"); %>>tcp4</option>
-			    <option value="tcp6-client" <% nvram_selected("openvpncl_proto","tcp6-client"); %>>tcp6</option>
-			    <option value="tcp-client" <% nvram_selected("openvpncl_proto","tcp-client"); %>>tcp</option>
+				<option value="udp4" <% nvram_selected("openvpncl_proto","udp4"); %>>udp4</option>
+				<option value="udp6" <% nvram_selected("openvpncl_proto","udp6"); %>>udp6</option>
+				<option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>udp</option>
+				<option value="tcp4-client" <% nvram_selected("openvpncl_proto","tcp4-client"); %>>tcp4</option>
+				<option value="tcp6-client" <% nvram_selected("openvpncl_proto","tcp6-client"); %>>tcp6</option>
+				<option value="tcp-client" <% nvram_selected("openvpncl_proto","tcp-client"); %>>tcp</option>
 			</select>
 		</div>
 		<div class="setting">
@@ -206,7 +206,7 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("eoip.wireguard_spbr"); %></div>
-				<select name="openvpncl_spbr" onclick="changevpnpbr(this, this.value)">
+				<select name="openvpncl_spbr" onchange="changevpnpbr(this, this.value)">
 				<!--  <select name="openvpncl_spbr">  -->
 					<option value="0" <% nvram_selected("openvpncl_spbr","0"); %>>Route all sources via VPN</option>
 					<option value="1" <% nvram_selected("openvpncl_spbr","1"); %>>Route selected sources via VPN</option>
@@ -218,7 +218,7 @@
 					<div class="label"><% tran("service.vpn_splitdns"); %></div>
 					<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_splitdns" <% nvc("openvpncl_splitdns","1"); %> />
 				</div>
-				<div class="setting">		
+				<div class="setting">
 					<div class="label"><% tran("service.vpn_route"); %></div>
 					<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
 					<script type="text/javascript">

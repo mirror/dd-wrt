@@ -222,7 +222,7 @@ void create_openvpnrules(FILE * fp)
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
-	if (nvram_matchi("openvpncl_blockmulticast", 1)	//block multicast on bridged vpns, when wan multicast is enabled
+	if (nvram_matchi("openvpncl_blockmulticast", 1)	//block multicast on bridged vpns
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_matchi("openvpncl_bridge", 1)) {
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
