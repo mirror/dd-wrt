@@ -9,6 +9,7 @@
 #include <linux/mm.h>
 #include <linux/wait.h>
 #include <linux/hash.h>
+#include <linux/poll.h>
 
 void __init_waitqueue_head(wait_queue_head_t *q, const char *name, struct lock_class_key *key)
 {
@@ -184,6 +185,13 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *arg)
 		return autoremove_wake_function(wait, mode, sync, key);
 }
 EXPORT_SYMBOL(wake_bit_function);
+
+void __wake_up_pollfree(wait_queue_head_t *wq_head)
+{
+	__wake_up(wq_head, TASK_NORMAL, 0, (void *)(POLLHUP | POLLFREE));
+	/* POLLFREE must have cleared the queue. */
+	WARN_ON_ONCE(waitqueue_active(wq_head));
+}
 
 /*
  * To allow interruptible waiting and asynchronous (i.e. nonblocking)
