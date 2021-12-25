@@ -18,6 +18,7 @@ do
 			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 			then
 				#logger -t "$TAG" "$ip ok"
+				:
 			else
 				logger -t "$TAG" "$ip dropped (1/3)"
 				DROPPED=true
@@ -32,6 +33,7 @@ do
 				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					#logger -t "$TAG" "$ip ok"
+					:
 				else
 					logger -t "$TAG" "$ip dropped (2/3)"
 					DROPPED=true
@@ -47,15 +49,13 @@ do
 				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					#logger -t "$TAG" "$ip ok"
+					:
 				else
 					logger -t "$TAG" "$ip dropped (3/3), Restarting Router"
 					/sbin/reboot &
 				fi 
 			done
 		fi
-
-
-
 	else
 		logger -t "$TAG" "Test cycle in mode of all dropped IPs for reboot"
 		DROPPED=true
@@ -65,6 +65,7 @@ do
 			then
 				DROPPED=false
 				#logger -t "$TAG" "$ip ok"
+				:
 			else
 				logger -t "$TAG" "$ip dropped (1/3)"
 			fi 
@@ -79,6 +80,7 @@ do
 				then
 					DROPPED=false
 					#logger -t "$TAG" "$ip ok"
+					:
 				else
 					logger -t "$TAG" "$ip dropped (2/3)"
 				fi 
@@ -94,6 +96,7 @@ do
 				then
 					DROPPED=false
 					#logger -t "$TAG" "$ip ok"
+					:
 				else
 					logger -t "$TAG" "$ip dropped (3/3)"          
 				fi 
