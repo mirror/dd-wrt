@@ -4000,7 +4000,7 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	current->lockdep_recursion = 0;
 	raw_local_irq_restore(flags);
 }
-EXPORT_SYMBOL_GPL(lock_acquire);
+EXPORT_SYMBOL(lock_acquire);
 
 void lock_release(struct lockdep_map *lock, int nested,
 			  unsigned long ip)
@@ -4019,7 +4019,7 @@ void lock_release(struct lockdep_map *lock, int nested,
 	current->lockdep_recursion = 0;
 	raw_local_irq_restore(flags);
 }
-EXPORT_SYMBOL_GPL(lock_release);
+EXPORT_SYMBOL(lock_release);
 
 int lock_is_held_type(struct lockdep_map *lock, int read)
 {
@@ -4039,7 +4039,7 @@ int lock_is_held_type(struct lockdep_map *lock, int read)
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(lock_is_held_type);
+EXPORT_SYMBOL(lock_is_held_type);
 
 struct pin_cookie lock_pin_lock(struct lockdep_map *lock)
 {
