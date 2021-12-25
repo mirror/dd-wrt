@@ -908,7 +908,7 @@ mutex_lock_nested(struct mutex *lock, unsigned int subclass)
 	__mutex_lock(lock, TASK_UNINTERRUPTIBLE, subclass, NULL, _RET_IP_);
 }
 
-EXPORT_SYMBOL_GPL(mutex_lock_nested);
+EXPORT_SYMBOL(mutex_lock_nested);
 
 void __sched
 _mutex_lock_nest_lock(struct mutex *lock, struct lockdep_map *nest)
