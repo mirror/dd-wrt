@@ -299,7 +299,7 @@ int notrace debug_lockdep_rcu_enabled(void)
 	return rcu_scheduler_active != RCU_SCHEDULER_INACTIVE && debug_locks &&
 	       current->lockdep_recursion == 0;
 }
-EXPORT_SYMBOL_GPL(debug_lockdep_rcu_enabled);
+EXPORT_SYMBOL(debug_lockdep_rcu_enabled);
 
 /**
  * rcu_read_lock_held() - might we be in RCU read-side critical section?
