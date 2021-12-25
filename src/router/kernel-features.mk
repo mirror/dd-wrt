@@ -551,6 +551,26 @@ define kernelfeatures
 		echo "# CONFIG_READABLE_ASM is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_PAGE_OWNER is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DEBUG_FORCE_WEAK_PER_CPU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PERF_USE_VMALLOC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MAXSMP=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_HWPOISON_INJECT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_VIRTUAL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_KMEMCHECK is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BOOTPARAM_HARDLOCKUP_PANIC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_TIMER_STATS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_PROVE_RCU_REPEATEDLY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CPU_HOTPLUG_STATE_CONTROL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_TEST_LIST_SORT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_X86_PTDUMP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_NX_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_TLBFLUSH is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IOMMU_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_X86_DECODER_SELFTEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_BOOT_PARAMS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CPA_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_ENTRY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_NMI_SELFTEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_X86_DEBUG_FPU is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
