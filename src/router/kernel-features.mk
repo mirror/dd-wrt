@@ -474,6 +474,84 @@ define kernelfeatures
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_LOCKDEBUG)" = "y" ]; then \
+		sed -i 's/\# CONFIG_TASKSTATS is not set/CONFIG_TASKSTATS=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_TASK_DELAY_ACCT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TASK_XACCT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TASK_IO_ACCOUNTING=y" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_DEBUG_KERNEL is not set/CONFIG_DEBUG_KERNEL=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PAGEALLOC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_OBJECTS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_KMEMLEAK is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_STACK_USAGE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_VM is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PER_CPU_MAPS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_HIGHMEM is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_STACKOVERFLOW is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_SHIRQ is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_LOCKUP_DETECTOR=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_SOFTLOCKUP_DETECTOR=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC_VALUE=0" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DETECT_HUNG_TASK=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEFAULT_HUNG_TASK_TIMEOUT=120" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BOOTPARAM_HUNG_TASK_PANIC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BOOTPARAM_HUNG_TASK_PANIC_VALUE=0" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_WQ_WATCHDOG=y" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_SCHED_INFO is not set/CONFIG_SCHED_INFO=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_SCHED_DEBUG=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_SCHED_INFO=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_SCHEDSTATS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_SCHED_STACK_END_CHECK is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEBUG_RT_MUTEXES=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEBUG_SPINLOCK=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEBUG_MUTEXES=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_WW_MUTEX_SLOWPATH is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEBUG_LOCK_ALLOC=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_PROVE_LOCKING=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_LOCKDEP=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LOCK_STAT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_LOCKDEP is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEBUG_ATOMIC_SLEEP=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LOCK_TORTURE_TEST is not set" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_STACKTRACE is not set/CONFIG_STACKTRACE=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_TRACE_IRQFLAGS=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_KOBJECT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_LIST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PI_LIST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_SG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_NOTIFIERS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_CREDENTIALS is not set" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_PROVE_RCU is not set/CONFIG_PROVE_RCU=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_RCU_PERF_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_RCU_TORTURE_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_RCU_TRACE=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_RCU_EQS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_WQ_FORCE_RR_CPU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_BLOCK_EXT_DEVT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NOTIFIER_ERROR_INJECTION is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FAULT_INJECTION is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LATENCYTOP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BACKTRACE_SELF_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_RBTREE_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_INTERVAL_TREE_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_PERCPU_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_KGDB is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_PCI_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_DRIVER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_DEVRES is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_TEST_DRIVER_REMOVE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_SPI_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PINCTRL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_GPIO is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BOOT_PRINTK_DELAY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_INFO is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_READABLE_ASM is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_PAGE_OWNER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_FORCE_WEAK_PER_CPU is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_RAID6_PQ is not set/CONFIG_RAID6_PQ=y/g' $(LINUXDIR)/.config; \
