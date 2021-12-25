@@ -571,6 +571,8 @@ define kernelfeatures
 		echo "# CONFIG_DEBUG_ENTRY is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DEBUG_NMI_SELFTEST is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_X86_DEBUG_FPU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CMA_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ARM64_PTDUMP_DEBUGFS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
