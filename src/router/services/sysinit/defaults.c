@@ -678,7 +678,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IDEXX
 	{ "dhcp_start", "192.168.1.2" },	/* First assignable DHCP address */
 #else
-	{ "dhcp_start", "192.168.1.100" },	/* First assignable DHCP address */
+	{ "dhcp_start", "192.168.1.64" },	/* First assignable DHCP address */
 #endif
 	// { "dhcp_end", "150", 0 }, /* Last assignable DHCP address */ /* Remove 
 	// 
@@ -687,7 +687,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IDEXX
 	{ "dhcp_num", "199" },	/* Number of DHCP Users *//* Add */
 #else
-	{ "dhcp_num", "50" },	/* Number of DHCP Users *//* Add */
+	{ "dhcp_num", "190" },	/* Number of DHCP Users *//* Add */
 #endif
 #ifdef HAVE_SKYTRON
 	{ "dhcp_lease", "10" },	/* LAN lease time in minutes */
