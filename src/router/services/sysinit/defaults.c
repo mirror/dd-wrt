@@ -2276,6 +2276,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnsmasq_rc", "0" },
 	{ "dnsmasq_cachesize", "1500" },
 	{ "dnsmasq_add_mac", "0" },
+	{ "dhcpd_usejffs", "0" },
 #ifdef HAVE_POWERNOC_WOAP54G
 	{ "dnsmasq_enable", "0" },
 #elif HAVE_FON
