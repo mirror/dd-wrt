@@ -1026,6 +1026,17 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	return n;
 }
 
+int jffs_mounted(void)
+{
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))
+	return 1;
+#endif
+	int ret = nvram_matchi("jffs_mounted", "1");
+	if (!ret)
+		ret = freediskSpace("/jffs") > 65536;
+	return ret;
+}
+
 int getMTD(char *name)
 {
 	char buf[32];
