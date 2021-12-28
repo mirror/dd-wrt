@@ -1526,7 +1526,7 @@ static int single_service_helper(void)
 		sr++;
 		nvram_seti("service_running", sr);
 		dd_loginfo("services", "increase delay to %d seconds\n", sr * 5);
-		return;
+		return 0;
 	}
 	nvram_seti("service_running", 1);
 	sleep(5);
@@ -1562,6 +1562,7 @@ static int single_service_helper(void)
 	nvram_unset("action_service_arg1");
 	nvram_unset("action_service_arg2");
 	nvram_seti("service_running", 0);
+	return 0;
 }
 
 static int start_single_service_main(int argc, char **argv)

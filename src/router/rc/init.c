@@ -519,7 +519,7 @@ static void check_bootfails(void)
 			nvram_commit();
 			kill(1, SIGTERM);
 			sleep(20);
-			return -1;
+			return;
 		}
 		if (failcnt < 5) {
 			nvram_seti("boot_last_fail", failcnt);
