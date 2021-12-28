@@ -56,25 +56,18 @@ void start_dlna(void)
 		return;
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
-#ifndef HAVE_RAMBUTAN
-#ifndef HAVE_VENTANA
-	if (nvram_matchi("jffs_mounted", 1) || (freediskSpace("/jffs") > 134217728)) {
-#endif
-#endif
+	if (jffs_mounted() && (freediskSpace("/jffs") > 134217728)) {
 		mkdir("/jffs/minidlna", 0700);
 		if (nvram_matchi("dlna_cleandb", 1)) {
 			unlink("/jffs/minidlna/files.db");
 			nvram_seti("dlna_cleandb", 0);
 		}
 		fprintf(fp, "db_dir=/jffs/minidlna\n");
-#ifndef HAVE_RAMBUTAN
-#ifndef HAVE_VENTANA
 	} else {
 		mkdir("/tmp/db", 0700);
 		unlink("/tmp/db/files.db");
 	}
-#endif
-#endif
+
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
 	dlna_shares = getdlnashares();

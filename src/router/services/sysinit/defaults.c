@@ -2814,7 +2814,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "enable_jffs2", "0" },
 	{ "clean_jffs2", "0" },
-	{ "sys_enable_jffs2", "0" },
 #endif
 #ifdef HAVE_KAID
 	{ "kaid_enable", "0" },

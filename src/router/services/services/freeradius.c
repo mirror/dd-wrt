@@ -87,7 +87,7 @@ void start_freeradius(void)
 	if (!nvram_matchi("radius_enabled", 1))
 		return;
 
-	if (!nvram_matchi("jffs_mounted", 1) && (freediskSpace("/jffs") < 8 * 1024 * 1024))
+	if (!jffs_mounted() && (freediskSpace("/jffs") < 8 * 1024 * 1024))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
 
 	prep();
