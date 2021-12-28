@@ -2271,7 +2271,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, " - %s", live_translate(wp, argv[0]));
 	}
 	websWrite(wp, "</title>\n");
-	if (wp->path) {
+	if (wp->path && strcmp(wp->path, "Info.htm")) {
 		websWrite(wp, "<script type=\"text/javascript\">");
 		if (!*(argv[0])) {
 			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", wp->path, nvram_safe_get("router_name"), SVN_REVISION, wp->path);
