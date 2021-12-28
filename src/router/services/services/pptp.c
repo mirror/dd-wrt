@@ -48,9 +48,7 @@ void start_pptpd(void)
 	     && nvram_matchi("usb_storage", 1)
 	     && nvram_matchi("usb_automnt", 1)
 	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_matchi("enable_jffs2", 1)
-		&& nvram_matchi("jffs_mounted", 1)
-		&& nvram_matchi("sys_enable_jffs2", 1)))
+	    || jffs_mounted())
 		jffs = 1;
 
 	insmod("gre");

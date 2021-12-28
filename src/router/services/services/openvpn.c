@@ -377,10 +377,7 @@ void start_openvpnserver(void)
 		return;
 	insmod("tun");
 	update_timezone();
-	if ((freediskSpace("/jffs") > 16384)
-	    || (nvram_matchi("enable_jffs2", 1)
-		&& nvram_matchi("jffs_mounted", 1)
-		&& nvram_matchi("sys_enable_jffs2", 1)))
+	if (jffs_mounted())
 		jffs = 1;
 	dd_loginfo("openvpn", "OpenVPN daemon (Server) starting/restarting...\n");
 	mkdir("/tmp/openvpn", 0700);

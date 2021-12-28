@@ -27,8 +27,16 @@
 
 void stop_jffs2(void)
 {
-	eval("umount", "/jffs");
+#if defined(HAVE_R9000)
+	int mtd = getMTD("plex");
+#else
+	int mtd = getMTD("ddwrt");
+#endif
+	if (mtd == -1)
+		return;
+	umount("/jffs2");
 	rmmod("jffs2");
+	nvram_seti("jffs_mounted", 0);
 }
 
 void start_jffs2(void)
@@ -41,6 +49,8 @@ void start_jffs2(void)
 #else
 	int mtd = getMTD("ddwrt");
 #endif
+	if (mtd == -1)
+		return;
 	int ubidev = 1;
 
 #ifdef HAVE_IPQ806X
@@ -57,14 +67,18 @@ void start_jffs2(void)
 		break;
 	}
 #endif
+	nvram_seti("jffs_mounted", 0);
+	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
+		umount2("/jffs2", MNT_DETACH);
+	}
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
 	sprintf(upath, "ubi%d:ddwrt", ubidev);
-	if (nvram_matchi("sys_enable_jffs2", 1)) {
+	if (nvram_matchi("enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
-		if (nvram_matchi("sys_clean_jffs2", 1)) {
-			nvram_seti("sys_clean_jffs2", 0);
+		if (nvram_matchi("clean_jffs2", 1)) {
+			nvram_seti("clean_jffs2", 0);
 			nvram_commit();
 			sprintf(dev, "/dev/mtd%d", mtd);
 #if defined(HAVE_WNDR3700V4)
