@@ -26,6 +26,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -1025,6 +1026,18 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	free(dest);
 	return n;
 }
+
+u_int64_t freediskSpace(char *path)
+{
+	struct statfs sizefs;
+
+	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174)) {
+		bzero(&sizefs, sizeof(sizefs));
+	}
+
+	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
+}
+
 
 int jffs_mounted(void)
 {
