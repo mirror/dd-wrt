@@ -68,7 +68,6 @@ dnsmasq-install:
 	install -D $(DNSMASQ_PATH)/contrib/lease-tools/dhcp_lease_time $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_lease_time
 	install -D $(DNSMASQ_PATH)/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
-	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
 	install -D $(DNSMASQ_PATH)/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
 ifeq ($(CONFIG_DNSSEC),y)
 	install -D $(DNSMASQ_PATH)/trust-anchors.conf $(INSTALLDIR)/dnsmasq/etc/trust-anchors.conf
