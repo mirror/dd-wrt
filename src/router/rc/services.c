@@ -898,7 +898,7 @@ static void handle_management(void)
 	start_service_f("nas");
 #endif
 #ifdef HAVE_JFFS2
-	FORK(eval("/etc/config/jffs2.startup"));
+	restart_f("jffs2");
 #endif
 #ifdef HAVE_X86
 	restart_f("bootconfig");

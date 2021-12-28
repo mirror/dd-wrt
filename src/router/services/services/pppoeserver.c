@@ -144,9 +144,7 @@ static void makeipup(void)
 	     && nvram_matchi("usb_storage", 1)
 	     && nvram_matchi("usb_automnt", 1)
 	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_matchi("enable_jffs2", 1)
-		&& nvram_matchi("jffs_mounted", 1)
-		&& nvram_matchi("sys_enable_jffs2", 1)))
+	    || jffs_mounted())
 		mkdir("/jffs/etc", 0700);
 	mkdir("/jffs/etc/pppoeserver", 0700);
 	eval("/bin/cp", "/jffs/etc/pppoeserver/pppoe_peer.db", "/tmp/");
@@ -353,9 +351,7 @@ void stop_pppoeserver(void)
 		     && nvram_matchi("usb_storage", 1)
 		     && nvram_matchi("usb_automnt", 1)
 		     && nvram_match("usb_mntpoint", "jffs"))
-		    || (nvram_matchi("enable_jffs2", 1)
-			&& nvram_matchi("jffs_mounted", 1)
-			&& nvram_matchi("sys_enable_jffs2", 1))) {
+		    || jffs_mounted()) {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/pppoeserver", 0700);
 			eval("/bin/cp", "/tmp/pppoe_peer.db", "/jffs/etc/pppoeserver");
