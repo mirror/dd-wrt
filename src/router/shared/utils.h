@@ -1193,6 +1193,7 @@ extern int has_spectralscanning(const char *prefix);
 extern int has_half(const char *prefix);
 extern int has_quarter(const char *prefix);
 extern int has_qam256(const char *prefix);
+extern int has_wave2(const char *prefix);
 extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
 extern int getath9kdevicecount(void);
@@ -1219,6 +1220,11 @@ static inline int has_qboost(char *prefix)
 }
 
 static inline int has_qam256(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_wave2(char *prefix)
 {
 	return 0;
 }
