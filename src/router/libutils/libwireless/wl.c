@@ -1800,7 +1800,7 @@ void radio_on_off_ath9k(int idx, int on)
 					write(fp, "0x0", sizeof("0x0") - 1);
 				else
 					write(fp, "0x76", sizeof("0x76") - 1);
-				close(fp)
+				close(fp);
 			}
 		}
 	} else {
