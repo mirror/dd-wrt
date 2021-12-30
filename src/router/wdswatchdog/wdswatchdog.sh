@@ -49,6 +49,7 @@ do
 					: #logger -t "$TAG" "$ip ok"
 				else
 					logger -t "$TAG" "$ip dropped (3/3), Restarting Router"
+					cat /var/log/messages > /jffs/lastlog.log
 					/sbin/reboot &
 				fi 
 			done
@@ -99,6 +100,7 @@ do
 		if $DROPPED
 		then
 			logger -t "$TAG" "None of the IPs $WDS_WATCHDOG_IPS responded ping, Restarting Router"
+			cat /var/log/messages > /jffs/lastlog.log
 			/sbin/reboot &
 		fi
 	fi
