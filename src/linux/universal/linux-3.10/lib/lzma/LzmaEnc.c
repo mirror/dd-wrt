@@ -2625,3 +2625,4 @@ SRes LzmaEnc_MemEncode(CLzmaEncHandle pp, Byte *dest, SizeT *destLen, const Byte
   return res;
 }
 EXPORT_SYMBOL(LzmaEnc_MemEncode);
+MODULE_LICENSE("GPL");
