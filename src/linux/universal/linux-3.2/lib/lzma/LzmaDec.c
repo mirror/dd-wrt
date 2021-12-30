@@ -1099,3 +1099,4 @@ SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
   return res;
 }
 EXPORT_SYMBOL(LzmaDecode);
+MODULE_LICENSE("GPL");
