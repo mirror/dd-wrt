@@ -11,7 +11,7 @@ while sleep $WDS_WATCHDOG_INTERVAL_SEC
 do
 	if [ $WDS_WATCHDOG_MODE = "0" ]
 	then
-		logger -t "$TAG" "Test cycle in mode of any dropped IPs for reboot"
+		#logger -t "$TAG" "Test cycle in mode of any dropped IPs for reboot"
 		DROPPED=false
 		for ip in $WDS_WATCHDOG_IPS
 		do
@@ -55,7 +55,7 @@ do
 			done
 		fi
 	else
-		logger -t "$TAG" "Test cycle in mode of all dropped IPs for reboot"
+		#logger -t "$TAG" "Test cycle in mode of all dropped IPs for reboot"
 		DROPPED=true
 		for ip in $WDS_WATCHDOG_IPS
 		do
