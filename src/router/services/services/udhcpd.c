@@ -153,7 +153,7 @@ void start_udhcpd(void)
 
 	usejffs = 0;
 
-	if (nvram_matchi("dhcpd_usejffs", 1)) {
+	if (jffs_mounted() || nvram_matchi("dhcpd_usejffs", 1)) {
 		if (!(fp = fopen("/jffs/udhcpd.leases", "a"))) {
 			usejffs = 0;
 		} else {
