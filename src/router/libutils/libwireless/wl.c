@@ -1776,7 +1776,7 @@ int getAssocMAC(char *ifname, char *mac)
 
 #ifdef HAVE_ATH9K
 
-unsigned int get_ath10kreg(char *ifname, unsigned int reg)
+static unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
 	int phy = get_ath9k_phy_ifname(ifname);
 	char file[64];
@@ -1796,7 +1796,7 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	return value;
 }
 
-void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
+static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
