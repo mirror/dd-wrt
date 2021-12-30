@@ -267,59 +267,7 @@ nla_put_failure:
 }
 
 #ifdef HAVE_ATH10K
-int is_beeliner(const char *prefix)
-{
-	char *globstring;
-	int devnum;
-	devnum = get_ath9k_phy_ifname(prefix);
-	if (devnum == -1)
-		return 0;
-	int device = getValueFromPath("/sys/class/ieee80211/phy%d/device/device", devnum, "0x%x", NULL);
-	if (device == 0x0040 || device == 0x0046)
-		return 1;
-	return 0;
-}
-
-unsigned int get_ath10kreg(char *ifname, unsigned int reg)
-{
-	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
-	int phy = get_ath9k_phy_ifname(ifname);
-	char file[64];
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
-	FILE *fp = fopen(file, "wb");
-	if (fp == NULL)
-		return 0;
-	fprintf(fp, "0x%x", baseaddress + reg);
-	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
-	fp = fopen(file, "rb");
-	if (fp == NULL)
-		return 0;
-	int value;
-	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
-	fclose(fp);
-	return value;
-}
-
-void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
-{
-	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
-	char file[64];
-	int phy = get_ath9k_phy_ifname(ifname);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
-	FILE *fp = fopen(file, "wb");
-	if (fp == NULL)
-		return;
-	fprintf(fp, "0x%x", baseaddress + reg);
-	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
-	fp = fopen(file, "wb");
-	if (fp == NULL)
-		return;
-	fprintf(fp, "0x%x", value);
-	fclose(fp);
-}
-
+#if 0
 void set_ath10kdistance(char *dev, unsigned int distance)
 {
 	unsigned int isb = is_beeliner(dev);
@@ -410,7 +358,7 @@ unsigned int get_ath10kdistance(char *ifname)
 	distance *= 450;
 	return distance;
 }
-
+#endif
 #endif
 #if 0
 int getFrequency_mac80211(char *interface)

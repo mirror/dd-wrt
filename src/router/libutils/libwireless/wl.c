@@ -1776,33 +1776,63 @@ int getAssocMAC(char *ifname, char *mac)
 
 #ifdef HAVE_ATH9K
 
+unsigned int get_ath10kreg(char *ifname, unsigned int reg)
+{
+	int phy = get_ath9k_phy_ifname(ifname);
+	char file[64];
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	FILE *fp = fopen(file, "wb");
+	if (fp == NULL)
+		return 0;
+	fprintf(fp, "0x%x", reg);
+	fclose(fp);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	fp = fopen(file, "rb");
+	if (fp == NULL)
+		return 0;
+	int value;
+	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
+	fclose(fp);
+	return value;
+}
+
+void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
+{
+	char file[64];
+	int phy = get_ath9k_phy_ifname(ifname);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	FILE *fp = fopen(file, "wb");
+	if (fp == NULL)
+		return;
+	fprintf(fp, "0x%x", reg);
+	fclose(fp);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	fp = fopen(file, "wb");
+	if (fp == NULL)
+		return;
+	fprintf(fp, "0x%x", value);
+	fclose(fp);
+}
+
 void radio_on_off_ath9k(int idx, int on)
 {
 	char debugstring[64];
 	int fp;
 	char secmode[16];
 	char tpt[8];
-	char wlan[32];
-	sprintf(wlan, "wlan%d", get_ath9k_phy_idx(idx));
-	if (is_ath10k(wlan)) {
-		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", get_ath9k_phy_idx(idx));
-		fp = open(debugstring, O_WRONLY);
-		if (fp) {
-			if (has_wave2(wlan))
-				write(fp, "0x311b4", sizeof("0x311b4") - 1);	// pcu diag register
-			else
-				write(fp, "0x24048", sizeof("0x24048") - 1);
-			close(fp);
-			sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", get_ath9k_phy_idx(idx));
-			fp = open(debugstring, O_WRONLY);
-			if (fp) {
-				if (on)
-					write(fp, "0x0", sizeof("0x0") - 1);
-				else
-					write(fp, "0x76", sizeof("0x76") - 1);
-				close(fp);
-			}
-		}
+	char prefix[32];
+	sprintf(prefix, "wlan%d", idx);
+
+	if (is_ath10k(prefix)) {
+		unsigned int pcu_diag_reg = 0x24048;
+		if (has_wave2(prefix))
+			pcu_diag_reg = 0x311b4;
+		unsigned int value = get_ath10kreg(prefix, pcu_diag_reg);
+		if (on)
+			value &= ~((1 << 5) | (1 << 6));
+		else
+			value |= ((1 << 5) | (1 << 6));	// disable rx and tx
+		set_ath10kreg(prefix, pcu_diag_reg, value);
 	} else {
 		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
 		fp = open(debugstring, O_WRONLY);
@@ -1822,7 +1852,7 @@ void radio_on_off_ath9k(int idx, int on)
 	else
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
 #else
-	if (is_ath10k(wlan))
+	if (is_ath10k(prefix))
 		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", get_ath9k_phy_idx(idx));
 	else
 		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
