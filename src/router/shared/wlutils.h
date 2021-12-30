@@ -451,11 +451,6 @@ extern int has_vht80plus80(const char *interface);
 int has_subeamforming(const char *interface);
 int has_mubeamforming(const char *interface);
 extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
-extern unsigned int get_ath10kreg(char *ifname, unsigned int reg);
-extern void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value);
-extern void set_ath10kdistance(char *ifname, unsigned int distance);
-extern unsigned int get_ath10kack(char *ifname);
-extern unsigned int get_ath10kdistance(char *ifname);
 #else
 static inline int has_subeamforming(const char *prefix)
 {
