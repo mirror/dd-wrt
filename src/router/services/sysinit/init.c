@@ -122,9 +122,6 @@ void start_post_sysinit(void)
 	set_ip_forward('1');
 	set_tcp_params();
 	set_systunes();
-#ifdef HAVE_JFFS2
-	start_jffs2();
-#endif
 #ifdef HAVE_MMC
 	start_mmc();
 #endif
@@ -411,6 +408,9 @@ void start_init_start(void)
 #endif
 	load_drivers(1);
 	eval("startservice_f", "modules_wait");
+#ifdef HAVE_JFFS2
+	start_jffs2();
+#endif
 #ifdef HAVE_X86
 	eval("restart_f", "bootconfig");
 #endif
