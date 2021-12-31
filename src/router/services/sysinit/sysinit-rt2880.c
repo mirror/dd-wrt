@@ -289,12 +289,13 @@ void start_sysinit(void)
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
 		insmod("rt2800soc");
-		insmod("rt2800pci");
-
-		insmod("mt76");
-		insmod("mt76x02-lib");
-		insmod("mt76x2-common");
-		insmod("mt76x2e");
+//		insmod("rt2800pci");
+		if (brand == ROUTER_DIR810L) {
+			insmod("mt76");
+			insmod("mt76x02-lib");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+		}
 		break;
 	default:
 		insmod("thermal_sys");
