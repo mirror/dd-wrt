@@ -205,7 +205,7 @@ extern void oops_enter(void);
 extern void oops_exit(void);
 void print_oops_end_marker(void);
 extern int oops_may_print(void);
-asmlinkage NORET_TYPE void do_exit(long error_code)
+NORET_TYPE void do_exit(long error_code)
 	ATTRIB_NORET;
 NORET_TYPE void complete_and_exit(struct completion *, long)
 	ATTRIB_NORET;
@@ -708,7 +708,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * "__build_bug_on_failed".  This error message can be harder to track down
  * though, hence the two different methods.
  */
-#if !defined(__OPTIMIZE__) || defined(CONFIG_LTO)
+#ifndef __OPTIMIZE__
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 #else
 extern int __build_bug_on_failed;

@@ -130,6 +130,7 @@
 # endif
 #endif
 
+#define __used			__attribute__((__used__))
 #define __compiler_offsetof(a, b)					\
 	__builtin_offsetof(a, b)
 
@@ -185,8 +186,6 @@
  */
 #define __visible	__attribute__((externally_visible))
 #endif
-
-#define __noreorder			__attribute__((no_reorder))
 
 /*
  * GCC 'asm goto' miscompiles certain code sequences:

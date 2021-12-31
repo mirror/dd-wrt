@@ -56,12 +56,6 @@ config JUMP_LABEL
 	 On i386, options added to the compiler flags may increase
 	 the size of the kernel slightly.
 
-config THIN_ARCHIVES
-	def_bool y 
-	help
-	  Select this if the architecture wants to use thin archives
-	  instead of ld -r to create the built-in.o files.
-
 config OPTPROBES
 	def_bool y
 	depends on KPROBES && HAVE_OPTPROBES
