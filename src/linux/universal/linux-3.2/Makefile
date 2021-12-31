@@ -332,14 +332,9 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-LDFINAL	= $(LD)
 CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
-#ifeq ($(CONFIG_LTO),y)
-AR		= $(CROSS_COMPILE)gcc-ar
-#else
-#AR		= $(CROSS_COMPILE)ar
-#endif
+AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
@@ -394,7 +389,7 @@ KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(S
 
 export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
-export CPP AR NM STRIP OBJCOPY OBJDUMP LDFINAL
+export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL UTS_MACHINE
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE KBUILD_LDFLAGS_MODULE_PREREQ CHECK CHECKFLAGS
 
@@ -404,17 +399,6 @@ export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
 export KBUILD_ARFLAGS
-
-ifdef CONFIG_LTO
-# LTO gcc creates a lot of files in TMPDIR, and with /tmp as tmpfs
-# it's easy to drive the machine OOM. Use the object directory
-# instead.
-ifndef TMPDIR
-TMPDIR ?= $(objtree)
-export TMPDIR
-$(info setting TMPDIR=$(objtree) for LTO build)
-endif
-endif
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
@@ -666,8 +650,6 @@ KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
 
-include scripts/Makefile.lto
-
 # check for 'asm goto'
 ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
 	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
@@ -795,9 +777,10 @@ export KBUILD_VMLINUX_OBJS := $(vmlinux-all)
 
 # Rule to link vmlinux - also used during CONFIG_KALLSYMS
 # May be overridden by arch/$(ARCH)/Makefile
-quiet_cmd_vmlinux__ ?= LDFINAL  $@
-      cmd_vmlinux__ ?= $(LDFINAL) $(LDFLAGS) $(LDFLAGS_vmlinux) -o $@ \
-      -T $(vmlinux-lds) $(head-y) --whole-archive built-in.o
+quiet_cmd_vmlinux__ ?= LD      $@
+      cmd_vmlinux__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux) -o $@ \
+      -T $(vmlinux-lds) $(vmlinux-init)                          \
+      --start-group $(vmlinux-main) --end-group                  \
       $(filter-out $(vmlinux-lds) $(vmlinux-init) $(vmlinux-main) vmlinux.o FORCE ,$^)
 
 # Generate new vmlinux version
@@ -823,11 +806,9 @@ quiet_cmd_sysmap = SYSMAP
 # First command is ':' to allow us to use + in front of the rule
 define rule_vmlinux__
 	:
-	+$(if $(CONFIG_KALLSYMS),,+$(call cmd,vmlinux_version))
-#	$(if $(CONFIG_KALLSYMS),,+$(call cmd,vmlinux_version))
+	$(if $(CONFIG_KALLSYMS),,+$(call cmd,vmlinux_version))
 
-	+$(call cmd,vmlinux__)
-#	$(call cmd,vmlinux__)
+	$(call cmd,vmlinux__)
 	$(Q)echo 'cmd_$@ := $(cmd_vmlinux__)' > $(@D)/.$(@F).cmd
 
 	$(Q)$(if $($(quiet)cmd_sysmap),                                      \
@@ -929,19 +910,16 @@ endif # ifdef CONFIG_KALLSYMS
 
 # Do modpost on a prelinked vmlinux. The finally linked vmlinux has
 # relevant sections renamed as per the linker script.
-quiet_cmd_vmlinux-modpost = LDLINUX      $@
-      cmd_vmlinux-modpost = rm -f built-in.o;${AR} rcsT${KBUILD_ARFLAGS} built-in.o $(init-y) $(vmlinux-main); $(LDFINAL) -r -o $@ $(head-y) --whole-archive built-in.o             \
+quiet_cmd_vmlinux-modpost = LD      $@
+      cmd_vmlinux-modpost = $(LD) $(LDFLAGS) -r -o $@                          \
+	 $(vmlinux-init) --start-group $(vmlinux-main) --end-group             \
 	 $(filter-out $(vmlinux-init) $(vmlinux-main) FORCE ,$^)
-
-#      cmd_vmlinux-modpost = ${AR} rcsT${KBUILD_ARFLAGS} built-in.o $(vmlinux-init) $(vmlinux-main) \
-#	 $(filter-out $(vmlinux-init) $(vmlinux-main) FORCE ,$^)
 define rule_vmlinux-modpost
 	:
 	+$(call cmd,vmlinux-modpost)
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost $@
 	$(Q)echo 'cmd_$@ := $(cmd_vmlinux-modpost)' > $(dot-target).cmd
 endef
-
 
 # vmlinux image - including updated kernel symbols
 vmlinux: $(vmlinux-lds) $(vmlinux-init) $(vmlinux-main) vmlinux.o $(kallsyms.o) FORCE
@@ -954,8 +932,8 @@ endif
 ifdef CONFIG_BUILD_DOCSRC
 	$(Q)$(MAKE) $(build)=Documentation
 endif
-	+$(call vmlinux-modpost)
-	+$(call if_changed_rule,vmlinux__)
+	$(call vmlinux-modpost)
+	$(call if_changed_rule,vmlinux__)
 	$(Q)rm -f .old_version
 
 # build vmlinux.o first to catch section mismatch errors early

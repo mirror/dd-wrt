@@ -526,7 +526,7 @@ config X86_32_IRIS
 
 config SCHED_OMIT_FRAME_POINTER
 	def_bool y
-	prompt "Single-depth WCHAN output" if !LTO && !FRAME_POINTER
+	prompt "Single-depth WCHAN output"
 	depends on X86
 	---help---
 	  Calculate simpler /proc/<PID>/wchan values. If this option

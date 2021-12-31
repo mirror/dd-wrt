@@ -588,19 +588,10 @@ static int ignore_undef_symbol(struct elf_info *info, const char *symname)
 #define KSYMTAB_PFX MODULE_SYMBOL_PREFIX "__ksymtab_"
 
 static void handle_modversions(struct module *mod, struct elf_info *info,
-			       Elf_Sym *sym, const char *symname, int hasinit, int hasexit)
+			       Elf_Sym *sym, const char *symname)
 {
 	unsigned int crc;
 	enum export export;
-	char newname[strlen(symname) + 1];
-	char *p;
-
-	/* Remove .number postfixes */
-	if (symname[0] && (p = strchr(symname + 1, '.')) != NULL) {
-		strcpy(newname, symname);
-		newname[p - symname] = 0;
-		symname = newname;
-	}
 
 	if ((!is_vmlinux(mod->name) || mod->is_dot_o) &&
 	    strncmp(symname, "__ksymtab", 9) == 0)
@@ -610,8 +601,7 @@ static void handle_modversions(struct module *mod, struct elf_info *info,
 
 	switch (sym->st_shndx) {
 	case SHN_COMMON:
-		if (strncmp(symname, "__gnu_lto_", sizeof("__gnu_lto_")-1))
-			warn("\"%s\" [%s] is COMMON symbol\n", symname, mod->name);
+		warn("\"%s\" [%s] is COMMON symbol\n", symname, mod->name);
 		break;
 	case SHN_ABS:
 		/* CRC'd symbol */
@@ -667,10 +657,6 @@ static void handle_modversions(struct module *mod, struct elf_info *info,
 			mod->has_init = 1;
 		if (strcmp(symname, MODULE_SYMBOL_PREFIX "cleanup_module") == 0)
 			mod->has_cleanup = 1;
-		if (hasinit)
-			mod->has_init=1;
-		if (hasexit)
-			mod->has_cleanup=1;
 		break;
 	}
 }
@@ -842,7 +828,6 @@ static const char *const section_white_list[] =
 	".note*",
 	".got*",
 	".toc*",
-	".gnu.lto*",
 	NULL
 };
 
@@ -1061,20 +1046,6 @@ static const struct sectioncheck sectioncheck[] = {
 	.symbol_white_list = { DEFAULT_SYMBOL_WHITE_LIST, NULL },
 }
 };
-
-/* For checks remove .lto_priv.0 which is added randomly by gcc LTO */
-
-static char *cleansym(const char *sym)
-{
-	char *nsym = strdup(sym);
-	char *p;
-	if (!nsym)
-		exit(-1);
-	p = strstr(nsym, ".lto_priv.0");
-	if (p && p[11] == 0)
-		*p = 0;
-	return nsym;
-}
 
 static const struct sectioncheck *section_mismatch(
 		const char *fromsec, const char *tosec)
@@ -1503,7 +1474,6 @@ static void check_section_mismatch(const char *modname, struct elf_info *elf,
 {
 	const char *tosec;
 	const struct sectioncheck *mismatch;
-	char *fromsym_clean, *tosym_clean;
 
 	tosec = sec_name(elf, get_secindex(elf, sym));
 	mismatch = section_mismatch(fromsec, tosec);
@@ -1517,19 +1487,15 @@ static void check_section_mismatch(const char *modname, struct elf_info *elf,
 		fromsym = sym_name(elf, from);
 		to = find_elf_symbol(elf, r->r_addend, sym);
 		tosym = sym_name(elf, to);
-		fromsym_clean = cleansym(fromsym);
-		tosym_clean = cleansym(tosym);
 
 		/* check whitelist - we may ignore it */
 		if (secref_whitelist(mismatch,
-					fromsec, fromsym_clean, tosec, tosym_clean)) {
+					fromsec, fromsym, tosec, tosym)) {
 			report_sec_mismatch(modname, mismatch,
 			   fromsec, r->r_offset, fromsym,
 			   is_function(from), tosec, tosym,
 			   is_function(to));
 		}
-		free(fromsym_clean);
-		free(tosym_clean);
 	}
 }
 
@@ -1749,31 +1715,7 @@ static void read_symbols(char *modname)
 
 	if (!parse_elf(&info, modname))
 		return;
-	int hasinit=0;
-	int hasexit=0;
-	char modn[512];
-	sprintf(modn,"nm %s|grep \"T init_module\"", modname);
-	FILE *p = popen(modn, "r");
-	if (p) {
-	    char line[512];
-	    memset(line,0,sizeof(line));
-	    fgets(line, sizeof(line), p);
-	    if (strstr(line, "init_module")) {
-		hasinit=1;
-	    }
-	    pclose(p);
-	}
-	sprintf(modn,"nm %s|grep \"T cleanup_module\"", modname);
-	p = popen(modn, "r");
-	if (p) {
-	    char line[512];
-	    memset(line,0,sizeof(line));
-	    fgets(line, sizeof(line), p);
-	    if (strstr(line, "cleanup_module")) {
-		hasexit=1;
-	    }
-	    pclose(p);
-	}
+
 	mod = new_module(modname);
 
 	/* When there's no vmlinux, don't print warnings about
@@ -1802,7 +1744,7 @@ static void read_symbols(char *modname)
 	for (sym = info.symtab_start; sym < info.symtab_stop; sym++) {
 		symname = info.strtab + sym->st_name;
 
-		handle_modversions(mod, &info, sym, symname, hasinit, hasexit);
+		handle_modversions(mod, &info, sym, symname);
 #ifndef CONFIG_MODULE_STRIPPED
 		handle_moddevtable(mod, &info, sym, symname);
 #endif
