@@ -51,6 +51,8 @@
 #include "feature/stats/bw_array_st.h"
 #include "feature/relay/router.h"
 
+#include "event2/dns.h"
+
 /** Run unit tests for some stats code. */
 static void
 test_stats(void *arg)
@@ -719,7 +721,7 @@ test_overload_stats(void *arg)
   stats_str = rep_hist_get_overload_stats_lines();
   tt_assert(!stats_str);
 
-  /* Note a DNS overload */
+  /* Note a overload */
   rep_hist_note_overload(OVERLOAD_GENERAL);
 
   /* Move the time forward one hour */
@@ -740,7 +742,7 @@ test_overload_stats(void *arg)
 
   /* Now the time should be 2002-01-07 00:00:00 */
 
-  /* Note a DNS overload */
+  /* Note a overload */
   rep_hist_note_overload(OVERLOAD_GENERAL);
 
   stats_str = rep_hist_get_overload_general_line();
@@ -758,7 +760,7 @@ test_overload_stats(void *arg)
   tt_str_op("overload-fd-exhausted 1 2002-01-07 00:00:00\n", OP_EQ, stats_str);
   tor_free(stats_str);
 
-  /* Move the time forward. Register DNS overload. See that the time changed */
+  /* Move the time forward. Register overload. See that the time changed */
   current_time += 3600*2;
   update_approx_time(current_time);
 

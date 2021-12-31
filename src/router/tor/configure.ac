@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.6.7])
+AC_INIT([tor],[0.4.6.9])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -18,7 +18,7 @@ AC_DEFINE_UNQUOTED([CONFIG_FLAGS], ["$configure_flags"], [Flags passed to config
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2021-08-16"], # for 0.4.6.7
+AC_DEFINE(APPROX_RELEASE_DATE, ["2021-12-15"], # for 0.4.6.9
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -1116,7 +1116,7 @@ dnl warnings.
 AC_MSG_CHECKING([for OpenSSL >= 3.0.0])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <openssl/opensslv.h>
-#if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER <= 0x30000000L
+#if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x30000000L
 #error "you_have_version_3"
 #endif
    ]], [[]])],
@@ -1133,6 +1133,18 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    ]], [[]])],
    [ AC_MSG_RESULT([no]) ],
    [ AC_MSG_ERROR([OpenSSL is too old. We require 1.0.1 or later. You can specify a path to a newer one with --with-openssl-dir.]) ])
+
+AC_MSG_CHECKING([whether LibreSSL TLS 1.3 APIs are busted])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <openssl/opensslv.h>
+#if defined(LIBRESSL_VERSION_NUMBER) && \
+     LIBRESSL_VERSION_NUMBER >= 0x3020100fL && \
+     LIBRESSL_VERSION_NUMBER < 0x3040100fL
+#error "oh no"
+#endif
+   ]], [[]])],
+   [ AC_MSG_RESULT([no]) ],
+   [ AC_MSG_ERROR([This version of LibreSSL won't work with Tor. Please upgrade to LibreSSL 3.4.1 or later. (Or downgrade to 3.2.0 if you really must.)]) ])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <openssl/opensslv.h>
