@@ -1411,9 +1411,8 @@ static int __init debugfs_fpuemu(void)
 __initcall(debugfs_fpuemu);
 #endif /* CONFIG_DEBUGFS */
 #else
-int fpu_emulator_cop1Handler(struct pt_regs *xcp,
-				    struct mips_fpu_struct *ctx, int has_fpu,
-				    void *__user *fault_addr)
+int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
+        int has_fpu)
 {
 	return 0;
 }
