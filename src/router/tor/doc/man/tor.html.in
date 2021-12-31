@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 9.1.0" />
+<meta name="generator" content="AsciiDoc 9.1.1" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -5016,6 +5016,52 @@ types of statistics that Tor relays collect and publish:</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="OverloadStatistics"></a> <strong>OverloadStatistics</strong> <strong>0<strong>|</strong>1</strong>*
+</dt>
+<dd>
+<p>
+    Relays and bridges only.
+    When this option is enabled, a Tor relay will write an overload general
+    line in the server descriptor if the relay is considered overloaded.
+    (Default: 1)
+    <br />
+    A relay is considered overloaded if at least one of these conditions is
+    met:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Onionskins are starting to be dropped.
+</p>
+</li>
+<li>
+<p>
+The OOM was invoked.
+</p>
+</li>
+<li>
+<p>
+(Exit only) DNS timeout occurs X% of the time over Y seconds (values
+          controlled by consensus parameters, see param-spec.txt).
+    <br />
+    If ExtraInfoStatistics is enabled, it can also put two more specific
+    overload lines in the extra-info document if at least one of these
+    conditions is met:
+</p>
+</li>
+<li>
+<p>
+TCP Port exhaustion.
+</p>
+</li>
+<li>
+<p>
+Connection rate limits have been reached (read and write side).
+</p>
+</li>
+</ul></div>
+</dd>
+<dt class="hdlist1">
 <a id="PaddingStatistics"></a> <strong>PaddingStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
@@ -5073,7 +5119,8 @@ details.)</p></div>
     more than once, but only one advertised DirPort is supported: all
     but one DirPort must have the <strong>NoAdvertise</strong> flag set. (Default: 0)<br />
     <br />
-    The same flags are supported here as are supported by ORPort.
+    The same flags are supported here as are supported by ORPort. This port can
+    only be IPv4.
     <br />
     As of Tor 0.4.6.1-alpha, non-authoritative relays (see
     AuthoritativeDirectory) will not publish the DirPort but will still listen
@@ -6326,6 +6373,16 @@ RendPostPeriod 2 minutes</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="TestingMinTimeToReportBandwidth"></a> <strong>TestingMinTimeToReportBandwidth</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    Do not report our measurements for our maximum observed bandwidth for any
+    time period that has lasted for less than this amount of time.
+    Values over 1 day have no effect. (Default: 1 day)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="TestingServerConsensusDownloadInitialDelay"></a> <strong>TestingServerConsensusDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
@@ -7014,8 +7071,6 @@ report them at <a href="https://bugs.torproject.org/">https://bugs.torproject.or
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated
- 2021-04-15 16:41:14 UTC
 </div>
 </div>
 </body>

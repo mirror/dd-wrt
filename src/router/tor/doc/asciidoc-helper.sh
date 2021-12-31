@@ -12,6 +12,9 @@ if [ $# != 3 ]; then
   exit 1;
 fi
 
+SOURCE_DATE_EPOCH="$(git show --no-patch --format='%ct')"
+export SOURCE_DATE_EPOCH
+
 output=$3
 
 if [ "$1" = "html" ]; then
@@ -19,7 +22,7 @@ if [ "$1" = "html" ]; then
     base=${output%%.html.in}
 
     if [ "$2" != none ]; then
-      TZ=UTC "$2" -d manpage -o "$output" "$input";
+      TZ=UTC "$2" -f "$(dirname "$0")/nofooter.conf" -d manpage -o "$output" "$input";
     else
       echo "==================================";
       echo;

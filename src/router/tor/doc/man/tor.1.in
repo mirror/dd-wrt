@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 05/07/2021
+.\"      Date: 12/16/2021
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "05/07/2021" "Tor" "Tor Manual"
+.TH "TOR" "1" "12/16/2021" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2644,6 +2644,70 @@ When this option is enabled, Tor includes previously gathered statistics in its 
 Relays and bridges only\&. When this option is enabled, a Tor relay writes obfuscated statistics on its role as hidden\-service directory, introduction point, or rendezvous point to disk every 24 hours\&. If ExtraInfoStatistics is enabled, it will be published as part of the extra\-info document\&. (Default: 1)
 .RE
 .PP
+\fBOverloadStatistics\fR \fB0\fR\fB\fB|\fR\fR\fB1\fR*
+.RS 4
+Relays and bridges only\&. When this option is enabled, a Tor relay will write an overload general line in the server descriptor if the relay is considered overloaded\&. (Default: 1)
+
+A relay is considered overloaded if at least one of these conditions is met:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Onionskins are starting to be dropped\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The OOM was invoked\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+(Exit only) DNS timeout occurs X% of the time over Y seconds (values controlled by consensus parameters, see param\-spec\&.txt)\&.
+
+If ExtraInfoStatistics is enabled, it can also put two more specific overload lines in the extra\-info document if at least one of these conditions is met:
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+TCP Port exhaustion\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Connection rate limits have been reached (read and write side)\&.
+.RE
+.RE
+.PP
 \fBPaddingStatistics\fR \fB0\fR|\fB1\fR
 .RS 4
 Relays and bridges only\&. When this option is enabled, Tor collects statistics for padding cells sent and received by this relay, in addition to total cell counts\&. These statistics are rounded, and omitted if traffic is low\&. This information is important for load balancing decisions related to padding\&. If ExtraInfoStatistics is enabled, it will be published as a part of the extra\-info document\&. (Default: 1)
@@ -2674,7 +2738,7 @@ If this option is nonzero, advertise the directory service on this port\&. Set i
 flag set\&. (Default: 0)
 
 
-The same flags are supported here as are supported by ORPort\&.
+The same flags are supported here as are supported by ORPort\&. This port can only be IPv4\&.
 
 As of Tor 0\&.4\&.6\&.1\-alpha, non\-authoritative relays (see AuthoritativeDirectory) will not publish the DirPort but will still listen on it\&. Clients don\(cqt use the DirPorts on relays, so it is safe for you to remove the DirPort from your torrc configuration\&.
 .RE
@@ -3519,6 +3583,11 @@ Sets a lower\-bound for assigning an exit flag when running as an authority on a
 \fBTestingMinFastFlagThreshold\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR|\fBTBytes\fR|\fBKBits\fR|\fBMBits\fR|\fBGBits\fR|\fBTBits\fR
 .RS 4
 Minimum value for the Fast flag\&. Overrides the ordinary minimum taken from the consensus when TestingTorNetwork is set\&. (Default: 0\&.)
+.RE
+.PP
+\fBTestingMinTimeToReportBandwidth\fR \fIN\fR \fBseconds\fR|\fBminutes\fR|\fBhours\fR
+.RS 4
+Do not report our measurements for our maximum observed bandwidth for any time period that has lasted for less than this amount of time\&. Values over 1 day have no effect\&. (Default: 1 day)
 .RE
 .PP
 \fBTestingServerConsensusDownloadInitialDelay\fR \fIN\fR
