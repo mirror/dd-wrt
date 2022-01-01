@@ -113,6 +113,9 @@ Define ksmbd configuration parameters list.
 		This boolean parameter controls whether ksmbd will support
 		SMB3 multi-channel. Warn that this is experimental feature
 		which means data can be corrupted under race conditions.
+	- smb2 max credits (default: 8192)
+		This option controls the maximum number of outstanding
+		simultaneous SMB2 operations.
 
 
 * Supported [share] level parameters list:
