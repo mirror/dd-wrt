@@ -23,8 +23,6 @@ static DEFINE_MUTEX(init_lock);
 
 static struct ksmbd_conn_ops default_conn_ops;
 
-LIST_HEAD(conn_list);
-DEFINE_RWLOCK(conn_list_lock);
 
 /**
  * ksmbd_conn_free() - free resources of the connection instance

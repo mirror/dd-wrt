@@ -215,118 +215,118 @@ static inline struct user_namespace *file_mnt_user_ns(struct file *file)
 }
 #endif
 
-int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode,
+static int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode,
 		bool delete);
-int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
+static int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
 				   struct dentry *dentry, __le32 *daccess);
-int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode);
-int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode);
-int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp,
+static int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode);
+static int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode);
+static int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp,
 		size_t count, loff_t *pos);
-int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
+static int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 		char *buf, size_t count, loff_t *pos, bool sync,
 		ssize_t *written);
-int ksmbd_vfs_fsync(struct ksmbd_work *work, u64 fid, u64 p_id);
-int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name);
-int ksmbd_vfs_link(struct ksmbd_work *work,
+static int ksmbd_vfs_fsync(struct ksmbd_work *work, u64 fid, u64 p_id);
+static int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name);
+static int ksmbd_vfs_link(struct ksmbd_work *work,
 		const char *oldname, const char *newname);
-int ksmbd_vfs_getattr(struct path *path, struct kstat *stat);
+static int ksmbd_vfs_getattr(struct path *path, struct kstat *stat);
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
+static int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 		u64 fid, struct iattr *attrs);
-int ksmbd_vfs_symlink(struct ksmbd_work *work,
+static int ksmbd_vfs_symlink(struct ksmbd_work *work,
 		const char *name, const char *symname);
-int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp);
-int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
+static int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp);
+static int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 			   struct user_namespace *user_ns,
 			   struct ksmbd_kstat *ksmbd_kstat,
 			   const char *de_name, int de_name_len,
 			   const char *dir_path);
 #endif
-int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
+static int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 		char *newname);
-int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
+static int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
 		char *oldname, char *newname);
-int ksmbd_vfs_truncate(struct ksmbd_work *work,
+static int ksmbd_vfs_truncate(struct ksmbd_work *work,
 		struct ksmbd_file *fp, loff_t size);
-struct srv_copychunk;
-int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
+static struct srv_copychunk;
+static int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 		struct ksmbd_file *src_fp, struct ksmbd_file *dst_fp,
 		struct srv_copychunk *chunks, unsigned int chunk_count,
 		unsigned int *chunk_count_written,
 		unsigned int *chunk_size_written, loff_t  *total_size_written);
-struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
+static struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
 		const struct path *path, int flags, __le32 option, int fexist);
-ssize_t ksmbd_vfs_listxattr(struct dentry *dentry, char **list);
-ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
+static ssize_t ksmbd_vfs_listxattr(struct dentry *dentry, char **list);
+static ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 			   struct dentry *dentry,
 			   char *xattr_name,
 		char **xattr_buf);
-ssize_t ksmbd_vfs_casexattr_len(struct user_namespace *user_ns,
+static ssize_t ksmbd_vfs_casexattr_len(struct user_namespace *user_ns,
 				struct dentry *dentry, char *attr_name,
 		int attr_name_len);
-int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
+static int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 		       struct dentry *dentry, const char *attr_name,
 		const void *attr_value, size_t attr_size, int flags);
-int ksmbd_vfs_fsetxattr(struct ksmbd_work *work, const char *filename,
+static int ksmbd_vfs_fsetxattr(struct ksmbd_work *work, const char *filename,
 		const char *attr_name, const void *attr_value, size_t attr_size,
 		int flags);
-int ksmbd_vfs_xattr_stream_name(char *stream_name, char **xattr_stream_name,
+static int ksmbd_vfs_xattr_stream_name(char *stream_name, char **xattr_stream_name,
 		size_t *xattr_stream_name_size, int s_type);
-int ksmbd_vfs_truncate_xattr(struct dentry *dentry, int wo_streams);
-int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
+static int ksmbd_vfs_truncate_xattr(struct dentry *dentry, int wo_streams);
+static int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 			   struct dentry *dentry, char *attr_name);
-void ksmbd_vfs_xattr_free(char *xattr);
-int ksmbd_vfs_kern_path(struct ksmbd_work *work,
+static void ksmbd_vfs_xattr_free(char *xattr);
+static int ksmbd_vfs_kern_path(struct ksmbd_work *work,
 			char *name, unsigned int flags, struct path *path,
 		bool caseless);
-struct dentry *ksmbd_vfs_kern_path_create(struct ksmbd_work *work,
+static struct dentry *ksmbd_vfs_kern_path_create(struct ksmbd_work *work,
 					  const char *name,
 					  unsigned int flags,
 					  struct path *path);
-int ksmbd_vfs_empty_dir(struct ksmbd_file *fp);
-void ksmbd_vfs_set_fadvise(struct file *filp, __le32 option);
-int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
+static int ksmbd_vfs_empty_dir(struct ksmbd_file *fp);
+static void ksmbd_vfs_set_fadvise(struct file *filp, __le32 option);
+static int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
 		loff_t off, loff_t len);
-struct file_allocated_range_buffer;
-int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
+static struct file_allocated_range_buffer;
+static int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 		struct file_allocated_range_buffer *ranges,
 		unsigned int in_count, unsigned int *out_count);
-int ksmbd_vfs_unlink(struct user_namespace *user_ns,
+static int ksmbd_vfs_unlink(struct user_namespace *user_ns,
 		     struct dentry *dir, struct dentry *dentry);
-void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat);
-int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
+static void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat);
+static int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 				struct user_namespace *user_ns,
 				struct dentry *dentry,
 		struct ksmbd_kstat *ksmbd_kstat);
-void ksmbd_vfs_posix_lock_wait(struct file_lock *flock);
-int ksmbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout);
-void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock);
-int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
+static void ksmbd_vfs_posix_lock_wait(struct file_lock *flock);
+static int ksmbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout);
+static void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock);
+static int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
 				struct dentry *dentry);
-int ksmbd_vfs_remove_sd_xattrs(struct user_namespace *user_ns,
+static int ksmbd_vfs_remove_sd_xattrs(struct user_namespace *user_ns,
 			       struct dentry *dentry);
-int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
+static int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 			   struct user_namespace *user_ns,
 			   struct dentry *dentry,
 		struct smb_ntsd *pntsd, int len);
-int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
+static int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
 			   struct user_namespace *user_ns,
 			   struct dentry *dentry,
 		struct smb_ntsd **pntsd);
-int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
+static int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 				   struct dentry *dentry,
 		struct xattr_dos_attrib *da);
-int ksmbd_vfs_get_dos_attrib_xattr(struct user_namespace *user_ns,
+static int ksmbd_vfs_get_dos_attrib_xattr(struct user_namespace *user_ns,
 				   struct dentry *dentry,
 		struct xattr_dos_attrib *da);
-struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags);
-struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
-int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
+static struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags);
+static struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
+static int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 		struct posix_acl *acl);
-int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
+static int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 				 struct inode *inode);
-int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
+static int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
 				struct inode *inode,
 		struct inode *parent_inode);
 #endif /* __KSMBD_VFS_H__ */

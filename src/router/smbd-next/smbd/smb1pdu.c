@@ -5646,7 +5646,7 @@ static int set_path_info(struct ksmbd_work *work)
 				info_level, err);
 	return err;
 }
-static int readdir_info_level_struct_sz(int info_level)
+static int smb1_readdir_info_level_struct_sz(int info_level)
 {
 	switch (info_level) {
 	case SMB_FIND_FILE_INFO_STANDARD:
@@ -5692,7 +5692,7 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn, int info_level,
 	int conv_len;
 	int struct_sz;
 
-	struct_sz = readdir_info_level_struct_sz(info_level);
+	struct_sz = smb1_readdir_info_level_struct_sz(info_level);
 	if (struct_sz == -EOPNOTSUPP)
 		return -EOPNOTSUPP;
 
@@ -6078,7 +6078,7 @@ static int find_first(struct ksmbd_work *work)
 		data_alignment_offset;
 
 
-	struct_sz = readdir_info_level_struct_sz(le16_to_cpu(req_params->InformationLevel));
+	struct_sz = smb1_readdir_info_level_struct_sz(le16_to_cpu(req_params->InformationLevel));
 
 	if (struct_sz < 0) {
 		rc = -EFAULT;
@@ -6354,7 +6354,7 @@ static int find_next(struct ksmbd_work *work)
 		data_alignment_offset;
 
 	srch_cnt = le16_to_cpu(req_params->SearchCount);
-	struct_sz = readdir_info_level_struct_sz(le16_to_cpu(req_params->InformationLevel));
+	struct_sz = smb1_readdir_info_level_struct_sz(le16_to_cpu(req_params->InformationLevel));
 
 	if (struct_sz < 0) {
 		rc = -EFAULT;

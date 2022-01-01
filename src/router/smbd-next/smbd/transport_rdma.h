@@ -49,9 +49,9 @@ struct smb_direct_data_transfer {
 } __packed;
 
 #ifdef CONFIG_SMB_SERVER_SMBDIRECT
-int ksmbd_rdma_init(void);
-void ksmbd_rdma_destroy(void);
-bool ksmbd_rdma_capable_netdev(struct net_device *netdev);
+static int ksmbd_rdma_init(void);
+static void ksmbd_rdma_destroy(void);
+static bool ksmbd_rdma_capable_netdev(struct net_device *netdev);
 #else
 static inline int ksmbd_rdma_init(void) { return 0; }
 static inline int ksmbd_rdma_destroy(void) { return 0; }

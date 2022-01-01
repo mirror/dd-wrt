@@ -39,18 +39,18 @@ static inline int test_tree_conn_flag(struct ksmbd_tree_connect *tree_conn,
 
 struct ksmbd_session;
 
-struct ksmbd_tree_conn_status
+static struct ksmbd_tree_conn_status
 ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name);
 
-int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
+static int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
 			       struct ksmbd_tree_connect *tree_conn);
 
-struct ksmbd_tree_connect *ksmbd_tree_conn_lookup(struct ksmbd_session *sess,
+static struct ksmbd_tree_connect *ksmbd_tree_conn_lookup(struct ksmbd_session *sess,
 						  unsigned int id);
 
-struct ksmbd_share_config *ksmbd_tree_conn_share(struct ksmbd_session *sess,
+static struct ksmbd_share_config *ksmbd_tree_conn_share(struct ksmbd_session *sess,
 						 unsigned int id);
 
-int ksmbd_tree_conn_session_logoff(struct ksmbd_session *sess);
+static int ksmbd_tree_conn_session_logoff(struct ksmbd_session *sess);
 
 #endif /* __TREE_CONNECT_MANAGEMENT_H__ */

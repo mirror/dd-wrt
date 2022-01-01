@@ -1,3 +1,4 @@
+static int ksmbd_debug_types;
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *   Copyright (C) 2016 Namjae Jeon <linkinjeon@kernel.org>
@@ -25,9 +26,10 @@
 #include "crypto_ctx.h"
 #include "auth.h"
 
-int ksmbd_debug_types;
+static LIST_HEAD(conn_list);
+static DEFINE_RWLOCK(conn_list_lock);
 
-struct ksmbd_server_config server_conf;
+//static struct ksmbd_server_config server_conf;
 
 enum SERVER_CTRL_TYPE {
 	SERVER_CTRL_TYPE_INIT,

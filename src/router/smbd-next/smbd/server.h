@@ -47,15 +47,15 @@ struct ksmbd_server_config {
 	char			*conf[SERVER_CONF_WORK_GROUP + 1];
 };
 
-extern struct ksmbd_server_config server_conf;
+static struct ksmbd_server_config server_conf;
 
-int ksmbd_set_netbios_name(char *v);
-int ksmbd_set_server_string(char *v);
-int ksmbd_set_work_group(char *v);
+static int ksmbd_set_netbios_name(char *v);
+static int ksmbd_set_server_string(char *v);
+static int ksmbd_set_work_group(char *v);
 
-char *ksmbd_netbios_name(void);
-char *ksmbd_server_string(void);
-char *ksmbd_work_group(void);
+static char *ksmbd_netbios_name(void);
+static char *ksmbd_server_string(void);
+static char *ksmbd_work_group(void);
 
 static inline int ksmbd_server_running(void)
 {
@@ -67,6 +67,6 @@ static inline int ksmbd_server_configurable(void)
 	return READ_ONCE(server_conf.state) < SERVER_STATE_RESETTING;
 }
 
-int server_queue_ctrl_init_work(void);
-int server_queue_ctrl_reset_work(void);
+static int server_queue_ctrl_init_work(void);
+static int server_queue_ctrl_reset_work(void);
 #endif /* __SERVER_H__ */
