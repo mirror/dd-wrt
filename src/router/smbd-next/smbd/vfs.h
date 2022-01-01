@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  *   Copyright (C) 2016 Namjae Jeon <linkinjeon@kernel.org>
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
@@ -248,7 +247,7 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 		char *newname);
 int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
 		char *oldname, char *newname);
-int ksmbd_vfs_truncate(struct ksmbd_work *work, const char *name,
+int ksmbd_vfs_truncate(struct ksmbd_work *work,
 		struct ksmbd_file *fp, loff_t size);
 struct srv_copychunk;
 int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
@@ -278,8 +277,13 @@ int ksmbd_vfs_truncate_xattr(struct dentry *dentry, int wo_streams);
 int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 			   struct dentry *dentry, char *attr_name);
 void ksmbd_vfs_xattr_free(char *xattr);
-int ksmbd_vfs_kern_path(char *name, unsigned int flags, struct path *path,
+int ksmbd_vfs_kern_path(struct ksmbd_work *work,
+			char *name, unsigned int flags, struct path *path,
 		bool caseless);
+struct dentry *ksmbd_vfs_kern_path_create(struct ksmbd_work *work,
+					  const char *name,
+					  unsigned int flags,
+					  struct path *path);
 int ksmbd_vfs_empty_dir(struct ksmbd_file *fp);
 void ksmbd_vfs_set_fadvise(struct file *filp, __le32 option);
 int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
