@@ -395,7 +395,7 @@ out:
  *
  * Return:	0 on success, error number on error
  */
-int ksmbd_auth_ntlm(struct ksmbd_session *sess, char *pw_buf)
+int ksmbd_auth_ntlm(struct ksmbd_session *sess, char *pw_buf, char *cryptkey)
 {
 	int rc;
 	unsigned char p21[21];
@@ -403,7 +403,7 @@ int ksmbd_auth_ntlm(struct ksmbd_session *sess, char *pw_buf)
 
 	memset(p21, '\0', 21);
 	memcpy(p21, user_passkey(sess->user), CIFS_NTHASH_SIZE);
-	rc = ksmbd_enc_p24(p21, sess->ntlmssp.cryptkey, key);
+	rc = ksmbd_enc_p24(p21, cryptkey, key);
 	if (rc) {
 		pr_err("password processing failed\n");
 		return rc;
@@ -434,7 +434,7 @@ int ksmbd_auth_ntlm(struct ksmbd_session *sess, char *pw_buf)
  * Return:	0 on success, error number on error
  */
 int ksmbd_auth_ntlmv2(struct ksmbd_session *sess, struct ntlmv2_resp *ntlmv2,
-		      int blen, char *domain_name)
+		      int blen, char *domain_name, char *cryptkey)
 {
 	char ntlmv2_hash[CIFS_ENCPWD_SIZE];
 	char ntlmv2_rsp[CIFS_HMAC_MD5_HASH_SIZE];
@@ -476,7 +476,7 @@ int ksmbd_auth_ntlmv2(struct ksmbd_session *sess, struct ntlmv2_resp *ntlmv2,
 		goto out;
 	}
 
-	memcpy(construct, sess->ntlmssp.cryptkey, CIFS_CRYPTO_KEY_SIZE);
+	memcpy(construct, cryptkey, CIFS_CRYPTO_KEY_SIZE);
 	memcpy(construct + CIFS_CRYPTO_KEY_SIZE, &ntlmv2->blob_signature, blen);
 
 	rc = crypto_shash_update(CRYPTO_HMACMD5(ctx), construct, len);
@@ -505,6 +505,7 @@ out:
 	return rc;
 }
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 /**
  * __ksmbd_auth_ntlmv2() - NTLM2(extended security) authentication handler
  * @sess:	session of connection
@@ -513,17 +514,17 @@ out:
  *
  * Return:	0 on success, error number on error
  */
-static int __ksmbd_auth_ntlmv2(struct ksmbd_session *sess, char *client_nonce,
-			       char *ntlm_resp)
+static int __ksmbd_auth_ntlmv2(struct ksmbd_session *sess,
+			       char *client_nonce,
+			       char *ntlm_resp,
+			       char *cryptkey)
 {
 	char sess_key[CIFS_SMB1_SESSKEY_SIZE] = {0};
 	int rc;
 	unsigned char p21[21];
 	char key[CIFS_AUTH_RESP_SIZE];
 
-	rc = ksmbd_enc_update_sess_key(sess_key,
-				       client_nonce,
-				       (char *)sess->ntlmssp.cryptkey, 8);
+	rc = ksmbd_enc_update_sess_key(sess_key, client_nonce, cryptkey, 8);
 	if (rc) {
 		pr_err("password processing failed\n");
 		goto out;
@@ -542,6 +543,7 @@ static int __ksmbd_auth_ntlmv2(struct ksmbd_session *sess, char *client_nonce,
 out:
 	return rc;
 }
+#endif
 
 /**
  * ksmbd_decode_ntlmssp_auth_blob() - helper function to construct
@@ -553,11 +555,16 @@ out:
  * Return:	0 on success, error number on error
  */
 int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
-				   int blob_len, struct ksmbd_session *sess)
+				   int blob_len, struct ksmbd_conn *conn,
+				   struct ksmbd_session *sess)
 {
 	char *domain_name;
-	unsigned int lm_off, nt_off, dn_off;
+	unsigned int nt_off, dn_off;
 	unsigned short nt_len, dn_len;
+#ifdef CONFIG_SMB_INSECURE_SERVER
+	unsigned int lm_off;
+	unsigned short lm_len;
+#endif
 	int ret;
 
 	if (blob_len < sizeof(struct authenticate_message)) {
@@ -572,7 +579,6 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 		return -EINVAL;
 	}
 
-	lm_off = le32_to_cpu(authblob->LmChallengeResponse.BufferOffset);
 	nt_off = le32_to_cpu(authblob->NtChallengeResponse.BufferOffset);
 	nt_len = le16_to_cpu(authblob->NtChallengeResponse.Length);
 
@@ -582,20 +588,29 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 	if (blob_len < (u64)dn_off + dn_len || blob_len < (u64)nt_off + nt_len)
 		return -EINVAL;
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
+	lm_off = le32_to_cpu(authblob->LmChallengeResponse.BufferOffset);
+	lm_len = le16_to_cpu(authblob->LmChallengeResponse.Length);
+	if (blob_len < (u64)lm_off + lm_len)
+		return -EINVAL;
+
 	/* process NTLM authentication */
 	if (nt_len == CIFS_AUTH_RESP_SIZE) {
 		if (le32_to_cpu(authblob->NegotiateFlags) &
 		    NTLMSSP_NEGOTIATE_EXTENDED_SEC)
-			return __ksmbd_auth_ntlmv2(sess, (char *)authblob +
-				lm_off, (char *)authblob + nt_off);
+			return __ksmbd_auth_ntlmv2(sess,
+						   (char *)authblob + lm_off,
+						   (char *)authblob + nt_off,
+						   conn->ntlmssp.cryptkey);
 		else
 			return ksmbd_auth_ntlm(sess, (char *)authblob +
-				nt_off);
+				nt_off, conn->ntlmssp.cryptkey);
 	}
+#endif
 
 	/* TODO : use domain name that imported from configuration file */
 	domain_name = smb_strndup_from_utf16((const char *)authblob + dn_off,
-					     dn_len, true, sess->conn->local_nls);
+					     dn_len, true, conn->local_nls);
 	if (IS_ERR(domain_name))
 		return PTR_ERR(domain_name);
 
@@ -604,7 +619,7 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
 		    domain_name);
 	ret = ksmbd_auth_ntlmv2(sess, (struct ntlmv2_resp *)((char *)authblob + nt_off),
 				nt_len - CIFS_ENCPWD_SIZE,
-				domain_name);
+				domain_name, conn->ntlmssp.cryptkey);
 	kfree(domain_name);
 	return ret;
 }
@@ -618,7 +633,7 @@ int ksmbd_decode_ntlmssp_auth_blob(struct authenticate_message *authblob,
  *
  */
 int ksmbd_decode_ntlmssp_neg_blob(struct negotiate_message *negblob,
-				  int blob_len, struct ksmbd_session *sess)
+				  int blob_len, struct ksmbd_conn *conn)
 {
 	if (blob_len < sizeof(struct negotiate_message)) {
 		ksmbd_debug(AUTH, "negotiate blob len %d too small\n",
@@ -632,7 +647,7 @@ int ksmbd_decode_ntlmssp_neg_blob(struct negotiate_message *negblob,
 		return -EINVAL;
 	}
 
-	sess->ntlmssp.client_flags = le32_to_cpu(negblob->NegotiateFlags);
+	conn->ntlmssp.client_flags = le32_to_cpu(negblob->NegotiateFlags);
 	return 0;
 }
 
@@ -646,14 +661,14 @@ int ksmbd_decode_ntlmssp_neg_blob(struct negotiate_message *negblob,
  */
 unsigned int
 ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
-				   struct ksmbd_session *sess)
+				   struct ksmbd_conn *conn)
 {
 	struct target_info *tinfo;
 	wchar_t *name;
 	__u8 *target_name;
 	unsigned int flags, blob_off, blob_len, type, target_info_len = 0;
 	int len, uni_len, conv_len;
-	int cflags = sess->ntlmssp.client_flags;
+	int cflags = conn->ntlmssp.client_flags;
 
 	memcpy(chgblob->Signature, NTLMSSP_SIGNATURE, 8);
 	chgblob->MessageType = NtLmChallenge;
@@ -674,7 +689,7 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 	if (cflags & NTLMSSP_REQUEST_TARGET)
 		flags |= NTLMSSP_REQUEST_TARGET;
 
-	if (sess->conn->use_spnego &&
+	if (conn->use_spnego &&
 	    (cflags & NTLMSSP_NEGOTIATE_EXTENDED_SEC))
 		flags |= NTLMSSP_NEGOTIATE_EXTENDED_SEC;
 
@@ -687,7 +702,7 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 	}
 
 	conv_len = smb_strtoUTF16((__le16 *)name, ksmbd_netbios_name(), len,
-				  sess->conn->local_nls);
+				  conn->local_nls);
 	if (conv_len < 0 || conv_len > len) {
 		kfree(name);
 		return -EINVAL;
@@ -703,8 +718,8 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 	chgblob->TargetName.BufferOffset = cpu_to_le32(blob_off);
 
 	/* Initialize random conn challenge */
-	get_random_bytes(sess->ntlmssp.cryptkey, sizeof(__u64));
-	memcpy(chgblob->Challenge, sess->ntlmssp.cryptkey,
+	get_random_bytes(conn->ntlmssp.cryptkey, sizeof(__u64));
+	memcpy(chgblob->Challenge, conn->ntlmssp.cryptkey,
 	       CIFS_CRYPTO_KEY_SIZE);
 
 	/* Add Target Information to security buffer */
