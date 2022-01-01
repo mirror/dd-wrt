@@ -564,6 +564,11 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 
 		return;
 	}
+
+	if (!cp_key_cmp(_k, "smb2 max credits")) {
+		global_conf.smb2_max_credits = memparse(_v);
+		return;
+	}
 }
 
 static void fixup_missing_global_group(void)
