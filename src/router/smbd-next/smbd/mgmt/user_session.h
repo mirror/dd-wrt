@@ -80,31 +80,31 @@ static inline void clear_session_flag(struct ksmbd_session *sess, int bit)
 }
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
-struct ksmbd_session *ksmbd_smb1_session_create(void);
+static struct ksmbd_session *ksmbd_smb1_session_create(void);
 #endif
-struct ksmbd_session *ksmbd_smb2_session_create(void);
+static struct ksmbd_session *ksmbd_smb2_session_create(void);
 
-void ksmbd_session_destroy(struct ksmbd_session *sess);
+static void ksmbd_session_destroy(struct ksmbd_session *sess);
 
-struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id);
-struct ksmbd_session *ksmbd_session_lookup(struct ksmbd_conn *conn,
+static struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id);
+static struct ksmbd_session *ksmbd_session_lookup(struct ksmbd_conn *conn,
 					   unsigned long long id);
-void ksmbd_session_register(struct ksmbd_conn *conn,
+static void ksmbd_session_register(struct ksmbd_conn *conn,
 			    struct ksmbd_session *sess);
-void ksmbd_sessions_deregister(struct ksmbd_conn *conn);
-struct ksmbd_session *ksmbd_session_lookup_all(struct ksmbd_conn *conn,
+static void ksmbd_sessions_deregister(struct ksmbd_conn *conn);
+static struct ksmbd_session *ksmbd_session_lookup_all(struct ksmbd_conn *conn,
 					       unsigned long long id);
-struct preauth_session *ksmbd_preauth_session_alloc(struct ksmbd_conn *conn,
+static struct preauth_session *ksmbd_preauth_session_alloc(struct ksmbd_conn *conn,
 						    u64 sess_id);
-struct preauth_session *ksmbd_preauth_session_lookup(struct ksmbd_conn *conn,
+static struct preauth_session *ksmbd_preauth_session_lookup(struct ksmbd_conn *conn,
 						     unsigned long long id);
 
-int ksmbd_acquire_tree_conn_id(struct ksmbd_session *sess);
-void ksmbd_release_tree_conn_id(struct ksmbd_session *sess, int id);
+static int ksmbd_acquire_tree_conn_id(struct ksmbd_session *sess);
+static void ksmbd_release_tree_conn_id(struct ksmbd_session *sess, int id);
 
-int ksmbd_session_rpc_open(struct ksmbd_session *sess, char *rpc_name);
-void ksmbd_session_rpc_close(struct ksmbd_session *sess, int id);
-int ksmbd_session_rpc_method(struct ksmbd_session *sess, int id);
-int get_session(struct ksmbd_session *sess);
-void put_session(struct ksmbd_session *sess);
+static int ksmbd_session_rpc_open(struct ksmbd_session *sess, char *rpc_name);
+static void ksmbd_session_rpc_close(struct ksmbd_session *sess, int id);
+static int ksmbd_session_rpc_method(struct ksmbd_session *sess, int id);
+static int get_session(struct ksmbd_session *sess);
+static void put_session(struct ksmbd_session *sess);
 #endif /* __USER_SESSION_MANAGEMENT_H__ */

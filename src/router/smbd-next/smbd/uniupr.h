@@ -13,7 +13,7 @@
 /*
  * Latin upper case
  */
-signed char SmbUniUpperTable[512] = {
+static signed char SmbUniUpperTable[512] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 000-00f */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 010-01f */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 020-02f */
@@ -126,7 +126,7 @@ static signed char UniCaseRangeUff40[27] = {
 /*
  * Upper Case Range
  */
-const struct UniCaseRange SmbUniUpperRange[] = {
+static const struct UniCaseRange SmbUniUpperRange[] = {
 	{0x03a0, 0x03ce, UniCaseRangeU03a0},
 	{0x0430, 0x045f, UniCaseRangeU0430},
 	{0x0490, 0x04cc, UniCaseRangeU0490},
@@ -255,7 +255,7 @@ static signed char UniCaseRangeLff20[27] = {
 /*
  * Lower Case Range
  */
-const struct UniCaseRange CifsUniLowerRange[] = {
+static const struct UniCaseRange CifsUniLowerRange[] = {
 	{0x0380, 0x03ab, UniCaseRangeL0380},
 	{0x0400, 0x042f, UniCaseRangeL0400},
 	{0x0490, 0x04cb, UniCaseRangeL0490},

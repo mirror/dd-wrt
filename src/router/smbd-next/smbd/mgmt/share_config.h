@@ -64,7 +64,7 @@ static inline int test_share_config_flag(struct ksmbd_share_config *share,
 	return share->flags & flag;
 }
 
-void __ksmbd_share_config_put(struct ksmbd_share_config *share);
+static void __ksmbd_share_config_put(struct ksmbd_share_config *share);
 
 static inline void ksmbd_share_config_put(struct ksmbd_share_config *share)
 {
@@ -73,9 +73,9 @@ static inline void ksmbd_share_config_put(struct ksmbd_share_config *share)
 	__ksmbd_share_config_put(share);
 }
 
-struct ksmbd_share_config *ksmbd_share_config_get(char *name);
-bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
+static struct ksmbd_share_config *ksmbd_share_config_get(char *name);
+static bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename);
-void ksmbd_share_configs_cleanup(void);
+static void ksmbd_share_configs_cleanup(void);
 
 #endif /* __SHARE_CONFIG_MANAGEMENT_H__ */

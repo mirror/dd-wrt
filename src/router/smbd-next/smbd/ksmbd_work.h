@@ -104,14 +104,14 @@ static inline void *ksmbd_req_buf_next(struct ksmbd_work *work)
 	return work->request_buf + work->next_smb2_rcv_hdr_off;
 }
 
-struct ksmbd_work *ksmbd_alloc_work_struct(void);
-void ksmbd_free_work_struct(struct ksmbd_work *work);
+static struct ksmbd_work *ksmbd_alloc_work_struct(void);
+static void ksmbd_free_work_struct(struct ksmbd_work *work);
 
-void ksmbd_work_pool_destroy(void);
-int ksmbd_work_pool_init(void);
+static void ksmbd_work_pool_destroy(void);
+static int ksmbd_work_pool_init(void);
 
-int ksmbd_workqueue_init(void);
-void ksmbd_workqueue_destroy(void);
-bool ksmbd_queue_work(struct ksmbd_work *work);
+static int ksmbd_workqueue_init(void);
+static void ksmbd_workqueue_destroy(void);
+static bool ksmbd_queue_work(struct ksmbd_work *work);
 
 #endif /* __KSMBD_WORK_H__ */

@@ -56,8 +56,6 @@ static inline bool d_can_lookup(const struct dentry *dentry)
 
 #endif
 
-extern int ksmbd_debug_types;
-
 #define KSMBD_DEBUG_SMB		BIT(0)
 #define KSMBD_DEBUG_AUTH	BIT(1)
 #define KSMBD_DEBUG_VFS		BIT(2)
@@ -95,7 +93,7 @@ extern int ksmbd_debug_types;
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /* ksmbd misc functions */
-extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
+static void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #endif
 
 #ifndef LOOKUP_NO_SYMLINKS
