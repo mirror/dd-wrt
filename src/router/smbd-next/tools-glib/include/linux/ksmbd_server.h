@@ -52,6 +52,7 @@ struct ksmbd_startup_request {
 	__u32	smb2_max_trans;
 	__u32	share_fake_fscaps;
 	__u32	sub_auth[3];
+	__u32	smb2_max_credits;
 	__u32	ifc_list_sz;
 	__s8	____payload[0];
 } ____ksmbd_align;
