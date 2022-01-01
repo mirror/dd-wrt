@@ -17,9 +17,9 @@
  *    depending upon the context in which it is used.
  */
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_acquire_smb1_tid(struct ida *ida);
+static int ksmbd_acquire_smb1_tid(struct ida *ida);
 #endif
-int ksmbd_acquire_smb2_tid(struct ida *ida);
+static int ksmbd_acquire_smb2_tid(struct ida *ida);
 
 /*
  * 2.2.1.6.8 UID Generation
@@ -29,12 +29,12 @@ int ksmbd_acquire_smb2_tid(struct ida *ida);
  *    zero (0x0000), are valid.
  */
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_acquire_smb1_uid(struct ida *ida);
+static int ksmbd_acquire_smb1_uid(struct ida *ida);
 #endif
-int ksmbd_acquire_smb2_uid(struct ida *ida);
-int ksmbd_acquire_async_msg_id(struct ida *ida);
+static int ksmbd_acquire_smb2_uid(struct ida *ida);
+static int ksmbd_acquire_async_msg_id(struct ida *ida);
 
-int ksmbd_acquire_id(struct ida *ida);
+static int ksmbd_acquire_id(struct ida *ida);
 
-void ksmbd_release_id(struct ida *ida, int id);
+static void ksmbd_release_id(struct ida *ida, int id);
 #endif /* __KSMBD_IDA_MANAGEMENT_H__ */

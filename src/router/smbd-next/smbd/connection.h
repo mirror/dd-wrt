@@ -138,27 +138,25 @@ struct ksmbd_transport {
 #define KSMBD_TCP_SEND_TIMEOUT	(5 * HZ)
 #define KSMBD_TCP_PEER_SOCKADDR(c)	((struct sockaddr *)&((c)->peer_addr))
 
-extern struct list_head conn_list;
-extern rwlock_t conn_list_lock;
 
-bool ksmbd_conn_alive(struct ksmbd_conn *conn);
-void ksmbd_conn_wait_idle(struct ksmbd_conn *conn);
-struct ksmbd_conn *ksmbd_conn_alloc(void);
-void ksmbd_conn_free(struct ksmbd_conn *conn);
-bool ksmbd_conn_lookup_dialect(struct ksmbd_conn *c);
-int ksmbd_conn_write(struct ksmbd_work *work);
-int ksmbd_conn_rdma_read(struct ksmbd_conn *conn, void *buf,
+static bool ksmbd_conn_alive(struct ksmbd_conn *conn);
+static void ksmbd_conn_wait_idle(struct ksmbd_conn *conn);
+static struct ksmbd_conn *ksmbd_conn_alloc(void);
+static void ksmbd_conn_free(struct ksmbd_conn *conn);
+static bool ksmbd_conn_lookup_dialect(struct ksmbd_conn *c);
+static int ksmbd_conn_write(struct ksmbd_work *work);
+static int ksmbd_conn_rdma_read(struct ksmbd_conn *conn, void *buf,
 			 unsigned int buflen, u32 remote_key, u64 remote_offset,
 			 u32 remote_len);
-int ksmbd_conn_rdma_write(struct ksmbd_conn *conn, void *buf,
+static int ksmbd_conn_rdma_write(struct ksmbd_conn *conn, void *buf,
 			  unsigned int buflen, u32 remote_key, u64 remote_offset,
 			  u32 remote_len);
-void ksmbd_conn_enqueue_request(struct ksmbd_work *work);
-int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work);
-void ksmbd_conn_init_server_callbacks(struct ksmbd_conn_ops *ops);
-int ksmbd_conn_handler_loop(void *p);
-int ksmbd_conn_transport_init(void);
-void ksmbd_conn_transport_destroy(void);
+static void ksmbd_conn_enqueue_request(struct ksmbd_work *work);
+static int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work);
+static void ksmbd_conn_init_server_callbacks(struct ksmbd_conn_ops *ops);
+static int ksmbd_conn_handler_loop(void *p);
+static int ksmbd_conn_transport_init(void);
+static void ksmbd_conn_transport_destroy(void);
 
 /*
  * WARNING

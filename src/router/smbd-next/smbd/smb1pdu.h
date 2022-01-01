@@ -1554,47 +1554,47 @@ struct smb_com_setattr_rsp {
 	__le16 ByteCount;        /* bct = 0 */
 } __packed;
 
-extern int init_smb1_server(struct ksmbd_conn *conn);
+static int init_smb1_server(struct ksmbd_conn *conn);
 
 /* function prototypes */
-extern int init_smb_rsp_hdr(struct ksmbd_work *work);
-extern u16 get_smb_cmd_val(struct ksmbd_work *work);
-extern void set_smb_rsp_status(struct ksmbd_work *work, __le32 err);
-extern int smb_allocate_rsp_buf(struct ksmbd_work *work);
-extern bool smb1_is_sign_req(struct ksmbd_work *work, unsigned int command);
-extern int smb1_check_sign_req(struct ksmbd_work *work);
-extern void smb1_set_sign_rsp(struct ksmbd_work *work);
-extern int smb_check_user_session(struct ksmbd_work *work);
-extern int smb_get_ksmbd_tcon(struct ksmbd_work *work);
-extern int ksmbd_smb1_check_message(struct ksmbd_work *work);
+static int init_smb_rsp_hdr(struct ksmbd_work *work);
+static u16 get_smb_cmd_val(struct ksmbd_work *work);
+static void set_smb_rsp_status(struct ksmbd_work *work, __le32 err);
+static int smb_allocate_rsp_buf(struct ksmbd_work *work);
+static bool smb1_is_sign_req(struct ksmbd_work *work, unsigned int command);
+static int smb1_check_sign_req(struct ksmbd_work *work);
+static void smb1_set_sign_rsp(struct ksmbd_work *work);
+static int smb_check_user_session(struct ksmbd_work *work);
+static int smb_get_ksmbd_tcon(struct ksmbd_work *work);
+static int ksmbd_smb1_check_message(struct ksmbd_work *work);
 
 /* smb1 command handlers */
-extern int smb_rename(struct ksmbd_work *work);
-extern int smb_negotiate_request(struct ksmbd_work *work);
-extern int smb_handle_negotiate(struct ksmbd_work *work);
-extern int smb_session_setup_andx(struct ksmbd_work *work);
-extern int smb_tree_connect_andx(struct ksmbd_work *work);
-extern int smb_trans2(struct ksmbd_work *work);
-extern int smb_nt_create_andx(struct ksmbd_work *work);
-extern int smb_trans(struct ksmbd_work *work);
-extern int smb_locking_andx(struct ksmbd_work *work);
-extern int smb_close(struct ksmbd_work *work);
-extern int smb_read_andx(struct ksmbd_work *work);
-extern int smb_tree_disconnect(struct ksmbd_work *work);
-extern int smb_session_disconnect(struct ksmbd_work *work);
-extern int smb_write_andx(struct ksmbd_work *work);
-extern int smb_echo(struct ksmbd_work *work);
-extern int smb_flush(struct ksmbd_work *work);
-extern int smb_mkdir(struct ksmbd_work *work);
-extern int smb_rmdir(struct ksmbd_work *work);
-extern int smb_unlink(struct ksmbd_work *work);
-extern int smb_nt_cancel(struct ksmbd_work *work);
-extern int smb_nt_rename(struct ksmbd_work *work);
-extern int smb_query_info(struct ksmbd_work *work);
-extern int smb_closedir(struct ksmbd_work *work);
-extern int smb_open_andx(struct ksmbd_work *work);
-extern int smb_write(struct ksmbd_work *work);
-extern int smb_setattr(struct ksmbd_work *work);
-extern int smb_checkdir(struct ksmbd_work *work);
-extern int smb_process_exit(struct ksmbd_work *work);
+static int smb_rename(struct ksmbd_work *work);
+static int smb_negotiate_request(struct ksmbd_work *work);
+static int smb_handle_negotiate(struct ksmbd_work *work);
+static int smb_session_setup_andx(struct ksmbd_work *work);
+static int smb_tree_connect_andx(struct ksmbd_work *work);
+static int smb_trans2(struct ksmbd_work *work);
+static int smb_nt_create_andx(struct ksmbd_work *work);
+static int smb_trans(struct ksmbd_work *work);
+static int smb_locking_andx(struct ksmbd_work *work);
+static int smb_close(struct ksmbd_work *work);
+static int smb_read_andx(struct ksmbd_work *work);
+static int smb_tree_disconnect(struct ksmbd_work *work);
+static int smb_session_disconnect(struct ksmbd_work *work);
+static int smb_write_andx(struct ksmbd_work *work);
+static int smb_echo(struct ksmbd_work *work);
+static int smb_flush(struct ksmbd_work *work);
+static int smb_mkdir(struct ksmbd_work *work);
+static int smb_rmdir(struct ksmbd_work *work);
+static int smb_unlink(struct ksmbd_work *work);
+static int smb_nt_cancel(struct ksmbd_work *work);
+static int smb_nt_rename(struct ksmbd_work *work);
+static int smb_query_info(struct ksmbd_work *work);
+static int smb_closedir(struct ksmbd_work *work);
+static int smb_open_andx(struct ksmbd_work *work);
+static int smb_write(struct ksmbd_work *work);
+static int smb_setattr(struct ksmbd_work *work);
+static int smb_checkdir(struct ksmbd_work *work);
+static int smb_process_exit(struct ksmbd_work *work);
 #endif /* __SMB1PDU_H */

@@ -52,30 +52,29 @@ struct UniCaseRange {
 #endif				/* UNICASERANGE_DEFINED */
 
 #ifndef UNIUPR_NOUPPER
-extern signed char SmbUniUpperTable[512];
-extern const struct UniCaseRange SmbUniUpperRange[];
+static signed char SmbUniUpperTable[512];
+static const struct UniCaseRange SmbUniUpperRange[];
 #endif				/* UNIUPR_NOUPPER */
 
 #ifndef UNIUPR_NOLOWER
-extern signed char CifsUniLowerTable[512];
-extern const struct UniCaseRange CifsUniLowerRange[];
+static signed char CifsUniLowerTable[512];
+static const struct UniCaseRange CifsUniLowerRange[];
 #endif				/* UNIUPR_NOLOWER */
 
 #ifdef __KERNEL__
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int smb1_utf16_name_length(const __le16 *from, int maxbytes);
+static int smb1_utf16_name_length(const __le16 *from, int maxbytes);
 #endif
-int smb_strtoUTF16(__le16 *to, const char *from, int len,
+static int smb_strtoUTF16(__le16 *to, const char *from, int len,
 		   const struct nls_table *codepage);
-char *smb_strndup_from_utf16(const char *src, const int maxlen,
+static char *smb_strndup_from_utf16(const char *src, const int maxlen,
 			     const bool is_unicode,
 			     const struct nls_table *codepage);
-int smbConvertToUTF16(__le16 *target, const char *source, int srclen,
+static int smbConvertToUTF16(__le16 *target, const char *source, int srclen,
 		      const struct nls_table *cp, int mapchars);
-char *ksmbd_extract_sharename(char *treename);
 #endif
 
-wchar_t cifs_toupper(wchar_t in);
+static wchar_t cifs_toupper(wchar_t in);
 
 /*
  * UniStrcat:  Concatenate the second string to the first

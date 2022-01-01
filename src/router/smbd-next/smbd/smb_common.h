@@ -487,22 +487,22 @@ smb2_hdr_size_no_buflen(struct smb_version_values *vals)
 	return vals->header_size - 4;
 }
 
-int ksmbd_min_protocol(void);
-int ksmbd_max_protocol(void);
+static int ksmbd_min_protocol(void);
+static int ksmbd_max_protocol(void);
 
-int ksmbd_lookup_protocol_idx(char *str);
+static int ksmbd_lookup_protocol_idx(char *str);
 
-int ksmbd_verify_smb_message(struct ksmbd_work *work);
-bool ksmbd_smb_request(struct ksmbd_conn *conn);
+static int ksmbd_verify_smb_message(struct ksmbd_work *work);
+static bool ksmbd_smb_request(struct ksmbd_conn *conn);
 
-int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
+static int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
 
-int ksmbd_init_smb_server(struct ksmbd_work *work);
+static int ksmbd_init_smb_server(struct ksmbd_work *work);
 
-bool ksmbd_pdu_size_has_room(unsigned int pdu);
+static bool ksmbd_pdu_size_has_room(unsigned int pdu);
 
-struct ksmbd_kstat;
-int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
+static struct ksmbd_kstat;
+static int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				      int info_level,
 				      struct ksmbd_file *dir,
 				      struct ksmbd_dir_info *d_info,
@@ -512,21 +512,21 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 						struct ksmbd_dir_info *,
 						struct ksmbd_kstat *));
 
-int ksmbd_extract_shortname(struct ksmbd_conn *conn,
+static int ksmbd_extract_shortname(struct ksmbd_conn *conn,
 			    const char *longname,
 			    char *shortname);
 
-int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command);
+static int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command);
 
-int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp);
-int ksmbd_override_fsids(struct ksmbd_work *work);
-void ksmbd_revert_fsids(struct ksmbd_work *work);
+static int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp);
+static int ksmbd_override_fsids(struct ksmbd_work *work);
+static void ksmbd_revert_fsids(struct ksmbd_work *work);
 
-unsigned int ksmbd_server_side_copy_max_chunk_count(void);
-unsigned int ksmbd_server_side_copy_max_chunk_size(void);
-unsigned int ksmbd_server_side_copy_max_total_size(void);
-bool is_asterisk(char *p);
-__le32 smb_map_generic_desired_access(__le32 daccess);
+static unsigned int ksmbd_server_side_copy_max_chunk_count(void);
+static unsigned int ksmbd_server_side_copy_max_chunk_size(void);
+static unsigned int ksmbd_server_side_copy_max_total_size(void);
+static bool is_asterisk(char *p);
+static __le32 smb_map_generic_desired_access(__le32 daccess);
 
 static inline unsigned int get_rfc1002_len(void *buf)
 {

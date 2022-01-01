@@ -15,6 +15,8 @@
  *
  *  C is set if "customer defined" error, N bit is reserved and MBZ
  */
+#ifndef SMBSTATUS_H
+#define SMBSTATUS_H
 
 #define STATUS_SEVERITY_SUCCESS cpu_to_le32(0x0000)
 #define STATUS_SEVERITY_INFORMATIONAL cpu_to_le32(0x0001)
@@ -1820,3 +1822,4 @@ struct ntstatus {
 
 #define STATUS_NO_PREAUTH_INTEGRITY_HASH_OVERLAP cpu_to_le32(0xC05D0000)
 #define STATUS_INVALID_LOCK_RANGE cpu_to_le32(0xC00001a1)
+#endif
