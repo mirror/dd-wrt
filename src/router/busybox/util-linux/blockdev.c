@@ -21,7 +21,8 @@
 //usage:       "	--setro		Set ro"
 //usage:     "\n	--setrw		Set rw"
 //usage:     "\n	--getro		Get ro"
-//usage:     "\n	--getss		Get sector size"
+//usage:     "\n	--getss		Get logical sector size"
+//usage:     "\n	--getpbsz	Get physical sector size"
 //usage:     "\n	--getbsz	Get block size"
 //usage:     "\n	--setbsz BYTES	Set block size"
 //usage:     "\n	--getsz		Get device size in 512-byte sectors"
@@ -55,26 +56,32 @@ static const char bdcmd_names[] ALIGN1 =
 	"setrw"     "\0"
 	"getro"     "\0"
 	"getss"     "\0"
+	"getpbsz"     "\0"
 	"getbsz"    "\0"
 	"setbsz"    "\0"
-#define CMD_SETBSZ 5
+#define CMD_SETBSZ 6
 	"getsz"     "\0"
 	"getsize"   "\0"
 	"getsize64" "\0"
 	"getra" "\0"
 	"setra" "\0"
-#define CMD_SETRA 10
+#define CMD_SETRA 11
 	"getfra" "\0"
 	"setfra" "\0"
-#define CMD_SETFRA 12
+#define CMD_SETFRA 13
 	"flushbufs" "\0"
 	"rereadpt"  "\0"
 ;
+#ifndef BLKPBSZGET
+#define BLKPBSZGET _IO(0x12,123)
+#endif
+
 static const uint32_t bdcmd_ioctl[] ALIGN4 = {
 	BLKROSET,       //setro
 	BLKROSET,       //setrw
 	BLKROGET,       //getro
 	BLKSSZGET,      //getss
+	BLKPBSZGET,
 	BLKBSZGET,      //getbsz
 	BLKBSZSET,      //setbsz
 	BLKGETSIZE64,   //getsz
@@ -106,6 +113,7 @@ static const uint8_t bdcmd_flags[] ALIGN1 = {
 	ARG_INT + FL_NORESULT,             //setrw
 	ARG_INT,                           //getro
 	ARG_INT,                           //getss
+	ARG_INT,                           //getpbsz
 	ARG_INT,                           //getbsz
 	ARG_INT + FL_NORESULT + FL_USRARG, //setbsz
 	ARG_U64 + FL_SCALE512,             //getsz
