@@ -32,6 +32,26 @@
 //config:	-a Show all filesystems
 //config:	-i Inodes
 //config:	-B <SIZE> Blocksize
+//config:
+//config:config FEATURE_SKIP_ROOTFS
+//config:	bool "Skip rootfs in mount table"
+//config:	default y
+//config:	depends on DF
+//config:	help
+//config:	Ignore rootfs entry in mount table.
+//config:
+//config:	In Linux, kernel has a special filesystem, rootfs, which is initially
+//config:	mounted on /. It contains initramfs data, if kernel is configured
+//config:	to have one. Usually, another file system is mounted over / early
+//config:	in boot process, and therefore most tools which manipulate
+//config:	mount table, such as df, will skip rootfs entry.
+//config:
+//config:	However, some systems do not mount anything on /.
+//config:	If you need to configure busybox for one of these systems,
+//config:	you may find it useful to turn this option off to make df show
+//config:	initramfs statistics.
+//config:
+//config:	Otherwise, choose Y.
 
 //applet:IF_DF(APPLET_NOEXEC(df, df, BB_DIR_BIN, BB_SUID_DROP, df))
 
@@ -99,15 +119,16 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 	struct mntent *mount_entry;
 	struct statvfs s;
 	enum {
-		OPT_KILO   = (1 << 0),
-		OPT_POSIX  = (1 << 1),
-		OPT_FSTYPE = (1 << 2),
-		OPT_t      = (1 << 3),
-		OPT_ALL    = (1 << 4) * ENABLE_FEATURE_DF_FANCY,
-		OPT_INODE  = (1 << 5) * ENABLE_FEATURE_DF_FANCY,
-		OPT_BSIZE  = (1 << 6) * ENABLE_FEATURE_DF_FANCY,
-		OPT_HUMAN  = (1 << (4 + 3*ENABLE_FEATURE_DF_FANCY)) * ENABLE_FEATURE_HUMAN_READABLE,
-		OPT_MEGA   = (1 << (5 + 3*ENABLE_FEATURE_DF_FANCY)) * ENABLE_FEATURE_HUMAN_READABLE,
+		OPT_KILO     = (1 << 0),
+		OPT_POSIX    = (1 << 1),
+		OPT_FSTYPE   = (1 << 2),
+		OPT_t        = (1 << 3),
+		OPT_ALL      = (1 << 4) * ENABLE_FEATURE_DF_FANCY,
+		OPT_INODE    = (1 << 5) * ENABLE_FEATURE_DF_FANCY,
+		OPT_BSIZE    = (1 << 6) * ENABLE_FEATURE_DF_FANCY,
+		OPT_HUMAN    = (1 << (4 + 3*ENABLE_FEATURE_DF_FANCY)) * ENABLE_FEATURE_HUMAN_READABLE,
+		OPT_HUMANDEC = (1 << (5 + 3*ENABLE_FEATURE_DF_FANCY)) * ENABLE_FEATURE_HUMAN_READABLE,
+		OPT_MEGA     = (1 << (6 + 3*ENABLE_FEATURE_DF_FANCY)) * ENABLE_FEATURE_HUMAN_READABLE,
 	};
 	const char *disp_units_hdr = NULL;
 	char *chp, *opt_t;
@@ -124,7 +145,7 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 	opt = getopt32(argv, "^"
 			"kPTt:"
 			IF_FEATURE_DF_FANCY("aiB:")
-			IF_FEATURE_HUMAN_READABLE("hm")
+			IF_FEATURE_HUMAN_READABLE("hHm")
 			"\0"
 #if ENABLE_FEATURE_HUMAN_READABLE && ENABLE_FEATURE_DF_FANCY
 			"k-mB:m-Bk:B-km"
@@ -151,8 +172,11 @@ int df_main(int argc UNUSED_PARAM, char **argv)
  got_it: ;
 	}
 
-	if (opt & OPT_HUMAN) {
+	if (opt & (OPT_HUMAN|OPT_HUMANDEC)) {
 		df_disp_hr = 0;
+//TODO: need to add support in make_human_readable_str() for "decimal human readable"
+		//if (opt & OPT_HUMANDEC)
+		//	df_disp_hr--;
 		disp_units_hdr = "     Size";
 	}
 	if (opt & OPT_INODE)

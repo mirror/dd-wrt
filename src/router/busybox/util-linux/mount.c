@@ -562,9 +562,9 @@ static void append_mount_options(char **oldopts, const char *newopts)
 		// Do not insert options which are already there
 		while (newopts[0]) {
 			char *p;
-			int len = strlen(newopts);
-			p = strchr(newopts, ',');
-			if (p) len = p - newopts;
+			int len;
+
+			len = strchrnul(newopts, ',') - newopts;
 			p = *oldopts;
 			while (1) {
 				if (!strncmp(p, newopts, len)
@@ -579,7 +579,7 @@ static void append_mount_options(char **oldopts, const char *newopts)
 			*oldopts = p;
  skip:
 			newopts += len;
-			while (newopts[0] == ',') newopts++;
+			while (*newopts == ',') newopts++;
 		}
 	} else {
 		if (ENABLE_FEATURE_CLEAN_UP) free(*oldopts);
@@ -589,7 +589,7 @@ static void append_mount_options(char **oldopts, const char *newopts)
 
 // Use the mount_options list to parse options into flags.
 // Also update list of unrecognized options if unrecognized != NULL
-static unsigned long parse_mount_options(char *options, char **unrecognized)
+static unsigned long parse_mount_options(char *options, char **unrecognized, uint32_t *opt)
 {
 	unsigned long flags = MS_SILENT;
 
@@ -617,6 +617,11 @@ static unsigned long parse_mount_options(char *options, char **unrecognized)
 					flags &= fl;
 				else
 					flags |= fl;
+				/* If we see "-o rw" on command line, it's the same as -w:
+				 * "do not try to fall back to RO mounts"
+				 */
+				if (fl == ~MS_RDONLY && opt)
+					(*opt) |= OPT_w;
 				goto found;
 			}
 			option_str += opt_len + 1;
@@ -713,10 +718,12 @@ static int mount_it_now(struct mntent *mp, unsigned long vfsflags, char *filtero
 		errno = 0;
 		rc = verbose_mount(mp->mnt_fsname, mp->mnt_dir, mp->mnt_type,
 				vfsflags, filteropts);
+		if (rc == 0)
+			goto mtab; // success
 
-		// If mount failed, try
-		// helper program mount.<mnt_type>
-		if (HELPERS_ALLOWED && rc && mp->mnt_type) {
+		// mount failed, try helper program
+		// mount.<mnt_type>
+		if (HELPERS_ALLOWED && mp->mnt_type) {
 			char *args[8];
 			int errno_save = errno;
 			args[0] = xasprintf("mount.%s", mp->mnt_type);
@@ -734,13 +741,19 @@ static int mount_it_now(struct mntent *mp, unsigned long vfsflags, char *filtero
 			args[rc] = NULL;
 			rc = spawn_and_wait(args);
 			free(args[0]);
-			if (!rc)
-				break;
+			if (rc == 0)
+				goto mtab; // success
 			errno = errno_save;
 		}
 
-		if (!rc || (vfsflags & MS_RDONLY) || (errno != EACCES && errno != EROFS))
-			break;
+		// Should we retry read-only mount?
+		if (vfsflags & MS_RDONLY)
+			break;		// no, already was tried
+		if (option_mask32 & OPT_w)
+			break;		// no, "mount -w" never falls back to RO
+		if (errno != EACCES && errno != EROFS)
+			break;		// no, error isn't hinting that RO may work
+
 		if (!(vfsflags & MS_SILENT))
 			bb_error_msg("%s is write-protected, mounting read-only",
 						mp->mnt_fsname);
@@ -1965,7 +1978,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 
 	errno = 0;
 
-	vfsflags = parse_mount_options(mp->mnt_opts, &filteropts);
+	vfsflags = parse_mount_options(mp->mnt_opts, &filteropts, NULL);
 
 	// Treat fstype "auto" as unspecified
 	if (mp->mnt_type && strcmp(mp->mnt_type, "auto") == 0)
@@ -2039,7 +2052,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 				len, share,
 				share + len + 1  /* "dir1/dir2" */
 			);
-			parse_mount_options(unc, &filteropts);
+			parse_mount_options(unc, &filteropts, NULL);
 			if (ENABLE_FEATURE_CLEAN_UP) free(unc);
 		}
 
@@ -2065,7 +2078,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 // (instead of _numeric_ iface_id) with glibc.
 // This probably should be fixed in glibc, not here.
 // The workaround is to manually specify correct "ip=ADDR%n" option.
-			parse_mount_options(ip, &filteropts);
+			parse_mount_options(ip, &filteropts, NULL);
 			if (ENABLE_FEATURE_CLEAN_UP) free(ip);
 		}
 
@@ -2347,7 +2360,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 	// Past this point, we are handling either "mount -a [opts]"
 	// or "mount [opts] single_param"
 
-	cmdopt_flags = parse_mount_options(cmdopts, NULL);
+	cmdopt_flags = parse_mount_options(cmdopts, NULL, &option_mask32);
 	if (nonroot && (cmdopt_flags & ~MS_SILENT)) // Non-root users cannot specify flags
 		bb_simple_error_msg_and_die(bb_msg_you_must_be_root);
 
@@ -2421,7 +2434,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 				continue;
 
 			// Skip noauto and swap anyway
-			if ((parse_mount_options(mtcur->mnt_opts, NULL) & (MOUNT_NOAUTO | MOUNT_SWAP))
+			if ((parse_mount_options(mtcur->mnt_opts, NULL, NULL) & (MOUNT_NOAUTO | MOUNT_SWAP))
 			// swap is bogus "fstype", parse_mount_options can't check fstypes
 			 || strcasecmp(mtcur->mnt_type, "swap") == 0
 			) {
@@ -2482,7 +2495,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 		// exit_group(32)                          = ?
 #if 0
 		// In case we want to simply skip swap partitions:
-		l = parse_mount_options(mtcur->mnt_opts, NULL);
+		l = parse_mount_options(mtcur->mnt_opts, NULL, NULL);
 		if ((l & MOUNT_SWAP)
 		// swap is bogus "fstype", parse_mount_options can't check fstypes
 		 || strcasecmp(mtcur->mnt_type, "swap") == 0
@@ -2492,7 +2505,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 #endif
 		if (nonroot) {
 			// fstab must have "users" or "user"
-			l = parse_mount_options(mtcur->mnt_opts, NULL);
+			l = parse_mount_options(mtcur->mnt_opts, NULL, NULL);
 			if (!(l & MOUNT_USERS))
 				bb_simple_error_msg_and_die(bb_msg_you_must_be_root);
 		}

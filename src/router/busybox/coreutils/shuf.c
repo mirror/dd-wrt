@@ -17,14 +17,14 @@
 //kbuild:lib-$(CONFIG_SHUF) += shuf.o
 
 //usage:#define shuf_trivial_usage
-//usage:       "[-e|-i L-H] [-n NUM] [-o FILE] [-z] [FILE|ARG...]"
+//usage:       "[-n NUM] [-o FILE] [-z] [FILE | -e [ARG...] | -i L-H]"
 //usage:#define shuf_full_usage "\n\n"
 //usage:       "Randomly permute lines\n"
-//usage:     "\n	-e	Treat ARGs as lines"
-//usage:     "\n	-i L-H	Treat numbers L-H as lines"
 //usage:     "\n	-n NUM	Output at most NUM lines"
 //usage:     "\n	-o FILE	Write to FILE, not standard output"
-//usage:     "\n	-z	End lines with zero byte, not newline"
+//usage:     "\n	-z	NUL terminated output"
+//usage:     "\n	-e	Treat ARGs as lines"
+//usage:     "\n	-i L-H	Treat numbers L-H as lines"
 
 #include "libbb.h"
 
@@ -39,24 +39,30 @@
 
 /*
  * Use the Fisher-Yates shuffle algorithm on an array of lines.
+ * If the required number of output lines is less than the total
+ * we can stop shuffling early.
  */
-static void shuffle_lines(char **lines, unsigned numlines)
+static void shuffle_lines(char **lines, unsigned numlines, unsigned outlines)
 {
-	unsigned i;
-	unsigned r;
-	char *tmp;
-
 	srand(monotonic_us());
 
-	for (i = numlines-1; i > 0; i--) {
-		r = rand();
+	while (outlines != 0) {
+		char *tmp;
+		unsigned r = rand();
 		/* RAND_MAX can be as small as 32767 */
-		if (i > RAND_MAX)
+		if (numlines > RAND_MAX)
 			r ^= rand() << 15;
-		r %= i + 1;
-		tmp = lines[i];
-		lines[i] = lines[r];
+		r %= numlines;
+//TODO: the above method is seriously non-uniform when numlines is very large.
+//For example, with numlines of   0xf0000000,
+//values of (r % numlines) in [0, 0x0fffffff] range
+//are more likely: e.g. r=1 and r=0xf0000001 both map to 1,
+//whereas only one value, r=0xefffffff, maps to 0xefffffff.
+		numlines--;
+		tmp = lines[numlines];
+		lines[numlines] = lines[r];
 		lines[r] = tmp;
+		outlines--;
 	}
 }
 
@@ -65,9 +71,10 @@ int shuf_main(int argc, char **argv)
 {
 	unsigned opts;
 	char *opt_i_str, *opt_n_str, *opt_o_str;
-	unsigned i;
 	char **lines;
-	unsigned numlines;
+	unsigned long long lo = lo;
+	unsigned numlines, outlines;
+	unsigned i;
 	char eol;
 
 	opts = getopt32(argv, "^"
@@ -87,35 +94,48 @@ int shuf_main(int argc, char **argv)
 	} else
 	if (opts & OPT_i) {
 		/* create a range of numbers */
+		unsigned long long hi;
 		char *dash;
-		unsigned lo, hi;
+
+		if (argv[0])
+			bb_show_usage();
 
 		dash = strchr(opt_i_str, '-');
 		if (!dash) {
 			bb_error_msg_and_die("bad range '%s'", opt_i_str);
 		}
 		*dash = '\0';
-		lo = xatou(opt_i_str);
-		hi = xatou(dash + 1);
+		lo = xatoull(opt_i_str);
+		hi = xatoull(dash + 1);
 		*dash = '-';
-		if (hi < lo) {
+		if (hi < lo)
 			bb_error_msg_and_die("bad range '%s'", opt_i_str);
+		hi -= lo;
+		if (sizeof(size_t) > sizeof(numlines)) {
+			if (hi >= UINT_MAX)
+				bb_error_msg_and_die("bad range '%s'", opt_i_str);
+		} else {
+			if (hi >= UINT_MAX / sizeof(lines[0]))
+				bb_error_msg_and_die("bad range '%s'", opt_i_str);
 		}
 
-		numlines = (hi+1) - lo;
-		lines = xmalloc(numlines * sizeof(lines[0]));
+		numlines = hi + 1;
+		lines = xmalloc((size_t)numlines * sizeof(lines[0]));
 		for (i = 0; i < numlines; i++) {
-			lines[i] = (char*)(uintptr_t)lo;
-			lo++;
+			lines[i] = (char*)(uintptr_t)i;
 		}
 	} else {
 		/* default - read lines from stdin or the input file */
 		FILE *fp;
+		const char *fname = "-";
 
-		if (argc > 1)
-			bb_show_usage();
+		if (argv[0]) {
+			if (argv[1])
+				bb_show_usage();
+			fname = argv[0];
+		}
 
-		fp = xfopen_stdin(argv[0] ? argv[0] : "-");
+		fp = xfopen_stdin(fname);
 		lines = NULL;
 		numlines = 0;
 		for (;;) {
@@ -128,26 +148,25 @@ int shuf_main(int argc, char **argv)
 		fclose_if_not_stdin(fp);
 	}
 
-	if (numlines != 0)
-		shuffle_lines(lines, numlines);
+	outlines = numlines;
+	if (opts & OPT_n) {
+		outlines = xatou(opt_n_str);
+		if (outlines > numlines)
+			outlines = numlines;
+	}
+
+	shuffle_lines(lines, numlines, outlines);
 
 	if (opts & OPT_o)
 		xmove_fd(xopen(opt_o_str, O_WRONLY|O_CREAT|O_TRUNC), STDOUT_FILENO);
-
-	if (opts & OPT_n) {
-		unsigned maxlines;
-		maxlines = xatou(opt_n_str);
-		if (numlines > maxlines)
-			numlines = maxlines;
-	}
 
 	eol = '\n';
 	if (opts & OPT_z)
 		eol = '\0';
 
-	for (i = 0; i < numlines; i++) {
+	for (i = numlines - outlines; i < numlines; i++) {
 		if (opts & OPT_i)
-			printf("%u%c", (unsigned)(uintptr_t)lines[i], eol);
+			printf("%llu%c", lo + (uintptr_t)lines[i], eol);
 		else
 			printf("%s%c", lines[i], eol);
 	}
