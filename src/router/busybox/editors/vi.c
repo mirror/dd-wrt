@@ -7,7 +7,7 @@
  */
 //
 //Things To Do:
-//	$HOME/.exrc  and  ./.exrc
+//	./.exrc
 //	add magic to search	/foo.*bar
 //	add :help command
 //	:map macros
@@ -185,7 +185,7 @@
 //usage:#define vi_full_usage "\n\n"
 //usage:       "Edit FILE\n"
 //usage:	IF_FEATURE_VI_COLON(
-//usage:     "\n	-c CMD	Initial command to run ($EXINIT also available)"
+//usage:     "\n	-c CMD	Initial command to run ($EXINIT and ~/.exrc also available)"
 //usage:	)
 //usage:	IF_FEATURE_VI_READONLY(
 //usage:     "\n	-R	Read-only"
@@ -201,6 +201,7 @@
 
 // the CRASHME code is unmaintained, and doesn't currently build
 #define ENABLE_FEATURE_VI_CRASHME 0
+#define IF_FEATURE_VI_CRASHME(...)
 
 
 #if ENABLE_LOCALE_SUPPORT
@@ -403,7 +404,7 @@ struct globals {
 	int cindex;               // saved character index for up/down motion
 	smallint keep_index;      // retain saved character index
 #if ENABLE_FEATURE_VI_COLON
-	char *initial_cmds[3];  // currently 2 entries, NULL terminated
+	llist_t *initial_cmds;
 #endif
 	// Should be just enough to hold a key sequence,
 	// but CRASHME mode uses it as generated command buffer too
@@ -1376,21 +1377,14 @@ static void print_literal(char *buf, const char *s)
 	char *d;
 	unsigned char c;
 
-	buf[0] = '\0';
 	if (!s[0])
 		s = "(NULL)";
 
 	d = buf;
 	for (; *s; s++) {
-		int c_is_no_print;
-
 		c = *s;
-		c_is_no_print = (c & 0x80) && !Isprint(c);
-		if (c_is_no_print) {
-			strcpy(d, ESC_NORM_TEXT);
-			d += sizeof(ESC_NORM_TEXT)-1;
-			c = '.';
-		}
+		if ((c & 0x80) && !Isprint(c))
+			c = '?';
 		if (c < ' ' || c == 0x7f) {
 			*d++ = '^';
 			c |= '@'; // 0x40
@@ -1399,14 +1393,6 @@ static void print_literal(char *buf, const char *s)
 		}
 		*d++ = c;
 		*d = '\0';
-		if (c_is_no_print) {
-			strcpy(d, ESC_BOLD_TEXT);
-			d += sizeof(ESC_BOLD_TEXT)-1;
-		}
-		if (*s == '\n') {
-			*d++ = '$';
-			*d = '\0';
-		}
 		if (d - buf > MAX_INPUT_LEN - 10) // paranoia
 			break;
 	}
@@ -2472,26 +2458,38 @@ static char *char_search(char *p, const char *pat, int dir_and_range)
 
 //----- The Colon commands -------------------------------------
 #if ENABLE_FEATURE_VI_COLON
-static char *get_one_address(char *p, int *result)	// get colon addr, if present
+// Evaluate colon address expression.  Returns a pointer to the
+// next character or NULL on error.  If 'result' contains a valid
+// address 'valid' is TRUE.
+static char *get_one_address(char *p, int *result, int *valid)
 {
-	int st, num, sign, addr, new_addr;
+	int num, sign, addr, got_addr;
 # if ENABLE_FEATURE_VI_YANKMARK || ENABLE_FEATURE_VI_SEARCH
 	char *q, c;
 # endif
 	IF_FEATURE_VI_SEARCH(int dir;)
 
-	addr = -1;			// assume no addr
+	got_addr = FALSE;
+	addr = count_lines(text, dot);	// default to current line
 	sign = 0;
 	for (;;) {
-		new_addr = -1;
 		if (isblank(*p)) {
+			if (got_addr) {
+				addr += sign;
+				sign = 0;
+			}
 			p++;
-		} else if (*p == '.') {	// the current line
+		} else if (!got_addr && *p == '.') {	// the current line
 			p++;
-			new_addr = count_lines(text, dot);
+			//addr = count_lines(text, dot);
+			got_addr = TRUE;
+		} else if (!got_addr && *p == '$') {	// the last line in file
+			p++;
+			addr = count_lines(text, end - 1);
+			got_addr = TRUE;
 		}
 # if ENABLE_FEATURE_VI_YANKMARK
-		else if (*p == '\'') {	// is this a mark addr
+		else if (!got_addr && *p == '\'') {	// is this a mark addr
 			p++;
 			c = tolower(*p);
 			p++;
@@ -2501,13 +2499,16 @@ static char *get_one_address(char *p, int *result)	// get colon addr, if present
 				c = c - 'a';
 				q = mark[(unsigned char) c];
 			}
-			if (q == NULL)	// is mark valid
+			if (q == NULL) {	// is mark valid
+				status_line_bold("Mark not set");
 				return NULL;
-			new_addr = count_lines(text, q);
+			}
+			addr = count_lines(text, q);
+			got_addr = TRUE;
 		}
 # endif
 # if ENABLE_FEATURE_VI_SEARCH
-		else if (*p == '/' || *p == '?') {	// a search pattern
+		else if (!got_addr && (*p == '/' || *p == '?')) {	// a search pattern
 			c = *p;
 			q = strchrnul(p + 1, c);
 			if (p + 1 != q) {
@@ -2526,39 +2527,45 @@ static char *get_one_address(char *p, int *result)	// get colon addr, if present
 				dir = ((unsigned)BACK << 1) | FULL;
 			}
 			q = char_search(q, last_search_pattern + 1, dir);
-			if (q == NULL)
-				return NULL;
-			new_addr = count_lines(text, q);
+			if (q == NULL) {
+				// no match, continue from other end of file
+				q = char_search(dir > 0 ? text : end - 1,
+								last_search_pattern + 1, dir);
+				if (q == NULL) {
+					status_line_bold("Pattern not found");
+					return NULL;
+				}
+			}
+			addr = count_lines(text, q);
+			got_addr = TRUE;
 		}
 # endif
-		else if (*p == '$') {	// the last line in file
-			p++;
-			new_addr = count_lines(text, end - 1);
-		} else if (isdigit(*p)) {
-			sscanf(p, "%d%n", &num, &st);
-			p += st;
-			if (addr < 0) {	// specific line number
+		else if (isdigit(*p)) {
+			num = 0;
+			while (isdigit(*p))
+				num = num * 10 + *p++ -'0';
+			if (!got_addr) {	// specific line number
 				addr = num;
+				got_addr = TRUE;
 			} else {	// offset from current addr
 				addr += sign >= 0 ? num : -num;
 			}
 			sign = 0;
 		} else if (*p == '-' || *p == '+') {
-			sign = *p++ == '-' ? -1 : 1;
-			if (addr < 0) {	// default address is dot
-				addr = count_lines(text, dot);
+			if (!got_addr) {	// default address is dot
+				//addr = count_lines(text, dot);
+				got_addr = TRUE;
+			} else {
+				addr += sign;
 			}
+			sign = *p++ == '-' ? -1 : 1;
 		} else {
 			addr += sign;	// consume unused trailing sign
 			break;
 		}
-		if (new_addr >= 0) {
-			if (addr >= 0)	// only one new address per expression
-				return NULL;
-			addr = new_addr;
-		}
 	}
 	*result = addr;
+	*valid = got_addr;
 	return p;
 }
 
@@ -2567,34 +2574,40 @@ static char *get_one_address(char *p, int *result)	// get colon addr, if present
 
 // Read line addresses for a colon command.  The user can enter as
 // many as they like but only the last two will be used.
-static char *get_address(char *p, int *b, int *e)
+static char *get_address(char *p, int *b, int *e, unsigned int *got)
 {
 	int state = GET_ADDRESS;
+	int valid;
+	int addr;
 	char *save_dot = dot;
 
 	//----- get the address' i.e., 1,3   'a,'b  -----
 	for (;;) {
 		if (isblank(*p)) {
 			p++;
-		} else if (*p == '%' && state == GET_ADDRESS) {	// alias for 1,$
+		} else if (state == GET_ADDRESS && *p == '%') {	// alias for 1,$
 			p++;
 			*b = 1;
 			*e = count_lines(text, end-1);
+			*got = 3;
+			state = GET_SEPARATOR;
+		} else if (state == GET_ADDRESS) {
+			valid = FALSE;
+			p = get_one_address(p, &addr, &valid);
+			// Quit on error or if the address is invalid and isn't of
+			// the form ',$' or '1,' (in which case it defaults to dot).
+			if (p == NULL || !(valid || *p == ',' || *p == ';' || *got & 1))
+				break;
+			*b = *e;
+			*e = addr;
+			*got = (*got << 1) | 1;
 			state = GET_SEPARATOR;
 		} else if (state == GET_SEPARATOR && (*p == ',' || *p == ';')) {
 			if (*p == ';')
 				dot = find_line(*e);
 			p++;
-			*b = *e;
 			state = GET_ADDRESS;
-		} else if (state == GET_ADDRESS) {
-			p = get_one_address(p, e);
-			if (p == NULL)
-				break;
-			state = GET_SEPARATOR;
 		} else {
-			if (state == GET_SEPARATOR && *b >= 0 && *e < 0)
-				*e = count_lines(text, dot);
 			break;
 		}
 	}
@@ -2808,9 +2821,14 @@ static void colon(char *buf)
 	not_implemented(p);
 #else
 
+// check how many addresses we got
+# define GOT_ADDRESS (got & 1)
+# define GOT_RANGE ((got & 3) == 3)
+
 	char c, *buf1, *q, *r;
 	char *fn, cmd[MAX_INPUT_LEN], *cmdend, *args, *exp = NULL;
 	int i, l, li, b, e;
+	unsigned int got;
 	int useforce;
 
 	// :3154	// if (-e line 3154) goto it  else stay put
@@ -2828,21 +2846,22 @@ static void colon(char *buf)
 	// :!<cmd>	// run <cmd> then return
 	//
 
-	if (!buf[0])
-		goto ret;
-	if (*buf == ':')
-		buf++;			// move past the ':'
+	while (*buf == ':')
+		buf++;			// move past leading colons
+	while (isblank(*buf))
+		buf++;			// move past leading blanks
+	if (!buf[0] || buf[0] == '"')
+		goto ret;		// ignore empty lines or those starting with '"'
 
 	li = i = 0;
 	b = e = -1;
+	got = 0;
 	li = count_lines(text, end - 1);
 	fn = current_filename;
 
 	// look for optional address(es)  :.  :1  :1,9   :'q,'a   :%
-	buf1 = buf;
-	buf = get_address(buf, &b, &e);
+	buf = get_address(buf, &b, &e, &got);
 	if (buf == NULL) {
-		status_line_bold("Bad address: %s", buf1);
 		goto ret;
 	}
 
@@ -2865,13 +2884,17 @@ static void colon(char *buf)
 	}
 	// assume the command will want a range, certain commands
 	// (read, substitute) need to adjust these assumptions
-	if (e < 0) {
+	if (!GOT_ADDRESS) {
 		q = text;			// no addr, use 1,$ for the range
 		r = end - 1;
 	} else {
 		// at least one addr was given, get its details
+		if (e < 0 || e > li) {
+			status_line_bold("Invalid range");
+			goto ret;
+		}
 		q = r = find_line(e);
-		if (b < 0) {
+		if (!GOT_RANGE) {
 			// if there is only one addr, then it's the line
 			// number of the single line the user wants.
 			// Reset the end pointer to the end of that line.
@@ -2880,6 +2903,10 @@ static void colon(char *buf)
 		} else {
 			// we were given two addrs.  change the
 			// start pointer to the addr given by user.
+			if (b < 0 || b > li || b > e) {
+				status_line_bold("Invalid range");
+				goto ret;
+			}
 			q = find_line(b);	// what line is #b
 			r = end_line(r);
 			li = e - b + 1;
@@ -2910,12 +2937,12 @@ static void colon(char *buf)
 	}
 # endif
 	else if (cmd[0] == '=' && !cmd[1]) {	// where is the address
-		if (e < 0) {	// no addr given- use defaults
+		if (!GOT_ADDRESS) {	// no addr given- use defaults
 			e = count_lines(text, dot);
 		}
 		status_line("%d", e);
 	} else if (strncmp(cmd, "delete", i) == 0) {	// delete lines
-		if (e < 0) {	// no addr given- use defaults
+		if (!GOT_ADDRESS) {	// no addr given- use defaults
 			q = begin_line(dot);	// assume .,. for the range
 			r = end_line(dot);
 		}
@@ -2987,7 +3014,7 @@ static void colon(char *buf)
 		rawmode();
 		Hit_Return();
 	} else if (strncmp(cmd, "list", i) == 0) {	// literal print line
-		if (e < 0) {	// no addr given- use defaults
+		if (!GOT_ADDRESS) {	// no addr given- use defaults
 			q = begin_line(dot);	// assume .,. for the range
 			r = end_line(dot);
 		}
@@ -3070,7 +3097,7 @@ static void colon(char *buf)
 		if (e == 0) {	// user said ":0r foo"
 			q = text;
 		} else {	// read after given line or current line if none given
-			q = next_line(e > 0 ? find_line(e) : dot);
+			q = next_line(GOT_ADDRESS ? find_line(e) : dot);
 			// read after last line
 			if (q == end-1)
 				++q;
@@ -3191,11 +3218,11 @@ static void colon(char *buf)
 			len_F = strlen(F);
 		}
 
-		if (e < 0) {	// no addr given
+		if (!GOT_ADDRESS) {	// no addr given
 			q = begin_line(dot);      // start with cur line
 			r = end_line(dot);
 			b = e = count_lines(text, q); // cur line number
-		} else if (b < 0) {	// one addr given
+		} else if (!GOT_RANGE) {	// one addr given
 			b = e;
 		}
 
@@ -3366,7 +3393,7 @@ static void colon(char *buf)
 		}
 # if ENABLE_FEATURE_VI_YANKMARK
 	} else if (strncmp(cmd, "yank", i) == 0) {	// yank lines
-		if (b < 0) {	// no addr given- use defaults
+		if (!GOT_ADDRESS) {	// no addr given- use defaults
 			q = begin_line(dot);	// assume .,. for the range
 			r = end_line(dot);
 		}
@@ -4089,8 +4116,8 @@ static void do_cmd(int c)
 #endif
 					}
 				}
-			} else /* if (c == '>') */ {
-				// shift right -- add tab or tabstop spaces
+			} else if (/* c == '>' && */ p != end_line(p)) {
+				// shift right -- add tab or tabstop spaces on non-empty lines
 				char_insert(p, '\t', allow_undo);
 			}
 #if ENABLE_FEATURE_VI_UNDO
@@ -4708,6 +4735,21 @@ static void crash_test()
 }
 #endif
 
+#if ENABLE_FEATURE_VI_COLON
+static void run_cmds(char *p)
+{
+	while (p) {
+		char *q = p;
+		p = strchr(q, '\n');
+		if (p)
+			while (*p == '\n')
+				*p++ = '\0';
+		if (strlen(q) < MAX_INPUT_LEN)
+			colon(q);
+	}
+}
+#endif
+
 static void edit_file(char *fn)
 {
 #if ENABLE_FEATURE_VI_YANKMARK
@@ -4778,25 +4820,8 @@ static void edit_file(char *fn)
 #endif
 
 #if ENABLE_FEATURE_VI_COLON
-	{
-		char *p, *q;
-		int n = 0;
-
-		while ((p = initial_cmds[n]) != NULL) {
-			do {
-				q = p;
-				p = strchr(q, '\n');
-				if (p)
-					while (*p == '\n')
-						*p++ = '\0';
-				if (*q)
-					colon(q);
-			} while (p);
-			free(initial_cmds[n]);
-			initial_cmds[n] = NULL;
-			n++;
-		}
-	}
+	while (initial_cmds)
+		run_cmds((char *)llist_pop(&initial_cmds));
 #endif
 	redraw(FALSE);			// dont force every col re-draw
 	//------This is the main Vi cmd handling loop -----------------------
@@ -4859,10 +4884,29 @@ static void edit_file(char *fn)
 #undef cur_line
 }
 
+#define VI_OPTSTR \
+	IF_FEATURE_VI_CRASHME("C") \
+	IF_FEATURE_VI_COLON("c:*") \
+	"Hh" \
+	IF_FEATURE_VI_READONLY("R")
+
+enum {
+	IF_FEATURE_VI_CRASHME(OPTBIT_C,)
+	IF_FEATURE_VI_COLON(OPTBIT_c,)
+	OPTBIT_H,
+	OPTBIT_h,
+	IF_FEATURE_VI_READONLY(OPTBIT_R,)
+	OPT_C = IF_FEATURE_VI_CRASHME(	(1 << OPTBIT_C)) + 0,
+	OPT_c = IF_FEATURE_VI_COLON(	(1 << OPTBIT_c)) + 0,
+	OPT_H = 1 << OPTBIT_H,
+	OPT_h = 1 << OPTBIT_h,
+	OPT_R = IF_FEATURE_VI_READONLY(	(1 << OPTBIT_R)) + 0,
+};
+
 int vi_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int vi_main(int argc, char **argv)
 {
-	int c;
+	int opts;
 
 	INIT_G();
 
@@ -4886,50 +4930,62 @@ int vi_main(int argc, char **argv)
 
 	// 0: all of our options are disabled by default in vim
 	//vi_setops = 0;
-	//  1-  process EXINIT variable from environment
-	//  2-  if EXINIT is unset process $HOME/.exrc file (not inplemented yet)
-	//  3-  process command line args
-#if ENABLE_FEATURE_VI_COLON
-	{
-		char *p = getenv("EXINIT");
-		if (p && *p)
-			initial_cmds[0] = xstrndup(p, MAX_INPUT_LEN);
-	}
-#endif
-	while ((c = getopt(argc, argv,
+	opts = getopt32(argv, VI_OPTSTR IF_FEATURE_VI_COLON(, &initial_cmds));
+
 #if ENABLE_FEATURE_VI_CRASHME
-			"C"
+	if (opts & OPT_C)
+		crashme = 1;
 #endif
-			"RHh" IF_FEATURE_VI_COLON("c:"))) != -1) {
-		switch (c) {
-#if ENABLE_FEATURE_VI_CRASHME
-		case 'C':
-			crashme = 1;
-			break;
-#endif
-#if ENABLE_FEATURE_VI_READONLY
-		case 'R':		// Read-only flag
-			SET_READONLY_MODE(readonly_mode);
-			break;
-#endif
-#if ENABLE_FEATURE_VI_COLON
-		case 'c':		// cmd line vi command
-			if (*optarg)
-				initial_cmds[initial_cmds[0] != NULL] = xstrndup(optarg, MAX_INPUT_LEN);
-			break;
-#endif
-		case 'H':
-			show_help();
-			// fall through
-		default:
-			bb_show_usage();
-			return 1;
-		}
+	if (opts & OPT_R)
+		SET_READONLY_MODE(readonly_mode);
+	if (opts & OPT_H)
+		show_help();
+	if (opts & (OPT_H | OPT_h)) {
+		bb_show_usage();
+		return 1;
 	}
 
 	argv += optind;
 	cmdline_filecnt = argc - optind;
 
+	//  1-  process EXINIT variable from environment
+	//  2-  if EXINIT is unset process $HOME/.exrc file
+	//  3-  process command line args
+#if ENABLE_FEATURE_VI_COLON
+	{
+		const char *exinit = getenv("EXINIT");
+		char *cmds = NULL;
+
+		if (exinit) {
+			cmds = xstrdup(exinit);
+		} else {
+			const char *home = getenv("HOME");
+
+			if (home && *home) {
+				char *exrc = concat_path_file(home, ".exrc");
+				struct stat st;
+
+				// .exrc must belong to and only be writable by user
+				if (stat(exrc, &st) == 0) {
+					if ((st.st_mode & (S_IWGRP|S_IWOTH)) == 0
+					 && st.st_uid == getuid()
+					) {
+						cmds = xmalloc_open_read_close(exrc, NULL);
+					} else {
+						status_line_bold(".exrc: permission denied");
+					}
+				}
+				free(exrc);
+			}
+		}
+
+		if (cmds) {
+			init_text_buffer(NULL);
+			run_cmds(cmds);
+			free(cmds);
+		}
+	}
+#endif
 	// "Save cursor, use alternate screen buffer, clear screen"
 	write1(ESC"[?1049h");
 	// This is the main file handling loop

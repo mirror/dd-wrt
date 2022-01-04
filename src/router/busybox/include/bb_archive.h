@@ -167,6 +167,7 @@ typedef struct tar_header_t {     /* byte offset */
 struct BUG_tar_header {
 	char c[sizeof(tar_header_t) == TAR_BLOCK_SIZE ? 1 : -1];
 };
+void chksum_and_xwrite_tar_header(int fd, struct tar_header_t *hp) FAST_FUNC;
 
 
 extern const char cpio_TRAILER[];
@@ -194,7 +195,6 @@ char get_header_ar(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_cpio(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_gz(archive_handle_t *archive_handle) FAST_FUNC;
-char get_header_tar_xz(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_bz2(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_lzma(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_xz(archive_handle_t *archive_handle) FAST_FUNC;
