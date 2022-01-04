@@ -677,7 +677,7 @@ static void add_client_options(struct dhcp_packet *packet)
 
 	// This will be needed if we remove -V VENDOR_STR in favor of
 	// -x vendor:VENDOR_STR
-	//if (!udhcp_find_option(packet.options, DHCP_VENDOR))
+	//if (!udhcp_find_option(packet.options, DHCP_VENDOR, /*dhcpv6:*/ 0))
 	//	/* not set, set the default vendor ID */
 	//	...add (DHCP_VENDOR, "udhcp "BB_VER) opt...
 }
@@ -1373,7 +1373,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	clientid_mac_ptr = NULL;
-	if (!(opt & OPT_C) && !udhcp_find_option(client_data.options, DHCP_CLIENT_ID)) {
+	if (!(opt & OPT_C) && !udhcp_find_option(client_data.options, DHCP_CLIENT_ID, /*dhcpv6:*/ 0)) {
 		/* not suppressed and not set, set the default client ID */
 		client_data.clientid = alloc_dhcp_option(DHCP_CLIENT_ID, "", 7);
 		client_data.clientid[OPT_DATA] = 1; /* type: ethernet */
