@@ -272,9 +272,9 @@ void start_overclocking(void)
 {
 }
 
-void enable_dtag_vlan(int enable)
+char *enable_dtag_vlan(int enable)
 {
-
+	return "eth0";
 }
 
 void start_fixboard(void)
