@@ -2607,42 +2607,8 @@ static void showencstatus(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n", prefix);
 	websWrite(wp, "<script type=\"text/javascript\">");
-	if (nvram_match(akm, "owe"))
-		enc = strdup("OWE");
-	else if (nvram_match(akm, "psk"))
-		enc = strdup("WPA-PSK");
-	else if (nvram_match(akm, "psk2"))
-		enc = strdup("WPA2-PSK");
-	else if (nvram_match(akm, "psk2-sha256"))
-		enc = strdup("WPA2-PSK-SHA256");
-	else if (nvram_match(akm, "psk3"))
-		enc = strdup("WPA3-PSK");
-	else if (nvram_match(akm, "wpa"))
-		enc = strdup("WPA-EAP");
-	else if (nvram_match(akm, "wpa2"))
-		enc = strdup("WPA2-EAP");
-	else if (nvram_match(akm, "wpa2-sha256"))
-		enc = strdup("WPA2-EAP-SHA256");
-	else if (nvram_match(akm, "wpa3"))
-		enc = strdup("WPA3-EAP");
-	else if (nvram_match(akm, "wpa3-128"))
-		enc = strdup("WPA3-EAP-SUITE-B");
-	else if (nvram_match(akm, "wpa3-192"))
-		enc = strdup("WPA3-EAP-SUITE-B-192");
-	else if (nvram_match(akm, "psk psk2"))
-		enc = strdup("WPA-PSK/WPA2-PSK");
-	else if (nvram_match(akm, "psk2 psk3"))
-		enc = strdup("WPA2-PSK/WPA3-PSK");
-	else if (nvram_match(akm, "wpa wpa2"))
-		enc = strdup("WPA-EAP/WPA2-EAP");
-	else if (nvram_match(akm, "wpa2 wpa3"))
-		enc = strdup("WPA2-EAP/WPA3-EAP-SUITE-B");
-	else if (nvram_match(akm, "wpa2 wpa3-192"))
-		enc = strdup("WPA2-EAP/WPA3-EAP-SUITE-B-192");
-	else if (nvram_match(akm, "radius"))
+	if (nvram_match(akm, "radius"))
 		enc = strdup("RADIUS");
-	else if (nvram_match(akm, "wep"))
-		enc = strdup("WEP");
 	else if (nvram_match(akm, "8021X"))
 		enc = strdup("802.1x");
 	else if (nvhas(akm, "peap") || nvhas(akm, "leap") || nvhas(akm, "tls") || nvhas(akm, "ttls")) {
@@ -2663,22 +2629,31 @@ static void showencstatus(webs_t wp, char *prefix)
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "802.1X");
 		asprintf(&enc, "%s%s%s%s%s", type[0] ? type : "UNKNOWN", nvhas(akm, "peap") ? "-PEAP" : "", nvhas(akm, "leap") ? "-LEAP" : "", nvhas(akm, "tls") ? "-TLS" : "", nvhas(akm, "ttls") ? "-TTLS" : "");
 	} else {
-
 		char type[128] = { 0 };
+		if (nvhas(akm, "owe"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "OWE");
+		if (nvhas(akm, "psk"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA-PSK");
+		if (nvhas(akm, "psk2"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-PSK");
+		if (nvhas(akm, "psk2-sha256"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-PSK-SHA256");
+		if (nvhas(akm, "psk3"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-PSK");
 		if (nvhas(akm, "wpa"))
-			sprintf(type, "WPA");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA-EAP");
 		if (nvhas(akm, "wpa2"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-EAP");
 		if (nvhas(akm, "wpa2-sha256"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-SHA256");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-EAP-SHA256");
 		if (nvhas(akm, "wpa3"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-EAP");
 		if (nvhas(akm, "wpa3-128"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-EAP-SUITE-B");
 		if (nvhas(akm, "wpa3-192"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B-192");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-EAP-SUITE-B-192");
 		if (nvhas(akm, "wep"))
-			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "802.1X");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WEP");
 		if (type[0])
 			enc = strdup(type);
 	}
