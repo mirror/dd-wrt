@@ -544,6 +544,9 @@ ifeq ($(CONFIG_X86),y)
 else
 	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_JFFS2),y)
+	sed -i 's/\# CONFIG_LSOF is not set/CONFIG_LSOF=y/g' busybox/.config
+endif
 	echo "CONFIG_SH_IS_ASH=y" >> busybox/.config
 	echo "# CONFIG_SH_IS_HUSH is not set" >> busybox/.config
 	echo "# CONFIG_SH_IS_NONE is not set" >> busybox/.config
@@ -604,6 +607,9 @@ endif
 	echo "# CONFIG_FLOAT_DURATION is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_FIND_EXECUTABLE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_FIND_QUIT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_ATIME is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_CTIME is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_SAMEFILE is not set" >> busybox/.config
 	echo "# CONFIG_NOLOGIN is not set" >> busybox/.config
 	echo "# CONFIG_BC is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_DC_BIG is not set" >> busybox/.config
@@ -630,6 +636,7 @@ endif
 	echo "# CONFIG_FEATURE_TFTP_HPA_COMPAT is not set" >> busybox/.config
 ifeq ($(CONFIG_OPENSSL),y)
 	sed -i 's/\# CONFIG_FEATURE_WGET_HTTPS is not set/CONFIG_FEATURE_WGET_HTTPS=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_WGET_OPENSSL is not set/CONFIG_FEATURE_WGET_OPENSSL=y/g' busybox/.config
 	sed -i 's/\# CONFIG_SSL_CLIENT is not set/CONFIG_SSL_CLIENT=y/g' busybox/.config
 	echo "# CONFIG_FEATURE_TLS_SHA1 is not set" >> busybox/.config
 endif
@@ -655,6 +662,7 @@ endif
 	echo "# CONFIG_STATIC_LIBGCC is not set" >> busybox/.config
 	echo "# CONFIG_BASE32 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_VOLUMEID_EROFS is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_TELNETD_PORT_DEFAULT=23" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
