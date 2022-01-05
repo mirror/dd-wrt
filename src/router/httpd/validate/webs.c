@@ -4812,6 +4812,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	char temp[32];
 	sprintf(temp, "%s_netmask", ifname);
 	nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
+	copytonv_prefix(wp, "web_filter", prefix);
 
 #else
 
