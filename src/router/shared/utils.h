@@ -1579,9 +1579,9 @@ int has_igmpsnooping(void);
 	"default_qdisc", \
 	"tcp_bic", \
 	"tcp_westwood", \
-	"tcp_vegas_cong_avoid" \
-	"osf" \
-	"tcp_tw_recycle" \
+	"tcp_vegas_cong_avoid", \
+	"osf", \
+	"tcp_tw_recycle", \
 	"scan_unevictable_pages"
 
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
