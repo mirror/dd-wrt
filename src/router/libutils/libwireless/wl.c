@@ -4648,18 +4648,17 @@ char *getWET()
 
 #endif
 
-struct wl_assoc_mac *get_wl_assoc_mac(char *prefix, int *c)
+struct wl_assoc_mac *get_wl_assoc_mac(char *ifname, int *c)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count;
 	char checkif[12];
-
+	char *prefix = ifname;
 	wlmac = NULL;
 	count = *c = 0;
 
 	int i;
 	int gotit = 0;
-
 	// fprintf(stderr,"assoclist\n");
 
 	if (!ifexists(prefix))
