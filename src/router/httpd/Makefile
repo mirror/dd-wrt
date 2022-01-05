@@ -1396,6 +1396,9 @@ endif
 ifeq ($(CONFIG_IPETH),y)
 CONFIG_MATRIXSSL=n
 endif
+ifeq ($(CONFIG_WPA3),y)
+CONFIG_MATRIXSSL=n
+endif
 ifeq ($(CONFIG_VPNC),y)
 CONFIG_MATRIXSSL=n
 endif

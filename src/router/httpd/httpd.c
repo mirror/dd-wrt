@@ -806,7 +806,7 @@ static int check_connect_type(webs_t wp)
 	char temp[32];
 	int c = getdevicecount();
 	for (j = 0; j < c; j++) {
-#ifdef HAVE_ATH9K
+#if defined(HAVE_ATH9K) || defined(HAVE_MADWIFI)
 		sprintf(temp, "wlan%d", j);
 #else
 		sprintf(temp, "wl%d", j);
