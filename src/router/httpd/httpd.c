@@ -808,10 +808,12 @@ static int check_connect_type(webs_t wp)
 	for (j = 0; j < c; j++) {
 #if defined(HAVE_ATH9K) || defined(HAVE_MADWIFI)
 		sprintf(temp, "wlan%d", j);
+		char *ifname = temp;
 #else
 		sprintf(temp, "wl%d", j);
+		char *ifname = get_wl_instance_name(j);
 #endif
-		if (check_connect_type_vap(temp, wp))
+		if (check_connect_type_vap(ifname, wp))
 			return -1;
 		char *names = nvram_nget("%s_vifs", temp);
 		char *next;
