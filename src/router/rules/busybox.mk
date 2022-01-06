@@ -665,6 +665,8 @@ endif
 	echo "# CONFIG_FEATURE_VOLUMEID_EROFS is not set" >> busybox/.config
 	echo "CONFIG_FEATURE_TELNETD_PORT_DEFAULT=23" >> busybox/.config
 	echo "CONFIG_FEATURE_TIMEZONE=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_CPIO_IGNORE_DEVNO is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_CPIO_RENUMBER_INODES is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
