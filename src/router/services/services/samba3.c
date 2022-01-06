@@ -297,6 +297,7 @@ void stop_samba3(void)
 	stop_process("ksmbd.mountd", "samba daemon");
 	sysprintf("echo hard > /sys/class/ksmbd-control/kill_server");
 	rmmod("ksmbd");
+	unlink("/tmp/ksmbd.lock");
 #else
 	stop_process("smbd", "samba daemon");
 	stop_process("nmbd", "daemon");
