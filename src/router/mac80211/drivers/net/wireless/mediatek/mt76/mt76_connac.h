@@ -83,6 +83,11 @@ struct mt76_connac_coredump {
 	unsigned long last_activity;
 };
 
+struct mt76_connac_sta_key_conf {
+	s8 keyidx;
+	u8 key[16];
+};
+
 extern const struct wiphy_wowlan_support mt76_connac_wowlan_support;
 
 static inline bool is_mt7922(struct mt76_dev *dev)
@@ -98,6 +103,58 @@ static inline bool is_mt7921(struct mt76_dev *dev)
 static inline bool is_mt7663(struct mt76_dev *dev)
 {
 	return mt76_chip(dev) == 0x7663;
+}
+
+static inline bool is_mt7915(struct mt76_dev *dev)
+{
+	return mt76_chip(dev) == 0x7915;
+}
+
+static inline bool is_mt7916(struct mt76_dev *dev)
+{
+	return mt76_chip(dev) == 0x7906;
+}
+
+static inline bool is_mt7622(struct mt76_dev *dev)
+{
+	if (!IS_ENABLED(CPTCFG_MT7622_WMAC))
+		return false;
+
+	return mt76_chip(dev) == 0x7622;
+}
+
+static inline bool is_mt7615(struct mt76_dev *dev)
+{
+	return mt76_chip(dev) == 0x7615 || mt76_chip(dev) == 0x7611;
+}
+
+static inline bool is_mt7611(struct mt76_dev *dev)
+{
+	return mt76_chip(dev) == 0x7611;
+}
+
+static inline bool is_connac_v1(struct mt76_dev *dev)
+{
+	return is_mt7615(dev) || is_mt7663(dev) || is_mt7622(dev);
+}
+
+static inline u8 mt76_connac_chan_bw(struct cfg80211_chan_def *chandef)
+{
+	static const u8 width_to_bw[] = {
+		[NL80211_CHAN_WIDTH_40] = CMD_CBW_40MHZ,
+		[NL80211_CHAN_WIDTH_80] = CMD_CBW_80MHZ,
+		[NL80211_CHAN_WIDTH_80P80] = CMD_CBW_8080MHZ,
+		[NL80211_CHAN_WIDTH_160] = CMD_CBW_160MHZ,
+		[NL80211_CHAN_WIDTH_5] = CMD_CBW_5MHZ,
+		[NL80211_CHAN_WIDTH_10] = CMD_CBW_10MHZ,
+		[NL80211_CHAN_WIDTH_20] = CMD_CBW_20MHZ,
+		[NL80211_CHAN_WIDTH_20_NOHT] = CMD_CBW_20MHZ,
+	};
+
+	if (chandef->width >= ARRAY_SIZE(width_to_bw))
+		return 0;
+
+	return width_to_bw[chandef->width];
 }
 
 int mt76_connac_pm_wake(struct mt76_phy *phy, struct mt76_connac_pm *pm);
