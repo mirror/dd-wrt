@@ -473,6 +473,7 @@ ifeq ($(CONFIG_MT7663),y)
 endif
 ifeq ($(CONFIG_MT7915),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7915* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7916* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 ifeq ($(CONFIG_MT7921),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/*MT7961* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
