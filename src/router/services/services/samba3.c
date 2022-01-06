@@ -61,6 +61,7 @@ static void free_users(struct samba3_share *cs)
 	}
 
 }
+void stop_samba3(void);
 
 void start_samba3(void)
 {
@@ -70,7 +71,7 @@ void start_samba3(void)
 	struct samba3_share *samba3shares;
 	int uniqueuserid = 1000;
 	FILE *fp;
-
+	stop_samba3();
 /*#ifdef HAVE_NORTHSTAR
 	if (!nvram_matchi("samba3_enable", 1)) {	// not set txworkq 
 		set_smp_affinity(163, 2);
