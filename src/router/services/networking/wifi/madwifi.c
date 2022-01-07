@@ -930,7 +930,7 @@ void do_hostapd(char *fstr, char *prefix)
 
 static void checkhostapd(char *ifname, int force)
 {
-	int pid;
+	int pid = 0;
 	int sup = 0;
 	char fname[32];
 	sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
@@ -944,14 +944,16 @@ static void checkhostapd(char *ifname, int force)
 	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname)
 	    || nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
-	if (fp || force) {
+	if (!fp && force == 2)
+	    force = 1;
+	if (fp || force == 1) {
 		if (fp) {
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
 		}
-		if (pid > 0 || force) {
+		if (pid > 0 || force == 1) {
 			int needrestart = 0;
-			if (force) {
+			if (force == 1) {
 				needrestart = 1;
 				if (pid > 0)
 					kill(pid, SIGKILL);
@@ -977,7 +979,7 @@ static void checkhostapd(char *ifname, int force)
 					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", ifname);
 				else
 					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
-				if (force) {
+				if (force == 1) {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
 				} else {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
@@ -1053,6 +1055,13 @@ void start_restarthostapd(void)
 {
 
 	s_checkhostapd(1);
+
+}
+
+void start_restarthostapd_ifneeded(void)
+{
+
+	s_checkhostapd(2);
 
 }
 
