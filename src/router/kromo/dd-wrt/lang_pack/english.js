@@ -264,7 +264,6 @@ share.no_wifi_access=" Can not use wireless interface to access GUI.";
 share.sysloglegend="System Log";
 share.syslogdisabled="No messages available! Syslogd is not enabled!";
 share.actiontbl="Action";
-share.static="Static";
 
 var sbutton=new Object();
 sbutton.save="Save";
