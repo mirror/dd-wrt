@@ -1839,7 +1839,7 @@ void radio_on_off_ath9k(int idx, int on)
 			kill(p, SIGTERM);
 		}
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
-		FILE *file = fopen(pid, "rb");
+		file = fopen(pid, "rb");
 		if (file) {
 			int p;
 			fscanf(file, "%d", &p);
