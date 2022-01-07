@@ -72,6 +72,10 @@ extern int eval_va_silence_space(const char *cmd, ...);
 #define eval_space(cmd, args...) eval_va_space(cmd, ## args, NULL)
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
 
+
+int check_pid(int pid, char *name);
+int check_pidfromfile(char *pidfile, char *name);
+
 /*
  * Kills process whose PID is stored in plaintext in pidfile
  * @param       pidfile PID file
