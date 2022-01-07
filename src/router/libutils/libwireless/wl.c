@@ -1854,7 +1854,7 @@ void radio_on_off_ath9k(int idx, int on)
 			}
 		}
 		if (needrestart) {
-			eval("startservice", "restarthostapd", "-f");
+			eval("startservice", "restarthostapd_ifneeded", "-f");
 			eval("restart", "dnsmasq");
 			eval("startservice", "resetleds", "-f");
 			eval("startservice", "postnetwork", "-f");
