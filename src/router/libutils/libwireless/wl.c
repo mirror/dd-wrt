@@ -1837,6 +1837,7 @@ void radio_on_off_ath9k(int idx, int on)
 			fscanf(file, "%d", &p);
 			fclose(file);
 			kill(p, SIGTERM);
+			unlink(pid);
 		}
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
 		file = fopen(pid, "rb");
@@ -1845,6 +1846,7 @@ void radio_on_off_ath9k(int idx, int on)
 			fscanf(file, "%d", &p);
 			fclose(file);
 			kill(p, SIGTERM);
+			unlink(pid);
 		}
 	}
 
