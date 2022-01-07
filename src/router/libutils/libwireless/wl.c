@@ -1822,12 +1822,43 @@ void radio_on_off_ath9k(int idx, int on)
 	char tpt[8];
 	char prefix[32];
 	sprintf(prefix, "wlan%d", idx);
-
+	int needrestart = 1;
 	if (on) {
-		eval("startservice", "restarthostapd", "-f");
-		eval("restart", "dnsmasq");
-		eval("startservice", "resetleds", "-f");
-		eval("startservice", "postnetwork", "-f");
+		char pid[64];
+		sprintf(pid, "/var/run/%s_hostapd.pid", prefix);
+		FILE *file = fopen(pid, "rb");
+		if (file) {
+			int p;
+			fscanf(file, "%d", &p);
+			fclose(file);
+			char checkname[32];
+			sprintf(checkname, "/proc/%d/cmdline", pid);
+			file = fopen(checkname, "rb");
+			if (file) {
+				needrestart = 0;
+				fclose(file);
+			}
+		}
+		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
+		file = fopen(pid, "rb");
+		if (file) {
+			int p;
+			fscanf(file, "%d", &p);
+			fclose(file);
+			char checkname[32];
+			sprintf(checkname, "/proc/%d/cmdline", pid);
+			file = fopen(checkname, "rb");
+			if (file) {
+				needrestart = 0;
+				fclose(file);
+			}
+		}
+		if (needrestart) {
+			eval("startservice", "restarthostapd", "-f");
+			eval("restart", "dnsmasq");
+			eval("startservice", "resetleds", "-f");
+			eval("startservice", "postnetwork", "-f");
+		}
 	} else {
 		char pid[64];
 		sprintf(pid, "/var/run/%s_hostapd.pid", prefix);
