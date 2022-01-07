@@ -212,6 +212,7 @@ td .meter {
 .bin {
   background: url(/images/bin_bt.gif) center no-repeat;
   cursor: pointer;
+  font-size:5px;
 }
 input.spaceradio {
   margin-right: .4em;

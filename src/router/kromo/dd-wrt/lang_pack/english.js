@@ -425,6 +425,7 @@ errmsg.err103=" must be lower than ";
 // Status_Lan.asp error messages
 errmsg.err58="Click to delete lease";
 errmsg.err581="Click to disconnect PPTP client";
+errmsg.err582="Click to add entry to static leases";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Not available! Please enable Wireless Network.";
