@@ -452,6 +452,33 @@ int kill_pidfile(char *pidfile)
 		return errno;
 }
 
+int check_pid(int pid, char *name)
+{
+	char checkname[32];
+	sprintf(checkname, "/proc/%d/cmdline", pid);
+	file = fopen(checkname, "rb");
+	if (file) {
+		char line[64];
+		fgets(line, sizeof(line), file);
+		fclose(file);
+		if (!strncmp(line, name, strlen(name)))
+			return 1;
+	}
+	return 0;
+}
+
+int check_pidfromfile(char *pidfile, char *name)
+{
+	FILE *file = fopen(pidfile, "rb");
+	if (file) {
+		int p;
+		fscanf(file, "%d", &p);
+		fclose(file);
+		return check_pid(p, name);
+	}
+	return 0;
+}
+
 /*
  * fread() with automatic retry on syscall interrupt
  * @param       ptr     location to store to
@@ -1037,7 +1064,6 @@ u_int64_t freediskSpace(char *path)
 
 	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
 }
-
 
 int jffs_mounted(void)
 {
