@@ -174,10 +174,11 @@ void static_leases(webs_t wp)
 	char *oldleases = nvram_safe_get("static_leases");
 	char *target = malloc(strlen(oldleases) + strlen(newlease) + 2);
 	int num = nvram_geti("static_leasenum");
-	if (!strlen(oldleases) || !num)
+	int len = strlen(oldleases);
+	if (!len || !num)
 		strcpy(target, newlease);
 	else {
-		if (oldleases[strlen(oldleases) - 1] == 0x20)
+		if (oldleases[len - 1] == 0x20)
 			sprintf(target, "%s%s", oldleases, newlease);
 		else
 			sprintf(target, "%s %s", oldleases, newlease);
