@@ -181,7 +181,7 @@ void static_leases(webs_t wp)
 	}
 	num++;
 	nvram_seti("static_leasenum", num);
-	nvtam_set("static_leases", target);
+	nvram_set("static_leases", target);
 	free(target);
 }
 
