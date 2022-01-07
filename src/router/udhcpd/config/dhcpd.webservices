@@ -52,7 +52,7 @@
 	</div>
 	<table class="table center" summary="static lease table">
 		<tr>
-			<th colspan="4"><% tran("share.static_lease"); %></th>
+			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>
 		<tr>
 			<th width="22%"><% tran("share.mac"); %></th>
