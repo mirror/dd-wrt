@@ -1256,7 +1256,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "SuperChannel", "activate", "", REFRESH, "superchannel_validate" },
 #endif
 	{ "Services", "add_lease", "", REFRESH, "lease_add" },
-	{ "Services", "remove_lease", "", REFRESH, "lease_remove" },
+	{ "Services", "del_lease", "", REFRESH, "lease_del" },
 #ifdef HAVE_PPPOESERVER
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
 	{ "PPPoE_Server", "remove_chap_user", "", REFRESH,
