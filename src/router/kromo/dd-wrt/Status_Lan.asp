@@ -94,7 +94,7 @@ function setDHCPTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+		cell.colSpan = 6;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
