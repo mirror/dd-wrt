@@ -3284,14 +3284,12 @@ struct nvram_param srouter_defaults[] = {
 	{ "pptpd_client_ipparam", "" },
 	{ "pptpd_client_mtu", "1436" },
 	{ "pptpd_client_mru", "1436" },
-#ifdef HAVE_RADIOOFF
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
 	{ "radiooff_button", "2" },
 	{ "radiooff_boot_off", "0" },
 #else
 	{ "radiooff_button", "0" },
 	{ "radiooff_boot_off", "0" },
-#endif
 #endif
 	{ "radio0_on_time", "111111111111111111111111" },	/* Radio timer,always on */
 	{ "radio0_timer_enable", "0" },
