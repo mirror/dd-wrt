@@ -620,7 +620,7 @@ static struct callmap gozila_map[] = {
 	{ "superchannel_validate", &superchannel_validate },
 #endif
 	{ "lease_add", &lease_add },
-	{ "lease_remove", &lease_remove },
+	{ "lease_del", &lease_del },
 #ifdef HAVE_PPPOESERVER
 	{ "chap_user_add", &chap_user_add },
 	{ "chap_user_remove", &chap_user_remove },

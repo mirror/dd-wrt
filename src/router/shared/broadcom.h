@@ -116,7 +116,7 @@ EJ_VISIBLE void reg_validate(webs_t wp);
 EJ_VISIBLE void changepass(webs_t wp);
 EJ_VISIBLE void superchannel_validate(webs_t wp);
 EJ_VISIBLE void lease_add(webs_t wp);
-EJ_VISIBLE void lease_remove(webs_t wp);
+EJ_VISIBLE void lease_del(webs_t wp);
 EJ_VISIBLE void chap_user_add(webs_t wp);
 EJ_VISIBLE void chap_user_remove(webs_t wp);
 EJ_VISIBLE void user_add(webs_t wp);
@@ -658,7 +658,7 @@ extern void set_security(webs_t wp);
 extern void forward_add(webs_t wp);
 extern void forward_remove(webs_t wp);
 extern void lease_add(webs_t wp);
-extern void lease_remove(webs_t wp);
+extern void lease_del(webs_t wp);
 extern void chap_user_add(webs_t wp);
 extern void chap_user_remove(webs_t wp);
 
