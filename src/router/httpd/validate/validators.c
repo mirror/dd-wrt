@@ -2383,6 +2383,8 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 	int i;
 
 	for (i = 0; i < leasenum; i++) {
+		if (i)
+		    strcat(leases, " ");
 		snprintf(lease_hwaddr, sizeof(lease_hwaddr), "lease%d_hwaddr", i);
 		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
 		if (hwaddr == NULL)
@@ -2419,7 +2421,6 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		strcat(leases, ip);
 		strcat(leases, "=");
 		strcat(leases, time);
-		strcat(leases, " ");
 	}
 	nvram_set("static_leases", leases);
 	nvram_async_commit();
