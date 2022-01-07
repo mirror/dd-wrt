@@ -3,15 +3,24 @@
 		//<![CDATA[
 
 function deleteLease(val, val2) {
-	document.forms[0].ip_del.value = val;
-	document.forms[0].mac_del.value = val2;
+	document.forms[0].ip.value = val;
+	document.forms[0].mac.value = val2;
 	document.forms[0].submit_type.value = "delete";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }
 
+function staticLease(hostname, ip, mac) {
+	document.forms[0].ip.value = ip;
+	document.forms[0].mac.value = mac;
+	document.forms[0].hostname.value = hostname;
+	document.forms[0].submit_type.value = "static";
+	document.forms[0].change_action.value="gozila_cgi";
+	document.forms[0].submit();
+}
+
 function deletepptp(val) {
-	document.forms[0].if_del.value = val;
+	document.forms[0].if.value = val;
 	document.forms[0].submit_type.value = "deletepptp";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
@@ -113,6 +122,11 @@ function setDHCPTable() {
 		cell.className = "bin";
 		cell.title = errmsg.err58;
 		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + val[i+2] + "') })");
+
+		var cell = row.insertCell(-1);
+		cell.className = "button";
+		cell.title = share.static;
+		eval("addEvent(cell, 'click', function() { staticLease('" + val[i] + "','" + val[i+1] + "','" + val[i+2] + "') })");
 	}
 }
 
@@ -244,9 +258,12 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="delete" />
 							
-							<input type="hidden" name="if_del" />
-							<input type="hidden" name="ip_del" />
-							<input type="hidden" name="mac_del" />
+							<input type="hidden" name="if" />
+							<input type="hidden" name="ip" />
+							<input type="hidden" name="mac" />
+							<input type="hidden" name="hostname" />
+							<input type="hidden" name="ip" />
+							<input type="hidden" name="mac" />
 							
 							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
