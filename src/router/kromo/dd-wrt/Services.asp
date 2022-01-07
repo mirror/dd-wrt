@@ -45,9 +45,9 @@ function lease_add_submit(F) {
 	F.submit();
 }
 
-function lease_remove_submit(F) {
+function lease_del_submit(F) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "remove_lease";
+	F.submit_type.value = "del_lease";
 	checked(F);
 	F.submit();
 }
