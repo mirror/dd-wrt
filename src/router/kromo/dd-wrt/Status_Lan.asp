@@ -122,11 +122,8 @@ function setDHCPTable() {
 		cell.className = "bin";
 		cell.title = errmsg.err58;
 		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + val[i+2] + "') })");
-
-		var cell = row.insertCell(-1);
-		cell.className = "button";
-		cell.title = share.static;
-		eval("addEvent(cell, 'click', function() { staticLease('" + val[i] + "','" + val[i+1] + "','" + val[i+2] + "') })");
+		var cellbutton = row.insertCell(-1);
+		cellbutton.innerHTML = "<input class=\"button\" type=\"button\" value=\"" + share.add + "\" onclick=\"staticLease('" + val[i] + "', '" + val[i+1] + "', '" + val[i+2] + "')\" />";
 	}
 }
 
@@ -347,7 +344,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="17%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
-											<th sortdir="up" width="10%">&nbsp;</th>
+											<th sortdir="up" width="10%"><% tran("share.static_lease"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
