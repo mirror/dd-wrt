@@ -591,7 +591,7 @@ void start_dnsmasq(void)
 #endif
 	usejffs = 0;
 
-	if (jffs_mounted() || nvram_matchi("dhcpd_usejffs", 1)) {
+	if (jffs_mounted() && nvram_matchi("dhcpd_usejffs", 1)) {
 		if (!(fp = fopen("/jffs/dnsmasq.leases", "a"))) {
 			usejffs = 0;
 		} else {
