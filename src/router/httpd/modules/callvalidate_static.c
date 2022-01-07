@@ -523,6 +523,7 @@ static struct callmap gozila_map[] = {
 #endif
 	{ "clone_mac", &clone_mac },
 	{ "delete_leases", &delete_leases },
+	{ "static_leases", &delete_leases },
 #ifdef HAVE_PPTPD
 	{ "delete_pptp", &delete_pptp },
 #endif
