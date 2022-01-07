@@ -372,7 +372,6 @@ void start_init_start(void)
 #endif
 	cprintf("set led release wan control\n");
 
-#ifdef HAVE_RADIOOFF
 	if (nvram_matchi("radiooff_button", 1)
 	    && nvram_matchi("radiooff_boot_off", 1)) {
 		start_radio_off();
@@ -380,7 +379,6 @@ void start_init_start(void)
 		led_control(LED_SEC0, LED_OFF);
 		led_control(LED_SEC1, LED_OFF);
 	} else
-#endif
 	{
 		start_radio_on();
 	}
