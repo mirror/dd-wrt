@@ -906,14 +906,6 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 		char on[32];
 		sprintf(on, "radio_on%s", post);
 		eval("restart", on);
-#ifdef HAVE_MADWIFI
-		if (restart) {
-			eval("startservice", "restarthostapd", "-f");
-			eval("restart", "dnsmasq");
-			eval("startservice", "resetleds", "-f");
-			eval("startservice", "postnetwork", "-f");
-		}
-#endif
 		*wifi_mode = 0;
 
 		break;

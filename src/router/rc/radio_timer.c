@@ -98,13 +98,6 @@ static int radio_timer_main(int argc, char **argv)
 							char on[32];
 							sprintf(on, "radio_on_%d", i);
 							start_service_force(on);
-#ifdef HAVE_MADWIFI
-							start_service_force("restarthostapd");
-							stop_service_force("dnsmasq");
-							start_service_force("dnsmasq");
-							start_service_force("resetleds");
-							start_service_force("postnetwork");
-#endif
 						}
 						break;
 					case 2:	// 10 - turn radio off
