@@ -456,7 +456,7 @@ int check_pid(int pid, char *name)
 {
 	char checkname[32];
 	sprintf(checkname, "/proc/%d/cmdline", pid);
-	file = fopen(checkname, "rb");
+	FILE *file = fopen(checkname, "rb");
 	if (file) {
 		char line[64];
 		fgets(line, sizeof(line), file);
@@ -1070,7 +1070,7 @@ int jffs_mounted(void)
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))
 	return 1;
 #endif
-	int ret = nvram_matchi("jffs_mounted", "1");
+	int ret = nvram_matchi("jffs_mounted", 1);
 	if (!ret)
 		ret = freediskSpace("/jffs") > 65536;
 	return ret;
