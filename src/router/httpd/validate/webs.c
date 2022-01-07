@@ -177,7 +177,7 @@ void static_leases(webs_t wp)
 	if (!strlen(oldleases) || !num)
 		strcpy(target, newlease);
 	else {
-		if (target[strlen(target) - 1] == 0x20)
+		if (oldleases[strlen(oldleases) - 1] == 0x20)
 			sprintf(target, "%s%s", oldleases, newlease);
 		else
 			sprintf(target, "%s %s", oldleases, newlease);
