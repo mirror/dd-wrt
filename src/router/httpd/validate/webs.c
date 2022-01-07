@@ -2727,8 +2727,10 @@ void lease_del(webs_t wp)
 	foreach(word, wordlist, next) {
 		if (idx)
 			strcat(target, " ");
-		if (idx == todel)
+		if (idx == todel) {
+			idx++;
 			continue;
+		}
 		idx++;
 		strcat(target, word);
 	}
