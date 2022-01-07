@@ -147,8 +147,8 @@ void delete_leases(webs_t wp)
 	}
 	//todo. detect correct interface
 
-	ip = websGetVar(wp, "ip", NULL);
-	mac = websGetVar(wp, "mac", NULL);
+	ip = websGetVar(wp, "del_ip", NULL);
+	mac = websGetVar(wp, "del_mac", NULL);
 
 	eval("dhcp_release", iface, ip, mac);
 	wordlist = nvram_safe_get("mdhcpd");
@@ -164,8 +164,8 @@ void static_leases(webs_t wp)
 {
 	if (nvram_match("lan_proto", "static"))
 		return;
-	char *ip = websGetVar(wp, "ip", NULL);
-	char *mac = websGetVar(wp, "mac", NULL);;
+	char *ip = websGetVar(wp, "add_ip", NULL);
+	char *mac = websGetVar(wp, "add_mac", NULL);;
 	char *hostname = websGetVar(wp, "hostname", NULL);
 	if (!ip || !mac || !hostname)
 		return;
@@ -188,7 +188,7 @@ void static_leases(webs_t wp)
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
 void delete_pptp(webs_t wp)
 {
-	int iface = websGetVari(wp, "if", 0);
+	int iface = websGetVari(wp, "del_if", 0);
 	if (iface)
 		kill(iface, SIGTERM);
 }

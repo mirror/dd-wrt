@@ -3,16 +3,16 @@
 		//<![CDATA[
 
 function deleteLease(val, val2) {
-	document.forms[0].ip.value = val;
-	document.forms[0].mac.value = val2;
+	document.forms[0].del_ip.value = val;
+	document.forms[0].del_mac.value = val2;
 	document.forms[0].submit_type.value = "delete";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }
 
 function staticLease(hostname, ip, mac) {
-	document.forms[0].ip.value = ip;
-	document.forms[0].mac.value = mac;
+	document.forms[0].add_ip.value = ip;
+	document.forms[0].add_mac.value = mac;
 	document.forms[0].hostname.value = hostname;
 	document.forms[0].submit_type.value = "static";
 	document.forms[0].change_action.value="gozila_cgi";
@@ -20,7 +20,7 @@ function staticLease(hostname, ip, mac) {
 }
 
 function deletepptp(val) {
-	document.forms[0].if.value = val;
+	document.forms[0].del_if.value = val;
 	document.forms[0].submit_type.value = "deletepptp";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
@@ -255,9 +255,11 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="delete" />
 							
-							<input type="hidden" name="if" />
-							<input type="hidden" name="ip" />
-							<input type="hidden" name="mac" />
+							<input type="hidden" name="del_if" />
+							<input type="hidden" name="del_ip" />
+							<input type="hidden" name="del_mac" />
+							<input type="hidden" name="add_ip" />
+							<input type="hidden" name="add_mac" />
 							<input type="hidden" name="hostname" />
 							<input type="hidden" name="ip" />
 							<input type="hidden" name="mac" />
