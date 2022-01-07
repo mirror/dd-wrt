@@ -27,6 +27,7 @@ EJ_VISIBLE void ias_save_admincard(webs_t wp);
 EJ_VISIBLE void execute(webs_t wp);
 EJ_VISIBLE void clone_mac(webs_t wp);
 EJ_VISIBLE void delete_leases(webs_t wp);
+EJ_VISIBLE void static_leases(webs_t wp);
 EJ_VISIBLE void delete_pptp(webs_t wp);
 EJ_VISIBLE void save_wifi(webs_t wp);
 EJ_VISIBLE void save_wifi(webs_t wp);
@@ -420,6 +421,7 @@ extern void ej_dumpleases(webs_t wp, int argc, char_t ** argv);
 extern void validate_dhcp(webs_t wp, char *value, struct variable *v);
 extern void validate_dhcp_check(webs_t wp, char *value, struct variable *v);
 extern void delete_leases(webs_t wp);
+extern void static_leases(webs_t wp);
 
 /*
  * for log 
