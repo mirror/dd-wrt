@@ -344,7 +344,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="17%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
-											<th sortdir="up" width="10%"><% tran("share.static_lease"); %></th>
+											<th sortdir="up" width="10%"><% tran("share.sttic"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
