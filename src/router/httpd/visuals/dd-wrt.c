@@ -800,7 +800,7 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /><script type=\"text/javascript\">Capture(share.minutes)</script></td>\n",
 			  i, sep != NULL ? sep : "");
-		websWrite(wp,"<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>", i);
+		websWrite(wp,"<td align=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>", i);
 	}
 	debug_free(originalpointer);
 	return;
