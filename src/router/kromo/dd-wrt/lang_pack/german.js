@@ -414,6 +414,7 @@ errmsg.err103=" mu&szlig; kleiner sein als ";
 // Status_Lan.asp error messages
 errmsg.err58="Klicken um die Zuweisung zu l&ouml;schen";
 errmsg.err581="Klicken um die Verbindung zu trennen";
+errmsg.err582="Klicken um den Eintrag der statischen Lease-Tabelle hinzuzuf&uuml;gen";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Nicht verf&uuml;gbar! Bitte schalten sie das WLAN-Netzwerk an.";
