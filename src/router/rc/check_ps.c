@@ -176,12 +176,12 @@ static void checknas(void)	// for broadcom v24 only
 	return;
 
 #endif
-/*#ifndef HAVE_NOWIFI
+#ifndef HAVE_NOWIFI
 #ifdef HAVE_MADWIFI
 	start_service_force_f_arg("checkhostapd", 1);
 #endif
 #endif
-*/
+
 }
 
 		/* 
