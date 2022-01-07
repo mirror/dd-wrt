@@ -342,10 +342,10 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
-											<th sortdir="up" width="35%"><% tran("share.hostname"); %></th>
+											<th sortdir="up" width="27%"><% tran("share.hostname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.mac"); %></th>
-											<th sortdir="up" width="20%"><% tran("idx.dhcp_lease"); %></th>
+											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 											<th sortdir="up" width="10%">&nbsp;</th>
 										</tr>
