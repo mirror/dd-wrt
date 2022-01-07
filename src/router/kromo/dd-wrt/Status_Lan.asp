@@ -124,6 +124,7 @@ function setDHCPTable() {
 		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deleteLease('" + val[i+1] + "', '" + val[i+2] + "')\" />";
 		var cellbutton = row.insertCell(-1);
 		cellbutton.title = errmsg.err582;
+		cellbutton.align = "center";
 		cellbutton.innerHTML = "<input class=\"button\" type=\"button\" value=\"" + share.add + "\" onclick=\"staticLease('" + val[i] + "', '" + val[i+1] + "', '" + val[i+2] + "')\" />";
 	}
 }
