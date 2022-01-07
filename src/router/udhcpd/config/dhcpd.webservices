@@ -55,10 +55,11 @@
 			<th colspan="4"><% tran("share.static_lease"); %></th>
 		</tr>
 		<tr>
-			<th width="25%"><% tran("share.mac"); %></th>
-			<th width="25%"><% tran("share.hostname"); %></th>
-			<th width="25%"><% tran("share.ip"); %></th>
-			<th width="25%"><% tran("idx.dhcp_lease"); %></th>
+			<th width="22%"><% tran("share.mac"); %></th>
+			<th width="22%"><% tran("share.hostname"); %></th>
+			<th width="22%"><% tran("share.ip"); %></th>
+			<th width="22%"><% tran("idx.dhcp_lease"); %></th>
+			<th width="12%">&nbsp;</th>
 		</tr>
 			<% show_staticleases(); %>
 	</table><br />
