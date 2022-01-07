@@ -51,9 +51,8 @@ function setPPTPTable() {
 		row.insertCell(-1).innerHTML = val[i+3]; // remote ip
 				
 		var cell = row.insertCell(-1);
-		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 4] + "') })");
+		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deletepptp('" + val[i + 4] + "')\" />";
 	}
 }
 
@@ -80,9 +79,8 @@ function setPPPOETable() {
 		row.insertCell(-1).innerHTML = val[i+2]; // local ip
 				
 		var cell = row.insertCell(-1);
-		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 3] + "') })");
+		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deletepptp('" + val[i + 3] + "')\" />";
 	}
 }
 
