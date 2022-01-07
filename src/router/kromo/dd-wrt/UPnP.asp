@@ -79,8 +79,11 @@ function setUPnPTable(forwards) {
 
 		
 		cell = row.insertCell(-1);
+		
+		cell.className = "bin";
 		cell.title = upnp.msg1;
-		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deleteForward(" + i + ")\" />";
+		cell.innerHTML = " ";
+		eval("addEvent(cell, 'click', function() { deleteForward(" + i + ") })");
 	}
 }
 
