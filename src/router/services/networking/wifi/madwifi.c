@@ -938,14 +938,17 @@ static void checkhostapd(char *ifname, int force)
 	fp = fopen(fname, "rb");
 	if (!fp) {
 		sprintf(fname, "/var/run/%s_wpa_supplicant.pid", ifname);
-		if (fp)
+		fp = fopen(fname, "rb");
+		if (fp) {
 			sup = 1;
+		}
 	}
 	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname)
 	    || nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
-	if (!fp && force == 2)
+	if (!fp && force == 2) {
 	    force = 1;
+	}
 	if (fp || force == 1) {
 		if (fp) {
 			fscanf(fp, "%d", &pid);
