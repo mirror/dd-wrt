@@ -1826,33 +1826,11 @@ void radio_on_off_ath9k(int idx, int on)
 	if (on) {
 		char pid[64];
 		sprintf(pid, "/var/run/%s_hostapd.pid", prefix);
-		FILE *file = fopen(pid, "rb");
-		if (file) {
-			int p;
-			fscanf(file, "%d", &p);
-			fclose(file);
-			char checkname[32];
-			sprintf(checkname, "/proc/%d/cmdline", pid);
-			file = fopen(checkname, "rb");
-			if (file) {
-				needrestart = 0;
-				fclose(file);
-			}
-		}
+		if (check_pidfromfile(pid, "hostapd"))
+			needrestart = 0;
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
-		file = fopen(pid, "rb");
-		if (file) {
-			int p;
-			fscanf(file, "%d", &p);
-			fclose(file);
-			char checkname[32];
-			sprintf(checkname, "/proc/%d/cmdline", pid);
-			file = fopen(checkname, "rb");
-			if (file) {
-				needrestart = 0;
-				fclose(file);
-			}
-		}
+		if (check_pidfromfile(pid, "wpa_supplicant"))
+			needrestart = 0;
 		if (needrestart) {
 			eval("startservice", "restarthostapd_ifneeded", "-f");
 			eval("restart", "dnsmasq");
