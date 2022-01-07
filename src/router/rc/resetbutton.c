@@ -733,9 +733,7 @@ static int _count = 0;
 static int ses_pushed = 0;
 static int wifi24_pushed = 0;
 static int wifi5_pushed = 0;
-#ifdef HAVE_RADIOOFF
 static int initses = 1;
-#endif
 
 static void resetbtn_alarmtimer(unsigned long sec, unsigned long usec)
 {
@@ -998,14 +996,12 @@ static void handle_ses(void)
 		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 		int dummy = ses_mode;
 		int dummy2 = ses_mode;
-#ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
 		control_wifi(&dummy, "SES / AOSS / EZ-setup button", "_0", 0, 0);
 		control_wifi(&dummy2, "SES / AOSS / EZ-setup button", "_1", 1, 1);
 #else
 		control_wifi(&dummy, "AOSS button", "_0", 0, 0);
 		control_wifi(&dummy2, "AOSS button", "_1", 1, 1);
-#endif
 #endif
 
 		switch (ses_mode) {
@@ -1057,13 +1053,11 @@ static void resetbtn_period_check(int sig)
 		}
 	}
 #endif
-#ifdef HAVE_RADIOOFF
 	if (initses == 1 && nvram_matchi("radiooff_boot_off", 1)
 	    && nvram_matchi("radiooff_button", 1)) {
 		ses_mode = 1;
 		initses = 0;
 	}
-#endif
 
 	// time_t t;
 
