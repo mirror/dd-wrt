@@ -152,7 +152,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeSambaShare(this);\\\">\");</script>\n",
+			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"bin\\\" name=\\\"smbshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removeSambaShare(this);\\\">\");</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
@@ -281,7 +281,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "			<td valign=\"top\" style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "				<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbuser_del%s\\\" value=\\\"\"+nas.userdel+\"\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");</script>\n",
+			  "				<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"bin\\\" name=\\\"smbuser_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");</script>\n",
 			  number);
 		websWrite(wp, "			</td>\n");
 
