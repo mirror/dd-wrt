@@ -177,7 +177,10 @@ void static_leases(webs_t wp)
 	if (!strlen(oldleases) || !num)
 		strcpy(target, newlease);
 	else {
-		sprintf(target, "%s %s", oldleases, newlease);
+		if (target[strlen(target) - 1] == 0x20)
+			sprintf(target, "%s%s", oldleases, newlease);
+		else
+			sprintf(target, "%s %s", oldleases, newlease);
 	}
 	num++;
 	nvram_seti("static_leasenum", num);
