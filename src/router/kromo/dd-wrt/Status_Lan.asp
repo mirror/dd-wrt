@@ -52,6 +52,7 @@ function setPPTPTable() {
 				
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
+		cell.align = "center";
 		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deletepptp('" + val[i + 4] + "')\" />";
 	}
 }
@@ -80,6 +81,7 @@ function setPPPOETable() {
 				
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
+		cell.align = "center";
 		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deletepptp('" + val[i + 3] + "')\" />";
 	}
 }
@@ -118,6 +120,7 @@ function setDHCPTable() {
 		
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err58;
+		cell.align = "center";
 		cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"deleteLease('" + val[i+1] + "', '" + val[i+2] + "')\" />";
 		var cellbutton = row.insertCell(-1);
 		cellbutton.title = errmsg.err582;
