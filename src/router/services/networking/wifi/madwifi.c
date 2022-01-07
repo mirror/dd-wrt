@@ -990,6 +990,7 @@ static void checkhostapd(char *ifname, int force)
 				if (sup) {
 					start_deconfigurewifi();
 					start_configurewifi();
+					start_wan_boot();
 					return;
 				}
 				do_hostapd(fstr, ifname);
