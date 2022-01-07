@@ -45,9 +45,10 @@ function lease_add_submit(F) {
 	F.submit();
 }
 
-function lease_del_submit(F) {
+function lease_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_lease";
+	F.lease_del_value.value=I;
 	checked(F);
 	F.submit();
 }
@@ -176,6 +177,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="static_leases" value="13" />
 							<input type="hidden" name="openvpn_certtype" />
 							<input type="hidden" name="dhcpd_usejffs" />
+							<input type="hidden" name="lease_del_value" />
 							<input type="hidden" name="dhcpd_usenvram" />
 							<input type="hidden" name="nstx_log" />
 							
