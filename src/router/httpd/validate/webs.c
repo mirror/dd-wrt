@@ -147,8 +147,8 @@ void delete_leases(webs_t wp)
 	}
 	//todo. detect correct interface
 
-	ip = websGetVar(wp, "ip_del", NULL);
-	mac = websGetVar(wp, "mac_del", NULL);
+	ip = websGetVar(wp, "ip", NULL);
+	mac = websGetVar(wp, "mac", NULL);
 
 	eval("dhcp_release", iface, ip, mac);
 	wordlist = nvram_safe_get("mdhcpd");
@@ -160,10 +160,35 @@ void delete_leases(webs_t wp)
 	}
 }
 
+void static_leases(webs_t wp)
+{
+	if (nvram_match("lan_proto", "static"))
+		return;
+	char *ip = websGetVar(wp, "ip", NULL);
+	char *mac = websGetVar(wp, "mac", NULL);;
+	char *hostname = websGetVar(wp, "hostname", NULL);
+	if (!ip || !mac || !hostname)
+		return;
+	char newlease[256];
+	sprintf(newlease, "%s=%s=%s=", mac, hostname, ip);
+	char *oldleases = nvram_safe_get("static_leases");
+	char *target = malloc(strlen(oldleases) + strlen(newlease) + 2);
+	int num = nvram_geti("static_leasenum");
+	if (!strlen(oldleases) || !num)
+		strcpy(target, newlease);
+	else {
+		sprintf(target, "%s %s", oldleases, newlease);
+		num++;
+	}
+	nvram_seti("static_leasenum", num);
+	nvtam_set("static_leases", target);
+	free(target);
+}
+
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
 void delete_pptp(webs_t wp)
 {
-	int iface = websGetVari(wp, "if_del", 0);
+	int iface = websGetVari(wp, "if", 0);
 	if (iface)
 		kill(iface, SIGTERM);
 }
@@ -2711,6 +2736,8 @@ void lease_del(webs_t wp)
 	if (num)
 		num--;
 	nvram_seti("static_leasenum", num);
+	nvram_set("static_leases", target);
+	free(target);
 }
 
 void lease_add(webs_t wp)
