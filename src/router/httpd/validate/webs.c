@@ -178,8 +178,8 @@ void static_leases(webs_t wp)
 		strcpy(target, newlease);
 	else {
 		sprintf(target, "%s %s", oldleases, newlease);
-		num++;
 	}
+	num++;
 	nvram_seti("static_leasenum", num);
 	nvtam_set("static_leases", target);
 	free(target);
