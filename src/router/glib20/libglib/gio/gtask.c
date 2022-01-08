@@ -58,6 +58,10 @@
  * use g_task_propagate_pointer() or the like to extract the
  * return value.
  *
+ * Using #GTask requires the thread-default #GMainContext from when the
+ * #GTask was constructed to be running at least until the task has completed
+ * and its data has been freed.
+ *
  * Here is an example for using GTask as a GAsyncResult:
  * |[<!-- language="C" -->
  *     typedef struct {
@@ -1528,9 +1532,9 @@ g_task_start_task_thread (GTask           *task,
  *
  * Although GLib currently rate-limits the tasks queued via
  * g_task_run_in_thread(), you should not assume that it will always
- * do this. If you have a very large number of tasks to run, but don't
- * want them to all run at once, you should only queue a limited
- * number of them at a time.
+ * do this. If you have a very large number of tasks to run (several tens of
+ * tasks), but don't want them to all run at once, you should only queue a
+ * limited number of them (around ten) at a time.
  *
  * Since: 2.36
  */
@@ -2177,7 +2181,7 @@ g_task_thread_pool_init (void)
   g_thread_pool_set_sort_function (task_pool, g_task_compare_priority, NULL);
 
   task_pool_manager = g_source_new (&trivial_source_funcs, sizeof (GSource));
-  g_source_set_name (task_pool_manager, "GTask thread pool manager");
+  g_source_set_static_name (task_pool_manager, "GTask thread pool manager");
   g_source_set_callback (task_pool_manager, task_pool_manager_timeout, NULL, NULL);
   g_source_set_ready_time (task_pool_manager, -1);
   g_source_attach (task_pool_manager,

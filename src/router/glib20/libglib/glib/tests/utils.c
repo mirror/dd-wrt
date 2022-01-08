@@ -158,11 +158,199 @@ test_appname (void)
   g_assert_cmpstr (appname, ==, "appname");
 }
 
+static gpointer
+thread_prgname_check (gpointer data)
+{
+  gint *n_threads_got_prgname = (gint *) data;
+  const gchar *old_prgname;
+
+  old_prgname = g_get_prgname ();
+  g_assert_cmpstr (old_prgname, ==, "prgname");
+
+  g_atomic_int_inc (n_threads_got_prgname);
+
+  while (g_strcmp0 (g_get_prgname (), "prgname2") != 0);
+
+  return NULL;
+}
+
+static void
+test_prgname_thread_safety (void)
+{
+  gsize i;
+  gint n_threads_got_prgname;
+  GThread *threads[4];
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/847");
+  g_test_summary ("Test that threads racing to get and set the program name "
+                  "always receive a valid program name.");
+
+  g_set_prgname ("prgname");
+  g_atomic_int_set (&n_threads_got_prgname, 0);
+
+  for (i = 0; i < G_N_ELEMENTS (threads); i++)
+    threads[i] = g_thread_new (NULL, thread_prgname_check, &n_threads_got_prgname);
+
+  while (g_atomic_int_get (&n_threads_got_prgname) != G_N_ELEMENTS (threads))
+    g_usleep (50);
+
+  g_set_prgname ("prgname2");
+
+  /* Wait for all the workers to exit. */
+  for (i = 0; i < G_N_ELEMENTS (threads); i++)
+    g_thread_join (threads[i]);
+
+  /* reset prgname */
+  g_set_prgname ("prgname");
+}
+
 static void
 test_tmpdir (void)
 {
-  g_test_bug ("627969");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=627969");
   g_assert_cmpstr (g_get_tmp_dir (), !=, "");
+}
+
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+#define TEST_BUILTINS 1
+#else
+#define TEST_BUILTINS 0
+#endif
+
+#if TEST_BUILTINS
+static gint
+builtin_bit_nth_lsf1 (gulong mask, gint nth_bit)
+{
+  if (nth_bit >= 0)
+    {
+      if (G_LIKELY (nth_bit < GLIB_SIZEOF_LONG * 8 - 1))
+        mask &= -(1UL << (nth_bit + 1));
+      else
+        mask = 0;
+    }
+  return __builtin_ffsl (mask) - 1;
+}
+
+static gint
+builtin_bit_nth_lsf2 (gulong mask, gint nth_bit)
+{
+  if (nth_bit >= 0)
+    {
+      if (G_LIKELY (nth_bit < GLIB_SIZEOF_LONG * 8 - 1))
+        mask &= -(1UL << (nth_bit + 1));
+      else
+        mask = 0;
+    }
+  return mask ? __builtin_ctzl (mask) : -1;
+}
+
+static gint
+builtin_bit_nth_msf (gulong mask, gint nth_bit)
+{
+  if (nth_bit >= 0 && nth_bit < GLIB_SIZEOF_LONG * 8)
+    mask &= (1UL << nth_bit) - 1;
+  return mask ? GLIB_SIZEOF_LONG * 8 - 1 - __builtin_clzl (mask) : -1;
+}
+
+static guint
+builtin_bit_storage (gulong number)
+{
+  return number ? GLIB_SIZEOF_LONG * 8 - __builtin_clzl (number) : 1;
+}
+#endif
+
+static gint
+naive_bit_nth_lsf (gulong mask, gint nth_bit)
+{
+  if (G_UNLIKELY (nth_bit < -1))
+    nth_bit = -1;
+  while (nth_bit < ((GLIB_SIZEOF_LONG * 8) - 1))
+    {
+      nth_bit++;
+      if (mask & (1UL << nth_bit))
+        return nth_bit;
+    }
+  return -1;
+}
+
+static gint
+naive_bit_nth_msf (gulong mask, gint nth_bit)
+{
+  if (nth_bit < 0 || G_UNLIKELY (nth_bit > GLIB_SIZEOF_LONG * 8))
+    nth_bit = GLIB_SIZEOF_LONG * 8;
+  while (nth_bit > 0)
+    {
+      nth_bit--;
+      if (mask & (1UL << nth_bit))
+        return nth_bit;
+    }
+  return -1;
+}
+
+static guint
+naive_bit_storage (gulong number)
+{
+  guint n_bits = 0;
+
+  do
+    {
+      n_bits++;
+      number >>= 1;
+    }
+  while (number);
+  return n_bits;
+}
+
+static void
+test_basic_bits (void)
+{
+  gulong i;
+  gint nth_bit;
+
+  /* we loop like this: 0, -1, 1, -2, 2, -3, 3, ... */
+  for (i = 0; (glong) i < 1500; i = -(i + ((glong) i >= 0)))
+    {
+      guint naive_bit_storage_i = naive_bit_storage (i);
+
+      /* Test the g_bit_*() implementations against the compiler builtins (if
+       * available), and against a slow-but-correct ‘naive’ implementation.
+       * They should all agree.
+       *
+       * The macro and function versions of the g_bit_*() functions are tested,
+       * hence one call with the function name in brackets (to avoid it being
+       * expanded as a macro). */
+#if TEST_BUILTINS
+      g_assert_cmpint (naive_bit_storage_i, ==, builtin_bit_storage (i));
+#endif
+      g_assert_cmpint (naive_bit_storage_i, ==, g_bit_storage (i));
+      g_assert_cmpint (naive_bit_storage_i, ==, (g_bit_storage) (i));
+
+      for (nth_bit = -3; nth_bit <= 2 + GLIB_SIZEOF_LONG * 8; nth_bit++)
+        {
+          gint naive_bit_nth_lsf_i_nth_bit = naive_bit_nth_lsf (i, nth_bit);
+          gint naive_bit_nth_msf_i_nth_bit = naive_bit_nth_msf (i, nth_bit);
+
+#if TEST_BUILTINS
+          g_assert_cmpint (naive_bit_nth_lsf_i_nth_bit, ==,
+                           builtin_bit_nth_lsf1 (i, nth_bit));
+          g_assert_cmpint (naive_bit_nth_lsf_i_nth_bit, ==,
+                           builtin_bit_nth_lsf2 (i, nth_bit));
+#endif
+          g_assert_cmpint (naive_bit_nth_lsf_i_nth_bit, ==,
+                           g_bit_nth_lsf (i, nth_bit));
+          g_assert_cmpint (naive_bit_nth_lsf_i_nth_bit, ==,
+                           (g_bit_nth_lsf) (i, nth_bit));
+
+#if TEST_BUILTINS
+          g_assert_cmpint (naive_bit_nth_msf_i_nth_bit, ==,
+                           builtin_bit_nth_msf (i, nth_bit));
+#endif
+          g_assert_cmpint (naive_bit_nth_msf_i_nth_bit, ==,
+                           g_bit_nth_msf (i, nth_bit));
+          g_assert_cmpint (naive_bit_nth_msf_i_nth_bit, ==,
+                           (g_bit_nth_msf) (i, nth_bit));
+        }
+    }
 }
 
 static void
@@ -246,6 +434,11 @@ test_find_program (void)
   gchar *res;
 
 #ifdef G_OS_UNIX
+  gchar *relative_path;
+  gchar *absolute_path;
+  gchar *cwd;
+  gsize i;
+
   res = g_find_program_in_path ("sh");
   g_assert (res != NULL);
   g_free (res);
@@ -253,6 +446,27 @@ test_find_program (void)
   res = g_find_program_in_path ("/bin/sh");
   g_assert (res != NULL);
   g_free (res);
+
+  cwd = g_get_current_dir ();
+  absolute_path = g_find_program_in_path ("sh");
+  relative_path = g_strdup (absolute_path);
+  for (i = 0; cwd[i] != '\0'; i++)
+    {
+      if (cwd[i] == '/' && cwd[i + 1] != '\0')
+        {
+          gchar *relative_path_2 = g_strconcat ("../", relative_path, NULL);
+          g_free (relative_path);
+          relative_path = relative_path_2;
+        }
+    }
+  res = g_find_program_in_path (relative_path);
+  g_assert_nonnull (res);
+  g_assert_true (g_path_is_absolute (res));
+  g_free (cwd);
+  g_free (absolute_path);
+  g_free (relative_path);
+  g_free (res);
+
 #else
   /* There's not a lot we can search for that would reliably work both
    * on real Windows and mingw.
@@ -527,7 +741,7 @@ test_os_info (void)
 {
   gchar *name;
   gchar *contents = NULL;
-#ifdef G_OS_UNIX
+#if defined (G_OS_UNIX) && !(defined (G_OS_WIN32) || defined (__APPLE__))
   struct utsname info;
 #endif
 
@@ -829,13 +1043,14 @@ main (int   argc,
   g_set_prgname (argv[0]);
 
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/utils/language-names", test_language_names);
   g_test_add_func ("/utils/locale-variants", test_locale_variants);
   g_test_add_func ("/utils/version", test_version);
   g_test_add_func ("/utils/appname", test_appname);
+  g_test_add_func ("/utils/prgname-thread-safety", test_prgname_thread_safety);
   g_test_add_func ("/utils/tmpdir", test_tmpdir);
+  g_test_add_func ("/utils/basic_bits", test_basic_bits);
   g_test_add_func ("/utils/bits", test_bits);
   g_test_add_func ("/utils/swap", test_swap);
   g_test_add_func ("/utils/find-program", test_find_program);

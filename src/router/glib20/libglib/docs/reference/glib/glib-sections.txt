@@ -138,6 +138,8 @@ GLIB_VERSION_2_62
 GLIB_VERSION_2_64
 GLIB_VERSION_2_66
 GLIB_VERSION_2_68
+GLIB_VERSION_2_70
+GLIB_VERSION_2_72
 GLIB_VERSION_CUR_STABLE
 GLIB_VERSION_PREV_STABLE
 GLIB_VERSION_MIN_REQUIRED
@@ -168,6 +170,8 @@ GLIB_AVAILABLE_ENUMERATOR_IN_2_62
 GLIB_AVAILABLE_ENUMERATOR_IN_2_64
 GLIB_AVAILABLE_ENUMERATOR_IN_2_66
 GLIB_AVAILABLE_ENUMERATOR_IN_2_68
+GLIB_AVAILABLE_ENUMERATOR_IN_2_70
+GLIB_AVAILABLE_ENUMERATOR_IN_2_72
 GLIB_AVAILABLE_IN_ALL
 GLIB_AVAILABLE_IN_2_26
 GLIB_AVAILABLE_IN_2_28
@@ -191,6 +195,8 @@ GLIB_AVAILABLE_IN_2_62
 GLIB_AVAILABLE_IN_2_64
 GLIB_AVAILABLE_IN_2_66
 GLIB_AVAILABLE_IN_2_68
+GLIB_AVAILABLE_IN_2_70
+GLIB_AVAILABLE_IN_2_72
 GLIB_AVAILABLE_MACRO_IN_2_26
 GLIB_AVAILABLE_MACRO_IN_2_28
 GLIB_AVAILABLE_MACRO_IN_2_30
@@ -213,12 +219,16 @@ GLIB_AVAILABLE_MACRO_IN_2_62
 GLIB_AVAILABLE_MACRO_IN_2_64
 GLIB_AVAILABLE_MACRO_IN_2_66
 GLIB_AVAILABLE_MACRO_IN_2_68
+GLIB_AVAILABLE_MACRO_IN_2_70
+GLIB_AVAILABLE_MACRO_IN_2_72
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_44
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_60
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_62
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_64
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_66
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_68
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_70
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_72
 GLIB_AVAILABLE_TYPE_IN_2_26
 GLIB_AVAILABLE_TYPE_IN_2_28
 GLIB_AVAILABLE_TYPE_IN_2_30
@@ -241,6 +251,8 @@ GLIB_AVAILABLE_TYPE_IN_2_62
 GLIB_AVAILABLE_TYPE_IN_2_64
 GLIB_AVAILABLE_TYPE_IN_2_66
 GLIB_AVAILABLE_TYPE_IN_2_68
+GLIB_AVAILABLE_TYPE_IN_2_70
+GLIB_AVAILABLE_TYPE_IN_2_72
 GLIB_DEPRECATED_ENUMERATOR
 GLIB_DEPRECATED_ENUMERATOR_FOR
 GLIB_DEPRECATED_ENUMERATOR_IN_2_26
@@ -287,6 +299,10 @@ GLIB_DEPRECATED_ENUMERATOR_IN_2_66
 GLIB_DEPRECATED_ENUMERATOR_IN_2_66_FOR
 GLIB_DEPRECATED_ENUMERATOR_IN_2_68
 GLIB_DEPRECATED_ENUMERATOR_IN_2_68_FOR
+GLIB_DEPRECATED_ENUMERATOR_IN_2_70
+GLIB_DEPRECATED_ENUMERATOR_IN_2_70_FOR
+GLIB_DEPRECATED_ENUMERATOR_IN_2_72
+GLIB_DEPRECATED_ENUMERATOR_IN_2_72_FOR
 GLIB_DEPRECATED_IN_2_26
 GLIB_DEPRECATED_IN_2_26_FOR
 GLIB_DEPRECATED_IN_2_28
@@ -331,6 +347,10 @@ GLIB_DEPRECATED_IN_2_66
 GLIB_DEPRECATED_IN_2_66_FOR
 GLIB_DEPRECATED_IN_2_68
 GLIB_DEPRECATED_IN_2_68_FOR
+GLIB_DEPRECATED_IN_2_70
+GLIB_DEPRECATED_IN_2_70_FOR
+GLIB_DEPRECATED_IN_2_72
+GLIB_DEPRECATED_IN_2_72_FOR
 GLIB_DEPRECATED_MACRO
 GLIB_DEPRECATED_MACRO_FOR
 GLIB_DEPRECATED_MACRO_IN_2_26
@@ -377,6 +397,10 @@ GLIB_DEPRECATED_MACRO_IN_2_66
 GLIB_DEPRECATED_MACRO_IN_2_66_FOR
 GLIB_DEPRECATED_MACRO_IN_2_68
 GLIB_DEPRECATED_MACRO_IN_2_68_FOR
+GLIB_DEPRECATED_MACRO_IN_2_70
+GLIB_DEPRECATED_MACRO_IN_2_70_FOR
+GLIB_DEPRECATED_MACRO_IN_2_72
+GLIB_DEPRECATED_MACRO_IN_2_72_FOR
 GLIB_DEPRECATED_TYPE
 GLIB_DEPRECATED_TYPE_FOR
 GLIB_DEPRECATED_TYPE_IN_2_26
@@ -423,6 +447,10 @@ GLIB_DEPRECATED_TYPE_IN_2_66
 GLIB_DEPRECATED_TYPE_IN_2_66_FOR
 GLIB_DEPRECATED_TYPE_IN_2_68
 GLIB_DEPRECATED_TYPE_IN_2_68_FOR
+GLIB_DEPRECATED_TYPE_IN_2_70
+GLIB_DEPRECATED_TYPE_IN_2_70_FOR
+GLIB_DEPRECATED_TYPE_IN_2_72
+GLIB_DEPRECATED_TYPE_IN_2_72_FOR
 GLIB_VERSION_CUR_STABLE
 GLIB_VERSION_PREV_STABLE
 </SECTION>
@@ -724,6 +752,7 @@ G_HAVE_GNUC_VARARGS
 G_HAVE_ISO_VARARGS
 G_HAVE_GROWING_STACK
 G_VA_COPY_AS_ARRAY
+GLIB_CANNOT_IGNORE_DEPRECATIONS
 GLIB_DEPRECATED
 GLIB_DEPRECATED_FOR
 GLIB_UNAVAILABLE
@@ -735,10 +764,26 @@ G_ANALYZER_ANALYZING
 G_ANALYZER_NORETURN
 g_autoptr_cleanup_generic_gfree
 glib_typeof
-glib_typeof_2_68
 g_macro__has_attribute
 g_macro__has_builtin
 g_macro__has_feature
+g_macro__has_extension
+g_macro__has_attribute___alloc_size__
+g_macro__has_attribute___const__
+g_macro__has_attribute___deprecated__
+g_macro__has_attribute___format__
+g_macro__has_attribute___format_arg__
+g_macro__has_attribute___malloc__
+g_macro__has_attribute___no_instrument_function__
+g_macro__has_attribute___noreturn__
+g_macro__has_attribute___pure__
+g_macro__has_attribute___sentinel__
+g_macro__has_attribute___unused__
+g_macro__has_attribute_fallthrough
+g_macro__has_attribute_may_alias
+g_macro__has_attribute___noinline__
+g_macro__has_attribute_warn_unused_result
+g_macro__has_attribute_cleanup
 </SECTION>
 
 <SECTION>
@@ -756,6 +801,7 @@ g_set_error_literal
 g_propagate_error
 g_clear_error
 g_prefix_error
+g_prefix_error_literal
 g_propagate_prefixed_error
 <SUBSECTION>
 GErrorInitFunc
@@ -796,7 +842,9 @@ G_SOURCE_REMOVE
 
 <SUBSECTION>
 GMainContext
+GMainContextFlags
 g_main_context_new
+g_main_context_new_with_flags
 g_main_context_ref
 g_main_context_unref
 g_main_context_default
@@ -886,6 +934,7 @@ g_source_get_can_recurse
 g_source_get_id
 g_source_get_name
 g_source_set_name
+g_source_set_static_name
 g_source_set_name_by_id
 g_source_get_context
 g_source_set_callback
@@ -909,6 +958,9 @@ g_source_remove_by_funcs_user_data
 g_source_remove_by_user_data
 GClearHandleFunc
 g_clear_handle_id
+
+<SUBSECTION>
+g_steal_fd
 
 <SUBSECTION Private>
 GLIB_HAVE_ALLOCA_H
@@ -1138,6 +1190,7 @@ g_once_init_enter_impl
 <FILE>thread_pools</FILE>
 GThreadPool
 g_thread_pool_new
+g_thread_pool_new_full
 g_thread_pool_push
 g_thread_pool_set_max_threads
 g_thread_pool_get_max_threads
@@ -1336,7 +1389,9 @@ g_mem_gc_friendly
 
 <SUBSECTION>
 g_alloca
+g_alloca0
 g_newa
+g_newa0
 
 <SUBSECTION>
 g_memmove
@@ -1392,6 +1447,9 @@ GPatternSpec
 g_pattern_spec_new
 g_pattern_spec_free
 g_pattern_spec_equal
+g_pattern_spec_copy
+g_pattern_spec_match
+g_pattern_spec_match_string
 g_pattern_match
 g_pattern_match_string
 g_pattern_match_simple
@@ -1531,6 +1589,7 @@ g_spawn_async_with_pipes_and_fds
 g_spawn_async
 g_spawn_sync
 G_SPAWN_EXIT_ERROR
+g_spawn_check_wait_status
 g_spawn_check_exit_status
 g_spawn_command_line_async
 g_spawn_command_line_sync
@@ -1613,6 +1672,7 @@ GOptionArg
 GOptionFlags
 G_OPTION_REMAINING
 GOptionEntry
+G_OPTION_ENTRY_NULL
 g_option_context_add_main_entries
 GOptionGroup
 g_option_context_add_group
@@ -1828,6 +1888,8 @@ g_strv_builder_new
 g_strv_builder_ref
 g_strv_builder_unref
 g_strv_builder_add
+g_strv_builder_addv
+g_strv_builder_add_many
 g_strv_builder_end
 
 <SUBSECTION>
@@ -2449,9 +2511,12 @@ g_bookmark_file_error_quark
 <FILE>modules</FILE>
 <INCLUDE>gmodule.h</INCLUDE>
 GModule
+GModuleError
+G_MODULE_ERROR
 g_module_supported
 g_module_build_path
 g_module_open
+g_module_open_full
 GModuleFlags
 g_module_symbol
 g_module_name
@@ -2464,6 +2529,8 @@ GModuleUnload
 G_MODULE_SUFFIX
 G_MODULE_EXPORT
 G_MODULE_IMPORT
+<SUBSECTION Private>
+g_module_error_quark
 </SECTION>
 
 <SECTION>
@@ -2989,6 +3056,7 @@ g_bytes_new_static
 g_bytes_new_with_free_func
 g_bytes_new_from_bytes
 g_bytes_get_data
+g_bytes_get_region
 g_bytes_get_size
 g_bytes_hash
 g_bytes_equal
@@ -3038,6 +3106,7 @@ g_tree_lower_bound
 g_tree_upper_bound
 g_tree_remove
 g_tree_steal
+g_tree_remove_all
 g_tree_destroy
 </SECTION>
 
@@ -3520,8 +3589,11 @@ g_test_get_filename
 g_test_get_dir
 
 g_test_fail
+g_test_fail_printf
 g_test_skip
+g_test_skip_printf
 g_test_incomplete
+g_test_incomplete_printf
 g_test_failed
 g_test_message
 g_test_bug_base
@@ -3590,6 +3662,8 @@ g_test_get_root
 g_test_suite_add
 g_test_suite_add_suite
 g_test_run_suite
+g_test_case_free
+g_test_suite_free
 
 <SUBSECTION Private>
 g_test_trap_assertions

@@ -1011,7 +1011,7 @@ test_happy_eyeballs_ipv6_error_ipv4_very_slow (HappyEyeballsFixture *fixture,
   AsyncData data = { 0 };
   GError *ipv6_error;
 
-  g_test_bug ("merge_requests/865");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/merge_requests/865");
   g_test_summary ("Ensure that we successfully return IPv4 results even when they come significantly later than an IPv6 failure.");
 
   /* If ipv6 fails, ensuring that ipv6 errors before ipv4 finishes, we still get ipv4. */
@@ -1183,38 +1183,37 @@ test_happy_eyeballs_both_error_delays_3 (HappyEyeballsFixture *fixture,
 int
 main (int argc, char *argv[])
 {
-  gint i;
+  gsize i;
   gchar *path;
 
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("https://gitlab.gnome.org/GNOME/glib/");
 
   g_test_add_func ("/network-address/basic", test_basic);
 
   for (i = 0; i < G_N_ELEMENTS (host_tests); i++)
     {
-      path = g_strdup_printf ("/network-address/parse-host/%d", i);
+      path = g_strdup_printf ("/network-address/parse-host/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &host_tests[i], test_parse_host);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (uri_tests); i++)
     {
-      path = g_strdup_printf ("/network-address/parse-uri/%d", i);
+      path = g_strdup_printf ("/network-address/parse-uri/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &uri_tests[i], test_parse_uri);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (address_tests); i++)
     {
-      path = g_strdup_printf ("/network-address/resolve-address/%d", i);
+      path = g_strdup_printf ("/network-address/resolve-address/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &address_tests[i], test_resolve_address);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (address_tests); i++)
     {
-      path = g_strdup_printf ("/gresolver/resolve-address/%d", i);
+      path = g_strdup_printf ("/gresolver/resolve-address/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &address_tests[i], test_resolve_address_gresolver);
       g_free (path);
     }

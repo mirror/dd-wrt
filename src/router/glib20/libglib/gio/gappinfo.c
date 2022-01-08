@@ -326,7 +326,12 @@ g_app_info_set_as_default_for_type (GAppInfo    *appinfo,
 
   iface = G_APP_INFO_GET_IFACE (appinfo);
 
-  return (* iface->set_as_default_for_type) (appinfo, content_type, error);
+  if (iface->set_as_default_for_type)
+    return (* iface->set_as_default_for_type) (appinfo, content_type, error);
+
+  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                       _("Setting default applications not supported yet"));
+  return FALSE;
 }
 
 /**
@@ -354,7 +359,12 @@ g_app_info_set_as_last_used_for_type (GAppInfo    *appinfo,
 
   iface = G_APP_INFO_GET_IFACE (appinfo);
 
-  return (* iface->set_as_last_used_for_type) (appinfo, content_type, error);
+  if (iface->set_as_last_used_for_type)
+    return (* iface->set_as_last_used_for_type) (appinfo, content_type, error);
+
+  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                       _("Setting application as last used for type not supported yet"));
+  return FALSE;
 }
 
 /**
@@ -1103,6 +1113,7 @@ g_app_info_delete (GAppInfo *appinfo)
 
 enum {
   LAUNCH_FAILED,
+  LAUNCH_STARTED,
   LAUNCHED,
   LAST_SIGNAL
 };
@@ -1147,7 +1158,7 @@ g_app_launch_context_class_init (GAppLaunchContextClass *klass)
    * @context: the object emitting the signal
    * @startup_notify_id: the startup notification id for the failed launch
    *
-   * The ::launch-failed signal is emitted when a #GAppInfo launch
+   * The #GAppLaunchContext::launch-failed signal is emitted when a #GAppInfo launch
    * fails. The startup notification id is provided, so that the launcher
    * can cancel the startup notification.
    *
@@ -1161,16 +1172,55 @@ g_app_launch_context_class_init (GAppLaunchContextClass *klass)
                                          G_TYPE_NONE, 1, G_TYPE_STRING);
 
   /**
+   * GAppLaunchContext::launch-started:
+   * @context: the object emitting the signal
+   * @info: the #GAppInfo that is about to be launched
+   * @platform_data: (nullable): additional platform-specific data for this launch
+   *
+   * The #GAppLaunchContext::launch-started signal is emitted when a #GAppInfo is
+   * about to be launched. If non-null the @platform_data is an
+   * GVariant dictionary mapping strings to variants (ie `a{sv}`), which
+   * contains additional, platform-specific data about this launch. On
+   * UNIX, at least the `startup-notification-id` keys will be
+   * present.
+   *
+   * The value of the `startup-notification-id` key (type `s`) is a startup
+   * notification ID corresponding to the format from the [startup-notification
+   * specification](https://specifications.freedesktop.org/startup-notification-spec/startup-notification-0.1.txt).
+   * It allows tracking the progress of the launchee through startup.
+   *
+   * It is guaranteed that this signal is followed by either a #GAppLaunchContext::launched or
+   * #GAppLaunchContext::launch-failed signal.
+   *
+   * Since: 2.72
+   */
+  signals[LAUNCH_STARTED] = g_signal_new (I_("launch-started"),
+                                          G_OBJECT_CLASS_TYPE (object_class),
+                                          G_SIGNAL_RUN_LAST,
+                                          G_STRUCT_OFFSET (GAppLaunchContextClass, launch_started),
+                                          NULL, NULL,
+                                          _g_cclosure_marshal_VOID__OBJECT_VARIANT,
+                                          G_TYPE_NONE, 2,
+                                          G_TYPE_APP_INFO, G_TYPE_VARIANT);
+  g_signal_set_va_marshaller (signals[LAUNCH_STARTED],
+                              G_TYPE_FROM_CLASS (klass),
+                              _g_cclosure_marshal_VOID__OBJECT_VARIANTv);
+
+  /**
    * GAppLaunchContext::launched:
    * @context: the object emitting the signal
    * @info: the #GAppInfo that was just launched
    * @platform_data: additional platform-specific data for this launch
    *
-   * The ::launched signal is emitted when a #GAppInfo is successfully
+   * The #GAppLaunchContext::launched signal is emitted when a #GAppInfo is successfully
    * launched. The @platform_data is an GVariant dictionary mapping
-   * strings to variants (ie a{sv}), which contains additional,
+   * strings to variants (ie `a{sv}`), which contains additional,
    * platform-specific data about this launch. On UNIX, at least the
-   * "pid" and "startup-notification-id" keys will be present.
+   * `pid` and `startup-notification-id` keys will be present.
+   *
+   * Since 2.72 the `pid` may be 0 if the process id wasn't known (for
+   * example if the process was launched via D-Bus). The `pid` may not be
+   * set at all in subsequent releases.
    *
    * Since: 2.36
    */

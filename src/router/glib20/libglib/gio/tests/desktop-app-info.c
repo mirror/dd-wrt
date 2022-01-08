@@ -482,8 +482,7 @@ assert_strings_equivalent (const gchar *expected,
         if (g_str_equal (expected_words[i], result_words[j]))
           goto got_it;
 
-      g_test_message ("Unable to find expected string '%s' in result '%s'", expected_words[i], result);
-      g_test_fail ();
+      g_test_fail_printf ("Unable to find expected string '%s' in result '%s'", expected_words[i], result);
 
 got_it:
       continue;
@@ -729,6 +728,20 @@ test_show_in (void)
   assert_shown ("invalid-desktop.desktop", FALSE, "../invalid/desktop:../invalid/desktop");
 }
 
+static void
+on_launch_started (GAppLaunchContext *context, GAppInfo *info, GVariant *platform_data, gpointer data)
+{
+  gboolean *invoked = data;
+
+  g_assert_true (G_IS_APP_LAUNCH_CONTEXT (context));
+  g_assert_true (G_IS_APP_INFO (info));
+  /* Our default context doesn't fill in any platform data */
+  g_assert_null (platform_data);
+
+  g_assert_false (*invoked);
+  *invoked = TRUE;
+}
+
 /* Test g_desktop_app_info_launch_uris_as_manager() and
  * g_desktop_app_info_launch_uris_as_manager_with_fds()
  */
@@ -739,6 +752,8 @@ test_launch_as_manager (void)
   GError *error = NULL;
   gboolean retval;
   const gchar *path;
+  gboolean invoked = FALSE;
+  GAppLaunchContext *context;
 
   if (g_getenv ("DISPLAY") == NULL || g_getenv ("DISPLAY")[0] == '\0')
     {
@@ -755,23 +770,43 @@ test_launch_as_manager (void)
       return;
     }
 
-  retval = g_desktop_app_info_launch_uris_as_manager (appinfo, NULL, NULL, 0,
+  context = g_app_launch_context_new ();
+  g_signal_connect (context, "launch-started",
+                    G_CALLBACK (on_launch_started),
+                    &invoked);
+  retval = g_desktop_app_info_launch_uris_as_manager (appinfo, NULL, context, 0,
                                                       NULL, NULL,
                                                       NULL, NULL,
                                                       &error);
   g_assert_no_error (error);
   g_assert_true (retval);
+  g_assert_true (invoked);
 
+  invoked = FALSE;
   retval = g_desktop_app_info_launch_uris_as_manager_with_fds (appinfo,
-                                                               NULL, NULL, 0,
+                                                               NULL, context, 0,
                                                                NULL, NULL,
                                                                NULL, NULL,
                                                                -1, -1, -1,
                                                                &error);
   g_assert_no_error (error);
   g_assert_true (retval);
+  g_assert_true (invoked);
 
   g_object_unref (appinfo);
+  g_assert_finalize_object (context);
+}
+
+/* Test if Desktop-File Id is correctly formed */
+static void
+test_id (void)
+{
+  gchar *result;
+
+  result = run_apps ("default-for-type", "application/vnd.kde.okular-archive",
+                     TRUE, FALSE, NULL, NULL, NULL);
+  g_assert_cmpstr (result, ==, "kde4-okular.desktop\n");
+  g_free (result);
 }
 
 int
@@ -795,6 +830,7 @@ main (int   argc,
   g_test_add_func ("/desktop-app-info/implements", test_implements);
   g_test_add_func ("/desktop-app-info/show-in", test_show_in);
   g_test_add_func ("/desktop-app-info/launch-as-manager", test_launch_as_manager);
+  g_test_add_func ("/desktop-app-info/id", test_id);
 
   return g_test_run ();
 }

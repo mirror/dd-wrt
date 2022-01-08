@@ -832,6 +832,7 @@ struct DestroyEntry
 };
 
 /* --- prototypes --- */
+static void     test_cleanup                    (void);
 static void     test_run_seed                   (const gchar *rseed);
 static void     test_trap_clear                 (void);
 static guint8*  g_test_log_dump                 (GTestLogMsg *msg,
@@ -1038,6 +1039,8 @@ g_test_log (GTestLogType lbit,
             g_print (" # TODO %s\n", string2 ? string2 : "");
           else if (result == G_TEST_RUN_SKIPPED)
             g_print (" # SKIP %s\n", string2 ? string2 : "");
+          else if (result == G_TEST_RUN_FAILURE && string2 != NULL)
+            g_print (" - %s\n", string2);
           else
             g_print ("\n");
         }
@@ -1727,6 +1730,18 @@ void
 }
 
 static void
+test_cleanup (void)
+{
+  /* Free statically allocated variables */
+
+  g_clear_pointer (&test_run_rand, g_rand_free);
+
+  g_clear_pointer (&test_argv0_dirname, g_free);
+
+  g_clear_pointer (&test_initial_cwd, g_free);
+}
+
+static void
 test_run_seed (const gchar *rseed)
 {
   guint seed_failed = 0;
@@ -2013,7 +2028,7 @@ g_test_message (const char *format,
  * case only.
  * Bug URIs are constructed by appending a bug specific URI
  * portion to @uri_pattern, or by replacing the special string
- * '\%s' within @uri_pattern if that is present.
+ * `%s` within @uri_pattern if that is present.
  *
  * If g_test_bug_base() is not called, bug URIs are formed solely
  * from the value provided by g_test_bug().
@@ -2029,14 +2044,18 @@ g_test_bug_base (const char *uri_pattern)
 
 /**
  * g_test_bug:
- * @bug_uri_snippet: Bug specific bug tracker URI portion.
+ * @bug_uri_snippet: Bug specific bug tracker URI or URI portion.
  *
  * This function adds a message to test reports that
  * associates a bug URI with a test case.
+ *
  * Bug URIs are constructed from a base URI set with g_test_bug_base()
  * and @bug_uri_snippet. If g_test_bug_base() has not been called, it is
  * assumed to be the empty string, so a full URI can be provided to
  * g_test_bug() instead.
+ *
+ * Since GLib 2.70, the base URI is not prepended to @bug_uri_snippet if it
+ * is already a valid URI.
  *
  * Since: 2.16
  * See also: g_test_summary()
@@ -2047,6 +2066,13 @@ g_test_bug (const char *bug_uri_snippet)
   const char *c = NULL;
 
   g_return_if_fail (bug_uri_snippet != NULL);
+
+  if (g_str_has_prefix (bug_uri_snippet, "http:") ||
+      g_str_has_prefix (bug_uri_snippet, "https:"))
+    {
+      g_test_message ("Bug Reference: %s", bug_uri_snippet);
+      return;
+    }
 
   if (test_uri_base != NULL)
     c = strstr (test_uri_base, "%s");
@@ -2167,8 +2193,15 @@ g_test_get_root (void)
 int
 g_test_run (void)
 {
-  if (g_test_run_suite (g_test_get_root()) != 0)
-    return 1;
+  int ret;
+  GTestSuite *suite;
+
+  suite = g_test_get_root ();
+  if (g_test_run_suite (suite) != 0)
+    {
+      ret = 1;
+      goto out;
+    }
 
   /* Clean up the temporary directory. */
   if (test_isolate_dirs_tmpdir != NULL)
@@ -2181,12 +2214,26 @@ g_test_run (void)
   /* 77 is special to Automake's default driver, but not Automake's TAP driver
    * or Perl's prove(1) TAP driver. */
   if (test_tap_log)
-    return 0;
+    {
+      ret = 0;
+      goto out;
+    }
 
   if (test_run_count > 0 && test_run_count == test_skipped_count)
-    return 77;
+    {
+      ret = 77;
+      goto out;
+    }
   else
-    return 0;
+    {
+      ret = 0;
+      goto out;
+    }
+
+out:
+  g_test_suite_free (suite);
+  test_cleanup ();
+  return ret;
 }
 
 /**
@@ -2356,12 +2403,42 @@ g_test_add_vtable (const char       *testpath,
  *
  * If not called from inside a test, this function does nothing.
  *
+ * Note that unlike g_test_skip() and g_test_incomplete(), this
+ * function does not log a message alongside the test failure.
+ * If details of the test failure are available, either log them with
+ * g_test_message() before g_test_fail(), or use g_test_fail_printf()
+ * instead.
+ *
  * Since: 2.30
  **/
 void
 g_test_fail (void)
 {
   test_run_success = G_TEST_RUN_FAILURE;
+  g_clear_pointer (&test_run_msg, g_free);
+}
+
+/**
+ * g_test_fail_printf:
+ * @format: the format string
+ * @...:    printf-like arguments to @format
+ *
+ * Equivalent to g_test_fail(), but also record a message like
+ * g_test_skip_printf().
+ *
+ * Since: 2.70
+ **/
+void
+g_test_fail_printf (const char *format,
+                    ...)
+{
+  va_list args;
+
+  test_run_success = G_TEST_RUN_FAILURE;
+  va_start (args, format);
+  g_free (test_run_msg);
+  test_run_msg = g_strdup_vprintf (format, args);
+  va_end (args);
 }
 
 /**
@@ -2390,6 +2467,29 @@ g_test_incomplete (const gchar *msg)
 }
 
 /**
+ * g_test_incomplete_printf:
+ * @format: the format string
+ * @...:    printf-like arguments to @format
+ *
+ * Equivalent to g_test_incomplete(), but the explanation is formatted
+ * as if by g_strdup_printf().
+ *
+ * Since: 2.70
+ */
+void
+g_test_incomplete_printf (const char *format,
+                          ...)
+{
+  va_list args;
+
+  test_run_success = G_TEST_RUN_INCOMPLETE;
+  va_start (args, format);
+  g_free (test_run_msg);
+  test_run_msg = g_strdup_vprintf (format, args);
+  va_end (args);
+}
+
+/**
  * g_test_skip:
  * @msg: (nullable): explanation
  *
@@ -2410,6 +2510,29 @@ g_test_skip (const gchar *msg)
   test_run_success = G_TEST_RUN_SKIPPED;
   g_free (test_run_msg);
   test_run_msg = g_strdup (msg);
+}
+
+/**
+ * g_test_skip_printf:
+ * @format: the format string
+ * @...:    printf-like arguments to @format
+ *
+ * Equivalent to g_test_skip(), but the explanation is formatted
+ * as if by g_strdup_printf().
+ *
+ * Since: 2.70
+ */
+void
+g_test_skip_printf (const char *format,
+                    ...)
+{
+  va_list args;
+
+  test_run_success = G_TEST_RUN_SKIPPED;
+  va_start (args, format);
+  g_free (test_run_msg);
+  test_run_msg = g_strdup_vprintf (format, args);
+  va_end (args);
 }
 
 /**
@@ -2962,6 +3085,41 @@ g_test_run_suite (GTestSuite *suite)
   test_run_name = NULL;
 
   return n_bad;
+}
+
+/**
+ * g_test_case_free:
+ * @test_case: a #GTestCase
+ *
+ * Free the @test_case.
+ *
+ * Since: 2.70
+ */
+void
+g_test_case_free (GTestCase *test_case)
+{
+  g_free (test_case->name);
+  g_slice_free (GTestCase, test_case);
+}
+
+/**
+ * g_test_suite_free:
+ * @suite: a #GTestSuite
+ *
+ * Free the @suite and all nested #GTestSuites.
+ *
+ * Since: 2.70
+ */
+void
+g_test_suite_free (GTestSuite *suite)
+{
+  g_slist_free_full (suite->cases, (GDestroyNotify)g_test_case_free);
+
+  g_free (suite->name);
+
+  g_slist_free_full (suite->suites, (GDestroyNotify)g_test_suite_free);
+
+  g_slice_free (GTestSuite, suite);
 }
 
 static void

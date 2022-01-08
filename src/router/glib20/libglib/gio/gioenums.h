@@ -1021,6 +1021,9 @@ typedef enum
  * do not ask the bus to launch an owner during proxy initialization, but allow it to be
  * autostarted by a method call. This flag is only meaningful in proxies for well-known names,
  * and only if %G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START is not also specified.
+ * @G_DBUS_PROXY_FLAGS_NO_MATCH_RULE: Don't actually send the AddMatch D-Bus
+ *    call for this signal subscription. This gives you more control
+ *    over which match rules you add (but you must add them manually). (Since: 2.72)
  *
  * Flags used when constructing an instance of a #GDBusProxy derived class.
  *
@@ -1033,7 +1036,8 @@ typedef enum
   G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS = (1<<1),
   G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START = (1<<2),
   G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES = (1<<3),
-  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION = (1<<4)
+  G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION = (1<<4),
+  G_DBUS_PROXY_FLAGS_NO_MATCH_RULE GLIB_AVAILABLE_ENUMERATOR_IN_2_72 = (1<<5)
 } GDBusProxyFlags;
 
 /**
@@ -1584,10 +1588,16 @@ typedef enum {
  *   flags
  *
  * A set of flags describing TLS certification validation. This can be
- * used to set which validation steps to perform (eg, with
- * g_tls_client_connection_set_validation_flags()), or to describe why
- * a particular certificate was rejected (eg, in
- * #GTlsConnection::accept-certificate).
+ * used to describe why a particular certificate was rejected (for
+ * example, in #GTlsConnection::accept-certificate).
+ *
+ * GLib guarantees that if certificate verification fails, at least one
+ * flag will be set, but it does not guarantee that all possible flags
+ * will be set. Accordingly, you may not safely decide to ignore any
+ * particular type of error. For example, it would be incorrect to mask
+ * %G_TLS_CERTIFICATE_EXPIRED if you want to allow expired certificates,
+ * because this could potentially be the only error flag set even if
+ * other problems exist with the certificate.
  *
  * Since: 2.28
  */
@@ -1703,6 +1713,12 @@ typedef enum {
  *    wrong many times, and the user may not have many chances left.
  * @G_TLS_PASSWORD_FINAL_TRY: Hint to the user that this is the last try to get
  *    this password right.
+ * @G_TLS_PASSWORD_PKCS11_USER: For PKCS #11, the user PIN is required.
+ *    Since: 2.70.
+ * @G_TLS_PASSWORD_PKCS11_SECURITY_OFFICER: For PKCS #11, the security officer
+ *    PIN is required. Since: 2.70.
+ * @G_TLS_PASSWORD_PKCS11_CONTEXT_SPECIFIC: For PKCS #11, the context-specific
+ *    PIN is required. Since: 2.70.
  *
  * Various flags for the password.
  *
@@ -1714,7 +1730,10 @@ typedef enum _GTlsPasswordFlags
   G_TLS_PASSWORD_NONE = 0,
   G_TLS_PASSWORD_RETRY = 1 << 1,
   G_TLS_PASSWORD_MANY_TRIES = 1 << 2,
-  G_TLS_PASSWORD_FINAL_TRY = 1 << 3
+  G_TLS_PASSWORD_FINAL_TRY = 1 << 3,
+  G_TLS_PASSWORD_PKCS11_USER = 1 << 4,
+  G_TLS_PASSWORD_PKCS11_SECURITY_OFFICER = 1 << 5,
+  G_TLS_PASSWORD_PKCS11_CONTEXT_SPECIFIC = 1 << 6
 } GTlsPasswordFlags;
 
 /**
@@ -1815,6 +1834,40 @@ typedef enum {
 typedef enum {
   G_TLS_CERTIFICATE_REQUEST_NONE = 0
 } GTlsCertificateRequestFlags;
+
+/**
+ * GTlsProtocolVersion:
+ * @G_TLS_PROTOCOL_VERSION_UNKNOWN: No protocol version or unknown protocol version
+ * @G_TLS_PROTOCOL_VERSION_SSL_3_0: SSL 3.0, which is insecure and should not be used
+ * @G_TLS_PROTOCOL_VERSION_TLS_1_0: TLS 1.0, which is insecure and should not be used
+ * @G_TLS_PROTOCOL_VERSION_TLS_1_1: TLS 1.1, which is insecure and should not be used
+ * @G_TLS_PROTOCOL_VERSION_TLS_1_2: TLS 1.2, defined by [RFC 5246](https://datatracker.ietf.org/doc/html/rfc5246)
+ * @G_TLS_PROTOCOL_VERSION_TLS_1_3: TLS 1.3, defined by [RFC 8446](https://datatracker.ietf.org/doc/html/rfc8446)
+ * @G_TLS_PROTOCOL_VERSION_DTLS_1_0: DTLS 1.0, which is insecure and should not be used
+ * @G_TLS_PROTOCOL_VERSION_DTLS_1_2: DTLS 1.2, defined by [RFC 6347](https://datatracker.ietf.org/doc/html/rfc6347)
+ *
+ * The TLS or DTLS protocol version used by a #GTlsConnection or
+ * #GDtlsConnection. The integer values of these versions are sequential
+ * to ensure newer known protocol versions compare greater than older
+ * known versions. Any known DTLS protocol version will compare greater
+ * than any SSL or TLS protocol version. The protocol version may be
+ * %G_TLS_PROTOCOL_VERSION_UNKNOWN if the TLS backend supports a newer
+ * protocol version that GLib does not yet know about. This means that
+ * it's possible for an unknown DTLS protocol version to compare less
+ * than the TLS protocol versions.
+ *
+ * Since: 2.70
+ */
+typedef enum {
+  G_TLS_PROTOCOL_VERSION_UNKNOWN = 0,
+  G_TLS_PROTOCOL_VERSION_SSL_3_0 = 1,
+  G_TLS_PROTOCOL_VERSION_TLS_1_0 = 2,
+  G_TLS_PROTOCOL_VERSION_TLS_1_1 = 3,
+  G_TLS_PROTOCOL_VERSION_TLS_1_2 = 4,
+  G_TLS_PROTOCOL_VERSION_TLS_1_3 = 5,
+  G_TLS_PROTOCOL_VERSION_DTLS_1_0 = 201,
+  G_TLS_PROTOCOL_VERSION_DTLS_1_2 = 202,
+} GTlsProtocolVersion;
 
 /**
  * GIOModuleScopeFlags:
@@ -1930,6 +1983,9 @@ typedef enum /*< flags >*/ {
  *   file descriptors of their parent, unless those descriptors have
  *   been explicitly marked as close-on-exec.  This flag has no effect
  *   over the "standard" file descriptors (stdin, stdout, stderr).
+ * @G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP: if path searching is
+ *   needed when spawning the subprocess, use the `PATH` in the launcher
+ *   environment. (Since: 2.72)
  *
  * Flags to define the behaviour of a #GSubprocess.
  *
@@ -1952,7 +2008,8 @@ typedef enum {
   G_SUBPROCESS_FLAGS_STDERR_PIPE           = (1u << 4),
   G_SUBPROCESS_FLAGS_STDERR_SILENCE        = (1u << 5),
   G_SUBPROCESS_FLAGS_STDERR_MERGE          = (1u << 6),
-  G_SUBPROCESS_FLAGS_INHERIT_FDS           = (1u << 7)
+  G_SUBPROCESS_FLAGS_INHERIT_FDS           = (1u << 7),
+  G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP = (1u << 8)
 } GSubprocessFlags;
 
 /**

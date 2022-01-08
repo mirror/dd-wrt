@@ -71,6 +71,13 @@
  * the message bus launching an owner (unless
  * %G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START is set).
  *
+ * If the proxy is for a stateless D-Bus service, where the name owner may
+ * be started and stopped between calls, the #GDBusProxy:g-name-owner tracking
+ * of #GDBusProxy will cause the proxy to drop signal and property changes from
+ * the service after it has restarted for the first time. When interacting
+ * with a stateless D-Bus service, do not use #GDBusProxy — use direct D-Bus
+ * method calls and signal connections.
+ *
  * The generic #GDBusProxy::g-properties-changed and
  * #GDBusProxy::g-signal signals are not very convenient to work with.
  * Therefore, the recommended way of working with proxies is to subclass
@@ -85,7 +92,7 @@
  * of the thread where the instance was constructed.
  *
  * An example using a proxy for a well-known name can be found in
- * [gdbus-example-watch-proxy.c](https://git.gnome.org/browse/glib/tree/gio/tests/gdbus-example-watch-proxy.c)
+ * [gdbus-example-watch-proxy.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-watch-proxy.c)
  */
 
 /* lock protecting the mutable properties: name_owner, timeout_msec,
@@ -586,11 +593,15 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    *
    * Emitted when a signal from the remote object and interface that @proxy is for, has been received.
    *
+   * Since 2.72 this signal supports detailed connections. You can connect to
+   * the detailed signal `g-signal::x` in order to receive callbacks only when
+   * signal `x` is received from the remote object.
+   *
    * Since: 2.26
    */
   signals[SIGNAL_SIGNAL] = g_signal_new (I_("g-signal"),
                                          G_TYPE_DBUS_PROXY,
-                                         G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
+                                         G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED | G_SIGNAL_MUST_COLLECT,
                                          G_STRUCT_OFFSET (GDBusProxyClass, g_signal),
                                          NULL,
                                          NULL,
@@ -883,7 +894,7 @@ on_signal_received (GDBusConnection *connection,
 
   g_signal_emit (proxy,
                  signals[SIGNAL_SIGNAL],
-                 0,
+                 g_quark_try_string (signal_name),
                  sender_name,
                  signal_name,
                  parameters);
@@ -1687,6 +1698,10 @@ static void
 async_initable_init_first (GAsyncInitable *initable)
 {
   GDBusProxy *proxy = G_DBUS_PROXY (initable);
+  GDBusSignalFlags signal_flags = G_DBUS_SIGNAL_FLAGS_NONE;
+
+  if (proxy->priv->flags & G_DBUS_PROXY_FLAGS_NO_MATCH_RULE)
+    signal_flags |= G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE;
 
   if (!(proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES))
     {
@@ -1698,7 +1713,7 @@ async_initable_init_first (GAsyncInitable *initable)
                                             "PropertiesChanged",
                                             proxy->priv->object_path,
                                             proxy->priv->interface_name,
-                                            G_DBUS_SIGNAL_FLAGS_NONE,
+                                            signal_flags,
                                             on_properties_changed,
                                             weak_ref_new (G_OBJECT (proxy)),
                                             (GDestroyNotify) weak_ref_free);
@@ -1714,7 +1729,7 @@ async_initable_init_first (GAsyncInitable *initable)
                                             NULL,                        /* member */
                                             proxy->priv->object_path,
                                             NULL,                        /* arg0 */
-                                            G_DBUS_SIGNAL_FLAGS_NONE,
+                                            signal_flags,
                                             on_signal_received,
                                             weak_ref_new (G_OBJECT (proxy)),
                                             (GDestroyNotify) weak_ref_free);
@@ -1730,7 +1745,7 @@ async_initable_init_first (GAsyncInitable *initable)
                                             "NameOwnerChanged",      /* signal name */
                                             "/org/freedesktop/DBus", /* path */
                                             proxy->priv->name,       /* arg0 */
-                                            G_DBUS_SIGNAL_FLAGS_NONE,
+                                            signal_flags,
                                             on_name_owner_changed,
                                             weak_ref_new (G_OBJECT (proxy)),
                                             (GDestroyNotify) weak_ref_free);
@@ -2239,7 +2254,7 @@ g_dbus_proxy_new_for_bus_sync (GBusType             bus_type,
  *
  * Gets the connection @proxy is for.
  *
- * Returns: (transfer none): A #GDBusConnection owned by @proxy. Do not free.
+ * Returns: (transfer none) (not nullable): A #GDBusConnection owned by @proxy. Do not free.
  *
  * Since: 2.26
  */
@@ -2273,7 +2288,11 @@ g_dbus_proxy_get_flags (GDBusProxy *proxy)
  *
  * Gets the name that @proxy was constructed for.
  *
- * Returns: A string owned by @proxy. Do not free.
+ * When connected to a message bus, this will usually be non-%NULL.
+ * However, it may be %NULL for a proxy that communicates using a peer-to-peer
+ * pattern.
+ *
+ * Returns: (nullable): A string owned by @proxy. Do not free.
  *
  * Since: 2.26
  */
@@ -2317,7 +2336,7 @@ g_dbus_proxy_get_name_owner (GDBusProxy *proxy)
  *
  * Gets the object path @proxy is for.
  *
- * Returns: A string owned by @proxy. Do not free.
+ * Returns: (not nullable): A string owned by @proxy. Do not free.
  *
  * Since: 2.26
  */
@@ -2334,7 +2353,7 @@ g_dbus_proxy_get_object_path (GDBusProxy *proxy)
  *
  * Gets the D-Bus interface name @proxy is for.
  *
- * Returns: A string owned by @proxy. Do not free.
+ * Returns: (not nullable): A string owned by @proxy. Do not free.
  *
  * Since: 2.26
  */

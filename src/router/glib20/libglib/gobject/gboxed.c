@@ -39,10 +39,11 @@
  * @see_also: #GParamSpecBoxed, g_param_spec_boxed()
  * @title: Boxed Types
  *
- * #GBoxed is a generic wrapper mechanism for arbitrary C structures. The only
- * thing the type system needs to know about the structures is how to copy them
- * (a #GBoxedCopyFunc) and how to free them (a #GBoxedFreeFunc) — beyond that
- * they are treated as opaque chunks of memory.
+ * #GBoxed is a generic wrapper mechanism for arbitrary C structures.
+ *
+ * The only thing the type system needs to know about the structures is how to
+ * copy them (a #GBoxedCopyFunc) and how to free them (a #GBoxedFreeFunc);
+ * beyond that, they are treated as opaque chunks of memory.
  *
  * Boxed types are useful for simple value-holder structures like rectangles or
  * points. They can also be used for wrapping structures defined in non-#GObject
@@ -175,6 +176,7 @@ G_DEFINE_BOXED_TYPE (GChecksum, g_checksum, g_checksum_copy, g_checksum_free)
 G_DEFINE_BOXED_TYPE (GUri, g_uri, g_uri_ref, g_uri_unref)
 
 G_DEFINE_BOXED_TYPE (GOptionGroup, g_option_group, g_option_group_ref, g_option_group_unref)
+G_DEFINE_BOXED_TYPE (GPatternSpec, g_pattern_spec, g_pattern_spec_copy, g_pattern_spec_free);
 
 /* This one can't use G_DEFINE_BOXED_TYPE (GStrv, g_strv, g_strdupv, g_strfreev) */
 GType
@@ -279,8 +281,14 @@ boxed_proxy_lcopy_value (const GValue *value,
  * @boxed_free: Boxed structure free function.
  *
  * This function creates a new %G_TYPE_BOXED derived type id for a new
- * boxed type with name @name. Boxed type handling functions have to be
- * provided to copy and free opaque boxed structures of this type.
+ * boxed type with name @name.
+ *
+ * Boxed type handling functions have to be provided to copy and free
+ * opaque boxed structures of this type.
+ *
+ * For the general case, it is recommended to use #G_DEFINE_BOXED_TYPE 
+ * instead of calling g_boxed_type_register_static() directly. The macro 
+ * will create the appropriate `*_get_type()` function for the boxed type.
  *
  * Returns: New %G_TYPE_BOXED derived type id for @name.
  */
@@ -505,6 +513,7 @@ g_value_set_boxed (GValue       *value,
  * @v_boxed: (nullable): static boxed value to be set
  *
  * Set the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed.
+ *
  * The boxed value is assumed to be static, and is thus not duplicated
  * when setting the #GValue.
  */
