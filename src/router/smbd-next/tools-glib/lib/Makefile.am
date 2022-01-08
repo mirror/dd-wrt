@@ -12,5 +12,6 @@ libksmbdtools_a_SOURCES = management/tree_conn.c \
 if HAVE_LIBKRB5
 libksmbdtools_a_SOURCES += management/spnego.c \
 			   asn1.c \
-			   management/spnego_krb5.c
+			   management/spnego_krb5.c \
+			   management/spnego_mech.h
 endif

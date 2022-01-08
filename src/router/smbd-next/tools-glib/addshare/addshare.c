@@ -90,10 +90,6 @@ static int sanity_check_share_name_simple(char *name)
 	if (!cp_key_cmp(name, "global"))
 		return -EINVAL;
 
-	for (i = 0; i < sz; i++) {
-		if (isalnum(name[i]))
-			return 0;
-	}
 	return -EINVAL;
 }
 
