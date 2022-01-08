@@ -309,10 +309,6 @@ static int ipc_server_config_on_startup(struct ksmbd_startup_request *req)
 	server_conf.share_fake_fscaps = req->share_fake_fscaps;
 	ksmbd_init_domain(req->sub_auth);
 
-//#ifdef CONFIG_SMB_INSECURE_SERVER
-//	server_conf.flags &= ~KSMBD_GLOBAL_FLAG_CACHE_TBUF;
-//#endif
-
 	if (req->smb2_max_read)
 		init_smb2_max_read_size(req->smb2_max_read);
 	if (req->smb2_max_write)
