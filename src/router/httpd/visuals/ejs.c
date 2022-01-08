@@ -897,7 +897,7 @@ EJ_VISIBLE void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
-		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
@@ -935,7 +935,7 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_spec(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
-		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
@@ -960,7 +960,7 @@ EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		ip_forward(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
-		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 }
 
@@ -996,7 +996,7 @@ EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "\" /></td>\n<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_trigger_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
-		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"trigger_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"trigger_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
