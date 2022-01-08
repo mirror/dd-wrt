@@ -2686,11 +2686,6 @@ static void macro_rem(char *a, char *nv)
 	return;
 }
 
-void forward_remove(webs_t wp)
-{
-	macro_rem("forward_entries", "forward_port");
-}
-
 void forward_add(webs_t wp)
 {
 	macro_add("forward_entries");
@@ -2806,10 +2801,6 @@ void milkfish_alias_remove(webs_t wp)
 }
 #endif
 
-void forwardspec_remove(webs_t wp)
-{
-	macro_rem("forwardspec_entries", "forward_spec");
-}
 
 void forwardspec_add(webs_t wp)
 {
@@ -2822,11 +2813,6 @@ void forwardspec_del(webs_t wp)
 	delfrom("forward_spec", "forwardspec_entries", todel);
 }
 
-void forwardip_remove(webs_t wp)
-{
-	macro_rem("forwardip_entries", "forward_ip");
-}
-
 void forwardip_add(webs_t wp)
 {
 	macro_add("forwardip_entries");
@@ -2836,11 +2822,6 @@ void forwardip_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
 	delfrom("forward_ip", "forwardip_entries", todel);
-}
-
-void trigger_remove(webs_t wp)
-{
-	macro_rem("trigger_entries", "port_trigger");
 }
 
 void trigger_add(webs_t wp)
