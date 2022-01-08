@@ -214,6 +214,11 @@ td .meter {
   cursor: pointer;
   font-size:5px;
 }
+.add {
+  background: url(/images/add-icon.png) center no-repeat;
+  cursor: pointer;
+  font-size:5px;
+}
 input.spaceradio {
   margin-right: .4em;
 }
