@@ -71,10 +71,14 @@ int ksmbd_anonymous_user(struct ksmbd_user *user)
 
 bool ksmbd_compare_user(struct ksmbd_user *u1, struct ksmbd_user *u2)
 {
-	if (strcmp(u1->name, u2->name))
+	if (strcmp(u1->name, u2->name)) {
+		ksmbd_debug(SMB, "user not match %s!=%s\n", u1->name, u2->name);
 		return false;
-	if (memcmp(u1->passkey, u2->passkey, u1->passkey_sz))
+	}
+	if (memcmp(u1->passkey, u2->passkey, u1->passkey_sz)) {
+		ksmbd_debug(SMB, "password does not match\n", u1->name, u2->name);
 		return false;
+	}
 
 	return true;
 }
