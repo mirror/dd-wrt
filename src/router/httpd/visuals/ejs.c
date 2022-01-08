@@ -877,7 +877,7 @@ EJ_VISIBLE void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	count = nvram_safe_get("forward_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
-		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
@@ -896,7 +896,8 @@ EJ_VISIBLE void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 		port_forward_table(wp, "ip", i);
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_table(wp, "enable", i);
-		websWrite(wp, " /></td>\n</tr>\n");
+		websWrite(wp, " /></td>\n");
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
@@ -911,7 +912,7 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		// websWrite (wp, "<tr></tr><tr></tr>\n");
-		websWrite(wp, "<tr>\n<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"8\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		//name
@@ -933,7 +934,8 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		port_forward_spec(wp, "to", i);
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_spec(wp, "enable", i);
-		websWrite(wp, " /></td>\n</tr>\n");
+		websWrite(wp, " /></td>\n");
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
@@ -946,7 +948,7 @@ EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("forwardip_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"5\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
@@ -957,7 +959,8 @@ EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 		ip_forward(wp, "dest", i);
 		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		ip_forward(wp, "enable", i);
-		websWrite(wp, " /></td>\n</tr>\n");
+		websWrite(wp, " /></td>\n");
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"forward_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 }
 
@@ -969,7 +972,7 @@ EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("trigger_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"8\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr>\n<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
@@ -992,7 +995,8 @@ EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 		port_trigger_table(wp, "o_to", i);
 		websWrite(wp, "\" /></td>\n<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_trigger_table(wp, "enable", i);
-		websWrite(wp, " /></td>\n</tr>\n");
+		websWrite(wp, " /></td>\n");
+		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"trigger_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>\n", i);
 	}
 	return;
 }
