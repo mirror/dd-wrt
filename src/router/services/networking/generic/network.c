@@ -453,10 +453,11 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			dhcp_argv[i++] = "-r";
 			dhcp_argv[i++] = requestip;
 		}
-
+		char hostname[128];
+		snprintf(hostname, sizeof(hostname), "hostname:%s", wan_hostname);
 		if (*wan_hostname) {
-			dhcp_argv[i++] = "-H";
-			dhcp_argv[i++] = wan_hostname;
+			dhcp_argv[i++] = "-x";
+			dhcp_argv[i++] = hostname;
 		}
 	}
 
