@@ -1188,6 +1188,7 @@ static struct gozila_action gozila_actions[] = {
 	 * end Sveasoft addition
 	 */
 	{ "Forward", "add_forward", "", REFRESH, "forward_add" },
+	{ "Forward", "del_forward", "", REFRESH, "forward_del" },
 	{ "Forward", "remove_forward", "", REFRESH, "forward_remove" },
 	{ "Filters", "add_filter", "", REFRESH, "filter_add" },
 	{ "Filters", "remove_filter", "", REFRESH, "filter_remove" },
@@ -1285,11 +1286,14 @@ static struct gozila_action gozila_actions[] = {
 	{ "eop-tunnel", "save", "eop", REFRESH, "tunnel_save" },
 #endif
 	{ "ForwardSpec", "add_forward_spec", "", REFRESH, "forwardspec_add" },
+	{ "ForwardSpec", "del_forward_spec", "", REFRESH, "forwardspec_del" },
 	{ "ForwardSpec", "remove_forward_spec", "", REFRESH,
 	 "forwardspec_remove" },
 	{ "ForwardIP", "add_forward_ip", "", REFRESH, "forwardip_add" },
+	{ "ForwardIP", "del_forward_ip", "", REFRESH, "forwardip_del" },
 	{ "ForwardIP", "remove_forward_ip", "", REFRESH, "forwardip_remove" },
 	{ "Triggering", "add_trigger", "", REFRESH, "trigger_add" },
+	{ "Triggering", "del_trigger", "", REFRESH, "trigger_del" },
 	{ "Triggering", "remove_trigger", "", REFRESH, "trigger_remove" },
 	{ "Port_Services", "save_services", "filters", REFRESH,
 	 "save_services_port" },
