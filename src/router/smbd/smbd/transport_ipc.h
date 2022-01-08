@@ -7,7 +7,7 @@
 #define __KSMBD_TRANSPORT_IPC_H__
 
 #include <linux/wait.h>
-#include "ksmbd_server.h"  /* FIXME */
+#include "ksmbd_netlink.h"  /* FIXME */
 
 #define KSMBD_IPC_MAX_PAYLOAD	4096
 
