@@ -14,6 +14,14 @@ function trigger_remove_submit(F) {
 	apply(F);
 }
 
+function trigger_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.del_value.value = I;
+	F.submit_type.value = "del_trigger";
+	apply(F);
+}
+
+
 function to_submit(F) {
 	F.submit_type.value = "";
 	F.change_action.value = "";
@@ -60,7 +68,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+							<input type="hidden" name="del_value" />
 							<input type="hidden" name="port_trigger" value="10" />
 							<h2><% tran("trforward.h2"); %></h2>
 							<fieldset>
