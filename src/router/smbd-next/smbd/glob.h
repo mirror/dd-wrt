@@ -87,7 +87,6 @@ static inline bool d_can_lookup(const struct dentry *dentry)
 #else
 #define ksmbd_debug(type, fmt, ...)				\
 	do {							\
-			pr_info(fmt, ##__VA_ARGS__);		\
 	} while (0)
 #endif
 #define UNICODE_LEN(x)		((x) * 2)
