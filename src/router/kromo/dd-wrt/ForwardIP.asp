@@ -8,12 +8,6 @@ function forward_add_submit(F) {
 	apply(F);
 }
 
-function forward_remove_submit(F) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "remove_forward_ip";
-	apply(F);
-}
-
 function forward_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.del_value.value = I;
@@ -86,7 +80,6 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
-										document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form);\" />");
 										//]]>
 									</script>
 								</div>
