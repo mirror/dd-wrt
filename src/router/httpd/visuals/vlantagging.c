@@ -30,6 +30,11 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("vlan_tagcount", 0);
+	websWrite(wp, "<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table center\"><tr>\n");
+	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
@@ -42,51 +47,60 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		if (!prio)
 			prio = "0";
 		char vlan_name[32];
-
-		// sprintf (vlan_name, "%s.%s", tag, port);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.vlan)+document.write(\" %d \")+Capture(networking.iface)</script></div>\n", count);
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "vlanifname%d", count);
 		showIfOptions(wp, vlan_name, buffer, tag);
+		websWrite(wp, "</td>\n");
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
+		websWrite(wp, "<td>");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
+		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
+		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
+		websWrite(wp, "</td>\n");
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
+
 		count++;
 	}
 	totalcount = count;
 	int i;
 
 	for (i = count; i < realcount; i++) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.vlan)+document.write(\" %d \")+Capture(networking.iface)</script></div>\n", i);
 		char vlan_name[32];
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>");
 
 		sprintf(vlan_name, "vlanifname%d", i);
 		showIfOptions(wp, vlan_name, buffer, "");
+		websWrite(wp, "</td>\n");
+
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
+		websWrite(wp, "<td>");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
+		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
+		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
+		websWrite(wp, "</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
+	websWrite(wp, "</table>\n");
 	char var[32];
 
 	sprintf(var, "%d", totalcount);
