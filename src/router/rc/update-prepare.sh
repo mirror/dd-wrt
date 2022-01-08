@@ -73,7 +73,7 @@ done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/mtd /sbin/hotplug2 \
 	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so /usr/sbin/writetool /sbin/watchdog \
+	/usr/sbin/httpd /sbin/service /usr/sbin/writetool /sbin/watchdog \
 	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
 do
 	cp -a $i $R/$i
