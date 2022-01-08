@@ -2719,6 +2719,7 @@ int smb2_open(struct ksmbd_work *work)
 						 SMB2_CREATE_TIMEWARP_REQUEST);
 		if (IS_ERR(context)) {
 			rc = PTR_ERR(context);
+			ksmbd_debug(SMB, "error create timewarp\n");
 			goto err_out1;
 		} else if (context) {
 			ksmbd_debug(SMB, "get timewarp context\n");
@@ -2731,6 +2732,7 @@ int smb2_open(struct ksmbd_work *work)
 							 SMB2_CREATE_TAG_POSIX);
 			if (IS_ERR(context)) {
 				rc = PTR_ERR(context);
+				ksmbd_debug(SMB, "error create tag posix\n");
 				goto err_out1;
 			} else if (context) {
 				struct create_posix *posix =
@@ -2750,12 +2752,13 @@ int smb2_open(struct ksmbd_work *work)
 	}
 
 	if (ksmbd_override_fsids(work)) {
-		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+		ksmbd_debug(SMB, "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto err_out1;
 	}
+	ksmbd_debug(SMB, "get kern path\n");
 
-	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, 1);
 	if (!rc) {
 		if (req->CreateOptions & FILE_DELETE_ON_CLOSE_LE) {
 			/*
@@ -2764,6 +2767,7 @@ int smb2_open(struct ksmbd_work *work)
 			 */
 			if (req->CreateDisposition == FILE_OVERWRITE_IF_LE ||
 			    req->CreateDisposition == FILE_OPEN_IF_LE) {
+				ksmbd_debug(SMB, "file exists under flags\n");
 				rc = -EACCES;
 				path_put(&path);
 				goto err_out;
@@ -2777,15 +2781,19 @@ int smb2_open(struct ksmbd_work *work)
 				goto err_out;
 			}
 		} else if (d_is_symlink(path.dentry)) {
+			ksmbd_debug(SMB, "is symlink. invalid access\n");
 			rc = -EACCES;
 			path_put(&path);
 			goto err_out;
 		}
 	}
 
+	ksmbd_debug(SMB, "done\n");
 	if (rc) {
-		if (rc != -ENOENT)
+		if (rc != -ENOENT) {
+			ksmbd_debug(SMB, "rc = %d\n", rc);
 			goto err_out;
+		}
 		ksmbd_debug(SMB, "can not get linux path for %s, rc = %d\n",
 			    name, rc);
 		rc = 0;
@@ -2818,8 +2826,10 @@ int smb2_open(struct ksmbd_work *work)
 			rc = -EIO;
 		}
 
-		if (rc < 0)
+		if (rc < 0) {
+			ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 			goto err_out;
+		}
 	}
 
 	if (file_present && req->CreateOptions & FILE_NON_DIRECTORY_FILE_LE &&
@@ -2836,12 +2846,14 @@ int smb2_open(struct ksmbd_work *work)
 	    !S_ISDIR(stat.mode)) {
 		rsp->hdr.Status = STATUS_NOT_A_DIRECTORY;
 		rc = -EIO;
+		ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 		goto err_out;
 	}
 
 	if (!stream_name && file_present &&
 	    req->CreateDisposition == FILE_CREATE_LE) {
 		rc = -EEXIST;
+		ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 		goto err_out;
 	}
 
@@ -2850,8 +2862,10 @@ int smb2_open(struct ksmbd_work *work)
 	if (file_present && !(req->CreateOptions & FILE_DELETE_ON_CLOSE_LE)) {
 		rc = smb_check_perm_dacl(conn, &path, &daccess,
 					 sess->user->uid);
-		if (rc)
+		if (rc) {
+			ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 			goto err_out;
+		}
 	}
 
 	if (daccess & FILE_MAXIMAL_ACCESS_LE) {
@@ -2861,8 +2875,10 @@ int smb2_open(struct ksmbd_work *work)
 			rc = ksmbd_vfs_query_maximal_access(user_ns,
 							    path.dentry,
 							    &daccess);
-			if (rc)
+			if (rc) {
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 				goto err_out;
+			}
 			already_permitted = true;
 		}
 		maximal_access = daccess;
@@ -2876,6 +2892,7 @@ int smb2_open(struct ksmbd_work *work)
 			ksmbd_debug(SMB,
 				    "User does not have write permission\n");
 			rc = -EACCES;
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 			goto err_out;
 		}
 	}
@@ -2889,6 +2906,7 @@ int smb2_open(struct ksmbd_work *work)
 				rc = -EIO;
 				rsp->hdr.Status = STATUS_OBJECT_PATH_NOT_FOUND;
 			}
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 			goto err_out;
 		}
 
@@ -2898,6 +2916,7 @@ int smb2_open(struct ksmbd_work *work)
 			if (le32_to_cpu(ea_buf->ccontext.DataLength) <
 			    sizeof(struct smb2_ea_info)) {
 				rc = -EINVAL;
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 				goto err_out;
 			}
 
@@ -2906,8 +2925,10 @@ int smb2_open(struct ksmbd_work *work)
 					 &path);
 			if (rc == -EOPNOTSUPP)
 				rc = 0;
-			else if (rc)
+			else if (rc) {
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 				goto err_out;
+			}
 		}
 	} else if (!already_permitted) {
 		bool may_delete;
@@ -2923,8 +2944,10 @@ int smb2_open(struct ksmbd_work *work)
 			rc = ksmbd_vfs_inode_permission(path.dentry,
 							open_flags & O_ACCMODE,
 							may_delete);
-			if (rc)
+			if (rc) {
+				ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 				goto err_out;
+			}
 		}
 	}
 
@@ -2963,6 +2986,7 @@ int smb2_open(struct ksmbd_work *work)
 		fput(filp);
 		rc = PTR_ERR(fp);
 		fp = NULL;
+		ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 		goto err_out;
 	}
 
@@ -2971,6 +2995,7 @@ int smb2_open(struct ksmbd_work *work)
 	if (!has_file_id(fp->persistent_id)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
+		ksmbd_debug(SMB, "%d: rc = %d\n", __LINE__, rc);
 		goto err_out;
 	}
 
@@ -4997,7 +5022,7 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	int rc = 0, len;
 	int fs_infoclass_size = 0;
 
-	rc = kern_path(share->path, LOOKUP_NO_SYMLINKS, &path);
+	rc = kern_path(share->path, LOOKUP_FOLLOW, &path);
 	if (rc) {
 		pr_err("cannot create vfs path\n");
 		return -EIO;
@@ -5577,7 +5602,7 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	}
 
 	ksmbd_debug(SMB, "new name %s\n", new_name);
-	rc = ksmbd_vfs_kern_path(work, new_name, LOOKUP_NO_SYMLINKS, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, new_name, 0, &path, 1);
 	if (rc) {
 		if (rc != -ENOENT)
 			goto out;
@@ -5660,7 +5685,7 @@ static int smb2_create_link(struct ksmbd_work *work,
 	}
 
 	ksmbd_debug(SMB, "target name is %s\n", target_name);
-	rc = ksmbd_vfs_kern_path(work, link_name, LOOKUP_NO_SYMLINKS, &path, 0);
+	rc = ksmbd_vfs_kern_path(work, link_name, 0, &path, 0);
 	if (rc) {
 		if (rc != -ENOENT)
 			goto out;
