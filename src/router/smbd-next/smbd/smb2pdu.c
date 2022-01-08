@@ -559,10 +559,7 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 	if (le32_to_cpu(hdr->NextCommand) > 0)
 		sz = large_sz;
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
-		work->response_buf = ksmbd_find_buffer(sz);
-	else
-		work->response_buf = ksmbd_alloc_response(sz);
+	work->response_buf = ksmbd_find_buffer(sz);
 
 	if (!work->response_buf) {
 		pr_err("Failed to allocate %zu bytes buffer\n", sz);
@@ -6219,12 +6216,8 @@ static noinline int smb2_read_pipe(struct ksmbd_work *work)
 			goto out;
 		}
 
-		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
-			work->aux_payload_buf =
-				ksmbd_find_buffer(rpc_resp->payload_sz);
-		else
-			work->aux_payload_buf =
-				ksmbd_alloc_response(rpc_resp->payload_sz);
+		work->aux_payload_buf =
+			ksmbd_find_buffer(rpc_resp->payload_sz);
 		if (!work->aux_payload_buf) {
 			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			err = -ENOMEM;
@@ -6339,12 +6332,8 @@ int smb2_read(struct ksmbd_work *work)
 	ksmbd_debug(SMB, "filename %s, offset %lld, len %zu\n", FP_FILENAME(fp),
 		    offset, length);
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF) {
-		work->aux_payload_buf =
-			ksmbd_find_buffer(conn->vals->max_read_size);
-	} else {
-		work->aux_payload_buf = ksmbd_alloc_response(length);
-	}
+	work->aux_payload_buf =
+		ksmbd_find_buffer(conn->vals->max_read_size);
 	if (!work->aux_payload_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -6357,10 +6346,7 @@ int smb2_read(struct ksmbd_work *work)
 	}
 
 	if ((nbytes == 0 && length != 0) || nbytes < mincount) {
-		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
-			ksmbd_release_buffer(work->aux_payload_buf);
-		else
-			ksmbd_free_response(work->aux_payload_buf);
+		ksmbd_release_buffer(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 		rsp->hdr.Status = STATUS_END_OF_FILE;
 		smb2_set_err_rsp(work);
@@ -6376,10 +6362,7 @@ int smb2_read(struct ksmbd_work *work)
 		/* write data to the client using rdma channel */
 		remain_bytes = smb2_read_rdma_channel(work, req,
 						work->aux_payload_buf, nbytes);
-		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
-			ksmbd_release_buffer(work->aux_payload_buf);
-		else
-			ksmbd_free_response(work->aux_payload_buf);
+		ksmbd_release_buffer(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 
 		nbytes = 0;
