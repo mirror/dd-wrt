@@ -341,9 +341,7 @@ test_ip_async (GSocketFamily family)
   data = create_server (family, echo_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -454,9 +452,7 @@ test_ip_sync (GSocketFamily family)
   data = create_server (family, echo_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -502,7 +498,7 @@ test_ip_sync (GSocketFamily family)
   g_assert_cmpstr (testbuf, ==, buf);
 
   {
-    GOutputVector v[7] = { { NULL, }, };
+    GOutputVector v[7] = { { NULL, 0 }, };
 
     v[0].buffer = testbuf2 + 0;
     v[0].size = 3;
@@ -594,9 +590,7 @@ test_ip_sync_dgram (GSocketFamily family)
                              echo_server_dgram_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -627,10 +621,10 @@ test_ip_sync_dgram (GSocketFamily family)
   g_assert_cmpstr (testbuf, ==, buf);
 
   {
-    GOutputMessage m[3] = { { NULL, }, };
-    GInputMessage im[3] = { { NULL, }, };
-    GOutputVector v[7] = { { NULL, }, };
-    GInputVector iv[7] = { { NULL, }, };
+    GOutputMessage m[3] = { { NULL, NULL, 0, 0, NULL, 0 }, };
+    GInputMessage im[3] = { { NULL, NULL, 0, 0, 0, NULL, 0 }, };
+    GOutputVector v[7] = { { NULL, 0 }, };
+    GInputVector iv[7] = { { NULL, 0 }, };
 
     v[0].buffer = testbuf2 + 0;
     v[0].size = 3;
@@ -868,8 +862,8 @@ test_ip_sync_dgram_timeouts (GSocketFamily family)
   /* Check for timeouts when no server is running. */
   {
     gint64 start_time;
-    GInputMessage im = { NULL, };
-    GInputVector iv = { NULL, };
+    GInputMessage im = { NULL, NULL, 0, 0, 0, NULL, 0 };
+    GInputVector iv = { NULL, 0 };
     guint8 buf[128];
 
     iv.buffer = buf;
@@ -974,9 +968,7 @@ test_close_graceful (void)
   data = create_server (family, graceful_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -1084,9 +1076,7 @@ test_ipv6_v4mapped (void)
   data = create_server (G_SOCKET_FAMILY_IPV6, v4mapped_server_thread, TRUE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -1145,9 +1135,7 @@ test_timed_wait (void)
   data = create_server (G_SOCKET_FAMILY_IPV4, echo_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -1227,14 +1215,12 @@ test_fd_reuse (void)
   gssize len;
   gchar buf[128];
 
-  g_test_bug ("741707");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=741707");
 
   data = create_server (G_SOCKET_FAMILY_IPV4, echo_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -1694,7 +1680,8 @@ test_get_available (gconstpointer user_data)
 
       for (tries = 0; tries < 100; tries++)
         {
-          if (g_socket_get_available_bytes (server) > sizeof (data))
+          gssize res = g_socket_get_available_bytes (server);
+          if ((res == -1) || ((gsize) res > sizeof (data)))
             break;
           g_usleep (100000);
         }
@@ -1937,9 +1924,7 @@ test_credentials_tcp_client (void)
   data = create_server (family, echo_server_thread, FALSE, &error);
   if (error != NULL)
     {
-      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-      g_test_skip (message);
-      g_free (message);
+      g_test_skip_printf ("Failed to create server: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -2044,13 +2029,9 @@ test_credentials_tcp_server (void)
   goto beach;
 
 skip:
-  {
-    gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
-    g_test_skip (message);
-    g_free (message);
+  g_test_skip_printf ("Failed to create server: %s", error->message);
+  goto beach;
 
-    goto beach;
-  }
 beach:
   {
     g_clear_error (&error);
@@ -2139,7 +2120,6 @@ main (int   argc,
   GError *error = NULL;
 
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("https://bugzilla.gnome.org/");
 
   sock = g_socket_new (G_SOCKET_FAMILY_IPV6,
                        G_SOCKET_TYPE_STREAM,

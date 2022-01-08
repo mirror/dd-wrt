@@ -345,10 +345,19 @@ const char * g_test_get_path            (void);
 /* tell about failure */
 GLIB_AVAILABLE_IN_2_30
 void    g_test_fail                     (void);
+GLIB_AVAILABLE_IN_2_70
+void    g_test_fail_printf              (const char *format,
+                                         ...) G_GNUC_PRINTF (1, 2);
 GLIB_AVAILABLE_IN_2_38
 void    g_test_incomplete               (const gchar *msg);
+GLIB_AVAILABLE_IN_2_70
+void    g_test_incomplete_printf        (const char *format,
+                                         ...) G_GNUC_PRINTF (1, 2);
 GLIB_AVAILABLE_IN_2_38
 void    g_test_skip                     (const gchar *msg);
+GLIB_AVAILABLE_IN_2_70
+void    g_test_skip_printf              (const char *format,
+                                         ...) G_GNUC_PRINTF (1, 2);
 GLIB_AVAILABLE_IN_2_38
 gboolean g_test_failed                  (void);
 GLIB_AVAILABLE_IN_2_38
@@ -505,6 +514,12 @@ void          g_test_suite_add_suite    (GTestSuite     *suite,
                                          GTestSuite     *nestedsuite);
 GLIB_AVAILABLE_IN_ALL
 int           g_test_run_suite          (GTestSuite     *suite);
+
+GLIB_AVAILABLE_IN_2_70
+void          g_test_case_free          (GTestCase *test_case);
+
+GLIB_AVAILABLE_IN_2_70
+void          g_test_suite_free         (GTestSuite     *suite);
 
 GLIB_AVAILABLE_IN_ALL
 void    g_test_trap_assertions          (const char     *domain,

@@ -268,6 +268,28 @@ g_dbus_is_interface_name (const gchar *string)
   return ret;
 }
 
+/**
+ * g_dbus_is_error_name:
+ * @string: The string to check.
+ *
+ * Check whether @string is a valid D-Bus error name.
+ *
+ * This function returns the same result as g_dbus_is_interface_name(),
+ * because D-Bus error names are defined to have exactly the
+ * same syntax as interface names.
+ *
+ * Returns: %TRUE if valid, %FALSE otherwise.
+ *
+ * Since: 2.70
+ */
+gboolean
+g_dbus_is_error_name (const gchar *string)
+{
+  /* Error names are the same syntax as interface names.
+   * See https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-error */
+  return g_dbus_is_interface_name (string);
+}
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 /* TODO: maybe move to glib? if so, it should conform to http://en.wikipedia.org/wiki/Guid and/or
@@ -280,8 +302,14 @@ g_dbus_is_interface_name (const gchar *string)
  * Generate a D-Bus GUID that can be used with
  * e.g. g_dbus_connection_new().
  *
- * See the D-Bus specification regarding what strings are valid D-Bus
- * GUID (for example, D-Bus GUIDs are not RFC-4122 compliant).
+ * See the
+ * [D-Bus specification](https://dbus.freedesktop.org/doc/dbus-specification.html#uuids)
+ * regarding what strings are valid D-Bus GUIDs. The specification refers to
+ * these as ‘UUIDs’ whereas GLib (for historical reasons) refers to them as
+ * ‘GUIDs’. The terms are interchangeable.
+ *
+ * Note that D-Bus GUIDs do not follow
+ * [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122).
  *
  * Returns: A valid D-Bus GUID. Free with g_free().
  *
@@ -317,10 +345,10 @@ g_dbus_generate_guid (void)
  *
  * Checks if @string is a D-Bus GUID.
  *
- * See the D-Bus specification regarding what strings are valid D-Bus
- * GUID (for example, D-Bus GUIDs are not RFC-4122 compliant).
+ * See the documentation for g_dbus_generate_guid() for more information about
+ * the format of a GUID.
  *
- * Returns: %TRUE if @string is a guid, %FALSE otherwise.
+ * Returns: %TRUE if @string is a GUID, %FALSE otherwise.
  *
  * Since: 2.26
  */

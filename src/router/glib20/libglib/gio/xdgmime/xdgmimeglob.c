@@ -20,10 +20,14 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
  */
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include "xdgmimeglob.h"
 #include "xdgmimeint.h"
@@ -86,7 +90,7 @@ _xdg_glob_list_new (void)
   return new_element;
 }
 
-/* Frees glob_list and all of it's children */
+/* Frees glob_list and all of its children */
 static void
 _xdg_glob_list_free (XdgGlobList *glob_list)
 {
@@ -158,8 +162,6 @@ _xdg_glob_hash_node_new (void)
   return glob_hash_node;
 }
 
-#ifdef NOT_USED_IN_GIO
-
 static void
 _xdg_glob_hash_node_dump (XdgGlobHashNode *glob_hash_node,
 			  int depth)
@@ -178,8 +180,6 @@ _xdg_glob_hash_node_dump (XdgGlobHashNode *glob_hash_node,
   if (glob_hash_node->next)
     _xdg_glob_hash_node_dump (glob_hash_node->next, depth);
 }
-
-#endif
 
 static XdgGlobHashNode *
 _xdg_glob_hash_insert_ucs4 (XdgGlobHashNode *glob_hash_node,
@@ -603,8 +603,6 @@ _xdg_glob_hash_append_glob (XdgGlobHash *glob_hash,
     }
 }
 
-#ifdef NOT_USED_IN_GIO
-
 void
 _xdg_glob_hash_dump (XdgGlobHash *glob_hash)
 {
@@ -641,7 +639,6 @@ _xdg_glob_hash_dump (XdgGlobHash *glob_hash)
     }
 }
 
-#endif
 
 void
 _xdg_mime_glob_read_from_file (XdgGlobHash *glob_hash,

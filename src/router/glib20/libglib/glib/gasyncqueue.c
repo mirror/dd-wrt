@@ -88,9 +88,9 @@
 /**
  * GAsyncQueue:
  *
- * The GAsyncQueue struct is an opaque data structure which represents
- * an asynchronous queue. It should only be accessed through the
- * g_async_queue_* functions.
+ * An opaque data structure which represents an asynchronous queue.
+ *
+ * It should only be accessed through the `g_async_queue_*` functions.
  */
 struct _GAsyncQueue
 {
@@ -123,7 +123,7 @@ g_async_queue_new (void)
 
 /**
  * g_async_queue_new_full:
- * @item_free_func: function to free queue elements
+ * @item_free_func: (nullable): function to free queue elements
  *
  * Creates a new asynchronous queue and sets up a destroy notify
  * function that is used to free any remaining queue items when

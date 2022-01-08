@@ -609,6 +609,8 @@ get_fs_type (long f_type)
       return "efivarfs";
     case 0x00414A53:
       return "efs";
+    case 0x2011BAB0UL:
+      return "exfat";
     case 0x137D:
       return "ext";
     case 0xEF51:
@@ -2009,7 +2011,16 @@ g_local_file_trash (GFile         *file,
        * trying to rename across a filesystem boundary, which doesn't work. So
        * we use g_stat here instead of g_lstat, to know where the symlink
        * points to. */
-      g_stat (path, &file_stat);
+      if (g_stat (path, &file_stat))
+	{
+	  errsv = errno;
+	  g_free (path);
+
+	  g_set_io_error (error,
+			  _("Error trashing file %s: %s"),
+			  file, errsv);
+	  return FALSE;
+	}
       g_free (path);
     }
 
@@ -2068,6 +2079,7 @@ g_local_file_trash (GFile         *file,
 	  (global_stat.st_mode & S_ISVTX) != 0)
 	{
 	  trashdir = g_build_filename (globaldir, uid_str, NULL);
+	  success = TRUE;
 
 	  if (g_lstat (trashdir, &trash_stat) == 0)
 	    {
@@ -2077,12 +2089,14 @@ g_local_file_trash (GFile         *file,
 		  /* Not a directory or not owned by user, ignore */
 		  g_free (trashdir);
 		  trashdir = NULL;
+		  success = FALSE;
 		}
 	    }
 	  else if (g_mkdir (trashdir, 0700) == -1)
 	    {
 	      g_free (trashdir);
 	      trashdir = NULL;
+	      success = FALSE;
 	    }
 	}
       g_free (globaldir);

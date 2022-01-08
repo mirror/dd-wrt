@@ -1,6 +1,7 @@
 /* GLib testing framework examples and tests
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
+ * Copyright (C) 2021 Frederic Martinsons
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,15 +17,13 @@
  * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
+ * Author: Frederic Martinsons <frederic.martinsons@gmail.com>
  */
 
 #include <gio/gio.h>
 #include <unistd.h>
 
 #include "gdbus-tests.h"
-
-/* all tests rely on a shared mainloop */
-static GMainLoop *loop;
 
 /* ---------------------------------------------------------------------------------------------------- */
 /* Test that g_bus_own_name() works correctly */
@@ -37,13 +36,14 @@ typedef struct
   guint num_acquired;
   guint num_lost;
   guint num_free_func;
+  GMainContext *main_context;  /* (unowned) */
 } OwnNameData;
 
 static void
 own_name_data_free_func (OwnNameData *data)
 {
   data->num_free_func++;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -54,7 +54,7 @@ bus_acquired_handler (GDBusConnection *connection,
   OwnNameData *data = user_data;
   g_dbus_connection_set_exit_on_close (connection, FALSE);
   data->num_bus_acquired += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -64,7 +64,7 @@ name_acquired_handler (GDBusConnection *connection,
 {
   OwnNameData *data = user_data;
   data->num_acquired += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -83,7 +83,7 @@ name_lost_handler (GDBusConnection *connection,
       g_dbus_connection_set_exit_on_close (connection, FALSE);
     }
   data->num_lost += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -99,6 +99,7 @@ test_bus_own_name (void)
   gboolean name_has_owner_reply;
   GDBusConnection *c2;
   GVariant *result;
+  GMainContext *main_context = NULL;  /* use the global default for now */
 
   error = NULL;
   name = "org.gtk.GDBus.Name1";
@@ -113,6 +114,7 @@ test_bus_own_name (void)
   data.num_acquired = 0;
   data.num_lost = 0;
   data.expect_null_connection = TRUE;
+  data.main_context = main_context;
   id = g_bus_own_name (G_BUS_TYPE_SESSION,
                        name,
                        G_BUS_NAME_OWNER_FLAGS_NONE,
@@ -124,7 +126,10 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_bus_acquired, ==, 0);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_lost < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 0);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 1);
@@ -152,11 +157,17 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_bus_acquired, ==, 0);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_bus_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_lost,     ==, 0);
@@ -188,7 +199,8 @@ test_bus_own_name (void)
    * Stop owning the name - this should invoke our free func
    */
   g_bus_unown_name (id);
-  g_main_loop_run (loop);
+  while (data.num_free_func < 2)
+    g_main_context_iteration (main_context, TRUE);
   g_assert_cmpint (data.num_free_func, ==, 2);
 
   /*
@@ -233,7 +245,11 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_lost,     ==, 0);
   g_assert_cmpint (data.num_free_func, ==, 2);
-  g_main_loop_run (loop); /* the GDestroyNotify is called in idle because the bus is acquired in idle */
+
+  /* the GDestroyNotify is called in idle because the bus is acquired in idle */
+  while (data.num_free_func < 3)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_free_func, ==, 3);
 
   /*
@@ -258,11 +274,17 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_bus_acquired, ==, 0);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_bus_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_lost,     ==, 0);
@@ -276,6 +298,7 @@ test_bus_own_name (void)
   data2.num_acquired = 0;
   data2.num_lost = 0;
   data2.expect_null_connection = FALSE;
+  data2.main_context = main_context;
   id2 = g_bus_own_name (G_BUS_TYPE_SESSION,
                         name,
                         G_BUS_NAME_OWNER_FLAGS_NONE,
@@ -287,16 +310,25 @@ test_bus_own_name (void)
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data2.num_bus_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 1);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data2.num_lost < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 1);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
+
   g_bus_unown_name (id2);
-  g_main_loop_run (loop);
+  while (data2.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 1);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
@@ -326,12 +358,18 @@ test_bus_own_name (void)
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data2.num_lost < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
+
   g_bus_unown_name (id2);
-  g_main_loop_run (loop);
+  while (data2.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
@@ -352,12 +390,18 @@ test_bus_own_name (void)
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data2.num_lost < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
+
   g_bus_unown_name (id2);
-  g_main_loop_run (loop);
+  while (data2.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
@@ -368,7 +412,9 @@ test_bus_own_name (void)
    */
   data.expect_null_connection = FALSE;
   g_bus_unown_name (id);
-  g_main_loop_run (loop);
+  while (data.num_bus_acquired < 1 || data.num_free_func < 4)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_free_func, ==, 4);
@@ -388,11 +434,17 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_bus_acquired, ==, 0);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_bus_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 0);
   g_assert_cmpint (data.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_lost,     ==, 0);
@@ -417,12 +469,18 @@ test_bus_own_name (void)
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
-  g_main_loop_run (loop);
+
+  while (data2.num_lost < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
+
   g_bus_unown_name (id2);
-  g_main_loop_run (loop);
+  while (data2.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 1);
@@ -445,18 +503,22 @@ test_bus_own_name (void)
   g_assert_cmpint (data.num_lost,     ==, 0);
   g_assert_cmpint (data2.num_acquired, ==, 0);
   g_assert_cmpint (data2.num_lost,     ==, 0);
+
   /* wait for handlers for both owner and owner2 to fire */
   while (data.num_lost == 0 || data2.num_acquired == 0)
-    g_main_loop_run (loop);
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_acquired, ==, 1);
   g_assert_cmpint (data.num_lost,     ==, 1);
   g_assert_cmpint (data2.num_acquired, ==, 1);
   g_assert_cmpint (data2.num_lost,     ==, 0);
   g_assert_cmpint (data2.num_bus_acquired, ==, 0);
+
   /* ok, make owner2 release the name - then wait for owner to automagically reacquire it */
   g_bus_unown_name (id2);
-  g_main_loop_run (loop);
-  g_main_loop_run (loop);
+  while (data.num_acquired < 2 || data2.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data2.num_free_func, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 2);
   g_assert_cmpint (data.num_lost,     ==, 1);
@@ -468,11 +530,15 @@ test_bus_own_name (void)
   data.expect_null_connection = TRUE;
   session_bus_stop ();
   while (data.num_lost != 2)
-    g_main_loop_run (loop);
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_acquired, ==, 2);
   g_assert_cmpint (data.num_lost,     ==, 2);
+
   g_bus_unown_name (id);
-  g_main_loop_run (loop);
+  while (data.num_free_func < 5)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_free_func, ==, 5);
 
   g_object_unref (c);
@@ -493,13 +559,29 @@ typedef struct
   guint num_appeared;
   guint num_vanished;
   guint num_free_func;
+  GMainContext *main_context;  /* (unowned), for the main test thread */
 } WatchNameData;
+
+typedef struct
+{
+  WatchNameData data;
+  GDBusConnection *connection;
+  GMutex cond_mutex;
+  GCond cond;
+  gboolean started;
+  gboolean name_acquired;
+  gboolean ended;
+  gboolean unwatch_early;
+  GMutex mutex;
+  guint watch_id;
+  GMainContext *thread_context;  /* (unowned), only accessed from watcher_thread() */
+} WatchNameThreadData;
 
 static void
 watch_name_data_free_func (WatchNameData *data)
 {
   data->num_free_func++;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -514,9 +596,9 @@ w_name_acquired_handler (GDBusConnection *connection,
                          const gchar     *name,
                          gpointer         user_data)
 {
-  WatchNameData *data = user_data;
+  OwnNameData *data = user_data;
   data->num_acquired += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -524,9 +606,9 @@ w_name_lost_handler (GDBusConnection *connection,
                      const gchar     *name,
                      gpointer         user_data)
 {
-  WatchNameData *data = user_data;
+  OwnNameData *data = user_data;
   data->num_lost += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -547,7 +629,7 @@ name_appeared_handler (GDBusConnection *connection,
       g_dbus_connection_set_exit_on_close (connection, FALSE);
     }
   data->num_appeared += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 static void
@@ -567,7 +649,7 @@ name_vanished_handler (GDBusConnection *connection,
       g_dbus_connection_set_exit_on_close (connection, FALSE);
     }
   data->num_vanished += 1;
-  g_main_loop_quit (loop);
+  g_main_context_wakeup (data->main_context);
 }
 
 typedef struct
@@ -613,6 +695,8 @@ stop_service (GDBusConnection *connection,
 {
   GError *error = NULL;
   GDBusProxy *proxy = NULL;
+  GVariant *result = NULL;
+  GMainContext *main_context = NULL;  /* use the global default for now */
 
   data->num_vanished = 0;
 
@@ -626,28 +710,32 @@ stop_service (GDBusConnection *connection,
                                  &error);
   g_assert_no_error (error);
 
-  g_dbus_proxy_call_sync (proxy,
-                          "Quit",
-                          NULL,
-                          G_DBUS_CALL_FLAGS_NO_AUTO_START,
-                          100,
-                          NULL,
-                          &error);
+  result = g_dbus_proxy_call_sync (proxy,
+                                   "Quit",
+                                   NULL,
+                                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
+                                   100,
+                                   NULL,
+                                   &error);
   g_assert_no_error (error);
   g_object_unref (proxy);
+  if (result)
+    g_variant_unref (result);
   while (data->num_vanished == 0)
-    g_main_loop_run (loop);
+    g_main_context_iteration (main_context, TRUE);
 }
 
 static void
 test_bus_watch_name (gconstpointer d)
 {
   WatchNameData data;
+  OwnNameData own_data;
   guint id;
   guint owner_id;
   GDBusConnection *connection;
   const WatchNameTest *watch_name_test;
   const gchar *name;
+  GMainContext *main_context = NULL;  /* use the global default for now */
 
   watch_name_test = (WatchNameTest *) d;
 
@@ -669,6 +757,7 @@ test_bus_watch_name (gconstpointer d)
   data.num_appeared = 0;
   data.num_vanished = 0;
   data.expect_null_connection = TRUE;
+  data.main_context = main_context;
   id = g_bus_watch_name (G_BUS_TYPE_SESSION,
                          name,
                          watch_name_test->watcher_flags,
@@ -678,34 +767,46 @@ test_bus_watch_name (gconstpointer d)
                          (GDestroyNotify) watch_name_data_free_func);
   g_assert_cmpint (data.num_appeared, ==, 0);
   g_assert_cmpint (data.num_vanished, ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_vanished < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_appeared, ==, 0);
   g_assert_cmpint (data.num_vanished, ==, 1);
+
   g_bus_unwatch_name (id);
+  while (data.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_appeared, ==, 0);
   g_assert_cmpint (data.num_vanished, ==, 1);
   g_assert_cmpint (data.num_free_func, ==, 1);
+  data.num_free_func = 0;
 
   /*
    * Now bring up a bus, own a name, and then start watching it.
    */
   session_bus_up ();
   /* own the name */
-  data.num_free_func = 0;
-  data.num_acquired = 0;
-  data.num_lost = 0;
+  own_data.num_free_func = 0;
+  own_data.num_acquired = 0;
+  own_data.num_lost = 0;
   data.expect_null_connection = FALSE;
+  own_data.main_context = main_context;
   owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
                              name,
                              G_BUS_NAME_OWNER_FLAGS_NONE,
                              w_bus_acquired_handler,
                              w_name_acquired_handler,
                              w_name_lost_handler,
-                             &data,
-                             (GDestroyNotify) watch_name_data_free_func);
-  g_main_loop_run (loop);
-  g_assert_cmpint (data.num_acquired, ==, 1);
-  g_assert_cmpint (data.num_lost, ==, 0);
+                             &own_data,
+                             (GDestroyNotify) own_name_data_free_func);
+
+  while (own_data.num_acquired < 1)
+    g_main_context_iteration (main_context, TRUE);
+
+  g_assert_cmpint (own_data.num_acquired, ==, 1);
+  g_assert_cmpint (own_data.num_lost, ==, 0);
 
   connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
   g_assert (connection != NULL);
@@ -737,7 +838,10 @@ test_bus_watch_name (gconstpointer d)
     }
   g_assert_cmpint (data.num_appeared, ==, 0);
   g_assert_cmpint (data.num_vanished, ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_appeared < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_appeared, ==, 1);
   g_assert_cmpint (data.num_vanished, ==, 0);
 
@@ -745,14 +849,19 @@ test_bus_watch_name (gconstpointer d)
    * Unwatch the name.
    */
   g_bus_unwatch_name (id);
+  while (data.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_free_func, ==, 1);
 
   /* unown the name */
   g_bus_unown_name (owner_id);
-  g_main_loop_run (loop);
-  g_assert_cmpint (data.num_acquired, ==, 1);
-  g_assert_cmpint (data.num_free_func, ==, 2);
+  while (own_data.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
 
+  g_assert_cmpint (own_data.num_acquired, ==, 1);
+  g_assert_cmpint (own_data.num_free_func, ==, 1);
+  own_data.num_free_func = 0;
   /*
    * Create a watcher and then make a name be owned.
    *
@@ -787,7 +896,10 @@ test_bus_watch_name (gconstpointer d)
 
   g_assert_cmpint (data.num_appeared, ==, 0);
   g_assert_cmpint (data.num_vanished, ==, 0);
-  g_main_loop_run (loop);
+
+  while (data.num_appeared == 0 && data.num_vanished == 0)
+    g_main_context_iteration (main_context, TRUE);
+
   if (watch_name_test->existing_service)
     {
       g_assert_cmpint (data.num_appeared, ==, 1);
@@ -802,21 +914,24 @@ test_bus_watch_name (gconstpointer d)
   if (!watch_name_test->existing_service)
     {
       /* own the name */
-      data.num_acquired = 0;
-      data.num_lost = 0;
-      data.expect_null_connection = FALSE;
+      own_data.num_acquired = 0;
+      own_data.num_lost = 0;
+      own_data.expect_null_connection = FALSE;
+      own_data.main_context = main_context;
       owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
                                  name,
                                  G_BUS_NAME_OWNER_FLAGS_NONE,
                                  w_bus_acquired_handler,
                                  w_name_acquired_handler,
                                  w_name_lost_handler,
-                                 &data,
-                                 (GDestroyNotify) watch_name_data_free_func);
-      while (data.num_acquired == 0 || data.num_appeared == 0)
-        g_main_loop_run (loop);
-      g_assert_cmpint (data.num_acquired, ==, 1);
-      g_assert_cmpint (data.num_lost, ==, 0);
+                                 &own_data,
+                                 (GDestroyNotify) own_name_data_free_func);
+
+      while (own_data.num_acquired == 0 || data.num_appeared == 0)
+        g_main_context_iteration (main_context, TRUE);
+
+      g_assert_cmpint (own_data.num_acquired, ==, 1);
+      g_assert_cmpint (own_data.num_lost, ==, 0);
       g_assert_cmpint (data.num_appeared, ==, 1);
       g_assert_cmpint (data.num_vanished, ==, 1);
     }
@@ -834,25 +949,286 @@ test_bus_watch_name (gconstpointer d)
   session_bus_stop ();
   if (!watch_name_test->existing_service)
     {
-      g_main_loop_run (loop);
-      g_assert_cmpint (data.num_lost, ==, 1);
+      while (own_data.num_lost < 1 || data.num_vanished < 2)
+        g_main_context_iteration (main_context, TRUE);
+      g_assert_cmpint (own_data.num_lost, ==, 1);
       g_assert_cmpint (data.num_vanished, ==, 2);
     }
   else
     {
-      g_assert_cmpint (data.num_lost, ==, 0);
+      g_assert_cmpint (own_data.num_lost, ==, 0);
       g_assert_cmpint (data.num_vanished, ==, 1);
     }
+
   g_bus_unwatch_name (id);
+  while (data.num_free_func < 1)
+    g_main_context_iteration (main_context, TRUE);
+
   g_assert_cmpint (data.num_free_func, ==, 1);
 
   if (!watch_name_test->existing_service)
     {
       g_bus_unown_name (owner_id);
-      g_main_loop_run (loop);
-      g_assert_cmpint (data.num_free_func, ==, 2);
+      while (own_data.num_free_func < 1)
+        g_main_context_iteration (main_context, TRUE);
+
+      g_assert_cmpint (own_data.num_free_func, ==, 1);
     }
   session_bus_down ();
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Called in the same thread as watcher_thread() */
+static void
+t_watch_name_data_free_func (WatchNameThreadData *thread_data)
+{
+  thread_data->data.num_free_func++;
+
+  g_assert_true (g_main_context_is_owner (thread_data->thread_context));
+  g_main_context_wakeup (thread_data->thread_context);
+}
+
+/* Called in the same thread as watcher_thread() */
+static void
+t_name_appeared_handler (GDBusConnection *connection,
+                         const gchar     *name,
+                         const gchar     *name_owner,
+                         gpointer         user_data)
+{
+  WatchNameThreadData *thread_data = user_data;
+  thread_data->data.num_appeared += 1;
+
+  g_assert_true (g_main_context_is_owner (thread_data->thread_context));
+  g_main_context_wakeup (thread_data->thread_context);
+}
+
+/* Called in the same thread as watcher_thread() */
+static void
+t_name_vanished_handler (GDBusConnection *connection,
+                         const gchar     *name,
+                         gpointer         user_data)
+{
+  WatchNameThreadData *thread_data = user_data;
+  thread_data->data.num_vanished += 1;
+
+  g_assert_true (g_main_context_is_owner (thread_data->thread_context));
+  g_main_context_wakeup (thread_data->thread_context);
+}
+
+/* Called in the thread which constructed the GDBusConnection */
+static void
+connection_closed_cb (GDBusConnection *connection,
+                      gboolean         remote_peer_vanished,
+                      GError          *error,
+                      gpointer         user_data)
+{
+  WatchNameThreadData *thread_data = (WatchNameThreadData *) user_data;
+  if (thread_data->unwatch_early)
+    {
+      g_mutex_lock (&thread_data->mutex);
+      g_bus_unwatch_name (g_atomic_int_get (&thread_data->watch_id));
+      g_atomic_int_set (&thread_data->watch_id, 0);
+      g_cond_signal (&thread_data->cond);
+      g_mutex_unlock (&thread_data->mutex);
+    }
+}
+
+static gpointer
+watcher_thread (gpointer user_data)
+{
+  WatchNameThreadData *thread_data = user_data;
+  GMainContext *thread_context;
+
+  thread_context = g_main_context_new ();
+  thread_data->thread_context = thread_context;
+  g_main_context_push_thread_default (thread_context);
+
+  // Notify that the thread has started
+  g_mutex_lock (&thread_data->cond_mutex);
+  g_atomic_int_set (&thread_data->started, TRUE);
+  g_cond_signal (&thread_data->cond);
+  g_mutex_unlock (&thread_data->cond_mutex);
+
+  // Wait for the main thread to own the name before watching it
+  g_mutex_lock (&thread_data->cond_mutex);
+  while (!g_atomic_int_get (&thread_data->name_acquired))
+    g_cond_wait (&thread_data->cond, &thread_data->cond_mutex);
+  g_mutex_unlock (&thread_data->cond_mutex);
+
+  thread_data->data.num_appeared = 0;
+  thread_data->data.num_vanished = 0;
+  thread_data->data.num_free_func = 0;
+  // g_signal_connect_after is important to have default handler be called before our code
+  g_signal_connect_after (thread_data->connection, "closed", G_CALLBACK (connection_closed_cb), thread_data);
+
+  g_mutex_lock (&thread_data->mutex);
+  thread_data->watch_id = g_bus_watch_name_on_connection (thread_data->connection,
+                                                          "org.gtk.GDBus.Name1",
+                                                          G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                                          t_name_appeared_handler,
+                                                          t_name_vanished_handler,
+                                                          thread_data,
+                                                          (GDestroyNotify) t_watch_name_data_free_func);
+  g_mutex_unlock (&thread_data->mutex);
+
+  g_assert_cmpint (thread_data->data.num_appeared, ==, 0);
+  g_assert_cmpint (thread_data->data.num_vanished, ==, 0);
+  while (thread_data->data.num_appeared == 0)
+    g_main_context_iteration (thread_context, TRUE);
+  g_assert_cmpint (thread_data->data.num_appeared, ==, 1);
+  g_assert_cmpint (thread_data->data.num_vanished, ==, 0);
+  thread_data->data.num_appeared = 0;
+
+  /* Close the connection and:
+   *  - check that we had received a vanished event even begin in different thread
+   *  - or check that unwatching the bus when a vanished had been scheduled
+   *    make it correctly unscheduled (unwatch_early condition)
+   */
+  g_dbus_connection_close_sync (thread_data->connection, NULL, NULL);
+  if (thread_data->unwatch_early)
+    {
+      // Wait for the main thread to iterate in order to have close connection handled
+      g_mutex_lock (&thread_data->mutex);
+      while (g_atomic_int_get (&thread_data->watch_id) != 0)
+        g_cond_wait (&thread_data->cond, &thread_data->mutex);
+      g_mutex_unlock (&thread_data->mutex);
+
+      while (thread_data->data.num_free_func == 0)
+        g_main_context_iteration (thread_context, TRUE);
+      g_assert_cmpint (thread_data->data.num_vanished, ==, 0);
+      g_assert_cmpint (thread_data->data.num_appeared, ==, 0);
+      g_assert_cmpint (thread_data->data.num_free_func, ==, 1);
+    }
+  else
+    {
+      while (thread_data->data.num_vanished == 0)
+        {
+          /*
+           * Close of connection is treated in the context of the thread which
+           * creates the connection. We must run iteration on it (to have the 'closed'
+           * signal handled) and also run current thread loop to have name_vanished
+           * callback handled.
+           */
+          g_main_context_iteration (thread_context, TRUE);
+        }
+      g_assert_cmpint (thread_data->data.num_vanished, ==, 1);
+      g_assert_cmpint (thread_data->data.num_appeared, ==, 0);
+      g_mutex_lock (&thread_data->mutex);
+      g_bus_unwatch_name (g_atomic_int_get (&thread_data->watch_id));
+      g_atomic_int_set (&thread_data->watch_id, 0);
+      g_mutex_unlock (&thread_data->mutex);
+      while (thread_data->data.num_free_func == 0)
+        g_main_context_iteration (thread_context, TRUE);
+      g_assert_cmpint (thread_data->data.num_free_func, ==, 1);
+    }
+
+  g_mutex_lock (&thread_data->cond_mutex);
+  thread_data->ended = TRUE;
+  g_main_context_wakeup (NULL);
+  g_cond_signal (&thread_data->cond);
+  g_mutex_unlock (&thread_data->cond_mutex);
+
+  g_signal_handlers_disconnect_by_func (thread_data->connection, connection_closed_cb, thread_data);
+  g_object_unref (thread_data->connection);
+  g_main_context_pop_thread_default (thread_context);
+  g_main_context_unref (thread_context);
+
+  g_mutex_lock (&thread_data->mutex);
+  g_assert_cmpint (thread_data->watch_id, ==, 0);
+  g_mutex_unlock (&thread_data->mutex);
+  return NULL;
+}
+
+static void
+watch_with_different_context (gboolean unwatch_early)
+{
+  OwnNameData own_data;
+  WatchNameThreadData thread_data;
+  GDBusConnection *connection;
+  GThread *watcher;
+  guint id;
+  GMainContext *main_context = NULL;  /* use the global default for now */
+
+  session_bus_up ();
+
+  connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+  g_assert (connection != NULL);
+
+  g_mutex_init (&thread_data.mutex);
+  g_mutex_init (&thread_data.cond_mutex);
+  g_cond_init (&thread_data.cond);
+  thread_data.started = FALSE;
+  thread_data.name_acquired = FALSE;
+  thread_data.ended = FALSE;
+  thread_data.connection = g_object_ref (connection);
+  thread_data.unwatch_early = unwatch_early;
+
+  // Create a thread which will watch a name and wait for it to be ready
+  g_mutex_lock (&thread_data.cond_mutex);
+  watcher = g_thread_new ("watcher", watcher_thread, &thread_data);
+  while (!g_atomic_int_get (&thread_data.started))
+    g_cond_wait (&thread_data.cond, &thread_data.cond_mutex);
+  g_mutex_unlock (&thread_data.cond_mutex);
+
+  own_data.num_acquired = 0;
+  own_data.num_lost = 0;
+  own_data.num_free_func = 0;
+  own_data.expect_null_connection = FALSE;
+  own_data.main_context = main_context;
+  // Own the name to avoid direct name vanished in watcher thread
+  id = g_bus_own_name_on_connection (connection,
+                                     "org.gtk.GDBus.Name1",
+                                     G_BUS_NAME_OWNER_FLAGS_REPLACE,
+                                     w_name_acquired_handler,
+                                     w_name_lost_handler,
+                                     &own_data,
+                                     (GDestroyNotify) own_name_data_free_func);
+  while (own_data.num_acquired == 0)
+    g_main_context_iteration (main_context, TRUE);
+  g_assert_cmpint (own_data.num_acquired, ==, 1);
+  g_assert_cmpint (own_data.num_lost, ==, 0);
+
+  // Wake the thread for it to begin watch
+  g_mutex_lock (&thread_data.cond_mutex);
+  g_atomic_int_set (&thread_data.name_acquired, TRUE);
+  g_cond_signal (&thread_data.cond);
+  g_mutex_unlock (&thread_data.cond_mutex);
+
+  // Iterate the loop until thread is waking us up
+  while (!thread_data.ended)
+    g_main_context_iteration (main_context, TRUE);
+
+  g_thread_join (watcher);
+
+  g_bus_unown_name (id);
+  while (own_data.num_free_func == 0)
+    g_main_context_iteration (main_context, TRUE);
+  g_assert_cmpint (own_data.num_free_func, ==, 1);
+
+  g_mutex_clear (&thread_data.mutex);
+  g_mutex_clear (&thread_data.cond_mutex);
+  g_cond_clear (&thread_data.cond);
+
+  session_bus_stop ();
+  g_assert_true (g_dbus_connection_is_closed (connection));
+  g_object_unref (connection);
+  session_bus_down ();
+}
+
+static void
+test_bus_watch_different_context (void)
+{
+  watch_with_different_context (FALSE);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+test_bus_unwatch_early (void)
+{
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/604");
+  watch_with_different_context (TRUE);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -899,9 +1275,15 @@ test_validate_names (void)
         g_assert (!g_dbus_is_unique_name (names[n].string));
 
       if (names[n].interface)
-        g_assert (g_dbus_is_interface_name (names[n].string));
+        {
+          g_assert (g_dbus_is_interface_name (names[n].string));
+          g_assert (g_dbus_is_error_name (names[n].string)); 
+        }
       else
-        g_assert (!g_dbus_is_interface_name (names[n].string));
+        {
+          g_assert (!g_dbus_is_interface_name (names[n].string));
+          g_assert (!g_dbus_is_error_name (names[n].string));
+        }        
     }
 }
 
@@ -958,8 +1340,6 @@ main (int   argc,
 
   g_test_init (&argc, &argv, NULL);
 
-  loop = g_main_loop_new (NULL, FALSE);
-
   g_test_dbus_unset ();
 
   g_test_add_func ("/gdbus/validate-names", test_validate_names);
@@ -979,10 +1359,10 @@ main (int   argc,
   g_test_add_data_func ("/gdbus/bus-watch-name-closures-auto-start",
                         &watch_closures_flags_auto_start,
                         test_bus_watch_name);
+  g_test_add_func ("/gdbus/bus-watch-different-context", test_bus_watch_different_context);
+  g_test_add_func ("/gdbus/bus-unwatch-early", test_bus_unwatch_early);
   g_test_add_func ("/gdbus/escape-object-path", test_escape_object_path);
   ret = g_test_run();
-
-  g_main_loop_unref (loop);
 
   return ret;
 }

@@ -18,25 +18,17 @@ subdir('refcount')
 tests = {
   'testglib' : {'tap' : true},
   'testgdate' : {},
-  'datetime' : {},
-  'bit-test' : {},
-  'child-test' : {},
-  'completion-test' : {},
-  'dirname-test' : {},
   'file-test' : {},
   'env-test' : {},
   'gio-test' : {},
   'mainloop-test' : {},
   'mapping-test' : {},
   'onceinit' : {},
-  'asyncqueue-test' : {},
-  'qsort-test' : {},
   'relation-test' : {},
   'slice-concurrent' : {},
   'slice-threadinit' : {
     'dependencies' : [libgthread_dep],
   },
-  'sources' : {},
   'spawn-test' : {},
   'thread-test' : {},
   'threadpool-test' : {'suite' : ['slow']},
@@ -54,11 +46,6 @@ tests = {
     'export_dynamic' : true,
     'source': 'module-test.c',
     'c_args': ['-DMODULE_TYPE="plugin"'],
-  },
-  'cxx-test' : {
-    'source' : 'cxx-test.cpp',
-    'include_directories' : gmoduleinc,
-    'dependencies' : [libgio_dep],
   },
 }
 

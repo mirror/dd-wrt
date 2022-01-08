@@ -17,7 +17,7 @@ if build_machine.system() == 'linux'
   libutil_name = 'libutil'
   libutil = run_command('sh', '-c',
     '''ldconfig -p | grep -o "[[:space:]]@0@\.so\(\.[0-9]\+\)\?\b"'''
-    .format(libutil_name)).stdout().strip().split('\n')
+    .format(libutil_name), check: false).stdout().strip().split('\n')
 
   if libutil.length() > 0
       message('Found libutil as @0@'.format(libutil[0]))
@@ -52,6 +52,9 @@ gio_tests = {
   'contenttype' : {},
   'converter-stream' : {},
   'credentials' : {},
+  'cxx' : {
+    'source' : ['cxx.cpp'],
+  },
   'data-input-stream' : {},
   'data-output-stream' : {},
   'defaultvalue' : {'extra_sources' : [giotypefuncs_inc]},
@@ -75,6 +78,7 @@ gio_tests = {
   'network-monitor-race' : {},
   'permission' : {},
   'pollable' : {'dependencies' : [libdl_dep]},
+  'power-profile-monitor' : {},
   'proxy-test' : {},
   'readwrite' : {},
   'simple-async-result' : {},
@@ -540,27 +544,29 @@ if installed_tests_enabled
   install_subdir('static-link', install_dir : installed_tests_execdir)
   install_data('static-link.py', install_dir : installed_tests_execdir)
 
-  memory_monitor_tests = [
+  monitor_tests = [
     'memory-monitor-dbus',
     'memory-monitor-portal',
+    'power-profile-monitor-dbus',
+    'power-profile-monitor-portal'
   ]
 
-  foreach memory_monitor_test : memory_monitor_tests
+  foreach monitor_test : monitor_tests
     cdata = configuration_data()
     cdata.set('installed_tests_dir', installed_tests_execdir)
-    cdata.set('program', memory_monitor_test + '.py')
+    cdata.set('program', monitor_test + '.py')
     cdata.set('env', '')
     configure_file(
       input: installed_tests_template_tap,
-      output: memory_monitor_test + '.test',
+      output: monitor_test + '.test',
       install_dir: installed_tests_metadir,
       configuration: cdata
     )
     cdata = configuration_data()
     cdata.set('libexecdir', join_paths(glib_prefix, get_option('libexecdir')))
     configure_file(
-      input: memory_monitor_test + '.py.in',
-      output: memory_monitor_test + '.py',
+      input: monitor_test + '.py.in',
+      output: monitor_test + '.py',
       install_dir : installed_tests_execdir,
       configuration: cdata,
     )
@@ -675,19 +681,24 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
   ]
 
   # Create object file containing resource data for testing the --external-data
-  # option. Currently only GNU ld and GNU objcopy support the right options.
-  # Support for --add-symbol was added to LLVM objcopy in 2019
-  # (https://reviews.llvm.org/D58234). FIXME: This test could be enabled for
-  # LLVM once that support is in a stable release.
+  # option. Currently only GNU ld and objcopy, or (as of 2019) LLVM ld and
+  # objcopy, support the right options.
   objcopy_supports_add_symbol = false
   objcopy = find_program('objcopy', required : false)
   if objcopy.found()
-    objcopy_supports_add_symbol = run_command(objcopy, '--help').stdout().contains('--add-symbol')
+    # FIXME: This should be `check: true` because we never really expect
+    # `objcopy --help` to fail, given that `objcopy` exists. However, it does
+    # fail on FreeBSD because ELF Tool Chain has
+    # [a bug](https://sourceforge.net/p/elftoolchain/code/3950/).
+    # This can be changed back to `check: true` once our CI uses a FreeBSD
+    # version which includes the fix.
+    # See https://gitlab.gnome.org/GNOME/glib/-/merge_requests/2360#note_1318608
+    objcopy_supports_add_symbol = run_command(objcopy, '--help', check: false).stdout().contains('--add-symbol')
   endif
 
   ld = find_program('ld', required : false)
 
-  if build_machine.system() == 'linux' and cc.get_id() == 'gcc' and objcopy.found() and objcopy_supports_add_symbol and ld.found()
+  if build_machine.system() == 'linux' and objcopy.found() and objcopy_supports_add_symbol and ld.found()
     test_gresource_binary = custom_target('test5.gresource',
       input : 'test5.gresource.xml',
       output : 'test5.gresource',

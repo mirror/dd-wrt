@@ -714,7 +714,7 @@ static const UriAbsoluteTest absolute_tests[] = {
 
   /* ".." past top */
   { "http://example.com/..", G_URI_FLAGS_NONE, TRUE, 0,
-    { "http", NULL, "example.com", -1, "/..", NULL, NULL }
+    { "http", NULL, "example.com", -1, "/", NULL, NULL }
   },
 
   /* scheme parsing */
@@ -898,6 +898,19 @@ static const UriRelativeTest relative_tests[] = {
   { "ScHeMe://User:P%61ss@HOST.%63om:1234/path/./from/../to%7d/item%2dobj?qu%65ry=something#fr%61gment",
     "scheme://User:Pass@HOST.com:1234/path/to%7D/item-obj?query=something#fragment",
     { "scheme", "User:Pass", "HOST.com", 1234, "/path/to}/item-obj", "query=something", "fragment" } },
+  /* Test corner cases of remove_dot_segments */
+  { "http:..", "http:",
+    { "http", NULL, NULL, -1, "", NULL, NULL } },
+  { "http:../", "http:",
+    { "http", NULL, NULL, -1, "", NULL, NULL } },
+  { "http:.", "http:",
+    { "http", NULL, NULL, -1, "", NULL, NULL } },
+  { "http:./", "http:",
+    { "http", NULL, NULL, -1, "", NULL, NULL } },
+  { "http:a/..", "http:/",
+    { "http", NULL, NULL, -1, "/", NULL, NULL } },
+  { "http:a/../", "http:/",
+    { "http", NULL, NULL, -1, "/", NULL, NULL } },
 };
 static int num_relative_tests = G_N_ELEMENTS (relative_tests);
 

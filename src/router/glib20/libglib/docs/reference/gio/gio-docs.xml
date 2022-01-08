@@ -48,8 +48,8 @@
         <title>Data conversion</title>
         <xi:include href="xml/gconverter.xml"/>
         <xi:include href="xml/gcharsetconverter.xml"/>
-        <xi:include href="xml/gzcompressor.xml"/>
-        <xi:include href="xml/gzdecompressor.xml"/>
+        <xi:include href="xml/gzlibcompressor.xml"/>
+        <xi:include href="xml/gzlibdecompressor.xml"/>
     </chapter>
     <chapter id="streaming">
         <title>Streaming I/O</title>
@@ -238,6 +238,7 @@
         <xi:include href="xml/gmenuexporter.xml"/>
         <xi:include href="xml/gdbusmenumodel.xml"/>
         <xi:include href="xml/gnotification.xml"/>
+        <xi:include href="xml/gpowerprofilemonitor.xml"/>
     </chapter>
     <chapter id="extending">
         <title>Extending GIO</title>
@@ -388,6 +389,14 @@
   <index id="api-index-2-68" role="2.68">
     <title>Index of new symbols in 2.68</title>
     <xi:include href="xml/api-index-2.68.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-70" role="2.70">
+    <title>Index of new symbols in 2.70</title>
+    <xi:include href="xml/api-index-2.70.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-72" role="2.72">
+    <title>Index of new symbols in 2.72</title>
+    <xi:include href="xml/api-index-2.72.xml"><xi:fallback /></xi:include>
   </index>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>

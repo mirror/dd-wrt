@@ -48,7 +48,7 @@
  *     management system
  * @title:Type Information
  *
- * The GType API is the foundation of the GObject system.  It provides the
+ * The GType API is the foundation of the GObject system. It provides the
  * facilities for registering and managing all fundamental data types,
  * user-defined object and interface types.
  *
@@ -143,7 +143,7 @@
 				    G_TYPE_FLAG_INSTANTIATABLE | \
 				    G_TYPE_FLAG_DERIVABLE | \
 				    G_TYPE_FLAG_DEEP_DERIVABLE)
-#define	TYPE_FLAG_MASK		   (G_TYPE_FLAG_ABSTRACT | G_TYPE_FLAG_VALUE_ABSTRACT)
+#define	TYPE_FLAG_MASK		   (G_TYPE_FLAG_ABSTRACT | G_TYPE_FLAG_VALUE_ABSTRACT | G_TYPE_FLAG_FINAL)
 #define	SIZEOF_FUNDAMENTAL_INFO	   ((gssize) MAX (MAX (sizeof (GTypeFundamentalInfo), \
 						       sizeof (gpointer)), \
                                                   sizeof (glong)))
@@ -804,6 +804,13 @@ check_derivation_I (GType        parent_type,
 		 NODE_NAME (pnode));
       return FALSE;
     }
+  if ((G_TYPE_FLAG_FINAL & GPOINTER_TO_UINT (type_get_qdata_L (pnode, static_quark_type_flags))) == G_TYPE_FLAG_FINAL)
+    {
+      g_warning ("cannot derive '%s' from final parent type '%s'",
+                 type_name,
+                 NODE_NAME (pnode));
+      return FALSE;
+    }
   
   return TRUE;
 }
@@ -1100,7 +1107,8 @@ type_data_make_W (TypeNode              *node,
 	vtable = pnode->data->common.value_table;
       else
 	{
-	  static const GTypeValueTable zero_vtable = { NULL, };
+          static const GTypeValueTable zero_vtable =
+            { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	  
 	  value_table = &zero_vtable;
 	}
@@ -3151,11 +3159,14 @@ g_type_class_peek_parent (gpointer g_class)
   g_return_val_if_fail (g_class != NULL, NULL);
   
   node = lookup_type_node_I (G_TYPE_FROM_CLASS (g_class));
+
+  g_return_val_if_fail (node != NULL, NULL);
+
   /* We used to acquire a read lock here. That is not necessary, since 
    * parent->data->class.class is constant as long as the derived class
    * exists. 
    */
-  if (node && node->is_classed && node->data && NODE_PARENT_TYPE (node))
+  if (node->is_classed && node->data && NODE_PARENT_TYPE (node))
     {
       node = lookup_type_node_I (NODE_PARENT_TYPE (node));
       class = node->data->class.class;

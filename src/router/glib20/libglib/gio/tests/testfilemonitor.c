@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <gio/gio.h>
 
-#include "glib/glib-private.h"
-
 /* These tests were written for the inotify implementation.
  * Other implementations may require slight adjustments in
  * the tests, e.g. the length of timeouts
@@ -120,7 +118,8 @@ check_expected_events (RecordedEvent *expected,
                        GList         *recorded,
                        Environment    env)
 {
-  gint i, li;
+  gsize i;
+  gint li;
   GList *l;
 
   for (i = 0, li = 0, l = recorded; i < n_expected && l != NULL;)
@@ -219,7 +218,7 @@ check_expected_events (RecordedEvent *expected,
               e2->event_type == G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
             {
               g_test_message ("Event CHANGES_DONE_HINT ignored at "
-                              "expected index %d, recorded index %d", i, li);
+                              "expected index %"  G_GSIZE_FORMAT ", recorded index %d", i, li);
               li++, l = l->next;
               continue;
             }
@@ -227,7 +226,7 @@ check_expected_events (RecordedEvent *expected,
            * the event doesn't match, it means the expected event has lost. */
           else if (env & e1->optional)
             {
-              g_test_message ("Event %d at expected index %d skipped because "
+              g_test_message ("Event %d at expected index %" G_GSIZE_FORMAT " skipped because "
                               "it is marked as optional", e1->event_type, i);
               i++;
               continue;
@@ -956,15 +955,10 @@ static void
 test_file_hard_links (Fixture       *fixture,
                       gconstpointer  user_data)
 {
-#ifdef _GLIB_ADDRESS_SANITIZER
-  g_test_incomplete ("FIXME: Leaks an inotify data structure, see glib#2311");
-  (void) file_hard_links_output;
-  (void) file_hard_links_step;
-#else
   GError *error = NULL;
   TestData data;
 
-  g_test_bug ("755721");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=755721");
 
 #ifdef HAVE_LINK
   g_test_message ("Running with hard link tests");
@@ -1011,15 +1005,12 @@ test_file_hard_links (Fixture       *fixture,
   g_object_unref (data.monitor);
   g_object_unref (data.file);
   g_object_unref (data.output_stream);
-#endif
 }
 
 int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-
-  g_test_bug_base ("https://bugzilla.gnome.org/show_bug.cgi?id=");
 
   g_test_add ("/monitor/atomic-replace", Fixture, NULL, setup, test_atomic_replace, teardown);
   g_test_add ("/monitor/file-changes", Fixture, NULL, setup, test_file_changes, teardown);

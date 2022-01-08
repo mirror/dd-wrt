@@ -2266,8 +2266,7 @@ g_signal_chain_from_overridden_handler (gpointer instance,
       va_start (var_args, instance);
 
       signal_return_type = node->return_type;
-      instance_and_params = g_alloca (sizeof (GValue) * (n_params + 1));
-      memset (instance_and_params, 0, sizeof (GValue) * (n_params + 1));
+      instance_and_params = g_newa0 (GValue, n_params + 1);
       param_values = instance_and_params + 1;
 
       for (i = 0; i < node->n_params; i++)
@@ -3462,8 +3461,7 @@ g_signal_emit_valist (gpointer instance,
 
   n_params = node->n_params;
   signal_return_type = node->return_type;
-  instance_and_params = g_alloca (sizeof (GValue) * (n_params + 1));
-  memset (instance_and_params, 0, sizeof (GValue) * (n_params + 1));
+  instance_and_params = g_newa0 (GValue, n_params + 1);
   param_values = instance_and_params + 1;
 
   for (i = 0; i < node->n_params; i++)
@@ -3560,7 +3558,8 @@ g_signal_emit (gpointer instance,
  * @detailed_signal: a string of the form "signal-name::detail".
  * @...: parameters to be passed to the signal, followed by a
  *  location for the return value. If the return type of the signal
- *  is #G_TYPE_NONE, the return value location can be omitted.
+ *  is %G_TYPE_NONE, the return value location can be omitted. The
+ *  number of parameters to pass to this function is defined when creating the signal.
  *
  * Emits a signal.
  *

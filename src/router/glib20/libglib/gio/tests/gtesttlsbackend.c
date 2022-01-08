@@ -110,6 +110,12 @@ enum
   PROP_CERT_ISSUER,
   PROP_CERT_PKCS11_URI,
   PROP_CERT_PRIVATE_KEY_PKCS11_URI,
+  PROP_CERT_NOT_VALID_BEFORE,
+  PROP_CERT_NOT_VALID_AFTER,
+  PROP_CERT_SUBJECT_NAME,
+  PROP_CERT_ISSUER_NAME,
+  PROP_CERT_DNS_NAMES,
+  PROP_CERT_IP_ADDRESSES,
 };
 
 static void g_test_tls_certificate_initable_iface_init (GInitableIface *iface);
@@ -135,6 +141,8 @@ g_test_tls_certificate_get_property (GObject    *object,
 				      GParamSpec *pspec)
 {
   GTestTlsCertificate *cert = (GTestTlsCertificate *) object;
+  GPtrArray *data = NULL;
+  const gchar *dns_name = "a.example.com";
 
   switch (prop_id)
     {
@@ -155,6 +163,28 @@ g_test_tls_certificate_get_property (GObject    *object,
       break;
     case PROP_CERT_PRIVATE_KEY_PKCS11_URI:
       g_value_set_string (value, cert->private_key_pkcs11_uri);
+      break;
+    case PROP_CERT_NOT_VALID_BEFORE:
+      g_value_take_boxed (value, g_date_time_new_from_iso8601 ("2020-10-12T17:49:44Z", NULL));
+      break;
+    case PROP_CERT_NOT_VALID_AFTER:
+      g_value_take_boxed (value, g_date_time_new_from_iso8601 ("2045-10-06T17:49:44Z", NULL));
+      break;
+    case PROP_CERT_SUBJECT_NAME:
+      g_value_set_string (value, "DC=COM,DC=EXAMPLE,CN=server.example.com");
+      break;
+    case PROP_CERT_ISSUER_NAME:
+      g_value_set_string (value, "DC=COM,DC=EXAMPLE,OU=Certificate Authority,CN=ca.example.com,emailAddress=ca@example.com");
+      break;
+    case PROP_CERT_DNS_NAMES:
+      data = g_ptr_array_new_with_free_func ((GDestroyNotify)g_bytes_unref);
+      g_ptr_array_add (data, g_bytes_new_static (dns_name, strlen (dns_name)));
+      g_value_take_boxed (value, data);
+      break;
+    case PROP_CERT_IP_ADDRESSES:
+      data = g_ptr_array_new_with_free_func (g_object_unref);
+      g_ptr_array_add (data, g_inet_address_new_from_string ("192.0.2.1"));
+      g_value_take_boxed (value, data);
       break;
     default:
       g_assert_not_reached ();
@@ -230,6 +260,12 @@ g_test_tls_certificate_class_init (GTestTlsCertificateClass *test_class)
   g_object_class_override_property (gobject_class, PROP_CERT_ISSUER, "issuer");
   g_object_class_override_property (gobject_class, PROP_CERT_PKCS11_URI, "pkcs11-uri");
   g_object_class_override_property (gobject_class, PROP_CERT_PRIVATE_KEY_PKCS11_URI, "private-key-pkcs11-uri");
+  g_object_class_override_property (gobject_class, PROP_CERT_NOT_VALID_BEFORE, "not-valid-before");
+  g_object_class_override_property (gobject_class, PROP_CERT_NOT_VALID_AFTER, "not-valid-after");
+  g_object_class_override_property (gobject_class, PROP_CERT_SUBJECT_NAME, "subject-name");
+  g_object_class_override_property (gobject_class, PROP_CERT_ISSUER_NAME, "issuer-name");
+  g_object_class_override_property (gobject_class, PROP_CERT_DNS_NAMES, "dns-names");
+  g_object_class_override_property (gobject_class, PROP_CERT_IP_ADDRESSES, "ip-addresses");
 }
 
 static void
@@ -369,12 +405,6 @@ static void
 g_test_tls_connection_initable_iface_init (GInitableIface  *iface)
 {
   iface->init = g_test_tls_connection_initable_init;
-}
-
-const gchar *
-g_test_tls_connection_get_private_key_pem (GTlsCertificate *cert)
-{
-  return ((GTestTlsCertificate *)cert)->key_pem;
 }
 
 /* Test database type */

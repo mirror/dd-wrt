@@ -48,6 +48,9 @@
 #include "gmemorymonitor.h"
 #include "gmemorymonitorportal.h"
 #include "gmemorymonitordbus.h"
+#include "gpowerprofilemonitor.h"
+#include "gpowerprofilemonitordbus.h"
+#include "gpowerprofilemonitorportal.h"
 #ifdef G_OS_WIN32
 #include "gregistrysettingsbackend.h"
 #include "giowin32-priv.h"
@@ -342,6 +345,7 @@ static gboolean
 g_io_module_load_module (GTypeModule *gmodule)
 {
   GIOModule *module = G_IO_MODULE (gmodule);
+  GError *error = NULL;
 
   if (!module->filename)
     {
@@ -349,11 +353,12 @@ g_io_module_load_module (GTypeModule *gmodule)
       return FALSE;
     }
 
-  module->library = g_module_open (module->filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
+  module->library = g_module_open_full (module->filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL, &error);
 
   if (!module->library)
     {
-      g_printerr ("%s\n", g_module_error ());
+      g_printerr ("%s\n", error->message);
+      g_clear_error (&error);
       return FALSE;
     }
 
@@ -731,7 +736,7 @@ print_help (const char        *envvar,
     {
       GList *l;
       GIOExtension *extension;
-      int width = 0;
+      gsize width = 0;
 
       for (l = g_io_extension_point_get_extensions (ep); l; l = l->next)
         {
@@ -743,7 +748,9 @@ print_help (const char        *envvar,
         {
           extension = l->data;
 
-          g_print (" %*s - %d\n", width, g_io_extension_get_name (extension), g_io_extension_get_priority (extension));
+          g_print (" %*s - %d\n", (int) MIN (width, G_MAXINT),
+                   g_io_extension_get_name (extension),
+                   g_io_extension_get_priority (extension));
         }
     }
 }
@@ -1073,6 +1080,7 @@ extern GType _g_network_monitor_nm_get_type (void);
 
 extern GType g_memory_monitor_dbus_get_type (void);
 extern GType g_memory_monitor_portal_get_type (void);
+extern GType g_power_profile_monitor_dbus_get_type (void);
 
 #ifdef G_OS_UNIX
 extern GType g_fdo_notification_backend_get_type (void);
@@ -1183,6 +1191,9 @@ _g_io_modules_ensure_extension_points_registered (void)
 
       ep = g_io_extension_point_register (G_MEMORY_MONITOR_EXTENSION_POINT_NAME);
       g_io_extension_point_set_required_type (ep, G_TYPE_MEMORY_MONITOR);
+
+      ep = g_io_extension_point_register (G_POWER_PROFILE_MONITOR_EXTENSION_POINT_NAME);
+      g_io_extension_point_set_required_type (ep, G_TYPE_POWER_PROFILE_MONITOR);
     }
   
   G_UNLOCK (registered_extensions);
@@ -1268,6 +1279,7 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_null_settings_backend_get_type ());
       g_type_ensure (g_memory_settings_backend_get_type ());
       g_type_ensure (g_keyfile_settings_backend_get_type ());
+      g_type_ensure (g_power_profile_monitor_dbus_get_type ());
 #if defined(HAVE_INOTIFY_INIT1)
       g_type_ensure (g_inotify_file_monitor_get_type ());
 #endif
@@ -1294,6 +1306,7 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_memory_monitor_dbus_get_type ());
       g_type_ensure (g_memory_monitor_portal_get_type ());
       g_type_ensure (g_network_monitor_portal_get_type ());
+      g_type_ensure (g_power_profile_monitor_portal_get_type ());
       g_type_ensure (g_proxy_resolver_portal_get_type ());
 #endif
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090

@@ -263,7 +263,7 @@
        <para>
         Used as a prefix for a GVariant type string (not a prefix for a format string, so <literal>&amp;s</literal> is
         a valid format string but <literal>&amp;@s</literal> is not).
-        Denotes that a C pointer to serialised data
+        Denotes that a C pointer to serialized data
         should be used in place of the normal C type.  See
         <link linkend='gvariant-format-strings-pointers'>Pointers</link> below.
        </para>
@@ -658,6 +658,7 @@ g_variant_builder_unref (builder);
   gchar *str;
 
   g_variant_get (value, "as", &iter);
+  /* No need to free 'str' unless breaking out of the loop */
   while (g_variant_iter_loop (iter, "s", &str))
     g_print ("%s\n", str);
   g_variant_iter_free (iter);
@@ -878,7 +879,10 @@ value2 = g_variant_new ("(@(iii)*)", value1, g_variant_new_string ("foo"));
   g_variant_get (value2, "(rs)", NULL, &string); /* or "(@(iii)s)" */
   g_print ("i only got the string: %s\n", string);
   g_free (string);
-}]]></programlisting></informalexample>
+}
+
+/* no need to free 'value1' as 'value2' has consumed its floating reference */
+g_variant_unref (value2);]]></programlisting></informalexample>
    </refsect3>
   </refsect2>
 
@@ -917,7 +921,7 @@ dict = g_variant_builder_end (b);]]></programlisting></informalexample>
 gint value = 1;
 gint max = 3;
 
-/* type (oa{sa{sv}) */
+/* type (oa{sa{sv}}) */
 data = g_variant_new_parsed ("(%o, {'brightness': {'value': <%i>, 'max': <%i>}})",
                              "/object/path", value, max);
 {
@@ -928,10 +932,12 @@ data = g_variant_new_parsed ("(%o, {'brightness': {'value': <%i>, 'max': <%i>}})
 
   g_variant_get (data, "(o@a{?*})", &obj, &params);
   g_print ("object_path: %s\n", obj);
+  g_free (obj);
 
   p_brightness = g_variant_lookup_value (params, "brightness", G_VARIANT_TYPE_VARDICT);
   g_variant_lookup (p_brightness, "max", "i", &p_max);
   g_print ("max: %d\n", p_max);
+  g_variant_unref (params);
 }]]></programlisting></informalexample>
    </refsect3>
 
@@ -946,7 +952,7 @@ data = g_variant_new_parsed ("(%o, {'brightness': {'value': <%i>, 'max': <%i>}})
    </para>
 
    <para>
-    The '<code>&amp;</code>' character is used to indicate that serialised data should be directly exchanged via a
+    The '<code>&amp;</code>' character is used to indicate that serialized data should be directly exchanged via a
     pointer.
    </para>
    <para>
@@ -954,7 +960,7 @@ data = g_variant_new_parsed ("(%o, {'brightness': {'value': <%i>, 'max': <%i>}})
     '<literal>&amp;o</literal>' or '<code>&amp;g</code>').  For
     <link linkend='g-variant-new'><function>g_variant_new()</function></link> this has absolutely no effect.  The string
     is collected and duplicated normally.  For <link linkend='g-variant-get'><function>g_variant_get()</function></link>
-    it means that instead of creating a newly allocated copy of the string, a pointer to the serialised data is
+    it means that instead of creating a newly allocated copy of the string, a pointer to the serialized data is
     returned.  This pointer should not be freed.  Validity checks are performed to ensure that the string data will
     always be properly nul-terminated.
    </para>

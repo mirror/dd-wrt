@@ -24,6 +24,8 @@
 #include <string.h>
 #include <signal.h>
 
+#include "../glib/glib-private.h"
+
 #include "gobject.h"
 #include "gtype-private.h"
 #include "gvaluecollector.h"
@@ -66,15 +68,18 @@
  * claimed to be "owned" by any code portion. The main motivation for
  * providing floating references is C convenience. In particular, it
  * allows code to be written as:
+ * 
  * |[<!-- language="C" --> 
  * container = create_container ();
  * container_add_child (container, create_child());
  * ]|
+ * 
  * If container_add_child() calls g_object_ref_sink() on the passed-in child,
  * no reference of the newly created child is leaked. Without floating
  * references, container_add_child() can only g_object_ref() the new child,
  * so to implement this code without reference leaks, it would have to be
  * written as:
+ *
  * |[<!-- language="C" --> 
  * Child *child;
  * container = create_container ();
@@ -82,6 +87,7 @@
  * container_add_child (container, child);
  * g_object_unref (child);
  * ]|
+ *
  * The floating reference can be converted into an ordinary reference by
  * calling g_object_ref_sink(). For already sunken objects (objects that
  * don't have a floating reference anymore), g_object_ref_sink() is equivalent
@@ -229,6 +235,7 @@ static guint               object_floating_flag_handler (GObject        *object,
 
 static void object_interface_check_properties           (gpointer        check_data,
 							 gpointer        g_iface);
+static void                weak_locations_free_unlocked (GSList **weak_locations);
 
 /* --- typedefs --- */
 typedef struct _GObjectNotifyQueue            GObjectNotifyQueue;
@@ -296,6 +303,7 @@ g_object_notify_queue_freeze (GObject  *object,
                G_OBJECT_TYPE_NAME (object), object);
   else
     nqueue->freeze_count++;
+
   G_UNLOCK(notify_lock);
 
   return nqueue;
@@ -537,11 +545,13 @@ g_object_do_class_init (GObjectClass *class)
    * This signal is typically used to obtain change notification for a
    * single property, by specifying the property name as a detail in the
    * g_signal_connect() call, like this:
+   *
    * |[<!-- language="C" --> 
    * g_signal_connect (text_view->buffer, "notify::paste-target-list",
    *                   G_CALLBACK (gtk_text_view_target_list_notify),
    *                   text_view)
    * ]|
+   *
    * It is important to note that you must use
    * [canonical parameter names][canonical-parameter-names] as
    * detail strings for the notify signal.
@@ -1172,6 +1182,25 @@ g_object_real_dispose (GObject *object)
   g_signal_handlers_destroy (object);
   g_datalist_id_set_data (&object->qdata, quark_closure_array, NULL);
   g_datalist_id_set_data (&object->qdata, quark_weak_refs, NULL);
+  g_datalist_id_set_data (&object->qdata, quark_weak_locations, NULL);
+}
+
+static gboolean
+floating_check (GObject *object)
+{
+  static const char *g_enable_diagnostic = NULL;
+
+  if (G_UNLIKELY (g_enable_diagnostic == NULL))
+    {
+      g_enable_diagnostic = g_getenv ("G_ENABLE_DIAGNOSTIC");
+      if (g_enable_diagnostic == NULL)
+        g_enable_diagnostic = "0";
+    }
+
+  if (g_enable_diagnostic[0] == '1')
+    return g_object_is_floating (object);
+
+  return FALSE;
 }
 
 static void
@@ -1182,6 +1211,17 @@ g_object_finalize (GObject *object)
       g_critical ("object %s %p finalized while still in-construction",
                   G_OBJECT_TYPE_NAME (object), object);
     }
+
+#ifdef G_ENABLE_DEBUG
+ if (floating_check (object))
+   {
+      g_critical ("A floating object %s %p was finalized. This means that someone\n"
+                  "called g_object_unref() on an object that had only a floating\n"
+                  "reference; the initial floating reference is not owned by anyone\n"
+                  "and must be removed with g_object_ref_sink().",
+                  G_OBJECT_TYPE_NAME (object), object);
+   }
+#endif
 
   g_datalist_clear (&object->qdata);
   
@@ -1564,15 +1604,9 @@ object_set_property (GObject             *object,
     {
       class->set_property (object, param_id, &tmp_value, pspec);
 
-      if (~pspec->flags & G_PARAM_EXPLICIT_NOTIFY)
-        {
-          GParamSpec *notify_pspec;
-
-          notify_pspec = get_notify_pspec (pspec);
-
-          if (notify_pspec != NULL)
-            g_object_notify_queue_add (object, nqueue, notify_pspec);
-        }
+      if (~pspec->flags & G_PARAM_EXPLICIT_NOTIFY &&
+          pspec->flags & G_PARAM_READABLE)
+        g_object_notify_queue_add (object, nqueue, pspec);
     }
   g_value_unset (&tmp_value);
 }
@@ -1763,6 +1797,12 @@ g_object_get_type (void)
  * Similarly, #gfloat is promoted to #gdouble, so you must ensure that the value
  * you provide is a #gdouble, even for a property of type #gfloat.
  *
+ * Since GLib 2.72, all #GObjects are guaranteed to be aligned to at least the
+ * alignment of the largest basic GLib type (typically this is #guint64 or
+ * #gdouble). If you need larger alignment for an element in a #GObject, you
+ * should allocate it on the heap (aligned), or arrange for your #GObject to be
+ * appropriately padded.
+ *
  * Returns: (transfer full) (type GObject.Object): a new instance of
  *   @object_type
  */
@@ -1783,6 +1823,26 @@ g_object_new (GType	   object_type,
   va_end (var_args);
   
   return object;
+}
+
+/* Check alignment. (See https://gitlab.gnome.org/GNOME/glib/-/issues/1231.)
+ * This should never fail, since g_type_create_instance() uses g_slice_alloc0().
+ * The GSlice allocator always aligns to the next power of 2 greater than the
+ * allocation size. The allocation size for a GObject is
+ *   sizeof(GTypeInstance) + sizeof(guint) + sizeof(GData*)
+ * which is 12B on 32-bit platforms, and larger on 64-bit systems. In both
+ * cases, that’s larger than the 8B needed for a guint64 or gdouble.
+ *
+ * If GSlice falls back to malloc(), it’s documented to return something
+ * suitably aligned for any basic type. */
+static inline gboolean
+g_object_is_aligned (GObject *object)
+{
+  return ((((guintptr) (void *) object) %
+             MAX (G_ALIGNOF (gdouble),
+                  MAX (G_ALIGNOF (guint64),
+                       MAX (G_ALIGNOF (gint),
+                            G_ALIGNOF (glong))))) == 0);
 }
 
 static gpointer
@@ -1872,6 +1932,16 @@ g_object_new_with_custom_constructor (GObjectClass          *class,
       return NULL;
     }
 
+  if (!g_object_is_aligned (object))
+    {
+      g_critical ("Custom constructor for class %s returned a non-aligned "
+                  "GObject (which is invalid since GLib 2.72). Assuming any "
+                  "code using this object doesn’t require it to be aligned. "
+                  "Please fix your constructor to align to the largest GLib "
+                  "basic type (typically gdouble or guint64).",
+                  G_OBJECT_CLASS_NAME (class));
+    }
+
   /* g_object_init() will have marked the object as being in-construction.
    * Check if the returned object still is so marked, or if this is an
    * already-existing singleton (in which case we should not do 'constructed').
@@ -1937,6 +2007,8 @@ g_object_new_internal (GObjectClass          *class,
     return g_object_new_with_custom_constructor (class, params, n_params);
 
   object = (GObject *) g_type_create_instance (class->g_type_class.g_type);
+
+  g_assert (g_object_is_aligned (object));
 
   if (CLASS_HAS_PROPS (class))
     {
@@ -2092,8 +2164,7 @@ g_object_new_with_properties (GType          object_type,
           params[count].pspec = pspec;
 
           /* Init GValue */
-          params[count].value = g_newa (GValue, 1);
-          memset (params[count].value, 0, sizeof (GValue));
+          params[count].value = g_newa0 (GValue, 1);
           g_value_init (params[count].value, G_VALUE_TYPE (&values[i]));
 
           g_value_copy (&values[i], params[count].value);
@@ -2523,17 +2594,14 @@ g_object_getv (GObject      *object,
 
   g_object_ref (object);
 
+  memset (values, 0, n_properties * sizeof (GValue));
+
   obj_type = G_OBJECT_TYPE (object);
   for (i = 0; i < n_properties; i++)
     {
-      pspec = g_param_spec_pool_lookup (pspec_pool,
-				        names[i],
-				        obj_type,
-				        TRUE);
+      pspec = g_param_spec_pool_lookup (pspec_pool, names[i], obj_type, TRUE);
       if (!g_object_get_is_valid_property (object, pspec, names[i]))
         break;
-
-      memset (&values[i], 0, sizeof (GValue));
       g_value_init (&values[i], pspec->value_type);
       object_get_property (object, pspec, &values[i]);
     }
@@ -3186,6 +3254,62 @@ gpointer
 }
 
 /**
+ * g_object_take_ref: (skip)
+ * @object: (type GObject.Object): a #GObject
+ *
+ * If @object is floating, sink it.  Otherwise, do nothing.
+ *
+ * In other words, this function will convert a floating reference (if
+ * present) into a full reference.
+ *
+ * Typically you want to use g_object_ref_sink() in order to
+ * automatically do the correct thing with respect to floating or
+ * non-floating references, but there is one specific scenario where
+ * this function is helpful.
+ *
+ * The situation where this function is helpful is when creating an API
+ * that allows the user to provide a callback function that returns a
+ * GObject. We certainly want to allow the user the flexibility to
+ * return a non-floating reference from this callback (for the case
+ * where the object that is being returned already exists).
+ *
+ * At the same time, the API style of some popular GObject-based
+ * libraries (such as Gtk) make it likely that for newly-created GObject
+ * instances, the user can be saved some typing if they are allowed to
+ * return a floating reference.
+ *
+ * Using this function on the return value of the user's callback allows
+ * the user to do whichever is more convenient for them. The caller will
+ * alway receives exactly one full reference to the value: either the
+ * one that was returned in the first place, or a floating reference
+ * that has been converted to a full reference.
+ *
+ * This function has an odd interaction when combined with
+ * g_object_ref_sink() running at the same time in another thread on
+ * the same #GObject instance. If g_object_ref_sink() runs first then
+ * the result will be that the floating reference is converted to a hard
+ * reference. If g_object_take_ref() runs first then the result will be
+ * that the floating reference is converted to a hard reference and an
+ * additional reference on top of that one is added. It is best to avoid
+ * this situation.
+ *
+ * Since: 2.70
+ *
+ * Returns: (type GObject.Object) (transfer full): @object
+ */
+gpointer
+g_object_take_ref (gpointer _object)
+{
+  GObject *object = _object;
+  g_return_val_if_fail (G_IS_OBJECT (object), object);
+  g_return_val_if_fail (g_atomic_int_get (&object->ref_count) >= 1, object);
+
+  floating_flag_handler (object, -1);
+
+  return object;
+}
+
+/**
  * g_object_force_floating:
  * @object: a #GObject
  *
@@ -3221,6 +3345,16 @@ toggle_refs_notify (GObject *object,
   ToggleRefStack tstack, *tstackptr;
 
   G_LOCK (toggle_refs_mutex);
+  /* If another thread removed the toggle reference on the object, while
+   * we were waiting here, there's nothing to notify.
+   * So let's check again if the object has toggle reference and in case return.
+   */
+  if (!OBJECT_HAS_TOGGLE_REF (object))
+    {
+      G_UNLOCK (toggle_refs_mutex);
+      return;
+    }
+
   tstackptr = g_datalist_id_get_data (&object->qdata, quark_toggle_refs);
   tstack = *tstackptr;
   G_UNLOCK (toggle_refs_mutex);
@@ -3319,7 +3453,8 @@ g_object_add_toggle_ref (GObject       *object,
  * @notify: a function to call when this reference is the
  *  last reference to the object, or is no longer
  *  the last reference.
- * @data: data to pass to @notify
+ * @data: (nullable): data to pass to @notify, or %NULL to
+ *  match any toggle refs with the @notify argument.
  *
  * Removes a reference added with g_object_add_toggle_ref(). The
  * reference count of the object is decreased by one.
@@ -3345,7 +3480,7 @@ g_object_remove_toggle_ref (GObject       *object,
 
       for (i = 0; i < tstack->n_toggle_refs; i++)
 	if (tstack->toggle_refs[i].notify == notify &&
-	    tstack->toggle_refs[i].data == data)
+	    (tstack->toggle_refs[i].data == data || data == NULL))
 	  {
 	    found_one = TRUE;
 	    tstack->n_toggle_refs -= 1;
@@ -3440,6 +3575,7 @@ g_object_unref (gpointer _object)
   else
     {
       GSList **weak_locations;
+      GObjectNotifyQueue *nqueue;
 
       /* The only way that this object can live at this point is if
        * there are outstanding weak references already established
@@ -3449,6 +3585,10 @@ g_object_unref (gpointer _object)
        * established at this time, because the other thread would have
        * to hold a strong ref in order to call
        * g_object_add_weak_pointer() and then we wouldn't be here.
+       *
+       * Other GWeakRef's (weak locations) instead may still be added
+       * before the object is finalized, but in such case we'll unset
+       * them as part of the qdata removal.
        */
       weak_locations = g_datalist_id_get_data (&object->qdata, quark_weak_locations);
 
@@ -3468,18 +3608,26 @@ g_object_unref (gpointer _object)
             }
 
           /* We got the lock first, so the object will definitely die
-           * now. Clear out all the weak references.
+           * now. Clear out all the weak references, if they're still set.
            */
-          while (*weak_locations)
-            {
-              GWeakRef *weak_ref_location = (*weak_locations)->data;
-
-              weak_ref_location->priv.p = NULL;
-              *weak_locations = g_slist_delete_link (*weak_locations, *weak_locations);
-            }
+          weak_locations = g_datalist_id_remove_no_notify (&object->qdata,
+                                                           quark_weak_locations);
+          g_clear_pointer (&weak_locations, weak_locations_free_unlocked);
 
           g_rw_lock_writer_unlock (&weak_locations_lock);
         }
+
+      /* freeze the notification queue, so we don't accidentally emit
+       * notifications during dispose() and finalize().
+       *
+       * The notification queue stays frozen unless the instance acquires
+       * a reference during dispose(), in which case we thaw it and
+       * dispatch all the notifications. If the instance gets through
+       * to finalize(), the notification queue gets automatically
+       * drained when g_object_finalize() is reached and
+       * the qdata is cleared.
+       */
+      nqueue = g_object_notify_queue_freeze (object, FALSE);
 
       /* we are about to remove the last reference */
       TRACE (GOBJECT_OBJECT_DISPOSE(object,G_TYPE_FROM_INSTANCE(object), 1));
@@ -3497,6 +3645,9 @@ g_object_unref (gpointer _object)
           if (!g_atomic_int_compare_and_exchange ((int *)&object->ref_count, old_ref, old_ref - 1))
 	    goto retry_atomic_decrement2;
 
+          /* emit all notifications that have been queued during dispose() */
+          g_object_notify_queue_thaw (object, nqueue);
+
 	  TRACE (GOBJECT_OBJECT_UNREF(object,G_TYPE_FROM_INSTANCE(object),old_ref));
 
           /* if we went from 2->1 we need to notify toggle refs if any */
@@ -3510,7 +3661,8 @@ g_object_unref (gpointer _object)
       g_datalist_id_set_data (&object->qdata, quark_closure_array, NULL);
       g_signal_handlers_destroy (object);
       g_datalist_id_set_data (&object->qdata, quark_weak_refs, NULL);
-      
+      g_datalist_id_set_data (&object->qdata, quark_weak_locations, NULL);
+
       /* decrement the last reference */
       old_ref = g_atomic_int_add (&object->ref_count, -1);
       g_return_if_fail (old_ref > 0);
@@ -3522,7 +3674,6 @@ g_object_unref (gpointer _object)
 	{
 	  TRACE (GOBJECT_OBJECT_FINALIZE(object,G_TYPE_FROM_INSTANCE(object)));
           G_OBJECT_GET_CLASS (object)->finalize (object);
-
 	  TRACE (GOBJECT_OBJECT_FINALIZE_END(object,G_TYPE_FROM_INSTANCE(object)));
 
           GOBJECT_IF_DEBUG (OBJECTS,
@@ -3540,6 +3691,13 @@ g_object_unref (gpointer _object)
 	    });
           g_type_free_instance ((GTypeInstance*) object);
 	}
+      else
+        {
+          /* The instance acquired a reference between dispose() and
+           * finalize(), so we need to thaw the notification queue
+           */
+          g_object_notify_queue_thaw (object, nqueue);
+        }
     }
 }
 
@@ -4473,11 +4631,12 @@ g_initially_unowned_class_init (GInitiallyUnownedClass *klass)
 /**
  * GWeakRef:
  *
- * A structure containing a weak reference to a #GObject.  It can either
- * be empty (i.e. point to %NULL), or point to an object for as long as
- * at least one "strong" reference to that object exists. Before the
- * object's #GObjectClass.dispose method is called, every #GWeakRef
- * associated with becomes empty (i.e. points to %NULL).
+ * A structure containing a weak reference to a #GObject.
+ *
+ * A `GWeakRef` can either be empty (i.e. point to %NULL), or point to an
+ * object for as long as at least one "strong" reference to that object
+ * exists. Before the object's #GObjectClass.dispose method is called,
+ * every #GWeakRef associated with becomes empty (i.e. points to %NULL).
  *
  * Like #GValue, #GWeakRef can be statically allocated, stack- or
  * heap-allocated, or embedded in larger structures.
@@ -4488,11 +4647,14 @@ g_initially_unowned_class_init (GInitiallyUnownedClass *klass)
  * objects.
  *
  * If the object's #GObjectClass.dispose method results in additional
- * references to the object being held, any #GWeakRefs taken
- * before it was disposed will continue to point to %NULL.  If
- * #GWeakRefs are taken after the object is disposed and
- * re-referenced, they will continue to point to it until its refcount
+ * references to the object being held (‘re-referencing’), any #GWeakRefs taken
+ * before it was disposed will continue to point to %NULL.  Any #GWeakRefs taken
+ * during disposal and after re-referencing, or after disposal has returned due
+ * to the re-referencing, will continue to point to the object until its refcount
  * goes back to zero, at which point they too will be invalidated.
+ *
+ * It is invalid to take a #GWeakRef on an object during #GObjectClass.dispose
+ * without first having or creating a strong reference to the object.
  */
 
 /**
@@ -4582,6 +4744,35 @@ g_weak_ref_get (GWeakRef *weak_ref)
   return object_or_null;
 }
 
+static void
+weak_locations_free_unlocked (GSList **weak_locations)
+{
+  if (*weak_locations)
+    {
+      GSList *weak_location;
+
+      for (weak_location = *weak_locations; weak_location;)
+        {
+          GWeakRef *weak_ref_location = weak_location->data;
+
+          weak_ref_location->priv.p = NULL;
+          weak_location = g_slist_delete_link (weak_location, weak_location);
+        }
+    }
+
+  g_free (weak_locations);
+}
+
+static void
+weak_locations_free (gpointer data)
+{
+  GSList **weak_locations = data;
+
+  g_rw_lock_writer_lock (&weak_locations_lock);
+  weak_locations_free_unlocked (weak_locations);
+  g_rw_lock_writer_unlock (&weak_locations_lock);
+}
+
 /**
  * g_weak_ref_set: (skip)
  * @weak_ref: location for a weak reference
@@ -4638,6 +4829,12 @@ g_weak_ref_set (GWeakRef *weak_ref,
           g_assert (weak_locations != NULL);
 
           *weak_locations = g_slist_remove (*weak_locations, weak_ref);
+
+          if (!*weak_locations)
+            {
+              weak_locations_free_unlocked (weak_locations);
+              g_datalist_id_remove_no_notify (&old_object->qdata, quark_weak_locations);
+            }
         }
 
       /* Add the weak ref to the new object */
@@ -4648,7 +4845,8 @@ g_weak_ref_set (GWeakRef *weak_ref,
           if (weak_locations == NULL)
             {
               weak_locations = g_new0 (GSList *, 1);
-              g_datalist_id_set_data_full (&new_object->qdata, quark_weak_locations, weak_locations, g_free);
+              g_datalist_id_set_data_full (&new_object->qdata, quark_weak_locations,
+                                           weak_locations, weak_locations_free);
             }
 
           *weak_locations = g_slist_prepend (*weak_locations, weak_ref);
