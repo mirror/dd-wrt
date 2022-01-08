@@ -238,7 +238,7 @@ function setWolHostsTable() {
 			cell = row.insertCell(-1);
 			cell.title = wol.msg1;
 			cell.align = "center";
-			cell.innerHTML = "<input class=\"bin\" type=\"button\" onclick=\"del_wol_host('" + mac + "')\" />";
+			cell.innerHTML = "<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"del_wol_host('" + mac + "')\" />";
 			row.insertCell(-1).innerHTML = "\t\t<input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
 		}
 	}
