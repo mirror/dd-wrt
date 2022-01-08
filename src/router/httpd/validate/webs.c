@@ -2696,6 +2696,13 @@ void forward_add(webs_t wp)
 	macro_add("forward_entries");
 }
 
+
+void forward_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("forward_port", "forward_entries", todel);
+}
+
 void filter_remove(webs_t wp)
 {
 	char filter[32];
@@ -2719,10 +2726,9 @@ void filter_add(webs_t wp)
 	nvram_set(filter, num);
 }
 
-void lease_del(webs_t wp)
+void delfrom(char *var, char *countvar, int todel)
 {
-	int todel = websGetVari(wp, "lease_del_value", 0);
-	char *wordlist = nvram_safe_get("static_leases");
+	char *wordlist = nvram_safe_get(var);
 	char *next;
 	char word[256];
 	char *target = malloc(strlen(wordlist) + 1);
@@ -2738,12 +2744,21 @@ void lease_del(webs_t wp)
 		idx++;
 		strcat(target, word);
 	}
-	int num = nvram_geti("static_leasenum");
+	int num = nvram_geti(countvar);
 	if (num)
 		num--;
-	nvram_seti("static_leasenum", num);
-	nvram_set("static_leases", target);
+	nvram_seti(countvar, num);
+	nvram_set(var, target);
 	free(target);
+
+
+
+}
+
+void lease_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "lease_del_value", 0);
+	delfrom("static_leases", "static_leasenum", todel);
 }
 
 void lease_add(webs_t wp)
@@ -2801,6 +2816,12 @@ void forwardspec_add(webs_t wp)
 	macro_add("forwardspec_entries");
 }
 
+void forwardspec_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("forward_spec", "forwardspec_entries", todel);
+}
+
 void forwardip_remove(webs_t wp)
 {
 	macro_rem("forwardip_entries", "forward_ip");
@@ -2811,6 +2832,12 @@ void forwardip_add(webs_t wp)
 	macro_add("forwardip_entries");
 }
 
+void forwardip_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("forward_ip", "forwardip_entries", todel);
+}
+
 void trigger_remove(webs_t wp)
 {
 	macro_rem("trigger_entries", "port_trigger");
@@ -2819,6 +2846,12 @@ void trigger_remove(webs_t wp)
 void trigger_add(webs_t wp)
 {
 	macro_add("trigger_entries");
+}
+
+void trigger_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("port_trigger", "trigger_entries", todel);
 }
 
 int get_vifcount(char *prefix)
