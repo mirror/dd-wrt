@@ -203,7 +203,7 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 	int err;
 
 	dentry = ksmbd_vfs_kern_path_create(work, name,
-					    LOOKUP_NO_SYMLINKS, &path);
+					    LOOKUP_FOLLOW, &path);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		if (err != -ENOENT)
@@ -263,7 +263,7 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	int err;
 
 	dentry = ksmbd_vfs_kern_path_create(work, name,
-					    LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
+					    LOOKUP_FOLLOW | LOOKUP_DIRECTORY,
 					    &path);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
@@ -928,7 +928,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 	memcpy(name + dir_pathlen + 1, de_name, de_name_len);
 	name[file_pathlen] = '\0';
 
-	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, 1);
 	if (rc) {
 		pr_err("lookup failed: %s [%d]\n", name, rc);
 		kfree(name);
@@ -983,7 +983,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 		return -ENOMEM;
 	}
 
-	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, false);
+	err = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, false);
 	if (err) {
 		ksmbd_debug(VFS, "can't get %s, err %d\n", name, err);
 		ksmbd_revert_fsids(work);
@@ -1059,7 +1059,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 		return -ENOMEM;
 	}
 
-	err = kern_path(oldname, LOOKUP_NO_SYMLINKS, &oldpath);
+	err = kern_path(oldname, LOOKUP_FOLLOW, &oldpath);
 
 	if (err) {
 		pr_err("cannot get linux path for %s, err = %d\n",
@@ -1068,7 +1068,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	}
 
 	dentry = ksmbd_vfs_kern_path_create(work, newname,
-					    LOOKUP_NO_SYMLINKS | LOOKUP_REVAL,
+					    LOOKUP_FOLLOW | LOOKUP_REVAL,
 					    &newpath);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
@@ -1211,7 +1211,7 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	src_dent = fp->filp->f_path.dentry;
 
 	err = ksmbd_vfs_kern_path(work, newname,
-				  LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
+				  LOOKUP_FOLLOW | LOOKUP_DIRECTORY,
 				  &dst_path, false);
 	if (err) {
 		ksmbd_debug(VFS, "Cannot get path for %s [%d]\n", newname, err);
