@@ -13,7 +13,7 @@
 #include "ksmbd_work.h"
 #include "buffer_pool.h"
 #include "mgmt/ksmbd_ida.h"
-#include "ksmbd_server.h"
+#include "ksmbd_netlink.h"
 
 static struct kmem_cache *work_cache;
 static struct workqueue_struct *ksmbd_wq;
@@ -36,15 +36,9 @@ struct ksmbd_work *ksmbd_alloc_work_struct(void)
 void ksmbd_free_work_struct(struct ksmbd_work *work)
 {
 	WARN_ON(work->saved_cred != NULL);
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
-		ksmbd_release_buffer(work->response_buf);
-	else
-		ksmbd_free_response(work->response_buf);
+	ksmbd_release_buffer(work->response_buf);
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
-		ksmbd_release_buffer(work->aux_payload_buf);
-	else
-		ksmbd_free_response(work->aux_payload_buf);
+	ksmbd_release_buffer(work->aux_payload_buf);
 
 	ksmbd_free_response(work->tr_buf);
 	ksmbd_free_request(work->request_buf);

@@ -195,10 +195,7 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 			sz = large_sz;
 	}
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
-		work->response_buf = ksmbd_find_buffer(sz);
-	else
-		work->response_buf = ksmbd_alloc_response(sz);
+	work->response_buf = ksmbd_find_buffer(sz);
 
 	if (!work->response_buf) {
 		pr_err("Failed to allocate %zu bytes buffer\n", sz);
@@ -2891,10 +2888,7 @@ int smb_read_andx(struct ksmbd_work *work)
 	ksmbd_debug(SMB, "filename %s, offset %lld, count %zu\n",
 		FP_FILENAME(fp), pos, count);
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF) {
-		work->aux_payload_buf = ksmbd_find_buffer(count);
-	} else
-		work->aux_payload_buf = ksmbd_alloc_response(count);
+	work->aux_payload_buf = ksmbd_find_buffer(count);
 	if (!work->aux_payload_buf) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		err = -ENOMEM;
