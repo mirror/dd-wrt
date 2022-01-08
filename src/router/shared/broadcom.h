@@ -72,7 +72,6 @@ EJ_VISIBLE void qos_add_ip(webs_t wp);
 EJ_VISIBLE void qos_add_mac(webs_t wp);
 EJ_VISIBLE void qos_add_dev(webs_t wp);
 EJ_VISIBLE void qos_save(webs_t wp);
-EJ_VISIBLE void forward_add(webs_t wp);
 EJ_VISIBLE void forward_remove(webs_t wp);
 EJ_VISIBLE void filter_add(webs_t wp);
 EJ_VISIBLE void filter_remove(webs_t wp);
@@ -133,11 +132,17 @@ EJ_VISIBLE void import_tunnel(webs_t wp);
 EJ_VISIBLE void add_tunnel(webs_t wp);
 EJ_VISIBLE void del_tunnel(webs_t wp);
 EJ_VISIBLE void tunnel_save(webs_t wp);
-EJ_VISIBLE void forwardspec_add(webs_t wp);
-EJ_VISIBLE void forwardspec_remove(webs_t wp);
-EJ_VISIBLE void forwardip_add(webs_t wp);
-EJ_VISIBLE void forwardip_remove(webs_t wp);
 EJ_VISIBLE void trigger_add(webs_t wp);
+EJ_VISIBLE void forwardip_add(webs_t wp);
+EJ_VISIBLE void forwardspec_add(webs_t wp);
+EJ_VISIBLE void forward_add(webs_t wp);
+EJ_VISIBLE void trigger_del(webs_t wp);
+EJ_VISIBLE void forwardip_del(webs_t wp);
+EJ_VISIBLE void forwardspec_del(webs_t wp);
+EJ_VISIBLE void forward_del(webs_t wp);
+
+EJ_VISIBLE void forwardspec_remove(webs_t wp);
+EJ_VISIBLE void forwardip_remove(webs_t wp);
 EJ_VISIBLE void trigger_remove(webs_t wp);
 EJ_VISIBLE void save_services_port(webs_t wp);
 EJ_VISIBLE void save_services_port(webs_t wp);
@@ -658,6 +663,7 @@ extern void superchannel_validate(webs_t wp);
 extern void wireless_save(webs_t wp);
 extern void set_security(webs_t wp);
 extern void forward_add(webs_t wp);
+extern void forward_del(webs_t wp);
 extern void forward_remove(webs_t wp);
 extern void lease_add(webs_t wp);
 extern void lease_del(webs_t wp);
@@ -671,12 +677,13 @@ extern void ej_show_userlist(webs_t wp, int argc, char_t ** argv);
 extern void validate_userlist(webs_t wp, char *value, struct variable *v);
 #endif
 extern void forwardspec_add(webs_t wp);
+extern void forwardspec_del(webs_t wp);
 extern void forwardspec_remove(webs_t wp);
-#ifdef HAVE_ANTAIRA
 extern void forwardip_add(webs_t wp);
+extern void forwardip_del(webs_t wp);
 extern void forwardip_remove(webs_t wp);
-#endif
 extern void trigger_add(webs_t wp);
+extern void trigger_del(webs_t wp);
 extern void trigger_remove(webs_t wp);
 
 /*
