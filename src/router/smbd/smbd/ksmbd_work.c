@@ -15,7 +15,7 @@
 #include "mgmt/ksmbd_ida.h"
 
 /* @FIXME */
-#include "ksmbd_server.h"
+#include "ksmbd_netlink.h"
 
 static struct kmem_cache *work_cache;
 static struct workqueue_struct *ksmbd_wq;
