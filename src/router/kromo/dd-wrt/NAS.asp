@@ -50,7 +50,7 @@ function checkDlnaShares() {
 			for(j = 0; j < shares[i].childElements().length; j++) {
 				element = shares[i].childElements()[j].childElements()[0];
 				error = false;
-				if( element.name ) {
+				if(element && element != undefined && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'dlnashare_mp' ) {
 						mp = element.value.replace(/^\s+|\s+$/g,"");
 						if(mp.length == 0) error = true;
@@ -60,7 +60,7 @@ function checkDlnaShares() {
 				// error handling
 				if(error) {
 					element.className = "value_error";
-				} else if( element.className == 'value_error') {
+				} else if(element && element != undefined && element.className == 'value_error') {
 					element.className = '';
 				}
 			}
@@ -171,7 +171,7 @@ function checknfsShares() {
 			for(j = 0; j < shares[i].childElements().length; j++) {
 				element = shares[i].childElements()[j].childElements()[0];
 				error = false;
-				if( element.name ) {
+				if(element && element != undefined && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'nfsshare_mp' ) {
 						mp = element.value.replace(/^\s+|\s+$/g,"");
 						if(mp.length == 0) error = true;
@@ -181,7 +181,7 @@ function checknfsShares() {
 				// error handling
 				if(error) {
 					element.className = "value_error";
-				} else if( element.className == 'value_error') {
+				} else if(element && element != undefined && element.className == 'value_error') {
 					element.className = '';
 				}
 			}
@@ -247,7 +247,7 @@ function checkrsyncShares() {
 			for(j = 0; j < shares[i].childElements().length; j++) {
 				element = shares[i].childElements()[j].childElements()[0];
 				error = false;
-				if( element.name ) {
+				if(element && element != undefined && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'rsyncshare_mp' ) {
 						mp = element.value.replace(/^\s+|\s+$/g,"");
 						if(mp.length == 0) error = true;
@@ -260,7 +260,7 @@ function checkrsyncShares() {
 				// error handling
 				if(error) {
 					element.className = "value_error";
-				} else if( element.className == 'value_error') {
+				} else if(element && element != undefined && element.className == 'value_error') {
 					element.className = '';
 				}
 			}
@@ -405,7 +405,7 @@ function checkSambaShares() {
 			for(j = 0; j < shares[i].childElements().length; j++) {
 				element = shares[i].childElements()[j].childElements()[0];
 				error = false;
-				if( element.name ) {
+				if(element && element != undefined &&  element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'smbshare_mp' ) {
 						mp = element.value.replace(/^\s+|\s+$/g,"");
 						if(mp.length == 0) error = true;
@@ -418,7 +418,7 @@ function checkSambaShares() {
 				// error handling
 				if(error) {
 					element.className = "value_error";
-				} else if( element.className == 'value_error') {
+				} else if(element && element != undefined && element.className == 'value_error') {
 					element.className = '';
 				}
 			}
@@ -499,7 +499,7 @@ function addSambaUserShare( userIndex, template, share ) {
 	// extrace the reqired share information
 	for( var i = 0; i < share.childElements().length; i++ ) {	
 		element = share.childElements()[i].childElements()[0];
-		if( element.name ) {
+		if(element && element != undefined && element.name ) {
 			if( element.name.substr(0, element.name.length - i.toString().length - 1 ) == 'smbshare_mp' ) {
 				mp = element.value.replace(/^\s+|\s+$/g,"");
 			} else if( element.name.substr(0, element.name.length - i.toString().length - 1 ) == 'smbshare_subdir' ) {
@@ -621,7 +621,7 @@ function checkSambaUsers() {
 				element = users[i].childElements()[j].childElements()[0];
 				error = false;
 				
-				if(element && element.name ) {
+				if(element && element != undefined && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'smbuser_username' ) {
 						username = element.value.replace(/^\s+|\s+$/g,"");
 						if(username.length == 0) error = true;
@@ -633,7 +633,7 @@ function checkSambaUsers() {
 					// error handling
 					if(error) {
 						element.className = "value_error";
-					} else if( element.className == 'value_error') {
+					} else if(element && element != undefined && element.className == 'value_error') {
 						element.className = '';
 					}
 				}
