@@ -28,37 +28,19 @@
 #include <locale.h>
 #include <math.h>
 
-#ifdef _MSC_VER
-# ifndef NAN
-/*
- * From the Visual Studio 2013+ math.h, we have the following:
- * #ifndef _HUGE_ENUF
- *    #define _HUGE_ENUF  1e+300  // _HUGE_ENUF*_HUGE_ENUF must overflow
- * #endif
- *
- * #define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
- * ...
- * #define NAN        ((float)(INFINITY * 0.0F))
- * ...
- * so, HUVE_VAL * HUGE_VAL would be a good approximation of INFINITY without
- * defining anything extra
- */
-#  define NAN HUGE_VAL * HUGE_VAL * 0.0f
-# endif
-#endif
 
 static GOptionEntry main_entries[] = {
   { "main-switch", 0, 0,
     G_OPTION_ARG_NONE, NULL,
     "A switch that is in the main group", NULL },
-  { NULL }
+  G_OPTION_ENTRY_NULL
 };
 
 static GOptionEntry group_entries[] = {
   { "test-switch", 0, 0,
     G_OPTION_ARG_NONE, NULL,
     "A switch that is in the test group", NULL },
-  { NULL }
+  G_OPTION_ENTRY_NULL
 };
 
 static GOptionContext *
@@ -134,7 +116,7 @@ test_group_captions (void)
   guint i;
   gsize j;
 
-  g_test_bug ("504142");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=504142");
 
   for (i = 0; i < 4; ++i)
     {
@@ -334,7 +316,7 @@ error_test1 (void)
   GOptionGroup *main_group;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_INT, &error_test1_int, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   error_test1_int = 0x12345678;
 
@@ -402,7 +384,7 @@ error_test2 (void)
   GOptionGroup *main_group;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_STRING, &error_test2_string, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   error_test2_string = "foo";
 
@@ -468,7 +450,7 @@ error_test3 (void)
   GOptionGroup *main_group;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_NONE, &error_test3_boolean, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   error_test3_boolean = FALSE;
 
@@ -508,7 +490,7 @@ arg_test1 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_INT, &arg_test1_int, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -543,7 +525,7 @@ arg_test2 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_STRING, &arg_test2_string, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -577,7 +559,7 @@ arg_test3 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_FILENAME, &arg_test3_filename, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -611,7 +593,7 @@ arg_test4 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_DOUBLE, &arg_test4_double, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -645,7 +627,7 @@ arg_test5 (void)
   const char *locale = "de_DE.UTF-8";
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_DOUBLE, &arg_test5_double, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -692,7 +674,7 @@ arg_test6 (void)
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_INT64, &arg_test6_int64, NULL, NULL },
       { "test2", 0, 0, G_OPTION_ARG_INT64, &arg_test6_int64_2, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -733,7 +715,7 @@ callback_test1 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_CALLBACK, callback_parse1, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -774,7 +756,7 @@ callback_test2 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, callback_parse2, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -818,7 +800,7 @@ callback_test_optional_1 (void)
   GOptionEntry entries [] =
     { { "test", 0, G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -854,7 +836,7 @@ callback_test_optional_2 (void)
   GOptionEntry entries [] =
     { { "test", 0, G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -890,7 +872,7 @@ callback_test_optional_3 (void)
   GOptionEntry entries [] =
     { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -927,7 +909,7 @@ callback_test_optional_4 (void)
   GOptionEntry entries [] =
     { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -965,7 +947,7 @@ callback_test_optional_5 (void)
     { { "dummy", 'd', 0, G_OPTION_ARG_NONE, &dummy, NULL, NULL },
       { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1003,7 +985,7 @@ callback_test_optional_6 (void)
     { { "dummy", 'd', 0, G_OPTION_ARG_NONE, &dummy, NULL, NULL },
       { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1041,7 +1023,7 @@ callback_test_optional_7 (void)
     { { "dummy", 'd', 0, G_OPTION_ARG_NONE, &dummy, NULL, NULL },
       { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1079,7 +1061,7 @@ callback_test_optional_8 (void)
     { { "dummy", 'd', 0, G_OPTION_ARG_NONE, &dummy, NULL, NULL },
       { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, 
 	callback_parse_optional, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1123,7 +1105,7 @@ callback_remaining_test1 (void)
   int argc;
   GOptionEntry entries [] =
     { { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_CALLBACK, callback_remaining_test1_callback, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   
   callback_remaining_args = g_ptr_array_new ();
   context = g_option_context_new (NULL);
@@ -1170,7 +1152,7 @@ callback_returns_false (void)
     { { "error", 0, 0, G_OPTION_ARG_CALLBACK, callback_error, NULL, NULL },
       { "error-no-arg", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, callback_error, NULL, NULL },
       { "error-optional-arg", 0, G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, callback_error, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1253,7 +1235,7 @@ ignore_test1 (void)
   gchar *arg;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
@@ -1289,7 +1271,7 @@ ignore_test2 (void)
   gchar *arg;
   GOptionEntry entries [] =
     { { "test", 't', 0, G_OPTION_ARG_NONE, &ignore_test2_boolean, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
@@ -1324,7 +1306,7 @@ ignore_test3 (void)
   gchar *arg;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_STRING, &ignore_test3_string, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
@@ -1362,7 +1344,7 @@ array_test1 (void)
   int argc;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_STRING_ARRAY, &array_test1_array, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
         
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1394,10 +1376,10 @@ add_test1 (void)
 
   GOptionEntry entries1 [] =
     { { "test1", 0, 0, G_OPTION_ARG_STRING_ARRAY, NULL, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   GOptionEntry entries2 [] =
     { { "test2", 0, 0, G_OPTION_ARG_STRING_ARRAY, NULL, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries1, NULL);
@@ -1445,7 +1427,7 @@ rest_test1 (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1483,7 +1465,7 @@ rest_test2 (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1522,7 +1504,7 @@ rest_test2a (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1559,7 +1541,7 @@ rest_test2b (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1597,7 +1579,7 @@ rest_test2c (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1634,7 +1616,7 @@ rest_test2d (void)
   int argc;
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1674,7 +1656,7 @@ rest_test3 (void)
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
       { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &array_test1_array, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1715,7 +1697,7 @@ rest_test4 (void)
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
       { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &array_test1_array, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1755,7 +1737,7 @@ rest_test5 (void)
   GOptionEntry entries [] = { 
       { "test", 0, 0, G_OPTION_ARG_NONE, &ignore_test1_boolean, NULL, NULL },
       { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &array_test1_array, NULL, NULL },
-      { NULL } 
+      G_OPTION_ENTRY_NULL
   };
         
   context = g_option_context_new (NULL);
@@ -1791,9 +1773,9 @@ unknown_short_test (void)
   gchar **argv;
   gchar **argv_copy;
   int argc;
-  GOptionEntry entries [] = { { NULL } };
+  GOptionEntry entries [] = { G_OPTION_ENTRY_NULL };
 
-  g_test_bug ("166609");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=166609");
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1823,7 +1805,7 @@ lonely_dash_test (void)
   gchar **argv_copy;
   int argc;
 
-  g_test_bug ("168008");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=168008");
 
   context = g_option_context_new (NULL);
 
@@ -1856,11 +1838,11 @@ triple_dash_test (void)
   gint arg1, arg2;
   GOptionEntry entries [] =
     { { "foo", 0, 0, G_OPTION_ARG_INT, &arg1, NULL, NULL},
-      { NULL }
+      G_OPTION_ENTRY_NULL
     };
   GOptionEntry group_entries [] =
     { { "test", 0, 0, G_OPTION_ARG_INT, &arg2, NULL, NULL},
-      { NULL }
+      G_OPTION_ENTRY_NULL
     };
 
   context = g_option_context_new (NULL);
@@ -1897,9 +1879,9 @@ missing_arg_test (void)
   gchar *arg = NULL;
   GOptionEntry entries [] =
     { { "test", 't', 0, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
-  g_test_bug ("305576");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=305576");
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -1963,9 +1945,9 @@ dash_arg_test (void)
   GOptionEntry entries [] =
     { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK, cb, NULL, NULL },
       { "three", '3', 0, G_OPTION_ARG_NONE, &argb, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
-  g_test_bug ("577638");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=577638");
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -2008,7 +1990,7 @@ test_basic (void)
   gchar *arg = NULL;
   GOptionEntry entries [] =
     { { "test", 't', 0, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -2069,7 +2051,7 @@ test_translate (void)
   gchar *arg = NULL;
   GOptionEntry entries [] =
     { { "test", 't', 0, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   TranslateData data = { 0, };
   gchar *str;
 
@@ -2103,12 +2085,12 @@ test_help (void)
     { "test2", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, NULL, "Tests also", NULL },
     { "frob", 0, 0, G_OPTION_ARG_NONE, NULL, "Main frob", NULL },
     { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &sarr, "Rest goes here", "REST" },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GOptionEntry group_entries[] = {
     { "test", 't', 0, G_OPTION_ARG_STRING, &arg, "Group test", "Group test arg" },
     { "frob", 0, G_OPTION_FLAG_NOALIAS, G_OPTION_ARG_NONE, NULL, "Group frob", NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
 
   context = g_option_context_new ("blabla");
@@ -2152,7 +2134,7 @@ test_help_no_options (void)
   gchar **sarr = NULL;
   GOptionEntry entries[] = {
     { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &sarr, "Rest goes here", "REST" },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   gchar *str;
 
@@ -2182,15 +2164,15 @@ test_help_no_help_options (void)
     { "test2", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, NULL, "Tests also", NULL },
     { "frob", 0, 0, G_OPTION_ARG_NONE, NULL, "Main frob", NULL },
     { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &sarr, "Rest goes here", "REST" },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GOptionEntry group_entries[] = {
     { "test", 't', 0, G_OPTION_ARG_STRING, &arg, "Group test", "Group test arg" },
     { "frob", 0, G_OPTION_FLAG_NOALIAS, G_OPTION_ARG_NONE, NULL, "Group frob", NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
 
-  g_test_bug ("697652");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=697652");
 
   context = g_option_context_new ("blabla");
   g_option_context_add_main_entries (context, entries, NULL);
@@ -2278,7 +2260,7 @@ test_error_hook (void)
   gchar *arg = NULL;
   GOptionEntry entries [] =
     { { "test", 't', 0, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   GOptionGroup *group;
   gchar **argv;
   gchar **argv_copy;
@@ -2323,13 +2305,13 @@ test_group_parse (void)
   GOptionEntry entries[] = {
     { "test", 't', 0, G_OPTION_ARG_STRING, &arg1, NULL, NULL },
     { "faz", 'f', 0, G_OPTION_ARG_STRING, &arg2, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GOptionEntry group_entries[] = {
     { "test", 0, 0, G_OPTION_ARG_STRING, &arg3, NULL, NULL },
     { "frob", 'f', 0, G_OPTION_ARG_STRING, &arg4, NULL, NULL },
     { "faz", 'z', 0, G_OPTION_ARG_STRING, &arg5, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   gchar **argv, **orig_argv;
   gint argc;
@@ -2393,7 +2375,7 @@ test_strict_posix (void)
   GOptionEntry entries[] = {
     { "foo", 'f', 0, G_OPTION_ARG_NONE, &foo, NULL, NULL },
     { "bar", 'b', 0, G_OPTION_ARG_NONE, &bar, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   gint n_parsed;
 
@@ -2438,7 +2420,7 @@ flag_reverse_string (void)
   gchar *arg = NULL;
   GOptionEntry entries [] =
     { { "test", 't', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   gchar **argv;
   gint argc;
   gboolean retval;
@@ -2471,7 +2453,7 @@ flag_optional_int (void)
   gint arg = 0;
   GOptionEntry entries [] =
     { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_INT, &arg, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
   gchar **argv;
   gint argc;
   gboolean retval;
@@ -2512,13 +2494,13 @@ short_remaining (void)
     { "number", 'n', 0, G_OPTION_ARG_INT, &number, NULL, NULL },
     { "text", 't', 0, G_OPTION_ARG_STRING, &text, NULL, NULL },
     { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &files, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GOptionContext* context;
   gchar **argv, **argv_copy;
   gint argc;
 
-  g_test_bug ("729563");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=729563");
 
   argv = split_string ("program -ri -n 4 -t hello file1 file2", &argc);
   argv_copy = copy_stringv (argv, argc);
@@ -2553,14 +2535,14 @@ double_free (void)
   GOptionEntry entries[] =
   {
     { "known", 0, 0, G_OPTION_ARG_STRING, &text, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GOptionContext* context;
   gchar **argv;
   gint argc;
   GError *error = NULL;
 
-  g_test_bug ("646926");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=646926");
 
   argv = split_string ("program --known=foo --known=bar --unknown=baz", &argc);
 
@@ -2591,7 +2573,7 @@ double_zero (void)
   double test_val = NAN;
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_DOUBLE, &test_val, NULL, NULL },
-      { NULL } };
+      G_OPTION_ENTRY_NULL };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
@@ -2621,8 +2603,6 @@ main (int   argc,
 
   g_setenv ("LC_ALL", "C", TRUE);
   g_test_init (&argc, &argv, NULL);
-
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/option/help/options", test_help);
   g_test_add_func ("/option/help/no-options", test_help_no_options);

@@ -20,10 +20,14 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
  */
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <assert.h>
 #include "xdgmimemagic.h"
@@ -99,6 +103,8 @@ _xdg_mime_magic_matchlet_new (void)
   XdgMimeMagicMatchlet *matchlet;
 
   matchlet = malloc (sizeof (XdgMimeMagicMatchlet));
+  if (matchlet == NULL)
+    return NULL;
 
   matchlet->indent = 0;
   matchlet->offset = 0;
@@ -316,7 +322,7 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
   int c;
   int end_of_file;
   int indent = 0;
-  int bytes_read;
+  size_t bytes_read;
 
   assert (magic_file != NULL);
 
@@ -351,6 +357,11 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
     return XDG_MIME_MAGIC_ERROR;
 
   matchlet = _xdg_mime_magic_matchlet_new ();
+
+  /* OOM */
+  if (matchlet == NULL)
+    return XDG_MIME_MAGIC_ERROR;
+
   matchlet->indent = indent;
   matchlet->offset = _xdg_mime_magic_read_a_number (magic_file, &end_of_file);
   if (end_of_file)
@@ -403,7 +414,7 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
       return XDG_MIME_MAGIC_ERROR;
     }
   bytes_read = fread (matchlet->value, 1, matchlet->value_length, magic_file);
-  if (bytes_read != matchlet->value_length)
+  if (bytes_read != (size_t) matchlet->value_length)
     {
       _xdg_mime_magic_matchlet_free (matchlet);
       if (feof (magic_file))
@@ -423,7 +434,7 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
 	  return XDG_MIME_MAGIC_ERROR;
 	}
       bytes_read = fread (matchlet->mask, 1, matchlet->value_length, magic_file);
-      if (bytes_read != matchlet->value_length)
+      if (bytes_read != (size_t) matchlet->value_length)
 	{
 	  _xdg_mime_magic_matchlet_free (matchlet);
 	  if (feof (magic_file))
@@ -461,7 +472,7 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
 	  _xdg_mime_magic_matchlet_free (matchlet);
 	  return XDG_MIME_MAGIC_EOF;
 	}
-      if (matchlet->range_length == -1)
+      if (matchlet->range_length == (unsigned int) -1)
 	{
 	  _xdg_mime_magic_matchlet_free (matchlet);
 	  return XDG_MIME_MAGIC_ERROR;
@@ -475,9 +486,7 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
       /* We clean up the matchlet, byte swapping if needed */
       if (matchlet->word_size > 1)
 	{
-#if LITTLE_ENDIAN
-	  int i;
-#endif
+	  unsigned int i;
 	  if (matchlet->value_length % matchlet->word_size != 0)
 	    {
 	      _xdg_mime_magic_matchlet_free (matchlet);
@@ -522,7 +531,7 @@ _xdg_mime_magic_matchlet_compare_to_data (XdgMimeMagicMatchlet *matchlet,
 					  const void           *data,
 					  size_t                len)
 {
-  int i, j;
+  unsigned int i, j;
   for (i = matchlet->offset; i < matchlet->offset + matchlet->range_length; i++)
     {
       int valid_matchlet = TRUE;
@@ -765,6 +774,11 @@ _xdg_mime_magic_read_magic_file (XdgMimeMagic *mime_magic,
 	{
 	case XDG_MIME_MAGIC_SECTION:
 	  match = _xdg_mime_magic_match_new ();
+
+	  /* OOM */
+	  if (match == NULL)
+	    return;
+
 	  state = _xdg_mime_magic_parse_header (magic_file, match);
 	  if (state == XDG_MIME_MAGIC_EOF || state == XDG_MIME_MAGIC_ERROR)
 	    _xdg_mime_magic_match_free (match);

@@ -462,15 +462,11 @@ g_tls_database_class_init (GTlsDatabaseClass *klass)
  * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: (nullable): a #GError, or %NULL
  *
- * Determines the validity of a certificate chain after looking up and
- * adding any missing certificates to the chain.
+ * Determines the validity of a certificate chain, outside the context
+ * of a TLS session.
  *
  * @chain is a chain of #GTlsCertificate objects each pointing to the next
- * certificate in the chain by its #GTlsCertificate:issuer property. The chain may initially
- * consist of one or more certificates. After the verification process is
- * complete, @chain may be modified by adding missing certificates, or removing
- * extra certificates. If a certificate anchor was found, then it is added to
- * the @chain.
+ * certificate in the chain by its #GTlsCertificate:issuer property.
  *
  * @purpose describes the purpose (or usage) for which the certificate
  * is being used. Typically @purpose will be set to #G_TLS_DATABASE_PURPOSE_AUTHENTICATE_SERVER
@@ -489,16 +485,43 @@ g_tls_database_class_init (GTlsDatabaseClass *klass)
  * used.
  *
  * If @chain is found to be valid, then the return value will be 0. If
- * @chain is found to be invalid, then the return value will indicate
- * the problems found. If the function is unable to determine whether
- * @chain is valid or not (eg, because @cancellable is triggered
- * before it completes) then the return value will be
- * %G_TLS_CERTIFICATE_GENERIC_ERROR and @error will be set
- * accordingly. @error is not set when @chain is successfully analyzed
- * but found to be invalid.
+ * @chain is found to be invalid, then the return value will indicate at
+ * least one problem found. If the function is unable to determine
+ * whether @chain is valid (for example, because @cancellable is
+ * triggered before it completes) then the return value will be
+ * %G_TLS_CERTIFICATE_GENERIC_ERROR and @error will be set accordingly.
+ * @error is not set when @chain is successfully analyzed but found to
+ * be invalid.
  *
- * This function can block, use g_tls_database_verify_chain_async() to perform
- * the verification operation asynchronously.
+ * GLib guarantees that if certificate verification fails, at least one
+ * error will be set in the return value, but it does not guarantee
+ * that all possible errors will be set. Accordingly, you may not safely
+ * decide to ignore any particular type of error. For example, it would
+ * be incorrect to mask %G_TLS_CERTIFICATE_EXPIRED if you want to allow
+ * expired certificates, because this could potentially be the only
+ * error flag set even if other problems exist with the certificate.
+ *
+ * Prior to GLib 2.48, GLib's default TLS backend modified @chain to
+ * represent the certification path built by #GTlsDatabase during
+ * certificate verification by adjusting the #GTlsCertificate:issuer
+ * property of each certificate in @chain. Since GLib 2.48, this no
+ * longer occurs, so you cannot rely on #GTlsCertificate:issuer to
+ * represent the actual certification path used during certificate
+ * verification.
+ *
+ * Because TLS session context is not used, #GTlsDatabase may not
+ * perform as many checks on the certificates as #GTlsConnection would.
+ * For example, certificate constraints may not be honored, and
+ * revocation checks may not be performed. The best way to verify TLS
+ * certificates used by a TLS connection is to let #GTlsConnection
+ * handle the verification.
+ *
+ * The TLS backend may attempt to look up and add missing certificates
+ * to the chain. This may involve HTTP requests to download missing
+ * certificates.
+ *
+ * This function can block. Use g_tls_database_verify_chain_async() to
+ * perform the verification operation asynchronously.
  *
  * Returns: the appropriate #GTlsCertificateFlags which represents the
  * result of verification.
@@ -783,14 +806,26 @@ g_tls_database_lookup_certificate_for_handle_finish (GTlsDatabase            *se
  * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: (nullable): a #GError, or %NULL
  *
- * Look up the issuer of @certificate in the database.
+ * Look up the issuer of @certificate in the database. The
+ * #GTlsCertificate:issuer property of @certificate is not modified, and
+ * the two certificates are not hooked into a chain.
  *
- * The #GTlsCertificate:issuer property
- * of @certificate is not modified, and the two certificates are not hooked
- * into a chain.
+ * This function can block. Use g_tls_database_lookup_certificate_issuer_async()
+ * to perform the lookup operation asynchronously.
  *
- * This function can block, use g_tls_database_lookup_certificate_issuer_async() to perform
- * the lookup operation asynchronously.
+ * Beware this function cannot be used to build certification paths. The
+ * issuer certificate returned by this function may not be the same as
+ * the certificate that would actually be used to construct a valid
+ * certification path during certificate verification.
+ * [RFC 4158](https://datatracker.ietf.org/doc/html/rfc4158) explains
+ * why an issuer certificate cannot be naively assumed to be part of the
+ * the certification path (though GLib's TLS backends may not follow the
+ * path building strategies outlined in this RFC). Due to the complexity
+ * of certification path building, GLib does not provide any way to know
+ * which certification path will actually be used when verifying a TLS
+ * certificate. Accordingly, this function cannot be used to make
+ * security-related decisions. Only GLib itself should make security
+ * decisions about TLS certificates.
  *
  * Returns: (transfer full): a newly allocated issuer #GTlsCertificate,
  * or %NULL. Use g_object_unref() to release the certificate.

@@ -555,8 +555,8 @@ g_file_monitor_source_dispatch (GSource     *source,
 
   g_file_monitor_source_update_ready_time (fms);
 
-  g_clear_object (&instance);
   g_mutex_unlock (&fms->lock);
+  g_clear_object (&instance);
 
   /* We now have our list of events to deliver */
   while ((event = g_queue_pop_head (&event_queue)))
@@ -658,7 +658,7 @@ g_file_monitor_source_new (gpointer           instance,
   source = g_source_new (&source_funcs, sizeof (GFileMonitorSource));
   fms = (GFileMonitorSource *) source;
 
-  g_source_set_name (source, "GFileMonitorSource");
+  g_source_set_static_name (source, "GFileMonitorSource");
 
   g_mutex_init (&fms->lock);
   g_weak_ref_init (&fms->instance_ref, instance);

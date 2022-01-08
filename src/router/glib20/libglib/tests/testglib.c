@@ -78,7 +78,7 @@ static void
 glist_test (void)
 {
   GList *list = NULL;
-  guint i;
+  gint i;
 
   for (i = 0; i < 10; i++)
     list = g_list_append (list, &test_nums[i]);
@@ -158,7 +158,7 @@ static void
 gslist_test (void)
 {
   GSList *slist = NULL;
-  guint i;
+  gint i;
 
   for (i = 0; i < 10; i++)
     slist = g_slist_append (slist, &test_nums[i]);
@@ -299,11 +299,11 @@ gnode_test (void)
   for (i = 0; i < g_node_n_children (node_B); i++)
     {
       node = g_node_nth_child (node_B, i);
-      g_assert (P2C (node->data) == ('C' + i));
+      g_assert (P2C (node->data) == (gchar) ('C' + i));
     }
   
   for (i = 0; i < g_node_n_children (node_G); i++)
-    g_assert (g_node_child_position (node_G, g_node_nth_child (node_G, i)) == i);
+    g_assert (g_node_child_position (node_G, g_node_nth_child (node_G, i)) == (gint) i);
 
   /* we have built:                    A
    *                                 /   \
@@ -1051,6 +1051,19 @@ test_paths (void)
     { "///triple/slash", ".", "/triple/slash" },
     { "//double/slash", ".", "//double/slash" },
     { "/cwd/../with/./complexities/", "./hello", "/with/complexities/hello" },
+    { "/", ".dot-dir", "/.dot-dir" },
+    { "/cwd", "..", "/" },
+    { "/etc", "hello/..", "/etc" },
+    { "/etc", "hello/../", "/etc" },
+    { "/", "..", "/" },
+    { "/", "../", "/" },
+    { "/", "/..", "/" },
+    { "/", "/../", "/" },
+    { "/", ".", "/" },
+    { "/", "./", "/" },
+    { "/", "/.", "/" },
+    { "/", "/./", "/" },
+    { "/", "///usr/../usr", "/usr" },
 #else
     { "/etc", "../usr/share", "\\usr\\share" },
     { "/", "/foo/bar", "\\foo\\bar" },
@@ -1066,6 +1079,19 @@ test_paths (void)
     { "///triple/slash", ".", "\\triple\\slash" },
     { "//double/slash", ".", "//double/slash\\" },
     { "/cwd/../with/./complexities/", "./hello", "\\with\\complexities\\hello" },
+    { "/", ".dot-dir", "/.dot-dir" },
+    { "/cwd", "..", "/" },
+    { "/etc", "hello/..", "/etc" },
+    { "/etc", "hello/../", "/etc" },
+    { "/", "..", "/" },
+    { "/", "../", "/" },
+    { "/", "/..", "/" },
+    { "/", "/../", "/" },
+    { "/", ".", "/" },
+    { "/", "./", "/" },
+    { "/", "/.", "/" },
+    { "/", "/./", "/" },
+    { "/", "///usr/../usr", "/usr" },
 
     { "\\etc", "..\\usr\\share", "\\usr\\share" },
     { "\\", "\\foo\\bar", "\\foo\\bar" },
@@ -1081,6 +1107,19 @@ test_paths (void)
     { "\\\\\\triple\\slash", ".", "\\triple\\slash" },
     { "\\\\double\\slash", ".", "\\\\double\\slash\\" },
     { "\\cwd\\..\\with\\.\\complexities\\", ".\\hello", "\\with\\complexities\\hello" },
+    { "\\", ".dot-dir", "\\.dot-dir" },
+    { "\\cwd", "..", "\\" },
+    { "\\etc", "hello\\..", "\\etc" },
+    { "\\etc", "hello\\..\\", "\\etc" },
+    { "\\", "..", "\\" },
+    { "\\", "..\\", "\\" },
+    { "\\", "\\..", "\\" },
+    { "\\", "\\..\\", "\\" },
+    { "\\", ".", "\\" },
+    { "\\", ".\\", "\\" },
+    { "\\", "\\.", "\\" },
+    { "\\", "\\.\\", "\\" },
+    { "\\", "\\\\\\usr\\..\\usr", "\\usr" },
 #endif
   };
   const guint n_canonicalize_filename_checks = G_N_ELEMENTS (canonicalize_filename_checks);
@@ -1313,7 +1352,7 @@ test_arrays (void)
   for (i = 0; i < 10000; i++)
     g_array_append_val (garray, i);
   for (i = 0; i < 10000; i++)
-    if (g_array_index (garray, gint, i) != i)
+    if (g_array_index (garray, gint, i) != (gint) i)
       g_error ("failure: %d ( %d )", g_array_index (garray, gint, i), i);
   g_array_free (garray, TRUE);
 
@@ -1321,7 +1360,7 @@ test_arrays (void)
   for (i = 0; i < 100; i++)
     g_array_prepend_val (garray, i);
   for (i = 0; i < 100; i++)
-    if (g_array_index (garray, gint, i) != (100 - i - 1))
+    if (g_array_index (garray, gint, i) != (gint) (100 - i - 1))
       g_error ("failure: %d ( %d )", g_array_index (garray, gint, i), 100 - i - 1);
   g_array_free (garray, TRUE);
 }

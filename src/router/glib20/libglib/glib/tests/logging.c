@@ -340,7 +340,7 @@ test_handler (const gchar    *log_domain,
 static void
 bug653052 (void)
 {
-  g_test_bug ("653052");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=653052");
 
   g_test_log_set_fatal_handler (good_failure_handler, fail_str);
   g_log_set_default_handler (test_handler, log_str);
@@ -435,9 +435,8 @@ expect_log_writer (GLogLevelFlags   log_level,
       char *str;
 
       str = g_log_writer_format_fields (log_level, fields, n_fields, FALSE);
-      g_test_message ("Unexpected message: %s", str);
+      g_test_fail_printf ("Unexpected message: %s", str);
       g_free (str);
-      g_test_fail ();
     }
 
   return G_LOG_WRITER_HANDLED;
@@ -529,9 +528,8 @@ test_structured_logging_roundtrip1 (void)
       ExpectedMessage *expected = expected_messages->data;
 
       str = g_log_writer_format_fields (0, expected->fields, expected->n_fields, FALSE);
-      g_test_message ("Unexpected message: %s", str);
+      g_test_fail_printf ("Unexpected message: %s", str);
       g_free (str);
-      g_test_fail ();
     }
 }
 
@@ -637,7 +635,6 @@ main (int argc, char *argv[])
   g_unsetenv ("G_MESSAGES_DEBUG");
 
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/logging/default-handler", test_default_handler);
   g_test_add_func ("/logging/default-handler/subprocess/error", test_default_handler_error);

@@ -408,17 +408,17 @@ test_spawn_nonexistent (void)
   GError *error = NULL;
   GPtrArray *argv = NULL;
   gchar *stdout_str = NULL;
-  gint exit_status = -1;
+  gint wait_status = -1;
 
   argv = g_ptr_array_new ();
   g_ptr_array_add (argv, "this does not exist");
   g_ptr_array_add (argv, NULL);
 
   g_spawn_sync (NULL, (char**) argv->pdata, NULL, 0, NULL, NULL, &stdout_str,
-                NULL, &exit_status, &error);
+                NULL, &wait_status, &error);
   g_assert_error (error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT);
   g_assert_null (stdout_str);
-  g_assert_cmpint (exit_status, ==, -1);
+  g_assert_cmpint (wait_status, ==, -1);
 
   g_ptr_array_free (argv, TRUE);
 
@@ -433,7 +433,7 @@ test_spawn_nonexistent (void)
 static void
 test_spawn_fd_assignment_clash (void)
 {
-#ifdef G_OS_UNIX
+#if defined(G_OS_UNIX) && defined(F_DUPFD_CLOEXEC)
   int tmp_fd;
   guint i;
   const guint n_fds = 10;
@@ -487,7 +487,7 @@ test_spawn_fd_assignment_clash (void)
   for (i = 0; i < n_fds; i++)
     g_close (source_fds[i], NULL);
 #else  /* !G_OS_UNIX */
-  g_test_skip ("FD redirection only supported on Unix");
+  g_test_skip ("FD redirection only supported on Unix with F_DUPFD_CLOEXEC");
 #endif  /* !G_OS_UNIX */
 }
 

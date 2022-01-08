@@ -122,7 +122,7 @@
  * thread-safe.
  *
  * Each event source is assigned a priority. The default priority,
- * #G_PRIORITY_DEFAULT, is 0. Values less than 0 denote higher priorities.
+ * %G_PRIORITY_DEFAULT, is 0. Values less than 0 denote higher priorities.
  * Values greater than 0 denote lower priorities. Events from high priority
  * sources are always processed before events from lower priority sources.
  *
@@ -176,6 +176,15 @@
  * g_main_context_iteration() directly. These functions are
  * g_main_context_prepare(), g_main_context_query(),
  * g_main_context_check() and g_main_context_dispatch().
+ *
+ * If the event loop thread releases #GMainContext ownership until the results
+ * required by g_main_context_check() are ready you must create a context with
+ * the flag %G_MAIN_CONTEXT_FLAGS_OWNERLESS_POLLING or else you'll lose
+ * g_source_attach() notifications. This happens for instance when you integrate
+ * the GLib event loop into implementations that follow the proactor pattern
+ * (i.e. in these contexts the `poll()` implementation will reclaim the thread for
+ * other tasks until the results are ready). One example of the proactor pattern
+ * is the Boost.Asio library.
  *
  * ## State of a Main Context # {#mainloop-states}
  *
@@ -270,6 +279,7 @@ struct _GMainContext
   GCond cond;
   GThread *owner;
   guint owner_count;
+  GMainContextFlags flags;
   GSList *waiters;
 
   gint ref_count;  /* (atomic) */
@@ -364,6 +374,8 @@ struct _GSourcePrivate
   GSList *fds;
 
   GSourceDisposeFunc dispose;
+
+  gboolean static_name;
 };
 
 typedef struct _GSourceIter
@@ -657,6 +669,23 @@ g_main_context_new_with_next_id (guint next_id)
 GMainContext *
 g_main_context_new (void)
 {
+  return g_main_context_new_with_flags (G_MAIN_CONTEXT_FLAGS_NONE);
+}
+
+/**
+ * g_main_context_new_with_flags:
+ * @flags: a bitwise-OR combination of #GMainContextFlags flags that can only be
+ *         set at creation time.
+ *
+ * Creates a new #GMainContext structure.
+ *
+ * Returns: (transfer full): the new #GMainContext
+ *
+ * Since: 2.72
+ */
+GMainContext *
+g_main_context_new_with_flags (GMainContextFlags flags)
+{
   static gsize initialised;
   GMainContext *context;
 
@@ -679,6 +708,7 @@ g_main_context_new (void)
 
   context->sources = g_hash_table_new (NULL, NULL);
   context->owner = NULL;
+  context->flags = flags;
   context->waiters = NULL;
 
   context->ref_count = 1;
@@ -1246,8 +1276,12 @@ g_source_attach_unlocked (GSource      *source,
   /* If another thread has acquired the context, wake it up since it
    * might be in poll() right now.
    */
-  if (do_wakeup && context->owner && context->owner != G_THREAD_SELF)
-    g_wakeup_signal (context->wakeup);
+  if (do_wakeup &&
+      (context->flags & G_MAIN_CONTEXT_FLAGS_OWNERLESS_POLLING ||
+       (context->owner && context->owner != G_THREAD_SELF)))
+    {
+      g_wakeup_signal (context->wakeup);
+    }
 
   g_trace_mark (G_TRACE_CURRENT_TIME, 0,
                 "GLib", "g_source_attach",
@@ -1370,6 +1404,10 @@ g_source_destroy_internal (GSource      *source,
  *
  * This function is safe to call from any thread, regardless of which thread
  * the #GMainContext is running in.
+ *
+ * If the source is currently attached to a #GMainContext, destroying it
+ * will effectively unset the callback similar to calling g_source_set_callback().
+ * This can mean, that the data's #GDestroyNotify gets called right away.
  */
 void
 g_source_destroy (GSource *source)
@@ -1761,6 +1799,9 @@ g_source_set_callback_indirect (GSource              *source,
  * It is safe to call this function multiple times on a source which has already
  * been attached to a context. The changes will take effect for the next time
  * the source is dispatched after this call returns.
+ *
+ * Note that g_source_destroy() for a currently attached source has the effect
+ * of also unsetting the callback.
  **/
 void
 g_source_set_callback (GSource        *source,
@@ -2052,6 +2093,41 @@ g_source_get_can_recurse (GSource  *source)
   return (source->flags & G_SOURCE_CAN_RECURSE) != 0;
 }
 
+static void
+g_source_set_name_full (GSource    *source,
+                        const char *name,
+                        gboolean    is_static)
+{
+  GMainContext *context;
+
+  g_return_if_fail (source != NULL);
+  g_return_if_fail (g_atomic_int_get (&source->ref_count) > 0);
+
+  context = source->context;
+
+  if (context)
+    LOCK_CONTEXT (context);
+
+  TRACE (GLIB_SOURCE_SET_NAME (source, name));
+
+  /* setting back to NULL is allowed, just because it's
+   * weird if get_name can return NULL but you can't
+   * set that.
+   */
+
+  if (!source->priv->static_name)
+    g_free (source->name);
+
+  if (is_static)
+    source->name = (char *)name;
+  else
+    source->name = g_strdup (name);
+
+  source->priv->static_name = is_static;
+
+  if (context)
+    UNLOCK_CONTEXT (context);
+}
 
 /**
  * g_source_set_name:
@@ -2075,34 +2151,33 @@ g_source_get_can_recurse (GSource  *source)
  * the value, and changing the value will free it while the other thread
  * may be attempting to use it.
  *
+ * Also see g_source_set_static_name().
+ *
  * Since: 2.26
  **/
 void
 g_source_set_name (GSource    *source,
                    const char *name)
 {
-  GMainContext *context;
+  g_source_set_name_full (source, name, FALSE);
+}
 
-  g_return_if_fail (source != NULL);
-  g_return_if_fail (g_atomic_int_get (&source->ref_count) > 0);
-
-  context = source->context;
-
-  if (context)
-    LOCK_CONTEXT (context);
-
-  TRACE (GLIB_SOURCE_SET_NAME (source, name));
-
-  /* setting back to NULL is allowed, just because it's
-   * weird if get_name can return NULL but you can't
-   * set that.
-   */
-
-  g_free (source->name);
-  source->name = g_strdup (name);
-
-  if (context)
-    UNLOCK_CONTEXT (context);
+/**
+ * g_source_set_static_name:
+ * @source: a #GSource
+ * @name: debug name for the source
+ *
+ * A variant of g_source_set_name() that does not
+ * duplicate the @name, and can only be used with
+ * string literals.
+ *
+ * Since: 2.70
+ */
+void
+g_source_set_static_name (GSource    *source,
+                          const char *name)
+{
+  g_source_set_name_full (source, name, TRUE);
 }
 
 /**
@@ -2277,7 +2352,8 @@ g_source_unref_internal (GSource      *source,
           g_warn_if_fail (old_ref_count == 1);
         }
 
-      g_free (source->name);
+      if (!source->priv->static_name)
+        g_free (source->name);
       source->name = NULL;
 
       g_slist_free (source->poll_fds);
@@ -2483,7 +2559,7 @@ g_main_context_find_source_by_user_data (GMainContext *context,
  * been reissued, leading to the operation being performed against the
  * wrong source.
  *
- * Returns: For historical reasons, this function always returns %TRUE
+ * Returns: %TRUE if the source was found and removed.
  **/
 gboolean
 g_source_remove (guint tag)
@@ -4961,11 +5037,11 @@ g_timeout_source_new_seconds (guint interval)
 /**
  * g_timeout_add_full: (rename-to g_timeout_add)
  * @priority: the priority of the timeout source. Typically this will be in
- *            the range between #G_PRIORITY_DEFAULT and #G_PRIORITY_HIGH.
+ *   the range between %G_PRIORITY_DEFAULT and %G_PRIORITY_HIGH.
  * @interval: the time between calls to the function, in milliseconds
- *             (1/1000ths of a second)
+ *   (1/1000ths of a second)
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * @notify: (nullable): function to call when the timeout is removed, or %NULL
  * 
  * Sets a function to be called at regular intervals, with the given
@@ -5025,15 +5101,17 @@ g_timeout_add_full (gint           priority,
 /**
  * g_timeout_add:
  * @interval: the time between calls to the function, in milliseconds
- *             (1/1000ths of a second)
+ *    (1/1000ths of a second)
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * 
  * Sets a function to be called at regular intervals, with the default
- * priority, #G_PRIORITY_DEFAULT.  The function is called repeatedly
- * until it returns %FALSE, at which point the timeout is automatically
- * destroyed and the function will not be called again.  The first call
- * to the function will be at the end of the first @interval.
+ * priority, %G_PRIORITY_DEFAULT.
+ *
+ * The given @function is called repeatedly until it returns %G_SOURCE_REMOVE
+ * or %FALSE, at which point the timeout is automatically destroyed and the
+ * function will not be called again. The first call to the function will be
+ * at the end of the first @interval.
  *
  * Note that timeout functions may be delayed, due to the processing of other
  * event sources. Thus they should not be relied on for precise timing.
@@ -5074,24 +5152,25 @@ g_timeout_add (guint32        interval,
 /**
  * g_timeout_add_seconds_full: (rename-to g_timeout_add_seconds)
  * @priority: the priority of the timeout source. Typically this will be in
- *            the range between #G_PRIORITY_DEFAULT and #G_PRIORITY_HIGH.
+ *   the range between %G_PRIORITY_DEFAULT and %G_PRIORITY_HIGH.
  * @interval: the time between calls to the function, in seconds
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * @notify: (nullable): function to call when the timeout is removed, or %NULL
  *
  * Sets a function to be called at regular intervals, with @priority.
- * The function is called repeatedly until it returns %FALSE, at which
- * point the timeout is automatically destroyed and the function will
- * not be called again.
+ *
+ * The function is called repeatedly until it returns %G_SOURCE_REMOVE
+ * or %FALSE, at which point the timeout is automatically destroyed and
+ * the function will not be called again.
  *
  * Unlike g_timeout_add(), this function operates at whole second granularity.
  * The initial starting point of the timer is determined by the implementation
  * and the implementation is expected to group multiple timers together so that
- * they fire all at the same time.
- * To allow this grouping, the @interval to the first timer is rounded
- * and can deviate up to one second from the specified interval.
- * Subsequent timer iterations will generally run at the specified interval.
+ * they fire all at the same time. To allow this grouping, the @interval to the
+ * first timer is rounded and can deviate up to one second from the specified
+ * interval. Subsequent timer iterations will generally run at the specified
+ * interval.
  *
  * Note that timeout functions may be delayed, due to the processing of other
  * event sources. Thus they should not be relied on for precise timing.
@@ -5154,8 +5233,10 @@ g_timeout_add_seconds_full (gint           priority,
  * @data: data to pass to @function
  *
  * Sets a function to be called at regular intervals with the default
- * priority, #G_PRIORITY_DEFAULT. The function is called repeatedly until
- * it returns %FALSE, at which point the timeout is automatically destroyed
+ * priority, %G_PRIORITY_DEFAULT.
+ *
+ * The function is called repeatedly until it returns %G_SOURCE_REMOVE
+ * or %FALSE, at which point the timeout is automatically destroyed
  * and the function will not be called again.
  *
  * This internally creates a main loop source using
@@ -5548,7 +5629,7 @@ _g_main_create_unix_signal_watch (int signum)
   unix_signal_source->pending = FALSE;
 
   /* Set a default name on the source, just in case the caller does not. */
-  g_source_set_name (source, signum_to_string (signum));
+  g_source_set_static_name (source, signum_to_string (signum));
 
   G_LOCK (unix_signal_lock);
   ref_unix_signal_handler_unlocked (signum);
@@ -5685,7 +5766,7 @@ g_child_watch_source_new (GPid pid)
   child_watch_source = (GChildWatchSource *)source;
 
   /* Set a default name on the source, just in case the caller does not. */
-  g_source_set_name (source, "GChildWatchSource");
+  g_source_set_static_name (source, "GChildWatchSource");
 
   child_watch_source->pid = pid;
 
@@ -5709,21 +5790,21 @@ g_child_watch_source_new (GPid pid)
 /**
  * g_child_watch_add_full: (rename-to g_child_watch_add)
  * @priority: the priority of the idle source. Typically this will be in the
- *            range between #G_PRIORITY_DEFAULT_IDLE and #G_PRIORITY_HIGH_IDLE.
- * @pid:      process to watch. On POSIX the positive pid of a child process. On
+ *   range between %G_PRIORITY_DEFAULT_IDLE and %G_PRIORITY_HIGH_IDLE.
+ * @pid: process to watch. On POSIX the positive pid of a child process. On
  * Windows a handle for a process (which doesn't have to be a child).
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * @notify: (nullable): function to call when the idle is removed, or %NULL
  * 
  * Sets a function to be called when the child indicated by @pid 
  * exits, at the priority @priority.
  *
  * If you obtain @pid from g_spawn_async() or g_spawn_async_with_pipes() 
- * you will need to pass #G_SPAWN_DO_NOT_REAP_CHILD as flag to 
+ * you will need to pass %G_SPAWN_DO_NOT_REAP_CHILD as flag to 
  * the spawn function for the child watching to work.
  *
- * In many programs, you will want to call g_spawn_check_exit_status()
+ * In many programs, you will want to call g_spawn_check_wait_status()
  * in the callback to determine whether or not the child exited
  * successfully.
  * 
@@ -5774,17 +5855,17 @@ g_child_watch_add_full (gint            priority,
 
 /**
  * g_child_watch_add:
- * @pid:      process id to watch. On POSIX the positive pid of a child
- * process. On Windows a handle for a process (which doesn't have to be
- * a child).
+ * @pid: process id to watch. On POSIX the positive pid of a child
+ *   process. On Windows a handle for a process (which doesn't have
+ *   to be a child).
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * 
  * Sets a function to be called when the child indicated by @pid 
- * exits, at a default priority, #G_PRIORITY_DEFAULT.
+ * exits, at a default priority, %G_PRIORITY_DEFAULT.
  * 
  * If you obtain @pid from g_spawn_async() or g_spawn_async_with_pipes() 
- * you will need to pass #G_SPAWN_DO_NOT_REAP_CHILD as flag to 
+ * you will need to pass %G_SPAWN_DO_NOT_REAP_CHILD as flag to 
  * the spawn function for the child watching to work.
  * 
  * Note that on platforms where #GPid must be explicitly closed
@@ -5874,7 +5955,7 @@ g_idle_source_new (void)
   g_source_set_priority (source, G_PRIORITY_DEFAULT_IDLE);
 
   /* Set a default name on the source, just in case the caller does not. */
-  g_source_set_name (source, "GIdleSource");
+  g_source_set_static_name (source, "GIdleSource");
 
   return source;
 }
@@ -5882,13 +5963,15 @@ g_idle_source_new (void)
 /**
  * g_idle_add_full: (rename-to g_idle_add)
  * @priority: the priority of the idle source. Typically this will be in the
- *            range between #G_PRIORITY_DEFAULT_IDLE and #G_PRIORITY_HIGH_IDLE.
+ *   range between %G_PRIORITY_DEFAULT_IDLE and %G_PRIORITY_HIGH_IDLE.
  * @function: function to call
- * @data:     data to pass to @function
+ * @data: data to pass to @function
  * @notify: (nullable): function to call when the idle is removed, or %NULL
  * 
  * Adds a function to be called whenever there are no higher priority
- * events pending.  If the function returns %FALSE it is automatically
+ * events pending.
+ *
+ * If the function returns %G_SOURCE_REMOVE or %FALSE it is automatically
  * removed from the list of event sources and will not be called again.
  *
  * See [memory management of sources][mainloop-memory-management] for details
@@ -5935,7 +6018,7 @@ g_idle_add_full (gint           priority,
  * 
  * Adds a function to be called whenever there are no higher priority
  * events pending to the default main loop. The function is given the
- * default idle priority, #G_PRIORITY_DEFAULT_IDLE.  If the function
+ * default idle priority, %G_PRIORITY_DEFAULT_IDLE.  If the function
  * returns %FALSE it is automatically removed from the list of event
  * sources and will not be called again.
  *
@@ -5991,7 +6074,7 @@ g_idle_remove_by_data (gpointer data)
  *
  * In any other case, an idle source is created to call @function and
  * that source is attached to @context (presumably to be run in another
- * thread).  The idle source is attached with #G_PRIORITY_DEFAULT
+ * thread).  The idle source is attached with %G_PRIORITY_DEFAULT
  * priority.  If you want a different priority, use
  * g_main_context_invoke_full().
  *
@@ -6122,3 +6205,23 @@ g_get_worker_context (void)
 
   return glib_worker_context;
 }
+
+/**
+ * g_steal_fd:
+ * @fd_ptr: (not optional) (inout): A pointer to a file descriptor
+ *
+ * Sets @fd_ptr to `-1`, returning the value that was there before.
+ *
+ * Conceptually, this transfers the ownership of the file descriptor
+ * from the referenced variable to the caller of the function (i.e.
+ * ‘steals’ the reference). This is very similar to g_steal_pointer(),
+ * but for file descriptors.
+ *
+ * On POSIX platforms, this function is async-signal safe
+ * (see [`signal(7)`](man:signal(7)) and
+ * [`signal-safety(7)`](man:signal-safety(7))), making it safe to call from a
+ * signal handler or a #GSpawnChildSetupFunc.
+ *
+ * Returns: the value that @fd_ptr previously had
+ * Since: 2.70
+ */

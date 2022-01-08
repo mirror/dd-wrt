@@ -28,11 +28,6 @@
 #include        <gobject/gsignal.h>
 #include        <gobject/gboxed.h>
 
-#if defined(glib_typeof_2_68) && GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68
-/* for glib_typeof */
-#include <type_traits>
-#endif
-
 G_BEGIN_DECLS
 
 /* --- type macros --- */
@@ -50,6 +45,7 @@ G_BEGIN_DECLS
  * @object: Object which is subject to casting.
  * 
  * Casts a #GObject or derived pointer into a (GObject*) pointer.
+ *
  * Depending on the current debugging level, this function may invoke
  * certain runtime checks to identify invalid casts.
  */
@@ -149,7 +145,9 @@ G_BEGIN_DECLS
  * @object: Object which is subject to casting.
  * 
  * Casts a #GInitiallyUnowned or derived pointer into a (GInitiallyUnowned*) 
- * pointer. Depending on the current debugging level, this function may invoke
+ * pointer.
+ *
+ * Depending on the current debugging level, this function may invoke
  * certain runtime checks to identify invalid casts.
  */
 #define G_INITIALLY_UNOWNED(object)           (G_TYPE_CHECK_INSTANCE_CAST ((object), G_TYPE_INITIALLY_UNOWNED, GInitiallyUnowned))
@@ -235,17 +233,34 @@ typedef void (*GObjectFinalizeFunc)     (GObject      *object);
  * @where_the_object_was: the object being disposed
  * 
  * A #GWeakNotify function can be added to an object as a callback that gets
- * triggered when the object is finalized. Since the object is already being
- * disposed when the #GWeakNotify is called, there's not much you could do 
- * with the object, apart from e.g. using its address as hash-index or the like. 
+ * triggered when the object is finalized.
+ *
+ * Since the object is already being disposed when the #GWeakNotify is called,
+ * there's not much you could do with the object, apart from e.g. using its
+ * address as hash-index or the like.
+ *
+ * In particular, this means it’s invalid to call g_object_ref(),
+ * g_weak_ref_init(), g_weak_ref_set(), g_object_add_toggle_ref(),
+ * g_object_weak_ref(), g_object_add_weak_pointer() or any function which calls
+ * them on the object from this callback.
  */
 typedef void (*GWeakNotify)		(gpointer      data,
 					 GObject      *where_the_object_was);
 /**
  * GObject:
+ *
+ * The base object type.
  * 
- * All the fields in the GObject structure are private 
- * to the #GObject implementation and should never be accessed directly.
+ * All the fields in the `GObject` structure are private to the implementation
+ * and should never be accessed directly.
+ *
+ * Since GLib 2.72, all #GObjects are guaranteed to be aligned to at least the
+ * alignment of the largest basic GLib type (typically this is #guint64 or
+ * #gdouble). If you need larger alignment for an element in a #GObject, you
+ * should allocate it on the heap (aligned), or arrange for your #GObject to be
+ * appropriately padded. This guarantee applies to the #GObject (or derived)
+ * struct, the #GObjectClass (or derived) struct, and any private data allocated
+ * by G_ADD_PRIVATE().
  */
 struct  _GObject
 {
@@ -357,14 +372,14 @@ struct  _GObjectClass
   /* padding */
   gpointer	pdummy[6];
 };
+
 /**
  * GObjectConstructParam:
  * @pspec: the #GParamSpec of the construct parameter
  * @value: the value to set the parameter to
  * 
- * The GObjectConstructParam struct is an auxiliary 
- * structure used to hand #GParamSpec/#GValue pairs to the @constructor of
- * a #GObjectClass.
+ * The GObjectConstructParam struct is an auxiliary structure used to hand
+ * #GParamSpec/#GValue pairs to the @constructor of a #GObjectClass.
  */
 struct _GObjectConstructParam
 {
@@ -374,10 +389,11 @@ struct _GObjectConstructParam
 
 /**
  * GInitiallyUnowned:
+ *
+ * A type for objects that have an initially floating reference.
  * 
- * All the fields in the GInitiallyUnowned structure 
- * are private to the #GInitiallyUnowned implementation and should never be 
- * accessed directly.
+ * All the fields in the `GInitiallyUnowned` structure are private to the
+ * implementation and should never be accessed directly.
  */
 /**
  * GInitiallyUnownedClass:
@@ -499,6 +515,8 @@ GLIB_AVAILABLE_IN_ALL
 gboolean    g_object_is_floating    	      (gpointer        object);
 GLIB_AVAILABLE_IN_ALL
 gpointer    g_object_ref_sink       	      (gpointer	       object);
+GLIB_AVAILABLE_IN_2_70
+gpointer    g_object_take_ref                 (gpointer        object);
 GLIB_AVAILABLE_IN_ALL
 gpointer    g_object_ref                      (gpointer        object);
 GLIB_AVAILABLE_IN_ALL
@@ -518,7 +536,7 @@ GLIB_AVAILABLE_IN_ALL
 void        g_object_remove_weak_pointer      (GObject        *object, 
                                                gpointer       *weak_pointer_location);
 
-#if defined(glib_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_56 && (!defined(glib_typeof_2_68) || GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68)
+#if defined(glib_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_56
 /* Make reference APIs type safe with macros */
 #define g_object_ref(Obj) ((glib_typeof (Obj)) (g_object_ref) (Obj))
 #define g_object_ref_sink(Obj) ((glib_typeof (Obj)) (g_object_ref_sink) (Obj))
@@ -534,7 +552,9 @@ void        g_object_remove_weak_pointer      (GObject        *object,
  *  references.
  * 
  * A callback function used for notification when the state
- * of a toggle reference changes. See g_object_add_toggle_ref().
+ * of a toggle reference changes.
+ *
+ * See also: g_object_add_toggle_ref()
  */
 typedef void (*GToggleNotify) (gpointer      data,
 			       GObject      *object,
@@ -688,10 +708,11 @@ void    g_clear_object (GObject **object_ptr);
  * @new_object: (nullable) (transfer none): a pointer to the new #GObject to
  *   assign to @object_ptr, or %NULL to clear the pointer
  *
- * Updates a #GObject pointer to refer to @new_object. It increments the
- * reference count of @new_object (if non-%NULL), decrements the reference
- * count of the current value of @object_ptr (if non-%NULL), and assigns
- * @new_object to @object_ptr. The assignment is not atomic.
+ * Updates a #GObject pointer to refer to @new_object.
+ *
+ * It increments the reference count of @new_object (if non-%NULL), decrements
+ * the reference count of the current value of @object_ptr (if non-%NULL), and
+ * assigns @new_object to @object_ptr. The assignment is not atomic.
  *
  * @object_ptr must not be %NULL, but can point to a %NULL value.
  *
@@ -841,13 +862,15 @@ static inline void
  * @new_object: (nullable) (transfer none): a pointer to the new #GObject to
  *   assign to it, or %NULL to clear the pointer
  *
- * Updates a pointer to weakly refer to @new_object. It assigns @new_object
- * to @weak_pointer_location and ensures that @weak_pointer_location will
- * automatically be set to %NULL if @new_object gets destroyed. The assignment
- * is not atomic. The weak reference is not thread-safe, see
- * g_object_add_weak_pointer() for details.
+ * Updates a pointer to weakly refer to @new_object.
  *
- * @weak_pointer_location must not be %NULL.
+ * It assigns @new_object to @weak_pointer_location and ensures
+ * that @weak_pointer_location will automatically be set to %NULL
+ * if @new_object gets destroyed. The assignment is not atomic.
+ * The weak reference is not thread-safe, see g_object_add_weak_pointer()
+ * for details.
+ *
+ * The @weak_pointer_location argument must not be %NULL.
  *
  * A macro is also included that allows this function to be used without
  * pointer casts. The function itself is static inline, so its address may vary

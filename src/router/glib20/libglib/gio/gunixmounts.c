@@ -1062,7 +1062,6 @@ _g_get_unix_mount_points (void)
           if ((mount_fstype != NULL && g_strcmp0 ("supermount", mount_fstype) == 0) ||
               ((userspace_flags & MNT_MS_USER) &&
                (g_strstr_len (mount_options, -1, "user_xattr") == NULL)) ||
-              (g_strstr_len (mount_options, -1, "pamconsole") == NULL) ||
               (userspace_flags & MNT_MS_USERS) ||
               (userspace_flags & MNT_MS_OWNER))
             {
@@ -1158,7 +1157,6 @@ _g_get_unix_mount_points (void)
 #ifdef HAVE_HASMNTOPT
 	  || (hasmntopt (mntent, "user") != NULL
 	      && hasmntopt (mntent, "user") != hasmntopt (mntent, "user_xattr"))
-	  || hasmntopt (mntent, "pamconsole") != NULL
 	  || hasmntopt (mntent, "users") != NULL
 	  || hasmntopt (mntent, "owner") != NULL
 #endif
@@ -1231,7 +1229,6 @@ _g_get_unix_mount_points (void)
 #ifdef HAVE_HASMNTOPT
 	  || (hasmntopt (&mntent, "user") != NULL
 	      && hasmntopt (&mntent, "user") != hasmntopt (&mntent, "user_xattr"))
-	  || hasmntopt (&mntent, "pamconsole") != NULL
 	  || hasmntopt (&mntent, "users") != NULL
 	  || hasmntopt (&mntent, "owner") != NULL
 #endif
@@ -1593,7 +1590,9 @@ g_unix_mounts_get (guint64 *time_read)
  * If more mounts have the same mount path, the last matching mount
  * is returned.
  *
- * Returns: (transfer full): a #GUnixMountEntry.
+ * This will return %NULL if there is no mount point at @mount_path.
+ *
+ * Returns: (transfer full) (nullable): a #GUnixMountEntry.
  **/
 GUnixMountEntry *
 g_unix_mount_at (const char *mount_path,
@@ -1636,7 +1635,10 @@ g_unix_mount_at (const char *mount_path,
  * If more mounts have the same mount path, the last matching mount
  * is returned.
  *
- * Returns: (transfer full): a #GUnixMountEntry.
+ * This will return %NULL if looking up the mount entry fails, if
+ * @file_path doesn’t exist or there is an I/O error.
+ *
+ * Returns: (transfer full)  (nullable): a #GUnixMountEntry.
  *
  * Since: 2.52
  **/
@@ -1849,7 +1851,7 @@ mtab_file_changed (GFileMonitor      *monitor,
   source = g_idle_source_new ();
   g_source_set_priority (source, G_PRIORITY_DEFAULT);
   g_source_set_callback (source, mtab_file_changed_cb, NULL, NULL);
-  g_source_set_name (source, "[gio] mtab_file_changed_cb");
+  g_source_set_static_name (source, "[gio] mtab_file_changed_cb");
   g_source_attach (source, context);
   g_source_unref (source);
 }

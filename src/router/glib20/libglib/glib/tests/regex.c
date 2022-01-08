@@ -25,11 +25,7 @@
 #include <locale.h>
 #include "glib.h"
 
-#ifdef USE_SYSTEM_PCRE
 #include <pcre.h>
-#else
-#include "glib/pcre/pcre.h"
-#endif
 
 /* U+20AC EURO SIGN (symbol, currency) */
 #define EURO "\xe2\x82\xac"
@@ -2124,7 +2120,7 @@ test_multiline (void)
   GMatchInfo *info;
   gint count;
 
-  g_test_bug ("640489");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=640489");
 
   regex = g_regex_new ("^a$", G_REGEX_MULTILINE|G_REGEX_DOTALL, 0, NULL);
 
@@ -2193,8 +2189,6 @@ main (int argc, char *argv[])
   setlocale (LC_ALL, "");
 
   g_test_init (&argc, &argv, NULL);
-
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/regex/properties", test_properties);
   g_test_add_func ("/regex/class", test_class);
@@ -2559,13 +2553,16 @@ main (int argc, char *argv[])
   TEST_SUB_PATTERN("(a)?(b)", "b", 0, 0, "b", 0, 1);
   TEST_SUB_PATTERN("(a)?(b)", "b", 0, 1, "", -1, -1);
   TEST_SUB_PATTERN("(a)?(b)", "b", 0, 2, "b", 0, 1);
+  TEST_SUB_PATTERN("(a)?b", "b", 0, 0, "b", 0, 1);
+  TEST_SUB_PATTERN("(a)?b", "b", 0, 1, "", -1, -1);
+  TEST_SUB_PATTERN("(a)?b", "b", 0, 2, NULL, UNTOUCHED, UNTOUCHED);
 
   /* TEST_NAMED_SUB_PATTERN(pattern, string, start_position, sub_name,
    * 			    expected_sub, expected_start, expected_end) */
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", "ab", 0, "A", "b", 1, 2);
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", "aab", 1, "A", "b", 2, 3);
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", EURO "ab", 0, "A", "b", 4, 5);
-  TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", EURO "ab", 0, "B", NULL, UNTOUCHED, UNTOUCHED);
+  TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", EURO "ab", 0, "B", "", -1, -1);
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", EURO "ab", 0, "C", NULL, UNTOUCHED, UNTOUCHED);
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", "a" EGRAVE "x", 0, "A", EGRAVE, 1, 3);
   TEST_NAMED_SUB_PATTERN("a(?P<A>.)(?P<B>.)?", "a" EGRAVE "x", 0, "B", "x", 3, 4);
@@ -2677,7 +2674,7 @@ main (int argc, char *argv[])
   TEST_EXPAND("a", "a", "\\0130", FALSE, "X");
   TEST_EXPAND("a", "a", "\\\\\\0", FALSE, "\\a");
   TEST_EXPAND("a(?P<G>.)c", "xabcy", "X\\g<G>X", FALSE, "XbX");
-#ifndef USE_SYSTEM_PCRE
+#if !(PCRE_MAJOR > 8 || (PCRE_MAJOR == 8 && PCRE_MINOR >= 34))
   /* PCRE >= 8.34 no longer allows this usage. */
   TEST_EXPAND("(.)(?P<1>.)", "ab", "\\1", FALSE, "a");
   TEST_EXPAND("(.)(?P<1>.)", "ab", "\\g<1>", FALSE, "a");

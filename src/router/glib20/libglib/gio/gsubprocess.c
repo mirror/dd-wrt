@@ -61,7 +61,10 @@
  * As a matter of principle, #GSubprocess has no API that accepts
  * shell-style space-separated strings.  It will, however, match the
  * typical shell behaviour of searching the PATH for executables that do
- * not contain a directory separator in their name.
+ * not contain a directory separator in their name. By default, the `PATH`
+ * of the current process is used.  You can specify
+ * %G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP to use the `PATH` of the
+ * launcher environment instead.
  *
  * #GSubprocess attempts to have a very simple API for most uses (ie:
  * spawning a subprocess with arguments and support for most typical
@@ -380,7 +383,7 @@ initable_init (GInitable     *initable,
   /* argv0 has no '/' in it?  We better do a PATH lookup. */
   if (strchr (self->argv[0], G_DIR_SEPARATOR) == NULL)
     {
-      if (self->launcher && self->launcher->path_from_envp)
+      if (self->launcher && self->launcher->flags & G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP)
         spawn_flags |= G_SPAWN_SEARCH_PATH_FROM_ENVP;
       else
         spawn_flags |= G_SPAWN_SEARCH_PATH;
@@ -883,7 +886,7 @@ g_subprocess_wait (GSubprocess   *subprocess,
  * @cancellable: a #GCancellable
  * @error: a #GError
  *
- * Combines g_subprocess_wait() with g_spawn_check_exit_status().
+ * Combines g_subprocess_wait() with g_spawn_check_wait_status().
  *
  * Returns: %TRUE on success, %FALSE if process exited abnormally, or
  * @cancellable was cancelled
@@ -896,7 +899,7 @@ g_subprocess_wait_check (GSubprocess   *subprocess,
                          GError       **error)
 {
   return g_subprocess_wait (subprocess, cancellable, error) &&
-         g_spawn_check_exit_status (subprocess->status, error);
+         g_spawn_check_wait_status (subprocess->status, error);
 }
 
 /**
@@ -906,7 +909,7 @@ g_subprocess_wait_check (GSubprocess   *subprocess,
  * @callback: a #GAsyncReadyCallback to call when the operation is complete
  * @user_data: user_data for @callback
  *
- * Combines g_subprocess_wait_async() with g_spawn_check_exit_status().
+ * Combines g_subprocess_wait_async() with g_spawn_check_wait_status().
  *
  * This is the asynchronous version of g_subprocess_wait_check().
  *
@@ -940,7 +943,7 @@ g_subprocess_wait_check_finish (GSubprocess   *subprocess,
                                 GError       **error)
 {
   return g_subprocess_wait_finish (subprocess, result, error) &&
-         g_spawn_check_exit_status (subprocess->status, error);
+         g_spawn_check_wait_status (subprocess->status, error);
 }
 
 #ifdef G_OS_UNIX
@@ -1053,7 +1056,7 @@ g_subprocess_force_exit (GSubprocess *subprocess)
  *
  * This value has no particular meaning, but it can be used with the
  * macros defined by the system headers such as WIFEXITED.  It can also
- * be used with g_spawn_check_exit_status().
+ * be used with g_spawn_check_wait_status().
  *
  * It is more likely that you want to use g_subprocess_get_if_exited()
  * followed by g_subprocess_get_exit_status().

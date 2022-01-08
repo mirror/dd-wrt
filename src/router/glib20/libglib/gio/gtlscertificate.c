@@ -63,6 +63,12 @@ enum
   PROP_ISSUER,
   PROP_PKCS11_URI,
   PROP_PRIVATE_KEY_PKCS11_URI,
+  PROP_NOT_VALID_BEFORE,
+  PROP_NOT_VALID_AFTER,
+  PROP_SUBJECT_NAME,
+  PROP_ISSUER_NAME,
+  PROP_DNS_NAMES,
+  PROP_IP_ADDRESSES,
 };
 
 static void
@@ -78,6 +84,8 @@ g_tls_certificate_get_property (GObject    *object,
 {
   switch (prop_id)
     {
+    case PROP_PRIVATE_KEY:
+    case PROP_PRIVATE_KEY_PEM:
     case PROP_PKCS11_URI:
     case PROP_PRIVATE_KEY_PKCS11_URI:
       /* Subclasses must override this property but this allows older backends to not fatally error */
@@ -148,17 +156,25 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
 							G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_STATIC_STRINGS));
   /**
-   * GTlsCertificate:private-key:
+   * GTlsCertificate:private-key: (nullable)
    *
    * The DER (binary) encoded representation of the certificate's
-   * private key, in either PKCS#1 format or unencrypted PKCS#8
-   * format. This property (or the #GTlsCertificate:private-key-pem
-   * property) can be set when constructing a key (eg, from a file),
-   * but cannot be read.
+   * private key, in either [PKCS \#1 format](https://datatracker.ietf.org/doc/html/rfc8017)
+   * or unencrypted [PKCS \#8 format.](https://datatracker.ietf.org/doc/html/rfc5208)
+   * PKCS \#8 format is supported since 2.32; earlier releases only
+   * support PKCS \#1. You can use the `openssl rsa` tool to convert
+   * PKCS \#8 keys to PKCS \#1.
    *
-   * PKCS#8 format is supported since 2.32; earlier releases only
-   * support PKCS#1. You can use the `openssl rsa`
-   * tool to convert PKCS#8 keys to PKCS#1.
+   * This property (or the #GTlsCertificate:private-key-pem property)
+   * can be set when constructing a key (for example, from a file).
+   * Since GLib 2.70, it is now also readable; however, be aware that if
+   * the private key is backed by a PKCS \#11 URI – for example, if it
+   * is stored on a smartcard – then this property will be %NULL. If so,
+   * the private key must be referenced via its PKCS \#11 URI,
+   * #GTlsCertificate:private-key-pkcs11-uri. You must check both
+   * properties to see if the certificate really has a private key.
+   * When this property is read, the output format will be unencrypted
+   * PKCS \#8.
    *
    * Since: 2.28
    */
@@ -167,22 +183,30 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
 						       P_("Private key"),
 						       P_("The DER representation of the certificate’s private key"),
 						       G_TYPE_BYTE_ARRAY,
-						       G_PARAM_WRITABLE |
+						       G_PARAM_READWRITE |
 						       G_PARAM_CONSTRUCT_ONLY |
 						       G_PARAM_STATIC_STRINGS));
   /**
-   * GTlsCertificate:private-key-pem:
+   * GTlsCertificate:private-key-pem: (nullable)
    *
    * The PEM (ASCII) encoded representation of the certificate's
-   * private key in either PKCS#1 format ("`BEGIN RSA PRIVATE
-   * KEY`") or unencrypted PKCS#8 format ("`BEGIN
-   * PRIVATE KEY`"). This property (or the
-   * #GTlsCertificate:private-key property) can be set when
-   * constructing a key (eg, from a file), but cannot be read.
+   * private key in either [PKCS \#1 format](https://datatracker.ietf.org/doc/html/rfc8017)
+   * ("`BEGIN RSA PRIVATE KEY`") or unencrypted
+   * [PKCS \#8 format](https://datatracker.ietf.org/doc/html/rfc5208)
+   * ("`BEGIN PRIVATE KEY`"). PKCS \#8 format is supported since 2.32;
+   * earlier releases only support PKCS \#1. You can use the `openssl rsa`
+   * tool to convert PKCS \#8 keys to PKCS \#1.
    *
-   * PKCS#8 format is supported since 2.32; earlier releases only
-   * support PKCS#1. You can use the `openssl rsa`
-   * tool to convert PKCS#8 keys to PKCS#1.
+   * This property (or the #GTlsCertificate:private-key property)
+   * can be set when constructing a key (for example, from a file).
+   * Since GLib 2.70, it is now also readable; however, be aware that if
+   * the private key is backed by a PKCS \#11 URI - for example, if it
+   * is stored on a smartcard - then this property will be %NULL. If so,
+   * the private key must be referenced via its PKCS \#11 URI,
+   * #GTlsCertificate:private-key-pkcs11-uri. You must check both
+   * properties to see if the certificate really has a private key.
+   * When this property is read, the output format will be unencrypted
+   * PKCS \#8.
    *
    * Since: 2.28
    */
@@ -191,7 +215,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
 							P_("Private key (PEM)"),
 							P_("The PEM representation of the certificate’s private key"),
 							NULL,
-							G_PARAM_WRITABLE |
+							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_STATIC_STRINGS));
   /**
@@ -201,6 +225,18 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * certificate. If %NULL, this means that the certificate is either
    * self-signed, or else the certificate of the issuer is not
    * available.
+   *
+   * Beware the issuer certificate may not be the same as the
+   * certificate that would actually be used to construct a valid
+   * certification path during certificate verification.
+   * [RFC 4158](https://datatracker.ietf.org/doc/html/rfc4158) explains
+   * why an issuer certificate cannot be naively assumed to be part of the
+   * the certification path (though GLib's TLS backends may not follow the
+   * path building strategies outlined in this RFC). Due to the complexity
+   * of certification path building, GLib does not provide any way to know
+   * which certification path will actually be used. Accordingly, this
+   * property cannot be used to make security-related decisions. Only
+   * GLib itself should make security decisions about TLS certificates.
    *
    * Since: 2.28
    */
@@ -216,10 +252,10 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   /**
    * GTlsCertificate:pkcs11-uri: (nullable)
    *
-   * A URI referencing the PKCS \#11 objects containing an X.509 certificate
-   * and optionally a private key.
+   * A URI referencing the [PKCS \#11](https://docs.oasis-open.org/pkcs11/pkcs11-base/v3.0/os/pkcs11-base-v3.0-os.html)
+   * objects containing an X.509 certificate and optionally a private key.
    *
-   * If %NULL the certificate is either not backed by PKCS \#11 or the
+   * If %NULL, the certificate is either not backed by PKCS \#11 or the
    * #GTlsBackend does not support PKCS \#11.
    *
    * Since: 2.68
@@ -236,7 +272,8 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   /**
    * GTlsCertificate:private-key-pkcs11-uri: (nullable)
    *
-   * A URI referencing a PKCS \#11 object containing a private key.
+   * A URI referencing a [PKCS \#11](https://docs.oasis-open.org/pkcs11/pkcs11-base/v3.0/os/pkcs11-base-v3.0-os.html)
+   * object containing a private key.
    *
    * Since: 2.68
    */
@@ -248,6 +285,101 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
                                                         G_PARAM_READWRITE |
                                                           G_PARAM_CONSTRUCT_ONLY |
                                                           G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:not-valid-before: (nullable)
+   *
+   * The time at which this cert is considered to be valid,
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_NOT_VALID_BEFORE,
+                                   g_param_spec_boxed ("not-valid-before",
+                                                       P_("Not Valid Before"),
+                                                       P_("Cert should not be considered valid before this time."),
+                                                       G_TYPE_DATE_TIME,
+                                                       G_PARAM_READABLE |
+                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:not-valid-after: (nullable)
+   *
+   * The time at which this cert is no longer valid,
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_NOT_VALID_AFTER,
+                                   g_param_spec_boxed ("not-valid-after",
+                                                       P_("Not Valid after"),
+                                                       P_("Cert should not be considered valid after this time."),
+                                                       G_TYPE_DATE_TIME,
+                                                       G_PARAM_READABLE |
+                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:subject-name: (nullable)
+   *
+   * The subject from the cert,
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_SUBJECT_NAME,
+                                   g_param_spec_string ("subject-name",
+                                                        P_("Subject Name"),
+                                                        P_("The subject name from the certificate."),
+                                                        NULL,
+                                                        G_PARAM_READABLE |
+                                                          G_PARAM_STATIC_STRINGS));
+  /**
+   * GTlsCertificate:issuer-name: (nullable)
+   *
+   * The issuer from the certificate,
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_ISSUER_NAME,
+                                   g_param_spec_string ("issuer-name",
+                                                        P_("Issuer Name"),
+                                                        P_("The issuer from the certificate."),
+                                                        NULL,
+                                                        G_PARAM_READABLE |
+                                                          G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:dns-names: (nullable) (element-type GBytes) (transfer container)
+   *
+   * The DNS names from the certificate's Subject Alternative Names (SANs),
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_DNS_NAMES,
+                                   g_param_spec_boxed ("dns-names",
+                                                       P_("DNS Names"),
+                                                       P_("DNS Names listed on the cert."),
+                                                       G_TYPE_PTR_ARRAY,
+                                                       G_PARAM_READABLE |
+                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:ip-addresses: (nullable) (element-type GInetAddress) (transfer container)
+   *
+   * The IP addresses from the certificate's Subject Alternative Names (SANs),
+   * %NULL if unavailable.
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_IP_ADDRESSES,
+                                   g_param_spec_boxed ("ip-addresses",
+                                                       P_("IP Addresses"),
+                                                       P_("IP Addresses listed on the cert."),
+                                                       G_TYPE_PTR_ARRAY,
+                                                       G_PARAM_READABLE |
+                                                         G_PARAM_STATIC_STRINGS));
 }
 
 static GTlsCertificate *
@@ -286,6 +418,7 @@ parse_private_key (const gchar *data,
 		   GError **error)
 {
   const gchar *header_start = NULL, *header_end, *footer_start = NULL, *footer_end;
+  const gchar *data_end = data + data_len;
 
   header_end = g_strstr_len (data, data_len, PEM_PRIVKEY_HEADER_END);
   if (header_end)
@@ -322,7 +455,7 @@ parse_private_key (const gchar *data,
 
   footer_end += strlen (PEM_PRIVKEY_FOOTER_END);
 
-  while (*footer_end == '\r' || *footer_end == '\n')
+  while ((footer_end < data_end) && (*footer_end == '\r' || *footer_end == '\n'))
     footer_end++;
 
   return g_strndup (header_start, footer_end - header_start);
@@ -356,7 +489,7 @@ parse_next_pem_certificate (const gchar **data,
       return NULL;
     }
   end += strlen (PEM_CERTIFICATE_FOOTER);
-  while (*end == '\r' || *end == '\n')
+  while ((end < data_end) && (*end == '\r' || *end == '\n'))
     end++;
 
   *data = end;
@@ -388,7 +521,7 @@ parse_and_create_certificate_list (const gchar  *data,
   /* If we read one certificate successfully, let's see if we can read
    * some more. If not, we will simply return a list with the first one.
    */
-  while (p && *p)
+  while (p < end && p && *p)
     {
       gchar *cert_pem;
       GError *error = NULL;
@@ -652,13 +785,14 @@ g_tls_certificate_new_from_files (const gchar  *cert_file,
  * @private_key_pkcs11_uri: (nullable): A PKCS \#11 URI
  * @error: #GError for error reporting, or %NULL to ignore.
  *
- * Creates a #GTlsCertificate from a PKCS \#11 URI.
+ * Creates a #GTlsCertificate from a
+ * [PKCS \#11](https://docs.oasis-open.org/pkcs11/pkcs11-base/v3.0/os/pkcs11-base-v3.0-os.html) URI.
  *
  * An example @pkcs11_uri would be `pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01`
  *
  * Where the token’s layout is:
  *
- * ```
+ * |[
  * Object 0:
  *   URL: pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01;object=private%20key;type=private
  *   Type: Private key (RSA-2048)
@@ -668,7 +802,7 @@ g_tls_certificate_new_from_files (const gchar  *cert_file,
  *   URL: pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01;object=Certificate%20for%20Authentication;type=cert
  *   Type: X.509 Certificate (RSA-2048)
  *   ID: 01
- * ```
+ * ]|
  *
  * In this case the certificate and private key would both be detected and used as expected.
  * @pkcs_uri may also just reference an X.509 certificate object and then optionally
@@ -825,8 +959,20 @@ g_tls_certificate_get_issuer (GTlsCertificate  *cert)
  * @trusted_ca is %NULL, that bit will never be set in the return
  * value.
  *
- * (All other #GTlsCertificateFlags values will always be set or unset
- * as appropriate.)
+ * GLib guarantees that if certificate verification fails, at least one
+ * error will be set in the return value, but it does not guarantee
+ * that all possible errors will be set. Accordingly, you may not safely
+ * decide to ignore any particular type of error. For example, it would
+ * be incorrect to mask %G_TLS_CERTIFICATE_EXPIRED if you want to allow
+ * expired certificates, because this could potentially be the only
+ * error flag set even if other problems exist with the certificate.
+ *
+ * Because TLS session context is not used, #GTlsCertificate may not
+ * perform as many checks on the certificates as #GTlsConnection would.
+ * For example, certificate constraints may not be honored, and
+ * revocation checks may not be performed. The best way to verify TLS
+ * certificates used by a TLS connection is to let #GTlsConnection
+ * handle the verification.
  *
  * Returns: the appropriate #GTlsCertificateFlags
  *
@@ -875,4 +1021,139 @@ g_tls_certificate_is_same (GTlsCertificate     *cert_one,
   g_byte_array_unref (b2);
 
   return equal;
+}
+
+
+/**
+ * g_tls_certificate_get_not_valid_before:
+ * @cert: a #GTlsCertificate
+ *
+ * Returns the time at which the certificate became or will become valid.
+ *
+ * Returns: (nullable) (transfer full): The not-valid-before date, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+GDateTime *
+g_tls_certificate_get_not_valid_before (GTlsCertificate *cert)
+{
+  GDateTime *not_valid_before = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "not-valid-before", &not_valid_before, NULL);
+
+  return g_steal_pointer (&not_valid_before);
+}
+
+/**
+ * g_tls_certificate_get_not_valid_after:
+ * @cert: a #GTlsCertificate
+ *
+ * Returns the time at which the certificate became or will become invalid.
+ *
+ * Returns: (nullable) (transfer full): The not-valid-after date, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+GDateTime *
+g_tls_certificate_get_not_valid_after (GTlsCertificate *cert)
+{
+  GDateTime *not_valid_after = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "not-valid-after", &not_valid_after, NULL);
+
+  return g_steal_pointer (&not_valid_after);
+}
+
+/**
+ * g_tls_certificate_get_subject_name:
+ * @cert: a #GTlsCertificate
+ *
+ * Returns the subject name from the certificate.
+ *
+ * Returns: (nullable) (transfer full): The subject name, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+gchar *
+g_tls_certificate_get_subject_name (GTlsCertificate *cert)
+{
+  gchar *subject_name = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "subject-name", &subject_name, NULL);
+
+  return g_steal_pointer (&subject_name);
+}
+
+/**
+ * g_tls_certificate_get_issuer_name:
+ * @cert: a #GTlsCertificate
+ *
+ * Returns the issuer name from the certificate.
+ *
+ * Returns: (nullable) (transfer full): The issuer name, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+gchar *
+g_tls_certificate_get_issuer_name (GTlsCertificate *cert)
+{
+  gchar *issuer_name = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "issuer-name", &issuer_name, NULL);
+
+  return g_steal_pointer (&issuer_name);
+}
+
+/**
+ * g_tls_certificate_get_dns_names:
+ * @cert: a #GTlsCertificate
+ *
+ * Gets the value of #GTlsCertificate:dns-names.
+ *
+ * Returns: (nullable) (element-type GBytes) (transfer container): A #GPtrArray of
+ * #GBytes elements, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+GPtrArray *
+g_tls_certificate_get_dns_names (GTlsCertificate *cert)
+{
+  GPtrArray *dns_names = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "dns-names", &dns_names, NULL);
+
+  return g_steal_pointer (&dns_names);
+}
+
+/**
+ * g_tls_certificate_get_ip_addresses:
+ * @cert: a #GTlsCertificate
+ *
+ * Gets the value of #GTlsCertificate:ip-addresses.
+ *
+ * Returns: (nullable) (element-type GInetAddress) (transfer container): A #GPtrArray
+ * of #GInetAddress elements, or %NULL if it's not available.
+ *
+ * Since: 2.70
+ */
+GPtrArray *
+g_tls_certificate_get_ip_addresses (GTlsCertificate *cert)
+{
+  GPtrArray *ip_addresses = NULL;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert), NULL);
+
+  g_object_get (G_OBJECT (cert), "ip-addresses", &ip_addresses, NULL);
+
+  return g_steal_pointer (&ip_addresses);
 }

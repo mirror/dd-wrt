@@ -77,7 +77,7 @@
  * session or system bus, you should instead use g_bus_own_name().
  *
  * An example of peer-to-peer communication with GDBus can be found
- * in [gdbus-example-peer.c](https://git.gnome.org/browse/glib/tree/gio/tests/gdbus-example-peer.c).
+ * in [gdbus-example-peer.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gdbus-example-peer.c).
  *
  * Note that a minimal #GDBusServer will accept connections from any
  * peer. In many use-cases it will be necessary to add a #GDBusAuthObserver
@@ -320,7 +320,9 @@ g_dbus_server_class_init (GDBusServerClass *klass)
   /**
    * GDBusServer:guid:
    *
-   * The guid of the server.
+   * The GUID of the server.
+   *
+   * See #GDBusConnection:guid for more details.
    *
    * Since: 2.26
    */
@@ -542,7 +544,9 @@ g_dbus_server_new_sync (const gchar        *address,
  * [D-Bus address](https://dbus.freedesktop.org/doc/dbus-specification.html#addresses)
  * string that can be used by clients to connect to @server.
  *
- * Returns: A D-Bus address string. Do not free, the string is owned
+ * This is valid and non-empty if initializing the #GDBusServer succeeded.
+ *
+ * Returns: (not nullable): A D-Bus address string. Do not free, the string is owned
  * by @server.
  *
  * Since: 2.26
@@ -558,9 +562,9 @@ g_dbus_server_get_client_address (GDBusServer *server)
  * g_dbus_server_get_guid:
  * @server: A #GDBusServer.
  *
- * Gets the GUID for @server.
+ * Gets the GUID for @server, as provided to g_dbus_server_new_sync().
  *
- * Returns: A D-Bus GUID. Do not free this string, it is owned by @server.
+ * Returns: (not nullable): A D-Bus GUID. Do not free this string, it is owned by @server.
  *
  * Since: 2.26
  */
@@ -1081,7 +1085,7 @@ on_run (GSocketService    *service,
                              emit_new_connection_in_idle,
                              data,
                              (GDestroyNotify) emit_idle_data_free);
-      g_source_set_name (idle_source, "[gio] emit_new_connection_in_idle");
+      g_source_set_static_name (idle_source, "[gio] emit_new_connection_in_idle");
       g_source_attach (idle_source, server->main_context_at_construction);
       g_source_unref (idle_source);
     }

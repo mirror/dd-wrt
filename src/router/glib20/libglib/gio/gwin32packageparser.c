@@ -96,7 +96,7 @@ static BOOL
 WIN32_FROM_HRESULT (HRESULT hresult,
                     DWORD  *win32_error_code)
 {
-  if ((hresult & 0xFFFF0000) == MAKE_HRESULT (SEVERITY_ERROR, FACILITY_WIN32, 0) ||
+  if ((hresult & (HRESULT) 0xFFFF0000) == MAKE_HRESULT (SEVERITY_ERROR, FACILITY_WIN32, 0) ||
       hresult == S_OK)
     {
       *win32_error_code = HRESULT_CODE (hresult);
@@ -390,7 +390,7 @@ g_win32_package_parser_enum_packages (GWin32PackageParserCallback   callback,
       wcs_path = LoadedWindowsGetStringRawBuffer (path, NULL);
       manifest_filename_size = wcslen (wcs_path) + wcslen (bslash_appmanifest);
       manifest_filename = g_new (wchar_t, manifest_filename_size + 1);
-      memcpy (manifest_filename, wcs_path, manifest_filename_size * sizeof (wchar_t));
+      memcpy (manifest_filename, wcs_path, wcslen (wcs_path) * sizeof (wchar_t));
       memcpy (&manifest_filename[wcslen (wcs_path)], bslash_appmanifest, (wcslen (bslash_appmanifest) + 1) * sizeof (wchar_t));
 
       memset (sax, 0, sizeof (*sax));

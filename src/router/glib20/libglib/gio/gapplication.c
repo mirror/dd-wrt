@@ -155,13 +155,13 @@
  * respectively.
  *
  * For an example of opening files with a GApplication, see
- * [gapplication-example-open.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-open.c).
+ * [gapplication-example-open.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-open.c).
  *
  * For an example of using actions with GApplication, see
- * [gapplication-example-actions.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-actions.c).
+ * [gapplication-example-actions.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-actions.c).
  *
  * For an example of using extra D-Bus hooks with GApplication, see
- * [gapplication-example-dbushooks.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-dbushooks.c).
+ * [gapplication-example-dbushooks.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-dbushooks.c).
  */
 
 /**
@@ -543,7 +543,7 @@ g_application_parse_command_line (GApplication   *application,
       GOptionEntry entries[] = {
         { "gapplication-service", '\0', 0, G_OPTION_ARG_NONE, &become_service,
           N_("Enter GApplication service mode (use from D-Bus service files)"), NULL },
-        { NULL }
+        G_OPTION_ENTRY_NULL
       };
 
       g_option_group_add_entries (gapplication_group, entries);
@@ -555,7 +555,7 @@ g_application_parse_command_line (GApplication   *application,
       GOptionEntry entries[] = {
         { "gapplication-app-id", '\0', 0, G_OPTION_ARG_STRING, &app_id,
           N_("Override the application’s ID"), NULL },
-        { NULL }
+        G_OPTION_ENTRY_NULL
       };
 
       g_option_group_add_entries (gapplication_group, entries);
@@ -567,7 +567,7 @@ g_application_parse_command_line (GApplication   *application,
       GOptionEntry entries[] = {
         { "gapplication-replace", '\0', 0, G_OPTION_ARG_NONE, &replace,
           N_("Replace the running instance"), NULL },
-        { NULL }
+        G_OPTION_ENTRY_NULL
       };
 
       g_option_group_add_entries (gapplication_group, entries);
@@ -729,7 +729,11 @@ g_application_add_main_option_entries (GApplication       *application,
 
   for (i = 0; entries[i].long_name; i++)
     {
-      GOptionEntry my_entries[2] = { { NULL }, { NULL } };
+      GOptionEntry my_entries[2] =
+        {
+          G_OPTION_ENTRY_NULL,
+          G_OPTION_ENTRY_NULL
+        };
       my_entries[0] = entries[i];
 
       if (!my_entries[0].arg_data)
@@ -778,7 +782,7 @@ g_application_add_main_option (GApplication *application,
   gchar *dup_string;
   GOptionEntry my_entry[2] = {
     { NULL, short_name, flags, arg, NULL, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
 
   g_return_if_fail (G_IS_APPLICATION (application));
@@ -2395,7 +2399,7 @@ g_application_open (GApplication  *application,
  * and override local_command_line(). In this case, you most likely want
  * to return %TRUE from your local_command_line() implementation to
  * suppress the default handling. See
- * [gapplication-example-cmdline2.c][gapplication-example-cmdline2]
+ * [gapplication-example-cmdline2.c][https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-cmdline2.c]
  * for an example.
  *
  * If, after the above is done, the use count of the application is zero
@@ -2524,7 +2528,12 @@ g_application_run (GApplication  *application,
 
   context = g_main_context_default ();
   acquired_context = g_main_context_acquire (context);
-  g_return_val_if_fail (acquired_context, 0);
+  if (!acquired_context)
+    {
+      g_critical ("g_application_run() cannot acquire the default main context because it is already acquired by another thread!");
+      g_strfreev (arguments);
+      return 1;
+    }
 
   if (!G_APPLICATION_GET_CLASS (application)
         ->local_command_line (application, &arguments, &status))
@@ -2573,6 +2582,13 @@ g_application_run (GApplication  *application,
 
   if (application->priv->impl)
     {
+      if (application->priv->is_registered)
+        {
+          application->priv->is_registered = FALSE;
+
+          g_object_notify (G_OBJECT (application), "is-registered");
+        }
+
       g_application_impl_flush (application->priv->impl);
       g_application_impl_destroy (application->priv->impl);
       application->priv->impl = NULL;
@@ -2816,6 +2832,8 @@ g_application_quit (GApplication *application)
  *
  * To cancel the busy indication, use g_application_unmark_busy().
  *
+ * The application must be registered before calling this function.
+ *
  * Since: 2.38
  **/
 void
@@ -2824,6 +2842,7 @@ g_application_mark_busy (GApplication *application)
   gboolean was_busy;
 
   g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (application->priv->is_registered);
 
   was_busy = (application->priv->busy_count > 0);
   application->priv->busy_count++;

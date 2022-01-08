@@ -1667,8 +1667,8 @@ file_is_hidden (const gchar *path,
             g_timeout_source_new_seconds (hidden_cache_ttl_secs +
                                           hidden_cache_ttl_jitter_secs);
           g_source_set_priority (hidden_cache_source, G_PRIORITY_DEFAULT);
-          g_source_set_name (hidden_cache_source,
-                             "[gio] remove_from_hidden_cache");
+          g_source_set_static_name (hidden_cache_source,
+                                    "[gio] remove_from_hidden_cache");
           g_source_set_callback (hidden_cache_source,
                                  remove_from_hidden_cache,
                                  NULL, NULL);
@@ -2440,7 +2440,7 @@ _g_win32_unix_time_to_filetime (gint64     ut,
 {
   gint64 result;
   /* 1 unit of FILETIME is 100ns */
-  const gint64 hundreds_of_usec_per_sec = 10000000;
+  const gint64 hundreds_of_nsec_per_sec = 10000000;
   /* The difference between January 1, 1601 UTC (FILETIME epoch) and UNIX epoch
    * in hundreds of nanoseconds.
    */
@@ -2465,7 +2465,7 @@ _g_win32_unix_time_to_filetime (gint64     ut,
       return FALSE;
     }
 
-  if (nsec >= hundreds_of_usec_per_sec * 100)
+  if (nsec >= hundreds_of_nsec_per_sec * 100)
     {
       g_set_error (error, G_IO_ERROR,
                    G_IO_ERROR_INVALID_DATA,
@@ -2474,8 +2474,8 @@ _g_win32_unix_time_to_filetime (gint64     ut,
       return FALSE;
     }
 
-  if (ut >= (G_MAXINT64 / hundreds_of_usec_per_sec) ||
-      (ut * hundreds_of_usec_per_sec) >= (G_MAXINT64 - filetime_unix_epoch_offset))
+  if (ut >= (G_MAXINT64 / hundreds_of_nsec_per_sec) ||
+      (ut * hundreds_of_nsec_per_sec) >= (G_MAXINT64 - filetime_unix_epoch_offset))
     {
       g_set_error (error, G_IO_ERROR,
                    G_IO_ERROR_INVALID_DATA,
@@ -2484,7 +2484,7 @@ _g_win32_unix_time_to_filetime (gint64     ut,
       return FALSE;
     }
 
-  result = ut * hundreds_of_usec_per_sec + filetime_unix_epoch_offset + nsec / 100;
+  result = ut * hundreds_of_nsec_per_sec + filetime_unix_epoch_offset + nsec / 100;
 
   if (result >= max_systemtime || result < 0)
     {
@@ -2512,6 +2512,7 @@ set_mtime_atime (const char                 *filename,
   BOOL res;
   guint64 val = 0;
   guint32 val_usec = 0;
+  guint32 val_nsec = 0;
   gunichar2 *filename_utf16;
   SECURITY_ATTRIBUTES sec = { sizeof (SECURITY_ATTRIBUTES), NULL, FALSE };
   HANDLE file_handle;
@@ -2529,8 +2530,14 @@ set_mtime_atime (const char                 *filename,
       val_usec = 0;
       if (atime_usec_value &&
           !get_uint32 (atime_usec_value, &val_usec, error))
-	return FALSE;
-      if (!_g_win32_unix_time_to_filetime (val, val_usec, &atime, error))
+        return FALSE;
+
+      /* Convert to nanoseconds. Clamp the usec value if it’s going to overflow,
+       * as %G_MAXINT32 will trigger a ‘too big’ error in
+       * _g_win32_unix_time_to_filetime() anyway. */
+      val_nsec = (val_usec > G_MAXINT32 / 1000) ? G_MAXINT32 : (val_usec * 1000);
+
+      if (!_g_win32_unix_time_to_filetime (val, val_nsec, &atime, error))
         return FALSE;
       p_atime = &atime;
     }
@@ -2543,8 +2550,14 @@ set_mtime_atime (const char                 *filename,
       val_usec = 0;
       if (mtime_usec_value &&
           !get_uint32 (mtime_usec_value, &val_usec, error))
-	return FALSE;
-      if (!_g_win32_unix_time_to_filetime (val, val_usec, &mtime, error))
+        return FALSE;
+
+      /* Convert to nanoseconds. Clamp the usec value if it’s going to overflow,
+       * as %G_MAXINT32 will trigger a ‘too big’ error in
+       * _g_win32_unix_time_to_filetime() anyway. */
+      val_nsec = (val_usec > G_MAXINT32 / 1000) ? G_MAXINT32 : (val_usec * 1000);
+
+      if (!_g_win32_unix_time_to_filetime (val, val_nsec, &mtime, error))
         return FALSE;
       p_mtime = &mtime;
     }
@@ -2637,7 +2650,7 @@ set_mtime_atime (char                       *filename,
     {
       if (lazy_stat (filename, &statbuf, &got_stat) == 0)
 	{
-	  times[0].tv_sec = statbuf.st_mtime;
+	  times[0].tv_sec = statbuf.st_atime;
 #if defined (HAVE_STRUCT_STAT_ST_ATIMENSEC)
 	  times[0].tv_usec = statbuf.st_atimensec / 1000;
 #elif defined (HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC)

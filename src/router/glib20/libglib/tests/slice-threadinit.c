@@ -31,7 +31,7 @@
 static struct {
   void *page;
   void *sample;
-} pages[N_PAGES] = { { NULL, }, };
+} pages[N_PAGES] = { { NULL, NULL }, };
 
 static const guint magazine_probes[] = MAGAZINE_PROBES;
 #define N_MAGAZINE_PROBES       G_N_ELEMENTS (magazine_probes)
@@ -70,7 +70,7 @@ int
 main (int   argc,
       char *argv[])
 {
-  int j, n_pages = 0;
+  gsize j, n_pages = 0;
   void *mps[N_MAGAZINE_PROBES];
 
   /* probe some magazine sizes */

@@ -1,10 +1,10 @@
 project('glib', 'c', 'cpp',
-  version : '2.68.1',
-  # NOTE: We keep this pinned at 0.49 because that's what Debian 10 ships
-  meson_version : '>= 0.49.2',
+  version : '2.71.0',
+  # NOTE: We keep this pinned at 0.52 because that's what Debian Stable ships
+  meson_version : '>= 0.52.0',
   default_options : [
     'buildtype=debugoptimized',
-    'warning_level=1',
+    'warning_level=3',
     'c_std=gnu99'
   ]
 )
@@ -14,18 +14,23 @@ cxx = meson.get_compiler('cpp')
 
 cc_can_run = not meson.is_cross_build() or meson.has_exe_wrapper()
 
-if cc.get_id() == 'msvc'
+if cc.get_argument_syntax() == 'msvc'
   # Ignore several spurious warnings for things glib does very commonly
+  # (also for clang-cl)
+  add_project_arguments('/FImsvc_recommended_pragmas.h',language : 'c')
+endif
+
+if cc.get_id() == 'msvc'
   # If a warning is completely useless and spammy, use '/wdXXXX' to suppress it
   # If a warning is harmless but hard to fix, use '/woXXXX' so it's shown once
   # NOTE: Only add warnings here if you are sure they're spurious
   add_project_arguments('/wd4035', '/wd4715', '/wd4116',
-    '/wd4046', '/wd4068', '/wo4090', '/FImsvc_recommended_pragmas.h',language : 'c')
+    '/wd4046', '/wd4068', '/wo4090',language : 'c')
+  # Set the input and exec encoding to utf-8, like is the default with GCC
+  add_project_arguments(cc.get_supported_arguments(['/utf-8']), language: 'c')
   # Disable SAFESEH with MSVC for plugins and libs that use external deps that
   # are built with MinGW
   noseh_link_args = ['/SAFESEH:NO']
-  # Set the input and exec encoding to utf-8, like is the default with GCC
-  add_project_arguments(cc.get_supported_arguments(['/utf-8']), language: 'c')
 else
   noseh_link_args = []
   # -mms-bitfields vs -fnative-struct ?
@@ -420,31 +425,40 @@ endforeach
 
 # Compiler flags
 if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
-  warning_c_args = [
+  warning_common_args = [
     '-Wduplicated-branches',
     '-Wimplicit-fallthrough',
     '-Wmisleading-indentation',
-    '-Wstrict-prototypes',
     '-Wunused',
     # Due to maintained deprecated code, we do not want to see unused parameters
     '-Wno-unused-parameter',
     # Due to pervasive use of things like GPOINTER_TO_UINT(), we do not support
     # building with -Wbad-function-cast.
-    '-Wno-bad-function-cast',
     '-Wno-cast-function-type',
     # Due to function casts through (void*) we cannot support -Wpedantic:
     # https://wiki.gnome.org/Projects/GLib/CompilerRequirements#Function_pointer_conversions.
     '-Wno-pedantic',
     # A zero-length format string shouldn't be considered an issue.
     '-Wno-format-zero-length',
-    '-Werror=declaration-after-statement',
+    # We explicitly require variadic macros
+    '-Wno-variadic-macros',
     '-Werror=format=2',
-    '-Werror=implicit-function-declaration',
     '-Werror=init-self',
     '-Werror=missing-include-dirs',
-    '-Werror=missing-prototypes',
     '-Werror=pointer-arith',
   ]
+
+  warning_c_args = warning_common_args + [
+    '-Wstrict-prototypes',
+    # Due to pervasive use of things like GPOINTER_TO_UINT(), we do not support
+    # building with -Wbad-function-cast.
+    '-Wno-bad-function-cast',
+    '-Werror=declaration-after-statement',
+    '-Werror=implicit-function-declaration',
+    '-Werror=missing-prototypes',
+  ]
+  warning_cxx_args = warning_common_args
+  warning_objc_args = warning_c_args
   warning_c_link_args = [
     '-Wl,-z,nodelete',
   ]
@@ -453,10 +467,13 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
   endif
 else
   warning_c_args = []
+  warning_cxx_args = []
+  warning_objc_args = []
   warning_c_link_args = []
 endif
 
 add_project_arguments(cc.get_supported_arguments(warning_c_args), language: 'c')
+add_project_arguments(cxx.get_supported_arguments(warning_cxx_args), language: 'cpp')
 
 # FIXME: We cannot build some of the GResource tests with -z nodelete, which
 # means we cannot use that flag in add_project_link_arguments(), and must add
@@ -750,6 +767,8 @@ if host_system == 'darwin'
   add_languages('objc')
   objcc = meson.get_compiler('objc')
 
+  add_project_arguments(objcc.get_supported_arguments(warning_objc_args), language: 'objc')
+
   osx_ldflags += ['-Wl,-framework,CoreFoundation']
 
   # Mac OS X Carbon support
@@ -957,6 +976,7 @@ else
   vsnprintf_c99_test_code = '''
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 int
 doit(char * s, ...)
@@ -1006,6 +1026,7 @@ main(void)
   snprintf_c99_test_code = '''
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 int
 doit()
@@ -1052,6 +1073,8 @@ main(void)
 
   printf_unix98_test_code = '''
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int
 main (void)
@@ -1183,6 +1206,15 @@ if cc.links('''#ifndef _GNU_SOURCE
                  return 0;
                }''', name : 'nl_langinfo (_NL_ABALTMON_n)')
   glib_conf.set('HAVE_LANGINFO_ABALTMON', 1)
+endif
+
+# Check for nl_langinfo and _NL_TIME_CODESET
+if cc.links('''#include <langinfo.h>
+               int main (int argc, char ** argv) {
+                 char *codeset = nl_langinfo (_NL_TIME_CODESET);
+                 return 0;
+               }''', name : 'nl_langinfo and _NL_TIME_CODESET')
+  glib_conf.set('HAVE_LANGINFO_TIME_CODESET', 1)
 endif
 
 # Check if C compiler supports the 'signed' keyword
@@ -1965,46 +1997,37 @@ else
   endif
 endif
 
-if get_option('internal_pcre')
-  pcre = []
-  use_system_pcre = false
-else
-  pcre = dependency('libpcre', version: '>= 8.31', required : false) # Should check for Unicode support, too. FIXME
-  if not pcre.found()
-    if cc.get_id() == 'msvc' or cc.get_id() == 'clang-cl'
-    # MSVC: Search for the PCRE library by the configuration, which corresponds
-    # to the output of CMake builds of PCRE.  Note that debugoptimized
-    # is really a Release build with .PDB files.
-      if vs_crt == 'debug'
-        pcre = cc.find_library('pcred', required : false)
-      else
-        pcre = cc.find_library('pcre', required : false)
-      endif
+pcre = dependency('libpcre', version: '>= 8.31', required : false) # Should check for Unicode support, too. FIXME
+if not pcre.found()
+  if cc.get_id() == 'msvc' or cc.get_id() == 'clang-cl'
+  # MSVC: Search for the PCRE library by the configuration, which corresponds
+  # to the output of CMake builds of PCRE.  Note that debugoptimized
+  # is really a Release build with .PDB files.
+    if vs_crt == 'debug'
+      pcre = cc.find_library('pcred', required : false)
+    else
+      pcre = cc.find_library('pcre', required : false)
     endif
   endif
-  use_system_pcre = pcre.found()
 endif
-glib_conf.set('USE_SYSTEM_PCRE', use_system_pcre)
 
-use_pcre_static_flag = false
-
-if host_system == 'windows'
-  if not use_system_pcre
-    use_pcre_static_flag = true
-  else
-    pcre_static = cc.links('''#define PCRE_STATIC
-                              #include <pcre.h>
-                              int main() {
-                                void *p = NULL;
-                                pcre_free(p);
-                                return 0;
-                              }''',
-                           dependencies: pcre,
-                           name : 'Windows system PCRE is a static build')
-    if pcre_static
-      use_pcre_static_flag = true
-    endif
-  endif
+# Try again with the fallback
+if not pcre.found()
+  pcre = dependency('libpcre', required : true, fallback : ['pcre', 'pcre_dep'])
+  use_pcre_static_flag = true
+elif host_system == 'windows'
+  pcre_static = cc.links('''#define PCRE_STATIC
+                            #include <pcre.h>
+                            int main() {
+                              void *p = NULL;
+                              pcre_free(p);
+                              return 0;
+                            }''',
+                         dependencies: pcre,
+                         name : 'Windows system PCRE is a static build')
+  use_pcre_static_flag = pcre_static
+else
+  use_pcre_static_flag = false
 endif
 
 libm = cc.find_library('m', required : false)
@@ -2054,10 +2077,10 @@ else
      # also defining the macros with the -pthread flag.
      libintl_pthread = cc.find_library('pthread', required : false)
      # Try linking with just libiconv.
-     if libintl_iconv.found() and cc.has_function('ngettext', dependencies : [libintl, libintl_iconv])
+     if libintl_iconv.found() and cc.has_function('ngettext', args : osx_ldflags, dependencies : [libintl, libintl_iconv])
        libintl_deps += [libintl_iconv]
      # Then also try linking with pthreads.
-     elif libintl_iconv.found() and libintl_pthread.found() and cc.has_function('ngettext', dependencies : [libintl, libintl_iconv, libintl_pthread])
+     elif libintl_iconv.found() and libintl_pthread.found() and cc.has_function('ngettext', args : osx_ldflags, dependencies : [libintl, libintl_iconv, libintl_pthread])
        libintl_deps += [libintl_iconv, libintl_pthread]
      else
        libintl = disabler()
@@ -2069,7 +2092,7 @@ else
     have_bind_textdomain_codeset = true  # proxy-libintl supports it
   else
     libintl_deps = [libintl] + libintl_deps
-    have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset',
+    have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset', args : osx_ldflags,
                                                    dependencies : libintl_deps)
   endif
 endif
@@ -2169,6 +2192,7 @@ cmdline_test_code = '''
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 static int
 __getcmdline (void)

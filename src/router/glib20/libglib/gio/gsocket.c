@@ -621,7 +621,7 @@ g_socket (gint     domain,
 	(flags & FD_CLOEXEC) == 0)
       {
 	flags |= FD_CLOEXEC;
-	fcntl (fd, F_SETFD, flags);
+	(void) fcntl (fd, F_SETFD, flags);
       }
   }
 #else
@@ -3138,7 +3138,7 @@ g_socket_get_available_bytes (GSocket *socket)
        * systems add internal header size to the reported size, making it
        * unusable for this function. */
       avail = recv (socket->priv->fd, buf, bufsize, MSG_PEEK);
-      if (avail == -1)
+      if ((gint) avail == -1)
         {
           int errsv = get_socket_errno ();
 #ifdef G_OS_WIN32
@@ -4114,7 +4114,7 @@ socket_source_new (GSocket      *socket,
   condition |= G_IO_HUP | G_IO_ERR | G_IO_NVAL;
 
   source = g_source_new (&socket_source_funcs, sizeof (GSocketSource));
-  g_source_set_name (source, "GSocket");
+  g_source_set_static_name (source, "GSocket");
   socket_source = (GSocketSource *)source;
 
   socket_source->socket = g_object_ref (socket);
@@ -4570,8 +4570,7 @@ G_STMT_START { \
       _msg->msg_control = NULL; \
     else \
       { \
-        _msg->msg_control = g_alloca (_msg->msg_controllen); \
-        memset (_msg->msg_control, '\0', _msg->msg_controllen); \
+        _msg->msg_control = g_alloca0 (_msg->msg_controllen); \
       } \
  \
     cmsg = CMSG_FIRSTHDR (_msg); \
@@ -4795,9 +4794,7 @@ g_socket_send_message (GSocket                *socket,
 
   if (num_vectors != -1)
     {
-      gint i;
-
-      for (i = 0; i < num_vectors; i++)
+      for (gint i = 0; i < num_vectors; i++)
         {
           /* No wrap-around for vectors_size */
           if (vectors_size > vectors_size + vectors[i].size)
@@ -4813,9 +4810,7 @@ g_socket_send_message (GSocket                *socket,
     }
   else
     {
-      gsize i;
-
-      for (i = 0; vectors[i].buffer != NULL; i++)
+      for (gsize i = 0; vectors[i].buffer != NULL; i++)
         {
           /* No wrap-around for vectors_size */
           if (vectors_size > vectors_size + vectors[i].size)
@@ -5279,7 +5274,7 @@ g_socket_send_messages_with_timeout (GSocket        *socket,
 #else
   {
     gssize result;
-    gint i;
+    guint i;
     gint64 wait_timeout;
 
     wait_timeout = timeout_us;
@@ -5309,7 +5304,11 @@ g_socket_send_messages_with_timeout (GSocket        *socket,
 #endif
           }
 
-        result = pollable_result == G_POLLABLE_RETURN_OK ? bytes_written : -1;
+        if (G_MAXSSIZE > bytes_written &&
+            pollable_result == G_POLLABLE_RETURN_OK)
+          result = (gssize) bytes_written;
+        else
+          result = -1;
 
         /* check if we've timed out or how much time to wait at most */
         if (timeout_us > 0)

@@ -131,7 +131,7 @@ test_unichar_break_type (void)
     { G_UNICODE_BREAK_HYPHEN,              0x002D },
     { G_UNICODE_BREAK_NON_STARTER,         0x17D6 },
     { G_UNICODE_BREAK_OPEN_PUNCTUATION,    0x0028 },
-    { G_UNICODE_BREAK_CLOSE_PARANTHESIS,   0x0029 },
+    { G_UNICODE_BREAK_CLOSE_PARENTHESIS,   0x0029 },
     { G_UNICODE_BREAK_CLOSE_PUNCTUATION,   0x007D },
     { G_UNICODE_BREAK_QUOTATION,           0x0022 },
     { G_UNICODE_BREAK_EXCLAMATION,         0x0021 },
@@ -337,6 +337,11 @@ test_unichar_script (void)
     { G_UNICODE_SCRIPT_DIVES_AKURU,            0x11900 },
     { G_UNICODE_SCRIPT_KHITAN_SMALL_SCRIPT,    0x18B00 },
     { G_UNICODE_SCRIPT_YEZIDI,                 0x10E80 },
+    { G_UNICODE_SCRIPT_CYPRO_MINOAN,           0x12F90 },
+    { G_UNICODE_SCRIPT_OLD_UYGHUR,             0x10F70 },
+    { G_UNICODE_SCRIPT_TANGSA,                 0x16A70 },
+    { G_UNICODE_SCRIPT_TOTO,                   0x1E290 },
+    { G_UNICODE_SCRIPT_VITHKUQI,               0x10570 }
   };
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     g_assert_cmpint (g_unichar_get_script (examples[i].c), ==, examples[i].script);
@@ -1426,8 +1431,54 @@ test_fully_decompose_len (void)
   }
 }
 
-/* Test that g_unichar_decompose() returns the correct value for various
- * ASCII and Unicode alphabetic, numeric, and other, codepoints. */
+/* Check various examples from Unicode Annex #15 for NFD and NFC
+ * normalization.
+ */
+static void
+test_normalization (void)
+{
+  const struct {
+    const char *source;
+    const char *nfd;
+    const char *nfc;
+  } tests[] = {
+    // Singletons
+    { "\xe2\x84\xab", "A\xcc\x8a", "Å" }, // U+212B ANGSTROM SIGN
+    { "\xe2\x84\xa6", "Ω", "Ω" }, // U+2126 OHM SIGN
+    // Canonical Composites
+    { "Å", "A\xcc\x8a", "Å" }, // U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE
+    { "ô", "o\xcc\x82", "ô" }, // U+00F4 LATIN SMALL LETTER O WITH CIRCUMFLEX
+    // Multiple Combining Marks
+    { "\xe1\xb9\xa9", "s\xcc\xa3\xcc\x87", "ṩ" }, // U+1E69 LATIN SMALL LETTER S WITH DOT BELOW AND DOT ABOVE
+    { "\xe1\xb8\x8b\xcc\xa3", "d\xcc\xa3\xcc\x87", "ḍ̇" },
+    { "q\xcc\x87\xcc\xa3", "q\xcc\xa3\xcc\x87", "q̣̇" },
+    // Compatibility Composites
+    { "ﬁ", "ﬁ", "ﬁ" }, // U+FB01 LATIN SMALL LIGATURE FI
+    { "2\xe2\x81\xb5", "2\xe2\x81\xb5", "2⁵" },
+    { "\xe1\xba\x9b\xcc\xa3", "\xc5\xbf\xcc\xa3\xcc\x87", "ẛ̣" },
+
+    // Tests for behavior with reordered marks
+    { "s\xcc\x87\xcc\xa3", "s\xcc\xa3\xcc\x87", "ṩ" },
+    { "α\xcc\x94\xcd\x82", "α\xcc\x94\xcd\x82", "ἇ" },
+    { "α\xcd\x82\xcc\x94", "α\xcd\x82\xcc\x94", "ᾶ\xcc\x94" },
+  };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (tests); i++)
+    {
+      char *nfd, *nfc;
+
+      nfd = g_utf8_normalize (tests[i].source, -1, G_NORMALIZE_NFD);
+      g_assert_cmpstr (nfd, ==, tests[i].nfd);
+
+      nfc = g_utf8_normalize (tests[i].nfd, -1, G_NORMALIZE_NFC);
+      g_assert_cmpstr (nfc, ==, tests[i].nfc);
+
+      g_free (nfd);
+      g_free (nfc);
+    }
+}
+
 static void
 test_iso15924 (void)
 {
@@ -1620,6 +1671,13 @@ test_iso15924 (void)
     { G_UNICODE_SCRIPT_DIVES_AKURU,            "Diak" },
     { G_UNICODE_SCRIPT_KHITAN_SMALL_SCRIPT,    "Kits" },
     { G_UNICODE_SCRIPT_YEZIDI,                 "Yezi" },
+
+    /* Unicode 14.0 additions */
+    { G_UNICODE_SCRIPT_CYPRO_MINOAN,           "Cpmn" },
+    { G_UNICODE_SCRIPT_OLD_UYGHUR,             "Ougr" },
+    { G_UNICODE_SCRIPT_TANGSA,                 "Tnsa" },
+    { G_UNICODE_SCRIPT_TOTO,                   "Toto" },
+    { G_UNICODE_SCRIPT_VITHKUQI,               "Vith" }
   };
   guint i;
 
@@ -1674,6 +1732,7 @@ main (int   argc,
   g_test_add_func ("/unicode/digit-value", test_digit_value);
   g_test_add_func ("/unicode/fully-decompose-canonical", test_fully_decompose_canonical);
   g_test_add_func ("/unicode/fully-decompose-len", test_fully_decompose_len);
+  g_test_add_func ("/unicode/normalization", test_normalization);
   g_test_add_func ("/unicode/graph", test_graph);
   g_test_add_func ("/unicode/iso15924", test_iso15924);
   g_test_add_func ("/unicode/lower", test_lower);

@@ -55,12 +55,7 @@
  * Since: 2.28
  */
 
-struct _GTlsConnectionPrivate
-{
-  gchar *negotiated_protocol;
-};
-
-G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GTlsConnection, g_tls_connection, G_TYPE_IO_STREAM)
+G_DEFINE_ABSTRACT_TYPE (GTlsConnection, g_tls_connection, G_TYPE_IO_STREAM)
 
 static void g_tls_connection_get_property (GObject    *object,
 					   guint       prop_id,
@@ -70,7 +65,6 @@ static void g_tls_connection_set_property (GObject      *object,
 					   guint         prop_id,
 					   const GValue *value,
 					   GParamSpec   *pspec);
-static void g_tls_connection_finalize (GObject *object);
 
 enum {
   ACCEPT_CERTIFICATE,
@@ -93,6 +87,8 @@ enum {
   PROP_PEER_CERTIFICATE_ERRORS,
   PROP_ADVERTISED_PROTOCOLS,
   PROP_NEGOTIATED_PROTOCOL,
+  PROP_PROTOCOL_VERSION,
+  PROP_CIPHERSUITE_NAME,
 };
 
 static void
@@ -102,7 +98,6 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
 
   gobject_class->get_property = g_tls_connection_get_property;
   gobject_class->set_property = g_tls_connection_set_property;
-  gobject_class->finalize = g_tls_connection_finalize;
 
   /**
    * GTlsConnection:base-io-stream:
@@ -147,6 +142,19 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
    * The certificate database to use when verifying this TLS connection.
    * If no certificate database is set, then the default database will be
    * used. See g_tls_backend_get_default_database().
+   *
+   * When using a non-default database, #GTlsConnection must fall back to using
+   * the #GTlsDatabase to perform certificate verification using
+   * g_tls_database_verify_chain(), which means certificate verification will
+   * not be able to make use of TLS session context. This may be less secure.
+   * For example, if you create your own #GTlsDatabase that just wraps the
+   * default #GTlsDatabase, you might expect that you have not changed anything,
+   * but this is not true because you may have altered the behavior of
+   * #GTlsConnection by causing it to use g_tls_database_verify_chain(). See the
+   * documentation of g_tls_database_verify_chain() for more details on specific
+   * security checks that may not be performed. Accordingly, setting a
+   * non-default database is discouraged except for specialty applications with
+   * unusual security requirements.
    *
    * Since: 2.30
    */
@@ -253,6 +261,14 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
    * #GTlsConnection::accept-certificate overrode the default
    * behavior.
    *
+   * GLib guarantees that if certificate verification fails, at least
+   * one error will be set, but it does not guarantee that all possible
+   * errors will be set. Accordingly, you may not safely decide to
+   * ignore any particular type of error. For example, it would be
+   * incorrect to mask %G_TLS_CERTIFICATE_EXPIRED if you want to allow
+   * expired certificates, because this could potentially be the only
+   * error flag set even if other problems exist with the certificate.
+   *
    * Since: 2.28
    */
   g_object_class_install_property (gobject_class, PROP_PEER_CERTIFICATE_ERRORS,
@@ -296,6 +312,37 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
                                                         G_PARAM_STATIC_STRINGS));
 
   /**
+   * GTlsConnection:protocol-version:
+   *
+   * The TLS protocol version in use. See g_tls_connection_get_protocol_version().
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_PROTOCOL_VERSION,
+                                   g_param_spec_enum ("protocol-version",
+                                                      P_("Protocol Version"),
+                                                      P_("TLS protocol version negotiated for this connection"),
+                                                      G_TYPE_TLS_PROTOCOL_VERSION,
+                                                      G_TLS_PROTOCOL_VERSION_UNKNOWN,
+                                                      G_PARAM_READABLE |
+                                                      G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsConnection:ciphersuite-name: (nullable)
+   *
+   * The name of the TLS ciphersuite in use. See g_tls_connection_get_ciphersuite_name().
+   *
+   * Since: 2.70
+   */
+  g_object_class_install_property (gobject_class, PROP_CIPHERSUITE_NAME,
+                                   g_param_spec_string ("ciphersuite-name",
+                                                        P_("Ciphersuite Name"),
+                                                        P_("Name of ciphersuite negotiated for this connection"),
+                                                        NULL,
+                                                        G_PARAM_READABLE |
+                                                        G_PARAM_STATIC_STRINGS));
+
+  /**
    * GTlsConnection::accept-certificate:
    * @conn: a #GTlsConnection
    * @peer_cert: the peer's #GTlsCertificate
@@ -312,6 +359,15 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
    * certificate to be accepted despite @errors, return %TRUE from the
    * signal handler. Otherwise, if no handler accepts the certificate,
    * the handshake will fail with %G_TLS_ERROR_BAD_CERTIFICATE.
+   *
+   * GLib guarantees that if certificate verification fails, this signal
+   * will be emitted with at least one error will be set in @errors, but
+   * it does not guarantee that all possible errors will be set.
+   * Accordingly, you may not safely decide to ignore any particular
+   * type of error. For example, it would be incorrect to ignore
+   * %G_TLS_CERTIFICATE_EXPIRED if you want to allow expired
+   * certificates, because this could potentially be the only error flag
+   * set even if other problems exist with the certificate.
    *
    * For a server-side connection, @peer_cert is the certificate
    * presented by the client, if this was requested via the server's
@@ -380,17 +436,6 @@ g_tls_connection_set_property (GObject      *object,
   G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 }
 
-static void
-g_tls_connection_finalize (GObject *object)
-{
-  GTlsConnection *conn = G_TLS_CONNECTION(object);
-  GTlsConnectionPrivate *priv = g_tls_connection_get_instance_private (conn);
-
-  g_clear_pointer (&priv->negotiated_protocol, g_free);
-
-  G_OBJECT_CLASS (g_tls_connection_parent_class)->finalize (object);
-}
-
 /**
  * g_tls_connection_set_use_system_certdb:
  * @conn: a #GTlsConnection
@@ -454,6 +499,9 @@ g_tls_connection_get_use_system_certdb (GTlsConnection *conn)
  * #GTlsConnection::accept-certificate will always be emitted on
  * client-side connections, unless that bit is not set in
  * #GTlsClientConnection:validation-flags).
+ *
+ * There are nonintuitive security implications when using a non-default
+ * database. See #GDtlsConnection:database for details.
  *
  * Since: 2.30
  */
@@ -639,6 +687,8 @@ g_tls_connection_get_peer_certificate (GTlsConnection *conn)
  * Gets the errors associated with validating @conn's peer's
  * certificate, after the handshake has completed or failed. (It is
  * not set during the emission of #GTlsConnection::accept-certificate.)
+ *
+ * See #GTlsConnection:peer-certificate-errors for more information.
  *
  * Returns: @conn's peer's certificate errors
  *
@@ -838,31 +888,15 @@ g_tls_connection_set_advertised_protocols (GTlsConnection      *conn,
 const gchar *
 g_tls_connection_get_negotiated_protocol (GTlsConnection *conn)
 {
-  GTlsConnectionPrivate *priv;
-  gchar *protocol;
+  GTlsConnectionClass *class;
 
   g_return_val_if_fail (G_IS_TLS_CONNECTION (conn), NULL);
 
-  g_object_get (G_OBJECT (conn),
-                "negotiated-protocol", &protocol,
-                NULL);
+  class = G_TLS_CONNECTION_GET_CLASS (conn);
+  if (class->get_negotiated_protocol == NULL)
+    return NULL;
 
-  /*
-   * Cache the property internally so we can return a `const` pointer
-   * to the caller.
-   */
-  priv = g_tls_connection_get_instance_private (conn);
-  if (g_strcmp0 (priv->negotiated_protocol, protocol) != 0)
-    {
-      g_free (priv->negotiated_protocol);
-      priv->negotiated_protocol = protocol;
-    }
-  else
-    {
-      g_free (protocol);
-    }
-
-  return priv->negotiated_protocol;
+  return class->get_negotiated_protocol (conn);
 }
 
 /**
@@ -1026,6 +1060,69 @@ g_tls_connection_handshake_finish (GTlsConnection  *conn,
   g_return_val_if_fail (G_IS_TLS_CONNECTION (conn), FALSE);
 
   return G_TLS_CONNECTION_GET_CLASS (conn)->handshake_finish (conn, result, error);
+}
+
+/**
+ * g_tls_connection_get_protocol_version:
+ * @conn: a #GTlsConnection
+ *
+ * Returns the current TLS protocol version, which may be
+ * %G_TLS_PROTOCOL_VERSION_UNKNOWN if the connection has not handshaked, or
+ * has been closed, or if the TLS backend has implemented a protocol version
+ * that is not a recognized #GTlsProtocolVersion.
+ *
+ * Returns: The current TLS protocol version
+ *
+ * Since: 2.70
+ */
+GTlsProtocolVersion
+g_tls_connection_get_protocol_version (GTlsConnection *conn)
+{
+  GTlsProtocolVersion protocol_version;
+  GEnumClass *enum_class;
+  GEnumValue *enum_value;
+
+  g_return_val_if_fail (G_IS_TLS_CONNECTION (conn), G_TLS_PROTOCOL_VERSION_UNKNOWN);
+
+  g_object_get (G_OBJECT (conn),
+                "protocol-version", &protocol_version,
+                NULL);
+
+  /* Convert unknown values to G_TLS_PROTOCOL_VERSION_UNKNOWN. */
+  enum_class = g_type_class_peek_static (G_TYPE_TLS_PROTOCOL_VERSION);
+  enum_value = g_enum_get_value (enum_class, protocol_version);
+  return enum_value ? protocol_version : G_TLS_PROTOCOL_VERSION_UNKNOWN;
+}
+
+/**
+ * g_tls_connection_get_ciphersuite_name:
+ * @conn: a #GTlsConnection
+ *
+ * Returns the name of the current TLS ciphersuite, or %NULL if the
+ * connection has not handshaked or has been closed. Beware that the TLS
+ * backend may use any of multiple different naming conventions, because
+ * OpenSSL and GnuTLS have their own ciphersuite naming conventions that
+ * are different from each other and different from the standard, IANA-
+ * registered ciphersuite names. The ciphersuite name is intended to be
+ * displayed to the user for informative purposes only, and parsing it
+ * is not recommended.
+ *
+ * Returns: (nullable): The name of the current TLS ciphersuite, or %NULL
+ *
+ * Since: 2.70
+ */
+gchar *
+g_tls_connection_get_ciphersuite_name (GTlsConnection *conn)
+{
+  gchar *ciphersuite_name;
+
+  g_return_val_if_fail (G_IS_TLS_CONNECTION (conn), NULL);
+
+  g_object_get (G_OBJECT (conn),
+                "ciphersuite-name", &ciphersuite_name,
+                NULL);
+
+  return g_steal_pointer (&ciphersuite_name);
 }
 
 /**

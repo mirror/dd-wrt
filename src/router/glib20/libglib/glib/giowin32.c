@@ -1023,7 +1023,9 @@ GSourceFuncs g_io_watch_funcs = {
   g_io_win32_prepare,
   g_io_win32_check,
   g_io_win32_dispatch,
-  g_io_win32_finalize
+  g_io_win32_finalize,
+  NULL,
+  NULL
 };
 
 static GIOStatus
@@ -1170,7 +1172,7 @@ g_io_win32_msg_create_watch (GIOChannel   *channel,
   GSource *source;
 
   source = g_source_new (&g_io_watch_funcs, sizeof (GIOWin32Watch));
-  g_source_set_name (source, "GIOChannel (Win32)");
+  g_source_set_static_name (source, "GIOChannel (Win32)");
   watch = (GIOWin32Watch *)source;
   
   watch->channel = channel;

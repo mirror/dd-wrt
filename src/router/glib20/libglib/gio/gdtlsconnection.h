@@ -45,8 +45,9 @@ typedef struct _GDtlsConnectionInterface GDtlsConnectionInterface;
  * @shutdown: Shut down one or both directions of the connection.
  * @shutdown_async: Start an asynchronous shutdown operation.
  * @shutdown_finish: Finish an asynchronous shutdown operation.
- * @set_advertised_protocols: Set APLN protocol list
- * @get_negotiated_protocol: Retrieve ALPN-negotiated protocol
+ * @set_advertised_protocols: Set APLN protocol list (Since: 2.60)
+ * @get_negotiated_protocol: Get ALPN-negotiated protocol (Since: 2.60)
+ * @get_binding_data: Retrieve TLS channel binding data (Since: 2.66)
  *
  * Virtual method table for a #GDtlsConnection implementation.
  *
@@ -215,6 +216,12 @@ gboolean              g_dtls_connection_get_channel_binding_data    (GDtlsConnec
                                                                      GByteArray              *data,
                                                                      GError                 **error);
 G_GNUC_END_IGNORE_DEPRECATIONS
+
+GLIB_AVAILABLE_IN_2_70
+GTlsProtocolVersion   g_dtls_connection_get_protocol_version        (GDtlsConnection       *conn);
+
+GLIB_AVAILABLE_IN_2_70
+gchar *               g_dtls_connection_get_ciphersuite_name        (GDtlsConnection       *conn);
 
 G_END_DECLS
 

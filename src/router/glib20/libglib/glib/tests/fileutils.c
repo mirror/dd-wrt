@@ -835,6 +835,67 @@ test_basename (void)
 }
 
 static void
+test_dirname (void)
+{
+  gsize i;
+  struct {
+    const gchar *filename;
+    const gchar *dirname;
+  } dirname_checks[] = {
+    { "/", "/" },
+    { "////", "/" },
+    { ".////", "." },
+    { ".", "." },
+    { "..", "." },
+    { "../", ".." },
+    { "..////", ".." },
+    { "", "." },
+    { "a/b", "a" },
+    { "a/b/", "a/b" },
+    { "c///", "c" },
+    { "/a/b", "/a" },
+    { "/a/b/", "/a/b" },
+#ifdef G_OS_WIN32
+    { "\\", "\\" },
+    { ".\\\\\\\\", "." },
+    { ".\\/\\/", "." },
+    { ".", "." },
+    { "..", "." },
+    { "..\\", ".." },
+    { "..\\\\\\\\", ".." },
+    { "..\\//\\", ".." },
+    { "", "." },
+    { "a\\b", "a" },
+    { "a\\b\\", "a\\b" },
+    { "\\a\\b", "\\a" },
+    { "\\a\\b\\", "\\a\\b" },
+    { "c\\\\\\", "c" },
+    { "c/\\\\", "c" },
+    { "a:", "a:." },
+    { "a:foo", "a:." },
+    { "a:foo\\bar", "a:foo" },
+    { "a:/foo", "a:/" },
+    { "a:/foo/bar", "a:/foo" },
+    { "a:/", "a:/" },
+    { "a://", "a:/" },
+    { "a:\\foo", "a:\\" },
+    { "a:\\", "a:\\" },
+    { "a:\\\\", "a:\\" },
+    { "a:\\/", "a:\\" },
+#endif
+  };
+
+  for (i = 0; i < G_N_ELEMENTS (dirname_checks); i++)
+    {
+      gchar *dirname;
+
+      dirname = g_path_get_dirname (dirname_checks[i].filename);
+      g_assert_cmpstr (dirname, ==, dirname_checks[i].dirname);
+      g_free (dirname);
+    }
+}
+
+static void
 test_dir_make_tmp (void)
 {
   gchar *name;
@@ -1439,7 +1500,7 @@ test_fopen_modes (void)
       "ab+"
     };
 
-  g_test_bug ("119");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/merge_requests/119");
 
   if (g_file_test (path, G_FILE_TEST_EXISTS))
     g_error ("failed, %s exists, cannot test g_fopen()", path);
@@ -1826,8 +1887,6 @@ main (int   argc,
   g_setenv ("LC_ALL", "C", TRUE);
   g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
-  g_test_bug_base ("https://gitlab.gnome.org/GNOME/glib/merge_requests/");
-
 #ifdef G_OS_WIN32
   g_test_add_func ("/fileutils/stdio-win32-pathstrip", test_win32_pathstrip);
   g_test_add_func ("/fileutils/stdio-win32-zero-terminate-symlink", test_win32_zero_terminate_symlink);
@@ -1841,6 +1900,7 @@ main (int   argc,
   g_test_add_func ("/fileutils/format-size-for-display", test_format_size_for_display);
   g_test_add_func ("/fileutils/errors", test_file_errors);
   g_test_add_func ("/fileutils/basename", test_basename);
+  g_test_add_func ("/fileutils/dirname", test_dirname);
   g_test_add_func ("/fileutils/dir-make-tmp", test_dir_make_tmp);
   g_test_add_func ("/fileutils/file-open-tmp", test_file_open_tmp);
   g_test_add_func ("/fileutils/mkstemp", test_mkstemp);
