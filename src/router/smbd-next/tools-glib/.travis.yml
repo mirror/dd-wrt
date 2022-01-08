@@ -6,7 +6,7 @@ notifications:
  - email: true
 
 before_install:
- - sudo apt-get install libnl-3-dev libnl-genl-3-dev
+ - sudo apt-get install libnl-3-dev libnl-genl-3-dev libkrb5-dev
  - gcc --version
  - g++ --version
 
@@ -14,4 +14,4 @@ script:
  # Compilation
  - ./autogen.sh
  - ./configure
- - make
+ - make DISTCHECK_CONFIGURE_FLAGS=--enable-krb5 distcheck

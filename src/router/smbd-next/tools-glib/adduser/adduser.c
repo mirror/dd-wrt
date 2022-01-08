@@ -87,11 +87,10 @@ static int sanity_check_user_name_simple(char *uname)
 	if (!strcmp(uname, "root"))
 		return -EINVAL;
 
-	for (i = 0; i < sz; i++) {
-		if (isalnum(uname[i]))
-			return 0;
-	}
-	return -EINVAL;
+	if (strpbrk(uname, ":\n"))
+		return -EINVAL;
+
+	return 0;
 }
 
 #ifdef MULTICALL
