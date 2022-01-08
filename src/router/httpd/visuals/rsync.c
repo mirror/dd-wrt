@@ -128,9 +128,8 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n",
 			  number, number, cs->label);
-		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"bin\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
+			  "					<script type=\"text/javascript\">document.write(\"<td style=\\\"width: 50px; text-align: center;\\\" title=\\\"\" + sbutton.del + \"\\\"><input type=\\\"button\\\" class=\\\"bin\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");

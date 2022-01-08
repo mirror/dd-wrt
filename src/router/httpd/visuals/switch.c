@@ -320,7 +320,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		if (flag < 16000 && flag > 2) {
 			websWrite(wp,
-				  "<td align=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
 		} else {
 			websWrite(wp, "<td>&nbsp;</td>\n");
