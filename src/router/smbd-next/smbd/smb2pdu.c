@@ -5602,7 +5602,7 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	}
 
 	ksmbd_debug(SMB, "new name %s\n", new_name);
-	rc = ksmbd_vfs_kern_path(work, new_name, 0, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, new_name, LOOKUP_FOLLOW, &path, 1);
 	if (rc) {
 		if (rc != -ENOENT)
 			goto out;
