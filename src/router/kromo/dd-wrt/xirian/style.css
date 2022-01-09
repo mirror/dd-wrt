@@ -1,3 +1,4 @@
+@import url(/style/buttons.css);
 body {
   background: #dde;
   margin: 12px;
@@ -269,16 +270,6 @@ td .meter {
   position: absolute;
   background-image: url(/style/xirian/help_bg.png);
   font-size: 1px;
-}
-.bin {
-  background: url(/images/bin_bt.gif) center center no-repeat;
-  cursor: pointer;
-  font-size:5px;
-}
-.add {
-  background: url(/images/add-icon.png) center no-repeat;
-  cursor: pointer;
-  font-size:5px;
 }
 .textblink {
   text-decoration: blink;

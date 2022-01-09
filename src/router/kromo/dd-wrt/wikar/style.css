@@ -1,3 +1,4 @@
+@import url(/style/buttons.css);
 * {
   padding: 0;
   margin: 0;
@@ -196,16 +197,6 @@ td .meter {
 }
 .textblink {
   text-decoration: blink;
-}
-.bin {
-  background: url(/images/bin_bt.gif) center no-repeat;
-  cursor: pointer;
-  font-size:5px;
-}
-.add {
-  background: url(/images/add-icon.png) center no-repeat;
-  cursor: pointer;
-  font-size:5px;
 }
 input.spaceradio, .submitFooter input.button {
   margin-right: .4em;

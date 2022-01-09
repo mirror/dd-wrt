@@ -1,0 +1,24 @@
+.bin {
+  background: url(/images/bin_bt.gif) center no-repeat;
+  cursor: pointer;
+  font-size:5px;
+}
+.bin:hover {
+  background: url(/images/bin_bt.gif) center no-repeat;
+  filter: saturate(4) contrast(2);
+  cursor: pointer;
+  font-size:5px;
+}
+
+.add {
+  background: url(/images/add-icon.png) center no-repeat;
+  cursor: pointer;
+  font-size:5px;
+}
+
+.add:hover {
+  background: url(/images/add-icon.png) center no-repeat;
+  filter: saturate(4) contrast(2);
+  cursor: pointer;
+  font-size:5px;
+}
