@@ -1,3 +1,4 @@
+@import url(/style/buttons.css);
 * {
   font-family: Tahoma, Arial, sans-serif;
   font-size: 1em;
@@ -420,16 +421,6 @@ td .meter {
 }
 .textblink {
   text-decoration: blink;
-}
-.bin {
-  background: url(/images/bin_bt.gif) center no-repeat;
-  cursor: pointer;
-  font-size:5px;
-}
-.add {
-  background: url(/images/add-icon.png) center no-repeat;
-  cursor: pointer;
-  font-size:5px;
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href="http://www.dd-wrt.com/"] {
