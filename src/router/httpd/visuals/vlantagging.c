@@ -64,7 +64,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>\n");
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
@@ -94,7 +94,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp, "</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
