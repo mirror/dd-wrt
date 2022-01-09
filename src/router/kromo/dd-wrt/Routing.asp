@@ -348,7 +348,7 @@ addEvent(window, "unload", function() {
 									</select>&nbsp;&nbsp;
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.del + "\" onclick=\"DeleteEntry(this.form);\" />");
+									document.write("<input class=\"bin\" type=\"button\" name=\"del_button\" aria-label=\"" + sbutton.del + "\" onclick=\"DeleteEntry(this.form);\" />");
 									//]]>
 									</script>
 								</div>
@@ -435,7 +435,7 @@ addEvent(window, "unload", function() {
 									</select>&nbsp;&nbsp;
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.del + "\" onclick=\"DeleteRuleEntry(this.form);\" />");
+									document.write("<input class=\"bin\" type=\"button\" name=\"del_button\" aria-label=\"" + sbutton.del + "\" onclick=\"DeleteRuleEntry(this.form);\" />");
 									//]]>
 									</script>
 								</div>
