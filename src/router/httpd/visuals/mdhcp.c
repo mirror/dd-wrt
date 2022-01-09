@@ -31,6 +31,14 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, sizeof(buf), "networking.h5"));
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.legend5"));
 
+	websWrite(wp, "<table cellspacing=\"7\" summary=\"mdhcp\" id=\"mdhcp_table\" class=\"table center\"><tr>\n");
+	show_caption_pp(wp, NULL, "share.ip", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "share.enable", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "share.start", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
+	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
@@ -53,34 +61,43 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// interface
 		char *ipaddr = nvram_nget("%s_ipaddr", interface);
 		char *netmask = nvram_nget("%s_netmask", interface);
-
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>\n");
 		if (*ipaddr && *netmask) {
-			show_caption_simple(wp, "networking.iface");
-			websWrite(wp, " %s: IP %s/%d\n", getNetworkLabel(wp, interface), ipaddr, getmask(netmask));
+			websWrite(wp, "%s: IP %s/%d\n", getNetworkLabel(wp, interface), ipaddr, getmask(netmask));
+		} else {
+			char buf[128];
+			websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.none"));
 		}
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "DHCP %d &nbsp;\n", count);
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpifname%d", count);
 		showIfOptions(wp, vlan_name, buffer, interface);
+		websWrite(wp, "</td>\n");
 		// on off
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", count);
 		showOptions(wp, vlan_name, "On Off", dhcpon);
+		websWrite(wp, "</td>\n");
 		// start
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpstart%d", count);
-		show_caption_pp(wp, NULL, "share.start", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, start);
+		websWrite(wp, "</td>\n");
 		// max
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpmax%d", count);
-		show_caption_pp(wp, NULL, "networking.max", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, max);
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpleasetime%d", count);
-		show_caption_pp(wp, NULL, "networking.leasetime", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, leasetime);
+		websWrite(wp, "</td>\n");
 		// 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
 			  count);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</tr>\n");
 		count++;
 	}
 	totalcount = count;
@@ -88,31 +105,40 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 
 	for (i = count; i < realcount; i++) {
 		char vlan_name[32];
-
-		// sprintf (mdhcp_name, "%s.%s", tag, port);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "DHCP %d\n", totalcount);
-		// interface
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>\n");
+		{
+			char buf[128];
+			websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.none"));
+		}
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpifname%d", totalcount);
 		showIfOptions(wp, vlan_name, buffer, "");
+		websWrite(wp, "</td>\n");
 		// on off
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", totalcount);
 		showOptions(wp, vlan_name, "On Off", "");
+		websWrite(wp, "</td>\n");
 		// start
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpstart%d", totalcount);
-		websWrite(wp, "&nbsp;Start&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, "100");
+		websWrite(wp, "</td>\n");
 		// max
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpmax%d", totalcount);
-		websWrite(wp, "&nbsp;Max&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, "50");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpleasetime%d", totalcount);
-		websWrite(wp, "&nbsp;Leasetime&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, "1440");
+		websWrite(wp, "</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
 			  i);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
 	char var[32];
