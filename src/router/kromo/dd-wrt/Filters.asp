@@ -313,7 +313,7 @@ addEvent(window, "unload", function() {
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"to_delete(this.form);\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form);\" />");
 									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480);\" />");
 									//]]>
 									</script>
