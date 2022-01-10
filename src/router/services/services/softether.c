@@ -62,6 +62,7 @@ void start_softether(void)
 		strcpy(vpndir, JFFSVPNDIR "/");
 	else
 		strcpy(vpndir, VPNDIR "/");
+	insmod("tun");
 	if (nvram_matchi("setherclient_enable", 1)) {
 		write_nvram("/tmp/vpn_client.config", "sether_config");
 		eval("ln", "-sf", EXECDIR "/hamcore.se2", vpndir);
