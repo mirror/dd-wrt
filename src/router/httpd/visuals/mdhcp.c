@@ -64,7 +64,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
 		if (*ipaddr && *netmask) {
-			websWrite(wp, "%s: IP %s/%d\n", getNetworkLabel(wp, interface), ipaddr, getmask(netmask));
+			websWrite(wp, "%s/%d\n", ipaddr, getmask(netmask));
 		} else {
 			char buf[128];
 			websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.none"));
