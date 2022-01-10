@@ -405,10 +405,10 @@ void start_init_start(void)
 	start_resetbutton();
 #endif
 	load_drivers(1);
-	eval("startservice_f", "modules_wait");
 #ifdef HAVE_JFFS2
 	start_jffs2();
 #endif
+	eval("startservice_f", "modules_wait");
 #ifdef HAVE_X86
 	eval("restart_f", "bootconfig");
 #endif
