@@ -319,6 +319,9 @@ void start_init_start(void)
 	lcdmessage("START SERVICES");
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
+#ifdef HAVE_JFFS2
+	start_jffs2();
+#endif
 #ifdef HAVE_SYSLOG
 	start_syslog();
 #endif
@@ -405,9 +408,6 @@ void start_init_start(void)
 	start_resetbutton();
 #endif
 	load_drivers(1);
-#ifdef HAVE_JFFS2
-	start_jffs2();
-#endif
 	eval("startservice_f", "modules_wait");
 #ifdef HAVE_X86
 	eval("restart_f", "bootconfig");
