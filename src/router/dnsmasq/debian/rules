@@ -1,0 +1,309 @@
+#!/usr/bin/make -f
+# debian/rules file - for dnsmasq.
+# Copyright 2001-2020 by Simon Kelley
+# Based on the sample in the debian hello package which carries the following:
+# Copyright 1994,1995 by Ian Jackson.
+# I hereby give you perpetual unlimited permission to copy,
+# modify and relicense this file, provided that you do not remove
+# my name from the file itself.  (I assert my moral right of
+# paternity under the Copyright, Designs and Patents Act 1988.)
+# This file may have to be extensively modified
+
+package=dnsmasq-base
+
+dpkg_buildflags := DEB_BUILD_MAINT_OPTIONS="hardening=+all,+pie,+bindnow" dpkg-buildflags
+
+CFLAGS = $(shell $(dpkg_buildflags) --get CFLAGS)
+CFLAGS += $(shell $(dpkg_buildflags) --get CPPFLAGS)
+CFLAGS += -Wall -W
+
+LDFLAGS = $(shell $(dpkg_buildflags) --get LDFLAGS)
+
+DEB_COPTS = $(COPTS)
+
+TARGET = install-i18n
+
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE := $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+BUILD_DATE := $(shell dpkg-parsechangelog --show-field Date)
+
+ifeq ($(origin CC),default)
+     CC = $(DEB_HOST_GNU_TYPE)-gcc
+endif
+
+# Support non-cross-builds on systems without gnu-triplet-binaries for pkg-config.
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+     PKG_CONFIG=pkg-config
+else
+     PKG_CONFIG=$(DEB_HOST_GNU_TYPE)-pkg-config	
+endif
+
+# Force package version based on git tags.
+ifneq (,$(filter gitversion,$(DEB_BUILD_OPTIONS)))
+     PACKAGE_VERSION = $(shell bld/get-version `pwd` |  sed 's/test/~&/; s/[a-z]/~&/;  s/-/./g; s/$$/-1/; s/^/-v/';)
+endif
+
+ifeq (,$(filter nodbus,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DHAVE_DBUS
+endif
+
+ifeq (,$(filter noidn, $(DEB_BUILD_OPTIONS)))
+	DEB_COPTS += -DHAVE_LIBIDN2
+endif
+
+ifeq (,$(filter nonftset, $(DEB_BUILD_OPTIONS)))
+	DEB_COPTS += -DHAVE_NFTSET
+endif
+
+ifeq (,$(filter noconntrack,$(DEB_BUILD_OPTIONS)))
+ifeq ($(DEB_HOST_ARCH_OS),linux)
+     DEB_COPTS += -DHAVE_CONNTRACK
+endif
+endif
+
+ifneq (,$(filter noipset,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_IPSET
+endif
+
+ifneq (,$(filter nodhcp6,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_DHCP6
+endif
+
+ifneq (,$(filter noipv6,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_IPV6
+endif
+
+ifneq (,$(filter notftp,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_TFTP
+endif
+
+ifneq (,$(filter nodhcp,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_DHCP
+endif
+
+ifneq (,$(filter noscript,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DNO_SCRIPT
+endif
+
+ifneq (,$(filter nortc,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DHAVE_BROKEN_RTC
+endif
+
+ifneq (,$(filter noi18n,$(DEB_BUILD_OPTIONS)))
+     TARGET = install
+endif
+
+ifneq (,$(filter uselua,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DHAVE_LUASCRIPT
+endif
+
+ifeq (,$(filter nodnssec,$(DEB_BUILD_OPTIONS)))
+     DEB_COPTS += -DHAVE_DNSSEC
+endif
+
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+     # For strlcpy in FreeBSD
+     LIBS += $(shell ${PKG_CONFIG} --libs libbsd-overlay)
+     CFLAGS += $(shell ${PKG_CONFIG} --cflags libbsd-overlay)
+endif
+
+define build_tree
+	rm -rf $1
+	install -m 755 \
+		-d $1/DEBIAN \
+		-d $1/etc/dbus-1/system.d \
+	        -d $1/usr/share/doc/$(package) \
+		-d $1/usr/share/doc/$(package)/examples \
+		-d $1/usr/share/$(package) \
+	        -d $1/var/lib/misc
+
+endef
+
+define add_docs
+# Need to remove paypal links in Debian Package for policy reasons.
+	sed -e /\<H2\>Donations/Q -e /icon.png/d doc.html -e /favicon.ico/d >$1/usr/share/doc/$(package)/doc.html
+	echo "</BODY>" >>$1/usr/share/doc/$(package)/doc.html 
+	install -m 644 setup.html $1/usr/share/doc/$(package)/.
+	install -m 644 dnsmasq.conf.example $1/usr/share/doc/$(package)/examples/.
+	install -m 644 FAQ $1/usr/share/doc/$(package)/.
+	gzip -9n $1/usr/share/doc/$(package)/FAQ
+	install -m 644 CHANGELOG $1/usr/share/doc/$(package)/changelog
+	gzip -9n $1/usr/share/doc/$(package)/changelog
+	install -m 644 CHANGELOG.archive $1/usr/share/doc/$(package)/changelog.archive
+	gzip -9n $1/usr/share/doc/$(package)/changelog.archive
+	install -m 644 dbus/DBus-interface $1/usr/share/doc/$(package)/.
+	gzip -9n $1/usr/share/doc/$(package)/DBus-interface	
+	install -m 644 debian/systemd_howto $1/usr/share/doc/$(package)/.
+	gzip -9n $1/usr/share/doc/$(package)/systemd_howto
+	gzip -9n $1/usr/share/man/man8/dnsmasq.8
+	for f in $1/usr/share/man/*; do \
+		if [ -f $$f/man8/dnsmasq.8 ]; then \
+                       gzip -9n $$f/man8/dnsmasq.8 ; \
+                fi \
+	done
+endef
+
+define add_files
+	install -m 644 trust-anchors.conf $1/usr/share/$(package)/.
+	install -m 644 debian/dnsmasq-base.conffiles $1/DEBIAN/conffiles
+	install -m 755 debian/dnsmasq-base.postinst $1/DEBIAN/postinst
+	install -m 755 debian/dnsmasq-base.postrm  $1/DEBIAN/postrm
+	install -m 644 debian/changelog $1/usr/share/doc/$(package)/changelog.Debian
+	gzip -9n $1/usr/share/doc/$(package)/changelog.Debian
+	install -m 644 debian/readme $1/usr/share/doc/$(package)/README.Debian
+	install -m 644 debian/copyright $1/usr/share/doc/$(package)/copyright
+	install -m 644 debian/dbus.conf $1/etc/dbus-1/system.d/dnsmasq.conf
+endef
+
+clean:
+	$(checkdir)
+	make BUILDDIR=debian/build/no-lua clean
+	make BUILDDIR=debian/build/lua clean
+	make -C contrib/lease-tools clean
+	rm -rf debian/build debian/trees debian/*~ debian/files debian/substvars debian/utils-substvars
+
+binary-indep:	checkroot
+	$(checkdir)
+	rm -rf debian/trees/daemon
+	install -m 755 \
+	        -d debian/trees/daemon/DEBIAN \
+		-d debian/trees/daemon/usr/share/doc/dnsmasq \
+	        -d debian/trees/daemon/etc/init.d \
+		-d debian/trees/daemon/etc/dnsmasq.d \
+	        -d debian/trees/daemon/etc/resolvconf/update.d \
+		-d debian/trees/daemon/usr/lib/resolvconf/dpkg-event.d \
+		-d debian/trees/daemon/usr/share/dnsmasq \
+		-d debian/trees/daemon/usr/share/doc/dnsmasq \
+	        -d debian/trees/daemon/etc/default \
+		-d debian/trees/daemon/lib/systemd/system \
+		-d debian/trees/daemon/usr/lib/tmpfiles.d \
+                -d debian/trees/daemon/etc/insserv.conf.d
+	install -m 644 debian/conffiles debian/trees/daemon/DEBIAN
+	install -m 755 debian/postinst debian/postrm debian/preinst debian/prerm debian/trees/daemon/DEBIAN
+	if ! dpkg-vendor --derives-from Ubuntu; then \
+                rm -f debian/dnsmasq.postinst.debhelper debian/dnsmasq.postrm.debhelper; \
+	      	dh_runit -pdnsmasq -Pdebian/trees/daemon; \
+		cat debian/dnsmasq.postinst.debhelper >> debian/trees/daemon/DEBIAN/postinst; \
+		cat debian/dnsmasq.postrm.debhelper   >> debian/trees/daemon/DEBIAN/postrm; \
+		cd debian/trees/daemon && find etc/sv -type f -printf '/%p\n' >>DEBIAN/conffiles; \
+	fi
+	install -m 755 debian/init debian/trees/daemon/etc/init.d/dnsmasq
+	install -m 755 debian/resolvconf debian/trees/daemon/etc/resolvconf/update.d/dnsmasq
+	install -m 755 debian/resolvconf-package debian/trees/daemon/usr/lib/resolvconf/dpkg-event.d/dnsmasq
+	install -m 644 debian/installed-marker debian/trees/daemon/usr/share/dnsmasq
+	install -m 644 debian/default debian/trees/daemon/etc/default/dnsmasq
+	install -m 644 dnsmasq.conf.example debian/trees/daemon/etc/dnsmasq.conf
+	install -m 644 debian/readme.dnsmasq.d debian/trees/daemon/etc/dnsmasq.d/README
+	install -m 644 debian/systemd.service debian/trees/daemon/lib/systemd/system/dnsmasq.service
+	install -m 644 debian/systemd@.service debian/trees/daemon/lib/systemd/system/dnsmasq@.service
+	install -m 644 debian/tmpfiles.conf debian/trees/daemon/usr/lib/tmpfiles.d/dnsmasq.conf
+	install -m 644 debian/insserv debian/trees/daemon/etc/insserv.conf.d/dnsmasq
+	install -m 644 debian/copyright debian/trees/daemon/usr/share/doc/dnsmasq/copyright
+	install -m 644 debian/changelog debian/trees/daemon/usr/share/doc/dnsmasq/changelog.Debian
+	gzip -9n debian/trees/daemon/usr/share/doc/dnsmasq/changelog.Debian
+	cd debian/trees/daemon && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums	
+	dpkg-gencontrol $(PACKAGE_VERSION) -Tdebian/dnsmasq.substvars -pdnsmasq -Pdebian/trees/daemon
+	find debian/trees/daemon -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
+	chown -R root.root debian/trees/daemon
+	chmod -R g-ws debian/trees/daemon
+	dpkg --build debian/trees/daemon ..
+
+binary-arch:	checkroot 
+	$(call build_tree,debian/trees/base)
+	make $(TARGET) BUILDDIR=debian/build/no-lua PREFIX=/usr DESTDIR=`pwd`/debian/trees/base CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=$(CC) PKG_CONFIG=$(PKG_CONFIG) LIBS="$(LIBS)"
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	$(call add_docs,debian/trees/base)
+else	
+	rm -rf debian/trees/base/usr/share/man
+endif
+	$(call add_files,debian/trees/base)
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/trees/base/usr/sbin/dnsmasq
+endif
+	cd debian/trees/base && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
+	dpkg-shlibdeps --warnings=1 debian/trees/base/usr/sbin/dnsmasq
+	dpkg-gencontrol $(PACKAGE_VERSION) -pdnsmasq-base -Pdebian/trees/base
+	find debian/trees/base -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
+	chown -R root.root debian/trees/base
+	chmod -R g-ws debian/trees/base 
+	dpkg --build debian/trees/base ..
+
+	$(call build_tree,debian/trees/lua-base)
+	make $(TARGET) BUILDDIR=debian/build/lua PREFIX=/usr DESTDIR=`pwd`/debian/trees/lua-base CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="-DHAVE_LUASCRIPT $(DEB_COPTS)" CC=$(CC) PKG_CONFIG=$(PKG_CONFIG) LIBS="$(LIBS)"
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	$(call add_docs,debian/trees/lua-base)
+else	
+	rm -rf debian/trees/lua-base/usr/share/man
+endif
+	$(call add_files,debian/trees/lua-base)
+	install -m 755 -d debian/trees/lua-base/usr/share/lintian/overrides
+	install -m 644 debian/lintian-override debian/trees/lua-base/usr/share/lintian/overrides/dnsmasq-base-lua
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/trees/lua-base/usr/sbin/dnsmasq
+endif
+	ln -s $(package) debian/trees/lua-base/usr/share/doc/dnsmasq-base-lua
+	cd debian/trees/lua-base && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
+	dpkg-shlibdeps --warnings=1 debian/trees/lua-base/usr/sbin/dnsmasq
+	dpkg-gencontrol $(PACKAGE_VERSION) -pdnsmasq-base-lua -Pdebian/trees/lua-base
+	find debian/trees/lua-base -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
+	chown -R root.root debian/trees/lua-base
+	chmod -R g-ws debian/trees/lua-base 
+	dpkg --build debian/trees/lua-base ..
+
+
+ifeq ($(DEB_HOST_ARCH_OS),linux)
+	rm -rf debian/trees/utils
+	install -m 755 -d debian/trees/utils/DEBIAN \
+	               -d debian/trees/utils/usr/bin \
+                       -d debian/trees/utils/usr/share/doc/dnsmasq-utils
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	install -m 755 -d debian/trees/utils/usr/share/man/man1
+endif
+	make -C contrib/lease-tools PREFIX=/usr DESTDIR=`pwd`/debian/trees/utils CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=$(CC) PKG_CONFIG=$(PKG_CONFIG) LIBS="$(LIBS)"
+	install -m 755 contrib/lease-tools/dhcp_release debian/trees/utils/usr/bin/dhcp_release
+	install -m 755 contrib/lease-tools/dhcp_release6 debian/trees/utils/usr/bin/dhcp_release6
+	install -m 755 contrib/lease-tools/dhcp_lease_time debian/trees/utils/usr/bin/dhcp_lease_time
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	install -m 644 contrib/lease-tools/dhcp_release.1 debian/trees/utils/usr/share/man/man1/dhcp_release.1
+	gzip -9n debian/trees/utils/usr/share/man/man1/dhcp_release.1
+	install -m 644 contrib/lease-tools/dhcp_release6.1 debian/trees/utils/usr/share/man/man1/dhcp_release6.1
+	gzip -9n debian/trees/utils/usr/share/man/man1/dhcp_release6.1
+	install -m 644 contrib/lease-tools/dhcp_lease_time.1 debian/trees/utils/usr/share/man/man1/dhcp_lease_time.1
+	gzip -9n debian/trees/utils/usr/share/man/man1/dhcp_lease_time.1
+endif
+	install -m 644 debian/copyright debian/trees/utils/usr/share/doc/dnsmasq-utils/copyright
+	install -m 644 debian/changelog debian/trees/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
+	gzip -9n debian/trees/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/trees/utils/usr/bin/dhcp_release
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/trees/utils/usr/bin/dhcp_release6
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/trees/utils/usr/bin/dhcp_lease_time
+endif	
+	cd debian/trees/utils && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
+	dpkg-shlibdeps -Tdebian/utils-substvars debian/trees/utils/usr/bin/dhcp_release debian/trees/utils/usr/bin/dhcp_release6 debian/trees/utils/usr/bin/dhcp_lease_time 
+	dpkg-gencontrol $(PACKAGE_VERSION) -Tdebian/utils-substvars -pdnsmasq-utils -Pdebian/trees/utils
+	find debian/trees/utils -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
+	chown -R root.root debian/trees/utils
+	chmod -R g-ws debian/trees/utils 
+	dpkg --build debian/trees/utils ..
+endif
+
+define checkdir
+	test -f Makefile -a -f debian/rules
+endef
+
+# Below here is fairly generic really
+
+binary:		binary-arch binary-indep
+
+build:		
+build-arch:
+build-indep:
+
+checkroot:
+	test root = "`whoami`"
+
+.PHONY: binary binary-arch binary-indep clean checkroot
+
+
