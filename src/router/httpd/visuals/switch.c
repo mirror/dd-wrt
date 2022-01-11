@@ -295,8 +295,26 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			if (j % 2 == 0)
 				// websWrite(wp, " bgcolor=\"#CCCCCC\"");
 				websWrite(wp, " class=\"odd\"");
-
-			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
+			char aria[64];
+			if (flag < 17000) {
+				sprintf(aria, "%s %d %s %d", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.legend"), i);
+			} else {
+				if (flag == 16000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.tagged"));
+				if (flag == 17000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.negociate"));
+				if (flag == 18000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.gigabit"));
+				if (flag == 19000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.fullspeed"));
+				if (flag == 20000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.fullduplex"));
+				if (flag == 21000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "share.enabled"));
+				if (flag == 22000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "networking.snooping"));
+			}
+			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=", aria);
 			websWrite(wp, buff);
 
 			if (flag < 17000 || flag > 22000) {
