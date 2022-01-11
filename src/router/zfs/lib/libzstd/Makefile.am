@@ -12,7 +12,11 @@ KERNEL_C = \
 	lib/zstd.c \
 	zfs_zstd.c
 
-nodist_libzstd_la_SOURCES = $(KERNEL_C)
+if TARGET_CPU_X86_64
+KERNEL_ASM = lib/huf_decompress_amd64.S
+endif
+
+nodist_libzstd_la_SOURCES = $(KERNEL_C) $(KERNEL_ASM)
 
 lib/zstd.$(OBJEXT):  CFLAGS += -fno-tree-vectorize -DZSTD_HAVE_WEAK_SYMBOLS=0 -include $(top_srcdir)/module/zstd/include/zstd_compat_wrapper.h -Wp,-w
 lib/zstd.l$(OBJEXT): CFLAGS += -fno-tree-vectorize -DZSTD_HAVE_WEAK_SYMBOLS=0 -include $(top_srcdir)/module/zstd/include/zstd_compat_wrapper.h -Wp,-w
