@@ -623,9 +623,6 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 	run_openvpn("/tmp/openvpnserver", "openvpn");
-	//restart firewall as alternative to reboot when change settings
-	stop_firewall();
-	start_firewall();
 }
 
 void stop_openvpnserver(void)
