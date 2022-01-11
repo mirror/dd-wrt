@@ -280,6 +280,7 @@ int main(int argc, char **argv)
   
   /* This voodoo fakes up a packet coming from the correct interface, which really matters for 
      a DHCP server */
+  memset(&ifr, 0, sizeof(ifr));
   strncpy(ifr.ifr_name, argv[1], sizeof(ifr.ifr_name)-1);
   ifr.ifr_name[sizeof(ifr.ifr_name)-1] = '\0';
   if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) == -1)

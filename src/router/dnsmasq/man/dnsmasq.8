@@ -348,6 +348,12 @@ the public DNS and can cause problems by triggering dial-on-demand links. This f
 to filter such requests. The requests blocked are for records of types SOA and SRV, and type ANY where the 
 requested name has underscores, to catch LDAP requests.
 .TP
+.B --filter-A
+Remove A records from answers. No IPv4 addresses will be returned.
+.TP
+.B --filter-AAAA
+Remove AAAA records from answers. No IPv6 addresses will be returned.
+.TP
 .B \-r, --resolv-file=<file>
 Read the IP addresses of the upstream nameservers from <file>, instead of
 /etc/resolv.conf. For the format of this file see
@@ -505,21 +511,20 @@ source address specified but the port may be specified directly as
 part of the source address. Forcing queries to an interface is not
 implemented on all platforms supported by dnsmasq.
 .TP
-.B --rev-server=<ip-address>/<prefix-len>[,<ipaddr>][#<port>][@<interface>][@<source-ip>[#<port>]]
+.B --rev-server=<ip-address>[/<prefix-len>][,<ipaddr>][#<port>][@<interface>][@<source-ip>[#<port>]]
 This is functionally the same as 
 .B --server, 
 but provides some syntactic sugar to make specifying address-to-name queries easier. For example
 .B --rev-server=1.2.3.0/24,192.168.0.1
 is exactly equivalent to 
 .B --server=/3.2.1.in-addr.arpa/192.168.0.1
+Allowed prefix lengths are 1-32 (IPv4) and 1-128 (IPv6). If the prefix length is omitted, dnsmasq substitutes either 32 (IPv4) or 128 (IPv6).
 .TP
 .B \-A, --address=/<domain>[/<domain>...]/[<ipaddr>]
 Specify an IP address to return for any host in the given domains.
 Queries in the domains are never forwarded and always replied to
 with the specified IP address which may be IPv4 or IPv6. To give
-both IPv4 and IPv6 addresses for a domain, use repeated \fB--address\fP flags.
-To include multiple IP addresses for a single query, use
-\fB--addn-hosts=<path>\fP instead.
+multiple addresses or both IPv4 and IPv6 addresses for a domain, use repeated \fB--address\fP flags.
 Note that /etc/hosts and DHCP leases override this for individual
 names. A common use of this is to redirect the entire doubleclick.net
 domain to some friendly local web server to avoid banner ads. The
@@ -548,6 +553,15 @@ versa).  Domains and subdomains are matched in the same way as
 These IP sets must already exist. See
 .BR ipset (8)
 for more details.
+.TP
+.B --nftset=/<domain>[/<domain>...]/[(6|4)#[<family>#]<table>#<set>[,[(6|4)#[<family>#]<table>#<set>]...]
+Similar to the \fB--ipset\fP option, but accepts one or more nftables 
+sets to add IP addresses into.
+These sets must already exist. See
+.BR nft (8)
+for more details. The family, table and set are passed directly to the nft. If the spec starts with 4# or 6# then
+only A or AAAA records respectively are added to the set. Since an nftset can hold only IPv4 or IPv6 addresses, this
+avoids errors being logged for addresses of the wrong type.
 .TP
 .B --connmark-allowlist-enable[=<mask>]
 Enables filtering of incoming DNS queries with associated Linux connection track marks
@@ -752,12 +766,13 @@ will add 1.2.3.0/24 for IPv4 requestors and ::/0 for IPv6 requestors.
 .B --add-subnet=1.2.3.4/24,1.2.3.4/24
 will add 1.2.3.0/24 for both IPv4 and IPv6 requestors.
 .TP
-.B --umbrella[=deviceid:<deviceid>[,orgid:<orgid>]]
+.B --umbrella[=[deviceid:<deviceid>][,orgid:<orgid>][,assetid:<id>]]
 Embeds the requestor's IP address in DNS queries forwarded upstream.
-If device id or organization id are specified, the information is
+If device id or, asset id or organization id are specified, the information is
 included in the forwarded queries and may be able to be used in
-filtering policies and reporting. The order of the deviceid and orgid
-attributes is irrelevant, but must be separated by a comma.
+filtering policies and reporting. The order of the id
+attributes is irrelevant, but they must be separated by a comma. Deviceid is
+a sixteen digit hexadecimal number, org and asset ids are decimal numbers.
 .TP
 .B \-c, --cache-size=<cachesize>
 Set the size of dnsmasq's cache. The default is 150 names. Setting the cache size to zero disables caching. Note: huge cache size impacts performance.
@@ -1036,7 +1051,7 @@ is also included, as described in RFC-3775 section 7.3.
 tells dnsmasq to advertise the prefix without the on-link (aka L) bit set.
 
 .TP
-.B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][tag:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
+.B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][,tag:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
 Specify per host parameters for the DHCP server. This allows a machine
 with a particular hardware address to be always allocated the same
 hostname, IP address and lease time. A hostname specified like this
@@ -1135,7 +1150,10 @@ ignore requests from unknown machines using
 If the host matches only a \fB--dhcp-host\fP directive which cannot
 be used because it specifies an address on different subnet, the tag "known-othernet" is set.
 
-The tag:<tag> construct filters which dhcp-host directives are used. Tagged directives are used in preference to untagged ones.
+The tag:<tag> construct filters which dhcp-host directives are used; more than
+one can be provided, in this case the request must match all of them. Tagged
+directives are used in preference to untagged ones. Note that one of <hwaddr>,
+<client_id> or <hostname> still needs to be specified (can be a wildcard).
 
 Ethernet addresses (but not client-ids) may have
 wildcard bytes, so for example 
@@ -1309,7 +1327,7 @@ DHCP options. This make extra space available in the DHCP packet for
 options but can, rarely, confuse old or broken clients. This flag
 forces "simple and safe" behaviour to avoid problems in such a case.
 .TP
-.B --dhcp-relay=<local address>,<server address>[,<interface]
+.B --dhcp-relay=<local address>[,<server address>][,<interface]
 Configure dnsmasq to do DHCP relay. The local address is an address
 allocated to an interface on the host running dnsmasq. All DHCP
 requests arriving on that interface will we relayed to a remote DHCP
@@ -1317,10 +1335,9 @@ server at the server address. It is possible to relay from a single local
 address to multiple remote servers by using multiple \fB--dhcp-relay\fP
 configs with the same local address and different server
 addresses. A server address must be an IP literal address, not a
-domain name. In the case of DHCPv6, the server address may be the
-ALL_SERVERS multicast address, ff05::1:3. In this case the interface
-must be given, not be wildcard, and is used to direct the multicast to the
-correct interface to reach the DHCP server. 
+domain name. If the server address is ommitted, the request will be
+forwarded by broadcast (IPv4) or multicast (IPv6). In this case the interface
+must be given and not be wildcard.
 
 Access control for DHCP clients has the same rules as for the DHCP
 server, see \fB--interface\fP, \fB--except-interface\fP, etc. The optional
@@ -1340,6 +1357,11 @@ supported: the relay function will take precedence.
 
 Both DHCPv4 and DHCPv6 relay is supported. It's not possible to relay
 DHCPv4 to a DHCPv6 server or vice-versa.
+
+The DHCP relay function for IPv6 includes the ability to snoop
+prefix-delegation from relayed DHCP transactions. See
+.B --dhcp-script
+for details. 
 .TP
 .B \-U, --dhcp-vendorclass=set:<tag>,[enterprise:<IANA-enterprise number>,]<vendor-class>
 Map from a vendor-class string to a tag. Most DHCP clients provide a 
@@ -1750,15 +1772,25 @@ receives a HUP signal, the script will be invoked for existing leases
 with an "old" event.
 
 
-There are four further actions which may appear as the first argument
-to the script, "init", "arp-add", "arp-del" and "tftp". More may be added in the future, so
+There are five further actions which may appear as the first argument
+to the script, "init", "arp-add", "arp-del", "relay-snoop" and "tftp".
+More may be added in the future, so
 scripts should be written to ignore unknown actions. "init" is
 described below in 
 .B --leasefile-ro
+
 The "tftp" action is invoked when a TFTP file transfer completes: the
 arguments are the file size in bytes, the address to which the file
 was sent, and the complete pathname of the file.
- 
+
+The "relay-snoop" action is invoked when dnsmasq is configured as a DHCP
+relay for DHCPv6 and it relays a prefx delegation to a client. The arguments
+are the name of the interface where the client is conected, its (link-local)
+address on that interface and the delegated prefix. This information is
+sufficient to install routes to the delegated prefix of a router. See
+.B --dhcp-relay
+for more details on configuring DHCP relay.
+
 The "arp-add" and "arp-del" actions are only called if enabled with
 .B --script-arp
 They are are supplied with a MAC address and IP address as arguments. "arp-add" indicates
@@ -1923,7 +1955,6 @@ additional flag "local" may be supplied which has the effect of adding
 is identical to
 .B --domain=thekelleys.org.uk,192.168.0.0/24
 .B --local=/thekelleys.org.uk/ --local=/0.168.192.in-addr.arpa/
-The network size must be 8, 16 or 24 for this to be legal.
 .TP
 .B --dhcp-fqdn
 In the default mode, dnsmasq inserts the unqualified names of

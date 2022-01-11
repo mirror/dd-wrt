@@ -2114,7 +2114,7 @@ msgstr ""
 
 #: tftp.c:512
 #, c-format
-msgid "file %s not found"
+msgid "file %s not found for %s"
 msgstr ""
 
 #: tftp.c:602

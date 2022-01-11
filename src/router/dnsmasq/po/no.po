@@ -2194,8 +2194,8 @@ msgstr ""
 
 #: tftp.c:512
 #, fuzzy, c-format
-msgid "file %s not found"
-msgstr "leie ikke funnet"
+msgid "file %s not found for %s"
+msgstr "fil %s ikke funnet for %s"
 
 #: tftp.c:602
 #, c-format
