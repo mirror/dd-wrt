@@ -139,6 +139,7 @@ share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
 share.deflt="Default";  //don't use share.default!!!
+share.reboot="Reboot after change";
 share.all="All";
 share.auto="Auto";
 share.desired="Desired";
