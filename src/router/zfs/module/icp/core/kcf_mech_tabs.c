@@ -776,16 +776,10 @@ kcf_get_mech_entry(crypto_mech_type_t mech_type, kcf_mech_entry_t **mep)
  * If there are no hardware or software providers for the mechanism,
  * but there is an unloaded software provider, this routine will attempt
  * to load it.
- *
- * If the MOD_NOAUTOUNLOAD flag is not set, a software provider is
- * in constant danger of being unloaded.  For consumers that call
- * crypto_mech2id() only once, the provider will not be reloaded
- * if it becomes unloaded.  If a provider gets loaded elsewhere
- * without the MOD_NOAUTOUNLOAD flag being set, we set it now.
  */
 crypto_mech_type_t
 crypto_mech2id_common(char *mechname, boolean_t load_module)
 {
-	crypto_mech_type_t mt = kcf_mech_hash_find(mechname);
-	return (mt);
+	(void) load_module;
+	return (kcf_mech_hash_find(mechname));
 }

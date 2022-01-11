@@ -31,7 +31,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
-#include <uuid.h>
+#include <uuid/uuid.h>
 #include <zlib.h>
 #include <libintl.h>
 #include <sys/types.h>
@@ -1564,6 +1564,7 @@ efi_type(int fd)
 	}
 	return (0);
 #else
+	(void) fd;
 	return (ENOSYS);
 #endif
 }

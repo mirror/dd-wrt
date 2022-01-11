@@ -83,8 +83,8 @@
 #include <sys/stat.h>
 #include <sys/vtoc.h>
 #include <sys/mntent.h>
-#include <uuid.h>
-#include <blkid.h>
+#include <uuid/uuid.h>
+#include <blkid/blkid.h>
 
 typedef struct vdev_disk_db_entry
 {
@@ -409,6 +409,7 @@ check_device(const char *path, boolean_t force,
 void
 after_zpool_upgrade(zpool_handle_t *zhp)
 {
+	(void) zhp;
 }
 
 int
