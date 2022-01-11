@@ -314,24 +314,21 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (flag == 22000)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "networking.snooping"));
 			}
-			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=", aria);
-			websWrite(wp, buff);
+			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
 			if (flag < 17000 || flag > 22000) {
 				if (vlans[j][i] == 1)
-					websWrite(wp, " checked=\"checked\"");
+					websWrite(wp, "checked=\"checked\" ");
 			} else {
 				if (vlans[j][i] == -1)
-					websWrite(wp, " checked=\"checked\"");
+					websWrite(wp, "checked=\"checked\" ");
 			}
 			if (flag < 17000) {
-				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
-				websWrite(wp, buff);
+				websWrite(wp, "onclick=%s", buff);
 			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000) {
-				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelSpeed(this.form,'port%d')\"", j);
-				websWrite(wp, buff);
+				websWrite(wp, "onclick=%s", buff);
 			}
 			websWrite(wp, " /></div></td>\n");
 		}
