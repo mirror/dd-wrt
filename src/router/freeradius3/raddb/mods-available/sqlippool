@@ -2,9 +2,9 @@
 #
 #  The database schemas are available at:
 #
-#       raddb/sql/ippool/<DB>/schema.sql
+#       raddb/mods-config/sql/ippool/<DB>/schema.sql
 #
-#  $Id: 51621b293daaae8ded38f1480644e06f36835323 $
+#  $Id: 3d98ca9e0fca4f8df2657d53a15a2c52756b45e1 $
 
 sqlippool {
 	# SQL instance to use (from mods-available/sql)
@@ -25,6 +25,11 @@ sqlippool {
 	ippool_table = "radippool"
 
 	# IP lease duration. (Leases expire even if Acct Stop packet is lost)
+	#
+	#  Note that you SHOULD also set Session-Timeout to this value!
+	#  That way the NAS will automatically kick the user offline when the
+	#  lease expires.
+	#
 	lease_duration = 3600
 
 	#

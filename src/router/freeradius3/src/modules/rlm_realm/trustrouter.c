@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7fcf189402e3a4eecf741dcc2a163a9b4bd618aa $
+ * $Id: c62edea675fd52d0a3eff33c9a707428918528ba $
  * @file trustrouter.c
  * @brief Integration with external trust router code
  *
@@ -359,7 +359,7 @@ static fr_tls_server_conf_t *construct_tls(TIDC_INSTANCE *inst,
 
 	tls->cipher_list = talloc_strdup(tls, "aPSK");
 	tls->fragment_size = 4200;
-	tls->ctx = tls_init_ctx(tls, 1);
+	tls->ctx = tls_init_ctx(tls, 1, NULL, NULL);
 	if (!tls->ctx) goto error;
 
 	memset(key_buf, 0, keylen);

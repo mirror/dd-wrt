@@ -1,5 +1,5 @@
 /**
- * $Id: 93aebcab04e07774ed3215f3b18a1b8ac565fcf1 $
+ * $Id: c25431b414ae49947dd6bb256edd982e60702c11 $
  *
  * @brief Source control functions
  *
@@ -59,6 +59,18 @@ extern "C" {
 #  define CC_BOUNDED(_x, ...) CC_HINT(__bounded__(_x, ## __VA_ARGS__))
 #else
 #  define CC_BOUNDED(...)
+#endif
+
+/*
+ *      GCC uses __SANITIZE_ADDRESS__, clang uses __has_feature, which
+ *      GCC complains about.
+ */
+#ifndef __SANITIZE_ADDRESS__
+#ifdef __has_feature
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__ (1)
+#endif
+#endif
 #endif
 
 /*

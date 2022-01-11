@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: b134712356b27ca62fc6f1c8341f3646d51fe70e $
+ * Version:	$Id: 09799da0e2077050c2b581d8c750723677c907e0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: b134712356b27ca62fc6f1c8341f3646d51fe70e $")
+RCSID("$Id: 09799da0e2077050c2b581d8c750723677c907e0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -506,6 +506,16 @@ static ssize_t xlat_listen_common(REQUEST *request, rad_listen_t *listen,
 				return vp_prints_value(out, outlen, vp, 0);
 			}
 		}
+	}
+#endif
+
+#ifdef WITH_COA_TUNNEL
+	/*
+	 *      Look for RADSEC CoA tunnel key.
+	 */
+	if (listen->key && (strcmp(fmt, "Originating-Realm-Key") == 0)) {
+		strlcpy(out, listen->key, outlen);
+		return strlen(out);
 	}
 #endif
 

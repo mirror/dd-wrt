@@ -38,7 +38,7 @@ PROJECT_NAME           = FreeRADIUS
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = $Id: 010a21ffec14b21f7009e0fa7baa4258614b3314 $
+PROJECT_NUMBER         = $Id: 0d3c3017aa225ba83deb839166e2b356cbf981ee $
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1939,6 +1939,7 @@ PREDEFINED             = WITH_PROXY \
                          WITH_STATS \
                          WITH_COMMAND_SOCKET \
                          WITH_COA \
+			 WITH_COA_TUNNEL \
                          WITH_TCP \
                          WITH_DHCP \
                          WITH_VMPS \

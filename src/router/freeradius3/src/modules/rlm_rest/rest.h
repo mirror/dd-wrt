@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: d077ccc5c2cca689fd858bf13cc6b371e42b880a $
+ * $Id: 4c41cf46c28a8f197ff7bfb14fb31661f107365a $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: d077ccc5c2cca689fd858bf13cc6b371e42b880a $")
+RCSIDH(other_h, "$Id: 4c41cf46c28a8f197ff7bfb14fb31661f107365a $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -221,6 +221,8 @@ typedef struct rlm_rest_request_t {
 
 	size_t			chunk;		//!< Chunk size
 
+	rlm_rest_section_t *section;	//!< Configuration data
+
 	void			*encoder;	//!< Encoder specific data.
 } rlm_rest_request_t;
 
@@ -271,7 +273,7 @@ typedef struct rlm_rest_handle_t {
  *	CURLOPT_READFUNCTION prototype.
  */
 typedef size_t (*rest_read_t)(void *ptr, size_t size, size_t nmemb,
-			      void *userdata, rlm_rest_section_t *section);
+			      void *userdata);
 
 /*
  *	Connection API callbacks

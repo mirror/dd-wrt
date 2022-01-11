@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 8aee16cf68d6a2f8fb29e51f821198fa922195c3 $
+ * Version:     $Id: 17e4cadca894fabe71ebb72c741dad844fe85bc9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id: 8aee16cf68d6a2f8fb29e51f821198fa922195c3 $")
+RCSID("$Id: 17e4cadca894fabe71ebb72c741dad844fe85bc9 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -797,7 +797,7 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	/*
 	 *	Who knows what happened...
 	 */
-	REDEBUG("T(LS) Cannot continue, as the peer is misbehaving.");
+	REDEBUG("(TLS) Cannot continue, as the peer is misbehaving.");
 	return FR_TLS_FAIL;
 }
 

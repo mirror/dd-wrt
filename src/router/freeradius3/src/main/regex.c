@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 2a31391af25fea52414cab3b738a891e73f726ce $
+ * $Id: f66414c903bde09edcaf3a5d297690fd51aefd12 $
  *
  * @file main/regex.c
  * @brief Regular expression functions used by the server library.
@@ -23,7 +23,7 @@
  * @copyright 2014  The FreeRADIUS server project
  */
 
-RCSID("$Id: 2a31391af25fea52414cab3b738a891e73f726ce $")
+RCSID("$Id: f66414c903bde09edcaf3a5d297690fd51aefd12 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -33,7 +33,9 @@ RCSID("$Id: 2a31391af25fea52414cab3b738a891e73f726ce $")
 #define REQUEST_DATA_REGEX (0xadbeef00)
 
 typedef struct regcapture {
+#ifdef HAVE_PCRE
 	regex_t		*preg;		//!< Compiled pattern.
+#endif
 	char const	*value;		//!< Original string.
 	regmatch_t	*rxmatch;	//!< Match vectors.
 	size_t		nmatch;		//!< Number of match vectors.
@@ -94,11 +96,10 @@ void regex_sub_to_request(REQUEST *request, regex_t **preg, char const *value, s
 	if (!(*preg)->precompiled) {
 		new_sc->preg = talloc_steal(new_sc, *preg);
 		*preg = NULL;
-	} else
-#endif
-	{
+	} else {
 		new_sc->preg = *preg;
 	}
+#endif
 
 	request_data_add(request, request, REQUEST_DATA_REGEX, new_sc, true);
 }

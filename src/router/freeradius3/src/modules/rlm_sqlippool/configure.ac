@@ -1,13 +1,16 @@
 #
 # Autoconf input file.
 #
-# Version:	$Id: 6c0309e05fd8bd0d45849952abf35b22a7f394bd $
+# Version:	$Id: a3dbed2d9ce120392ff6dfddd8fe61be8d315311 $
 #
 
 AC_PREREQ([2.59])
 AC_INIT(rlm_sqlippool.c)
 AC_REVISION($Revision$)
 AC_DEFUN(modname,[rlm_sqlippool])
+
+AC_ARG_WITH([]modname,
+[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 

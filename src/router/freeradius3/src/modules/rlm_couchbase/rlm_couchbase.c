@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7b3707668fc42161dc0ba63d73b35d8f46909951 $
+ * $Id: d011e24a6ecc37ce6f2f181f0e69dc3af4cc4f83 $
  *
  * @brief Integrate FreeRADIUS with the Couchbase document database.
  * @file rlm_couchbase.c
@@ -24,7 +24,7 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: 7b3707668fc42161dc0ba63d73b35d8f46909951 $")
+RCSID("$Id: d011e24a6ecc37ce6f2f181f0e69dc3af4cc4f83 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/libradius.h>
@@ -64,6 +64,7 @@ static const CONF_PARSER module_config[] = {
 	{ "simul_vkey", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_couchbase_t, simul_vkey), "%{tolower:%{%{Stripped-User-Name}:-%{User-Name}}}" },
 	{ "verify_simul", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_couchbase_t, verify_simul), NULL }, /* NULL defaults to "no" */
 #endif
+	{ "raw_value", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_couchbase_t, raw_value), "yes" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -361,7 +362,7 @@ static rlm_rcode_t mod_accounting(void *instance, REQUEST *request)
 		if ((vp = fr_pair_find_by_num(request->packet->vps, PW_EVENT_TIMESTAMP, 0, TAG_ANY)) != NULL) {
 			/* add to json object */
 			json_object_object_add(cookie->jobj, "startTimestamp",
-					       mod_value_pair_to_json_object(request, vp));
+					       mod_value_pair_to_json_object(request, vp, inst->raw_value));
 		}
 		break;
 
@@ -370,7 +371,7 @@ static rlm_rcode_t mod_accounting(void *instance, REQUEST *request)
 		if ((vp = fr_pair_find_by_num(request->packet->vps, PW_EVENT_TIMESTAMP, 0, TAG_ANY)) != NULL) {
 			/* add to json object */
 			json_object_object_add(cookie->jobj, "stopTimestamp",
-					       mod_value_pair_to_json_object(request, vp));
+					       mod_value_pair_to_json_object(request, vp, inst->raw_value));
 		}
 		/* check start timestamp and adjust if needed */
 		mod_ensure_start_timestamp(cookie->jobj, request->packet->vps);
@@ -395,7 +396,7 @@ static rlm_rcode_t mod_accounting(void *instance, REQUEST *request)
 			/* debug */
 			RDEBUG3("mapped attribute %s => %s", vp->da->name, element);
 			/* add to json object with mapped name */
-			json_object_object_add(cookie->jobj, element, mod_value_pair_to_json_object(request, vp));
+			json_object_object_add(cookie->jobj, element, mod_value_pair_to_json_object(request, vp, inst->raw_value));
 		}
 	}
 
@@ -468,11 +469,12 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 	char *user_name = NULL;                /* user name from accounting document */
 	char *session_id = NULL;               /* session id from accounting document */
 	char *cs_id = NULL;                    /* calling station id from accounting document */
-	uint32_t nas_addr = 0;                 /* nas address from accounting document */
+	fr_ipaddr_t nas_addr;                 /* nas address from accounting document */
 	uint32_t nas_port = 0;                 /* nas port from accounting document */
 	uint32_t framed_ip_addr = 0;           /* framed ip address from accounting document */
 	char framed_proto = 0;                 /* framed proto from accounting document */
 	int session_time = 0;                  /* session time from accounting document */
+	int slen;
 
 	/* do nothing if this is not enabled */
 	if (inst->check_simul != true) {
@@ -507,8 +509,12 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 	cookie_t *cookie = handle->cookie;
 
 	/* build view path */
-	snprintf(vpath, sizeof(vpath), "%s?key=\"%s\"&stale=update_after",
-		 inst->simul_view, vkey);
+	slen = snprintf(vpath, sizeof(vpath), "%s?key=\"%s\"&stale=update_after",
+			inst->simul_view, vkey);
+	if (slen >= (int) sizeof(vpath) || slen < 0) {
+		RERROR("view path is too long");
+		return RLM_MODULE_FAIL;
+	}
 
 	/* query view for document */
 	cb_error = couchbase_query_view(cb_inst, cookie, vpath, NULL);
@@ -689,7 +695,8 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 		if (mod_attribute_to_element("NAS-IP-Address", inst->map, &element) == 0) {
 			/* attempt to get and nas address element */
 			if (json_object_object_get_ex(cookie->jobj, element, &jval)){
-				nas_addr = inet_addr(json_object_get_string(jval));
+				nas_addr.af = AF_INET;
+				nas_addr.ipaddr.ip4addr.s_addr = inet_addr(json_object_get_string(jval));
 			}
 		}
 
@@ -702,7 +709,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 		}
 
 		/* check terminal server */
-		int check = rad_check_ts(nas_addr, nas_port, user_name, session_id);
+		int check = rad_check_ts(&nas_addr, nas_port, user_name, session_id);
 
 		/* take action based on check return */
 		if (check == 0) {
@@ -737,7 +744,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 				}
 
 				/* zap session */
-				session_zap(request, nas_addr, nas_port, user_name, session_id,
+				session_zap(request, &nas_addr, nas_port, user_name, session_id,
 					    framed_ip_addr, framed_proto, session_time);
 			}
 		} else if (check == 1) {
