@@ -2213,8 +2213,8 @@ msgstr "pedido no-soportado desde %s"
 
 #: tftp.c:512
 #, fuzzy, c-format
-msgid "file %s not found"
-msgstr "archivo %s no encontrado"
+msgid "file %s not found for %s"
+msgstr "archivo %s no encontrado por %s"
 
 #: tftp.c:602
 #, c-format

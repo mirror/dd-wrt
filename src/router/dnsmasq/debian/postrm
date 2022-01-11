@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+# /usr/share/doc/dnsmasq was a symlink in versions < 2.81-1 (see #985282)
+dpkg-maintscript-helper symlink_to_dir /usr/share/doc/dnsmasq dnsmasq-base 2.84-1.2~ dnsmasq -- "$@"
+
+if [ purge = "$1" ]; then
+   update-rc.d dnsmasq remove >/dev/null
+fi
+
+# Code copied from dh_systemd_enable ----------------------
+if [ "$1" = "remove" ]; then
+	if [ -x "/usr/bin/deb-systemd-helper" ]; then
+		deb-systemd-helper mask dnsmasq.service >/dev/null
+	fi
+fi
+
+if [ "$1" = "purge" ]; then
+	if [ -x "/usr/bin/deb-systemd-helper" ]; then
+		deb-systemd-helper purge dnsmasq.service >/dev/null
+		deb-systemd-helper unmask dnsmasq.service >/dev/null
+	fi
+fi
+# End code copied from dh_systemd_enable ------------------
+

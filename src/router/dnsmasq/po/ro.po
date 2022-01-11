@@ -2195,8 +2195,8 @@ msgstr ""
 
 #: tftp.c:512
 #, fuzzy, c-format
-msgid "file %s not found"
-msgstr "împrumutul nu a fost găsit"
+msgid "file %s not found for %s"
+msgstr "fișier %s nu a fost găsit pentru %s"
 
 #: tftp.c:602
 #, c-format

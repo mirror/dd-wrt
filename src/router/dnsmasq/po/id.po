@@ -2460,8 +2460,8 @@ msgstr ""
 # OK
 #: tftp.c:512
 #, fuzzy, c-format
-msgid "file %s not found"
-msgstr "lease tak ditemukan"
+msgid "file %s not found for %s"
+msgstr "file %s tidak ditemukan untuk %s"
 
 #: tftp.c:602
 #, c-format

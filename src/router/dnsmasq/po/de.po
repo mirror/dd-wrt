@@ -2145,8 +2145,8 @@ msgstr "nicht unterstützte Anfrage von %s"
 
 #: tftp.c:512
 #, c-format
-msgid "file %s not found"
-msgstr "Datei %s nicht gefunden"
+msgid "file %s not found for %s"
+msgstr "Datei %s nicht gefunden für %s"
 
 #: tftp.c:602
 #, c-format

@@ -1,3 +1,37 @@
+version 2.87
+        Allow arbitrary prefix lengths in --rev-server and
+	--domain=....,local
+
+	Replace --address=/#/..... functionality which got
+	missed in the 2.86 domain search rewrite.
+
+	Add --nftset option, like --ipset but for the newer nftables.
+	Thanks to Chen Zhenge for the patch.
+	
+	Add --filter-A and --filter-AAAA options, to remove IPv4 or IPv6
+	addresses from DNS answers.
+
+	Fix crash doing netbooting when --port is set to zero
+	to disable the DNS server. Thanks to Drexl Johannes
+	for the bug report.
+
+	Generalise --dhcp-relay. Sending via broadcast/multicast is
+	now supported for both IPv4 and IPv6 and the configuration
+	syntax made easier (but backwards compatible).
+	
+	Add snooping of IPv6 prefix-delegations to the DHCP-relay system.
+
+	Finesse parsing of --dhcp-remoteid and --dhcp-subscrid. To be treated
+	as hex, the pattern must consist of only hex digits AND contain
+	at least one ':'. Thanks to Bengt-Erik Sandstrom who tripped
+	over a pattern consisting of a decimal number which was interpreted
+	surprisingly.
+
+	Include client address in TFTP file-not-found error reports.
+	Thanks to Stefan Rink for the initial patch, which has been
+	re-worked by me (srk). All bugs mine.
+
+	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
 	Thanks to Aichun Li for spotting this omission, and the initial
@@ -91,6 +125,9 @@ version 2.86
 	files within that directory are read (alphabetical order
 	of filename). Thanks to Ed Wildgoose for the initial patch
 	and motivation for this.
+
+	Allow adding IP address to nftables set in addition to
+	ipset.
 
 	
 version 2.85
