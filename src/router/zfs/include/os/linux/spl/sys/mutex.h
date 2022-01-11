@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <linux/sched.h>
 #include <linux/mutex.h>
+#include <linux/sched.h>
 #include <linux/lockdep.h>
 #include <linux/compiler_compat.h>
 
