@@ -19,7 +19,7 @@
 #ifndef _FR_BASE64_H
 #define _FR_BASE64_H
 
-RCSIDH(base64_h, "$Id: ca3e0ca16293968302c9e1a71015b30d40b8a271 $")
+RCSIDH(base64_h, "$Id: c83cfc913abf4c33620f53f8ea18699776a4d528 $")
 
 #include <stddef.h>
 #include <stdint.h>
@@ -31,7 +31,7 @@ RCSIDH(base64_h, "$Id: ca3e0ca16293968302c9e1a71015b30d40b8a271 $")
 
 bool fr_is_base64(char c);
 
-size_t fr_base64_encode(char *out, size_t outlen, uint8_t const *in, size_t inlen);
+ssize_t fr_base64_encode(char *out, size_t outlen, uint8_t const *in, size_t inlen);
 
 ssize_t fr_base64_decode(uint8_t *out, size_t outlen, char const *in, size_t inlen);
 

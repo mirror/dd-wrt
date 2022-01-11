@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 590e59198ed7a07a12de8185be117443dbcef889 $
+ * $Id: 229644fe9561ddd23c8b23537f00c9f16eafdd64 $
  * @file rlm_unix.c
  * @brief Unixy things
  *
@@ -27,7 +27,7 @@
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  * @copyright 2000  Alan Curry <pacman@world.std.com>
  */
-RCSID("$Id: 590e59198ed7a07a12de8185be117443dbcef889 $")
+RCSID("$Id: 229644fe9561ddd23c8b23537f00c9f16eafdd64 $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -382,7 +382,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 	}
 
 	if (request->packet->src_ipaddr.af != AF_INET) {
-		RDEBUG2("IPv6 is not supported!");
+		RDEBUG2("IPv6 is not supported for the radwtmp file.");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -446,7 +446,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 			break;
 
 		case PW_ACCT_DELAY_TIME:
-			delay = vp->vp_ipaddr;
+			delay = vp->vp_integer;
 			break;
 		}
 	}

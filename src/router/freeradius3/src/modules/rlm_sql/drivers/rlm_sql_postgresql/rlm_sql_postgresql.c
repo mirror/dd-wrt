@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id: 46ba4629177bdd2069087fe318134c4fe9dc913b $
+ * Version:	$Id: a152f74099c7dffc3c693f40c33075a537c200b7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * Bernhard Herzog <bh@intevation.de>
  */
 
-RCSID("$Id: 46ba4629177bdd2069087fe318134c4fe9dc913b $")
+RCSID("$Id: a152f74099c7dffc3c693f40c33075a537c200b7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -444,6 +444,13 @@ static CC_HINT(nonnull) sql_rcode_t sql_query(rlm_sql_handle_t *handle, UNUSED r
 	case PGRES_NONFATAL_ERROR:
 	case PGRES_FATAL_ERROR:
 		return sql_classify_error(conn->result);
+
+#ifdef HAVE_PGRES_PIPELINE_SYNC
+	case PGRES_PIPELINE_SYNC:
+	case PGRES_PIPELINE_ABORTED:
+		ERROR("rlm_sql_postgresql: Pipeline flagged as aborted");
+		return RLM_SQL_ERROR;
+#endif
 	}
 
 	return RLM_SQL_ERROR;

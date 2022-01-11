@@ -6,7 +6,7 @@
 #
 #	http://nam-en.apc.com/cgi-bin/nam_en.cfg/php/enduser/std_adp.php?p_faqid=8012
 #
-#	$Id: e603360368bc9bc3ab7cfa4a7543426c109f72b5 $
+#	$Id: 00efbab7aed13d28c546d5ac813e894bf85be943 $
 #
 ##############################################################################
 
@@ -34,5 +34,6 @@ VALUE	APC-Service-Type		Device			2
 VALUE	APC-Service-Type		ReadOnly		3
 VALUE	APC-Service-Type		Outlet			4
 VALUE	APC-Service-Type		Card			5
+VALUE	APC-Service-Type		NetworkOnly		6
 
 END-VENDOR APC

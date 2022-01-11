@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 90fe371b0757d4aa364f70f6eb743e68073487e8 $
+ * $Id: 24638f09cd9f00b3a97d832854f5babc181d12c6 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 90fe371b0757d4aa364f70f6eb743e68073487e8 $")
+RCSID("$Id: 24638f09cd9f00b3a97d832854f5babc181d12c6 $")
 
 #include <ctype.h>
 
@@ -1604,7 +1604,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 	char const     		*call_num = NULL;
 	VALUE_PAIR		*vp;
 	int			ret;
-	uint32_t		nas_addr = 0;
+	fr_ipaddr_t		nas_addr;
 	uint32_t		nas_port = 0;
 
 	char 			*expanded = NULL;
@@ -1727,14 +1727,18 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 		}
 
 		if (row[3]) {
-			nas_addr = inet_addr(row[3]);
+			if (fr_pton(&nas_addr, row[3], -1, AF_UNSPEC, false) < 0) {
+				RDEBUG("Cannot parse '%s' as an IPv4 or an IPv6 address - %s", row[3], fr_strerror());
+				rcode = RLM_MODULE_FAIL;
+				goto finish;
+			}
 		}
 
 		if (row[4]) {
 			nas_port = atoi(row[4]);
 		}
 
-		check = rad_check_ts(nas_addr, nas_port, row[2], row[1]);
+		check = rad_check_ts(&nas_addr, nas_port, row[2], row[1]);
 		if (check == 0) {
 			/*
 			 *	Stale record - zap it.
@@ -1754,7 +1758,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 				}
 				if ((num_rows > 8) && row[8])
 					sess_time = atoi(row[8]);
-				session_zap(request, nas_addr, nas_port,
+				session_zap(request, &nas_addr, nas_port,
 					    row[2], row[1], framed_addr,
 					    proto, sess_time);
 			}

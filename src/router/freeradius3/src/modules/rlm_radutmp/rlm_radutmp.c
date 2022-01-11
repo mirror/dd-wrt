@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: b542618153854a72d8e2a7432a5523c5e1c3b6cb $
+ * $Id: e58f34da2a6693cdb17b8e6adc93d67ca92c261f $
  * @file rlm_radutmp.c
  * @brief Tracks sessions.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id: b542618153854a72d8e2a7432a5523c5e1c3b6cb $")
+RCSID("$Id: e58f34da2a6693cdb17b8e6adc93d67ca92c261f $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>
@@ -660,6 +660,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_checksimul(void *instance, REQUEST *requ
 	 */
 	request->simul_count = 0;
 	while (read(fd, &u, sizeof(u)) == sizeof(u)) {
+		fr_ipaddr_t nasaddr;
+
 		if (((strncmp(expanded, u.login, RUT_NAMESIZE) == 0) || (!inst->case_sensitive &&
 		    (strncasecmp(expanded, u.login, RUT_NAMESIZE) == 0))) && (u.type == P_LOGIN)) {
 			char session_id[sizeof(u.session_id) + 1];
@@ -688,20 +690,23 @@ static rlm_rcode_t CC_HINT(nonnull) mod_checksimul(void *instance, REQUEST *requ
 			memset(utmp_login, 0, sizeof(utmp_login));
 			memcpy(utmp_login, u.login, sizeof(u.login));
 
+			nasaddr.af = AF_INET;
+			nasaddr.ipaddr.ip4addr.s_addr = u.nas_address;
+
 			/*
 			 *	rad_check_ts may take seconds
 			 *	to return, and we don't want
 			 *	to block everyone else while
 			 *	that's happening.  */
 			rad_unlockfd(fd, LOCK_LEN);
-			rcode = rad_check_ts(u.nas_address, u.nas_port, utmp_login, session_id);
+			rcode = rad_check_ts(&nasaddr, u.nas_port, utmp_login, session_id);
 			rad_lockfd(fd, LOCK_LEN);
 
 			if (rcode == 0) {
 				/*
 				 *	Stale record - zap it.
 				 */
-				session_zap(request, u.nas_address, u.nas_port, expanded, session_id,
+				session_zap(request, &nasaddr, u.nas_port, expanded, session_id,
 					    u.framed_address, u.proto, 0);
 			}
 			else if (rcode == 1) {

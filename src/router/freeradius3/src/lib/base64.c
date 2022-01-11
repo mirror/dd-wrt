@@ -22,7 +22,7 @@
  * @author Simon Josefsson.
  * @see RFC 3548 <http://www.ietf.org/rfc/rfc3548.txt>.
  */
-RCSID("$Id: 399f167de7bfd98674d50d5923183b7ad96ca2fc $")
+RCSID("$Id: 6b40866d0b17371f9db673edc5f2fda1dfa998af $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/base64.h>
@@ -40,7 +40,7 @@ RCSID("$Id: 399f167de7bfd98674d50d5923183b7ad96ca2fc $")
  * @return The amount of data we wrote to the buffer or -1 if output buffer
  *	was too small.
  */
-size_t fr_base64_encode(char *out, size_t outlen, uint8_t const *in, size_t inlen)
+ssize_t fr_base64_encode(char *out, size_t outlen, uint8_t const *in, size_t inlen)
 {
 	static char const b64str[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

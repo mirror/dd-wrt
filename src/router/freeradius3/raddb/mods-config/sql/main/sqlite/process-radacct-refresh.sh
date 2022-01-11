@@ -2,7 +2,7 @@
 #
 #  main/sqlite/process-radacct-refresh.sh -- Schema extensions and script for processing radacct entries
 #
-#  $Id: c148b3f135b6875242fde93ca8404eeda0cd0f7d $
+#  $Id: c32fd438d6428c2acb8124712a90721043edaa69 $
 
 #
 #  See process-radacct-schema.sql for details.
@@ -30,7 +30,7 @@ cat <<EOF | sqlite3 "$1"
         PRIMARY KEY (key)
     );
 
-    INSERT INTO vars SELECT 'v_start', COALESCE(DATETIME(MAX(period_start), '+1 seconds'), DATETIME(0, 'unixepoch')) FROM data_usage_by_period;
+    INSERT INTO vars SELECT 'v_start', COALESCE(DATETIME(MAX(period_end), '+1 seconds'), DATETIME(0, 'unixepoch')) FROM data_usage_by_period;
     INSERT INTO vars SELECT 'v_end', CURRENT_TIMESTAMP;
 
 

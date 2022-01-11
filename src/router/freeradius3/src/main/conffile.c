@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 4a793cf27ed7d3d3b728ad76fe4fb1302dc8c846 $
+ * Version:	$Id: bddb923af54ade4b4bf18b8e8f6f64af6382391c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 4a793cf27ed7d3d3b728ad76fe4fb1302dc8c846 $")
+RCSID("$Id: bddb923af54ade4b4bf18b8e8f6f64af6382391c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -2516,6 +2516,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 				 */
 				while ((dp = readdir(dir)) != NULL) {
 					char const *p;
+					int slen;
 
 					if (dp->d_name[0] == '.') continue;
 
@@ -2532,8 +2533,12 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 					}
 					if (*p != '\0') continue;
 
-					snprintf(buf2, sizeof(buf2), "%s%s",
-						 value, dp->d_name);
+					slen = snprintf(buf2, sizeof(buf2), "%s%s",
+							value, dp->d_name);
+					if (slen >= (int) sizeof(buf2) || slen < 0) {
+						ERROR("%s: Full file path is too long.", dp->d_name);
+						return -1;
+					}
 					if ((stat(buf2, &stat_buf) != 0) ||
 					    S_ISDIR(stat_buf.st_mode)) continue;
 

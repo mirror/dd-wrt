@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 2fbc9278e39516c4fc2e8119d2a5be35858f1e33 $
+#  $Id: 1748d5747f5b2fda08a017ad3095d9b96b0c2ee0 $
 
 #
 #  Microsoft CHAP authentication
@@ -79,7 +79,7 @@ mschap {
 	#
 	#  to the command-line parameters.
 	#
-#	ntlm_auth = "/path/to/ntlm_auth --request-nt-key --username=%{%{Stripped-User-Name}:-%{%{User-Name}:-None}} --challenge=%{%{mschap:Challenge}:-00} --nt-response=%{%{mschap:NT-Response}:-00}"
+#	ntlm_auth = "/path/to/ntlm_auth --request-nt-key --allow-mschapv2 --username=%{%{Stripped-User-Name}:-%{%{User-Name}:-None}} --challenge=%{%{mschap:Challenge}:-00} --nt-response=%{%{mschap:NT-Response}:-00}"
 
 	#
 	#  The default is to wait 10 seconds for ntlm_auth to

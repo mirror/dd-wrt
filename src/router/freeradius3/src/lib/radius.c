@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: d2d2bf49aa9059aed1f45a58bc08a8f0624c89e7 $
+ * $Id: 6bf667898ecc2dfb1ef40b3fc2d75f0657014f02 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: d2d2bf49aa9059aed1f45a58bc08a8f0624c89e7 $")
+RCSID("$Id: 6bf667898ecc2dfb1ef40b3fc2d75f0657014f02 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -2989,7 +2989,8 @@ static ssize_t data2vp_nas_filter_rule(TALLOC_CTX *ctx,
 				       DICT_ATTR const *da, uint8_t const *start,
 				       size_t const packetlen, VALUE_PAIR **pvp)
 {
-	uint8_t const *p, *attr = start;
+	uint8_t const *p = start;
+	uint8_t const *attr = start;
 	uint8_t const *end = start + packetlen;
 	uint8_t const *attr_end;
 	uint8_t *q;

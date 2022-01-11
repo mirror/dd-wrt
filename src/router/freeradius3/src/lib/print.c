@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 2293ee9fea1e1b487fcc5a5c0b0c68c092c703c6 $
+ * Version:	$Id: 57455b6f30bf167abd138ac2281cd2b5d304d0c5 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 2293ee9fea1e1b487fcc5a5c0b0c68c092c703c6 $")
+RCSID("$Id: 57455b6f30bf167abd138ac2281cd2b5d304d0c5 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -502,7 +502,9 @@ size_t vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp, bool
 {
 	char const	*q;
 	size_t		len, freespace = outlen;
-	bool		raw = raw_value || (!vp->da->flags.has_tag && !vp->da->flags.has_value);
+	/* attempt to print raw_value when has_value is false, or raw_value is false, but only
+	   if has_tag is also false */
+	bool		raw = (raw_value || !vp->da->flags.has_value) && !vp->da->flags.has_tag;
 
 	if (raw) {
 		switch (vp->da->type) {

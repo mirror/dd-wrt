@@ -1,5 +1,5 @@
 /*
- * $Id: ec9731648e83c1e1d4ee39ed24a994ee79bb7dd6 $
+ * $Id: 0fabd43981d1622013811200ea73bc08e11b057d $
  *
  * --- Peter Nixon [ codemonkey@peternixon.net ]
  *
@@ -10,11 +10,11 @@
  * which is designed for simple dialup installations of FreeRadius.
  *
  * For this schema to work properly you MUST use
- * raddb/sql/postgresql/voip-postpaid.conf rather than
- * raddb/sql/postgresql/dialup.conf
+ * raddb/mods-config/sql/postgresql/voip-postpaid.conf rather than
+ * raddb/mods-config/sql/postgresql/dialup.conf
  *
  * If you wish to do RADIUS Authentication using the same database,
- * you MUST use use raddb/sql/postgresql/schema.sql as well as this schema.
+ * you MUST use use raddb/mods-config/sql/postgresql/schema.sql as well as this schema.
  */
 
 /*

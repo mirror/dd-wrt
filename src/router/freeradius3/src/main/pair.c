@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2f736d74cf7ca2de6323fadae9780d2b8e3613c1 $
+ * $Id: 3725ba1e10ba5d8c8c58cf2fcc13df000e1cc0d1 $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 2f736d74cf7ca2de6323fadae9780d2b8e3613c1 $")
+RCSID("$Id: 3725ba1e10ba5d8c8c58cf2fcc13df000e1cc0d1 $")
 
 #include <ctype.h>
 
@@ -84,13 +84,13 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 		if (check->da->type == PW_TYPE_STRING) {
 			expr_p = check->vp_strvalue;
 		} else {
-			expr_p = expr = vp_aprints_value(check, check, '\0');
+			expr_p = expr = vp_aprints_value(request, check, '\0');
 		}
 
 		if (vp->da->type == PW_TYPE_STRING) {
 			value_p = vp->vp_strvalue;
 		} else {
-			value_p = value = vp_aprints_value(vp, vp, '\0');
+			value_p = value = vp_aprints_value(request, vp, '\0');
 		}
 
 		if (!expr_p || !value_p) {
