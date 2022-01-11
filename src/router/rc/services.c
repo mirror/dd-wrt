@@ -655,6 +655,7 @@ static void handle_pptp(void)
 #ifdef HAVE_OPENVPN
 	restart_f("openvpnserver");
 	restart_f("openvpn");
+	restart("firewall");
 #endif
 }
 
@@ -755,6 +756,7 @@ static void handle_services(void)
 	stop_service("openvpn");
 	start_service_f("openvpnserver");
 	start_service_f("openvpn");
+	restart("firewall");
 #endif
 #ifdef HAVE_NOCAT
 	restart_f("splashd");
