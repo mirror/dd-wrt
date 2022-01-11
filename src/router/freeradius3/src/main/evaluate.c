@@ -1,7 +1,7 @@
 /*
  * evaluate.c	Evaluate complex conditions
  *
- * Version:	$Id: 363e3c4c502cce38a35fdc4278f0e063e793eb7f $
+ * Version:	$Id: ba214a26ffc9e8a53fc1cf4000be58ed527b5bc2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 363e3c4c502cce38a35fdc4278f0e063e793eb7f $")
+RCSID("$Id: ba214a26ffc9e8a53fc1cf4000be58ed527b5bc2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -173,6 +173,9 @@ static int cond_do_regex(REQUEST *request, fr_cond_t const *c,
 	switch (map->rhs->type) {
 	case TMPL_TYPE_REGEX_STRUCT: /* pre-compiled to a regex */
 		preg = map->rhs->tmpl_preg;
+#ifdef HAVE_PCRE
+		rad_assert(preg->precompiled);
+#endif
 		break;
 
 	default:
@@ -187,6 +190,9 @@ static int cond_do_regex(REQUEST *request, fr_cond_t const *c,
 			return -1;
 		}
 		preg = rreg;
+#ifdef HAVE_PCRE
+		rad_assert(!preg->precompiled);
+#endif
 		break;
 	}
 

@@ -2,7 +2,7 @@
 #
 #  main/mysql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: d0e77b93222af0476e2a3987d055abe39e733960 $
+#  $Id: 8cd0bd25dcc9a17ec50f947f909b79d2e448bdc4 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -78,10 +78,17 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS fr_new_data_usage_period;
 CREATE PROCEDURE fr_new_data_usage_period ()
+SQL SECURITY INVOKER
 BEGIN
 
     DECLARE v_start DATETIME;
     DECLARE v_end DATETIME;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
 
     SELECT IFNULL(DATE_ADD(MAX(period_end), INTERVAL 1 SECOND), FROM_UNIXTIME(0)) INTO v_start FROM data_usage_by_period;
     SELECT NOW() INTO v_end;

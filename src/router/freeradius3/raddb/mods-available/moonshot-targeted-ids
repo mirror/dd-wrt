@@ -1,12 +1,12 @@
 # -*- text -*-
 #
-#  $Id: bcf69bcf1a366a3a6ac948e63dd07d1b86d1f978 $
+#  $Id: 1b27b44b5a2d82e23d67c07ba19f0ef3293960d2 $
 
 #
 #  Write Moonshot-*-TargetedId (MSTID) to the database.
 #
-#  Schema	raddb/sql/moonshot-targeted-ids/<DB>/schema.sql
-#  Queries	raddb/sql/moonshot-targeted-ids/<DB>/queries.conf
+#  Schema	raddb/mods-config/sql/moonshot-targeted-ids/<DB>/schema.sql
+#  Queries	raddb/mods-config/sql/moonshot-targeted-ids/<DB>/queries.conf
 #
 sql moonshot_tid_sql {
 

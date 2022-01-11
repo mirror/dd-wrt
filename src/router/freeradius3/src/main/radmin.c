@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: 8edf163911552a406a2358979a3926378c93c412 $
+ * Version:	$Id: d71a2dd0b465a2a976607404a07aef9d6ccd5174 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8edf163911552a406a2358979a3926378c93c412 $")
+RCSID("$Id: d71a2dd0b465a2a976607404a07aef9d6ccd5174 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -116,6 +116,7 @@ static void NEVER_RETURNS usage(int status)
 	fprintf(output, "  -i input_file   Read commands from 'input_file'.\n");
 	fprintf(output, "  -n name         Read raddb/name.conf instead of raddb/radiusd.conf\n");
 	fprintf(output, "  -q              Quiet mode.\n");
+	fprintf(output, "  -v              Show program version information.\n");
 
 	exit(status);
 }
@@ -367,7 +368,7 @@ int main(int argc, char **argv)
 		progname++;
 	}
 
-	while ((argval = getopt(argc, argv, "d:D:hi:e:Ef:n:qs:S")) != EOF) {
+	while ((argval = getopt(argc, argv, "d:D:hi:e:Ef:n:qs:vS")) != EOF) {
 		switch (argval) {
 		case 'd':
 			if (file) {
@@ -439,6 +440,11 @@ int main(int argc, char **argv)
 
 		case 'S':
 			secret = NULL;
+			break;
+
+		case 'v':
+			printf("%s\n", radmin_version);
+			exit(EXIT_SUCCESS);
 			break;
 		}
 	}

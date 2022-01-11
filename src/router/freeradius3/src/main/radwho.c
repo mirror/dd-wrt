@@ -2,7 +2,7 @@
 /*
  * radwho.c	Show who is logged in on the terminal servers.
  *
- * Version:	$Id: bd534cfaa9df5b8a636e1ff59c9a72230228027f $
+ * Version:	$Id: d5347608d478ca5a2414a3fb571cf074a464d81d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: bd534cfaa9df5b8a636e1ff59c9a72230228027f $")
+RCSID("$Id: d5347608d478ca5a2414a3fb571cf074a464d81d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/sysutmp.h>
@@ -55,6 +55,15 @@ static char const *dict_dir = DICTDIR;
 char const *radacct_dir = NULL;
 
 bool log_stripped_names;
+
+static char const *radwho_version = "radwho version " RADIUSD_VERSION_STRING
+#ifdef RADIUSD_VERSION_COMMIT
+" (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
+#endif
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 /*
  *	Global, for log.c to use.
@@ -182,6 +191,7 @@ static void NEVER_RETURNS usage(int status)
 	fprintf(output, "  -S                   Hide shell users from radius.\n");
 	fprintf(output, "  -u <user>            Show entries matching the given user.\n");
 	fprintf(output, "  -U <user>            Like -u, but case-sensitive.\n");
+	fprintf(output, "  -v                   Show program version information.\n");
 	fprintf(output, "  -Z                   Include accounting stop information in radius output.  Requires -R.\n");
 	exit(status);
 }
@@ -224,7 +234,7 @@ int main(int argc, char **argv)
 
 	talloc_set_log_stderr();
 
-	while((c = getopt(argc, argv, "d:D:fF:nN:sSipP:crRu:U:Z")) != EOF) switch (c) {
+	while((c = getopt(argc, argv, "d:D:fF:nN:sSipP:crRu:U:vZ")) != EOF) switch (c) {
 		case 'd':
 			raddb_dir = optarg;
 			break;
@@ -279,6 +289,9 @@ int main(int argc, char **argv)
 			user = optarg;
 			user_cmp = 1;
 			break;
+		case 'v':
+			printf("%s\n", radwho_version);
+			exit(EXIT_SUCCESS);
 		case 'Z':
 			zap = 1;
 			break;

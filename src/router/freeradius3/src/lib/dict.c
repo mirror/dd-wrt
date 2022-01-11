@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id: eda6cabd82502ac787b77606554457fc79378171 $
+ * Version:	$Id: 479bf1104ee02c98a8ef10939a78fc0a6206fcfa $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: eda6cabd82502ac787b77606554457fc79378171 $")
+RCSID("$Id: 479bf1104ee02c98a8ef10939a78fc0a6206fcfa $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -1273,6 +1273,8 @@ int dict_addvalue(char const *namestr, char const *attrstr, int value)
 				   fr_int2str(dict_attr_types, da->type, "?Unknown?"));
 			return -1;
 		}
+		/* in v4 this is done with the UNCONST #define */
+		((DICT_ATTR *)((uintptr_t)(da)))->flags.has_value = 1;
 	} else {
 		value_fixup_t *fixup;
 

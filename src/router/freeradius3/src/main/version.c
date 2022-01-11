@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: f1f1e878104c732ba9ab325593887e1dc6f5425f $
+ * Version:	$Id: 728be50a933bd7ca97ace605b3e5900554cc9d05 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: f1f1e878104c732ba9ab325593887e1dc6f5425f $")
+RCSID("$Id: 728be50a933bd7ca97ace605b3e5900554cc9d05 $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -347,6 +347,14 @@ void version_init_features(CONF_SECTION *cs)
 #endif
 				);
 
+
+	version_add_feature(cs, "recv-coa-from-home-server",
+#ifdef WITH_COA_TUNNEL
+			        true
+#else
+				false
+#endif
+				);
 
 	version_add_feature(cs, "control-socket",
 #ifdef WITH_COMMAND_SOCKET

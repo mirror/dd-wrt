@@ -1,7 +1,7 @@
 #
 # Autoconf input file.
 #
-# Version:	$Id: e52e7545902feb7acb1342a05a8cf1c9af1e095a $
+# Version:	$Id: 46d32a78d531992de3bed4ba4ce2b2bc31aec614 $
 #
 
 AC_PREREQ([2.53])
@@ -11,6 +11,9 @@ AC_DEFUN(modname,[rlm_eap_fast])
 
 mod_ldflags=
 mod_cflags=
+
+AC_ARG_WITH([]modname,
+[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 

@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 97395145096cfa878e07abab5a921bbe500b358d $
+ * Version:	$Id: 06b566d073505e93f4dd81eec75cfad0bc03512c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 97395145096cfa878e07abab5a921bbe500b358d $")
+RCSID("$Id: 06b566d073505e93f4dd81eec75cfad0bc03512c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -693,6 +693,13 @@ cleanup:
 	 *  Free the configuration items.
 	 */
 	main_config_free();
+
+#ifdef WITH_COA_TUNNEL
+	/*
+	 *	This should be after freeing all of the listeners.
+	 */
+	listen_coa_free();
+#endif
 
 #ifdef WIN32
 	WSACleanup();

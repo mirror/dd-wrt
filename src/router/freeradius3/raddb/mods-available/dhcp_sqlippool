@@ -10,9 +10,9 @@
 #
 #  The database schemas are available at:
 #
-#       raddb/sql/ippool-dhcp/<DB>/schema.sql
+#       raddb/mods-config/sql/ippool-dhcp/<DB>/schema.sql
 #
-#  $Id: 3a85063a627c92a6839c2f2a57862153b367d162 $
+#  $Id: 909b93c7ebcbbeb16b123ca38e696790b5771dda $
 
 sqlippool dhcp_sqlippool {
 	# SQL instance to use (from mods-available/sql)

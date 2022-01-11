@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: fa2d6ff1eb60bfaa021bfc4dc27e50691e3c45c0 $
+ * Version:     $Id: 8c63498586bedb276661beb80cf6575a3827a332 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: fa2d6ff1eb60bfaa021bfc4dc27e50691e3c45c0 $")
+RCSID("$Id: 8c63498586bedb276661beb80cf6575a3827a332 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -271,6 +271,7 @@ static void eap_fast_send_pac_tunnel(REQUEST *request, tls_session_t *tls_sessio
 	dlen = eap_fast_encrypt((unsigned const char *)&opaque_plaintext, sizeof(opaque_plaintext),
 				    t->a_id, PAC_A_ID_LENGTH, t->pac_opaque_key, pac.opaque.iv,
 				    pac.opaque.data, pac.opaque.tag);
+	if (dlen < 0) return;
 
 	pac.opaque.hdr.type = htons(EAP_FAST_TLV_MANDATORY | PAC_INFO_PAC_OPAQUE);
 	pac.opaque.hdr.length = htons(sizeof(pac.opaque) - sizeof(pac.opaque.hdr) - sizeof(pac.opaque.data) + dlen);
@@ -1219,8 +1220,12 @@ PW_CODE eap_fast_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 				t->mode = EAP_FAST_PROVISIONING_AUTH;
 			}
 
-			if (!t->pac.expires || t->pac.expired || t->pac.expires - time(NULL) < t->pac_lifetime * 0.6)
+			/*
+			 *	Send a new pac at ~0.6 times the lifetime.
+			 */
+			if (!t->pac.expires || t->pac.expired || t->pac.expires < (time(NULL) + (t->pac_lifetime >> 1) + (t->pac_lifetime >> 3))) {
 				t->pac.send = true;
+			}
 		}
 
 		eap_fast_init_keys(request, tls_session);

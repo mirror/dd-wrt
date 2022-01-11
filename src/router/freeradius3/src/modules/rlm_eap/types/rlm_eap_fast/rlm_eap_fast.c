@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 02ea77f3c220daf7284e8d3e970d8ce9f1acad64 $
+ * Version:     $Id: 7c91d340507993cd1f68216b37d6640fb460e143 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 02ea77f3c220daf7284e8d3e970d8ce9f1acad64 $")
+RCSID("$Id: 7c91d340507993cd1f68216b37d6640fb460e143 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -260,7 +260,7 @@ static int _session_ticket(SSL *s, uint8_t const *data, int len, void *arg)
 	DICT_ATTR const	*fast_da;
 	char const		*errmsg;
 	int			dlen, plen;
-	uint16_t		length;
+	int			length;
 	eap_fast_attr_pac_opaque_t const	*opaque = (eap_fast_attr_pac_opaque_t const *) data;
 	eap_fast_attr_pac_opaque_t		opaque_plaintext;
 
@@ -293,7 +293,7 @@ error:
 	 * so we have to use the length in the PAC-Opaque header
 	 */
 	length = ntohs(opaque->hdr.length);
-	if (len - sizeof(opaque->hdr) < length) {
+	if (len < (int) (length + sizeof(opaque->hdr))) {
 		errmsg = "PAC has bad length in header";
 		goto error;
 	}
@@ -312,7 +312,7 @@ error:
 	plen = eap_fast_decrypt(opaque->data, dlen, opaque->aad, PAC_A_ID_LENGTH,
 					(uint8_t const *) opaque->tag, t->pac_opaque_key, opaque->iv,
 					(uint8_t *)&opaque_plaintext);
-	if (plen == -1) {
+	if (plen < 0) {
 		errmsg = "PAC failed to decrypt";
 		goto error;
 	}
@@ -333,8 +333,8 @@ error:
 			break;
 		case PAC_INFO_PAC_LIFETIME:
 			rad_assert(t->pac.expires == 0);
-			t->pac.expires = vp->vp_integer;
-			t->pac.expired = (vp->vp_integer <= time(NULL));
+			t->pac.expires = vp->vp_integer + time(NULL);
+			t->pac.expired = false;
 			break;
 		case PAC_INFO_PAC_KEY:
 			rad_assert(t->pac.key == NULL);

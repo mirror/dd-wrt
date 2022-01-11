@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: cea6f7d0f6bfc22d1032748dafaa06f1d42e6e09 $
+ * $Id: 2a6683d471f2e6d4f425003a8487ec447c5a305e $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: cea6f7d0f6bfc22d1032748dafaa06f1d42e6e09 $")
+RCSIDH(tls_h, "$Id: 2a6683d471f2e6d4f425003a8487ec447c5a305e $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -320,7 +320,7 @@ tls_session_t	*tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_client_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_server_conf_alloc(TALLOC_CTX *ctx);
-SSL_CTX		*tls_init_ctx(fr_tls_server_conf_t *conf, int client);
+SSL_CTX		*tls_init_ctx(fr_tls_server_conf_t *conf, int client, char const *chain_file, char const *private_key_file);
 int 		tls_handshake_recv(REQUEST *, tls_session_t *ssn);
 int 		tls_handshake_send(REQUEST *, tls_session_t *ssn);
 void 		tls_session_information(tls_session_t *ssn);
@@ -368,6 +368,7 @@ struct fr_tls_server_conf_t {
 	bool		disable_tlsv1_1;
 	bool		disable_tlsv1_2;
 	bool		tls13_enable_magic;
+	bool		disallow_untrusted;		//!< allow untrusted CAs to issue client certificates
 
 	int		min_version;
 	int		max_version;
@@ -431,6 +432,10 @@ struct fr_tls_server_conf_t {
 	char const	*psk_query;
 #endif
 
+	char const	*realm_dir;
+	fr_hash_table_t	*realms;
+
+	char const	*client_hostname;
 };
 
 #ifdef __cplusplus

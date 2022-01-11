@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5222973d260d77daa2e086749a265c756b843078 $
+ * $Id: cc151f7299065c611d8639094ddd8d7d0408aec5 $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 5222973d260d77daa2e086749a265c756b843078 $")
+RCSID("$Id: cc151f7299065c611d8639094ddd8d7d0408aec5 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -990,7 +990,8 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_parse(REQUEST *reques
 		(void)fr_strerror();
 		slen = fr_base64_decode((uint8_t *)&iterations, sizeof(iterations), (char const *)p, q - p);
 		if (slen < 0) {
-			REDEBUG("Failed decoding PBKDF2-Password iterations component (%.*s)", (int)(q - p), p);
+			REDEBUG("Failed decoding PBKDF2-Password iterations component (%.*s): %s",
+				(int)(q - p), p, fr_strerror());
 			goto finish;
 		}
 		if (slen != sizeof(iterations)) {
@@ -1015,7 +1016,7 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_parse(REQUEST *reques
 	MEM(salt = talloc_array(request, uint8_t, FR_BASE64_DEC_LENGTH(((size_t)(q - p)))));
 	slen = fr_base64_decode(salt, talloc_array_length(salt), (char const *) p, q - p);
 	if (slen < 0) {
-		REDEBUG("Failed decoding PBKDF2-Password salt component");
+		REDEBUG("Failed decoding PBKDF2-Password salt component: %s", fr_strerror());
 		goto finish;
 	}
 	salt_len = (size_t)slen;
@@ -1029,7 +1030,7 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_parse(REQUEST *reques
 
 	slen = fr_base64_decode(hash, sizeof(hash), (char const *)p, end - p);
 	if (slen < 0) {
-		REDEBUG("Failed decoding PBKDF2-Password hash component");
+		REDEBUG("Failed decoding PBKDF2-Password hash component: %s", fr_strerror());
 		goto finish;
 	}
 

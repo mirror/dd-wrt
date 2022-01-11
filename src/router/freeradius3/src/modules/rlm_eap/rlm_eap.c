@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 49819d9ce7a86fb61de289c0ee103432e750f76f $
+ * $Id: 24b8c5ee2d510569107790abd41027c3880ed38b $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: 49819d9ce7a86fb61de289c0ee103432e750f76f $")
+RCSID("$Id: 24b8c5ee2d510569107790abd41027c3880ed38b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -144,7 +144,7 @@ static int mod_instantiate(CONF_SECTION *cs, void *instance)
 		 */
 		if (!strcmp(name, "leap")) {
 			WARN("rlm_eap (%s): Ignoring EAP method 'leap', because it is no longer supported",
-			     inst->xlat_name, name);
+			     inst->xlat_name);
 			continue;
 		}
 

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 1d7d1d2f75e6f02e39f88bc3254c024a5c8107d6 $
+ * $Id: 409ff0b8019ba03faeb797e7317911ea916c7238 $
  * @file rlm_smsotp.c
  * @brief Supports OTP authentication using SMS.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2009  Siemens AG, Holger Wolff holger.wolff@siemens.com
  */
-RCSID("$Id: 1d7d1d2f75e6f02e39f88bc3254c024a5c8107d6 $")
+RCSID("$Id: 409ff0b8019ba03faeb797e7317911ea916c7238 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -199,8 +199,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 
 	/* Get greeting */
 	bufsize = read_all(fdp, buffer, sizeof(buffer));
-	if (bufsize <= 0) {
-		REDEBUG("Failed reading from socket");
+	if (bufsize == 0) {
+		REDEBUG("No data available from socket - other end closed the connection");
+		goto done;
+	}
+	if (bufsize < 0) {
+		REDEBUG("Failed reading from socket: %s", fr_syserror(errno));
 		goto done;
 	}
 

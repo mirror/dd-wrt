@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: d0080623362345afb165ea5712d2129211634ab9 $
+ * Version:	$Id: 9919482c8605d89c907ab37f6479f7c651b0f1a6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: d0080623362345afb165ea5712d2129211634ab9 $")
+RCSID("$Id: 9919482c8605d89c907ab37f6479f7c651b0f1a6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -160,7 +160,7 @@ fr_dlhandle fr_dlopenext(char const *name)
 	} else
 #endif
 		flags |= RTLD_LOCAL;
-#ifdef RTLD_DEEPBIND
+#if defined(RTLD_DEEPBIND) && !defined(__SANITIZE_ADDRESS__)
 		flags |= RTLD_DEEPBIND;
 #endif
 
@@ -1360,7 +1360,7 @@ static int load_byserver(CONF_SECTION *cs)
 #if defined(WITH_VMPS) || defined(WITH_DHCP)
 		CONF_SECTION *subcs;
 #endif
-#ifdef WITH_DHCP
+#if defined(WITH_DHCP) || defined(WITH_TLS)
 		DICT_ATTR const *da;
 #endif
 

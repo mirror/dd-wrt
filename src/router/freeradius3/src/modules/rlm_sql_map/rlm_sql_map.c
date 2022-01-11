@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 5443cf3c4f0ab21a9d0f6cc7c816adb0b1a46ed2 $
+ * $Id: e720c8e7aa0158a69399f44bd0b180907d54f9e5 $
  * @file rlm_sql_map.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 5443cf3c4f0ab21a9d0f6cc7c816adb0b1a46ed2 $")
+RCSID("$Id: e720c8e7aa0158a69399f44bd0b180907d54f9e5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -317,8 +317,10 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 
 	while (isspace((int) *p)) p++;
 
-	if (strncasecmp(p, "select", 6) != 0) {
-		cf_log_err_cs(conf, "'query' MUST be 'SELECT ...', not 'INSERT' or 'UPDATE'");
+	if ((strncasecmp(p, "insert", 6) == 0) ||
+	    (strncasecmp(p, "update", 6) == 0) ||
+	    (strncasecmp(p, "delete", 6) == 0)) {
+		cf_log_err_cs(conf, "'query' MUST be 'SELECT ...', not 'INSERT', 'UPDATE', or 'DELETE'");
 		return -1;
 	}
 

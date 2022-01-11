@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 98d914fbd141314f843b1dc10b9e574ab113ecfc $
+ * $Id: 1e5624782dcaf61a2739e115c0dfbe5b1ca0e171 $
  * @file ldap.c
  * @brief Functions for mapping between LDAP and FreeRADIUS attributes.
  *
@@ -109,6 +109,8 @@ int rlm_ldap_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, v
 	case TMPL_TYPE_ATTR:
 		for (i = 0; i < self->count; i++) {
 			if (!self->values[i]->bv_len) continue;
+
+			RDEBUG3("Parsing %s = %s", map->lhs->name, self->values[i]->bv_val);
 
 			vp = fr_pair_afrom_da(ctx, map->lhs->tmpl_da);
 			rad_assert(vp);

@@ -1,13 +1,16 @@
 #
 # Autoconf input file.
 #
-# Version:	$Id: fb6459f7744f8d3e2b591018f73222ef11aacdd8 $
+# Version:	$Id: df19649ea50bafe8191c85376789237564718bc8 $
 #
 
 AC_PREREQ([2.59])
 AC_INIT(rlm_sql_map.c)
 AC_REVISION($Revision$)
 AC_DEFUN(modname,[rlm_sql_map])
+
+AC_ARG_WITH([]modname,
+[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 

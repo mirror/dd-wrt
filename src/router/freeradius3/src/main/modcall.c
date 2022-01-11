@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 839f5b09e73e2ab37cd60fb6bb4a1c2f6e8fe60a $
+ * Version:	$Id: aa6abf8fbf54432dd80fd990c13b85ef90e5cf9d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 839f5b09e73e2ab37cd60fb6bb4a1c2f6e8fe60a $")
+RCSID("$Id: aa6abf8fbf54432dd80fd990c13b85ef90e5cf9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1812,6 +1812,14 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 		return NULL;
 	}
 
+	/*
+	 *	Warn about confusing things.
+	 */
+	if ((vpt->type == TMPL_TYPE_ATTR) && (*name2 != '&')) {
+		WARN("%s[%d]: Please change \"switch %s\" to \"switch &%s\"",
+		     cf_section_filename(cs), cf_section_lineno(cs),
+		     name2, name2);
+	}
 
 	/*
 	 *	Walk through the children of the switch section,

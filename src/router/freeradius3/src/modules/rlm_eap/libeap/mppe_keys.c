@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 1998af6c06d8e50f2200ff0b684627652b4bc3ca $
+ * Version:     $Id: 237c671d97846e9143962de8ec830935f7a4b974 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 1998af6c06d8e50f2200ff0b684627652b4bc3ca $")
+RCSID("$Id: 237c671d97846e9143962de8ec830935f7a4b974 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -178,6 +178,35 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 		ERROR("Failed generating keying material");
 		return;
 	}
+
+	if (RDEBUG_ENABLED4) {
+		size_t i, client_len, master_len;
+		uint8_t client_random[SSL3_RANDOM_SIZE];
+		uint8_t master_key[SSL_MAX_MASTER_KEY_LENGTH];
+		char *q, buffer[64 + 2*SSL3_RANDOM_SIZE + 2*SSL_MAX_MASTER_KEY_LENGTH];
+
+		client_len = SSL_get_client_random(s, client_random, sizeof(client_random));
+		master_len = SSL_SESSION_get_master_key(SSL_get_session(s), master_key, sizeof(master_key));
+
+		strcpy(buffer, "CLIENT_RANDOM ");
+		q = buffer + 14;
+
+		for (i = 0; i < client_len; i++) {
+			sprintf(q, "%02X", client_random[i]);
+			q += 2;
+		}
+		*(q++) = ' ';
+
+		for (i = 0; i < master_len; i++) {
+			sprintf(q, "%02X", master_key[i]);
+			q += 2;
+		}
+		*q = '\0';
+
+		RDEBUG("(TLS) KEYLOG: %s", buffer);
+
+	}
+
 #else
 	{
 		uint8_t seed[64 + (2 * SSL3_RANDOM_SIZE) + (context ? 2 + context_size : 0)];
@@ -209,6 +238,33 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 
 		PRF(s->session->master_key, s->session->master_key_length,
 		    seed, len, out, buf, sizeof(out));
+	}
+
+	if (RDEBUG_ENABLED4) {
+		size_t i, master_len;
+		char *q, buffer[64 + 2*SSL3_RANDOM_SIZE + 2*SSL_MAX_MASTER_KEY_LENGTH];
+
+		client_len = SSL_get_client_random(s, client_random, sizeof(client_random));
+		master_len = s->session->master_key_length;
+		if (master_len > SSL_MAX_MASTER_KEY_LENGTH) master_len = SSL_MAX_MASTER_KEY_LENGTH;
+
+		strcpy(buffer, "CLIENT_RANDOM ");
+		q = buffer + 14;
+
+		for (i = 0; i < SSL3_RANDOM_SIZE; i++) {
+			sprintf(q, "%02X", s->s3->client_random[i]);
+			q += 2;
+		}
+		*(q++) = ' ';
+
+		for (i = 0; i < master_len; i++) {
+			sprintf(q, "%02X", s->session->master_key[i]);
+			q += 2;
+		}
+		*q = '\0';
+
+		RDEBUG("(TLS) KEYLOG: %s", buffer);
+
 	}
 #endif
 
