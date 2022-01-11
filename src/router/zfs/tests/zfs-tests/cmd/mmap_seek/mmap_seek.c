@@ -35,6 +35,18 @@
 #include <linux/fs.h>
 #endif
 
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#endif
+
+#ifndef SEEK_HOLE
+#define SEEK_HOLE 4
+#endif
+
+#ifndef P2ROUNDUP
+#define	P2ROUNDUP(x, align)	((((x) - 1) | ((align) - 1)) + 1)
+#endif
+
 static void
 seek_data(int fd, off_t offset, off_t expected)
 {

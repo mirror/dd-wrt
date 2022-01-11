@@ -31,7 +31,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <zlib.h>
 #include <libintl.h>
 #include <sys/types.h>
