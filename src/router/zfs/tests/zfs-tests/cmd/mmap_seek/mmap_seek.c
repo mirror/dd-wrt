@@ -29,18 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/sysmacros.h>
 #include <errno.h>
-
-#ifndef SEEK_DATA
-#define SEEK_DATA 3
-#endif
-
-#ifndef SEEK_HOLE
-#define SEEK_HOLE 4
-#endif
-
-#ifndef P2ROUNDUP
-#define	P2ROUNDUP(x, align)	((((x) - 1) | ((align) - 1)) + 1)
+#ifdef __linux__
+#include <linux/fs.h>
 #endif
 
 static void

@@ -476,8 +476,8 @@ dsl_pool_destroy_obsolete_bpobj(dsl_pool_t *dp, dmu_tx_t *tx)
 }
 
 dsl_pool_t *
-dsl_pool_create(spa_t *spa, nvlist_t *zplprops, dsl_crypto_params_t *dcp,
-    uint64_t txg)
+dsl_pool_create(spa_t *spa, nvlist_t *zplprops __attribute__((unused)),
+    dsl_crypto_params_t *dcp, uint64_t txg)
 {
 	int err;
 	dsl_pool_t *dp = dsl_pool_open_impl(spa, txg);
@@ -664,6 +664,9 @@ dsl_early_sync_task_verify(dsl_pool_t *dp, uint64_t txg)
 
 	return (B_TRUE);
 }
+#else
+#define	dsl_early_sync_task_verify(dp, txg) \
+	((void) sizeof (dp), (void) sizeof (txg), B_TRUE)
 #endif
 
 void

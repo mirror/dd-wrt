@@ -94,6 +94,7 @@ KERNEL_C = \
 	gzip.c \
 	hkdf.c \
 	lz4.c \
+	lz4_zfs.c \
 	lzjb.c \
 	metaslab.c \
 	mmp.c \
@@ -220,7 +221,7 @@ libzpool_la_LIBADD = \
 
 libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
 
-libzpool_la_LDFLAGS = -pthread -latomic
+libzpool_la_LDFLAGS = -pthread
 
 if !ASAN_ENABLED
 libzpool_la_LDFLAGS += -Wl,-z,defs

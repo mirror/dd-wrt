@@ -113,6 +113,12 @@ VFS_SMR_DECLARE;
 #define	VNCHECKREF(vp)
 #endif
 
+#if __FreeBSD_version >= 1400045
+typedef uint64_t cookie_t;
+#else
+typedef ulong_t cookie_t;
+#endif
+
 /*
  * Programming rules.
  *
@@ -1665,7 +1671,7 @@ zfs_rmdir(znode_t *dzp, const char *name, znode_t *cwd, cred_t *cr, int flags)
 /* ARGSUSED */
 static int
 zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
-    int *ncookies, ulong_t **cookies)
+    int *ncookies, cookie_t **cookies)
 {
 	znode_t		*zp = VTOZ(vp);
 	iovec_t		*iovp;
@@ -1687,7 +1693,7 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 	boolean_t	check_sysattrs;
 	uint8_t		type;
 	int		ncooks;
-	ulong_t		*cooks = NULL;
+	cookie_t	*cooks = NULL;
 	int		flags = 0;
 
 	ZFS_ENTER(zfsvfs);
@@ -1764,7 +1770,7 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 		 */
 		ncooks = zfs_uio_resid(uio) / (sizeof (struct dirent) -
 		    sizeof (((struct dirent *)NULL)->d_name) + 1);
-		cooks = malloc(ncooks * sizeof (ulong_t), M_TEMP, M_WAITOK);
+		cooks = malloc(ncooks * sizeof (*cooks), M_TEMP, M_WAITOK);
 		*cookies = cooks;
 		*ncookies = ncooks;
 	}
@@ -2051,7 +2057,7 @@ zfs_getattr(vnode_t *vp, vattr_t *vap, int flags, cred_t *cr)
 	vap->va_size = zp->z_size;
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		vap->va_rdev = zfs_cmpldev(rdev);
-	vap->va_seq = zp->z_seq;
+	vap->va_gen = zp->z_gen;
 	vap->va_flags = 0;	/* FreeBSD: Reset chflags(2) flags. */
 	vap->va_filerev = zp->z_seq;
 
@@ -4718,7 +4724,7 @@ struct vop_readdir_args {
 	struct ucred *a_cred;
 	int *a_eofflag;
 	int *a_ncookies;
-	ulong_t **a_cookies;
+	cookie_t **a_cookies;
 };
 #endif
 
@@ -5343,8 +5349,12 @@ zfs_getextattr_dir(struct vop_getextattr_args *ap, const char *attrname)
 		return (error);
 
 	flags = FREAD;
+#if __FreeBSD_version < 1400043
 	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname,
 	    xvp, td);
+#else
+	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname, xvp);
+#endif
 	error = vn_open_cred(&nd, &flags, 0, VN_OPEN_INVFS, ap->a_cred, NULL);
 	vp = nd.ni_vp;
 	NDFREE(&nd, NDF_ONLY_PNBUF);
@@ -5457,8 +5467,13 @@ zfs_deleteextattr_dir(struct vop_deleteextattr_args *ap, const char *attrname)
 	if (error != 0)
 		return (error);
 
+#if __FreeBSD_version < 1400043
 	NDINIT_ATVP(&nd, DELETE, NOFOLLOW | LOCKPARENT | LOCKLEAF,
 	    UIO_SYSSPACE, attrname, xvp, ap->a_td);
+#else
+	NDINIT_ATVP(&nd, DELETE, NOFOLLOW | LOCKPARENT | LOCKLEAF,
+	    UIO_SYSSPACE, attrname, xvp);
+#endif
 	error = namei(&nd);
 	vp = nd.ni_vp;
 	if (error != 0) {
@@ -5586,7 +5601,11 @@ zfs_setextattr_dir(struct vop_setextattr_args *ap, const char *attrname)
 		return (error);
 
 	flags = FFLAGS(O_WRONLY | O_CREAT);
+#if __FreeBSD_version < 1400043
 	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname, xvp, td);
+#else
+	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname, xvp);
+#endif
 	error = vn_open_cred(&nd, &flags, 0600, VN_OPEN_INVFS, ap->a_cred,
 	    NULL);
 	vp = nd.ni_vp;
@@ -5741,8 +5760,13 @@ zfs_listextattr_dir(struct vop_listextattr_args *ap, const char *attrprefix)
 		return (error);
 	}
 
+#if __FreeBSD_version < 1400043
 	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKSHARED,
 	    UIO_SYSSPACE, ".", xvp, td);
+#else
+	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKSHARED,
+	    UIO_SYSSPACE, ".", xvp);
+#endif
 	error = namei(&nd);
 	vp = nd.ni_vp;
 	NDFREE(&nd, NDF_ONLY_PNBUF);
@@ -6171,6 +6195,9 @@ struct vop_vector zfs_vnodeops = {
 	.vop_unlock =		vop_unlock,
 	.vop_islocked =		vop_islocked,
 #endif
+#if __FreeBSD_version >= 1400043
+	.vop_add_writecount =	vop_stdadd_writecount_nomsync,
+#endif
 };
 VFS_VOP_VECTOR_REGISTER(zfs_vnodeops);
 
@@ -6195,6 +6222,9 @@ struct vop_vector zfs_fifoops = {
 	.vop_getacl =		zfs_freebsd_getacl,
 	.vop_setacl =		zfs_freebsd_setacl,
 	.vop_aclcheck =		zfs_freebsd_aclcheck,
+#if __FreeBSD_version >= 1400043
+	.vop_add_writecount =	vop_stdadd_writecount_nomsync,
+#endif
 };
 VFS_VOP_VECTOR_REGISTER(zfs_fifoops);
 
@@ -6214,5 +6244,8 @@ struct vop_vector zfs_shareops = {
 	.vop_reclaim =		zfs_freebsd_reclaim,
 	.vop_fid =		zfs_freebsd_fid,
 	.vop_pathconf =		zfs_freebsd_pathconf,
+#if __FreeBSD_version >= 1400043
+	.vop_add_writecount =	vop_stdadd_writecount_nomsync,
+#endif
 };
 VFS_VOP_VECTOR_REGISTER(zfs_shareops);

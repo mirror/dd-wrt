@@ -7,7 +7,7 @@ MODULE := zlua
 
 obj-$(CONFIG_ZFS) := $(MODULE).o
 
-ccflags-y := -DLUA_USE_LONGLONG -fno-lto
+ccflags-y := -DLUA_USE_LONGLONG
 
 $(MODULE)-objs += lapi.o
 $(MODULE)-objs += lauxlib.o
