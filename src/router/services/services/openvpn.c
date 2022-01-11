@@ -276,9 +276,9 @@ void create_openvpnrules(FILE * fp)
 				"esac\n"
 				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
 				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
-				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
 				"echo \"iptables -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
 				"echo \"iptables -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
 				"done\n" "set=1\n" "fi\n");
 		}
@@ -623,6 +623,9 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 	run_openvpn("/tmp/openvpnserver", "openvpn");
+	//restart firewall as alternative to reboot when change settings
+	stop_firewall();
+	start_firewall();
 }
 
 void stop_openvpnserver(void)
@@ -921,9 +924,9 @@ void start_openvpn(void)
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-		fprintf(fp, "if [[ \"$(nvram get openvpncl_enable)\" == '0' || \"$(nvram get openvpncl_killswitch)\" == '0' ]]; then\n");
-		fprintf(fp, "ip route flush table 10\n");
+		fprintf(fp, "if [[ \"$(nvram get openvpncl_enable)\" == '0' ]]; then\n");
 		fprintf(fp, "while ip rule delete from 0/0 to 0/0 table 10; do true; done\n");	//egc: added to delete ip rules
+		fprintf(fp, "ip route flush table 10\n");
 		fprintf(fp, "ip route flush cache\n" "fi\n");
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
