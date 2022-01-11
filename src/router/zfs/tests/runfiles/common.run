@@ -179,7 +179,7 @@ tags = ['functional', 'cli_root', 'zfs_destroy']
 
 [tests/functional/cli_root/zfs_diff]
 tests = ['zfs_diff_changes', 'zfs_diff_cliargs', 'zfs_diff_timestamp',
-    'zfs_diff_types', 'zfs_diff_encrypted']
+    'zfs_diff_types', 'zfs_diff_encrypted', 'zfs_diff_mangle']
 tags = ['functional', 'cli_root', 'zfs_diff']
 
 [tests/functional/cli_root/zfs_get]
@@ -873,6 +873,10 @@ tags = ['functional', 'snapused']
 [tests/functional/sparse]
 tests = ['sparse_001_pos']
 tags = ['functional', 'sparse']
+
+[tests/functional/stat]
+tests = ['stat_001_pos']
+tags = ['functional', 'stat']
 
 [tests/functional/suid]
 tests = ['suid_write_to_suid', 'suid_write_to_sgid', 'suid_write_to_suid_sgid',

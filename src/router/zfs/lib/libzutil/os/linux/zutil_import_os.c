@@ -73,7 +73,7 @@
 #include <libudev.h>
 #include <sched.h>
 #endif
-#include <blkid.h>
+#include <blkid/blkid.h>
 
 #define	DEV_BYID_PATH	"/dev/disk/by-id/"
 
@@ -560,17 +560,17 @@ udev_device_is_ready(struct udev_device *dev)
 
 #else
 
-/* ARGSUSED */
 int
 zfs_device_get_devid(struct udev_device *dev, char *bufptr, size_t buflen)
 {
+	(void) dev, (void) bufptr, (void) buflen;
 	return (ENODATA);
 }
 
-/* ARGSUSED */
 int
 zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
 {
+	(void) dev, (void) bufptr, (void) buflen;
 	return (ENODATA);
 }
 
@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
 int
 zpool_label_disk_wait(const char *path, int timeout_ms)
 {
-#if 0 //def HAVE_LIBUDEV
+#ifdef HAVE_LIBUDEV
 	struct udev *udev;
 	struct udev_device *dev = NULL;
 	char nodepath[MAXPATHLEN];
@@ -788,6 +788,8 @@ update_vdev_config_dev_sysfs_path(nvlist_t *nv, char *path)
 static int
 sysfs_path_pool_vdev_iter_f(void *hdl_data, nvlist_t *nv, void *data)
 {
+	(void) hdl_data, (void) data;
+
 	char *path = NULL;
 	if (nvlist_lookup_string(nv, ZPOOL_CONFIG_PATH, &path) != 0)
 		return (1);
