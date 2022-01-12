@@ -14,8 +14,8 @@ SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCMAKE_BUILD_TYPE=release
 
 SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
-SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(TOP)/openssl/include -lcrypto
-SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lreadline -lhistory -lncurses -lz
+SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(TOP)/openssl/include -I$(TOP)/libsodium/src/libsodium/include -lcrypto
+SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -L$(TOP)/libsodium/src/libsodium/.libs -lreadline -lhistory -lncurses -lz
 
 
 softether-configure: zlib readline ncurses
