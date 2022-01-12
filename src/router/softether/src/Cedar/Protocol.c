@@ -1,13 +1,47 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Protocol.c
 // SoftEther protocol related routines
 
-#include "CedarPch.h"
+#include "Protocol.h"
 
-static UCHAR ssl_packet_start[3] = {0x17, 0x03, 0x00};
+#include "Admin.h"
+#include "Client.h"
+#include "CM.h"
+#include "DDNS.h"
+#include "Hub.h"
+#include "IPC.h"
+#include "Link.h"
+#include "Logging.h"
+#include "Proto_IPsec.h"
+#include "Proto_OpenVPN.h"
+#include "Proto_PPP.h"
+#include "Proto_SSTP.h"
+#include "Radius.h"
+#include "Sam.h"
+#include "Server.h"
+#include "UdpAccel.h"
+#include "VLanUnix.h"
+#include "WaterMark.h"
+#include "WebUI.h"
+#include "WinUi.h"
+#include "Wpc.h"
+
+#include "Mayaqua/Cfg.h"
+#include "Mayaqua/DNS.h"
+#include "Mayaqua/FileIO.h"
+#include "Mayaqua/Internat.h"
+#include "Mayaqua/Memory.h"
+#include "Mayaqua/Microsoft.h"
+#include "Mayaqua/Object.h"
+#include "Mayaqua/OS.h"
+#include "Mayaqua/Pack.h"
+#include "Mayaqua/Secure.h"
+#include "Mayaqua/Str.h"
+#include "Mayaqua/Table.h"
+#include "Mayaqua/Tick64.h"
 
 // Download and save intermediate certificates if necessary
 bool DownloadAndSaveIntermediateCertificatesIfNecessary(X *x)
@@ -1330,12 +1364,45 @@ bool ServerAccept(CONNECTION *c)
 			goto CLEANUP;
 		}
 
-
-
-		// Login
-		if (GetHubnameAndUsernameFromPack(p, username, sizeof(username), hubname, sizeof(hubname)) == false)
+		// Get authentication method and initiate login process
+		authtype = GetAuthTypeFromPack(p);
+		if (authtype == AUTHTYPE_WIREGUARD_KEY)
 		{
-			// Protocol error
+			WGK *wgk, tmp;
+			bool ok = false;
+
+			if (PackGetStr(p, "key", tmp.Key, sizeof(tmp.Key)) == false)
+			{
+				FreePack(p);
+				c->Err = ERR_PROTOCOL_ERROR;
+				error_detail = "GetWireGuardKeyFromPack";
+				goto CLEANUP;
+			}
+
+			LockList(c->Cedar->WgkList);
+			{
+				wgk = Search(c->Cedar->WgkList, &tmp);
+				if (wgk != NULL)
+				{
+					ok = true;
+					StrCpy(hubname, sizeof(hubname), wgk->Hub);
+					StrCpy(username, sizeof(username), wgk->User);
+					StrCpy(node.HubName, sizeof(node.HubName), hubname);
+				}
+			}
+			UnlockList(c->Cedar->WgkList);
+
+			if (ok == false)
+			{
+				FreePack(p);
+				c->Err = ERR_AUTH_FAILED;
+				SLog(c->Cedar, "LS_WG_KEY_NOT_FOUND", c->Name, hubname);
+				error_detail = "ERR_AUTH_FAILED";
+				goto CLEANUP;
+			}
+		}
+		else if (GetHubnameAndUsernameFromPack(p, username, sizeof(username), hubname, sizeof(hubname)) == false)
+		{
 			FreePack(p);
 			c->Err = ERR_PROTOCOL_ERROR;
 			error_detail = "GetHubnameAndUsernameFromPack";
@@ -1345,9 +1412,7 @@ bool ServerAccept(CONNECTION *c)
 		if (farm_member)
 		{
 			bool ok = false;
-			UINT authtype;
 
-			authtype = GetAuthTypeFromPack(p);
 			if (StrCmpi(username, ADMINISTRATOR_USERNAME) == 0 &&
 				authtype == AUTHTYPE_PASSWORD)
 			{
@@ -1600,9 +1665,6 @@ bool ServerAccept(CONNECTION *c)
 				PackGetData(p, "unique_id", unique);
 			}
 
-			// Get the authentication method
-			authtype = GetAuthTypeFromPack(p);
-
 			if (1)
 			{
 				// Log
@@ -1622,11 +1684,14 @@ bool ServerAccept(CONNECTION *c)
 				case CLIENT_AUTHTYPE_CERT:
 					authtype_str = _UU("LH_AUTH_CERT");
 					break;
-				case AUTHTYPE_TICKET:
-					authtype_str = _UU("LH_AUTH_TICKET");
+				case AUTHTYPE_WIREGUARD_KEY:
+					authtype_str = _UU("LH_AUTH_WIREGUARD_KEY");
 					break;
 				case AUTHTYPE_OPENVPN_CERT:
 					authtype_str = _UU("LH_AUTH_OPENVPN_CERT");
+					break;
+				case AUTHTYPE_TICKET:
+					authtype_str = _UU("LH_AUTH_TICKET");
 					break;
 				}
 				IPToStr(ip1, sizeof(ip1), &c->FirstSock->RemoteIP);
@@ -1640,7 +1705,6 @@ bool ServerAccept(CONNECTION *c)
 
 			// Attempt an anonymous authentication first
 			auth_ret = SamAuthUserByAnonymous(hub, username);
-
 			if (auth_ret)
 			{
 				if (c->IsInProc)
@@ -1734,8 +1798,6 @@ bool ServerAccept(CONNECTION *c)
 
 				if (auth_ret)
 				{
-					// User authentication success by anonymous authentication
-					HLog(hub, "LH_AUTH_OK", c->Name, username);
 					is_empty_password = true;
 				}
 			}
@@ -1961,6 +2023,24 @@ bool ServerAccept(CONNECTION *c)
 					}
 					break;
 
+				case AUTHTYPE_WIREGUARD_KEY:
+					// We already retrieved the hubname and username associated with the key.
+					// Now we only have to verify that the user effectively exists.
+					if (c->IsInProc)
+					{
+						auth_ret = SamIsUser(hub, username);
+					}
+					else
+					{
+						// WireGuard public key authentication cannot be used directly by external clients.
+						Unlock(hub->lock);
+						ReleaseHub(hub);
+						FreePack(p);
+						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
+						goto CLEANUP;
+					}
+					break;
+
 				case AUTHTYPE_OPENVPN_CERT:
 					// For OpenVPN; mostly same as CLIENT_AUTHTYPE_CERT, but without
 					// signature verification, because it was already performed during TLS handshake.
@@ -2014,22 +2094,14 @@ bool ServerAccept(CONNECTION *c)
 					error_detail = "ERR_AUTHTYPE_NOT_SUPPORTED";
 					goto CLEANUP;
 				}
-
-				if (auth_ret == false)
-				{
-					// Authentication failure
-					HLog(hub, "LH_AUTH_NG", c->Name, username);
-				}
-				else
-				{
-					// Authentication success
-					HLog(hub, "LH_AUTH_OK", c->Name, username);
-				}
 			}
 
 			if (auth_ret == false)
 			{
-				// Authentication failure
+				char ip[64];
+				IPToStr(ip, sizeof(ip), &c->FirstSock->RemoteIP);
+				HLog(hub, "LH_AUTH_NG", c->Name, username, ip);
+
 				Unlock(hub->lock);
 				ReleaseHub(hub);
 				FreePack(p);
@@ -2043,13 +2115,12 @@ bool ServerAccept(CONNECTION *c)
 			}
 			else
 			{
-				if(is_empty_password)
+				if (is_empty_password)
 				{
-					SOCK *s = c->FirstSock;
-					if (s != NULL && s->RemoteIP.addr[0] != 127)
+					const SOCK *s = c->FirstSock;
+					if (s != NULL && IsLocalHostIP(&s->RemoteIP) == false)
 					{
-						if(StrCmpi(username, ADMINISTRATOR_USERNAME) == 0 || 
-							GetHubAdminOption(hub, "deny_empty_password") != 0)
+						if (StrCmpi(username, ADMINISTRATOR_USERNAME) == 0 || GetHubAdminOption(hub, "deny_empty_password") != 0)
 						{
 							// When the password is empty, remote connection is not acceptable
 							HLog(hub, "LH_LOCAL_ONLY", c->Name, username);
@@ -2063,6 +2134,8 @@ bool ServerAccept(CONNECTION *c)
 						}
 					}
 				}
+
+				HLog(hub, "LH_AUTH_OK", c->Name, username);
 			}
 
 			policy = NULL;
@@ -2929,7 +3002,7 @@ bool ServerAccept(CONNECTION *c)
 
 					if (UdpAccelInitServer(s->UdpAccel,
 						s->UdpAccel->Version == 2 ? udp_acceleration_client_key_v2 : udp_acceleration_client_key,
-						&udp_acceleration_client_ip, udp_acceleration_client_port, &c->FirstSock->RemoteIP) == false)
+						&c->FirstSock->RemoteIP, &udp_acceleration_client_ip, udp_acceleration_client_port) == false)
 					{
 						Debug("UdpAccelInitServer Failed.\n");
 						s->UseUdpAcceleration = false;
@@ -3117,7 +3190,7 @@ bool ServerAccept(CONNECTION *c)
 			if (IsURLMsg(msg, NULL, 0) == false)
 			{
 
-				if (s != NULL && s->IsRUDPSession && c != NULL && StrCmpi(hub->Name, VG_HUBNAME) != 0)
+				if (s != NULL && s->IsRUDPSession && c != NULL)
 				{
 					// Show the warning message if the connection is made by NAT-T
 					wchar_t *tmp2;
@@ -3762,7 +3835,7 @@ void CreateNodeInfo(NODE_INFO *info, CONNECTION *c)
 	}
 	else
 	{
-		Copy(info->ClientIpAddress6, c->FirstSock->LocalIP.ipv6_addr, sizeof(info->ClientIpAddress6));
+		Copy(info->ClientIpAddress6, c->FirstSock->LocalIP.address, sizeof(info->ClientIpAddress6));
 	}
 	// Client port number
 	info->ClientPort = Endian32(c->FirstSock->LocalPort);
@@ -3778,7 +3851,7 @@ void CreateNodeInfo(NODE_INFO *info, CONNECTION *c)
 		}
 		else
 		{
-			Copy(info->ServerIpAddress6, ip.ipv6_addr, sizeof(info->ServerIpAddress6));
+			Copy(info->ServerIpAddress6, ip.address, sizeof(info->ServerIpAddress6));
 		}
 	}
 	// Server port number
@@ -3796,7 +3869,7 @@ void CreateNodeInfo(NODE_INFO *info, CONNECTION *c)
 		}
 		else
 		{
-			Copy(&info->ProxyIpAddress6, c->FirstSock->RemoteIP.ipv6_addr, sizeof(info->ProxyIpAddress6));
+			Copy(&info->ProxyIpAddress6, c->FirstSock->RemoteIP.address, sizeof(info->ProxyIpAddress6));
 		}
 
 		info->ProxyPort = Endian32(c->FirstSock->RemotePort);
@@ -4915,8 +4988,8 @@ REDIRECTED:
 
 							if (UdpAccelInitClient(sess->UdpAccel,
 								sess->UdpAccel->Version == 2 ? udp_acceleration_server_key_v2 : udp_acceleration_server_key,
-								&udp_acceleration_server_ip, udp_acceleration_server_port,
-								server_cookie, client_cookie, &remote_ip) == false)
+								&remote_ip, &udp_acceleration_server_ip, udp_acceleration_server_port,
+								server_cookie, client_cookie) == false)
 							{
 								Debug("UdpAccelInitClient failed.\n");
 							}
@@ -5005,15 +5078,9 @@ REDIRECTED:
 	}
 
 	PrintStatus(sess, _UU("STATUS_9"));
-
 #ifdef OS_UNIX
-	// Set TUN up if session has NicDownOnDisconnect set
-	if (c->Session->NicDownOnDisconnect != NULL)
-	{
-		UnixVLanSetState(c->Session->ClientOption->DeviceName, true);
-	}
+	UnixVLanSetState(c->Session->ClientOption->DeviceName, true);
 #endif
-
 	// Shift the connection to the tunneling mode
 	StartTunnelingMode(c);
 	s = NULL;
@@ -5514,6 +5581,20 @@ bool ClientUploadAuth(CONNECTION *c)
 			}
 			break;
 
+		case CLIENT_AUTHTYPE_OPENSSLENGINE:
+			// Certificate authentication
+			if (a->ClientX != NULL && a->ClientX->is_compatible_bit &&
+				a->ClientX->bits != 0 && (a->ClientX->bits / 8) <= sizeof(sign))
+			{
+				if (RsaSignEx(sign, c->Random, SHA1_SIZE, a->ClientK, a->ClientX->bits))
+				{
+					p = PackLoginWithCert(o->HubName, a->Username, a->ClientX, sign, a->ClientX->bits / 8);
+					c->ClientX = CloneX(a->ClientX);
+				}
+			}
+			break;
+
+
 		case CLIENT_AUTHTYPE_SECURE:
 			// Authentication by secure device
 			if (ClientSecureSign(c, sign, c->Random, &x))
@@ -5594,25 +5675,18 @@ bool ClientUploadAuth(CONNECTION *c)
 	// UDP acceleration function using flag
 	if (o->NoUdpAcceleration == false && c->Session->UdpAccel != NULL)
 	{
-		IP my_ip;
-
-		Zero(&my_ip, sizeof(my_ip));
-
 		PackAddBool(p, "use_udp_acceleration", true);
 
 		PackAddInt(p, "udp_acceleration_version", c->Session->UdpAccel->Version);
 
-		Copy(&my_ip, &c->Session->UdpAccel->MyIp, sizeof(IP));
-		if (IsLocalHostIP(&my_ip))
+		IP my_ip;
+		if (IsLocalHostIP(&c->Session->UdpAccel->MyIp) == false)
 		{
-			if (IsIP4(&my_ip))
-			{
-				ZeroIP4(&my_ip);
-			}
-			else
-			{
-				ZeroIP6(&my_ip);
-			}
+			Copy(&my_ip, &c->Session->UdpAccel->MyIp, sizeof(my_ip));
+		}
+		else
+		{
+			Zero(&my_ip, sizeof(my_ip));
 		}
 
 		PackAddIp(p, "udp_acceleration_client_ip", &my_ip);
@@ -5881,9 +5955,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 				}
 			}
 		}
-		else if (StrCmpi(h->Method, "SSTP_DUPLEX_POST") == 0 && (server->DisableSSTPServer == false || s->IsReverseAcceptedSocket
-			) &&
-			GetServerCapsBool(server, "b_support_sstp") && GetNoSstp() == false)
+		else if (StrCmpi(h->Method, "SSTP_DUPLEX_POST") == 0 && (ProtoEnabled(server->Proto, "SSTP") || s->IsReverseAcceptedSocket) && GetServerCapsBool(server, "b_support_sstp"))
 		{
 			// SSTP client is connected
 			c->WasSstp = true;
@@ -5894,7 +5966,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 				// Accept the SSTP connection
 				c->Type = CONNECTION_TYPE_OTHER;
 
-				sstp_ret = AcceptSstp(c);
+				sstp_ret = ProtoHandleConnection(server->Proto, s, "SSTP");
 
 				c->Err = ERR_DISCONNECTED;
 				FreeHttpHeader(h);
@@ -5939,7 +6011,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 
 					if (server->DisableJsonRpcWebApi == false)
 					{
-						b = ReadDump("|wwwroot\\index.html");
+						b = ReadDump("|wwwroot/index.html");
 					}
 
 					if (b != NULL)
@@ -5980,7 +6052,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 
 					}
 
-					if (c->FirstSock->RemoteIP.addr[0] == 127)
+					if (IsLocalHostIP(&c->FirstSock->RemoteIP))
 					{
 						if (StrCmpi(h->Target, HTTP_SAITAMA) == 0)
 						{
@@ -6579,6 +6651,24 @@ PACK *PackLoginWithPlainPassword(char *hubname, char *username, void *plain_pass
 	PackAddStr(p, "username", username);
 	PackAddInt(p, "authtype", CLIENT_AUTHTYPE_PLAIN_PASSWORD);
 	PackAddStr(p, "plain_password", plain_password);
+
+	return p;
+}
+
+// Generate a packet of WireGuard key login
+PACK *PackLoginWithWireGuardKey(char *key)
+{
+	PACK *p;
+	// Validate arguments
+	if (key == NULL)
+	{
+		return NULL;
+	}
+
+	p = NewPack();
+	PackAddStr(p, "method", "login");
+	PackAddInt(p, "authtype", AUTHTYPE_WIREGUARD_KEY);
+	PackAddStr(p, "key", key);
 
 	return p;
 }

@@ -1,12 +1,18 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Command.h
 // Header of Command.c
 
 #ifndef	COMMAND_H
 #define	COMMAND_H
+
+#include "CedarType.h"
+
+#include "Mayaqua/Network.h"
+
+#include <stddef.h>
 
 // Constants
 #define	TRAFFIC_DEFAULT_PORT		9821
@@ -25,8 +31,6 @@
 #define	VPNCMD_BOOTSTRAP_REG_VALUENAME_VER	"InstalledVersion"
 #define	VPNCMD_BOOTSTRAP_REG_VALUENAME_PATH	"InstalledPath"
 #define	VPNCMD_BOOTSTRAP_FILENAME		"|vpncmdsys.exe"
-#define	VPNCMD_BOOTSTRAP_FILENAME_X64	"|vpncmdsys_x64.exe"
-#define	VPNCMD_BOOTSTRAP_FILENAME_IA64	"|vpncmdsys_ia64.exe"
 
 
 // Traffic test results
@@ -227,7 +231,7 @@ char *CmdPasswordPrompt(CONSOLE *c);
 bool CmdEvalIp(CONSOLE *c, wchar_t *str, void *param);
 wchar_t *PsClusterSettingMemberPromptIp(CONSOLE *c, void *param);
 bool CmdEvalHostAndPort(CONSOLE *c, wchar_t *str, void *param);
-LIST *StrToPortList(char *str);
+LIST *StrToPortList(char *str, bool limit_range);
 bool CmdEvalPortList(CONSOLE *c, wchar_t *str, void *param);
 wchar_t *PsClusterSettingMemberPromptPorts(CONSOLE *c, void *param);
 K *CmdLoadKey(CONSOLE *c, wchar_t *filename);
@@ -370,6 +374,7 @@ UINT PcAccountNicSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountStatusShow(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountStatusHide(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountSecureCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PcAccountOpensslEngineCertSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountRetrySet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountStartupSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountStartupRemove(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
@@ -377,9 +382,6 @@ UINT PcAccountExport(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcAccountImport(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcRemoteEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcRemoteDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PcTunDownOnDisconnectEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PcTunDownOnDisconnectDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PcTunDownOnDisconnectGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcKeepEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcKeepDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PcKeepSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
@@ -398,6 +400,10 @@ UINT PsListenerDelete(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsListenerList(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsListenerEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsListenerDisable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsPortsUDPSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsPortsUDPGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsProtoOptionsSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsProtoOptionsGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsServerPasswordSet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsClusterSettingGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsClusterSettingStandalone(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
@@ -446,6 +452,9 @@ UINT PsRouterTableAdd(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsRouterTableDel(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsLogFileList(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsLogFileGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsWgkAdd(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsWgkDelete(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsWgkEnum(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsHubCreate(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsHubCreateDynamic(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsHubCreateStatic(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
@@ -456,6 +465,7 @@ UINT PsHubList(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsHub(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsOnline(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsOffline(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
+UINT PsSetStaticNetwork(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsSetMaxSession(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsSetHubPassword(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsSetEnumAllow(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
@@ -584,13 +594,7 @@ UINT PsIPsecGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsEtherIpClientAdd(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsEtherIpClientDelete(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsEtherIpClientList(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsOpenVpnEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsOpenVpnGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsOpenVpnMakeConfig(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsOpenVpnObfuscationEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsOpenVpnObfuscationGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsSstpEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
-UINT PsSstpGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsServerCertRegenerate(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsVpnOverIcmpDnsEnable(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);
 UINT PsVpnOverIcmpDnsGet(CONSOLE *c, char *cmd_name, wchar_t *str, void *param);

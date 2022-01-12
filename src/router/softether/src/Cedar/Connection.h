@@ -1,12 +1,17 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Connection.h
 // Header of Connection.c
 
 #ifndef	CONNECTION_H
 #define	CONNECTION_H
+
+#include "Cedar.h"
+
+#include "Mayaqua/Encrypt.h"
+#include "Mayaqua/Proxy.h"
 
 // Magic number indicating that the packet is compressed
 #define	CONNECTION_BULK_COMPRESS_SIGNATURE	0xDEADBEEFCAFEFACEULL
@@ -99,6 +104,8 @@ struct CLIENT_AUTH
 	K *ClientK;										// Client private key
 	char SecurePublicCertName[MAX_SECURE_DEVICE_FILE_LEN + 1];	// Secure device certificate name
 	char SecurePrivateKeyName[MAX_SECURE_DEVICE_FILE_LEN + 1];	// Secure device secret key name
+	char OpensslEnginePrivateKeyName[MAX_SECURE_DEVICE_FILE_LEN + 1];	// Secure device secret key name
+	char OpensslEngineName[MAX_SECURE_DEVICE_FILE_LEN + 1];	// Secure device secret key name
 	CHECK_CERT_PROC *CheckCertProc;					// Server certificate confirmation procedure
 	SECURE_SIGN_PROC *SecureSignProc;				// Security signing procedure
 };
@@ -147,7 +154,7 @@ struct UDP
 // Data block
 struct BLOCK
 {
-	BOOL Compressed;				// Compression flag
+	bool Compressed;				// Compression flag
 	UINT Size;						// Block size
 	UINT SizeofData;				// Data size
 	UCHAR *Buf;						// Buffer

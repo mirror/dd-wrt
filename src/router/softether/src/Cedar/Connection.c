@@ -1,11 +1,36 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Connection.c
 // Connection Manager
 
-#include "CedarPch.h"
+#include "Connection.h"
+
+#include "BridgeUnix.h"
+#include "BridgeWin32.h"
+#include "Hub.h"
+#include "Layer3.h"
+#include "Link.h"
+#include "Listener.h"
+#include "Nat.h"
+#include "Protocol.h"
+#include "Server.h"
+#include "SecureNAT.h"
+#include "Session.h"
+#include "UdpAccel.h"
+#include "Virtual.h"
+
+#include "Mayaqua/DNS.h"
+#include "Mayaqua/Kernel.h"
+#include "Mayaqua/Mayaqua.h"
+#include "Mayaqua/Memory.h"
+#include "Mayaqua/Object.h"
+#include "Mayaqua/Pack.h"
+#include "Mayaqua/Str.h"
+#include "Mayaqua/Tick64.h"
+
+#include <stdlib.h>
 
 // Determine whether the socket is to use to send
 #define	IS_SEND_TCP_SOCK(ts)		\
@@ -337,7 +362,7 @@ WAIT_FOR_ENABLE:
 				{
 					if (StrCmpi(k->ServerName, server_name) != 0 ||
 						k->ServerPort != server_port || k->Enable == false ||
-						k->UdpMode)
+						k->UdpMode == false)
 					{
 						changed = true;
 					}
@@ -538,6 +563,14 @@ CLIENT_AUTH *CopyClientAuth(CLIENT_AUTH *a)
 		// Secure device authentication
 		StrCpy(ret->SecurePublicCertName, sizeof(ret->SecurePublicCertName), a->SecurePublicCertName);
 		StrCpy(ret->SecurePrivateKeyName, sizeof(ret->SecurePrivateKeyName), a->SecurePrivateKeyName);
+		break;
+
+	case CLIENT_AUTHTYPE_OPENSSLENGINE:
+		// Secure device authentication
+		ret->ClientX = CloneX(a->ClientX);
+		StrCpy(ret->OpensslEnginePrivateKeyName, sizeof(ret->OpensslEnginePrivateKeyName), a->OpensslEnginePrivateKeyName);
+		StrCpy(ret->OpensslEngineName, sizeof(ret->OpensslEngineName), a->OpensslEngineName);
+    ret->ClientK = OpensslEngineToK(ret->OpensslEnginePrivateKeyName, ret->OpensslEngineName);
 		break;
 	}
 
@@ -854,8 +887,9 @@ void SendKeepAlive(CONNECTION *c, TCPSOCK *ts)
 	UINT size, i, num;
 	UINT size_be;
 	SESSION *s;
+	UDP_ACCEL *udp_accel;
 	UCHAR *buf;
-	bool insert_natt_port = false;
+	bool insert_natt_port = false, insert_natt_ip = false;
 	// Validate arguments
 	if (c == NULL || ts == NULL)
 	{
@@ -863,33 +897,61 @@ void SendKeepAlive(CONNECTION *c, TCPSOCK *ts)
 	}
 
 	s = c->Session;
+	if (s == NULL)
+	{
+		return;
+	}
+
+	udp_accel = s->UdpAccel;
 
 	size = rand() % MAX_KEEPALIVE_SIZE;
 	num = KEEP_ALIVE_MAGIC;
 
-	if (s != NULL && s->UseUdpAcceleration && s->UdpAccel != NULL)
+	if (s->UseUdpAcceleration && udp_accel != NULL)
 	{
-		if (s->UdpAccel->MyPortByNatTServer != 0)
+		if (udp_accel->MyPortNatT != 0)
 		{
 			size = MAX(size, (StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE) + sizeof(USHORT)));
 
 			insert_natt_port = true;
 		}
+
+		if (IsZeroIP(&udp_accel->MyIpNatT) == false)
+		{
+			size = MAX(size, (StrLen(UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE) + sizeof(udp_accel->MyIpNatT.address)));
+
+			insert_natt_ip = true;
+		}
+
 	}
 
 	buf = MallocFast(size);
 
-	for (i = 0;i < size;i++)
+	for (i = 0; i < size; ++i)
 	{
 		buf[i] = rand();
 	}
 
+	UCHAR *seek = buf;
+
 	if (insert_natt_port)
 	{
-		USHORT myport = Endian16((USHORT)s->UdpAccel->MyPortByNatTServer);
+		const UINT nat_t_port_sig_size = StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE);
+		const USHORT port = Endian16(udp_accel->MyPortNatT);
 
-		Copy(buf, UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE, StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE));
-		Copy(buf + StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE), &myport, sizeof(USHORT));
+		Copy(buf, UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE, nat_t_port_sig_size);
+		seek += nat_t_port_sig_size;
+		Copy(seek, &port, sizeof(port));
+		seek += sizeof(port);
+	}
+
+	if (insert_natt_ip)
+	{
+		const UINT nat_t_ip_sig_size = StrLen(UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE);
+
+		Copy(seek, UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE, nat_t_ip_sig_size);
+		seek += nat_t_ip_sig_size;
+		Copy(seek, udp_accel->MyIpNatT.address, sizeof(udp_accel->MyIpNatT.address));
 	}
 
 	num = Endian32(num);
@@ -971,7 +1033,7 @@ void ConnectionSend(CONNECTION *c, UINT64 now)
 				{
 					// Processing of KeepAlive
 					if (now >= tcpsock->NextKeepAliveTime || tcpsock->NextKeepAliveTime == 0 ||
-						(s->UseUdpAcceleration && s->UdpAccel != NULL && s->UdpAccel->MyPortByNatTServerChanged))
+						(s->UseUdpAcceleration && s->UdpAccel != NULL && s->UdpAccel->MyIpOrPortNatTChanged))
 					{
 						// Send the KeepAlive
 						SendKeepAlive(c, tcpsock);
@@ -979,7 +1041,7 @@ void ConnectionSend(CONNECTION *c, UINT64 now)
 
 						if (s->UseUdpAcceleration && s->UdpAccel != NULL)
 						{
-							s->UdpAccel->MyPortByNatTServerChanged = false;
+							s->UdpAccel->MyIpOrPortNatTChanged = false;
 						}
 					}
 
@@ -2153,28 +2215,48 @@ DISCONNECT_THIS_TCP:
 						ts->Mode = 0;
 						sz = ts->NextBlockSize;
 
-						if (sz >= (StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE) + sizeof(USHORT)))
+						if (s->UseUdpAcceleration && s->UdpAccel != NULL)
 						{
-							UCHAR *keep_alive_buffer = FifoPtr(ts->RecvFifo);
+							const UCHAR *keep_alive_buffer = FifoPtr(ts->RecvFifo);
+							const UINT nat_t_ip_sig_size = StrLen(UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE);
+							const UINT nat_t_port_sig_size = StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE);
+							UINT cur_size = sz;
 
-							if (Cmp(keep_alive_buffer, UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE, StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE)) == 0)
+							if (cur_size >= nat_t_port_sig_size + sizeof(USHORT))
 							{
-								USHORT us = READ_USHORT(keep_alive_buffer + StrLen(UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE));
-
-								if (us != 0)
+								if (Cmp(keep_alive_buffer, UDP_NAT_T_PORT_SIGNATURE_IN_KEEP_ALIVE, nat_t_port_sig_size) == 0)
 								{
-									if (s->UseUdpAcceleration && s->UdpAccel != NULL)
+									cur_size -= nat_t_port_sig_size;
+									keep_alive_buffer += nat_t_port_sig_size;
+
+									const USHORT port = READ_USHORT(keep_alive_buffer);
+									cur_size -= sizeof(USHORT);
+									keep_alive_buffer += sizeof(USHORT);
+
+									if (port && s->UdpAccel->YourPortNatT != port)
 									{
-										UINT port = (UINT)us;
+										s->UdpAccel->YourPortNatT = port;
+										s->UdpAccel->YourIpOrPortNatTChanged = true;
 
-										if (s->UdpAccel->YourPortByNatTServer != port)
-										{
-											s->UdpAccel->YourPortByNatTServer = port;
-											s->UdpAccel->YourPortByNatTServerChanged = true;
+										Debug("ConnectionReceive(): New peer NAT-T port: %u\n", port);
+									}
+								}
+							}
 
-											Debug("s->UdpAccel->YourPortByNatTServer: %u\n",
-												s->UdpAccel->YourPortByNatTServer);
-										}
+							if (cur_size >= nat_t_ip_sig_size + sizeof(s->UdpAccel->YourIpNatT.address))
+							{
+								if (Cmp(keep_alive_buffer, UDP_NAT_T_IP_SIGNATURE_IN_KEEP_ALIVE, nat_t_ip_sig_size) == 0)
+								{
+									keep_alive_buffer += nat_t_ip_sig_size;
+
+									IP ip;
+									SetIP6(&ip, keep_alive_buffer);
+									if (IsZeroIP(&ip) == false && CmpIpAddr(&s->UdpAccel->YourIpNatT, &ip) != 0)
+									{
+										Copy(&s->UdpAccel->YourIpNatT, &ip, sizeof(s->UdpAccel->YourIpNatT));
+										s->UdpAccel->YourIpOrPortNatTChanged = true;
+
+										Debug("ConnectionReceive(): New peer NAT-T IP: %r\n", &ip);
 									}
 								}
 							}
@@ -2693,7 +2775,7 @@ BLOCK *NewBlock(void *data, UINT size, int compress)
 	if (compress == 0)
 	{
 		// Uncompressed
-		b->Compressed = FALSE;
+		b->Compressed = false;
 		b->Buf = data;
 		b->Size = size;
 		b->SizeofData = size;
@@ -2703,7 +2785,7 @@ BLOCK *NewBlock(void *data, UINT size, int compress)
 		UINT max_size;
 
 		// Compressed
-		b->Compressed = TRUE;
+		b->Compressed = true;
 		max_size = CalcCompress(size);
 		b->Buf = MallocFast(max_size);
 		b->Size = Compress(b->Buf, max_size, data, size);
@@ -2717,7 +2799,7 @@ BLOCK *NewBlock(void *data, UINT size, int compress)
 		// Expand
 		UINT max_size;
 
-		b->Compressed = FALSE;
+		b->Compressed = false;
 		max_size = MAX_PACKET_SIZE;
 		b->Buf = MallocFast(max_size);
 		b->Size = Uncompress(b->Buf, max_size, data, size);
@@ -2935,10 +3017,10 @@ void ConnectionAccept(CONNECTION *c)
 	{
 		if (c->Cedar != NULL && c->Cedar->Server != NULL)
 		{
-			c->Type = CONNECTION_TYPE_OTHER;
-
-			if (ProtoHandleConnection(c->Cedar, s) == true)
+			PROTO *proto = c->Cedar->Server->Proto;
+			if (proto && ProtoHandleConnection(proto, s, NULL) == true)
 			{
+				c->Type = CONNECTION_TYPE_OTHER;
 				goto FINAL;
 			}
 		}

@@ -5,10 +5,18 @@
 // Radius.c
 // Radius authentication module
 
-#include "CedarPch.h"
+#include "Radius.h"
 
-////////// Modern implementation
+#include "Connection.h"
+#include "IPC.h"
+#include "Server.h"
 
+#include "Mayaqua/DNS.h"
+#include "Mayaqua/Internat.h"
+#include "Mayaqua/Memory.h"
+#include "Mayaqua/Object.h"
+#include "Mayaqua/Str.h"
+#include "Mayaqua/Tick64.h"
 
 // send PEAP-MSCHAPv2 auth client response
 bool PeapClientSendMsChapv2AuthClientResponse(EAP_CLIENT *e, UCHAR *client_response, UCHAR *client_challenge)
@@ -1710,7 +1718,7 @@ bool RadiusLogin(CONNECTION *c, char *server, UINT port, UCHAR *secret, UINT sec
 		{
 			Add(ip_list, tmp_ip);
 		}
-		else if (GetIPEx(tmp_ip, token->Token[i], true))
+		else if (GetIP(tmp_ip, token->Token[i]))
 		{
 			Add(ip_list, tmp_ip);
 		}
@@ -1785,7 +1793,7 @@ bool RadiusLogin(CONNECTION *c, char *server, UINT port, UCHAR *secret, UINT sec
 			SOCK *sock;
 			USHORT sz = 0;
 			UINT pos = 0;
-			BOOL *finish = ZeroMallocEx(sizeof(BOOL) * LIST_NUM(ip_list), true);
+			bool *finish = ZeroMallocEx(sizeof(bool) * LIST_NUM(ip_list), true);
 
 			Zero(tmp, sizeof(tmp));
 
@@ -1972,10 +1980,10 @@ RECV_RETRY:
 				if (recv_size == 0)
 				{
 					Debug("Radius recv_size 0\n");
-					finish[pos] = TRUE;
-					for(i = 0; i < LIST_NUM(ip_list); i++)
+					finish[pos] = true;
+					for (i = 0; i < LIST_NUM(ip_list); ++i)
 					{
-						if(finish[i] == FALSE)
+						if (finish[i] == false)
 						{
 							// Switch the host to refer
 							pos++;
