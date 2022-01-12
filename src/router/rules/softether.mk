@@ -14,7 +14,7 @@ SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCMAKE_BUILD_TYPE=release
 
 SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
-SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP)
+SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(TOP)/openssl/include -lcrypto
 SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lreadline -lhistory -lncurses -lz
 
 
@@ -28,7 +28,7 @@ softether-configure: zlib readline ncurses
 	sed -i 's/\readline/libreadline.a/g' $(TOP)/softether/host/src/Cedar/CMakeLists.txt
 	cd $(TOP)/softether/host && export CC=gcc && export LD=ld && export CFLAGS=-O2 && cmake -DCMAKE_BUILD_TYPE=release .
 	cd $(TOP)/softether/host && export CC=gcc && export LD=ld && export CFLAGS=-O2 && make
-	cp $(TOP)/softether/host/tmp/hamcorebuilder /usr/local/bin
+	cp $(TOP)/softether/host/src/hamcorebuilder/hamcorebuilder /usr/local/bin
 	$(call CMakeClean,$(SOFTETHER_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS),.) 
 
