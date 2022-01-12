@@ -33,6 +33,7 @@
 #include <string.h>
 #include "config.h"
 #include "protocol.h"
+#include "interfaces.h"
 
 #define _(String) String
 
