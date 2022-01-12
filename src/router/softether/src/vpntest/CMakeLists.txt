@@ -1,7 +1,7 @@
 set(COMPONENT_NAME "Testing Utility")
 set(COMPONENT_INTERNAL_NAME "vpntest")
 
-add_executable(vpntest vpntest.c vpntest.h)
+add_executable(vpntest vpntest.c)
 
 set_target_properties(vpntest
   PROPERTIES
@@ -19,14 +19,14 @@ if(WIN32)
   get_filename_component(COMPONENT_FILE_NAME vpntest NAME)
   set(COMPONENT_FILE_NAME "${COMPONENT_FILE_NAME}.exe")
 
-  configure_file("${TOP_DIRECTORY}/src/BuildFiles/VerScript/ver.rc" "${CMAKE_BINARY_DIR}/VerScript/vpntest.rc")
-  target_sources(vpntest PRIVATE vpntest.rc "${CMAKE_BINARY_DIR}/VerScript/vpntest.rc")
+  configure_file("${TOP_DIRECTORY}/src/BuildFiles/VerScript/ver.rc" "${CMAKE_CURRENT_BINARY_DIR}/ver.rc")
 
-  if(${COMPILER_ARCHITECTURE} STREQUAL "x64")
-    target_sources(vpntest PRIVATE "${TOP_DIRECTORY}/src/BuildFiles/Manifests/x64_user.manifest")
-  else()
-    target_sources(vpntest PRIVATE "${TOP_DIRECTORY}/src/BuildFiles/Manifests/x86_user.manifest")
-  endif()
+  target_sources(vpntest PRIVATE
+    "vpntest.rc"
+    "ver.rc"
+
+    "${TOP_DIRECTORY}/src/BuildFiles/Manifests/common.manifest"
+  )
 endif()
 
 target_link_libraries(vpntest cedar mayaqua)

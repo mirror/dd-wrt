@@ -8,6 +8,7 @@
 #ifndef	OBJECT_H
 #define	OBJECT_H
 
+#include "MayaType.h"
 
 // Constants
 #define	OBJECT_ALLOC_FAIL_SLEEP_TIME		150
@@ -17,7 +18,7 @@
 struct LOCK
 {
 	void *pData;
-	BOOL Ready;
+	bool Ready;
 #ifdef	OS_UNIX
 	UINT thread_id;
 	UINT locked_count;

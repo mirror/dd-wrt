@@ -1,23 +1,21 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Mayaqua Kernel
-
+// © 2020 Nokia
 
 // Encrypt.c
 // Encryption and digital certification routine
 
-#include <GlobalConst.h>
+#include "Encrypt.h"
 
-#define	ENCRYPT_C
+#include "FileIO.h"
+#include "Internat.h"
+#include "Kernel.h"
+#include "Memory.h"
+#include "Object.h"
+#include "Str.h"
 
-#define	__WINCRYPT_H__
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
-#include <stdarg.h>
-#include <time.h>
-#include <errno.h>
+
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -40,11 +38,11 @@
 #include <openssl/pem.h>
 #include <openssl/conf.h>
 #include <openssl/x509v3.h>
-#include <Mayaqua/Mayaqua.h>
 
 #ifdef _MSC_VER
 	#include <intrin.h> // For __cpuid()
 #else // _MSC_VER
+
 
 #ifndef SKIP_CPU_FEATURES
 	#include "cpu_features_macros.h"
@@ -62,6 +60,23 @@
 		#include "cpuinfo_ppc.h"
 	#endif
 #endif // _MSC_VER
+
+// OpenSSL <1.1 Shims
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#	define EVP_PKEY_get0_RSA(obj) ((obj)->pkey.rsa)
+#	define EVP_PKEY_base_id(pkey) ((pkey)->type)
+#	define X509_get0_notBefore(x509) ((x509)->cert_info->validity->notBefore)
+#	define X509_get0_notAfter(x509) ((x509)->cert_info->validity->notAfter)
+#	define X509_get_serialNumber(x509) ((x509)->cert_info->serialNumber)
+#endif
+
+#ifndef EVP_CTRL_AEAD_GET_TAG
+#	define EVP_CTRL_AEAD_GET_TAG EVP_CTRL_GCM_GET_TAG
+#endif
+
+#ifndef EVP_CTRL_AEAD_SET_TAG
+#	define EVP_CTRL_AEAD_SET_TAG EVP_CTRL_GCM_SET_TAG
+#endif
 
 LOCK *openssl_lock = NULL;
 
@@ -294,7 +309,7 @@ MD *NewMdEx(char *name, bool hmac)
 		return m;
 	}
 
-	m->Md = (const struct evp_md_st *)EVP_get_digestbyname(name);
+	m->Md = EVP_get_digestbyname(name);
 	if (m->Md == NULL)
 	{
 		Debug("NewMdEx(): Algorithm %s not found by EVP_get_digestbyname().\n", m->Name);
@@ -302,7 +317,7 @@ MD *NewMdEx(char *name, bool hmac)
 		return NULL;
 	}
 
-	m->Size = EVP_MD_size((const EVP_MD *)m->Md);
+	m->Size = EVP_MD_size(m->Md);
 	m->IsHMac = hmac;
 
 	if (hmac)
@@ -340,7 +355,7 @@ bool SetMdKey(MD *md, void *key, UINT key_size)
 		return false;
 	}
 
-	if (HMAC_Init_ex(md->Ctx, key, key_size, (const EVP_MD *)md->Md, NULL) == false)
+	if (HMAC_Init_ex(md->Ctx, key, key_size, md->Md, NULL) == false)
 	{
 		Debug("SetMdKey(): HMAC_Init_ex() failed with error: %s\n", OpenSSL_Error());
 		return false;
@@ -3111,6 +3126,22 @@ bool IsEncryptedK(BUF *b, bool private_key)
 	return true;
 }
 
+K *OpensslEngineToK(char *key_file_name, char *engine_name)
+{
+    K *k;
+#if OPENSSL_API_COMPAT < 0x10100000L
+    ENGINE_load_dynamic();
+#endif	// OPENSSL_API_COMPAT < 0x10100000L
+    ENGINE *engine = ENGINE_by_id(engine_name);
+    ENGINE_init(engine);
+    EVP_PKEY *pkey;
+    pkey = ENGINE_load_private_key(engine, key_file_name, NULL, NULL);
+   	k = ZeroMalloc(sizeof(K));
+    k->pkey = pkey;
+    k->private_key = true;
+    return k;
+}
+
 // Convert the BUF to a K
 K *BufToK(BUF *b, bool private_key, bool text, char *password)
 {
@@ -3841,7 +3872,7 @@ CRYPT *NewCrypt(void *key, UINT size)
 {
 	CRYPT *c = ZeroMalloc(sizeof(CRYPT));
 
-	c->Rc4Key = Malloc(sizeof(struct rc4_key_st));
+	c->Rc4Key = Malloc(sizeof(RC4_KEY));
 
 	RC4_set_key(c->Rc4Key, size, (UCHAR *)key);
 
@@ -4022,8 +4053,8 @@ AES_KEY_VALUE *AesNewKey(void *data, UINT size)
 
 	k = ZeroMalloc(sizeof(AES_KEY_VALUE));
 
-	k->EncryptKey = ZeroMalloc(sizeof(struct aes_key_st));
-	k->DecryptKey = ZeroMalloc(sizeof(struct aes_key_st));
+	k->EncryptKey = ZeroMalloc(sizeof(AES_KEY));
+	k->DecryptKey = ZeroMalloc(sizeof(AES_KEY));
 
 	k->KeySize = size;
 	Copy(k->KeyValue, data, size);

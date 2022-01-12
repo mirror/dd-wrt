@@ -8,26 +8,28 @@
 #ifndef	MAYATYPE_H
 #define	MAYATYPE_H
 
-// Check whether the windows.h header is included
-#ifndef	WINDOWS_H
-#ifdef	_WINDOWS_
-#define	WINDOWS_H
-#endif	// _WINDOWS_
-#endif	// WINDOWS_H
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#ifdef OS_WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
-#if	!defined(ENCRYPT_C) && !defined(HAM_C)
-// Structure which is used by OpenSSL
-typedef struct x509_st X509;
-typedef struct evp_pkey_st EVP_PKEY;
-typedef struct bio_st BIO;
-typedef struct ssl_st SSL;
-typedef struct ssl_ctx_st SSL_CTX;
-typedef struct X509_req_st X509_REQ;
-typedef struct PKCS12 PKCS12;
-typedef struct bignum_st BIGNUM;
-typedef struct x509_crl_st X509_CRL;
-#endif	// ENCRYPT_C
+#ifndef NTDDI_VERSION
+#define	NTDDI_VERSION NTDDI_VISTA
+#endif
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_VISTA
+#endif
+
+#include <WinSock2.h>
+#include <ws2ipdef.h>
+#else
+#include <unistd.h>
+#endif
 
 // 
 // Constant
@@ -42,7 +44,7 @@ typedef struct x509_crl_st X509_CRL;
 #define	SUPPORTED_WINDOWS_LIST		"Windows 98 / 98 SE / ME / NT 4.0 SP6a / 2000 SP4 / XP SP2, SP3 / Vista SP1, SP2 / 7 SP1 / 8 / 8.1 / 10 / Server 2003 SP2 / Server 2008 SP1, SP2 / Hyper-V Server 2008 / Server 2008 R2 SP1 / Hyper-V Server 2008 R2 / Server 2012 / Hyper-V Server 2012 / Server 2012 R2 / Hyper-V Server 2012 R2 / Server 2016 / Server 2019"
 
 // Infinite
-#ifndef	WINDOWS_H
+#ifndef	INFINITE
 #define	INFINITE			(0xFFFFFFFF)
 #endif
 
@@ -51,7 +53,7 @@ typedef struct x509_crl_st X509_CRL;
 #define	SRC_LINE			__LINE__	// Line number in the source code
 
 // Maximum path size
-#ifndef	WINDOWS_H
+#ifndef	MAX_PATH
 #define	MAX_PATH			260
 #endif	// WINDOWS_H
 
@@ -157,78 +159,30 @@ typedef int (COMPARE)(void *p1, void *p2);
 #define	WRITE_UINT(buf, i)		(((UCHAR *)(buf))[0]) = ((((UINT)(i)) >> 24) & 0xFF); (((UCHAR *)(buf))[1]) = ((((UINT)(i)) >> 16) & 0xFF); (((UCHAR *)(buf))[2]) = ((((UINT)(i)) >> 8) & 0xFF); (((UCHAR *)(buf))[3]) = ((((UINT)(i))) & 0xFF)
 #define	WRITE_UINT64(buf, i)	(((UCHAR *)(buf))[0]) = ((((UINT64)(i)) >> 56) & 0xFF); (((UCHAR *)(buf))[1]) = ((((UINT64)(i)) >> 48) & 0xFF); (((UCHAR *)(buf))[2]) = ((((UINT64)(i)) >> 40) & 0xFF); (((UCHAR *)(buf))[3]) = ((((UINT64)(i)) >> 32) & 0xFF); (((UCHAR *)(buf))[4]) = ((((UINT64)(i)) >> 24) & 0xFF); (((UCHAR *)(buf))[5]) = ((((UINT64)(i)) >> 16) & 0xFF); (((UCHAR *)(buf))[6]) = ((((UINT64)(i)) >> 8) & 0xFF); (((UCHAR *)(buf))[7]) = ((((UINT64)(i))) & 0xFF)
 
-
-
 // 
 // Type declaration
 // 
+typedef int64_t time_64t;
 
-// PID type
-#ifdef OS_UNIX
-typedef int PID;
-#endif // OS_UNIX
 #ifdef OS_WIN32
-typedef unsigned long PID;
-#endif // WINDOWS_H
+typedef uint32_t PID;
+#else
+typedef int32_t  INT;
+typedef int64_t  INT64;
 
-// bool type
-#ifndef	WINDOWS_H
-typedef	unsigned int		BOOL;
-#define	TRUE				1
-#define	FALSE				0
-#endif	// WINDOWS_H
+typedef uint32_t UINT;
+typedef uint64_t UINT64;
 
-// bool type
-#ifndef	WIN32COM_CPP
-typedef	unsigned int		bool;
-#define	true				1
-#define	false				0
-#endif	// WIN32COM_CPP
+typedef uint8_t  BYTE;
+typedef uint8_t  UCHAR;
+typedef uint16_t USHORT;
 
-// 32bit integer type
-#ifndef	WINDOWS_H
-typedef	unsigned int		UINT;
-typedef	unsigned int		UINT32;
-typedef	unsigned int		DWORD;
-typedef	signed int			INT;
-typedef	signed int			INT32;
+typedef int SOCKET;
+typedef pid_t PID;
 
-typedef	int					UINT_PTR;
-typedef	long				LONG_PTR;
-
-#endif
-
-// 16bit integer type
-typedef	unsigned short		WORD;
-typedef	unsigned short		USHORT;
-typedef	signed short		SHORT;
-
-// 8bit integer type
-typedef	unsigned char		BYTE;
-typedef	unsigned char		UCHAR;
-
-#ifndef	WIN32COM_CPP
-typedef signed char			CHAR;
-#endif	// WIN32COM_CPP
-
-
-// 64-bit integer type
-typedef	unsigned long long	UINT64;
-typedef signed long long	INT64;
-
-typedef signed long long	time_64t;
-
-#ifdef	OS_UNIX
-// Avoiding compile error
 #define	__cdecl
 #define	__declspec(x)
-// socket type
-typedef	int SOCKET;
-#else	// OS_UNIX
-#ifndef	_WINSOCK2API_
-typedef UINT_PTR SOCKET;
-#endif	// _WINSOCK2API_
-#endif	// OS_UNIX
+#endif
 
 // OS type
 #define	OSTYPE_WINDOWS_95						1100	// Windows 95
@@ -277,11 +231,9 @@ typedef UINT_PTR SOCKET;
 
 // OS discrimination macro
 #define	GET_KETA(t, i)			(((t) % (i * 10)) / i)
-#define	OS_IS_WINDOWS_9X(t)		(GET_KETA(t, 1000) == 1)
-#define	OS_IS_WINDOWS_NT(t)		(GET_KETA(t, 1000) == 2)
-#define	OS_IS_WINDOWS(t)		(OS_IS_WINDOWS_9X(t) || OS_IS_WINDOWS_NT(t))
-#define	OS_IS_SERVER(t)			(OS_IS_WINDOWS_NT(t) && GET_KETA(t, 10))
-#define	OS_IS_WORKSTATION(t)	((OS_IS_WINDOWS_NT(t) && (!(GET_KETA(t, 10)))) || OS_IS_WINDOWS_9X(t))
+#define	OS_IS_WINDOWS(t)		((GET_KETA(t, 1000) == 1) || (GET_KETA(t, 1000) == 2))
+#define	OS_IS_SERVER(t)			(OS_IS_WINDOWS(t) && GET_KETA(t, 10))
+#define	OS_IS_WORKSTATION(t)	(OS_IS_WINDOWS(t) && !(GET_KETA(t, 10))
 #define	OS_IS_UNIX(t)			(GET_KETA(t, 1000) == 3)
 
 
@@ -299,20 +251,19 @@ typedef struct OS_INFO
 } OS_INFO;
 
 // Time type
-#ifndef	WINDOWS_H
+#ifndef	OS_WIN32
 typedef struct SYSTEMTIME
 {
-	WORD wYear;
-	WORD wMonth;
-	WORD wDayOfWeek;
-	WORD wDay;
-	WORD wHour;
-	WORD wMinute;
-	WORD wSecond;
-	WORD wMilliseconds;
+	USHORT wYear;
+	USHORT wMonth;
+	USHORT wDayOfWeek;
+	USHORT wDay;
+	USHORT wHour;
+	USHORT wMinute;
+	USHORT wSecond;
+	USHORT wMilliseconds;
 } SYSTEMTIME;
 #endif	// WINDOWS_H
-
 
 // Object.h
 typedef struct LOCK LOCK;
@@ -401,7 +352,6 @@ typedef struct LANGLIST LANGLIST;
 
 // Network.h
 typedef struct IP IP;
-typedef struct DNSCACHE DNSCACHE;
 typedef struct SOCK_EVENT SOCK_EVENT;
 typedef struct SOCK SOCK;
 typedef struct SOCKSET SOCKSET;
@@ -411,7 +361,6 @@ typedef struct ROUTE_TABLE ROUTE_TABLE;
 typedef struct IP_CLIENT IP_CLIENT;
 typedef struct ROUTE_CHANGE ROUTE_CHANGE;
 typedef struct ROUTE_CHANGE_DATA ROUTE_CHANGE_DATA;
-typedef struct GETIP_THREAD_PARAM GETIP_THREAD_PARAM;
 typedef struct WIN32_RELEASEADDRESS_THREAD_PARAM WIN32_RELEASEADDRESS_THREAD_PARAM;
 typedef struct IPV6_ADDR IPV6_ADDR;
 typedef struct TUBE TUBE;
@@ -436,8 +385,6 @@ typedef struct TCP_PAIR_HEADER TCP_PAIR_HEADER;
 typedef struct NIC_ENTRY NIC_ENTRY;
 typedef struct HTTP_VALUE HTTP_VALUE;
 typedef struct HTTP_HEADER HTTP_HEADER;
-typedef struct DNSPROXY_CLIENT DNSPROXY_CLIENT;
-typedef struct DNSPROXY_CACHE DNSPROXY_CACHE;
 typedef struct QUERYIPTHREAD QUERYIPTHREAD;
 typedef struct IPBLOCK IPBLOCK;
 typedef struct SAFE_REQUEST SAFE_REQUEST;
@@ -463,7 +410,6 @@ typedef struct ZIP_DIR_HEADER ZIP_DIR_HEADER;
 typedef struct ZIP_END_HEADER ZIP_END_HEADER;
 typedef struct ZIP_FILE ZIP_FILE;
 typedef struct ZIP_PACKER ZIP_PACKER;
-typedef struct ENUM_DIR_WITH_SUB_DATA ENUM_DIR_WITH_SUB_DATA;
 
 // TcpIp.h
 typedef struct MAC_HEADER MAC_HEADER;
@@ -513,5 +459,11 @@ typedef struct HTTP_MIME_TYPE HTTP_MIME_TYPE;
 // Proxy.h
 typedef struct PROXY_PARAM_IN PROXY_PARAM_IN;
 typedef struct PROXY_PARAM_OUT PROXY_PARAM_OUT;
+
+// DNS.h
+typedef struct DNS_CACHE DNS_CACHE;
+typedef struct DNS_CACHE_REVERSE DNS_CACHE_REVERSE;
+typedef struct DNS_RESOLVER DNS_RESOLVER;
+typedef struct DNS_RESOLVER_REVERSE DNS_RESOLVER_REVERSE;
 
 #endif	// MAYATYPE_H

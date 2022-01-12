@@ -1,16 +1,13 @@
 set(COMPONENT_NAME "Client")
 set(COMPONENT_INTERNAL_NAME "vpnclient")
 
-add_executable(vpnclient vpncsvc.c vpncsvc.h)
-
-set_target_properties(vpnclient
-  PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
-  LIBRARY_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
-  RUNTIME_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
-)
-
 if(WIN32)
+  add_executable(vpnclient WIN32
+    "vpncsvc.c"
+
+    "${TOP_DIRECTORY}/src/BuildFiles/Manifests/common.manifest"
+  )
+
   set_target_properties(vpnclient
     PROPERTIES
     PDB_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
@@ -19,9 +16,18 @@ if(WIN32)
   get_filename_component(COMPONENT_FILE_NAME vpnclient NAME)
   set(COMPONENT_FILE_NAME "${COMPONENT_FILE_NAME}.exe")
 
-  configure_file("${TOP_DIRECTORY}/src/BuildFiles/VerScript/ver.rc" "${CMAKE_BINARY_DIR}/VerScript/vpnclient.rc")
-  target_sources(vpnclient PRIVATE vpnclient.rc "${CMAKE_BINARY_DIR}/VerScript/vpnclient.rc")
+  configure_file("${TOP_DIRECTORY}/src/BuildFiles/VerScript/ver.rc" "${CMAKE_CURRENT_BINARY_DIR}/ver.rc")
+  target_sources(vpnclient PRIVATE "vpnclient.rc" "${CMAKE_CURRENT_BINARY_DIR}/ver.rc")
+else()
+  add_executable(vpnclient "vpncsvc.c")
 endif()
+
+set_target_properties(vpnclient
+  PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
+  LIBRARY_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
+  RUNTIME_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
+)
 
 target_link_libraries(vpnclient cedar mayaqua)
 
@@ -39,13 +45,8 @@ if(UNIX)
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
 
-  install_wrapper_script("vpnclient" "${CMAKE_INSTALL_FULL_LIBEXECDIR}/softether/vpnclient/vpnclient")
+  install_wrapper_script("vpnclient")
   if(NOT "${CMAKE_INSTALL_SYSTEMD_UNITDIR}" STREQUAL "")
-    configure_file(${TOP_DIRECTORY}/systemd/softether-vpnclient.service ${CMAKE_BINARY_DIR}/systemd/softether-vpnclient.service)
-    install(FILES ${CMAKE_BINARY_DIR}/systemd/softether-vpnclient.service
-      COMPONENT "vpnclient"
-      DESTINATION ${CMAKE_INSTALL_SYSTEMD_UNITDIR}
-      PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-    )
+    install_unit_file("vpnclient")
   endif()
 endif()

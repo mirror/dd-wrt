@@ -8,7 +8,9 @@
 #ifndef	PROTO_L2TP_H
 #define	PROTO_L2TP_H
 
-//// Macro
+#include "CedarType.h"
+
+#include "Mayaqua/Network.h"
 
 // Check the sequence number
 #define	L2TP_SEQ_LT(a, b)			(((USHORT)(((USHORT)(a)) - ((USHORT)(b)))) & 0x8000)
@@ -169,6 +171,7 @@ struct L2TP_SESSION
 	UINT64 DisconnectTimeout;					// Disconnection completion time-out
 	bool HasThread;								// Whether have a thread
 	THREAD *Thread;								// Thread
+	PPP_SESSION* PPPSession;						// Underlying PPP session
 	TUBE *TubeSend;								// Tube of PPP to L2TP direction
 	TUBE *TubeRecv;								// Tube of L2TP to PPP direction
 	UINT PseudowireType;						// Type of L2TPv3 virtual line

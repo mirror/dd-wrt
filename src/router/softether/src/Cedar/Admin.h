@@ -8,6 +8,14 @@
 #ifndef	ADMIN_H
 #define	ADMIN_H
 
+#include "Account.h"
+#include "Cedar.h"
+#include "Client.h"
+#include "Hub.h"
+#include "Logging.h"
+
+#include "Mayaqua/Kernel.h"
+
 // Windows version
 struct RPC_WINVER
 {
@@ -105,6 +113,13 @@ struct RPC_LISTENER_LIST
 	bool *Errors;						// An error occurred
 };
 
+// List of ports
+struct RPC_PORTS
+{
+	UINT Num;							// Number of ports
+	UINT *Ports;						// Ports
+};
+
 // String *
 struct RPC_STR
 {
@@ -115,6 +130,14 @@ struct RPC_STR
 struct RPC_INT
 {
 	UINT IntValue;						// Integer
+};
+
+// Proto options
+struct RPC_PROTO_OPTIONS
+{
+	char *Protocol;						// Protocol name
+	UINT Num;							// Number of options
+	PROTO_OPTION *Options;				// Options
 };
 
 // Set Password
@@ -211,9 +234,18 @@ struct RPC_KEY_PAIR
 	UINT Flag1;							// Flag1
 };
 
+// WireGuard keys
+struct RPC_WGK
+{
+	UINT Num;							// Number of keys
+	WGK *Wgks;							// Keys
+};
+
 // HUB option
 struct RPC_HUB_OPTION
 {
+	UINT DefaultGateway;				// Default gateway address
+	UINT DefaultSubnet;					// Default subnet mask
 	UINT MaxSession;					// Maximum number of sessions
 	bool NoEnum;						// Not listed
 };
@@ -957,6 +989,10 @@ UINT StCreateListener(ADMIN *a, RPC_LISTENER *t);
 UINT StEnumListener(ADMIN *a, RPC_LISTENER_LIST *t);
 UINT StDeleteListener(ADMIN *a, RPC_LISTENER *t);
 UINT StEnableListener(ADMIN *a, RPC_LISTENER *t);
+UINT StSetPortsUDP(ADMIN *a, RPC_PORTS *t);
+UINT StGetPortsUDP(ADMIN *a, RPC_PORTS *t);
+UINT StGetProtoOptions(ADMIN *a, RPC_PROTO_OPTIONS *t);
+UINT StSetProtoOptions(ADMIN *a, RPC_PROTO_OPTIONS *t);
 UINT StSetServerPassword(ADMIN *a, RPC_SET_PASSWORD *t);
 UINT StSetFarmSetting(ADMIN *a, RPC_FARM *t);
 UINT StGetFarmSetting(ADMIN *a, RPC_FARM *t);
@@ -968,6 +1004,9 @@ UINT StGetServerCert(ADMIN *a, RPC_KEY_PAIR *t);
 UINT StGetServerCipherList(ADMIN *a, RPC_STR *t);
 UINT StGetServerCipher(ADMIN *a, RPC_STR *t);
 UINT StSetServerCipher(ADMIN *a, RPC_STR *t);
+UINT StAddWgk(ADMIN *a, RPC_WGK *t);
+UINT StDeleteWgk(ADMIN *a, RPC_WGK *t);
+UINT StEnumWgk(ADMIN *a, RPC_WGK *t);
 UINT StCreateHub(ADMIN *a, RPC_CREATE_HUB *t);
 UINT StSetHub(ADMIN *a, RPC_CREATE_HUB *t);
 UINT StGetHub(ADMIN *a, RPC_CREATE_HUB *t);
@@ -1101,6 +1140,10 @@ UINT ScCreateListener(RPC *r, RPC_LISTENER *t);
 UINT ScEnumListener(RPC *r, RPC_LISTENER_LIST *t);
 UINT ScDeleteListener(RPC *r, RPC_LISTENER *t);
 UINT ScEnableListener(RPC *r, RPC_LISTENER *t);
+UINT ScSetPortsUDP(RPC *r, RPC_PORTS *t);
+UINT ScGetPortsUDP(RPC *r, RPC_PORTS *t);
+UINT ScSetProtoOptions(RPC *r, RPC_PROTO_OPTIONS *t);
+UINT ScGetProtoOptions(RPC *r, RPC_PROTO_OPTIONS *t);
 UINT ScSetServerPassword(RPC *r, RPC_SET_PASSWORD *t);
 UINT ScSetFarmSetting(RPC *r, RPC_FARM *t);
 UINT ScGetFarmSetting(RPC *r, RPC_FARM *t);
@@ -1112,6 +1155,9 @@ UINT ScGetServerCert(RPC *r, RPC_KEY_PAIR *t);
 UINT ScGetServerCipherList(RPC *r, RPC_STR *t);
 UINT ScGetServerCipher(RPC *r, RPC_STR *t);
 UINT ScSetServerCipher(RPC *r, RPC_STR *t);
+UINT ScAddWgk(RPC *r, RPC_WGK *t);
+UINT ScDeleteWgk(RPC *r, RPC_WGK *t);
+UINT ScEnumWgk(RPC *r, RPC_WGK *t);
 UINT ScCreateHub(RPC *r, RPC_CREATE_HUB *t);
 UINT ScSetHub(RPC *r, RPC_CREATE_HUB *t);
 UINT ScGetHub(RPC *r, RPC_CREATE_HUB *t);
@@ -1251,9 +1297,15 @@ void OutRpcListener(PACK *p, RPC_LISTENER *t);
 void InRpcListenerList(RPC_LISTENER_LIST *t, PACK *p);
 void OutRpcListenerList(PACK *p, RPC_LISTENER_LIST *t);
 void FreeRpcListenerList(RPC_LISTENER_LIST *t);
+void InRpcPorts(RPC_PORTS *t, PACK *p);
+void OutRpcPorts(PACK *p, RPC_PORTS *t);
+void FreeRpcPorts(RPC_PORTS *t);
 void InRpcStr(RPC_STR *t, PACK *p);
 void OutRpcStr(PACK *p, RPC_STR *t);
 void FreeRpcStr(RPC_STR *t);
+void InRpcProtoOptions(RPC_PROTO_OPTIONS *t, PACK *p);
+void OutRpcProtoOptions(PACK *p, RPC_PROTO_OPTIONS *t);
+void FreeRpcProtoOptions(RPC_PROTO_OPTIONS *t);
 void InRpcSetPassword(RPC_SET_PASSWORD *t, PACK *p);
 void OutRpcSetPassword(PACK *p, RPC_SET_PASSWORD *t);
 void InRpcFarm(RPC_FARM *t, PACK *p);
@@ -1363,6 +1415,9 @@ void OutRpcMemInfo(PACK *p, MEMINFO *t);
 void InRpcKeyPair(RPC_KEY_PAIR *t, PACK *p);
 void OutRpcKeyPair(PACK *p, RPC_KEY_PAIR *t);
 void FreeRpcKeyPair(RPC_KEY_PAIR *t);
+void InRpcWgk(RPC_WGK *t, PACK *p);
+void OutRpcWgk(PACK *p, RPC_WGK *t);
+void FreeRpcWgk(RPC_WGK *t);
 void InRpcAddAccess(RPC_ADD_ACCESS *t, PACK *p);
 void OutRpcAddAccess(PACK *p, RPC_ADD_ACCESS *t);
 void InRpcDeleteAccess(RPC_DELETE_ACCESS *t, PACK *p);

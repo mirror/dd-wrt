@@ -8,6 +8,10 @@
 #ifndef	INTERNAT_H
 #define	INTERNAT_H
 
+#include "MayaType.h"
+
+#include <stdarg.h>
+
 // String token
 struct UNI_TOKEN_LIST
 {
@@ -98,9 +102,13 @@ bool UniIsSafeChar(wchar_t c);
 BUF *UniStrToBin(wchar_t *str);
 bool UniInStr(wchar_t *str, wchar_t *keyword);
 bool UniInStrEx(wchar_t *str, wchar_t *keyword, bool case_sensitive);
-void ClearUniStr(wchar_t *str, UINT str_size);
 bool UniInChar(wchar_t *string, wchar_t c);
 UNI_TOKEN_LIST *UniGetLines(wchar_t *str);
+wchar_t *UniDefaultTokenSplitChars();
+bool UniIsCharInStr(wchar_t *str, wchar_t c);
+UNI_TOKEN_LIST *UniParseTokenWithNullStr(wchar_t *str, wchar_t *split_chars);
+UNI_TOKEN_LIST *UniParseTokenWithoutNullStr(wchar_t *str, wchar_t *split_chars);
+
 
 #ifdef	OS_UNIX
 void GetCurrentCharSet(char *name, UINT size);

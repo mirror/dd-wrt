@@ -1,6 +1,12 @@
 # SoftEther VPN
 
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/softethervpn/softethervpn?branch=master&svg=true)](https://ci.appveyor.com/project/softethervpn/softethervpn) [![Travis CI build status](https://travis-ci.org/SoftEtherVPN/SoftEtherVPN.svg?branch=master)](https://travis-ci.org/SoftEtherVPN/SoftEtherVPN) [![gitlab-ci build status](https://gitlab.com/SoftEther/SoftEtherVPN/badges/master/build.svg)](https://gitlab.com/SoftEther/SoftEtherVPN/pipelines) [![Coverity Scan Build Status](https://scan.coverity.com/projects/16304/badge.svg)](https://scan.coverity.com/projects/softethervpn-softethervpn)
+||Badges|
+|---|---|
+|AppVeyor|[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/softethervpn/softethervpn?branch=master&svg=true)](https://ci.appveyor.com/project/softethervpn/softethervpn) |
+|GitLab CI|[![GitLab CI build status](https://gitlab.com/SoftEther/SoftEtherVPN/badges/master/pipeline.svg)](https://gitlab.com/SoftEther/SoftEtherVPN/pipelines)|
+|Coverity Scan|[![Coverity Scan build status](https://scan.coverity.com/projects/16304/badge.svg)](https://scan.coverity.com/projects/softethervpn-softethervpn)|
+|Azure Pipelines|[![Azure Pipelines build status for Nightly](https://dev.azure.com/SoftEther-VPN/SoftEther%20VPN/_apis/build/status/6?api-version=6.0-preview.1)](https://dev.azure.com/SoftEther-VPN/SoftEther%20VPN/_build?definitionId=6)|
+|Cirrus CI|[![Cirrus CI build status](https://api.cirrus-ci.com/github/SoftEtherVPN/SoftEtherVPN.svg)](https://cirrus-ci.com/github/SoftEtherVPN/SoftEtherVPN)|
 
 - [SoftEther VPN](#softether-vpn)
 - [BOARD MEMBERS OF THIS REPOSITORY](#board-members-of-this-repository)
@@ -226,22 +232,23 @@ some censorship governments want to block your access to the source code
 of SoftEther VPN, by abusing their censorship firewalls.
 
 To circumvent your censor's unjust restriction,
-SoftEther VPN Project distributes the up-to-date source-code
+SoftEther VPN Project distributes the up-to-date source code
 on all the following open-source repositories:
 
   - GitHub
     https://github.com/SoftEtherVPN/SoftEtherVPN/
 
-```
-$ git clone https://github.com/SoftEtherVPN/SoftEtherVPN.git
-```
+        $ git clone https://github.com/SoftEtherVPN/SoftEtherVPN.git
 
   - GitLab (mirrored from GitHub)
     https://gitlab.com/SoftEther/SoftEtherVPN/
 
-```
-$ git clone https://gitlab.com/SoftEther/SoftEtherVPN.git
-```
+        $ git clone https://gitlab.com/SoftEther/SoftEtherVPN.git
+
+  - Codeberg (mirrored from GitHub)
+    https://codeberg.org/softether/vpn
+
+        $ git clone https://codeberg.org/softether/vpn.git
 
 We hope that you can reach one of the above URLs at least!
 

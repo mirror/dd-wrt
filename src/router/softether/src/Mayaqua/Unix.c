@@ -5,19 +5,46 @@
 // Unix.c
 // UNIX dependent code
 
-#include <GlobalConst.h>
+#ifdef	OS_UNIX
 
-#ifdef	UNIX
+#include "Unix.h"
 
+#include "Cfg.h"
+#include "FileIO.h"
+#include "GlobalConst.h"
+#include "Internat.h"
+#include "Kernel.h"
+#include "Mayaqua.h"
+#include "Memory.h"
+#include "Network.h"
+#include "Object.h"
+#include "Str.h"
+#include "Table.h"
+#include "Tick64.h"
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
-#include <stdarg.h>
-#include <time.h>
-#include <errno.h>
+
+#include <dirent.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <pthread.h>
+#include <signal.h>
+
+#include <sys/mount.h>
+#include <sys/param.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
-#include <Mayaqua/Mayaqua.h>
+#include <sys/wait.h>
+
+#ifdef UNIX_LINUX
+#include <sys/statfs.h>
+#endif
 
 #ifdef	UNIX_MACOS
 #ifdef	NO_VLAN
@@ -799,7 +826,6 @@ void *UnixNewSingleInstance(char *instance_name)
 	if (fcntl(fd, F_SETLK, &lock) == -1)
 	{
 		close(fd);
-		(void)remove(name);
 		return NULL;
 	}
 	else
@@ -1841,6 +1867,10 @@ LOCK *UnixNewLock()
 
 	// Create a mutex
 	mutex = UnixMemoryAlloc(sizeof(pthread_mutex_t));
+	if (mutex == NULL)
+	{
+		return NULL;
+	}
 
 	// Initialization of the mutex
 	pthread_mutex_init(mutex, NULL);
@@ -1938,7 +1968,7 @@ void UnixGetSystemTime(SYSTEMTIME *system_time)
 
 	if (sizeof(time_t) == 4)
 	{
-		now2 = (time_64t)((UINT64)((UINT32)now));
+		now2 = (time_64t)((UINT64)((UINT)now));
 	}
 	else
 	{
@@ -1976,7 +2006,7 @@ UINT64 UnixGetTick64()
 	clock_gettime(CLOCK_REALTIME, &t);
 #endif
 
-	ret = ((UINT64)((UINT32)t.tv_sec)) * 1000LL + (UINT64)t.tv_nsec / 1000000LL;
+	ret = ((UINT64)((UINT)t.tv_sec)) * 1000LL + (UINT64)t.tv_nsec / 1000000LL;
 
 	if (ret == 0)
 	{
