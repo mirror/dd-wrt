@@ -14,9 +14,7 @@
 #ifdef OS_UNIX
 #include <netinet/in.h>
 
-#ifdef UNIX_OPENBSD
 #include <pthread.h>
-#endif
 #endif
 
 // Dynamic Value
