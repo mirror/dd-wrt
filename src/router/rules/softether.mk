@@ -39,14 +39,14 @@ softether: zlib ncurses
 softether-install:
 	rm -rf $(INSTALLDIR)/softether
 	mkdir -p $(INSTALLDIR)/softether/usr/lib
-	cp $(TOP)/softether/build/libcedar.so $(INSTALLDIR)/softether/usr/lib
-	cp $(TOP)/softether/build/libmayaqua.so $(INSTALLDIR)/softether/usr/lib
+	cp $(TOP)/softether/libcedar.so $(INSTALLDIR)/softether/usr/lib
+	cp $(TOP)/softether/libmayaqua.so $(INSTALLDIR)/softether/usr/lib
 	mkdir -p $(INSTALLDIR)/softether/usr/libexec/softethervpn
-	cp $(TOP)/softether/build/vpnserver $(INSTALLDIR)/softether/usr/libexec/softethervpn
-	cp $(TOP)/softether/build/vpnbridge $(INSTALLDIR)/softether/usr/libexec/softethervpn
-	cp $(TOP)/softether/build/vpnclient $(INSTALLDIR)/softether/usr/libexec/softethervpn
-	cp $(TOP)/softether/build/hamcore.se2 $(INSTALLDIR)/softether/usr/libexec/softethervpn
-	cp $(TOP)/softether/build/vpncmd $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/vpnserver $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/vpnbridge $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/vpnclient $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/hamcore.se2 $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/vpncmd $(INSTALLDIR)/softether/usr/libexec/softethervpn
 	cp $(TOP)/softether/files/launcher.sh $(INSTALLDIR)/softether/usr/libexec/softethervpn
 	chmod 777 $(INSTALLDIR)/softether/usr/libexec/softethervpn/launcher.sh
 	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/lang.config
