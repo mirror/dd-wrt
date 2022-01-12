@@ -1,11 +1,47 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Client.c
 // Client Manager
 
-#include "CedarPch.h"
+#include "Client.h"
+
+#include "Account.h"
+#include "Admin.h"
+#include "Cedar.h"
+#include "CM.h"
+#include "Connection.h"
+#include "IPC.h"
+#include "Listener.h"
+#include "Logging.h"
+#include "Protocol.h"
+#include "Remote.h"
+#include "Virtual.h"
+#include "VLanUnix.h"
+#include "VLanWin32.h"
+#include "Win32Com.h"
+#include "WinUi.h"
+
+#include "Mayaqua/Cfg.h"
+#include "Mayaqua/Encrypt.h"
+#include "Mayaqua/FileIO.h"
+#include "Mayaqua/Internat.h"
+#include "Mayaqua/Kernel.h"
+#include "Mayaqua/MayaType.h"
+#include "Mayaqua/Memory.h"
+#include "Mayaqua/Microsoft.h"
+#include "Mayaqua/Network.h"
+#include "Mayaqua/Object.h"
+#include "Mayaqua/OS.h"
+#include "Mayaqua/Pack.h"
+#include "Mayaqua/Secure.h"
+#include "Mayaqua/Str.h"
+#include "Mayaqua/Table.h"
+#include "Mayaqua/Tick64.h"
+#include "Mayaqua/Win32.h"
+
+#include <stdlib.h>
 
 static CLIENT *client = NULL;
 static LISTENER *cn_listener = NULL;
@@ -410,27 +446,6 @@ typedef struct CNC_CONNECT_ERROR_DLG_THREAD_PARAM
 	bool HaltThread;
 	EVENT *Event;
 } CNC_CONNECT_ERROR_DLG_THREAD_PARAM;
-
-
-// Get the file name of vpnclient.exe in Win32
-char *CiGetVpnClientExeFileName()
-{
-	if (Is64() == false)
-	{
-		return CLIENT_WIN32_EXE_FILENAME;
-	}
-	else
-	{
-		if (IsX64())
-		{
-			return CLIENT_WIN32_EXE_FILENAME_X64;
-		}
-		else
-		{
-			return CLIENT_WIN32_EXE_FILENAME_IA64;
-		}
-	}
-}
 
 // Thread to stop forcibly the Certificate check dialog client
 void CncCheckCertHaltThread(THREAD *thread, void *param)
@@ -1129,11 +1144,7 @@ void Win32CnNicInfoThreadProc(THREAD *thread, void *param)
 		return;
 	}
 
-	if (MsIsNt())
-	{
-		// Do not show a dialog on Windows 9x system
-		NicInfo(info);
-	}
+	NicInfo(info);
 
 	Disconnect(info->Sock);
 }
@@ -1391,10 +1402,7 @@ void Win32CnExecDriverInstaller(SOCK *s, PACK *p)
 		return;
 	}
 
-	if (MsIsVista())
-	{
-		helper = CmStartUacHelper();
-	}
+	helper = CmStartUacHelper();
 
 	ret = MsExecDriverInstaller(arg);
 
@@ -1527,7 +1535,7 @@ void CnListenerProc(THREAD *thread, void *param)
 	AddRef(s->ref);
 	NoticeThreadInit(thread);
 
-	if (s->LocalIP.addr[0] == 127)
+	if (IsLocalHostIP(&s->LocalIP))
 	{
 		p = RecvPack(s);
 
@@ -3660,7 +3668,6 @@ void InRpcClientConfig(CLIENT_CONFIG *c, PACK *p)
 	c->KeepConnectProtocol = PackGetInt(p, "KeepConnectProtocol");
 	c->KeepConnectInterval = PackGetInt(p, "KeepConnectInterval");
 	c->AllowRemoteConfig = PackGetInt(p, "AllowRemoteConfig") == 0 ? false : true;
-	c->NicDownOnDisconnect = PackGetBool(p, "NicDownOnDisconnect");
 	PackGetStr(p, "KeepConnectHost", c->KeepConnectHost, sizeof(c->KeepConnectHost));
 }
 void OutRpcClientConfig(PACK *p, CLIENT_CONFIG *c)
@@ -3676,7 +3683,6 @@ void OutRpcClientConfig(PACK *p, CLIENT_CONFIG *c)
 	PackAddInt(p, "KeepConnectProtocol", c->KeepConnectProtocol);
 	PackAddInt(p, "KeepConnectInterval", c->KeepConnectInterval);
 	PackAddInt(p, "AllowRemoteConfig", c->AllowRemoteConfig);
-	PackAddBool(p, "NicDownOnDisconnect", c->NicDownOnDisconnect);
 	PackAddStr(p, "KeepConnectHost", c->KeepConnectHost);
 }
 
@@ -4425,6 +4431,17 @@ void InRpcClientAuth(CLIENT_AUTH *c, PACK *p)
 		PackGetStr(p, "SecurePublicCertName", c->SecurePublicCertName, sizeof(c->SecurePublicCertName));
 		PackGetStr(p, "SecurePrivateKeyName", c->SecurePrivateKeyName, sizeof(c->SecurePrivateKeyName));
 		break;
+
+  case CLIENT_AUTHTYPE_OPENSSLENGINE:
+		b = PackGetBuf(p, "ClientX");
+		if (b != NULL)
+		{
+			c->ClientX = BufToX(b, false);
+			FreeBuf(b);
+		}
+    PackGetStr(p, "OpensslEnginePrivateKeyName", c->OpensslEnginePrivateKeyName, sizeof(c->OpensslEnginePrivateKeyName));
+    PackGetStr(p, "OpensslEngineName", c->OpensslEngineName, sizeof(c->OpensslEngineName));
+    break;
 	}
 }
 void OutRpcClientAuth(PACK *p, CLIENT_AUTH *c)
@@ -4470,6 +4487,17 @@ void OutRpcClientAuth(PACK *p, CLIENT_AUTH *c)
 	case CLIENT_AUTHTYPE_SECURE:
 		PackAddStr(p, "SecurePublicCertName", c->SecurePublicCertName);
 		PackAddStr(p, "SecurePrivateKeyName", c->SecurePrivateKeyName);
+		break;
+
+	case CLIENT_AUTHTYPE_OPENSSLENGINE:
+		b = XToBuf(c->ClientX, false);
+		if (b != NULL)
+		{
+			PackAddBuf(p, "ClientX", b);
+			FreeBuf(b);
+		}
+		PackAddStr(p, "OpensslEnginePrivateKeyName", c->OpensslEnginePrivateKeyName);
+		PackAddStr(p, "OpensslEngineName", c->OpensslEngineName);
 		break;
 	}
 }
@@ -5082,7 +5110,7 @@ void CiRpcAccepted(CLIENT *c, SOCK *s)
 		retcode = 1;
 	}
 
-	if (c->PasswordRemoteOnly && s->RemoteIP.addr[0] == 127)
+	if (c->PasswordRemoteOnly && IsLocalHostIP(&s->RemoteIP))
 	{
 		// If in a mode that requires a password only remote,
 		// the password sent from localhost is considered to be always correct
@@ -5095,7 +5123,7 @@ void CiRpcAccepted(CLIENT *c, SOCK *s)
 		{
 			// If the remote control is prohibited,
 			// identify whether this connection is from remote
-			if (s->RemoteIP.addr[0] != 127)
+			if (IsLocalHostIP(&s->RemoteIP) == false)
 			{
 				retcode = 2;
 			}
@@ -5726,7 +5754,6 @@ L_TRY:
 		CcGetClientVersion(ret, &t);
 		ret->OsType = t.OsType;
 		ret->Unix = OS_IS_UNIX(ret->OsType);
-		ret->Win9x = OS_IS_WINDOWS_9X(ret->OsType);
 		ret->IsVgcSupported = t.IsVgcSupported;
 		ret->ShowVgcLink = t.ShowVgcLink;
 		StrCpy(ret->ClientId, sizeof(ret->ClientId), t.ClientId);
@@ -6283,17 +6310,12 @@ bool CtConnect(CLIENT *c, RPC_CLIENT_CONNECT *connect)
 		{
 			if (t.NumItem == 0)
 			{
-				// There are no virtual LAN cards in the system
-				if (OS_IS_WINDOWS_NT(GetOsInfo()->OsType) || OS_IS_UNIX(GetOsInfo()->OsType))
-				{
-					// Only in Linux system or Windows NT system,
-					// create a new virtual LAN card which named as "VPN" automatically
+					// Create a new virtual LAN card named "VPN" automatically
 					RPC_CLIENT_CREATE_VLAN t;
 
 					Zero(&t, sizeof(t));
 					StrCpy(t.DeviceName, sizeof(t.DeviceName), "VPN");
 					CtCreateVLan(c,  &t);
-				}
 			}
 
 			CiFreeClientEnumVLan(&t);
@@ -6425,6 +6447,11 @@ bool CtConnect(CLIENT *c, RPC_CLIENT_CONNECT *connect)
 						// Register a procedure for secure device authentication
 						r->ClientAuth->SecureSignProc = CiSecureSignProc;
 					}
+          else if (r->ClientAuth->AuthType == CLIENT_AUTHTYPE_OPENSSLENGINE)
+					{
+              /* r->ClientAuth->ClientK = OpensslEngineToK("asdf"); */
+						r->ClientAuth->SecureSignProc = NULL;
+					}
 					else
 					{
 						r->ClientAuth->SecureSignProc = NULL;
@@ -6445,7 +6472,7 @@ bool CtConnect(CLIENT *c, RPC_CLIENT_CONNECT *connect)
 
 					CLog(c, "LC_CONNECT", connect->AccountName);
 
-					r->ClientSession = NewClientSessionEx(c->Cedar, r->ClientOption, r->ClientAuth, pa, r, &c->Config.NicDownOnDisconnect);
+					r->ClientSession = NewClientSessionEx(c->Cedar, r->ClientOption, r->ClientAuth, pa, r);
 					Notify(r->ClientSession, CLIENT_NOTIFY_ACCOUNT_CHANGED);
 
 					ret = true;
@@ -6762,14 +6789,9 @@ bool CtSetClientConfig(CLIENT *c, CLIENT_CONFIG *o)
 	// Apply TAP state
 	LockList(c->AccountList);
 	LockList(c->UnixVLanList);
-	if (o->NicDownOnDisconnect)
-	{
-		CtVLansDown(c);
-	}
-	else
-	{
-		CtVLansUp(c);
-	}
+
+	CtVLansDown(c);
+
 	UnlockList(c->UnixVLanList);
 	UnlockList(c->AccountList);
 
@@ -7642,13 +7664,6 @@ bool CtDeleteVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *d)
 
 #else	// OS_WIN32
 
-	if (MsIsNt() == false)
-	{
-		// Not available in Win9x
-		CiSetError(c, ERR_NOT_SUPPORTED);
-		return false;
-	}
-
 	// Check whether the virtual LAN card are present
 	if (MsIsVLanExists(VLAN_ADAPTER_NAME_TAG, d->DeviceName) == false &&
 		MsIsVLanExists(VLAN_ADAPTER_NAME_TAG_OLD, d->DeviceName) == false)
@@ -8022,8 +8037,7 @@ bool CtUpgradeVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 {
 	bool use_old_name = false;
 
-#ifdef	OS_WIN32
-	KAKUSHI *k = NULL;
+#ifdef OS_WIN32
 	MS_DRIVER_VER ver;
 #endif	// OS_WIN32
 
@@ -8043,13 +8057,6 @@ bool CtUpgradeVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 
 	CiInitDriverVerStruct(&ver);
 
-	if (MsIsNt() == false)
-	{
-		// Not available in Win9x
-		CiSetError(c, ERR_NOT_SUPPORTED);
-		return false;
-	}
-
 	// Check whether the LAN card with the specified name already exists
 	if (MsIsVLanExists(VLAN_ADAPTER_NAME_TAG, create->DeviceName) == false &&
 		MsIsVLanExists(VLAN_ADAPTER_NAME_TAG_OLD, create->DeviceName) == false)
@@ -8066,46 +8073,18 @@ bool CtUpgradeVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 		use_old_name = true;
 	}
 
-	if (MsIsVista() == false)
+	// Perform the installation
+	char tmp[MAX_SIZE];
+	Format(tmp, sizeof(tmp), "upgradevlan %s", create->DeviceName);
+
+	if (CncExecDriverInstaller(tmp) == false)
 	{
-		k = InitKakushi();	
+		// Installation Failed
+		CiSetError(c, ERR_VLAN_INSTALL_ERROR);
+		CiNotify(c);
+		CiSendGlobalPulse(c);
+		return false;
 	}
-
-
-	if (MsIsVista() == false)
-	{
-		// Perform the installation (other than Windows Vista)
-		if (MsUpgradeVLan(use_old_name ? VLAN_ADAPTER_NAME_TAG_OLD : VLAN_ADAPTER_NAME_TAG,
-			use_old_name ? VLAN_CONNECTION_NAME_OLD : VLAN_CONNECTION_NAME,
-			create->DeviceName, &ver) == false)
-		{
-			// Installation Failed
-			FreeKakushi(k);
-			CiSetError(c, ERR_VLAN_INSTALL_ERROR);
-			CiNotify(c);
-			CiSendGlobalPulse(c);
-			return false;
-		}
-	}
-	else
-	{
-		// Perform the installation (Windows Vista)
-		char tmp[MAX_SIZE];
-
-		Format(tmp, sizeof(tmp), "upgradevlan %s", create->DeviceName);
-
-		if (CncExecDriverInstaller(tmp) == false)
-		{
-			// Installation Failed
-			FreeKakushi(k);
-			CiSetError(c, ERR_VLAN_INSTALL_ERROR);
-			CiNotify(c);
-			CiSendGlobalPulse(c);
-			return false;
-		}
-	}
-
-	FreeKakushi(k);
 
 	CLog(c, "LC_UPDATE_VLAN", create->DeviceName);
 
@@ -8122,10 +8101,6 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 {
 	TOKEN_LIST *t;
 	UINT max_len;
-
-#ifdef	OS_WIN32
-	KAKUSHI *k = NULL;
-#endif	// OS_WIN32
 
 	// Validate arguments
 	if (c == NULL || create == NULL)
@@ -8183,7 +8158,7 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 		StrCpy(r->Name, sizeof(r->Name), create->DeviceName);
 
 		// Create a TUN
-		if (UnixVLanCreate(r->Name, r->MacAddress, !c->Config.NicDownOnDisconnect) == false)
+		if (UnixVLanCreate(r->Name, r->MacAddress, false) == false)
 		{
 			// Failure
 			Free(r);
@@ -8207,25 +8182,6 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 	return true;
 
 #else	// OS_WIN32
-
-	if (OS_IS_WINDOWS_9X(GetOsInfo()->OsType))
-	{
-		// Only one LAN card is available in the Win9x
-		TOKEN_LIST *t;
-
-		t = MsEnumNetworkAdapters(VLAN_ADAPTER_NAME, VLAN_ADAPTER_NAME_OLD);
-		if (t != NULL)
-		{
-			if (t->NumTokens >= 1)
-			{
-				FreeToken(t);
-				CiSetError(c, ERR_NOT_SUPPORTED);
-				return false;
-			}
-			FreeToken(t);
-		}
-	}
-
 	// Check whether the specified name is valid or not
 	if (IsSafeStr(create->DeviceName) == false)
 	{
@@ -8234,7 +8190,7 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 		return false;
 	}
 
-	max_len = MsIsNt() ? MAX_DEVICE_NAME_LEN : MAX_DEVICE_NAME_LEN_9X;
+	max_len = MAX_DEVICE_NAME_LEN;
 	if (StrLen(create->DeviceName) > max_len)
 	{
 		// Name is too long
@@ -8262,50 +8218,17 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 		return false;
 	}
 
-	if (MsIsNt())
+	// Perform the installation (Windows Vista)
+	char tmp[MAX_SIZE];
+	Format(tmp, sizeof(tmp), "instvlan %s", create->DeviceName);
+
+	if (CncExecDriverInstaller(tmp) == false)
 	{
-		if (MsIsVista() == false)
-		{
-			k = InitKakushi();
-		}
+		CiSetError(c, ERR_VLAN_INSTALL_ERROR);
+		CiNotify(c);
+		CiSendGlobalPulse(c);
+		return false;
 	}
-
-	if (MsIsVista() == false)
-	{
-		MS_DRIVER_VER ver;
-
-		CiInitDriverVerStruct(&ver);
-
-		// Perform the installation (other than Windows Vista)
-		if (MsInstallVLan(VLAN_ADAPTER_NAME_TAG, VLAN_CONNECTION_NAME, create->DeviceName, &ver) == false)
-		{
-			// Installation Failed
-			FreeKakushi(k);
-			CiSetError(c, ERR_VLAN_INSTALL_ERROR);
-			CiNotify(c);
-			CiSendGlobalPulse(c);
-			return false;
-		}
-	}
-	else
-	{
-		// Perform the installation (Windows Vista)
-		char tmp[MAX_SIZE];
-
-		Format(tmp, sizeof(tmp), "instvlan %s", create->DeviceName);
-
-		if (CncExecDriverInstaller(tmp) == false)
-		{
-			// Installation Failed
-			FreeKakushi(k);
-			CiSetError(c, ERR_VLAN_INSTALL_ERROR);
-			CiNotify(c);
-			CiSendGlobalPulse(c);
-			return false;
-		}
-	}
-
-	FreeKakushi(k);
 
 	t = MsEnumNetworkAdapters(VLAN_ADAPTER_NAME, VLAN_ADAPTER_NAME_OLD);
 	if (t->NumTokens == 1)
@@ -8340,17 +8263,6 @@ bool CtCreateVLan(CLIENT *c, RPC_CLIENT_CREATE_VLAN *create)
 	CiSendGlobalPulse(c);
 
 	CiSaveConfigurationFile(c);
-
-	if (MsIsNt() == false)
-	{
-		if (GetOsInfo()->OsType == OSTYPE_WINDOWS_ME)
-		{
-			// Show the warning in the case of Windows Me
-			MsgBox(NULL, 0x00000040L, _UU("CM_9X_VLAN_ME_MESSAGE"));
-		}
-
-		ReleaseThread(NewThread(Win9xRebootThread, NULL));
-	}
 
 	return true;
 
@@ -9236,7 +9148,6 @@ void CiLoadClientConfig(CLIENT_CONFIG *c, FOLDER *f)
 	c->AllowRemoteConfig = CfgGetBool(f, "AllowRemoteConfig");
 	c->KeepConnectInterval = MAKESURE(CfgGetInt(f, "KeepConnectInterval"), KEEP_INTERVAL_MIN, KEEP_INTERVAL_MAX);
 	c->NoChangeWcmNetworkSettingOnWindows8 = CfgGetBool(f, "NoChangeWcmNetworkSettingOnWindows8");
-	c->NicDownOnDisconnect = CfgGetBool(f, "NicDownOnDisconnect");
 }
 
 // Read the client authentication data
@@ -9294,6 +9205,20 @@ CLIENT_AUTH *CiLoadClientAuth(FOLDER *f)
 	case CLIENT_AUTHTYPE_SECURE:
 		CfgGetStr(f, "SecurePublicCertName", a->SecurePublicCertName, sizeof(a->SecurePublicCertName));
 		CfgGetStr(f, "SecurePrivateKeyName", a->SecurePrivateKeyName, sizeof(a->SecurePrivateKeyName));
+		break;
+
+	case CLIENT_AUTHTYPE_OPENSSLENGINE:
+		b = CfgGetBuf(f, "ClientCert");
+		if (b != NULL)
+		{
+			a->ClientX = BufToX(b, false);
+		}
+		FreeBuf(b);
+		if (CfgGetStr(f, "OpensslEnginePrivateKeyName", a->OpensslEnginePrivateKeyName, sizeof(a->OpensslEnginePrivateKeyName)))
+    {
+        a->ClientK = OpensslEngineToK(a->OpensslEnginePrivateKeyName, a->OpensslEngineName);
+    }
+    CfgGetStr(f, "OpensslEngineName", a->OpensslEngineName, sizeof(a->OpensslEngineName));
 		break;
 	}
 
@@ -9566,7 +9491,7 @@ void CiLoadVLan(CLIENT *c, FOLDER *f)
 	Add(c->UnixVLanList, v);
 
 #ifdef	OS_UNIX
-	UnixVLanCreate(v->Name, v->MacAddress, !c->Config.NicDownOnDisconnect);
+	UnixVLanCreate(v->Name, v->MacAddress, false);
 #endif	// OS_UNIX
 }
 
@@ -9682,7 +9607,7 @@ bool CiReadSettingFromCfg(CLIENT *c, FOLDER *root)
 		UNIX_VLAN *uv;
 
 		// Create a Tap for MacOS X
-		if (UnixVLanCreate(CLIENT_MACOS_TAP_NAME, NULL, !c->Config.NicDownOnDisconnect) == false)
+		if (UnixVLanCreate(CLIENT_MACOS_TAP_NAME, NULL, false) == false)
 		{
 			// Fail (abort)
 			CLog(c, "LC_TAP_NOT_FOUND");
@@ -9729,12 +9654,7 @@ bool CiReadSettingFromCfg(CLIENT *c, FOLDER *root)
 		UINT ostype = GetOsInfo()->OsType;
 		// CM_SETTING
 		CM_SETTING *s = c->CmSetting;
-
-		if (OS_IS_UNIX(ostype) || OS_IS_WINDOWS_NT(ostype))
-		{
-			s->EasyMode = CfgGetBool(cmsetting, "EasyMode");
-		}
-
+		s->EasyMode = CfgGetBool(cmsetting, "EasyMode");
 		s->LockMode = CfgGetBool(cmsetting, "LockMode");
 		CfgGetByte(cmsetting, "HashedPassword", s->HashedPassword, sizeof(s->HashedPassword));
 	}
@@ -9792,7 +9712,6 @@ void CiWriteClientConfig(FOLDER *cc, CLIENT_CONFIG *config)
 	CfgAddBool(cc, "AllowRemoteConfig", config->AllowRemoteConfig);
 	CfgAddInt(cc, "KeepConnectInterval", config->KeepConnectInterval);
 	CfgAddBool(cc, "NoChangeWcmNetworkSettingOnWindows8", config->NoChangeWcmNetworkSettingOnWindows8);
-	CfgAddBool(cc, "NicDownOnDisconnect", config->NicDownOnDisconnect);
 }
 
 // Write the client authentication data
@@ -9840,6 +9759,16 @@ void CiWriteClientAuth(FOLDER *f, CLIENT_AUTH *a)
 		CfgAddStr(f, "SecurePublicCertName", a->SecurePublicCertName);
 		CfgAddStr(f, "SecurePrivateKeyName", a->SecurePrivateKeyName);
 		break;
+
+	case CLIENT_AUTHTYPE_OPENSSLENGINE:
+		if (a->ClientX != NULL) {
+			b = XToBuf(a->ClientX, false);
+			CfgAddByte(f, "ClientCert", b->Buf, b->Size);
+			FreeBuf(b);
+		}
+		CfgAddStr(f, "OpensslEnginePrivateKeyName", a->OpensslEnginePrivateKeyName);
+		CfgAddStr(f, "OpensslEngineName", a->OpensslEngineName);
+	break;
 	}
 }
 
@@ -10411,16 +10340,6 @@ CLIENT *CiNewClient()
 	// Raise the priority
 	OSSetHighPriority();
 
-
-
-#ifdef	OS_WIN32
-	// For Win9x, release the DHCP address of all the virtual LAN card
-	if (MsIsNt() == false)
-	{
-		Win32ReleaseAllDhcp9x(true);
-	}
-#endif	// OS_WIN32
-
 	CiChangeAllVLanMacAddressIfMachineChanged(c);
 
 	CiChangeAllVLanMacAddressIfCleared(c);
@@ -10543,14 +10462,6 @@ void CiCleanupClient(CLIENT *c)
 
 	Free(c);
 
-#ifdef	OS_WIN32
-	// For Win9x, release the DHCP address of all the virtual LAN card
-	if (MsIsNt() == false)
-	{
-		Win32ReleaseAllDhcp9x(true);
-	}
-#endif	// OS_WIN32
-
 	StopCedarLog();
 
 	if (ci_active_sessions_lock != NULL)
@@ -10610,9 +10521,6 @@ void CtStartClient()
 		// It is already in running
 		return;
 	}
-
-	// OS check
-	CiCheckOs();
 
 #ifdef	OS_WIN32
 	RegistWindowsFirewallAll();
@@ -10731,27 +10639,6 @@ void CtStopClient()
 	// Release the client
 	CtReleaseClient(client);
 	client = NULL;
-}
-
-// OS check
-void CiCheckOs()
-{
-	// Get the OS type
-	OS_INFO *info = GetOsInfo();
-
-	if (OS_IS_WINDOWS(info->OsType))
-	{
-		bool ok = IS_CLIENT_SUPPORTED_OS(info->OsType);
-
-		if (ok == false)
-		{
-			Alert(
-				CEDAR_PRODUCT_STR " VPN Client doesn't support this Windows Operating System.\n"
-				CEDAR_PRODUCT_STR " VPN Client requires Windows 98, Windows Me, Windows 2000, Windows XP, Windows Server 2003 or Greater.\n\n"
-				"Please contact your system administrator.", CEDAR_PRODUCT_STR " VPN Client");
-			exit(0);
-		}
-	}
 }
 
 // Client status indicator

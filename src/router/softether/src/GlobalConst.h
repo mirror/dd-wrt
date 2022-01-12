@@ -64,7 +64,4 @@
 
 #define	GC_UI_APPID_CM				L"SoftEther.SoftEther VPN Client Developer Edition"
 
-
-
 #endif	// GLOBAL_CONST_H
-

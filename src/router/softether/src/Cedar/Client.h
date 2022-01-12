@@ -1,6 +1,6 @@
 // SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-
+// © 2020 Nokia
 
 // Client.h
 // Header of Client.c
@@ -8,15 +8,13 @@
 #ifndef	CLIENT_H
 #define	CLIENT_H
 
+#include "Account.h"
+#include "Session.h"
+#include "Wpc.h"
+
 #define	CLIENT_CONFIG_PORT					GC_CLIENT_CONFIG_PORT		// Client port number
 #define	CLIENT_NOTIFY_PORT					GC_CLIENT_NOTIFY_PORT		// Client notification port number
 #define CLIENT_WAIT_CN_READY_TIMEOUT		(10 * 1000)	// Standby time to start the client notification service
-
-
-// Check whether the client can run on the specified OS_TYPE
-#define	IS_CLIENT_SUPPORTED_OS(t)			\
-	((OS_IS_WINDOWS_NT(t) && GET_KETA(t, 100) >= 2) || (OS_IS_WINDOWS_9X(t)))
-
 
 // Constants
 #define	CLIENT_CONFIG_FILE_NAME				"$vpn_client.config"
@@ -36,8 +34,6 @@
 #define	CLIENT_NOTIFY_SERVICE_INSTANCENAME	GC_SW_SOFTETHER_PREFIX "vpnclient_uihelper"
 
 #define	CLIENT_WIN32_EXE_FILENAME			"vpnclient.exe"
-#define	CLIENT_WIN32_EXE_FILENAME_X64		"vpnclient_x64.exe"
-#define	CLIENT_WIN32_EXE_FILENAME_IA64		"vpnclient_ia64.exe"
 
 #define CLIENT_CUSTOM_INI_FILENAME			"$custom.ini"
 
@@ -90,7 +86,6 @@ struct CLIENT_CONFIG
 	UINT KeepConnectProtocol;				// Protocol
 	UINT KeepConnectInterval;				// Interval
 	bool NoChangeWcmNetworkSettingOnWindows8;	// Don't change the WCM network settings on Windows 8
-	bool NicDownOnDisconnect;				// Put NIC down on disconnect/connection loss and put it up again after connecting to VPN server
 };
 
 // Version acquisition
@@ -423,7 +418,6 @@ struct REMOTE_CLIENT
 	RPC *Rpc;
 	UINT OsType;
 	bool Unix;
-	bool Win9x;
 	UINT ProcessId;
 	UINT ClientBuildInt;
 	bool IsVgcSupported;
@@ -600,7 +594,6 @@ bool CtSetCommonProxySetting(CLIENT *c, INTERNET_SETTING *a);
 // Internal function prototype
 void CiSendGlobalPulse(CLIENT *c);
 void CiPulseRecvThread(THREAD *thread, void *param);
-char *CiGetVpnClientExeFileName();
 void CiServerThread(THREAD *t, void *param);
 void CiInitSaver(CLIENT *c);
 void CiFreeSaver(CLIENT *c);
@@ -647,7 +640,6 @@ void CiFreeGetCa(RPC_GET_CA *a);
 void CiFreeGetIssuer(RPC_GET_ISSUER *a);
 void CiFreeClientEnumAccount(RPC_CLIENT_ENUM_ACCOUNT *a);
 void CiSetError(CLIENT *c, UINT err);
-void CiCheckOs();
 CLIENT *CiNewClient();
 void CiCleanupClient(CLIENT *c);
 bool CiLoadConfigurationFile(CLIENT *c);
@@ -754,11 +746,9 @@ void OutRpcTrafficEx(TRAFFIC *t, PACK *p, UINT i, UINT num);
 void OutRpcCmSetting(PACK *p, CM_SETTING *c);
 void InRpcCmSetting(CM_SETTING *c, PACK *p);
 
-
-#ifdef	OS_WIN32
+#ifdef OS_WIN32
+typedef struct MS_DRIVER_VER MS_DRIVER_VER;
 void CiInitDriverVerStruct(MS_DRIVER_VER *ver);
 #endif	// OS_EIN32
 
 #endif	// CLIENT_H
-
-
