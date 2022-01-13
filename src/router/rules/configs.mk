@@ -337,6 +337,7 @@ obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
 obj-$(CONFIG_F2FS) += f2fs-tools
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_LSOF) += lsof
+obj-$(CONFIG_X86) += lsof
 obj-$(CONFIG_LIBMNL) += libmnl
 obj-$(CONFIG_WIREGUARD) += libmnl wireguard qrencode
 obj-$(CONFIG_EXFAT) += exfat-utils
