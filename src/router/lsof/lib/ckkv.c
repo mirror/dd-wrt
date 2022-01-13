@@ -37,7 +37,6 @@
 # if	!defined(lint)
 static char copyright[] =
 "@(#) Copyright 1998 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: ckkv.c,v 1.3 2008/10/21 16:12:36 abe Exp $";
 # endif	/* !defined(lint) */
 
 #include "../lsof.h"

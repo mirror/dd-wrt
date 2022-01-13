@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1999 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id";
 #endif
 
 
@@ -212,7 +211,7 @@ gather_proc_info()
 	     * If only ORed process selection options have been specified,
 	     * enable conditional file skipping and socket file only checking.
 	     */
-		if ((Selflags & SELFILE) || !(Selflags & SELPROC))
+		if ((Selflags & SELFILE) || !(Selflags & SelProc))
 		    cckreg = ckscko = 0;
 		else
 		    cckreg = ckscko = 1;
@@ -247,7 +246,7 @@ gather_proc_info()
 	     * socket file only checking, based on the process' selection
 	     * status.
 	     */
-		ckscko = (sf & SELPROC) ? 0 : 1;
+		ckscko = (sf & SelProc) ? 0 : 1;
 	    }
 	    alloc_lproc((int)p->pst_pid, (int)p->pst_pgrp, (int)p->pst_ppid,
 			(UID_ARG)p->pst_uid, p->pst_ucomm, (int)pss, (int)sf);

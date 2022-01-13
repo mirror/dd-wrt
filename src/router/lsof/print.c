@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: print.c,v 1.55 2013/01/02 17:14:59 abe Exp $";
 #endif
 
 
@@ -678,8 +677,10 @@ print_file()
 		PIDTTL);
 
 #if	defined(HASTASKS)
-	    if (TaskPrtFl)
-		(void) printf(" %*s", TidColW, TIDTTL);
+	    if (TaskPrtTid)
+		(void) printf(" %*s", TaskTidColW, TASKTIDTTL);
+	    if (TaskPrtCmd)
+		(void) printf(" %-*.*s", TaskCmdColW, TaskCmdColW, TASKCMDTTL);
 #endif	/* defined(HASTASKS) */
 
 #if	defined(HASZONES)
@@ -766,20 +767,35 @@ print_file()
 
 #if	defined(HASTASKS)
 /*
- * Size or print task ID.
+ * Size or print task ID and command name.
  */
 	if (!PrPass) {
+	    if ((cp = Lp->tcmd)) {
+		len = safestrlen(cp, 2);
+		if (TaskCmdLim && (len > TaskCmdLim))
+		    len = TaskCmdLim;
+		if (len > TaskCmdColW)
+		    TaskCmdColW = len;
+		TaskPrtCmd = 1;
+	    }
 	    if (Lp->tid) {
 		(void) snpf(buf, sizeof(buf), "%d", Lp->tid);
-		if ((len = strlen(buf)) > TidColW)
-		    TidColW = len;
-		TaskPrtFl = 1;
+		if ((len = strlen(buf)) >TaskTidColW)
+		    TaskTidColW = len;
+		TaskPrtTid = 1;
 	    }
-	} else if (TaskPrtFl) {
-	    if (Lp->tid)
-		(void) printf(" %*d", TidColW, Lp->tid);
-	    else
-		(void) printf(" %*s", TidColW, "");
+	} else {
+	    if (TaskPrtTid) {
+		if (Lp->tid)
+		    (void) printf(" %*d", TaskTidColW, Lp->tid);
+		else
+		    (void) printf(" %*s", TaskTidColW, "");
+	    }
+	    if (TaskPrtCmd) {
+		cp = Lp->tcmd ? Lp->tcmd : "";
+		printf(" ");
+		safestrprtn(cp, TaskCmdColW, stdout, 2);
+	    }
 	}
 #endif	/* defined(HASTASKS) */
 
@@ -1279,7 +1295,7 @@ print_init()
  */
 	PrPass = (Ffield || Fterse) ? 1 : 0;
 	LastPid = -1;
-	TaskPrtFl = 0;
+	TaskPrtCmd = TaskPrtTid = 0;
 /*
  * Size columns by their titles.
  */
@@ -1301,7 +1317,8 @@ print_init()
 	    SzOffColW = strlen(SZOFFTTL);
 
 #if	defined(HASTASKS)
-	TidColW = strlen(TIDTTL);
+	TaskCmdColW = strlen(TASKCMDTTL);
+	TaskTidColW = strlen(TASKTIDTTL);
 #endif	/* defined(HASTASKS) */
 
 	TypeColW = strlen(TYPETTL);

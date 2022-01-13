@@ -37,7 +37,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 2005-2007 Apple Inc. and Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dproc.c,v 1.9 2013/01/02 17:03:05 abe Exp $";
 #endif
 
 #include "lsof.h"
@@ -221,7 +220,7 @@ gather_proc_info()
 	     * If only ORed process selection options have been specified,
 	     * enable conditional file skipping and socket file only checking.
 	     */
-		if ((Selflags & SELFILE) || !(Selflags & SELPROC))
+		if ((Selflags & SELFILE) || !(Selflags & SelProc))
 		    cckreg = ckscko = 0;
 		else
 		    cckreg = ckscko = 1;
@@ -338,7 +337,7 @@ gather_proc_info()
 	     * socket file only checking, based on the process' selection
 	     * status.
 	     */
-		ckscko = (sf & SELPROC) ? 0 : 1;
+		ckscko = (sf & SelProc) ? 0 : 1;
 	    }
 	/*
 	 * Get root and current directory information.

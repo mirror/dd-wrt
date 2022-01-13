@@ -312,7 +312,7 @@ cat << .CAT_MARK
 
 =====================================================================
 
-When WARNINGSTATE is enabled, lsof will will issue whatever warning
+When WARNINGSTATE is enabled, lsof will issue whatever warning
 messages it finds necessary.  When WARNINGSTATE is disabled, lsof
 will issue no warning messages.  For individual uses of lsof, -w
 disables warning state and +w enables it.

@@ -35,7 +35,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dnode1.c,v 1.10 2008/10/21 16:16:06 abe Exp abe $";
 #endif
 
 
@@ -142,3 +141,33 @@ read_iso_node(v, d, dd, ino, nl, sz)
 	return(0);
 }
 #endif	/* defined(HAS9660FS) */
+
+
+#if	defined(HASFUSEFS)
+#include <fs/fuse/fuse_node.h>
+/*
+ * read_fuse_node() -- read FUSE file system fuse_node
+ */
+
+int
+read_fuse_node(v, d, dd, ino, nl, sz)
+	struct vnode *v;		/* containing vnode */
+	dev_t *d;			/* returned device number */
+	int *dd;			/* returned device-defined flag */
+	INODETYPE *ino;			/* returned inode number */
+	long *nl;			/* returned number of links */
+	SZOFFTYPE *sz;			/* returned size */
+{
+	struct fuse_vnode_data fn;	/* FUSE node */
+
+	if (!v->v_data
+	||  kread((KA_T)v->v_data, (char *)&fn, sizeof(fn)))
+	    return(1);
+	*d = fn.cached_attrs.va_fsid;
+	*dd = 1;
+	*ino = (INODETYPE)fn.cached_attrs.va_fileid;
+	*nl = (long)fn.cached_attrs.va_nlink;
+	*sz = (SZOFFTYPE)fn.cached_attrs.va_size;
+	return(0);
+}
+#endif	/* defined(HASFUSEFS) */

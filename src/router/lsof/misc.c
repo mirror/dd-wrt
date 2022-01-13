@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: misc.c,v 1.28 2014/10/13 22:36:20 abe Exp $";
 #endif
 
 
@@ -247,6 +246,7 @@ doinchild(fn, fp, rbuf, rbln)
 	int rbln;			/* response buffer length */
 {
 	int en, rv;
+
 /*
  * Check reply buffer size.
  */
@@ -292,13 +292,40 @@ doinchild(fn, fp, rbuf, rbln)
 		 * Begin the child process.
 		 */
 
-		    int fd, r_al, r_rbln;
+		    int r_al, r_rbln;
 		    char r_arg[MAXPATHLEN+1], r_rbuf[MAXPATHLEN+1];
 		    int (*r_fn)();
 		/*
 		 * Close sufficient open file descriptors except Pipes[0] and
 		 * Pipes[3].
 		 */
+
+#if	defined(HAS_DUP2) && defined(HAS_CLOSEFROM)
+		    int rc;
+
+		    rc = dup2(Pipes[0], 0);
+		    if (rc < 0) {
+			(void) fprintf(stderr,
+			    "%s: can't dup Pipes[0] to fd 0: %s\n",
+			    Pn, strerror(errno));
+			Exit(1);
+		    }
+		    Pipes[0] = 0;
+		    rc = dup2(Pipes[3], 1);
+		    if (rc < 0) {
+			(void) fprintf(stderr,
+			    "%s: can't dup Pipes.[3] to fd 1: %s\n",
+			    Pn, strerror(errno));
+			Exit(1);
+		    }
+		    Pipes[3] = 1;
+		    (void) closefrom(2);
+		    Pipes[1] = -1;
+		    Pipes[2] = -1;
+
+#else	/* !defined(HAS_DUP2) && !defined(HAS_CLOSEFROM) */
+		    int fd;
+
 		    for (fd = 0; fd < MaxFd; fd++) {
 			if (fd == Pipes[0] || fd == Pipes[3])
 			    continue;
@@ -316,6 +343,8 @@ doinchild(fn, fp, rbuf, rbln)
 			(void) close(Pipes[2]);
 			Pipes[2] = -1;
 		    }
+#endif	/* defined(HAS_DUP2) && defined(HAS_CLOSEFROM) */
+
 		/*
 		 * Read function requests, process them, and return replies.
 		 */
@@ -331,6 +360,7 @@ doinchild(fn, fp, rbuf, rbln)
 			    != (int)sizeof(r_rbln)
 			||  r_rbln < 1 || r_rbln > (int)sizeof(r_rbuf))
 			    break;
+			zeromem (r_rbuf, r_rbln);
 			rv = r_fn(r_arg, r_rbuf, r_rbln);
 			en = errno;
 			if (write(Pipes[3], (char *)&rv, sizeof(rv))
@@ -1182,8 +1212,10 @@ no_readlink_space:
 		stk[i] = (char *)NULL;
 	    }
 	    (void) free((FREE_P *)stk);
+	    (void) free((FREE_P *)s1);
 	    stk = (char **)NULL;
 	    ss = sx = 0;
+	    s1 = (char *)NULL;
 	    op = (char *)NULL;
 	    return((char *)NULL);
 	}

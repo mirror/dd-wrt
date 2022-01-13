@@ -33,7 +33,7 @@
 
 
 /*
- * $Id: dproto.h,v 1.14 2009/03/25 19:23:06 abe Exp $
+ * $Id: dproto.h,v 1.15 2018/02/14 14:26:03 abe Exp $
  */
 
 
@@ -53,6 +53,10 @@ _PROTOTYPE(extern int is_file_named,(char *p, int cd));
 _PROTOTYPE(extern void process_socket,(KA_T sa));
 _PROTOTYPE(extern struct l_vfs *readvfs,(KA_T vm));
 
+#if	defined(HASPTSFN)
+_PROTOTYPE(extern void process_pts,(KA_T ta));
+#endif	/* defined(HASPTSFN) */
+
 #if	defined(HASKQUEUE)
 _PROTOTYPE(extern void process_kqueue,(KA_T ka));
 #endif	/* defined(HASKQUEUE) */
@@ -60,6 +64,10 @@ _PROTOTYPE(extern void process_kqueue,(KA_T ka));
 #if	FREEBSDV>=2020
 _PROTOTYPE(extern void process_pipe,(KA_T pa));
 #endif	/* FREEBSDV>=2020 */
+
+#if	defined(HASFUSEFS)
+_PROTOTYPE(extern int read_fuse_node,(struct vnode *v, dev_t *d, int *dd, INODETYPE *ino, long *nl, SZOFFTYPE *sz));
+#endif	/* defined(HASFUSEFS) */
 
 #if	defined(HAS9660FS)
 _PROTOTYPE(extern int read_iso_node,(struct vnode *v, dev_t *d, int *dd, INODETYPE *ino, long *nl, SZOFFTYPE *sz));

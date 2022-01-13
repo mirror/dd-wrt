@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dstore.c,v 1.4 2011/09/07 19:07:45 abe Exp $";
 #endif
 
 
@@ -46,6 +45,8 @@ int HasNFS = 0;				/* NFS mount point status:
 					 *          and its device number is
 					 *          known
 					 */
+dev_t MqueueDev = -1;			/* The number for the device behind
+					 * mqueue mount point */
 int OffType = 0;			/* offset type:
 					 *     0 == unknown
 					 *     1 == lstat's st_size
@@ -100,6 +101,18 @@ struct pff_tab Pff_tab[] = {
 #else	/* !defined(O_LARGEFILE) */
 	{ (long)0100000,	FF_LARGEFILE	},
 #endif	/* defined(O_LARGEFILE) */
+
+#if	defined(O_CLOEXEC)
+	{ (long)O_CLOEXEC,	POF_CLOEXEC	},
+#endif	/* defined(O_CLOEXEC) */
+
+#if	defined(O_PATH)
+	{ (long)O_PATH,	FF_PATH	},
+#endif	/* defined(O_PATH) */
+
+#if	defined(O_TMPFILE)
+	{ (long)O_TMPFILE,	FF_TMPFILE	},
+#endif	/* defined(O_TMPFILE) */
 
 	{ (long)0,		NULL		}
 };

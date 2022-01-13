@@ -36,11 +36,14 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 2005-2007 Apple Inc. and Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dfile.c,v 1.8 2012/04/10 16:41:04 abe Exp abe $";
 #endif
 
 
 #include "lsof.h"
+
+#if	defined(PROC_FP_GUARDED)
+extern	struct pff_tab	Pgf_tab[];
+#endif	/* defined(PROC_FP_GUARDED) */
 
 
 /*
@@ -286,7 +289,7 @@ print_nm(lf)
 
 #if	defined(PROC_FP_GUARDED)
 	if (extra > 1)
-	    putchar(`,');
+	    putchar(',');
 	if (lf->guardflags) {
 	    struct pff_tab *tp;
 	    long gf;

@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dproc.c,v 1.29 2015/07/07 19:46:33 abe Exp $";
 #endif
 
 #include "lsof.h"
@@ -42,9 +41,32 @@ static char *rcsid = "$Id: dproc.c,v 1.29 2015/07/07 19:46:33 abe Exp $";
  * Local definitions
  */
 
-#define	FDINFO_FLAGS		1	/* fdinfo flags available */
-#define	FDINFO_POS		2	/* fdinfo position available */
-#define FDINFO_ALL		(FDINFO_FLAGS | FDINFO_POS)
+#define	FDINFO_FLAGS		0x1	/* fdinfo flags available */
+#define	FDINFO_POS		0x2	/* fdinfo position available */
+
+#if	defined(HASEPTOPTS)
+#define FDINFO_EVENTFD_ID	0x4	/* fdinfo eventfd-id available */
+#if	defined(HASPTYEPT)
+#define FDINFO_TTY_INDEX	0x8	/* fdinfo tty-index available */
+#endif  /* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+
+#define FDINFO_PID		0x10	/* pidfd pid available */
+#define FDINFO_TFD		0x20	/* fd monitored by eventpoll fd */
+
+#define FDINFO_BASE		(FDINFO_FLAGS | FDINFO_POS)
+#if	defined(HASEPTOPTS)
+#if     defined(HASPTYEPT)
+#define FDINFO_ALL		(FDINFO_BASE | FDINFO_TTY_INDEX | FDINFO_EVENTFD_ID | FDINFO_PID | FDINFO_TFD)
+#else  /* !defined(HASPTYEPT) */
+#define FDINFO_ALL		(FDINFO_BASE | FDINFO_EVENTFD_ID | FDINFO_PID | FDINFO_TFD)
+#endif  /* defined(HASPTYEPT) */
+#define FDINFO_OPTIONAL		(FDINFO_ALL & ~FDINFO_BASE)
+#else   /* !defined(HASEPTOPTS) */
+#define FDINFO_ALL		(FDINFO_BASE | FDINFO_PID | FDINFO_TFD)
+#endif	/* defined(HASEPTOPTS) */
+
+
 #define	LSTAT_TEST_FILE		"/"
 #define LSTAT_TEST_SEEK		1
 
@@ -60,6 +82,19 @@ static char *rcsid = "$Id: dproc.c,v 1.29 2015/07/07 19:46:33 abe Exp $";
 struct l_fdinfo {
 	int flags;			/* flags: line value */
 	off_t pos;			/* pos: line value */
+
+#if	defined(HASEPTOPTS)
+	int eventfd_id;
+#if	defined(HASPTYEPT)
+	int tty_index;			/* pty line index */
+#endif  /* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+
+	int pid;			/* for pidfd */
+
+#define EPOLL_MAX_TFDS 32
+	int tfds [ EPOLL_MAX_TFDS ];
+	size_t tfd_count;
 };
 
 
@@ -81,7 +116,7 @@ static short Ckscko;			/* socket file only checking status:
  */
 
 _PROTOTYPE(static MALLOC_S alloc_cbf,(MALLOC_S len, char **cbf, MALLOC_S cbfa));
-_PROTOTYPE(static int get_fdinfo,(char *p, struct l_fdinfo *fi));
+_PROTOTYPE(static int get_fdinfo,(char *p, int msk, struct l_fdinfo *fi));
 _PROTOTYPE(static int getlinksrc,(char *ln, char *src, int srcl, char **rest));
 _PROTOTYPE(static int isefsys,(char *path, char *type, int l,
 			       efsys_list_t **rep, struct lfile **lfr));
@@ -90,9 +125,11 @@ _PROTOTYPE(static int read_id_stat,(char *p, int id, char **cmd, int *ppid,
 				    int *pgid));
 _PROTOTYPE(static void process_proc_map,(char *p, struct stat *s, int ss));
 _PROTOTYPE(static int process_id,(char *idp, int idpl, char *cmd, UID_ARG uid,
-				  int pid, int ppid, int pgid, int tid));
+				  int pid, int ppid, int pgid, int tid,
+				  char *tcmd));
 _PROTOTYPE(static int statEx,(char *p, struct stat *s, int *ss));
- 
+
+_PROTOTYPE(static void snp_eventpoll, (char *p, int len, int *tfds, int tfd_count));
 
 #if	defined(HASSELINUX)
 _PROTOTYPE(static int cmp_cntx_eq,(char *pcntx, char *ucntx));
@@ -182,9 +219,10 @@ void
 gather_proc_info()
 {
 	char *cmd, *tcmd;
+	char cmdbuf[MAXPATHLEN];
 	struct dirent *dp;
 	unsigned char ht, pidts;
-	int n, nl, pgid, pid, ppid, rv, tid, tpgid, tppid, tx;
+	int n, nl, pgid, pid, ppid, prv, rv, tid, tpgid, tppid, tx;
 	static char *path = (char *)NULL;
 	static int pathl = 0;
 	static char *pidpath = (char *)NULL;
@@ -252,7 +290,7 @@ gather_proc_info()
 	     * If only ORed process selection options have been specified,
 	     * enable conditional file skipping and socket file only checking.
 	     */
-		if ((Selflags & SELFILE) || !(Selflags & SELPROC))
+		if ((Selflags & SELFILE) || !(Selflags & SelProc))
 		    Cckreg = Ckscko = 0;
 		else
 		    Cckreg = Ckscko = 1;
@@ -301,13 +339,26 @@ gather_proc_info()
 		continue;
 	    uid = (UID_ARG)sb.st_uid;
 	    ht = pidts = 0;
+	/*
+	 * Get the PID's command name.
+	 */
+	    (void) make_proc_path(pidpath, n, &path, &pathl, "stat");
+	    if ((prv = read_id_stat(path, pid, &cmd, &ppid, &pgid)) < 0) 
+		cmd = "(unknown)";
 
 #if	defined(HASTASKS)
 	/*
-	 * If task reporting is selected, check the tasks of the process first,
-	 * so that the "-p<PID> -aK" options work properly.
+	 * Task reporting has been selected, so save the process' command
+	 * string, so that task processing won't change it in the buffer of
+	 * read_id_stat().
+	 *
+	 * Check the tasks of the process first, so that the "-p<PID> -aK"
+	 * options work properly.
 	 */
-	    if ((Selflags & SELTASK)) {
+	    else if (!IgnTasks && (Selflags & SELTASK)) {
+		strncpy(cmdbuf, cmd, sizeof(cmdbuf) - 1);
+		cmdbuf[sizeof(cmdbuf) - 1] = '\0';
+		cmd = cmdbuf;
 		(void) make_proc_path(pidpath, n, &taskpath, &taskpathl,
 				      "task");
 		tx = n + 4;
@@ -361,8 +412,8 @@ gather_proc_info()
 		    /*
 		     * Attempt to record the task.
 		     */
-			if (!process_id(tidpath, (tx + 1 + nl+ 1), tcmd, uid,
-					pid, tppid, tpgid, tid))
+			if (!process_id(tidpath, (tx + 1 + nl+ 1), cmd, uid,
+					pid, tppid, tpgid, tid, tcmd))
 			{
 			    ht = 1;
 			}
@@ -375,15 +426,14 @@ gather_proc_info()
 	/*
 	 * If the main process is a task and task selection has been specified
 	 * along with option ANDing, enter the main process temporarily as a
-	 * task,  so that the "-aK" option set lists the main process along
+	 * task, so that the "-aK" option set lists the main process along
 	 * with its tasks.
 	 */
-	    (void) make_proc_path(pidpath, n, &path, &pathl, "stat");
-	    if (((rv = read_id_stat(path, pid, &cmd, &ppid, &pgid)) >= 0) 
-	    &&   (rv != 1))
-	    {
-		tid = (Fand && ht && pidts && (Selflags & SELTASK)) ? pid : 0;
-		if ((!process_id(pidpath, n, cmd, uid, pid, ppid, pgid, tid))
+	    if ((prv >= 0) && (prv != 1)) {
+		tid = (Fand && ht && pidts && !IgnTasks && (Selflags & SELTASK))
+		    ? pid : 0;
+		if ((!process_id(pidpath, n, cmd, uid, pid, ppid, pgid, tid,
+				 (char *)NULL))
 		&&  tid)
 		{
 		    Lp->tid = 0;
@@ -398,8 +448,10 @@ gather_proc_info()
  */
 
 static int
-get_fdinfo(p, fi)
+get_fdinfo(p, msk, fi)
 	char *p;			/* path to fdinfo file */
+	int msk;			/* mask for information type: e.g.,
+					 * the FDINFO_* definition */
 	struct l_fdinfo *fi;		/* pointer to local fdinfo values
 					 * return structure */
 {
@@ -414,17 +466,28 @@ get_fdinfo(p, fi)
  */
 	if (!fi)
 	    return(0);
+
+#if	defined(HASEPTOPTS)
+	fi->eventfd_id = -1;
+#if	defined(HASPTYEPT)
+	fi->tty_index = -1;
+#endif	/* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+	fi->pid = -1;
+	fi->tfd_count = 0;
+
 	if (!p || !*p || !(fs = fopen(p, "r")))
 	    return(0);
 /*
  * Read the fdinfo file.
  */
 	while (fgets(buf, sizeof(buf), fs)) {
+	    int opt_flg = 0;
 	    if (get_fields(buf, (char *)NULL, &fp, (int *)NULL, 0) < 2)
 		continue;
 	    if (!fp[0] || !*fp[0] || !fp[1] || !*fp[1])
 		continue;
-	    if (!strcmp(fp[0], "flags:")) {
+	    if ((msk & FDINFO_FLAGS) && !strcmp(fp[0], "flags:")) {
 
 	    /*
 	     * Process a "flags:" line.
@@ -434,9 +497,9 @@ get_fdinfo(p, fi)
 		||  !ep || *ep)
 		    continue;
 		fi->flags = (unsigned int)ul;
-		if ((rv |= FDINFO_FLAGS) == FDINFO_ALL)
+		if ((rv |= FDINFO_FLAGS) == msk)
 		    break;
-	    } else if (!strcmp(fp[0], "pos:")) {
+	    } else if ((msk & FDINFO_POS) && !strcmp(fp[0], "pos:")) {
 
 	    /*
 	     * Process a "pos:" line.
@@ -446,8 +509,76 @@ get_fdinfo(p, fi)
 		||  !ep || *ep)
 		    continue;
 		fi->pos = (off_t)ull;
-		if ((rv |= FDINFO_POS) == FDINFO_ALL)
+		if ((rv |= FDINFO_POS) == msk)
 		    break;
+
+	    } else if (
+		       ((msk & FDINFO_PID) && !strcmp(fp[0], "Pid:")
+			&& ((opt_flg = FDINFO_PID)))
+		       || ((msk & FDINFO_TFD) && !strcmp(fp[0], "tfd:")
+			   && ((opt_flg = FDINFO_TFD)))
+#if	defined(HASEPTOPTS)
+		       || ((msk & FDINFO_EVENTFD_ID) && !strcmp(fp[0], "eventfd-id:")
+			   && ((opt_flg = FDINFO_EVENTFD_ID)))
+#if	defined(HASPTYEPT)
+		       || ((msk & FDINFO_TTY_INDEX) && !strcmp(fp[0], "tty-index:")
+			   && ((opt_flg = FDINFO_TTY_INDEX)))
+#endif	/* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+		       ) {
+		int val;
+	    /*
+	     * Process a "tty-index:", "eventfd-id:", "Pid:", or "tfid:" line.
+	     */
+		ep = (char *)NULL;
+		if ((ul = strtoul(fp[1], &ep, 0)) == ULONG_MAX
+		||  !ep || *ep)
+		     continue;
+
+		val = (int)ul;
+		if (val < 0) {
+		/*
+		 * Oops! If integer overflow occurred, reset the field.
+		 */
+		     val = -1;
+		}
+
+		rv |= opt_flg;
+		switch (opt_flg) {
+#if	defined(HASEPTOPTS)
+		case FDINFO_EVENTFD_ID:
+		    fi->eventfd_id = val;
+		    break;
+#if	defined(HASPTYEPT)
+		case FDINFO_TTY_INDEX:
+		    fi->tty_index = val;
+		    break;
+#endif	/* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+		case FDINFO_PID:
+		    fi->pid = val;
+		    break;
+		case FDINFO_TFD:
+		    if (fi->tfd_count < EPOLL_MAX_TFDS) {
+			fi->tfds [fi->tfd_count] = val;
+			fi->tfd_count++;
+		    }
+		    break;
+		}
+
+		if ((
+			/* There can be more than one tfd: lines.
+			   So even if we found one, we can not exit the loop.
+			   However, we can assume tfd lines are continuous. */
+			opt_flg != FDINFO_TFD
+			&& (rv == msk || (rv & FDINFO_TFD))
+		    )
+		    || (
+			/* Too many tfds. */
+			opt_flg == FDINFO_TFD
+			&& rv == msk && fi->tfd_count == EPOLL_MAX_TFDS
+		    ))
+		  break;
 	    }
 	}
 	fclose(fs);
@@ -534,7 +665,7 @@ initialize()
 	    if (!OffType) {
 		(void) snpf(path, sizeof(path), "%s/%d/fdinfo/%d", PROCFS,
 			    Mypid, fd);
-		if (get_fdinfo(path, &fi) & FDINFO_POS) {
+		if (get_fdinfo(path, FDINFO_POS, &fi) & FDINFO_POS) {
 		    if (fi.pos == (off_t)LSTAT_TEST_SEEK)
 			OffType = 2;
 		}
@@ -797,7 +928,7 @@ open_proc_stream(p, m, buf, sz, act)
  */
 
 static int
-process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
+process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid, tcmd)
 	char *idp;			/* pointer to ID's path */
 	int idpl;			/* pointer to ID's path length */
 	char *cmd;			/* pointer to ID's command */
@@ -806,8 +937,9 @@ process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
 	int ppid;			/* parent PID */
 	int pgid;			/* parent GID */
 	int tid;			/* task ID, if non-zero */
+	char *tcmd;			/* task command, if non-NULL) */
 {
-	int av;
+	int av = 0;
 	static char *dpath = (char *)NULL;
 	static int dpathl = 0;
 	short efs, enls, enss, lnk, oty, pn, pss, sf;
@@ -854,11 +986,27 @@ process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
 	 * socket file only checking, based on the process' selection
 	 * status.
 	 */
-	    Ckscko = (sf & SELPROC) ? 0 : 1;
+	    Ckscko = (sf & SelProc) ? 0 : 1;
 	}
 	alloc_lproc(pid, pgid, ppid, uid, cmd, (int)pss, (int)sf);
-	Lp->tid = tid;
 	Plf = (struct lfile *)NULL;
+
+#if	defined(HASTASKS)
+/*
+ * Enter task information.
+ */
+	Lp->tid = tid;
+	if (tid && tcmd) {
+	    if (!(Lp->tcmd = mkstrcpy(tcmd, (MALLOC_S *)NULL))) {
+		(void) fprintf(stderr,
+		    "%s: PID %d, TID %d, no space for task name: ",
+		    Pn, pid, tid);
+		safestrprt(tcmd, stderr, 1);
+		Exit(1);
+	    }
+	}
+#endif	/* defined(HASTASKS) */
+
 /*
  * Process the ID's current working directory info.
  */
@@ -1088,6 +1236,7 @@ process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
 		zeromem((char *)&sb, sizeof(sb));
 		lnk = ss = 0;
 		if (!Fwarn) {
+		    ls = 0;
 		    (void) snpf(nmabuf, sizeof(nmabuf), "(readlink: %s)",
 			strerror(errno));
 		    nmabuf[sizeof(nmabuf) - 1] = '\0';
@@ -1147,9 +1296,29 @@ process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
 	    }
 	    if (pn || (efs && lfr && oty)) {
 		if (oty) {
+		    int fdinfo_mask = FDINFO_BASE;
 		    (void) make_proc_path(ipath, j, &pathi, &pathil,
 					  fp->d_name);
-		    if ((av = get_fdinfo(pathi, &fi)) & FDINFO_POS) {
+
+		    if (rest && rest[0] == '['
+			&& rest[1] == 'e' && rest[2] == 'v' && rest[3] == 'e'
+			&& rest[4] == 'n' && rest[5] == 't') {
+#if	defined(HASEPTOPTS)
+			if (rest[6] == 'f')
+			    fdinfo_mask |= FDINFO_EVENTFD_ID;
+#endif	/* defined(HASEPTOPTS) */
+			else if (rest[6] == 'p')
+			    fdinfo_mask |= FDINFO_TFD;
+		    }
+#if	defined(HASEPTOPTS)
+#if	defined(HASPTYEPT)
+		    fdinfo_mask |= FDINFO_TTY_INDEX;
+#endif  /* defined(HASPTYEPT) */
+#endif	/* defined(HASEPTOPTS) */
+		    if (rest && rest[0] == '[' && rest[1] == 'p')
+			fdinfo_mask |= FDINFO_PID;
+
+		    if ((av = get_fdinfo(pathi,fdinfo_mask,&fi)) & FDINFO_POS) {
 			if (efs) {
 			    if (Foffset) {
 				lfr->off = (SZOFFTYPE)fi.pos;
@@ -1178,8 +1347,50 @@ process_id(idp, idpl, cmd, uid, pid, ppid, pgid, tid)
 		if (pn) {
 		    process_proc_node(lnk ? pbuf : path, path, &sb, ss, &lsb,
 				      ls);
-		    if ((Lf->ntype == N_ANON_INODE) && rest && *rest)
-			enter_nm(rest);
+		    if (Lf->ntype == N_ANON_INODE) {
+			if (rest && *rest) {
+#if	defined(HASEPTOPTS)
+			    if (fi.eventfd_id != -1
+				&& strcmp(rest, "[eventfd]") == 0) {
+				(void) snpf(rest,
+					    sizeof(pbuf) - (rest - pbuf),
+					    "[eventfd:%d]", fi.eventfd_id);
+			    }
+#endif	/* defined(HASPTYEPT) */
+			    if (fi.pid != -1
+				&& strcmp(rest, "[pidfd]") == 0) {
+				(void) snpf (rest,
+					     sizeof(pbuf) - (rest - pbuf),
+					     "[pidfd:%d]", fi.pid);
+			    }
+			    if (fi.tfd_count > 0
+				&& strcmp(rest, "[eventpoll]") == 0) {
+				snp_eventpoll (rest, sizeof(pbuf) - (rest - pbuf),
+					       fi.tfds, fi.tfd_count);
+			    }
+
+			    enter_nm(rest);
+			}
+#if	defined(HASEPTOPTS)
+			if (FeptE && fi.eventfd_id != -1) {
+			    enter_evtfdinfo(fi.eventfd_id);
+			    Lf->eventfd_id = fi.eventfd_id;
+			    Lf->sf |= SELEVTFDINFO;
+			}
+#endif	/* defined(HASPTYEPT) */
+		    }
+#if	defined(HASEPTOPTS) && defined(HASPTYEPT)
+		    else if (FeptE
+			 &&  Lf->rdev_def
+			 &&  is_pty_ptmx(Lf->rdev)
+			 &&  (av & FDINFO_TTY_INDEX)
+		    ) {
+			    enter_ptmxi(fi.tty_index);
+			    Lf->tty_index = fi.tty_index;
+			    Lf->sf |= SELPTYINFO;
+		    }
+#endif	/* defined(HASEPTOPTS) && defined(HASPTYEPT) */
+
 		    if (Lf->sf)
 			link_lfile();
 		}
@@ -1434,7 +1645,7 @@ read_id_stat(p, id, cmd, ppid, pgid)
 					 * type */
 {
 	char buf[MAXPATHLEN], *cp, *cp1, **fp;
-	int ch, cx, es, nf;
+	int ch, cx, es, nf, pc;
 	static char *cbf = (char *)NULL;
 	static MALLOC_S cbfa = 0;
 	FILE *fs;
@@ -1474,11 +1685,14 @@ read_id_stat_exit:
 	if (!cp || (*cp != '('))
 	    goto read_id_stat_exit;
 	cp++;
+	pc = 1;			/* start the parenthesis balance count at 1 */
 /*
  * Enter the command characters safely.  Supply them from the initial read
  * of the stat file line, a '\n' if the initial read didn't yield a ')'
  * command closure, or by reading the rest of the command a character at
- * a time from the stat file.
+ * a time from the stat file.  Count embedded '(' characters and balance
+ * them with embedded ')' characters.  The opening '(' starts the balance
+ * count at one.
  */
 	for (cx = es = 0;;) {
 	    if (!es)
@@ -1487,8 +1701,18 @@ read_id_stat_exit:
 		if ((ch = fgetc(fs)) == EOF)
 		    goto read_id_stat_exit;
 	    }
-	    if (ch == ')')		/* ')' closes the command */
-		break;
+	    if (ch == '(')		/* a '(' advances the balance count */
+		pc++;
+	    if (ch == ')') {
+	    
+	    /*
+	     * Balance parentheses when a closure is encountered.  When
+	     * they are balanced, this is the end of the command.
+	     */
+		pc--;
+		if (!pc)
+		    break;
+	    }
 	    if ((cx + 2) > cbfa)
 		cbfa = alloc_cbf((cx + 2), &cbf, cbfa);
 	    cbf[cx] = ch;
@@ -1610,4 +1834,86 @@ statEx(p, s, ss)
 	errno = ensv;
 	*ss = 0;
 	return(1);
+}
+
+static int
+cal_order (int n)
+{
+	int i = 0;
+	do {
+	    n /= 10;
+	    i++;
+	} while (n);
+	return i;
+}
+
+static int
+snp_eventpoll_fds(char *p, int len, int *tfds, int count)
+{
+	int wl = 0;
+	int i;
+
+	if (len > 0)
+	    p[0] = '\0';
+
+	for (i = 0; i < count; i++) {
+	    int is_last_item = (i == count - 1);
+	    int needs = cal_order (tfds [i]) + (is_last_item? 0: 3);
+
+	    if ((len - wl + (wl? 2: 0)) <= needs) {
+		/* No space to print the tfd. */
+		break;
+	    }
+
+	    if (wl) {
+		/* Rewrite the last "..." to ",". */
+		wl -= 3;
+		p[wl++] = ',';
+	    }
+	    wl += snpf(p + wl, len - wl,
+		       (is_last_item? "%d": "%d..."), tfds[i]);
+	}
+
+	return wl;
+}
+
+static int
+fd_compare(const void *a, const void *b)
+{
+	int ia = *(int *)a, ib = *(int *)b;
+
+	return ia - ib;
+}
+
+static void
+snp_eventpoll(char *p, int len, int *tfds, int tfd_count)
+{
+	/* Reserve the area for prefix: "[eventpoll:" */
+	len -= 11;
+	/* Reserve the area for postfix */
+	len -= ((tfd_count == EPOLL_MAX_TFDS)
+		? 4 /* "...]" */
+		: 1 /* "]" */
+	       ) + 1 /* for the last \0 */
+	;
+
+	if (len > 1) {
+	    qsort (tfds, tfd_count, sizeof (tfds[0]), fd_compare);
+
+	    p[10] = ':'; /* "[eventpoll]" => "[eventpoll:" */
+	    int wl = snp_eventpoll_fds(p + 11, len, tfds, tfd_count);
+
+	    const char *postfix = (
+		/* If the buffer doesn't have enough space, snp_eventpoll_fds puts
+		 * "..." at the end of the buffer. In that case we don't
+		 have to "..." here. */
+		(wl > 3 && p [11 + wl - 1] == '.')
+		? "]"
+		: ((tfd_count == EPOLL_MAX_TFDS)
+		   /* File descriptors more than EPOLL_MAX_TFDS are associated to
+		    * the eventpoll fd. */
+		   ? "...]"
+		   : "]"));
+	    strcpy(p + 11 + wl, postfix);
+	}
 }

@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dmnt.c,v 1.17 2013/01/02 17:01:43 abe Exp $";
 #endif
 
 
@@ -329,8 +328,8 @@ no_space_for_mount:
 		sb.st_mode = S_IFDIR | 0777;
 		if (!Fwarn) {
 		    (void) fprintf(stderr,
-			"      assuming \"dev=%x\" from mount table\n",
-			sb.st_dev);
+			"      assuming \"dev=%lx\" from mount table\n",
+			(unsigned long)sb.st_dev);
 		}
 	    }
 	/*

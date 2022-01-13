@@ -99,6 +99,21 @@ static char copyright[] =
 #endif	/* defined(LT_DIAL_bsdi) */
 
 
+#if	defined(LT_DIAL_freebsd)
+/*
+ *FreeBSD-specific items
+*/
+
+#undef	XDINDEV
+#define	XDINDEV		16
+# if	defined(LT_DEV64)
+#undef	X2DEV_T
+#define	X2DEV_T		unsigned long long
+#define	major_X(dp, em)	((int)((x2dev(dp, em) >> 32) & 0xffffffff))
+# endif	/* defined(LT_DEV64) */
+#endif	/* defined(LT_DIAL_freebsd) */
+
+
 #if	defined(LT_DIAL_osr)
 /*
  * OpenUNIX-specific items
@@ -172,6 +187,14 @@ static char copyright[] =
 
 #include <sys/mkdev.h>
 #endif	/* defined(LT_DIAL_uw) */
+
+#if	defined(LT_DIAL_linux)
+/*
+ * Linux-specific items
+ */
+
+#include <sys/sysmacros.h>
+#endif	/* defined(LT_DIAL_linux) */
 
 
 /*

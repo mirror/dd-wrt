@@ -32,11 +32,14 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dnode.c,v 1.25 2015/07/07 19:46:33 abe Exp $";
 #endif
 
 
 #include "lsof.h"
+
+#if	defined(HASEPTOPTS) && defined(HASPTYEPT)
+#include <linux/major.h>
+#endif	/* defined(HASEPTOPTS) && defined(HASPTYEPT) */
 
 
 /*
@@ -88,7 +91,13 @@ _PROTOTYPE(static void enter_pinfo,(void));
  */
 
 #if	defined(HASEPTOPTS)
-static pxinfo_t **Pinfo = (pxinfo_t **)NULL;
+static pxinfo_t **Pinfo = (pxinfo_t **)NULL;	/* pipe endpoint hash buckets */
+# if	defined(HASPTYEPT)
+static pxinfo_t **PtyInfo = (pxinfo_t **)NULL;	/* pseudoterminal endpoint hash
+						 * buckets */
+# endif	/* defined(HASPTYEPT) */
+static pxinfo_t **PSXMQinfo = (pxinfo_t **)NULL;/* posix msg queue endpoint hash buckets */
+static pxinfo_t **EvtFDinfo = (pxinfo_t **)NULL;/* envetfd endpoint hash buckets */
 #endif	/* defined(HASEPTOPTS) */
 
 
@@ -116,6 +125,110 @@ check_lock()
 
 
 #if	defined(HASEPTOPTS)
+static void
+endpoint_pxinfo_hash(pxinfo_t **pinfo_hash, const size_t nbuckets,
+		     void (* free_elt) (void *))
+{
+	int h;				/* hash index */
+	pxinfo_t *pi, *pp;		/* temporary pointers */
+
+	if (!pinfo_hash)
+	    return;
+	for (h = 0; h < nbuckets; h++) {
+	    if ((pi = pinfo_hash[h])) {
+		do {
+		    pp = pi->next;
+		    (void) (* free_elt)
+		    ((FREE_P *)pi);
+		    pi = pp;
+		} while (pi);
+		pinfo_hash[h] = (pxinfo_t *)NULL;
+	    }
+	}
+}
+
+static void
+endpoint_enter(pxinfo_t **pinfo_hash, const char *table_name, int id)
+{
+	int h;
+	struct lfile *lf;		/* local file structure pointer */
+	struct lproc *lp;		/* local proc structure pointer */
+	pxinfo_t *np, *pi, *pe;		/* inode hash pointers */
+
+    /*
+     * Make sure this is a unique entry.
+     */
+	for (h = HASHPINFO(id), pi = pinfo_hash[h], pe = (pxinfo_t *)NULL;
+	     pi;
+	     pe = pi, pi = pi->next
+	    ) {
+	    lf = pi->lf;
+	    lp = &Lproc[pi->lpx];
+	    if (pi->ino == id) {
+		if ((lp->pid == Lp->pid) && !strcmp(lf->fd, Lf->fd))
+		    return;
+	    }
+	}
+   /*
+    * Allocate, fill and link a new pipe info structure used for pty
+    * to the end of the pty device hash chain.
+    */
+	if (!(np = (pxinfo_t *)malloc(sizeof(pxinfo_t)))) {
+	    (void) fprintf(stderr,
+		"%s: no space for pipeinfo for %s, PID %d, FD %s\n",
+		table_name,
+		Pn, Lp->pid, Lf->fd);
+	    Exit(1);
+	}
+	np->ino = id;
+	np->lf = Lf;
+	np->lpx = Lp - Lproc;
+	np->next = (pxinfo_t *)NULL;
+	if (pe)
+	    pe->next = np;
+	else
+	    pinfo_hash[h] = np;
+}
+
+static pxinfo_t *
+endpoint_find(pxinfo_t **pinfo_hash,
+	      int (* is_acceptable) (pxinfo_t *, int, struct lfile *),
+	      int pid, struct lfile *lf, int id, pxinfo_t *pp)
+{
+	int h;				/* hash result */
+	pxinfo_t *pi;			/* pipe info pointer */
+
+	if (pinfo_hash) {
+	    if (pp)
+		pi = pp;
+	    else {
+		h = HASHPINFO(id);
+		pi = pinfo_hash[h];
+	    }
+	    while (pi) {
+		if (pi->ino == id && is_acceptable(pi, pid, lf))
+		    return (pi);
+		pi = pi->next;
+	    }
+	}
+	return ((pxinfo_t *)NULL);
+}
+
+
+/*
+ * endpoint_accept_other_than_self() -- a helper function return true if
+ * fd associated with pi is not the same as fd associated with lf.
+ */
+
+static int
+endpoint_accept_other_than_self(pxinfo_t *pi, int pid, struct lfile *lf)
+{
+	struct lfile *ef = pi->lf;
+	struct lproc *ep = &Lproc[pi->lpx];
+	return (strcmp(lf->fd, ef->fd)) || (pid != ep->pid);
+}
+
+
 /*
  * clear_pinfo() -- clear allocated pipe info
  */
@@ -123,21 +236,7 @@ check_lock()
 void
 clear_pinfo()
 {
-	int h;				/* hash index */
-	pxinfo_t *pi, *pp;		/* temporary pointers */
-
-	if (!Pinfo)
-	    return;
-	for (h = 0; h < PINFOBUCKS; h++) {
-	    if ((pi = Pinfo[h])) {
-		do {
-		    pp = pi->next;
-		    (void) free((FREE_P *)pi);
-		    pi = pp;
-		} while (pi);
-		Pinfo[h] = (pxinfo_t *)NULL;
-	    }
-	}
+	endpoint_pxinfo_hash(Pinfo, PINFOBUCKS, free);
 }
 
 
@@ -151,11 +250,6 @@ clear_pinfo()
 static void
 enter_pinfo()
 {
-	int h;				/* hash result */
-	struct lfile *lf;		/* local file structure pointer */
-	struct lproc *lp;		/* local proc structure pointer */
-	pxinfo_t *np, *pi, *pe;		/* pipe info pointers */
-
 	if (!Pinfo) {
 	/*
 	 * Allocate pipe info hash buckets.
@@ -167,75 +261,255 @@ enter_pinfo()
 		    Exit(1);
 	    }
 	}
-    /*
-     * Make sure this is a unique entry.
-     */
-	for (h = HASHPINFO(Lf->inode), pi = Pinfo[h], pe = (pxinfo_t *)NULL;
-	     pi;
-	     pe = pi, pi = pi->next
-	) {
-	    lf = pi->lf;
-	    lp = &Lproc[pi->lpx];
-	    if (pi->ino == Lf->inode) {
-		if ((lp->pid == Lp->pid) && !strcmp(lf->fd, Lf->fd))
-		    return;
-	    }
-	}
-   /*
-    * Allocate, fill and link a new pipe info structure to the end of
-    * the pipe inode hash chain.
-    */
-	if (!(np = (pxinfo_t *)malloc(sizeof(pxinfo_t)))) {
-	    (void) fprintf(stderr,
-		"%s: no space for pipeinfo, PID %d, FD %s\n",
-		Pn, Lp->pid, Lf->fd);
-	    Exit(1);
-	}
-	np->ino = Lf->inode;
-	np->lf = Lf;
-	np->lpx = Lp - Lproc;
-	np->next = (pxinfo_t *)NULL;
-	if (pe)
-	    pe->next = np;
-	else
-	    Pinfo[h] = np;
+	endpoint_enter(Pinfo, "pipeinfo", Lf->inode);
 }
 
 
 /*
- * find_pendinfo() -- find pipe end info
+ * find_pepti() -- find pipe end point info
  */
 
 pxinfo_t *
-find_pendinfo(lf, pp)
+find_pepti(pid, lf, pp)
+	int pid;			/* pid of the process owning lf */
 	struct lfile *lf;		/* pipe's lfile */
 	pxinfo_t *pp;			/* previous pipe info (NULL == none) */
 {
-	struct lfile *ef;		/* pipe end local file structure */
-	int h;				/* hash result */
-	pxinfo_t *pi;			/* pipe info pointer */
+	return endpoint_find(Pinfo,
+			     endpoint_accept_other_than_self,
+			     pid, lf, lf->inode, pp);
+}
 
-	if (Pinfo) {
-	    if (pp)
-		pi = pp;
-	     else {
-		h = HASHPINFO(lf->inode);
-		pi = Pinfo[h];
-	    }
-	    while (pi) {
-		if (pi->ino == lf->inode) {
-		    ef = pi->lf;
-		    if (strcmp(lf->fd, ef->fd))
-			return(pi);
-	 	}
-		pi = pi->next;
+#if	defined(HASPTYEPT)
+
+
+/*
+ * clear_ptyinfo() -- clear allocated pseudoterminal info
+ */
+
+void
+clear_ptyinfo()
+{
+	endpoint_pxinfo_hash(PtyInfo, PINFOBUCKS, free);
+}
+
+
+/*
+ * enter_ptmxi() -- enter pty info
+ *
+ * 	entry	Lf = local file structure pointer
+ * 		Lp = local process structure pointer
+ */
+
+void
+enter_ptmxi(mn)
+	int mn;				/* minor number of device */
+{
+	/*
+	 * Allocate pipe info hash buckets (but used for pty).
+	 */
+	if (!PtyInfo) {
+	    if (!(PtyInfo = (pxinfo_t **)calloc(PINFOBUCKS,
+			    sizeof(pxinfo_t *))))
+	    {
+		(void) fprintf(stderr,
+		    "%s: no space for %d pty info buckets\n", Pn, PINFOBUCKS);
+		    Exit(1);
 	    }
 	}
-	return((pxinfo_t *)NULL);
+	endpoint_enter(PtyInfo, "pty", mn);
+}
 
+/*
+ * ptyepti_accept_ptmx() -- a helper function return whether lfile is pty ptmx or not
+ */
+
+static int
+ptyepti_accept_ptmx(pxinfo_t *pi, int pid, struct lfile *lf)
+{
+	struct lfile *ef = pi->lf;
+	return is_pty_ptmx(ef->rdev);
+}
+
+/*
+ * ptyepti_accept_slave() -- a helper function returns whether lfile is pty slave or not
+ */
+
+static int
+ptyepti_accept_slave(pxinfo_t *pi, int pid, struct lfile *lf)
+{
+	struct lfile *ef = pi->lf;
+	return is_pty_slave(GET_MAJ_DEV(ef->rdev));
+}
+
+/*
+ * find_ptyepti() -- find pseudoterminal end point info
+ */
+
+pxinfo_t *
+find_ptyepti(pid, lf, m, pp)
+	int pid;
+	struct lfile *lf;		/* pseudoterminal's lfile */
+	int m;				/* minor number type:
+					 *     0 == use tty_index
+					 *     1 == use minor device */
+	pxinfo_t *pp;			/* previous pseudoterminal info
+					 * (NULL == none) */
+{
+	return endpoint_find(PtyInfo,
+			     m ? ptyepti_accept_ptmx : ptyepti_accept_slave,
+			     pid, lf, m ? GET_MIN_DEV(lf->rdev) : lf->tty_index, pp);
+}
+
+
+/*
+ * is_pty_slave() -- is a pseudoterminal a slave device
+ */
+
+int
+is_pty_slave(sm)
+	int sm;				/* slave major device number */
+{
+	/* linux/Documentation/admin-guide/devices.txt
+	   -------------------------------------------
+	   136-143 char	Unix98 PTY slaves
+		  0 = /dev/pts/0	First Unix98 pseudo-TTY
+		  1 = /dev/pts/1	Second Unix98 pseudo-TTY
+		    ...
+
+		These device nodes are automatically generated with
+		the proper permissions and modes by mounting the
+		devpts filesystem onto /dev/pts with the appropriate
+		mount options (distribution dependent, however, on
+		*most* distributions the appropriate options are
+		"mode=0620,gid=<gid of the "tty" group>".) */
+	if ((UNIX98_PTY_SLAVE_MAJOR <= sm)
+	&&  (sm < (UNIX98_PTY_SLAVE_MAJOR + UNIX98_PTY_MAJOR_COUNT))
+	) {
+	    return 1;
+	}
+	return 0;
+}
+
+
+/*
+ * is_pty_ptmx() -- is a pseudoterminal a master clone device
+ */
+
+int
+is_pty_ptmx(dev)
+	dev_t dev;			/* device number */
+{
+	if ((GET_MAJ_DEV(dev) == TTYAUX_MAJOR) && (GET_MIN_DEV(dev) == 2))
+	    return 1;
+	return 0;
+}
+#endif	/* defined(HASPTYEPT) */
+
+
+/*
+ * clear_psxmqinfo -- clear allocate posix mq info
+ */
+
+void
+clear_psxmqinfo()
+{
+	endpoint_pxinfo_hash(PSXMQinfo, PINFOBUCKS, free);
+}
+
+
+/*
+ * enter_psxmqinfo() -- enter posix mq info
+ *
+ *	entry	Lf = local file structure pointer
+ *		Lp = local process structure pointer
+ */
+
+void
+enter_psxmqinfo()
+{
+	if (!PSXMQinfo) {
+	/*
+	 * Allocate posix mq info hash buckets.
+	 */
+	    if (!(PSXMQinfo = (pxinfo_t **)calloc(PINFOBUCKS, sizeof(pxinfo_t *))))
+	    {
+		(void) fprintf(stderr,
+		    "%s: no space for %d posix mq info buckets\n", Pn, PINFOBUCKS);
+		    Exit(1);
+	    }
+	}
+	endpoint_enter(PSXMQinfo, "psxmqinfo", Lf->inode);
+}
+
+
+/*
+ * find_psxmqinfo() -- find posix mq end point info
+ */
+
+pxinfo_t *
+find_psxmqinfo(pid, lf, pp)
+	int pid;			/* pid of the process owning lf */
+	struct lfile *lf;		/* posix mq's lfile */
+	pxinfo_t *pp;			/* previous posix mq info (NULL == none) */
+{
+	return endpoint_find(PSXMQinfo,
+			     endpoint_accept_other_than_self,
+			     pid, lf, lf->inode, pp);
+}
+
+/*
+ * clear_evtfdinfo -- clear allocate eventfd info
+ */
+
+void
+clear_evtfdinfo()
+{
+	endpoint_pxinfo_hash(EvtFDinfo, PINFOBUCKS, free);
+}
+
+
+/*
+ * enter_evtfdinfo() -- enter eventfd info
+ *
+ *	entry	Lf = local file structure pointer
+ *		Lp = local process structure pointer
+ */
+
+void
+enter_evtfdinfo(int id)
+{
+	if (!EvtFDinfo) {
+	/*
+	 * Allocate eventfd info hash buckets.
+	 */
+	    if (!(EvtFDinfo = (pxinfo_t **)calloc(PINFOBUCKS, sizeof(pxinfo_t *))))
+	    {
+		(void) fprintf(stderr,
+		    "%s: no space for %d envet fd info buckets\n", Pn, PINFOBUCKS);
+		    Exit(1);
+	    }
+	}
+	endpoint_enter(EvtFDinfo, "evtfdinfo", id);
+}
+
+
+/*
+ * find_evtfdinfo() -- find eventfd end point info
+ */
+
+pxinfo_t *
+find_evtfdinfo(pid, lf, pp)
+	int pid;			/* pid of the process owning lf */
+	struct lfile *lf;		/* eventfd's lfile */
+	pxinfo_t *pp;			/* previous eventfd info (NULL == none) */
+{
+	void *r = endpoint_find(EvtFDinfo,
+			     endpoint_accept_other_than_self,
+			     pid, lf, lf->eventfd_id, pp);
+	return r;
 }
 #endif	/* defined(HASEPTOPTS) */
-
 
 
 /*
@@ -559,6 +833,17 @@ process_proc_node(p, pbr, s, ss, l, ls)
 	    if (ss & SB_RDEV) {
 		Lf->rdev = s->st_rdev;
 		Lf->rdev_def = 1;
+
+#if	defined(HASEPTOPTS) && defined(HASPTYEPT)
+		if (FeptE
+		&&  (Ntype == N_CHR)
+		&&  is_pty_slave(GET_MAJ_DEV(Lf->rdev))
+		) {
+		    enter_ptmxi(GET_MIN_DEV(Lf->rdev));
+		    Lf->sf |= SELPTYINFO;
+		}
+#endif	/* defined(HASEPTOPTS) && defined(HASPTYEPT) */
+
 	    }
 	}
 	if (Ntype == N_REGLR && (HasNFS == 2)) {
@@ -584,6 +869,9 @@ process_proc_node(p, pbr, s, ss, l, ls)
 	    if ((Lf->ntype == N_FIFO) && FeptE) {
 	    	(void) enter_pinfo();
 		Lf->sf |= SELPINFO;
+	    } else if ((Lf->dev == MqueueDev) && FeptE) {
+		(void) enter_psxmqinfo();
+		Lf->sf |= SELPSXMQINFO;
 	    }
 #endif	/* defined(HASEPTOPTS) */
 
@@ -645,7 +933,10 @@ process_proc_node(p, pbr, s, ss, l, ls)
 		tn = "FIFO";
 		break;
 	    case S_IFREG:
-		tn = "REG";
+		if (Lf->dev == MqueueDev)
+		    tn = "PSXMQ";
+		else
+		    tn = "REG";
 		break;
 	    case S_IFLNK:
 		tn = "LINK";

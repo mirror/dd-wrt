@@ -32,7 +32,6 @@
 #ifndef	lint
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dmnt.c,v 1.20 2015/07/07 19:47:31 abe Exp $";
 #endif
 
 
@@ -429,6 +428,7 @@ readmnt()
 	struct mounts *mp;
 	FILE *ms;
 	int nfs;
+	int mqueue;
 	struct stat sb;
 	static char *vbuf = (char *)NULL;
 	static size_t vsz = (size_t)0;
@@ -524,6 +524,12 @@ readmnt()
 	    if (*dn != '/')
 		continue;
 	    dnl = strlen(dn);
+
+	/*
+	 * Test Mqueue directory
+	 */
+	    mqueue = strcmp(fp[2], "mqueue");
+
 	/*
 	 * Test for duplicate and NFS directories.
 	 */
@@ -535,6 +541,8 @@ readmnt()
 		if ((nfs = strcasecmp(fp[2], "nfs3")))
 		    nfs = strcasecmp(fp[2], "nfs4");
 	    }
+	    if (!nfs && !HasNFS)
+		HasNFS = 1;
 	    if (mp) {
 
 	    /*
@@ -633,8 +641,12 @@ readmnt()
 		mp->ty = N_NFS;
 		if (HasNFS < 2)
 		    HasNFS = 2;
-	    } else
+	    } else if (!mqueue) {
+		mp->ty = N_MQUEUE;
+		MqueueDev = mp->dev;
+	    } else {
 		mp->ty = N_REGLR;
+	    }
 
 #if	defined(HASMNTSUP)
 	/*
