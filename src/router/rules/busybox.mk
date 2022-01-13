@@ -537,7 +537,6 @@ endif
 	echo "CONFIG_REBOOT=y" >> busybox/.config
 ifeq ($(CONFIG_X86),y)
 	echo "CONFIG_POWEROFF=y" >> busybox/.config
-#	sed -i 's/\# CONFIG_LSOF is not set/CONFIG_LSOF=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_USE_TERMIOS is not set/CONFIG_FEATURE_USE_TERMIOS=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
@@ -667,6 +666,7 @@ endif
 	echo "CONFIG_FEATURE_TIMEZONE=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_CPIO_IGNORE_DEVNO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_CPIO_RENUMBER_INODES is not set" >> busybox/.config
+	sed -i 's/\CONFIG_LSOF=y/# CONFIG_LSOF is not set/g' busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
