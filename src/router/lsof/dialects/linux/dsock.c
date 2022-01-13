@@ -44,8 +44,8 @@ static char copyright[] =
  * UNIX endpoint definitions
  */
 
-#include "socket.h"			/* for AF_NETLINK */
-#include "rtnetlink.h"		/* for NETLINK_INET_DIAG */
+#include <sys/socket.h>			/* for AF_NETLINK */
+#include <linux/rtnetlink.h>		/* for NETLINK_INET_DIAG */
 #include "sock_diag.h"		/* for SOCK_DIAG_BY_FAMILY */
 #include "unix_diag.h"		/* for unix_diag_req */
 #include <string.h>			/* memset */
@@ -61,6 +61,10 @@ static char copyright[] =
 /*
  * Local definitions
  */
+#ifndef NETLINK_SOCK_DIAG
+#define NETLINK_SOCK_DIAG	4	/* socket monitoring				*/
+#endif
+
 
 #define	INOBUCKS	128		/* inode hash bucket count -- must be
 					 * a power of two */
