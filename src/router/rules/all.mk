@@ -109,6 +109,7 @@ include rules/bridge.mk
 include rules/busybox.mk
 include rules/dnsmasq.mk
 include rules/nettle.mk
+include rules/sodium.mk
 include rules/dnscrypt.mk
 include rules/iptables-new.mk
 include rules/iptables.mk
