@@ -398,9 +398,9 @@ to be compiled and archived to liblsof.a.
 			USE_LIB_PROCESS_FILE selects it.
 
 			FILEPTR, DTYPE_PIPE, HASPIPEFN, DTYPE_GNODE,
-			DTYPE_INODE, DTYPE_PORT, DTYPE_VNODE,
+			DTYPE_INODE, DTYPE_PORT, DTYPE_VNODE, DTYPE_PTS,
 			HASF_VNODE, HASKQUEUE, HASPRIVFILETYPE,
-			HASPSXSHM and HASPSXSEM customize it.
+			HASPSXSHM, HASPSXSEM and HASPTSFN customize it.
 
     ptti.c		print_tcptpi() function
 
@@ -700,6 +700,9 @@ possibilities
 
     HAS_AFS		enables AFS support code for the dialect.
 
+    HAS_AIO_REQ_STRUCT	is defined for Solaris 10 and above systems that
+			have the aio_req structure definition.
+
     HAS_ATOMIC_T	indicates the Linux version has an
 			<asm/atomic.h> header file and it contains
 			"typedef struct .* atomic_t;"
@@ -725,6 +728,9 @@ possibilities
 			dialect.
 
     HASCDRNODE		enables/disables readcdrnode() in node.c.
+
+    HAS_CLOSEFROM	is defined when the FreeBSD C library contains the
+			closefrom() function.
 
     HAS_CONN_NEW        indicates the Solaris version has the new form
 			of the conn_s structure, introduced in b134 of
@@ -764,6 +770,9 @@ possibilities
     HASDNLCPTR          is defined when the name cache entry of
 			<sys/dnlc.h> has a name character pointer
 			rather than a name character array.
+
+    HAS_DUP2		is defined when the FreeBSD C library contains the
+			dup2() function.
 
     HASEFFNLINK		indicates the *BSD system has the i_effnlink
 			member in the inode structure.
@@ -838,6 +847,9 @@ possibilities
 
 			See also the RMNT_EXPDEV and RMNT_FSTYPE
 			documentation in lib/rmnt.c
+
+    HASFUSEFS		is defined when the FreeBSD system has FUSE file system
+			support.
 
     HASGETBOOTFILE	indicates the NetBSD or OpenBSD dialect has
 			a getbootfile() function.
@@ -1011,6 +1023,9 @@ possibilities
     HAS_NO_6PPCB	is defined if the FreeBSD in_pcb.h has no in6p_ppcb
 			definition.
 
+    HAS_NO_IDEV		indicates the FreeBSD system's inode has no i_dev
+			member.
+
     HAS_NO_ISO_DEV	indicates the FreeBSD 6 and higher system has
 			no i_dev member in its iso_node structure.
 
@@ -1155,6 +1170,12 @@ possibilities
 
     HASPSXSHM		indicates the dialect has support for the POSIX
 			shared memory file type.
+
+    HASPTSFN		indicates the dialect has a DNODE_PTS file descriptor
+			type and defines the function that processes it.
+
+    HASPTYEPT		indicates the Linux dialect has support for the
+			pseudoterminal endpoint option.
 
     HASPTYFS		indicates the *BSD dialect has a ptyfs file system.
 
@@ -1437,6 +1458,9 @@ possibilities
 
     NEEDS_BOOLEAN_T	indicates the FreeBSD 9 and above system needs a
 			boolean_t definition for <sys/conf.h>.
+
+    NEEDS_DEVICE_T	indicates the FreeBSD <sys/eventhandler.h> header file
+			needs the device_t typedef.
 
     NEEDS_MACH_PORT_T	is defined for Darwin versions that need the inclusion
 			of the header file <device/device_types.h>.
@@ -1863,4 +1887,4 @@ keep in mind the private, one-man nature of current lsof support.
 
 
 Vic Abell <abe@purdue.edu>
-July 7, 2015
+July 14, 2018

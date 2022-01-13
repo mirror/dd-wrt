@@ -14,7 +14,7 @@
 # shell script, named $LSOF_MK, that places its source modules in this
 # directory.
 #
-# $Id: Configure,v 1.164 2015/07/07 20:16:58 abe Exp $
+# $Id: Configure,v 1.166 2018/07/14 12:13:52 abe Exp $
 
 # LSOF_CFLAGS_OVERRIDE=1 may be introduced through the environment to cause
 #	the library Makefile's CFLAGS definition to override any in the
@@ -293,8 +293,8 @@ do
       echo "rm -rf AFSHeaders AFSVersion solaris11 version.h vnode_if.h"
       rm -f ${LSOF_HLP_BASE}* cd9660_node.h lockf_owner.h fbsd_minor.h
       echo "rm -f ${LSOF_HLP_BASE}* cd9660_node.h lockf_owner.h fbsd_minor.h"
-      rm -f opt_kdtrace.h
-      echo "rm -f opt_kdtrace.h"
+      rm -f opt_kdtrace.h opt_random.h
+      echo "rm -f opt_kdtrace.h opt_random.h"
       rm -f dialects/aix/aix5/j2/j2_snapshot.h
       echo "rm -f dialects/aix/aix5/j2/j2_snapshot.h"
       rm -f dialects/sun/solaris10	# DEBUG -- for s10_44
@@ -1620,6 +1620,14 @@ kernel generation process.
 	LSOF_TSTBIGF=" "
 	LSOF_VERS=11000
 	;;
+      12*)
+	LSOF_TSTBIGF=" "
+	LSOF_VERS=12000
+	;;
+      13*)
+	LSOF_TSTBIGF=" "
+	LSOF_VERS=13000
+	;;
       *)
 	echo Unknown FreeBSD release: `uname -r`
 	rm -f $LSOF_HLP
@@ -1631,7 +1639,7 @@ kernel generation process.
     # Clear LSOF_UNSUP message for supported versions of FreeBSD.
     
     case $LSOF_VERS in  # {
-    4090|8020|8030|8040|9000|10000|11000)
+    4090|8020|8030|8040|9000|10000|11000|12000|13000)
       LSOF_UNSUP=""
       ;;
     esac	# }
@@ -1706,6 +1714,22 @@ kernel generation process.
 	LSOF_CFGF="$LSOF_CFGF -DHAS_PAUSE_SBT"
       fi	# }
     fi	# }
+
+    # Check the C library for closefrom and dup2.
+
+      if test -r /usr/lib/libc.a	# {
+      then
+	nm /usr/lib/libc.a | grep -q "W dup2"
+	if test $? -eq 0	# {
+	then
+	  LSOF_CFGF="$LSOF_CFGF -DHAS_DUP2"
+	fi	# }
+	nm /usr/lib/libc.a | grep -q "W closefrom"
+	if test $? -eq 0	# {
+	then
+	  LSOF_CFGF="$LSOF_CFGF -DHAS_CLOSEFROM"
+	fi	# }
+      fi	# }
 
     # Do FreeBSD version-specific stuff.
 
@@ -1886,12 +1910,30 @@ cpumask_t c;
 
 	# Do FreeBSD 6.0 and higher version-specific stuff.
 
+	  if test -r ${LSOF_INCLUDE}/sys/_types.h	# {
+	  then
+	    grep __dev_t ${LSOF_INCLUDE}/sys/_types.h | grep -q 64
+	    if test $? -eq 0	# {
+	    then
+	      if test "X$LSOF_TSTDFLG" = "X"	# {
+	      then
+		LSOF_TSTDFLG="-DLT_DEV64"
+	      else
+		LSOF_TSTDFLG="$LSOF_TSTDFLG -DLT_DEV64"
+	      fi	# }
+	    fi	# }
+	  fi	# }
 	  if test -r ${LSOF_INCLUDE}/ufs/ufs/inode.h	# {
 	  then
 	    grep -q i_din2 ${LSOF_INCLUDE}/ufs/ufs/inode.h
 	    if test $? -eq 0	# {
 	    then
 	      LSOF_CFGF="$LSOF_CFGF -DHAS_UFS1_2"
+	    fi	# }
+	    grep -q i_dev ${LSOF_INCLUDE}/ufs/ufs/inode.h
+	    if test $? -ne 0	# {
+	    then
+	      LSOF_CFGF="$LSOF_CFGF -DHAS_NO_IDEV"
 	    fi	# }
 	  fi	# }
 	  if test -r ${LSOF_INCLUDE}/sys/conf.h	# {
@@ -1900,6 +1942,11 @@ cpumask_t c;
 	    if test $? -eq 0	#{
 	    then
 	      LSOF_CFGF="$LSOF_CFGF -DHAS_VM_MEMATTR_T"
+	    fi	# }
+	    grep -q device_t ${LSOF_INCLUDE}/sys/eventhandler.h
+	    if test $? -eq 0	# {
+	    then
+	      LSOF_CFGF="$LSOF_CFGF -DNEEDS_DEVICE_T"
 	    fi	# }
 	    grep -q "^#define	minor(" ${LSOF_INCLUDE}/sys/conf.h
 	    if test $? -eq 0	# {
@@ -1958,6 +2005,12 @@ FBSD_MINOR3
 	    LSOF_CFGF="$LSOF_CFGF -DHAS_SYS_SX_H"
 	  fi	# }
 
+	# Do FUSE file system test,
+
+	  if test -r ${FREEBSD_SYS}/fs/fuse/fuse_node.h	# {
+	  then
+	    LSOF_CFGF="$LSOF_CFGF -DHASFUSEFS"
+	  fi	# }
 	# Do ZFS test.  Try for the newer OpenSolaris files first -- i.e.,
 	# the ones in ${FREEBSD_SYS}/cddl/contrib/opensolaris.  If that fails,
 	# try for the older ones in ${FREEBSD}/contrib/opensolaris.
@@ -1999,6 +2052,15 @@ FBSD_MINOR3
 		  LSOF_FBSD_ZFS_CFGF="$LSOF_FBSD_ZFS_CFGF -DHAS_CV_TIMEDWAIT_SBT"
 		fi	# }
 	    fi	#}
+	    if test -r /usr/include/sys/random.h	# {
+	    then
+	      grep -q opt_random.h /usr/include/sys/random.h
+	      if test $? -eq 0	# {
+	      then
+		rm -f opt_random.h
+		touch opt_random.h
+	      fi	# }
+	    fi	# }
 	  fi	# }
 	  if test -r ${LSOF_INCLUDE}/sys/vnode.h	# {
 	  then
@@ -2033,7 +2095,7 @@ FBSD_MINOR3
 	      rm -f ./lockf_owner.h
 	      if test -r ${FREEBSD_SYS}/kern/kern_lockf.c	# {
 	      then
-		LSOF_TMP1=`grep -n "^struct lock_owner" ${FREEBSD_SYS}/kern/kern_lockf.c | sed 's/\([0-9]*\):.*$/\1/'`
+		LSOF_TMP1=`grep -n "^struct lock_owner {" ${FREEBSD_SYS}/kern/kern_lockf.c | sed 's/\([0-9]*\):.*$/\1/'`
 		if test "X$LSOF_TMP1" != "X"	# {
 		then
 		  LSOF_TMP2=0
@@ -2892,8 +2954,14 @@ return(0); }
 
     # Test for <rpc/rpc.h>.
 
-    if ! test -r ${LSOF_INCLUDE}/rpc/rpc.h	# {
+    if test -r ${LSOF_INCLUDE}/rpc/rpc.h	# {
     then
+      :	# Do nothing
+    elif test -r ${LSOF_INCLUDE}/tirpc/rpc/rpc.h
+    then
+      LSOF_DINC="${LSOF_DINC} -I${LSOF_INCLUDE}/tirpc"
+      LSOF_CFGL="${LSOF_CFGL} -ltirpc"
+    else
       LSOF_CFGF="$LSOF_CFGF -DHASNORPC_H"
     fi	# }
 
@@ -2935,6 +3003,29 @@ return(0); }
     then
       LSOF_CFGF="$LSOF_CFGF -DHASUXSOCKEPT"
     fi	# }
+
+  # Test for pseudoterminal endpoint support.
+
+    if test -r ${LSOF_INCLUDE}/linux/major.h # {
+    then
+      grep -q TTYAUX_MAJOR ${LSOF_INCLUDE}/linux/major.h
+      if test $? -eq 0	# {
+      then
+	LSOF_CFGF="$LSOF_CFGF -DHASPTYEPT"
+      fi	# }
+    fi	# }
+
+  # Test for (unix) socket state support.
+
+    if test -f ${LSOF_INCLUDE}/linux/net.h # {
+    then
+      grep -q SS_CONNECTED ${LSOF_INCLUDE}/linux/net.h
+      if test $? -eq 0 # {
+      then
+        LSOF_CFGF="$LSOF_CFGF -DHASSOSTATE -DHASSOOPT"
+      fi	# }
+    fi	# }
+
     LSOF_DIALECT_DIR="linux"
     LSOF_CFGF="$LSOF_CFGF -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
     ;;
@@ -4866,6 +4957,14 @@ return(0); }
 	  if test $? -eq 0	# {
 	  then
 	    LSOF_CFGF="$LSOF_CFGF -DHAS_PC_DIRENTPERSEC"
+	  fi	# }
+	fi	# }
+	if test -r ${LSOF_INCLUDE}/sys/aio_req.h	# {
+	then
+	  grep "struct[ 	]aio_req" ${LSOF_INCLUDE}/sys/aio_req.h > /dev/null 2>&1
+	  if test $? -eq 0	# {
+	  then
+	    LSOF_CFGF="$LSOF_CFGF -DHAS_AIO_REQ_STRUCT"
 	  fi	# }
 	fi	# }
       fi	# }

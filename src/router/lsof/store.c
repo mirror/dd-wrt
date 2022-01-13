@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: store.c,v 1.43 2015/07/07 20:16:58 abe Exp $";
 #endif
 
 
@@ -42,6 +41,8 @@ static char *rcsid = "$Id: store.c,v 1.43 2015/07/07 20:16:58 abe Exp $";
 /*
  * Global storage definitions
  */
+
+int AllProc = 1;		/* all processes are selected (default) */
 
 #if	defined(HASBLKDEV)
 struct l_dev *BDevtp = (struct l_dev *)NULL;
@@ -209,7 +210,7 @@ struct fieldsel FieldSel[] = {
     { LSOF_FID_CT,     0,  LSOF_FNM_CT,     &Fsv,     FSV_CT 	 }, /*  2 */
     { LSOF_FID_DEVCH,  0,  LSOF_FNM_DEVCH,  NULL,     0		 }, /*  3 */
     { LSOF_FID_DEVN,   0,  LSOF_FNM_DEVN,   NULL,     0		 }, /*  4 */
-    { LSOF_FID_FD,     1,  LSOF_FNM_FD,     NULL,     0		 }, /*  5 */
+    { LSOF_FID_FD,     0,  LSOF_FNM_FD,     NULL,     0		 }, /*  5 */
     { LSOF_FID_FA,     0,  LSOF_FNM_FA,     &Fsv,     FSV_FA	 }, /*  6 */
     { LSOF_FID_FG,     0,  LSOF_FNM_FG,     &Fsv,     FSV_FG	 }, /*  7 */
     { LSOF_FID_INODE,  0,  LSOF_FNM_INODE,  NULL,     0		 }, /*  8 */
@@ -218,26 +219,28 @@ struct fieldsel FieldSel[] = {
     { LSOF_FID_LOCK,   0,  LSOF_FNM_LOCK,   NULL,     0		 }, /* 11 */
     { LSOF_FID_LOGIN,  0,  LSOF_FNM_LOGIN,  NULL,     0		 }, /* 12 */
     { LSOF_FID_MARK,   1,  LSOF_FNM_MARK,   NULL,     0		 }, /* 13 */
-    { LSOF_FID_NAME,   0,  LSOF_FNM_NAME,   NULL,     0		 }, /* 14 */
-    { LSOF_FID_NI,     0,  LSOF_FNM_NI,     &Fsv,     FSV_NI	 }, /* 15 */
-    { LSOF_FID_OFFSET, 0,  LSOF_FNM_OFFSET, NULL,     0		 }, /* 16 */
-    { LSOF_FID_PID,    1,  LSOF_FNM_PID,    NULL,     0		 }, /* 17 */
-    { LSOF_FID_PGID,   0,  LSOF_FNM_PGID,   &Fpgid,   1		 }, /* 18 */
-    { LSOF_FID_PROTO,  0,  LSOF_FNM_PROTO,  NULL,     0		 }, /* 19 */
-    { LSOF_FID_RDEV,   0,  LSOF_FNM_RDEV,   NULL,     0		 }, /* 20 */
-    { LSOF_FID_PPID,   0,  LSOF_FNM_PPID,   &Fppid,   1		 }, /* 21 */
-    { LSOF_FID_SIZE,   0,  LSOF_FNM_SIZE,   NULL,     0		 }, /* 22 */
-    { LSOF_FID_STREAM, 0,  LSOF_FNM_STREAM, NULL,     0		 }, /* 23 */
-    { LSOF_FID_TYPE,   0,  LSOF_FNM_TYPE,   NULL,     0		 }, /* 24 */
-    { LSOF_FID_TCPTPI, 0,  LSOF_FNM_TCPTPI, &Ftcptpi, TCPTPI_ALL }, /* 25 */
-    { LSOF_FID_UID,    0,  LSOF_FNM_UID,    NULL,     0		 }, /* 26 */
-    { LSOF_FID_ZONE,   0,  LSOF_FNM_ZONE,   &Fzone,   1		 }, /* 27 */
-    { LSOF_FID_CNTX,   0,  LSOF_FNM_CNTX,   &Fcntx,   1		 }, /* 28 */
-    { LSOF_FID_TERM,   0,  LSOF_FNM_TERM,   NULL,     0		 }, /* 29 */
+    { LSOF_FID_TCMD,   0,  LSOF_FNM_TCMD,   NULL,     0		 }, /* 14 */
+    { LSOF_FID_NAME,   0,  LSOF_FNM_NAME,   NULL,     0		 }, /* 15 */
+    { LSOF_FID_NI,     0,  LSOF_FNM_NI,     &Fsv,     FSV_NI	 }, /* 16 */
+    { LSOF_FID_OFFSET, 0,  LSOF_FNM_OFFSET, NULL,     0		 }, /* 17 */
+    { LSOF_FID_PID,    1,  LSOF_FNM_PID,    NULL,     0		 }, /* 18 */
+    { LSOF_FID_PGID,   0,  LSOF_FNM_PGID,   &Fpgid,   1		 }, /* 19 */
+    { LSOF_FID_PROTO,  0,  LSOF_FNM_PROTO,  NULL,     0		 }, /* 20 */
+    { LSOF_FID_RDEV,   0,  LSOF_FNM_RDEV,   NULL,     0		 }, /* 21 */
+    { LSOF_FID_PPID,   0,  LSOF_FNM_PPID,   &Fppid,   1		 }, /* 22 */
+    { LSOF_FID_SIZE,   0,  LSOF_FNM_SIZE,   NULL,     0		 }, /* 23 */
+    { LSOF_FID_STREAM, 0,  LSOF_FNM_STREAM, NULL,     0		 }, /* 24 */
+    { LSOF_FID_TYPE,   0,  LSOF_FNM_TYPE,   NULL,     0		 }, /* 25 */
+    { LSOF_FID_TCPTPI, 0,  LSOF_FNM_TCPTPI, &Ftcptpi, TCPTPI_ALL }, /* 26 */
+    { LSOF_FID_UID,    0,  LSOF_FNM_UID,    NULL,     0		 }, /* 27 */
+    { LSOF_FID_ZONE,   0,  LSOF_FNM_ZONE,   &Fzone,   1		 }, /* 28 */
+    { LSOF_FID_CNTX,   0,  LSOF_FNM_CNTX,   &Fcntx,   1		 }, /* 29 */
+    { LSOF_FID_TERM,   0,  LSOF_FNM_TERM,   NULL,     0		 }, /* 30 */
     { ' ',	       0,  NULL,	    NULL,     0		 }
 };
 
 int Hdr = 0;			/* header print status */
+int IgnTasks = 0;		/* ignore tasks when non-zero */
 char *InodeFmt_d = (char *) NULL;
 				/* INODETYPE decimal printf specification */
 char *InodeFmt_x = (char *) NULL;
@@ -320,11 +323,14 @@ int Procsrch = 0;		/* 1 if searching for any proc file system
 int PrPass = 0;			/* print pass: 0 = compute column widths
 				 *	       1 = print */
 int RptTm = 0;			/* repeat time -- set by -r */
+int RptMaxCount = 0;		/* count of repeasts: 0 = no limit
+				 * -- set by -r */
 struct l_dev **Sdev = (struct l_dev **)NULL;
 				/* pointer to Devtp[] pointers, sorted
 				 * by device */
-int Selall = 1;			/* all processes are selected (default) */
+int SelAll = 0;			/* SELALL flags, modified by IgnTasks */
 int Selflags = 0;		/* selection flags -- see SEL* in lsof.h */
+int SelProc = 0;		/* SELPROC flags, modified by IgnTasks */
 int Setgid = 0;			/* setgid state */
 int Selinet = 0;		/* select only Internet socket files */
 int Setuidroot = 0;		/* setuid-root state */
@@ -346,7 +352,11 @@ char *SzOffFmt_dv = (char *)NULL;
 				/* SZOFFTYPE %*d printf  specification */
 char *SzOffFmt_x = (char *)NULL;
 				/* SZOFFTYPE %#x printf  specification */
-int TaskPrtFl = 0;		/* task print flag */
+int TaskCmdColW = 0;		/* task command column width */
+int TaskCmdLim = TASKCMDL;	/* TASKCMD column width limit (same as
+				 * CmdLim) */
+int TaskPrtCmd = 0;		/* task print task command flag */
+int TaskPrtTid = 0;		/* task print TID flag */
 int TcpStAlloc = 0;		/* allocated (possibly unused) entries in TCP 
 				 * state tables */
 unsigned char *TcpStI = (unsigned char *)NULL;
@@ -363,7 +373,7 @@ int TcpNstates = 0;		/* number of TCP states -- either in
 char **TcpSt = (char **)NULL;	/* local TCP state names, indexed by system
 				 * state value */
 char Terminator = '\n';		/* output field terminator */
-int TidColW = 0;		/* TID column width */
+int TaskTidColW = 0;		/* task TID column width */
 int TmLimit = TMLIMIT;		/* Readlink() and stat() timeout (seconds) */
 int TypeColW;			/* TYPE column width */
 int UdpStAlloc = 0;		/* allocated (possibly unused) entries in UDP 

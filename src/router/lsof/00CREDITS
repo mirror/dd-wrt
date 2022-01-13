@@ -1,4 +1,3 @@
-
 			    Lsof Credits
 
 I owe an enormous debt to the users of lsof who have contributed
@@ -93,6 +92,7 @@ provided test systems where I was able to do development work.
 	Yves Christophe
 	Richard Chycoski
 	A. Channing Clark
+	Jorn Clausen
 	Axel Clauberg
 	John Clear
 	David Clissold
@@ -125,6 +125,7 @@ provided test systems where I was able to do development work.
 	Casper Dik
 	John DiMarco
 	Don Draper
+	Bryan Drewery
 	Michel Dubois
 	Eric Dumazet
 	Dick Dunbar
@@ -179,6 +180,7 @@ provided test systems where I was able to do development work.
 	Chaskiel Grundman
 	Armin Gruner
 	David Gutierrez
+	Mateusz Guzik
 	Robert Hall
 	Garner Halloran
 	Adam Hammer
@@ -334,6 +336,9 @@ provided test systems where I was able to do development work.
 	Andrew Merril
 	Richard van Meurs
 	Jim Mewes
+	Ivan Melnikov
+	Conrad Meyer
+	Hendrik Meyer
 	Gary Millen
 	Timothy Miller
 	Davin Milun
@@ -344,6 +349,7 @@ provided test systems where I was able to do development work.
 	Janardhan Molumuri
 	Nasser Momtaheni
 	Laurent Montaron
+	Doug Moore
 	Phillip Moore
 	Dmitry Morozovsky
 	John Paul Morrison
@@ -389,6 +395,7 @@ provided test systems where I was able to do development work.
 	Philippe-Andre Prindeville
 	David Putz
 	Tom Qin
+	Jan Rybar
 	Kurtis Rader
 	Peter Radig
 	Jean-Pierre Radley
@@ -421,6 +428,7 @@ provided test systems where I was able to do development work.
 	Peter Schiffer
 	Michael Schmitz
 	Larry Schwimmer
+	Cy Schubert
 	Hendrik G. Seliger
 	Igor V. Semenyuk
 	Jonathan Sergent
@@ -438,6 +446,7 @@ provided test systems where I was able to do development work.
 	Gerry Singleton
 	Leonard Sitongia
 	Kevin Smallwood
+	Gleb Smirnoff
 	Curt Smith
 	Ben Smithurst
 	Douglas R. Smith
@@ -456,6 +465,7 @@ provided test systems where I was able to do development work.
 	Diana Stockdale
 	Andreas Stolcke
 	Jeff Stoner
+	Kristyna Streitova
 	Sushila Subramanian
 	Jan Ole Suhr
 	Mike Sullivan
@@ -530,11 +540,24 @@ provided test systems where I was able to do development work.
 	Karel Zak
 	Donald Zoch
 	Malcom Zung
-	and Waldemar Zurowski
+	Waldemar Zurowski
+	@eranik (github account)
+	@jolmg  (github account)
+	yasu@utahime.org (email)
+	jamie@catflap.org (email)
+	@hardikpnsp (github account)
+	Martin D Kealey
+	Henry Peteet
+	@zhrf2020
+	@JustAnotherArchivist and
+	@po5857
 
 If I have omitted a contributor's name, the fault is wholly mine,
 and I apologize for the error.
 
 
 Vic Abell <abe@purdue.edu>
-July 7, 2015
+March 27, 2018
+
+Masatake YAMATO <yamato@redhat.com> (since revision 4.92.1)
+October 4, 2020

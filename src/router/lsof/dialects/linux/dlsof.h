@@ -174,7 +174,18 @@ struct sfile {
 	struct sfile *next;		/* forward link */
 };
 
+# if	defined(HASEPTOPTS)
+typedef struct pxinfo {			/* hashed pipe, UNIX socket or pseudo-
+					 * terminal inode information */
+	INODETYPE ino;			/* file's inode */
+	struct lfile *lf;		/* connected peer file */
+	int lpx;			/* connected process index */
+	struct pxinfo *next;		/* next entry for hashed inode */
+} pxinfo_t;
+# endif	/* defined(HASEPTOPTS) */
+
 extern int HasNFS;
+extern dev_t MqueueDev;
 extern int OffType;
 
 #endif	/* LINUX_LSOF_H	*/

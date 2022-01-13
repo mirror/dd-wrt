@@ -37,7 +37,6 @@
 # if	!defined(lint)
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: prfp.c,v 1.14 2008/10/21 16:12:36 abe Exp $";
 # endif	/* !defined(lint) */
 
 #include "../lsof.h"
@@ -143,6 +142,18 @@ process_file(fp)
 		return;
 #endif	/* defined(DTYPE_PIPE) */
 
+#if	defined(DTYPE_PTS)
+	    case DTYPE_PTS:
+# if	defined(HASPTSFN)
+		HASPTSFN((KA_T)f.f_data);
+# endif	/* defined(HASPTSFN) */
+		return;
+#endif	/* defined(DTYPE_PIPE) */
+
+#if	defined(DTYPE_FIFO)
+	    case DTYPE_FIFO:
+#endif	/* defined(DTYPE_FIFO) */
+
 #if	defined(DTYPE_GNODE)
 	    case DTYPE_GNODE:
 #endif	/* defined(DTYPE_GNODE) */
@@ -195,9 +206,20 @@ process_file(fp)
 #endif	/* defined(HASPRIVFILETYPE) */
 
 	    default:
+
+#if	defined(X_BADFILEOPS)
+		if (X_bfopsa && f.f_ops && (X_bfopsa == (KA_T)f.f_ops)) {
+		    (void) snpf(Namech, Namechl,
+			"no more information; ty=%d file may be closing",
+			(int)f.f_type);
+		    enter_nm(Namech);
+		    return;
+		}
+#endif	/* defined(X_BADFILEOPS) */
+
 		if (f.f_type || f.f_ops) {
 		    (void) snpf(Namech, Namechl,
-			"%s file struct, ty=%#x, op=%s",
+			"%s file struct, ty=%d, op=%s",
 			print_kptr(fp, tbuf, sizeof(tbuf)), (int)f.f_type,
 			print_kptr((KA_T)f.f_ops, (char *)NULL, 0));
 		    enter_nm(Namech);

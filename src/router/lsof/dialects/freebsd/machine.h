@@ -31,7 +31,7 @@
 
 
 /*
- * $Id: machine.h,v 1.39 2015/07/07 20:23:43 abe Exp $
+ * $Id: machine.h,v 1.40 2018/02/14 14:26:03 abe Exp $
  */
 
 
@@ -438,6 +438,17 @@ typedef _Bool   bool;
 # if	FREEBSDV>=2000
 #define	HASPINODEN	1
 # endif	/* FREEBSDV>=2000 */
+
+
+/*
+ * HASPTSFN is defined for dialects that have a DTYPE_PTS file descriptor
+ * type.  The definition names the function that processes the type.
+ *
+ *
+ * NOTE: don't forget to define a prototype for this function in dproto.h.
+ */
+
+#define	HASPTSFN	process_pts
 
 
 /*

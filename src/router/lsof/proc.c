@@ -32,11 +32,19 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: proc.c,v 1.49 2015/07/07 20:16:58 abe Exp $";
 #endif
 
 
 #include "lsof.h"
+
+#if	defined(HASEPTOPTS)
+_PROTOTYPE(static void prt_pinfo,(pxinfo_t *pp, int ps));
+_PROTOTYPE(static void prt_psxmqinfo,(pxinfo_t *pp, int ps));
+_PROTOTYPE(static void prt_evtfdinfo,(pxinfo_t *pp, int ps));
+#endif  /* defined(HASEPTOPTS) */
+#if	defined(HASPTYEPT)
+_PROTOTYPE(static void prt_ptyinfo,(pxinfo_t *pp, int prt_edev, int ps));
+#endif	/* defined(HASPTYEPT) */
 
 
 /*
@@ -164,6 +172,10 @@ alloc_lfile(nm, num)
 
 #if	defined(HASEPTOPTS)
 	Lf->chend = 0;
+	Lf->eventfd_id = -1;
+#if	defined(HASPTYEPT)
+	Lf->tty_index  = -1;
+#endif	/* defined(HASPTYEPT) */
 #endif	/* defined(HASEPTOPTS) */
 
 #if	defined(HASSOOPT)
@@ -306,6 +318,7 @@ alloc_lproc(pid, pgid, ppid, uid, cmd, pss, sf)
 
 #if	defined(HASTASKS)
 	Lp->tid = 0;
+	Lp->tcmd = (char *)NULL;
 #endif	/* defined(HASTASKS) */
 
 	Lp->pgid = pgid;
@@ -499,7 +512,7 @@ examine_lproc()
  *	o  listing is selected by an ANDed option set (not all options)
  *	   that includes a single PID selection -- this one.
  */
-	if ((Lp->sf & SELPID) && !Selall) {
+	if ((Lp->sf & SELPID) && !AllProc) {
 	    if ((Selflags == SELPID)
 	    ||  (Fand && (Selflags & SELPID))) {
 		sbp = 1;
@@ -565,6 +578,14 @@ free_lproc(lp)
 	    (void) free((FREE_P *)lp->cmd);
 	    lp->cmd = (char *)NULL;
 	}
+
+#if	defined(HASTASKS)
+	if (lp->tcmd) {
+	    (void) free((FREE_P *)lp->tcmd);
+	    lp->tcmd = (char *)NULL;
+	}
+#endif	/* defined(HASTASKS) */
+
 }
 
 
@@ -649,7 +670,7 @@ is_file_sel(lp, lf)
 	}
 #endif	/* defined(HASSECURITY) && defined(HASNOSOCKSECURITY) */
 
-	if (Selall)
+	if (AllProc)
 	    return(1);
 	if (Fand && ((lf->sf & Selflags) != Selflags))
 	    return(0);
@@ -743,13 +764,13 @@ is_proc_excl(pid, pgid, uid, pss, sf)
  * network selections from the file flags, so that the tests in is_file_sel()
  * work as expected.
  */
-	if (Selall) {
+	if (AllProc) {
 	    *pss = PS_PRI;
 
 #if	defined(HASSECURITY) && defined(HASNOSOCKSECURITY)
-	    *sf = SELALL & ~(SELNA | SELNET);
+	    *sf = SelAll & ~(SELNA | SELNET);
 #else	/* !defined(HASSECURITY) || !defined(HASNOSOCKSECURITY) */
-	    *sf = SELALL;
+	    *sf = SelAll;
 #endif	/* defined(HASSECURITY) && defined(HASNOSOCKSECURITY) */
 
 	    return(0);
@@ -897,6 +918,16 @@ link_lfile()
 		Lf->sf &= ~SELPINFO;
 	    }
 
+/*
+ * Process posix mq endpoint files the same way by clearing the
+ * SELPSXMQINFO flag and setting the EPT_PSXMQ flag, letting a later call to
+ * process_psxmqinfo() set selection flags.
+ */
+	    if (Lf->sf & SELPSXMQINFO) {
+		Lp->ept |= EPT_PSXMQ;
+		Lf->sf &= ~SELPSXMQINFO;
+	    }
+
 # if	defined(HASUXSOCKEPT)
 /*
  * Process UNIX socket endpoint files the same way by clearing the SELUXINFO
@@ -909,6 +940,48 @@ link_lfile()
 	    }
 # endif	/* defined(HASUXSOCKEPT) */
 
+# if	defined(HASPTYEPT)
+/*
+ * Process pseudoterminal endpoint files the same way by clearing the SELPTYINFO
+ * flag and setting the EPT_PTY flag, letting a later call to process_ptyinfo()
+ * set selection flags.
+ */
+	    if (Lf->sf & SELPTYINFO) {
+		Lp->ept |= EPT_PTY;
+		Lf->sf &= ~SELPTYINFO;
+	    }
+# endif	/* defined(HASPTYEPT) */
+
+/*
+ * Process locally used INET socket endpoint files the same way by clearing the
+ * SENETSINFO flag and setting the EPT_NETS flag, letting a later call to
+ * process_netsinfo() set selection flags.
+ */
+	    if (Lf->sf & SELNETSINFO) {
+		Lp->ept |= EPT_NETS;
+		Lf->sf &= ~SELNETSINFO;
+	    }
+
+#if	defined(HASIPv6)
+/*
+ * Process locally used INET6 socket endpoint files the same way by clearing the
+ * SENETS6INFO flag and setting the EPT_NETS6 flag, letting a later call to
+ * process_nets6info() set selection flags.
+ */
+	    if (Lf->sf & SELNETS6INFO) {
+		Lp->ept |= EPT_NETS6;
+		Lf->sf &= ~SELNETS6INFO;
+	    }
+# endif	/* defined(HASIPv6) */
+/*
+ * Process eventfd endpoint files the same way by clearing the SELEVTFDINFO
+ * flag and setting the EPT_EVTFD flag, letting a later call to process_evtfdinfo()
+ * set selection flags.
+ */
+	    if (Lf->sf & SELEVTFDINFO) {
+		Lp->ept |= EPT_EVTFD;
+		Lf->sf &= ~SELEVTFDINFO;
+	    }
 	}
 #endif	/* defined(HASEPTOPTS) */
 
@@ -942,10 +1015,6 @@ process_pinfo(f)
 					 *     1 == process end point
 					 */
 {
-	struct lproc *ep;		/* pipe endpoint process */
-	struct lfile *ef;		/* pipe endpoint file */
-	int i;				/* temporary index */
-	char nma[1024];			/* name addition buffer */
 	pxinfo_t *pp;			/* previous pipe info */
 	
 	if (!FeptE)
@@ -967,32 +1036,14 @@ process_pinfo(f)
 		 * its being a pipe.  Look up the pipe's endpoints.
 		 */
 		    do {
-			if ((pp = find_pendinfo(Lf, pp))) {
+			if ((pp = find_pepti(Lp->pid, Lf, pp))) {
 
 			/*
 			 * This pipe endpoint is linked to the selected pipe
 			 * file.  Add its PID and FD to the name column
 			 * addition.
 			 */
-			    ep = &Lproc[pp->lpx];
-			    ef = pp->lf;
-			    for (i = 0; i < (FDLEN - 1); i++) {
-				if (ef->fd[i] != ' ')
-				    break;
-			    }
-			    (void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
-				ep->pid, CmdLim, ep->cmd,&ef->fd[i],
-				ef->access);
-			    (void) add_nma(nma, strlen(nma));
-			    if (FeptE == 2) {
-
-			    /*
-			     * Endpoint files have been selected, so mark this
-			     * one for selection later. Set the type to PIPE.
-			     */
-				ef->chend = CHEND_PIPE;
-				ep->ept |= EPT_PIPE_END;
-			    }
+			    prt_pinfo(pp, (FeptE == 2));
 			    pp = pp->next;
 			}
 		    } while (pp);
@@ -1008,23 +1059,263 @@ process_pinfo(f)
 		    Lf->sf = Selflags;
 		    Lp->pss |= PS_SEC;
 		    do {
-			if ((pp = find_pendinfo(Lf, pp))) {
-			    ep = &Lproc[pp->lpx];
-			    ef = pp->lf;
-			    for (i = 0; i < (FDLEN - 1); i++) {
-				if (ef->fd[i] != ' ')
-				    break;
-			    }
-			    (void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
-				ep->pid, CmdLim, ep->cmd, &ef->fd[i],
-				ef->access);
-			    (void) add_nma(nma, strlen(nma));
+			if ((pp = find_pepti(Lp->pid, Lf, pp))) {
+			    prt_pinfo(pp, 0);
 			    pp = pp->next;
 			}
 		    } while (pp);
 		}
 		break;
 	    }
+	}
+}
+
+/*
+ * prt_pinfo() -- print pipe information
+ */
+
+static void
+prt_pinfo(pp, ps)
+	pxinfo_t *pp;			/* peer info */
+	int ps;				/* processing status:
+					 *    0 == process immediately
+					 *    1 == process later */
+{
+	struct lproc *ep;		/* pipe endpoint process */
+	struct lfile *ef;		/* pipe endpoint file */
+	int i;				/* temporary index */
+	char nma[1024];			/* name addition buffer */
+
+	ep = &Lproc[pp->lpx];
+	ef = pp->lf;
+	for (i = 0; i < (FDLEN - 1); i++) {
+	    if (ef->fd[i] != ' ')
+		break;
+	}
+	(void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
+	    ep->pid, CmdLim, ep->cmd, &ef->fd[i],
+	    ef->access);
+	(void) add_nma(nma, strlen(nma));
+	if (ps) {
+
+	/*
+	* Endpoint files have been selected, so mark this
+	* one for selection later. Set the type to PIPE.
+	*/
+	    ef->chend = CHEND_PIPE;
+	    ep->ept |= EPT_PIPE_END;
+	}
+}
+
+
+/*
+ * process_psxmqinfo() -- posix mq info, adding it to selected files and
+ *		          selecting posix mq end files (if requested)
+ */
+
+void
+process_psxmqinfo(f)
+	int f;				/* function:
+					 *     0 == process selected posix mq
+					 *     1 == process end point
+					 */
+{
+	pxinfo_t *pp;			/* previous posix mq info */
+
+	if (!FeptE)
+	    return;
+	for (Lf = Lp->file; Lf; Lf = Lf->next) {
+	    if (Lf->dev != MqueueDev)
+		continue;
+	    pp = (pxinfo_t *)NULL;
+	    switch(f) {
+	    case 0:
+
+	    /*
+	     * Process already selected posix mq file.
+	     */
+		if (is_file_sel(Lp, Lf)) {
+
+		/*
+		 * This file has been selected by some criterion other than
+		 * its being a posix mq.  Look up the posix mq's endpoints.
+		 */
+		    do {
+			if ((pp = find_psxmqinfo(Lp->pid, Lf, pp))) {
+
+			/*
+			 * This posix mq endpoint is linked to the selected posix mq
+			 * file.  Add its PID and FD to the name column
+			 * addition.
+			 */
+			    prt_psxmqinfo(pp, (FeptE == 2));
+			    pp = pp->next;
+			}
+		    } while (pp);
+		}
+		break;
+	    case 1:
+		if (!is_file_sel(Lp, Lf) && (Lf->chend & CHEND_PSXMQ)) {
+
+		/*
+		 * This is an unselected end point file.  Select it and add
+		 * its end point information to its name column addition.
+		 */
+		    Lf->sf = Selflags;
+		    Lp->pss |= PS_SEC;
+		    do {
+		      if ((pp = find_psxmqinfo(Lp->pid, Lf, pp))) {
+			    prt_psxmqinfo(pp, 0);
+			    pp = pp->next;
+			}
+		    } while (pp);
+		}
+		break;
+	    }
+	}
+}
+
+
+/*
+ * prt_psxmqinfo() -- print posix mq information
+ */
+
+static void
+prt_psxmqinfo(pp, ps)
+	pxinfo_t *pp;			/* peer info */
+	int ps;				/* processing status:
+					 *    0 == process immediately
+					 *    1 == process later */
+{
+	struct lproc *ep;		/* posix mq endpoint process */
+	struct lfile *ef;		/* posix mq endpoint file */
+	int i;				/* temporary index */
+	char nma[1024];			/* name addition buffer */
+
+	ep = &Lproc[pp->lpx];
+	ef = pp->lf;
+	for (i = 0; i < (FDLEN - 1); i++) {
+	    if (ef->fd[i] != ' ')
+		break;
+	}
+	(void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
+	    ep->pid, CmdLim, ep->cmd, &ef->fd[i],
+	    ef->access);
+	(void) add_nma(nma, strlen(nma));
+	if (ps) {
+
+	/*
+	* Endpoint files have been selected, so mark this
+	* one for selection later. Set the type to posix mq.
+	*/
+	    ef->chend = CHEND_PSXMQ;
+	    ep->ept |= EPT_PSXMQ_END;
+	}
+}
+
+
+/*
+ * process_evtfdinfo() -- process eventfd info, adding it to selected files and
+ *		          selecting envetfd end files (if requested)
+ */
+
+void
+process_evtfdinfo(f)
+	int f;				/* function:
+					 *     0 == process selected eventfd
+					 *     1 == process end point
+					 */
+{
+	pxinfo_t *pp;			/* previous eventfd info */
+
+	if (!FeptE)
+	    return;
+	for (Lf = Lp->file; Lf; Lf = Lf->next) {
+	    if ((Lf->ntype != N_ANON_INODE) || (Lf->eventfd_id == -1))
+		continue;
+	    pp = (pxinfo_t *)NULL;
+	    switch(f) {
+	    case 0:
+
+	    /*
+	     * Process already selected eventfd_id file.
+	     */
+		if (is_file_sel(Lp, Lf)) {
+
+		/*
+		 * This file has been selected by some criterion other than
+		 * its being a eventfd.  Look up the eventfd's endpoints.
+		 */
+		    do {
+			if ((pp = find_evtfdinfo(Lp->pid, Lf, pp))) {
+
+			/*
+			 * This eventfd endpoint is linked to the selected eventfd
+			 * file.  Add its PID and FD to the name column
+			 * addition.
+			 */
+			    prt_evtfdinfo(pp, (FeptE == 2));
+			    pp = pp->next;
+			}
+		    } while (pp);
+		}
+		break;
+	    case 1:
+		if (!is_file_sel(Lp, Lf) && (Lf->chend & CHEND_EVTFD)) {
+
+		/*
+		 * This is an unselected end point file.  Select it and add
+		 * its end point information to its name column addition.
+		 */
+		    Lf->sf = Selflags;
+		    Lp->pss |= PS_SEC;
+		    do {
+			if ((pp = find_evtfdinfo(Lp->pid, Lf, pp))) {
+			    prt_evtfdinfo(pp, 0);
+			    pp = pp->next;
+			}
+		    } while (pp);
+		}
+		break;
+	    }
+	}
+}
+
+
+/*
+ * prt_evtfdinfo() -- print eventfd information
+ */
+
+static void
+prt_evtfdinfo(pp, ps)
+	pxinfo_t *pp;			/* peer info */
+	int ps;				/* processing status:
+					 *    0 == process immediately
+					 *    1 == process later */
+{
+	struct lproc *ep;		/* eventfd endpoint process */
+	struct lfile *ef;		/* eventfd endpoint file */
+	int i;				/* temporary index */
+	char nma[1024];			/* name addition buffer */
+
+	ep = &Lproc[pp->lpx];
+	ef = pp->lf;
+	for (i = 0; i < (FDLEN - 1); i++) {
+	    if (ef->fd[i] != ' ')
+		break;
+	}
+	(void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
+	    ep->pid, CmdLim, ep->cmd, &ef->fd[i],
+	    ef->access);
+	(void) add_nma(nma, strlen(nma));
+	if (ps) {
+
+	/*
+	* Endpoint files have been selected, so mark this
+	* one for selection later. Set the type to PIPE.
+	*/
+	    ef->chend = CHEND_EVTFD;
+	    ep->ept |= EPT_EVTFD_END;
 	}
 }
 #endif	/* defined(HASEPTOPTS) */
@@ -1155,6 +1446,8 @@ print_proc()
 #if	defined(HASTASKS)
 	    if (FieldSel[LSOF_FIX_TID].st && Lp->tid)
 		(void) printf("%c%d%c", LSOF_FID_TID, Lp->tid, Terminator);
+	    if (FieldSel[LSOF_FIX_TCMD].st && Lp->tcmd)
+		(void) printf("%c%s%c", LSOF_FID_TCMD, Lp->tcmd, Terminator);
 #endif	/* defined(HASTASKS) */
 
 #if	defined(HASZONES)
@@ -1371,3 +1664,131 @@ print_proc()
 	}
 	return(rv);
 }
+
+
+#if	defined(HASPTYEPT)
+/*
+ * process_ptyinfo() -- process pseudoterminal info, adding it to selected files and
+ *		      selecting pseudoterminal end files (if requested)
+ */
+
+void
+process_ptyinfo(f)
+	int f;				/* function:
+					 *  0 == process selected pseudoterminal
+					 *  1 == process end point */
+{
+	pxinfo_t *pp;			/* previous pseudoterminal info */
+	int mos;			/* master or slave indicator
+					 *     0 == slave; 1 == master */
+	int pc;				/* print count */
+
+	if (!FeptE)
+	    return;
+	for (Lf = Lp->file; Lf; Lf = Lf->next) {
+	    if (Lf->rdev_def && is_pty_ptmx(Lf->rdev))
+		mos = 1;
+	    else if (Lf->rdev_def && is_pty_slave(GET_MAJ_DEV(Lf->rdev)))
+		mos = 0;
+	    else
+		continue;
+
+	    pp = (pxinfo_t *)NULL;
+	    switch(f) {
+	    case 0:
+
+	    /*
+	     * Process already selected pseudoterminal file.
+	     */
+		if (is_file_sel(Lp, Lf)) {
+
+		/*
+		 * This file has been selected by some criterion other than
+		 * its being a pseudoterminal.  Look up the pseudoterminal's
+		 * endpoints.
+		 */
+		    pc = 1;
+		    do {
+			if ((pp = find_ptyepti(Lp->pid, Lf, !mos, pp))) {
+
+			/*
+			 * This pseudoterminal endpoint is linked to the
+			 * selected pseudoterminal file.  Add its PID, FD and
+			 * access mode to the name column addition.
+			 */
+			    prt_ptyinfo(pp, (mos && pc), (FeptE == 2));
+			    pp = pp->next;
+			    pc = 0;
+			}
+		    } while (pp);
+		}
+		break;
+	    case 1:
+		if (!is_file_sel(Lp, Lf) && (Lf->chend & CHEND_PTY)) {
+
+		/*
+		 * This is an unselected end point file.  Select it and add
+		 * its end point information to its name column addition.
+		 */
+		    Lf->sf = Selflags;
+		    Lp->pss |= PS_SEC;
+		    pc = 1;
+		    do {
+			if ((pp = find_ptyepti(Lp->pid, Lf, !mos, pp))) {
+			    prt_ptyinfo(pp, (mos && pc), 0);
+			    pp = pp->next;
+			    pc = 0;
+			}
+		    } while (pp);
+		}
+		break;
+	    }
+	}
+}
+
+
+/*
+ * prt_ptyinfo() -- print pseudoterminal information
+ */
+
+static void
+prt_ptyinfo(pp, prt_edev, ps)
+	pxinfo_t *pp;			/* peer info */
+	int prt_edev;			/* print the end point device file */
+	int ps;				/* processing status:
+					 *    0 == process immediately
+					 *    1 == process later */
+{
+	struct lproc *ep;		/* pseudoterminal endpoint process */
+	struct lfile *ef;		/* pseudoterminal endpoint file */
+	int i;				/* temporary index */
+	char nma[1024];			/* name addition buffer */
+
+	ep = &Lproc[pp->lpx];
+	ef = pp->lf;
+	for (i = 0; i < (FDLEN - 1); i++) {
+	    if (ef->fd[i] != ' ')
+		break;
+	}
+	if (prt_edev) {
+	    (void) snpf(nma, sizeof(nma) - 1, "->/dev/pts/%d %d,%.*s,%s%c",
+			Lf->tty_index,
+			ep->pid, CmdLim, ep->cmd, &ef->fd[i],
+			ef->access);
+	} else {
+	    (void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
+			ep->pid, CmdLim, ep->cmd, &ef->fd[i],
+			ef->access);
+	}
+	(void) add_nma(nma, strlen(nma));
+	if (ps) {
+
+	/*
+	 * Endpoint files have been selected, so mark this
+	 * one for selection later. Set the type to PTY.
+	 */
+	    ef->chend = CHEND_PTY;
+	    ep->ept |= EPT_PTY_END;
+	}
+}
+#endif	/* defined(HASPTYEPT) */

@@ -40,6 +40,17 @@ SHELL=	/bin/sh
 
 SOURCE=	Makefile ${OTHER} ${MAN} ${HDR} ${SRC}
 
+ifneq ($(SOURCE_DATE_EPOCH),)
+	LSOF_HOST=   none
+	LSOF_LOGNAME=        none
+	LSOF_SYSINFO=        none
+	LSOF_USER=   none
+	BUILD_DATE=     $(shell date --utc --date=@$(SOURCE_DATE_EPOCH))
+	export LSOF_HOST LSOF_LOGNAME LSOF_SYSINFO LSOF_USER
+else
+	BUILD_DATE=     $(shell date)
+endif
+
 include _cmake.mk
 
 lib_rpc:
@@ -53,10 +64,18 @@ all: lib_rpc ${PROG}
 ${PROG}: ${P} ${LIB} ${OBJ}
 	${CC} -o $@ ${OBJ} ${CFGL}
 
+check: all
+	bash ./check.bash linux
+
+dist: clean
+	test -d .git && bash support/GenericDistrib2 linux
+
 clean: FRC
 	rm -f Makefile.bak ${PROG} a.out core errs lint.out tags *.o version.h ${CFGDN}
 	rm -f machine.h.old new_machine.h
 	(cd lib; ${MAKE} -f Makefile.skel clean)
+	(cd tests; ${MAKE} clean)
+	(cd dialects/linux/tests; ${MAKE} clean)
 
 install: all FRC
 	@echo ''
@@ -86,7 +105,7 @@ version.h:	FRC
 	@echo '#define	LSOF_BLDCMT	"${LSOF_BLDCMT}"' > version.h;
 	@echo '#define	LSOF_CC		"${CC}"' >> version.h
 	@echo '#define	LSOF_CCV	"${CCV}"' >> version.h
-	@echo '#define	LSOF_CCDATE	"'`date`'"' >> version.h
+	@echo '#define	LSOF_CCDATE	"$(BUILD_DATE)"' >> version.h
 	@echo '#define	LSOF_CCFLAGS	"'`echo ${CFLAGS} | sed 's/\\\\(/\\(/g' | sed 's/\\\\)/\\)/g' | sed 's/"/\\\\"/g'`'"' >> version.h
 	@echo '#define	LSOF_CINFO	"${CINFO}"' >> version.h
 	@if [ "X${LSOF_HOST}" = "X" ]; then \

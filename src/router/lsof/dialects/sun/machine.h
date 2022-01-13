@@ -31,7 +31,7 @@
 
 
 /*
- * $Id: machine.h,v 1.47 2011/09/07 19:16:00 abe Exp $
+ * $Id: machine.h,v 1.48 2018/02/14 14:24:07 abe Exp $
  */
 
 #if	!defined(LSOF_MACHINE_H)
@@ -50,12 +50,20 @@
 
 
 # if	solaris>=100000
+#  if	!defined(HAS_AIO_REQ_STRUCT)
 /*
- * Define a dummy aio_req structure for Solaris >= 10, because #include'ing
- * <sys/aio_req.h> with _KERNEL defined creates too many problems.
+ * When <sys.aio_req.h> lacks one, define a dummy aio_req structure for
+ * Solaris >= 10 systems.
+ *
+ * If this definition causes compilation errors for <sys/vnode.h>, especially
+ * with Solaris 11, it may be necessary to comment out the following structure
+ * definition.  I don't know a test that will determine the possibility of
+ * compilation errors.
  */
 
 typedef struct aio_req { int dummy; } aio_req_t;
+
+#  endif	/* !defined(HAS_AIO_REQ_STRUCT) */
 
 /*
  * Include <sys/utsname.h> so it won't be corrupted for 32 bit compilations
