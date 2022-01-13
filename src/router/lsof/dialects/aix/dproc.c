@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dproc.c,v 1.26 2008/10/21 16:14:18 abe Exp $";
 #endif
 
 
@@ -409,7 +408,7 @@ gather_proc_info()
 	     * If only ORed process selection options have been specified,
 	     * enable conditional file skipping and socket file only checking.
 	     */
-		if ((Selflags & SELFILE) || !(Selflags & SELPROC))
+		if ((Selflags & SELFILE) || !(Selflags & SelProc))
 		    cckreg = ckscko = 0;
 		else
 		    cckreg = ckscko = 1;
@@ -537,7 +536,7 @@ gather_proc_info()
 	     * socket file only checking, based on the process' selection
 	     * status.
 	     */
-		ckscko = (sf & SELPROC) ? 0 : 1;
+		ckscko = (sf & SelProc) ? 0 : 1;
 	    }
 	    
 #else	/* AIXV>=4300 */
@@ -557,7 +556,7 @@ gather_proc_info()
 	     * socket file only checking, based on the process' selection
 	     * status.
 	     */
-		ckscko = (sf & SELPROC) ? 0 : 1;
+		ckscko = (sf & SelProc) ? 0 : 1;
 	    }
 	    if (!fds) {
 		if (!(fds = (struct FDSINFO *)malloc((MALLOC_S)FDSINFOSIZE)))

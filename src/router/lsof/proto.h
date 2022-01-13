@@ -31,7 +31,7 @@
 
 
 /*
- * $Id: proto.h,v 1.38 2015/07/07 20:16:58 abe Exp $
+ * $Id: proto.h,v 1.39 2018/02/14 14:20:14 abe Exp $
  */
 
 
@@ -112,12 +112,34 @@ _PROTOTYPE(extern void find_ch_ino,(void));
 
 # if	defined(HASEPTOPTS)
 _PROTOTYPE(extern void clear_pinfo,(void));
-_PROTOTYPE(extern pxinfo_t *find_pendinfo,(struct lfile *lf, pxinfo_t *pp));
+_PROTOTYPE(extern pxinfo_t *find_pepti,(int pid, struct lfile *lf, pxinfo_t *pp));
 _PROTOTYPE(extern void process_pinfo,(int f));
+_PROTOTYPE(extern void clear_psxmqinfo,(void));
+_PROTOTYPE(extern pxinfo_t *find_psxmqinfo,(int pid, struct lfile *lf, pxinfo_t *pp));
+_PROTOTYPE(extern void process_psxmqinfo,(int f));
 #  if	defined(HASUXSOCKEPT)
+_PROTOTYPE(extern void clear_uxsinfo,(void));
 _PROTOTYPE(extern struct uxsin *find_uxsepti,(struct lfile *lf));
 _PROTOTYPE(extern void process_uxsinfo,(int f));
 #  endif	/* defined(HASUXSOCKEPT) */
+#  if	defined(HASPTYEPT)
+_PROTOTYPE(extern void clear_ptyinfo,(void));
+_PROTOTYPE(extern void enter_ptmxi,(int mn));
+_PROTOTYPE(extern pxinfo_t *find_ptyepti,(int pid, struct lfile *lf,int m,pxinfo_t *pp));
+_PROTOTYPE(extern int is_pty_slave,(int sm));
+_PROTOTYPE(extern int is_pty_ptmx,(dev_t dev));
+_PROTOTYPE(extern void process_ptyinfo,(int f));
+_PROTOTYPE(extern void clear_evtfdinfo,(void));
+_PROTOTYPE(extern void enter_evtfdinfo,(int id));
+_PROTOTYPE(extern pxinfo_t *find_evtfdinfo,(int pid, struct lfile *lf,pxinfo_t *pp));
+_PROTOTYPE(extern void process_evtfdinfo,(int f));
+#  endif	/* defined(HASPTYEPT) */
+_PROTOTYPE(extern void clear_netsinfo,(void));
+_PROTOTYPE(extern void process_netsinfo,(int f));
+#if	defined(HASIPv6)
+_PROTOTYPE(extern void clear_nets6info,(void));
+_PROTOTYPE(extern void process_nets6info,(int f));
+# endif	/* defined(HASIPv6) */
 # endif	/* defined(HASEPTOPTS) */
 
 _PROTOTYPE(extern void free_lproc,(struct lproc *lp));
@@ -140,6 +162,7 @@ _PROTOTYPE(extern int hashbyname,(char *nm, int mod));
 _PROTOTYPE(extern void hashSfile,(void));
 _PROTOTYPE(extern void initialize,(void));
 _PROTOTYPE(extern int is_cmd_excl,(char *cmd, short *pss, short *sf));
+_PROTOTYPE(extern int is_file_sel,(struct lproc *lp, struct lfile *lf));
 _PROTOTYPE(extern int is_nw_addr,(unsigned char *ia, int p, int af));
 
 #if	defined(HASTASKS)

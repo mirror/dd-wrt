@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dstore.c,v 1.8 2008/04/15 13:31:47 abe Exp $";
 #endif
 
 
@@ -47,6 +46,8 @@ struct file *Cfp;			/* curent file's file struct pointer */
  */
 
 struct drive_Nl Drive_Nl[] = {
+
+	{ X_BADFILEOPS,	"badfileops"	},
 
 #if	FREEBSDV<2005
 	{ X_NCACHE,	"_nchhead"	},
@@ -129,3 +130,10 @@ struct pff_tab Pof_tab[] = {
 	{ (long)0,		NULL		}
 };
 #endif	/* defined(HASFSTRUCT) */
+
+
+/*
+ * Kernel's bad file operations address
+ */
+
+KA_T X_bfopsa;				/* badfileops kernel address */

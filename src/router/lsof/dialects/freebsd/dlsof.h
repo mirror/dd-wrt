@@ -31,13 +31,14 @@
 
 
 /*
- * $Id: dlsof.h,v 1.47 2015/07/07 20:23:43 abe Exp $
+ * $Id: dlsof.h,v 1.49 2018/07/14 12:14:55 abe Exp $
  */
 
 
 #if	!defined(FREEBSD_LSOF_H)
 #define	FREEBSD_LSOF_H	1
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <nlist.h>
@@ -45,6 +46,12 @@
 #include <signal.h>
 #include <unistd.h>
 
+#if    FREEBSDV>=13000
+/* This header is a huge mess.  Please don't support EOL FreeBSD releases. */
+#define        _KERNEL 1
+#include <sys/_lock.h>
+#undef _KERNEL
+#endif         /* FREEBSDV>=13000 */
 # if	FREEBSDV>=4000
 #  if	FREEBSDV>=5000
 #   if	FREEBSDV<6020
@@ -86,6 +93,26 @@
 
 #define	boolean_t	int
 #  endif	/* defined(NEEDS_BOOLEAN_T) */
+
+#  if defined(NEEDS_DEVICE_T)
+/*
+ * In FreeBSD 12 <sys/conf.h calls <sys/eventhandler.h> and it needs
+ * the device_t typedef.
+ */
+typedef	struct device	*device_t;
+#endif /* defined(NEEDS_DEVICE_T) */
+
+/*
+ * Define KLD_MODULE to avoid the error "ARM_NMMUS is 0" from ARM's
+ * <machine/cpuconf.h>.
+ */
+
+#define KLD_MODULE
+
+/*
+ * include <stdbool.h> for refount(9)
+ */
+#include <stdbool.h>
 
 #include <sys/conf.h>
 
@@ -134,8 +161,10 @@ int     getmntinfo(struct statfs **, int);
 #include <rpc/types.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+#define	_WANT_SOCKET
 #include <sys/socketvar.h>
 #include <sys/un.h>
+#define	_WANT_UNPCB
 #include <sys/unpcb.h>
 
 # if	FREEBSDV>=3000
@@ -146,12 +175,14 @@ int     getmntinfo(struct statfs **, int);
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <net/route.h>
+#define	_WANT_INPCB			/* for FreeBSD 12 and above */
 #include <netinet/in_pcb.h>
 #include <netinet/ip_var.h>
 #include <netinet/tcp.h>
 #include <netinet/tcpip.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_timer.h>
+#define	_WANT_TCPCB			/* for FreeBSD 12 and above */
 #include <netinet/tcp_var.h>
 #include <sys/ucred.h>
 #include <sys/uio.h>
@@ -476,6 +507,13 @@ struct vop_advlock_args { int dummy; };	/* to pacify lf_advlock() prototype */
 #  endif	/* FREEBSDV<5000 */
 # endif        /* FREEBSDV>=2020 */
 
+#undef	bcmp		/* avoid _KERNEL conflict */
+#undef	bcopy		/* avoid _KERNEL conflict */
+#undef	bzero		/* avoid _KERNEL conflict */
+#undef	memcmp		/* avoid _KERNEL conflict */
+#undef	memcpy		/* avoid _KERNEL conflict */
+#undef	memmove		/* avoid _KERNEL conflict */
+#undef	memset		/* avoid _KERNEL conflict */
 #include <string.h>
 
 
@@ -561,6 +599,8 @@ struct mounts {
         struct mounts *next;    	/* forward link */
 };
 
+#define	X_BADFILEOPS	"badfileops"
+extern KA_T X_bfopsa;
 #define	X_NCACHE	"ncache"
 #define	X_NCSIZE	"ncsize"
 #define	NL_NAME		n_name

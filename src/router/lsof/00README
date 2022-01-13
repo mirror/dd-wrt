@@ -1017,7 +1017,7 @@ test systems.
 The FreeBSD distribution header files are augmented by header files
 in the dialects/freebsd/include directory.
 
-David O'Brien maintains the lsof FreeBSD port package.
+Larry Rosenman maintains the lsof FreeBSD port package.
 
 
 HP-UX
@@ -1456,8 +1456,7 @@ grant read permission to the kernel memory devices.
 	AIX 4.1.[45], 4.2[.1], and 4.3[.123]
 	Apple Darwin 7.x for Power Macintosh systems
 	DEC OSF/1, Digital UNIX, Tru64 UNIX 2.0, 3.2, 4.0, and 5.[01]
-	FreeBSD 2.1.6, 2.2[.x], 3.x, 4.x, 5.x and [67].x
-	/dev/kmem-based 11.00
+	FreeBSD 2.1.6, 2.2[.x], 3.x, 4.x, 5.x, [6789].x and 1[012].x
 	NetBSD 1.[456], 2.x and 3.x
 	NEXTSTEP 3.[13]
 	OpenBSD 2.[89] and 3.[0-9]
@@ -1523,4 +1522,4 @@ you are trying to configure.
 
 
 Vic Abell <abe@purdue.edu>
-January 2, 2013
+February 14, 2018

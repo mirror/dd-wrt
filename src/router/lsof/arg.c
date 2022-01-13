@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: arg.c,v 1.51 2012/04/10 16:30:06 abe Exp abe $";
 #endif
 
 
@@ -772,8 +771,10 @@ enter_efsys(e, rdlnk)
  * Enter file system path on list, avoiding duplicates.
  */
 	for (ep = Efsysl; ep; ep = ep->next) {
-	   if (!strcmp(ep->path, path))
-		return(0);
+	   if (!strcmp(ep->path, path)) {
+		(void)free((FREE_P *)path);
+		return (0);
+	   }
 	}
 	if (!(ep = (efsys_list_t *)malloc((MALLOC_S)(sizeof(efsys_list_t))))) {
 	   (void) fprintf(stderr, "%s: no space for \"-e %s\" entry\n",
@@ -957,6 +958,12 @@ enter_fd_lst(nm, lo, hi, excl)
  */
 	f->hi = hi;
 	f->lo = lo;
+	if (f->nm && strcmp(f->nm, "fd") == 0) {
+	    (void) free((FREE_P *)f->nm);
+	    f->nm = NULL;
+	    f->hi = INT_MAX;
+	    f->lo = 0;
+	}
 	f->next = Fdl;
 	Fdl = f;
 	FdlTy = excl;

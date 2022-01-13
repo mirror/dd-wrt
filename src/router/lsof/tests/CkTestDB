@@ -95,6 +95,10 @@ else
   EO="-n"
 fi
 
+if [ x"$CI" = x1 ]; then
+    exit 0
+fi
+
 # Display a validation warning.
 
 cat << .CAT_MARK > /dev/tty

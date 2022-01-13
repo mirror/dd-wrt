@@ -32,7 +32,7 @@
 
 
 /*
- * $Id: lsof_fields.h,v 1.13 2014/10/13 22:36:20 abe Exp $
+ * $Id: lsof_fields.h,v 1.14 2018/02/14 14:19:25 abe Exp $
  */
 
 
@@ -113,68 +113,72 @@
 #define	LSOF_FIX_MARK		13
 #define	LSOF_FNM_MARK		"marker between repeated output"
 
+#define	LSOF_FID_TCMD		'M'
+#define	LSOF_FIX_TCMD		14
+#define	LSOF_FNM_TCMD		"task comMand name"
+
 #define	LSOF_FID_NAME		'n'
-#define	LSOF_FIX_NAME		14
+#define	LSOF_FIX_NAME		15
 #define	LSOF_FNM_NAME		"comment, name, Internet addresses"
 
 #define	LSOF_FID_NI		'N'
-#define	LSOF_FIX_NI		15
+#define	LSOF_FIX_NI		16
 #define	LSOF_FNM_NI		"file struct node ID as 0x<hex>"
 
 #define	LSOF_FID_OFFSET		'o'
-#define	LSOF_FIX_OFFSET		16
+#define	LSOF_FIX_OFFSET		17
 #define	LSOF_FNM_OFFSET		"file offset as 0t<dec> or 0x<hex>"
 
 #define	LSOF_FID_PID		'p'
-#define	LSOF_FIX_PID		17
+#define	LSOF_FIX_PID		18
 #define	LSOF_FNM_PID		"process ID (PID)"
 
 #define	LSOF_FID_PGID		'g'
-#define	LSOF_FIX_PGID		18
+#define	LSOF_FIX_PGID		19
 #define	LSOF_FNM_PGID		"process group ID (PGID)"
 
 #define	LSOF_FID_PROTO		'P'
-#define	LSOF_FIX_PROTO		19
+#define	LSOF_FIX_PROTO		20
 #define	LSOF_FNM_PROTO		"protocol name"
 
 #define	LSOF_FID_RDEV		'r'
-#define	LSOF_FIX_RDEV		20
+#define	LSOF_FIX_RDEV		21
 #define	LSOF_FNM_RDEV		"raw device number as 0x<hex>"
 
 #define	LSOF_FID_PPID		'R'
-#define	LSOF_FIX_PPID		21
+#define	LSOF_FIX_PPID		22
 #define	LSOF_FNM_PPID		"paRent PID"
 
 #define	LSOF_FID_SIZE		's'
-#define	LSOF_FIX_SIZE		22
+#define	LSOF_FIX_SIZE		23
 #define	LSOF_FNM_SIZE		"file size"
 
 #define	LSOF_FID_STREAM		'S'
-#define	LSOF_FIX_STREAM		23
+#define	LSOF_FIX_STREAM		24
 #define	LSOF_FNM_STREAM		"stream module and device names"
 
 #define	LSOF_FID_TYPE		't'
-#define	LSOF_FIX_TYPE		24
+#define	LSOF_FIX_TYPE		25
 #define	LSOF_FNM_TYPE		"file type"
 
 #define	LSOF_FID_TCPTPI		'T'
-#define	LSOF_FIX_TCPTPI		25
+#define	LSOF_FIX_TCPTPI		26
 #define	LSOF_FNM_TCPTPI		"TCP/TPI info"
 
 #define	LSOF_FID_UID		'u'
-#define	LSOF_FIX_UID		26
+#define	LSOF_FIX_UID		27
 #define	LSOF_FNM_UID		"user ID (UID)"
 
 #define	LSOF_FID_ZONE		'z'
-#define	LSOF_FIX_ZONE		27
+#define	LSOF_FIX_ZONE		28
 #define	LSOF_FNM_ZONE		"zone name"
 
 #define	LSOF_FID_CNTX		'Z'
-#define	LSOF_FIX_CNTX		28
+#define	LSOF_FIX_CNTX		29
 #define	LSOF_FNM_CNTX		"security context"
 
 #define	LSOF_FID_TERM		'0'
-#define	LSOF_FIX_TERM		29
+#define	LSOF_FIX_TERM		30
 #define	LSOF_FNM_TERM		"(zero) use NUL field terminator instead of NL"
 
 #endif	/* !defined(LSOF_FORMAT_H) */

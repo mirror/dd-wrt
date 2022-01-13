@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dnode.c,v 1.44 2015/07/07 20:23:43 abe Exp $";
 #endif
 
 
@@ -52,17 +51,20 @@ _PROTOTYPE(static int lkup_dev_tty,(dev_t *dr, INODETYPE *ir));
 #endif	/* defined(HASFDESCFS) && HASFDESCFS==1 */
 
 
+#if	defined(HASPTSFN) && defined(DTYPE_PTS)
+#include <sys/tty.h>
+#endif	/* defined(HASPTSFN) && defined(DTYPE_PTS) */
+
+
 #if	defined(HAS_TMPFS)
-#define	_KERNEL
 #include <fs/tmpfs/tmpfs.h>
-#undef	_KERNEL
 #endif	/* defined(HAS_TMPFS) */
 
 _PROTOTYPE(static void get_lock_state,(KA_T f));
 
 
 /*
- * get_lock_state() -- get the lock state
+ * get_lock_state() - get the lock state
  */
 
 static void
@@ -232,7 +234,7 @@ lkup_dev_tty_again:
 
 #if	defined(HASKQUEUE)
 /*
- * process_kqueue() -- process kqueue file
+ * process_kqueue() - process kqueue file
  *
  * Strictly speaking this function should appear in dfile.c, because it is
  * a file processing function.  However, the Net and Open BSD sources don't
@@ -272,6 +274,7 @@ process_node(va)
 	struct nfsnode *n;
 	size_t sz;
 	char *ty;
+	unsigned char ums;
 	enum vtype type;
 	struct vnode *v, vb;
 	struct l_vfs *vfs;
@@ -320,6 +323,14 @@ process_node(va)
 
 #endif	/* defined(HASFDESCFS) */
 
+#if	defined(HASFUSEFS)
+	dev_t fuse_dev;
+	int fuse_dev_def, fuse_stat;
+	INODETYPE fuse_ino;
+	long fuse_links;
+	SZOFFTYPE fuse_sz;
+#endif	/* defined(HASFUSEFS) */
+
 #if	FREEBSDV>=5000
 # if	defined(HAS_UFS1_2)
 	int ufst;
@@ -337,8 +348,8 @@ process_node(va)
 	struct devfs_dirent *d;
 	char vtbuf[32];
 	char *vtbp;
-	enum vtagtype { VT_DEVFS, VT_FDESC, VT_ISOFS, VT_PSEUDOFS, VT_NFS,
-			VT_NULL, VT_TMPFS, VT_UFS, VT_ZFS, VT_UNKNOWN
+	enum vtagtype { VT_DEVFS, VT_FDESC, VT_FUSEFS, VT_ISOFS, VT_PSEUDOFS,
+			VT_NFS, VT_NULL, VT_TMPFS, VT_UFS, VT_ZFS, VT_UNKNOWN
 		      };
 
 # if	defined(HAS_TMPFS)
@@ -400,7 +411,7 @@ process_overlaid_node:
  * Initialize miscellaneous variables.  This is done so that processing an
  * overlaid node will be a fresh start.
  */
-	devs = rdevs = 0;
+	devs = rdevs = ums = 0;
 	i = (struct inode *)NULL;
 	n = (struct nfsnode *)NULL;
 	Namech[0] = '\0';
@@ -412,6 +423,10 @@ process_overlaid_node:
 #if	defined(HASFDESCFS)
 	f = (struct fdescnode *)NULL;
 #endif	/* defined(HASFDESCFS) */
+
+#if	defined(HASFUSEFS)
+	fuse_dev_def = fuse_stat = 0;
+#endif	/* defined(HASFUSEFS) */
 
 #if	FREEBSDV<5000
 	m = (struct mfsnode *)NULL;
@@ -544,7 +559,7 @@ process_overlaid_node:
  * Get the pseudo vnode tag type for FreeBSD >= 5.
  */
 	vtag = VT_UNKNOWN;
-	if (v->v_tag && !kread((KA_T)v->v_tag, (char *)&vtbuf, sizeof(vtbuf)))
+	if (!kread((KA_T)v->v_lock.lock_object.lo_name, (char *)&vtbuf, sizeof(vtbuf)))
 	{
 	    vtbuf[sizeof(vtbuf) - 1] = '\0';
 	    vtbp = vtbuf;
@@ -577,10 +592,14 @@ process_overlaid_node:
 		vtag = VT_ISOFS;
 	    else if (!strcmp(vtbuf, "pseudofs"))
 		vtag = VT_PSEUDOFS;
+	    else if (!strcmp(vtbuf, "nullfs"))
+		vtag = VT_NULL;
 	    else if (!strcmp(vtbuf, "null"))
 		vtag = VT_NULL;
 	    else if (!strcmp(vtbuf, "fdesc"))
 		vtag = VT_FDESC;
+	    else if (!strcmp(vtbuf, "fuse"))
+		vtag = VT_FUSEFS;
 	    else if (!strcmp(vtbuf, "tmpfs"))
 		vtag = VT_TMPFS;
 	} else
@@ -630,6 +649,20 @@ process_overlaid_node:
 	    break;
 # endif	/* FREEBSDV<2000 */
 #endif	/* defined(HASFDESCFS) */
+
+#if	defined(HASFUSEFS)
+	case VT_FUSEFS:
+	    if (read_fuse_node(v, &fuse_dev, &fuse_dev_def, &fuse_ino,
+			       &fuse_links, &fuse_sz))
+	    {
+		(void) snpf(Namech, Namechl, "no fuse node: %s",
+		    print_kptr((KA_T)v->v_data, (char *)NULL, 0));
+		enter_nm(Namech);
+		return;
+	    }
+	    fuse_stat = 1;
+	    break;
+#endif	/* defined(HASFUSEFS) */
 
 #if	defined(HAS9660FS)
 	case VT_ISOFS:
@@ -795,6 +828,7 @@ process_overlaid_node:
 
 # if	defined(HAS_UFS1_2)
 	    if (i->i_ump && !kread((KA_T)i->i_ump, (char *)&um, sizeof(um))) {
+		ums =  1;
 		if (um.um_fstype == UFS1) {
 		    if (i->i_din1
 		    &&  !kread((KA_T)i->i_din1, (char *)&d1, sizeof(d1)))
@@ -870,26 +904,33 @@ process_overlaid_node:
 	} else if (i) {
 
 #if	FREEBSDV>=4000
+# if	defined(HAS_NO_IDEV)
+	    if (ums) {
+		dev = Dev2Udev((KA_T)um.um_dev);
+		devs = 1;
+	    }
+# else	/* !defined(HAS_NO_IDEV) */
 	    if (i->i_dev
 
-# if	!defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV)
+#  if	!defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV)
 	    &&  !kread((KA_T)i->i_dev, (char *)&si, sizeof(si))
-# endif	/* !defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV) */
+#  endif/* !defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV) */
 
 	    ) {
 
-# if	defined(HAS_NO_SI_UDEV)
-#  if	defined(HAS_CONF_MINOR) || defined(HAS_CDEV2PRIV)
+#  if	defined(HAS_NO_SI_UDEV)
+#   if	defined(HAS_CONF_MINOR) || defined(HAS_CDEV2PRIV)
 		dev = Dev2Udev((KA_T)i->i_dev);
-#  else	/* !defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV) */
+#   else	/* !defined(HAS_CONF_MINOR) && !defined(HAS_CDEV2PRIV) */
 		dev = Dev2Udev(&si);
-#  endif	/* defined(HAS_CONF_MINOR) || defined(HAS_CDEV2PRIV) */
-# else	/* !defined(HAS_NO_SI_UDEV) */
+#   endif	/* defined(HAS_CONF_MINOR) || defined(HAS_CDEV2PRIV) */
+#   else	/* !defined(HAS_NO_SI_UDEV) */
 		dev = si.si_udev;
-# endif	/* defined(HAS_NO_SI_UDEV) */
+#  endif	/* defined(HAS_NO_SI_UDEV) */
 
 		devs = 1;
 	    }
+# endif	/* defined(HAS_NO_IDEV) */
 #else	/* FREEBSDV<4000 */
 	    dev = i->i_dev;
 	    devs = 1;
@@ -937,7 +978,14 @@ process_overlaid_node:
 	 * Record information returned by readzfsnode().
 	 */
 	    if (vfs) {
-		dev = vfs->fsid.val[0];
+		union {
+		    int32_t val[2];
+		    dev_t dev;
+		} vfs_fsid;
+
+		vfs_fsid.val[0] = vfs->fsid.val[0];
+		vfs_fsid.val[1] = vfs->fsid.val[1];
+		dev = vfs_fsid.dev;
 		devs = 1;
 	    }
 	    if ((type == VCHR) || (type == VBLK)) {
@@ -959,7 +1007,7 @@ process_overlaid_node:
 
 #  if	HASFDESCFS==1
 	    else
-#  endif	/* HASFDESFS==1 */
+#  endif	/* HASFDESCFS==1 */
 # endif	/* defined(HASFDLINK) */
 
 # if	HASFDESCFS==1
@@ -972,7 +1020,7 @@ process_overlaid_node:
 			devs = Lf->inp_ty = 1;
 		    }
 		}
-# endif	/* HASFDESFS==1 */
+# endif	/* HASFDESCFS==1 */
 
 	}
 #endif	/* defined(HASFDESCFS) && (defined(HASFDLINK) || HASFDESCFS==1) */
@@ -983,6 +1031,13 @@ process_overlaid_node:
 	    devs = Lf->inp_ty = 1;
 	}
 #endif	/* defined(HAS9660FS) */
+
+#if	defined(HASFUSEFS)
+	else if (fuse_stat && fuse_dev_def) {
+	    dev = fuse_dev;
+	    devs = Lf->inp_ty = 1;
+	}
+#endif	/* defined(HASFUSEFS) */
 
 #if	FREEBSDV>=5000
 	else if (d) {
@@ -1073,6 +1128,13 @@ process_overlaid_node:
 	    Lf->inp_ty = 1;
 	}
 #endif	/* defined(HAS9660FS) */
+
+#if	defined(HASFUSEFS)
+	else if (fuse_stat) {
+	    Lf->inode = fuse_ino;
+	    Lf->inp_ty = 1;
+	}
+#endif	/* defined(HASFUSEFS) */
 
 #if	defined(HASPROCFS)
 # if	FREEBSDV>=2000
@@ -1205,7 +1267,15 @@ process_overlaid_node:
 			Lf->sz = (SZOFFTYPE)iso_sz;
 			Lf->sz_def = 1;
 		    }
+
 #endif	/* defined(HAS9660FS) */
+
+#if	defined(HASFUSEFS)
+		    else if (fuse_stat) {
+			Lf->sz = (SZOFFTYPE)fuse_sz;
+			Lf->sz_def = 1;
+		    }
+#endif	/* defined(HASFUSEFS) */
 
 		}
 		else if ((type == VCHR || type == VBLK) && !Fsize)
@@ -1264,6 +1334,13 @@ process_overlaid_node:
 		    Lf->nlink_def = 1;
 		}
 #endif	/* defined(HAS9660FS) */
+
+#if	defined(HASFUSEFS)
+		else if (fuse_stat) {
+		    Lf->nlink = fuse_links;
+		    Lf->nlink_def = 1;
+		}
+#endif	/* defined(HASFUSEFS) */
 
 #if	FREEBSDV>=5000
 		else if (d) {
@@ -1577,3 +1654,58 @@ process_pipe(pa)
 	    enter_nm(Namech);
 }
 #endif	/* FREEBSDV>=2020 */
+
+
+#if	defined(HASPTSFN) && defined(DTYPE_PTS)
+/*
+ * process_pts - process a file structure whose type is DTYPE_PTS
+ */
+
+void process_pts(tp)
+	KA_T tp;			/* f_data pointer to tty structure */
+{
+	dev_t dev;			/* IFCHR device number */
+	struct tty t;			/* tty structure */
+
+	(void) snpf(Lf->type, sizeof(Lf->type), "PTS");
+/*
+ * Read the tty structure.  Quit if it can't be read.
+ */
+	if (!tp || kread(tp, (char *)&t, sizeof(t))) {
+	    (void) snpf(Namech, Namechl,
+		"can't read DTYPE_PTS tty struct: %s",
+		print_kptr((KA_T)tp, (char *)NULL, 0));
+	    enter_nm(Namech);
+	    return;
+	}
+/*
+ * Convert the tty's cdev from kernel to user form.
+ *
+ * Set the device number to DevDev, the device number of /dev.
+ *
+ * Set the inode number to the device number.
+ *
+ * Set the file type to N_CHR for a character device (That's what a PTS is.)
+ *
+ * Force the use of offset from file structure.
+ *
+ * Set rdev to the converted device.
+ *
+ * Force the reloading of the device cache.
+ */
+	if ((dev = Dev2Udev((KA_T)t.t_dev)) == NODEV) {
+	    (void) snpf(Namech, Namechl,
+		"can't convert device in DTYPE_PTS tty struct: %s",
+		print_kptr((KA_T)tp, (char *)NULL, 0));
+	    enter_nm(Namech);
+	    return;
+	}
+	Lf->dev = DevDev;
+	Lf->inode = (INODETYPE)dev;
+	Lf->inp_ty = Lf->dev_def = Lf->rdev_def = 1;
+	Lf->ntype = N_CHR;
+	Lf->off_def = 1;
+	Lf->rdev = dev;
+	DCunsafe = 1;
+}
+#endif	/* defined(HASPTSFN) && defined(DTYPE_PTS) */

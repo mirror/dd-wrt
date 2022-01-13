@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1994 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dsock.c,v 1.30 2015/07/07 20:23:43 abe Exp $";
 #endif
 
 
@@ -79,7 +78,7 @@ static char *rcsid = "$Id: dsock.c,v 1.30 2015/07/07 20:23:43 abe Exp $";
  * Local function prototypes
  */
 
-_PROTOTYPE(static int ckstate,(KA_T ta, struct tcpcb *t, int fam));
+_PROTOTYPE(static int ckstate,(KA_T pcb, KA_T ta, struct tcpcb *t, int fam));
 
 
 /*
@@ -91,7 +90,8 @@ _PROTOTYPE(static int ckstate,(KA_T ta, struct tcpcb *t, int fam));
  */
 
 static int
-ckstate(ta, t, fam)
+ckstate(pcb, ta, t, fam)
+	KA_T pcb;			/* PCB address */
 	KA_T ta;			/* TCP control block address */
 	struct tcpcb *t;		/* TCP control block receptor */
 	int fam;			/* protocol family */
@@ -100,14 +100,18 @@ ckstate(ta, t, fam)
 /*
  * Read TCP control block.
  */
-	if (kread(ta, (char *)t, sizeof(struct tcpcb)))
+	if (kread(ta, (char *)t, sizeof(struct tcpcb))
+	||  (KA_T)t->t_inpcb != pcb)
+	{
 	    return(-1);
+	}
 	if (TcpStXn || TcpStIn) {
 
 	/*
 	 * If there are TCP state inclusions or exclusions, check them.
 	 */
-	    tsnx = (int)t->t_state + TcpStOff;
+	    if ((tsnx = (int)t->t_state + TcpStOff) >= TcpNstates)
+		return(0);
 	    if (TcpStXn) {
 		if (TcpStX[tsnx]) {
 		    Lf->sf &= ~SELNET;
@@ -177,7 +181,7 @@ process_socket(sa)
 #endif	/* FREEBSDV<4050 */
 
 #if	defined(HASIPv6) && !defined(HASINRIAIPv6)
-	struct in6pcb in6p;
+	struct inpcb in6p;
 #endif	/* defined(HASIPv6) && !defined(HASINRIAIPv6) */
 
 	(void) snpf(Lf->type, sizeof(Lf->type), "sock");
@@ -236,22 +240,43 @@ process_socket(sa)
 #if	defined(HASSOOPT)
 	Lf->lts.ltm = (unsigned int)s.so_linger;
 	Lf->lts.opt = (unsigned int)s.so_options;
+
+# if	__FreeBSD_version>=1200027
+	if (s.so_options & SO_ACCEPTCONN) {
+	    Lf->lts.pqlen = (unsigned int)s.sol_incqlen;
+	    Lf->lts.qlen = (unsigned int)s.sol_qlen;
+	    Lf->lts.qlim = (unsigned int)s.sol_qlimit;
+	} else {
+	    Lf->lts.rbsz = (unsigned long)s.so_rcv.sb_mbmax;
+	    Lf->lts.sbsz = (unsigned long)s.so_snd.sb_mbmax;
+
+#  if	defined(HASSBSTATE)
+	    Lf->lts.sbs_rcv = s.so_rcv.sb_state;
+	    Lf->lts.sbs_snd = s.so_snd.sb_state;
+#  endif	/* defined(HASSBSTATE) */
+
+	}
+
+# else	/* __FreeBSD_version<1200027 */
 	Lf->lts.pqlen = (unsigned int)s.so_incqlen;
 	Lf->lts.qlen = (unsigned int)s.so_qlen;
 	Lf->lts.qlim = (unsigned int)s.so_qlimit;
 	Lf->lts.rbsz = (unsigned long)s.so_rcv.sb_mbmax;
 	Lf->lts.sbsz = (unsigned long)s.so_snd.sb_mbmax;
-	Lf->lts.pqlens = Lf->lts.qlens = Lf->lts.qlims = Lf->lts.rbszs
-		       = Lf->lts.sbszs = (unsigned char)1;
-#endif	/* defined(HASSOOPT) */
 
-#if	defined(HASSOSTATE)
-	Lf->lts.ss = (unsigned int)s.so_state;
-# if	defined(HASSBSTATE)
+#  if	defined(HASSBSTATE)
 	Lf->lts.sbs_rcv = s.so_rcv.sb_state;
 	Lf->lts.sbs_snd = s.so_snd.sb_state;
-# endif	/* defined(HASSBSTATE) */
-#endif	/* defined(HASSOSTATE) */
+#  endif	/* defined(HASSBSTATE) */
+# endif	/*__FreeBSD_version>=1200027 */
+
+	Lf->lts.pqlens = Lf->lts.qlens = Lf->lts.qlims = Lf->lts.rbszs
+		       = Lf->lts.sbszs = (unsigned char)1;
+
+# if	defined(HASSOSTATE)
+	Lf->lts.ss = (unsigned int)s.so_state;
+# endif	/* defined(HASSOSTATE) */
+#endif	/* defined(HASSOPT) */
 
 /*
  * Process socket by the associated domain family.
@@ -306,8 +331,11 @@ process_socket(sa)
 	     */
 		if (p.pr_protocol == IPPROTO_TCP) {
 		    if (in6p.in6p_ppcb) {
-			if ((ts = ckstate((KA_T)in6p.in6p_ppcb, &t, fam)) == 1)
+			if ((ts = ckstate((KA_T)s.so_pcb, (KA_T)in6p.in6p_ppcb,
+					  &t, fam)) == 1)
+			{
 			    return;
+			}
 		    }
 		}
 		enter_dev_ch(print_kptr((KA_T)(in6p.in6p_ppcb ? in6p.in6p_ppcb
@@ -357,8 +385,11 @@ process_socket(sa)
 		}
 		if (p.pr_protocol == IPPROTO_TCP) {
 		    if (inp.inp_ppcb) {
-			if ((ts = ckstate((KA_T)inp.inp_ppcb, &t, fam)) == 1)
+			if ((ts = ckstate((KA_T)s.so_pcb, (KA_T)inp.inp_ppcb,
+					  &t, fam)) == 1)
+			{
 			    return;
+			}
 		    }
 		}
 		enter_dev_ch(print_kptr((KA_T)(inp.inp_ppcb ? inp.inp_ppcb

@@ -32,7 +32,6 @@
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright 1997 Purdue Research Foundation.\nAll rights reserved.\n";
-static char *rcsid = "$Id: dsock.c,v 1.41 2015/07/07 19:46:33 abe Exp $";
 #endif
 
 
@@ -55,6 +54,9 @@ static char *rcsid = "$Id: dsock.c,v 1.41 2015/07/07 19:46:33 abe Exp $";
 #define SOCKET_BUFFER_SIZE (getpagesize() < 8192L ? getpagesize() : 8192L)
 #endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
 
+#if	defined(HASSOSTATE)
+#include <linux/net.h>			/* for SS_* */
+#endif  /* defined(HASSOSTATE) */
 
 /*
  * Local definitions
@@ -66,6 +68,32 @@ static char *rcsid = "$Id: dsock.c,v 1.41 2015/07/07 19:46:33 abe Exp $";
 #define TCPUDPHASH(ino)	((int)((ino * 31415) >> 3) & (TcpUdp_bucks - 1))
 #define TCPUDP6HASH(ino) ((int)((ino * 31415) >> 3) & (TcpUdp6_bucks - 1))
 
+#define IPCBUCKS 128			/* IPC hash bucket count -- must be
+					 * a power of two */
+
+/* If a socket is used for IPC, we store both end points for the socket
+ * to the same hash backet. This makes seaching the counter part of
+ * an end point easier. See get_netpeeri(). */
+#define TCPUDP_IPC_HASH(tp) ((int)(((((tp)->faddr			\
+				      + (tp)->laddr,			\
+				      + (tp)->fport			\
+				      + (tp)->lport			\
+				      + (tp)->proto) * 31415) >> 3)	\
+				   & (IPCBUCKS - 1)))
+
+#define TCPUDP6_IPC_ADDR_INT32(a, n) (((a)->s6_addr32[n]))
+#define TCPUDP6_IPC_ADDR_MK_INT(a)		\
+	((int)TCPUDP6_IPC_ADDR_INT32(a, 0x0)    \
+	+(int)TCPUDP6_IPC_ADDR_INT32(a, 0x1)	\
+	+(int)TCPUDP6_IPC_ADDR_INT32(a, 0x2)	\
+	+(int)TCPUDP6_IPC_ADDR_INT32(a, 0x3))
+
+#define TCPUDP6_IPC_HASH(tp) ((int)((((TCPUDP6_IPC_ADDR_MK_INT(&(tp)->faddr) \
+				       + TCPUDP6_IPC_ADDR_MK_INT(&(tp)->laddr), \
+				       + (tp)->fport			\
+				       + (tp)->lport			\
+				       + (tp)->proto) * 31415) >> 3)	\
+				   & (IPCBUCKS - 1)))
 
 /*
  * Local structures
@@ -141,27 +169,59 @@ struct sctpsin {			/* SCTP socket information */
 struct tcp_udp {			/* IPv4 TCP and UDP socket
 					 * information */
 	INODETYPE inode;
-	unsigned long faddr, laddr;	/* foreign & local IPv6 addresses */
+	unsigned long faddr, laddr;	/* foreign & local IPv4 addresses */
 	int fport, lport;		/* foreign & local ports */
 	unsigned long txq, rxq;		/* transmit & receive queue values */
 	int proto;			/* 0 = TCP, 1 = UDP, 2 = UDPLITE */
 	int state;			/* protocol state */
-	struct tcp_udp *next;
+	struct tcp_udp *next;		/* in TcpUdp inode hash table */
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pxinfo;		/* inode information */
+	struct tcp_udp *ipc_next;	/* in TcpUdp local ipc hash table */
+	struct tcp_udp *ipc_peer;	/* locally connected peer(s) info */
+#endif	/* defined(HASEPTOPTS) */
 };
 
 #if	defined(HASIPv6)
 struct tcp_udp6 {			/* IPv6 TCP and UDP socket
 					 * information */
 	INODETYPE inode;
-	struct in6_addr faddr, laddr;	/* foreign and local IPv6 addresses */
+	struct in6_addr faddr, laddr;	/* foreign & local IPv6 addresses */
 	int fport, lport;		/* foreign & local ports */
 	unsigned long txq, rxq;		/* transmit & receive queue values */
 	int proto;			/* 0 = TCP, 1 = UDP, 2 = UDPLITE */
 	int state;			/* protocol state */
 	struct tcp_udp6 *next;
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pxinfo;		/* inode information */
+	struct tcp_udp6 *ipc_next;	/* in TcpUdp6 local ipc hash table */
+	struct tcp_udp6 *ipc_peer;	/* locally connected peer(s) info */
+#endif	/* defined(HASEPTOPTS) */
 };
 #endif	/* defined(HASIPv6) */
 
+typedef struct uxsin {			/* UNIX socket information */
+	INODETYPE inode;		/* node number */
+	char *pcb;			/* protocol control block */
+	char *path;			/* file path */
+	unsigned char sb_def;		/* stat(2) buffer definitions */
+	dev_t sb_dev;			/* stat(2) buffer device */
+	INODETYPE sb_ino;		/* stat(2) buffer node number */
+	dev_t sb_rdev;			/* stat(2) raw device number */
+	uint32_t ty;			/* socket type */
+	unsigned int opt;		/* socket options */
+	unsigned int ss;		/* socket state */
+
+#  if	defined(HASEPTOPTS) && defined(HASUXSOCKEPT)
+	struct uxsin *icons;		/* incoming socket conections */
+	unsigned int icstat;		/* incoming connection status
+					 * 0 == none */
+	pxinfo_t *pxinfo;		/* inode information */
+	struct uxsin *peer;	        /* connected peer(s) info */
+#  endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
+
+	struct uxsin *next;
+} uxsin_t;
 
 /*
  * Local static values
@@ -215,6 +275,12 @@ static struct tcp_udp **TcpUdp = (struct tcp_udp **)NULL;
 static int TcpUdp_bucks = 0;		/* dynamically sized hash bucket
 					 * count for TCP and UDP -- will
 					 * be a power of two */
+#if	defined(HASEPTOPTS)
+static struct tcp_udp **TcpUdpIPC = (struct tcp_udp **)NULL;
+					/* IPv4 TCP & UDP info for socket used
+					   for IPC, hashed by (addr, port paris
+					   and protocol */
+#endif	/* defined(HASEPTOPTS) */
 
 #if	defined(HASIPv6)
 static char *Raw6path = (char *)NULL;	/* path to raw IPv6 /proc information */
@@ -235,6 +301,12 @@ static char *UDP6path = (char *)NULL;	/* path to IPv6 UDP /proc information */
 static char *UDPLITE6path = (char *)NULL;
 					/* path to IPv6 UDPLITE /proc
 					 * information */
+#if	defined(HASEPTOPTS)
+static struct tcp_udp6 **TcpUdp6IPC = (struct tcp_udp6 **)NULL;
+					/* IPv4 TCP & UDP info for socket used
+					   for IPC, hashed by (addr, port paris
+					   and protocol */
+#endif	/* defined(HASEPTOPTS) */
 #endif	/* defined(HASIPv6) */
 
 static char *UDPpath = (char *)NULL;	/* path to UDP /proc information */
@@ -261,6 +333,18 @@ _PROTOTYPE(static void parse_diag,(struct unix_diag_msg *dm, int len));
 _PROTOTYPE(static void prt_uxs,(uxsin_t *p, int mk));
 #endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
 
+#if	defined(HASEPTOPTS)
+_PROTOTYPE(static void enter_netsinfo,(struct tcp_udp *tp));
+_PROTOTYPE(static void get_netpeeri,(void));
+#endif	/* defined(HASEPTOPTS) */
+
+#if	defined(HASIPv6)
+#if	defined(HASEPTOPTS)
+_PROTOTYPE(static void enter_nets6info,(struct tcp_udp6 *tp));
+_PROTOTYPE(static void get_net6peeri,(void));
+#endif	/* defined(HASEPTOPTS) */
+#endif	/* defined(HASIPv6) */
+
 _PROTOTYPE(static struct icmpin *check_icmp,(INODETYPE i));
 _PROTOTYPE(static struct ipxsin *check_ipx,(INODETYPE i));
 _PROTOTYPE(static struct nlksin *check_netlink,(INODETYPE i));
@@ -283,6 +367,10 @@ _PROTOTYPE(static int isainb,(char *a, char *b));
 _PROTOTYPE(static void print_ax25info,(struct ax25sin *ap));
 _PROTOTYPE(static void print_ipxinfo,(struct ipxsin *ip));
 _PROTOTYPE(static char *sockty2str,(uint32_t ty, int *rf));
+_PROTOTYPE(static char *nlproto2str,(unsigned int pr));
+#if	defined(HASSOSTATE)
+_PROTOTYPE(static char *sockss2str,(unsigned int ss));
+#endif	/* defined(HASSOSTATE) */
 
 #if	defined(HASIPv6)
 _PROTOTYPE(static struct rawsin *check_raw6,(INODETYPE i));
@@ -493,6 +581,64 @@ check_tcpudp(i, p)
 	return((struct tcp_udp *)NULL);
 }
 
+/*
+ * check_inet() - check for locally used INET domain socket
+ */
+
+static struct tcp_udp *
+check_inet(i)
+	INODETYPE i;			/* socket file's inode number */
+{
+	int h;
+	struct tcp_udp *tp;
+
+	h = TCPUDPHASH(i);
+	for (tp = TcpUdp[h]; tp; tp = tp->next) {
+	    if (i == tp->inode)
+		return(tp);
+	}
+	return((struct tcp_udp *)NULL);
+}
+
+/*
+ * clear_netsinfo -- clear allocated INET socket info
+ */
+
+void
+clear_netsinfo()
+{
+	int h;				/* hash index */
+	struct tcp_udp *ti, *tp;	/* temporary pointers */
+
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pp, *pnp;
+#endif	/* defined(HASEPTOPTS) */
+
+	if (TcpUdp) {
+	    for (h = 0; h < TcpUdp_bucks; h++) {
+		if ((ti = TcpUdp[h])) {
+		    do {
+			tp = ti->next;
+
+#if	defined(HASEPTOPTS)
+			for (pp = ti->pxinfo; pp; pp = pnp) {
+			    pnp = pp->next;
+			    (void) free((FREE_P *)pp);
+			}
+#endif	/* defined(HASEPTOPTS) */
+
+			(void) free((FREE_P *)ti);
+			ti = tp;
+		    } while (ti);
+		    TcpUdp[h] = (struct tcp_udp *)NULL;
+		}
+	    }
+	}
+	if (TcpUdpIPC) {
+	    for (h = 0; h < IPCBUCKS; h++)
+		TcpUdpIPC[h] = (struct tcp_udp *)NULL;
+	}
+}
 
 #if	defined(HASIPv6)
 /*
@@ -548,6 +694,66 @@ check_tcpudp6(i, p)
 	}
 	return((struct tcp_udp6 *)NULL);
 }
+
+/*
+ * check_inet6() - check for locally used INET6 domain socket
+ */
+
+static struct tcp_udp6 *
+check_inet6(i)
+	INODETYPE i;			/* socket file's inode number */
+{
+	int h;
+	struct tcp_udp6 *tp;
+
+	h = TCPUDP6HASH(i);
+	for (tp = TcpUdp6[h]; tp; tp = tp->next) {
+	    if (i == tp->inode)
+		return(tp);
+	}
+	return((struct tcp_udp6 *)NULL);
+}
+
+/*
+ * clear_nets6info -- clear allocated INET6 socket info
+ */
+
+void
+clear_nets6info()
+{
+	int h;				/* hash index */
+	struct tcp_udp6 *ti, *tp;	/* temporary pointers */
+
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pp, *pnp;
+#endif	/* defined(HASEPTOPTS) */
+
+	if (TcpUdp6) {
+	    for (h = 0; h < TcpUdp6_bucks; h++) {
+		if ((ti = TcpUdp6[h])) {
+		    do {
+			tp = ti->next;
+
+#if	defined(HASEPTOPTS)
+			for (pp = ti->pxinfo; pp; pp = pnp) {
+			    pnp = pp->next;
+			    (void) free((FREE_P *)pp);
+			}
+#endif	/* defined(HASEPTOPTS) */
+
+			(void) free((FREE_P *)ti);
+			ti = tp;
+		    } while (ti);
+		    TcpUdp6[h] = (struct tcp_udp6 *)NULL;
+		}
+	    }
+	}
+	if (TcpUdp6IPC) {
+	    for (h = 0; h < IPCBUCKS; h++)
+		TcpUdp6IPC[h] = (struct tcp_udp6 *)NULL;
+	}
+}
+
 #endif	/* defined(HASIPv6) */
 
 
@@ -562,12 +768,56 @@ check_unix(i)
 	int h;
 	uxsin_t *up;
 
+	if (!Uxsin)
+	    return NULL;
+
 	h = INOHASH(i);
 	for (up = Uxsin[h]; up; up = up->next) {
 	    if (i == up->inode)
 		return(up);
 	}
 	return((uxsin_t *)NULL);
+}
+
+
+/*
+ * clear_uxsinfo -- clear allocated UNIX socket info
+ */
+
+void
+clear_uxsinfo()
+{
+	int h;				/* hash index */
+	uxsin_t *ui, *up;		/* remporary pointers */
+
+#if	defined(HASEPTOPTS) && defined(HASUXSOCKEPT)
+	pxinfo_t *pp, *pnp;
+#endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
+
+	if (!Uxsin)
+	    return;
+	for (h = 0; h < INOBUCKS; h++) {
+	    if ((ui = Uxsin[h])) {
+		do {
+		    up = ui->next;
+
+#if	defined(HASEPTOPTS) && defined(HASUXSOCKEPT)
+		    for (pp = ui->pxinfo; pp; pp = pnp) {
+		        pnp = pp->next;
+		        (void) free((FREE_P *)pp);
+		    }
+#endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
+
+		    if (ui->path)
+			(void) free((FREE_P *)ui->path);
+		    if (ui->pcb)
+			(void) free((FREE_P *)ui->pcb);
+		    (void) free((FREE_P *)ui);
+		    ui = up;
+		} while (ui);
+		Uxsin[h] = (uxsin_t *)NULL;
+	    }
+	}
 }
 
 
@@ -822,7 +1072,7 @@ fill_uxpino(si, pi)
 
 	if ((up = check_unix(si))) {
 	    if (!up->peer) {
-		if (pp = check_unix(pi))
+		if ((pp = check_unix(pi)))
 		    up->peer = pp;
 	    }
 	}
@@ -1081,15 +1331,15 @@ process_uxsinfo(f)
 			if (tp->icons) {
 			    if (tp->icstat) {
 				p = tp->icons;
-				while (p != tp) {
-				    if (p && p->inode)
+				while (p && p != tp) {
+				    if (p->inode)
 					prt_uxs(p, 1);
 				    p = p->icons;
 				}
 			    } else {
-				for (p = tp->icons; !p->icstat; p = p->icons)
+				for (p = tp->icons; p && !p->icstat; p = p->icons)
 				    ; /* DO NOTHING */
-				if (p->icstat && p->inode)
+				if (p && p->inode)
 				    prt_uxs (p, 1);
 			    }
 			}
@@ -1113,15 +1363,15 @@ process_uxsinfo(f)
 			if (tp->icons) {
 			    if (tp->icstat) {
 				p = tp->icons;
-				while (p != tp) {
-				    if (p  && p->inode)
+				while (p && p != tp) {
+				    if (p->inode)
 					prt_uxs(p, 0);
 				    p = p->icons;
 				}
 			    } else {
-				for (p = tp->icons; !p->icstat; p = p->icons)
+				for (p = tp->icons; p && !p->icstat; p = p->icons)
 				    ; /* DO NOTHING */
-				if (p->icstat && p->inode)
+				if (p && p->inode)
 				    prt_uxs(p, 0);
 			    }
 			}
@@ -1134,6 +1384,384 @@ process_uxsinfo(f)
 #endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
  
  
+#if	defined(HASEPTOPTS)
+/*
+ * enter_netsinfo_common() -- enter inet or inet6 socket info
+ * 	tp = tcp/udp on ipv4 or ipv4 socket pointer
+ */
+
+static void
+enter_netsinfo_common (void *tp,
+		       pxinfo_t * (* get_pxinfo) (void *),
+		       void (* set_pxinfo) (void *, pxinfo_t *))
+{
+	pxinfo_t *pi;			/* pxinfo_t structure pointer */
+	struct lfile *lf;		/* local file structure pointer */
+	struct lproc *lp;		/* local proc structure pointer */
+	pxinfo_t *np;			/* new pxinfo_t structure pointer */
+
+	for (pi = (* get_pxinfo) (tp); pi; pi = pi->next) {
+	    lf = pi->lf;
+	    lp = &Lproc[pi->lpx];
+	    if (pi->ino == Lf->inode) {
+		if ((lp->pid == Lp->pid) && !strcmp(lf->fd, Lf->fd))
+		    return;
+	    }
+	}
+	if (!(np = (pxinfo_t *)malloc(sizeof(pxinfo_t)))) {
+	    (void) fprintf(stderr,
+			   "%s: no space for pipeinfo in netsinfo, PID %d\n",
+			   Pn, Lp->pid);
+	    Exit(1);
+	}
+	np->ino = Lf->inode;
+	np->lf = Lf;
+	np->lpx = Lp - Lproc;
+	np->next = (* get_pxinfo)(tp);
+	(* set_pxinfo)(tp, np);
+}
+
+/*
+ * prt_nets_common() -- print locally used INET or INET6 socket information
+ */
+
+static void
+prt_nets_common(p, mk, get_pxinfo, chend, ept_flag)
+	void *p;			/* peer info */
+	int mk;				/* 1 == mark for later
+					 * processing */
+	pxinfo_t * (* get_pxinfo) (void *);
+	unsigned char chend;
+	short ept_flag;
+{
+	struct lproc *ep;		/* socket endpoint process */
+	struct lfile *ef;		/* socket endpoint file */
+	int i;				/* temporary index */
+	char nma[1024];			/* character buffer */
+	pxinfo_t *pp;			/* previous pipe info of socket */
+
+	for (pp = (* get_pxinfo)(p); pp; pp = pp->next) {
+
+	/*
+	 * Add a linked socket's PID, command name and FD to the name column
+	 * addition.
+	 */
+	    ep = &Lproc[pp->lpx];
+	    ef = pp->lf;
+	    for (i = 0; i < (FDLEN - 1); i++) {
+		if (ef->fd[i] != ' ')
+		    break;
+	    }
+	    (void) snpf(nma, sizeof(nma) - 1, "%d,%.*s,%s%c",
+			ep->pid, CmdLim, ep->cmd, &ef->fd[i], ef->access);
+	    (void) add_nma(nma, strlen(nma));
+	    if (mk && FeptE == 2) {
+
+	    /*
+	     * Endpoint files have been selected, so mark this
+	     * one for selection later.
+	     */
+		ef->chend = chend;
+		ep->ept |= ept_flag;
+	    }
+	}
+}
+
+/*
+ * enter_netsinfo() -- enter inet socket info
+ * 	tp = tcp/udp on ipv4 socket pointer
+ */
+
+static pxinfo_t *
+tcp_udp_get_pxinfo(void *vp)
+{
+	struct tcp_udp *tp = vp;
+	return tp->pxinfo;
+}
+
+static void
+tcp_udp_set_pxinfo(void *vp, pxinfo_t *np)
+{
+	struct tcp_udp *tp = vp;
+	tp->pxinfo = np;
+}
+
+static void
+enter_netsinfo (tp)
+	struct tcp_udp *tp;
+{
+	enter_netsinfo_common (tp,
+			       tcp_udp_get_pxinfo,
+			       tcp_udp_set_pxinfo);
+}
+
+/*
+ * find_netsepti(lf) -- find locally used INET socket endpoint info
+ */
+
+static struct tcp_udp *
+find_netsepti(lf)
+	struct lfile *lf;		/* socket's lfile */
+{
+	struct tcp_udp *tp;
+
+	tp = check_inet(lf->inode);
+	return(tp ? tp->ipc_peer: (struct tcp_udp *)NULL);
+}
+
+/*
+ * get_netpeeri() - get INET socket peer inode information
+ */
+
+static void
+get_netpeeri()
+{
+	int h;
+	struct tcp_udp *np, *tp;
+
+	for (h = 0; h < IPCBUCKS; h++) {
+	    for (tp = TcpUdpIPC[h]; tp; tp = tp->ipc_next) {
+		if (tp->ipc_peer)
+		    continue;
+		for (np = TcpUdpIPC[h]; np; np = np->ipc_next) {
+		    if (np->ipc_peer)
+			continue;
+		    if (tp->faddr == np->laddr &&
+			tp->laddr == np->faddr &&
+			tp->fport == np->lport &&
+			tp->lport == np->fport &&
+			tp->proto == np->proto) {
+			tp->ipc_peer = np;
+			np->ipc_peer = tp;
+			break;
+		    }
+		}
+	    }
+	}
+}
+
+/*
+ * prt_nets() -- print locally used INET socket information
+ */
+
+static void
+prt_nets(p, mk)
+	struct tcp_udp *p;		/* peer info */
+	int mk;				/* 1 == mark for later processing */
+{
+	prt_nets_common (p, mk, tcp_udp_get_pxinfo, CHEND_NETS, EPT_NETS_END);
+}
+
+/*
+ * process_netsinfo() -- process locally used INET socket information, adding
+ *			it to selected INET socket files and selecting INET
+ *			socket end point files (if requested)
+ */
+
+void
+process_netsinfo(f)
+	int f;				/* function:
+					 *     0 == process selected socket
+					 *     1 == process socket end point
+					 */
+{
+	struct tcp_udp *p;		/* peer INET socket info pointer */
+	struct tcp_udp*tp;		/* temporary INET socket info pointer */
+
+	if (!FeptE)
+	    return;
+	for (Lf = Lp->file; Lf; Lf = Lf->next) {
+	    if (strcmp(Lf->type,
+#if	defined(HASIPv6)
+		       "IPv4"
+#else	/* !defined(HASIPv6) */
+		       "inet"
+#endif	/* defined(HASIPv6) */
+		      ))
+		continue;
+	    switch (f) {
+	    case 0:
+
+	    /*
+	     * Process already selected socket.
+	     */
+		if (is_file_sel(Lp, Lf)) {
+
+		/*
+		 * This file has been selected by some criterion other than its
+		 * being a socket.  Look up the socket's endpoints.
+		 */
+		    p = find_netsepti(Lf);
+		    if (p && p->inode)
+			prt_nets(p, 1);
+		}
+		break;
+	    case 1:
+		if (!is_file_sel(Lp, Lf) && (Lf->chend & CHEND_NETS)) {
+
+		/*
+		 * This is an unselected end point INET socket file.  Select it
+		 * and add its end point information to peer's name column
+		 * addition.
+		 */
+		    Lf->sf = Selflags;
+		    Lp->pss |= PS_SEC;
+		    p = find_netsepti(Lf);
+		    if (p && p->inode)
+			prt_nets(p, 0);
+		}
+		break;
+	    }
+	}
+}
+#endif
+    /* defined(HASEPTOPTS) */
+
+#if	defined(HASIPv6)
+#if	defined(HASEPTOPTS)
+/*
+ * enter_nets6info() -- enter inet socket info
+ * 	tp = tcp/udp on ipv6 socket pointer
+ */
+
+static pxinfo_t *
+tcp_udp6_get_pxinfo(void *vp)
+{
+	struct tcp_udp6 *tp = vp;
+	return tp->pxinfo;
+}
+
+static void
+tcp_udp6_set_pxinfo(void *vp, pxinfo_t *np)
+{
+	struct tcp_udp6 *tp = vp;
+	tp->pxinfo = np;
+}
+
+static void
+enter_nets6info (tp)
+	struct tcp_udp6 *tp;
+{
+	enter_netsinfo_common (tp,
+			       tcp_udp6_get_pxinfo,
+			       tcp_udp6_set_pxinfo);
+}
+
+/*
+ * find_nets6epti(lf) -- find locally used INET6 socket endpoint info
+ */
+
+static struct tcp_udp6 *
+find_nets6epti(lf)
+	struct lfile *lf;		/* socket's lfile */
+{
+	struct tcp_udp6 *tp;
+
+	tp = check_inet6(lf->inode);
+	return(tp ? tp->ipc_peer: (struct tcp_udp6 *)NULL);
+}
+
+/*
+ * get_net6peeri() - get INET6 socket peer inode information
+ */
+
+static void
+get_net6peeri()
+{
+	int h;
+	struct tcp_udp6 *np, *tp;
+
+	for (h = 0; h < IPCBUCKS; h++) {
+	    for (tp = TcpUdp6IPC[h]; tp; tp = tp->ipc_next) {
+		if (tp->ipc_peer)
+		    continue;
+		for (np = TcpUdp6IPC[h]; np; np = np->ipc_next) {
+		    if (np->ipc_peer)
+			continue;
+		    if (IN6_ARE_ADDR_EQUAL(&tp->faddr, &np->laddr) &&
+			IN6_ARE_ADDR_EQUAL(&tp->laddr, &np->faddr) &&
+			tp->fport == np->lport &&
+			tp->lport == np->fport &&
+			tp->proto == np->proto) {
+			tp->ipc_peer = np;
+			np->ipc_peer = tp;
+			break;
+		    }
+		}
+	    }
+	}
+}
+
+/*
+ * prt_nets6() -- print locally used INET6 socket information
+ */
+
+static void
+prt_nets6(p, mk)
+	struct tcp_udp6 *p;		/* peer info */
+	int mk;				/* 1 == mark for later processing */
+{
+	prt_nets_common (p, mk, tcp_udp6_get_pxinfo, CHEND_NETS6, EPT_NETS6_END);
+}
+
+/*
+ * process_nets6info() -- process locally used INET6 socket information, adding
+ *			it to selected INET6 socket files and selecting INET6
+ *			socket end point files (if requested)
+ */
+
+void
+process_nets6info(f)
+	int f;				/* function:
+					 *     0 == process selected socket
+					 *     1 == process socket end point
+					 */
+{
+	struct tcp_udp6 *p;		/* peer INET6 socket info pointer */
+	struct tcp_udp6*tp;		/* temporary INET6 socket info pointer */
+
+	if (!FeptE)
+	    return;
+	for (Lf = Lp->file; Lf; Lf = Lf->next) {
+	    if (strcmp(Lf->type, "IPv6"))
+		continue;
+	    switch (f) {
+	    case 0:
+
+	    /*
+	     * Process already selected socket.
+	     */
+		if (is_file_sel(Lp, Lf)) {
+		/*
+		 * This file has been selected by some criterion other than its
+		 * being a socket.  Look up the socket's endpoints.
+		 */
+		    p = find_nets6epti(Lf);
+		    if (p && p->inode)
+			prt_nets6(p, 1);
+		}
+		break;
+	    case 1:
+		if (!is_file_sel(Lp, Lf) && (Lf->chend & CHEND_NETS6)) {
+
+		/*
+		 * This is an unselected end point INET6 socket file.  Select it
+		 * and add its end point information to peer's name column
+		 * addition.
+		 */
+		    Lf->sf = Selflags;
+		    Lp->pss |= PS_SEC;
+		    p = find_nets6epti(Lf);
+		    if (p && p->inode)
+			prt_nets6(p, 0);
+		}
+		break;
+	    }
+	}
+}
+#endif	/* defined(HASEPTOPTS) */
+#endif	/* defined(HASIPv6) */
+
 /*
  * get_icmp() - get ICMP net info
  */
@@ -2189,6 +2817,11 @@ get_tcpudp(p, pr, clr)
 	struct tcp_udp *np, *tp;
 	static char *vbuf = (char *)NULL;
 	static size_t vsz = (size_t)0;
+
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pp, *pnp;
+#endif	/* defined(HASEPTOPTS) */
+
 /*
  * Delete previous table contents.
  */
@@ -2197,10 +2830,23 @@ get_tcpudp(p, pr, clr)
 		for (h = 0; h < TcpUdp_bucks; h++) {
 		    for (tp = TcpUdp[h]; tp; tp = np) {
 			np = tp->next;
+
+#if	defined(HASEPTOPTS)
+			for (pp = tp->pxinfo; pp; pp = pnp) {
+			    pnp = pp->next;
+			    (void) free((FREE_P *)pp);
+			}
+#endif	/* defined(HASEPTOPTS) */
+
 			(void) free((FREE_P *)tp);
 		    }
 		    TcpUdp[h] = (struct tcp_udp *)NULL;
 		}
+#if	defined(HASEPTOPTS)
+		if (FeptE)
+		    for (h = 0; h < IPCBUCKS; h++)
+			TcpUdpIPC[h] = (struct tcp_udp *)NULL;
+#endif	/* defined(HASEPTOPTS) */
 	    }
 /*
  * If no hash buckets have been allocated, do so now.
@@ -2236,6 +2882,15 @@ get_tcpudp(p, pr, clr)
 		    Pn, (int)(TcpUdp_bucks * sizeof(struct tcp_udp *)));
 		Exit(1);
 	    }
+#if	defined(HASEPTOPTS)
+	    if (FeptE && (!(TcpUdpIPC = (struct tcp_udp **)calloc(IPCBUCKS,
+								  sizeof(struct tcp_udp *))))) {
+		(void) fprintf(stderr,
+			       "%s: can't allocate %d bytes for TCP&UDP local IPC hash buckets\n",
+			       Pn, (int)(IPCBUCKS * sizeof(struct tcp_udp *)));
+		Exit(1);
+	    }
+#endif	/* defined(HASEPTOPTS) */
 	}
 /*
  * Open the /proc/net file, assign a page size buffer to the stream, and
@@ -2336,7 +2991,27 @@ get_tcpudp(p, pr, clr)
 	    tp->state = (int)state;
 	    tp->next = TcpUdp[h];
 	    TcpUdp[h] = tp;
+#if	defined(HASEPTOPTS)
+	    tp->pxinfo = (pxinfo_t *)NULL;
+	    if (FeptE) {
+		tp->ipc_peer = (struct tcp_udp *)NULL;
+		if (tp->state == TCP_ESTABLISHED) {
+		    int i = TCPUDP_IPC_HASH(tp);
+		    tp->ipc_next = TcpUdpIPC[i];
+		    TcpUdpIPC[i] = tp;
+		}
+	    }
+#endif	/* defined(HASEPTOPTS) */
 	}
+
+#if	defined(HASEPTOPTS)
+/*
+ * If endpoint info has been requested, link INET socket peer info.
+ */
+	if (FeptE)
+	    get_netpeeri();
+#endif	/* defined(HASEPTOPTS) */
+
 	(void) fclose(fs);
 }
 
@@ -2370,6 +3045,8 @@ get_raw6(p)
 			(void) free((FREE_P *)rp->la);
 		    if (rp->ra)
 			(void) free((FREE_P *)rp->ra);
+		    if (rp->sp)
+			(void) free((FREE_P *)rp->sp);
 		    (void) free((FREE_P *)rp);
 		}
 		Rawsin6[h] = (struct rawsin *)NULL;
@@ -2511,6 +3188,11 @@ get_tcpudp6(p, pr, clr)
 	struct tcp_udp6 *np6, *tp6;
 	static char *vbuf = (char *)NULL;
 	static size_t vsz = (size_t)0;
+
+#if	defined(HASEPTOPTS)
+	pxinfo_t *pp, *pnp;
+#endif	/* defined(HASEPTOPTS) */
+
 /*
  * Delete previous table contents.  Allocate a table for the first time.
  */
@@ -2519,10 +3201,23 @@ get_tcpudp6(p, pr, clr)
 		for (h = 0; h < TcpUdp6_bucks; h++) {
 		    for (tp6 = TcpUdp6[h]; tp6; tp6 = np6) {
 			np6 = tp6->next;
+
+#if	defined(HASEPTOPTS)
+			for (pp = tp6->pxinfo; pp; pp = pnp) {
+			    pnp = pp->next;
+			    (void) free((FREE_P *)pp);
+			}
+#endif	/* defined(HASEPTOPTS) */
+
 			(void) free((FREE_P *)tp6);
 		    }
 		    TcpUdp6[h] = (struct tcp_udp6 *)NULL;
 		}
+#if	defined(HASEPTOPTS)
+		if (FeptE)
+		    for (h = 0; h < IPCBUCKS; h++)
+			TcpUdp6IPC[h] = (struct tcp_udp6 *)NULL;
+#endif	/* defined(HASEPTOPTS) */
 	    }
 	} else {
 	
@@ -2568,6 +3263,15 @@ get_tcpudp6(p, pr, clr)
 		    Pn, (int)(TcpUdp6_bucks * sizeof(struct tcp_udp6 *)));
 		Exit(1);
 	    }
+#if	defined(HASEPTOPTS)
+	    if (FeptE && (!(TcpUdp6IPC = (struct tcp_udp6 **)calloc(IPCBUCKS,
+								    sizeof(struct tcp_udp6 *))))) {
+		(void) fprintf(stderr,
+			       "%s: can't allocate %d bytes for TCP6&UDP6 local IPC hash buckets\n",
+			       Pn, (int)(IPCBUCKS * sizeof(struct tcp_udp6 *)));
+		Exit(1);
+	    }
+#endif	/* defined(HASEPTOPTS) */
 	}
 /*
  * Open the /proc/net file, assign a page size buffer to the stream,
@@ -2664,7 +3368,26 @@ get_tcpudp6(p, pr, clr)
 	    tp6->state = (int)state;
 	    tp6->next = TcpUdp6[h];
 	    TcpUdp6[h] = tp6;
+#if	defined(HASEPTOPTS)
+	    tp6->pxinfo = (pxinfo_t *)NULL;
+	    if (FeptE) {
+		tp6->ipc_peer = (struct tcp_udp6 *)NULL;
+		if (tp6->state == TCP_ESTABLISHED) {
+		    int i = TCPUDP6_IPC_HASH(tp6);
+		    tp6->ipc_next = TcpUdp6IPC[i];
+		    TcpUdp6IPC[i] = tp6;
+		}
+	    }
+#endif	/* defined(HASEPTOPTS) */
 	}
+#if	defined(HASEPTOPTS)
+/*
+ * If endpoint info has been requested, link INET6 socket peer info.
+ */
+	if (FeptE)
+	    get_net6peeri();
+#endif	/* defined(HASEPTOPTS) */
+
 	(void) fclose(fs);
 }
 #endif	/* defined(HASIPv6) */
@@ -2722,6 +3445,7 @@ get_unix(p)
 		(void) fprintf(stderr,
 		    "%s: can't allocate %d bytes for Unix socket info\n",
 		    Pn, (int)(INOBUCKS * sizeof(uxsin_t *)));
+		Exit(1);
 	    }
 	}
 /*
@@ -2806,6 +3530,21 @@ get_unix(p)
 		ty = (uint32_t)UINT_MAX;
 	    }
 	/*
+	 * Record socket state.
+	 */
+	    unsigned long proc_flags = 0UL;
+	    ep = (char *)NULL;
+	    if (fp[3] && *fp[3]
+	    &&  (proc_flags = strtoul(fp[3], &ep, 16)) == ULONG_MAX)
+	        proc_flags = 0UL;
+
+	    unsigned long proc_st = 0UL;
+	    ep = (char *)NULL;
+	    if (fp[5] && *fp[5]
+	    &&  ((proc_st = strtoul(fp[5], &ep, 16)) == ULONG_MAX))
+	        proc_st = 0UL;
+
+	/*
 	 * Allocate and fill a Unix socket info structure; link it to its
 	 * hash bucket.
 	 */
@@ -2820,6 +3559,8 @@ get_unix(p)
 	    up->pcb = pcb;
 	    up->sb_def = 0;
 	    up->ty = ty;
+	    up->opt = (unsigned int)proc_flags;
+	    up->ss = (unsigned int)proc_st;
 	    if ((up->path = path) && (*path == '/')) {
 
 	    /*
@@ -2891,9 +3632,38 @@ net6a2in6(as, ad)
 	    (void) strncpy(buf, as, 8);
 	    buf[8] = '\0';
 	    ep = (char *)NULL;
-	    if ((ad->s6_addr32[i] = (uint32_t)strtoul(buf, &ep, 16))
-	    ==  (uint32_t)UINT32_MAX || !ep || *ep)
+
+	    errno = 0;
+	    unsigned long ul_addr = strtoul(buf, &ep, 16);
+	    if (!ep || *ep)
 		break;
+	    else if (ul_addr == ULONG_MAX && errno == ERANGE)
+	    {
+		/* Quoted from strtoul(3)
+		   ---------------------------------------------------
+		   The strtoul() function returns either the result of
+		   the conversion or, if there was a leading minus
+		   sign, the negation of the result of the conversion
+		   represented as an unsigned value, unless the
+		   original (nonnegated) value would overflow; in the
+		   latter case, strtoul() returns ULONG_MAX and sets
+		   errno to ERANGE.
+		   ---------------------------------------------------
+		   NOTE: even if the value doesn't overflow, a
+		   negative is not acceptable. */
+		break;
+	    }
+	    else if (ul_addr > (unsigned long)UINT32_MAX)
+	    {
+		/* This will never happen:
+		   The maximum length of BUF is 8 characters.
+		   The possible maximum value represented by BUF is
+		   "FFFFFFFF". This is UINT32_MAX.
+		   If you agree with what I write here, make a pull
+		   request for removing this block. */
+		break;
+	    }
+	    ad->s6_addr32[i] = (uint32_t)ul_addr;
 	}
 	return((*as || (i != 4) || len) ? 1 : 0);
 }
@@ -3017,6 +3787,31 @@ print_ipxinfo(ip)
 
 
 /*
+ * print_unix() - print state of UNIX domain socket
+ */
+
+static void
+print_unix(int nl)
+{
+	if (Ftcptpi & TCPTPI_STATE) {
+#if	defined(HASSOSTATE) && defined(HASSOOPT)
+	    char *cp = (Lf->lts.opt == __SO_ACCEPTCON)? "LISTEN": sockss2str(Lf->lts.ss);
+
+	    if (Ffield)
+		(void) printf("%cST=%s%c", LSOF_FID_TCPTPI, cp, Terminator);
+	    else {
+		putchar('(');
+		(void) fputs(cp, stdout);
+		putchar(')');
+	    }
+#endif	/* defined(HASSOSTATE) && defined(HASSOOPT) */
+	}
+	if (nl)
+	    putchar('\n');
+}
+
+
+/*
  * print_tcptpi() - print TCP/TPI state
  */
 
@@ -3029,6 +3824,10 @@ print_tcptpi(nl)
 	int ps = 0;
 	int s;
 
+	if (!strcmp(Lf->type, "unix"))  {
+	    print_unix(nl);
+	    return;
+	}
 	if ((Ftcptpi & TCPTPI_STATE) && Lf->lts.type == 0) {
 	    if (!TcpSt)
 		(void) build_IPstates();
@@ -3337,128 +4136,12 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 	     */
 
 	    (void) snpf(Lf->type, sizeof(Lf->type), "netlink");
-	    switch (np->pr) {
-
-#if	defined(NETLINK_ROUTE)
-	    case NETLINK_ROUTE:
-		cp = "ROUTE";
-		break;
-#endif	/* defined(NETLINK_ROUTE) */
-
-#if	defined(NETLINK_UNUSED)
-	    case NETLINK_UNUSED:
-		cp = "UNUSED";
-		break;
-#endif	/* defined(NETLINK_UNUSED) */
-
-#if	defined(NETLINK_USERSOCK)
-	    case NETLINK_USERSOCK:
-		cp = "USERSOCK";
-		break;
-#endif	/* defined(NETLINK_USERSOCK) */
-
-#if	defined(NETLINK_FIREWALL)
-	    case NETLINK_FIREWALL:
-		cp = "FIREWALL";
-		break;
-#endif	/* defined(NETLINK_FIREWALL) */
-
-#if	defined(NETLINK_INET_DIAG)
-	    case NETLINK_INET_DIAG:
-		cp = "INET_DIAG";
-		break;
-#endif	/* defined(NETLINK_INET_DIAG) */
-
-#if	defined(NETLINK_NFLOG)
-	    case NETLINK_NFLOG:
-		cp = "NFLOG";
-		break;
-#endif	/* defined(NETLINK_NFLOG) */
-
-#if	defined(NETLINK_XFRM)
-	    case NETLINK_XFRM:
-		cp = "XFRM";
-		break;
-#endif	/* defined(NETLINK_XFRM) */
-
-#if	defined(NETLINK_SELINUX)
-	    case NETLINK_SELINUX:
-		cp = "SELINUX";
-		break;
-#endif	/* defined(NETLINK_SELINUX) */
-
-#if	defined(NETLINK_ISCSI)
-	    case NETLINK_ISCSI:
-		cp = "ISCSI";
-		break;
-#endif	/* defined(NETLINK_ISCSI) */
-
-#if	defined(NETLINK_AUDIT)
-	    case NETLINK_AUDIT:
-		cp = "AUDIT";
-		break;
-#endif	/* defined(NETLINK_AUDIT) */
-
-#if	defined(NETLINK_FIB_LOOKUP)
-	    case NETLINK_FIB_LOOKUP:
-		cp = "FIB_LOOKUP";
-		break;
-#endif	/* defined(NETLINK_FIB_LOOKUP) */
-
-#if	defined(NETLINK_CONNECTOR)
-	    case NETLINK_CONNECTOR:
-		cp = "CONNECTOR";
-		break;
-#endif	/* defined(NETLINK_CONNECTOR) */
-
-#if	defined(NETLINK_NETFILTER)
-	    case NETLINK_NETFILTER:
-		cp = "NETFILTER";
-		break;
-#endif	/* defined(NETLINK_NETFILTER) */
-
-#if	defined(NETLINK_IP6_FW)
-	    case NETLINK_IP6_FW:
-		cp = "IP6_FW";
-		break;
-#endif	/* defined(NETLINK_IP6_FW) */
-
-#if	defined(NETLINK_DNRTMSG)
-	    case NETLINK_DNRTMSG:
-		cp = "DNRTMSG";
-		break;
-#endif	/* defined(NETLINK_DNRTMSG) */
-
-#if	defined(NETLINK_KOBJECT_UEVENT)
-	    case NETLINK_KOBJECT_UEVENT:
-		cp = "KOBJECT_UEVENT";
-		break;
-#endif	/* defined(NETLINK_KOBJECT_UEVENT) */
-
-#if	defined(NETLINK_GENERIC)
-	    case NETLINK_GENERIC:
-		cp = "GENERIC";
-		break;
-#endif	/* defined(NETLINK_GENERIC) */
-
-#if	defined(NETLINK_SCSITRANSPORT)
-	    case NETLINK_SCSITRANSPORT:
-		cp = "SCSITRANSPORT";
-		break;
-#endif	/* defined(NETLINK_SCSITRANSPORT) */
-
-#if	defined(NETLINK_ECRYPTFS)
-	    case NETLINK_ECRYPTFS:
-		cp = "ECRYPTFS";
-		break;
-#endif	/* defined(NETLINK_ECRYPTFS) */
-
-	    default:
-		(void) snpf(Namech, Namechl, "unknown protocol: %d", np->pr);
-		cp = (char *)NULL;
-	    }
+	    cp = nlproto2str(np->pr);
 	    if (cp)
 		(void) snpf(Namech, Namechl, "%s", cp);
+	    else
+		(void) snpf(Namech, Namechl, "unknown protocol: %d", np->pr);
+
 	    Lf->inode = (INODETYPE)s->st_ino;
 	    Lf->inp_ty = 1;
 	    if (Namech[0])
@@ -3823,11 +4506,16 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 	    (void) snpf(Lf->type, sizeof(Lf->type), "unix");
 	    if (up->pcb)
 		enter_dev_ch(up->pcb);
-	    if (ss & SB_INO) {
-		Lf->inode = (INODETYPE)s->st_ino;
-		Lf->inp_ty = 1;
-	    }
+	    Lf->inode = (INODETYPE)s->st_ino;
+	    Lf->inp_ty = 1;
 
+	    Lf->lts.type = up->ty;
+#if	defined(HASSOOPT)
+	    Lf->lts.opt = up->opt;
+#endif	/* defined(HASSOOPT) */
+#if	defined(HASSOSTATE)
+	    Lf->lts.ss = up->ss;
+#endif	/* defined(HASSOSTATE) */
 #if	defined(HASEPTOPTS) && defined(HASUXSOCKEPT)
 	    if (FeptE) {
 		(void) enter_uxsinfo(up);
@@ -4040,6 +4728,7 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 		    (INODETYPE)s->st_ino);
 		tbuf[sizeof(tbuf) - 1] = '\0';
 		enter_dev_ch(tbuf);
+		Lf->inode = (INODETYPE)s->st_ino;
 	    }
 	    af = AF_INET6;
 	    if (!IN6_IS_ADDR_UNSPECIFIED(&tp6->faddr) || tp6->fport)
@@ -4068,6 +4757,12 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 	    Lf->lts.rqs = Lf->lts.sqs = 1;
 #endif  /* defined(HASTCPTPIQ) */
 
+#if	defined(HASEPTOPTS)
+	    if (FeptE && tp6->ipc_peer) {
+		(void) enter_nets6info(tp6);
+		Lf->sf |= SELNETS6INFO;
+	    }
+#endif	/* defined(HASEPTOPTS) */
 	    return;
 	}
 #endif	/* defined(HASIPv6) */
@@ -4145,6 +4840,7 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 		    (INODETYPE)s->st_ino);
 		tbuf[sizeof(tbuf) - 1] = '\0';
 		enter_dev_ch(tbuf);
+		Lf->inode = (INODETYPE)s->st_ino;
 	    }
 	    if (tp->faddr || tp->fport) {
 		fs.s_addr = tp->faddr;
@@ -4165,6 +4861,13 @@ process_proc_sock(p, pbr, s, ss, l, lss)
 	    Lf->lts.sq = tp->txq;
 	    Lf->lts.rqs = Lf->lts.sqs = 1;
 #endif  /* defined(HASTCPTPIQ) */
+
+#if	defined(HASEPTOPTS)
+	    if (FeptE && tp->ipc_peer) {
+		(void) enter_netsinfo(tp);
+		Lf->sf |= SELNETSINFO;
+	    }
+#endif	/* defined(HASEPTOPTS) */
 
 	    return;
 	}
@@ -4412,6 +5115,12 @@ sockty2str(ty, rf)
 	    break;
 #endif	/* defined(SOCK_SEQPACKET) */
 
+#if	defined(SOCK_DCCP)
+	case SOCK_DCCP:
+	    sr = "DCCP";
+	    break;
+#endif	/* defined(SOCK_DCCP) */
+
 #if	defined(SOCK_PACKET)
 	case SOCK_PACKET:
 	    sr = "PACKET";
@@ -4425,3 +5134,182 @@ sockty2str(ty, rf)
 	*rf = f;
 	return(sr);
 }
+
+
+/*
+ * Nlproto2str() -- convert netlink protocol number to a string
+ *
+ * return NULL if the number is unknown.
+ */
+
+static char *
+nlproto2str(unsigned int pr)
+{
+	char *cp = NULL;
+	switch (pr) {
+#if	defined(NETLINK_ROUTE)
+	case NETLINK_ROUTE:
+	    cp = "ROUTE";
+	    break;
+#endif	/* defined(NETLINK_ROUTE) */
+
+#if	defined(NETLINK_UNUSED)
+	case NETLINK_UNUSED:
+	    cp = "UNUSED";
+	    break;
+#endif	/* defined(NETLINK_UNUSED) */
+
+#if	defined(NETLINK_USERSOCK)
+	case NETLINK_USERSOCK:
+	    cp = "USERSOCK";
+	    break;
+#endif	/* defined(NETLINK_USERSOCK) */
+
+#if	defined(NETLINK_FIREWALL)
+	case NETLINK_FIREWALL:
+	    cp = "FIREWALL";
+	    break;
+#endif	/* defined(NETLINK_FIREWALL) */
+
+#if	defined(NETLINK_INET_DIAG)
+	case NETLINK_INET_DIAG:
+	    cp = "INET_DIAG";
+	    break;
+#endif	/* defined(NETLINK_INET_DIAG) */
+
+#if	defined(NETLINK_NFLOG)
+	case NETLINK_NFLOG:
+	    cp = "NFLOG";
+	    break;
+#endif	/* defined(NETLINK_NFLOG) */
+
+#if	defined(NETLINK_XFRM)
+	case NETLINK_XFRM:
+	    cp = "XFRM";
+	    break;
+#endif	/* defined(NETLINK_XFRM) */
+
+#if	defined(NETLINK_SELINUX)
+	case NETLINK_SELINUX:
+	    cp = "SELINUX";
+	    break;
+#endif	/* defined(NETLINK_SELINUX) */
+
+#if	defined(NETLINK_ISCSI)
+	case NETLINK_ISCSI:
+	    cp = "ISCSI";
+	    break;
+#endif	/* defined(NETLINK_ISCSI) */
+
+#if	defined(NETLINK_AUDIT)
+	case NETLINK_AUDIT:
+	    cp = "AUDIT";
+	    break;
+#endif	/* defined(NETLINK_AUDIT) */
+
+#if	defined(NETLINK_FIB_LOOKUP)
+	case NETLINK_FIB_LOOKUP:
+	    cp = "FIB_LOOKUP";
+	    break;
+#endif	/* defined(NETLINK_FIB_LOOKUP) */
+
+#if	defined(NETLINK_CONNECTOR)
+	case NETLINK_CONNECTOR:
+	    cp = "CONNECTOR";
+	    break;
+#endif	/* defined(NETLINK_CONNECTOR) */
+
+#if	defined(NETLINK_NETFILTER)
+	case NETLINK_NETFILTER:
+	    cp = "NETFILTER";
+	    break;
+#endif	/* defined(NETLINK_NETFILTER) */
+
+#if	defined(NETLINK_IP6_FW)
+	case NETLINK_IP6_FW:
+	    cp = "IP6_FW";
+	    break;
+#endif	/* defined(NETLINK_IP6_FW) */
+
+#if	defined(NETLINK_DNRTMSG)
+	case NETLINK_DNRTMSG:
+	    cp = "DNRTMSG";
+	    break;
+#endif	/* defined(NETLINK_DNRTMSG) */
+
+#if	defined(NETLINK_KOBJECT_UEVENT)
+	case NETLINK_KOBJECT_UEVENT:
+	    cp = "KOBJECT_UEVENT";
+	    break;
+#endif	/* defined(NETLINK_KOBJECT_UEVENT) */
+
+#if	defined(NETLINK_GENERIC)
+	case NETLINK_GENERIC:
+	    cp = "GENERIC";
+	    break;
+#endif	/* defined(NETLINK_GENERIC) */
+
+#if	defined(NETLINK_SCSITRANSPORT)
+	case NETLINK_SCSITRANSPORT:
+	    cp = "SCSITRANSPORT";
+	    break;
+#endif	/* defined(NETLINK_SCSITRANSPORT) */
+
+#if	defined(NETLINK_ECRYPTFS)
+	case NETLINK_ECRYPTFS:
+	    cp = "ECRYPTFS";
+	    break;
+#endif	/* defined(NETLINK_ECRYPTFS) */
+
+#if	defined(NETLINK_RDMA)
+	case NETLINK_RDMA:
+	    cp = "RDMA";
+	    break;
+#endif	/* defined(NETLINK_RDMA) */
+
+#if	defined(NETLINK_CRYPTO)
+	case NETLINK_CRYPTO:
+	    cp = "CRYPTO";
+	    break;
+#endif	/* defined(NETLINK_CRYPTO) */
+
+#if	defined(NETLINK_SMC)
+	case NETLINK_SMC:
+	    cp = "SMC";
+	    break;
+#endif	/* defined(NETLINK_SMC) */
+	}
+
+	return cp;
+}
+
+/*
+ * Sockss2str() -- convert socket state number to a string
+ *
+ * returns "UNKNOWN" for unknown state.
+ */
+#if	defined(HASSOSTATE)
+static char *
+sockss2str(unsigned int ss)
+{
+	char *sr;
+	switch (Lf->lts.ss) {
+	case SS_UNCONNECTED:
+	    sr = "UNCONNECTED";
+	    break;
+	case SS_CONNECTING:
+	    sr = "CONNECTING";
+	    break;
+	case SS_CONNECTED:
+	    sr = "CONNECTED";
+	    break;
+	case SS_DISCONNECTING:
+	    sr = "DISCONNECTING";
+	    break;
+	default:
+	    sr = "UNKNOWN";
+	    break;
+	}
+	return sr;
+}
+#endif	/* defined(HASSOSTATE) */

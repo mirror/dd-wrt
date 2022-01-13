@@ -356,8 +356,8 @@ tstlsof(texec, tkmem, tproc)
 		    pem = cem;
 		    break;
 		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%u",
-		    (unsigned int)cwdsb.st_ino);
+		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+		    (uint64_t)cwdsb.st_ino);
 		ibuf[sizeof(ibuf) - 1] = '\0';
 		if ((tmpdc.maj == cwddc.maj)
 		&&  (tmpdc.min == cwddc.min)
@@ -389,8 +389,8 @@ tstlsof(texec, tkmem, tproc)
 		    pem = cem;
 		    break;
 		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%u",
-		    (unsigned int)kmemsb.st_ino);
+		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+		    (uint64_t)kmemsb.st_ino);
 		ibuf[sizeof(ibuf) - 1] = '\0';
 		if ((tmpdc.maj == kmemdc.maj)
 		&&  (tmpdc.min == kmemdc.min)
@@ -420,8 +420,8 @@ tstlsof(texec, tkmem, tproc)
 		    pem = cem;
 		    break;
 		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%u",
-		    (unsigned int)lsofsb.st_ino);
+		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+		    (uint64_t)lsofsb.st_ino);
 		ibuf[sizeof(ibuf) - 1] = '\0';
 		if ((tmpdc.maj == lsofdc.maj)
 		&&  (tmpdc.min == lsofdc.min)

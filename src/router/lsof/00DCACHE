@@ -727,7 +727,7 @@ machine.h header files.
 
     AIX 5.[12] and 5.3-ML1
     FreeBSD 4.x, 4.1x, 5.x and [6789].x for x86-based systems
-    FreeBSD 5.x, [6789].x and 10 for Alpha, AMD64 and Sparc64-a
+    FreeBSD 5.x, [6789].x and 1[012].x for Alpha, AMD64 and Sparc64
 	based systems
     HP-UX 11.00
     NetBSD 1.[456], 2.x and 3.x for Alpha, x86, and SPARC-based
@@ -742,4 +742,4 @@ machine.h header files.
 
 
 Vic Abell <abe@purdue.edu>
-October 13, 2014
+February 14, 2018

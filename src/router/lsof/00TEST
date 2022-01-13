@@ -363,6 +363,10 @@ The config.cflags file may contain the following C compiler flags.
 
     -DLT_CC		    is present if the lsof compiler is cc.
 
+    -DLT_DEV64		    is present if the FreeBSD dialect uses a 64
+			    devite type.
+
+
     -DLT_DIAL_<abbr>	    always ends in (the <abbr> part) the
 			    "canonical" -- i.e., usually the most
 			    common abbreviation by which the dialect
@@ -908,6 +912,7 @@ base, footprints, and the scripts that support them.
 		 10.0 Amd64, gcc
 		 10.0 Amd64, clang
 		 11.0 Amd64, clang
+		 12.0 Amd64, clang
     DEC OSF/1	  4.0, cc
     HP-UX	  10.20, cc			LTbigf
 		  10.20, gcc (1)		LTbigf
@@ -950,6 +955,7 @@ base, footprints, and the scripts that support them.
 		  2.6.38-686
 		  3.10.004
 		  3.10.08
+		  4.14.14
 		  3.10.0-229.1.2.el7
     NEXTSTEP      3.1, gcc                   	LTnfs
     NetBSD        1.4.1, Alpha, gcc          	LTnfs
@@ -1029,4 +1035,4 @@ I was unable to make the test suite run on the following dialects.
 
 
 Vic Abell <abe@purdue.edu>
-May 11, 2015
+February 14, 2018

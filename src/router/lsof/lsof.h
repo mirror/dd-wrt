@@ -31,7 +31,7 @@
 
 
 /*
- * $Id: lsof.h,v 1.68 2015/07/07 20:16:58 abe Exp $
+ * $Id: lsof.h,v 1.70 2018/03/26 21:50:45 abe Exp $
  */
 
 
@@ -85,16 +85,51 @@ struct l_dev {
  * End point definitions
  */
 
-#define	CHEND_PIPE	1		/* pipe endpoint ID */
-#define	EPT_PIPE	1		/* process has pipe file */
-#define	EPT_PIPE_END	2		/* process has pipe end point file */
+#define	CHEND_PIPE	0x01		/* pipe endpoint ID */
+#define	CHEND_PTY	0x02		/* pseudoterminal endpoint ID */
 
 #  if	defined(HASUXSOCKEPT)
-#define	CHEND_UXS	2		/* UNIX socket endpoint ID */
-#define	EPT_UXS		4		/* process has a UNIX socket file */
-#define	EPT_UXS_END	8		/* process has a UNIX socket end point
+#define	CHEND_UXS	0x04		/* UNIX socket endpoint ID */
+#  endif	/* defined(HASUXSOCKEPT) */
+
+#define	CHEND_NETS	0x08		/* INET socket endpoint ID */
+#define	CHEND_PSXMQ	0x10		/* Posix MQ endpoint ID */
+
+# if	defined(HASIPv6)
+#define	CHEND_NETS6	0x20		/* INET6 socket endpoint ID */
+# endif	/* defined(HASIPv6) */
+
+#define CHEND_EVTFD	0x40		/* eventfd endpoint ID */
+
+#define	EPT_PIPE	0x01		/* process has pipe file */
+#define	EPT_PIPE_END	0x02		/* process has pipe end point file */
+#define	EPT_PTY		0x04		/* process has a pseudoterminal file */
+#define	EPT_PTY_END	0x08		/* process has a pseudoterminal end
+					 * point file */
+
+#  if	defined(HASUXSOCKEPT)
+#define	EPT_UXS		0x10		/* process has a UNIX socket file */
+#define	EPT_UXS_END	0x20		/* process has a UNIX socket end point
 					 * file */
 #  endif	/* defined(HASUXSOCKEPT) */
+
+#define	EPT_NETS	0x40		/* process has a INET socket file */
+#define	EPT_NETS_END	0x80		/* process has a INET socket end point
+					 * file */
+
+#define	EPT_PSXMQ	0x100		/* process has a POSIX MQ file*/
+#define	EPT_PSXMQ_END	0x200		/* process has a POSIX MQ end point
+					 * file*/
+
+# if	defined(HASIPv6)
+#define	EPT_NETS6	0x400		/* process has a INET6 socket file */
+#define	EPT_NETS6_END	0x800		/* process has a INET6 socket end point
+					 * file */
+# endif	/* defined(HASIPv6) */
+
+#define	EPT_EVTFD	0x1000		/* process has a eventfd file*/
+#define	EPT_EVTFD_END	0x2000		/* process has a eventfd end point
+					 * file*/
 # endif	/* defined(HASEPTOPTS) */
 
 
@@ -153,6 +188,7 @@ struct l_dev {
 #define	FF_NOTOSTOP	"NOTO"
 #define	FF_NSHARE	"NSH"
 #define	FF_OLRMIRROR	"OLRM"
+#define	FF_PATH		"PATH"
 #define	FF_POSIX_AIO	"PAIO"
 #define	FF_POSIX_PIPE	"PP"
 #define	FF_RAIOSIG	"RAIO"
@@ -176,6 +212,7 @@ struct l_dev {
 #define	FF_SYNCRON	"SWR"
 #define	FF_TCP_MDEVONLY	"TCPM"
 #define	FF_TERMIO	"TIO"
+#define	FF_TMPFILE	"TMPF"
 #define	FF_TRUNC	"TR"
 #define	FF_VHANGUP	"VH"
 #define	FF_VTEXT	"VTXT"
@@ -295,7 +332,12 @@ static struct utmp dummy_utmp;		/* to get login name length */
 # endif	/* !defined(LOGINML) */
 
 #define	LPROCINCR	128		/* Lproc[] allocation increment */
-#define	LSOF_URL	"ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/"
+#define	LSOF_GITHUB_URL	"https://github.com/lsof-org"
+#define	LSOF_REPO	"lsof"
+#define	LSOF_BRANCH	"master"
+#define	LSOF_REPO_URL	LSOF_GITHUB_URL "/" LSOF_REPO
+#define	LSOF_FAQ_URL	LSOF_REPO_URL "/blob/" LSOF_BRANCH "/00FAQ"
+#define	LSOF_MAN_URL	LSOF_REPO_URL "/blob/" LSOF_BRANCH "/Lsof.8"
 #define	MIN_AF_ADDR	sizeof(struct in_addr)
 					/* minimum AF_* address length */
 
@@ -368,6 +410,7 @@ static struct utmp dummy_utmp;		/* to get login name length */
 #define	N_VXFS		52		/* Veritas file system node */
 #define	N_XFS		53		/* XFS node */
 #define	N_ZFS		54		/* ZFS node */
+#define	N_MQUEUE	55		/* Posix mqueue node on Linux */
 
 # if	!defined(OFFDECDIG)
 #define	OFFDECDIG	8		/* maximum number of digits in the
@@ -382,6 +425,9 @@ static struct utmp dummy_utmp;		/* to get login name length */
 
 #define	RPTTM		15		/* default repeat seconds */
 #define	RTD		" rtd"		/* root directory fd name */
+#define	TASKCMDL	9		/* maximum number of characters from
+					 * command name to print in TASKCMD
+					 * column */
 #define TCPTPI_FLAGS	0x0001		/* report TCP/TPI socket options and
 					 * state, and TCP_NODELAY state */
 #define	TCPTPI_QUEUES	0x0002		/* report TCP/TPI queue lengths */
@@ -455,8 +501,10 @@ extern int PpidColW;
 #define SZTTL		"SIZE"
 #define	SZOFFTTL	"SIZE/OFF"
 extern int SzOffColW;
-#define	TIDTTL		"TID"
-extern	int TidColW;
+#define	TASKCMDTTL	"TASKCMD"
+extern	int TaskCmdColW;
+#define	TASKTIDTTL	"TID"
+extern	int TaskTidColW;
 #define TYPETTL		"TYPE"
 extern int TypeColW;
 #define	USERTTL		"USER"
@@ -490,8 +538,19 @@ extern int ZoneColW;
 #define	SELTASK		0x4000		/* select tasks (-K) */
 #define	SELPINFO	0x8000		/* selected for pipe info (cleared in
 					 * link_lfile() */
-#define	SELUXSINFO	0x10000		/* selected for UNIX socket info
+#define	SELUXSINFO	0x10000		/* selected for UNIX socket info;
 					 * cleared in link_lfile() */
+#define	SELPTYINFO	0x20000		/* selected for pseudoterminal info;
+					 * cleared in link_lfile() */
+#define	SELNETSINFO	0x40000		/* selected for INET socket info;
+					 * cleared in link_lfile() */
+#define SELPSXMQINFO	0x80000		/* selected for POSIX MQ socket info;
+					   cleared in link_lfile() */
+#define	SELNETS6INFO	0x100000	/* selected for INET6 socket info;
+					 * cleared in link_lfile() */
+#define	SELEVTFDINFO	0x200000	/* selected for evetnfd info;
+					 * cleared in link_lfile() */
+
 #define	SELALL		(SELCMD|SELCNTX|SELFD|SELNA|SELNET|SELNM|SELNFS|SELPID|SELUID|SELUNX|SELZONE|SELTASK)
 #define	SELPROC		(SELCMD|SELCNTX|SELPGID|SELPID|SELUID|SELZONE|SELTASK)
 					/* process selecters */
@@ -512,6 +571,8 @@ struct afsnode {			/* AFS pseudo-node structure */
 	long nlink;
 };
 # endif	/* defined(HAS_AFS) */
+
+extern int AllProc;
 
 # if	defined(HAS_STD_CLONE)
 struct clone {
@@ -566,37 +627,6 @@ struct pff_tab {			/* print file flags table structure */
 	char *nm;			/* name to print for flag */
 };
 # endif	/* defined(HASFSTRUCT) */
-
-# if	defined(HASEPTOPTS)
-typedef struct pxinfo {			/* hashed pipe or UNIX socket inode
-					 * information */
-	INODETYPE ino;			/* file's inode */
-	struct lfile *lf;		/* connected peer file */
-	int lpx;			/* connected process index */
-	struct pxinfo *next;		/* next entry for hashed inode */
-} pxinfo_t;
-
-typedef struct uxsin {			/* UNIX socket information */
-	INODETYPE inode;		/* node number */
-	char *pcb;			/* protocol control block */
-	char *path;			/* file path */
-	unsigned char sb_def;		/* stat(2) buffer definitions */
-	dev_t sb_dev;			/* stat(2) buffer device */
-	INODETYPE sb_ino;		/* stat(2) buffer node number */
-	dev_t sb_rdev;			/* stat(2) raw device number */
-	uint32_t ty;			/* socket type */
-
-#  if	defined(HASEPTOPTS) && defined(HASUXSOCKEPT)
-	struct uxsin *icons;		/* incoming socket conections */
-	unsigned int icstat;		/* incoming connection status
-					 * 0 == none */
-	pxinfo_t *pxinfo;		/* inode information */
-	struct uxsin *peer;	        /* connected peer(s) info */
-#  endif	/* defined(HASEPTOPTS) && defined(HASUXSOCKEPT) */
-
-	struct uxsin *next;
-} uxsin_t;
-# endif	/* defined(HASEPTOPTS) */
 
 
 struct seluid {
@@ -728,6 +758,7 @@ extern struct fieldsel FieldSel[];
 extern int Hdr;
 
 enum IDType {PGID, PID};
+extern int  IgnTasks;
 extern char *InodeFmt_d;
 extern char *InodeFmt_x;
 extern int LastPid;
@@ -763,6 +794,12 @@ struct lfile {
 # if	defined(HASEPTOPTS)
 	unsigned char chend;		/* communication channel endpoint
 					 * file */
+	int eventfd_id;			/* evntfd id taken from
+					   /proc/$pid/fdinfo */
+#  if	defined(HASPTYEPT)
+	int tty_index;			/* pseudoterminal index of slave side
+					 * (if this is the master side) */
+#  endif	/* defined(HASPTYEPT) */
 # endif	/* defined(HASEPTOPTS) */
 
 	unsigned char rdev_def;		/* rdev definition status */
@@ -908,6 +945,7 @@ struct lproc {
 
 # if	defined(HASTASKS)
 	int tid;			/* task ID */
+	char *tcmd;			/* task command name */
 # endif	/* HASTASKS */
 
 	int pgid;			/* process group ID */
@@ -1004,9 +1042,11 @@ extern int Procsrch;
 
 extern int PrPass;
 extern int RptTm;
+extern int RptMaxCount;
 extern struct l_dev **Sdev;
-extern int Selall;
+extern int SelAll;
 extern int Selflags;
+extern int SelProc;
 extern int Setgid;
 extern int Selinet;
 extern int Setuidroot;
@@ -1018,7 +1058,9 @@ extern char *SzOffFmt_0t;
 extern char *SzOffFmt_d;
 extern char *SzOffFmt_dv;
 extern char *SzOffFmt_x;
-extern int TaskPrtFl;
+extern int TaskCmdLim;
+extern int TaskPrtCmd;
+extern int TaskPrtTid;
 extern int TcpStAlloc;
 extern unsigned char *TcpStI;
 extern int TcpStIn;
