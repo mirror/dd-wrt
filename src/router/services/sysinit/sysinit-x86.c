@@ -268,6 +268,7 @@ void start_sysinit(void)
 	}
 
 	nvram_default_get("use_ath5k", "1");
+	nvram_seti("enable_jffs2",1);
 	detect_wireless_devices(RADIO_ALL);
 
 	mknod("/dev/rtc", S_IFCHR | 0644, makedev(253, 0));
