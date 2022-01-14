@@ -243,7 +243,8 @@ void start_setup_vlans(void)
 				char *ports = buildports[vlan_number];
 				if (i == 0 && nvram_exists("sw_wancpuport")) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
-						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+						snprintf(ports, 31, "W");	// mark port as wan to prevent overwriting of vlan in later code
+						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlanlist[vlan_number], nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
 					}
 				} else {
 					if (i == 0) {
@@ -352,12 +353,12 @@ void start_setup_vlans(void)
 #else
 	for (vlan_number = 0; vlan_number < blen; vlan_number++) {
 		char *ports = buildports[vlan_number];
-		if (strlen(ports)) {
+		if (strlen(ports) && ports[0] != 'W') {
 			if (nvram_exists("sw_wancpuport"))
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_lancpuport"), ports);
 			else
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_cpuport"), ports);
-		} else {
+		} else if (!strlen(ports)) {
 			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlanlist[vlan_number]);
 		}
 	}
