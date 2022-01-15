@@ -1536,7 +1536,7 @@ ifeq ($(CONFIG_ATH9K),y)
 	@$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
 	gcc -o makeej makeej.c
-	nm *.o | grep ej_| awk '{print $$3}' > ejsyms
+	gcc-nm *.o | grep ej_| awk '{print $$3}' > ejsyms
 	cp www www.renew
 	cat ej_temp/* >> www.renew
 	./makeej > modules/ejtable.h
