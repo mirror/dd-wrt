@@ -334,9 +334,10 @@ bool HamcoreBuild(const char *dst_path, const char *base_path, const char **src_
 
 		file->Offset = offset;
 		offset += file->Size;
+//		fprintf(stderr, "bufsize %d offset %d, size %d\n", buffer_size, offset, file->Size);
 	}
 
-	if (buffer_size < offset)
+//	if (buffer_size < offset)
 	{
 		buffer_size = offset;
 		buffer = realloc(buffer, buffer_size);
