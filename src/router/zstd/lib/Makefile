@@ -296,25 +296,9 @@ INSTALL_PROGRAM ?= $(INSTALL)
 INSTALL_DATA    ?= $(INSTALL) -m 644
 
 
-libzstd.pc: libzstd.pc.in
-	@echo creating pkgconfig
-	@sed $(SED_ERE_OPT) \
-	        -e 's|@PREFIX@|$(PREFIX)|' \
-	        -e 's|@EXEC_PREFIX@|$(PCEXEC_PREFIX)|' \
-	        -e 's|@INCLUDEDIR@|$(PCINCPREFIX)$(PCINCDIR)|' \
-	        -e 's|@LIBDIR@|$(PCLIBPREFIX)$(PCLIBDIR)|' \
-	        -e 's|@VERSION@|$(VERSION)|' \
-	        -e 's|@LIBS_PRIVATE@|$(LDFLAGS_DYNLIB)|' \
-	        $< >$@
-
 .PHONY: install
-install: install-pc install-static install-shared install-includes
+install: install-static install-shared install-includes
 	@echo zstd static and shared library installed
-
-.PHONY:
-install-pc: libzstd.pc
-	[ -e $(DESTDIR)$(PKGCONFIGDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/
-	$(INSTALL_DATA) libzstd.pc $(DESTDIR)$(PKGCONFIGDIR)/
 
 .PHONY: install-static
 install-static:
@@ -348,7 +332,6 @@ uninstall:
 	$(RM) $(DESTDIR)$(LIBDIR)/libzstd.$(SHARED_EXT)
 	$(RM) $(DESTDIR)$(LIBDIR)/libzstd.$(SHARED_EXT_MAJOR)
 	$(RM) $(DESTDIR)$(LIBDIR)/$(LIBZSTD)
-	$(RM) $(DESTDIR)$(PKGCONFIGDIR)/libzstd.pc
 	$(RM) $(DESTDIR)$(INCLUDEDIR)/zstd.h
 	$(RM) $(DESTDIR)$(INCLUDEDIR)/zstd_errors.h
 	$(RM) $(DESTDIR)$(INCLUDEDIR)/zdict.h
