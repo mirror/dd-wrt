@@ -5641,7 +5641,7 @@ else
     LSOF_DEBUG=""
   fi	# }
 fi	# }
-echo "DEBUG=	$LSOF_DEBUG" >> $LSOF_MKFC
+#echo "DEBUG=	$LSOF_DEBUG" >> $LSOF_MKFC
 if test "X$LSOF_OPINC" != "X"	# {
 then
   LSOF_DINC="$LSOF_DINC $LSOF_OPINC"
@@ -5722,7 +5722,7 @@ then
       LSOF_DEBUG=""
     fi	# }
   fi	# }
-  echo "DEBUG=	$LSOF_DEBUG" >> $LSOF_FBSD_ZFS_MKF
+#  echo "DEBUG=	$LSOF_DEBUG" >> $LSOF_FBSD_ZFS_MKF
   echo "" >> $LSOF_FBSD_ZFS_MKF
   echo "OPENSOLARIS=	$LSOF_FBSD_ZFS_SYS" >> $LSOF_FBSD_ZFS_MKF
   echo "" >> $LSOF_FBSD_ZFS_MKF
