@@ -1500,11 +1500,6 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 	}
 
 	if (user_guest(sess->user)) {
-		if (conn->sign) {
-			ksmbd_debug(SMB, "Guest login not allowed when signing enabled\n");
-			return -EPERM;
-		}
-
 		rsp->SessionFlags = SMB2_SESSION_FLAG_IS_GUEST_LE;
 	} else {
 		struct authenticate_message *authblob;
@@ -1517,38 +1512,39 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 			ksmbd_debug(SMB, "authentication failed\n");
 			return -EPERM;
 		}
+	}
 
+	/*
+	 * If session state is SMB2_SESSION_VALID, We can assume
+	 * that it is reauthentication. And the user/password
+	 * has been verified, so return it here.
+	 */
+	if (sess->state == SMB2_SESSION_VALID) {
+		if (conn->binding)
+			goto binding_session;
+		return 0;
+	}
+
+	if ((rsp->SessionFlags != SMB2_SESSION_FLAG_IS_GUEST_LE &&
+	     (conn->sign || server_conf.enforced_signing)) ||
+	    (req->SecurityMode & SMB2_NEGOTIATE_SIGNING_REQUIRED))
+		sess->sign = true;
+
+	if (smb3_encryption_negotiated(conn) &&
+			!(req->Flags & SMB2_SESSION_REQ_FLAG_BINDING)) {
+		rc = conn->ops->generate_encryptionkey(sess);
+		if (rc) {
+			ksmbd_debug(SMB,
+					"SMB3 encryption key generation failed\n");
+			return -EINVAL;
+		}
+		sess->enc = true;
+		rsp->SessionFlags = SMB2_SESSION_FLAG_ENCRYPT_DATA_LE;
 		/*
-		 * If session state is SMB2_SESSION_VALID, We can assume
-		 * that it is reauthentication. And the user/password
-		 * has been verified, so return it here.
+		 * signing is disable if encryption is enable
+		 * on this session
 		 */
-		if (sess->state == SMB2_SESSION_VALID) {
-			if (conn->binding)
-				goto binding_session;
-			return 0;
-		}
-
-		if ((conn->sign || server_conf.enforced_signing) ||
-		    (req->SecurityMode & SMB2_NEGOTIATE_SIGNING_REQUIRED))
-			sess->sign = true;
-
-		if (smb3_encryption_negotiated(conn) &&
-		    !(req->Flags & SMB2_SESSION_REQ_FLAG_BINDING)) {
-			rc = conn->ops->generate_encryptionkey(sess);
-			if (rc) {
-				ksmbd_debug(SMB,
-					    "SMB3 encryption key generation failed\n");
-				return -EINVAL;
-			}
-			sess->enc = true;
-			rsp->SessionFlags = SMB2_SESSION_FLAG_ENCRYPT_DATA_LE;
-			/*
-			 * signing is disable if encryption is enable
-			 * on this session
-			 */
-			sess->sign = false;
-		}
+		sess->sign = false;
 	}
 
 binding_session:
@@ -6274,6 +6270,26 @@ out:
 	return err;
 }
 
+static int smb2_set_remote_key_for_rdma(struct ksmbd_work *work,
+					struct smb2_buffer_desc_v1 *desc,
+					__le32 Channel,
+					__le16 ChannelInfoOffset,
+					__le16 ChannelInfoLength)
+{
+	if (work->conn->dialect == SMB30_PROT_ID &&
+	    Channel != SMB2_CHANNEL_RDMA_V1)
+		return -EINVAL;
+
+	if (ChannelInfoOffset == 0 ||
+	    le16_to_cpu(ChannelInfoLength) < sizeof(*desc))
+		return -EINVAL;
+
+	work->need_invalidate_rkey =
+		(Channel == SMB2_CHANNEL_RDMA_V1_INVALIDATE);
+	work->remote_key = le32_to_cpu(desc->token);
+	return 0;
+}
+
 static ssize_t smb2_read_rdma_channel(struct ksmbd_work *work,
 				      struct smb2_read_req *req, void *data_buf,
 				      size_t length)
@@ -6281,18 +6297,6 @@ static ssize_t smb2_read_rdma_channel(struct ksmbd_work *work,
 	struct smb2_buffer_desc_v1 *desc =
 		(struct smb2_buffer_desc_v1 *)&req->Buffer[0];
 	int err;
-
-	if (work->conn->dialect == SMB30_PROT_ID &&
-	    req->Channel != SMB2_CHANNEL_RDMA_V1)
-		return -EINVAL;
-
-	if (req->ReadChannelInfoOffset == 0 ||
-	    le16_to_cpu(req->ReadChannelInfoLength) < sizeof(*desc))
-		return -EINVAL;
-
-	work->need_invalidate_rkey =
-		(req->Channel == SMB2_CHANNEL_RDMA_V1_INVALIDATE);
-	work->remote_key = le32_to_cpu(desc->token);
 
 	err = ksmbd_conn_rdma_write(work->conn, data_buf, length,
 				    le32_to_cpu(desc->token),
@@ -6315,7 +6319,7 @@ int smb2_read(struct ksmbd_work *work)
 	struct ksmbd_conn *conn = work->conn;
 	struct smb2_read_req *req;
 	struct smb2_read_rsp *rsp, *rsp_org;
-	struct ksmbd_file *fp;
+	struct ksmbd_file *fp = NULL;
 	loff_t offset;
 	size_t length, mincount;
 	ssize_t nbytes = 0, remain_bytes = 0;
@@ -6328,6 +6332,18 @@ int smb2_read(struct ksmbd_work *work)
 				   KSMBD_SHARE_FLAG_PIPE)) {
 		ksmbd_debug(SMB, "IPC pipe read request\n");
 		return smb2_read_pipe(work);
+	}
+
+	if (req->Channel == SMB2_CHANNEL_RDMA_V1_INVALIDATE ||
+	    req->Channel == SMB2_CHANNEL_RDMA_V1) {
+		err = smb2_set_remote_key_for_rdma(work,
+						   (struct smb2_buffer_desc_v1 *)
+						   &req->Buffer[0],
+						   req->Channel,
+						   req->ReadChannelInfoOffset,
+						   req->ReadChannelInfoLength);
+		if (err)
+			goto out;
 	}
 
 	fp = ksmbd_lookup_fd_slow(work, le64_to_cpu(req->VolatileFileId),
@@ -6513,21 +6529,6 @@ static ssize_t smb2_write_rdma_channel(struct ksmbd_work *work,
 
 	desc = (struct smb2_buffer_desc_v1 *)&req->Buffer[0];
 
-	if (work->conn->dialect == SMB30_PROT_ID &&
-	    req->Channel != SMB2_CHANNEL_RDMA_V1)
-		return -EINVAL;
-
-	if (req->Length != 0 || req->DataOffset != 0)
-		return -EINVAL;
-
-	if (req->WriteChannelInfoOffset == 0 ||
-	    le16_to_cpu(req->WriteChannelInfoLength) < sizeof(*desc))
-		return -EINVAL;
-
-	work->need_invalidate_rkey =
-		(req->Channel == SMB2_CHANNEL_RDMA_V1_INVALIDATE);
-	work->remote_key = le32_to_cpu(desc->token);
-
 	data_buf = ksmbd_alloc_response(length);
 	if (!data_buf) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
@@ -6575,6 +6576,20 @@ int smb2_write(struct ksmbd_work *work)
 	if (test_share_config_flag(work->tcon->share_conf, KSMBD_SHARE_FLAG_PIPE)) {
 		ksmbd_debug(SMB, "IPC pipe write request\n");
 		return smb2_write_pipe(work);
+	}
+
+	if (req->Channel == SMB2_CHANNEL_RDMA_V1 ||
+	    req->Channel == SMB2_CHANNEL_RDMA_V1_INVALIDATE) {
+		if (req->Length != 0 || req->DataOffset != 0)
+			return -EINVAL;
+		err = smb2_set_remote_key_for_rdma(work,
+						   (struct smb2_buffer_desc_v1 *)
+						   &req->Buffer[0],
+						   req->Channel,
+						   req->WriteChannelInfoOffset,
+						   req->WriteChannelInfoLength);
+		if (err)
+			goto out;
 	}
 
 	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
