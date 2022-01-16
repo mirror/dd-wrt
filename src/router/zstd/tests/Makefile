@@ -1,5 +1,6 @@
-# ################################################################
-# Copyright (c) 2015-2020, Yann Collet, Facebook, Inc.
+
+ # ################################################################
+# Copyright (c) Yann Collet, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under both the BSD-style license (found in the
@@ -19,46 +20,43 @@
 # zstreamtest32: Same as zstreamtest, but forced to compile in 32-bits mode
 # ##########################################################################
 
-ZSTDDIR = ../lib
+LIBZSTD = ../lib
+
+ZSTD_LEGACY_SUPPORT ?= 0
+
+DEBUGLEVEL ?= 2
+export DEBUGLEVEL  # transmit value to sub-makefiles
+
+include $(LIBZSTD)/libzstd.mk
+
+ZSTDDIR = $(LIBZSTD)
 PRGDIR  = ../programs
 PYTHON ?= python3
 TESTARTEFACT := versionsTest
 
-DEBUGLEVEL ?= 1
-export DEBUGLEVEL  # transmit value to sub-makefiles
-DEBUGFLAGS  = -g -DDEBUGLEVEL=$(DEBUGLEVEL)
+DEBUGFLAGS += -g -Wno-c++-compat
 CPPFLAGS   += -I$(ZSTDDIR) -I$(ZSTDDIR)/common -I$(ZSTDDIR)/compress \
-              -I$(ZSTDDIR)/dictBuilder -I$(ZSTDDIR)/deprecated -I$(PRGDIR)
-ifeq ($(OS),Windows_NT)   # MinGW assumed
-CPPFLAGS   += -D__USE_MINGW_ANSI_STDIO   # compatibility with %zu formatting
-endif
-CFLAGS     ?= -O3
-CFLAGS     += -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow                 \
-              -Wstrict-aliasing=1 -Wswitch-enum -Wdeclaration-after-statement \
-              -Wstrict-prototypes -Wundef                                     \
-              -Wvla -Wformat=2 -Winit-self -Wfloat-equal -Wwrite-strings      \
-              -Wredundant-decls -Wmissing-prototypes
-CFLAGS     += $(DEBUGFLAGS) $(MOREFLAGS)
-FLAGS       = $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
+              -I$(ZSTDDIR)/dictBuilder -I$(ZSTDDIR)/deprecated -I$(PRGDIR) \
+			  -DZSTD_WINDOW_OVERFLOW_CORRECT_FREQUENTLY=1
 
-
-ZSTDCOMMON_FILES := $(ZSTDDIR)/common/*.c
-ZSTDCOMP_FILES   := $(ZSTDDIR)/compress/*.c
-ZSTDDECOMP_FILES := $(ZSTDDIR)/decompress/*.c
+ZSTDCOMMON_FILES := $(sort $(ZSTD_COMMON_FILES))
+ZSTDCOMP_FILES   := $(sort $(ZSTD_COMPRESS_FILES))
+ZSTDDECOMP_FILES := $(sort $(ZSTD_DECOMPRESS_FILES))
 ZSTD_FILES  := $(ZSTDDECOMP_FILES) $(ZSTDCOMMON_FILES) $(ZSTDCOMP_FILES)
-ZBUFF_FILES := $(ZSTDDIR)/deprecated/*.c
-ZDICT_FILES := $(ZSTDDIR)/dictBuilder/*.c
+ZDICT_FILES := $(sort $(ZSTD_DICTBUILDER_FILES))
 
-ZSTD_F1 := $(wildcard $(ZSTD_FILES))
+ZSTD_F1 := $(sort $(wildcard $(ZSTD_FILES)))
 ZSTD_OBJ1 := $(subst $(ZSTDDIR)/common/,zstdm_,$(ZSTD_F1))
 ZSTD_OBJ2 := $(subst $(ZSTDDIR)/compress/,zstdc_,$(ZSTD_OBJ1))
 ZSTD_OBJ3 := $(subst $(ZSTDDIR)/decompress/,zstdd_,$(ZSTD_OBJ2))
-ZSTD_OBJECTS := $(ZSTD_OBJ3:.c=.o)
+ZSTD_OBJ4 := $(ZSTD_OBJ3:.c=.o)
+ZSTD_OBJECTS := $(ZSTD_OBJ4:.S=.o)
 
 ZSTDMT_OBJ1 := $(subst $(ZSTDDIR)/common/,zstdmt_m_,$(ZSTD_F1))
 ZSTDMT_OBJ2 := $(subst $(ZSTDDIR)/compress/,zstdmt_c_,$(ZSTDMT_OBJ1))
 ZSTDMT_OBJ3 := $(subst $(ZSTDDIR)/decompress/,zstdmt_d_,$(ZSTDMT_OBJ2))
-ZSTDMT_OBJECTS := $(ZSTDMT_OBJ3:.c=.o)
+ZSTDMT_OBJ4 := $(ZSTDMT_OBJ3:.c=.o)
+ZSTDMT_OBJECTS := $(ZSTDMT_OBJ4:.S=.o)
 
 # Define *.exe as extension for Windows systems
 ifneq (,$(filter Windows%,$(OS)))
@@ -107,7 +105,6 @@ libzstd :
 %-dll : libzstd
 %-dll : LDFLAGS += -L$(ZSTDDIR) -lzstd
 
-.PHONY: $(ZSTDDIR)/libzstd.a
 $(ZSTDDIR)/libzstd.a :
 	$(MAKE) -C $(ZSTDDIR) libzstd.a
 
@@ -118,6 +115,9 @@ zstdc_%.o : $(ZSTDDIR)/compress/%.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 zstdd_%.o : $(ZSTDDIR)/decompress/%.c
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+
+zstdd_%.o : $(ZSTDDIR)/decompress/%.S
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 zstdmt%.o : CPPFLAGS += $(MULTITHREAD_CPP)
@@ -131,8 +131,11 @@ zstdmt_c_%.o : $(ZSTDDIR)/compress/%.c
 zstdmt_d_%.o : $(ZSTDDIR)/decompress/%.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
+zstdmt_d_%.o : $(ZSTDDIR)/decompress/%.S
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+
 fullbench32: CPPFLAGS += -m32
-fullbench fullbench32 : CPPFLAGS += $(MULTITHREAD_CPP)
+fullbench fullbench32 : CPPFLAGS += $(MULTITHREAD_CPP) -Wno-deprecated-declarations
 fullbench fullbench32 : LDFLAGS += $(MULTITHREAD_LD)
 fullbench fullbench32 : DEBUGFLAGS = -DNDEBUG  # turn off assert() for speed measurements
 fullbench fullbench32 : $(ZSTD_FILES)
@@ -146,9 +149,9 @@ fullbench-lib : $(PRGDIR)/datagen.c $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR
 # note : broken : requires symbols unavailable from dynamic library
 fullbench-dll: $(PRGDIR)/datagen.c $(PRGDIR)/util.c $(PRGDIR)/benchfn.c $(PRGDIR)/timefn.c fullbench.c
 #	$(CC) $(FLAGS) $(filter %.c,$^) -o $@$(EXT) -DZSTD_DLL_IMPORT=1 $(ZSTDDIR)/dll/libzstd.dll
-	$(CC) $(FLAGS) $(filter %.c,$^) -o $@$(EXT)
+	$(LINK.c) $^ $(LDLIBS) -o $@$(EXT)
 
-fuzzer : CPPFLAGS += $(MULTITHREAD_CPP)
+fuzzer : CPPFLAGS += $(MULTITHREAD_CPP) -Wno-deprecated-declarations
 fuzzer : LDFLAGS += $(MULTITHREAD_LD)
 fuzzer : $(ZSTDMT_OBJECTS)
 fuzzer fuzzer32 : $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c
@@ -159,15 +162,6 @@ fuzzer32 : $(ZSTD_FILES)
 
 # note : broken : requires symbols unavailable from dynamic library
 fuzzer-dll : $(ZSTDDIR)/common/xxhash.c $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDFLAGS) -o $@$(EXT)
-
-zbufftest zbufftest32 zbufftest-dll : CPPFLAGS += -I$(ZSTDDIR)/deprecated
-zbufftest zbufftest32 zbufftest-dll : CFLAGS += -Wno-deprecated-declarations   # required to silence deprecation warnings
-zbufftest32 : CFLAGS +=  -m32
-zbufftest zbufftest32 : $(ZSTD_OBJECTS) $(ZBUFF_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c zbufftest.c
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
-zbufftest-dll : $(ZSTDDIR)/common/xxhash.c $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c zbufftest.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDFLAGS) -o $@$(EXT)
 
 ZSTREAM_LOCAL_FILES := $(PRGDIR)/datagen.c $(PRGDIR)/util.c $(PRGDIR)/timefn.c seqgen.c zstreamtest.c
@@ -211,8 +205,8 @@ bigdict: $(ZSTDMT_OBJECTS) $(PRGDIR)/datagen.c bigdict.c
 
 invalidDictionaries : $(ZSTD_OBJECTS) invalidDictionaries.c
 
-legacy : CPPFLAGS += -I$(ZSTDDIR)/legacy -DZSTD_LEGACY_SUPPORT=4
-legacy : $(ZSTD_FILES) $(wildcard $(ZSTDDIR)/legacy/*.c) legacy.c
+legacy : CPPFLAGS += -I$(ZSTDDIR)/legacy -UZSTD_LEGACY_SUPPORT -DZSTD_LEGACY_SUPPORT=4
+legacy : $(ZSTD_FILES) $(sort $(wildcard $(ZSTDDIR)/legacy/*.c)) legacy.c
 
 decodecorpus : LDLIBS += -lm
 decodecorpus : $(filter-out zstdc_zstd_compress.o, $(ZSTD_OBJECTS)) $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c decodecorpus.c
@@ -241,8 +235,8 @@ clean:
         $(PRGDIR)/zstd$(EXT) $(PRGDIR)/zstd32$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \
         fullbench-lib$(EXT) fullbench-dll$(EXT) \
-        fuzzer$(EXT) fuzzer32$(EXT) zbufftest$(EXT) zbufftest32$(EXT) \
-        fuzzer-dll$(EXT) zstreamtest-dll$(EXT) zbufftest-dll$(EXT) \
+        fuzzer$(EXT) fuzzer32$(EXT) \
+        fuzzer-dll$(EXT) zstreamtest-dll$(EXT) \
         zstreamtest$(EXT) zstreamtest32$(EXT) \
         datagen$(EXT) paramgrill$(EXT) roundTripCrash$(EXT) longmatch$(EXT) \
         symbols$(EXT) invalidDictionaries$(EXT) legacy$(EXT) poolTests$(EXT) \
@@ -254,7 +248,7 @@ clean:
 # valgrind tests are validated only for some posix platforms
 #----------------------------------------------------------------------------------
 UNAME := $(shell uname)
-ifneq (,$(filter $(UNAME),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS))
+ifneq (,$(filter $(UNAME),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS AIX))
 HOST_OS = POSIX
 
 valgrindTest: VALGRIND = valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1
@@ -272,7 +266,6 @@ valgrindTest: zstd datagen fuzzer fullbench
 	$(VALGRIND) ./fullbench -i1
 
 endif
-
 
 ifneq (,$(filter MINGW% MSYS%,$(UNAME)))
   HOST_OS = MSYS
@@ -345,12 +338,6 @@ test-fuzzer-stackmode: test-fuzzer
 
 test-fuzzer32: fuzzer32
 	$(QEMU_SYS) ./fuzzer32 -v $(FUZZERTEST) $(FUZZER_FLAGS)
-
-test-zbuff: zbufftest
-	$(QEMU_SYS) ./zbufftest $(ZSTREAM_TESTTIME)
-
-test-zbuff32: zbufftest32
-	$(QEMU_SYS) ./zbufftest32 $(ZSTREAM_TESTTIME)
 
 test-zstream: zstreamtest
 	$(QEMU_SYS) ./zstreamtest -v $(ZSTREAM_TESTTIME) $(FUZZER_FLAGS)

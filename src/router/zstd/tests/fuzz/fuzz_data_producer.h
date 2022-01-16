@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, Facebook, Inc.
+ * Copyright (c) Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -48,6 +48,9 @@ int32_t FUZZ_dataProducer_int32Range(FUZZ_dataProducer_t *producer,
 
 /* Returns the size of the remaining bytes of data in the producer */
 size_t FUZZ_dataProducer_remainingBytes(FUZZ_dataProducer_t *producer);
+
+/* Rolls back the data producer state to have remainingBytes remaining */
+void FUZZ_dataProducer_rollBack(FUZZ_dataProducer_t *producer, size_t remainingBytes);
 
 /* Returns true if the data producer is out of bytes */
 int FUZZ_dataProducer_empty(FUZZ_dataProducer_t *producer);

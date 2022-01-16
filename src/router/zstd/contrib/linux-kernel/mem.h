@@ -1,5 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause */
 /*
- * Copyright (c) 2016-2020, Yann Collet, Facebook, Inc.
+ * Copyright (c) Yann Collet, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -29,6 +30,8 @@
 *  Basic Types
 *****************************************************************/
 typedef uint8_t  BYTE;
+typedef uint8_t  U8;
+typedef int8_t   S8;
 typedef uint16_t U16;
 typedef int16_t  S16;
 typedef uint32_t U32;
