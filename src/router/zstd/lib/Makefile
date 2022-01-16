@@ -251,7 +251,7 @@ clean:
 #-----------------------------------------------------------------------------
 ifneq (,$(filter $(UNAME),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS Haiku AIX))
 
-lib: libzstd.pc
+lib:
 
 HAS_EXPLICIT_EXEC_PREFIX := $(if $(or $(EXEC_PREFIX),$(exec_prefix)),1,)
 
@@ -311,7 +311,7 @@ libzstd.pc: libzstd.pc.in
 install: install-pc install-static install-shared install-includes
 	@echo zstd static and shared library installed
 
-.PHONY: install-pc
+.PHONY:
 install-pc: libzstd.pc
 	[ -e $(DESTDIR)$(PKGCONFIGDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/
 	$(INSTALL_DATA) libzstd.pc $(DESTDIR)$(PKGCONFIGDIR)/
