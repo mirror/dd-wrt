@@ -47,7 +47,7 @@ Our contribution process works in three main stages:
     * Topic and development:
         * Make a new branch on your fork about the topic you're developing for
         ```
-        # branch names should be consise but sufficiently informative
+        # branch names should be concise but sufficiently informative
         git checkout -b <branch-name>
         git push origin <branch-name>
         ```
@@ -104,7 +104,7 @@ Our contribution process works in three main stages:
         issue at hand, then please indicate this by requesting that an issue be closed by commenting.
         * Just because your changes have been merged does not mean the topic or larger issue is complete. Remember
         that the change must make it to an official zstd release for it to be meaningful. We recommend
-        that contributers track the activity on their pull request and corresponding issue(s) page(s) until
+        that contributors track the activity on their pull request and corresponding issue(s) page(s) until
         their change makes it to the next release of zstd. Users will often discover bugs in your code or
         suggest ways to refine and improve your initial changes even after the pull request is merged.
 
@@ -270,15 +270,15 @@ for level 1 compression on Zstd. Typically this means, you have identified a sec
 code that you think can be made to run faster.
 
 The first thing you will want to do is make sure that the piece of code is actually taking up
-a notable amount of time to run. It is usually not worth optimzing something which accounts for less than
+a notable amount of time to run. It is usually not worth optimizing something which accounts for less than
 0.0001% of the total running time. Luckily, there are tools to help with this.
 Profilers will let you see how much time your code spends inside a particular function.
-If your target code snippit is only part of a function, it might be worth trying to
-isolate that snippit by moving it to its own function (this is usually not necessary but
+If your target code snippet is only part of a function, it might be worth trying to
+isolate that snippet by moving it to its own function (this is usually not necessary but
 might be).
 
-Most profilers (including the profilers dicusssed below) will generate a call graph of
-functions for you. Your goal will be to find your function of interest in this call grapch
+Most profilers (including the profilers discussed below) will generate a call graph of
+functions for you. Your goal will be to find your function of interest in this call graph
 and then inspect the time spent inside of it. You might also want to to look at the
 annotated assembly which most profilers will provide you with.
 
@@ -301,16 +301,16 @@ $ zstd -b1 -i5 <my-data> # this will run for 5 seconds
 5. Once you run your benchmarking script, switch back over to instruments and attach your
 process to the time profiler. You can do this by:
     * Clicking on the `All Processes` drop down in the top left of the toolbar.
-    * Selecting your process from the dropdown. In my case, it is just going to be labled
+    * Selecting your process from the dropdown. In my case, it is just going to be labeled
     `zstd`
     * Hitting the bright red record circle button on the top left of the toolbar
-6. You profiler will now start collecting metrics from your bencharking script. Once
+6. You profiler will now start collecting metrics from your benchmarking script. Once
 you think you have collected enough samples (usually this is the case after 3 seconds of
 recording), stop your profiler.
 7. Make sure that in toolbar of the bottom window, `profile` is selected.
 8. You should be able to see your call graph.
     * If you don't see the call graph or an incomplete call graph, make sure you have compiled
-    zstd and your benchmarking scripg using debug flags. On mac and linux, this just means
+    zstd and your benchmarking script using debug flags. On mac and linux, this just means
     you will have to supply the `-g` flag alone with your build script. You might also
     have to provide the `-fno-omit-frame-pointer` flag
 9. Dig down the graph to find your function call and then inspect it by double clicking
@@ -329,7 +329,7 @@ Some general notes on perf:
 counter statistics. Perf uses a high resolution timer and this is likely one
 of the first things your team will run when assessing your PR.
 * Perf has a long list of hardware counters that can be viewed with `perf --list`.
-When measuring optimizations, something worth trying is to make sure the handware
+When measuring optimizations, something worth trying is to make sure the hardware
 counters you expect to be impacted by your change are in fact being so. For example,
 if you expect the L1 cache misses to decrease with your change, you can look at the
 counter `L1-dcache-load-misses`
@@ -368,7 +368,7 @@ Follow these steps to link travis-ci with your github fork of zstd
 TODO
 
 ### appveyor
-Follow these steps to link circle-ci with your girhub fork of zstd
+Follow these steps to link circle-ci with your github fork of zstd
 
 1. Make sure you are logged into your github account
 2. Go to https://www.appveyor.com/
@@ -399,7 +399,105 @@ disclosure of security bugs. In those cases, please go through the process
 outlined on that page and do not file a public issue.
 
 ## Coding Style
+It's a pretty long topic, which is difficult to summarize in a single paragraph.
+As a rule of thumbs, try to imitate the coding style of
+similar lines of codes around your contribution.
+The following is a non-exhaustive list of rules employed in zstd code base:
+
+### C90
+This code base is following strict C90 standard,
+with 2 extensions : 64-bit `long long` types, and variadic macros.
+This rule is applied strictly to code within `lib/` and `programs/`.
+Sub-project in `contrib/` are allowed to use other conventions.
+
+### C++ direct compatibility : symbol mangling
+All public symbol declarations must be wrapped in `extern “C” { … }`,
+so that this project can be compiled as C++98 code,
+and linked into C++ applications.
+
+### Minimal Frugal
+This design requirement is fundamental to preserve the portability of the code base.
+#### Dependencies
+- Reduce dependencies to the minimum possible level.
+  Any dependency should be considered “bad” by default,
+  and only tolerated because it provides a service in a better way than can be achieved locally.
+  The only external dependencies this repository tolerates are
+  standard C libraries, and in rare cases, system level headers.
+- Within `lib/`, this policy is even more drastic.
+  The only external dependencies allowed are `<assert.h>`, `<stdlib.h>`, `<string.h>`,
+  and even then, not directly.
+  In particular, no function shall ever allocate on heap directly,
+  and must use instead `ZSTD_malloc()` and equivalent.
+  Other accepted non-symbol headers are `<stddef.h>` and `<limits.h>`.
+- Within the project, there is a strict hierarchy of dependencies that must be respected.
+  `programs/` is allowed to depend on `lib/`, but only its public API.
+  Within `lib/`, `lib/common` doesn't depend on any other directory.
+  `lib/compress` and `lib/decompress` shall not depend on each other.
+  `lib/dictBuilder` can depend on `lib/common` and `lib/compress`, but not `lib/decompress`.
+#### Resources
+- Functions in `lib/` must use very little stack space,
+  several dozens of bytes max.
+  Everything larger must use the heap allocator,
+  or require a scratch buffer to be emplaced manually.
+
+### Naming
+* All public symbols are prefixed with `ZSTD_`
+  + private symbols, with a scope limited to their own unit, are free of this restriction.
+    However, since `libzstd` source code can be amalgamated,
+    each symbol name must attempt to be (and remain) unique.
+    Avoid too generic names that could become ground for future collisions.
+    This generally implies usage of some form of prefix.
+* For symbols (functions and variables), naming convention is `PREFIX_camelCase`.
+  + In some advanced cases, one can also find :
+    - `PREFIX_prefix2_camelCase`
+    - `PREFIX_camelCase_extendedQualifier`
+* Multi-words names generally consist of an action followed by object:
+  - for example : `ZSTD_createCCtx()`
+* Prefer positive actions
+  - `goBackward` rather than `notGoForward`
+* Type names (`struct`, etc.) follow similar convention,
+  except that they are allowed and even invited to start by an Uppercase letter.
+  Example : `ZSTD_CCtx`, `ZSTD_CDict`
+* Macro names are all Capital letters.
+  The same composition rules (`PREFIX_NAME_QUALIFIER`) apply.
+* File names are all lowercase letters.
+  The convention is `snake_case`.
+  File names **must** be unique across the entire code base,
+  even when they stand in clearly separated directories.
+
+### Qualifiers
+* This code base is `const` friendly, if not `const` fanatical.
+  Any variable that can be `const` (aka. read-only) **must** be `const`.
+  Any pointer which content will not be modified must be `const`.
+  This property is then controlled at compiler level.
+  `const` variables are an important signal to readers that this variable isn’t modified.
+  Conversely, non-const variables are a signal to readers to watch out for modifications later on in the function.
+* If a function must be inlined, mention it explicitly,
+  using project's own portable macros, such as `FORCE_INLINE_ATTR`,
+  defined in `lib/common/compiler.h`.
+
+### Debugging
+* **Assertions** are welcome, and should be used very liberally,
+  to control any condition the code expects for its correct execution.
+  These assertion checks will be run in debug builds, and disabled in production.
+* For traces, this project provides its own debug macros,
+  in particular `DEBUGLOG(level, ...)`, defined in `lib/common/debug.h`.
+
+### Code documentation
+* Avoid code documentation that merely repeats what the code is already stating.
+  Whenever applicable, prefer employing the code as the primary way to convey explanations.
+  Example 1 : `int nbTokens = n;` instead of `int i = n; /* i is a nb of tokens *./`.
+  Example 2 : `assert(size > 0);` instead of `/* here, size should be positive */`.
+* At declaration level, the documentation explains how to use the function or variable
+  and when applicable why it's needed, of the scenarios where it can be useful.
+* At implementation level, the documentation explains the general outline of the algorithm employed,
+  and when applicable why this specific choice was preferred.
+
+### General layout
 * 4 spaces for indentation rather than tabs
+* Code documentation shall directly precede function declaration or implementation
+* Function implementations and its code documentation should be preceded and followed by an empty line
+
 
 ## License
 By contributing to Zstandard, you agree that your contributions will be licensed

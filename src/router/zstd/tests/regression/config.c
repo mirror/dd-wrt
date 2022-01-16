@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, Facebook, Inc.
+ * Copyright (c) Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -28,20 +28,134 @@
     };
 
 /* Define a config for each level we want to test with. */
-#define LEVEL(x)                                                \
-    param_value_t const level_##x##_param_values[] = {          \
-        {.param = ZSTD_c_compressionLevel, .value = x},         \
-    };                                                          \
-    config_t const level_##x = {                                \
-        .name = "level " #x,                                    \
-        .cli_args = "-" #x,                                     \
-        .param_values = PARAM_VALUES(level_##x##_param_values), \
-    };                                                          \
-    config_t const level_##x##_dict = {                         \
-        .name = "level " #x " with dict",                       \
-        .cli_args = "-" #x,                                     \
-        .param_values = PARAM_VALUES(level_##x##_param_values), \
-        .use_dictionary = 1,                                    \
+#define LEVEL(x)                                                                  \
+    param_value_t const level_##x##_param_values[] = {                            \
+        {.param = ZSTD_c_compressionLevel, .value = x},                           \
+    };                                                                            \
+    param_value_t const level_##x##_param_values_dms[] = {                        \
+        {.param = ZSTD_c_compressionLevel, .value = x},                           \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                  \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceAttach},         \
+    };                                                                            \
+    param_value_t const level_##x##_param_values_dds[] = {                        \
+        {.param = ZSTD_c_compressionLevel, .value = x},                           \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 1},                  \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceAttach},         \
+    };                                                                            \
+    param_value_t const level_##x##_param_values_dictcopy[] = {                   \
+        {.param = ZSTD_c_compressionLevel, .value = x},                           \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                  \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceCopy},           \
+    };                                                                            \
+    param_value_t const level_##x##_param_values_dictload[] = {                   \
+        {.param = ZSTD_c_compressionLevel, .value = x},                           \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                  \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceLoad},           \
+    };                                                                            \
+    config_t const level_##x = {                                                  \
+        .name = "level " #x,                                                      \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values),                   \
+    };                                                                            \
+    config_t const level_##x##_dict = {                                           \
+        .name = "level " #x " with dict",                                         \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values),                   \
+        .use_dictionary = 1,                                                      \
+    };                                                                            \
+    config_t const level_##x##_dict_dms = {                                       \
+        .name = "level " #x " with dict dms",                                     \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values_dms),               \
+        .use_dictionary = 1,                                                      \
+        .advanced_api_only = 1,                                                   \
+    };                                                                            \
+    config_t const level_##x##_dict_dds = {                                       \
+        .name = "level " #x " with dict dds",                                     \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values_dds),               \
+        .use_dictionary = 1,                                                      \
+        .advanced_api_only = 1,                                                   \
+    };                                                                            \
+    config_t const level_##x##_dict_copy = {                                      \
+        .name = "level " #x " with dict copy",                                    \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values_dictcopy),          \
+        .use_dictionary = 1,                                                      \
+        .advanced_api_only = 1,                                                   \
+    };                                                                            \
+    config_t const level_##x##_dict_load = {                                      \
+        .name = "level " #x " with dict load",                                    \
+        .cli_args = "-" #x,                                                       \
+        .param_values = PARAM_VALUES(level_##x##_param_values_dictload),          \
+        .use_dictionary = 1,                                                      \
+        .advanced_api_only = 1,                                                   \
+    };
+
+/* Define a config specifically to test row hash based levels and settings.
+ */
+#define ROW_LEVEL(x, y)                                                            \
+    param_value_t const row_##y##_level_##x##_param_values[] = {                   \
+        {.param = ZSTD_c_useRowMatchFinder, .value = y},                           \
+        {.param = ZSTD_c_compressionLevel, .value = x},                            \
+    };                                                                             \
+    param_value_t const row_##y##_level_##x##_param_values_dms[] = {               \
+        {.param = ZSTD_c_useRowMatchFinder, .value = y},                           \
+        {.param = ZSTD_c_compressionLevel, .value = x},                            \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                   \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceAttach},          \
+    };                                                                             \
+    param_value_t const row_##y##_level_##x##_param_values_dds[] = {               \
+        {.param = ZSTD_c_useRowMatchFinder, .value = y},                           \
+        {.param = ZSTD_c_compressionLevel, .value = x},                            \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 1},                   \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceAttach},          \
+    };                                                                             \
+    param_value_t const row_##y##_level_##x##_param_values_dictcopy[] = {          \
+        {.param = ZSTD_c_useRowMatchFinder, .value = y},                           \
+        {.param = ZSTD_c_compressionLevel, .value = x},                            \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                   \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceCopy},            \
+    };                                                                             \
+    param_value_t const row_##y##_level_##x##_param_values_dictload[] = {          \
+        {.param = ZSTD_c_useRowMatchFinder, .value = y},                           \
+        {.param = ZSTD_c_compressionLevel, .value = x},                            \
+        {.param = ZSTD_c_enableDedicatedDictSearch, .value = 0},                   \
+        {.param = ZSTD_c_forceAttachDict, .value = ZSTD_dictForceLoad},            \
+    };                                                                             \
+    config_t const row_##y##_level_##x = {                                         \
+        .name = "level " #x " row " #y,                                            \
+        .cli_args = "-" #x,                                                        \
+        .param_values = PARAM_VALUES(row_##y##_level_##x##_param_values),          \
+        .advanced_api_only = 1,                                                    \
+    };                                                                             \
+    config_t const row_##y##_level_##x##_dict_dms = {                              \
+        .name = "level " #x " row " #y " with dict dms",                           \
+        .cli_args = "-" #x,                                                        \
+        .param_values = PARAM_VALUES(row_##y##_level_##x##_param_values_dms),      \
+        .use_dictionary = 1,                                                       \
+        .advanced_api_only = 1,                                                    \
+    };                                                                             \
+    config_t const row_##y##_level_##x##_dict_dds = {                              \
+        .name = "level " #x " row " #y " with dict dds",                           \
+        .cli_args = "-" #x,                                                        \
+        .param_values = PARAM_VALUES(row_##y##_level_##x##_param_values_dds),      \
+        .use_dictionary = 1,                                                       \
+        .advanced_api_only = 1,                                                    \
+    };                                                                             \
+    config_t const row_##y##_level_##x##_dict_copy = {                             \
+        .name = "level " #x " row " #y" with dict copy",                          \
+        .cli_args = "-" #x,                                                        \
+        .param_values = PARAM_VALUES(row_##y##_level_##x##_param_values_dictcopy), \
+        .use_dictionary = 1,                                                       \
+        .advanced_api_only = 1,                                                    \
+    };                                                                             \
+    config_t const row_##y##_level_##x##_dict_load = {                             \
+        .name = "level " #x " row " #y " with dict load",                          \
+        .cli_args = "-" #x,                                                        \
+        .param_values = PARAM_VALUES(row_##y##_level_##x##_param_values_dictload), \
+        .use_dictionary = 1,                                                       \
+        .advanced_api_only = 1,                                                    \
     };
 
 #define PARAM_VALUES(pv) \
@@ -51,12 +165,21 @@
 
 #undef LEVEL
 #undef FAST_LEVEL
+#undef ROW_LEVEL
 
 static config_t no_pledged_src_size = {
     .name = "no source size",
     .cli_args = "",
     .param_values = PARAM_VALUES(level_0_param_values),
     .no_pledged_src_size = 1,
+};
+
+static config_t no_pledged_src_size_with_dict = {
+    .name = "no source size with dict",
+    .cli_args = "",
+    .param_values = PARAM_VALUES(level_0_param_values),
+    .no_pledged_src_size = 1,
+    .use_dictionary = 1,
 };
 
 static param_value_t const ldm_param_values[] = {
@@ -92,7 +215,7 @@ static config_t mt_ldm = {
 
 static param_value_t mt_advanced_param_values[] = {
     {.param = ZSTD_c_nbWorkers, .value = 2},
-    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_lcm_uncompressed},
+    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_ps_disable},
 };
 
 static config_t mt_advanced = {
@@ -135,7 +258,7 @@ static config_t small_clog = {
 
 static param_value_t const uncompressed_literals_param_values[] = {
     {.param = ZSTD_c_compressionLevel, .value = 3},
-    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_lcm_uncompressed},
+    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_ps_disable},
 };
 
 static config_t uncompressed_literals = {
@@ -146,7 +269,7 @@ static config_t uncompressed_literals = {
 
 static param_value_t const uncompressed_literals_opt_param_values[] = {
     {.param = ZSTD_c_compressionLevel, .value = 19},
-    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_lcm_uncompressed},
+    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_ps_disable},
 };
 
 static config_t uncompressed_literals_opt = {
@@ -157,7 +280,7 @@ static config_t uncompressed_literals_opt = {
 
 static param_value_t const huffman_literals_param_values[] = {
     {.param = ZSTD_c_compressionLevel, .value = -1},
-    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_lcm_huffman},
+    {.param = ZSTD_c_literalCompressionMode, .value = ZSTD_ps_enable},
 };
 
 static config_t huffman_literals = {
@@ -186,12 +309,15 @@ static config_t explicit_params = {
 static config_t const* g_configs[] = {
 
 #define FAST_LEVEL(x) &level_fast##x, &level_fast##x##_dict,
-#define LEVEL(x) &level_##x, &level_##x##_dict,
+#define LEVEL(x) &level_##x, &level_##x##_dict, &level_##x##_dict_dms, &level_##x##_dict_dds, &level_##x##_dict_copy, &level_##x##_dict_load,
+#define ROW_LEVEL(x, y) &row_##y##_level_##x, &row_##y##_level_##x##_dict_dms, &row_##y##_level_##x##_dict_dds, &row_##y##_level_##x##_dict_copy, &row_##y##_level_##x##_dict_load,
 #include "levels.h"
+#undef ROW_LEVEL
 #undef LEVEL
 #undef FAST_LEVEL
 
     &no_pledged_src_size,
+    &no_pledged_src_size_with_dict,
     &ldm,
     &mt,
     &mt_ldm,

@@ -29,6 +29,7 @@ dictionary
 NUL
 
 # Build artefacts
+contrib/linux-kernel/linux/
 projects/
 bin/
 .buckd/
@@ -50,3 +51,5 @@ googletest/
 *.code-workspace
 compile_commands.json
 .clangd
+perf.data
+perf.data.old

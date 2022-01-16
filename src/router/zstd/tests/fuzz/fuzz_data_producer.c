@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, Facebook, Inc.
+ * Copyright (c) Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -64,6 +64,12 @@ int32_t FUZZ_dataProducer_int32Range(FUZZ_dataProducer_t *producer,
 
 size_t FUZZ_dataProducer_remainingBytes(FUZZ_dataProducer_t *producer){
     return producer->size;
+}
+
+void FUZZ_dataProducer_rollBack(FUZZ_dataProducer_t *producer, size_t remainingBytes)
+{
+    FUZZ_ASSERT(remainingBytes >= producer->size);
+    producer->size = remainingBytes;
 }
 
 int FUZZ_dataProducer_empty(FUZZ_dataProducer_t *producer) {
