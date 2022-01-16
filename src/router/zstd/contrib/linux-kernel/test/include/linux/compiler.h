@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, Facebook, Inc.
+ * Copyright (c) 2016-2021, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -13,5 +13,11 @@
 #ifndef inline
 #define inline __inline __attribute__((unused))
 #endif
+
+#ifndef noinline
+#define noinline __attribute__((noinline))
+#endif
+
+#define fallthrough __attribute__((__fallthrough__))
 
 #endif
