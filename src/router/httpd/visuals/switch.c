@@ -120,10 +120,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	nowan = nvram_match("sw_wan", "-1");
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
-	if (nowan)
-		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports);
-	else
-		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + 1);
+	websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + !nowan);
 	websWrite(wp, "<th rowspan=\"2\">&nbsp;</th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
@@ -134,7 +131,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "</tr>\n");
 
-	websWrite(wp, "              <tr>\n");
+	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	for (a = nowan; a < lanports + 1; a++) {
 		int status = 0;
