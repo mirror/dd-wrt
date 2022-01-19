@@ -267,7 +267,7 @@ sbutton.cmd="Ausführen";
 sbutton.cancel="Einstellungen zurücknehmen";
 sbutton.canceltitle="Verwerfe Einstellungen dieser Maske";
 sbutton.refres="Auffrischen";
-sbutton.clos="Schlie&szlig;en";
+sbutton.clos="Schließen";
 sbutton.del="Löschen";
 sbutton.continu="Fortfahren";
 sbutton.add="Hinzufügen";
@@ -323,9 +323,9 @@ sbutton.prev="Älaquo; Vorheriges";
 
 errmsg.err0="Sie müssen einen Benutzernamen angeben.";
 errmsg.err1="Sie müssen einen Routernamen angeben.";
-errmsg.err2="Au&szlig;erhalb des zulässigen Bereichs! Bitte ändern Sie die Start-IP-Adresse oder die Anzahl der Benutzer.";
+errmsg.err2="Außerhalb des zulässigen Bereichs! Bitte ändern Sie die Start-IP-Adresse oder die Anzahl der Benutzer.";
 errmsg.err3="Sie müssen einen Tag auswählen.";
-errmsg.err4="Die Endzeit mu&szlig; nach der die Startzeit liegen.";
+errmsg.err4="Die Endzeit muß nach der die Startzeit liegen.";
 errmsg.err5="Die MAC-Adressenlänge ist nicht korrekt.";
 errmsg.err6="Sie müssen einen Benutzernamen angeben.";
 errmsg.err7="Sie müssen einen Hostnamen angeben.";
@@ -339,9 +339,9 @@ errmsg.err45="Diese Funktion ist unter HTTPS nicht verfügbar! Bitte verwenden S
 errmsg.err46="Diese Funktion ist unter HTTPS nicht verfügbar";
 
 //common.js error messages
-errmsg.err14=" Wert ist au&szlig;erhalb des zulässigen Bereichs [";
-errmsg.err15="Die WAN-MAC-Adresse ist au&szlig;erhalb des gültigen Bereichs [00 - ff].";
-errmsg.err16="Der zweite Wert der MAC-Adresse mu&szlig; eine gerade Zahl sein : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err14=" Wert ist außerhalb des zulässigen Bereichs [";
+errmsg.err15="Die WAN-MAC-Adresse ist außerhalb des gültigen Bereichs [00 - ff].";
+errmsg.err16="Der zweite Wert der MAC-Adresse muß eine gerade Zahl sein : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Diese MAC-Adresse ist nicht korrekt.";
 errmsg.err18="Die Länge der MAC-Adresse ist nicht korrekt.";
 errmsg.err19="Die MAC-Adresse kann nicht die Broadcast-Adresse sein.";
@@ -360,7 +360,7 @@ errmsg.err31=" ist ungültig.";
 errmsg.err32="IP-Adresse und Gateway sind nicht im selben Netzbereich.";
 errmsg.err33="IP-Adresse und Gateway können nicht die selben sein.";
 errmsg.err34=" darf keine Leerzeichen enthalten.";
-errmsg.err110="Die snd Nummer mu&szlig; grö&szlig;er als die start Nummer sein";
+errmsg.err110="Die snd Nummer muß größer als die start Nummer sein";
 errmsg.err111="Ungültige IP Adresse";
 errmsg.err112="Ungültige Zeichen \"<invchars>\" in Feld \"<fieldname>\"";
 errmsg.err113="Die Mobility Domain muss ein 4 Stelliger Hexadezimalwert sein";
@@ -406,11 +406,11 @@ errmsg.err54="Sie müssen einen Dienst-Namen angeben.";
 errmsg.err55="Der Dienstname existiert bereits.";
 
 // QoS.asp error messages
-errmsg.err56="Portwert ist au&szlig;erhalb des gültigen Bereichs [0 - 65535]";
+errmsg.err56="Portwert ist außerhalb des gültigen Bereichs [0 - 65535]";
 
 // Routing.asp error messages
 errmsg.err57="Eintrag löschen?";
-errmsg.err103=" mu&szlig; kleiner sein als ";
+errmsg.err103=" muß kleiner sein als ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Klicken um die Zuweisung zu löschen";
@@ -852,7 +852,7 @@ hprivoxy.page4="<dd><br /><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li
 
 lighttpd.wan="WAN Zugriff";
 
-hnas.right2="Um eine neue Freigabe zu erstellen müssen Pfad und Freigabename eingetragen werden. Anschlie&szlig;end müssen Benutzer und deren Rechte für FTP und Samba Zugriff spezifiziert werden";
+hnas.right2="Um eine neue Freigabe zu erstellen müssen Pfad und Freigabename eingetragen werden. Anschließend müssen Benutzer und deren Rechte für FTP und Samba Zugriff spezifiziert werden";
 
 
 // ** Hotspot.asp ** //
@@ -897,7 +897,7 @@ hotspot.nocat_redirect="Homepage Weiterleitung";
 hotspot.nocat_allowweb="Erlaubte Web-Hosts";
 hotspot.nocat_docroot="Dokumenten-Pfad";
 hotspot.nocat_splash="Splash-URL";
-hotspot.nocat_port="Ports ausschlie&szlig;en";
+hotspot.nocat_port="Ports ausschließen";
 hotspot.nocat_timeout="Login-Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Nur Routen";
@@ -979,8 +979,8 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 //anchorfree.servicestatus="Dienst Status";
 //anchorfree.agreement="Nutzungsbestimmungen";
 //anchorfree.agree="Einverstanden";
-//anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, mu&szlig; eine gültige Adresse angegeben werden!";
-//anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, mu&szlig; eine gültige Stadt oder Postleitzahl angegeben werden!";
+//anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Adresse angegeben werden!";
+//anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Stadt oder Postleitzahl angegeben werden!";
 //anchorfree.validcat="Bitte wählen Sie eine Kategorie für ihren Hotspot aus!";
 //anchorfree.validcountry="Bitte geben Sie ihr Land an";
 //anchorfree.validterms="Sie müssen den Nutzungsbestimmungen zustimmen!";
@@ -1956,7 +1956,7 @@ hstatus_lan.right2="Dies ist die Router-MAC-Adresse wie sie in Ihrem lokalen Eth
 hstatus_lan.right4="Dies zeigt die Router-IP-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
 hstatus_lan.right6="Wenn der Router eine Netzmaske nutzt, wird diese hier angezeigt.";
 hstatus_lan.right8="Wenn Sie den Router als DHCP-Server nutzen, wird dies hier angezeigt.";
-hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie die OUI ID, welche auf den Hersteller des Geräts rückschlie&szlig;en lässt.";
+hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie die OUI ID, welche auf den Hersteller des Geräts rückschließen lässt.";
 
 
 // ** Status_Bandwidth.asp **//
@@ -2696,7 +2696,7 @@ wl_basic.fw_type="Firmware Typ";
 
 //help container
 
-hwl_basic.right2="Wenn Sie G-Clients komplett ausschlie&szlig;en wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>abschalten</em>.";
+hwl_basic.right2="Wenn Sie G-Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>abschalten</em>.";
 hwl_basic.right3="Empfindlichkeitsbereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing auf Broadcom Geräten komplett ab. Auf Atheros Geräten wechselt eine 0 in den Auto ACK Timing Modus";
 hwl_basic.right6="Klick auf irgendeine Stunde um das WLAN Signal an- oder abzuschalten (<em>Grün</em> zeigt den erlaubten Zugriff an, <em>Rot</em> zeigt den blockierten Zugriff an)";
