@@ -6,7 +6,11 @@ if [ "$($nv get wan_proto)" = "disabled" ]
 then
 	EP=$($nv get lan_ipaddr)
 else
-	EP=$(get_wanip)
+	if [ -z "$($nv get oet$1_clend$2)" ]; then
+		EP=$(get_wanip)
+	else
+		EP="$($nv get oet$1_clend$2)"
+	fi
 fi
 if [ "$($nv get oet$1_endpoint$2)" = "1" ]
 then
@@ -16,11 +20,11 @@ else
 fi
 if [ -z "$($nv get oet$1_ip$2)" ]
 then
-	nvram set oet$1_ip$2=0.0.0.0
+	$nv set oet$1_ip$2=0.0.0.0
 fi
-if [ -z "$($nv get oet$1_dns$2)" ]
+if [ -z "$($nv get oet$1_cldns$2)" ]
 then
-	nvram set oet$1_dns$2=0.0.0.0
+	$nv set oet$1_cldns$2=0.0.0.0
 fi
 overhead=60
 if [ "$($nv get ipv6_enable)" == "1" ]
@@ -31,9 +35,9 @@ if [ -z "$($nv get oet$1_mtu)" ]
 then
 	if [ "$($nv get wan_proto)" != "disabled" ]
 	then
-		nvram set oet$1_mtu=$(($($nv get wan_mtu) - $overhead))
+		$nv set oet$1_mtu=$(($($nv get wan_mtu) - $overhead))
 	else
-		nvram set oet$1_mtu=$((1500 - $overhead))
+		$nv set oet$1_mtu=$((1500 - $overhead))
 	fi
 fi
 if [ -z "$($nv get oet$1_aip$2)" ]
@@ -45,9 +49,9 @@ echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
 echo "Address = $($nv get oet$1_ip$2)/$(getmask $($nv get oet$1_netmask))" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PrivateKey = $($nv get oet$1_peerpk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
-if [ "$($nv get oet$1_dns$2)" != "0.0.0.0" ]
+if [ "$($nv get oet$1_cldns$2)" != "0.0.0.0" ]
 then
-echo "DNS = $($nv get oet$1_dns$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "DNS = $($nv get oet$1_cldns$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
 echo "MTU = $($nv get oet$1_mtu)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "[Peer]" >> /tmp/wireguard/oet$1_peer$2_conf
@@ -59,4 +63,4 @@ if [ $($nv get oet$1_usepsk$2) = "1" ]
 then
 echo "PresharedKey = $($nv get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "PersistentKeepalive = $($nv get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PersistentKeepalive = $($nv get oet$1_clka$2)" >> /tmp/wireguard/oet$1_peer$2_conf

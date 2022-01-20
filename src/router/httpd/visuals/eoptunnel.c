@@ -198,11 +198,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp,
 						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d_showadvanced', true)\" />", temp,
 						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun);
-					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					show_caption(wp, NULL, "share.show", "&nbsp;");
 					websWrite(wp,
 						  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d_showadvanced', false)\" />", temp,
 						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun);
-					show_caption_simple(wp, "share.disable");
+					show_caption_simple(wp, "share.hide");
 				}
 				websWrite(wp, "</div>\n");
 				//end show
@@ -375,28 +375,65 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						websWrite(wp, "<legend>%d. <input type=\"text\" size=\"14\" id=\"%s\" name=\"%s\" value=\"%s\" ></legend>\n", peer + 1, temp, temp, nvram_safe_get(temp));
 					}
-					//legend
-					//websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
-
+					//Box for items in Client config file, definition of show_ip, show_caption etc is in src/router/httpd/visuals/ddwrt.c
+					websWrite(wp, "<fieldset>\n");
+					//websWrite(wp, "<legend>Client config file</legend>\n");
+					show_caption_legend(wp, "eoip.wireguard_cllegend");
+					//Show/Hide Client Config
+					snprintf(temp, sizeof(temp), "oet%d_clconfig%d", tun, peer);
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
-						show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\" />\n", tun, peer);
-						snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
-						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerip");
+						show_caption(wp, "label", "eoip.wireguard_cllegend", NULL);
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idclconfig%d_peer%d', true)\" />", temp,
+							  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun, peer);
+						show_caption(wp, NULL, "share.show", "&nbsp;");
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idclconfig%d_peer%d', false)\" />", temp,
+							  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun, peer);
+						show_caption_simple(wp, "share.hide");
 					}
 					websWrite(wp, "</div>\n");
+					//end show Client config
+					websWrite(wp, "<div id=\"idclconfig%d_peer%d\">\n", tun, peer);
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
+							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\" />\n", tun, peer);
+							snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
+							nvram_default_get(temp, "0.0.0.0");
+							show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerip");
+						}
+						websWrite(wp, "</div>\n");
 
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\" />\n", tun, peer);
-						snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
-						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
-					}
-					websWrite(wp, "</div>\n");
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
+							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_cldns%d\" value=\"0.0.0.0\" />\n", tun, peer);
+							snprintf(temp, sizeof(temp), "oet%d_cldns%d", tun, peer);
+							nvram_default_get(temp, "0.0.0.0");
+							show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
+						}
+						websWrite(wp, "</div>\n");
+						
+						websWrite(wp, "<div class=\"setting\">\n");
+						snprintf(temp, sizeof(temp), "oet%d_clend%d", tun, peer);
+						{
+							show_caption(wp, "label", "eoip.wireguard_clend", NULL);
+							websWrite(wp, "<input size=\"20\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+						}
+						websWrite(wp, "</div>\n");
+
+						websWrite(wp, "<div class=\"setting\">\n");
+						snprintf(temp, sizeof(temp), "oet%d_clka%d", tun, peer);
+						{
+							show_caption(wp, "label", "eoip.wireguard_clka", NULL);
+							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%s\" />\n", temp,
+										nvram_safe_get(temp));
+						}
+						websWrite(wp, "</div>\n");
+					websWrite(wp, "</div>\n"); // end show/hide idclconfig
+					websWrite(wp, "</fieldset>\n");
 
 					snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
 					websWrite(wp, "<div class=\"setting\">\n");
@@ -572,6 +609,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					//end status box
 
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+					websWrite(wp, "show_layer_ext(this, 'idclconfig%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_clconfig%d", tun, peer) ? "true" : "false");
 					websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_usepsk%d", tun, peer) ? "true" : "false");
 					websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_endpoint%d", tun, peer) ? "true" : "false");
 					websWrite(wp,
