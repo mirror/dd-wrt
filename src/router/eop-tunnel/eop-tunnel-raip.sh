@@ -141,7 +141,8 @@ if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
 	# check if other instances did not set already
 	if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
 		logger -p user.info "WireGuard DNS ERROR, already set when running oet${i} will overwrite"
-		#mv -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
+		#consider adding sleep i otherwise this tunnel will change resolv.dnsmasq within one second and it will not get polled
+		#sleep i
 	fi
 	#if PBR is used with split DNS
 	if [[ $($nv get oet${i}_spbr) -eq 1 && $($nv get oet${i}_dnspbr) -eq 1 && ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
@@ -182,6 +183,8 @@ if [[ $($nv get oet${i}_failstate) -eq 2 ]]; then
 	sh /usr/bin/wireguard-fwatchdog.sh $i 29 8.8.8.8 $fset &
 fi
 #restart dnsmasq when the last tunnel has been setup to reread resolv.dnsmasq, due to a bug this does not happen on change of resolv.dnsmasq
-# for now disabled waiting for DNSMasq to be repaired
+# for now disabled waiting for DNSMasq to be repaired 2.86 works but 287test4 is buggy and does not want to replace a DNS resolver which is already in memory
 restart=$(nvram get wg_restart_dnsmasq)
 [[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; restart dnsmasq; }
+# reload but not restart works of resolv.dnsmasq only if "no-poll" is set
+#[[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; kill -1 $(pidof dnsmasq); }
