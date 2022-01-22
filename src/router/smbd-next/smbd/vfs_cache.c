@@ -551,7 +551,13 @@ static int __open_id(struct ksmbd_file_table *ft, struct ksmbd_file *fp,
 
 	idr_preload(GFP_KERNEL);
 	write_lock(&ft->lock);
+#ifdef CONFIG_SMB_INSECURE_SERVER
+	ret = idr_alloc_cyclic(ft->idr, fp, 0,
+			       IS_SMB2(fp->conn) ? INT_MAX - 1 : 0xFFFF,
+			       GFP_NOWAIT);
+#else
 	ret = idr_alloc_cyclic(ft->idr, fp, 0, INT_MAX - 1, GFP_NOWAIT);
+#endif
 	if (ret >= 0) {
 		id = ret;
 		ret = 0;
