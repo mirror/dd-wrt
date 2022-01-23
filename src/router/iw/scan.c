@@ -1771,6 +1771,21 @@ static void print_wifi_wps(const uint8_t type, uint8_t len, const uint8_t *data,
 				data[12], data[13], data[14], data[15],
 				data[16], data[17], data[18], data[19]);
 			break;
+		case 0x1049:
+			tab_on_first(&first);
+			if (sublen == 6 &&
+			    data[4] == 0x00 &&
+			    data[5] == 0x37 &&
+			    data[6] == 0x2a &&
+			    data[7] == 0x00 &&
+			    data[8] == 0x01) {
+				uint8_t v2 = data[9];
+				printf("\t * Version2: %d.%d\n", v2 >> 4, v2 & 0xf);
+			} else {
+				printf("\t * Unknown vendor extension. len=%u\n",
+				       sublen);
+			}
+			break;
 		case 0x1054: {
 			tab_on_first(&first);
 			if (sublen != 8) {
