@@ -1986,6 +1986,8 @@ static const struct ie_print wfa_printers[] = {
 	[28] = { "OWE", print_wifi_owe, 1, 255, BIT(PRINT_SCAN), },
 };
 
+static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
+
 static void print_vendor(unsigned char len, unsigned char *data,
 			 bool unknown, enum print_ie_type ptype)
 {
@@ -2035,6 +2037,12 @@ static void print_vendor(unsigned char len, unsigned char *data,
 #endif
 	if (len >= 4 && memcmp(data, mtik_oui, 3) == 0) {
 		print_mtik(data);
+	}
+
+	if (len >= 4 && !memcmp(data, brcm_oui, 3)) {
+		if (data[3] == 2) {
+			printf("\tNumber of Stations:%d\n", data[4]);
+		}
 	}
 
 
