@@ -1574,15 +1574,15 @@ void mac80211_site_survey(char *interface)
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
 	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
-	for (i = 0; i < SITE_SURVEY_NUM; i++) {
-		site_survey_lists[i].numsta = -1;
-	}
 	int i;
 	int phy, wdev;
 	char scaninterface[32];
 	char macaddr[32];
 	unsigned char hwbuff[16];
 	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	for (i = 0; i < SITE_SURVEY_NUM; i++) {
+		site_survey_lists[i].numsta = -1;
+	}
 	eval("iw", "dev", interface, "scan");
 	mac80211_scan(&unl, interface);
 	write_site_survey();
