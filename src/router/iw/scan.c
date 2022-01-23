@@ -2041,7 +2041,7 @@ static void print_vendor(unsigned char len, unsigned char *data,
 
 	if (len >= 4 && !memcmp(data, brcm_oui, 3)) {
 		if (data[3] == 2) {
-			printf("\tNumber of Stations:%d\n", data[4]);
+			printf("\tNumber of Stations: %d\n", data[4]);
 		}
 	}
 
