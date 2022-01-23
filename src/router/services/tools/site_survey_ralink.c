@@ -193,7 +193,7 @@ int site_survey_main(int argc, char *argv[])
 	pclose(scan);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency
 	     && site_survey_lists[i].channel != 0; i++) {
 
 		fprintf(stderr,
