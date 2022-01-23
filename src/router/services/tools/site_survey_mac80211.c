@@ -1591,12 +1591,13 @@ void mac80211_site_survey(char *interface)
 		}
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] rssi[%d] noise[%d] active[%llu] busy[%llu] quality[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] numsta[%2d] rssi[%d] noise[%d] active[%llu] busy[%llu] quality[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel & 0xff,
 			site_survey_lists[i].channel,
 			site_survey_lists[i].frequency,
+			site_survey_lists[i].numsta,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].active,
