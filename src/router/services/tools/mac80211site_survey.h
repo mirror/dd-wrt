@@ -78,6 +78,7 @@ struct scan_params {
 
 static unsigned char wfa_oui[3]		= { 0x50, 0x6f, 0x9a };
 static unsigned char wifi_oui[3] = { 0x00, 0x50, 0xf2 };
+static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
 static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
 
 /* typedef unsigned char uint8;
