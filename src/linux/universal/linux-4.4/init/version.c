@@ -40,7 +40,7 @@ struct uts_namespace init_uts_ns = {
 	.ns.ops = &utsns_operations,
 #endif
 };
-EXPORT_SYMBOL_GPL(init_uts_ns);
+EXPORT_SYMBOL(init_uts_ns);
 
 /* FIXED STRINGS! Don't touch! */
 #ifdef CONFIG_LTO
