@@ -1,4 +1,4 @@
-/*
+/*g
  * site_survey_broadcom.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -364,12 +364,15 @@ static uint8 *wlu_parse_tlvs(uint8 * tlv_buf, int buflen, uint key)
 	return NULL;
 }
 
-static char *wl_dump_wpa_rsn_ies(uint8 * cp, uint len)
+static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
+
+static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *list)
 {
 	uint8 *parse = cp;
 	uint parse_len = len;
 	uint8 *wpaie;
 	uint8 *rsnie;
+	uint8 *bcmie;
 	static char sum[128] = { 0 };
 	bzero(sum, sizeof(sum));
 
@@ -385,21 +388,31 @@ static char *wl_dump_wpa_rsn_ies(uint8 * cp, uint len)
 	if (wpaie || rsnie) {
 		if (*sum > 0)
 			sum[strlen(sum)] = 0;
-		return sum;
+		strcpy(list->ENCINFO, sum);
+	}
+	bcmie = wlu_parse_tlvs(cp, len, 211);
+	if (bcmie) {
+		if (bcmie[1] >= 4 && memcmp(&bcmie[2], brcm_oui, 3)) {
+			if (data[5] == 2) {
+				site_survey_lists[sscount].numsta = data[6];
+				if (data[8] & 0x80)
+					site_survey_lists[sscount].extcap = CAP_DWDS;
+			}
+		}
 	}
 
-	return "WEP";
+	strcpy(list->ENCINFO, "WEP");
 }
 
-static char *getEncInfo(wl_bss_info_t * bi)
+static void getEncInfo(wl_bss_info_t * bi, struct site_survey_list *list)
 {
 	if (bi->capability & DOT11_CAP_PRIVACY) {
-		if (bi->ie_length)
-			return wl_dump_wpa_rsn_ies((uint8 *) (((uint8 *) bi) + bi->ie_offset), bi->ie_length);
-		else
-			return "WEP";
+		if (bi->ie_length) {
+			wl_dump_wpa_rsn_ies((uint8 *) (((uint8 *) bi) + bi->ie_offset), bi->ie_length, list);
+		} else
+			strcpy(list->ENCINFO, "WEP");
 	} else
-		return "Open";
+		strcpy(list->ENCINFO, "Open");
 }
 
 static int get_mcs_max(const unsigned char *mcs)
@@ -565,7 +578,7 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].rate_count = get_legacy(bss_info->rateset.rates, bss_info->rateset.count);
 
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
-		strcpy(site_survey_lists[i].ENCINFO, getEncInfo(bss_info));
+		getEncInfo(bss_info, &site_survey_lists[i]);
 
 		bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
 	}
@@ -595,38 +608,34 @@ endss:
 	return 0;
 }
 
-int write_site_survey(void)
-{
+int write_site_survey(void) {
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
 		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
-		fclose(fp);
-		return FALSE;
+		 fclose(fp);
+		 return FALSE;
 	}
 	return TRUE;
 }
 
-static int open_site_survey(void)
-{
+static int open_site_survey(void) {
 	FILE *fp;
 
-	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
+	 bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
 		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
-		fclose(fp);
-		return TRUE;
+		 fclose(fp);
+		 return TRUE;
 	}
 	return FALSE;
 }
 
 #ifdef TEST
 
-void main(int argc, char *argv[])
-{
+void main(int argc, char *argv[]) {
 	site_survey_main(argc, argv);
 
 }
-
 #endif

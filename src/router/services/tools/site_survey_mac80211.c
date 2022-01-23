@@ -298,7 +298,7 @@ static void print_mcs_index(const __u8 *mcs)
 static void print_ht_mcs(const __u8 *mcs)
 {
 
-	site_survey_lists[sscount].extcap |= 0x2;	// ht
+	site_survey_lists[sscount].extcap |= CAP_HT;	// ht
 
 	/* As defined in 7.3.2.57.4 Supported MCS Set field */
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
@@ -382,6 +382,12 @@ static bool print_wifi_wmm_param(const uint8_t * data, uint8_t len)
 invalid:
 	printf("invalid: ");
 	return false;
+}
+
+static void print_broadcom_ie(const uint8_t type, uint8_t len, const uint8_t * data)
+{
+
+
 }
 
 static void print_wifi_wmm(const uint8_t type, uint8_t len, const uint8_t * data)
@@ -579,13 +585,13 @@ static void tab_on_first(bool *first)
 
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	if (!(site_survey_lists[sscount].extcap & 1))
+	if (!(site_survey_lists[sscount].extcap & CAP_MESH))
 		memcpy(site_survey_lists[sscount].SSID, data, len);
 }
 
 static void print_mesh_ssid(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	site_survey_lists[sscount].extcap |= 1;
+	site_survey_lists[sscount].extcap |= CAP_MESH;
 	memcpy(site_survey_lists[sscount].SSID, data, len);
 }
 
@@ -799,7 +805,13 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 		printf("\n");
 		return;
 	}
-
+	if (len >= 4 && memcmp(data, brcm_oui, 3)) {
+		if (data[3] == 2) {
+			site_survey_lists[sscount].numsta = data[4];
+			if (data[6] & 0x80)
+				site_survey_lists[sscount].extcap = CAP_DWDS;
+		}
+	}
 	if (len >= 4 && memcmp(data, wifi_oui, 3) == 0) {
 		if (data[3] < ARRAY_SIZE(wifiprinters) && wifiprinters[data[3]].name && wifiprinters[data[3]].flags & BIT(ptype)) {
 			print_ie(&wifiprinters[data[3]], data[3], len - 4, data + 4);
@@ -1226,7 +1238,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 {
 	__u16 tmp;
 	int i;
-	site_survey_lists[sscount].extcap |= 0x4;	// vht
+	site_survey_lists[sscount].extcap |= CAP_VHT;	// vht
 
 	printf("\t\tVHT Capabilities (0x%.8x):\n", capa);
 
@@ -1342,7 +1354,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 
 static void print_vht_capa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	site_survey_lists[sscount].extcap |= 0x4;	// vht
+	site_survey_lists[sscount].extcap |= CAP_VHT;	// vht
 	printf("\n");
 	print_vht_info(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24), data + 4);
 }
@@ -1361,7 +1373,7 @@ static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t * data
 	if (data[0] == 3 || data[0] == 2)
 		site_survey_lists[sscount].channel |= 0x200;	//80+80 or 160
 
-	site_survey_lists[sscount].extcap |= 0x4;	// vht
+	site_survey_lists[sscount].extcap |= CAP_VHT;	// vht
 	printf("\n");
 	printf("\t\t * channel width: %d (%s)\n", data[0], data[0] < ARRAY_SIZE(chandwidths) ? chandwidths[data[0]] : "unknown");
 	printf("\t\t * center freq segment 1: %d\n", data[1]);
@@ -1376,7 +1388,7 @@ static void print_ht_capability(__u16 cap)
 		if (_cond) \
 			printf("\t\t\t" _str "\n"); \
 	} while (0)
-	site_survey_lists[sscount].extcap |= 0x2;	// vht
+	site_survey_lists[sscount].extcap |= CAP_HT;	// vht
 
 	printf("\t\tCapabilities: 0x%02x\n", cap);
 
@@ -1437,7 +1449,7 @@ static void print_ht_capability(__u16 cap)
 
 static void print_ht_capa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	site_survey_lists[sscount].extcap |= 0x2;	// vht
+	site_survey_lists[sscount].extcap |= CAP_HT;	// vht
 	printf("\n");
 	print_ht_capability(data[0] | (data[1] << 8));
 	print_ampdu_length(data[2] & 3);
@@ -1464,9 +1476,9 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data)
 		"any",
 	};
 	site_survey_lists[sscount].channel |= 0x1000;	//20 or 40
-	site_survey_lists[sscount].extcap |= 0x2;	// ht
+	site_survey_lists[sscount].extcap |= CAP_HT;	// ht
 	if (data[1] & 0x3)
-		site_survey_lists[sscount].extcap |= 0x8;	// sec channel available
+		site_survey_lists[sscount].extcap |= CAP_SECCHANNEL;	// sec channel available
 
 	printf("\n");
 	printf("\t\t * primary channel: %d\n", data[0]);
