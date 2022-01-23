@@ -805,7 +805,7 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 		printf("\n");
 		return;
 	}
-	if (len >= 4 && memcmp(data, brcm_oui, 3)) {
+	if (len >= 4 && !memcmp(data, brcm_oui, 3)) {
 		if (data[3] == 2) {
 			site_survey_lists[sscount].numsta = data[4];
 			if (data[6] & 0x80)
