@@ -3778,6 +3778,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 	}
 #ifdef HAVE_BCMMODERN
+	if (nvram_match(wl_mode,"ap") || nvram_match(wl_mode,"sta"))
 	{
 		char wl_dwds;
 		sprintf(wl_dwds,"%s_dwds", prefix);
