@@ -2990,6 +2990,7 @@ wl_basic.igmpsnooping="Optimize Multicast Traffic";
 wl_basic.overlap="Allow Channel Overlapping";
 wl_basic.turboqam="TurboQAM (QAM256) support";
 wl_basic.nitroqam="NitroQAM (QAM1024) support";
+wl_basic.dwds="Dynamic WDS Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
 wl_basic.parent="Parent IP";

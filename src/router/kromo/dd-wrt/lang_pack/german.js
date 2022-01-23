@@ -2595,6 +2595,7 @@ wl_basic.n2="Nur-N (2.4 GHz)";
 wl_basic.g="Nur-G";
 wl_basic.bg="BG-Gemischt";
 wl_basic.n="Nur-N";
+wl_basic.dwds="Dynamischer WDS Modus";
 wl_basic.rts="RTS Schwellwert";
 wl_basic.rtsvalue="Schwellwert";
 wl_basic.protmode="Schutzmodus";
