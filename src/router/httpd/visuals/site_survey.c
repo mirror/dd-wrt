@@ -293,11 +293,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				s = narrow;
 			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
 			int hasac = 0;
-			if (site_survey_lists[i].extcap & 4)
+			if (site_survey_lists[i].extcap & CAP_VHT)
 				hasac = 1;
 			switch (cbw) {
 			case 0x0:
-				if (site_survey_lists[i].extcap & 8)
+				if (site_survey_lists[i].extcap & CAP_SECCHANNEL)
 					speed = getrate(speed, s * 2, hasac);
 				else
 					speed = getrate(speed, s, hasac);
@@ -315,12 +315,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (site_survey_lists[i].extcap & 0x4)
+				if (site_survey_lists[i].extcap & CAP_VHT)
 					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf));
 				else
 					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf));
 			} else {
-				if (site_survey_lists[i].extcap & 0x4)
+				if (site_survey_lists[i].extcap & CAP_VHT)
 					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf));
 				else
 					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf));
@@ -401,7 +401,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		int netmodecap = site_survey_lists[i].capability;
 
 		netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
-		if (site_survey_lists[i].extcap & 1)
+		if (site_survey_lists[i].extcap & CAP_MESH)
 			netmode = "Mesh";
 		else if (netmodecap == DOT11_CAP_ESS)
 			netmode = "AP";
@@ -409,6 +409,9 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			netmode = "AdHoc";
 		else
 			netmode = live_translate(wp, "share.unknown");
+		if (site_survey_lists[i].extcap & CAP_DWDS)
+			netmode = "AP DWDS";
+
 		char net[32];
 		strcpy(net, netmode);
 		websWrite(wp, "%c\"", i ? ',' : ' ');
