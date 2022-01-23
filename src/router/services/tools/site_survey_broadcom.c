@@ -392,7 +392,7 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 	}
 	bcmie = wlu_parse_tlvs(cp, len, 211);
 	if (bcmie) {
-		if (bcmie[1] >= 4 && memcmp(&bcmie[2], brcm_oui, 3)) {
+		if (bcmie[1] >= 4 && !memcmp(&bcmie[2], brcm_oui, 3)) {
 			if (data[5] == 2) {
 				site_survey_lists[sscount].numsta = data[6];
 				if (data[8] & 0x80)
