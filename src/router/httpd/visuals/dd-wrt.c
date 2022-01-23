@@ -3777,6 +3777,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 	}
+#ifdef HAVE_BCMMODERN
+	{
+		char wl_dwds;
+		sprintf(wl_dwds,"%s_dwds", prefix);
+		nvram_default_get(wl_dwds, "0");
+		showRadio(wp, "wl_basic.dwds", wl_dwds);
+	}
+#endif
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
 #if 0
