@@ -320,6 +320,13 @@ extern int has_mumimo(const char *prefix);
 #define SCAN_HT40 2
 #define SCAN_VHT80 4
 
+
+#define CAP_MESH 0x1
+#define CAP_HT 0x2
+#define CAP_VHT 0x4
+#define CAP_SECCHANNEL 0x8
+#define CAP_DWDS 0x10
+
 struct site_survey_list {
 	char SSID[33];
 	char BSSID[18];
@@ -335,6 +342,7 @@ struct site_survey_list {
 	uint8 dtim_period;	/* DTIM period */
 	unsigned long long active;	/* channel active time */
 	unsigned long long busy;	/* channel busy time */
+	uint8 numsta;
 };
 
 struct wifi_interface {
