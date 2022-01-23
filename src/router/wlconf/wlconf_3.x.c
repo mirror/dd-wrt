@@ -1902,6 +1902,19 @@ int wlconf(char *name)
 //fprintf(stderr, "set infra flag %s\n",name);
 	WL_IOCTL(name, WLC_SET_INFRA, &val, sizeof(val));
 
+
+	/* Set DWDS only for AP or STA modes */
+	for (i = 0; i < bclist->count; i++) {
+		val = 0;
+		bsscfg = &bclist->bsscfgs[i];
+
+		if (ap || sta || (apsta && !wet)) {
+			strcat_r(bsscfg->prefix, "dwds", tmp);
+			val = atoi(nvram_safe_get(tmp));
+		}
+		WL_BSSIOVAR_SETINT(name, "dwds", bsscfg->idx, val);
+	}
+
 	cprintf("set maxassoc flag %s\n", name);
 //fprintf(stderr, "set maxassoc flag %s\n",name);
 	/* Set The AP MAX Associations Limit */
@@ -2117,6 +2130,8 @@ int wlconf(char *name)
 	country = nvram_get(tmp);
 	(void)strcat_r(prefix, "country_rev", tmp2);
 	country_rev = nvram_get(tmp2);
+	fprintf(stderr, "country %s\n",country);
+	fprintf(stderr, "country_rev %s\n",country_rev);
 	if ((country && country[0] != '\0') && (country_rev && country_rev[0] != '\0')) {
 		/* Initialize the wl country parameter */
 		strncpy(country_spec.country_abbrev, country, WLC_CNTRY_BUF_SZ - 1);
