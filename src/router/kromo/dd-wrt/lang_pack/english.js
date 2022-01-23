@@ -116,6 +116,7 @@ share.manual="Manual";
 share.port="Port";
 share.ssid="SSID";
 share.channel="Channel";
+share.stations="Stations";
 share.frequency="Frequency";
 share.rssi="RSSI";
 share.signal="Signal";
