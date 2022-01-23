@@ -578,6 +578,7 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].rate_count = get_legacy(bss_info->rateset.rates, bss_info->rateset.count);
 
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
+		site_survey_lists[i].numsta = -1;
 		getEncInfo(bss_info, &site_survey_lists[i]);
 
 		bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
