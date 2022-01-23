@@ -590,11 +590,12 @@ int site_survey_main(int argc, char *argv[])
 			strcpy(site_survey_lists[i].SSID, "hidden");
 		}
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] numsta[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel & 0xff,
 			site_survey_lists[i].frequency,
+			site_survey_lists[i].numsta,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
