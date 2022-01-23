@@ -342,7 +342,7 @@ struct site_survey_list {
 	uint8 dtim_period;	/* DTIM period */
 	unsigned long long active;	/* channel active time */
 	unsigned long long busy;	/* channel busy time */
-	uint8 numsta;
+	int16 numsta;
 };
 
 struct wifi_interface {
