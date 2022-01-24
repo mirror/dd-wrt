@@ -1343,17 +1343,30 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 	fa_info_t *fai = NULL;
 	bool fa_capable = FA_CAPABLE(fa_chip_rev(sih), sih->chip);
 
+	if (!fa_capable) {
+		printk(KERN_INFO "not FA capable\n");
+	}
+	/* Create the FA proc for user application */
+	if (FA_FA_CORE(coreunit)) {
+		printk(KERN_INFO "FA Core Detected!\n");
+		fa_proc = et_fa_fs_create();
+	}
+
 	/* By pass fa attach if FA configuration is not enabled or invalid */
-	if (!FA_ON_MODE_VALID() || !fa_capable)
+	if (!FA_ON_MODE_VALID()) {
 		return NULL;
+	}
 
 	/* Do fa_attach for:
 	 * Normal mode: Both Aux and FA device
 	 * Bypass mode: Only FA device
 	 * fa_probe has filter it for us.
 	 */
-	if (!FA_FA_CORE(coreunit) && !FA_AUX_CORE(coreunit))
+
+	if (!FA_FA_CORE(coreunit) && !FA_AUX_CORE(coreunit)) {
+		printk(KERN_INFO "FA Disabled!\n");
 		return NULL;
+	}
 
 	/* Allocate private info structure */
 	if ((fai = MALLOC(si_osh(sih), sizeof(fa_info_t))) == NULL) {
@@ -1383,9 +1396,6 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 		goto aux_done;
 	}
 
-	/* Create the FA proc for user application */
-	if (FA_FA_CORE(coreunit))
-		fa_proc = et_fa_fs_create();
 
 	if (!fa_corereg(fai, coreunit)) {
 		MFREE(si_osh(sih), fai, sizeof(fa_info_t));
@@ -1917,24 +1927,14 @@ fa_set_name(fa_t *fa, char *name)
 	}
 }
 
-int
-fa_read_proc(char *buffer, char **start, off_t offset, int length, int *eof, void *data)
+
+ssize_t
+fa_read_proc(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	int len;
-
-	if (offset > 0) {
-		*eof = 1;
-		return 0;
-	}
-
-	/* Give the processed buffer back to userland */
-	if (!length) {
-		ET_ERROR(("%s: Not enough return buf space\n", __FUNCTION__));
-		return 0;
-	}
-
+	char buffer[16];
 	len = sprintf(buffer, "%d\n", 1);
-	return len;
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
 }
 
 void
