@@ -105,8 +105,7 @@ extern void fa_et_down(fa_t *fa);
 extern void fa_set_name(fa_t *fa, char *name);
 extern void fa_set_aux_unit(si_t *sih, uint unit);
 extern char *fa_get_macaddr(si_t *sih, char *vars, uint unit);
-extern int fa_read_proc(char *buffer, char **start, off_t offset, int length,
-	int *eof, void *data);
+extern ssize_t fa_read_proc(struct file *file, char __user *buf, size_t count, loff_t *pposs);
 extern void fa_dump(fa_t *fai, struct bcmstrbuf *b, bool all);
 extern void fa_regs_show(fa_t *fai, struct bcmstrbuf *b);
 extern uint fa_core2unit(si_t *sih, uint coreunit);
