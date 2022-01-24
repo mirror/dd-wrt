@@ -1677,7 +1677,6 @@ struct ieee80211_ddwrt_ie_data {
 	    u8 boardname[0];
 } __packed;
 
-
 struct ieee80211_ddwrt_ie {
 	u8 id;                /* IEEE80211_ELEMID_VENDOR */
 	u8 len;               /* length in bytes */
@@ -1686,6 +1685,22 @@ struct ieee80211_ddwrt_ie {
 	u16 version;          /* spec revision */
 	struct ieee80211_ddwrt_ie_data iedata;
 } __packed;
+
+struct ieee80211_brcm_ie_data {
+	u8	assoc;		/* # of assoc STAs */
+	u8	flags;		/* misc flags */
+	u8	flags1;		/* misc flags */
+	u16	amsdu_mtu_pref;	/* preferred A-MSDU MTU */
+} __packed;
+
+struct ieee80211_brcm_ie {
+	u8 id;                /* IEEE80211_ELEMID_VENDOR */
+	u8 len;               /* length in bytes */
+	u8 oui[3];            /* 0x00, 0x10, 0x18 */
+	u8 ver;               /* Version */
+	struct ieee80211_brcm_ie_data iedata;
+} __packed;
+
 
 /**
  * struct ieee80211_ht_operation - HT operation IE
