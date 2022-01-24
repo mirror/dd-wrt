@@ -68,6 +68,7 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 		    2 + sizeof(struct ieee80211_vht_cap) +
 		    2 + sizeof(struct ieee80211_vht_operation) +
 		    sizeof(struct ieee80211_mtik_ie) +
+		    ((sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN) ? sizeof(struct ieee80211_brcm_ie) : 0) +
 		    ifibss->ie_len;
 	presp = kzalloc(sizeof(*presp) + frame_len, GFP_KERNEL);
 	if (!presp)
@@ -209,6 +210,8 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 	}
 
 	pos = ieee80211_add_mtik_ie(pos, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	if (sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+		pos = ieee80211_add_brcm_ie(pos, sta_count(sdata));
 
 	if (local->hw.queues >= IEEE80211_NUM_ACS)
 		pos = ieee80211_add_wmm_info_ie(pos, 0); /* U-APSD not in use */
