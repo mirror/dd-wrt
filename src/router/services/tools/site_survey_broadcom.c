@@ -352,7 +352,6 @@ static uint8 *wlu_parse_tlvs(uint8 * tlv_buf, int buflen, uint key)
 
 		tag = *cp;
 		len = *(cp + 1);
-
 		/* validate remaining totlen */
 		if ((tag == key) && (totlen >= (len + 2)))
 			return (cp);
@@ -369,12 +368,15 @@ static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
 static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *list)
 {
 	uint8 *parse = cp;
+	uint8 *parse2 = cp;
 	uint parse_len = len;
 	uint8 *wpaie;
 	uint8 *rsnie;
 	uint8 *bcmie;
 	static char sum[128] = { 0 };
 	bzero(sum, sizeof(sum));
+
+	strcpy(list->ENCINFO, "WEP");
 
 	while ((wpaie = wlu_parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
 		if (wlu_is_wpa_ie(&wpaie, &parse, &parse_len))
@@ -390,18 +392,19 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 			sum[strlen(sum)] = 0;
 		strcpy(list->ENCINFO, sum);
 	}
-	bcmie = wlu_parse_tlvs(cp, len, 211);
-	if (bcmie) {
+	while ((bcmie = wlu_parse_tlvs(parse2, len, 221))) {
 		if (bcmie[1] >= 4 && !memcmp(&bcmie[2], brcm_oui, 3)) {
 			if (bcmie[5] == 2) {
 				list->numsta = bcmie[6];
 				if (bcmie[8] & 0x80)
 					list->extcap = CAP_DWDS;
+				break;
 			}
 		}
+		len -= (bcmie + bcmie[1] + 2) - parse2;
+		parse2 = bcmie + bcmie[1] + 2;
 	}
 
-	strcpy(list->ENCINFO, "WEP");
 }
 
 static void getEncInfo(wl_bss_info_t * bi, struct site_survey_list *list)
@@ -610,33 +613,36 @@ endss:
 	return 0;
 }
 
-int write_site_survey(void) {
+int write_site_survey(void)
+{
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
 		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
-		 fclose(fp);
-		 return FALSE;
+		fclose(fp);
+		return FALSE;
 	}
 	return TRUE;
 }
 
-static int open_site_survey(void) {
+static int open_site_survey(void)
+{
 	FILE *fp;
 
-	 bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
+	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
 		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
-		 fclose(fp);
-		 return TRUE;
+		fclose(fp);
+		return TRUE;
 	}
 	return FALSE;
 }
 
 #ifdef TEST
 
-void main(int argc, char *argv[]) {
+void main(int argc, char *argv[])
+{
 	site_survey_main(argc, argv);
 
 }
