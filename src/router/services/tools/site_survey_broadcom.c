@@ -395,7 +395,7 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 		if (bcmie[1] >= 4 && !memcmp(&bcmie[2], brcm_oui, 3)) {
 			if (bcmie[5] == 2) {
 				list->numsta = bcmie[6];
-				if (data[8] & 0x80)
+				if (bcmie[8] & 0x80)
 					list->extcap = CAP_DWDS;
 			}
 		}
