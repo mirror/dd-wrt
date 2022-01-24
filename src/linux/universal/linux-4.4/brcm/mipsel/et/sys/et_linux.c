@@ -41,6 +41,7 @@
 #include <linux/delay.h>
 #include <linux/string.h>
 #include <linux/sockios.h>
+#include <linux/proc_fs.h>
 #ifdef SIOCETHTOOL
 #include <linux/ethtool.h>
 #endif /* SIOCETHTOOL */
@@ -3570,12 +3571,15 @@ et_fa_normal_cb(void *dev, ctf_ipc_t *ipc, bool v6, int cmd)
 void *
 et_fa_fs_create(void)
 {
-#if 0
+#ifdef CONFIG_PLAT_BCM5301X
 #ifdef CONFIG_PROC_FS
+	static const struct file_operations fa_ops = {
+		.read = fa_read_proc,
+		.llseek = default_llseek,
+	};
 	struct proc_dir_entry *proc_fa = NULL;
 
-	if ((proc_fa = create_proc_entry("fa", 0, NULL)))
-		proc_fa->read_proc = fa_read_proc;
+	proc_fa = proc_create_data("fa", 0, NULL, &fa_ops, NULL);
 
 	return proc_fa;
 #else
@@ -3589,7 +3593,7 @@ et_fa_fs_create(void)
 void
 et_fa_fs_clean(void)
 {
-#if 0
+#ifdef CONFIG_PLAT_BCM5301X
 #ifdef CONFIG_PROC_FS
 	remove_proc_entry("fa", NULL);
 #endif /* CONFIG_PROC_FS */
