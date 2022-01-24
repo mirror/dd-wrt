@@ -429,7 +429,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel & 0xff,
 			  site_survey_lists[i].frequency,
-			  site_survey_lists[i].numsta == -1 "N/A" : numsta,
+			  site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
 			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim),
 			  rates);
 
