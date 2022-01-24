@@ -1563,14 +1563,6 @@ bcm_robo_enable_device(robo_info_t *robo)
 #define FLAG_UNTAG	'u'	/* input & output untagged (CPU port only, for OS (linux, ...) */
 #define FLAG_LAN	'*'	/* input & output untagged (CPU port only, for CFE */
 
-/* port descriptor */
-typedef	struct {
-	uint32 untag;	/* untag enable bit (Page 0x05 Address 0x63-0x66 Bit[17:9]) */
-	uint32 member;	/* vlan member bit (Page 0x05 Address 0x63-0x66 Bit[7:0]) */
-	uint8 ptagr;	/* port tag register address (Page 0x34 Address 0x10-0x1F) */
-	uint8 cpu;	/* is this cpu port? */
-} pdesc_t;
-
 pdesc_t pdesc97[] = {
 	/* 5395/5397/5398/53115S is 0 ~ 7.  port 8 is IMP port. */
 	/* port 0 */ {1 << 9, 1 << 0, REG_VLAN_PTAG0, 0},
@@ -1752,6 +1744,13 @@ robo_fa_aux_set_tcam(robo_info_t *robo, bool ipv6, bool tcp_rst, uint32 index)
 	uint32 val32;
 	uint8 l3_framing_bit, tcp_flags_bit;
 	uint8 phy_portmap = 0x1F; /* port 0~4 by default */
+
+	char *rgmii_port;
+
+	/* Add rgmii port into phy_portmap */
+	rgmii_port = getvar(robo->vars, "rgmii_port");
+	if (rgmii_port)
+		phy_portmap |= (1 << bcm_strtoul(rgmii_port, NULL, 0));
 
 	if (ipv6)
 		l3_framing_bit = 1; /* IPv6 */
@@ -1961,6 +1960,7 @@ robo_fa_aux_enable(robo_info_t *robo, bool enable)
 {
 	uint8 val8 = 0x0;
 	uint8 phy_portmap = 0x1F; /* port 0~4 by default */
+	char *rgmii_port;
 
 	if (!robo)
 		return;
@@ -1968,6 +1968,11 @@ robo_fa_aux_enable(robo_info_t *robo, bool enable)
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
 		robo->ops->enable_mgmtif(robo);
+
+	/* Add rgmii port into phy_portmap */
+	rgmii_port = getvar(robo->vars, "rgmii_port");
+	if (rgmii_port)
+		phy_portmap |= (1 << bcm_strtoul(rgmii_port, NULL, 0));
 
 	/* Enable CFP on phy ports */
 	if (enable)
