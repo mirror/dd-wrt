@@ -23,11 +23,15 @@
 #elif HAVE_FON
 #define CYBERTAN_VERSION	"FON powered by DD-WRT v23 (" BUILD_DATE ")"
 #elif HAVE_MAKSAT
+
 #ifdef HAVE_MAKSAT_BLANK
 #define CYBERTAN_VERSION	"2.1 (" BUILD_DATE ")"
 #else
 #define CYBERTAN_VERSION	"MAKSAT 1.5 (" BUILD_DATE ")"
 #endif
+
+#elif HAVE_ERC
+#define CYBERTAN_VERSION	"ServiceGate (" BUILD_DATE ")"
 #elif HAVE_CORENET
 #define CYBERTAN_VERSION	"CoreNet v24-sp2 (" BUILD_DATE ")"
 #elif HAVE_TRIMAX

@@ -796,7 +796,9 @@ typedef struct wl_instance_info {
 #define WLC_NVOTPW				274
 #define WLC_OTPW				275
 #define WLC_SET_LOCALE				278
-#define WLC_LAST				279	/* do not change - use get_var/set_var */
+#define WLC_GET_RADIONAME				279
+#define WLC_SET_RADIONAME				280
+#define WLC_LAST				281	/* do not change - use get_var/set_var */
 
 /*
  * Minor kludge alert:
