@@ -772,7 +772,9 @@ static void ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata)
 			2 + 1 + sizeof(struct ieee80211_he_6ghz_capa) +
 			assoc_data->ie_len + /* extra IEs */
 			(assoc_data->fils_kek_len ? 16 /* AES-SIV */ : 0) +
-			9 /* WMM */ + sizeof(struct ieee80211_mtik_ie),
+			9 /* WMM */ + sizeof(struct ieee80211_mtik_ie) +
+			((sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN) ? sizeof(struct ieee80211_brcm_ie) : 0)
+			,
 			GFP_KERNEL);
 	if (!skb)
 		return;
@@ -1029,6 +1031,8 @@ skip_rates:
 	}
 
 	pos = ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN || sdata->vif.type == NL80211_IFTYPE_AP)
+		pos = ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
 
 	if (assoc_data->wmm) {
 		if (assoc_data->uapsd) {

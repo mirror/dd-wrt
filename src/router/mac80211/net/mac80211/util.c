@@ -2000,6 +2000,7 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata,
 	size_t pos = 0, old_pos = 0, custom_ie_offset = 0, addpos;
 	int i;
 	u8 *newpos;
+	int brcmlen = ((sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN) ? sizeof(struct ieee80211_brcm_ie) : 0);
 
 	memset(ie_desc, 0, sizeof(*ie_desc));
 
@@ -2018,24 +2019,27 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata,
 			old_pos = pos;
 		}
 	}
-
-	if (WARN_ONCE(buffer_len - pos < sizeof(struct ieee80211_mtik_ie),
+	
+	if (WARN_ONCE(buffer_len - pos < sizeof(struct ieee80211_mtik_ie) + brcmlen,
 			"not enough space for mtik IE\n"))
 		return pos;
 
 	newpos = ieee80211_add_mtik_ie(buffer + pos, sdata ? sdata->vif.type == NL80211_IFTYPE_AP_VLAN : 0);
+	if (brcmlen)
+		newpos = ieee80211_add_brcm_ie(buffer + pos + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
+	
 	addpos = newpos - (buffer + pos);
 	/* add any remaining custom IEs */
 	if (ie && ie_len) {
-		if (WARN_ONCE((buffer_len - pos) + addpos < (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie),
+		if (WARN_ONCE((buffer_len - pos) + addpos < (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie) + brcmlen,
 			      "not enough space for preq custom IEs\n"))
 			return pos;
 		
 		memcpy(buffer + pos + addpos, ie + custom_ie_offset,
 		       ie_len - custom_ie_offset);
 		ie_desc->common_ies = buffer + pos;
-		ie_desc->common_ie_len = (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie);
-		pos += (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie);
+		ie_desc->common_ie_len = (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie) + brcmlen;
+		pos += (ie_len - custom_ie_offset) + sizeof(struct ieee80211_mtik_ie) + brcmlen;
 	}
 
 	return pos;
@@ -4617,6 +4621,21 @@ u32 ieee80211_get_ddwrt_ie_len(void)
 	return len;
 }
 
+u8 *ieee80211_add_brcm_ie(u8 *frm, int numsta)
+{
+	struct ieee80211_brcm_ie_data data;
+	static const u_int8_t brcmoui[3] = { 0x00, 0x10, 0x18 };
+	*frm++ = WLAN_EID_VENDOR_SPECIFIC;
+	*frm++ = sizeof(struct ieee80211_brcm_ie_data) + 4; /* brcm ie + oui + ver */
+	memcpy(frm, &brcmoui, sizeof(brcmoui));
+	frm += sizeof(brcmoui);
+	*frm++ = 2; // version
+	data.assoc = numsta;
+	memcpy(frm, &data, sizeof(data));
+	frm += sizeof(data);
+	return frm;
+
+}
 
 u8 *ieee80211_add_ddwrt_ie(u8 *frm)
 {

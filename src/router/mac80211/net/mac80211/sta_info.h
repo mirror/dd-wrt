@@ -820,6 +820,8 @@ struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,
  */
 struct sta_info *sta_info_get_by_idx(struct ieee80211_sub_if_data *sdata,
 				     int idx);
+
+int sta_count(struct ieee80211_sub_if_data *sdata);
 /*
  * Create a new STA info, caller owns returned structure
  * until sta_info_insert().

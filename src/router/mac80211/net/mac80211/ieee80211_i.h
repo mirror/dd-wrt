@@ -2446,6 +2446,8 @@ u8 *ieee80211_add_mtik_ie(u8 *frm, int wds);
 
 u8 *ieee80211_add_ddwrt_ie(u8 *frm);
 
+u8 *ieee80211_add_brcm_ie(u8 *frm, int numsta);
+
 u32 ieee80211_get_ddwrt_ie_len(void);
 
 /* channel management */
