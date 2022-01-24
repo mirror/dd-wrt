@@ -889,6 +889,8 @@ typedef struct wlc_rev_info {
 #define WLC_SET_WSEC_PMK			268
 #define WLC_GET_AUTH_MODE			269
 #define WLC_SET_AUTH_MODE			270
+#define WLC_GET_RADIONAME				271
+#define WLC_SET_RADIONAME				272
 #define WLC_LAST				273	/* do not change - use get_var/set_var */
 
 /*
