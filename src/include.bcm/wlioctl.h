@@ -929,7 +929,9 @@ typedef struct wlc_iov_trx_s {
 #define WLC_GET_DESIRED_BSSID			281
 #define WLC_SET_DESIRED_BSSID			282
 #define	WLC_DISASSOC_MYAP			283
-#define WLC_LAST				284	/* do not change - use get_var/set_var */
+#define WLC_GET_RADIONAME				284
+#define WLC_SET_RADIONAME				285
+#define WLC_LAST				286	/* do not change - use get_var/set_var */
 
 /*
  * Minor kludge alert:
