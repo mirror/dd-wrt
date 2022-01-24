@@ -818,7 +818,9 @@
 #define WLC_GET_RSSI_QDB			321 /* qdB portion of the RSSI */
 #define WLC_DUMP_RATESET			322
 #define WLC_ECHO				323
-#define WLC_LAST				324
+#define WLC_GET_RADIONAME			324
+#define WLC_SET_RADIONAME			325
+#define WLC_LAST				326
 #ifndef EPICTRL_COOKIE
 #define EPICTRL_COOKIE		0xABADCEDE
 #endif
