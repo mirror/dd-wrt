@@ -411,6 +411,10 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			netmode = live_translate(wp, "share.unknown");
 		if (site_survey_lists[i].extcap & CAP_DWDS)
 			netmode = "AP DWDS";
+		if (site_survey_lists[i].extcap & CAP_MTIKWDS) {
+			//since dd-wrt does broadcast this flag for wds in the same way, but without the dirty mikrotik implementation we may use it for detection
+			netmode = "AP WDS";
+		}
 
 		char net[32];
 		strcpy(net, netmode);
@@ -425,11 +429,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		char numsta[32];
 		sprintf(numsta,"%d", site_survey_lists[i].numsta);
 		websWrite(wp,
-			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel & 0xff,
 			  site_survey_lists[i].frequency,
 			  site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
+			  site_survey_lists[i].radioname,
 			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim),
 			  rates);
 
