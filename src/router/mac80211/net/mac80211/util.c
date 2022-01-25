@@ -4631,6 +4631,9 @@ u8 *ieee80211_add_brcm_ie(u8 *frm, int numsta)
 	frm += sizeof(brcmoui);
 	*frm++ = 2; // version
 	data.assoc = numsta;
+	data.flags = 0;
+	data.flags1 = 0;
+	data.amsdu_mtu_pref = 0;
 	memcpy(frm, &data, sizeof(data));
 	frm += sizeof(data);
 	return frm;

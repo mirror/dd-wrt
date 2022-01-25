@@ -848,10 +848,10 @@ static int ieee80211_set_probe_resp(struct ieee80211_sub_if_data *sdata,
 	if (!new)
 		return -ENOMEM;
 
-	new->len = resp_len + sizeof(struct ieee80211_mtik_ie);
+	new->len = resp_len + sizeof(struct ieee80211_mtik_ie) + sizeof(struct ieee80211_brcm_ie);
 	memcpy(new->data, resp, resp_len);
-	ieee80211_add_mtik_ie(&new->data[resp_len], sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
-	ieee80211_add_brcm_ie(&new->data[resp_len + sizeof(struct ieee80211_mtik_ie)], sta_count(sdata));
+	ieee80211_add_mtik_ie(new->data + resp_len, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	ieee80211_add_brcm_ie(new->data + resp_len + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
 
 	if (csa)
 		memcpy(new->cntdwn_counter_offsets, csa->counter_offsets_presp,
@@ -968,7 +968,6 @@ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
 	int new_head_len, new_tail_len;
 	int size, err;
 	u32 changed = BSS_CHANGED_BEACON;
-	int brcmlen = ((sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN) ? sizeof(struct ieee80211_brcm_ie) : 0);
 
 	old = sdata_dereference(sdata->u.ap.beacon, sdata);
 
@@ -986,7 +985,7 @@ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
 	/* new or old tail? */
 	if (params->tail || !old)
 		/* params->tail_len will be zero for !params->tail */
-		new_tail_len = params->tail_len  + sizeof(struct ieee80211_mtik_ie) + brcmlen;
+		new_tail_len = params->tail_len;
 	else
 		new_tail_len = old->tail_len;
 
@@ -1023,13 +1022,11 @@ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
 	/* copy in optional tail */
 	if (params->tail) {
 		memcpy(new->tail, params->tail, params->tail_len);
-		ieee80211_add_mtik_ie(new->tail + params->tail_len, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
-		if (brcmlen)
-			ieee80211_add_brcm_ie(new->tail + params->tail_len + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
-	}else
-		if (old)
-			memcpy(new->tail, old->tail, new_tail_len);
-
+	}else {
+		if (old) {
+			memcpy(new->tail, old->tail, old->head_len);
+		}
+	}
 	err = ieee80211_set_probe_resp(sdata, params->probe_resp,
 				       params->probe_resp_len, csa);
 	if (err < 0) {
