@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6415 | brainslayer | 2022-01-25 14:29:04 +0700 (Tue, 25 Jan 2022) | 1 line
+
+we must modif probe responsed from hostapd to get stanum working
+------------------------------------------------------------------------
 r6414 | brainslayer | 2022-01-25 04:25:51 +0700 (Tue, 25 Jan 2022) | 1 line
 
 fix flags
