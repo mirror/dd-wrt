@@ -641,12 +641,18 @@ void cfg80211_mlme_purge_registrations(struct wireless_dev *wdev)
 	cfg80211_mgmt_registrations_update(wdev);
 }
 
+void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
+		      struct cfg80211_mgmt_tx_params *params, u64 *cookie);
+void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev *wdev,
+		      struct cfg80211_mgmt_tx_params *params, u64 *cookie);
+
 int cfg80211_mlme_mgmt_tx(struct cfg80211_registered_device *rdev,
 			  struct wireless_dev *wdev,
 			  struct cfg80211_mgmt_tx_params *params, u64 *cookie)
 {
 	const struct ieee80211_mgmt *mgmt;
 	u16 stype;
+	int ret;
 
 	if (!wdev->wiphy->mgmt_stypes)
 		return -EOPNOTSUPP;
@@ -754,7 +760,10 @@ int cfg80211_mlme_mgmt_tx(struct cfg80211_registered_device *rdev,
 	}
 
 	/* Transmit the Action frame as requested by user space */
-	return rdev_mgmt_tx(rdev, wdev, params, cookie);
+	ieee80211_mgmt_mod_params(&rdev->wiphy, wdev, params, cookie);	
+	ret = rdev_mgmt_tx(rdev, wdev, params, cookie);
+	ieee80211_mgmt_mod_params_release(&rdev->wiphy, wdev, params, cookie);
+	return ret;
 }
 
 bool cfg80211_rx_mgmt_khz(struct wireless_dev *wdev, int freq, int sig_dbm,

@@ -5116,7 +5116,7 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 			skb_reserve(skb, local->tx_headroom);
 			skb_put_data(skb, beacon->head, beacon->head_len);
 			ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-			ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
+			ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 
 			ieee80211_beacon_add_tim(sdata, &ap->ps, skb,
 						 is_template);
@@ -5326,7 +5326,7 @@ struct sk_buff *ieee80211_proberesp_get(struct ieee80211_hw *hw,
 
 	skb_put_data(skb, presp->data, presp->len);
 	ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
+	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 
 	hdr = (struct ieee80211_hdr *) skb->data;
 	memset(hdr->addr1, 0, sizeof(hdr->addr1));
@@ -5388,7 +5388,7 @@ ieee80211_get_unsol_bcast_probe_resp_tmpl(struct ieee80211_hw *hw,
 		skb_reserve(skb, sdata->local->hw.extra_tx_headroom);
 		skb_put_data(skb, tmpl->data, tmpl->len);
 		ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
+		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	}
 
 	rcu_read_unlock();

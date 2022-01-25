@@ -767,7 +767,8 @@ void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
 	int extraie = 0;
-	if (ieee80211_is_probe_resp(mgmt->frame_control)) {
+
+	if (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
 		extraie = sizeof(struct ieee80211_brcm_ie) + sizeof(struct ieee80211_mtik_ie);
 	}
 	if (extraie) {
@@ -775,7 +776,7 @@ void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 		params->buf = kmalloc(params->len + extraie, GFP_KERNEL);
 		memcpy(params->buf, oldbuf, params->len);
 		ieee80211_add_brcm_ie(params->buf + params->len, sta_count(sdata));
-		ieee80211_add_mtik_ie(params->buf + params->len + sizeof(struct ieee80211_brcm_ie), 0);
+		ieee80211_add_mtik_ie(params->buf + params->len + sizeof(struct ieee80211_brcm_ie), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds); /* todo, handle mtik wds flag? */
 		params->len += extraie;
 	}
 }
@@ -783,7 +784,7 @@ void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev 
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie) {
 
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
-	if (ieee80211_is_probe_resp(mgmt->frame_control)) {
+	if (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
 		kfree(params->buf);
 	}
 }
