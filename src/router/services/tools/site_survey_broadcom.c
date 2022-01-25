@@ -372,7 +372,7 @@ struct ieee80211_mtik_ie_data {
 	unsigned char namelen;	/* length of radio name. Change with caution. 0x0f is safe value */
 	unsigned char radioname[15];	/* Radio name */
 	unsigned char pad2[5];	/* unknown. fill with zero */
-} __packed;
+}  __attribute__((packed));
 
 struct ieee80211_mtik_ie {
 	unsigned char id;	/* IEEE80211_ELEMID_VENDOR */
@@ -381,7 +381,7 @@ struct ieee80211_mtik_ie {
 	unsigned char type;	/* OUI type */
 	unsigned short version;	/* spec revision */
 	struct ieee80211_mtik_ie_data iedata;
-} __packed;
+}  __attribute__((packed));
 
 static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
 static unsigned char mtik_oui[3] = { 0x00, 0x0c, 0x42 };
