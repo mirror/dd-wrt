@@ -1030,7 +1030,7 @@ skip_rates:
 		offset = noffset;
 	}
 
-	pos = ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	pos = ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN || sdata->vif.type == NL80211_IFTYPE_AP)
 		pos = ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
 

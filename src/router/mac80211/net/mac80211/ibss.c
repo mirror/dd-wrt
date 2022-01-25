@@ -209,7 +209,7 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 		}
 	}
 
-	pos = ieee80211_add_mtik_ie(pos, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	pos = ieee80211_add_mtik_ie(pos, sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	if (sdata->vif.type == NL80211_IFTYPE_AP || sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
 		pos = ieee80211_add_brcm_ie(pos, sta_count(sdata));
 

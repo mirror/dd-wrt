@@ -2024,7 +2024,7 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata,
 			"not enough space for mtik IE\n"))
 		return pos;
 
-	newpos = ieee80211_add_mtik_ie(buffer + pos, sdata ? sdata->vif.type == NL80211_IFTYPE_AP_VLAN : 0);
+	newpos = ieee80211_add_mtik_ie(buffer + pos, sdata ? (sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds) : 0);
 	if (brcmlen)
 		newpos = ieee80211_add_brcm_ie(buffer + pos + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
 	
