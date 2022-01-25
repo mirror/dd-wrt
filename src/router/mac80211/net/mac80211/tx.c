@@ -5103,13 +5103,20 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 			 */
 			skb = dev_alloc_skb(local->tx_headroom +
 					    beacon->head_len +
-					    beacon->tail_len + 256 +
+					    beacon->tail_len +
+					    sizeof(struct ieee80211_brcm_ie) + 
+					    sizeof(struct ieee80211_mtik_ie) + 
+					    256 +
 					    local->hw.extra_beacon_tailroom);
+
+
 			if (!skb)
 				goto out;
 
 			skb_reserve(skb, local->tx_headroom);
 			skb_put_data(skb, beacon->head, beacon->head_len);
+			ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
+			ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
 
 			ieee80211_beacon_add_tim(sdata, &ap->ps, skb,
 						 is_template);
@@ -5313,11 +5320,13 @@ struct sk_buff *ieee80211_proberesp_get(struct ieee80211_hw *hw,
 	if (!presp)
 		goto out;
 
-	skb = dev_alloc_skb(presp->len);
+	skb = dev_alloc_skb(presp->len + sizeof(struct ieee80211_brcm_ie) + sizeof(struct ieee80211_mtik_ie));
 	if (!skb)
 		goto out;
 
 	skb_put_data(skb, presp->data, presp->len);
+	ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
+	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
 
 	hdr = (struct ieee80211_hdr *) skb->data;
 	memset(hdr->addr1, 0, sizeof(hdr->addr1));
@@ -5374,10 +5383,12 @@ ieee80211_get_unsol_bcast_probe_resp_tmpl(struct ieee80211_hw *hw,
 		return NULL;
 	}
 
-	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom + tmpl->len);
+	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom + tmpl->len + sizeof(struct ieee80211_brcm_ie) + sizeof(struct ieee80211_mtik_ie));
 	if (skb) {
 		skb_reserve(skb, sdata->local->hw.extra_tx_headroom);
 		skb_put_data(skb, tmpl->data, tmpl->len);
+		ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
+		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), 0);
 	}
 
 	rcu_read_unlock();
