@@ -363,7 +363,28 @@ static uint8 *wlu_parse_tlvs(uint8 * tlv_buf, int buflen, uint key)
 	return NULL;
 }
 
+struct ieee80211_mtik_ie_data {
+	unsigned char data1[2];	/* unknown yet 0x011e */
+	unsigned char flags;	/* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	unsigned char data2[3];	/* unknown yet fill with zero */
+	unsigned char version[4];	/* little endian version. Use 0x1f660902 */
+	unsigned char pad1;	/* a kind of padding, 0xff */
+	unsigned char namelen;	/* length of radio name. Change with caution. 0x0f is safe value */
+	unsigned char radioname[15];	/* Radio name */
+	unsigned char pad2[5];	/* unknown. fill with zero */
+} __packed;
+
+struct ieee80211_mtik_ie {
+	unsigned char id;	/* IEEE80211_ELEMID_VENDOR */
+	unsigned char len;	/* length in bytes */
+	unsigned char oui[3];	/* 0x00, 0x50, 0xf2 */
+	unsigned char type;	/* OUI type */
+	unsigned short version;	/* spec revision */
+	struct ieee80211_mtik_ie_data iedata;
+} __packed;
+
 static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
+static unsigned char mtik_oui[3] = { 0x00, 0x0c, 0x42 };
 
 static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *list)
 {
@@ -372,7 +393,7 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 	uint parse_len = len;
 	uint8 *wpaie;
 	uint8 *rsnie;
-	uint8 *bcmie;
+	uint8 *customie;
 	static char sum[128] = { 0 };
 	bzero(sum, sizeof(sum));
 
@@ -392,19 +413,28 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 			sum[strlen(sum)] = 0;
 		strcpy(list->ENCINFO, sum);
 	}
-	while ((bcmie = wlu_parse_tlvs(parse2, len, 221))) {
-		if (bcmie[1] >= 4 && !memcmp(&bcmie[2], brcm_oui, 3)) {
-			if (bcmie[5] == 2) {
-				list->numsta = bcmie[6];
-				if (bcmie[8] & 0x80)
+	parse = cp;
+	while ((customie = wlu_parse_tlvs(parse, len, 221))) {
+		if (customie[1] >= 4 && !memcmp(&customie[2], brcm_oui, 3)) {
+			if (customie[5] == 2) {
+				list->numsta = customie[6];
+				if (customie[8] & 0x80)
 					list->extcap = CAP_DWDS;
 				break;
 			}
 		}
-		len -= (bcmie + bcmie[1] + 2) - parse2;
-		parse2 = bcmie + bcmie[1] + 2;
+		if (customie[1] >= 4 && !memcmp(&customie[2], mtik_oui, 3)) {
+			struct ieee80211_mtik_ie *ie = customie;
+			if (ie->iedata.namelen <= 15) {
+				memcpy(list->radioname, ie->iedata.radioname, ie->iedata.namelen);
+			}
+			if (ie->iedata.flags & 0x4) {
+				list->extcap = CAP_MTIKWDS;
+			}
+		}
+		len -= (customie + customie[1] + 2) - parse;
+		parse = customie + customie[1] + 2;
 	}
-
 }
 
 static void getEncInfo(wl_bss_info_t * bi, struct site_survey_list *list)
