@@ -65,6 +65,24 @@ union ieee80211_country_ie_triplet {
 	} __attribute__((packed)) ext;
 } __attribute__((packed));
 
+struct ieee80211_mtik_ie_data {
+	__u8 data1[2];          /* unknown yet 0x011e */
+	__u8 flags;             /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	__u8 data2[3];          /* unknown yet fill with zero */
+	__u8 version[4];        /* little endian version. Use 0x1f660902 */
+	__u8 pad1;              /* a kind of padding, 0xff */
+	__u8 namelen;           /* length of radio name. Change with caution. 0x0f is safe value */
+	__u8 radioname[15];     /* Radio name */
+	__u8 pad2[5];           /* unknown. fill with zero */
+} __attribute__((packed));
+
+struct ieee80211_mtik_ie {
+	__u8 oui[3];            /* 0x00, 0x50, 0xf2 */
+	__u8 type;              /* OUI type */
+	__u16 version;          /* spec revision */
+	struct ieee80211_mtik_ie_data iedata;
+} __attribute__((packed));
+
 enum print_ie_type {
 	PRINT_SCAN,
 	PRINT_LINK,
@@ -79,6 +97,7 @@ struct scan_params {
 static unsigned char wfa_oui[3]		= { 0x50, 0x6f, 0x9a };
 static unsigned char wifi_oui[3] = { 0x00, 0x50, 0xf2 };
 static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
+static unsigned char mtik_oui[3] = { 0x00, 0x0c, 0x42 };
 static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
 
 /* typedef unsigned char uint8;
