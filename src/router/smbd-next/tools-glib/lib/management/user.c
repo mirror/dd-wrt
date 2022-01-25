@@ -405,4 +405,7 @@ int usm_handle_logout_request(struct ksmbd_logout_request *req)
 		user->failed_login_count = 0;
 		user->flags &= ~KSMBD_USER_FLAG_DELAY_SESSION;
 	}
+
+	put_ksmbd_user(user);
+	return 0;
 }
