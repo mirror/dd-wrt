@@ -343,6 +343,7 @@ struct site_survey_list {
 	unsigned long long active;	/* channel active time */
 	unsigned long long busy;	/* channel busy time */
 	int16 numsta;
+	char radioname[16]; /* in dd-wrt typically the router name from setup page */
 };
 
 struct wifi_interface {
