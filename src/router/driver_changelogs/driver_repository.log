@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6417 | brainslayer | 2022-01-25 17:05:03 +0700 (Tue, 25 Jan 2022) | 1 line
+
+inject also other hostapd events like assoc responses
+------------------------------------------------------------------------
+r6416 | brainslayer | 2022-01-25 17:04:55 +0700 (Tue, 25 Jan 2022) | 1 line
+
+inject also other hostapd events like assoc responses
+------------------------------------------------------------------------
 r6415 | brainslayer | 2022-01-25 14:29:04 +0700 (Tue, 25 Jan 2022) | 1 line
 
 we must modif probe responsed from hostapd to get stanum working
