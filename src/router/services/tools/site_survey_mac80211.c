@@ -387,7 +387,6 @@ invalid:
 static void print_broadcom_ie(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 
-
 }
 
 static void print_wifi_wmm(const uint8_t type, uint8_t len, const uint8_t * data)
@@ -811,6 +810,14 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 			if (data[6] & 0x80)
 				site_survey_lists[sscount].extcap = CAP_DWDS;
 		}
+	}
+	if (len >= 4 && !memcmp(data, mtik_oui, 3)) {
+		struct ieee80211_mtik_ie *ie = (struct ieee80211_mtik_ie *)data;
+		if (ie->iedata.namelen <= 15) {
+			memcpy(&site_survey_lists[sscount].radioname, ie->iedata.radioname, ie->iedata.namelen);
+		}
+		if (ie->iedata.flags & 0x4)
+			site_survey_lists[sscount].extcap = CAP_MTIKWDS;
 	}
 	if (len >= 4 && memcmp(data, wifi_oui, 3) == 0) {
 		if (data[3] < ARRAY_SIZE(wifiprinters) && wifiprinters[data[3]].name && wifiprinters[data[3]].flags & BIT(ptype)) {

@@ -259,8 +259,7 @@ int site_survey_main(int argc, char *argv[])
 	free(buf);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM &&  site_survey_lists[i].frequency
-	     && site_survey_lists[i].channel != 0; i++) {
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency && site_survey_lists[i].channel != 0; i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
 		}
