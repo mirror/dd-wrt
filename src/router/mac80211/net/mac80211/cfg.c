@@ -850,7 +850,7 @@ static int ieee80211_set_probe_resp(struct ieee80211_sub_if_data *sdata,
 
 	new->len = resp_len + sizeof(struct ieee80211_mtik_ie) + sizeof(struct ieee80211_brcm_ie);
 	memcpy(new->data, resp, resp_len);
-	ieee80211_add_mtik_ie(new->data + resp_len, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+	ieee80211_add_mtik_ie(new->data + resp_len, sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	ieee80211_add_brcm_ie(new->data + resp_len + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
 
 	if (csa)
