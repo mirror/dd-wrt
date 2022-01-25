@@ -744,15 +744,6 @@ static int rpc_samr_add_domain_entry(char *name)
 	return 0;
 }
 
-static void rpc_samr_remove_domain_entry(unsigned int eidx)
-{
-	gpointer entry;
-
-	entry = g_array_index(domain_entries, gpointer, eidx);
-	domain_entries = g_array_remove_index(domain_entries, eidx);
-	free(entry);
-}
-
 static void domain_entry_free(void *v)
 {
 	char **entry = v;
