@@ -64,7 +64,7 @@ function do_join (F,SSID) {
 							document.write("<td align=\"right\">"+table[i+3]+"</td>");
 							document.write("<td align=\"right\">"+table[i+4]+"</td>");
 							document.write("<td align=\"right\">"+table[i+5]+"</td>");
-							document.write("<td align=\"right\">"+table[i+6]+"</td>");
+							document.write("<td align=\"left\">"+table[i+6]+"</td>");
 							document.write("<td align=\"right\">"+table[i+7]+"</td>");
 							document.write("<td align=\"right\">"+table[i+8]+"</td>");
 							document.write("<td align=\"right\">"+table[i+9]+"</td>");
