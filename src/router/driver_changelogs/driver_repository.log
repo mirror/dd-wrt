@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r6420 | brainslayer | 2022-01-27 04:46:12 +0700 (Thu, 27 Jan 2022) | 1 line
+
+set radioname feature in firmware. consider that his only works with custom firmwares
+------------------------------------------------------------------------
+r6419 | brainslayer | 2022-01-27 04:45:35 +0700 (Thu, 27 Jan 2022) | 1 line
+
+set radioname feature in firmware. consider that his only works with custom firmwares
+------------------------------------------------------------------------
+r6418 | brainslayer | 2022-01-27 03:52:11 +0700 (Thu, 27 Jan 2022) | 1 line
+
+add mtik ie for brcm
+------------------------------------------------------------------------
 r6417 | brainslayer | 2022-01-25 17:05:03 +0700 (Tue, 25 Jan 2022) | 1 line
 
 inject also other hostapd events like assoc responses
