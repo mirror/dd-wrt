@@ -1163,7 +1163,12 @@ out:
 
 	if (ret > 0)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
-		ret = generic_write_sync(file, iocb->ki_pos - ret, ret);
+	{
+		ssize_t err;
+		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+		if (err < 0)
+			ret = err;
+	}
 #else
 		ret = generic_write_sync(iocb, ret);
 #endif
