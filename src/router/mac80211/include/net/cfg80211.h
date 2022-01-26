@@ -8088,4 +8088,6 @@ void cfg80211_update_owe_info_event(struct net_device *netdev,
  */
 void cfg80211_bss_flush(struct wiphy *wiphy);
 
+u8 *ieee80211_add_mtik_ie(u8 *frm, int wds);
+
 #endif /* __NET_CFG80211_H */

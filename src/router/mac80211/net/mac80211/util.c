@@ -4701,7 +4701,7 @@ u8 *ieee80211_add_mtik_ie(u8 *frm, int wds)
 
 	return frm;
 }
-
+EXPORT_SYMBOL(ieee80211_add_mtik_ie);
 
 void ieee80211_txq_get_depth(struct ieee80211_txq *txq,
 			     unsigned long *frame_cnt,
