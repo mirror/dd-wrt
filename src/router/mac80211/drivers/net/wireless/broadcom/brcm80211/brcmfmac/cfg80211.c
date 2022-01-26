@@ -11,6 +11,7 @@
 #include <linux/vmalloc.h>
 #include <net/cfg80211.h>
 #include <net/netlink.h>
+#include <linux/utsname.h>
 #include <uapi/linux/if_arp.h>
 
 #include <brcmu_utils.h>
@@ -4547,6 +4548,17 @@ brcmf_vndr_ie(u8 *iebuf, s32 pktflag, u8 *ie_ptr, u32 ie_len, s8 *add_del_cmd)
 	return ie_len + VNDR_IE_HDR_SIZE;
 }
 
+static u8* add_mtik(u8 *buf, u32 *len)
+{
+	u8 *oldbuf = buf;
+	buf = kmalloc(*len + sizeof(struct ieee80211_mtik_ie), GFP_KERNEL);
+	memcpy(buf, oldbuf, *len);
+	ieee80211_add_mtik_ie(buf + *len, 0);
+	*len += sizeof(struct ieee80211_mtik_ie);
+	return buf;
+}
+
+
 s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 			  const u8 *vndr_ie_buf, u32 vndr_ie_len)
 {
@@ -4612,6 +4624,7 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 		bphy_err(drvr, "not suitable type\n");
 		goto exit;
 	}
+	mgmt_ie_buf = add_mtik(mgmt_ie_buf, mgmt_ie_len);
 
 	if (vndr_ie_len > mgmt_ie_buf_len) {
 		err = -ENOMEM;
@@ -4709,6 +4722,7 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 
 exit:
 	kfree(iovar_ie_buf);
+	kfree(mgmt_ie_buf);
 	return err;
 }
 
@@ -4818,6 +4832,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 	const struct brcmf_tlv *ssid_ie;
 	const struct brcmf_tlv *country_ie;
 	struct brcmf_ssid_le ssid_le;
+	struct brcmf_ssid_le radioname;
 	s32 err = -EPERM;
 	struct brcmf_join_params join_params;
 	enum nl80211_iftype dev_role;
@@ -4848,6 +4863,12 @@ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 		is_11d = country_ie ? 1 : 0;
 		supports_11d = true;
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)
+	strncpy(radioname.SSID, system_utsname.nodename, 15);
+#else
+	strncpy(radioname.SSID, init_utsname()->nodename, 15);
+#endif
+	radioname.SSID_len = strlen(radioname.SSID);
 
 	memset(&ssid_le, 0, sizeof(ssid_le));
 	if (settings->ssid == NULL || settings->ssid_len == 0) {
@@ -5024,6 +5045,11 @@ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 	brcmf_config_ap_mgmt_ie(ifp->vif, &settings->beacon);
 	set_bit(BRCMF_VIF_STATUS_AP_CREATED, &ifp->vif->sme_state);
 	brcmf_net_setcarrier(ifp, true);
+	err =  brcmf_fil_iovar_data_set(ifp, "radioname", &radioname, sizeof(radioname));
+	if (err < 0) {
+		bphy_err(drvr, "radioname config failed %d\n", err);
+		err = 0;
+	}
 
 exit:
 	if ((err) && (!mbss)) {
