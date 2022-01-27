@@ -1567,22 +1567,15 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
 		next = pgd_addr_end(addr, end);
 		if (pgd_none(pgd))
 			break;
-		/*
-		 * The FAST_GUP case requires FOLL_WRITE even for pure reads,
-		 * because get_user_pages() may need to cause an early COW in
-		 * order to avoid confusing the normal COW routines. So only
-		 * targets that are already writable are safe to do by just
-		 * looking at the page tables.
-		 */
 		if (unlikely(pgd_huge(pgd))) {
-			if (!gup_huge_pgd(pgd, pgdp, addr, next, 1,
+			if (!gup_huge_pgd(pgd, pgdp, addr, next, write,
 					  pages, &nr))
 				break;
 		} else if (unlikely(is_hugepd(__hugepd(pgd_val(pgd))))) {
 			if (!gup_huge_pd(__hugepd(pgd_val(pgd)), addr,
-					 PGDIR_SHIFT, next, 1, pages, &nr))
+					 PGDIR_SHIFT, next, write, pages, &nr))
 				break;
-		} else if (!gup_pud_range(pgd, addr, next, 1, pages, &nr))
+		} else if (!gup_pud_range(pgd, addr, next, write, pages, &nr))
 			break;
 	} while (pgdp++, addr = next, addr != end);
 	local_irq_restore(flags);
@@ -1612,7 +1605,14 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
 	int nr, ret;
 
 	start &= PAGE_MASK;
-	nr = __get_user_pages_fast(start, nr_pages, write, pages);
+	/*
+	 * The FAST_GUP case requires FOLL_WRITE even for pure reads,
+	 * because get_user_pages() may need to cause an early COW in
+	 * order to avoid confusing the normal COW routines. So only
+	 * targets that are already writable are safe to do by just
+	 * looking at the page tables.
+	 */
+	nr = __get_user_pages_fast(start, nr_pages, 1, pages);
 	ret = nr;
 
 	if (nr < nr_pages) {
