@@ -5,37 +5,39 @@ cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
 tunnels=$($nv get oet_tunnels)
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
-fset=0
-for i in $(seq 1 $tunnels); do
-	[[ -z $($nv get oet${i}_failgrp) ]] && $nv set oet${i}_failgrp=0 #add missing default delete in future version
-	if [[ $($nv get oet${i}_en) -eq 1 && $($nv get oet${i}_failgrp) -eq 1 && $($nv get oet${i}_failstate) -eq 2  ]]; then
-		fset=$((fset+1))
-		logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
-	fi
-done
-for i in $(seq 1 $tunnels); do
-	if [[ $($nv get oet${i}_en) -ne 1 ]]; then #non enabled tunnels reset
-		$nv set oet${i}_failstate=0
-	else #enabled tunnels
-		if [[ $($nv get oet${i}_failgrp) -eq 1 ]]; then
-			#search for first tunnel with failgroup enabled which is not failed and set to 2
-			if [[ $($nv get oet${i}_failstate) -eq 0 ]]; then #non failed tunnels
-				if [[ $fset -eq 0 ]]; then
-					fset=$((fset+1))
-					#set this tunnel to start the fail over group
-					logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
-					$nv set oet${i}_failstate=2
-				else  #number of failgroup running or standby
-					fset=$((fset+1))
-					#$nv set oet${i}_failstate=0
-				fi
-			fi
-		else #enabled tunnels not part of fail group reset
-			$nv set oet${i}_failstate=0
+if [[ $tunnels -gt 0 ]]; then
+	fset=0
+	for i in $(seq 1 $tunnels); do
+		[[ -z $($nv get oet${i}_failgrp) ]] && $nv set oet${i}_failgrp=0 #add missing default delete in future version
+		if [[ $($nv get oet${i}_en) -eq 1 && $($nv get oet${i}_failgrp) -eq 1 && $($nv get oet${i}_failstate) -eq 2  ]]; then
+			fset=$((fset+1))
+			logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
 		fi
-	fi
-done
-logger -p user.info "WireGuard number of non failed tunnels in fail set: $fset"
+	done
+	for i in $(seq 1 $tunnels); do
+		if [[ $($nv get oet${i}_en) -ne 1 ]]; then #non enabled tunnels reset
+			$nv set oet${i}_failstate=0
+		else #enabled tunnels
+			if [[ $($nv get oet${i}_failgrp) -eq 1 ]]; then
+				#search for first tunnel with failgroup enabled which is not failed and set to 2
+				if [[ $($nv get oet${i}_failstate) -eq 0 ]]; then #non failed tunnels
+					if [[ $fset -eq 0 ]]; then
+						fset=$((fset+1))
+						#set this tunnel to start the fail over group
+						logger -p user.info "WireGuard tunnel oet${i} is the fail over group start tunnel"
+						$nv set oet${i}_failstate=2
+					else  #number of failgroup running or standby
+						fset=$((fset+1))
+						#$nv set oet${i}_failstate=0
+					fi
+				fi
+			else #enabled tunnels not part of fail group reset
+				$nv set oet${i}_failstate=0
+			fi
+		fi
+	done
+	logger -p user.info "WireGuard number of non failed tunnels in fail set: $fset"
+fi
 #reset dns
 if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
 	logger -p user.info "WireGuard DNS reset"

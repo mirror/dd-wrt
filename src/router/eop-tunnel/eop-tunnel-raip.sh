@@ -78,20 +78,38 @@ for p in $(seq 0 $peers); do
 		fi
 done
 # Destination based routing
-WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
-for dpbr in $($nv get oet${i}_dpbr_ip | sed "s/,/ /g"); do
-	if [[ ${dpbr:0:1} != "#" ]]; then
-		#echo dpbr to file to remove
-		echo "ip route del $dpbr" >> $WGDELDPBR
-		if [[ $($nv get oet${i}_dpbr) -eq 1 ]]; then
-			#route via vpn
-			ip route add $dpbr dev oet${i} >/dev/null 2>&1
-		elif [[ $($nv get oet${i}_dpbr) -eq 2 ]]; then
-			#route via WAN
-			ip route add $dpbr via $($nv get wan_gateway) >/dev/null 2>&1
+if [[ $($nv get oet${i}_dpbr) -ne 0 ]]; then
+	WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
+	WGDPBRIP="/tmp/wgdpbrip_oet${i}"
+	rm $WGDPBRIP >/dev/null 2>&1
+	for dpbr in $($nv get oet${i}_dpbr_ip | sed "s/,/ /g"); do
+		if [[ ${dpbr:0:1} != "#" ]]; then
+			if [ "$dpbr" != "${dpbr#*[0-9].[0-9]}" ]; then
+				echo "$dpbr" >> $WGDPBRIP
+			elif [ "$dpbr" != "${dpbr#*:[0-9a-fA-F]}" ]; then
+				#echo "$dpbr" >> $WGDPBRIP
+				logger -p user.warning "WireGuard $dpbr is IPv6, not yet implemented"
+			else
+				if ! nslookup "$dpbr" >/dev/null 2>&1; then
+					logger -p user.err "WireGuard domain $dpbr not found"
+				else
+					nslookup "$dpbr" 2>/dev/null | awk '/^Name:/,0 {if (/^Addr[^:]*: [0-9]{1,3}\./) print $3}' >> $WGDPBRIP
+				fi
+			fi
 		fi
+	done
+	if [[ -s $WGDPBRIP ]]; then
+		rm $WGDELDPBR >/dev/null 2>&1
+		while read dpbrip; do
+			echo "ip route del $dpbrip" >> $WGDELDPBR
+			if [[ $($nv get oet${i}_dpbr) -eq 1 ]]; then
+				ip route add $dpbrip dev oet${i} >/dev/null 2>&1
+			elif [[ $($nv get oet${i}_dpbr) -eq 2 ]]; then
+				ip route add $dpbrip via $($nv get wan_gateway) >/dev/null 2>&1
+			fi
+		done < $WGDPBRIP
 	fi
-done
+fi
 #add route to DNS server via tunnel
 if [ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]; then
 	for wgdns in $($nv get oet${i}_dns | sed "s/,/ /g") ; do
