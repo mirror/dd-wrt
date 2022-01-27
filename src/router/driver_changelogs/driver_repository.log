@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6421 | brainslayer | 2022-01-27 13:30:07 +0700 (Thu, 27 Jan 2022) | 1 line
+
+add missing commit
+------------------------------------------------------------------------
 r6420 | brainslayer | 2022-01-27 04:46:12 +0700 (Thu, 27 Jan 2022) | 1 line
 
 set radioname feature in firmware. consider that his only works with custom firmwares
