@@ -333,7 +333,7 @@ int ksmbd_init_smb_server(struct ksmbd_work *work)
 	if (proto == SMB1_PROTO_NUMBER)
 		init_smb1_server(conn);
 	else
-		init_smb2_0_server(conn);
+		init_smb3_11_server(conn);
 #else
 	init_smb3_11_server(conn);
 #endif
