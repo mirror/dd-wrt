@@ -1564,7 +1564,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", ifname));
 			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", ifname));
 		}
-		char *nas_ident = nvram_nget("%s_nas", prefix);
+		char *nas_ident = nvram_nget("%s_nas", ifname);
 		if (strlen(nas_ident))
 			fprintf(fp, "nas_identifier=%s\n", nas_ident);
 
