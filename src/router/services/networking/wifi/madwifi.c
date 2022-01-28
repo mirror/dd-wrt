@@ -297,8 +297,10 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	if (has_wpa3(prefix) && iswpa3_192)
 		fprintf(fp, "WPA-EAP-SUITE-B-192 ");
 #ifdef HAVE_80211R
-	if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa2sha256))
 		fprintf(fp, "FT-EAP ");
+	if (nvram_matchi(ft, 1) && iswpa3_192)
+		fprintf(fp, "FT-EAP-SHA384 ");
 #endif
 	if (iswep)
 		fprintf(fp, "IEEE8021X ");
