@@ -800,7 +800,9 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /><script type=\"text/javascript\">Capture(share.minutes)</script></td>\n",
 			  i, sep != NULL ? sep : "");
-		websWrite(wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>", i);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
+			  i);
 	}
 	debug_free(originalpointer);
 	return;
@@ -3778,10 +3780,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 	}
 #ifdef HAVE_BCMMODERN
-	if (nvram_match(wl_mode,"ap") || nvram_match(wl_mode,"sta"))
-	{
+	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "sta")) {
 		char wl_dwds[32];
-		sprintf(wl_dwds,"%s_dwds", prefix);
+		sprintf(wl_dwds, "%s_dwds", prefix);
 		nvram_default_get(wl_dwds, "0");
 		showRadio(wp, "wl_basic.dwds", wl_dwds);
 	}
@@ -5386,6 +5387,12 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	}
+
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wpa.nas", NULL);
+	sprintf(var, "%s_nas", prefix);
+	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "ap.example.com"));
+	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label3", NULL);

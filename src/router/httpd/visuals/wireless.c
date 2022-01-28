@@ -758,20 +758,14 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		sprintf(bssft, "%s_ft", prefix);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnas', true);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_iddomain', true);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  vvar, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnas', false);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_iddomain', false);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  vvar, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
-		websWrite(wp, "<div id=\"%s_idnas\">\n", vvar);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.nas", NULL);
-		sprintf(var, "%s_nas", prefix);
-		websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "ap.example.com"));
-		websWrite(wp, "</div>\n");
-
+		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.domain", NULL);
 		sprintf(var, "%s_domain", prefix);
@@ -780,7 +774,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idnas\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 
 	}
