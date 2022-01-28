@@ -67,8 +67,8 @@
 #include <netconf.h>
 #include <shutils.h>
 #include <code_pattern.h>
-#include <wlutils.h>
 #include <utils.h>
+#include <wlutils.h>
 #include <rc.h>
 #include <cy_conf.h>
 #include <utils.h>
