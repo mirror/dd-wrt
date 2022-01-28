@@ -1330,18 +1330,18 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
 
-	int ispsk2 = nvhas(akm, "psk2");
-	int ispsk = nvhas(akm, "psk");
-	int ispsk3 = nvhas(akm, "psk3");
-	int isowe = nvhas(akm, "owe");
-	int iswpa = nvhas(akm, "wpa");
-	int iswpa2 = nvhas(akm, "wpa2");
-	int iswpa3 = nvhas(akm, "wpa3");
-	int iswpa3_192 = nvhas(akm, "wpa3-192");
-	int iswpa3_128 = nvhas(akm, "wpa3-128");
-	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
-	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
-	int iswep = nvhas(akm, "wep");
+	const int ispsk2 = nvhas(akm, "psk2");
+	const int ispsk = nvhas(akm, "psk");
+	const int ispsk3 = has_wpa3(prefix) ? nvhas(akm, "psk3") : 0;
+	const int isowe = nvhas(akm, "owe");
+	const int iswpa = nvhas(akm, "wpa");
+	const int iswpa2 = nvhas(akm, "wpa2");
+	const int iswpa3 = has_wpa3(prefix) ? nvhas(akm, "wpa3") : 0;
+	const int iswpa3_192 = has_wpa3(prefix) ? nvhas(akm, "wpa3-192") : 0;
+	const int iswpa3_128 = has_wpa3(prefix) ? nvhas(akm, "wpa3-128") : 0;
+	const int iswpa2sha256 = has_wpa3(prefix) ? nvhas(akm, "wpa2-sha256") : 0;
+	const int ispsk2sha256 = has_wpa3(prefix) ? nvhas(akm, "psk2-sha256") : 0;
+	const int iswep = nvhas(akm, "wep");
 
 	if (!strncmp(prefix, "wlan0", 4))
 		led_control(LED_SEC0, LED_ON);
@@ -1449,9 +1449,11 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #ifdef HAVE_80211R
 	if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
 		fprintf(fp, "FT-SAE ");
-	if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
+	if (nvram_matchi(ft, 1) && (ispsk2 || ispsk || ispsk2sha256))
 		fprintf(fp, "FT-PSK ");
-	if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
+	if (nvram_matchi(ft, 1) && (iswpa3_192))
+		fprintf(fp, "FT-EAP-SHA384 ");
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa2sha256 || iswpa3_128))
 		fprintf(fp, "FT-EAP ");
 #endif
 	fprintf(fp, "\n");
@@ -1463,7 +1465,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
-	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256)) {
+	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
 		fprintf(fp, "ft_over_ds=1\n");
