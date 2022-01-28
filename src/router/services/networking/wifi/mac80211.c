@@ -1814,15 +1814,16 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
-	int ispsk2 = nvhas(akm, "psk2");
-	int ispsk = nvhas(akm, "psk");
-	int ispsk3 = nvhas(akm, "psk3");
-	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
-	int isleap = nvhas(akm, "leap");
-	int ispeap = nvhas(akm, "peap");
-	int istls = nvhas(akm, "tls");
-	int isttls = nvhas(akm, "ttls");
-	int ismesh = nvram_nmatch("mesh", "%s_mode", prefix);
+	const int has_wpa3 = has_wpa3(prefix);
+	const int ispsk2 = nvhas(akm, "psk2");
+	const int ispsk = nvhas(akm, "psk");
+	const int ispsk3 = has_wpa3 ? nvhas(akm, "psk3") : 0;
+	const int ispsk2sha256 = has_wpa3 ? nvhas(akm, "psk2-sha256") : 0;
+	const int isleap = nvhas(akm, "leap");
+	const int ispeap = nvhas(akm, "peap");
+	const int istls = nvhas(akm, "tls");
+	const int isttls = nvhas(akm, "ttls");
+	const int ismesh = nvram_nmatch("mesh", "%s_mode", prefix);
 	if (ispsk)
 		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
@@ -1917,12 +1918,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)
 			fprintf(fp, "WPA-PSK ");
-		if (has_wpa3(prefix) && ispsk2sha256)
+		if (has_wpa3 && ispsk2sha256)
 			fprintf(fp, "WPA-PSK-SHA256 ");
-		if (has_wpa3(prefix) && ispsk3)
+		if (has_wpa3 && ispsk3)
 			fprintf(fp, "SAE ");
 #ifdef HAVE_80211R
-		if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
+		if (has_wpa3 && nvram_matchi(ft, 1) && ispsk3)
 			fprintf(fp, "FT-SAE ");
 		if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
 			fprintf(fp, "FT-PSK ");
