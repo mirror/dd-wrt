@@ -5002,11 +5002,17 @@ static int alwaystrue(const char *prefix)
 	return 1;
 }
 
+#ifdef HAVE_WPA3
 static int wpa3_support(const char *prefix)
 {
 	return !is_brcmfmac(prefix) && has_wpa3(prefix);
 }
-
+#else
+static inline int wpa3_support(const char *prefix)
+{
+	return 0;
+}
+#endif
 static int noad(const char *prefix)
 {
 
