@@ -427,7 +427,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		else
 			quality = 100;
 		char numsta[32];
-		sprintf(numsta,"%d", site_survey_lists[i].numsta);
+		sprintf(numsta, "%d", site_survey_lists[i].numsta);
 		websWrite(wp,
 			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
