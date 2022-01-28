@@ -1453,7 +1453,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "FT-PSK ");
 	if (nvram_matchi(ft, 1) && (iswpa3_192))
 		fprintf(fp, "FT-EAP-SHA384 ");
-	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa2sha256 || iswpa3_128))
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128))
 		fprintf(fp, "FT-EAP ");
 #endif
 	fprintf(fp, "\n");
@@ -1465,7 +1465,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
-	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
+	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
 		fprintf(fp, "ft_over_ds=1\n");
