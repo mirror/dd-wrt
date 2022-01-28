@@ -540,7 +540,7 @@ static inline int has_acktiming(const char *prefix)
 #ifdef HAVE_WPA3
 static inline int has_wpa3(const char *prefix)
 {
-	return 1;
+	return !is_brcmfmac(prefix);
 }
 #else
 static inline int has_wpa3(const char *prefix)
