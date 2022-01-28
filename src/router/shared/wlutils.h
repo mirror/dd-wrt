@@ -18,6 +18,7 @@
 #include <dd_list.h>
 #include <typedefs.h>
 #include <stdint.h>
+#include <utils.h>
 #ifndef _NO_WLIOCTL_H
 #include <wlioctl.h>
 #endif
