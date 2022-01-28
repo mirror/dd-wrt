@@ -266,15 +266,16 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
 	sprintf(akm, "%s_akm", prefix);
-	int iswep = nvhas(akm, "802.1x");
-	int iswpa = nvhas(akm, "wpa");
-	int iswpa2 = nvhas(akm, "wpa2");
-	int ispsk = nvhas(akm, "psk");
-	int ispsk2 = nvhas(akm, "psk2");
-	int iswpa3 = nvhas(akm, "wpa3");
-	int iswpa3_192 = nvhas(akm, "wpa3-192");
-	int iswpa3_128 = nvhas(akm, "wpa3-128");
-	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
+	const int has_wpa3 = has_wpa3(prefix);
+	const int iswep = nvhas(akm, "802.1x");
+	const int iswpa = nvhas(akm, "wpa");
+	const int iswpa2 = nvhas(akm, "wpa2");
+	const int ispsk = nvhas(akm, "psk");
+	const int ispsk2 = nvhas(akm, "psk2");
+	const int iswpa3 = has_wpa3 ? nvhas(akm, "wpa3") : 0;
+	const int iswpa3_192 = has_wpa3 ? nvhas(akm, "wpa3-192") : 0;
+	const int iswpa3_128 = has_wpa3 ? nvhas(akm, "wpa3-128") : 0;
+	const int iswpa2sha256 = has_wpa3 ? nvhas(akm, "wpa2-sha256") : 0;
 	char pwstring[128] = {
 		0, 0
 	};
@@ -290,11 +291,11 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	fprintf(fp, "\tkey_mgmt=");
 	if (iswpa2 || iswpa || iswpa3)
 		fprintf(fp, "WPA-EAP ");
-	if (has_wpa3(prefix) && iswpa2sha256)
+	if (has_wpa3 && iswpa2sha256)
 		fprintf(fp, "WPA-EAP-SHA256 ");
-	if (has_wpa3(prefix) && iswpa3_128)
+	if (has_wpa3 && iswpa3_128)
 		fprintf(fp, "WPA-EAP-SUITE-B ");
-	if (has_wpa3(prefix) && iswpa3_192)
+	if (has_wpa3 && iswpa3_192)
 		fprintf(fp, "WPA-EAP-SUITE-B-192 ");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa2sha256))
@@ -620,14 +621,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
 	sprintf(bridged, "%s_bridged", prefix);
-	int ispsk2 = nvhas(akm, "psk2");
-	int ispsk = nvhas(akm, "psk");
-	int ispsk3 = nvhas(akm, "psk3");
-	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
-	int isleap = nvhas(akm, "leap");
-	int ispeap = nvhas(akm, "peap");
-	int istls = nvhas(akm, "tls");
-	int isttls = nvhas(akm, "ttls");
+	const int has_wpa3 = has_wpa3(prefix);
+	const int ispsk2 = nvhas(akm, "psk2");
+	const int ispsk = nvhas(akm, "psk");
+	const int ispsk3 = has_wpa3 ? nvhas(akm, "psk3") : 0;
+	const int ispsk2sha256 = has_wpa3 ? nvhas(akm, "psk2-sha256") : 0;
+	const int isleap = nvhas(akm, "leap");
+	const int ispeap = nvhas(akm, "peap");
+	const int istls = nvhas(akm, "tls");
+	const int isttls = nvhas(akm, "ttls");
 	if (ispsk)
 		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
@@ -667,12 +669,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)
 			fprintf(fp, "WPA-PSK ");
-		if (has_wpa3(prefix) && ispsk2sha256)
+		if (has_wpa3 && ispsk2sha256)
 			fprintf(fp, "WPA-PSK-SHA256 ");
-		if (has_wpa3(prefix) && ispsk3)
+		if (has_wpa3 && ispsk3)
 			fprintf(fp, "SAE ");
 #ifdef HAVE_80211R
-		if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
+		if (has_wpa3 && nvram_matchi(ft, 1) && ispsk3)
 			fprintf(fp, "FT-SAE ");
 		if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
 			fprintf(fp, "FT-PSK ");
@@ -1332,17 +1334,18 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
 
+	const int has_wpa3 = has_wpa3(prefix);
 	const int ispsk2 = nvhas(akm, "psk2");
 	const int ispsk = nvhas(akm, "psk");
-	const int ispsk3 = has_wpa3(prefix) ? nvhas(akm, "psk3") : 0;
+	const int ispsk3 = has_wpa3 ? nvhas(akm, "psk3") : 0;
 	const int isowe = nvhas(akm, "owe");
 	const int iswpa = nvhas(akm, "wpa");
 	const int iswpa2 = nvhas(akm, "wpa2");
-	const int iswpa3 = has_wpa3(prefix) ? nvhas(akm, "wpa3") : 0;
-	const int iswpa3_192 = has_wpa3(prefix) ? nvhas(akm, "wpa3-192") : 0;
-	const int iswpa3_128 = has_wpa3(prefix) ? nvhas(akm, "wpa3-128") : 0;
-	const int iswpa2sha256 = has_wpa3(prefix) ? nvhas(akm, "wpa2-sha256") : 0;
-	const int ispsk2sha256 = has_wpa3(prefix) ? nvhas(akm, "psk2-sha256") : 0;
+	const int iswpa3 = has_wpa3 ? nvhas(akm, "wpa3") : 0;
+	const int iswpa3_192 = has_wpa3 ? nvhas(akm, "wpa3-192") : 0;
+	const int iswpa3_128 = has_wpa3 ? nvhas(akm, "wpa3-128") : 0;
+	const int iswpa2sha256 = has_wpa3 ? nvhas(akm, "wpa2-sha256") : 0;
+	const int ispsk2sha256 = has_wpa3 ? nvhas(akm, "psk2-sha256") : 0;
 	const int iswep = nvhas(akm, "wep");
 
 	if (!strncmp(prefix, "wlan0", 4))
@@ -1434,22 +1437,22 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	fprintf(fp, "wpa_key_mgmt=");
 	if (ispsk2 || ispsk)
 		fprintf(fp, "WPA-PSK ");
-	if (has_wpa3(prefix) && ispsk3)
+	if (has_wpa3 && ispsk3)
 		fprintf(fp, "SAE ");
-	if (has_wpa3(prefix) && isowe)
+	if (has_wpa3 && isowe)
 		fprintf(fp, "OWE ");
-	if (has_wpa3(prefix) && ispsk2sha256)
+	if (has_wpa3 && ispsk2sha256)
 		fprintf(fp, "WPA-PSK-SHA256 ");
 	if (iswpa2 || iswpa || iswpa3)
 		fprintf(fp, "WPA-EAP ");
-	if (has_wpa3(prefix) && iswpa2sha256)
+	if (has_wpa3 && iswpa2sha256)
 		fprintf(fp, "WPA-EAP-SHA256 ");
-	if (has_wpa3(prefix) && iswpa3_128)
+	if (has_wpa3 && iswpa3_128)
 		fprintf(fp, "WPA-EAP-SUITE-B ");
-	if (has_wpa3(prefix) && iswpa3_192)
+	if (has_wpa3 && iswpa3_192)
 		fprintf(fp, "WPA-EAP-SUITE-B-192 ");
 #ifdef HAVE_80211R
-	if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
+	if (has_wpa3 && nvram_matchi(ft, 1) && ispsk3)
 		fprintf(fp, "FT-SAE ");
 	if (nvram_matchi(ft, 1) && (ispsk2 || ispsk || ispsk2sha256))
 		fprintf(fp, "FT-PSK ");
@@ -1459,11 +1462,11 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "FT-EAP ");
 #endif
 	fprintf(fp, "\n");
-	if (has_wpa3(prefix) && isowe) {
+	if (has_wpa3 && isowe) {
 		fprintf(fp, "owe_transition_ifname=%s\n", nvram_nget("%s_owe_ifname", prefix));
 		fprintf(fp, "owe_groups=19 20 21\n");
 	}
-	if (has_wpa3(prefix) && ispsk3)
+	if (has_wpa3 && ispsk3)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
