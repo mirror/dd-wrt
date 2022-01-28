@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include <typedefs.h>
+#include <utils.h>
 #include <wlutils.h>
 #include <shutils.h>
 #include <utils.h>
