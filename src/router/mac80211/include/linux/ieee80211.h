@@ -1655,6 +1655,20 @@ struct ieee80211_mtik_ie_data {
 	u8 pad2[5];           /* unknown. fill with zero */
 } __packed;
 
+struct aironet_ie_data {
+	u8	load;
+	u8	hops;
+	u8	device;
+	u8	refresh_rate;
+	u16  cwmin;
+	u16  cwmax;
+	u8	flags;
+	u8	distance;
+	char	name[16];	/* AP or Client's machine name */
+	u16	num_assoc;	/* number of clients associated */
+	u16	radiotype;
+} __packed;
+
 struct ieee80211_mtik_ie {
 	u8 id;                /* IEEE80211_ELEMID_VENDOR */
 	u8 len;               /* length in bytes */
@@ -2974,6 +2988,7 @@ enum ieee80211_eid {
 	WLAN_EID_PREQ = 130,
 	WLAN_EID_PREP = 131,
 	WLAN_EID_PERR = 132,
+	WLAN_EID_AIRONET = 133,
 	/* 133-136 reserved for Cisco */
 	WLAN_EID_PXU = 137,
 	WLAN_EID_PXUC = 138,

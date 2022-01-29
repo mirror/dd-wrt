@@ -935,6 +935,10 @@ void mesh_rx_path_sel_frame(struct ieee80211_sub_if_data *sdata,
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
 
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
+
 	if (elems.preq) {
 		if (elems.preq_len != 37)
 			/* Right now we support just 1 destination and no AE */

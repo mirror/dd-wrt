@@ -1613,6 +1613,7 @@ struct ieee802_11_elems {
 	const struct ieee80211_multiple_bssid_configuration *mbssid_config_ie;
 	const struct ieee80211_bssid_index *bssid_index;
 	const struct ieee80211_mtik_ie_data *mtik;
+	const struct aironet_ie_data *aironet;
 	u8 max_bssid_indicator;
 	u8 dtim_count;
 	u8 dtim_period;

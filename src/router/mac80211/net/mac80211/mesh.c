@@ -1248,6 +1248,10 @@ ieee80211_mesh_rx_probe_req(struct ieee80211_sub_if_data *sdata,
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
 
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
+
 	/* 802.11-2012 10.1.4.3.2 */
 	if ((!ether_addr_equal(mgmt->da, sdata->vif.addr) &&
 	     !is_broadcast_ether_addr(mgmt->da)) ||
@@ -1314,6 +1318,10 @@ static void ieee80211_mesh_rx_bcn_presp(struct ieee80211_sub_if_data *sdata,
 		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
+	}
+
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
 	}
 
 	/* ignore non-mesh or secure / unsecure mismatch */
@@ -1466,6 +1474,11 @@ static void mesh_rx_csa_frame(struct ieee80211_sub_if_data *sdata,
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
+
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
+
 	ifmsh->chsw_ttl = elems.mesh_chansw_params_ie->mesh_ttl;
 	if (!--ifmsh->chsw_ttl)
 		fwd_csa = false;

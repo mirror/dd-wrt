@@ -1117,6 +1117,9 @@ static void ieee80211_update_sta_info(struct ieee80211_sub_if_data *sdata,
 		if (elems->mtik->namelen && elems->mtik->namelen < 16)
 		    sta->radioname[elems->mtik->namelen] = 0;
 	}
+	if (sta && elems->aironet) {
+		memcpy(&sta->radioname[0], &elems->aironet->name[0], 16);
+	}
 
 	rcu_read_unlock();
 }
@@ -1634,6 +1637,9 @@ void ieee80211_rx_mgmt_probe_beacon(struct ieee80211_sub_if_data *sdata,
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
 
 	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status, &elems);
 }
@@ -1692,6 +1698,9 @@ void ieee80211_ibss_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 				memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
 				if (elems.mtik->namelen && elems.mtik->namelen < 16)
 					sdata->radioname[elems.mtik->namelen] = 0;
+			}
+			if (elems.aironet) {
+				memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
 			}
 
 			ieee80211_rx_mgmt_spectrum_mgmt(sdata, mgmt, skb->len,

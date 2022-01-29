@@ -224,6 +224,12 @@ ieee80211_bss_info_update(struct ieee80211_local *local,
 			}
 		}
 	}
+	if (elems.aironet) {
+		memcpy(&local->radioname[0], &elems.aironet->name[0], 16);
+		if (scan_sdata) {
+			memcpy(&scan_sdata->radioname[0], &elems.aironet->name[0], 16);
+		}
+	}
 	/* In case the signal is invalid update the status */
 	signal_valid = channel == cbss->channel;
 	if (!signal_valid)
@@ -330,6 +336,15 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 			if (local)
 				local->radioname[elems.mtik->namelen] = 0;
 		}
+	}
+
+	if (elems.aironet) {
+		if (local)
+			memcpy(&local->radioname[0], &elems.aironet->name[0], 16);
+		if (sdata1)
+			memcpy(&sdata1->radioname[0], &elems.aironet->name[0], 16);
+		if (sdata2)
+			memcpy(&sdata2->radioname[0], &elems.aironet->name[0], 16);
 	}
 
 	channel = ieee80211_get_channel_khz(local->hw.wiphy,
