@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6423 | brainslayer | 2022-01-29 16:59:38 +0700 (Sat, 29 Jan 2022) | 1 line
+
+add aironet ie to station / scan etc. handler
+------------------------------------------------------------------------
 r6422 | brainslayer | 2022-01-27 18:18:21 +0700 (Thu, 27 Jan 2022) | 1 line
 
 fix backports for newer 4.9 patches
