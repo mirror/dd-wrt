@@ -793,6 +793,13 @@ static const struct ie_print wfa_printers[] = {
 	[28] = { "OWE", print_wifi_owe, 1, 255, BIT(PRINT_SCAN), },
 };
 
+static void print_aironet(unsigned char len, unsigned char *data, bool unknown, enum print_ie_type ptype)
+{
+	struct aironet_ie *ie = (struct aironet_ie *)data;
+	site_survey_lists[sscount].numsta = ie->num_assoc;
+	memcpy(site_survey_lists[sscount].radioname, ie->name, 15);
+}
+
 static void print_vendor(unsigned char len, unsigned char *data, bool unknown, enum print_ie_type ptype)
 {
 	int i;
@@ -814,7 +821,7 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 	if (len >= 4 && !memcmp(data, mtik_oui, 3)) {
 		struct ieee80211_mtik_ie *ie = (struct ieee80211_mtik_ie *)data;
 		if (ie->iedata.namelen <= 15) {
-			memcpy(&site_survey_lists[sscount].radioname, ie->iedata.radioname, ie->iedata.namelen);
+			memcpy(site_survey_lists[sscount].radioname, ie->iedata.radioname, ie->iedata.namelen);
 		}
 		if (ie->iedata.flags & 0x4)
 			site_survey_lists[sscount].extcap = CAP_MTIKWDS;
@@ -863,6 +870,8 @@ static void print_ies(unsigned char *ie, int ielen, bool unknown, enum print_ie_
 			print_ie(&ieprinters[ie[0]], ie[0], ie[1], ie + 2);
 		} else if (ie[0] == 221 /* vendor */ ) {
 			print_vendor(ie[1], ie + 2, unknown, ptype);
+		} else if (ie[0] == 133 /* vendor */ ) {
+			print_aironet(ie[1], ie + 2, unknown, ptype);
 		} else if (unknown) {
 			int i;
 
