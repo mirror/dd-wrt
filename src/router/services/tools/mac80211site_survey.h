@@ -83,6 +83,20 @@ struct ieee80211_mtik_ie {
 	struct ieee80211_mtik_ie_data iedata;
 } __attribute__((packed));
 
+struct aironet_ie {
+	uint8	load;
+	uint8	hops;
+	uint8	device;
+	uint8	refresh_rate;
+	uint16  cwmin;
+	uint16  cwmax;
+	uint8	flags;
+	uint8	distance;
+	char	name[16];	/* AP or Client's machine name */
+	uint16	num_assoc;	/* number of clients associated */
+	uint16	radiotype;
+} __attribute__((packed));
+
 enum print_ie_type {
 	PRINT_SCAN,
 	PRINT_LINK,
