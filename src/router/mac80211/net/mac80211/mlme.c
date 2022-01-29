@@ -2947,6 +2947,10 @@ static void ieee80211_auth_challenge(struct ieee80211_sub_if_data *sdata,
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
+
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
 	auth_data->expected_transaction = 4;
 	drv_mgd_prepare_tx(sdata->local, sdata, 0);
 	if (ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS))
@@ -3363,6 +3367,12 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 		}
 
 	}
+
+	if (elems->aironet) {
+		memcpy(&radioname[0], &elems->aironet->name[0], 16);
+		radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
+	}
+
 	if (!is_s1g && !elems->supp_rates) {
 		sdata_info(sdata, "no SuppRates element in AssocResp\n");
 		return false;
@@ -3408,6 +3418,11 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 				radioname[bss_elems.mtik->namelen] = 0;
 		        radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], bss_elems.mtik->flags & (1<<2));
 		}
+		if (bss_elems.aironet) {
+			memcpy(&radioname[0], &bss_elems.aironet->name[0], 16);
+		        radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
+		}
+
 		if (assoc_data->wmm &&
 		    !elems->wmm_param && bss_elems.wmm_param) {
 			elems->wmm_param = bss_elems.wmm_param;
@@ -3770,6 +3785,9 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
 		    sdata->radioname[elems.mtik->namelen] = 0;
 
 	}
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
 
 	if (status_code == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY &&
 	    elems.timeout_int &&
@@ -3888,6 +3906,9 @@ static void ieee80211_rx_mgmt_probe_resp(struct ieee80211_sub_if_data *sdata,
 		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
+	}
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
 	}
 	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
@@ -4091,6 +4112,11 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 			    radioname[elems.mtik->namelen] = 0;
 			memcpy(&sdata->radioname[0], &radioname[0], 16);
 			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems.mtik->flags & (1<<2));
+		}
+		if (elems.aironet) {
+			memcpy(radioname[0], &elems.aironet->name[0], 16);
+			memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
 		}
 		if (!radio) {
 			radio = add_radioname(sdata, &mgmt->sa[0], NULL, -1);
@@ -4401,7 +4427,9 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 				if (elems.mtik->namelen && elems.mtik->namelen < 16)
 					sdata->radioname[elems.mtik->namelen] = 0;
 			}
-
+			if (elems.aironet) {
+				memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+			}
 			ieee80211_sta_process_chanswitch(sdata,
 						 rx_status->mactime,
 						 rx_status->device_timestamp,
@@ -4430,7 +4458,10 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 				if (elems.mtik->namelen && elems.mtik->namelen < 16)
 					sdata->radioname[elems.mtik->namelen] = 0;
 			}
-
+			if (elems.aironet) {
+				memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+			}
+			
 			/* for the handling code pretend this was also an IE */
 			elems.ext_chansw_ie =
 				&mgmt->u.action.u.ext_chan_switch.data;

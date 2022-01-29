@@ -1235,5 +1235,8 @@ void mesh_rx_plink_frame(struct ieee80211_sub_if_data *sdata,
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
 	mesh_process_plink_frame(sdata, mgmt, &elems, rx_status);
 }

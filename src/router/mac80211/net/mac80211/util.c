@@ -1155,6 +1155,9 @@ _ieee802_11_parse_elems_crc(const u8 *start, size_t len, bool action,
 			    }
 			}
 			break;
+		case WLAN_EID_AIRONET:
+			elems->aironet = (struct aironet_ie_data *)pos;
+			break;
 		case WLAN_EID_RSN:
 			elems->rsn = pos;
 			elems->rsn_len = elen;
