@@ -383,6 +383,22 @@ struct ieee80211_mtik_ie {
 	struct ieee80211_mtik_ie_data iedata;
 }  __attribute__((packed));
 
+struct aironet_ie {
+	unsigned char id;	/* IEEE80211_ELEMID_VENDOR */
+	unsigned char len;	/* length in bytes */
+	unsigned char	load;
+	unsigned char	hops;
+	unsigned char	device;
+	unsigned char	refresh_rate;
+	unsigned short  cwmin;
+	unsigned short  cwmax;
+	unsigned char	flags;
+	unsigned char	distance;
+	char	name[16];	/* AP or Client's machine name */
+	unsigned short	num_assoc;	/* number of clients associated */
+	unsigned short	radiotype;
+} __attribute__((packed));
+
 static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
 static unsigned char mtik_oui[3] = { 0x00, 0x0c, 0x42 };
 
@@ -394,6 +410,7 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 	uint8 *wpaie;
 	uint8 *rsnie;
 	uint8 *customie;
+	struct aironet_ie *aironet;
 	static char sum[128] = { 0 };
 	bzero(sum, sizeof(sum));
 
@@ -434,6 +451,12 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 		}
 		len -= (customie + customie[1] + 2) - parse;
 		parse = customie + customie[1] + 2;
+	}
+	parse = cp;
+	aironet = (struct aironet_ie *)wlu_parse_tlvs(parse, len, 133);
+	if (aironet) {
+		list->numsta = aironet->num_assoc;
+		memcpy(list->radioname, aironet->name, 15);
 	}
 }
 
