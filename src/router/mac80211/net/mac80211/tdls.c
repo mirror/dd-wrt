@@ -1739,6 +1739,10 @@ ieee80211_process_tdls_channel_switch_resp(struct ieee80211_sub_if_data *sdata,
 		    sdata->radioname[elems.mtik->namelen] = 0;
 	}
 
+	if (elems.aironet) {
+		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	}
+
 	if (!elems.ch_sw_timing || !elems.lnk_id) {
 		tdls_dbg(sdata, "TDLS channel switch resp - missing IEs\n");
 		ret = -EINVAL;

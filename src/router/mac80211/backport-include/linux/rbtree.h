@@ -2,7 +2,7 @@
 #define __BACKPORT_LINUX_RBTREE_H
 #include_next <linux/rbtree.h>
 
-#if LINUX_VERSION_IS_LESS(4,14,0)
+#if LINUX_VERSION_IS_LESS(4,9,0)
 /*
  * Leftmost-cached rbtrees.
  *

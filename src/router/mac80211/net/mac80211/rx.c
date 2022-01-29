@@ -3371,6 +3371,10 @@ ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
 					radioname[elems.mtik->namelen] = 0;
 				radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems.mtik->flags & (1<<2));
 			}
+			if (elems.aironet) {
+				memcpy(&radioname[0], &elems.aironet->name[0], 16);
+				radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
+			}
 		}
 		if (sta) {
 			if (!radio) {
