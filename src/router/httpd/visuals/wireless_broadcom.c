@@ -182,7 +182,8 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 	int sgi = 0;
 	int vht = 0;
 	int i40 = 0;
-
+	int chain_snr[4] = {0,0,0,0};
+	
 	bzero(buf, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
 #ifdef HAVE_QTN
@@ -225,33 +226,10 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			char cmd[64];
 			if (strcmp(mode, "ap") && strcmp(mode, "apsta")
 			    && strcmp(mode, "apstawet"))
-				sprintf(cmd, "wl -i %s rssi", iface);
+				rssi = getRssi(iface, NULL);
 			else
-				sprintf(cmd, "wl -i %s rssi \"%s\"", iface, mac);
-
-			// get noise value if not ap mode
-			// if (strcmp (mode, "ap"))
-			// snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface,
-			// RSSI_TMP);
-			// system (cmd); // get RSSI value for mac
-
-			fp2 = popen(cmd, "r");
-			if (fp2) {
-				if (fgets(line, sizeof(line), fp2) != NULL) {
-					// get rssi
-					if (sscanf(line, "%d", &rssi) != 1) {
-						pclose(fp2);
-						continue;
-					}
-					noise = getNoise(iface, NULL);
-					/*
-					 * if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
-					 * NULL && sscanf (line, "%d", &noise) != 1) continue;
-					 */
-					// get noise for client/wet mode
-				}
-				pclose(fp2);
-			}
+				rssi = getRssi(iface, mac);
+			noise = getNoise(iface, NULL);
 #ifdef HAVE_QTN
 		}
 #endif
@@ -265,7 +243,6 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			mac[9] = 'x';
 			mac[10] = 'x';
 		}
-		if (globalcnt)
 			websWrite(wp, ",");
 		*cnt = (*cnt) + 1;
 		globalcnt++;
@@ -340,6 +317,10 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 							sprintf(rxrate, "%dM", rx / 1000);
 						strcpy(time, UPTIME(sta4->in, str));
 					}
+					chain_snr[0] = sta4->rssi[0] - sta4->nf[0];
+					chain_snr[1] = sta4->rssi[1] - sta4->nf[1];
+					chain_snr[2] = sta4->rssi[2] - sta4->nf[2];
+					chain_snr[3] = sta4->rssi[3] - sta4->nf[3];
 					info[0] = 0;
 					ht = 0;
 					sgi = 0;
@@ -424,7 +405,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			qual = 0;
 		else
 			qual = (signal + 100) * 20;
-		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','0','0','0','0'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
+		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_snr[0], chain_snr[1], chain_snr[2], chain_snr[3]);
 	}
 
 	return globalcnt;
