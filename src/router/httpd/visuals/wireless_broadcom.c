@@ -182,8 +182,8 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 	int sgi = 0;
 	int vht = 0;
 	int i40 = 0;
-	int chain_snr[4] = {0,0,0,0};
-	
+	int chain_snr[4] = { 0, 0, 0, 0 };
+
 	bzero(buf, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
 #ifdef HAVE_QTN
@@ -243,7 +243,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			mac[9] = 'x';
 			mac[10] = 'x';
 		}
-			websWrite(wp, ",");
+		websWrite(wp, ",");
 		*cnt = (*cnt) + 1;
 		globalcnt++;
 		char info[32];
@@ -405,7 +405,8 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			qual = 0;
 		else
 			qual = (signal + 100) * 20;
-		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_snr[0], chain_snr[1], chain_snr[2], chain_snr[3]);
+		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_snr[0], chain_snr[1],
+			  chain_snr[2], chain_snr[3]);
 	}
 
 	return globalcnt;
