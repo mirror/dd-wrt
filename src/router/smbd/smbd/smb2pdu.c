@@ -3506,9 +3506,9 @@ static int smb2_populate_readdir_entry(struct ksmbd_conn *conn, int info_level,
 		goto free_conv_name;
 	}
 
-	struct_sz = readdir_info_level_struct_sz(info_level);
-	next_entry_offset = ALIGN(struct_sz - 1 + conv_len,
-				  KSMBD_DIR_INFO_ALIGNMENT);
+	struct_sz = readdir_info_level_struct_sz(info_level) - 1 + conv_len;
+	next_entry_offset = ALIGN(struct_sz, KSMBD_DIR_INFO_ALIGNMENT);
+	d_info->last_entry_off_align = next_entry_offset - struct_sz;
 
 	if (next_entry_offset > d_info->out_buf_len) {
 		d_info->out_buf_len = 0;
@@ -4112,6 +4112,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 		((struct file_directory_info *)
 		((char *)rsp->Buffer + d_info.last_entry_offset))
 		->NextEntryOffset = 0;
+		d_info.data_count -= d_info.last_entry_off_align;
 
 		rsp->StructureSize = cpu_to_le16(9);
 		rsp->OutputBufferOffset = cpu_to_le16(72);
@@ -5112,12 +5113,13 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	case FS_SIZE_INFORMATION:
 	{
 		struct filesystem_info *info;
+		int unit = stfs.f_bsize >> 10;
 
 		info = (struct filesystem_info *)(rsp->Buffer);
-		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks);
-		info->FreeAllocationUnits = cpu_to_le64(stfs.f_bfree);
-		info->SectorsPerAllocationUnit = cpu_to_le32(1);
-		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
+		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks * unit);
+		info->FreeAllocationUnits = cpu_to_le64(stfs.f_bavail * unit);
+		info->SectorsPerAllocationUnit = cpu_to_le32(2);
+		info->BytesPerSector = cpu_to_le32(512);
 		rsp->OutputBufferLength = cpu_to_le32(24);
 		inc_rfc1001_len(work->response_buf, 24);
 		fs_infoclass_size = FS_SIZE_INFORMATION_SIZE;
@@ -5126,15 +5128,16 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	case FS_FULL_SIZE_INFORMATION:
 	{
 		struct smb2_fs_full_size_info *info;
+		int unit = stfs.f_bsize >> 10;
 
 		info = (struct smb2_fs_full_size_info *)(rsp->Buffer);
-		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks);
+		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks * unit);
 		info->CallerAvailableAllocationUnits =
-					cpu_to_le64(stfs.f_bavail);
+					cpu_to_le64(stfs.f_bavail * unit);
 		info->ActualAvailableAllocationUnits =
-					cpu_to_le64(stfs.f_bfree);
-		info->SectorsPerAllocationUnit = cpu_to_le32(1);
-		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
+					cpu_to_le64(stfs.f_bfree * unit);
+		info->SectorsPerAllocationUnit = cpu_to_le32(2);
+		info->BytesPerSector = cpu_to_le32(512);
 		rsp->OutputBufferLength = cpu_to_le32(32);
 		inc_rfc1001_len(work->response_buf, 32);
 		fs_infoclass_size = FS_FULL_SIZE_INFORMATION_SIZE;
