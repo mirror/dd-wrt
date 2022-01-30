@@ -243,7 +243,8 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			mac[9] = 'x';
 			mac[10] = 'x';
 		}
-		websWrite(wp, ",");
+		if (globalcnt)
+			websWrite(wp, ",");
 		*cnt = (*cnt) + 1;
 		globalcnt++;
 		char info[32];
