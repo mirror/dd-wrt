@@ -1,0 +1,8 @@
+[
+	{
+		"id": "personal_api_key",
+		"label": "Personal API Key",
+		"type": "text",
+		"default": ""
+	}
+]
