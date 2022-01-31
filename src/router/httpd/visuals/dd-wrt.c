@@ -5389,12 +5389,6 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	}
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.nas", NULL);
-	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "ap.example.com"));
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label3", NULL);
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n", prefix);
 	show_ip(wp, prefix, "radius_ipaddr", 0, "radius.label3");
