@@ -767,6 +767,11 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 
 		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.nas", NULL);
+		sprintf(var, "%s_nas", prefix);
+		websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "ap.example.com"));
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.domain", NULL);
 		sprintf(var, "%s_domain", prefix);
 		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "0000"));
