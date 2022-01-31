@@ -1526,10 +1526,6 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
 			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
 		}
-		char *nas_ident = nvram_nget("%s_nas", prefix);
-		if (strlen(nas_ident))
-			fprintf(fp, "nas_identifier=%s\n", nas_ident);
-
 	}
 	char pwstring[128] = {
 		0, 0
