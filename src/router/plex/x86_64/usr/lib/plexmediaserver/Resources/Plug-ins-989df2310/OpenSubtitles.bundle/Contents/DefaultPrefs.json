@@ -1,0 +1,40 @@
+[
+        {
+                "id": "username",
+                "label": "OpenSubtitles Username:",
+                "type": "text"
+        },
+        {
+                "id": "password",
+                "label": "OpenSubtitles Password:",
+                "type": "text",
+                "option": "hidden"
+        },
+        {
+                "id": "langPref1",
+                "label": "Subtitle Language (1)",
+                "type": "enum",
+                "values": ["None","eng","alb","ara","arm","bos","bul","cat","chi","hrv","cze","dan","dut","epo","est","fas","fin","fre","lgl","geo","ger","ell","heb",
+                           "hin","hun","ice","ind","ita","jpn","kaz","kor","lat","lit","ltz","mac","may","nor","oci","pol","por","pob","rum","rus","srp","slo",
+                           "slv","spa","swe","syr","tha","tur","ukr","urd","vie"],
+                "default": "None"
+        },
+        {
+                "id": "langPref2",
+                "label": "Subtitle Language (2)",
+                "type": "enum",
+                "values": ["None","eng","alb","ara","arm","bos","bul","cat","chi","hrv","cze","dan","dut","epo","est","fas","fin","fre","lgl","geo","ger","ell","heb",
+                           "hin","hun","ice","ind","ita","jpn","kaz","kor","lat","lit","ltz","mac","may","nor","oci","pol","por","pob","rum","rus","srp","slo",
+                           "slv","spa","swe","syr","tha","tur","ukr","urd","vie"],
+                "default": "None"
+        },
+        {
+                "id": "langPref3",
+                "label": "Subtitle Language (3)",
+                "type": "enum",
+                "values": ["None","eng","alb","ara","arm","bos","bul","cat","chi","hrv","cze","dan","dut","epo","est","fas","fin","fre","lgl","geo","ger","ell","heb",
+                           "hin","hun","ice","ind","ita","jpn","kaz","kor","lat","lit","ltz","mac","may","nor","oci","pol","por","pob","rum","rus","srp","slo",
+                           "slv","spa","swe","syr","tha","tur","ukr","urd","vie"],
+                "default": "None"
+        }
+]
