@@ -2162,8 +2162,9 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 			FILE *out = fopen("/tmp/mypage.tmp", "wb");
 
 			if ((fp = popen(sname, "rb")) != NULL) {
-				while (fgets(buf, 512, fp) != NULL)
+				while (fgets(buf, 512, fp) != NULL) {
 					fprintf(out, "%s", buf);
+				}
 				pclose(fp);
 			} else {
 				fclose(out);
@@ -2171,8 +2172,6 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 			}
 
 			fclose(out);
-			if (handler && !handler->send_headers)
-				send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			ret = do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
@@ -2812,7 +2811,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
