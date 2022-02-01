@@ -373,7 +373,6 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	size_t len;
 	int i;
 	memdebug_enter();
-	dd_debug(HTTPD_DEBUG, "open %s\n," path);
 	i = 0;
 	len = 0;
 	fp = _getWebsFile(stream, path, &len);
