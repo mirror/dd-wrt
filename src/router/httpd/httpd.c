@@ -549,6 +549,7 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 {
 	time_t now;
 	char timebuf[100];
+	dd_debug(DEBUG_HTTPD, "send header\n");
 
 	websWrite(conn_fp, "%s %d %s\r\n", PROTOCOL, status, title);
 	if (mime_type != NULL)
@@ -735,8 +736,9 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 	FILE *web = _getWebsFile(stream, path, &len);
 	if (!web)
 		return -1;
-	if (!handler->send_headers)
+	if (!handler->send_headers) {
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
+	}
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
 		while (len && !feof(web)) {
