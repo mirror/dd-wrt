@@ -395,6 +395,7 @@ static NTSTATUS open_pathref_base_fsp(const struct files_struct *dirfsp,
 {
 	struct smb_filename *smb_fname_base = NULL;
 	NTSTATUS status;
+	int ret;
 
 	smb_fname_base = synthetic_smb_fname(talloc_tos(),
 					     fsp->fsp_name->base_name,
@@ -404,6 +405,11 @@ static NTSTATUS open_pathref_base_fsp(const struct files_struct *dirfsp,
 					     fsp->fsp_name->flags);
 	if (smb_fname_base == NULL) {
 		return NT_STATUS_NO_MEMORY;
+	}
+
+	ret = vfs_stat(fsp->conn, smb_fname_base);
+	if (ret != 0) {
+		return map_nt_error_from_unix(errno);
 	}
 
 	status = openat_pathref_fsp(dirfsp, smb_fname_base);
@@ -435,7 +441,6 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 {
 	connection_struct *conn = dirfsp->conn;
 	struct smb_filename *full_fname = NULL;
-	bool file_existed = VALID_STAT(smb_fname->st);
 	struct files_struct *fsp = NULL;
 	int open_flags = O_RDONLY;
 	NTSTATUS status;
@@ -449,8 +454,12 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 		return NT_STATUS_OK;
 	}
 
-	if (file_existed && S_ISLNK(smb_fname->st.st_ex_mode)) {
-		return NT_STATUS_STOPPED_ON_SYMLINK;
+	if (!VALID_STAT(smb_fname->st)) {
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+
+	if (S_ISLNK(smb_fname->st.st_ex_mode)) {
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
 	status = fsp_new(conn, conn, &fsp);
@@ -494,25 +503,15 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 		}
 	}
 
+	if (S_ISFIFO(smb_fname->st.st_ex_mode)) {
+		open_flags |= O_NONBLOCK;
+	}
+
 	status = fd_openat(dirfsp, smb_fname, fsp, open_flags, 0);
 	if (!NT_STATUS_IS_OK(status)) {
-		DBG_DEBUG("Could not open fd for [%s]: %s\n",
-			  fsp_str_dbg(fsp),
-			  nt_errstr(status));
-
-		if (fsp->base_fsp != NULL) {
-			struct files_struct *tmp_base_fsp = fsp->base_fsp;
-
-			fsp_set_base_fsp(fsp, NULL);
-
-			fd_close(tmp_base_fsp);
-			file_free(NULL, tmp_base_fsp);
-		}
-		file_free(NULL, fsp);
-		fsp = NULL;
-
 		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND) ||
-		    NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_PATH_NOT_FOUND))
+		    NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_PATH_NOT_FOUND) ||
+		    NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK))
 		{
 			/*
 			 * streams_xattr return NT_STATUS_NOT_FOUND for
@@ -524,19 +523,17 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 			 *
 			 * NT_STATUS_OBJECT_NAME_NOT_FOUND is the simple
 			 * ENOENT case.
+			 *
+			 * NT_STATUS_STOPPED_ON_SYMLINK is returned when trying
+			 * to open a symlink, our callers are not interested in
+			 * this.
 			 */
 			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		}
-		if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
-			goto fail;
-		}
-
-		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+		goto fail;
 	}
 
-	if (file_existed &&
-	    !check_same_dev_ino(&smb_fname->st, &fsp->fsp_name->st))
-	{
+	if (!check_same_dev_ino(&smb_fname->st, &fsp->fsp_name->st)) {
 		DBG_DEBUG("file [%s] - dev/ino mismatch. "
 			  "Old (dev=%ju, ino=%ju). "
 			  "New (dev=%ju, ino=%ju).\n",
@@ -548,6 +545,13 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 		status = NT_STATUS_ACCESS_DENIED;
 		goto fail;
 	}
+
+	/*
+	 * fd_openat() has done an FSTAT on the handle
+	 * so update the smb_fname stat info with "truth".
+	 * from the handle.
+	 */
+	smb_fname->st = fsp->fsp_name->st;
 
 	fsp->file_id = vfs_file_id_from_sbuf(conn, &fsp->fsp_name->st);
 
@@ -622,6 +626,128 @@ NTSTATUS move_smb_fname_fsp_link(struct smb_filename *smb_fname_dst,
 
 	smb_fname_fsp_unlink(smb_fname_src);
 
+	return NT_STATUS_OK;
+}
+
+/**
+ * Create an smb_fname and open smb_fname->fsp pathref
+ **/
+NTSTATUS synthetic_pathref(TALLOC_CTX *mem_ctx,
+			   struct files_struct *dirfsp,
+			   const char *base_name,
+			   const char *stream_name,
+			   const SMB_STRUCT_STAT *psbuf,
+			   NTTIME twrp,
+			   uint32_t flags,
+			   struct smb_filename **_smb_fname)
+{
+	struct smb_filename *smb_fname = NULL;
+	NTSTATUS status;
+	int ret;
+
+	smb_fname = synthetic_smb_fname(mem_ctx,
+					base_name,
+					stream_name,
+					psbuf,
+					twrp,
+					flags);
+	if (smb_fname == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	if (!VALID_STAT(smb_fname->st)) {
+		ret = vfs_stat(dirfsp->conn, smb_fname);
+		if (ret != 0) {
+			int err = errno;
+			int lvl = err == ENOENT ? DBGLVL_INFO : DBGLVL_ERR;
+			DBG_PREFIX(lvl, ("stat [%s] failed: %s\n",
+				smb_fname_str_dbg(smb_fname),
+				strerror(err)));
+			TALLOC_FREE(smb_fname);
+			return map_nt_error_from_unix(err);
+		}
+	}
+
+	status = openat_pathref_fsp(dirfsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("opening [%s] failed\n",
+			smb_fname_str_dbg(smb_fname));
+		TALLOC_FREE(smb_fname);
+		return status;
+	}
+
+	*_smb_fname = smb_fname;
+	return NT_STATUS_OK;
+}
+
+static int atname_destructor(struct smb_filename *smb_fname)
+{
+	destroy_fsp_smb_fname_link(&smb_fname->fsp_link);
+	return 0;
+}
+
+/**
+ * Turn a path into a parent pathref and atname
+ *
+ * This returns the parent pathref in _parent and the name relative to it. If
+ * smb_fname was a pathref (ie smb_fname->fsp != NULL), then _atname will be a
+ * pathref as well, ie _atname->fsp will point at the same fsp as
+ * smb_fname->fsp.
+ **/
+NTSTATUS parent_pathref(TALLOC_CTX *mem_ctx,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			struct smb_filename **_parent,
+			struct smb_filename **_atname)
+{
+	struct smb_filename *parent = NULL;
+	struct smb_filename *atname = NULL;
+	NTSTATUS status;
+	int ret;
+
+	status = SMB_VFS_PARENT_PATHNAME(dirfsp->conn,
+					 mem_ctx,
+					 smb_fname,
+					 &parent,
+					 &atname);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	/*
+	 * We know that the parent name must
+	 * exist, and the name has been canonicalized
+	 * even if this was a POSIX pathname.
+	 * Ensure that we follow symlinks for
+	 * the parent. See the torture test
+	 * POSIX-SYMLINK-PARENT for details.
+	 */
+	parent->flags &= ~SMB_FILENAME_POSIX_PATH;
+
+	ret = vfs_stat(dirfsp->conn, parent);
+	if (ret != 0) {
+		TALLOC_FREE(parent);
+		return map_nt_error_from_unix(errno);
+	}
+
+	status = openat_pathref_fsp(dirfsp, parent);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(parent);
+		return status;
+	}
+
+	if (smb_fname->fsp != NULL) {
+		status = fsp_smb_fname_link(smb_fname->fsp,
+					    &atname->fsp_link,
+					    &atname->fsp);
+		if (!NT_STATUS_IS_OK(status)) {
+			TALLOC_FREE(parent);
+			return status;
+		}
+		talloc_set_destructor(atname, atname_destructor);
+	}
+	*_parent = parent;
+	*_atname = atname;
 	return NT_STATUS_OK;
 }
 
@@ -1232,8 +1358,19 @@ NTSTATUS file_name_hash(connection_struct *conn,
 
 	/* Set the hash of the full pathname. */
 
-	len = full_path_tos(conn->connectpath, name, tmpbuf, sizeof(tmpbuf),
-			    &fullpath, &to_free);
+	if (name[0] == '/') {
+		strlcpy(tmpbuf, name, sizeof(tmpbuf));
+		fullpath = tmpbuf;
+		len = strlen(fullpath);
+		to_free = NULL;
+	} else {
+		len = full_path_tos(conn->connectpath,
+				    name,
+				    tmpbuf,
+				    sizeof(tmpbuf),
+				    &fullpath,
+				    &to_free);
+	}
 	if (len == -1) {
 		return NT_STATUS_NO_MEMORY;
 	}

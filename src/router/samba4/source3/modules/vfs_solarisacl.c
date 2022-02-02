@@ -62,7 +62,7 @@ static bool solaris_acl_check(SOLARIS_ACL_T solaris_acl, int count);
 
 /* public functions - the api */
 
-SMB_ACL_T solarisacl_sys_acl_get_file(vfs_handle_struct *handle,
+static SMB_ACL_T solarisacl_sys_acl_get_file(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname,
 				SMB_ACL_TYPE_T type,
 				TALLOC_CTX *mem_ctx)
@@ -105,7 +105,9 @@ SMB_ACL_T solarisacl_sys_acl_get_file(vfs_handle_struct *handle,
  * get the access ACL of a file referred to by a fd
  */
 SMB_ACL_T solarisacl_sys_acl_get_fd(vfs_handle_struct *handle,
-				    files_struct *fsp, TALLOC_CTX *mem_ctx)
+				    files_struct *fsp,
+				    SMB_ACL_TYPE_T type,
+				    TALLOC_CTX *mem_ctx)
 {
 	SMB_ACL_T result = NULL;
 	int count;
@@ -116,13 +118,19 @@ SMB_ACL_T solarisacl_sys_acl_get_fd(vfs_handle_struct *handle,
 	if (!solaris_acl_get_fd(fsp_get_io_fd(fsp), &solaris_acl, &count)) {
 		goto done;
 	}
+
+	if (type != SMB_ACL_TYPE_ACCESS && type != SMB_ACL_TYPE_DEFAULT) {
+		DEBUG(10, ("invalid SMB_ACL_TYPE given (%d)\n", type));
+		errno = EINVAL;
+		goto done;
+	}
 	/* 
 	 * The facl call returns both ACCESS and DEFAULT acls (as present). 
 	 * The posix acl_get_fd function returns only the
 	 * access acl. So we need to filter this out here.  
 	 */
 	result = solaris_acl_to_smb_acl(solaris_acl, count,
-					SMB_ACL_TYPE_ACCESS, mem_ctx);
+					type, mem_ctx);
 	if (result == NULL) {
 		DEBUG(10, ("conversion solaris_acl -> smb_acl failed (%s).\n",
 			   strerror(errno)));
@@ -133,103 +141,6 @@ SMB_ACL_T solarisacl_sys_acl_get_fd(vfs_handle_struct *handle,
 		   ((result == NULL) ? "failed" : "succeeded")));
 	SAFE_FREE(solaris_acl);
 	return result;
-}
-
-int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname_in,
-				SMB_ACL_TYPE_T type,
-				SMB_ACL_T theacl)
-{
-	int ret = -1;
-	SOLARIS_ACL_T solaris_acl = NULL;
-	int count;
-	struct smb_filename *smb_fname = NULL;
-
-	smb_fname = cp_smb_filename_nostream(talloc_tos(), smb_fname_in);
-	if (smb_fname == NULL) {
-		errno = ENOMEM;
-		goto done;
-	}
-
-	DEBUG(10, ("solarisacl_sys_acl_set_file called for file '%s'\n",
-		   smb_fname->base_name));
-
-	if ((type != SMB_ACL_TYPE_ACCESS) && (type != SMB_ACL_TYPE_DEFAULT)) {
-		errno = EINVAL;
-		DEBUG(10, ("invalid smb acl type given (%d).\n", type));
-		goto done;
-	}
-	DEBUGADD(10, ("setting %s acl\n",
-		      ((type == SMB_ACL_TYPE_ACCESS) ? "access" : "default")));
-
-	if(!smb_acl_to_solaris_acl(theacl, &solaris_acl, &count, type)) {
-		DEBUG(10, ("conversion smb_acl -> solaris_acl failed (%s).\n",
-			   strerror(errno)));
-                goto done;
-	}
-
-	/*
-	 * if the file is a directory, there is extra work to do:
-	 * since the solaris acl call stores both the access acl and
-	 * the default acl as provided, we have to get the acl part
-	 * that has not been specified in "type" from the file first
-	 * and concatenate it with the acl provided.
-	 *
-	 * We can directly use SMB_VFS_STAT here, as if this was a
-	 * POSIX call on a symlink, we've already refused it.
-	 * For a Windows acl mapped call on a symlink, we want to follow
-	 * it.
-	 */
-	ret = SMB_VFS_STAT(handle->conn, smb_fname);
-	if (ret != 0) {
-		DEBUG(10, ("Error in stat call: %s\n", strerror(errno)));
-		goto done;
-	}
-	if (S_ISDIR(smb_fname->st.st_ex_mode)) {
-		SOLARIS_ACL_T other_acl = NULL;
-		int other_count;
-		SMB_ACL_TYPE_T other_type;
-
-		other_type = (type == SMB_ACL_TYPE_ACCESS)
-			? SMB_ACL_TYPE_DEFAULT
-			: SMB_ACL_TYPE_ACCESS;
-		DEBUGADD(10, ("getting acl from filesystem\n"));
-		if (!solaris_acl_get_file(smb_fname->base_name,
-					&other_acl, &other_count)) {
-			DEBUG(10, ("error getting acl from directory\n"));
-			goto done;
-		}
-		DEBUG(10, ("adding %s part of fs acl to given acl\n",
-			   ((other_type == SMB_ACL_TYPE_ACCESS)
-			    ? "access"
-			    : "default")));
-		if (!solaris_add_to_acl(&solaris_acl, &count, other_acl,
-					other_count, other_type))
-		{
-			DEBUG(10, ("error adding other acl.\n"));
-			SAFE_FREE(other_acl);
-			goto done;
-		}
-		SAFE_FREE(other_acl);
-	}
-	else if (type != SMB_ACL_TYPE_ACCESS) {
-		errno = EINVAL;
-		goto done;
-	}
-
-	if (!solaris_acl_sort(solaris_acl, count)) {
-		DEBUG(10, ("resulting acl is not valid!\n"));
-		goto done;
-	}
-
-	ret = acl(smb_fname->base_name, SETACL, count, solaris_acl);
-
- done:
-	DEBUG(10, ("solarisacl_sys_acl_set_file %s.\n",
-		   ((ret != 0) ? "failed" : "succeeded")));
-	SAFE_FREE(solaris_acl);
-	TALLOC_FREE(smb_fname);
-	return ret;
 }
 
 /*
@@ -300,57 +211,56 @@ int solarisacl_sys_acl_set_fd(vfs_handle_struct *handle,
 /*
  * delete the default ACL of a directory
  *
- * This is achieved by fetching the access ACL and rewriting it 
- * directly, via the solaris system call: the SETACL call on 
+ * This is achieved by fetching the access ACL and rewriting it
+ * directly, via the solaris system call: the SETACL call on
  * directories writes both the access and the default ACL as provided.
  *
  * XXX: posix acl_delete_def_file returns an error if
  * the file referred to by path is not a directory.
- * this function does not complain but the actions 
+ * this function does not complain but the actions
  * have no effect on a file other than a directory.
  * But sys_acl_delete_default_file is only called in
  * smbd/posixacls.c after having checked that the file
  * is a directory, anyways. So implementing the extra
  * check is considered unnecessary. --- Agreed? XXX
  */
-int solarisacl_sys_acl_delete_def_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname)
+int solarisacl_sys_acl_delete_def_fd(vfs_handle_struct *handle,
+				files_struct *fsp)
 {
 	SMB_ACL_T smb_acl;
 	int ret = -1;
 	SOLARIS_ACL_T solaris_acl = NULL;
 	int count;
 
-	DEBUG(10, ("entering solarisacl_sys_acl_delete_def_file.\n"));
-	
-	smb_acl = solarisacl_sys_acl_get_file(handle, smb_fname->base_name,
+	DBG_DEBUG("entering solarisacl_sys_acl_delete_def_fd.\n");
+
+	smb_acl = solarisacl_sys_acl_get_file(handle, fsp->fsp_name->base_name,
 					      SMB_ACL_TYPE_ACCESS, talloc_tos());
 	if (smb_acl == NULL) {
-		DEBUG(10, ("getting file acl failed!\n"));
+		DBG_DEBUG("getting file acl failed!\n");
 		goto done;
 	}
-	if (!smb_acl_to_solaris_acl(smb_acl, &solaris_acl, &count, 
+	if (!smb_acl_to_solaris_acl(smb_acl, &solaris_acl, &count,
 				    SMB_ACL_TYPE_ACCESS))
 	{
-		DEBUG(10, ("conversion smb_acl -> solaris_acl failed.\n"));
+		DBG_DEBUG("conversion smb_acl -> solaris_acl failed.\n");
 		goto done;
 	}
 	if (!solaris_acl_sort(solaris_acl, count)) {
-		DEBUG(10, ("resulting acl is not valid!\n"));
+		DBG_DEBUG("resulting acl is not valid!\n");
 		goto done;
 	}
-	ret = acl(smb_fname->base_name, SETACL, count, solaris_acl);
+	ret = acl(fsp->fsp_name->base_name, SETACL, count, solaris_acl);
 	if (ret != 0) {
-		DEBUG(10, ("settinge file acl failed!\n"));
+		DBG_DEBG("settinge file acl failed!\n");
 	}
-	
+
  done:
-	DEBUG(10, ("solarisacl_sys_acl_delete_def_file %s.\n",
-		   ((ret != 0) ? "failed" : "succeeded" )));
+	DBG_DEBUG("solarisacl_sys_acl_delete_def_fd %s.\n",
+		   ((ret != 0) ? "failed" : "succeeded" ));
 	TALLOC_FREE(smb_acl);
 	return ret;
 }
-
 
 /* private functions */
 
@@ -773,12 +683,10 @@ static bool solaris_acl_check(SOLARIS_ACL_T solaris_acl, int count)
 #endif
 
 static struct vfs_fn_pointers solarisacl_fns = {
-	.sys_acl_get_file_fn = solarisacl_sys_acl_get_file,
 	.sys_acl_get_fd_fn = solarisacl_sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = solarisacl_sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = solarisacl_sys_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = solarisacl_sys_acl_delete_def_fd,
 };
 
 static_decl_vfs;

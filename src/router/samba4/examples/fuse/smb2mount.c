@@ -20,12 +20,12 @@
 
 #include "source3/include/includes.h"
 #include "popt.h"
-#include "popt_common_cmdline.h"
+#include "lib/cmdline/cmdline.h"
 #include "client.h"
 #include "libsmb/proto.h"
 #include "clifuse.h"
 
-static struct cli_state *connect_one(const struct user_auth_info *auth_info,
+static struct cli_state *connect_one(struct cli_credentials *creds,
 				     const char *server, int port,
 				     const char *share)
 {
@@ -36,7 +36,7 @@ static struct cli_state *connect_one(const struct user_auth_info *auth_info,
 	nt_status = cli_full_connection_creds(&c, lp_netbios_name(), server,
 				NULL, port,
 				share, "?????",
-				get_cmdline_auth_info_creds(auth_info),
+				creds,
 				flags);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DBG_ERR("cli_full_connection failed! (%s)\n",
@@ -56,6 +56,8 @@ int main(int argc, char *argv[])
 	int port = 0;
 	char *unc, *mountpoint, *server, *share;
 	struct cli_state *cli;
+	struct cli_credentials *creds = NULL;
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -67,14 +69,29 @@ int main(int argc, char *argv[])
 	};
 
 	smb_init_locale();
-	setup_logging(argv[0], DEBUG_STDERR);
+
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 	lp_set_cmdline("client min protocol", "SMB2");
 	lp_set_cmdline("client max protocol", "SMB3_11");
 
-	lp_load_global(get_dyn_CONFIGFILE());
-	load_interfaces();
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv_const,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
-	pc = poptGetContext("smb2mount", argc, argv_const, long_options, 0);
 	poptSetOtherOptionHelp(pc, "//server1/share1 mountpoint");
 
 	while ((opt = poptGetNextOpt(pc)) != -1) {
@@ -107,7 +124,7 @@ int main(int argc, char *argv[])
 	}
 
 	poptFreeContext(pc);
-	popt_burn_cmdline_password(argc, argv);
+	samba_cmdline_burn(argc, argv);
 
 	server = talloc_strdup(frame, unc+2);
 	if (!server) {
@@ -115,14 +132,16 @@ int main(int argc, char *argv[])
 	}
 	share = strchr_m(server,'\\');
 	if (!share) {
-		fprintf(stderr, "Invalid argument: %s\n", share);
+		fprintf(stderr, "Invalid argument: %s\n", server);
 		return -1;
 	}
 
 	*share = 0;
 	share++;
 
-	cli = connect_one(popt_get_cmdline_auth_info(), server, port, share);
+	creds = samba_cmdline_get_creds();
+
+	cli = connect_one(creds, server, port, share);
 	if (cli == NULL) {
 		return -1;
 	}
@@ -133,7 +152,6 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	popt_free_cmdline_auth_info();
 	TALLOC_FREE(frame);
 	return 0;
 }

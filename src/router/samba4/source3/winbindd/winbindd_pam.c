@@ -1473,8 +1473,10 @@ static NTSTATUS winbindd_dual_auth_passdb(TALLOC_CTX *mem_ctx,
 	}
 
 	*pinfo3 = info3;
-	DEBUG(10, ("Authenticaticating user %s\\%s returned %s\n", domain,
-		   user, nt_errstr(status)));
+	DBG_DEBUG("Authenticating user %s\\%s returned %s\n",
+		  domain,
+		  user,
+		  nt_errstr(status));
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -1799,11 +1801,10 @@ static NTSTATUS winbindd_dual_pam_auth_samlogon(
 {
 	fstring name_namespace, name_domain, name_user;
 	NTSTATUS result;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	uint32_t flags = 0;
 	uint16_t validation_level = 0;
 	union netr_Validation *validation = NULL;
-	struct netr_SamBaseInfo *base_info = NULL;
 	bool ok;
 
 	DEBUG(10,("winbindd_dual_pam_auth_samlogon\n"));
@@ -1837,16 +1838,16 @@ static NTSTATUS winbindd_dual_pam_auth_samlogon(
 		 * not authoritative (for example on the RODC).
 		 */
 		if (authoritative != 0) {
-			if (NT_STATUS_IS_OK(result)) {
-				result = map_info3_to_validation(
-						mem_ctx,
-						info3,
-						&validation_level,
-						&validation);
-				TALLOC_FREE(info3);
-				if (!NT_STATUS_IS_OK(result)) {
-					goto done;
-				}
+			if (!NT_STATUS_IS_OK(result)) {
+				return result;
+			}
+			result = map_info3_to_validation(mem_ctx,
+							 info3,
+							 &validation_level,
+							 &validation);
+			TALLOC_FREE(info3);
+			if (!NT_STATUS_IS_OK(result)) {
+				return result;
 			}
 
 			goto done;
@@ -1872,98 +1873,14 @@ static NTSTATUS winbindd_dual_pam_auth_samlogon(
 					     &validation_level,
 					     &validation);
 	if (!NT_STATUS_IS_OK(result)) {
-		goto done;
-	}
-
-	/* handle the case where a NT4 DC does not fill in the acct_flags in
-	 * the samlogon reply info3. When accurate info3 is required by the
-	 * caller, we look up the account flags ourselves - gd */
-
-	switch (validation_level) {
-	case 3:
-		base_info = &validation->sam3->base;
-		break;
-	case 6:
-		base_info = &validation->sam6->base;
-		break;
-	default:
-		DBG_ERR("Bad validation level %d", (int)validation_level);
-		result = NT_STATUS_INTERNAL_ERROR;
-		goto done;
-	}
-	if ((request_flags & WBFLAG_PAM_INFO3_TEXT) &&
-	    (base_info->acct_flags == 0))
-	{
-		struct rpc_pipe_client *samr_pipe;
-		struct policy_handle samr_domain_handle, user_pol;
-		union samr_UserInfo *info = NULL;
-		NTSTATUS status_tmp, result_tmp;
-		uint32_t acct_flags;
-		struct dcerpc_binding_handle *b;
-
-		status_tmp = cm_connect_sam(domain, mem_ctx, false,
-					    &samr_pipe, &samr_domain_handle);
-
-		if (!NT_STATUS_IS_OK(status_tmp)) {
-			DEBUG(3, ("could not open handle to SAMR pipe: %s\n",
-				nt_errstr(status_tmp)));
-			goto done;
-		}
-
-		b = samr_pipe->binding_handle;
-
-		status_tmp = dcerpc_samr_OpenUser(b, mem_ctx,
-						  &samr_domain_handle,
-						  MAXIMUM_ALLOWED_ACCESS,
-						  base_info->rid,
-						  &user_pol,
-						  &result_tmp);
-
-		if (!NT_STATUS_IS_OK(status_tmp)) {
-			DEBUG(3, ("could not open user handle on SAMR pipe: %s\n",
-				nt_errstr(status_tmp)));
-			goto done;
-		}
-		if (!NT_STATUS_IS_OK(result_tmp)) {
-			DEBUG(3, ("could not open user handle on SAMR pipe: %s\n",
-				nt_errstr(result_tmp)));
-			goto done;
-		}
-
-		status_tmp = dcerpc_samr_QueryUserInfo(b, mem_ctx,
-						       &user_pol,
-						       16,
-						       &info,
-						       &result_tmp);
-
-		if (any_nt_status_not_ok(status_tmp, result_tmp,
-					 &status_tmp)) {
-			DEBUG(3, ("could not query user info on SAMR pipe: %s\n",
-				nt_errstr(status_tmp)));
-			dcerpc_samr_Close(b, mem_ctx, &user_pol, &result_tmp);
-			goto done;
-		}
-
-		acct_flags = info->info16.acct_flags;
-
-		if (acct_flags == 0) {
-			dcerpc_samr_Close(b, mem_ctx, &user_pol, &result_tmp);
-			goto done;
-		}
-
-		base_info->acct_flags = acct_flags;
-
-		DEBUG(10,("successfully retrieved acct_flags 0x%x\n", acct_flags));
-
-		dcerpc_samr_Close(b, mem_ctx, &user_pol, &result_tmp);
+		return result;
 	}
 
 done:
-	if (NT_STATUS_IS_OK(result)) {
-		*_validation_level = validation_level;
-		*_validation = validation;
-	}
-	return result;
+	*_validation_level = validation_level;
+	*_validation = validation;
+
+	return NT_STATUS_OK;
 }
 
 /*
@@ -2453,6 +2370,13 @@ done:
 		result = NT_STATUS_NO_LOGON_SERVERS;
 	}
 
+	/*
+	 * Here we don't alter
+	 * state->response->data.auth.authoritative based
+	 * on the servers response
+	 * as we don't want a fallback to the local sam
+	 * for interactive PAM logons
+	 */
 	set_auth_errors(state->response, result);
 
 	DEBUG(NT_STATUS_IS_OK(result) ? 5 : 2, ("Plain-text authentication for user %s returned %s (PAM: %d)\n",
@@ -2667,7 +2591,7 @@ enum winbindd_result winbindd_dual_pam_auth_crap(struct winbindd_domain *domain,
 	const char *name_domain = NULL;
 	const char *workstation;
 	uint64_t logon_id = 0;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	uint32_t flags = 0;
 	uint16_t validation_level;
 	union netr_Validation *validation = NULL;
@@ -2740,7 +2664,6 @@ enum winbindd_result winbindd_dual_pam_auth_crap(struct winbindd_domain *domain,
 				       &validation_level,
 				       &validation);
 	if (!NT_STATUS_IS_OK(result)) {
-		state->response->data.auth.authoritative = authoritative;
 		goto done;
 	}
 
@@ -2772,7 +2695,6 @@ enum winbindd_result winbindd_dual_pam_auth_crap(struct winbindd_domain *domain,
 				   "from firewalled domain [%s]\n",
 				   info3->base.account_name.string,
 				   info3->base.logon_domain.string);
-			state->response->data.auth.authoritative = true;
 			result = NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
 			goto done;
 		}
@@ -2794,6 +2716,8 @@ done:
 	}
 
 	set_auth_errors(state->response, result);
+	state->response->data.auth.authoritative = authoritative;
+
 	/*
 	 * Log the winbind pam authentication, the logon_id will tie this to
 	 * any of the logons invoked from this request.

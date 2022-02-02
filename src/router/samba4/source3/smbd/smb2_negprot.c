@@ -96,11 +96,8 @@ enum protocol_types smbd_smb2_protocol_dialect_match(const uint8_t *indyn,
 		uint16_t dialect;
 	} pd[] = {
 		{ PROTOCOL_SMB3_11, SMB3_DIALECT_REVISION_311 },
-		{ PROTOCOL_SMB3_10, SMB3_DIALECT_REVISION_310 },
 		{ PROTOCOL_SMB3_02, SMB3_DIALECT_REVISION_302 },
 		{ PROTOCOL_SMB3_00, SMB3_DIALECT_REVISION_300 },
-		{ PROTOCOL_SMB2_24, SMB2_DIALECT_REVISION_224 },
-		{ PROTOCOL_SMB2_22, SMB2_DIALECT_REVISION_222 },
 		{ PROTOCOL_SMB2_10, SMB2_DIALECT_REVISION_210 },
 		{ PROTOCOL_SMB2_02, SMB2_DIALECT_REVISION_202 },
 	};
@@ -127,10 +124,19 @@ enum protocol_types smbd_smb2_protocol_dialect_match(const uint8_t *indyn,
 	return PROTOCOL_NONE;
 }
 
+struct smbd_smb2_request_process_negprot_state {
+	struct smbd_smb2_request *req;
+	DATA_BLOB outbody;
+	DATA_BLOB outdyn;
+};
+
+static void smbd_smb2_request_process_negprot_mc_done(struct tevent_req *subreq);
+
 NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 {
+	struct smbd_smb2_request_process_negprot_state *state = NULL;
 	struct smbXsrv_connection *xconn = req->xconn;
-	struct smbXsrv_client_global0 *global0 = NULL;
+	struct tevent_req *subreq = NULL;
 	NTSTATUS status;
 	const uint8_t *inbody;
 	const uint8_t *indyn = NULL;
@@ -150,7 +156,12 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 	struct smb2_negotiate_contexts in_c = { .num_contexts = 0, };
 	struct smb2_negotiate_context *in_preauth = NULL;
 	struct smb2_negotiate_context *in_cipher = NULL;
+	struct smb2_negotiate_context *in_sign_algo = NULL;
 	struct smb2_negotiate_contexts out_c = { .num_contexts = 0, };
+	const struct smb311_capabilities default_smb3_capabilities =
+		smb311_capabilities_parse("server",
+			lp_server_smb3_signing_algorithms(),
+			lp_server_smb3_encryption_algorithms());
 	DATA_BLOB out_negotiate_context_blob = data_blob_null;
 	uint32_t out_negotiate_context_offset = 0;
 	uint16_t out_negotiate_context_count = 0;
@@ -217,7 +228,7 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		return smbd_smb2_request_error(req, NT_STATUS_NOT_SUPPORTED);
 	}
 
-	if (protocol >= PROTOCOL_SMB3_10) {
+	if (protocol >= PROTOCOL_SMB3_11) {
 		uint32_t in_negotiate_context_offset = 0;
 		uint16_t in_negotiate_context_count = 0;
 		DATA_BLOB in_negotiate_context_blob = data_blob_null;
@@ -253,14 +264,11 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		in_negotiate_context_blob.length -= ofs;
 
 		status = smb2_negotiate_context_parse(req,
-					in_negotiate_context_blob, &in_c);
+						      in_negotiate_context_blob,
+						      in_negotiate_context_count,
+						      &in_c);
 		if (!NT_STATUS_IS_OK(status)) {
 			return smbd_smb2_request_error(req, status);
-		}
-
-		if (in_negotiate_context_count != in_c.num_contexts) {
-			return smbd_smb2_request_error(req,
-					NT_STATUS_INVALID_PARAMETER);
 		}
 	}
 
@@ -294,11 +302,13 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 
 	in_preauth = smb2_negotiate_context_find(&in_c,
 					SMB2_PREAUTH_INTEGRITY_CAPABILITIES);
-	if (protocol >= PROTOCOL_SMB3_10 && in_preauth == NULL) {
+	if (protocol >= PROTOCOL_SMB3_11 && in_preauth == NULL) {
 		return smbd_smb2_request_error(req, NT_STATUS_INVALID_PARAMETER);
 	}
 	in_cipher = smb2_negotiate_context_find(&in_c,
 					SMB2_ENCRYPTION_CAPABILITIES);
+	in_sign_algo = smb2_negotiate_context_find(&in_c,
+					SMB2_SIGNING_CAPABILITIES);
 
 	/* negprot_spnego() returns a the server guid in the first 16 bytes */
 	negprot_spnego_blob = negprot_spnego(req, xconn);
@@ -334,7 +344,7 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		capabilities |= SMB2_CAP_LEASING;
 	}
 
-	if ((protocol >= PROTOCOL_SMB2_24) &&
+	if ((protocol >= PROTOCOL_SMB3_00) &&
 	    (lp_server_smb_encrypt(-1) != SMB_ENCRYPTION_OFF) &&
 	    (in_capabilities & SMB2_CAP_ENCRYPTION)) {
 		capabilities |= SMB2_CAP_ENCRYPTION;
@@ -446,14 +456,21 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		req->preauth = &req->xconn->smb2.preauth;
 	}
 
+	if (protocol >= PROTOCOL_SMB3_00) {
+		xconn->smb2.server.sign_algo = SMB2_SIGNING_AES128_CMAC;
+	} else {
+		xconn->smb2.server.sign_algo = SMB2_SIGNING_HMAC_SHA256;
+	}
+
 	if ((capabilities & SMB2_CAP_ENCRYPTION) && (in_cipher != NULL)) {
+		const struct smb3_encryption_capabilities *srv_ciphers =
+			&default_smb3_capabilities.encryption;
+		uint16_t srv_preferred_idx = UINT16_MAX;
 		size_t needed = 2;
 		uint16_t cipher_count;
 		const uint8_t *p;
 		uint8_t buf[4];
 		size_t i;
-		bool aes_128_ccm_supported = false;
-		bool aes_128_gcm_supported = false;
 
 		capabilities &= ~SMB2_CAP_ENCRYPTION;
 
@@ -463,7 +480,6 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		}
 
 		cipher_count = SVAL(in_cipher->data.data, 0);
-
 		if (cipher_count == 0) {
 			return smbd_smb2_request_error(req,
 					NT_STATUS_INVALID_PARAMETER);
@@ -478,23 +494,31 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		}
 
 		for (i=0; i < cipher_count; i++) {
+			uint16_t si;
 			uint16_t v;
 
 			v = SVAL(p, 0);
 			p += 2;
 
-			if (v == SMB2_ENCRYPTION_AES128_GCM) {
-				aes_128_gcm_supported = true;
-			}
-			if (v == SMB2_ENCRYPTION_AES128_CCM) {
-				aes_128_ccm_supported = true;
+			for (si = 0; si < srv_ciphers->num_algos; si++) {
+				if (srv_ciphers->algos[si] != v) {
+					continue;
+				}
+
+				/*
+				 * The server ciphers are listed
+				 * with the lowest idx being preferred.
+				 */
+				if (si < srv_preferred_idx) {
+					srv_preferred_idx = si;
+				}
+				break;
 			}
 		}
 
-		if (aes_128_gcm_supported) {
-			xconn->smb2.server.cipher = SMB2_ENCRYPTION_AES128_GCM;
-		} else if (aes_128_ccm_supported) {
-			xconn->smb2.server.cipher = SMB2_ENCRYPTION_AES128_CCM;
+		if (srv_preferred_idx != UINT16_MAX) {
+			xconn->smb2.server.cipher =
+				srv_ciphers->algos[srv_preferred_idx];
 		}
 
 		SSVAL(buf, 0, 1); /* ChiperCount */
@@ -515,7 +539,96 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		xconn->smb2.server.cipher = SMB2_ENCRYPTION_AES128_CCM;
 	}
 
-	if (protocol >= PROTOCOL_SMB2_22 &&
+	if (in_sign_algo != NULL) {
+		const struct smb3_signing_capabilities *srv_sign_algos =
+			&default_smb3_capabilities.signing;
+		uint16_t srv_preferred_idx = UINT16_MAX;
+		size_t needed = 2;
+		uint16_t sign_algo_count;
+		const uint8_t *p;
+		size_t i;
+
+		if (in_sign_algo->data.length < needed) {
+			return smbd_smb2_request_error(req,
+					NT_STATUS_INVALID_PARAMETER);
+		}
+
+		sign_algo_count = SVAL(in_sign_algo->data.data, 0);
+		if (sign_algo_count == 0) {
+			return smbd_smb2_request_error(req,
+					NT_STATUS_INVALID_PARAMETER);
+		}
+
+		p = in_sign_algo->data.data + needed;
+		needed += sign_algo_count * 2;
+
+		if (in_sign_algo->data.length < needed) {
+			return smbd_smb2_request_error(req,
+					NT_STATUS_INVALID_PARAMETER);
+		}
+
+		for (i=0; i < sign_algo_count; i++) {
+			uint16_t si;
+			uint16_t v;
+
+			v = SVAL(p, 0);
+			p += 2;
+
+			for (si = 0; si < srv_sign_algos->num_algos; si++) {
+				if (srv_sign_algos->algos[si] != v) {
+					continue;
+				}
+
+				/*
+				 * The server sign_algos are listed
+				 * with the lowest idx being preferred.
+				 */
+				if (si < srv_preferred_idx) {
+					srv_preferred_idx = si;
+				}
+				break;
+			}
+		}
+
+		/*
+		 * If we found a match announce it
+		 * otherwise we'll keep the default
+		 * of SMB2_SIGNING_AES128_CMAC
+		 */
+		if (srv_preferred_idx != UINT16_MAX) {
+			uint8_t buf[4];
+
+			xconn->smb2.server.sign_algo =
+				srv_sign_algos->algos[srv_preferred_idx];
+
+			SSVAL(buf, 0, 1); /* SigningAlgorithmCount */
+			SSVAL(buf, 2, xconn->smb2.server.sign_algo);
+
+			status = smb2_negotiate_context_add(
+				req,
+				&out_c,
+				SMB2_SIGNING_CAPABILITIES,
+				buf,
+				sizeof(buf));
+			if (!NT_STATUS_IS_OK(status)) {
+				return smbd_smb2_request_error(req, status);
+			}
+		}
+	}
+
+	status = smb311_capabilities_check(&default_smb3_capabilities,
+					   "smb2srv_negprot",
+					   DBGLVL_NOTICE,
+					   NT_STATUS_INVALID_PARAMETER,
+					   "server",
+					   protocol,
+					   xconn->smb2.server.sign_algo,
+					   xconn->smb2.server.cipher);
+	if (!NT_STATUS_IS_OK(status)) {
+		return smbd_smb2_request_error(req, status);
+	}
+
+	if (protocol >= PROTOCOL_SMB3_00 &&
 	    xconn->client->server_multi_channel_enabled)
 	{
 		if (in_capabilities & SMB2_CAP_MULTI_CHANNEL) {
@@ -675,38 +788,83 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		return smbd_smb2_request_done(req, outbody, &outdyn);
 	}
 
-	status = smb2srv_client_lookup_global(xconn->client,
-					      xconn->smb2.client.guid,
-					      req, &global0);
-	/*
-	 * TODO: check for races...
-	 */
-	if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECTID_NOT_FOUND)) {
+	state = talloc_zero(req, struct smbd_smb2_request_process_negprot_state);
+	if (state == NULL) {
+		return smbd_smb2_request_error(req, NT_STATUS_NO_MEMORY);
+	}
+	*state = (struct smbd_smb2_request_process_negprot_state) {
+		.req = req,
+		.outbody = outbody,
+		.outdyn = outdyn,
+	};
+
+	subreq = smb2srv_client_mc_negprot_send(state,
+						req->xconn->client->raw_ev_ctx,
+						req);
+	if (subreq == NULL) {
+		return smbd_smb2_request_error(req, NT_STATUS_NO_MEMORY);
+	}
+	tevent_req_set_callback(subreq,
+				smbd_smb2_request_process_negprot_mc_done,
+				state);
+	return NT_STATUS_OK;
+}
+
+static void smbd_smb2_request_process_negprot_mc_done(struct tevent_req *subreq)
+{
+	struct smbd_smb2_request_process_negprot_state *state =
+		tevent_req_callback_data(subreq,
+		struct smbd_smb2_request_process_negprot_state);
+	struct smbd_smb2_request *req = state->req;
+	struct smbXsrv_connection *xconn = req->xconn;
+	NTSTATUS status;
+
+	status = smb2srv_client_mc_negprot_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_MESSAGE_RETRIEVED)) {
 		/*
-		 * This stores the new client information in
-		 * smbXsrv_client_global.tdb
+		 * The connection was passed to another process
 		 */
-		xconn->client->global->client_guid =
-			xconn->smb2.client.guid;
-		status = smbXsrv_client_update(xconn->client);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-
-		xconn->smb2.client.guid_verified = true;
-	} else if (NT_STATUS_IS_OK(status)) {
-		status = smb2srv_client_connection_pass(req,
-							global0);
-		if (!NT_STATUS_IS_OK(status)) {
-			return smbd_smb2_request_error(req, status);
-		}
-
 		smbd_server_connection_terminate(xconn,
 						 "passed connection");
-		return NT_STATUS_OBJECTID_EXISTS;
-	} else {
-		return smbd_smb2_request_error(req, status);
+		/*
+		 * smbd_server_connection_terminate() should not return!
+		 */
+		smb_panic(__location__);
+		return;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		status = smbd_smb2_request_error(req, status);
+		if (NT_STATUS_IS_OK(status)) {
+			return;
+		}
+
+		/*
+		 * The connection was passed to another process
+		 */
+		smbd_server_connection_terminate(xconn, nt_errstr(status));
+		/*
+		 * smbd_server_connection_terminate() should not return!
+		 */
+		smb_panic(__location__);
+		return;
 	}
 
-	return smbd_smb2_request_done(req, outbody, &outdyn);
+	/*
+	 * We're the first connection...
+	 */
+	status = smbd_smb2_request_done(req, state->outbody, &state->outdyn);
+	if (NT_STATUS_IS_OK(status)) {
+		return;
+	}
+
+	/*
+	 * The connection was passed to another process
+	 */
+	smbd_server_connection_terminate(xconn, nt_errstr(status));
+	/*
+	 * smbd_server_connection_terminate() should not return!
+	 */
+	smb_panic(__location__);
+	return;
 }

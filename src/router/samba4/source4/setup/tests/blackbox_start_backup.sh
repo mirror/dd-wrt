@@ -53,10 +53,10 @@ start_backup()
 
     # redirect logs to stderr (which we'll then redirect to stdout so we can
     # capture it in a bash variable)
-    OPTS="$OPTS --debug-stderr"
+    OPTS="$OPTS --debug-stdout"
 
     # start samba and capture the debug output
-    OUTPUT=$($BINDIR/samba -s $DBPATH/etc/smb.conf $OPTS 2>&1)
+    OUTPUT=$($BINDIR/samba --configfile=$DBPATH/etc/smb.conf $OPTS 2>&1)
     if [ $? -eq 0 ] ; then
         echo "ERROR: Samba should not have started successfully"
         return 1

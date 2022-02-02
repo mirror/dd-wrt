@@ -35,42 +35,9 @@
 #define FAKE_ACL_ACCESS_XATTR "system.fake_access_acl"
 #define FAKE_ACL_DEFAULT_XATTR "system.fake_default_acl"
 
-static int fake_acls_uid(vfs_handle_struct *handle,
-			 struct smb_filename *smb_fname,
-			 uid_t *uid)
-{
-	ssize_t size;
-	uint8_t uid_buf[4];
-	size = SMB_VFS_NEXT_GETXATTR(handle, smb_fname,
-			FAKE_UID, uid_buf, sizeof(uid_buf));
-	if (size == -1 && errno == ENOATTR) {
-		return 0;
-	}
-	if (size != 4) {
-		return -1;
-	}
-	*uid = IVAL(uid_buf, 0);
-	return 0;
-}
-
-static int fake_acls_gid(vfs_handle_struct *handle,
-			 struct smb_filename *smb_fname,
-			 uid_t *gid)
-{
-	ssize_t size;
-	uint8_t gid_buf[4];
-
-	size = SMB_VFS_NEXT_GETXATTR(handle, smb_fname,
-			FAKE_GID, gid_buf, sizeof(gid_buf));
-	if (size == -1 && errno == ENOATTR) {
-		return 0;
-	}
-	if (size != 4) {
-		return -1;
-	}
-	*gid = IVAL(gid_buf, 0);
-	return 0;
-}
+struct in_pathref_data {
+	bool calling_pathref_fsp;
+};
 
 static int fake_acls_fuid(vfs_handle_struct *handle,
 			   files_struct *fsp,
@@ -112,40 +79,105 @@ static int fake_acls_stat(vfs_handle_struct *handle,
 			   struct smb_filename *smb_fname)
 {
 	int ret = -1;
+	struct in_pathref_data *prd = NULL;
+
+	SMB_VFS_HANDLE_GET_DATA(handle,
+				prd,
+				struct in_pathref_data,
+				return -1);
 
 	ret = SMB_VFS_NEXT_STAT(handle, smb_fname);
 	if (ret == 0) {
-		TALLOC_CTX *frame = talloc_stackframe();
-		char *path;
-		struct smb_filename smb_fname_base = {
-			.base_name = smb_fname->base_name
-		};
-		NTSTATUS status;
-		/*
-		 * As we're calling getxattr directly here
-		 * we need to use only the base_name, not
-		 * the full name containing any stream name.
-		 */
-		status = get_full_smb_filename(frame, &smb_fname_base, &path);
-		if (!NT_STATUS_IS_OK(status)) {
-			errno = map_errno_from_nt_status(status);
-			TALLOC_FREE(frame);
-			return -1;
+		struct smb_filename *smb_fname_cp = NULL;
+		struct files_struct *fsp = NULL;
+
+		if (smb_fname->fsp != NULL) {
+			fsp = smb_fname->fsp;
+			if (fsp->base_fsp != NULL) {
+				/*
+				 * This is a stream pathname. Use
+				 * the base_fsp to get the xattr.
+				 */
+				fsp = fsp->base_fsp;
+			}
+		} else {
+			NTSTATUS status;
+
+			/*
+			 * Ensure openat_pathref_fsp()
+			 * can't recurse into fake_acls_stat().
+			 * openat_pathref_fsp() doesn't care
+			 * about the uid/gid values, it only
+			 * wants a valid/invalid stat answer
+			 * and we know smb_fname exists as
+			 * the SMB_VFS_NEXT_STAT() returned
+			 * zero above.
+			 */
+			if (prd->calling_pathref_fsp) {
+				return 0;
+			}
+
+			/*
+			 * openat_pathref_fsp() expects a talloc'ed
+			 * smb_filename. stat can be passed a struct
+			 * from the stack. Make a talloc'ed copy
+			 * so openat_pathref_fsp() can add its
+			 * destructor.
+			 */
+			smb_fname_cp = cp_smb_filename(talloc_tos(),
+						       smb_fname);
+			if (smb_fname_cp == NULL) {
+				errno = ENOMEM;
+				return -1;
+			}
+
+			/* Recursion guard. */
+			prd->calling_pathref_fsp = true;
+			status = openat_pathref_fsp(handle->conn->cwd_fsp,
+						    smb_fname_cp);
+			/* End recursion guard. */
+			prd->calling_pathref_fsp = false;
+
+			if (!NT_STATUS_IS_OK(status)) {
+				/*
+				 * Ignore errors here. We know
+				 * the path exists (the SMB_VFS_NEXT_STAT()
+				 * above succeeded. So being unable to
+				 * open a pathref fsp can be due to a
+				 * range of errors (startup path beginning
+				 * with '/' for example, path = ".." when
+				 * enumerating a directory. Just treat this
+				 * the same way as the path not having the
+				 * FAKE_UID or FAKE_GID EA's present. For the
+				 * test purposes of this module (fake NT ACLs
+				 * from windows clients) this is close enough.
+				 * Just report for debugging purposes.
+				 */
+				DBG_DEBUG("Unable to get pathref fsp on %s. "
+					  "Error %s\n",
+					  smb_fname_str_dbg(smb_fname_cp),
+					  nt_errstr(status));
+				TALLOC_FREE(smb_fname_cp);
+				return 0;
+			}
+			fsp = smb_fname_cp->fsp;
 		}
-		
-		ret = fake_acls_uid(handle, &smb_fname_base,
-					&smb_fname->st.st_ex_uid);
+
+		ret = fake_acls_fuid(handle,
+				     fsp,
+				     &smb_fname->st.st_ex_uid);
 		if (ret != 0) {
-			TALLOC_FREE(frame);
+			TALLOC_FREE(smb_fname_cp);
 			return ret;
 		}
-		ret = fake_acls_gid(handle, &smb_fname_base,
-					&smb_fname->st.st_ex_gid);
+		ret = fake_acls_fgid(handle,
+				     fsp,
+				     &smb_fname->st.st_ex_gid);
 		if (ret != 0) {
-			TALLOC_FREE(frame);
+			TALLOC_FREE(smb_fname_cp);
 			return ret;
 		}
-		TALLOC_FREE(frame);
+		TALLOC_FREE(smb_fname_cp);
 	}
 
 	return ret;
@@ -155,39 +187,63 @@ static int fake_acls_lstat(vfs_handle_struct *handle,
 			   struct smb_filename *smb_fname)
 {
 	int ret = -1;
+	struct in_pathref_data *prd = NULL;
+
+	SMB_VFS_HANDLE_GET_DATA(handle,
+				prd,
+				struct in_pathref_data,
+				return -1);
 
 	ret = SMB_VFS_NEXT_LSTAT(handle, smb_fname);
 	if (ret == 0) {
-		TALLOC_CTX *frame = talloc_stackframe();
-		char *path;
-		struct smb_filename smb_fname_base = {
-			.base_name = smb_fname->base_name
-		};
+		struct smb_filename *smb_fname_base = NULL;
+		SMB_STRUCT_STAT sbuf = { 0 };
 		NTSTATUS status;
+
 		/*
-		 * As we're calling getxattr directly here
-		 * we need to use only the base_name, not
-		 * the full name containing any stream name.
+		 * Ensure synthetic_pathref()
+		 * can't recurse into fake_acls_lstat().
+		 * synthetic_pathref() doesn't care
+		 * about the uid/gid values, it only
+		 * wants a valid/invalid stat answer
+		 * and we know smb_fname exists as
+		 * the SMB_VFS_NEXT_LSTAT() returned
+		 * zero above.
 		 */
-		status = get_full_smb_filename(frame, &smb_fname_base, &path);
-		if (!NT_STATUS_IS_OK(status)) {
-			errno = map_errno_from_nt_status(status);
-			TALLOC_FREE(frame);
-			return -1;
+		if (prd->calling_pathref_fsp) {
+			return 0;
 		}
 
-		/* This isn't quite right (calling getxattr not
-		 * lgetxattr), but for the test purposes of this
-		 * module (fake NT ACLs from windows clients), it is
-		 * close enough.  We removed the l*xattr functions
-		 * because linux doesn't support using them, but we
-		 * could fake them in xattr_tdb if we really wanted
-		 * to.  We ignore errors because the link might not point anywhere */
-		fake_acls_uid(handle, &smb_fname_base,
-			&smb_fname->st.st_ex_uid);
-		fake_acls_gid(handle, &smb_fname_base,
-			&smb_fname->st.st_ex_gid);
-		TALLOC_FREE(frame);
+		/* Recursion guard. */
+		prd->calling_pathref_fsp = true;
+		status = synthetic_pathref(talloc_tos(),
+					   handle->conn->cwd_fsp,
+					   smb_fname->base_name,
+					   NULL,
+					   &sbuf,
+					   smb_fname->twrp,
+					   0, /* we want stat, not lstat. */
+					   &smb_fname_base);
+		/* End recursion guard. */
+		prd->calling_pathref_fsp = false;
+		if (NT_STATUS_IS_OK(status)) {
+			/*
+			 * This isn't quite right (calling fgetxattr not
+			 * lgetxattr), but for the test purposes of this
+			 * module (fake NT ACLs from windows clients), it is
+			 * close enough.  We removed the l*xattr functions
+			 * because linux doesn't support using them, but we
+			 * could fake them in xattr_tdb if we really wanted
+			 * to. We ignore errors because the link might not
+			 * point anywhere */
+			fake_acls_fuid(handle,
+				       smb_fname_base->fsp,
+				       &smb_fname->st.st_ex_uid);
+			fake_acls_fgid(handle,
+				       smb_fname_base->fsp,
+				       &smb_fname->st.st_ex_gid);
+		}
+		TALLOC_FREE(smb_fname_base);
 	}
 
 	return ret;
@@ -247,16 +303,17 @@ static DATA_BLOB fake_acls_acl2blob(TALLOC_CTX *mem_ctx, SMB_ACL_T acl)
 	return blob;
 }
 
-static SMB_ACL_T fake_acls_sys_acl_get_file(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T type,
-				TALLOC_CTX *mem_ctx)
+static SMB_ACL_T fake_acls_sys_acl_get_fd(struct vfs_handle_struct *handle,
+					  files_struct *fsp,
+					  SMB_ACL_TYPE_T type,
+					  TALLOC_CTX *mem_ctx)
 {
 	DATA_BLOB blob = data_blob_null;
 	ssize_t length;
 	const char *name = NULL;
 	struct smb_acl_t *acl = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
+		
 	switch (type) {
 	case SMB_ACL_TYPE_ACCESS:
 		name = FAKE_ACL_ACCESS_XATTR;
@@ -264,41 +321,16 @@ static SMB_ACL_T fake_acls_sys_acl_get_file(struct vfs_handle_struct *handle,
 	case SMB_ACL_TYPE_DEFAULT:
 		name = FAKE_ACL_DEFAULT_XATTR;
 		break;
+	default:
+		DBG_ERR("Illegal ACL type %d\n", (int)type);
+		break;
 	}
 
-	do {
-		blob.length += 1000;
-		blob.data = talloc_realloc(frame, blob.data, uint8_t, blob.length);
-		if (!blob.data) {
-			errno = ENOMEM;
-			TALLOC_FREE(frame);
-			return NULL;
-		}
-		length = SMB_VFS_NEXT_GETXATTR(handle, smb_fname,
-				name, blob.data, blob.length);
-		blob.length = length;
-	} while (length == -1 && errno == ERANGE);
-	if (length == -1 && errno == ENOATTR) {
+	if (name == NULL) {
 		TALLOC_FREE(frame);
 		return NULL;
 	}
-	if (length != -1) {
-		acl = fake_acls_blob2acl(&blob, mem_ctx);
-	}
-	TALLOC_FREE(frame);
-	return acl;
-}
 
-static SMB_ACL_T fake_acls_sys_acl_get_fd(struct vfs_handle_struct *handle,
-					  files_struct *fsp,
-					  TALLOC_CTX *mem_ctx)
-{
-	DATA_BLOB blob = data_blob_null;
-	ssize_t length;
-	const char *name = FAKE_ACL_ACCESS_XATTR;
-	struct smb_acl_t *acl = NULL;
-	TALLOC_CTX *frame = talloc_stackframe();
-		
 	do {
 		blob.length += 1000;
 		blob.data = talloc_realloc(frame, blob.data, uint8_t, blob.length);
@@ -319,36 +351,6 @@ static SMB_ACL_T fake_acls_sys_acl_get_fd(struct vfs_handle_struct *handle,
 	}
 	TALLOC_FREE(frame);
 	return acl;
-}
-
-
-static int fake_acls_sys_acl_set_file(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			SMB_ACL_TYPE_T acltype,
-			SMB_ACL_T theacl)
-{
-	int ret;
-	const char *name = NULL;
-	TALLOC_CTX *frame = talloc_stackframe();
-	DATA_BLOB blob = fake_acls_acl2blob(frame, theacl);
-	if (!blob.data) {
-		DEBUG(0, ("Failed to convert ACL to linear blob for xattr storage\n"));
-		TALLOC_FREE(frame);
-		errno = EINVAL;
-		return -1;
-	}
-	switch (acltype) {
-	case SMB_ACL_TYPE_ACCESS:
-		name = FAKE_ACL_ACCESS_XATTR;
-		break;
-	case SMB_ACL_TYPE_DEFAULT:
-		name = FAKE_ACL_DEFAULT_XATTR;
-		break;
-	}
-	ret = SMB_VFS_NEXT_SETXATTR(handle, smb_fname,
-			name, blob.data, blob.length, 0);
-	TALLOC_FREE(frame);
-	return ret;
 }
 
 static int fake_acls_sys_acl_set_fd(vfs_handle_struct *handle,
@@ -384,40 +386,23 @@ static int fake_acls_sys_acl_set_fd(vfs_handle_struct *handle,
 	return ret;
 }
 
-static int fake_acls_sys_acl_delete_def_file(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname_in)
+static int fake_acls_sys_acl_delete_def_fd(vfs_handle_struct *handle,
+			struct files_struct *fsp)
 {
 	int ret;
 	const char *name = FAKE_ACL_DEFAULT_XATTR;
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct smb_filename *smb_fname = cp_smb_filename_nostream(talloc_tos(),
-						smb_fname_in);
 
-	if (smb_fname == NULL) {
-		TALLOC_FREE(frame);
-		errno = ENOMEM;
-		return -1;
-	}
-
-	ret = SMB_VFS_NEXT_STAT(handle, smb_fname);
-	if (ret == -1) {
-		TALLOC_FREE(frame);
-		return -1;
-	}
-
-	if (!S_ISDIR(smb_fname->st.st_ex_mode)) {
+	if (!fsp->fsp_flags.is_directory) {
 		errno = EINVAL;
-		TALLOC_FREE(frame);
 		return -1;
 	}
 
-	ret = SMB_VFS_NEXT_REMOVEXATTR(handle, smb_fname, name);
+	ret = SMB_VFS_NEXT_FREMOVEXATTR(handle, fsp, name);
 	if (ret == -1 && errno == ENOATTR) {
 		ret = 0;
 		errno = 0;
 	}
 
-	TALLOC_FREE(frame);
 	return ret;
 }
 
@@ -444,8 +429,8 @@ static int fake_acls_lchown(vfs_handle_struct *handle,
 		 * to.
 		 */
 		SIVAL(id_buf, 0, uid);
-		ret = SMB_VFS_NEXT_SETXATTR(handle,
-				smb_fname,
+		ret = SMB_VFS_NEXT_FSETXATTR(handle,
+				smb_fname->fsp,
 				FAKE_UID,
 				id_buf,
 				sizeof(id_buf),
@@ -456,8 +441,8 @@ static int fake_acls_lchown(vfs_handle_struct *handle,
 	}
 	if (gid != -1) {
 		SIVAL(id_buf, 0, gid);
-		ret = SMB_VFS_NEXT_SETXATTR(handle,
-				smb_fname,
+		ret = SMB_VFS_NEXT_FSETXATTR(handle,
+				smb_fname->fsp,
 				FAKE_GID,
 				id_buf,
 				sizeof(id_buf),
@@ -621,62 +606,6 @@ static int fake_acl_process_chmod(SMB_ACL_T *pp_the_acl,
 	return 0;
 }
 
-static int fake_acls_chmod(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname_in,
-			mode_t mode)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	int ret = -1;
-	SMB_ACL_T the_acl = NULL;
-	struct smb_filename *smb_fname = cp_smb_filename_nostream(talloc_tos(),
-						smb_fname_in);
-
-	if (smb_fname == NULL) {
-		TALLOC_FREE(frame);
-		return -1;
-	}
-
-	/*
-	 * Passthrough first to preserve the
-	 * S_ISUID | S_ISGID | S_ISVTX
-	 * bits.
-	 */
-
-	ret = SMB_VFS_NEXT_CHMOD(handle,
-				smb_fname,
-				mode);
-	if (ret == -1) {
-		TALLOC_FREE(frame);
-		return -1;
-	}
-
-	the_acl = fake_acls_sys_acl_get_file(handle,
-				smb_fname,
-				SMB_ACL_TYPE_ACCESS,
-				talloc_tos());
-	if (the_acl == NULL) {
-		TALLOC_FREE(frame);
-		if (errno == ENOATTR) {
-			/* No ACL on this file. Just passthrough. */
-			return 0;
-		}
-		return -1;
-	}
-	ret = fake_acl_process_chmod(&the_acl,
-			smb_fname->st.st_ex_uid,
-			mode);
-	if (ret == -1) {
-		TALLOC_FREE(frame);
-		return -1;
-	}
-	ret = fake_acls_sys_acl_set_file(handle,
-				smb_fname,
-				SMB_ACL_TYPE_ACCESS,
-				the_acl);
-	TALLOC_FREE(frame);
-	return ret;
-}
-
 static int fake_acls_fchmod(vfs_handle_struct *handle,
 			files_struct *fsp,
 			mode_t mode)
@@ -701,6 +630,7 @@ static int fake_acls_fchmod(vfs_handle_struct *handle,
 
 	the_acl = fake_acls_sys_acl_get_fd(handle,
 				fsp,
+				SMB_ACL_TYPE_ACCESS,
 				talloc_tos());
 	if (the_acl == NULL) {
 		TALLOC_FREE(frame);
@@ -725,18 +655,48 @@ static int fake_acls_fchmod(vfs_handle_struct *handle,
 	return ret;
 }
 
+static int fake_acls_connect(struct vfs_handle_struct *handle,
+			     const char *service,
+			     const char *user)
+{
+	struct in_pathref_data *prd = NULL;
+	int ret;
+
+	ret = SMB_VFS_NEXT_CONNECT(handle, service, user);
+	if (ret < 0) {
+		return ret;
+	}
+	/*
+	 * Create a struct can tell us if we're recursing
+	 * into open_pathref_fsp() in this module. This will
+	 * go away once we have SMB_VFS_STATX() and we will
+	 * have a way for a caller to as for specific stat
+	 * fields in a granular way. Then we will know exactly
+	 * what fields the caller wants, so we won't have to
+	 * fill in everything.
+	 */
+	prd = talloc_zero(handle->conn, struct in_pathref_data);
+	if (prd == NULL) {
+		return -1;
+	}
+	SMB_VFS_HANDLE_SET_DATA(handle,
+				prd,
+				NULL,
+				struct in_pathref_data,
+				return -1);
+	return 0;
+}
+
 static struct vfs_fn_pointers vfs_fake_acls_fns = {
+	.connect_fn = fake_acls_connect,
 	.stat_fn = fake_acls_stat,
 	.lstat_fn = fake_acls_lstat,
 	.fstat_fn = fake_acls_fstat,
-	.chmod_fn = fake_acls_chmod,
 	.fchmod_fn = fake_acls_fchmod,
-	.sys_acl_get_file_fn = fake_acls_sys_acl_get_file,
 	.sys_acl_get_fd_fn = fake_acls_sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = fake_acls_sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = fake_acls_sys_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = fake_acls_sys_acl_delete_def_fd,
 	.lchown_fn = fake_acls_lchown,
 	.fchown_fn = fake_acls_fchown,
 	

@@ -33,6 +33,7 @@
 #include "dns_server/dnsserver_common.h"
 #include "rpc_server/dnsserver/dnsserver.h"
 #include "lib/util/dlinklist.h"
+#include "system/network.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_DNS
@@ -214,7 +215,7 @@ WERROR dns_common_lookup(struct ldb_context *samdb,
 				 * a tombstone, this will be used
 				 * in dns_common_replace()
 				 */
-				.data.timestamp = 1,
+				.data.EntombedTime = 1,
 			};
 
 			*tombstoned = true;
@@ -636,13 +637,16 @@ static int rec_cmp(const struct dnsp_DnssrvRpcRecord *r1,
 {
 	if (r1->wType != r2->wType) {
 		/*
-		 * The records are sorted with higher types first
+		 * The records are sorted with higher types first,
+		 * which puts tombstones (type 0) last.
 		 */
 		return r2->wType - r1->wType;
 	}
-
 	/*
-	 * Then we need to sort from the oldest to newest timestamp
+	 * Then we need to sort from the oldest to newest timestamp.
+	 *
+	 * Note that dwTimeStamp == 0 (never expiring) records come first,
+	 * then the ones whose expiry is soonest.
 	 */
 	return r1->dwTimeStamp - r2->dwTimeStamp;
 }
@@ -941,7 +945,7 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 	bool become_tombstoned = false;
 	struct ldb_dn *zone_dn = NULL;
 	struct dnsserver_zoneinfo *zoneinfo = NULL;
-	NTTIME t;
+	uint32_t t;
 
 	msg = ldb_msg_new(mem_ctx);
 	W_ERROR_HAVE_NO_MEMORY(msg);
@@ -989,12 +993,12 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 	 * which might be used for the tombstone marker
 	 */
 	el->values = talloc_zero_array(el, struct ldb_val, MAX(1, rec_count));
-	if (rec_count > 0) {
-		if (el->values == NULL) {
-			werr = WERR_NOT_ENOUGH_MEMORY;
-			goto exit;
-		}
+	if (el->values == NULL) {
+		werr = WERR_NOT_ENOUGH_MEMORY;
+		goto exit;
+	}
 
+	if (rec_count > 1) {
 		/*
 		 * We store a sorted list with the high wType values first
 		 * that's what windows does. It also simplifies the
@@ -1008,16 +1012,33 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 		enum ndr_err_code ndr_err;
 
 		if (records[i].wType == DNS_TYPE_TOMBSTONE) {
-			if (records[i].data.timestamp != 0) {
+			/*
+			 * There are two things that could be going on here.
+			 *
+			 * 1. We use a tombstone with EntombedTime == 0 for
+			 * passing deletion messages through the stack, and
+			 * this is the place we filter them out to perform
+			 * that deletion.
+			 *
+			 * 2. This node is tombstoned, with no records except
+			 * for a single tombstone, and it is just waiting to
+			 * disappear. In this case, unless the caller has
+			 * added a record, rec_count should be 1, and
+			 * el->num_values will end up at 0, and we will make
+			 * no changes. But if the caller has added a record,
+			 * we need to un-tombstone the node.
+			 *
+			 * It is not possible to add an explicit tombstone
+			 * record.
+			 */
+			if (records[i].data.EntombedTime != 0) {
 				was_tombstoned = true;
 			}
 			continue;
 		}
 
 		if (zoneinfo->fAging == 1 && records[i].dwTimeStamp != 0) {
-			unix_to_nt_time(&t, time(NULL));
-			t /= 10 * 1000 * 1000;
-			t /= 3600;
+			t = unix_to_dns_timestamp(time(NULL));
 			if (t - records[i].dwTimeStamp >
 			    zoneinfo->dwNoRefreshInterval) {
 				records[i].dwTimeStamp = t;
@@ -1036,6 +1057,11 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 	}
 
 	if (needs_add) {
+		/*
+		 * This is a new dnsNode, which simplifies everything as we
+		 * know there is nothing to delete or change. We add the
+		 * records and get out.
+		 */
 		if (el->num_values == 0) {
 			werr = WERR_OK;
 			goto exit;
@@ -1053,11 +1079,15 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 			goto exit;
 		}
 
-		return WERR_OK;
+		werr = WERR_OK;
 		goto exit;
 	}
 
 	if (el->num_values == 0) {
+		/*
+		 * We get here if there are no records or all the records were
+		 * tombstones.
+		 */
 		struct dnsp_DnssrvRpcRecord tbs;
 		struct ldb_val *v = &el->values[el->num_values];
 		enum ndr_err_code ndr_err;
@@ -1076,7 +1106,7 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 		tbs = (struct dnsp_DnssrvRpcRecord) {
 			.wType = DNS_TYPE_TOMBSTONE,
 			.dwSerial = serial,
-			.data.timestamp = timeval_to_nttime(&tv),
+			.data.EntombedTime = timeval_to_nttime(&tv),
 		};
 
 		ndr_err = ndr_push_struct_blob(v, el->values, &tbs,
@@ -1116,6 +1146,7 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 
 	werr = WERR_OK;
 exit:
+	talloc_free(msg);
 	DNS_COMMON_LOG_OPERATION(
 		win_errstr(werr),
 		&start,
@@ -1268,6 +1299,86 @@ WERROR dns_common_name2dn(struct ldb_context *samdb,
 	return WERR_OK;
 }
 
+
+/*
+  see if two dns records match
+ */
+
+
+bool dns_record_match(struct dnsp_DnssrvRpcRecord *rec1,
+		      struct dnsp_DnssrvRpcRecord *rec2)
+{
+	int i;
+	struct in6_addr rec1_in_addr6;
+	struct in6_addr rec2_in_addr6;
+
+	if (rec1->wType != rec2->wType) {
+		return false;
+	}
+
+	/* see if the data matches */
+	switch (rec1->wType) {
+	case DNS_TYPE_A:
+		return strcmp(rec1->data.ipv4, rec2->data.ipv4) == 0;
+	case DNS_TYPE_AAAA: {
+		int ret;
+
+		ret = inet_pton(AF_INET6, rec1->data.ipv6, &rec1_in_addr6);
+		if (ret != 1) {
+			return false;
+		}
+		ret = inet_pton(AF_INET6, rec2->data.ipv6, &rec2_in_addr6);
+		if (ret != 1) {
+			return false;
+		}
+
+		return memcmp(&rec1_in_addr6, &rec2_in_addr6, sizeof(rec1_in_addr6)) == 0;
+	}
+	case DNS_TYPE_CNAME:
+		return dns_name_equal(rec1->data.cname, rec2->data.cname);
+	case DNS_TYPE_TXT:
+		if (rec1->data.txt.count != rec2->data.txt.count) {
+			return false;
+		}
+		for (i = 0; i < rec1->data.txt.count; i++) {
+			if (strcmp(rec1->data.txt.str[i], rec2->data.txt.str[i]) != 0) {
+				return false;
+			}
+		}
+		return true;
+	case DNS_TYPE_PTR:
+		return dns_name_equal(rec1->data.ptr, rec2->data.ptr);
+	case DNS_TYPE_NS:
+		return dns_name_equal(rec1->data.ns, rec2->data.ns);
+
+	case DNS_TYPE_SRV:
+		return rec1->data.srv.wPriority == rec2->data.srv.wPriority &&
+			rec1->data.srv.wWeight  == rec2->data.srv.wWeight &&
+			rec1->data.srv.wPort    == rec2->data.srv.wPort &&
+			dns_name_equal(rec1->data.srv.nameTarget, rec2->data.srv.nameTarget);
+
+	case DNS_TYPE_MX:
+		return rec1->data.mx.wPriority == rec2->data.mx.wPriority &&
+			dns_name_equal(rec1->data.mx.nameTarget, rec2->data.mx.nameTarget);
+
+	case DNS_TYPE_SOA:
+		return dns_name_equal(rec1->data.soa.mname, rec2->data.soa.mname) &&
+			dns_name_equal(rec1->data.soa.rname, rec2->data.soa.rname) &&
+			rec1->data.soa.serial == rec2->data.soa.serial &&
+			rec1->data.soa.refresh == rec2->data.soa.refresh &&
+			rec1->data.soa.retry == rec2->data.soa.retry &&
+			rec1->data.soa.expire == rec2->data.soa.expire &&
+			rec1->data.soa.minimum == rec2->data.soa.minimum;
+	case DNS_TYPE_TOMBSTONE:
+		return true;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+
 static int dns_common_sort_zones(struct ldb_message **m1, struct ldb_message **m2)
 {
 	const char *n1, *n2;
@@ -1393,4 +1504,85 @@ bool dns_name_equal(const char *name1, const char *name2)
 		return false;
 	}
 	return strncasecmp(name1, name2, len1) == 0;
+}
+
+
+/*
+ * Convert unix time to a DNS timestamp
+ * uint32 hours in the NTTIME epoch
+ *
+ * This uses unix_to_nt_time() which can return special flag NTTIMEs like
+ * UINT64_MAX (0xFFF...) or NTTIME_MAX (0x7FF...), which will convert to
+ * distant future timestamps; or 0 as a flag value, meaning a 1601 timestamp,
+ * which is used to indicate a record does not expire.
+ *
+ * As we don't generally check for these special values in NTTIME conversions,
+ * we also don't check here, but for the benefit of people encountering these
+ * timestamps and searching for their origin, here is a list:
+ *
+ **  TIME_T_MAX
+ *
+ * Even if time_t is 32 bit, this will become NTTIME_MAX (a.k.a INT64_MAX,
+ * 0x7fffffffffffffff) in 100ns units. That translates to 256204778 hours
+ * since 1601, which converts back to 9223372008000000000 or
+ * 0x7ffffff9481f1000. It will present as 30828-09-14 02:00:00, around 48
+ * minutes earlier than NTTIME_MAX.
+ *
+ **  0, the start of the unix epoch, 1970-01-01 00:00:00
+ *
+ * This is converted into 0 in the Windows epoch, 1601-01-01 00:00:00 which is
+ * clearly the same whether you count in 100ns units or hours. In DNS record
+ * timestamps this is a flag meaning the record will never expire.
+ *
+ **  (time_t)-1, such as what *might* mean 1969-12-31 23:59:59
+ *
+ * This becomes (NTTIME)-1ULL a.k.a. UINT64_MAX, 0xffffffffffffffff thence
+ * 512409557 in hours since 1601. That in turn is 0xfffffffaf2028800 or
+ * 18446744052000000000 in NTTIME (rounded to the hour), which might be
+ * presented as -21709551616 or -0x50dfd7800, because NTITME is not completely
+ * dedicated to being unsigned. If it gets shown as a year, it will be around
+ * 60055.
+ *
+ **  Other negative time_t values (e.g. 1969-05-29).
+ *
+ * The meaning of these is somewhat undefined, but in any case they will
+ * translate perfectly well into the same dates in NTTIME.
+ *
+ **  Notes
+ *
+ * There are dns timestamps that exceed the range of NTTIME (up to 488356 AD),
+ * but it is not possible for this function to produce them.
+ *
+ * It is plausible that it was at midnight on 1601-01-01, in London, that
+ * Shakespeare wrote:
+ *
+ *  The time is out of joint. O cursed spite
+ *  That ever I was born to set it right!
+ *
+ * and this is why we have this epoch and time zone.
+ */
+uint32_t unix_to_dns_timestamp(time_t t)
+{
+	NTTIME nt;
+	unix_to_nt_time(&nt, t);
+	nt /= NTTIME_TO_HOURS;
+	return (uint32_t) nt;
+}
+
+/*
+ * Convert a DNS timestamp into NTTIME.
+ *
+ * Because DNS timestamps cover a longer time period than NTTIME, and these
+ * would wrap to an arbitrary NTTIME, we saturate at NTTIME_MAX and return an
+ * error in this case.
+ */
+NTSTATUS dns_timestamp_to_nt_time(NTTIME *_nt, uint32_t t)
+{
+	NTTIME nt = t;
+	if (nt > NTTIME_MAX / NTTIME_TO_HOURS) {
+		*_nt = NTTIME_MAX;
+		return NT_STATUS_INTEGER_OVERFLOW;
+	}
+	*_nt = nt * NTTIME_TO_HOURS;
+	return NT_STATUS_OK;
 }

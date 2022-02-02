@@ -42,8 +42,7 @@ do_kinit() {
 	password="$2"
 	shift
 	shift
-	echo $password > $PREFIX/tmppassfile
-	$samba_kinit --password-file=$PREFIX/tmppassfile $principal $@
+	kerberos_kinit "$samba_kinit" "$principal" "$password" $@
 }
 
 UID_WRAPPER_ROOT=1
@@ -72,10 +71,10 @@ testit "kinit with user password" \
 	do_kinit $TEST_PRINCIPAL $TEST_PASSWORD || failed=`expr $failed + 1`
 
 test_smbclient "Test login with user kerberos ccache" \
-	"ls" "$SMB_UNC" -k yes || failed=`expr $failed + 1`
+	"ls" "$SMB_UNC" --use-kerberos=required || failed=`expr $failed + 1`
 
 testit "change user password with 'samba-tool user password' (unforced)" \
-	$VALGRIND $PYTHON $samba_tool user password -W$DOMAIN -U$TEST_USERNAME%$TEST_PASSWORD -k no --newpassword=$TEST_PASSWORD_NEW || failed=`expr $failed + 1`
+	$VALGRIND $PYTHON $samba_tool user password -W$DOMAIN -U$TEST_USERNAME%$TEST_PASSWORD --use-kerberos=off --newpassword=$TEST_PASSWORD_NEW || failed=`expr $failed + 1`
 
 TEST_PASSWORD_OLD=$TEST_PASSWORD
 TEST_PASSWORD=$TEST_PASSWORD_NEW
@@ -85,7 +84,7 @@ testit "kinit with user password" \
 	do_kinit $TEST_PRINCIPAL $TEST_PASSWORD || failed=`expr $failed + 1`
 
 test_smbclient "Test login with user kerberos ccache" \
-	"ls" "$SMB_UNC" -k yes || failed=`expr $failed + 1`
+	"ls" "$SMB_UNC" --use-kerberos=required || failed=`expr $failed + 1`
 
 ###########################################################
 ### check that a short password is rejected

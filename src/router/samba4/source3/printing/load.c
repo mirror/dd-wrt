@@ -19,6 +19,7 @@
 
 #include "includes.h"
 #include "printing/pcap.h"
+#include "printing/printer_list.h"
 #include "printing/load.h"
 #include "lib/param/loadparm.h"
 
@@ -54,7 +55,7 @@ static void add_auto_printers(void)
 		if (lp_servicenumber(p) >= 0)
 			continue;
 		
-		if (pcap_printername_ok(p))
+		if (printer_list_printername_exists(p))
 			lp_add_printer(p, pnum);
 	}
 
@@ -66,13 +67,28 @@ load automatic printer services from pre-populated pcap cache
 ***************************************************************************/
 void load_printers(void)
 {
+	NTSTATUS status;
+
 	if (!pcap_cache_loaded(NULL)) {
 		return;
 	}
 
 	add_auto_printers();
 
-	/* load all printcap printers */
-	if (lp_load_printers() && lp_servicenumber(PRINTERS_NAME) >= 0)
-		pcap_printer_read_fn(lp_add_one_printer, NULL);
+	if (!lp_load_printers()) {
+		return;
+	}
+
+	/*
+	 * Do not add printers from pcap, if we don't have a [printers] share.
+	 */
+	if (lp_servicenumber(PRINTERS_NAME) < 0) {
+		return;
+	}
+
+	status = printer_list_read_run_fn(lp_add_one_printer, NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_NOTICE("printer_list_read_run_fn failed: %s\n",
+			   nt_errstr(status));
+	}
 }

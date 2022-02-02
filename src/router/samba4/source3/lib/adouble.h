@@ -101,6 +101,8 @@ typedef enum {ADOUBLE_META, ADOUBLE_RSRC} adouble_type_t;
 #define ADEDLEN_MACFILEI        4
 #define ADEDLEN_PRODOSFILEI     8
 #define ADEDLEN_MSDOSFILEI      2
+#define ADEDLEN_ICONBW          128
+#define ADEDLEN_ICONCOL         1024
 #define ADEDLEN_DID             4
 #define ADEDLEN_PRIVDEV         8
 #define ADEDLEN_PRIVINO         8
@@ -154,7 +156,6 @@ char *ad_get_entry(const struct adouble *ad, int eid);
 int ad_getdate(const struct adouble *ad, unsigned int dateoff, uint32_t *date);
 int ad_setdate(struct adouble *ad, unsigned int dateoff, uint32_t date);
 int ad_convert(struct vfs_handle_struct *handle,
-		struct files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		const char *catia_mappings,
 		uint32_t flags);
@@ -164,15 +165,18 @@ bool ad_unconvert(TALLOC_CTX *mem_ctx,
 		  struct smb_filename *smb_fname,
 		  bool *converted);
 struct adouble *ad_init(TALLOC_CTX *ctx, adouble_type_t type);
+NTSTATUS adouble_open_from_base_fsp(const struct files_struct *dirfsp,
+				    struct files_struct *base_fsp,
+				    adouble_type_t type,
+				    int flags,
+				    mode_t mode,
+				    struct files_struct **_ad_fsp);
 struct adouble *ad_get(TALLOC_CTX *ctx,
 		       vfs_handle_struct *handle,
 		       const struct smb_filename *smb_fname,
 		       adouble_type_t type);
 struct adouble *ad_fget(TALLOC_CTX *ctx, vfs_handle_struct *handle,
 			files_struct *fsp, adouble_type_t type);
-int ad_set(vfs_handle_struct *handle,
-	   struct adouble *ad,
-	   const struct smb_filename *smb_fname);
 int ad_fset(struct vfs_handle_struct *handle,
 	    struct adouble *ad,
 	    files_struct *fsp);

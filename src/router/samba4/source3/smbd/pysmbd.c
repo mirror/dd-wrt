@@ -300,27 +300,36 @@ static NTSTATUS get_nt_acl_conn(TALLOC_CTX *mem_ctx,
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	NTSTATUS status;
-	struct smb_filename *smb_fname = synthetic_smb_fname(talloc_tos(),
+	int ret;
+	struct smb_filename *smb_fname =  NULL;
+
+	smb_fname = synthetic_smb_fname_split(frame,
 					fname,
-					NULL,
-					NULL,
-					0,
-					lp_posix_pathnames() ?
-						SMB_FILENAME_POSIX_PATH : 0);
+					lp_posix_pathnames());
 
 	if (smb_fname == NULL) {
 		TALLOC_FREE(frame);
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	status = SMB_VFS_GET_NT_ACL_AT(conn,
-				conn->cwd_fsp,
-				smb_fname,
+	ret = vfs_stat(conn, smb_fname);
+	if (ret == -1) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return status;
+	}
+
+	status = SMB_VFS_FGET_NT_ACL(smb_fname->fsp,
 				security_info_wanted,
 				mem_ctx,
 				sd);
 	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("get_nt_acl_at returned %s.\n",
+		DBG_ERR("fget_nt_acl_at returned %s.\n",
 			nt_errstr(status));
 	}
 
@@ -648,10 +657,13 @@ static PyObject *py_smbd_unlink(PyObject *self, PyObject *args, PyObject *kwargs
 	connection_struct *conn;
 	int ret;
 	struct smb_filename *smb_fname = NULL;
+	struct smb_filename *parent_fname = NULL;
+	struct smb_filename *at_fname = NULL;
 	PyObject *py_session = Py_None;
 	struct auth_session_info *session_info = NULL;
 	char *fname, *service = NULL;
 	TALLOC_CTX *frame;
+	NTSTATUS status;
 
 	frame = talloc_stackframe();
 
@@ -694,9 +706,19 @@ static PyObject *py_smbd_unlink(PyObject *self, PyObject *args, PyObject *kwargs
 		return PyErr_NoMemory();
 	}
 
+	status = parent_pathref(frame,
+				conn->cwd_fsp,
+				smb_fname,
+				&parent_fname,
+				&at_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return PyErr_NoMemory();
+	}
+
 	ret = SMB_VFS_UNLINKAT(conn,
-			conn->cwd_fsp,
-			smb_fname,
+			parent_fname->fsp,
+			at_fname,
 			0);
 	if (ret != 0) {
 		TALLOC_FREE(frame);
@@ -959,6 +981,8 @@ static PyObject *py_smbd_get_sys_acl(PyObject *self, PyObject *args, PyObject *k
 	connection_struct *conn;
 	char *service = NULL;
 	struct smb_filename *smb_fname = NULL;
+	NTSTATUS status;
+	int ret;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO|z",
 					 discard_const_p(char *, kwnames),
@@ -999,7 +1023,20 @@ static PyObject *py_smbd_get_sys_acl(PyObject *self, PyObject *args, PyObject *k
 		TALLOC_FREE(frame);
 		return NULL;
 	}
-	acl = SMB_VFS_SYS_ACL_GET_FILE( conn, smb_fname, acl_type, frame);
+	ret = vfs_stat(conn, smb_fname);
+	if (ret == -1) {
+		TALLOC_FREE(frame);
+		return PyErr_SetFromErrno(PyExc_OSError);
+	}
+
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	acl = SMB_VFS_SYS_ACL_GET_FD(smb_fname->fsp, acl_type, frame);
 	if (!acl) {
 		TALLOC_FREE(frame);
 		return PyErr_SetFromErrno(PyExc_OSError);
@@ -1031,7 +1068,6 @@ static PyObject *py_smbd_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
 	NTSTATUS status;
 	int ret;
 	mode_t saved_umask;
-	bool ok;
 
 	if (!PyArg_ParseTupleAndKeywords(args,
 					 kwargs,
@@ -1080,21 +1116,11 @@ static PyObject *py_smbd_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 	}
 
-	ok = parent_smb_fname(frame,
-			      smb_fname,
-			      &parent_fname,
-			      &base_name);
-	if (!ok) {
-		TALLOC_FREE(frame);
-		return NULL;
-	}
-
-	ret = vfs_stat(conn, parent_fname);
-	if (ret == -1) {
-		TALLOC_FREE(frame);
-		return NULL;
-	}
-	status = openat_pathref_fsp(conn->cwd_fsp, parent_fname);
+	status = parent_pathref(talloc_tos(),
+				conn->cwd_fsp,
+				smb_fname,
+				&parent_fname,
+				&base_name);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(frame);
 		return NULL;

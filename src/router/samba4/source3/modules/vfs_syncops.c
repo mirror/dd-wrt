@@ -71,39 +71,47 @@ static char *parent_dir(TALLOC_CTX *mem_ctx, const char *name)
 /*
   fsync a directory by name
  */
-static void syncops_sync_directory(const char *dname)
+static void syncops_sync_directory(connection_struct *conn,
+				   char *dname)
 {
-#ifdef O_DIRECTORY
-	int fd = open(dname, O_DIRECTORY|O_RDONLY);
-	if (fd != -1) {
-		fsync(fd);
-		close(fd);
+	struct smb_Dir *dir_hnd = NULL;
+	struct files_struct *dirfsp = NULL;
+	struct smb_filename smb_dname = { .base_name = dname };
+
+	dir_hnd = OpenDir(talloc_tos(),
+			  conn,
+			  &smb_dname,
+			  "*",
+			  0);
+	if (dir_hnd == NULL) {
+		return;
 	}
-#else
-	DIR *d = opendir(dname);
-	if (d != NULL) {
-		fsync(dirfd(d));
-		closedir(d);
-	}
-#endif
+
+	dirfsp = dir_hnd_fetch_fsp(dir_hnd);
+
+	smb_vfs_fsync_sync(dirfsp);
+
+	TALLOC_FREE(dir_hnd);
 }
 
 /*
   sync two meta data changes for 2 names
  */
-static void syncops_two_names(const char *name1, const char *name2)
+static void syncops_two_names(connection_struct *conn,
+			      const struct smb_filename *name1,
+			      const struct smb_filename *name2)
 {
 	TALLOC_CTX *tmp_ctx = talloc_new(NULL);
 	char *parent1, *parent2;
-	parent1 = parent_dir(tmp_ctx, name1);
-	parent2 = parent_dir(tmp_ctx, name2);
+	parent1 = parent_dir(tmp_ctx, name1->base_name);
+	parent2 = parent_dir(tmp_ctx, name2->base_name);
 	if (!parent1 || !parent2) {
 		talloc_free(tmp_ctx);
 		return;
 	}
-	syncops_sync_directory(parent1);
+	syncops_sync_directory(conn, parent1);
 	if (strcmp(parent1, parent2) != 0) {
-		syncops_sync_directory(parent2);		
+		syncops_sync_directory(conn, parent2);
 	}
 	talloc_free(tmp_ctx);
 }
@@ -111,13 +119,14 @@ static void syncops_two_names(const char *name1, const char *name2)
 /*
   sync two meta data changes for 1 names
  */
-static void syncops_smb_fname(const struct smb_filename *smb_fname)
+static void syncops_smb_fname(connection_struct *conn,
+			      const struct smb_filename *smb_fname)
 {
 	char *parent = NULL;
 	if (smb_fname != NULL) {
 		parent = parent_dir(NULL, smb_fname->base_name);
 		if (parent != NULL) {
-			syncops_sync_directory(parent);
+			syncops_sync_directory(conn, parent);
 			talloc_free(parent);
 		}
 	}
@@ -135,6 +144,8 @@ static int syncops_renameat(vfs_handle_struct *handle,
 {
 
 	int ret;
+	struct smb_filename *full_fname_src = NULL;
+	struct smb_filename *full_fname_dst = NULL;
 	struct syncops_config_data *config;
 
 	SMB_VFS_HANDLE_GET_DATA(handle, config,
@@ -146,48 +157,78 @@ static int syncops_renameat(vfs_handle_struct *handle,
 			smb_fname_src,
 			dstfsp,
 			smb_fname_dst);
-	if (ret == 0 && config->onmeta && !config->disable) {
-		syncops_two_names(smb_fname_src->base_name,
-				  smb_fname_dst->base_name);
+	if (ret == -1) {
+		return ret;
 	}
+	if (config->disable) {
+		return ret;
+	}
+	if (!config->onmeta) {
+		return ret;
+	}
+
+	full_fname_src = full_path_from_dirfsp_atname(talloc_tos(),
+						      srcfsp,
+						      smb_fname_src);
+	if (full_fname_src == NULL) {
+		errno = ENOMEM;
+		return ret;
+	}
+	full_fname_dst = full_path_from_dirfsp_atname(talloc_tos(),
+						      dstfsp,
+						      smb_fname_dst);
+	if (full_fname_dst == NULL) {
+		TALLOC_FREE(full_fname_src);
+		errno = ENOMEM;
+		return ret;
+	}
+	syncops_two_names(handle->conn,
+			  full_fname_src,
+			  full_fname_dst);
+	TALLOC_FREE(full_fname_src);
+	TALLOC_FREE(full_fname_dst);
 	return ret;
 }
 
 #define SYNCOPS_NEXT_SMB_FNAME(op, fname, args) do {   \
 	int ret; \
+	struct smb_filename *full_fname = NULL; \
 	struct syncops_config_data *config; \
 	SMB_VFS_HANDLE_GET_DATA(handle, config, \
 				struct syncops_config_data, \
 				return -1); \
 	ret = SMB_VFS_NEXT_ ## op args; \
-	if (ret == 0 \
-	&& config->onmeta && !config->disable \
-	&& fname) syncops_smb_fname(fname); \
+	if (ret != 0) { \
+		return ret; \
+	} \
+	if (config->disable) { \
+		return ret; \
+	} \
+	if (!config->onmeta) { \
+		return ret; \
+	} \
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(), \
+				dirfsp, \
+				smb_fname); \
+	if (full_fname == NULL) { \
+		return ret; \
+	} \
+	syncops_smb_fname(dirfsp->conn, full_fname); \
+	TALLOC_FREE(full_fname); \
 	return ret; \
 } while (0)
 
 static int syncops_symlinkat(vfs_handle_struct *handle,
 			const struct smb_filename *link_contents,
 			struct files_struct *dirfsp,
-			const struct smb_filename *new_smb_fname)
+			const struct smb_filename *smb_fname)
 {
-	int ret;
-	struct syncops_config_data *config;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, config,
-				struct syncops_config_data,
-				return -1);
-
-	ret = SMB_VFS_NEXT_SYMLINKAT(handle,
+	SYNCOPS_NEXT_SMB_FNAME(SYMLINKAT,
+			smb_fname,
+				(handle,
 				link_contents,
 				dirfsp,
-				new_smb_fname);
-
-	if (ret == 0 && config->onmeta && !config->disable) {
-		syncops_two_names(link_contents->base_name,
-				  new_smb_fname->base_name);
-	}
-	return ret;
+				smb_fname));
 }
 
 static int syncops_linkat(vfs_handle_struct *handle,
@@ -199,13 +240,12 @@ static int syncops_linkat(vfs_handle_struct *handle,
 {
 	int ret;
 	struct syncops_config_data *config;
+	struct smb_filename *old_full_fname = NULL;
+	struct smb_filename *new_full_fname = NULL;
 
 	SMB_VFS_HANDLE_GET_DATA(handle, config,
 				struct syncops_config_data,
 				return -1);
-
-	SMB_ASSERT(srcfsp == srcfsp->conn->cwd_fsp);
-	SMB_ASSERT(dstfsp == dstfsp->conn->cwd_fsp);
 
 	ret = SMB_VFS_NEXT_LINKAT(handle,
 			srcfsp,
@@ -214,10 +254,34 @@ static int syncops_linkat(vfs_handle_struct *handle,
 			new_smb_fname,
 			flags);
 
-	if (ret == 0 && config->onmeta && !config->disable) {
-		syncops_two_names(old_smb_fname->base_name,
-				  new_smb_fname->base_name);
+	if (ret == -1) {
+		return ret;
 	}
+	if (config->disable) {
+		return ret;
+	}
+	if (!config->onmeta) {
+		return ret;
+	}
+
+	old_full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						      srcfsp,
+						      old_smb_fname);
+	if (old_full_fname == NULL) {
+		return ret;
+	}
+	new_full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						      dstfsp,
+						      new_smb_fname);
+	if (new_full_fname == NULL) {
+		TALLOC_FREE(old_full_fname);
+		return ret;
+	}
+	syncops_two_names(handle->conn,
+			  old_full_fname,
+			  new_full_fname);
+	TALLOC_FREE(old_full_fname);
+	TALLOC_FREE(new_full_fname);
 	return ret;
 }
 
@@ -265,24 +329,12 @@ static int syncops_mkdirat(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			mode_t mode)
 {
-	struct smb_filename *full_fname = NULL;
-
-	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
-						  dirfsp,
-						  smb_fname);
-	if (full_fname == NULL) {
-		errno = ENOMEM;
-		return -1;
-	}
-
         SYNCOPS_NEXT_SMB_FNAME(MKDIRAT,
 			full_fname,
 				(handle,
 				dirfsp,
 				smb_fname,
 				mode));
-
-	TALLOC_FREE(full_fname);
 }
 
 /* close needs to be handled specially */

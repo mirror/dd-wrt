@@ -1,5 +1,5 @@
 /*
-  Fuzz NMB parse_packet
+  Fuzz dcerpc_parse_binding
   Copyright (C) Catalyst IT 2020
 
   This program is free software; you can redistribute it and/or modify
@@ -66,5 +66,11 @@ int LLVMFuzzerTestOneInput(uint8_t *input, size_t len)
 	guid = dcerpc_binding_get_object(binding);
 
 	talloc_free(mem_ctx);
+	return 0;
+}
+
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
 	return 0;
 }

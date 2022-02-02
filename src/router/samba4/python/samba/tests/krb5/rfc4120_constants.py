@@ -27,28 +27,79 @@ ARCFOUR_HMAC_MD5 = int(
 
 # Message types
 KRB_ERROR = int(krb5_asn1.MessageTypeValues('krb-error'))
+KRB_AP_REQ = int(krb5_asn1.MessageTypeValues('krb-ap-req'))
 KRB_AS_REP = int(krb5_asn1.MessageTypeValues('krb-as-rep'))
+KRB_AS_REQ = int(krb5_asn1.MessageTypeValues('krb-as-req'))
 KRB_TGS_REP = int(krb5_asn1.MessageTypeValues('krb-tgs-rep'))
+KRB_TGS_REQ = int(krb5_asn1.MessageTypeValues('krb-tgs-req'))
 
 # PAData types
 PADATA_ENC_TIMESTAMP = int(
     krb5_asn1.PADataTypeValues('kRB5-PADATA-ENC-TIMESTAMP'))
+PADATA_ENCRYPTED_CHALLENGE = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-ENCRYPTED-CHALLENGE'))
+PADATA_ETYPE_INFO = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-ETYPE-INFO'))
 PADATA_ETYPE_INFO2 = int(
     krb5_asn1.PADataTypeValues('kRB5-PADATA-ETYPE-INFO2'))
+PADATA_FOR_USER = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-FOR-USER'))
+PADATA_FX_COOKIE = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-FX-COOKIE'))
+PADATA_FX_ERROR = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-FX-ERROR'))
+PADATA_FX_FAST = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-FX-FAST'))
+PADATA_KDC_REQ = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-KDC-REQ'))
+PADATA_PAC_OPTIONS = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PAC-OPTIONS'))
+PADATA_PAC_REQUEST = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PA-PAC-REQUEST'))
+PADATA_PK_AS_REQ = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PK-AS-REQ'))
+PADATA_PK_AS_REP_19 = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PK-AS-REP-19'))
+PADATA_PW_SALT = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PW-SALT'))
+PADATA_SUPPORTED_ETYPES = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-SUPPORTED-ETYPES'))
 
 # Error codes
 KDC_ERR_C_PRINCIPAL_UNKNOWN = 6
+KDC_ERR_S_PRINCIPAL_UNKNOWN = 7
+KDC_ERR_POLICY = 12
+KDC_ERR_BADOPTION = 13
+KDC_ERR_ETYPE_NOSUPP = 14
+KDC_ERR_SUMTYPE_NOSUPP = 15
+KDC_ERR_TGT_REVOKED = 20
 KDC_ERR_PREAUTH_FAILED = 24
 KDC_ERR_PREAUTH_REQUIRED = 25
+KDC_ERR_BAD_INTEGRITY = 31
+KDC_ERR_NOT_US = 35
 KDC_ERR_BADMATCH = 36
 KDC_ERR_SKEW = 37
+KDC_ERR_MODIFIED = 41
+KDC_ERR_INAPP_CKSUM = 50
+KDC_ERR_GENERIC = 60
+KDC_ERR_WRONG_REALM = 68
+KDC_ERR_CLIENT_NAME_MISMATCH = 75
+KDC_ERR_UNKNOWN_CRITICAL_FAST_OPTIONS = 93
+
+# Extended error types
+KERB_AP_ERR_TYPE_SKEW_RECOVERY = int(
+    krb5_asn1.KerbErrorDataTypeValues('kERB-AP-ERR-TYPE-SKEW-RECOVERY'))
+KERB_ERR_TYPE_EXTENDED = int(
+    krb5_asn1.KerbErrorDataTypeValues('kERB-ERR-TYPE-EXTENDED'))
 
 # Name types
 NT_UNKNOWN = int(krb5_asn1.NameTypeValues('kRB5-NT-UNKNOWN'))
 NT_PRINCIPAL = int(krb5_asn1.NameTypeValues('kRB5-NT-PRINCIPAL'))
+NT_SRV_HST = int(krb5_asn1.NameTypeValues('kRB5-NT-SRV-HST'))
 NT_SRV_INST = int(krb5_asn1.NameTypeValues('kRB5-NT-SRV-INST'))
 NT_ENTERPRISE_PRINCIPAL = int(krb5_asn1.NameTypeValues(
     'kRB5-NT-ENTERPRISE-PRINCIPAL'))
+NT_WELLKNOWN = int(krb5_asn1.NameTypeValues('kRB5-NT-WELLKNOWN'))
 
 # Authorization data ad-type values
 
@@ -61,6 +112,8 @@ AD_MANDATORY_TICKET_EXTENSIONS = 6
 AD_IN_TICKET_EXTENSIONS = 7
 AD_MANDATORY_FOR_KDC = 8
 AD_INITIAL_VERIFIED_CAS = 9
+AD_FX_FAST_ARMOR = 71
+AD_FX_FAST_USED = 72
 AD_WIN2K_PAC = 128
 AD_SIGNTICKET = 512
 
@@ -113,3 +166,20 @@ KU_KRB_CRED = 14
 KU_KRB_SAFE_CKSUM = 15
 ''' KRB-SAFE cksum, keyed with a key chosen by the application
     (section 5.6.1) '''
+KU_NON_KERB_SALT = 16
+KU_NON_KERB_CKSUM_SALT = 17
+
+KU_ACCEPTOR_SEAL = 22
+KU_ACCEPTOR_SIGN = 23
+KU_INITIATOR_SEAL = 24
+KU_INITIATOR_SIGN = 25
+
+KU_FAST_REQ_CHKSUM = 50
+KU_FAST_ENC = 51
+KU_FAST_REP = 52
+KU_FAST_FINISHED = 53
+KU_ENC_CHALLENGE_CLIENT = 54
+KU_ENC_CHALLENGE_KDC = 55
+
+# Armor types
+FX_FAST_ARMOR_AP_REQUEST = 1

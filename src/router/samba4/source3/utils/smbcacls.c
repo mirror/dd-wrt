@@ -23,7 +23,7 @@
 */
 
 #include "includes.h"
-#include "popt_common_cmdline.h"
+#include "lib/cmdline/cmdline.h"
 #include "rpc_client/cli_pipe.h"
 #include "../librpc/gen_ndr/ndr_lsa.h"
 #include "rpc_client/cli_lsarpc.h"
@@ -50,7 +50,7 @@ enum chown_mode {REQUEST_NONE, REQUEST_CHOWN, REQUEST_CHGRP, REQUEST_INHERIT};
 enum exit_values {EXIT_OK, EXIT_FAILED, EXIT_PARSE_ERROR};
 
 struct cacl_callback_state {
-	struct user_auth_info *auth_info;
+	struct cli_credentials *creds;
 	struct cli_state *cli;
 	struct security_descriptor *aclsd;
 	struct security_acl *acl_to_add;
@@ -190,26 +190,24 @@ static struct dom_sid *get_domain_sid(struct cli_state *cli)
 
 /* add an ACE to a list of ACEs in a struct security_acl */
 static bool add_ace_with_ctx(TALLOC_CTX *ctx, struct security_acl **the_acl,
-			     struct security_ace *ace)
+			     const struct security_ace *ace)
 
 {
-	struct security_acl *new_ace;
-	struct security_ace *aces;
-	if (! *the_acl) {
-		return (((*the_acl) = make_sec_acl(ctx, 3, 1, ace))
-			!= NULL);
+	struct security_acl *acl = *the_acl;
+
+	if (acl == NULL) {
+		acl = make_sec_acl(ctx, 3, 0, NULL);
+		if (acl == NULL) {
+			return false;
+		}
 	}
 
-	if (!(aces = SMB_CALLOC_ARRAY(struct security_ace, 1+(*the_acl)->num_aces))) {
-		return False;
+	if (acl->num_aces == UINT32_MAX) {
+		return false;
 	}
-	memcpy(aces, (*the_acl)->aces, (*the_acl)->num_aces * sizeof(struct
-	security_ace));
-	memcpy(aces+(*the_acl)->num_aces, ace, sizeof(struct security_ace));
-	new_ace = make_sec_acl(ctx, (*the_acl)->revision,
-			       1+(*the_acl)->num_aces, aces);
-	SAFE_FREE(aces);
-	(*the_acl) = new_ace;
+	ADD_TO_ARRAY(
+		acl, struct security_ace, *ace, &acl->aces, &acl->num_aces);
+	*the_acl = acl;
 	return True;
 }
 
@@ -225,7 +223,10 @@ static struct security_descriptor *sec_desc_parse(TALLOC_CTX *ctx, struct cli_st
 	char *tok;
 	struct security_descriptor *ret = NULL;
 	size_t sd_size;
-	struct dom_sid *grp_sid=NULL, *owner_sid=NULL;
+	struct dom_sid owner_sid = { .num_auths = 0 };
+	bool have_owner = false;
+	struct dom_sid group_sid = { .num_auths = 0 };
+	bool have_group = false;
 	struct security_acl *dacl=NULL;
 	int revision=1;
 
@@ -236,30 +237,28 @@ static struct security_descriptor *sec_desc_parse(TALLOC_CTX *ctx, struct cli_st
 		}
 
 		if (strncmp(tok,"OWNER:", 6) == 0) {
-			if (owner_sid) {
+			if (have_owner) {
 				printf("Only specify owner once\n");
 				goto done;
 			}
-			owner_sid = SMB_CALLOC_ARRAY(struct dom_sid, 1);
-			if (!owner_sid ||
-			    !StringToSid(cli, owner_sid, tok+6)) {
+			if (!StringToSid(cli, &owner_sid, tok+6)) {
 				printf("Failed to parse owner sid\n");
 				goto done;
 			}
+			have_owner = true;
 			continue;
 		}
 
 		if (strncmp(tok,"GROUP:", 6) == 0) {
-			if (grp_sid) {
+			if (have_group) {
 				printf("Only specify group once\n");
 				goto done;
 			}
-			grp_sid = SMB_CALLOC_ARRAY(struct dom_sid, 1);
-			if (!grp_sid ||
-			    !StringToSid(cli, grp_sid, tok+6)) {
+			if (!StringToSid(cli, &group_sid, tok+6)) {
 				printf("Failed to parse group sid\n");
 				goto done;
 			}
+			have_group = true;
 			continue;
 		}
 
@@ -279,13 +278,17 @@ static struct security_descriptor *sec_desc_parse(TALLOC_CTX *ctx, struct cli_st
 		goto done;
 	}
 
-	ret = make_sec_desc(ctx,revision, SEC_DESC_SELF_RELATIVE, owner_sid, grp_sid,
-			    NULL, dacl, &sd_size);
+	ret = make_sec_desc(
+		ctx,
+		revision,
+		SEC_DESC_SELF_RELATIVE,
+		have_owner ? &owner_sid : NULL,
+		have_group ? &group_sid : NULL,
+		NULL,
+		dacl,
+		&sd_size);
 
-  done:
-	SAFE_FREE(grp_sid);
-	SAFE_FREE(owner_sid);
-
+done:
 	return ret;
 }
 
@@ -860,7 +863,7 @@ static int inherit(struct cli_state *cli, const char *filename,
 /*****************************************************
  Return a connection to a server.
 *******************************************************/
-static struct cli_state *connect_one(const struct user_auth_info *auth_info,
+static struct cli_state *connect_one(struct cli_credentials *creds,
 				     const char *server, const char *share)
 {
 	struct cli_state *c = NULL;
@@ -870,7 +873,7 @@ static struct cli_state *connect_one(const struct user_auth_info *auth_info,
 	nt_status = cli_full_connection_creds(&c, lp_netbios_name(), server,
 				NULL, 0,
 				share, "?????",
-				get_cmdline_auth_info_creds(auth_info),
+				creds,
 				flags);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DEBUG(0,("cli_full_connection failed! (%s)\n", nt_errstr(nt_status)));
@@ -1265,7 +1268,7 @@ static NTSTATUS cacl_set_cb(struct file_info *f,
 	}
 
 	cli = cbstate->cli;
-	creds = get_cmdline_auth_info_creds(cbstate->auth_info);
+	creds = cbstate->creds;
 
 	/* Work out the directory. */
 	dir = talloc_strdup(dirctx, mask);
@@ -1501,7 +1504,7 @@ static int inheritance_cacl_set(char *filename,
 	ntstatus = cli_tree_connect_creds(cli,
 			  save_share,
 			  "?????",
-			  get_cmdline_auth_info_creds(cbstate->auth_info));
+			  cbstate->creds);
 
 	if (!NT_STATUS_IS_OK(ntstatus)) {
 		d_printf("error: %s processing %s\n",
@@ -1569,6 +1572,7 @@ int main(int argc, char *argv[])
 	struct cli_credentials *creds = NULL;
 	char *targetfile = NULL;
 	NTSTATUS status;
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -1691,15 +1695,6 @@ int main(int argc, char *argv[])
 			.descrip    = "Domain SID for sddl",
 			.argDescrip = "SID"},
 		{
-			.longName   = "max-protocol",
-			.shortName  = 'm',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = NULL,
-			.val        = 'm',
-			.descrip    = "Set the max protocol level",
-			.argDescrip = "LEVEL",
-		},
-		{
 			.longName   = "maximum-access",
 			.shortName  = 'x',
 			.argInfo    = POPT_ARG_NONE,
@@ -1710,6 +1705,8 @@ int main(int argc, char *argv[])
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
+		POPT_LEGACY_S3
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
@@ -1720,15 +1717,29 @@ int main(int argc, char *argv[])
 
 	smb_init_locale();
 
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 	/* set default debug level to 1 regardless of what smb.conf sets */
-	setup_logging( "smbcacls", DEBUG_STDERR);
 	lp_set_cmdline("log level", "1");
 
 	setlinebuf(stdout);
 
-	popt_common_credentials_set_ignore_missing_conf();
-
-	pc = poptGetContext("smbcacls", argc, argv_const, long_options, 0);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv_const,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
 	poptSetOtherOptionHelp(pc, "//server1/share1 filename\nACLs look like: "
 		"'ACL:user:[ALLOWED|DENIED]/flags/permissions'");
@@ -1775,6 +1786,11 @@ int main(int argc, char *argv[])
 		case 'x':
 			want_mxac = true;
 			break;
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 	if (inheritance && !the_acl) {
@@ -1803,8 +1819,7 @@ int main(int argc, char *argv[])
 	}
 
 	poptFreeContext(pc);
-	popt_burn_cmdline_password(argc, argv);
-	popt_common_credentials_post();
+	samba_cmdline_burn(argc, argv);
 
 	string_replace(path,'/','\\');
 
@@ -1821,14 +1836,15 @@ int main(int argc, char *argv[])
 	*share = 0;
 	share++;
 
+	creds = samba_cmdline_get_creds();
+
 	/* Make connection to server */
 	if (!test_args) {
-		cli = connect_one(popt_get_cmdline_auth_info(), server, share);
+		cli = connect_one(creds, server, share);
 		if (!cli) {
 			exit(EXIT_FAILED);
 		}
 	} else {
-		popt_free_cmdline_auth_info();
 		exit(0);
 	}
 
@@ -1841,8 +1857,6 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
-
-	creds = get_cmdline_auth_info_creds(popt_get_cmdline_auth_info()),
 
 	status = local_cli_resolve_path(frame,
 				  "",
@@ -1865,7 +1879,7 @@ int main(int argc, char *argv[])
 	} else if (the_acl) {
 		if (inheritance) {
 			struct cacl_callback_state cbstate = {
-				.auth_info = popt_get_cmdline_auth_info(),
+				.creds = creds,
 				.cli = targetcli,
 				.mode = mode,
 				.the_acl = the_acl,
@@ -1883,7 +1897,6 @@ int main(int argc, char *argv[])
 		result = cacl_dump(targetcli, targetfile, numeric);
 	}
 
-	popt_free_cmdline_auth_info();
 	TALLOC_FREE(frame);
 
 	return result;

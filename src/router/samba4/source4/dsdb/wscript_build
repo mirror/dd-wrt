@@ -13,7 +13,7 @@ bld.SAMBA_LIBRARY('samdb',
 	)
 
 bld.SAMBA_LIBRARY('samdb-common',
-	source='common/util.c common/util_trusts.c common/util_groups.c common/util_samr.c common/dsdb_dn.c common/dsdb_access.c common/util_links.c',
+	source='common/util.c common/util_trusts.c common/util_groups.c common/util_samr.c common/dsdb_dn.c common/dsdb_access.c common/util_links.c common/rodc_helper.c',
 	autoproto='common/proto.h',
 	private_library=True,
 	deps='ldb NDR_DRSBLOBS util_ldb LIBCLI_AUTH samba-hostconfig samba_socket cli-ldap-common flag_mapping UTIL_RUNCMD'
@@ -79,6 +79,5 @@ bld.SAMBA_PYTHON('python_dsdb',
                  # removes it so we end up with unresolved symbols.
                  deps='samdb %s dcerpc com_err %s %s dsdb_garbage_collect_tombstones scavenge_dns_records' %\
                  (pyldb_util, pyrpc_util, pyparam_util),
-                 realname='samba/dsdb.so',
-                 enabled=bld.AD_DC_BUILD_IS_ENABLED()
+                 realname='samba/dsdb.so'
                  )

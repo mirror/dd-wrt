@@ -2,12 +2,12 @@
 .\"     Title: smbget
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "SMBGET" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
+.TH "SMBGET" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -128,11 +128,6 @@ Display brief usage message
 .RS 4
 Download only when remote file is newer than local file or local file is missing\&.
 .RE
-.PP
-\-e|\-\-encrypt
-.RS 4
-This command line parameter requires the remote server support the UNIX extensions or that the SMB3 protocol has been selected\&. Requests that the connection be encrypted\&. Negotiates SMB encryption using either SMB3 or POSIX extensions via GSSAPI\&. Uses the given credentials for the encryption negotiation (either kerberos or NTLMv1/v2 if given domain/username/password triple\&. Fails the connection if encryption cannot be negotiated\&.
-.RE
 .SH "SMB URLS"
 .PP
 SMB URL\*(Aqs should be specified in the following format:
@@ -189,7 +184,7 @@ smbget \-Rr smb://rhonwyn/
 Permission denied is returned in some cases where the cause of the error is unknown (such as an illegally formatted smb:// url or trying to get a directory without \-R turned on)\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

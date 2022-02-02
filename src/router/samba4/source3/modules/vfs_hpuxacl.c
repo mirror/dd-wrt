@@ -138,7 +138,7 @@ static bool hpux_aclsort_call_present(void);
 
 /* public functions - the api */
 
-SMB_ACL_T hpuxacl_sys_acl_get_file(vfs_handle_struct *handle,
+static SMB_ACL_T hpuxacl_sys_acl_get_file(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname,
 				SMB_ACL_TYPE_T type,
 				TALLOC_CTX *mem_ctx)
@@ -189,6 +189,7 @@ SMB_ACL_T hpuxacl_sys_acl_get_file(vfs_handle_struct *handle,
  */
 SMB_ACL_T hpuxacl_sys_acl_get_fd(vfs_handle_struct *handle,
 				 files_struct *fsp,
+				 SMB_ACL_TYPE_T type,
 				 TALLOC_CTX *mem_ctx)
 {
         /* 
@@ -203,7 +204,7 @@ SMB_ACL_T hpuxacl_sys_acl_get_fd(vfs_handle_struct *handle,
 
         return hpuxacl_sys_acl_get_file(handle,
 					fsp->fsp_name->base_name,
-					SMB_ACL_TYPE_ACCESS,
+					type,
 					mem_ctx);
 }
 
@@ -324,6 +325,7 @@ int hpuxacl_sys_acl_set_file(vfs_handle_struct *handle,
  */
 int hpuxacl_sys_acl_set_fd(vfs_handle_struct *handle,
 			      files_struct *fsp,
+			      SMB_ACL_TYPE_T type,
 			      SMB_ACL_T theacl)
 {
         /*
@@ -338,65 +340,63 @@ int hpuxacl_sys_acl_set_fd(vfs_handle_struct *handle,
 
         return hpuxacl_sys_acl_set_file(handle,
 					fsp->fsp_name->base_name,
-					SMB_ACL_TYPE_ACCESS, theacl);
+					type, theacl);
 }
-
 
 /*
  * delete the default ACL of a directory
  *
- * This is achieved by fetching the access ACL and rewriting it 
- * directly, via the hpux system call: the ACL_SET call on 
+ * This is achieved by fetching the access ACL and rewriting it
+ * directly, via the hpux system call: the ACL_SET call on
  * directories writes both the access and the default ACL as provided.
  *
  * XXX: posix acl_delete_def_file returns an error if
  * the file referred to by path is not a directory.
- * this function does not complain but the actions 
+ * this function does not complain but the actions
  * have no effect on a file other than a directory.
  * But sys_acl_delete_default_file is only called in
  * smbd/posixacls.c after having checked that the file
  * is a directory, anyways. So implementing the extra
  * check is considered unnecessary. --- Agreed? XXX
  */
-int hpuxacl_sys_acl_delete_def_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname)
+int hpuxacl_sys_acl_delete_def_fd(vfs_handle_struct *handle,
+				  files_struct *fsp)
 {
 	SMB_ACL_T smb_acl;
 	int ret = -1;
 	HPUX_ACL_T hpux_acl;
 	int count;
 
-	DEBUG(10, ("entering hpuxacl_sys_acl_delete_def_file.\n"));
+	DBG_DEBUG("entering hpuxacl_sys_acl_delete_def_fd.\n");
 
-	smb_acl = hpuxacl_sys_acl_get_file(handle, smb_fname->base_name,
+	smb_acl = hpuxacl_sys_acl_get_file(handle, fsp->fsp_name->base_name,
 					   SMB_ACL_TYPE_ACCESS);
 	if (smb_acl == NULL) {
-		DEBUG(10, ("getting file acl failed!\n"));
+		DBG_DEBUG("getting file acl failed!\n");
 		goto done;
 	}
-	if (!smb_acl_to_hpux_acl(smb_acl, &hpux_acl, &count, 
+	if (!smb_acl_to_hpux_acl(smb_acl, &hpux_acl, &count,
 				 SMB_ACL_TYPE_ACCESS))
 	{
-		DEBUG(10, ("conversion smb_acl -> hpux_acl failed.\n"));
+		DBG_DEBUG("conversion smb_acl -> hpux_acl failed.\n");
 		goto done;
 	}
 	if (!hpux_acl_sort(hpux_acl, count)) {
-		DEBUG(10, ("resulting acl is not valid!\n"));
+		DBG_DEBUG("resulting acl is not valid!\n");
 		goto done;
 	}
-	ret = acl(discard_const_p(char, smb_fname->base_name),
+	ret = acl(discard_const_p(char, fsp->fsp_name->base_name),
 				ACL_SET, count, hpux_acl);
 	if (ret != 0) {
-		DEBUG(10, ("settinge file acl failed!\n"));
+		DBG_DEBUG("settinge file acl failed!\n");
 	}
 
  done:
-	DEBUG(10, ("hpuxacl_sys_acl_delete_def_file %s.\n",
-		   ((ret != 0) ? "failed" : "succeeded" )));
+	DBG_DEBUG("hpuxacl_sys_acl_delete_def_fd %s.\n",
+		  ((ret != 0) ? "failed" : "succeeded" ));
 	TALLOC_FREE(smb_acl);
 	return ret;
 }
-
 
 /* 
  * private functions 
@@ -1158,12 +1158,10 @@ static bool hpux_acl_check(HPUX_ACL_T hpux_acl, int count)
 /* VFS operations structure */
 
 static struct vfs_fn_pointers hpuxacl_fns = {
-	.sys_acl_get_file_fn = hpuxacl_sys_acl_get_file,
 	.sys_acl_get_fd_fn = hpuxacl_sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
-	.sys_acl_set_fd_fn = hpuxacl_sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = hpuxacl_sys_acl_delete_def_file,
+	sys_acl_set_fd_fn = hpuxacl_sys_acl_set_fd,
+	.sys_acl_delete_def_fd_fn = hpuxacl_sys_acl_delete_def_fd,
 };
 
 static_decl_vfs;

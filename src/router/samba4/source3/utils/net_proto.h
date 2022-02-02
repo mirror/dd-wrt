@@ -95,6 +95,15 @@ int net_idmap(struct net_context *c, int argc, const char **argv);
 int net_join_usage(struct net_context *c, int argc, const char **argv);
 int net_join(struct net_context *c, int argc, const char **argv);
 
+/* The following definitions come from source3/utils/net_offlinejoin.c  */
+
+int net_offlinejoin_usage(struct net_context *c, int argc, const char **argv);
+int net_offlinejoin(struct net_context *c, int argc, const char **argv);
+int net_offlinejoin_provision(struct net_context *c,
+			      int argc, const char **argv);
+int net_offlinejoin_requestodj(struct net_context *c,
+			       int argc, const char **argv);
+
 /* The following definitions come from utils/net_lookup.c  */
 
 int net_lookup_usage(struct net_context *c, int argc, const char **argv);
@@ -418,9 +427,6 @@ NTSTATUS net_make_ipc_connection_ex(struct net_context *c ,const char *domain,
 				    const struct sockaddr_storage *pss,
 				    unsigned flags, struct cli_state **pcli);
 const char *net_prompt_pass(struct net_context *c, const char *user);
-struct cli_credentials;
-struct cli_credentials *net_context_creds(struct net_context *c,
-					  TALLOC_CTX *mem_ctx);
 int net_run_function(struct net_context *c, int argc, const char **argv,
 		      const char *whoami, struct functable *table);
 void net_display_usage_from_functable(struct functable *table);

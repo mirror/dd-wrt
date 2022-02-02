@@ -19,23 +19,20 @@ failed=0
 
 samba4bindir="$BINDIR"
 samba4srcdir="$SRCDIR/source4"
-samba4kinit=kinit
-if test -x $BINDIR/samba4kinit; then
-	samba4kinit=$BINDIR/samba4kinit
-fi
 
 
 . `dirname $0`/subunit.sh
 
-testit "run samba_upgradedns converting to bind9 DLZ" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ -s $PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "run samba_upgradedns converting to bind9 DLZ" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ --configfile=$PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "check that dns.keytab is present" test -f $PROVDIR/bind-dns/dns.keytab
 
-testit "run samba_upgradedns converting to internal" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=SAMBA_INTERNAL -s $PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "run samba_upgradedns converting to internal" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=SAMBA_INTERNAL --configfile=$PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
 
-testit "run samba_upgradedns converting to internal (2nd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=SAMBA_INTERNAL -s $PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "run samba_upgradedns converting to internal (2nd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=SAMBA_INTERNAL --configfile=$PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
 
-testit "run samba_upgradedns converting to bind9 DLZ (2nd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ -s $PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "run samba_upgradedns converting to bind9 DLZ (2nd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ --configfile=$PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
 
-testit "run samba_upgradedns converting to bind9 DLZ (3rd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ -s $PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
+testit "run samba_upgradedns converting to bind9 DLZ (3rd time)" $PYTHON $samba4srcdir/scripting/bin/samba_upgradedns --dns-backend=BIND9_DLZ --configfile=$PROVDIR/etc/smb.conf || failed=`expr $failed + 1`
 
 
 exit $failed

@@ -415,7 +415,7 @@ enum ndr_compression_alg {
 #define NDR_PULL_GET_MEM_CTX(ndr) (ndr->current_mem_ctx)
 
 #define NDR_PULL_SET_MEM_CTX(ndr, mem_ctx, flgs) do {\
-	if ( !(flgs) || (ndr->flags & flgs) ) {\
+	if ( (flgs == 0) || (ndr->flags & flgs) ) {\
 		if (!(mem_ctx)) {\
 			return ndr_pull_error(ndr, NDR_ERR_ALLOC, "NDR_PULL_SET_MEM_CTX(NULL): %s\n", __location__); \
 		}\
@@ -556,7 +556,12 @@ void ndr_print_GUID(struct ndr_print *ndr, const char *name, const struct GUID *
 void ndr_print_sockaddr_storage(struct ndr_print *ndr, const char *name, const struct sockaddr_storage *ss);
 void ndr_zero_memory(void *ptr, size_t len);
 bool ndr_syntax_id_equal(const struct ndr_syntax_id *i1, const struct ndr_syntax_id *i2);
+
+struct ndr_syntax_id_buf { char buf[39 /*GUID*/ + 3 /* "/0x" */ + 8]; };
+char *ndr_syntax_id_buf_string(
+	const struct ndr_syntax_id *id, struct ndr_syntax_id_buf *buf);
 char *ndr_syntax_id_to_string(TALLOC_CTX *mem_ctx, const struct ndr_syntax_id *id);
+
 bool ndr_syntax_id_from_string(const char *s, struct ndr_syntax_id *id);
 enum ndr_err_code ndr_push_struct_blob(DATA_BLOB *blob, TALLOC_CTX *mem_ctx, const void *p, ndr_push_flags_fn_t fn);
 enum ndr_err_code ndr_push_struct_into_fixed_blob(DATA_BLOB *blob,
@@ -648,13 +653,17 @@ enum ndr_err_code ndr_token_store(TALLOC_CTX *mem_ctx,
 enum ndr_err_code ndr_token_retrieve_cmp_fn(struct ndr_token_list *list, const void *key, uint32_t *v,
 					    int(*_cmp_fn)(const void*,const void*), bool erase);
 enum ndr_err_code ndr_token_retrieve(struct ndr_token_list *list, const void *key, uint32_t *v);
-uint32_t ndr_token_peek(struct ndr_token_list *list, const void *key);
+enum ndr_err_code ndr_token_peek(struct ndr_token_list *list, const void *key, uint32_t *v);
 enum ndr_err_code ndr_pull_array_size(struct ndr_pull *ndr, const void *p);
-uint32_t ndr_get_array_size(struct ndr_pull *ndr, const void *p);
-enum ndr_err_code ndr_check_array_size(struct ndr_pull *ndr, void *p, uint32_t size);
+enum ndr_err_code ndr_get_array_size(struct ndr_pull *ndr, const void *p, uint32_t *size);
+enum ndr_err_code ndr_steal_array_size(struct ndr_pull *ndr, const void *p, uint32_t *size);
+enum ndr_err_code ndr_check_array_size(struct ndr_pull *ndr, const void *p, uint32_t size);
+enum ndr_err_code ndr_check_steal_array_size(struct ndr_pull *ndr, const void *p, uint32_t size);
 enum ndr_err_code ndr_pull_array_length(struct ndr_pull *ndr, const void *p);
-uint32_t ndr_get_array_length(struct ndr_pull *ndr, const void *p);
-enum ndr_err_code ndr_check_array_length(struct ndr_pull *ndr, void *p, uint32_t length);
+enum ndr_err_code ndr_get_array_length(struct ndr_pull *ndr, const void *p, uint32_t *length);
+enum ndr_err_code ndr_steal_array_length(struct ndr_pull *ndr, const void *p, uint32_t *length);
+enum ndr_err_code ndr_check_array_length(struct ndr_pull *ndr, const void *p, uint32_t length);
+enum ndr_err_code ndr_check_steal_array_length(struct ndr_pull *ndr, const void *p, uint32_t length);
 enum ndr_err_code ndr_push_pipe_chunk_trailer(struct ndr_push *ndr, int ndr_flags, uint32_t count);
 enum ndr_err_code ndr_check_pipe_chunk_trailer(struct ndr_pull *ndr, int ndr_flags, uint32_t count);
 enum ndr_err_code ndr_push_set_switch_value(struct ndr_push *ndr, const void *p, uint32_t val);

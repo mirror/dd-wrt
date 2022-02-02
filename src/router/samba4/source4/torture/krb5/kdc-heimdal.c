@@ -26,7 +26,7 @@
 #include "torture/winbind/proto.h"
 #include "torture/krb5/proto.h"
 #include "auth/credentials/credentials.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "source4/auth/kerberos/kerberos.h"
 #include "source4/auth/kerberos/kerberos_util.h"
 #include "lib/util/util_net.h"
@@ -204,11 +204,12 @@ static bool torture_check_krb5_error(struct torture_krb5_context *test_context,
 
 static bool torture_check_krb5_as_rep_enctype(struct torture_krb5_context *test_context,
 					      const krb5_data *reply,
-					      krb5_enctype expected_enctype)
+					      const krb5_enctype* allowed_enctypes)
 {
 	ENCTYPE reply_enctype = { 0 };
 	size_t used = 0;
 	int rc;
+	int expected_enctype = ETYPE_NULL;
 
 	rc = decode_AS_REP(reply->data,
 			   reply->length,
@@ -230,8 +231,84 @@ static bool torture_check_krb5_as_rep_enctype(struct torture_krb5_context *test_
 		       test_context->as_rep.ticket.enc_part.kvno,
 		       "Did not get a KVNO in test_context->as_rep.ticket.enc_part.kvno");
 
-	reply_enctype = test_context->as_rep.enc_part.etype;
+	if (test_context->as_req.padata) {
+		/*
+		 * If the AS-REQ contains a PA-ENC-TIMESTAMP, then
+		 * that encryption type is used to determine the reply
+		 * enctype.
+		 */
+		int i = 0;
+		const PA_DATA *pa = krb5_find_padata(test_context->as_req.padata->val,
+						     test_context->as_req.padata->len,
+						     KRB5_PADATA_ENC_TIMESTAMP,
+						     &i);
+		if (pa) {
+			EncryptedData ed;
+			size_t len;
+			krb5_error_code ret = decode_EncryptedData(pa->padata_value.data,
+								   pa->padata_value.length,
+								   &ed, &len);
+			torture_assert_int_equal(test_context->tctx,
+						 ret,
+						 0,
+						 "decode_EncryptedData failed");
+			expected_enctype = ed.etype;
+			free_EncryptedData(&ed);
+		}
+	}
+	if (expected_enctype == ETYPE_NULL) {
+		/*
+		 * Otherwise, find the strongest enctype contained in
+		 * the AS-REQ supported enctypes list.
+		 */
+		const krb5_enctype *p = NULL;
 
+		for (p = krb5_kerberos_enctypes(NULL); *p != (krb5_enctype)ETYPE_NULL; ++p) {
+			int j;
+
+			if ((*p == (krb5_enctype)ETYPE_AES256_CTS_HMAC_SHA1_96 ||
+			     *p == (krb5_enctype)ETYPE_AES128_CTS_HMAC_SHA1_96) &&
+			    !test_context->as_req.req_body.kdc_options.canonicalize)
+			{
+				/*
+				 * AES encryption types are only used here when
+				 * we set the canonicalize flag, as the salt
+				 * needs to match.
+				 */
+				continue;
+			}
+
+			for (j = 0; j < test_context->as_req.req_body.etype.len; ++j) {
+				krb5_enctype etype = test_context->as_req.req_body.etype.val[j];
+				if (*p == etype) {
+					expected_enctype = etype;
+					break;
+				}
+			}
+
+			if (expected_enctype != (krb5_enctype)ETYPE_NULL) {
+				break;
+			}
+		}
+	}
+
+	{
+		/* Ensure the enctype to check against is an expected type. */
+		const krb5_enctype *p = NULL;
+		bool found = false;
+		for (p = allowed_enctypes; *p != (krb5_enctype)ETYPE_NULL; ++p) {
+			if (*p == expected_enctype) {
+				found = true;
+				break;
+			}
+		}
+
+		torture_assert(test_context->tctx,
+			       found,
+			       "Calculated enctype not in allowed list");
+	}
+
+	reply_enctype = test_context->as_rep.enc_part.etype;
 	torture_assert_int_equal(test_context->tctx,
 				 reply_enctype, expected_enctype,
 				 "Ticket encrypted with invalid algorithm");
@@ -310,7 +387,7 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 		if (test_context->packet_count == 0) {
 			ok = torture_check_krb5_error(test_context,
 						      recv_buf,
-						      KRB5KRB_ERR_RESPONSE_TOO_BIG,
+						      KRB5KDC_ERR_PREAUTH_REQUIRED,
 						      false);
 			torture_assert(test_context->tctx,
 				       ok,
@@ -318,7 +395,7 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 		} else if (test_context->packet_count == 1) {
 			ok = torture_check_krb5_error(test_context,
 						      recv_buf,
-						      KRB5KDC_ERR_PREAUTH_REQUIRED,
+						      KRB5KRB_ERR_RESPONSE_TOO_BIG,
 						      false);
 			torture_assert(test_context->tctx,
 				       ok,
@@ -411,9 +488,13 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 				       ok,
 				       "torture_check_krb5_error failed");
 		} else {
+			const krb5_enctype allowed_enctypes[] = {
+				KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96,
+				ETYPE_NULL
+			};
 			ok = torture_check_krb5_as_rep_enctype(test_context,
 							       recv_buf,
-							       KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96);
+							       allowed_enctypes);
 			torture_assert(test_context->tctx,
 				       ok,
 				       "torture_check_krb5_as_rep_enctype failed");
@@ -443,9 +524,13 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 				       ok,
 				       "torture_check_krb5_error failed");
 		} else {
+			const krb5_enctype allowed_enctypes[] = {
+				KRB5_ENCTYPE_ARCFOUR_HMAC_MD5,
+				ETYPE_NULL
+			};
 			ok = torture_check_krb5_as_rep_enctype(test_context,
 							       recv_buf,
-							       KRB5_ENCTYPE_ARCFOUR_HMAC_MD5);
+							       allowed_enctypes);
 			torture_assert(test_context->tctx,
 				       ok,
 				       "torture_check_krb5_as_rep_enctype failed");
@@ -475,9 +560,14 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 				       ok,
 				       "torture_check_krb5_error failed");
 		} else {
+			const krb5_enctype allowed_enctypes[] = {
+				KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96,
+				KRB5_ENCTYPE_ARCFOUR_HMAC_MD5,
+				ETYPE_NULL
+			};
 			ok = torture_check_krb5_as_rep_enctype(test_context,
 							       recv_buf,
-							       KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96);
+							       allowed_enctypes);
 			torture_assert(test_context->tctx,
 				       ok,
 				       "torture_check_krb5_as_rep_enctype failed");
@@ -870,7 +960,7 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 
 static bool torture_krb5_as_req_cmdline(struct torture_context *tctx)
 {
-	return torture_krb5_as_req_creds(tctx, popt_get_cmdline_credentials(),
+	return torture_krb5_as_req_creds(tctx, samba_cmdline_get_creds(),
 			TORTURE_KRB5_TEST_PLAIN);
 }
 
@@ -879,40 +969,40 @@ static bool torture_krb5_as_req_pac_request(struct torture_context *tctx)
 	if (torture_setting_bool(tctx, "expect_rodc", false)) {
 		torture_skip(tctx, "This test needs further investigation in the RODC case against a Windows DC, in particular with non-cached users");
 	}
-	return torture_krb5_as_req_creds(tctx, popt_get_cmdline_credentials(),
+	return torture_krb5_as_req_creds(tctx, samba_cmdline_get_creds(),
 			TORTURE_KRB5_TEST_PAC_REQUEST);
 }
 
 static bool torture_krb5_as_req_break_pw(struct torture_context *tctx)
 {
-	return torture_krb5_as_req_creds(tctx, popt_get_cmdline_credentials(),
+	return torture_krb5_as_req_creds(tctx, samba_cmdline_get_creds(),
 			TORTURE_KRB5_TEST_BREAK_PW);
 }
 
 static bool torture_krb5_as_req_clock_skew(struct torture_context *tctx)
 {
-	return torture_krb5_as_req_creds(tctx, popt_get_cmdline_credentials(),
+	return torture_krb5_as_req_creds(tctx, samba_cmdline_get_creds(),
 			TORTURE_KRB5_TEST_CLOCK_SKEW);
 }
 
 static bool torture_krb5_as_req_aes(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_AES);
 }
 
 static bool torture_krb5_as_req_rc4(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_RC4);
 }
 
 static bool torture_krb5_as_req_aes_rc4(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_AES_RC4);
 }
 
@@ -920,21 +1010,21 @@ static bool torture_krb5_as_req_aes_rc4(struct torture_context *tctx)
 static bool torture_krb5_as_req_change_server_out(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_CHANGE_SERVER_OUT);
 }
 
 static bool torture_krb5_as_req_change_server_in(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_CHANGE_SERVER_IN);
 }
 
 static bool torture_krb5_as_req_change_server_both(struct torture_context *tctx)
 {
 	return torture_krb5_as_req_creds(tctx,
-					 popt_get_cmdline_credentials(),
+					 samba_cmdline_get_creds(),
 					 TORTURE_KRB5_TEST_CHANGE_SERVER_BOTH);
 }
 

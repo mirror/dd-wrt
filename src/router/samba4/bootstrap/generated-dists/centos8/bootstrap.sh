@@ -54,6 +54,7 @@ yum install -y \
     keyutils-libs-devel \
     krb5-devel \
     krb5-server \
+    krb5-workstation \
     libacl-devel \
     libarchive-devel \
     libattr-devel \
@@ -62,7 +63,6 @@ yum install -y \
     libcap-devel \
     libcephfs-devel \
     libicu-devel \
-    libnsl2-devel \
     libpcap-devel \
     libtasn1-devel \
     libtasn1-tools \
@@ -112,6 +112,7 @@ yum install -y \
     sudo \
     systemd-devel \
     tar \
+    tracker-devel \
     tree \
     wget \
     which \

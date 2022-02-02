@@ -203,7 +203,7 @@ copy an IP address from one buffer to another
  Check to see if we are a DC for this domain
 *****************************************************************************/
 
-#define IS_DC  (lp_server_role()==ROLE_DOMAIN_PDC || lp_server_role()==ROLE_DOMAIN_BDC || lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC) 
+#define IS_DC  (lp_server_role()==ROLE_DOMAIN_PDC || lp_server_role()==ROLE_DOMAIN_BDC || lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC || lp_server_role() == ROLE_IPA_DC)
 #define IS_AD_DC  (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC)
 
 /*
@@ -228,10 +228,7 @@ copy an IP address from one buffer to another
 #define SMB_XMALLOC_ARRAY(type,count) (type *)smb_xmalloc_array(sizeof(type),(count))
 
 #define TALLOC(ctx, size) talloc_named_const(ctx, size, __location__)
-#define TALLOC_ZERO(ctx, size) _talloc_zero(ctx, size, __location__)
 #define TALLOC_SIZE(ctx, size) talloc_named_const(ctx, size, __location__)
-#define TALLOC_ZERO_SIZE(ctx, size) _talloc_zero(ctx, size, __location__)
-
 #define TALLOC_REALLOC(ctx, ptr, count) _talloc_realloc(ctx, ptr, count, __location__)
 #define talloc_destroy(ctx) talloc_free(ctx)
 #ifndef TALLOC_FREE

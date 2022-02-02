@@ -37,6 +37,7 @@
 #include "rpc_server/rpc_config.h"
 #include "librpc/ndr/ndr_table.h"
 #include "rpc_server/rpc_server.h"
+#include "librpc/rpc/dcerpc_util.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
@@ -401,9 +402,8 @@ static NTSTATUS make_internal_dcesrv_connection(TALLOC_CTX *mem_ctx,
 	context->conn = conn;
 	context->context_id = 0;
 	context->transfer_syntax = *(conn->preferred_transfer);
-	context->iface = find_interface_by_uuid(conn->endpoint,
-					&ndr_table->syntax_id.uuid,
-					ndr_table->syntax_id.if_version);
+	context->iface = find_interface_by_syntax_id(
+		conn->endpoint, &ndr_table->syntax_id);
 	if (context->iface == NULL) {
 		status = NT_STATUS_RPC_INTERFACE_NOT_FOUND;
 		goto fail;
@@ -489,7 +489,9 @@ static struct tevent_req *rpcint_bh_raw_call_send(TALLOC_CTX *mem_ctx,
 	if (hs->conn->assoc_group == NULL) {
 		ZERO_STRUCT(state->call->pkt);
 		state->call->pkt.u.bind.assoc_group_id = 0;
-		status = dce_ctx->callbacks.assoc_group.find(state->call);
+		status = dce_ctx->callbacks->assoc_group.find(
+			state->call,
+			dce_ctx->callbacks->assoc_group.private_data);
 		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, ev);
 		}
@@ -1045,7 +1047,7 @@ static struct np_proxy_state *make_external_rpc_pipe_p(TALLOC_CTX *mem_ctx,
 	TALLOC_FREE(subreq);
 	if (ret != 0) {
 		int l = 1;
-		if (errno == ENOENT) {
+		if (sys_errno == ENOENT) {
 			l = 2;
 		}
 		DEBUG(l, ("tstream_npa_connect_recv  to %s for pipe %s and "

@@ -63,6 +63,7 @@
  * implement this yet.
  */
 #define NTTIME_FREEZE UINT64_MAX
+#define NTTIME_THAW (UINT64_MAX - 1)
 
 #define SAMBA_UTIME_NOW UTIME_NOW
 #define SAMBA_UTIME_OMIT UTIME_OMIT
@@ -342,6 +343,8 @@ bool nt_time_equal(NTTIME *t1, NTTIME *t2);
 
 void interpret_dos_date(uint32_t date,int *year,int *month,int *day,int *hour,int *minute,int *second);
 
+struct timespec nt_time_to_unix_timespec_raw(NTTIME nt);
+
 struct timespec nt_time_to_unix_timespec(NTTIME nt);
 
 time_t convert_timespec_to_time_t(struct timespec ts);
@@ -360,6 +363,7 @@ void round_timespec_to_sec(struct timespec *ts);
 void round_timespec_to_usec(struct timespec *ts);
 void round_timespec_to_nttime(struct timespec *ts);
 NTTIME unix_timespec_to_nt_time(struct timespec ts);
+void normalize_timespec(struct timespec *ts);
 
 /*
  * Functions supporting the full range of time_t and struct timespec values,

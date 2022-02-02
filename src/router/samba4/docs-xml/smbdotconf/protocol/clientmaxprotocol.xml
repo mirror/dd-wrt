@@ -44,12 +44,6 @@
 		<listitem>
 		    <para><constant>SMB2_10</constant>: Windows 7 SMB2 version.</para>
 		</listitem>
-		<listitem>
-		    <para><constant>SMB2_22</constant>: Early Windows 8 SMB2 version.</para>
-		</listitem>
-		<listitem>
-		    <para><constant>SMB2_24</constant>: Windows 8 beta SMB2 version.</para>
-		</listitem>
 	    </itemizedlist>
 	    <para>By default SMB2 selects the SMB2_10 variant.</para>
 	</listitem>
@@ -59,16 +53,13 @@
 	    Used by Windows 8. SMB3 has sub protocols available.</para>
 	    <itemizedlist>
 		<listitem>
-		    <para><constant>SMB3_00</constant>: Windows 8 SMB3 version. (mostly the same as SMB2_24)</para>
+		    <para><constant>SMB3_00</constant>: Windows 8 SMB3 version.</para>
 		</listitem>
 		<listitem>
 		    <para><constant>SMB3_02</constant>: Windows 8.1 SMB3 version.</para>
 		</listitem>
 		<listitem>
-		    <para><constant>SMB3_10</constant>: early Windows 10 technical preview SMB3 version.</para>
-		</listitem>
-		<listitem>
-		    <para><constant>SMB3_11</constant>: Windows 10 technical preview SMB3 version (maybe final).</para>
+		    <para><constant>SMB3_11</constant>: Windows 10 SMB3 version.</para>
 		</listitem>
 	    </itemizedlist>
 	    <para>By default SMB3 selects the SMB3_11 variant.</para>

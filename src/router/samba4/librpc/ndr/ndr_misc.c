@@ -28,7 +28,8 @@
 
 _PUBLIC_ void ndr_print_GUID(struct ndr_print *ndr, const char *name, const struct GUID *guid)
 {
-	ndr->print(ndr, "%-25s: %s", name, GUID_string(ndr, guid));
+	struct GUID_txt_buf buf;
+	ndr->print(ndr, "%-25s: %s", name, GUID_buf_string(guid, &buf));
 }
 
 bool ndr_syntax_id_equal(const struct ndr_syntax_id *i1,
@@ -38,38 +39,32 @@ bool ndr_syntax_id_equal(const struct ndr_syntax_id *i1,
 		&& (i1->if_version == i2->if_version);
 }
 
+char *ndr_syntax_id_buf_string(
+	const struct ndr_syntax_id *id, struct ndr_syntax_id_buf *dst)
+{
+	struct GUID_txt_buf guid_buf;
+
+	snprintf(dst->buf,
+		 sizeof(dst->buf),
+		 "%s/0x%08x",
+		 GUID_buf_string(&id->uuid, &guid_buf),
+		 (unsigned int)id->if_version);
+
+	return dst->buf;
+}
+
 _PUBLIC_ char *ndr_syntax_id_to_string(TALLOC_CTX *mem_ctx, const struct ndr_syntax_id *id)
 {
-	return talloc_asprintf(mem_ctx,
-			       "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x/0x%08x",
-			       id->uuid.time_low, id->uuid.time_mid,
-			       id->uuid.time_hi_and_version,
-			       id->uuid.clock_seq[0],
-			       id->uuid.clock_seq[1],
-			       id->uuid.node[0], id->uuid.node[1],
-			       id->uuid.node[2], id->uuid.node[3],
-			       id->uuid.node[4], id->uuid.node[5],
-			       (unsigned)id->if_version);
+	struct ndr_syntax_id_buf buf;
+	return talloc_strdup(mem_ctx, ndr_syntax_id_buf_string(id, &buf));
 }
 
 _PUBLIC_ bool ndr_syntax_id_from_string(const char *s, struct ndr_syntax_id *id)
 {
-	size_t i;
-	uint32_t time_low;
-	uint32_t time_mid, time_hi_and_version;
-	uint32_t clock_seq[2];
-	uint32_t node[6];
-	uint64_t if_version;
-	NTSTATUS status;
+	bool ok;
 
-	status =  parse_guid_string(s,
-				    &time_low,
-				    &time_mid,
-				    &time_hi_and_version,
-				    clock_seq,
-				    node);
-
-	if (!NT_STATUS_IS_OK(status)) {
+	ok =  parse_guid_string(s, &id->uuid);
+	if (!ok) {
 		return false;
 	}
 
@@ -77,21 +72,6 @@ _PUBLIC_ bool ndr_syntax_id_from_string(const char *s, struct ndr_syntax_id *id)
 		return false;
 	}
 
-	status = read_hex_bytes(s + 39, 8, &if_version);
-
-	if (!NT_STATUS_IS_OK(status)) {
-		return false;
-	}
-
-	id->uuid.time_low = time_low;
-	id->uuid.time_mid = time_mid;
-	id->uuid.time_hi_and_version = time_hi_and_version;
-	id->uuid.clock_seq[0] = clock_seq[0];
-	id->uuid.clock_seq[1] = clock_seq[1];
-	for (i=0; i<6; i++) {
-		id->uuid.node[i] = node[i];
-	}
-	id->if_version = (uint32_t)if_version;
-
-	return true;
+	ok = hex_uint32(s+39, &id->if_version);
+	return ok;
 }

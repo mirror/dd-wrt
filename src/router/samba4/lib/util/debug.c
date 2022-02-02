@@ -583,16 +583,6 @@ static void debug_backends_log(const char *msg, int msg_level)
 	}
 }
 
-/* -------------------------------------------------------------------------- **
- * External variables.
- */
-
-/*
-   used to check if the user specified a
-   logfile on the command line
-*/
-bool    override_logfile;
-
 int debuglevel_get_class(size_t idx)
 {
 	return dbgc_config[idx].loglevel;
@@ -795,8 +785,7 @@ static int debug_lookup_classname(const char *classname)
 	if (ndx != -1)
 		return ndx;
 
-	DEBUG(0, ("debug_lookup_classname(%s): Unknown class\n",
-		  classname));
+	DBG_WARNING("Unknown classname[%s] -> adding it...\n", classname);
 	return debug_add_class(classname);
 }
 
@@ -1029,6 +1018,8 @@ void debug_set_logfile(const char *name)
 	}
 	TALLOC_FREE(dbgc_config[DBGC_ALL].logfile);
 	dbgc_config[DBGC_ALL].logfile = talloc_strdup(NULL, name);
+
+	reopen_logs_internal();
 }
 
 static void debug_close_fd(int fd)
@@ -1036,6 +1027,11 @@ static void debug_close_fd(int fd)
 	if (fd > 2) {
 		close(fd);
 	}
+}
+
+enum debug_logtype debug_get_log_type(void)
+{
+	return state.logtype;
 }
 
 bool debug_get_output_is_stderr(void)
@@ -1131,7 +1127,6 @@ bool reopen_logs_internal(void)
 {
 	struct debug_backend *b = NULL;
 	mode_t oldumask;
-	int new_fd = 0;
 	size_t i;
 	bool ok;
 
@@ -1196,7 +1191,7 @@ bool reopen_logs_internal(void)
 	 * If log file was opened or created successfully, take over stderr to
 	 * catch output into logs.
 	 */
-	if (new_fd != -1) {
+	if (dbgc_config[DBGC_ALL].fd > 0) {
 		if (dup2(dbgc_config[DBGC_ALL].fd, 2) == -1) {
 			/* Close stderr too, if dup2 can't point it -
 			   at the logfile.  There really isn't much

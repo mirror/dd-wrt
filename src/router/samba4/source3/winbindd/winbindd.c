@@ -23,7 +23,7 @@
 */
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "winbindd.h"
 #include "nsswitch/winbind_client.h"
 #include "nsswitch/wb_reqtrans.h"
@@ -51,6 +51,7 @@
 #include "lib/gencache.h"
 #include "rpc_server/rpc_config.h"
 #include "lib/global_contexts.h"
+#include "source3/lib/substitute.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -63,8 +64,6 @@ static void winbindd_setup_max_fds(void);
 
 static bool opt_nocache = False;
 static bool interactive = False;
-
-extern bool override_logfile;
 
 struct imessaging_context *winbind_imessaging_context(void)
 {
@@ -159,7 +158,7 @@ static void winbindd_status(void)
 
 void winbindd_flush_caches(void)
 {
-	/* We need to invalidate cached user list entries on a SIGHUP 
+	/* We need to invalidate cached user list entries on a SIGHUP
            otherwise cached access denied errors due to restrict anonymous
            hang around until the sequence number changes. */
 
@@ -202,7 +201,7 @@ static void terminate(bool is_parent)
 		/* When parent goes away we should
 		 * remove the socket file. Not so
 		 * when children terminate.
-		 */ 
+		 */
 		char *path = NULL;
 
 		if (asprintf(&path, "%s/%s",
@@ -1383,6 +1382,8 @@ static void winbindd_register_handlers(struct messaging_context *msg_ctx,
 {
 	bool scan_trusts = true;
 	NTSTATUS status;
+	struct tevent_timer *te = NULL;
+
 	/* Setup signal handlers */
 
 	if (!winbindd_setup_sig_term_handler(true))
@@ -1486,6 +1487,16 @@ static void winbindd_register_handlers(struct messaging_context *msg_ctx,
 		}
 	}
 
+	te = tevent_add_timer(global_event_context(),
+			      NULL,
+			      timeval_zero(),
+			      winbindd_ping_offline_domains,
+			      NULL);
+	if (te == NULL) {
+		DBG_ERR("Failed to schedule winbindd_ping_offline_domains()\n");
+		exit(1);
+	}
+
 	status = wb_irpc_register();
 
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1582,58 +1593,10 @@ static void winbindd_addr_changed(struct tevent_req *req)
 
 int main(int argc, const char **argv)
 {
-	static bool is_daemon = False;
-	static bool Fork = True;
 	static bool log_stdout = False;
-	static bool no_process_group = False;
-	enum {
-		OPT_DAEMON = 1000,
-		OPT_FORK,
-		OPT_NO_PROCESS_GROUP,
-		OPT_LOG_STDOUT
-	};
+	struct samba_cmdline_daemon_cfg *cmdline_daemon_cfg = NULL;
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
-		{
-			.longName   = "stdout",
-			.shortName  = 'S',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_LOG_STDOUT,
-			.descrip    = "Log to stdout",
-		},
-		{
-			.longName   = "foreground",
-			.shortName  = 'F',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_FORK,
-			.descrip    = "Daemon in foreground mode",
-		},
-		{
-			.longName   = "no-process-group",
-			.shortName  = 0,
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_NO_PROCESS_GROUP,
-			.descrip    = "Don't create a new process group",
-		},
-		{
-			.longName   = "daemon",
-			.shortName  = 'D',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_DAEMON,
-			.descrip    = "Become a daemon (default)",
-		},
-		{
-			.longName   = "interactive",
-			.shortName  = 'i',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'i',
-			.descrip    = "Interactive mode",
-		},
 		{
 			.longName   = "no-caching",
 			.shortName  = 'n',
@@ -1643,6 +1606,8 @@ int main(int argc, const char **argv)
 			.descrip    = "Disable caching",
 		},
 		POPT_COMMON_SAMBA
+		POPT_COMMON_DAEMON
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 	const struct loadparm_substitution *lp_sub =
@@ -1654,6 +1619,9 @@ int main(int argc, const char **argv)
 	bool ok;
 	const struct dcesrv_endpoint_server *ep_server = NULL;
 	struct dcesrv_context *dce_ctx = NULL;
+	size_t winbindd_socket_dir_len = 0;
+	char *winbindd_priv_socket_dir = NULL;
+	size_t winbindd_priv_socket_dir_len = 0;
 
 	setproctitle_init(argc, discard_const(argv), environ);
 
@@ -1669,7 +1637,7 @@ int main(int argc, const char **argv)
 	 */
 	umask(0);
 
-	setup_logging("winbindd", DEBUG_DEFAULT_STDOUT);
+	smb_init_locale();
 
 	/* glibc (?) likes to print "User defined signal 1" and exit if a
 	   SIGUSR[12] is received before a handler is installed */
@@ -1677,49 +1645,26 @@ int main(int argc, const char **argv)
  	CatchSignal(SIGUSR1, SIG_IGN);
  	CatchSignal(SIGUSR2, SIG_IGN);
 
-	fault_setup();
-	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
-
-	smb_init_locale();
-
-	/* Initialise for running in non-root mode */
-
-	sec_init();
-
-	set_remote_machine_name("winbindd", False);
-
-	/* Set environment variable so we don't recursively call ourselves.
-	   This may also be useful interactively. */
-
-	if ( !winbind_off() ) {
-		DEBUG(0,("Failed to disable recusive winbindd calls.  Exiting.\n"));
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_SERVER,
+				true /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to setup cmdline parser\n");
+		TALLOC_FREE(frame);
 		exit(1);
 	}
 
-	/* Initialise samba/rpc client stuff */
+	cmdline_daemon_cfg = samba_cmdline_get_daemon_cfg();
 
-	pc = poptGetContext("winbindd", argc, argv, long_options, 0);
+	pc = samba_popt_get_context(getprogname(), argc, argv, long_options, 0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
 	while ((opt = poptGetNextOpt(pc)) != -1) {
 		switch (opt) {
-			/* Don't become a daemon */
-		case OPT_DAEMON:
-			is_daemon = True;
-			break;
-		case 'i':
-			interactive = True;
-			log_stdout = True;
-			Fork = False;
-			break;
-                case OPT_FORK:
-			Fork = false;
-			break;
-		case OPT_NO_PROCESS_GROUP:
-			no_process_group = true;
-			break;
-		case OPT_LOG_STDOUT:
-			log_stdout = true;
-			break;
 		case 'n':
 			opt_nocache = true;
 			break;
@@ -1731,22 +1676,39 @@ int main(int argc, const char **argv)
 		}
 	}
 
-	/* We call dump_core_setup one more time because the command line can
-	 * set the log file or the log-basename and this will influence where
-	 * cores are stored. Without this call get_dyn_LOGFILEBASE will be
-	 * the default value derived from build's prefix. For EOM this value
-	 * is often not related to the path where winbindd is actually run
-	 * in production.
-	 */
+	/* Set environment variable so we don't recursively call ourselves.
+	   This may also be useful interactively. */
+	if ( !winbind_off() ) {
+		DEBUG(0,("Failed to disable recusive winbindd calls.  Exiting.\n"));
+		exit(1);
+	}
+
+	/* Initialise for running in non-root mode */
+	sec_init();
+
+	set_remote_machine_name("winbindd", False);
+
 	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
-	if (is_daemon && interactive) {
+	if (cmdline_daemon_cfg->daemon && cmdline_daemon_cfg->interactive) {
 		d_fprintf(stderr,"\nERROR: "
 			  "Option -i|--interactive is not allowed together with -D|--daemon\n\n");
 		poptPrintUsage(pc, stderr, 0);
 		exit(1);
 	}
 
-	if (log_stdout && Fork) {
+	log_stdout = (debug_get_log_type() == DEBUG_STDOUT);
+	if (cmdline_daemon_cfg->interactive) {
+		/*
+		 * libcmdline POPT_DAEMON callback sets "fork" to false if "-i"
+		 * for interactive is passed on the commandline. Set it back to
+		 * true. TODO: check if this is correct, smbd and nmbd don't do
+		 * this.
+		 */
+		cmdline_daemon_cfg->fork = true;
+		log_stdout = true;
+	}
+
+	if (log_stdout && cmdline_daemon_cfg->fork) {
 		d_fprintf(stderr, "\nERROR: "
 			  "Can't log to stdout (-S) unless daemon is in foreground +(-F) or interactive (-i)\n\n");
 		poptPrintUsage(pc, stderr, 0);
@@ -1755,40 +1717,25 @@ int main(int argc, const char **argv)
 
 	poptFreeContext(pc);
 
-	if (!override_logfile) {
-		char *lfile = NULL;
-		if (asprintf(&lfile,"%s/log.winbindd",
-				get_dyn_LOGFILEBASE()) > 0) {
-			lp_set_logfile(lfile);
-			SAFE_FREE(lfile);
-		}
-	}
-
-	if (log_stdout) {
-		setup_logging("winbindd", DEBUG_STDOUT);
-	} else {
-		setup_logging("winbindd", DEBUG_FILE);
-	}
 	reopen_logs();
 
 	DEBUG(0,("winbindd version %s started.\n", samba_version_string()));
 	DEBUGADD(0,("%s\n", COPYRIGHT_STARTUP_MESSAGE));
 
-	if (!lp_load_initial_only(get_dyn_CONFIGFILE())) {
-		DEBUG(0, ("error opening config file '%s'\n", get_dyn_CONFIGFILE()));
-		exit(1);
-	}
 	/* After parsing the configuration file we setup the core path one more time
 	 * as the log file might have been set in the configuration and cores's
 	 * path is by default basename(lp_logfile()).
 	 */
 	dump_core_setup("winbindd", lp_logfile(talloc_tos(), lp_sub));
 
-	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC
-	    && !lp_parm_bool(-1, "server role check", "inhibit", false)) {
-		DEBUG(0, ("server role = 'active directory domain controller' not compatible with running the winbindd binary. \n"));
-		DEBUGADD(0, ("You should start 'samba' instead, and it will control starting the internal AD DC winbindd implementation, which is not the same as this one\n"));
-		exit(1);
+	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC) {
+		if (!lp_parm_bool(-1, "server role check", "inhibit", false)) {
+			DBG_ERR("server role = 'active directory domain controller' not compatible with running the winbindd binary. \n");
+			DEBUGADD(0, ("You should start 'samba' instead, and it will control starting the internal AD DC winbindd implementation, which is not the same as this one\n"));
+			exit(1);
+		}
+		/* Main 'samba' daemon will notify */
+		daemon_sd_notifications(false);
 	}
 
 	if (lp_security() == SEC_ADS) {
@@ -1807,6 +1754,56 @@ int main(int argc, const char **argv)
 			exit(1);
 		}
 	}
+
+	winbindd_socket_dir_len = strlen(lp_winbindd_socket_directory());
+	if (winbindd_socket_dir_len > 0) {
+		size_t winbindd_socket_len =
+			winbindd_socket_dir_len + 1 +
+			strlen(WINBINDD_SOCKET_NAME);
+		struct sockaddr_un un = {
+			.sun_family = AF_UNIX,
+		};
+		size_t sun_path_len = sizeof(un.sun_path);
+
+		if (winbindd_socket_len >= sun_path_len) {
+			DBG_ERR("The winbind socket path [%s/%s] is too long "
+				"(%zu >= %zu)\n",
+				lp_winbindd_socket_directory(),
+				WINBINDD_SOCKET_NAME,
+				winbindd_socket_len,
+				sun_path_len);
+			exit(1);
+		}
+	} else {
+		DBG_ERR("'winbindd_socket_directory' parameter is empty\n");
+		exit(1);
+	}
+
+	winbindd_priv_socket_dir = get_winbind_priv_pipe_dir();
+	winbindd_priv_socket_dir_len = strlen(winbindd_priv_socket_dir);
+	if (winbindd_priv_socket_dir_len > 0) {
+		size_t winbindd_priv_socket_len =
+			winbindd_priv_socket_dir_len + 1 +
+			strlen(WINBINDD_SOCKET_NAME);
+		struct sockaddr_un un = {
+			.sun_family = AF_UNIX,
+		};
+		size_t sun_path_len = sizeof(un.sun_path);
+
+		if (winbindd_priv_socket_len >= sun_path_len) {
+			DBG_ERR("The winbind priviliged socket path [%s/%s] is too long "
+				"(%zu >= %zu)\n",
+				winbindd_priv_socket_dir,
+				WINBINDD_SOCKET_NAME,
+				winbindd_priv_socket_len,
+				sun_path_len);
+			exit(1);
+		}
+	} else {
+		DBG_ERR("'winbindd_priv_socket_directory' parameter is empty\n");
+		exit(1);
+	}
+	TALLOC_FREE(winbindd_priv_socket_dir);
 
 	if (!cluster_probe_ok()) {
 		exit(1);
@@ -1856,11 +1853,6 @@ int main(int argc, const char **argv)
 		exit(1);
 	}
 
-	/* Setup names. */
-
-	if (!init_names())
-		exit(1);
-
   	load_interfaces();
 
 	if (!secrets_init()) {
@@ -1888,7 +1880,9 @@ int main(int argc, const char **argv)
 	BlockSignals(False, SIGCHLD);
 
 	if (!interactive) {
-		become_daemon(Fork, no_process_group, log_stdout);
+		become_daemon(cmdline_daemon_cfg->fork,
+			      cmdline_daemon_cfg->no_process_group,
+			      log_stdout);
 	} else {
 		daemon_status("winbindd", "Starting process ...");
 	}
@@ -1900,8 +1894,11 @@ int main(int argc, const char **argv)
 	 * If we're interactive we want to set our own process group for
 	 * signal management.
 	 */
-	if (interactive && !no_process_group)
+	if (cmdline_daemon_cfg->interactive &&
+	    !cmdline_daemon_cfg->no_process_group)
+	{
 		setpgid( (pid_t)0, (pid_t)0);
+	}
 #endif
 
 	TimeInit();
@@ -1935,7 +1932,8 @@ int main(int argc, const char **argv)
 		exit_daemon(nt_errstr(status), map_errno_from_nt_status(status));
 	}
 
-	winbindd_register_handlers(global_messaging_context(), !Fork);
+	winbindd_register_handlers(global_messaging_context(),
+				   !cmdline_daemon_cfg->fork);
 
 	if (!messaging_parent_dgm_cleanup_init(global_messaging_context())) {
 		exit(1);

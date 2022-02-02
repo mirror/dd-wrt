@@ -1200,12 +1200,12 @@ _PUBLIC_ int cli_credentials_get_keytab(struct cli_credentials *cred,
 		break;
 	}
 
-	ret = smb_krb5_salt_principal(realm,
-				      username, /* sAMAccountName */
-				      upn, /* userPrincipalName */
-				      uac_flags,
-				      mem_ctx,
-				      &salt_principal);
+	ret = smb_krb5_salt_principal_str(realm,
+					  username, /* sAMAccountName */
+					  upn, /* userPrincipalName */
+					  uac_flags,
+					  mem_ctx,
+					  &salt_principal);
 	if (ret) {
 		talloc_free(mem_ctx);
 		return ret;
@@ -1433,7 +1433,9 @@ _PUBLIC_ void cli_credentials_set_impersonate_principal(struct cli_credentials *
 	cred->impersonate_principal = talloc_strdup(cred, principal);
 	talloc_free(cred->self_service);
 	cred->self_service = talloc_strdup(cred, self_service);
-	cli_credentials_set_kerberos_state(cred, CRED_USE_KERBEROS_REQUIRED);
+	cli_credentials_set_kerberos_state(cred,
+					   CRED_USE_KERBEROS_REQUIRED,
+					   CRED_SPECIFIED);
 }
 
 /*

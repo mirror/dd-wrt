@@ -182,6 +182,10 @@ static PyObject *py_ldb_control_get_critical(PyLdbControlObject *self,
 
 static int py_ldb_control_set_critical(PyLdbControlObject *self, PyObject *value, void *closure)
 {
+	if (value == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "cannot delete critical flag");
+		return -1;
+	}
 	if (PyObject_IsTrue(value)) {
 		self->data->critical = true;
 	} else {
@@ -839,7 +843,7 @@ static PyMethodDef py_ldb_dn_methods[] = {
 		"S.get_component_value(num) -> string\n"
 		"get the attribute value of the specified component as a binary string" },
 	{ "set_component", (PyCFunction)py_ldb_dn_set_component, METH_VARARGS,
-		"S.get_component_value(num, name, value) -> None\n"
+		"S.set_component(num, name, value) -> None\n"
 		"set the attribute name and value of the specified component" },
 	{ "get_rdn_name", (PyCFunction)py_ldb_dn_get_rdn_name, METH_NOARGS,
 		"S.get_rdn_name() -> string\n"
@@ -1804,6 +1808,7 @@ static PyObject *py_ldb_msg_diff(PyLdbObject *self, PyObject *args)
 	struct ldb_message *diff;
 	struct ldb_context *ldb;
 	PyObject *py_ret;
+	TALLOC_CTX *mem_ctx = NULL;
 
 	if (!PyArg_ParseTuple(args, "OO", &py_msg_old, &py_msg_new))
 		return NULL;
@@ -1818,19 +1823,32 @@ static PyObject *py_ldb_msg_diff(PyLdbObject *self, PyObject *args)
 		return NULL;
 	}
 
+	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
 	ldb = pyldb_Ldb_AS_LDBCONTEXT(self);
-	ldb_ret = ldb_msg_difference(ldb, ldb,
+	ldb_ret = ldb_msg_difference(ldb, mem_ctx,
 	                             pyldb_Message_AsMessage(py_msg_old),
 	                             pyldb_Message_AsMessage(py_msg_new),
 	                             &diff);
 	if (ldb_ret != LDB_SUCCESS) {
+		talloc_free(mem_ctx);
 		PyErr_SetString(PyExc_RuntimeError, "Failed to generate the Ldb Message diff");
+		return NULL;
+	}
+
+	diff = ldb_msg_copy(mem_ctx, diff);
+	if (diff == NULL) {
+		PyErr_NoMemory();
 		return NULL;
 	}
 
 	py_ret = PyLdbMessage_FromMessage(diff);
 
-	talloc_unlink(ldb, diff);
+	talloc_free(mem_ctx);
 
 	return py_ret;
 }
@@ -3415,33 +3433,41 @@ static PyObject *py_ldb_msg_keys(PyLdbMessageObject *self,
 	return obj;
 }
 
-static PyObject *py_ldb_msg_getitem_helper(PyLdbMessageObject *self, PyObject *py_name)
+static int py_ldb_msg_contains(PyLdbMessageObject *self, PyObject *py_name)
 {
-	struct ldb_message_element *el;
-	const char *name;
+	struct ldb_message_element *el = NULL;
+	const char *name = NULL;
 	struct ldb_message *msg = pyldb_Message_AsMessage(self);
 	name = PyUnicode_AsUTF8(py_name);
 	if (name == NULL) {
-		PyErr_SetNone(PyExc_TypeError);
-		return NULL;
+		return -1;
 	}
-	if (!ldb_attr_cmp(name, "dn"))
-		return pyldb_Dn_FromDn(msg->dn);
+	if (!ldb_attr_cmp(name, "dn")) {
+		return 1;
+	}
 	el = ldb_msg_find_element(msg, name);
-	if (el == NULL) {
-		return NULL;
-	}
-	return (PyObject *)PyLdbMessageElement_FromMessageElement(el, msg->elements);
+	return el != NULL ? 1 : 0;
 }
 
 static PyObject *py_ldb_msg_getitem(PyLdbMessageObject *self, PyObject *py_name)
 {
-	PyObject *ret = py_ldb_msg_getitem_helper(self, py_name);
-	if (ret == NULL) {
+	struct ldb_message_element *el = NULL;
+	const char *name = NULL;
+	struct ldb_message *msg = pyldb_Message_AsMessage(self);
+	name = PyUnicode_AsUTF8(py_name);
+	if (name == NULL) {
+		return NULL;
+	}
+	if (!ldb_attr_cmp(name, "dn")) {
+		return pyldb_Dn_FromDn(msg->dn);
+	}
+	el = ldb_msg_find_element(msg, name);
+	if (el == NULL) {
 		PyErr_SetString(PyExc_KeyError, "No such element");
 		return NULL;
 	}
-	return ret;
+
+	return PyLdbMessageElement_FromMessageElement(el, msg->elements);
 }
 
 static PyObject *py_ldb_msg_get(PyLdbMessageObject *self, PyObject *args, PyObject *kwargs)
@@ -3509,13 +3535,13 @@ static PyObject *py_ldb_msg_items(PyLdbMessageObject *self,
 		PyObject *value = NULL;
 		PyObject *py_el = PyLdbMessageElement_FromMessageElement(&msg->elements[i], msg->elements);
 		int res = 0;
-		Py_CLEAR(py_el);
 		value = Py_BuildValue("(sO)", msg->elements[i].name, py_el);
+		Py_CLEAR(py_el);
 		if (value == NULL ) {
 			Py_CLEAR(l);
 			return NULL;
 		}
-		res = PyList_SetItem(l, 0, value);
+		res = PyList_SetItem(l, j, value);
 		if (res == -1) {
 			Py_CLEAR(l);
 			return NULL;
@@ -3651,6 +3677,10 @@ static Py_ssize_t py_ldb_msg_length(PyLdbMessageObject *self)
 	return pyldb_Message_AsMessage(self)->num_elements;
 }
 
+static PySequenceMethods py_ldb_msg_sequence = {
+	.sq_contains = (objobjproc)py_ldb_msg_contains,
+};
+
 static PyMappingMethods py_ldb_msg_mapping = {
 	.mp_length = (lenfunc)py_ldb_msg_length,
 	.mp_subscript = (binaryfunc)py_ldb_msg_getitem,
@@ -3727,6 +3757,10 @@ static PyObject *py_ldb_msg_get_dn(PyLdbMessageObject *self, void *closure)
 static int py_ldb_msg_set_dn(PyLdbMessageObject *self, PyObject *value, void *closure)
 {
 	struct ldb_message *msg = pyldb_Message_AsMessage(self);
+	if (value == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "cannot delete dn");
+		return -1;
+	}
 	if (!pyldb_Dn_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, "expected dn");
 		return -1;
@@ -3824,6 +3858,7 @@ static PyTypeObject PyLdbMessage = {
 	.tp_name = "ldb.Message",
 	.tp_methods = py_ldb_msg_methods,
 	.tp_getset = py_ldb_msg_getset,
+	.tp_as_sequence = &py_ldb_msg_sequence,
 	.tp_as_mapping = &py_ldb_msg_mapping,
 	.tp_basicsize = sizeof(PyLdbMessageObject),
 	.tp_dealloc = (destructor)py_ldb_msg_dealloc,
@@ -4192,6 +4227,13 @@ static PyObject *py_timestring(PyObject *module, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l", &t_val))
 		return NULL;
 	tresult = ldb_timestring(NULL, (time_t) t_val);
+	if (tresult == NULL) {
+		/*
+		 * Most likely EOVERFLOW from gmtime()
+		 */
+		PyErr_SetFromErrno(PyExc_OSError);
+		return NULL;
+	}
 	ret = PyUnicode_FromString(tresult);
 	talloc_free(tresult);
 	return ret;
@@ -4272,7 +4314,7 @@ static PyMethodDef py_ldb_global_methods[] = {
 		"S.string_to_time(string) -> int\n\n"
 		"Parse a LDAP time string into a UNIX timestamp." },
 	{ "valid_attr_name", py_valid_attr_name, METH_VARARGS,
-		"S.valid_attr_name(name) -> bool\n\nn"
+		"S.valid_attr_name(name) -> bool\n\n"
 		"Check whether the supplied name is a valid attribute name." },
 	{ "binary_encode", py_binary_encode, METH_VARARGS,
 		"S.binary_encode(string) -> string\n\n"

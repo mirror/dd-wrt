@@ -304,6 +304,36 @@ static bool witness_AsyncNotify_check_move_OUT(struct torture_context *tctx,
 	return true;
 }
 
+static const uint8_t witness_AsyncNotify_data_fuzz1_OUT[] = {
+	0x00, 0x00, 0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00,
+	0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x02, 0x00, 0x0C, 0x00, 0x00, 0x00,
+	0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+};
+
+static bool witness_AsyncNotify_check_fuzz1_OUT(struct torture_context *tctx,
+					        struct witness_AsyncNotify *r)
+{
+	struct witness_notifyResponse *n;
+	struct witness_IPaddrInfoList *i;
+
+	torture_assert(tctx, r->out.response, "r->out.response");
+
+	n = *(r->out.response);
+
+	torture_assert_int_equal(tctx, n->type, WITNESS_NOTIFY_CLIENT_MOVE, "type");
+	torture_assert_int_equal(tctx, n->length, 12, "length");
+	torture_assert_int_equal(tctx, n->num, 1, "num");
+
+	i = &n->messages[0].client_move;
+
+	torture_assert_int_equal(tctx, i->length, 12, "i->length");
+	torture_assert_int_equal(tctx, i->reserved, 0, "i->reserved");
+	torture_assert_int_equal(tctx, i->num, 0, "i->num");
+
+	return true;
+}
+
 struct torture_suite *ndr_witness_suite(TALLOC_CTX *ctx)
 {
 	struct torture_suite *suite = torture_suite_create(ctx, "witness");
@@ -363,6 +393,19 @@ struct torture_suite *ndr_witness_suite(TALLOC_CTX *ctx)
 					    NDR_OUT,
 					    0,
 					    witness_AsyncNotify_check_move_OUT);
+
+	torture_suite_add_ndr_pull_fn_test(suite,
+					   witness_AsyncNotify,
+					   witness_AsyncNotify_data_fuzz1_OUT,
+					   NDR_OUT,
+					   witness_AsyncNotify_check_fuzz1_OUT);
+
+	torture_suite_add_ndr_pullpush_fn_test_flags(suite,
+					    witness_AsyncNotify,
+					    witness_AsyncNotify_data_fuzz1_OUT,
+					    NDR_OUT,
+					    0,
+					    witness_AsyncNotify_check_fuzz1_OUT);
 
 	return suite;
 }

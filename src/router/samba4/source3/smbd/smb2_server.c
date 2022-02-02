@@ -23,6 +23,7 @@
 #include "system/network.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
+#include "lib/param/param.h"
 #include "../libcli/smb/smb_common.h"
 #include "../lib/tsocket/tsocket.h"
 #include "../lib/util/tevent_ntstatus.h"
@@ -32,6 +33,7 @@
 #include "lib/util/iov_buf.h"
 #include "auth.h"
 #include "libcli/smb/smbXcli_base.h"
+#include "source3/lib/substitute.h"
 
 #if defined(LINUX)
 /* SIOCOUTQ TIOCOUTQ are the same */
@@ -64,7 +66,6 @@ static const struct smbd_smb2_dispatch_table {
 	bool need_tcon;
 	bool as_root;
 	uint16_t fileid_ofs;
-	bool allow_invalid_fileid;
 	bool modify;
 } smbd_smb2_table[] = {
 #define _OP(o) .opcode = o, .name = #o
@@ -129,7 +130,6 @@ static const struct smbd_smb2_dispatch_table {
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
-		.allow_invalid_fileid = true,
 		.modify = true,
 	},{
 		_OP(SMB2_OP_CANCEL),
@@ -298,12 +298,8 @@ static bool smb2_setup_nbt_length(struct iovec *vector, int count)
 
 static int smbd_smb2_request_destructor(struct smbd_smb2_request *req)
 {
-	if (req->first_key.length > 0) {
-		data_blob_clear_free(&req->first_key);
-	}
-	if (req->last_key.length > 0) {
-		data_blob_clear_free(&req->last_key);
-	}
+	TALLOC_FREE(req->first_enc_key);
+	TALLOC_FREE(req->last_sign_key);
 	return 0;
 }
 
@@ -403,7 +399,7 @@ static NTSTATUS smbd_smb2_inbuf_parse_compound(struct smbXsrv_connection *xconn,
 			NTSTATUS status;
 			size_t enc_len;
 
-			if (xconn->protocol < PROTOCOL_SMB2_24) {
+			if (xconn->protocol < PROTOCOL_SMB3_00) {
 				DEBUG(10, ("Got SMB2_TRANSFORM header, "
 					   "but dialect[0x%04X] is used\n",
 					   xconn->smb2.server.dialect));
@@ -442,6 +438,10 @@ static NTSTATUS smbd_smb2_inbuf_parse_compound(struct smbXsrv_connection *xconn,
 			status = smb2srv_session_lookup_conn(xconn, uid, now,
 							     &s);
 			if (s == NULL) {
+				status = smb2srv_session_lookup_global(xconn->client,
+								       uid, req, &s);
+			}
+			if (s == NULL) {
 				DEBUG(1, ("invalid session[%llu] in "
 					  "SMB2_TRANSFORM header\n",
 					   (unsigned long long)uid));
@@ -455,7 +455,6 @@ static NTSTATUS smbd_smb2_inbuf_parse_compound(struct smbXsrv_connection *xconn,
 			tf_iov[1].iov_len = enc_len;
 
 			status = smb2_signing_decrypt_pdu(s->global->decryption_key,
-							  xconn->smb2.server.cipher,
 							  tf_iov, 2);
 			if (!NT_STATUS_IS_OK(status)) {
 				TALLOC_FREE(iov_alloc);
@@ -1133,6 +1132,11 @@ bool smbXsrv_server_multi_channel_enabled(void)
 	bool enabled = lp_server_multi_channel_support();
 #ifndef __ALLOW_MULTI_CHANNEL_SUPPORT
 	bool forced = false;
+	struct loadparm_context *lp_ctx = loadparm_init_s3(NULL, loadparm_s3_helpers());
+	bool unspecified = lpcfg_parm_is_unspecified(lp_ctx, "server multi channel support");
+	if (unspecified) {
+		enabled = false;
+	}
 	/*
 	 * If we don't have support from the kernel
 	 * to ask for the un-acked number of bytes
@@ -1148,6 +1152,7 @@ bool smbXsrv_server_multi_channel_enabled(void)
 			"https://bugzilla.samba.org/show_bug.cgi?id=11897\n"));
 		enabled = false;
 	}
+	TALLOC_FREE(lp_ctx);
 #endif /* ! __ALLOW_MULTI_CHANNEL_SUPPORT */
 	return enabled;
 }
@@ -1499,7 +1504,7 @@ size_t smbXsrv_client_valid_connections(struct smbXsrv_client *client)
 }
 
 struct smbXsrv_connection_shutdown_state {
-	struct tevent_queue *wait_queue;
+	struct smbXsrv_connection *xconn;
 };
 
 static void smbXsrv_connection_shutdown_wait_done(struct tevent_req *subreq);
@@ -1520,6 +1525,8 @@ static struct tevent_req *smbXsrv_connection_shutdown_send(TALLOC_CTX *mem_ctx,
 	 * smbXsrv_connection_disconnect_transport() before.
 	 */
 	SMB_ASSERT(!NT_STATUS_IS_OK(xconn->transport.status));
+	SMB_ASSERT(xconn->transport.terminating);
+	SMB_ASSERT(xconn->transport.shutdown_wait_queue == NULL);
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct smbXsrv_connection_shutdown_state);
@@ -1527,45 +1534,51 @@ static struct tevent_req *smbXsrv_connection_shutdown_send(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
-	status = smbXsrv_session_disconnect_xconn(xconn);
-	if (tevent_req_nterror(req, status)) {
-		return tevent_req_post(req, ev);
-	}
+	state->xconn = xconn;
+	tevent_req_defer_callback(req, ev);
 
-	state->wait_queue = tevent_queue_create(state, "smbXsrv_connection_shutdown_queue");
-	if (tevent_req_nomem(state->wait_queue, req)) {
+	xconn->transport.shutdown_wait_queue =
+		tevent_queue_create(state, "smbXsrv_connection_shutdown_queue");
+	if (tevent_req_nomem(xconn->transport.shutdown_wait_queue, req)) {
 		return tevent_req_post(req, ev);
 	}
 
 	for (preq = xconn->smb2.requests; preq != NULL; preq = preq->next) {
-		/*
-		 * The connection is gone so we
-		 * don't need to take care of
-		 * any crypto
-		 */
-		preq->session = NULL;
-		preq->do_signing = false;
-		preq->do_encryption = false;
-		preq->preauth = NULL;
-
-		if (preq->subreq != NULL) {
-			tevent_req_cancel(preq->subreq);
-		}
-
 		/*
 		 * Now wait until the request is finished.
 		 *
 		 * We don't set a callback, as we just want to block the
 		 * wait queue and the talloc_free() of the request will
 		 * remove the item from the wait queue.
+		 *
+		 * Note that we don't cancel the requests here
+		 * in order to keep the replay detection logic correct.
+		 *
+		 * However if we teardown the last channel of
+		 * a connection, we'll call some logic via
+		 * smbXsrv_session_disconnect_xconn()
+		 * -> smbXsrv_session_disconnect_xconn_callback()
+		 *   -> smbXsrv_session_remove_channel()
+		 *     -> smb2srv_session_shutdown_send()
+		 * will indeed cancel the request.
 		 */
-		subreq = tevent_queue_wait_send(preq, ev, state->wait_queue);
+		subreq = tevent_queue_wait_send(preq, ev,
+					xconn->transport.shutdown_wait_queue);
 		if (tevent_req_nomem(subreq, req)) {
 			return tevent_req_post(req, ev);
 		}
 	}
 
-	len = tevent_queue_length(state->wait_queue);
+	/*
+	 * This may attach sessions with num_channels == 0
+	 * to xconn->transport.shutdown_wait_queue.
+	 */
+	status = smbXsrv_session_disconnect_xconn(xconn);
+	if (tevent_req_nterror(req, status)) {
+		return tevent_req_post(req, ev);
+	}
+
+	len = tevent_queue_length(xconn->transport.shutdown_wait_queue);
 	if (len == 0) {
 		tevent_req_done(req);
 		return tevent_req_post(req, ev);
@@ -1576,7 +1589,7 @@ static struct tevent_req *smbXsrv_connection_shutdown_send(TALLOC_CTX *mem_ctx,
 	 * this way we get notified when all pending requests are finished
 	 * and send to the socket.
 	 */
-	subreq = tevent_queue_wait_send(state, ev, state->wait_queue);
+	subreq = tevent_queue_wait_send(state, ev, xconn->transport.shutdown_wait_queue);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -1590,15 +1603,33 @@ static void smbXsrv_connection_shutdown_wait_done(struct tevent_req *subreq)
 	struct tevent_req *req =
 		tevent_req_callback_data(subreq,
 		struct tevent_req);
+	struct smbXsrv_connection_shutdown_state *state =
+		tevent_req_data(req,
+		struct smbXsrv_connection_shutdown_state);
+	struct smbXsrv_connection *xconn = state->xconn;
 
 	tevent_queue_wait_recv(subreq);
 	TALLOC_FREE(subreq);
 
 	tevent_req_done(req);
+	/*
+	 * make sure the xconn pointer is still valid,
+	 * it should as we used tevent_req_defer_callback()
+	 */
+	SMB_ASSERT(xconn->transport.terminating);
 }
 
 static NTSTATUS smbXsrv_connection_shutdown_recv(struct tevent_req *req)
 {
+	struct smbXsrv_connection_shutdown_state *state =
+		tevent_req_data(req,
+		struct smbXsrv_connection_shutdown_state);
+	struct smbXsrv_connection *xconn = state->xconn;
+	/*
+	 * make sure the xconn pointer is still valid,
+	 * it should as we used tevent_req_defer_callback()
+	 */
+	SMB_ASSERT(xconn->transport.terminating);
 	return tevent_req_simple_recv_ntstatus(req);
 }
 
@@ -1636,6 +1667,14 @@ void smbd_server_connection_terminate_ex(struct smbXsrv_connection *xconn,
 					NT_STATUS_CONNECTION_DISCONNECTED);
 
 	num_ok = smbXsrv_client_valid_connections(client);
+
+	if (xconn->transport.terminating) {
+		DBG_DEBUG("skip recursion conn[%s] num_ok[%zu] reason[%s] at %s\n",
+			  smbXsrv_connection_dbg(xconn), num_ok,
+			  reason, location);
+		return;
+	}
+	xconn->transport.terminating = true;
 
 	DBG_DEBUG("conn[%s] num_ok[%zu] reason[%s] at %s\n",
 		  smbXsrv_connection_dbg(xconn), num_ok,
@@ -1903,27 +1942,16 @@ static NTSTATUS smb2_send_async_interim_response(const struct smbd_smb2_request 
 	 * we need to sign/encrypt here with the last/first key we remembered
 	 */
 	if (firsttf->iov_len == SMB2_TF_HDR_SIZE) {
-		struct smb2_signing_key key = {
-			.blob = req->first_key,
-		};
-		status = smb2_signing_encrypt_pdu(&key,
-					xconn->smb2.server.cipher,
+		status = smb2_signing_encrypt_pdu(req->first_enc_key,
 					firsttf,
 					nreq->out.vector_count - first_idx);
-		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
-	} else if (req->last_key.length > 0) {
-		struct smb2_signing_key key = {
-			.blob = req->last_key,
-		};
-
-		status = smb2_signing_sign_pdu(&key,
-					       xconn->protocol,
+	} else if (smb2_signing_key_valid(req->last_sign_key)) {
+		status = smb2_signing_sign_pdu(req->last_sign_key,
 					       outhdr_v,
 					       SMBD_SMB2_NUM_IOV_PER_REQ - 1);
-		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
@@ -2044,9 +2072,7 @@ NTSTATUS smbd_smb2_request_pending_queue(struct smbd_smb2_request *req,
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
-		if (req->first_key.length > 0) {
-			data_blob_clear_free(&req->first_key);
-		}
+		TALLOC_FREE(req->first_enc_key);
 
 		req->current_idx = 1;
 
@@ -2077,9 +2103,7 @@ NTSTATUS smbd_smb2_request_pending_queue(struct smbd_smb2_request *req,
 			SIVAL(outhdr, SMB2_HDR_FLAGS, flags);
 		}
 	}
-	if (req->last_key.length > 0) {
-		data_blob_clear_free(&req->last_key);
-	}
+	TALLOC_FREE(req->last_sign_key);
 
 	/*
 	 * smbd_smb2_request_pending_timer() just send a packet
@@ -2101,19 +2125,27 @@ NTSTATUS smbd_smb2_request_pending_queue(struct smbd_smb2_request *req,
 
 static
 struct smb2_signing_key *smbd_smb2_signing_key(struct smbXsrv_session *session,
-					       struct smbXsrv_connection *xconn)
+					       struct smbXsrv_connection *xconn,
+					       bool *_has_channel)
 {
 	struct smbXsrv_channel_global0 *c = NULL;
 	NTSTATUS status;
 	struct smb2_signing_key *key = NULL;
+	bool has_channel = false;
 
 	status = smbXsrv_session_find_channel(session, xconn, &c);
 	if (NT_STATUS_IS_OK(status)) {
 		key = c->signing_key;
+		has_channel = true;
 	}
 
 	if (!smb2_signing_key_valid(key)) {
 		key = session->global->signing_key;
+		has_channel = false;
+	}
+
+	if (_has_channel != NULL) {
+		*_has_channel = has_channel;
 	}
 
 	return key;
@@ -2239,6 +2271,11 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 	SIVAL(hdr, SMB2_HDR_STATUS, NT_STATUS_V(NT_STATUS_PENDING));
 	SSVAL(hdr, SMB2_HDR_OPCODE, SVAL(outhdr, SMB2_HDR_OPCODE));
 
+	/*
+	 * The STATUS_PENDING response has SMB2_HDR_FLAG_SIGNED
+	 * clearedm, but echoes the signature field.
+	 */
+	flags &= ~SMB2_HDR_FLAG_SIGNED;
 	SIVAL(hdr, SMB2_HDR_FLAGS, flags);
 	SIVAL(hdr, SMB2_HDR_NEXT_COMMAND, 0);
 	SBVAL(hdr, SMB2_HDR_MESSAGE_ID, message_id);
@@ -2292,6 +2329,10 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 			SMBD_SMB2_IN_HDR_IOV(req),
 			&state->vector[1+SMBD_SMB2_HDR_IOV_OFS]);
 
+	/*
+	 * We add SMB2_HDR_FLAG_ASYNC after smb2_set_operation_credit()
+	 * as it reacts on it
+	 */
 	SIVAL(hdr, SMB2_HDR_FLAGS, flags | SMB2_HDR_FLAG_ASYNC);
 
 	if (DEBUGLVL(10)) {
@@ -2310,23 +2351,8 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 		struct smb2_signing_key *encryption_key = x->global->encryption_key;
 
 		status = smb2_signing_encrypt_pdu(encryption_key,
-					xconn->smb2.server.cipher,
 					&state->vector[1+SMBD_SMB2_TF_IOV_OFS],
 					SMBD_SMB2_NUM_IOV_PER_REQ);
-		if (!NT_STATUS_IS_OK(status)) {
-			smbd_server_connection_terminate(xconn,
-						nt_errstr(status));
-			return;
-		}
-	} else if (req->do_signing) {
-		struct smbXsrv_session *x = req->session;
-		struct smb2_signing_key *signing_key =
-			smbd_smb2_signing_key(x, xconn);
-
-		status = smb2_signing_sign_pdu(signing_key,
-					xconn->protocol,
-					&state->vector[1+SMBD_SMB2_HDR_IOV_OFS],
-					SMBD_SMB2_NUM_IOV_PER_REQ - 1);
 		if (!NT_STATUS_IS_OK(status)) {
 			smbd_server_connection_terminate(xconn,
 						nt_errstr(status));
@@ -2376,6 +2402,10 @@ static NTSTATUS smbd_smb2_request_process_cancel(struct smbd_smb2_request *req)
 		const uint8_t *outhdr;
 		uint64_t message_id;
 		uint64_t async_id;
+
+		if (cur->session != req->session) {
+			continue;
+		}
 
 		if (cur->compound_related) {
 			/*
@@ -2515,6 +2545,28 @@ static NTSTATUS smbd_smb2_request_check_session(struct smbd_smb2_request *req)
 	if (session) {
 		req->session = session;
 		req->last_session_id = in_session_id;
+	}
+	if (NT_STATUS_EQUAL(status, NT_STATUS_USER_SESSION_DELETED)) {
+		switch (in_opcode) {
+		case SMB2_OP_SESSSETUP:
+			status = smb2srv_session_lookup_global(req->xconn->client,
+							       in_session_id,
+							       req,
+							       &session);
+			if (NT_STATUS_IS_OK(status)) {
+				/*
+				 * We fallback to a session of
+				 * another process in order to
+				 * get the signing correct.
+				 *
+				 * We don't set req->last_session_id here.
+				 */
+				req->session = session;
+			}
+			break;
+		default:
+			break;
+		}
 	}
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NETWORK_SESSION_EXPIRED)) {
 		switch (in_opcode) {
@@ -2710,6 +2762,18 @@ static void smb2srv_update_crypto_flags(struct smbd_smb2_request *req,
 	bool update_session = false;
 	bool update_tcon = false;
 
+	if (session->table == NULL) {
+		/*
+		 * sessions from smb2srv_session_lookup_global()
+		 * have NT_STATUS_BAD_LOGON_SESSION_STATE
+		 * and session->table == NULL.
+		 *
+		 * They only used to give the correct error
+		 * status, we should not update any state.
+		 */
+		goto out;
+	}
+
 	if (req->was_encrypted && req->do_encryption) {
 		encrypt_flag = SMBXSRV_PROCESSED_ENCRYPTED_PACKET;
 		sign_flag = SMBXSRV_PROCESSED_SIGNED_PACKET;
@@ -2717,9 +2781,6 @@ static void smb2srv_update_crypto_flags(struct smbd_smb2_request *req,
 		/* Unencrypted packet, can be signed */
 		if (req->do_signing) {
 			sign_flag = SMBXSRV_PROCESSED_SIGNED_PACKET;
-		} else if (opcode == SMB2_OP_CANCEL) {
-			/* Cancel requests are allowed to skip signing */
-			sign_flag &= ~SMBXSRV_PROCESSED_UNSIGNED_PACKET;
 		}
 	}
 
@@ -2735,6 +2796,7 @@ static void smb2srv_update_crypto_flags(struct smbd_smb2_request *req,
 			&tcon->global->signing_flags, sign_flag);
 	}
 
+out:
 	*update_session_globalp = update_session;
 	*update_tcon_globalp = update_tcon;
 	return;
@@ -2773,7 +2835,7 @@ static NTSTATUS smbd_smb2_request_dispatch_update_counts(
 
 	SMB_ASSERT(!req->request_counters_updated);
 
-	if (xconn->protocol < PROTOCOL_SMB2_22) {
+	if (xconn->protocol < PROTOCOL_SMB3_00) {
 		return NT_STATUS_OK;
 	}
 
@@ -3009,7 +3071,7 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 	if (opcode == SMB2_OP_CANCEL) {
 		allowed_flags |= SMB2_HDR_FLAG_ASYNC;
 	}
-	if (xconn->protocol >= PROTOCOL_SMB2_22) {
+	if (xconn->protocol >= PROTOCOL_SMB3_00) {
 		allowed_flags |= SMB2_HDR_FLAG_REPLAY_OPERATION;
 	}
 	if ((flags & ~allowed_flags) != 0) {
@@ -3032,6 +3094,7 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		signing_required = false;
 	} else if (signing_required || (flags & SMB2_HDR_FLAG_SIGNED)) {
 		struct smb2_signing_key *signing_key = NULL;
+		bool has_channel = false;
 
 		if (x == NULL) {
 			/*
@@ -3053,20 +3116,46 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 			return smbd_smb2_request_error(req, status);
 		}
 
-		signing_key = smbd_smb2_signing_key(x, xconn);
+		signing_key = smbd_smb2_signing_key(x, xconn, &has_channel);
 
 		/*
 		 * If we have a signing key, we should
 		 * sign the response
 		 */
-		if (smb2_signing_key_valid(signing_key)) {
+		if (smb2_signing_key_valid(signing_key) && opcode != SMB2_OP_CANCEL) {
 			req->do_signing = true;
 		}
 
 		status = smb2_signing_check_pdu(signing_key,
-						xconn->protocol,
 						SMBD_SMB2_IN_HDR_IOV(req),
 						SMBD_SMB2_NUM_IOV_PER_REQ - 1);
+		if (NT_STATUS_EQUAL(status, NT_STATUS_ACCESS_DENIED) &&
+		    opcode == SMB2_OP_SESSSETUP && !has_channel &&
+		    NT_STATUS_IS_OK(session_status))
+		{
+			if (!NT_STATUS_EQUAL(x->status, NT_STATUS_BAD_LOGON_SESSION_STATE)) {
+				struct smbXsrv_session *session = NULL;
+				NTSTATUS error;
+
+				error = smb2srv_session_lookup_global(req->xconn->client,
+								      x->global->session_wire_id,
+								      req,
+								      &session);
+				if (!NT_STATUS_IS_OK(error)) {
+					return smbd_smb2_request_error(req, error);
+				}
+
+				/*
+				 * We fallback to a session of
+				 * another process in order to
+				 * get the signing correct.
+				 *
+				 * We don't set req->last_session_id here.
+				 */
+				req->session = x = session;
+			}
+			goto skipped_signing;
+		}
 		if (!NT_STATUS_IS_OK(status)) {
 			return smbd_smb2_request_error(req, status);
 		}
@@ -3075,14 +3164,16 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		 * Now that we know the request was correctly signed
 		 * we have to sign the response too.
 		 */
-		req->do_signing = true;
+		if (opcode != SMB2_OP_CANCEL) {
+			req->do_signing = true;
+		}
 
 		if (!NT_STATUS_IS_OK(session_status)) {
 			return smbd_smb2_request_error(req, session_status);
 		}
-	} else if (opcode == SMB2_OP_CANCEL) {
-		/* Cancel requests are allowed to skip the signing */
-	} else if (opcode == SMB2_OP_IOCTL) {
+	}
+
+	if (opcode == SMB2_OP_IOCTL) {
 		/*
 		 * Some special IOCTL calls don't require
 		 * file, tcon nor session.
@@ -3102,7 +3193,7 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		const uint8_t *body = SMBD_SMB2_IN_BODY_PTR(req);
 		size_t body_size = SMBD_SMB2_IN_BODY_LEN(req);
 		uint32_t in_ctl_code;
-		size_t needed = 4;
+		size_t needed = 8;
 
 		if (needed > body_size) {
 			return smbd_smb2_request_error(req,
@@ -3117,15 +3208,16 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		case FSCTL_SMBTORTURE_FORCE_UNACKED_TIMEOUT:
 			call = &_root_ioctl_call;
 			break;
+		case FSCTL_VALIDATE_NEGOTIATE_INFO:
+			call = &_root_ioctl_call;
+			break;
+		case FSCTL_QUERY_NETWORK_INTERFACE_INFO:
+			call = &_root_ioctl_call;
+			break;
 		}
-	} else if (signing_required) {
-		/*
-		 * If signing is required we try to sign
-		 * a possible error response
-		 */
-		req->do_signing = true;
-		return smbd_smb2_request_error(req, NT_STATUS_ACCESS_DENIED);
 	}
+
+skipped_signing:
 
 	if (flags & SMB2_HDR_FLAG_CHAINED) {
 		req->compound_related = true;
@@ -3225,16 +3317,18 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 
 		fsp = file_fsp_smb2(req, file_id_persistent, file_id_volatile);
 		if (fsp == NULL) {
-			if (!call->allow_invalid_fileid) {
+			if (req->compound_related &&
+			    !NT_STATUS_IS_OK(req->compound_create_err))
+			{
 				return smbd_smb2_request_error(req,
-						NT_STATUS_FILE_CLOSED);
+						req->compound_create_err);
 			}
-
-			if (file_id_persistent != UINT64_MAX) {
-				return smbd_smb2_request_error(req,
-						NT_STATUS_FILE_CLOSED);
-			}
-			if (file_id_volatile != UINT64_MAX) {
+			/*
+			 * smbd_smb2_request_process_ioctl()
+			 * has more checks in order to return more
+			 * detailed error codes...
+			 */
+			if (opcode != SMB2_OP_IOCTL) {
 				return smbd_smb2_request_error(req,
 						NT_STATUS_FILE_CLOSED);
 			}
@@ -3412,7 +3506,7 @@ static void smbd_smb2_request_reply_update_counts(struct smbd_smb2_request *req)
 
 	req->request_counters_updated = false;
 
-	if (xconn->protocol < PROTOCOL_SMB2_22) {
+	if (xconn->protocol < PROTOCOL_SMB3_00) {
 		return;
 	}
 
@@ -3456,7 +3550,7 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 
 	if (req->do_encryption &&
 	    (firsttf->iov_len == 0) &&
-	    (req->first_key.length == 0) &&
+	    (!smb2_signing_key_valid(req->first_enc_key)) &&
 	    (req->session != NULL) &&
 	    smb2_signing_key_valid(req->session->global->encryption_key))
 	{
@@ -3485,10 +3579,11 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 		 * we are sure that we do not change
 		 * the header again.
 		 */
-		req->first_key = data_blob_dup_talloc(req,
-						      encryption_key->blob);
-		if (req->first_key.data == NULL) {
-			return NT_STATUS_NO_MEMORY;
+		status = smb2_signing_key_copy(req,
+					       encryption_key,
+					       &req->first_enc_key);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
 		}
 
 		tf = talloc_zero_array(req, uint8_t,
@@ -3507,32 +3602,25 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 	}
 
 	if ((req->current_idx > SMBD_SMB2_NUM_IOV_PER_REQ) &&
-	    (req->last_key.length > 0) &&
+	    (smb2_signing_key_valid(req->last_sign_key)) &&
 	    (firsttf->iov_len == 0))
 	{
 		int last_idx = req->current_idx - SMBD_SMB2_NUM_IOV_PER_REQ;
 		struct iovec *lasthdr = SMBD_SMB2_IDX_HDR_IOV(req,out,last_idx);
-		struct smb2_signing_key key = {
-			.blob = req->last_key,
-		};
 
 		/*
 		 * As we are sure the header of the last request in the
 		 * compound chain will not change, we can to sign here
 		 * with the last signing key we remembered.
 		 */
-		status = smb2_signing_sign_pdu(&key,
-					       xconn->protocol,
+		status = smb2_signing_sign_pdu(req->last_sign_key,
 					       lasthdr,
 					       SMBD_SMB2_NUM_IOV_PER_REQ - 1);
-		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
 	}
-	if (req->last_key.length > 0) {
-		data_blob_clear_free(&req->last_key);
-	}
+	TALLOC_FREE(req->last_sign_key);
 
 	SMBPROFILE_IOBYTES_ASYNC_END(req->profile,
 		iov_buflen(outhdr, SMBD_SMB2_NUM_IOV_PER_REQ-1));
@@ -3556,7 +3644,7 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 		if (req->do_signing && firsttf->iov_len == 0) {
 			struct smbXsrv_session *x = req->session;
 			struct smb2_signing_key *signing_key =
-				smbd_smb2_signing_key(x, xconn);
+				smbd_smb2_signing_key(x, xconn, NULL);
 
 			/*
 			 * we need to remember the signing key
@@ -3564,10 +3652,11 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 			 * we are sure that we do not change
 			 * the header again.
 			 */
-			req->last_key = data_blob_dup_talloc(req,
-							     signing_key->blob);
-			if (req->last_key.data == NULL) {
-				return NT_STATUS_NO_MEMORY;
+			status = smb2_signing_key_copy(req,
+						       signing_key,
+						       &req->last_sign_key);
+			if (!NT_STATUS_IS_OK(status)) {
+				return status;
 			}
 		}
 
@@ -3600,33 +3689,25 @@ static NTSTATUS smbd_smb2_request_reply(struct smbd_smb2_request *req)
 	 * now check if we need to sign the current response
 	 */
 	if (firsttf->iov_len == SMB2_TF_HDR_SIZE) {
-		struct smb2_signing_key key = {
-			.blob = req->first_key,
-		};
-		status = smb2_signing_encrypt_pdu(&key,
-					xconn->smb2.server.cipher,
+		status = smb2_signing_encrypt_pdu(req->first_enc_key,
 					firsttf,
 					req->out.vector_count - first_idx);
-		smb2_signing_key_destructor(&key);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
 	} else if (req->do_signing) {
 		struct smbXsrv_session *x = req->session;
 		struct smb2_signing_key *signing_key =
-			smbd_smb2_signing_key(x, xconn);
+			smbd_smb2_signing_key(x, xconn, NULL);
 
 		status = smb2_signing_sign_pdu(signing_key,
-					       xconn->protocol,
 					       outhdr,
 					       SMBD_SMB2_NUM_IOV_PER_REQ - 1);
 		if (!NT_STATUS_IS_OK(status)) {
 			return status;
 		}
 	}
-	if (req->first_key.length > 0) {
-		data_blob_clear_free(&req->first_key);
-	}
+	TALLOC_FREE(req->first_enc_key);
 
 	if (req->preauth != NULL) {
 		gnutls_hash_hd_t hash_hnd = NULL;
@@ -4582,6 +4663,18 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 		struct smbd_smb2_send_queue *e = xconn->smb2.send_queue;
 		bool ok;
 		struct msghdr msg;
+
+		if (!NT_STATUS_IS_OK(xconn->transport.status)) {
+			/*
+			 * we're not supposed to do any io
+			 * just flush all pending stuff.
+			 */
+			xconn->smb2.send_queue_len--;
+			DLIST_REMOVE(xconn->smb2.send_queue, e);
+
+			talloc_free(e->mem_ctx);
+			continue;
+		}
 
 		if (e->sendfile_header != NULL) {
 			size_t size = 0;

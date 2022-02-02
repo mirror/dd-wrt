@@ -38,7 +38,8 @@ from samba.dsdb import (
     DS_DOMAIN_FUNCTION_2003,
     DS_DOMAIN_FUNCTION_2008_R2,
     DS_DOMAIN_FUNCTION_2012_R2,
-    DS_DOMAIN_FUNCTION_2016
+    DS_DOMAIN_FUNCTION_2016,
+    DS_GUID_USERS_CONTAINER
 )
 from samba.descriptor import (
     get_domain_descriptor,
@@ -69,11 +70,21 @@ def get_domainguid(samdb, domaindn):
 
 
 def get_dnsadmins_sid(samdb, domaindn):
-    res = samdb.search(base="CN=DnsAdmins,CN=Users,%s" % domaindn, scope=ldb.SCOPE_BASE,
-                       attrs=["objectSid"])
+    base_dn = "CN=DnsAdmins,%s" % samdb.get_wellknown_dn(ldb.Dn(samdb,
+                                            domaindn), DS_GUID_USERS_CONTAINER)
+    res = samdb.search(base=base_dn, scope=ldb.SCOPE_BASE, attrs=["objectSid"])
     dnsadmins_sid = ndr_unpack(security.dom_sid, res[0]["objectSid"][0])
     return dnsadmins_sid
 
+
+# Note: these classses are not quite the same as similar looking ones
+# in ../dnsserver.py -- those ones are based on
+# dnsserver.DNS_RPC_RECORD ([MS-DNSP]2.2.2.2.5 "DNS_RPC_RECORD"),
+# these are based on dnsp.DnssrvRpcRecord ([MS-DNSP] 2.3.2.2
+# "DnsRecord").
+#
+# They are not interchangeable or mergeable. If you're talking over
+# the wire you want those other ones; these are the on-disk format.
 
 class ARecord(dnsp.DnssrvRpcRecord):
 
@@ -97,10 +108,10 @@ class AAAARecord(dnsp.DnssrvRpcRecord):
         self.data = ip6_addr
 
 
-class CNameRecord(dnsp.DnssrvRpcRecord):
+class CNAMERecord(dnsp.DnssrvRpcRecord):
 
     def __init__(self, cname, serial=1, ttl=900, rank=dnsp.DNS_RANK_ZONE):
-        super(CNameRecord, self).__init__()
+        super().__init__()
         self.wType = dnsp.DNS_TYPE_CNAME
         self.rank = rank
         self.dwSerial = serial
@@ -447,7 +458,7 @@ def add_ns_glue_record(samdb, container_dn, prefix, host):
 
 
 def add_cname_record(samdb, container_dn, prefix, host):
-    cname_record = CNameRecord(host)
+    cname_record = CNAMERecord(host)
     msg = ldb.Message(ldb.Dn(samdb, "%s,%s" % (prefix, container_dn)))
     msg["objectClass"] = ["top", "dnsNode"]
     msg["dnsRecord"] = ldb.MessageElement(ndr_pack(cname_record), ldb.FLAG_MOD_ADD, "dnsRecord")
@@ -689,7 +700,7 @@ def secretsdb_setup_dns(secretsdb, names, private_dir, binddns_dir, realm,
 
 
 def create_dns_dir(logger, paths):
-    """Write out a DNS zone file, from the info in the current database.
+    """(Re)create the DNS directory and chown it to bind.
 
     :param logger: Logger object
     :param paths: paths object
@@ -712,6 +723,48 @@ def create_dns_dir(logger, paths):
             if 'SAMBA_SELFTEST' not in os.environ:
                 logger.error("Failed to chown %s to bind gid %u" % (
                     dns_dir, paths.bind_gid))
+
+
+def create_dns_dir_keytab_link(logger, paths):
+    """Create link for BIND to DNS keytab
+
+    :param logger: Logger object
+    :param paths: paths object
+    """
+    private_dns_keytab_path = os.path.join(paths.private_dir, paths.dns_keytab)
+    bind_dns_keytab_path = os.path.join(paths.binddns_dir, paths.dns_keytab)
+
+    if os.path.isfile(private_dns_keytab_path):
+        if os.path.isfile(bind_dns_keytab_path):
+            try:
+                os.unlink(bind_dns_keytab_path)
+            except OSError as e:
+                logger.error("Failed to remove %s: %s" %
+                             (bind_dns_keytab_path, e.strerror))
+
+        # link the dns.keytab to the bind-dns directory
+        try:
+            os.link(private_dns_keytab_path, bind_dns_keytab_path)
+        except OSError as e:
+            logger.error("Failed to create link %s -> %s: %s" %
+                         (private_dns_keytab_path, bind_dns_keytab_path, e.strerror))
+
+        # chown the dns.keytab in the bind-dns directory
+        if paths.bind_gid is not None:
+            try:
+                os.chmod(paths.binddns_dir, 0o770)
+                os.chown(paths.binddns_dir, -1, paths.bind_gid)
+            except OSError:
+                if 'SAMBA_SELFTEST' not in os.environ:
+                    logger.info("Failed to chown %s to bind gid %u",
+                                paths.binddns_dir, paths.bind_gid)
+            try:
+                os.chmod(bind_dns_keytab_path, 0o640)
+                os.chown(bind_dns_keytab_path, -1, paths.bind_gid)
+            except OSError:
+                if 'SAMBA_SELFTEST' not in os.environ:
+                    logger.info("Failed to chown %s to bind gid %u",
+                                bind_dns_keytab_path, paths.bind_gid)
 
 
 def create_zone_file(lp, logger, paths, targetdir, dnsdomain,
@@ -1252,6 +1305,7 @@ def setup_bind9_dns(samdb, secretsdb, names, paths, lp, logger,
                         key_version_number=key_version_number)
 
     create_dns_dir(logger, paths)
+    create_dns_dir_keytab_link(logger, paths)
 
     if dns_backend == "BIND9_FLATFILE":
         create_zone_file(lp, logger, paths, targetdir, site=site,

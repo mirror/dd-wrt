@@ -91,7 +91,8 @@ static int qsort_stream(const struct stream_struct * s1, const struct stream_str
 	return strcmp(s1->stream_name.s, s2->stream_name.s);
 }
 
-static bool check_stream(struct smb2_tree *tree,
+static bool check_stream(struct torture_context *tctx,
+			 struct smb2_tree *tree,
 			 const char *location,
 			 TALLOC_CTX *mem_ctx,
 			 const char *fname,
@@ -117,7 +118,7 @@ static bool check_stream(struct smb2_tree *tree,
 		if (value == NULL) {
 			return true;
 		} else {
-			torture_comment(mem_ctx, "Unable to open stream %s\n",
+			torture_comment(tctx, "Unable to open stream %s\n",
 			    full_name);
 			return false;
 		}
@@ -137,13 +138,13 @@ static bool check_stream(struct smb2_tree *tree,
 	status = smb2_read(tree, tree, &r);
 
 	if (!NT_STATUS_IS_OK(status)) {
-		torture_comment(mem_ctx, "(%s) Failed to read %lu bytes from "
+		torture_comment(tctx, "(%s) Failed to read %lu bytes from "
 		    "stream '%s'\n", location, (long)strlen(value), full_name);
 		return false;
 	}
 
 	if (memcmp(r.out.data.data, value, strlen(value)) != 0) {
-		torture_comment(mem_ctx, "(%s) Bad data in stream\n", location);
+		torture_comment(tctx, "(%s) Bad data in stream\n", location);
 		return false;
 	}
 
@@ -349,7 +350,7 @@ static bool test_stream_io(struct torture_context *tctx,
 	CHECK_STATUS(status, NT_STATUS_OK);
 	h2 = io.smb2.out.file.handle;
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Stream One", NULL);
 
 	torture_comment(tctx, "(%s) check that open of base file is allowed\n", __location__);
@@ -365,7 +366,7 @@ static bool test_stream_io(struct torture_context *tctx,
 
 	smb2_util_close(tree, h2);
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Stream One", "test data");
 
 	io.smb2.in.create_disposition = NTCREATEX_DISP_OPEN;
@@ -380,7 +381,7 @@ static bool test_stream_io(struct torture_context *tctx,
 
 	smb2_util_close(tree, h2);
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Stream One:$FOO", NULL);
 
 	torture_comment(tctx, "(%s) creating a stream2 on a existing file\n",
@@ -396,28 +397,40 @@ static bool test_stream_io(struct torture_context *tctx,
 	CHECK_STATUS(status, NT_STATUS_OK);
 	smb2_util_close(tree, h2);
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			     "Stream One", "test MORE DATA ");
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Stream One:$DATA", "test MORE DATA ");
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Stream One:", NULL);
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	if (!ret) {
+		torture_result(tctx, TORTURE_FAIL,
+		    "check_stream(\"Stream One:*\") failed\n");
+		goto done;
+	}
+
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Second Stream", "SECOND STREAM");
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "SECOND STREAM:$DATA", "SECOND STREAM");
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Second Stream:$DATA", "SECOND STREAM");
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Second Stream:", NULL);
 
-	ret &= check_stream(tree, __location__, mem_ctx, fname,
+	ret &= check_stream(tctx, tree, __location__, mem_ctx, fname,
 			    "Second Stream:$FOO", NULL);
+
+	if (!ret) {
+		torture_result(tctx, TORTURE_FAIL,
+		    "check_stream(\"Second Stream:*\") failed\n");
+		goto done;
+	}
 
 	io.smb2.in.fname = sname2;
 	io.smb2.in.create_disposition = NTCREATEX_DISP_OPEN_IF;
@@ -944,7 +957,7 @@ static bool test_stream_names(struct torture_context *tctx,
 	CHECK_STATUS(status, NT_STATUS_OK);
 	ret &= check_stream_list(tree, tctx, fname, 4, four,
 				 io.smb2.out.file.handle);
-
+	CHECK_VALUE(ret, true);
 	smb2_util_close(tree, h1);
 	smb2_util_close(tree, h2);
 	smb2_util_close(tree, h3);
@@ -960,6 +973,7 @@ static bool test_stream_names(struct torture_context *tctx,
 	ret &= check_stream_list(tree, tctx, fname, 4, four,
 				 io.smb2.out.file.handle);
 
+	CHECK_VALUE(ret, true);
 	for (i=0; i < 4; i++) {
 		NTTIME write_time;
 		uint64_t stream_size;
@@ -1101,6 +1115,7 @@ static bool test_stream_names(struct torture_context *tctx,
 	ret &= check_stream_list(tree,tctx, fname, 5, five2,
 				 io.smb2.out.file.handle);
 
+	CHECK_VALUE(ret, true);
 	ZERO_STRUCT(sinfo);
 	sinfo.rename_information.level = RAW_SFILEINFO_RENAME_INFORMATION;
 	sinfo.rename_information.in.file.handle = h1;
@@ -1125,6 +1140,7 @@ static bool test_stream_names(struct torture_context *tctx,
 	ret &= check_stream_list(tree,tctx, fname, 5, five2,
 				 io.smb2.out.file.handle);
 
+	CHECK_VALUE(ret, true);
 	/* TODO: we need to test more rename combinations */
 
 done:
@@ -2049,6 +2065,5 @@ struct torture_suite *torture_smb2_streams_init(TALLOC_CTX *ctx)
 					test_basefile_rename_with_open_stream);
 
 	suite->description = talloc_strdup(suite, "SMB2-STREAM tests");
-
 	return suite;
 }

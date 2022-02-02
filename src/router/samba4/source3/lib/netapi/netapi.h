@@ -24,6 +24,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+struct cli_credentials;
+
 /****************************************************************
  NET_API_STATUS
 ****************************************************************/
@@ -86,8 +88,25 @@ struct DOMAIN_CONTROLLER_INFO {
 #define NETSETUP_DEFER_SPN_SET ( 0x00000100 )
 #define NETSETUP_JOIN_DC_ACCOUNT ( 0x00000200 )
 #define NETSETUP_JOIN_WITH_NEW_NAME ( 0x00000400 )
+#define NETSETUP_JOIN_READONLY ( 0x00000800 )
+#define NETSETUP_AMBIGUOUS_DC ( 0x00001000 )
+#define NETSETUP_NO_NETLOGON_CACHE ( 0x00002000 )
+#define NETSETUP_DONT_CONTROL_SERVICES ( 0x00004000 )
+#define NETSETUP_SET_MACHINE_NAME ( 0x00008000 )
+#define NETSETUP_FORCE_SPN_SET ( 0x00010000 )
+#define NETSETUP_NO_ACCT_REUSE ( 0x00020000 )
 #define NETSETUP_INSTALL_INVOCATION ( 0x00040000 )
 #define NETSETUP_IGNORE_UNSUPPORTED_FLAGS ( 0x10000000 )
+
+/* bitmap NetProvisionFlags */
+#define NETSETUP_PROVISION_DOWNLEVEL_PRIV_SUPPORT ( 0x00000001 )
+#define NETSETUP_PROVISION_REUSE_ACCOUNT ( 0x00000002 )
+#define NETSETUP_PROVISION_USE_DEFAULT_PASSWORD ( 0x00000004 )
+#define NETSETUP_PROVISION_SKIP_ACCOUNT_SEARCH ( 0x00000008 )
+#define NETSETUP_PROVISION_ROOT_CA_CERTS ( 0x00000010 )
+
+/* bitmap NetProvisionJoinFlags */
+#define NETSETUP_PROVISION_ONLINE_CALLER ( 0x40000000 )
 
 #define FILTER_TEMP_DUPLICATE_ACCOUNT	( 0x0001 )
 #define FILTER_NORMAL_ACCOUNT	( 0x0002 )
@@ -1362,19 +1381,7 @@ struct NETLOGON_INFO_4 {
 /****************************************************************
 ****************************************************************/
 
-struct libnetapi_ctx {
-	char *debuglevel;
-	char *error_string;
-	char *username;
-	char *workgroup;
-	char *password;
-	char *krb5_cc_env;
-	int use_kerberos;
-	int use_ccache;
-	int disable_policy_handle_cache;
-
-	void *private_data;
-};
+struct libnetapi_ctx;
 
 /****************************************************************
 ****************************************************************/
@@ -1391,6 +1398,12 @@ NET_API_STATUS libnetapi_free(struct libnetapi_ctx *ctx);
 
 NET_API_STATUS libnetapi_getctx(struct libnetapi_ctx **ctx);
 
+NET_API_STATUS libnetapi_get_username(struct libnetapi_ctx *ctx,
+				      const char **username);
+
+NET_API_STATUS libnetapi_get_password(struct libnetapi_ctx *ctx,
+				      const char **password);
+
 /****************************************************************
 ****************************************************************/
 
@@ -1399,6 +1412,10 @@ NET_API_STATUS libnetapi_set_debuglevel(struct libnetapi_ctx *ctx,
 
 /****************************************************************
 ****************************************************************/
+
+NET_API_STATUS libnetapi_set_creds(struct libnetapi_ctx *ctx,
+				   struct cli_credentials *creds);
+
 
 NET_API_STATUS libnetapi_set_username(struct libnetapi_ctx *ctx,
 				      const char *username);
@@ -1419,6 +1436,18 @@ NET_API_STATUS libnetapi_set_workgroup(struct libnetapi_ctx *ctx,
 ****************************************************************/
 
 NET_API_STATUS libnetapi_set_use_kerberos(struct libnetapi_ctx *ctx);
+
+/****************************************************************
+****************************************************************/
+
+NET_API_STATUS libnetapi_get_use_kerberos(struct libnetapi_ctx *ctx,
+					  int *use_kerberos);
+
+/****************************************************************
+****************************************************************/
+
+NET_API_STATUS libnetapi_set_logfile(struct libnetapi_ctx *ctx,
+				     const char *logfile);
 
 /****************************************************************
 ****************************************************************/
@@ -1593,6 +1622,56 @@ NET_API_STATUS NetRenameMachineInDomain(const char * server_name /* [in] */,
 					const char * account /* [in] */,
 					const char * password /* [in] */,
 					uint32_t rename_options /* [in] */);
+
+/************************************************************//**
+ *
+ * NetProvisionComputerAccount
+ *
+ * @brief Provision a machine for offline join
+ *
+ * @param[in] domain The domain to provision for
+ * @param[in] machine_name The machine account name
+ * @param[in] machine_account_ou The machine account ou to create the account in
+ * @param[in] dcname A specific domain controller to use for account creation
+ * @param[in] options The options used for account creation
+ * @param[in,out] provision_bin_data The generated binary buffer
+ * @param[in,out] provision_bin_data_size The generated binary buffer size
+ * @param[in,out] provision_text_data The generated text data blob
+ * @return NET_API_STATUS
+ *
+ * example join/provision_computer_account.c
+ *
+ ***************************************************************/
+
+NET_API_STATUS NetProvisionComputerAccount(const char * domain /* [in] [ref] */,
+					   const char * machine_name /* [in] [ref] */,
+					   const char * machine_account_ou /* [in] [unique] */,
+					   const char * dcname /* [in] [unique] */,
+					   uint32_t options /* [in] */,
+					   uint8_t **provision_bin_data /* [in,out] [unique] */,
+					   uint32_t *provision_bin_data_size /* [in,out] [unique] */,
+					   const char * *provision_text_data /* [in,out] [unique] */);
+
+/************************************************************//**
+ *
+ * NetRequestOfflineDomainJoin
+ *
+ * @brief Request an offline domain join
+ *
+ * @param[in] provision_bin_data The provided binary buffer
+ * @param[in] provision_bin_data_size The provided binary buffer size
+ * @param[in] options The options used for account creation
+ * @param[in] windows_path The path for the joined image
+ * @return NET_API_STATUS
+ *
+ * example join/request_offline_domain_join.c
+ *
+ ***************************************************************/
+
+NET_API_STATUS NetRequestOfflineDomainJoin(uint8_t *provision_bin_data /* [in] [unique] */,
+					   uint32_t provision_bin_data_size /* [in] */,
+					   uint32_t options /* [in] */,
+					   const char * windows_path /* [in] [unique] */);
 
 /************************************************************//**
  *

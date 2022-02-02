@@ -403,14 +403,23 @@ static int cephwrap_openat(struct vfs_handle_struct *handle,
 			   int flags,
 			   mode_t mode)
 {
+	struct smb_filename *name = NULL;
 	bool have_opath = false;
 	bool became_root = false;
 	int result = -ENOENT;
 
 	/*
-	 * cephfs API doesn't have ceph_openat(), so for now assert this.
+	 * ceph doesn't have openat().
 	 */
-	SMB_ASSERT(fsp_get_pathref_fd(dirfsp) == AT_FDCWD);
+	if (fsp_get_pathref_fd(dirfsp) != AT_FDCWD) {
+		name = full_path_from_dirfsp_atname(talloc_tos(),
+						    dirfsp,
+						    smb_fname);
+		if (name == NULL) {
+			return -1;
+		}
+		smb_fname = name;
+	}
 
 	DBG_DEBUG("[CEPH] openat(%p, %s, %p, %d, %d)\n", handle,
 		  smb_fname_str_dbg(smb_fname), fsp, flags, mode);
@@ -438,6 +447,7 @@ static int cephwrap_openat(struct vfs_handle_struct *handle,
 	}
 
 out:
+	TALLOC_FREE(name);
 	fsp->fsp_flags.have_proc_fds = false;
 	DBG_DEBUG("[CEPH] open(...) = %d\n", result);
 	WRAP_RETURN(result);
@@ -621,17 +631,39 @@ static int cephwrap_renameat(struct vfs_handle_struct *handle,
 			files_struct *dstfsp,
 			const struct smb_filename *smb_fname_dst)
 {
+	struct smb_filename *full_fname_src = NULL;
+	struct smb_filename *full_fname_dst = NULL;
 	int result = -1;
+
 	DBG_DEBUG("[CEPH] cephwrap_renameat\n");
 	if (smb_fname_src->stream_name || smb_fname_dst->stream_name) {
 		errno = ENOENT;
 		return result;
 	}
 
-	SMB_ASSERT(srcfsp == srcfsp->conn->cwd_fsp);
-	SMB_ASSERT(dstfsp == dstfsp->conn->cwd_fsp);
+	full_fname_src = full_path_from_dirfsp_atname(talloc_tos(),
+						  srcfsp,
+						  smb_fname_src);
+	if (full_fname_src == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+	full_fname_dst = full_path_from_dirfsp_atname(talloc_tos(),
+						  dstfsp,
+						  smb_fname_dst);
+	if (full_fname_dst == NULL) {
+		TALLOC_FREE(full_fname_src);
+		errno = ENOMEM;
+		return -1;
+	}
 
-	result = ceph_rename(handle->data, smb_fname_src->base_name, smb_fname_dst->base_name);
+	result = ceph_rename(handle->data,
+			     full_fname_src->base_name,
+			     full_fname_dst->base_name);
+
+	TALLOC_FREE(full_fname_src);
+	TALLOC_FREE(full_fname_dst);
+
 	WRAP_RETURN(result);
 }
 
@@ -792,9 +824,9 @@ static int cephwrap_lstat(struct vfs_handle_struct *handle,
 	return result;
 }
 
-static int cephwrap_ntimes(struct vfs_handle_struct *handle,
-			 const struct smb_filename *smb_fname,
-			 struct smb_file_time *ft)
+static int cephwrap_fntimes(struct vfs_handle_struct *handle,
+			    files_struct *fsp,
+			    struct smb_file_time *ft)
 {
 	struct ceph_statx stx = { 0 };
 	int result;
@@ -817,10 +849,29 @@ static int cephwrap_ntimes(struct vfs_handle_struct *handle,
 		return 0;
 	}
 
-	result = ceph_setattrx(handle->data, smb_fname->base_name, &stx, mask, 0);
-	DBG_DEBUG("[CEPH] ntimes(%p, %s, {%ld, %ld, %ld, %ld}) = %d\n", handle, smb_fname_str_dbg(smb_fname),
-				ft->mtime.tv_sec, ft->atime.tv_sec, ft->ctime.tv_sec,
-				ft->create_time.tv_sec, result);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to set xattrs.
+		 */
+		result = ceph_fsetattrx(handle->data,
+					fsp_get_io_fd(fsp),
+					&stx,
+					mask);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		result = ceph_setattrx(handle->data,
+				       fsp->fsp_name->base_name,
+				       &stx,
+				       mask,
+				       0);
+	}
+
+	DBG_DEBUG("[CEPH] ntimes(%p, %s, {%ld, %ld, %ld, %ld}) = %d\n",
+		  handle, fsp_str_dbg(fsp), ft->mtime.tv_sec, ft->atime.tv_sec,
+		  ft->ctime.tv_sec, ft->create_time.tv_sec, result);
+
 	return result;
 }
 
@@ -829,34 +880,32 @@ static int cephwrap_unlinkat(struct vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			int flags)
 {
+	struct smb_filename *full_fname = NULL;
 	int result = -1;
 
 	DBG_DEBUG("[CEPH] unlink(%p, %s)\n",
 		handle,
 		smb_fname_str_dbg(smb_fname));
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
+
 	if (smb_fname->stream_name) {
 		errno = ENOENT;
 		return result;
 	}
-	if (flags & AT_REMOVEDIR) {
-		result = ceph_rmdir(handle->data, smb_fname->base_name);
-	} else {
-		result = ceph_unlink(handle->data, smb_fname->base_name);
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		return -1;
 	}
+
+	if (flags & AT_REMOVEDIR) {
+		result = ceph_rmdir(handle->data, full_fname->base_name);
+	} else {
+		result = ceph_unlink(handle->data, full_fname->base_name);
+	}
+	TALLOC_FREE(full_fname);
 	DBG_DEBUG("[CEPH] unlink(...) = %d\n", result);
-	WRAP_RETURN(result);
-}
-
-static int cephwrap_chmod(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			mode_t mode)
-{
-	int result;
-
-	DBG_DEBUG("[CEPH] chmod(%p, %s, %d)\n", handle, smb_fname->base_name, mode);
-	result = ceph_chmod(handle->data, smb_fname->base_name, mode);
-	DBG_DEBUG("[CEPH] chmod(...) = %d\n", result);
 	WRAP_RETURN(result);
 }
 
@@ -865,7 +914,19 @@ static int cephwrap_fchmod(struct vfs_handle_struct *handle, files_struct *fsp, 
 	int result;
 
 	DBG_DEBUG("[CEPH] fchmod(%p, %p, %d)\n", handle, fsp, mode);
-	result = ceph_fchmod(handle->data, fsp_get_io_fd(fsp), mode);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to remove xattrs.
+		 */
+		result = ceph_fchmod(handle->data, fsp_get_io_fd(fsp), mode);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		result = ceph_chmod(handle->data,
+				    fsp->fsp_name->base_name,
+				    mode);
+	}
 	DBG_DEBUG("[CEPH] fchmod(...) = %d\n", result);
 	WRAP_RETURN(result);
 }
@@ -1080,13 +1141,21 @@ static int cephwrap_readlinkat(struct vfs_handle_struct *handle,
 		char *buf,
 		size_t bufsiz)
 {
+	struct smb_filename *full_fname = NULL;
 	int result = -1;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						dirfsp,
+						smb_fname);
+	if (full_fname == NULL) {
+		return -1;
+	}
+
 	DBG_DEBUG("[CEPH] readlink(%p, %s, %p, %llu)\n", handle,
-			smb_fname->base_name, buf, llu(bufsiz));
+			full_fname->base_name, buf, llu(bufsiz));
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-
-	result = ceph_readlink(handle->data, smb_fname->base_name, buf, bufsiz);
+	result = ceph_readlink(handle->data, full_fname->base_name, buf, bufsiz);
+	TALLOC_FREE(full_fname);
 	DBG_DEBUG("[CEPH] readlink(...) = %d\n", result);
 	WRAP_RETURN(result);
 }
@@ -1098,18 +1167,34 @@ static int cephwrap_linkat(struct vfs_handle_struct *handle,
 		const struct smb_filename *new_smb_fname,
 		int flags)
 {
+	struct smb_filename *full_fname_old = NULL;
+	struct smb_filename *full_fname_new = NULL;
 	int result = -1;
-	DBG_DEBUG("[CEPH] link(%p, %s, %s)\n", handle,
-			old_smb_fname->base_name,
-			new_smb_fname->base_name);
 
-	SMB_ASSERT(srcfsp == srcfsp->conn->cwd_fsp);
-	SMB_ASSERT(dstfsp == dstfsp->conn->cwd_fsp);
+	full_fname_old = full_path_from_dirfsp_atname(talloc_tos(),
+					srcfsp,
+					old_smb_fname);
+	if (full_fname_old == NULL) {
+		return -1;
+	}
+	full_fname_new = full_path_from_dirfsp_atname(talloc_tos(),
+					dstfsp,
+					new_smb_fname);
+	if (full_fname_new == NULL) {
+		TALLOC_FREE(full_fname_old);
+		return -1;
+	}
+
+	DBG_DEBUG("[CEPH] link(%p, %s, %s)\n", handle,
+			full_fname_old->base_name,
+			full_fname_new->base_name);
 
 	result = ceph_link(handle->data,
-				old_smb_fname->base_name,
-				new_smb_fname->base_name);
+				full_fname_old->base_name,
+				full_fname_new->base_name);
 	DBG_DEBUG("[CEPH] link(...) = %d\n", result);
+	TALLOC_FREE(full_fname_old);
+	TALLOC_FREE(full_fname_new);
 	WRAP_RETURN(result);
 }
 
@@ -1182,8 +1267,9 @@ static struct smb_filename *cephwrap_realpath(struct vfs_handle_struct *handle,
 	return result_fname;
 }
 
-static int cephwrap_chflags(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
+
+static int cephwrap_fchflags(struct vfs_handle_struct *handle,
+			struct files_struct *fsp,
 			unsigned int flags)
 {
 	errno = ENOSYS;
@@ -1214,24 +1300,6 @@ static const char *cephwrap_connectpath(struct vfs_handle_struct *handle,
  Extended attribute operations.
 *****************************************************************/
 
-static ssize_t cephwrap_getxattr(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *name,
-			void *value,
-			size_t size)
-{
-	int ret;
-	DBG_DEBUG("[CEPH] getxattr(%p, %s, %s, %p, %llu)\n", handle,
-			smb_fname->base_name, name, value, llu(size));
-	ret = ceph_getxattr(handle->data,
-			smb_fname->base_name, name, value, size);
-	DBG_DEBUG("[CEPH] getxattr(...) = %d\n", ret);
-	if (ret < 0) {
-		WRAP_RETURN(ret);
-	}
-	return (ssize_t)ret;
-}
-
 static ssize_t cephwrap_fgetxattr(struct vfs_handle_struct *handle, struct files_struct *fsp, const char *name, void *value, size_t size)
 {
 	int ret;
@@ -1244,28 +1312,28 @@ static ssize_t cephwrap_fgetxattr(struct vfs_handle_struct *handle, struct files
 	return (ssize_t)ret;
 }
 
-static ssize_t cephwrap_listxattr(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			char *list,
-			size_t size)
-{
-	int ret;
-	DBG_DEBUG("[CEPH] listxattr(%p, %s, %p, %llu)\n", handle,
-			smb_fname->base_name, list, llu(size));
-	ret = ceph_listxattr(handle->data, smb_fname->base_name, list, size);
-	DBG_DEBUG("[CEPH] listxattr(...) = %d\n", ret);
-	if (ret < 0) {
-		WRAP_RETURN(ret);
-	}
-	return (ssize_t)ret;
-}
-
 static ssize_t cephwrap_flistxattr(struct vfs_handle_struct *handle, struct files_struct *fsp, char *list, size_t size)
 {
 	int ret;
 	DBG_DEBUG("[CEPH] flistxattr(%p, %p, %p, %llu)\n",
 		  handle, fsp, list, llu(size));
-	ret = ceph_flistxattr(handle->data, fsp_get_io_fd(fsp), list, size);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to list xattrs.
+		 */
+		ret = ceph_flistxattr(handle->data,
+					fsp_get_io_fd(fsp),
+					list,
+					size);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		ret = ceph_listxattr(handle->data,
+					fsp->fsp_name->base_name,
+					list,
+					size);
+	}
 	DBG_DEBUG("[CEPH] flistxattr(...) = %d\n", ret);
 	if (ret < 0) {
 		WRAP_RETURN(ret);
@@ -1273,40 +1341,24 @@ static ssize_t cephwrap_flistxattr(struct vfs_handle_struct *handle, struct file
 	return (ssize_t)ret;
 }
 
-static int cephwrap_removexattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name)
-{
-	int ret;
-	DBG_DEBUG("[CEPH] removexattr(%p, %s, %s)\n", handle,
-			smb_fname->base_name, name);
-	ret = ceph_removexattr(handle->data, smb_fname->base_name, name);
-	DBG_DEBUG("[CEPH] removexattr(...) = %d\n", ret);
-	WRAP_RETURN(ret);
-}
-
 static int cephwrap_fremovexattr(struct vfs_handle_struct *handle, struct files_struct *fsp, const char *name)
 {
 	int ret;
 	DBG_DEBUG("[CEPH] fremovexattr(%p, %p, %s)\n", handle, fsp, name);
-	ret = ceph_fremovexattr(handle->data, fsp_get_io_fd(fsp), name);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to remove xattrs.
+		 */
+		ret = ceph_fremovexattr(handle->data, fsp_get_io_fd(fsp), name);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		ret = ceph_removexattr(handle->data,
+					fsp->fsp_name->base_name,
+					name);
+	}
 	DBG_DEBUG("[CEPH] fremovexattr(...) = %d\n", ret);
-	WRAP_RETURN(ret);
-}
-
-static int cephwrap_setxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				const void *value,
-				size_t size,
-				int flags)
-{
-	int ret;
-	DBG_DEBUG("[CEPH] setxattr(%p, %s, %s, %p, %llu, %d)\n", handle,
-			smb_fname->base_name, name, value, llu(size), flags);
-	ret = ceph_setxattr(handle->data, smb_fname->base_name,
-			name, value, size, flags);
-	DBG_DEBUG("[CEPH] setxattr(...) = %d\n", ret);
 	WRAP_RETURN(ret);
 }
 
@@ -1314,8 +1366,27 @@ static int cephwrap_fsetxattr(struct vfs_handle_struct *handle, struct files_str
 {
 	int ret;
 	DBG_DEBUG("[CEPH] fsetxattr(%p, %p, %s, %p, %llu, %d)\n", handle, fsp, name, value, llu(size), flags);
-	ret = ceph_fsetxattr(handle->data, fsp_get_io_fd(fsp),
-			     name, value, size, flags);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to set xattrs.
+		 */
+		ret = ceph_fsetxattr(handle->data,
+				fsp_get_io_fd(fsp),
+				name,
+				value,
+				size,
+				flags);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		ret = ceph_setxattr(handle->data,
+				fsp->fsp_name->base_name,
+				name,
+				value,
+				size,
+				flags);
+	}
 	DBG_DEBUG("[CEPH] fsetxattr(...) = %d\n", ret);
 	WRAP_RETURN(ret);
 }
@@ -1342,8 +1413,14 @@ static NTSTATUS cephwrap_create_dfs_pathat(struct vfs_handle_struct *handle,
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
 	int ret;
 	char *msdfs_link = NULL;
+	struct smb_filename *full_fname = NULL;
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						dirfsp,
+						smb_fname);
+	if (full_fname == NULL) {
+		goto out;
+	}
 
 	/* Form the msdfs_link contents */
 	msdfs_link = msdfs_link_string(frame,
@@ -1355,7 +1432,7 @@ static NTSTATUS cephwrap_create_dfs_pathat(struct vfs_handle_struct *handle,
 
 	ret = ceph_symlink(handle->data,
 			msdfs_link,
-			smb_fname->base_name);
+			full_fname->base_name);
 	if (ret == 0) {
 		status = NT_STATUS_OK;
 	} else {
@@ -1365,7 +1442,7 @@ static NTSTATUS cephwrap_create_dfs_pathat(struct vfs_handle_struct *handle,
   out:
 
 	DBG_DEBUG("[CEPH] create_dfs_pathat(%s) = %s\n",
-			smb_fname->base_name,
+			full_fname != NULL ? full_fname->base_name : "",
 			nt_errstr(status));
 
 	TALLOC_FREE(frame);
@@ -1399,9 +1476,8 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 	char link_target_buf[7];
 #endif
 	struct ceph_statx stx;
+	struct smb_filename *full_fname = NULL;
 	int ret;
-
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
 
 	if (is_named_stream(smb_fname)) {
 		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
@@ -1423,8 +1499,16 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 		}
 	}
 
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto err;
+	}
+
 	ret = ceph_statx(handle->data,
-			 smb_fname->base_name,
+			 full_fname->base_name,
 			 &stx,
 			 SAMBA_STATX_ATTR_MASK,
 			 AT_SYMLINK_NOFOLLOW);
@@ -1434,20 +1518,20 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 	}
 
         referral_len = ceph_readlink(handle->data,
-                                smb_fname->base_name,
+                                full_fname->base_name,
                                 link_target,
                                 bufsize - 1);
         if (referral_len < 0) {
 		/* ceph errors are -errno. */
 		if (-referral_len == EINVAL) {
 			DBG_INFO("%s is not a link.\n",
-				smb_fname->base_name);
+				full_fname->base_name);
 			status = NT_STATUS_OBJECT_TYPE_MISMATCH;
 		} else {
 	                status = map_nt_error_from_unix(-referral_len);
 			DBG_ERR("Error reading "
 				"msdfs link %s: %s\n",
-				smb_fname->base_name,
+				full_fname->base_name,
 			strerror(errno));
 		}
                 goto err;
@@ -1455,7 +1539,7 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
         link_target[referral_len] = '\0';
 
         DBG_INFO("%s -> %s\n",
-                        smb_fname->base_name,
+                        full_fname->base_name,
                         link_target);
 
         if (!strnequal(link_target, "msdfs:", 6)) {
@@ -1465,6 +1549,7 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 
         if (ppreflist == NULL && preferral_count == NULL) {
                 /* Early return for checking if this is a DFS link. */
+		TALLOC_FREE(full_fname);
 		init_stat_ex_from_ceph_statx(&smb_fname->st, &stx);
                 return NT_STATUS_OK;
         }
@@ -1487,6 +1572,7 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
         if (link_target != link_target_buf) {
                 TALLOC_FREE(link_target);
         }
+	TALLOC_FREE(full_fname);
         return status;
 }
 
@@ -1533,13 +1619,12 @@ static struct vfs_fn_pointers ceph_fns = {
 	.fstat_fn = cephwrap_fstat,
 	.lstat_fn = cephwrap_lstat,
 	.unlinkat_fn = cephwrap_unlinkat,
-	.chmod_fn = cephwrap_chmod,
 	.fchmod_fn = cephwrap_fchmod,
 	.fchown_fn = cephwrap_fchown,
 	.lchown_fn = cephwrap_lchown,
 	.chdir_fn = cephwrap_chdir,
 	.getwd_fn = cephwrap_getwd,
-	.ntimes_fn = cephwrap_ntimes,
+	.fntimes_fn = cephwrap_fntimes,
 	.ftruncate_fn = cephwrap_ftruncate,
 	.fallocate_fn = cephwrap_fallocate,
 	.lock_fn = cephwrap_lock,
@@ -1552,29 +1637,23 @@ static struct vfs_fn_pointers ceph_fns = {
 	.linkat_fn = cephwrap_linkat,
 	.mknodat_fn = cephwrap_mknodat,
 	.realpath_fn = cephwrap_realpath,
-	.chflags_fn = cephwrap_chflags,
+	.fchflags_fn = cephwrap_fchflags,
 	.get_real_filename_fn = cephwrap_get_real_filename,
 	.connectpath_fn = cephwrap_connectpath,
 
 	/* EA operations. */
-	.getxattr_fn = cephwrap_getxattr,
 	.getxattrat_send_fn = vfs_not_implemented_getxattrat_send,
 	.getxattrat_recv_fn = vfs_not_implemented_getxattrat_recv,
 	.fgetxattr_fn = cephwrap_fgetxattr,
-	.listxattr_fn = cephwrap_listxattr,
 	.flistxattr_fn = cephwrap_flistxattr,
-	.removexattr_fn = cephwrap_removexattr,
 	.fremovexattr_fn = cephwrap_fremovexattr,
-	.setxattr_fn = cephwrap_setxattr,
 	.fsetxattr_fn = cephwrap_fsetxattr,
 
 	/* Posix ACL Operations */
-	.sys_acl_get_file_fn = posixacl_xattr_acl_get_file,
 	.sys_acl_get_fd_fn = posixacl_xattr_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = posixacl_xattr_acl_set_fd,
-	.sys_acl_delete_def_file_fn = posixacl_xattr_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = posixacl_xattr_acl_delete_def_fd,
 
 	/* aio operations */
 	.aio_force_fn = cephwrap_aio_force,

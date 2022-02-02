@@ -166,7 +166,7 @@ sub wait_for_start($$)
 		$cmd .= "$testenv_vars->{CONFIGURATION} ";
 		$cmd .= "-H ldap://$testenv_vars->{SERVER} ";
 		$cmd .= "-U$testenv_vars->{USERNAME}%$testenv_vars->{PASSWORD} ";
-		$cmd .= "-s base ";
+		$cmd .= "--scope base ";
 		$cmd .= "-b '$search_dn' ";
 		while (system("$cmd >/dev/null") != 0) {
 			$count++;
@@ -204,28 +204,29 @@ sub wait_for_start($$)
 	# Ensure we registered all our names
 	if ($testenv_vars->{SERVER_ROLE} eq "domain controller") {
 		my $max_wait = 120;
-		print "Waiting for dns_update_cache to be created.\n";
+		my $dns_update_cache = "$testenv_vars->{PRIVATEDIR}/dns_update_cache";
+		print "Waiting for $dns_update_cache to be created.\n";
 		$count = 0;
-		while (not -e "$testenv_vars->{PRIVATEDIR}/dns_update_cache") {
+		while (not -e $dns_update_cache) {
 			$count++;
 			if ($count > $max_wait) {
 				teardown_env($self, $testenv_vars);
-				warn("Timed out ($max_wait sec) waiting for dns_update_cache PID $testenv_vars->{SAMBA_PID}");
+				warn("Timed out ($max_wait sec) waiting for $dns_update_cache PID $testenv_vars->{SAMBA_PID}");
 				return -1;
 			}
-			print "Waiting for dns_update_cache to be created...\n";
+			print "Waiting for $dns_update_cache to be created...\n";
 			sleep(1);
 		}
-		print "Waiting for dns_update_cache to be filled.\n";
+		print "Waiting for $dns_update_cache to be filled.\n";
 		$count = 0;
-		while ((-s "$testenv_vars->{PRIVATEDIR}/dns_update_cache") == 0) {
+		while ((-s "$dns_update_cache") == 0) {
 			$count++;
 			if ($count > $max_wait) {
 				teardown_env($self, $testenv_vars);
-				warn("Timed out ($max_wait sec) waiting for dns_update_cache PID $testenv_vars->{SAMBA_PID}");
+				warn("Timed out ($max_wait sec) waiting for $dns_update_cache PID $testenv_vars->{SAMBA_PID}");
 				return -1;
 			}
-			print "Waiting for dns_update_cache to be filled...\n";
+			print "Waiting for $dns_update_cache to be filled...\n";
 			sleep(1);
 		}
 	}
@@ -239,12 +240,19 @@ sub wait_for_start($$)
 
 sub write_ldb_file($$$)
 {
-	my ($self, $file, $ldif) = @_;
+	my ($self, $file, $ldif_in) = @_;
 
 	my $ldbadd =  Samba::bindir_path($self, "ldbadd");
-	open(LDIF, "|$ldbadd -H $file >/dev/null");
-	print LDIF $ldif;
-	return(close(LDIF));
+	open(my $ldif, "|$ldbadd -H $file > /dev/null")
+	    or die "Failed to run $ldbadd: $!";
+	print $ldif $ldif_in;
+	close($ldif);
+
+	unless ($? == 0) {
+	    warn("$ldbadd failed: $?");
+	    return undef;
+	}
+	return 1;
 }
 
 sub add_wins_config($$)
@@ -456,10 +464,10 @@ sub setup_namespaces
 	$namespaces .= $cmd_config;
 	unless (system($namespaces) == 0) {
 		warn("Failed to add namespaces \n$namespaces");
-		return;
+		return -1;
 	}
 
-	return;
+	return 0;
 }
 
 sub setup_trust($$$$$)
@@ -467,12 +475,17 @@ sub setup_trust($$$$$)
 	my ($self, $localenv, $remoteenv, $type, $extra_args) = @_;
 
 	$localenv->{TRUST_SERVER} = $remoteenv->{SERVER};
+	$localenv->{TRUST_SERVER_IP} = $remoteenv->{SERVER_IP};
+	$localenv->{TRUST_DNSNAME} = $remoteenv->{DNSNAME};
 
 	$localenv->{TRUST_USERNAME} = $remoteenv->{USERNAME};
 	$localenv->{TRUST_PASSWORD} = $remoteenv->{PASSWORD};
 	$localenv->{TRUST_DOMAIN} = $remoteenv->{DOMAIN};
 	$localenv->{TRUST_REALM} = $remoteenv->{REALM};
 	$localenv->{TRUST_DOMSID} = $remoteenv->{DOMSID};
+
+	# Add trusted domain realms to krb5.conf
+	Samba::append_krb5_conf_trust_realms($localenv);
 
 	my $samba_tool =  Samba::bindir_path($self, "samba-tool");
 
@@ -561,7 +574,7 @@ sub provision_raw_prepare($$$$$$$$$$$$$$)
 	$ctx->{force_fips_mode} = $force_fips_mode;
 	$ctx->{krb5_ccname} = "$prefix_abs/krb5cc_%{uid}";
 	if ($functional_level eq "2000") {
-		$ctx->{supported_enctypes} = "arcfour-hmac-md5 des-cbc-md5 des-cbc-crc"
+		$ctx->{supported_enctypes} = "arcfour-hmac-md5 des-cbc-md5 des-cbc-crc";
 	}
 
 #
@@ -599,7 +612,7 @@ sub provision_raw_prepare($$$$$$$$$$$$$$)
 	$ctx->{logdir} = "$prefix_abs/logs";
 	$ctx->{statedir} = "$prefix_abs/statedir";
 	$ctx->{cachedir} = "$prefix_abs/cachedir";
-	$ctx->{winbindd_socket_dir} = "$prefix_abs/winbindd_socket";
+	$ctx->{winbindd_socket_dir} = "$prefix_abs/wbsock";
 	$ctx->{ntp_signd_socket_dir} = "$prefix_abs/ntp_signd_socket";
 	$ctx->{nsswrap_passwd} = "$ctx->{etcdir}/passwd";
 	$ctx->{nsswrap_group} = "$ctx->{etcdir}/group";
@@ -607,10 +620,10 @@ sub provision_raw_prepare($$$$$$$$$$$$$$)
 	$ctx->{nsswrap_hostname} = "$ctx->{hostname}.$ctx->{dnsname}";
 	if ($ENV{SAMBA_DNS_FAKING}) {
 		$ctx->{dns_host_file} = "$ENV{SELFTEST_PREFIX}/dns_host_file";
-		$ctx->{samba_dnsupdate} = "$ENV{SRCDIR_ABS}/source4/scripting/bin/samba_dnsupdate -s $ctx->{smb_conf} --all-interfaces --use-file=$ctx->{dns_host_file}";
+		$ctx->{samba_dnsupdate} = "$ENV{SRCDIR_ABS}/source4/scripting/bin/samba_dnsupdate --configfile=$ctx->{smb_conf} --all-interfaces --use-file=$ctx->{dns_host_file}";
 		$ctx->{samba_dnsupdate} = $python_cmd .  $ctx->{samba_dnsupdate};
 	} else {
-	        $ctx->{samba_dnsupdate} = "$ENV{SRCDIR_ABS}/source4/scripting/bin/samba_dnsupdate -s $ctx->{smb_conf} --all-interfaces";
+	        $ctx->{samba_dnsupdate} = "$ENV{SRCDIR_ABS}/source4/scripting/bin/samba_dnsupdate --configfile=$ctx->{smb_conf} --all-interfaces";
 		$ctx->{samba_dnsupdate} = $python_cmd .  $ctx->{samba_dnsupdate};
 		$ctx->{use_resolv_wrapper} = 1;
 	}
@@ -763,6 +776,8 @@ sub provision_raw_step1($$)
 	tls crlfile = ${crlfile}
 	tls verify peer = no_check
 	panic action = $RealBin/gdb_backtrace \%d
+	smbd:suicide mode = yes
+	smbd:FSCTL_SMBTORTURE = yes
 	wins support = yes
 	server role = $ctx->{server_role}
 	server services = +echo $services
@@ -770,8 +785,6 @@ sub provision_raw_step1($$)
 	notify:inotify = false
 	ldb:nosync = true
 	ldap server require strong auth = yes
-#We don't want to pass our self-tests if the PAC code is wrong
-	gensec:require_pac = true
 	log file = $ctx->{logdir}/log.\%m
 	log level = $ctx->{server_loglevel}
 	lanman auth = Yes
@@ -780,8 +793,8 @@ sub provision_raw_step1($$)
 	server min protocol = SMB2_02
 	mangled names = yes
 	dns update command = $ctx->{samba_dnsupdate}
-	spn update command = $ctx->{python} $ENV{SRCDIR_ABS}/source4/scripting/bin/samba_spnupdate -s $ctx->{smb_conf}
-	gpo update command = $ctx->{python} $ENV{SRCDIR_ABS}/source4/scripting/bin/samba-gpupdate -s $ctx->{smb_conf} --target=Computer
+	spn update command = $ctx->{python} $ENV{SRCDIR_ABS}/source4/scripting/bin/samba_spnupdate --configfile $ctx->{smb_conf}
+	gpo update command = $ctx->{python} $ENV{SRCDIR_ABS}/source4/scripting/bin/samba-gpupdate --configfile $ctx->{smb_conf} --target=Computer
 	samba kcc command = $ctx->{python} $ENV{SRCDIR_ABS}/source4/scripting/bin/samba_kcc
 	dreplsrv:periodic_startup_interval = 0
 	dsdb:schema update allowed = yes
@@ -946,6 +959,8 @@ sub provision_raw_step2($$$)
 {
 	my ($self, $ctx, $ret) = @_;
 
+	my $ldif;
+
 	my $provision_cmd = join(" ", @{$ctx->{provision_options}});
 	unless (system($provision_cmd) == 0) {
 		warn("Unable to provision: \n$provision_cmd\n");
@@ -991,17 +1006,23 @@ sub provision_raw_step2($$$)
 
 	my $user_dn = "cn=$testallowed_account,cn=users,$base_dn";
 	$testallowed_account = "testallowed account";
-	open(LDIF, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb");
-	print LDIF "dn: $user_dn
+	open($ldif, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb")
+	    or die "Failed to run $ldbmodify: $!";
+	print $ldif "dn: $user_dn
 changetype: modify
 replace: samAccountName
 samAccountName: $testallowed_account
 -
 ";
-	close(LDIF);
+	close($ldif);
+	unless ($? == 0) {
+	    warn("$ldbmodify failed: $?");
+	    return undef;
+	}
 
-	open(LDIF, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb");
-	print LDIF "dn: $user_dn
+	open($ldif, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb")
+            or die "Failed to run $ldbmodify: $!";
+	print $ldif "dn: $user_dn
 changetype: modify
 replace: userPrincipalName
 userPrincipalName: testallowed upn\@$ctx->{realm}
@@ -1009,7 +1030,11 @@ replace: servicePrincipalName
 servicePrincipalName: host/testallowed
 -	    
 ";
-	close(LDIF);
+	close($ldif);
+	unless ($? == 0) {
+	    warn("$ldbmodify failed: $?");
+	    return undef;
+	}
 
 	$samba_tool_cmd = ${cmd_env};
 	$samba_tool_cmd .= Samba::bindir_path($self, "samba-tool")
@@ -1020,14 +1045,19 @@ servicePrincipalName: host/testallowed
 	}
 
 	$user_dn = "cn=testdenied,cn=users,$base_dn";
-	open(LDIF, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb");
-	print LDIF "dn: $user_dn
+        open($ldif, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb")
+            or die "Failed to run $ldbmodify: $!";
+        print $ldif "dn: $user_dn
 changetype: modify
 replace: userPrincipalName
 userPrincipalName: testdenied_upn\@$ctx->{realm}.upn
 -	    
 ";
-	close(LDIF);
+	close($ldif);
+	unless ($? == 0) {
+	    warn("$ldbmodify failed: $?");
+	    return undef;
+	}
 
 	$samba_tool_cmd = ${cmd_env};
 	$samba_tool_cmd .= Samba::bindir_path($self, "samba-tool")
@@ -1038,8 +1068,9 @@ userPrincipalName: testdenied_upn\@$ctx->{realm}.upn
 	}
 
 	$user_dn = "cn=testupnspn,cn=users,$base_dn";
-	open(LDIF, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb");
-	print LDIF "dn: $user_dn
+        open($ldif, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb")
+            or die "Failed to run $ldbmodify: $!";
+        print $ldif "dn: $user_dn
 changetype: modify
 replace: userPrincipalName
 userPrincipalName: http/testupnspn.$ctx->{dnsname}\@$ctx->{realm}
@@ -1047,11 +1078,15 @@ replace: servicePrincipalName
 servicePrincipalName: http/testupnspn.$ctx->{dnsname}
 -
 ";
-	close(LDIF);
+	close($ldif);
+	unless ($? == 0) {
+	    warn("$ldbmodify failed: $?");
+	    return undef;
+	}
 
 	$samba_tool_cmd = ${cmd_env};
 	$samba_tool_cmd .= Samba::bindir_path($self, "samba-tool")
-	    . " group addmembers --configfile=$ctx->{smb_conf} 'Allowed RODC Password Replication Group' '$testallowed_account' -d10";
+	    . " group addmembers --configfile=$ctx->{smb_conf} 'Allowed RODC Password Replication Group' '$testallowed_account'";
 	unless (system($samba_tool_cmd) == 0) {
 		warn("Unable to add '$testallowed_account' user to 'Allowed RODC Password Replication Group': \n$samba_tool_cmd\n");
 		return undef;
@@ -1108,20 +1143,21 @@ servicePrincipalName: http/testupnspn.$ctx->{dnsname}
 	}
 
 	# Change the userPrincipalName for jane
-	$ldbmodify = ${cmd_env};
-	$ldbmodify .= Samba::bindir_path($self, "ldbmodify");
-	$ldbmodify .=  " --configfile=$ctx->{smb_conf}";
-	$base_dn = "DC=".join(",DC=", split(/\./, $ctx->{realm}));
 	$user_dn = "cn=jane,cn=users,$base_dn";
 
-	open(LDIF, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb");
-	print LDIF "dn: $user_dn
+	open($ldif, "|$ldbmodify -H $ctx->{privatedir}/sam.ldb")
+            or die "Failed to run $ldbmodify: $!";
+        print $ldif "dn: $user_dn
 changetype: modify
 replace: userPrincipalName
 userPrincipalName: jane.doe\@$ctx->{realm}
 -
 ";
-	close(LDIF);
+	close($ldif);
+	unless ($? == 0) {
+	    warn("$ldbmodify failed: $?");
+	    return undef;
+	}
 
 	return $ret;
 }
@@ -1334,7 +1370,7 @@ server min protocol = LANMAN1
 
 	my $samba_tool =  Samba::bindir_path($self, "samba-tool");
 	my $cmd = $self->get_cmd_env_vars($ret);
-	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} member";
+	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} --experimental-s4-member member";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD}";
 	$cmd .= " --machinepass=machine$ret->{PASSWORD}";
 
@@ -1399,7 +1435,7 @@ sub provision_rpc_proxy($$$)
 
 	# The joind runs in the context of the rpc_proxy/member for now
 	my $cmd = $self->get_cmd_env_vars($ret);
-	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} member";
+	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} --experimental-s4-member member";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD}";
 	$cmd .= " --machinepass=machine$ret->{PASSWORD}";
 
@@ -1479,7 +1515,7 @@ sub provision_promoted_dc($$$)
 
 	my $samba_tool =  Samba::bindir_path($self, "samba-tool");
 	my $cmd = $self->get_cmd_env_vars($ret);
-	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} MEMBER --realm=$dcvars->{REALM}";
+	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} --experimental-s4-member MEMBER --realm=$dcvars->{REALM}";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD}";
 	$cmd .= " --machinepass=machine$ret->{PASSWORD}";
 
@@ -1905,6 +1941,8 @@ sub provision_ad_dc($$$$$$$)
 	kernel oplocks = no
 	kernel change notify = no
 	smb2 leases = no
+	smb2 disable oplock break retry = yes
+	server multi channel support = yes
 
 	logging = file
 	printing = bsd
@@ -2194,7 +2232,7 @@ sub check_env($$)
 
 	fl2008r2dc           => ["ad_dc"],
 	fl2003dc             => ["ad_dc"],
-	fl2000dc             => ["dns_hub"],
+	fl2000dc             => ["ad_dc"],
 
 	vampire_2000_dc      => ["fl2000dc"],
 	vampire_dc           => ["ad_dc_ntvfs"],
@@ -2364,13 +2402,15 @@ sub setup_chgdcpass
 
 sub setup_fl2000dc
 {
-	my ($self, $path) = @_;
+	my ($self, $path, $dc_vars) = @_;
 
 	my $env = $self->provision_fl2000dc($path);
 	if (defined $env) {
 	        if (not defined($self->check_or_start($env, "standard"))) {
 		        return undef;
 		}
+
+		$env = $self->setup_trust($env, $dc_vars, "external", "--no-aes-keys --direction=outgoing");
 	}
 
 	return $env;
@@ -2406,7 +2446,9 @@ sub setup_fl2008r2dc
 		my $upn_array = ["$env->{REALM}.upn"];
 		my $spn_array = ["$env->{REALM}.spn"];
 
-		$self->setup_namespaces($env, $upn_array, $spn_array);
+		if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+			return undef;
+		}
 
 		$env = $self->setup_trust($env, $dc_vars, "forest", "");
 	}
@@ -2591,7 +2633,9 @@ sub _setup_ad_dc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2649,7 +2693,9 @@ sub setup_ad_dc_no_nss
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2681,7 +2727,9 @@ sub setup_ad_dc_no_ntlm
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2713,7 +2761,9 @@ sub setup_ad_dc_fips
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2743,6 +2793,11 @@ sub setup_preforkrestartdc
 		return undef;
 	}
 
+        # We treat processes in this environment cruelly, sometimes
+        # sending them SIGSEGV signals. We don't need gdb_backtrace
+        # dissecting these fake crashes in precise detail.
+        $env->{PLEASE_NO_GDB_BACKTRACE} = '1';
+
 	$env->{NSS_WRAPPER_MODULE_SO_PATH} = undef;
 	$env->{NSS_WRAPPER_MODULE_FN_PREFIX} = undef;
 
@@ -2753,7 +2808,9 @@ sub setup_preforkrestartdc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2792,7 +2849,9 @@ sub setup_proclimitdc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2823,7 +2882,9 @@ sub setup_schema_dc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -2920,7 +2981,9 @@ sub setup_backupfromdc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	# Set up a dangling forward link to an expunged object
 	#
@@ -3216,7 +3279,9 @@ sub setup_renamedc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -3241,7 +3306,7 @@ sub setup_offlinebackupdc
 
 	# create an offline backup of the 'backupfromdc' target
 	my $backupdir = File::Temp->newdir();
-	my $cmd = "offline -s $dcvars->{SERVERCONFFILE}";
+	my $cmd = "offline --configfile $dcvars->{SERVERCONFFILE}";
 	my $backup_file = $self->create_backup($env, $dcvars,
 					       $backupdir, $cmd);
 
@@ -3335,7 +3400,9 @@ sub setup_labdc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }
@@ -3455,7 +3522,9 @@ sub setup_customdc
 	my $upn_array = ["$env->{REALM}.upn"];
 	my $spn_array = ["$env->{REALM}.spn"];
 
-	$self->setup_namespaces($env, $upn_array, $spn_array);
+	if ($self->setup_namespaces($env, $upn_array, $spn_array) != 0) {
+		return undef;
+	}
 
 	return $env;
 }

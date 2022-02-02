@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 APPNAME = 'tevent'
-VERSION = '0.10.2'
+VERSION = '0.11.0'
 
 import sys, os
 
@@ -15,9 +15,12 @@ out = 'bin'
 
 import wafsamba
 from wafsamba import samba_dist, samba_utils
-from waflib import Options, Logs, Context
+from waflib import Options, Logs, Context, Errors
 
-samba_dist.DIST_DIRS('lib/tevent:. lib/replace:lib/replace lib/talloc:lib/talloc buildtools:buildtools third_party/waf:third_party/waf')
+samba_dist.DIST_DIRS('''lib/tevent:. lib/replace:lib/replace
+                        lib/talloc:lib/talloc buildtools:buildtools
+                        third_party/cmocka:third_party/cmocka
+                        third_party/waf:third_party/waf''')
 
 def options(opt):
     opt.BUILTIN_DEFAULT('replace')
@@ -29,6 +32,14 @@ def options(opt):
 def configure(conf):
     conf.RECURSE('lib/replace')
     conf.RECURSE('lib/talloc')
+
+    if conf.CHECK_FOR_THIRD_PARTY():
+        conf.RECURSE('third_party/cmocka')
+    else:
+        if not conf.CHECK_CMOCKA():
+            raise Errors.WafError('cmocka development package have not been found.\nIf third_party is installed, check that it is in the proper place.')
+        else:
+            conf.define('USING_SYSTEM_CMOCKA', 1)
 
     conf.env.standalone_tevent = conf.IN_LAUNCH_DIR()
 
@@ -70,6 +81,9 @@ def configure(conf):
 def build(bld):
     bld.RECURSE('lib/replace')
     bld.RECURSE('lib/talloc')
+
+    if bld.CHECK_FOR_THIRD_PARTY():
+        bld.RECURSE('third_party/cmocka')
 
     SRC = '''tevent.c tevent_debug.c tevent_fd.c tevent_immediate.c
              tevent_queue.c tevent_req.c tevent_wrapper.c
@@ -121,6 +135,15 @@ def build(bld):
                          pattern='tevent.py',
                          installdir='python')
 
+    bld.SAMBA_BINARY('test_tevent_tag',
+                     source='tests/test_tevent_tag.c',
+                     deps='cmocka tevent',
+                     install=False)
+
+    bld.SAMBA_BINARY('test_tevent_trace',
+                     source='tests/test_tevent_trace.c',
+                     deps='cmocka tevent',
+                     install=False)
 
 def test(ctx):
     '''test tevent'''
@@ -130,8 +153,18 @@ def test(ctx):
     samba_utils.ADD_LD_LIBRARY_PATH('bin/shared/private')
 
     pyret = samba_utils.RUN_PYTHON_TESTS(['bindings.py'])
-    sys.exit(pyret)
 
+    unit_test_ret = 0
+    unit_tests = [
+        'test_tevent_tag',
+        'test_tevent_trace',
+    ]
+
+    for unit_test in unit_tests:
+        unit_test_cmd = os.path.join(Context.g_module.out, unit_test)
+        unit_test_ret = unit_test_ret or samba_utils.RUN_COMMAND(unit_test_cmd)
+
+    sys.exit(pyret or unit_test_ret)
 
 def dist():
     '''makes a tarball for distribution'''

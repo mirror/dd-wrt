@@ -25,6 +25,7 @@
 #include "auth.h"
 #include "libcli/security/security.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "source3/lib/substitute.h"
 
 NTSTATUS auth3_generate_session_info(struct auth4_context *auth_context,
 				     TALLOC_CTX *mem_ctx,
@@ -43,7 +44,7 @@ NTSTATUS auth3_generate_session_info(struct auth4_context *auth_context,
 	 * Some callers pass auth_user_info_dc, the SCHANNEL and
 	 * NCALRPC_AS_SYSTEM gensec modules.
 	 *
-	 * While the reset passes auth3_check_password() returned.
+	 * While the rest passes auth3_check_password() returned.
 	 */
 	user_info = talloc_get_type(server_returned_info,
 				    struct auth_user_info_dc);
@@ -111,13 +112,15 @@ NTSTATUS auth3_set_challenge(struct auth4_context *auth4_context, const uint8_t 
 {
 	struct auth_context *auth_context = talloc_get_type_abort(auth4_context->private_data,
 								  struct auth_context);
+	bool ok;
 
-	auth_context->challenge = data_blob_talloc(auth_context,
-						   chal, 8);
-	NT_STATUS_HAVE_NO_MEMORY(auth_context->challenge.data);
-
-	auth_context->challenge_set_by = talloc_strdup(auth_context, challenge_set_by);
-	NT_STATUS_HAVE_NO_MEMORY(auth_context->challenge_set_by);
+	ok = auth3_context_set_challenge(auth_context, chal, challenge_set_by);
+	if (!ok) {
+		/*
+		 * This can only fail for ENOMEM
+		 */
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	DEBUG(5, ("auth_context challenge set by %s\n", auth_context->challenge_set_by));
 	DEBUG(5, ("challenge is: \n"));

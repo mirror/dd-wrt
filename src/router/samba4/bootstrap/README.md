@@ -13,7 +13,7 @@ A pure python3 module with CLI to bootstrap Samba envs for multiple distribution
 ## Supported Distributions
 
 deb: Debian 10, Ubuntu 1604|1804|2004
-rpm: CentOS 7|8, Fedora 32|33, openSUSE Leap 15.1|15.2
+rpm: CentOS 7|8, Fedora 33|34, openSUSE Leap 15.1|15.2
 
 Easy to add more.
 
@@ -32,7 +32,7 @@ Just calculate the sha1sum for consistency checks:
  bootstrap/template.py --sha1sum
 
 The checksum needs to be added as `SAMBA_CI_CONTAINER_TAG` in
-the toplevel .gitlab-ci.yml file.
+the toplevel .gitlab-ci-main.yml file.
 
 ## User Stories
 

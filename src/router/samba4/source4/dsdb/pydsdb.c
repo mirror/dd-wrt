@@ -33,6 +33,7 @@
 #include "lib/util/dlinklist.h"
 #include "dsdb/kcc/garbage_collect_tombstones.h"
 #include "dsdb/kcc/scavenge_dns_records.h"
+#include "libds/common/flag_mapping.h"
 
 #undef strcasecmp
 
@@ -587,8 +588,7 @@ static PyObject *py_dsdb_DsReplicaAttribute(PyObject *self, PyObject *args)
 			PyObject *item = PyList_GetItem(el_list, i);
 			if (!(PyBytes_Check(item))) {
 				PyErr_Format(PyExc_TypeError,
-					     "ldif_element type should be "
-					     PY_DESC_PY3_BYTES
+					     "ldif_element type should be bytes"
 					     );
 				talloc_free(tmp_ctx);
 				return NULL;
@@ -698,8 +698,7 @@ static PyObject *py_dsdb_normalise_attributes(PyObject *self, PyObject *args)
 			PyObject *item = PyList_GetItem(el_list, i);
 			if (!PyBytes_Check(item)) {
 				PyErr_Format(PyExc_TypeError,
-					     "ldif_element type should be "
-					     PY_DESC_PY3_BYTES
+					     "ldif_element type should be bytes"
 					     );
 				talloc_free(tmp_ctx);
 				return NULL;
@@ -1168,6 +1167,7 @@ static PyObject *py_dsdb_allocate_rid(PyObject *self, PyObject *args)
 	return PyLong_FromLong(rid);
 }
 
+#ifdef AD_DC_BUILD_IS_ENABLED
 static PyObject *py_dns_delete_tombstones(PyObject *self, PyObject *args)
 {
 	PyObject *py_ldb;
@@ -1333,6 +1333,7 @@ static PyObject *py_dsdb_garbage_collect_tombstones(PyObject *self, PyObject *ar
 	return Py_BuildValue("(II)", num_objects_removed,
 			    num_links_removed);
 }
+#endif
 
 static PyObject *py_dsdb_load_udv_v2(PyObject *self, PyObject *args)
 {
@@ -1401,6 +1402,30 @@ static PyObject *py_dsdb_load_udv_v2(PyObject *self, PyObject *args)
 	return pylist;
 }
 
+static PyObject *py_dsdb_user_account_control_flag_bit_to_string(PyObject *self, PyObject *args)
+{
+	const char *str;
+	long long uf;
+	if (!PyArg_ParseTuple(args, "L", &uf)) {
+		return NULL;
+	}
+
+	if (uf > UINT32_MAX) {
+		return PyErr_Format(PyExc_OverflowError, "No UF_ flags are over UINT32_MAX");
+	}
+	if (uf < 0) {
+		return PyErr_Format(PyExc_KeyError, "No UF_ flags are less then zero");
+	}
+
+	str = dsdb_user_account_control_flag_bit_to_string(uf);
+	if (str == NULL) {
+		return PyErr_Format(PyExc_KeyError,
+				    "No such UF_ flag 0x%08x",
+				    (unsigned int)uf);
+	}
+	return PyUnicode_FromString(str);
+}
+
 static PyMethodDef py_dsdb_methods[] = {
 	{ "_samdb_server_site_name", (PyCFunction)py_samdb_server_site_name,
 		METH_VARARGS, "Get the server site name as a string"},
@@ -1466,6 +1491,7 @@ static PyMethodDef py_dsdb_methods[] = {
 	{ "_dsdb_get_wellknown_dn", (PyCFunction)py_dsdb_get_wellknown_dn, METH_VARARGS, NULL },
 	{ "_dsdb_DsReplicaAttribute", (PyCFunction)py_dsdb_DsReplicaAttribute, METH_VARARGS, NULL },
 	{ "_dsdb_normalise_attributes", (PyCFunction)py_dsdb_normalise_attributes, METH_VARARGS, NULL },
+#ifdef AD_DC_BUILD_IS_ENABLED
 	{ "_dsdb_garbage_collect_tombstones", (PyCFunction)py_dsdb_garbage_collect_tombstones, METH_VARARGS,
 		"_dsdb_kcc_check_deleted(samdb, [dn], current_time, tombstone_lifetime)"
 		" -> (num_objects_expunged, num_links_expunged)" },
@@ -1473,6 +1499,7 @@ static PyMethodDef py_dsdb_methods[] = {
 		METH_VARARGS, NULL},
 	{ "_dns_delete_tombstones", (PyCFunction)py_dns_delete_tombstones,
 		METH_VARARGS, NULL},
+#endif
 	{ "_dsdb_create_own_rid_set", (PyCFunction)py_dsdb_create_own_rid_set, METH_VARARGS,
 		"_dsdb_create_own_rid_set(samdb)"
 		" -> None" },
@@ -1480,6 +1507,11 @@ static PyMethodDef py_dsdb_methods[] = {
 		"_dsdb_allocate_rid(samdb)"
 		" -> RID" },
 	{ "_dsdb_load_udv_v2", (PyCFunction)py_dsdb_load_udv_v2, METH_VARARGS, NULL },
+	{ "user_account_control_flag_bit_to_string",
+	        (PyCFunction)py_dsdb_user_account_control_flag_bit_to_string,
+	        METH_VARARGS,
+	        "user_account_control_flag_bit_to_string(bit)"
+                " -> string name" },
 	{0}
 };
 

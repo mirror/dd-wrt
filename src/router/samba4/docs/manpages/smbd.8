@@ -2,12 +2,12 @@
 .\"     Title: smbd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "SMBD" "8" "06/01/2021" "Samba 4\&.14\&.5" "System Administration tools"
+.TH "SMBD" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbd \- server to provide SMB/CIFS services to clients
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbd [\-D|\-\-daemon] [\-F|\-\-foreground] [\-S|\-\-log\-stdout] [\-i|\-\-interactive] [\-V] [\-b|\-\-build\-options] [\-d\ <debug\ level>] [\-l|\-\-log\-basename\ <log\ directory>] [\-p\ <port\ number(s)>] [\-P\ <profiling\ level>] [\-s\ <configuration\ file>] [\-\-no\-process\-group]
+smbd [\-D|\-\-daemon] [\-i|\-\-interactive] [\-F|\-\-foreground] [\-\-no\-process\-group] [\-b|\-\-build\-options] [\-p\ <port\ number(s)>] [\-P\ <profiling\ level>] [\-d\ <debug\ level>] [\-\-debug\-stdout] [\-\-configfile=<configuration\ file>] [\-\-option=<name>=<value>] [\-l|\-\-log\-basename\ <log\ directory>] [\-\-leak\-report] [\-\-leak\-report\-full] [\-V|\-\-version]
 .SH "DESCRIPTION"
 .PP
 This program is part of the
@@ -68,6 +68,15 @@ smbd
 is executed on the command line of a shell\&.
 .RE
 .PP
+\-i|\-\-interactive
+.RS 4
+If this parameter is specified it causes the server to run "interactively", not as a daemon, even if the server is executed on the command line of a shell\&. Setting this parameter negates the implicit daemon mode when run from the command line\&.
+smbd
+will only accept one connection and terminate\&. It will also log to standard output, as if the
+\-S
+parameter had been given\&.
+.RE
+.PP
 \-F|\-\-foreground
 .RS 4
 If specified, this parameter causes the main
@@ -81,74 +90,6 @@ svscan
 from Daniel J\&. Bernstein\*(Aqs
 daemontools
 package, or the AIX process monitor\&.
-.RE
-.PP
-\-S|\-\-log\-stdout
-.RS 4
-If specified, this parameter causes
-smbd
-to log to standard output rather than a file\&.
-.RE
-.PP
-\-i|\-\-interactive
-.RS 4
-If this parameter is specified it causes the server to run "interactively", not as a daemon, even if the server is executed on the command line of a shell\&. Setting this parameter negates the implicit daemon mode when run from the command line\&.
-smbd
-will only accept one connection and terminate\&. It will also log to standard output, as if the
-\-S
-parameter had been given\&.
-.RE
-.PP
-\-d|\-\-debuglevel=level
-.RS 4
-\fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 0\&.
-.sp
-The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
-.sp
-Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
-.sp
-Note that specifying this parameter here will override the
-\m[blue]\fBlog level\fR\m[]
-parameter in the
-smb\&.conf
-file\&.
-.RE
-.PP
-\-V|\-\-version
-.RS 4
-Prints the program version number\&.
-.RE
-.PP
-\-s|\-\-configfile=<configuration file>
-.RS 4
-The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
-smb\&.conf
-for more information\&. The default configuration file name is determined at compile time\&.
-.RE
-.PP
-\-l|\-\-log\-basename=logdirectory
-.RS 4
-Base directory name for log/debug files\&. The extension
-\fB"\&.progname"\fR
-will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
-.RE
-.PP
-\-\-option=<name>=<value>
-.RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
-.RE
-.PP
-\-?|\-\-help
-.RS 4
-Print a summary of command line options\&.
-.RE
-.PP
-\-\-usage
-.RS 4
-Display brief usage message\&.
 .RE
 .PP
 \-\-no\-process\-group
@@ -176,6 +117,69 @@ The default ports are 139 (used for SMB over NetBIOS over TCP) and port 445 (use
 .RS 4
 \fIprofiling level\fR
 is a number specifying the level of profiling data to be collected\&. 0 turns off profiling, 1 turns on counter profiling only, 2 turns on complete profiling, and 3 resets all profiling data\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL, \-\-debug\-stdout
+.RS 4
+\fIlevel\fR
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 0\&.
+.sp
+The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
+.sp
+Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBlog level\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+This will redirect debug output to STDOUT\&. By default server daemons are logging to a log file\&.
+.RE
+.PP
+\-\-configfile=CONFIGFILE
+.RS 4
+The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
+smb\&.conf
+for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
+.RE
+.PP
+\-l|\-\-log\-basename=logdirectory
+.RS 4
+Base directory name for log/debug files\&. The extension
+\fB"\&.progname"\fR
+will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
+.RE
+.PP
+\-\-leak\-report
+.RS 4
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
+.RE
+.PP
+\-?|\-\-help
+.RS 4
+Print a summary of command line options\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Display brief usage message\&.
 .RE
 .SH "FILES"
 .PP
@@ -256,7 +260,7 @@ parameter\&. When this is set, the following restrictions apply:
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "DIAGNOSTICS"
 .PP
 Most diagnostics issued by the server are logged in a specified log file\&. The log file name is specified at compile time, but may be overridden on the command line\&.

@@ -31,7 +31,6 @@
 #include "libcli/security/security.h"
 #include "libcli/security/session.h"
 #include "rpc_server/drsuapi/dcesrv_drsuapi.h"
-#include "rpc_server/common/sid_helper.h"
 #include "../libcli/drsuapi/drsuapi.h"
 #include "lib/util/binsearch.h"
 #include "lib/util/tsort.h"
@@ -1168,13 +1167,14 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 	struct ldb_dn *ntds_dn = NULL, *server_dn = NULL;
 	struct ldb_dn *rodc_dn, *krbtgt_link_dn;
 	int ret;
-	const char *rodc_attrs[] = { "msDS-KrbTgtLink", "msDS-NeverRevealGroup", "msDS-RevealOnDemandGroup", "objectGUID", NULL };
+	const char *rodc_attrs[] = { "msDS-KrbTgtLink",
+				     "msDS-NeverRevealGroup",
+				     "msDS-RevealOnDemandGroup",
+				     "userAccountControl",
+				     NULL };
 	const char *obj_attrs[] = { "tokenGroups", "objectSid", "UserAccountControl", "msDS-KrbTgtLinkBL", NULL };
 	struct ldb_result *rodc_res = NULL, *obj_res = NULL;
-	const struct dom_sid **never_reveal_sids, **reveal_sids, **token_sids;
-	const struct dom_sid *object_sid = NULL;
 	WERROR werr;
-	const struct dom_sid *additional_sids[] = { NULL, NULL };
 
 	DEBUG(3,(__location__ ": DRSUAPI_EXOP_REPL_SECRET extended op on %s\n",
 		 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot)));
@@ -1249,21 +1249,17 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 				 dom_sid_string(mem_ctx, user_sid));
 	if (!ldb_dn_validate(rodc_dn)) goto failed;
 
-	/* do the two searches we need */
+	/*
+	 * do the two searches we need
+	 * We need DSDB_SEARCH_SHOW_EXTENDED_DN as we get a SID lists
+	 * out of the extended DNs
+	 */
 	ret = dsdb_search_dn(b_state->sam_ctx_system, mem_ctx, &rodc_res, rodc_dn, rodc_attrs,
 			     DSDB_SEARCH_SHOW_EXTENDED_DN);
 	if (ret != LDB_SUCCESS || rodc_res->count != 1) goto failed;
 
 	ret = dsdb_search_dn(b_state->sam_ctx_system, mem_ctx, &obj_res, obj_dn, obj_attrs, 0);
 	if (ret != LDB_SUCCESS || obj_res->count != 1) goto failed;
-
-	/* if the object SID is equal to the user_sid, allow */
-	object_sid = samdb_result_dom_sid(mem_ctx, obj_res->msgs[0], "objectSid");
-	if (dom_sid_equal(user_sid, object_sid)) {
-		goto allowed;
-	}
-
-	additional_sids[0] = object_sid;
 
 	/*
 	 * Must be an RODC account at this point, verify machine DN matches the
@@ -1281,49 +1277,12 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 		goto allowed;
 	}
 
-	/* but it isn't allowed to get anyone elses krbtgt secrets */
-	if (samdb_result_dn(b_state->sam_ctx_system, mem_ctx,
-			    obj_res->msgs[0], "msDS-KrbTgtLinkBL", NULL)) {
-		goto denied;
-	}
+	werr = samdb_confirm_rodc_allowed_to_repl_to(b_state->sam_ctx_system,
+						     user_sid,
+						     rodc_res->msgs[0],
+						     obj_res->msgs[0]);
 
-	if (ldb_msg_find_attr_as_uint(obj_res->msgs[0],
-				      "userAccountControl", 0) &
-	    UF_INTERDOMAIN_TRUST_ACCOUNT) {
-		goto denied;
-	}
-
-	werr = samdb_result_sid_array_dn(b_state->sam_ctx_system, rodc_res->msgs[0],
-					 mem_ctx, "msDS-NeverRevealGroup", &never_reveal_sids);
-	if (!W_ERROR_IS_OK(werr)) {
-		goto denied;
-	}
-
-	werr = samdb_result_sid_array_dn(b_state->sam_ctx_system, rodc_res->msgs[0],
-					 mem_ctx, "msDS-RevealOnDemandGroup", &reveal_sids);
-	if (!W_ERROR_IS_OK(werr)) {
-		goto denied;
-	}
-
-	/*
-	 * The SID list needs to include itself as well as the tokenGroups.
-	 *
-	 * TODO determine if sIDHistory is required for this check
-	 */
-	werr = samdb_result_sid_array_ndr(b_state->sam_ctx_system, obj_res->msgs[0],
-					  mem_ctx, "tokenGroups", &token_sids,
-					  additional_sids, 1);
-	if (!W_ERROR_IS_OK(werr) || token_sids==NULL) {
-		goto denied;
-	}
-
-	if (never_reveal_sids &&
-	    sid_list_match(token_sids, never_reveal_sids)) {
-		goto denied;
-	}
-
-	if (reveal_sids &&
-	    sid_list_match(token_sids, reveal_sids)) {
+	if (W_ERROR_IS_OK(werr)) {
 		goto allowed;
 	}
 

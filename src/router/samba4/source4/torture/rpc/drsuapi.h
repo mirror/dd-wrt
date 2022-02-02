@@ -27,9 +27,9 @@
  * Data structure common for most of DRSUAPI tests
  */
 struct DsPrivate {
+	struct cli_credentials *admin_credentials;
 	struct dcerpc_pipe *drs_pipe;
 	struct policy_handle bind_handle;
-	struct GUID bind_guid;
 	struct drsuapi_DsBindInfo28 srv_bind_info;
 
 	const char *domain_obj_dn;
@@ -38,6 +38,7 @@ struct DsPrivate {
 	struct GUID domain_guid;
 	struct drsuapi_DsGetDCInfo2 dcinfo;
 	struct test_join *join;
+	struct cli_credentials *dc_credentials;
 };
 
 /**

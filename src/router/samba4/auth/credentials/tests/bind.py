@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # This is unit with tests for LDAP access checks
 
-from __future__ import print_function
 import optparse
 import sys
 import base64
@@ -53,6 +52,9 @@ creds_user1 = create_credential(lp, creds)
 creds_user2 = create_credential(lp, creds)
 creds_user3 = create_credential(lp, creds)
 creds_user4 = create_credential(lp, creds)
+creds_user5 = create_credential(lp, creds)
+creds_user6 = create_credential(lp, creds)
+creds_user7 = create_credential(lp, creds)
 
 class BindTests(samba.tests.TestCase):
 
@@ -90,7 +92,8 @@ class BindTests(samba.tests.TestCase):
         # this test to detect when the LDAP DN is being double-parsed
         # but must be in the user@realm style to allow the account to
         # be created
-        self.ldb.add_ldif("""
+        try:
+            self.ldb.add_ldif("""
 dn: """ + self.virtual_user_dn + """
 cn: frednurk@""" + self.realm + """
 displayName: Fred Nurk
@@ -103,13 +106,21 @@ objectClass: person
 objectClass: top
 objectClass: user
 """)
+        except LdbError as e:
+            (num, msg) = e.args
+            self.fail(f"Failed to create e-mail user: {msg}")
+
         self.addCleanup(delete_force, self.ldb, self.virtual_user_dn)
-        self.ldb.modify_ldif("""
+        try:
+            self.ldb.modify_ldif("""
 dn: """ + self.virtual_user_dn + """
 changetype: modify
 replace: unicodePwd
 unicodePwd:: """ + base64.b64encode(u"\"P@ssw0rd\"".encode('utf-16-le')).decode('utf8') + """
 """)
+        except LdbError as e:
+            (num, msg) = e.args
+            self.fail(f"Failed to set password on e-mail user: {msg}")
 
         self.ldb.enable_account('distinguishedName=%s' % self.virtual_user_dn)
 
@@ -169,7 +180,8 @@ unicodePwd:: """ + base64.b64encode(u"\"P@ssw0rd\"".encode('utf-16-le')).decode(
         self.ldb.newuser(username=self.username, password=self.password)
         ldb_res = self.ldb.search(base=self.domain_dn,
                                   scope=SCOPE_SUBTREE,
-                                  expression="(samAccountName=%s)" % self.username)
+                                  expression="(samAccountName=%s)" % self.username,
+                                  attrs=["objectSid"])
         self.assertEqual(len(ldb_res), 1)
         user_dn = ldb_res[0]["dn"]
         self.addCleanup(delete_force, self.ldb, user_dn)
@@ -197,6 +209,30 @@ unicodePwd:: """ + base64.b64encode(u"\"P@ssw0rd\"".encode('utf-16-le')).decode(
         ldb_user3 = samba.tests.connect_samdb(host, credentials=creds_user3,
                                               lp=lp, ldap_only=True)
         res = ldb_user3.search(base="", expression="", scope=SCOPE_BASE, attrs=["*"])
+
+        # do a simple bind and search with the user account SID
+        creds_user5.set_bind_dn(self.ldb.schema_format_value("objectSid", ldb_res[0]["objectSid"][0]).decode('utf8'))
+        creds_user5.set_password(self.password)
+        print("BindTest with: " + creds_user5.get_bind_dn())
+        ldb_user5 = samba.tests.connect_samdb(host, credentials=creds_user5,
+                                              lp=lp, ldap_only=True)
+        res = ldb_user5.search(base="", expression="", scope=SCOPE_BASE, attrs=["*"])
+
+        # do a simple bind and search with the canonical name
+        creds_user6.set_bind_dn(user_dn.canonical_str())
+        creds_user6.set_password(self.password)
+        print("BindTest with: " + creds_user6.get_bind_dn())
+        ldb_user6 = samba.tests.connect_samdb(host, credentials=creds_user6,
+                                              lp=lp, ldap_only=True)
+        res = ldb_user6.search(base="", expression="", scope=SCOPE_BASE, attrs=["*"])
+
+        # do a simple bind and search with the extended canonical name
+        creds_user7.set_bind_dn(user_dn.canonical_ex_str())
+        creds_user7.set_password(self.password)
+        print("BindTest with: " + creds_user7.get_bind_dn())
+        ldb_user7 = samba.tests.connect_samdb(host, credentials=creds_user7,
+                                              lp=lp, ldap_only=True)
+        res = ldb_user7.search(base="", expression="", scope=SCOPE_BASE, attrs=["*"])
 
     def test_user_account_bind_no_domain(self):
         # create user

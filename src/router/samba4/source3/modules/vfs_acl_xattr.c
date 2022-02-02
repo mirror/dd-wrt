@@ -37,7 +37,6 @@
 
 static ssize_t getxattr_do(vfs_handle_struct *handle,
 			   files_struct *fsp,
-			   const struct smb_filename *smb_fname,
 			   const char *xattr_name,
 			   uint8_t *val,
 			   size_t size)
@@ -46,12 +45,7 @@ static ssize_t getxattr_do(vfs_handle_struct *handle,
 	int saved_errno = 0;
 
 	become_root();
-	if (fsp && fsp_get_pathref_fd(fsp) != -1) {
-		sizeret = SMB_VFS_FGETXATTR(fsp, xattr_name, val, size);
-	} else {
-		sizeret = SMB_VFS_GETXATTR(handle->conn, smb_fname,
-					   XATTR_NTACL_NAME, val, size);
-	}
+	sizeret = SMB_VFS_FGETXATTR(fsp, xattr_name, val, size);
 	if (sizeret == -1) {
 		saved_errno = errno;
 	}
@@ -86,7 +80,7 @@ static NTSTATUS fget_acl_blob(TALLOC_CTX *ctx,
 	val = tmp;
 
 	sizeret =
-	    getxattr_do(handle, fsp, NULL, XATTR_NTACL_NAME, val, size);
+	    getxattr_do(handle, fsp, XATTR_NTACL_NAME, val, size);
 
 	if (sizeret >= 0) {
 		pblob->data = val;
@@ -100,66 +94,7 @@ static NTSTATUS fget_acl_blob(TALLOC_CTX *ctx,
 
 	/* Too small, try again. */
 	sizeret =
-	    getxattr_do(handle, fsp, NULL, XATTR_NTACL_NAME, NULL, 0);
-	if (sizeret < 0) {
-		goto err;
-	}
-
-	if (size < sizeret) {
-		size = sizeret;
-	}
-
-	if (size > 65536) {
-		/* Max ACL size is 65536 bytes. */
-		errno = ERANGE;
-		goto err;
-	}
-
-	goto again;
-  err:
-	/* Real error - exit here. */
-	TALLOC_FREE(val);
-	return map_nt_error_from_unix(errno);
-}
-
-static NTSTATUS get_acl_blob_at(TALLOC_CTX *ctx,
-			vfs_handle_struct *handle,
-			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname,
-			DATA_BLOB *pblob)
-{
-	size_t size = 4096;
-	uint8_t *val = NULL;
-	uint8_t *tmp;
-	ssize_t sizeret;
-
-	ZERO_STRUCTP(pblob);
-
-  again:
-
-	tmp = talloc_realloc(ctx, val, uint8_t, size);
-	if (tmp == NULL) {
-		TALLOC_FREE(val);
-		return NT_STATUS_NO_MEMORY;
-	}
-	val = tmp;
-
-	sizeret =
-	    getxattr_do(handle, NULL, smb_fname, XATTR_NTACL_NAME, val, size);
-
-	if (sizeret >= 0) {
-		pblob->data = val;
-		pblob->length = sizeret;
-		return NT_STATUS_OK;
-	}
-
-	if (errno != ERANGE) {
-		goto err;
-	}
-
-	/* Too small, try again. */
-	sizeret =
-	    getxattr_do(handle, NULL, smb_fname, XATTR_NTACL_NAME, NULL, 0);
+	    getxattr_do(handle, fsp, XATTR_NTACL_NAME, NULL, 0);
 	if (sizeret < 0) {
 		goto err;
 	}
@@ -196,14 +131,8 @@ static NTSTATUS store_acl_blob_fsp(vfs_handle_struct *handle,
 		  (unsigned int)pblob->length, fsp_str_dbg(fsp)));
 
 	become_root();
-	if (fsp_get_pathref_fd(fsp) != -1) {
-		ret = SMB_VFS_FSETXATTR(fsp, XATTR_NTACL_NAME,
+	ret = SMB_VFS_FSETXATTR(fsp, XATTR_NTACL_NAME,
 			pblob->data, pblob->length, 0);
-	} else {
-		ret = SMB_VFS_SETXATTR(fsp->conn, fsp->fsp_name,
-				XATTR_NTACL_NAME,
-				pblob->data, pblob->length, 0);
-	}
 	if (ret) {
 		saved_errno = errno;
 	}
@@ -353,24 +282,6 @@ static NTSTATUS acl_xattr_fget_nt_acl(vfs_handle_struct *handle,
 	return status;
 }
 
-static NTSTATUS acl_xattr_get_nt_acl_at(vfs_handle_struct *handle,
-				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
-				uint32_t security_info,
-				TALLOC_CTX *mem_ctx,
-				struct security_descriptor **ppdesc)
-{
-	NTSTATUS status;
-	status = get_nt_acl_common_at(get_acl_blob_at,
-				handle,
-				dirfsp,
-				smb_fname,
-				security_info,
-				mem_ctx,
-				ppdesc);
-	return status;
-}
-
 static NTSTATUS acl_xattr_fset_nt_acl(vfs_handle_struct *handle,
 				      files_struct *fsp,
 				      uint32_t security_info_sent,
@@ -386,10 +297,8 @@ static NTSTATUS acl_xattr_fset_nt_acl(vfs_handle_struct *handle,
 static struct vfs_fn_pointers vfs_acl_xattr_fns = {
 	.connect_fn = connect_acl_xattr,
 	.unlinkat_fn = acl_xattr_unlinkat,
-	.chmod_fn = chmod_acl_module_common,
 	.fchmod_fn = fchmod_acl_module_common,
 	.fget_nt_acl_fn = acl_xattr_fget_nt_acl,
-	.get_nt_acl_at_fn = acl_xattr_get_nt_acl_at,
 	.fset_nt_acl_fn = acl_xattr_fset_nt_acl,
 	.sys_acl_set_fd_fn = sys_acl_set_fd_xattr
 };

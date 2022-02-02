@@ -27,7 +27,7 @@
 #include "auth/kerberos/kerberos.h"
 #include "auth/credentials/credentials.h"
 #include "auth/credentials/credentials_krb5.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "torture/rpc/torture_rpc.h"
 #include "libcli/auth/libcli_auth.h"
 #include "libcli/security/security.h"
@@ -162,7 +162,8 @@ static bool test_PACVerify(struct torture_context *tctx,
 {
 	NTSTATUS status;
 	bool ok;
-	bool pkinit_in_use = torture_setting_bool(tctx, "pkinit_in_use", false);
+	const char *pkinit_ccache = torture_setting_string(tctx, "pkinit_ccache", NULL);
+	bool pkinit_in_use = pkinit_ccache != NULL;
 	bool expect_pac_upn_dns_info = torture_setting_bool(tctx, "expect_pac_upn_dns_info", true);
 	size_t num_pac_buffers;
 	struct gensec_security *gensec_client_context;
@@ -186,19 +187,60 @@ static bool test_PACVerify(struct torture_context *tctx,
 		"Testing PAC Verify (secure_channel_type: %d, machine: %s, negotiate_flags: 0x%08x\n",
 		secure_channel_type, test_machine_name, negotiate_flags);
 
-	/*
-	 * Copy the credentials in order to use a different MEMORY krb5 ccache
-	 * for each client/server setup. The MEMORY cache identifier is a
-	 * pointer to the creds container. If we copy it the pointer changes and
-	 * we will get a new clean memory cache.
-	 */
-	client_creds = cli_credentials_shallow_copy(tmp_ctx,
-					    popt_get_cmdline_credentials());
-	torture_assert(tctx, client_creds, "Failed to copy of credentials");
-	if (!pkinit_in_use) {
-		/* Invalidate the gss creds container to allocate a new MEMORY ccache */
+	if (pkinit_in_use) {
+		struct cli_credentials *tmp_creds = NULL;
+		const char *error_string = NULL;
+		int rc;
+
+		torture_comment(tctx,
+				"Using pkinit_ccache=%s\n",
+				pkinit_ccache);
+
+		tmp_creds = cli_credentials_init(tctx);
+		torture_assert(tctx, tmp_creds, "Failed to create credentials");
+
+		rc = cli_credentials_set_ccache(tmp_creds,
+						tctx->lp_ctx,
+						pkinit_ccache,
+						CRED_SPECIFIED,
+						&error_string);
+		torture_assert_int_equal(tctx,
+					 rc,
+					 0,
+					 "cli_credentials_set_ccache failed");
+		cli_credentials_set_kerberos_state(tmp_creds,
+						   CRED_USE_KERBEROS_REQUIRED,
+						   CRED_SPECIFIED);
+
+		/*
+		 * Copy the credentials in order to use a different MEMORY krb5
+		 * ccache for each client/server setup. The MEMORY cache
+		 * identifier is a pointer to the creds container. If we copy
+		 * it the pointer changes and we will get a new clean memory
+		 * cache.
+		 */
+		client_creds =
+			cli_credentials_shallow_copy(tmp_ctx, tmp_creds);
+		torture_assert(tctx,
+			       client_creds,
+			       "Failed to copy of credentials");
+	} else {
+		/*
+		 * Copy the credentials in order to use a different MEMORY krb5
+		 * ccache for each client/server setup. The MEMORY cache
+		 * identifier is a pointer to the creds container. If we copy
+		 * it the pointer changes and we will get a new clean memory
+		 * cache.
+		 */
+		client_creds =
+			cli_credentials_shallow_copy(tmp_ctx,
+						     samba_cmdline_get_creds());
+		torture_assert(tctx,
+			       client_creds,
+			       "Failed to copy of credentials");
 		cli_credentials_invalidate_ccache(client_creds, CRED_SPECIFIED);
 	}
+
 
 	server_creds = cli_credentials_shallow_copy(tmp_ctx,
 						    credentials);
@@ -266,7 +308,7 @@ static bool test_PACVerify(struct torture_context *tctx,
 				       (ndr_pull_flags_fn_t)ndr_pull_PAC_DATA);
 	torture_assert(tctx, NDR_ERR_CODE_IS_SUCCESS(ndr_err), "ndr_pull_struct_blob of PAC_DATA structure failed");
 
-	num_pac_buffers = 4;
+	num_pac_buffers = 7;
 	if (expect_pac_upn_dns_info) {
 		num_pac_buffers += 1;
 	}
@@ -316,6 +358,24 @@ static bool test_PACVerify(struct torture_context *tctx,
 	torture_assert(tctx,
 		       pac_buf->info != NULL,
 		       "PAC_TYPE_KDC_CHECKSUM info");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_TICKET_CHECKSUM);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_TICKET_CHECKSUM");
+	torture_assert(tctx,
+		       pac_buf->info != NULL,
+		       "PAC_TYPE_TICKET_CHECKSUM info");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_ATTRIBUTES_INFO);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_ATTRIBUTES_INFO");
+	torture_assert(tctx,
+		       pac_buf->info != NULL,
+		       "PAC_TYPE_ATTRIBUTES_INFO info");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_REQUESTER_SID);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_REQUESTER_SID");
+	torture_assert(tctx,
+		       pac_buf->info != NULL,
+		       "PAC_TYPE_REQUESTER_SID info");
 
 	ok = netlogon_validate_pac(tctx, p, server_creds, secure_channel_type, test_machine_name,
 				   negotiate_flags, pac_data, session_info);
@@ -701,8 +761,12 @@ static bool test_S4U2Self(struct torture_context *tctx,
 	 * we will get a new clean memory cache.
 	 */
 	client_creds = cli_credentials_shallow_copy(tmp_ctx,
-					    popt_get_cmdline_credentials());
+					    samba_cmdline_get_creds());
 	torture_assert(tctx, client_creds, "Failed to copy of credentials");
+	/* We use cli_credentials_get_ntlm_response(), so relax krb5 requirements. */
+	cli_credentials_set_kerberos_state(client_creds,
+					   CRED_USE_KERBEROS_DESIRED,
+					   CRED_SPECIFIED);
 
 	server_creds = cli_credentials_shallow_copy(tmp_ctx,
 						    credentials);
@@ -1003,7 +1067,7 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 		"Testing S4U2Proxy (secure_channel_type: %d, machine: %s, negotiate_flags: 0x%08x\n",
 		secure_channel_type, test_machine_name, negotiate_flags);
 
-	impersonate_princ = cli_credentials_get_principal(popt_get_cmdline_credentials(), tctx);
+	impersonate_princ = cli_credentials_get_principal(samba_cmdline_get_creds(), tctx);
 	torture_assert_not_null(tctx, impersonate_princ, "Failed to get impersonate client name");
 
 	server_creds = cli_credentials_shallow_copy(tctx, credentials);
@@ -1076,7 +1140,7 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 				       (ndr_pull_flags_fn_t)ndr_pull_PAC_DATA);
 	torture_assert(tctx, NDR_ERR_CODE_IS_SUCCESS(ndr_err), "ndr_pull_struct_blob of PAC_DATA structure failed");
 
-	num_pac_buffers = 6;
+	num_pac_buffers = 9;
 
 	torture_assert_int_equal(tctx, pac_data_struct.version, 0, "version");
 	torture_assert_int_equal(tctx, pac_data_struct.num_buffers, num_pac_buffers, "num_buffers");
@@ -1101,6 +1165,10 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_KDC_CHECKSUM");
 	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_KDC_CHECKSUM info");
 
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_TICKET_CHECKSUM);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_TICKET_CHECKSUM");
+	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_TICKET_CHECKSUM info");
+
 	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_CONSTRAINED_DELEGATION);
 	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_CONSTRAINED_DELEGATION");
 	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_CONSTRAINED_DELEGATION info");
@@ -1111,6 +1179,14 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 	torture_assert_str_equal(tctx, deleg->transited_services[0].string,
 				 talloc_asprintf(tctx, "%s@%s", self_princ, cli_credentials_get_realm(credentials)),
 				 "wrong transited_services[0]");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_ATTRIBUTES_INFO);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_ATTRIBUTES_INFO");
+	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_ATTRIBUTES_INFO info");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_REQUESTER_SID);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_REQUESTER_SID");
+	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_REQUESTER_SID info");
 
 	return netlogon_validate_pac(tctx, p, server_creds, secure_channel_type, test_machine_name,
 				     negotiate_flags, pac_data, session_info);
@@ -1132,7 +1208,7 @@ static bool setup_constrained_delegation(struct torture_context *tctx,
 	int ret;
 
 	url = talloc_asprintf(tctx, "ldap://%s", dcerpc_server_name(p));
-	sam_ctx = ldb_wrap_connect(tctx, tctx->ev, tctx->lp_ctx, url, NULL, popt_get_cmdline_credentials(), 0);
+	sam_ctx = ldb_wrap_connect(tctx, tctx->ev, tctx->lp_ctx, url, NULL, samba_cmdline_get_creds(), 0);
 	torture_assert_not_null(tctx, sam_ctx, "Connection to the SAMDB on DC failed!");
 
 	server_dn_str = samdb_search_string(sam_ctx, tctx, ldb_get_default_basedn(sam_ctx), "distinguishedName",

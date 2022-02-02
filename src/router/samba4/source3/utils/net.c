@@ -41,7 +41,7 @@
 /*****************************************************/
 
 #include "includes.h"
-#include "popt_common_cmdline.h"
+#include "lib/cmdline/cmdline.h"
 #include "utils/net.h"
 #include "secrets.h"
 #include "lib/netapi/netapi.h"
@@ -52,6 +52,7 @@
 #include "lib/gencache.h"
 #include "auth/credentials/credentials.h"
 #include "source3/utils/passwd_proto.h"
+#include "auth/gensec/gensec.h"
 
 #ifdef WITH_FAKE_KASERVER
 #include "utils/net_afs.h"
@@ -260,6 +261,7 @@ static int net_changesecretpw(struct net_context *c, int argc,
 static int net_setauthuser(struct net_context *c, int argc, const char **argv)
 {
 	const char *password = NULL;
+	bool ok;
 
 	if (!secrets_init()) {
 		d_fprintf(stderr, _("Failed to open secrets.tdb.\n"));
@@ -305,21 +307,9 @@ static int net_setauthuser(struct net_context *c, int argc, const char **argv)
 		return 1;
 	}
 
-	if (!secrets_store(SECRETS_AUTH_USER, c->opt_user_name,
-			   strlen(c->opt_user_name) + 1)) {
-		d_fprintf(stderr, _("error storing auth user name\n"));
-		return 1;
-	}
-
-	if (!secrets_store(SECRETS_AUTH_DOMAIN, c->opt_workgroup,
-			   strlen(c->opt_workgroup) + 1)) {
-		d_fprintf(stderr, _("error storing auth user domain\n"));
-		return 1;
-	}
-
-	if (!secrets_store(SECRETS_AUTH_PASSWORD, password,
-			   strlen(password) + 1)) {
-		d_fprintf(stderr, _("error storing auth user password\n"));
+	ok = secrets_store_creds(c->creds);
+	if (!ok) {
+		d_fprintf(stderr, _("Failed storing auth user credentials\n"));
 		return 1;
 	}
 
@@ -768,6 +758,13 @@ static struct functable net_func[] = {
 		N_("  Use 'net help join' to get more information about 'net "
 		   "join'.")
 	},
+	{	"offlinejoin",
+		net_offlinejoin,
+		NET_TRANSPORT_ADS | NET_TRANSPORT_RPC,
+		N_("Perform offline domain join"),
+		N_("  Use 'net help offlinejoin' to get more information about 'net "
+		   "offlinejoin'.")
+	},
 	{	"dom",
 		net_dom,
 		NET_TRANSPORT_LOCAL,
@@ -922,33 +919,12 @@ static struct functable net_func[] = {
 };
 
 
-static void get_credentials_file(struct net_context *c,
-				 const char *file)
-{
-	struct cli_credentials *cred = cli_credentials_init(c);
-
-	if (cred == NULL) {
-		d_printf("ERROR: Unable to allocate memory!\n");
-		exit(-1);
-	}
-
-	if (!cli_credentials_parse_file(cred, file, CRED_GUESS_FILE)) {
-		exit(-1);
-	}
-
-	c->opt_user_name = cli_credentials_get_username(cred);
-	c->opt_user_specified = (c->opt_user_name != NULL);
-	c->opt_password = cli_credentials_get_password(cred);
-	c->opt_target_workgroup = cli_credentials_get_domain(cred);
-}
-
 /****************************************************************************
   main program
 ****************************************************************************/
  int main(int argc, char **argv)
 {
 	int opt,i;
-	char *p;
 	int rc = 0;
 	int argc_new = 0;
 	const char ** argv_new;
@@ -956,6 +932,7 @@ static void get_credentials_file(struct net_context *c,
 	poptContext pc;
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct net_context *c = talloc_zero(frame, struct net_context);
+	bool ok;
 
 	struct poptOption long_options[] = {
 		{
@@ -965,26 +942,10 @@ static void get_credentials_file(struct net_context *c,
 			.val        = 'h',
 		},
 		{
-			.longName   = "workgroup",
+			.longName   = "target-workgroup",
 			.shortName  = 'w',
 			.argInfo    = POPT_ARG_STRING,
 			.arg        = &c->opt_target_workgroup,
-		},
-		{
-			.longName   = "user",
-			.shortName  = 'U',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &c->opt_user_name,
-			.val        = 'U',
-		},
-		{
-			.longName   = "authentication-file",
-			.shortName  = 'A',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &c->opt_user_name,
-			.val        = 'A',
-			.descrip    = "Get the credentials from a file",
-			.argDescrip = "FILE",
 		},
 		{
 			.longName   = "ipaddress",
@@ -1001,7 +962,7 @@ static void get_credentials_file(struct net_context *c,
 		},
 		{
 			.longName   = "myname",
-			.shortName  = 'n',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_STRING,
 			.arg        = &c->opt_requester_name,
 		},
@@ -1010,14 +971,6 @@ static void get_credentials_file(struct net_context *c,
 			.shortName  = 'S',
 			.argInfo    = POPT_ARG_STRING,
 			.arg        = &c->opt_host,
-		},
-		{
-			.longName   = "encrypt",
-			.shortName  = 'e',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'e',
-			.descrip    = N_("Encrypt SMB transport"),
 		},
 		{
 			.longName   = "container",
@@ -1045,7 +998,6 @@ static void get_credentials_file(struct net_context *c,
 		},
 		{
 			.longName   = "long",
-			.shortName  = 'l',
 			.argInfo    = POPT_ARG_NONE,
 			.arg        = &c->opt_long_list_entries,
 		},
@@ -1080,24 +1032,6 @@ static void get_credentials_file(struct net_context *c,
 			.arg        = &c->opt_request_timeout,
 		},
 		{
-			.longName   = "machine-pass",
-			.shortName  = 'P',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = &c->opt_machine_pass,
-		},
-		{
-			.longName   = "kerberos",
-			.shortName  = 'k',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = &c->opt_kerberos,
-		},
-		{
-			.longName   = "myworkgroup",
-			.shortName  = 'W',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &c->opt_workgroup,
-		},
-		{
 			.longName   = "use-ccache",
 			.shortName  = 0,
 			.argInfo    = POPT_ARG_NONE,
@@ -1130,13 +1064,13 @@ static void get_credentials_file(struct net_context *c,
 		},
 		{
 			.longName   = "ntname",
-			.shortName  = 'N',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_STRING,
 			.arg        = &c->opt_newntname,
 		},
 		{
 			.longName   = "rid",
-			.shortName  = 'R',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_INT,
 			.arg        = &c->opt_rid,
 		},
@@ -1286,6 +1220,10 @@ static void get_credentials_file(struct net_context *c,
 			.descrip    = "follow symlinks",
 		},
 		POPT_COMMON_SAMBA
+		POPT_COMMON_CONNECTION
+		POPT_COMMON_CREDENTIALS
+		POPT_COMMON_VERSION
+		POPT_LEGACY_S3
 		POPT_TABLEEND
 	};
 
@@ -1293,8 +1231,6 @@ static void get_credentials_file(struct net_context *c,
 	BlockSignals(True, SIGPIPE);
 
 	zero_sockaddr(&c->opt_dest_ip);
-
-	setup_logging(argv[0], DEBUG_STDERR);
 
 	smb_init_locale();
 
@@ -1306,20 +1242,33 @@ static void get_credentials_file(struct net_context *c,
 	textdomain(MODULE_NAME);
 #endif
 
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 	/* set default debug level to 0 regardless of what smb.conf sets */
 	lp_set_cmdline("log level", "0");
 	c->private_data = net_func;
 
-	pc = poptGetContext(NULL, argc, argv_const, long_options,
-			    POPT_CONTEXT_KEEP_FIRST);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv_const,
+				    long_options,
+				    POPT_CONTEXT_KEEP_FIRST);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
 	while((opt = poptGetNextOpt(pc)) != -1) {
 		switch (opt) {
 		case 'h':
 			c->display_usage = true;
-			break;
-		case 'e':
-			c->smb_encrypt = true;
 			break;
 		case 'I':
 			if (!interpret_string_addr(&c->opt_dest_ip,
@@ -1329,18 +1278,6 @@ static void get_credentials_file(struct net_context *c,
 				c->opt_have_ip = true;
 			}
 			break;
-		case 'U':
-			c->opt_user_specified = true;
-			c->opt_user_name = talloc_strdup(c, c->opt_user_name);
-			p = strchr(c->opt_user_name,'%');
-			if (p) {
-				*p = 0;
-				c->opt_password = p+1;
-			}
-			break;
-		case 'A':
-			get_credentials_file(c, c->opt_user_name);
-			break;
 		default:
 			d_fprintf(stderr, _("\nInvalid option %s: %s\n"),
 				 poptBadOption(pc, 0), poptStrerror(opt));
@@ -1349,13 +1286,34 @@ static void get_credentials_file(struct net_context *c,
 		}
 	}
 
-	c->msg_ctx = cmdline_messaging_context(get_dyn_CONFIGFILE());
+	c->creds = samba_cmdline_get_creds();
+	c->lp_ctx = samba_cmdline_get_lp_ctx();
 
-	if (!lp_load_global(get_dyn_CONFIGFILE())) {
-		d_fprintf(stderr, "Can't load %s - run testparm to debug it\n",
-			  get_dyn_CONFIGFILE());
-		exit(1);
+	{
+		enum credentials_obtained username_obtained =
+			CRED_UNINITIALISED;
+		enum smb_encryption_setting encrypt_state =
+			cli_credentials_get_smb_encryption(c->creds);
+		enum credentials_use_kerberos krb5_state =
+			cli_credentials_get_kerberos_state(c->creds);
+		uint32_t gensec_features;
+
+		c->opt_user_name = cli_credentials_get_username_and_obtained(
+				c->creds,
+				&username_obtained);
+		c->opt_user_specified = (username_obtained == CRED_SPECIFIED);
+
+		c->opt_workgroup = cli_credentials_get_domain(c->creds);
+
+		c->smb_encrypt = (encrypt_state == SMB_ENCRYPTION_REQUIRED);
+
+		c->opt_kerberos = (krb5_state > CRED_USE_KERBEROS_DESIRED);
+
+		gensec_features = cli_credentials_get_gensec_features(c->creds);
+		c->opt_ccache = (gensec_features & GENSEC_FEATURE_NTLM_CCACHE);
 	}
+
+	c->msg_ctx = cmdline_messaging_context(get_dyn_CONFIGFILE());
 
 #if defined(HAVE_BIND_TEXTDOMAIN_CODESET)
 	/* Bind our gettext results to 'unix charset'
@@ -1385,20 +1343,9 @@ static void get_credentials_file(struct net_context *c,
 		lp_set_cmdline("netbios name", c->opt_requester_name);
 	}
 
-	if (!c->opt_user_name && getenv("LOGNAME")) {
-		c->opt_user_name = getenv("LOGNAME");
-	}
-
-	if (!c->opt_workgroup) {
-		c->opt_workgroup = talloc_strdup(c, lp_workgroup());
-	}
-
 	if (!c->opt_target_workgroup) {
 		c->opt_target_workgroup = talloc_strdup(c, lp_workgroup());
 	}
-
-	if (!init_names())
-		exit(1);
 
 	load_interfaces();
 
@@ -1406,18 +1353,7 @@ static void get_credentials_file(struct net_context *c,
 	   that it won't assert because we are not root */
 	sec_init();
 
-	if (c->opt_machine_pass) {
-		/* it is very useful to be able to make ads queries as the
-		   machine account for testing purposes and for domain leave */
-
-		net_use_krb_machine_account(c);
-	}
-
-	if (!c->opt_password) {
-		c->opt_password = getenv("PASSWD");
-	}
-
-	popt_burn_cmdline_password(argc, argv);
+	samba_cmdline_burn(argc, argv);
 
 	rc = net_run_function(c, argc_new-1, argv_new+1, "net", net_func);
 

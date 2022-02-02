@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 """Tests for samba.dcerpc.dnsserver"""
 
 import os
@@ -26,7 +25,7 @@ from samba.samdb import SamDB
 from samba.ndr import ndr_unpack, ndr_pack
 from samba.dcerpc import dnsp, dnsserver, security
 from samba.tests import RpcInterfaceTestCase, env_get_var_value
-from samba.netcmd.dns import ARecord, AAAARecord, PTRRecord, CNameRecord, NSRecord, MXRecord, SRVRecord, TXTRecord
+from samba.dnsserver import record_from_string, flag_from_string, ARecord
 from samba import sd_utils, descriptor
 from samba import WERRORError, werror
 
@@ -178,7 +177,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                                  self.custom_zone,
                                                  "@",
                                                  None,
-                                                 self.record_type_int(record_type_str),
+                                                 flag_from_string(record_type_str),
                                                  dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA,
                                                  None,
                                                  None)
@@ -219,7 +218,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                                  self.custom_zone,
                                                  "@",
                                                  None,
-                                                 self.record_type_int(record_type_str),
+                                                 flag_from_string(record_type_str),
                                                  dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA,
                                                  None,
                                                  None)
@@ -261,7 +260,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                                  self.custom_zone,
                                                  "a.b",
                                                  None,
-                                                 self.record_type_int(record_type_str),
+                                                 flag_from_string(record_type_str),
                                                  dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA,
                                                  None,
                                                  None)
@@ -291,7 +290,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                                  self.custom_zone,
                                                  "a.b",
                                                  None,
-                                                 self.record_type_int(record_type_str),
+                                                 flag_from_string(record_type_str),
                                                  dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA,
                                                  None,
                                                  None)
@@ -331,24 +330,79 @@ class DnsserverTests(RpcInterfaceTestCase):
         self.delete_record(self.custom_zone, "testrecord", record_type_str, record_str)
         self.assert_num_records(self.custom_zone, "testrecord", record_type_str, 0)
 
-    def test_dns_tombstoned(self):
-        """
-        See what happens when we set a record to be tombstoned.
-        """
+    def test_dns_tombstoned_zero_timestamp(self):
+        """What happens with a zero EntombedTime tombstone?"""
+        # A zero-timestamp tombstone record has a special meaning for
+        # dns_common_replace(), which is the function exposed by
+        # samdb.dns_replace_by_dn(), and which is *NOT* a general
+        # purpose record replacement function but a specialised part
+        # of the dns update mechanism (for both DLZ and internal).
+        #
+        # In the earlier stages of handling updates, a record that
+        # needs to be deleted is set to be a tombstone with a zero
+        # timestamp. dns_common_replace() notices this specific
+        # marker, and if there are no other records, marks the node as
+        # tombstoned, in the process adding a "real" tombstone.
+        #
+        # If the tombstone has a non-zero timestamp, as you'll see in
+        # the next test, dns_common_replace will decide that the node
+        # is already tombstoned, and that no action needs to be taken.
+        #
+        # This test has worked historically, entirely by accident, as
+        # changing the wType appears to
 
         record_str = "192.168.50.50"
-        record_type_str = "A"
-        self.add_record(self.custom_zone, "testrecord", record_type_str, record_str)
+        self.add_record(self.custom_zone, "testrecord", 'A', record_str)
 
         dn, record = self.get_record_from_db(self.custom_zone, "testrecord")
         record.wType = dnsp.DNS_TYPE_TOMBSTONE
-        res = self.samdb.dns_replace_by_dn(dn, [record])
-        if res is not None:
-            self.fail("Unable to update dns record to be tombstoned.")
+        record.data = 0
+        self.samdb.dns_replace_by_dn(dn, [record])
 
-        self.assert_num_records(self.custom_zone, "testrecord", record_type_str)
-        self.delete_record(self.custom_zone, "testrecord", record_type_str, record_str)
-        self.assert_num_records(self.custom_zone, "testrecord", record_type_str, 0)
+        # there should be no A record, and one TOMBSTONE record.
+        self.assert_num_records(self.custom_zone, "testrecord", 'A', 0)
+        # we can't make assertions about the tombstone count based on
+        # RPC calls, as ther are no tombstones in RPCs (there is
+        # "DNS_TYPE_ZERO" instead). Nor do tombstones show up if we
+        # use DNS_TYPE_ALL.
+        self.assert_num_records(self.custom_zone, "testrecord", 'ALL', 0)
+
+        # But we can use LDAP:
+        records = self.ldap_get_records(self.custom_zone, "testrecord")
+        self.assertEqual(len(records), 1)
+        r = records[0]
+        self.assertEqual(r.wType, dnsp.DNS_TYPE_TOMBSTONE)
+        self.assertGreater(r.data, 1e17) # ~ October 1916
+
+        # this should fail, because no A records.
+        self.delete_record(self.custom_zone, "testrecord", 'A', record_str,
+                           assertion=False)
+
+    def test_dns_tombstoned_nonzero_timestamp(self):
+        """See what happens when we set a record to be tombstoned with an
+        EntombedTime timestamp.
+        """
+        # Because this tombstone has a non-zero EntombedTime,
+        # dns_common_replace() will decide the node was already
+        # tombstoned and there is nothing to be done, leaving the A
+        # record where it was.
+
+        record_str = "192.168.50.50"
+        self.add_record(self.custom_zone, "testrecord", 'A', record_str)
+
+        dn, record = self.get_record_from_db(self.custom_zone, "testrecord")
+        record.wType = dnsp.DNS_TYPE_TOMBSTONE
+        record.data = 0x123456789A
+        self.samdb.dns_replace_by_dn(dn, [record])
+
+        # there should be the A record and no TOMBSTONE
+        self.assert_num_records(self.custom_zone, "testrecord", 'A', 1)
+        self.assert_num_records(self.custom_zone, "testrecord", 'TOMBSTONE', 0)
+        # this should succeed
+        self.delete_record(self.custom_zone, "testrecord", 'A', record_str,
+                           assertion=True)
+        self.assert_num_records(self.custom_zone, "testrecord", 'TOMBSTONE', 0)
+        self.assert_num_records(self.custom_zone, "testrecord", 'A', 0)
 
     def get_record_from_db(self, zone_name, record_name):
         """
@@ -376,6 +430,19 @@ class DnsserverTests(RpcInterfaceTestCase):
             if record_name in str(old_packed_record.dn):
                 rec = ndr_unpack(dnsp.DnssrvRpcRecord, old_packed_record["dnsRecord"][0])
                 return (old_packed_record.dn, rec)
+
+    def ldap_get_records(self, zone, name):
+        zone_dn = (f"DC={zone},CN=MicrosoftDNS,DC=DomainDNSZones,"
+                   f"{self.samdb.get_default_basedn()}")
+
+        expr = f"(&(objectClass=dnsNode)(name={name}))"
+        nodes = self.samdb.search(base=zone_dn,
+                                  scope=ldb.SCOPE_SUBTREE,
+                                  expression=expr,
+                                  attrs=["dnsRecord"])
+
+        records = nodes[0].get('dnsRecord')
+        return [ndr_unpack(dnsp.DnssrvRpcRecord, r) for r in records]
 
     def test_duplicate_matching(self):
         """
@@ -734,52 +801,10 @@ class DnsserverTests(RpcInterfaceTestCase):
                                             zone,
                                             name,
                                             None,
-                                            self.record_type_int(record_type_str),
+                                            flag_from_string(record_type_str),
                                             dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA | dnsserver.DNS_RPC_VIEW_NO_CHILDREN,
                                             None,
                                             None)
-
-    def record_obj_from_str(self, record_type_str, record_str):
-        if record_type_str == 'A':
-            return ARecord(record_str)
-        elif record_type_str == 'AAAA':
-            return AAAARecord(record_str)
-        elif record_type_str == 'PTR':
-            return PTRRecord(record_str)
-        elif record_type_str == 'CNAME':
-            return CNameRecord(record_str)
-        elif record_type_str == 'NS':
-            return NSRecord(record_str)
-        elif record_type_str == 'MX':
-            split = record_str.split(' ')
-            return MXRecord(split[0], int(split[1]))
-        elif record_type_str == 'SRV':
-            split = record_str.split(' ')
-            target = split[0]
-            port = int(split[1])
-            priority = int(split[2])
-            weight = int(split[3])
-            return SRVRecord(target, port, priority, weight)
-        elif record_type_str == 'TXT':
-            return TXTRecord(record_str)
-
-    def record_type_int(self, record_type_str):
-        if record_type_str == 'A':
-            return dnsp.DNS_TYPE_A
-        elif record_type_str == 'AAAA':
-            return dnsp.DNS_TYPE_AAAA
-        elif record_type_str == 'PTR':
-            return dnsp.DNS_TYPE_PTR
-        elif record_type_str == 'CNAME':
-            return dnsp.DNS_TYPE_CNAME
-        elif record_type_str == 'NS':
-            return dnsp.DNS_TYPE_NS
-        elif record_type_str == 'MX':
-            return dnsp.DNS_TYPE_MX
-        elif record_type_str == 'SRV':
-            return dnsp.DNS_TYPE_SRV
-        elif record_type_str == 'TXT':
-            return dnsp.DNS_TYPE_TXT
 
     def add_record(self, zone, name, record_type_str, record_str,
                    assertion=True, client_version=dnsserver.DNS_CLIENT_VERSION_LONGHORN):
@@ -789,7 +814,7 @@ class DnsserverTests(RpcInterfaceTestCase):
         Also asserts whether or not the add was successful.
         This can also update existing records if they have the same name.
         """
-        record = self.record_obj_from_str(record_type_str, record_str)
+        record = record_from_string(record_type_str, record_str, sep=' ')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = record
 
@@ -816,7 +841,7 @@ class DnsserverTests(RpcInterfaceTestCase):
         from the given zone.
         Also asserts whether or not the deletion was successful.
         """
-        record = self.record_obj_from_str(record_type_str, record_str)
+        record = record_from_string(record_type_str, record_str, sep=' ')
         del_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         del_rec_buf.rec = record
 
@@ -1005,7 +1030,6 @@ class DnsserverTests(RpcInterfaceTestCase):
         client_version = dnsserver.DNS_CLIENT_VERSION_LONGHORN
         record_type = dnsp.DNS_TYPE_A
         select_flags = dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA
-
         name = 'dummy'
         rec = ARecord('1.2.3.4')
         rec2 = ARecord('5.6.7.8')
@@ -1107,7 +1131,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                   expression="(&(objectClass=dnsZone)(name=_msdcs*))",
                                   attrs=["nTSecurityDescriptor", "objectClass"])
         self.assertEqual(len(zones), 1)
-        self.assertTrue("nTSecurityDescriptor" in zones[0])
+        self.assertIn("nTSecurityDescriptor", zones[0])
         tmp = zones[0]["nTSecurityDescriptor"][0]
         utils = sd_utils.SDUtils(self.samdb)
         sd = ndr_unpack(security.descriptor, tmp)
@@ -1166,7 +1190,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                   attrs=["nTSecurityDescriptor"])
         self.assertEqual(len(zones), 1)
         current_dn = zones[0].dn
-        self.assertTrue("nTSecurityDescriptor" in zones[0])
+        self.assertIn("nTSecurityDescriptor", zones[0])
         tmp = zones[0]["nTSecurityDescriptor"][0]
         utils = sd_utils.SDUtils(self.samdb)
         sd = ndr_unpack(security.descriptor, tmp)
@@ -1205,7 +1229,7 @@ class DnsserverTests(RpcInterfaceTestCase):
             for (key, sec_desc) in security_desc_dict:
                 zones = self.samdb.search(base=key, scope=ldb.SCOPE_BASE,
                                           attrs=["nTSecurityDescriptor"])
-                self.assertTrue("nTSecurityDescriptor" in zones[0])
+                self.assertIn("nTSecurityDescriptor", zones[0])
                 tmp = zones[0]["nTSecurityDescriptor"][0]
                 utils = sd_utils.SDUtils(self.samdb)
 
@@ -1238,7 +1262,7 @@ class DnsserverTests(RpcInterfaceTestCase):
                                   attrs=["nTSecurityDescriptor"])
         self.assertEqual(len(zones), 1)
         current_dn = zones[0].dn
-        self.assertTrue("nTSecurityDescriptor" in zones[0])
+        self.assertIn("nTSecurityDescriptor", zones[0])
         tmp = zones[0]["nTSecurityDescriptor"][0]
         utils = sd_utils.SDUtils(self.samdb)
         sd = ndr_unpack(security.descriptor, tmp)
@@ -1277,7 +1301,7 @@ class DnsserverTests(RpcInterfaceTestCase):
         for (key, sec_desc) in security_desc_dict:
             zones = self.samdb.search(base=key, scope=ldb.SCOPE_BASE,
                                       attrs=["nTSecurityDescriptor"])
-            self.assertTrue("nTSecurityDescriptor" in zones[0])
+            self.assertIn("nTSecurityDescriptor", zones[0])
             tmp = zones[0]["nTSecurityDescriptor"][0]
             utils = sd_utils.SDUtils(self.samdb)
 

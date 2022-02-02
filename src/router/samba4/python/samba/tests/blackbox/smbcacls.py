@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
 from samba.tests import BlackboxTestCase, BlackboxProcessError
 from samba.samba3 import param as s3param
 
@@ -121,7 +120,7 @@ class SmbCaclsBlockboxTestBase(BlackboxTestCase):
 
     def file_ace_check(self, remotepath, ace):
         smbcacls_args = self.build_test_cmd("smbcacls",
-                            ["//%s/%s" % (self.server, self.share), "--get",
+                            ["//%s/%s" % (self.server, self.share),
                             remotepath])
         try:
             output = self.check_output(smbcacls_args)

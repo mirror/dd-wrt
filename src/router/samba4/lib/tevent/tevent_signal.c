@@ -194,6 +194,7 @@ static int tevent_signal_destructor(struct tevent_signal *se)
 	TALLOC_FREE(se->additional_data);
 
 	if (se->event_ctx != NULL) {
+		tevent_trace_signal_callback(se->event_ctx, se, TEVENT_EVENT_TRACE_DETACH);
 		DLIST_REMOVE(se->event_ctx->signal_events, se);
 	}
 
@@ -327,6 +328,7 @@ struct tevent_signal *tevent_common_add_signal(struct tevent_context *ev,
 	sigemptyset(&set);
 	sigaddset(&set, signum);
 	sigprocmask(SIG_BLOCK, &set, &oldset);
+	tevent_trace_signal_callback(se->event_ctx, se, TEVENT_EVENT_TRACE_ATTACH);
 	DLIST_ADD(sig_state->sig_handlers[signum], sl);
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
 
@@ -367,6 +369,7 @@ int tevent_common_invoke_signal_handler(struct tevent_signal *se,
 						se->handler_name,
 						se->location);
 	}
+	tevent_trace_signal_callback(se->event_ctx, se, TEVENT_EVENT_TRACE_BEFORE_HANDLER);
 	se->handler(handler_ev, se, signum, count, siginfo, se->private_data);
 	if (se->wrapper != NULL) {
 		se->wrapper->ops->after_signal_handler(
@@ -515,4 +518,22 @@ void tevent_cleanup_pending_signal_handlers(struct tevent_signal *se)
 	tevent_signal_destructor(se);
 	talloc_set_destructor(se, NULL);
 	return;
+}
+
+void tevent_signal_set_tag(struct tevent_signal *se, uint64_t tag)
+{
+	if (se == NULL) {
+		return;
+	}
+
+	se->tag = tag;
+}
+
+uint64_t tevent_signal_get_tag(const struct tevent_signal *se)
+{
+	if (se == NULL) {
+		return 0;
+	}
+
+	return se->tag;
 }

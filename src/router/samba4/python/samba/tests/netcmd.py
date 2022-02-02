@@ -17,6 +17,9 @@
 
 """Tests for samba.netcmd."""
 
+import os
+import tempfile
+
 from io import StringIO
 from samba.netcmd import Command
 from samba.netcmd.testparm import cmd_testparm
@@ -24,7 +27,7 @@ from samba.netcmd.main import cmd_sambatool
 import samba.tests
 
 
-class NetCmdTestCase(samba.tests.TestCase):
+class NetCmdTestCase(samba.tests.TestCaseInTempDir):
 
     def run_netcmd(self, cmd_klass, args, retcode=0):
         cmd = cmd_klass(outf=StringIO(), errf=StringIO())
@@ -48,6 +51,33 @@ class NetCmdTestCase(samba.tests.TestCase):
 
 class TestParmTests(NetCmdTestCase):
 
+    def setUp(self):
+        super().setUp()
+
+        # Override these global parameters in case their default values are
+        # invalid.
+        contents = """[global]
+    netbios name = test
+    lock dir = /
+    pid directory = /
+[tmp]
+    path = /
+"""
+        self.smbconf = self.create_smbconf(contents)
+
+    def create_smbconf(self, contents):
+        smbconf = tempfile.NamedTemporaryFile(mode='w',
+                                              dir=self.tempdir,
+                                              delete=False)
+        self.addCleanup(os.remove, smbconf.name)
+
+        try:
+            smbconf.write(contents)
+        finally:
+            smbconf.close()
+
+        return smbconf
+
     def test_no_client_ip(self):
         out, err = self.run_netcmd(cmd_testparm, ["--client-name=foo"],
                                    retcode=-1)
@@ -55,6 +85,42 @@ class TestParmTests(NetCmdTestCase):
         self.assertEqual(
             "ERROR: Both a DNS name and an IP address are "
             "required for the host access check\n", err)
+
+    def test_section(self):
+        # We don't get an opportunity to verify the output, as the parameters
+        # are dumped directly to stdout, so just check the return code.
+        self.run_netcmd(cmd_testparm,
+                        ["--configfile=%s" % self.smbconf.name,
+                         "--section-name=tmp"],
+                        retcode=None)
+
+    def test_no_such_section(self):
+        out, err = self.run_netcmd(cmd_testparm,
+                                   ["--configfile=%s" % self.smbconf.name,
+                                    "--section-name=foo"],
+                                   retcode=-1)
+        # Ensure all exceptions are caught.
+        self.assertEqual("", out)
+        self.assertNotIn("uncaught exception", err)
+
+        out, err = self.run_netcmd(cmd_testparm,
+                                   ["--configfile=%s" % self.smbconf.name,
+                                    "--section-name=foo",
+                                    "--parameter-name=foo"],
+                                   retcode=-1)
+        # Ensure all exceptions are caught.
+        self.assertEqual("", out)
+        self.assertNotIn("uncaught exception", err)
+
+    def test_no_such_parameter(self):
+        out, err = self.run_netcmd(cmd_testparm,
+                                   ["--configfile=%s" % self.smbconf.name,
+                                    "--section-name=tmp",
+                                    "--parameter-name=foo"],
+                                   retcode=-1)
+        # Ensure all exceptions are caught.
+        self.assertEqual("", out)
+        self.assertNotIn("uncaught exception", err)
 
 
 class CommandTests(NetCmdTestCase):

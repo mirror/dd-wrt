@@ -21,7 +21,7 @@
 
 #include "includes.h"
 #include "system/filesys.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "nmbd/nmbd.h"
 #include "serverid.h"
 #include "messages.h"
@@ -29,6 +29,7 @@
 #include "util_cluster.h"
 #include "lib/gencache.h"
 #include "lib/global_contexts.h"
+#include "source3/lib/substitute.h"
 
 int ClientNMB       = -1;
 int ClientDGRAM     = -1;
@@ -36,8 +37,6 @@ int global_nmb_port = -1;
 
 extern bool rescan_listen_set;
 extern bool global_in_nmbd;
-
-extern bool override_logfile;
 
 /* have we found LanMan clients yet? */
 bool found_lm_clients = False;
@@ -370,7 +369,7 @@ static void reload_interfaces(time_t t)
 
 		/* We only count IPv4, non-loopback interfaces here. */
 		while (iface_count_v4_nl() == 0) {
-			sleep(5);
+			usleep(NMBD_WAIT_INTERFACES_TIME_USEC);
 			load_interfaces();
 		}
 
@@ -436,6 +435,7 @@ static void msg_reload_nmbd_services(struct messaging_context *msg,
 	reload_nmbd_services( True );
 	reopen_logs();
 	reload_interfaces(0);
+	nmbd_init_my_netbios_names();
 }
 
 static void msg_nmbd_send_packet(struct messaging_context *msg,
@@ -732,22 +732,18 @@ static bool open_sockets(bool isdaemon, int port)
 	}
 
 	if (isdaemon) {
-		ClientNMB = open_socket_in(SOCK_DGRAM, port,
-					   0, &ss,
-					   true);
+		ClientNMB = open_socket_in(SOCK_DGRAM, &ss, port, true);
 	} else {
 		ClientNMB = 0;
 	}
 
-	if (ClientNMB == -1) {
+	if (ClientNMB < 0) {
 		return false;
 	}
 
-	ClientDGRAM = open_socket_in(SOCK_DGRAM, DGRAM_PORT,
-					   3, &ss,
-					   true);
+	ClientDGRAM = open_socket_in(SOCK_DGRAM, &ss, DGRAM_PORT, true);
 
-	if (ClientDGRAM == -1) {
+	if (ClientDGRAM < 0) {
 		if (ClientNMB != 0) {
 			close(ClientNMB);
 		}
@@ -774,65 +770,14 @@ static bool open_sockets(bool isdaemon, int port)
 
  int main(int argc, const char *argv[])
 {
-	bool is_daemon = false;
-	bool opt_interactive = false;
-	bool Fork = true;
-	bool no_process_group = false;
+	struct samba_cmdline_daemon_cfg *cmdline_daemon_cfg = NULL;
 	bool log_stdout = false;
 	poptContext pc;
 	char *p_lmhosts = NULL;
 	int opt;
 	struct messaging_context *msg;
-	enum {
-		OPT_DAEMON = 1000,
-		OPT_INTERACTIVE,
-		OPT_FORK,
-		OPT_NO_PROCESS_GROUP,
-		OPT_LOG_STDOUT
-	};
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
-		{
-			.longName   = "daemon",
-			.shortName  = 'D',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_DAEMON,
-			.descrip    = "Become a daemon (default)",
-		},
-		{
-			.longName   = "interactive",
-			.shortName  = 'i',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_INTERACTIVE,
-			.descrip    = "Run interactive (not a daemon)",
-		},
-		{
-			.longName   = "foreground",
-			.shortName  = 'F',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_FORK,
-			.descrip    = "Run daemon in foreground "
-				      "(for daemontools, etc.)",
-		},
-		{
-			.longName   = "no-process-group",
-			.shortName  = 0,
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_NO_PROCESS_GROUP,
-			.descrip    = "Don't create a new process group",
-		},
-		{
-			.longName   = "log-stdout",
-			.shortName  = 'S',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = OPT_LOG_STDOUT,
-			.descrip    = "Log to stdout",
-		},
 		{
 			.longName   = "hosts",
 			.shortName  = 'H',
@@ -850,6 +795,8 @@ static bool open_sockets(bool isdaemon, int port)
 			.descrip    = "Listen on the specified port",
 		},
 		POPT_COMMON_SAMBA
+		POPT_COMMON_DAEMON
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 	const struct loadparm_substitution *lp_sub =
@@ -870,36 +817,36 @@ static bool open_sockets(bool isdaemon, int port)
 	 */
 	umask(0);
 
-	setup_logging(argv[0], DEBUG_DEFAULT_STDOUT);
-
 	smb_init_locale();
+
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_SERVER,
+				true /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(ENOMEM);
+	}
+
+	cmdline_daemon_cfg = samba_cmdline_get_daemon_cfg();
 
 	global_nmb_port = NMB_PORT;
 
-	pc = poptGetContext("nmbd", argc, argv, long_options, 0);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
+
 	while ((opt = poptGetNextOpt(pc)) != -1) {
-		switch (opt) {
-		case OPT_DAEMON:
-			is_daemon = true;
-			break;
-		case OPT_INTERACTIVE:
-			opt_interactive = true;
-			break;
-		case OPT_FORK:
-			Fork = false;
-			break;
-		case OPT_NO_PROCESS_GROUP:
-			no_process_group = true;
-			break;
-		case OPT_LOG_STDOUT:
-			log_stdout = true;
-			break;
-		default:
-			d_fprintf(stderr, "\nInvalid option %s: %s\n\n",
-				  poptBadOption(pc, 0), poptStrerror(opt));
-			poptPrintUsage(pc, stderr, 0);
-			exit(1);
-		}
+		d_fprintf(stderr, "\nInvalid options\n\n");
+		poptPrintUsage(pc, stderr, 0);
+		exit(1);
 	};
 	poptFreeContext(pc);
 
@@ -909,7 +856,7 @@ static bool open_sockets(bool isdaemon, int port)
 
 	sys_srandom(time(NULL) ^ getpid());
 
-	if (!override_logfile) {
+	if (is_default_dyn_LOGFILEBASE()) {
 		char *lfile = NULL;
 		if (asprintf(&lfile, "%s/log.nmbd", get_dyn_LOGFILEBASE()) < 0) {
 			exit(1);
@@ -918,7 +865,6 @@ static bool open_sockets(bool isdaemon, int port)
 		SAFE_FREE(lfile);
 	}
 
-	fault_setup();
 	dump_core_setup("nmbd", lp_logfile(talloc_tos(), lp_sub));
 
 	/* POSIX demands that signals are inherited. If the invoking process has
@@ -940,33 +886,20 @@ static bool open_sockets(bool isdaemon, int port)
 	/* Ignore children - no zombies. */
 	CatchChild();
 
-	if ( opt_interactive ) {
-		Fork = False;
+	log_stdout = (debug_get_log_type() == DEBUG_STDOUT);
+	if ( cmdline_daemon_cfg->interactive ) {
 		log_stdout = True;
 	}
 
-	if ( log_stdout && Fork ) {
+	if ( log_stdout && cmdline_daemon_cfg->fork ) {
 		DEBUG(0,("ERROR: Can't log to stdout (-S) unless daemon is in foreground (-F) or interactive (-i)\n"));
 		exit(1);
-	}
-
-	if (log_stdout) {
-		setup_logging(argv[0], DEBUG_STDOUT);
-	} else {
-		setup_logging( argv[0], DEBUG_FILE);
 	}
 
 	reopen_logs();
 
 	DEBUG(0,("nmbd version %s started.\n", samba_version_string()));
 	DEBUGADD(0,("%s\n", COPYRIGHT_STARTUP_MESSAGE));
-
-	if (!lp_load_initial_only(get_dyn_CONFIGFILE())) {
-		DEBUG(0, ("error opening config file '%s'\n", get_dyn_CONFIGFILE()));
-		exit(1);
-	}
-
-	reopen_logs();
 
 	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC
 	    && !lp_parm_bool(-1, "server role check", "inhibit", false)) {
@@ -984,14 +917,16 @@ static bool open_sockets(bool isdaemon, int port)
 
 	msg = messaging_init(NULL, global_event_context());
 	if (msg == NULL) {
+		DBG_ERR("Failed to init messaging context!\n");
 		return 1;
 	}
 
 	if ( !reload_nmbd_services(False) )
 		return(-1);
 
-	if(!init_names())
+	if (!nmbd_init_my_netbios_names()) {
 		return -1;
+	}
 
 	reload_nmbd_services( True );
 
@@ -1002,15 +937,17 @@ static bool open_sockets(bool isdaemon, int port)
 
 	set_samba_nb_type();
 
-	if (!is_daemon && !is_a_socket(0)) {
+	if (!cmdline_daemon_cfg->daemon && !is_a_socket(0)) {
 		DEBUG(3, ("standard input is not a socket, assuming -D option\n"));
-		is_daemon = True;
+		cmdline_daemon_cfg->daemon = true;
 	}
 
-	if (is_daemon && !opt_interactive) {
+	if (cmdline_daemon_cfg->daemon && !cmdline_daemon_cfg->interactive) {
 		DEBUG(3, ("Becoming a daemon.\n"));
-		become_daemon(Fork, no_process_group, log_stdout);
-	} else if (!opt_interactive) {
+		become_daemon(cmdline_daemon_cfg->fork,
+			      cmdline_daemon_cfg->no_process_group,
+			      log_stdout);
+	} else if (!cmdline_daemon_cfg->interactive) {
 		daemon_status("nmbd", "Starting process...");
 	}
 
@@ -1019,8 +956,11 @@ static bool open_sockets(bool isdaemon, int port)
 	 * If we're interactive we want to set our own process group for 
 	 * signal management.
 	 */
-	if (opt_interactive && !no_process_group)
+	if (cmdline_daemon_cfg->interactive &&
+	    !cmdline_daemon_cfg->no_process_group)
+	{
 		setpgid( (pid_t)0, (pid_t)0 );
+	}
 #endif
 
 #ifndef SYNC_DNS
@@ -1061,7 +1001,7 @@ static bool open_sockets(bool isdaemon, int port)
 
 	if (!nmbd_setup_sig_term_handler(msg))
 		exit_daemon("NMBD failed to setup signal handler", EINVAL);
-	if (!nmbd_setup_stdin_handler(msg, !Fork))
+	if (!nmbd_setup_stdin_handler(msg, !cmdline_daemon_cfg->fork))
 		exit_daemon("NMBD failed to setup stdin handler", EINVAL);
 	if (!nmbd_setup_sig_hup_handler(msg))
 		exit_daemon("NMBD failed to setup SIGHUP handler", EINVAL);
@@ -1088,7 +1028,7 @@ static bool open_sockets(bool isdaemon, int port)
 
 	DEBUG( 3, ( "Opening sockets %d\n", global_nmb_port ) );
 
-	if ( !open_sockets( is_daemon, global_nmb_port ) ) {
+	if ( !open_sockets( cmdline_daemon_cfg->daemon, global_nmb_port ) ) {
 		kill_async_dns_child();
 		return 1;
 	}
@@ -1138,7 +1078,7 @@ static bool open_sockets(bool isdaemon, int port)
 		exit_daemon( "NMBD failed to setup packet server.", EACCES);
 	}
 
-	if (!opt_interactive) {
+	if (!cmdline_daemon_cfg->interactive) {
 		daemon_ready("nmbd");
 	}
 

@@ -28,6 +28,7 @@ packages:
   - hostname
   - htop
   - keyutils-devel
+  - krb5-client
   - krb5-devel
   - krb5-server
   - lcov
@@ -40,7 +41,6 @@ packages:
   - libcephfs-devel
   - libicu-devel
   - libjansson-devel
-  - libnsl-devel
   - libpcap-devel
   - libtasn1-devel
   - libtirpc-devel
@@ -86,6 +86,7 @@ packages:
   - sudo
   - systemd-devel
   - tar
+  - tracker-devel
   - tree
   - wget
   - which

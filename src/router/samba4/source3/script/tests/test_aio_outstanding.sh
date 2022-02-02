@@ -18,10 +18,17 @@ SMBCLIENT=$2
 SERVER=$3
 SHARE=$4
 
+# Do not let deprecated option warnings muck this up
+SAMBA_DEPRECATED_SUPPRESS=1
+export SAMBA_DEPRECATED_SUPPRESS
+
 incdir=$(dirname $0)/../../../testprogs/blackbox
 . $incdir/subunit.sh
 
 failed=0
+
+cd $SELFTEST_TMPDIR || exit 1
+
 #
 # Note if we already have any panics in the smbd log.
 #
@@ -47,7 +54,6 @@ exec 100>smbclient-stdin  101<smbclient-stdout 102<smbclient-stderr
 
 # consume the smbclient startup messages
 head -n 1 <&101
-head -n 1 <&102
 
 # Ensure we're putting a fresh file.
 echo "del aio_outstanding_testfile" >&100

@@ -158,8 +158,8 @@ struct winbindd_domain {
 	void *private_data;
 
 	/* A working DC */
-	pid_t dc_probe_pid; /* Child we're using to detect the DC. */
 	char *dcname;
+	const char *ping_dcname;
 	struct sockaddr_storage dcaddr;
 
 	/* Sequence number stuff */
@@ -179,10 +179,7 @@ struct winbindd_domain {
 	struct tevent_queue *queue;
 	struct dcerpc_binding_handle *binding_handle;
 
-	/* Callback we use to try put us back online. */
-
-	uint32_t check_online_timeout;
-	struct tevent_timer *check_online_event;
+	struct tevent_req *check_online_event;
 
 	/* Linked list info */
 
@@ -284,9 +281,6 @@ struct winbindd_methods {
 				    uint32_t *num_names,
 				    struct dom_sid **sid_mem, char ***names,
 				    uint32_t **name_types);
-
-	/* return the current global sequence number */
-	NTSTATUS (*sequence_number)(struct winbindd_domain *domain, uint32_t *seq);
 
 	/* return the lockout policy */
 	NTSTATUS (*lockout_policy)(struct winbindd_domain *domain,

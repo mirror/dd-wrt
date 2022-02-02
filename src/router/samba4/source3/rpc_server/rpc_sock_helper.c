@@ -32,14 +32,134 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
-NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
-	struct dcesrv_endpoint *e,
+static NTSTATUS dcesrv_create_ncacn_np_socket(
+	struct dcerpc_binding *b, int *out_fd)
+{
+	char *np_dir = NULL;
+	int fd = -1;
+	NTSTATUS status;
+	const char *endpoint;
+	char *endpoint_normalized = NULL;
+	char *p = NULL;
+
+	endpoint = dcerpc_binding_get_string_option(b, "endpoint");
+	if (endpoint == NULL) {
+		DBG_ERR("Endpoint mandatory for named pipes\n");
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	/* The endpoint string from IDL can be mixed uppercase and case is
+	 * normalized by smbd on connection */
+	endpoint_normalized = strlower_talloc(talloc_tos(), endpoint);
+	if (endpoint_normalized == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	/* The endpoint string from IDL can be prefixed by \pipe\ */
+	p = endpoint_normalized;
+	if (strncmp(p, "\\pipe\\", 6) == 0) {
+		p += 6;
+	}
+
+	/*
+	 * As lp_ncalrpc_dir() should have 0755, but
+	 * lp_ncalrpc_dir()/np should have 0700, we need to
+	 * create lp_ncalrpc_dir() first.
+	 */
+	if (!directory_create_or_exist(lp_ncalrpc_dir(), 0755)) {
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create pipe directory %s - %s\n",
+			lp_ncalrpc_dir(), strerror(errno));
+		goto out;
+	}
+
+	np_dir = talloc_asprintf(talloc_tos(), "%s/np", lp_ncalrpc_dir());
+	if (!np_dir) {
+		status = NT_STATUS_NO_MEMORY;
+		DBG_ERR("Out of memory\n");
+		goto out;
+	}
+
+	if (!directory_create_or_exist_strict(np_dir, geteuid(), 0700)) {
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create pipe directory %s - %s\n",
+			np_dir, strerror(errno));
+		goto out;
+	}
+
+	fd = create_pipe_sock(np_dir, p, 0700);
+	if (fd == -1) {
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncacn_np socket! '%s/%s': %s\n",
+			np_dir, p, strerror(errno));
+		goto out;
+	}
+
+	DBG_DEBUG("Opened pipe socket fd %d for %s\n", fd, p);
+
+	*out_fd = fd;
+
+	status = NT_STATUS_OK;
+
+out:
+	TALLOC_FREE(endpoint_normalized);
+	TALLOC_FREE(np_dir);
+	return status;
+}
+
+/********************************************************************
+ * Start listening on the tcp/ip socket
+ ********************************************************************/
+
+static NTSTATUS dcesrv_create_ncacn_ip_tcp_socket(
+	const struct sockaddr_storage *ifss, uint16_t *port, int *out_fd)
+{
+	int fd = -1;
+
+	if (*port == 0) {
+		static uint16_t low = 0;
+		uint16_t i;
+
+		if (low == 0) {
+			low = lp_rpc_low_port();
+		}
+
+		for (i = low; i <= lp_rpc_high_port(); i++) {
+			fd = open_socket_in(SOCK_STREAM, ifss, i, false);
+			if (fd >= 0) {
+				*port = i;
+				low = i+1;
+				break;
+			}
+		}
+	} else {
+		fd = open_socket_in(SOCK_STREAM, ifss, *port, true);
+	}
+
+	if (fd < 0) {
+		DBG_ERR("Failed to create socket on port %u!\n", *port);
+		return map_nt_error_from_unix(-fd);
+	}
+
+	/* ready to listen */
+	set_socket_options(fd, "SO_KEEPALIVE");
+	set_socket_options(fd, lp_socket_options());
+
+	DBG_DEBUG("Opened ncacn_ip_tcp socket fd %d for port %u\n", fd, *port);
+
+	*out_fd = fd;
+
+	return NT_STATUS_OK;
+}
+
+static NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
+	struct dcerpc_binding *b,
 	TALLOC_CTX *mem_ctx,
 	size_t *pnum_fds,
 	int **pfds)
 {
 	uint16_t port = 0;
-	char port_str[6];
+	char port_str[11];
 	const char *endpoint = NULL;
 	size_t i = 0, num_fds;
 	int *fds = NULL;
@@ -47,8 +167,7 @@ NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
 	NTSTATUS status = NT_STATUS_INVALID_PARAMETER;
 	bool ok;
 
-	endpoint = dcerpc_binding_get_string_option(
-		e->ep_description, "endpoint");
+	endpoint = dcerpc_binding_get_string_option(b, "endpoint");
 	if (endpoint != NULL) {
 		port = atoi(endpoint);
 	}
@@ -127,10 +246,9 @@ NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
 	}
 
 	/* Set the port in the endpoint */
-	snprintf(port_str, sizeof(port_str), "%u", port);
+	snprintf(port_str, sizeof(port_str), "%"PRIu16, port);
 
-	status = dcerpc_binding_set_string_option(
-		e->ep_description, "endpoint", port_str);
+	status = dcerpc_binding_set_string_option(b, "endpoint", port_str);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("Failed to set binding endpoint '%s': %s\n",
 			port_str, nt_errstr(status));
@@ -152,6 +270,132 @@ fail:
 	TALLOC_FREE(fds);
 	TALLOC_FREE(addrs);
 	return status;
+}
+
+/********************************************************************
+ * Start listening on the ncalrpc socket
+ ********************************************************************/
+
+static NTSTATUS dcesrv_create_ncalrpc_socket(
+	struct dcerpc_binding *b, int *out_fd)
+{
+	int fd = -1;
+	const char *endpoint = NULL;
+	NTSTATUS status;
+
+	endpoint = dcerpc_binding_get_string_option(b, "endpoint");
+	if (endpoint == NULL) {
+		/*
+		 * No identifier specified: use DEFAULT or SMBD.
+		 *
+		 * When role is AD DC we run two rpc server instances, the one
+		 * started by 'samba' and the one embedded in 'smbd'.
+		 * Avoid listening in DEFAULT socket for NCALRPC as both
+		 * servers will race to accept connections. In this case smbd
+		 * will listen in SMBD socket and rpcint binding handle
+		 * implementation will pick the right socket to use.
+		 *
+		 * TODO: DO NOT hardcode this value anywhere else. Rather,
+		 * specify no endpoint and let the epmapper worry about it.
+		 */
+		if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC) {
+			endpoint = "SMBD";
+		} else {
+			endpoint = "DEFAULT";
+		}
+		status = dcerpc_binding_set_string_option(
+			b, "endpoint", endpoint);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_ERR("Failed to set ncalrpc 'endpoint' binding "
+				"string option to '%s': %s\n",
+				endpoint, nt_errstr(status));
+			return status;
+		}
+	}
+
+	if (!directory_create_or_exist(lp_ncalrpc_dir(), 0755)) {
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncalrpc directory '%s': %s\n",
+			lp_ncalrpc_dir(), strerror(errno));
+		goto out;
+	}
+
+	fd = create_pipe_sock(lp_ncalrpc_dir(), endpoint, 0755);
+	if (fd == -1) {
+		status = map_nt_error_from_unix_common(errno);
+		DBG_ERR("Failed to create ncalrpc socket '%s/%s': %s\n",
+			lp_ncalrpc_dir(), endpoint, strerror(errno));
+		goto out;
+	}
+
+	DBG_DEBUG("Opened ncalrpc socket fd '%d' for '%s/%s'\n",
+		  fd, lp_ncalrpc_dir(), endpoint);
+
+	*out_fd = fd;
+
+	return NT_STATUS_OK;
+
+out:
+	return status;
+}
+
+NTSTATUS dcesrv_create_binding_sockets(
+	struct dcerpc_binding *b,
+	TALLOC_CTX *mem_ctx,
+	size_t *pnum_fds,
+	int **pfds)
+{
+	enum dcerpc_transport_t transport = dcerpc_binding_get_transport(b);
+	size_t i, num_fds = 1;
+	int *fds = NULL;
+	NTSTATUS status;
+
+	if ((transport == NCALRPC) || (transport == NCACN_NP)) {
+		fds = talloc(mem_ctx, int);
+		if (fds == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+	}
+
+	switch(transport) {
+	case NCALRPC:
+		status = dcesrv_create_ncalrpc_socket(b, fds);
+		break;
+	case NCACN_NP:
+		status = dcesrv_create_ncacn_np_socket(b, fds);
+		break;
+	case NCACN_IP_TCP:
+		status = dcesrv_create_ncacn_ip_tcp_sockets(
+			b, talloc_tos(), &num_fds, &fds);
+		break;
+	default:
+		status = NT_STATUS_NOT_SUPPORTED;
+		break;
+	}
+
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(fds);
+		return status;
+	}
+
+	for (i=0; i<num_fds; i++) {
+		bool ok = smb_set_close_on_exec(fds[i]);
+		if (!ok) {
+			status = map_nt_error_from_unix(errno);
+			break;
+		}
+	}
+	if (i < num_fds) {
+		for (i=0; i<num_fds; i++) {
+			close(fds[i]);
+		}
+		TALLOC_FREE(fds);
+		return status;
+	}
+
+	*pfds = fds;
+	*pnum_fds = num_fds;
+	return NT_STATUS_OK;
 }
 
 /* vim: set ts=8 sw=8 noet cindent syntax=c.doxygen: */

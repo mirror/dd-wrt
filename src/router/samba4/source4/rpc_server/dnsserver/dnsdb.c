@@ -436,6 +436,21 @@ WERROR dnsserver_db_add_empty_node(TALLOC_CTX *mem_ctx,
 	return dnsserver_db_do_add_rec(mem_ctx, samdb, dn, 0, NULL);
 }
 
+static void set_record_rank(struct dnsserver_zone *z,
+			    const char *name,
+			    struct dnsp_DnssrvRpcRecord *rec)
+{
+	if (z->zoneinfo->dwZoneType == DNS_ZONE_TYPE_PRIMARY) {
+		if (strcmp(name, "@") != 0 && rec->wType == DNS_TYPE_NS) {
+			rec->rank = DNS_RANK_NS_GLUE;
+		} else {
+			rec->rank = DNS_RANK_ZONE;
+		}
+	} else if (strcmp(z->name, ".") == 0) {
+		rec->rank = DNS_RANK_ROOT_HINT;
+	}
+}
+
 
 /* Add a DNS record */
 WERROR dnsserver_db_add_record(TALLOC_CTX *mem_ctx,
@@ -462,15 +477,7 @@ WERROR dnsserver_db_add_record(TALLOC_CTX *mem_ctx,
 	}
 
 	/* Set the correct rank for the record. */
-	if (z->zoneinfo->dwZoneType == DNS_ZONE_TYPE_PRIMARY) {
-		if (strcmp(name, "@") != 0 && rec->wType == DNS_TYPE_NS) {
-			rec->rank = DNS_RANK_NS_GLUE;
-		} else {
-			rec->rank |= DNS_RANK_ZONE;
-		}
-	} else if (strcmp(z->name, ".") == 0) {
-		rec->rank |= DNS_RANK_ROOT_HINT;
-	}
+	set_record_rank(z, name, rec);
 
 	serial = dnsserver_update_soa(mem_ctx, samdb, z, &werr);
 	if (serial < 0) {
@@ -563,12 +570,14 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 {
 	const char * const attrs[] = { "dnsRecord", NULL };
 	struct ldb_result *res;
+	struct dnsp_DnssrvRpcRecord rec2;
 	struct dnsp_DnssrvRpcRecord *arec = NULL, *drec = NULL;
 	struct ldb_message_element *el;
 	enum ndr_err_code ndr_err;
 	int ret, i;
 	int serial;
 	WERROR werr;
+	bool updating_ttl = false;
 	char *encoded_name = ldb_binary_encode_string(mem_ctx, name);
 
 	werr = dns_to_dnsp_convert(mem_ctx, add_record, &arec, true);
@@ -580,8 +589,6 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 	if (!W_ERROR_IS_OK(werr)) {
 		return werr;
 	}
-
-	arec->dwTimeStamp = 0;
 
 	ret = ldb_search(samdb, mem_ctx, &res, z->zone_dn, LDB_SCOPE_ONELEVEL, attrs,
 			"(&(objectClass=dnsNode)(name=%s)(!(dNSTombstoned=TRUE)))",
@@ -600,8 +607,6 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 	}
 
 	for (i=0; i<el->num_values; i++) {
-		struct dnsp_DnssrvRpcRecord rec2;
-
 		ndr_err = ndr_pull_struct_blob(&el->values[i], mem_ctx, &rec2,
 						(ndr_pull_flags_fn_t)ndr_pull_dnsp_DnssrvRpcRecord);
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
@@ -613,13 +618,22 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 		}
 	}
 	if (i < el->num_values) {
-		return WERR_DNS_ERROR_RECORD_ALREADY_EXISTS;
+		/*
+		 * The record already exists, which is an error UNLESS we are
+		 * doing an in-place update.
+		 *
+		 * Therefore we need to see if drec also matches, in which
+		 * case it's OK, though we can only update dwTtlSeconds and
+		 * reset the timestamp to zero.
+		 */
+		updating_ttl = dns_record_match(drec, &rec2);
+		if (! updating_ttl) {
+			return WERR_DNS_ERROR_RECORD_ALREADY_EXISTS;
+		}
+		/* In this case the next loop is redundant */
 	}
 
-
 	for (i=0; i<el->num_values; i++) {
-		struct dnsp_DnssrvRpcRecord rec2;
-
 		ndr_err = ndr_pull_struct_blob(&el->values[i], mem_ctx, &rec2,
 						(ndr_pull_flags_fn_t)ndr_pull_dnsp_DnssrvRpcRecord);
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
@@ -627,6 +641,11 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 		}
 
 		if (dns_record_match(drec, &rec2)) {
+			/*
+			 * we are replacing this one with arec, which is done
+			 * by pushing arec into el->values[i] below, after the
+			 * various manipulations.
+			 */
 			break;
 		}
 	}
@@ -634,14 +653,46 @@ WERROR dnsserver_db_update_record(TALLOC_CTX *mem_ctx,
 		return WERR_DNS_ERROR_RECORD_DOES_NOT_EXIST;
 	}
 
-	/* If updating SOA record, use specified serial, otherwise increment */
+	/*
+	 * If we're updating a SOA record, use the specified serial.
+	 *
+	 * Otherwise, if we are updating ttl in place (i.e., not changing
+	 * .wType and .data on a record), we should increment the existing
+	 * serial, and save to the SOA.
+	 *
+	 * Outside of those two cases, we look for the zone's SOA record and
+	 * use its serial.
+	 */
 	if (arec->wType != DNS_TYPE_SOA) {
-		serial = dnsserver_update_soa(mem_ctx, samdb, z, &werr);
-		if (serial < 0) {
-			return werr;
+		if (updating_ttl) {
+			/*
+			 * In this case, we keep some of the old values.
+			 */
+			arec->dwSerial = rec2.dwSerial;
+			arec->dwReserved = rec2.dwReserved;
+			/*
+			 * TODO: if the old TTL and the new TTL are
+			 * different, the serial number is incremented.
+			 */
+		} else {
+			arec->dwReserved = 0;
+			serial = dnsserver_update_soa(mem_ctx, samdb, z, &werr);
+			if (serial < 0) {
+				return werr;
+			}
+			arec->dwSerial = serial;
 		}
-		arec->dwSerial = serial;
 	}
+
+	/* Set the correct rank for the record. */
+	set_record_rank(z, name, arec);
+	/*
+	 * Successful RPC updates *always* zero timestamp and flags and set
+	 * version.
+	 */
+	arec->dwTimeStamp = 0;
+	arec->version = 5;
+	arec->flags = 0;
 
 	ndr_err = ndr_push_struct_blob(&el->values[i], mem_ctx, arec,
 					(ndr_push_flags_fn_t)ndr_push_dnsp_DnssrvRpcRecord);

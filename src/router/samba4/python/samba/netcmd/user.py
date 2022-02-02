@@ -44,6 +44,7 @@ from samba import (
     gensec,
     generate_random_password,
     Ldb,
+    nttime2float,
 )
 from samba.net import Net
 
@@ -151,27 +152,6 @@ def get_crypt_value(alg, utf8pw, rounds=0):
         raise NotImplementedError("crypt.crypt(%s) returned a value with length %d, expected length is %d" % (
             crypt_salt, len(crypt_value), expected_len))
     return crypt_value
-
-# Extract the rounds value from the options of a virtualCrypt attribute
-# i.e. options = "rounds=20;other=ignored;" will return 20
-# if the rounds option is not found or the value is not a number, 0 is returned
-# which indicates that the default number of rounds should be used.
-
-
-def get_rounds(options):
-    if not options:
-        return 0
-
-    opts = options.split(';')
-    for o in opts:
-        if o.lower().startswith("rounds="):
-            (key, _, val) = o.partition('=')
-            try:
-                return int(val)
-            except ValueError:
-                return 0
-    return 0
-
 
 try:
     import hashlib
@@ -1109,6 +1089,13 @@ class GetPasswordCommand(Command):
         super(GetPasswordCommand, self).__init__()
         self.lp = None
 
+    def inject_virtual_attributes(self, samdb):
+        # We use sort here in order to have a predictable processing order
+        # this might not be strictly needed, but also doesn't hurt here
+        for a in sorted(virtual_attributes.keys()):
+            flags = ldb.ATTR_FLAG_HIDDEN | virtual_attributes[a].get("flags", 0)
+            samdb.schema_attribute_add(a, flags, ldb.SYNTAX_OCTET_STRING)
+
     def connect_system_samdb(self, url, allow_local=False, verbose=False):
 
         # using anonymous here, results in no authentication
@@ -1148,55 +1135,110 @@ class GetPasswordCommand(Command):
             raise CommandError("You need to specify an URL that gives privileges as SID_NT_SYSTEM(%s)" %
                                (security.SID_NT_SYSTEM))
 
-        # We use sort here in order to have a predictable processing order
-        # this might not be strictly needed, but also doesn't hurt here
-        for a in sorted(virtual_attributes.keys()):
-            flags = ldb.ATTR_FLAG_HIDDEN | virtual_attributes[a].get("flags", 0)
-            samdb.schema_attribute_add(a, flags, ldb.SYNTAX_OCTET_STRING)
+        self.inject_virtual_attributes(samdb)
 
         return samdb
 
     def get_account_attributes(self, samdb, username, basedn, filter, scope,
-                               attrs, decrypt):
+                               attrs, decrypt, support_pw_attrs=True):
+
+        def get_option(opts, name):
+            if not opts:
+                return None
+            for o in opts:
+                if o.lower().startswith("%s=" % name.lower()):
+                    (key, _, val) = o.partition('=')
+                    return val
+            return None
+
+        def get_virtual_attr_definition(attr):
+            for van in sorted(virtual_attributes.keys()):
+                if van.lower() != attr.lower():
+                    continue
+                return virtual_attributes[van]
+            return None
+
+        formats = [
+                "GeneralizedTime",
+                "UnixTime",
+                "TimeSpec",
+        ]
+
+        def get_virtual_format_definition(opts):
+            formatname = get_option(opts, "format")
+            if formatname is None:
+                return None
+            for fm in formats:
+                if fm.lower() != formatname.lower():
+                    continue
+                return fm
+            return None
+
+        def parse_raw_attr(raw_attr, is_hidden=False):
+            (attr, _, fullopts) = raw_attr.partition(';')
+            if fullopts:
+                opts = fullopts.split(';')
+            else:
+                opts = []
+            a = {}
+            a["raw_attr"] = raw_attr
+            a["attr"] = attr
+            a["opts"] = opts
+            a["vattr"] = get_virtual_attr_definition(attr)
+            a["vformat"] = get_virtual_format_definition(opts)
+            a["is_hidden"] = is_hidden
+            return a
 
         raw_attrs = attrs[:]
+        has_wildcard_attr = "*" in raw_attrs
+        has_virtual_attrs = False
+        requested_attrs = []
+        implicit_attrs = []
+
+        for raw_attr in raw_attrs:
+            a = parse_raw_attr(raw_attr)
+            requested_attrs.append(a)
+
         search_attrs = []
-        attr_opts = {}
-        for a in raw_attrs:
-            (attr, _, opts) = a.partition(';')
-            if opts:
-                attr_opts[attr] = opts
-            else:
-                attr_opts[attr] = None
-            search_attrs.append(attr)
-        lower_attrs = [x.lower() for x in search_attrs]
+        has_virtual_attrs = False
+        for a in requested_attrs:
+            if a["vattr"] is not None:
+                has_virtual_attrs = True
+                continue
+            if a["vformat"] is not None:
+                # also add it as implicit attr,
+                # where we just do
+                # search_attrs.append(a["attr"])
+                # later on
+                implicit_attrs.append(a)
+                continue
+            if a["raw_attr"] in search_attrs:
+                continue
+            search_attrs.append(a["raw_attr"])
 
-        require_supplementalCredentials = False
-        for a in virtual_attributes.keys():
-            if a.lower() in lower_attrs:
-                require_supplementalCredentials = True
-        add_supplementalCredentials = False
-        add_unicodePwd = False
-        if require_supplementalCredentials:
-            a = "supplementalCredentials"
-            if a.lower() not in lower_attrs:
-                search_attrs += [a]
-                add_supplementalCredentials = True
-            a = "unicodePwd"
-            if a.lower() not in lower_attrs:
-                search_attrs += [a]
-                add_unicodePwd = True
-        add_sAMAcountName = False
-        a = "sAMAccountName"
-        if a.lower() not in lower_attrs:
-            search_attrs += [a]
-            add_sAMAcountName = True
+        if not has_wildcard_attr:
+            required_attrs = [
+                "sAMAccountName",
+                "userPrincipalName"
+            ]
+            for required_attr in required_attrs:
+                a = parse_raw_attr(required_attr)
+                implicit_attrs.append(a)
 
-        add_userPrincipalName = False
-        upn = "userPrincipalName"
-        if upn.lower() not in lower_attrs:
-            search_attrs += [upn]
-            add_userPrincipalName = True
+        if has_virtual_attrs:
+            if support_pw_attrs:
+                required_attrs = [
+                    "supplementalCredentials",
+                    "unicodePwd",
+                ]
+                for required_attr in required_attrs:
+                    a = parse_raw_attr(required_attr, is_hidden=True)
+                    implicit_attrs.append(a)
+
+        for a in implicit_attrs:
+            if a["attr"] in search_attrs:
+                continue
+            search_attrs.append(a["attr"])
 
         if scope == ldb.SCOPE_BASE:
             search_controls = ["show_deleted:1", "show_recycled:1"]
@@ -1220,22 +1262,14 @@ class GetPasswordCommand(Command):
         if "supplementalCredentials" in obj:
             sc_blob = obj["supplementalCredentials"][0]
             sc = ndr_unpack(drsblobs.supplementalCredentialsBlob, sc_blob)
-            if add_supplementalCredentials:
-                del obj["supplementalCredentials"]
         if "unicodePwd" in obj:
             unicodePwd = obj["unicodePwd"][0]
-            if add_unicodePwd:
-                del obj["unicodePwd"]
         account_name = str(obj["sAMAccountName"][0])
-        if add_sAMAcountName:
-            del obj["sAMAccountName"]
         if "userPrincipalName" in obj:
             account_upn = str(obj["userPrincipalName"][0])
         else:
-            realm = self.lp.get("realm")
+            realm = samdb.domain_dns_name()
             account_upn = "%s@%s" % (account_name, realm.lower())
-        if add_userPrincipalName:
-            del obj["userPrincipalName"]
 
         calculated = {}
 
@@ -1262,7 +1296,7 @@ class GetPasswordCommand(Command):
             # Samba adds 'Primary:SambaGPG' at the end.
             # When Windows sets the password it keeps
             # 'Primary:SambaGPG' and rotates it to
-            # the begining. So we can only use the value,
+            # the beginning. So we can only use the value,
             # if it is the last one.
             #
             # In order to get more protection we verify
@@ -1479,10 +1513,32 @@ class GetPasswordCommand(Command):
                                    primary_krb5)
             return (krb5_blob.version, krb5_blob.ctr)
 
+        # Extract the rounds value from the options of a virtualCrypt attribute
+        # i.e. options = "rounds=20;other=ignored;" will return 20
+        # if the rounds option is not found or the value is not a number, 0 is returned
+        # which indicates that the default number of rounds should be used.
+        def get_rounds(opts):
+            val = get_option(opts, "rounds")
+            if val is None:
+                return 0
+            try:
+                return int(val)
+            except ValueError:
+                return 0
+
         # We use sort here in order to have a predictable processing order
         for a in sorted(virtual_attributes.keys()):
-            if not a.lower() in lower_attrs:
+            vattr = None
+            for ra in requested_attrs:
+                if ra["vattr"] is None:
+                    continue
+                if ra["attr"].lower() != a.lower():
+                    continue
+                vattr = ra
+                break
+            if vattr is None:
                 continue
+            attr_opts = vattr["opts"]
 
             if a == "virtualClearTextUTF8":
                 b = get_package("Primary:CLEARTEXT")
@@ -1510,13 +1566,13 @@ class GetPasswordCommand(Command):
                 bv = h.digest() + salt
                 v = "{SSHA}" + base64.b64encode(bv).decode('utf8')
             elif a == "virtualCryptSHA256":
-                rounds = get_rounds(attr_opts[a])
+                rounds = get_rounds(attr_opts)
                 x = get_virtual_crypt_value(a, 5, rounds, username, account_name)
                 if x is None:
                     continue
                 v = x
             elif a == "virtualCryptSHA512":
-                rounds = get_rounds(attr_opts[a])
+                rounds = get_rounds(attr_opts)
                 x = get_virtual_crypt_value(a, 6, rounds, username, account_name)
                 if x is None:
                     continue
@@ -1525,7 +1581,7 @@ class GetPasswordCommand(Command):
                 # Samba adds 'Primary:SambaGPG' at the end.
                 # When Windows sets the password it keeps
                 # 'Primary:SambaGPG' and rotates it to
-                # the begining. So we can only use the value,
+                # the beginning. So we can only use the value,
                 # if it is the last one.
                 v = get_package("Primary:SambaGPG", min_idx=-1)
                 if v is None:
@@ -1544,7 +1600,7 @@ class GetPasswordCommand(Command):
                     i = int(x)
                 except ValueError:
                     continue
-                domain = self.lp.get("workgroup")
+                domain = samdb.domain_netbios_name()
                 dns_domain = samdb.domain_dns_name()
                 v = get_wDigest(i, primary_wdigest, account_name, account_upn, domain, dns_domain)
                 if v is None:
@@ -1552,6 +1608,115 @@ class GetPasswordCommand(Command):
             else:
                 continue
             obj[a] = ldb.MessageElement(v, ldb.FLAG_MOD_REPLACE, a)
+
+        def get_src_attrname(srcattrg):
+            srcattrl = srcattrg.lower()
+            srcattr = None
+            for k in obj.keys():
+                if srcattrl != k.lower():
+                    continue
+                srcattr = k
+                break
+            return srcattr
+
+        def get_src_time_float(srcattr):
+            if srcattr not in obj:
+                return None
+            vstr = str(obj[srcattr][0])
+            if vstr.endswith(".0Z"):
+                vut = ldb.string_to_time(vstr)
+                vfl = float(vut)
+                return vfl
+
+            try:
+                vnt = int(vstr)
+            except ValueError as e:
+                return None
+            # 0 or 9223372036854775807 mean no value too
+            if vnt == 0:
+                return None
+            if vnt >= 0x7FFFFFFFFFFFFFFF:
+                return None
+            vfl = nttime2float(vnt)
+            return vfl
+
+        def get_generalizedtime(srcattr):
+            vfl = get_src_time_float(srcattr)
+            if vfl is None:
+                return None
+            vut = int(vfl)
+            try:
+                v = "%s" % ldb.timestring(vut)
+            except OSError as e:
+                if e.errno == errno.EOVERFLOW:
+                    return None
+                raise
+            return v
+
+        def get_unixepoch(srcattr):
+            vfl = get_src_time_float(srcattr)
+            if vfl is None:
+                return None
+            vut = int(vfl)
+            v = "%d" % vut
+            return v
+
+        def get_timespec(srcattr):
+            vfl = get_src_time_float(srcattr)
+            if vfl is None:
+                return None
+            v = "%.9f" % vfl
+            return v
+
+        generated_formats = {}
+        for fm in formats:
+            for ra in requested_attrs:
+                if ra["vformat"] is None:
+                    continue
+                if ra["vformat"] != fm:
+                    continue
+                srcattr = get_src_attrname(ra["attr"])
+                if srcattr is None:
+                    continue
+                an = "%s;format=%s" % (srcattr, fm)
+                if an in generated_formats:
+                    continue
+                generated_formats[an] = fm
+
+                v = None
+                if fm == "GeneralizedTime":
+                    v = get_generalizedtime(srcattr)
+                elif fm == "UnixTime":
+                    v = get_unixepoch(srcattr)
+                elif fm == "TimeSpec":
+                    v = get_timespec(srcattr)
+                if v is None:
+                    continue
+                obj[an] = ldb.MessageElement(v, ldb.FLAG_MOD_REPLACE, an)
+
+        # Now filter out implicit attributes
+        for delname in obj.keys():
+            keep = False
+            for ra in requested_attrs:
+                if delname.lower() != ra["raw_attr"].lower():
+                    continue
+                keep = True
+                break
+            if keep:
+                continue
+
+            dattr = None
+            for ia in implicit_attrs:
+                if delname.lower() != ia["attr"].lower():
+                    continue
+                dattr = ia
+                break
+            if dattr is None:
+                continue
+
+            if has_wildcard_attr and not dattr["is_hidden"]:
+                continue
+            del obj[delname]
         return obj
 
     def parse_attributes(self, attributes):
@@ -1604,7 +1769,7 @@ for which virtual attributes are supported in your environment):
                           bytes, e.g. for computer accounts.
 
    virtualClearTextUTF8:  As virtualClearTextUTF16, but converted to UTF-8
-                          (only from valid UTF-16-LE)
+                          (only from valid UTF-16-LE).
 
    virtualSSHA:           As virtualClearTextUTF8, but a salted SHA-1
                           checksum, useful for OpenLDAP's '{SSHA}' algorithm.
@@ -1616,15 +1781,15 @@ for which virtual attributes are supported in your environment):
                           also be specified. By appending ";rounds=x" to the
                           attribute name i.e. virtualCryptSHA256;rounds=10000
                           will calculate a SHA256 hash with 10,000 rounds.
-                          non numeric values for rounds are silently ignored
+                          Non numeric values for rounds are silently ignored.
                           The value is calculated as follows:
                           1) If a value exists in 'Primary:userPassword' with
                              the specified number of rounds it is returned.
-                          2) If 'Primary:CLEARTEXT, or 'Primary:SambaGPG' with
-                             '--decrypt-samba-gpg'. Calculate a hash with
-                             the specified number of rounds
+                          2) If 'Primary:CLEARTEXT', or 'Primary:SambaGPG'
+                             with '--decrypt-samba-gpg'. Calculate a hash with
+                             the specified number of rounds.
                           3) Return the first CryptSHA256 value in
-                             'Primary:userPassword'
+                             'Primary:userPassword'.
 
 
    virtualCryptSHA512:    As virtualClearTextUTF8, but a salted SHA512
@@ -1634,15 +1799,15 @@ for which virtual attributes are supported in your environment):
                           also be specified. By appending ";rounds=x" to the
                           attribute name i.e. virtualCryptSHA512;rounds=10000
                           will calculate a SHA512 hash with 10,000 rounds.
-                          non numeric values for rounds are silently ignored
+                          Non numeric values for rounds are silently ignored.
                           The value is calculated as follows:
                           1) If a value exists in 'Primary:userPassword' with
                              the specified number of rounds it is returned.
-                          2) If 'Primary:CLEARTEXT, or 'Primary:SambaGPG' with
-                             '--decrypt-samba-gpg'. Calculate a hash with
-                             the specified number of rounds
+                          2) If 'Primary:CLEARTEXT', or 'Primary:SambaGPG'
+                             with '--decrypt-samba-gpg'. Calculate a hash with
+                             the specified number of rounds.
                           3) Return the first CryptSHA512 value in
-                             'Primary:userPassword'
+                             'Primary:userPassword'.
 
    virtualWDigestNN:      The individual hash values stored in
                           'Primary:WDigest' where NN is the hash number in
@@ -1650,7 +1815,7 @@ for which virtual attributes are supported in your environment):
                           NOTE: As at 22-05-2017 the documentation:
                           3.1.1.8.11.3.1 WDIGEST_CREDENTIALS Construction
                         https://msdn.microsoft.com/en-us/library/cc245680.aspx
-                          is incorrect
+                          is incorrect.
 
    virtualKerberosSalt:   This results the salt string that is used to compute
                           Kerberos keys from a UTF-8 cleartext password.
@@ -1668,6 +1833,21 @@ note that you might need to set the GNUPGHOME environment variable.  If the
 decryption key has a passphrase you have to make sure that the GPG_AGENT_INFO
 environment variable has been set correctly and the passphrase is already
 known by the gpg-agent.
+
+Attributes with time values can take an additional format specifier, which
+converts the time value into the requested format. The format can be specified
+by adding ";format=formatSpecifier" to the requested attribute name, whereby
+"formatSpecifier" must be a valid specifier. The syntax looks like:
+
+  --attributes=attributeName;format=formatSpecifier
+
+The following format specifiers are available:
+  - GeneralizedTime (e.g. 20210224113259.0Z)
+  - UnixTime        (e.g. 1614166392)
+  - TimeSpec        (e.g. 161416639.267546892)
+
+Attributes with an original NTTIME value of 0 and 9223372036854775807 are
+treated as non-existing value.
 
 Example1:
 samba-tool user getpassword TestUser1 --attributes=pwdLastSet,virtualClearTextUTF8
@@ -1776,7 +1956,7 @@ for supported virtual attributes in your environment):
                           bytes, e.g. for computer accounts.
 
    virtualClearTextUTF8:  As virtualClearTextUTF16, but converted to UTF-8
-                          (only from valid UTF-16-LE)
+                          (only from valid UTF-16-LE).
 
    virtualSSHA:           As virtualClearTextUTF8, but a salted SHA-1
                           checksum, useful for OpenLDAP's '{SSHA}' algorithm.
@@ -1788,15 +1968,15 @@ for supported virtual attributes in your environment):
                           also be specified. By appending ";rounds=x" to the
                           attribute name i.e. virtualCryptSHA256;rounds=10000
                           will calculate a SHA256 hash with 10,000 rounds.
-                          non numeric values for rounds are silently ignored
+                          Non numeric values for rounds are silently ignored.
                           The value is calculated as follows:
                           1) If a value exists in 'Primary:userPassword' with
                              the specified number of rounds it is returned.
-                          2) If 'Primary:CLEARTEXT, or 'Primary:SambaGPG' with
+                          2) If 'Primary:CLEARTEXT', or 'Primary:SambaGPG' with
                              '--decrypt-samba-gpg'. Calculate a hash with
                              the specified number of rounds
                           3) Return the first CryptSHA256 value in
-                             'Primary:userPassword'
+                             'Primary:userPassword'.
 
    virtualCryptSHA512:    As virtualClearTextUTF8, but a salted SHA512
                           checksum, useful for OpenLDAP's '{CRYPT}' algorithm,
@@ -1805,15 +1985,15 @@ for supported virtual attributes in your environment):
                           also be specified. By appending ";rounds=x" to the
                           attribute name i.e. virtualCryptSHA512;rounds=10000
                           will calculate a SHA512 hash with 10,000 rounds.
-                          non numeric values for rounds are silently ignored
+                          Non numeric values for rounds are silently ignored.
                           The value is calculated as follows:
                           1) If a value exists in 'Primary:userPassword' with
                              the specified number of rounds it is returned.
-                          2) If 'Primary:CLEARTEXT, or 'Primary:SambaGPG' with
+                          2) If 'Primary:CLEARTEXT', or 'Primary:SambaGPG' with
                              '--decrypt-samba-gpg'. Calculate a hash with
-                             the specified number of rounds
+                             the specified number of rounds.
                           3) Return the first CryptSHA512 value in
-                             'Primary:userPassword'
+                             'Primary:userPassword'.
 
    virtualWDigestNN:      The individual hash values stored in
                           'Primary:WDigest' where NN is the hash number in
@@ -2677,7 +2857,7 @@ LDAP server using the 'nano' editor.
         self.outf.write("Modified User '%s' successfully\n" % username)
 
 
-class cmd_user_show(Command):
+class cmd_user_show(GetPasswordCommand):
     """Display a user AD object.
 
 This command displays a user account and it's attributes in the Active
@@ -2688,6 +2868,29 @@ The command may be run from the root userid or another authorized userid.
 
 The -H or --URL= option can be used to execute the command against a remote
 server.
+
+The '--attributes' parameter takes a comma separated list of the requested
+attributes. Without '--attributes' or with '--attributes=*' all usually
+available attributes are selected.
+Hidden attributes in addition to all usually available attributes can be
+selected with e.g. '--attributes=*,msDS-UserPasswordExpiryTimeComputed'.
+If a specified attribute is not available on a user object it's silently
+omitted.
+
+Attributes with time values can take an additional format specifier, which
+converts the time value into the requested format. The format can be specified
+by adding ";format=formatSpecifier" to the requested attribute name, whereby
+"formatSpecifier" must be a valid specifier. The syntax looks like:
+
+  --attributes=attributeName;format=formatSpecifier
+
+The following format specifiers are available:
+  - GeneralizedTime (e.g. 20210224113259.0Z)
+  - UnixTime        (e.g. 1614166392)
+  - TimeSpec        (e.g. 161416639.267546892)
+
+Attributes with an original NTTIME value of 0 and 9223372036854775807 are
+treated as non-existing value.
 
 Example1:
 samba-tool user show User1 -H ldap://samba.samdom.example.com \\
@@ -2708,6 +2911,16 @@ Example3:
 samba-tool user show User2 --attributes=objectSid,memberOf
 
 Example3 shows how to display a users objectSid and memberOf attributes.
+
+Example4:
+samba-tool user show User2 \\
+    --attributes='pwdLastSet;format=GeneralizedTime,pwdLastSet;format=UnixTime'
+
+The result of Example 4 provides the pwdLastSet attribute values in the
+specified format:
+    dn: CN=User2,CN=Users,DC=samdom,DC=example,DC=com
+    pwdLastSet;format=GeneralizedTime: 20210120105207.0Z
+    pwdLastSet;format=UnixTime: 1611139927
 """
     synopsis = "%prog <username> [options]"
 
@@ -2716,7 +2929,9 @@ Example3 shows how to display a users objectSid and memberOf attributes.
                type=str, metavar="URL", dest="H"),
         Option("--attributes",
                help=("Comma separated list of attributes, "
-                     "which will be printed."),
+                     "which will be printed. "
+                     "Possible supported virtual attributes: "
+                     "virtualGeneralizedTime, virtualUnixTime, virtualTimeSpec."),
                type=str, dest="user_attrs"),
     ]
 
@@ -2735,26 +2950,27 @@ Example3 shows how to display a users objectSid and memberOf attributes.
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
 
-        attrs = None
+        self.inject_virtual_attributes(samdb)
+
         if user_attrs:
-            attrs = user_attrs.split(",")
+            attrs = self.parse_attributes(user_attrs)
+        else:
+            attrs = ["*"]
 
         filter = ("(&(sAMAccountType=%d)(sAMAccountName=%s))" %
                   (dsdb.ATYPE_NORMAL_ACCOUNT, ldb.binary_encode(username)))
 
         domaindn = samdb.domain_dn()
 
-        try:
-            res = samdb.search(base=domaindn, expression=filter,
-                               scope=ldb.SCOPE_SUBTREE, attrs=attrs)
-            user_dn = res[0].dn
-        except IndexError:
-            raise CommandError('Unable to find user "%s"' % (username))
-
-        for msg in res:
-            user_ldif = common.get_ldif_for_editor(samdb, msg)
-            self.outf.write(user_ldif)
-
+        obj = self.get_account_attributes(samdb, username,
+                                          basedn=domaindn,
+                                          filter=filter,
+                                          scope=ldb.SCOPE_SUBTREE,
+                                          attrs=attrs,
+                                          decrypt=False,
+                                          support_pw_attrs=False)
+        user_ldif = common.get_ldif_for_editor(samdb, obj)
+        self.outf.write(user_ldif)
 
 class cmd_user_move(Command):
     """Move a user to an organizational unit/container.
@@ -2771,7 +2987,7 @@ class cmd_user_move(Command):
     server.
 
     Example1:
-    samba-tool user move User1 'OU=OrgUnit,DC=samdom.DC=example,DC=com' \\
+    samba-tool user move User1 'OU=OrgUnit,DC=samdom,DC=example,DC=com' \\
         -H ldap://samba.samdom.example.com -U administrator
 
     Example1 shows how to move a user User1 into the 'OrgUnit' organizational

@@ -30,7 +30,7 @@
 
 #include "system/filesys.h"
 #include "auth/credentials/credentials.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "librpc/gen_ndr/security.h"
 #include "lib/events/events.h"
 
@@ -2707,6 +2707,253 @@ done:
 	return ret;
 }
 
+static bool test_fileid_unique_object(
+			struct torture_context *tctx,
+			struct smb2_tree *tree,
+			unsigned int num_objs,
+			bool create_dirs)
+{
+	TALLOC_CTX *mem_ctx = talloc_new(tctx);
+	char *fname = NULL;
+	struct smb2_handle testdirh;
+	struct smb2_handle h1;
+	struct smb2_create create;
+	unsigned int i;
+	uint64_t fileid_array[num_objs];
+	NTSTATUS status;
+	bool ret = true;
+
+	smb2_deltree(tree, DNAME);
+
+	status = torture_smb2_testdir(tree, DNAME, &testdirh);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"test_fileid_unique failed\n");
+	smb2_util_close(tree, testdirh);
+
+	/* Create num_obj files as rapidly as we can. */
+	for (i = 0; i < num_objs; i++) {
+		fname = talloc_asprintf(mem_ctx,
+					"%s\\testfile.%u",
+					DNAME,
+					i);
+		torture_assert_goto(tctx,
+				fname != NULL,
+				ret,
+				done,
+				"talloc failed\n");
+
+		create = (struct smb2_create) {
+			.in.desired_access = SEC_FILE_READ_ATTRIBUTE,
+			.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+			.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+			.in.create_disposition = NTCREATEX_DISP_CREATE,
+			.in.fname = fname,
+		};
+
+		if (create_dirs) {
+			create.in.file_attributes = FILE_ATTRIBUTE_DIRECTORY;
+			create.in.create_options = FILE_DIRECTORY_FILE;
+		}
+
+		status = smb2_create(tree, tctx, &create);
+		if (!NT_STATUS_IS_OK(status)) {
+			torture_fail(tctx,
+				talloc_asprintf(tctx,
+					"test file %s could not be created\n",
+					fname));
+			TALLOC_FREE(fname);
+			ret = false;
+			goto done;
+		}
+
+		h1 = create.out.file.handle;
+		smb2_util_close(tree, h1);
+		TALLOC_FREE(fname);
+	}
+
+	/*
+	 * Get the file ids.
+	 */
+	for (i = 0; i < num_objs; i++) {
+		union smb_fileinfo finfo;
+
+		fname = talloc_asprintf(mem_ctx,
+					"%s\\testfile.%u",
+					DNAME,
+					i);
+		torture_assert_goto(tctx,
+				fname != NULL,
+				ret,
+				done,
+				"talloc failed\n");
+
+		create = (struct smb2_create) {
+			.in.desired_access = SEC_FILE_READ_ATTRIBUTE,
+			.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+			.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+			.in.create_disposition = NTCREATEX_DISP_OPEN,
+			.in.fname = fname,
+		};
+
+		if (create_dirs) {
+			create.in.file_attributes = FILE_ATTRIBUTE_DIRECTORY;
+			create.in.create_options = FILE_DIRECTORY_FILE;
+		}
+
+		status = smb2_create(tree, tctx, &create);
+		if (!NT_STATUS_IS_OK(status)) {
+			torture_fail(tctx,
+				talloc_asprintf(tctx,
+					"test file %s could not "
+					"be opened: %s\n",
+					fname,
+					nt_errstr(status)));
+			TALLOC_FREE(fname);
+			ret = false;
+			goto done;
+		}
+
+		h1 = create.out.file.handle;
+
+		finfo = (union smb_fileinfo) {
+			.generic.level = RAW_FILEINFO_SMB2_ALL_INFORMATION,
+			.generic.in.file.handle = h1,
+		};
+
+		status = smb2_getinfo_file(tree, tctx, &finfo);
+		if (!NT_STATUS_IS_OK(status)) {
+			torture_fail(tctx,
+				talloc_asprintf(tctx,
+					"failed to get fileid for "
+					"test file %s: %s\n",
+					fname,
+					nt_errstr(status)));
+			TALLOC_FREE(fname);
+			ret = false;
+			goto done;
+		}
+		smb2_util_close(tree, h1);
+		/*
+		 * Samba created files on a "normal" share
+		 * using itime should have the top bit of the fileid set.
+		 */
+		fileid_array[i] = finfo.all_info2.out.file_id;
+
+		if ((fileid_array[i] & 0x8000000000000000) == 0) {
+			torture_fail(tctx,
+				talloc_asprintf(tctx,
+					"test file %s fileid 0x%lx top "
+					"bit not set\n",
+					fname,
+					fileid_array[i]));
+			TALLOC_FREE(fname);
+			ret = false;
+			goto done;
+		}
+		TALLOC_FREE(fname);
+	}
+
+	/* All returned fileids must be unique. 100 is small so brute force. */
+	for (i = 0; i < num_objs - 1; i++) {
+		unsigned int j;
+		for (j = i + 1; j < num_objs; j++) {
+			if (fileid_array[i] == fileid_array[j]) {
+				torture_fail(tctx,
+					talloc_asprintf(tctx,
+						"fileid %u == fileid %u (0x%lu)\n",
+						i,
+						j,
+						fileid_array[i]));
+				ret = false;
+				goto done;
+			}
+		}
+	}
+
+done:
+
+	smb2_util_close(tree, testdirh);
+	smb2_deltree(tree, DNAME);
+	talloc_free(mem_ctx);
+	return ret;
+}
+
+static bool test_fileid_unique(
+			struct torture_context *tctx,
+			struct smb2_tree *tree)
+{
+	return test_fileid_unique_object(tctx, tree, 100, false);
+}
+
+static bool test_fileid_unique_dir(
+			struct torture_context *tctx,
+			struct smb2_tree *tree)
+{
+	return test_fileid_unique_object(tctx, tree, 100, true);
+}
+
+/*
+  test opening quota fakefile handle and returned attributes
+*/
+static bool test_smb2_open_quota_fake_file(struct torture_context *tctx,
+					   struct smb2_tree *tree)
+{
+	const char *fname = "$Extend\\$Quota:$Q:$INDEX_ALLOCATION";
+	struct smb2_create create;
+	struct smb2_handle h = {{0}};
+	NTSTATUS status;
+	bool ret = true;
+
+	create = (struct smb2_create) {
+		.in.desired_access = SEC_RIGHTS_FILE_READ,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.create_disposition = NTCREATEX_DISP_OPEN,
+		.in.impersonation_level = SMB2_IMPERSONATION_ANONYMOUS,
+		.in.fname = fname,
+	};
+
+	status = smb2_create(tree, tree, &create);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+	h = create.out.file.handle;
+
+	torture_assert_u64_equal_goto(tctx,
+				      create.out.file_attr,
+				      FILE_ATTRIBUTE_HIDDEN
+				      | FILE_ATTRIBUTE_SYSTEM
+				      | FILE_ATTRIBUTE_DIRECTORY
+				      | FILE_ATTRIBUTE_ARCHIVE,
+				      ret,
+				      done,
+				      "Wrong attributes\n");
+
+	torture_assert_u64_equal_goto(tctx,
+				      create.out.create_time, 0,
+				      ret,
+				      done,
+				      "create_time is not 0\n");
+	torture_assert_u64_equal_goto(tctx,
+				      create.out.access_time, 0,
+				      ret,
+				      done,
+				      "access_time is not 0\n");
+	torture_assert_u64_equal_goto(tctx,
+				      create.out.write_time, 0,
+				      ret,
+				      done,
+				      "write_time is not 0\n");
+	torture_assert_u64_equal_goto(tctx,
+				      create.out.change_time, 0,
+				      ret,
+				      done,
+				      "change_time is not 0\n");
+
+done:
+	smb2_util_close(tree, h);
+	return ret;
+}
+
 /*
    basic testing of SMB2 read
 */
@@ -2727,6 +2974,7 @@ struct torture_suite *torture_smb2_create_init(TALLOC_CTX *ctx)
 	torture_suite_add_1smb2_test(suite, "nulldacl", test_create_null_dacl);
 	torture_suite_add_1smb2_test(suite, "mkdir-dup", test_mkdir_dup);
 	torture_suite_add_1smb2_test(suite, "dir-alloc-size", test_dir_alloc_size);
+	torture_suite_add_1smb2_test(suite, "quota-fake-file", test_smb2_open_quota_fake_file);
 
 	suite->description = talloc_strdup(suite, "SMB2-CREATE tests");
 
@@ -2757,6 +3005,26 @@ struct torture_suite *torture_smb2_fileid_init(TALLOC_CTX *ctx)
 	torture_suite_add_1smb2_test(suite, "fileid-dir", test_fileid_dir);
 
 	suite->description = talloc_strdup(suite, "SMB2-CREATE tests");
+
+	return suite;
+}
+
+/*
+   Testing for uniqueness of SMB2 File-IDs
+*/
+struct torture_suite *torture_smb2_fileid_unique_init(TALLOC_CTX *ctx)
+{
+	struct torture_suite *suite = torture_suite_create(ctx,
+					"fileid_unique");
+
+	torture_suite_add_1smb2_test(suite,
+					"fileid_unique",
+					test_fileid_unique);
+	torture_suite_add_1smb2_test(suite,
+					"fileid_unique-dir",
+					test_fileid_unique_dir);
+
+	suite->description = talloc_strdup(suite, "SMB2-FILEID-UNIQUE tests");
 
 	return suite;
 }

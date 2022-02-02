@@ -25,6 +25,7 @@
 #include "../libcli/smb/smb_seal.h"
 #include "async_smb.h"
 #include "../libcli/smb/smbXcli_base.h"
+#include "../libcli/smb/smb2_negotiate_context.h"
 #include "../librpc/ndr/libndr.h"
 #include "../include/client.h"
 
@@ -69,12 +70,23 @@ struct cli_state *cli_state_create(TALLOC_CTX *mem_ctx,
 	bool use_level_II_oplocks = false;
 	uint32_t smb1_capabilities = 0;
 	uint32_t smb2_capabilities = 0;
+	struct smb311_capabilities smb3_capabilities =
+		smb311_capabilities_parse("client",
+			lp_client_smb3_signing_algorithms(),
+			lp_client_smb3_encryption_algorithms());
 	struct GUID client_guid;
 
 	if (!GUID_all_zero(&cli_state_client_guid)) {
 		client_guid = cli_state_client_guid;
 	} else {
-		client_guid = GUID_random();
+		const char *str = NULL;
+
+		str = lp_parm_const_string(-1, "libsmb", "client_guid", NULL);
+		if (str != NULL) {
+			GUID_from_string(str, &client_guid);
+		} else {
+			client_guid = GUID_random();
+		}
 	}
 
 	/* Check the effective uid - make sure we are not setuid */
@@ -179,7 +191,8 @@ struct cli_state *cli_state_create(TALLOC_CTX *mem_ctx,
 					signing_state,
 					smb1_capabilities,
 					&client_guid,
-					smb2_capabilities);
+					smb2_capabilities,
+					&smb3_capabilities);
 	if (cli->conn == NULL) {
 		goto error;
 	}

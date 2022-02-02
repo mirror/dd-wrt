@@ -18,7 +18,6 @@
  */
 
 #include "includes.h"
-#include "auth_info.h"
 
 #include "lib/netapi/netapi.h"
 #include "lib/netapi/netapi_private.h"
@@ -67,11 +66,13 @@ static WERROR libnetapi_open_ipc_connection(struct libnetapi_ctx *ctx,
 					    struct client_ipc_connection **pp)
 {
 	struct libnetapi_private_ctx *priv_ctx;
-	struct user_auth_info *auth_info = NULL;
 	struct cli_state *cli_ipc = NULL;
 	struct client_ipc_connection *p;
 	NTSTATUS status;
-	struct cli_credentials *creds = NULL;
+	const char *username = NULL;
+	const char *password = NULL;
+	NET_API_STATUS rc;
+	enum credentials_use_kerberos krb5_state;
 
 	if (!ctx || !pp || !server_name) {
 		return WERR_INVALID_PARAMETER;
@@ -85,38 +86,37 @@ static WERROR libnetapi_open_ipc_connection(struct libnetapi_ctx *ctx,
 		return WERR_OK;
 	}
 
-	auth_info = user_auth_info_init(ctx);
-	if (!auth_info) {
-		return WERR_NOT_ENOUGH_MEMORY;
-	}
-	set_cmdline_auth_info_signing_state_raw(auth_info, SMB_SIGNING_IPC_DEFAULT);
-	set_cmdline_auth_info_use_kerberos(auth_info, ctx->use_kerberos);
-	set_cmdline_auth_info_username(auth_info, ctx->username);
-	if (ctx->password) {
-		set_cmdline_auth_info_password(auth_info, ctx->password);
-	} else {
-		set_cmdline_auth_info_getpass(auth_info);
+	rc = libnetapi_get_username(ctx, &username);
+	if (rc != 0) {
+		return WERR_INTERNAL_ERROR;
 	}
 
-	if (ctx->username && ctx->username[0] &&
-	    ctx->password && ctx->password[0] &&
-	    ctx->use_kerberos) {
-		set_cmdline_auth_info_fallback_after_kerberos(auth_info, true);
+	rc = libnetapi_get_password(ctx, &password);
+	if (rc != 0) {
+		return WERR_INTERNAL_ERROR;
 	}
 
-	if (ctx->use_ccache) {
-		set_cmdline_auth_info_use_ccache(auth_info, true);
+	if (password == NULL) {
+		cli_credentials_set_cmdline_callbacks(ctx->creds);
 	}
-	creds = get_cmdline_auth_info_creds(auth_info);
+
+	krb5_state = cli_credentials_get_kerberos_state(ctx->creds);
+
+	if (username != NULL && username[0] != '\0' &&
+	    password != NULL && password[0] != '\0' &&
+	    krb5_state == CRED_USE_KERBEROS_REQUIRED) {
+		cli_credentials_set_kerberos_state(ctx->creds,
+						   CRED_USE_KERBEROS_DESIRED,
+						   CRED_SPECIFIED);
+	}
 
 	status = cli_cm_open(ctx, NULL,
 			     server_name, "IPC$",
-			     creds,
+			     ctx->creds,
 			     NULL, 0, 0x20, &cli_ipc);
 	if (!NT_STATUS_IS_OK(status)) {
 		cli_ipc = NULL;
 	}
-	TALLOC_FREE(auth_info);
 
 	if (!cli_ipc) {
 		libnetapi_set_error_string(ctx,

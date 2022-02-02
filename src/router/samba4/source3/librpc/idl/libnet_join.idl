@@ -1,6 +1,6 @@
 #include "idl_types.h"
 
-import "wkssvc.idl", "security.idl", "misc.idl";
+import "wkssvc.idl", "security.idl", "misc.idl", "netlogon.idl", "ODJ.idl";
 
 /*
   libnetjoin interface definition
@@ -45,6 +45,9 @@ interface libnetjoin
 		[in] netr_SchannelType secure_channel_type,
 		[in,noprint] messaging_context *msg_ctx,
 		[in] uint32 desired_encryption_types,
+		[in] boolean8 provision_computer_account_only,
+		[in,out,unique] ODJ_PROVISION_DATA *odj_provision_data,
+		[in] boolean8 request_offline_join,
 		[out] string account_name,
 		[out] string netbios_domain_name,
 		[out] string dns_domain_name,
@@ -56,7 +59,9 @@ interface libnetjoin
 		[out] string error_string,
 		[out] boolean8 domain_is_ad,
 		[out] uint32 set_encryption_types,
-		[out] string krb5_salt
+		[out] string krb5_salt,
+		[out,unique] netr_DsRGetDCNameInfo *dcinfo,
+		[out] uint32 account_rid
 		);
 
 	[nopush,nopull,noopnum] WERROR libnet_UnjoinCtx(

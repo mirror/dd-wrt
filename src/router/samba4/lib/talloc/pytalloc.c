@@ -3,18 +3,22 @@
    Python Talloc Module
    Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2010-2011
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+     ** NOTE! The following LGPL license applies to the talloc
+     ** library. This does NOT imply that all of Samba is released
+     ** under the LGPL
 
-   This program is distributed in the hope that it will be useful,
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 3 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <Python.h>
@@ -37,7 +41,7 @@ static PyObject *pytalloc_report_full(PyObject *self, PyObject *args)
 	} else {
 		talloc_report_full(pytalloc_get_mem_ctx(py_obj), stdout);
 	}
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 /* enable null tracking */
@@ -45,7 +49,7 @@ static PyObject *pytalloc_enable_null_tracking(PyObject *self,
 		PyObject *Py_UNUSED(ignored))
 {
 	talloc_enable_null_tracking();
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 /* return the number of talloc blocks */

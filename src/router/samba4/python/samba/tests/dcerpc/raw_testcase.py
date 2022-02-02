@@ -321,7 +321,7 @@ class RawDCERPCTest(TestCase):
                                 pfc_flags=req.pfc_flags |
                                 samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_DID_NOT_EXECUTE,
                                 auth_length=0)
-                self.assertNotEquals(rep.u.alloc_hint, 0)
+                self.assertNotEqual(rep.u.alloc_hint, 0)
                 self.assertEqual(rep.u.context_id, 0)
                 self.assertEqual(rep.u.cancel_count, 0)
                 self.assertEqual(rep.u.flags, 0)
@@ -361,7 +361,7 @@ class RawDCERPCTest(TestCase):
             if assoc_group_id != 0:
                 self.assertEqual(rep.u.assoc_group_id, assoc_group_id)
             else:
-                self.assertNotEquals(rep.u.assoc_group_id, 0)
+                self.assertNotEqual(rep.u.assoc_group_id, 0)
                 assoc_group_id = rep.u.assoc_group_id
             sda_str = self.secondary_address
             sda_len = len(sda_str) + 1
@@ -385,7 +385,7 @@ class RawDCERPCTest(TestCase):
             self.assertEqual(rep.auth_length, 0)
             self.assertEqual(len(rep.u.auth_info), 0)
             return ack
-        self.assertNotEquals(rep.auth_length, 0)
+        self.assertNotEqual(rep.auth_length, 0)
         self.assertGreater(len(rep.u.auth_info), samba.dcerpc.dcerpc.DCERPC_AUTH_TRAILER_LENGTH)
         self.assertEqual(rep.auth_length, len(rep.u.auth_info) - samba.dcerpc.dcerpc.DCERPC_AUTH_TRAILER_LENGTH)
 
@@ -426,7 +426,7 @@ class RawDCERPCTest(TestCase):
                             pfc_flags=req.pfc_flags |
                             samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_DID_NOT_EXECUTE,
                             auth_length=0)
-            self.assertNotEquals(rep.u.alloc_hint, 0)
+            self.assertNotEqual(rep.u.alloc_hint, 0)
             self.assertEqual(rep.u.context_id, 0)
             self.assertEqual(rep.u.cancel_count, 0)
             self.assertEqual(rep.u.flags, 0)
@@ -451,7 +451,7 @@ class RawDCERPCTest(TestCase):
         if finished:
             self.assertEqual(rep.auth_length, 0)
         else:
-            self.assertNotEquals(rep.auth_length, 0)
+            self.assertNotEqual(rep.auth_length, 0)
         self.assertGreaterEqual(len(rep.u.auth_info), samba.dcerpc.dcerpc.DCERPC_AUTH_TRAILER_LENGTH)
         self.assertEqual(rep.auth_length, len(rep.u.auth_info) - samba.dcerpc.dcerpc.DCERPC_AUTH_TRAILER_LENGTH)
 
@@ -526,28 +526,27 @@ class RawDCERPCTest(TestCase):
             if hexdump:
                 sys.stderr.write("stub_in: %d\n%s" % (len(stub_in), self.hexdump(stub_in)))
 
-        pfc_flags = samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_FIRST
-        pfc_flags |= samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_LAST
-        if object is not None:
-            pfc_flags |= samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_OBJECT_UUID
+            pfc_flags = samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_FIRST
+            pfc_flags |= samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_LAST
+            if object is not None:
+                pfc_flags |= samba.dcerpc.dcerpc.DCERPC_PFC_FLAG_OBJECT_UUID
 
-        req = self.generate_request_auth(call_id=call_id,
-                                         context_id=ctx.context_id,
-                                         pfc_flags=pfc_flags,
-                                         object=object,
-                                         opnum=io.opnum(),
-                                         stub=stub_in,
-                                         auth_context=auth_context)
-        if send_req:
+            req = self.generate_request_auth(call_id=call_id,
+                                             context_id=ctx.context_id,
+                                             pfc_flags=pfc_flags,
+                                             object=object,
+                                             opnum=io.opnum(),
+                                             stub=stub_in,
+                                             auth_context=auth_context)
             self.send_pdu(req, ndr_print=ndr_print, hexdump=hexdump)
         if recv_rep:
             (rep, rep_blob) = self.recv_pdu_raw(timeout=timeout,
                                                 ndr_print=ndr_print,
                                                 hexdump=hexdump)
             if fault_status:
-                self.verify_pdu(rep, samba.dcerpc.dcerpc.DCERPC_PKT_FAULT, req.call_id,
+                self.verify_pdu(rep, samba.dcerpc.dcerpc.DCERPC_PKT_FAULT, call_id,
                                 pfc_flags=fault_pfc_flags, auth_length=0)
-                self.assertNotEquals(rep.u.alloc_hint, 0)
+                self.assertNotEqual(rep.u.alloc_hint, 0)
                 self.assertEqual(rep.u.context_id, fault_context_id)
                 self.assertEqual(rep.u.cancel_count, 0)
                 self.assertEqual(rep.u.flags, 0)
@@ -559,12 +558,16 @@ class RawDCERPCTest(TestCase):
             expected_auth_length = 0
             if auth_context is not None and \
                auth_context["auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_PACKET:
-                expected_auth_length = req.auth_length
+                if send_req:
+                    expected_auth_length = req.auth_length
+                else:
+                    expected_auth_length = rep.auth_length
 
-            self.verify_pdu(rep, samba.dcerpc.dcerpc.DCERPC_PKT_RESPONSE, req.call_id,
+
+            self.verify_pdu(rep, samba.dcerpc.dcerpc.DCERPC_PKT_RESPONSE, call_id,
                             auth_length=expected_auth_length)
-            self.assertNotEquals(rep.u.alloc_hint, 0)
-            self.assertEqual(rep.u.context_id, req.u.context_id & 0xff)
+            self.assertNotEqual(rep.u.alloc_hint, 0)
+            self.assertEqual(rep.u.context_id, ctx.context_id & 0xff)
             self.assertEqual(rep.u.cancel_count, 0)
             self.assertGreaterEqual(len(rep.u.stub_and_verifier), rep.u.alloc_hint)
             stub_out = self.check_response_auth(rep, rep_blob, auth_context)
@@ -922,12 +925,12 @@ class RawDCERPCTest(TestCase):
         req_data = req_blob[ofs_stub:ofs_trailer]
         req_whole = req_blob[0:ofs_sig]
 
-        if auth_context["auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_PRIVACY:
+        if auth_context["g_auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_PRIVACY:
             # TODO: not yet supported here
             self.assertTrue(False)
-        elif auth_context["auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_PACKET:
+        elif auth_context["g_auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_PACKET:
             req_sig = auth_context["gensec"].sign_packet(req_data, req_whole)
-        elif auth_context["auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_CONNECT:
+        elif auth_context["g_auth_level"] >= dcerpc.DCERPC_AUTH_LEVEL_CONNECT:
             self.assertEqual(auth_context["auth_type"],
                               dcerpc.DCERPC_AUTH_TYPE_NTLMSSP)
             req_sig = b"\x01" +b"\x00" *15

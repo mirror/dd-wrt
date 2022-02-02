@@ -31,7 +31,6 @@
 NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 				     const char *cli_name,
 				     const char *princ_name,
-				     struct PAC_LOGON_INFO *logon_info,
 				     bool *is_mapped,
 				     bool *mapped_to_guest,
 				     char **ntuser,
@@ -40,13 +39,14 @@ NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 				     struct passwd **_pw)
 {
 	NTSTATUS status;
-	char *domain = NULL;
-	char *realm = NULL;
+	const char *domain = NULL;
+	const char *realm = NULL;
 	char *user = NULL;
 	char *p;
 	char *fuser = NULL;
 	char *unixuser = NULL;
 	struct passwd *pw = NULL;
+	bool may_retry = false;
 
 	DEBUG(3, ("Kerberos ticket principal name is [%s]\n", princ_name));
 
@@ -62,55 +62,17 @@ NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	realm = talloc_strdup(talloc_tos(), p + 1);
-	if (!realm) {
-		return NT_STATUS_NO_MEMORY;
-	}
+	realm = p + 1;
 
 	if (!strequal(realm, lp_realm())) {
 		DEBUG(3, ("Ticket for foreign realm %s@%s\n", user, realm));
 		if (!lp_allow_trusted_domains()) {
 			return NT_STATUS_LOGON_FAILURE;
 		}
-	}
-
-	if (logon_info && logon_info->info3.base.logon_domain.string) {
-		domain = talloc_strdup(mem_ctx,
-					logon_info->info3.base.logon_domain.string);
-		if (!domain) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		DEBUG(10, ("Domain is [%s] (using PAC)\n", domain));
+		domain = realm;
 	} else {
-
-		/* If we have winbind running, we can (and must) shorten the
-		   username by using the short netbios name. Otherwise we will
-		   have inconsistent user names. With Kerberos, we get the
-		   fully qualified realm, with ntlmssp we get the short
-		   name. And even w2k3 does use ntlmssp if you for example
-		   connect to an ip address. */
-
-		wbcErr wbc_status;
-		struct wbcDomainInfo *info = NULL;
-
-		DEBUG(10, ("Mapping [%s] to short name using winbindd\n",
-			   realm));
-
-		wbc_status = wbcDomainInfo(realm, &info);
-
-		if (WBC_ERROR_IS_OK(wbc_status)) {
-			domain = talloc_strdup(mem_ctx,
-						info->short_name);
-			wbcFreeMemory(info);
-		} else {
-			DEBUG(3, ("Could not find short name: %s\n",
-				  wbcErrorString(wbc_status)));
-			domain = talloc_strdup(mem_ctx, realm);
-		}
-		if (!domain) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		DEBUG(10, ("Domain is [%s] (using Winbind)\n", domain));
+		domain = lp_workgroup();
+		may_retry = true;
 	}
 
 	fuser = talloc_asprintf(mem_ctx,
@@ -129,6 +91,13 @@ NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 	*mapped_to_guest = false;
 
 	pw = smb_getpwnam(mem_ctx, fuser, &unixuser, true);
+	if (may_retry && pw == NULL && !*is_mapped) {
+		fuser = talloc_strdup(mem_ctx, user);
+		if (!fuser) {
+			return NT_STATUS_NO_MEMORY;
+		}
+		pw = smb_getpwnam(mem_ctx, fuser, &unixuser, true);
+	}
 	if (pw) {
 		if (!unixuser) {
 			return NT_STATUS_NO_MEMORY;
@@ -155,7 +124,7 @@ NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 			if (!fuser) {
 				return NT_STATUS_NO_MEMORY;
 			}
-			pw = smb_getpwnam(mem_ctx, fuser, &unixuser, true);
+			pw = smb_getpwnam(mem_ctx, fuser, &unixuser, false);
 		}
 
 		/* extra sanity check that the guest account is valid */
@@ -175,7 +144,11 @@ NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 	*ntuser = user;
-	*ntdomain = domain;
+	*ntdomain = talloc_strdup(mem_ctx, domain);
+	if (*ntdomain == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
 	*_pw = pw;
 
 	return NT_STATUS_OK;
@@ -186,9 +159,7 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 				char *ntdomain,
 				char *username,
 				struct passwd *pw,
-				const struct netr_SamInfo3 *info3,
 				bool mapped_to_guest, bool username_was_mapped,
-				DATA_BLOB *session_key,
 				struct auth_session_info **session_info)
 {
 	NTSTATUS status;
@@ -198,20 +169,6 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 		status = make_server_info_guest(mem_ctx, &server_info);
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(1, ("make_server_info_guest failed: %s!\n",
-				  nt_errstr(status)));
-			return status;
-		}
-
-	} else if (info3) {
-		/* pass the unmapped username here since map_username()
-		   will be called again in make_server_info_info3() */
-
-		status = make_server_info_info3(mem_ctx,
-						ntuser, ntdomain,
-						&server_info,
-						info3);
-		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(1, ("make_server_info_info3 failed: %s!\n",
 				  nt_errstr(status)));
 			return status;
 		}
@@ -267,7 +224,7 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 
 	server_info->nss_token |= username_was_mapped;
 
-	status = create_local_token(mem_ctx, server_info, session_key, ntuser, session_info);
+	status = create_local_token(mem_ctx, server_info, NULL, ntuser, session_info);
 	talloc_free(server_info);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10,("failed to create local token: %s\n",
@@ -282,7 +239,6 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 				     const char *cli_name,
 				     const char *princ_name,
-				     struct PAC_LOGON_INFO *logon_info,
 				     bool *is_mapped,
 				     bool *mapped_to_guest,
 				     char **ntuser,
@@ -298,9 +254,7 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 				char *ntdomain,
 				char *username,
 				struct passwd *pw,
-				const struct netr_SamInfo3 *info3,
 				bool mapped_to_guest, bool username_was_mapped,
-				DATA_BLOB *session_key,
 				struct auth_session_info **session_info)
 {
 	return NT_STATUS_NOT_IMPLEMENTED;

@@ -12,7 +12,7 @@ bld.SAMBA_MODULE('auth4_anonymous',
 	source='auth_anonymous.c',
 	subsystem='auth4',
 	init_function='auth4_anonymous_init',
-	deps='talloc'
+	deps='tevent'
 	)
 
 
@@ -28,15 +28,7 @@ bld.SAMBA_MODULE('auth4_developer',
 	source='auth_developer.c',
 	subsystem='auth4',
 	init_function='auth4_developer_init',
-	deps='talloc'
-	)
-
-
-bld.SAMBA_MODULE('auth4_unix',
-	source='auth_unix.c',
-	subsystem='auth4',
-	init_function='auth4_unix_init',
-	deps='pam PAM_ERRORS LIBTSOCKET crypt'
+	deps='tevent'
 	)
 
 

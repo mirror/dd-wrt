@@ -24,6 +24,7 @@
 #include "param/pyparam.h"
 #include "lib/socket/netif.h"
 #include "lib/util/debug.h"
+#include "librpc/ndr/ndr_private.h"
 
 void init_glue(void);
 static PyObject *PyExc_NTSTATUSError;
@@ -134,6 +135,49 @@ static PyObject *py_nttime2unix(PyObject *self, PyObject *args)
 	return PyLong_FromLong((uint64_t)t);
 }
 
+static PyObject *py_float2nttime(PyObject *self, PyObject *args)
+{
+	double ft = 0;
+	double ft_sec = 0;
+	double ft_nsec = 0;
+	struct timespec ts;
+	NTTIME nt = 0;
+
+	if (!PyArg_ParseTuple(args, "d", &ft)) {
+		return NULL;
+	}
+
+	ft_sec = (double)(int)ft;
+	ft_nsec = (ft - ft_sec) * 1.0e+9;
+
+	ts.tv_sec = (int)ft_sec;
+	ts.tv_nsec = (int)ft_nsec;
+
+	nt = full_timespec_to_nt_time(&ts);
+
+	return PyLong_FromLongLong((uint64_t)nt);
+}
+
+static PyObject *py_nttime2float(PyObject *self, PyObject *args)
+{
+	double ft = 0;
+	struct timespec ts;
+	const struct timespec ts_zero = { .tv_sec = 0, };
+	NTTIME nt = 0;
+
+	if (!PyArg_ParseTuple(args, "K", &nt)) {
+		return NULL;
+	}
+
+	ts = nt_time_to_full_timespec(nt);
+	if (is_omit_timespec(&ts)) {
+		return PyFloat_FromDouble(1.0);
+	}
+	ft = timespec_elapsed2(&ts_zero, &ts);
+
+	return PyFloat_FromDouble(ft);
+}
+
 static PyObject *py_nttime2string(PyObject *self, PyObject *args)
 {
 	PyObject *ret;
@@ -211,6 +255,22 @@ static PyObject *py_is_ad_dc_built(PyObject *self,
 #else
         Py_RETURN_FALSE;
 #endif
+}
+
+static PyObject *py_is_selftest_enabled(PyObject *self,
+                PyObject *Py_UNUSED(ignored))
+{
+#ifdef ENABLE_SELFTEST
+	Py_RETURN_TRUE;
+#else
+	Py_RETURN_FALSE;
+#endif
+}
+
+static PyObject *py_ndr_token_max_list_size(PyObject *self,
+                PyObject *Py_UNUSED(ignored))
+{
+	return PyLong_FromLong(ndr_token_max_list_size());
 }
 
 /*
@@ -374,6 +434,10 @@ static PyMethodDef py_misc_methods[] = {
 		"unix2nttime(timestamp) -> nttime" },
 	{ "nttime2unix", (PyCFunction)py_nttime2unix, METH_VARARGS,
 		"nttime2unix(nttime) -> timestamp" },
+	{ "float2nttime", (PyCFunction)py_float2nttime, METH_VARARGS,
+		"pytime2nttime(floattimestamp) -> nttime" },
+	{ "nttime2float", (PyCFunction)py_nttime2float, METH_VARARGS,
+		"nttime2pytime(nttime) -> floattimestamp" },
 	{ "nttime2string", (PyCFunction)py_nttime2string, METH_VARARGS,
 		"nttime2string(nttime) -> string" },
 	{ "set_debug_level", (PyCFunction)py_set_debug_level, METH_VARARGS,
@@ -401,6 +465,10 @@ static PyMethodDef py_misc_methods[] = {
 		"Generate random bytes with specified length." },
 	{ "is_ad_dc_built", (PyCFunction)py_is_ad_dc_built, METH_NOARGS,
 		"is Samba built with AD DC?" },
+	{ "is_selftest_enabled", (PyCFunction)py_is_selftest_enabled,
+		METH_NOARGS, "is Samba built with selftest enabled?" },
+	{ "ndr_token_max_list_size", (PyCFunction)py_ndr_token_max_list_size,
+		METH_NOARGS, "How many NDR internal tokens is too many for this build?" },
 	{0}
 };
 

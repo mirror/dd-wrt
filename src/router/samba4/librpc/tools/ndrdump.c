@@ -24,7 +24,7 @@
 #include "librpc/ndr/libndr.h"
 #include "librpc/ndr/ndr_table.h"
 #include "librpc/gen_ndr/ndr_dcerpc.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "param/param.h"
 #include "lib/util/base64.h"
 
@@ -306,7 +306,7 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		{"context-file", 'c', POPT_ARG_STRING, NULL, OPT_CONTEXT_FILE, "In-filename to parse first", "CTX-FILE" },
 		{"validate", 0, POPT_ARG_NONE, NULL, OPT_VALIDATE, "try to validate the data", NULL },	
 		{"dump-data", 0, POPT_ARG_NONE, NULL, OPT_DUMP_DATA, "dump the hex data", NULL },	
-		{"load-dso", 'l', POPT_ARG_STRING, NULL, OPT_LOAD_DSO, "load from shared object file", NULL },
+		{"load-dso", 0, POPT_ARG_STRING, NULL, OPT_LOAD_DSO, "load from shared object file", NULL },
 		{"ndr64", 0, POPT_ARG_NONE, NULL, OPT_NDR64, "Assume NDR64 data", NULL },
 		{"quiet", 0, POPT_ARG_NONE, NULL, OPT_QUIET, "Don't actually dump anything", NULL },
 		{"base64-input", 0, POPT_ARG_NONE, NULL, OPT_BASE64_INPUT, "Read the input file in as a base64 string", NULL },
@@ -316,11 +316,12 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 		 "Try to print structures that fail to parse (used to develop parsers, segfaults are likely).", NULL },
 		POPT_COMMON_SAMBA
 		POPT_COMMON_VERSION
-		{0}
+		POPT_TABLEEND
 	};
 	uint32_t highest_ofs;
 	struct dcerpc_sec_verification_trailer *sec_vt = NULL;
-	
+	bool ok;
+
 	ndr_table_init();
 
 	/* Initialise samba stuff */
@@ -328,10 +329,31 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 
 	setlinebuf(stdout);
 
-	setup_logging("ndrdump", DEBUG_STDOUT);
+	mem_ctx = talloc_init("ndrdump.c/main");
+	if (mem_ctx == NULL) {
+		exit(ENOMEM);
+	}
 
-	pc = poptGetContext("ndrdump", argc, argv, long_options, 0);
-	
+	ok = samba_cmdline_init(mem_ctx,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+	}
+
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+	}
+
 	poptSetOtherOptionHelp(
 		pc, "<pipe|uuid> <format> <in|out|struct> [<filename>]");
 
@@ -426,9 +448,6 @@ static void ndr_print_dummy(struct ndr_print *ndr, const char *format, ...)
 			exit(1);
 		}
 	}
-
-
-	mem_ctx = talloc_init("ndrdump");
 
 	st = talloc_zero_size(mem_ctx, f->struct_size);
 	if (!st) {

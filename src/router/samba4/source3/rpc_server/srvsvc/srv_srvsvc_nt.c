@@ -42,6 +42,7 @@
 #include "messages.h"
 #include "serverid.h"
 #include "lib/global_contexts.h"
+#include "source3/lib/substitute.h"
 
 extern const struct generic_mapping file_generic_mapping;
 
@@ -1958,6 +1959,8 @@ WERROR _srvsvc_NetShareSetInfo(struct pipes_struct *p,
 
 		ret = smbrun(command, NULL, NULL);
 		if (ret == 0) {
+			reload_services(NULL, NULL, false);
+
 			/* Tell everyone we updated smb.conf. */
 			messaging_send_all(p->msg_ctx, MSG_SMB_CONF_UPDATED,
 					   NULL, 0);

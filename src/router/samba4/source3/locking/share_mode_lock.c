@@ -880,8 +880,15 @@ struct share_mode_lock *get_share_mode_lock(
 
 	if (static_share_mode_data != NULL) {
 		if (!file_id_equal(&static_share_mode_data->id, &id)) {
-			DEBUG(1, ("Can not lock two share modes "
-				  "simultaneously\n"));
+			struct file_id_buf existing;
+			struct file_id_buf requested;
+
+			DBG_ERR("Can not lock two share modes "
+				"simultaneously: existing %s requested %s\n",
+				file_id_str_buf(static_share_mode_data->id, &existing),
+				file_id_str_buf(id, &requested));
+
+			smb_panic(__location__);
 			goto fail;
 		}
 		goto done;
@@ -904,6 +911,7 @@ struct share_mode_lock *get_share_mode_lock(
 	cmp = tdb_data_cmp(share_mode_lock_key, key);
 	if (cmp != 0) {
 		DBG_WARNING("Can not lock two share modes simultaneously\n");
+		smb_panic(__location__);
 		goto fail;
 	}
 
@@ -928,6 +936,15 @@ done:
 	lck->data = static_share_mode_data;
 
 	talloc_set_destructor(lck, share_mode_lock_destructor);
+
+	if (CHECK_DEBUGLVL(DBGLVL_DEBUG)) {
+		struct file_id_buf returned;
+
+		DBG_DEBUG("Returning %s (data_refcount=%zu key_refcount=%zu)\n",
+			  file_id_str_buf(id, &returned),
+			  static_share_mode_data_refcount,
+			  share_mode_lock_key_refcount);
+	}
 
 	return lck;
 fail:
@@ -2153,7 +2170,6 @@ static bool share_mode_entry_do(
 	bool modified = false;
 	struct share_mode_entry e;
 	uint8_t *e_ptr = NULL;
-	bool had_share_entries, have_share_entries;
 	NTSTATUS status;
 	bool ret = false;
 
@@ -2164,8 +2180,6 @@ static bool share_mode_entry_do(
 		return false;
 	}
 	DBG_DEBUG("num_share_modes=%zu\n", ltdb->num_share_entries);
-
-	had_share_entries = (ltdb->num_share_entries != 0);
 
 	idx = share_mode_entry_find(
 		ltdb->share_entries,
@@ -2212,6 +2226,14 @@ static bool share_mode_entry_do(
 		}
 		ltdb->num_share_entries -= 1;
 
+		if (ltdb->num_share_entries == 0) {
+			/*
+			 * Tell share_mode_lock_destructor() to delete
+			 * the whole record
+			 */
+			d->modified = true;
+		}
+
 		if (DEBUGLEVEL>=10) {
 			DBG_DEBUG("share_mode_entry:\n");
 			NDR_PRINT_DEBUG(share_mode_entry, &e);
@@ -2241,15 +2263,6 @@ static bool share_mode_entry_do(
 		DBG_DEBUG("locking_tdb_data_store failed: %s\n",
 			  nt_errstr(status));
 		goto done;
-	}
-
-	have_share_entries = (ltdb->num_share_entries != 0);
-	if (had_share_entries != have_share_entries) {
-		/*
-		 * Make share_mode_data_store do the right thing wrt
-		 * possibly deleting the locking.tdb record
-		 */
-		d->modified = true;
 	}
 
 	ret = true;

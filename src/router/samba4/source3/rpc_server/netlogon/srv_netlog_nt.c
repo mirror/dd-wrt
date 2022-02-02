@@ -49,6 +49,7 @@
 #include "lib/param/param.h"
 #include "libsmb/dsgetdcname.h"
 #include "lib/util/util_str_escape.h"
+#include "source3/lib/substitute.h"
 
 extern userdom_struct current_user_info;
 
@@ -418,7 +419,6 @@ NTSTATUS _netr_NetrEnumerateTrustedDomains(struct pipes_struct *p,
 	struct dcerpc_binding_handle *h = NULL;
 	struct policy_handle pol;
 	uint32_t enum_ctx = 0;
-	int i;
 	uint32_t max_size = (uint32_t)-1;
 
 	ZERO_STRUCT(pol);
@@ -442,15 +442,13 @@ NTSTATUS _netr_NetrEnumerateTrustedDomains(struct pipes_struct *p,
 					 LSA_POLICY_VIEW_LOCAL_INFORMATION,
 					 &pol,
 					 &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
 	do {
+		uint32_t i;
+
 		/* Lookup list of trusted domains */
 		status = dcerpc_lsa_EnumTrustDom(h,
 						 p->mem_ctx,
@@ -539,11 +537,7 @@ static NTSTATUS samr_find_machine_account(TALLOC_CTX *mem_ctx,
 				      SAMR_ACCESS_LOOKUP_DOMAIN,
 				      &connect_handle,
 				      &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -554,11 +548,7 @@ static NTSTATUS samr_find_machine_account(TALLOC_CTX *mem_ctx,
 					  &domain_name,
 					  &domain_sid,
 					  &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -568,11 +558,7 @@ static NTSTATUS samr_find_machine_account(TALLOC_CTX *mem_ctx,
 					domain_sid,
 					&domain_handle,
 					&result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -585,11 +571,7 @@ static NTSTATUS samr_find_machine_account(TALLOC_CTX *mem_ctx,
 					 &rids,
 					 &types,
 					 &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -614,11 +596,7 @@ static NTSTATUS samr_find_machine_account(TALLOC_CTX *mem_ctx,
 				      rid,
 				      user_handle,
 				      &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -652,15 +630,15 @@ static NTSTATUS get_md4pw(struct samr_Password *md4pw, const char *mach_acct,
 {
 	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
-	TALLOC_CTX *mem_ctx;
+	TALLOC_CTX *mem_ctx = NULL;
 	struct dcerpc_binding_handle *h = NULL;
-	struct tsocket_address *local;
-	struct policy_handle user_handle;
-	uint32_t user_rid;
-	struct dom_sid *domain_sid;
-	uint32_t acct_ctrl;
-	union samr_UserInfo *info;
-	struct auth_session_info *session_info;
+	struct tsocket_address *local = NULL;
+	struct policy_handle user_handle = { .handle_type = 0 };
+	uint32_t user_rid = UINT32_MAX;
+	struct dom_sid *domain_sid = NULL;
+	uint32_t acct_ctrl = 0;
+	union samr_UserInfo *info = NULL;
+	struct auth_session_info *session_info = NULL;
 	int rc;
 
 #if 0
@@ -683,10 +661,6 @@ static NTSTATUS get_md4pw(struct samr_Password *md4pw, const char *mach_acct,
 #endif /* 0 */
 
 	mem_ctx = talloc_stackframe();
-	if (mem_ctx == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto out;
-	}
 
 	status = make_session_info_system(mem_ctx, &session_info);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -730,11 +704,7 @@ static NTSTATUS get_md4pw(struct samr_Password *md4pw, const char *mach_acct,
 					    UserControlInformation,
 					    &info,
 					    &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -792,11 +762,7 @@ static NTSTATUS get_md4pw(struct samr_Password *md4pw, const char *mach_acct,
 					    &info,
 					    &result);
 	unbecome_root();
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -1198,6 +1164,74 @@ static NTSTATUS netr_creds_server_step_check(struct pipes_struct *p,
 /*************************************************************************
  *************************************************************************/
 
+static NTSTATUS samr_open_machine_account(
+	struct dcerpc_binding_handle *b,
+	const struct dom_sid *machine_sid,
+	uint32_t access_mask,
+	struct policy_handle *machine_handle)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct policy_handle connect_handle = { .handle_type = 0 };
+	struct policy_handle domain_handle = { .handle_type = 0 };
+	struct dom_sid domain_sid = *machine_sid;
+	uint32_t machine_rid;
+	NTSTATUS result = NT_STATUS_OK;
+	NTSTATUS status = NT_STATUS_INVALID_PARAMETER;
+	bool ok;
+
+	ok = sid_split_rid(&domain_sid, &machine_rid);
+	if (!ok) {
+		goto out;
+	}
+
+	status = dcerpc_samr_Connect2(
+		b,
+		frame,
+		lp_netbios_name(),
+		SAMR_ACCESS_CONNECT_TO_SERVER |
+		SAMR_ACCESS_ENUM_DOMAINS |
+		SAMR_ACCESS_LOOKUP_DOMAIN,
+		&connect_handle,
+		&result);
+	if (any_nt_status_not_ok(status, result, &status)) {
+		goto out;
+	}
+
+	status = dcerpc_samr_OpenDomain(
+		b,
+		frame,
+		&connect_handle,
+		SAMR_DOMAIN_ACCESS_OPEN_ACCOUNT,
+		&domain_sid,
+		&domain_handle,
+		&result);
+	if (any_nt_status_not_ok(status, result, &status)) {
+		goto out;
+	}
+
+	status = dcerpc_samr_OpenUser(
+		b,
+		frame,
+		&domain_handle,
+		SEC_FLAG_MAXIMUM_ALLOWED,
+		machine_rid,
+		machine_handle,
+		&result);
+	if (any_nt_status_not_ok(status, result, &status)) {
+		goto out;
+	}
+
+out:
+	if ((b != NULL) && is_valid_policy_hnd(&domain_handle)) {
+		dcerpc_samr_Close(b, frame, &domain_handle, &result);
+	}
+	if ((b != NULL) && is_valid_policy_hnd(&connect_handle)) {
+		dcerpc_samr_Close(b, frame, &connect_handle, &result);
+	}
+	TALLOC_FREE(frame);
+	return status;
+}
+
 struct _samr_Credentials_t {
 	enum {
 		CRED_TYPE_NT_HASH,
@@ -1210,17 +1244,18 @@ struct _samr_Credentials_t {
 };
 
 
-static NTSTATUS netr_set_machine_account_password(TALLOC_CTX *mem_ctx,
-						  struct auth_session_info *session_info,
-						  struct messaging_context *msg_ctx,
-						  const char *account_name,
-						  struct _samr_Credentials_t *cr)
+static NTSTATUS netr_set_machine_account_password(
+	TALLOC_CTX *mem_ctx,
+	struct auth_session_info *session_info,
+	struct messaging_context *msg_ctx,
+	const struct dom_sid *machine_sid,
+	struct _samr_Credentials_t *cr)
 {
 	NTSTATUS status;
 	NTSTATUS result = NT_STATUS_OK;
 	struct dcerpc_binding_handle *h = NULL;
 	struct tsocket_address *local;
-	struct policy_handle user_handle;
+	struct policy_handle user_handle = { .handle_type = 0 };
 	uint32_t acct_ctrl;
 	union samr_UserInfo *info;
 	struct samr_UserInfo18 info18;
@@ -1230,8 +1265,6 @@ static NTSTATUS netr_set_machine_account_password(TALLOC_CTX *mem_ctx,
 	DATA_BLOB session_key;
 	enum samr_UserInfoLevel infolevel;
 	TALLOC_CTX *frame = talloc_stackframe();
-
-	ZERO_STRUCT(user_handle);
 
 	status = session_extract_session_key(session_info,
 					     &session_key,
@@ -1262,13 +1295,8 @@ static NTSTATUS netr_set_machine_account_password(TALLOC_CTX *mem_ctx,
 	}
 
 	become_root();
-	status = samr_find_machine_account(frame,
-					   h,
-					   account_name,
-					   SEC_FLAG_MAXIMUM_ALLOWED,
-					   NULL,
-					   NULL,
-					   &user_handle);
+	status = samr_open_machine_account(
+		h, machine_sid, SEC_FLAG_MAXIMUM_ALLOWED, &user_handle);
 	unbecome_root();
 	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
@@ -1280,11 +1308,7 @@ static NTSTATUS netr_set_machine_account_password(TALLOC_CTX *mem_ctx,
 					    UserControlInformation,
 					    &info,
 					    &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -1355,11 +1379,7 @@ static NTSTATUS netr_set_machine_account_password(TALLOC_CTX *mem_ctx,
 					  info,
 					  &result);
 	unbecome_root();
-	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
-	}
-	if (!NT_STATUS_IS_OK(result)) {
-		status = result;
+	if (any_nt_status_not_ok(status, result, &status)) {
 		goto out;
 	}
 
@@ -1380,7 +1400,7 @@ NTSTATUS _netr_ServerPasswordSet(struct pipes_struct *p,
 				 struct netr_ServerPasswordSet *r)
 {
 	NTSTATUS status = NT_STATUS_OK;
-	int i;
+	size_t i;
 	struct netlogon_creds_CredentialState *creds = NULL;
 	struct _samr_Credentials_t cr = { CRED_TYPE_NT_HASH, {0}};
 
@@ -1424,7 +1444,7 @@ NTSTATUS _netr_ServerPasswordSet(struct pipes_struct *p,
 	status = netr_set_machine_account_password(p->mem_ctx,
 						   p->session_info,
 						   p->msg_ctx,
-						   creds->account_name,
+						   creds->sid,
 						   &cr);
 	return status;
 }
@@ -1468,9 +1488,10 @@ NTSTATUS _netr_ServerPasswordSet2(struct pipes_struct *p,
 		return status;
 	}
 
-	DEBUG(3,("_netr_ServerPasswordSet2: Server Password Seti2 by remote "
-		 "machine:[%s] on account [%s]\n",
-		 r->in.computer_name, creds->computer_name));
+	DBG_NOTICE("Server Password Set2 by remote "
+		   "machine:[%s] on account [%s]\n",
+		   r->in.computer_name,
+		   creds->computer_name);
 
 	memcpy(password_buf.data, r->in.new_password->data, 512);
 	SIVAL(password_buf.data, 512, r->in.new_password->length);
@@ -1585,7 +1606,7 @@ NTSTATUS _netr_ServerPasswordSet2(struct pipes_struct *p,
 	status = netr_set_machine_account_password(p->mem_ctx,
 						   p->session_info,
 						   p->msg_ctx,
-						   creds->account_name,
+						   creds->sid,
 						   &cr);
 	TALLOC_FREE(creds);
 	return status;

@@ -18,20 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 """Blackbox tests for ndrdump."""
 
 import os
 import re
 from samba.tests import BlackboxTestCase, BlackboxProcessError
 
-for p in ["../../../../../source4/librpc/tests",
-          "../../../../../librpc/tests"]:
-    data_path_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), p))
-    print(data_path_dir)
-    if os.path.exists(data_path_dir):
-        break
-
+data_path_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../source4/librpc/tests"))
 
 class NdrDumpTests(BlackboxTestCase):
     """Blackbox tests for ndrdump."""
@@ -40,33 +33,33 @@ class NdrDumpTests(BlackboxTestCase):
         return os.path.join(data_path_dir, name)
 
     def test_ndrdump_with_in(self):
-        self.check_run(("ndrdump samr samr_CreateUser in %s" %
+        self.check_run(("ndrdump --debug-stdout samr samr_CreateUser in %s" %
                        (self.data_path("samr-CreateUser-in.dat"))))
 
     def test_ndrdump_with_out(self):
-        self.check_run(("ndrdump samr samr_CreateUser out %s" %
+        self.check_run(("ndrdump --debug-stdout samr samr_CreateUser out %s" %
                        (self.data_path("samr-CreateUser-out.dat"))))
 
     def test_ndrdump_context_file(self):
         self.check_run(
-            ("ndrdump --context-file %s samr samr_CreateUser out %s" %
+            ("ndrdump --debug-stdout --context-file %s samr samr_CreateUser out %s" %
                 (self.data_path("samr-CreateUser-in.dat"),
                 self.data_path("samr-CreateUser-out.dat"))))
 
     def test_ndrdump_with_validate(self):
-        self.check_run(("ndrdump --validate samr samr_CreateUser in %s" %
+        self.check_run(("ndrdump --debug-stdout --validate samr samr_CreateUser in %s" %
                        (self.data_path("samr-CreateUser-in.dat"))))
 
     def test_ndrdump_with_hex_decode_function(self):
         self.check_run(
-            ("ndrdump dns decode_dns_name_packet in --hex-input %s" %
+            ("ndrdump --debug-stdout dns decode_dns_name_packet in --hex-input %s" %
                 self.data_path("dns-decode_dns_name_packet-hex.dat")))
 
     def test_ndrdump_with_hex_struct_name(self):
         expected = open(self.data_path("dns-decode_dns_name_packet-hex.txt")).read()
         try:
             actual = self.check_output(
-                "ndrdump dns dns_name_packet struct --hex-input %s" %
+                "ndrdump --debug-stdout dns dns_name_packet struct --hex-input %s" %
                 self.data_path("dns-decode_dns_name_packet-hex.dat"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -85,7 +78,7 @@ class NdrDumpTests(BlackboxTestCase):
         buffers: ARRAY(5)'''
         try:
             actual = self.check_output(
-                "ndrdump krb5pac PAC_DATA struct %s" %
+                "ndrdump --debug-stdout krb5pac PAC_DATA struct %s" %
                 self.data_path("krb5pac-PAC_DATA.dat"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -96,6 +89,41 @@ class NdrDumpTests(BlackboxTestCase):
                          expected.encode('utf-8'))
         self.assertTrue(actual.endswith(b"dump OK\n"))
 
+    def test_ndrdump_upn_dns_info_ex(self):
+        with open(self.data_path(
+                'krb5pac_upn_dns_info_ex.txt')) as f:
+            expected = f.read()
+        data_path = self.data_path(
+            'krb5pac_upn_dns_info_ex.b64.txt')
+
+        try:
+            actual = self.check_output(
+                'ndrdump --debug-stdout -d0 krb5pac PAC_DATA struct '
+                '--validate --base64-input ' + data_path)
+        except BlackboxProcessError as e:
+            self.fail(e)
+
+        self.assertEqual(actual, expected.encode('utf-8'))
+
+    def test_ndrdump_upn_dns_info_ex_not_supported(self):
+        with open(self.data_path(
+                'krb5pac_upn_dns_info_ex_not_supported.txt')) as f:
+            expected = f.read()
+        data_path = self.data_path(
+            'krb5pac_upn_dns_info_ex_not_supported.b64.txt')
+
+        try:
+            # This PAC has been edited to remove the
+            # PAC_UPN_DNS_FLAG_HAS_SAM_NAME_AND_SID bit, so that we can
+            # simulate older versions of Samba parsing this structure.
+            actual = self.check_output(
+                'ndrdump --debug-stdout -d0 krb5pac PAC_DATA struct '
+                '--validate --base64-input ' + data_path)
+        except BlackboxProcessError as e:
+            self.fail(e)
+
+        self.assertEqual(actual, expected.encode('utf-8'))
+
     def test_ndrdump_with_binary_struct_number(self):
         expected = '''pull returned Success
     GUID                     : 33323130-3534-3736-3839-616263646566
@@ -103,7 +131,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                "ndrdump misc 0 struct %s" %
+                "ndrdump --debug-stdout misc 0 struct %s" %
                 self.data_path("misc-GUID.dat"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -117,7 +145,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                "ndrdump misc netr_SchannelType --input=x struct",
+                "ndrdump --debug-stdout misc netr_SchannelType --input=x struct",
                 1)
         except BlackboxProcessError as e:
             self.fail(e)
@@ -131,7 +159,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                "ndrdump -d0 misc GUID struct --input=abcdefg", 2)
+                "ndrdump --debug-stdout -d0 misc GUID struct --input=abcdefg", 2)
         except BlackboxProcessError as e:
             self.fail(e)
 
@@ -147,7 +175,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                "ndrdump -d0 misc GUID struct --input=abcdefg --dump-data", 2)
+                "ndrdump --debug-stdout -d0 misc GUID struct --input=abcdefg --dump-data", 2)
         except BlackboxProcessError as e:
             self.fail(e)
 
@@ -169,7 +197,7 @@ dump of failed-to-parse GUID complete
 '''
         try:
             actual = self.check_exit_code(
-                "ndrdump -d0 misc GUID struct --input=abcdefg --dump-data --print-after-parse-failure", 2)
+                "ndrdump --debug-stdout -d0 misc GUID struct --input=abcdefg --dump-data --print-after-parse-failure", 2)
         except BlackboxProcessError as e:
             self.fail(e)
 
@@ -199,7 +227,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                'ndrdump clusapi clusapi_QueryAllValues out ' +\
+                'ndrdump --debug-stdout clusapi clusapi_QueryAllValues out ' +\
                 '--base64-input --input=' +\
                 'AAAAAQEAAAAAAAAAAAAAAAgAAAAA/wAA/wAAAAAJAAAACAAzMzI3NjI2OTMyNzY4NAEAAIAyDf8AAP8AAAAACAAAABzxKQgAAA==')
         except BlackboxProcessError as e:
@@ -211,7 +239,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                'ndrdump IOXIDResolver ResolveOxid out ' +\
+                'ndrdump --debug-stdout IOXIDResolver ResolveOxid out ' +\
                 '--base64-input --input=' +\
                 'c87PMf7CBAUAAAAADgQMBASjfPqKw0KPld6DY87PMfQ=',
                 2)
@@ -224,7 +252,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                'ndrdump IOXIDResolver ResolveOxid2 out ' +\
+                'ndrdump --debug-stdout IOXIDResolver ResolveOxid2 out ' +\
                 '--base64-input --input=' +\
                 'AAAAAQ0K9Q0AAAAAAAAAA6ampqampqampqampqampqampqampqamNAAAAAAtNDQ=',
                 2)
@@ -245,7 +273,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                'ndrdump IOXIDResolver ServerAlive out ' +\
+                'ndrdump --debug-stdout IOXIDResolver ServerAlive out ' +\
                 '--base64-input --input=' +\
                 'AAAAAQ02CgoKCgoAAAAAAAAAAwAAAAEAADM5NjE2MTc3Njg0MjT8haxJC2GHCgoK9QA=')
         except BlackboxProcessError as e:
@@ -257,7 +285,7 @@ dump OK
 '''
         try:
             actual = self.check_exit_code(
-                'ndrdump IRemoteActivation RemoteActivation out ' +\
+                'ndrdump --debug-stdout IRemoteActivation RemoteActivation out ' +\
                 '--base64-input --input=' +\
                 'AAAAAQAAAAAAAABKAAD/AAAAAP4AAAAAAAAASgAAAAAAAAABIiIjIiIiIiIiIiIiIiMiAAAAAAD/AAAAAAAA',
                 2)
@@ -269,7 +297,7 @@ dump OK
         expected = open(self.data_path("fuzzed_ntlmssp-AUTHENTICATE_MESSAGE.txt")).read()
         try:
             actual = self.check_output(
-                "ndrdump ntlmssp AUTHENTICATE_MESSAGE struct --base64-input %s --validate" %
+                "ndrdump --debug-stdout ntlmssp AUTHENTICATE_MESSAGE struct --base64-input %s --validate" %
                 self.data_path("fuzzed_ntlmssp-AUTHENTICATE_MESSAGE.b64.txt"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -280,7 +308,7 @@ dump OK
     def test_ndrdump_fuzzed_PackagesBlob(self):
         expected = 'ndr_pull_string: ndr_pull_error\\(Buffer Size Error\\):'
         command = (
-            "ndrdump drsblobs package_PackagesBlob struct --input='aw=='"
+            "ndrdump --debug-stdout drsblobs package_PackagesBlob struct --input='aw=='"
             " --base64-input")
         try:
             actual = self.check_exit_code(command, 2)
@@ -294,7 +322,7 @@ dump OK
         expected = open(self.data_path("fuzzed_drsuapi_DsAddEntry_1.txt")).read()
         try:
             actual = self.check_output(
-                "ndrdump drsuapi drsuapi_DsAddEntry in --base64-input --validate %s" %
+                "ndrdump --debug-stdout drsuapi drsuapi_DsAddEntry in --base64-input --validate %s" %
                 self.data_path("fuzzed_drsuapi_DsAddEntry_1.b64.txt"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -306,7 +334,7 @@ dump OK
         expected = "Maximum Recursion Exceeded"
         try:
             self.check_output(
-                "ndrdump drsuapi 17 out --base64-input %s" %
+                "ndrdump --debug-stdout drsuapi 17 out --base64-input %s" %
                 self.data_path(
                     "fuzzed_drsuapi_DsaAddressListItem_V1-in.b64.txt"))
             self.fail("Input should have been rejected with %s" % expected)
@@ -318,8 +346,45 @@ dump OK
         expected = open(self.data_path("fuzzed_drsuapi_DsReplicaAttribute.txt")).read()
         try:
             actual = self.check_output(
-                "ndrdump drsuapi drsuapi_DsReplicaAttribute struct --base64-input --validate %s" %
+                "ndrdump --debug-stdout drsuapi drsuapi_DsReplicaAttribute struct --base64-input --validate %s" %
                 self.data_path("fuzzed_drsuapi_DsReplicaAttribute.b64.txt"))
+        except BlackboxProcessError as e:
+            self.fail(e)
+        # check_output will return bytes
+        # convert expected to bytes for python 3
+        self.assertEqual(actual, expected.encode('utf-8'))
+
+    def test_ndrdump_Krb5ccache(self):
+        expected = open(self.data_path("../../../source3/selftest/"
+                                       "ktest-krb5_ccache-2.txt")).read()
+        try:
+            # Specify -d1 to match the generated output file, because ndrdump
+            # only outputs some additional info if this parameter is specified,
+            # and the --configfile parameter gives us an empty smb.conf to avoid
+            # extraneous output.
+            actual = self.check_output(
+                "ndrdump krb5ccache CCACHE struct "
+                "--configfile /dev/null --debug-stdout -d1 --validate " +
+                self.data_path("../../../source3/selftest/"
+                               "ktest-krb5_ccache-2"))
+        except BlackboxProcessError as e:
+            self.fail(e)
+        # check_output will return bytes
+        # convert expected to bytes for python 3
+        self.assertEqual(actual, expected.encode('utf-8'))
+
+        expected = open(self.data_path("../../../source3/selftest/"
+                                       "ktest-krb5_ccache-3.txt")).read()
+        try:
+            # Specify -d1 to match the generated output file, because ndrdump
+            # only outputs some additional info if this parameter is specified,
+            # and the --configfile parameter gives us an empty smb.conf to avoid
+            # extraneous output.
+            actual = self.check_output(
+                "ndrdump krb5ccache CCACHE struct "
+                "--configfile /dev/null --debug-stdout -d1 --validate " +
+                self.data_path("../../../source3/selftest/"
+                               "ktest-krb5_ccache-3"))
         except BlackboxProcessError as e:
             self.fail(e)
         # check_output will return bytes
@@ -355,7 +420,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                "ndrdump spoolss spoolss_EnumForms out --base64-input " +\
+                "ndrdump --debug-stdout spoolss spoolss_EnumForms out --base64-input " +\
                 "--input AAAAAQAAAAAAAAAAAAEAAACpqakAAA="
                 )
         except BlackboxProcessError as e:
@@ -372,7 +437,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                "ndrdump xattr xattr_NTACL struct --hex-input %s --validate" %
+                "ndrdump --debug-stdout xattr xattr_NTACL struct --hex-input %s --validate" %
                 self.data_path("xattr_NTACL.dat"))
         except BlackboxProcessError as e:
             self.fail(e)
@@ -387,7 +452,7 @@ dump OK
         expected = open(self.data_path("dnsp-DnssrvRpcRecord.txt")).read().encode('utf8')
         try:
             actual = self.check_output(
-                "ndrdump dnsp dnsp_DnssrvRpcRecord struct " +\
+                "ndrdump --debug-stdout dnsp dnsp_DnssrvRpcRecord struct " +\
                 "--input BQAPAAXwAAC3AAAAAAADhAAAAAAAAAAAAAoBAAA= "+\
                 "--base64-input --validate")
         except BlackboxProcessError as e:
@@ -419,7 +484,7 @@ dump OK
 '''
         try:
             actual = self.check_output(
-                "ndrdump krb5pac PAC_BUFFER struct --validate --input " +\
+                "ndrdump --debug-stdout krb5pac PAC_BUFFER struct --validate --input " +\
                 "QPM4QcaShwQAAAAAAAAABvX/ADw8Jf9wFh+gEoQ= --base64-input")
         except BlackboxProcessError as e:
             self.fail(e)
@@ -431,7 +496,7 @@ dump OK
         expected =  open(self.data_path("fuzzed_ntlmssp-CHALLENGE_MESSAGE.txt")).read().encode('utf8')
         try:
             actual = self.check_exit_code(
-                "ndrdump ntlmssp CHALLENGE_MESSAGE struct --validate --input " +\
+                "ndrdump --debug-stdout ntlmssp CHALLENGE_MESSAGE struct --validate --input " +\
                 "'AAAACwIAAAAAJwIAAAAAAAcAAAAAAAAAAIAbhG8uyk9dAL0mQE73MAAAAAAAAAAA' --base64-input",
                 1)
         except BlackboxProcessError as e:
@@ -449,7 +514,7 @@ dump OK
         expected =  open(self.data_path("fuzzed_drsuapi_DsGetNCChanges.txt"), 'rb').read()
         try:
             actual = self.check_output(
-                "ndrdump drsuapi 3 out --base64-input --input " +\
+                "ndrdump --debug-stdout drsuapi 3 out --base64-input --input " +\
                 "AQAAAAEAAAAGAKoAAAAGAKoGAAMAAQAAAAYAEwAAAAAAAAAA/wAAAAAAAAA/AAAAAAAAAAAAAAAAAAAAAABbAAAAAAAAAAAAAAkRAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPkAAAAAAAABAAD4BgATAAAAAAAAAAD/AAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAFsAAAAAAAAAAAAABgAQAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAMAAAABAAAACREAAAEAAAABAAAAAAAAAAYAEAABAAgAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAA=")
         except BlackboxProcessError as e:
             self.fail(e)
@@ -459,7 +524,7 @@ dump OK
     def test_ndrdump_fuzzed_ndr_compression(self):
         expected = 'pull returned Buffer Size Error'
         command = (
-            "ndrdump drsuapi 3 out --base64-input "
+            "ndrdump --debug-stdout drsuapi 3 out --base64-input "
             "--input BwAAAAcAAAAGAAAAAwAgICAgICAJAAAAICAgIAkAAAAgIAAA//////8=")
         try:
             actual = self.check_exit_code(command, 2)
@@ -482,7 +547,7 @@ dump OK
 dump OK
 '''
         command = (
-            "ndrdump dnsp dnsp_DnsProperty_short struct --base64-input "
+            "ndrdump --debug-stdout dnsp dnsp_DnsProperty_short struct --base64-input "
             "--input AAAAAAAAAAAAAAAAAQAAAJIAAAAAAAAA")
         try:
             actual = self.check_output(command)

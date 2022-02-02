@@ -22,7 +22,9 @@
 #ifndef _____LIB_UTIL_UTIL_TDB_H__
 #define _____LIB_UTIL_UTIL_TDB_H__
 
+#include "replace.h"
 #include <tdb.h>
+#include "libcli/util/ntstatus.h"
 
 /***************************************************************
  Make a TDB_DATA and keep the const warning in one place
@@ -96,20 +98,14 @@ TDB_DATA tdb_fetch_bystring(struct tdb_context *tdb, const char *keystr);
 int tdb_delete_bystring(struct tdb_context *tdb, const char *keystr);
 
 /****************************************************************************
- Atomic integer change. Returns old value. To create, set initial value in *oldval. 
+ Atomic integer change. Returns old value. To create, set initial value in *oldval.
 ****************************************************************************/
 int32_t tdb_change_int32_atomic(struct tdb_context *tdb, const char *keystr, int32_t *oldval, int32_t change_val);
 
 /****************************************************************************
- Atomic unsigned integer change. Returns old value. To create, set initial value in *oldval. 
+ Atomic unsigned integer change. Returns old value. To create, set initial value in *oldval.
 ****************************************************************************/
 bool tdb_change_uint32_atomic(struct tdb_context *tdb, const char *keystr, uint32_t *oldval, uint32_t change_val);
-
-/****************************************************************************
- Allow tdb_delete to be used as a tdb_traversal_fn.
-****************************************************************************/
-int tdb_traverse_delete_fn(struct tdb_context *the_tdb, TDB_DATA key, TDB_DATA dbuf,
-                     void *state);
 
 /****************************************************************************
  Return an NTSTATUS from a TDB_ERROR

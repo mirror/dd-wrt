@@ -115,6 +115,21 @@ enum FAKE_FILE_TYPE is_fake_file(const struct smb_filename *smb_fname)
 	return ret;
 }
 
+uint32_t dosmode_from_fake_filehandle(const struct fake_file_handle *ffh)
+{
+	if (ffh->type != FAKE_FILE_TYPE_QUOTA) {
+		DBG_ERR("Unexpected fake_file_handle: %d\n", ffh->type);
+		log_stack_trace();
+		return FILE_ATTRIBUTE_NORMAL;
+	}
+
+	/* This is what Windows 2016 returns */
+	return FILE_ATTRIBUTE_HIDDEN
+		| FILE_ATTRIBUTE_SYSTEM
+		| FILE_ATTRIBUTE_DIRECTORY
+		| FILE_ATTRIBUTE_ARCHIVE;
+}
+
 /****************************************************************************
  Open a fake quota file with a share mode.
 ****************************************************************************/
@@ -130,21 +145,6 @@ NTSTATUS open_fake_file(struct smb_request *req, connection_struct *conn,
 		loadparm_s3_global_substitution();
 	files_struct *fsp = NULL;
 	NTSTATUS status;
-
-	status = smbd_calculate_access_mask(conn,
-					conn->cwd_fsp,
-					smb_fname,
-					false,
-					access_mask,
-					&access_mask);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(10, ("open_fake_file: smbd_calculate_access_mask "
-			"on service[%s] file[%s] returned %s\n",
-			lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
-			smb_fname_str_dbg(smb_fname),
-			nt_errstr(status)));
-		return status;
-	}
 
 	/* access check */
 	if (geteuid() != sec_initial_uid()) {
@@ -183,6 +183,21 @@ NTSTATUS open_fake_file(struct smb_request *req, connection_struct *conn,
 	if (fsp->fake_file_handle==NULL) {
 		file_free(req, fsp);
 		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = smbd_calculate_access_mask_fsp(conn->cwd_fsp,
+					fsp,
+					false,
+					access_mask,
+					&access_mask);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("smbd_calculate_access_mask_fsp "
+			"on service[%s] file[%s] returned %s\n",
+			lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
+			smb_fname_str_dbg(smb_fname),
+			nt_errstr(status));
+		file_free(req, fsp);
+		return status;
 	}
 
 	*result = fsp;

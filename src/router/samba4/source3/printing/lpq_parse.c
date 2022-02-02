@@ -223,10 +223,16 @@ static time_t LPRng_time(char *time_string)
 	}
 
 	if ( atoi(time_string) < 24 ){
+		if (strlen(time_string) < 7) {
+			return (time_t)-1;
+		}
 		t->tm_hour = atoi(time_string);
 		t->tm_min = atoi(time_string+3);
 		t->tm_sec = atoi(time_string+6);
 	} else {
+		if (strlen(time_string) < 18) {
+			return (time_t)-1;
+		}
 		t->tm_year = atoi(time_string)-1900;
 		t->tm_mon = atoi(time_string+5)-1;
 		t->tm_mday = atoi(time_string+8);
@@ -1131,7 +1137,7 @@ bool parse_lpq_entry(enum printing_types printing_type,char *line,
 						return ret;
 					}
 				}
-				/* fallthrough */
+				FALL_THROUGH;
 			case LPSTAT_STOPPED:
 				for (i=0; stat1_strings[i]; i++) {
 					if (strstr_m(line,stat1_strings[i])) {
@@ -1140,7 +1146,7 @@ bool parse_lpq_entry(enum printing_types printing_type,char *line,
 						return ret;
 					}
 				}
-				/* fallthrough */
+				FALL_THROUGH;
 			case LPSTAT_ERROR:
 				for (i=0; stat2_strings[i]; i++) {
 					if (strstr_m(line,stat2_strings[i])) {

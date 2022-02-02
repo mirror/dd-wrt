@@ -616,7 +616,7 @@ test_ccache_access()
 	return 1
     fi
 
-    $SMBCLIENT //$SERVER_IP/tmp -C -U "${USERNAME}" $ADDARGS -c quit 2>&1
+    $SMBCLIENT //$SERVER_IP/tmp --use-winbind-ccache -U "${USERNAME}" $ADDARGS -c quit 2>&1
     ret=$?
 
     if [ $ret != 0 ] ; then
@@ -632,7 +632,7 @@ test_ccache_access()
 	return 1
     fi
 
-    $SMBCLIENT //$SERVER_IP/tmp -C -U "${USERNAME}" $ADDARGS -c quit 2>&1
+    $SMBCLIENT //$SERVER_IP/tmp --use-winbind-ccache -U "${USERNAME}" $ADDARGS -c quit 2>&1
     ret=$?
 
     if [ $ret -eq 0 ] ; then
@@ -1044,12 +1044,12 @@ EOF
 	return 1
     fi
 
-# This should fail with NT_STATUS_ACCESS_DENIED
-    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
+# This should fail with NT_STATUS_OBJECT_NAME_NOT_FOUND
+    echo "$out" | grep 'NT_STATUS_OBJECT_NAME_NOT_FOUND'
     ret=$?
     if [ $ret != 0 ] ; then
 	echo "$out"
-	echo "failed - should get NT_STATUS_ACCESS_DENIED listing \\widelinks_share\\source"
+	echo "failed - should get NT_STATUS_OBJECT_NAME_NOT_FOUND listing \\widelinks_share\\source"
 	return 1
     fi
 }
@@ -1105,16 +1105,17 @@ test_nosymlinks()
     rm -rf $local_test_dir
 
     local_nosymlink_target_file="nosymlink_target_file"
-    echo "$local_slink_target" > $local_nosymlink_target_file
+    echo "$local_slink_target" > $PREFIX/$local_nosymlink_target_file
 
     local_foobar_target_file="testfile"
-    echo "$share_target_file" > $local_foobar_target_file
+    echo "$share_target_file" > $PREFIX/$local_foobar_target_file
 
     tmpfile=$PREFIX/smbclient_interactive_prompt_commands
     cat > $tmpfile <<EOF
 mkdir $share_test_dir
 mkdir $share_foo_dir
 mkdir $share_foobar_dir
+lcd $PREFIX
 cd /$share_test_dir
 put $local_nosymlink_target_file
 cd /$share_foobar_dir
@@ -1127,8 +1128,8 @@ EOF
     out=`eval $cmd`
     ret=$?
     rm -f $tmpfile
-    rm -f $local_nosymlink_target_file
-    rm -f $local_foobar_target_file
+    rm -f $PREFIX/$local_nosymlink_target_file
+    rm -f $PREFIX/$local_foobar_target_file
 
     if [ $ret -ne 0 ] ; then
        echo "$out"
@@ -1167,11 +1168,11 @@ EOF
        return 1
     fi
 
-    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
+    echo "$out" | grep 'NT_STATUS_OBJECT_NAME_NOT_FOUND'
     ret=$?
     if [ $ret -ne 0 ] ; then
        echo "$out"
-       echo "failed - should get NT_STATUS_ACCESS_DENIED getting \\nosymlinks\\source"
+       echo "failed - should get NT_STATUS_OBJECT_NAME_NOT_FOUND getting \\nosymlinks\\source"
        return 1
     fi
 
@@ -1870,19 +1871,6 @@ EOF
     if [ $ret -ne 0 ] ; then
        echo "$out"
        echo "test_valid_users:valid_users_unix_group 'User from UNIX group in 'valid users' can login to service' failed - $ret"
-       return 1
-    fi
-
-    # User not in NIS group in "valid users" can't login to service
-    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_nis_group $ADDARGS < $tmpfile 2>&1'
-    eval echo "$cmd"
-    out=`eval $cmd`
-    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
-    ret=$?
-
-    if [ $ret -ne 0 ] ; then
-       echo "$out"
-       echo "test_valid_users:valid_users_nis_group 'User not in NIS group in 'valid users' can't login to service' failed - $ret"
        return 1
     fi
 

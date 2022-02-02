@@ -129,7 +129,6 @@ static bool test_DsCrackNamesMatrix(struct torture_context *tctx,
 			break;
 		case DRSUAPI_DS_NAME_FORMAT_UNKNOWN:	/* should fail as we ask server to convert to Unknown format */
 		case DRSUAPI_DS_NAME_FORMAT_DNS_DOMAIN:	
-		case DRSUAPI_DS_NAME_FORMAT_SID_OR_SID_HISTORY:	
 			if (r.out.ctr->ctr1->array[0].status != DRSUAPI_DS_NAME_STATUS_RESOLVE_ERROR) {
 				err_msg = talloc_asprintf(mem_ctx,
 						"Unexpected error (%d): This name lookup should fail",
@@ -156,7 +155,6 @@ static bool test_DsCrackNamesMatrix(struct torture_context *tctx,
 			n_from[i] = service_principal_name;
 			break;
 		case DRSUAPI_DS_NAME_FORMAT_UNKNOWN:
-		case DRSUAPI_DS_NAME_FORMAT_SID_OR_SID_HISTORY:	
 		case DRSUAPI_DS_NAME_FORMAT_DNS_DOMAIN:	
 			n_from[i] = NULL;
 			break;
@@ -803,7 +801,7 @@ bool test_DsCrackNames(struct torture_context *tctx,
 				.format_offered	= DRSUAPI_DS_NAME_FORMAT_GUID,
 				.format_desired	= DRSUAPI_DS_NAME_FORMAT_FQDN_1779,
 				.comment = "BIND GUID (ie, not in the directory)",
-				.str = GUID_string2(mem_ctx, &priv->bind_guid),
+				.str = DRSUAPI_DS_BIND_GUID,
 				.status = DRSUAPI_DS_NAME_STATUS_NOT_FOUND
 			},
 			{

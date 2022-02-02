@@ -1,3 +1,43 @@
+-- Portions of these ASN.1 modules are structures are from RFC6113
+-- authored by S. Hartman (Painless Security) and L. Zhu (Microsoft)
+--
+-- Copyright (c) 2011 IETF Trust and the persons identified as authors of the
+-- code. All rights reserved.
+--
+-- Redistribution and use in source and binary forms, with or without
+-- modification, is permitted pursuant to, and subject to the license terms
+-- contained in, the Simplified BSD License set forth in Section 4.c of the IETF
+-- Trust’s Legal Provisions Relating to IETF Documents
+-- (http://trustee.ietf.org/license-info).
+--
+-- BSD License:
+--
+-- Copyright (c) 2011 IETF Trust and the persons identified as authors of the code. All rights reserved.
+-- Redistribution and use in source and binary forms, with or without modification, are permitted provided
+-- that the following conditions are met:
+-- • Redistributions of source code must retain the above copyright notice, this list of conditions and
+-- the following disclaimer.
+--
+-- • Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+-- and the following disclaimer in the documentation and/or other materials provided with the
+-- distribution.
+--
+-- • Neither the name of Internet Society, IETF or IETF Trust, nor the names of specific contributors,
+-- may be used to endorse or promote products derived from this software without specific prior written
+-- permission.
+-- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+-- AND  ANY  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+-- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+-- ARE  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+-- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+-- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+-- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+-- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+-- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+-- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+-- POSSIBILITY OF SUCH DAMAGE.
+--
+
 KerberosV5Spec2 {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2) modules(4) krb5spec2(2)
@@ -84,7 +124,7 @@ KerberosFlags   ::= BIT STRING (SIZE (1..32))
 
 EncryptedData   ::= SEQUENCE {
         etype   [0] EncryptionType, --Int32 EncryptionType --
-        kvno    [1] UInt32 OPTIONAL,
+        kvno    [1] Int32 OPTIONAL,
         cipher  [2] OCTET STRING -- ciphertext
 }
 
@@ -386,14 +426,14 @@ PA-ENC-TS-ENC           ::= SEQUENCE {
 }
 
 ETYPE-INFO-ENTRY        ::= SEQUENCE {
-        etype           [0] Int32,
+        etype           [0] EncryptionType, --Int32 EncryptionType --
         salt            [1] OCTET STRING OPTIONAL
 }
 
 ETYPE-INFO              ::= SEQUENCE OF ETYPE-INFO-ENTRY
 
 ETYPE-INFO2-ENTRY       ::= SEQUENCE {
-        etype           [0] Int32,
+        etype           [0] EncryptionType, --Int32 EncryptionType --
         salt            [1] KerberosString OPTIONAL,
         s2kparams       [2] OCTET STRING OPTIONAL
 }
@@ -425,9 +465,111 @@ PA-S4U2Self ::= SEQUENCE {
         auth            [3] KerberosString
 }
 
+--
+--
+-- MS-KILE Start
 
+KERB-ERROR-DATA ::= SEQUENCE {
+        data-type [1] KerbErrorDataType,
+        data-value [2] OCTET STRING OPTIONAL
+}
 
+KerbErrorDataType ::= INTEGER
 
+KERB-PA-PAC-REQUEST ::= SEQUENCE {
+        include-pac[0] BOOLEAN --If TRUE, and no pac present, include PAC.
+                               --If FALSE, and PAC present, remove PAC
+}
+
+KERB-LOCAL ::= OCTET STRING -- Implementation-specific data which MUST be
+                            -- ignored if Kerberos client is not local.
+
+KERB-AD-RESTRICTION-ENTRY ::= SEQUENCE {
+        restriction-type [0] Int32,
+        restriction [1] OCTET STRING -- LSAP_TOKEN_INFO_INTEGRITY structure
+}
+
+PA-SUPPORTED-ENCTYPES ::= Int32 -- Supported Encryption Types Bit Field --
+
+PACOptionFlags ::= KerberosFlags -- Claims (0)
+                                 -- Branch Aware (1)
+                                 -- Forward to Full DC (2)
+                                 -- Resource Based Constrained Delegation (3)
+PA-PAC-OPTIONS ::= SEQUENCE {
+        options [0] PACOptionFlags
+}
+-- Note: KerberosFlags ::= BIT STRING (SIZE (32..MAX))
+-- minimum number of bits shall be sent, but no fewer than 32
+
+KERB-KEY-LIST-REQ ::= SEQUENCE OF EncryptionType -- Int32 encryption type --
+KERB-KEY-LIST-REP ::= SEQUENCE OF EncryptionKey
+
+FastOptions     ::= BIT STRING {
+        reserved(0),
+        hide-client-names(1),
+        kdc-follow-referrals(16)
+}
+
+KrbFastReq      ::= SEQUENCE {
+        fast-options    [0] FastOptions,
+        padata          [1] SEQUENCE OF PA-DATA,
+        req-body        [2] KDC-REQ-BODY,
+        ...
+}
+
+KrbFastArmor    ::= SEQUENCE {
+        armor-type      [0] Int32,
+        armor-value     [1] OCTET STRING,
+        ...
+}
+
+KrbFastArmoredReq ::= SEQUENCE {
+        armor           [0] KrbFastArmor OPTIONAL,
+        req-checksum    [1] Checksum,
+        enc-fast-req    [2] EncryptedData -- KrbFastReq --
+}
+
+PA-FX-FAST-REQUEST ::= CHOICE {
+        armored-data    [0] KrbFastArmoredReq,
+        ...
+}
+
+KrbFastFinished ::= SEQUENCE {
+        timestamp       [0] KerberosTime,
+        usec            [1] Int32,
+        crealm          [2] Realm,
+        cname           [3] PrincipalName,
+        ticket-checksum [4] Checksum,
+        ...
+}
+
+KrbFastResponse ::= SEQUENCE {
+        padata          [0] SEQUENCE OF PA-DATA,
+                -- padata typed holes.
+        strengthen-key  [1] EncryptionKey OPTIONAL,
+                -- This, if present, strengthens the reply key for AS and
+                -- TGS. MUST be present for TGS.
+                -- MUST be absent in KRB-ERROR.
+        finished        [2] KrbFastFinished OPTIONAL,
+	        -- Present in AS or TGS reply; absent otherwise.
+        nonce           [3] UInt32,
+	        -- Nonce from the client request.
+        ...
+}
+
+KrbFastArmoredRep ::= SEQUENCE {
+        enc-fast-rep    [0] EncryptedData, -- KrbFastResponse --
+        ...
+}
+
+PA-FX-FAST-REPLY ::= CHOICE {
+        armored-data    [0] KrbFastArmoredRep,
+        ...
+}
+
+-- MS-KILE End
+--
+--
 
 --
 --
@@ -490,6 +632,7 @@ KDCOptionsValues      ::= BIT STRING { -- KerberosFlags
         opt-hardware-auth(11),
         unused12(12),
         unused13(13),
+        cname-in-addl-tkt(14),
 -- Canonicalize is used by RFC 6806
         canonicalize(15),
 -- 26 was unused in 1510
@@ -502,6 +645,15 @@ KDCOptionsValues      ::= BIT STRING { -- KerberosFlags
 }
 KDCOptionsSequence ::= SEQUENCE {
         dummy [0] KDCOptionsValues
+}
+
+APOptionsValues ::= BIT STRING { -- KerberosFlags
+        reserved(0),
+        use-session-key(1),
+        mutual-required(2)
+}
+APOptionsSequence ::= SEQUENCE {
+        dummy [0] APOptionsValues
 }
 
 MessageTypeValues ::= INTEGER {
@@ -583,7 +735,8 @@ PADataTypeValues ::= INTEGER {
 	kRB5-PADATA-PKINIT-KX(147),		-- krb-wg-anon
 	kRB5-PADATA-PKU2U-NAME(148),		-- zhu-pku2u
 	kRB5-PADATA-REQ-ENC-PA-REP(149),	--
-	kRB5-PADATA-SUPPORTED-ETYPES(165)	-- MS-KILE
+	kRB5-PADATA-SUPPORTED-ETYPES(165),	-- MS-KILE
+	kRB5-PADATA-PAC-OPTIONS(167)		-- MS-KILE
 }
 PADataTypeSequence ::= SEQUENCE {
         dummy [0] PADataTypeValues
@@ -667,6 +820,24 @@ EncryptionTypeValues ::= INTEGER {
 }
 EncryptionTypeSequence ::= SEQUENCE {
         dummy [0] EncryptionTypeValues
+}
+
+KerbErrorDataTypeValues ::= INTEGER {
+        kERB-AP-ERR-TYPE-SKEW-RECOVERY(2),
+        kERB-ERR-TYPE-EXTENDED(3)
+}
+KerbErrorDataTypeSequence ::= SEQUENCE {
+        dummy [0] KerbErrorDataTypeValues
+}
+
+PACOptionFlagsValues ::= BIT STRING { -- KerberosFlags
+        claims(0),
+        branch-aware(1),
+        forward-to-full-dc(2),
+        resource-based-constrained-delegation(3)
+}
+PACOptionFlagsSequence ::= SEQUENCE {
+        dummy [0] PACOptionFlagsValues
 }
 
 END

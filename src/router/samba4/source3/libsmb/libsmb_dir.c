@@ -25,7 +25,6 @@
 #include "includes.h"
 #include "libsmb/namequery.h"
 #include "libsmb/libsmb.h"
-#include "auth_info.h"
 #include "libsmbclient.h"
 #include "libsmb_internal.h"
 #include "rpc_client/cli_pipe.h"
@@ -948,8 +947,7 @@ SMBC_opendir_ctx(SMBCCTX *context,
 				return NULL;
 			}
 
-			creds = get_cmdline_auth_info_creds(
-					context->internal->auth_info);
+			creds = context->internal->creds;
 
 			status = cli_resolve_path(
 				frame, "",
@@ -1607,7 +1605,7 @@ SMBC_mkdir_ctx(SMBCCTX *context,
 
 	}
 
-	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+	creds = context->internal->creds;
 
 	/*d_printf(">>>mkdir: resolving %s\n", path);*/
 	status = cli_resolve_path(frame, "",
@@ -1621,9 +1619,10 @@ SMBC_mkdir_ctx(SMBCCTX *context,
 	}
 	/*d_printf(">>>mkdir: resolved path as %s\n", targetpath);*/
 
-	if (!NT_STATUS_IS_OK(cli_mkdir(targetcli, targetpath))) {
-		errno = SMBC_errno(context, targetcli);
+	status = cli_mkdir(targetcli, targetpath);
+	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(frame);
+		errno = cli_status_to_errno(status);
 		return -1;
 
 	}
@@ -1721,7 +1720,7 @@ SMBC_rmdir_ctx(SMBCCTX *context,
 
 	}
 
-	creds = get_cmdline_auth_info_creds(context->internal->auth_info),
+	creds = context->internal->creds;
 
 	/*d_printf(">>>rmdir: resolving %s\n", path);*/
 	status = cli_resolve_path(frame, "",
@@ -1903,7 +1902,7 @@ SMBC_lseekdir_ctx(SMBCCTX *context,
 
 	/* Now, check what we were passed and see if it is OK ... */
 
-	if (dirent == NULL) {  /* Seek to the begining of the list */
+	if (dirent == NULL) {  /* Seek to the beginning of the list */
 
 		dir->dir_next = dir->dir_list;
 
@@ -2029,7 +2028,7 @@ SMBC_chmod_ctx(SMBCCTX *context,
 		return -1;  /* errno set by SMBC_server */
 	}
 	
-	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+	creds = context->internal->creds;
 
 	/*d_printf(">>>unlink: resolving %s\n", path);*/
 	status = cli_resolve_path(frame, "",
@@ -2227,7 +2226,7 @@ SMBC_unlink_ctx(SMBCCTX *context,
 
 	}
 
-	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+	creds = context->internal->creds;
 
 	/*d_printf(">>>unlink: resolving %s\n", path);*/
 	status = cli_resolve_path(frame, "",
@@ -2403,7 +2402,7 @@ SMBC_rename_ctx(SMBCCTX *ocontext,
 				    	   password1);
 
 	/*d_printf(">>>rename: resolving %s\n", path1);*/
-	ocreds = get_cmdline_auth_info_creds(ocontext->internal->auth_info);
+	ocreds = ocontext->internal->creds;
 
 	status = cli_resolve_path(frame, "",
 				  ocreds,
@@ -2423,7 +2422,7 @@ SMBC_rename_ctx(SMBCCTX *ocontext,
 	
 	/*d_printf(">>>rename: resolved path as %s\n", targetpath1);*/
 	/*d_printf(">>>rename: resolving %s\n", path2);*/
-	ncreds = get_cmdline_auth_info_creds(ncontext->internal->auth_info);
+	ncreds = ncontext->internal->creds;
 
 	status = cli_resolve_path(frame, "",
 				  ncreds,
