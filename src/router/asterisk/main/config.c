@@ -1836,7 +1836,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 						if (newcat) {
 							ast_category_destroy(newcat);
 						}
-						ast_log(LOG_ERROR, "Inheritence requested, but allocation failed\n");
+						ast_log(LOG_ERROR, "Inheritance requested, but allocation failed\n");
 						return -1;
 					}
 				}
@@ -3384,16 +3384,19 @@ int ast_realtime_require_field(const char *family, ...)
 	struct ast_config_engine *eng;
 	char db[256];
 	char table[256];
-	va_list ap;
+	va_list ap, aq;
 	int res = -1, i;
 
 	va_start(ap, family);
 	for (i = 1; ; i++) {
 		if ((eng = find_engine(family, i, db, sizeof(db), table, sizeof(table)))) {
+			va_copy(aq, ap);
 			/* If the require succeeds, it returns 0. */
-			if (eng->require_func && !(res = eng->require_func(db, table, ap))) {
+			if (eng->require_func && !(res = eng->require_func(db, table, aq))) {
+				va_end(aq);
 				break;
 			}
+			va_end(aq);
 		} else {
 			break;
 		}
@@ -3730,7 +3733,7 @@ int32_done:
 			error = 1;
 			goto uint32_done;
 		}
-		/* strtoul will happilly and silently negate negative numbers */
+		/* strtoul will happily and silently negate negative numbers */
 		arg = ast_skip_blanks(arg);
 		if (*arg == '-') {
 			error = 1;

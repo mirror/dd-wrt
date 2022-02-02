@@ -401,6 +401,19 @@ void ast_copy_string(char *dst, const char *src, size_t size),
 )
 
 /*!
+ * \brief Check if there is an exact match for 'needle' between delimiters in 'haystack'.
+ *
+ * \note This will skip extra leading spaces between delimiters.
+ *
+ * \param needle The string to search for
+ * \param haystack The string searched in
+ * \param delim The haystack delimiter
+ *
+ * \return True if an exact match for needle is in haystack, false otherwise
+ */
+int ast_in_delimited_string(const char *needle, const char *haystack, char delim);
+
+/*!
   \brief Build a string in a buffer, designed to be called repeatedly
 
   \note This method is not recommended. New code should use ast_str_*() instead.
@@ -885,7 +898,7 @@ struct ast_str *__ast_str_thread_get(struct ast_threadstorage *ts,
 
 /*!
  * \brief Error codes from __ast_str_helper()
- * The undelying processing to manipulate dynamic string is done
+ * The underlying processing to manipulate dynamic string is done
  * by __ast_str_helper(), which can return a success or a
  * permanent failure (e.g. no memory).
  */
@@ -1104,30 +1117,35 @@ int __attribute__((format(printf, 3, 4))) ast_str_append(
  * \details
  * There are a few query functions scattered around that need an ast_str in which
  * to assemble the results but it's not always convenient to create an ast_str
- * and ensure it's freed just to print a log message.  For example...
+ * and ensure it's freed just to print a log message.  For example:
  *
+ * \code
  * struct ast_str *temp = ast_str_create(128);
  * ast_log(LOG_INFO, "Format caps: %s\n", ast_format_cap_get_names(caps, &temp));
  * ast_free(temp);
+ * \endcode
  *
  * That's not bad if you only have to do it once but some of our code that deals
  * with streams and codecs is pretty complex and good instrumentation is essential.
  * The aim of this function is to make that easier.
  *
- * With this macro, the above code can be simplified as follows...
- * \example
+ * With this macro, the above code can be simplified:
+ *
+ * \code
  * ast_log(LOG_INFO, "Format caps: %s\n",
  *     ast_str_tmp(128, ast_format_cap_get_names(caps, &STR_TMP));
+ * \endcode
  *
  * STR_TMP will always be a reference to the temporary ast_str created
  * by the macro.  Its scope is limited by the macro so you can use it multiple
- * times without conflict.
+ * times without conflict:
  *
- * \example
+ * \code
  * ast_log(LOG_INFO, "Format caps in: %s  Format caps out: %s\n",
  *     ast_str_tmp(128, ast_format_cap_get_names(caps_in, &STR_TMP),
  *     ast_str_tmp(128, ast_format_cap_get_names(caps_out, &STR_TMP)
  *     );
+ * \endcode
  *
  * \warning
  * The returned string is stack allocated so don't go overboard.
@@ -1417,7 +1435,7 @@ int ast_strings_match(const char *left, const char *op, const char *right);
  * \warning The original string and *buffer will be modified.
  *
  * \details
- * Both '\n' and '\r\n' are treated as single delimiters but consecutive occurrances of
+ * Both '\n' and '\r\n' are treated as single delimiters but consecutive occurrences of
  * the delimiters are NOT considered to be a single delimiter.  This preserves blank
  * lines in the input.
  *

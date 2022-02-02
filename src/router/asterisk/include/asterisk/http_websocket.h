@@ -31,7 +31,8 @@
 #define AST_DEFAULT_WEBSOCKET_WRITE_TIMEOUT_STR "100"
 
 /*!
- * \file http_websocket.h
+ * \file
+ *
  * \brief Support for WebSocket connections within the Asterisk HTTP server and client
  *        WebSocket connections to a server.
  *
@@ -121,7 +122,7 @@ struct ast_websocket_protocol {
 	unsigned int version;
 	/*! \brief Callback called when a new session is attempted. Optional. */
 	ast_websocket_pre_callback session_attempted;
-	/* \brief Callback called when a new session is established. Mandatory. */
+	/*! \brief Callback called when a new session is established. Mandatory. */
 	ast_websocket_callback session_established;
 };
 

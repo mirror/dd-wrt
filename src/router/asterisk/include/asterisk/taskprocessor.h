@@ -17,7 +17,8 @@
  */
 
 /*!
- * \file taskprocessor.h
+ * \file
+ *
  * \brief An API for managing task processing threads that can be shared across modules
  *
  * \author Dwayne M. Hubbard <dhubbard@digium.com>
@@ -352,7 +353,7 @@ unsigned int ast_taskprocessor_alert_get(void);
 
 
 /*!
- * \brief Get the current taskprocessor high water alert count by sybsystem.
+ * \brief Get the current taskprocessor high water alert count by subsystem.
  * \since 13.26.0
  * \since 16.3.0
  *

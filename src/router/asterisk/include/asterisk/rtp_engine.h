@@ -1519,7 +1519,7 @@ void ast_rtp_codecs_payloads_set_m_type(struct ast_rtp_codecs *codecs, struct as
  * \param instance Optionally the instance that the codecs structure belongs to
  * \param payload Numerical payload that was seen in the a=rtpmap: SDP line
  * \param mimetype The string mime type that was seen
- * \param mimesubtype The strin mime sub type that was seen
+ * \param mimesubtype The string mime sub type that was seen
  * \param options Optional options that may change the behavior of this specific payload
  *
  * \retval 0 success
@@ -2723,6 +2723,8 @@ struct stasis_message_type *ast_rtp_rtcp_sent_type(void);
  */
 struct stasis_message_type *ast_rtp_rtcp_received_type(void);
 
+/*! @} */
+
 #ifdef TEST_FRAMEWORK
 /*!
  * \brief Get the maximum size of the receive buffer
@@ -2897,8 +2899,6 @@ uintmax_t ast_debug_category_ice_id(void);
  */
 #define ast_debug_ice(sublevel, ...) \
 	ast_debug_category(sublevel, AST_DEBUG_CATEGORY_ICE, __VA_ARGS__)
-
-/* @} */
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

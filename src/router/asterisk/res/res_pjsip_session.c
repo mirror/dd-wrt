@@ -1742,6 +1742,7 @@ static void set_from_header(struct ast_sip_session *session)
  * \internal
  * \brief Validate a media state
  *
+ * \param session_name For log messages
  * \param state Media state
  *
  * \retval 1 The media state is valid
@@ -1827,7 +1828,7 @@ end:
  * \param delayed_pending_state The pending media state at the time the resuest was queued
  * \param delayed_active_state The active media state  at the time the resuest was queued
  * \param current_active_state The current active media state
- * \param run_validation Whether to run validation on the resulting media state or not
+ * \param run_post_validation Whether to run validation on the resulting media state or not
  *
  * \returns New merged topology or NULL if there's an error
  *
@@ -3098,7 +3099,7 @@ struct ast_sip_session *ast_sip_session_alloc(struct ast_sip_endpoint *endpoint,
 
 	session->authentication_challenge_count = 0;
 
-	/* Fire seesion begin handlers */
+	/* Fire session begin handlers */
 	handle_session_begin(session);
 
 	/* Avoid unnecessary ref manipulation to return a session */
@@ -3582,8 +3583,6 @@ int ast_sip_session_defer_termination(struct ast_sip_session *session)
  * \since 13.5.0
  *
  * \param session Which session to stop the timer.
- *
- * \return Nothing
  */
 static void sip_session_defer_termination_stop_timer(struct ast_sip_session *session)
 {
@@ -4051,6 +4050,11 @@ static void handle_new_invite_request(pjsip_rx_data *rdata)
 {
 	RAII_VAR(struct ast_sip_endpoint *, endpoint,
 			ast_pjsip_rdata_get_endpoint(rdata), ao2_cleanup);
+	static const pj_str_t identity_str = { "Identity", 8 };
+	const pj_str_t use_identity_header_str = {
+		AST_STIR_SHAKEN_RESPONSE_STR_USE_IDENTITY_HEADER,
+		strlen(AST_STIR_SHAKEN_RESPONSE_STR_USE_IDENTITY_HEADER)
+	};
 	pjsip_inv_session *inv_session = NULL;
 	struct ast_sip_session *session;
 	struct new_invite invite;
@@ -4059,6 +4063,14 @@ static void handle_new_invite_request(pjsip_rx_data *rdata)
 	SCOPE_ENTER(1, "Request: %s\n", res ? req_uri : "");
 
 	ast_assert(endpoint != NULL);
+
+	if ((endpoint->stir_shaken & AST_SIP_STIR_SHAKEN_VERIFY) &&
+		!ast_sip_rdata_get_header_value(rdata, identity_str)) {
+		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata,
+			AST_STIR_SHAKEN_RESPONSE_CODE_USE_IDENTITY_HEADER, &use_identity_header_str, NULL, NULL);
+		ast_debug(3, "No Identity header when we require one\n");
+		return;
+	}
 
 	inv_session = pre_session_setup(rdata, endpoint);
 	if (!inv_session) {
