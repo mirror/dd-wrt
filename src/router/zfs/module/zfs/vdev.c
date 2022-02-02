@@ -81,22 +81,22 @@
  * 1 << (spa_slop_shift + 1), on small pools the usable space may be reduced
  * (by more than 1<<spa_slop_shift) due to the embedded slog metaslab.
  */
-int zfs_embedded_slog_min_ms = 64;
+static int zfs_embedded_slog_min_ms = 64;
 
 /* default target for number of metaslabs per top-level vdev */
-int zfs_vdev_default_ms_count = 200;
+static int zfs_vdev_default_ms_count = 200;
 
 /* minimum number of metaslabs per top-level vdev */
-int zfs_vdev_min_ms_count = 16;
+static int zfs_vdev_min_ms_count = 16;
 
 /* practical upper limit of total metaslabs per top-level vdev */
-int zfs_vdev_ms_count_limit = 1ULL << 17;
+static int zfs_vdev_ms_count_limit = 1ULL << 17;
 
 /* lower limit for metaslab size (512M) */
-int zfs_vdev_default_ms_shift = 29;
+static int zfs_vdev_default_ms_shift = 29;
 
 /* upper limit for metaslab size (16G) */
-int zfs_vdev_max_ms_shift = 34;
+static const int zfs_vdev_max_ms_shift = 34;
 
 int vdev_validate_skip = B_FALSE;
 
@@ -109,18 +109,18 @@ int zfs_vdev_dtl_sm_blksz = (1 << 12);
 /*
  * Rate limit slow IO (delay) events to this many per second.
  */
-unsigned int zfs_slow_io_events_per_second = 20;
+static unsigned int zfs_slow_io_events_per_second = 20;
 
 /*
  * Rate limit checksum events after this many checksum errors per second.
  */
-unsigned int zfs_checksum_events_per_second = 20;
+static unsigned int zfs_checksum_events_per_second = 20;
 
 /*
  * Ignore errors during scrub/resilver.  Allows to work around resilver
  * upon import when there are pool errors.
  */
-int zfs_scan_ignore_errors = 0;
+static int zfs_scan_ignore_errors = 0;
 
 /*
  * vdev-wide space maps that have lots of entries written to them at
@@ -216,7 +216,7 @@ vdev_dbgmsg_print_tree(vdev_t *vd, int indent)
  * Virtual device management.
  */
 
-static vdev_ops_t *vdev_ops_table[] = {
+static const vdev_ops_t *const vdev_ops_table[] = {
 	&vdev_root_ops,
 	&vdev_raidz_ops,
 	&vdev_draid_ops,
@@ -238,7 +238,7 @@ static vdev_ops_t *vdev_ops_table[] = {
 static vdev_ops_t *
 vdev_getops(const char *type)
 {
-	vdev_ops_t *ops, **opspp;
+	const vdev_ops_t *ops, *const *opspp;
 
 	for (opspp = vdev_ops_table; (ops = *opspp) != NULL; opspp++)
 		if (strcmp(ops->vdev_op_type, type) == 0)
@@ -5476,7 +5476,10 @@ vdev_props_set_sync(void *arg, dmu_tx_t *tx)
 	vdev_guid = fnvlist_lookup_uint64(nvp, ZPOOL_VDEV_PROPS_SET_VDEV);
 	nvprops = fnvlist_lookup_nvlist(nvp, ZPOOL_VDEV_PROPS_SET_PROPS);
 	vd = spa_lookup_by_guid(spa, vdev_guid, B_TRUE);
-	VERIFY(vd != NULL);
+
+	/* this vdev could get removed while waiting for this sync task */
+	if (vd == NULL)
+		return;
 
 	mutex_enter(&spa->spa_props_lock);
 
@@ -6035,7 +6038,6 @@ EXPORT_SYMBOL(vdev_online);
 EXPORT_SYMBOL(vdev_offline);
 EXPORT_SYMBOL(vdev_clear);
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, default_ms_count, INT, ZMOD_RW,
 	"Target number of metaslabs per top-level vdev");
 
@@ -6051,9 +6053,11 @@ ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, ms_count_limit, INT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs, zfs_, slow_io_events_per_second, UINT, ZMOD_RW,
 	"Rate limit slow IO (delay) events to this many per second");
 
+/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs, zfs_, checksum_events_per_second, UINT, ZMOD_RW,
 	"Rate limit checksum events to this many checksum errors per second "
-	"(do not set below zed threshold).");
+	"(do not set below ZED threshold).");
+/* END CSTYLED */
 
 ZFS_MODULE_PARAM(zfs, zfs_, scan_ignore_errors, INT, ZMOD_RW,
 	"Ignore errors during resilver/scrub");
@@ -6067,6 +6071,7 @@ ZFS_MODULE_PARAM(zfs, zfs_, nocacheflush, INT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs, zfs_, embedded_slog_min_ms, INT, ZMOD_RW,
 	"Minimum number of metaslabs required to dedicate one for log blocks");
 
+/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM_CALL(zfs_vdev, zfs_vdev_, min_auto_ashift,
 	param_set_min_auto_ashift, param_get_ulong, ZMOD_RW,
 	"Minimum ashift used when creating new top-level vdevs");

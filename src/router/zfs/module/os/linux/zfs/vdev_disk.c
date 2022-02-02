@@ -446,7 +446,7 @@ vdev_submit_bio_impl(struct bio *bio)
 #ifdef HAVE_1ARG_SUBMIT_BIO
 	(void) submit_bio(bio);
 #else
-	(void) submit_bio(0, bio);
+	(void) submit_bio(bio_data_dir(bio), bio);
 #endif
 }
 
@@ -919,7 +919,7 @@ param_set_vdev_scheduler(const char *val, zfs_kernel_param_t *kp)
 	return (error);
 }
 
-char *zfs_vdev_scheduler = "unused";
+static const char *zfs_vdev_scheduler = "unused";
 module_param_call(zfs_vdev_scheduler, param_set_vdev_scheduler,
     param_get_charp, &zfs_vdev_scheduler, 0644);
 MODULE_PARM_DESC(zfs_vdev_scheduler, "I/O scheduler");

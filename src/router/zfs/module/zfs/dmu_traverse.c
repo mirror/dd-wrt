@@ -39,9 +39,9 @@
 #include <sys/callb.h>
 #include <sys/zfeature.h>
 
-int32_t zfs_pd_bytes_max = 50 * 1024 * 1024;	/* 50MB */
-int32_t send_holes_without_birth_time = 1;
-int32_t zfs_traverse_indirect_prefetch_limit = 32;
+static int32_t zfs_pd_bytes_max = 50 * 1024 * 1024;	/* 50MB */
+static int32_t send_holes_without_birth_time = 1;
+static int32_t zfs_traverse_indirect_prefetch_limit = 32;
 
 typedef struct prefetch_data {
 	kmutex_t pd_mtx;
@@ -809,7 +809,6 @@ traverse_pool(spa_t *spa, uint64_t txg_start, int flags,
 EXPORT_SYMBOL(traverse_dataset);
 EXPORT_SYMBOL(traverse_pool);
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs, zfs_, pd_bytes_max, INT, ZMOD_RW,
 	"Max number of bytes to prefetch");
 
@@ -822,6 +821,6 @@ MODULE_PARM_DESC(ignore_hole_birth,
 	"Alias for send_holes_without_birth_time");
 #endif
 
+/* CSTYLED */
 ZFS_MODULE_PARAM(zfs, , send_holes_without_birth_time, INT, ZMOD_RW,
 	"Ignore hole_birth txg for zfs send");
-/* END CSTYLED */
