@@ -257,6 +257,9 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 	mt7915_init_bitrate_mask(vif);
 	memset(&mvif->cap, -1, sizeof(mvif->cap));
 
+	mt7915_mcu_add_bss_info(phy, vif, true);
+	mt7915_mcu_add_sta(dev, vif, NULL, true);
+
 out:
 	mutex_unlock(&dev->mt76.mutex);
 
@@ -308,7 +311,8 @@ static void mt7915_init_dfs_state(struct mt7915_phy *phy)
 	if (hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)
 		return;
 
-	if (!(chandef->chan->flags & IEEE80211_CHAN_RADAR))
+	if (!(chandef->chan->flags & IEEE80211_CHAN_RADAR) &&
+	    !(mphy->chandef.chan->flags & IEEE80211_CHAN_RADAR))
 		return;
 
 	if (mphy->chandef.chan->center_freq == chandef->chan->center_freq &&
@@ -484,11 +488,10 @@ static int
 mt7915_conf_tx(struct ieee80211_hw *hw, struct ieee80211_vif *vif, u16 queue,
 	       const struct ieee80211_tx_queue_params *params)
 {
-	struct mt7915_dev *dev = mt7915_hw_dev(hw);
 	struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
 
 	/* no need to update right away, we'll get BSS_CHANGED_QOS */
-	queue = mt7915_lmac_mapping(dev, queue);
+	queue = mt76_connac_lmac_mapping(queue);
 	mvif->queue_params[queue] = *params;
 
 	return 0;
@@ -1329,6 +1332,55 @@ mt7915_twt_teardown_request(struct ieee80211_hw *hw,
 	mutex_lock(&dev->mt76.mutex);
 	mt7915_mac_twt_teardown_flow(dev, msta, flowid);
 	mutex_unlock(&dev->mt76.mutex);
+}
+
+static int
+mt7915_set_radar_background(struct ieee80211_hw *hw,
+			    struct cfg80211_chan_def *chandef)
+{
+	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+	struct mt7915_dev *dev = phy->dev;
+	int ret = -EINVAL;
+	bool running;
+
+	mutex_lock(&dev->mt76.mutex);
+
+	if (dev->mt76.region == NL80211_DFS_UNSET)
+		goto out;
+
+	if (dev->rdd2_phy && dev->rdd2_phy != phy) {
+		/* rdd2 is already locked */
+		ret = -EBUSY;
+		goto out;
+	}
+
+	/* rdd2 already configured on a radar channel */
+	running = dev->rdd2_phy &&
+		  cfg80211_chandef_valid(&dev->rdd2_chandef) &&
+		  !!(dev->rdd2_chandef.chan->flags & IEEE80211_CHAN_RADAR);
+
+	if (!chandef || running ||
+	    !(chandef->chan->flags & IEEE80211_CHAN_RADAR)) {
+		ret = mt7915_mcu_rdd_background_enable(phy, NULL);
+		if (ret)
+			goto out;
+
+		if (!running)
+			goto update_phy;
+	}
+
+	ret = mt7915_mcu_rdd_background_enable(phy, chandef);
+	if (ret)
+		goto out;
+
+update_phy:
+	dev->rdd2_phy = chandef ? phy : NULL;
+	if (chandef)
+		dev->rdd2_chandef = *chandef;
+out:
+	mutex_unlock(&dev->mt76.mutex);
+
+	return ret;
 }
 
 const struct ieee80211_ops mt7915_ops = {
