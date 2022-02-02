@@ -77,6 +77,8 @@ asterisk-configure: util-linux-configure jansson editline zlib minidlna
 	LIBUUID_INCLUDE="-I $(INSTALLDIR)/util-linux/usr/include" \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIB="-L$(TOP)/ncurses/lib -lncurses" \
+	OPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
+	OPENSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
 	JANSSON_CFLAGS="-I$(TOP)/jansson/src" \
 	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/minidlna/lib -lsqlite3 -L$(TOP)/openssl" \
 	LIBEDIT_CFLAGS="-I$(TOP)/editline/src" \
