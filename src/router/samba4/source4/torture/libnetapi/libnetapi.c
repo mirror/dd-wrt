@@ -20,7 +20,7 @@
 #include "source3/include/includes.h"
 #include "torture/smbtorture.h"
 #include "auth/credentials/credentials.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "source3/lib/netapi/netapi.h"
 #include "source3/lib/netapi/netapi_private.h"
 #include "lib/param/param.h"
@@ -39,7 +39,6 @@ bool torture_libnetapi_init_context(struct torture_context *tctx,
 		return W_ERROR_V(WERR_GEN_FAILURE);
 	}
 
-	init_names();
 	load_interfaces();
 
 	status = libnetapi_net_init(&ctx);
@@ -49,9 +48,9 @@ bool torture_libnetapi_init_context(struct torture_context *tctx,
 	}
 
 	libnetapi_set_username(ctx,
-		cli_credentials_get_username(popt_get_cmdline_credentials()));
+		cli_credentials_get_username(samba_cmdline_get_creds()));
 	libnetapi_set_password(ctx,
-		cli_credentials_get_password(popt_get_cmdline_credentials()));
+		cli_credentials_get_password(samba_cmdline_get_creds()));
 
 	*ctx_p = ctx;
 

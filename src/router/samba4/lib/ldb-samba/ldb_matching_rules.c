@@ -336,7 +336,9 @@ static int ldb_comparator_trans(struct ldb_context *ldb,
  *
  * This allows a search filter such as:
  *
- * dnsRecord:1.3.6.1.4.1.7165.4.5.3:=131139216000000000
+ * dnsRecord:1.3.6.1.4.1.7165.4.5.3:=3694869
+ *
+ * where the value is a number of hours since the start of 1601.
  *
  * This allows the caller to find records that should become a DNS
  * tomestone, despite that information being deep within an NDR packed
@@ -380,17 +382,17 @@ static int dsdb_match_for_dns_to_tombstone_time(struct ldb_context *ldb,
 		return LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS;
 	}
 
-	/* Just check we don't allow the caller to fill our stack */
-	if (value_to_match->length >= 64) {
+	/* We only expect uint32_t <= 10 digits */
+	if (value_to_match->length >= 12) {
 		DBG_ERR("Invalid timestamp passed\n");
 		return LDB_ERR_INVALID_ATTRIBUTE_SYNTAX;
 	} else {
 		int error = 0;
-		char s[value_to_match->length+1];
+		char s[12];
 
 		memcpy(s, value_to_match->data, value_to_match->length);
 		s[value_to_match->length] = 0;
-		if (s[0] == '\0' || s[0] == '-') {
+		if (s[0] == '\0') {
 			DBG_ERR("Empty timestamp passed\n");
 			return LDB_ERR_INVALID_ATTRIBUTE_SYNTAX;
 		}
@@ -428,20 +430,20 @@ static int dsdb_match_for_dns_to_tombstone_time(struct ldb_context *ldb,
 		}
 
 		if (rec->wType == DNS_TYPE_SOA || rec->wType == DNS_TYPE_NS) {
-			TALLOC_FREE(tmp_ctx);
+			TALLOC_FREE(rec);
 			continue;
 		}
 
 		if (rec->wType == DNS_TYPE_TOMBSTONE) {
-			TALLOC_FREE(tmp_ctx);
+			TALLOC_FREE(rec);
 			continue;
 		}
 		if (rec->dwTimeStamp == 0) {
-			TALLOC_FREE(tmp_ctx);
+			TALLOC_FREE(rec);
 			continue;
 		}
 		if (rec->dwTimeStamp > tombstone_time) {
-			TALLOC_FREE(tmp_ctx);
+			TALLOC_FREE(rec);
 			continue;
 		}
 

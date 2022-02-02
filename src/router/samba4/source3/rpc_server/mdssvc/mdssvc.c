@@ -19,6 +19,7 @@
 */
 
 #include "includes.h"
+#include "smbd/proto.h"
 #include "librpc/gen_ndr/auth.h"
 #include "dbwrap/dbwrap.h"
 #include "lib/util/dlinklist.h"
@@ -26,6 +27,7 @@
 #include "lib/util/time_basic.h"
 #include "lib/dbwrap/dbwrap_rbt.h"
 #include "libcli/security/dom_sid.h"
+#include "libcli/security/security.h"
 #include "mdssvc.h"
 #include "mdssvc_noindex.h"
 #ifdef HAVE_SPOTLIGHT_BACKEND_TRACKER
@@ -513,9 +515,12 @@ static bool inode_map_add(struct sl_query *slq, uint64_t ino, const char *path)
 
 bool mds_add_result(struct sl_query *slq, const char *path)
 {
+	struct smb_filename *smb_fname = NULL;
 	struct stat_ex sb;
+	uint32_t attr;
 	uint64_t ino64;
 	int result;
+	NTSTATUS status;
 	bool ok;
 
 	/*
@@ -539,33 +544,66 @@ bool mds_add_result(struct sl_query *slq, const char *path)
 	 * any function exit below must ensure we switch back
 	 */
 
-	result = sys_stat(path, &sb, false);
-	if (result != 0) {
+	status = synthetic_pathref(talloc_tos(),
+				   slq->mds_ctx->conn->cwd_fsp,
+				   path,
+				   NULL,
+				   NULL,
+				   0,
+				   0,
+				   &smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("synthetic_pathref [%s]: %s\n",
+			  smb_fname_str_dbg(smb_fname),
+			  nt_errstr(status));
 		unbecome_authenticated_pipe_user();
 		return true;
 	}
-	result = access(path, R_OK);
-	if (result != 0) {
+
+	status = smbd_check_access_rights_fsp(slq->mds_ctx->conn->cwd_fsp,
+					      smb_fname->fsp,
+					      false,
+					      FILE_READ_DATA);
+	if (!NT_STATUS_IS_OK(status)) {
 		unbecome_authenticated_pipe_user();
+		TALLOC_FREE(smb_fname);
 		return true;
+	}
+
+	/* This is needed to fetch the itime from the DOS attribute blob */
+	status = SMB_VFS_FGET_DOS_ATTRIBUTES(slq->mds_ctx->conn,
+					     smb_fname->fsp,
+					     &attr);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Ignore the error, likely no DOS attr xattr */
+		DBG_DEBUG("SMB_VFS_FGET_DOS_ATTRIBUTES [%s]: %s\n",
+			  smb_fname_str_dbg(smb_fname),
+			  nt_errstr(status));
 	}
 
 	unbecome_authenticated_pipe_user();
 
-	ino64 = sb.st_ex_ino;
+	smb_fname->st = smb_fname->fsp->fsp_name->st;
+	sb = smb_fname->st;
+	/* Done with smb_fname now. */
+	TALLOC_FREE(smb_fname);
+	ino64 = SMB_VFS_FS_FILE_ID(slq->mds_ctx->conn, &sb);
+
 	if (slq->cnids) {
+		bool found;
+
 		/*
 		 * Check whether the found element is in the requested
 		 * set of IDs. Note that we're faking CNIDs by using
 		 * filesystem inode numbers here
 		 */
-		ok = bsearch(&ino64,
-			     slq->cnids,
-			     slq->cnids_num,
-			     sizeof(uint64_t),
-			     cnid_comp_fn);
-		if (!ok) {
-			return false;
+		found = bsearch(&ino64,
+				slq->cnids,
+				slq->cnids_num,
+				sizeof(uint64_t),
+				cnid_comp_fn);
+		if (!found) {
+			return true;
 		}
 	}
 
@@ -1231,7 +1269,7 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 	sl_array_t *fm_array;
 	sl_nil_t nil;
 	char *path = NULL;
-	struct stat_ex sb = {0};
+	struct smb_filename *smb_fname = NULL;
 	struct stat_ex *sp = NULL;
 	struct sl_inode_path_map *elem = NULL;
 	void *p;
@@ -1300,11 +1338,29 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 		elem = talloc_get_type_abort(p, struct sl_inode_path_map);
 		path = elem->path;
 
-		result = sys_stat(path, &sb, false);
-		if (result != 0) {
-			goto error;
+		status = synthetic_pathref(talloc_tos(),
+					   mds_ctx->conn->cwd_fsp,
+					   path,
+					   NULL,
+					   NULL,
+					   0,
+					   0,
+					   &smb_fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			/* This is not an error, the user may lack permissions */
+			DBG_DEBUG("synthetic_pathref [%s]: %s\n",
+				  smb_fname_str_dbg(smb_fname),
+				  nt_errstr(status));
+			return true;
 		}
-		sp = &sb;
+
+		result = SMB_VFS_FSTAT(smb_fname->fsp, &smb_fname->st);
+		if (result != 0) {
+			TALLOC_FREE(smb_fname);
+			return true;
+		}
+
+		sp = &smb_fname->st;
 	}
 
 	ok = add_filemeta(mds_ctx, reqinfo, fm_array, path, sp);
@@ -1334,9 +1390,12 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 		goto error;
 	}
 
+	TALLOC_FREE(smb_fname);
 	return true;
 
 error:
+
+	TALLOC_FREE(smb_fname);
 	sl_result = UINT64_MAX;
 	result = dalloc_add_copy(array, &sl_result, uint64_t);
 	if (result != 0) {
@@ -1510,6 +1569,11 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
 	}
 	TALLOC_FREE(mds_ctx->ino_path_map);
 
+	if (mds_ctx->conn != NULL) {
+		SMB_VFS_DISCONNECT(mds_ctx->conn);
+		conn_free(mds_ctx->conn);
+	}
+
 	ZERO_STRUCTP(mds_ctx);
 
 	return 0;
@@ -1523,15 +1587,21 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
  **/
 struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 			     struct tevent_context *ev,
+			     struct messaging_context *msg_ctx,
 			     struct auth_session_info *session_info,
 			     int snum,
 			     const char *sharename,
 			     const char *path)
 {
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	struct smb_filename conn_basedir;
 	struct mds_ctx *mds_ctx;
 	int backend;
+	int ret;
 	bool ok;
 	smb_iconv_t iconv_hnd = (smb_iconv_t)-1;
+	NTSTATUS status;
 
 	mds_ctx = talloc_zero(mem_ctx, struct mds_ctx);
 	if (mds_ctx == NULL) {
@@ -1613,6 +1683,30 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 		goto error;
 	}
 
+	status = create_conn_struct_cwd(mds_ctx,
+					ev,
+					msg_ctx,
+					session_info,
+					snum,
+					lp_path(talloc_tos(), lp_sub, snum),
+					&mds_ctx->conn);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("failed to create conn for vfs: %s\n",
+			nt_errstr(status));
+		goto error;
+	}
+
+	conn_basedir = (struct smb_filename) {
+		.base_name = mds_ctx->conn->connectpath,
+	};
+
+	ret = vfs_ChDir(mds_ctx->conn, &conn_basedir);
+	if (ret != 0) {
+		DBG_ERR("vfs_ChDir [%s] failed: %s\n",
+			conn_basedir.base_name, strerror(errno));
+		goto error;
+	}
+
 	ok = mds_ctx->backend->connect(mds_ctx);
 	if (!ok) {
 		DBG_ERR("backend connect failed\n");
@@ -1641,11 +1735,15 @@ bool mds_dispatch(struct mds_ctx *mds_ctx,
 		  struct mdssvc_blob *response_blob)
 {
 	bool ok;
+	int ret;
 	ssize_t len;
 	DALLOC_CTX *query = NULL;
 	DALLOC_CTX *reply = NULL;
 	char *rpccmd;
 	const struct slrpc_cmd *slcmd;
+	const struct smb_filename conn_basedir = {
+		.base_name = mds_ctx->conn->connectpath,
+	};
 
 	if (CHECK_DEBUGLVL(10)) {
 		const struct sl_query *slq;
@@ -1693,6 +1791,14 @@ bool mds_dispatch(struct mds_ctx *mds_ctx,
 	if (slcmd == NULL) {
 		DEBUG(1, ("unsupported primary Spotlight RPC command %s\n",
 			  rpccmd));
+		ok = false;
+		goto cleanup;
+	}
+
+	ret = vfs_ChDir(mds_ctx->conn, &conn_basedir);
+	if (ret != 0) {
+		DBG_ERR("vfs_ChDir [%s] failed: %s\n",
+			conn_basedir.base_name, strerror(errno));
 		ok = false;
 		goto cleanup;
 	}

@@ -30,50 +30,50 @@ testrenamedc() {
 	$PYTHON $SRCDIR/source4/scripting/bin/renamedc \
 		--oldname="BAR" \
 		--newname="RAYMONBAR" \
-		-s $PREFIX/renamedc_test/etc/smb.conf
+		--configfile=$PREFIX/renamedc_test/etc/smb.conf
 }
 
 confirmrenamedc() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb -s base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --scope=base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com'
 }
 
 confirmrenamedc_server() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb -s base -b 'cn=RAYMONBAR,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=configuration,dc=foo,dc=example,dc=com'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --scope=base -b 'cn=RAYMONBAR,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=configuration,dc=foo,dc=example,dc=com'
 }
 
 confirmrenamedc_sAMAccountName() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb -s base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com' sAMAccountName | grep 'sAMAccountName: RAYMONBAR\$'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --scope=base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com' sAMAccountName | grep 'sAMAccountName: RAYMONBAR\$'
 }
 
 confirmrenamedc_dNSHostName() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb -s base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com' dNSHostName | grep 'dNSHostName: RAYMONBAR.foo.example.com'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --scope=base -b 'cn=RAYMONBAR,ou=domain controllers,dc=foo,dc=example,dc=com' dNSHostName | grep 'dNSHostName: RAYMONBAR.foo.example.com'
 }
 
 confirmrenamedc_rootdse_dnsHostName() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb -s base -b '' dNSHostName | grep 'dnsHostName: RAYMONBAR.foo.example.com'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --scope=base -b '' dNSHostName | grep 'dnsHostName: RAYMONBAR.foo.example.com'
 }
 
 confirmrenamedc_rootdse_dsServiceName() {
-    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --show-binary -s base -b '' dsServiceName | grep 'dsServiceName: CN=NTDS Settings,CN=RAYMONBAR,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=foo,DC=example,DC=com'
+    $ldbsearch -H $PREFIX/renamedc_test/private/sam.ldb --show-binary --scope=base -b '' dsServiceName | grep 'dsServiceName: CN=NTDS Settings,CN=RAYMONBAR,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=foo,DC=example,DC=com'
 }
 
 testrenamedc2() {
 	$PYTHON $SRCDIR/source4/scripting/bin/renamedc \
 		--oldname="RAYMONBAR" \
 		--newname="BAR" \
-		-s $PREFIX/renamedc_test/etc/smb.conf
+		--configfile=$PREFIX/renamedc_test/etc/smb.conf
 }
 
 dbcheck_fix() {
         # Unlike most calls to dbcheck --fix, this will not trigger an error, as
         # we do not flag an error count for this old DN string case.
-	$PYTHON $BINDIR/samba-tool dbcheck --cross-ncs -s $PREFIX/renamedc_test/etc/smb.conf --fix \
+	$PYTHON $BINDIR/samba-tool dbcheck --cross-ncs --configfile=$PREFIX/renamedc_test/etc/smb.conf --fix \
 		--quiet --yes fix_all_old_dn_string_component_mismatch \
 		--attrs="fsmoRoleOwner interSiteTopologyGenerator msDS-NC-Replica-Locations"
 }
 
 dbcheck() {
-	$PYTHON $BINDIR/samba-tool dbcheck --cross-ncs -s $PREFIX/renamedc_test/etc/smb.conf
+	$PYTHON $BINDIR/samba-tool dbcheck --cross-ncs --configfile=$PREFIX/renamedc_test/etc/smb.conf
 }
 
 

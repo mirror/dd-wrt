@@ -23,6 +23,9 @@
 #include "lib/netapi/netapi_private.h"
 #include "secrets.h"
 #include "krb5_env.h"
+#include "source3/param/loadparm.h"
+#include "lib/param/param.h"
+#include "auth/gensec/gensec.h"
 
 struct libnetapi_ctx *stat_ctx = NULL;
 static bool libnetapi_initialized = false;
@@ -81,7 +84,6 @@ NET_API_STATUS libnetapi_init(struct libnetapi_ctx **context)
 		return W_ERROR_V(WERR_GEN_FAILURE);
 	}
 
-	init_names();
 	load_interfaces();
 	reopen_logs();
 
@@ -105,6 +107,7 @@ NET_API_STATUS libnetapi_net_init(struct libnetapi_ctx **context)
 	NET_API_STATUS status;
 	struct libnetapi_ctx *ctx = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
+	struct loadparm_context *lp_ctx = NULL;
 
 	ctx = talloc_zero(frame, struct libnetapi_ctx);
 	if (!ctx) {
@@ -112,18 +115,22 @@ NET_API_STATUS libnetapi_net_init(struct libnetapi_ctx **context)
 		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
 	}
 
-	BlockSignals(True, SIGPIPE);
-
-	if (getenv("USER")) {
-		ctx->username = talloc_strdup(ctx, getenv("USER"));
-	} else {
-		ctx->username = talloc_strdup(ctx, "");
-	}
-	if (!ctx->username) {
+	ctx->creds = cli_credentials_init(ctx);
+	if (ctx->creds == NULL) {
 		TALLOC_FREE(frame);
-		fprintf(stderr, "libnetapi_init: out of memory\n");
 		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
 	}
+
+	lp_ctx = loadparm_init_s3(frame, loadparm_s3_helpers());
+	if (lp_ctx == NULL) {
+		TALLOC_FREE(frame);
+		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
+	}
+
+	BlockSignals(True, SIGPIPE);
+
+	/* Ignore return code, as we might not have a smb.conf */
+	(void)cli_credentials_guess(ctx->creds, lp_ctx);
 
 	status = libnetapi_init_private_context(ctx);
 	if (status != 0) {
@@ -171,14 +178,6 @@ NET_API_STATUS libnetapi_free(struct libnetapi_ctx *ctx)
 
 	libnetapi_shutdown_cm(ctx);
 
-	if (ctx->krb5_cc_env) {
-		char *env = getenv(KRB5_ENV_CCNAME);
-		if (env && (strequal(ctx->krb5_cc_env, env))) {
-			unsetenv(KRB5_ENV_CCNAME);
-		}
-	}
-
-	gfree_names();
 	gfree_loadparm();
 	gfree_charcnv();
 	gfree_interfaces();
@@ -219,6 +218,25 @@ NET_API_STATUS libnetapi_set_debuglevel(struct libnetapi_ctx *ctx,
 /****************************************************************
 ****************************************************************/
 
+NET_API_STATUS libnetapi_set_logfile(struct libnetapi_ctx *ctx,
+				     const char *logfile)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	ctx->logfile = talloc_strdup(ctx, logfile);
+
+	if (!lp_set_cmdline("log file", logfile)) {
+		TALLOC_FREE(frame);
+		return W_ERROR_V(WERR_GEN_FAILURE);
+	}
+	debug_set_logfile(logfile);
+	setup_logging("libnetapi", DEBUG_FILE);
+	TALLOC_FREE(frame);
+	return NET_API_STATUS_SUCCESS;
+}
+
+/****************************************************************
+****************************************************************/
+
 NET_API_STATUS libnetapi_get_debuglevel(struct libnetapi_ctx *ctx,
 					char **debuglevel)
 {
@@ -229,37 +247,112 @@ NET_API_STATUS libnetapi_get_debuglevel(struct libnetapi_ctx *ctx,
 /****************************************************************
 ****************************************************************/
 
+/**
+ * @brief Get the username of the libnet context
+ *
+ * @param[in]  ctx      The netapi context
+ *
+ * @param[in]  username A pointer to hold the username.
+ *
+ * @return 0 on success, an werror code otherwise.
+ */
+NET_API_STATUS libnetapi_get_username(struct libnetapi_ctx *ctx,
+				      const char **username)
+{
+	if (ctx == NULL) {
+		return W_ERROR_V(WERR_INVALID_PARAMETER);
+	}
+
+	if (username != NULL) {
+		*username = cli_credentials_get_username(ctx->creds);
+	}
+
+	return NET_API_STATUS_SUCCESS;
+}
+
+/**
+ * @brief Get the password of the libnet context
+ *
+ * @param[in]  ctx      The netapi context
+ *
+ * @param[in]  password A pointer to hold the password.
+ *
+ * @return 0 on success, an werror code otherwise.
+ */
+NET_API_STATUS libnetapi_get_password(struct libnetapi_ctx *ctx,
+				      const char **password)
+{
+	if (ctx == NULL) {
+		return W_ERROR_V(WERR_INVALID_PARAMETER);
+	}
+
+	if (password != NULL) {
+		*password = cli_credentials_get_password(ctx->creds);
+	}
+
+	return NET_API_STATUS_SUCCESS;
+}
+
 NET_API_STATUS libnetapi_set_username(struct libnetapi_ctx *ctx,
 				      const char *username)
 {
-	TALLOC_FREE(ctx->username);
-	ctx->username = talloc_strdup(ctx, username ? username : "");
-
-	if (!ctx->username) {
-		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
+	if (ctx == NULL || username == NULL) {
+		return W_ERROR_V(WERR_INVALID_PARAMETER);
 	}
+
+	cli_credentials_parse_string(ctx->creds, username, CRED_SPECIFIED);
+
 	return NET_API_STATUS_SUCCESS;
 }
 
 NET_API_STATUS libnetapi_set_password(struct libnetapi_ctx *ctx,
 				      const char *password)
 {
-	TALLOC_FREE(ctx->password);
-	ctx->password = talloc_strdup(ctx, password);
-	if (!ctx->password) {
-		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
+	bool ok;
+
+	if (ctx == NULL || password == NULL) {
+		return W_ERROR_V(WERR_INVALID_PARAMETER);
 	}
+
+	ok = cli_credentials_set_password(ctx->creds, password, CRED_SPECIFIED);
+	if (!ok) {
+		return W_ERROR_V(WERR_INTERNAL_ERROR);
+	}
+
 	return NET_API_STATUS_SUCCESS;
 }
 
 NET_API_STATUS libnetapi_set_workgroup(struct libnetapi_ctx *ctx,
 				       const char *workgroup)
 {
-	TALLOC_FREE(ctx->workgroup);
-	ctx->workgroup = talloc_strdup(ctx, workgroup);
-	if (!ctx->workgroup) {
-		return W_ERROR_V(WERR_NOT_ENOUGH_MEMORY);
+	bool ok;
+
+	ok = cli_credentials_set_domain(ctx->creds, workgroup, CRED_SPECIFIED);
+	if (!ok) {
+		return W_ERROR_V(WERR_INTERNAL_ERROR);
 	}
+
+	return NET_API_STATUS_SUCCESS;
+}
+
+/**
+ * @brief Set the cli_credentials to be used in the netapi context
+ *
+ * @param[in]  ctx    The netapi context
+ *
+ * @param[in]  creds  The cli_credentials which should be used by netapi.
+ *
+ * @return 0 on success, an werror code otherwise.
+ */
+NET_API_STATUS libnetapi_set_creds(struct libnetapi_ctx *ctx,
+				   struct cli_credentials *creds)
+{
+	if (ctx == NULL || creds == NULL) {
+		return W_ERROR_V(WERR_INVALID_PARAMETER);
+	}
+
+	ctx->creds = creds;
+
 	return NET_API_STATUS_SUCCESS;
 }
 
@@ -268,7 +361,28 @@ NET_API_STATUS libnetapi_set_workgroup(struct libnetapi_ctx *ctx,
 
 NET_API_STATUS libnetapi_set_use_kerberos(struct libnetapi_ctx *ctx)
 {
-	ctx->use_kerberos = true;
+	cli_credentials_set_kerberos_state(ctx->creds,
+					   CRED_USE_KERBEROS_REQUIRED,
+					   CRED_SPECIFIED);
+
+	return NET_API_STATUS_SUCCESS;
+}
+
+/****************************************************************
+****************************************************************/
+
+NET_API_STATUS libnetapi_get_use_kerberos(struct libnetapi_ctx *ctx,
+					  int *use_kerberos)
+{
+	enum credentials_use_kerberos creds_use_kerberos;
+
+	*use_kerberos = 0;
+
+	creds_use_kerberos = cli_credentials_get_kerberos_state(ctx->creds);
+	if (creds_use_kerberos > CRED_USE_KERBEROS_DESIRED) {
+		*use_kerberos = 1;
+	}
+
 	return NET_API_STATUS_SUCCESS;
 }
 
@@ -277,7 +391,14 @@ NET_API_STATUS libnetapi_set_use_kerberos(struct libnetapi_ctx *ctx)
 
 NET_API_STATUS libnetapi_set_use_ccache(struct libnetapi_ctx *ctx)
 {
-	ctx->use_ccache = true;
+	uint32_t gensec_features;
+
+	gensec_features = cli_credentials_get_gensec_features(ctx->creds);
+	gensec_features |= GENSEC_FEATURE_NTLM_CCACHE;
+	cli_credentials_set_gensec_features(ctx->creds,
+					    gensec_features,
+					    CRED_SPECIFIED);
+
 	return NET_API_STATUS_SUCCESS;
 }
 

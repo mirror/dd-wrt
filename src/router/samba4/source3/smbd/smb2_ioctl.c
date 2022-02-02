@@ -197,6 +197,7 @@ NTSTATUS smbd_smb2_request_process_ioctl(struct smbd_smb2_request *req)
 	case FSCTL_QUERY_NETWORK_INTERFACE_INFO:
 	case FSCTL_SMBTORTURE_FORCE_UNACKED_TIMEOUT:
 	case FSCTL_SMBTORTURE_IOCTL_RESPONSE_BODY_PADDING8:
+	case FSCTL_SMBTORTURE_GLOBAL_READ_RESPONSE_BODY_PADDING8:
 		/*
 		 * Some SMB2 specific CtlCodes like FSCTL_DFS_GET_REFERRALS or
 		 * FSCTL_PIPE_WAIT does not take a file handle.
@@ -229,6 +230,21 @@ NTSTATUS smbd_smb2_request_process_ioctl(struct smbd_smb2_request *req)
 	if (subreq == NULL) {
 		return smbd_smb2_request_error(req, NT_STATUS_NO_MEMORY);
 	}
+
+	/*
+	 * If the FSCTL has gone async on a file handle, remember
+	 * to add it to the list of async requests we need to wait
+	 * for on file handle close.
+	 */
+	if (in_fsp != NULL && tevent_req_is_in_progress(subreq)) {
+		bool ok;
+
+		ok = aio_add_req_to_fsp(in_fsp, subreq);
+		if (!ok) {
+			return smbd_smb2_request_error(req, NT_STATUS_NO_MEMORY);
+		}
+	}
+
 	tevent_req_set_callback(subreq, smbd_smb2_request_ioctl_done, req);
 
 	return smbd_smb2_request_pending_queue(req, subreq, 1000);
@@ -280,6 +296,7 @@ static void smbd_smb2_request_ioctl_done(struct tevent_req *subreq)
 	uint32_t in_ctl_code;
 	uint64_t in_file_id_persistent;
 	uint64_t in_file_id_volatile;
+	uint32_t in_max_output_length;
 	uint32_t out_input_offset;
 	uint32_t out_output_offset;
 	DATA_BLOB out_output_buffer = data_blob_null;
@@ -312,6 +329,24 @@ static void smbd_smb2_request_ioctl_done(struct tevent_req *subreq)
 	in_ctl_code		= IVAL(inbody, 0x04);
 	in_file_id_persistent	= BVAL(inbody, 0x08);
 	in_file_id_volatile	= BVAL(inbody, 0x10);
+	in_max_output_length	= IVAL(inbody, 0x2C);
+
+	if (out_output_buffer.length > in_max_output_length) {
+		/*
+		 * Return NT_STATUS_BUFFER_TOO_SMALL by
+		 * default if the provided buffer doesn't
+		 * fit.
+		 *
+		 * If someone wants truncated data
+		 * together with STATUS_BUFFER_OVERFLOW
+		 * it needs to be done explicitly in
+		 * the backends. We currently do that
+		 * in:
+		 * - fsctl_dfs_get_refers()
+		 * - smbd_smb2_ioctl_pipe_read_done()
+		 */
+		status = NT_STATUS_BUFFER_TOO_SMALL;
+	}
 
 	if (smbd_smb2_ioctl_is_failure(in_ctl_code, status,
 				       out_output_buffer.length)) {
@@ -378,65 +413,6 @@ static void smbd_smb2_request_ioctl_done(struct tevent_req *subreq)
 						 nt_errstr(error));
 		return;
 	}
-}
-
-static struct tevent_req *smb2_ioctl_smbtorture(uint32_t ctl_code,
-					struct tevent_context *ev,
-					struct tevent_req *req,
-					struct smbd_smb2_ioctl_state *state)
-{
-	NTSTATUS status;
-	bool ok;
-
-	ok = lp_parm_bool(-1, "smbd", "FSCTL_SMBTORTURE", false);
-	if (!ok) {
-		goto not_supported;
-	}
-
-	switch (ctl_code) {
-	case FSCTL_SMBTORTURE_FORCE_UNACKED_TIMEOUT:
-		if (state->in_input.length != 0) {
-			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
-			return tevent_req_post(req, ev);
-		}
-
-		state->smb2req->xconn->ack.force_unacked_timeout = true;
-		tevent_req_done(req);
-		return tevent_req_post(req, ev);
-
-	case FSCTL_SMBTORTURE_IOCTL_RESPONSE_BODY_PADDING8:
-		if (state->in_input.length != 0) {
-			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
-			return tevent_req_post(req, ev);
-		}
-
-		if (state->in_max_output > 0) {
-			uint32_t size = state->in_max_output;
-
-			state->out_output = data_blob_talloc(state, NULL, size);
-			if (tevent_req_nomem(state->out_output.data, req)) {
-				return tevent_req_post(req, ev);
-			}
-			memset(state->out_output.data, 8, size);
-		}
-
-		state->body_padding = 8;
-		tevent_req_done(req);
-		return tevent_req_post(req, ev);
-
-	default:
-		goto not_supported;
-	}
-
-not_supported:
-	if (IS_IPC(state->smbreq->conn)) {
-		status = NT_STATUS_FS_DRIVER_REQUIRED;
-	} else {
-		status = NT_STATUS_INVALID_DEVICE_REQUEST;
-	}
-
-	tevent_req_nterror(req, status);
-	return tevent_req_post(req, ev);
 }
 
 static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,

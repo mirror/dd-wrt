@@ -1,0 +1,17 @@
+# Knownfail entries due to restricting the creation of computer/user
+# accounts (in terms of userAccountControl) that do not match the objectclass
+#
+# All these tests need to be fixed and the entries here removed
+
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-DC_add_CC_WP_user\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-DC_add_CC_default_user\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-a2d-user_add_CC_WP_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-a2d-user_add_CC_default_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-a2d-user_mod-del-add_CC_default_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-a2d-user_mod-replace_CC_default_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-t4d-user_add_CC_WP_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-t4d-user_add_CC_default_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-t4d-user_mod-del-add_CC_default_computer\(ad_dc_default\)
+^samba4.priv_attrs.strict.python\(ad_dc_default\).__main__.PrivAttrsTests.test_priv_attr_userAccountControl-t4d-user_mod-replace_CC_default_computer\(ad_dc_default\)
+^samba4.user_account_control.python\(ad_dc_default\).__main__.UserAccountControlTests.test_add_computer_sd_cc\(ad_dc_default\)
+^samba4.user_account_control.python\(ad_dc_default\).__main__.UserAccountControlTests.test_mod_computer_cc\(ad_dc_default\)

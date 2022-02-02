@@ -54,8 +54,8 @@ int ldb_handler_copy(struct ldb_context *ldb, void *mem_ctx,
 int ldb_handler_fold(struct ldb_context *ldb, void *mem_ctx,
 			    const struct ldb_val *in, struct ldb_val *out)
 {
-	char *s, *t;
-	size_t l;
+	char *s, *t, *start;
+	bool in_space;
 
 	if (!in || !out || !(in->data)) {
 		return -1;
@@ -67,40 +67,37 @@ int ldb_handler_fold(struct ldb_context *ldb, void *mem_ctx,
 		return -1;
 	}
 
-	s = (char *)(out->data);
-	
-	/* remove trailing spaces if any */
-	l = strlen(s);
-	while (l > 0 && s[l - 1] == ' ') l--;
-	s[l] = '\0';
-	
-	/* remove leading spaces if any */
-	if (*s == ' ') {
-		for (t = s; *s == ' '; s++, l--) ;
-
-		/* remove leading spaces by moving down the string */
-		memmove(t, s, l);
-
-		s = t;
-	}
-
-	/* check middle spaces */
-	while ((t = strchr(s, ' ')) != NULL) {
-		for (s = t; *s == ' '; s++) ;
-
-		if ((s - t) > 1) {
-			l = strlen(s);
-
-			/* remove all spaces but one by moving down the string */
-			memmove(t + 1, s, l);
+	start = (char *)(out->data);
+	in_space = true;
+	t = start;
+	for (s = start; *s != '\0'; s++) {
+		if (*s == ' ') {
+			if (in_space) {
+				/*
+				 * We already have one (or this is the start)
+				 * and we don't want to add more
+				 */
+				continue;
+			}
+			in_space = true;
+		} else {
+			in_space = false;
 		}
+		*t = *s;
+		t++;
 	}
 
-	out->length = strlen((char *)out->data);
+	if (in_space && t != start) {
+		/* the loop will have left a single trailing space */
+		t--;
+	}
+	*t = '\0';
+
+	out->length = t - start;
 	return 0;
 }
 
-/* length limited conversion of a ldb_val to a int32_t */
+/* length limited conversion of a ldb_val to an int64_t */
 static int val_to_int64(const struct ldb_val *in, int64_t *v)
 {
 	char *end;
@@ -113,8 +110,6 @@ static int val_to_int64(const struct ldb_val *in, int64_t *v)
 	strncpy(buf, (char *)in->data, in->length);
 	buf[in->length] = 0;
 
-	/* We've to use "strtoll" here to have the intended overflows.
-	 * Otherwise we may get "LONG_MAX" and the conversion is wrong. */
 	*v = (int64_t) strtoll(buf, &end, 0);
 	if (*end != 0) {
 		return LDB_ERR_INVALID_ATTRIBUTE_SYNTAX;
@@ -337,8 +332,8 @@ int ldb_comparison_fold(struct ldb_context *ldb, void *mem_ctx,
 		if (toupper((unsigned char)*s1) != toupper((unsigned char)*s2))
 			break;
 		if (*s1 == ' ') {
-			while (n1 && s1[0] == s1[1]) { s1++; n1--; }
-			while (n2 && s2[0] == s2[1]) { s2++; n2--; }
+			while (n1 > 1 && s1[0] == s1[1]) { s1++; n1--; }
+			while (n2 > 1 && s2[0] == s2[1]) { s2++; n2--; }
 		}
 		s1++; s2++;
 		n1--; n2--;

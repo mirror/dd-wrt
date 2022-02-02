@@ -113,6 +113,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     negoex.idl
                     notify.idl
                     ntprinting.idl
+                    ODJ.idl
                     printcap.idl
                     rap.idl
                     schannel.idl
@@ -147,6 +148,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     drsblobs.idl
                     idmap.idl
                     krb5pac.idl
+                    krb5ccache.idl
                     messaging.idl
                     misc.idl
                     nbt.idl

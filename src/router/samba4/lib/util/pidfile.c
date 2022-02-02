@@ -27,16 +27,14 @@
 
 #include "lib/util/pidfile.h"
 
-int pidfile_path_create(const char *path, int *outfd)
+int pidfile_path_create(const char *path, int *pfd, pid_t *existing_pid)
 {
 	struct flock lck;
 	char tmp[64] = { 0 };
-	pid_t pid;
 	int fd, ret = 0;
 	int len;
 	ssize_t nwritten;
-
-	pid = getpid();
+	bool retried = false;
 
 	fd = open(path, O_CREAT|O_WRONLY|O_NONBLOCK, 0644);
 	if (fd == -1) {
@@ -44,10 +42,11 @@ int pidfile_path_create(const char *path, int *outfd)
 	}
 
 	if (! set_close_on_exec(fd)) {
-		close(fd);
-		return EIO;
+		ret = errno;
+		goto fail;
 	}
 
+retry:
 	lck = (struct flock) {
 		.l_type = F_WRLCK,
 		.l_whence = SEEK_SET,
@@ -59,25 +58,41 @@ int pidfile_path_create(const char *path, int *outfd)
 
 	if (ret != 0) {
 		ret = errno;
-		close(fd);
-		return ret;
+
+		if ((ret == EACCES) || (ret == EAGAIN)) {
+			do {
+				ret = fcntl(fd, F_GETLK, &lck);
+			} while ((ret == -1) && (errno == EINTR));
+
+			if (ret == -1) {
+				ret = errno;
+				goto fail;
+			}
+
+			if (lck.l_type == F_UNLCK) {
+				if (!retried) {
+					/* Lock holder died, retry once */
+					retried = true;
+					goto retry;
+				}
+				/* Something badly wrong */
+				ret = EIO;
+				goto fail;
+			}
+
+			if (existing_pid != NULL) {
+				*existing_pid = lck.l_pid;
+			}
+			return EAGAIN;
+		}
+		goto fail;
 	}
 
 	/*
 	 * PID file is locked by us so from here on we should unlink
 	 * on failure
 	 */
-
-	do {
-		ret = ftruncate(fd, 0);
-	} while ((ret == -1) && (errno == EINTR));
-
-	if (ret == -1) {
-		ret = EIO;
-		goto fail_unlink;
-	}
-
-	len = snprintf(tmp, sizeof(tmp), "%u\n", pid);
+	len = snprintf(tmp, sizeof(tmp), "%u\n", getpid());
 	if (len < 0) {
 		ret = errno;
 		goto fail_unlink;
@@ -92,17 +107,25 @@ int pidfile_path_create(const char *path, int *outfd)
 	} while ((nwritten == -1) && (errno == EINTR));
 
 	if ((nwritten == -1) || (nwritten != len)) {
-		ret = EIO;
+		ret = errno;
 		goto fail_unlink;
 	}
 
-	if (outfd != NULL) {
-		*outfd = fd;
+	do {
+		ret = ftruncate(fd, len);
+	} while ((ret == -1) && (errno == EINTR));
+
+	if (ret == -1) {
+		ret = errno;
+		goto fail_unlink;
 	}
+
+	*pfd = fd;
 	return 0;
 
 fail_unlink:
 	unlink(path);
+fail:
 	close(fd);
 	return ret;
 }
@@ -134,7 +157,7 @@ pid_t pidfile_pid(const char *piddir, const char *name)
 	size_t len = strlen(piddir) + strlen(name) + 6;
 	char pidFile[len];
 	int fd;
-	char pidstr[20];
+	char pidstr[20] = { 0, };
 	pid_t ret = -1;
 
 	snprintf(pidFile, sizeof(pidFile), "%s/%s.pid", piddir, name);
@@ -144,8 +167,6 @@ pid_t pidfile_pid(const char *piddir, const char *name)
 	if (fd == -1) {
 		return 0;
 	}
-
-	ZERO_STRUCT(pidstr);
 
 	if (read(fd, pidstr, sizeof(pidstr)-1) <= 0) {
 		goto noproc;
@@ -187,21 +208,14 @@ void pidfile_create(const char *piddir, const char *name)
 	size_t len = strlen(piddir) + strlen(name) + 6;
 	char pidFile[len];
 	pid_t pid;
-	int ret;
+	int ret, fd;
 
 	snprintf(pidFile, sizeof(pidFile), "%s/%s.pid", piddir, name);
 
-	pid = pidfile_pid(piddir, name);
-	if (pid != 0) {
+	ret = pidfile_path_create(pidFile, &fd, &pid);
+	if (ret == EAGAIN) {
 		DEBUG(0,("ERROR: %s is already running. File %s exists and process id %d is running.\n",
 			 name, pidFile, (int)pid));
-		exit(1);
-	}
-
-	ret = pidfile_path_create(pidFile, NULL);
-	if (ret != 0) {
-		DBG_ERR("ERROR: Failed to create PID file %s (%s)\n",
-			pidFile, strerror(ret));
 		exit(1);
 	}
 
@@ -210,13 +224,12 @@ void pidfile_create(const char *piddir, const char *name)
 
 void pidfile_unlink(const char *piddir, const char *name)
 {
+	size_t len = strlen(piddir) + strlen(name) + 6;
+	char pidFile[len];
 	int ret;
-	char *pidFile = NULL;
 
-	if (asprintf(&pidFile, "%s/%s.pid", piddir, name) < 0) {
-		DEBUG(0,("ERROR: Out of memory\n"));
-		exit(1);
-	}
+	snprintf(pidFile, sizeof(pidFile), "%s/%s.pid", piddir, name);
+
 	ret = unlink(pidFile);
 	if (ret == -1) {
 		DEBUG(0,("Failed to delete pidfile %s. Error was %s\n",

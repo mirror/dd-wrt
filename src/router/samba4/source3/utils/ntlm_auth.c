@@ -26,7 +26,7 @@
 
 #include "includes.h"
 #include "lib/param/param.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "libcli/security/security.h"
 #include "utils/ntlm_auth.h"
 #include "../libcli/auth/libcli_auth.h"
@@ -790,10 +790,8 @@ static NTSTATUS ntlm_auth_generate_session_info_pac(struct auth4_context *auth_c
 	struct PAC_LOGON_INFO *logon_info = NULL;
 	char *unixuser;
 	NTSTATUS status;
-	char *domain = NULL;
-	char *realm = NULL;
-	char *user = NULL;
-	char *p;
+	const char *domain = "";
+	const char *user = "";
 
 	tmp_ctx = talloc_new(mem_ctx);
 	if (!tmp_ctx) {
@@ -810,71 +808,44 @@ static NTSTATUS ntlm_auth_generate_session_info_pac(struct auth4_context *auth_c
 		if (!NT_STATUS_IS_OK(status)) {
 			goto done;
 		}
-	}
-
-	DEBUG(3, ("Kerberos ticket principal name is [%s]\n", princ_name));
-
-	p = strchr_m(princ_name, '@');
-	if (!p) {
-		DEBUG(3, ("[%s] Doesn't look like a valid principal\n",
-			  princ_name));
-		return NT_STATUS_LOGON_FAILURE;
-	}
-
-	user = talloc_strndup(mem_ctx, princ_name, p - princ_name);
-	if (!user) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	realm = talloc_strdup(talloc_tos(), p + 1);
-	if (!realm) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	if (!strequal(realm, lp_realm())) {
-		DEBUG(3, ("Ticket for foreign realm %s@%s\n", user, realm));
-		if (!lp_allow_trusted_domains()) {
-			return NT_STATUS_LOGON_FAILURE;
-		}
-	}
-
-	if (logon_info && logon_info->info3.base.logon_domain.string) {
-		domain = talloc_strdup(mem_ctx,
-					logon_info->info3.base.logon_domain.string);
-		if (!domain) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		DEBUG(10, ("Domain is [%s] (using PAC)\n", domain));
 	} else {
+		status = NT_STATUS_ACCESS_DENIED;
+		DBG_WARNING("Kerberos ticket for[%s] has no PAC: %s\n",
+			    princ_name, nt_errstr(status));
+		goto done;
+	}
 
-		/* If we have winbind running, we can (and must) shorten the
-		   username by using the short netbios name. Otherwise we will
-		   have inconsistent user names. With Kerberos, we get the
-		   fully qualified realm, with ntlmssp we get the short
-		   name. And even w2k3 does use ntlmssp if you for example
-		   connect to an ip address. */
+	if (logon_info->info3.base.account_name.string != NULL) {
+		user = logon_info->info3.base.account_name.string;
+	} else {
+		user = "";
+	}
+	if (logon_info->info3.base.logon_domain.string != NULL) {
+		domain = logon_info->info3.base.logon_domain.string;
+	} else {
+		domain = "";
+	}
 
-		wbcErr wbc_status;
-		struct wbcDomainInfo *info = NULL;
+	if (strlen(user) == 0 || strlen(domain) == 0) {
+		status = NT_STATUS_ACCESS_DENIED;
+		DBG_WARNING("Kerberos ticket for[%s] has invalid "
+			    "account_name[%s]/logon_domain[%s]: %s\n",
+			    princ_name,
+			    logon_info->info3.base.account_name.string,
+			    logon_info->info3.base.logon_domain.string,
+			    nt_errstr(status));
+		goto done;
+	}
 
-		DEBUG(10, ("Mapping [%s] to short name using winbindd\n",
-			   realm));
+	DBG_NOTICE("Kerberos ticket principal name is [%s] "
+		   "account_name[%s]/logon_domain[%s]\n",
+		   princ_name, user, domain);
 
-		wbc_status = wbcDomainInfo(realm, &info);
-
-		if (WBC_ERROR_IS_OK(wbc_status)) {
-			domain = talloc_strdup(mem_ctx,
-						info->short_name);
-			wbcFreeMemory(info);
-		} else {
-			DEBUG(3, ("Could not find short name: %s\n",
-				  wbcErrorString(wbc_status)));
-			domain = talloc_strdup(mem_ctx, realm);
+	if (!strequal(domain, lp_workgroup())) {
+		if (!lp_allow_trusted_domains()) {
+			status = NT_STATUS_LOGON_FAILURE;
+			goto done;
 		}
-		if (!domain) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		DEBUG(10, ("Domain is [%s] (using Winbind)\n", domain));
 	}
 
 	unixuser = talloc_asprintf(tmp_ctx, "%s%c%s", domain, winbind_separator(), user);
@@ -1365,9 +1336,13 @@ static NTSTATUS ntlm_auth_prepare_gensec_server(TALLOC_CTX *mem_ctx,
 	cli_credentials_set_conf(server_credentials, lp_ctx);
 
 	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC || lp_security() == SEC_ADS || USE_KERBEROS_KEYTAB) {
-		cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DESIRED);
+		cli_credentials_set_kerberos_state(server_credentials,
+						   CRED_USE_KERBEROS_DESIRED,
+						   CRED_SPECIFIED);
 	} else {
-		cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DISABLED);
+		cli_credentials_set_kerberos_state(server_credentials,
+						   CRED_USE_KERBEROS_DISABLED,
+						   CRED_SPECIFIED);
 	}
 
 	nt_status = gensec_server_start(tmp_ctx, gensec_settings,
@@ -1927,7 +1902,7 @@ static void manage_ntlm_server_1_request(enum stdio_helper_mode stdio_helper_mod
 				TALLOC_FREE(mem_ctx);
 
 			} else {
-				uint8_t authoritative = 0;
+				uint8_t authoritative = 1;
 
 				if (!domain) {
 					domain = smb_xstrdup(get_winbind_domain());
@@ -2443,7 +2418,7 @@ static bool check_auth_crap(void)
 	char *hex_lm_key;
 	char *hex_user_session_key;
 	char *error_string;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 
 	setbuf(stdout, NULL);
 
@@ -2527,6 +2502,7 @@ enum {
 	const char *hex_nt_response = NULL;
 	struct loadparm_context *lp_ctx;
 	poptContext pc;
+	bool ok;
 
 	/* NOTE: DO NOT change this interface without considering the implications!
 	   This is an external interface, which other programs will use to interact
@@ -2683,44 +2659,35 @@ enum {
 			.val        = OPT_TARGET_HOSTNAME,
 			.descrip    = "Target hostname",
 		},
-		POPT_COMMON_CONFIGFILE
+		POPT_COMMON_DEBUG_ONLY
+		POPT_COMMON_CONFIG_ONLY
+		POPT_COMMON_OPTION_ONLY
 		POPT_COMMON_VERSION
-		POPT_COMMON_OPTION
 		POPT_TABLEEND
 	};
 
 	/* Samba client initialisation */
 	smb_init_locale();
 
-	setup_logging("ntlm_auth", DEBUG_STDERR);
-	fault_setup();
-
-	/* Parse options */
-
-	pc = poptGetContext("ntlm_auth", argc, argv, long_options, 0);
-
-	/* Parse command line options */
-
-	if (argc == 1) {
-		poptPrintHelp(pc, stderr, 0);
-		poptFreeContext(pc);
-		return 1;
-	}
-
-	while((opt = poptGetNextOpt(pc)) != -1) {
-		/* Get generic config options like --configfile */
-	}
-
-	poptFreeContext(pc);
-
-	if (!lp_load_global(get_dyn_CONFIGFILE())) {
-		d_fprintf(stderr, "ntlm_auth: error opening config file %s. Error was %s\n",
-			get_dyn_CONFIGFILE(), strerror(errno));
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
 		exit(1);
 	}
 
-	pc = poptGetContext(NULL, argc, (const char **)argv, long_options, 
-			    POPT_CONTEXT_KEEP_FIRST);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    POPT_CONTEXT_KEEP_FIRST);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
 	while((opt = poptGetNextOpt(pc)) != -1) {
 		switch (opt) {
@@ -2761,6 +2728,12 @@ enum {
 				require_membership_of_sid = require_membership_of;
 			}
 			break;
+
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 

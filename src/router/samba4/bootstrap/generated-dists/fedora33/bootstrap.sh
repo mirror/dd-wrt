@@ -45,6 +45,7 @@ dnf install -y \
     keyutils-libs-devel \
     krb5-devel \
     krb5-server \
+    krb5-workstation \
     lcov \
     libacl-devel \
     libarchive-devel \
@@ -54,7 +55,6 @@ dnf install -y \
     libcap-devel \
     libcephfs-devel \
     libicu-devel \
-    libnsl2-devel \
     libpcap-devel \
     libtasn1-devel \
     libtasn1-tools \
@@ -87,10 +87,10 @@ dnf install -y \
     psmisc \
     python3 \
     python3-cryptography \
+    python3-dateutil \
     python3-devel \
     python3-dns \
     python3-gpg \
-    python3-iso8601 \
     python3-libsemanage \
     python3-markdown \
     python3-policycoreutils \
@@ -107,6 +107,7 @@ dnf install -y \
     sudo \
     systemd-devel \
     tar \
+    tracker-devel \
     tree \
     wget \
     which \

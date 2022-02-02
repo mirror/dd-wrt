@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-
 from samba import dsdb
 from samba.ndr import ndr_unpack, ndr_pack
 from samba.samdb import SamDB
@@ -30,7 +28,8 @@ import socket
 import samba.ndr as ndr
 from samba import credentials
 from samba.dcerpc import dns, dnsp, dnsserver
-from samba.netcmd.dns import TXTRecord, dns_record_match, data_to_dns_record
+from samba.dnsserver import TXTRecord
+from samba.dnsserver import record_from_string, dns_record_match
 from samba.tests.subunitrun import SubunitOptions, TestProgram
 from samba import werror, WERRORError
 from samba.tests.dns_base import DNSTest
@@ -1126,7 +1125,6 @@ class TestZones(DNSTest):
             self.fail(e)
 
     def set_params(self, **kwargs):
-        zone = kwargs.pop('zone', None)
         for key, val in kwargs.items():
             name_param = dnsserver.DNS_RPC_NAME_AND_PARAM()
             name_param.dwParam = val
@@ -1138,7 +1136,7 @@ class TestZones(DNSTest):
                 self.rpc_conn.DnssrvOperation2(client_version,
                                                0,
                                                self.server,
-                                               zone,
+                                               self.zone,
                                                0,
                                                'ResetDwordProperty',
                                                nap_type,
@@ -1218,8 +1216,9 @@ class TestZones(DNSTest):
 
     def set_aging(self, enable=False):
         self.create_zone(self.zone, aging_enabled=enable)
-        self.set_params(NoRefreshInterval=1, RefreshInterval=1,
-                        Aging=int(bool(enable)), zone=self.zone,
+        self.set_params(NoRefreshInterval=1,
+                        RefreshInterval=1,
+                        Aging=int(bool(enable)),
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
 
     def test_set_aging(self, enable=True, name='agingtest', txt=['test txt']):
@@ -1245,7 +1244,7 @@ class TestZones(DNSTest):
         self.set_aging(enable=True)
         before_mod = self.dns_update_record(name, txt)
         if not enable:
-            self.set_params(zone=self.zone, Aging=0)
+            self.set_params(Aging=0)
         dec = 2
 
         def mod_ts(rec):
@@ -1269,8 +1268,9 @@ class TestZones(DNSTest):
         name, txt = 'agingtest', ['test txt']
         self.create_zone(self.zone, aging_enabled=True)
         interval = 10
-        self.set_params(NoRefreshInterval=interval, RefreshInterval=interval,
-                        Aging=1, zone=self.zone,
+        self.set_params(NoRefreshInterval=interval,
+                        RefreshInterval=interval,
+                        Aging=1,
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
         before_mod = self.dns_update_record(name, txt)
 
@@ -1367,8 +1367,9 @@ class TestZones(DNSTest):
 
         self.create_zone(self.zone, aging_enabled=True)
         interval = 10
-        self.set_params(NoRefreshInterval=interval, RefreshInterval=interval,
-                        Aging=1, zone=self.zone,
+        self.set_params(NoRefreshInterval=interval,
+                        RefreshInterval=interval,
+                        Aging=1,
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
 
         self.dns_update_record(name, txt)
@@ -1422,8 +1423,9 @@ class TestZones(DNSTest):
 
         self.create_zone(self.zone, aging_enabled=True)
         interval = 10
-        self.set_params(NoRefreshInterval=interval, RefreshInterval=interval,
-                        Aging=1, zone=self.zone,
+        self.set_params(NoRefreshInterval=interval,
+                        RefreshInterval=interval,
+                        Aging=1,
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
 
         expr = "(dnsRecord:1.3.6.1.4.1.7165.4.5.3:={0})"
@@ -1517,8 +1519,9 @@ class TestZones(DNSTest):
 
         self.create_zone(self.zone, aging_enabled=True)
         interval = 1
-        self.set_params(NoRefreshInterval=interval, RefreshInterval=interval,
-                        zone=self.zone, Aging=1,
+        self.set_params(NoRefreshInterval=interval,
+                        RefreshInterval=interval,
+                        Aging=1,
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
         name, txt = 'agingtest', ['test txt']
         name2, txt2 = 'agingtest2', ['test txt2']
@@ -1531,11 +1534,11 @@ class TestZones(DNSTest):
         self.dns_update_record(name3, txt)
         self.dns_update_record(name3, txt2)
 
-        # Create a tomb stoned record.
+        # Create a tombstoned record.
         self.dns_update_record(name4, txt4)
         self.dns_tombstone(name4, txt4, self.zone)
         records = self.ldap_get_records(name4)
-        self.assertTrue("dNSTombstoned" in records[0])
+        self.assertIn("dNSTombstoned", records[0])
         self.assertEqual(records[0]["dNSTombstoned"][0], b"TRUE")
 
         # Create an un-tombstoned record, with dnsTombstoned: FALSE
@@ -1543,7 +1546,7 @@ class TestZones(DNSTest):
         self.dns_tombstone(name5, txt5, self.zone)
         self.dns_update_record(name5, txt5)
         records = self.ldap_get_records(name5)
-        self.assertTrue("dNSTombstoned" in records[0])
+        self.assertIn("dNSTombstoned", records[0])
         self.assertEqual(records[0]["dNSTombstoned"][0], b"FALSE")
 
         last_add = self.dns_update_record(name3, txt3)
@@ -1566,7 +1569,7 @@ class TestZones(DNSTest):
         self.assertEqual(len(recs), 1)
         self.assertEqual(recs[0].wType, dnsp.DNS_TYPE_TOMBSTONE)
         records = self.ldap_get_records(name)
-        self.assertTrue("dNSTombstoned" in records[0])
+        self.assertIn("dNSTombstoned", records[0])
         self.assertEqual(records[0]["dNSTombstoned"][0], b"TRUE")
 
         recs = self.ldap_get_dns_records(name2)
@@ -1585,14 +1588,14 @@ class TestZones(DNSTest):
         self.assertEqual(len(recs), 1)
         self.assertEqual(recs[0].wType, dnsp.DNS_TYPE_TOMBSTONE)
         records = self.ldap_get_records(name4)
-        self.assertTrue("dNSTombstoned" in records[0])
+        self.assertIn("dNSTombstoned", records[0])
         self.assertEqual(records[0]["dNSTombstoned"][0], b"TRUE")
 
         recs = self.ldap_get_dns_records(name5)
         self.assertEqual(len(recs), 1)
         self.assertEqual(recs[0].wType, dnsp.DNS_TYPE_TOMBSTONE)
         records = self.ldap_get_records(name5)
-        self.assertTrue("dNSTombstoned" in records[0])
+        self.assertIn("dNSTombstoned", records[0])
         self.assertEqual(records[0]["dNSTombstoned"][0], b"TRUE")
 
         for make_it_work in [False, True]:
@@ -1747,12 +1750,12 @@ class TestZones(DNSTest):
     def test_rpc_zone_update_while_dnsProperty_zero_length(self):
         self.create_zone(self.zone)
         self.set_dnsProperty_zero_length(dnsp.DSPROPERTY_ZONE_ALLOW_UPDATE)
-        self.set_params(zone=self.zone, AllowUpdate=dnsp.DNS_ZONE_UPDATE_SECURE)
+        self.set_params(AllowUpdate=dnsp.DNS_ZONE_UPDATE_SECURE)
 
     def test_rpc_zone_update_while_other_dnsProperty_zero_length(self):
         self.create_zone(self.zone)
         self.set_dnsProperty_zero_length(dnsp.DSPROPERTY_ZONE_MASTER_SERVERS_DA)
-        self.set_params(zone=self.zone, AllowUpdate=dnsp.DNS_ZONE_UPDATE_SECURE)
+        self.set_params(AllowUpdate=dnsp.DNS_ZONE_UPDATE_SECURE)
 
 class TestRPCRoundtrip(DNSTest):
     def setUp(self):
@@ -1773,7 +1776,7 @@ class TestRPCRoundtrip(DNSTest):
     def rpc_update(self, fqn=None, data=None, wType=None, delete=False):
         fqn = fqn or ("rpctestrec." + self.get_dns_domain())
 
-        rec = data_to_dns_record(wType, data)
+        rec = record_from_string(wType, data)
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
 
@@ -1819,7 +1822,7 @@ class TestRPCRoundtrip(DNSTest):
 
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT, '"\\"This is a test\\""')
+        rec = record_from_string(dnsp.DNS_TYPE_TXT, '"\\"This is a test\\""')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
         try:
@@ -1898,7 +1901,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT,
+        rec = record_from_string(dnsp.DNS_TYPE_TXT,
                                  '"\\"This is a test\\"" "" ""')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
@@ -1931,7 +1934,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT,
+        rec = record_from_string(dnsp.DNS_TYPE_TXT,
                                  '"\\"This is a test\\"" "" "" "more text"')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
@@ -1964,7 +1967,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT,
+        rec = record_from_string(dnsp.DNS_TYPE_TXT,
                                  '"" "" "\\"This is a test\\""')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
@@ -2021,7 +2024,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpcnulltextrec'
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT, '"NULL\x00BYTE"')
+        rec = record_from_string(dnsp.DNS_TYPE_TXT, '"NULL\x00BYTE"')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
         try:
@@ -2067,7 +2070,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT, '"HIGH\xFFBYTE"')
+        rec = record_from_string(dnsp.DNS_TYPE_TXT, '"HIGH\xFFBYTE"')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
         try:
@@ -2116,7 +2119,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT, '"Th\\\\=is=is a test"')
+        rec = record_from_string(dnsp.DNS_TYPE_TXT, '"Th\\\\=is=is a test"')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
         try:
@@ -2166,7 +2169,7 @@ class TestRPCRoundtrip(DNSTest):
         prefix = 'rpc' + prefix
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT,
+        rec = record_from_string(dnsp.DNS_TYPE_TXT,
                                  '"\\"This is a test\\""' +
                                  ' "\\"and this is a test, too\\""')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
@@ -2214,7 +2217,7 @@ class TestRPCRoundtrip(DNSTest):
 
         name = "%s.%s" % (prefix, self.get_dns_domain())
 
-        rec = data_to_dns_record(dnsp.DNS_TYPE_TXT, '')
+        rec = record_from_string(dnsp.DNS_TYPE_TXT, '')
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
         try:

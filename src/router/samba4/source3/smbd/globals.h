@@ -179,6 +179,8 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 					    char **_fname),
 			   bool (*mode_fn)(TALLOC_CTX *ctx,
 					   void *private_data,
+					   struct files_struct *dirfsp,
+					   struct smb_filename *atname,
 					   struct smb_filename *smb_fname,
 					   bool get_dosmode,
 					   uint32_t *_mode),
@@ -211,9 +213,8 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 			       struct ea_list *name_list,
 			       struct file_id *file_id);
 
-NTSTATUS smbd_calculate_access_mask(connection_struct *conn,
-			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname,
+NTSTATUS smbd_calculate_access_mask_fsp(struct files_struct *dirsfp,
+			struct files_struct *fsp,
 			bool use_privs,
 			uint32_t access_mask,
 			uint32_t *access_mask_out);
@@ -367,6 +368,8 @@ struct smbXsrv_connection {
 
 	struct {
 		NTSTATUS status;
+		bool terminating;
+		struct tevent_queue *shutdown_wait_queue;
 		int sock;
 		struct tevent_fd *fde;
 
@@ -528,12 +531,17 @@ struct smbXsrv_connection {
 			uint32_t max_trans;
 			uint32_t max_read;
 			uint32_t max_write;
+			uint16_t sign_algo;
 			uint16_t cipher;
 		} server;
 
 		struct smbXsrv_preauth preauth;
 
 		struct smbd_smb2_request *requests;
+
+		struct {
+			uint8_t read_body_padding;
+		} smbtorture;
 	} smb2;
 };
 
@@ -549,14 +557,11 @@ NTSTATUS smbXsrv_client_create(TALLOC_CTX *mem_ctx,
 			       struct messaging_context *msg_ctx,
 			       NTTIME now,
 			       struct smbXsrv_client **_client);
-NTSTATUS smbXsrv_client_update(struct smbXsrv_client *client);
 NTSTATUS smbXsrv_client_remove(struct smbXsrv_client *client);
-NTSTATUS smb2srv_client_lookup_global(struct smbXsrv_client *client,
-				      struct GUID client_guid,
-				      TALLOC_CTX *mem_ctx,
-				      struct smbXsrv_client_global0 **_pass);
-NTSTATUS smb2srv_client_connection_pass(struct smbd_smb2_request *smb2req,
-					struct smbXsrv_client_global0 *global);
+struct tevent_req *smb2srv_client_mc_negprot_send(TALLOC_CTX *mem_ctx,
+						  struct tevent_context *ev,
+						  struct smbd_smb2_request *smb2req);
+NTSTATUS smb2srv_client_mc_negprot_recv(struct tevent_req *req);
 
 NTSTATUS smbXsrv_connection_init_tables(struct smbXsrv_connection *conn,
 					enum protocol_types protocol);
@@ -569,6 +574,8 @@ NTSTATUS smbXsrv_session_add_channel(struct smbXsrv_session *session,
 				     struct smbXsrv_connection *conn,
 				     NTTIME now,
 				     struct smbXsrv_channel_global0 **_c);
+NTSTATUS smbXsrv_session_remove_channel(struct smbXsrv_session *session,
+					struct smbXsrv_connection *xconn);
 NTSTATUS smbXsrv_session_disconnect_xconn(struct smbXsrv_connection *xconn);
 NTSTATUS smbXsrv_session_update(struct smbXsrv_session *session);
 struct smbXsrv_channel_global0;
@@ -605,6 +612,10 @@ NTSTATUS smb2srv_session_lookup_conn(struct smbXsrv_connection *conn,
 				     struct smbXsrv_session **session);
 NTSTATUS smb2srv_session_lookup_client(struct smbXsrv_client *client,
 				       uint64_t session_id, NTTIME now,
+				       struct smbXsrv_session **session);
+NTSTATUS smb2srv_session_lookup_global(struct smbXsrv_client *client,
+				       uint64_t session_wire_id,
+				       TALLOC_CTX *mem_ctx,
 				       struct smbXsrv_session **session);
 NTSTATUS get_valid_smbXsrv_session(struct smbXsrv_client *client,
 				   uint64_t session_wire_id,
@@ -667,8 +678,12 @@ NTSTATUS smb2srv_open_lookup(struct smbXsrv_connection *conn,
 			     uint64_t volatile_id,
 			     NTTIME now,
 			     struct smbXsrv_open **_open);
+NTSTATUS smbXsrv_open_purge_replay_cache(struct smbXsrv_client *client,
+					 const struct GUID *create_guid);
 NTSTATUS smb2srv_open_lookup_replay_cache(struct smbXsrv_connection *conn,
-					  const struct GUID *create_guid,
+					  struct GUID caller_req_guid,
+					  struct GUID create_guid,
+					  const char *name,
 					  NTTIME now,
 					  struct smbXsrv_open **_open);
 NTSTATUS smb2srv_open_recreate(struct smbXsrv_connection *conn,
@@ -731,6 +746,7 @@ struct smbd_smb2_request {
 	bool do_encryption;
 	struct tevent_timer *async_te;
 	bool compound_related;
+	NTSTATUS compound_create_err;
 
 	/*
 	 * Give the implementation of an SMB2 req a way to tell the SMB2 request
@@ -743,12 +759,12 @@ struct smbd_smb2_request {
 	 * the encryption key for the whole
 	 * compound chain
 	 */
-	DATA_BLOB first_key;
+	struct smb2_signing_key *first_enc_key;
 	/*
 	 * the signing key for the last
 	 * request/response of a compound chain
 	 */
-	DATA_BLOB last_key;
+	struct smb2_signing_key *last_sign_key;
 	struct smbXsrv_preauth *preauth;
 
 	struct timeval request_time;

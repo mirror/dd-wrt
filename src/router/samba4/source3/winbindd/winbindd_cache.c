@@ -95,12 +95,6 @@ static bool is_non_centry_key(TDB_DATA kbuf)
 	return false;
 }
 
-/* Global online/offline state - False when online. winbindd starts up online
-   and sets this to true if the first query fails and there's an entry in
-   the cache tdb telling us to stay offline. */
-
-static bool global_winbindd_offline_state;
-
 struct winbind_cache {
 	TDB_CONTEXT *tdb;
 };
@@ -534,13 +528,6 @@ static void refresh_sequence_number(struct winbindd_domain *domain)
 
 	get_cache( domain );
 
-#if 0	/* JERRY -- disable as the default cache time is now 5 minutes */
-	/* trying to reconnect is expensive, don't do it too often */
-	if (domain->sequence_number == DOM_SEQUENCE_NONE) {
-		cache_time *= 8;
-	}
-#endif
-
 	time_diff = t - domain->last_seq_check;
 
 	/* see if we have to refetch the domain sequence number */
@@ -561,30 +548,9 @@ static void refresh_sequence_number(struct winbindd_domain *domain)
 		goto done;
 	}
 
-	/* important! make sure that we know if this is a native 
-	   mode domain or not.  And that we can contact it. */
-
-	if ( winbindd_can_contact_domain( domain ) ) {		
-		status = domain->backend->sequence_number(domain, 
-							  &domain->sequence_number);
-	} else {
-		/* just use the current time */
-		status = NT_STATUS_OK;
-		domain->sequence_number = time(NULL);
-	}
-
-
-	/* the above call could have set our domain->backend to NULL when
-	 * coming from offline to online mode, make sure to reinitialize the
-	 * backend - Guenther */
-	get_cache( domain );
-
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(10,("refresh_sequence_number: failed with %s\n", nt_errstr(status)));
-		domain->sequence_number = DOM_SEQUENCE_NONE;
-	}
-
-	domain->last_status = status;
+	/* just use the current time */
+	domain->last_status = NT_STATUS_OK;
+	domain->sequence_number = time(NULL);
 	domain->last_seq_check = time(NULL);
 
 	/* save the new sequence number in the cache */
@@ -603,7 +569,7 @@ done:
 static bool centry_expired(struct winbindd_domain *domain, const char *keystr, struct cache_entry *centry)
 {
 	/* If we've been told to be offline - stay in that state... */
-	if (lp_winbind_offline_logon() && global_winbindd_offline_state) {
+	if (lp_winbind_offline_logon() && get_global_winbindd_state_offline()) {
 		DEBUG(10,("centry_expired: Key %s for domain %s valid as winbindd is globally offline.\n",
 			keystr, domain->name ));
 		return false;
@@ -1488,11 +1454,6 @@ do_cached:
 
 do_query:
 
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
-
 	/* Put the query_user_list() in a retry loop.  There appears to be
 	 * some bug either with Windows 2000 or Samba's handling of large
 	 * rpc replies.  This manifests itself as sudden disconnection
@@ -1624,11 +1585,6 @@ do_query:
 	*num_entries = 0;
 	*info = NULL;
 
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
-
 	DEBUG(10,("enum_dom_groups: [Cached] - doing backend query for list for domain %s\n",
 		domain->name ));
 
@@ -1728,11 +1684,6 @@ do_cached:
 do_query:
 	*num_entries = 0;
 	*info = NULL;
-
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
 
 	DEBUG(10,("enum_local_groups: [Cached] - doing backend query for list for domain %s\n",
 		domain->name ));
@@ -1844,17 +1795,6 @@ NTSTATUS wb_cache_name_to_sid(struct winbindd_domain *domain,
 	}
 
 	ZERO_STRUCTP(sid);
-
-	/* If the seq number check indicated that there is a problem
-	 * with this DC, then return that status... except for
-	 * access_denied.  This is special because the dc may be in
-	 * "restrict anonymous = 1" mode, in which case it will deny
-	 * most unauthenticated operations, but *will* allow the LSA
-	 * name-to-sid that we try as a fallback. */
-
-	if (!(NT_STATUS_IS_OK(domain->last_status)
-	      || NT_STATUS_EQUAL(domain->last_status, NT_STATUS_ACCESS_DENIED)))
-		return domain->last_status;
 
 	DEBUG(10,("name_to_sid: [Cached] - doing backend query for name for domain %s\n",
 		domain->name ));
@@ -1983,17 +1923,6 @@ NTSTATUS wb_cache_sid_to_name(struct winbindd_domain *domain,
 
 	*name = NULL;
 	*domain_name = NULL;
-
-	/* If the seq number check indicated that there is a problem
-	 * with this DC, then return that status... except for
-	 * access_denied.  This is special because the dc may be in
-	 * "restrict anonymous = 1" mode, in which case it will deny
-	 * most unauthenticated operations, but *will* allow the LSA
-	 * sid-to-name that we try as a fallback. */
-
-	if (!(NT_STATUS_IS_OK(domain->last_status)
-	      || NT_STATUS_EQUAL(domain->last_status, NT_STATUS_ACCESS_DENIED)))
-		return domain->last_status;
 
 	DEBUG(10,("sid_to_name: [Cached] - doing backend query for name for domain %s\n",
 		domain->name ));
@@ -2276,21 +2205,6 @@ static NTSTATUS wcache_query_user(struct winbindd_domain *domain,
 		return NT_STATUS_NOT_FOUND;
 	}
 
-	/*
-	 * If we have an access denied cache entry and a cached info3
-	 * in the samlogon cache then do a query.  This will force the
-	 * rpc back end to return the info3 data.
-	 */
-
-	if (NT_STATUS_EQUAL(domain->last_status, NT_STATUS_ACCESS_DENIED) &&
-	    netsamlogon_cache_have(user_sid)) {
-		DEBUG(10, ("query_user: cached access denied and have cached "
-			   "info3\n"));
-		domain->last_status = NT_STATUS_OK;
-		centry_free(centry);
-		return NT_STATUS_NOT_FOUND;
-	}
-
 	/* if status is not ok then this is a negative hit
 	   and the rest of the data doesn't matter */
 	status = centry->status;
@@ -2374,19 +2288,6 @@ static NTSTATUS wcache_lookup_usergroups(struct winbindd_domain *domain,
 		return NT_STATUS_NOT_FOUND;
 	}
 
-	/* If we have an access denied cache entry and a cached info3 in the
-           samlogon cache then do a query.  This will force the rpc back end
-           to return the info3 data. */
-
-	if (NT_STATUS_EQUAL(domain->last_status, NT_STATUS_ACCESS_DENIED)
-	    && netsamlogon_cache_have(user_sid)) {
-		DEBUG(10, ("lookup_usergroups: cached access denied and have "
-			   "cached info3\n"));
-		domain->last_status = NT_STATUS_OK;
-		centry_free(centry);
-		return NT_STATUS_NOT_FOUND;
-	}
-
 	num_sids = centry_uint32(centry);
 	sids = talloc_array(mem_ctx, struct dom_sid, num_sids);
 	if (sids == NULL) {
@@ -2432,11 +2333,6 @@ NTSTATUS wb_cache_lookup_usergroups(struct winbindd_domain *domain,
 
 	(*num_groups) = 0;
 	(*user_gids) = NULL;
-
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
 
 	DEBUG(10,("lookup_usergroups: [Cached] - doing backend query for info for domain %s\n",
 		domain->name ));
@@ -2589,9 +2485,6 @@ NTSTATUS wb_cache_lookup_useraliases(struct winbindd_domain *domain,
 	(*num_aliases) = 0;
 	(*alias_rids) = NULL;
 
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
-
 	DEBUG(10,("lookup_usergroups: [Cached] - doing backend query for info "
 		  "for domain %s\n", domain->name ));
 
@@ -2726,11 +2619,6 @@ NTSTATUS wb_cache_lookup_groupmem(struct winbindd_domain *domain,
 	(*names) = NULL;
 	(*name_types) = NULL;
 
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
-
 	DEBUG(10,("lookup_groupmem: [Cached] - doing backend query for info for domain %s\n",
 		domain->name ));
 
@@ -2861,11 +2749,6 @@ do_fetch_cache:
 	return NT_STATUS_OK;
 
 do_query:
-	/* Return status value returned by seq number check */
-
- 	if (!NT_STATUS_IS_OK(domain->last_status))
- 		return domain->last_status;
-
 	DEBUG(10,("trusted_domains: [Cached] - doing backend query for info for domain %s\n",
 		domain->name ));
 
@@ -2931,11 +2814,6 @@ do_fetch_cache:
 
 do_query:
 	ZERO_STRUCTP(policy);
-
-	/* Return status value returned by seq number check */
-
- 	if (!NT_STATUS_IS_OK(domain->last_status))
- 		return domain->last_status;
 
 	DEBUG(10,("lockout_policy: [Cached] - doing backend query for info for domain %s\n",
 		domain->name ));
@@ -3003,11 +2881,6 @@ do_fetch_cache:
 
 do_query:
 	ZERO_STRUCTP(policy);
-
-	/* Return status value returned by seq number check */
-
-	if (!NT_STATUS_IS_OK(domain->last_status))
-		return domain->last_status;
 
 	DEBUG(10,("password_policy: [Cached] - doing backend query for info for domain %s\n",
 		domain->name ));
@@ -3184,8 +3057,9 @@ static bool init_wcache(void)
 
 bool initialize_winbindd_cache(void)
 {
-	bool cache_bad = true;
-	uint32_t vers;
+	bool cache_bad = false;
+	uint32_t vers = 0;
+	bool ok;
 
 	if (!init_wcache()) {
 		DEBUG(0,("initialize_winbindd_cache: init_wcache failed.\n"));
@@ -3193,9 +3067,16 @@ bool initialize_winbindd_cache(void)
 	}
 
 	/* Check version number. */
-	if (tdb_fetch_uint32(wcache->tdb, WINBINDD_CACHE_VERSION_KEYSTR, &vers) &&
-			vers == WINBINDD_CACHE_VERSION) {
-		cache_bad = false;
+	ok = tdb_fetch_uint32(wcache->tdb, WINBINDD_CACHE_VERSION_KEYSTR, &vers);
+	if (!ok) {
+		DBG_DEBUG("Failed to get cache version\n");
+		cache_bad = true;
+	}
+	if (vers != WINBINDD_CACHE_VERSION) {
+		DBG_DEBUG("Invalid cache version %u != %u\n",
+			  vers,
+			  WINBINDD_CACHE_VERSION);
+		cache_bad = true;
 	}
 
 	if (cache_bad) {
@@ -3541,40 +3422,43 @@ done:
 /* Change the global online/offline state. */
 bool set_global_winbindd_state_offline(void)
 {
-	TDB_DATA data;
+	bool ok;
+	uint8_t buf[4] = {0};
+	TDB_DATA data = {
+		.dptr = buf,
+		.dsize = sizeof(buf)
+	};
+	int rc;
 
-	DEBUG(10,("set_global_winbindd_state_offline: offline requested.\n"));
-
-	/* Only go offline if someone has created
-	   the key "WINBINDD_OFFLINE" in the cache tdb. */
+	DBG_ERR("Offline requested\n");
 
 	if (wcache == NULL || wcache->tdb == NULL) {
-		DEBUG(10,("set_global_winbindd_state_offline: wcache not open yet.\n"));
+		DBG_ERR("Winbind cache doesn't exist yet\n");
 		return false;
 	}
 
 	if (!lp_winbind_offline_logon()) {
-		DEBUG(10,("set_global_winbindd_state_offline: rejecting.\n"));
+		DBG_ERR("Rejecting to set winbind offline\n");
 		return false;
 	}
 
-	if (global_winbindd_offline_state) {
-		/* Already offline. */
+	ok = get_global_winbindd_state_offline();
+	if (ok) {
 		return true;
 	}
 
-	data = tdb_fetch_bystring( wcache->tdb, "WINBINDD_OFFLINE" );
+	PUSH_LE_U32(buf, 0, time(NULL));
 
-	if (!data.dptr || data.dsize != 4) {
-		DEBUG(10,("set_global_winbindd_state_offline: offline state not set.\n"));
-		SAFE_FREE(data.dptr);
+	rc = tdb_store_bystring(wcache->tdb,
+				"WINBINDD_OFFLINE",
+				data,
+				TDB_INSERT);
+	if (rc != 0) {
 		return false;
-	} else {
-		DEBUG(10,("set_global_winbindd_state_offline: offline state set.\n"));
-		global_winbindd_offline_state = true;
-		SAFE_FREE(data.dptr);
-		return true;
 	}
+
+	return true;
+
 }
 
 void set_global_winbindd_state_online(void)
@@ -3586,12 +3470,6 @@ void set_global_winbindd_state_online(void)
 		return;
 	}
 
-	if (!global_winbindd_offline_state) {
-		/* Already online. */
-		return;
-	}
-	global_winbindd_offline_state = false;
-
 	if (!wcache->tdb) {
 		return;
 	}
@@ -3602,7 +3480,16 @@ void set_global_winbindd_state_online(void)
 
 bool get_global_winbindd_state_offline(void)
 {
-	return global_winbindd_offline_state;
+	TDB_DATA data;
+
+	data = tdb_fetch_bystring(wcache->tdb, "WINBINDD_OFFLINE");
+	if (data.dptr == NULL || data.dsize != 4) {
+		DBG_DEBUG("Offline state not set.\n");
+		SAFE_FREE(data.dptr);
+		return false;
+	}
+
+	return true;
 }
 
 /***********************************************************************

@@ -40,6 +40,7 @@
 #include "dlz_minimal.h"
 #include "dnsserver_common.h"
 #include "lib/util/smb_strtox.h"
+#include "lib/util/access.h"
 
 #undef strcasecmp
 
@@ -230,13 +231,6 @@ static bool b9_format(struct dlz_bind9_data *state,
 					rec->data.mx.wPriority, fqdn);
 		break;
 
-	case DNS_TYPE_HINFO:
-		*type = "hinfo";
-		*data = talloc_asprintf(mem_ctx, "%s %s",
-					rec->data.hinfo.cpu,
-					rec->data.hinfo.os);
-		break;
-
 	case DNS_TYPE_NS:
 		*type = "ns";
 		*data = b9_format_fqdn(mem_ctx, rec->data.ns);
@@ -299,7 +293,6 @@ static const struct {
 	{ DNS_TYPE_PTR,   "PTR"   , false},
 	{ DNS_TYPE_SRV,   "SRV"   , false},
 	{ DNS_TYPE_MX,    "MX"    , false},
-	{ DNS_TYPE_HINFO, "HINFO" , false},
 	{ DNS_TYPE_NS,    "NS"    , false},
 	{ DNS_TYPE_SOA,   "SOA"   , true},
 };
@@ -320,7 +313,7 @@ static bool b9_single_valued(enum dns_record_type dns_type)
 }
 
 /*
-  see if a DNS type is single valued
+  get a DNS_TYPE_* value from the corresponding string
  */
 static bool b9_dns_type(const char *type, enum dns_record_type *dtype)
 {
@@ -430,11 +423,6 @@ static bool b9_parse(struct dlz_bind9_data *state,
 	case DNS_TYPE_MX:
 		DNS_PARSE_UINT(rec->data.mx.wPriority, NULL, " ", saveptr);
 		DNS_PARSE_STR(rec->data.mx.nameTarget, NULL, " ", saveptr);
-		break;
-
-	case DNS_TYPE_HINFO:
-		DNS_PARSE_STR(rec->data.hinfo.cpu, NULL, " ", saveptr);
-		DNS_PARSE_STR(rec->data.hinfo.os, NULL, " ", saveptr);
 		break;
 
 	case DNS_TYPE_NS:
@@ -955,13 +943,9 @@ static isc_result_t b9_find_name_dn(struct dlz_bind9_data *state, const char *na
 /*
   see if we handle a given zone
  */
-#if DLZ_DLOPEN_VERSION < 3
-_PUBLIC_ isc_result_t dlz_findzonedb(void *dbdata, const char *name)
-#else
 _PUBLIC_ isc_result_t dlz_findzonedb(void *dbdata, const char *name,
 				     dns_clientinfomethods_t *methods,
 				     dns_clientinfo_t *clientinfo)
-#endif
 {
 	struct timeval start = timeval_current();
 	struct dlz_bind9_data *state = talloc_get_type_abort(dbdata, struct dlz_bind9_data);
@@ -1076,15 +1060,10 @@ static isc_result_t dlz_lookup_types(struct dlz_bind9_data *state,
 /*
   lookup one record
  */
-#if DLZ_DLOPEN_VERSION == 1
-_PUBLIC_ isc_result_t dlz_lookup(const char *zone, const char *name,
-				 void *dbdata, dns_sdlzlookup_t *lookup)
-#else
 _PUBLIC_ isc_result_t dlz_lookup(const char *zone, const char *name,
 				 void *dbdata, dns_sdlzlookup_t *lookup,
 				 dns_clientinfomethods_t *methods,
 				 dns_clientinfo_t *clientinfo)
-#endif
 {
 	struct dlz_bind9_data *state = talloc_get_type_abort(dbdata, struct dlz_bind9_data);
 	isc_result_t result = ISC_R_SUCCESS;
@@ -1107,10 +1086,60 @@ _PUBLIC_ isc_result_t dlz_lookup(const char *zone, const char *name,
  */
 _PUBLIC_ isc_result_t dlz_allowzonexfr(void *dbdata, const char *name, const char *client)
 {
-	/* just say yes for all our zones for now */
 	struct dlz_bind9_data *state = talloc_get_type(
 		dbdata, struct dlz_bind9_data);
-	return b9_find_zone_dn(state, name, NULL, NULL);
+	isc_result_t ret;
+	const char **authorized_clients, **denied_clients;
+	const char *cname="";
+
+	/* check that the zone is known */
+	ret = b9_find_zone_dn(state, name, NULL, NULL);
+	if (ret != ISC_R_SUCCESS) {
+		return ret;
+	}
+
+	/* default is to deny all transfers */
+
+	authorized_clients = lpcfg_dns_zone_transfer_clients_allow(state->lp);
+	denied_clients = lpcfg_dns_zone_transfer_clients_deny(state->lp);
+
+	/* The logic of allow_access() when both allow and deny lists are given
+	 * does not match our expectation here: it would allow clients thar are
+	 * neither allowed nor denied.
+	 * Here, we want to deny clients by default.
+	 * Using the allow_access() function is still useful as it takes care of
+	 * parsing IP adresses and subnets in a consistent way with other options
+	 * from smb.conf.
+	 *
+	 * We will then check the deny list first, then the allow list, so that
+	 * we accept only clients that are explicitely allowed AND not explicitely
+	 * denied.
+	 */
+	if ((authorized_clients == NULL) && (denied_clients == NULL)) {
+		/* No "allow" or "deny" lists given. Deny by default. */
+		return ISC_R_NOPERM;
+	}
+
+	if (denied_clients != NULL) {
+		bool ok = allow_access(denied_clients, NULL, cname, client);
+		if (!ok) {
+			/* client on deny list. Deny. */
+			return ISC_R_NOPERM;
+		}
+	}
+
+	if (authorized_clients != NULL) {
+		bool ok = allow_access(NULL, authorized_clients, cname, client);
+		if (ok) {
+			/*
+			 * client is not on deny list and is on allow list.
+			 * This is the only place we should return "allow".
+			 */
+			return ISC_R_SUCCESS;
+		}
+	}
+	/* We shouldn't get here, but deny by default. */
+	return ISC_R_NOPERM;
 }
 
 /*
@@ -1444,12 +1473,8 @@ static bool b9_zone_exists(struct dlz_bind9_data *state, const char *name)
 /*
   configure a writeable zone
  */
-#if DLZ_DLOPEN_VERSION < 3
-_PUBLIC_ isc_result_t dlz_configure(dns_view_t *view, void *dbdata)
-#else
 _PUBLIC_ isc_result_t dlz_configure(dns_view_t *view, dns_dlzdb_t *dlzdb,
 				    void *dbdata)
-#endif
 {
 	struct dlz_bind9_data *state = talloc_get_type_abort(dbdata, struct dlz_bind9_data);
 	TALLOC_CTX *tmp_ctx;
@@ -1520,11 +1545,7 @@ _PUBLIC_ isc_result_t dlz_configure(dns_view_t *view, dns_dlzdb_t *dlzdb,
 				return ISC_R_NOMEMORY;
 			}
 
-#if DLZ_DLOPEN_VERSION < 3
-			result = state->writeable_zone(view, zone);
-#else
 			result = state->writeable_zone(view, dlzdb, zone);
-#endif
 			if (result != ISC_R_SUCCESS) {
 				state->log(ISC_LOG_ERROR, "samba_dlz: Failed to configure zone '%s'",
 					   zone);
@@ -1567,6 +1588,8 @@ _PUBLIC_ isc_boolean_t dlz_ssumatch(const char *signer, const char *name, const 
 	const struct gensec_security_ops **backends = NULL;
 	size_t idx = 0;
 	isc_boolean_t result = ISC_FALSE;
+	NTSTATUS status;
+	bool ok;
 
 	/* Remove cached credentials, if any */
 	if (state->session_info) {
@@ -1594,8 +1617,24 @@ _PUBLIC_ isc_boolean_t dlz_ssumatch(const char *signer, const char *name, const 
 		goto exit;
 	}
 
-	cli_credentials_set_krb5_context(server_credentials, state->smb_krb5_ctx);
-	cli_credentials_set_conf(server_credentials, state->lp);
+	status = cli_credentials_set_krb5_context(server_credentials,
+						  state->smb_krb5_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		state->log(ISC_LOG_ERROR,
+			   "samba_dlz: failed to set krb5 context");
+		talloc_free(tmp_ctx);
+		result = ISC_FALSE;
+		goto exit;
+	}
+
+	ok = cli_credentials_set_conf(server_credentials, state->lp);
+	if (!ok) {
+		state->log(ISC_LOG_ERROR,
+			   "samba_dlz: failed to load smb.conf");
+		talloc_free(tmp_ctx);
+		result = ISC_FALSE;
+		goto exit;
+	}
 
 	keytab_file = talloc_asprintf(tmp_ctx,
 				      "%s/dns.keytab",
@@ -1770,17 +1809,13 @@ exit:
 	return result;
 }
 
+
 /*
   see if two dns records match
  */
-static bool b9_record_match(struct dlz_bind9_data *state,
-			    struct dnsp_DnssrvRpcRecord *rec1, struct dnsp_DnssrvRpcRecord *rec2)
+static bool b9_record_match(struct dnsp_DnssrvRpcRecord *rec1,
+			    struct dnsp_DnssrvRpcRecord *rec2)
 {
-	bool status;
-	int i;
-	struct in6_addr rec1_in_addr6;
-	struct in6_addr rec2_in_addr6;
-
 	if (rec1->wType != rec2->wType) {
 		return false;
 	}
@@ -1789,67 +1824,7 @@ static bool b9_record_match(struct dlz_bind9_data *state,
 		return true;
 	}
 
-	/* see if the data matches */
-	switch (rec1->wType) {
-	case DNS_TYPE_A:
-		return strcmp(rec1->data.ipv4, rec2->data.ipv4) == 0;
-	case DNS_TYPE_AAAA: {
-		int ret;
-
-		ret = inet_pton(AF_INET6, rec1->data.ipv6, &rec1_in_addr6);
-		if (ret != 1) {
-			return false;
-		}
-		ret = inet_pton(AF_INET6, rec2->data.ipv6, &rec2_in_addr6);
-		if (ret != 1) {
-			return false;
-		}
-
-		return memcmp(&rec1_in_addr6, &rec2_in_addr6, sizeof(rec1_in_addr6)) == 0;
-	}
-	case DNS_TYPE_CNAME:
-		return dns_name_equal(rec1->data.cname, rec2->data.cname);
-	case DNS_TYPE_TXT:
-		status = (rec1->data.txt.count == rec2->data.txt.count);
-		if (!status) return status;
-		for (i=0; i<rec1->data.txt.count; i++) {
-			status &= (strcmp(rec1->data.txt.str[i], rec2->data.txt.str[i]) == 0);
-		}
-		return status;
-	case DNS_TYPE_PTR:
-		return dns_name_equal(rec1->data.ptr, rec2->data.ptr);
-	case DNS_TYPE_NS:
-		return dns_name_equal(rec1->data.ns, rec2->data.ns);
-
-	case DNS_TYPE_SRV:
-		return rec1->data.srv.wPriority == rec2->data.srv.wPriority &&
-			rec1->data.srv.wWeight  == rec2->data.srv.wWeight &&
-			rec1->data.srv.wPort    == rec2->data.srv.wPort &&
-			dns_name_equal(rec1->data.srv.nameTarget, rec2->data.srv.nameTarget);
-
-	case DNS_TYPE_MX:
-		return rec1->data.mx.wPriority == rec2->data.mx.wPriority &&
-			dns_name_equal(rec1->data.mx.nameTarget, rec2->data.mx.nameTarget);
-
-	case DNS_TYPE_HINFO:
-		return strcmp(rec1->data.hinfo.cpu, rec2->data.hinfo.cpu) == 0 &&
-			strcmp(rec1->data.hinfo.os, rec2->data.hinfo.os) == 0;
-
-	case DNS_TYPE_SOA:
-		return dns_name_equal(rec1->data.soa.mname, rec2->data.soa.mname) &&
-			dns_name_equal(rec1->data.soa.rname, rec2->data.soa.rname) &&
-			rec1->data.soa.serial == rec2->data.soa.serial &&
-			rec1->data.soa.refresh == rec2->data.soa.refresh &&
-			rec1->data.soa.retry == rec2->data.soa.retry &&
-			rec1->data.soa.expire == rec2->data.soa.expire &&
-			rec1->data.soa.minimum == rec2->data.soa.minimum;
-	default:
-		state->log(ISC_LOG_ERROR, "samba_dlz b9_record_match: unhandled record type %u",
-			   rec1->wType);
-		break;
-	}
-
-	return false;
+	return dns_record_match(rec1, rec2);
 }
 
 /*
@@ -1908,7 +1883,6 @@ _PUBLIC_ isc_result_t dlz_addrdataset(const char *name, const char *rdatastr, vo
 	uint16_t num_recs = 0;
 	uint16_t first = 0;
 	uint16_t i;
-	NTTIME t;
 	WERROR werr;
 
 	if (state->transaction_token != (void*)version) {
@@ -1962,16 +1936,18 @@ _PUBLIC_ isc_result_t dlz_addrdataset(const char *name, const char *rdatastr, vo
 		first = num_recs;
 	}
 
-	/* there are existing records. We need to see if this will
+	/* there may be existing records. We need to see if this will
 	 * replace a record or add to it
 	 */
 	for (i=first; i < num_recs; i++) {
-		if (b9_record_match(state, rec, &recs[i])) {
+		if (b9_record_match(rec, &recs[i])) {
 			break;
 		}
 	}
 	if (i == UINT16_MAX) {
-		state->log(ISC_LOG_ERROR, "samba_dlz: failed to already %u dnsRecord values for %s",
+		state->log(ISC_LOG_ERROR,
+			   "samba_dlz: failed to find record to modify, and "
+			   "there are already %u dnsRecord values for %s",
 			   i, ldb_dn_get_linearized(dn));
 		talloc_free(rec);
 		result = ISC_R_FAILURE;
@@ -1993,10 +1969,7 @@ _PUBLIC_ isc_result_t dlz_addrdataset(const char *name, const char *rdatastr, vo
 		if (dns_name_is_static(recs, num_recs)) {
 			rec->dwTimeStamp = 0;
 		} else {
-			unix_to_nt_time(&t, time(NULL));
-			t /= 10 * 1000 * 1000; /* convert to seconds */
-			t /= 3600;	     /* convert to hours */
-			rec->dwTimeStamp = (uint32_t)t;
+			rec->dwTimeStamp = unix_to_dns_timestamp(time(NULL));
 		}
 	}
 
@@ -2087,7 +2060,7 @@ _PUBLIC_ isc_result_t dlz_subrdataset(const char *name, const char *rdatastr, vo
 	}
 
 	for (i=0; i < num_recs; i++) {
-		if (b9_record_match(state, rec, &recs[i])) {
+		if (b9_record_match(rec, &recs[i])) {
 			recs[i] = (struct dnsp_DnssrvRpcRecord) {
 				.wType = DNS_TYPE_TOMBSTONE,
 			};

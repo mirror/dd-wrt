@@ -158,29 +158,13 @@ static bool endpoints_match(const struct dcerpc_binding *b1,
 		return false;
 	}
 
-	if (!ep1 && ep2) {
-		return false;
-	}
-
-	if (ep1 && !ep2) {
-		return false;
-	}
-
-	if (ep1 && ep2) {
+	if ((ep1 != NULL) || (ep2 != NULL)) {
 		if (!strequal(ep1, ep2)) {
 			return false;
 		}
 	}
 
-	if (!h1 && h2) {
-		return false;
-	}
-
-	if (h1 && !h2) {
-		return false;
-	}
-
-	if (h1 && h2) {
+	if ((h1 != NULL) || (h2 != NULL)) {
 		if (!strequal(h1, h2)) {
 			return false;
 		}
@@ -969,9 +953,6 @@ error_status_t _epm_Map(struct pipes_struct *p,
 	}
 
 	tmp_ctx = talloc_stackframe();
-	if (tmp_ctx == NULL) {
-		return EPMAPPER_STATUS_NO_MEMORY;
-	}
 
 	ZERO_STRUCTP(r->out.entry_handle);
 
@@ -1002,8 +983,7 @@ error_status_t _epm_Map(struct pipes_struct *p,
 	dcerpc_floor_get_lhs_data(&floors[1], &ifid);
 
 	if (floors[1].lhs.protocol != EPM_PROTOCOL_UUID ||
-	    !GUID_equal(&ifid.uuid, &ndr_transfer_syntax_ndr.uuid) ||
-	    ifid.if_version != ndr_transfer_syntax_ndr.if_version) {
+	    !ndr_syntax_id_equal(&ifid, &ndr_transfer_syntax_ndr)) {
 		rc = EPMAPPER_STATUS_NO_MORE_ENTRIES;
 		goto done;
 	}

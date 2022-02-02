@@ -38,6 +38,7 @@ int tevent_common_fd_destructor(struct tevent_fd *fde)
 	fde->destroyed = true;
 
 	if (fde->event_ctx) {
+		tevent_trace_fd_callback(fde->event_ctx, fde, TEVENT_EVENT_TRACE_DETACH);
 		DLIST_REMOVE(fde->event_ctx->fd_events, fde);
 	}
 
@@ -85,9 +86,11 @@ struct tevent_fd *tevent_common_add_fd(struct tevent_context *ev, TALLOC_CTX *me
 		.location	= location,
 	};
 
+	tevent_trace_fd_callback(fde->event_ctx, fde, TEVENT_EVENT_TRACE_ATTACH);
 	DLIST_ADD(ev->fd_events, fde);
 
 	talloc_set_destructor(fde, tevent_common_fd_destructor);
+
 
 	return fde;
 }
@@ -135,6 +138,7 @@ int tevent_common_invoke_fd_handler(struct tevent_fd *fde, uint16_t flags,
 					fde->handler_name,
 					fde->location);
 	}
+	tevent_trace_fd_callback(fde->event_ctx, fde, TEVENT_EVENT_TRACE_BEFORE_HANDLER);
 	fde->handler(handler_ev, fde, flags, fde->private_data);
 	if (fde->wrapper != NULL) {
 		fde->wrapper->ops->after_fd_handler(
@@ -158,4 +162,22 @@ int tevent_common_invoke_fd_handler(struct tevent_fd *fde, uint16_t flags,
 	}
 
 	return 0;
+}
+
+void tevent_fd_set_tag(struct tevent_fd *fde, uint64_t tag)
+{
+	if (fde == NULL) {
+		return;
+	}
+
+	fde->tag = tag;
+}
+
+uint64_t tevent_fd_get_tag(const struct tevent_fd *fde)
+{
+	if (fde == NULL) {
+		return 0;
+	}
+
+	return fde->tag;
 }

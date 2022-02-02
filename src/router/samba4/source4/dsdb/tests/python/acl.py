@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # This is unit with tests for LDAP access checks
 
-from __future__ import print_function
 import optparse
 import sys
 import base64
@@ -1647,6 +1646,8 @@ userPassword: thatsAcomplPASS1
         except LdbError as e31:
             (num, _) = e31.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            pass # Not self.fail() as we normally want success.
 
     def test_reset_password3(self):
         """Grant WP and see what happens (unicodePwd)"""
@@ -1708,6 +1709,8 @@ userPassword: thatsAcomplPASS1
         except LdbError as e34:
             (num, _) = e34.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            pass # Not self.fail() as we normally want success
 
 
 class AclExtendedTests(AclTests):
@@ -1922,6 +1925,8 @@ class AclSPNTests(AclTests):
         self.computername = "testcomp8"
         self.test_user = "spn_test_user8"
         self.computerdn = "CN=%s,CN=computers,%s" % (self.computername, self.base_dn)
+        self.user_object = "user_with_spn"
+        self.user_object_dn = "CN=%s,CN=Users,%s" % (self.user_object, self.base_dn)
         self.dc_dn = "CN=%s,OU=Domain Controllers,%s" % (self.dcname, self.base_dn)
         self.site = "Default-First-Site-Name"
         self.rodcctx = DCJoinContext(server=host, creds=creds, lp=lp,
@@ -1943,6 +1948,7 @@ class AclSPNTests(AclTests):
         self.dcctx.cleanup_old_join()
         delete_force(self.ldb_admin, "cn=%s,cn=computers,%s" % (self.computername, self.base_dn))
         delete_force(self.ldb_admin, self.get_user_dn(self.test_user))
+        delete_force(self.ldb_admin, self.user_object_dn)
 
         del self.ldb_user1
 
@@ -2024,6 +2030,8 @@ class AclSPNTests(AclTests):
         except LdbError as e39:
             (num, _) = e39.args
             self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
+        else:
+            self.fail()
 
         mod = "(OA;;SW;f3a64788-5306-11d1-a9c5-0000f80367c1;;%s)" % str(self.user_sid1)
         self.sd_utils.dacl_add_ace(ctx.acct_dn, mod)
@@ -2062,29 +2070,39 @@ class AclSPNTests(AclTests):
         except LdbError as e40:
             (num, _) = e40.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, ctx.acct_dn, "ldap/%s.%s/DomainDnsZones.%s" %
                              (ctx.myname, ctx.dnsdomain, ctx.dnsdomain))
         except LdbError as e41:
             (num, _) = e41.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, ctx.acct_dn, "nosuchservice/%s/%s" % ("abcd", "abcd"))
         except LdbError as e42:
             (num, _) = e42.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, ctx.acct_dn, "GC/%s.%s/%s" %
                              (ctx.myname, ctx.dnsdomain, netbiosdomain))
         except LdbError as e43:
             (num, _) = e43.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, ctx.acct_dn, "E3514235-4B06-11D1-AB04-00C04FC2DCD2/%s/%s" %
                              (ctx.ntds_guid, ctx.dnsdomain))
         except LdbError as e44:
             (num, _) = e44.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
 
     def test_computer_spn(self):
         # with WP, any value can be set
@@ -2130,6 +2148,8 @@ class AclSPNTests(AclTests):
         except LdbError as e45:
             (num, _) = e45.args
             self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
+        else:
+            self.fail()
 
         mod = "(OA;;SW;f3a64788-5306-11d1-a9c5-0000f80367c1;;%s)" % str(self.user_sid1)
         self.sd_utils.dacl_add_ace(self.computerdn, mod)
@@ -2148,47 +2168,123 @@ class AclSPNTests(AclTests):
         except LdbError as e46:
             (num, _) = e46.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "HOST/%s.%s/%s" %
                              (self.computername, self.dcctx.dnsdomain, netbiosdomain))
         except LdbError as e47:
             (num, _) = e47.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "HOST/%s/%s" %
                              (self.computername, self.dcctx.dnsdomain))
         except LdbError as e48:
             (num, _) = e48.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "HOST/%s.%s/%s" %
                              (self.computername, self.dcctx.dnsdomain, self.dcctx.dnsdomain))
         except LdbError as e49:
             (num, _) = e49.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "GC/%s.%s/%s" %
                              (self.computername, self.dcctx.dnsdomain, self.dcctx.dnsforest))
         except LdbError as e50:
             (num, _) = e50.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "ldap/%s/%s" % (self.computername, netbiosdomain))
         except LdbError as e51:
             (num, _) = e51.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
         try:
             self.replace_spn(self.ldb_user1, self.computerdn, "ldap/%s.%s/ForestDnsZones.%s" %
                              (self.computername, self.dcctx.dnsdomain, self.dcctx.dnsdomain))
         except LdbError as e52:
             (num, _) = e52.args
             self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
 
     def test_spn_rwdc(self):
         self.dc_spn_test(self.dcctx)
 
     def test_spn_rodc(self):
         self.dc_spn_test(self.rodcctx)
+
+    def test_user_spn(self):
+        #grant SW to a regular user and try to set the spn on a user object
+        #should get  ERR_INSUFFICIENT_ACCESS_RIGHTS, since Validate-SPN only applies to computer
+        self.ldb_admin.newuser(self.user_object, self.user_pass)
+        mod = "(OA;;SW;f3a64788-5306-11d1-a9c5-0000f80367c1;;%s)" % str(self.user_sid1)
+        self.sd_utils.dacl_add_ace(self.user_object_dn, mod)
+        try:
+            self.replace_spn(self.ldb_user1, self.user_object_dn, "nosuchservice/%s/%s" % ("abcd", "abcd"))
+        except LdbError as e60:
+            (num, _) = e60.args
+            self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
+        else:
+            self.fail()
+
+    def test_delete_add_spn(self):
+        # Grant Validated-SPN property.
+        mod = f'(OA;;SW;{security.GUID_DRS_VALIDATE_SPN};;{self.user_sid1})'
+        self.sd_utils.dacl_add_ace(self.computerdn, mod)
+
+        spn_base = f'HOST/{self.computername}'
+
+        allowed_spn = f'{spn_base}.{self.dcctx.dnsdomain}'
+        not_allowed_spn = f'{spn_base}/{self.dcctx.get_domain_name()}'
+
+        # Ensure we are able to add an allowed SPN.
+        msg = Message(Dn(self.ldb_user1, self.computerdn))
+        msg['servicePrincipalName'] = MessageElement(allowed_spn,
+                                                     FLAG_MOD_ADD,
+                                                     'servicePrincipalName')
+        self.ldb_user1.modify(msg)
+
+        # Ensure we are not able to add a disallowed SPN.
+        msg = Message(Dn(self.ldb_user1, self.computerdn))
+        msg['servicePrincipalName'] = MessageElement(not_allowed_spn,
+                                                     FLAG_MOD_ADD,
+                                                     'servicePrincipalName')
+        try:
+            self.ldb_user1.modify(msg)
+        except LdbError as e:
+            num, _ = e.args
+            self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail(f'able to add disallowed SPN {not_allowed_spn}')
+
+        # Ensure that deleting an existing SPN followed by adding a disallowed
+        # SPN fails.
+        msg = Message(Dn(self.ldb_user1, self.computerdn))
+        msg['0'] = MessageElement([],
+                                  FLAG_MOD_DELETE,
+                                  'servicePrincipalName')
+        msg['1'] = MessageElement(not_allowed_spn,
+                                  FLAG_MOD_ADD,
+                                  'servicePrincipalName')
+        try:
+            self.ldb_user1.modify(msg)
+        except LdbError as e:
+            num, _ = e.args
+            self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail(f'able to add disallowed SPN {not_allowed_spn}')
+
 
 # tests SEC_ADS_LIST vs. SEC_ADS_LIST_OBJECT
 @DynamicTestCase

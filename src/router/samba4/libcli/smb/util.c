@@ -23,6 +23,8 @@
 #include "libcli/smb/smb_common.h"
 #include "system/filesys.h"
 #include "lib/param/loadparm.h"
+#include "lib/param/param.h"
+#include "libcli/smb/smb2_negotiate_context.h"
 
 const char *smb_protocol_types_string(enum protocol_types protocol)
 {
@@ -45,16 +47,10 @@ const char *smb_protocol_types_string(enum protocol_types protocol)
 		return "SMB2_02";
 	case PROTOCOL_SMB2_10:
 		return "SMB2_10";
-	case PROTOCOL_SMB2_22:
-		return "SMB2_22";
-	case PROTOCOL_SMB2_24:
-		return "SMB2_24";
 	case PROTOCOL_SMB3_00:
 		return "SMB3_00";
 	case PROTOCOL_SMB3_02:
 		return "SMB3_02";
-	case PROTOCOL_SMB3_10:
-		return "SMB3_10";
 	case PROTOCOL_SMB3_11:
 		return "SMB3_11";
 	}
@@ -467,4 +463,254 @@ enum smb_encryption_setting smb_encryption_setting_translate(const char *str)
 	}
 
 	return encryption_state;
+}
+
+static const struct enum_list enum_smb3_signing_algorithms[] = {
+	{SMB2_SIGNING_AES128_GMAC, "AES-128-GMAC"},
+	{SMB2_SIGNING_AES128_CMAC, "AES-128-CMAC"},
+	{SMB2_SIGNING_HMAC_SHA256, "HMAC-SHA256"},
+	{-1, NULL}
+};
+
+const char *smb3_signing_algorithm_name(uint16_t algo)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(enum_smb3_signing_algorithms); i++) {
+		if (enum_smb3_signing_algorithms[i].value != algo) {
+			continue;
+		}
+
+		return enum_smb3_signing_algorithms[i].name;
+	}
+
+	return NULL;
+}
+
+static const struct enum_list enum_smb3_encryption_algorithms[] = {
+	{SMB2_ENCRYPTION_AES128_GCM, "AES-128-GCM"},
+	{SMB2_ENCRYPTION_AES128_CCM, "AES-128-CCM"},
+	{SMB2_ENCRYPTION_AES256_GCM, "AES-256-GCM"},
+	{SMB2_ENCRYPTION_AES256_CCM, "AES-256-CCM"},
+	{-1, NULL}
+};
+
+const char *smb3_encryption_algorithm_name(uint16_t algo)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(enum_smb3_encryption_algorithms); i++) {
+		if (enum_smb3_encryption_algorithms[i].value != algo) {
+			continue;
+		}
+
+		return enum_smb3_encryption_algorithms[i].name;
+	}
+
+	return NULL;
+}
+
+static int32_t parse_enum_val(const struct enum_list *e,
+			      const char *param_name,
+			      const char *param_value)
+{
+	struct parm_struct parm = {
+		.label = param_name,
+		.type = P_LIST,
+		.p_class = P_GLOBAL,
+		.enum_list = e,
+	};
+	int32_t ret = INT32_MIN;
+	bool ok;
+
+	ok = lp_set_enum_parm(&parm, param_value, &ret);
+	if (!ok) {
+		return INT32_MIN;
+	}
+
+	return ret;
+}
+
+struct smb311_capabilities smb311_capabilities_parse(const char *role,
+				const char * const *signing_algos,
+				const char * const *encryption_algos)
+{
+	struct smb311_capabilities c = {
+		.signing = {
+			.num_algos = 0,
+		},
+		.encryption = {
+			.num_algos = 0,
+		},
+	};
+	char sign_param[64] = { 0, };
+	char enc_param[64] = { 0, };
+	size_t ai;
+
+	snprintf(sign_param, sizeof(sign_param),
+		 "%s smb3 signing algorithms", role);
+	snprintf(enc_param, sizeof(enc_param),
+		 "%s smb3 encryption algorithms", role);
+
+	for (ai = 0; signing_algos != NULL && signing_algos[ai] != NULL; ai++) {
+		const char *algoname = signing_algos[ai];
+		int32_t v32;
+		uint16_t algo;
+		size_t di;
+		bool ignore = false;
+
+		if (c.signing.num_algos >= SMB3_ENCRYTION_CAPABILITIES_MAX_ALGOS) {
+			DBG_ERR("WARNING: Ignoring trailing value '%s' for parameter '%s'\n",
+				  algoname, sign_param);
+			continue;
+		}
+
+		v32 = parse_enum_val(enum_smb3_signing_algorithms,
+				     sign_param, algoname);
+		if (v32 == INT32_MAX) {
+			continue;
+		}
+		algo = v32;
+
+		for (di = 0; di < c.signing.num_algos; di++) {
+			if (algo != c.signing.algos[di]) {
+				continue;
+			}
+
+			ignore = true;
+			break;
+		}
+
+		if (ignore) {
+			DBG_ERR("WARNING: Ignoring duplicate value '%s' for parameter '%s'\n",
+				  algoname, sign_param);
+			continue;
+		}
+
+		c.signing.algos[c.signing.num_algos] = algo;
+		c.signing.num_algos += 1;
+	}
+
+	for (ai = 0; encryption_algos != NULL && encryption_algos[ai] != NULL; ai++) {
+		const char *algoname = encryption_algos[ai];
+		int32_t v32;
+		uint16_t algo;
+		size_t di;
+		bool ignore = false;
+
+		if (c.encryption.num_algos >= SMB3_ENCRYTION_CAPABILITIES_MAX_ALGOS) {
+			DBG_ERR("WARNING: Ignoring trailing value '%s' for parameter '%s'\n",
+				  algoname, enc_param);
+			continue;
+		}
+
+		v32 = parse_enum_val(enum_smb3_encryption_algorithms,
+				     enc_param, algoname);
+		if (v32 == INT32_MAX) {
+			continue;
+		}
+		algo = v32;
+
+		for (di = 0; di < c.encryption.num_algos; di++) {
+			if (algo != c.encryption.algos[di]) {
+				continue;
+			}
+
+			ignore = true;
+			break;
+		}
+
+		if (ignore) {
+			DBG_ERR("WARNING: Ignoring duplicate value '%s' for parameter '%s'\n",
+				  algoname, enc_param);
+			continue;
+		}
+
+		c.encryption.algos[c.encryption.num_algos] = algo;
+		c.encryption.num_algos += 1;
+	}
+
+	return c;
+}
+
+NTSTATUS smb311_capabilities_check(const struct smb311_capabilities *c,
+				   const char *debug_prefix,
+				   int debug_lvl,
+				   NTSTATUS error_status,
+				   const char *role,
+				   enum protocol_types protocol,
+				   uint16_t sign_algo,
+				   uint16_t cipher_algo)
+{
+	const struct smb3_signing_capabilities *sign_algos =
+		&c->signing;
+	const struct smb3_encryption_capabilities *ciphers =
+		&c->encryption;
+	bool found_signing = false;
+	bool found_encryption = false;
+	size_t i;
+
+	for (i = 0; i < sign_algos->num_algos; i++) {
+		if (sign_algo == sign_algos->algos[i]) {
+			/*
+			 * We found a match
+			 */
+			found_signing = true;
+			break;
+		}
+	}
+
+	for (i = 0; i < ciphers->num_algos; i++) {
+		if (cipher_algo == SMB2_ENCRYPTION_NONE) {
+			/*
+			 * encryption not supported, we'll error out later
+			 */
+			found_encryption = true;
+			break;
+		}
+
+		if (cipher_algo == ciphers->algos[i]) {
+			/*
+			 * We found a match
+			 */
+			found_encryption = true;
+			break;
+		}
+	}
+
+	if (!found_signing) {
+		/*
+		 * We negotiated a signing algo we don't allow,
+		 * most likely for SMB < 3.1.1
+		 */
+		DEBUG(debug_lvl,("%s: "
+		      "SMB3 signing algorithm[%u][%s] on dialect[%s] "
+		      "not allowed by '%s smb3 signing algorithms' - %s.\n",
+		      debug_prefix,
+		      sign_algo,
+		      smb3_signing_algorithm_name(sign_algo),
+		      smb_protocol_types_string(protocol),
+		      role,
+		      nt_errstr(error_status)));
+		return error_status;
+	}
+
+	if (!found_encryption) {
+		/*
+		 * We negotiated a cipher we don't allow,
+		 * most likely for SMB 3.0 and 3.0.2
+		 */
+		DEBUG(debug_lvl,("%s: "
+		      "SMB3 encryption algorithm[%u][%s] on dialect[%s] "
+		      "not allowed by '%s smb3 encryption algorithms' - %s.\n",
+		      debug_prefix,
+		      cipher_algo,
+		      smb3_encryption_algorithm_name(cipher_algo),
+		      smb_protocol_types_string(protocol),
+		      role,
+		      nt_errstr(error_status)));
+		return error_status;
+	}
+
+	return NT_STATUS_OK;
 }

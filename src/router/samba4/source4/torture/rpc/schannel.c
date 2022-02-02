@@ -26,7 +26,7 @@
 #include "auth/credentials/credentials.h"
 #include "auth/credentials/credentials_krb5.h"
 #include "torture/rpc/torture_rpc.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "../libcli/auth/schannel.h"
 #include "libcli/auth/libcli_auth.h"
 #include "libcli/security/security.h"
@@ -50,7 +50,7 @@ bool test_netlogon_ex_ops(struct dcerpc_pipe *p, struct torture_context *tctx,
 	struct netr_NetworkInfo ninfo;
 	union netr_LogonLevel logon;
 	union netr_Validation validation;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	uint32_t _flags = 0;
 	DATA_BLOB names_blob, chal, lm_resp, nt_resp;
 	int i;
@@ -73,7 +73,7 @@ bool test_netlogon_ex_ops(struct dcerpc_pipe *p, struct torture_context *tctx,
 		flags |= CLI_CRED_NTLMv2_AUTH;
 	}
 
-	cli_credentials_get_ntlm_username_domain(popt_get_cmdline_credentials(),
+	cli_credentials_get_ntlm_username_domain(samba_cmdline_get_creds(),
 				tctx,
 				&ninfo.identity_info.account_name.string,
 				&ninfo.identity_info.domain_name.string);
@@ -87,7 +87,7 @@ bool test_netlogon_ex_ops(struct dcerpc_pipe *p, struct torture_context *tctx,
 						cli_credentials_get_domain(credentials));
 
 	status = cli_credentials_get_ntlm_response(
-			popt_get_cmdline_credentials(),
+			samba_cmdline_get_creds(),
 			tctx,
 			&flags,
 			chal,
@@ -129,6 +129,211 @@ bool test_netlogon_ex_ops(struct dcerpc_pipe *p, struct torture_context *tctx,
 	*/
 
 	if (creds) {
+		if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+			crypto_alg = "AES";
+		} else if (creds->negotiate_flags & NETLOGON_NEG_ARCFOUR) {
+			crypto_alg = "ARCFOUR";
+		}
+	}
+
+	dcerpc_binding_handle_auth_info(b, NULL, &auth_level);
+	if (auth_level == DCERPC_AUTH_LEVEL_PRIVACY) {
+		r.in.validation_level = 6;
+
+		torture_comment(tctx,
+				"Testing LogonSamLogonEx with name %s using %s and validation_level: %d\n",
+				ninfo.identity_info.account_name.string, crypto_alg,
+				r.in.validation_level);
+
+		torture_assert_ntstatus_ok(tctx,
+			dcerpc_netr_LogonSamLogonEx_r(b, tctx, &r),
+			"LogonSamLogonEx failed");
+	} else {
+		torture_comment(tctx,
+				"Skip auth_level[%u] Testing LogonSamLogonEx with name %s using %s and validation_level: %d\n",
+				auth_level, ninfo.identity_info.account_name.string, crypto_alg,
+				r.in.validation_level);
+		r.out.result = NT_STATUS_INVALID_INFO_CLASS;
+	}
+
+	if (NT_STATUS_EQUAL(r.out.result, NT_STATUS_INVALID_INFO_CLASS)) {
+		can_do_validation_6 = false;
+	} else {
+		torture_assert_ntstatus_ok(tctx, r.out.result,
+			"LogonSamLogonEx failed");
+
+		key = r.out.validation->sam6->base.key;
+		LMSessKey = r.out.validation->sam6->base.LMSessKey;
+
+		DEBUG(1,("unencrypted session keys from validation_level 6:\n"));
+		dump_data(1, r.out.validation->sam6->base.key.key, 16);
+		dump_data(1, r.out.validation->sam6->base.LMSessKey.key, 8);
+	}
+
+	for (i=0; i < ARRAY_SIZE(validation_levels); i++) {
+
+		r.in.validation_level = validation_levels[i];
+
+		torture_comment(tctx,
+			"Testing LogonSamLogonEx with name %s using %s and validation_level: %d\n",
+			ninfo.identity_info.account_name.string, crypto_alg,
+			r.in.validation_level);
+
+		torture_assert_ntstatus_ok(tctx,
+			dcerpc_netr_LogonSamLogonEx_r(b, tctx, &r),
+			"LogonSamLogonEx failed");
+		torture_assert_ntstatus_ok(tctx, r.out.result,
+			"LogonSamLogonEx failed");
+
+		if (creds == NULL) {
+			/* when this test is called without creds no point in
+			 * testing the session keys */
+			continue;
+		}
+
+		switch (validation_levels[i]) {
+		case 2:
+			base = &r.out.validation->sam2->base;
+			break;
+		case 3:
+			base = &r.out.validation->sam3->base;
+			break;
+		default:
+			break;
+		}
+
+		DEBUG(1,("encrypted keys validation_level %d:\n",
+			validation_levels[i]));
+		dump_data(1, base->key.key, 16);
+		dump_data(1, base->LMSessKey.key, 8);
+
+		if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+			netlogon_creds_aes_decrypt(creds, base->key.key, 16);
+			netlogon_creds_aes_decrypt(creds, base->LMSessKey.key, 8);
+		} else if (creds->negotiate_flags & NETLOGON_NEG_ARCFOUR) {
+			netlogon_creds_arcfour_crypt(creds, base->key.key, 16);
+			netlogon_creds_arcfour_crypt(creds, base->LMSessKey.key, 8);
+		}
+
+		DEBUG(1,("decryped keys validation_level %d\n",
+			validation_levels[i]));
+
+		dump_data(1, base->key.key, 16);
+		dump_data(1, base->LMSessKey.key, 8);
+
+		if (!can_do_validation_6) {
+			/* we cant compare against unencrypted keys */
+			continue;
+		}
+
+		torture_assert_mem_equal(tctx,
+					 base->key.key,
+					 key.key,
+					 16,
+					 "unexpected user session key\n");
+		torture_assert_mem_equal(tctx,
+					 base->LMSessKey.key,
+					 LMSessKey.key,
+					 8,
+					 "unexpected LM session key\n");
+	}
+
+	return true;
+}
+
+static bool test_netlogon_ex_bug14932(struct dcerpc_pipe *p,
+				      struct torture_context *tctx,
+				      struct cli_credentials *credentials,
+				      struct netlogon_creds_CredentialState *creds)
+{
+	NTSTATUS status;
+	struct netr_LogonSamLogonEx r;
+	struct netr_NetworkInfo ninfo;
+	union netr_LogonLevel logon;
+	union netr_Validation validation;
+	uint8_t authoritative = 1;
+	uint32_t _flags = 0;
+	static const char *netapp_magic =
+		"\x01\x01\x00\x00\x00\x00\x00\x00"
+		"\x3f\x3f\x3f\x3f\x3f\x3f\x3f\x3f"
+		"\xb8\x82\x3a\xf1\xb3\xdd\x08\x15"
+		"\x00\x00\x00\x00\x11\xa2\x08\x81"
+		"\x50\x38\x22\x78\x2b\x94\x47\xfe"
+		"\x54\x94\x7b\xff\x17\x27\x5a\xb4"
+		"\xf4\x18\xba\xdc\x2c\x38\xfd\x5b"
+		"\xfb\x0e\xc1\x85\x1e\xcc\x92\xbb"
+		"\x9b\xb1\xc4\xd5\x53\x14\xff\x8c"
+		"\x76\x49\xf5\x45\x90\x19\xa2";
+	NTTIME timestamp = BVAL(netapp_magic, 8);
+	DATA_BLOB names_blob = data_blob_string_const(netapp_magic + 28);
+	DATA_BLOB chal, lm_resp, nt_resp;
+	int i;
+	int flags = CLI_CRED_NTLM_AUTH;
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	struct netr_UserSessionKey key;
+	struct netr_LMSessionKey LMSessKey;
+	uint32_t validation_levels[] = { 2, 3 };
+	struct netr_SamBaseInfo *base = NULL;
+	const char *crypto_alg = "";
+	bool can_do_validation_6 = true;
+	enum dcerpc_AuthLevel auth_level = DCERPC_AUTH_LEVEL_NONE;
+
+	flags |= CLI_CRED_NTLMv2_AUTH;
+
+	cli_credentials_get_ntlm_username_domain(samba_cmdline_get_creds(),
+				tctx,
+				&ninfo.identity_info.account_name.string,
+				&ninfo.identity_info.domain_name.string);
+
+	generate_random_buffer(ninfo.challenge,
+			       sizeof(ninfo.challenge));
+
+	chal = data_blob_const(ninfo.challenge,
+			       sizeof(ninfo.challenge));
+
+	status = cli_credentials_get_ntlm_response(
+			samba_cmdline_get_creds(),
+			tctx,
+			&flags,
+			chal,
+			&timestamp,
+			names_blob,
+			&lm_resp, &nt_resp,
+			NULL, NULL);
+	torture_assert_ntstatus_ok(tctx, status,
+				   "cli_credentials_get_ntlm_response failed");
+
+	ninfo.lm.data = lm_resp.data;
+	ninfo.lm.length = lm_resp.length;
+
+	ninfo.nt.data = nt_resp.data;
+	ninfo.nt.length = nt_resp.length;
+
+	ninfo.identity_info.parameter_control = 0;
+	ninfo.identity_info.logon_id = 0;
+	ninfo.identity_info.workstation.string = cli_credentials_get_workstation(credentials);
+
+	logon.network = &ninfo;
+
+	r.in.server_name = talloc_asprintf(tctx, "\\\\%s", dcerpc_server_name(p));
+	r.in.computer_name = cli_credentials_get_workstation(credentials);
+	r.in.logon_level = NetlogonNetworkInformation;
+	r.in.logon= &logon;
+	r.in.flags = &_flags;
+	r.out.validation = &validation;
+	r.out.authoritative = &authoritative;
+	r.out.flags = &_flags;
+
+	/*
+	- retrieve level6
+	- save usrsession and lmsession key
+	- retrieve level 2
+	- calculate, compare
+	- retrieve level 3
+	- calculate, compare
+	*/
+
+	if (creds != NULL) {
 		if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
 			crypto_alg = "AES";
 		} else if (creds->negotiate_flags & NETLOGON_NEG_ARCFOUR) {
@@ -435,6 +640,10 @@ static bool test_schannel(struct torture_context *tctx,
 
 	torture_assert(tctx, test_netlogon_ex_ops(p_netlogon, tctx, credentials, creds),
 		"Failed to process schannel secured NETLOGON EX ops");
+
+	/* regression test for https://bugzilla.samba.org/show_bug.cgi?id=14932 */
+	torture_assert(tctx, test_netlogon_ex_bug14932(p_netlogon, tctx, credentials, creds),
+		       "Failed to process schannel secured NETLOGON EX for BUG 14932");
 
 	/* we *MUST* use ncacn_np for openpolicy etc. */
 	transport = dcerpc_binding_get_transport(b);
@@ -944,13 +1153,13 @@ bool torture_rpc_schannel_bench1(struct torture_context *torture)
 	s->conns = talloc_zero_array(s, struct torture_schannel_bench_conn, s->nprocs);
 
 	s->user1_creds = cli_credentials_shallow_copy(s,
-				popt_get_cmdline_credentials());
+				samba_cmdline_get_creds());
 	tmp = torture_setting_string(s->tctx, "extra_user1", NULL);
 	if (tmp) {
 		cli_credentials_parse_string(s->user1_creds, tmp, CRED_SPECIFIED);
 	}
 	s->user2_creds = cli_credentials_shallow_copy(s,
-				popt_get_cmdline_credentials());
+				samba_cmdline_get_creds());
 	tmp = torture_setting_string(s->tctx, "extra_user2", NULL);
 	if (tmp) {
 		cli_credentials_parse_string(s->user1_creds, tmp, CRED_SPECIFIED);
@@ -965,8 +1174,12 @@ bool torture_rpc_schannel_bench1(struct torture_context *torture)
 	torture_assert(torture, s->join_ctx2 != NULL,
 		       "Failed to join domain with acct_flags=ACB_WSTRUST");
 
-	cli_credentials_set_kerberos_state(s->wks_creds1, CRED_USE_KERBEROS_DISABLED);
-	cli_credentials_set_kerberos_state(s->wks_creds2, CRED_USE_KERBEROS_DISABLED);
+	cli_credentials_set_kerberos_state(s->wks_creds1,
+					   CRED_USE_KERBEROS_DISABLED,
+					   CRED_SPECIFIED);
+	cli_credentials_set_kerberos_state(s->wks_creds2,
+					   CRED_USE_KERBEROS_DISABLED,
+					   CRED_SPECIFIED);
 
 	for (i=0; i < s->nprocs; i++) {
 		struct cli_credentials *wks = s->wks_creds1;

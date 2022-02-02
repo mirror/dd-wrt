@@ -2,12 +2,12 @@
 .\"     Title: winbindd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "WINBINDD" "8" "06/01/2021" "Samba 4\&.14\&.5" "System Administration tools"
+.TH "WINBINDD" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 winbindd \- Name Service Switch daemon for resolving names from NT servers
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-winbindd [\-D|\-\-daemon] [\-F|\-\-foreground] [\-S|\-\-stdout] [\-i|\-\-interactive] [\-d\ <debug\ level>] [\-s\ <smb\ config\ file>] [\-n|\-\-no\-caching] [\-\-no\-process\-group]
+winbindd [\-D|\-\-daemon] [\-i|\-\-interactive] [\-F|\-\-foreground] [\-\-no\-process\-group] [\-n|\-\-no\-caching] [\-d\ <debug\ level>] [\-\-debug\-stdout] [\-\-configfile=<configuration\ file>] [\-\-option=<name>=<value>] [\-l|\-\-log\-basename\ <log\ directory>] [\-\-leak\-report] [\-\-leak\-report\-full] [\-V|\-\-version]
 .SH "DESCRIPTION"
 .PP
 This program is part of the
@@ -150,6 +150,19 @@ winbindd
 is executed on the command line of a shell\&.
 .RE
 .PP
+\-i|\-\-interactive
+.RS 4
+Tells
+winbindd
+to not become a daemon and detach from the current terminal\&. This option is used by developers when interactive debugging of
+winbindd
+is required\&.
+winbindd
+also logs to standard output, as if the
+\-S
+parameter had been given\&.
+.RE
+.PP
 \-F|\-\-foreground
 .RS 4
 If specified, this parameter causes the main
@@ -165,14 +178,17 @@ daemontools
 package, or the AIX process monitor\&.
 .RE
 .PP
-\-S|\-\-stdout
+\-\-no\-process\-group
 .RS 4
-If specified, this parameter causes
-winbindd
-to log to standard output rather than a file\&.
+Do not create a new process group for winbindd\&.
 .RE
 .PP
-\-d|\-\-debuglevel=level
+\-n|\-\-no\-caching
+.RS 4
+Disable some caching\&. This means winbindd will often have to wait for a response from the domain controller before it can respond to a client and this thus makes things slower\&. The results will however be more accurate, since results from the cache might not be up\-to\-date\&. This might also temporarily hang winbindd if the DC doesn\*(Aqt respond\&. This does not disable the samlogon cache, which is required for group membership tracking in trusted environments\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL, \-\-debug\-stdout
 .RS 4
 \fIlevel\fR
 is an integer from 0 to 10\&. The default value if this parameter is not specified is 0\&.
@@ -186,32 +202,41 @@ Note that specifying this parameter here will override the
 parameter in the
 smb\&.conf
 file\&.
+This will redirect debug output to STDOUT\&. By default server daemons are logging to a log file\&.
 .RE
 .PP
-\-V|\-\-version
-.RS 4
-Prints the program version number\&.
-.RE
-.PP
-\-s|\-\-configfile=<configuration file>
+\-\-configfile=CONFIGFILE
 .RS 4
 The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
 smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
-\-l|\-\-log\-basename=logdirectory
-.RS 4
-Base directory name for log/debug files\&. The extension
-\fB"\&.progname"\fR
-will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
-.RE
-.PP
 \-\-option=<name>=<value>
 .RS 4
 Set the
 \fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
+.RE
+.PP
+\-l|\-\-log\-basename=logdirectory
+.RS 4
+Base directory name for log/debug files\&. The parent process uses filename log\&.winbindd, the child process uses filename log\&.wb\-<name>\&. The log file is never removed by winbindd\&.
+.RE
+.PP
+\-\-leak\-report
+.RS 4
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
 .RE
 .PP
 \-?|\-\-help
@@ -222,29 +247,6 @@ Print a summary of command line options\&.
 \-\-usage
 .RS 4
 Display brief usage message\&.
-.RE
-.PP
-\-i|\-\-interactive
-.RS 4
-Tells
-winbindd
-to not become a daemon and detach from the current terminal\&. This option is used by developers when interactive debugging of
-winbindd
-is required\&.
-winbindd
-also logs to standard output, as if the
-\-S
-parameter had been given\&.
-.RE
-.PP
-\-n|\-\-no\-caching
-.RS 4
-Disable some caching\&. This means winbindd will often have to wait for a response from the domain controller before it can respond to a client and this thus makes things slower\&. The results will however be more accurate, since results from the cache might not be up\-to\-date\&. This might also temporarily hang winbindd if the DC doesn\*(Aqt respond\&. This does not disable the samlogon cache, which is required for group membership tracking in trusted environments\&.
-.RE
-.PP
-\-\-no\-process\-group
-.RS 4
-Do not create a new process group for winbindd\&.
 .RE
 .SH "NAME AND ID RESOLUTION"
 .PP
@@ -495,11 +497,6 @@ to confirm the correct operation of winbindd\&.
 The following notes are useful when configuring and running
 winbindd:
 .PP
-\fBnmbd\fR(8)
-must be running on the local machine for
-winbindd
-to work\&.
-.PP
 PAM is really easy to misconfigure\&. Make sure you know what you are doing when modifying PAM configuration files\&. It is possible to set up PAM such that you can no longer log into your system\&.
 .PP
 If more than one UNIX machine is running
@@ -583,7 +580,7 @@ Storage for cached user and group information\&.
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 nsswitch\&.conf(5),

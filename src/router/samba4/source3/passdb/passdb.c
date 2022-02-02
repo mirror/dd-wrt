@@ -33,6 +33,7 @@
 #include "auth/credentials/credentials.h"
 #include "lib/param/param.h"
 #include "lib/util/string_wrappers.h"
+#include "source3/lib/substitute.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_PASSDB
@@ -137,6 +138,7 @@ static NTSTATUS samu_set_unix_internal(struct pdb_methods *methods,
 	const char *domain = lp_netbios_name();
 	char *fullname;
 	uint32_t urid;
+	bool ok;
 
 	if ( !pwd ) {
 		return NT_STATUS_NO_SUCH_USER;
@@ -144,7 +146,10 @@ static NTSTATUS samu_set_unix_internal(struct pdb_methods *methods,
 
 	/* Basic properties based upon the Unix account information */
 
-	pdb_set_username(user, pwd->pw_name, PDB_SET);
+	ok = pdb_set_username(user, pwd->pw_name, PDB_SET);
+	if (!ok) {
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	fullname = NULL;
 
@@ -157,16 +162,26 @@ static NTSTATUS samu_set_unix_internal(struct pdb_methods *methods,
 		fullname = talloc_strndup(
 			talloc_tos(), pwd->pw_gecos,
 			strchr(pwd->pw_gecos, ',') - pwd->pw_gecos);
+		if (fullname == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
 	}
 
 	if (fullname != NULL) {
-		pdb_set_fullname(user, fullname, PDB_SET);
+		ok = pdb_set_fullname(user, fullname, PDB_SET);
 	} else {
-		pdb_set_fullname(user, pwd->pw_gecos, PDB_SET);
+		ok = pdb_set_fullname(user, pwd->pw_gecos, PDB_SET);
 	}
 	TALLOC_FREE(fullname);
 
-	pdb_set_domain (user, get_global_sam_name(), PDB_DEFAULT);
+	if (!ok) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	ok = pdb_set_domain(user, get_global_sam_name(), PDB_DEFAULT);
+	if (!ok) {
+		return NT_STATUS_NO_MEMORY;
+	}
 #if 0
 	/* This can lead to a primary group of S-1-22-2-XX which 
 	   will be rejected by other parts of the Samba code. 
@@ -180,6 +195,9 @@ static NTSTATUS samu_set_unix_internal(struct pdb_methods *methods,
 	/* save the password structure for later use */
 
 	user->unix_pw = tcopy_passwd( user, pwd );
+	if (user->unix_pw == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	/* Special case for the guest account which must have a RID of 501 */
 
@@ -212,18 +230,53 @@ static NTSTATUS samu_set_unix_internal(struct pdb_methods *methods,
 
 		/* set some basic attributes */
 
-		pdb_set_profile_path(user, talloc_sub_specified(user, 
-			lp_logon_path(), pwd->pw_name, NULL, domain, pwd->pw_uid, pwd->pw_gid),
-			PDB_DEFAULT);		
-		pdb_set_homedir(user, talloc_sub_specified(user, 
-			lp_logon_home(), pwd->pw_name, NULL, domain, pwd->pw_uid, pwd->pw_gid),
+		ok = pdb_set_profile_path(
+			user,
+			talloc_sub_specified(
+				user,
+				lp_logon_path(),
+				pwd->pw_name,
+				NULL,
+				domain,
+				pwd->pw_uid,
+				pwd->pw_gid),
 			PDB_DEFAULT);
-		pdb_set_dir_drive(user, talloc_sub_specified(user, 
-			lp_logon_drive(), pwd->pw_name, NULL, domain, pwd->pw_uid, pwd->pw_gid),
+		ok &= pdb_set_homedir(
+			user,
+			talloc_sub_specified(
+				user,
+				lp_logon_home(),
+				pwd->pw_name,
+				NULL,
+				domain,
+				pwd->pw_uid,
+				pwd->pw_gid),
 			PDB_DEFAULT);
-		pdb_set_logon_script(user, talloc_sub_specified(user, 
-			lp_logon_script(), pwd->pw_name, NULL, domain, pwd->pw_uid, pwd->pw_gid),
+		ok &= pdb_set_dir_drive(
+			user,
+			talloc_sub_specified(
+				user,
+				lp_logon_drive(),
+				pwd->pw_name,
+				NULL,
+				domain,
+				pwd->pw_uid,
+				pwd->pw_gid),
 			PDB_DEFAULT);
+		ok &= pdb_set_logon_script(
+			user,
+			talloc_sub_specified(
+				user,
+				lp_logon_script(),
+				pwd->pw_name,
+				NULL,
+				domain,
+				pwd->pw_uid,
+				pwd->pw_gid),
+			PDB_DEFAULT);
+		if (!ok) {
+			return NT_STATUS_NO_MEMORY;
+		}
 	}
 
 	/* Now deal with the user SID.  If we have a backend that can generate 
@@ -2538,7 +2591,11 @@ NTSTATUS pdb_get_trust_credentials(const char *netbios_domain,
 			goto fail;
 		}
 
-		cli_credentials_set_conf(creds, lp_ctx);
+		ok = cli_credentials_set_conf(creds, lp_ctx);
+		if (!ok) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto fail;
+		}
 
 		ok = cli_credentials_set_domain(creds, netbios_domain, CRED_SPECIFIED);
 		if (!ok) {
@@ -2610,7 +2667,11 @@ NTSTATUS pdb_get_trust_credentials(const char *netbios_domain,
 		goto fail;
 	}
 
-	cli_credentials_set_conf(creds, lp_ctx);
+	ok = cli_credentials_set_conf(creds, lp_ctx);
+	if (!ok) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto fail;
+	}
 
 	cli_credentials_set_secure_channel_type(creds, channel);
 	cli_credentials_set_password_last_changed_time(creds, last_set_time);
@@ -2631,7 +2692,9 @@ NTSTATUS pdb_get_trust_credentials(const char *netbios_domain,
 		/*
 		 * It's not possible to use NTLMSSP with a domain trust account.
 		 */
-		cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_REQUIRED);
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_USE_KERBEROS_REQUIRED,
+						   CRED_SPECIFIED);
 	} else {
 		/*
 		 * We can't use kerberos against an NT4 domain.
@@ -2639,7 +2702,9 @@ NTSTATUS pdb_get_trust_credentials(const char *netbios_domain,
 		 * We should have a mode that also disallows NTLMSSP here,
 		 * as only NETLOGON SCHANNEL is possible.
 		 */
-		cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_DISABLED);
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_USE_KERBEROS_DISABLED,
+						   CRED_SPECIFIED);
 	}
 
 	ok = cli_credentials_set_username(creds, account_name, CRED_SPECIFIED);
@@ -2657,7 +2722,9 @@ NTSTATUS pdb_get_trust_credentials(const char *netbios_domain,
 		/*
 		 * We currently can't do kerberos just with an NTHASH.
 		 */
-		cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_DISABLED);
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_USE_KERBEROS_DISABLED,
+						   CRED_SPECIFIED);
 		goto done;
 	}
 

@@ -23,7 +23,6 @@
 
 #include "includes.h"
 #include "system/filesys.h"
-#include "popt_common_cmdline.h"
 #include "rpc_client/cli_pipe.h"
 #include "client/client_proto.h"
 #include "client/clitar_proto.h"
@@ -41,6 +40,7 @@
 #include "../libcli/smb/smbXcli_base.h"
 #include "lib/util/time_basic.h"
 #include "lib/util/string_wrappers.h"
+#include "lib/cmdline/cmdline.h"
 
 #ifndef REGISTER
 #define REGISTER 0
@@ -296,8 +296,7 @@ static int do_dskattr(void)
 	struct cli_state *targetcli = NULL;
 	char *targetpath = NULL;
 	TALLOC_CTX *ctx = talloc_tos();
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	status = cli_resolve_path(ctx,
@@ -393,8 +392,7 @@ static int do_cd(const char *new_dir)
 	uint32_t attributes;
 	int ret = 1;
 	TALLOC_CTX *ctx = talloc_stackframe();
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	newdir = talloc_strdup(ctx, new_dir);
@@ -589,6 +587,7 @@ static NTSTATUS display_finfo(struct cli_state *cli_state, struct file_info *fin
 		char *targetpath = NULL;
 		char *afname = NULL;
 		uint16_t fnum;
+		struct cli_credentials *creds = samba_cmdline_get_creds();
 
 		/* skip if this is . or .. */
 		if ( strequal(finfo->name,"..") || strequal(finfo->name,".") )
@@ -611,8 +610,7 @@ static NTSTATUS display_finfo(struct cli_state *cli_state, struct file_info *fin
 		status = cli_resolve_path(
 			ctx,
 			"",
-			get_cmdline_auth_info_creds(
-				popt_get_cmdline_auth_info()),
+			creds,
 			cli_state,
 			afname,
 			&targetcli,
@@ -827,8 +825,7 @@ NTSTATUS do_list(const char *mask,
 	struct do_list_helper_state state = { .cli = cli, };
 	static int in_do_list = 0;
 	TALLOC_CTX *ctx = talloc_tos();
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS ret_status = NT_STATUS_OK;
 	NTSTATUS status = NT_STATUS_OK;
 
@@ -1074,8 +1071,7 @@ static int do_get(const char *rname, const char *lname_in, bool reget)
 	struct cli_state *targetcli = NULL;
 	char *targetname = NULL;
 	char *lname = NULL;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	lname = talloc_strdup(ctx, lname_in);
@@ -1448,8 +1444,7 @@ static bool do_mkdir(const char *name)
 	TALLOC_CTX *ctx = talloc_tos();
 	struct cli_state *targetcli;
 	char *targetname = NULL;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	status = cli_resolve_path(ctx, "",
@@ -1497,7 +1492,6 @@ static bool do_altname(const char *name)
 static int cmd_quit(void)
 {
 	cli_shutdown(cli);
-	popt_free_cmdline_auth_info();
 	exit(0);
 	/* NOTREACHED */
 	return 0;
@@ -1512,8 +1506,7 @@ static int cmd_mkdir(void)
 	TALLOC_CTX *ctx = talloc_tos();
 	char *mask = NULL;
 	char *buf = NULL;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	mask = talloc_strdup(ctx, client_get_cur_dir());
@@ -1865,8 +1858,7 @@ static int do_put(const char *rname, const char *lname, bool reput)
 	struct cli_state *targetcli;
 	char *targetname = NULL;
 	struct push_state state;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	status = cli_resolve_path(ctx, "",
@@ -1969,7 +1961,6 @@ static int do_put(const char *rname, const char *lname, bool reput)
 
 	if (f == stdin) {
 		cli_shutdown(cli);
-		popt_free_cmdline_auth_info();
 		exit(rc);
 	}
 
@@ -2645,8 +2636,7 @@ static int cmd_wdel(void)
 	uint32_t attribute;
 	struct cli_state *targetcli;
 	char *targetname = NULL;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -2699,8 +2689,7 @@ static int cmd_open(void)
 	char *targetname = NULL;
 	struct cli_state *targetcli;
 	uint16_t fnum = (uint16_t)-1;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -2788,8 +2777,7 @@ static int cmd_posix_encrypt(void)
 	} else {
 		bool auth_requested = false;
 
-		creds = get_cmdline_auth_info_creds(
-				popt_get_cmdline_auth_info());
+		creds = samba_cmdline_get_creds();
 
 		auth_requested = cli_credentials_authentication_requested(creds);
 		if (!auth_requested) {
@@ -2804,8 +2792,13 @@ static int cmd_posix_encrypt(void)
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("posix_encrypt failed with error %s\n", nt_errstr(status));
 	} else {
+		bool ok;
+
 		d_printf("encryption on\n");
-		set_cmdline_auth_info_smb_encrypt(popt_get_cmdline_auth_info());
+		ok = cli_credentials_set_smb_encryption(creds,
+							SMB_ENCRYPTION_REQUIRED,
+							CRED_SPECIFIED);
+		SMB_ASSERT(ok);
 	}
 
 	return 0;
@@ -2823,8 +2816,7 @@ static int cmd_posix_open(void)
 	struct cli_state *targetcli;
 	mode_t mode;
 	uint16_t fnum;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -2845,6 +2837,11 @@ static int cmd_posix_open(void)
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		d_printf("posix_open <filename> 0<mode>\n");
+		return 1;
+	}
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"posix_open\" command can be used.\n");
 		return 1;
 	}
 	mode = (mode_t)strtol(buf, (char **)NULL, 8);
@@ -2885,8 +2882,7 @@ static int cmd_posix_mkdir(void)
 	char *targetname = NULL;
 	struct cli_state *targetcli;
 	mode_t mode;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -2907,6 +2903,11 @@ static int cmd_posix_mkdir(void)
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		d_printf("posix_mkdir <filename> 0<mode>\n");
+		return 1;
+	}
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"posix_mkdir\" command can be used.\n");
 		return 1;
 	}
 	mode = (mode_t)strtol(buf, (char **)NULL, 8);
@@ -2936,12 +2937,16 @@ static int cmd_posix_unlink(void)
 	char *buf = NULL;
 	char *targetname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		d_printf("posix_unlink <filename>\n");
+		return 1;
+	}
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"posix_unlink\" command can be used.\n");
 		return 1;
 	}
 	mask = talloc_asprintf(ctx,
@@ -2982,12 +2987,16 @@ static int cmd_posix_rmdir(void)
 	char *buf = NULL;
 	char *targetname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		d_printf("posix_rmdir <filename>\n");
+		return 1;
+	}
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"posix_rmdir\" command can be used.\n");
 		return 1;
 	}
 	mask = talloc_asprintf(ctx,
@@ -3189,6 +3198,12 @@ static int cmd_lock(void)
 		return 1;
 	}
 
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"lock\" command can be used.\n");
+		return 1;
+	}
+
 	len = (uint64_t)strtol(buf, (char **)NULL, 16);
 
 	status = cli_posix_lock(cli, fnum, start, len, true, lock_type);
@@ -3225,6 +3240,12 @@ static int cmd_unlock(void)
 		return 1;
 	}
 
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"unlock\" command can be used.\n");
+		return 1;
+	}
+
 	len = (uint64_t)strtol(buf, (char **)NULL, 16);
 
 	status = cli_posix_unlock(cli, fnum, start, len);
@@ -3247,6 +3268,12 @@ static int cmd_posix_whoami(void)
 	struct dom_sid *sids = NULL;
 	bool guest = false;
 	uint32_t i;
+
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			"the \"posix_whoami\" command can be used.\n");
+		return 1;
+	}
 
 	status = cli_posix_whoami(cli,
 			ctx,
@@ -3292,8 +3319,7 @@ static int cmd_rmdir(void)
 	char *buf = NULL;
 	char *targetname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -3342,8 +3368,7 @@ static int cmd_link(void)
 	char *buf2 = NULL;
 	char *targetname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -3387,6 +3412,12 @@ static int cmd_link(void)
 		return 1;
 	}
 
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"link\" command can be used.\n");
+		return 1;
+	}
+
 	status = cli_posix_hardlink(targetcli, targetname, newname);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s linking files (%s -> %s)\n",
@@ -3408,8 +3439,7 @@ static int cmd_readlink(void)
 	char *targetname = NULL;
 	char *linkname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
@@ -3441,6 +3471,12 @@ static int cmd_readlink(void)
 		return 1;
 	}
 
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"readlink\" command can be used.\n");
+		return 1;
+	}
+
 	status = cli_posix_readlink(targetcli, name, talloc_tos(), &linkname);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s readlink on file %s\n",
@@ -3468,8 +3504,7 @@ static int cmd_symlink(void)
 	char *buf = NULL;
 	char *buf2 = NULL;
 	struct cli_state *newcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -3481,6 +3516,11 @@ static int cmd_symlink(void)
 	link_target = buf;
 
 	if (SERVER_HAS_UNIX_CIFS(cli)) {
+		if (CLI_DIRSEP_CHAR != '/') {
+			d_printf("Command \"posix\" must be issued before "
+				"the \"symlink\" command can be used.\n");
+			return 1;
+		}
 		newname = talloc_asprintf(ctx, "%s%s", client_get_cur_dir(),
 					  buf2);
 		if (!newname) {
@@ -3529,8 +3569,7 @@ static int cmd_chmod(void)
 	char *targetname = NULL;
 	struct cli_state *targetcli;
 	mode_t mode;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -3562,6 +3601,12 @@ static int cmd_chmod(void)
 
 	if (!SERVER_HAS_UNIX_CIFS(targetcli)) {
 		d_printf("Server doesn't support UNIX CIFS calls.\n");
+		return 1;
+	}
+
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"chmod\" command can be used.\n");
 		return 1;
 	}
 
@@ -3697,8 +3742,7 @@ static int cmd_getfacl(void)
 	size_t num_dir_acls = 0;
 	size_t expected_buflen;
 	uint16_t i;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&name,NULL)) {
@@ -3727,6 +3771,12 @@ static int cmd_getfacl(void)
 
 	if (!SERVER_HAS_UNIX_CIFS(targetcli)) {
 		d_printf("Server doesn't support UNIX CIFS calls.\n");
+		return 1;
+	}
+
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"getfacl\" command can be used.\n");
 		return 1;
 	}
 
@@ -3883,8 +3933,7 @@ static int cmd_geteas(void)
 	NTSTATUS status;
 	size_t i, num_eas;
 	struct ea_struct *eas;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&name,NULL)) {
 		d_printf("geteas filename\n");
@@ -3942,8 +3991,7 @@ static int cmd_setea(void)
 	char *eavalue = NULL;
 	char *targetname = NULL;
 	struct cli_state *targetcli;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr, &name, NULL)
@@ -3999,8 +4047,7 @@ static int cmd_stat(void)
 	SMB_STRUCT_STAT sbuf;
 	struct tm *lt;
 	time_t tmp_time;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&name,NULL)) {
@@ -4029,6 +4076,12 @@ static int cmd_stat(void)
 
 	if (!SERVER_HAS_UNIX_CIFS(targetcli)) {
 		d_printf("Server doesn't support UNIX CIFS calls.\n");
+		return 1;
+	}
+
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"stat\" command can be used.\n");
 		return 1;
 	}
 
@@ -4109,8 +4162,7 @@ static int cmd_chown(void)
 	char *buf, *buf2, *buf3;
 	struct cli_state *targetcli;
 	char *targetname = NULL;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -4147,6 +4199,12 @@ static int cmd_chown(void)
 		return 1;
 	}
 
+	if (CLI_DIRSEP_CHAR != '/') {
+		d_printf("Command \"posix\" must be issued before "
+			 "the \"chown\" command can be used.\n");
+		return 1;
+	}
+
 	status = cli_posix_chown(targetcli, targetname, uid, gid);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s chown file %s uid=%d, gid=%d\n",
@@ -4169,8 +4227,7 @@ static int cmd_rename(void)
 	struct cli_state *targetcli;
 	char *targetsrc;
 	char *targetdest;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 	bool replace = false;
 
@@ -4275,8 +4332,7 @@ static int cmd_scopy(void)
 	off_t written = 0;
 	struct scopy_timing st;
 	int rc = 0;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -4417,8 +4473,7 @@ static int cmd_hardlink(void)
 	char *buf, *buf2;
 	struct cli_state *targetcli;
 	char *targetname;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL) ||
@@ -5126,8 +5181,7 @@ static int cmd_show_connect( void )
 	TALLOC_CTX *ctx = talloc_tos();
 	struct cli_state *targetcli;
 	char *targetpath;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	status = cli_resolve_path(ctx, "",
@@ -5387,9 +5441,10 @@ int cmd_iosize(void)
 	TALLOC_CTX *ctx = talloc_tos();
 	char *buf;
 	int iosize;
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	bool smb_encrypt =
-		get_cmdline_auth_info_smb_encrypt(
-				popt_get_cmdline_auth_info());
+		(cli_credentials_get_smb_encryption(creds) ==
+		 SMB_ENCRYPTION_REQUIRED);
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		if (smbXcli_conn_protocol(cli->conn) < PROTOCOL_SMB2_02) {
@@ -5653,8 +5708,7 @@ static int process_command_string(const char *cmd_in)
 	TALLOC_CTX *ctx = talloc_tos();
 	char *cmd = talloc_strdup(ctx, cmd_in);
 	int rc = 0;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 
 	if (!cmd) {
 		return 1;
@@ -5790,8 +5844,7 @@ static char **remote_completion(const char *text, int len)
 	struct cli_state *targetcli = NULL;
 	int i;
 	struct completion_remote info = { NULL, NULL, 1, 0, NULL, 0 };
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	/* can't have non-static initialisation on Sun CC, so do it
@@ -6109,8 +6162,7 @@ static int process(const char *base_directory)
 {
 	int rc = 0;
 	NTSTATUS status;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 
 	status = cli_cm_open(talloc_tos(), NULL,
 			     desthost,
@@ -6149,8 +6201,7 @@ static int process(const char *base_directory)
 static int do_host_query(const char *query_host)
 {
 	NTSTATUS status;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 
 	status = cli_cm_open(talloc_tos(), NULL,
 			     query_host,
@@ -6197,6 +6248,7 @@ static int do_host_query(const char *query_host)
 
 		cli_shutdown(cli);
 		d_printf("Reconnecting with SMB1 for workgroup listing.\n");
+		lp_set_cmdline("client max protocol", "NT1");
 		status = cli_cm_open(talloc_tos(), NULL,
 				     query_host,
 				     "IPC$",
@@ -6226,8 +6278,7 @@ static int do_tar_op(const char *base_directory)
 {
 	struct tar *tar_ctx = tar_get_ctx();
 	int ret = 0;
-	struct cli_credentials *creds =
-		get_cmdline_auth_info_creds(popt_get_cmdline_auth_info());
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 
 	/* do we already have a connection? */
 	if (!cli) {
@@ -6267,7 +6318,7 @@ static int do_tar_op(const char *base_directory)
  Handle a message operation.
 ****************************************************************************/
 
-static int do_message_op(struct user_auth_info *a_info)
+static int do_message_op(struct cli_credentials *creds)
 {
 	NTSTATUS status;
 
@@ -6288,7 +6339,7 @@ static int do_message_op(struct user_auth_info *a_info)
 	}
 
 	cli_set_timeout(cli, io_timeout*1000);
-	send_message(get_cmdline_auth_info_username(a_info));
+	send_message(cli_credentials_get_username(creds));
 	cli_shutdown(cli);
 
 	return 0;
@@ -6312,19 +6363,11 @@ int main(int argc,char *argv[])
 	bool tar_opt = false;
 	bool service_opt = false;
 	struct tar *tar_ctx = tar_get_ctx();
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 
-		{
-			.longName   = "name-resolve",
-			.shortName  = 'R',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &new_name_resolve_order,
-			.val        = 'R',
-			.descrip    = "Use these name resolution services only",
-			.argDescrip = "NAME-RESOLVE-ORDER",
-		},
 		{
 			.longName   = "message",
 			.shortName  = 'M',
@@ -6359,15 +6402,6 @@ int main(int argc,char *argv[])
 			.val        = 'L',
 			.descrip    = "Get a list of shares available on a host",
 			.argDescrip = "HOST",
-		},
-		{
-			.longName   = "max-protocol",
-			.shortName  = 'm',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = NULL,
-			.val        = 'm',
-			.descrip    = "Set the max protocol level",
-			.argDescrip = "LEVEL",
 		},
 		{
 			.longName   = "tar",
@@ -6449,27 +6483,42 @@ int main(int argc,char *argv[])
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
+		POPT_LEGACY_S3
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 	TALLOC_CTX *frame = talloc_stackframe();
+	struct cli_credentials *creds = NULL;
 
 	if (!client_set_cur_dir("\\")) {
 		exit(ENOMEM);
 	}
 
-        /* set default debug level to 1 regardless of what smb.conf sets */
-	setup_logging( "smbclient", DEBUG_DEFAULT_STDERR );
 	smb_init_locale();
 
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		exit(ENOMEM);
+	}
 	lp_set_cmdline("log level", "1");
 
-	popt_common_credentials_set_ignore_missing_conf();
-	popt_common_credentials_set_delay_post();
-
 	/* skip argv(0) */
-	pc = poptGetContext("smbclient", argc, const_argv, long_options, 0);
-	poptSetOtherOptionHelp(pc, "service <password>");
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    const_argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		exit(1);
+	}
 
+	poptSetOtherOptionHelp(pc, "[OPTIONS] service <password>");
+
+	creds = samba_cmdline_get_creds();
 	while ((opt = poptGetNextOpt(pc)) != -1) {
 
 		/*
@@ -6494,12 +6543,12 @@ int main(int argc,char *argv[])
 		}
 
 		/* if the service has already been retrieved then check if we have also a password */
-		if (service_opt
-		    && (!get_cmdline_auth_info_got_pass(
-				popt_get_cmdline_auth_info()))
-		    && poptPeekArg(pc)) {
-			set_cmdline_auth_info_password(
-				popt_get_cmdline_auth_info(), poptGetArg(pc));
+		if (service_opt &&
+		    cli_credentials_get_password(creds) == NULL &&
+		    poptPeekArg(pc)) {
+			cli_credentials_set_password(creds,
+						     poptGetArg(pc),
+						     CRED_SPECIFIED);
 		}
 
 
@@ -6527,19 +6576,11 @@ int main(int argc,char *argv[])
 				print_sockaddr(dest_ss_str, sizeof(dest_ss_str), &dest_ss);
 			}
 			break;
-		case 'E':
-			setup_logging("smbclient", DEBUG_STDERR );
-			display_set_stderr();
-			break;
-
 		case 'L':
 			query_host = talloc_strdup(frame, poptGetOptArg(pc));
 			if (!query_host) {
 				exit(ENOMEM);
 			}
-			break;
-		case 'm':
-			lp_set_cmdline("client max protocol", poptGetOptArg(pc));
 			break;
 		case 'T':
 			/* We must use old option processing for this. Find the
@@ -6575,7 +6616,11 @@ int main(int argc,char *argv[])
 			break;
 		case 'B':
 			return(do_smb_browse());
-
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 
@@ -6597,11 +6642,12 @@ int main(int argc,char *argv[])
 	}
 
 	/* if the service has already been retrieved then check if we have also a password */
-	if (service_opt
-	    && !get_cmdline_auth_info_got_pass(popt_get_cmdline_auth_info())
-	    && poptPeekArg(pc)) {
-		set_cmdline_auth_info_password(popt_get_cmdline_auth_info(),
-					       poptGetArg(pc));
+	if (service_opt &&
+	    cli_credentials_get_password(creds) == NULL &&
+	    poptPeekArg(pc)) {
+		cli_credentials_set_password(creds,
+					     poptGetArg(pc),
+					     CRED_SPECIFIED);
 	}
 
 	if (service_opt && service) {
@@ -6622,11 +6668,6 @@ int main(int argc,char *argv[])
 		}
 	}
 
-	if (!init_names()) {
-		fprintf(stderr, "init_names() failed\n");
-		exit(1);
-	}
-
 	if(new_name_resolve_order)
 		lp_set_cmdline("name resolve order", new_name_resolve_order);
 
@@ -6636,12 +6677,9 @@ int main(int argc,char *argv[])
 	}
 
 	poptFreeContext(pc);
-	popt_burn_cmdline_password(argc, argv);
+	samba_cmdline_burn(argc, argv);
 
 	DEBUG(3,("Client started (version %s).\n", samba_version_string()));
-
-	/* Ensure we have a password (or equivalent). */
-	popt_common_credentials_post();
 
 	if (tar_to_process(tar_ctx)) {
 		if (cmdstr)
@@ -6667,12 +6705,11 @@ int main(int argc,char *argv[])
 
 		rc = do_host_query(qhost);
 	} else if (message) {
-		rc = do_message_op(popt_get_cmdline_auth_info());
+		rc = do_message_op(creds);
 	} else if (process(base_directory)) {
 		rc = 1;
 	}
 
-	popt_free_cmdline_auth_info();
 	TALLOC_FREE(frame);
 	return rc;
 }

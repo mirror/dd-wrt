@@ -2,12 +2,12 @@
 .\"     Title: vfs_preopen
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "VFS_PREOPEN" "8" "06/01/2021" "Samba 4\&.14\&.5" "System Administration tools"
+.TH "VFS_PREOPEN" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -45,10 +45,25 @@ When you use this module, a number of helper processes is started that speculati
 This module is stackable\&.
 .SH "OPTIONS"
 .PP
-preopen:names = /pattern/
+preopen:posix\-basic\-regex = BOOL (default: no)
 .RS 4
-preopen:names specifies the file name pattern which should trigger the preopen helpers to do their work\&. We assume that the files are numbered incrementally\&. So if your file names are numbered FRAME00000\&.frm FRAME00001\&.frm and so on you would list them as
-preopen:names=/FRAME*\&.frm/
+preopen:posix\-basic\-regex = yes
+changes the meaning of the
+preopen:names
+option\&. Further details are described there\&.
+.RE
+.PP
+preopen:names = /pattern1/pattern2/
+.RS 4
+preopen:names specifies the file name pattern(s) which should trigger the preopen helpers to do their work\&. We assume that the files are numbered incrementally\&. So if your file names are numbered FRAME00000\&.frm FRAME00001\&.frm and so on you would list them as
+preopen:names=/FRAME*\&.frm/\&. The default algorithm uses the first (at least 3) digits it finds in order to calculate the name of the next frames\&.
+.sp
+preopen:posix\-basic\-regex = yes
+changes the meaning of the
+preopen:names
+option\&. It means \*(AqPOSIX Basic Regular Expression\*(Aq strings are used as patterns\&. The key is each pattern requires exactly one \*(Aqsubexpression\*(Aq starting with \*(Aq\e(\*(Aq and ending with \*(Aq\e)\*(Aq in order to specify the position of the digits representing the incrementing frame numbers\&. Given a file names like Movie7599Frame0v1234\&.txt, Movie7599Frame1v1234\&.txt, Movie7599Frame2v1234\&.txt up to Movie7599Frame9v1234\&.txt you can use
+preopen:names = /\&.*Frame\e([0\-9]\e)\&.*\e\&.txt/
+in order to match just a single digits, this might not be a real world example, but it shows the flexiblity that is possible here\&.
 .RE
 .PP
 preopen:num_bytes = BYTES
@@ -65,9 +80,74 @@ preopen:queuelen = NUM\-FILES
 .RS 4
 Number of files that should be speculatively opened\&. Defaults to the 10 subsequent files\&.
 .RE
+.PP
+preopen:nomatch_log_level = LOGLEVEL
+.RS 4
+In order to debug or audit the usage of the preopen logic you can use this option to specify at what log level details about filenames not matching any pattern from \*(Aqpreopen:names\*(Aq are logged\&.
+.sp
+Defaults to the log level 5\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:match_log_level = LOGLEVEL
+.RS 4
+In order to debug or audit the usage of the preopen logic you can use this option to specify at what log level details about filenames actually matching a pattern from \*(Aqpreopen:names\*(Aq are logged\&.
+.sp
+See also \*(Aqpreopen:founddigits_log_level\*(Aq and \*(Aqpreopen:push_log_level\*(Aq\&.
+.sp
+Defaults to the log level 5\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:nodigits_log_level = LOGLEVEL
+.RS 4
+In order to debug or audit problems with the preopen configuration you can use this option to specify at what log level details about filenames actually matching a pattern from \*(Aqpreopen:names\*(Aq, but at the same time don\*(Aqt contain the expected digits, are logged\&. This is typically something the administrator wants to notice and adjust the configuration in order to define more precisely where to find the digits in the filename\&.
+.sp
+Defaults to the log level 1\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:founddigits_log_level = LOGLEVEL
+.RS 4
+In order to debug or audit the usage of the preopen logic you can use this option to specify at what log level details about filenames actually matching a pattern from \*(Aqpreopen:names\*(Aq, and at the same time having valid expected digits, are logged\&. This means enough information is available in order to queue preopens\&.
+.sp
+Defaults to the log level 3\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:reset_log_level = LOGLEVEL
+.RS 4
+If a matching filename belongs to a different pattern from \*(Aqpreopen:names\*(Aq, a different parent directory or differs in a significant way from the last filename that was found before, the module needs to reset it\*(Aqs internal queue state\&. This means that no more preopens will be pushed to helper processes belonging to the former queue state\&. In order to debug or audit such queue resets you can use this option to specify at what log level details are logged\&.
+.sp
+Defaults to the log level 5\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:push_log_level = LOGLEVEL
+.RS 4
+In order to debug or audit the usage of the preopen logic you can use this option to specify at what log level details about filenames actually pushed to preopen helper processes are logged\&. This means they will actually be preopened soon\&.
+.sp
+Defaults to the log level 3\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
+.PP
+preopen:queue_log_level = LOGLEVEL
+.RS 4
+In order to debug details about internal queue processing you can use this option to specify at what log level the details are logged\&.
+.sp
+Defaults to the log level 10\&. See also
+\fBsmb.conf\fR(5)
+in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the \*(Aqpreopen\*(Aq debug class\&.
+.RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

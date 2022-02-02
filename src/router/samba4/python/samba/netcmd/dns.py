@@ -15,20 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import logging
-
 import samba.getopt as options
 from samba import WERRORError
 from samba import werror
 from struct import pack
-from socket import inet_ntoa
-from socket import inet_ntop
+from socket import inet_ntop, inet_pton
 from socket import AF_INET
 from socket import AF_INET6
-import shlex
 import struct
+import time
+import ldb
+from samba.ndr import ndr_unpack, ndr_pack
+import re
 
-from samba import remove_dc
+from samba import remove_dc, dsdb_dns
 from samba.samdb import SamDB
 from samba.auth import system_session
 
@@ -40,7 +40,8 @@ from samba.netcmd import (
 )
 from samba.dcerpc import dnsp, dnsserver
 
-from samba.dnsserver import ARecord, AAAARecord, PTRRecord, CNameRecord, NSRecord, MXRecord, SOARecord, SRVRecord, TXTRecord
+from samba.dnsserver import record_from_string, DNSParseError, flag_from_string
+from samba.dnsserver import dns_record_match
 
 
 def dns_connect(server, lp, creds):
@@ -166,30 +167,10 @@ def dns_addr_array_string(array):
 
 
 def dns_type_flag(rec_type):
-    rtype = rec_type.upper()
-    if rtype == 'A':
-        record_type = dnsp.DNS_TYPE_A
-    elif rtype == 'AAAA':
-        record_type = dnsp.DNS_TYPE_AAAA
-    elif rtype == 'PTR':
-        record_type = dnsp.DNS_TYPE_PTR
-    elif rtype == 'NS':
-        record_type = dnsp.DNS_TYPE_NS
-    elif rtype == 'CNAME':
-        record_type = dnsp.DNS_TYPE_CNAME
-    elif rtype == 'SOA':
-        record_type = dnsp.DNS_TYPE_SOA
-    elif rtype == 'MX':
-        record_type = dnsp.DNS_TYPE_MX
-    elif rtype == 'SRV':
-        record_type = dnsp.DNS_TYPE_SRV
-    elif rtype == 'TXT':
-        record_type = dnsp.DNS_TYPE_TXT
-    elif rtype == 'ALL':
-        record_type = dnsp.DNS_TYPE_ALL
-    else:
-        raise CommandError('Unknown type of DNS record %s' % rec_type)
-    return record_type
+    try:
+        return flag_from_string(rec_type)
+    except DNSParseError as e:
+        raise CommandError(*e.args)
 
 
 def dns_client_version(cli_version):
@@ -406,131 +387,12 @@ def print_dnsrecords(outf, records):
 
 # Convert data into a dns record
 def data_to_dns_record(record_type, data):
-    if record_type == dnsp.DNS_TYPE_A:
-        rec = ARecord(data)
-    elif record_type == dnsp.DNS_TYPE_AAAA:
-        rec = AAAARecord(data)
-    elif record_type == dnsp.DNS_TYPE_PTR:
-        rec = PTRRecord(data)
-    elif record_type == dnsp.DNS_TYPE_CNAME:
-        rec = CNameRecord(data)
-    elif record_type == dnsp.DNS_TYPE_NS:
-        rec = NSRecord(data)
-    elif record_type == dnsp.DNS_TYPE_MX:
-        tmp = data.split()
-        if len(tmp) != 2:
-            raise CommandError('Data requires 2 elements - mail_server, preference')
-        mail_server = tmp[0]
-        preference = int(tmp[1])
-        rec = MXRecord(mail_server, preference)
-    elif record_type == dnsp.DNS_TYPE_SRV:
-        tmp = data.split()
-        if len(tmp) != 4:
-            raise CommandError('Data requires 4 elements - server, port, priority, weight')
-        server = tmp[0]
-        port = int(tmp[1])
-        priority = int(tmp[2])
-        weight = int(tmp[3])
-        rec = SRVRecord(server, port, priority=priority, weight=weight)
-    elif record_type == dnsp.DNS_TYPE_SOA:
-        tmp = data.split()
-        if len(tmp) != 7:
-            raise CommandError('Data requires 7 elements - nameserver, email, serial, '
-                               'refresh, retry, expire, minimumttl')
-        nameserver = tmp[0]
-        email = tmp[1]
-        serial = int(tmp[2])
-        refresh = int(tmp[3])
-        retry = int(tmp[4])
-        expire = int(tmp[5])
-        minimum = int(tmp[6])
-        rec = SOARecord(nameserver, email, serial=serial, refresh=refresh,
-                        retry=retry, expire=expire, minimum=minimum)
-    elif record_type == dnsp.DNS_TYPE_TXT:
-        slist = shlex.split(data)
-        rec = TXTRecord(slist)
-    else:
-        raise CommandError('Unsupported record type')
-    return rec
-
-
-# Match dns name (of type DNS_RPC_NAME)
-def dns_name_equal(n1, n2):
-    return n1.str.rstrip('.').lower() == n2.str.rstrip('.').lower()
-
-
-# Match a dns record with specified data
-def dns_record_match(dns_conn, server, zone, name, record_type, data):
-    urec = data_to_dns_record(record_type, data)
-
-    select_flags = dnsserver.DNS_RPC_VIEW_AUTHORITY_DATA
-
     try:
-        buflen, res = dns_conn.DnssrvEnumRecords2(
-            dnsserver.DNS_CLIENT_VERSION_LONGHORN, 0, server, zone, name, None,
-            record_type, select_flags, None, None)
-    except WERRORError as e:
-        if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
-            # Either the zone doesn't exist, or there were no records.
-            # We can't differentiate the two.
-            return None
-        raise e
+        rec = record_from_string(record_type, data)
+    except DNSParseError as e:
+        raise CommandError(*e.args) from None
 
-    if not res or res.count == 0:
-        return None
-
-    for rec in res.rec[0].records:
-        if rec.wType != record_type:
-            continue
-
-        found = False
-        if record_type == dnsp.DNS_TYPE_A:
-            if rec.data == urec.data:
-                found = True
-        elif record_type == dnsp.DNS_TYPE_AAAA:
-            if rec.data == urec.data:
-                found = True
-        elif record_type == dnsp.DNS_TYPE_PTR:
-            if dns_name_equal(rec.data, urec.data):
-                found = True
-        elif record_type == dnsp.DNS_TYPE_CNAME:
-            if dns_name_equal(rec.data, urec.data):
-                found = True
-        elif record_type == dnsp.DNS_TYPE_NS:
-            if dns_name_equal(rec.data, urec.data):
-                found = True
-        elif record_type == dnsp.DNS_TYPE_MX:
-            if dns_name_equal(rec.data.nameExchange, urec.data.nameExchange) and \
-               rec.data.wPreference == urec.data.wPreference:
-                found = True
-        elif record_type == dnsp.DNS_TYPE_SRV:
-            if rec.data.wPriority == urec.data.wPriority and \
-               rec.data.wWeight == urec.data.wWeight and \
-               rec.data.wPort == urec.data.wPort and \
-               dns_name_equal(rec.data.nameTarget, urec.data.nameTarget):
-                found = True
-        elif record_type == dnsp.DNS_TYPE_SOA:
-            if rec.data.dwSerialNo == urec.data.dwSerialNo and \
-               rec.data.dwRefresh == urec.data.dwRefresh and \
-               rec.data.dwRetry == urec.data.dwRetry and \
-               rec.data.dwExpire == urec.data.dwExpire and \
-               rec.data.dwMinimumTtl == urec.data.dwMinimumTtl and \
-               dns_name_equal(rec.data.NamePrimaryServer,
-                              urec.data.NamePrimaryServer) and \
-               dns_name_equal(rec.data.ZoneAdministratorEmail,
-                              urec.data.ZoneAdministratorEmail):
-                found = True
-        elif record_type == dnsp.DNS_TYPE_TXT:
-            if rec.data.count == urec.data.count:
-                found = True
-                for i in range(rec.data.count):
-                    found = found and \
-                            (rec.data.str[i].str == urec.data.str[i].str)
-
-        if found:
-            return rec
-
-    return None
+    return rec
 
 
 class cmd_serverinfo(Command):
@@ -563,6 +425,290 @@ class cmd_serverinfo(Command):
         typeid, res = dns_conn.DnssrvQuery2(client_version, 0, server,
                                             None, 'ServerInfo')
         print_serverinfo(self.outf, typeid, res)
+
+
+def _add_integer_options(table, takes_options, integer_properties):
+    """Generate options for cmd_zoneoptions"""
+    for k, doc, _min, _max in table:
+        o = '--' + k.lower()
+        opt =  Option(o,
+                      help=f"{doc} [{_min}-{_max}]",
+                      type="int",
+                      dest=k)
+        takes_options.append(opt)
+        integer_properties.append((k, _min, _max, o))
+
+
+class cmd_zoneoptions(Command):
+    """Change zone aging options."""
+
+    synopsis = '%prog <server> <zone> [options]'
+
+    takes_args = ['server', 'zone']
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option('--client-version', help='Client Version',
+               default='longhorn', metavar='w2k|dotnet|longhorn',
+               choices=['w2k', 'dotnet', 'longhorn'], dest='cli_ver'),
+        Option('--mark-old-records-static', metavar="YYYY-MM-DD",
+               help="Make records older than this (YYYY-MM-DD) static"),
+        Option('--mark-records-static-regex', metavar="REGEXP",
+               help="Make records matching this regular expression static"),
+        Option('--mark-records-dynamic-regex', metavar="REGEXP",
+               help="Make records matching this regular expression dynamic"),
+        Option('-n', '--dry-run', action='store_true',
+               help="Don't change anything, say what would happen"),
+    ]
+
+    integer_properties = []
+    # Any zone parameter that is stored as an integer (which is most of
+    # them) can be added to this table. The name should be the dnsp
+    # mixed case name, which will get munged into a lowercase name for
+    # the option. (e.g. "Aging" becomes "--aging").
+    #
+    # Note: just because we add a name here doesn't mean we will use
+    # it.
+    _add_integer_options([
+    #       ( name,   help-string,         min, max )
+            ('Aging', 'Enable record aging', 0, 1),
+            ('NoRefreshInterval',
+             'Aging no refresh interval in hours (0: use default)',
+             0, 10 * 365 * 24),
+            ('RefreshInterval',
+             'Aging refresh interval in hours (0: use default)',
+             0, 10 * 365 * 24),
+            ],
+                         takes_options,
+                         integer_properties)
+
+    def run(self, server, zone, cli_ver, sambaopts=None, credopts=None,
+            versionopts=None, dry_run=False,
+            mark_old_records_static=None,
+            mark_records_static_regex=None,
+            mark_records_dynamic_regex=None,
+            **kwargs):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp)
+        dns_conn = dns_connect(server, self.lp, self.creds)
+
+        client_version = dns_client_version(cli_ver)
+        nap_type = dnsserver.DNSSRV_TYPEID_NAME_AND_PARAM
+
+        for k, _min, _max, o in self.integer_properties:
+            if kwargs.get(k) is None:
+                continue
+            v = kwargs[k]
+            if _min is not None and v < _min:
+                raise CommandError(f"{o} must be at least {_min}")
+            if _max is not None and v > _max:
+                raise CommandError(f"{o} can't exceed {_max}")
+
+            name_param = dnsserver.DNS_RPC_NAME_AND_PARAM()
+            name_param.dwParam = v
+            name_param.pszNodeName = k
+            if dry_run:
+                print(f"would set {k} to {v} for {zone}", file=self.outf)
+                continue
+            try:
+                dns_conn.DnssrvOperation2(client_version,
+                                          0,
+                                          server,
+                                          zone,
+                                          0,
+                                          'ResetDwordProperty',
+                                          nap_type,
+                                          name_param)
+            except WERRORError as e:
+                raise CommandError(f"Could not set {k} to {v}") from None
+
+            print(f"Set {k} to {v}", file=self.outf)
+
+        # We don't want to allow more than one of these --mark-*
+        # options at a time, as they are sensitive to ordering and
+        # the order is not documented.
+        n_mark_options = 0
+        for x in (mark_old_records_static,
+                  mark_records_static_regex,
+                  mark_records_dynamic_regex):
+            if x is not None:
+                n_mark_options += 1
+
+        if n_mark_options > 1:
+            raise CommandError("Multiple --mark-* options will not work\n")
+
+        if mark_old_records_static is not None:
+            self.mark_old_records_static(server, zone,
+                                         mark_old_records_static,
+                                         dry_run)
+
+        if mark_records_static_regex is not None:
+            self.mark_records_static_regex(server,
+                                           zone,
+                                           mark_records_static_regex,
+                                           dry_run)
+
+        if mark_records_dynamic_regex is not None:
+            self.mark_records_dynamic_regex(server,
+                                            zone,
+                                            mark_records_dynamic_regex,
+                                            dry_run)
+
+
+    def _get_dns_nodes(self, server, zone_name):
+        samdb = SamDB(url="ldap://%s" % server,
+                      session_info=system_session(),
+                      credentials=self.creds, lp=self.lp)
+
+        zone_dn = (f"DC={zone_name},CN=MicrosoftDNS,DC=DomainDNSZones,"
+                   f"{samdb.get_default_basedn()}")
+
+        nodes = samdb.search(base=zone_dn,
+                             scope=ldb.SCOPE_SUBTREE,
+                             expression=("(&(objectClass=dnsNode)"
+                                         "(!(dNSTombstoned=TRUE)))"),
+                             attrs=["dnsRecord", "name"])
+        return samdb, nodes
+
+    def mark_old_records_static(self, server, zone_name, date_string, dry_run):
+        try:
+            ts = time.strptime(date_string, "%Y-%m-%d")
+            t = time.mktime(ts)
+        except ValueError as e:
+            raise CommandError(f"Invalid date {date_string}: should be YYY-MM-DD")
+        threshold = dsdb_dns.unix_to_dns_timestamp(int(t))
+
+        samdb, nodes = self._get_dns_nodes(server, zone_name)
+
+        for node in nodes:
+            if "dnsRecord" not in node:
+                continue
+
+            values = list(node["dnsRecord"])
+            changes = 0
+            for i, v in enumerate(values):
+                rec = ndr_unpack(dnsp.DnssrvRpcRecord, v)
+                if rec.dwTimeStamp < threshold and rec.dwTimeStamp != 0:
+                    rec.dwTimeStamp = 0
+                    values[i] = ndr_pack(rec)
+                    changes += 1
+
+            if changes == 0:
+                continue
+
+            name = node["name"][0].decode()
+
+            if dry_run:
+                print(f"would make {changes}/{len(values)} records static "
+                      f"on {name}.{zone_name}.", file=self.outf)
+                continue
+
+            msg = ldb.Message.from_dict(samdb,
+                                        {'dn': node.dn,
+                                         'dnsRecord': values
+                                        },
+                                        ldb.FLAG_MOD_REPLACE)
+            samdb.modify(msg)
+            print(f"made {changes}/{len(values)} records static on "
+                  f"{name}.{zone_name}.", file=self.outf)
+
+    def mark_records_static_regex(self, server, zone_name, regex, dry_run):
+        """Make the records of nodes with matching names static.
+        """
+        r = re.compile(regex)
+        samdb, nodes = self._get_dns_nodes(server, zone_name)
+
+        for node in nodes:
+            name = node["name"][0].decode()
+            if not r.search(name):
+                continue
+            if "dnsRecord" not in node:
+                continue
+
+            values = list(node["dnsRecord"])
+            if len(values) == 0:
+                continue
+
+            changes = 0
+            for i, v in enumerate(values):
+                rec = ndr_unpack(dnsp.DnssrvRpcRecord, v)
+                if rec.dwTimeStamp != 0:
+                    rec.dwTimeStamp = 0
+                    values[i] = ndr_pack(rec)
+                    changes += 1
+
+            if changes == 0:
+                continue
+
+            if dry_run:
+                print(f"would make {changes}/{len(values)} records static "
+                      f"on {name}.{zone_name}.", file=self.outf)
+                continue
+
+            msg = ldb.Message.from_dict(samdb,
+                                        {'dn': node.dn,
+                                         'dnsRecord': values
+                                        },
+                                        ldb.FLAG_MOD_REPLACE)
+            samdb.modify(msg)
+            print(f"made {changes}/{len(values)} records static on "
+                  f"{name}.{zone_name}.", file=self.outf)
+
+    def mark_records_dynamic_regex(self, server, zone_name, regex, dry_run):
+        """Make the records of nodes with matching names dynamic, with a
+        current timestamp. In this case we only adjust the A, AAAA,
+        and TXT records.
+        """
+        r = re.compile(regex)
+        samdb, nodes = self._get_dns_nodes(server, zone_name)
+        now = time.time()
+        dns_timestamp = dsdb_dns.unix_to_dns_timestamp(int(now))
+        safe_wtypes = {
+            dnsp.DNS_TYPE_A,
+            dnsp.DNS_TYPE_AAAA,
+            dnsp.DNS_TYPE_TXT
+        }
+
+        for node in nodes:
+            name = node["name"][0].decode()
+            if not r.search(name):
+                continue
+            if "dnsRecord" not in node:
+                continue
+
+            values = list(node["dnsRecord"])
+            if len(values) == 0:
+                continue
+
+            changes = 0
+            for i, v in enumerate(values):
+                rec = ndr_unpack(dnsp.DnssrvRpcRecord, v)
+                if rec.wType in safe_wtypes and rec.dwTimeStamp == 0:
+                    rec.dwTimeStamp = dns_timestamp
+                    values[i] = ndr_pack(rec)
+                    changes += 1
+
+            if changes == 0:
+                continue
+
+            if dry_run:
+                print(f"would make {changes}/{len(values)} records dynamic "
+                      f"on {name}.{zone_name}.", file=self.outf)
+                continue
+
+            msg = ldb.Message.from_dict(samdb,
+                                        {'dn': node.dn,
+                                         'dnsRecord': values
+                                        },
+                                        ldb.FLAG_MOD_REPLACE)
+            samdb.modify(msg)
+            print(f"made {changes}/{len(values)} records dynamic on "
+                  f"{name}.{zone_name}.", file=self.outf)
 
 
 class cmd_zoneinfo(Command):
@@ -978,8 +1124,17 @@ class cmd_update_record(Command):
     def run(self, server, zone, name, rtype, olddata, newdata,
             sambaopts=None, credopts=None, versionopts=None):
 
-        if rtype.upper() not in ('A', 'AAAA', 'PTR', 'CNAME', 'NS', 'MX', 'SOA', 'SRV', 'TXT'):
+        rtype = rtype.upper()
+        if rtype not in ('A', 'AAAA', 'PTR', 'CNAME', 'NS', 'MX', 'SOA', 'SRV', 'TXT'):
             raise CommandError('Updating record of type %s is not supported' % rtype)
+
+        try:
+            if rtype == 'A':
+                inet_pton(AF_INET, newdata)
+            elif rtype == 'AAAA':
+                inet_pton(AF_INET6, newdata)
+        except OSError as e:
+            raise CommandError(f"bad data for {rtype}: {e!r}")
 
         record_type = dns_type_flag(rtype)
         rec = data_to_dns_record(record_type, newdata)
@@ -988,8 +1143,12 @@ class cmd_update_record(Command):
         self.creds = credopts.get_credentials(self.lp)
         dns_conn = dns_connect(server, self.lp, self.creds)
 
-        rec_match = dns_record_match(dns_conn, server, zone, name, record_type,
-                                     olddata)
+        try:
+            rec_match = dns_record_match(dns_conn, server, zone, name, record_type,
+                                         olddata)
+        except DNSParseError as e:
+            raise CommandError(*e.args) from None
+
         if not rec_match:
             raise CommandError('Record or zone does not exist.')
 
@@ -1125,6 +1284,7 @@ class cmd_dns(SuperCommand):
 
     subcommands = {}
     subcommands['serverinfo'] = cmd_serverinfo()
+    subcommands['zoneoptions'] = cmd_zoneoptions()
     subcommands['zoneinfo'] = cmd_zoneinfo()
     subcommands['zonelist'] = cmd_zonelist()
     subcommands['zonecreate'] = cmd_zonecreate()

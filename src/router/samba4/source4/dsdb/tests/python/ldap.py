@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import optparse
 import sys
 import time
@@ -48,6 +47,7 @@ from samba.dsdb import (UF_NORMAL_ACCOUNT,
                         ATYPE_WORKSTATION_TRUST, SYSTEM_FLAG_DOMAIN_DISALLOW_MOVE,
                         SYSTEM_FLAG_CONFIG_ALLOW_RENAME, SYSTEM_FLAG_CONFIG_ALLOW_MOVE,
                         SYSTEM_FLAG_CONFIG_ALLOW_LIMITED_MOVE)
+from samba.dcerpc.security import DOMAIN_RID_DOMAIN_MEMBERS
 
 from samba.ndr import ndr_pack, ndr_unpack
 from samba.dcerpc import security, lsa
@@ -435,33 +435,41 @@ class BasicTests(samba.tests.TestCase):
             (num, _) = e.args
             self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
-        # Add a new top-most structural class "inetOrgPerson" and remove it
-        # afterwards
+        # Try to add a new top-most structural class "inetOrgPerson"
         m = Message()
         m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
         m["objectClass"] = MessageElement("inetOrgPerson", FLAG_MOD_ADD,
                                           "objectClass")
-        ldb.modify(m)
+        try:
+            ldb.modify(m)
+            self.fail()
+        except LdbError as e:
+            (num, _) = e.args
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
+        # Try to remove the structural class "user"
         m = Message()
         m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
-        m["objectClass"] = MessageElement("inetOrgPerson", FLAG_MOD_DELETE,
+        m["objectClass"] = MessageElement("user", FLAG_MOD_DELETE,
                                           "objectClass")
-        ldb.modify(m)
+        try:
+            ldb.modify(m)
+            self.fail()
+        except LdbError as e:
+            (num, _) = e.args
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
-        # Replace top-most structural class to "inetOrgPerson" and reset it
-        # back to "user"
+        # Try to replace top-most structural class to "inetOrgPerson"
         m = Message()
         m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
         m["objectClass"] = MessageElement("inetOrgPerson", FLAG_MOD_REPLACE,
                                           "objectClass")
-        ldb.modify(m)
-
-        m = Message()
-        m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
-        m["objectClass"] = MessageElement("user", FLAG_MOD_REPLACE,
-                                          "objectClass")
-        ldb.modify(m)
+        try:
+            ldb.modify(m)
+            self.fail()
+        except LdbError as e:
+            (num, _) = e.args
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
         # Add a new auxiliary object class "posixAccount" to "ldaptestuser"
         m = Message()
@@ -2018,9 +2026,9 @@ delete: description
         self.assertTrue("objectGUID" in res[0])
         self.assertTrue("whenCreated" in res[0])
         self.assertEqual(str(res[0]["objectCategory"][0]), ("CN=Computer,%s" % ldb.get_schema_basedn()))
-        self.assertEqual(int(res[0]["primaryGroupID"][0]), 513)
-        self.assertEqual(int(res[0]["sAMAccountType"][0]), ATYPE_NORMAL_ACCOUNT)
-        self.assertEqual(int(res[0]["userAccountControl"][0]), UF_NORMAL_ACCOUNT | UF_PASSWD_NOTREQD | UF_ACCOUNTDISABLE)
+        self.assertEqual(int(res[0]["primaryGroupID"][0]), DOMAIN_RID_DOMAIN_MEMBERS)
+        self.assertEqual(int(res[0]["sAMAccountType"][0]), ATYPE_WORKSTATION_TRUST)
+        self.assertEqual(int(res[0]["userAccountControl"][0]), UF_WORKSTATION_TRUST_ACCOUNT | UF_PASSWD_NOTREQD | UF_ACCOUNTDISABLE)
 
         delete_force(self.ldb, "cn=ldaptestcomputer3,cn=computers," + self.base_dn)
 
@@ -2499,9 +2507,9 @@ member: cn=ldaptestuser2,cn=users,""" + self.base_dn + """
         self.assertTrue("objectGUID" in res[0])
         self.assertTrue("whenCreated" in res[0])
         self.assertEqual(str(res[0]["objectCategory"]), ("CN=Computer,%s" % ldb.get_schema_basedn()))
-        self.assertEqual(int(res[0]["primaryGroupID"][0]), 513)
-        self.assertEqual(int(res[0]["sAMAccountType"][0]), ATYPE_NORMAL_ACCOUNT)
-        self.assertEqual(int(res[0]["userAccountControl"][0]), UF_NORMAL_ACCOUNT | UF_PASSWD_NOTREQD | UF_ACCOUNTDISABLE)
+        self.assertEqual(int(res[0]["primaryGroupID"][0]), DOMAIN_RID_DOMAIN_MEMBERS)
+        self.assertEqual(int(res[0]["sAMAccountType"][0]), ATYPE_WORKSTATION_TRUST)
+        self.assertEqual(int(res[0]["userAccountControl"][0]), UF_WORKSTATION_TRUST_ACCOUNT | UF_PASSWD_NOTREQD | UF_ACCOUNTDISABLE)
         self.assertEqual(str(res[0]["memberOf"][0]).upper(), ("CN=ldaptestgroup2,CN=Users," + self.base_dn).upper())
         self.assertEqual(len(res[0]["memberOf"]), 1)
 

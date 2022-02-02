@@ -48,6 +48,8 @@ static void torture_creds_init(void **state)
 	const char *username = NULL;
 	const char *domain = NULL;
 	const char *password = NULL;
+	enum credentials_obtained usr_obtained = CRED_UNINITIALISED;
+	enum credentials_obtained pwd_obtained = CRED_UNINITIALISED;
 	bool ok;
 
 	creds = cli_credentials_init(mem_ctx);
@@ -71,12 +73,22 @@ static void torture_creds_init(void **state)
 	username = cli_credentials_get_username(creds);
 	assert_string_equal(username, "brot");
 
+	username = cli_credentials_get_username_and_obtained(creds,
+							     &usr_obtained);
+	assert_int_equal(usr_obtained, CRED_SPECIFIED);
+	assert_string_equal(username, "brot");
+
 	password = cli_credentials_get_password(creds);
 	assert_null(password);
 	ok = cli_credentials_set_password(creds, "SECRET", CRED_SPECIFIED);
 	assert_true(ok);
 	assert_int_equal(creds->password_obtained, CRED_SPECIFIED);
 	password = cli_credentials_get_password(creds);
+	assert_string_equal(password, "SECRET");
+
+	password = cli_credentials_get_password_and_obtained(creds,
+							     &pwd_obtained);
+	assert_int_equal(pwd_obtained, CRED_SPECIFIED);
 	assert_string_equal(password, "SECRET");
 
 	/* Run dump to check it works */
@@ -106,12 +118,14 @@ static void torture_creds_guess(void **state)
 	TALLOC_CTX *mem_ctx = *state;
 	struct cli_credentials *creds = NULL;
 	const char *env_user = getenv("USER");
+	bool ok;
 
 	creds = cli_credentials_init(mem_ctx);
 	assert_non_null(creds);
 
 	setenv("PASSWD", "SECRET", 1);
-	cli_credentials_guess(creds, NULL);
+	ok = cli_credentials_guess(creds, NULL);
+	assert_true(ok);
 
 	assert_string_equal(creds->username, env_user);
 	assert_int_equal(creds->username_obtained, CRED_GUESS_ENV);
@@ -125,12 +139,14 @@ static void torture_creds_anon_guess(void **state)
 {
 	TALLOC_CTX *mem_ctx = *state;
 	struct cli_credentials *creds = NULL;
+	bool ok;
 
 	creds = cli_credentials_init_anon(mem_ctx);
 	assert_non_null(creds);
 
 	setenv("PASSWD", "SECRET", 1);
-	cli_credentials_guess(creds, NULL);
+	ok = cli_credentials_guess(creds, NULL);
+	assert_true(ok);
 
 	assert_string_equal(creds->username, "");
 	assert_int_equal(creds->username_obtained, CRED_SPECIFIED);
@@ -200,6 +216,75 @@ static void torture_creds_parse_string(void **state)
 	assert_int_equal(creds->password_obtained, CRED_SPECIFIED);
 }
 
+static void torture_creds_krb5_state(void **state)
+{
+	TALLOC_CTX *mem_ctx = *state;
+	struct cli_credentials *creds = NULL;
+	struct loadparm_context *lp_ctx = NULL;
+	bool ok;
+
+	lp_ctx = loadparm_init_global(true);
+	assert_non_null(lp_ctx);
+
+	creds = cli_credentials_init(mem_ctx);
+	assert_non_null(creds);
+	assert_int_equal(creds->kerberos_state_obtained, CRED_UNINITIALISED);
+	assert_int_equal(creds->kerberos_state, CRED_USE_KERBEROS_DESIRED);
+
+	ok = cli_credentials_set_conf(creds, lp_ctx);
+	assert_true(ok);
+	assert_int_equal(creds->kerberos_state_obtained, CRED_SMB_CONF);
+	assert_int_equal(creds->kerberos_state, CRED_USE_KERBEROS_DESIRED);
+
+	ok = cli_credentials_guess(creds, lp_ctx);
+	assert_true(ok);
+	assert_int_equal(creds->kerberos_state_obtained, CRED_SMB_CONF);
+	assert_int_equal(creds->kerberos_state, CRED_USE_KERBEROS_DESIRED);
+	assert_int_equal(creds->ccache_obtained, CRED_GUESS_FILE);
+	assert_non_null(creds->ccache);
+
+	ok = cli_credentials_set_kerberos_state(creds,
+						CRED_USE_KERBEROS_REQUIRED,
+						CRED_SPECIFIED);
+	assert_true(ok);
+	assert_int_equal(creds->kerberos_state_obtained, CRED_SPECIFIED);
+	assert_int_equal(creds->kerberos_state, CRED_USE_KERBEROS_REQUIRED);
+
+	ok = cli_credentials_set_kerberos_state(creds,
+						CRED_USE_KERBEROS_DISABLED,
+						CRED_SMB_CONF);
+	assert_false(ok);
+	assert_int_equal(creds->kerberos_state_obtained, CRED_SPECIFIED);
+	assert_int_equal(creds->kerberos_state, CRED_USE_KERBEROS_REQUIRED);
+
+}
+
+static void torture_creds_gensec_feature(void **state)
+{
+	TALLOC_CTX *mem_ctx = *state;
+	struct cli_credentials *creds = NULL;
+	bool ok;
+
+	creds = cli_credentials_init(mem_ctx);
+	assert_non_null(creds);
+	assert_int_equal(creds->gensec_features_obtained, CRED_UNINITIALISED);
+	assert_int_equal(creds->gensec_features, 0);
+
+	ok = cli_credentials_set_gensec_features(creds,
+						 GENSEC_FEATURE_SIGN,
+						 CRED_SPECIFIED);
+	assert_true(ok);
+	assert_int_equal(creds->gensec_features_obtained, CRED_SPECIFIED);
+	assert_int_equal(creds->gensec_features, GENSEC_FEATURE_SIGN);
+
+	ok = cli_credentials_set_gensec_features(creds,
+						 GENSEC_FEATURE_SEAL,
+						 CRED_SMB_CONF);
+	assert_false(ok);
+	assert_int_equal(creds->gensec_features_obtained, CRED_SPECIFIED);
+	assert_int_equal(creds->gensec_features, GENSEC_FEATURE_SIGN);
+}
+
 int main(int argc, char *argv[])
 {
 	int rc;
@@ -209,6 +294,8 @@ int main(int argc, char *argv[])
 		cmocka_unit_test(torture_creds_guess),
 		cmocka_unit_test(torture_creds_anon_guess),
 		cmocka_unit_test(torture_creds_parse_string),
+		cmocka_unit_test(torture_creds_krb5_state),
+		cmocka_unit_test(torture_creds_gensec_feature),
 	};
 
 	if (argc == 2) {

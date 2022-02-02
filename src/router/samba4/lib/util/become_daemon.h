@@ -33,13 +33,16 @@
  */
 
 /**
- * @brief Close the low 3 file descriptors and open /dev/null in their place
+ * @brief Enable or disable daemon status systemd notifications
  *
- * @param[in] stdin_too Should stdin be closed?
- * @param[in] stdout_too Should stdout be closed?
- * @param[in] stderr_too Should stderr be closed?
+ * When samba runs as AD DC only the main 'samba' process has to
+ * notify systemd. Child processes started by the main 'samba', like
+ * smbd and winbindd should call this function to disable sd_notify()
+ * calls.
+ *
+ * @param[in] enable True to enable notifications, false to disable
 **/
-void close_low_fds(bool stdin_too, bool stdout_too, bool stderr_too);
+void daemon_sd_notifications(bool enable);
 
 /**
  * @brief Become a daemon, optionally discarding the controlling terminal

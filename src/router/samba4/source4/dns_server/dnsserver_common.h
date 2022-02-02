@@ -78,6 +78,9 @@ WERROR dns_common_name2dn(struct ldb_context *samdb,
 			  struct ldb_dn **_dn);
 bool dns_name_equal(const char *name1, const char *name2);
 
+bool dns_record_match(struct dnsp_DnssrvRpcRecord *rec1,
+		      struct dnsp_DnssrvRpcRecord *rec2);
+
 /*
  * For this routine, base_dn is generally NULL.  The exception comes
  * from the python bindings to support setting ACLs on DNS objects
@@ -118,5 +121,19 @@ bool dns_zoneinfo_load_zone_property(struct dnsserver_zoneinfo *zoneinfo,
 			nm == NULL ? "" : nm, \
 			dt == NULL ? "" : dt); \
 	}
+
+/* There are this many nttime jiffies in an hour */
+#define NTTIME_TO_HOURS (3600ULL * 10ULL * 1000ULL * 1000ULL)
+
+/*
+ * convert unix time to a DNS timestamp
+ * (hours in the NTTIME epoch, 32 bit).
+ */
+uint32_t unix_to_dns_timestamp(time_t t);
+
+/*
+ * Convert a DNS timestamp into NTTIME.
+ */
+NTSTATUS dns_timestamp_to_nt_time(NTTIME *_nt, uint32_t t);
 
 #endif /* __DNSSERVER_COMMON_H__ */

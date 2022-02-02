@@ -2,12 +2,12 @@
 .\"     Title: traffic_replay
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "TRAFFIC_REPLAY" "7" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
+.TH "TRAFFIC_REPLAY" "7" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -199,10 +199,10 @@ This writes extra timing data to the file specified\&. This is mostly used for r
 Samba Common Options
 .RS 4
 .PP
-\-d|\-\-debuglevel=level
+\-d|\-\-debuglevel=DEBUGLEVEL
 .RS 4
 \fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 1\&.
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
 .sp
 The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
 .sp
@@ -215,9 +215,15 @@ smb\&.conf
 file\&.
 .RE
 .PP
-\-s|\-\-configfile=<configuration file>
+\-\-debug\-stdout
 .RS 4
-The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
+.RE
+.PP
+\-\-configfile=<configuration file>
+.RS 4
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
 smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
@@ -226,7 +232,7 @@ for more information\&. The default configuration file name is determined at com
 .RS 4
 Set the
 \fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
 .RE
 .PP
 \-\-realm=REALM
@@ -266,9 +272,15 @@ Username
 Workgroup
 .RE
 .PP
-\-k|\-\-kerberos
+\-\-use\-kerberos=desired|required|off
 .RS 4
-Try to authenticate with kerberos\&. Only useful in an Active Directory environment\&.
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connnecting to a service\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient use kerberos\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
 .RE
 .PP
 \-\-ipaddress=IPADDRESS
@@ -355,7 +367,7 @@ traffic_replay traffic\-model\&.txt my\-dc\&.samdom\&.example\&.com \-UAdmin%pas
 The users created by the test will have names like STGU\-0\-xyz\&. The groups generated have names like STGG\-0\-xyz\&.
 .SH "VERSION"
 .PP
-This man page is complete for version 4\&.14\&.5 of the Samba suite\&.
+This man page is complete for version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBtraffic_learner\fR(7)\&.

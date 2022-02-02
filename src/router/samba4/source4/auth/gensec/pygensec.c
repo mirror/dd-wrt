@@ -310,9 +310,13 @@ static PyObject *py_gensec_session_info(PyObject *self,
 		return NULL;
 	}
 	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
 
 	status = gensec_session_info(security, mem_ctx, &info);
 	if (NT_STATUS_IS_ERR(status)) {
+		talloc_free(mem_ctx);
 		PyErr_SetNTSTATUS(status);
 		return NULL;
 	}
@@ -337,6 +341,9 @@ static PyObject *py_gensec_session_key(PyObject *self,
 		return NULL;
 	}
 	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
 
 	status = gensec_session_key(security, mem_ctx, &session_key);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -426,9 +433,9 @@ static PyObject *py_gensec_have_feature(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (gensec_have_feature(security, feature)) {
-		return Py_True;
+		Py_RETURN_TRUE;
 	} 
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 static PyObject *py_gensec_set_max_update_size(PyObject *self, PyObject *args)
@@ -461,18 +468,33 @@ static PyObject *py_gensec_update(PyObject *self, PyObject *args)
 	PyObject *py_bytes, *result, *py_in;
 	struct gensec_security *security = pytalloc_get_type(self, struct gensec_security);
 	PyObject *finished_processing;
+	char *data = NULL;
+	Py_ssize_t len;
+	int err;
 
 	if (!PyArg_ParseTuple(args, "O", &py_in))
 		return NULL;
 
 	mem_ctx = talloc_new(NULL);
-	if (!PyBytes_Check(py_in)) {
-		PyErr_Format(PyExc_TypeError, "bytes expected");
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
+
+	err = PyBytes_AsStringAndSize(py_in, &data, &len);
+	if (err) {
+		talloc_free(mem_ctx);
 		return NULL;
 	}
 
-	in.data = (uint8_t *)PyBytes_AsString(py_in);
-	in.length = PyBytes_Size(py_in);
+	/*
+	 * Make a copy of the input buffer, as gensec_update may modify its
+	 * input argument.
+	 */
+	in = data_blob_talloc(mem_ctx, data, len);
+	if (!in.data) {
+		talloc_free(mem_ctx);
+		return PyErr_NoMemory();
+	}
 
 	status = gensec_update(security, mem_ctx, in, &out);
 
@@ -510,8 +532,12 @@ static PyObject *py_gensec_wrap(PyObject *self, PyObject *args)
 		return NULL;
 
 	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
 
 	if (!PyBytes_Check(py_in)) {
+		talloc_free(mem_ctx);
 		PyErr_Format(PyExc_TypeError, "bytes expected");
 		return NULL;
 	}
@@ -540,19 +566,33 @@ static PyObject *py_gensec_unwrap(PyObject *self, PyObject *args)
 	DATA_BLOB in, out;
 	PyObject *ret, *py_in;
 	struct gensec_security *security = pytalloc_get_type(self, struct gensec_security);
+	char *data = NULL;
+	Py_ssize_t len;
+	int err;
 
 	if (!PyArg_ParseTuple(args, "O", &py_in))
 		return NULL;
 
 	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
 
-	if (!PyBytes_Check(py_in)) {
-		PyErr_Format(PyExc_TypeError, "bytes expected");
+	err = PyBytes_AsStringAndSize(py_in, &data, &len);
+	if (err) {
+		talloc_free(mem_ctx);
 		return NULL;
 	}
 
-	in.data = (uint8_t *)PyBytes_AsString(py_in);
-	in.length = PyBytes_Size(py_in);
+	/*
+	 * Make a copy of the input buffer, as gensec_unwrap may modify its
+	 * input argument.
+	 */
+	in = data_blob_talloc(mem_ctx, data, len);
+	if (!in.data) {
+		talloc_free(mem_ctx);
+		return PyErr_NoMemory();
+	}
 
 	status = gensec_unwrap(security, mem_ctx, &in, &out);
 
@@ -599,6 +639,9 @@ static PyObject *py_gensec_sign_packet(PyObject *self, PyObject *args)
 	pdu.length = pdu_length;
 
 	mem_ctx = talloc_new(NULL);
+	if (mem_ctx == NULL) {
+		return PyErr_NoMemory();
+	}
 
 	status = gensec_sign_packet(security, mem_ctx,
 				    data.data, data.length,
@@ -654,13 +697,13 @@ static PyMethodDef py_gensec_security_methods[] = {
 		METH_VARARGS|METH_KEYWORDS|METH_CLASS,
 		"S.start_server(auth_ctx, settings) -> gensec" },
 	{ "set_credentials", (PyCFunction)py_gensec_set_credentials, METH_VARARGS, 
-		"S.start_client(credentials)" },
+		"S.set_credentials(credentials)" },
 	{ "set_target_hostname", (PyCFunction)py_gensec_set_target_hostname, METH_VARARGS, 
-		"S.start_target_hostname(target_hostname) \n This sets the Kerberos target hostname to obtain a ticket for." },
+		"S.set_target_hostname(target_hostname) \n This sets the Kerberos target hostname to obtain a ticket for." },
 	{ "set_target_service", (PyCFunction)py_gensec_set_target_service, METH_VARARGS, 
-		"S.start_target_service(target_service) \n This sets the Kerberos target service to obtain a ticket for.  The default value is 'host'" },
+		"S.set_target_service(target_service) \n This sets the Kerberos target service to obtain a ticket for.  The default value is 'host'" },
 	{ "set_target_service_description", (PyCFunction)py_gensec_set_target_service_description, METH_VARARGS,
-		"S.start_target_service_description(target_service_description) \n This description is set server-side and used in authentication and authorization logs.  The default value is that provided to set_target_service() or None."},
+		"S.set_target_service_description(target_service_description) \n This description is set server-side and used in authentication and authorization logs.  The default value is that provided to set_target_service() or None."},
 	{ "session_info", (PyCFunction)py_gensec_session_info, METH_NOARGS,
 		"S.session_info() -> info" },
 	{ "session_key", (PyCFunction)py_gensec_session_key, METH_NOARGS,

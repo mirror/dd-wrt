@@ -1235,28 +1235,51 @@ failed:
 	return -1;
 }
 
-static void initialise_node_flags (struct ctdb_context *ctdb)
+struct ctdb_node *ctdb_find_node(struct ctdb_context *ctdb, uint32_t pnn)
 {
+	struct ctdb_node *node = NULL;
 	unsigned int i;
+
+	if (pnn == CTDB_CURRENT_NODE) {
+		pnn = ctdb->pnn;
+	}
 
 	/* Always found: PNN correctly set just before this is called */
 	for (i = 0; i < ctdb->num_nodes; i++) {
-		if (ctdb->pnn == ctdb->nodes[i]->pnn) {
-			break;
+		node = ctdb->nodes[i];
+		if (pnn == node->pnn) {
+			return node;
 		}
 	}
 
-	ctdb->nodes[i]->flags &= ~NODE_FLAGS_DISCONNECTED;
+	return NULL;
+}
+
+static void initialise_node_flags (struct ctdb_context *ctdb)
+{
+	struct ctdb_node *node = NULL;
+
+	node = ctdb_find_node(ctdb, CTDB_CURRENT_NODE);
+	/*
+	 * PNN correctly set just before this is called so always
+	 * found but keep static analysers happy...
+	 */
+	if (node == NULL) {
+		DBG_ERR("Unable to find current node\n");
+		return;
+	}
+
+	node->flags &= ~NODE_FLAGS_DISCONNECTED;
 
 	/* do we start out in DISABLED mode? */
 	if (ctdb->start_as_disabled != 0) {
 		D_ERR("This node is configured to start in DISABLED state\n");
-		ctdb->nodes[i]->flags |= NODE_FLAGS_DISABLED;
+		node->flags |= NODE_FLAGS_PERMANENTLY_DISABLED;
 	}
 	/* do we start out in STOPPED mode? */
 	if (ctdb->start_as_stopped != 0) {
 		D_ERR("This node is configured to start in STOPPED state\n");
-		ctdb->nodes[i]->flags |= NODE_FLAGS_STOPPED;
+		node->flags |= NODE_FLAGS_STOPPED;
 	}
 }
 
@@ -2178,6 +2201,11 @@ void ctdb_shutdown_sequence(struct ctdb_context *ctdb, int exit_code)
 int switch_from_server_to_client(struct ctdb_context *ctdb)
 {
 	int ret;
+
+	if (ctdb->daemon.sd != -1) {
+		close(ctdb->daemon.sd);
+		ctdb->daemon.sd = -1;
+	}
 
 	/* get a new event context */
 	ctdb->ev = tevent_context_init(ctdb);

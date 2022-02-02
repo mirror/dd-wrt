@@ -2,15 +2,22 @@
 
 BASENAME=`basename $0`
 
+unset LD_PRELOAD
+
 if [ -n "$VALGRIND" -o -n "$SMBD_VALGRIND" ]; then
 	echo "${BASENAME}: Not running debugger under valgrind"
 	exit 1
 fi
 
+if [ "x$PLEASE_NO_GDB_BACKTRACE" != "x" ]; then
+	echo "${BASENAME}: Not running debugger because PLEASE_NO_GDB_BACKTRACE is set"
+        exit 0
+fi
+
+
 # we want everything on stderr, so the program is not disturbed
 exec 1>&2
 
-BASENAME=`basename $0`
 UNAME=`uname`
 
 PID=$1

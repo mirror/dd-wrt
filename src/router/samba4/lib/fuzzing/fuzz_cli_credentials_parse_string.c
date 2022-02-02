@@ -1,5 +1,5 @@
 /*
-  Fuzz NMB parse_packet
+  Fuzz cli_credentials_parse_string
   Copyright (C) Catalyst IT 2020
 
   This program is free software; you can redistribute it and/or modify
@@ -53,5 +53,11 @@ int LLVMFuzzerTestOneInput(uint8_t *input, size_t len)
 						 &domain);
 
 	talloc_free(mem_ctx);
+	return 0;
+}
+
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
 	return 0;
 }

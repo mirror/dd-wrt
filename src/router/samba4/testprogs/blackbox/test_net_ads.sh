@@ -24,7 +24,7 @@ cd $RUNDIR
 
 failed=0
 
-net_tool="$BINDIR/net -s $BASEDIR/$WORKDIR/client.conf --option=security=ads"
+net_tool="$BINDIR/net --configfile=$BASEDIR/$WORKDIR/client.conf --option=security=ads"
 
 ldbsearch="ldbsearch"
 if [ -x "$BINDIR/ldbsearch" ]; then
@@ -51,7 +51,7 @@ fi
 
 testit "join" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
 
-testit "testjoin" $VALGRIND $net_tool ads testjoin -kP || failed=`expr $failed + 1`
+testit "testjoin" $VALGRIND $net_tool ads testjoin -P --use-kerberos=required || failed=`expr $failed + 1`
 
 netbios=$(grep "netbios name" $BASEDIR/$WORKDIR/client.conf | cut -f2 -d= | awk '{$1=$1};1')
 
@@ -81,7 +81,7 @@ testit "leave" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || fail
 dedicated_keytab_file="$PREFIX_ABS/test_net_ads_dedicated_krb5.keytab"
 testit "join (dedicated keytab)" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
 
-testit "testjoin (dedicated keytab)" $VALGRIND $net_tool ads testjoin -kP || failed=`expr $failed + 1`
+testit "testjoin (dedicated keytab)" $VALGRIND $net_tool ads testjoin -P --use-kerberos=required || failed=`expr $failed + 1`
 
 netbios=$(grep "netbios name" $BASEDIR/$WORKDIR/client.conf | cut -f2 -d= | awk '{$1=$1};1')
 uc_netbios=$(echo $netbios | tr '[:lower:]' '[:upper:]')
@@ -179,15 +179,15 @@ fi
 
 rm -f $dedicated_keytab_file
 
-testit_expect_failure "testjoin(not joined)" $VALGRIND $net_tool ads testjoin -kP || failed=`expr $failed + 1`
+testit_expect_failure "testjoin(not joined)" $VALGRIND $net_tool ads testjoin -P --use-kerberos=required || failed=`expr $failed + 1`
 
-testit "join+kerberos" $VALGRIND $net_tool ads join -kU$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
+testit "join+kerberos" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD --use-kerberos=required || failed=`expr $failed + 1`
 
-testit "testjoin" $VALGRIND $net_tool ads testjoin -kP || failed=`expr $failed + 1`
+testit "testjoin" $VALGRIND $net_tool ads testjoin -P --use-kerberos=required || failed=`expr $failed + 1`
 
-testit "leave+kerberos" $VALGRIND $net_tool ads leave -kU$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
+testit "leave+kerberos" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD --use-kerberos=required || failed=`expr $failed + 1`
 
-testit_expect_failure "testjoin(not joined)" $VALGRIND $net_tool ads testjoin -kP || failed=`expr $failed + 1`
+testit_expect_failure "testjoin(not joined)" $VALGRIND $net_tool ads testjoin -P --use-kerberos=required || failed=`expr $failed + 1`
 
 testit "join+server" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD -S$DC_SERVER || failed=`expr $failed + 1`
 
@@ -205,7 +205,7 @@ testit "leave+keep_account" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PAS
 
 base_dn="DC=addom,DC=samba,DC=example,DC=com"
 computers_dn="CN=Computers,$base_dn"
-testit "ldb check for existence of machine account" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "cn=$HOSTNAME,$computers_dn" || failed=`expr $failed + 1`
+testit "ldb check for existence of machine account" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM --scope=base -b "cn=$HOSTNAME,$computers_dn" || failed=`expr $failed + 1`
 
 dns_alias1="${netbios}_alias1.other.${lc_realm}"
 dns_alias2="${netbios}_alias2.other2.${lc_realm}"
@@ -234,7 +234,7 @@ EOF
 
 testit "add binary msDS-AdditionalDnsHostName" $VALGRIND $ldbmodify -k yes -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM $PREFIX_ABS/tmpldbmodify || failed=`expr $failed + 1`
 
-testit_grep "addl short alias" short_alias $ldbsearch --show-binary -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "CN=$HOSTNAME,CN=Computers,$base_dn" msDS-AdditionalDnsHostName || failed=`expr $failed + 1`
+testit_grep "addl short alias" short_alias $ldbsearch --show-binary -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM --scope=base -b "CN=$HOSTNAME,CN=Computers,$base_dn" msDS-AdditionalDnsHostName || failed=`expr $failed + 1`
 
 rm -f $PREFIX_ABS/tmpldbmodify $short_alias_file
 
@@ -275,7 +275,7 @@ EOF
 
 testit "join+createcomputer" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD createcomputer=Servers || failed=`expr $failed + 1`
 
-testit "ldb check for existence of machine account in OU=Servers" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "cn=$HOSTNAME,OU=Servers,$base_dn" || failed=`expr $failed + 1`
+testit "ldb check for existence of machine account in OU=Servers" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM --scope=base -b "cn=$HOSTNAME,OU=Servers,$base_dn" || failed=`expr $failed + 1`
 
 ## Goodbye...
 testit "leave+createcomputer" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
@@ -287,7 +287,7 @@ testit "Remove OU=Servers" $VALGRIND $ldbdel -U$DC_USERNAME%$DC_PASSWORD -H ldap
 #
 testit "join+createupn" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD createupn="host/test-$HOSTNAME@$REALM" || failed=`expr $failed + 1`
 
-testit_grep "checkupn" "userPrincipalName: host/test-$HOSTNAME@$REALM" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "CN=$HOSTNAME,CN=Computers,$base_dn" || failed=`expr $failed + 1`
+testit_grep "checkupn" "userPrincipalName: host/test-$HOSTNAME@$REALM" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM --scope=base -b "CN=$HOSTNAME,CN=Computers,$base_dn" || failed=`expr $failed + 1`
 
 dedicated_keytab_file="$PREFIX_ABS/test_net_create_dedicated_krb5.keytab"
 
@@ -304,7 +304,7 @@ testit "leave+createupn" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWO
 #
 testit "join+dnshostname" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD dnshostname="alt.hostname.$HOSTNAME" || failed=`expr $failed + 1`
 
-testit_grep "check dnshostname opt" "dNSHostName: alt.hostname.$HOSTNAME" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "CN=$HOSTNAME,CN=Computers,$base_dn" || failed=`expr $failed + 1`
+testit_grep "check dnshostname opt" "dNSHostName: alt.hostname.$HOSTNAME" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM --scope=base -b "CN=$HOSTNAME,CN=Computers,$base_dn" || failed=`expr $failed + 1`
 
 testit "create_keytab+dnshostname" $VALGRIND $net_tool ads keytab create --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
 

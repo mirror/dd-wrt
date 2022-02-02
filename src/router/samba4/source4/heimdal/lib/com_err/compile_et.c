@@ -45,7 +45,7 @@
 int numerror;
 extern FILE *yyin;
 
-extern void yyparse(void);
+extern int yyparse(void);
 
 long base_id;
 int number;
@@ -56,7 +56,8 @@ char name[128];
 char Basename[128];
 
 #ifdef YYDEBUG
-extern int yydebug = 1;
+extern int yydebug;
+int yydebug = 1;
 #endif
 
 char *filename;

@@ -36,17 +36,16 @@
 /* The following definitions come from auth/auth.c  */
 
 NTSTATUS smb_register_auth(int version, const char *name, auth_init_function init);
-bool load_auth_module(struct auth_context *auth_context,
-		      const char *module,
-		      struct auth_methods **ret) ;
 NTSTATUS make_auth3_context_for_ntlm(TALLOC_CTX *mem_ctx,
 				     struct auth_context **auth_context);
 NTSTATUS make_auth3_context_for_netlogon(TALLOC_CTX *mem_ctx,
 					 struct auth_context **auth_context);
 NTSTATUS make_auth3_context_for_winbind(TALLOC_CTX *mem_ctx,
 					struct auth_context **auth_context);
-bool auth3_context_set_challenge(struct auth_context *ctx, uint8_t chal[8],
-				 const char *challenge_set_by);
+bool auth3_context_set_challenge(
+	struct auth_context *ctx,
+	const uint8_t chal[8],
+	const char *challenge_set_by);
 
 /****************************************************************************
  Try to get a challenge out of the various authentication modules.
@@ -180,9 +179,9 @@ bool make_user_info_netlogon_network(TALLOC_CTX *mem_ctx,
 				     const struct tsocket_address *remote_address,
 				     const struct tsocket_address *local_address,
 				     uint32_t logon_parameters,
-				     const uchar *lm_network_pwd,
+				     const unsigned char *lm_network_pwd,
 				     int lm_pwd_len,
-				     const uchar *nt_network_pwd,
+				     const unsigned char *nt_network_pwd,
 				     int nt_pwd_len);
 bool make_user_info_netlogon_interactive(TALLOC_CTX *mem_ctx,
 					 struct auth_usersupplied_info **user_info,
@@ -192,9 +191,9 @@ bool make_user_info_netlogon_interactive(TALLOC_CTX *mem_ctx,
 					 const struct tsocket_address *remote_address,
 					 const struct tsocket_address *local_address,
 					 uint32_t logon_parameters,
-					 const uchar chal[8],
-					 const uchar lm_interactive_pwd[16],
-					 const uchar nt_interactive_pwd[16]);
+					 const unsigned char chal[8],
+					 const unsigned char lm_interactive_pwd[16],
+					 const unsigned char nt_interactive_pwd[16]);
 bool make_user_info_for_reply(TALLOC_CTX *mem_ctx,
 			      struct auth_usersupplied_info **user_info,
 			      const char *smb_name,
@@ -254,11 +253,6 @@ NTSTATUS auth3_user_info_dc_add_hints(struct auth_user_info_dc *user_info_dc,
 				      uid_t uid,
 				      gid_t gid,
 				      uint32_t flags);
-NTSTATUS auth3_session_info_create(TALLOC_CTX *mem_ctx,
-				   const struct auth_user_info_dc *user_info_dc,
-				   const char *original_user_name,
-				   uint32_t session_info_flags,
-				   struct auth_session_info **session_info_out);
 NTSTATUS create_token_from_username(TALLOC_CTX *mem_ctx, const char *username,
 				    bool is_guest,
 				    uid_t *uid, gid_t *gid,
@@ -423,7 +417,6 @@ struct PAC_LOGON_INFO;
 NTSTATUS get_user_from_kerberos_info(TALLOC_CTX *mem_ctx,
 				     const char *cli_name,
 				     const char *princ_name,
-				     struct PAC_LOGON_INFO *logon_info,
 				     bool *is_mapped,
 				     bool *mapped_to_guest,
 				     char **ntuser,
@@ -435,9 +428,7 @@ NTSTATUS make_session_info_krb5(TALLOC_CTX *mem_ctx,
 				char *ntdomain,
 				char *username,
 				struct passwd *pw,
-				const struct netr_SamInfo3 *info3,
 				bool mapped_to_guest, bool username_was_mapped,
-				DATA_BLOB *session_key,
 				struct auth_session_info **session_info);
 
 /* The following definitions come from auth/auth_samba4.c  */

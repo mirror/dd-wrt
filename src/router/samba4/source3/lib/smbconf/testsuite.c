@@ -18,7 +18,7 @@
  */
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "lib/smbconf/smbconf.h"
 #include "lib/smbconf/smbconf_init.h"
 #include "lib/smbconf/smbconf_reg.h"
@@ -290,28 +290,45 @@ int main(int argc, const char **argv)
 	bool ret;
 	poptContext pc;
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
+	int opt;
 
 	struct poptOption long_options[] = {
 		POPT_COMMON_SAMBA
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
 	smb_init_locale();
-	setup_logging(argv[0], DEBUG_STDERR);
 
-	/* parse options */
-	pc = poptGetContext("smbconftort", argc, (const char **)argv,
-			    long_options, 0);
-
-	while(poptGetNextOpt(pc) != -1) { }
-
-	poptFreeContext(pc);
-
-	ret = lp_load_global(get_dyn_CONFIGFILE());
+	ret = samba_cmdline_init(mem_ctx,
+				 SAMBA_CMDLINE_CONFIG_CLIENT,
+				 true /* require_smbconf */);
 	if (!ret) {
-		printf("failure: error loading the configuration\n");
 		goto done;
 	}
+
+	/* parse options */
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    (const char **)argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		ret = false;
+		goto done;
+	}
+
+	while ((opt = poptGetNextOpt(pc)) != -1) {
+		switch (opt) {
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
+		}
+	}
+
+	poptFreeContext(pc);
 
 	ret = torture_smbconf();
 

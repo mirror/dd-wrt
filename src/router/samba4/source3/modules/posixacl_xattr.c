@@ -335,14 +335,14 @@ static int smb_acl_to_posixacl_xattr(SMB_ACL_T theacl, char *buf, size_t len)
 	return size;
 }
 
-SMB_ACL_T posixacl_xattr_acl_get_file(vfs_handle_struct *handle,
-				      const struct smb_filename *smb_fname,
-				      SMB_ACL_TYPE_T type,
-				      TALLOC_CTX *mem_ctx)
+SMB_ACL_T posixacl_xattr_acl_get_fd(vfs_handle_struct *handle,
+				    files_struct *fsp,
+				    SMB_ACL_TYPE_T type,
+				    TALLOC_CTX *mem_ctx)
 {
 	int ret;
-	int size;
-	char *buf;
+	int size = ACL_EA_SIZE(20);
+	char *buf = alloca(size);
 	const char *name;
 
 	if (type == SMB_ACL_TYPE_ACCESS) {
@@ -354,80 +354,19 @@ SMB_ACL_T posixacl_xattr_acl_get_file(vfs_handle_struct *handle,
 		return NULL;
 	}
 
-	size = ACL_EA_SIZE(20);
-	buf = alloca(size);
 	if (!buf) {
 		return NULL;
 	}
 
-	ret = SMB_VFS_GETXATTR(handle->conn, smb_fname,
-				name, buf, size);
+	ret = SMB_VFS_FGETXATTR(fsp, name, buf, size);
 	if (ret < 0 && errno == ERANGE) {
-		size = SMB_VFS_GETXATTR(handle->conn, smb_fname,
-					name, NULL, 0);
+		size = SMB_VFS_FGETXATTR(fsp, name, NULL, 0);
 		if (size > 0) {
 			buf = alloca(size);
 			if (!buf) {
 				return NULL;
 			}
-			ret = SMB_VFS_GETXATTR(handle->conn,
-						smb_fname, name,
-						buf, size);
-		}
-	}
-
-	if (ret > 0) {
-		return posixacl_xattr_to_smb_acl(buf, ret, mem_ctx);
-	}
-	if (ret == 0 || errno == ENOATTR) {
-		mode_t mode = 0;
-		TALLOC_CTX *frame = talloc_stackframe();
-		struct smb_filename *smb_fname_tmp =
-			cp_smb_filename_nostream(frame, smb_fname);
-		if (smb_fname_tmp == NULL) {
-			errno = ENOMEM;
-			ret = -1;
-		} else {
-			ret = SMB_VFS_STAT(handle->conn, smb_fname_tmp);
-			if (ret == 0) {
-				mode = smb_fname_tmp->st.st_ex_mode;
-			}
-		}
-		TALLOC_FREE(frame);
-		if (ret == 0) {
-			if (type == SMB_ACL_TYPE_ACCESS) {
-				return mode_to_smb_acl(mode, mem_ctx);
-			}
-			if (S_ISDIR(mode)) {
-				return sys_acl_init(mem_ctx);
-			}
-			errno = EACCES;
-		}
-	}
-	return NULL;
-}
-
-SMB_ACL_T posixacl_xattr_acl_get_fd(vfs_handle_struct *handle,
-				    files_struct *fsp,
-				    TALLOC_CTX *mem_ctx)
-{
-	int ret;
-	int size = ACL_EA_SIZE(20);
-	char *buf = alloca(size);
-
-	if (!buf) {
-		return NULL;
-	}
-
-	ret = SMB_VFS_FGETXATTR(fsp, ACL_EA_ACCESS, buf, size);
-	if (ret < 0 && errno == ERANGE) {
-		size = SMB_VFS_FGETXATTR(fsp, ACL_EA_ACCESS, NULL, 0);
-		if (size > 0) {
-			buf = alloca(size);
-			if (!buf) {
-				return NULL;
-			}
-			ret = SMB_VFS_FGETXATTR(fsp, ACL_EA_ACCESS, buf, size);
+			ret = SMB_VFS_FGETXATTR(fsp, name, buf, size);
 		}
 	}
 
@@ -441,41 +380,6 @@ SMB_ACL_T posixacl_xattr_acl_get_fd(vfs_handle_struct *handle,
 			return mode_to_smb_acl(sbuf.st_ex_mode, mem_ctx);
 	}
 	return NULL;
-}
-
-int posixacl_xattr_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T type,
-				SMB_ACL_T theacl)
-{
-	const char *name;
-	char *buf;
-	ssize_t size;
-	int ret;
-
-	size = smb_acl_to_posixacl_xattr(theacl, NULL, 0);
-	buf = alloca(size);
-	if (!buf) {
-		return -1;
-	}
-
-	ret = smb_acl_to_posixacl_xattr(theacl, buf, size);
-	if (ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-
-	if (type == SMB_ACL_TYPE_ACCESS) {
-		name = ACL_EA_ACCESS;
-	} else if (type == SMB_ACL_TYPE_DEFAULT) {
-		name = ACL_EA_DEFAULT;
-	} else {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return SMB_VFS_SETXATTR(handle->conn, smb_fname,
-			name, buf, size, 0);
 }
 
 int posixacl_xattr_acl_set_fd(vfs_handle_struct *handle,
@@ -512,10 +416,8 @@ int posixacl_xattr_acl_set_fd(vfs_handle_struct *handle,
 	return SMB_VFS_FSETXATTR(fsp, name, buf, size, 0);
 }
 
-int posixacl_xattr_acl_delete_def_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname)
+int posixacl_xattr_acl_delete_def_fd(vfs_handle_struct *handle,
+				files_struct *fsp)
 {
-	return SMB_VFS_REMOVEXATTR(handle->conn,
-			smb_fname,
-			ACL_EA_DEFAULT);
+	return SMB_VFS_FREMOVEXATTR(fsp, ACL_EA_DEFAULT);
 }

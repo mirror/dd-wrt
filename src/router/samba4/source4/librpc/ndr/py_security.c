@@ -309,9 +309,46 @@ static PyMethodDef py_descriptor_extra_methods[] = {
 	{0}
 };
 
+static PyObject *py_descriptor_richcmp(
+	PyObject *py_self, PyObject *py_other, int op)
+{
+	struct security_descriptor *self = pytalloc_get_ptr(py_self);
+	struct security_descriptor *other = pytalloc_get_ptr(py_other);
+	bool eq;
+
+	if (other == NULL) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	eq = security_descriptor_equal(self, other);
+
+	switch(op) {
+	case Py_EQ:
+		if (eq) {
+			Py_RETURN_TRUE;
+		} else {
+			Py_RETURN_FALSE;
+		}
+		break;
+	case Py_NE:
+		if (eq) {
+			Py_RETURN_FALSE;
+		} else {
+			Py_RETURN_TRUE;
+		}
+		break;
+	default:
+		break;
+	}
+
+	Py_RETURN_NOTIMPLEMENTED;
+}
+
 static void py_descriptor_patch(PyTypeObject *type)
 {
 	type->tp_new = py_descriptor_new;
+	type->tp_richcompare = py_descriptor_richcmp;
 	PyType_AddMethods(type, py_descriptor_extra_methods);
 }
 
@@ -410,7 +447,7 @@ static PyMethodDef py_token_extra_methods[] = {
 	{ "has_sid", (PyCFunction)py_token_has_sid, METH_VARARGS,
 		NULL },
 	{ "is_anonymous", (PyCFunction)py_token_is_anonymous, METH_NOARGS,
-		"S.is_anonymus() -> bool\n"
+		"S.is_anonymous() -> bool\n"
 		"Check whether this is an anonymous token." },
 	{ "is_system", (PyCFunction)py_token_is_system, METH_NOARGS,
 		NULL },
@@ -464,10 +501,12 @@ static PyObject *py_random_sid(PyObject *self,
 {
 	struct dom_sid *sid;
 	PyObject *ret;
-    	char *str = talloc_asprintf(NULL, "S-1-5-21-%u-%u-%u", 
-			(unsigned)generate_random(), 
-			(unsigned)generate_random(), 
-			(unsigned)generate_random());
+	char *str = talloc_asprintf(
+		NULL,
+		"S-1-5-21-%"PRIu32"-%"PRIu32"-%"PRIu32,
+		generate_random(),
+		generate_random(),
+		generate_random());
 
         sid = dom_sid_parse_talloc(NULL, str);
 	talloc_free(str);

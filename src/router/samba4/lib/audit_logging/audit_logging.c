@@ -70,7 +70,7 @@ char* audit_get_timestamp(TALLOC_CTX *frame)
 
 	strftime(buffer, sizeof(buffer)-1, "%a, %d %b %Y %H:%M:%S", tm_info);
 	strftime(tz, sizeof(tz)-1, "%Z", tm_info);
-	ts = talloc_asprintf(frame, "%s.%06ld %s", buffer, tv.tv_usec, tz);
+	ts = talloc_asprintf(frame, "%s.%06ld %s", buffer, (long)tv.tv_usec, tz);
 	if (ts == NULL) {
 		DBG_ERR("Out of memory formatting time stamp\n");
 	}
@@ -294,7 +294,7 @@ void audit_message_send(
  * Create a new json object, the json_object wraps the underlying json
  * implementations JSON Object representation.
  *
- * Free with a call to json_free_object, note that the jansson inplementation
+ * Free with a call to json_free_object, note that the jansson implementation
  * allocates memory with malloc and not talloc.
  *
  * @return a struct json_object, valid will be set to false if the object
@@ -321,7 +321,7 @@ struct json_object json_new_object(void) {
  * Create a new json object, the json_object wraps the underlying json
  * implementations JSON Array representation.
  *
- * Free with a call to json_free_object, note that the jansson inplementation
+ * Free with a call to json_free_object, note that the jansson implementation
  * allocates memory with malloc and not talloc.
  *
  * @return a struct json_object, error will be set to true if the array
@@ -908,7 +908,7 @@ int json_add_guid(struct json_object *object,
 /*
  * @brief Convert a JSON object into a string
  *
- * Convert the jsom object into a string suitable for printing on a log line,
+ * Convert the json object into a string suitable for printing on a log line,
  * i.e. with no embedded line breaks.
  *
  * If the object is invalid it logs an error and returns NULL.

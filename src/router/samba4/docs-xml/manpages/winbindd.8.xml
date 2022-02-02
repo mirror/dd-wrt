@@ -21,13 +21,18 @@
 	<cmdsynopsis>
 		<command>winbindd</command>
 		<arg choice="opt">-D|--daemon</arg>
-		<arg choice="opt">-F|--foreground</arg>
-		<arg choice="opt">-S|--stdout</arg>
 		<arg choice="opt">-i|--interactive</arg>
-		<arg choice="opt">-d &lt;debug level&gt;</arg>
-		<arg choice="opt">-s &lt;smb config file&gt;</arg>
-		<arg choice="opt">-n|--no-caching</arg>
+		<arg choice="opt">-F|--foreground</arg>
 		<arg choice="opt">--no-process-group</arg>
+		<arg choice="opt">-n|--no-caching</arg>
+		<arg choice="opt">-d &lt;debug level&gt;</arg>
+		<arg choice="opt">--debug-stdout</arg>
+		<arg choice="opt">--configfile=&lt;configuration file&gt;</arg>
+		<arg choice="opt">--option=&lt;name&gt;=&lt;value&gt;</arg>
+		<arg choice="opt">-l|--log-basename &lt;log directory&gt;</arg>
+		<arg choice="opt">--leak-report</arg>
+		<arg choice="opt">--leak-report-full</arg>
+		<arg choice="opt">-V|--version</arg>
 	</cmdsynopsis>
 </refsynopsisdiv>
 
@@ -146,6 +151,17 @@ hosts:		files wins
 		</varlistentry>
 
 		<varlistentry>
+		<term>-i|--interactive</term>
+		<listitem><para>Tells <command>winbindd</command> to not
+		become a daemon and detach from the current terminal. This
+		option is used by developers when interactive debugging
+		of <command>winbindd</command> is required.
+		<command>winbindd</command> also logs to standard output,
+		as if the <command>-S</command> parameter had been given.
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
 		<term>-F|--foreground</term>
 		<listitem><para>If specified, this parameter causes
 		the main <command>winbindd</command> process to not daemonize,
@@ -161,24 +177,8 @@ hosts:		files wins
 		</varlistentry>
 
 		<varlistentry>
-		<term>-S|--stdout</term>
-		<listitem><para>If specified, this parameter causes
-		<command>winbindd</command> to log to standard output rather
-		than a file.</para></listitem>
-		</varlistentry>
-
-		&stdarg.server.debug;
-		&popt.common.samba;
-		&popt.autohelp;
-
-		<varlistentry>
-		<term>-i|--interactive</term>
-		<listitem><para>Tells <command>winbindd</command> to not
-		become a daemon and detach from the current terminal. This
-		option is used by developers when interactive debugging
-		of <command>winbindd</command> is required.
-		<command>winbindd</command> also logs to standard output,
-		as if the <command>-S</command> parameter had been given.
+		<term>--no-process-group</term>
+		<listitem><para>Do not create a new process group for winbindd.
 		</para></listitem>
 		</varlistentry>
 
@@ -195,11 +195,26 @@ hosts:		files wins
 		</para></listitem>
 		</varlistentry>
 
+		&cmdline.common.debug.server;
+		&cmdline.common.config.server;
+		&cmdline.common.option;
+
 		<varlistentry>
-		<term>--no-process-group</term>
-		<listitem><para>Do not create a new process group for winbindd.
-		</para></listitem>
+			<term>-l|--log-basename=logdirectory</term>
+			<listitem>
+				<para>
+					Base directory name for log/debug files. The parent process
+					uses filename log.winbindd, the child process uses filename
+					log.wb-&lt;name>. The log file is never removed by winbindd.
+				</para>
+			</listitem>
 		</varlistentry>
+
+		&cmdline.common.samba.leakreport;
+		&cmdline.common.samba.leakreportfull;
+		&cmdline.version;
+
+		&popt.autohelp;
 
 	</variablelist>
 </refsect1>
@@ -357,10 +372,6 @@ auth  required    /lib/security/pam_unix.so \
 
 	<para>The following notes are useful when configuring and
 	running <command>winbindd</command>: </para>
-
-	<para><citerefentry><refentrytitle>nmbd</refentrytitle>
-	<manvolnum>8</manvolnum></citerefentry> must be running on the local machine
-	for <command>winbindd</command> to work. </para>
 
 	<para>PAM is really easy to misconfigure.  Make sure you know what
 	you are doing when modifying PAM configuration files.  It is possible

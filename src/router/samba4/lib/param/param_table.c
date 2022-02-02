@@ -35,6 +35,7 @@
 #include "libcli/smb/smb_constants.h"
 #include "libds/common/roles.h"
 #include "source4/lib/tls/tls.h"
+#include "auth/credentials/credentials.h"
 
 #ifndef N_
 #define N_(x) x
@@ -45,11 +46,8 @@ static const struct enum_list enum_protocol[] = {
 	{PROTOCOL_SMB2_10, "SMB2"}, /* for now keep PROTOCOL_SMB2_10 */
 	{PROTOCOL_SMB3_11, "SMB3"}, /* for now keep PROTOCOL_SMB3_11 */
 	{PROTOCOL_SMB3_11, "SMB3_11"},
-	{PROTOCOL_SMB3_10, "SMB3_10"},
 	{PROTOCOL_SMB3_02, "SMB3_02"},
 	{PROTOCOL_SMB3_00, "SMB3_00"},
-	{PROTOCOL_SMB2_24, "SMB2_24"},
-	{PROTOCOL_SMB2_22, "SMB2_22"},
 	{PROTOCOL_SMB2_10, "SMB2_10"},
 	{PROTOCOL_SMB2_02, "SMB2_02"},
 	{PROTOCOL_NT1, "NT1"},
@@ -111,6 +109,7 @@ static const struct enum_list enum_server_role[] = {
 	{ROLE_ACTIVE_DIRECTORY_DC, "active directory domain controller"},
 	{ROLE_ACTIVE_DIRECTORY_DC, "domain controller"},
 	{ROLE_ACTIVE_DIRECTORY_DC, "dc"},
+	{ROLE_IPA_DC, "IPA primary domain controller"},
 	{-1, NULL}
 };
 
@@ -158,6 +157,25 @@ static const struct enum_list enum_smb_encryption_vals[] = {
 	{SMB_ENCRYPTION_REQUIRED, "force"},
 	{SMB_ENCRYPTION_REQUIRED, "forced"},
 	{SMB_ENCRYPTION_REQUIRED, "enforced"},
+	{-1, NULL}
+};
+
+static const struct enum_list enum_use_kerberos_vals[] = {
+	{CRED_USE_KERBEROS_DESIRED, "desired"},
+	{CRED_USE_KERBEROS_DESIRED, "auto"},
+	{CRED_USE_KERBEROS_REQUIRED, "yes"},
+	{CRED_USE_KERBEROS_REQUIRED, "required"},
+	{CRED_USE_KERBEROS_DISABLED, "no"},
+	{CRED_USE_KERBEROS_DISABLED, "disabled"},
+	{CRED_USE_KERBEROS_DISABLED, "off"},
+	{-1, NULL}
+};
+
+static const struct enum_list enum_client_protection_vals[] = {
+	{CRED_CLIENT_PROTECTION_DEFAULT,  "default"},
+	{CRED_CLIENT_PROTECTION_PLAIN,    "plain"},
+	{CRED_CLIENT_PROTECTION_SIGN,     "sign"},
+	{CRED_CLIENT_PROTECTION_ENCRYPT,  "encrypt"},
 	{-1, NULL}
 };
 

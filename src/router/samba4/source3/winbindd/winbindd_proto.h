@@ -479,6 +479,10 @@ bool add_trusted_domain_from_auth(uint16_t validation_level,
 bool domain_is_forest_root(const struct winbindd_domain *domain);
 void rescan_trusted_domains(struct tevent_context *ev, struct tevent_timer *te,
 			    struct timeval now, void *private_data);
+void winbindd_ping_offline_domains(struct tevent_context *ev,
+				   struct tevent_timer *te,
+				   struct timeval now,
+				   void *private_data);
 enum winbindd_result winbindd_dual_init_connection(struct winbindd_domain *domain,
 						   struct winbindd_cli_state *state);
 bool init_domain_list(void);
@@ -521,7 +525,7 @@ NTSTATUS normalize_name_map(TALLOC_CTX *mem_ctx,
 			     const char *name,
 			     char **normalized);
 NTSTATUS normalize_name_unmap(TALLOC_CTX *mem_ctx,
-			      char *name,
+			      const char *name,
 			      char **normalized);
 
 NTSTATUS resolve_username_to_alias(TALLOC_CTX *mem_ctx,

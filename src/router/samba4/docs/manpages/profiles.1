@@ -2,12 +2,12 @@
 .\"     Title: profiles
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "PROFILES" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
+.TH "PROFILES" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 profiles \- A utility to report and change SIDs in registry files
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-profiles [\-v] [\-c|\-\-change\-sid\ SID] [\-n|\-\-new\-sid\ SID] {file}
+profiles [\-c|\-\-change\-sid=STRING] [\-n|\-\-new\-sid=STRING] [\-v|\-\-verbose] [\-?|\-\-help] [\-\-usage] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full] {FILE}
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -59,10 +59,10 @@ file
 by SID2\&.
 .RE
 .PP
-\-d|\-\-debuglevel=level
+\-d|\-\-debuglevel=DEBUGLEVEL
 .RS 4
 \fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 1\&.
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
 .sp
 The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
 .sp
@@ -75,16 +75,24 @@ smb\&.conf
 file\&.
 .RE
 .PP
-\-V|\-\-version
+\-\-debug\-stdout
 .RS 4
-Prints the program version number\&.
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
 .RE
 .PP
-\-s|\-\-configfile=<configuration file>
+\-\-configfile=<configuration file>
 .RS 4
-The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
 smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
 .RE
 .PP
 \-l|\-\-log\-basename=logdirectory
@@ -94,11 +102,19 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-\-option=<name>=<value>
+\-\-leak\-report
 .RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
 .RE
 .PP
 \-?|\-\-help
@@ -112,7 +128,7 @@ Display brief usage message\&.
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

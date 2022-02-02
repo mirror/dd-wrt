@@ -21,6 +21,7 @@
 
 #include "includes.h"
 #include "printing/nt_printing_tdb.h"
+#include "printing/queue_process.h"
 #include "../librpc/gen_ndr/ndr_spoolss.h"
 #include "rpc_server/spoolss/srv_spoolss_util.h"
 #include "nt_printing.h"
@@ -29,7 +30,6 @@
 #include "../libcli/security/security.h"
 #include "passdb/machine_sid.h"
 #include "smbd/smbd.h"
-#include "smbd/globals.h"
 #include "auth.h"
 #include "messages.h"
 #include "rpc_server/spoolss/srv_spoolss_nt.h"
@@ -66,7 +66,8 @@ const struct generic_mapping job_generic_mapping = {
 
 static bool print_driver_directories_init(void)
 {
-	int service, i;
+	int service;
+	size_t i;
 	char *driver_path;
 	bool ok;
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
@@ -200,18 +201,7 @@ static void forward_drv_upgrade_printer_msg(struct messaging_context *msg,
 				struct server_id server_id,
 				DATA_BLOB *data)
 {
-	extern pid_t background_lpq_updater_pid;
-
-	if (background_lpq_updater_pid == -1) {
-		DEBUG(3,("no background lpq queue updater\n"));
-		return;
-	}
-
-	messaging_send_buf(msg,
-			pid_to_procid(background_lpq_updater_pid),
-			MSG_PRINTER_DRVUPGRADE,
-			data->data,
-			data->length);
+	send_to_bgqd(msg, msg_type, data->data, data->length);
 }
 
 /****************************************************************************
@@ -864,24 +854,26 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 		ret = 1;
 		goto done;
 
-	} else {
-		ret = get_file_version(fsp, old_file, &old_major, &old_minor);
-		if (ret == -1) {
+	}
+
+	ret = get_file_version(fsp, old_file, &old_major, &old_minor);
+	if (ret == -1) {
+		goto error_exit;
+	}
+
+	if (!ret) {
+		DEBUG(6,("file_version_is_newer: Version info not found [%s], "
+			 "use mod time\n",
+			 old_file));
+		use_version = false;
+		if (SMB_VFS_FSTAT(fsp, &st) == -1) {
 			goto error_exit;
 		}
-
-		if (!ret) {
-			DEBUG(6,("file_version_is_newer: Version info not found [%s], use mod time\n",
-					 old_file));
-			use_version = false;
-			if (SMB_VFS_FSTAT(fsp, &st) == -1) {
-				 goto error_exit;
-			}
-			old_create_time = convert_timespec_to_time_t(st.st_ex_mtime);
-			DEBUGADD(6,("file_version_is_newer: mod time = %ld sec\n",
-				(long)old_create_time));
-		}
+		old_create_time = convert_timespec_to_time_t(st.st_ex_mtime);
+		DEBUGADD(6,("file_version_is_newer: mod time = %ld sec\n",
+			    (long)old_create_time));
 	}
+
 	close_file(NULL, fsp, NORMAL_CLOSE);
 	fsp = NULL;
 
@@ -923,24 +915,26 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 			 "errno = %d\n", smb_fname_str_dbg(smb_fname), errno));
 		goto error_exit;
 
-	} else {
-		ret = get_file_version(fsp, new_file, &new_major, &new_minor);
-		if (ret == -1) {
+	}
+
+	ret = get_file_version(fsp, new_file, &new_major, &new_minor);
+	if (ret == -1) {
+		goto error_exit;
+	}
+
+	if (!ret) {
+		DEBUG(6,("file_version_is_newer: Version info not found [%s], "
+			 "use mod time\n",
+			 new_file));
+		use_version = false;
+		if (SMB_VFS_FSTAT(fsp, &st) == -1) {
 			goto error_exit;
 		}
-
-		if (!ret) {
-			DEBUG(6,("file_version_is_newer: Version info not found [%s], use mod time\n",
-					 new_file));
-			use_version = false;
-			if (SMB_VFS_FSTAT(fsp, &st) == -1) {
-				goto error_exit;
-			}
-			new_create_time = convert_timespec_to_time_t(st.st_ex_mtime);
-			DEBUGADD(6,("file_version_is_newer: mod time = %ld sec\n",
-				(long)new_create_time));
-		}
+		new_create_time = convert_timespec_to_time_t(st.st_ex_mtime);
+		DEBUGADD(6,("file_version_is_newer: mod time = %ld sec\n",
+			    (long)new_create_time));
 	}
+
 	close_file(NULL, fsp, NORMAL_CLOSE);
 	fsp = NULL;
 
@@ -1004,6 +998,8 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	char *printdollar_path = NULL;
 	char *working_dir = NULL;
 	int printdollar_snum;
+	uint32_t major, minor;
+	int ret;
 
 	*perr = WERR_INVALID_PARAMETER;
 
@@ -1134,48 +1130,44 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 			 "%d\n", smb_fname_str_dbg(smb_fname), errno));
 		*perr = WERR_ACCESS_DENIED;
 		goto error_exit;
-	} else {
-		uint32_t major;
-		uint32_t minor;
-		int    ret;
-
-		ret = get_file_version(fsp, smb_fname->base_name, &major, &minor);
-		if (ret == -1) {
-			*perr = WERR_INVALID_PARAMETER;
-			goto error_exit;
-		} else if (!ret) {
-			DEBUG(6,("get_correct_cversion: Version info not "
-				 "found [%s]\n",
-				 smb_fname_str_dbg(smb_fname)));
-			*perr = WERR_INVALID_PARAMETER;
-			goto error_exit;
-		}
-
-		/*
-		 * This is a Microsoft'ism. See references in MSDN to VER_FILEVERSION
-		 * for more details. Version in this case is not just the version of the
-		 * file, but the version in the sense of kernal mode (2) vs. user mode
-		 * (3) drivers. Other bits of the version fields are the version info.
-		 * JRR 010716
-		*/
-		cversion = major & 0x0000ffff;
-		switch (cversion) {
-			case 2: /* WinNT drivers */
-			case 3: /* Win2K drivers */
-				break;
-
-			default:
-				DEBUG(6,("get_correct_cversion: cversion "
-					 "invalid [%s]  cversion = %d\n",
-					 smb_fname_str_dbg(smb_fname),
-					 cversion));
-				goto error_exit;
-		}
-
-		DEBUG(10,("get_correct_cversion: Version info found [%s] major"
-			  " = 0x%x  minor = 0x%x\n",
-			  smb_fname_str_dbg(smb_fname), major, minor));
 	}
+
+	ret = get_file_version(fsp, smb_fname->base_name, &major, &minor);
+	if (ret == -1) {
+		*perr = WERR_INVALID_PARAMETER;
+		goto error_exit;
+	} else if (!ret) {
+		DEBUG(6,("get_correct_cversion: Version info not "
+			 "found [%s]\n",
+			 smb_fname_str_dbg(smb_fname)));
+		*perr = WERR_INVALID_PARAMETER;
+		goto error_exit;
+	}
+
+	/*
+	 * This is a Microsoft'ism. See references in MSDN to VER_FILEVERSION
+	 * for more details. Version in this case is not just the version of the
+	 * file, but the version in the sense of kernal mode (2) vs. user mode
+	 * (3) drivers. Other bits of the version fields are the version info.
+	 * JRR 010716
+	 */
+	cversion = major & 0x0000ffff;
+	switch (cversion) {
+	case 2: /* WinNT drivers */
+	case 3: /* Win2K drivers */
+		break;
+
+	default:
+		DEBUG(6,("get_correct_cversion: cversion "
+			 "invalid [%s]  cversion = %d\n",
+			 smb_fname_str_dbg(smb_fname),
+			 cversion));
+		goto error_exit;
+	}
+
+	DEBUG(10,("get_correct_cversion: Version info found [%s] major"
+		  " = 0x%x  minor = 0x%x\n",
+		  smb_fname_str_dbg(smb_fname), major, minor));
 
 	DEBUG(10,("get_correct_cversion: Driver file [%s] cversion = %d\n",
 		  smb_fname_str_dbg(smb_fname), cversion));
@@ -1957,11 +1949,10 @@ bool printer_driver_files_in_use(TALLOC_CTX *mem_ctx,
 				 struct dcerpc_binding_handle *b,
 				 struct spoolss_DriverInfo8 *info)
 {
-	int 				i;
 	uint32_t 				version;
 	struct spoolss_DriverInfo8 	*driver;
 	bool in_use = false;
-	uint32_t num_drivers;
+	uint32_t i, num_drivers;
 	const char **drivers;
 	WERROR result;
 
@@ -2032,7 +2023,6 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 	struct smb_filename *smb_fname = NULL;
 	char *print_dlr_path;
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
-	int ret;
 
 	print_dlr_path = talloc_asprintf(tmp_ctx, "%s/%d/%s",
 					 short_arch, vers, fname);
@@ -2040,31 +2030,19 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 		goto err_out;
 	}
 
-	smb_fname = synthetic_smb_fname(tmp_ctx,
-					print_dlr_path,
-					NULL,
-					NULL,
-					0,
-					0);
-	if (smb_fname == NULL) {
-		goto err_out;
-	}
-
-	ret = vfs_stat(conn, smb_fname);
-	if (ret == -1) {
-		status = map_nt_error_from_unix(errno);
-		goto err_out;
-	}
-
-	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
-	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
-		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
-	}
+	status = synthetic_pathref(tmp_ctx,
+				   conn->cwd_fsp,
+				   print_dlr_path,
+				   NULL,
+				   NULL,
+				   0,
+				   0,
+				   &smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto err_out;
 	}
 
-	status = unlink_internals(conn, NULL, 0, smb_fname, false);
+	status = unlink_internals(conn, NULL, 0, smb_fname);
 err_out:
 	talloc_free(tmp_ctx);
 	return status;
@@ -2228,7 +2206,7 @@ jfm: I should use this comment for the text file to explain
 
 void map_printer_permissions(struct security_descriptor *sd)
 {
-	int i;
+	uint32_t i;
 
 	for (i = 0; sd->dacl && i < sd->dacl->num_aces; i++) {
 		se_map_generic(&sd->dacl->aces[i].access_mask,
@@ -2238,7 +2216,7 @@ void map_printer_permissions(struct security_descriptor *sd)
 
 void map_job_permissions(struct security_descriptor *sd)
 {
-	int i;
+	uint32_t i;
 
 	for (i = 0; sd->dacl && i < sd->dacl->num_aces; i++) {
 		se_map_generic(&sd->dacl->aces[i].access_mask,

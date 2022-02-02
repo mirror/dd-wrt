@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 from samba.tests import TestCaseInTempDir
 from samba.dcerpc import dns, dnsp
 from samba import gensec, tests
@@ -166,11 +165,11 @@ class DNSTest(TestCaseInTempDir):
         self.assertEqual(my_packet, recv_packet[2:])
         return (response, recv_packet[2:])
 
-    def make_txt_update(self, prefix, txt_array, domain=None):
+    def make_txt_update(self, prefix, txt_array, zone=None, ttl=900):
         p = self.make_name_packet(dns.DNS_OPCODE_UPDATE)
         updates = []
 
-        name = domain or self.get_dns_domain()
+        name = zone or self.get_dns_domain()
         u = self.make_name_question(name, dns.DNS_QTYPE_SOA, dns.DNS_QCLASS_IN)
         updates.append(u)
         self.finish_name_packet(p, updates)
@@ -180,7 +179,7 @@ class DNSTest(TestCaseInTempDir):
         r.name = "%s.%s" % (prefix, name)
         r.rr_type = dns.DNS_QTYPE_TXT
         r.rr_class = dns.DNS_QCLASS_IN
-        r.ttl = 900
+        r.ttl = ttl
         r.length = 0xffff
         rdata = self.make_txt_record(txt_array)
         r.rdata = rdata
@@ -298,10 +297,7 @@ class DNSTKeyTest(DNSTest):
         # so it can be modified
         response_packet_list = [x if isinstance(x, int) else ord(x) for x in response_packet]
         del response_packet_list[-tsig_record_len:]
-        if isinstance(response_packet_list[11], int):
-            response_packet_list[11] = 0
-        else:
-            response_packet_list[11] = chr(0)
+        response_packet_list[11] = 0
 
         # convert modified list (of string char or int) to str/bytes
         response_packet_wo_tsig = bytes(response_packet_list)

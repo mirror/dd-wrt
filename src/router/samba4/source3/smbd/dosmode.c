@@ -28,11 +28,7 @@
 #include "lib/param/loadparm.h"
 #include "lib/util/tevent_ntstatus.h"
 #include "lib/util/string_wrappers.h"
-
-static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
-				const struct smb_filename *smb_fname,
-				files_struct **ret_fsp,
-				bool *need_close);
+#include "fake_file.h"
 
 static void dos_mode_debug_print(const char *func, uint32_t mode)
 {
@@ -206,12 +202,13 @@ static uint32_t dos_mode_from_sbuf(connection_struct *conn,
 			result |= FILE_ATTRIBUTE_READONLY;
 		}
 	} else if (ro_opts == MAP_READONLY_PERMISSIONS) {
+		/* smb_fname->fsp can be NULL for an MS-DFS link. */
 		/* Check actual permissions for read-only. */
-		if (!can_write_to_file(conn,
-				conn->cwd_fsp,
-				smb_fname))
-		{
-			result |= FILE_ATTRIBUTE_READONLY;
+		if (smb_fname->fsp != NULL) {
+			if (!can_write_to_fsp(smb_fname->fsp))
+			{
+				result |= FILE_ATTRIBUTE_READONLY;
+			}
 		}
 	} /* Else never set the readonly bit. */
 
@@ -382,6 +379,19 @@ NTSTATUS fget_ea_dos_attribute(struct files_struct *fsp,
 				    SAMBA_XATTR_DOS_ATTRIB,
 				    attrstr,
 				    sizeof(attrstr));
+	if (sizeret == -1 && ( errno == EPERM || errno == EACCES )) {
+		/* we may also retrieve dos attribs for unreadable files, this
+		   is why we'll retry as root. We don't use root in the first
+		   run because in cases like NFS, root might have even less
+		   rights than the real user
+		*/
+		become_root();
+		sizeret = SMB_VFS_FGETXATTR(fsp->base_fsp ? fsp->base_fsp : fsp,
+					    SAMBA_XATTR_DOS_ATTRIB,
+					    attrstr,
+					    sizeof(attrstr));
+		unbecome_root();
+	}
 	if (sizeret == -1) {
 		DBG_INFO("Cannot get attribute "
 			 "from EA on file %s: Error = %s\n",
@@ -418,6 +428,10 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 		return NT_STATUS_NOT_IMPLEMENTED;
 	}
 
+	if (smb_fname->fsp == NULL) {
+		/* symlink */
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
 	/*
 	 * Don't store FILE_ATTRIBUTE_OFFLINE, it's dealt with in
 	 * vfs_default via DMAPI if that is enabled.
@@ -460,13 +474,11 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	ret = SMB_VFS_SETXATTR(conn, smb_fname,
+	ret = SMB_VFS_FSETXATTR(smb_fname->fsp,
 			       SAMBA_XATTR_DOS_ATTRIB,
 			       blob.data, blob.length, 0);
 	if (ret != 0) {
 		NTSTATUS status = NT_STATUS_OK;
-		bool need_close = false;
-		files_struct *fsp = NULL;
 		bool set_dosmode_ok = false;
 
 		if ((errno != EPERM) && (errno != EACCES)) {
@@ -485,9 +497,8 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 			return NT_STATUS_ACCESS_DENIED;
 		}
 
-		status = smbd_check_access_rights(conn,
-					conn->cwd_fsp,
-					smb_fname,
+		status = smbd_check_access_rights_fsp(conn->cwd_fsp,
+					smb_fname->fsp,
 					false,
 					FILE_WRITE_ATTRIBUTES);
 		if (NT_STATUS_IS_OK(status)) {
@@ -495,39 +506,21 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 		}
 
 		if (!set_dosmode_ok && lp_dos_filemode(SNUM(conn))) {
-			set_dosmode_ok = can_write_to_file(conn,
-						conn->cwd_fsp,
-						smb_fname);
+			set_dosmode_ok = can_write_to_fsp(smb_fname->fsp);
 		}
 
 		if (!set_dosmode_ok) {
 			return NT_STATUS_ACCESS_DENIED;
 		}
 
-		/*
-		 * We need to get an open file handle to do the
-		 * metadata operation under root.
-		 */
-
-		status = get_file_handle_for_metadata(conn,
-						smb_fname,
-						&fsp,
-						&need_close);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-
 		become_root();
-		ret = SMB_VFS_FSETXATTR(fsp,
+		ret = SMB_VFS_FSETXATTR(smb_fname->fsp,
 					SAMBA_XATTR_DOS_ATTRIB,
 					blob.data, blob.length, 0);
 		if (ret == 0) {
 			status = NT_STATUS_OK;
 		}
 		unbecome_root();
-		if (need_close) {
-			close_file(NULL, fsp, NORMAL_CLOSE);
-		}
 		return status;
 	}
 	DEBUG(10,("set_ea_dos_attribute: set EA 0x%x on file %s\n",
@@ -596,9 +589,7 @@ uint32_t dos_mode_msdfs(connection_struct *conn,
 /*
  * check whether a file or directory is flagged as compressed.
  */
-static NTSTATUS dos_mode_check_compressed(connection_struct *conn,
-					  struct files_struct *fsp,
-					  struct smb_filename *smb_fname,
+static NTSTATUS dos_mode_check_compressed(struct files_struct *fsp,
 					  bool *is_compressed)
 {
 	NTSTATUS status;
@@ -609,7 +600,7 @@ static NTSTATUS dos_mode_check_compressed(connection_struct *conn,
 		goto err_out;
 	}
 
-	status = SMB_VFS_FGET_COMPRESSION(conn, tmp_ctx, fsp,
+	status = SMB_VFS_FGET_COMPRESSION(fsp->conn, tmp_ctx, fsp,
 					 &compression_fmt);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto err_ctx_free;
@@ -663,16 +654,16 @@ static uint32_t dos_mode_from_name(connection_struct *conn,
 }
 
 static uint32_t dos_mode_post(uint32_t dosmode,
-			      connection_struct *conn,
 			      struct files_struct *fsp,
-			      struct smb_filename *smb_fname,
 			      const char *func)
 {
+	struct smb_filename *smb_fname = NULL;
 	NTSTATUS status;
 
 	if (fsp != NULL) {
 		smb_fname = fsp->fsp_name;
 	}
+	SMB_ASSERT(smb_fname != NULL);
 
 	/*
 	 * According to MS-FSA a stream name does not have
@@ -691,17 +682,16 @@ static uint32_t dos_mode_post(uint32_t dosmode,
 		dosmode &= ~(FILE_ATTRIBUTE_DIRECTORY);
 	}
 
-	if (conn->fs_capabilities & FILE_FILE_COMPRESSION) {
+	if (fsp->conn->fs_capabilities & FILE_FILE_COMPRESSION) {
 		bool compressed = false;
 
-		status = dos_mode_check_compressed(conn, fsp, smb_fname,
-						   &compressed);
+		status = dos_mode_check_compressed(fsp, &compressed);
 		if (NT_STATUS_IS_OK(status) && compressed) {
 			dosmode |= FILE_ATTRIBUTE_COMPRESSED;
 		}
 	}
 
-	dosmode |= dos_mode_from_name(conn, smb_fname, dosmode);
+	dosmode |= dos_mode_from_name(fsp->conn, smb_fname, dosmode);
 
 	if (S_ISDIR(smb_fname->st.st_ex_mode)) {
 		dosmode |= FILE_ATTRIBUTE_DIRECTORY;
@@ -738,6 +728,10 @@ uint32_t fdos_mode(struct files_struct *fsp)
 
 	DBG_DEBUG("%s\n", fsp_str_dbg(fsp));
 
+	if (fsp->fake_file_handle != NULL) {
+		return dosmode_from_fake_filehandle(fsp->fake_file_handle);
+	}
+
 	if (!VALID_STAT(fsp->fsp_name->st)) {
 		return 0;
 	}
@@ -757,7 +751,7 @@ uint32_t fdos_mode(struct files_struct *fsp)
 		}
 	}
 
-	result = dos_mode_post(result, fsp->conn, fsp, NULL, __func__);
+	result = dos_mode_post(result, fsp, __func__);
 	return result;
 }
 
@@ -796,6 +790,25 @@ struct tevent_req *dos_mode_at_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
+	if (smb_fname->fsp == NULL) {
+		if (ISDOTDOT(smb_fname->base_name)) {
+			/*
+			 * smb_fname->fsp is explicitly closed
+			 * for ".." to prevent meta-data leakage.
+			 */
+			state->dosmode = FILE_ATTRIBUTE_DIRECTORY;
+		} else {
+			/*
+			 * This is a symlink in POSIX context.
+			 * FIXME ? Should we move to returning
+			 * FILE_ATTRIBUTE_REPARSE_POINT here ?
+			 */
+			state->dosmode = FILE_ATTRIBUTE_NORMAL;
+		}
+		tevent_req_done(req);
+		return tevent_req_post(req, ev);
+	}
+
 	subreq = SMB_VFS_GET_DOS_ATTRIBUTES_SEND(state,
 						 ev,
 						 dir_fsp,
@@ -816,8 +829,6 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 	struct dos_mode_at_state *state =
 		tevent_req_data(req,
 		struct dos_mode_at_state);
-	char *path = NULL;
-	struct smb_filename *smb_path = NULL;
 	struct vfs_aio_state aio_state;
 	NTSTATUS status;
 	bool ok;
@@ -857,9 +868,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 	}
 	if (NT_STATUS_IS_OK(status)) {
 		state->dosmode = dos_mode_post(state->dosmode,
-					       state->dir_fsp->conn,
-					       NULL,
-					       state->smb_fname,
+					       state->smb_fname->fsp,
 					       __func__);
 		tevent_req_done(req);
 		return;
@@ -868,24 +877,6 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 	/*
 	 * Fall back to sync dos_mode() if we got NOT_IMPLEMENTED.
 	 */
-
-	path = talloc_asprintf(state,
-			       "%s/%s",
-			       state->dir_fsp->fsp_name->base_name,
-			       state->smb_fname->base_name);
-	if (tevent_req_nomem(path, req)) {
-		return;
-	}
-
-	smb_path = synthetic_smb_fname(state,
-				       path,
-				       NULL,
-				       &state->smb_fname->st,
-				       state->smb_fname->twrp,
-				       0);
-	if (tevent_req_nomem(smb_path, req)) {
-		return;
-	}
 
 	state->dosmode = fdos_mode(state->smb_fname->fsp);
 	tevent_req_done(req);
@@ -926,8 +917,6 @@ int file_set_dosmode(connection_struct *conn,
 	mode_t tmp;
 	mode_t unixmode;
 	int ret = -1, lret = -1;
-	files_struct *fsp = NULL;
-	bool need_close = false;
 	NTSTATUS status;
 
 	if (!CAN_WRITE(conn)) {
@@ -942,16 +931,25 @@ int file_set_dosmode(connection_struct *conn,
 
 	unixmode = smb_fname->st.st_ex_mode;
 
-	get_acl_group_bits(conn, smb_fname,
+	if (smb_fname->fsp != NULL) {
+		get_acl_group_bits(conn, smb_fname,
 			&smb_fname->st.st_ex_mode);
+	}
 
 	if (S_ISDIR(smb_fname->st.st_ex_mode))
 		dosmode |= FILE_ATTRIBUTE_DIRECTORY;
 	else
 		dosmode &= ~FILE_ATTRIBUTE_DIRECTORY;
 
-	/* Store the DOS attributes in an EA by preference. */
-	status = SMB_VFS_SET_DOS_ATTRIBUTES(conn, smb_fname, dosmode);
+	if (smb_fname->fsp != NULL) {
+		/* Store the DOS attributes in an EA by preference. */
+		status = SMB_VFS_FSET_DOS_ATTRIBUTES(conn,
+						     smb_fname->fsp,
+						     dosmode);
+	} else {
+		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+
 	if (NT_STATUS_IS_OK(status)) {
 		if (!newfile) {
 			notify_fname(conn, NOTIFY_ACTION_MODIFIED,
@@ -1028,7 +1026,7 @@ int file_set_dosmode(connection_struct *conn,
 		return -1;
 	}
 
-	ret = SMB_VFS_CHMOD(conn, smb_fname, unixmode);
+	ret = SMB_VFS_FCHMOD(smb_fname->fsp, unixmode);
 	if (ret == 0) {
 		if(!newfile || (lret != -1)) {
 			notify_fname(conn, NOTIFY_ACTION_MODIFIED,
@@ -1049,34 +1047,16 @@ int file_set_dosmode(connection_struct *conn,
 		bits on a file. Just like file_ntimes below.
 	*/
 
-	if (!can_write_to_file(conn,
-			conn->cwd_fsp,
-			smb_fname))
+	if (!can_write_to_fsp(smb_fname->fsp))
 	{
 		errno = EACCES;
 		return -1;
 	}
 
-	/*
-	 * We need to get an open file handle to do the
-	 * metadata operation under root.
-	 */
-
-	status = get_file_handle_for_metadata(conn,
-					      smb_fname,
-					      &fsp,
-					      &need_close);
-	if (!NT_STATUS_IS_OK(status)) {
-		errno = map_errno_from_nt_status(status);
-		return -1;
-	}
-
 	become_root();
-	ret = SMB_VFS_FCHMOD(fsp, unixmode);
+	ret = SMB_VFS_FCHMOD(smb_fname->fsp, unixmode);
 	unbecome_root();
-	if (need_close) {
-		close_file(NULL, fsp, NORMAL_CLOSE);
-	}
+
 	if (!newfile) {
 		notify_fname(conn, NOTIFY_ACTION_MODIFIED,
 			     FILE_NOTIFY_CHANGE_ATTRIBUTES,
@@ -1179,21 +1159,22 @@ NTSTATUS file_set_sparse(connection_struct *conn,
  than POSIX.
 *******************************************************************/
 
-int file_ntimes(connection_struct *conn, const struct smb_filename *smb_fname,
+int file_ntimes(connection_struct *conn,
+		files_struct *fsp,
 		struct smb_file_time *ft)
 {
 	int ret = -1;
 
 	errno = 0;
 
-	DEBUG(6, ("file_ntime: actime: %s",
-		  time_to_asc(convert_timespec_to_time_t(ft->atime))));
-	DEBUG(6, ("file_ntime: modtime: %s",
-		  time_to_asc(convert_timespec_to_time_t(ft->mtime))));
-	DEBUG(6, ("file_ntime: ctime: %s",
-		  time_to_asc(convert_timespec_to_time_t(ft->ctime))));
-	DEBUG(6, ("file_ntime: createtime: %s",
-		  time_to_asc(convert_timespec_to_time_t(ft->create_time))));
+	DBG_INFO("actime: %s",
+		 time_to_asc(convert_timespec_to_time_t(ft->atime)));
+	DBG_INFO("modtime: %s",
+		 time_to_asc(convert_timespec_to_time_t(ft->mtime)));
+	DBG_INFO("ctime: %s",
+		 time_to_asc(convert_timespec_to_time_t(ft->ctime)));
+	DBG_INFO("createtime: %s",
+		 time_to_asc(convert_timespec_to_time_t(ft->create_time)));
 
 	/* Don't update the time on read-only shares */
 	/* We need this as set_filetime (which can be called on
@@ -1206,7 +1187,7 @@ int file_ntimes(connection_struct *conn, const struct smb_filename *smb_fname,
 		return 0;
 	}
 
-	if(SMB_VFS_NTIMES(conn, smb_fname, ft) == 0) {
+	if (SMB_VFS_FNTIMES(fsp, ft) == 0) {
 		return 0;
 	}
 
@@ -1225,13 +1206,10 @@ int file_ntimes(connection_struct *conn, const struct smb_filename *smb_fname,
 	 */
 
 	/* Check if we have write access. */
-	if (can_write_to_file(conn,
-			conn->cwd_fsp,
-			smb_fname))
-	{
+	if (can_write_to_fsp(fsp)) {
 		/* We are allowed to become root and change the filetime. */
 		become_root();
-		ret = SMB_VFS_NTIMES(conn, smb_fname, ft);
+		ret = SMB_VFS_FNTIMES(fsp, ft);
 		unbecome_root();
 	}
 
@@ -1277,40 +1255,26 @@ bool set_sticky_write_time_fsp(struct files_struct *fsp, struct timespec mtime)
  Set a create time EA.
 ******************************************************************/
 
-NTSTATUS set_create_timespec_ea(connection_struct *conn,
-				const struct smb_filename *psmb_fname,
+NTSTATUS set_create_timespec_ea(struct files_struct *fsp,
 				struct timespec create_time)
 {
-	struct smb_filename *smb_fname;
 	uint32_t dosmode;
 	int ret;
 
-	if (!lp_store_dos_attributes(SNUM(conn))) {
+	if (!lp_store_dos_attributes(SNUM(fsp->conn))) {
 		return NT_STATUS_OK;
 	}
 
-	smb_fname = synthetic_smb_fname(talloc_tos(),
-					psmb_fname->base_name,
-					NULL,
-					&psmb_fname->st,
-					psmb_fname->twrp,
-					psmb_fname->flags);
+	dosmode = fdos_mode(fsp);
 
-	if (smb_fname == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	dosmode = fdos_mode(psmb_fname->fsp);
-
-	smb_fname->st.st_ex_btime = create_time;
-
-	ret = file_set_dosmode(conn, smb_fname, dosmode, NULL, false);
+	fsp->fsp_name->st.st_ex_btime = create_time;
+	ret = file_set_dosmode(fsp->conn, fsp->fsp_name, dosmode, NULL, false);
 	if (ret == -1) {
 		return map_nt_error_from_unix(errno);
 	}
 
-	DEBUG(10,("set_create_timespec_ea: wrote create time EA for file %s\n",
-		smb_fname_str_dbg(smb_fname)));
+	DBG_DEBUG("wrote create time EA for file %s\n",
+		smb_fname_str_dbg(fsp->fsp_name));
 
 	return NT_STATUS_OK;
 }
@@ -1335,82 +1299,4 @@ struct timespec get_change_timespec(connection_struct *conn,
 				const struct smb_filename *smb_fname)
 {
 	return smb_fname->st.st_ex_mtime;
-}
-
-/****************************************************************************
- Get a real open file handle we can do meta-data operations on. As it's
- going to be used under root access only on meta-data we should look for
- any existing open file handle first, and use that in preference (also to
- avoid kernel self-oplock breaks). If not use an INTERNAL_OPEN_ONLY handle.
-****************************************************************************/
-
-static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
-				const struct smb_filename *smb_fname,
-				files_struct **ret_fsp,
-				bool *need_close)
-{
-	NTSTATUS status;
-	files_struct *fsp;
-	struct file_id file_id;
-	struct smb_filename *smb_fname_cp = NULL;
-
-	*need_close = false;
-
-	if (!VALID_STAT(smb_fname->st)) {
-		return NT_STATUS_INVALID_PARAMETER;
-	}
-
-	file_id = vfs_file_id_from_sbuf(conn, &smb_fname->st);
-
-	for(fsp = file_find_di_first(conn->sconn, file_id, true);
-			fsp;
-			fsp = file_find_di_next(fsp, true)) {
-		if (fsp_get_io_fd(fsp) != -1) {
-			*ret_fsp = fsp;
-			return NT_STATUS_OK;
-		}
-	}
-
-	smb_fname_cp = cp_smb_filename(talloc_tos(),
-					smb_fname);
-	if (smb_fname_cp == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname_cp);
-	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
-		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
-	}
-	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(smb_fname_cp);
-		return status;
-	}
-
-	/* Opens an INTERNAL_OPEN_ONLY write handle. */
-	status = SMB_VFS_CREATE_FILE(
-		conn,                                   /* conn */
-		NULL,                                   /* req */
-		smb_fname_cp,				/* fname */
-		FILE_WRITE_ATTRIBUTES,			/* access_mask */
-		(FILE_SHARE_READ | FILE_SHARE_WRITE |   /* share_access */
-			FILE_SHARE_DELETE),
-		FILE_OPEN,                              /* create_disposition*/
-		0,                                      /* create_options */
-		0,                                      /* file_attributes */
-		INTERNAL_OPEN_ONLY,                     /* oplock_request */
-		NULL,					/* lease */
-                0,                                      /* allocation_size */
-		0,                                      /* private_flags */
-		NULL,                                   /* sd */
-		NULL,                                   /* ea_list */
-		ret_fsp,                                /* result */
-		NULL,                                   /* pinfo */
-		NULL, NULL);				/* create context */
-
-	TALLOC_FREE(smb_fname_cp);
-
-	if (NT_STATUS_IS_OK(status)) {
-		*need_close = true;
-	}
-	return status;
 }

@@ -25,6 +25,7 @@
 #include "param/param.h"
 #include "dsdb/samdb/samdb.h"
 #include "system/kerberos.h"
+#include <com_err.h>
 #include <kdb.h>
 #include <kadm5/kadm_err.h>
 #include "kdc/sdb.h"
@@ -40,6 +41,9 @@
 
 #include "mit_samba.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
 void mit_samba_context_free(struct mit_samba_context *ctx)
 {
 	/* free heimdal's krb5_context */
@@ -49,6 +53,22 @@ void mit_samba_context_free(struct mit_samba_context *ctx)
 
 	/* then free everything else */
 	talloc_free(ctx);
+}
+
+/*
+ * Implemant a callback to log to the MIT KDC log facility
+ *
+ * http://web.mit.edu/kerberos/krb5-devel/doc/plugindev/general.html#logging-from-kdc-and-kadmind-plugin-modules
+ */
+static void mit_samba_debug(void *private_ptr, int msg_level, const char *msg)
+{
+	int is_error = 1;
+
+	if (msg_level > 0) {
+		is_error = 0;
+	}
+
+	com_err("", is_error, "%s", msg);
 }
 
 int mit_samba_context_init(struct mit_samba_context **_ctx)
@@ -77,12 +97,18 @@ int mit_samba_context_init(struct mit_samba_context **_ctx)
 		goto done;
 	}
 
-	setup_logging("mitkdc", DEBUG_DEFAULT_STDOUT);
+	debug_set_callback(NULL, mit_samba_debug);
 
 	/* init s4 configuration */
 	s4_conf_file = lpcfg_configfile(base_ctx.lp_ctx);
-	if (s4_conf_file) {
-		lpcfg_load(base_ctx.lp_ctx, s4_conf_file);
+	if (s4_conf_file != NULL) {
+		char *p = talloc_strdup(ctx, s4_conf_file);
+		if (p == NULL) {
+			ret = ENOMEM;
+			goto done;
+		}
+		lpcfg_load(base_ctx.lp_ctx, p);
+		TALLOC_FREE(p);
 	} else {
 		lpcfg_load_default(base_ctx.lp_ctx);
 	}
@@ -434,9 +460,15 @@ int mit_samba_get_pac(struct mit_samba_context *smb_ctx,
 					    skdc_entry,
 					    &logon_info_blob,
 					    cred_ndr_ptr,
-					    &upn_dns_info_blob);
+					    &upn_dns_info_blob,
+					    NULL, NULL, NULL,
+					    NULL);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		talloc_free(tmp_ctx);
+		if (NT_STATUS_EQUAL(nt_status,
+				    NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
+			return ENOENT;
+		}
 		return EINVAL;
 	}
 
@@ -457,6 +489,8 @@ int mit_samba_get_pac(struct mit_samba_context *smb_ctx,
 				   logon_info_blob,
 				   pcred_blob,
 				   upn_dns_info_blob,
+				   NULL,
+				   NULL,
 				   NULL,
 				   pac);
 
@@ -498,36 +532,50 @@ krb5_error_code mit_samba_reget_pac(struct mit_samba_context *ctx,
 	krb5_pac new_pac = NULL;
 	bool ok;
 
+	/* Create a memory context early so code can use talloc_stackframe() */
+	tmp_ctx = talloc_named(ctx, 0, "mit_samba_reget_pac context");
+	if (tmp_ctx == NULL) {
+		return ENOMEM;
+	}
+
 	if (client != NULL) {
 		client_skdc_entry =
 			talloc_get_type_abort(client->e_data,
 					      struct samba_kdc_entry);
 
-		/* The user account may be set not to want the PAC */
-		ok = samba_princ_needs_pac(client_skdc_entry);
-		if (!ok) {
-			return EINVAL;
+		/*
+		 * Check the objectSID of the client and pac data are the same.
+		 * Does a parse and SID check, but no crypto.
+		 */
+		code = samba_kdc_validate_pac_blob(context, client_skdc_entry, *pac);
+		if (code != 0) {
+			goto done;
 		}
 	}
 
 	if (server == NULL) {
-		return EINVAL;
+		code = EINVAL;
+		goto done;
 	}
+
 	server_skdc_entry =
 		talloc_get_type_abort(server->e_data,
 				      struct samba_kdc_entry);
 
+	/* The account may be set not to want the PAC */
+	ok = samba_princ_needs_pac(server_skdc_entry);
+	if (!ok) {
+		code = EINVAL;
+		goto done;
+	}
+
 	if (krbtgt == NULL) {
-		return EINVAL;
+		code = EINVAL;
+		goto done;
 	}
 	krbtgt_skdc_entry =
 		talloc_get_type_abort(krbtgt->e_data,
 				      struct samba_kdc_entry);
-
-	tmp_ctx = talloc_named(ctx, 0, "mit_samba_reget_pac context");
-	if (tmp_ctx == NULL) {
-		return ENOMEM;
-	}
 
 	code = samba_krbtgt_is_in_db(krbtgt_skdc_entry,
 				     &is_in_db,
@@ -546,7 +594,10 @@ krb5_error_code mit_samba_reget_pac(struct mit_samba_context *ctx,
 						    client_skdc_entry,
 						    &pac_blob,
 						    NULL,
-						    &upn_blob);
+						    &upn_blob,
+						    NULL, NULL,
+						    NULL,
+						    NULL);
 		if (!NT_STATUS_IS_OK(nt_status)) {
 			code = EINVAL;
 			goto done;
@@ -575,8 +626,7 @@ krb5_error_code mit_samba_reget_pac(struct mit_samba_context *ctx,
 
 		nt_status = samba_kdc_update_pac_blob(tmp_ctx,
 						      context,
-						      krbtgt_skdc_entry,
-						      server_skdc_entry,
+						      krbtgt_skdc_entry->kdc_db_ctx->samdb,
 						      *pac,
 						      pac_blob,
 						      pac_srv_sig,
@@ -1050,7 +1100,8 @@ int mit_samba_kpasswd_change_password(struct mit_samba_context *ctx,
 	struct samr_DomInfo1 *dominfo;
 	const char *error_string = NULL;
 	struct auth_user_info_dc *user_info_dc;
-	struct samba_kdc_entry *p;
+	struct samba_kdc_entry *p =
+		talloc_get_type_abort(db_entry->e_data, struct samba_kdc_entry);
 	krb5_error_code code = 0;
 
 #ifdef DEBUG_PASSWORD
@@ -1061,8 +1112,6 @@ int mit_samba_kpasswd_change_password(struct mit_samba_context *ctx,
 	if (tmp_ctx == NULL) {
 		return ENOMEM;
 	}
-
-	p = (struct samba_kdc_entry *)db_entry->e_data;
 
 	status = authsam_make_user_info_dc(tmp_ctx,
 					   ctx->db_ctx->samdb,
@@ -1139,10 +1188,9 @@ out:
 void mit_samba_zero_bad_password_count(krb5_db_entry *db_entry)
 {
 	struct netr_SendToSamBase *send_to_sam = NULL;
-	struct samba_kdc_entry *p;
+	struct samba_kdc_entry *p =
+		talloc_get_type_abort(db_entry->e_data, struct samba_kdc_entry);
 	struct ldb_dn *domain_dn;
-
-	p = (struct samba_kdc_entry *)db_entry->e_data;
 
 	domain_dn = ldb_get_default_basedn(p->kdc_db_ctx->samdb);
 
@@ -1157,11 +1205,18 @@ void mit_samba_zero_bad_password_count(krb5_db_entry *db_entry)
 
 void mit_samba_update_bad_password_count(krb5_db_entry *db_entry)
 {
-	struct samba_kdc_entry *p;
-
-	p = (struct samba_kdc_entry *)db_entry->e_data;
+	struct samba_kdc_entry *p =
+		talloc_get_type_abort(db_entry->e_data, struct samba_kdc_entry);
 
 	authsam_update_bad_pwd_count(p->kdc_db_ctx->samdb,
 				     p->msg,
 				     ldb_get_default_basedn(p->kdc_db_ctx->samdb));
+}
+
+bool mit_samba_princ_needs_pac(krb5_db_entry *db_entry)
+{
+	struct samba_kdc_entry *skdc_entry =
+		talloc_get_type_abort(db_entry->e_data, struct samba_kdc_entry);
+
+	return samba_princ_needs_pac(skdc_entry);
 }

@@ -202,13 +202,13 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_BRL_LOCK_WINDOWS()        | [[fsp][fsp]]      | -      |
 | SMB_VFS_BRL_UNLOCK_WINDOWS()      | [[fsp][fsp]]      | -      |
 | SMB_VFS_CHDIR()                   | [[Path][Path]]     | Todo   |
-| SMB_VFS_CHFLAGS()                 | [[Path][Path]]     | Todo   |
-| SMB_VFS_CHMOD()                   | [[Path][Path]]     | Todo   |
+| SMB_VFS_CHFLAGS()                 | [[Path][Path]]     | -      |
+| SMB_VFS_CHMOD()                   | [[Path][Path]]     | -      |
 | SMB_VFS_CLOSE()                   | [[fsp][fsp]]      | -      |
 | SMB_VFS_CLOSEDIR()                | [[fsp][fsp]]      | -      |
 | SMB_VFS_CONNECT()                 | [[Disk][Disk]]     | -      |
 | SMB_VFS_CONNECTPATH()             | [[P2px][P2px]]     | -      |
-| SMB_VFS_CREATE_DFS_PATHAT()       | [[NsC][NsC]]      | Todo   |
+| SMB_VFS_CREATE_DFS_PATHAT()       | [[NsC][NsC]]      | -      |
 | SMB_VFS_CREATE_FILE()             | [[NsC][NsC]]      | -      |
 | SMB_VFS_DISCONNECT()              | [[Disk][Disk]]     | -      |
 | SMB_VFS_DISK_FREE()               | [[Disk][Disk]]     | -      |
@@ -242,25 +242,25 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_GET_DOS_ATTRIBUTES_RECV() | [[Enum][Enum]]     | -      |
 | SMB_VFS_GET_DOS_ATTRIBUTES_SEND() | [[Enum][Enum]]     | -      |
 | SMB_VFS_GETLOCK()                 | [[fsp][fsp]]      | -      |
-| SMB_VFS_GET_NT_ACL_AT()           | [[Path][Path]]     | Todo   |
+| SMB_VFS_GET_NT_ACL_AT()           | [[Path][Path]]     | -      |
 | SMB_VFS_GET_QUOTA()               | [[Special][Special]]  | -      |
 | SMB_VFS_GET_REAL_FILENAME()       | [[P2px][P2px]]     | -      |
 | SMB_VFS_GET_SHADOW_COPY_DATA()    | [[fsp][fsp]]      | -      |
 | SMB_VFS_GETWD()                   | [[Special][Special]]  | -      |
-| SMB_VFS_GETXATTR()                | [[Path][Path]]     | Todo   |
+| SMB_VFS_GETXATTR()                | [[Path][Path]]     | -      |
 | SMB_VFS_GETXATTRAT_RECV()         | [[Enum][Enum]]     | -      |
 | SMB_VFS_GETXATTRAT_SEND()         | [[Enum][Enum]]     | -      |
 | SMB_VFS_KERNEL_FLOCK()            | [[fsp][fsp]]      | -      |
 | SMB_VFS_LCHOWN()                  | [[Path][Path]]     | Todo   |
-| SMB_VFS_LINKAT()                  | [[NsC][NsC]]      | Todo   |
+| SMB_VFS_LINKAT()                  | [[NsC][NsC]]      | -      |
 | SMB_VFS_LINUX_SETLEASE()          | [[fsp][fsp]]      | -      |
-| SMB_VFS_LISTXATTR()               | [[Path][Path]]     | Todo   |
+| SMB_VFS_LISTXATTR()               | [[Path][Path]]     | -      |
 | SMB_VFS_LOCK()                    | [[fsp][fsp]]      | -      |
 | SMB_VFS_LSEEK()                   | [[fsp][fsp]]      | -      |
 | SMB_VFS_LSTAT()                   | [[Path][Path]]     | Todo   |
 | SMB_VFS_MKDIRAT()                 | [[NsC][NsC]]      | -      |
 | SMB_VFS_MKNODAT()                 | [[NsC][NsC]]      | -      |
-| SMB_VFS_NTIMES()                  | [[Path][Path]]     | Todo   |
+| SMB_VFS_NTIMES()                  | [[Path][Path]]    | -      |
 | SMB_VFS_OFFLOAD_READ_RECV()       | [[fsp][fsp]]      | -      |
 | SMB_VFS_OFFLOAD_READ_SEND()       | [[fsp][fsp]]      | -      |
 | SMB_VFS_OFFLOAD_WRITE_RECV()      | [[fsp][fsp]]      | -      |
@@ -270,47 +270,46 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_PREAD_SEND()              | [[fsp][fsp]]      | -      |
 | SMB_VFS_PWRITE()                  | [[fsp][fsp]]      | -      |
 | SMB_VFS_PWRITE_SEND()             | [[fsp][fsp]]      | -      |
-| SMB_VFS_READ_DFS_PATHAT()         | [[Symlink][Symlink]]  | Todo   |
+| SMB_VFS_READ_DFS_PATHAT()         | [[Symlink][Symlink]]  | -      |
 | SMB_VFS_READDIR()                 | [[fsp][fsp]]      | -      |
-| SMB_VFS_READDIR_ATTR()            | [[Path][Path]]     | Todo   |
-| SMB_VFS_READLINKAT()              | [[Symlink][Symlink]]  | Todo   |
+| SMB_VFS_READDIR_ATTR()            | [[Path][Path]]    | -      |
+| SMB_VFS_READLINKAT()              | [[Symlink][Symlink]]  | -      |
 | SMB_VFS_REALPATH()                | [[P2px][P2px]]     | -      |
 | SMB_VFS_RECVFILE()                | [[fsp][fsp]]      | -      |
-| SMB_VFS_REMOVEXATTR()             | [[Path][Path]]     | Todo   |
-| SMB_VFS_RENAMEAT()                | [[Path][Path]]     | Todo   |
+| SMB_VFS_REMOVEXATTR()             | [[Path][Path]]     | -      |
+| SMB_VFS_RENAMEAT()                | [[Path][Path]]     | ----   |
 | SMB_VFS_REWINDDIR()               | [[fsp][fsp]]      | -      |
 | SMB_VFS_SEEKDIR()                 | [[fsp][fsp]]      | -      |
 | SMB_VFS_SENDFILE()                | [[fsp][fsp]]      | -      |
 | SMB_VFS_SET_COMPRESSION()         | [[fsp][fsp]]      | -      |
 | SMB_VFS_SET_DOS_ATTRIBUTES()      | [[Path][Path]]     | -      |
 | SMB_VFS_SET_QUOTA()               | [[Special][Special]]  | -      |
-| SMB_VFS_SETXATTR()                | [[Path][Path]]     | Todo   |
+| SMB_VFS_SETXATTR()                | [[Path][Path]]     | -      |
 | SMB_VFS_SNAP_CHECK_PATH()         | [[Disk][Disk]]     | -      |
 | SMB_VFS_SNAP_CREATE()             | [[Disk][Disk]]     | -      |
 | SMB_VFS_SNAP_DELETE()             | [[Disk][Disk]]     | -      |
 | SMB_VFS_STAT()                    | [[Path][Path]]     | Todo   |
 | SMB_VFS_STATVFS()                 | [[Disk][Disk]]     | -      |
-| SMB_VFS_STREAMINFO()              | [[Path][Path]]     | Todo   |
+| SMB_VFS_STREAMINFO()              | [[Path][Path]]     | -      |
 | SMB_VFS_STRICT_LOCK_CHECK()       | [[fsp][fsp]]      | -      |
 | SMB_VFS_SYMLINKAT()               | [[NsC][NsC]]      | -      |
 | SMB_VFS_SYS_ACL_BLOB_GET_FD()     | [[xpathref][xpathref]] | -      |
-| SMB_VFS_SYS_ACL_BLOB_GET_FILE()   | [[Path][Path]]     | Todo   |
-| SMB_VFS_SYS_ACL_DELETE_DEF_FILE() | [[Path][Path]]     | Todo   |
+| SMB_VFS_SYS_ACL_BLOB_GET_FILE()   | [[Path][Path]]     | -      |
+| SMB_VFS_SYS_ACL_DELETE_DEF_FILE() | [[Path][Path]]     | -      |
 | SMB_VFS_SYS_ACL_GET_FD()          | [[xpathref][xpathref]] | -      |
-| SMB_VFS_SYS_ACL_GET_FILE()        | [[Path][Path]]     | Todo   |
+| SMB_VFS_SYS_ACL_GET_FILE()        | [[Path][Path]]     | -      |
 | SMB_VFS_SYS_ACL_SET_FD()          | [[xpathref][xpathref]] | -      |
 | SMB_VFS_TELLDIR()                 | [[fsp][fsp]]      | -      |
 | SMB_VFS_TRANSLATE_NAME()          | [[P2px][P2px]]     | -      |
-| SMB_VFS_UNLINKAT()                | [[NsC][NsC]]      | Todo   |
+| SMB_VFS_UNLINKAT()                | [[NsC][NsC]]      | -      |
 |-----------------------------------+----------+--------|
 
 *** New VFS Functions
 #+ATTR_HTML: :border 1 :rules all :frame border
 | VFS Function                    | Group    | Status |
 |---------------------------------+----------+--------|
-| SMB_VFS_SYS_ACL_DELETE_DEF_FD() | [[xpathref][xpathref]] | Todo   |
-| SMB_VFS_READDIR_ATTRAT()        | [[Enum][Enum]]     | Todo   |
-| SMB_VFS_FUTIMENS()              | [[fsp][fsp]]      | Todo   |
+| SMB_VFS_SYS_ACL_DELETE_DEF_FD() | [[xpathref][xpathref]] | -     |
+| SMB_VFS_FNTIMENS()              | [[fsp][fsp]]      | -      |
 |---------------------------------+----------+--------|
 
 ** VFS functions by category
@@ -438,7 +437,6 @@ whenever VFS access is done in a piecemeal fashion.
 *** AT VFS functions needed for directory enumeration <<Enum>>
  - SMB_VFS_GET_DOS_ATTRIBUTES_SEND()
  - SMB_VFS_GETXATTRAT_SEND()
- - SMB_VFS_READDIR_ATTRAT() (NEW)
 *** Handle based VFS functions not allowed on O_PATH opened handles <<xpathref>>
  - SMB_VFS_FGETXATTR()
  - SMB_VFS_FLISTXATTR()

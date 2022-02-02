@@ -1,6 +1,6 @@
 /*
    Unix SMB/CIFS implementation.
-   SMB torture tester
+   Fuzzer for pidl-generated NDR pipes.
    Copyright (C) Andrew Tridgell 2003
    Copyright (C) Jelmer Vernooij 2006
    Copyright (C) Andrew Bartlett 2019
@@ -327,5 +327,11 @@ int LLVMFuzzerTestOneInput(uint8_t *data, size_t size) {
 	}
 	TALLOC_FREE(mem_ctx);
 
+	return 0;
+}
+
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
 	return 0;
 }

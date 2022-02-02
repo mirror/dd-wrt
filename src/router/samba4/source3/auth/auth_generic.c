@@ -36,6 +36,7 @@
 #include "auth/credentials/credentials.h"
 #include "lib/param/loadparm.h"
 #include "librpc/gen_ndr/dcerpc.h"
+#include "source3/lib/substitute.h"
 
 static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 						TALLOC_CTX *mem_ctx,
@@ -46,47 +47,66 @@ static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 						uint32_t session_info_flags,
 						struct auth_session_info **session_info)
 {
+	enum server_role server_role = lp_server_role();
 	TALLOC_CTX *tmp_ctx;
-	struct PAC_LOGON_INFO *logon_info = NULL;
-	struct netr_SamInfo3 *info3_copy = NULL;
 	bool is_mapped;
 	bool is_guest;
 	char *ntuser;
 	char *ntdomain;
 	char *username;
-	char *rhost;
+	const char *rhost;
 	struct passwd *pw;
 	NTSTATUS status;
-	int rc;
 
 	tmp_ctx = talloc_new(mem_ctx);
 	if (!tmp_ctx) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (pac_blob) {
-#ifdef HAVE_KRB5
+	if (tsocket_address_is_inet(remote_address, "ip")) {
+		rhost = tsocket_address_inet_addr_string(
+			remote_address, tmp_ctx);
+		if (rhost == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto done;
+		}
+	} else {
+		rhost = "127.0.0.1";
+	}
+
+	if (server_role != ROLE_STANDALONE) {
 		struct wbcAuthUserParams params = { 0 };
 		struct wbcAuthUserInfo *info = NULL;
 		struct wbcAuthErrorInfo *err = NULL;
+		struct auth_serversupplied_info *server_info = NULL;
+		char *original_user_name = NULL;
+		char *p = NULL;
 		wbcErr wbc_err;
+
+		if (pac_blob == NULL) {
+			/*
+			 * This should already be catched at the main
+			 * gensec layer, but better check twice
+			 */
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto done;
+		}
 
 		/*
 		 * Let winbind decode the PAC.
 		 * This will also store the user
 		 * data in the netsamlogon cache.
 		 *
-		 * We need to do this *before* we
-		 * call get_user_from_kerberos_info()
-		 * as that does a user lookup that
-		 * expects info in the netsamlogon cache.
-		 *
-		 * See BUG: https://bugzilla.samba.org/show_bug.cgi?id=11259
+		 * This used to be a cache prime
+		 * optimization, but now we delegate
+		 * all logic to winbindd, as we require
+		 * winbindd as domain member anyway.
 		 */
 		params.level = WBC_AUTH_USER_LEVEL_PAC;
 		params.password.pac.data = pac_blob->data;
 		params.password.pac.length = pac_blob->length;
 
+		/* we are contacting the privileged pipe */
 		become_root();
 		wbc_err = wbcAuthenticateUserEx(&params, &info, &err);
 		unbecome_root();
@@ -99,46 +119,103 @@ static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 		 */
 
 		switch (wbc_err) {
-			case WBC_ERR_WINBIND_NOT_AVAILABLE:
 			case WBC_ERR_SUCCESS:
 				break;
+			case WBC_ERR_WINBIND_NOT_AVAILABLE:
+				status = NT_STATUS_NO_LOGON_SERVERS;
+				DBG_ERR("winbindd not running - "
+					"but required as domain member: %s\n",
+					nt_errstr(status));
+				goto done;
 			case WBC_ERR_AUTH_ERROR:
 				status = NT_STATUS(err->nt_status);
 				wbcFreeMemory(err);
+				goto done;
+			case WBC_ERR_NO_MEMORY:
+				status = NT_STATUS_NO_MEMORY;
 				goto done;
 			default:
 				status = NT_STATUS_LOGON_FAILURE;
 				goto done;
 		}
 
-		status = kerberos_pac_logon_info(tmp_ctx, *pac_blob, NULL, NULL,
-						 NULL, NULL, 0, &logon_info);
-#else
-		status = NT_STATUS_ACCESS_DENIED;
-#endif
+		status = make_server_info_wbcAuthUserInfo(tmp_ctx,
+							  info->account_name,
+							  info->domain_name,
+							  info, &server_info);
+		if (!NT_STATUS_IS_OK(status)) {
+			DEBUG(10, ("make_server_info_wbcAuthUserInfo failed: %s\n",
+				   nt_errstr(status)));
+			goto done;
+		}
+
+		/* We skip doing this step if the caller asked us not to */
+		if (!(server_info->guest)) {
+			const char *unix_username = server_info->unix_name;
+
+			/* We might not be root if we are an RPC call */
+			become_root();
+			status = smb_pam_accountcheck(unix_username, rhost);
+			unbecome_root();
+
+			if (!NT_STATUS_IS_OK(status)) {
+				DEBUG(3, ("check_ntlm_password:  PAM Account for user [%s] "
+					  "FAILED with error %s\n",
+					  unix_username, nt_errstr(status)));
+				goto done;
+			}
+
+			DEBUG(5, ("check_ntlm_password:  PAM Account for user [%s] "
+				  "succeeded\n", unix_username));
+		}
+
+		DEBUG(3, ("Kerberos ticket principal name is [%s]\n", princ_name));
+
+		p = strchr_m(princ_name, '@');
+		if (!p) {
+			DEBUG(3, ("[%s] Doesn't look like a valid principal\n",
+				  princ_name));
+			status = NT_STATUS_LOGON_FAILURE;
+			goto done;
+		}
+
+		original_user_name = talloc_strndup(tmp_ctx, princ_name, p - princ_name);
+		if (original_user_name == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto done;
+		}
+
+		status = create_local_token(mem_ctx,
+					    server_info,
+					    NULL,
+					    original_user_name,
+					    session_info);
+		if (!NT_STATUS_IS_OK(status)) {
+			DEBUG(10, ("create_local_token failed: %s\n",
+				   nt_errstr(status)));
+			goto done;
+		}
+
+		goto session_info_ready;
+	}
+
+	/* This is the standalone legacy code path */
+
+	if (pac_blob != NULL) {
+		/*
+		 * In standalone mode we don't expect a PAC!
+		 * we only support MIT realms
+		 */
+		status = NT_STATUS_BAD_TOKEN_TYPE;
+		DBG_WARNING("Unexpected PAC for [%s] in standalone mode - %s\n",
+			    princ_name, nt_errstr(status));
 		if (!NT_STATUS_IS_OK(status)) {
 			goto done;
 		}
 	}
 
-	rc = get_remote_hostname(remote_address,
-				 &rhost,
-				 tmp_ctx);
-	if (rc < 0) {
-		status = NT_STATUS_NO_MEMORY;
-		goto done;
-	}
-	if (strequal(rhost, "UNKNOWN")) {
-		rhost = tsocket_address_inet_addr_string(remote_address,
-							 tmp_ctx);
-		if (rhost == NULL) {
-			status = NT_STATUS_NO_MEMORY;
-			goto done;
-		}
-	}
-
 	status = get_user_from_kerberos_info(tmp_ctx, rhost,
-					     princ_name, logon_info,
+					     princ_name,
 					     &is_mapped, &is_guest,
 					     &ntuser, &ntdomain,
 					     &username, &pw);
@@ -149,26 +226,18 @@ static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 		goto done;
 	}
 
-	/* Get the info3 from the PAC data if we have it */
-	if (logon_info) {
-		status = create_info3_from_pac_logon_info(tmp_ctx,
-					logon_info,
-					&info3_copy);
-		if (!NT_STATUS_IS_OK(status)) {
-			goto done;
-		}
-	}
-
 	status = make_session_info_krb5(mem_ctx,
 					ntuser, ntdomain, username, pw,
-					info3_copy, is_guest, is_mapped, NULL /* No session key for now, caller will sort it out */,
+					is_guest, is_mapped,
 					session_info);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1, ("Failed to map kerberos pac to server info (%s)\n",
 			  nt_errstr(status)));
-		status = NT_STATUS_ACCESS_DENIED;
+		status = nt_status_squash(status);
 		goto done;
 	}
+
+session_info_ready:
 
 	/* setup the string used by %U */
 	set_current_user_info((*session_info)->unix_info->sanitized_username,
@@ -179,7 +248,9 @@ static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 	lp_load_with_shares(get_dyn_CONFIGFILE());
 
 	DEBUG(5, (__location__ "OK: user: %s domain: %s client: %s\n",
-		  ntuser, ntdomain, rhost));
+		  (*session_info)->info->account_name,
+		  (*session_info)->info->domain_name,
+		  rhost));
 
 	status = NT_STATUS_OK;
 
@@ -243,7 +314,7 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 			      struct gensec_security **gensec_security_out)
 {
 	struct gensec_security *gensec_security;
-	struct auth_context *auth_context;
+	struct auth_context *auth_context = NULL;
 	NTSTATUS nt_status;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
@@ -251,16 +322,14 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 
 	nt_status = make_auth3_context_for_ntlm(tmp_ctx, &auth_context);
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		TALLOC_FREE(tmp_ctx);
-		return nt_status;
+		goto done;
 	}
 
 	if (auth_context->prepare_gensec) {
 		nt_status = auth_context->prepare_gensec(auth_context, tmp_ctx,
 							 &gensec_security);
 		if (!NT_STATUS_IS_OK(nt_status)) {
-			TALLOC_FREE(tmp_ctx);
-			return nt_status;
+			goto done;
 		}
 	} else {
 		const struct gensec_security_ops **backends = NULL;
@@ -270,24 +339,23 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 		struct cli_credentials *server_credentials;
 		const char *dns_name;
 		const char *dns_domain;
+		bool ok;
 		struct auth4_context *auth4_context = make_auth4_context_s3(tmp_ctx, auth_context);
 		if (auth4_context == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		lp_ctx = loadparm_init_s3(tmp_ctx, loadparm_s3_helpers());
 		if (lp_ctx == NULL) {
 			DEBUG(10, ("loadparm_init_s3 failed\n"));
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_INVALID_SERVER_STATE;
+			nt_status = NT_STATUS_INVALID_SERVER_STATE;
+			goto done;
 		}
 
 		gensec_settings = lpcfg_gensec_settings(tmp_ctx, lp_ctx);
 		if (lp_ctx == NULL) {
 			DEBUG(10, ("lpcfg_gensec_settings failed\n"));
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		/*
@@ -310,21 +378,18 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 
 		gensec_settings->server_dns_name = strlower_talloc(gensec_settings, dns_name);
 		if (gensec_settings->server_dns_name == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		gensec_settings->server_dns_domain = strlower_talloc(gensec_settings, dns_domain);
 		if (gensec_settings->server_dns_domain == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		backends = talloc_zero_array(gensec_settings,
 					     const struct gensec_security_ops *, 6);
 		if (backends == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 		gensec_settings->backends = backends;
 
@@ -350,58 +415,66 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 		server_credentials = cli_credentials_init_anon(tmp_ctx);
 		if (!server_credentials) {
 			DEBUG(0, ("auth_generic_prepare: Failed to init server credentials\n"));
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
-		cli_credentials_set_conf(server_credentials, lp_ctx);
+		ok = cli_credentials_set_conf(server_credentials, lp_ctx);
+		if (!ok) {
+			DBG_ERR("Failed to set server credentials defaults "
+				"from smb.conf.\n");
+			goto nomem;
+		}
 
 		if (lp_security() == SEC_ADS || USE_KERBEROS_KEYTAB) {
-			cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DESIRED);
+			cli_credentials_set_kerberos_state(server_credentials,
+							   CRED_USE_KERBEROS_DESIRED,
+							   CRED_SPECIFIED);
 		} else {
-			cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DISABLED);
+			cli_credentials_set_kerberos_state(server_credentials,
+							   CRED_USE_KERBEROS_DISABLED,
+							   CRED_SPECIFIED);
 		}
 
 		nt_status = gensec_server_start(tmp_ctx, gensec_settings,
 						auth4_context, &gensec_security);
 
 		if (!NT_STATUS_IS_OK(nt_status)) {
-			TALLOC_FREE(tmp_ctx);
-			return nt_status;
+			goto done;
 		}
 
-		gensec_set_credentials(gensec_security, server_credentials);
-
-		talloc_unlink(tmp_ctx, lp_ctx);
-		talloc_unlink(tmp_ctx, server_credentials);
-		talloc_unlink(tmp_ctx, gensec_settings);
-		talloc_unlink(tmp_ctx, auth4_context);
+		nt_status = gensec_set_credentials(
+			gensec_security, server_credentials);
+		if (!NT_STATUS_IS_OK(nt_status)) {
+			goto done;
+		}
 	}
 
 	nt_status = gensec_set_remote_address(gensec_security,
 					      remote_address);
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		TALLOC_FREE(tmp_ctx);
-		return nt_status;
+		goto done;
 	}
 
 	nt_status = gensec_set_local_address(gensec_security,
 					     local_address);
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		TALLOC_FREE(tmp_ctx);
-		return nt_status;
+		goto done;
 	}
 
 	nt_status = gensec_set_target_service_description(gensec_security,
 							  service_description);
-
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		TALLOC_FREE(tmp_ctx);
-		return nt_status;
+		goto done;
 	}
 
-	*gensec_security_out = talloc_steal(mem_ctx, gensec_security);
+	*gensec_security_out = talloc_move(mem_ctx, &gensec_security);
+	nt_status = NT_STATUS_OK;
+	goto done;
+nomem:
+	nt_status = NT_STATUS_NO_MEMORY;
+done:
 	TALLOC_FREE(tmp_ctx);
-	return NT_STATUS_OK;
+	return nt_status;
 }
 
 /*
@@ -416,7 +489,7 @@ NTSTATUS auth_check_password_session_info(struct auth4_context *auth_context,
 {
 	NTSTATUS nt_status;
 	void *server_info;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	struct tevent_context *ev = NULL;
 	struct tevent_req *subreq = NULL;
 	bool ok;

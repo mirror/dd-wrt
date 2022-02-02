@@ -21,6 +21,7 @@
 #define __LIB_NETAPI_PRIVATE_H__
 
 #include "lib/netapi/netapi_net.h"
+#include "auth/credentials/credentials.h"
 
 #define LIBNETAPI_REDIRECT_TO_LOCALHOST(ctx, r, fn) \
 	DEBUG(10,("redirecting call %s to localhost\n", #fn)); \
@@ -53,12 +54,24 @@ struct libnetapi_private_ctx {
 	struct messaging_context *msg_ctx;
 };
 
-NET_API_STATUS libnetapi_get_password(struct libnetapi_ctx *ctx, char **password);
-NET_API_STATUS libnetapi_get_username(struct libnetapi_ctx *ctx, char **username);
+struct libnetapi_ctx {
+	char *debuglevel;
+	char *logfile;
+	char *error_string;
+	int disable_policy_handle_cache;
+
+	struct cli_credentials *creds;
+
+	void *private_data;
+};
+
+
 NET_API_STATUS libnetapi_set_error_string(struct libnetapi_ctx *ctx,
 					  const char *format, ...)
 					  PRINTF_ATTRIBUTE(2,3);
 NET_API_STATUS libnetapi_get_debuglevel(struct libnetapi_ctx *ctx, char **debuglevel);
+NET_API_STATUS libnetapi_set_logfile(struct libnetapi_ctx *ctx,
+				     const char *logfile);
 
 WERROR libnetapi_shutdown_cm(struct libnetapi_ctx *ctx);
 WERROR libnetapi_open_pipe(struct libnetapi_ctx *ctx,

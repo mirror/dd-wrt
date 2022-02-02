@@ -13,6 +13,11 @@ SERVER="$1"
 USERNAME="$2"
 PASSWORD="$3"
 
+samba_ldbsearch=ldbsearch
+if test -x $BINDIR/ldbsearch; then
+    samba_ldbsearch=$BINDIR/ldbsearch
+fi
+
 STpath=$(pwd)
 . $STpath/testprogs/blackbox/subunit.sh
 
@@ -23,7 +28,7 @@ display_name_new="Renamed Bjoern"
 # echo -e "test \a string" | base64
 display_name_con_b64="dGVzdCAHIHN0cmluZwo="
 
-tmpeditor=$(mktemp --suffix .sh -p $STpath/bin samba-tool-editor-XXXXXXXX)
+tmpeditor=$(mktemp --suffix .sh -p ${SELFTEST_TMPDIR} samba-tool-editor-XXXXXXXX)
 chmod +x $tmpeditor
 
 create_test_user() {
@@ -65,7 +70,7 @@ EOF
 }
 
 get_attribute_base64() {
-	${STpath}/bin/ldbsearch '(sAMAccountName=sambatool1)' displayName \
+	$samba_ldbsearch '(sAMAccountName=sambatool1)' displayName \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 

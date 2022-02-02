@@ -553,40 +553,73 @@ static int update_flags(struct ctdb_recoverd *rec,
 	for (j=0; j<nodemap->num; j++) {
 		struct ctdb_node_map_old *remote_nodemap=NULL;
 		uint32_t local_flags = nodemap->nodes[j].flags;
+		uint32_t remote_pnn = nodemap->nodes[j].pnn;
 		uint32_t remote_flags;
+		unsigned int i;
 		int ret;
 
 		if (local_flags & NODE_FLAGS_DISCONNECTED) {
 			continue;
 		}
-		if (nodemap->nodes[j].pnn == ctdb->pnn) {
-			continue;
+		if (remote_pnn == ctdb->pnn) {
+			/*
+			 * No remote nodemap for this node since this
+			 * is the local nodemap.  However, still need
+			 * to check this against the remote nodes and
+			 * push it if they are out-of-date.
+			 */
+			goto compare_remotes;
 		}
 
 		remote_nodemap = remote_nodemaps[j];
 		remote_flags = remote_nodemap->nodes[j].flags;
 
 		if (local_flags != remote_flags) {
-			ret = update_flags_on_all_nodes(rec,
-							nodemap->nodes[j].pnn,
-							remote_flags);
-			if (ret != 0) {
-				DBG_ERR(
-				    "Unable to update flags on remote nodes\n");
-				talloc_free(mem_ctx);
-				return -1;
-			}
-
 			/*
 			 * Update the local copy of the flags in the
 			 * recovery daemon.
 			 */
 			D_NOTICE("Remote node %u had flags 0x%x, "
 				 "local had 0x%x - updating local\n",
-				 nodemap->nodes[j].pnn,
+				 remote_pnn,
 				 remote_flags,
 				 local_flags);
 			nodemap->nodes[j].flags = remote_flags;
+			local_flags = remote_flags;
+			goto push;
+		}
+
+compare_remotes:
+		for (i = 0; i < nodemap->num; i++) {
+			if (i == j) {
+				continue;
+			}
+			if (nodemap->nodes[i].flags & NODE_FLAGS_DISCONNECTED) {
+				continue;
+			}
+			if (nodemap->nodes[i].pnn == ctdb->pnn) {
+				continue;
+			}
+
+			remote_nodemap = remote_nodemaps[i];
+			remote_flags = remote_nodemap->nodes[j].flags;
+
+			if (local_flags != remote_flags) {
+				goto push;
+			}
+		}
+
+		continue;
+
+push:
+		D_NOTICE("Pushing updated flags for node %u (0x%x)\n",
+			 remote_pnn,
+			 local_flags);
+		ret = update_flags_on_all_nodes(rec, remote_pnn, local_flags);
+		if (ret != 0) {
+			DBG_ERR("Unable to update flags on remote nodes\n");
+			talloc_free(mem_ctx);
+			return -1;
 		}
 	}
 	talloc_free(mem_ctx);
@@ -1748,54 +1781,21 @@ static void force_election(struct ctdb_recoverd *rec, uint32_t pnn,
 }
 
 
-
-/*
-  handler for when a node changes its flags
-*/
-static void monitor_handler(uint64_t srvid, TDB_DATA data, void *private_data)
+static void srvid_not_implemented(uint64_t srvid,
+				  TDB_DATA data,
+				  void *private_data)
 {
-	struct ctdb_recoverd *rec = talloc_get_type(
-		private_data, struct ctdb_recoverd);
-	struct ctdb_context *ctdb = rec->ctdb;
-	int ret;
-	struct ctdb_node_flag_change *c = (struct ctdb_node_flag_change *)data.dptr;
-	struct ctdb_node_map_old *nodemap=NULL;
-	TALLOC_CTX *tmp_ctx;
-	unsigned int i;
+	const char *s;
 
-	if (data.dsize != sizeof(*c)) {
-		DEBUG(DEBUG_ERR,(__location__ "Invalid data in ctdb_node_flag_change\n"));
-		return;
+	switch (srvid) {
+	case CTDB_SRVID_SET_NODE_FLAGS:
+		s = "CTDB_SRVID_SET_NODE_FLAGS";
+		break;
+	default:
+		s = "UNKNOWN";
 	}
 
-	tmp_ctx = talloc_new(ctdb);
-	CTDB_NO_MEMORY_VOID(ctdb, tmp_ctx);
-
-	ret = ctdb_ctrl_getnodemap(ctdb, CONTROL_TIMEOUT(), CTDB_CURRENT_NODE, tmp_ctx, &nodemap);
-	if (ret != 0) {
-		DEBUG(DEBUG_ERR,(__location__ "ctdb_ctrl_getnodemap failed in monitor_handler\n"));
-		talloc_free(tmp_ctx);
-		return;		
-	}
-
-
-	for (i=0;i<nodemap->num;i++) {
-		if (nodemap->nodes[i].pnn == c->pnn) break;
-	}
-
-	if (i == nodemap->num) {
-		DEBUG(DEBUG_CRIT,(__location__ "Flag change for non-existant node %u\n", c->pnn));
-		talloc_free(tmp_ctx);
-		return;
-	}
-
-	if (c->old_flags != c->new_flags) {
-		DEBUG(DEBUG_NOTICE,("Node %u has changed flags - now 0x%x  was 0x%x\n", c->pnn, c->new_flags, c->old_flags));
-	}
-
-	nodemap->nodes[i].flags = c->new_flags;
-
-	talloc_free(tmp_ctx);
+	D_WARNING("SRVID %s (0x%" PRIx64 ") is obsolete\n", s, srvid);
 }
 
 /*
@@ -2965,8 +2965,10 @@ static void monitor_cluster(struct ctdb_context *ctdb)
 	/* register a message port for recovery elections */
 	ctdb_client_set_message_handler(ctdb, CTDB_SRVID_ELECTION, election_handler, rec);
 
-	/* when nodes are disabled/enabled */
-	ctdb_client_set_message_handler(ctdb, CTDB_SRVID_SET_NODE_FLAGS, monitor_handler, rec);
+	ctdb_client_set_message_handler(ctdb,
+					CTDB_SRVID_SET_NODE_FLAGS,
+					srvid_not_implemented,
+					rec);
 
 	/* when we are asked to puch out a flag change */
 	ctdb_client_set_message_handler(ctdb, CTDB_SRVID_PUSH_NODE_FLAGS, push_flags_handler, rec);

@@ -22,18 +22,22 @@
 */
 
 #include "includes.h"
+#include "lib/cmdline/cmdline.h"
 #include "librpc/gen_ndr/ndr_drsuapi_c.h"
 #include "torture/rpc/torture_rpc.h"
+#include "libcli/security/dom_sid.h"
 #include "param/param.h"
 
 #define TEST_MACHINE_NAME "torturetest"
 
-bool test_DsBind(struct dcerpc_pipe *p,
-		 struct torture_context *tctx,
-		 struct DsPrivate *priv)
+static bool test_DsBind(struct dcerpc_pipe *p,
+			struct torture_context *tctx,
+			struct policy_handle *bind_handle,
+			struct drsuapi_DsBindInfo28 *srv_info28)
 {
 	NTSTATUS status;
 	struct drsuapi_DsBind r;
+	struct GUID bind_guid;
 	struct drsuapi_DsBindInfo28 *bind_info28;
 	struct drsuapi_DsBindInfoCtr bind_info_ctr;
 
@@ -70,19 +74,20 @@ bool test_DsBind(struct dcerpc_pipe *p,
 	bind_info28->supported_extensions	|= DRSUAPI_SUPPORTED_EXTENSION_GETCHGREPLY_V7;
 	bind_info28->supported_extensions	|= DRSUAPI_SUPPORTED_EXTENSION_VERIFY_OBJECT;
 
-	GUID_from_string(DRSUAPI_DS_BIND_GUID, &priv->bind_guid);
+	GUID_from_string(DRSUAPI_DS_BIND_GUID, &bind_guid);
 
-	r.in.bind_guid = &priv->bind_guid;
+	r.in.bind_guid = &bind_guid;
 	r.in.bind_info = &bind_info_ctr;
-	r.out.bind_handle = &priv->bind_handle;
+	r.out.bind_handle = bind_handle;
 
 	torture_comment(tctx, "Testing DsBind\n");
 
 	status = dcerpc_drsuapi_DsBind_r(p->binding_handle, tctx, &r);
 	torture_drsuapi_assert_call(tctx, p, status, &r, "dcerpc_drsuapi_DsBind");
 
-	/* cache server supported extensions, i.e. bind_info */
-	priv->srv_bind_info = r.out.bind_info->info.info28;
+	if (srv_info28 != NULL) {
+		*srv_info28 = r.out.bind_info->info.info28;
+	}
 
 	return true;
 }
@@ -771,9 +776,10 @@ bool torture_drsuapi_tcase_setup_common(struct torture_context *tctx, struct DsP
 	NTSTATUS status;
 	int rnd = rand() % 1000;
 	char *name = talloc_asprintf(tctx, "%s%d", TEST_MACHINE_NAME, rnd);
-	struct cli_credentials *machine_credentials;
 
 	torture_assert(tctx, priv, "Invalid argument");
+
+	priv->admin_credentials = samba_cmdline_get_creds();
 
 	torture_comment(tctx, "Create DRSUAPI pipe\n");
 	status = torture_rpc_connection(tctx,
@@ -783,10 +789,13 @@ bool torture_drsuapi_tcase_setup_common(struct torture_context *tctx, struct DsP
 
 	torture_comment(tctx, "About to join domain with name %s\n", name);
 	priv->join = torture_join_domain(tctx, name, ACB_SVRTRUST,
-					 &machine_credentials);
+					 &priv->dc_credentials);
 	torture_assert(tctx, priv->join, "Failed to join as BDC");
 
-	if (!test_DsBind(priv->drs_pipe, tctx, priv)) {
+	if (!test_DsBind(priv->drs_pipe, tctx,
+			 &priv->bind_handle,
+			 &priv->srv_bind_info))
+	{
 		/* clean up */
 		torture_drsuapi_tcase_teardown_common(tctx, priv);
 		torture_fail(tctx, "Failed execute test_DsBind()");
@@ -837,6 +846,173 @@ static bool torture_drsuapi_tcase_teardown(struct torture_context *tctx, void *d
 	return ret;
 }
 
+static bool __test_DsBind_assoc_group(struct torture_context *tctx,
+				      const char *testname,
+				      struct DsPrivate *priv,
+				      struct cli_credentials *creds)
+{
+	NTSTATUS status;
+	const char *err_msg;
+	struct drsuapi_DsCrackNames r;
+	union drsuapi_DsNameRequest req;
+	uint32_t level_out;
+	union drsuapi_DsNameCtr ctr;
+	struct drsuapi_DsNameString names[1];
+	const char *dom_sid = NULL;
+	struct dcerpc_pipe *p1 = NULL;
+	struct dcerpc_pipe *p2 = NULL;
+	TALLOC_CTX *mem_ctx = priv;
+	struct dcerpc_binding *binding = NULL;
+	struct policy_handle ds_bind_handle = { .handle_type = 0, };
+
+	torture_comment(tctx, "%s: starting...\n", testname);
+
+	torture_assert_ntstatus_ok(tctx,
+				   torture_rpc_binding(tctx, &binding),
+				   "torture_rpc_binding");
+
+	torture_assert_ntstatus_ok(tctx,
+				   dcerpc_pipe_connect_b(tctx,
+							 &p1,
+							 binding,
+							 &ndr_table_drsuapi,
+							 creds,
+							 tctx->ev,
+							 tctx->lp_ctx),
+				   "connect p1");
+
+	torture_assert_ntstatus_ok(tctx,
+				   dcerpc_pipe_connect_b(tctx,
+							 &p2,
+							 p1->binding,
+							 &ndr_table_drsuapi,
+							 creds,
+							 tctx->ev,
+							 tctx->lp_ctx),
+				   "connect p2");
+
+	torture_assert(tctx, test_DsBind(p1, tctx, &ds_bind_handle, NULL), "DsBind");
+
+	ZERO_STRUCT(r);
+	r.in.bind_handle		= &ds_bind_handle;
+	r.in.level			= 1;
+	r.in.req			= &req;
+	r.in.req->req1.codepage		= 1252; /* german */
+	r.in.req->req1.language		= 0x00000407; /* german */
+	r.in.req->req1.count		= 1;
+	r.in.req->req1.names		= names;
+	r.in.req->req1.format_flags	= DRSUAPI_DS_NAME_FLAG_NO_FLAGS;
+
+	r.in.req->req1.format_offered	= DRSUAPI_DS_NAME_FORMAT_SID_OR_SID_HISTORY;
+	r.in.req->req1.format_desired	= DRSUAPI_DS_NAME_FORMAT_NT4_ACCOUNT;
+
+	r.out.level_out			= &level_out;
+	r.out.ctr			= &ctr;
+
+	dom_sid = dom_sid_string(mem_ctx, torture_join_sid(priv->join));
+
+	names[0].str = dom_sid;
+
+	torture_comment(tctx, "Testing DsCrackNames on p1 with name '%s'"
+			      " offered format: %d desired format:%d\n",
+			names[0].str,
+			r.in.req->req1.format_offered,
+			r.in.req->req1.format_desired);
+	status = dcerpc_drsuapi_DsCrackNames_r(p1->binding_handle, mem_ctx, &r);
+	if (!NT_STATUS_IS_OK(status)) {
+		const char *errstr = nt_errstr(status);
+		err_msg = talloc_asprintf(mem_ctx, "dcerpc_drsuapi_DsCrackNames failed - %s", errstr);
+		torture_fail(tctx, err_msg);
+	} else if (!W_ERROR_IS_OK(r.out.result)) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed - %s", win_errstr(r.out.result));
+		torture_fail(tctx, err_msg);
+	} else if (r.out.ctr->ctr1->array[0].status != DRSUAPI_DS_NAME_STATUS_OK) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed on name - %d",
+					  r.out.ctr->ctr1->array[0].status);
+		torture_fail(tctx, err_msg);
+	}
+
+	torture_comment(tctx, "Testing DsCrackNames on p2 with name '%s'"
+			      " offered format: %d desired format:%d\n",
+			names[0].str,
+			r.in.req->req1.format_offered,
+			r.in.req->req1.format_desired);
+	status = dcerpc_drsuapi_DsCrackNames_r(p2->binding_handle, mem_ctx, &r);
+	if (!NT_STATUS_IS_OK(status)) {
+		const char *errstr = nt_errstr(status);
+		err_msg = talloc_asprintf(mem_ctx, "dcerpc_drsuapi_DsCrackNames failed - %s", errstr);
+		torture_fail(tctx, err_msg);
+	} else if (!W_ERROR_IS_OK(r.out.result)) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed - %s", win_errstr(r.out.result));
+		torture_fail(tctx, err_msg);
+	} else if (r.out.ctr->ctr1->array[0].status != DRSUAPI_DS_NAME_STATUS_OK) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed on name - %d",
+					  r.out.ctr->ctr1->array[0].status);
+		torture_fail(tctx, err_msg);
+	}
+
+	TALLOC_FREE(p1);
+
+	torture_comment(tctx, "Testing DsCrackNames on p2 (with p1 closed) with name '%s'"
+			      " offered format: %d desired format:%d\n",
+			names[0].str,
+			r.in.req->req1.format_offered,
+			r.in.req->req1.format_desired);
+	status = dcerpc_drsuapi_DsCrackNames_r(p2->binding_handle, mem_ctx, &r);
+	if (!NT_STATUS_IS_OK(status)) {
+		const char *errstr = nt_errstr(status);
+		err_msg = talloc_asprintf(mem_ctx, "dcerpc_drsuapi_DsCrackNames failed - %s", errstr);
+		torture_fail(tctx, err_msg);
+	} else if (!W_ERROR_IS_OK(r.out.result)) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed - %s", win_errstr(r.out.result));
+		torture_fail(tctx, err_msg);
+	} else if (r.out.ctr->ctr1->array[0].status != DRSUAPI_DS_NAME_STATUS_OK) {
+		err_msg = talloc_asprintf(mem_ctx, "DsCrackNames failed on name - %d",
+					  r.out.ctr->ctr1->array[0].status);
+		torture_fail(tctx, err_msg);
+	}
+
+	torture_comment(tctx, "%s: ... finished\n", testname);
+	return true;
+}
+
+static bool test_DsBindAssocGroupAdmin(struct torture_context *tctx,
+				       struct DsPrivate *priv,
+				       struct cli_credentials *creds)
+{
+	return __test_DsBind_assoc_group(tctx, __func__, priv,
+					 priv->admin_credentials);
+}
+
+static bool test_DsBindAssocGroupDC(struct torture_context *tctx,
+				    struct DsPrivate *priv,
+				    struct cli_credentials *creds)
+{
+	return __test_DsBind_assoc_group(tctx, __func__, priv,
+					 priv->dc_credentials);
+}
+
+static bool test_DsBindAssocGroupWS(struct torture_context *tctx,
+				    struct DsPrivate *priv,
+				    struct cli_credentials *creds)
+{
+	struct test_join *wks_join = NULL;
+	struct cli_credentials *wks_credentials = NULL;
+	int rnd = rand() % 1000;
+	char *wks_name = talloc_asprintf(tctx, "WKS%s%d", TEST_MACHINE_NAME, rnd);
+	bool ret;
+
+	torture_comment(tctx, "%s: About to join workstation with name %s\n",
+			__func__, wks_name);
+	wks_join = torture_join_domain(tctx, wks_name, ACB_WSTRUST,
+				       &wks_credentials);
+	torture_assert(tctx, wks_join, "Failed to join as WORKSTATION");
+	ret = __test_DsBind_assoc_group(tctx, __func__, priv,
+					wks_credentials);
+	torture_leave_domain(tctx, wks_join);
+	return ret;
+}
+
 /**
  * DRSUAPI test case implementation
  */
@@ -866,4 +1042,8 @@ void torture_rpc_drsuapi_tcase(struct torture_suite *suite)
 	torture_tcase_add_simple_test(tcase, "DsReplicaUpdateRefs", (run_func)test_DsReplicaUpdateRefs);
 
 	torture_tcase_add_simple_test(tcase, "DsGetNCChanges", (run_func)test_DsGetNCChanges);
+
+	torture_tcase_add_simple_test(tcase, "DsBindAssocGroupAdmin", (run_func)test_DsBindAssocGroupAdmin);
+	torture_tcase_add_simple_test(tcase, "DsBindAssocGroupDC", (run_func)test_DsBindAssocGroupDC);
+	torture_tcase_add_simple_test(tcase, "DsBindAssocGroupWS", (run_func)test_DsBindAssocGroupWS);
 }

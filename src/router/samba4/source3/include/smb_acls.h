@@ -58,20 +58,16 @@ int sys_acl_set_qualifier(SMB_ACL_ENTRY_T entry_d, void *qual_p);
 int sys_acl_set_permset(SMB_ACL_ENTRY_T entry_d, SMB_ACL_PERMSET_T permset_d);
 int sys_acl_free_text(char *text);
 int sys_acl_valid(SMB_ACL_T acl_d);
-SMB_ACL_T sys_acl_get_file(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			SMB_ACL_TYPE_T type,
-			TALLOC_CTX *mem_ctx);
-SMB_ACL_T sys_acl_get_fd(struct vfs_handle_struct *handle, struct files_struct *fsp,
+SMB_ACL_T sys_acl_get_fd(struct vfs_handle_struct *handle,
+			 struct files_struct *fsp,
+			 SMB_ACL_TYPE_T type,
 			 TALLOC_CTX *mem_ctx);
-int sys_acl_set_file(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
+int sys_acl_set_fd(struct vfs_handle_struct *handle,
+			struct files_struct *fsp,
 			SMB_ACL_TYPE_T type,
 			SMB_ACL_T acl_d);
-int sys_acl_set_fd(struct vfs_handle_struct *handle, struct files_struct *fsp,
-		   SMB_ACL_T acl_d);
-int sys_acl_delete_def_file(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname);
+int sys_acl_delete_def_fd(struct vfs_handle_struct *handle,
+			  struct files_struct *fsp);
 int no_acl_syscall_error(int err);
 
 #endif /* _SMB_ACLS_H */

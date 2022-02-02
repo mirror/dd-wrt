@@ -26,8 +26,6 @@
 #ifndef _LIBSMB_PROTO_H_
 #define _LIBSMB_PROTO_H_
 
-#include "auth_info.h"
-
 struct smb_trans_enc_state;
 struct cli_credentials;
 struct cli_state;
@@ -205,6 +203,7 @@ NTSTATUS cli_smb(TALLOC_CTX *mem_ctx, struct cli_state *cli,
 
 NTSTATUS cli_nt_error(struct cli_state *cli);
 void cli_dos_error(struct cli_state *cli, uint8_t *eclass, uint32_t *ecode);
+int cli_status_to_errno(NTSTATUS status);
 int cli_errno(struct cli_state *cli);
 bool cli_is_error(struct cli_state *cli);
 bool cli_is_nt_error(struct cli_state *cli);

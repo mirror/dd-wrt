@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "06/01/2021" "Samba 4\&.14\&.5" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "01/31/2022" "Samba 4\&.15\&.5" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -492,7 +492,7 @@ the Internet name of the client machine\&.
 .PP
 %R
 .RS 4
-the selected protocol level after protocol negotiation\&. It can be one of CORE, COREPLUS, LANMAN1, LANMAN2, NT1, SMB2_02, SMB2_10, SMB2_22, SMB2_24, SMB3_00, SMB3_02, SMB3_10, SMB3_11 or SMB2_FF\&.
+the selected protocol level after protocol negotiation\&. It can be one of CORE, COREPLUS, LANMAN1, LANMAN2, NT1, SMB2_02, SMB2_10, SMB3_00, SMB3_02, SMB3_11 or SMB2_FF\&.
 .RE
 .PP
 %d
@@ -585,15 +585,7 @@ the home directory of the user given by %u\&.
 .PP
 %N
 .RS 4
-the name of your NIS home directory server\&. This is obtained from your NIS auto\&.map entry\&. If you have not compiled Samba with the
-\fI\-\-with\-automount\fR
-option, this value will be the same as %L\&.
-.RE
-.PP
-%p
-.RS 4
-the path of the service\*(Aqs home directory, obtained from your NIS auto\&.map entry\&. The NIS auto\&.map entry is split up as
-%N:%p\&.
+This value is the same as %L\&.
 .RE
 .PP
 There are some quite creative things that can be done with these substitutions and other
@@ -819,6 +811,20 @@ If this parameter is set to "false" Samba doesn\*(Aqt check permissions on "open
 .sp
 Default:
 \fI\fIacl check permissions\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+acl flag inherited canonicalization (S)
+.PP
+.RS 4
+This option controls the way Samba handles client requests setting the Security Descriptor of files and directories and the effect the operation has on the Security Descriptor flag "DACL auto\-inherited" (DI)\&. Generally, this flag is set on a file (or directory) upon creation if the parent directory has DI set and also has inheritable ACEs\&.
+.sp
+On the other hand when a Security Descriptor is explicitly set on a file, the DI flag is cleared, unless the flag "DACL Inheritance Required" (DR) is also set in the new Security Descriptor (fwiw, DR is never stored on disk)\&.
+.sp
+This is the default behaviour when this option is enabled (the default)\&. When setting this option to
+no, the resulting value of the DI flag on\-disk is directly taken from the DI value of the to\-be\-set Security Descriptor\&. This can be used so dump tools like rsync that copy data blobs from xattrs that represent ACLs created by the acl_xattr VFS module will result in copies of the ACL that are identical to the source\&. Without this option, the copied ACLs would all loose the DI flag if set on the source\&.
+.sp
+Default:
+\fI\fIacl flag inherited canonicalization\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
 acl group control (S)
@@ -2028,14 +2034,14 @@ client ipc signing (G)
 .PP
 .RS 4
 This controls whether the client is allowed or required to use SMB signing for IPC$ connections as DCERPC transport\&. Possible values are
-\fIauto\fR,
-\fImandatory\fR
+\fIdesired\fR,
+\fIrequired\fR
 and
 \fIdisabled\fR\&.
 .sp
-When set to mandatory or default, SMB signing is required\&.
+When set to required or default, SMB signing is mandatory\&.
 .sp
-When set to auto, SMB signing is offered, but not enforced and if set to disabled, SMB signing is not offered either\&.
+When set to desired, SMB signing is offered, but not enforced and if set to disabled, SMB signing is not offered either\&.
 .sp
 Connections from winbindd to Active Directory Domain Controllers always enforce signing\&.
 .sp
@@ -2201,28 +2207,6 @@ version of the protocol\&. Long filename support\&.
 \fBSMB2_10\fR: Windows 7 SMB2 version\&.
 .RE
 .sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB2_22\fR: Early Windows 8 SMB2 version\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB2_24\fR: Windows 8 beta SMB2 version\&.
-.RE
-.sp
 .RE
 By default SMB2 selects the SMB2_10 variant\&.
 .RE
@@ -2246,7 +2230,7 @@ By default SMB2 selects the SMB2_10 variant\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBSMB3_00\fR: Windows 8 SMB3 version\&. (mostly the same as SMB2_24)
+\fBSMB3_00\fR: Windows 8 SMB3 version\&.
 .RE
 .sp
 .RS 4
@@ -2268,18 +2252,7 @@ By default SMB2 selects the SMB2_10 variant\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBSMB3_10\fR: early Windows 10 technical preview SMB3 version\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB3_11\fR: Windows 10 technical preview SMB3 version (maybe final)\&.
+\fBSMB3_11\fR: Windows 10 SMB3 version\&.
 .RE
 .sp
 .RE
@@ -2380,6 +2353,92 @@ Default:
 \fI\fIclient plaintext auth\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
+client protection (G)
+.PP
+.RS 4
+This parameter defines which protection Samba client tools should use by default\&.
+.sp
+Possible client settings are:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdefault\fR
+\- Use the individual default values of the options:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIclient signing\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIclient smb encrypt\fR
+.RE
+.sp
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIplain\fR
+\- This will send everything just as plaintext, signing or encryption are turned off\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIsign\fR
+\- This will enable integrity checking\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIencrypt\fR
+\- This will enable integrity checks and force encryption for privacy\&.
+.RE
+.sp
+.RE
+Default:
+\fI\fIclient protection\fR\fR\fI = \fR\fIdefault\fR\fI \fR
+.RE
+
 client schannel (G)
 .PP
 .RS 4
@@ -2411,14 +2470,14 @@ client signing (G)
 .PP
 .RS 4
 This controls whether the client is allowed or required to use SMB signing\&. Possible values are
-\fIauto\fR,
-\fImandatory\fR
+\fIdesired\fR,
+\fIrequired\fR
 and
 \fIdisabled\fR\&.
 .sp
-When set to auto or default, SMB signing is offered, but not enforced\&.
+When set to desired or default, SMB signing is offered, but not enforced\&.
 .sp
-When set to mandatory, SMB signing is required and if set to disabled, SMB signing is not offered either\&.
+When set to required, SMB signing is mandatory and if set to disabled, SMB signing is not offered either\&.
 .sp
 IPC$ connections for DCERPC e\&.g\&. in winbindd, are handled by the
 \m[blue]\fBclient ipc signing\fR\m[]
@@ -2544,6 +2603,96 @@ globally will completely disable the encryption feature for all connections\&.
 .sp
 Default:
 \fI\fIclient smb encrypt\fR\fR\fI = \fR\fIdefault\fR\fI \fR
+.RE
+
+client smb3 encryption algorithms (G)
+.PP
+.RS 4
+This parameter specifies the availability and order of encryption algorithms which are available for negotiation in the SMB3_11 dialect\&.
+.sp
+It is also possible to remove individual algorithms from the default list, by prefixing them with \*(Aq\-\*(Aq\&. This can avoid having to specify a hardcoded list\&.
+.sp
+Note: that the removal of AES\-128\-CCM from the list will result in SMB3_00 and SMB3_02 being unavailable, as it is the default and only available algorithm for these dialects\&.
+.sp
+Default:
+\fI\fIclient smb3 encryption algorithms\fR\fR\fI = \fR\fIAES\-128\-GCM, AES\-128\-CCM, AES\-256\-GCM, AES\-256\-CCM\fR\fI \fR
+.sp
+Example:
+\fI\fIclient smb3 encryption algorithms\fR\fR\fI = \fR\fIAES\-256\-GCM\fR\fI \fR
+.sp
+Example:
+\fI\fIclient smb3 encryption algorithms\fR\fR\fI = \fR\fI\-AES\-128\-GCM \-AES\-128\-CCM\fR\fI \fR
+.RE
+
+client smb3 signing algorithms (G)
+.PP
+.RS 4
+This parameter specifies the availability and order of signing algorithms which are available for negotiation in the SMB3_11 dialect\&.
+.sp
+It is also possible to remove individual algorithms from the default list, by prefixing them with \*(Aq\-\*(Aq\&. This can avoid having to specify a hardcoded list\&.
+.sp
+Note: that the removal of AES\-128\-CMAC from the list will result in SMB3_00 and SMB3_02 being unavailable, and the removal of HMAC\-SHA256 will result in SMB2_02 and SMB2_10 being unavailable, as these are the default and only available algorithms for these dialects\&.
+.sp
+Default:
+\fI\fIclient smb3 signing algorithms\fR\fR\fI = \fR\fIAES\-128\-GMAC, AES\-128\-CMAC, HMAC\-SHA256\fR\fI \fR
+.sp
+Example:
+\fI\fIclient smb3 signing algorithms\fR\fR\fI = \fR\fIAES\-128\-CMAC, HMAC\-SHA256\fR\fI \fR
+.sp
+Example:
+\fI\fIclient smb3 signing algorithms\fR\fR\fI = \fR\fI\-AES\-128\-CMAC\fR\fI \fR
+.RE
+
+client use kerberos (G)
+.PP
+.RS 4
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connnecting to a service\&.
+.sp
+Possible option settings are:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdesired\fR
+\- Kerberos authentication will be tried first and if it fails it automatically fallback to NTLM\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIrequired\fR
+\- Kerberos authentication will be required\&. There will be no falllback to NTLM or a different alternative\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIoff\fR
+\- Don\*(Aqt use Kerberos, use NTLM instead or another alternative\&.
+.RE
+.sp
+.RE
+In case that weak cryptography is not allowed (e\&.g\&. FIPS mode) the default will be forced to
+\fIrequired\fR\&.
+.sp
+Default:
+\fI\fIclient use kerberos\fR\fR\fI = \fR\fIdesired\fR\fI \fR
 .RE
 
 client use spnego principal (G)
@@ -3244,9 +3393,12 @@ Example:
 delete veto files (S)
 .PP
 .RS 4
-This option is used when Samba is attempting to delete a directory that contains one or more vetoed directories (see the
-\m[blue]\fBveto files\fR\m[]
-option)\&. If this option is set to
+This option is used when Samba is attempting to delete a directory that contains one or more vetoed files or directories or non\-visible files or directories (such as dangling symlinks that point nowhere)\&. (see the
+\m[blue]\fBveto files\fR\m[],
+\m[blue]\fBhide special files\fR\m[],
+\m[blue]\fBhide unreadable\fR\m[],
+\m[blue]\fBhide unwriteable files\fR\m[]
+options)\&. If this option is set to
 \fBno\fR
 (the default) then if a vetoed directory contains any non\-vetoed files or directories then the directory delete will fail\&. This is usually what you want\&.
 .sp
@@ -3518,6 +3670,46 @@ If one record for a DNS name is static (non\-aging) then no other record for tha
 .RE
 Default:
 \fI\fIdns zone scavenging\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
+dns zone transfer clients allow (G)
+.PP
+.RS 4
+This option specifies the list of IPs authorized to ask for dns zone transfer from bind DLZ module\&.
+.sp
+The IP list is comma and space separated and specified in the same syntax as used in
+\m[blue]\fBhosts allow\fR\m[], specifically including IP address, IP prefixes and IP address masks\&.
+.sp
+As this is a DNS server option, hostnames are naturally not permitted\&.
+.sp
+The default behaviour is to deny any request\&. A request will be authorized only if the emitting client is identified in this list, and not in
+\m[blue]\fBdns zone transfer clients deny\fR\m[]
+.sp
+Default:
+\fI\fIdns zone transfer clients allow\fR\fR\fI = \fR\fI\fR\fI \fR
+.sp
+Example:
+\fI\fIdns zone transfer clients allow\fR\fR\fI = \fR\fI192\&.168\&.0\&.1\fR\fI \fR
+.RE
+
+dns zone transfer clients deny (G)
+.PP
+.RS 4
+This option specifies the list of IPs denied to ask for dns zone transfer from bind DLZ module\&.
+.sp
+The IP list is comma and space separated and specified in the same syntax as used in
+\m[blue]\fBhosts allow\fR\m[], specifically including IP address, IP prefixes and IP address masks\&.
+.sp
+As this is a DNS server option, hostnames are naturally not permitted\&.
+.sp
+If a client identified in this list sends a zone transfer request, it will always be denied, even if they are in
+\m[blue]\fBdns zone transfer clients allow\fR\m[]\&. This allows the definition of specific denied clients within an authorized subnet\&.
+.sp
+Default:
+\fI\fIdns zone transfer clients deny\fR\fR\fI = \fR\fI\fR\fI \fR
+.sp
+Example:
+\fI\fIdns zone transfer clients deny\fR\fR\fI = \fR\fI192\&.168\&.0\&.1\fR\fI \fR
 .RE
 
 domain logons (G)
@@ -4582,51 +4774,6 @@ Default:
 \fI\fIhide unwriteable files\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
-homedir map (G)
-.PP
-.RS 4
-If
-\m[blue]\fBnis homedir\fR\m[]
-is
-\fByes\fR, and
-\fBsmbd\fR(8)
-is also acting as a Win95/98
-\fIlogon server\fR
-then this parameter specifies the NIS (or YP) map from which the server for the user\*(Aqs home directory should be extracted\&. At present, only the Sun auto\&.home map format is understood\&. The form of the map is:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-username server:/some/file/system
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-and the program will extract the servername from before the first \*(Aq:\*(Aq\&. There should probably be a better parsing system that copes with different map formats and also Amd (another automounter) maps\&.
-.if n \{\
-.sp
-.\}
-.RS 4
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBNote\fR
-.ps -1
-.br
-A working NIS client is required on the system for this option to work\&.
-.sp .5v
-.RE
-Default:
-\fI\fIhomedir map\fR\fR\fI = \fR\fI\fR\fI \fR
-.sp
-Example:
-\fI\fIhomedir map\fR\fR\fI = \fR\fIamd\&.homedir\fR\fI \fR
-.RE
-
 honor change notify privilege (S)
 .PP
 .RS 4
@@ -4707,12 +4854,6 @@ hosts allow = 150\&.203\&.15\&.0/255\&.255\&.255\&.0
 Example 3: allow a couple of hosts
 .sp
 hosts allow = lapland, arvidsjaur
-.sp
-Example 4: allow only hosts in NIS netgroup "foonet", but deny access from one particular host
-.sp
-hosts allow = @foonet
-.sp
-hosts deny = pirate
 .if n \{\
 .sp
 .\}
@@ -4815,6 +4956,10 @@ range = low \- high
 Defines the available matching uid and gid range for which the backend is authoritative\&. For allocating backends, this also defines the start and the end of the range for allocating new unique IDs\&.
 .sp
 winbind uses this parameter to find the backend that is authoritative for a unix ID to SID mapping, so it must be set for each individually configured domain and for the default configuration\&. The configured ranges must be mutually disjoint\&.
+.sp
+Note that the low value interacts with the
+\m[blue]\fBmin domain uid\fR\m[]
+option!
 .RE
 .PP
 read only = yes|no
@@ -5173,13 +5318,7 @@ This is a list of users that should not be allowed to login to this service\&. T
 \fIparanoid\fR
 check to absolutely ensure an improper setting does not breach your security\&.
 .sp
-A name starting with a \*(Aq@\*(Aq is interpreted as an NIS netgroup first (if your system supports NIS), and then as a UNIX group if the name was not found in the NIS netgroup database\&.
-.sp
-A name starting with \*(Aq+\*(Aq is interpreted only by looking in the UNIX group database via the NSS getgrnam() interface\&. A name starting with \*(Aq&\*(Aq is interpreted only by looking in the NIS netgroup database (this requires NIS to be working on your system)\&. The characters \*(Aq+\*(Aq and \*(Aq&\*(Aq may be used at the start of the name in either order so the value
-\fI+&group\fR
-means check the UNIX group database, followed by the NIS netgroup database, and the value
-\fI&+group\fR
-means check the NIS netgroup database, followed by the UNIX group database (the same as the \*(Aq@\*(Aq prefix)\&.
+A name starting with a \*(Aq@\*(Aq is interpreted UNIX group\&.
 .sp
 The current servicename is substituted for
 \fI%S\fR\&. This is useful in the [homes] section\&.
@@ -6688,6 +6827,153 @@ This parameter has been extended since the 2\&.2\&.x series, now it allows one t
 .RE
 .sp
 .RE
+Various modules register dynamic debug classes at first usage:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIcatia\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdfs_samba4\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIextd_audit\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIfileid\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIfruit\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIfull_audit\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fImedia_harmony\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpreopen\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIrecycle\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIshadow_copy\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIshadow_copy\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIunityed_media\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIvirusfilter\fR
+.RE
+.sp
+.RE
 To configure the logging for specific classes to go into a different file then
 \m[blue]\fBlog file\fR\m[], you can append
 \fI@PATH\fR
@@ -8014,6 +8300,18 @@ Example:
 \fI\fImessage command\fR\fR\fI = \fR\fIcsh \-c \*(Aqxedit %s; rm %s\*(Aq &\fR\fI \fR
 .RE
 
+min domain uid (G)
+.PP
+.RS 4
+The integer parameter specifies the minimum uid allowed when mapping a local account to a domain account\&.
+.sp
+Note that this option interacts with the configured
+\fIidmap ranges\fR!
+.sp
+Default:
+\fI\fImin domain uid\fR\fR\fI = \fR\fI1000\fR\fI \fR
+.RE
+
 min print space (S)
 .PP
 .RS 4
@@ -8160,7 +8458,8 @@ The options are: "lmhosts", "host", "wins" and "bcast"\&. They cause names to be
 .\}
 \fBhost\fR
 : Do a standard host name to IP address resolution, using the system
-/etc/hosts, NIS, or DNS lookups\&. This method of name resolution is operating system depended for instance on IRIX or Solaris this may be controlled by the
+/etc/hosts
+or DNS lookups\&. This method of name resolution is operating system depended for instance on IRIX or Solaris this may be controlled by the
 /etc/nsswitch\&.conf
 file\&. Note that this method is used only if the NetBIOS name type being queried is the 0x20 (server) name type or 0x1c (domain controllers)\&. The latter case is only useful for active directory domains and results in a DNS query for the SRV RR entry matching _ldap\&._tcp\&.domain\&.
 .RE
@@ -8339,23 +8638,6 @@ The behavior can be controlled per netbios domain by using \*(Aqneutralize nt4 e
 .sp
 Default:
 \fI\fIneutralize nt4 emulation\fR\fR\fI = \fR\fIno\fR\fI \fR
-.RE
-
-NIS homedir (G)
-.PP
-.RS 4
-Get the home share server from a NIS map\&. For UNIX systems that use an automounter, the user\*(Aqs home directory will often be mounted on a workstation on demand from a remote server\&.
-.sp
-When the Samba logon server is not the actual home directory server, but is mounting the home directories via NFS then two network hops would be required to access the users home directory if the logon server told the client to use itself as the SMB server for home directories (one over SMB and one over NFS)\&. This can be very slow\&.
-.sp
-This option allows Samba to return the home share as being on a different server to the logon server and as long as a Samba daemon is running on the home directory server, it will be mounted on the Samba client directly from the directory server\&. When Samba is returning the home share to the client, it will consult the NIS map specified in
-\m[blue]\fBhomedir map\fR\m[]
-and return the server listed there\&.
-.sp
-Note that for this option to work there must be a working NIS system and the Samba server with this option must also be a logon server\&.
-.sp
-Default:
-\fI\fINIS homedir\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 nmbd bind explicit broadcast (G)
@@ -8849,16 +9131,14 @@ uses to determine what to send to the
 \m[blue]\fBpasswd program\fR\m[]
 and what to expect back\&. If the expected output is not received then the password is not changed\&.
 .sp
-This chat sequence is often quite site specific, depending on what local methods are used for password control (such as NIS etc)\&.
+This chat sequence is often quite site specific, depending on what local methods are used for password control\&.
 .sp
 Note that this parameter only is used if the
 \m[blue]\fBunix password sync\fR\m[]
 parameter is set to
 \fByes\fR\&. This sequence is then called
 \fIAS ROOT\fR
-when the SMB password in the smbpasswd file is being changed, without access to the old password cleartext\&. This means that root must be able to reset the user\*(Aqs password without knowing the text of the previous password\&. In the presence of NIS/YP, this means that the
-\m[blue]\fBpasswd program\fR\m[]
-must be executed on the NIS master\&.
+when the SMB password in the smbpasswd file is being changed, without access to the old password cleartext\&. This means that root must be able to reset the user\*(Aqs password without knowing the text of the previous password\&.
 .sp
 The string can contain the macro
 \fI%n\fR
@@ -10629,28 +10909,6 @@ version of the protocol\&. Long filename support\&.
 \fBSMB2_10\fR: Windows 7 SMB2 version\&.
 .RE
 .sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB2_22\fR: Early Windows 8 SMB2 version\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB2_24\fR: Windows 8 beta SMB2 version\&.
-.RE
-.sp
 .RE
 By default SMB2 selects the SMB2_10 variant\&.
 .RE
@@ -10674,7 +10932,7 @@ By default SMB2 selects the SMB2_10 variant\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBSMB3_00\fR: Windows 8 SMB3 version\&. (mostly the same as SMB2_24)
+\fBSMB3_00\fR: Windows 8 SMB3 version\&.
 .RE
 .sp
 .RS 4
@@ -10696,18 +10954,7 @@ By default SMB2 selects the SMB2_10 variant\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBSMB3_10\fR: early Windows 10 technical preview SMB3 version\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fBSMB3_11\fR: Windows 10 technical preview SMB3 version (maybe final)\&.
+\fBSMB3_11\fR: Windows 10 SMB3 version\&.
 .RE
 .sp
 .RE
@@ -10758,14 +11005,16 @@ will support SMB3 multi\-channel\&.
 .sp
 This parameter was added with version 4\&.4\&.
 .sp
-Warning: Note that this feature is still considered experimental\&. Use it at your own risk: Even though it may seem to work well in testing, it may result in data corruption under some race conditions\&. Future releases may improve this situation\&.
+Note that this feature was still considered experimental up to 4\&.14\&.
 .sp
 Due to dependencies to kernel APIs of Linux or FreeBSD, it\*(Aqs only possible to use this feature on Linux and FreeBSD for now\&. For testing this restriction can be overwritten by specifying
 \fBforce:server multi channel support=yes\fR
 in addition\&.
 .sp
+This option is enabled by default starting with to 4\&.15 (on Linux and FreeBSD)\&.
+.sp
 Default:
-\fI\fIserver multi channel support\fR\fR\fI = \fR\fIno\fR\fI \fR
+\fI\fIserver multi channel support\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
 server role (G)
@@ -10836,6 +11085,10 @@ This mode of operation runs a classic Samba backup domain controller, providing 
 .sp
 This mode of operation runs Samba as an active directory domain controller, providing domain logon services to Windows and Samba clients of the domain\&. This role requires special configuration, see the
 Samba4 HOWTO
+.sp
+\fISERVER ROLE = IPA DOMAIN CONTROLLER\fR
+.sp
+This mode of operation runs Samba in a hybrid mode for IPA domain controller, providing forest trust to Active Directory\&. This role requires special configuration performed by IPA installers and should not be used manually by any administrator\&.
 .sp
 Default:
 \fI\fIserver role\fR\fR\fI = \fR\fIAUTO\fR\fI \fR
@@ -11172,6 +11425,44 @@ Default:
 \fI\fIserver smb encrypt\fR\fR\fI = \fR\fIdefault\fR\fI \fR
 .RE
 
+server smb3 encryption algorithms (G)
+.PP
+.RS 4
+This parameter specifies the availability and order of encryption algorithms which are available for negotiation in the SMB3_11 dialect\&.
+.sp
+It is also possible to remove individual algorithms from the default list, by prefixing them with \*(Aq\-\*(Aq\&. This can avoid having to specify a hardcoded list\&.
+.sp
+Note: that the removal of AES\-128\-CCM from the list will result in SMB3_00 and SMB3_02 being unavailable, as it is the default and only available algorithm for these dialects\&.
+.sp
+Default:
+\fI\fIserver smb3 encryption algorithms\fR\fR\fI = \fR\fIAES\-128\-GCM, AES\-128\-CCM, AES\-256\-GCM, AES\-256\-CCM\fR\fI \fR
+.sp
+Example:
+\fI\fIserver smb3 encryption algorithms\fR\fR\fI = \fR\fIAES\-256\-GCM\fR\fI \fR
+.sp
+Example:
+\fI\fIserver smb3 encryption algorithms\fR\fR\fI = \fR\fI\-AES\-128\-GCM \-AES\-128\-CCM\fR\fI \fR
+.RE
+
+server smb3 signing algorithms (G)
+.PP
+.RS 4
+This parameter specifies the availability and order of signing algorithms which are available for negotiation in the SMB3_11 dialect\&.
+.sp
+It is also possible to remove individual algorithms from the default list, by prefixing them with \*(Aq\-\*(Aq\&. This can avoid having to specify a hardcoded list\&.
+.sp
+Note: that the removal of AES\-128\-CMAC from the list will result in SMB3_00 and SMB3_02 being unavailable, and the removal of HMAC\-SHA256 will result in SMB2_02 and SMB2_10 being unavailable, as these are the default and only available algorithms for these dialects\&.
+.sp
+Default:
+\fI\fIserver smb3 signing algorithms\fR\fR\fI = \fR\fIAES\-128\-GMAC, AES\-128\-CMAC, HMAC\-SHA256\fR\fI \fR
+.sp
+Example:
+\fI\fIserver smb3 signing algorithms\fR\fR\fI = \fR\fIAES\-128\-CMAC, HMAC\-SHA256\fR\fI \fR
+.sp
+Example:
+\fI\fIserver smb3 signing algorithms\fR\fR\fI = \fR\fI\-AES\-128\-CMAC\fR\fI \fR
+.RE
+
 server string (G)
 .PP
 .RS 4
@@ -11382,21 +11673,6 @@ Example:
 \fI\fIset quota command\fR\fR\fI = \fR\fI/usr/local/sbin/set_quota\fR\fI \fR
 .RE
 
-share backend (G)
-.PP
-.RS 4
-This option specifies the backend that will be used to access the configuration of file shares\&.
-.sp
-Traditionally, Samba file shares have been configured in the
-\fBsmb\&.conf\fR
-file and this is still the default\&.
-.sp
-At the moment there are no other supported backends\&.
-.sp
-Default:
-\fI\fIshare backend\fR\fR\fI = \fR\fIclassic\fR\fI \fR
-.RE
-
 share:fake_fscaps (G)
 .PP
 .RS 4
@@ -11555,7 +11831,7 @@ The [MS\-SMB2] specification (under 3\&.3\&.5\&.14 Receiving an SMB2 LOCK Reques
 .sp
 But Windows Server (at least up to v2004) only does these checks for the Open\&.IsResilient and Open\&.IsPersistent\&. That means they do not implement the behavior specified in [MS\-SMB2]\&.
 .sp
-By default Samba behaves according to the specification and sends smb2 oplock break notification retries\&.
+By default Samba behaves according to the specification and implements lock sequence checking when multi\-channel is used\&.
 .sp
 Warning: Only enable this option if existing clients can\*(Aqt handle lock sequence checking for handles without Open\&.IsResilient and Open\&.IsPersistent\&. And it turns out that the Windows Server behavior is required\&.
 .sp
@@ -11698,6 +11974,15 @@ This parameter controls how many async operations to fetch the DOS attributes th
 .sp
 Default:
 \fI\fIsmbd max async dosmode\fR\fR\fI = \fR\fIaio max threads * 2\fR\fI \fR
+.RE
+
+smbd max xattr size (S)
+.PP
+.RS 4
+This parameter controls the maximum size of extended attributes that may be written to the server as EAs or as alternate data streams if vfs_streams_xattr is enabled\&. The maximum size of extended attributes depends on the Samba server\*(Aqs operating system and the underlying filesystem\&. The Linux VFS currently sets an upper boundary of 64 KiB per extended attribute\&. FreeBSD does not set a practical upper limit, but since pread() and pwrite() are not possible via the extattr on FreeBSD, it is not recommended to increase this value above a few MiB\&. If a client attempts to write an overly\-large alternate datastream, the Samba server will return STATUS_FILESYSTEM_LIMITATION\&. If this error is encountered, users may try increasing the maximum size supported for xattr writes\&. If this is not possible, and writes are from a MacOS client and to an AFP_Resource extended attribute, the user may enable the vfs_fruit module and configure to allow stream writes for AFP_Resource to an alternative storage location\&. See vfs_fruit documentation for further details\&.
+.sp
+Default:
+\fI\fIsmbd max xattr size\fR\fR\fI = \fR\fI65536\fR\fI \fR
 .RE
 
 smbd profiling level (G)
@@ -12868,10 +13153,6 @@ sys = @system
 .sp
 You can have as many mappings as you like in a username map file\&.
 .sp
-If your system supports the NIS NETGROUP option then the netgroup database is checked before the
-/etc/group
-database for matching groups\&.
-.sp
 You can map Windows usernames that have spaces in them by using double quotes around the name\&. For example:
 .sp
 .if n \{\
@@ -12963,7 +13244,7 @@ username map script (G)
 .RS 4
 This script is a mutually exclusive alternative to the
 \m[blue]\fBusername map\fR\m[]
-parameter\&. This parameter specifies and external program or script that must accept a single command line option (the username transmitted in the authentication request) and return a line on standard output (the name to which the account should mapped)\&. In this way, it is possible to store username map tables in an LDAP or NIS directory services\&.
+parameter\&. This parameter specifies and external program or script that must accept a single command line option (the username transmitted in the authentication request) and return a line on standard output (the name to which the account should mapped)\&. In this way, it is possible to store username map tables in an LDAP directory services\&.
 .sp
 Default:
 \fI\fIusername map script\fR\fR\fI = \fR\fI\fR\fI \fR
@@ -13123,7 +13404,7 @@ Default:
 valid users (S)
 .PP
 .RS 4
-This is a list of users that should be allowed to login to this service\&. Names starting with \*(Aq@\*(Aq, \*(Aq+\*(Aq and \*(Aq&\*(Aq are interpreted using the same rules as described in the
+This is a list of users that should be allowed to login to this service\&. Names starting with an \*(Aq@\*(Aq are interpreted using the same rules as described in the
 \fIinvalid users\fR
 parameter\&.
 .sp
@@ -13560,8 +13841,8 @@ This option only takes effect when the
 option is set to
 \fBdomain\fR
 or
-\fBads\fR\&. If it is set to yes (the default), winbindd periodically tries to scan for new trusted domains and adds them to a global list inside of winbindd\&. The list can be extracted with
-wbinfo \-\-trusted\-domains \-\-verbose\&. This matches the behaviour of Samba 4\&.7 and older\&.
+\fBads\fR\&. If it is set to yes, winbindd periodically tries to scan for new trusted domains and adds them to a global list inside of winbindd\&. The list can be extracted with
+wbinfo \-\-trusted\-domains \-\-verbose\&. Setting it to yes matches the behaviour of Samba 4\&.7 and older\&.
 .sp
 The construction of that global list is not reliable and often incomplete in complex trust setups\&. In most situations the list is not needed any more for winbindd to operate correctly\&. E\&.g\&. for plain file serving via SMB using a simple idmap setup with
 \fBautorid\fR,
@@ -13573,7 +13854,7 @@ If you have a setup that doesn\*(Aqt require the global list, you should set
 \m[blue]\fBwinbind scan trusted domains = no\fR\m[]\&.
 .sp
 Default:
-\fI\fIwinbind scan trusted domains\fR\fR\fI = \fR\fIyes\fR\fI \fR
+\fI\fIwinbind scan trusted domains\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 winbind sealed pipes (G)
@@ -13597,7 +13878,7 @@ and
 nss_winbind\&.so
 modules for UNIX services\&.
 .sp
-Please note that setting this parameter to + causes problems with group membership at least on glibc systems, as the character + is used as a special character for NIS in /etc/group\&.
+Please note that setting this parameter to + can cause problems with group membership at least on glibc systems, as the character + was used as a special character for NIS in /etc/group\&.
 .sp
 Default:
 \fI\fIwinbind separator\fR\fR\fI = \fR\fI\e\fR\fI \fR
@@ -13631,7 +13912,7 @@ winbindd (at least on a domain member) is never be able to have a complete pictu
 .sp
 With
 \m[blue]\fBwinbind scan trusted domains = no\fR\m[]
-winbindd don\*(Aqt even get an incomplete picture of the topology\&.
+winbindd doesn\*(Aqt even get a complete picture of the topology\&.
 .sp
 It is not really required to know about the trust topology\&. We can just rely on the [K]DCs of our primary domain (e\&.g\&. PRIMARY\&.A\&.EXAMPLE\&.COM) and use enterprise principals e\&.g\&. upnfromB@B\&.EXAMPLE\&.COM@PRIMARY\&.A\&.EXAMPLE\&.COM and follow the WRONG_REALM referrals in order to find the correct DC\&. The final principal might be userfromB@INTERNALB\&.EXAMPLE\&.PRIVATE\&.
 .sp
@@ -13640,10 +13921,10 @@ With
 winbindd enterprise principals will be used\&.
 .sp
 Default:
-\fI\fIwinbind use krb5 enterprise principals\fR\fR\fI = \fR\fIno\fR\fI \fR
+\fI\fIwinbind use krb5 enterprise principals\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .sp
 Example:
-\fI\fIwinbind use krb5 enterprise principals\fR\fR\fI = \fR\fIyes\fR\fI \fR
+\fI\fIwinbind use krb5 enterprise principals\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 winsdb:local_owner (G)
@@ -13969,7 +14250,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

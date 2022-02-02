@@ -34,7 +34,7 @@
 #include "lib/util/server_id.h"
 #include "smbd/globals.h"
 #include "system/filesys.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "dbwrap/dbwrap.h"
 #include "dbwrap/dbwrap_open.h"
 #include "../libcli/security/security.h"
@@ -358,12 +358,23 @@ static int traverse_connections(const struct connections_key *key,
 	}
 
 	if (smbXsrv_is_signed(crec->signing_flags)) {
-		if (crec->dialect >= SMB3_DIALECT_REVISION_302) {
-			signing = "AES-128-CMAC";
-		} else if (crec->dialect >= SMB2_DIALECT_REVISION_202) {
-			signing = "HMAC-SHA256";
-		} else {
+		switch (crec->signing) {
+		case SMB2_SIGNING_MD5_SMB1:
 			signing = "HMAC-MD5";
+			break;
+		case SMB2_SIGNING_HMAC_SHA256:
+			signing = "HMAC-SHA256";
+			break;
+		case SMB2_SIGNING_AES128_CMAC:
+			signing = "AES-128-CMAC";
+			break;
+		case SMB2_SIGNING_AES128_GMAC:
+			signing = "AES-128-GMAC";
+			break;
+		default:
+			signing = "???";
+			result = -1;
+			break;
 		}
 	}
 
@@ -450,6 +461,12 @@ static int traverse_sessionid(const char *key, struct sessionid *session,
 		case SMB2_ENCRYPTION_AES128_GCM:
 			encryption = "AES-128-GCM";
 			break;
+		case SMB2_ENCRYPTION_AES256_CCM:
+			encryption = "AES-256-CCM";
+			break;
+		case SMB2_ENCRYPTION_AES256_GCM:
+			encryption = "AES-256-GCM";
+			break;
 		default:
 			encryption = "???";
 			result = -1;
@@ -466,6 +483,12 @@ static int traverse_sessionid(const char *key, struct sessionid *session,
 		case SMB2_ENCRYPTION_AES128_GCM:
 			encryption = "partial(AES-128-GCM)";
 			break;
+		case SMB2_ENCRYPTION_AES256_CCM:
+			encryption = "partial(AES-256-CCM)";
+			break;
+		case SMB2_ENCRYPTION_AES256_GCM:
+			encryption = "partial(AES-256-GCM)";
+			break;
 		default:
 			encryption = "???";
 			result = -1;
@@ -474,20 +497,42 @@ static int traverse_sessionid(const char *key, struct sessionid *session,
 	}
 
 	if (smbXsrv_is_signed(session->signing_flags)) {
-		if (session->connection_dialect >= SMB3_DIALECT_REVISION_302) {
-			signing = "AES-128-CMAC";
-		} else if (session->connection_dialect >= SMB2_DIALECT_REVISION_202) {
-			signing = "HMAC-SHA256";
-		} else {
+		switch (session->signing) {
+		case SMB2_SIGNING_MD5_SMB1:
 			signing = "HMAC-MD5";
+			break;
+		case SMB2_SIGNING_HMAC_SHA256:
+			signing = "HMAC-SHA256";
+			break;
+		case SMB2_SIGNING_AES128_CMAC:
+			signing = "AES-128-CMAC";
+			break;
+		case SMB2_SIGNING_AES128_GMAC:
+			signing = "AES-128-GMAC";
+			break;
+		default:
+			signing = "???";
+			result = -1;
+			break;
 		}
 	} else if (smbXsrv_is_partially_signed(session->signing_flags)) {
-		if (session->connection_dialect >= SMB3_DIALECT_REVISION_302) {
-			signing = "partial(AES-128-CMAC)";
-		} else if (session->connection_dialect >= SMB2_DIALECT_REVISION_202) {
-			signing = "partial(HMAC-SHA256)";
-		} else {
+		switch (session->signing) {
+		case SMB2_SIGNING_MD5_SMB1:
 			signing = "partial(HMAC-MD5)";
+			break;
+		case SMB2_SIGNING_HMAC_SHA256:
+			signing = "partial(HMAC-SHA256)";
+			break;
+		case SMB2_SIGNING_AES128_CMAC:
+			signing = "partial(AES-128-CMAC)";
+			break;
+		case SMB2_SIGNING_AES128_GMAC:
+			signing = "partial(AES-128-GMAC)";
+			break;
+		default:
+			signing = "???";
+			result = -1;
+			break;
 		}
 	}
 
@@ -638,6 +683,7 @@ int main(int argc, const char *argv[])
 			.descrip    = "Try to resolve UIDs to usernames"
 		},
 		POPT_COMMON_SAMBA
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 	TALLOC_CTX *frame = talloc_stackframe();
@@ -646,27 +692,28 @@ int main(int argc, const char *argv[])
 	char *db_path;
 	bool ok;
 
-	sec_init();
 	smb_init_locale();
 
-	setup_logging(argv[0], DEBUG_STDERR);
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 	lp_set_cmdline("log level", "0");
 
-	if (getuid() != geteuid()) {
-		d_printf("smbstatus should not be run setuid\n");
-		ret = 1;
-		goto done;
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    POPT_CONTEXT_KEEP_FIRST);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
 	}
-
-	if (getuid() != 0) {
-		d_printf("smbstatus only works as root!\n");
-		ret = 1;
-		goto done;
-	}
-
-
-	pc = poptGetContext(NULL, argc, argv, long_options,
-			    POPT_CONTEXT_KEEP_FIRST);
 
 	while ((c = poptGetNextOpt(pc)) != -1) {
 		switch (c) {
@@ -707,7 +754,26 @@ int main(int argc, const char *argv[])
 		case OPT_RESOLVE_UIDS:
 			resolve_uids = true;
 			break;
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(c));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
+	}
+
+	sec_init();
+
+	if (getuid() != geteuid()) {
+		d_printf("smbstatus should not be run setuid\n");
+		ret = 1;
+		goto done;
+	}
+
+	if (getuid() != 0) {
+		d_printf("smbstatus only works as root!\n");
+		ret = 1;
+		goto done;
 	}
 
 	/* setup the flags based on the possible combincations */
@@ -726,13 +792,6 @@ int main(int argc, const char *argv[])
 	msg_ctx = cmdline_messaging_context(get_dyn_CONFIGFILE());
 	if (msg_ctx == NULL) {
 		fprintf(stderr, "Could not initialize messaging, not root?\n");
-		ret = -1;
-		goto done;
-	}
-
-	if (!lp_load_global(get_dyn_CONFIGFILE())) {
-		fprintf(stderr, "Can't load %s - run testparm to debug it\n",
-			get_dyn_CONFIGFILE());
 		ret = -1;
 		goto done;
 	}

@@ -44,10 +44,12 @@ class SimpleKerberosTests(RawKerberosTest):
     def test_simple(self):
         user_creds = self.get_user_creds()
         user = user_creds.get_username()
-        realm = user_creds.get_realm()
+        krbtgt_creds = self.get_krbtgt_creds(require_keys=False)
+        krbtgt_account = krbtgt_creds.get_username()
+        realm = krbtgt_creds.get_realm()
 
         cname = self.PrincipalName_create(name_type=1, names=[user])
-        sname = self.PrincipalName_create(name_type=2, names=["krbtgt", realm])
+        sname = self.PrincipalName_create(name_type=2, names=[krbtgt_account, realm])
 
         till = self.get_KerberosTime(offset=36000)
 
@@ -67,8 +69,6 @@ class SimpleKerberosTests(RawKerberosTest):
                                  nonce=0x7fffffff,
                                  etypes=etypes,
                                  addresses=None,
-                                 EncAuthorizationData=None,
-                                 EncAuthorizationData_key=None,
                                  additional_tickets=None)
         rep = self.send_recv_transaction(req)
         self.assertIsNotNone(rep)
@@ -111,8 +111,6 @@ class SimpleKerberosTests(RawKerberosTest):
                                  nonce=0x7fffffff,
                                  etypes=etypes,
                                  addresses=None,
-                                 EncAuthorizationData=None,
-                                 EncAuthorizationData_key=None,
                                  additional_tickets=None)
         rep = self.send_recv_transaction(req)
         self.assertIsNotNone(rep)
@@ -181,7 +179,7 @@ class SimpleKerberosTests(RawKerberosTest):
 
 
 if __name__ == "__main__":
-    global_asn1_print = True
-    global_hexdump = True
+    global_asn1_print = False
+    global_hexdump = False
     import unittest
     unittest.main()

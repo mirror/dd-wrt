@@ -222,6 +222,7 @@ int net_rpc_shell(struct net_context *c, int argc, const char **argv)
 	NTSTATUS status;
 	struct rpc_sh_ctx *ctx;
 	struct dom_sid_buf buf;
+	NET_API_STATUS net_api_status;
 
 	if (argc != 0 || c->display_usage) {
 		d_printf("%s\nnet rpc shell\n", _("Usage:"));
@@ -231,10 +232,10 @@ int net_rpc_shell(struct net_context *c, int argc, const char **argv)
 	if (libnetapi_net_init(&c->netapi_ctx) != 0) {
 		return -1;
 	}
-	libnetapi_set_username(c->netapi_ctx, c->opt_user_name);
-	libnetapi_set_password(c->netapi_ctx, c->opt_password);
-	if (c->opt_kerberos) {
-		libnetapi_set_use_kerberos(c->netapi_ctx);
+
+	net_api_status = libnetapi_set_creds(c->netapi_ctx, c->creds);
+	if (net_api_status != 0) {
+		return -1;
 	}
 
 	ctx = talloc(NULL, struct rpc_sh_ctx);

@@ -28,6 +28,7 @@
 #include <tevent.h>
 #include "lib/async_req/async_sock.h"
 #include "lib/util/iov_buf.h"
+#include "lib/util/util_net.h"
 
 /* Note: lib/util/ is currently GPL */
 #include "lib/util/tevent_unix.h"
@@ -651,8 +652,7 @@ static void wait_for_read_done(struct tevent_context *ev,
 		private_data, struct tevent_req);
 	struct wait_for_read_state *state =
 	    tevent_req_data(req, struct wait_for_read_state);
-	ssize_t nread;
-	char c;
+	int ret, available;
 
 	if ((flags & TEVENT_FD_READ) == 0) {
 		return;
@@ -663,26 +663,20 @@ static void wait_for_read_done(struct tevent_context *ev,
 		return;
 	}
 
-	nread = recv(state->fd, &c, 1, MSG_PEEK);
+	ret = ioctl(state->fd, FIONREAD, &available);
 
-	if (nread == 0) {
-		tevent_req_error(req, EPIPE);
-		return;
-	}
-
-	if ((nread == -1) && (errno == EINTR)) {
+	if ((ret == -1) && (errno == EINTR)) {
 		/* come back later */
 		return;
 	}
 
-	if ((nread == -1) && (errno == ENOTSOCK)) {
-		/* Ignore this specific error on pipes */
-		tevent_req_done(req);
+	if (ret == -1) {
+		tevent_req_error(req, errno);
 		return;
 	}
 
-	if (nread == -1) {
-		tevent_req_error(req, errno);
+	if (available == 0) {
+		tevent_req_error(req, EPIPE);
 		return;
 	}
 
@@ -704,8 +698,7 @@ bool wait_for_read_recv(struct tevent_req *req, int *perr)
 struct accept_state {
 	struct tevent_fd *fde;
 	int listen_sock;
-	socklen_t addrlen;
-	struct sockaddr_storage addr;
+	struct samba_sockaddr addr;
 	int sock;
 };
 
@@ -747,10 +740,12 @@ static void accept_handler(struct tevent_context *ev, struct tevent_fd *fde,
 		tevent_req_error(req, EIO);
 		return;
 	}
-	state->addrlen = sizeof(state->addr);
 
-	ret = accept(state->listen_sock, (struct sockaddr *)&state->addr,
-		     &state->addrlen);
+	state->addr.sa_socklen = sizeof(state->addr.u);
+
+	ret = accept(state->listen_sock,
+		     &state->addr.u.sa,
+		     &state->addr.sa_socklen);
 	if ((ret == -1) && (errno == EINTR)) {
 		/* retry */
 		return;
@@ -764,23 +759,28 @@ static void accept_handler(struct tevent_context *ev, struct tevent_fd *fde,
 	tevent_req_done(req);
 }
 
-int accept_recv(struct tevent_req *req, struct sockaddr_storage *paddr,
-		socklen_t *paddrlen, int *perr)
+int accept_recv(struct tevent_req *req,
+		int *listen_sock,
+		struct samba_sockaddr *paddr,
+		int *perr)
 {
 	struct accept_state *state = tevent_req_data(req, struct accept_state);
+	int sock = state->sock;
 	int err;
 
 	if (tevent_req_is_unix_error(req, &err)) {
 		if (perr != NULL) {
 			*perr = err;
 		}
+		tevent_req_received(req);
 		return -1;
 	}
+	if (listen_sock != NULL) {
+		*listen_sock = state->listen_sock;
+	}
 	if (paddr != NULL) {
-		memcpy(paddr, &state->addr, state->addrlen);
+		*paddr = state->addr;
 	}
-	if (paddrlen != NULL) {
-		*paddrlen = state->addrlen;
-	}
-	return state->sock;
+	tevent_req_received(req);
+	return sock;
 }

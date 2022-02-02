@@ -31,6 +31,7 @@ struct GUID;
 struct iovec;
 struct smb2_create_blobs;
 struct smb_create_returns;
+struct smb311_capabilities;
 
 struct smbXcli_conn *smbXcli_conn_create(TALLOC_CTX *mem_ctx,
 					 int fd,
@@ -38,7 +39,8 @@ struct smbXcli_conn *smbXcli_conn_create(TALLOC_CTX *mem_ctx,
 					 enum smb_signing_setting signing_state,
 					 uint32_t smb1_capabilities,
 					 struct GUID *client_guid,
-					 uint32_t smb2_capabilities);
+					 uint32_t smb2_capabilities,
+					 const struct smb311_capabilities *smb3_capabilities);
 
 bool smbXcli_conn_is_connected(struct smbXcli_conn *conn);
 void smbXcli_conn_disconnect(struct smbXcli_conn *conn, NTSTATUS status);
@@ -373,6 +375,8 @@ NTSTATUS smb1cli_readx_recv(struct tevent_req *req,
 bool smb2cli_conn_req_possible(struct smbXcli_conn *conn, uint32_t *max_dyn_len);
 uint32_t smb2cli_conn_server_capabilities(struct smbXcli_conn *conn);
 uint16_t smb2cli_conn_server_security_mode(struct smbXcli_conn *conn);
+uint16_t smb2cli_conn_server_signing_algo(struct smbXcli_conn *conn);
+uint16_t smb2cli_conn_server_encryption_algo(struct smbXcli_conn *conn);
 uint32_t smb2cli_conn_max_trans_size(struct smbXcli_conn *conn);
 uint32_t smb2cli_conn_max_read_size(struct smbXcli_conn *conn);
 uint32_t smb2cli_conn_max_write_size(struct smbXcli_conn *conn);
@@ -390,6 +394,15 @@ void smb2cli_conn_set_cc_max_chunks(struct smbXcli_conn *conn,
 				    uint32_t max_chunks);
 void smb2cli_conn_set_mid(struct smbXcli_conn *conn, uint64_t mid);
 uint64_t smb2cli_conn_get_mid(struct smbXcli_conn *conn);
+
+NTSTATUS smb2cli_parse_dyn_buffer(uint32_t dyn_offset,
+				  const DATA_BLOB dyn_buffer,
+				  uint32_t min_offset,
+				  uint32_t buffer_offset,
+				  uint32_t buffer_length,
+				  uint32_t max_length,
+				  uint32_t *next_offset,
+				  DATA_BLOB *buffer);
 
 struct tevent_req *smb2cli_req_create(TALLOC_CTX *mem_ctx,
 				      struct tevent_context *ev,
@@ -580,6 +593,26 @@ NTSTATUS smb2cli_logoff(struct smbXcli_conn *conn,
 			uint32_t timeout_msec,
 			struct smbXcli_session *session);
 
+/* smb2cli_raw_tcon* should only be used in tests! */
+struct tevent_req *smb2cli_raw_tcon_send(TALLOC_CTX *mem_ctx,
+					 struct tevent_context *ev,
+					 struct smbXcli_conn *conn,
+					 uint32_t additional_flags,
+					 uint32_t clear_flags,
+					 uint32_t timeout_msec,
+					 struct smbXcli_session *session,
+					 struct smbXcli_tcon *tcon,
+					 uint16_t tcon_flags,
+					 const char *unc);
+NTSTATUS smb2cli_raw_tcon_recv(struct tevent_req *req);
+NTSTATUS smb2cli_raw_tcon(struct smbXcli_conn *conn,
+			  uint32_t additional_flags,
+			  uint32_t clear_flags,
+			  uint32_t timeout_msec,
+			  struct smbXcli_session *session,
+			  struct smbXcli_tcon *tcon,
+			  uint16_t tcon_flags,
+			  const char *unc);
 struct tevent_req *smb2cli_tcon_send(TALLOC_CTX *mem_ctx,
 				     struct tevent_context *ev,
 				     struct smbXcli_conn *conn,

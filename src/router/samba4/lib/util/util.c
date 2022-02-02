@@ -881,49 +881,28 @@ _PUBLIC_ size_t strhex_to_str(char *p, size_t p_len, const char *strhex, size_t 
 {
 	size_t i = 0;
 	size_t num_chars = 0;
-	uint8_t   lonybble, hinybble;
-	const char     *hexchars = "0123456789ABCDEF";
-	char           *p1 = NULL, *p2 = NULL;
 
 	/* skip leading 0x prefix */
 	if (strncasecmp(strhex, "0x", 2) == 0) {
 		i += 2; /* skip two chars */
 	}
 
-	for (; i+1 < strhex_len && strhex[i] != 0 && strhex[i+1] != 0; i++) {
-		p1 = strchr(hexchars, toupper((unsigned char)strhex[i]));
-		if (p1 == NULL) {
+	while ((i < strhex_len) && (num_chars < p_len)) {
+		bool ok = hex_byte(&strhex[i], (uint8_t *)&p[num_chars]);
+		if (!ok) {
 			break;
 		}
-
-		i++; /* next hex digit */
-
-		p2 = strchr(hexchars, toupper((unsigned char)strhex[i]));
-		if (p2 == NULL) {
-			break;
-		}
-
-		/* get the two nybbles */
-		hinybble = PTR_DIFF(p1, hexchars);
-		lonybble = PTR_DIFF(p2, hexchars);
-
-		if (num_chars >= p_len) {
-			break;
-		}
-
-		p[num_chars] = (hinybble << 4) | lonybble;
-		num_chars++;
-
-		p1 = NULL;
-		p2 = NULL;
+		i += 2;
+		num_chars += 1;
 	}
+
 	return num_chars;
 }
 
 /**
  * Parse a hex string and return a data blob.
  */
-_PUBLIC_ _PURE_ DATA_BLOB strhex_to_data_blob(TALLOC_CTX *mem_ctx, const char *strhex) 
+_PUBLIC_ DATA_BLOB strhex_to_data_blob(TALLOC_CTX *mem_ctx, const char *strhex)
 {
 	DATA_BLOB ret_blob = data_blob_talloc(mem_ctx, NULL, strlen(strhex)/2+1);
 
@@ -939,7 +918,7 @@ _PUBLIC_ _PURE_ DATA_BLOB strhex_to_data_blob(TALLOC_CTX *mem_ctx, const char *s
  * is generated from dump_data_cb() elsewhere in this file
  * 
  */
-_PUBLIC_ _PURE_ DATA_BLOB hexdump_to_data_blob(TALLOC_CTX *mem_ctx, const char *hexdump, size_t hexdump_len)
+_PUBLIC_ DATA_BLOB hexdump_to_data_blob(TALLOC_CTX *mem_ctx, const char *hexdump, size_t hexdump_len)
 {
 	DATA_BLOB ret_blob = { 0 };
 	size_t i = 0;
@@ -1189,21 +1168,56 @@ void anonymous_shared_free(void *ptr)
 */
 void samba_start_debugger(void)
 {
-	char *cmd = NULL;
+	int ready_pipe[2];
+	char c;
+	int ret;
+	pid_t pid;
+
+	ret = pipe(ready_pipe);
+	SMB_ASSERT(ret == 0);
+
+	pid = fork();
+	SMB_ASSERT(pid >= 0);
+
+	if (pid) {
+		c = 0;
+
+		ret = close(ready_pipe[0]);
+		SMB_ASSERT(ret == 0);
 #if defined(HAVE_PRCTL) && defined(PR_SET_PTRACER)
-	/*
-	 * Make sure all children can attach a debugger.
-	 */
-	prctl(PR_SET_PTRACER, getpid(), 0, 0, 0);
+		/*
+		 * Make sure the child process can attach a debugger.
+		 *
+		 * We don't check the error code as the debugger
+		 * will tell us if it can't attach.
+		 */
+		(void)prctl(PR_SET_PTRACER, pid, 0, 0, 0);
 #endif
-	if (asprintf(&cmd, "xterm -e \"gdb --pid %u\"&", getpid()) == -1) {
-		return;
+		ret = write(ready_pipe[1], &c, 1);
+		SMB_ASSERT(ret == 1);
+
+		ret = close(ready_pipe[1]);
+		SMB_ASSERT(ret == 0);
+
+		/* Wait for gdb to attach. */
+		sleep(2);
+	} else {
+		char *cmd = NULL;
+
+		ret = close(ready_pipe[1]);
+		SMB_ASSERT(ret == 0);
+
+		ret = read(ready_pipe[0], &c, 1);
+		SMB_ASSERT(ret == 1);
+
+		ret = close(ready_pipe[0]);
+		SMB_ASSERT(ret == 0);
+
+		ret = asprintf(&cmd, "gdb --pid %u", getppid());
+		SMB_ASSERT(ret != -1);
+
+		execlp("xterm", "xterm", "-e", cmd, (char *) NULL);
+		smb_panic("execlp() failed");
 	}
-	if (system(cmd) == -1) {
-		free(cmd);
-		return;
-	}
-	free(cmd);
-	sleep(2);
 }
 #endif

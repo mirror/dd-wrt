@@ -156,7 +156,7 @@ dbcheck_full_clean_well_known_acls() {
 
 upgradeprovision() {
 	# bring the really old Samba schema in line with a more recent 2008R2 schema
-	$PYTHON $BINDIR/samba_upgradeprovision -s "$PREFIX_ABS/${RELEASE}_upgrade/etc/smb.conf" --debugchange
+	$PYTHON $BINDIR/samba_upgradeprovision --configfile="$PREFIX_ABS/${RELEASE}_upgrade/etc/smb.conf" --debugchange
 
 	# on top of this, also apply 2008R2 changes we accidentally missed in the past
 	$PYTHON $BINDIR/samba-tool domain schemaupgrade -H tdb://$PREFIX_ABS/${RELEASE}_upgrade/private/sam.ldb --ldf-file=samba-4.7-missing-for-schema45.ldif,fix-forest-rev.ldf
@@ -169,11 +169,11 @@ upgradeprovision_full() {
 	# add missing domain prep for 2008R2
 	$PYTHON $BINDIR/samba-tool domain functionalprep -H tdb://$PREFIX_ABS/${RELEASE}_upgrade_full/private/sam.ldb --domain --function-level 2008_R2
 
-	$PYTHON $BINDIR/samba_upgradeprovision -s "$PREFIX_ABS/${RELEASE}_upgrade_full/etc/smb.conf" --full --debugchange
+	$PYTHON $BINDIR/samba_upgradeprovision --configfile="$PREFIX_ABS/${RELEASE}_upgrade_full/etc/smb.conf" --full --debugchange
 }
 
 samba_upgradedns() {
-        $PYTHON $BINDIR/samba_upgradedns --dns-backend=SAMBA_INTERNAL -s "$PREFIX_ABS/${RELEASE}_upgrade_full/etc/smb.conf"
+        $PYTHON $BINDIR/samba_upgradedns --dns-backend=SAMBA_INTERNAL --configfile="$PREFIX_ABS/${RELEASE}_upgrade_full/etc/smb.conf"
 }
 
 referenceprovision() {
@@ -182,12 +182,12 @@ referenceprovision() {
 
 ldapcmp() {
     if [ x$RELEASE != x"alpha13" ]; then
-         $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX_ABS/${RELEASE}_upgrade_reference/private/sam.ldb tdb://$PREFIX_ABS/${RELEASE}_upgrade/private/sam.ldb --two --skip-missing-dn --filter=dnsRecord,displayName,msDS-SupportedEncryptionTypes
+         $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX_ABS/${RELEASE}_upgrade_reference/private/sam.ldb tdb://$PREFIX_ABS/${RELEASE}_upgrade/private/sam.ldb --two --skip-missing-dn --filter=dnsRecord,displayName,msDS-SupportedEncryptionTypes,servicePrincipalName
     fi
 }
 
 ldapcmp_full() {
-        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX_ABS/${RELEASE}_upgrade_reference/private/sam.ldb tdb://$PREFIX_ABS/${RELEASE}_upgrade_full/private/sam.ldb --two --filter=dNSProperty,dnsRecord,cn,displayName,versionNumber,systemFlags,msDS-HasInstantiatedNCs --skip-missing-dn
+        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX_ABS/${RELEASE}_upgrade_reference/private/sam.ldb tdb://$PREFIX_ABS/${RELEASE}_upgrade_full/private/sam.ldb --two --filter=dNSProperty,dnsRecord,cn,displayName,versionNumber,systemFlags,msDS-HasInstantiatedNCs,servicePrincipalName --skip-missing-dn
 }
 
 ldapcmp_sd() {

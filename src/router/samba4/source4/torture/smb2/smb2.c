@@ -157,6 +157,7 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 	torture_suite_add_suite(suite, torture_smb2_twrp_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_fileid_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_acls_init(suite));
+	torture_suite_add_suite(suite, torture_smb2_acls_non_canonical_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_notify_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_notify_inotify_init(suite));
 	torture_suite_add_suite(suite,
@@ -212,6 +213,7 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 	torture_suite_add_1smb2_test(suite, "secleak", torture_smb2_sec_leak);
 	torture_suite_add_1smb2_test(suite, "session-id", run_sessidtest);
 	torture_suite_add_suite(suite, torture_smb2_deny_init(suite));
+	torture_suite_add_suite(suite, torture_smb2_fileid_unique_init(suite));
 
 	suite->description = talloc_strdup(suite, "SMB2-specific tests");
 

@@ -20,6 +20,7 @@
 #include "includes.h"
 #include "printing.h"
 #include "smbd/proto.h"
+#include "source3/lib/substitute.h"
 
 extern userdom_struct current_user_info;
 
@@ -108,7 +109,7 @@ static int generic_job_delete( const char *sharename, const char *lprm_command, 
 	fstring jobstr;
 
 	/* need to delete the spooled entry */
-	slprintf(jobstr, sizeof(jobstr)-1, "%d", pjob->sysjob);
+	fstr_sprintf(jobstr, "%d", pjob->sysjob);
 	return print_run_command( -1, sharename, False, lprm_command, NULL,
 		   "%j", jobstr,
 		   "%T", http_timestring(talloc_tos(), pjob->starttime),
@@ -125,7 +126,7 @@ static int generic_job_pause(int snum, struct printjob *pjob)
 	fstring jobstr;
 	
 	/* need to pause the spooled entry */
-	slprintf(jobstr, sizeof(jobstr)-1, "%d", pjob->sysjob);
+	fstr_sprintf(jobstr, "%d", pjob->sysjob);
 	return print_run_command(snum, lp_printername(talloc_tos(), lp_sub, snum), True,
 				 lp_lppause_command(snum), NULL,
 				 "%j", jobstr,
@@ -142,7 +143,7 @@ static int generic_job_resume(int snum, struct printjob *pjob)
 	fstring jobstr;
 
 	/* need to pause the spooled entry */
-	slprintf(jobstr, sizeof(jobstr)-1, "%d", pjob->sysjob);
+	fstr_sprintf(jobstr, "%d", pjob->sysjob);
 	return print_run_command(snum, lp_printername(talloc_tos(), lp_sub, snum), True,
 				 lp_lpresume_command(snum), NULL,
 				 "%j", jobstr,
@@ -164,7 +165,7 @@ static int generic_queue_get(const char *printer_name,
 	print_queue_struct *queue = NULL;
 
 	/* never do substitution when running the 'lpq command' since we can't
-	   get it rigt when using the background update daemon.  Make the caller
+	   get it right when using the background update daemon.  Make the caller
 	   do it before passing off the command string to us here. */
 
 	print_run_command(-1, printer_name, False, lpq_command, &fd, NULL);
@@ -263,8 +264,8 @@ static int generic_job_submit(int snum, struct printjob *pjob,
 		ret = -1;
 		goto out;
 	}
-	slprintf(job_page_count, sizeof(job_page_count)-1, "%d", pjob->page_count);
-	slprintf(job_size, sizeof(job_size)-1, "%lu", (unsigned long)pjob->size);
+	fstr_sprintf(job_page_count, "%d", pjob->page_count);
+	fstr_sprintf(job_size, "%zu", pjob->size);
 
 	/* send it to the system spooler */
 	ret = print_run_command(snum, lp_printername(talloc_tos(), lp_sub, snum), True,

@@ -65,7 +65,7 @@ static int usr_info_cmp(const struct usrinfo *usr1, const struct usrinfo *usr2)
  Get a list of the names of all users logged into this machine
  ********************************************************************/
 
-static char **get_logged_on_userlist(TALLOC_CTX *mem_ctx)
+static int get_logged_on_userlist(TALLOC_CTX *mem_ctx, char ***pusers)
 {
 	char **users;
 	int i, num_users = 0;
@@ -94,7 +94,7 @@ static char **get_logged_on_userlist(TALLOC_CTX *mem_ctx)
 		if (tmp == NULL) {
 			TALLOC_FREE(tmp);
 			endutxent();
-			return NULL;
+			return ENOMEM;
 		}
 		usr_infos = tmp;
 		usr_infos[num_users].name = talloc_strdup(usr_infos,
@@ -102,7 +102,7 @@ static char **get_logged_on_userlist(TALLOC_CTX *mem_ctx)
 		if (usr_infos[num_users].name == NULL) {
 			TALLOC_FREE(usr_infos);
 			endutxent();
-			return NULL;
+			return ENOMEM;
 		}
 		usr_infos[num_users].login_time.tv_sec = u->ut_tv.tv_sec;
 		usr_infos[num_users].login_time.tv_usec = u->ut_tv.tv_usec;
@@ -120,15 +120,16 @@ static char **get_logged_on_userlist(TALLOC_CTX *mem_ctx)
 	}
 	TALLOC_FREE(usr_infos);
 	endutxent();
-	errno = 0;
-	return users;
+	*pusers = users;
+	return 0;
 }
 
 #else
 
-static char **get_logged_on_userlist(TALLOC_CTX *mem_ctx)
+static int get_logged_on_userlist(TALLOC_CTX *mem_ctx, char ***pusers)
 {
-	return NULL;
+	*pusers = NULL;
+	return 0;
 }
 
 #endif
@@ -159,7 +160,7 @@ static int dom_user_cmp(const struct dom_usr *usr1, const struct dom_usr *usr2)
  in this list.
  ********************************************************************/
 
-static struct dom_usr *get_domain_userlist(TALLOC_CTX *mem_ctx)
+static int get_domain_userlist(TALLOC_CTX *mem_ctx, struct dom_usr **pusers)
 {
 	struct sessionid *session_list = NULL;
 	char *machine_name, *p, *nm;
@@ -174,14 +175,14 @@ static struct dom_usr *get_domain_userlist(TALLOC_CTX *mem_ctx)
 
 	num_sessions = list_sessions(mem_ctx, &session_list);
 	if (num_sessions == 0) {
-		errno = 0;
-		return NULL;
+		*pusers = NULL;
+		return 0;
 	}
 
 	users = talloc_array(mem_ctx, struct dom_usr, num_sessions);
 	if (users == NULL) {
 		TALLOC_FREE(session_list);
-		return NULL;
+		return ENOMEM;
 	}
 
 	for (i=num_users=0; i<num_sessions; i++) {
@@ -231,17 +232,24 @@ static struct dom_usr *get_domain_userlist(TALLOC_CTX *mem_ctx)
 	}
 	TALLOC_FREE(session_list);
 
+	if (num_users == 0) {
+		TALLOC_FREE(users);
+		*pusers = NULL;
+		return 0;
+	}
+
 	tmp = talloc_realloc(mem_ctx, users, struct dom_usr, num_users);
 	if (tmp == NULL) {
-		return NULL;
+		TALLOC_FREE(users);
+		return ENOMEM;
 	}
 	users = tmp;
 
 	/* Sort the user list by time, oldest first */
 	TYPESAFE_QSORT(users, num_users, dom_user_cmp);
 
-	errno = 0;
-	return users;
+	*pusers = users;
+	return 0;
 }
 
 /*******************************************************************
@@ -316,6 +324,7 @@ static struct wkssvc_NetWkstaInfo102 *create_wks_info_102(TALLOC_CTX *mem_ctx)
 {
 	struct wkssvc_NetWkstaInfo102 *info102;
 	char **users;
+	int ret;
 
 	info102 = talloc(mem_ctx, struct wkssvc_NetWkstaInfo102);
 	if (info102 == NULL) {
@@ -332,7 +341,12 @@ static struct wkssvc_NetWkstaInfo102 *create_wks_info_102(TALLOC_CTX *mem_ctx)
 		info102, "%s", lp_workgroup());
 	info102->lan_root = "";
 
-	users = get_logged_on_userlist(talloc_tos());
+	ret = get_logged_on_userlist(talloc_tos(), &users);
+	if (ret != 0) {
+		TALLOC_FREE(info102);
+		errno = ret;
+		return NULL;
+	}
 	info102->logged_on_users = talloc_array_length(users);
 
 	TALLOC_FREE(users);
@@ -428,18 +442,20 @@ static struct wkssvc_NetWkstaEnumUsersCtr0 *create_enum_users0(
 {
 	struct wkssvc_NetWkstaEnumUsersCtr0 *ctr0;
 	char **users;
-	int i, num_users;
+	int i, num_users, ret;
 
 	ctr0 = talloc(mem_ctx, struct wkssvc_NetWkstaEnumUsersCtr0);
 	if (ctr0 == NULL) {
 		return NULL;
 	}
 
-	users = get_logged_on_userlist(talloc_tos());
-	if (users == NULL && errno != 0) {
-		DEBUG(1,("get_logged_on_userlist error %d: %s\n",
-			errno, strerror(errno)));
+	ret = get_logged_on_userlist(talloc_tos(), &users);
+	if (ret != 0) {
+		DBG_WARNING("get_logged_on_userlist error %d: %s\n",
+			    ret,
+			    strerror(ret));
 		TALLOC_FREE(ctr0);
+		errno = ret;
 		return NULL;
 	}
 
@@ -478,26 +494,29 @@ static struct wkssvc_NetWkstaEnumUsersCtr1 *create_enum_users1(
 	struct dom_usr *dom_users;
 	const char *pwd_server;
 	char *pwd_tmp;
-	int i, j, num_users, num_dom_users;
+	int i, j, num_users, num_dom_users, ret;
 
 	ctr1 = talloc(mem_ctx, struct wkssvc_NetWkstaEnumUsersCtr1);
 	if (ctr1 == NULL) {
 		return NULL;
 	}
 
-	users = get_logged_on_userlist(talloc_tos());
-	if (users == NULL && errno != 0) {
-		DEBUG(1,("get_logged_on_userlist error %d: %s\n",
-			errno, strerror(errno)));
+	ret = get_logged_on_userlist(talloc_tos(), &users);
+	if (ret != 0) {
+		DBG_WARNING("get_logged_on_userlist error %d: %s\n",
+			    ret,
+			    strerror(ret));
 		TALLOC_FREE(ctr1);
+		errno = ret;
 		return NULL;
 	}
 	num_users = talloc_array_length(users);
 
-	dom_users = get_domain_userlist(talloc_tos());
-	if (dom_users == NULL && errno != 0) {
+	ret = get_domain_userlist(talloc_tos(), &dom_users);
+	if (ret != 0) {
 		TALLOC_FREE(ctr1);
 		TALLOC_FREE(users);
+		errno = ret;
 		return NULL;
 	}
 	num_dom_users = talloc_array_length(dom_users);
@@ -508,6 +527,7 @@ static struct wkssvc_NetWkstaEnumUsersCtr1 *create_enum_users1(
 		TALLOC_FREE(ctr1);
 		TALLOC_FREE(users);
 		TALLOC_FREE(dom_users);
+		errno = ENOMEM;
 		return NULL;
 	}
 

@@ -33,31 +33,16 @@
 
 #include "become_daemon.h"
 
+static bool sd_notifications = true;
+
 /*******************************************************************
- Close the low 3 fd's and open dev/null in their place.
+ Enable or disable daemon status systemd notifications
 ********************************************************************/
-
-void close_low_fds(bool stdin_too, bool stdout_too, bool stderr_too)
+void daemon_sd_notifications(bool enable)
 {
-
-	if (stdin_too) {
-		int ret = close_low_fd(0);
-		if (ret != 0) {
-			DBG_ERR("close_low_fd(0) failed: %s\n", strerror(ret));
-		}
-	}
-	if (stdout_too) {
-		int ret = close_low_fd(1);
-		if (ret != 0) {
-			DBG_ERR("close_low_fd(1) failed: %s\n", strerror(ret));
-		}
-	}
-	if (stderr_too) {
-		int ret = close_low_fd(2);
-		if (ret != 0) {
-			DBG_ERR("close_low_fd(2) failed: %s\n", strerror(ret));
-		}
-	}
+	sd_notifications = enable;
+	DBG_DEBUG("Daemon status systemd notifications %s\n",
+		  sd_notifications ? "enabled" : "disabled");
 }
 
 /****************************************************************************
@@ -76,7 +61,7 @@ void become_daemon(bool do_fork, bool no_session, bool log_stdout)
 			_exit(0);
 		}
 #if defined(HAVE_LIBSYSTEMD_DAEMON) || defined(HAVE_LIBSYSTEMD)
-	} else {
+	} else if (sd_notifications) {
 		sd_notify(0, "STATUS=Starting process...");
 #endif
 	}
@@ -103,20 +88,33 @@ void become_daemon(bool do_fork, bool no_session, bool log_stdout)
 	/* stdin must be open if we do not fork, for monitoring for
 	 * close.  stdout must be open if we are logging there, and we
 	 * never close stderr (but debug might dup it onto a log file) */
-	close_low_fds(do_fork, !log_stdout, false);
+	if (do_fork) {
+		int ret = close_low_fd(0);
+		if (ret != 0) {
+			exit_daemon("close_low_fd(0) failed: %s\n", errno);
+		}
+	}
+	if (!log_stdout) {
+		int ret = close_low_fd(1);
+		if (ret != 0) {
+			exit_daemon("close_low_fd(1) failed: %s\n", errno);
+		}
+	}
 }
 
 void exit_daemon(const char *msg, int error)
 {
-#if defined(HAVE_LIBSYSTEMD_DAEMON) || defined(HAVE_LIBSYSTEMD)
 	if (msg == NULL) {
 		msg = strerror(error);
 	}
 
-	sd_notifyf(0, "STATUS=daemon failed to start: %s\n"
+#if defined(HAVE_LIBSYSTEMD_DAEMON) || defined(HAVE_LIBSYSTEMD)
+	if (sd_notifications) {
+		sd_notifyf(0, "STATUS=daemon failed to start: %s\n"
 				  "ERRNO=%i",
 				  msg,
 				  error);
+	}
 #endif
 	DBG_ERR("daemon failed to start: %s, error code %d\n",
 		msg, error);
@@ -129,10 +127,13 @@ void daemon_ready(const char *daemon)
 		daemon = "Samba";
 	}
 #if defined(HAVE_LIBSYSTEMD_DAEMON) || defined(HAVE_LIBSYSTEMD)
-	sd_notifyf(0, "READY=1\nSTATUS=%s: ready to serve connections...",
-		   daemon);
+	if (sd_notifications) {
+		sd_notifyf(0,
+			   "READY=1\nSTATUS=%s: ready to serve connections...",
+			   daemon);
+	}
 #endif
-	DBG_ERR("daemon '%s' finished starting up and ready to serve "
+	DBG_INFO("daemon '%s' finished starting up and ready to serve "
 		"connections\n", daemon);
 }
 
@@ -142,7 +143,9 @@ void daemon_status(const char *daemon, const char *msg)
 		daemon = "Samba";
 	}
 #if defined(HAVE_LIBSYSTEMD_DAEMON) || defined(HAVE_LIBSYSTEMD)
-	sd_notifyf(0, "STATUS=%s: %s", daemon, msg);
+	if (sd_notifications) {
+		sd_notifyf(0, "STATUS=%s: %s", daemon, msg);
+	}
 #endif
 	DBG_ERR("daemon '%s' : %s\n", daemon, msg);
 }

@@ -30,6 +30,9 @@
 #include "rpc_client/cli_pipe.h"
 #include "secrets.h"
 #include "libsmb/dsgetdcname.h"
+#include "../librpc/gen_ndr/ndr_ODJ.h"
+#include "lib/util/base64.h"
+#include "libnet/libnet_join_offline.h"
 
 /****************************************************************
 ****************************************************************/
@@ -375,6 +378,7 @@ WERROR NetGetJoinInformation_l(struct libnetapi_ctx *ctx,
 		case ROLE_DOMAIN_MEMBER:
 		case ROLE_DOMAIN_PDC:
 		case ROLE_DOMAIN_BDC:
+		case ROLE_IPA_DC:
 			*r->out.name_type = NetSetupDomainName;
 			break;
 		case ROLE_STANDALONE:
@@ -428,15 +432,25 @@ WERROR NetGetJoinableOUs_l(struct libnetapi_ctx *ctx,
 	SAFE_FREE(ads->auth.user_name);
 	if (r->in.account) {
 		ads->auth.user_name = SMB_STRDUP(r->in.account);
-	} else if (ctx->username) {
-		ads->auth.user_name = SMB_STRDUP(ctx->username);
+	} else {
+		const char *username = NULL;
+
+		libnetapi_get_username(ctx, &username);
+		if (username != NULL) {
+			ads->auth.user_name = SMB_STRDUP(username);
+		}
 	}
 
 	SAFE_FREE(ads->auth.password);
 	if (r->in.password) {
 		ads->auth.password = SMB_STRDUP(r->in.password);
-	} else if (ctx->password) {
-		ads->auth.password = SMB_STRDUP(ctx->password);
+	} else {
+		const char *password = NULL;
+
+		libnetapi_get_password(ctx, &password);
+		if (password != NULL) {
+			ads->auth.password = SMB_STRDUP(password);
+		}
 	}
 
 	ads_status = ads_connect_user_creds(ads);
@@ -578,4 +592,328 @@ WERROR NetRenameMachineInDomain_l(struct libnetapi_ctx *ctx,
 				  struct NetRenameMachineInDomain *r)
 {
 	LIBNETAPI_REDIRECT_TO_LOCALHOST(ctx, r, NetRenameMachineInDomain);
+}
+
+/****************************************************************
+****************************************************************/
+
+WERROR NetProvisionComputerAccount_r(struct libnetapi_ctx *ctx,
+				     struct NetProvisionComputerAccount *r)
+{
+	return NetProvisionComputerAccount_l(ctx, r);
+}
+
+/****************************************************************
+****************************************************************/
+
+static WERROR NetProvisionComputerAccount_backend(struct libnetapi_ctx *ctx,
+						  struct NetProvisionComputerAccount *r,
+						  TALLOC_CTX *mem_ctx,
+						  struct ODJ_PROVISION_DATA **p)
+{
+	WERROR werr;
+	struct libnet_JoinCtx *j = NULL;
+	int use_kerberos = 0;
+	const char *username = NULL;
+
+	werr = libnet_init_JoinCtx(mem_ctx, &j);
+	if (!W_ERROR_IS_OK(werr)) {
+		return werr;
+	}
+
+	j->in.domain_name = talloc_strdup(j, r->in.domain);
+	if (j->in.domain_name == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	talloc_free(discard_const_p(char *, j->in.machine_name));
+	j->in.machine_name = talloc_strdup(j, r->in.machine_name);
+	if (j->in.machine_name == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	if (r->in.dcname) {
+		j->in.dc_name = talloc_strdup(j, r->in.dcname);
+		if (j->in.dc_name == NULL) {
+			talloc_free(j);
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+	}
+
+	if (r->in.machine_account_ou) {
+		j->in.account_ou = talloc_strdup(j, r->in.machine_account_ou);
+		if (j->in.account_ou == NULL) {
+			talloc_free(j);
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+	}
+
+	libnetapi_get_username(ctx, &username);
+	if (username == NULL) {
+		talloc_free(j);
+		return WERR_NERR_BADUSERNAME;
+	}
+
+	j->in.admin_account = talloc_strdup(j, username);
+	if (j->in.admin_account == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	libnetapi_get_use_kerberos(ctx, &use_kerberos);
+	if (!use_kerberos) {
+		const char *password = NULL;
+
+		libnetapi_get_password(ctx, &password);
+		if (password == NULL) {
+			talloc_free(j);
+			return WERR_NERR_BADPASSWORD;
+		}
+		j->in.admin_password = talloc_strdup(j, password);
+		if (j->in.admin_password == NULL) {
+			talloc_free(j);
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+	}
+
+	j->in.use_kerberos = use_kerberos;
+	j->in.debug = true;
+	j->in.join_flags	= WKSSVC_JOIN_FLAGS_JOIN_TYPE |
+				  WKSSVC_JOIN_FLAGS_ACCOUNT_CREATE;
+
+	if (r->in.options & NETSETUP_PROVISION_REUSE_ACCOUNT) {
+		j->in.join_flags |= WKSSVC_JOIN_FLAGS_DOMAIN_JOIN_IF_JOINED;
+	}
+
+	if (r->in.options & NETSETUP_PROVISION_USE_DEFAULT_PASSWORD) {
+		j->in.join_flags |= WKSSVC_JOIN_FLAGS_MACHINE_PWD_PASSED;
+		j->in.machine_password = talloc_strdup(j, r->in.machine_name);
+		if (j->in.machine_password == NULL) {
+			talloc_free(j);
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+	}
+
+	j->in.provision_computer_account_only = true;
+
+	werr = libnet_Join(mem_ctx, j);
+	if (!W_ERROR_IS_OK(werr) && j->out.error_string) {
+		libnetapi_set_error_string(ctx, "%s", j->out.error_string);
+		talloc_free(j);
+		return werr;
+	}
+
+	werr = libnet_odj_compose_ODJ_PROVISION_DATA(mem_ctx, j, p);
+	if (!W_ERROR_IS_OK(werr)) {
+		talloc_free(j);
+		return werr;
+	}
+
+	TALLOC_FREE(j);
+
+	return WERR_OK;
+}
+
+WERROR NetProvisionComputerAccount_l(struct libnetapi_ctx *ctx,
+				     struct NetProvisionComputerAccount *r)
+{
+	WERROR werr;
+	enum ndr_err_code ndr_err;
+	const char *b64_bin_data_str;
+	DATA_BLOB blob;
+	struct ODJ_PROVISION_DATA_serialized_ptr odj_provision_data;
+	struct ODJ_PROVISION_DATA *p;
+	TALLOC_CTX *mem_ctx = talloc_new(ctx);
+
+	if (r->in.provision_bin_data == NULL &&
+	    r->in.provision_text_data == NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+	if (r->in.provision_bin_data != NULL &&
+	    r->in.provision_text_data != NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+	if (r->in.provision_bin_data == NULL &&
+	    r->in.provision_bin_data_size != NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+	if (r->in.provision_bin_data != NULL &&
+	   r->in.provision_bin_data_size == NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+
+	if (r->in.domain == NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+
+	if (r->in.machine_name == NULL) {
+		return WERR_INVALID_PARAMETER;
+	}
+
+	werr = NetProvisionComputerAccount_backend(ctx, r, mem_ctx, &p);
+	if (!W_ERROR_IS_OK(werr)) {
+		talloc_free(mem_ctx);
+		return werr;
+	}
+
+	ZERO_STRUCT(odj_provision_data);
+
+	odj_provision_data.s.p = p;
+
+	ndr_err = ndr_push_struct_blob(&blob, ctx, &odj_provision_data,
+		(ndr_push_flags_fn_t)ndr_push_ODJ_PROVISION_DATA_serialized_ptr);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		talloc_free(mem_ctx);
+		return W_ERROR(NERR_BadOfflineJoinInfo);
+	}
+
+	talloc_free(mem_ctx);
+
+	if (r->out.provision_text_data != NULL) {
+		b64_bin_data_str = base64_encode_data_blob(ctx, blob);
+		if (b64_bin_data_str == NULL) {
+			return WERR_NOT_ENOUGH_MEMORY;
+		}
+		*r->out.provision_text_data = b64_bin_data_str;
+	}
+
+	if (r->out.provision_bin_data != NULL &&
+	    r->out.provision_bin_data_size != NULL) {
+		*r->out.provision_bin_data = blob.data;
+		*r->out.provision_bin_data_size = blob.length;
+	}
+
+	return werr;
+}
+
+/****************************************************************
+****************************************************************/
+
+WERROR NetRequestOfflineDomainJoin_r(struct libnetapi_ctx *ctx,
+				     struct NetRequestOfflineDomainJoin *r)
+{
+	return WERR_NOT_SUPPORTED;
+}
+
+/****************************************************************
+****************************************************************/
+
+static WERROR NetRequestOfflineDomainJoin_backend(struct libnetapi_ctx *ctx,
+						  const struct ODJ_WIN7BLOB *win7blob,
+						  const struct ODJ_PROVISION_DATA *odj_provision_data)
+{
+	struct libnet_JoinCtx *j = NULL;
+	WERROR werr;
+
+	werr = libnet_init_JoinCtx(ctx, &j);
+	if (!W_ERROR_IS_OK(werr)) {
+		return werr;
+	}
+
+	j->in.domain_name = talloc_strdup(j, win7blob->lpDomain);
+	if (j->in.domain_name == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	talloc_free(discard_const_p(char *, j->in.machine_name));
+	j->in.machine_name = talloc_strdup(j, win7blob->lpMachineName);
+	if (j->in.machine_name == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	j->in.machine_password = talloc_strdup(j, win7blob->lpMachinePassword);
+	if (j->in.machine_password == NULL) {
+		talloc_free(j);
+		return WERR_NOT_ENOUGH_MEMORY;
+	}
+
+	j->in.request_offline_join = true;
+	j->in.odj_provision_data = discard_const(odj_provision_data);
+	j->in.debug = true;
+	j->in.join_flags	= WKSSVC_JOIN_FLAGS_JOIN_TYPE |
+				  WKSSVC_JOIN_FLAGS_MACHINE_PWD_PASSED;
+
+	werr = libnet_Join(j, j);
+	if (!W_ERROR_IS_OK(werr) && j->out.error_string) {
+		libnetapi_set_error_string(ctx, "%s", j->out.error_string);
+		talloc_free(j);
+		return werr;
+	}
+
+	TALLOC_FREE(j);
+
+	return WERR_OK;
+}
+
+WERROR NetRequestOfflineDomainJoin_l(struct libnetapi_ctx *ctx,
+				     struct NetRequestOfflineDomainJoin *r)
+{
+	DATA_BLOB blob, blob_base64;
+	enum ndr_err_code ndr_err;
+	struct ODJ_PROVISION_DATA_serialized_ptr odj_provision_data;
+	bool ok;
+	struct ODJ_WIN7BLOB win7blob = { 0 };
+	WERROR werr;
+
+	if (r->in.provision_bin_data == NULL ||
+	    r->in.provision_bin_data_size == 0) {
+		return W_ERROR(NERR_NoOfflineJoinInfo);
+	}
+
+	if (r->in.provision_bin_data_size < 2) {
+		return W_ERROR(NERR_BadOfflineJoinInfo);
+	}
+
+	if (r->in.provision_bin_data[0] == 0xff &&
+	    r->in.provision_bin_data[1] == 0xfe) {
+		ok = convert_string_talloc(ctx, CH_UTF16LE, CH_UNIX,
+					   r->in.provision_bin_data+2,
+					   r->in.provision_bin_data_size-2,
+					   &blob_base64.data,
+					   &blob_base64.length);
+		if (!ok) {
+			return W_ERROR(NERR_BadOfflineJoinInfo);
+		}
+	} else {
+		blob_base64 = data_blob(r->in.provision_bin_data,
+					r->in.provision_bin_data_size);
+	}
+
+	blob = base64_decode_data_blob_talloc(ctx, (const char *)blob_base64.data);
+
+	ndr_err = ndr_pull_struct_blob(&blob, ctx, &odj_provision_data,
+		(ndr_pull_flags_fn_t)ndr_pull_ODJ_PROVISION_DATA_serialized_ptr);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		return W_ERROR(NERR_BadOfflineJoinInfo);
+	}
+
+	if (DEBUGLEVEL >= 10) {
+		NDR_PRINT_DEBUG(ODJ_PROVISION_DATA_serialized_ptr, &odj_provision_data);
+	}
+
+	if (odj_provision_data.s.p->ulVersion != 1) {
+		return W_ERROR(NERR_ProvisioningBlobUnsupported);
+	}
+
+	werr = libnet_odj_find_win7blob(odj_provision_data.s.p, &win7blob);
+	if (!W_ERROR_IS_OK(werr)) {
+		return werr;
+	}
+
+	if (!(r->in.options & NETSETUP_PROVISION_ONLINE_CALLER)) {
+		return WERR_NERR_SETUPNOTJOINED;
+	}
+
+	werr = NetRequestOfflineDomainJoin_backend(ctx,
+						   &win7blob,
+						   odj_provision_data.s.p);
+	if (!W_ERROR_IS_OK(werr)) {
+		return werr;
+	}
+
+	return W_ERROR(NERR_JoinPerformedMustRestart);
 }

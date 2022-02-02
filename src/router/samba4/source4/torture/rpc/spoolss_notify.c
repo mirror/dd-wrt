@@ -34,7 +34,7 @@
 #include "ntvfs/ntvfs.h"
 #include "param/param.h"
 
-struct dcesrv_context_callbacks srv_cb = {
+static struct dcesrv_context_callbacks srv_cb = {
 	.log.successful_authz = log_successful_dcesrv_authz_event,
 	.auth.gensec_prepare = dcesrv_gensec_prepare,
 	.assoc_group.find = dcesrv_assoc_group_find,
@@ -208,7 +208,7 @@ static NTSTATUS spoolss__op_ndr_push(struct dcesrv_call_state *dce_call, TALLOC_
 	return NT_STATUS_OK;
 }
 
-const static struct dcesrv_interface notify_test_spoolss_interface = {
+static const struct dcesrv_interface notify_test_spoolss_interface = {
 	.name		= "spoolss",
 	.syntax_id  = {{0x12345678,0x1234,0xabcd,{0xef,0x00},{0x01,0x23,0x45,0x67,0x89,0xab}},1.0},
 	.bind		= spoolss__op_bind,
@@ -242,7 +242,7 @@ static bool spoolss__op_interface_by_name(struct dcesrv_interface *iface, const 
 
 static NTSTATUS spoolss__op_init_server(struct dcesrv_context *dce_ctx, const struct dcesrv_endpoint_server *ep_server)
 {
-	int i;
+	uint32_t i;
 
 	for (i=0;i<ndr_table_spoolss.endpoints->count;i++) {
 		NTSTATUS ret;

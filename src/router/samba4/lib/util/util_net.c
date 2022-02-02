@@ -979,26 +979,48 @@ static const smb_socket_option socket_options[] = {
 
 static void print_socket_options(int s)
 {
-	int value;
-	socklen_t vlen = 4;
+	TALLOC_CTX *frame = NULL;
 	const smb_socket_option *p = &socket_options[0];
+	char *str = NULL;
 
-	/* wrapped in if statement to prevent streams
-	 * leak in SCO Openserver 5.0 */
-	/* reported on samba-technical  --jerry */
-	if ( DEBUGLEVEL >= 5 ) {
-		DEBUG(5,("Socket options:\n"));
-		for (; p->name != NULL; p++) {
-			if (getsockopt(s, p->level, p->option,
-						(void *)&value, &vlen) == -1) {
-				DEBUGADD(5,("\tCould not test socket option %s.\n",
-							p->name));
-			} else {
-				DEBUGADD(5,("\t%s = %d\n",
-							p->name,value));
-			}
+	if (DEBUGLEVEL < 5) {
+		return;
+	}
+
+	frame = talloc_stackframe();
+
+	str = talloc_strdup(frame, "");
+	if (str == NULL) {
+		DBG_WARNING("talloc failed\n");
+		goto done;
+	}
+
+	for (; p->name != NULL; p++) {
+		int ret, val;
+		socklen_t vlen = sizeof(val);
+
+		ret = getsockopt(s, p->level, p->option, (void *)&val, &vlen);
+		if (ret == -1) {
+			DBG_INFO("Could not test socket option %s: %s.\n",
+				 p->name, strerror(errno));
+			continue;
+		}
+
+		str = talloc_asprintf_append_buffer(
+			str,
+			"%s%s=%d",
+			str[0] != '\0' ? ", " : "",
+			p->name,
+			val);
+		if (str == NULL) {
+			DBG_WARNING("talloc_asprintf_append_buffer failed\n");
+			goto done;
 		}
 	}
+
+	DEBUG(5, ("socket options: %s\n", str));
+done:
+	TALLOC_FREE(frame);
  }
 
 /****************************************************************************
@@ -1095,12 +1117,12 @@ bool sockaddr_storage_to_samba_sockaddr(
 bool samba_sockaddr_set_port(struct samba_sockaddr *sa, uint16_t port)
 {
 	if (sa->u.sa.sa_family == AF_INET) {
-		sa->u.in.sin_port = port;
+		sa->u.in.sin_port = htons(port);
 		return true;
 	}
 #ifdef HAVE_IPV6
 	if (sa->u.sa.sa_family == AF_INET6) {
-		sa->u.in6.sin6_port = port;
+		sa->u.in6.sin6_port = htons(port);
 		return true;
 	}
 #endif
@@ -1110,12 +1132,12 @@ bool samba_sockaddr_set_port(struct samba_sockaddr *sa, uint16_t port)
 bool samba_sockaddr_get_port(const struct samba_sockaddr *sa, uint16_t *port)
 {
 	if (sa->u.sa.sa_family == AF_INET) {
-		*port = sa->u.in.sin_port;
+		*port = ntohs(sa->u.in.sin_port);
 		return true;
 	}
 #ifdef HAVE_IPV6
 	if (sa->u.sa.sa_family == AF_INET6) {
-		*port = sa->u.in6.sin6_port;
+		*port = ntohs(sa->u.in6.sin6_port);
 		return true;
 	}
 #endif

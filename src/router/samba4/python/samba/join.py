@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 """Joining a domain."""
 
 from samba.auth import system_session
@@ -41,7 +40,7 @@ from samba import werror
 from base64 import b64encode
 from samba import WERRORError, NTSTATUSError
 from samba import sd_utils
-from samba.dnsserver import ARecord, AAAARecord, CNameRecord
+from samba.dnsserver import ARecord, AAAARecord, CNAMERecord
 import logging
 import random
 import time
@@ -136,7 +135,7 @@ class DCJoinContext(object):
         if machinepass is not None:
             ctx.acct_pass = machinepass
         else:
-            ctx.acct_pass = samba.generate_random_machine_password(128, 255)
+            ctx.acct_pass = samba.generate_random_machine_password(120, 120)
 
         ctx.dnsdomain = ctx.samdb.domain_dns_name()
 
@@ -257,8 +256,9 @@ class DCJoinContext(object):
 
         ctx.del_noerror(res[0].dn, recursive=True)
 
-        if "msDS-Krbtgtlink" in res[0]:
-            ctx.new_krbtgt_dn = res[0]["msDS-Krbtgtlink"][0]
+        krbtgt_dn = res[0].get('msDS-KrbTgtLink', idx=0)
+        if krbtgt_dn is not None:
+            ctx.new_krbtgt_dn = krbtgt_dn
             ctx.del_noerror(ctx.new_krbtgt_dn)
 
         res = ctx.samdb.search(base=ctx.samdb.get_default_basedn(),
@@ -337,7 +337,7 @@ class DCJoinContext(object):
                                attrs=["msDS-krbTgtLink", "userAccountControl", "serverReferenceBL", "rIDSetReferences"])
         if len(res) == 0:
             raise Exception("Could not find domain member account '%s' to promote to a DC, use 'samba-tool domain join' instead'" % ctx.samname)
-        if "msDS-krbTgtLink" in res[0] or "serverReferenceBL" in res[0] or "rIDSetReferences" in res[0]:
+        if "msDS-KrbTgtLink" in res[0] or "serverReferenceBL" in res[0] or "rIDSetReferences" in res[0]:
             raise Exception("Account '%s' appears to be an active DC, use 'samba-tool domain join' if you must re-create this account" % ctx.samname)
         if (int(res[0]["userAccountControl"][0]) & (samba.dsdb.UF_WORKSTATION_TRUST_ACCOUNT |
                                                     samba.dsdb.UF_SERVER_TRUST_ACCOUNT) == 0):
@@ -398,20 +398,6 @@ class DCJoinContext(object):
                                (ldb.binary_encode(ctx.parent_dnsdomain),
                                 ldb.OID_COMPARATOR_AND, samba.dsdb.SYSTEM_FLAG_CR_NTDS_DOMAIN))
         return str(res[0].dn)
-
-    def get_naming_master(ctx):
-        '''get the parent domain partition DN from parent DNS name'''
-        res = ctx.samdb.search(base='CN=Partitions,%s' % ctx.config_dn, attrs=['fSMORoleOwner'],
-                               scope=ldb.SCOPE_BASE, controls=["extended_dn:1:1"])
-        if 'fSMORoleOwner' not in res[0]:
-            raise DCJoinException("Can't find naming master on partition DN %s in %s" % (ctx.partition_dn, ctx.samdb.url))
-        try:
-            master_guid = str(misc.GUID(ldb.Dn(ctx.samdb, res[0]['fSMORoleOwner'][0].decode('utf8')).get_extended_component('GUID')))
-        except KeyError:
-            raise DCJoinException("Can't find GUID in naming master on partition DN %s" % res[0]['fSMORoleOwner'][0])
-
-        master_host = '%s._msdcs.%s' % (master_guid, ctx.dnsforest)
-        return master_host
 
     def get_mysid(ctx):
         '''get the SID of the connected user. Only works with w2k8 and later,
@@ -932,13 +918,13 @@ class DCJoinContext(object):
 
         secrets_ldb = Ldb(ctx.paths.secrets, session_info=system_session(), lp=ctx.lp)
 
-        presult = provision_fill(ctx.local_samdb, secrets_ldb,
-                                 ctx.logger, ctx.names, ctx.paths,
-                                 dom_for_fun_level=DS_DOMAIN_FUNCTION_2003,
-                                 targetdir=ctx.targetdir, samdb_fill=FILL_SUBDOMAIN,
-                                 machinepass=ctx.acct_pass, serverrole="active directory domain controller",
-                                 lp=ctx.lp, hostip=ctx.names.hostip, hostip6=ctx.names.hostip6,
-                                 dns_backend=ctx.dns_backend, adminpass=ctx.adminpass)
+        provision_fill(ctx.local_samdb, secrets_ldb,
+                       ctx.logger, ctx.names, ctx.paths,
+                       dom_for_fun_level=DS_DOMAIN_FUNCTION_2003,
+                       targetdir=ctx.targetdir, samdb_fill=FILL_SUBDOMAIN,
+                       machinepass=ctx.acct_pass, serverrole="active directory domain controller",
+                       lp=ctx.lp, hostip=ctx.names.hostip, hostip6=ctx.names.hostip6,
+                       dns_backend=ctx.dns_backend, adminpass=ctx.adminpass)
         print("Provision OK for domain %s" % ctx.names.dnsdomain)
 
     def create_replicator(ctx, repl_creds, binding_options):
@@ -1206,7 +1192,7 @@ class DCJoinContext(object):
                             % (msdcs_cname, msdcs_zone, cname_target))
 
             add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
-            rec = CNameRecord(cname_target)
+            rec = CNAMERecord(cname_target)
             add_rec_buf.rec = rec
             dns_conn.DnssrvUpdateRecord2(client_version,
                                          0,

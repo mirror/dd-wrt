@@ -102,7 +102,8 @@ class gp_krb_ext(gp_inf_ext):
             inf_conf = self.parse(path)
             if not inf_conf:
                 return output
-            for section in inf_conf.sections():
+            if str(self) in inf_conf.sections():
+                section = str(self)
                 output[section] = {k: v for k, v in inf_conf.items(section) \
                                       if gp_krb_ext.apply_map.get(k)}
         return output
@@ -114,8 +115,7 @@ class gp_access_ext(gp_inf_ext):
     object to update the parameter to Samba4. Not registry oriented whatsoever.
     '''
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def load_ldb(self):
         try:
             self.ldb = SamDB(self.lp.samdb_url(),
                              session_info=system_session(),
@@ -131,6 +131,7 @@ class gp_access_ext(gp_inf_ext):
     def process_group_policy(self, deleted_gpo_list, changed_gpo_list):
         if self.lp.get('server role') != 'active directory domain controller':
             return
+        self.load_ldb()
         inf_file = 'MACHINE/Microsoft/Windows NT/SecEdit/GptTmpl.inf'
         for guid, settings in deleted_gpo_list:
             self.gp_db.set_guid(guid)
@@ -210,7 +211,8 @@ class gp_access_ext(gp_inf_ext):
             inf_conf = self.parse(path)
             if not inf_conf:
                 return output
-            for section in inf_conf.sections():
+            if str(self) in inf_conf.sections():
+                section = str(self)
                 output[section] = {k: v for k, v in inf_conf.items(section) \
                                       if gp_access_ext.apply_map.get(k)}
         return output

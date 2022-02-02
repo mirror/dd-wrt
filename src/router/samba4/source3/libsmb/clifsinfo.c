@@ -29,7 +29,6 @@
 #include "../libcli/smb/smbXcli_base.h"
 #include "auth/credentials/credentials.h"
 #include "../librpc/gen_ndr/ndr_security.h"
-#include "libcli/security/dom_sid.h"
 
 /****************************************************************************
  Get UNIX extensions version info.
@@ -571,6 +570,8 @@ struct posix_whoami_state {
 
 static void cli_posix_whoami_done(struct tevent_req *subreq);
 
+static const uint32_t posix_whoami_max_rdata = 62*1024;
+
 struct tevent_req *cli_posix_whoami_send(TALLOC_CTX *mem_ctx,
 					struct tevent_context *ev,
 					struct cli_state *cli)
@@ -587,7 +588,7 @@ struct tevent_req *cli_posix_whoami_send(TALLOC_CTX *mem_ctx,
 	SSVAL(state->setup, 0, TRANSACT2_QFSINFO);
 	SSVAL(state->param, 0, SMB_QUERY_POSIX_WHOAMI);
 
-	state->max_rdata = 62*1024;
+	state->max_rdata = posix_whoami_max_rdata;
 
 	subreq = cli_trans_send(state,                  /* mem ctx. */
 				ev,                     /* event ctx. */
@@ -651,7 +652,7 @@ static void cli_posix_whoami_done(struct tevent_req *subreq)
 	 * parsing network packets in C.
 	 */
 
-	if (num_rdata < 40 || rdata + num_rdata < rdata) {
+	if (num_rdata < 40 || num_rdata > posix_whoami_max_rdata) {
 		tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);
 		return;
 	}
@@ -661,6 +662,13 @@ static void cli_posix_whoami_done(struct tevent_req *subreq)
 	state->gid = BVAL(rdata, 16);
 	state->num_gids = IVAL(rdata, 24);
 	state->num_sids = IVAL(rdata, 28);
+
+	/* Ensure the gid array doesn't overflow */
+	if (state->num_gids > (num_rdata - 40) / sizeof(uint64_t)) {
+		tevent_req_nterror(req,
+			NT_STATUS_INVALID_NETWORK_RESPONSE);
+		return;
+	}
 
 	state->gids = talloc_array(state, uint64_t, state->num_gids);
 	if (tevent_req_nomem(state->gids, req)) {
@@ -674,11 +682,6 @@ static void cli_posix_whoami_done(struct tevent_req *subreq)
 	p = rdata + 40;
 
 	for (i = 0; i < state->num_gids; i++) {
-		if (p + 8 > rdata + num_rdata) {
-			tevent_req_nterror(req,
-				NT_STATUS_INVALID_NETWORK_RESPONSE);
-			return;
-		}
 		state->gids[i] = BVAL(p, 0);
 		p += 8;
 	}
@@ -686,9 +689,23 @@ static void cli_posix_whoami_done(struct tevent_req *subreq)
 	num_rdata -= (p - rdata);
 
 	for (i = 0; i < state->num_sids; i++) {
-		ssize_t sid_size = sid_parse(p, num_rdata, &state->sids[i]);
+		size_t sid_size;
+		DATA_BLOB in = data_blob_const(p, num_rdata);
+		enum ndr_err_code ndr_err;
 
-		if ((sid_size == -1) || (sid_size > num_rdata)) {
+		ndr_err = ndr_pull_struct_blob(&in,
+				state,
+				&state->sids[i],
+				(ndr_pull_flags_fn_t)ndr_pull_dom_sid);
+		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+			tevent_req_nterror(req,
+				NT_STATUS_INVALID_NETWORK_RESPONSE);
+			return;
+		}
+
+		sid_size = ndr_size_dom_sid(&state->sids[i], 0);
+
+		if (sid_size > num_rdata) {
 			tevent_req_nterror(req,
 				NT_STATUS_INVALID_NETWORK_RESPONSE);
 			return;
@@ -697,6 +714,13 @@ static void cli_posix_whoami_done(struct tevent_req *subreq)
 		p += sid_size;
 		num_rdata -= sid_size;
 	}
+
+	if (num_rdata != 0) {
+		tevent_req_nterror(req,
+			NT_STATUS_INVALID_NETWORK_RESPONSE);
+		return;
+	}
+
 	tevent_req_done(req);
 }
 

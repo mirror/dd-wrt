@@ -888,21 +888,21 @@ bool run_smb2_multi_channel(int dummy)
 	cli_state_client_guid = saved_guid;
 
 	status = smbXcli_negprot(cli1->conn, cli1->timeout,
-				 PROTOCOL_SMB2_22, PROTOCOL_LATEST);
+				 PROTOCOL_SMB3_00, PROTOCOL_LATEST);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
 		return false;
 	}
 
 	status = smbXcli_negprot(cli2->conn, cli2->timeout,
-				 PROTOCOL_SMB2_22, PROTOCOL_LATEST);
+				 PROTOCOL_SMB3_00, PROTOCOL_LATEST);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
 		return false;
 	}
 
 	status = smbXcli_negprot(cli3->conn, cli3->timeout,
-				 PROTOCOL_SMB2_22, PROTOCOL_LATEST);
+				 PROTOCOL_SMB3_00, PROTOCOL_LATEST);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
 		return false;
@@ -1456,7 +1456,7 @@ bool run_smb2_session_reauth(int dummy)
 	 * PROTOCOL_SMB2_22 has a bug in win8pre0
 	 * it behaves like PROTOCOL_SMB2_02
 	 * and returns NT_STATUS_REQUEST_NOT_ACCEPTED,
-	 * while it allows it on PROTOCOL_SMB2_02.
+	 * while it allows it on PROTOCOL_SMB2_10.
 	 */
 	status = smbXcli_negprot(cli->conn, cli->timeout,
 				 PROTOCOL_SMB2_10, PROTOCOL_SMB2_10);
@@ -2936,4 +2936,431 @@ bool run_smb2_quota1(int dummy)
 	}
 
 	return true;
+}
+
+bool run_smb2_stream_acl(int dummy)
+{
+	struct cli_state *cli = NULL;
+	NTSTATUS status;
+	uint16_t fnum = (uint16_t)-1;
+	const char *fname = "stream_acl_test_file";
+	const char *sname = "stream_acl_test_file:streamname";
+	struct security_descriptor *sd_dacl = NULL;
+	bool ret = false;
+
+	printf("SMB2 stream acl\n");
+
+	if (!torture_init_connection(&cli)) {
+		return false;
+	}
+
+	status = smbXcli_negprot(cli->conn,
+				cli->timeout,
+				PROTOCOL_SMB2_02,
+				PROTOCOL_SMB3_11);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_session_setup_creds(cli, torture_creds);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_session_setup returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_tree_connect(cli, share, "?????", NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_tree_connect returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	/* Ensure file doesn't exist. */
+	(void)cli_unlink(cli, fname, 0);
+
+	/* Create the file. */
+	status = cli_ntcreate(cli,
+				fname,
+				0,
+				GENERIC_ALL_ACCESS,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_NONE,
+				FILE_CREATE,
+				0,
+				0,
+				&fnum,
+				NULL);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Create of %s failed (%s)\n",
+			fname,
+			nt_errstr(status));
+                goto fail;
+	}
+
+	/* Close the handle. */
+	cli_smb2_close_fnum(cli, fnum);
+	fnum = (uint16_t)-1;
+
+	/* Create the stream. */
+	status = cli_ntcreate(cli,
+				sname,
+				0,
+				FILE_READ_DATA|
+					SEC_STD_READ_CONTROL|
+					SEC_STD_WRITE_DAC,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_NONE,
+				FILE_CREATE,
+				0,
+				0,
+				&fnum,
+				NULL);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Create of %s failed (%s)\n",
+			sname,
+			nt_errstr(status));
+		goto fail;
+	}
+
+	/* Close the handle. */
+	cli_smb2_close_fnum(cli, fnum);
+	fnum = (uint16_t)-1;
+
+	/*
+	 * Open the stream - for Samba this ensures
+	 * we prove we have a pathref fsp.
+	 */
+	status = cli_ntcreate(cli,
+				sname,
+				0,
+				FILE_READ_DATA|
+					SEC_STD_READ_CONTROL|
+					SEC_STD_WRITE_DAC,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_NONE,
+				FILE_OPEN,
+				0,
+				0,
+				&fnum,
+				NULL);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Open of %s failed (%s)\n",
+			sname,
+			nt_errstr(status));
+                goto fail;
+	}
+
+	/* Read the security descriptor off the stream handle. */
+	status = cli_query_security_descriptor(cli,
+				fnum,
+				SECINFO_DACL,
+				talloc_tos(),
+				&sd_dacl);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Reading DACL on stream %s got (%s)\n",
+			sname,
+			nt_errstr(status));
+		goto fail;
+	}
+
+	if (sd_dacl == NULL || sd_dacl->dacl == NULL ||
+			sd_dacl->dacl->num_aces < 1) {
+		printf("Invalid DACL returned on stream %s "
+			"(this should not happen)\n",
+			sname);
+		goto fail;
+	}
+
+	/*
+	 * Ensure it allows FILE_READ_DATA in the first ace.
+	 * It always should.
+	 */
+	if ((sd_dacl->dacl->aces[0].access_mask & FILE_READ_DATA) == 0) {
+		printf("DACL->ace[0] returned on stream %s "
+			"doesn't have read access (should not happen)\n",
+			sname);
+		goto fail;
+	}
+
+	/* Remove FILE_READ_DATA from the first ace and set. */
+	sd_dacl->dacl->aces[0].access_mask &= ~FILE_READ_DATA;
+
+	status = cli_set_security_descriptor(cli,
+				fnum,
+				SECINFO_DACL,
+				sd_dacl);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Setting DACL on stream %s got (%s)\n",
+			sname,
+			nt_errstr(status));
+		goto fail;
+	}
+
+	TALLOC_FREE(sd_dacl);
+
+	/* Read again and check it changed. */
+	status = cli_query_security_descriptor(cli,
+				fnum,
+				SECINFO_DACL,
+				talloc_tos(),
+				&sd_dacl);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Reading DACL on stream %s got (%s)\n",
+			sname,
+			nt_errstr(status));
+		goto fail;
+	}
+
+	if (sd_dacl == NULL || sd_dacl->dacl == NULL ||
+			sd_dacl->dacl->num_aces < 1) {
+		printf("Invalid DACL (1) returned on stream %s "
+			"(this should not happen)\n",
+			sname);
+		goto fail;
+	}
+
+	/* FILE_READ_DATA should be gone from the first ace. */
+	if ((sd_dacl->dacl->aces[0].access_mask & FILE_READ_DATA) != 0) {
+		printf("DACL on stream %s did not change\n",
+			sname);
+		goto fail;
+	}
+
+	ret = true;
+
+  fail:
+
+	if (fnum != (uint16_t)-1) {
+		cli_smb2_close_fnum(cli, fnum);
+		fnum = (uint16_t)-1;
+	}
+
+	(void)cli_unlink(cli, fname, 0);
+	return ret;
+}
+
+static NTSTATUS list_fn(struct file_info *finfo,
+			const char *name,
+			void *state)
+{
+	bool *matched = (bool *)state;
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
+		*matched = true;
+	}
+	return NT_STATUS_OK;
+}
+
+/*
+ * Must be run against a share with "smbd async dosmode = yes".
+ * Checks we can return DOS attriutes other than "N".
+ * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14758
+ */
+
+bool run_list_dir_async_test(int dummy)
+{
+	struct cli_state *cli = NULL;
+	NTSTATUS status;
+	const char *dname = "ASYNC_DIR";
+	bool ret = false;
+	bool matched = false;
+
+	printf("SMB2 list dir async\n");
+
+	if (!torture_init_connection(&cli)) {
+		return false;
+	}
+
+	status = smbXcli_negprot(cli->conn,
+				cli->timeout,
+				PROTOCOL_SMB2_02,
+				PROTOCOL_SMB3_11);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_session_setup_creds(cli, torture_creds);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_session_setup returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_tree_connect(cli, share, "?????", NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_tree_connect returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	/* Ensure directory doesn't exist. */
+	(void)cli_rmdir(cli, dname);
+
+	status = cli_mkdir(cli, dname);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_mkdir %s returned %s\n", dname, nt_errstr(status));
+		return false;
+	}
+
+	status = cli_list(cli,
+			  dname,
+			  FILE_ATTRIBUTE_NORMAL|FILE_ATTRIBUTE_DIRECTORY,
+			  list_fn,
+			  &matched);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_list %s returned %s\n", dname, nt_errstr(status));
+		goto fail;
+	}
+
+	if (!matched) {
+		printf("Failed to find %s\n", dname);
+		goto fail;
+	}
+
+	ret = true;
+
+  fail:
+
+	(void)cli_rmdir(cli, dname);
+	return ret;
+}
+
+/*
+ * Test delete a directory fails if a file is created
+ * in a directory after the delete on close is set.
+ * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14892
+ */
+
+bool run_delete_on_close_non_empty(int dummy)
+{
+	struct cli_state *cli = NULL;
+	NTSTATUS status;
+	const char *dname = "DEL_ON_CLOSE_DIR";
+	const char *fname = "DEL_ON_CLOSE_DIR\\testfile";
+	uint16_t fnum = (uint16_t)-1;
+	uint16_t fnum1 = (uint16_t)-1;
+	bool ret = false;
+
+	printf("SMB2 delete on close nonempty\n");
+
+	if (!torture_init_connection(&cli)) {
+		return false;
+	}
+
+	status = smbXcli_negprot(cli->conn,
+				cli->timeout,
+				PROTOCOL_SMB2_02,
+				PROTOCOL_SMB3_11);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("smbXcli_negprot returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_session_setup_creds(cli, torture_creds);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_session_setup returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	status = cli_tree_connect(cli, share, "?????", NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_tree_connect returned %s\n", nt_errstr(status));
+		return false;
+	}
+
+	/* Ensure directory doesn't exist. */
+	(void)cli_unlink(cli,
+			 fname,
+			 FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+	(void)cli_rmdir(cli, dname);
+
+	/* Create target directory. */
+	status = cli_ntcreate(cli,
+				dname,
+				0,
+				DELETE_ACCESS|FILE_READ_DATA,
+				FILE_ATTRIBUTE_DIRECTORY,
+				FILE_SHARE_READ|
+					FILE_SHARE_WRITE|
+					FILE_SHARE_DELETE,
+				FILE_CREATE,
+				FILE_DIRECTORY_FILE,
+				0,
+				&fnum,
+				NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_ntcreate for directory %s returned %s\n",
+				dname,
+				nt_errstr(status));
+		goto out;
+	}
+
+	/* Now set the delete on close bit. */
+	status = cli_nt_delete_on_close(cli, fnum, 1);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_cli_nt_delete_on_close set for directory "
+			"%s returned %s\n",
+			dname,
+			nt_errstr(status));
+		goto out;
+	}
+
+	/* Create file inside target directory. */
+	/*
+	 * NB. On Windows this will return NT_STATUS_DELETE_PENDING.  Only on
+	 * Samba will this succeed by default (the option "check parent
+	 * directory delete on close" configures behaviour), but we're using
+	 * this to test a race condition.
+	 */
+	status = cli_ntcreate(cli,
+				fname,
+				0,
+				FILE_READ_DATA,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_READ|
+					FILE_SHARE_WRITE|
+					FILE_SHARE_DELETE,
+				FILE_CREATE,
+				0,
+				0,
+				&fnum1,
+				NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("cli_ntcreate for file %s returned %s\n",
+				fname,
+				nt_errstr(status));
+		goto out;
+	}
+	cli_close(cli, fnum1);
+	fnum1 = (uint16_t)-1;
+
+	/* Now the close should fail. */
+	status = cli_close(cli, fnum);
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_DIRECTORY_NOT_EMPTY)) {
+		printf("cli_close for directory %s returned %s\n",
+				dname,
+				nt_errstr(status));
+		goto out;
+	}
+
+	ret = true;
+
+  out:
+
+	if (fnum1 != (uint16_t)-1) {
+		cli_close(cli, fnum1);
+	}
+	if (fnum != (uint16_t)-1) {
+		cli_nt_delete_on_close(cli, fnum, 0);
+		cli_close(cli, fnum);
+	}
+	(void)cli_unlink(cli,
+			 fname,
+			 FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+	(void)cli_rmdir(cli, dname);
+	return ret;
 }

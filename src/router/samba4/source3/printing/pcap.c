@@ -144,7 +144,7 @@ void pcap_cache_reload(struct tevent_context *ev,
 		return;
 	}
 
-	/* only go looking if no printcap name supplied */
+	/* only go looking if a printcap name is supplied */
 	if (pcap_name == NULL || *pcap_name == 0) {
 		DEBUG(0, ("No printcap file name configured!\n"));
 		return;
@@ -211,15 +211,6 @@ done:
 	return;
 }
 
-
-bool pcap_printername_ok(const char *printername)
-{
-	NTSTATUS status;
-
-	status = printer_list_get_printer(talloc_tos(), printername, NULL, NULL, 0);
-	return NT_STATUS_IS_OK(status);
-}
-
 /***************************************************************************
 run a function on each printer name in the printcap file.
 ***************************************************************************/
@@ -233,16 +224,5 @@ void pcap_printer_fn_specific(const struct pcap_cache *pc,
 	for (p = pc; p != NULL; p = p->next)
 		fn(p->name, p->comment, p->location, pdata);
 
-	return;
-}
-
-void pcap_printer_read_fn(void (*fn)(const char *, const char *, const char *, void *), void *pdata)
-{
-	NTSTATUS status;
-
-	status = printer_list_read_run_fn(fn, pdata);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(3, ("Failed to run fn for all printers!\n"));
-	}
 	return;
 }

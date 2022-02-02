@@ -1209,11 +1209,34 @@ static int vfs_gluster_renameat(struct vfs_handle_struct *handle,
 			files_struct *dstfsp,
 			const struct smb_filename *smb_fname_dst)
 {
+	struct smb_filename *full_fname_src = NULL;
+	struct smb_filename *full_fname_dst = NULL;
 	int ret;
 
 	START_PROFILE(syscall_renameat);
-	ret = glfs_rename(handle->data, smb_fname_src->base_name,
-			  smb_fname_dst->base_name);
+
+	full_fname_src = full_path_from_dirfsp_atname(talloc_tos(),
+						      srcfsp,
+						      smb_fname_src);
+	if (full_fname_src == NULL) {
+		errno = ENOMEM;
+		END_PROFILE(syscall_renameat);
+		return -1;
+	}
+	full_fname_dst = full_path_from_dirfsp_atname(talloc_tos(),
+						      dstfsp,
+						      smb_fname_dst);
+	if (full_fname_dst == NULL) {
+		TALLOC_FREE(full_fname_src);
+		errno = ENOMEM;
+		END_PROFILE(syscall_renameat);
+		return -1;
+	}
+	ret = glfs_rename(handle->data,
+			  full_fname_src->base_name,
+			  full_fname_dst->base_name);
+	TALLOC_FREE(full_fname_src);
+	TALLOC_FREE(full_fname_dst);
 	END_PROFILE(syscall_renameat);
 
 	return ret;
@@ -1434,29 +1457,26 @@ static int vfs_gluster_unlinkat(struct vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			int flags)
 {
+	struct smb_filename *full_fname = NULL;
 	int ret;
 
 	START_PROFILE(syscall_unlinkat);
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-	if (flags & AT_REMOVEDIR) {
-		ret = glfs_rmdir(handle->data, smb_fname->base_name);
-	} else {
-		ret = glfs_unlink(handle->data, smb_fname->base_name);
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		END_PROFILE(syscall_unlinkat);
+		return -1;
 	}
+
+	if (flags & AT_REMOVEDIR) {
+		ret = glfs_rmdir(handle->data, full_fname->base_name);
+	} else {
+		ret = glfs_unlink(handle->data, full_fname->base_name);
+	}
+	TALLOC_FREE(full_fname);
 	END_PROFILE(syscall_unlinkat);
-
-	return ret;
-}
-
-static int vfs_gluster_chmod(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				mode_t mode)
-{
-	int ret;
-
-	START_PROFILE(syscall_chmod);
-	ret = glfs_chmod(handle->data, smb_fname->base_name, mode);
-	END_PROFILE(syscall_chmod);
 
 	return ret;
 }
@@ -1476,7 +1496,17 @@ static int vfs_gluster_fchmod(struct vfs_handle_struct *handle,
 		return -1;
 	}
 
-	ret = glfs_fchmod(glfd, mode);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to remove xattrs.
+		 */
+		ret = glfs_fchmod(glfd, mode);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		ret = glfs_chmod(handle->data, fsp->fsp_name->base_name, mode);
+	}
 	END_PROFILE(syscall_fchmod);
 
 	return ret;
@@ -1532,23 +1562,16 @@ static int vfs_gluster_chdir(struct vfs_handle_struct *handle,
 static struct smb_filename *vfs_gluster_getwd(struct vfs_handle_struct *handle,
 				TALLOC_CTX *ctx)
 {
-	char *cwd;
+	char cwd[PATH_MAX] = { '\0' };
 	char *ret;
 	struct smb_filename *smb_fname = NULL;
 
 	START_PROFILE(syscall_getwd);
 
-	cwd = SMB_CALLOC_ARRAY(char, PATH_MAX);
-	if (cwd == NULL) {
-		END_PROFILE(syscall_getwd);
-		return NULL;
-	}
-
 	ret = glfs_getcwd(handle->data, cwd, PATH_MAX - 1);
 	END_PROFILE(syscall_getwd);
 
 	if (ret == NULL) {
-		SAFE_FREE(cwd);
 		return NULL;
 	}
 	smb_fname = synthetic_smb_fname(ctx,
@@ -1557,45 +1580,52 @@ static struct smb_filename *vfs_gluster_getwd(struct vfs_handle_struct *handle,
 					NULL,
 					0,
 					0);
-	SAFE_FREE(cwd);
 	return smb_fname;
 }
 
-static int vfs_gluster_ntimes(struct vfs_handle_struct *handle,
-			      const struct smb_filename *smb_fname,
-			      struct smb_file_time *ft)
+static int vfs_gluster_fntimes(struct vfs_handle_struct *handle,
+			       files_struct *fsp,
+			       struct smb_file_time *ft)
 {
 	int ret = -1;
 	struct timespec times[2];
+	glfs_fd_t *glfd = NULL;
 
-	START_PROFILE(syscall_ntimes);
+	START_PROFILE(syscall_fntimes);
 
 	if (is_omit_timespec(&ft->atime)) {
-		times[0].tv_sec = smb_fname->st.st_ex_atime.tv_sec;
-		times[0].tv_nsec = smb_fname->st.st_ex_atime.tv_nsec;
+		times[0].tv_sec = fsp->fsp_name->st.st_ex_atime.tv_sec;
+		times[0].tv_nsec = fsp->fsp_name->st.st_ex_atime.tv_nsec;
 	} else {
 		times[0].tv_sec = ft->atime.tv_sec;
 		times[0].tv_nsec = ft->atime.tv_nsec;
 	}
 
 	if (is_omit_timespec(&ft->mtime)) {
-		times[1].tv_sec = smb_fname->st.st_ex_mtime.tv_sec;
-		times[1].tv_nsec = smb_fname->st.st_ex_mtime.tv_nsec;
+		times[1].tv_sec = fsp->fsp_name->st.st_ex_mtime.tv_sec;
+		times[1].tv_nsec = fsp->fsp_name->st.st_ex_mtime.tv_nsec;
 	} else {
 		times[1].tv_sec = ft->mtime.tv_sec;
 		times[1].tv_nsec = ft->mtime.tv_nsec;
 	}
 
 	if ((timespec_compare(&times[0],
-			      &smb_fname->st.st_ex_atime) == 0) &&
+			      &fsp->fsp_name->st.st_ex_atime) == 0) &&
 	    (timespec_compare(&times[1],
-			      &smb_fname->st.st_ex_mtime) == 0)) {
-		END_PROFILE(syscall_ntimes);
+			      &fsp->fsp_name->st.st_ex_mtime) == 0)) {
+		END_PROFILE(syscall_fntimes);
 		return 0;
 	}
 
-	ret = glfs_utimens(handle->data, smb_fname->base_name, times);
-	END_PROFILE(syscall_ntimes);
+	glfd = vfs_gluster_fetch_glfd(handle, fsp);
+	if (glfd == NULL) {
+		END_PROFILE(syscall_fntimes);
+		DBG_ERR("Failed to fetch gluster fd\n");
+		return -1;
+	}
+
+	ret = glfs_futimens(glfd, times);
+	END_PROFILE(syscall_fntimes);
 
 	return ret;
 }
@@ -1874,11 +1904,23 @@ static int vfs_gluster_readlinkat(struct vfs_handle_struct *handle,
 				char *buf,
 				size_t bufsiz)
 {
+	struct smb_filename *full_fname = NULL;
 	int ret;
 
 	START_PROFILE(syscall_readlinkat);
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-	ret = glfs_readlink(handle->data, smb_fname->base_name, buf, bufsiz);
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						dirfsp,
+						smb_fname);
+	if (full_fname == NULL) {
+		END_PROFILE(syscall_readlinkat);
+		return -1;
+	}
+
+	ret = glfs_readlink(handle->data, full_fname->base_name, buf, bufsiz);
+
+	TALLOC_FREE(full_fname);
+
 	END_PROFILE(syscall_readlinkat);
 
 	return ret;
@@ -1892,15 +1934,33 @@ static int vfs_gluster_linkat(struct vfs_handle_struct *handle,
 				int flags)
 {
 	int ret;
+	struct smb_filename *full_fname_old = NULL;
+	struct smb_filename *full_fname_new = NULL;
 
 	START_PROFILE(syscall_linkat);
 
-	SMB_ASSERT(srcfsp == srcfsp->conn->cwd_fsp);
-	SMB_ASSERT(dstfsp == dstfsp->conn->cwd_fsp);
+	full_fname_old = full_path_from_dirfsp_atname(talloc_tos(),
+						srcfsp,
+						old_smb_fname);
+	if (full_fname_old == NULL) {
+		END_PROFILE(syscall_linkat);
+		return -1;
+	}
+	full_fname_new = full_path_from_dirfsp_atname(talloc_tos(),
+						dstfsp,
+						new_smb_fname);
+	if (full_fname_new == NULL) {
+		TALLOC_FREE(full_fname_old);
+		END_PROFILE(syscall_linkat);
+		return -1;
+	}
 
 	ret = glfs_link(handle->data,
-			old_smb_fname->base_name,
-			new_smb_fname->base_name);
+			full_fname_old->base_name,
+			full_fname_new->base_name);
+
+	TALLOC_FREE(full_fname_old);
+	TALLOC_FREE(full_fname_new);
 	END_PROFILE(syscall_linkat);
 
 	return ret;
@@ -1934,8 +1994,8 @@ static int vfs_gluster_mknodat(struct vfs_handle_struct *handle,
 	return ret;
 }
 
-static int vfs_gluster_chflags(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
+static int vfs_gluster_fchflags(struct vfs_handle_struct *handle,
+				struct files_struct *fsp,
 				unsigned int flags)
 {
 	errno = ENOSYS;
@@ -1985,16 +2045,6 @@ static const char *vfs_gluster_connectpath(struct vfs_handle_struct *handle,
 
 /* EA Operations */
 
-static ssize_t vfs_gluster_getxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				void *value,
-				size_t size)
-{
-	return glfs_getxattr(handle->data, smb_fname->base_name,
-			     name, value, size);
-}
-
 static ssize_t vfs_gluster_fgetxattr(struct vfs_handle_struct *handle,
 				     files_struct *fsp, const char *name,
 				     void *value, size_t size)
@@ -2008,14 +2058,6 @@ static ssize_t vfs_gluster_fgetxattr(struct vfs_handle_struct *handle,
 	return glfs_fgetxattr(glfd, name, value, size);
 }
 
-static ssize_t vfs_gluster_listxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				char *list,
-				size_t size)
-{
-	return glfs_listxattr(handle->data, smb_fname->base_name, list, size);
-}
-
 static ssize_t vfs_gluster_flistxattr(struct vfs_handle_struct *handle,
 				      files_struct *fsp, char *list,
 				      size_t size)
@@ -2025,15 +2067,20 @@ static ssize_t vfs_gluster_flistxattr(struct vfs_handle_struct *handle,
 		DBG_ERR("Failed to fetch gluster fd\n");
 		return -1;
 	}
-
-	return glfs_flistxattr(glfd, list, size);
-}
-
-static int vfs_gluster_removexattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name)
-{
-	return glfs_removexattr(handle->data, smb_fname->base_name, name);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to list xattrs.
+		 */
+		return glfs_flistxattr(glfd, list, size);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		return glfs_listxattr(handle->data,
+				fsp->fsp_name->base_name,
+				list,
+				size);
+	}
 }
 
 static int vfs_gluster_fremovexattr(struct vfs_handle_struct *handle,
@@ -2044,16 +2091,19 @@ static int vfs_gluster_fremovexattr(struct vfs_handle_struct *handle,
 		DBG_ERR("Failed to fetch gluster fd\n");
 		return -1;
 	}
-
-	return glfs_fremovexattr(glfd, name);
-}
-
-static int vfs_gluster_setxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				const void *value, size_t size, int flags)
-{
-	return glfs_setxattr(handle->data, smb_fname->base_name, name, value, size, flags);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to remove xattrs.
+		 */
+		return glfs_fremovexattr(glfd, name);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		return glfs_removexattr(handle->data,
+				fsp->fsp_name->base_name,
+				name);
+	}
 }
 
 static int vfs_gluster_fsetxattr(struct vfs_handle_struct *handle,
@@ -2066,7 +2116,22 @@ static int vfs_gluster_fsetxattr(struct vfs_handle_struct *handle,
 		return -1;
 	}
 
-	return glfs_fsetxattr(glfd, name, value, size, flags);
+	if (!fsp->fsp_flags.is_pathref) {
+		/*
+		 * We can use an io_fd to set xattrs.
+		 */
+		return glfs_fsetxattr(glfd, name, value, size, flags);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		return glfs_setxattr(handle->data,
+				fsp->fsp_name->base_name,
+				name,
+				value,
+				size,
+				flags);
+	}
 }
 
 /* AIO Operations */
@@ -2087,8 +2152,14 @@ static NTSTATUS vfs_gluster_create_dfs_pathat(struct vfs_handle_struct *handle,
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
 	int ret;
 	char *msdfs_link = NULL;
+	struct smb_filename *full_fname = NULL;
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		goto out;
+	}
 
 	/* Form the msdfs_link contents */
 	msdfs_link = msdfs_link_string(frame,
@@ -2100,7 +2171,7 @@ static NTSTATUS vfs_gluster_create_dfs_pathat(struct vfs_handle_struct *handle,
 
 	ret = glfs_symlink(handle->data,
 			msdfs_link,
-			smb_fname->base_name);
+			full_fname->base_name);
 	if (ret == 0) {
 		status = NT_STATUS_OK;
 	} else {
@@ -2140,9 +2211,8 @@ static NTSTATUS vfs_gluster_read_dfs_pathat(struct vfs_handle_struct *handle,
 	char link_target_buf[7];
 #endif
 	struct stat st;
+	struct smb_filename *full_fname = NULL;
 	int ret;
-
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
 
 	if (is_named_stream(smb_fname)) {
 		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
@@ -2164,25 +2234,33 @@ static NTSTATUS vfs_gluster_read_dfs_pathat(struct vfs_handle_struct *handle,
 		}
 	}
 
-	ret = glfs_lstat(handle->data, smb_fname->base_name, &st);
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto err;
+        }
+
+	ret = glfs_lstat(handle->data, full_fname->base_name, &st);
 	if (ret < 0) {
 		status = map_nt_error_from_unix(errno);
 		goto err;
 	}
 
 	referral_len = glfs_readlink(handle->data,
-				smb_fname->base_name,
+				full_fname->base_name,
 				link_target,
 				bufsize - 1);
 	if (referral_len < 0) {
 		if (errno == EINVAL) {
-			DBG_INFO("%s is not a link.\n", smb_fname->base_name);
+			DBG_INFO("%s is not a link.\n", full_fname->base_name);
 			status = NT_STATUS_OBJECT_TYPE_MISMATCH;
 		} else {
 			status = map_nt_error_from_unix(errno);
 			DBG_ERR("Error reading "
 				"msdfs link %s: %s\n",
-				smb_fname->base_name,
+				full_fname->base_name,
 				strerror(errno));
 		}
 		goto err;
@@ -2190,7 +2268,7 @@ static NTSTATUS vfs_gluster_read_dfs_pathat(struct vfs_handle_struct *handle,
 	link_target[referral_len] = '\0';
 
 	DBG_INFO("%s -> %s\n",
-			smb_fname->base_name,
+			full_fname->base_name,
 			link_target);
 
 	if (!strnequal(link_target, "msdfs:", 6)) {
@@ -2200,6 +2278,7 @@ static NTSTATUS vfs_gluster_read_dfs_pathat(struct vfs_handle_struct *handle,
 
 	if (ppreflist == NULL && preferral_count == NULL) {
 		/* Early return for checking if this is a DFS link. */
+		TALLOC_FREE(full_fname);
 		smb_stat_ex_from_stat(&smb_fname->st, &st);
 		return NT_STATUS_OK;
 	}
@@ -2222,6 +2301,7 @@ static NTSTATUS vfs_gluster_read_dfs_pathat(struct vfs_handle_struct *handle,
 	if (link_target != link_target_buf) {
 		TALLOC_FREE(link_target);
 	}
+	TALLOC_FREE(full_fname);
 	return status;
 }
 
@@ -2273,13 +2353,12 @@ static struct vfs_fn_pointers glusterfs_fns = {
 	.get_alloc_size_fn = vfs_gluster_get_alloc_size,
 	.unlinkat_fn = vfs_gluster_unlinkat,
 
-	.chmod_fn = vfs_gluster_chmod,
 	.fchmod_fn = vfs_gluster_fchmod,
 	.fchown_fn = vfs_gluster_fchown,
 	.lchown_fn = vfs_gluster_lchown,
 	.chdir_fn = vfs_gluster_chdir,
 	.getwd_fn = vfs_gluster_getwd,
-	.ntimes_fn = vfs_gluster_ntimes,
+	.fntimes_fn = vfs_gluster_fntimes,
 	.ftruncate_fn = vfs_gluster_ftruncate,
 	.fallocate_fn = vfs_gluster_fallocate,
 	.lock_fn = vfs_gluster_lock,
@@ -2292,9 +2371,9 @@ static struct vfs_fn_pointers glusterfs_fns = {
 	.linkat_fn = vfs_gluster_linkat,
 	.mknodat_fn = vfs_gluster_mknodat,
 	.realpath_fn = vfs_gluster_realpath,
-	.chflags_fn = vfs_gluster_chflags,
+	.fchflags_fn = vfs_gluster_fchflags,
 	.file_id_create_fn = NULL,
-	.streaminfo_fn = NULL,
+	.fstreaminfo_fn = NULL,
 	.get_real_filename_fn = vfs_gluster_get_real_filename,
 	.connectpath_fn = vfs_gluster_connectpath,
 	.create_dfs_pathat_fn = vfs_gluster_create_dfs_pathat,
@@ -2308,28 +2387,21 @@ static struct vfs_fn_pointers glusterfs_fns = {
 
 	/* NT ACL Operations */
 	.fget_nt_acl_fn = NULL,
-	.get_nt_acl_at_fn = NULL,
 	.fset_nt_acl_fn = NULL,
 	.audit_file_fn = NULL,
 
 	/* Posix ACL Operations */
-	.sys_acl_get_file_fn = posixacl_xattr_acl_get_file,
 	.sys_acl_get_fd_fn = posixacl_xattr_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = posixacl_xattr_acl_set_fd,
-	.sys_acl_delete_def_file_fn = posixacl_xattr_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = posixacl_xattr_acl_delete_def_fd,
 
 	/* EA Operations */
-	.getxattr_fn = vfs_gluster_getxattr,
 	.getxattrat_send_fn = vfs_not_implemented_getxattrat_send,
 	.getxattrat_recv_fn = vfs_not_implemented_getxattrat_recv,
 	.fgetxattr_fn = vfs_gluster_fgetxattr,
-	.listxattr_fn = vfs_gluster_listxattr,
 	.flistxattr_fn = vfs_gluster_flistxattr,
-	.removexattr_fn = vfs_gluster_removexattr,
 	.fremovexattr_fn = vfs_gluster_fremovexattr,
-	.setxattr_fn = vfs_gluster_setxattr,
 	.fsetxattr_fn = vfs_gluster_fsetxattr,
 
 	/* AIO Operations */

@@ -204,6 +204,7 @@ static int password_hash_bypass(struct ldb_module *module, struct ldb_request *r
 	struct ldb_message_element *nthe;
 	struct ldb_message_element *lmhe;
 	struct ldb_message_element *sce;
+	int ret;
 
 	switch (request->operation) {
 	case LDB_ADD:
@@ -217,17 +218,26 @@ static int password_hash_bypass(struct ldb_module *module, struct ldb_request *r
 	}
 
 	/* nobody must touch password histories and 'supplementalCredentials' */
-	nte = dsdb_get_single_valued_attr(msg, "unicodePwd",
-					  request->operation);
-	lme = dsdb_get_single_valued_attr(msg, "dBCSPwd",
-					  request->operation);
-	nthe = dsdb_get_single_valued_attr(msg, "ntPwdHistory",
-					   request->operation);
-	lmhe = dsdb_get_single_valued_attr(msg, "lmPwdHistory",
-					   request->operation);
-	sce = dsdb_get_single_valued_attr(msg, "supplementalCredentials",
-					  request->operation);
 
+#define GET_VALUES(el, attr) do {  \
+	ret = dsdb_get_expected_new_values(request,		\
+					   msg,			\
+					   attr,		\
+					   &el,			\
+					   request->operation);	\
+								\
+	if (ret != LDB_SUCCESS) {				\
+		return ret;					\
+	}							\
+} while(0)
+
+	GET_VALUES(nte, "unicodePwd");
+	GET_VALUES(lme, "dBCSPwd");
+	GET_VALUES(nthe, "ntPwdHistory");
+	GET_VALUES(lmhe, "lmPwdHistory");
+	GET_VALUES(sce, "supplementalCredentials");
+
+#undef GET_VALUES
 #define CHECK_HASH_ELEMENT(e, min, max) do {\
 	if (e && e->num_values) { \
 		unsigned int _count; \
@@ -688,8 +698,8 @@ static int setup_kerberos_keys(struct setup_password_fields_io *io)
 {
 	struct ldb_context *ldb;
 	krb5_error_code krb5_ret;
-	char *salt_principal = NULL;
-	char *salt_data = NULL;
+	krb5_principal salt_principal = NULL;
+	krb5_data salt_data;
 	krb5_data salt;
 	krb5_keyblock key;
 	krb5_data cleartext_data;
@@ -700,11 +710,11 @@ static int setup_kerberos_keys(struct setup_password_fields_io *io)
 	cleartext_data.length = io->n.cleartext_utf8->length;
 
 	uac_flags = io->u.userAccountControl & UF_ACCOUNT_TYPE_MASK;
-	krb5_ret = smb_krb5_salt_principal(io->ac->status->domain_data.realm,
+	krb5_ret = smb_krb5_salt_principal(io->smb_krb5_context->krb5_context,
+					   io->ac->status->domain_data.realm,
 					   io->u.sAMAccountName,
 					   io->u.user_principal_name,
 					   uac_flags,
-					   io->ac,
 					   &salt_principal);
 	if (krb5_ret) {
 		ldb_asprintf_errstring(ldb,
@@ -718,8 +728,10 @@ static int setup_kerberos_keys(struct setup_password_fields_io *io)
 	/*
 	 * create salt from salt_principal
 	 */
-	krb5_ret = smb_krb5_salt_principal2data(io->smb_krb5_context->krb5_context,
-						salt_principal, io->ac, &salt_data);
+	krb5_ret = smb_krb5_get_pw_salt(io->smb_krb5_context->krb5_context,
+					salt_principal, &salt_data);
+
+	krb5_free_principal(io->smb_krb5_context->krb5_context, salt_principal);
 	if (krb5_ret) {
 		ldb_asprintf_errstring(ldb,
 				       "setup_kerberos_keys: "
@@ -728,11 +740,16 @@ static int setup_kerberos_keys(struct setup_password_fields_io *io)
 								  krb5_ret, io->ac));
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
-	io->g.salt = salt_data;
 
 	/* now use the talloced copy of the salt */
-	salt.data	= discard_const(io->g.salt);
+	salt.data	= talloc_strndup(io->ac,
+					 (char *)salt_data.data,
+					 salt_data.length);
+	io->g.salt      = salt.data;
 	salt.length	= strlen(io->g.salt);
+
+	smb_krb5_free_data_contents(io->smb_krb5_context->krb5_context,
+				    &salt_data);
 
 	/*
 	 * create ENCTYPE_AES256_CTS_HMAC_SHA1_96 key out of
@@ -1540,6 +1557,7 @@ static int setup_primary_userPassword_hash(
 	 * RHEL 7 behaviour.
 	 */
 	errno = 0;
+
 #ifdef HAVE_CRYPT_RN
 	hash = crypt_rn((char *)io->n.cleartext_utf8->data,
 			cmd,
@@ -1554,18 +1572,29 @@ static int setup_primary_userPassword_hash(
 	 */
 	hash = crypt((char *)io->n.cleartext_utf8->data, cmd);
 #endif
-	if (hash == NULL) {
+	/*
+	* On error, crypt() and crypt_r() may return a null pointer,
+	* or a pointer to an invalid hash beginning with a '*'.
+	*/
+	if (hash == NULL || hash[0] == '*') {
 		char buf[1024];
-		int err = strerror_r(errno, buf, sizeof(buf));
-		if (err != 0) {
-			strlcpy(buf, "Unknown error", sizeof(buf)-1);
+		const char *reason = NULL;
+		if (errno == ERANGE) {
+			reason = "Password exceeds maximum length allowed for crypt() hashing";
+		} else {
+			int err = strerror_r(errno, buf, sizeof(buf));
+			if (err == 0) {
+				reason = buf;
+			} else {
+				reason = "Unknown error";
+			}
 		}
 		ldb_asprintf_errstring(
 			ldb,
 			"setup_primary_userPassword: generation of a %s "
 			"password hash failed: (%s)",
 			scheme,
-			buf);
+			reason);
 		TALLOC_FREE(frame);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
@@ -2031,7 +2060,12 @@ static int setup_supplemental_field(struct setup_password_fields_io *io)
 		num_packages++;
 	}
 
-	if (io->ac->userPassword_schemes) {
+	/*
+	 * Don't generate crypt() or similar password for the krbtgt account.
+	 * It's unnecessary, and the length of the cleartext in UTF-8 form
+	 * exceeds the maximum (CRYPT_MAX_PASSPHRASE_SIZE) allowed by crypt().
+	 */
+	if (io->ac->userPassword_schemes && !io->u.is_krbtgt) {
 		/*
 		 * setup 'Primary:userPassword' element
 		 */
@@ -2213,23 +2247,31 @@ static int setup_last_set_field(struct setup_password_fields_io *io)
 	}
 
 	if (io->ac->pwd_last_set_bypass) {
-		struct ldb_message_element *el1 = NULL;
-		struct ldb_message_element *el2 = NULL;
-
+		struct ldb_message_element *el = NULL;
+		size_t i;
+		size_t count = 0;
+		/*
+		 * This is a message from pdb_samba_dsdb_replace_by_sam()
+		 *
+		 * We want to ensure there is only one pwdLastSet element, and
+		 * it isn't deleting.
+		 */
 		if (msg == NULL) {
 			return LDB_ERR_CONSTRAINT_VIOLATION;
 		}
 
-		el1 = dsdb_get_single_valued_attr(msg, "pwdLastSet",
-						  io->ac->req->operation);
-		if (el1 == NULL) {
+		for (i = 0; i < msg->num_elements; i++) {
+			if (ldb_attr_cmp(msg->elements[i].name,
+					 "pwdLastSet") == 0) {
+				count++;
+				el = &msg->elements[i];
+			}
+		}
+		if (count != 1) {
 			return LDB_ERR_CONSTRAINT_VIOLATION;
 		}
-		el2 = ldb_msg_find_element(msg, "pwdLastSet");
-		if (el2 == NULL) {
-			return LDB_ERR_CONSTRAINT_VIOLATION;
-		}
-		if (el1 != el2) {
+
+		if (LDB_FLAG_MOD_TYPE(el->flags) == LDB_FLAG_MOD_DELETE) {
 			return LDB_ERR_CONSTRAINT_VIOLATION;
 		}
 
@@ -2470,6 +2512,59 @@ static int setup_password_fields(struct setup_password_fields_io *io)
 
 	if (!io->ac->update_password) {
 		return LDB_SUCCESS;
+	}
+
+	if (io->u.is_krbtgt) {
+		size_t min = 196;
+		size_t max = 255;
+		size_t diff = max - min;
+		size_t len = max;
+		struct ldb_val *krbtgt_utf16 = NULL;
+
+		if (!io->ac->pwd_reset) {
+			return dsdb_module_werror(io->ac->module,
+					LDB_ERR_ATTRIBUTE_OR_VALUE_EXISTS,
+					WERR_DS_ATT_ALREADY_EXISTS,
+					"Password change on krbtgt not permitted!");
+		}
+
+		if (io->n.cleartext_utf16 == NULL) {
+			return dsdb_module_werror(io->ac->module,
+					LDB_ERR_UNWILLING_TO_PERFORM,
+					WERR_DS_INVALID_ATTRIBUTE_SYNTAX,
+					"Password reset on krbtgt requires UTF16!");
+		}
+
+		/*
+		 * Instead of taking the callers value,
+		 * we just generate a new random value here.
+		 *
+		 * Include null termination in the array.
+		 */
+		if (diff > 0) {
+			size_t tmp;
+
+			generate_random_buffer((uint8_t *)&tmp, sizeof(tmp));
+
+			tmp %= diff;
+
+			len = min + tmp;
+		}
+
+		krbtgt_utf16 = talloc_zero(io->ac, struct ldb_val);
+		if (krbtgt_utf16 == NULL) {
+			return ldb_oom(ldb);
+		}
+
+		*krbtgt_utf16 = data_blob_talloc_zero(krbtgt_utf16,
+						      (len+1)*2);
+		if (krbtgt_utf16->data == NULL) {
+			return ldb_oom(ldb);
+		}
+		krbtgt_utf16->length = len * 2;
+		generate_secret_buffer(krbtgt_utf16->data,
+				       krbtgt_utf16->length);
+		io->n.cleartext_utf16 = krbtgt_utf16;
 	}
 
 	/* transform the old password (for password changes) */
@@ -3647,59 +3742,6 @@ static int setup_io(struct ph_context *ac,
 	} else {
 		/* this shouldn't happen */
 		return ldb_operr(ldb);
-	}
-
-	if (io->u.is_krbtgt) {
-		size_t min = 196;
-		size_t max = 255;
-		size_t diff = max - min;
-		size_t len = max;
-		struct ldb_val *krbtgt_utf16 = NULL;
-
-		if (!ac->pwd_reset) {
-			return dsdb_module_werror(ac->module,
-					LDB_ERR_ATTRIBUTE_OR_VALUE_EXISTS,
-					WERR_DS_ATT_ALREADY_EXISTS,
-					"Password change on krbtgt not permitted!");
-		}
-
-		if (io->n.cleartext_utf16 == NULL) {
-			return dsdb_module_werror(ac->module,
-					LDB_ERR_UNWILLING_TO_PERFORM,
-					WERR_DS_INVALID_ATTRIBUTE_SYNTAX,
-					"Password reset on krbtgt requires UTF16!");
-		}
-
-		/*
-		 * Instead of taking the callers value,
-		 * we just generate a new random value here.
-		 *
-		 * Include null termination in the array.
-		 */
-		if (diff > 0) {
-			size_t tmp;
-
-			generate_random_buffer((uint8_t *)&tmp, sizeof(tmp));
-
-			tmp %= diff;
-
-			len = min + tmp;
-		}
-
-		krbtgt_utf16 = talloc_zero(io->ac, struct ldb_val);
-		if (krbtgt_utf16 == NULL) {
-			return ldb_oom(ldb);
-		}
-
-		*krbtgt_utf16 = data_blob_talloc_zero(krbtgt_utf16,
-						      (len+1)*2);
-		if (krbtgt_utf16->data == NULL) {
-			return ldb_oom(ldb);
-		}
-		krbtgt_utf16->length = len * 2;
-		generate_secret_buffer(krbtgt_utf16->data,
-				       krbtgt_utf16->length);
-		io->n.cleartext_utf16 = krbtgt_utf16;
 	}
 
 	if (existing_msg != NULL) {

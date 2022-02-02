@@ -1,5 +1,5 @@
 /*
-   Fuzzing ldb_parse_control_from_string
+   Fuzzing ldb_ldif_read_string
    Copyright (C) Catalyst IT 2020
 
    This program is free software; you can redistribute it and/or modify
@@ -46,5 +46,11 @@ int LLVMFuzzerTestOneInput(uint8_t *input, size_t len)
 		ldb_ldif_write_redacted_trace_string(ldb, ldb, ldif);
 	}
 	TALLOC_FREE(ldb);
+	return 0;
+}
+
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
 	return 0;
 }
