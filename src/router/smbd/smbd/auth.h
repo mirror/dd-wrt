@@ -69,4 +69,13 @@ static int ksmbd_gen_preauth_integrity_hash(struct ksmbd_conn *conn, char *buf,
 				     __u8 *pi_hash);
 static int ksmbd_gen_sd_hash(struct ksmbd_conn *conn, char *sd_buf, int len,
 		      __u8 *pi_hash);
+
+#define ARC4_MIN_KEY_SIZE	1
+#define ARC4_MAX_KEY_SIZE	256
+#define ARC4_BLOCK_SIZE		1
+
+struct arc4_ctx {
+	u32 S[256];
+	u32 x, y;
+};
 #endif
