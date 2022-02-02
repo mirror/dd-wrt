@@ -55,7 +55,7 @@
 #include <sys/wmsum.h>
 #include <sys/vdev_impl.h>
 
-kstat_t *dbuf_ksp;
+static kstat_t *dbuf_ksp;
 
 typedef struct dbuf_stats {
 	/*
@@ -225,12 +225,12 @@ typedef struct dbuf_cache {
 dbuf_cache_t dbuf_caches[DB_CACHE_MAX];
 
 /* Size limits for the caches */
-unsigned long dbuf_cache_max_bytes = ULONG_MAX;
-unsigned long dbuf_metadata_cache_max_bytes = ULONG_MAX;
+static unsigned long dbuf_cache_max_bytes = ULONG_MAX;
+static unsigned long dbuf_metadata_cache_max_bytes = ULONG_MAX;
 
 /* Set the default sizes of the caches to log2 fraction of arc size */
-int dbuf_cache_shift = 5;
-int dbuf_metadata_cache_shift = 6;
+static int dbuf_cache_shift = 5;
+static int dbuf_metadata_cache_shift = 6;
 
 static unsigned long dbuf_cache_target_bytes(void);
 static unsigned long dbuf_metadata_cache_target_bytes(void);
@@ -277,8 +277,8 @@ static unsigned long dbuf_metadata_cache_target_bytes(void);
 /*
  * The percentage above and below the maximum cache size.
  */
-uint_t dbuf_cache_hiwater_pct = 10;
-uint_t dbuf_cache_lowater_pct = 10;
+static uint_t dbuf_cache_hiwater_pct = 10;
+static uint_t dbuf_cache_lowater_pct = 10;
 
 static int
 dbuf_cons(void *vdb, void *unused, int kmflag)
@@ -822,7 +822,7 @@ dbuf_evict_thread(void *unused)
 /*
  * Wake up the dbuf eviction thread if the dbuf cache is at its max size.
  * If the dbuf cache is at its high water mark, then evict a dbuf from the
- * dbuf cache using the callers context.
+ * dbuf cache using the caller's context.
  */
 static void
 dbuf_evict_notify(uint64_t size)
@@ -5096,25 +5096,20 @@ EXPORT_SYMBOL(dmu_buf_set_user_ie);
 EXPORT_SYMBOL(dmu_buf_get_user);
 EXPORT_SYMBOL(dmu_buf_get_blkptr);
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_dbuf_cache, dbuf_cache_, max_bytes, ULONG, ZMOD_RW,
 	"Maximum size in bytes of the dbuf cache.");
 
 ZFS_MODULE_PARAM(zfs_dbuf_cache, dbuf_cache_, hiwater_pct, UINT, ZMOD_RW,
-	"Percentage over dbuf_cache_max_bytes when dbufs must be evicted "
-	"directly.");
+	"Percentage over dbuf_cache_max_bytes for direct dbuf eviction.");
 
 ZFS_MODULE_PARAM(zfs_dbuf_cache, dbuf_cache_, lowater_pct, UINT, ZMOD_RW,
-	"Percentage below dbuf_cache_max_bytes when the evict thread stops "
-	"evicting dbufs.");
+	"Percentage below dbuf_cache_max_bytes when dbuf eviction stops.");
 
 ZFS_MODULE_PARAM(zfs_dbuf, dbuf_, metadata_cache_max_bytes, ULONG, ZMOD_RW,
-	"Maximum size in bytes of the dbuf metadata cache.");
+	"Maximum size in bytes of dbuf metadata cache.");
 
 ZFS_MODULE_PARAM(zfs_dbuf, dbuf_, cache_shift, INT, ZMOD_RW,
-	"Set the size of the dbuf cache to a log2 fraction of arc size.");
+	"Set size of dbuf cache to log2 fraction of arc size.");
 
 ZFS_MODULE_PARAM(zfs_dbuf, dbuf_, metadata_cache_shift, INT, ZMOD_RW,
-	"Set the size of the dbuf metadata cache to a log2 fraction of arc "
-	"size.");
-/* END CSTYLED */
+	"Set size of dbuf metadata cache to log2 fraction of arc size.");

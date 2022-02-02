@@ -158,7 +158,7 @@ procfs_list_seq_stop(struct seq_file *f, void *p)
 	mutex_exit(&procfs_list->pl_lock);
 }
 
-static struct seq_operations procfs_list_seq_ops = {
+static const struct seq_operations procfs_list_seq_ops = {
 	.show  = procfs_list_seq_show,
 	.start = procfs_list_seq_start,
 	.next  = procfs_list_seq_next,
@@ -175,7 +175,7 @@ procfs_list_open(struct inode *inode, struct file *filp)
 
 	struct seq_file *f = filp->private_data;
 	procfs_list_cursor_t *cursor = f->private;
-	cursor->procfs_list = PDE_DATA(inode);
+	cursor->procfs_list = SPL_PDE_DATA(inode);
 	cursor->cached_node = NULL;
 	cursor->cached_pos = 0;
 

@@ -42,7 +42,7 @@
  * list usually needs to be updated.
  * this can be done with some hand crafting of the output of the following
  * script
- * nm zstd.o | awk '{print "#define "$3 " zfs_" $3}' > macrotable
+ * nm zzstd.o | awk '{print "#define "$3 " zfs_" $3}' > macrotable
  */
 
 #define	BIT_initDStream zfs_BIT_initDStream
@@ -77,6 +77,10 @@
 #define	FSE_readNCount zfs_FSE_readNCount
 #define	FSE_versionNumber zfs_FSE_versionNumber
 #define	FSE_writeNCount zfs_FSE_writeNCount
+#define	FSE_buildDTable_internal zfs_FSE_buildDTable_internal
+#define	FSE_decompress_wksp_body_bmi2 zfs_FSE_decompress_wksp_body_bmi2
+#define	FSE_initDState zfs_FSE_initDState
+#define	FSE_readNCount_body_bmi2 zfs_FSE_readNCount_body_bmi2
 #define	HIST_count zfs_HIST_count
 #define	HIST_countFast zfs_HIST_countFast
 #define	HIST_countFast_wksp zfs_HIST_countFast_wksp
@@ -140,6 +144,45 @@
 #define	HUF_setMaxHeight zfs_HUF_setMaxHeight
 #define	HUF_validateCTable zfs_HUF_validateCTable
 #define	HUF_writeCTable zfs_HUF_writeCTable
+#define	HUF_readQuickSort zfs_HUF_readQuickSort
+#define	HUF_readDTableX2_wksp_bmi2 zfs_HUF_readDTableX2_wksp_bmi2
+#define	HUF_getNbBitsFromCTable zfs_HUF_getNbBitsFromCTable
+#define	HUF_DecompressAsmArgs_init zfs_HUF_DecompressAsmArgs_init
+#define	HUF_decompress4X1_usingDTable_internal_bmi2 \
+	zfs_HUF_decompress4X1_usingDTable_internal_bmi2
+#define	HUF_decompress4X2_usingDTable_internal_bmi2 \
+	zfs_HUF_decompress4X2_usingDTable_internal_bmi2
+#define	HUF_compress1X_usingCTable_bmi2 \
+	zfs_HUF_compress1X_usingCTable_bmi2
+#define	HUF_compress4X_usingCTable_bmi2 \
+	zfs_HUF_compress4X_usingCTable_bmi2
+#define	HUF_compress1X_usingCTable_internal_bmi2 \
+	zfs_HUF_compress1X_usingCTable_internal_bmi2
+#define	HUF_compress1X_usingCTable_internal_default \
+	zfs_HUF_compress1X_usingCTable_internal_default
+#define	HUF_compress4X_usingCTable_internal \
+	zfs_HUF_compress4X_usingCTable_internal
+#define	HUF_compressCTable_internal zfs_HUF_compressCTable_internal
+#define	HUF_compress_internal zfs_HUF_compress_internal
+#define	HUF_decompress1X1_usingDTable_internal_bmi2 \
+	zfs_HUF_decompress1X1_usingDTable_internal_bmi2
+#define	HUF_decompress1X1_usingDTable_internal_default \
+	zfs_HUF_decompress1X1_usingDTable_internal_default
+#define	HUF_decompress1X2_usingDTable_internal_bmi2 \
+	zfs_HUF_decompress1X2_usingDTable_internal_bmi2
+#define	HUF_decompress1X2_usingDTable_internal_default \
+	zfs_HUF_decompress1X2_usingDTable_internal_default
+#define	HUF_decompress4X1_usingDTable_internal_default \
+	zfs_HUF_decompress4X1_usingDTable_internal_default
+#define	HUF_decompress4X2_usingDTable_internal_default \
+	zfs_HUF_decompress4X2_usingDTable_internal_default
+#define	HUF_decompress4X1_usingDTable_internal_bmi2_asm \
+	zfs_HUF_decompress4X1_usingDTable_internal_bmi2_asm
+#define	HUF_decompress4X2_usingDTable_internal_bmi2_asm \
+	zfs_HUF_decompress4X2_usingDTable_internal_bmi2_asm
+#define	HUF_readStats_body_bmi2 zfs_HUF_readStats_body_bmi2
+#define	HUF_simpleQuickSort zfs_HUF_simpleQuickSort
+#define	HUF_fillDTableX2 zfs_HUF_fillDTableX2
 #define	LL_base zfs_LL_base
 #define	LL_bits zfs_LL_bits
 #define	LL_defaultDTable zfs_LL_defaultDTable
@@ -521,3 +564,10 @@
 #define	ZSTD_compressBlock_lazy_extDict_row \
 	zfs_ZSTD_compressBlock_lazy_extDict_row
 #define	ZSTD_compressBlock_lazy_row zfs_ZSTD_compressBlock_lazy_row
+#define	ZSTD_defaultCLevel zfs_ZSTD_defaultCLevel
+#define	ZSTD_defaultCMem zfs_ZSTD_defaultCMem
+#define	ZSTD_isSkippableFrame zfs_ZSTD_isSkippableFrame
+#define	ZSTD_readSkippableFrame zfs_ZSTD_readSkippableFrame
+#define	ZSTD_buildBlockEntropyStats zfs_ZSTD_buildBlockEntropyStats
+#define	XXH64_finalize zfs_XXH64_finalize
+#define	XXH_INLINE_XXH64_digest zfs_XXH_INLINE_XXH64_digest

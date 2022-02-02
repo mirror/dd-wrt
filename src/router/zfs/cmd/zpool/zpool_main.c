@@ -3039,9 +3039,8 @@ show_import(nvlist_t *config, boolean_t report_error)
 				    ZPOOL_CONFIG_MMP_HOSTID);
 
 			(void) printf(gettext(" action: The pool must be "
-			    "exported from %s (hostid=%lx)\n\tbefore it "
-			    "can be safely imported.\n"), hostname,
-			    (unsigned long) hostid);
+			    "exported from %s (hostid=%"PRIx64")\n\tbefore it "
+			    "can be safely imported.\n"), hostname, hostid);
 			break;
 		case ZPOOL_STATUS_HOSTID_REQUIRED:
 			(void) printf(gettext(" action: Set a unique system "
@@ -3136,7 +3135,7 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 {
 	int ret = 0;
 	zpool_handle_t *zhp;
-	char *name;
+	const char *name;
 	uint64_t version;
 
 	name = fnvlist_lookup_string(config, ZPOOL_CONFIG_POOL_NAME);
@@ -3157,7 +3156,7 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 			    ZPOOL_CONFIG_MMP_STATE);
 
 		if (mmp_state == MMP_STATE_ACTIVE) {
-			char *hostname = "<unknown>";
+			const char *hostname = "<unknown>";
 			uint64_t hostid = 0;
 
 			if (nvlist_exists(nvinfo, ZPOOL_CONFIG_MMP_HOSTNAME))
@@ -3170,17 +3169,17 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 
 			(void) fprintf(stderr, gettext("cannot import '%s': "
 			    "pool is imported on %s (hostid: "
-			    "0x%lx)\nExport the pool on the other system, "
-			    "then run 'zpool import'.\n"),
-			    name, hostname, (unsigned long) hostid);
+			    "0x%"PRIx64")\nExport the pool on the other "
+			    "system, then run 'zpool import'.\n"),
+			    name, hostname, hostid);
 		} else if (mmp_state == MMP_STATE_NO_HOSTID) {
 			(void) fprintf(stderr, gettext("Cannot import '%s': "
 			    "pool has the multihost property on and the\n"
 			    "system's hostid is not set. Set a unique hostid "
 			    "with the zgenhostid(8) command.\n"), name);
 		} else {
-			char *hostname = "<unknown>";
-			uint64_t timestamp = 0;
+			const char *hostname = "<unknown>";
+			time_t timestamp = 0;
 			uint64_t hostid = 0;
 
 			if (nvlist_exists(config, ZPOOL_CONFIG_HOSTNAME))
@@ -3197,10 +3196,10 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 
 			(void) fprintf(stderr, gettext("cannot import '%s': "
 			    "pool was previously in use from another system.\n"
-			    "Last accessed by %s (hostid=%lx) at %s"
+			    "Last accessed by %s (hostid=%"PRIx64") at %s"
 			    "The pool can be imported, use 'zpool import -f' "
 			    "to import the pool.\n"), name, hostname,
-			    (unsigned long)hostid, ctime((time_t *)&timestamp));
+			    hostid, ctime(&timestamp));
 		}
 
 		return (1);
@@ -3210,7 +3209,7 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 		return (1);
 
 	if (newname != NULL)
-		name = (char *)newname;
+		name = newname;
 
 	if ((zhp = zpool_open_canfail(g_zfs, name)) == NULL)
 		return (1);
@@ -3219,11 +3218,9 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 	 * Loading keys is best effort. We don't want to return immediately
 	 * if it fails but we do want to give the error to the caller.
 	 */
-	if (flags & ZFS_IMPORT_LOAD_KEYS) {
-		ret = zfs_crypto_attempt_load_keys(g_zfs, name);
-		if (ret != 0)
+	if (flags & ZFS_IMPORT_LOAD_KEYS &&
+	    zfs_crypto_attempt_load_keys(g_zfs, name) != 0)
 			ret = 1;
-	}
 
 	if (zpool_get_state(zhp) != POOL_STATE_UNAVAIL &&
 	    !(flags & ZFS_IMPORT_ONLY) &&
@@ -3273,7 +3270,7 @@ import_pools(nvlist_t *pools, nvlist_t *props, char *mntopts, int flags,
 			if (first)
 				first = B_FALSE;
 			else if (!do_all)
-				(void) printf("\n");
+				(void) putchar('\n');
 
 			if (do_all) {
 				err |= do_import(config, NULL, mntopts,
@@ -3724,9 +3721,8 @@ zpool_do_import(int argc, char **argv)
 	if (argc == 0 && geteuid() != 0) {
 		(void) fprintf(stderr, gettext("cannot "
 		    "discover pools: permission denied\n"));
-		if (searchdirs != NULL)
-			free(searchdirs);
 
+		free(searchdirs);
 		nvlist_free(props);
 		nvlist_free(policy);
 		return (1);

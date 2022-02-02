@@ -452,7 +452,7 @@ _LIBZFS_H void zpool_print_unsup_feat(nvlist_t *config);
  */
 struct zfs_cmd;
 
-_LIBZFS_H const char *zfs_history_event_names[];
+_LIBZFS_H const char *const zfs_history_event_names[];
 
 typedef enum {
 	VDEV_NAME_PATH		= 1 << 0,
@@ -553,8 +553,8 @@ _LIBZFS_H int zfs_crypto_create(libzfs_handle_t *, char *, nvlist_t *,
     nvlist_t *, boolean_t stdin_available, uint8_t **, uint_t *);
 _LIBZFS_H int zfs_crypto_clone_check(libzfs_handle_t *, zfs_handle_t *, char *,
     nvlist_t *);
-_LIBZFS_H int zfs_crypto_attempt_load_keys(libzfs_handle_t *, char *);
-_LIBZFS_H int zfs_crypto_load_key(zfs_handle_t *, boolean_t, char *);
+_LIBZFS_H int zfs_crypto_attempt_load_keys(libzfs_handle_t *, const char *);
+_LIBZFS_H int zfs_crypto_load_key(zfs_handle_t *, boolean_t, const char *);
 _LIBZFS_H int zfs_crypto_unload_key(zfs_handle_t *);
 _LIBZFS_H int zfs_crypto_rewrap(zfs_handle_t *, nvlist_t *, boolean_t);
 
