@@ -1156,7 +1156,7 @@ _ieee802_11_parse_elems_crc(const u8 *start, size_t len, bool action,
 			}
 			break;
 		case WLAN_EID_AIRONET:
-			elems->aironet = (struct aironet_ie_data *)pos;
+			elems->aironet = (struct ieee80211_aironet_ie_data *)pos;
 			break;
 		case WLAN_EID_RSN:
 			elems->rsn = pos;
@@ -4627,6 +4627,7 @@ u32 ieee80211_get_ddwrt_ie_len(void)
 u8 *ieee80211_add_brcm_ie(u8 *frm, int numsta)
 {
 	struct ieee80211_brcm_ie_data data;
+	struct ieee80211_aironet_ie_data *aironet;
 	static const u_int8_t brcmoui[3] = { 0x00, 0x10, 0x18 };
 	*frm++ = WLAN_EID_VENDOR_SPECIFIC;
 	*frm++ = sizeof(struct ieee80211_brcm_ie_data) + 4; /* brcm ie + oui + ver */
@@ -4639,6 +4640,19 @@ u8 *ieee80211_add_brcm_ie(u8 *frm, int numsta)
 	data.amsdu_mtu_pref = 0;
 	memcpy(frm, &data, sizeof(data));
 	frm += sizeof(data);
+/*	
+	its meaningless to broadcast it. aironet contains too many
+	propertiery crypto extensions which are insecure. this should not 
+	be used in any way
+	*frm++ = WLAN_EID_AIRONET;
+	*frm++ = sizeof(struct ieee80211_aironet_ie_data);
+	aironet = frm;
+	frm += sizeof(aironet);
+	memset(aironet, 0, sizeof(*aironet));
+	aironet->device = 0x66;
+	aironet->refresh_rate = 10;
+	aironet->flags = 0; 
+	*/	
 	return frm;
 
 }
