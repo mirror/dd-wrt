@@ -59,15 +59,19 @@
 #define DEFAULT_MANAGER_TLS_PORT 5039	/* Default port for Asterisk management via TCP */
 
 /*! \name Constant return values
- *\note Currently, returning anything other than zero causes the session to terminate.
+ * \note Currently, returning anything other than zero causes the session to terminate.
+ *
+ * @{
  */
-/*@{ */
 #define	AMI_SUCCESS	(0)
 #define	AMI_DESTROY	(-1)
-/*@} */
 
-/*! \name Manager event classes */
-/*@{ */
+/*! @} */
+
+/*! \name Manager event classes
+ *
+ * @{
+ */
 #define EVENT_FLAG_SYSTEM           (1 << 0) /* System events such as module load/unload */
 #define EVENT_FLAG_CALL             (1 << 1) /* Call event, such as state change, etc */
 #define EVENT_FLAG_LOG              (1 << 2) /* Log events */
@@ -89,7 +93,8 @@
 #define EVENT_FLAG_SECURITY         (1 << 18) /* Security Message as AMI Event */
 /*XXX Why shifted by 30? XXX */
 #define EVENT_FLAG_MESSAGE          (1 << 30) /* MESSAGE events. */
-/*@} */
+
+/*! @} */
 
 /*! \brief Export manager structures */
 #define AST_MAX_MANHEADERS 128
@@ -173,7 +178,7 @@ struct manager_action {
 	 * \brief TRUE if the AMI action is registered and the callback can be called.
 	 *
 	 * \note Needed to prevent a race between calling the callback
-	 * function and unregestring the AMI action object.
+	 * function and unregistering the AMI action object.
 	 */
 	unsigned int registered:1;
 };
@@ -269,7 +274,7 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 		struct ast_channel **chans, const char *file, int line, const char *func,
 		const char *contents, ...) __attribute__((format(printf, 8, 9)));
 
-/*! \brief Get header from mananger transaction */
+/*! \brief Get header from manager transaction */
 const char *astman_get_header(const struct message *m, char *var);
 
 /*! \brief Get a linked list of the Variable: headers
@@ -353,7 +358,7 @@ void astman_send_list_complete_end(struct mansession *s);
 
 void __attribute__((format(printf, 2, 3))) astman_append(struct mansession *s, const char *fmt, ...);
 
-/*! \brief Determinie if a manager session ident is authenticated */
+/*! \brief Determine if a manager session ident is authenticated */
 int astman_is_authed(uint32_t ident);
 
 /*!
