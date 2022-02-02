@@ -11,7 +11,7 @@ samba4-configure: gnutls icu zlib
 	echo 'Checking uname version type: "$(VERSION_DIST) Linux-$(LINUX_VERSION) $(shell date +%Y-%m-%d)"' >> $(TOP)/samba4/cross-answers.txt
 	# NOTE: For some unknown reason this answer is not needed on some hosts/distros, yet needed on others?
 	echo 'Checking whether POSIX capabilities are available: OK' >> $(TOP)/samba4/cross-answers.txt
-	cd samba4 && ./configure --hostcc=gcc \
+		cd samba4 && ./configure  --hostcc=gcc \
 		--disable-cups \
 		--disable-iprint \
 		--disable-cephfs \
@@ -24,7 +24,6 @@ samba4-configure: gnutls icu zlib
 		--without-automount \
 		--without-iconv \
 		--without-lttng \
-		--without-ntvfs-fileserver \
 		--without-pam \
 		--without-systemd \
 		--without-utmp \
@@ -34,15 +33,23 @@ samba4-configure: gnutls icu zlib
 		--without-gettext \
 		--without-regedit \
 		--without-gpgme \
+		--with-shared-modules='!vfs_snapper' \
 		--builtin-libraries=replace --nonshared-binary=asn1_compile \
 		--disable-avahi \
 		--without-quotas --without-acl-support --without-winbind \
 		--without-ad-dc --without-libarchive --disable-python --nopyc --nopyo \
-		--without-dnsupdate --without-ads --without-ldap python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
-	cd samba4 && ./buildtools/bin/waf build --targets=asn1_compile,compile_et python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
+		--without-ads --without-ldap python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
+		-cd samba4 && ./buildtools/bin/waf build --targets=asn1_compile,compile_et python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
 		install $(TOP)/samba4/bin/asn1_compile $(TOP)/samba4/bin/asn1_compile_host 
 		install $(TOP)/samba4/bin/compile_et $(TOP)/samba4/bin/compile_et_host
-	cd samba4 && ./configure  \
+		cd samba4 && ./buildtools/bin/waf build --targets=asn1_compile,compile_et python_LDFLAGS="" python_LIBDIR="" CC=gcc LD=ld CFLAGS="-O2"
+		export CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DLIBREPLACE_NETWORK_CHECKS -DNODEBUG -DNEED_PRINTF -I$(TOP)/libtirpc/tirpc -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -L$(TOP)/icu/target_staging/lib -ffunction-sections -fdata-sections -fPIC" && \
+		export CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DLIBREPLACE_NETWORK_CHECKS -DNODEBUG -DNEED_PRINTF -I$(TOP)/libtirpc/tirpc  -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -L$(TOP)/icu/target_staging/lib -ffunction-sections -fdata-sections -fPIC" && \
+		export CFLAGS="$(COPTS) $(MIPS16_OPT) -DLIBREPLACE_NETWORK_CHECKS -DNODEBUG -DNEED_PRINTF -I$(TOP)/libtirpc/tirpc  -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -L$(TOP)/icu/target_staging/lib -ffunction-sections -fdata-sections -fPIC" && \
+		export LDFLAGS="-Wl,--gc-sections -L$(TOP)/libtirpc/src/.libs -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed  -L$(TOP)/gmp/.libs -lgmp -L$(TOP)/icu/target_staging/lib -L$(TOP)/zlib  -fPIC" && \
+		export AR_FLAGS="cru $(LTOPLUGIN)" && \
+		export RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" && \
+		cd samba4 && ./buildtools/bin/waf configure \
 		--hostcc="$(ARCH)-linux-uclibc-gcc" \
 		--cross-compile \
 		--cross-answers=cross-answers.txt \
@@ -54,11 +61,11 @@ samba4-configure: gnutls icu zlib
 		--disable-rpath \
 		--disable-rpath-install \
 		--disable-rpath-private-install \
+		--with-shared-modules='!vfs_snapper' \
 		--enable-fhs \
 		--without-automount \
 		--without-iconv \
 		--without-lttng \
-		--without-ntvfs-fileserver \
 		--without-pam \
 		--without-systemd \
 		--without-utmp \
@@ -81,7 +88,6 @@ samba4-configure: gnutls icu zlib
 		--disable-python \
 		--nopyc \
 		--nopyo \
-		--without-dnsupdate \
 		--without-ads \
 		--without-ldap \
 		--with-winbind \
@@ -91,10 +97,7 @@ samba4-configure: gnutls icu zlib
 		--with-lockdir=/tmp/var \
 		--destdir=$(INSTALLDIR)/samba4 \
 		--private-libraries=talloc,tevent,tevent-util,texpect,tdb,ldb,tdr,cmocka,replace \
-		CFLAGS="$(LTOMIN) $(COPTS) $(MIPS16_OPT) -DNODEBUG -DNEED_PRINTF -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -ffunction-sections -fdata-sections -fPIC" \
-		LDFLAGS="$(LDLTO) -Wl,--gc-sections -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp -L$(TOP)/icu/target_staging/lib -L$(TOP)/zlib  -fPIC"
-		AR_FLAGS="cru $(LTOPLUGIN)" \
-		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+		
 		-make -C samba4
 		sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 		-make -C samba4
