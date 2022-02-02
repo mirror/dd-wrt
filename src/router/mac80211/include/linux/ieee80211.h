@@ -1655,18 +1655,24 @@ struct ieee80211_mtik_ie_data {
 	u8 pad2[5];           /* unknown. fill with zero */
 } __packed;
 
-struct aironet_ie_data {
+struct ieee80211_aironet_ie_data {
 	u8	load;
 	u8	hops;
 	u8	device;
 	u8	refresh_rate;
-	u16  cwmin;
-	u16  cwmax;
+	u16	cwmin;
+	u16	cwmax;
 	u8	flags;
 	u8	distance;
 	char	name[16];	/* AP or Client's machine name */
 	u16	num_assoc;	/* number of clients associated */
 	u16	radiotype;
+} __packed;
+
+struct ieee80211_aironet_ie {
+	u8 id;                /* IEEE80211_ELEMID_AIRONET */
+	u8 len;               /* length in bytes */
+	struct ieee80211_aironet_ie_data iedata;
 } __packed;
 
 struct ieee80211_mtik_ie {
