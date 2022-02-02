@@ -33,7 +33,7 @@
 
 #include "system/filesys.h"
 #include "auth/credentials/credentials.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "librpc/gen_ndr/security.h"
 
 #include "lib/events/events.h"
@@ -1647,6 +1647,11 @@ static bool torture_smb2_notify_invalid_reauth(struct torture_context *torture,
 	CHECK_STATUS(status, NT_STATUS_NOTIFY_CLEANUP);
 	CHECK_VAL(notify.smb2.out.num_changes, 0);
 
+	/*
+	 * Demonstrate that the session is no longer valid.
+	 */
+	status = smb2_create(tree1, torture, &(io.smb2));
+	CHECK_STATUS(status, NT_STATUS_USER_SESSION_DELETED);
 done:
 	smb2_deltree(tree2, BASEDIR_IR);
 	return ret;

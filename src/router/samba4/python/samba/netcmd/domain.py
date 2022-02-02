@@ -22,8 +22,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import division
 import samba.getopt as options
 import ldb
 import os
@@ -71,6 +69,9 @@ from samba.upgrade import upgrade_from_samba3
 from samba.drs_utils import drsuapi_connect
 from samba import remove_dc, arcfour_encrypt, string_to_byte_array
 from samba.auth_util import system_session_unix
+from samba.net_s3 import Net as s3_Net
+from samba.param import default_path
+from samba import is_ad_dc_built
 
 from samba.dsdb import (
     DS_DOMAIN_FUNCTION_2000,
@@ -106,6 +107,7 @@ from samba.netcmd.domain_backup import cmd_domain_backup
 
 from samba.common import get_string
 from samba.trust_utils import CreateTrustedDomainRelax
+from samba import dsdb
 
 string_version_to_constant = {
     "2008_R2": DS_DOMAIN_FUNCTION_2008_R2,
@@ -628,6 +630,12 @@ class cmd_domain_join(Command):
             action="store_true")
     ]
 
+    selftest_options = [
+        Option("--experimental-s4-member", action="store_true",
+               help="Perform member joins using the s4 Net join_member. "
+                    "Don't choose this unless you know what you're doing")
+    ]
+
     takes_options = []
     takes_options.extend(common_join_options)
     takes_options.extend(common_provision_join_options)
@@ -635,12 +643,15 @@ class cmd_domain_join(Command):
     if samba.is_ntvfs_fileserver_built():
         takes_options.extend(ntvfs_options)
 
+    if samba.is_selftest_enabled():
+        takes_options.extend(selftest_options)
+
     takes_args = ["domain", "role?"]
 
     def run(self, domain, role=None, sambaopts=None, credopts=None,
             versionopts=None, server=None, site=None, targetdir=None,
             domain_critical_only=False, machinepass=None,
-            use_ntvfs=False, dns_backend=None,
+            use_ntvfs=False, experimental_s4_member=False, dns_backend=None,
             quiet=False, verbose=False,
             plaintext_secrets=False,
             backend_store=None, backend_store_size=None):
@@ -656,12 +667,36 @@ class cmd_domain_join(Command):
             role = role.upper()
 
         if role is None or role == "MEMBER":
-            (join_password, sid, domain_name) = net.join_member(
-                domain, netbios_name, LIBNET_JOIN_AUTOMATIC,
-                machinepass=machinepass)
+            if experimental_s4_member:
+                (join_password, sid, domain_name) = net.join_member(
+                    domain, netbios_name, LIBNET_JOIN_AUTOMATIC,
+                    machinepass=machinepass)
+            else:
+                lp.set('realm', domain)
+                if lp.get('workgroup') == 'WORKGROUP':
+                    lp.set('workgroup', net.finddc(domain=domain,
+                        flags=(nbt.NBT_SERVER_LDAP |
+                               nbt.NBT_SERVER_DS)).domain_name)
+                lp.set('server role', 'member server')
+                smb_conf = lp.configfile if lp.configfile else default_path()
+                with tempfile.NamedTemporaryFile(delete=False,
+                        dir=os.path.dirname(smb_conf)) as f:
+                    lp.dump(False, f.name)
+                    if os.path.exists(smb_conf):
+                        mode = os.stat(smb_conf).st_mode
+                        os.chmod(f.name, mode)
+                    os.rename(f.name, smb_conf)
+                s3_lp = s3param.get_context()
+                s3_lp.load(smb_conf)
+                if machinepass is None:
+                    machinepass = samba.generate_random_machine_password(14, 40)
+                s3_net = s3_Net(creds, s3_lp, server=server)
+                (sid, domain_name) = s3_net.join_member(netbios_name,
+                                                        machinepass=machinepass,
+                                                        debug=verbose)
 
             self.errf.write("Joined domain %s (%s)\n" % (domain_name, sid))
-        elif role == "DC":
+        elif role == "DC" and is_ad_dc_built():
             join_DC(logger=logger, server=server, creds=creds, lp=lp, domain=domain,
                     site=site, netbios_name=netbios_name, targetdir=targetdir,
                     domain_critical_only=domain_critical_only,
@@ -670,7 +705,7 @@ class cmd_domain_join(Command):
                     plaintext_secrets=plaintext_secrets,
                     backend_store=backend_store,
                     backend_store_size=backend_store_size)
-        elif role == "RODC":
+        elif role == "RODC" and is_ad_dc_built():
             join_RODC(logger=logger, server=server, creds=creds, lp=lp, domain=domain,
                       site=site, netbios_name=netbios_name, targetdir=targetdir,
                       domain_critical_only=domain_critical_only,
@@ -868,7 +903,9 @@ class cmd_domain_demote(Command):
         i = 0
         newrdn = str(rdn)
 
-        computer_dn = ldb.Dn(remote_samdb, "CN=Computers,%s" % str(remote_samdb.domain_dn()))
+        computer_dn = remote_samdb.get_wellknown_dn(
+            remote_samdb.get_default_basedn(),
+            dsdb.DS_GUID_COMPUTERS_CONTAINER)
         res = remote_samdb.search(base=computer_dn, expression=rdn, scope=ldb.SCOPE_ONELEVEL)
 
         if (len(res) != 0):
@@ -3822,6 +3859,13 @@ This command expunges tombstones from the database."""
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
 
+        if current_time_string is None and tombstone_lifetime is None:
+            print("Note: without --current-time or --tombstone-lifetime "
+                  "only tombstones already scheduled for deletion will "
+                  "be deleted.", file=self.outf)
+            print("To remove all tombstones, use --tombstone-lifetime=0.",
+                  file=self.outf)
+
         if current_time_string is not None:
             current_time_obj = time.strptime(current_time_string, "%Y-%m-%d")
             current_time = int(time.mktime(current_time_obj))
@@ -4142,7 +4186,8 @@ class cmd_domain_schema_upgrade(Command):
                                              stderr=subprocess.PIPE, cwd=temp_folder)
                     except (OSError, IOError):
                         shutil.rmtree(temp_folder)
-                        raise CommandError("Failed to upgrade schema. Check if 'patch' is installed.")
+                        raise CommandError("Failed to upgrade schema. "
+                                           "Is '/usr/bin/patch' missing?")
 
                     stdout, stderr = p.communicate()
 
@@ -4297,19 +4342,20 @@ class cmd_domain(SuperCommand):
     """Domain management."""
 
     subcommands = {}
-    subcommands["demote"] = cmd_domain_demote()
     if cmd_domain_export_keytab is not None:
         subcommands["exportkeytab"] = cmd_domain_export_keytab()
     subcommands["info"] = cmd_domain_info()
-    subcommands["provision"] = cmd_domain_provision()
     subcommands["join"] = cmd_domain_join()
-    subcommands["dcpromo"] = cmd_domain_dcpromo()
-    subcommands["level"] = cmd_domain_level()
-    subcommands["passwordsettings"] = cmd_domain_passwordsettings()
-    subcommands["classicupgrade"] = cmd_domain_classicupgrade()
-    subcommands["samba3upgrade"] = cmd_domain_samba3upgrade()
-    subcommands["trust"] = cmd_domain_trust()
-    subcommands["tombstones"] = cmd_domain_tombstones()
-    subcommands["schemaupgrade"] = cmd_domain_schema_upgrade()
-    subcommands["functionalprep"] = cmd_domain_functional_prep()
-    subcommands["backup"] = cmd_domain_backup()
+    if is_ad_dc_built():
+        subcommands["demote"] = cmd_domain_demote()
+        subcommands["provision"] = cmd_domain_provision()
+        subcommands["dcpromo"] = cmd_domain_dcpromo()
+        subcommands["level"] = cmd_domain_level()
+        subcommands["passwordsettings"] = cmd_domain_passwordsettings()
+        subcommands["classicupgrade"] = cmd_domain_classicupgrade()
+        subcommands["samba3upgrade"] = cmd_domain_samba3upgrade()
+        subcommands["trust"] = cmd_domain_trust()
+        subcommands["tombstones"] = cmd_domain_tombstones()
+        subcommands["schemaupgrade"] = cmd_domain_schema_upgrade()
+        subcommands["functionalprep"] = cmd_domain_functional_prep()
+        subcommands["backup"] = cmd_domain_backup()

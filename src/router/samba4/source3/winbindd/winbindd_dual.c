@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
    Winbind child daemons
@@ -46,8 +46,6 @@
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
-
-extern bool override_logfile;
 
 static void forall_domain_children(bool (*fn)(struct winbindd_child *c,
 					      void *private_data),
@@ -872,7 +870,7 @@ void winbindd_flush_negative_conn_cache(struct winbindd_domain *domain)
 	}
 }
 
-/* 
+/*
  * Parent winbindd process sets its own debug level first and then
  * sends a message to all the winbindd children to adjust their debug
  * level to that of parents.
@@ -1026,7 +1024,7 @@ void winbind_msg_offline(struct messaging_context *msg_ctx,
 			continue;
 		}
 		DEBUG(5,("winbind_msg_offline: marking %s offline.\n", domain->name));
-		set_domain_offline(domain);
+		domain->online = false;
 	}
 
 	forall_domain_children(winbind_msg_on_offline_fn, &state);
@@ -1044,7 +1042,6 @@ void winbind_msg_online(struct messaging_context *msg_ctx,
 		.msg_ctx = msg_ctx,
 		.msg_type = MSG_WINBIND_ONLINE,
 	};
-	struct winbindd_domain *domain;
 
 	DEBUG(10,("winbind_msg_online: got online message.\n"));
 
@@ -1059,32 +1056,7 @@ void winbind_msg_online(struct messaging_context *msg_ctx,
 	smb_nscd_flush_user_cache();
 	smb_nscd_flush_group_cache();
 
-	/* Set all our domains as online. */
-	for (domain = domain_list(); domain; domain = domain->next) {
-		if (domain->internal) {
-			continue;
-		}
-		DEBUG(5,("winbind_msg_online: requesting %s to go online.\n", domain->name));
-
-		winbindd_flush_negative_conn_cache(domain);
-		set_domain_online_request(domain);
-
-		/* Send an online message to the idmap child when our
-		   primary domain comes back online */
-
-		if ( domain->primary ) {
-			pid_t idmap_pid = idmap_child_pid();
-
-			if (idmap_pid != 0) {
-				messaging_send_buf(msg_ctx,
-						   pid_to_procid(idmap_pid),
-						   MSG_WINBIND_ONLINE,
-						   (const uint8_t *)domain->name,
-						   strlen(domain->name)+1);
-			}
-		}
-	}
-
+	/* Tell all our child domains to go online online. */
 	forall_domain_children(winbind_msg_on_offline_fn, &state);
 }
 
@@ -1093,15 +1065,15 @@ static const char *collect_onlinestatus(TALLOC_CTX *mem_ctx)
 	struct winbindd_domain *domain;
 	char *buf = NULL;
 
-	if ((buf = talloc_asprintf(mem_ctx, "global:%s ", 
-				   get_global_winbindd_state_offline() ? 
+	if ((buf = talloc_asprintf(mem_ctx, "global:%s ",
+				   get_global_winbindd_state_offline() ?
 				   "Offline":"Online")) == NULL) {
 		return NULL;
 	}
 
 	for (domain = domain_list(); domain; domain = domain->next) {
-		if ((buf = talloc_asprintf_append_buffer(buf, "%s:%s ", 
-						  domain->name, 
+		if ((buf = talloc_asprintf_append_buffer(buf, "%s:%s ",
+						  domain->name,
 						  domain->online ?
 						  "Online":"Offline")) == NULL) {
 			return NULL;
@@ -1232,10 +1204,10 @@ static void account_lockout_policy_handler(struct tevent_context *ctx,
 
 	if ( !winbindd_can_contact_domain( child->domain ) ) {
 		DEBUG(10,("account_lockout_policy_handler: Removing myself since I "
-			  "do not have an incoming trust to domain %s\n", 
+			  "do not have an incoming trust to domain %s\n",
 			  child->domain->name));
 
-		return;		
+		return;
 	}
 
 	mem_ctx = talloc_init("account_lockout_policy_handler ctx");
@@ -1457,7 +1429,7 @@ static void child_msg_offline(struct messaging_context *msg,
 		if (strequal(domain->name, domainname)) {
 			DEBUG(5,("child_msg_offline: marking %s offline.\n", domain->name));
 			set_domain_offline(domain);
-			/* we are in the trusted domain, set the primary domain 
+			/* we are in the trusted domain, set the primary domain
 			 * offline too */
 			if (domain != primary_domain) {
 				set_domain_offline(primary_domain);
@@ -1572,16 +1544,18 @@ NTSTATUS winbindd_reinit_after_fork(const struct winbindd_child *myself,
 
 	close_conns_after_fork();
 
-	if (!override_logfile && logfilename) {
+	if (logfilename != NULL) {
 		lp_set_logfile(logfilename);
 		reopen_logs();
 	}
 
-	if (!winbindd_setup_sig_term_handler(false))
+	if (!winbindd_setup_sig_term_handler(false)) {
 		return NT_STATUS_NO_MEMORY;
-	if (!winbindd_setup_sig_hup_handler(override_logfile ? NULL :
-					    logfilename))
+	}
+
+	if (!winbindd_setup_sig_hup_handler(logfilename)) {
 		return NT_STATUS_NO_MEMORY;
+	}
 
 	/* Stop zombies in children */
 	CatchChild();
@@ -1802,10 +1776,11 @@ static bool fork_domain_child(struct winbindd_child *child)
 	messaging_register(global_messaging_context(), NULL,
 			   MSG_WINBIND_DISCONNECT_DC,
 			   winbind_msg_disconnect_dc);
-	messaging_register(global_messaging_context(),
-			   override_logfile ? NULL : child->logfilename,
-			   MSG_SMB_CONF_UPDATED,
-			   winbindd_msg_reload_services_child);
+	messaging_register(
+		global_messaging_context(),
+		child->logfilename,
+		MSG_SMB_CONF_UPDATED,
+		winbindd_msg_reload_services_child);
 
 	primary_domain = find_our_domain();
 
@@ -1832,8 +1807,7 @@ static bool fork_domain_child(struct winbindd_child *child)
 	}
 
 	/*
-	 * We are in idmap child, make sure that we set the
-	 * check_online_event to bring primary domain online.
+	 * We are in idmap child, bring primary domain online.
 	 */
 	if (is_idmap_child(child)) {
 		set_domain_online_request(primary_domain);

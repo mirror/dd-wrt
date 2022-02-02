@@ -28,28 +28,28 @@ bld.SAMBA_SUBSYSTEM('registry_common',
 bld.SAMBA_BINARY('regdiff',
 	source='tools/regdiff.c',
 	manpages='man/regdiff.1',
-	deps='samba-hostconfig registry popt POPT_SAMBA POPT_CREDENTIALS'
+	deps='samba-hostconfig registry popt CMDLINE_S4'
 	)
 
 
 bld.SAMBA_BINARY('regpatch',
 	source='tools/regpatch.c',
 	manpages='man/regpatch.1',
-	deps='samba-hostconfig registry popt POPT_SAMBA POPT_CREDENTIALS registry_common'
+	deps='samba-hostconfig registry popt CMDLINE_S4 registry_common'
 	)
 
 
 bld.SAMBA_BINARY('regshell',
 	source='tools/regshell.c',
 	manpages='man/regshell.1',
-	deps='samba-hostconfig popt registry POPT_SAMBA POPT_CREDENTIALS SMBREADLINE registry_common'
+	deps='samba-hostconfig popt registry CMDLINE_S4 SMBREADLINE registry_common'
 	)
 
 
 bld.SAMBA_BINARY('regtree',
 	source='tools/regtree.c',
 	manpages='man/regtree.1',
-	deps='samba-hostconfig popt registry POPT_SAMBA POPT_CREDENTIALS registry_common'
+	deps='samba-hostconfig popt registry CMDLINE_S4 registry_common'
 	)
 
 

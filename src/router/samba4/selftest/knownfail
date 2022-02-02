@@ -144,6 +144,7 @@
 ^samba4.raw.acls.*.create_owner_file
 ^samba4.smb2.create.*.acldir
 ^samba4.smb2.create.*.impersonation
+^samba4.smb2.create.quota-fake-file\(ad_dc_ntvfs\) # not supported by the NTVFS
 ^samba4.smb2.acls.*.generic
 ^samba4.smb2.acls.*.inheritflags
 ^samba4.smb2.acls.*.owner
@@ -197,6 +198,7 @@
 ^samba4.smb2.ioctl.req_two_resume_keys\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.copy_chunk_\w*\(ad_dc_ntvfs\)	# not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.copy-chunk streams\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl.bug14769\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
 ^samba3.smb2.dir.one
 ^samba3.smb2.dir.modify
 ^samba3.smb2.oplock.batch20
@@ -213,14 +215,10 @@
 ^samba3.smb2.session.*reauth5 # some special anonymous checks?
 ^samba3.smb2.compound.interim2 # wrong return code (STATUS_CANCELLED)
 ^samba3.smb2.compound.aio.interim2 # wrong return code (STATUS_CANCELLED)
-^samba3.smb2.replay.replay3 # This requires multi-chanel
-^samba3.smb2.replay.replay4 # This requires multi-chanel
-^samba3.smb2.lock.replay_smb3_specification_multi # This requires multi-chanel
 ^samba3.smb2.lock.replay_smb3_specification_durable\(nt4_dc\) # Requires durable handles
 ^samba3.smb2.lock.*replay_broken_windows # This tests the windows behaviour
 ^samba3.smb2.lease.statopen3
 ^samba3.smb2.lease.unlink # we currently do not downgrade RH lease to R after unlink
-^samba3.smb2.multichannel
 ^samba4.smb2.ioctl.compress_notsup.*\(ad_dc_ntvfs\)
 ^samba3.raw.session.*reauth2 # maybe fix this?
 ^samba3.rpc.lsa.secrets.seal # This gives NT_STATUS_LOCAL_USER_SESSION_KEY
@@ -294,10 +292,6 @@
 ^samba4.winbind.struct.lookup_name_sid\(ad_member:local\)
 ^samba4.winbind.struct.getdcname\(nt4_member:local\) # Works in other modes, just not against the classic/NT4 DC
 #
-# Differences in our KDC compared to windows
-#
-^samba4.krb5.kdc .*.as-req-pac-request # We should reply to a request for a PAC over UDP with KRB5KRB_ERR_RESPONSE_TOO_BIG unconditionally
-#
 # This will fail against the classic DC, because it requires kerberos
 #
 ^samba4.winbind.pac.*\(nt4_member:local\) # No KDC on a classic DC
@@ -334,9 +328,9 @@
 ^samba.tests.dns.__main__.TestComplexQueries.test_cname_two_chain_not_matching_qtype
 # ad_dc requires signing
 #
-^samba4.smb.signing.*disabled.*signing=off.*\(ad_dc\)
+^samba4.smb.signing.*disabled.*client-protection=off.*\(ad_dc\)
 # fl2000dc doesn't support AES
-^samba4.krb5.kdc.*as-req-aes.*fl2000dc
+^samba4.krb5.kdc.*as-req-aes.fl2000dc
 # nt4_member and ad_member don't support ntlmv1 (not even over SMB1)
 ^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.member.creds.*as.user.*_member
 ^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.*mNT1.member.creds.*as.user.*_member
@@ -349,11 +343,11 @@
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_no_auth_presentation_ctx_invalid4
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_auth_type2
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_transfer
-# Association groups not implemented yet in s3 server implementation
+# Association groups between processes not implemented yet in s3 server implementation
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_ok2\(ad_member\)
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail1\(ad_member\)
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail2\(ad_member\)
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail3\(ad_member\)
-^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_diff1\(ad_member\)
 ^samba4.rpc.echo.*on.*with.object.echo.doublepointer.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.surrounding.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.enum.*nt4_dc
@@ -363,12 +357,6 @@
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_security_descriptor.*
-^samba.tests.dcerpc.dnsserver.python3.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
-^samba.tests.dcerpc.dnsserver.python3.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*
-^samba.tests.dcerpc.dnsserver.python3.samba.tests.dcerpc.dnsserver.DnsserverTests.test_security_descriptor.*
-^samba.tests.dcerpc.dnsserver.python2.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
-^samba.tests.dcerpc.dnsserver.python2.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*
-^samba.tests.dcerpc.dnsserver.python2.samba.tests.dcerpc.dnsserver.DnsserverTests.test_security_descriptor.*
 ^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dbcheck_dangling_multi_valued_clean
 ^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dangling_multi_valued_check_missing
 #
@@ -385,14 +373,8 @@
 # NTLM authentication is (intentionally) disabled in ktest
 ^samba.tests.ntlmdisabled.python\(ktest\).ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ktest\)
 ^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ad_dc_no_ntlm\)
-^samba.tests.ntlmdisabled.python\(ktest\).python3.ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ktest\)
-^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).python3.ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ad_dc_no_ntlm\)
-^samba.tests.ntlmdisabled.python\(ktest\).python2.ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ktest\)
-^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).python2.ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ad_dc_no_ntlm\)
 # Disabling NTLM means you can't use samr to change the password
 ^samba.tests.ntlmdisabled.python\(ktest\).ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ktest\)
 ^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ad_dc_no_ntlm\)
-^samba.tests.ntlmdisabled.python\(ktest\).python3.ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ktest\)
-^samba.tests.ntlmdisabled.python\(ktest\).python2.ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ktest\)
-^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).python3.ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ad_dc_no_ntlm\)
-^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).python2.ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ad_dc_no_ntlm\)
+
+

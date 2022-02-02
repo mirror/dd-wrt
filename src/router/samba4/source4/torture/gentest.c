@@ -20,7 +20,7 @@
 */
 
 #include "includes.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "lib/events/events.h"
 #include "system/time.h"
 #include "system/filesys.h"
@@ -3292,7 +3292,11 @@ int main(int argc, const char *argv[])
 	poptContext pc;
 	int argc_new;
 	char **argv_new;
-	enum {OPT_UNCLIST=1000};
+	enum {
+		OPT_UNCLIST=1000,
+		OPT_USER1,
+		OPT_USER2,
+	};
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 		{"smb2",          0, POPT_ARG_NONE, &options.smb2, 0,	"use SMB2 protocol", 	NULL},
@@ -3308,7 +3312,8 @@ int main(int argc, const char *argv[])
 		{"fast",          0, POPT_ARG_NONE, &options.fast_reconnect,    0,      "use fast reconnect", NULL},
 		{"unclist",	  0, POPT_ARG_STRING,	NULL, 	OPT_UNCLIST,	"unclist", 	NULL},
 		{"seedsfile",	  0, POPT_ARG_STRING,  &options.seeds_file, 0,	"seed file", 	NULL},
-		{ "user", 'U',       POPT_ARG_STRING, NULL, 'U', "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
+		{"user1",         0, POPT_ARG_STRING, NULL, OPT_USER1, "Set first network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
+		{"user2",         0, POPT_ARG_STRING, NULL, OPT_USER2, "Set second network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
 		{"maskindexing",  0, POPT_ARG_NONE,  &options.mask_indexing, 0,	"mask out the indexed file attrib", 	NULL},
 		{"noeas",  0, POPT_ARG_NONE,  &options.no_eas, 0,	"don't use extended attributes", 	NULL},
 		{"noacls",  0, POPT_ARG_NONE,  &options.no_acls, 0,	"don't use ACLs", 	NULL},
@@ -3318,9 +3323,11 @@ int main(int argc, const char *argv[])
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
 		POPT_COMMON_VERSION
-		{0}
+		POPT_LEGACY_S4
+		POPT_TABLEEND
 	};
 	TALLOC_CTX *mem_ctx = NULL;
+	bool ok;
 
 	memset(&bad_smb2_handle, 0xFF, sizeof(bad_smb2_handle));
 
@@ -3336,12 +3343,29 @@ int main(int argc, const char *argv[])
 		exit(1);
 	}
 
-	pc = poptGetContext("gentest", argc, argv, long_options,
-			    POPT_CONTEXT_KEEP_FIRST);
+	ok = samba_cmdline_init(mem_ctx,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+	}
+
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    POPT_CONTEXT_KEEP_FIRST);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(mem_ctx);
+		exit(1);
+	}
 
 	poptSetOtherOptionHelp(pc, "<unc1> <unc2>");
 
-	lp_ctx = cmdline_lp_ctx;
+	lp_ctx = samba_cmdline_get_lp_ctx();
 	servers[0].credentials = cli_credentials_init(mem_ctx);
 	servers[1].credentials = cli_credentials_init(mem_ctx);
 	cli_credentials_guess(servers[0].credentials, lp_ctx);
@@ -3350,17 +3374,25 @@ int main(int argc, const char *argv[])
 	while((opt = poptGetNextOpt(pc)) != -1) {
 		switch (opt) {
 		case OPT_UNCLIST:
-			lpcfg_set_cmdline(cmdline_lp_ctx, "torture:unclist", poptGetOptArg(pc));
+			lpcfg_set_cmdline(lp_ctx, "torture:unclist", poptGetOptArg(pc));
 			break;
-		case 'U':
-			if (username_count == 2) {
-				usage(pc);
-				talloc_free(mem_ctx);
-				exit(1);
-			}
-			cli_credentials_parse_string(servers[username_count].credentials, poptGetOptArg(pc), CRED_SPECIFIED);
+		case OPT_USER1:
+			cli_credentials_parse_string(servers[0].credentials,
+						     poptGetOptArg(pc),
+						     CRED_SPECIFIED);
 			username_count++;
 			break;
+		case OPT_USER2:
+			cli_credentials_parse_string(servers[1].credentials,
+						     poptGetOptArg(pc),
+						     CRED_SPECIFIED);
+			username_count++;
+			break;
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 

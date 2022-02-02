@@ -33,14 +33,14 @@ static acl_t smb_acl_to_posix(const struct smb_acl_t *acl);
 
 /* public functions - the api */
 
-SMB_ACL_T posixacl_sys_acl_get_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T type,
-				TALLOC_CTX *mem_ctx)
+SMB_ACL_T posixacl_sys_acl_get_fd(vfs_handle_struct *handle,
+				  files_struct *fsp,
+				  SMB_ACL_TYPE_T type,
+				  TALLOC_CTX *mem_ctx)
 {
 	struct smb_acl_t *result;
+	acl_t acl = NULL;
 	acl_type_t acl_type;
-	acl_t acl;
 
 	switch(type) {
 	case SMB_ACL_TYPE_ACCESS:
@@ -53,25 +53,8 @@ SMB_ACL_T posixacl_sys_acl_get_file(vfs_handle_struct *handle,
 		errno = EINVAL;
 		return NULL;
 	}
-
-	acl = acl_get_file(smb_fname->base_name, acl_type);
-
-	if (acl == NULL) {
-		return NULL;
-	}
-
-	result = smb_acl_to_internal(acl, mem_ctx);
-	acl_free(acl);
-	return result;
-}
-
-SMB_ACL_T posixacl_sys_acl_get_fd(vfs_handle_struct *handle,
-				  files_struct *fsp, TALLOC_CTX *mem_ctx)
-{
-	struct smb_acl_t *result;
-	acl_t acl = NULL;
-
-	if (!fsp->fsp_flags.is_pathref) {
+	if (!fsp->fsp_flags.is_pathref && (acl_type == ACL_TYPE_ACCESS)) {
+		/* POSIX API only allows ACL_TYPE_ACCESS fetched on fd. */
 		acl = acl_get_fd(fsp_get_io_fd(fsp));
 	} else if (fsp->fsp_flags.have_proc_fds) {
 		int fd = fsp_get_pathref_fd(fsp);
@@ -83,12 +66,12 @@ SMB_ACL_T posixacl_sys_acl_get_fd(vfs_handle_struct *handle,
 			return NULL;
 		}
 
-		acl = acl_get_file(proc_fd_path, ACL_TYPE_ACCESS);
+		acl = acl_get_file(proc_fd_path, acl_type);
 	} else {
 		/*
 		 * This is no longer a handle based call.
 		 */
-		acl = acl_get_file(fsp->fsp_name->base_name, ACL_TYPE_ACCESS);
+		acl = acl_get_file(fsp->fsp_name->base_name, acl_type);
 	}
 	if (acl == NULL) {
 		return NULL;
@@ -99,18 +82,19 @@ SMB_ACL_T posixacl_sys_acl_get_fd(vfs_handle_struct *handle,
 	return result;
 }
 
-int posixacl_sys_acl_set_file(vfs_handle_struct *handle,
-			      const struct smb_filename *smb_fname,
-			      SMB_ACL_TYPE_T type,
-			      SMB_ACL_T theacl)
+int posixacl_sys_acl_set_fd(vfs_handle_struct *handle,
+			    files_struct *fsp,
+			    SMB_ACL_TYPE_T type,
+			    SMB_ACL_T theacl)
 {
 	int res;
+	acl_t acl = smb_acl_to_posix(theacl);
 	acl_type_t acl_type;
-	acl_t acl;
+	int fd = fsp_get_pathref_fd(fsp);
 
-	DEBUG(10, ("Calling acl_set_file: %s, %d\n",
-			smb_fname->base_name,
-			type));
+	if (acl == NULL) {
+		return -1;
+	}
 
 	switch(type) {
 	case SMB_ACL_TYPE_ACCESS:
@@ -120,31 +104,8 @@ int posixacl_sys_acl_set_file(vfs_handle_struct *handle,
 		acl_type = ACL_TYPE_DEFAULT;
 		break;
 	default:
+		acl_free(acl);
 		errno = EINVAL;
-		return -1;
-	}
-
-	if ((acl = smb_acl_to_posix(theacl)) == NULL) {
-		return -1;
-	}
-	res = acl_set_file(smb_fname->base_name, acl_type, acl);
-	if (res != 0) {
-		DEBUG(10, ("acl_set_file failed: %s\n", strerror(errno)));
-	}
-	acl_free(acl);
-	return res;
-}
-
-int posixacl_sys_acl_set_fd(vfs_handle_struct *handle,
-			    files_struct *fsp,
-			    SMB_ACL_TYPE_T type,
-			    SMB_ACL_T theacl)
-{
-	int res;
-	acl_t acl = smb_acl_to_posix(theacl);
-	int fd = fsp_get_pathref_fd(fsp);
-
-	if (acl == NULL) {
 		return -1;
 	}
 
@@ -156,15 +117,16 @@ int posixacl_sys_acl_set_fd(vfs_handle_struct *handle,
 
 		proc_fd_path = sys_proc_fd_path(fd, buf, sizeof(buf));
 		if (proc_fd_path == NULL) {
+			acl_free(acl);
 			return -1;
 		}
-		res = acl_set_file(proc_fd_path, type, acl);
+		res = acl_set_file(proc_fd_path, acl_type, acl);
 	} else {
 		/*
 		 * This is no longer a handle based call.
 		 */
 		res = acl_set_file(fsp->fsp_name->base_name,
-				   type,
+				   acl_type,
 				   acl);
 	}
 
@@ -172,12 +134,26 @@ int posixacl_sys_acl_set_fd(vfs_handle_struct *handle,
 	return res;
 }
 
-int posixacl_sys_acl_delete_def_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname)
+int posixacl_sys_acl_delete_def_fd(vfs_handle_struct *handle,
+				files_struct *fsp)
 {
-	return acl_delete_def_file(smb_fname->base_name);
-}
+	if (fsp->fsp_flags.have_proc_fds) {
+		int fd = fsp_get_pathref_fd(fsp);
+		const char *proc_fd_path = NULL;
+		char buf[PATH_MAX];
 
+		proc_fd_path = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (proc_fd_path == NULL) {
+			return -1;
+		}
+		return acl_delete_def_file(proc_fd_path);
+	}
+
+	/*
+	 * This is no longer a handle based call.
+	 */
+	return acl_delete_def_file(fsp->fsp_name->base_name);
+}
 
 /* private functions */
 
@@ -416,12 +392,10 @@ static acl_t smb_acl_to_posix(const struct smb_acl_t *acl)
 /* VFS operations structure */
 
 static struct vfs_fn_pointers posixacl_fns = {
-	.sys_acl_get_file_fn = posixacl_sys_acl_get_file,
 	.sys_acl_get_fd_fn = posixacl_sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = posixacl_sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = posixacl_sys_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = posixacl_sys_acl_delete_def_fd,
 };
 
 static_decl_vfs;

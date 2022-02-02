@@ -38,6 +38,7 @@
 #include "rpc_client/util_netlogon.h"
 #include "source4/auth/auth.h"
 #include "auth/auth_util.h"
+#include "source3/lib/substitute.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
@@ -476,11 +477,11 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 	size_t i;
 	struct dom_sid tmp_sid;
-	struct auth_session_info *session_info;
+	struct auth_session_info *session_info = NULL;
 	struct unixid *ids;
 
 	/* Ensure we can't possible take a code path leading to a
-	 * null defref. */
+	 * null deref. */
 	if (!server_info) {
 		return NT_STATUS_LOGON_FAILURE;
 	}
@@ -497,7 +498,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 		session_info = copy_session_info(mem_ctx,
 				server_info->cached_session_info);
 		if (session_info == NULL) {
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		/* This is a potentially untrusted username for use in %U */
@@ -506,8 +507,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 					    smb_username,
 					    SAFE_NETBIOS_CHARS "$");
 		if (session_info->unix_info->sanitized_username == NULL) {
-			TALLOC_FREE(session_info);
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 
 		session_info->unique_session_token = GUID_random();
@@ -518,13 +518,12 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 
 	session_info = talloc_zero(mem_ctx, struct auth_session_info);
 	if (!session_info) {
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	session_info->unix_token = talloc_zero(session_info, struct security_unix_token);
 	if (!session_info->unix_token) {
-		TALLOC_FREE(session_info);
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	session_info->unix_token->uid = server_info->utok.uid;
@@ -532,14 +531,12 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 
 	session_info->unix_info = talloc_zero(session_info, struct auth_user_info_unix);
 	if (!session_info->unix_info) {
-		TALLOC_FREE(session_info);
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	session_info->unix_info->unix_name = talloc_strdup(session_info, server_info->unix_name);
 	if (!session_info->unix_info->unix_name) {
-		TALLOC_FREE(session_info);
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	/* This is a potentially untrusted username for use in %U */
@@ -548,8 +545,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 				    smb_username,
 				    SAFE_NETBIOS_CHARS "$");
 	if (session_info->unix_info->sanitized_username == NULL) {
-		TALLOC_FREE(session_info);
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	if (session_key) {
@@ -558,7 +554,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 								  session_key->data,
 								  session_key->length);
 		if (!session_info->session_key.data && session_key->length) {
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 	} else {
 		session_info->session_key = data_blob_talloc( session_info, server_info->session_key.data,
@@ -571,18 +567,15 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 					    &session_info->info);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("conversion of info3 into auth_user_info failed!\n"));
-		TALLOC_FREE(session_info);
-		return status;
+		goto fail;
 	}
 
 	/*
-	 * If winbind is not around, we can not make much use of the SIDs the
-	 * domain controller provided us with. Likewise if the user name was
-	 * mapped to some local unix user.
+	 * If the user name was mapped to some local unix user,
+	 * we can not make much use of the SIDs the
+	 * domain controller provided us with.
 	 */
-
-	if (((lp_server_role() == ROLE_DOMAIN_MEMBER) && !winbind_ping()) ||
-	    (server_info->nss_token)) {
+	if (server_info->nss_token) {
 		char *found_username = NULL;
 		status = create_token_from_username(session_info,
 						    server_info->unix_name,
@@ -603,7 +596,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {
-		return status;
+		goto fail;
 	}
 
 	/* Convert the SIDs to gids. */
@@ -616,12 +609,11 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 	ids = talloc_array(talloc_tos(), struct unixid,
 			   t->num_sids);
 	if (ids == NULL) {
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	if (!sids_to_unixids(t->sids, t->num_sids, ids)) {
-		TALLOC_FREE(ids);
-		return NT_STATUS_NO_MEMORY;
+		goto nomem;
 	}
 
 	for (i=0; i<t->num_sids; i++) {
@@ -642,7 +634,7 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 					     ids[i].id,
 					     &session_info->unix_token->groups,
 					     &session_info->unix_token->ngroups)) {
-			return NT_STATUS_NO_MEMORY;
+			goto nomem;
 		}
 	}
 
@@ -660,20 +652,35 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 	 */
 
 	uid_to_unix_users_sid(session_info->unix_token->uid, &tmp_sid);
-	add_sid_to_array_unique(session_info->security_token, &tmp_sid,
-				&session_info->security_token->sids,
-				&session_info->security_token->num_sids);
+	status = add_sid_to_array_unique(
+		session_info->security_token,
+		&tmp_sid,
+		&session_info->security_token->sids,
+		&session_info->security_token->num_sids);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
 
 	gid_to_unix_groups_sid(session_info->unix_token->gid, &tmp_sid);
-	add_sid_to_array_unique(session_info->security_token, &tmp_sid,
-				&session_info->security_token->sids,
-				&session_info->security_token->num_sids);
+	status = add_sid_to_array_unique(
+		session_info->security_token,
+		&tmp_sid,
+		&session_info->security_token->sids,
+		&session_info->security_token->num_sids);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
 
 	for ( i=0; i<session_info->unix_token->ngroups; i++ ) {
 		gid_to_unix_groups_sid(session_info->unix_token->groups[i], &tmp_sid);
-		add_sid_to_array_unique(session_info->security_token, &tmp_sid,
-					&session_info->security_token->sids,
-					&session_info->security_token->num_sids);
+		status = add_sid_to_array_unique(
+			session_info->security_token,
+			&tmp_sid,
+			&session_info->security_token->sids,
+			&session_info->security_token->num_sids);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto fail;
+		}
 	}
 
 	security_token_debug(DBGC_AUTH, 10, session_info->security_token);
@@ -685,13 +692,18 @@ NTSTATUS create_local_token(TALLOC_CTX *mem_ctx,
 
 	status = log_nt_token(session_info->security_token);
 	if (!NT_STATUS_IS_OK(status)) {
-		return status;
+		goto fail;
 	}
 
 	session_info->unique_session_token = GUID_random();
 
 	*session_info_out = session_info;
 	return NT_STATUS_OK;
+nomem:
+	status = NT_STATUS_NO_MEMORY;
+fail:
+	TALLOC_FREE(session_info);
+	return status;
 }
 
 NTSTATUS auth3_user_info_dc_add_hints(struct auth_user_info_dc *user_info_dc,
@@ -761,11 +773,12 @@ fail:
 	return status;
 }
 
-NTSTATUS auth3_session_info_create(TALLOC_CTX *mem_ctx,
-				   const struct auth_user_info_dc *user_info_dc,
-				   const char *original_user_name,
-				   uint32_t session_info_flags,
-				   struct auth_session_info **session_info_out)
+static NTSTATUS auth3_session_info_create(
+	TALLOC_CTX *mem_ctx,
+	const struct auth_user_info_dc *user_info_dc,
+	const char *original_user_name,
+	uint32_t session_info_flags,
+	struct auth_session_info **session_info_out)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct auth_session_info *session_info = NULL;
@@ -1292,7 +1305,7 @@ NTSTATUS make_server_info_pw(TALLOC_CTX *mem_ctx,
 	result->utok.uid = pwd->pw_uid;
 	result->utok.gid = pwd->pw_gid;
 
-	*server_info = talloc_steal(mem_ctx, result);
+	*server_info = talloc_move(mem_ctx, &result);
 	status = NT_STATUS_OK;
 done:
 	talloc_free(tmp_ctx);
@@ -1864,7 +1877,9 @@ const struct auth_session_info *get_session_info_system(void)
 ***************************************************************************/
 
 static NTSTATUS check_account(TALLOC_CTX *mem_ctx, const char *domain,
-			      const char *username, char **found_username,
+			      const char *username,
+			      const struct dom_sid *sid,
+			      char **found_username,
 			      struct passwd **pwd,
 			      bool *username_was_mapped)
 {
@@ -1898,7 +1913,32 @@ static NTSTATUS check_account(TALLOC_CTX *mem_ctx, const char *domain,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	passwd = smb_getpwnam(mem_ctx, dom_user, &real_username, true );
+	passwd = smb_getpwnam(mem_ctx, dom_user, &real_username, false);
+	if (!passwd && !*username_was_mapped) {
+		struct dom_sid_buf buf;
+		uid_t uid;
+		bool ok;
+
+		DBG_DEBUG("Failed to find authenticated user %s via "
+			  "getpwnam(), fallback to sid_to_uid(%s).\n",
+			  dom_user, dom_sid_str_buf(sid, &buf));
+
+		ok = sid_to_uid(sid, &uid);
+		if (!ok) {
+			DBG_ERR("Failed to convert SID %s to a UID (dom_user[%s])\n",
+				dom_sid_str_buf(sid, &buf), dom_user);
+			return NT_STATUS_NO_SUCH_USER;
+		}
+		passwd = getpwuid_alloc(mem_ctx, uid);
+		if (!passwd) {
+			DBG_ERR("Failed to find local account with UID %lld for SID %s (dom_user[%s])\n",
+				(long long)uid,
+				dom_sid_str_buf(sid, &buf),
+				dom_user);
+			return NT_STATUS_NO_SUCH_USER;
+		}
+		real_username = talloc_strdup(mem_ctx, passwd->pw_name);
+	}
 	if (!passwd) {
 		DEBUG(3, ("Failed to find authenticated user %s via "
 			  "getpwnam(), denying access.\n", dom_user));
@@ -1933,7 +1973,7 @@ struct passwd *smb_getpwnam( TALLOC_CTX *mem_ctx, const char *domuser,
 {
 	struct passwd *pw = NULL;
 	char *p = NULL;
-	char *username = NULL;
+	const char *username = NULL;
 
 	/* we only save a copy of the username it has been mangled 
 	   by winbindd use default domain */
@@ -1952,48 +1992,55 @@ struct passwd *smb_getpwnam( TALLOC_CTX *mem_ctx, const char *domuser,
 	/* code for a DOMAIN\user string */
 
 	if ( p ) {
-		pw = Get_Pwnam_alloc( mem_ctx, domuser );
-		if ( pw ) {
-			/* make sure we get the case of the username correct */
-			/* work around 'winbind use default domain = yes' */
+		const char *domain = NULL;
 
-			if ( lp_winbind_use_default_domain() &&
-			     !strchr_m( pw->pw_name, *lp_winbind_separator() ) ) {
-				char *domain;
+		/* split the domain and username into 2 strings */
+		*p = '\0';
+		domain = username;
+		p++;
+		username = p;
 
-				/* split the domain and username into 2 strings */
-				*p = '\0';
-				domain = username;
-
-				*p_save_username = talloc_asprintf(mem_ctx,
-								"%s%c%s",
-								domain,
-								*lp_winbind_separator(),
-								pw->pw_name);
-				if (!*p_save_username) {
-					TALLOC_FREE(pw);
-					return NULL;
-				}
-			} else {
-				*p_save_username = talloc_strdup(mem_ctx, pw->pw_name);
-			}
-
-			/* whew -- done! */
-			return pw;
+		if (strequal(domain, get_global_sam_name())) {
+			/*
+			 * This typically don't happen
+			 * as check_sam_Security()
+			 * don't call make_server_info_info3()
+			 * and thus check_account().
+			 *
+			 * But we better keep this.
+			 */
+			goto username_only;
 		}
 
-		/* setup for lookup of just the username */
-		/* remember that p and username are overlapping memory */
-
-		p++;
-		username = talloc_strdup(mem_ctx, p);
-		if (!username) {
+		pw = Get_Pwnam_alloc( mem_ctx, domuser );
+		if (pw == NULL) {
 			return NULL;
 		}
+		/* make sure we get the case of the username correct */
+		/* work around 'winbind use default domain = yes' */
+
+		if ( lp_winbind_use_default_domain() &&
+		     !strchr_m( pw->pw_name, *lp_winbind_separator() ) ) {
+			*p_save_username = talloc_asprintf(mem_ctx,
+							"%s%c%s",
+							domain,
+							*lp_winbind_separator(),
+							pw->pw_name);
+			if (!*p_save_username) {
+				TALLOC_FREE(pw);
+				return NULL;
+			}
+		} else {
+			*p_save_username = talloc_strdup(mem_ctx, pw->pw_name);
+		}
+
+		/* whew -- done! */
+		return pw;
+
 	}
 
 	/* just lookup a plain username */
-
+username_only:
 	pw = Get_Pwnam_alloc(mem_ctx, username);
 
 	/* Create local user if requested but only if winbindd
@@ -2037,6 +2084,7 @@ NTSTATUS make_server_info_info3(TALLOC_CTX *mem_ctx,
 	bool username_was_mapped;
 	struct passwd *pwd;
 	struct auth_serversupplied_info *result;
+	struct dom_sid sid;
 	TALLOC_CTX *tmp_ctx = talloc_stackframe();
 
 	/* 
@@ -2083,9 +2131,13 @@ NTSTATUS make_server_info_info3(TALLOC_CTX *mem_ctx,
 
 	/* this call will try to create the user if necessary */
 
+	sid_copy(&sid, info3->base.domain_sid);
+	sid_append_rid(&sid, info3->base.rid);
+
 	nt_status = check_account(tmp_ctx,
 				  nt_domain,
 				  nt_username,
+				  &sid,
 				  &found_username,
 				  &pwd,
 				  &username_was_mapped);
@@ -2102,6 +2154,22 @@ NTSTATUS make_server_info_info3(TALLOC_CTX *mem_ctx,
 				*server_info = talloc_move(mem_ctx, &result);
 			}
 		}
+		goto out;
+	} else if ((lp_security() == SEC_ADS || lp_security() == SEC_DOMAIN) &&
+		   !is_myname(domain) && pwd->pw_uid < lp_min_domain_uid()) {
+		/*
+		 * !is_myname(domain) because when smbd starts tries to setup
+		 * the guest user info, calling this function with nobody
+		 * username. Nobody is usually uid 65535 but it can be changed
+		 * to a regular user with 'guest account' parameter
+		 */
+		nt_status = NT_STATUS_INVALID_TOKEN;
+		DBG_NOTICE("Username '%s%s%s' is invalid on this system, "
+			   "it does not meet 'min domain uid' "
+			   "restriction (%u < %u): %s\n",
+			   nt_domain, lp_winbind_separator(), nt_username,
+			   pwd->pw_uid, lp_min_domain_uid(),
+			   nt_errstr(nt_status));
 		goto out;
 	}
 

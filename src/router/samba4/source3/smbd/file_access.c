@@ -36,11 +36,9 @@ bool can_delete_file_in_directory(connection_struct *conn,
 			struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname)
 {
-	TALLOC_CTX *ctx = talloc_tos();
 	struct smb_filename *smb_fname_parent = NULL;
 	bool ret;
-
-	SMB_ASSERT(dirfsp == conn->cwd_fsp);
+	NTSTATUS status;
 
 	if (!CAN_WRITE(conn)) {
 		return False;
@@ -51,26 +49,34 @@ bool can_delete_file_in_directory(connection_struct *conn,
 		return true;
 	}
 
-	/* Get the parent directory permission mask and owners. */
-	ret = parent_smb_fname(ctx, smb_fname, &smb_fname_parent, NULL);
-	if (ret != true) {
-		return false;
+	if (get_current_uid(conn) == (uid_t)0) {
+		/* I'm sorry sir, I didn't know you were root... */
+		return true;
 	}
 
-	if(SMB_VFS_STAT(conn, smb_fname_parent) != 0) {
-		ret = false;
-		goto out;
+	if (dirfsp != conn->cwd_fsp) {
+		smb_fname_parent = dirfsp->fsp_name;
+	} else {
+		struct smb_filename *atname = NULL;
+		/*
+		 * Get a pathref on the parent.
+		 */
+		status = parent_pathref(talloc_tos(),
+					conn->cwd_fsp,
+					smb_fname,
+					&smb_fname_parent,
+					&atname);
+		if (!NT_STATUS_IS_OK(status)) {
+			return false;
+		}
 	}
+
+	SMB_ASSERT(VALID_STAT(smb_fname_parent->st));
 
 	/* fast paths first */
 
 	if (!S_ISDIR(smb_fname_parent->st.st_ex_mode)) {
 		ret = false;
-		goto out;
-	}
-	if (get_current_uid(conn) == (uid_t)0) {
-		/* I'm sorry sir, I didn't know you were root... */
-		ret = true;
 		goto out;
 	}
 
@@ -117,66 +123,60 @@ bool can_delete_file_in_directory(connection_struct *conn,
 	 * check the file DELETE permission separately.
 	 */
 
-	/*
-	 * NB. When dirfsp != conn->cwd_fsp, we must
-	 * change smb_fname_parent to be "." for the name here.
-	 */
-	ret = NT_STATUS_IS_OK(smbd_check_access_rights(conn,
-				dirfsp,
-				smb_fname_parent,
+	ret = NT_STATUS_IS_OK(smbd_check_access_rights_fsp(
+				conn->cwd_fsp,
+				smb_fname_parent->fsp,
 				false,
 				FILE_DELETE_CHILD));
  out:
-	TALLOC_FREE(smb_fname_parent);
+	if (smb_fname_parent != dirfsp->fsp_name) {
+		TALLOC_FREE(smb_fname_parent);
+	}
 	return ret;
 }
 
 /****************************************************************************
- Userspace check for write access.
+ Userspace check for write access to fsp.
 ****************************************************************************/
 
-bool can_write_to_file(connection_struct *conn,
-			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname)
+bool can_write_to_fsp(struct files_struct *fsp)
 {
-	SMB_ASSERT(dirfsp == conn->cwd_fsp);
-	return NT_STATUS_IS_OK(smbd_check_access_rights(conn,
-				dirfsp,
-				smb_fname,
-				false,
-				FILE_WRITE_DATA));
+	return NT_STATUS_IS_OK(smbd_check_access_rights_fsp(
+							fsp->conn->cwd_fsp,
+							fsp,
+							false,
+							FILE_WRITE_DATA));
 }
 
 /****************************************************************************
- Check for an existing default Windows ACL on a directory.
+ Check for an existing default Windows ACL on a directory fsp.
 ****************************************************************************/
 
-bool directory_has_default_acl(connection_struct *conn,
-		struct files_struct *dirfsp,
-		struct smb_filename *smb_fname)
+bool directory_has_default_acl_fsp(struct files_struct *fsp)
 {
 	struct security_descriptor *secdesc = NULL;
 	unsigned int i;
 	NTSTATUS status;
 
-	status = SMB_VFS_GET_NT_ACL_AT(conn,
-				dirfsp,
-				smb_fname,
+	status = SMB_VFS_FGET_NT_ACL(fsp,
 				SECINFO_DACL,
 				talloc_tos(),
 				&secdesc);
 
 	if (!NT_STATUS_IS_OK(status) ||
-			secdesc == NULL ||
-			secdesc->dacl == NULL) {
+	    secdesc == NULL ||
+	    secdesc->dacl == NULL)
+	{
 		TALLOC_FREE(secdesc);
 		return false;
 	}
 
 	for (i = 0; i < secdesc->dacl->num_aces; i++) {
 		struct security_ace *psa = &secdesc->dacl->aces[i];
+
 		if (psa->flags & (SEC_ACE_FLAG_OBJECT_INHERIT|
-				SEC_ACE_FLAG_CONTAINER_INHERIT)) {
+				SEC_ACE_FLAG_CONTAINER_INHERIT))
+		{
 			TALLOC_FREE(secdesc);
 			return true;
 		}

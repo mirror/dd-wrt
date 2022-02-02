@@ -166,14 +166,28 @@ const char **tevent_backend_list(TALLOC_CTX *mem_ctx)
 {
 	const char **list = NULL;
 	struct tevent_ops_list *e;
+	size_t idx = 0;
 
 	tevent_backend_init();
 
 	for (e=tevent_backends;e;e=e->next) {
-		list = ev_str_list_add(list, e->name);
+		idx += 1;
 	}
 
-	talloc_steal(mem_ctx, list);
+	list = talloc_zero_array(mem_ctx, const char *, idx+1);
+	if (list == NULL) {
+		return NULL;
+	}
+
+	idx = 0;
+	for (e=tevent_backends;e;e=e->next) {
+		list[idx] = talloc_strdup(list, e->name);
+		if (list[idx] == NULL) {
+			TALLOC_FREE(list);
+			return NULL;
+		}
+		idx += 1;
+	}
 
 	return list;
 }
@@ -363,6 +377,7 @@ int tevent_common_context_destructor(struct tevent_context *ev)
 
 	for (fd = ev->fd_events; fd; fd = fn) {
 		fn = fd->next;
+		tevent_trace_fd_callback(fd->event_ctx, fd, TEVENT_EVENT_TRACE_DETACH);
 		fd->wrapper = NULL;
 		fd->event_ctx = NULL;
 		DLIST_REMOVE(ev->fd_events, fd);
@@ -371,6 +386,7 @@ int tevent_common_context_destructor(struct tevent_context *ev)
 	ev->last_zero_timer = NULL;
 	for (te = ev->timer_events; te; te = tn) {
 		tn = te->next;
+		tevent_trace_timer_callback(te->event_ctx, te, TEVENT_EVENT_TRACE_DETACH);
 		te->wrapper = NULL;
 		te->event_ctx = NULL;
 		DLIST_REMOVE(ev->timer_events, te);
@@ -378,6 +394,7 @@ int tevent_common_context_destructor(struct tevent_context *ev)
 
 	for (ie = ev->immediate_events; ie; ie = in) {
 		in = ie->next;
+		tevent_trace_immediate_callback(ie->event_ctx, ie, TEVENT_EVENT_TRACE_DETACH);
 		ie->wrapper = NULL;
 		ie->event_ctx = NULL;
 		ie->cancel_fn = NULL;
@@ -386,6 +403,7 @@ int tevent_common_context_destructor(struct tevent_context *ev)
 
 	for (se = ev->signal_events; se; se = sn) {
 		sn = se->next;
+		tevent_trace_signal_callback(se->event_ctx, se, TEVENT_EVENT_TRACE_DETACH);
 		se->wrapper = NULL;
 		se->event_ctx = NULL;
 		DLIST_REMOVE(ev->signal_events, se);

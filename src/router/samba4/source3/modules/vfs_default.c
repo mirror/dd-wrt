@@ -386,8 +386,6 @@ static NTSTATUS vfswrap_create_dfs_pathat(struct vfs_handle_struct *handle,
 	int ret;
 	char *msdfs_link = NULL;
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-
 	/* Form the msdfs_link contents */
 	msdfs_link = msdfs_link_string(frame,
 					reflist,
@@ -397,7 +395,7 @@ static NTSTATUS vfswrap_create_dfs_pathat(struct vfs_handle_struct *handle,
 	}
 
 	ret = symlinkat(msdfs_link,
-			fsp_get_io_fd(dirfsp),
+			fsp_get_pathref_fd(dirfsp),
 			smb_fname->base_name);
 	if (ret == 0) {
 		status = NT_STATUS_OK;
@@ -439,8 +437,6 @@ static NTSTATUS vfswrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 #endif
 	int ret;
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-
 	if (is_named_stream(smb_fname)) {
 		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		goto err;
@@ -461,7 +457,7 @@ static NTSTATUS vfswrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 		}
 	}
 
-	referral_len = readlinkat(fsp_get_io_fd(dirfsp),
+	referral_len = readlinkat(fsp_get_pathref_fd(dirfsp),
 				smb_fname->base_name,
 				link_target,
 				bufsize - 1);
@@ -476,10 +472,17 @@ static NTSTATUS vfswrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 			status = NT_STATUS_OBJECT_TYPE_MISMATCH;
 		} else {
 			status = map_nt_error_from_unix(errno);
-			DBG_ERR("Error reading "
-				"msdfs link %s: %s\n",
-				smb_fname->base_name,
-				strerror(errno));
+			if (errno == ENOENT) {
+				DBG_NOTICE("Error reading "
+					 "msdfs link %s: %s\n",
+					 smb_fname->base_name,
+					 strerror(errno));
+			} else {
+				DBG_ERR("Error reading "
+					"msdfs link %s: %s\n",
+					smb_fname->base_name,
+					strerror(errno));
+			}
 		}
                 goto err;
         }
@@ -494,9 +497,11 @@ static NTSTATUS vfswrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 		goto err;
 	}
 
-	ret = sys_lstat(smb_fname->base_name,
-			&smb_fname->st,
-			lp_fake_directory_create_times(SNUM(handle->conn)));
+       ret = sys_fstatat(fsp_get_pathref_fd(dirfsp),
+			 smb_fname->base_name,
+			 &smb_fname->st,
+			 AT_SYMLINK_NOFOLLOW,
+			 lp_fake_directory_create_times(SNUM(handle->conn)));
 	if (ret < 0) {
 		status = map_nt_error_from_unix(errno);
 		goto err;
@@ -576,17 +581,12 @@ static struct dirent *vfswrap_readdir(vfs_handle_struct *handle,
 				      SMB_STRUCT_STAT *sbuf)
 {
 	struct dirent *result;
-	bool do_stat = false;
 	bool fake_ctime = lp_fake_directory_create_times(SNUM(handle->conn));
 	int flags = AT_SYMLINK_NOFOLLOW;
-	struct stat st;
+	SMB_STRUCT_STAT st;
 	int ret;
 
 	START_PROFILE(syscall_readdir);
-
-#if defined(HAVE_DIRFD) && defined(HAVE_FSTATAT)
-	do_stat = true;
-#endif
 
 	result = readdir(dirp);
 	END_PROFILE(syscall_readdir);
@@ -604,15 +604,11 @@ static struct dirent *vfswrap_readdir(vfs_handle_struct *handle,
 	 */
 	SET_STAT_INVALID(*sbuf);
 
-	/* See if we can efficiently return this. */
-	if (!do_stat) {
-		return result;
-	}
-
-	ret = fstatat(dirfd(dirp),
+	ret = sys_fstatat(dirfd(dirp),
 		      result->d_name,
 		      &st,
-		      flags);
+		      flags,
+		      fake_ctime);
 	if (ret != 0) {
 		return result;
 	}
@@ -623,20 +619,20 @@ static struct dirent *vfswrap_readdir(vfs_handle_struct *handle,
 	 * as we don't know if they wanted the link info, or its
 	 * target info.
 	 */
-	if (S_ISLNK(st.st_mode) &&
+	if (S_ISLNK(st.st_ex_mode) &&
 	    !(dirfsp->fsp_name->flags & SMB_FILENAME_POSIX_PATH))
 	{
 		return result;
 	}
-	init_stat_ex_from_stat(sbuf, &st, fake_ctime);
+	*sbuf = st;
 
 	return result;
 }
 
-static NTSTATUS vfswrap_readdir_attr(struct vfs_handle_struct *handle,
-				     const struct smb_filename *fname,
-				     TALLOC_CTX *mem_ctx,
-				     struct readdir_attr_data **attr_data)
+static NTSTATUS vfswrap_freaddir_attr(struct vfs_handle_struct *handle,
+				      struct files_struct *fsp,
+				      TALLOC_CTX *mem_ctx,
+				      struct readdir_attr_data **attr_data)
 {
 	return NT_STATUS_NOT_SUPPORTED;
 }
@@ -1327,6 +1323,70 @@ static NTSTATUS vfswrap_translate_name(struct vfs_handle_struct *handle,
 	return NT_STATUS_NONE_MAPPED;
 }
 
+/**
+ * Return allocated parent directory and basename of path
+ *
+ * Note: if requesting name, it is returned as talloc child of the
+ * parent. Freeing the parent is thus sufficient to free both.
+ */
+static NTSTATUS vfswrap_parent_pathname(struct vfs_handle_struct *handle,
+					TALLOC_CTX *mem_ctx,
+					const struct smb_filename *smb_fname_in,
+					struct smb_filename **parent_dir_out,
+					struct smb_filename **atname_out)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct smb_filename *parent = NULL;
+	struct smb_filename *name = NULL;
+	char *p = NULL;
+
+	parent = cp_smb_filename(frame, smb_fname_in);
+	if (parent == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+	TALLOC_FREE(parent->stream_name);
+	SET_STAT_INVALID(parent->st);
+
+	p = strrchr_m(parent->base_name, '/'); /* Find final '/', if any */
+	if (p == NULL) {
+		TALLOC_FREE(parent->base_name);
+		parent->base_name = talloc_strdup(parent, ".");
+		if (parent->base_name == NULL) {
+			TALLOC_FREE(frame);
+			return NT_STATUS_NO_MEMORY;
+		}
+		p = smb_fname_in->base_name;
+	} else {
+		*p = '\0';
+		p++;
+	}
+
+	if (atname_out == NULL) {
+		*parent_dir_out = talloc_move(mem_ctx, &parent);
+		TALLOC_FREE(frame);
+		return NT_STATUS_OK;
+	}
+
+	name = cp_smb_filename(frame, smb_fname_in);
+	if (name == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+	TALLOC_FREE(name->base_name);
+
+	name->base_name = talloc_strdup(name, p);
+	if (name->base_name == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	*parent_dir_out = talloc_move(mem_ctx, &parent);
+	*atname_out = talloc_move(*parent_dir_out, &name);
+	TALLOC_FREE(frame);
+	return NT_STATUS_OK;
+}
+
 /*
  * Implement the default fsctl operation.
  */
@@ -1867,13 +1927,6 @@ static NTSTATUS vfswrap_fget_dos_attributes(struct vfs_handle_struct *handle,
 	return fget_ea_dos_attribute(fsp, dosmode);
 }
 
-static NTSTATUS vfswrap_set_dos_attributes(struct vfs_handle_struct *handle,
-					   const struct smb_filename *smb_fname,
-					   uint32_t dosmode)
-{
-	return set_ea_dos_attribute(handle->conn, smb_fname, dosmode);
-}
-
 static NTSTATUS vfswrap_fset_dos_attributes(struct vfs_handle_struct *handle,
 					    struct files_struct *fsp,
 					    uint32_t dosmode)
@@ -1968,6 +2021,7 @@ struct vfswrap_offload_write_state {
 	off_t dst_off;
 	off_t to_copy;
 	off_t remaining;
+	off_t copied;
 	size_t next_io_size;
 };
 
@@ -1987,6 +2041,7 @@ static void vfswrap_offload_write_cleanup(struct tevent_req *req,
 	state->dst_fsp = NULL;
 }
 
+static NTSTATUS vfswrap_offload_copy_file_range(struct tevent_req *req);
 static NTSTATUS vfswrap_offload_write_loop(struct tevent_req *req);
 
 static struct tevent_req *vfswrap_offload_write_send(
@@ -2126,6 +2181,16 @@ static struct tevent_req *vfswrap_offload_write_send(
 		return tevent_req_post(req, ev);
 	}
 
+	status = vfswrap_offload_copy_file_range(req);
+	if (NT_STATUS_IS_OK(status)) {
+		tevent_req_done(req);
+		return tevent_req_post(req, ev);
+	}
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_MORE_PROCESSING_REQUIRED)) {
+		tevent_req_nterror(req, status);
+		return tevent_req_post(req, ev);
+	}
+
 	state->buf = talloc_array(state, uint8_t, num);
 	if (tevent_req_nomem(state->buf, req)) {
 		return tevent_req_post(req, ev);
@@ -2138,6 +2203,135 @@ static struct tevent_req *vfswrap_offload_write_send(
 	}
 
 	return req;
+}
+
+static NTSTATUS vfswrap_offload_copy_file_range(struct tevent_req *req)
+{
+	struct vfswrap_offload_write_state *state = tevent_req_data(
+		req, struct vfswrap_offload_write_state);
+	struct lock_struct lck;
+	ssize_t nwritten;
+	NTSTATUS status;
+	bool same_file;
+	bool ok;
+	static bool try_copy_file_range = true;
+
+	if (!try_copy_file_range) {
+		return NT_STATUS_MORE_PROCESSING_REQUIRED;
+	}
+
+	same_file = file_id_equal(&state->src_fsp->file_id,
+				  &state->dst_fsp->file_id);
+	if (same_file &&
+	    sys_io_ranges_overlap(state->remaining,
+				  state->src_off,
+				  state->remaining,
+				  state->dst_off))
+	{
+		return NT_STATUS_MORE_PROCESSING_REQUIRED;
+	}
+
+	if (is_named_stream(state->src_fsp->fsp_name) ||
+	    is_named_stream(state->dst_fsp->fsp_name))
+	{
+		return NT_STATUS_MORE_PROCESSING_REQUIRED;
+	}
+
+	init_strict_lock_struct(state->src_fsp,
+				state->src_fsp->op->global->open_persistent_id,
+				state->src_off,
+				state->remaining,
+				READ_LOCK,
+				&lck);
+
+	ok = SMB_VFS_STRICT_LOCK_CHECK(state->src_fsp->conn,
+				 state->src_fsp,
+				 &lck);
+	if (!ok) {
+		return NT_STATUS_FILE_LOCK_CONFLICT;
+	}
+
+	ok = change_to_user_and_service_by_fsp(state->dst_fsp);
+	if (!ok) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	init_strict_lock_struct(state->dst_fsp,
+				state->dst_fsp->op->global->open_persistent_id,
+				state->dst_off,
+				state->remaining,
+				WRITE_LOCK,
+				&lck);
+
+	ok = SMB_VFS_STRICT_LOCK_CHECK(state->dst_fsp->conn,
+				       state->dst_fsp,
+				       &lck);
+	if (!ok) {
+		return NT_STATUS_FILE_LOCK_CONFLICT;
+	}
+
+	while (state->remaining > 0) {
+		nwritten = copy_file_range(fsp_get_io_fd(state->src_fsp),
+					   &state->src_off,
+					   fsp_get_io_fd(state->dst_fsp),
+					   &state->dst_off,
+					   state->remaining,
+					   0);
+		if (nwritten == -1) {
+			DBG_DEBUG("copy_file_range src [%s]:[%jd] dst [%s]:[%jd] "
+				  "n [%jd] failed: %s\n",
+				  fsp_str_dbg(state->src_fsp),
+				  (intmax_t)state->src_off,
+				  fsp_str_dbg(state->dst_fsp),
+				  (intmax_t)state->dst_off,
+				  (intmax_t)state->remaining,
+				  strerror(errno));
+			switch (errno) {
+			case EOPNOTSUPP:
+			case ENOSYS:
+				try_copy_file_range = false;
+				status = NT_STATUS_MORE_PROCESSING_REQUIRED;
+				break;
+			case EXDEV:
+				status = NT_STATUS_MORE_PROCESSING_REQUIRED;
+				break;
+			default:
+				status = map_nt_error_from_unix(errno);
+				if (NT_STATUS_EQUAL(
+					    status,
+					    NT_STATUS_MORE_PROCESSING_REQUIRED))
+				{
+					/* Avoid triggering the fallback */
+					status = NT_STATUS_INTERNAL_ERROR;
+				}
+				break;
+			}
+			return status;
+		}
+
+		if (state->remaining < nwritten) {
+			DBG_DEBUG("copy_file_range src [%s] dst [%s] "
+				  "n [%jd] remaining [%jd]\n",
+				  fsp_str_dbg(state->src_fsp),
+				  fsp_str_dbg(state->dst_fsp),
+				  (intmax_t)nwritten,
+				  (intmax_t)state->remaining);
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+
+		if (nwritten == 0) {
+			break;
+		}
+		state->copied += nwritten;
+		state->remaining -= nwritten;
+	}
+
+	/*
+	 * Tell the req cleanup function there's no need to call
+	 * change_to_user_and_service_by_fsp() on the dst handle.
+	 */
+	state->dst_fsp = NULL;
+	return NT_STATUS_OK;
 }
 
 static void vfswrap_offload_write_read_done(struct tevent_req *subreq);
@@ -2278,6 +2472,7 @@ static void vfswrap_offload_write_write_done(struct tevent_req *subreq)
 		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
 		return;
 	}
+	state->copied += nwritten;
 	state->remaining -= nwritten;
 	if (state->remaining == 0) {
 		tevent_req_done(req);
@@ -2314,7 +2509,7 @@ static NTSTATUS vfswrap_offload_write_recv(struct vfs_handle_struct *handle,
 		return status;
 	}
 
-	*copied = state->to_copy;
+	*copied = state->copied;
 	DBG_DEBUG("copy chunk copied %lu\n", (unsigned long)*copied);
 	tevent_req_received(req);
 
@@ -2404,8 +2599,6 @@ static int vfswrap_unlinkat(vfs_handle_struct *handle,
 
 	START_PROFILE(syscall_unlinkat);
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-
 	if (is_named_stream(smb_fname)) {
 		errno = ENOENT;
 		goto out;
@@ -2419,29 +2612,37 @@ static int vfswrap_unlinkat(vfs_handle_struct *handle,
 	return result;
 }
 
-static int vfswrap_chmod(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			mode_t mode)
-{
-	int result;
-
-	START_PROFILE(syscall_chmod);
-	result = chmod(smb_fname->base_name, mode);
-	END_PROFILE(syscall_chmod);
-	return result;
-}
-
 static int vfswrap_fchmod(vfs_handle_struct *handle, files_struct *fsp, mode_t mode)
 {
 	int result;
 
 	START_PROFILE(syscall_fchmod);
-#if defined(HAVE_FCHMOD)
-	result = fchmod(fsp_get_io_fd(fsp), mode);
-#else
-	result = -1;
-	errno = ENOSYS;
-#endif
+
+	if (!fsp->fsp_flags.is_pathref) {
+		result = fchmod(fsp_get_io_fd(fsp), mode);
+		END_PROFILE(syscall_fchmod);
+		return result;
+	}
+
+	if (fsp->fsp_flags.have_proc_fds) {
+		int fd = fsp_get_pathref_fd(fsp);
+		const char *p = NULL;
+		char buf[PATH_MAX];
+
+		p = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (p != NULL) {
+			result = chmod(p, mode);
+		} else {
+			result = -1;
+		}
+		END_PROFILE(syscall_fchmod);
+		return result;
+	}
+
+	/*
+	 * This is no longer a handle based call.
+	 */
+	result = chmod(fsp->fsp_name->base_name, mode);
 
 	END_PROFILE(syscall_fchmod);
 	return result;
@@ -2453,7 +2654,31 @@ static int vfswrap_fchown(vfs_handle_struct *handle, files_struct *fsp, uid_t ui
 	int result;
 
 	START_PROFILE(syscall_fchown);
-	result = fchown(fsp_get_io_fd(fsp), uid, gid);
+	if (!fsp->fsp_flags.is_pathref) {
+		result = fchown(fsp_get_io_fd(fsp), uid, gid);
+		END_PROFILE(syscall_fchown);
+		return result;
+	}
+
+	if (fsp->fsp_flags.have_proc_fds) {
+		int fd = fsp_get_pathref_fd(fsp);
+		const char *p = NULL;
+		char buf[PATH_MAX];
+
+		p = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (p != NULL) {
+			result = chown(p, uid, gid);
+		} else {
+			result = -1;
+		}
+		END_PROFILE(syscall_fchown);
+		return result;
+	}
+
+	/*
+	 * This is no longer a handle based call.
+	 */
+	result = chown(fsp->fsp_name->base_name, uid, gid);
 	END_PROFILE(syscall_fchown);
 	return result;
 #else
@@ -2519,88 +2744,86 @@ static struct smb_filename *vfswrap_getwd(vfs_handle_struct *handle,
  system will support.
 **********************************************************************/
 
-static int vfswrap_ntimes(vfs_handle_struct *handle,
-			  const struct smb_filename *smb_fname,
-			  struct smb_file_time *ft)
+static int vfswrap_fntimes(vfs_handle_struct *handle,
+			   files_struct *fsp,
+			   struct smb_file_time *ft)
 {
 	int result = -1;
+	struct timespec ts[2];
+	struct timespec *times = NULL;
 
-	START_PROFILE(syscall_ntimes);
+	START_PROFILE(syscall_fntimes);
 
-	if (is_named_stream(smb_fname)) {
+	if (is_named_stream(fsp->fsp_name)) {
 		errno = ENOENT;
 		goto out;
 	}
 
 	if (ft != NULL) {
 		if (is_omit_timespec(&ft->atime)) {
-			ft->atime= smb_fname->st.st_ex_atime;
+			ft->atime = fsp->fsp_name->st.st_ex_atime;
 		}
 
 		if (is_omit_timespec(&ft->mtime)) {
-			ft->mtime = smb_fname->st.st_ex_mtime;
+			ft->mtime = fsp->fsp_name->st.st_ex_mtime;
 		}
 
 		if (!is_omit_timespec(&ft->create_time)) {
-			set_create_timespec_ea(handle->conn,
-					       smb_fname,
+			set_create_timespec_ea(fsp,
 					       ft->create_time);
 		}
 
 		if ((timespec_compare(&ft->atime,
-				      &smb_fname->st.st_ex_atime) == 0) &&
+				      &fsp->fsp_name->st.st_ex_atime) == 0) &&
 		    (timespec_compare(&ft->mtime,
-				      &smb_fname->st.st_ex_mtime) == 0)) {
-			return 0;
+				      &fsp->fsp_name->st.st_ex_mtime) == 0)) {
+			result = 0;
+			goto out;
 		}
-	}
 
-#if defined(HAVE_UTIMENSAT)
-	if (ft != NULL) {
-		struct timespec ts[2];
 		ts[0] = ft->atime;
 		ts[1] = ft->mtime;
-		result = utimensat(AT_FDCWD, smb_fname->base_name, ts, 0);
+		times = ts;
 	} else {
-		result = utimensat(AT_FDCWD, smb_fname->base_name, NULL, 0);
+		times = NULL;
 	}
-	if (!((result == -1) && (errno == ENOSYS))) {
-		goto out;
-	}
-#endif
-#if defined(HAVE_UTIMES)
-	if (ft != NULL) {
-		struct timeval tv[2];
-		tv[0] = convert_timespec_to_timeval(ft->atime);
-		tv[1] = convert_timespec_to_timeval(ft->mtime);
-		result = utimes(smb_fname->base_name, tv);
-	} else {
-		result = utimes(smb_fname->base_name, NULL);
-	}
-	if (!((result == -1) && (errno == ENOSYS))) {
-		goto out;
-	}
-#endif
-#if defined(HAVE_UTIME)
-	if (ft != NULL) {
-		struct utimbuf times;
-		times.actime = convert_timespec_to_time_t(ft->atime);
-		times.modtime = convert_timespec_to_time_t(ft->mtime);
-		result = utime(smb_fname->base_name, &times);
-	} else {
-		result = utime(smb_fname->base_name, NULL);
-	}
-	if (!((result == -1) && (errno == ENOSYS))) {
-		goto out;
-	}
-#endif
-	errno = ENOSYS;
-	result = -1;
 
- out:
-	END_PROFILE(syscall_ntimes);
+	if (!fsp->fsp_flags.is_pathref) {
+		result = futimens(fsp_get_io_fd(fsp), times);
+		goto out;
+	}
+
+	if (fsp->fsp_flags.have_proc_fds) {
+		int fd = fsp_get_pathref_fd(fsp);
+		const char *p = NULL;
+		char buf[PATH_MAX];
+
+		p = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (p != NULL) {
+			/*
+			 * The dirfd argument of utimensat is ignored when
+			 * pathname is an absolute path
+			 */
+			result = utimensat(AT_FDCWD, p, times, 0);
+		} else {
+			result = -1;
+		}
+
+		goto out;
+	}
+
+	/*
+	 * The fd is a pathref (opened with O_PATH) and there isn't fd to
+	 * path translation mechanism. Fallback to path based call.
+	 */
+	result = utimensat(AT_FDCWD, fsp->fsp_name->base_name, times, 0);
+
+out:
+	END_PROFILE(syscall_fntimes);
+
 	return result;
 }
+
 
 /*********************************************************************
  A version of ftruncate that will write the space on disk if strict
@@ -2975,12 +3198,33 @@ static struct smb_filename *vfswrap_realpath(vfs_handle_struct *handle,
 	return result_fname;
 }
 
-static int vfswrap_chflags(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
+static int vfswrap_fchflags(vfs_handle_struct *handle,
+			struct files_struct *fsp,
 			unsigned int flags)
 {
-#ifdef HAVE_CHFLAGS
-	return chflags(smb_fname->base_name, flags);
+#ifdef HAVE_FCHFLAGS
+	int fd = fsp_get_pathref_fd(fsp);
+
+	if (!fsp->fsp_flags.is_pathref) {
+		return fchflags(fd, flags);
+	}
+
+	if (fsp->fsp_flags.have_proc_fds) {
+		const char *p = NULL;
+		char buf[PATH_MAX];
+
+		p = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (p == NULL) {
+			return -1;
+		}
+
+		return chflags(p, flags);
+	}
+
+	/*
+	 * This is no longer a handle based call.
+	 */
+	return chflags(fsp->fsp_name->base_name, flags);
 #else
 	errno = ENOSYS;
 	return -1;
@@ -3025,61 +3269,52 @@ static uint64_t vfswrap_fs_file_id(struct vfs_handle_struct *handle,
 	return file_id;
 }
 
-static NTSTATUS vfswrap_streaminfo(vfs_handle_struct *handle,
+static NTSTATUS vfswrap_fstreaminfo(vfs_handle_struct *handle,
 				   struct files_struct *fsp,
-				   const struct smb_filename *smb_fname,
 				   TALLOC_CTX *mem_ctx,
 				   unsigned int *pnum_streams,
 				   struct stream_struct **pstreams)
 {
-	SMB_STRUCT_STAT sbuf;
 	struct stream_struct *tmp_streams = NULL;
-	int ret;
+	unsigned int num_streams = *pnum_streams;
+	struct stream_struct *streams = *pstreams;
+	NTSTATUS status;
 
-	if ((fsp != NULL) && (fsp->fsp_flags.is_directory)) {
+	if (fsp->fsp_flags.is_directory) {
 		/*
 		 * No default streams on directories
 		 */
 		goto done;
 	}
-
-	if ((fsp != NULL) && (fsp_get_pathref_fd(fsp) != -1)) {
-		ret = SMB_VFS_FSTAT(fsp, &sbuf);
-	}
-	else {
-		struct smb_filename *smb_fname_cp = NULL;
-
-		smb_fname_cp = cp_smb_filename_nostream(talloc_tos(), smb_fname);
-		if (smb_fname_cp == NULL) {
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		ret = vfs_stat(handle->conn, smb_fname_cp);
-		sbuf = smb_fname_cp->st;
-		TALLOC_FREE(smb_fname_cp);
+	status = vfs_stat_fsp(fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
-	if (ret == -1) {
-		return map_nt_error_from_unix(errno);
+	if (num_streams + 1 < 1) {
+		/* Integer wrap. */
+		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if (S_ISDIR(sbuf.st_ex_mode)) {
-		goto done;
-	}
-
-	tmp_streams = talloc_realloc(mem_ctx, *pstreams, struct stream_struct,
-					(*pnum_streams) + 1);
+	tmp_streams = talloc_realloc(mem_ctx,
+					streams,
+					struct stream_struct,
+					num_streams + 1);
 	if (tmp_streams == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	tmp_streams[*pnum_streams].name = talloc_strdup(tmp_streams, "::$DATA");
-	if (tmp_streams[*pnum_streams].name == NULL) {
+	tmp_streams[num_streams].name = talloc_strdup(tmp_streams, "::$DATA");
+	if (tmp_streams[num_streams].name == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	tmp_streams[*pnum_streams].size = sbuf.st_ex_size;
-	tmp_streams[*pnum_streams].alloc_size = SMB_VFS_GET_ALLOC_SIZE(handle->conn, fsp, &sbuf);
+	tmp_streams[num_streams].size = fsp->fsp_name->st.st_ex_size;
+	tmp_streams[num_streams].alloc_size = SMB_VFS_GET_ALLOC_SIZE(
+						handle->conn,
+						fsp,
+						&fsp->fsp_name->st);
+	num_streams += 1;
 
-	*pnum_streams += 1;
+	*pnum_streams = num_streams;
 	*pstreams = tmp_streams;
  done:
 	return NT_STATUS_OK;
@@ -3151,28 +3386,6 @@ static NTSTATUS vfswrap_fget_nt_acl(vfs_handle_struct *handle,
 	return result;
 }
 
-static NTSTATUS vfswrap_get_nt_acl_at(vfs_handle_struct *handle,
-			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname,
-			uint32_t security_info,
-			TALLOC_CTX *mem_ctx,
-			struct security_descriptor **ppdesc)
-{
-	NTSTATUS result;
-
-	START_PROFILE(get_nt_acl_at);
-
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
-
-	result = posix_get_nt_acl(handle->conn,
-				smb_fname,
-				security_info,
-				mem_ctx,
-				ppdesc);
-	END_PROFILE(get_nt_acl_at);
-	return result;
-}
-
 static NTSTATUS vfswrap_fset_nt_acl(vfs_handle_struct *handle, files_struct *fsp, uint32_t security_info_sent, const struct security_descriptor *psd)
 {
 	NTSTATUS result;
@@ -3192,19 +3405,12 @@ static NTSTATUS vfswrap_audit_file(struct vfs_handle_struct *handle,
 	return NT_STATUS_OK; /* Nothing to do here ... */
 }
 
-static SMB_ACL_T vfswrap_sys_acl_get_file(vfs_handle_struct *handle,
-					  const struct smb_filename *smb_fname,
-					  SMB_ACL_TYPE_T type,
-					  TALLOC_CTX *mem_ctx)
-{
-	return sys_acl_get_file(handle, smb_fname, type, mem_ctx);
-}
-
 static SMB_ACL_T vfswrap_sys_acl_get_fd(vfs_handle_struct *handle,
 					files_struct *fsp,
+					SMB_ACL_TYPE_T type,
 					TALLOC_CTX *mem_ctx)
 {
-	return sys_acl_get_fd(handle, fsp, mem_ctx);
+	return sys_acl_get_fd(handle, fsp, type, mem_ctx);
 }
 
 static int vfswrap_sys_acl_set_fd(vfs_handle_struct *handle,
@@ -3212,15 +3418,32 @@ static int vfswrap_sys_acl_set_fd(vfs_handle_struct *handle,
 				  SMB_ACL_TYPE_T type,
 				  SMB_ACL_T theacl)
 {
-	if (!fsp->fsp_flags.is_pathref &&
-	    type == SMB_ACL_TYPE_ACCESS)
-	{
-		return sys_acl_set_fd(handle, fsp, theacl);
+	return sys_acl_set_fd(handle, fsp, type, theacl);
+}
+
+static int vfswrap_sys_acl_delete_def_fd(vfs_handle_struct *handle,
+					 files_struct *fsp)
+{
+	return sys_acl_delete_def_fd(handle, fsp);
+}
+
+/****************************************************************
+ Extended attribute operations.
+*****************************************************************/
+
+static ssize_t vfswrap_fgetxattr(struct vfs_handle_struct *handle,
+				 struct files_struct *fsp,
+				 const char *name,
+				 void *value,
+				 size_t size)
+{
+	int fd = fsp_get_pathref_fd(fsp);
+
+	if (!fsp->fsp_flags.is_pathref) {
+		return fgetxattr(fd, name, value, size);
 	}
 
 	if (fsp->fsp_flags.have_proc_fds) {
-		int fd = fsp_get_pathref_fd(fsp);
-		struct smb_filename smb_fname;
 		const char *p = NULL;
 		char buf[PATH_MAX];
 
@@ -3229,46 +3452,18 @@ static int vfswrap_sys_acl_set_fd(vfs_handle_struct *handle,
 			return -1;
 		}
 
-		smb_fname = (struct smb_filename) {
-			.base_name = buf,
-		};
-
-		return sys_acl_set_file(handle,
-					&smb_fname,
-					type,
-					theacl);
+		return getxattr(p, name, value, size);
 	}
 
 	/*
 	 * This is no longer a handle based call.
 	 */
-	return sys_acl_set_file(handle,
-				fsp->fsp_name,
-				type,
-				theacl);
-}
-
-static int vfswrap_sys_acl_delete_def_file(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname)
-{
-	return sys_acl_delete_def_file(handle, smb_fname);
-}
-
-/****************************************************************
- Extended attribute operations.
-*****************************************************************/
-
-static ssize_t vfswrap_getxattr(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *name,
-			void *value,
-			size_t size)
-{
-	return getxattr(smb_fname->base_name, name, value, size);
+	return getxattr(fsp->fsp_name->base_name, name, value, size);
 }
 
 struct vfswrap_getxattrat_state {
 	struct tevent_context *ev;
+	struct vfs_handle_struct *handle;
 	files_struct *dir_fsp;
 	const struct smb_filename *smb_fname;
 
@@ -3321,6 +3516,7 @@ static struct tevent_req *vfswrap_getxattrat_send(
 	}
 	*state = (struct vfswrap_getxattrat_state) {
 		.ev = ev,
+		.handle = handle,
 		.dir_fsp = dir_fsp,
 		.smb_fname = smb_fname,
 	};
@@ -3419,31 +3615,19 @@ static void vfswrap_getxattrat_do_sync(struct tevent_req *req)
 {
 	struct vfswrap_getxattrat_state *state = tevent_req_data(
 		req, struct vfswrap_getxattrat_state);
-	char *path = NULL;
-	char *tofree = NULL;
-	char pathbuf[PATH_MAX+1];
-	ssize_t pathlen;
-	int err;
+	struct files_struct *fsp = state->smb_fname->fsp;
 
-	pathlen = full_path_tos(state->dir_fsp->fsp_name->base_name,
-				state->smb_fname->base_name,
-				pathbuf,
-				sizeof(pathbuf),
-				&path,
-				&tofree);
-	if (pathlen == -1) {
-		tevent_req_error(req, ENOMEM);
-		return;
+	if (fsp->base_fsp != NULL) {
+		fsp = fsp->base_fsp;
 	}
 
-	state->xattr_size = getxattr(path,
-				     state->xattr_name,
-				     state->xattr_value,
-				     talloc_array_length(state->xattr_value));
-	err = errno;
-	TALLOC_FREE(tofree);
+	state->xattr_size = vfswrap_fgetxattr(state->handle,
+					      fsp,
+					      state->xattr_name,
+					      state->xattr_value,
+					      talloc_array_length(state->xattr_value));
 	if (state->xattr_size == -1) {
-		tevent_req_error(req, err);
+		tevent_req_error(req, errno);
 		return;
 	}
 
@@ -3458,6 +3642,11 @@ static void vfswrap_getxattrat_do_async(void *private_data)
 	struct timespec start_time;
 	struct timespec end_time;
 	int ret;
+	struct files_struct *fsp = state->smb_fname->fsp;
+
+	if (fsp->base_fsp != NULL) {
+		fsp = fsp->base_fsp;
+	}
 
 	PROFILE_TIMESTAMP(&start_time);
 	SMBPROFILE_BYTES_ASYNC_SET_BUSY(state->profile_bytes);
@@ -3480,17 +3669,11 @@ static void vfswrap_getxattrat_do_async(void *private_data)
 		goto end_profile;
 	}
 
-	ret = fchdir(fsp_get_pathref_fd(state->dir_fsp));
-	if (ret == -1) {
-		state->xattr_size = -1;
-		state->vfs_aio_state.error = errno;
-		goto end_profile;
-	}
-
-	state->xattr_size = getxattr(state->name,
-				     state->xattr_name,
-				     state->xattr_value,
-				     talloc_array_length(state->xattr_value));
+	state->xattr_size = vfswrap_fgetxattr(state->handle,
+					      fsp,
+					      state->xattr_name,
+					      state->xattr_value,
+					      talloc_array_length(state->xattr_value));
 	if (state->xattr_size == -1) {
 		state->vfs_aio_state.error = errno;
 	}
@@ -3584,44 +3767,6 @@ static ssize_t vfswrap_getxattrat_recv(struct tevent_req *req,
 	return xattr_size;
 }
 
-static ssize_t vfswrap_fgetxattr(struct vfs_handle_struct *handle,
-				 struct files_struct *fsp,
-				 const char *name,
-				 void *value,
-				 size_t size)
-{
-	int fd = fsp_get_pathref_fd(fsp);
-
-	if (!fsp->fsp_flags.is_pathref) {
-		return fgetxattr(fd, name, value, size);
-	}
-
-	if (fsp->fsp_flags.have_proc_fds) {
-		const char *p = NULL;
-		char buf[PATH_MAX];
-
-		p = sys_proc_fd_path(fd, buf, sizeof(buf));
-		if (p == NULL) {
-			return -1;
-		}
-
-		return getxattr(p, name, value, size);
-	}
-
-	/*
-	 * This is no longer a handle based call.
-	 */
-	return getxattr(fsp->fsp_name->base_name, name, value, size);
-}
-
-static ssize_t vfswrap_listxattr(struct vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			char *list,
-			size_t size)
-{
-	return listxattr(smb_fname->base_name, list, size);
-}
-
 static ssize_t vfswrap_flistxattr(struct vfs_handle_struct *handle, struct files_struct *fsp, char *list, size_t size)
 {
 	int fd = fsp_get_pathref_fd(fsp);
@@ -3648,13 +3793,6 @@ static ssize_t vfswrap_flistxattr(struct vfs_handle_struct *handle, struct files
 	return listxattr(fsp->fsp_name->base_name, list, size);
 }
 
-static int vfswrap_removexattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name)
-{
-	return removexattr(smb_fname->base_name, name);
-}
-
 static int vfswrap_fremovexattr(struct vfs_handle_struct *handle, struct files_struct *fsp, const char *name)
 {
 	int fd = fsp_get_pathref_fd(fsp);
@@ -3679,16 +3817,6 @@ static int vfswrap_fremovexattr(struct vfs_handle_struct *handle, struct files_s
 	 * This is no longer a handle based call.
 	 */
 	return removexattr(fsp->fsp_name->base_name, name);
-}
-
-static int vfswrap_setxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				const void *value,
-				size_t size,
-				int flags)
-{
-	return setxattr(smb_fname->base_name, name, value, size, flags);
 }
 
 static int vfswrap_fsetxattr(struct vfs_handle_struct *handle, struct files_struct *fsp, const char *name, const void *value, size_t size, int flags)
@@ -3806,7 +3934,7 @@ static struct vfs_fn_pointers vfs_default_fns = {
 
 	.fdopendir_fn = vfswrap_fdopendir,
 	.readdir_fn = vfswrap_readdir,
-	.readdir_attr_fn = vfswrap_readdir_attr,
+	.freaddir_attr_fn = vfswrap_freaddir_attr,
 	.seekdir_fn = vfswrap_seekdir,
 	.telldir_fn = vfswrap_telldir,
 	.rewind_dir_fn = vfswrap_rewinddir,
@@ -3835,13 +3963,12 @@ static struct vfs_fn_pointers vfs_default_fns = {
 	.lstat_fn = vfswrap_lstat,
 	.get_alloc_size_fn = vfswrap_get_alloc_size,
 	.unlinkat_fn = vfswrap_unlinkat,
-	.chmod_fn = vfswrap_chmod,
 	.fchmod_fn = vfswrap_fchmod,
 	.fchown_fn = vfswrap_fchown,
 	.lchown_fn = vfswrap_lchown,
 	.chdir_fn = vfswrap_chdir,
 	.getwd_fn = vfswrap_getwd,
-	.ntimes_fn = vfswrap_ntimes,
+	.fntimes_fn = vfswrap_fntimes,
 	.ftruncate_fn = vfswrap_ftruncate,
 	.fallocate_fn = vfswrap_fallocate,
 	.lock_fn = vfswrap_lock,
@@ -3854,18 +3981,18 @@ static struct vfs_fn_pointers vfs_default_fns = {
 	.linkat_fn = vfswrap_linkat,
 	.mknodat_fn = vfswrap_mknodat,
 	.realpath_fn = vfswrap_realpath,
-	.chflags_fn = vfswrap_chflags,
+	.fchflags_fn = vfswrap_fchflags,
 	.file_id_create_fn = vfswrap_file_id_create,
 	.fs_file_id_fn = vfswrap_fs_file_id,
-	.streaminfo_fn = vfswrap_streaminfo,
+	.fstreaminfo_fn = vfswrap_fstreaminfo,
 	.get_real_filename_fn = vfswrap_get_real_filename,
 	.connectpath_fn = vfswrap_connectpath,
 	.brl_lock_windows_fn = vfswrap_brl_lock_windows,
 	.brl_unlock_windows_fn = vfswrap_brl_unlock_windows,
 	.strict_lock_check_fn = vfswrap_strict_lock_check,
 	.translate_name_fn = vfswrap_translate_name,
+	.parent_pathname_fn = vfswrap_parent_pathname,
 	.fsctl_fn = vfswrap_fsctl,
-	.set_dos_attributes_fn = vfswrap_set_dos_attributes,
 	.fset_dos_attributes_fn = vfswrap_fset_dos_attributes,
 	.get_dos_attributes_send_fn = vfswrap_get_dos_attributes_send,
 	.get_dos_attributes_recv_fn = vfswrap_get_dos_attributes_recv,
@@ -3880,29 +4007,22 @@ static struct vfs_fn_pointers vfs_default_fns = {
 	/* NT ACL operations. */
 
 	.fget_nt_acl_fn = vfswrap_fget_nt_acl,
-	.get_nt_acl_at_fn = vfswrap_get_nt_acl_at,
 	.fset_nt_acl_fn = vfswrap_fset_nt_acl,
 	.audit_file_fn = vfswrap_audit_file,
 
 	/* POSIX ACL operations. */
 
-	.sys_acl_get_file_fn = vfswrap_sys_acl_get_file,
 	.sys_acl_get_fd_fn = vfswrap_sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = vfswrap_sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = vfswrap_sys_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = vfswrap_sys_acl_delete_def_fd,
 
 	/* EA operations. */
-	.getxattr_fn = vfswrap_getxattr,
 	.getxattrat_send_fn = vfswrap_getxattrat_send,
 	.getxattrat_recv_fn = vfswrap_getxattrat_recv,
 	.fgetxattr_fn = vfswrap_fgetxattr,
-	.listxattr_fn = vfswrap_listxattr,
 	.flistxattr_fn = vfswrap_flistxattr,
-	.removexattr_fn = vfswrap_removexattr,
 	.fremovexattr_fn = vfswrap_fremovexattr,
-	.setxattr_fn = vfswrap_setxattr,
 	.fsetxattr_fn = vfswrap_fsetxattr,
 
 	/* aio operations */

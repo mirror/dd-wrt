@@ -27,6 +27,10 @@
 #include "torture/smb2/proto.h"
 #include "../libcli/smb/smbXcli_base.h"
 #include "librpc/gen_ndr/ndr_ioctl.h"
+#include "lib/cmdline/cmdline.h"
+#include "libcli/resolve/resolve.h"
+#include "lib/param/param.h"
+#include "lib/util/tevent_ntstatus.h"
 
 #define FNAME	"testfsctl.dat"
 #define FNAME2	"testfsctl2.dat"
@@ -6846,11 +6850,475 @@ static bool test_ioctl_bug14607(struct torture_context *torture,
 }
 
 /*
+   basic regression test for BUG 14769
+   https://bugzilla.samba.org/show_bug.cgi?id=14769
+*/
+static bool test_ioctl_bug14769(struct torture_context *torture,
+				struct smb2_tree *tree)
+{
+	NTSTATUS status;
+	const char *fname = "bug14769";
+	bool ret = false;
+	struct smb2_handle h;
+	struct smb2_ioctl ioctl;
+	struct smb2_close cl;
+	struct smb2_request *smb2arr[2] = { 0 };
+	uint8_t tosend_msec = 200;
+	DATA_BLOB send_buf = { &tosend_msec, 1 };
+
+	/* Create a test file. */
+	smb2_util_unlink(tree, fname);
+	status = torture_smb2_testfile(tree, fname, &h);
+	torture_assert_ntstatus_ok(torture, status, "create bug14769");
+
+	/*
+	 * Send (not receive) the FSCTL.
+	 * This should go async with a wait time of 200 msec.
+	 */
+	ZERO_STRUCT(ioctl);
+	ioctl.in.file.handle = h;
+	ioctl.in.function = FSCTL_SMBTORTURE_FSP_ASYNC_SLEEP;
+	ioctl.in.flags = SMB2_IOCTL_FLAG_IS_FSCTL;
+	ioctl.in.out = send_buf;
+
+	smb2arr[0] = smb2_ioctl_send(tree, &ioctl);
+	torture_assert_goto(torture,
+			    smb2arr[0] != NULL,
+			    ret,
+			    done,
+			    "smb2_ioctl_send failed\n");
+	/* Immediately send the close. */
+	ZERO_STRUCT(cl);
+	cl.in.file.handle = h;
+	cl.in.flags = 0;
+	smb2arr[1] = smb2_close_send(tree, &cl);
+	torture_assert_goto(torture,
+			    smb2arr[1] != NULL,
+			    ret,
+			    done,
+			    "smb2_close_send failed\n");
+
+	/* Now get the FSCTL reply. */
+	/*
+	 * If we suffer from bug #14769 this will fail as
+	 * the ioctl will return with NT_STATUS_FILE_CLOSED,
+	 * as the close will have closed the handle without
+	 * waiting for the ioctl to complete. The server shouldn't
+	 * complete the close until the ioctl finishes.
+	 */
+	status = smb2_ioctl_recv(smb2arr[0], tree, &ioctl);
+	torture_assert_ntstatus_ok_goto(torture,
+					status,
+					ret,
+					done,
+					"smb2_ioctl_recv failed\n");
+
+	/* Followed by the close reply. */
+	status = smb2_close_recv(smb2arr[1], &cl);
+	torture_assert_ntstatus_ok_goto(torture,
+					status,
+					ret,
+					done,
+					"smb2_ioctl_close failed\n");
+	ret = true;
+
+  done:
+	smb2_util_unlink(tree, fname);
+	return ret;
+}
+
+/*
+   basic regression test for BUG 14788,
+   with FSCTL_VALIDATE_NEGOTIATE_INFO
+   https://bugzilla.samba.org/show_bug.cgi?id=14788
+*/
+static bool test_ioctl_bug14788_VALIDATE_NEGOTIATE(struct torture_context *torture,
+				struct smb2_tree *tree0)
+{
+	const char *host = torture_setting_string(torture, "host", NULL);
+	const char *share = torture_setting_string(torture, "share", NULL);
+	const char *noperm_share = torture_setting_string(torture, "noperm_share", "noperm");
+	struct smb2_transport *transport0 = tree0->session->transport;
+	struct smbcli_options options;
+	struct smb2_transport *transport = NULL;
+	struct smb2_tree *tree = NULL;
+	struct smb2_session *session = NULL;
+	uint16_t noperm_flags = 0;
+	const char *noperm_unc = NULL;
+	struct smb2_tree *noperm_tree = NULL;
+	uint32_t timeout_msec;
+	struct tevent_req *subreq = NULL;
+	struct cli_credentials *credentials = samba_cmdline_get_creds();
+	NTSTATUS status;
+
+	if (smbXcli_conn_protocol(transport0->conn) < PROTOCOL_SMB3_00) {
+		torture_skip(torture, "Can't test without SMB 3 support");
+	}
+
+	options = transport0->options;
+	options.client_guid = GUID_random();
+	options.min_protocol = PROTOCOL_SMB3_00;
+	options.max_protocol = PROTOCOL_SMB3_02;
+
+	status = smb2_connect(torture,
+			      host,
+			      lpcfg_smb_ports(torture->lp_ctx),
+			      share,
+			      lpcfg_resolve_context(torture->lp_ctx),
+			      credentials,
+			      &tree,
+			      torture->ev,
+			      &options,
+			      lpcfg_socket_options(torture->lp_ctx),
+			      lpcfg_gensec_settings(torture, torture->lp_ctx)
+			      );
+	torture_assert_ntstatus_ok(torture, status, "smb2_connect options failed");
+	session = tree->session;
+	transport = session->transport;
+
+	timeout_msec = tree->session->transport->options.request_timeout * 1000;
+
+	subreq = smb2cli_validate_negotiate_info_send(torture,
+						      torture->ev,
+						      transport->conn,
+						      timeout_msec,
+						      session->smbXcli,
+						      tree->smbXcli);
+	torture_assert(torture,
+		       tevent_req_poll_ntstatus(subreq, torture->ev, &status),
+		       "tevent_req_poll_ntstatus");
+	status = smb2cli_validate_negotiate_info_recv(subreq);
+	torture_assert_ntstatus_ok(torture, status, "smb2cli_validate_negotiate_info");
+
+	noperm_unc = talloc_asprintf(torture, "\\\\%s\\%s", host, noperm_share);
+	torture_assert(torture, noperm_unc != NULL, "talloc_asprintf");
+
+	noperm_tree = smb2_tree_init(session, torture, false);
+	torture_assert(torture, noperm_tree != NULL, "smb2_tree_init");
+
+	status = smb2cli_raw_tcon(transport->conn,
+				  SMB2_HDR_FLAG_SIGNED,
+				  0, /* clear_flags */
+				  timeout_msec,
+				  session->smbXcli,
+				  noperm_tree->smbXcli,
+				  noperm_flags,
+				  noperm_unc);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_BAD_NETWORK_NAME)) {
+		torture_skip(torture, talloc_asprintf(torture,
+			     "noperm_unc[%s] %s",
+			     noperm_unc, nt_errstr(status)));
+	}
+	torture_assert_ntstatus_ok(torture, status,
+				   talloc_asprintf(torture,
+				   "smb2cli_tcon(%s)",
+				   noperm_unc));
+
+	subreq = smb2cli_validate_negotiate_info_send(torture,
+						      torture->ev,
+						      transport->conn,
+						      timeout_msec,
+						      session->smbXcli,
+						      noperm_tree->smbXcli);
+	torture_assert(torture,
+		       tevent_req_poll_ntstatus(subreq, torture->ev, &status),
+		       "tevent_req_poll_ntstatus");
+	status = smb2cli_validate_negotiate_info_recv(subreq);
+	torture_assert_ntstatus_ok(torture, status, "smb2cli_validate_negotiate_info noperm");
+
+	return true;
+}
+
+/*
+   basic regression test for BUG 14788,
+   with FSCTL_QUERY_NETWORK_INTERFACE_INFO
+   https://bugzilla.samba.org/show_bug.cgi?id=14788
+*/
+static bool test_ioctl_bug14788_NETWORK_INTERFACE(struct torture_context *torture,
+				struct smb2_tree *tree0)
+{
+	const char *host = torture_setting_string(torture, "host", NULL);
+	const char *share = torture_setting_string(torture, "share", NULL);
+	const char *noperm_share = torture_setting_string(torture, "noperm_share", "noperm");
+	struct smb2_transport *transport0 = tree0->session->transport;
+	struct smbcli_options options;
+	struct smb2_transport *transport = NULL;
+	struct smb2_tree *tree = NULL;
+	struct smb2_session *session = NULL;
+	uint16_t noperm_flags = 0;
+	const char *noperm_unc = NULL;
+	struct smb2_tree *noperm_tree = NULL;
+	uint32_t timeout_msec;
+	DATA_BLOB out_input_buffer = data_blob_null;
+	DATA_BLOB out_output_buffer = data_blob_null;
+	struct cli_credentials *credentials = samba_cmdline_get_creds();
+	NTSTATUS status;
+
+	if (smbXcli_conn_protocol(transport0->conn) < PROTOCOL_SMB3_00) {
+		torture_skip(torture, "Can't test without SMB 3 support");
+	}
+
+	options = transport0->options;
+	options.client_guid = GUID_random();
+	options.min_protocol = PROTOCOL_SMB3_00;
+	options.max_protocol = PROTOCOL_SMB3_02;
+
+	status = smb2_connect(torture,
+			      host,
+			      lpcfg_smb_ports(torture->lp_ctx),
+			      share,
+			      lpcfg_resolve_context(torture->lp_ctx),
+			      credentials,
+			      &tree,
+			      torture->ev,
+			      &options,
+			      lpcfg_socket_options(torture->lp_ctx),
+			      lpcfg_gensec_settings(torture, torture->lp_ctx)
+			      );
+	torture_assert_ntstatus_ok(torture, status, "smb2_connect options failed");
+	session = tree->session;
+	transport = session->transport;
+
+	timeout_msec = tree->session->transport->options.request_timeout * 1000;
+
+	/*
+	 * A valid FSCTL_QUERY_NETWORK_INTERFACE_INFO
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       tree->smbXcli,
+			       UINT64_MAX, /* in_fid_persistent */
+			       UINT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       UINT16_MAX, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_ok(torture, status,
+				   "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* is being UINT64_MAX and
+	 * in_max_output_length = 1.
+	 *
+	 * This demonstrates NT_STATUS_BUFFER_TOO_SMALL
+	 * if the server is not able to return the
+	 * whole response buffer to the client.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       tree->smbXcli,
+			       UINT64_MAX, /* in_fid_persistent */
+			       UINT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       1, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_BUFFER_TOO_SMALL,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* not being UINT64_MAX.
+	 *
+	 * This gives INVALID_PARAMETER instead
+	 * of FILE_CLOSED.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       tree->smbXcli,
+			       INT64_MAX, /* in_fid_persistent */
+			       INT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       UINT16_MAX, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_INVALID_PARAMETER,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* not being UINT64_MAX and
+	 * in_max_output_length = 1.
+	 *
+	 * This proves INVALID_PARAMETER instead
+	 * of BUFFER_TOO_SMALL.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       tree->smbXcli,
+			       INT64_MAX, /* in_fid_persistent */
+			       INT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       1, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_INVALID_PARAMETER,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	noperm_unc = talloc_asprintf(torture, "\\\\%s\\%s", host, noperm_share);
+	torture_assert(torture, noperm_unc != NULL, "talloc_asprintf");
+
+	noperm_tree = smb2_tree_init(session, torture, false);
+	torture_assert(torture, noperm_tree != NULL, "smb2_tree_init");
+
+	status = smb2cli_raw_tcon(transport->conn,
+				  SMB2_HDR_FLAG_SIGNED,
+				  0, /* clear_flags */
+				  timeout_msec,
+				  session->smbXcli,
+				  noperm_tree->smbXcli,
+				  noperm_flags,
+				  noperm_unc);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_BAD_NETWORK_NAME)) {
+		torture_skip(torture, talloc_asprintf(torture,
+			     "noperm_unc[%s] %s",
+			     noperm_unc, nt_errstr(status)));
+	}
+	torture_assert_ntstatus_ok(torture, status,
+				   talloc_asprintf(torture,
+				   "smb2cli_tcon(%s)",
+				   noperm_unc));
+
+	/*
+	 * A valid FSCTL_QUERY_NETWORK_INTERFACE_INFO
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       noperm_tree->smbXcli,
+			       UINT64_MAX, /* in_fid_persistent */
+			       UINT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       UINT16_MAX, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_ok(torture, status,
+				   "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* is being UINT64_MAX and
+	 * in_max_output_length = 1.
+	 *
+	 * This demonstrates NT_STATUS_BUFFER_TOO_SMALL
+	 * if the server is not able to return the
+	 * whole response buffer to the client.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       noperm_tree->smbXcli,
+			       UINT64_MAX, /* in_fid_persistent */
+			       UINT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       1, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_BUFFER_TOO_SMALL,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* not being UINT64_MAX.
+	 *
+	 * This gives INVALID_PARAMETER instead
+	 * of FILE_CLOSED.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       noperm_tree->smbXcli,
+			       INT64_MAX, /* in_fid_persistent */
+			       INT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       UINT16_MAX, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_INVALID_PARAMETER,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	/*
+	 * An invalid FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+	 * with file_id_* not being UINT64_MAX and
+	 * in_max_output_length = 1.
+	 *
+	 * This proves INVALID_PARAMETER instead
+	 * of BUFFER_TOO_SMALL.
+	 */
+	status = smb2cli_ioctl(transport->conn,
+			       timeout_msec,
+			       session->smbXcli,
+			       noperm_tree->smbXcli,
+			       INT64_MAX, /* in_fid_persistent */
+			       INT64_MAX, /* in_fid_volatile */
+			       FSCTL_QUERY_NETWORK_INTERFACE_INFO,
+			       0, /* in_max_input_length */
+			       NULL, /* in_input_buffer */
+			       1, /* in_max_output_length */
+			       NULL, /* in_output_buffer */
+			       SMB2_IOCTL_FLAG_IS_FSCTL,
+			       torture,
+			       &out_input_buffer,
+			       &out_output_buffer);
+	torture_assert_ntstatus_equal(torture, status,
+				      NT_STATUS_INVALID_PARAMETER,
+				      "FSCTL_QUERY_NETWORK_INTERFACE_INFO");
+
+	return true;
+}
+
+/*
  * testing of SMB2 ioctls
  */
 struct torture_suite *torture_smb2_ioctl_init(TALLOC_CTX *ctx)
 {
 	struct torture_suite *suite = torture_suite_create(ctx, "ioctl");
+	struct torture_suite *bug14788 = torture_suite_create(ctx, "bug14788");
 
 	torture_suite_add_1smb2_test(suite, "shadow_copy",
 				     test_ioctl_get_shadow_copy);
@@ -6992,6 +7460,14 @@ struct torture_suite *torture_smb2_ioctl_init(TALLOC_CTX *ctx)
 				     test_ioctl_dup_extents_dest_lck);
 	torture_suite_add_1smb2_test(suite, "bug14607",
 				     test_ioctl_bug14607);
+	torture_suite_add_1smb2_test(suite, "bug14769",
+				     test_ioctl_bug14769);
+
+	torture_suite_add_1smb2_test(bug14788, "VALIDATE_NEGOTIATE",
+				     test_ioctl_bug14788_VALIDATE_NEGOTIATE);
+	torture_suite_add_1smb2_test(bug14788, "NETWORK_INTERFACE",
+				     test_ioctl_bug14788_NETWORK_INTERFACE);
+	torture_suite_add_suite(suite, bug14788);
 
 	suite->description = talloc_strdup(suite, "SMB2-IOCTL tests");
 

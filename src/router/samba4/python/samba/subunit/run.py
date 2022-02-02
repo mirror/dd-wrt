@@ -24,52 +24,10 @@
   $ python -m samba.subunit.run mylib.tests.test_suite
 """
 
-from iso8601.iso8601 import UTC
-
 import datetime
 import os
 import sys
-import traceback
 import unittest
-
-
-# Whether or not to hide layers of the stack trace that are
-# unittest/testtools internal code.  Defaults to True since the
-# system-under-test is rarely unittest or testtools.
-HIDE_INTERNAL_STACK = True
-
-
-def write_traceback(stream, err, test):
-    """Converts a sys.exc_info()-style tuple of values into a string.
-
-    Copied from Python 2.7's unittest.TestResult._exc_info_to_string.
-    """
-    def _is_relevant_tb_level(tb):
-        return '__unittest' in tb.tb_frame.f_globals
-
-    def _count_relevant_tb_levels(tb):
-        length = 0
-        while tb and not _is_relevant_tb_level(tb):
-            length += 1
-            tb = tb.tb_next
-        return length
-
-    exctype, value, tb = err
-    # Skip test runner traceback levels
-    if HIDE_INTERNAL_STACK:
-        while tb and _is_relevant_tb_level(tb):
-            tb = tb.tb_next
-
-    format_exception = traceback.format_exception
-
-    if (HIDE_INTERNAL_STACK and test.failureException
-        and isinstance(value, test.failureException)):
-        # Skip assert*() traceback levels
-        length = _count_relevant_tb_levels(tb)
-        msgLines = format_exception(exctype, value, tb, length)
-    else:
-        msgLines = format_exception(exctype, value, tb)
-    stream.writelines(msgLines)
 
 
 class TestProtocolClient(unittest.TestResult):
@@ -94,80 +52,28 @@ class TestProtocolClient(unittest.TestResult):
     def __init__(self, stream):
         unittest.TestResult.__init__(self)
         self._stream = stream
-        self.failed = False
+        self.successes = []
 
-    def wasSuccessful(self):
-        return not self.failed
-
-    def addError(self, test, error=None):
-        """Report an error in test test.
-
-        :param error: Standard unittest positional argument form - an
-            exc_info tuple.
-        """
-        self._addOutcome("error", test, error=error)
-        self.failed = True
-
-    def addExpectedFailure(self, test, error=None):
-        """Report an expected failure in test test.
-
-        :param error: Standard unittest positional argument form - an
-            exc_info tuple.
-        """
-        self._addOutcome("xfail", test, error=error)
-
-    def addFailure(self, test, error=None):
-        """Report a failure in test test.
-
-        :param error: Standard unittest positional argument form - an
-            exc_info tuple.
-        """
-        self._addOutcome("failure", test, error=error)
-        self.failed = True
-
-    def _addOutcome(self, outcome, test, error=None, error_permitted=True):
-        """Report a failure in test test.
+    def _addOutcome(self, outcome, test, errors=None):
+        """Report an outcome of test test.
 
         :param outcome: A string describing the outcome - used as the
             event name in the subunit stream.
-        :param error: Standard unittest positional argument form - an
-            exc_info tuple.
-        :param error_permitted: If True then error must be supplied.
-            If False then error must not be supplied.
+        :param errors: A list of strings describing the errors.
         """
         self._stream.write(("%s: " % outcome) + test.id())
-        if error_permitted:
-            if error is None:
-                raise ValueError
-        else:
-            if error is not None:
-                raise ValueError
-        if error is not None:
+        if errors:
             self._stream.write(" [\n")
-            write_traceback(self._stream, error, test)
-        else:
-            self._stream.write("\n")
-        if error is not None:
-            self._stream.write("]\n")
-
-    def addSkip(self, test, reason=None):
-        """Report a skipped test."""
-        if reason is None:
-            self._addOutcome("skip", test, error=None)
-        else:
-            self._stream.write("skip: %s [\n" % test.id())
-            self._stream.write("%s\n" % reason)
-            self._stream.write("]\n")
+            for error in errors:
+                self._stream.write(error)
+                if not error.endswith('\n'):
+                    self._stream.write('\n')
+            self._stream.write("]")
+        self._stream.write("\n")
 
     def addSuccess(self, test):
         """Report a success in a test."""
-        self._addOutcome("successful", test, error_permitted=False)
-
-    def addUnexpectedSuccess(self, test):
-        """Report an unexpected success in test test.
-        """
-        self._addOutcome("uxsuccess", test, error_permitted=False)
-        self.failed = True
+        self.successes.append(test)
 
     def startTest(self, test):
         """Mark a test as starting its test run."""
@@ -176,15 +82,87 @@ class TestProtocolClient(unittest.TestResult):
         self._stream.flush()
 
     def stopTest(self, test):
+        """Mark a test as having finished its test run."""
         super(TestProtocolClient, self).stopTest(test)
+        self.writeOutcome(test)
+
+    def writeOutcome(self, test):
+        """Output the overall outcome for test test."""
+        err,       self.errors              = self._filterErrors(test,    self.errors)
+        fail,      self.failures            = self._filterErrors(test,    self.failures)
+        xfail,     self.expectedFailures    = self._filterErrors(test,    self.expectedFailures)
+        skip,      self.skipped             = self._filterErrors(test,    self.skipped)
+        success,   self.successes           = self._filterSuccesses(test, self.successes)
+        uxsuccess, self.unexpectedSuccesses = self._filterSuccesses(test, self.unexpectedSuccesses)
+
+        if err:
+            outcome = "error"
+        elif fail:
+            outcome = "failure"
+        elif skip:
+            outcome = "skip"
+        elif uxsuccess:
+            outcome = "uxsuccess"
+        elif xfail:
+            outcome = "xfail"
+        elif success:
+            outcome = "successful"
+        else:
+            outcome = None
+
+        if outcome:
+            self._addOutcome(outcome, test, errors=err+fail+skip+xfail)
+
         self._stream.flush()
+
+    def _filterErrors(self, test, errors):
+        """Filter a list of errors by test test.
+
+        :param test: The test to filter by.
+        :param errors: A list of <test, error> pairs to filter.
+
+        :return: A pair whose first element is a list of strings containing
+            errors that apply to test test, and whose second element is a list
+            of the remaining elements.
+        """
+        filtered = []
+        unfiltered = []
+
+        for error in errors:
+            if error[0] is test:
+                filtered.append(error[1])
+            else:
+                unfiltered.append(error)
+
+        return (filtered, unfiltered)
+
+    def _filterSuccesses(self, test, successes):
+        """Filter a list of successes by test test.
+
+        :param test: The test to filter by.
+        :param successes: A list of tests to filter.
+
+        :return: A tuple whose first element is a boolean stating whether test
+            test was found in the list of successes, and whose second element is
+            a list of the remaining elements.
+        """
+        filtered = False
+        unfiltered = []
+
+        for success in successes:
+            if success is test:
+                filtered = True
+            else:
+                unfiltered.append(success)
+
+        return (filtered, unfiltered)
 
     def time(self, a_datetime):
         """Inform the client of the time.
 
         ":param datetime: A datetime.datetime object.
         """
-        time = a_datetime.astimezone(UTC)
+        time = a_datetime.astimezone(datetime.timezone.utc)
         self._stream.write("time: %04d-%02d-%02d %02d:%02d:%02d.%06dZ\n" % (
             time.year, time.month, time.day, time.hour, time.minute,
             time.second, time.microsecond))
@@ -458,7 +436,7 @@ class AutoTimingTestResultDecorator(HookedTestResultDecorator):
         time = self._time
         if time is not None:
             return
-        time = datetime.datetime.utcnow().replace(tzinfo=UTC)
+        time = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         self.decorated.time(time)
 
     @property

@@ -131,6 +131,7 @@ bld.SAMBA_SUBSYSTEM('ndr-table',
                     NDR_PERFCOUNT
                     NDR_SECRETS
                     NDR_LEASES_DB
+                    NDR_ODJ
                     ''',
         depends_on='GEN_NDR_TABLES'
         )
@@ -157,7 +158,26 @@ bld.SAMBA_LIBRARY('dcerpc',
 	rpc/dcerpc_roh_channel_in.c rpc/dcerpc_roh_channel_out.c rpc/dcerpc_roh.c
 	rpc/dcerpc_connect.c rpc/dcerpc_secondary.c''',
 	pc_files='dcerpc.pc',
-	deps='samba_socket LIBCLI_RESOLVE LIBCLI_SMB LIBCLI_SMB2 ndr NDR_DCERPC RPC_NDR_EPMAPPER NDR_SCHANNEL RPC_NDR_NETLOGON RPC_NDR_MGMT gensec LIBCLI_AUTH smbclient-raw LP_RESOLVE tevent-util dcerpc-binding param_options http',
+	deps='''
+        samba_socket
+        LIBCLI_RESOLVE
+        LIBCLI_SMB
+        LIBCLI_SMB2
+        ndr
+        NDR_DCERPC
+        RPC_NDR_EPMAPPER
+        NDR_SCHANNEL
+        RPC_NDR_NETLOGON
+        RPC_NDR_MGMT
+        gensec
+        LIBCLI_AUTH
+        smbclient-raw
+        LP_RESOLVE
+        tevent-util
+        dcerpc-binding
+        dcerpc-pkt-auth
+        param_options
+        http''',
 	autoproto='rpc/dcerpc_proto.h',
 	public_deps='samba-credentials tevent talloc',
 	public_headers='''rpc/dcerpc.h''',
@@ -226,6 +246,13 @@ bld.SAMBA_PYTHON('python_krb5pac',
         source='../../librpc/gen_ndr/py_krb5pac.c',
         deps='ndr-krb5pac %s %s' % (pytalloc_util, pyrpc_util),
         realname='samba/dcerpc/krb5pac.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_krb5ccache',
+        source='../../librpc/gen_ndr/py_krb5ccache.c',
+        deps='NDR_KRB5CCACHE %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/krb5ccache.so',
         cflags_end=gen_cflags
         )
 

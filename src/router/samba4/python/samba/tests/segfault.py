@@ -49,12 +49,21 @@ def segfault_detector(f):
             os._exit(0)
 
         pid2, status = os.waitpid(pid, 0)
-        signal = status & 255
         if os.WIFSIGNALED(status):
             signal = os.WTERMSIG(status)
             raise AssertionError("Failed with signal %d" % signal)
 
     return wrapper
+
+
+def no_gdb_backtrace(f):
+    from os import environ
+    def w(*args, **kwargs):
+        environ['PLEASE_NO_GDB_BACKTRACE'] = '1'
+        f(*args, **kwargs)
+        del environ['PLEASE_NO_GDB_BACKTRACE']
+
+    return w
 
 
 class SegfaultTests(samba.tests.TestCase):
@@ -78,6 +87,7 @@ class SegfaultTests(samba.tests.TestCase):
         net = Net(creds, lp, server=server)
         net.replicate_init(42, lp, None, misc.GUID())
 
+    @no_gdb_backtrace
     @segfault_detector
     def test_net_replicate_init__3(self):
         # third argument is also unchecked
@@ -155,7 +165,7 @@ class SegfaultTests(samba.tests.TestCase):
 
     @segfault_detector
     def test_rpcecho(self):
-        from dcerpc import echo
+        from samba.dcerpc import echo
         echo.rpcecho("")
 
     @segfault_detector
@@ -174,3 +184,55 @@ class SegfaultTests(samba.tests.TestCase):
     def test_dcerpc_idl_inline_arrays(self):
         """Inline arrays were incorrectly handled."""
         dnsserver.DNS_RPC_SERVER_INFO_DOTNET().pExtensions
+
+    @segfault_detector
+    def test_dcerpc_idl_set_inline_arrays(self):
+        """Setting an inline array was incorrectly handled."""
+        a = dnsserver.DNS_EXTENSION();
+        x = dnsserver.DNS_RPC_DP_INFO();
+        x.pwszReserved = [a, a, a]
+
+    @no_gdb_backtrace
+    @segfault_detector
+    def test_dnsp_string_list(self):
+        from samba.dcerpc import dnsp
+        # We segfault if s.count is greater than the length of s.str
+        s = dnsp.string_list()
+        s.count = 3
+        s.str
+
+    @no_gdb_backtrace
+    @segfault_detector
+    def test_dns_record(self):
+        from samba.dnsserver import TXTRecord
+        from samba.dcerpc import dnsp, dnsserver
+        # there are many others here
+        rec = TXTRecord(["a", "b", "c"])
+        rec.wType = dnsp.DNS_TYPE_A
+        rec.data
+
+    @no_gdb_backtrace
+    @segfault_detector
+    def test_ldb_msg_diff(self):
+        samdb = self.get_samdb()
+
+        msg = ldb.Message()
+        msg.dn = ldb.Dn(samdb, '')
+        diff = samdb.msg_diff(msg, msg)
+
+        del msg
+        diff.dn
+
+    @no_gdb_backtrace
+    @segfault_detector
+    def test_ldb_msg_del_dn(self):
+        msg = ldb.Message()
+        del msg.dn
+
+    @no_gdb_backtrace
+    @segfault_detector
+    def test_ldb_control_del_critical(self):
+        samdb = self.get_samdb()
+
+        c = ldb.Control(samdb, 'relax:1')
+        del c.critical

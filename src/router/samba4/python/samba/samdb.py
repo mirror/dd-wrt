@@ -34,6 +34,7 @@ from samba.dcerpc import drsblobs, misc
 from samba.common import normalise_int32
 from samba.common import get_bytes, cmp
 from samba.dcerpc import security
+from samba import is_ad_dc_built
 import binascii
 
 __docformat__ = "restructuredText"
@@ -227,7 +228,12 @@ lockoutTime: 0
         :param sd: security descriptor of the object
         """
 
-        group_dn = "CN=%s,%s,%s" % (groupname, (groupou or "CN=Users"), self.domain_dn())
+        if groupou:
+            group_dn = "CN=%s,%s,%s" % (groupname, groupou, self.domain_dn())
+        else:
+            group_dn = "CN=%s,%s" % (groupname, self.get_wellknown_dn(
+                                        self.get_default_basedn(),
+                                        dsdb.DS_GUID_USERS_CONTAINER))
 
         # The new user record. Note the reliance on the SAMLDB module which
         # fills in the default information
@@ -529,7 +535,12 @@ member: %s
         if useusernameascn is None and displayname != "":
             cn = displayname
 
-        user_dn = "CN=%s,%s,%s" % (cn, (userou or "CN=Users"), self.domain_dn())
+        if userou:
+            user_dn = "CN=%s,%s,%s" % (cn, userou, self.domain_dn())
+        else:
+            user_dn = "CN=%s,%s" % (cn, self.get_wellknown_dn(
+                                        self.get_default_basedn(),
+                                        dsdb.DS_GUID_USERS_CONTAINER))
 
         dnsdomain = ldb.Dn(self, self.domain_dn()).canonical_str().replace("/", "")
         user_principal_name = "%s@%s" % (username, dnsdomain)
@@ -762,7 +773,8 @@ member: %s
             raise Exception('Illegal computername "%s"' % computername)
         samaccountname = "%s$" % cn
 
-        computercontainer_dn = "CN=Computers,%s" % self.domain_dn()
+        computercontainer_dn = self.get_wellknown_dn(self.get_default_basedn(),
+                                              dsdb.DS_GUID_COMPUTERS_CONTAINER)
         if computerou:
             computercontainer_dn = self.normalize_dn_in_domain(computerou)
 
@@ -1369,6 +1381,10 @@ schemaUpdateNow: 1
         '''garbage_collect_tombstones(lp, samdb, [dn], current_time, tombstone_lifetime)
         -> (num_objects_expunged, num_links_expunged)'''
 
+        if not is_ad_dc_built():
+            raise SamDBError('Cannot garbage collect tombstones: ' \
+                'AD DC was not built')
+
         if tombstone_lifetime is None:
             return dsdb._dsdb_garbage_collect_tombstones(self, dn,
                                                          current_time)
@@ -1384,6 +1400,111 @@ schemaUpdateNow: 1
     def allocate_rid(self):
         '''return a new RID from the RID Pool on this DSA'''
         return dsdb._dsdb_allocate_rid(self)
+
+    def next_free_rid(self):
+        '''return the next free RID from the RID Pool on this DSA.
+
+        :note: This function is not intended for general use, and care must be
+            taken if it is used to generate objectSIDs. The returned RID is not
+            formally reserved for use, creating the possibility of duplicate
+            objectSIDs.
+        '''
+        rid, _ = self.free_rid_bounds()
+        return rid
+
+    def free_rid_bounds(self):
+        '''return the low and high bounds (inclusive) of RIDs that are
+            available for use in this DSA's current RID pool.
+
+        :note: This function is not intended for general use, and care must be
+            taken if it is used to generate objectSIDs. The returned range of
+            RIDs is not formally reserved for use, creating the possibility of
+            duplicate objectSIDs.
+        '''
+        # Get DN of this server's RID Set
+        server_name_dn = ldb.Dn(self, self.get_serverName())
+        res = self.search(base=server_name_dn,
+                          scope=ldb.SCOPE_BASE,
+                          attrs=["serverReference"])
+        try:
+            server_ref = res[0]["serverReference"]
+        except KeyError:
+            raise ldb.LdbError(
+                ldb.ERR_NO_SUCH_ATTRIBUTE,
+                "No RID Set DN - "
+                "Cannot find attribute serverReference of %s "
+                "to calculate reference dn" % server_name_dn) from None
+        server_ref_dn = ldb.Dn(self, server_ref[0].decode("utf-8"))
+
+        res = self.search(base=server_ref_dn,
+                          scope=ldb.SCOPE_BASE,
+                          attrs=["rIDSetReferences"])
+        try:
+            rid_set_refs = res[0]["rIDSetReferences"]
+        except KeyError:
+            raise ldb.LdbError(
+                ldb.ERR_NO_SUCH_ATTRIBUTE,
+                "No RID Set DN - "
+                "Cannot find attribute rIDSetReferences of %s "
+                "to calculate reference dn" % server_ref_dn) from None
+        rid_set_dn = ldb.Dn(self, rid_set_refs[0].decode("utf-8"))
+
+        # Get the alloc pools and next RID of this RID Set
+        res = self.search(base=rid_set_dn,
+                          scope=ldb.SCOPE_BASE,
+                          attrs=["rIDAllocationPool",
+                                 "rIDPreviousAllocationPool",
+                                 "rIDNextRID"])
+
+        uint32_max = 2**32 - 1
+        uint64_max = 2**64 - 1
+
+        try:
+            alloc_pool = int(res[0]["rIDAllocationPool"][0])
+        except KeyError:
+            alloc_pool = uint64_max
+        if alloc_pool == uint64_max:
+            raise ldb.LdbError(ldb.ERR_OPERATIONS_ERROR,
+                               "Bad RID Set %s" % rid_set_dn)
+
+        try:
+            prev_pool = int(res[0]["rIDPreviousAllocationPool"][0])
+        except KeyError:
+            prev_pool = uint64_max
+        try:
+            next_rid = int(res[0]["rIDNextRID"][0])
+        except KeyError:
+            next_rid = uint32_max
+
+        # If we never used a pool, set up our first pool
+        if prev_pool == uint64_max or next_rid == uint32_max:
+            prev_pool = alloc_pool
+            next_rid = prev_pool & uint32_max
+        else:
+            next_rid += 1
+
+        # Now check if our current pool is still usable
+        prev_pool_lo = prev_pool & uint32_max
+        prev_pool_hi = prev_pool >> 32
+        if next_rid > prev_pool_hi:
+            # We need a new pool, check if we already have a new one
+            # Otherwise we return an error code.
+            if alloc_pool == prev_pool:
+                raise ldb.LdbError(ldb.ERR_OPERATIONS_ERROR,
+                                   "RID pools out of RIDs")
+
+            # Now use the new pool
+            prev_pool = alloc_pool
+            prev_pool_lo = prev_pool & uint32_max
+            prev_pool_hi = prev_pool >> 32
+            next_rid = prev_pool_lo
+
+        if next_rid < prev_pool_lo or next_rid > prev_pool_hi:
+            raise ldb.LdbError(ldb.ERR_OPERATIONS_ERROR,
+                               "Bad RID chosen %d from range %d-%d" %
+                               (next_rid, prev_pool_lo, prev_pool_hi))
+
+        return next_rid, prev_pool_hi
 
     def normalize_dn_in_domain(self, dn):
         '''return a new DN expanded by adding the domain DN

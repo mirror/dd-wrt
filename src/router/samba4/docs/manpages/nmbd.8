@@ -2,12 +2,12 @@
 .\"     Title: nmbd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "NMBD" "8" "06/01/2021" "Samba 4\&.14\&.5" "System Administration tools"
+.TH "NMBD" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 nmbd \- NetBIOS name server to provide NetBIOS over IP naming services to clients
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-nmbd [\-D|\-\-daemon] [\-F|\-\-foreground] [\-S|\-\-log\-stdout] [\-i|\-\-interactive] [\-V] [\-d\ <debug\ level>] [\-H|\-\-hosts\ <lmhosts\ file>] [\-l\ <log\ directory>] [\-p|\-\-port\ <port\ number>] [\-s\ <configuration\ file>] [\-\-no\-process\-group]
+nmbd [\-D|\-\-daemon] [\-i|\-\-interactive] [\-F|\-\-foreground] [\-\-no\-process\-group] [\-b|\-\-build\-options] [\-p\ <port\ number(s)>] [\-P\ <profiling\ level>] [\-d\ <debug\ level>] [\-\-debug\-stdout] [\-\-configfile=<configuration\ file>] [\-\-option=<name>=<value>] [\-l|\-\-log\-basename\ <log\ directory>] [\-\-leak\-report] [\-\-leak\-report\-full] [\-V|\-\-version]
 .SH "DESCRIPTION"
 .PP
 This program is part of the
@@ -90,13 +90,6 @@ daemontools
 package, or the AIX process monitor\&.
 .RE
 .PP
-\-S|\-\-log\-stdout
-.RS 4
-If specified, this parameter causes
-nmbd
-to log to standard output rather than a file\&.
-.RE
-.PP
 \-i|\-\-interactive
 .RS 4
 If this parameter is specified it causes the server to run "interactively", not as a daemon, even if the server is executed on the command line of a shell\&. Setting this parameter negates the implicit daemon mode when run from the command line\&.
@@ -104,16 +97,6 @@ nmbd
 also logs to standard output, as if the
 \fB\-S\fR
 parameter had been given\&.
-.RE
-.PP
-\-?|\-\-help
-.RS 4
-Print a summary of command line options\&.
-.RE
-.PP
-\-\-usage
-.RS 4
-Display brief usage message\&.
 .RE
 .PP
 \-H|\-\-hosts <filename>
@@ -138,7 +121,19 @@ or
 man page for details on the contents of this file\&.
 .RE
 .PP
-\-d|\-\-debuglevel=level
+\-p|\-\-port <UDP port number>
+.RS 4
+UDP port number is a positive integer value\&. This option changes the default UDP port number (normally 137) that
+nmbd
+responds to name queries on\&. Don\*(Aqt use this option unless you are an expert, in which case you won\*(Aqt need help!
+.RE
+.PP
+\-\-no\-process\-group
+.RS 4
+Do not create a new process group for nmbd\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL, \-\-debug\-stdout
 .RS 4
 \fIlevel\fR
 is an integer from 0 to 10\&. The default value if this parameter is not specified is 0\&.
@@ -152,18 +147,21 @@ Note that specifying this parameter here will override the
 parameter in the
 smb\&.conf
 file\&.
+This will redirect debug output to STDOUT\&. By default server daemons are logging to a log file\&.
 .RE
 .PP
-\-V|\-\-version
-.RS 4
-Prints the program version number\&.
-.RE
-.PP
-\-s|\-\-configfile=<configuration file>
+\-\-configfile=CONFIGFILE
 .RS 4
 The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
 smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
 .RE
 .PP
 \-l|\-\-log\-basename=logdirectory
@@ -173,23 +171,29 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-\-option=<name>=<value>
+\-\-leak\-report
 .RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+Enable talloc leak reporting on exit\&.
 .RE
 .PP
-\-p|\-\-port <UDP port number>
+\-\-leak\-report\-full
 .RS 4
-UDP port number is a positive integer value\&. This option changes the default UDP port number (normally 137) that
-nmbd
-responds to name queries on\&. Don\*(Aqt use this option unless you are an expert, in which case you won\*(Aqt need help!
+Enable full talloc leak reporting on exit\&.
 .RE
 .PP
-\-\-no\-process\-group
+\-V|\-\-version
 .RS 4
-Do not create a new process group for nmbd\&.
+Prints the program version number\&.
+.RE
+.PP
+\-?|\-\-help
+.RS 4
+Print a summary of command line options\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Display brief usage message\&.
 .RE
 .SH "FILES"
 .PP
@@ -284,7 +288,7 @@ The debug log level of nmbd may be raised or lowered using
 (SIGUSR[1|2] signals are no longer used since Samba 2\&.2)\&. This is to allow transient problems to be diagnosed, whilst still running at a normally low log level\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBinetd\fR(8),

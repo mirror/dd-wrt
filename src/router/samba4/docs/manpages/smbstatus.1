@@ -2,12 +2,12 @@
 .\"     Title: smbstatus
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "SMBSTATUS" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
+.TH "SMBSTATUS" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbstatus \- report on current Samba connections
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbstatus [\-P] [\-b] [\-d\ <debug\ level>] [\-v] [\-L] [\-B] [\-p] [\-S] [\-N] [\-f] [\-s\ <configuration\ file>] [\-u\ <username>] [\-n|\-\-numeric] [\-R|\-\-profile\-rates]
+smbstatus [\-p|\-\-processes] [\-v|\-\-verbose] [\-L|\-\-locks] [\-S|\-\-shares] [\-N|\-\-notify] [\-u|\-\-user=STRING] [\-b|\-\-brief] [\-P|\-\-profile] [\-R|\-\-profile\-rates] [\-B|\-\-byterange] [\-n|\-\-numeric] [\-f|\-\-fast] [\-\-resolve\-uids] [\-?|\-\-help] [\-\-usage] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -55,48 +55,6 @@ If samba has been compiled with the profiling option, print the contents of the 
 \-b|\-\-brief
 .RS 4
 gives brief output\&.
-.RE
-.PP
-\-d|\-\-debuglevel=level
-.RS 4
-\fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 0\&.
-.sp
-The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
-.sp
-Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
-.sp
-Note that specifying this parameter here will override the
-\m[blue]\fBlog level\fR\m[]
-parameter in the
-smb\&.conf
-file\&.
-.RE
-.PP
-\-V|\-\-version
-.RS 4
-Prints the program version number\&.
-.RE
-.PP
-\-s|\-\-configfile=<configuration file>
-.RS 4
-The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
-smb\&.conf
-for more information\&. The default configuration file name is determined at compile time\&.
-.RE
-.PP
-\-l|\-\-log\-basename=logdirectory
-.RS 4
-Base directory name for log/debug files\&. The extension
-\fB"\&.progname"\fR
-will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
-.RE
-.PP
-\-\-option=<name>=<value>
-.RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
 .RE
 .PP
 \-v|\-\-verbose
@@ -136,11 +94,6 @@ causes smbstatus to display registered file notifications
 causes smbstatus to not check if the status data is valid by checking if the processes that the status data refer to all still exist\&. This speeds up execution on busy systems and clusters but might display stale data of processes that died without cleaning up properly\&.
 .RE
 .PP
-\-?|\-\-help
-.RS 4
-Print a summary of command line options\&.
-.RE
-.PP
 \-u|\-\-user=<username>
 .RS 4
 selects information relevant to
@@ -152,9 +105,77 @@ only\&.
 .RS 4
 causes smbstatus to display numeric UIDs and GIDs instead of resolving them to names\&.
 .RE
+.PP
+\-?|\-\-help
+.RS 4
+Print a summary of command line options\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Display brief usage message\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL
+.RS 4
+\fIlevel\fR
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
+.sp
+The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
+.sp
+Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBlog level\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-\-debug\-stdout
+.RS 4
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
+.RE
+.PP
+\-\-configfile=<configuration file>
+.RS 4
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
+smb\&.conf
+for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
+.RE
+.PP
+\-l|\-\-log\-basename=logdirectory
+.RS 4
+Base directory name for log/debug files\&. The extension
+\fB"\&.progname"\fR
+will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
+.RE
+.PP
+\-\-leak\-report
+.RS 4
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
+.RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsmbd\fR(8)

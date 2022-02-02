@@ -939,7 +939,7 @@ static int messaging_dgm_lockfile_create(struct messaging_dgm_context *ctx,
 		generate_random_buffer((uint8_t *)&unique, sizeof(unique));
 	} while (unique == UINT64_C(0xFFFFFFFFFFFFFFFF));
 
-	unique_len = snprintf(buf, sizeof(buf), "%ju\n", (uintmax_t)unique);
+	unique_len = snprintf(buf, sizeof(buf), "%"PRIu64"\n", unique);
 
 	/* shorten a potentially preexisting file */
 
@@ -1000,6 +1000,10 @@ int messaging_dgm_init(struct tevent_context *ev,
 
 	if (have_dgm_context) {
 		return EEXIST;
+	}
+
+	if ((socket_dir == NULL) || (lockfile_dir == NULL)) {
+		return EINVAL;
 	}
 
 	ctx = talloc_zero(NULL, struct messaging_dgm_context);
@@ -1319,6 +1323,18 @@ static int messaging_dgm_in_msg_destructor(struct messaging_dgm_in_msg *m)
 	return 0;
 }
 
+static void messaging_dgm_close_unconsumed(int *fds, size_t num_fds)
+{
+	size_t i;
+
+	for (i=0; i<num_fds; i++) {
+		if (fds[i] != -1) {
+			close(fds[i]);
+			fds[i] = -1;
+		}
+	}
+}
+
 /*
  * Deal with identification of fragmented messages and
  * re-assembly into full messages sent, then calls the
@@ -1345,6 +1361,7 @@ static void messaging_dgm_recv(struct messaging_dgm_context *ctx,
 	if (cookie == 0) {
 		ctx->recv_cb(ev, buf, buflen, fds, num_fds,
 			     ctx->recv_cb_private_data);
+		messaging_dgm_close_unconsumed(fds, num_fds);
 		return;
 	}
 
@@ -1408,6 +1425,7 @@ static void messaging_dgm_recv(struct messaging_dgm_context *ctx,
 
 	ctx->recv_cb(ev, msg->buf, msg->msglen, fds, num_fds,
 		     ctx->recv_cb_private_data);
+	messaging_dgm_close_unconsumed(fds, num_fds);
 
 	TALLOC_FREE(msg);
 	return;

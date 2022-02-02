@@ -2,12 +2,12 @@
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "NET" "8" "06/01/2021" "Samba 4\&.14\&.5" "System Administration tools"
+.TH "NET" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 net \- Tool for administration of Samba and remote CIFS servers\&.
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-net {<ads|rap|rpc>} [\-h|\-\-help] [\-w|\-\-workgroup\ workgroup] [\-W|\-\-myworkgroup\ myworkgroup] [\-U|\-\-user\ user] [\-A|\-\-authentication\-file\ authfile] [\-I|\-\-ipaddress\ ip\-address] [\-p|\-\-port\ port] [\-n\ myname] [\-s\ conffile] [\-S|\-\-server\ server] [\-l|\-\-long] [\-v|\-\-verbose] [\-f|\-\-force] [\-P|\-\-machine\-pass] [\-d\ debuglevel] [\-V] [\-\-request\-timeout\ seconds] [\-t|\-\-timeout\ seconds] [\-i|\-\-stdin] [\-\-tallocreport]
+net {<ads|rap|rpc>} [\-h|\-\-help] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full] [\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER] [\-O|\-\-socket\-options=SOCKETOPTIONS] [\-m|\-\-max\-protocol=MAXPROTOCOL] [\-n|\-\-netbiosname=NETBIOSNAME] [\-\-netbios\-scope=SCOPE] [\-W|\-\-workgroup=WORKGROUP] [\-\-realm=REALM] [\-U|\-\-user=[DOMAIN/]USERNAME[%PASSWORD]] [\-N|\-\-no\-pass] [\-\-password=STRING] [\-\-pw\-nt\-hash] [\-A|\-\-authentication\-file=FILE] [\-P|\-\-machine\-pass] [\-\-simple\-bind\-dn=DN] [\-\-use\-kerberos=desired|required|off] [\-\-use\-krb5\-ccache=CCACHE] [\-\-use\-winbind\-ccache] [\-\-client\-protection=sign|encrypt|off] [\-V|\-\-version] [\-w|\-\-target\-workgroup\ workgroup] [\-I|\-\-ipaddress\ ip\-address] [\-p|\-\-port\ port] [\-\-myname] [\-S|\-\-server\ server] [\-\-long] [\-v|\-\-verbose] [\-f|\-\-force] [\-\-request\-timeout\ seconds] [\-t|\-\-timeout\ seconds] [\-i|\-\-stdin]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -41,29 +41,9 @@ suite\&.
 The Samba net utility is meant to work just like the net utility available for windows and DOS\&. The first argument should be used to specify the protocol to use when executing a certain command\&. ADS is used for ActiveDirectory, RAP is using for old (Win9x/NT3) clients and RPC can be used for NT4 and Windows 2000\&. If this argument is omitted, net will try to determine it automatically\&. Not all commands are available on all protocols\&.
 .SH "OPTIONS"
 .PP
-\-?|\-\-help
-.RS 4
-Print a summary of command line options\&.
-.RE
-.PP
-\-k|\-\-kerberos
-.RS 4
-Try to authenticate with kerberos\&. Only useful in an Active Directory environment\&.
-.RE
-.PP
-\-w|\-\-workgroup target\-workgroup
+\-w|\-\-target\-workgroup target\-workgroup
 .RS 4
 Sets target workgroup or domain\&. You have to specify either this option or the IP address or the name of a server\&.
-.RE
-.PP
-\-W|\-\-myworkgroup workgroup
-.RS 4
-Sets client workgroup or domain
-.RE
-.PP
-\-U|\-\-user user
-.RS 4
-User name to use
 .RE
 .PP
 \-I|\-\-ipaddress ip\-address
@@ -74,16 +54,6 @@ IP address of target server to use\&. You have to specify either this option or 
 \-p|\-\-port port
 .RS 4
 Port on the target server to connect to (usually 139 or 445)\&. Defaults to trying 445 first, then 139\&.
-.RE
-.PP
-\-n|\-\-netbiosname <primary NetBIOS name>
-.RS 4
-This option allows you to override the NetBIOS name that Samba uses for itself\&. This is identical to setting the
-\m[blue]\fBnetbios name\fR\m[]
-parameter in the
-smb\&.conf
-file\&. However, a command line setting will take precedence over settings in
-smb\&.conf\&.
 .RE
 .PP
 \-S|\-\-server server
@@ -106,11 +76,6 @@ When listing data, give more verbose information on each item\&.
 Enforcing a net command\&.
 .RE
 .PP
-\-P|\-\-machine\-pass
-.RS 4
-Make queries to the external server using the machine account of the local server\&.
-.RE
-.PP
 \-\-request\-timeout 30
 .RS 4
 Let client requests timeout after 30 seconds the default is 10 seconds\&.
@@ -121,19 +86,9 @@ Let client requests timeout after 30 seconds the default is 10 seconds\&.
 Set timeout for client operations to 30 seconds\&.
 .RE
 .PP
-\-\-use\-ccache
-.RS 4
-Try to use the credentials cached by winbind\&.
-.RE
-.PP
 \-i|\-\-stdin
 .RS 4
 Take input for net commands from standard input\&.
-.RE
-.PP
-\-\-tallocreport
-.RS 4
-Generate a talloc report while processing a net command\&.
 .RE
 .PP
 \-T|\-\-test
@@ -151,7 +106,7 @@ Pass down integer flags to a net subcommand\&.
 Pass down a comment string to a net subcommand\&.
 .RE
 .PP
-\-n|\-\-myname MYNAME
+\-\-myname MYNAME
 .RS 4
 Use MYNAME as a requester name for a net subcommand\&.
 .RE
@@ -246,7 +201,7 @@ Sets the type of group mapping to domain (used in "net groupmap set")\&.
 Sets the ntname of a group mapping (used in "net groupmap set")\&.
 .RE
 .PP
-\-R|\-\-rid RID
+\-\-rid RID
 .RS 4
 Sets the rid of a group mapping (used in "net groupmap set")\&.
 .RE
@@ -301,15 +256,10 @@ Continue traversing a directory hierarchy in case conversion of one file fails\&
 Follow symlinks encountered while traversing a directory\&.
 .RE
 .PP
-\-e|\-\-encrypt
-.RS 4
-This command line parameter requires the remote server support the UNIX extensions or that the SMB3 protocol has been selected\&. Requests that the connection be encrypted\&. Negotiates SMB encryption using either SMB3 or POSIX extensions via GSSAPI\&. Uses the given credentials for the encryption negotiation (either kerberos or NTLMv1/v2 if given domain/username/password triple\&. Fails the connection if encryption cannot be negotiated\&.
-.RE
-.PP
-\-d|\-\-debuglevel=level
+\-d|\-\-debuglevel=DEBUGLEVEL
 .RS 4
 \fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 1\&.
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
 .sp
 The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
 .sp
@@ -322,16 +272,24 @@ smb\&.conf
 file\&.
 .RE
 .PP
-\-V|\-\-version
+\-\-debug\-stdout
 .RS 4
-Prints the program version number\&.
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
 .RE
 .PP
-\-s|\-\-configfile=<configuration file>
+\-\-configfile=<configuration file>
 .RS 4
-The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
 smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
 .RE
 .PP
 \-l|\-\-log\-basename=logdirectory
@@ -341,11 +299,273 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-\-option=<name>=<value>
+\-\-leak\-report
 .RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
+.RE
+.PP
+\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER
+.RS 4
+This option is used to determine what naming services and in what order to resolve host names to IP addresses\&. The option takes a space\-separated string of different name resolution options\&. The best ist to wrap the whole \-\-name\-resolve=NAME\-RESOLVE\-ORDER into quotes\&.
+.sp
+The options are: "lmhosts", "host", "wins" and "bcast"\&. They cause names to be resolved as follows:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlmhosts\fR: Lookup an IP address in the Samba lmhosts file\&. If the line in lmhosts has no name type attached to the NetBIOS name (see the
+\fBlmhosts\fR(5)
+for details) then any name type matches for lookup\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBhost\fR: Do a standard host name to IP address resolution, using the system
+/etc/hosts, NIS, or DNS lookups\&. This method of name resolution is operating system dependent, for instance on IRIX or Solaris this may be controlled by the
+/etc/nsswitch\&.conf
+file)\&. Note that this method is only used if the NetBIOS name type being queried is the 0x20 (server) name type, otherwise it is ignored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBwins\fR: Query a name with the IP address listed in the
+\fIwins server\fR
+parameter\&. If no WINS server has been specified this method will be ignored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbcast\fR: Do a broadcast on each of the known local interfaces listed in the
+\fIinterfaces\fR
+parameter\&. This is the least reliable of the name resolution methods as it depends on the target host being on a locally connected subnet\&.
+.RE
+.sp
+.RE
+If this parameter is not set then the name resolve order defined in the
+smb\&.conf
+file parameter (\m[blue]\fBname resolve order\fR\m[]) will be used\&.
+.sp
+The default order is lmhosts, host, wins, bcast\&. Without this parameter or any entry in the
+\m[blue]\fBname resolve order\fR\m[]
+parameter of the
+smb\&.conf
+file, the name resolution methods will be attempted in this order\&.
+.RE
+.PP
+\-O|\-\-socket\-options=SOCKETOPTIONS
+.RS 4
+TCP socket options to set on the client socket\&. See the socket options parameter in the
+smb\&.conf
+manual page for the list of valid options\&.
+.RE
+.PP
+\-m|\-\-max\-protocol=MAXPROTOCOL
+.RS 4
+The value of the parameter (a string) is the highest protocol level that will be supported by the client\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient max protocol\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-n|\-\-netbiosname=NETBIOSNAME
+.RS 4
+This option allows you to override the NetBIOS name that Samba uses for itself\&. This is identical to setting the
+\m[blue]\fBnetbios name\fR\m[]
+parameter in the
+smb\&.conf
+file\&. However, a command line setting will take precedence over settings in
+smb\&.conf\&.
+.RE
+.PP
+\-\-netbios\-scope=SCOPE
+.RS 4
+This specifies a NetBIOS scope that
+nmblookup
+will use to communicate with when generating NetBIOS names\&. For details on the use of NetBIOS scopes, see rfc1001\&.txt and rfc1002\&.txt\&. NetBIOS scopes are
+\fIvery\fR
+rarely used, only set this parameter if you are the system administrator in charge of all the NetBIOS systems you communicate with\&.
+.RE
+.PP
+\-W|\-\-workgroup=WORKGROUP
+.RS 4
+Set the SMB domain of the username\&. This overrides the default domain which is the domain defined in smb\&.conf\&. If the domain specified is the same as the servers NetBIOS name, it causes the client to log on using the servers local SAM (as opposed to the Domain SAM)\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBworkgroup\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-r|\-\-realm=REALM
+.RS 4
+Set the realm for the domain\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBrealm\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-U|\-\-user=[DOMAIN\e]USERNAME[%PASSWORD]
+.RS 4
+Sets the SMB username or username and password\&.
+.sp
+If %PASSWORD is not specified, the user will be prompted\&. The client will first check the
+\fBUSER\fR
+environment variable (which is also permitted to also contain the password seperated by a %), then the
+\fBLOGNAME\fR
+variable (which is not permitted to contain a password) and if either exists, the value is used\&. If these environmental variables are not found, the username found in a Kerberos Credentials cache may be used\&.
+.sp
+A third option is to use a credentials file which contains the plaintext of the username and password\&. This option is mainly provided for scripts where the admin does not wish to pass the credentials on the command line or via environment variables\&. If this method is used, make certain that the permissions on the file restrict access from unwanted users\&. See the
+\fI\-A\fR
+for more details\&.
+.sp
+Be cautious about including passwords in scripts or passing user\-supplied values onto the command line\&. For security it is better to let the Samba client tool ask for the password if needed, or obtain the password once with
+kinit\&.
+.sp
+While Samba will attempt to scrub the password from the process title (as seen in ps), this is after startup and so is subject to a race\&.
+.RE
+.PP
+\-N|\-\-no\-pass
+.RS 4
+If specified, this parameter suppresses the normal password prompt from the client to the user\&. This is useful when accessing a service that does not require a password\&.
+.sp
+Unless a password is specified on the command line or this parameter is specified, the client will request a password\&.
+.sp
+If a password is specified on the command line and this option is also defined the password on the command line will be silently ignored and no password will be used\&.
+.RE
+.PP
+\-\-password
+.RS 4
+Specify the password on the commandline\&.
+.sp
+Be cautious about including passwords in scripts or passing user\-supplied values onto the command line\&. For security it is better to let the Samba client tool ask for the password if needed, or obtain the password once with
+kinit\&.
+.sp
+If \-\-password is not specified, the tool will check the
+\fBPASSWD\fR
+environment variable, followed by
+\fBPASSWD_FD\fR
+which is expected to contain an open file descriptor (FD) number\&.
+.sp
+Finally it will check
+\fBPASSWD_FILE\fR
+(containing a file path to be opened)\&. The file should only contain the password\&. Make certain that the permissions on the file restrict access from unwanted users!
+.sp
+While Samba will attempt to scrub the password from the process title (as seen in ps), this is after startup and so is subject to a race\&.
+.RE
+.PP
+\-\-pw\-nt\-hash
+.RS 4
+The supplied password is the NT hash\&.
+.RE
+.PP
+\-A|\-\-authentication\-file=filename
+.RS 4
+This option allows you to specify a file from which to read the username and password used in the connection\&. The format of the file is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+				username = <value>
+				password = <value>
+				domain   = <value>
+			
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Make certain that the permissions on the file restrict access from unwanted users!
+.RE
+.PP
+\-P|\-\-machine\-pass
+.RS 4
+Use stored machine account password\&.
+.RE
+.PP
+\-\-simple\-bind\-dn=DN
+.RS 4
+DN to use for a simple bind\&.
+.RE
+.PP
+\-\-use\-kerberos=desired|required|off
+.RS 4
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connnecting to a service\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient use kerberos\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-\-use\-krb5\-ccache=CCACHE
+.RS 4
+Specifies the credential cache location for Kerberos authentication\&.
+.sp
+This will set \-\-use\-kerberos=required too\&.
+.RE
+.PP
+\-\-use\-winbind\-ccache
+.RS 4
+Try to use the credential cache by winbind\&.
+.RE
+.PP
+\-\-client\-protection=sign|encrypt|off
+.RS 4
+Sets the connection protection the client tool should use\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient protection\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.sp
+In case you need more fine grained control you can use:
+\-\-option=clientsmbencrypt=OPTION,
+\-\-option=clientipcsigning=OPTION,
+\-\-option=clientsigning=OPTION\&.
 .RE
 .SH "COMMANDS"
 .SS "CHANGESECRETPW"
@@ -2156,6 +2376,147 @@ A Samba share\&.
 \fIpath\fR
 A relative path of something in the Samba share\&. "\&." can be used for the root directory of the share\&.
 .RE
+.SS "OFFLINEJOIN"
+.PP
+Starting with version 4\&.15 Samba has support for offline join APIs\&. Windows supports offline join capabilities since Windows 7 and Windows 2008 R2\&.
+.PP
+The following offline commands are implemented:
+.RS 4
+net offlinejoin provision \- Provisions a machine account in AD\&.
+.RE
+.RS 4
+net offlinejoin requestodj \- Requests a domain offline join\&.
+.RE
+.SS "OFFLINEJOIN PROVISION domain=DOMAIN machine_name=MACHINE_NAME machine_account_ou=MACHINE_ACCOUNT_OU dcname=DCNAME defpwd reuse savefile=FILENAME printblob"
+.PP
+Provisions a machine account in AD\&. This command needs network connectivity to the domain controller to succeed\&. This command supports the following additional parameters:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDOMAIN\fR
+can be a NetBIOS domain name (also known as short domain name) or a DNS domain name for Active Directory Domains\&. The
+\fIDOMAIN\fR
+parameter cannot be NULL\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIMACHINE_NAME\fR
+defines the machine account name that will be provisioned in AD\&. The
+\fIMACHINE_NAME\fR
+parameter cannot be NULL\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIMACHINE_ACCOUNT_OU\fR
+can be set to a RFC 1779 LDAP DN, like
+\fIou=mymachines,cn=Users,dc=example,dc=com\fR
+in order to create the machine account in a non\-default LDAP container\&. This optional parameter is only supported when joining Active Directory Domains\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDCNAME\fR
+defines a specific domain controller for creating the machine account in AD\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDEFPWD\fR
+is an optional parameter that can be set to enforce using the default machine account password\&. The use of this parameter is not recommended as the default machine account password can be easily guessed\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIREUSE\fR
+is an optional parameter that can be set to enforce reusing an exisiting machine account in AD\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISAVEFILE\fR
+is an optional parameter to store the generated provisioning data on disk\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIPRINTBLOB\fR
+is an optional parameter to print the generated provisioning data on stdout\&.
+.RE
+.sp
+.RE
+.PP
+Example: net offlinejoin provision \-U administrator%secret domain=MYDOM machine_name=MYHOST savefile=provisioning\&.txt
+.SS "OFFLINEJOIN REQUESTODJ loadfile=FILENAME"
+.PP
+Requests an offline domain join by providing file\-based provisioning data\&. This command supports the following additional parameters:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fILOADFILE\fR
+is a required parameter to load the provisioning from a file\&.
+.RE
+.sp
+.RE
+.PP
+Example: net offlinejoin requestodj \-U administrator%secret loadfile=provisioning\&.txt
 .SS "HELP [COMMAND]"
 .PP
 Gives usage information for the specified command\&.

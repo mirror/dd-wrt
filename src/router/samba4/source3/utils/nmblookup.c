@@ -20,7 +20,7 @@
 */
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "libsmb/nmblib.h"
 #include "libsmb/namequery.h"
 #include "lib/util/string_wrappers.h"
@@ -50,12 +50,16 @@ static bool open_sockets(void)
 					"from string %s", sock_addr));
 		return false;
 	}
-	ServerFD = open_socket_in( SOCK_DGRAM,
-				(RootPort ? 137 : 0),
-				(RootPort ?   0 : 3),
-				&ss, true );
-
-	if (ServerFD == -1) {
+	ServerFD = open_socket_in(
+		SOCK_DGRAM, &ss, (RootPort ? 137 : 0), true);
+	if (ServerFD < 0) {
+		if (RootPort) {
+			DBG_ERR("open_socket_in failed: %s\n",
+				strerror(-ServerFD));
+		} else {
+			DBG_NOTICE("open_socket_in failed: %s\n",
+				   strerror(-ServerFD));
+		}
 		return false;
 	}
 
@@ -223,6 +227,10 @@ static bool query_one(const char *lookup, unsigned int lookup_type)
 /****************************************************************************
   main program
 ****************************************************************************/
+enum nmblookup_cmdline_options {
+	CMDLINE_RECURSIVE = 1,
+};
+
 int main(int argc, const char *argv[])
 {
 	int opt;
@@ -233,6 +241,7 @@ int main(int argc, const char *argv[])
 	poptContext pc = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
 	int rc = 0;
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -271,10 +280,10 @@ int main(int argc, const char *argv[])
 		},
 		{
 			.longName   = "recursion",
-			.shortName  = 'R',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_NONE,
 			.arg        = NULL,
-			.val        = 'R',
+			.val        = CMDLINE_RECURSIVE,
 			.descrip    = "Set recursion desired in package",
 		},
 		{
@@ -311,6 +320,7 @@ int main(int argc, const char *argv[])
 		},
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
@@ -318,10 +328,25 @@ int main(int argc, const char *argv[])
 
 	smb_init_locale();
 
-	setup_logging(argv[0], DEBUG_STDOUT);
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
-	pc = poptGetContext("nmblookup", argc, argv,
-			long_options, POPT_CONTEXT_KEEP_FIRST);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    POPT_CONTEXT_KEEP_FIRST);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 
 	poptSetOtherOptionHelp(pc, "<NODE> ...");
 
@@ -333,7 +358,7 @@ int main(int argc, const char *argv[])
 		case 'M':
 			find_master = true;
 			break;
-		case 'R':
+		case CMDLINE_RECURSIVE:
 			recursion_desired = true;
 			break;
 		case 'S':
@@ -364,6 +389,11 @@ int main(int argc, const char *argv[])
 		case 'T':
 			translate_addresses = !translate_addresses;
 			break;
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 
@@ -375,12 +405,6 @@ int main(int argc, const char *argv[])
 		goto out;
 	}
 
-	if (!lp_load_global(get_dyn_CONFIGFILE())) {
-		fprintf(stderr, "Can't load %s - run testparm to debug it\n",
-				get_dyn_CONFIGFILE());
-	}
-
-	load_interfaces();
 	if (!open_sockets()) {
 		rc = 1;
 		goto out;

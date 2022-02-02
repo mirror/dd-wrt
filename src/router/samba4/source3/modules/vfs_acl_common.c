@@ -411,7 +411,6 @@ static NTSTATUS add_directory_inheritable_components(vfs_handle_struct *handle,
 static NTSTATUS validate_nt_acl_blob(TALLOC_CTX *mem_ctx,
 				vfs_handle_struct *handle,
 				struct files_struct *fsp,
-				struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				const DATA_BLOB *blob,
 				struct security_descriptor **ppsd,
@@ -488,22 +487,12 @@ static NTSTATUS validate_nt_acl_blob(TALLOC_CTX *mem_ctx,
 	case 4:
 	{
 		int ret;
-		if (fsp) {
-			/* Get the full underlying sd, then hash. */
-			ret = SMB_VFS_NEXT_SYS_ACL_BLOB_GET_FD(handle,
-							       fsp,
-							       mem_ctx,
-							       &sys_acl_blob_description,
-							       &sys_acl_blob);
-		} else {
-			/* Get the full underlying sd, then hash. */
-			ret = SMB_VFS_NEXT_SYS_ACL_BLOB_GET_FILE(handle,
-						 smb_fname,
-						 mem_ctx,
-						 &sys_acl_blob_description,
-						 &sys_acl_blob);
-		}
-
+		/* Get the full underlying sd, then hash. */
+		ret = SMB_VFS_NEXT_SYS_ACL_BLOB_GET_FD(handle,
+						       fsp,
+						       mem_ctx,
+						       &sys_acl_blob_description,
+						       &sys_acl_blob);
 		/* If we fail to get the ACL blob (for some reason) then this
 		 * is not fatal, we just work based on the NT ACL only */
 		if (ret == 0) {
@@ -531,21 +520,11 @@ static NTSTATUS validate_nt_acl_blob(TALLOC_CTX *mem_ctx,
 	case 3:
 		/* Get the full underlying sd for the hash
 		   or to return as backup. */
-		if (fsp) {
-			status = SMB_VFS_NEXT_FGET_NT_ACL(handle,
-							  fsp,
-							  HASH_SECURITY_INFO,
-							  mem_ctx,
-							  &psd_fs);
-		} else {
-			status = SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
-							dirfsp,
-							smb_fname,
-							HASH_SECURITY_INFO,
-							mem_ctx,
-							&psd_fs);
-		}
-
+		status = SMB_VFS_NEXT_FGET_NT_ACL(handle,
+						  fsp,
+						  HASH_SECURITY_INFO,
+						  mem_ctx,
+						  &psd_fs);
 		if (!NT_STATUS_IS_OK(status)) {
 			DBG_DEBUG("get_next_acl for file %s returned %s\n",
 				  smb_fname->base_name, nt_errstr(status));
@@ -630,7 +609,6 @@ NTSTATUS fget_nt_acl_common(
 		status = validate_nt_acl_blob(mem_ctx,
 					handle,
 					fsp,
-					NULL,
 					smb_fname,
 					&blob,
 					&psd,
@@ -732,175 +710,6 @@ NTSTATUS fget_nt_acl_common(
 	if (DEBUGLEVEL >= 10) {
 		DBG_DEBUG("returning acl for %s is:\n",
 			  smb_fname->base_name);
-		NDR_PRINT_DEBUG(security_descriptor, psd);
-	}
-
-	*ppdesc = psd;
-
-	return NT_STATUS_OK;
-
-fail:
-	TALLOC_FREE(psd);
-	return status;
-}
-
-/*******************************************************************
- Pull a DATA_BLOB from an xattr given a pathname.
- If the hash doesn't match, or doesn't exist - return the underlying
- filesystem sd.
-*******************************************************************/
-
-NTSTATUS get_nt_acl_common_at(
-	NTSTATUS (*get_acl_blob_at_fn)(TALLOC_CTX *ctx,
-				    vfs_handle_struct *handle,
-				    struct files_struct *dirfsp,
-				    const struct smb_filename *smb_fname,
-				    DATA_BLOB *pblob),
-	vfs_handle_struct *handle,
-	struct files_struct *dirfsp,
-	const struct smb_filename *smb_fname_in,
-	uint32_t security_info,
-	TALLOC_CTX *mem_ctx,
-	struct security_descriptor **ppdesc)
-{
-	DATA_BLOB blob = data_blob_null;
-	NTSTATUS status;
-	struct security_descriptor *psd = NULL;
-	bool psd_is_from_fs = false;
-	struct acl_common_config *config = NULL;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, config,
-				struct acl_common_config,
-				return NT_STATUS_UNSUCCESSFUL);
-
-	DBG_DEBUG("name=%s\n", smb_fname_in->base_name);
-
-	status = get_acl_blob_at_fn(mem_ctx,
-				handle,
-				dirfsp,
-				smb_fname_in,
-				&blob);
-	if (NT_STATUS_IS_OK(status)) {
-		status = validate_nt_acl_blob(mem_ctx,
-					handle,
-					NULL,
-					dirfsp,
-					smb_fname_in,
-					&blob,
-					&psd,
-					&psd_is_from_fs);
-		TALLOC_FREE(blob.data);
-		if (!NT_STATUS_IS_OK(status)) {
-			DBG_DEBUG("ACL validation for [%s] failed\n",
-				  smb_fname_in->base_name);
-			goto fail;
-		}
-	}
-
-	if (psd == NULL) {
-		/* Get the full underlying sd, as we failed to get the
-		 * blob for the hash, or the revision/hash type wasn't
-		 * known */
-
-		if (config->ignore_system_acls) {
-			SMB_STRUCT_STAT sbuf;
-			int ret;
-
-			ret = vfs_stat_smb_basename(handle->conn,
-					smb_fname_in,
-					&sbuf);
-			if (ret == -1) {
-				status = map_nt_error_from_unix(errno);
-				goto fail;
-			}
-
-			status = make_default_filesystem_acl(
-				mem_ctx,
-				config->default_acl_style,
-				smb_fname_in->base_name,
-				&sbuf,
-				&psd);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto fail;
-			}
-		} else {
-			status = SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
-						dirfsp,
-						smb_fname_in,
-						security_info,
-						mem_ctx,
-						&psd);
-
-			if (!NT_STATUS_IS_OK(status)) {
-				DBG_DEBUG("get_next_acl for file %s "
-					  "returned %s\n",
-					  smb_fname_in->base_name,
-					  nt_errstr(status));
-				goto fail;
-			}
-
-			psd_is_from_fs = true;
-		}
-	}
-
-	if (psd_is_from_fs) {
-		SMB_STRUCT_STAT sbuf;
-		bool is_directory = false;
-		int ret;
-
-		/*
-		 * We're returning the underlying ACL from the
-		 * filesystem. If it's a directory, and has no
-		 * inheritable ACE entries we have to fake them.
-		 */
-
-		ret = vfs_stat_smb_basename(handle->conn,
-				smb_fname_in,
-				&sbuf);
-		if (ret == -1) {
-			status = map_nt_error_from_unix(errno);
-			goto fail;
-		}
-
-		is_directory = S_ISDIR(sbuf.st_ex_mode);
-
-		if (is_directory && !sd_has_inheritable_components(psd, true)) {
-			status = add_directory_inheritable_components(
-				handle,
-				smb_fname_in->base_name,
-				&sbuf,
-				psd);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto fail;
-			}
-		}
-
-		/*
-		 * The underlying POSIX module always sets the
-		 * ~SEC_DESC_DACL_PROTECTED bit, as ACLs can't be inherited in
-		 * this way under POSIX. Remove it for Windows-style ACLs.
-		 */
-		psd->type &= ~SEC_DESC_DACL_PROTECTED;
-	}
-
-	if (!(security_info & SECINFO_OWNER)) {
-		psd->owner_sid = NULL;
-	}
-	if (!(security_info & SECINFO_GROUP)) {
-		psd->group_sid = NULL;
-	}
-	if (!(security_info & SECINFO_DACL)) {
-		psd->type &= ~SEC_DESC_DACL_PRESENT;
-		psd->dacl = NULL;
-	}
-	if (!(security_info & SECINFO_SACL)) {
-		psd->type &= ~SEC_DESC_SACL_PRESENT;
-		psd->sacl = NULL;
-	}
-
-	if (DEBUGLEVEL >= 10) {
-		DBG_DEBUG("returning acl for %s is:\n",
-			  smb_fname_in->base_name);
 		NDR_PRINT_DEBUG(security_descriptor, psd);
 	}
 
@@ -1187,6 +996,7 @@ done:
 }
 
 static int acl_common_remove_object(vfs_handle_struct *handle,
+					struct files_struct *dirfsp,
 					const struct smb_filename *smb_fname,
 					bool is_directory)
 {
@@ -1194,11 +1004,12 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 	struct file_id id;
 	files_struct *fsp = NULL;
 	int ret = 0;
+	struct smb_filename *full_fname = NULL;
 	struct smb_filename *local_fname = NULL;
 	struct smb_filename *parent_dir_fname = NULL;
 	int saved_errno = 0;
 	struct smb_filename *saved_dir_fname = NULL;
-	bool ok;
+	NTSTATUS status;
 
 	saved_dir_fname = vfs_GetWd(talloc_tos(),conn);
 	if (saved_dir_fname == NULL) {
@@ -1206,18 +1017,25 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 		goto out;
 	}
 
-	ok = parent_smb_fname(talloc_tos(),
-			      smb_fname,
-			      &parent_dir_fname,
-			      &local_fname);
-	if (!ok) {
-		saved_errno = ENOMEM;
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
 		goto out;
 	}
 
-	DBG_DEBUG("removing %s %s/%s\n", is_directory ? "directory" : "file",
-		  smb_fname_str_dbg(parent_dir_fname),
-		  smb_fname_str_dbg(local_fname));
+	status = SMB_VFS_PARENT_PATHNAME(conn,
+					 talloc_tos(),
+					 full_fname,
+					 &parent_dir_fname,
+					 &local_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		saved_errno = map_errno_from_nt_status(status);
+		goto out;
+	}
+
+	DBG_DEBUG("removing %s %s\n", is_directory ? "directory" : "file",
+		  smb_fname_str_dbg(full_fname));
 
  	/* cd into the parent dir to pin it. */
 	ret = vfs_ChDir(conn, parent_dir_fname);
@@ -1248,10 +1066,9 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 	}
 
 	if (!fsp) {
-		DBG_DEBUG("%s %s/%s not an open file\n",
+		DBG_DEBUG("%s %s not an open file\n",
 			  is_directory ? "directory" : "file",
-			  smb_fname_str_dbg(parent_dir_fname),
-			  smb_fname_str_dbg(local_fname));
+			  smb_fname_str_dbg(full_fname));
 		saved_errno = EACCES;
 		goto out;
 	}
@@ -1259,13 +1076,13 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 	become_root();
 	if (is_directory) {
 		ret = SMB_VFS_NEXT_UNLINKAT(handle,
-				conn->cwd_fsp,
-				local_fname,
+				dirfsp,
+				smb_fname,
 				AT_REMOVEDIR);
 	} else {
 		ret = SMB_VFS_NEXT_UNLINKAT(handle,
-				conn->cwd_fsp,
-				local_fname,
+				dirfsp,
+				smb_fname,
 				0);
 	}
 	unbecome_root();
@@ -1277,6 +1094,7 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
   out:
 
 	TALLOC_FREE(parent_dir_fname);
+	TALLOC_FREE(full_fname);
 
 	if (saved_dir_fname) {
 		vfs_ChDir(conn, saved_dir_fname);
@@ -1306,6 +1124,7 @@ int rmdir_acl_common(struct vfs_handle_struct *handle,
 		/* Failed due to access denied,
 		   see if we need to root override. */
 		return acl_common_remove_object(handle,
+						dirfsp,
 						smb_fname,
 						true);
 	}
@@ -1340,6 +1159,7 @@ int unlink_acl_common(struct vfs_handle_struct *handle,
 			return -1;
 		}
 		return acl_common_remove_object(handle,
+					dirfsp,
 					smb_fname,
 					false);
 	}
@@ -1350,21 +1170,11 @@ int unlink_acl_common(struct vfs_handle_struct *handle,
 	return -1;
 }
 
-int chmod_acl_module_common(struct vfs_handle_struct *handle,
-			    const struct smb_filename *smb_fname,
-			    mode_t mode)
-{
-	if (smb_fname->flags & SMB_FILENAME_POSIX_PATH) {
-		/* Only allow this on POSIX pathnames. */
-		return SMB_VFS_NEXT_CHMOD(handle, smb_fname, mode);
-	}
-	return 0;
-}
-
 int fchmod_acl_module_common(struct vfs_handle_struct *handle,
 			     struct files_struct *fsp, mode_t mode)
 {
-	if (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN) {
+	if (fsp->posix_flags & FSP_POSIX_FLAGS_PATHNAMES
+	    || fsp->fsp_name->flags & SMB_FILENAME_POSIX_PATH) {
 		/* Only allow this on POSIX opens. */
 		return SMB_VFS_NEXT_FCHMOD(handle, fsp, mode);
 	}

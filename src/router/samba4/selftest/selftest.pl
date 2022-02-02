@@ -271,6 +271,8 @@ unless (defined($ENV{VALGRIND})) {
 # make all our python scripts unbuffered
 $ENV{PYTHONUNBUFFERED} = 1;
 
+$ENV{SAMBA_DEPRECATED_SUPPRESS} = 1;
+
 # do not depend on the users setup
 # see also bootstrap/config.py
 $ENV{TZ} = "UTC";
@@ -344,7 +346,7 @@ my $ld_preload = $ENV{LD_PRELOAD};
 
 if ($opt_libasan_so_path) {
 	if ($ld_preload) {
-		$ld_preload = "$ld_preload:$opt_libasan_so_path";
+		$ld_preload = "$opt_libasan_so_path:$ld_preload";
 	} else {
 		$ld_preload = "$opt_libasan_so_path";
 	}
@@ -528,6 +530,7 @@ sub write_clientconf($$$)
 	my $cacert = "$cadir/Public/CA-samba.example.com-cert.pem";
 	my $cacrl_pem = "$cadir/Public/CA-samba.example.com-crl.pem";
 	my $ca_users_dir = "$cadir/Users";
+	my $client_loglevel = $ENV{CLIENT_LOG_LEVEL} || 1;
 
 	# each user has a USER-${USER_PRINCIPAL_NAME}-cert.pem and
 	# USER-${USER_PRINCIPAL_NAME}-private-key.pem symlink
@@ -581,10 +584,8 @@ sub write_clientconf($$$)
 	system:anonymous = true
 	client lanman auth = Yes
 	client min protocol = CORE
-	log level = 1
+	log level = $client_loglevel
 	torture:basedir = $clientdir
-#We don't want to pass our self-tests if the PAC code is wrong
-	gensec:require_pac = true
 #We don't want to run 'speed' tests for very long
         torture:timelimit = 1
         winbind separator = /

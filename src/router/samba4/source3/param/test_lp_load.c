@@ -18,15 +18,17 @@
  */
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 
 int main(int argc, const char **argv)
 {
-	const char *config_file = get_dyn_CONFIGFILE();
+	const char *config_file = NULL;
 	int ret = 0;
 	poptContext pc;
 	char *count_str = NULL;
 	int i, count = 1;
+	int opt;
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -38,25 +40,51 @@ int main(int argc, const char **argv)
 			.val        = 1,
 			.descrip    = "Load config <count> number of times"
 		},
-		POPT_COMMON_DEBUGLEVEL
+		POPT_COMMON_DEBUG_ONLY
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
 	TALLOC_CTX *frame = talloc_stackframe();
 
 	smb_init_locale();
+
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_NONE,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(frame);
+		exit(ENOMEM);
+	}
 	lp_set_cmdline("log level", "0");
 
-	pc = poptGetContext(NULL, argc, argv, long_options,
-			    POPT_CONTEXT_KEEP_FIRST);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(frame);
+		exit(1);
+	}
 	poptSetOtherOptionHelp(pc, "[OPTION...] <config-file>");
 
-	while(poptGetNextOpt(pc) != -1);
-
-	setup_logging(poptGetArg(pc), DEBUG_STDERR);
+	while ((opt = poptGetNextOpt(pc)) != -1) {
+		switch (opt) {
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
+		}
+	}
 
 	if (poptPeekArg(pc)) {
 		config_file = poptGetArg(pc);
+	} else {
+		config_file = get_dyn_CONFIGFILE();
 	}
 
 	poptFreeContext(pc);

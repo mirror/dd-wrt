@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os
+import os, pwd, grp
 import ldb
 import samba
 from samba.tests.samba_tool.base import SambaToolCmdTest
@@ -31,6 +31,9 @@ from samba.ndr import ndr_pack, ndr_unpack
 from samba.common import get_string
 from configparser import ConfigParser
 from io import StringIO
+import xml.etree.ElementTree as etree
+from tempfile import NamedTemporaryFile
+from time import sleep
 
 source_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
 
@@ -691,28 +694,67 @@ class GpoCmdTestCase(SambaToolCmdTest):
         self.assertCmdSuccess(result, out, err,
                               'Failed to unset MaxTicketAge')
 
-    def test_sudoers_remove(self):
+    def test_security_nonempty_sections(self):
         lp = LoadParm()
         lp.load(os.environ['SERVERCONFFILE'])
         local_path = lp.get('path', 'sysvol')
-        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
-                               self.gpo_guid, 'Machine/Registry.pol')
+        gpt_inf = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Microsoft/Windows NT',
+                               'SecEdit/GptTmpl.inf')
 
-        # Stage the Registry.pol file with test data
-        stage = preg.file()
-        e = preg.entry()
-        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
-        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
-        e.type = 1
-        e.data = b'fakeu  ALL=(ALL) NOPASSWD: ALL'
-        stage.num_entries = 1
-        stage.entries = [e]
-        ret = stage_file(reg_pol, ndr_pack(stage))
-        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge', '10',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to set MaxTicketAge')
 
-        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
-                                                 "remove"), self.gpo_guid,
-                                                 get_string(e.data),
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to unset MaxTicketAge')
+
+        inf_data = ConfigParser(interpolation=None)
+        inf_data.read(gpt_inf)
+
+        self.assertFalse(inf_data.has_section('Kerberos Policy'))
+
+    def test_sudoers_add(self):
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "add"),
+                                                 self.gpo_guid, 'ALL', 'ALL',
+                                                 'fakeu', 'fakeg', "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers add failed')
+
+        sudoer = 'fakeu,fakeg% ALL=(ALL) NOPASSWD: ALL'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(sudoer, out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "remove"),
+                                                 self.gpo_guid, sudoer,
                                                  "-H", "ldap://%s" %
                                                  os.environ["SERVER"],
                                                  "-U%s%%%s" %
@@ -720,59 +762,691 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  os.environ["PASSWORD"]))
         self.assertCmdSuccess(result, out, err, 'Sudoers remove failed')
 
-    def test_sudoers_add(self):
-        lp = LoadParm()
-        lp.load(os.environ['SERVERCONFFILE'])
-        local_path = lp.get('path', 'sysvol')
-        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
-                               self.gpo_guid, 'Machine/Registry.pol')
-
-        entry = 'fakeu  ALL=(ALL) NOPASSWD: ALL'
-        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
-                                                 "add"), self.gpo_guid, entry,
-                                                 "-H", "ldap://%s" %
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
                                                  os.environ["SERVER"],
                                                  "-U%s%%%s" %
                                                  (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]))
-        self.assertCmdSuccess(result, out, err, 'Sudoers add failed')
-
-        self.assertTrue(os.path.exists(reg_pol),
-                        'The Registry.pol does not exist')
-        reg_data = ndr_unpack(preg.file, open(reg_pol, 'rb').read())
-        self.assertTrue(any([get_string(e.data) == entry for e in reg_data.entries]),
-                        'The sudoers entry was not added')
+        self.assertNotIn(sudoer, out, 'The test entry was still found!')
 
     def test_sudoers_list(self):
         lp = LoadParm()
         lp.load(os.environ['SERVERCONFFILE'])
         local_path = lp.get('path', 'sysvol')
-        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
-                               self.gpo_guid, 'Machine/Registry.pol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Sudo',
+                               'SudoersConfiguration/manifest.xml')
 
-        # Stage the Registry.pol file with test data
-        stage = preg.file()
-        e = preg.entry()
-        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
-        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
-        e.type = 1
-        e.data = b'fakeu  ALL=(ALL) NOPASSWD: ALL'
-        stage.num_entries = 1
-        stage.entries = [e]
-        ret = stage_file(reg_pol, ndr_pack(stage))
-        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Sudo Policy'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Sudoers File Configuration Policy'
+        apply_mode = etree.SubElement(policysetting, 'apply_mode')
+        apply_mode.text = 'merge'
+        data = etree.SubElement(policysetting, 'data')
+        load_plugin = etree.SubElement(data, 'load_plugin')
+        load_plugin.text = 'true'
+        sudoers_entry = etree.SubElement(data, 'sudoers_entry')
+        command = etree.SubElement(sudoers_entry, 'command')
+        command.text = 'ALL'
+        user = etree.SubElement(sudoers_entry, 'user')
+        user.text = 'ALL'
+        listelement = etree.SubElement(sudoers_entry, 'listelement')
+        principal = etree.SubElement(listelement, 'principal')
+        principal.text = 'fakeu'
+        principal.attrib['type'] = 'user'
+        # Ensure an empty principal doesn't cause a crash
+        sudoers_entry = etree.SubElement(data, 'sudoers_entry')
+        command = etree.SubElement(sudoers_entry, 'command')
+        command.text = 'ALL'
+        user = etree.SubElement(sudoers_entry, 'user')
+        user.text = 'ALL'
+        # Ensure having dispersed principals still works
+        sudoers_entry = etree.SubElement(data, 'sudoers_entry')
+        command = etree.SubElement(sudoers_entry, 'command')
+        command.text = 'ALL'
+        user = etree.SubElement(sudoers_entry, 'user')
+        user.text = 'ALL'
+        listelement = etree.SubElement(sudoers_entry, 'listelement')
+        principal = etree.SubElement(listelement, 'principal')
+        principal.text = 'fakeu2'
+        principal.attrib['type'] = 'user'
+        listelement = etree.SubElement(sudoers_entry, 'listelement')
+        group = etree.SubElement(listelement, 'principal')
+        group.text = 'fakeg2'
+        group.attrib['type'] = 'group'
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
 
-        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
-                                                 "list"), self.gpo_guid,
+        sudoer = 'fakeu ALL=(ALL) NOPASSWD: ALL'
+        sudoer2 = 'fakeu2,fakeg2% ALL=(ALL) NOPASSWD: ALL'
+        sudoer_no_principal = 'ALL ALL=(ALL) NOPASSWD: ALL'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers list failed')
+        self.assertIn(sudoer, out, 'The test entry was not found!')
+        self.assertIn(sudoer2, out, 'The test entry was not found!')
+        self.assertIn(sudoer_no_principal, out,
+                      'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "remove"),
+                                                 self.gpo_guid, sudoer2,
                                                  "-H", "ldap://%s" %
                                                  os.environ["SERVER"],
                                                  "-U%s%%%s" %
                                                  (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]))
-        self.assertIn(e.data, out, 'The test entry was not found!')
+        self.assertCmdSuccess(result, out, err, 'Sudoers remove failed')
 
-        # Unstage the Registry.pol file
-        unstage_file(reg_pol)
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "remove"),
+                                                 self.gpo_guid,
+                                                 sudoer_no_principal,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers remove failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(sudoer2, out, 'The test entry was still found!')
+        self.assertNotIn(sudoer_no_principal, out,
+                      'The test entry was still found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_symlink_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Unix',
+                               'Symlink/manifest.xml')
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Symlink Policy'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Specifies symbolic link data'
+        apply_mode = etree.SubElement(policysetting, 'apply_mode')
+        apply_mode.text = 'merge'
+        data = etree.SubElement(policysetting, 'data')
+        file_properties = etree.SubElement(data, 'file_properties')
+        source = etree.SubElement(file_properties, 'source')
+        source.text = os.path.join(self.tempdir, 'test.source')
+        target = etree.SubElement(file_properties, 'target')
+        target.text = os.path.join(self.tempdir, 'test.target')
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        symlink = 'ln -s %s %s' % (source.text, target.text)
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "symlink", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(symlink, out, 'The test entry was not found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_symlink_add(self):
+        source_text = os.path.join(self.tempdir, 'test.source')
+        target_text = os.path.join(self.tempdir, 'test.target')
+        symlink = 'ln -s %s %s' % (source_text, target_text)
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "symlink", "add"),
+                                                 self.gpo_guid,
+                                                 source_text, target_text,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Symlink add failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "symlink", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(symlink, out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "symlink", "remove"),
+                                                 self.gpo_guid,
+                                                 source_text, target_text,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Symlink remove failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "symlink", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(symlink, out, 'The test entry was not removed!')
+
+    def test_files_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Unix',
+                               'Files/manifest.xml')
+        source_file = os.path.join(local_path, lp.get('realm').lower(),
+                                   'Policies', self.gpo_guid, 'Machine/VGP',
+                                   'VTLA/Unix/Files/test.source')
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Files'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Represents file data to set/copy on clients'
+        data = etree.SubElement(policysetting, 'data')
+        file_properties = etree.SubElement(data, 'file_properties')
+        source = etree.SubElement(file_properties, 'source')
+        source.text = source_file
+        target = etree.SubElement(file_properties, 'target')
+        target.text = os.path.join(self.tempdir, 'test.target')
+        user = etree.SubElement(file_properties, 'user')
+        user.text = pwd.getpwuid(os.getuid()).pw_name
+        group = etree.SubElement(file_properties, 'group')
+        group.text = grp.getgrgid(os.getgid()).gr_name
+
+        # Request permissions of 755
+        permissions = etree.SubElement(file_properties, 'permissions')
+        permissions.set('type', 'user')
+        etree.SubElement(permissions, 'read')
+        etree.SubElement(permissions, 'write')
+        etree.SubElement(permissions, 'execute')
+        permissions = etree.SubElement(file_properties, 'permissions')
+        permissions.set('type', 'group')
+        etree.SubElement(permissions, 'read')
+        etree.SubElement(permissions, 'execute')
+        permissions = etree.SubElement(file_properties, 'permissions')
+        permissions.set('type', 'other')
+        etree.SubElement(permissions, 'read')
+        etree.SubElement(permissions, 'execute')
+
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "files", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(target.text, out, 'The test entry was not found!')
+        self.assertIn('-rwxr-xr-x', out,
+                      'The test entry permissions were not found')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_files_add(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        sysvol_source = os.path.join(local_path, lp.get('realm').lower(),
+                                     'Policies', self.gpo_guid, 'Machine/VGP',
+                                     'VTLA/Unix/Files/test.source')
+        source_file = os.path.join(self.tempdir, 'test.source')
+        source_data = '#!/bin/sh\necho hello world'
+        with open(source_file, 'w') as w:
+            w.write(source_data)
+        target_file = os.path.join(self.tempdir, 'test.target')
+        user = pwd.getpwuid(os.getuid()).pw_name
+        group = grp.getgrgid(os.getgid()).gr_name
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "files", "add"),
+                                                 self.gpo_guid,
+                                                 source_file,
+                                                 target_file,
+                                                 user, group,
+                                                 '755', "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'File add failed')
+        self.assertIn(source_data, open(sysvol_source, 'r').read(),
+                      'Failed to find the source file on the sysvol')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "files", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(target_file, out, 'The test entry was not found!')
+        self.assertIn('-rwxr-xr-x', out,
+                      'The test entry permissions were not found')
+
+        os.unlink(source_file)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "files", "remove"),
+                                                 self.gpo_guid,
+                                                 target_file, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'File remove failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "files", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(target_file, out, 'The test entry was still found!')
+
+    def test_vgp_openssh_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/SshCfg',
+                               'SshD/manifest.xml')
+
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Configuration File'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Represents Unix configuration file settings'
+        apply_mode = etree.SubElement(policysetting, 'apply_mode')
+        apply_mode.text = 'merge'
+        data = etree.SubElement(policysetting, 'data')
+        configfile = etree.SubElement(data, 'configfile')
+        etree.SubElement(configfile, 'filename')
+        configsection = etree.SubElement(configfile, 'configsection')
+        etree.SubElement(configsection, 'sectionname')
+        opt = etree.SubElement(configsection, 'keyvaluepair')
+        key = etree.SubElement(opt, 'key')
+        key.text = 'KerberosAuthentication'
+        value = etree.SubElement(opt, 'value')
+        value.text = 'Yes'
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        openssh = 'KerberosAuthentication Yes'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "openssh", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(openssh, out, 'The test entry was not found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_vgp_openssh_set(self):
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "openssh", "set"),
+                                                 self.gpo_guid,
+                                                 "KerberosAuthentication",
+                                                 "Yes", "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'OpenSSH set failed')
+
+        openssh = 'KerberosAuthentication Yes'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "openssh", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(openssh, out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "openssh", "set"),
+                                                 self.gpo_guid,
+                                                 "KerberosAuthentication", "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'OpenSSH unset failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "openssh", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(openssh, out, 'The test entry was still found!')
+
+    def test_startup_script_add(self):
+        lp = LoadParm()
+        fname = None
+        with NamedTemporaryFile() as f:
+            fname = os.path.basename(f.name)
+            f.write(b'#!/bin/sh\necho $@ hello world')
+            f.flush()
+            (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                     "scripts", "startup",
+                                                     "add"), self.gpo_guid,
+                                                     f.name, "'-n'", "-H",
+                                                     "ldap://%s" %
+                                                     os.environ["SERVER"],
+                                                     "-U%s%%%s" %
+                                                     (os.environ["USERNAME"],
+                                                     os.environ["PASSWORD"]))
+            self.assertCmdSuccess(result, out, err, 'Script add failed')
+
+        script_path = '\\'.join(['\\', lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'MACHINE\\VGP\\VTLA\\Unix',
+                               'Scripts\\Startup', fname])
+        entry = '@reboot root %s -n' % script_path
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "scripts",
+                                                 "startup", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(entry, out, 'The test entry was not found!')
+        local_path = lp.get('path', 'sysvol')
+        local_script_path = os.path.join(local_path, lp.get('realm').lower(),
+                                         'Policies', self.gpo_guid,
+                                         'Machine/VGP/VTLA/Unix',
+                                         'Scripts/Startup', fname)
+        self.assertTrue(os.path.exists(local_script_path),
+                        'The test script was not uploaded to the sysvol')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "scripts", "startup",
+                                                 "remove"), self.gpo_guid,
+                                                 f.name, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Script remove failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "scripts",
+                                                 "startup", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(entry, out, 'The test entry was still found!')
+
+    def test_startup_script_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Unix',
+                               'Scripts/Startup/manifest.xml')
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Unix Scripts'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Represents Unix scripts to run on Group Policy clients'
+        data = etree.SubElement(policysetting, 'data')
+        listelement = etree.SubElement(data, 'listelement')
+        script = etree.SubElement(listelement, 'script')
+        script.text = 'test.sh'
+        parameters = etree.SubElement(listelement, 'parameters')
+        parameters.text = '-e'
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        script_path = '\\'.join(['\\', lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'MACHINE\\VGP\\VTLA\\Unix',
+                               'Scripts\\Startup', script.text])
+        entry = '@reboot root %s %s' % (script_path, parameters.text)
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "scripts",
+                                                 "startup", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(entry, out, 'The test entry was not found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_vgp_motd_set(self):
+        text = 'This is the message of the day'
+        msg = '"%s\n"' % text
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "motd", "set"),
+                                                 self.gpo_guid,
+                                                 msg, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'MOTD set failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "motd", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(text, out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "motd", "set"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'MOTD unset failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "motd", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(text, out, 'The test entry was still found!')
+
+    def test_vgp_motd(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Unix',
+                               'MOTD/manifest.xml')
+
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Text File'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Represents a Generic Text File'
+        apply_mode = etree.SubElement(policysetting, 'apply_mode')
+        apply_mode.text = 'replace'
+        data = etree.SubElement(policysetting, 'data')
+        filename = etree.SubElement(data, 'filename')
+        filename.text = 'motd'
+        text = etree.SubElement(data, 'text')
+        text.text = 'This is a message of the day'
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "motd", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(text.text, out, 'The test entry was not found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_vgp_issue_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        vgp_xml = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/VGP/VTLA/Unix',
+                               'Issue/manifest.xml')
+
+        stage = etree.Element('vgppolicy')
+        policysetting = etree.SubElement(stage, 'policysetting')
+        pv = etree.SubElement(policysetting, 'version')
+        pv.text = '1'
+        name = etree.SubElement(policysetting, 'name')
+        name.text = 'Text File'
+        description = etree.SubElement(policysetting, 'description')
+        description.text = 'Represents a Generic Text File'
+        apply_mode = etree.SubElement(policysetting, 'apply_mode')
+        apply_mode.text = 'replace'
+        data = etree.SubElement(policysetting, 'data')
+        filename = etree.SubElement(data, 'filename')
+        filename.text = 'issue'
+        text = etree.SubElement(data, 'text')
+        text.text = 'Welcome to Samba!'
+        ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
+        self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "issue", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(text.text, out, 'The test entry was not found!')
+
+        # Unstage the manifest.xml file
+        unstage_file(vgp_xml)
+
+    def test_vgp_issue_set(self):
+        text = 'Welcome to Samba!'
+        msg = '"%s\n"' % text
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "issue", "set"),
+                                                 self.gpo_guid,
+                                                 msg, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Issue set failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "issue", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(text, out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "issue", "set"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Issue unset failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "issue", "list"),
+                                                 self.gpo_guid, "-H",
+                                                 "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertNotIn(text, out, 'The test entry was still found!')
 
     def setUp(self):
         """set up a temporary GPO to work with"""

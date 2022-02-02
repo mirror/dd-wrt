@@ -4,7 +4,7 @@
    Samba KDB plugin for MIT Kerberos
 
    Copyright (c) 2010      Simo Sorce <idra@samba.org>.
-   Copyright (c) 2014      Andreas Schneider <asn@samba.org>
+   Copyright (c) 2014-2021 Andreas Schneider <asn@samba.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@
 
 #include "kdc/mit_samba.h"
 #include "kdb_samba.h"
+
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
 
 /* FIXME: This is a krb5 function which is exported, but in no header */
 extern krb5_error_code decode_krb5_padata_sequence(const krb5_data *output,
@@ -287,22 +290,6 @@ done:
 	return code;
 }
 
-#if KRB5_KDB_API_VERSION < 10
-krb5_error_code kdb_samba_db_sign_auth_data(krb5_context context,
-					    unsigned int flags,
-					    krb5_const_principal client_princ,
-					    krb5_db_entry *client,
-					    krb5_db_entry *server,
-					    krb5_db_entry *krbtgt,
-					    krb5_keyblock *client_key,
-					    krb5_keyblock *server_key,
-					    krb5_keyblock *krbtgt_key,
-					    krb5_keyblock *session_key,
-					    krb5_timestamp authtime,
-					    krb5_authdata **tgt_auth_data,
-					    krb5_authdata ***signed_auth_data)
-{
-#else
 krb5_error_code kdb_samba_db_sign_auth_data(krb5_context context,
 					    unsigned int flags,
 					    krb5_const_principal client_princ,
@@ -322,17 +309,21 @@ krb5_error_code kdb_samba_db_sign_auth_data(krb5_context context,
 					    krb5_data ***auth_indicators,
 					    krb5_authdata ***signed_auth_data)
 {
-#endif
+	krb5_const_principal ks_client_princ = NULL;
+	krb5_db_entry *client_entry = NULL;
+	krb5_authdata **pac_auth_data = NULL;
 	krb5_authdata **authdata = NULL;
 	krb5_boolean is_as_req;
 	krb5_error_code code;
 	krb5_pac pac = NULL;
 	krb5_data pac_data;
+	bool with_pac = false;
+	bool generate_pac = false;
+	char *client_name = NULL;
 
-#if KRB5_KDB_API_VERSION >= 10
+
 	krbtgt = krbtgt == NULL ? local_krbtgt : krbtgt;
 	krbtgt_key = krbtgt_key == NULL ? local_krbtgt_key : krbtgt_key;
-#endif
 
 	/* FIXME: We don't support S4U yet */
 	if (flags & KRB5_KDB_FLAGS_S4U) {
@@ -341,44 +332,168 @@ krb5_error_code kdb_samba_db_sign_auth_data(krb5_context context,
 
 	is_as_req = ((flags & KRB5_KDB_FLAG_CLIENT_REFERRALS_ONLY) != 0);
 
-	if (is_as_req && (flags & KRB5_KDB_FLAG_INCLUDE_PAC)) {
-		code = ks_get_pac(context, client, client_key, &pac);
+	/*
+	 * When using s4u2proxy client_princ actually refers to the proxied user
+	 * while client->princ to the proxy service asking for the TGS on behalf
+	 * of the proxied user. So always use client_princ in preference.
+	 *
+	 * Note that when client principal is not NULL, client entry might be
+	 * NULL for cross-realm case, so we need to make sure to not
+	 * dereference NULL pointer here.
+	 */
+	if (client_princ != NULL) {
+		ks_client_princ = client_princ;
+		if (!is_as_req) {
+			krb5_boolean is_equal = false;
+
+			if (client != NULL && client->princ != NULL) {
+				is_equal =
+					krb5_principal_compare(context,
+							       client_princ,
+							       client->princ);
+			}
+
+			/*
+			 * When client principal is the same as supplied client
+			 * entry, don't fetch it.
+			 */
+			if (!is_equal) {
+				code = ks_get_principal(context,
+							ks_client_princ,
+							0,
+							&client_entry);
+				if (code != 0) {
+					(void)krb5_unparse_name(context,
+								ks_client_princ,
+								&client_name);
+
+					DBG_DEBUG("We didn't find the client "
+						  "principal [%s] in our "
+						  "database.\n",
+						  client_name);
+					SAFE_FREE(client_name);
+
+					/*
+					 * If we didn't find client_princ in our
+					 * database it might be from another
+					 * realm.
+					 */
+					client_entry = NULL;
+				}
+			}
+		}
+	} else {
+		if (client == NULL) {
+			*signed_auth_data = NULL;
+			return 0;
+		}
+		ks_client_princ = client->princ;
+	}
+
+	if (client_entry == NULL) {
+		client_entry = client;
+	}
+
+	if (is_as_req) {
+		with_pac = mit_samba_princ_needs_pac(client_entry);
+	} else {
+		with_pac = mit_samba_princ_needs_pac(server);
+	}
+
+	code = krb5_unparse_name(context,
+				 client_princ,
+				 &client_name);
+	if (code != 0) {
+		goto done;
+	}
+
+	if (is_as_req && (flags & KRB5_KDB_FLAG_INCLUDE_PAC) != 0) {
+		generate_pac = true;
+	}
+
+	DBG_DEBUG("*** Sign data for client principal: %s [%s %s%s]\n",
+		  client_name,
+		  is_as_req ? "AS-REQ" : "TGS_REQ",
+		  with_pac ? is_as_req ? "WITH_PAC" : "FIND_PAC" : "NO_PAC",
+		  generate_pac ? " GENERATE_PAC" : "");
+
+	/*
+	 * Generate PAC for the AS-REQ or check or generate one for the TGS if
+	 * needed.
+	 */
+	if (with_pac && generate_pac) {
+		DBG_DEBUG("Generate PAC for AS-REQ [%s]\n", client_name);
+		code = ks_get_pac(context, client_entry, client_key, &pac);
 		if (code != 0) {
 			goto done;
 		}
-	}
-
-	if (!is_as_req) {
-		code = ks_verify_pac(context,
-				     flags,
-				     client_princ,
-				     client,
-				     server,
-				     krbtgt,
-				     server_key,
-				     krbtgt_key,
-				     authtime,
-				     tgt_auth_data,
-				     &pac);
+	} else if (with_pac && !is_as_req) {
+		/*
+		 * Find the PAC in the TGS, if one exists.
+		 */
+		code = krb5_find_authdata(context,
+					  tgt_auth_data,
+					  NULL,
+					  KRB5_AUTHDATA_WIN2K_PAC,
+					  &pac_auth_data);
 		if (code != 0) {
+			DBG_ERR("krb5_find_authdata failed: %d\n", code);
 			goto done;
 		}
-	}
+		DBG_DEBUG("Found PAC data for TGS-REQ [%s]\n", client_name);
 
-	if (pac == NULL && client != NULL) {
+		if (pac_auth_data != NULL && pac_auth_data[0] != NULL) {
+			if (pac_auth_data[1] != NULL) {
+				DBG_ERR("Invalid PAC data!\n");
+				code = KRB5KDC_ERR_BADOPTION;
+				goto done;
+			}
 
-		code = ks_get_pac(context, client, client_key, &pac);
-		if (code != 0) {
-			goto done;
+			DBG_DEBUG("Verify PAC for TGS [%s]\n",
+				client_name);
+
+			code = ks_verify_pac(context,
+					     flags,
+					     ks_client_princ,
+					     client_entry,
+					     server,
+					     krbtgt,
+					     server_key,
+					     krbtgt_key,
+					     authtime,
+					     tgt_auth_data,
+					     &pac);
+			if (code != 0) {
+				goto done;
+			}
+		} else {
+			if (flags & KRB5_KDB_FLAG_CONSTRAINED_DELEGATION) {
+				DBG_DEBUG("Generate PAC for constrained"
+					  "delegation TGS [%s]\n",
+					  client_name);
+
+				code = ks_get_pac(context,
+						  client_entry,
+						  client_key,
+						  &pac);
+				if (code != 0 && code != ENOENT) {
+					goto done;
+				}
+			}
 		}
 	}
 
 	if (pac == NULL) {
-		code = KRB5_KDB_DBTYPE_NOSUP;
+		DBG_DEBUG("No PAC data - we're done [%s]\n", client_name);
+		*signed_auth_data = NULL;
+		code = 0;
 		goto done;
 	}
 
-	code = krb5_pac_sign(context, pac, authtime, client_princ,
+	DBG_DEBUG("Signing PAC for %s [%s]\n",
+		  is_as_req ? "AS-REQ" : "TGS-REQ",
+		  client_name);
+	code = krb5_pac_sign(context, pac, authtime, ks_client_princ,
 			server_key, krbtgt_key, &pac_data);
 	if (code != 0) {
 		DBG_ERR("krb5_pac_sign failed: %d\n", code);
@@ -412,8 +527,12 @@ krb5_error_code kdb_samba_db_sign_auth_data(krb5_context context,
 	code = 0;
 
 done:
-	krb5_pac_free(context, pac);
+	if (client_entry != NULL && client_entry != client) {
+		ks_free_principal(context, client_entry);
+	}
+	SAFE_FREE(client_name);
 	krb5_free_authdata(context, authdata);
+	krb5_pac_free(context, pac);
 
 	return code;
 }
@@ -475,7 +594,6 @@ static void samba_bad_password_count(krb5_db_entry *client,
 	}
 }
 
-#if KRB5_KDB_API_VERSION >= 9
 void kdb_samba_db_audit_as_req(krb5_context context,
 			       krb5_kdc_req *request,
 			       const krb5_address *local_addr,
@@ -497,22 +615,3 @@ void kdb_samba_db_audit_as_req(krb5_context context,
 
 	/* TODO: perform proper audit logging for addresses */
 }
-#else
-void kdb_samba_db_audit_as_req(krb5_context context,
-			       krb5_kdc_req *request,
-			       krb5_db_entry *client,
-			       krb5_db_entry *server,
-			       krb5_timestamp authtime,
-			       krb5_error_code error_code)
-{
-	/*
-	 * FIXME: This segfaulted with a FAST test
-	 * FIND_FAST: <unknown client> for <unknown server>, Unknown FAST armor type 0
-	 */
-	if (client == NULL) {
-		return;
-	}
-
-	samba_bad_password_count(client, error_code);
-}
-#endif

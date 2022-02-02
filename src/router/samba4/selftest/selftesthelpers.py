@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+#
 # This script generates a list of testsuites that should be run as part of
 # the Samba 4 test suite.
 
@@ -17,7 +18,6 @@
 # by the name of the test, the environment it needs and the command to run, all
 # three separated by newlines. All other lines in the output are considered
 # comments.
-from __future__ import print_function
 
 import os
 import subprocess
@@ -25,7 +25,8 @@ import sys
 
 
 def srcdir():
-    return os.path.normpath(os.getenv("SRCDIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+    alternate_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+    return os.path.normpath(os.getenv("SRCDIR", alternate_path))
 
 
 def source4dir():
@@ -65,7 +66,7 @@ def valgrindify(cmdline):
     return valgrind + " " + cmdline
 
 
-def plantestsuite(name, env, cmdline):
+def plantestsuite(name, env, cmd, environ={}):
     """Plan a test suite.
 
     :param name: Testsuite name
@@ -79,8 +80,18 @@ def plantestsuite(name, env, cmdline):
         fullname = "%s(%s)" % (name, env)
     print(fullname)
     print(env)
-    if isinstance(cmdline, list):
-        cmdline = " ".join(cmdline)
+
+    cmdline = ""
+    if environ:
+        environ = dict(environ)
+        cmdline_env = ["%s=%s" % item for item in environ.items()]
+        cmdline = " ".join(cmdline_env) + " "
+
+    if isinstance(cmd, list):
+        cmdline += " ".join(cmd)
+    else:
+        cmdline += cmd
+
     if "$LISTOPT" in cmdline:
         raise AssertionError("test %s supports --list, but not --load-list" % name)
     print(cmdline + " 2>&1 " + " | " + add_prefix(name, env))
@@ -91,7 +102,8 @@ def add_prefix(prefix, env, support_list=False):
         listopt = "$LISTOPT "
     else:
         listopt = ""
-    return "%s %s/selftest/filter-subunit %s--fail-on-empty --prefix=\"%s.\" --suffix=\"(%s)\"" % (python, srcdir(), listopt, prefix, env)
+    return ("%s %s/selftest/filter-subunit %s--fail-on-empty --prefix=\"%s.\" --suffix=\"(%s)\"" %
+            (python, srcdir(), listopt, prefix, env))
 
 
 def plantestsuite_loadlist(name, env, cmdline):
@@ -109,7 +121,9 @@ def plantestsuite_loadlist(name, env, cmdline):
         raise AssertionError("loadlist test %s does not support not --list" % name)
     if "$LOADLIST" not in cmdline:
         raise AssertionError("loadlist test %s does not support --load-list" % name)
-    print(("%s | %s" % (cmdline.replace("$LOADLIST", ""), add_prefix(name, env, support_list))).replace("$LISTOPT", "--list"))
+    print(("%s | %s" %
+           (cmdline.replace("$LOADLIST", ""),
+            add_prefix(name, env, support_list))).replace("$LISTOPT", "--list "))
     print(cmdline.replace("$LISTOPT", "") + " 2>&1 " + " | " + add_prefix(name, env, False))
 
 
@@ -164,7 +178,10 @@ bbdir = os.path.join(srcdir(), "testprogs/blackbox")
 configuration = "--configfile=$SMB_CONF_PATH"
 
 smbtorture4 = binpath("smbtorture")
-smbtorture4_testsuite_list = subprocess.Popen([smbtorture4, "--list-suites"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate("")[0].decode('utf8').splitlines()
+smbtorture4_testsuite_list = subprocess.Popen(
+    [smbtorture4, "--list-suites"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE).communicate("")[0].decode('utf8').splitlines()
 
 smbtorture4_options = [
     configuration,
@@ -175,13 +192,17 @@ smbtorture4_options = [
 ] + get_env_torture_options()
 
 
-def plansmbtorture4testsuite(name, env, options, target, modname=None):
+def plansmbtorture4testsuite(name, env, options, target, modname=None, environ={}):
     if modname is None:
         modname = "samba4.%s" % name
     if isinstance(options, list):
         options = " ".join(options)
     options = " ".join(smbtorture4_options + ["--target=%s" % target]) + " " + options
-    cmdline = "%s $LISTOPT $LOADLIST %s %s" % (valgrindify(smbtorture4), options, name)
+    cmdline = ""
+    if environ:
+        environ = dict(environ)
+        cmdline = ["%s=%s" % item for item in environ.items()]
+    cmdline += " %s $LISTOPT $LOADLIST %s %s" % (valgrindify(smbtorture4), options, name)
     plantestsuite_loadlist(modname, env, cmdline)
 
 

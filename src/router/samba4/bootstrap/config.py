@@ -20,6 +20,9 @@ Manage dependencies and bootstrap environments for Samba.
 
 Config file for packages and templates.
 
+Update the lists in this file to require new packages in the
+container images used in GitLab CI
+
 Author: Joe Guo <joeg@catalyst.net.nz>
 """
 import os
@@ -116,7 +119,7 @@ PKGS = [
     ('bind9utils', 'bind-utils'),
     ('dnsutils', ''),
     ('xsltproc', 'libxslt'),
-    ('krb5-user', ''),
+    ('krb5-user', 'krb5-workstation'),
     ('krb5-config', ''),
     ('krb5-kdc', 'krb5-server'),
     ('apt-utils', 'yum-utils'),
@@ -126,7 +129,6 @@ PKGS = [
     ('', 'rpcgen'),  # required for test
     # refer: https://fedoraproject.org/wiki/Changes/SunRPCRemoval
     ('', 'libtirpc-devel'),  # for <rpc/rpc.h> header on fedora
-    ('', 'libnsl2-devel'),  # for <rpcsvc/yp_prot.h> header on fedora
     ('', 'rpcsvc-proto-devel'), # for <rpcsvc/rquota.h> header
     ('mawk', 'gawk'),
 
@@ -163,6 +165,9 @@ PKGS = [
     ('', 'glusterfs-api-devel'),
     ('glusterfs-common', 'glusterfs-devel'),
     ('libcephfs-dev', 'libcephfs-devel'),
+
+    # spotlight
+    ('libtracker-sparql-2.0-dev', 'tracker-devel'),
 
     # misc
     # @ means group for rpm, use fedora as rpm default
@@ -394,6 +399,13 @@ DEB_DISTS = {
             'liburing-dev': '',   # not available
         }
     },
+    'debian11': {
+        'docker_image': 'debian:11',
+        'vagrant_box': 'debian/bullseye64',
+        'replace': {
+            'language-pack-en': '',   # included in locales
+        }
+    },
     'ubuntu1604': {
         'docker_image': 'ubuntu:16.04',
         'vagrant_box': 'ubuntu/xenial64',
@@ -402,6 +414,7 @@ DEB_DISTS = {
             'glusterfs-common': '',
             'libcephfs-dev': '',
             'liburing-dev': '',   # not available
+            'libtracker-sparql-2.0-dev': '', # not available
         }
     },
     'ubuntu1804': {
@@ -455,6 +468,7 @@ RPM_DISTS = {
             'gnutls-devel': 'compat-gnutls34-devel',
             'liburing-devel': '',   # not available
             'python3-setproctitle': 'python36-setproctitle',
+            'tracker-devel': '', # do not install
         }
     },
     'centos8': {
@@ -473,17 +487,6 @@ RPM_DISTS = {
             'liburing-devel': '', # not available yet, Add me back, once available!
         }
     },
-    'fedora32': {
-        'docker_image': 'fedora:32',
-        'vagrant_box': 'fedora/32-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            'libsemanage-python': 'python3-libsemanage',
-            'policycoreutils-python': 'python3-policycoreutils',
-            'perl-FindBin': '',
-        }
-    },
     'fedora33': {
         'docker_image': 'fedora:33',
         'vagrant_box': 'fedora/33-cloud-base',
@@ -492,6 +495,20 @@ RPM_DISTS = {
             'lsb-release': 'redhat-lsb',
             'libsemanage-python': 'python3-libsemanage',
             'policycoreutils-python': 'python3-policycoreutils',
+            'python3-iso8601': 'python3-dateutil',
+        }
+    },
+    'fedora34': {
+        'docker_image': 'fedora:34',
+        'vagrant_box': 'fedora/34-cloud-base',
+        'bootstrap': DNF_BOOTSTRAP,
+        'replace': {
+            'lsb-release': 'redhat-lsb',
+            'libsemanage-python': 'python3-libsemanage',
+            'policycoreutils-python': 'python3-policycoreutils',
+            'perl-FindBin': '',
+            'python3-iso8601': 'python3-dateutil',
+            'libtracker-sparql-2.0-dev': '', # only tracker 3.x is available
         }
     },
     'opensuse151': {
@@ -508,7 +525,6 @@ RPM_DISTS = {
             'jansson-devel': 'libjansson-devel',
             'keyutils-libs-devel': 'keyutils-devel',
             'krb5-workstation': 'krb5-client',
-            'libnsl2-devel': 'libnsl-devel',
             'libsemanage-python': 'python2-semanage',
             'openldap-devel': 'openldap2-devel',
             'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
@@ -540,7 +556,6 @@ RPM_DISTS = {
             'jansson-devel': 'libjansson-devel',
             'keyutils-libs-devel': 'keyutils-devel',
             'krb5-workstation': 'krb5-client',
-            'libnsl2-devel': 'libnsl-devel',
             'libsemanage-python': 'python2-semanage',
             'openldap-devel': 'openldap2-devel',
             'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
@@ -549,6 +564,7 @@ RPM_DISTS = {
             'perl-interpreter': '',
             'perl-FindBin': '',
             'procps-ng': 'procps',
+            'python3-iso8601': 'python3-python-dateutil',
             'python3-dns': 'python3-dnspython',
             'python3-markdown': 'python3-Markdown',
             'quota-devel': '',

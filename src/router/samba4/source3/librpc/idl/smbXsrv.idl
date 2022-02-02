@@ -167,11 +167,15 @@ interface smbXsrv
 
 	/*
 	 * smbXsrv_connection_pass is used in the MSG_SMBXSRV_CONNECTION_PASS
-	 * message
+	 * message and echo'ed as MSG_SMBXSRV_CONNECTION_PASSED message with
+	 * negotiate_request.length = 0.
 	 */
 	typedef struct {
-		NTTIME					initial_connect_time;
 		GUID					client_guid;
+		server_id				src_server_id;
+		NTTIME					xconn_connect_time;
+		server_id				dst_server_id;
+		NTTIME					client_connect_time;
 		DATA_BLOB 				negotiate_request;
 	} smbXsrv_connection_pass0;
 
@@ -216,6 +220,7 @@ interface smbXsrv
 		[ignore] smb2_signing_key		*signing_key;
 		uint32					auth_session_info_seqnum;
 		[ignore] smbXsrv_connection		*connection;
+		uint16					signing_algo;
 		uint16					encryption_cipher;
 	} smbXsrv_channel_global0;
 
@@ -234,14 +239,17 @@ interface smbXsrv
 		auth_session_info			*auth_session_info;
 		uint16					connection_dialect;
 		smbXsrv_signing_flags			signing_flags;
+		uint16					signing_algo;
 		smbXsrv_encrpytion_flags		encryption_flags;
+		uint16					encryption_cipher;
 		[noprint] DATA_BLOB			signing_key_blob;
 		[ignore] smb2_signing_key		*signing_key;
 		[noprint] DATA_BLOB			encryption_key_blob;
 		[ignore] smb2_signing_key		*encryption_key;
 		[noprint] DATA_BLOB			decryption_key_blob;
 		[ignore] smb2_signing_key		*decryption_key;
-		[noprint] DATA_BLOB			application_key;
+		[noprint] DATA_BLOB			application_key_blob;
+		[ignore] smb2_signing_key		*application_key;
 		[range(1, 1024)] uint32			num_channels;
 		smbXsrv_channel_global0			channels[num_channels];
 	} smbXsrv_session_global0;
@@ -504,4 +512,11 @@ interface smbXsrv
 	void smbXsrv_open_decode(
 		[in] smbXsrv_openB blob
 		);
+
+	const uint32 SMBXSRV_OPEN_REPLAY_CACHE_FIXED_SIZE = 28;
+	typedef [public] struct {
+		GUID					holder_req_guid;
+		NTTIME					idle_time;
+		uint32					local_id;
+	} smbXsrv_open_replay_cache;
 }

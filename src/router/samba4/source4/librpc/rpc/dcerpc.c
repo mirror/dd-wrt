@@ -26,6 +26,8 @@
 #include "lib/events/events.h"
 #include "librpc/rpc/dcerpc.h"
 #include "librpc/rpc/dcerpc_proto.h"
+#include "librpc/rpc/dcerpc_util.h"
+#include "librpc/rpc/dcerpc_pkt_auth.h"
 #include "librpc/gen_ndr/ndr_misc.h"
 #include "librpc/gen_ndr/ndr_dcerpc.h"
 #include "auth/gensec/gensec.h"
@@ -724,6 +726,7 @@ static NTSTATUS ncacn_pull_pkt_auth(struct dcecli_connection *c,
 
 	status = dcerpc_ncacn_pull_pkt_auth(&tmp_auth,
 					    c->security_state.generic_state,
+					    true, /* check_pkt_auth_fields */
 					    mem_ctx,
 					    ptype,
 					    required_flags,

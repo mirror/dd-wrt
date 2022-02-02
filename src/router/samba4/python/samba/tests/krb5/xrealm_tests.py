@@ -68,8 +68,6 @@ class XrealmKerberosTests(RawKerberosTest):
                                  nonce=0x7fffffff,
                                  etypes=etypes,
                                  addresses=None,
-                                 EncAuthorizationData=None,
-                                 EncAuthorizationData_key=None,
                                  additional_tickets=None)
         rep = self.send_recv_transaction(req)
         self.assertIsNotNone(rep)
@@ -112,8 +110,6 @@ class XrealmKerberosTests(RawKerberosTest):
                                  nonce=0x7fffffff,
                                  etypes=etypes,
                                  addresses=None,
-                                 EncAuthorizationData=None,
-                                 EncAuthorizationData_key=None,
                                  additional_tickets=None)
         rep = self.send_recv_transaction(req)
         self.assertIsNotNone(rep)
@@ -185,7 +181,7 @@ class XrealmKerberosTests(RawKerberosTest):
 
 
 if __name__ == "__main__":
-    global_asn1_print = True
-    global_hexdump = True
+    global_asn1_print = False
+    global_hexdump = False
     import unittest
     unittest.main()

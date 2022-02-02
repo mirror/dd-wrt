@@ -33,7 +33,7 @@
 
 #include "includes.h"
 #include "system/filesys.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "lib/param/loadparm.h"
 #include "lib/crypto/gnutls_helpers.h"
 #include "cmdline_contexts.h"
@@ -547,6 +547,13 @@ static int do_global_checks(void)
 		ret = 1;
 	}
 
+	if (!lp_server_schannel()) {
+		fprintf(stderr,
+			"WARNING: You have configured 'server schannel = no'. "
+			"Your server is vulernable to \"ZeroLogon\" "
+			"(CVE-2020-1472)\n\n");
+	}
+
 	return ret;
 }
 
@@ -662,9 +669,10 @@ static void do_per_share_checks(int s)
 
  int main(int argc, const char *argv[])
 {
-	const char *config_file = get_dyn_CONFIGFILE();
+	const char *config_file = NULL;
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
+	int opt;
 	int s;
 	static int silent_mode = False;
 	static int show_all_parameters = False;
@@ -677,6 +685,7 @@ static void do_per_share_checks(int s)
 	static int show_defaults;
 	static int skip_logic_checks = 0;
 	const char *weak_crypo_str = "";
+	bool ok;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -729,15 +738,25 @@ static void do_per_share_checks(int s)
 			.val        = 0,
 			.descrip    = "Limit testparm to a named section",
 		},
+		POPT_COMMON_DEBUG_ONLY
+		POPT_COMMON_OPTION_ONLY
 		POPT_COMMON_VERSION
-		POPT_COMMON_DEBUGLEVEL
-		POPT_COMMON_OPTION
 		POPT_TABLEEND
 	};
 
 	TALLOC_CTX *frame = talloc_stackframe();
 
 	smb_init_locale();
+
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_NONE,
+				true /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		ret = 1;
+		goto done;
+	}
+
 	/*
 	 * Set the default debug level to 1.
 	 * Allow it to be overridden by the command line,
@@ -745,21 +764,39 @@ static void do_per_share_checks(int s)
 	 */
 	lp_set_cmdline("log level", "1");
 
-	pc = poptGetContext(NULL, argc, argv, long_options,
-			    POPT_CONTEXT_KEEP_FIRST);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		ret = 1;
+		goto done;
+	}
+
 	poptSetOtherOptionHelp(pc, "[OPTION...] <config-file> [host-name] [host-ip]");
 
-	while(poptGetNextOpt(pc) != -1);
+	while ((opt = poptGetNextOpt(pc)) != -1) {
+		switch (opt) {
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
+		}
+	}
 
 	if (show_all_parameters) {
 		show_parameter_list();
 		exit(0);
 	}
 
-	setup_logging(poptGetArg(pc), DEBUG_STDERR);
-
-	if (poptPeekArg(pc))
+	if (poptPeekArg(pc)) {
 		config_file = poptGetArg(pc);
+	} else {
+		config_file = get_dyn_CONFIGFILE();
+	}
 
 	cname = poptGetArg(pc);
 	caddr = poptGetArg(pc);

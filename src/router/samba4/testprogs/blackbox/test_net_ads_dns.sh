@@ -20,19 +20,11 @@ shift 6
 failed=0
 
 samba4bindir="$BINDIR"
-samba4kinit=kinit
-if test -x $BINDIR/samba4kinit; then
-	samba4kinit=$BINDIR/samba4kinit
-fi
 
 samba_tool="$samba4bindir/samba-tool"
 net_tool="$samba4bindir/net"
 smbpasswd="$samba4bindir/smbpasswd"
 texpect="$samba4bindir/texpect"
-samba4kpasswd=kpasswd
-if test -x $BINDIR/samba4kpasswd; then
-	samba4kpasswd=$BINDIR/samba4kpasswd
-fi
 ldbsearch="$samba4bindir/ldbsearch"
 ldbmodify="$samba4bindir/ldbmodify"
 
@@ -70,7 +62,7 @@ testit "The name $NAME.$REALM $IP6ADDRESS should not be there any longer" dig @$
 # This should be an expect_failure test ...
 testit "Adding an unprivileged user" $VALGRIND $net_tool user add $UNPRIVUSER $UNPRIVPASS -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
 
-BASEDN=$($VALGRIND $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -b '' -s base defaultNamingContext | grep defaultNamingContext | sed -e 's!^defaultNamingContext: !!')
+BASEDN=$($VALGRIND $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -b '' --scope=base defaultNamingContext | grep defaultNamingContext | sed -e 's!^defaultNamingContext: !!')
 
 LDIF="dn: CN=$UNPRIVUSER,CN=users,${BASEDN}+changetype: modify+replace: userAccountControl+userAccountControl: 512"
 

@@ -30,6 +30,7 @@
 #include "librpc/gen_ndr/ndr_dcerpc.h"
 #include "librpc/gen_ndr/ndr_netlogon_c.h"
 #include "librpc/rpc/dcerpc.h"
+#include "librpc/rpc/dcerpc_util.h"
 #include "rpc_dce.h"
 #include "cli_pipe.h"
 #include "libsmb/libsmb.h"
@@ -1808,7 +1809,7 @@ static NTSTATUS create_rpc_bind_auth3(TALLOC_CTX *mem_ctx,
 
 /*******************************************************************
  Creates a DCE/RPC bind alter context authentication request which
- may contain a spnego auth blobl
+ may contain a spnego auth blob
  ********************************************************************/
 
 static NTSTATUS create_rpc_alter_context(TALLOC_CTX *mem_ctx,
@@ -2568,7 +2569,9 @@ static NTSTATUS rpccli_generic_bind_data(TALLOC_CTX *mem_ctx,
 		goto fail;
 	}
 
-	cli_credentials_set_kerberos_state(auth_generic_ctx->credentials, use_kerberos);
+	cli_credentials_set_kerberos_state(auth_generic_ctx->credentials,
+					   use_kerberos,
+					   CRED_SPECIFIED);
 	cli_credentials_set_netlogon_creds(auth_generic_ctx->credentials, creds);
 
 	status = auth_generic_client_start_by_authtype(auth_generic_ctx, auth_type, auth_level);
@@ -2734,6 +2737,166 @@ static NTSTATUS rpc_pipe_open_tcp_port(TALLOC_CTX *mem_ctx, const char *host,
 	return status;
 }
 
+static NTSTATUS rpccli_epm_map_binding(
+	struct dcerpc_binding_handle *epm_connection,
+	struct dcerpc_binding *binding,
+	TALLOC_CTX *mem_ctx,
+	char **pendpoint)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	enum dcerpc_transport_t transport =
+		dcerpc_binding_get_transport(binding);
+	enum dcerpc_transport_t res_transport;
+	struct dcerpc_binding *res_binding = NULL;
+	struct epm_twr_t *map_tower = NULL;
+	struct epm_twr_p_t res_towers = { .twr = NULL };
+	struct policy_handle *entry_handle = NULL;
+	uint32_t num_towers = 0;
+	const uint32_t max_towers = 1;
+	const char *endpoint = NULL;
+	char *tmp = NULL;
+	uint32_t result;
+	NTSTATUS status;
+
+	map_tower = talloc_zero(frame, struct epm_twr_t);
+	if (map_tower == NULL) {
+		goto nomem;
+	}
+
+	status = dcerpc_binding_build_tower(
+		frame, binding, &(map_tower->tower));
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_binding_build_tower failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	res_towers.twr = talloc_array(frame, struct epm_twr_t, max_towers);
+	if (res_towers.twr == NULL) {
+		goto nomem;
+	}
+
+	entry_handle = talloc_zero(frame, struct policy_handle);
+	if (entry_handle == NULL) {
+		goto nomem;
+	}
+
+	status = dcerpc_epm_Map(
+		epm_connection,
+		frame,
+		NULL,
+		map_tower,
+		entry_handle,
+		max_towers,
+		&num_towers,
+		&res_towers,
+		&result);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_epm_Map failed: %s\n", nt_errstr(status));
+		goto done;
+	}
+
+	if (result != EPMAPPER_STATUS_OK) {
+		DBG_DEBUG("dcerpc_epm_Map returned %"PRIu32"\n", result);
+		status = NT_STATUS_NOT_FOUND;
+		goto done;
+	}
+
+	if (num_towers != 1) {
+		DBG_DEBUG("dcerpc_epm_Map returned %"PRIu32" towers\n",
+			  num_towers);
+		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+		goto done;
+	}
+
+	status = dcerpc_binding_from_tower(
+		frame, &(res_towers.twr->tower), &res_binding);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_binding_from_tower failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	res_transport = dcerpc_binding_get_transport(res_binding);
+	if (res_transport != transport) {
+		DBG_DEBUG("dcerpc_epm_Map returned transport %d, "
+			  "expected %d\n",
+			  (int)res_transport,
+			  (int)transport);
+		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+		goto done;
+	}
+
+	endpoint = dcerpc_binding_get_string_option(res_binding, "endpoint");
+	if (endpoint == NULL) {
+		DBG_DEBUG("dcerpc_epm_Map returned no endpoint\n");
+		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+		goto done;
+	}
+
+	tmp = talloc_strdup(mem_ctx, endpoint);
+	if (tmp == NULL) {
+		goto nomem;
+	}
+	*pendpoint = tmp;
+
+	status = NT_STATUS_OK;
+	goto done;
+
+nomem:
+	status = NT_STATUS_NO_MEMORY;
+done:
+	TALLOC_FREE(frame);
+	return status;
+}
+
+static NTSTATUS rpccli_epm_map_interface(
+	struct dcerpc_binding_handle *epm_connection,
+	enum dcerpc_transport_t transport,
+	const struct ndr_syntax_id *iface,
+	TALLOC_CTX *mem_ctx,
+	char **pendpoint)
+{
+	struct dcerpc_binding *binding = NULL;
+	char *endpoint = NULL;
+	NTSTATUS status;
+
+	status = dcerpc_parse_binding(mem_ctx, "", &binding);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_parse_binding failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = dcerpc_binding_set_transport(binding, transport);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_binding_set_transport failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = dcerpc_binding_set_abstract_syntax(binding, iface);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dcerpc_binding_set_abstract_syntax failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = rpccli_epm_map_binding(
+		epm_connection, binding, mem_ctx, &endpoint);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpccli_epm_map_binding failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+	*pendpoint = endpoint;
+
+done:
+	TALLOC_FREE(binding);
+	return status;
+}
+
 /**
  * Determine the tcp port on which a dcerpc interface is listening
  * for the ncacn_ip_tcp transport via the endpoint mapper of the
@@ -2746,20 +2909,9 @@ static NTSTATUS rpc_pipe_get_tcp_port(const char *host,
 {
 	NTSTATUS status;
 	struct rpc_pipe_client *epm_pipe = NULL;
-	struct dcerpc_binding_handle *epm_handle = NULL;
 	struct pipe_auth_data *auth = NULL;
-	struct dcerpc_binding *map_binding = NULL;
-	struct dcerpc_binding *res_binding = NULL;
-	enum dcerpc_transport_t transport;
-	const char *endpoint = NULL;
-	struct epm_twr_t *map_tower = NULL;
-	struct epm_twr_t *res_towers = NULL;
-	struct policy_handle *entry_handle = NULL;
-	uint32_t num_towers = 0;
-	uint32_t max_towers = 1;
-	struct epm_twr_p_t towers;
+	char *endpoint = NULL;
 	TALLOC_CTX *tmp_ctx = talloc_stackframe();
-	uint32_t result = 0;
 
 	if (pport == NULL) {
 		status = NT_STATUS_INVALID_PARAMETER;
@@ -2781,7 +2933,6 @@ static NTSTATUS rpc_pipe_get_tcp_port(const char *host,
 	if (!NT_STATUS_IS_OK(status)) {
 		goto done;
 	}
-	epm_handle = epm_pipe->binding_handle;
 
 	status = rpccli_anon_bind_data(tmp_ctx, &auth);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -2793,94 +2944,15 @@ static NTSTATUS rpc_pipe_get_tcp_port(const char *host,
 		goto done;
 	}
 
-	/* create tower for asking the epmapper */
-
-	status = dcerpc_parse_binding(tmp_ctx, "ncacn_ip_tcp:[135]",
-				      &map_binding);
+	status = rpccli_epm_map_interface(
+		epm_pipe->binding_handle,
+		NCACN_IP_TCP,
+		&table->syntax_id,
+		tmp_ctx,
+		&endpoint);
 	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	status = dcerpc_binding_set_abstract_syntax(map_binding,
-						    &table->syntax_id);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	map_tower = talloc_zero(tmp_ctx, struct epm_twr_t);
-	if (map_tower == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto done;
-	}
-
-	status = dcerpc_binding_build_tower(tmp_ctx, map_binding,
-					    &(map_tower->tower));
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	/* allocate further parameters for the epm_Map call */
-
-	res_towers = talloc_array(tmp_ctx, struct epm_twr_t, max_towers);
-	if (res_towers == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto done;
-	}
-	towers.twr = res_towers;
-
-	entry_handle = talloc_zero(tmp_ctx, struct policy_handle);
-	if (entry_handle == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto done;
-	}
-
-	/* ask the endpoint mapper for the port */
-
-	status = dcerpc_epm_Map(epm_handle,
-				tmp_ctx,
-				discard_const_p(struct GUID,
-					      &(table->syntax_id.uuid)),
-				map_tower,
-				entry_handle,
-				max_towers,
-				&num_towers,
-				&towers,
-				&result);
-
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	if (result != EPMAPPER_STATUS_OK) {
-		status = NT_STATUS_UNSUCCESSFUL;
-		goto done;
-	}
-
-	if (num_towers != 1) {
-		status = NT_STATUS_UNSUCCESSFUL;
-		goto done;
-	}
-
-	/* extract the port from the answer */
-
-	status = dcerpc_binding_from_tower(tmp_ctx,
-					   &(towers.twr->tower),
-					   &res_binding);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	transport = dcerpc_binding_get_transport(res_binding);
-	endpoint = dcerpc_binding_get_string_option(res_binding, "endpoint");
-
-	/* are further checks here necessary? */
-	if (transport != NCACN_IP_TCP) {
-		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
-		goto done;
-	}
-
-	if (endpoint == NULL) {
-		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+		DBG_DEBUG("rpccli_epm_map_interface failed: %s\n",
+			  nt_errstr(status));
 		goto done;
 	}
 
@@ -2913,30 +2985,105 @@ NTSTATUS rpc_pipe_open_tcp(TALLOC_CTX *mem_ctx, const char *host,
 				      table, presult);
 }
 
+static NTSTATUS rpc_pipe_get_ncalrpc_name(
+	const struct ndr_syntax_id *iface,
+	TALLOC_CTX *mem_ctx,
+	char **psocket_name)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct rpc_pipe_client *epm_pipe = NULL;
+	struct pipe_auth_data *auth = NULL;
+	NTSTATUS status = NT_STATUS_OK;
+	bool is_epm;
+
+	is_epm = ndr_syntax_id_equal(iface, &ndr_table_epmapper.syntax_id);
+	if (is_epm) {
+		char *endpoint = talloc_strdup(mem_ctx, "EPMAPPER");
+		if (endpoint == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto done;
+		}
+		*psocket_name = endpoint;
+		goto done;
+	}
+
+	status = rpc_pipe_open_ncalrpc(
+		frame, &ndr_table_epmapper, &epm_pipe);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpc_pipe_open_ncalrpc failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = rpccli_anon_bind_data(epm_pipe, &auth);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpccli_anon_bind_data failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = rpc_pipe_bind(epm_pipe, auth);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpc_pipe_bind failed: %s\n", nt_errstr(status));
+		goto done;
+	}
+
+	status = rpccli_epm_map_interface(
+		epm_pipe->binding_handle,
+		NCALRPC,
+		iface,
+		mem_ctx,
+		psocket_name);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpccli_epm_map_interface failed: %s\n",
+			  nt_errstr(status));
+	}
+
+done:
+	TALLOC_FREE(frame);
+	return status;
+}
+
 /********************************************************************
  Create a rpc pipe client struct, connecting to a unix domain socket
  ********************************************************************/
-NTSTATUS rpc_pipe_open_ncalrpc(TALLOC_CTX *mem_ctx, const char *socket_path,
+NTSTATUS rpc_pipe_open_ncalrpc(TALLOC_CTX *mem_ctx,
 			       const struct ndr_interface_table *table,
 			       struct rpc_pipe_client **presult)
 {
+	char *socket_name = NULL;
 	struct rpc_pipe_client *result;
 	struct sockaddr_un addr = { .sun_family = AF_UNIX };
 	socklen_t salen = sizeof(addr);
-	size_t pathlen;
+	int pathlen;
 	NTSTATUS status;
 	int fd = -1;
-
-	pathlen = strlcpy(addr.sun_path, socket_path, sizeof(addr.sun_path));
-	if (pathlen >= sizeof(addr.sun_path)) {
-		DBG_DEBUG("socket_path %s too long\n", socket_path);
-		return NT_STATUS_NAME_TOO_LONG;
-	}
 
 	result = talloc_zero(mem_ctx, struct rpc_pipe_client);
 	if (result == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
+
+	status = rpc_pipe_get_ncalrpc_name(
+		&table->syntax_id, result, &socket_name);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("rpc_pipe_get_ncalrpc_name failed: %s\n",
+			  nt_errstr(status));
+		goto fail;
+	}
+
+	pathlen = snprintf(
+		addr.sun_path,
+		sizeof(addr.sun_path),
+		"%s/%s",
+		lp_ncalrpc_dir(),
+		socket_name);
+	if ((pathlen < 0) || ((size_t)pathlen >= sizeof(addr.sun_path))) {
+		DBG_DEBUG("socket_path for %s too long\n", socket_name);
+		status = NT_STATUS_NAME_TOO_LONG;
+		goto fail;
+	}
+	TALLOC_FREE(socket_name);
 
 	result->abstract_syntax = table->syntax_id;
 	result->transfer_syntax = ndr_transfer_syntax_ndr;
@@ -2963,8 +3110,9 @@ NTSTATUS rpc_pipe_open_ncalrpc(TALLOC_CTX *mem_ctx, const char *socket_path,
 	}
 
 	if (connect(fd, (struct sockaddr *)(void *)&addr, salen) == -1) {
-		DEBUG(0, ("connect(%s) failed: %s\n", socket_path,
-			  strerror(errno)));
+		DBG_ERR("connect(%s) failed: %s\n",
+			addr.sun_path,
+			strerror(errno));
 		status = map_nt_error_from_unix(errno);
 		goto fail;
 	}
@@ -3015,7 +3163,7 @@ static int rpc_pipe_client_np_ref_destructor(struct rpc_pipe_client_np_ref *np_r
  *    assignments of cli, which invalidates the data in the returned
  *    rpc_pipe_client if this function is called before the structure assignment
  *    of cli.
- * 
+ *
  ****************************************************************************/
 
 static NTSTATUS rpc_pipe_open_np(struct cli_state *cli,
@@ -3093,13 +3241,15 @@ static NTSTATUS rpc_pipe_open_np(struct cli_state *cli,
 static NTSTATUS cli_rpc_pipe_open(struct cli_state *cli,
 				  enum dcerpc_transport_t transport,
 				  const struct ndr_interface_table *table,
+				  const char *remote_name,
+				  const struct sockaddr_storage *remote_sockaddr,
 				  struct rpc_pipe_client **presult)
 {
 	switch (transport) {
 	case NCACN_IP_TCP:
 		return rpc_pipe_open_tcp(NULL,
-					 smbXcli_conn_remote_name(cli->conn),
-					 smbXcli_conn_remote_sockaddr(cli->conn),
+					 remote_name,
+					 remote_sockaddr,
 					 table, presult);
 	case NCACN_NP:
 		return rpc_pipe_open_np(cli, table, presult);
@@ -3115,13 +3265,20 @@ static NTSTATUS cli_rpc_pipe_open(struct cli_state *cli,
 NTSTATUS cli_rpc_pipe_open_noauth_transport(struct cli_state *cli,
 					    enum dcerpc_transport_t transport,
 					    const struct ndr_interface_table *table,
+					    const char *remote_name,
+					    const struct sockaddr_storage *remote_sockaddr,
 					    struct rpc_pipe_client **presult)
 {
 	struct rpc_pipe_client *result;
 	struct pipe_auth_data *auth;
 	NTSTATUS status;
 
-	status = cli_rpc_pipe_open(cli, transport, table, &result);
+	status = cli_rpc_pipe_open(cli,
+				   transport,
+				   table,
+				   remote_name,
+				   remote_sockaddr,
+				   &result);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -3189,8 +3346,15 @@ NTSTATUS cli_rpc_pipe_open_noauth(struct cli_state *cli,
 				  const struct ndr_interface_table *table,
 				  struct rpc_pipe_client **presult)
 {
+	const char *remote_name = smbXcli_conn_remote_name(cli->conn);
+	const struct sockaddr_storage *remote_sockaddr =
+		smbXcli_conn_remote_sockaddr(cli->conn);
+
 	return cli_rpc_pipe_open_noauth_transport(cli, NCACN_NP,
-						  table, presult);
+						  table,
+						  remote_name,
+						  remote_sockaddr,
+						  presult);
 }
 
 /****************************************************************************
@@ -3205,6 +3369,7 @@ NTSTATUS cli_rpc_pipe_open_with_creds(struct cli_state *cli,
 				      enum dcerpc_AuthType auth_type,
 				      enum dcerpc_AuthLevel auth_level,
 				      const char *server,
+				      const struct sockaddr_storage *remote_sockaddr,
 				      struct cli_credentials *creds,
 				      struct rpc_pipe_client **presult)
 {
@@ -3213,7 +3378,12 @@ NTSTATUS cli_rpc_pipe_open_with_creds(struct cli_state *cli,
 	const char *target_service = table->authservices->names[0];
 	NTSTATUS status;
 
-	status = cli_rpc_pipe_open(cli, transport, table, &result);
+	status = cli_rpc_pipe_open(cli,
+				   transport,
+				   table,
+				   server,
+				   remote_sockaddr,
+				   &result);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -3255,6 +3425,8 @@ NTSTATUS cli_rpc_pipe_open_bind_schannel(
 	const struct ndr_interface_table *table,
 	enum dcerpc_transport_t transport,
 	struct netlogon_creds_cli_context *netlogon_creds,
+	const char *remote_name,
+	const struct sockaddr_storage *remote_sockaddr,
 	struct rpc_pipe_client **_rpccli)
 {
 	struct rpc_pipe_client *rpccli;
@@ -3264,7 +3436,12 @@ NTSTATUS cli_rpc_pipe_open_bind_schannel(
 	enum dcerpc_AuthLevel auth_level;
 	NTSTATUS status;
 
-	status = cli_rpc_pipe_open(cli, transport, table, &rpccli);
+	status = cli_rpc_pipe_open(cli,
+				   transport,
+				   table,
+				   remote_name,
+				   remote_sockaddr,
+				   &rpccli);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -3316,6 +3493,8 @@ NTSTATUS cli_rpc_pipe_open_schannel_with_creds(struct cli_state *cli,
 					       const struct ndr_interface_table *table,
 					       enum dcerpc_transport_t transport,
 					       struct netlogon_creds_cli_context *netlogon_creds,
+					       const char *remote_name,
+					       const struct sockaddr_storage *remote_sockaddr,
 					       struct rpc_pipe_client **_rpccli)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
@@ -3333,8 +3512,13 @@ NTSTATUS cli_rpc_pipe_open_schannel_with_creds(struct cli_state *cli,
 		return status;
 	}
 
-	status = cli_rpc_pipe_open_bind_schannel(
-		cli, table, transport, netlogon_creds, &rpccli);
+	status = cli_rpc_pipe_open_bind_schannel(cli,
+						 table,
+						 transport,
+						 netlogon_creds,
+						 remote_name,
+						 remote_sockaddr,
+						 &rpccli);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NETWORK_ACCESS_DENIED)) {
 		netlogon_creds_cli_delete_lck(netlogon_creds);
 	}

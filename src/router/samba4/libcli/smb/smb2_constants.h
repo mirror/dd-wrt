@@ -133,18 +133,40 @@
 #define SMB2_ENCRYPTION_CAPABILITIES        0x0002
 #define SMB2_COMPRESSION_CAPABILITIES       0x0003
 #define SMB2_NETNAME_NEGOTIATE_CONTEXT_ID   0x0005
+#define SMB2_TRANSPORT_CAPABILITIES         0x0006
+#define SMB2_RDMA_TRANSFORM_CAPABILITIES    0x0007
+#define SMB2_SIGNING_CAPABILITIES           0x0008
 
 /* Values for the SMB2_PREAUTH_INTEGRITY_CAPABILITIES Context (>= 0x310) */
 #define SMB2_PREAUTH_INTEGRITY_SHA512       0x0001
 
-/* Values for the SMB2_ENCRYPTION_CAPABILITIES Context (>= 0x310) */
+/* Values for the SMB2_SIGNING_CAPABILITIES Context (>= 0x311) */
+#define SMB2_SIGNING_INVALID_ALGO          0xffff /* only used internally */
+#define SMB2_SIGNING_MD5_SMB1              0xfffe /* internally for SMB1 */
+#define SMB2_SIGNING_HMAC_SHA256           0x0000 /* default <= 0x210 */
+#define SMB2_SIGNING_AES128_CMAC           0x0001 /* default >= 0x224 */
+#define SMB2_SIGNING_AES128_GMAC           0x0002 /* only in dialect >= 0x311 */
+
+/* Values for the SMB2_ENCRYPTION_CAPABILITIES Context (>= 0x311) */
+#define SMB2_ENCRYPTION_INVALID_ALGO       0xffff /* only used internally */
+#define SMB2_ENCRYPTION_NONE               0x0000 /* only used internally */
 #define SMB2_ENCRYPTION_AES128_CCM         0x0001 /* only in dialect >= 0x224 */
-#define SMB2_ENCRYPTION_AES128_GCM         0x0002 /* only in dialect >= 0x310 */
+#define SMB2_ENCRYPTION_AES128_GCM         0x0002 /* only in dialect >= 0x311 */
+#define SMB2_ENCRYPTION_AES256_CCM         0x0003 /* only in dialect >= 0x311 */
+#define SMB2_ENCRYPTION_AES256_GCM         0x0004 /* only in dialect >= 0x311 */
 #define SMB2_NONCE_HIGH_MAX(nonce_len_bytes) ((uint64_t)(\
 	((nonce_len_bytes) >= 16) ? UINT64_MAX : \
 	((nonce_len_bytes) <= 8) ? 0 : \
 	(((uint64_t)1 << (((nonce_len_bytes) - 8)*8)) - 1) \
 	))
+
+/* Values for the SMB2_TRANSPORT_CAPABILITIES Context (>= 0x311) */
+#define SMB2_ACCEPT_TRANSPORT_LEVEL_SECURITY           0x0001
+
+/* Values for the SMB2_RDMA_TRANSFORM_CAPABILITIES Context (>= 0x311) */
+#define SMB2_RDMA_TRANSFORM_NONE                       0x0000
+#define SMB2_RDMA_TRANSFORM_ENCRYPTION                 0x0001
+#define SMB2_RDMA_TRANSFORM_SIGNING                    0x0002
 
 /* SMB2 session (request) flags */
 #define SMB2_SESSION_FLAG_BINDING       0x01

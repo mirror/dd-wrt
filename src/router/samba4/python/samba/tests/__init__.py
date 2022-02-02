@@ -17,10 +17,10 @@
 #
 
 """Samba Python tests."""
-from __future__ import print_function
 import os
 import tempfile
 import warnings
+import collections
 import ldb
 import samba
 from samba import param
@@ -61,6 +61,22 @@ BINDIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
 
 HEXDUMP_FILTER = bytearray([x if ((len(repr(chr(x))) == 3) and (x < 127)) else ord('.') for x in range(256)])
 
+LDB_ERR_LUT = {v: k for k,v in vars(ldb).items() if k.startswith('ERR_')}
+
+def ldb_err(v):
+    if isinstance(v, ldb.LdbError):
+        v = v.args[0]
+
+    if v in LDB_ERR_LUT:
+        return LDB_ERR_LUT[v]
+
+    try:
+        return f"[{', '.join(LDB_ERR_LUT.get(x, x) for x in v)}]"
+    except TypeError as e:
+        print(e)
+    return v
+
+
 def DynamicTestCase(cls):
     cls.setUpDynamicTestCases()
     return cls
@@ -69,7 +85,7 @@ class TestCase(unittest.TestCase):
     """A Samba test case."""
 
     @classmethod
-    def generate_dynamic_test(cls, fnname, suffix, *args):
+    def generate_dynamic_test(cls, fnname, suffix, *args, doc=None):
         """
         fnname is something like "test_dynamic_sum"
         suffix is something like "1plus2"
@@ -82,7 +98,11 @@ class TestCase(unittest.TestCase):
         """
         def fn(self):
             getattr(self, "_%s_with_args" % fnname)(*args)
-        setattr(cls, "%s_%s" % (fnname, suffix), fn)
+        fn.__doc__ = doc
+        attr = "%s_%s" % (fnname, suffix)
+        if hasattr(cls, attr):
+            raise RuntimeError(f"Dynamic test {attr} already exists!")
+        setattr(cls, attr, fn)
 
     @classmethod
     def setUpDynamicTestCases(cls):
@@ -188,6 +208,42 @@ class TestCase(unittest.TestCase):
                 sys.stderr.write(line)
 
             self.fail(msg)
+
+    def assertRaisesLdbError(self, errcode, message, f, *args, **kwargs):
+        """Assert a function raises a particular LdbError."""
+        if message is None:
+            message = f"{f.__name__}(*{args}, **{kwargs})"
+        try:
+            f(*args, **kwargs)
+        except ldb.LdbError as e:
+            (num, msg) = e.args
+            if isinstance(errcode, collections.abc.Container):
+                found = num in errcode
+            else:
+                found = num == errcode
+            if not found:
+                lut = {v: k for k, v in vars(ldb).items()
+                       if k.startswith('ERR_') and isinstance(v, int)}
+                if isinstance(errcode, collections.abc.Container):
+                    errcode_name = ' '.join(lut.get(x) for x in errcode)
+                else:
+                    errcode_name = lut.get(errcode)
+                self.fail(f"{message}, expected "
+                          f"LdbError {errcode_name}, {errcode} "
+                          f"got {lut.get(num)} ({num}) "
+                          f"{msg}")
+        else:
+            lut = {v: k for k, v in vars(ldb).items()
+                   if k.startswith('ERR_') and isinstance(v, int)}
+            if isinstance(errcode, collections.abc.Container):
+                errcode_name = ' '.join(lut.get(x) for x in errcode)
+            else:
+                errcode_name = lut.get(errcode)
+            self.fail("%s, expected "
+                      "LdbError %s, (%s) "
+                      "but we got success" % (message,
+                                              errcode_name,
+                                              errcode))
 
 
 class LdbTestCase(TestCase):

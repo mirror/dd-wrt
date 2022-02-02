@@ -211,6 +211,22 @@ struct tevent_fd *_tevent_add_fd(struct tevent_context *ev,
 		       #handler, __location__)
 #endif
 
+/**
+ * @brief Associate a custom tag with the event.
+ *
+ * This tag can be then retrieved with tevent_fd_get_tag()
+ *
+ * @param[in]  fde  The file descriptor event.
+ *
+ * @param[in]  tag  Custom tag.
+ */
+void tevent_fd_set_tag(struct tevent_fd *fde, uint64_t tag);
+
+/**
+ * @brief Get custom event tag.
+ */
+uint64_t tevent_fd_get_tag(const struct tevent_fd *fde);
+
 #ifdef DOXYGEN
 /**
  * @brief Add a timed event
@@ -269,6 +285,22 @@ struct tevent_timer *_tevent_add_timer(struct tevent_context *ev,
  */
 void tevent_update_timer(struct tevent_timer *te, struct timeval next_event);
 
+/**
+ * @brief Associate a custom tag with the event.
+ *
+ * This tag can be then retrieved with tevent_timer_get_tag()
+ *
+ * @param[in]  te   The timer event.
+ *
+ * @param[in]  tag  Custom tag.
+ */
+void tevent_timer_set_tag(struct tevent_timer *te, uint64_t tag);
+
+/**
+ * @brief Get custom event tag.
+ */
+uint64_t tevent_timer_get_tag(const struct tevent_timer *te);
+
 #ifdef DOXYGEN
 /**
  * Initialize an immediate event object
@@ -319,6 +351,22 @@ void _tevent_schedule_immediate(struct tevent_immediate *im,
 				   #handler, __location__);
 #endif
 
+/**
+ * @brief Associate a custom tag with the event.
+ *
+ * This tag can be then retrieved with tevent_immediate_get_tag()
+ *
+ * @param[in]  im   The immediate event.
+ *
+ * @param[in]  tag  Custom tag.
+ */
+void tevent_immediate_set_tag(struct tevent_immediate *im, uint64_t tag);
+
+/**
+ * @brief Get custom event tag.
+ */
+uint64_t tevent_immediate_get_tag(const struct tevent_immediate *fde);
+
 #ifdef DOXYGEN
 /**
  * @brief Add a tevent signal handler
@@ -365,6 +413,22 @@ struct tevent_signal *_tevent_add_signal(struct tevent_context *ev,
 	_tevent_add_signal(ev, mem_ctx, signum, sa_flags, handler, private_data, \
 			   #handler, __location__)
 #endif
+
+/**
+ * @brief Associate a custom tag with the event.
+ *
+ * This tag can be then retrieved with tevent_signal_get_tag()
+ *
+ * @param[in]  fde  The signal event.
+ *
+ * @param[in]  tag  Custom tag.
+ */
+void tevent_signal_set_tag(struct tevent_signal *se, uint64_t tag);
+
+/**
+ * @brief Get custom event tag.
+ */
+uint64_t tevent_signal_get_tag(const struct tevent_signal *se);
 
 /**
  * @brief the number of supported signals
@@ -627,6 +691,155 @@ void tevent_set_trace_callback(struct tevent_context *ev,
 void tevent_get_trace_callback(struct tevent_context *ev,
 			       tevent_trace_callback_t *cb,
 			       void *private_data);
+
+enum tevent_event_trace_point {
+	/**
+	 * Corresponds to a trace point just before the event is added.
+	 */
+	TEVENT_EVENT_TRACE_ATTACH,
+
+	/**
+	 * Corresponds to a trace point just before the event is removed.
+	 */
+	TEVENT_EVENT_TRACE_DETACH,
+
+	/**
+	 * Corresponds to a trace point just before the event handler is called.
+	 */
+	TEVENT_EVENT_TRACE_BEFORE_HANDLER,
+};
+
+typedef void (*tevent_trace_fd_callback_t)(struct tevent_fd *fde,
+					   enum tevent_event_trace_point,
+					   void *private_data);
+
+typedef void (*tevent_trace_signal_callback_t)(struct tevent_signal *se,
+					       enum tevent_event_trace_point,
+					       void *private_data);
+
+typedef void (*tevent_trace_timer_callback_t)(struct tevent_timer *te,
+					      enum tevent_event_trace_point,
+					      void *private_data);
+
+typedef void (*tevent_trace_immediate_callback_t)(struct tevent_immediate *im,
+						  enum tevent_event_trace_point,
+						  void *private_data);
+
+/**
+ * Register a callback to be called at certain trace points of fd event.
+ *
+ * @param[in] ev             Event context
+ * @param[in] cb             Trace callback
+ * @param[in] private_data   Data to be passed to callback
+ *
+ * @note The callback will be called at trace points defined by
+ * tevent_event_trace_point. Call with NULL to reset.
+ */
+void tevent_set_trace_fd_callback(struct tevent_context *ev,
+				  tevent_trace_fd_callback_t cb,
+				  void *private_data);
+
+/**
+ * Retrieve the current trace callback of file descriptor event.
+ *
+ * @param[in] ev             Event context
+ * @param[out] cb            Registered trace callback
+ * @param[out] p_private_data  Registered data to be passed to callback
+ *
+ * @note This can be used to allow one component that wants to
+ * register a callback to respect the callback that another component
+ * has already registered.
+ */
+void tevent_get_trace_fd_callback(struct tevent_context *ev,
+				  tevent_trace_fd_callback_t *cb,
+				  void *p_private_data);
+
+/**
+ * Register a callback to be called at certain trace points of signal event.
+ *
+ * @param[in] ev             Event context
+ * @param[in] cb             Trace callback
+ * @param[in] private_data   Data to be passed to callback
+ *
+ * @note The callback will be called at trace points defined by
+ * tevent_event_trace_point. Call with NULL to reset.
+ */
+void tevent_set_trace_signal_callback(struct tevent_context *ev,
+				      tevent_trace_signal_callback_t cb,
+				      void *private_data);
+
+/**
+ * Retrieve the current trace callback of signal event.
+ *
+ * @param[in] ev             Event context
+ * @param[out] cb            Registered trace callback
+ * @param[out] p_private_data  Registered data to be passed to callback
+ *
+ * @note This can be used to allow one component that wants to
+ * register a callback to respect the callback that another component
+ * has already registered.
+ */
+void tevent_get_trace_signal_callback(struct tevent_context *ev,
+				      tevent_trace_signal_callback_t *cb,
+				      void *p_private_data);
+
+/**
+ * Register a callback to be called at certain trace points of timer event.
+ *
+ * @param[in] ev             Event context
+ * @param[in] cb             Trace callback
+ * @param[in] private_data   Data to be passed to callback
+ *
+ * @note The callback will be called at trace points defined by
+ * tevent_event_trace_point. Call with NULL to reset.
+ */
+void tevent_set_trace_timer_callback(struct tevent_context *ev,
+				     tevent_trace_timer_callback_t cb,
+				     void *private_data);
+
+/**
+ * Retrieve the current trace callback of timer event.
+ *
+ * @param[in] ev             Event context
+ * @param[out] cb            Registered trace callback
+ * @param[out] p_private_data  Registered data to be passed to callback
+ *
+ * @note This can be used to allow one component that wants to
+ * register a callback to respect the callback that another component
+ * has already registered.
+ */
+void tevent_get_trace_timer_callback(struct tevent_context *ev,
+				     tevent_trace_timer_callback_t *cb,
+				     void *p_private_data);
+
+/**
+ * Register a callback to be called at certain trace points of immediate event.
+ *
+ * @param[in] ev             Event context
+ * @param[in] cb             Trace callback
+ * @param[in] private_data   Data to be passed to callback
+ *
+ * @note The callback will be called at trace points defined by
+ * tevent_event_trace_point. Call with NULL to reset.
+ */
+void tevent_set_trace_immediate_callback(struct tevent_context *ev,
+					 tevent_trace_immediate_callback_t cb,
+					 void *private_data);
+
+/**
+ * Retrieve the current trace callback of immediate event.
+ *
+ * @param[in] ev             Event context
+ * @param[out] cb            Registered trace callback
+ * @param[out] p_private_data  Registered data to be passed to callback
+ *
+ * @note This can be used to allow one component that wants to
+ * register a callback to respect the callback that another component
+ * has already registered.
+ */
+void tevent_get_trace_immediate_callback(struct tevent_context *ev,
+					 tevent_trace_immediate_callback_t *cb,
+					 void *p_private_data);
 
 /**
  * @}

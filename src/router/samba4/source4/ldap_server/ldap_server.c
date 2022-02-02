@@ -255,7 +255,9 @@ static int ldapsrv_load_limits(struct ldapsrv_connection *conn)
 			continue;
 		}
 		if (strcasecmp("MaxQueryDuration", policy_name) == 0) {
-			conn->limits.search_timeout = policy_value;
+			if (policy_value > 0) {
+				conn->limits.search_timeout = policy_value;
+			}
 			continue;
 		}
 	}
@@ -302,7 +304,6 @@ static void ldapsrv_accept(struct stream_connection *c,
 	struct ldapsrv_connection *conn;
 	struct cli_credentials *server_credentials;
 	struct socket_address *socket_address;
-	NTSTATUS status;
 	int port;
 	int ret;
 	struct tevent_req *subreq;
@@ -352,18 +353,12 @@ static void ldapsrv_accept(struct stream_connection *c,
 		conn->global_catalog = true;
 	}
 
-	server_credentials = cli_credentials_init(conn);
+	server_credentials = cli_credentials_init_server(conn, conn->lp_ctx);
 	if (!server_credentials) {
 		stream_terminate_connection(c, "Failed to init server credentials\n");
 		return;
 	}
 
-	cli_credentials_set_conf(server_credentials, conn->lp_ctx);
-	status = cli_credentials_set_machine_account(server_credentials, conn->lp_ctx);
-	if (!NT_STATUS_IS_OK(status)) {
-		stream_terminate_connection(c, talloc_asprintf(conn, "Failed to obtain server credentials, perhaps a standalone server?: %s\n", nt_errstr(status)));
-		return;
-	}
 	conn->server_credentials = server_credentials;
 
 	conn->session_info = session_info;

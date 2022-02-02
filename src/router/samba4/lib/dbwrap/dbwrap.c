@@ -110,16 +110,13 @@ NTSTATUS dbwrap_record_delete(struct db_record *rec)
 {
 	NTSTATUS status;
 
-	/*
-	 * Invalidate before rec->delete_rec() is called, give
-	 * rec->delete_rec() the chance to re-validate rec->value.
-	 */
-	rec->value_valid = false;
-
 	status = rec->delete_rec(rec);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
+
+	rec->value = tdb_null;
+
 	return NT_STATUS_OK;
 }
 
@@ -264,16 +261,6 @@ struct db_record *dbwrap_fetch_locked(struct db_context *db,
 {
 	return dbwrap_fetch_locked_internal(db, mem_ctx, key,
 					    db->fetch_locked);
-}
-
-struct db_record *dbwrap_try_fetch_locked(struct db_context *db,
-				      TALLOC_CTX *mem_ctx,
-				      TDB_DATA key)
-{
-	return dbwrap_fetch_locked_internal(
-		db, mem_ctx, key,
-		db->try_fetch_locked
-		? db->try_fetch_locked : db->fetch_locked);
 }
 
 struct db_context *dbwrap_record_get_db(struct db_record *rec)

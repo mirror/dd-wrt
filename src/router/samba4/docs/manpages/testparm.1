@@ -2,12 +2,12 @@
 .\"     Title: testparm
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 06/01/2021
+.\"      Date: 01/31/2022
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.5
+.\"    Source: Samba 4.15.5
 .\"  Language: English
 .\"
-.TH "TESTPARM" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
+.TH "TESTPARM" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 testparm \- check an smb\&.conf configuration file for internal correctness
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-testparm [\-s|\-\-suppress\-prompt] [\-\-help] [\-v|\-\-verbose] {config\ filename} [hostname\ hostIP]
+testparm [\-s|\-\-suppress\-prompt] [\-v|\-\-verbose] [\-?|\-\-help] [\-\-usage] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] {config\ filename} [hostname\ hostIP]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -66,44 +66,6 @@ testparm
 will prompt for a carriage return after printing the service names and before dumping the service definitions\&.
 .RE
 .PP
-\-V|\-\-version
-.RS 4
-Prints the program version number\&.
-.RE
-.PP
-\-\-option=<name>=<value>
-.RS 4
-Set the
-\fBsmb.conf\fR(5)
-option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&.
-.RE
-.PP
-\-?|\-\-help
-.RS 4
-Print a summary of command line options\&.
-.RE
-.PP
-\-\-usage
-.RS 4
-Display brief usage message\&.
-.RE
-.PP
-\-d|\-\-debuglevel=level
-.RS 4
-\fIlevel\fR
-is an integer from 0 to 10\&. The default value if this parameter is not specified is 1\&.
-.sp
-The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
-.sp
-Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
-.sp
-Note that specifying this parameter here will override the
-\m[blue]\fBlog level\fR\m[]
-parameter in the
-smb\&.conf
-file\&.
-.RE
-.PP
 \-v|\-\-verbose
 .RS 4
 If this option is specified, testparm will also output all options that were not used in
@@ -129,6 +91,57 @@ Show the parameters, type, possible values\&.
 \-l|\-\-skip\-logic\-checks
 .RS 4
 Skip the global checks\&.
+.RE
+.PP
+\-?|\-\-help
+.RS 4
+Print a summary of command line options\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Display brief usage message\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL
+.RS 4
+\fIlevel\fR
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
+.sp
+The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
+.sp
+Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBlog level\fR\m[]
+parameter in the
+smb\&.conf
+file\&.
+.RE
+.PP
+\-\-debug\-stdout
+.RS 4
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
+.RE
+.PP
+\-\-configfile=<configuration file>
+.RS 4
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
+smb\&.conf
+for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
 .RE
 .PP
 configfilename
@@ -171,7 +184,7 @@ The program will issue a message saying whether the configuration file loaded OK
 For certain use cases, SMB protocol requires use of cryptographic algorithms which are known to be weak and already broken\&. DES and ARCFOUR (RC4) ciphers and the SHA1 and MD5 hash algorithms are considered weak but they are required for backward compatibility\&. The testparm utility shows whether the Samba tools will fall back to these weak crypto algorithms if it is not possible to use strong cryptography by default\&. In FIPS mode weak crypto cannot be enabled\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.5 of the Samba suite\&.
+This man page is part of version 4\&.15\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsmb.conf\fR(5),

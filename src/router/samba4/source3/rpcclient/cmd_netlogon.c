@@ -102,6 +102,7 @@ static WERROR cmd_netlogon_logon_ctrl2(struct rpc_pipe_client *cli,
 			break;
 		case NETLOGON_CONTROL_SET_DBFLAG:
 			data.debug_level = atoi(domain);
+			break;
 		default:
 			break;
 	}
@@ -496,7 +497,7 @@ static NTSTATUS cmd_netlogon_sam_logon(struct rpc_pipe_client *cli,
 	uint32_t logon_param = 0;
 	const char *workstation = NULL;
 	struct netr_SamInfo3 *info3 = NULL;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	uint32_t flags = 0;
 	uint16_t validation_level;
 	union netr_Validation *validation = NULL;

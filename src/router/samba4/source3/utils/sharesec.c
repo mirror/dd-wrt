@@ -24,7 +24,7 @@
 struct cli_state;
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "../libcli/security/security.h"
 #include "passdb/machine_sid.h"
 #include "util_sd.h"
@@ -90,21 +90,21 @@ static struct security_descriptor* parse_acl_string(TALLOC_CTX *mem_ctx, const c
 /* add an ACE to a list of ACEs in a struct security_acl */
 static bool add_ace(TALLOC_CTX *mem_ctx, struct security_acl **the_acl, struct security_ace *ace)
 {
-	struct security_acl *new_ace;
-	struct security_ace *aces;
-	if (! *the_acl) {
-		return (((*the_acl) = make_sec_acl(mem_ctx, 3, 1, ace)) != NULL);
+	struct security_acl *acl = *the_acl;
+
+	if (acl == NULL) {
+		acl = make_sec_acl(mem_ctx, 3, 1, ace);
+		if (acl == NULL) {
+			return false;
+		}
 	}
 
-	if (!(aces = SMB_CALLOC_ARRAY(struct security_ace, 1+(*the_acl)->num_aces))) {
-		return False;
+	if (acl->num_aces == UINT32_MAX) {
+		return false;
 	}
-	memcpy(aces, (*the_acl)->aces, (*the_acl)->num_aces * sizeof(struct
-	security_ace));
-	memcpy(aces+(*the_acl)->num_aces, ace, sizeof(struct security_ace));
-	new_ace = make_sec_acl(mem_ctx,(*the_acl)->revision,1+(*the_acl)->num_aces, aces);
-	SAFE_FREE(aces);
-	(*the_acl) = new_ace;
+	ADD_TO_ARRAY(
+		acl, struct security_ace, *ace, &acl->aces, &acl->num_aces);
+	*the_acl = acl;
 	return True;
 }
 
@@ -321,6 +321,7 @@ static int view_sharesec_sddl(const char *sharename)
 
 enum {
 	OPT_VIEW_ALL = 1000,
+	OPT_VIEW_SDDL,
 };
 
 int main(int argc, const char *argv[])
@@ -334,6 +335,7 @@ int main(int argc, const char *argv[])
 	int snum;
 	poptContext pc;
 	bool initialize_sid = False;
+	bool ok;
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 		{
@@ -390,10 +392,9 @@ int main(int argc, const char *argv[])
 		},
 		{
 			.longName   = "viewsddl",
-			.shortName  = 'V',
 			.argInfo    = POPT_ARG_NONE,
 			.arg        = the_acl,
-			.val        = 'V',
+			.val        = OPT_VIEW_SDDL,
 			.descrip    = "View the SD in sddl format",
 		},
 		{
@@ -430,6 +431,7 @@ int main(int argc, const char *argv[])
 			.argDescrip = "ACLS",
 		},
 		POPT_COMMON_SAMBA
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
@@ -438,14 +440,29 @@ int main(int argc, const char *argv[])
 		return -1;
 	}
 
-	/* set default debug level to 1 regardless of what smb.conf sets */
-	setup_logging( "sharesec", DEBUG_STDERR);
-
 	smb_init_locale();
 
+	ok = samba_cmdline_init(ctx,
+				SAMBA_CMDLINE_CONFIG_NONE,
+				false /* require_smbconf */);
+	if (!ok) {
+		DBG_ERR("Failed to init cmdline parser!\n");
+		TALLOC_FREE(ctx);
+		exit(1);
+	}
+	/* set default debug level to 1 regardless of what smb.conf sets */
 	lp_set_cmdline("log level", "1");
 
-	pc = poptGetContext("sharesec", argc, argv, long_options, 0);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		DBG_ERR("Failed to setup popt context!\n");
+		TALLOC_FREE(ctx);
+		exit(1);
+	}
 
 	poptSetOtherOptionHelp(pc, "sharename\n");
 
@@ -480,7 +497,7 @@ int main(int argc, const char *argv[])
 			the_acl = smb_xstrdup(poptGetOptArg(pc));
 			break;
 
-		case 'V':
+		case OPT_VIEW_SDDL:
 			mode = SMB_SD_VIEWSDDL;
 			break;
 
@@ -498,6 +515,11 @@ int main(int argc, const char *argv[])
 		case OPT_VIEW_ALL:
 			mode = SMB_ACL_VIEW_ALL;
 			break;
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
 		}
 	}
 

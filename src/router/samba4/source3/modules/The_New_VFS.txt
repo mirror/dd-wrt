@@ -270,13 +270,13 @@ Table of Contents
    SMB_VFS_BRL_LOCK_WINDOWS()         [fsp]       -
    SMB_VFS_BRL_UNLOCK_WINDOWS()       [fsp]       -
    SMB_VFS_CHDIR()                    [Path]      Todo
-   SMB_VFS_CHFLAGS()                  [Path]      Todo
-   SMB_VFS_CHMOD()                    [Path]      Todo
+   SMB_VFS_CHFLAGS()                  [Path]      -
+   SMB_VFS_CHMOD()                    [Path]      -
    SMB_VFS_CLOSE()                    [fsp]       -
    SMB_VFS_CLOSEDIR()                 [fsp]       -
    SMB_VFS_CONNECT()                  [Disk]      -
    SMB_VFS_CONNECTPATH()              [P2px]      -
-   SMB_VFS_CREATE_DFS_PATHAT()        [NsC]       Todo
+   SMB_VFS_CREATE_DFS_PATHAT()        [NsC]       -
    SMB_VFS_CREATE_FILE()              [NsC]       -
    SMB_VFS_DISCONNECT()               [Disk]      -
    SMB_VFS_DISK_FREE()                [Disk]      -
@@ -310,25 +310,25 @@ Table of Contents
    SMB_VFS_GET_DOS_ATTRIBUTES_RECV()  [Enum]      -
    SMB_VFS_GET_DOS_ATTRIBUTES_SEND()  [Enum]      -
    SMB_VFS_GETLOCK()                  [fsp]       -
-   SMB_VFS_GET_NT_ACL_AT()            [Path]      Todo
+   SMB_VFS_GET_NT_ACL_AT()            [Path]      -
    SMB_VFS_GET_QUOTA()                [Special]   -
    SMB_VFS_GET_REAL_FILENAME()        [P2px]      -
    SMB_VFS_GET_SHADOW_COPY_DATA()     [fsp]       -
    SMB_VFS_GETWD()                    [Special]   -
-   SMB_VFS_GETXATTR()                 [Path]      Todo
+   SMB_VFS_GETXATTR()                 [Path]      -
    SMB_VFS_GETXATTRAT_RECV()          [Enum]      -
    SMB_VFS_GETXATTRAT_SEND()          [Enum]      -
    SMB_VFS_KERNEL_FLOCK()             [fsp]       -
    SMB_VFS_LCHOWN()                   [Path]      Todo
-   SMB_VFS_LINKAT()                   [NsC]       Todo
+   SMB_VFS_LINKAT()                   [NsC]       -
    SMB_VFS_LINUX_SETLEASE()           [fsp]       -
-   SMB_VFS_LISTXATTR()                [Path]      Todo
+   SMB_VFS_LISTXATTR()                [Path]      -
    SMB_VFS_LOCK()                     [fsp]       -
    SMB_VFS_LSEEK()                    [fsp]       -
    SMB_VFS_LSTAT()                    [Path]      Todo
    SMB_VFS_MKDIRAT()                  [NsC]       -
    SMB_VFS_MKNODAT()                  [NsC]       -
-   SMB_VFS_NTIMES()                   [Path]      Todo
+   SMB_VFS_NTIMES()                   [Path]      -
    SMB_VFS_OFFLOAD_READ_RECV()        [fsp]       -
    SMB_VFS_OFFLOAD_READ_SEND()        [fsp]       -
    SMB_VFS_OFFLOAD_WRITE_RECV()       [fsp]       -
@@ -338,38 +338,38 @@ Table of Contents
    SMB_VFS_PREAD_SEND()               [fsp]       -
    SMB_VFS_PWRITE()                   [fsp]       -
    SMB_VFS_PWRITE_SEND()              [fsp]       -
-   SMB_VFS_READ_DFS_PATHAT()          [Symlink]   Todo
+   SMB_VFS_READ_DFS_PATHAT()          [Symlink]   -
    SMB_VFS_READDIR()                  [fsp]       -
-   SMB_VFS_READDIR_ATTR()             [Path]      Todo
-   SMB_VFS_READLINKAT()               [Symlink]   Todo
+   SMB_VFS_READDIR_ATTR()             [Path]      -
+   SMB_VFS_READLINKAT()               [Symlink]   -
    SMB_VFS_REALPATH()                 [P2px]      -
    SMB_VFS_RECVFILE()                 [fsp]       -
-   SMB_VFS_REMOVEXATTR()              [Path]      Todo
-   SMB_VFS_RENAMEAT()                 [Path]      Todo
+   SMB_VFS_REMOVEXATTR()              [Path]      -
+   SMB_VFS_RENAMEAT()                 [Path]      -
    SMB_VFS_REWINDDIR()                [fsp]       -
    SMB_VFS_SEEKDIR()                  [fsp]       -
    SMB_VFS_SENDFILE()                 [fsp]       -
    SMB_VFS_SET_COMPRESSION()          [fsp]       -
    SMB_VFS_SET_DOS_ATTRIBUTES()       [Path]      -
    SMB_VFS_SET_QUOTA()                [Special]   -
-   SMB_VFS_SETXATTR()                 [Path]      Todo
+   SMB_VFS_SETXATTR()                 [Path]      -
    SMB_VFS_SNAP_CHECK_PATH()          [Disk]      -
    SMB_VFS_SNAP_CREATE()              [Disk]      -
    SMB_VFS_SNAP_DELETE()              [Disk]      -
    SMB_VFS_STAT()                     [Path]      Todo
    SMB_VFS_STATVFS()                  [Disk]      -
-   SMB_VFS_STREAMINFO()               [Path]      Todo
+   SMB_VFS_STREAMINFO()               [Path]      -
    SMB_VFS_STRICT_LOCK_CHECK()        [fsp]       -
    SMB_VFS_SYMLINKAT()                [NsC]       -
    SMB_VFS_SYS_ACL_BLOB_GET_FD()      [xpathref]  -
-   SMB_VFS_SYS_ACL_BLOB_GET_FILE()    [Path]      Todo
-   SMB_VFS_SYS_ACL_DELETE_DEF_FILE()  [Path]      Todo
+   SMB_VFS_SYS_ACL_BLOB_GET_FILE()    [Path]      -
+   SMB_VFS_SYS_ACL_DELETE_DEF_FILE()  [Path]      -
    SMB_VFS_SYS_ACL_GET_FD()           [xpathref]  -
-   SMB_VFS_SYS_ACL_GET_FILE()         [Path]      Todo
+   SMB_VFS_SYS_ACL_GET_FILE()         [Path]      -
    SMB_VFS_SYS_ACL_SET_FD()           [xpathref]  -
    SMB_VFS_TELLDIR()                  [fsp]       -
    SMB_VFS_TRANSLATE_NAME()           [P2px]      -
-   SMB_VFS_UNLINKAT()                 [NsC]       Todo
+   SMB_VFS_UNLINKAT()                 [NsC]       -
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
@@ -398,9 +398,8 @@ Table of Contents
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    VFS Function                     Group       Status
   ─────────────────────────────────────────────────────
-   SMB_VFS_SYS_ACL_DELETE_DEF_FD()  [xpathref]  Todo
-   SMB_VFS_READDIR_ATTRAT()         [Enum]      Todo
-   SMB_VFS_FUTIMENS()               [fsp]       Todo
+   SMB_VFS_SYS_ACL_DELETE_DEF_FD()  [xpathref]  -
+   SMB_VFS_FNTIMENS()               [fsp]       -
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
@@ -556,7 +555,6 @@ Table of Contents
 
   • SMB_VFS_GET_DOS_ATTRIBUTES_SEND()
   • SMB_VFS_GETXATTRAT_SEND()
-  • SMB_VFS_READDIR_ATTRAT() (NEW)
 
 
 2.2.7 Handle based VFS functions not allowed on O_PATH opened handles

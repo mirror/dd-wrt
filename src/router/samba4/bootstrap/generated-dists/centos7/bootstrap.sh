@@ -45,6 +45,7 @@ yum install -y \
     keyutils-libs-devel \
     krb5-devel \
     krb5-server \
+    krb5-workstation \
     lcov \
     libacl-devel \
     libarchive-devel \
@@ -53,7 +54,6 @@ yum install -y \
     libbsd-devel \
     libcap-devel \
     libicu-devel \
-    libnsl2-devel \
     libpcap-devel \
     libsemanage-python \
     libtasn1-devel \

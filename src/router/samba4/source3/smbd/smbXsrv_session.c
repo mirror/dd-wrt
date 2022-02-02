@@ -872,6 +872,23 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 
 	global = global_blob.info.info0;
 
+#define __BLOB_KEEP_SECRET(__blob) do { \
+	if ((__blob).length != 0) { \
+		talloc_keep_secret((__blob).data); \
+	} \
+} while(0)
+	{
+		uint32_t i;
+		__BLOB_KEEP_SECRET(global->application_key_blob);
+		__BLOB_KEEP_SECRET(global->signing_key_blob);
+		__BLOB_KEEP_SECRET(global->encryption_key_blob);
+		__BLOB_KEEP_SECRET(global->decryption_key_blob);
+		for (i = 0; i < global->num_channels; i++) {
+			__BLOB_KEEP_SECRET(global->channels[i].signing_key_blob);
+		}
+	}
+#undef __BLOB_KEEP_SECRET
+
 	exists = serverid_exists(&global->channels[0].server_id);
 	if (!exists) {
 		struct server_id_buf idbuf;
@@ -1145,6 +1162,10 @@ static void smb2srv_session_close_previous_modified(struct tevent_req *subreq)
 	state->db_rec = smbXsrv_session_global_fetch_locked(
 		state->connection->client->session_table->global.db_ctx,
 		global_id, state /* TALLOC_CTX */);
+	if (state->db_rec == NULL) {
+		tevent_req_nterror(req, NT_STATUS_UNSUCCESSFUL);
+		return;
+	}
 
 	smb2srv_session_close_previous_check(req);
 }
@@ -1197,6 +1218,9 @@ static NTSTATUS smbXsrv_session_clear_and_logoff(struct smbXsrv_session *session
 static int smbXsrv_session_destructor(struct smbXsrv_session *session)
 {
 	NTSTATUS status;
+
+	DBG_DEBUG("destructing session(%llu)\n",
+		  (unsigned long long)session->global->session_wire_id);
 
 	status = smbXsrv_session_clear_and_logoff(session);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1402,6 +1426,13 @@ NTSTATUS smbXsrv_session_update(struct smbXsrv_session *session)
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 
+	if (table == NULL) {
+		DEBUG(0, ("smbXsrv_session_update(0x%08x): "
+			  "Called with table == NULL'\n",
+			  session->global->session_global_id));
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
 	session->global->db_rec = smbXsrv_session_global_fetch_locked(
 					table->global.db_ctx,
 					session->global->session_global_id,
@@ -1519,7 +1550,7 @@ NTSTATUS smbXsrv_session_create_auth(struct smbXsrv_session *session,
 	a->idle_time = now;
 	a->channel_id = conn->channel_id;
 
-	if (conn->protocol >= PROTOCOL_SMB3_10) {
+	if (conn->protocol >= PROTOCOL_SMB3_11) {
 		a->preauth = talloc(a, struct smbXsrv_preauth);
 		if (a->preauth == NULL) {
 			TALLOC_FREE(session);
@@ -1533,6 +1564,124 @@ NTSTATUS smbXsrv_session_create_auth(struct smbXsrv_session *session,
 
 	*_a = a;
 	return NT_STATUS_OK;
+}
+
+static void smbXsrv_session_remove_channel_done(struct tevent_req *subreq);
+
+NTSTATUS smbXsrv_session_remove_channel(struct smbXsrv_session *session,
+					struct smbXsrv_connection *xconn)
+{
+	struct smbXsrv_session_auth0 *a = NULL;
+	struct smbXsrv_channel_global0 *c = NULL;
+	NTSTATUS status;
+	bool need_update = false;
+
+	status = smbXsrv_session_find_auth(session, xconn, 0, &a);
+	if (!NT_STATUS_IS_OK(status)) {
+		a = NULL;
+	}
+	status = smbXsrv_session_find_channel(session, xconn, &c);
+	if (!NT_STATUS_IS_OK(status)) {
+		c = NULL;
+	}
+
+	if (a != NULL) {
+		smbXsrv_session_auth0_destructor(a);
+		a->connection = NULL;
+		need_update = true;
+	}
+
+	if (c != NULL) {
+		struct smbXsrv_session_global0 *global = session->global;
+		ptrdiff_t n;
+
+		n = (c - global->channels);
+		if (n >= global->num_channels || n < 0) {
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+		ARRAY_DEL_ELEMENT(global->channels, n, global->num_channels);
+		global->num_channels--;
+		if (global->num_channels == 0) {
+			struct smbXsrv_client *client = session->client;
+			struct tevent_queue *xconn_wait_queue =
+				xconn->transport.shutdown_wait_queue;
+			struct tevent_req *subreq = NULL;
+
+			/*
+			 * Let the connection wait until the session is
+			 * destroyed.
+			 *
+			 * We don't set a callback, as we just want to block the
+			 * wait queue and the talloc_free() of the session will
+			 * remove the item from the wait queue in order
+			 * to remove allow the connection to disapear.
+			 */
+			if (xconn_wait_queue != NULL) {
+				subreq = tevent_queue_wait_send(session,
+								client->raw_ev_ctx,
+								xconn_wait_queue);
+				if (subreq == NULL) {
+					status = NT_STATUS_NO_MEMORY;
+					DBG_ERR("tevent_queue_wait_send() session(%llu) failed: %s\n",
+						(unsigned long long)session->global->session_wire_id,
+						nt_errstr(status));
+					return status;
+				}
+			}
+
+			/*
+			 * This is garanteed to set
+			 * session->status = NT_STATUS_USER_SESSION_DELETED
+			 * even if NULL is returned.
+			 */
+			subreq = smb2srv_session_shutdown_send(session,
+							       client->raw_ev_ctx,
+							       session,
+							       NULL);
+			if (subreq == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				DBG_ERR("smb2srv_session_shutdown_send(%llu) failed: %s\n",
+					(unsigned long long)session->global->session_wire_id,
+					nt_errstr(status));
+				return status;
+			}
+			tevent_req_set_callback(subreq,
+						smbXsrv_session_remove_channel_done,
+						session);
+		}
+		need_update = true;
+	}
+
+	if (!need_update) {
+		return NT_STATUS_OK;
+	}
+
+	return smbXsrv_session_update(session);
+}
+
+static void smbXsrv_session_remove_channel_done(struct tevent_req *subreq)
+{
+	struct smbXsrv_session *session =
+		tevent_req_callback_data(subreq,
+		struct smbXsrv_session);
+	NTSTATUS status;
+
+	status = smb2srv_session_shutdown_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("smb2srv_session_shutdown_recv(%llu) failed: %s\n",
+			(unsigned long long)session->global->session_wire_id,
+			nt_errstr(status));
+	}
+
+	status = smbXsrv_session_logoff(session);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("smbXsrv_session_logoff(%llu) failed: %s\n",
+			(unsigned long long)session->global->session_wire_id,
+			nt_errstr(status));
+	}
+
+	TALLOC_FREE(session);
 }
 
 struct smb2srv_session_shutdown_state {
@@ -1581,28 +1730,7 @@ struct tevent_req *smb2srv_session_shutdown_send(TALLOC_CTX *mem_ctx,
 				continue;
 			}
 
-			if (!NT_STATUS_IS_OK(xconn->transport.status)) {
-				preq->session = NULL;
-				/*
-				 * If we no longer have a session we can't
-				 * sign or encrypt replies.
-				 */
-				preq->do_signing = false;
-				preq->do_encryption = false;
-				preq->preauth = NULL;
-
-				if (preq->subreq != NULL) {
-					tevent_req_cancel(preq->subreq);
-				}
-				continue;
-			}
-
-			/*
-			 * Never cancel anything in a compound
-			 * request. Way too hard to deal with
-			 * the result.
-			 */
-			if (!preq->compound_related && preq->subreq != NULL) {
+			if (preq->subreq != NULL) {
 				tevent_req_cancel(preq->subreq);
 			}
 
@@ -1831,8 +1959,8 @@ static int smbXsrv_session_logoff_all_callback(struct db_record *local_rec,
 	session = talloc_get_type_abort(ptr, struct smbXsrv_session);
 
 	session->db_rec = local_rec;
-
 	status = smbXsrv_session_clear_and_logoff(session);
+	session->db_rec = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
 		if (NT_STATUS_IS_OK(state->first_status)) {
 			state->first_status = status;
@@ -1901,6 +2029,7 @@ static int smbXsrv_session_local_traverse_cb(struct db_record *local_rec,
 	TDB_DATA val;
 	void *ptr = NULL;
 	struct smbXsrv_session *session = NULL;
+	int ret;
 
 	val = dbwrap_record_get_value(local_rec);
 	if (val.dsize != sizeof(ptr)) {
@@ -1910,9 +2039,12 @@ static int smbXsrv_session_local_traverse_cb(struct db_record *local_rec,
 
 	memcpy(&ptr, val.dptr, val.dsize);
 	session = talloc_get_type_abort(ptr, struct smbXsrv_session);
-	session->db_rec = local_rec;
 
-	return state->caller_cb(session, state->caller_data);
+	session->db_rec = local_rec;
+	ret = state->caller_cb(session, state->caller_data);
+	session->db_rec = NULL;
+
+	return ret;
 }
 
 struct smbXsrv_session_disconnect_xconn_state {
@@ -1967,10 +2099,7 @@ static int smbXsrv_session_disconnect_xconn_callback(struct db_record *local_rec
 	TDB_DATA val;
 	void *ptr = NULL;
 	struct smbXsrv_session *session = NULL;
-	struct smbXsrv_session_auth0 *a = NULL;
-	struct smbXsrv_channel_global0 *c = NULL;
 	NTSTATUS status;
-	bool need_update = false;
 
 	val = dbwrap_record_get_value(local_rec);
 	if (val.dsize != sizeof(ptr)) {
@@ -1986,48 +2115,9 @@ static int smbXsrv_session_disconnect_xconn_callback(struct db_record *local_rec
 	session = talloc_get_type_abort(ptr, struct smbXsrv_session);
 
 	session->db_rec = local_rec;
-
-	status = smbXsrv_session_find_auth(session, state->xconn, 0, &a);
+	status = smbXsrv_session_remove_channel(session, state->xconn);
+	session->db_rec = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
-		a = NULL;
-	}
-	status = smbXsrv_session_find_channel(session, state->xconn, &c);
-	if (!NT_STATUS_IS_OK(status)) {
-		c = NULL;
-	}
-	if (session->global->num_channels <= 1) {
-		/*
-		 * The last channel is treated different
-		 */
-		c = NULL;
-	}
-
-	if (a != NULL) {
-		smbXsrv_session_auth0_destructor(a);
-		a->connection = NULL;
-		need_update = true;
-	}
-
-	if (c != NULL) {
-		struct smbXsrv_session_global0 *global = session->global;
-		ptrdiff_t n;
-
-		n = (c - global->channels);
-		if (n >= global->num_channels || n < 0) {
-			status = NT_STATUS_INTERNAL_ERROR;
-			if (NT_STATUS_IS_OK(state->first_status)) {
-				state->first_status = status;
-			}
-			state->errors++;
-			return 0;
-		}
-		ARRAY_DEL_ELEMENT(global->channels, n, global->num_channels);
-		global->num_channels--;
-		need_update = true;
-	}
-
-	if (need_update) {
-		status = smbXsrv_session_update(session);
 		if (NT_STATUS_IS_OK(state->first_status)) {
 			state->first_status = status;
 		}
@@ -2156,6 +2246,115 @@ NTSTATUS get_valid_smbXsrv_session(struct smbXsrv_client *client,
 	return NT_STATUS_OK;
 }
 
+NTSTATUS smb2srv_session_lookup_global(struct smbXsrv_client *client,
+				       uint64_t session_wire_id,
+				       TALLOC_CTX *mem_ctx,
+				       struct smbXsrv_session **_session)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct smbXsrv_session_table *table = client->session_table;
+	uint32_t global_id = session_wire_id & UINT32_MAX;
+	uint64_t global_zeros = session_wire_id & 0xFFFFFFFF00000000LLU;
+	struct smbXsrv_session *session = NULL;
+	struct db_record *global_rec = NULL;
+	bool is_free = false;
+	NTSTATUS status;
+
+	if (global_id == 0) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_USER_SESSION_DELETED;
+	}
+	if (global_zeros != 0) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_USER_SESSION_DELETED;
+	}
+
+	if (table == NULL) {
+		/* this might happen before the end of negprot */
+		TALLOC_FREE(frame);
+		return NT_STATUS_USER_SESSION_DELETED;
+	}
+
+	if (table->global.db_ctx == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	session = talloc_zero(mem_ctx, struct smbXsrv_session);
+	if (session == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+	talloc_steal(frame, session);
+
+	session->client = client;
+	session->status = NT_STATUS_BAD_LOGON_SESSION_STATE;
+	session->local_id = global_id;
+
+	/*
+	 * This means smb2_get_new_nonce() will return
+	 * NT_STATUS_ENCRYPTION_FAILED.
+	 *
+	 * But we intialize some random parts just in case...
+	 */
+	session->nonce_high_max = session->nonce_high = 0;
+	generate_nonce_buffer((uint8_t *)&session->nonce_high_random,
+			      sizeof(session->nonce_high_random));
+	generate_nonce_buffer((uint8_t *)&session->nonce_low,
+			      sizeof(session->nonce_low));
+
+	global_rec = smbXsrv_session_global_fetch_locked(table->global.db_ctx,
+							 global_id,
+							 frame);
+	if (global_rec == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_INTERNAL_DB_ERROR;
+	}
+
+	smbXsrv_session_global_verify_record(global_rec,
+					     &is_free,
+					     NULL,
+					     session,
+					     &session->global);
+	if (is_free) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_USER_SESSION_DELETED;
+	}
+
+	/*
+	 * We don't have channels on this session
+	 * and only the main signing key
+	 */
+	session->global->num_channels = 0;
+	status = smb2_signing_key_sign_create(session->global,
+					      session->global->signing_algo,
+					      NULL, /* no master key */
+					      NULL, /* derivations */
+					      &session->global->signing_key);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+	session->global->signing_key->blob = session->global->signing_key_blob;
+	session->global->signing_flags = 0;
+
+	status = smb2_signing_key_cipher_create(session->global,
+						session->global->encryption_cipher,
+						NULL, /* no master key */
+						NULL, /* derivations */
+						&session->global->decryption_key);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+	session->global->decryption_key->blob = session->global->decryption_key_blob;
+	session->global->encryption_flags = 0;
+
+	*_session = talloc_move(mem_ctx, &session);
+	TALLOC_FREE(frame);
+	return NT_STATUS_OK;
+}
+
 NTSTATUS smb2srv_session_table_init(struct smbXsrv_connection *conn)
 {
 	/*
@@ -2232,6 +2431,13 @@ static int smbXsrv_session_global_traverse_fn(struct db_record *rec, void *data)
 			 "key '%s' unsupported version - %d\n",
 			 hex_encode_talloc(frame, key.dptr, key.dsize),
 			 (int)global_blob.version));
+		goto done;
+	}
+
+	if (global_blob.info.info0 == NULL) {
+		DEBUG(1,("Invalid record in smbXsrv_tcon_global.tdb:"
+			 "key '%s' info0 NULL pointer\n",
+			 hex_encode_talloc(frame, key.dptr, key.dsize)));
 		goto done;
 	}
 

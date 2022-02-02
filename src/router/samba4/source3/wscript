@@ -13,7 +13,6 @@ import build.charset
 from wafsamba import samba_utils
 from samba_utils import TO_LIST
 import samba3
-from waflib.Tools import bison
 
 default_prefix = Options.default_prefix = '/usr/local/samba'
 
@@ -73,7 +72,6 @@ def options(opt):
     opt.samba_add_onoff_option('avahi', with_name="enable", without_name="disable")
     opt.samba_add_onoff_option('iconv')
     opt.samba_add_onoff_option('acl-support')
-    opt.samba_add_onoff_option('dnsupdate')
     opt.samba_add_onoff_option('syslog')
     opt.samba_add_onoff_option('automount')
     opt.samba_add_onoff_option('dmapi', default=None) # None means autodetection
@@ -126,7 +124,7 @@ def configure(conf):
     conf.CHECK_HEADERS('linux/falloc.h linux/ioctl.h')
 
     conf.CHECK_FUNCS('getcwd fchown chmod fchmod mknod mknodat')
-    conf.CHECK_FUNCS('strtol strchr strupr chflags')
+    conf.CHECK_FUNCS('strtol strchr strupr chflags fchflags')
     conf.CHECK_FUNCS('getrlimit fsync setpgid')
     conf.CHECK_FUNCS('setsid glob strpbrk crypt16 getauthuid')
     conf.CHECK_FUNCS('innetgr')
@@ -136,13 +134,11 @@ def configure(conf):
     conf.CHECK_FUNCS('fseeko setluid')
     conf.CHECK_FUNCS('getpwnam', headers='sys/types.h pwd.h')
     conf.CHECK_FUNCS('fdopendir')
-    conf.CHECK_FUNCS('fstatat')
     conf.CHECK_FUNCS('getpwent_r setenv clearenv strcasecmp')
     conf.CHECK_FUNCS('syslog vsyslog timegm setlocale')
-    conf.CHECK_FUNCS('lutimes futimes utimensat futimens')
+    conf.CHECK_FUNCS('lutimes utimensat futimens')
     conf.CHECK_FUNCS('mlock munlock mlockall munlockall')
     conf.CHECK_FUNCS('memalign posix_memalign hstrerror')
-    conf.CHECK_FUNCS_IN('yp_get_default_domain', 'nsl')
     conf.CHECK_FUNCS_IN('dn_expand _dn_expand __dn_expand', 'resolv')
     conf.CHECK_FUNCS_IN('dn_expand', 'inet')
     conf.CHECK_DECLS('readahead', reverse=True, headers='fcntl.h')
@@ -387,10 +383,10 @@ int main(int argc, char **argv) {
 DNSServiceRegister
 atexit
 chflags
+fchflags
 chmod
 crypt16
 devnm
-dirfd
 endmntent
 execl
 fchmod
@@ -398,7 +394,6 @@ fchown
 fseeko
 fsync
 futimens
-futimes
 getauthuid
 getcwd
 getgrent
@@ -543,10 +538,6 @@ return acl_get_perm_np(permset_d, perm);
                 Logs.info('Using solaris or UnixWare ACLs')
                 conf.DEFINE('HAVE_SOLARIS_UNIXWARE_ACLS',1)
                 default_static_modules.extend(['vfs_solarisacl'])
-            elif conf.CHECK_FUNCS_IN(['acl_get_fd'], 'pacl'):
-                Logs.info('Using Tru64 ACLs')
-                conf.DEFINE('HAVE_TRU64_ACLS',1)
-                default_static_modules.extend(['vfs_tru64acl'])
             else:
                 conf.fatal("ACL support not found. Try installing libacl1-dev "
                            "or libacl-devel.  "
@@ -636,9 +627,6 @@ msg.msg_accrightslen = sizeof(fd);
     conf.CHECK_STRUCTURE_MEMBER('struct dirent', 'd_off',
                                 headers='unistd.h sys/types.h dirent.h',
                                 define='HAVE_DIRENT_D_OFF')
-
-    if (conf.CONFIG_SET('HAVE_YP_GET_DEFAULT_DOMAIN')):
-           conf.DEFINE('HAVE_NETGROUP', '1')
 
     # Look for CUPS
     if Options.options.with_cups:
@@ -1082,11 +1070,6 @@ syscall(SYS_setgroups32, 0, NULL);
                                 execute=True,
                                 mandatory=True,
                                 msg="Checking whether setuidx is available")
-    if Options.options.with_dnsupdate:
-        if not conf.CONFIG_SET('HAVE_KRB5'):
-            Logs.warn("--with-dnsupdate=yes but gssapi support not sufficient")
-        else:
-            conf.DEFINE('WITH_DNS_UPDATES', 1)
     # valgrind.h or valgrind/valgrind.h is checked in lib/replace/wscript
     if Options.options.developer:
         if conf.CONFIG_SET('HAVE_VALGRIND_H') or conf.CONFIG_SET('HAVE_VALGRIND_VALGRIND_H'):
@@ -1841,14 +1824,6 @@ main() {
             conf.DEFINE('HAVE_TRACKER', '1')
             break
 
-    Logs.info("Checking for bison")
-    bison.configure(conf)
-    if conf.env['BISON']:
-        conf.CHECK_COMMAND('%s --version  | head -n1' % conf.env.BISON[0],
-                           msg='Using bison version',
-                           define=None,
-                           on_target=False)
-
     with_spotlight_tracker_backend = (
         conf.CONFIG_SET('HAVE_TRACKER')
         and conf.CONFIG_SET('HAVE_GLIB')
@@ -1903,7 +1878,7 @@ main() {
         conf.env.with_spotlight = True
 
     if not conf.CONFIG_SET('HAVE_RPC_XDR_H'):
-        conf.CHECK_HEADERS('rpc/xdr.h', lib='tirpc')
+        conf.CHECK_HEADERS('rpc/types.h rpc/xdr.h', together=True, lib='tirpc')
 
     if conf.CHECK_FUNCS_IN('nscd_flush_cache', 'nscd', headers='libnscd.h'):
         conf.DEFINE('HAVE_NSCD_FLUSH_CACHE', '1')
@@ -1934,7 +1909,7 @@ main() {
         default_static_modules.extend(['charset_weird'])
         default_shared_modules.extend(['perfcount_test',
                                        'vfs_skel_opaque', 'vfs_skel_transparent', 'vfs_shadow_copy_test',
-                                       'auth_skel', 'pdb_test',
+                                       'pdb_test',
                                        'vfs_fake_dfq',
                                        'gpext_security', 'gpext_registry', 'gpext_scripts'])
 

@@ -39,154 +39,13 @@
 #include "lib/util/sys_rw_data.h"
 #include "lib/util/string_wrappers.h"
 #include "lib/global_contexts.h"
+#include "source3/printing/rap_jobid.h"
+#include "source3/lib/substitute.h"
 
 extern userdom_struct current_user_info;
 
 /* Current printer interface */
 static bool remove_from_jobs_added(const char* sharename, uint32_t jobid);
-
-/*
-   the printing backend revolves around a tdb database that stores the
-   SMB view of the print queue
-
-   The key for this database is a jobid - a internally generated number that
-   uniquely identifies a print job
-
-   reading the print queue involves two steps:
-     - possibly running lpq and updating the internal database from that
-     - reading entries from the database
-
-   jobids are assigned when a job starts spooling.
-*/
-
-static TDB_CONTEXT *rap_tdb;
-static uint16_t next_rap_jobid;
-struct rap_jobid_key {
-	fstring sharename;
-	uint32_t  jobid;
-};
-
-/***************************************************************************
- Nightmare. LANMAN jobid's are 16 bit numbers..... We must map them to 32
- bit RPC jobids.... JRA.
-***************************************************************************/
-
-uint16_t pjobid_to_rap(const char* sharename, uint32_t jobid)
-{
-	uint16_t rap_jobid;
-	TDB_DATA data, key;
-	struct rap_jobid_key jinfo;
-	uint8_t buf[2];
-
-	DEBUG(10,("pjobid_to_rap: called.\n"));
-
-	if (!rap_tdb) {
-		/* Create the in-memory tdb. */
-		rap_tdb = tdb_open_log(NULL, 0, TDB_INTERNAL, (O_RDWR|O_CREAT), 0644);
-		if (!rap_tdb)
-			return 0;
-	}
-
-	ZERO_STRUCT( jinfo );
-	fstrcpy( jinfo.sharename, sharename );
-	jinfo.jobid = jobid;
-	key.dptr = (uint8_t *)&jinfo;
-	key.dsize = sizeof(jinfo);
-
-	data = tdb_fetch(rap_tdb, key);
-	if (data.dptr && data.dsize == sizeof(uint16_t)) {
-		rap_jobid = SVAL(data.dptr, 0);
-		SAFE_FREE(data.dptr);
-		DEBUG(10,("pjobid_to_rap: jobid %u maps to RAP jobid %u\n",
-			(unsigned int)jobid, (unsigned int)rap_jobid));
-		return rap_jobid;
-	}
-	SAFE_FREE(data.dptr);
-	/* Not found - create and store mapping. */
-	rap_jobid = ++next_rap_jobid;
-	if (rap_jobid == 0)
-		rap_jobid = ++next_rap_jobid;
-	SSVAL(buf,0,rap_jobid);
-	data.dptr = buf;
-	data.dsize = sizeof(rap_jobid);
-	tdb_store(rap_tdb, key, data, TDB_REPLACE);
-	tdb_store(rap_tdb, data, key, TDB_REPLACE);
-
-	DEBUG(10,("pjobid_to_rap: created jobid %u maps to RAP jobid %u\n",
-		(unsigned int)jobid, (unsigned int)rap_jobid));
-	return rap_jobid;
-}
-
-bool rap_to_pjobid(uint16_t rap_jobid, fstring sharename, uint32_t *pjobid)
-{
-	TDB_DATA data, key;
-	uint8_t buf[2];
-
-	DEBUG(10,("rap_to_pjobid called.\n"));
-
-	if (!rap_tdb)
-		return False;
-
-	SSVAL(buf,0,rap_jobid);
-	key.dptr = buf;
-	key.dsize = sizeof(rap_jobid);
-	data = tdb_fetch(rap_tdb, key);
-	if ( data.dptr && data.dsize == sizeof(struct rap_jobid_key) )
-	{
-		struct rap_jobid_key *jinfo = (struct rap_jobid_key*)data.dptr;
-		if (sharename != NULL) {
-			fstrcpy( sharename, jinfo->sharename );
-		}
-		*pjobid = jinfo->jobid;
-		DEBUG(10,("rap_to_pjobid: jobid %u maps to RAP jobid %u\n",
-			(unsigned int)*pjobid, (unsigned int)rap_jobid));
-		SAFE_FREE(data.dptr);
-		return True;
-	}
-
-	DEBUG(10,("rap_to_pjobid: Failed to lookup RAP jobid %u\n",
-		(unsigned int)rap_jobid));
-	SAFE_FREE(data.dptr);
-	return False;
-}
-
-void rap_jobid_delete(const char* sharename, uint32_t jobid)
-{
-	TDB_DATA key, data;
-	uint16_t rap_jobid;
-	struct rap_jobid_key jinfo;
-	uint8_t buf[2];
-
-	DEBUG(10,("rap_jobid_delete: called.\n"));
-
-	if (!rap_tdb)
-		return;
-
-	ZERO_STRUCT( jinfo );
-	fstrcpy( jinfo.sharename, sharename );
-	jinfo.jobid = jobid;
-	key.dptr = (uint8_t *)&jinfo;
-	key.dsize = sizeof(jinfo);
-
-	data = tdb_fetch(rap_tdb, key);
-	if (!data.dptr || (data.dsize != sizeof(uint16_t))) {
-		DEBUG(10,("rap_jobid_delete: cannot find jobid %u\n",
-			(unsigned int)jobid ));
-		SAFE_FREE(data.dptr);
-		return;
-	}
-
-	DEBUG(10,("rap_jobid_delete: deleting jobid %u\n",
-		(unsigned int)jobid ));
-
-	rap_jobid = SVAL(data.dptr, 0);
-	SAFE_FREE(data.dptr);
-	SSVAL(buf,0,rap_jobid);
-	data.dptr = buf;
-	data.dsize = sizeof(rap_jobid);
-	tdb_delete(rap_tdb, key);
-	tdb_delete(rap_tdb, data);
-}
 
 static int get_queue_status(const char* sharename, print_status_struct *);
 
@@ -215,13 +74,6 @@ bool print_backend_init(struct messaging_context *msg_ctx)
 	if (!ok) {
 		return false;
 	}
-
-	print_cache_path = cache_path(talloc_tos(), "printing.tdb");
-	if (print_cache_path == NULL) {
-		return false;
-	}
-	unlink(print_cache_path);
-	TALLOC_FREE(print_cache_path);
 
 	/* handle a Samba upgrade */
 
@@ -317,7 +169,7 @@ static TDB_DATA print_key(uint32_t jobid, uint32_t *tmp)
 static int pack_devicemode(struct spoolss_DeviceMode *devmode, uint8_t *buf, int buflen)
 {
 	enum ndr_err_code ndr_err;
-	DATA_BLOB blob;
+	DATA_BLOB blob = { .data = NULL };
 	int len = 0;
 
 	if (devmode) {
@@ -330,8 +182,6 @@ static int pack_devicemode(struct spoolss_DeviceMode *devmode, uint8_t *buf, int
 				   "error encoding spoolss_DeviceMode\n"));
 			goto done;
 		}
-	} else {
-		ZERO_STRUCT(blob);
 	}
 
 	len = tdb_pack(buf, buflen, "B", blob.length, blob.data);
@@ -647,29 +497,32 @@ static uint32_t map_to_spoolss_status(uint32_t lpq_status)
 }
 
 /***************************************************************************
- Append a jobid to the 'jobs changed' list.
+ Append a jobid to a list
 ***************************************************************************/
 
-static bool add_to_jobs_changed(struct tdb_print_db *pdb, uint32_t jobid)
+static bool add_to_jobs_list(
+	struct tdb_print_db *pdb, uint32_t jobid, const char *key)
 {
-	TDB_DATA data;
-	uint32_t store_jobid;
+	uint8_t store_jobid[sizeof(uint32_t)];
+	TDB_DATA data = {
+		.dptr = store_jobid, .dsize = sizeof(store_jobid)
+	};
+	int ret;
 
 	SIVAL(&store_jobid, 0, jobid);
-	data.dptr = (uint8_t *) &store_jobid;
-	data.dsize = 4;
 
-	DEBUG(10,("add_to_jobs_added: Added jobid %u\n", (unsigned int)jobid ));
+	DBG_DEBUG("Added jobid %"PRIu32" to %s\n", jobid, key);
 
-	return (tdb_append(pdb->tdb, string_tdb_data("INFO/jobs_changed"),
-			   data) == 0);
+	ret = tdb_append(pdb->tdb, string_tdb_data(key), data);
+	return ret == 0;
 }
 
 /***************************************************************************
  Remove a jobid from the 'jobs changed' list.
 ***************************************************************************/
 
-static bool remove_from_jobs_changed(const char* sharename, uint32_t jobid)
+static bool remove_from_jobs_list(
+	const char *keystr, const char *sharename, uint32_t jobid)
 {
 	struct tdb_print_db *pdb = get_print_db_byname(sharename);
 	TDB_DATA data, key;
@@ -683,7 +536,7 @@ static bool remove_from_jobs_changed(const char* sharename, uint32_t jobid)
 
 	ZERO_STRUCT(data);
 
-	key = string_tdb_data("INFO/jobs_changed");
+	key = string_tdb_data(keystr);
 
 	if (tdb_chainlock_with_timeout(pdb->tdb, key, 5) != 0)
 		goto out;
@@ -718,9 +571,16 @@ static bool remove_from_jobs_changed(const char* sharename, uint32_t jobid)
 	SAFE_FREE(data.dptr);
 	release_print_db(pdb);
 	if (ret)
-		DEBUG(10,("remove_from_jobs_changed: removed jobid %u\n", (unsigned int)jobid ));
+		DBG_DEBUG("removed jobid %"PRIu32"\n", jobid);
 	else
-		DEBUG(10,("remove_from_jobs_changed: Failed to remove jobid %u\n", (unsigned int)jobid ));
+		DBG_DEBUG("Failed to remove jobid %"PRIu32"\n", jobid);
+	return ret;
+}
+
+static bool remove_from_jobs_changed(const char* sharename, uint32_t jobid)
+{
+	bool ret = remove_from_jobs_list(
+		"INFO/jobs_changed", sharename, jobid);
 	return ret;
 }
 
@@ -874,7 +734,10 @@ static bool pjob_store(struct tevent_context *ev,
 						  pjob,
 						  &changed);
 				if (changed) {
-					add_to_jobs_changed(pdb, jobid);
+					add_to_jobs_list(
+						pdb,
+						jobid,
+						"INFO/jobs_changed");
 				}
 			}
 			talloc_free(tmp_ctx);
@@ -1697,8 +1560,6 @@ void print_queue_receive(struct messaging_context *msg,
 update the internal database from the system print queue for a queue
 ****************************************************************************/
 
-extern pid_t background_lpq_updater_pid;
-
 static void print_queue_update(struct messaging_context *msg_ctx,
 			       int snum, bool force)
 {
@@ -1823,8 +1684,7 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 
 	/* finally send the message */
 
-	messaging_send_buf(msg_ctx, pid_to_procid(background_lpq_updater_pid),
-			   MSG_PRINTER_UPDATE, (uint8_t *)buffer, len);
+	send_to_bgqd(msg_ctx, MSG_PRINTER_UPDATE, (uint8_t *)buffer, len);
 
 	SAFE_FREE( buffer );
 
@@ -2099,56 +1959,7 @@ bool print_job_get_name(TALLOC_CTX *mem_ctx, const char *sharename, uint32_t job
 
 static bool remove_from_jobs_added(const char* sharename, uint32_t jobid)
 {
-	struct tdb_print_db *pdb = get_print_db_byname(sharename);
-	TDB_DATA data, key;
-	size_t job_count, i;
-	bool ret = False;
-	bool gotlock = False;
-
-	if (!pdb) {
-		return False;
-	}
-
-	ZERO_STRUCT(data);
-
-	key = string_tdb_data("INFO/jobs_added");
-
-	if (tdb_chainlock_with_timeout(pdb->tdb, key, 5) != 0)
-		goto out;
-
-	gotlock = True;
-
-	data = tdb_fetch(pdb->tdb, key);
-
-	if (data.dptr == NULL || data.dsize == 0 || (data.dsize % 4 != 0))
-		goto out;
-
-	job_count = data.dsize / 4;
-	for (i = 0; i < job_count; i++) {
-		uint32_t ch_jobid;
-
-		ch_jobid = IVAL(data.dptr, i*4);
-		if (ch_jobid == jobid) {
-			if (i < job_count -1 )
-				memmove(data.dptr + (i*4), data.dptr + (i*4) + 4, (job_count - i - 1)*4 );
-			data.dsize -= 4;
-			if (tdb_store(pdb->tdb, key, data, TDB_REPLACE) != 0)
-				goto out;
-			break;
-		}
-	}
-
-	ret = True;
-  out:
-
-	if (gotlock)
-		tdb_chainunlock(pdb->tdb, key);
-	SAFE_FREE(data.dptr);
-	release_print_db(pdb);
-	if (ret)
-		DEBUG(10,("remove_from_jobs_added: removed jobid %u\n", (unsigned int)jobid ));
-	else
-		DEBUG(10,("remove_from_jobs_added: Failed to remove jobid %u\n", (unsigned int)jobid ));
+	bool ret = remove_from_jobs_list("INFO/jobs_added", sharename, jobid);
 	return ret;
 }
 
@@ -2672,26 +2483,6 @@ static WERROR allocate_print_jobid(struct tdb_print_db *pdb, int snum,
 }
 
 /***************************************************************************
- Append a jobid to the 'jobs added' list.
-***************************************************************************/
-
-static bool add_to_jobs_added(struct tdb_print_db *pdb, uint32_t jobid)
-{
-	TDB_DATA data;
-	uint32_t store_jobid;
-
-	SIVAL(&store_jobid, 0, jobid);
-	data.dptr = (uint8_t *)&store_jobid;
-	data.dsize = 4;
-
-	DEBUG(10,("add_to_jobs_added: Added jobid %u\n", (unsigned int)jobid ));
-
-	return (tdb_append(pdb->tdb, string_tdb_data("INFO/jobs_added"),
-			   data) == 0);
-}
-
-
-/***************************************************************************
  Do all checks needed to determine if we can start a job.
 ***************************************************************************/
 
@@ -2731,7 +2522,8 @@ static WERROR print_job_checks(const struct auth_session_info *server_info,
 	}
 
 	/* for autoloaded printers, check that the printcap entry still exists */
-	if (lp_autoloaded(snum) && !pcap_printername_ok(sharename)) {
+	if (lp_autoloaded(snum) &&
+	    !printer_list_printername_exists(sharename)) {
 		DEBUG(3, ("print_job_checks: printer name %s check failed.\n",
 			  sharename));
 		return WERR_ACCESS_DENIED;
@@ -2909,7 +2701,7 @@ WERROR print_job_start(const struct auth_session_info *server_info,
 	pjob_store(global_event_context(), msg_ctx, sharename, jobid, &pjob);
 
 	/* Update the 'jobs added' entry used by print_queue_status. */
-	add_to_jobs_added(pdb, jobid);
+	add_to_jobs_list(pdb, jobid, "INFO/jobs_added");
 
 	/* Ensure we keep a rough count of the number of total jobs... */
 	tdb_change_int32_atomic(pdb->tdb, "INFO/total_jobs", &njobs, 1);

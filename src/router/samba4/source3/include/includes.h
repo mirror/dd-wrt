@@ -96,10 +96,6 @@
 #include <langinfo.h>
 #endif
 
-#ifdef HAVE_NETGROUP_H
-#include <netgroup.h>
-#endif
-
 /* Special macros that are no-ops except when run under Valgrind on
  * x86.  They've moved a little bit from valgrind 1.0.4 to 1.9.4 */
 #ifdef HAVE_VALGRIND_MEMCHECK_H
@@ -209,10 +205,10 @@ struct stat_ex {
 	struct timespec st_ex_ctime;
 	struct timespec st_ex_btime; /* birthtime */
 	/*
-	 * Immutable original birth time aka instantiation time. Set when a file
+	 * Immutable original birth time aka invented time. Set when a file
 	 * is created, never changes thereafter. May not be set by the client.
 	 */
-	struct timespec st_ex_itime; /* instantiation time */
+	struct timespec st_ex_itime; /* invented time */
 
 	blksize_t	st_ex_blksize;
 	blkcnt_t	st_ex_blocks;

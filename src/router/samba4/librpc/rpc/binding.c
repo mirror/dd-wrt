@@ -137,7 +137,7 @@ const char *epm_floor_string(TALLOC_CTX *mem_ctx, struct epm_floor *epm_floor)
 			status = dcerpc_floor_get_lhs_data(epm_floor, &syntax);
 			if (NT_STATUS_IS_OK(status)) {
 				/* lhs is used: UUID */
-				char *uuidstr;
+				struct GUID_txt_buf buf;
 
 				if (GUID_equal(&syntax.uuid, &ndr_transfer_syntax_ndr.uuid)) {
 					return "NDR";
@@ -147,9 +147,11 @@ const char *epm_floor_string(TALLOC_CTX *mem_ctx, struct epm_floor *epm_floor)
 					return "NDR64";
 				} 
 
-				uuidstr = GUID_string(mem_ctx, &syntax.uuid);
-
-				return talloc_asprintf(mem_ctx, " uuid %s/0x%02x", uuidstr, syntax.if_version);
+				return talloc_asprintf(
+					mem_ctx,
+					" uuid %s/0x%02x",
+					GUID_buf_string(&syntax.uuid, &buf),
+					syntax.if_version);
 			} else { /* IPX */
 				return talloc_asprintf(mem_ctx, "IPX:%s", 
 						data_blob_hex_string_upper(mem_ctx, &epm_floor->rhs.uuid.unknown));
@@ -211,49 +213,50 @@ const char *epm_floor_string(TALLOC_CTX *mem_ctx, struct epm_floor *epm_floor)
 */
 _PUBLIC_ char *dcerpc_binding_string(TALLOC_CTX *mem_ctx, const struct dcerpc_binding *b)
 {
-	char *s = talloc_strdup(mem_ctx, "");
-	char *o = s;
+	char *s = NULL;
+	char *tmp = NULL;
 	size_t i;
 	const char *t_name = NULL;
 	bool option_section = false;
 	const char *target_hostname = NULL;
 
+	s = talloc_strdup(mem_ctx, "");
+	if (s == NULL) {
+		goto nomem;
+	}
+
 	if (b->transport != NCA_UNKNOWN) {
 		t_name = derpc_transport_string_by_transport(b->transport);
 		if (!t_name) {
-			talloc_free(o);
-			return NULL;
+			goto nomem;
 		}
 	}
 
 	if (!GUID_all_zero(&b->object)) {
 		struct GUID_txt_buf buf;
 
-		o = s;
-		s = talloc_asprintf_append_buffer(
+		tmp = talloc_asprintf_append_buffer(
 			s, "%s@", GUID_buf_string(&b->object, &buf));
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	if (t_name != NULL) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, "%s:", t_name);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(s, "%s:", t_name);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	if (b->host) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, "%s", b->host);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(s, "%s", b->host);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	target_hostname = b->target_hostname;
@@ -263,38 +266,30 @@ _PUBLIC_ char *dcerpc_binding_string(TALLOC_CTX *mem_ctx, const struct dcerpc_bi
 		}
 	}
 
-	if (b->endpoint) {
-		option_section = true;
-	} else if (target_hostname) {
-		option_section = true;
-	} else if (b->target_principal) {
-		option_section = true;
-	} else if (b->assoc_group_id != 0) {
-		option_section = true;
-	} else if (b->options) {
-		option_section = true;
-	} else if (b->flags) {
-		option_section = true;
-	}
+	option_section =
+		(b->endpoint != NULL) ||
+		(target_hostname != NULL) ||
+		(b->target_principal != NULL) ||
+		(b->assoc_group_id != 0) ||
+		(b->options != NULL) ||
+		(b->flags != 0);
 
 	if (!option_section) {
 		return s;
 	}
 
-	o = s;
-	s = talloc_asprintf_append_buffer(s, "[");
-	if (s == NULL) {
-		talloc_free(o);
-		return NULL;
+	tmp = talloc_asprintf_append_buffer(s, "[");
+	if (tmp == NULL) {
+		goto nomem;
 	}
+	s = tmp;
 
 	if (b->endpoint) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, "%s", b->endpoint);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(s, "%s", b->endpoint);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	for (i=0;i<ARRAY_SIZE(ncacn_options);i++) {
@@ -302,61 +297,59 @@ _PUBLIC_ char *dcerpc_binding_string(TALLOC_CTX *mem_ctx, const struct dcerpc_bi
 			continue;
 		}
 
-		o = s;
-		s = talloc_asprintf_append_buffer(s, ",%s", ncacn_options[i].name);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(
+			s, ",%s", ncacn_options[i].name);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	if (target_hostname) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, ",target_hostname=%s",
-						  b->target_hostname);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(
+			s, ",target_hostname=%s", b->target_hostname);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	if (b->target_principal) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, ",target_principal=%s",
-						  b->target_principal);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(
+			s, ",target_principal=%s", b->target_principal);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	if (b->assoc_group_id != 0) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, ",assoc_group_id=0x%08x",
-						  b->assoc_group_id);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp = talloc_asprintf_append_buffer(
+			s, ",assoc_group_id=0x%08x", b->assoc_group_id);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
 	for (i=0;b->options && b->options[i];i++) {
-		o = s;
-		s = talloc_asprintf_append_buffer(s, ",%s", b->options[i]);
-		if (s == NULL) {
-			talloc_free(o);
-			return NULL;
+		tmp  = talloc_asprintf_append_buffer(s, ",%s", b->options[i]);
+		if (tmp == NULL) {
+			goto nomem;
 		}
+		s = tmp;
 	}
 
-	o = s;
-	s = talloc_asprintf_append_buffer(s, "]");
-	if (s == NULL) {
-		talloc_free(o);
-		return NULL;
+	tmp = talloc_asprintf_append_buffer(s, "]");
+	if (tmp == NULL) {
+		goto nomem;
 	}
+	s = tmp;
 
 	return s;
+nomem:
+	TALLOC_FREE(s);
+	return NULL;
 }
 
 /*
@@ -646,38 +639,21 @@ _PUBLIC_ NTSTATUS dcerpc_binding_set_abstract_syntax(struct dcerpc_binding *b,
 						     const struct ndr_syntax_id *syntax)
 {
 	NTSTATUS status;
-	char *s = NULL;
+	struct ndr_syntax_id_buf buf;
 
 	if (syntax == NULL) {
 		status = dcerpc_binding_set_string_option(b, "abstract_syntax", NULL);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-
-		return NT_STATUS_OK;
+		return status;
 	}
 
 	if (ndr_syntax_id_equal(&ndr_syntax_id_null, syntax)) {
 		status = dcerpc_binding_set_string_option(b, "abstract_syntax", NULL);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-
-		return NT_STATUS_OK;
-	}
-
-	s = ndr_syntax_id_to_string(b, syntax);
-	if (s == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	status = dcerpc_binding_set_string_option(b, "abstract_syntax", s);
-	TALLOC_FREE(s);
-	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
 
-	return NT_STATUS_OK;
+	status = dcerpc_binding_set_string_option(
+		b, "abstract_syntax", ndr_syntax_id_buf_string(syntax, &buf));
+	return status;
 }
 
 _PUBLIC_ const char *dcerpc_binding_get_string_option(const struct dcerpc_binding *b,
@@ -1393,39 +1369,34 @@ _PUBLIC_ struct dcerpc_binding *dcerpc_binding_dup(TALLOC_CTX *mem_ctx,
 	if (b->object_string != NULL) {
 		n->object_string = talloc_strdup(n, b->object_string);
 		if (n->object_string == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 	}
 	if (b->host != NULL) {
 		n->host = talloc_strdup(n, b->host);
 		if (n->host == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 	}
 
 	if (b->target_hostname != NULL) {
 		n->target_hostname = talloc_strdup(n, b->target_hostname);
 		if (n->target_hostname == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 	}
 
 	if (b->target_principal != NULL) {
 		n->target_principal = talloc_strdup(n, b->target_principal);
 		if (n->target_principal == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 	}
 
 	if (b->endpoint != NULL) {
 		n->endpoint = talloc_strdup(n, b->endpoint);
 		if (n->endpoint == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 	}
 
@@ -1436,21 +1407,22 @@ _PUBLIC_ struct dcerpc_binding *dcerpc_binding_dup(TALLOC_CTX *mem_ctx,
 
 		n->options = talloc_array(n, const char *, count + 1);
 		if (n->options == NULL) {
-			talloc_free(n);
-			return NULL;
+			goto nomem;
 		}
 
 		for (i = 0; i < count; i++) {
 			n->options[i] = talloc_strdup(n->options, b->options[i]);
 			if (n->options[i] == NULL) {
-				talloc_free(n);
-				return NULL;
+				goto nomem;
 			}
 		}
 		n->options[count] = NULL;
 	}
 
 	return n;
+nomem:
+	TALLOC_FREE(n);
+	return NULL;
 }
 
 _PUBLIC_ NTSTATUS dcerpc_binding_build_tower(TALLOC_CTX *mem_ctx,
@@ -1458,7 +1430,7 @@ _PUBLIC_ NTSTATUS dcerpc_binding_build_tower(TALLOC_CTX *mem_ctx,
 					     struct epm_tower *tower)
 {
 	const enum epm_protocol *protseq = NULL;
-	size_t i, num_protocols;
+	size_t i, num_protocols = 0;
 	struct ndr_syntax_id abstract_syntax;
 	NTSTATUS status;
 
@@ -1478,6 +1450,9 @@ _PUBLIC_ NTSTATUS dcerpc_binding_build_tower(TALLOC_CTX *mem_ctx,
 
 	tower->num_floors = 2 + num_protocols;
 	tower->floors = talloc_array(mem_ctx, struct epm_floor, tower->num_floors);
+	if (tower->floors == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	/* Floor 0 */
 	tower->floors[0].lhs.protocol = EPM_PROTOCOL_UUID;

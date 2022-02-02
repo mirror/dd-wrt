@@ -27,7 +27,6 @@ NTSTATUS share_classic_init(TALLOC_CTX *);
 
 static NTSTATUS sclassic_init(TALLOC_CTX *mem_ctx, 
 			      const struct share_ops *ops, 
-			      struct tevent_context *event_ctx,
 			      struct loadparm_context *lp_ctx,
 			      struct share_context **ctx)
 {
@@ -82,10 +81,6 @@ static char *sclassic_string_option(TALLOC_CTX *mem_ctx,
 
 	if (strcmp(opt_name, SHARE_COMMENT) == 0) {
 		return lpcfg_comment(s, lpcfg_default_service(lp_ctx), mem_ctx);
-	}
-
-	if (strcmp(opt_name, SHARE_VOLUME) == 0) {
-		return talloc_strdup(mem_ctx, lpcfg_volume_label(s, lpcfg_default_service(lp_ctx)));
 	}
 
 	if (strcmp(opt_name, SHARE_TYPE) == 0) {

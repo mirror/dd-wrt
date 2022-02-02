@@ -44,6 +44,8 @@
 #include "auth.h"
 #include "rpc_server/rpc_ncacn_np.h"
 #include "lib/util/string_wrappers.h"
+#include "source3/printing/rap_jobid.h"
+#include "source3/lib/substitute.h"
 
 #ifdef CHECK_TYPES
 #undef CHECK_TYPES
@@ -3259,7 +3261,7 @@ static bool api_WPrintQueueCtrl(struct smbd_server_connection *sconn,
 	struct spoolss_SetPrinterInfoCtr info_ctr;
 	struct spoolss_DevmodeContainer devmode_ctr;
 	struct sec_desc_buf secdesc_ctr;
-	enum spoolss_PrinterControl command;
+	enum spoolss_PrinterControl command = SPOOLSS_PRINTER_CONTROL_UNPAUSE;
 
 	if (!str1 || !str2 || !QueueName) {
 		return False;

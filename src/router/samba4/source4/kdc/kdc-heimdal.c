@@ -276,6 +276,7 @@ static NTSTATUS kdc_task_init(struct task_server *task)
 		return NT_STATUS_INVALID_DOMAIN_ROLE;
 	case ROLE_DOMAIN_PDC:
 	case ROLE_DOMAIN_BDC:
+	case ROLE_IPA_DC:
 		task_server_terminate(
 		    task, "Cannot start KDC as a 'classic Samba' DC", false);
 		return NT_STATUS_INVALID_DOMAIN_ROLE;
@@ -403,7 +404,7 @@ static void kdc_post_fork(struct task_server *task, struct process_details *pd)
 	 * function is use_strongest_server_key=TRUE.
 	 */
 	kdc_config->as_use_strongest_session_key = false;
-	kdc_config->preauth_use_strongest_session_key = false;
+	kdc_config->preauth_use_strongest_session_key = true;
 	kdc_config->tgs_use_strongest_session_key = false;
 	kdc_config->use_strongest_server_key = true;
 

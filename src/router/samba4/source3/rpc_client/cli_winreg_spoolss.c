@@ -38,18 +38,6 @@
 #define TOP_LEVEL_CONTROL_KEY "SYSTEM\\CurrentControlSet\\Control\\Print"
 #define TOP_LEVEL_CONTROL_FORMS_KEY TOP_LEVEL_CONTROL_KEY "\\Forms"
 
-#define EMPTY_STRING ""
-
-#define FILL_STRING(mem_ctx, in, out) \
-	do { \
-		if (in && strlen(in)) { \
-			out = talloc_strdup(mem_ctx, in); \
-		} else { \
-			out = talloc_strdup(mem_ctx, ""); \
-		} \
-		W_ERROR_HAVE_NO_MEMORY(out); \
-	} while (0);
-
 #define CHECK_ERROR(result) \
 	if (W_ERROR_IS_OK(result)) continue; \
 	if (W_ERROR_EQUAL(result, WERR_NOT_FOUND)) result = WERR_OK; \
@@ -555,7 +543,7 @@ static WERROR winreg_enumval_to_sz(TALLOC_CTX *mem_ctx,
 	}
 
 	if (v->data_length == 0) {
-		*_str = talloc_strdup(mem_ctx, EMPTY_STRING);
+		*_str = talloc_strdup(mem_ctx, "");
 		if (*_str == NULL) {
 			return WERR_NOT_ENOUGH_MEMORY;
 		}
@@ -1491,7 +1479,8 @@ WERROR winreg_get_printer(TALLOC_CTX *mem_ctx,
 {
 	struct spoolss_PrinterInfo2 *info2;
 	uint32_t access_mask = SEC_FLAG_MAXIMUM_ALLOWED;
-	struct policy_handle hive_hnd, key_hnd;
+	struct policy_handle hive_hnd = { .handle_type = 0 };
+	struct policy_handle key_hnd = { .handle_type = 0 };
 	struct spoolss_PrinterEnumValues enum_value;
 	struct spoolss_PrinterEnumValues *v = NULL;
 	enum ndr_err_code ndr_err;
@@ -1506,17 +1495,12 @@ WERROR winreg_get_printer(TALLOC_CTX *mem_ctx,
 	const char **enum_names = NULL;
 	enum winreg_Type *enum_types = NULL;
 	DATA_BLOB *enum_data_blobs = NULL;
-	TALLOC_CTX *tmp_ctx;
-
-	tmp_ctx = talloc_stackframe();
-	if (tmp_ctx == NULL) {
-		return WERR_NOT_ENOUGH_MEMORY;
-	}
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
 
 	path = winreg_printer_data_keyname(tmp_ctx, printer);
 	if (path == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return WERR_NOT_ENOUGH_MEMORY;
+		result = WERR_NOT_ENOUGH_MEMORY;
+		goto done;
 	}
 
 	result = winreg_printer_openkey(tmp_ctx,
@@ -1551,23 +1535,57 @@ WERROR winreg_get_printer(TALLOC_CTX *mem_ctx,
 		goto done;
 	}
 
+	result = WERR_NOT_ENOUGH_MEMORY;
+
 	info2 = talloc_zero(tmp_ctx, struct spoolss_PrinterInfo2);
 	if (info2 == NULL) {
-		result = WERR_NOT_ENOUGH_MEMORY;
 		goto done;
 	}
 
-	FILL_STRING(info2, EMPTY_STRING, info2->servername);
-	FILL_STRING(info2, EMPTY_STRING, info2->printername);
-	FILL_STRING(info2, EMPTY_STRING, info2->sharename);
-	FILL_STRING(info2, EMPTY_STRING, info2->portname);
-	FILL_STRING(info2, EMPTY_STRING, info2->drivername);
-	FILL_STRING(info2, EMPTY_STRING, info2->comment);
-	FILL_STRING(info2, EMPTY_STRING, info2->location);
-	FILL_STRING(info2, EMPTY_STRING, info2->sepfile);
-	FILL_STRING(info2, EMPTY_STRING, info2->printprocessor);
-	FILL_STRING(info2, EMPTY_STRING, info2->datatype);
-	FILL_STRING(info2, EMPTY_STRING, info2->parameters);
+	info2->servername = talloc_strdup(info2, "");
+	if (info2->servername == NULL) {
+		goto done;
+	}
+	info2->printername = talloc_strdup(info2, "");
+	if (info2->printername == NULL) {
+		goto done;
+	}
+	info2->sharename = talloc_strdup(info2, "");
+	if (info2->sharename == NULL) {
+		goto done;
+	}
+	info2->portname = talloc_strdup(info2, "");
+	if (info2->portname == NULL) {
+		goto done;
+	}
+	info2->drivername = talloc_strdup(info2, "");
+	if (info2->drivername == NULL) {
+		goto done;
+	}
+	info2->comment = talloc_strdup(info2, "");
+	if (info2->comment == NULL) {
+		goto done;
+	}
+	info2->location = talloc_strdup(info2, "");
+	if (info2->location == NULL) {
+		goto done;
+	}
+	info2->sepfile = talloc_strdup(info2, "");
+	if (info2->sepfile == NULL) {
+		goto done;
+	}
+	info2->printprocessor = talloc_strdup(info2, "");
+	if (info2->printprocessor == NULL) {
+		goto done;
+	}
+	info2->datatype = talloc_strdup(info2, "");
+	if (info2->datatype == NULL) {
+		goto done;
+	}
+	info2->parameters = talloc_strdup(info2, "");
+	if (info2->parameters == NULL) {
+		goto done;
+	}
 
 	for (i = 0; i < num_values; i++) {
 		enum_value.value_name = enum_names[i];

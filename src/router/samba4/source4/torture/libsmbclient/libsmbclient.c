@@ -21,11 +21,12 @@
 #include "system/dir.h"
 #include "torture/smbtorture.h"
 #include "auth/credentials/credentials.h"
-#include "lib/cmdline/popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include <libsmbclient.h>
 #include "torture/libsmbclient/proto.h"
 #include "lib/param/loadparm.h"
 #include "lib/param/param_global.h"
+#include "libcli/smb/smb_constants.h"
 #include "dynconfig.h"
 #include "lib/util/time.h"
 
@@ -49,11 +50,11 @@ static void auth_callback(const char *srv,
 			  char *pw, int pwlen)
 {
 	const char *workgroup =
-		cli_credentials_get_domain(popt_get_cmdline_credentials());
+		cli_credentials_get_domain(samba_cmdline_get_creds());
 	const char *username =
-		cli_credentials_get_username(popt_get_cmdline_credentials());
+		cli_credentials_get_username(samba_cmdline_get_creds());
 	const char *password =
-		cli_credentials_get_password(popt_get_cmdline_credentials());
+		cli_credentials_get_password(samba_cmdline_get_creds());
 	ssize_t ret;
 
 	if (workgroup != NULL) {
@@ -82,9 +83,9 @@ bool torture_libsmbclient_init_context(struct torture_context *tctx,
 				       SMBCCTX **ctx_p)
 {
 	const char *workgroup =
-		cli_credentials_get_domain(popt_get_cmdline_credentials());
+		cli_credentials_get_domain(samba_cmdline_get_creds());
 	const char *username =
-		cli_credentials_get_username(popt_get_cmdline_credentials());
+		cli_credentials_get_username(samba_cmdline_get_creds());
 	const char *client_proto =
 		torture_setting_string(tctx, "clientprotocol", NULL);
 	SMBCCTX *ctx = NULL;
@@ -210,10 +211,10 @@ static bool torture_libsmbclient_setConfiguration(struct torture_context *tctx)
 			"NEW_WORKGROUP",
 			"smbc_setConfiguration failed, "
 			"'workgroup' not updated");
-	torture_assert_int_equal(tctx, global_config->client_min_protocol, 7,
+	torture_assert_int_equal(tctx, global_config->client_min_protocol, PROTOCOL_NT1,
 			"smbc_setConfiguration failed, 'client min protocol' "
 			"not updated");
-	torture_assert_int_equal(tctx, global_config->_client_max_protocol, 13,
+	torture_assert_int_equal(tctx, global_config->_client_max_protocol, PROTOCOL_SMB3_00,
 			"smbc_setConfiguration failed, 'client max protocol' "
 			"not updated");
 	torture_assert_int_equal(tctx, global_config->client_signing, 1,
@@ -1254,6 +1255,54 @@ static bool torture_libsmbclient_utimes(struct torture_context *tctx)
 	return true;
 }
 
+static bool torture_libsmbclient_noanon_list(struct torture_context *tctx)
+{
+	const char *smburl = torture_setting_string(tctx, "smburl", NULL);
+	struct smbc_dirent *dirent = NULL;
+	SMBCCTX *ctx = NULL;
+	int dhandle = -1;
+	bool ok = true;
+
+	if (smburl == NULL) {
+		torture_fail(tctx,
+			     "option --option=torture:smburl="
+			     "smb://user:password@server missing\n");
+	}
+
+	ok = torture_libsmbclient_init_context(tctx, &ctx);
+	torture_assert_goto(tctx,
+			    ok,
+			    ok,
+			    out,
+			    "Failed to init context");
+	torture_comment(tctx,
+			"Testing smbc_setOptionNoAutoAnonymousLogin\n");
+	smbc_setOptionNoAutoAnonymousLogin(ctx, true);
+	smbc_set_context(ctx);
+
+	torture_comment(tctx, "Listing: %s\n", smburl);
+	dhandle = smbc_opendir(smburl);
+	torture_assert_int_not_equal_goto(tctx,
+					  dhandle,
+					  -1,
+					  ok,
+					  out,
+					  "Failed to open smburl");
+
+	while((dirent = smbc_readdir(dhandle)) != NULL) {
+		torture_comment(tctx, "DIR: %s\n", dirent->name);
+		torture_assert_not_null_goto(tctx,
+					     dirent->name,
+					     ok,
+					     out,
+					     "Failed to read name");
+	}
+
+out:
+	smbc_closedir(dhandle);
+	return ok;
+}
+
 NTSTATUS torture_libsmbclient_init(TALLOC_CTX *ctx)
 {
 	struct torture_suite *suite;
@@ -1275,6 +1324,8 @@ NTSTATUS torture_libsmbclient_init(TALLOC_CTX *ctx)
 		torture_libsmbclient_readdirplus2);
 	torture_suite_add_simple_test(
 		suite, "utimes", torture_libsmbclient_utimes);
+	torture_suite_add_simple_test(
+		suite, "noanon_list", torture_libsmbclient_noanon_list);
 
 	suite->description = talloc_strdup(suite, "libsmbclient interface tests");
 

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
 from samba.tests.blackbox.smbcacls import SmbCaclsBlockboxTestBase
 from samba.tests import BlackboxProcessError
 import os
@@ -887,7 +886,7 @@ class InheritanceSmbCaclsTests(SmbCaclsBlockboxTestBase):
             self.smb_cacls(["--propagate-inheritance", "--set",
                             dir_acl_str, self.oi_dir])
 
-            out = self.smb_cacls(["--get", self.oi_dir])
+            out = self.smb_cacls([self.oi_dir])
             #count the ACL(s)
             nacls = len([i for i in out.decode().split("\n") if i.startswith("ACL")])
 

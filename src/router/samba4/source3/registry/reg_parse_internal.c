@@ -215,7 +215,7 @@ const struct hive_info* hive_info(const char* name)
 	return info;
 }
 
-const char* get_charset(const char* c)
+const char *smbreg_get_charset(const char *c)
 {
 	if (strcmp(c, "dos") == 0) {
 		return lp_dos_charset();
@@ -231,8 +231,8 @@ bool set_iconv(smb_iconv_t* t, const char* to, const char* from)
 	smb_iconv_t cd = (smb_iconv_t)-1;
 
 	if (to && from) {
-		to   = get_charset(to);
-		from = get_charset(from);
+		to   = smbreg_get_charset(to);
+		from = smbreg_get_charset(from);
 		cd   = smb_iconv_open(to, from);
 		if (cd == ((smb_iconv_t)-1)) {
 			return false;
@@ -381,6 +381,7 @@ int cbuf_puts_case(cbuf* s, const char* str, size_t len, enum fmt_case fmt)
 	case FMT_CASE_TITLE:
 		*ptr = toupper(*ptr);
 		ptr++;
+		FALL_THROUGH;
 	case FMT_CASE_LOWER:
 		while(*ptr != '\0') {
 			*ptr = tolower(*ptr);

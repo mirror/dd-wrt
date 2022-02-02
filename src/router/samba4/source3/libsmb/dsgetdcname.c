@@ -572,6 +572,10 @@ static NTSTATUS discover_dc_dns(TALLOC_CTX *mem_ctx,
 	for (i = 0; i < numdcs; i++) {
 		size_t j;
 
+		if (dcs[i].num_ips == 0) {
+			continue;
+		}
+
 		dclist[ret_count].hostname =
 			talloc_move(dclist, &dcs[i].hostname);
 
@@ -646,7 +650,12 @@ static NTSTATUS make_domain_controller_info(TALLOC_CTX *mem_ctx,
 	NT_STATUS_HAVE_NO_MEMORY(info);
 
 	if (dc_unc) {
-		info->dc_unc = talloc_strdup(mem_ctx, dc_unc);
+		if (!(dc_unc[0] == '\\' && dc_unc[1] == '\\')) {
+			info->dc_unc = talloc_asprintf(mem_ctx, "\\\\%s",
+						       dc_unc);
+		} else {
+			info->dc_unc = talloc_strdup(mem_ctx, dc_unc);
+		}
 		NT_STATUS_HAVE_NO_MEMORY(info->dc_unc);
 	}
 
@@ -1115,6 +1124,7 @@ static NTSTATUS dsgetdcname_internal(TALLOC_CTX *mem_ctx,
 	status = dsgetdcname_cached(mem_ctx, msg_ctx, domain_name, domain_guid,
 				    flags, site_name, &myinfo);
 	if (NT_STATUS_IS_OK(status)) {
+		*info = myinfo;
 		goto done;
 	}
 
@@ -1205,4 +1215,57 @@ NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
 	}
 
 	return status;
+}
+
+NTSTATUS dsgetonedcname(TALLOC_CTX *mem_ctx,
+			struct messaging_context *msg_ctx,
+			const char *domain_name,
+			const char *dcname,
+			uint32_t flags,
+			struct netr_DsRGetDCNameInfo **info)
+{
+	NTSTATUS status;
+	struct sockaddr_storage *addrs;
+	unsigned int num_addrs, i;
+	const char *hostname = strip_hostname(dcname);
+
+	status = resolve_name_list(mem_ctx, hostname, 0x20,
+				   &addrs, &num_addrs);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	for (i = 0; i < num_addrs; i++) {
+
+		bool ok;
+		struct ip_service_name dclist;
+
+		dclist.hostname = hostname;
+		ok = sockaddr_storage_to_samba_sockaddr(&dclist.sa, &addrs[i]);
+		if (!ok) {
+			TALLOC_FREE(addrs);
+			return NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
+		}
+
+		status = process_dc_dns(mem_ctx, domain_name, flags,
+					&dclist, 1, info);
+		if (NT_STATUS_IS_OK(status)) {
+			TALLOC_FREE(addrs);
+			return NT_STATUS_OK;
+		}
+
+		if (lp_disable_netbios()) {
+			continue;
+		}
+
+		status = process_dc_netbios(mem_ctx, msg_ctx, domain_name, flags,
+					    &dclist, 1, info);
+		if (NT_STATUS_IS_OK(status)) {
+			TALLOC_FREE(addrs);
+			return NT_STATUS_OK;
+		}
+	}
+
+	TALLOC_FREE(addrs);
+	return NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 }

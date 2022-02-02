@@ -155,62 +155,6 @@ static NTSTATUS fget_acl_blob(TALLOC_CTX *ctx,
 }
 
 /*******************************************************************
- Pull a security descriptor into a DATA_BLOB from a tdb store.
-*******************************************************************/
-
-static NTSTATUS get_acl_blob_at(TALLOC_CTX *ctx,
-			vfs_handle_struct *handle,
-			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname,
-			DATA_BLOB *pblob)
-{
-	uint8_t id_buf[16];
-	TDB_DATA data;
-	struct file_id id;
-	struct db_context *db = acl_db;
-	NTSTATUS status = NT_STATUS_OK;
-	SMB_STRUCT_STAT sbuf;
-	int ret;
-
-	ZERO_STRUCT(sbuf);
-
-	ret = vfs_stat_smb_basename(handle->conn,
-				smb_fname,
-				&sbuf);
-	if (ret == -1) {
-		status = map_nt_error_from_unix(errno);
-	}
-
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	id = vfs_file_id_from_sbuf(handle->conn, &sbuf);
-
-	/* For backwards compatibility only store the dev/inode. */
-	push_file_id_16((char *)id_buf, &id);
-
-	status = dbwrap_fetch(db,
-			      ctx,
-			      make_tdb_data(id_buf, sizeof(id_buf)),
-			      &data);
-	if (!NT_STATUS_IS_OK(status)) {
-		return NT_STATUS_INTERNAL_DB_CORRUPTION;
-	}
-
-	pblob->data = data.dptr;
-	pblob->length = data.dsize;
-
-	DBG_DEBUG("returned %u bytes from file %s\n",
-		(unsigned int)data.dsize, smb_fname->base_name );
-
-	if (pblob->length == 0 || pblob->data == NULL) {
-		return NT_STATUS_NOT_FOUND;
-	}
-	return NT_STATUS_OK;
-}
-
-/*******************************************************************
  Store a DATA_BLOB into a tdb record given an fsp pointer.
 *******************************************************************/
 
@@ -413,25 +357,6 @@ static NTSTATUS acl_tdb_fget_nt_acl(vfs_handle_struct *handle,
 	return status;
 }
 
-static NTSTATUS acl_tdb_get_nt_acl_at(vfs_handle_struct *handle,
-				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
-				uint32_t security_info,
-				TALLOC_CTX *mem_ctx,
-				struct security_descriptor **ppdesc)
-{
-	NTSTATUS status;
-	status = get_nt_acl_common_at(get_acl_blob_at,
-				handle,
-				dirfsp,
-				smb_fname,
-				security_info,
-				mem_ctx,
-				ppdesc);
-	return status;
-}
-
-
 static NTSTATUS acl_tdb_fset_nt_acl(vfs_handle_struct *handle,
 				    files_struct *fsp,
 				    uint32_t security_info_sent,
@@ -448,10 +373,8 @@ static struct vfs_fn_pointers vfs_acl_tdb_fns = {
 	.connect_fn = connect_acl_tdb,
 	.disconnect_fn = disconnect_acl_tdb,
 	.unlinkat_fn = unlinkat_acl_tdb,
-	.chmod_fn = chmod_acl_module_common,
 	.fchmod_fn = fchmod_acl_module_common,
 	.fget_nt_acl_fn = acl_tdb_fget_nt_acl,
-	.get_nt_acl_at_fn = acl_tdb_get_nt_acl_at,
 	.fset_nt_acl_fn = acl_tdb_fset_nt_acl,
 	.sys_acl_set_fd_fn = sys_acl_set_fd_tdb
 };

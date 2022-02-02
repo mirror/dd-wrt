@@ -43,82 +43,50 @@
 /*
  * Copy only non-expired dns records from one message element to another.
  */
-NTSTATUS copy_current_records(TALLOC_CTX *mem_ctx,
-			      struct ldb_message_element *old_el,
-			      struct ldb_message_element *el,
-			      NTTIME t)
+static NTSTATUS copy_current_records(TALLOC_CTX *mem_ctx,
+				     struct ldb_message_element *old_el,
+				     struct ldb_message_element *el,
+				     uint32_t dns_timestamp)
 {
-	unsigned int i, num_kept = 0;
-	struct dnsp_DnssrvRpcRecord *recs = NULL;
+	unsigned int i;
+	struct dnsp_DnssrvRpcRecord rec;
 	enum ndr_err_code ndr_err;
-	TALLOC_CTX *tmp_ctx = talloc_new(NULL);
 
-	if (tmp_ctx == NULL) {
+	el->values = talloc_zero_array(mem_ctx, struct ldb_val,
+				       old_el->num_values);
+	if (el->values == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	recs = talloc_zero_array(
-	    tmp_ctx, struct dnsp_DnssrvRpcRecord, el->num_values);
-	if (recs == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	for (i = 0; i < el->num_values; i++) {
+	for (i = 0; i < old_el->num_values; i++) {
 		ndr_err = ndr_pull_struct_blob(
 		    &(old_el->values[i]),
-		    tmp_ctx,
-		    &(recs[num_kept]),
+		    mem_ctx,
+		    &rec,
 		    (ndr_pull_flags_fn_t)ndr_pull_dnsp_DnssrvRpcRecord);
 		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-			TALLOC_FREE(tmp_ctx);
 			DBG_ERR("Failed to pull dns rec blob.\n");
 			return NT_STATUS_INTERNAL_ERROR;
 		}
-		if (recs[num_kept].dwTimeStamp > t ||
-		    recs[num_kept].dwTimeStamp == 0) {
-			num_kept++;
+		if (rec.dwTimeStamp > dns_timestamp ||
+		    rec.dwTimeStamp == 0) {
+			el->values[el->num_values] = old_el->values[i];
+			el->num_values++;
 		}
 	}
 
-	if (num_kept == el->num_values) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_OK;
-	}
-
-	el->values = talloc_zero_array(mem_ctx, struct ldb_val, num_kept);
-	if (el->values == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_NO_MEMORY;
-	}
-	el->num_values = num_kept;
-	for (i = 0; i < el->num_values; i++) {
-		ndr_err = ndr_push_struct_blob(
-		    &(el->values[i]),
-		    mem_ctx,
-		    &(recs[i]),
-		    (ndr_push_flags_fn_t)ndr_push_dnsp_DnssrvRpcRecord);
-		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-			TALLOC_FREE(tmp_ctx);
-			DBG_ERR("Failed to push dnsp_DnssrvRpcRecord\n");
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-	}
-
-	TALLOC_FREE(tmp_ctx);
 	return NT_STATUS_OK;
 }
 
 /*
  * Check all records in a zone and tombstone them if they're expired.
  */
-NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
-				    struct ldb_context *samdb,
-				    struct dns_server_zone *zone,
-				    struct ldb_val *true_struct,
-				    struct ldb_val *tombstone_blob,
-				    NTTIME t,
-				    char **error_string)
+static NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
+					   struct ldb_context *samdb,
+					   struct dns_server_zone *zone,
+					   uint32_t dns_timestamp,
+					   NTTIME entombed_time,
+					   char **error_string)
 {
 	WERROR werr;
 	NTSTATUS status;
@@ -129,7 +97,7 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 	struct ldb_message_element *tombstone_el = NULL;
 	struct ldb_message_element *old_el = NULL;
 	struct ldb_message *new_msg = NULL;
-	struct ldb_message *old_msg = NULL;
+	enum ndr_err_code ndr_err;
 	int ret;
 	struct GUID guid;
 	struct GUID_txt_buf buf_guid;
@@ -137,6 +105,29 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 			       "dNSTombstoned",
 			       "objectGUID",
 			       NULL};
+
+	struct ldb_val true_val = {
+		.data = discard_const_p(uint8_t, "TRUE"),
+		.length = 4
+	};
+
+	struct ldb_val tombstone_blob;
+	struct dnsp_DnssrvRpcRecord tombstone_struct = {
+		.wType = DNS_TYPE_TOMBSTONE,
+		.data = {.EntombedTime = entombed_time}
+	};
+
+	ndr_err = ndr_push_struct_blob(
+	    &tombstone_blob,
+	    mem_ctx,
+	    &tombstone_struct,
+	    (ndr_push_flags_fn_t)ndr_push_dnsp_DnssrvRpcRecord);
+	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+		*error_string = discard_const_p(char,
+						"Failed to push TOMBSTONE"
+						"dnsp_DnssrvRpcRecord\n");
+		return NT_STATUS_INTERNAL_ERROR;
+	}
 
 	*error_string = NULL;
 
@@ -154,7 +145,7 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 
 	/* Subtract them from current time to get the earliest possible.
 	 * timestamp allowed for a non-expired DNS record. */
-	t -= zi->dwNoRefreshInterval + zi->dwRefreshInterval;
+	dns_timestamp -= zi->dwNoRefreshInterval + zi->dwRefreshInterval;
 
 	/* Custom match gets dns records in the zone with dwTimeStamp < t. */
 	ret = ldb_search(samdb,
@@ -166,8 +157,8 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 			 "(&(objectClass=dnsNode)"
 			 "(&(!(dnsTombstoned=TRUE))"
 			 "(dnsRecord:" DSDB_MATCH_FOR_DNS_TO_TOMBSTONE_TIME
-			 ":=%"PRIu64")))",
-			 t);
+			 ":=%"PRIu32")))",
+			 dns_timestamp);
 	if (ret != LDB_SUCCESS) {
 		*error_string = talloc_asprintf(mem_ctx,
 						"Failed to search for dns "
@@ -186,37 +177,28 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 	 * change.  This prevents race conditions.
 	 */
 	for (i = 0; i < res->count; i++) {
-		old_msg = ldb_msg_copy(mem_ctx, res->msgs[i]);
-		if (old_msg == NULL) {
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-
-		old_el = ldb_msg_find_element(old_msg, "dnsRecord");
-		if (old_el == NULL) {
-			TALLOC_FREE(old_msg);
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-
-		old_el->flags = LDB_FLAG_MOD_DELETE;
-		new_msg = ldb_msg_copy(mem_ctx, old_msg);
+		new_msg = ldb_msg_copy(mem_ctx, res->msgs[i]);
 		if (new_msg == NULL) {
-			TALLOC_FREE(old_msg);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
+
+		old_el = ldb_msg_find_element(new_msg, "dnsRecord");
+		if (old_el == NULL) {
+			TALLOC_FREE(new_msg);
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+		old_el->flags = LDB_FLAG_MOD_DELETE;
 
 		ret = ldb_msg_add_empty(
 		    new_msg, "dnsRecord", LDB_FLAG_MOD_ADD, &el);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
 
-		el->num_values = old_el->num_values;
-		status = copy_current_records(mem_ctx, old_el, el, t);
+		status = copy_current_records(new_msg, old_el, el, dns_timestamp);
 
 		if (!NT_STATUS_IS_OK(status)) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
@@ -224,40 +206,72 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 		/* If nothing was expired, do nothing. */
 		if (el->num_values == old_el->num_values &&
 		    el->num_values != 0) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			continue;
 		}
 
-		el->flags = LDB_FLAG_MOD_ADD;
-
-		/* If everything was expired, we tombstone the node. */
+		/*
+		 * If everything was expired, we tombstone the node, which
+		 * involves adding a tombstone dnsRecord and a 'dnsTombstoned:
+		 * TRUE' attribute. That is, we want to end up with this:
+		 *
+		 *  objectClass: dnsNode
+		 *  dnsRecord:  { .wType = DNSTYPE_TOMBSTONE,
+		 *                .data.EntombedTime = <now> }
+		 *  dnsTombstoned: TRUE
+		 *
+		 * and no other dnsRecords.
+		 */
 		if (el->num_values == 0) {
-			el->values = tombstone_blob;
+			struct ldb_val *vals = talloc_realloc(new_msg->elements,
+							      el->values,
+							      struct ldb_val,
+							      1);
+			if (!vals) {
+				TALLOC_FREE(new_msg);
+				return NT_STATUS_INTERNAL_ERROR;
+			}
+			el->values = vals;
+			el->values[0] = tombstone_blob;
 			el->num_values = 1;
 
 			tombstone_el = ldb_msg_find_element(new_msg,
 						  "dnsTombstoned");
+
 			if (tombstone_el == NULL) {
 				ret = ldb_msg_add_value(new_msg,
 							"dnsTombstoned",
-							true_struct,
+							&true_val,
 							&tombstone_el);
 				if (ret != LDB_SUCCESS) {
-					TALLOC_FREE(old_msg);
 					TALLOC_FREE(new_msg);
 					return NT_STATUS_INTERNAL_ERROR;
 				}
 				tombstone_el->flags = LDB_FLAG_MOD_ADD;
 			} else {
+				if (tombstone_el->num_values != 1) {
+					vals = talloc_realloc(
+						new_msg->elements,
+						tombstone_el->values,
+						struct ldb_val,
+						1);
+					if (!vals) {
+						TALLOC_FREE(new_msg);
+						return NT_STATUS_INTERNAL_ERROR;
+					}
+					tombstone_el->values = vals;
+					tombstone_el->num_values = 1;
+				}
 				tombstone_el->flags = LDB_FLAG_MOD_REPLACE;
-				tombstone_el->values = true_struct;
+				tombstone_el->values[0] = true_val;
 			}
-			tombstone_el->num_values = 1;
 		} else {
 			/*
-			 * Do not change the status of dnsTombstoned
-			 * if we found any live records
+			 * Do not change the status of dnsTombstoned if we
+			 * found any live records. If it exists, its value
+			 * will be the harmless "FALSE", which is what we end
+			 * up with when a tombstoned record is untombstoned.
+			 * (in dns_common_replace).
 			 */
 			ldb_msg_remove_attr(new_msg,
 					    "dnsTombstoned");
@@ -266,7 +280,6 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 		/* Set DN to the GUID in case the object was moved. */
 		el = ldb_msg_find_element(new_msg, "objectGUID");
 		if (el == NULL) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			*error_string =
 			    talloc_asprintf(mem_ctx,
@@ -278,7 +291,6 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 
 		status = GUID_from_ndr_blob(el->values, &guid);
 		if (!NT_STATUS_IS_OK(status)) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			*error_string =
 			    discard_const_p(char, "Error: Invalid GUID.\n");
@@ -294,7 +306,6 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 
 		ret = ldb_modify(samdb, new_msg);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(old_msg);
 			TALLOC_FREE(new_msg);
 			*error_string =
 			    talloc_asprintf(mem_ctx,
@@ -304,7 +315,6 @@ NTSTATUS dns_tombstone_records_zone(TALLOC_CTX *mem_ctx,
 					    ldb_errstring(samdb));
 			return NT_STATUS_INTERNAL_ERROR;
 		}
-		TALLOC_FREE(old_msg);
 		TALLOC_FREE(new_msg);
 	}
 
@@ -321,58 +331,48 @@ NTSTATUS dns_tombstone_records(TALLOC_CTX *mem_ctx,
 	struct dns_server_zone *zones = NULL;
 	struct dns_server_zone *z = NULL;
 	NTSTATUS ret;
-	struct dnsp_DnssrvRpcRecord tombstone_struct;
-	struct ldb_val tombstone_blob;
-	struct ldb_val true_struct;
-	NTTIME t;
-	enum ndr_err_code ndr_err;
+	uint32_t dns_timestamp;
+	NTTIME entombed_time;
 	TALLOC_CTX *tmp_ctx = NULL;
-	uint8_t true_str[4] = "TRUE";
+	time_t unix_now = time(NULL);
 
-	unix_to_nt_time(&t, time(NULL));
-	t /= 10 * 1000 * 1000;
-	t /= 3600;
+	unix_to_nt_time(&entombed_time, unix_now);
+	dns_timestamp = unix_to_dns_timestamp(unix_now);
 
-	tombstone_struct = (struct dnsp_DnssrvRpcRecord){
-	    .wType = DNS_TYPE_TOMBSTONE, .data = {.timestamp = t}};
-
-	true_struct = (struct ldb_val){.data = true_str, .length = 4};
-
-	ndr_err = ndr_push_struct_blob(
-	    &tombstone_blob,
-	    mem_ctx,
-	    &tombstone_struct,
-	    (ndr_push_flags_fn_t)ndr_push_dnsp_DnssrvRpcRecord);
-	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		*error_string = discard_const_p(char,
-						"Failed to push "
-						"dnsp_DnssrvRpcRecord\n");
-		return NT_STATUS_INTERNAL_ERROR;
+	tmp_ctx = talloc_new(mem_ctx);
+	if (tmp_ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
 	}
 
-	dns_common_zones(samdb, mem_ctx, NULL, &zones);
+	ret = dns_common_zones(samdb, tmp_ctx, NULL, &zones);
+	if (!NT_STATUS_IS_OK(ret)) {
+		TALLOC_FREE(tmp_ctx);
+		return ret;
+	}
+
 	for (z = zones; z; z = z->next) {
-		tmp_ctx = talloc_new(NULL);
 		ret = dns_tombstone_records_zone(tmp_ctx,
 						 samdb,
 						 z,
-						 &true_struct,
-						 &tombstone_blob,
-						 t,
+						 dns_timestamp,
+						 entombed_time,
 						 error_string);
-		TALLOC_FREE(tmp_ctx);
 		if (NT_STATUS_EQUAL(ret, NT_STATUS_PROPSET_NOT_FOUND)) {
 			continue;
 		} else if (!NT_STATUS_IS_OK(ret)) {
+			TALLOC_FREE(tmp_ctx);
 			return ret;
 		}
 	}
+	TALLOC_FREE(tmp_ctx);
 	return NT_STATUS_OK;
 }
 
 /*
  * Delete all DNS tombstones that have been around for longer than the server
- * property 'DsTombstoneInterval' which we store in smb.conf
+ * property 'dns_tombstone_interval' which we store in smb.conf, which
+ * corresponds to DsTombstoneInterval in [MS-DNSP] 3.1.1.1.1 "DNS Server
+ * Integer Properties".
  */
 NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 			       struct ldb_context *samdb,
@@ -381,34 +381,47 @@ NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 	struct dns_server_zone *zones = NULL;
 	struct dns_server_zone *z = NULL;
 	int ret, i;
-	NTTIME current_time;
+	NTSTATUS status;
+	uint32_t current_time;
+	uint32_t tombstone_interval;
+	uint32_t tombstone_hours;
+	NTTIME tombstone_nttime;
 	enum ndr_err_code ndr_err;
 	struct ldb_result *res = NULL;
-	int tombstone_time;
 	TALLOC_CTX *tmp_ctx = NULL;
 	struct loadparm_context *lp_ctx = NULL;
 	struct ldb_message_element *el = NULL;
-	struct dnsp_DnssrvRpcRecord *rec = NULL;
+	struct dnsp_DnssrvRpcRecord rec = {0};
 	const char *attrs[] = {"dnsRecord", "dNSTombstoned", NULL};
-	rec = talloc_zero(mem_ctx, struct dnsp_DnssrvRpcRecord);
 
-	unix_to_nt_time(&current_time, time(NULL));
-	current_time /= 10 * 1000 * 1000;
-	current_time /= 3600;
+	current_time = unix_to_dns_timestamp(time(NULL));
 
 	lp_ctx = (struct loadparm_context *)ldb_get_opaque(samdb, "loadparm");
-	tombstone_time =
-	    current_time -
-	    lpcfg_parm_int(
-		lp_ctx, NULL, "dnsserver", "dns_tombstone_interval", 24 * 14);
+	tombstone_interval = lpcfg_parm_ulong(lp_ctx, NULL,
+					      "dnsserver",
+					      "dns_tombstone_interval",
+					      24 * 14);
 
-	dns_common_zones(samdb, mem_ctx, NULL, &zones);
+	tombstone_hours = current_time - tombstone_interval;
+	status = dns_timestamp_to_nt_time(&tombstone_nttime,
+					  tombstone_hours);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("DNS timestamp exceeds NTTIME epoch.\n");
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	tmp_ctx = talloc_new(mem_ctx);
+	if (tmp_ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	status = dns_common_zones(samdb, tmp_ctx, NULL, &zones);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(tmp_ctx);
+		return status;
+	}
+
 	for (z = zones; z; z = z->next) {
-		tmp_ctx = talloc_new(NULL);
-		if (tmp_ctx == NULL) {
-			return NT_STATUS_NO_MEMORY;
-		}
-
 		/*
 		 * This can load a very large set, but on the
 		 * assumption that the number of tombstones is
@@ -427,7 +440,6 @@ NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 				 "(&(objectClass=dnsNode)(dNSTombstoned=TRUE))");
 
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(tmp_ctx);
 			*error_string =
 			    talloc_asprintf(mem_ctx,
 					    "Failed to "
@@ -435,15 +447,38 @@ NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 					    "dns objects in zone %s: %s",
 					    ldb_dn_get_linearized(z->dn),
 					    ldb_errstring(samdb));
+			TALLOC_FREE(tmp_ctx);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
 
 		for (i = 0; i < res->count; i++) {
-			el = ldb_msg_find_element(res->msgs[i], "dnsRecord");
+			struct ldb_message *msg = res->msgs[i];
+			el = ldb_msg_find_element(msg, "dnsRecord");
+			if (el == NULL) {
+				DBG_ERR("The tombstoned dns node %s has no dns "
+					"records, which should not happen.\n",
+					ldb_dn_get_linearized(msg->dn)
+					);
+				continue;
+			}
+			/*
+			 * Below we assume the element has one value, which we
+			 * expect because when we tombstone a node we remove
+			 * all the records except for the tombstone.
+			 */
+			if (el->num_values != 1) {
+				DBG_ERR("The tombstoned dns node %s has %u "
+					"dns records, expected one.\n",
+					ldb_dn_get_linearized(msg->dn),
+					el->num_values
+					);
+				continue;
+			}
+
 			ndr_err = ndr_pull_struct_blob(
 			    el->values,
 			    tmp_ctx,
-			    rec,
+			    &rec,
 			    (ndr_pull_flags_fn_t)ndr_pull_dnsp_DnssrvRpcRecord);
 			if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 				TALLOC_FREE(tmp_ctx);
@@ -451,15 +486,37 @@ NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 				return NT_STATUS_INTERNAL_ERROR;
 			}
 
-			if (rec->wType != DNS_TYPE_TOMBSTONE) {
+			if (rec.wType != DNS_TYPE_TOMBSTONE) {
+				DBG_ERR("A tombstoned dnsNode has non-tombstoned"
+					" records, which should not happen.\n");
 				continue;
 			}
 
-			if (rec->data.timestamp > tombstone_time) {
+			if (rec.data.EntombedTime > tombstone_nttime) {
+				continue;
+			}
+			/*
+			 * Between 4.9 and 4.14 in some places we saved the
+			 * tombstone time as hours since the start of 1601,
+			 * not in NTTIME ten-millionths of a second units.
+			 *
+			 * We can accomodate these bad values by noting that
+			 * all the realistic timestamps in that measurement
+			 * fall within the first *second* of NTTIME, that is,
+			 * before 1601-01-01 00:00:01; and that these
+			 * timestamps are not realistic for NTTIME timestamps.
+			 *
+			 * Calculation: there are roughly 365.25 * 24 = 8766
+			 * hours per year, and < 500 years since 1601, so
+			 * 4383000 would be a fine threshold. We round up to
+			 * the crore-second (c. 2741CE) in honour of NTTIME.
+			 */
+			if ((rec.data.EntombedTime < 10000000) &&
+			    (rec.data.EntombedTime > tombstone_hours)) {
 				continue;
 			}
 
-			ret = dsdb_delete(samdb, res->msgs[i]->dn, 0);
+			ret = dsdb_delete(samdb, msg->dn, 0);
 			if (ret != LDB_ERR_NO_SUCH_OBJECT &&
 			    ret != LDB_SUCCESS) {
 				TALLOC_FREE(tmp_ctx);
@@ -468,7 +525,7 @@ NTSTATUS dns_delete_tombstones(TALLOC_CTX *mem_ctx,
 			}
 		}
 
-		TALLOC_FREE(tmp_ctx);
 	}
+	TALLOC_FREE(tmp_ctx);
 	return NT_STATUS_OK;
 }

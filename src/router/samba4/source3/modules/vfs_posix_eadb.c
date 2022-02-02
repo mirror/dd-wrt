@@ -76,20 +76,6 @@ static ssize_t posix_eadb_getattr(struct tdb_wrap *db_ctx,
 	return result;
 }
 
-static ssize_t posix_eadb_getxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				void *value,
-				size_t size)
-{
-	struct tdb_wrap *db;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct tdb_wrap, return -1);
-
-	return posix_eadb_getattr(db, smb_fname->base_name,
-			-1, name, value, size);
-}
-
 static ssize_t posix_eadb_fgetxattr(struct vfs_handle_struct *handle,
 				   struct files_struct *fsp,
 				   const char *name, void *value, size_t size)
@@ -124,21 +110,6 @@ static int posix_eadb_setattr(struct tdb_wrap *db_ctx,
 	}
 
 	return 0;
-}
-
-static int posix_eadb_setxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name,
-				const void *value,
-				size_t size,
-				int flags)
-{
-	struct tdb_wrap *db;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct tdb_wrap, return -1);
-
-	return posix_eadb_setattr(db, smb_fname->base_name,
-			-1, name, value, size, flags);
 }
 
 static int posix_eadb_fsetxattr(struct vfs_handle_struct *handle,
@@ -185,18 +156,6 @@ static ssize_t posix_eadb_listattr(struct tdb_wrap *db_ctx,
 	return blob.length;
 }
 
-static ssize_t posix_eadb_listxattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				char *list,
-				size_t size)
-{
-	struct tdb_wrap *db;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct tdb_wrap, return -1);
-
-	return posix_eadb_listattr(db, smb_fname->base_name, -1, list, size);
-}
-
 static ssize_t posix_eadb_flistxattr(struct vfs_handle_struct *handle,
 				    struct files_struct *fsp, char *list,
 				    size_t size)
@@ -225,17 +184,6 @@ static int posix_eadb_removeattr(struct tdb_wrap *db_ctx,
 		return -1;
 	}
 	return 0;
-}
-
-static int posix_eadb_removexattr(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				const char *name)
-{
-	struct tdb_wrap *db;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct tdb_wrap, return -1);
-
-	return posix_eadb_removeattr(db, smb_fname->base_name, -1, name);
 }
 
 static int posix_eadb_fremovexattr(struct vfs_handle_struct *handle,
@@ -295,6 +243,7 @@ static int posix_eadb_unlink_internal(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			int flags)
 {
+	struct smb_filename *full_fname = NULL;
 	struct smb_filename *smb_fname_tmp = NULL;
 	int ret = -1;
 
@@ -308,14 +257,26 @@ static int posix_eadb_unlink_internal(vfs_handle_struct *handle,
 		return -1;
 	}
 
+	/*
+	 * TODO: use SMB_VFS_STATX() once we have that.
+	 */
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		goto out;
+	}
+
 	if (smb_fname->flags & SMB_FILENAME_POSIX_PATH) {
-		ret = SMB_VFS_NEXT_LSTAT(handle, smb_fname_tmp);
+		ret = SMB_VFS_NEXT_LSTAT(handle, full_fname);
 	} else {
-		ret = SMB_VFS_NEXT_STAT(handle, smb_fname_tmp);
+		ret = SMB_VFS_NEXT_STAT(handle, full_fname);
 	}
 	if (ret == -1) {
 		goto out;
 	}
+	smb_fname_tmp->st = full_fname->st;
 
 	if (smb_fname_tmp->st.st_ex_nlink == 1) {
 		NTSTATUS status;
@@ -327,7 +288,9 @@ static int posix_eadb_unlink_internal(vfs_handle_struct *handle,
 			goto out;
 		}
 
-		status = unlink_posix_eadb_raw(ea_tdb, smb_fname->base_name, -1);
+		status = unlink_posix_eadb_raw(ea_tdb,
+					       full_fname->base_name,
+					       -1);
 		if (!NT_STATUS_IS_OK(status)) {
 			tdb_transaction_cancel(ea_tdb->tdb);
 			ret = -1;
@@ -352,6 +315,7 @@ static int posix_eadb_unlink_internal(vfs_handle_struct *handle,
 
 out:
 	TALLOC_FREE(smb_fname_tmp);
+	TALLOC_FREE(full_fname);
 	return ret;
 }
 
@@ -365,15 +329,24 @@ static int posix_eadb_rmdir_internal(vfs_handle_struct *handle,
 	NTSTATUS status;
 	struct tdb_wrap *ea_tdb;
 	int ret;
-	const char *path = smb_fname->base_name;
+	struct smb_filename *full_fname = NULL;
 
 	SMB_VFS_HANDLE_GET_DATA(handle, ea_tdb, struct tdb_wrap, return -1);
 
-	if (tdb_transaction_start(ea_tdb->tdb) != 0) {
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
 		return -1;
 	}
 
-	status = unlink_posix_eadb_raw(ea_tdb, path, -1);
+	if (tdb_transaction_start(ea_tdb->tdb) != 0) {
+		TALLOC_FREE(full_fname);
+		return -1;
+	}
+
+	status = unlink_posix_eadb_raw(ea_tdb, full_fname->base_name, -1);
+	TALLOC_FREE(full_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		tdb_transaction_cancel(ea_tdb->tdb);
 	}
@@ -401,7 +374,6 @@ static int posix_eadb_unlinkat(vfs_handle_struct *handle,
 {
 	int ret;
 
-	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
 	if (flags & AT_REMOVEDIR) {
 		ret = posix_eadb_rmdir_internal(handle,
 					dirfsp,
@@ -460,15 +432,11 @@ static int posix_eadb_connect(vfs_handle_struct *handle, const char *service,
 }
 
 static struct vfs_fn_pointers vfs_posix_eadb_fns = {
-	.getxattr_fn = posix_eadb_getxattr,
 	.getxattrat_send_fn = vfs_not_implemented_getxattrat_send,
 	.getxattrat_recv_fn = vfs_not_implemented_getxattrat_recv,
 	.fgetxattr_fn = posix_eadb_fgetxattr,
-	.setxattr_fn = posix_eadb_setxattr,
 	.fsetxattr_fn = posix_eadb_fsetxattr,
-	.listxattr_fn = posix_eadb_listxattr,
 	.flistxattr_fn = posix_eadb_flistxattr,
-	.removexattr_fn = posix_eadb_removexattr,
 	.fremovexattr_fn = posix_eadb_fremovexattr,
 	.unlinkat_fn = posix_eadb_unlinkat,
 	.connect_fn = posix_eadb_connect,

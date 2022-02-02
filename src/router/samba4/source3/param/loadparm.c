@@ -75,6 +75,8 @@
 #include "libcli/auth/ntlm_check.h"
 #include "lib/crypto/gnutls_helpers.h"
 #include "lib/util/string_wrappers.h"
+#include "auth/credentials/credentials.h"
+#include "source3/lib/substitute.h"
 
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
@@ -196,6 +198,7 @@ static const struct loadparm_service _sDefault =
 	.map_hidden = false,
 	.map_archive = true,
 	.store_dos_attributes = true,
+	.smbd_max_xattr_size = 65536,
 	.dmapi_support = false,
 	.locking = true,
 	.strict_locking = Auto,
@@ -238,6 +241,7 @@ static const struct loadparm_service _sDefault =
 	.acl_map_full_control = true,
 	.acl_group_control = false,
 	.acl_allow_execute_always = false,
+	.acl_flag_inherited_canonicalization = true,
 	.aio_read_size = 1,
 	.aio_write_size = 1,
 	.map_readonly = MAP_READONLY_NO,
@@ -682,15 +686,6 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.machine_password_timeout = 60 * 60 * 24 * 7;	/* 7 days default. */
 	Globals.lm_announce = Auto;	/* = Auto: send only if LM clients found */
 	Globals.lm_interval = 60;
-#if (defined(HAVE_NETGROUP) && defined(WITH_AUTOMOUNT))
-	Globals.nis_homedir = false;
-#ifdef WITH_NISPLUS_HOME
-	lpcfg_string_set(Globals.ctx, &Globals.homedir_map,
-			 "auto_home.org_dir");
-#else
-	lpcfg_string_set(Globals.ctx, &Globals.homedir_map, "auto.home");
-#endif
-#endif
 	Globals.time_server = false;
 	Globals.bind_interfaces_only = false;
 	Globals.unix_password_sync = false;
@@ -823,7 +818,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.winbind_nss_info = str_list_make_v3_const(NULL, "template", NULL);
 	Globals.winbind_refresh_tickets = false;
 	Globals.winbind_offline_logon = false;
-	Globals.winbind_scan_trusted_domains = true;
+	Globals.winbind_scan_trusted_domains = false;
 
 	Globals.idmap_cache_time = 86400 * 7; /* a week by default */
 	Globals.idmap_negative_cache_time = 120; /* 2 minutes by default */
@@ -873,6 +868,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.smb2_max_trans = DEFAULT_SMB2_MAX_TRANSACT;
 	Globals.smb2_max_credits = DEFAULT_SMB2_MAX_CREDITS;
 	Globals.smb2_leases = true;
+	Globals.server_multi_channel_support = true;
 
 	lpcfg_string_set(Globals.ctx, &Globals.ncalrpc_dir,
 			 get_dyn_NCALRPCDIR());
@@ -890,8 +886,6 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	lpcfg_string_set(Globals.ctx,
 			 &Globals.tls_priority,
 			 "NORMAL:-VERS-SSL3.0");
-
-	lpcfg_string_set(Globals.ctx, &Globals.share_backend, "classic");
 
 	Globals._preferred_master = Auto;
 
@@ -966,6 +960,24 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.async_dns_timeout = 10;
 
 	Globals.client_smb_encrypt = SMB_ENCRYPTION_DEFAULT;
+
+	Globals._client_use_kerberos = CRED_USE_KERBEROS_DESIRED;
+
+	Globals.client_protection = CRED_CLIENT_PROTECTION_DEFAULT;
+
+	Globals.winbind_use_krb5_enterprise_principals = true;
+
+	Globals.client_smb3_signing_algorithms =
+		str_list_make_v3_const(NULL, DEFAULT_SMB3_SIGNING_ALGORITHMS, NULL);
+	Globals.server_smb3_signing_algorithms =
+		str_list_make_v3_const(NULL, DEFAULT_SMB3_SIGNING_ALGORITHMS, NULL);
+
+	Globals.client_smb3_encryption_algorithms =
+		str_list_make_v3_const(NULL, DEFAULT_SMB3_ENCRYPTION_ALGORITHMS, NULL);
+	Globals.server_smb3_encryption_algorithms =
+		str_list_make_v3_const(NULL, DEFAULT_SMB3_ENCRYPTION_ALGORITHMS, NULL);
+
+	Globals.min_domain_uid = 1000;
 
 	/* Now put back the settings that were set with lp_set_cmdline() */
 	apply_lp_set_cmdline();
@@ -4410,6 +4422,7 @@ int lp_default_server_announce(void)
 			default_server_announce |= SV_TYPE_DOMAIN_MEMBER;
 			break;
 		case ROLE_DOMAIN_PDC:
+		case ROLE_IPA_DC:
 			default_server_announce |= SV_TYPE_DOMAIN_CTRL;
 			break;
 		case ROLE_DOMAIN_BDC:
@@ -4435,7 +4448,8 @@ int lp_default_server_announce(void)
 bool lp_domain_master(void)
 {
 	if (Globals._domain_master == Auto)
-		return (lp_server_role() == ROLE_DOMAIN_PDC);
+		return (lp_server_role() == ROLE_DOMAIN_PDC ||
+			lp_server_role() == ROLE_IPA_DC);
 
 	return (bool)Globals._domain_master;
 }
@@ -4718,6 +4732,16 @@ int lp_client_ipc_signing(void)
 	}
 	return client_ipc_signing;
 }
+
+enum credentials_use_kerberos lp_client_use_kerberos(void)
+{
+	if (lp_weak_crypto() == SAMBA_WEAK_CRYPTO_DISALLOWED) {
+		return CRED_USE_KERBEROS_REQUIRED;
+	}
+
+	return lp__client_use_kerberos();
+}
+
 
 int lp_rpc_low_port(void)
 {

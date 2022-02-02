@@ -29,30 +29,53 @@ struct flag_map {
 	uint32_t flag;
 };
 
+static bool sddl_map_flag(
+	const struct flag_map *map,
+	const char *str,
+	size_t *plen,
+	uint32_t *pflag)
+{
+	while (map->name != NULL) {
+		size_t len = strlen(map->name);
+		int cmp = strncmp(map->name, str, len);
+
+		if (cmp == 0) {
+			*plen = len;
+			*pflag = map->flag;
+			return true;
+		}
+		map += 1;
+	}
+	return false;
+}
+
 /*
   map a series of letter codes into a uint32_t
 */
 static bool sddl_map_flags(const struct flag_map *map, const char *str, 
-			   uint32_t *flags, size_t *len)
+			   uint32_t *pflags, size_t *plen)
 {
 	const char *str0 = str;
-	if (len) *len = 0;
-	*flags = 0;
+	if (plen != NULL) {
+		*plen = 0;
+	}
+	*pflags = 0;
 	while (str[0] && isupper(str[0])) {
-		int i;
-		for (i=0;map[i].name;i++) {
-			size_t l = strlen(map[i].name);
-			if (strncmp(map[i].name, str, l) == 0) {
-				*flags |= map[i].flag;
-				str += l;
-				if (len) *len += l;
-				break;
-			}
-		}
-		if (map[i].name == NULL) {
+		size_t len;
+		uint32_t flags;
+		bool found;
+
+		found = sddl_map_flag(map, str, &len, &flags);
+		if (!found) {
 			DEBUG(1, ("Unknown flag - %s in %s\n", str, str0));
 			return false;
 		}
+
+		*pflags |= flags;
+		if (plen != NULL) {
+			*plen += len;
+		}
+		str += len;
 	}
 	return true;
 }
@@ -203,6 +226,47 @@ static const struct flag_map ace_access_mask[] = {
 	{ NULL, 0 }
 };
 
+static const struct flag_map decode_ace_access_mask[] = {
+	{ "FA", FILE_ALL_ACCESS },
+	{ "FR", FILE_GENERIC_READ },
+	{ "FW", FILE_GENERIC_WRITE },
+	{ "FX", FILE_GENERIC_EXECUTE },
+	{ NULL, 0 },
+};
+
+static bool sddl_decode_access(const char *str, uint32_t *pmask)
+{
+	const char *str0 = str;
+	uint32_t mask = 0;
+	int cmp;
+
+	cmp = strncmp(str, "0x", 2);
+	if (cmp == 0) {
+		*pmask = strtol(str, NULL, 16);
+		return true;
+	}
+
+	while ((str[0] != '\0') && isupper(str[0])) {
+		uint32_t flags = 0;
+		size_t len = 0;
+		bool found;
+
+		found = sddl_map_flag(
+			ace_access_mask, str, &len, &flags);
+		found |= sddl_map_flag(
+			decode_ace_access_mask, str, &len, &flags);
+		if (!found) {
+			DEBUG(1, ("Unknown flag - %s in %s\n", str, str0));
+			return false;
+		}
+		mask |= flags;
+		str += len;
+	}
+
+	*pmask = mask;
+	return true;
+}
+
 /*
   decode an ACE
   return true on success, false on failure
@@ -216,6 +280,7 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 	int i;
 	uint32_t v;
 	struct dom_sid *sid;
+	bool ok;
 
 	ZERO_STRUCTP(ace);
 
@@ -242,13 +307,9 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 	ace->flags = v;
 	
 	/* access mask */
-	if (strncmp(tok[2], "0x", 2) == 0) {
-		ace->access_mask = strtol(tok[2], NULL, 16);
-	} else {
-		if (!sddl_map_flags(ace_access_mask, tok[2], &v, NULL)) {
-			return false;
-		}
-		ace->access_mask = v;
+	ok = sddl_decode_access(tok[2], &ace->access_mask);
+	if (!ok) {
+		return false;
 	}
 
 	/* object */
@@ -496,6 +557,7 @@ static char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace
 {
 	char *sddl = NULL;
 	TALLOC_CTX *tmp_ctx;
+	struct GUID_txt_buf object_buf, iobject_buf;
 	const char *sddl_type="", *sddl_flags="", *sddl_mask="",
 		*sddl_object="", *sddl_iobject="", *sddl_trustee="";
 
@@ -530,19 +592,18 @@ static char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace
 	    ace->type == SEC_ACE_TYPE_ACCESS_DENIED_OBJECT ||
 	    ace->type == SEC_ACE_TYPE_SYSTEM_AUDIT_OBJECT ||
 	    ace->type == SEC_ACE_TYPE_SYSTEM_ALARM_OBJECT) {
+		const struct security_ace_object *object = &ace->object.object;
+
 		if (ace->object.object.flags & SEC_ACE_OBJECT_TYPE_PRESENT) {
-			sddl_object = GUID_string(
-				tmp_ctx, &ace->object.object.type.type);
-			if (sddl_object == NULL) {
-				goto failed;
-			}
+			sddl_object = GUID_buf_string(
+				&object->type.type, &object_buf);
 		}
 
-		if (ace->object.object.flags & SEC_ACE_INHERITED_OBJECT_TYPE_PRESENT) {
-			sddl_iobject = GUID_string(tmp_ctx, &ace->object.object.inherited_type.inherited_type);
-			if (sddl_iobject == NULL) {
-				goto failed;
-			}
+		if (ace->object.object.flags &
+		    SEC_ACE_INHERITED_OBJECT_TYPE_PRESENT) {
+			sddl_iobject = GUID_buf_string(
+				&object->inherited_type.inherited_type,
+				&iobject_buf);
 		}
 	}
 

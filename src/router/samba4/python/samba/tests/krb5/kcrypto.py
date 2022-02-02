@@ -81,8 +81,8 @@ class Cksumtype(object):
     MD4_DES = 3
     MD5 = 7
     MD5_DES = 8
-    SHA1 = 9
     SHA1_DES3 = 12
+    SHA1 = 14
     SHA1_AES128 = 15
     SHA1_AES256 = 16
     HMAC_MD5 = -138
@@ -478,6 +478,7 @@ class _ChecksumProfile(object):
     # define:
     #   * checksum
     #   * verify (if verification is not just checksum-and-compare)
+    #   * checksum_len
     @classmethod
     def verify(cls, key, keyusage, text, cksum):
         expected = cls.checksum(key, keyusage, text)
@@ -503,6 +504,10 @@ class _SimplifiedChecksum(_ChecksumProfile):
         if key.enctype != cls.enc.enctype:
             raise ValueError('Wrong key type for checksum')
         super(_SimplifiedChecksum, cls).verify(key, keyusage, text, cksum)
+
+    @classmethod
+    def checksum_len(cls):
+        return cls.macsize
 
 
 class _SHA1AES128(_SimplifiedChecksum):
@@ -533,12 +538,20 @@ class _HMACMD5(_ChecksumProfile):
             raise ValueError('Wrong key type for checksum')
         super(_HMACMD5, cls).verify(key, keyusage, text, cksum)
 
+    @classmethod
+    def checksum_len(cls):
+        return hashes.MD5.digest_size
+
 
 class _MD5(_ChecksumProfile):
     @classmethod
     def checksum(cls, key, keyusage, text):
         # This is unkeyed!
         return SIMPLE_HASH(text, hashes.MD5)
+
+    @classmethod
+    def checksum_len(cls):
+        return hashes.MD5.digest_size
 
 
 class _SHA1(_ChecksumProfile):
@@ -547,6 +560,10 @@ class _SHA1(_ChecksumProfile):
         # This is unkeyed!
         return SIMPLE_HASH(text, hashes.SHA1)
 
+    @classmethod
+    def checksum_len(cls):
+        return hashes.SHA1.digest_size
+
 
 class _CRC32(_ChecksumProfile):
     @classmethod
@@ -554,6 +571,10 @@ class _CRC32(_ChecksumProfile):
         # This is unkeyed!
         cksum = (~crc32(text, 0xffffffff)) & 0xffffffff
         return pack('<I', cksum)
+
+    @classmethod
+    def checksum_len(cls):
+        return 4
 
 
 _enctype_table = {
@@ -643,6 +664,11 @@ def verify_checksum(cksumtype, key, keyusage, text, cksum):
     c.verify(key, keyusage, text, cksum)
 
 
+def checksum_len(cksumtype):
+    c = _get_checksum_profile(cksumtype)
+    return c.checksum_len()
+
+
 def prfplus(key, pepper, ln):
     # Produce ln bytes of output using the RFC 6113 PRF+ function.
     out = b''
@@ -653,9 +679,11 @@ def prfplus(key, pepper, ln):
     return out[:ln]
 
 
-def cf2(enctype, key1, key2, pepper1, pepper2):
+def cf2(key1, key2, pepper1, pepper2, enctype=None):
     # Combine two keys and two pepper strings to produce a result key
     # of type enctype, using the RFC 6113 KRB-FX-CF2 function.
+    if enctype is None:
+        enctype = key1.enctype
     e = _get_enctype_profile(enctype)
     return e.random_to_key(_xorbytes(prfplus(key1, pepper1, e.seedsize),
                                      prfplus(key2, pepper2, e.seedsize)))
@@ -748,7 +776,7 @@ class KcrytoTest(TestCase):
         kb = h('97DF97E4B798B29EB31ED7280287A92A')
         k1 = string_to_key(Enctype.AES128, b'key1', b'key1')
         k2 = string_to_key(Enctype.AES128, b'key2', b'key2')
-        k = cf2(Enctype.AES128, k1, k2, b'a', b'b')
+        k = cf2(k1, k2, b'a', b'b')
         self.assertEqual(k.contents, kb)
 
     def test_aes256_cf2(self):
@@ -757,7 +785,7 @@ class KcrytoTest(TestCase):
                'E72B1C7B')
         k1 = string_to_key(Enctype.AES256, b'key1', b'key1')
         k2 = string_to_key(Enctype.AES256, b'key2', b'key2')
-        k = cf2(Enctype.AES256, k1, k2, b'a', b'b')
+        k = cf2(k1, k2, b'a', b'b')
         self.assertEqual(k.contents, kb)
 
     def test_des3_crypt(self):
@@ -794,7 +822,7 @@ class KcrytoTest(TestCase):
         kb = h('E58F9EB643862C13AD38E529313462A7F73E62834FE54A01')
         k1 = string_to_key(Enctype.DES3, b'key1', b'key1')
         k2 = string_to_key(Enctype.DES3, b'key2', b'key2')
-        k = cf2(Enctype.DES3, k1, k2, b'a', b'b')
+        k = cf2(k1, k2, b'a', b'b')
         self.assertEqual(k.contents, kb)
 
     def test_rc4_crypt(self):
@@ -830,7 +858,7 @@ class KcrytoTest(TestCase):
         kb = h('24D7F6B6BAE4E5C00D2082C5EBAB3672')
         k1 = string_to_key(Enctype.RC4, b'key1', b'key1')
         k2 = string_to_key(Enctype.RC4, b'key2', b'key2')
-        k = cf2(Enctype.RC4, k1, k2, b'a', b'b')
+        k = cf2(k1, k2, b'a', b'b')
         self.assertEqual(k.contents, kb)
 
     def _test_md5_unkeyed_checksum(self, etype, usage):

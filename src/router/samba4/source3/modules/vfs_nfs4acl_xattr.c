@@ -52,7 +52,7 @@ static const struct enum_list nfs4acl_encoding[] = {
  * directories 0777. Discard the ACL blob if the mode is different.
  */
 static bool nfs4acl_validate_blob(vfs_handle_struct *handle,
-				  const struct smb_filename *smb_fname)
+				  files_struct *fsp)
 {
 	struct nfs4acl_config *config = NULL;
 	mode_t expected_mode;
@@ -66,22 +66,17 @@ static bool nfs4acl_validate_blob(vfs_handle_struct *handle,
 		return true;
 	}
 
-	if (!VALID_STAT(smb_fname->st)) {
-		/* might be a create */
-		return true;
-	}
-
-	if (S_ISDIR(smb_fname->st.st_ex_mode)) {
+	if (S_ISDIR(fsp->fsp_name->st.st_ex_mode)) {
 		expected_mode = 0777;
 	} else {
 		expected_mode = 0666;
 	}
-	if ((smb_fname->st.st_ex_mode & expected_mode) == expected_mode) {
+	if ((fsp->fsp_name->st.st_ex_mode & expected_mode) == expected_mode) {
 		return true;
 	}
 
-	ret = SMB_VFS_NEXT_REMOVEXATTR(handle,
-				       smb_fname,
+	ret = SMB_VFS_NEXT_FREMOVEXATTR(handle,
+				       fsp,
 				       config->xattr_name);
 	if (ret != 0 && errno != ENOATTR) {
 		DBG_ERR("Removing NFS4 xattr failed: %s\n", strerror(errno));
@@ -93,12 +88,10 @@ static bool nfs4acl_validate_blob(vfs_handle_struct *handle,
 
 static NTSTATUS nfs4acl_get_blob(struct vfs_handle_struct *handle,
 				 files_struct *fsp,
-				 const struct smb_filename *smb_fname_in,
 				 TALLOC_CTX *mem_ctx,
 				 DATA_BLOB *blob)
 {
 	struct nfs4acl_config *config = NULL;
-	const struct smb_filename *smb_fname = NULL;
 	size_t allocsize = 256;
 	ssize_t length;
 	bool ok;
@@ -109,18 +102,7 @@ static NTSTATUS nfs4acl_get_blob(struct vfs_handle_struct *handle,
 
 	*blob = data_blob_null;
 
-	if (fsp == NULL && smb_fname_in == NULL) {
-		return NT_STATUS_INTERNAL_ERROR;
-	}
-	smb_fname = smb_fname_in;
-	if (smb_fname == NULL) {
-		smb_fname = fsp->fsp_name;
-	}
-	if (smb_fname == NULL) {
-		return NT_STATUS_INTERNAL_ERROR;
-	}
-
-	ok = nfs4acl_validate_blob(handle, smb_fname);
+	ok = nfs4acl_validate_blob(handle, fsp);
 	if (!ok) {
 		return NT_STATUS_INTERNAL_ERROR;
 	}
@@ -133,19 +115,11 @@ static NTSTATUS nfs4acl_get_blob(struct vfs_handle_struct *handle,
 			return NT_STATUS_NO_MEMORY;
 		}
 
-		if (fsp != NULL && fsp_get_pathref_fd(fsp) != -1) {
-			length = SMB_VFS_NEXT_FGETXATTR(handle,
-							fsp,
-							config->xattr_name,
-							blob->data,
-							blob->length);
-		} else {
-			length = SMB_VFS_NEXT_GETXATTR(handle,
-						       smb_fname,
-						       config->xattr_name,
-						       blob->data,
-						       blob->length);
-		}
+		length = SMB_VFS_NEXT_FGETXATTR(handle,
+						fsp,
+						config->xattr_name,
+						blob->data,
+						blob->length);
 	} while (length == -1 && errno == ERANGE && allocsize <= 65536);
 
 	if (length == -1) {
@@ -239,7 +213,7 @@ static NTSTATUS nfs4acl_xattr_fget_nt_acl(struct vfs_handle_struct *handle,
 	DATA_BLOB blob;
 	NTSTATUS status;
 
-	status = nfs4acl_get_blob(handle, fsp, NULL, frame, &blob);
+	status = nfs4acl_get_blob(handle, fsp, frame, &blob);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
 		TALLOC_FREE(frame);
 		return nfs4acl_xattr_default_sd(
@@ -258,44 +232,6 @@ static NTSTATUS nfs4acl_xattr_fget_nt_acl(struct vfs_handle_struct *handle,
 
 	status = smb_fget_nt_acl_nfs4(fsp, NULL, security_info, mem_ctx,
 				      sd, smb4acl);
-	TALLOC_FREE(frame);
-	return status;
-}
-
-static NTSTATUS nfs4acl_xattr_get_nt_acl_at(struct vfs_handle_struct *handle,
-				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
-				uint32_t security_info,
-				TALLOC_CTX *mem_ctx,
-				struct security_descriptor **sd)
-{
-	struct SMB4ACL_T *smb4acl = NULL;
-	TALLOC_CTX *frame = talloc_stackframe();
-	DATA_BLOB blob;
-	NTSTATUS status;
-
-	SMB_ASSERT(dirfsp == handle->conn->cwd_fsp);
-
-	status = nfs4acl_get_blob(handle, NULL, smb_fname, frame, &blob);
-	if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
-		TALLOC_FREE(frame);
-		return nfs4acl_xattr_default_sd(
-			handle,	smb_fname, mem_ctx, sd);
-	}
-	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
-	}
-
-	status = nfs4acl_blob_to_smb4(handle, &blob, frame, &smb4acl);
-	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
-	}
-
-	status = smb_get_nt_acl_nfs4(handle->conn, smb_fname, NULL,
-				     security_info, mem_ctx, sd,
-				     smb4acl);
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -335,14 +271,8 @@ static bool nfs4acl_smb4acl_set_fn(vfs_handle_struct *handle,
 		return false;
 	}
 
-	if (fsp_get_pathref_fd(fsp) != -1) {
-		ret = SMB_VFS_NEXT_FSETXATTR(handle, fsp, config->xattr_name,
-					     blob.data, blob.length, 0);
-	} else {
-		ret = SMB_VFS_NEXT_SETXATTR(handle, fsp->fsp_name,
-					    config->xattr_name,
-					    blob.data, blob.length, 0);
-	}
+	ret = SMB_VFS_NEXT_FSETXATTR(handle, fsp, config->xattr_name,
+				     blob.data, blob.length, 0);
 	if (ret != 0) {
 		saved_errno = errno;
 	}
@@ -396,15 +326,9 @@ static NTSTATUS nfs4acl_xattr_fset_nt_acl(vfs_handle_struct *handle,
 
 		restored_mode = existing_mode | expected_mode;
 
-		if (fsp_get_io_fd(fsp) != -1) {
-			ret = SMB_VFS_NEXT_FCHMOD(handle,
-						  fsp,
-						  restored_mode);
-		} else {
-			ret = SMB_VFS_NEXT_CHMOD(handle,
-						 fsp->fsp_name,
-						 restored_mode);
-		}
+		ret = SMB_VFS_NEXT_FCHMOD(handle,
+					  fsp,
+					  restored_mode);
 		if (ret != 0) {
 			DBG_ERR("Resetting POSIX mode on [%s] from [0%o]: %s\n",
 				fsp_str_dbg(fsp), existing_mode,
@@ -605,16 +529,9 @@ static int nfs4acl_connect(struct vfs_handle_struct *handle,
    Function declarations taken from vfs_solarisacl
 */
 
-static SMB_ACL_T nfs4acl_xattr_fail__sys_acl_get_file(vfs_handle_struct *handle,
-					const struct smb_filename *smb_fname,
-					SMB_ACL_TYPE_T type,
-					TALLOC_CTX *mem_ctx)
-{
-	return (SMB_ACL_T)NULL;
-}
-
 static SMB_ACL_T nfs4acl_xattr_fail__sys_acl_get_fd(vfs_handle_struct *handle,
 						    files_struct *fsp,
+						    SMB_ACL_TYPE_T type,
 						    TALLOC_CTX *mem_ctx)
 {
 	return (SMB_ACL_T)NULL;
@@ -628,17 +545,8 @@ static int nfs4acl_xattr_fail__sys_acl_set_fd(vfs_handle_struct *handle,
 	return -1;
 }
 
-static int nfs4acl_xattr_fail__sys_acl_delete_def_file(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname)
-{
-	return -1;
-}
-
-static int nfs4acl_xattr_fail__sys_acl_blob_get_file(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			TALLOC_CTX *mem_ctx,
-			char **blob_description,
-			DATA_BLOB *blob)
+static int nfs4acl_xattr_fail__sys_acl_delete_def_fd(vfs_handle_struct *handle,
+			files_struct *fsp)
 {
 	return -1;
 }
@@ -653,15 +561,12 @@ static int nfs4acl_xattr_fail__sys_acl_blob_get_fd(vfs_handle_struct *handle, fi
 static struct vfs_fn_pointers nfs4acl_xattr_fns = {
 	.connect_fn = nfs4acl_connect,
 	.fget_nt_acl_fn = nfs4acl_xattr_fget_nt_acl,
-	.get_nt_acl_at_fn = nfs4acl_xattr_get_nt_acl_at,
 	.fset_nt_acl_fn = nfs4acl_xattr_fset_nt_acl,
 
-	.sys_acl_get_file_fn = nfs4acl_xattr_fail__sys_acl_get_file,
 	.sys_acl_get_fd_fn = nfs4acl_xattr_fail__sys_acl_get_fd,
-	.sys_acl_blob_get_file_fn = nfs4acl_xattr_fail__sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = nfs4acl_xattr_fail__sys_acl_blob_get_fd,
 	.sys_acl_set_fd_fn = nfs4acl_xattr_fail__sys_acl_set_fd,
-	.sys_acl_delete_def_file_fn = nfs4acl_xattr_fail__sys_acl_delete_def_file,
+	.sys_acl_delete_def_fd_fn = nfs4acl_xattr_fail__sys_acl_delete_def_fd,
 };
 
 static_decl_vfs;

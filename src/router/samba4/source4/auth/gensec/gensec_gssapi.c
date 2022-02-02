@@ -764,27 +764,27 @@ init_sec_context_done:
 		} else if (smb_gss_oid_equal(gensec_gssapi_state->gss_oid,
 					     gss_mech_krb5)) {
 			switch (min_stat) {
-			case KRB5KRB_AP_ERR_TKT_NYV:
+			case (OM_uint32)KRB5KRB_AP_ERR_TKT_NYV:
 				DEBUG(1, ("Error with ticket to contact %s: possible clock skew between us and the KDC or target server: %s\n",
 					  gensec_gssapi_state->target_principal,
 					  gssapi_error_string(out_mem_ctx, maj_stat, min_stat, gensec_gssapi_state->gss_oid)));
 				return NT_STATUS_TIME_DIFFERENCE_AT_DC; /* Make SPNEGO ignore us, we can't go any further here */
-			case KRB5KRB_AP_ERR_TKT_EXPIRED:
+			case (OM_uint32)KRB5KRB_AP_ERR_TKT_EXPIRED:
 				DEBUG(1, ("Error with ticket to contact %s: ticket is expired, possible clock skew between us and the KDC or target server: %s\n",
 					  gensec_gssapi_state->target_principal,
 					  gssapi_error_string(out_mem_ctx, maj_stat, min_stat, gensec_gssapi_state->gss_oid)));
 				return NT_STATUS_INVALID_PARAMETER; /* Make SPNEGO ignore us, we can't go any further here */
-			case KRB5_KDC_UNREACH:
+			case (OM_uint32)KRB5_KDC_UNREACH:
 				DEBUG(3, ("Cannot reach a KDC we require in order to obtain a ticket to %s: %s\n",
 					  gensec_gssapi_state->target_principal,
 					  gssapi_error_string(out_mem_ctx, maj_stat, min_stat, gensec_gssapi_state->gss_oid)));
 				return NT_STATUS_NO_LOGON_SERVERS; /* Make SPNEGO ignore us, we can't go any further here */
-			case KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN:
+			case (OM_uint32)KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN:
 				DEBUG(3, ("Server %s is not registered with our KDC: %s\n",
 					  gensec_gssapi_state->target_principal,
 					  gssapi_error_string(out_mem_ctx, maj_stat, min_stat, gensec_gssapi_state->gss_oid)));
 				return NT_STATUS_INVALID_PARAMETER; /* Make SPNEGO ignore us, we can't go any further here */
-			case KRB5KRB_AP_ERR_MSG_TYPE:
+			case (OM_uint32)KRB5KRB_AP_ERR_MSG_TYPE:
 				/* garbage input, possibly from the auto-mech detection */
 				return NT_STATUS_INVALID_PARAMETER;
 			default:
@@ -1168,6 +1168,10 @@ static NTSTATUS gensec_gssapi_unwrap(struct gensec_security *gensec_security,
 		}
 	}
 	
+	/*
+	 * FIXME: input_message_buffer is marked const, but gss_unwrap() may
+	 * modify it (see calls to rrc_rotate() in _gssapi_unwrap_cfx()).
+	 */
 	maj_stat = gss_unwrap(&min_stat, 
 			      gensec_gssapi_state->gssapi_context, 
 			      &input_token,
@@ -1557,7 +1561,9 @@ static NTSTATUS gensec_gssapi_session_info(struct gensec_security *gensec_securi
 		}
 		
 		/* This credential handle isn't useful for password authentication, so ensure nobody tries to do that */
-		cli_credentials_set_kerberos_state(session_info->credentials, CRED_USE_KERBEROS_REQUIRED);
+		cli_credentials_set_kerberos_state(session_info->credentials,
+						   CRED_USE_KERBEROS_REQUIRED,
+						   CRED_SPECIFIED);
 
 		/* It has been taken from this place... */
 		gensec_gssapi_state->delegated_cred_handle = GSS_C_NO_CREDENTIAL;

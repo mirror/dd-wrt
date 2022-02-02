@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # This is a port of the original in testprogs/ejs/ldap.js
 
-from __future__ import print_function
 import optparse
 import sys
 import os
@@ -90,6 +89,7 @@ class SamTests(samba.tests.TestCase):
         delete_force(self.ldb, "cn=ldaptestuser2,cn=users," + self.base_dn)
         delete_force(self.ldb, "cn=ldaptest\,specialuser,cn=users," + self.base_dn)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
+        delete_force(self.ldb, "cn=ldaptestcomputer2,cn=computers," + self.base_dn)
         delete_force(self.ldb, "cn=ldaptestgroup,cn=users," + self.base_dn)
         delete_force(self.ldb, "cn=ldaptestgroup2,cn=users," + self.base_dn)
 
@@ -291,7 +291,9 @@ class SamTests(samba.tests.TestCase):
 
         ldb.add({
             "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
-            "objectclass": "computer"})
+            "objectclass": "computer",
+            "userAccountControl": str(UF_NORMAL_ACCOUNT |
+                                      UF_PASSWD_NOTREQD)})
 
         res1 = ldb.search("cn=ldaptestuser,cn=users," + self.base_dn,
                           scope=SCOPE_BASE, attrs=["primaryGroupID"])
@@ -1885,7 +1887,7 @@ class SamTests(samba.tests.TestCase):
 
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
-    def test_userAccountControl(self):
+    def test_userAccountControl_user_add_0_uac(self):
         """Test the userAccountControl behaviour"""
         print("Testing userAccountControl behaviour\n")
 
@@ -1913,12 +1915,15 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_PASSWD_NOTREQD == 0)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_normal(self):
+        """Test the userAccountControl behaviour"""
         ldb.add({
             "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
             "objectclass": "user",
             "userAccountControl": str(UF_NORMAL_ACCOUNT)})
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_normal_pwnotreq(self):
         ldb.add({
             "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
             "objectclass": "user",
@@ -1933,6 +1938,7 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_ACCOUNTDISABLE == 0)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_normal_pwnotreq_lockout_expired(self):
         ldb.add({
             "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
             "objectclass": "user",
@@ -1952,6 +1958,7 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue(int(res1[0]["pwdLastSet"][0]) == 0)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_temp_dup(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
@@ -1963,6 +1970,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OTHER)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_server(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
@@ -1974,6 +1982,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_workstation(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
@@ -1984,6 +1993,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_rodc(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
@@ -1994,6 +2004,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_userAccountControl_user_add_trust(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
@@ -2007,6 +2018,7 @@ class SamTests(samba.tests.TestCase):
 
         # Modify operation
 
+    def test_userAccountControl_user_modify(self):
         ldb.add({
             "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
             "objectclass": "user"})
@@ -2125,7 +2137,7 @@ class SamTests(samba.tests.TestCase):
             self.fail()
         except LdbError as e67:
             (num, _) = e67.args
-            self.assertEqual(num, ERR_UNWILLING_TO_PERFORM)
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
         m = Message()
         m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
@@ -2144,7 +2156,7 @@ class SamTests(samba.tests.TestCase):
             self.fail()
         except LdbError as e68:
             (num, _) = e68.args
-            self.assertEqual(num, ERR_UNWILLING_TO_PERFORM)
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
         res1 = ldb.search("cn=ldaptestuser,cn=users," + self.base_dn,
                           scope=SCOPE_BASE, attrs=["sAMAccountType"])
@@ -2177,6 +2189,7 @@ class SamTests(samba.tests.TestCase):
             (num, _) = e69.args
             self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
 
+    def test_userAccountControl_computer_add_0_uac(self):
         # With a computer object
 
         # Add operation
@@ -2196,17 +2209,19 @@ class SamTests(samba.tests.TestCase):
                           attrs=["sAMAccountType", "userAccountControl"])
         self.assertTrue(len(res1) == 1)
         self.assertEqual(int(res1[0]["sAMAccountType"][0]),
-                          ATYPE_NORMAL_ACCOUNT)
+                          ATYPE_WORKSTATION_TRUST)
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_ACCOUNTDISABLE == 0)
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_PASSWD_NOTREQD == 0)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_normal(self):
         ldb.add({
             "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
             "objectclass": "computer",
             "userAccountControl": str(UF_NORMAL_ACCOUNT)})
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_normal_pwnotreqd(self):
         ldb.add({
             "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
             "objectclass": "computer",
@@ -2221,6 +2236,7 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_ACCOUNTDISABLE == 0)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_normal_pwnotreqd_lockout_expired(self):
         ldb.add({
             "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
             "objectclass": "computer",
@@ -2240,6 +2256,7 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue(int(res1[0]["pwdLastSet"][0]) == 0)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_temp_dup(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
@@ -2251,6 +2268,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OTHER)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_server(self):
         ldb.add({
             "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
             "objectclass": "computer",
@@ -2263,6 +2281,7 @@ class SamTests(samba.tests.TestCase):
                           ATYPE_WORKSTATION_TRUST)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_workstation(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
@@ -2273,6 +2292,7 @@ class SamTests(samba.tests.TestCase):
             self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_add_trust(self):
         try:
             ldb.add({
                 "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
@@ -2281,9 +2301,10 @@ class SamTests(samba.tests.TestCase):
             self.fail()
         except LdbError as e72:
             (num, _) = e72.args
-            self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
+    def test_userAccountControl_computer_modify(self):
         # Modify operation
 
         ldb.add({
@@ -2296,7 +2317,7 @@ class SamTests(samba.tests.TestCase):
                           attrs=["sAMAccountType", "userAccountControl"])
         self.assertTrue(len(res1) == 1)
         self.assertEqual(int(res1[0]["sAMAccountType"][0]),
-                          ATYPE_NORMAL_ACCOUNT)
+                          ATYPE_WORKSTATION_TRUST)
         self.assertTrue(int(res1[0]["userAccountControl"][0]) & UF_ACCOUNTDISABLE != 0)
 
         # As computer you can switch from a normal account to a workstation
@@ -2483,7 +2504,7 @@ class SamTests(samba.tests.TestCase):
             self.fail()
         except LdbError as e76:
             (num, _) = e76.args
-            self.assertEqual(num, ERR_INSUFFICIENT_ACCESS_RIGHTS)
+            self.assertEqual(num, ERR_OBJECT_CLASS_VIOLATION)
 
         # "primaryGroupID" does not change if account type remains the same
 
@@ -2926,6 +2947,39 @@ class SamTests(samba.tests.TestCase):
 
         delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
 
+    def test_isCriticalSystemObject_user(self):
+        """Test the isCriticalSystemObject behaviour"""
+        print("Testing isCriticalSystemObject behaviour\n")
+
+        # Add tests (of a user)
+
+        ldb.add({
+            "dn": "cn=ldaptestuser,cn=users," + self.base_dn,
+            "objectclass": "user"})
+
+        res1 = ldb.search("cn=ldaptestuser,cn=users," + self.base_dn,
+                          scope=SCOPE_BASE,
+                          attrs=["isCriticalSystemObject"])
+        self.assertTrue(len(res1) == 1)
+        self.assertTrue("isCriticalSystemObject" not in res1[0])
+
+        # Modification tests
+        m = Message()
+
+        m.dn = Dn(ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
+        m["userAccountControl"] = MessageElement(str(UF_WORKSTATION_TRUST_ACCOUNT),
+                                                 FLAG_MOD_REPLACE, "userAccountControl")
+        ldb.modify(m)
+
+        res1 = ldb.search("cn=ldaptestuser,cn=users," + self.base_dn,
+                          scope=SCOPE_BASE,
+                          attrs=["isCriticalSystemObject"])
+        self.assertTrue(len(res1) == 1)
+        self.assertTrue("isCriticalSystemObject" in res1[0])
+        self.assertEqual(str(res1[0]["isCriticalSystemObject"][0]), "FALSE")
+
+        delete_force(self.ldb, "cn=ldaptestuser,cn=users," + self.base_dn)
+
     def test_isCriticalSystemObject(self):
         """Test the isCriticalSystemObject behaviour"""
         print("Testing isCriticalSystemObject behaviour\n")
@@ -2940,7 +2994,8 @@ class SamTests(samba.tests.TestCase):
                           scope=SCOPE_BASE,
                           attrs=["isCriticalSystemObject"])
         self.assertTrue(len(res1) == 1)
-        self.assertTrue("isCriticalSystemObject" not in res1[0])
+        self.assertTrue("isCriticalSystemObject" in res1[0])
+        self.assertEqual(str(res1[0]["isCriticalSystemObject"][0]), "FALSE")
 
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
 
@@ -3445,6 +3500,26 @@ class SamTests(samba.tests.TestCase):
         self.assertTrue("HOST/testname3.testdom" in [str(x) for x in res[0]["servicePrincipalName"]])
 
         delete_force(self.ldb, "cn=ldaptestcomputer,cn=computers," + self.base_dn)
+
+    def test_service_principal_name_uniqueness(self):
+        """Test the servicePrincipalName uniqueness behaviour"""
+        print("Testing servicePrincipalName uniqueness behaviour")
+
+        ldb.add({
+            "dn": "cn=ldaptestcomputer,cn=computers," + self.base_dn,
+            "objectclass": "computer",
+            "servicePrincipalName": "HOST/testname.testdom"})
+
+        try:
+            ldb.add({
+                "dn": "cn=ldaptestcomputer2,cn=computers," + self.base_dn,
+                "objectclass": "computer",
+                "servicePrincipalName": "HOST/testname.testdom"})
+        except LdbError as e:
+            num, _ = e.args
+            self.assertEqual(num, ERR_CONSTRAINT_VIOLATION)
+        else:
+            self.fail()
 
     def test_sam_description_attribute(self):
         """Test SAM description attribute"""

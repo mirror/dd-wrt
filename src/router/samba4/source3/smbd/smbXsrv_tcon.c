@@ -1061,6 +1061,7 @@ static int smbXsrv_tcon_disconnect_all_callback(struct db_record *local_rec,
 
 	tcon->db_rec = local_rec;
 	status = smbXsrv_tcon_disconnect(tcon, vuid);
+	tcon->db_rec = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
 		if (NT_STATUS_IS_OK(state->first_status)) {
 			state->first_status = status;
@@ -1205,6 +1206,13 @@ static int smbXsrv_tcon_global_traverse_fn(struct db_record *rec, void *data)
 			 "key '%s' unsupported version - %d\n",
 			 hex_encode_talloc(frame, key.dptr, key.dsize),
 			 (int)global_blob.version));
+		goto done;
+	}
+
+	if (global_blob.info.info0 == NULL) {
+		DEBUG(1,("Invalid record in smbXsrv_tcon_global.tdb:"
+			 "key '%s' info0 NULL pointer\n",
+			 hex_encode_talloc(frame, key.dptr, key.dsize)));
 		goto done;
 	}
 

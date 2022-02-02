@@ -26,7 +26,7 @@ upgradeprovision() {
     rm -fr $PREFIX/upgradeprovision
   fi
 	$PYTHON $BINDIR/samba-tool domain provision --host-name=bar --domain=FOO --realm=foo.example.com --targetdir="$PREFIX/upgradeprovision" --server-role="dc" --use-ntvfs --base-schema=2008_R2
-	$PYTHON $BINDIR/samba_upgradeprovision -s "$PREFIX/upgradeprovision/etc/smb.conf" --debugchange
+	$PYTHON $BINDIR/samba_upgradeprovision --configfile="$PREFIX/upgradeprovision/etc/smb.conf" --debugchange
 }
 
 upgradeprovision_full() {
@@ -34,7 +34,7 @@ upgradeprovision_full() {
     rm -fr $PREFIX/upgradeprovision_full
   fi
 	$PYTHON $BINDIR/samba-tool domain provision --host-name=bar --domain=FOO --realm=foo.example.com --targetdir="$PREFIX/upgradeprovision_full" --server-role="dc" --use-ntvfs --base-schema=2008_R2
-	$PYTHON $BINDIR/samba_upgradeprovision -s "$PREFIX/upgradeprovision_full/etc/smb.conf" --full --debugchange
+	$PYTHON $BINDIR/samba_upgradeprovision --configfile="$PREFIX/upgradeprovision_full/etc/smb.conf" --full --debugchange
 }
 
 # The ldapcmp runs here are to ensure that a 'null' run of
@@ -42,19 +42,19 @@ upgradeprovision_full() {
 # really doesn't change anything.
 
 ldapcmp() {
-        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --skip-missing-dn
+        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --skip-missing-dn --filter=servicePrincipalName
 }
 
 ldapcmp_full() {
-        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision_full/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --skip-missing-dn
+        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision_full/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --skip-missing-dn --filter=servicePrincipalName
 }
 
 ldapcmp_sd() {
-        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --sd --skip-missing-dn
+        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --sd --skip-missing-dn --filter=servicePrincipalName
 }
 
 ldapcmp_full_sd() {
-        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision_full/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --sd --skip-missing-dn
+        $PYTHON $BINDIR/samba-tool ldapcmp tdb://$PREFIX/upgradeprovision_full/private/sam.ldb tdb://$PREFIX/upgradeprovision_reference/private/sam.ldb --two --sd --skip-missing-dn --filter=servicePrincipalName
 }
 
 testit "upgradeprovision" upgradeprovision

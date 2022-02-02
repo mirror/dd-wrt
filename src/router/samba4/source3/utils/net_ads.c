@@ -1506,7 +1506,7 @@ static WERROR check_ads_config( void )
  Send a DNS update request
 *******************************************************************/
 
-#if defined(WITH_DNS_UPDATES)
+#if defined(HAVE_KRB5)
 #include "../lib/addns/dns.h"
 
 static NTSTATUS net_update_dns_internal(struct net_context *c,
@@ -1741,7 +1741,7 @@ static int net_ads_join_usage(struct net_context *c, int argc, const char **argv
 
 static void _net_ads_join_dns_updates(struct net_context *c, TALLOC_CTX *ctx, struct libnet_JoinCtx *r)
 {
-#if defined(WITH_DNS_UPDATES)
+#if defined(HAVE_KRB5)
 	ADS_STRUCT *ads_dns = NULL;
 	int ret;
 	NTSTATUS status;
@@ -2030,7 +2030,7 @@ fail:
 
 static int net_ads_dns_register(struct net_context *c, int argc, const char **argv)
 {
-#if defined(WITH_DNS_UPDATES)
+#if defined(HAVE_KRB5)
 	ADS_STRUCT *ads;
 	ADS_STATUS status;
 	NTSTATUS ntstatus;
@@ -2129,7 +2129,7 @@ static int net_ads_dns_unregister(struct net_context *c,
 				  int argc,
 				  const char **argv)
 {
-#if defined(WITH_DNS_UPDATES)
+#if defined(HAVE_KRB5)
 	ADS_STRUCT *ads;
 	ADS_STATUS status;
 	NTSTATUS ntstatus;
@@ -2433,7 +2433,6 @@ static int net_ads_printer_publish(struct net_context *c, int argc, const char *
 	char *prt_dn, *srv_dn, **srv_cn;
 	char *srv_cn_escaped = NULL, *printername_escaped = NULL;
 	LDAPMessage *res = NULL;
-	struct cli_credentials *creds = NULL;
 	bool ok;
 
 	if (argc < 1 || c->display_usage) {
@@ -2471,19 +2470,14 @@ static int net_ads_printer_publish(struct net_context *c, int argc, const char *
 		return -1;
 	}
 
-	creds = net_context_creds(c, mem_ctx);
-	if (creds == NULL) {
-		d_fprintf(stderr, "net_context_creds() failed\n");
-		ads_destroy(&ads);
-		talloc_destroy(mem_ctx);
-		return -1;
-	}
-	cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_REQUIRED);
+	cli_credentials_set_kerberos_state(c->creds,
+					   CRED_USE_KERBEROS_REQUIRED,
+					   CRED_SPECIFIED);
 
 	nt_status = cli_full_connection_creds(&cli, lp_netbios_name(), servername,
 					&server_ss, 0,
 					"IPC$", "IPC",
-					creds,
+					c->creds,
 					CLI_FULL_CONNECTION_IPC);
 
 	if (NT_STATUS_IS_ERR(nt_status)) {
@@ -2673,8 +2667,8 @@ static int net_ads_printer(struct net_context *c, int argc, const char **argv)
 static int net_ads_password(struct net_context *c, int argc, const char **argv)
 {
 	ADS_STRUCT *ads;
-	const char *auth_principal = c->opt_user_name;
-	const char *auth_password = c->opt_password;
+	const char *auth_principal = cli_credentials_get_username(c->creds);
+	const char *auth_password = cli_credentials_get_password(c->creds);
 	const char *realm = NULL;
 	const char *new_password = NULL;
 	char *chr, *prompt;
@@ -2691,7 +2685,7 @@ static int net_ads_password(struct net_context *c, int argc, const char **argv)
 		return 0;
 	}
 
-	if (c->opt_user_name == NULL || c->opt_password == NULL) {
+	if (auth_principal == NULL || auth_password == NULL) {
 		d_fprintf(stderr, _("You must supply an administrator "
 				    "username/password\n"));
 		return -1;
@@ -3030,6 +3024,10 @@ static int net_ads_keytab_flush(struct net_context *c, int argc, const char **ar
 		return 0;
 	}
 
+	if (!c->opt_user_specified && c->opt_password == NULL) {
+		net_use_krb_machine_account(c);
+	}
+
 	if (!ADS_ERR_OK(ads_startup(c, true, &ads))) {
 		return -1;
 	}
@@ -3058,6 +3056,11 @@ static int net_ads_keytab_add(struct net_context *c,
 	}
 
 	d_printf(_("Processing principals to add...\n"));
+
+	if (!c->opt_user_specified && c->opt_password == NULL) {
+		net_use_krb_machine_account(c);
+	}
+
 	if (!ADS_ERR_OK(ads_startup(c, true, &ads))) {
 		return -1;
 	}
@@ -3094,6 +3097,10 @@ static int net_ads_keytab_create(struct net_context *c, int argc, const char **a
 			 _("Usage:"),
 			 _("Create new default keytab"));
 		return 0;
+	}
+
+	if (!c->opt_user_specified && c->opt_password == NULL) {
+		net_use_krb_machine_account(c);
 	}
 
 	if (!ADS_ERR_OK(ads_startup(c, true, &ads))) {

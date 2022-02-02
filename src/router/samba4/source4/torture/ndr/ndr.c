@@ -152,10 +152,12 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pullpush_test(
 	ndr_push_flags_fn_t push_fn,
 	ndr_print_fn_t print_fn,
 	ndr_print_function_t print_function,
+	const char *db_name,
 	DATA_BLOB db,
 	size_t struct_size,
 	int ndr_flags,
 	int flags,
+	const char *check_fn_name,
 	bool (*check_fn) (struct torture_context *ctx, void *data))
 {
 	struct torture_test *test;
@@ -166,8 +168,9 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pullpush_test(
 
 	test = talloc(tcase, struct torture_test);
 
-	test->name = talloc_strdup(test, name);
-	test->description = NULL;
+	test->name = talloc_strdup(test, check_fn_name);
+	test->description = talloc_asprintf(test, "db:%s",
+					    db_name);
 	test->run = wrap_ndr_pullpush_test;
 
 	data = talloc_zero(test, struct ndr_pull_test_data);
@@ -268,10 +271,13 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_inout_test(
 					const char *name,
 					ndr_pull_flags_fn_t pull_fn,
 					ndr_print_function_t print_function,
+					const char *db_in_name,
 					DATA_BLOB db_in,
+					const char *db_out_name,
 					DATA_BLOB db_out,
 					size_t struct_size,
 					int flags,
+					const char *check_fn_name,
 					bool (*check_fn) (struct torture_context *ctx, void *data))
 {
 	struct torture_test *test;
@@ -282,8 +288,10 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_inout_test(
 
 	test = talloc(tcase, struct torture_test);
 
-	test->name = talloc_strdup(test, name);
-	test->description = NULL;
+	test->name = talloc_strdup(test, check_fn_name);
+	test->description = talloc_asprintf(test, "db_in:%s db_out:%s",
+					    db_in_name,
+					    db_out_name);
 	test->run = wrap_ndr_inout_pull_test;
 	data = talloc_zero(test, struct ndr_pull_test_data);
 	data->data = db_out;
@@ -333,6 +341,7 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_invalid_data_test(
 	struct torture_suite *suite,
 	const char *name,
 	ndr_pull_flags_fn_t pull_fn,
+	const char *db_name,
 	DATA_BLOB db,
 	size_t struct_size,
 	int ndr_flags,
@@ -347,7 +356,7 @@ _PUBLIC_ struct torture_test *_torture_suite_add_ndr_pull_invalid_data_test(
 
 	test = talloc(tcase, struct torture_test);
 
-	test->name = talloc_strdup(test, name);
+	test->name = talloc_strdup(test, db_name);
 	test->description = NULL;
 	test->run = wrap_ndr_pull_invalid_data_test;
 
@@ -477,11 +486,12 @@ static bool test_guid_from_string(struct torture_context *tctx)
 {
 	struct GUID g1, exp;
 	/* we are asserting all these guids are valid and equal */
-	const char *guids[4] = {
+	const char *guids[5] = {
 		"00000001-0002-0003-0405-060708090a0b",
 		"{00000001-0002-0003-0405-060708090a0b}",
 		"{00000001-0002-0003-0405-060708090a0B}", /* mixed */
 		"00000001-0002-0003-0405-060708090A0B",   /* upper */
+		"01000000020003000405060708090a0b",       /* hex string */
 	};
 	int i;
 
@@ -507,6 +517,45 @@ static bool test_guid_from_string(struct torture_context *tctx)
 		torture_assert(tctx, GUID_equal(&g1, &exp),
 			       "UUID parsed incorrectly");
 	}
+	return true;
+}
+
+static bool test_guid_from_data_blob(struct torture_context *tctx)
+{
+	struct GUID g1, exp;
+	const uint8_t bin[16] = {
+		0x01, 0x00, 0x00, 0x00,
+		0x02, 0x00,
+		0x03, 0x00,
+		0x04, 0x05,
+		0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b };
+	const char *hexstr = "01000000020003000405060708090a0b";
+	const DATA_BLOB blobs[2] = {
+		data_blob_const(bin, sizeof(bin)),
+		data_blob_string_const(hexstr),
+	};
+	int i;
+
+	exp.time_low = 1;
+	exp.time_mid = 2;
+	exp.time_hi_and_version = 3;
+	exp.clock_seq[0] = 4;
+	exp.clock_seq[1] = 5;
+	exp.node[0] = 6;
+	exp.node[1] = 7;
+	exp.node[2] = 8;
+	exp.node[3] = 9;
+	exp.node[4] = 10;
+	exp.node[5] = 11;
+
+	for (i = 1; i < ARRAY_SIZE(blobs); i++) {
+		torture_assert_ntstatus_ok(tctx,
+					   GUID_from_data_blob(&blobs[i], &g1),
+					   "invalid return code");
+		torture_assert(tctx, GUID_equal(&g1, &exp),
+			       "UUID parsed incorrectly");
+	}
+
 	return true;
 }
 
@@ -680,6 +729,32 @@ static bool test_compare_uuid(struct torture_context *tctx)
 	return true;
 }
 
+static bool test_syntax_id_from_string(struct torture_context *tctx)
+{
+	struct ndr_syntax_id s, exp;
+	const char *id = "00000001-0002-0003-0405-060708090a0b/0x12345678";
+
+	exp.uuid.time_low = 1;
+	exp.uuid.time_mid = 2;
+	exp.uuid.time_hi_and_version = 3;
+	exp.uuid.clock_seq[0] = 4;
+	exp.uuid.clock_seq[1] = 5;
+	exp.uuid.node[0] = 6;
+	exp.uuid.node[1] = 7;
+	exp.uuid.node[2] = 8;
+	exp.uuid.node[3] = 9;
+	exp.uuid.node[4] = 10;
+	exp.uuid.node[5] = 11;
+	exp.if_version = 0x12345678;
+
+	torture_assert(tctx,
+		       ndr_syntax_id_from_string(id, &s),
+		       "invalid return code");
+	torture_assert(tctx, ndr_syntax_id_equal(&s, &exp),
+		       "NDR syntax id parsed incorrectly");
+	return true;
+}
+
 struct torture_suite *torture_local_ndr(TALLOC_CTX *mem_ctx)
 {
 	struct torture_suite *suite = torture_suite_create(mem_ctx, "ndr");
@@ -709,6 +784,7 @@ struct torture_suite *torture_local_ndr(TALLOC_CTX *mem_ctx)
 	torture_suite_add_suite(suite, ndr_cabinet_suite(suite));
 	torture_suite_add_suite(suite, ndr_charset_suite(suite));
 	torture_suite_add_suite(suite, ndr_svcctl_suite(suite));
+	torture_suite_add_suite(suite, ndr_ODJ_suite(suite));
 
 	torture_suite_add_simple_test(suite, "string terminator",
 				      test_check_string_terminator);
@@ -718,6 +794,9 @@ struct torture_suite *torture_local_ndr(TALLOC_CTX *mem_ctx)
 
 	torture_suite_add_simple_test(suite, "guid_from_string",
 				      test_guid_from_string);
+
+	torture_suite_add_simple_test(suite, "guid_from_data_blob",
+				      test_guid_from_data_blob);
 
 	torture_suite_add_simple_test(suite, "guid_from_string_invalid",
 				      test_guid_from_string_invalid);
@@ -742,6 +821,9 @@ struct torture_suite *torture_local_ndr(TALLOC_CTX *mem_ctx)
 
 	torture_suite_add_simple_test(suite, "guid_into_long_blob",
 				      test_guid_into_long_blob);
+
+	torture_suite_add_simple_test(suite, "syntax_id_from_string",
+				      test_syntax_id_from_string);
 
 	return suite;
 }

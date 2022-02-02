@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
    tdb utility functions
@@ -10,12 +10,12 @@
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -89,7 +89,7 @@ TDB_DATA tdb_data_talloc_copy(TALLOC_CTX* mem_ctx, TDB_DATA data) {
 int tdb_lock_bystring(struct tdb_context *tdb, const char *keyval)
 {
 	TDB_DATA key = string_term_tdb_data(keyval);
-	
+
 	return tdb_chainlock(tdb, key);
 }
 
@@ -111,7 +111,7 @@ void tdb_unlock_bystring(struct tdb_context *tdb, const char *keyval)
 int tdb_read_lock_bystring(struct tdb_context *tdb, const char *keyval)
 {
 	TDB_DATA key = string_term_tdb_data(keyval);
-	
+
 	return tdb_chainlock_read(tdb, key);
 }
 
@@ -122,7 +122,7 @@ int tdb_read_lock_bystring(struct tdb_context *tdb, const char *keyval)
 void tdb_read_unlock_bystring(struct tdb_context *tdb, const char *keyval)
 {
 	TDB_DATA key = string_term_tdb_data(keyval);
-	
+
 	tdb_chainunlock_read(tdb, key);
 }
 
@@ -132,20 +132,19 @@ void tdb_read_unlock_bystring(struct tdb_context *tdb, const char *keyval)
  Output is int32_t in native byte order.
 ****************************************************************************/
 
+static int fetch_int32_parser(TDB_DATA key, TDB_DATA data, void *private_data)
+{
+	if (data.dsize == sizeof(int32_t)) {
+		*((int32_t *)private_data) = PULL_LE_I32(data.dptr, 0);
+	}
+	return 0;
+}
+
 static int32_t tdb_fetch_int32_byblob(struct tdb_context *tdb, TDB_DATA key)
 {
-	TDB_DATA data;
-	int32_t ret;
-
-	data = tdb_fetch(tdb, key);
-	if (!data.dptr || data.dsize != sizeof(int32_t)) {
-		SAFE_FREE(data.dptr);
-		return -1;
-	}
-
-	ret = IVAL(data.dptr,0);
-	SAFE_FREE(data.dptr);
-	return ret;
+	int v = -1;
+	tdb_parse_record(tdb, key, fetch_int32_parser, &v);
+	return v;
 }
 
 /****************************************************************************
@@ -191,19 +190,24 @@ int tdb_store_int32(struct tdb_context *tdb, const char *keystr, int32_t v)
  Output is uint32_t in native byte order.
 ****************************************************************************/
 
+static int fetch_uint32_parser(TDB_DATA key, TDB_DATA data, void *private_data)
+{
+	if (data.dsize != sizeof(uint32_t)) {
+		return -1;
+	}
+	*((uint32_t *)private_data) = PULL_LE_U32(data.dptr, 0);
+	return 0;
+}
+
 static bool tdb_fetch_uint32_byblob(struct tdb_context *tdb, TDB_DATA key,
 				    uint32_t *value)
 {
-	TDB_DATA data;
+	int ret = tdb_parse_record(tdb, key, fetch_uint32_parser, value);
 
-	data = tdb_fetch(tdb, key);
-	if (!data.dptr || data.dsize != sizeof(uint32_t)) {
-		SAFE_FREE(data.dptr);
+	if (ret == -1) {
 		return false;
 	}
 
-	*value = IVAL(data.dptr,0);
-	SAFE_FREE(data.dptr);
 	return true;
 }
 
@@ -256,7 +260,7 @@ bool tdb_store_uint32(struct tdb_context *tdb, const char *keystr, uint32_t valu
 int tdb_store_bystring(struct tdb_context *tdb, const char *keystr, TDB_DATA data, int flags)
 {
 	TDB_DATA key = string_term_tdb_data(keystr);
-	
+
 	return tdb_store(tdb, key, data, flags);
 }
 
@@ -273,7 +277,7 @@ TDB_DATA tdb_fetch_bystring(struct tdb_context *tdb, const char *keystr)
 }
 
 /****************************************************************************
- Delete an entry using a null terminated string key. 
+ Delete an entry using a null terminated string key.
 ****************************************************************************/
 
 int tdb_delete_bystring(struct tdb_context *tdb, const char *keystr)
@@ -284,7 +288,7 @@ int tdb_delete_bystring(struct tdb_context *tdb, const char *keystr)
 }
 
 /****************************************************************************
- Atomic integer change. Returns old value. To create, set initial value in *oldval. 
+ Atomic integer change. Returns old value. To create, set initial value in *oldval.
 ****************************************************************************/
 
 int32_t tdb_change_int32_atomic(struct tdb_context *tdb, const char *keystr, int32_t *oldval, int32_t change_val)
@@ -301,7 +305,7 @@ int32_t tdb_change_int32_atomic(struct tdb_context *tdb, const char *keystr, int
 			/* but not because it didn't exist */
 			goto err_out;
 		}
-		
+
 		/* Start with 'old' value */
 		val = *oldval;
 
@@ -312,7 +316,7 @@ int32_t tdb_change_int32_atomic(struct tdb_context *tdb, const char *keystr, int
 
 	/* Increment value for storage and return next time */
 	val += change_val;
-		
+
 	if (tdb_store_int32(tdb, keystr, val) != 0)
 		goto err_out;
 
@@ -325,7 +329,7 @@ int32_t tdb_change_int32_atomic(struct tdb_context *tdb, const char *keystr, int
 }
 
 /****************************************************************************
- Atomic unsigned integer change. Returns old value. To create, set initial value in *oldval. 
+ Atomic unsigned integer change. Returns old value. To create, set initial value in *oldval.
 ****************************************************************************/
 
 bool tdb_change_uint32_atomic(struct tdb_context *tdb, const char *keystr, uint32_t *oldval, uint32_t change_val)
@@ -338,7 +342,7 @@ bool tdb_change_uint32_atomic(struct tdb_context *tdb, const char *keystr, uint3
 
 	if (!tdb_fetch_uint32(tdb, keystr, &val)) {
 		/* It failed */
-		if (tdb_error(tdb) != TDB_ERR_NOEXIST) { 
+		if (tdb_error(tdb) != TDB_ERR_NOEXIST) {
 			/* and not because it didn't exist */
 			goto err_out;
 		}
@@ -354,7 +358,7 @@ bool tdb_change_uint32_atomic(struct tdb_context *tdb, const char *keystr, uint3
 
 	/* get a new value to store */
 	val += change_val;
-		
+
 	if (!tdb_store_uint32(tdb, keystr, val))
 		goto err_out;
 
@@ -364,16 +368,6 @@ bool tdb_change_uint32_atomic(struct tdb_context *tdb, const char *keystr, uint3
 
 	tdb_unlock_bystring(tdb, keystr);
 	return ret;
-}
-
-/****************************************************************************
- Allow tdb_delete to be used as a tdb_traversal_fn.
-****************************************************************************/
-
-int tdb_traverse_delete_fn(struct tdb_context *the_tdb, TDB_DATA key, TDB_DATA dbuf,
-                     void *state)
-{
-    return tdb_delete(the_tdb, key);
 }
 
 /****************************************************************************

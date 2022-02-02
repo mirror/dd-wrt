@@ -4,15 +4,7 @@ import os
 from waflib import Context
 from samba_utils import SET_TARGET_TYPE
 from samba_autoconf import CURRENT_CFLAGS
-from samba_utils import LOAD_ENVIRONMENT
-
-def to_list(str):
-    '''Split a list, preserving quoted strings and existing lists'''
-    if str is None:
-        return []
-    if isinstance(str, list):
-        return str
-    return str.split(None)
+from samba_utils import LOAD_ENVIRONMENT, TO_LIST
 
 def heimdal_path(p, absolute=False):
     hpath = os.path.join("../heimdal", p)
@@ -21,7 +13,7 @@ def heimdal_path(p, absolute=False):
     return os.path.normpath(os.path.join(bld.path.abspath(), hpath))
 
 def heimdal_paths(ps):
-    return [heimdal_path(p) for p in to_list(ps)]
+    return [heimdal_path(p) for p in TO_LIST(ps)]
 
 # waf build tool for building .et files with compile_et
 def HEIMDAL_ASN1(name, source,
@@ -68,7 +60,7 @@ def HEIMDAL_ASN1(name, source,
 
     asn1_rule = cd_rule + no_leak_check + ' "${ASN1_COMPILE}" ${OPTION_FILE} ${ASN1OPTIONS} --one-code-file "${SRC[0].abspath(env)}" ${ASN1NAME}'
 
-    source = to_list(source)
+    source = TO_LIST(source)
 
     if option_file is not None:
         source.append(option_file)
@@ -131,7 +123,7 @@ def HEIMDAL_ASN1(name, source,
 
     bld.set_group('main')
 
-    includes = to_list(includes)
+    includes = TO_LIST(includes)
     includes.append(os.path.dirname(out_files[0]))
 
     t = bld(features       = 'c',
@@ -139,7 +131,7 @@ def HEIMDAL_ASN1(name, source,
             target         = name,
             samba_cflags   = CURRENT_CFLAGS(bld, name, ''),
             depends_on     = '',
-            samba_deps     = to_list('roken replace'),
+            samba_deps     = TO_LIST('roken replace'),
             samba_includes = includes,
             local_include  = True)
 
@@ -154,7 +146,7 @@ def HEIMDAL_ERRTABLE(name, source):
     if not SET_TARGET_TYPE(bld, name, 'ET'):
         return
 
-    bld.set_group('build_source')
+    bld.set_group('hostcc_build_source')
 
     out_files = []
     out_files.append('%s.c' % bname)
@@ -220,7 +212,7 @@ def HEIMDAL_GENERATOR(name, rule, source='', target='',
         name=name)
 
 
-def HEIMDAL_LIBRARY(libname, source, deps, vnum, version_script, includes=''):
+def HEIMDAL_LIBRARY(libname, source, deps, vnum, version_script, includes='', cflags=[]):
     '''define a Heimdal library'''
 
     obj_target = libname + '.objlist'
@@ -232,13 +224,14 @@ def HEIMDAL_LIBRARY(libname, source, deps, vnum, version_script, includes=''):
                         source         = source,
                         deps           = deps,
                         includes       = includes,
+                        cflags         = cflags,
                         group          = 'main')
 
     if not SET_TARGET_TYPE(bld, libname, "LIBRARY"):
         return
 
     # the library itself will depend on that object target
-    deps = to_list(deps)
+    deps = TO_LIST(deps)
     deps.append(obj_target)
 
     ldflags = []
@@ -270,6 +263,21 @@ def HEIMDAL_LIBRARY(libname, source, deps, vnum, version_script, includes=''):
         version_script  = heimdal_path(version_script, absolute=True),
         )
 
+def HEIMDAL_CFLAGS(use_hostcc=False, extra_cflags=[]):
+    cflags_unpicky=[]
+
+    if bld.env.allow_heimdal_warnings:
+        cflags_unpicky += bld.env.HEIMDAL_UNPICKY_WNO_STRICT_OVERFLOW_CFLAGS
+        cflags_unpicky += bld.env.HEIMDAL_UNPICKY_WNO_MAYBE_UNINITIALIZED_CFLAGS
+        # old compilers on centos7 or ubuntu1604 need this
+
+    allow_warnings = bld.env.allow_heimdal_warnings
+    cflags_picky = bld.env.HEIMDAL_NO_ERROR_CFLAGS
+    extra_cflags=TO_LIST(extra_cflags)
+
+    cflags = ''
+    cflags_end = cflags_picky + cflags_unpicky + extra_cflags
+    return (cflags, cflags_end, allow_warnings)
 
 def HEIMDAL_SUBSYSTEM(modname, source,
                     deps='',
@@ -280,36 +288,20 @@ def HEIMDAL_SUBSYSTEM(modname, source,
                     use_global_deps=True):
     '''define a Heimdal subsystem'''
 
-    if not SET_TARGET_TYPE(bld, modname, 'SUBSYSTEM'):
-        return
-
+    cflags, cflags_end, allow_warnings = HEIMDAL_CFLAGS(use_hostcc=use_hostcc,
+                                                        extra_cflags=cflags)
     source = heimdal_paths(source)
 
-    bld.set_group(group)
-
-    # If we found the -Wno-error options we need then build without
-    # allowing warnings, otherwise permit them
-    if bld.env.enable_heimdal_warnings:
-        samba_cflags = CURRENT_CFLAGS(bld, modname, cflags) + \
-                       bld.env.HEIMDAL_PICKY_CFLAGS
-    else:
-        samba_cflags = CURRENT_CFLAGS(bld, modname, cflags,
-                                      allow_warnings=True)
-
-    return bld(
-        features       = 'c',
-        source         = source,
-        target         = modname,
-        samba_cflags   = samba_cflags,
-        depends_on     = '',
-        samba_deps     = to_list(deps),
-        samba_includes = includes,
-        local_include  = True,
-        local_include_first  = True,
-        samba_use_hostcc = use_hostcc,
-        samba_use_global_deps = use_global_deps
-        )
-
+    bld.SAMBA_SUBSYSTEM(modname,
+                        source         = source,
+                        deps           = deps,
+                        includes       = includes,
+                        cflags         = cflags,
+                        cflags_end     = cflags_end,
+                        allow_warnings = allow_warnings,
+                        group          = group,
+                        use_hostcc     = use_hostcc,
+                        use_global_deps= use_global_deps)
 
 def HEIMDAL_BINARY(binname, source,
                  deps='',
@@ -323,19 +315,32 @@ def HEIMDAL_BINARY(binname, source,
                  install_path=None):
     '''define a Samba binary'''
 
+    cflags, cflags_end, allow_warnings = HEIMDAL_CFLAGS(use_hostcc=use_hostcc)
     source = heimdal_paths(source)
 
+    obj_target = binname + '.heimdal.objlist'
+
+    HEIMDAL_SUBSYSTEM(obj_target,
+                      source         = source,
+                      deps           = deps,
+                      includes       = includes,
+                      cflags         = cflags,
+                      group          = group,
+                      use_hostcc     = use_hostcc,
+                      use_global_deps= use_global_deps)
+
     bld.SAMBA_BINARY(binname,
-                     source         = source,
-                     deps           = deps,
+                     source         = '',
+                     deps           = obj_target,
                      includes       = includes,
                      cflags         = cflags,
+                     cflags_end     = cflags_end,
+                     allow_warnings = allow_warnings,
                      group          = group,
                      use_hostcc     = use_hostcc,
                      use_global_deps= use_global_deps,
                      install_path   = None,
-                     install        = install,
-                     allow_warnings = True)
+                     install        = install)
 
 
 if not bld.CONFIG_SET('USING_SYSTEM_ROKEN'):
@@ -350,7 +355,7 @@ if not bld.CONFIG_SET('USING_SYSTEM_ROKEN'):
 
     if not bld.CONFIG_SET('HAVE_ERR_H'):
         HEIMDAL_GENERATOR(
-            group='build_compiler_source',
+            group='hostcc_base_build_source',
             name="HEIMDAL_ERR_H",
             rule="rm -f ${TGT} && ln ${SRC} ${TGT}",
             source = '../heimdal/lib/roken/err.hin',
@@ -412,8 +417,7 @@ if not bld.CONFIG_SET('USING_SYSTEM_ROKEN'):
         use_hostcc=True,
         use_global_deps=False,
         includes='../heimdal/lib/roken ../heimdal/include ../heimdal_build/include',
-        cflags='-DSOCKET_WRAPPER_DISABLE=1 -D_SAMBA_HOSTCC_',
-        group='compiler_libraries',
+        group='hostcc_base_build_main',
         deps='LIBREPLACE_HOSTCC',
         )
 
@@ -614,10 +618,10 @@ if not bld.CONFIG_SET("USING_SYSTEM_KRB5"):
 
     HEIMDAL_ERRTABLE('HEIMDAL_HEIM_ERR_ET', 'lib/krb5/heim_err.et')
 
-    KRB5_SOURCE = [os.path.join('lib/krb5/', x) for x in to_list(
+    KRB5_SOURCE = [os.path.join('lib/krb5/', x) for x in TO_LIST(
                                    '''acache.c add_et_list.c
                                    addr_families.c appdefault.c
-                                   asn1_glue.c auth_context.c
+                                   asn1_glue.c auth_context.c authdata.c
                                    build_ap_req.c build_auth.c cache.c
                                    changepw.c codec.c config_file.c
                                    constants.c convert_creds.c
@@ -677,13 +681,13 @@ if not bld.CONFIG_SET("USING_SYSTEM_ASN1"):
 
     HEIMDAL_AUTOPROTO('lib/asn1/der-protos.h',
                           HEIMDAL_HEIM_ASN1_DER_SOURCE,
-                          group = 'compiler_prototypes',
+                          group='hostcc_build_source',
                           options="-q -P comment -o")
 
 
     HEIMDAL_AUTOPROTO('lib/asn1/der-private.h',
                           HEIMDAL_HEIM_ASN1_DER_SOURCE,
-                          group = 'compiler_prototypes',
+                          group='hostcc_build_source',
                           options="-q -P comment -p")
 
     HEIMDAL_ERRTABLE('HEIMDAL_ASN1_ERR_ET', 'lib/asn1/asn1_err.et')
@@ -701,7 +705,7 @@ if not bld.CONFIG_SET("USING_SYSTEM_ASN1"):
 
     HEIMDAL_ASN1('HEIMDAL_RFC2459_ASN1',
         'lib/asn1/rfc2459.asn1',
-        options='--preserve-binary=TBSCertificate --preserve-binary=TBSCRLCertList --preserve-binary=Name --sequence=GeneralNames --sequence=Extensions --sequence=CRLDistributionPoints',
+        option_file='lib/asn1/rfc2459.opt',
         directory='lib/asn1'
         )
 
@@ -824,7 +828,7 @@ if not bld.CONFIG_SET("USING_SYSTEM_HX509"):
                           options="-q -P comment -p")
 
     HEIMDAL_LIBRARY('hx509',
-        'lib/hx509/ca.c lib/hx509/cert.c lib/hx509/cms.c lib/hx509/collector.c lib/hx509/crypto.c lib/hx509/error.c lib/hx509/env.c lib/hx509/file.c lib/hx509/keyset.c lib/hx509/ks_dir.c lib/hx509/ks_file.c lib/hx509/ks_keychain.c lib/hx509/ks_mem.c lib/hx509/ks_null.c lib/hx509/ks_p11.c lib/hx509/ks_p12.c lib/hx509/lock.c lib/hx509/name.c lib/hx509/peer.c lib/hx509/print.c lib/hx509/req.c lib/hx509/revoke.c lib/hx509/sel.c lib/hx509/hx509_err.c lib/hx509/sel-lex.l lib/hx509/sel-gram.c',
+        'lib/hx509/ca.c lib/hx509/cert.c lib/hx509/cms.c lib/hx509/collector.c lib/hx509/crypto.c lib/hx509/error.c lib/hx509/env.c lib/hx509/file.c lib/hx509/keyset.c lib/hx509/ks_dir.c lib/hx509/ks_file.c lib/hx509/ks_keychain.c lib/hx509/ks_mem.c lib/hx509/ks_null.c lib/hx509/ks_p11.c lib/hx509/ks_p12.c lib/hx509/lock.c lib/hx509/name.c lib/hx509/peer.c lib/hx509/print.c lib/hx509/req.c lib/hx509/revoke.c lib/hx509/sel.c lib/hx509/hx509_err.c lib/hx509/sel-lex.l lib/hx509/sel-gram.y',
         includes='../heimdal/lib/hx509',
         deps='roken com_err asn1 hcrypto asn1 HEIMDAL_OCSP_ASN1 HEIMDAL_PKCS8_ASN1 HEIMDAL_PKCS9_ASN1 HEIMDAL_PKCS12_ASN1 HEIMDAL_PKCS10_ASN1 wind',
         vnum='5.0.0',
@@ -891,14 +895,13 @@ if not bld.CONFIG_SET('USING_SYSTEM_COM_ERR'):
 
 HEIMDAL_SUBSYSTEM('HEIMDAL_VERS_HOSTCC',
        'lib/vers/print_version.c ../heimdal_build/version.c',
-        group='build_compilers',
+       group='hostcc_base_build_main',
        deps='LIBREPLACE_HOSTCC ROKEN_HOSTCC',
        use_global_deps=False,
        use_hostcc=True)
 
 HEIMDAL_SUBSYSTEM('HEIMDAL_VERS',
        'lib/vers/print_version.c ../heimdal_build/version.c',
-        group='build_compilers',
         deps='roken replace')
 
 
@@ -909,12 +912,11 @@ if not bld.CONFIG_SET('USING_SYSTEM_ASN1_COMPILE'):
         'lib/asn1/gen_decode.c lib/asn1/gen_encode.c lib/asn1/gen_free.c '
         'lib/asn1/gen_glue.c lib/asn1/gen_length.c lib/asn1/gen_seq.c '
         'lib/asn1/gen_template.c lib/asn1/hash.c lib/asn1/symbol.c '
-        'lib/asn1/asn1parse.c lib/asn1/lex.l lib/asn1/main.c',
+        'lib/asn1/asn1parse.y lib/asn1/lex.l lib/asn1/main.c',
         use_hostcc=True,
         use_global_deps=False,
-        cflags='-DSOCKET_WRAPPER_DISABLE=1 -D_SAMBA_HOSTCC_',
         includes='../heimdal/lib/asn1',
-        group='build_compilers',
+        group='hostcc_build_main',
         deps='ROKEN_HOSTCC LIBREPLACE_HOSTCC HEIMDAL_VERS_HOSTCC',
         install=False
     )
@@ -923,12 +925,11 @@ if not bld.CONFIG_SET('USING_SYSTEM_ASN1_COMPILE'):
 
 if not bld.CONFIG_SET('USING_SYSTEM_COMPILE_ET'):
     HEIMDAL_BINARY('compile_et',
-        'lib/com_err/parse.c lib/com_err/lex.l lib/com_err/compile_et.c',
+        'lib/com_err/parse.y lib/com_err/lex.l lib/com_err/compile_et.c',
         use_hostcc=True,
         use_global_deps=False,
         includes='../heimdal/lib/com_err',
-        group='build_compilers',
-        cflags='-DSOCKET_WRAPPER_DISABLE=1 -D_SAMBA_HOSTCC_',
+        group='hostcc_base_build_main',
         deps='ROKEN_HOSTCC LIBREPLACE_HOSTCC HEIMDAL_VERS_HOSTCC',
         install=False
         )

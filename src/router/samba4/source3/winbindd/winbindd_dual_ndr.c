@@ -433,9 +433,8 @@ static NTSTATUS make_internal_dcesrv_connection(TALLOC_CTX *mem_ctx,
 	context->conn = conn;
 	context->context_id = 0;
 	context->transfer_syntax = *(conn->preferred_transfer);
-	context->iface = find_interface_by_uuid(conn->endpoint,
-					&ndr_table->syntax_id.uuid,
-					ndr_table->syntax_id.if_version);
+	context->iface = find_interface_by_syntax_id(
+		conn->endpoint, &ndr_table->syntax_id);
 	if (context->iface == NULL) {
 		status = NT_STATUS_RPC_INTERFACE_NOT_FOUND;
 		goto fail;
@@ -482,6 +481,7 @@ enum winbindd_result winbindd_dual_ndrcmd(struct winbindd_domain *domain,
 	struct dcesrv_connection *dcesrv_conn = NULL;
 	struct dcesrv_call_state *dcesrv_call = NULL;
 	struct data_blob_list_item *rep = NULL;
+	struct dcesrv_context_callbacks *cb = NULL;
 	uint32_t opnum = state->request->data.ndrcmd;
 	TALLOC_CTX *mem_ctx;
 	NTSTATUS status;
@@ -523,8 +523,10 @@ enum winbindd_result winbindd_dual_ndrcmd(struct winbindd_domain *domain,
 
 	ZERO_STRUCT(dcesrv_call->pkt);
 	dcesrv_call->pkt.u.bind.assoc_group_id = 0;
-	status = dcesrv_call->conn->dce_ctx->callbacks.assoc_group.find(
-								dcesrv_call);
+
+	cb = dcesrv_call->conn->dce_ctx->callbacks;
+	status = cb->assoc_group.find(
+		dcesrv_call, cb->assoc_group.private_data);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}

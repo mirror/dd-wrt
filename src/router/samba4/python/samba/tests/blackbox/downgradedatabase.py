@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
 from samba.tests import BlackboxTestCase
 import os
 import ldb
@@ -40,7 +39,7 @@ class DowngradeTestBase(BlackboxTestCase):
                    "--targetdir {self.tempdir} " +\
                    "--backend-store {self.backend} " +\
                    "--host-name downgradetest " +\
-                   "--option=\"vfs objects=fake_acls xattr_tdb\""
+                   "--option=\"vfs objects=dfs_samba4 acl_xattr fake_acls xattr_tdb\""
         prov_cmd = prov_cmd.format(self=self)
         self.check_run(prov_cmd, "Provisioning for downgrade")
 

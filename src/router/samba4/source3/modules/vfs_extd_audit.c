@@ -280,27 +280,55 @@ static int audit_renameat(vfs_handle_struct *handle,
 			files_struct *dstfsp,
 			const struct smb_filename *smb_fname_dst)
 {
+	struct smb_filename *full_fname_src = NULL;
+	struct smb_filename *full_fname_dst = NULL;
 	int result;
+	int saved_errno = 0;
+
+	full_fname_src = full_path_from_dirfsp_atname(talloc_tos(),
+						      srcfsp,
+						      smb_fname_src);
+	if (full_fname_src == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	full_fname_dst = full_path_from_dirfsp_atname(talloc_tos(),
+						      dstfsp,
+						      smb_fname_dst);
+	if (full_fname_dst == NULL) {
+		TALLOC_FREE(full_fname_src);
+		errno = ENOMEM;
+		return -1;
+	}
 
 	result = SMB_VFS_NEXT_RENAMEAT(handle,
 			srcfsp,
 			smb_fname_src,
 			dstfsp,
 			smb_fname_dst);
-
+	if (result == -1) {
+		saved_errno = errno;
+	}
 	if (lp_syslog() > 0) {
 		syslog(audit_syslog_priority(handle), "renameat %s -> %s %s%s\n",
-		       smb_fname_src->base_name,
-		       smb_fname_dst->base_name,
+		       full_fname_src->base_name,
+		       full_fname_dst->base_name,
 		       (result < 0) ? "failed: " : "",
-		       (result < 0) ? strerror(errno) : "");
+		       (result < 0) ? strerror(saved_errno) : "");
 	}
 	DEBUG(1, ("vfs_extd_audit: renameat old: %s newname: %s  %s %s\n",
-		smb_fname_str_dbg(smb_fname_src),
-		smb_fname_str_dbg(smb_fname_dst),
+		smb_fname_str_dbg(full_fname_src),
+		smb_fname_str_dbg(full_fname_dst),
 	       (result < 0) ? "failed: " : "",
-	       (result < 0) ? strerror(errno) : ""));
+	       (result < 0) ? strerror(saved_errno) : ""));
 
+	TALLOC_FREE(full_fname_src);
+	TALLOC_FREE(full_fname_dst);
+
+	if (result == -1)  {
+		errno = saved_errno;
+	}
 	return result;
 }
 
@@ -309,7 +337,15 @@ static int audit_unlinkat(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			int flags)
 {
+	struct smb_filename *full_fname = NULL;
 	int result;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		return -1;
+	}
 
 	result = SMB_VFS_NEXT_UNLINKAT(handle,
 			dirfsp,
@@ -318,37 +354,16 @@ static int audit_unlinkat(vfs_handle_struct *handle,
 
 	if (lp_syslog() > 0) {
 		syslog(audit_syslog_priority(handle), "unlinkat %s %s%s\n",
-		       smb_fname->base_name,
+		       full_fname->base_name,
 		       (result < 0) ? "failed: " : "",
 		       (result < 0) ? strerror(errno) : "");
 	}
 	DBG_ERR("unlinkat %s %s %s\n",
-	       smb_fname_str_dbg(smb_fname),
+	       smb_fname_str_dbg(full_fname),
 	       (result < 0) ? "failed: " : "",
 	       (result < 0) ? strerror(errno) : "");
 
-	return result;
-}
-
-static int audit_chmod(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			mode_t mode)
-{
-	int result;
-
-	result = SMB_VFS_NEXT_CHMOD(handle, smb_fname, mode);
-
-	if (lp_syslog() > 0) {
-		syslog(audit_syslog_priority(handle), "chmod %s mode 0x%x %s%s\n",
-		       smb_fname->base_name, mode,
-		       (result < 0) ? "failed: " : "",
-		       (result < 0) ? strerror(errno) : "");
-	}
-	DEBUG(1, ("vfs_extd_audit: chmod %s mode 0x%x %s %s\n",
-	       smb_fname->base_name, (unsigned int)mode,
-	       (result < 0) ? "failed: " : "",
-	       (result < 0) ? strerror(errno) : ""));
-
+	TALLOC_FREE(full_fname);
 	return result;
 }
 
@@ -380,7 +395,6 @@ static struct vfs_fn_pointers vfs_extd_audit_fns = {
 	.close_fn = audit_close,
 	.renameat_fn = audit_renameat,
 	.unlinkat_fn = audit_unlinkat,
-	.chmod_fn = audit_chmod,
 	.fchmod_fn = audit_fchmod,
 };
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Originally based on ./sam.py
-from __future__ import print_function
 import optparse
 import sys
 import os
@@ -165,27 +164,6 @@ class LATests(samba.tests.TestCase):
                                 scope=ldb.SCOPE_BASE,
                                 attrs=['objectGUID'])
         return str(misc.GUID(res[0]['objectGUID'][0]))
-
-    def assertRaisesLdbError(self, errcode, msg, f, *args, **kwargs):
-        """Assert a function raises a particular LdbError."""
-        try:
-            f(*args, **kwargs)
-        except ldb.LdbError as e:
-            (num, msg) = e.args
-            if num != errcode:
-                lut = {v: k for k, v in vars(ldb).items()
-                       if k.startswith('ERR_') and isinstance(v, int)}
-                self.fail("%s, expected "
-                          "LdbError %s, (%d) "
-                          "got %s (%d)" % (msg,
-                                           lut.get(errcode), errcode,
-                                           lut.get(num), num))
-        else:
-            lut = {v: k for k, v in vars(ldb).items()
-                   if k.startswith('ERR_') and isinstance(v, int)}
-            self.fail("%s, expected "
-                      "LdbError %s, (%d) "
-                      "but we got success" % (msg, lut.get(errcode), errcode))
 
     def _test_la_backlinks(self, reveal=False):
         tag = 'backlinks'

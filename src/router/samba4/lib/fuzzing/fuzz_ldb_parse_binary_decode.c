@@ -1,5 +1,5 @@
 /*
-   Fuzzing ldb_parse_control_from_string
+   Fuzzing ldb_binary_decode and ldb_binary_encode_string
    Copyright (C) Catalyst IT 2020
 
    This program is free software; you can redistribute it and/or modify
@@ -45,5 +45,11 @@ int LLVMFuzzerTestOneInput(uint8_t *input, size_t len)
 	val = ldb_binary_decode(mem_ctx, s);
 	ldb_binary_encode_string(mem_ctx, s);
 	TALLOC_FREE(mem_ctx);
+	return 0;
+}
+
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
 	return 0;
 }

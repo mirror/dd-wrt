@@ -43,6 +43,7 @@
 #endif
 
 
+#define NSEC_PER_SEC 1000000000
 
 /**
  External access to time_t_min and time_t_max.
@@ -92,10 +93,7 @@ _PUBLIC_ time_t time_mono(time_t *t)
 time_t convert_timespec_to_time_t(struct timespec ts)
 {
 	/* Ensure tv_nsec is less than 1sec. */
-	while (ts.tv_nsec > 1000000000) {
-		ts.tv_sec += 1;
-		ts.tv_nsec -= 1000000000;
-	}
+	normalize_timespec(&ts);
 
 	/* 1 ns == 1,000,000,000 - one thousand millionths of a second.
 	   increment if it's greater than 500 millionth of a second. */
@@ -180,7 +178,7 @@ check if it's a null NTTIME
 **/
 _PUBLIC_ bool null_nttime(NTTIME t)
 {
-	return t == 0 || t == (NTTIME)-1;
+	return t == 0;
 }
 
 /*******************************************************************
@@ -869,6 +867,36 @@ _PUBLIC_ int get_time_zone(time_t t)
 	return tm_diff(&tm_utc,tm);
 }
 
+/*
+ * Raw convert an NTTIME to a unix timespec.
+ */
+
+struct timespec nt_time_to_unix_timespec_raw(
+			NTTIME nt)
+{
+	int64_t d;
+	struct timespec ret;
+
+	d = (int64_t)nt;
+	/* d is now in 100ns units, since jan 1st 1601".
+	   Save off the ns fraction. */
+
+	/*
+	 * Take the last seven decimal digits and multiply by 100.
+	 * to convert from 100ns units to 1ns units.
+	 */
+        ret.tv_nsec = (long) ((d % (1000 * 1000 * 10)) * 100);
+
+	/* Convert to seconds */
+	d /= 1000*1000*10;
+
+	/* Now adjust by 369 years to make the secs since 1970 */
+	d -= TIME_FIXUP_CONSTANT_INT;
+
+	ret.tv_sec = (time_t)d;
+	return ret;
+}
+
 struct timespec nt_time_to_unix_timespec(NTTIME nt)
 {
 	int64_t d;
@@ -1015,10 +1043,7 @@ void round_timespec_to_usec(struct timespec *ts)
 {
 	struct timeval tv = convert_timespec_to_timeval(*ts);
 	*ts = convert_timeval_to_timespec(tv);
-	while (ts->tv_nsec > 1000000000) {
-		ts->tv_sec += 1;
-		ts->tv_nsec -= 1000000000;
-	}
+	normalize_timespec(ts);
 }
 
 /****************************************************************************
@@ -1133,10 +1158,10 @@ struct timespec nt_time_to_full_timespec(NTTIME nt)
 	if (nt == NTTIME_OMIT) {
 		return make_omit_timespec();
 	}
-	if (nt == NTTIME_FREEZE) {
+	if (nt == NTTIME_FREEZE || nt == NTTIME_THAW) {
 		/*
-		 * This should be returned as SAMBA_UTIME_FREEZE in the
-		 * future.
+		 * This should be returned as SAMBA_UTIME_FREEZE or
+		 * SAMBA_UTIME_THAW in the future.
 		 */
 		return make_omit_timespec();
 	}
@@ -1461,4 +1486,46 @@ struct timespec get_ctimespec(const struct stat *pst)
 	ret.tv_sec = pst->st_mtime;
 	ret.tv_nsec = get_ctimensec(pst);
 	return ret;
+}
+
+/****************************************************************************
+ Deal with nanoseconds overflow.
+****************************************************************************/
+
+void normalize_timespec(struct timespec *ts)
+{
+	lldiv_t dres;
+
+	/* most likely case: nsec is valid */
+	if ((unsigned long)ts->tv_nsec < NSEC_PER_SEC) {
+		return;
+	}
+
+	dres = lldiv(ts->tv_nsec, NSEC_PER_SEC);
+
+	/* if the operation would result in overflow, max out values and bail */
+	if (dres.quot > 0) {
+		if ((int64_t)LONG_MAX - dres.quot < ts->tv_sec) {
+			ts->tv_sec = LONG_MAX;
+			ts->tv_nsec = NSEC_PER_SEC - 1;
+			return;
+		}
+	} else {
+		if ((int64_t)LONG_MIN - dres.quot > ts->tv_sec) {
+			ts->tv_sec = LONG_MIN;
+			ts->tv_nsec = 0;
+			return;
+		}
+	}
+
+	ts->tv_nsec = dres.rem;
+	ts->tv_sec += dres.quot;
+
+	/* if the ns part was positive or a multiple of -1000000000, we're done */
+	if (ts->tv_nsec > 0 || dres.rem == 0) {
+		return;
+	}
+
+	ts->tv_nsec += NSEC_PER_SEC;
+	--ts->tv_sec;
 }

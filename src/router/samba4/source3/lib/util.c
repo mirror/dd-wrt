@@ -21,6 +21,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * @brief  Small functions that don't fit anywhere else
+ * @file   util.c
+ */
+
 #include "includes.h"
 #include "system/passwd.h"
 #include "system/filesys.h"
@@ -46,43 +51,6 @@
 /* Max allowable allococation - 256mb - 0x10000000 */
 #define MAX_ALLOC_SIZE (1024*1024*256)
 
-#if (defined(HAVE_NETGROUP) && defined (WITH_AUTOMOUNT))
-/* rpc/xdr.h uses TRUE and FALSE */
-#ifdef TRUE
-#undef TRUE
-#endif
-
-#ifdef FALSE
-#undef FALSE
-#endif
-
-#include "system/nis.h"
-
-#ifdef WITH_NISPLUS_HOME
-#ifdef BROKEN_NISPLUS_INCLUDE_FILES
-/*
- * The following lines are needed due to buggy include files
- * in Solaris 2.6 which define GROUP in both /usr/include/sys/acl.h and
- * also in /usr/include/rpcsvc/nis.h. The definitions conflict. JRA.
- * Also GROUP_OBJ is defined as 0x4 in /usr/include/sys/acl.h and as
- * an enum in /usr/include/rpcsvc/nis.h.
- */
-
-#if defined(GROUP)
-#undef GROUP
-#endif
-
-#if defined(GROUP_OBJ)
-#undef GROUP_OBJ
-#endif
-
-#endif /* BROKEN_NISPLUS_INCLUDE_FILES */
-
-#include <rpcsvc/nis.h>
-
-#endif /* WITH_NISPLUS_HOME */
-#endif /* HAVE_NETGROUP && WITH_AUTOMOUNT */
-
 static enum protocol_types Protocol = PROTOCOL_COREPLUS;
 
 enum protocol_types get_Protocol(void)
@@ -99,7 +67,6 @@ static enum remote_arch_types ra_type = RA_UNKNOWN;
 
 void gfree_all( void )
 {
-	gfree_names();
 	gfree_loadparm();
 	gfree_charcnv();
 	gfree_interfaces();
@@ -426,6 +393,20 @@ NTSTATUS init_before_fork(void)
 }
 
 /**
+ * @brief Get a fd to watch for our parent process to exit
+ *
+ * Samba parent processes open a pipe that naturally closes when the
+ * parent exits. Child processes can watch the read end of the pipe
+ * for readability: Readability with 0 bytes to read means the parent
+ * has exited and the child process might also want to exit.
+ */
+
+int parent_watch_fd(void)
+{
+	return reinit_after_fork_pipe[0];
+}
+
+/**
  * Detect died parent by detecting EOF on the pipe
  */
 static void reinit_after_fork_pipe_handler(struct tevent_context *ev,
@@ -598,133 +579,6 @@ char *get_mydnsdomname(TALLOC_CTX *ctx)
 		return talloc_strdup(ctx, "");
 	}
 }
-
-#if (defined(HAVE_NETGROUP) && defined(WITH_AUTOMOUNT))
-/******************************************************************
- Remove any mount options such as -rsize=2048,wsize=2048 etc.
- Based on a fix from <Thomas.Hepper@icem.de>.
- Returns a malloc'ed string.
-*******************************************************************/
-
-static char *strip_mount_options(TALLOC_CTX *ctx, const char *str)
-{
-	if (*str == '-') {
-		const char *p = str;
-		while(*p && !isspace(*p))
-			p++;
-		while(*p && isspace(*p))
-			p++;
-		if(*p) {
-			return talloc_strdup(ctx, p);
-		}
-	}
-	return NULL;
-}
-
-/*******************************************************************
- Patch from jkf@soton.ac.uk
- Split Luke's automount_server into YP lookup and string splitter
- so can easily implement automount_path().
- Returns a malloc'ed string.
-*******************************************************************/
-
-#ifdef WITH_NISPLUS_HOME
-char *automount_lookup(TALLOC_CTX *ctx, const char *user_name)
-{
-	const struct loadparm_substitution *lp_sub =
-		loadparm_s3_global_substitution();
-	char *value = NULL;
-
-	char *nis_map = (char *)lp_homedir_map(talloc_tos(), lp_sub);
-
-	char buffer[NIS_MAXATTRVAL + 1];
-	nis_result *result;
-	nis_object *object;
-	entry_obj  *entry;
-
-	snprintf(buffer, sizeof(buffer), "[key=%s],%s", user_name, nis_map);
-	DEBUG(5, ("NIS+ querystring: %s\n", buffer));
-
-	if (result = nis_list(buffer, FOLLOW_PATH|EXPAND_NAME|HARD_LOOKUP, NULL, NULL)) {
-		if (result->status != NIS_SUCCESS) {
-			DEBUG(3, ("NIS+ query failed: %s\n", nis_sperrno(result->status)));
-		} else {
-			object = result->objects.objects_val;
-			if (object->zo_data.zo_type == ENTRY_OBJ) {
-				entry = &object->zo_data.objdata_u.en_data;
-				DEBUG(5, ("NIS+ entry type: %s\n", entry->en_type));
-				DEBUG(3, ("NIS+ result: %s\n", entry->en_cols.en_cols_val[1].ec_value.ec_value_val));
-
-				value = talloc_strdup(ctx,
-						entry->en_cols.en_cols_val[1].ec_value.ec_value_val);
-				if (!value) {
-					nis_freeresult(result);
-					return NULL;
-				}
-				value = talloc_string_sub(ctx,
-						value,
-						"&",
-						user_name);
-			}
-		}
-	}
-	nis_freeresult(result);
-
-	if (value) {
-		value = strip_mount_options(ctx, value);
-		DEBUG(4, ("NIS+ Lookup: %s resulted in %s\n",
-					user_name, value));
-	}
-	return value;
-}
-#else /* WITH_NISPLUS_HOME */
-
-char *automount_lookup(TALLOC_CTX *ctx, const char *user_name)
-{
-	const struct loadparm_substitution *lp_sub =
-		loadparm_s3_global_substitution();
-	char *value = NULL;
-
-	int nis_error;        /* returned by yp all functions */
-	char *nis_result;     /* yp_match inits this */
-	int nis_result_len;  /* and set this */
-	char *nis_domain;     /* yp_get_default_domain inits this */
-	char *nis_map = lp_homedir_map(talloc_tos(), lp_sub);
-
-	if ((nis_error = yp_get_default_domain(&nis_domain)) != 0) {
-		DEBUG(3, ("YP Error: %s\n", yperr_string(nis_error)));
-		return NULL;
-	}
-
-	DEBUG(5, ("NIS Domain: %s\n", nis_domain));
-
-	if ((nis_error = yp_match(nis_domain, nis_map, user_name,
-					strlen(user_name), &nis_result,
-					&nis_result_len)) == 0) {
-		if (nis_result_len > 0 && nis_result[nis_result_len] == '\n') {
-			nis_result[nis_result_len] = '\0';
-		}
-		value = talloc_strdup(ctx, nis_result);
-		if (!value) {
-			return NULL;
-		}
-		value = strip_mount_options(ctx, value);
-	} else if(nis_error == YPERR_KEY) {
-		DEBUG(3, ("YP Key not found:  while looking up \"%s\" in map \"%s\"\n", 
-				user_name, nis_map));
-		DEBUG(3, ("using defaults for server and home directory\n"));
-	} else {
-		DEBUG(3, ("YP Error: \"%s\" while looking up \"%s\" in map \"%s\"\n", 
-				yperr_string(nis_error), user_name, nis_map));
-	}
-
-	if (value) {
-		DEBUG(4, ("YP Lookup: %s resulted in %s\n", user_name, value));
-	}
-	return value;
-}
-#endif /* WITH_NISPLUS_HOME */
-#endif
 
 bool process_exists(const struct server_id pid)
 {
@@ -1107,21 +961,38 @@ int map_process_lock_to_ofd_lock(int op)
  Returns true if it is equal, false otherwise.
 ********************************************************************/
 
+static bool nb_name_equal(const char *s1, const char *s2)
+{
+	int cmp = strncasecmp_m(s1, s2, MAX_NETBIOSNAME_LEN-1);
+	return (cmp == 0);
+}
+
 bool is_myname(const char *s)
 {
-	int n;
-	bool ret = False;
+	const char **aliases = NULL;
+	bool ok = false;
 
-	for (n=0; my_netbios_names(n); n++) {
-		const char *nbt_name = my_netbios_names(n);
-
-		if (strncasecmp_m(nbt_name, s, MAX_NETBIOSNAME_LEN-1) == 0) {
-			ret=True;
-			break;
-		}
+	ok = nb_name_equal(lp_netbios_name(), s);
+	if (ok) {
+		goto done;
 	}
-	DEBUG(8, ("is_myname(\"%s\") returns %d\n", s, ret));
-	return(ret);
+
+	aliases = lp_netbios_aliases();
+	if (aliases == NULL) {
+		goto done;
+	}
+
+	while (*aliases != NULL) {
+		ok = nb_name_equal(*aliases, s);
+		if (ok) {
+			goto done;
+		}
+		aliases += 1;
+	}
+
+done:
+	DBG_DEBUG("is_myname(\"%s\") returns %d\n", s, (int)ok);
+	return ok;
 }
 
 /*******************************************************************
@@ -1678,8 +1549,9 @@ bool name_to_fqdn(fstring fqdn, const char *name)
 
 	s = getaddrinfo(name, NULL, &hints, &result);
 	if (s != 0) {
-		DEBUG(1, ("getaddrinfo: %s\n", gai_strerror(s)));
-		DEBUG(10,("name_to_fqdn: lookup for %s failed.\n", name));
+		DBG_WARNING("getaddrinfo lookup for %s failed: %s\n",
+			name,
+			gai_strerror(s));
 		fstrcpy(fqdn, name);
 		return false;
 	}

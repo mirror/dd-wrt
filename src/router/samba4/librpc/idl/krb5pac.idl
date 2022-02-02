@@ -86,8 +86,21 @@ interface krb5pac
 	} PAC_CONSTRAINED_DELEGATION;
 
 	typedef [bitmap32bit] bitmap {
-		PAC_UPN_DNS_FLAG_CONSTRUCTED = 0x00000001
+		PAC_UPN_DNS_FLAG_CONSTRUCTED = 0x00000001,
+		PAC_UPN_DNS_FLAG_HAS_SAM_NAME_AND_SID = 0x00000002
 	} PAC_UPN_DNS_FLAGS;
+
+	typedef struct {
+		[value(2*strlen_m(samaccountname))] uint16 samaccountname_size;
+		[relative_short,subcontext(0),subcontext_size(samaccountname_size),flag(NDR_ALIGN8|STR_NOTERM|NDR_REMAINING)] string *samaccountname;
+		[value(ndr_size_dom_sid(objectsid, ndr->flags))] uint16 objectsid_size;
+		[relative_short,subcontext(0),subcontext_size(objectsid_size)] dom_sid *objectsid;
+	} PAC_UPN_DNS_INFO_SAM_NAME_AND_SID;
+
+	typedef [nodiscriminant] union {
+		[case(PAC_UPN_DNS_FLAG_HAS_SAM_NAME_AND_SID)] PAC_UPN_DNS_INFO_SAM_NAME_AND_SID sam_name_and_sid;
+		[default];
+	} PAC_UPN_DNS_INFO_EX;
 
 	typedef struct {
 		[value(2*strlen_m(upn_name))] uint16 upn_name_size;
@@ -95,7 +108,22 @@ interface krb5pac
 		[value(2*strlen_m(dns_domain_name))] uint16 dns_domain_name_size;
 		[relative_short,subcontext(0),subcontext_size(dns_domain_name_size),flag(NDR_ALIGN8|STR_NOTERM|NDR_REMAINING)] string *dns_domain_name;
 		PAC_UPN_DNS_FLAGS flags;
+		[switch_is(flags & PAC_UPN_DNS_FLAG_HAS_SAM_NAME_AND_SID)] PAC_UPN_DNS_INFO_EX ex;
 	} PAC_UPN_DNS_INFO;
+
+	typedef [bitmap32bit] bitmap {
+		PAC_ATTRIBUTE_FLAG_PAC_WAS_REQUESTED = 0x00000001,
+		PAC_ATTRIBUTE_FLAG_PAC_WAS_GIVEN_IMPLICITLY = 0x00000002
+	} PAC_ATTRIBUTE_INFO_FLAGS;
+
+	typedef struct {
+		uint32 flags_length; /* length in bits */
+		PAC_ATTRIBUTE_INFO_FLAGS flags;
+	} PAC_ATTRIBUTES_INFO;
+
+	typedef struct {
+		dom_sid sid;
+	} PAC_REQUESTER_SID;
 
 	typedef [public] struct {
 		PAC_LOGON_INFO *info;
@@ -112,7 +140,13 @@ interface krb5pac
 		PAC_TYPE_KDC_CHECKSUM = 7,
 		PAC_TYPE_LOGON_NAME = 10,
 		PAC_TYPE_CONSTRAINED_DELEGATION = 11,
-		PAC_TYPE_UPN_DNS_INFO = 12
+		PAC_TYPE_UPN_DNS_INFO = 12,
+		PAC_TYPE_CLIENT_CLAIMS_INFO = 13,
+		PAC_TYPE_DEVICE_INFO = 14,
+		PAC_TYPE_DEVICE_CLAIMS_INFO = 15,
+		PAC_TYPE_TICKET_CHECKSUM = 16,
+		PAC_TYPE_ATTRIBUTES_INFO = 17,
+		PAC_TYPE_REQUESTER_SID = 18
 	} PAC_TYPE;
 
 	typedef struct {
@@ -128,6 +162,9 @@ interface krb5pac
 		[case(PAC_TYPE_CONSTRAINED_DELEGATION)][subcontext(0xFFFFFC01)]
 			PAC_CONSTRAINED_DELEGATION_CTR constrained_delegation;
 		[case(PAC_TYPE_UPN_DNS_INFO)]	PAC_UPN_DNS_INFO upn_dns_info;
+		[case(PAC_TYPE_TICKET_CHECKSUM)]	PAC_SIGNATURE_DATA ticket_checksum;
+		[case(PAC_TYPE_ATTRIBUTES_INFO)]	PAC_ATTRIBUTES_INFO attributes_info;
+		[case(PAC_TYPE_REQUESTER_SID)]	PAC_REQUESTER_SID requester_sid;
 		/* when new PAC info types are added they are supposed to be done
 		   in such a way that they are backwards compatible with existing
 		   servers. This makes it safe to just use a [default] for
@@ -137,7 +174,7 @@ interface krb5pac
 
 	typedef [public,nopush,nopull] struct {
 		PAC_TYPE type;
-		[value(_ndr_size_PAC_INFO(info, type, 0))] uint32 _ndr_size;
+		[value(_ndr_size_PAC_INFO(info, type, LIBNDR_FLAG_ALIGN8))] uint32 _ndr_size;
 		/*
 		 * We need to have two subcontexts to get the padding right,
 		 * the outer subcontext uses NDR_ROUND(_ndr_size, 8), while

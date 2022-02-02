@@ -174,7 +174,8 @@ _kdc_find_etype(krb5_context context, krb5_boolean use_strongest_session_key,
 		ret = hdb_enctype2key(context, &princ->entry, p[i], &key);
 		if (ret)
 		    continue;
-		if (is_preauth && !is_default_salt_p(&def_salt, key))
+		if (is_preauth && enctype == (krb5_enctype)ETYPE_DES_CBC_CRC
+		    && !is_default_salt_p(&def_salt, key))
 		    continue;
 		enctype = p[i];
 	    }
@@ -913,27 +914,30 @@ _kdc_check_addresses(krb5_context context,
  */
 
 static krb5_boolean
-send_pac_p(krb5_context context, KDC_REQ *req)
+send_pac_p(krb5_context context, KDC_REQ *req, krb5_boolean *pac_request)
 {
     krb5_error_code ret;
     PA_PAC_REQUEST pacreq;
     const PA_DATA *pa;
     int i = 0;
 
+    *pac_request = TRUE;
+
     pa = _kdc_find_padata(req, &i, KRB5_PADATA_PA_PAC_REQUEST);
     if (pa == NULL)
-	return TRUE;
+	return FALSE;
 
     ret = decode_PA_PAC_REQUEST(pa->padata_value.data,
 				pa->padata_value.length,
 				&pacreq,
 				NULL);
     if (ret)
-	return TRUE;
+	return FALSE;
     i = pacreq.include_pac;
     free_PA_PAC_REQUEST(&pacreq);
-    if (i == 0)
-	return FALSE;
+    if (i == 0) {
+	*pac_request = FALSE;
+    }
     return TRUE;
 }
 
@@ -946,6 +950,33 @@ _kdc_is_anonymous(krb5_context context, krb5_principal principal)
 	strcmp(principal->name.name_string.val[1], KRB5_ANON_NAME) != 0)
 	return 0;
     return 1;
+}
+
+static krb5_error_code
+get_local_tgs(krb5_context context,
+	      krb5_kdc_configuration *config,
+	      krb5_const_realm realm,
+	      hdb_entry_ex **krbtgt)
+{
+    krb5_error_code ret;
+    krb5_principal tgs_name;
+
+    *krbtgt = NULL;
+
+    ret = krb5_make_principal(context,
+			      &tgs_name,
+			      realm,
+			      KRB5_TGS_NAME,
+			      realm,
+			      NULL);
+    if (ret)
+	return ret;
+
+    ret = _kdc_db_fetch(context, config, tgs_name,
+			HDB_F_GET_KRBTGT, NULL, NULL, krbtgt);
+    krb5_free_principal(context, tgs_name);
+
+    return ret;
 }
 
 /*
@@ -983,6 +1014,9 @@ _kdc_as_rep(krb5_context context,
     pk_client_params *pkp = NULL;
 #endif
     const EncryptionKey *pk_reply_key = NULL;
+    krb5_boolean is_tgs;
+    hdb_entry_ex *krbtgt = NULL;
+    Key *krbtgt_key = NULL;
 
     memset(&rep, 0, sizeof(rep));
     memset(&session_key, 0, sizeof(session_key));
@@ -996,7 +1030,7 @@ _kdc_as_rep(krb5_context context,
 	flags |= HDB_F_CANON;
 
     if(b->sname == NULL){
-	ret = KRB5KRB_ERR_GENERIC;
+	ret = KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN;
 	e_text = "No server in request";
     } else{
 	ret = _krb5_principalname2krb5_principal (context,
@@ -1012,7 +1046,7 @@ _kdc_as_rep(krb5_context context,
 	goto out;
     }
     if(b->cname == NULL){
-	ret = KRB5KRB_ERR_GENERIC;
+	ret = KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN;
 	e_text = "No client in request";
     } else {
 	ret = _krb5_principalname2krb5_principal (context,
@@ -1032,6 +1066,8 @@ _kdc_as_rep(krb5_context context,
 
     kdc_log(context, config, 0, "AS-REQ %s from %s for %s",
 	    client_name, from, server_name);
+
+    is_tgs = krb5_principal_is_krbtgt(context, server_princ);
 
     /*
      *
@@ -1101,7 +1137,7 @@ _kdc_as_rep(krb5_context context,
 	goto out;
     }
     ret = _kdc_db_fetch(context, config, server_princ,
-			HDB_F_GET_SERVER|HDB_F_GET_KRBTGT | flags,
+			HDB_F_GET_SERVER | flags | (is_tgs ? HDB_F_GET_KRBTGT : 0),
 			NULL, NULL, &server);
     if(ret == HDB_ERR_NOT_FOUND_HERE) {
 	kdc_log(context, config, 5, "target %s does not have secrets at this KDC, need to proxy", server_name);
@@ -1463,6 +1499,22 @@ _kdc_as_rep(krb5_context context,
     if(ret)
 	goto out;
 
+    /* If server is not krbtgt, fetch local krbtgt key for signing authdata */
+    if (is_tgs) {
+	krbtgt_key = skey;
+    } else {
+	ret = get_local_tgs(context, config, server_princ->realm,
+			    &krbtgt);
+	if (ret)
+	    goto out;
+
+	ret = _kdc_get_preferred_key(context, config, krbtgt,
+				      server_princ->realm,
+				      NULL, &krbtgt_key);
+	if (ret)
+	    goto out;
+    }
+
     if(f.renew || f.validate || f.proxy || f.forwarded || f.enc_tkt_in_skey
        || (f.request_anonymous && !config->allow_anonymous)) {
 	ret = KRB5KDC_ERR_BADOPTION;
@@ -1709,22 +1761,42 @@ _kdc_as_rep(krb5_context context,
     }
 
     /* Add the PAC */
-    if (send_pac_p(context, req)) {
+    {
 	krb5_pac p = NULL;
 	krb5_data data;
+	uint16_t rodc_id;
+	krb5_principal client_pac;
+	krb5_boolean sent_pac_request;
+	krb5_boolean pac_request;
 
-	ret = _kdc_pac_generate(context, client, pk_reply_key, &p);
+	sent_pac_request = send_pac_p(context, req, &pac_request);
+
+	ret = _kdc_pac_generate(context, client, pk_reply_key,
+				sent_pac_request ? &pac_request : NULL,
+				&p);
 	if (ret) {
 	    kdc_log(context, config, 0, "PAC generation failed for -- %s",
 		    client_name);
 	    goto out;
 	}
 	if (p != NULL) {
+	    rodc_id = server->entry.kvno >> 16;
+
+	    /* libkrb5 expects ticket and PAC client names to match */
+	    ret = _krb5_principalname2krb5_principal(context, &client_pac,
+						     et.cname, et.crealm);
+	    if (ret) {
+	       krb5_pac_free(context, p);
+	       goto out;
+	    }
+
 	    ret = _krb5_pac_sign(context, p, et.authtime,
-				 client->entry.principal,
+				 client_pac,
 				 &skey->key, /* Server key */
-				 &skey->key, /* FIXME: should be krbtgt key */
+				 &krbtgt_key->key, /* TGS key */
+				 rodc_id,
 				 &data);
+	    krb5_free_principal(context, client_pac);
 	    krb5_pac_free(context, p);
 	    if (ret) {
 		kdc_log(context, config, 0, "PAC signing failed for -- %s",
@@ -1732,9 +1804,7 @@ _kdc_as_rep(krb5_context context,
 		goto out;
 	    }
 
-	    ret = _kdc_tkt_add_if_relevant_ad(context, &et,
-					      KRB5_AUTHDATA_WIN2K_PAC,
-					      &data);
+	    ret = _kdc_tkt_insert_pac(context, &et, &data);
 	    krb5_data_free(&data);
 	    if (ret)
 		goto out;
@@ -1743,18 +1813,6 @@ _kdc_as_rep(krb5_context context,
 
     _kdc_log_timestamp(context, config, "AS-REQ", et.authtime, et.starttime,
 		       et.endtime, et.renew_till);
-
-    /* do this as the last thing since this signs the EncTicketPart */
-    ret = _kdc_add_KRB5SignedPath(context,
-				  config,
-				  server,
-				  setype,
-				  client->entry.principal,
-				  NULL,
-				  NULL,
-				  &et);
-    if (ret)
-	goto out;
 
     log_as_req(context, config, reply_key->keytype, setype, b);
 
@@ -1804,6 +1862,8 @@ out:
 	_kdc_free_ent(context, client);
     if(server)
 	_kdc_free_ent(context, server);
+    if (krbtgt)
+	_kdc_free_ent(context, krbtgt);
     return ret;
 }
 
@@ -1899,65 +1959,4 @@ prepare_enc_data(krb5_context context,
 	e_data->length = len;
 
 	return TRUE;
-}
-
-/*
- * Add the AuthorizationData `data´ of `type´ to the last element in
- * the sequence of authorization_data in `tkt´ wrapped in an IF_RELEVANT
- */
-
-krb5_error_code
-_kdc_tkt_add_if_relevant_ad(krb5_context context,
-			    EncTicketPart *tkt,
-			    int type,
-			    const krb5_data *data)
-{
-    krb5_error_code ret;
-    size_t size = 0;
-
-    if (tkt->authorization_data == NULL) {
-	tkt->authorization_data = calloc(1, sizeof(*tkt->authorization_data));
-	if (tkt->authorization_data == NULL) {
-	    krb5_set_error_message(context, ENOMEM, "out of memory");
-	    return ENOMEM;
-	}
-    }
-
-    /* add the entry to the last element */
-    {
-	AuthorizationData ad = { 0, NULL };
-	AuthorizationDataElement ade;
-
-	ade.ad_type = type;
-	ade.ad_data = *data;
-
-	ret = add_AuthorizationData(&ad, &ade);
-	if (ret) {
-	    krb5_set_error_message(context, ret, "add AuthorizationData failed");
-	    return ret;
-	}
-
-	ade.ad_type = KRB5_AUTHDATA_IF_RELEVANT;
-
-	ASN1_MALLOC_ENCODE(AuthorizationData,
-			   ade.ad_data.data, ade.ad_data.length,
-			   &ad, &size, ret);
-	free_AuthorizationData(&ad);
-	if (ret) {
-	    krb5_set_error_message(context, ret, "ASN.1 encode of "
-				   "AuthorizationData failed");
-	    return ret;
-	}
-	if (ade.ad_data.length != size)
-	    krb5_abortx(context, "internal asn.1 encoder error");
-
-	ret = add_AuthorizationData(tkt->authorization_data, &ade);
-	der_free_octet_string(&ade.ad_data);
-	if (ret) {
-	    krb5_set_error_message(context, ret, "add AuthorizationData failed");
-	    return ret;
-	}
-    }
-
-    return 0;
 }

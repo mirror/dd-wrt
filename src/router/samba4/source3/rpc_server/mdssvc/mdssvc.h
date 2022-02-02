@@ -126,6 +126,7 @@ struct mds_ctx {
 	int snum;
 	const char *sharename;
 	const char *spath;
+	struct connection_struct *conn;
 	struct sl_query *query_list;     /* list of active queries */
 	struct db_context *ino_path_map; /* dbwrap rbt for storing inode->path mappings */
 };
@@ -150,6 +151,7 @@ extern bool mds_init(struct messaging_context *msg_ctx);
 extern bool mds_shutdown(void);
 struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 			     struct tevent_context *ev,
+			     struct messaging_context *msg_ctx,
 			     struct auth_session_info *session_info,
 			     int snum,
 			     const char *sharename,

@@ -21,11 +21,14 @@
 */
 
 #include "includes.h"
+#include <spawn.h>
 #include "smbd/globals.h"
 #include "include/messages.h"
 #include "lib/util/util_process.h"
+#include "lib/util/sys_rw.h"
 #include "printing.h"
 #include "printing/pcap.h"
+#include "printing/printer_list.h"
 #include "printing/queue_process.h"
 #include "locking/proto.h"
 #include "locking/share_mode_lock.h"
@@ -38,6 +41,7 @@
 #include "nt_printing.h"
 #include "util_event.h"
 #include "lib/global_contexts.h"
+#include "lib/util/pidfile.h"
 
 /**
  * @brief Purge stale printers and reload from pre-populated pcap cache.
@@ -75,7 +79,7 @@ static void delete_and_reload_printers_full(struct tevent_context *ev,
 		DEBUG(3, ("reload_printers: "
 			  "Could not create system session_info\n"));
 		/* can't remove stale printers before we
-		 * are fully initilized */
+		 * are fully initialized */
 		return;
 	}
 
@@ -98,7 +102,8 @@ static void delete_and_reload_printers_full(struct tevent_context *ev,
 		pname = lp_printername(session_info, lp_sub, snum);
 
 		/* check printer, but avoid removing non-autoloaded printers */
-		if (lp_autoloaded(snum) && !pcap_printername_ok(pname)) {
+		if (lp_autoloaded(snum) &&
+		    !printer_list_printername_exists(pname)) {
 			DEBUG(3, ("removing stale printer %s\n", pname));
 
 			if (is_printer_published(session_info, session_info,
@@ -143,7 +148,7 @@ static void reload_pcap_change_notify(struct tevent_context *ev,
 	 * newly added printers get default values created in the registry.
 	 *
 	 * This will block the process for some time (~1 sec per printer), but
-	 * it doesn't block smbd's servering clients.
+	 * it doesn't block smbd's serving clients.
 	 */
 	delete_and_reload_printers_full(ev, msg_ctx);
 
@@ -154,6 +159,8 @@ struct bq_state {
 	struct tevent_context *ev;
 	struct messaging_context *msg;
 	struct idle_event *housekeep;
+	struct tevent_signal *sighup_handler;
+	struct tevent_signal *sigchld_handler;
 };
 
 static bool print_queue_housekeeping(const struct timeval *now, void *pvt)
@@ -163,7 +170,7 @@ static bool print_queue_housekeeping(const struct timeval *now, void *pvt)
 	state = talloc_get_type_abort(pvt, struct bq_state);
 
 	DEBUG(5, ("print queue housekeeping\n"));
-	pcap_cache_reload(state->ev, state->msg, &reload_pcap_change_notify);
+	pcap_cache_reload(state->ev, state->msg, reload_pcap_change_notify);
 
 	return true;
 }
@@ -200,30 +207,6 @@ static void bq_reopen_logs(char *logfile)
 	reopen_logs();
 }
 
-static void bq_sig_term_handler(struct tevent_context *ev,
-				struct tevent_signal *se,
-				int signum,
-				int count,
-				void *siginfo,
-				void *private_data)
-{
-	exit_server_cleanly("termination signal");
-}
-
-static void bq_setup_sig_term_handler(void)
-{
-	struct tevent_signal *se;
-
-	se = tevent_add_signal(global_event_context(),
-			       global_event_context(),
-			       SIGTERM, 0,
-			       bq_sig_term_handler,
-			       NULL);
-	if (!se) {
-		exit_server("failed to setup SIGTERM handler");
-	}
-}
-
 static void bq_sig_hup_handler(struct tevent_context *ev,
 				struct tevent_signal *se,
 				int signum,
@@ -238,20 +221,9 @@ static void bq_sig_hup_handler(struct tevent_context *ev,
 
 	DEBUG(1, ("Reloading pcap cache after SIGHUP\n"));
 	pcap_cache_reload(state->ev, state->msg,
-			  &reload_pcap_change_notify);
+			  reload_pcap_change_notify);
 	printing_subsystem_queue_tasks(state);
 	bq_reopen_logs(NULL);
-}
-
-static void bq_setup_sig_hup_handler(struct bq_state *state)
-{
-	struct tevent_signal *se;
-
-	se = tevent_add_signal(state->ev, state->ev, SIGHUP, 0,
-			       bq_sig_hup_handler, state);
-	if (!se) {
-		exit_server("failed to setup SIGHUP handler");
-	}
 }
 
 static void bq_sig_chld_handler(struct tevent_context *ev_ctx,
@@ -262,25 +234,20 @@ static void bq_sig_chld_handler(struct tevent_context *ev_ctx,
 	int status;
 	pid_t pid;
 
-	pid = waitpid(-1, &status, WNOHANG);
-	if (WIFEXITED(status)) {
-		DEBUG(6, ("Bq child process %d terminated with %d\n",
-			  (int)pid, WEXITSTATUS(status)));
-	} else {
-		DEBUG(3, ("Bq child process %d terminated abnormally\n",
-			  (int)pid));
-	}
-}
+	do {
+		do {
+			pid = waitpid(-1, &status, WNOHANG);
+		} while ((pid == -1) && (errno == EINTR));
 
-static void bq_setup_sig_chld_handler(struct tevent_context *ev_ctx)
-{
-	struct tevent_signal *se;
-
-	se = tevent_add_signal(ev_ctx, ev_ctx, SIGCHLD, 0,
-				bq_sig_chld_handler, NULL);
-	if (!se) {
-		exit_server("failed to setup SIGCHLD handler");
-	}
+		if (WIFEXITED(status)) {
+			DBG_INFO("Bq child process %d terminated with %d\n",
+				 (int)pid,
+				 WEXITSTATUS(status));
+		} else {
+			DBG_NOTICE("Bq child process %d terminated abnormally\n",
+				   (int)pid);
+		}
+	} while (pid > 0);
 }
 
 static void bq_smb_conf_updated(struct messaging_context *msg_ctx,
@@ -296,20 +263,84 @@ static void bq_smb_conf_updated(struct messaging_context *msg_ctx,
 	DEBUG(10,("smb_conf_updated: Got message saying smb.conf was "
 		  "updated. Reloading.\n"));
 	change_to_root_user();
-	pcap_cache_reload(state->ev, msg_ctx, &reload_pcap_change_notify);
+	pcap_cache_reload(state->ev, msg_ctx, reload_pcap_change_notify);
 	printing_subsystem_queue_tasks(state);
 }
 
-static void printing_pause_fd_handler(struct tevent_context *ev,
-				      struct tevent_fd *fde,
-				      uint16_t flags,
-				      void *private_data)
+static int bq_state_destructor(struct bq_state *s)
 {
-	/*
-	 * If pause_pipe[1] is closed it means the parent smbd
-	 * and children exited or aborted.
-	 */
-	exit_server_cleanly(NULL);
+	struct messaging_context *msg_ctx = s->msg;
+	TALLOC_FREE(s->sighup_handler);
+	TALLOC_FREE(s->sigchld_handler);
+	messaging_deregister(msg_ctx, MSG_PRINTER_DRVUPGRADE, NULL);
+	messaging_deregister(msg_ctx, MSG_PRINTER_UPDATE, NULL);
+	messaging_deregister(msg_ctx, MSG_SMB_CONF_UPDATED, s);
+	return 0;
+}
+
+struct bq_state *register_printing_bq_handlers(
+	TALLOC_CTX *mem_ctx,
+	struct messaging_context *msg_ctx)
+{
+	struct bq_state *state = NULL;
+	NTSTATUS status;
+	bool ok;
+
+	state = talloc_zero(mem_ctx, struct bq_state);
+	if (state == NULL) {
+		return NULL;
+	}
+	state->ev = messaging_tevent_context(msg_ctx);
+	state->msg = msg_ctx;
+
+	status = messaging_register(
+		msg_ctx, state, MSG_SMB_CONF_UPDATED, bq_smb_conf_updated);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+	status = messaging_register(
+		msg_ctx, NULL, MSG_PRINTER_UPDATE, print_queue_receive);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail_dereg_smb_conf_updated;
+	}
+	status = messaging_register(
+		msg_ctx, NULL, MSG_PRINTER_DRVUPGRADE, do_drv_upgrade_printer);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail_dereg_printer_update;
+	}
+
+	state->sighup_handler = tevent_add_signal(
+		state->ev, state, SIGHUP, 0, bq_sig_hup_handler, state);
+	if (state->sighup_handler == NULL) {
+		goto fail_dereg_printer_drvupgrade;
+	}
+	state->sigchld_handler = tevent_add_signal(
+		state->ev, state, SIGCHLD, 0, bq_sig_chld_handler, NULL);
+	if (state->sigchld_handler == NULL) {
+		goto fail_free_handlers;
+	}
+
+	ok = printing_subsystem_queue_tasks(state);
+	if (!ok) {
+		goto fail_free_handlers;
+	}
+
+	talloc_set_destructor(state, bq_state_destructor);
+
+	return state;
+
+fail_free_handlers:
+	TALLOC_FREE(state->sighup_handler);
+	TALLOC_FREE(state->sigchld_handler);
+fail_dereg_printer_drvupgrade:
+	messaging_deregister(msg_ctx, MSG_PRINTER_DRVUPGRADE, NULL);
+fail_dereg_printer_update:
+	messaging_deregister(msg_ctx, MSG_PRINTER_UPDATE, NULL);
+fail_dereg_smb_conf_updated:
+	messaging_deregister(msg_ctx, MSG_SMB_CONF_UPDATED, state);
+fail:
+	TALLOC_FREE(state);
+	return NULL;
 }
 
 /****************************************************************************
@@ -320,116 +351,68 @@ pid_t start_background_queue(struct tevent_context *ev,
 			     char *logfile)
 {
 	pid_t pid;
-	struct bq_state *state;
-
-	/* Use local variables for this as we don't
-	 * need to save the parent side of this, just
-	 * ensure it closes when the process exits.
-	 */
-	int pause_pipe[2];
+	int ret;
+	ssize_t nread;
+	char **argv = NULL;
+	int ready_fds[2];
 
 	DEBUG(3,("start_background_queue: Starting background LPQ thread\n"));
 
-	if (pipe(pause_pipe) == -1) {
-		DEBUG(5,("start_background_queue: cannot create pipe. %s\n", strerror(errno) ));
-		exit(1);
+	ret = pipe(ready_fds);
+	if (ret == -1) {
+		return -1;
 	}
 
-	/*
-	 * Block signals before forking child as it will have to
-	 * set its own handlers. Child will re-enable SIGHUP as
-	 * soon as the handlers are set up.
-	 */
-	BlockSignals(true, SIGTERM);
-	BlockSignals(true, SIGHUP);
-
-	pid = fork();
-
-	/* parent or error */
-	if (pid != 0) {
-		/* Re-enable SIGHUP before returnig */
-		BlockSignals(false, SIGTERM);
-		BlockSignals(false, SIGHUP);
-		return pid;
+	argv = str_list_make_empty(talloc_tos());
+	str_list_add_printf(
+		&argv, "%s/samba-bgqd", get_dyn_SAMBA_LIBEXECDIR());
+	str_list_add_printf(
+		&argv, "--ready-signal-fd=%d", ready_fds[1]);
+	str_list_add_printf(
+		&argv, "--parent-watch-fd=%d", parent_watch_fd());
+	str_list_add_printf(
+		&argv, "--debuglevel=%d", debuglevel_get_class(DBGC_RPC_SRV));
+	if (!is_default_dyn_CONFIGFILE()) {
+		str_list_add_printf(
+			&argv, "--configfile=%s", get_dyn_CONFIGFILE());
+	}
+	if (!is_default_dyn_LOGFILEBASE()) {
+		str_list_add_printf(
+			&argv, "--log-basename=%s", get_dyn_LOGFILEBASE());
+	}
+	str_list_add_printf(&argv, "-F");
+	if (argv == NULL) {
+		goto nomem;
 	}
 
-	if (pid == -1) {
-		DEBUG(5,("start_background_queue: background LPQ thread failed to start. %s\n", strerror(errno) ));
-		exit(1);
+	ret = posix_spawn(&pid, argv[0], NULL, NULL, argv, environ);
+	if (ret == -1) {
+		goto fail;
 	}
+	TALLOC_FREE(argv);
 
-	if (pid == 0) {
-		struct tevent_fd *fde;
-		int ret;
-		NTSTATUS status;
+	close(ready_fds[1]);
 
-		/* Child. */
-		DEBUG(5,("start_background_queue: background LPQ thread started\n"));
-
-		close(pause_pipe[0]);
-		pause_pipe[0] = -1;
-
-		status = smbd_reinit_after_fork(msg_ctx, ev, true, "lpqd");
-
-		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(0,("reinit_after_fork() failed\n"));
-			smb_panic("reinit_after_fork() failed");
-		}
-
-		state = talloc_zero(NULL, struct bq_state);
-		if (state == NULL) {
-			exit(1);
-		}
-		state->ev = ev;
-		state->msg = msg_ctx;
-
-		bq_reopen_logs(logfile);
-		bq_setup_sig_term_handler();
-		bq_setup_sig_hup_handler(state);
-		bq_setup_sig_chld_handler(ev);
-
-		BlockSignals(false, SIGTERM);
-		BlockSignals(false, SIGHUP);
-
-		if (!printing_subsystem_queue_tasks(state)) {
-			exit(1);
-		}
-
-		if (!locking_init()) {
-			exit(1);
-		}
-		messaging_register(msg_ctx, state, MSG_SMB_CONF_UPDATED,
-				   bq_smb_conf_updated);
-		messaging_register(msg_ctx, NULL, MSG_PRINTER_UPDATE,
-				   print_queue_receive);
-		/* Remove previous forwarder message set in parent. */
-		messaging_deregister(msg_ctx, MSG_PRINTER_DRVUPGRADE, NULL);
-
-		messaging_register(msg_ctx, NULL, MSG_PRINTER_DRVUPGRADE,
-				   do_drv_upgrade_printer);
-
-		fde = tevent_add_fd(ev, ev, pause_pipe[1], TEVENT_FD_READ,
-				    printing_pause_fd_handler,
-				    NULL);
-		if (!fde) {
-			DEBUG(0,("tevent_add_fd() failed for pause_pipe\n"));
-			smb_panic("tevent_add_fd() failed for pause_pipe");
-		}
-
-		pcap_cache_reload(ev, msg_ctx, &reload_pcap_change_notify);
-
-		DEBUG(5,("start_background_queue: background LPQ thread waiting for messages\n"));
-		ret = tevent_loop_wait(ev);
-		/* should not be reached */
-		DEBUG(0,("background_queue: tevent_loop_wait() exited with %d - %s\n",
-			 ret, (ret == 0) ? "out of events" : strerror(errno)));
-		exit(1);
+	nread = sys_read(ready_fds[0], &pid, sizeof(pid));
+	close(ready_fds[0]);
+	if (nread != sizeof(pid)) {
+		goto fail;
 	}
-
-	close(pause_pipe[1]);
 
 	return pid;
+
+nomem:
+	errno = ENOMEM;
+fail:
+	{
+		int err = errno;
+		TALLOC_FREE(argv);
+		errno = err;
+	}
+
+	return -1;
 }
+
 
 /* Run before the parent forks */
 bool printing_subsystem_init(struct tevent_context *ev_ctx,
@@ -469,7 +452,7 @@ bool printing_subsystem_init(struct tevent_context *ev_ctx,
 
 		/* Publish nt printers, this requires a working winreg pipe */
 		pcap_cache_reload(ev_ctx, msg_ctx,
-				  &delete_and_reload_printers_full);
+				  delete_and_reload_printers_full);
 
 		return ret;
 	}
@@ -497,5 +480,19 @@ void printing_subsystem_update(struct tevent_context *ev_ctx,
 	}
 
 	pcap_cache_reload(ev_ctx, msg_ctx,
-			  &delete_and_reload_printers_full);
+			  delete_and_reload_printers_full);
+}
+
+void send_to_bgqd(struct messaging_context *msg_ctx,
+		  uint32_t msg_type,
+		  const uint8_t *buf,
+		  size_t buflen)
+{
+	pid_t bgqd = pidfile_pid(lp_pid_directory(), "samba-bgqd");
+
+	if (bgqd == -1) {
+		return;
+	}
+	messaging_send_buf(
+		msg_ctx, pid_to_procid(bgqd), msg_type, buf, buflen);
 }

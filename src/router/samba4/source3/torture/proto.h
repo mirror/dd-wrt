@@ -74,6 +74,7 @@ bool torture_ioctl_test(int dummy);
 bool torture_chkpath_test(int dummy);
 NTSTATUS torture_setup_unix_extensions(struct cli_state *cli);
 void torture_conn_set_sockopt(struct cli_state *cli);
+void torture_deltree(struct cli_state *cli, const char *dname);
 
 /* The following definitions come from torture/utable.c  */
 
@@ -89,12 +90,20 @@ bool run_posix_ls_wildcard_test(int dummy);
 bool run_posix_ls_single_test(int dummy);
 bool run_posix_readlink_test(int dummy);
 bool run_posix_stat_test(int dummy);
+bool run_posix_symlink_parent_test(int dummy);
+bool run_posix_symlink_chmod_test(int dummy);
+bool run_posix_dir_default_acl_test(int dummy);
 bool run_case_insensitive_create(int dummy);
+bool run_posix_symlink_rename_test(int dummy);
+bool run_posix_symlink_getpathinfo_test(int dummy);
+bool run_posix_symlink_setpathinfo_test(int dummy);
 
 bool run_nbench2(int dummy);
 bool run_async_echo(int dummy);
 bool run_smb_any_connect(int dummy);
 bool run_addrchange(int dummy);
+bool run_str_match_mswild(int dummy);
+bool run_str_match_regex_sub1(int dummy);
 bool run_notify_online(int dummy);
 bool run_nttrans_create(int dummy);
 bool run_nttrans_fsctl(int dummy);
@@ -110,6 +119,9 @@ bool run_smb2_dir_fsync(int dummy);
 bool run_smb2_path_slash(int dummy);
 bool run_smb2_sacl(int dummy);
 bool run_smb2_quota1(int dummy);
+bool run_smb2_stream_acl(int dummy);
+bool run_list_dir_async_test(int dummy);
+bool run_delete_on_close_non_empty(int dummy);
 bool run_chain3(int dummy);
 bool run_local_conv_auth_info(int dummy);
 bool run_local_sprintf_append(int dummy);

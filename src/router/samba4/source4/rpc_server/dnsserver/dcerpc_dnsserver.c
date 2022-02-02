@@ -22,6 +22,7 @@
 #include "includes.h"
 #include "talloc.h"
 #include "rpc_server/dcerpc_server.h"
+#include "rpc_server/common/common.h"
 #include "dsdb/samdb/samdb.h"
 #include "lib/util/dlinklist.h"
 #include "librpc/gen_ndr/ndr_dnsserver.h"
@@ -106,8 +107,6 @@ static void dnsserver_reload_zones(struct dnsserver_state *dsstate)
 
 static struct dnsserver_state *dnsserver_connect(struct dcesrv_call_state *dce_call)
 {
-	struct auth_session_info *session_info =
-		dcesrv_call_session_info(dce_call);
 	struct dnsserver_state *dsstate;
 	struct dnsserver_zone *zones, *z, *znext;
 	struct dnsserver_partition *partitions, *p;
@@ -127,13 +126,7 @@ static struct dnsserver_state *dnsserver_connect(struct dcesrv_call_state *dce_c
 
 	dsstate->lp_ctx = dce_call->conn->dce_ctx->lp_ctx;
 
-	/* FIXME: create correct auth_session_info for connecting user */
-	dsstate->samdb = samdb_connect(dsstate,
-				       dce_call->event_ctx,
-				       dsstate->lp_ctx,
-				       session_info,
-				       dce_call->conn->remote_address,
-				       0);
+	dsstate->samdb = dcesrv_samdb_connect_as_user(dsstate, dce_call);
 	if (dsstate->samdb == NULL) {
 		DEBUG(0,("dnsserver: Failed to open samdb"));
 		goto failed;
@@ -1131,8 +1124,8 @@ static WERROR dnsserver_operate_server(struct dnsserver_state *dsstate,
 	} else if (strcasecmp(operation, "ZoneCreate") == 0) {
 		struct dnsserver_zone *z, *z2;
 		WERROR status;
-		int len;
-
+		size_t len;
+		const char *name;
 		z = talloc_zero(mem_ctx, struct dnsserver_zone);
 		W_ERROR_HAVE_NO_MEMORY(z);
 		z->partition = talloc_zero(z, struct dnsserver_partition);
@@ -1141,32 +1134,20 @@ static WERROR dnsserver_operate_server(struct dnsserver_state *dsstate,
 		W_ERROR_HAVE_NO_MEMORY_AND_FREE(z->zoneinfo, z);
 
 		if (typeid == DNSSRV_TYPEID_ZONE_CREATE_W2K) {
-			len = strlen(r->ZoneCreateW2K->pszZoneName);
-			if (r->ZoneCreateW2K->pszZoneName[len-1] == '.') {
-				len -= 1;
-			}
-			z->name = talloc_strndup(z, r->ZoneCreateW2K->pszZoneName, len);
+			name = r->ZoneCreateW2K->pszZoneName;
 			z->zoneinfo->dwZoneType = r->ZoneCreateW2K->dwZoneType;
 			z->zoneinfo->fAllowUpdate = r->ZoneCreateW2K->fAllowUpdate;
 			z->zoneinfo->fAging = r->ZoneCreateW2K->fAging;
 			z->zoneinfo->Flags = r->ZoneCreateW2K->dwFlags;
 		} else if (typeid == DNSSRV_TYPEID_ZONE_CREATE_DOTNET) {
-			len = strlen(r->ZoneCreateDotNet->pszZoneName);
-			if (r->ZoneCreateDotNet->pszZoneName[len-1] == '.') {
-				len -= 1;
-			}
-			z->name = talloc_strndup(z, r->ZoneCreateDotNet->pszZoneName, len);
+			name = r->ZoneCreateDotNet->pszZoneName;
 			z->zoneinfo->dwZoneType = r->ZoneCreateDotNet->dwZoneType;
 			z->zoneinfo->fAllowUpdate = r->ZoneCreateDotNet->fAllowUpdate;
 			z->zoneinfo->fAging = r->ZoneCreateDotNet->fAging;
 			z->zoneinfo->Flags = r->ZoneCreateDotNet->dwFlags;
 			z->partition->dwDpFlags = r->ZoneCreateDotNet->dwDpFlags;
 		} else if (typeid == DNSSRV_TYPEID_ZONE_CREATE) {
-			len = strlen(r->ZoneCreate->pszZoneName);
-			if (r->ZoneCreate->pszZoneName[len-1] == '.') {
-				len -= 1;
-			}
-			z->name = talloc_strndup(z, r->ZoneCreate->pszZoneName, len);
+			name = r->ZoneCreate->pszZoneName;
 			z->zoneinfo->dwZoneType = r->ZoneCreate->dwZoneType;
 			z->zoneinfo->fAllowUpdate = r->ZoneCreate->fAllowUpdate;
 			z->zoneinfo->fAging = r->ZoneCreate->fAging;
@@ -1175,6 +1156,16 @@ static WERROR dnsserver_operate_server(struct dnsserver_state *dsstate,
 		} else {
 			talloc_free(z);
 			return WERR_DNS_ERROR_INVALID_PROPERTY;
+		}
+
+		len = strlen(name);
+		if (name[len-1] == '.') {
+			len -= 1;
+		}
+		z->name = talloc_strndup(z, name, len);
+		if (z->name == NULL) {
+			talloc_free(z);
+			return WERR_NOT_ENOUGH_MEMORY;
 		}
 
 		z2 = dnsserver_find_zone(dsstate->zones, z->name);

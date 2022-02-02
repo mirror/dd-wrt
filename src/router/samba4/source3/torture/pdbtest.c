@@ -22,7 +22,7 @@
 
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/cmdline.h"
 #include "passdb.h"
 
 #include "../librpc/gen_ndr/drsblobs.h"
@@ -277,7 +277,7 @@ static bool test_auth(TALLOC_CTX *mem_ctx, struct samu *pdb_entry)
 	struct netr_SamInfo6 *info6_wbc = NULL;
 	NTSTATUS status;
 	bool ok;
-	uint8_t authoritative = 0;
+	uint8_t authoritative = 1;
 	int rc;
 
 	rc = SMBOWFencrypt(pdb_get_nt_passwd(pdb_entry), challenge_8,
@@ -554,6 +554,7 @@ int main(int argc, const char **argv)
 	struct samu *in = NULL;
 	NTSTATUS rv;
 	int i;
+	int opt;
 	struct timeval tv;
 	bool error = False;
 	struct passwd *pwd;
@@ -563,11 +564,13 @@ int main(int argc, const char **argv)
 	poptContext pc;
 	static const char *backend = NULL;
 	static const char *unix_user = "nobody";
+	bool ok;
 	struct poptOption long_options[] = {
 		{"username", 'u', POPT_ARG_STRING, &unix_user, 0, "Unix user to use for testing", "USERNAME" },
 		{"backend", 'b', POPT_ARG_STRING, &backend, 0, "Backend to use if not default", "BACKEND[:SETTINGS]" },
 		POPT_AUTOHELP
 		POPT_COMMON_SAMBA
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
 
@@ -575,18 +578,33 @@ int main(int argc, const char **argv)
 
 	smb_init_locale();
 
-	pc = poptGetContext("pdbtest", argc, argv, long_options, 0);
+	ok = samba_cmdline_init(ctx,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				true /* require_smbconf */);
+	if (!ok) {
+		TALLOC_FREE(ctx);
+		exit(1);
+	}
+
+	pc = samba_popt_get_context(getprogname(), argc, argv, long_options, 0);
+	if (pc == NULL) {
+		TALLOC_FREE(ctx);
+		exit(1);
+	}
 
 	poptSetOtherOptionHelp(pc, "backend[:settings] username");
 
-	while(poptGetNextOpt(pc) != -1);
+	while ((opt = poptGetNextOpt(pc)) != -1) {
+		switch (opt) {
+		case POPT_ERROR_BADOPT:
+			fprintf(stderr, "\nInvalid option %s: %s\n\n",
+				poptBadOption(pc, 0), poptStrerror(opt));
+			poptPrintUsage(pc, stderr, 0);
+			exit(1);
+		}
+	}
 
 	poptFreeContext(pc);
-
-	/* Load configuration */
-	lp_load_global(get_dyn_CONFIGFILE());
-	setup_logging("pdbtest", DEBUG_STDOUT);
-	init_names();
 
 	if (backend == NULL) {
 		backend = lp_passdb_backend();

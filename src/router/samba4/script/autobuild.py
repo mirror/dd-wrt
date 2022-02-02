@@ -3,7 +3,6 @@
 # Copyright Andrew Tridgell 2010
 # released under GNU GPL v3 or later
 
-from __future__ import print_function
 from subprocess import call, check_call, check_output, Popen, PIPE, CalledProcessError
 import os
 import tarfile
@@ -54,6 +53,7 @@ parser = OptionParser()
 parser.add_option("--tail", help="show output while running", default=False, action="store_true")
 parser.add_option("--keeplogs", help="keep logs", default=False, action="store_true")
 parser.add_option("--nocleanup", help="don't remove test tree", default=False, action="store_true")
+parser.add_option("--skip-dependencies", help="skip to run task dependency tasks", default=False, action="store_true")
 parser.add_option("--testbase", help="base directory to run tests in (default %s)" % def_testbase,
                   default=def_testbase)
 parser.add_option("--full-testbase", help="full base directory to run tests in (default %s/b$PID)" % def_testbase,
@@ -113,6 +113,13 @@ if options.enable_coverage:
 else:
     LCOV_CMD = 'echo "lcov skipped since no --enable-coverage specified"'
 
+if options.enable_coverage:
+    PUBLISH_DOCS = "mkdir -p ${LOG_BASE}/public && mv output/htmldocs ${LOG_BASE}/public/htmldocs"
+else:
+    PUBLISH_DOCS = 'echo "HTML documentation publishing skipped since no --enable-coverage specified"'
+
+CLEAN_SOURCE_TREE_CMD = "cd ${TEST_SOURCE_DIR} && script/clean-source-tree.sh"
+
 if args:
     # If we are only running specific test,
     # do not sleep randomly to wait for it to start
@@ -158,8 +165,8 @@ def format_option(name, value=None):
 
 
 def make_test(
-        cmd='make test',
-        FAIL_IMMEDIATELY=1,
+        cmd='make testonly',
+        INJECT_SELFTEST_PREFIX=1,
         TESTS='',
         include_envs=None,
         exclude_envs=None):
@@ -174,10 +181,20 @@ def make_test(
         TESTS = (TESTS + ' ' + ' '.join(test_options)).strip()
 
     _options = []
-    if FAIL_IMMEDIATELY:
+
+    # Allow getting a full CI with
+    # git push -o ci.variable='AUTOBUILD_FAIL_IMMEDIATELY=0'
+
+    FAIL_IMMEDIATELY = os.getenv("AUTOBUILD_FAIL_IMMEDIATELY", "1")
+
+    if int(FAIL_IMMEDIATELY):
         _options.append('FAIL_IMMEDIATELY=1')
     if TESTS:
         _options.append("TESTS='{}'".format(TESTS))
+
+    if INJECT_SELFTEST_PREFIX:
+        _options.append("TEST_OPTIONS='--with-selftest-prefix={}'".format("${SELFTEST_PREFIX}"))
+        _options.append("--directory='{}'".format("${TEST_SOURCE_DIR}"))
 
     return ' '.join([cmd] + _options)
 
@@ -186,30 +203,85 @@ def make_test(
 # and to make it a dependency of 'page' for the coverage report.
 
 tasks = {
-    "ctdb": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure " + ctdb_configure_params),
-        ("make", "make all"),
-        ("install", "make install"),
-        ("test", "make autotest"),
-        ("check-clean-tree", "../script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+    "ctdb": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "./configure " + ctdb_configure_params),
+            ("make", "make all"),
+            ("install", "make install"),
+            ("test", "make autotest"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
         ],
+    },
+    "docs-xml": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("autoconf", "autoconf"),
+            ("configure", "./configure"),
+            ("make", "make html htmlman"),
+            ("publish-docs", PUBLISH_DOCS),
+            ("clean", "make clean"),
+        ],
+    },
 
-    "docs-xml": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("autoconf", "autoconf"),
-        ("configure", "./configure"),
-        ("make", "make html htmlman"),
-        ("clean", "make clean"),
+    "samba-def-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "./configure.developer" + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
         ],
+    },
+
+    "samba-mit-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "./configure.developer --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
+        ],
+    },
+
+    "samba-nt4-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "./configure.developer --without-ad-dc --without-ldap --without-ads --without-json" + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
+        ],
+    },
+
+    "samba-h5l-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "./configure.developer --without-ad-dc --with-system-heimdalkrb5" + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
+        ],
+    },
+
+    "samba-no-opath-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "ADDITIONAL_CFLAGS='-DDISABLE_OPATH=1' ./configure.developer --without-ad-dc " + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
+        ],
+    },
 
     # We have 'test' before 'install' because, 'test' should work without 'install (runs all the other envs)'
-    "samba": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(exclude_envs=[
+    "samba": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "./configure.developer" + samba_configure_params),
+            ("make", "make -j"),
+            ("test", make_test(exclude_envs=[
             "none",
             "nt4_dc",
             "nt4_dc_smb1",
@@ -233,6 +305,7 @@ tasks = {
             "ad_member_idmap_rid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
+            "ad_member_oneway",
             "chgdcpass",
             "vampire_2000_dc",
             "fl2000dc",
@@ -259,19 +332,21 @@ tasks = {
             "schema_dc",
             "clusteredmember",
             ])),
-        ("test-slow-none", make_test(cmd='make test', TESTS="--include=selftest/slow-none", include_envs=["none"])),
-        ("lcov", LCOV_CMD),
-        ("install", "make install"),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+            ("test-slow-none", make_test(cmd='make test', TESTS="--include=selftest/slow-none", include_envs=["none"])),
+            ("lcov", LCOV_CMD),
+            ("install", "make install"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
         ],
+    },
 
     # We have 'test' before 'install' because, 'test' should work without 'install (runs all the other envs)'
-    "samba-mitkrb5": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(exclude_envs=[
+    "samba-mitkrb5": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "./configure.developer --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
+            ("make", "make -j"),
+            ("test", make_test(exclude_envs=[
             "none",
             "nt4_dc",
             "nt4_dc_smb1",
@@ -296,6 +371,7 @@ tasks = {
             "ad_member_idmap_rid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
+            "ad_member_oneway",
             "chgdcpass",
             "vampire_2000_dc",
             "fl2000dc",
@@ -322,17 +398,18 @@ tasks = {
             "schema_dc",
             "clusteredmember",
             ])),
-        ("lcov", LCOV_CMD),
-        ("install", "make install"),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+            ("lcov", LCOV_CMD),
+            ("install", "make install"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
         ],
+    },
 
-    "samba-nt4": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --without-ad-dc --without-ldap --without-ads --without-json --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-nt4": {
+        "dependency": "samba-nt4-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=[
             "nt4_dc",
             "nt4_dc_smb1",
             "nt4_dc_smb1_done",
@@ -340,282 +417,372 @@ tasks = {
             "nt4_member",
             "simpleserver",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-fileserver": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --without-ad-dc --with-system-heimdalkrb5 --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-fileserver": {
+        "dependency": "samba-h5l-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=[
             "fileserver",
             "fileserver_smb1",
             "fileserver_smb1_done",
             "maptoguest",
-            "ktest", # ktest is also tested in samba and samba-mitkrb5
-                     # but is tested here against a system Heimdal
+            "ktest", # ktest is also tested in samba-ktest-mit samba
+                     # and samba-mitkrb5 but is tested here against
+                     # a system Heimdal
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-admem": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    # This is a full build without the AD DC so we test the build with
+    # MIT Kerberos from the current system.  Runtime behaviour is
+    # confirmed via the ktest (static ccache and keytab) environment
+
+    "samba-ktest-mit": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "./configure.developer --without-ad-dc --with-system-mitkrb5 " + samba_configure_params),
+            ("make", "make -j"),
+            ("test", make_test(include_envs=[
+            "ktest", # ktest is also tested in fileserver, samba and
+                     # samba-mitkrb5 but is tested here against a
+                     # system MIT krb5
+            ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+        ],
+    },
+
+    "samba-admem": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=[
             "ad_member",
             "ad_member_idmap_rid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
+            "ad_member_offlogon",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-no-opath": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "ADDITIONAL_CFLAGS='-DDISABLE_OPATH=1' ./configure.developer --without-ad-dc --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(
-            cmd="make test DISABLE_OPATH=1",
-            include_envs=[
-            "nt4_dc",
-            "nt4_dc_smb1",
-            "nt4_dc_smb1_done",
-            "nt4_dc_schannel",
-            "nt4_member",
-            "simpleserver",
-            "fileserver",
-            "fileserver_smb1",
-            "fileserver_smb1_done",
-            ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+    "samba-no-opath1": {
+        "dependency": "samba-no-opath-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(
+                cmd="make testonly DISABLE_OPATH=1",
+                include_envs=[
+                "nt4_dc",
+                "nt4_dc_smb1",
+                "nt4_dc_smb1_done",
+                "nt4_dc_schannel",
+                "nt4_member",
+                "simpleserver",
+                ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", "script/clean-source-tree.sh"),
         ],
+    },
 
-    "samba-ad-dc-1": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-no-opath2": {
+        "dependency": "samba-no-opath-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(
+                cmd="make testonly DISABLE_OPATH=1",
+                include_envs=[
+                "fileserver",
+                "fileserver_smb1",
+                "fileserver_smb1_done",
+                ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", "script/clean-source-tree.sh"),
+        ],
+    },
+
+    "samba-ad-dc-1": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "ad_dc",
             "ad_dc_smb1",
             "ad_dc_smb1_done",
             "ad_dc_no_nss",
             "ad_dc_no_ntlm",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-2": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-ad-dc-2": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "vampire_dc",
             "vampire_2000_dc",
             "rodc",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-3": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-ad-dc-3": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "promoted_dc",
             "chgdcpass",
             "preforkrestartdc",
             "proclimitdc",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-4": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-ad-dc-4a": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "fl2000dc",
+            "ad_member_oneway",
             "fl2003dc",
+            ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+        ],
+    },
+    "samba-ad-dc-4b": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "fl2008dc",
             "fl2008r2dc",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-5": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-ad-dc-5": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "ad_dc_default", "ad_dc_default_smb1", "ad_dc_default_smb1_done"])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-6": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=["ad_dc_slowtests"])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+    "samba-ad-dc-6": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=["ad_dc_slowtests", "ad_dc_backup"])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-schemaupgrade": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=["schema_dc", "schema_pair_dc"])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+    "samba-schemaupgrade": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=["schema_dc", "schema_pair_dc"])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
     # We split out the ad_dc_ntvfs tests (which are long) so other test do not wait
     # This is currently the longest task, so we don't randomly delay it.
-    "samba-ad-dc-ntvfs": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=["ad_dc_ntvfs"])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+    "samba-ad-dc-ntvfs": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=["ad_dc_ntvfs"])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
     # Test fips compliance
-    "samba-fips": [
-        ("random-sleep", random_sleep(100, 500)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=["ad_dc_fips", "ad_member_fips"])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+    "samba-fips": {
+        "dependency": "samba-mit-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=["ad_dc_fips", "ad_member_fips"])),
+            # TODO: This seems to generate only an empty samba-fips.info ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
     # run the backup/restore testenvs separately as they're fairly standalone
-    # (and CI seems to max out at ~8 different DCs running at once)
-    "samba-ad-dc-backup": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    # (and CI seems to max out at ~3 different DCs running at once)
+    "samba-ad-back1": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=[
             "backupfromdc",
             "restoredc",
             "renamedc",
+            ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+        ],
+    },
+    "samba-ad-back2": {
+        "dependency": "samba-def-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=[
+            "backupfromdc",
             "offlinebackupdc",
             "labdc",
-            "ad_dc_backup",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-admem-mit": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-admem-mit": {
+        "dependency": "samba-mit-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "ad_member",
             "ad_member_idmap_rid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
+            "ad_member_offlogon",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-1-mitkrb5": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-addc-mit-1": {
+        "dependency": "samba-mit-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "ad_dc",
             "ad_dc_smb1",
             "ad_dc_smb1_done",
             "ad_dc_no_nss",
             "ad_dc_no_ntlm",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-ad-dc-4-mitkrb5": [
-        ("random-sleep", random_sleep(1, 1)),
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab --with-system-mitkrb5 --with-experimental-mit-ad-dc" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(include_envs=[
+    "samba-addc-mit-4a": {
+        "dependency": "samba-mit-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "fl2000dc",
+            "ad_member_oneway",
             "fl2003dc",
+            ])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+        ],
+    },
+    "samba-addc-mit-4b": {
+        "dependency": "samba-mit-build",
+        "sequence": [
+            ("random-sleep", random_sleep(1, 1)),
+            ("test", make_test(include_envs=[
             "fl2008dc",
             "fl2008r2dc",
             ])),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
         ],
+    },
 
-    "samba-test-only": [
-        ("configure", "./configure.developer --with-selftest-prefix=./bin/ab  --abi-check-disable" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(TESTS="${TESTS}")),
-        ("lcov", LCOV_CMD),
+    "samba-test-only": {
+        "sequence": [
+            ("configure", "./configure.developer  --abi-check-disable" + samba_configure_params),
+            ("make", "make -j"),
+            ("test", make_test(TESTS="${TESTS}")),
+            ("lcov", LCOV_CMD),
         ],
+    },
 
     # Test cross-compile infrastructure
-    "samba-xc": [
-        ("random-sleep", random_sleep(900, 1500)),
-        ("configure-native", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
-        ("configure-cross-execute", "./configure.developer --out ./bin-xe --cross-compile --cross-execute=script/identity_cc.sh" \
+    "samba-xc": {
+        "sequence": [
+            ("random-sleep", random_sleep(900, 1500)),
+            ("configure-native", "./configure.developer --with-selftest-prefix=./bin/ab" + samba_configure_params),
+            ("configure-cross-execute", "./configure.developer --out ./bin-xe --cross-compile --cross-execute=script/identity_cc.sh" \
             " --cross-answers=./bin-xe/cross-answers.txt --with-selftest-prefix=./bin-xe/ab" + samba_configure_params),
-        ("verify-cross-execute-output", "grep '^Checking value of NSIG' ./bin-xe/cross-answers.txt"),
-        ("configure-cross-answers", "./configure.developer --out ./bin-xa --cross-compile" \
+            ("verify-cross-execute-output", "grep '^Checking value of NSIG' ./bin-xe/cross-answers.txt"),
+            ("configure-cross-answers", "./configure.developer --out ./bin-xa --cross-compile" \
             " --cross-answers=./bin-xe/cross-answers.txt --with-selftest-prefix=./bin-xa/ab" + samba_configure_params),
-        ("compare-results", "script/compare_cc_results.py "
+            ("compare-results", "script/compare_cc_results.py "
             "./bin/c4che/default{} "
             "./bin-xe/c4che/default{} "
             "./bin-xa/c4che/default{}".format(*([CACHE_SUFFIX]*3))),
-        ("modify-cross-answers", "sed -i.bak -e 's/^\\(Checking value of NSIG:\\) .*/\\1 \"1234\"/' ./bin-xe/cross-answers.txt"),
-        ("configure-cross-answers-modified", "./configure.developer --out ./bin-xa2 --cross-compile" \
+            ("modify-cross-answers", "sed -i.bak -e 's/^\\(Checking value of NSIG:\\) .*/\\1 \"1234\"/' ./bin-xe/cross-answers.txt"),
+            ("configure-cross-answers-modified", "./configure.developer --out ./bin-xa2 --cross-compile" \
             " --cross-answers=./bin-xe/cross-answers.txt --with-selftest-prefix=./bin-xa2/ab" + samba_configure_params),
-        ("verify-cross-answers", "test $(sed -n -e 's/VALUEOF_NSIG = \\(.*\\)/\\1/p' ./bin-xa2/c4che/default{})" \
+            ("verify-cross-answers", "test $(sed -n -e 's/VALUEOF_NSIG = \\(.*\\)/\\1/p' ./bin-xa2/c4che/default{})" \
             " = \"'1234'\"".format(CACHE_SUFFIX)),
-        ("invalidate-cross-answers", "sed -i.bak -e '/^Checking value of NSIG/d' ./bin-xe/cross-answers.txt"),
-        ("configure-cross-answers-fail", "./configure.developer --out ./bin-xa3 --cross-compile" \
+            ("invalidate-cross-answers", "sed -i.bak -e '/^Checking value of NSIG/d' ./bin-xe/cross-answers.txt"),
+            ("configure-cross-answers-fail", "./configure.developer --out ./bin-xa3 --cross-compile" \
             " --cross-answers=./bin-xe/cross-answers.txt --with-selftest-prefix=./bin-xa3/ab" + samba_configure_params + \
             " ; test $? -ne 0"),
         ],
+    },
 
     # test build with -O3 -- catches extra warnings and bugs, tests the ad_dc environments
-    "samba-o3": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "ADDITIONAL_CFLAGS='-O3 -Wp,-D_FORTIFY_SOURCE=2' ./configure.developer --with-selftest-prefix=./bin/ab --abi-check-disable" + samba_configure_params),
-        ("make", "make -j"),
-        ("test", make_test(cmd='make test', TESTS="--exclude=selftest/slow-none", include_envs=["none"])),
-        ("quicktest", make_test(cmd='make quicktest', include_envs=["ad_dc", "ad_dc_smb1", "ad_dc_smb1_done"])),
-        ("lcov", LCOV_CMD),
-        ("install", "make install"),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+    "samba-o3": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "ADDITIONAL_CFLAGS='-O3 -Wp,-D_FORTIFY_SOURCE=2' ./configure.developer --abi-check-disable" + samba_configure_params),
+            ("make", "make -j"),
+            ("test", make_test(cmd='make test', TESTS="--exclude=selftest/slow-none", include_envs=["none"])),
+            ("quicktest", make_test(cmd='make quicktest', include_envs=["ad_dc", "ad_dc_smb1", "ad_dc_smb1_done"])),
+            ("lcov", LCOV_CMD),
+            ("install", "make install"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
         ],
+    },
 
-    "samba-ctdb": [
-        ("random-sleep", random_sleep(900, 1500)),
+    "samba-ctdb": {
+        "sequence": [
+            ("random-sleep", random_sleep(900, 1500)),
 
         # make sure we have tdb around:
-        ("tdb-configure", "cd lib/tdb && PYTHONPATH=${PYTHON_PREFIX}:$PYTHONPATH PKG_CONFIG_PATH=$PKG_CONFIG_PATH:${PREFIX_DIR}/lib/pkgconfig ./configure --bundled-libraries=NONE --abi-check --enable-debug -C ${PREFIX}"),
-        ("tdb-make", "cd lib/tdb && make"),
-        ("tdb-install", "cd lib/tdb && make install"),
+            ("tdb-configure", "cd lib/tdb && PYTHONPATH=${PYTHON_PREFIX}:$PYTHONPATH PKG_CONFIG_PATH=$PKG_CONFIG_PATH:${PREFIX_DIR}/lib/pkgconfig ./configure --bundled-libraries=NONE --abi-check --enable-debug -C ${PREFIX}"),
+            ("tdb-make", "cd lib/tdb && make"),
+            ("tdb-install", "cd lib/tdb && make install"),
 
         # build samba with cluster support (also building ctdb):
-        ("samba-configure",
+            ("samba-configure",
          "PYTHONPATH=${PYTHON_PREFIX}:$PYTHONPATH "
          "PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH} "
          "./configure.developer ${PREFIX} "
@@ -624,57 +791,63 @@ tasks = {
          "--with-cluster-support "
          "--without-ad-dc "
          "--bundled-libraries=!tdb"),
-        ("samba-make", "make"),
-        ("samba-check", "./bin/smbd -b | grep CLUSTER_SUPPORT"),
-        ("samba-install", "make install"),
-        ("ctdb-check", "test -e ${PREFIX_DIR}/sbin/ctdbd"),
+            ("samba-make", "make"),
+            ("samba-check", "./bin/smbd --configfile=/dev/null -b | grep CLUSTER_SUPPORT"),
+            ("samba-install", "make install"),
+            ("ctdb-check", "test -e ${PREFIX_DIR}/sbin/ctdbd"),
 
-        ("test",
-         make_test(cmd='make test',
-                   include_envs=["clusteredmember"])
-        ),
+            ("test", make_test(
+                cmd='make test',
+                INJECT_SELFTEST_PREFIX=0,
+                include_envs=["clusteredmember"])
+            ),
 
         # clean up:
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
-        ("ctdb-clean", "cd ./ctdb && make clean"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
+            ("ctdb-clean", "cd ./ctdb && make clean"),
         ],
+    },
 
-    "samba-libs": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("talloc-configure", "cd lib/talloc && " + samba_libs_configure_libs),
-        ("talloc-make", "cd lib/talloc && make"),
-        ("talloc-install", "cd lib/talloc && make install"),
+    "samba-libs": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("talloc-configure", "cd lib/talloc && " + samba_libs_configure_libs),
+            ("talloc-make", "cd lib/talloc && make"),
+            ("talloc-install", "cd lib/talloc && make install"),
 
-        ("tdb-configure", "cd lib/tdb && " + samba_libs_configure_libs),
-        ("tdb-make", "cd lib/tdb && make"),
-        ("tdb-install", "cd lib/tdb && make install"),
+            ("tdb-configure", "cd lib/tdb && " + samba_libs_configure_libs),
+            ("tdb-make", "cd lib/tdb && make"),
+            ("tdb-install", "cd lib/tdb && make install"),
 
-        ("tevent-configure", "cd lib/tevent && " + samba_libs_configure_libs),
-        ("tevent-make", "cd lib/tevent && make"),
-        ("tevent-install", "cd lib/tevent && make install"),
+            ("tevent-configure", "cd lib/tevent && " + samba_libs_configure_libs),
+            ("tevent-make", "cd lib/tevent && make"),
+            ("tevent-install", "cd lib/tevent && make install"),
 
-        ("ldb-configure", "cd lib/ldb && " + samba_libs_configure_libs),
-        ("ldb-make", "cd lib/ldb && make"),
-        ("ldb-install", "cd lib/ldb && make install"),
+            ("ldb-configure", "cd lib/ldb && " + samba_libs_configure_libs),
+            ("ldb-make", "cd lib/ldb && make"),
+            ("ldb-install", "cd lib/ldb && make install"),
 
-        ("nondevel-configure", "./configure ${PREFIX}"),
-        ("nondevel-make", "make -j"),
-        ("nondevel-check", "./bin/smbd -b | grep WITH_NTVFS_FILESERVER && exit 1; exit 0"),
-        ("nondevel-install", "make install"),
-        ("nondevel-dist", "make dist"),
+            ("nondevel-configure", "./configure ${PREFIX}"),
+            ("nondevel-make", "make -j"),
+            ("nondevel-check", "./bin/smbd -b | grep WITH_NTVFS_FILESERVER && exit 1; exit 0"),
+            ("nondevel-install", "make install"),
+            ("nondevel-dist", "make dist"),
 
         # retry with all modules shared
-        ("allshared-distclean", "make distclean"),
-        ("allshared-configure", samba_libs_configure_samba + " --with-shared-modules=ALL"),
-        ("allshared-make", "make -j"),
+            ("allshared-distclean", "make distclean"),
+            ("allshared-configure", samba_libs_configure_samba + " --with-shared-modules=ALL"),
+            ("allshared-make", "make -j"),
         ],
+    },
 
-    "samba-fuzz": [
+    "samba-fuzz": {
+        "sequence": [
         # build the fuzzers (static) via the oss-fuzz script
-        ("fuzzers-mkdir-prefix", "mkdir -p ${PREFIX_DIR}"),
-        ("fuzzers-build", "OUT=${PREFIX_DIR} LIB_FUZZING_ENGINE= SANITIZER=address CXX= CFLAGS= ADDITIONAL_LDFLAGS='-fuse-ld=bfd' ./lib/fuzzing/oss-fuzz/build_samba.sh --enable-afl"),
+            ("fuzzers-mkdir-prefix", "mkdir -p ${PREFIX_DIR}"),
+            ("fuzzers-build", "OUT=${PREFIX_DIR} LIB_FUZZING_ENGINE= SANITIZER=address CXX= CFLAGS= ADDITIONAL_LDFLAGS='-fuse-ld=bfd' ./lib/fuzzing/oss-fuzz/build_samba.sh --enable-afl-fuzzer"),
         ],
+    },
 
     # * Test smbd and smbtorture can build semi-static
     #
@@ -686,143 +859,205 @@ tasks = {
     # to support this environment).
     #
     # The target here is for vendors shipping a minimal smbd.
-    "samba-minimal-smbd": [
-        ("random-sleep", random_sleep(300, 900)),
+    "samba-minimal-smbd": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
 
         # build with all modules static
-        ("allstatic-configure", "./configure.developer " + samba_configure_params + " --with-static-modules=ALL"),
-        ("allstatic-make", "make -j"),
-        ("allstatic-test", make_test(TESTS="samba3.smb2.create.*nt4_dc")),
-        ("lcov", LCOV_CMD),
+            ("allstatic-configure", "./configure.developer " + samba_configure_params + " --with-static-modules=ALL"),
+            ("allstatic-make", "make -j"),
+            ("allstatic-test", make_test(TESTS="samba3.smb2.create.*nt4_dc")),
+            ("allstatic-lcov", LCOV_CMD),
 
         # retry with nonshared smbd and smbtorture
-        ("nonshared-distclean", "make distclean"),
-        ("nonshared-configure", "./configure.developer " + samba_configure_params + " --bundled-libraries=ALL --with-static-modules=ALL --nonshared-binary=smbtorture,smbd/smbd"),
-        ("nonshared-make", "make -j"),
+            ("nonshared-distclean", "make distclean"),
+            ("nonshared-configure", "./configure.developer " + samba_configure_params + " --bundled-libraries=ALL --with-static-modules=ALL --nonshared-binary=smbtorture,smbd/smbd"),
+            ("nonshared-make", "make -j"),
+            # TODO ("nonshared-test", make_test(TESTS="samba3.smb2.create.*nt4_dc")),
+            # TODO ("nonshared-lcov", LCOV_CMD),
 
-        ("configure", "./configure.developer ${ENABLE_COVERAGE} ${PREFIX} --with-profiling-data --disable-python --without-ad-dc"),
-        ("make", "make -j"),
-        ("find-python", "script/find_python.sh ${PREFIX}"),
-        ("test", "make test-nopython"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
+        ],
+    },
 
-        ("talloc-configure", "cd lib/talloc && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("talloc-make", "cd lib/talloc && make"),
-        ("talloc-install", "cd lib/talloc && make install"),
+    "samba-nopython": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
 
-        ("tdb-configure", "cd lib/tdb && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("tdb-make", "cd lib/tdb && make"),
-        ("tdb-install", "cd lib/tdb && make install"),
+            ("configure", "./configure.developer ${ENABLE_COVERAGE} ${PREFIX} --with-profiling-data --disable-python --without-ad-dc"),
+            ("make", "make -j"),
+            ("find-python", "script/find_python.sh ${PREFIX}"),
+            ("test", "make test-nopython"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
 
-        ("tevent-configure", "cd lib/tevent && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("tevent-make", "cd lib/tevent && make"),
-        ("tevent-install", "cd lib/tevent && make install"),
+            ("talloc-configure", "cd lib/talloc && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
+            ("talloc-make", "cd lib/talloc && make"),
+            ("talloc-install", "cd lib/talloc && make install"),
 
-        ("ldb-configure", "cd lib/ldb && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("ldb-make", "cd lib/ldb && make"),
-        ("ldb-install", "cd lib/ldb && make install"),
+            ("tdb-configure", "cd lib/tdb && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
+            ("tdb-make", "cd lib/tdb && make"),
+            ("tdb-install", "cd lib/tdb && make install"),
+
+            ("tevent-configure", "cd lib/tevent && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
+            ("tevent-make", "cd lib/tevent && make"),
+            ("tevent-install", "cd lib/tevent && make install"),
+
+            ("ldb-configure", "cd lib/ldb && " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
+            ("ldb-make", "cd lib/ldb && make"),
+            ("ldb-install", "cd lib/ldb && make install"),
 
         # retry against installed library packages, but no required modules
-        ("libs-configure", samba_libs_configure_base + samba_libs_configure_bundled_libs + " --disable-python --without-ad-dc  --with-static-modules=!FORCED,!DEFAULT --with-shared-modules=!FORCED,!DEFAULT"),
-        ("libs-make", "make -j"),
-        ("libs-install", "make install"),
-        ("libs-check-clean-tree", "script/clean-source-tree.sh"),
-        ("libs-clean", "make clean"),
+            ("libs-configure", samba_libs_configure_base + samba_libs_configure_bundled_libs + " --disable-python --without-ad-dc  --with-static-modules=!FORCED,!DEFAULT --with-shared-modules=!FORCED,!DEFAULT"),
+            ("libs-make", "make -j"),
+            ("libs-install", "make install"),
+            ("libs-check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("libs-clean", "make clean"),
 
         ],
+    },
 
-    "ldb": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
-        ("make", "make"),
-        ("install", "make install"),
-        ("test", "make test"),
-        ("lcov", LCOV_CMD),
-        ("clean", "make clean"),
-        ("configure-no-lmdb", "./configure ${ENABLE_COVERAGE} --enable-developer --without-ldb-lmdb -C ${PREFIX}"),
-        ("make-no-lmdb", "make"),
-        ("test-no-lmdb", "make test"),
-        ("lcov-no-lmdb", LCOV_CMD),
-        ("install-no-lmdb", "make install"),
-        ("check-clean-tree", "../../script/clean-source-tree.sh"),
-        ("distcheck", "make distcheck"),
-        ("clean", "make clean"),
+    "ldb": {
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
+            ("make", "make"),
+            ("install", "make install"),
+            ("test", "make test"),
+            ("lcov", LCOV_CMD),
+            ("clean", "make clean"),
+            ("configure-no-lmdb", "./configure ${ENABLE_COVERAGE} --enable-developer --without-ldb-lmdb -C ${PREFIX}"),
+            ("make-no-lmdb", "make"),
+            ("test-no-lmdb", "make test"),
+            ("lcov-no-lmdb", LCOV_CMD),
+            ("install-no-lmdb", "make install"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("distcheck", "make distcheck"),
+            ("clean", "make clean"),
         ],
+    },
 
-    "tdb": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
-        ("make", "make"),
-        ("install", "make install"),
-        ("test", "make test"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "../../script/clean-source-tree.sh"),
-        ("distcheck", "make distcheck"),
-        ("clean", "make clean"),
+    "tdb": {
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
+            ("make", "make"),
+            ("install", "make install"),
+            ("test", "make test"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("distcheck", "make distcheck"),
+            ("clean", "make clean"),
         ],
+    },
 
-    "talloc": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
-        ("make", "make"),
-        ("install", "make install"),
-        ("test", "make test"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "../../script/clean-source-tree.sh"),
-        ("distcheck", "make distcheck"),
-        ("clean", "make clean"),
+    "talloc": {
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
+            ("make", "make"),
+            ("install", "make install"),
+            ("test", "make test"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("distcheck", "make distcheck"),
+            ("clean", "make clean"),
         ],
+    },
 
-    "replace": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
-        ("make", "make"),
-        ("install", "make install"),
-        ("test", "make test"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "../../script/clean-source-tree.sh"),
-        ("distcheck", "make distcheck"),
-        ("clean", "make clean"),
+    "replace": {
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
+            ("make", "make"),
+            ("install", "make install"),
+            ("test", "make test"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("distcheck", "make distcheck"),
+            ("clean", "make clean"),
         ],
+    },
 
-    "tevent": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
-        ("make", "make"),
-        ("install", "make install"),
-        ("test", "make test"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "../../script/clean-source-tree.sh"),
-        ("distcheck", "make distcheck"),
-        ("clean", "make clean"),
+    "tevent": {
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "./configure ${ENABLE_COVERAGE} --enable-developer -C ${PREFIX}"),
+            ("make", "make"),
+            ("install", "make install"),
+            ("test", "make test"),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("distcheck", "make distcheck"),
+            ("clean", "make clean"),
         ],
+    },
 
-    "pidl": [
-        ("random-sleep", random_sleep(60, 600)),
-        ("configure", "perl Makefile.PL PREFIX=${PREFIX_DIR}"),
-        ("touch", "touch *.yp"),
-        ("make", "make"),
-        ("test", "make test"),
-        ("install", "make install"),
-        ("checkout-yapp-generated", "git checkout lib/Parse/Pidl/IDL.pm lib/Parse/Pidl/Expr.pm"),
-        ("check-clean-tree", "../script/clean-source-tree.sh"),
-        ("clean", "make clean"),
+    "pidl": {
+        "git-clone-required": True,
+        "sequence": [
+            ("random-sleep", random_sleep(60, 600)),
+            ("configure", "perl Makefile.PL PREFIX=${PREFIX_DIR}"),
+            ("touch", "touch *.yp"),
+            ("make", "make"),
+            ("test", "make test"),
+            ("install", "make install"),
+            ("checkout-yapp-generated", "git checkout lib/Parse/Pidl/IDL.pm lib/Parse/Pidl/Expr.pm"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
         ],
+    },
 
     # these are useful for debugging autobuild
-    'pass': [("pass", 'echo passing && /bin/true')],
-    'fail': [("fail", 'echo failing && /bin/false')],
+    "pass": {
+        "sequence": [
+            ("pass", 'echo passing && /bin/true'),
+        ],
+    },
+    "fail": {
+        "sequence": [
+            ("fail", 'echo failing && /bin/false'),
+        ],
+    },
 }
 
 defaulttasks = list(tasks.keys())
 
 defaulttasks.remove("pass")
 defaulttasks.remove("fail")
+
+# The build tasks will be brought in by the test tasks as needed
+defaulttasks.remove("samba-def-build")
+defaulttasks.remove("samba-nt4-build")
+defaulttasks.remove("samba-mit-build")
+defaulttasks.remove("samba-h5l-build")
+defaulttasks.remove("samba-no-opath-build")
+
+# This is not a normal test, but a task to support manually running
+# one test under autobuild
 defaulttasks.remove("samba-test-only")
+
+# Only built on GitLab CI and not in the default autobuild because it
+# uses too much space (4GB of semi-static binaries)
 defaulttasks.remove("samba-fuzz")
+
+# The FIPS build runs only in GitLab CI on a current Fedora Docker
+# container where a simulated FIPS mode is possible.
 defaulttasks.remove("samba-fips")
+
+# The MIT build runs on a current Fedora where an up to date MIT KDC
+# is already packaged.  This avoids needing to backport a current MIT
+# to the default Ubuntu 18.04, particularly during development, and
+# the need to install on the shared sn-devel-184.
+
+defaulttasks.remove("samba-mitkrb5")
+defaulttasks.remove("samba-admem-mit")
+defaulttasks.remove("samba-addc-mit-1")
+defaulttasks.remove("samba-addc-mit-4a")
+defaulttasks.remove("samba-addc-mit-4b")
+
 if os.environ.get("AUTOBUILD_SKIP_SAMBA_O3", "0") == "1":
     defaulttasks.remove("samba-o3")
 
@@ -861,11 +1096,17 @@ def rmdir_force(dirname, re_raise=True):
 class builder(object):
     '''handle build of one directory'''
 
-    def __init__(self, name, sequence, cp=True):
+    def __init__(self, name, definition):
         self.name = name
         self.dir = builddirs.get(name, '.')
         self.tag = self.name.replace('/', '_')
-        self.sequence = sequence
+        self.definition = definition
+        self.sequence = definition["sequence"]
+        self.git_clone_required = False
+        if "git-clone-required" in definition:
+            self.git_clone_required = bool(definition["git-clone-required"])
+        self.proc = None
+        self.done = False
         self.next = 0
         self.stdout_path = "%s/%s.stdout" % (gitroot, self.tag)
         self.stderr_path = "%s/%s.stderr" % (gitroot, self.tag)
@@ -876,24 +1117,62 @@ class builder(object):
         self.stdout = open(self.stdout_path, 'w')
         self.stderr = open(self.stderr_path, 'w')
         self.stdin  = open("/dev/null", 'r')
-        self.test_source_dir = "%s/%s" % (testbase, self.tag)
-        self.cwd = "%s/%s" % (self.test_source_dir, self.dir)
+        self.builder_dir = "%s/%s" % (testbase, self.tag)
+        self.test_source_dir = self.builder_dir
+        self.cwd = "%s/%s" % (self.builder_dir, self.dir)
+        self.selftest_prefix = "%s/bin/ab" % (self.cwd)
         self.prefix = "%s/%s" % (test_prefix, self.tag)
-        rmdir_force(self.test_source_dir)
-        rmdir_force(self.prefix)
-        if cp:
-            run_cmd("cp -R -a -l %s %s" % (test_master, self.test_source_dir), dir=test_master, show=True)
-        else:
-            run_cmd("git clone --recursive --shared %s %s" % (test_master, self.test_source_dir), dir=test_master, show=True)
-        self.start_next()
+        self.consumers = []
+        self.producer = None
+
+        if self.git_clone_required:
+            assert "dependency" not in definition
+
+    def mark_existing(self):
+        do_print('%s: Mark as existing dependency' % self.name)
+        self.next = len(self.sequence)
+        self.done = True
+
+    def add_consumer(self, consumer):
+        do_print("%s: add consumer: %s" % (self.name, consumer.name))
+        consumer.producer = self
+        consumer.test_source_dir = self.test_source_dir
+        self.consumers.append(consumer)
 
     def start_next(self):
+        if self.producer is not None:
+            if not self.producer.done:
+                do_print("%s: Waiting for producer: %s" % (self.name, self.producer.name))
+                return
+
+        if self.next == 0:
+            rmdir_force(self.builder_dir)
+            rmdir_force(self.prefix)
+            if self.producer is not None:
+                run_cmd("mkdir %s" % (self.builder_dir), dir=test_master, show=True)
+            elif not self.git_clone_required:
+                run_cmd("cp -R -a -l %s %s" % (test_master, self.builder_dir), dir=test_master, show=True)
+            else:
+                run_cmd("git clone --recursive --shared %s %s" % (test_master, self.builder_dir), dir=test_master, show=True)
+
         if self.next == len(self.sequence):
-            if not options.nocleanup:
-                rmdir_force(self.test_source_dir)
+            if not self.done:
+                do_print('%s: Completed OK' % self.name)
+                self.done = True
+            if not options.nocleanup and len(self.consumers) == 0:
+                do_print('%s: Cleaning up' % self.name)
+                rmdir_force(self.builder_dir)
                 rmdir_force(self.prefix)
-            do_print('%s: Completed OK' % self.name)
-            self.done = True
+            for consumer in self.consumers:
+                if consumer.next != 0:
+                    continue
+                do_print('%s: Starting consumer %s' % (self.name, consumer.name))
+                consumer.start_next()
+            if self.producer is not None:
+                self.producer.consumers.remove(self)
+                assert self.producer.done
+                self.producer.start_next()
+            do_print('%s: Remaining consumers %u' % (self.name, len(self.consumers)))
             return
         (self.stage, self.cmd) = self.sequence[self.next]
         self.cmd = self.cmd.replace("${PYTHON_PREFIX}", get_python_lib(plat_specific=1, standard_lib=0, prefix=self.prefix))
@@ -901,6 +1180,7 @@ class builder(object):
         self.cmd = self.cmd.replace("${PREFIX_DIR}", "%s" % self.prefix)
         self.cmd = self.cmd.replace("${TESTS}", options.restrict_tests)
         self.cmd = self.cmd.replace("${TEST_SOURCE_DIR}", self.test_source_dir)
+        self.cmd = self.cmd.replace("${SELFTEST_PREFIX}", self.selftest_prefix)
         self.cmd = self.cmd.replace("${LOG_BASE}", options.log_base)
         self.cmd = self.cmd.replace("${NAME}", self.name)
         self.cmd = self.cmd.replace("${ENABLE_COVERAGE}", options.enable_coverage)
@@ -909,6 +1189,18 @@ class builder(object):
                           close_fds=True, cwd=self.cwd,
                           stdout=self.stdout, stderr=self.stderr, stdin=self.stdin)
         self.next += 1
+
+def expand_dependencies(n):
+    deps = list()
+    if "dependency" in tasks[n]:
+        depname = tasks[n]["dependency"]
+        assert depname in tasks
+        sdeps = expand_dependencies(depname)
+        assert n not in sdeps
+        for sdep in sdeps:
+            deps.append(sdep)
+        deps.append(depname)
+    return deps
 
 
 class buildlist(object):
@@ -923,11 +1215,30 @@ class buildlist(object):
             else:
                 tasknames = defaulttasks
 
-        self.tlist = [builder(n, tasks[n], cp=(n != "pidl")) for n in tasknames]
+        given_tasknames = tasknames.copy()
+        implicit_tasknames = []
+        for n in given_tasknames:
+            deps = expand_dependencies(n)
+            for dep in deps:
+                if dep in given_tasknames:
+                    continue
+                if dep in implicit_tasknames:
+                    continue
+                implicit_tasknames.append(dep)
+
+        tasknames = implicit_tasknames.copy()
+        tasknames.extend(given_tasknames)
+        do_print("given_tasknames: %s" % given_tasknames)
+        do_print("implicit_tasknames: %s" % implicit_tasknames)
+        do_print("tasknames: %s" % tasknames)
+        self.tlist = [builder(n, tasks[n]) for n in tasknames]
 
         if options.retry:
             rebase_remote = "rebaseon"
-            retry_task = [("retry",
+            retry_task = {
+                    "git-clone-required": True,
+                    "sequence": [
+                            ("retry",
                             '''set -e
                             git remote add -t %s %s %s
                             git fetch %s
@@ -944,10 +1255,25 @@ class buildlist(object):
                                rebase_remote, rebase_branch,
                                rebase_remote,
                                rebase_remote, rebase_branch
-                            ))]
+                            ))]}
 
-            self.retry = builder('retry', retry_task, cp=False)
+            self.retry = builder('retry', retry_task)
             self.need_retry = False
+
+        if options.skip_dependencies:
+            for b in self.tlist:
+                if b.name in implicit_tasknames:
+                    b.mark_existing()
+
+        for b in self.tlist:
+            do_print("b.name=%s" % b.name)
+            if "dependency" not in b.definition:
+                continue
+            depname = b.definition["dependency"]
+            do_print("b.name=%s: dependency:%s" % (b.name, depname))
+            for p in self.tlist:
+                if p.name == depname:
+                    p.add_consumer(b)
 
     def kill_kids(self):
         if self.tail_proc is not None:
@@ -988,6 +1314,10 @@ class buildlist(object):
             time.sleep(0.1)
 
     def run(self):
+        for b in self.tlist:
+            b.start_next()
+        if options.retry:
+            self.retry.start_next()
         while True:
             b = self.wait_one()
             if options.retry and self.need_retry:
@@ -1278,7 +1608,10 @@ The top commit for the tree that was built was:
 top_commit_msg = run_cmd("git log -1", dir=gitroot, output=True)
 
 try:
-    os.makedirs(testbase)
+    if options.skip_dependencies:
+        run_cmd("stat %s" % testbase, dir=testbase, output=True)
+    else:
+        os.makedirs(testbase)
 except Exception as reason:
     raise Exception("Unable to create %s : %s" % (testbase, reason))
 cleanup_list.append(testbase)
@@ -1303,7 +1636,10 @@ while True:
                                           ".directory-is-not-empty"), show=True)
         run_cmd("stat %s" % test_tmpdir, show=True)
         run_cmd("stat %s" % testbase, show=True)
-        run_cmd("git clone --recursive --shared %s %s" % (gitroot, test_master), show=True, dir=gitroot)
+        if options.skip_dependencies:
+            run_cmd("stat %s" % test_master, dir=testbase, output=True)
+        else:
+            run_cmd("git clone --recursive --shared %s %s" % (gitroot, test_master), show=True, dir=gitroot)
     except Exception:
         cleanup()
         raise

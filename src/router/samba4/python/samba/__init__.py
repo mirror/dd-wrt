@@ -217,7 +217,8 @@ class Ldb(_Ldb):
 
         :param ldif_path: Path to LDIF file.
         """
-        self.add_ldif(open(ldif_path, 'r').read())
+        with open(ldif_path, 'r') as ldif_file:
+            self.add_ldif(ldif_file.read())
 
     def add_ldif(self, ldif, controls=None):
         """Add data based on a LDIF string.
@@ -279,10 +280,11 @@ def read_and_sub_file(file_name, subst_vars):
     :param file_name: File to be read (typically from setup directory)
      param subst_vars: Optional variables to subsitute in the file.
     """
-    data = open(file_name, 'r', encoding="utf-8").read()
-    if subst_vars is not None:
-        data = substitute_var(data, subst_vars)
-        check_all_substituted(data)
+    with open(file_name, 'r', encoding="utf-8") as data_file:
+        data = data_file.read()
+        if subst_vars is not None:
+            data = substitute_var(data, subst_vars)
+            check_all_substituted(data)
     return data
 
 
@@ -368,6 +370,8 @@ fault_setup = _glue.fault_setup
 set_debug_level = _glue.set_debug_level
 get_debug_level = _glue.get_debug_level
 unix2nttime = _glue.unix2nttime
+float2nttime = _glue.float2nttime
+nttime2float = _glue.nttime2float
 nttime2string = _glue.nttime2string
 nttime2unix = _glue.nttime2unix
 unix2nttime = _glue.unix2nttime
@@ -380,6 +384,7 @@ strstr_m = _glue.strstr_m
 is_ntvfs_fileserver_built = _glue.is_ntvfs_fileserver_built
 is_heimdal_built = _glue.is_heimdal_built
 is_ad_dc_built = _glue.is_ad_dc_built
+is_selftest_enabled = _glue.is_selftest_enabled
 
 NTSTATUSError = _glue.NTSTATUSError
 HRESULTError = _glue.HRESULTError
