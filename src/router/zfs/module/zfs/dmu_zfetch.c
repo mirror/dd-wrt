@@ -43,12 +43,12 @@
  * so it can't hurt performance.
  */
 
-int zfs_prefetch_disable = B_FALSE;
+static int zfs_prefetch_disable = B_FALSE;
 
 /* max # of streams per zfetch */
-unsigned int	zfetch_max_streams = 8;
+static unsigned int	zfetch_max_streams = 8;
 /* min time before stream reclaim */
-unsigned int	zfetch_min_sec_reap = 2;
+static unsigned int	zfetch_min_sec_reap = 2;
 /* max bytes to prefetch per stream (default 8MB) */
 unsigned int	zfetch_max_distance = 8 * 1024 * 1024;
 /* max bytes to prefetch indirects for per stream (default 64MB) */
@@ -83,7 +83,7 @@ struct {
 	wmsum_add(&zfetch_sums.stat, val)
 
 
-kstat_t		*zfetch_ksp;
+static kstat_t		*zfetch_ksp;
 
 static int
 zfetch_kstats_update(kstat_t *ksp, int rw)
@@ -531,7 +531,6 @@ dmu_zfetch(zfetch_t *zf, uint64_t blkid, uint64_t nblks, boolean_t fetch_data,
 		dmu_zfetch_run(zs, missed, have_lock);
 }
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_prefetch, zfs_prefetch_, disable, INT, ZMOD_RW,
 	"Disable all ZFS prefetching");
 
@@ -549,4 +548,3 @@ ZFS_MODULE_PARAM(zfs_prefetch, zfetch_, max_idistance, UINT, ZMOD_RW,
 
 ZFS_MODULE_PARAM(zfs_prefetch, zfetch_, array_rd_sz, ULONG, ZMOD_RW,
 	"Number of bytes in a array_read");
-/* END CSTYLED */

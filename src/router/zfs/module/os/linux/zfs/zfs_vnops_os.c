@@ -320,7 +320,7 @@ mappedread(znode_t *zp, int nbytes, zfs_uio_t *uio)
 }
 #endif /* _KERNEL */
 
-unsigned long zfs_delete_blocks = DMU_MAX_DELETEBLKCNT;
+static unsigned long zfs_delete_blocks = DMU_MAX_DELETEBLKCNT;
 
 /*
  * Write the bytes to a file.
@@ -3995,9 +3995,8 @@ EXPORT_SYMBOL(zfs_putpage);
 EXPORT_SYMBOL(zfs_dirty_inode);
 EXPORT_SYMBOL(zfs_map);
 
-/* BEGIN CSTYLED */
+/* CSTYLED */
 module_param(zfs_delete_blocks, ulong, 0644);
 MODULE_PARM_DESC(zfs_delete_blocks, "Delete files larger than N blocks async");
-/* END CSTYLED */
 
 #endif

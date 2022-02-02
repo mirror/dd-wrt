@@ -96,12 +96,12 @@
 /*
  * Maximum size of TRIM I/O, ranges will be chunked in to 128MiB lengths.
  */
-unsigned int zfs_trim_extent_bytes_max = 128 * 1024 * 1024;
+static unsigned int zfs_trim_extent_bytes_max = 128 * 1024 * 1024;
 
 /*
  * Minimum size of TRIM I/O, extents smaller than 32Kib will be skipped.
  */
-unsigned int zfs_trim_extent_bytes_min = 32 * 1024;
+static unsigned int zfs_trim_extent_bytes_min = 32 * 1024;
 
 /*
  * Skip uninitialized metaslabs during the TRIM process.  This option is
@@ -118,7 +118,7 @@ unsigned int zfs_trim_metaslab_skip = 0;
  * concurrent TRIM I/Os issued to the device is controlled by the
  * zfs_vdev_trim_min_active and zfs_vdev_trim_max_active module options.
  */
-unsigned int zfs_trim_queue_limit = 10;
+static unsigned int zfs_trim_queue_limit = 10;
 
 /*
  * The minimum number of transaction groups between automatic trims of a
@@ -134,7 +134,7 @@ unsigned int zfs_trim_queue_limit = 10;
  * has the opposite effect.  The default value of 32 was determined though
  * testing to be a reasonable compromise.
  */
-unsigned int zfs_trim_txg_batch = 32;
+static unsigned int zfs_trim_txg_batch = 32;
 
 /*
  * The trim_args are a control structure which describe how a leaf vdev
@@ -1709,19 +1709,17 @@ EXPORT_SYMBOL(vdev_autotrim_restart);
 EXPORT_SYMBOL(vdev_trim_l2arc);
 EXPORT_SYMBOL(vdev_trim_simple);
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_trim, zfs_trim_, extent_bytes_max, UINT, ZMOD_RW,
-    "Max size of TRIM commands, larger will be split");
+	"Max size of TRIM commands, larger will be split");
 
 ZFS_MODULE_PARAM(zfs_trim, zfs_trim_, extent_bytes_min, UINT, ZMOD_RW,
-    "Min size of TRIM commands, smaller will be skipped");
+	"Min size of TRIM commands, smaller will be skipped");
 
 ZFS_MODULE_PARAM(zfs_trim, zfs_trim_, metaslab_skip, UINT, ZMOD_RW,
-    "Skip metaslabs which have never been initialized");
+	"Skip metaslabs which have never been initialized");
 
 ZFS_MODULE_PARAM(zfs_trim, zfs_trim_, txg_batch, UINT, ZMOD_RW,
-    "Min number of txgs to aggregate frees before issuing TRIM");
+	"Min number of txgs to aggregate frees before issuing TRIM");
 
 ZFS_MODULE_PARAM(zfs_trim, zfs_trim_, queue_limit, UINT, ZMOD_RW,
-    "Max queued TRIMs outstanding per leaf vdev");
-/* END CSTYLED */
+	"Max queued TRIMs outstanding per leaf vdev");

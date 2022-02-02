@@ -186,7 +186,7 @@
 #define	ZFS_KEY_MAX_SALT_USES_DEFAULT	400000000
 #define	ZFS_CURRENT_MAX_SALT_USES	\
 	(MIN(zfs_key_max_salt_uses, ZFS_KEY_MAX_SALT_USES_DEFAULT))
-unsigned long zfs_key_max_salt_uses = ZFS_KEY_MAX_SALT_USES_DEFAULT;
+static unsigned long zfs_key_max_salt_uses = ZFS_KEY_MAX_SALT_USES_DEFAULT;
 
 typedef struct blkptr_auth_buf {
 	uint64_t bab_prop;			/* blk_prop - portable mask */
@@ -194,7 +194,7 @@ typedef struct blkptr_auth_buf {
 	uint64_t bab_pad;			/* reserved for future use */
 } blkptr_auth_buf_t;
 
-zio_crypt_info_t zio_crypt_table[ZIO_CRYPT_FUNCTIONS] = {
+const zio_crypt_info_t zio_crypt_table[ZIO_CRYPT_FUNCTIONS] = {
 	{"",			ZC_TYPE_NONE,	0,	"inherit"},
 	{"",			ZC_TYPE_NONE,	0,	"on"},
 	{"",			ZC_TYPE_NONE,	0,	"off"},
@@ -1204,10 +1204,25 @@ zio_crypt_do_objset_hmacs(zio_crypt_key_t *key, void *data, uint_t datalen,
 	bcopy(raw_portable_mac, portable_mac, ZIO_OBJSET_MAC_LEN);
 
 	/*
+	 * This is necessary here as we check next whether
+	 * OBJSET_FLAG_USERACCOUNTING_COMPLETE is set in order to
+	 * decide if the local_mac should be zeroed out. That flag will always
+	 * be set by dmu_objset_id_quota_upgrade_cb() and
+	 * dmu_objset_userspace_upgrade_cb() if useraccounting has been
+	 * completed.
+	 */
+	intval = osp->os_flags;
+	if (should_bswap)
+		intval = BSWAP_64(intval);
+	boolean_t uacct_incomplete =
+	    !(intval & OBJSET_FLAG_USERACCOUNTING_COMPLETE);
+
+	/*
 	 * The local MAC protects the user, group and project accounting.
 	 * If these objects are not present, the local MAC is zeroed out.
 	 */
-	if ((datalen >= OBJSET_PHYS_SIZE_V3 &&
+	if (uacct_incomplete ||
+	    (datalen >= OBJSET_PHYS_SIZE_V3 &&
 	    osp->os_userused_dnode.dn_type == DMU_OT_NONE &&
 	    osp->os_groupused_dnode.dn_type == DMU_OT_NONE &&
 	    osp->os_projectused_dnode.dn_type == DMU_OT_NONE) ||
@@ -2036,9 +2051,8 @@ error:
 }
 
 #if defined(_KERNEL)
-/* BEGIN CSTYLED */
+/* CSTYLED */
 module_param(zfs_key_max_salt_uses, ulong, 0644);
 MODULE_PARM_DESC(zfs_key_max_salt_uses, "Max number of times a salt value "
 	"can be used for generating encryption keys before it is rotated");
-/* END CSTYLED */
 #endif

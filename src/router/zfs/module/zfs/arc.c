@@ -328,6 +328,8 @@ static zthr_t *arc_reap_zthr;
  * arc_evict(), which improves arc_is_overflowing().
  */
 static zthr_t *arc_evict_zthr;
+static arc_buf_hdr_t **arc_state_evict_markers;
+static int arc_state_evict_marker_count;
 
 static kmutex_t arc_evict_lock;
 static boolean_t arc_evict_needed = B_FALSE;
@@ -352,7 +354,7 @@ static list_t arc_evict_waiters;
  * can still happen, even during the potentially long time that arc_size is
  * more than arc_c.
  */
-int zfs_arc_eviction_pct = 200;
+static int zfs_arc_eviction_pct = 200;
 
 /*
  * The number of headers to evict in arc_evict_state_impl() before
@@ -361,7 +363,7 @@ int zfs_arc_eviction_pct = 200;
  * oldest header in the arc state), but comes with higher overhead
  * (i.e. more invocations of arc_evict_state_impl()).
  */
-int zfs_arc_evict_batch_limit = 10;
+static int zfs_arc_evict_batch_limit = 10;
 
 /* number of seconds before growing cache again */
 int arc_grow_retry = 5;
@@ -369,13 +371,13 @@ int arc_grow_retry = 5;
 /*
  * Minimum time between calls to arc_kmem_reap_soon().
  */
-int arc_kmem_cache_reap_retry_ms = 1000;
+static const int arc_kmem_cache_reap_retry_ms = 1000;
 
 /* shift of arc_c for calculating overflow limit in arc_get_data_impl */
-int zfs_arc_overflow_shift = 8;
+static int zfs_arc_overflow_shift = 8;
 
 /* shift of arc_c for calculating both min and max arc_p */
-int arc_p_min_shift = 4;
+static int arc_p_min_shift = 4;
 
 /* log2(fraction of arc to reclaim) */
 int arc_shrink_shift = 7;
@@ -421,19 +423,22 @@ unsigned long zfs_arc_max = 0;
 unsigned long zfs_arc_min = 0;
 unsigned long zfs_arc_meta_limit = 0;
 unsigned long zfs_arc_meta_min = 0;
-unsigned long zfs_arc_dnode_limit = 0;
-unsigned long zfs_arc_dnode_reduce_percent = 10;
-int zfs_arc_grow_retry = 0;
-int zfs_arc_shrink_shift = 0;
-int zfs_arc_p_min_shift = 0;
+static unsigned long zfs_arc_dnode_limit = 0;
+static unsigned long zfs_arc_dnode_reduce_percent = 10;
+static int zfs_arc_grow_retry = 0;
+static int zfs_arc_shrink_shift = 0;
+static int zfs_arc_p_min_shift = 0;
 int zfs_arc_average_blocksize = 8 * 1024; /* 8KB */
 
 /*
- * ARC dirty data constraints for arc_tempreserve_space() throttle.
+ * ARC dirty data constraints for arc_tempreserve_space() throttle:
+ * * total dirty data limit
+ * * anon block dirty limit
+ * * each pool's anon allowance
  */
-unsigned long zfs_arc_dirty_limit_percent = 50;	/* total dirty data limit */
-unsigned long zfs_arc_anon_limit_percent = 25;	/* anon block dirty limit */
-unsigned long zfs_arc_pool_dirty_percent = 20;	/* each pool's anon allowance */
+static const unsigned long zfs_arc_dirty_limit_percent = 50;
+static const unsigned long zfs_arc_anon_limit_percent = 25;
+static const unsigned long zfs_arc_pool_dirty_percent = 20;
 
 /*
  * Enable or disable compressed arc buffers.
@@ -444,24 +449,24 @@ int zfs_compressed_arc_enabled = B_TRUE;
  * ARC will evict meta buffers that exceed arc_meta_limit. This
  * tunable make arc_meta_limit adjustable for different workloads.
  */
-unsigned long zfs_arc_meta_limit_percent = 75;
+static unsigned long zfs_arc_meta_limit_percent = 75;
 
 /*
  * Percentage that can be consumed by dnodes of ARC meta buffers.
  */
-unsigned long zfs_arc_dnode_limit_percent = 10;
+static unsigned long zfs_arc_dnode_limit_percent = 10;
 
 /*
- * These tunables are Linux specific
+ * These tunables are Linux-specific
  */
-unsigned long zfs_arc_sys_free = 0;
-int zfs_arc_min_prefetch_ms = 0;
-int zfs_arc_min_prescient_prefetch_ms = 0;
-int zfs_arc_p_dampener_disable = 1;
-int zfs_arc_meta_prune = 10000;
-int zfs_arc_meta_strategy = ARC_STRATEGY_META_BALANCED;
-int zfs_arc_meta_adjust_restarts = 4096;
-int zfs_arc_lotsfree_percent = 10;
+static unsigned long zfs_arc_sys_free = 0;
+static int zfs_arc_min_prefetch_ms = 0;
+static int zfs_arc_min_prescient_prefetch_ms = 0;
+static int zfs_arc_p_dampener_disable = 1;
+static int zfs_arc_meta_prune = 10000;
+static int zfs_arc_meta_strategy = ARC_STRATEGY_META_BALANCED;
+static int zfs_arc_meta_adjust_restarts = 4096;
+static int zfs_arc_lotsfree_percent = 10;
 
 /*
  * Number of arc_prune threads
@@ -651,7 +656,7 @@ arc_sums_t arc_sums;
 		ARCSTAT(stat) = x; \
 	} while (0)
 
-kstat_t			*arc_ksp;
+static kstat_t			*arc_ksp;
 
 /*
  * There are several ARC variables that are critical to export as kstats --
@@ -785,7 +790,7 @@ unsigned long l2arc_feed_min_ms = L2ARC_FEED_MIN_MS;	/* min interval msecs */
 int l2arc_noprefetch = B_TRUE;			/* don't cache prefetch bufs */
 int l2arc_feed_again = B_TRUE;			/* turbo warmup */
 int l2arc_norw = B_FALSE;			/* no reads during writes */
-int l2arc_meta_percent = 33;			/* limit on headers size */
+static int l2arc_meta_percent = 33;		/* limit on headers size */
 
 /*
  * L2ARC Internals
@@ -886,7 +891,7 @@ int l2arc_exclude_special = 0;
  * l2arc_mfuonly : A ZFS module parameter that controls whether only MFU
  * 		metadata and data are cached from ARC into L2ARC.
  */
-int l2arc_mfuonly = 0;
+static int l2arc_mfuonly = 0;
 
 /*
  * L2ARC TRIM
@@ -903,7 +908,7 @@ int l2arc_mfuonly = 0;
  * 		will vary depending of how well the specific device handles
  * 		these commands.
  */
-unsigned long l2arc_trim_ahead = 0;
+static unsigned long l2arc_trim_ahead = 0;
 
 /*
  * Performance tuning of L2ARC persistence:
@@ -918,8 +923,8 @@ unsigned long l2arc_trim_ahead = 0;
  * 		data. In this case do not write log blocks in L2ARC in order
  * 		not to waste space.
  */
-int l2arc_rebuild_enabled = B_TRUE;
-unsigned long l2arc_rebuild_blocks_min_l2size = 1024 * 1024 * 1024;
+static int l2arc_rebuild_enabled = B_TRUE;
+static unsigned long l2arc_rebuild_blocks_min_l2size = 1024 * 1024 * 1024;
 
 /* L2ARC persistence rebuild control routines. */
 void l2arc_rebuild_vdev(vdev_t *vd, boolean_t reopen);
@@ -4164,6 +4169,38 @@ arc_evict_state_impl(multilist_t *ml, int idx, arc_buf_hdr_t *marker,
 }
 
 /*
+ * Allocate an array of buffer headers used as placeholders during arc state
+ * eviction.
+ */
+static arc_buf_hdr_t **
+arc_state_alloc_markers(int count)
+{
+	arc_buf_hdr_t **markers;
+
+	markers = kmem_zalloc(sizeof (*markers) * count, KM_SLEEP);
+	for (int i = 0; i < count; i++) {
+		markers[i] = kmem_cache_alloc(hdr_full_cache, KM_SLEEP);
+
+		/*
+		 * A b_spa of 0 is used to indicate that this header is
+		 * a marker. This fact is used in arc_evict_type() and
+		 * arc_evict_state_impl().
+		 */
+		markers[i]->b_spa = 0;
+
+	}
+	return (markers);
+}
+
+static void
+arc_state_free_markers(arc_buf_hdr_t **markers, int count)
+{
+	for (int i = 0; i < count; i++)
+		kmem_cache_free(hdr_full_cache, markers[i]);
+	kmem_free(markers, sizeof (*markers) * count);
+}
+
+/*
  * Evict buffers from the given arc state, until we've removed the
  * specified number of bytes. Move the removed buffers to the
  * appropriate evict state.
@@ -4194,18 +4231,14 @@ arc_evict_state(arc_state_t *state, uint64_t spa, uint64_t bytes,
 	 * pick up where we left off for each individual sublist, rather
 	 * than starting from the tail each time.
 	 */
-	markers = kmem_zalloc(sizeof (*markers) * num_sublists, KM_SLEEP);
+	if (zthr_iscurthread(arc_evict_zthr)) {
+		markers = arc_state_evict_markers;
+		ASSERT3S(num_sublists, <=, arc_state_evict_marker_count);
+	} else {
+		markers = arc_state_alloc_markers(num_sublists);
+	}
 	for (int i = 0; i < num_sublists; i++) {
 		multilist_sublist_t *mls;
-
-		markers[i] = kmem_cache_alloc(hdr_full_cache, KM_SLEEP);
-
-		/*
-		 * A b_spa of 0 is used to indicate that this header is
-		 * a marker. This fact is used in arc_evict_type() and
-		 * arc_evict_state_impl().
-		 */
-		markers[i]->b_spa = 0;
 
 		mls = multilist_sublist_lock(ml, i);
 		multilist_sublist_insert_tail(mls, markers[i]);
@@ -4288,10 +4321,9 @@ arc_evict_state(arc_state_t *state, uint64_t spa, uint64_t bytes,
 		multilist_sublist_t *mls = multilist_sublist_lock(ml, i);
 		multilist_sublist_remove(mls, markers[i]);
 		multilist_sublist_unlock(mls);
-
-		kmem_cache_free(hdr_full_cache, markers[i]);
 	}
-	kmem_free(markers, sizeof (*markers) * num_sublists);
+	if (markers != arc_state_evict_markers)
+		arc_state_free_markers(markers, num_sublists);
 
 	return (total_evicted);
 }
@@ -4810,8 +4842,6 @@ arc_kmem_reap_soon(void)
 	size_t			i;
 	kmem_cache_t		*prev_cache = NULL;
 	kmem_cache_t		*prev_data_cache = NULL;
-	extern kmem_cache_t	*zio_buf_cache[];
-	extern kmem_cache_t	*zio_data_buf_cache[];
 
 #ifdef _KERNEL
 	if ((aggsum_compare(&arc_sums.arcstat_meta_used,
@@ -7618,52 +7648,51 @@ arc_tuning_update(boolean_t verbose)
 }
 
 static void
+arc_state_multilist_init(multilist_t *ml,
+    multilist_sublist_index_func_t *index_func, int *maxcountp)
+{
+	multilist_create(ml, sizeof (arc_buf_hdr_t),
+	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node), index_func);
+	*maxcountp = MAX(*maxcountp, multilist_get_num_sublists(ml));
+}
+
+static void
 arc_state_init(void)
 {
-	multilist_create(&arc_mru->arcs_list[ARC_BUFC_METADATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mru->arcs_list[ARC_BUFC_DATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mru_ghost->arcs_list[ARC_BUFC_METADATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mru_ghost->arcs_list[ARC_BUFC_DATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mfu->arcs_list[ARC_BUFC_METADATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mfu->arcs_list[ARC_BUFC_DATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mfu_ghost->arcs_list[ARC_BUFC_METADATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
-	multilist_create(&arc_mfu_ghost->arcs_list[ARC_BUFC_DATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_multilist_index_func);
+	int num_sublists = 0;
+
+	arc_state_multilist_init(&arc_mru->arcs_list[ARC_BUFC_METADATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mru->arcs_list[ARC_BUFC_DATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mru_ghost->arcs_list[ARC_BUFC_METADATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mru_ghost->arcs_list[ARC_BUFC_DATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mfu->arcs_list[ARC_BUFC_METADATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mfu->arcs_list[ARC_BUFC_DATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mfu_ghost->arcs_list[ARC_BUFC_METADATA],
+	    arc_state_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_mfu_ghost->arcs_list[ARC_BUFC_DATA],
+	    arc_state_multilist_index_func, &num_sublists);
+
 	/*
 	 * L2 headers should never be on the L2 state list since they don't
 	 * have L1 headers allocated.  Special index function asserts that.
 	 */
-	multilist_create(&arc_l2c_only->arcs_list[ARC_BUFC_METADATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_l2c_multilist_index_func);
-	multilist_create(&arc_l2c_only->arcs_list[ARC_BUFC_DATA],
-	    sizeof (arc_buf_hdr_t),
-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
-	    arc_state_l2c_multilist_index_func);
+	arc_state_multilist_init(&arc_l2c_only->arcs_list[ARC_BUFC_METADATA],
+	    arc_state_l2c_multilist_index_func, &num_sublists);
+	arc_state_multilist_init(&arc_l2c_only->arcs_list[ARC_BUFC_DATA],
+	    arc_state_l2c_multilist_index_func, &num_sublists);
+
+	/*
+	 * Keep track of the number of markers needed to reclaim buffers from
+	 * any ARC state.  The markers will be pre-allocated so as to minimize
+	 * the number of memory allocations performed by the eviction thread.
+	 */
+	arc_state_evict_marker_count = num_sublists;
 
 	zfs_refcount_create(&arc_anon->arcs_esize[ARC_BUFC_METADATA]);
 	zfs_refcount_create(&arc_anon->arcs_esize[ARC_BUFC_DATA]);
@@ -8007,6 +8036,8 @@ arc_init(void)
 		kstat_install(arc_ksp);
 	}
 
+	arc_state_evict_markers =
+	    arc_state_alloc_markers(arc_state_evict_marker_count);
 	arc_evict_zthr = zthr_create("arc_evict",
 	    arc_evict_cb_check, arc_evict_cb, NULL, defclsyspri);
 	arc_reap_zthr = zthr_create_timer("arc_reap",
@@ -8086,6 +8117,8 @@ arc_fini(void)
 
 	(void) zthr_cancel(arc_evict_zthr);
 	(void) zthr_cancel(arc_reap_zthr);
+	arc_state_free_markers(arc_state_evict_markers,
+	    arc_state_evict_marker_count);
 
 	mutex_destroy(&arc_evict_lock);
 	list_destroy(&arc_evict_waiters);
@@ -11010,7 +11043,6 @@ EXPORT_SYMBOL(arc_getbuf_func);
 EXPORT_SYMBOL(arc_add_prune_callback);
 EXPORT_SYMBOL(arc_remove_prune_callback);
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, min, param_set_arc_min,
 	param_get_long, ZMOD_RW, "Min arc size");
 
@@ -11021,7 +11053,7 @@ ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, meta_limit, param_set_arc_long,
 	param_get_long, ZMOD_RW, "Metadata limit for arc size");
 
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, meta_limit_percent,
-	param_set_arc_long, param_get_long, ZMOD_RW,
+    param_set_arc_long, param_get_long, ZMOD_RW,
 	"Percent of arc size for arc meta limit");
 
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, meta_min, param_set_arc_long,
@@ -11061,7 +11093,7 @@ ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, min_prefetch_ms, param_set_arc_int,
 	param_get_int, ZMOD_RW, "Min life of prefetch block in ms");
 
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, min_prescient_prefetch_ms,
-	param_set_arc_int, param_get_int, ZMOD_RW,
+    param_set_arc_int, param_get_int, ZMOD_RW,
 	"Min life of prescient prefetched block in ms");
 
 ZFS_MODULE_PARAM(zfs_l2arc, l2arc_, write_max, ULONG, ZMOD_RW,
@@ -11107,8 +11139,7 @@ ZFS_MODULE_PARAM(zfs_l2arc, l2arc_, mfuonly, INT, ZMOD_RW,
 	"Cache only MFU data from ARC into L2ARC");
 
 ZFS_MODULE_PARAM(zfs_l2arc, l2arc_, exclude_special, INT, ZMOD_RW,
-	"If set to 1 exclude dbufs on special vdevs from being cached to "
-	"L2ARC.");
+	"Exclude dbufs on special vdevs from being cached to L2ARC if set.");
 
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, lotsfree_percent, param_set_arc_int,
 	param_get_int, ZMOD_RW, "System free memory I/O throttle in bytes");
@@ -11120,7 +11151,7 @@ ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, dnode_limit, param_set_arc_long,
 	param_get_long, ZMOD_RW, "Minimum bytes of dnodes in arc");
 
 ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, dnode_limit_percent,
-	param_set_arc_long, param_get_long, ZMOD_RW,
+    param_set_arc_long, param_get_long, ZMOD_RW,
 	"Percent of ARC meta buffers for dnodes");
 
 ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, dnode_reduce_percent, ULONG, ZMOD_RW,
@@ -11134,4 +11165,3 @@ ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, evict_batch_limit, INT, ZMOD_RW,
 
 ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, prune_task_threads, INT, ZMOD_RW,
 	"Number of arc_prune threads");
-/* END CSTYLED */
