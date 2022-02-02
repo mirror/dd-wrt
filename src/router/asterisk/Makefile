@@ -21,7 +21,7 @@
 #      on a single object just for that object
 # SOLINK - linker flags used only for creating dynamically loadable modules
 #          as .so files
-# DYLINK - linker flags used only for creating shared libaries
+# DYLINK - linker flags used only for creating shared libraries
 #          (.so files on Unix-type platforms, .dylib on Darwin)
 #
 # Values for ASTCFLAGS and ASTLDFLAGS can be specified in the
@@ -135,7 +135,7 @@ empty:=
 space:=$(empty) $(empty)
 ASTTOPDIR:=$(subst $(space),\$(space),$(CURDIR))
 
-# Overwite config files on "make samples" or other config installation targets
+# Overwrite config files on "make samples" or other config installation targets
 OVERWRITE=y
 
 # Include debug and macro symbols in the executables (-g) and profiling info (-pg)
@@ -493,7 +493,7 @@ doc/core-en_US.xml: makeopts .lastclean $(XML_core_en_US)
 			MODULEINFO=$$($(AWK) -f build_tools/get_moduleinfo $$i) ; \
 			if [ -n "$$MODULEINFO" ] ; \
 			then \
-				echo "<module language=\"en_US\" name=\"`$(BASENAME) -s .c $$i`\">" >> $@ ; \
+				echo "<module language=\"en_US\" name=\"`$(BASENAME) $$i .c`\">" >> $@ ; \
 				echo "$$MODULEINFO" >> $@ ; \
 				echo "</module>" >> $@ ; \
 			fi ; \

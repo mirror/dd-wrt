@@ -321,7 +321,7 @@ struct ast_sorcery_wizard {
 	/*! \brief Callback for closing a wizard */
 	void (*close)(void *data);
 
-	/* \brief Callback for whether or not the wizard believes the object is stale */
+	/*! \brief Callback for whether or not the wizard believes the object is stale */
 	int (*is_stale)(const struct ast_sorcery *sorcery, void *data, void *object);
 
 	/*! \brief Optional callback for forcing a reload to occur, even if wizard has determined no changes */
@@ -1513,7 +1513,7 @@ const char *ast_sorcery_object_get_id(const void *object);
 
 /*!
  * \since 14.0.0
- * \brief Get when the socery object was created
+ * \brief Get when the sorcery object was created
  *
  * \param object Pointer to a sorcery object
  *

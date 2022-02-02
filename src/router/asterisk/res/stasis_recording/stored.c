@@ -85,7 +85,7 @@ const char *stasis_app_stored_recording_get_extension(
  *
  * \param path Path to split.
  * \param[out] dir Output parameter for directory portion.
- * \param[out] fail Output parameter for the file portion.
+ * \param[out] file Output parameter for the file portion.
  * \return 0 on success.
  * \return Non-zero on error.
  */
@@ -174,7 +174,7 @@ static int handle_find_recording(const char *dir_name, const char *filename, voi
 /*!
  * \brief Finds a recording in the given directory.
  *
- * This function searchs for a file with the given file name, with a registered
+ * This function searches for a file with the given file name, with a registered
  * format that matches its extension.
  *
  * \param dir_name Directory to search (absolute path).

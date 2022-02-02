@@ -940,6 +940,13 @@
 						When enabled the UDPTL stack will use IPv6.
 					</para></description>
 				</configOption>
+				<configOption name="t38_bind_udptl_to_media_address" default="no">
+					<synopsis>Bind the UDPTL instance to the media_adress</synopsis>
+					<description><para>
+						If media_address is specified, this option causes the UDPTL instance to be bound to
+						the specified ip address which causes the packets to be sent from that address.
+					</para></description>
+				</configOption>
 				<configOption name="tone_zone">
 					<synopsis>Set which country's indications to use for channels created for this endpoint.</synopsis>
 				</configOption>
@@ -1045,7 +1052,7 @@
 						It can be one of the following values:
 						</para><enumlist>
 							<enum name="no"><para>
-								meaning no verificaton is done.
+								meaning no verification is done.
 							</para></enum>
 							<enum name="fingerprint"><para>
 								meaning to verify the remote fingerprint.
@@ -1558,7 +1565,7 @@
 						in their WWW-Authenticate header.  It can't be blank
 						unless you expect the server to be sending a blank
 						realm in the header.  You can't use pre-hashed
-						paswords with a wildcard auth object.
+						passwords with a wildcard auth object.
 						You can generate the hash with the following shell
 						command:
 						</para>
@@ -1997,8 +2004,9 @@
 						TLS.  Unfortunately, refreshing a registration may register a
 						different contact address and exceed
 						<replaceable>max_contacts</replaceable>.  The
-						<replaceable>remove_existing</replaceable> option can help by
-						removing the soonest to expire contact(s) over
+						<replaceable>remove_existing</replaceable> and
+						<replaceable>remove_unavailable</replaceable> options can help by
+						removing either the soonest to expire or unavailable contact(s) over
 						<replaceable>max_contacts</replaceable> which is likely the
 						old <replaceable>rewrite_contact</replaceable> contact source
 						address being refreshed.
@@ -2038,6 +2046,26 @@
 						<note><para>This should be set to <literal>yes</literal> and
 						<replaceable>max_contacts</replaceable> set to <literal>1</literal> if you
 						wish to stick with the older <literal>chan_sip</literal> behaviour.
+						</para></note>
+					</description>
+				</configOption>
+				<configOption name="remove_unavailable" default="no">
+					<synopsis>Determines whether new contacts should replace unavailable ones.</synopsis>
+					<description><para>
+						The effect of this setting depends on the setting of
+						<replaceable>remove_existing</replaceable>.</para>
+						<para>If <replaceable>remove_existing</replaceable> is set to
+						<literal>no</literal> (default), setting remove_unavailable to
+						<literal>yes</literal> will remove only unavailable contacts that exceed
+						<replaceable>max_contacts</replaceable>	to allow an incoming
+						REGISTER to complete sucessfully.</para>
+						<para>If <replaceable>remove_existing</replaceable> is set to
+						<literal>yes</literal>, setting remove_unavailable to
+						<literal>yes</literal> will prioritize unavailable contacts for removal
+						instead of just removing the contact that expires the soonest.</para>
+						<note><para>See <replaceable>remove_existing</replaceable> and
+						<replaceable>max_contacts</replaceable> for further information about how
+						these 3 settings interact.
 						</para></note>
 					</description>
 				</configOption>
@@ -2444,6 +2472,9 @@
 				<parameter name="RemoveExisting">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='remove_existing']/synopsis/node())"/></para>
 				</parameter>
+				<parameter name="RemoveUnavailable">
+					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='remove_unavailable']/synopsis/node())"/></para>
+				</parameter>
 				<parameter name="Mailboxes">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='mailboxes']/synopsis/node())"/></para>
 				</parameter>
@@ -2759,6 +2790,9 @@
 				<parameter name="T38UdptlIpv6">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='endpoint']/configOption[@name='t38_udptl_ipv6']/synopsis/node())"/></para>
 				</parameter>
+				<parameter name="T38BindUdptlToMediaAddress">
+					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='endpoint']/configOption[@name='t38_bind_udptl_to_media_address']/synopsis/node())"/></para>
+				</parameter>
 				<parameter name="ToneZone">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='endpoint']/configOption[@name='tone_zone']/synopsis/node())"/></para>
 				</parameter>
@@ -2903,6 +2937,9 @@
 				</parameter>
 				<parameter name="RemoveExisting">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='remove_existing']/synopsis/node())"/></para>
+				</parameter>
+				<parameter name="RemoveUnavailable">
+					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='remove_unavailable']/synopsis/node())"/></para>
 				</parameter>
 				<parameter name="Mailboxes">
 					<para><xi:include xpointer="xpointer(/docs/configInfo[@name='res_pjsip']/configFile[@name='pjsip.conf']/configObject[@name='aor']/configOption[@name='mailboxes']/synopsis/node())"/></para>

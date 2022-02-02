@@ -930,7 +930,7 @@ static const char *get_cid_name(char *name, int namelen, struct ast_channel *cha
  * XXX this code is highly suspicious, as it essentially overwrites
  * the outgoing channel without properly deleting it.
  *
- * \todo eventually this function should be intergrated into and replaced by ast_call_forward()
+ * \todo eventually this function should be integrated into and replaced by ast_call_forward()
  */
 static void do_forward(struct chanlist *o, struct cause_args *num,
 	struct ast_flags64 *peerflags, int single, int caller_entertained, int *to,
@@ -1167,8 +1167,6 @@ static void publish_dial_end_event(struct ast_channel *in, struct dial_head *out
  * \param chan Channel to get connected line updated.
  * \param peer Channel providing connected line information.
  * \param is_caller Non-zero if chan is the calling channel.
- *
- * \return Nothing
  */
 static void update_connected_line_from_peer(struct ast_channel *chan, struct ast_channel *peer, int is_caller)
 {
@@ -2210,8 +2208,6 @@ static int dial_handle_playtones(struct ast_channel *chan, const char *data)
  * \param peer Peer channel for bridge.
  * \param opts Dialing option flags.
  * \param opt_args Dialing option argument strings.
- *
- * \return Nothing
  */
 static void setup_peer_after_bridge_goto(struct ast_channel *chan, struct ast_channel *peer, struct ast_flags64 *opts, char *opt_args[])
 {

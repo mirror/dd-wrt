@@ -17,9 +17,10 @@
  */
 
 /*!
- * \file tcptls.h
+ * \file
  *
  * \brief Generic support for tcp/tls servers in Asterisk.
+ *
  * \note In order to have TLS/SSL support, we need the openssl libraries.
  * Still we can decide whether or not to use them by commenting
  * in or out the DO_SSL macro.
@@ -168,7 +169,7 @@ struct ast_tcptls_session_instance {
   */
 struct ast_tcptls_session_instance *ast_tcptls_client_start(struct ast_tcptls_session_instance *tcptls_session);
 
-/* \brief Creates a client connection's ast_tcptls_session_instance. */
+/*! \brief Creates a client connection's ast_tcptls_session_instance. */
 struct ast_tcptls_session_instance *ast_tcptls_client_create(struct ast_tcptls_session_args *desc);
 
 void *ast_tcptls_server_root(void *);

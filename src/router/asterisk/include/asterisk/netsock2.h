@@ -752,8 +752,9 @@ int ast_set_qos(int sockfd, int tos, int cos, const char *desc);
  * These are backward compatibility functions that may be used by subsystems
  * that have not yet been converted to IPv6. They will be removed when all
  * subsystems are IPv6-ready.
+ *
+ * @{
  */
-/*@{*/
 
 /*!
  * \since 1.8
@@ -819,11 +820,10 @@ static inline int _ast_addressfamily_to_sockaddrsize(int af, const char *file, i
  *
  * \param[out] addr The address of the ast_sockaddr to store into
  * \param sa The sockaddr structure (sockaddr_in or sockaddr_in6) to convert
- * \return Nothing
  */
 #define ast_sockaddr_from_sockaddr(addr,sa)	ast_sockaddr_copy_sockaddr(addr, sa, ast_addressfamily_to_sockaddrsize(((const struct sockaddr*)(sa))->sa_family))
 
-/*@}*/
+/*! @} */
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

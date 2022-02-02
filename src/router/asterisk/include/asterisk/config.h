@@ -902,7 +902,7 @@ int ast_category_inherit(struct ast_category *existing, const struct ast_categor
  * \param category category to empty
  *
  * \retval 0 if succeeded
- * \retval -1 if categopry is NULL
+ * \retval -1 if category is NULL
  */
 int ast_category_empty(struct ast_category *category);
 
@@ -1026,7 +1026,7 @@ enum config_hook_flags {
 	butt,
 };
 
-/*
+/*!
  * \brief Callback when configuration is updated
  *
  * \param cfg A copy of the configuration that is being changed.
