@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6427 | brainslayer | 2022-02-03 22:33:15 +0700 (Thu, 03 Feb 2022) | 1 line
+
+mac80211: upgrade passive scan to active scan on DFS channels after beacon rx
+------------------------------------------------------------------------
 r6426 | brainslayer | 2022-02-01 23:53:57 +0700 (Tue, 01 Feb 2022) | 1 line
 
 update mt76
