@@ -1520,6 +1520,7 @@ void ping_wol(webs_t wp)
 
 void diag_ping_start(webs_t wp)
 {
+	static char cmd[1024];
 	char *ip = websGetVar(wp, "ping_ip", NULL);
 
 	if (!ip || !strcmp(ip, ""))
@@ -1533,15 +1534,15 @@ void diag_ping_start(webs_t wp)
 	if (!wp->isregistered_real)
 		return;
 #endif
-	char cmd[1024];
-	snprintf(cmd, sizeof(cmd), "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
+	snprintf(cmd, sizeof(cmd) - 1, "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
 	//FORK(system(cmd));
 
+	dd_logdebug("httpd","exec %s\n",cmd);
 	FILE *fp = popen(cmd, "rb");
 	if (!fp)
 		return;
-	while (!feof(fp))
-		getc(fp);
+	while (!feof(fp) && fgetc(fp)!=EOF) {
+	}
 	pclose(fp);
 
 	return;

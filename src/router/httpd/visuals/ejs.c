@@ -1658,45 +1658,6 @@ struct menucontext {
 #define MENU_QOS 5
 #define MENU_ADMIN 6
 #define MENU_STATUS 7
-static void free_menu(struct menucontext *m)
-{
-#ifdef HAVE_MADWIFI
-#if !defined(HAVE_BUFFALO) || defined(HAVE_ATH9K)
-	// fill up WDS
-	int ifcount = getdevicecount();
-	if (ifcount > 4)
-		ifcount = 4;	//truncate to max of 4
-	int a;
-	int count = 0;
-	for (a = 0; a < ifcount; a++) {
-		char check[32];
-		sprintf(check, "wlan%d", a);
-		if (has_ad(check))
-			continue;
-		debug_free(m->menu[MENU_WIRELESS][count + 8]);
-		debug_free(m->menuname[MENU_WIRELESS][count + 9]);
-		count++;
-	}
-#endif
-#else
-#ifdef HAVE_ERC
-	if (wp->userid) {
-#endif
-
-		int ifcount = get_wl_instances();
-		int a;
-
-		for (a = 0; a < ifcount; a++) {
-			debug_free(m->menu[MENU_WIRELESS][a * 2 + 7]);
-			debug_free(m->menu[MENU_WIRELESS][a * 2 + 8]);
-			debug_free(m->menuname[MENU_WIRELESS][a * 2 + 8]);
-			debug_free(m->menuname[MENU_WIRELESS][a * 2 + 9]);
-		}
-#ifdef HAVE_ERC
-	}
-#endif
-#endif
-}
 
 static struct menucontext *init_menu(webs_t wp)
 {
@@ -1806,6 +1767,8 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menuname[MENU_ADMIN][0] = "adminman";
 #endif
 #ifdef HAVE_MADWIFI
+	static char *wdsmenu[4] = {"Wireless_WDS-wlan0.asp" , "Wireless_WDS-wlan1.asp", "Wireless_WDS-wlan2.asp", "Wireless_WDS-wlan3.asp"};
+	static char *tran_wdsmenu[4] = {"wirelessWds0" , "wirelessWds1", "wirelessWds2", "wirelessWds3"};
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
 	m->menu[MENU_WIRELESS][8] = NULL;
 	m->menuname[MENU_WIRELESS][9] = NULL;
@@ -1821,11 +1784,11 @@ static struct menucontext *init_menu(webs_t wp)
 		sprintf(check, "wlan%d", a);
 		if (has_ad(check))
 			continue;
-		asprintf(&m->menu[MENU_WIRELESS][count + 8], "Wireless_WDS-wlan%d.asp", a);
+		m->menu[MENU_WIRELESS][count + 8] = wdsmenu[a];
 		if (ifcount == 1)
-			asprintf(&m->menuname[MENU_WIRELESS][count + 9], "wirelessWds");
+			m->menuname[MENU_WIRELESS][count + 9] = "wirelessWds";
 		else
-			asprintf(&m->menuname[MENU_WIRELESS][count + 9], "wirelessWds%d", a);
+			m->menuname[MENU_WIRELESS][count + 9] = tran_wdsmenu[a];
 		count++;
 	}
 #endif
@@ -1836,16 +1799,21 @@ static struct menucontext *init_menu(webs_t wp)
 
 		int ifcount = get_wl_instances();
 		int a;
+		static char *wdsmenu[4] = {"Wireless_WDS-wl0.asp" , "Wireless_WDS-wl1.asp", "Wireless_WDS-wl2.asp", "Wireless_WDS-wl3.asp"};
+		static char *tran_wdsmenu[4] = {"wirelessWdswl0" , "wirelessWdswl1", "wirelessWdswl2", "wirelessWdswl3"};
+
+		static char *advmenu[4] = {"Wireless_Advanced-wl0.asp" , "Wireless_Advanced-wl1.asp", "Wireless_Advanced-wl2.asp", "Wireless_Advanced-wl3.asp"};
+		static char *tran_advmenu[4] = {"wirelessAdvancedwl0" , "wirelessAdvancedwl1", "wirelessAdvancedwl2", "wirelessAdvancedwl3"};
 
 		for (a = 0; a < ifcount; a++) {
-			asprintf(&m->menu[MENU_WIRELESS][a * 2 + 7], "Wireless_Advanced-wl%d.asp", a);
-			asprintf(&m->menu[MENU_WIRELESS][a * 2 + 8], "Wireless_WDS-wl%d.asp", a);
+			m->menu[MENU_WIRELESS][a * 2 + 7] = advmenu[a];
+			m->menu[MENU_WIRELESS][a * 2 + 8] = wdsenu[a];
 			if (ifcount == 1) {
-				asprintf(&m->menuname[MENU_WIRELESS][a * 2 + 8], "wirelessAdvanced");
-				asprintf(&m->menuname[MENU_WIRELESS][a * 2 + 9], "wirelessWds");
+				m->menuname[MENU_WIRELESS][a * 2 + 8] = "wirelessAdvanced";
+				m->menuname[MENU_WIRELESS][a * 2 + 9] = "wirelessWds";
 			} else {
-				asprintf(&m->menuname[MENU_WIRELESS][a * 2 + 8], "wirelessAdvancedwl%d", a);
-				asprintf(&m->menuname[MENU_WIRELESS][a * 2 + 9], "wirelessWdswl%d", a);
+				m->menuname[MENU_WIRELESS][a * 2 + 8] = tran_advmenu[a];
+				m->menuname[MENU_WIRELESS][a * 2 + 9] = tran_wdsmenu[a];
 			}
 		}
 #ifdef HAVE_ERC
@@ -2223,7 +2191,6 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "  </ul>\n");
 	websWrite(wp, " </div>\n");
 	websWrite(wp, "</div>\n");
-	free_menu(m);
 	return;
 }
 

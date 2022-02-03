@@ -211,6 +211,7 @@ static void *handle_request(void *conn_fp);
 #define PTHREAD_MUTEX_INIT pthread_mutex_init
 #define PTHREAD_MUTEX_LOCK pthread_mutex_lock
 #define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+#define PTHREAD_MUTEX_TRYLOCK pthread_mutex_trylock
 
 #define SEM_WAIT sem_wait
 #define SEM_POST sem_post
@@ -239,6 +240,7 @@ static pthread_mutex_t input_mutex;
 #define PTHREAD_MUTEX_INIT(m, v) do {} while(0)
 #define PTHREAD_MUTEX_LOCK(m) do {} while(0)
 #define PTHREAD_MUTEX_UNLOCK(m) do {} while(0)
+#define PTHREAD_MUTEX_TRYLOCK do {} while(0)
 #define SEM_WAIT(sem) do {} while(0)
 #define SEM_POST(sem) do {} while(0)
 #define SEM_INIT(sem, p, v) do {} while(0)
@@ -487,8 +489,8 @@ static int auth_check(webs_t conn_fp)
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-//		while (wfgets(dummy, 64, conn_fp, NULL)) {
-//		}
+//              while (wfgets(dummy, 64, conn_fp, NULL)) {
+//              }
 		goto out;
 	}
 	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
@@ -496,8 +498,8 @@ static int auth_check(webs_t conn_fp)
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-//		while (wfgets(dummy, 64, conn_fp, NULL)) {
-//		}
+//              while (wfgets(dummy, 64, conn_fp, NULL)) {
+//              }
 		goto out;
 	}
 	ret = 1;
@@ -1271,6 +1273,7 @@ static void *handle_request(void *arg)
 	if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
 		clear_ndelay(conn_fp->conn_fd);
 	}
+	PTHREAD_MUTEX_LOCK(&input_mutex);
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (!match(handler->pattern, file))
 			continue;
@@ -1300,7 +1303,6 @@ static void *handle_request(void *arg)
 		}
 
 		if (handler->input) {
-			PTHREAD_MUTEX_LOCK(&input_mutex);
 			if (handler->input(file, conn_fp, content_length, boundary)) {
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
@@ -1325,8 +1327,16 @@ static void *handle_request(void *arg)
 		}
 		// check for do_file handler and check if file exists
 		if (handler->output) {
-    			dd_logdebug("httpd", "handle %s\n", file);
+			dd_logdebug("httpd", "handle %s\n", file);
+			if (!strstr(file, "MyPage") && !strstr(file, "Diagnostics.asp")) {
+				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
+			}
 			file_error = handler->output(method_type, handler, file, conn_fp);
+			if (strstr(file, "MyPage") || strstr(file, "Diagnostics.asp")) {
+				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
+			}
 			if (!file_error)
 				goto out;
 			dd_logdebug("httpd", "returns with error\n", file_error);
