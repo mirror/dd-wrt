@@ -522,9 +522,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 {
 	int flags, newflags;
 
-	if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
-		clear_ndelay(conn_fp->conn_fd);
-	}
+	dd_debug(DEBUG_HTTPD, "send error %s\n", title);
 	char *text;
 	va_list args;
 	va_start(args, (char *)fmt);
@@ -885,6 +883,9 @@ static void *handle_request(void *arg)
 	dd_debug(DEBUG_HTTPD, "parse line\n");
 	wfgets(line, LINE_LEN, conn_fp, &eof);
 	if (eof) {
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
 		goto out;
 	}
@@ -905,6 +906,9 @@ static void *handle_request(void *arg)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_path"));
 		goto out;
 	}
@@ -913,6 +917,9 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_proto"));
 		goto out;
 	}
@@ -926,6 +933,9 @@ static void *handle_request(void *arg)
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
+			if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+				clear_ndelay(conn_fp->conn_fd);
+			}
 			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2"));
 			goto out;
 		}
@@ -979,17 +989,26 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL, live_translate(conn_fp, "share.method_unimpl"), method);
 		goto out;
 	}
 
 	if (path[0] != '/') {
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.no_slash"));
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.threaten_fs"));
 		goto out;
 	}
@@ -1064,6 +1083,9 @@ static void *handle_request(void *arg)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
+		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+			clear_ndelay(conn_fp->conn_fd);
+		}
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site"));
 		goto out;
 	}
@@ -1092,10 +1114,16 @@ static void *handle_request(void *arg)
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
+					if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+						clear_ndelay(conn_fp->conn_fd);
+					}
 					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
+					if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+						clear_ndelay(conn_fp->conn_fd);
+					}
 					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
@@ -1105,6 +1133,9 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
+				if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
+					clear_ndelay(conn_fp->conn_fd);
+				}
 				send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 				goto out;
 			}
