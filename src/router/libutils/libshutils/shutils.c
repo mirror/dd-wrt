@@ -209,17 +209,19 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 void dd_logdebug(const char *servicename, const char *fmt, ...)
 {
 	char *str;
+	int service = DEBUG_SERVICE;
 	va_list args;
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
+	if (!strcmp(servicename, "httpd"))
+		service = DEBUG_HTTPD;
+
 #ifdef SYS_gettid
 	unsigned int thread = syscall(SYS_gettid);
-	fprintf(stdout, "[%s][%d] : %s", servicename, thread, str);
-	dd_debug(DEBUG_SERVICE, "[%s] : %s", servicename, str);
+	dd_debug(service, "[%s][%d] : %s", servicename, thread, str);
 #else
-	fprintf(stdout, "[%s] : %s", servicename, str);
-	dd_debug(DEBUG_SERVICE, "[%s] : %s", servicename, str);
+	dd_debug(service, "[%s] : %s", servicename, str);
 #endif
 	free(str);
 }
