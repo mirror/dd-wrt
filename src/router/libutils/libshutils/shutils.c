@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>
+#include <syscall.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/types.h>
@@ -212,8 +213,14 @@ void dd_logdebug(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
+#ifdef SYS_gettid
+	unsigned int thread = syscall(SYS_gettid);
+	fprintf(stdout, "[%s][%d] : %s", servicename, thread, str);
+	dd_debug(DEBUG_SERVICE, "[%s] : %s", servicename, str);
+#else
 	fprintf(stdout, "[%s] : %s", servicename, str);
 	dd_debug(DEBUG_SERVICE, "[%s] : %s", servicename, str);
+#endif
 	free(str);
 }
 
