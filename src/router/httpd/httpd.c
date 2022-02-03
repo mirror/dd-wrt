@@ -937,24 +937,24 @@ static void *handle_request(void *arg)
 			cp = &cur[14];
 			cp += strspn(cp, " \t");
 			authorization = cp;
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "Auth: %s", cp);
 			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Referer:", 8) == 0) {
 			cp = &cur[8];
 			cp += strspn(cp, " \t");
 			referer = cp;
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "Referer: %s", cp);
 			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Host:", 5) == 0) {
 			cp = &cur[5];
 			cp += strspn(cp, " \t");
 			host = cp;
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "Host: %s", cp);
 			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Content-Length:", 15) == 0) {
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "Content-Length: %s", cp);
 			content_length = strtoul(cp, NULL, 0);
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
@@ -966,14 +966,13 @@ static void *handle_request(void *arg)
 		else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
 			cp = &cur[11];
 			cp += strspn(cp, " \t");
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "User-Agent: %s", cp);
 			useragent = cp;
-			dd_logdebug("httpd", "%s", cp);
 			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
 			cp = &cur[17];
 			cp += strspn(cp, " \t");
-			dd_logdebug("httpd", "%s", cp);
+			dd_logdebug("httpd", "Accept-Language: %s", cp);
 			language = cp;
 			cur = cp + strlen(cp) + 1;
 		}
@@ -1327,19 +1326,17 @@ static void *handle_request(void *arg)
 		}
 		// check for do_file handler and check if file exists
 		if (handler->output) {
-			dd_logdebug("httpd", "handle %s\n", file);
-			if (!strstr(file, "MyPage") && !strstr(file, "Diagnostics.asp")) {
+			if (!strstr(file, "MyPage")) {
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
 			file_error = handler->output(method_type, handler, file, conn_fp);
-			if (strstr(file, "MyPage") || strstr(file, "Diagnostics.asp")) {
+			if (strstr(file, "MyPage")) {
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
 			if (!file_error)
 				goto out;
-			dd_logdebug("httpd", "returns with error\n", file_error);
 		}
 		break;
 	}
