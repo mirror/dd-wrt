@@ -2144,8 +2144,7 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
 	char sname[128];
-	char buf[512];
-	int ret = -1;
+	char buf[1024];
 	int qnum;
 	int i = 1;
 	char *query = strchr(url, '?');
@@ -2159,26 +2158,20 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
 			FILE *fp;
-			FILE *out = fopen("/tmp/mypage.tmp", "wb");
-
+			dd_logdebug("httpd", "exec %s\n", sname);
 			if ((fp = popen(sname, "rb")) != NULL) {
-				while (fgets(buf, 512, fp) != NULL) {
-					fprintf(out, "%s", buf);
+				while (fgets(buf, sizeof(buf) - 1, fp) != NULL) {
+					wfwrite(buf, strlen(buf), 1, stream);
 				}
 				pclose(fp);
 			} else {
-				fclose(out);
 				return -1;
 			}
-
-			fclose(out);
-			ret = do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
-			unlink("/tmp/mypage.tmp");
 		}
 		i++;
 	}
 
-	return ret;
+	return 0;
 
 }
 
@@ -2417,7 +2410,7 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 {
 	static char *cur_language = NULL;
 	if (!tran || *(tran) == 0) {
-		dd_debug(DEBUG_HTTPD, "translation string is empty\n");
+		dd_logdebug("httpd", "translation string is empty\n");
 		return "Error";
 	}
 	if (!cur_language) {
@@ -2471,7 +2464,7 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 	if (ret)
 		entry->translation = ret;
 	else {
-		dd_debug(DEBUG_HTTPD, "no translation found for %s\n", tran);
+		dd_logdebug("httpd", "no translation found for %s\n", tran);
 		entry->translation = strdup("Error");
 	}
 	return entry->translation;

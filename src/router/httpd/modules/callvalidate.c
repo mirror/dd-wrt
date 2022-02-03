@@ -137,13 +137,13 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp);
 
 	snprintf(service, sizeof(service), "%s", name);
-	dd_debug(DEBUG_HTTPD, "start gozila %s\n", service);
+	dd_logdebug("httpd", "start gozila %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
 	else
-		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
+		dd_logdebug("httpd", "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -167,14 +167,14 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	int (*fptr)(webs_t wp, char *value, struct variable * v);
 
 	snprintf(service, sizeof(service), "%s", name);
-	dd_debug(DEBUG_HTTPD, "start validator %s\n", service);
+	dd_logdebug("httpd", "start validator %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
 	else
-		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
+		dd_logdebug("httpd", "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -206,7 +206,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	if (fptr)
 		(*fptr) (wp, value, v);
 	else
-		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
+		dd_logdebug("httpd", "function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }
@@ -251,11 +251,11 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 			(*fptr) (wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_debug(DEBUG_HTTPD, " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
 
 		} else {
 			char *err = dlerror();
-			dd_debug(DEBUG_HTTPD, " function %s not found (%s)\n", service, err ? err : "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)\n", service, err ? err : "unknown");
 		}
 		memdebug_leave_info(service);
 	}
