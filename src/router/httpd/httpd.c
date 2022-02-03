@@ -551,8 +551,6 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 {
 	time_t now;
 	char timebuf[100];
-	dd_logdebug("httpd", "send header\n");
-
 	websWrite(conn_fp, "%s %d %s\r\n", PROTOCOL, status, title);
 	if (mime_type != NULL)
 		websWrite(conn_fp, "Content-Type: %s\r\n", mime_type);
