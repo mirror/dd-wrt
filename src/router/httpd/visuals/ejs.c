@@ -1807,7 +1807,7 @@ static struct menucontext *init_menu(webs_t wp)
 
 		for (a = 0; a < ifcount; a++) {
 			m->menu[MENU_WIRELESS][a * 2 + 7] = advmenu[a];
-			m->menu[MENU_WIRELESS][a * 2 + 8] = wdsenu[a];
+			m->menu[MENU_WIRELESS][a * 2 + 8] = wdsmenu[a];
 			if (ifcount == 1) {
 				m->menuname[MENU_WIRELESS][a * 2 + 8] = "wirelessAdvanced";
 				m->menuname[MENU_WIRELESS][a * 2 + 9] = "wirelessWds";
