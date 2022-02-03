@@ -487,8 +487,8 @@ static int auth_check(webs_t conn_fp)
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp, NULL)) {
-		}
+//		while (wfgets(dummy, 64, conn_fp, NULL)) {
+//		}
 		goto out;
 	}
 	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
@@ -496,8 +496,8 @@ static int auth_check(webs_t conn_fp)
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
-		while (wfgets(dummy, 64, conn_fp, NULL)) {
-		}
+//		while (wfgets(dummy, 64, conn_fp, NULL)) {
+//		}
 		goto out;
 	}
 	ret = 1;
