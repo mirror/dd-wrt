@@ -240,7 +240,7 @@ static pthread_mutex_t input_mutex;
 #define PTHREAD_MUTEX_INIT(m, v) do {} while(0)
 #define PTHREAD_MUTEX_LOCK(m) do {} while(0)
 #define PTHREAD_MUTEX_UNLOCK(m) do {} while(0)
-#define PTHREAD_MUTEX_TRYLOCK do {} while(0)
+#define PTHREAD_MUTEX_TRYLOCK(m) do {} while(0)
 #define SEM_WAIT(sem) do {} while(0)
 #define SEM_POST(sem) do {} while(0)
 #define SEM_INIT(sem, p, v) do {} while(0)
