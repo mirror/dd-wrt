@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6428 | brainslayer | 2022-02-05 02:40:24 +0700 (Sat, 05 Feb 2022) | 1 line
+
+mt76 driver from git
+------------------------------------------------------------------------
 r6427 | brainslayer | 2022-02-03 22:33:15 +0700 (Thu, 03 Feb 2022) | 1 line
 
 mac80211: upgrade passive scan to active scan on DFS channels after beacon rx
