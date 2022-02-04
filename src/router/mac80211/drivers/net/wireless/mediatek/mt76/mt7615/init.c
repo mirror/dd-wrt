@@ -558,7 +558,6 @@ void mt7615_init_device(struct mt7615_dev *dev)
 	dev->pm.stats.last_wake_event = jiffies;
 	dev->pm.stats.last_doze_event = jiffies;
 	mt7615_cap_dbdc_disable(dev);
-	dev->phy.dfs_state = -1;
 
 #ifdef CPTCFG_NL80211_TESTMODE
 	dev->mt76.test_ops = &mt7615_testmode_ops;
