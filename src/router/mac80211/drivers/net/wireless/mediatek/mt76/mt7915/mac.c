@@ -390,12 +390,12 @@ mt7915_mac_decode_he_radiotap(struct sk_buff *skb, __le32 *rxv, u32 mode)
 static int mt7915_reverse_frag0_hdr_trans(struct sk_buff *skb, u16 hdr_gap)
 {
 	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
+	struct ethhdr *eth_hdr = (struct ethhdr *)(skb->data + hdr_gap);
 	struct mt7915_sta *msta = (struct mt7915_sta *)status->wcid;
+	__le32 *rxd = (__le32 *)skb->data;
 	struct ieee80211_sta *sta;
 	struct ieee80211_vif *vif;
 	struct ieee80211_hdr hdr;
-	struct ethhdr eth_hdr;
-	__le32 *rxd = (__le32 *)skb->data;
 	__le32 qos_ctrl, ht_ctrl;
 
 	if (FIELD_GET(MT_RXD3_NORMAL_ADDR_TYPE, le32_to_cpu(rxd[3])) !=
@@ -412,7 +412,6 @@ static int mt7915_reverse_frag0_hdr_trans(struct sk_buff *skb, u16 hdr_gap)
 	vif = container_of((void *)msta->vif, struct ieee80211_vif, drv_priv);
 
 	/* store the info from RXD and ethhdr to avoid being overridden */
-	memcpy(&eth_hdr, skb->data + hdr_gap, sizeof(eth_hdr));
 	hdr.frame_control = FIELD_GET(MT_RXD6_FRAME_CONTROL, rxd[6]);
 	hdr.seq_ctrl = FIELD_GET(MT_RXD8_SEQ_CTRL, rxd[8]);
 	qos_ctrl = FIELD_GET(MT_RXD8_QOS_CTL, rxd[8]);
@@ -427,24 +426,24 @@ static int mt7915_reverse_frag0_hdr_trans(struct sk_buff *skb, u16 hdr_gap)
 		ether_addr_copy(hdr.addr3, vif->bss_conf.bssid);
 		break;
 	case IEEE80211_FCTL_FROMDS:
-		ether_addr_copy(hdr.addr3, eth_hdr.h_source);
+		ether_addr_copy(hdr.addr3, eth_hdr->h_source);
 		break;
 	case IEEE80211_FCTL_TODS:
-		ether_addr_copy(hdr.addr3, eth_hdr.h_dest);
+		ether_addr_copy(hdr.addr3, eth_hdr->h_dest);
 		break;
 	case IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS:
-		ether_addr_copy(hdr.addr3, eth_hdr.h_dest);
-		ether_addr_copy(hdr.addr4, eth_hdr.h_source);
+		ether_addr_copy(hdr.addr3, eth_hdr->h_dest);
+		ether_addr_copy(hdr.addr4, eth_hdr->h_source);
 		break;
 	default:
 		break;
 	}
 
 	skb_pull(skb, hdr_gap + sizeof(struct ethhdr) - 2);
-	if (eth_hdr.h_proto == htons(ETH_P_AARP) ||
-	    eth_hdr.h_proto == htons(ETH_P_IPX))
+	if (eth_hdr->h_proto == cpu_to_be16(ETH_P_AARP) ||
+	    eth_hdr->h_proto == cpu_to_be16(ETH_P_IPX))
 		ether_addr_copy(skb_push(skb, ETH_ALEN), bridge_tunnel_header);
-	else if (eth_hdr.h_proto >= htons(ETH_P_802_3_MIN))
+	else if (eth_hdr->h_proto >= cpu_to_be16(ETH_P_802_3_MIN))
 		ether_addr_copy(skb_push(skb, ETH_ALEN), rfc1042_header);
 	else
 		skb_pull(skb, 2);
@@ -586,7 +585,7 @@ mt7915_mac_fill_rx(struct mt7915_dev *dev, struct sk_buff *skb)
 	u16 seq_ctrl = 0;
 	u8 qos_ctl = 0;
 	__le16 fc = 0;
-	int i, idx;
+	int idx;
 
 	memset(status, 0, sizeof(*status));
 
@@ -746,15 +745,6 @@ mt7915_mac_fill_rx(struct mt7915_dev *dev, struct sk_buff *skb)
 		status->chain_signal[1] = to_rssi(MT_PRXV_RCPI1, v1);
 		status->chain_signal[2] = to_rssi(MT_PRXV_RCPI2, v1);
 		status->chain_signal[3] = to_rssi(MT_PRXV_RCPI3, v1);
-		status->signal = status->chain_signal[0];
-
-		for (i = 1; i < hweight8(mphy->antenna_mask); i++) {
-			if (!(status->chains & BIT(i)))
-				continue;
-
-			status->signal = max(status->signal,
-					     status->chain_signal[i]);
-		}
 
 		/* RXD Group 5 - C-RXV */
 		if (rxd1 & MT_RXD1_NORMAL_GROUP_5) {
@@ -2437,40 +2427,47 @@ mt7915_dfs_init_radar_specs(struct mt7915_phy *phy)
 
 int mt7915_dfs_init_radar_detector(struct mt7915_phy *phy)
 {
-	struct cfg80211_chan_def *chandef = &phy->mt76->chandef;
 	struct mt7915_dev *dev = phy->dev;
 	bool ext_phy = phy != &dev->phy;
+	enum mt76_dfs_state dfs_state, prev_state;
 	int err;
 
-	if (dev->mt76.region == NL80211_DFS_UNSET) {
-		phy->dfs_state = -1;
-		if (phy->rdd_state)
-			goto stop;
+	prev_state = phy->mt76->dfs_state;
+	dfs_state = mt76_phy_dfs_state(phy->mt76);
 
-		return 0;
-	}
-
-	if (test_bit(MT76_SCANNING, &phy->mt76->state))
+	if (prev_state == dfs_state)
 		return 0;
 
-	if (phy->dfs_state == chandef->chan->dfs_state)
-		return 0;
+	if (prev_state == MT_DFS_STATE_UNKNOWN)
+		mt7915_dfs_stop_radar_detector(phy);
 
-	err = mt7915_dfs_init_radar_specs(phy);
-	if (err < 0) {
-		phy->dfs_state = -1;
+	if (dfs_state == MT_DFS_STATE_DISABLED)
 		goto stop;
+
+	if (prev_state <= MT_DFS_STATE_DISABLED) {
+		err = mt7915_dfs_init_radar_specs(phy);
+		if (err < 0)
+			return err;
+
+		err = mt7915_dfs_start_radar_detector(phy);
+		if (err < 0)
+			return err;
+
+		phy->mt76->dfs_state = MT_DFS_STATE_CAC;
 	}
 
-	phy->dfs_state = chandef->chan->dfs_state;
+	if (dfs_state == MT_DFS_STATE_CAC)
+		return 0;
 
-	if (chandef->chan->flags & IEEE80211_CHAN_RADAR) {
-		if (chandef->chan->dfs_state != NL80211_DFS_AVAILABLE)
-			return mt7915_dfs_start_radar_detector(phy);
-
-		return mt76_connac_mcu_rdd_cmd(&dev->mt76, RDD_CAC_END,
-					       ext_phy, MT_RX_SEL0, 0);
+	err = mt76_connac_mcu_rdd_cmd(&dev->mt76, RDD_CAC_END,
+				      ext_phy, MT_RX_SEL0, 0);
+	if (err < 0) {
+		phy->mt76->dfs_state = MT_DFS_STATE_UNKNOWN;
+		return err;
 	}
+
+	phy->mt76->dfs_state = MT_DFS_STATE_ACTIVE;
+	return 0;
 
 stop:
 	err = mt76_connac_mcu_rdd_cmd(&dev->mt76, RDD_NORMAL_START, ext_phy,
@@ -2479,6 +2476,8 @@ stop:
 		return err;
 
 	mt7915_dfs_stop_radar_detector(phy);
+	phy->mt76->dfs_state = MT_DFS_STATE_DISABLED;
+
 	return 0;
 }
 
