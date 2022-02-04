@@ -1291,7 +1291,6 @@ static void *handle_request(void *arg)
 			if (!result) {
 #endif
 				send_authenticate(conn_fp);
-				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
 			}
 		}
@@ -1302,10 +1301,8 @@ static void *handle_request(void *arg)
 
 		if (handler->input) {
 			if (handler->input(file, conn_fp, content_length, boundary)) {
-				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
 			}
-			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 		}
 #if 0				// defined(linux)
 		if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -1317,7 +1314,6 @@ static void *handle_request(void *arg)
 #endif
 		if (check_connect_type(conn_fp) < 0) {
 			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.no_wifi_access"));
-			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
 		if (handler->send_headers) {
@@ -1331,13 +1327,7 @@ static void *handle_request(void *arg)
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
 			file_error = handler->output(method_type, handler, file, conn_fp);
-			if (strstr(file, "MyPage")) {
-				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
-				PTHREAD_MUTEX_UNLOCK(&input_mutex);
-			}
 			if (!file_error) {
-				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
-				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
 			}
 		}
@@ -1346,6 +1336,8 @@ static void *handle_request(void *arg)
 	send_error(conn_fp, noheader, 404, live_translate(conn_fp, "share.not_found"), NULL, live_translate(conn_fp, "share.file_not_found"), file);
 
       out:;
+	PTHREAD_MUTEX_TRYLOCK(&input_mutex);
+	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 	setnaggle(conn_fp, 0);
 
 	debug_free(line);
