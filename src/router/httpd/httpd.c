@@ -1291,6 +1291,7 @@ static void *handle_request(void *arg)
 			if (!result) {
 #endif
 				send_authenticate(conn_fp);
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
 			}
 		}
@@ -1316,6 +1317,7 @@ static void *handle_request(void *arg)
 #endif
 		if (check_connect_type(conn_fp) < 0) {
 			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.no_wifi_access"));
+			PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			goto out;
 		}
 		if (handler->send_headers) {
@@ -1333,8 +1335,11 @@ static void *handle_request(void *arg)
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
-			if (!file_error)
+			if (!file_error) {
+				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 				goto out;
+			}
 		}
 		break;
 	}
