@@ -253,6 +253,14 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #define foreach(word, foreachwordlist, next) \
 	foreach_delim(word, foreachwordlist, next, " ")
 
+#define foreach_delimln(word, len, foreachwordlist, next, delim) \
+	for (next = foreach_first(foreachwordlist, word, delim, len); \
+	     word[0]; \
+	     next = foreach_last(next, word, delim, len))
+
+#define foreachln(word, len, foreachwordlist, next) \
+	foreach_delim(word, foreachwordlist, next, " ")
+
 /*
  * Return NUL instead of NULL if undefined 
  */
