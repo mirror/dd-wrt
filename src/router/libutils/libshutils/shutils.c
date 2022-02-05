@@ -1163,8 +1163,6 @@ char *chomp(char *s)
 
 char *foreach_first(char *foreachwordlist, char *word, char *delimiters, size_t len)
 {
-	if (len == sizeof(long))
-	    dd_logerror("internal", "foreach is used in a improper way, word must have a defined size");
 	char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
 	strcpyto(word, next, delimiters, len);
 	next = strpbrk(next, delimiters);
@@ -1173,8 +1171,6 @@ char *foreach_first(char *foreachwordlist, char *word, char *delimiters, size_t 
 
 char *foreach_last(char *next, char *word, char *delimiters, size_t len)
 {
-	if (len == sizeof(long))
-	    dd_logerror("internal", "foreach is used in a improper way, word must have a defined size");
 	next = next ? &next[strspn(next, delimiters)] : "";
 	strcpyto(word, next, delimiters, len);
 	next = strpbrk(next, delimiters);
