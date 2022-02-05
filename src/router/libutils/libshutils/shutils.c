@@ -1145,7 +1145,7 @@ static void strcpyto(char *dest, char *src, char *delim, size_t max)
 	char *to = strpbrk(src, delim);
 	if (to)
 		len = to - src;
-	if (max<len+1) {
+	if (max != sizeof(long) && max<len+1) {
 	    dd_logerror("internal", "foreach is used in a improper way, target word is too small");
 	    len = max-1;
 	}
