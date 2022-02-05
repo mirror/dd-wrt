@@ -71,10 +71,26 @@ function changevpnclprot(F, value)
 {
 	if (value == "tap" ) {
 		show_layer_ext(F, "idnat", true);
+		show_layer_ext(F, "idsec", false);
 	} else {
 		show_layer_ext(F, "idnat", false);
+		show_layer_ext(F, "idsec", true);
 	}
 }
+
+function changesrvtuntap(F, value)
+{
+	if (value == "tap" ) {
+		show_layer_ext(F, "idrouter", false);
+		show_layer_ext(F, "idrouter2", false);
+		show_layer_ext(F, "idbridge", true);
+	} else {
+		show_layer_ext(F, "idrouter", true);
+		show_layer_ext(F, "idrouter2", true);
+		show_layer_ext(F, "idbridge", false);
+	}
+}
+
 
 function changevpnpbr(F, value)
 {
@@ -97,6 +113,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvem("openvpn_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter2', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvem("openvpn_proxy", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvem("openvpn_switch", "1", "1", "0"); %> == 1);
@@ -107,6 +124,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpncl_upauth, 'idupauth', <% nvem("openvpncl_upauth", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_tuntap", "tap", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_tuntap, 'idsec', <% nvem("openvpncl_tuntap", "tun", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_wdog, 'idwdog', <% nvem("openvpncl_wdog", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_dh_btn, 'iddhpem', <% nvem("openvpn_dh_btn", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
 		// if nvram match with arg 1 then arg 2 otherwise arg 3

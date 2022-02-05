@@ -362,9 +362,15 @@ void create_openvpnserverrules(FILE * fp)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
-	if (nvram_matchi("openvpn_allowcnwan", 1)) {
-		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
-		fprintf(fp, "iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+	if (nvram_match("openvpn_tuntap", "tun")) {
+		if (nvram_matchi("openvpn_allowcnwan", 1)) {
+			fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+			fprintf(fp, "iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+		}
+		if (nvram_matchi("openvpn_allowcnlan", 1)) {
+			fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+			fprintf(fp, "iptables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+		}
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
 	fprintf(fp, "/tmp/openvpnsrv_fw.sh\n");
@@ -607,6 +613,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_matchi("openvpn_allowcnwan", 1))
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+	if (nvram_matchi("openvpn_allowcnlan", 1))
+		fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
                         && nvram_matchi("openvpn_proxy",0))
@@ -790,8 +798,9 @@ void start_openvpn(void)
 		fprintf(fp, "auth-user-pass %s\n", "/tmp/openvpncl/credentials");
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"), nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_matchi("openvpncl_multirem", 1)) {
+		fprintf(fp, "server-poll-timeout 20\n");
 		if (nvram_matchi("openvpncl_randomsrv", 1))
-			fprintf(fp, "remote random\n");
+			fprintf(fp, "remote-random\n");
 		int i;
 		char tempip[32] = { 0 };
 		char tempport[32] = { 0 };
@@ -890,6 +899,7 @@ void start_openvpn(void)
 	}
 	create_openvpnrules(fp);
 	fclose(fp);
+	//route-pre-down script
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -965,6 +975,10 @@ void start_openvpn(void)
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 	run_openvpn("openvpn", "openvpncl");
+	//start openvpn-watchdog with control script to kill running
+	if (nvram_matchi("openvpncl_wdog", 1)) {
+		eval("/usr/bin/controlovpnwdog.sh", "1");
+	}
 	return;
 }
 
@@ -991,7 +1005,9 @@ void stop_openvpn(void)
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
 		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
-		dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", get_wan_face());
+		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", get_wan_face());
+		// to kill running watchdog
+		eval("/usr/bin/controlovpnwdog.sh", "0");
 	}
 }
 
@@ -1030,7 +1046,9 @@ void stop_openvpn_wandone(void)
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
 		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
-		dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", get_wan_face());
+		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", get_wan_face());
+		// to kill running watchdog
+		eval("/usr/bin/controlovpnwdog.sh", "0");
 	}
 }
 #endif
