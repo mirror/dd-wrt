@@ -470,7 +470,7 @@ static void add_dnslist_internal(struct dns_lists *dns_list, char *dns, int cust
 
 static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
-	char *next, word[32];
+	char *next, word[128];
 	if (!dns)
 		return;
 	foreach(word, dns, next) {
