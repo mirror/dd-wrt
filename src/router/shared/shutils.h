@@ -226,9 +226,9 @@ char *chomp(char *s);
 #define cprintf(fmt, args...)
 #endif
 
-char *foreach_first(char *foreachwordlist, char *word, char *delim);
+char *foreach_first(char *foreachwordlist, char *word, char *delim, size_t len);
 
-char *foreach_last(char *next, char *word, char *delim);
+char *foreach_last(char *next, char *word, char *delim, size_t len);
 
 char *getentrybyidx(char *buf, char *list, int idx);
 char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters);
@@ -246,9 +246,9 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
  */
 
 #define foreach_delim(word, foreachwordlist, next, delim) \
-	for (next = foreach_first(foreachwordlist, word, delim); \
+	for (next = foreach_first(foreachwordlist, word, delim, sizeof(word)); \
 	     word[0]; \
-	     next = foreach_last(next, word, delim))
+	     next = foreach_last(next, word, delim, sizeof(word)))
 
 #define foreach(word, foreachwordlist, next) \
 	foreach_delim(word, foreachwordlist, next, " ")
