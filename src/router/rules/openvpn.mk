@@ -146,6 +146,7 @@ ifeq ($(CONFIG_WOLFSSL),y)
 else
 	make -j 4 -C $(OVPN)/openssl
 endif
+
 openvpn-install:
 ifeq ($(CONFIG_WOLFSSL),y)
 	make -C $(OVPN)/wolfssl install DESTDIR=$(INSTALLDIR)/openvpn
@@ -166,11 +167,9 @@ else
 	install -D openvpn/config2/openvpn.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpn.webvpn
 endif
 	cp -f openvpn/config/*.sh $(INSTALLDIR)/openvpn/etc
-
+	install -D -m 0755 openvpn/config/userscripts/*.sh -t $(INSTALLDIR)/openvpn/usr/bin
 
 openvpn-clean:
 	-make -C $(OVPN)/wolfssl clean
 	-make -C $(OVPN)/openssl clean
-
-
 

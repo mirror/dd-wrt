@@ -3145,6 +3145,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_multirem", "0" },
 	{ "openvpncl_randomsrv", "0" },
 	{ "openvpncl_blockmulticast", "0" },
+	{ "openvpncl_wdog", "0" },
+	{ "openvpncl_wdog_pingip", "8.8.8.8" },
+	{ "openvpncl_wdog_sleept", "30" },
 	{ "openvpn_enable", "0" },
 	{ "openvpn_mit", "1" },
 	{ "openvpn_net", "0.0.0.0" },
@@ -3190,8 +3193,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_dc1", "CHACHA20-POLY1305" },
 	{ "openvpn_dc2", "AES-128-GCM" },
 	{ "openvpn_dc3", "AES-256-GCM" },
-	{ "openvpn_dh_btn", "0" },
+	{ "openvpn_dh_btn", "1" },
 	{ "openvpn_allowcnwan", "0" },
+	{ "openvpn_allowcnlan", "0" },
 	{ "openvpn_blockmulticast", "0" },
 #endif
 #ifdef HAVE_KODATA

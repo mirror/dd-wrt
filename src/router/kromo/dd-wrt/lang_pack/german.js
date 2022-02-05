@@ -1658,6 +1658,7 @@ service.vpnd_cl2cl="Klient zu Klient Verbindung erlaubt";
 service.vpnd_switch="Konfiguriere als";
 service.vpnd_dupcn="Erlaube doppelte Clients";
 service.vpnd_allowcnwan="Erlaube Clients WAN zugang (internet)";
+service.vpnd_allowcnlan="Erlaube Clients voller LAN Zugriff";
 service.vpnd_proxy="DHCP-Proxy Modus";
 service.vpnd_clcon="Client Verbindungsskript";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
@@ -1703,6 +1704,8 @@ service.vpn_splitdns="Split DNS";
 service.vpn_ipnameport="Server-IP/Name : Port";
 service.vpn_multiaddress="Weitere Server";
 service.vpn_randomsrv="Wähle zufälligen Server";
+service.vpn_wdog="Watchdog";
+
 
 //help container
 hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standardgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
