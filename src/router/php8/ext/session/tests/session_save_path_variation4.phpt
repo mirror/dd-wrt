@@ -1,5 +1,7 @@
 --TEST--
 Test session_save_path() function : variation
+--EXTENSIONS--
+session
 --SKIPIF--
 <?php include('skipif.inc');?>
 --INI--
@@ -14,7 +16,7 @@ ob_start();
 
 echo "*** Testing session_save_path() : variation ***\n";
 $initdir = __DIR__;
-$sessions = ($initdir."/sessions");
+$sessions = ($initdir."/session_save_path_variation4");
 
 chdir($initdir);
 
@@ -38,7 +40,7 @@ ob_end_flush();
 --CLEAN--
 <?php
 $initdir = __DIR__;
-$sessions = ($initdir."/sessions");
+$sessions = ($initdir."/session_save_path_variation4");
 var_dump(rmdir($sessions));
 ?>
 --EXPECTF--

@@ -5,7 +5,7 @@
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
+   | https://www.php.net/license/3_01.txt                                 |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 4dd4a0459567d774c7c127e2639deac0141db4c7 $ */
+/* $Id: a713373046dceeaaea99b2436dfa8ed5d8df0db5 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -278,6 +278,6 @@ datum flatfile_nextkey(flatfile *dba) {
 /* {{{ flatfile_version */
 char *flatfile_version()
 {
-	return "1.0, $Id: 4dd4a0459567d774c7c127e2639deac0141db4c7 $";
+	return "1.0, $Id: a713373046dceeaaea99b2436dfa8ed5d8df0db5 $";
 }
 /* }}} */

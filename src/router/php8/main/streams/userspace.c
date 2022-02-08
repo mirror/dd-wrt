@@ -5,7 +5,7 @@
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
+   | https://www.php.net/license/3_01.txt                                 |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
@@ -310,7 +310,7 @@ static php_stream *user_wrapper_opener(php_stream_wrapper *wrapper, const char *
 	zval args[4];
 	int call_result;
 	php_stream *stream = NULL;
-	zend_bool old_in_user_include;
+	bool old_in_user_include;
 
 	/* Try to catch bad usage without preventing flexibility */
 	if (FG(user_stream_current_filename) != NULL && strcmp(filename, FG(user_stream_current_filename)) == 0) {
@@ -648,6 +648,7 @@ static ssize_t php_userstreamop_read(php_stream *stream, char *buf, size_t count
 	}
 
 	if (!try_convert_to_string(&retval)) {
+		zval_ptr_dtor(&retval);
 		return -1;
 	}
 
@@ -1101,7 +1102,7 @@ static int user_wrapper_unlink(php_stream_wrapper *wrapper, const char *url, int
 		ret = (Z_TYPE(zretval) == IS_TRUE);
 	} else if (call_result == FAILURE) {
 		php_error_docref(NULL, E_WARNING, "%s::" USERSTREAM_UNLINK " is not implemented!", ZSTR_VAL(uwrap->ce->name));
- 	}
+	}
 
 	/* clean up */
 	zval_ptr_dtor(&object);
@@ -1145,7 +1146,7 @@ static int user_wrapper_rename(php_stream_wrapper *wrapper, const char *url_from
 		ret = (Z_TYPE(zretval) == IS_TRUE);
 	} else if (call_result == FAILURE) {
 		php_error_docref(NULL, E_WARNING, "%s::" USERSTREAM_RENAME " is not implemented!", ZSTR_VAL(uwrap->ce->name));
- 	}
+	}
 
 	/* clean up */
 	zval_ptr_dtor(&object);
@@ -1191,7 +1192,7 @@ static int user_wrapper_mkdir(php_stream_wrapper *wrapper, const char *url, int 
 		ret = (Z_TYPE(zretval) == IS_TRUE);
 	} else if (call_result == FAILURE) {
 		php_error_docref(NULL, E_WARNING, "%s::" USERSTREAM_MKDIR " is not implemented!", ZSTR_VAL(uwrap->ce->name));
- 	}
+	}
 
 	/* clean up */
 	zval_ptr_dtor(&object);
@@ -1237,7 +1238,7 @@ static int user_wrapper_rmdir(php_stream_wrapper *wrapper, const char *url,
 		ret = (Z_TYPE(zretval) == IS_TRUE);
 	} else if (call_result == FAILURE) {
 		php_error_docref(NULL, E_WARNING, "%s::" USERSTREAM_RMDIR " is not implemented!", ZSTR_VAL(uwrap->ce->name));
- 	}
+	}
 
 	/* clean up */
 	zval_ptr_dtor(&object);
@@ -1307,7 +1308,7 @@ static int user_wrapper_metadata(php_stream_wrapper *wrapper, const char *url, i
 		ret = Z_TYPE(zretval) == IS_TRUE;
 	} else if (call_result == FAILURE) {
 		php_error_docref(NULL, E_WARNING, "%s::" USERSTREAM_METADATA " is not implemented!", ZSTR_VAL(uwrap->ce->name));
- 	}
+	}
 
 	/* clean up */
 	zval_ptr_dtor(&object);
