@@ -1,5 +1,7 @@
 --TEST--
 Test session_save_path() function : variation
+--EXTENSIONS--
+session
 --SKIPIF--
 <?php include('skipif.inc');
 if(substr(PHP_OS, 0, 3) == "WIN")
@@ -15,7 +17,7 @@ session.name=PHPSESSID
 ob_start();
 echo "*** Testing session_save_path() : variation ***\n";
 $directory = __DIR__;
-$sessions = ($directory."/sessions");
+$sessions = ($directory."/session_save_path_variation5");
 
 chdir($directory);
 ini_set('open_basedir', '.');
@@ -36,7 +38,7 @@ ob_end_flush();
 --CLEAN--
 <?php
 $directory = __DIR__;
-$sessions = ($directory."/sessions");
+$sessions = ($directory."/session_save_path_variation5");
 var_dump(rmdir($sessions));
 ?>
 --EXPECTF--
