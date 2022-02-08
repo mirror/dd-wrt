@@ -1155,7 +1155,7 @@ int getWifiInfo(char *ifname, unsigned char *macname, int field)
 		return noise;
 		break;
 	case INFO_RSSI:
-		if (!rssi) {
+		if (!macname) {
 			wl_ioctl(ifname, WLC_GET_RSSI, &rssi, sizeof(rssi));
 			return rssi;
 		} else {
