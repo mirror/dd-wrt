@@ -7,7 +7,7 @@
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
+   | https://www.php.net/license/3_01.txt                                 |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: 8a3cf76e293233efd7dfd68549c0f816008ec254 $ */
+/* $Id: ae7a3a987c0a9a6a0d4d07cc79eed0afa15e79dc $ */
 
 /* {{{ error */
 function error($message) {
@@ -140,7 +140,7 @@ function print_success() {
 
     printf('%1$sSuccess. The extension is now ready to be compiled. To do so, use the%s', PHP_EOL);
     printf('following steps:%1$s%1$s', PHP_EOL);
-    printf('cd /path/to/php-src/ext/%s%s', $options['ext'], PHP_EOL);
+    printf('cd %s%s%s', $options['dir'], $options['ext'], PHP_EOL);
     printf('phpize%s', PHP_EOL);
     printf('%sconfigure%s', $file_prefix, PHP_EOL);
     printf('%smake%2$s%2$s', $make_prefix, PHP_EOL);
@@ -261,7 +261,7 @@ function process_source_tags($file, $short_name) {
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
+   | https://www.php.net/license/3_01.txt                                 |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |

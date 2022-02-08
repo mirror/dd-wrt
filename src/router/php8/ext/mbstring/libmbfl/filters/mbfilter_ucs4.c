@@ -32,13 +32,21 @@
 
 static const char *mbfl_encoding_ucs4_aliases[] = {"ISO-10646-UCS-4", "UCS4", NULL};
 
+/* This library historically had encodings called 'byte4be' and 'byte4le'
+ * which were almost identical to UCS-4
+ * Maintain minimal support by aliasing to UCS-4 */
+static const char *mbfl_encoding_ucs4be_aliases[] = {"byte4be", NULL};
+static const char *mbfl_encoding_ucs4le_aliases[] = {"byte4le", NULL};
+
+static int mbfl_filt_conv_ucs4_wchar_flush(mbfl_convert_filter *filter);
+
 const mbfl_encoding mbfl_encoding_ucs4 = {
 	mbfl_no_encoding_ucs4,
 	"UCS-4",
 	"UCS-4",
-	(const char *(*)[])&mbfl_encoding_ucs4_aliases,
+	mbfl_encoding_ucs4_aliases,
 	NULL,
-	MBFL_ENCTYPE_WCS4BE,
+	MBFL_ENCTYPE_WCS4,
 	&vtbl_ucs4_wchar,
 	&vtbl_wchar_ucs4
 };
@@ -47,9 +55,9 @@ const mbfl_encoding mbfl_encoding_ucs4be = {
 	mbfl_no_encoding_ucs4be,
 	"UCS-4BE",
 	"UCS-4BE",
+	mbfl_encoding_ucs4be_aliases,
 	NULL,
-	NULL,
-	MBFL_ENCTYPE_WCS4BE,
+	MBFL_ENCTYPE_WCS4,
 	&vtbl_ucs4be_wchar,
 	&vtbl_wchar_ucs4be
 };
@@ -58,9 +66,9 @@ const mbfl_encoding mbfl_encoding_ucs4le = {
 	mbfl_no_encoding_ucs4le,
 	"UCS-4LE",
 	"UCS-4LE",
+	mbfl_encoding_ucs4le_aliases,
 	NULL,
-	NULL,
-	MBFL_ENCTYPE_WCS4LE,
+	MBFL_ENCTYPE_WCS4,
 	&vtbl_ucs4le_wchar,
 	&vtbl_wchar_ucs4le
 };
@@ -71,7 +79,7 @@ const struct mbfl_convert_vtbl vtbl_ucs4_wchar = {
 	mbfl_filt_conv_common_ctor,
 	NULL,
 	mbfl_filt_conv_ucs4_wchar,
-	mbfl_filt_conv_common_flush,
+	mbfl_filt_conv_ucs4_wchar_flush,
 	NULL,
 };
 
@@ -91,7 +99,7 @@ const struct mbfl_convert_vtbl vtbl_ucs4be_wchar = {
 	mbfl_filt_conv_common_ctor,
 	NULL,
 	mbfl_filt_conv_ucs4be_wchar,
-	mbfl_filt_conv_common_flush,
+	mbfl_filt_conv_ucs4_wchar_flush,
 	NULL,
 };
 
@@ -111,7 +119,7 @@ const struct mbfl_convert_vtbl vtbl_ucs4le_wchar = {
 	mbfl_filt_conv_common_ctor,
 	NULL,
 	mbfl_filt_conv_ucs4le_wchar,
-	mbfl_filt_conv_common_flush,
+	mbfl_filt_conv_ucs4_wchar_flush,
 	NULL,
 };
 
@@ -177,15 +185,14 @@ int mbfl_filt_conv_ucs4_wchar(int c, mbfl_convert_filter *filter)
 			} else {
 				filter->status = 0x100;		/* little-endian */
 			}
-			CK((*filter->output_function)(0xfeff, filter->data));
-		} else {
-			filter->status &= ~0xff;
+		} else if (n != 0xfeff) {
 			CK((*filter->output_function)(n, filter->data));
 		}
+		filter->status &= ~0xff;
 		break;
 	}
 
-	return c;
+	return 0;
 }
 
 /*
@@ -212,7 +219,7 @@ int mbfl_filt_conv_ucs4be_wchar(int c, mbfl_convert_filter *filter)
 		n = (c & 0xff) | filter->cache;
 		CK((*filter->output_function)(n, filter->data));
 	}
-	return c;
+	return 0;
 }
 
 /*
@@ -220,7 +227,7 @@ int mbfl_filt_conv_ucs4be_wchar(int c, mbfl_convert_filter *filter)
  */
 int mbfl_filt_conv_wchar_ucs4be(int c, mbfl_convert_filter *filter)
 {
-	if (c >= 0 && c < MBFL_WCSGROUP_UCS4MAX) {
+	if (c != MBFL_BAD_INPUT) {
 		CK((*filter->output_function)((c >> 24) & 0xff, filter->data));
 		CK((*filter->output_function)((c >> 16) & 0xff, filter->data));
 		CK((*filter->output_function)((c >> 8) & 0xff, filter->data));
@@ -229,7 +236,7 @@ int mbfl_filt_conv_wchar_ucs4be(int c, mbfl_convert_filter *filter)
 		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
-	return c;
+	return 0;
 }
 
 /*
@@ -256,7 +263,7 @@ int mbfl_filt_conv_ucs4le_wchar(int c, mbfl_convert_filter *filter)
 		n = ((c & 0xffu) << 24) | filter->cache;
 		CK((*filter->output_function)(n, filter->data));
 	}
-	return c;
+	return 0;
 }
 
 /*
@@ -264,7 +271,7 @@ int mbfl_filt_conv_ucs4le_wchar(int c, mbfl_convert_filter *filter)
  */
 int mbfl_filt_conv_wchar_ucs4le(int c, mbfl_convert_filter *filter)
 {
-	if (c >= 0 && c < MBFL_WCSGROUP_UCS4MAX) {
+	if (c != MBFL_BAD_INPUT) {
 		CK((*filter->output_function)(c & 0xff, filter->data));
 		CK((*filter->output_function)((c >> 8) & 0xff, filter->data));
 		CK((*filter->output_function)((c >> 16) & 0xff, filter->data));
@@ -273,5 +280,19 @@ int mbfl_filt_conv_wchar_ucs4le(int c, mbfl_convert_filter *filter)
 		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
-	return c;
+	return 0;
+}
+
+static int mbfl_filt_conv_ucs4_wchar_flush(mbfl_convert_filter *filter)
+{
+	if (filter->status & 0xF) {
+		/* Input string was truncated */
+		CK((*filter->output_function)(MBFL_BAD_INPUT, filter->data));
+	}
+
+	if (filter->flush_function) {
+		(*filter->flush_function)(filter->data);
+	}
+
+	return 0;
 }
