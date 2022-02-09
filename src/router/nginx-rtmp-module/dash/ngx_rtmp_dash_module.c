@@ -22,11 +22,14 @@ static char * ngx_rtmp_dash_merge_app_conf(ngx_conf_t *cf,
 static ngx_int_t ngx_rtmp_dash_write_init_segments(ngx_rtmp_session_t *s);
 static ngx_int_t ngx_rtmp_dash_ensure_directory(ngx_rtmp_session_t *s);
 
-
-#define NGX_RTMP_DASH_BUFSIZE           (1024*1024)
-#define NGX_RTMP_DASH_MAX_MDAT          (10*1024*1024)
+/* Big buffer for 8k (QHD) cameras */
+#ifndef NGX_RTMP_DASH_BUFSIZE
+#define NGX_RTMP_DASH_BUFSIZE           (16*1024*1024)
+#endif
+#define NGX_RTMP_DASH_MAX_MDAT          (16*1024*1024)
 #define NGX_RTMP_DASH_MAX_SAMPLES       1024
-#define NGX_RTMP_DASH_DIR_ACCESS        0744
+/* Allow access to www-data (web-server) and others too */
+#define NGX_RTMP_DASH_DIR_ACCESS        0755
 
 #define NGX_RTMP_DASH_GMT_LENGTH        sizeof("1970-09-28T12:00:00+06:00")
 

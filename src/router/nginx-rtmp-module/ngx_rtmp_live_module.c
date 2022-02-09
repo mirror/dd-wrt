@@ -1227,7 +1227,7 @@ ngx_rtmp_live_on_fi(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
 
         { NGX_RTMP_AMF_STRING,
           ngx_null_string,
-          "onFi", 0 },
+          "onFI", 0 },
 
         { NGX_RTMP_AMF_MIXED_ARRAY,
           ngx_null_string,
@@ -1254,7 +1254,7 @@ ngx_rtmp_live_on_fi(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
     if (res == NGX_OK) {
 
         ngx_log_error(NGX_LOG_DEBUG, s->connection->log, 0,
-            "live: onFi: date='%s', time='%s'",
+            "live: onFI: date='%s', time='%s'",
             v.date, v.time);
 
         out_dt_elts[0].data = v.date;
@@ -1513,7 +1513,7 @@ ngx_rtmp_live_postconfiguration(ngx_conf_t *cf)
     ch->handler = ngx_rtmp_live_on_cue_point;
 
     ch = ngx_array_push(&cmcf->amf);
-    ngx_str_set(&ch->name, "onFi");
+    ngx_str_set(&ch->name, "onFI");
     ch->handler = ngx_rtmp_live_on_fi;
 
     ch = ngx_array_push(&cmcf->amf);
