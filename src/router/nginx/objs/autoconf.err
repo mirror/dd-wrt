@@ -40,8 +40,8 @@ checking for limits.h
 checking for sys/filio.h
 
 objs/autotest.c:3:10: fatal error: sys/filio.h: No such file or directory
- #include <sys/filio.h>
-          ^~~~~~~~~~~~~
+    3 | #include <sys/filio.h>
+      |          ^~~~~~~~~~~~~
 compilation terminated.
 ----------
 
@@ -82,6 +82,10 @@ checking for EPOLLRDHUP
 
 ----------------------------------------
 checking for EPOLLEXCLUSIVE
+
+
+----------------------------------------
+checking for eventfd()
 
 
 ----------------------------------------
@@ -128,8 +132,8 @@ checking for poll()
 checking for /dev/poll
 
 objs/autotest.c:4:10: fatal error: sys/devpoll.h: No such file or directory
- #include <sys/devpoll.h>
-          ^~~~~~~~~~~~~~~
+    4 | #include <sys/devpoll.h>
+      |          ^~~~~~~~~~~~~~~
 compilation terminated.
 ----------
 
@@ -156,8 +160,8 @@ gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c
 checking for kqueue
 
 objs/autotest.c:4:10: fatal error: sys/event.h: No such file or directory
- #include <sys/event.h>
-          ^~~~~~~~~~~~~
+    4 | #include <sys/event.h>
+      |          ^~~~~~~~~~~~~
 compilation terminated.
 ----------
 
@@ -177,7 +181,7 @@ gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c
 ----------------------------------------
 checking for crypt()
 
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/ccX0hYmZ.o: in function `main':
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/cco1z6rC.o: in function `main':
 autotest.c:(.text.startup+0xf): undefined reference to `crypt'
 collect2: error: ld returned 1 exit status
 ----------
@@ -204,8 +208,8 @@ checking for F_READAHEAD
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:7:14: error: 'F_READAHEAD' undeclared (first use in this function)
-     fcntl(0, F_READAHEAD, 1);;
-              ^~~~~~~~~~~
+    7 |     fcntl(0, F_READAHEAD, 1);;
+      |              ^~~~~~~~~~~
 objs/autotest.c:7:14: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -235,8 +239,8 @@ checking for F_NOCACHE
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:7:14: error: 'F_NOCACHE' undeclared (first use in this function)
-     fcntl(0, F_NOCACHE, 1);;
-              ^~~~~~~~~
+    7 |     fcntl(0, F_NOCACHE, 1);;
+      |              ^~~~~~~~~
 objs/autotest.c:7:14: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -258,11 +262,11 @@ checking for directio()
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:8:5: warning: implicit declaration of function 'directio' [-Wimplicit-function-declaration]
-     directio(0, DIRECTIO_ON);;
-     ^~~~~~~~
+    8 |     directio(0, DIRECTIO_ON);;
+      |     ^~~~~~~~
 objs/autotest.c:8:17: error: 'DIRECTIO_ON' undeclared (first use in this function)
-     directio(0, DIRECTIO_ON);;
-                 ^~~~~~~~~~~
+    8 |     directio(0, DIRECTIO_ON);;
+      |                 ^~~~~~~~~~~
 objs/autotest.c:8:17: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -291,9 +295,9 @@ checking for statvfs()
 ----------------------------------------
 checking for dlopen()
 
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/cc72Hosd.o: in function `main':
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/ccgKgKHX.o: in function `main':
 autotest.c:(.text.startup+0xc): undefined reference to `dlopen'
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: autotest.c:(.text.startup+0x18): undefined reference to `dlsym'
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: autotest.c:(.text.startup+0x18): undefined reference to `dlsym'
 collect2: error: ld returned 1 exit status
 ----------
 
@@ -326,10 +330,9 @@ checking for sched_setaffinity()
 checking for SO_SETFIB
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:7:31: error: 'SO_SETFIB' undeclared (first use in this function); did you mean 'FD_SETSIZE'?
-     setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0);
-                               ^~~~~~~~~
-                               FD_SETSIZE
+objs/autotest.c:7:31: error: 'SO_SETFIB' undeclared (first use in this function)
+    7 |     setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0);
+      |                               ^~~~~~~~~
 objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -355,9 +358,9 @@ checking for SO_ACCEPTFILTER
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:7:31: error: 'SO_ACCEPTFILTER' undeclared (first use in this function); did you mean 'SO_LOCK_FILTER'?
-     setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0);
-                               ^~~~~~~~~~~~~~~
-                               SO_LOCK_FILTER
+    7 |     setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0);
+      |                               ^~~~~~~~~~~~~~~
+      |                               SO_LOCK_FILTER
 objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -378,10 +381,9 @@ gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c
 checking for SO_BINDANY
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:7:31: error: 'SO_BINDANY' undeclared (first use in this function); did you mean 'SO_LINGER'?
-     setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0);
-                               ^~~~~~~~~~
-                               SO_LINGER
+objs/autotest.c:7:31: error: 'SO_BINDANY' undeclared (first use in this function)
+    7 |     setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0);
+      |                               ^~~~~~~~~~
 objs/autotest.c:7:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -406,10 +408,9 @@ checking for IP_TRANSPARENT
 checking for IP_BINDANY
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:8:31: error: 'IP_BINDANY' undeclared (first use in this function); did you mean 'IP_MINTTL'?
-     setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0);
-                               ^~~~~~~~~~
-                               IP_MINTTL
+objs/autotest.c:8:31: error: 'IP_BINDANY' undeclared (first use in this function)
+    8 |     setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0);
+      |                               ^~~~~~~~~~
 objs/autotest.c:8:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -436,9 +437,9 @@ checking for IP_RECVDSTADDR
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:8:31: error: 'IP_RECVDSTADDR' undeclared (first use in this function); did you mean 'IP_ORIGDSTADDR'?
-     setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0);
-                               ^~~~~~~~~~~~~~
-                               IP_ORIGDSTADDR
+    8 |     setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0);
+      |                               ^~~~~~~~~~~~~~
+      |                               IP_ORIGDSTADDR
 objs/autotest.c:8:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -460,10 +461,9 @@ gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c
 checking for IP_SENDSRCADDR
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:8:31: error: 'IP_SENDSRCADDR' undeclared (first use in this function); did you mean 'IP_ORIGDSTADDR'?
-     setsockopt(0, IPPROTO_IP, IP_SENDSRCADDR, NULL, 0);
-                               ^~~~~~~~~~~~~~
-                               IP_ORIGDSTADDR
+objs/autotest.c:8:31: error: 'IP_SENDSRCADDR' undeclared (first use in this function)
+    8 |     setsockopt(0, IPPROTO_IP, IP_SENDSRCADDR, NULL, 0);
+      |                               ^~~~~~~~~~~~~~
 objs/autotest.c:8:31: note: each undeclared identifier is reported only once for each function it appears in
 ----------
 
@@ -507,10 +507,6 @@ checking for TCP_INFO
 
 ----------------------------------------
 checking for accept4()
-
-
-----------------------------------------
-checking for eventfd()
 
 
 ----------------------------------------
@@ -589,11 +585,10 @@ checking for AF_INET6
 checking for setproctitle()
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:7:5: warning: implicit declaration of function 'setproctitle'; did you mean 'setstate'? [-Wimplicit-function-declaration]
-     setproctitle("test");;
-     ^~~~~~~~~~~~
-     setstate
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/cc0oBW7X.o: in function `main':
+objs/autotest.c:7:5: warning: implicit declaration of function 'setproctitle' [-Wimplicit-function-declaration]
+    7 |     setproctitle("test");;
+      |     ^~~~~~~~~~~~
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/cczNsUMd.o: in function `main':
 autotest.c:(.text.startup+0xc): undefined reference to `setproctitle'
 collect2: error: ld returned 1 exit status
 ----------
@@ -627,14 +622,13 @@ checking for pwritev()
 checking for strerrordesc_np()
 
 objs/autotest.c: In function 'main':
-objs/autotest.c:7:18: warning: implicit declaration of function 'strerrordesc_np'; did you mean 'strerror_l'? [-Wimplicit-function-declaration]
-     char *p; p = strerrordesc_np(0);
-                  ^~~~~~~~~~~~~~~
-                  strerror_l
-objs/autotest.c:7:16: warning: assignment makes pointer from integer without a cast [-Wint-conversion]
-     char *p; p = strerrordesc_np(0);
-                ^
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/ccaq68Z6.o: in function `main':
+objs/autotest.c:7:18: warning: implicit declaration of function 'strerrordesc_np' [-Wimplicit-function-declaration]
+    7 |     char *p; p = strerrordesc_np(0);
+      |                  ^~~~~~~~~~~~~~~
+objs/autotest.c:7:16: warning: assignment to 'char *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+    7 |     char *p; p = strerrordesc_np(0);
+      |                ^
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/ccAN3LrZ.o: in function `main':
 autotest.c:(.text.startup+0x9): undefined reference to `strerrordesc_np'
 collect2: error: ld returned 1 exit status
 ----------
@@ -656,7 +650,7 @@ gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c
 ----------------------------------------
 checking for sys_nerr
 
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/ccS51Uj6.o: in function `main':
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/ccfwcUkS.o: in function `main':
 autotest.c:(.text.startup+0x6): warning: `sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
 135
 ----------------------------------------
@@ -690,9 +684,9 @@ checking for System V shared memory
 ----------------------------------------
 checking for POSIX semaphores
 
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: /tmp/ccZFPnyb.o: in function `main':
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: /tmp/ccHxrCRz.o: in function `main':
 autotest.c:(.text.startup+0xf): undefined reference to `sem_init'
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: autotest.c:(.text.startup+0x21): undefined reference to `sem_destroy'
+/usr/lib64/gcc/x86_64-suse-linux/11/../../../../x86_64-suse-linux/bin/ld: autotest.c:(.text.startup+0x25): undefined reference to `sem_destroy'
 collect2: error: ld returned 1 exit status
 ----------
 
@@ -736,13 +730,13 @@ checking for struct dirent.d_namlen
 
 objs/autotest.c: In function 'main':
 objs/autotest.c:8:29: error: 'struct dirent' has no member named 'd_namlen'; did you mean 'd_name'?
-     struct dirent  dir; dir.d_namlen = 0;
-                             ^~~~~~~~
-                             d_name
+    8 |     struct dirent  dir; dir.d_namlen = 0;
+      |                             ^~~~~~~~
+      |                             d_name
 objs/autotest.c:9:42: error: 'struct dirent' has no member named 'd_namlen'; did you mean 'd_name'?
-                   printf("%d", (int) dir.d_namlen);
-                                          ^~~~~~~~
-                                          d_name
+    9 |                   printf("%d", (int) dir.d_namlen);
+      |                                          ^~~~~~~~
+      |                                          d_name
 ----------
 
 #include <sys/types.h>
@@ -779,6 +773,31 @@ checking for openat(), fstatat()
 ----------------------------------------
 checking for getaddrinfo()
 
+
+----------------------------------------
+checking for PCRE2 library
+
+objs/autotest.c:5:36: fatal error: pcre2.h: No such file or directory
+    5 |                           #include <pcre2.h>
+      |                                    ^~~~~~~~~
+compilation terminated.
+----------
+
+#include <sys/types.h>
+#include <unistd.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+                          #include <pcre2.h>
+
+int main(void) {
+    pcre2_code *re;
+                          re = pcre2_compile(NULL, 0, 0, NULL, NULL, NULL);
+                          if (re == NULL) return 1;
+    return 0;
+}
+
+----------
+gcc -O2 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -o objs/autotest objs/autotest.c -lpcre2-8
+----------
 
 ----------------------------------------
 checking for PCRE library
