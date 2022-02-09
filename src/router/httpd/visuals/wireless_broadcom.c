@@ -163,7 +163,6 @@ typedef struct {
 int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int *cnt, int globalcnt)
 {
 	int rssi = 0, noise = 0;
-	FILE *fp2 = NULL;
 	char *mode;
 	char mac[30];
 	char line[80];
@@ -534,7 +533,6 @@ EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 int internal_ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt)
 {
 	int rssi = 0, i;
-	FILE *fp2 = NULL;
 	char *mode;
 	char mac[30];
 	char line[80];
@@ -578,21 +576,8 @@ int internal_ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int ins
 			}
 		}
 
-		char cmd[64];
-		sprintf(cmd, "wl -i %s rssi \"%s\"", iface, mac);
+		rssi = getRssi(iface, mac);
 
-		fp2 = popen(cmd, "r");
-		if (fp2) {
-			if (fgets(line, sizeof(line), fp2) != NULL) {
-
-				// get rssi
-				if (sscanf(line, "%d", &rssi) != 1) {
-					pclose(fp2);
-					continue;
-				}
-			}
-			pclose(fp2);
-		}
 		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
