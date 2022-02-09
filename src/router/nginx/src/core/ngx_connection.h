@@ -162,6 +162,7 @@ struct ngx_connection_s {
 
     ngx_atomic_uint_t   number;
 
+    ngx_msec_t          start_time;
     ngx_uint_t          requests;
 
     unsigned            buffered:8;
@@ -184,7 +185,7 @@ struct ngx_connection_s {
 
     unsigned            need_last_buf:1;
 
-#if (NGX_HAVE_AIO_SENDFILE || NGX_COMPAT)
+#if (NGX_HAVE_SENDFILE_NODISKIO || NGX_COMPAT)
     unsigned            busy_count:2;
 #endif
 
