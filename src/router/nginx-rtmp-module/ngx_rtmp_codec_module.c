@@ -306,7 +306,7 @@ ngx_rtmp_codec_parse_aac_header(ngx_rtmp_session_t *s, ngx_chain_t *in)
     ctx->aac_chan_conf = (ngx_uint_t) ngx_rtmp_bit_read(&br, 4);
 
     if (ctx->aac_profile == 5 || ctx->aac_profile == 29) {
-        
+
         if (ctx->aac_profile == 29) {
             ctx->aac_ps = 1;
         }
@@ -343,7 +343,7 @@ ngx_rtmp_codec_parse_aac_header(ngx_rtmp_session_t *s, ngx_chain_t *in)
            5 bits: object type
            if (object type == 31)
              6 bits + 32: object type
-             
+
        var bits: AOT Specific Config
      */
 
@@ -415,7 +415,7 @@ ngx_rtmp_codec_parse_avc_header(ngx_rtmp_session_t *s, ngx_chain_t *in)
     {
         /* chroma format idc */
         cf_idc = (ngx_uint_t) ngx_rtmp_bit_read_golomb(&br);
-        
+
         if (cf_idc == 3) {
 
             /* separate color plane */
@@ -595,6 +595,7 @@ ngx_rtmp_codec_reconstruct_meta(ngx_rtmp_session_t *s)
         double                      duration;
         double                      frame_rate;
         double                      video_data_rate;
+        double                      video_keyframe_frequency;
         double                      video_codec_id;
         double                      audio_data_rate;
         double                      audio_codec_id;
@@ -639,6 +640,10 @@ ngx_rtmp_codec_reconstruct_meta(ngx_rtmp_session_t *s)
         { NGX_RTMP_AMF_NUMBER,
           ngx_string("videodatarate"),
           &v.video_data_rate, 0 },
+
+        { NGX_RTMP_AMF_NUMBER,
+          ngx_string("videokeyframe_frequency"),
+          &v.video_keyframe_frequency, 0 },
 
         { NGX_RTMP_AMF_NUMBER,
           ngx_string("videocodecid"),
@@ -689,6 +694,7 @@ ngx_rtmp_codec_reconstruct_meta(ngx_rtmp_session_t *s)
     v.duration = ctx->duration;
     v.frame_rate = ctx->frame_rate;
     v.video_data_rate = ctx->video_data_rate;
+    v.video_keyframe_frequency = ctx->video_keyframe_frequency;
     v.video_codec_id = ctx->video_codec_id;
     v.audio_data_rate = ctx->audio_data_rate;
     v.audio_codec_id = ctx->audio_codec_id;
@@ -765,6 +771,7 @@ ngx_rtmp_codec_meta_data(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
         double                      duration;
         double                      frame_rate;
         double                      video_data_rate;
+        double                      video_keyframe_frequency;
         double                      video_codec_id_n;
         u_char                      video_codec_id_s[32];
         double                      audio_data_rate;
@@ -822,6 +829,10 @@ ngx_rtmp_codec_meta_data(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
           ngx_string("videodatarate"),
           &v.video_data_rate, 0 },
 
+        { NGX_RTMP_AMF_NUMBER,
+          ngx_string("videokeyframe_frequency"),
+          &v.video_keyframe_frequency, 0 },
+
         { NGX_RTMP_AMF_VARIANT,
           ngx_string("videocodecid"),
           in_video_codec_id, sizeof(in_video_codec_id) },
@@ -871,6 +882,7 @@ ngx_rtmp_codec_meta_data(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
     v.duration = -1;
     v.frame_rate = -1;
     v.video_data_rate = -1;
+    v.video_keyframe_frequency = -1;
     v.video_codec_id_n = -1;
     v.audio_data_rate = -1;
     v.audio_codec_id_n = -1;
@@ -895,6 +907,7 @@ ngx_rtmp_codec_meta_data(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
     if (v.video_data_rate != -1) ctx->video_data_rate = v.video_data_rate;
     if (v.video_codec_id_n != -1) ctx->video_codec_id = (ngx_uint_t) v.video_codec_id_n;
     if (v.audio_data_rate != -1) ctx->audio_data_rate = v.audio_data_rate;
+    if (v.video_keyframe_frequency != -1) ctx->video_keyframe_frequency = v.video_keyframe_frequency;
     if (v.audio_codec_id_n != -1) ctx->audio_codec_id = (v.audio_codec_id_n == 0
             ? NGX_RTMP_AUDIO_UNCOMPRESSED : (ngx_uint_t) v.audio_codec_id_n);
     if (v.profile[0] != '\0') ngx_memcpy(ctx->profile, v.profile, sizeof(v.profile));
@@ -982,7 +995,7 @@ ngx_rtmp_codec_postconfiguration(ngx_conf_t *cf)
     }
     ngx_str_set(&ch->name, "@setDataFrame");
     ch->handler = ngx_rtmp_codec_meta_data;
-    
+
     // some encoders send setDataFrame instead of @setDataFrame
     ch = ngx_array_push(&cmcf->amf);
     if (ch == NULL) {
@@ -990,7 +1003,7 @@ ngx_rtmp_codec_postconfiguration(ngx_conf_t *cf)
     }
     ngx_str_set(&ch->name, "setDataFrame");
     ch->handler = ngx_rtmp_codec_meta_data;
-    
+
     ch = ngx_array_push(&cmcf->amf);
     if (ch == NULL) {
         return NGX_ERROR;

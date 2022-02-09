@@ -165,6 +165,9 @@ ngx_rtmp_eval(void *ctx, ngx_str_t *in, ngx_rtmp_eval_t **e, ngx_str_t *out,
                     case '\\':
                         state = ESCAPE;
                         continue;
+                        /* fall through */
+                    default:
+                        break;
                 }
                 /* fall through */
 
