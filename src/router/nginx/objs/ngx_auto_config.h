@@ -36,12 +36,18 @@
 
 
 #ifndef NGX_HAVE_EPOLLEXCLUSIVE
+#include <sys/epoll.h>
+#ifdef EPOLLEXCLUSIVE
 #define NGX_HAVE_EPOLLEXCLUSIVE  1
+#endif
 #endif
 
 
 #ifndef NGX_HAVE_O_PATH
+#include <fcntl.h>
+#ifdef AT_EMPTY_PATH
 #define NGX_HAVE_O_PATH  1
+#endif
 #endif
 
 
@@ -127,8 +133,8 @@
 #define NGX_HAVE_SCHED_SETAFFINITY  1
 #endif
 
-
-#ifndef NGX_HAVE_REUSEPORT
+#include <sys/socket.h>
+#ifdef SO_REUSEPORT
 #define NGX_HAVE_REUSEPORT  1
 #endif
 
@@ -139,7 +145,10 @@
 
 
 #ifndef NGX_HAVE_IP_BIND_ADDRESS_NO_PORT
+#include <netinet/in.h>
+#ifdef IP_BIND_ADDRESS_NO_PORT
 #define NGX_HAVE_IP_BIND_ADDRESS_NO_PORT  1
+#endif
 #endif
 
 
@@ -162,8 +171,8 @@
 #define NGX_HAVE_KEEPALIVE_TUNABLE  1
 #endif
 
-
-#ifndef NGX_HAVE_TCP_FASTOPEN
+#include <netinet/tcp.h>
+#ifdef TCP_FASTOPEN
 #define NGX_HAVE_TCP_FASTOPEN  1
 #endif
 
@@ -200,11 +209,6 @@
 
 #ifndef NGX_SIG_ATOMIC_T_SIZE
 #define NGX_SIG_ATOMIC_T_SIZE  4
-#endif
-
-
-#ifndef NGX_HAVE_LITTLE_ENDIAN
-#define NGX_HAVE_LITTLE_ENDIAN  1
 #endif
 
 
@@ -337,9 +341,11 @@
 #define NGX_HAVE_SC_NPROCESSORS_ONLN  1
 #endif
 
-
 #ifndef NGX_HAVE_LEVEL1_DCACHE_LINESIZE
+#include <unistd.h>
+#ifdef _SC_LEVEL1_DCACHE_LINESIZE
 #define NGX_HAVE_LEVEL1_DCACHE_LINESIZE  1
+#endif
 #endif
 
 
@@ -500,5 +506,17 @@
 
 #ifndef NGX_GROUP
 #define NGX_GROUP  "nobody"
+#endif
+
+#ifndef NGX_THREADS
+#define NGX_THREADS  1
+#endif
+
+#ifndef NGX_HTTP_V2
+#define NGX_HTTP_V2  1
+#endif
+
+#ifndef NGX_HTTP_HEADERS
+#define NGX_HTTP_HEADERS  1
 #endif
 
