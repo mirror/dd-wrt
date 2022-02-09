@@ -586,11 +586,13 @@ ngx_rtmp_netcall_http_format_session(ngx_rtmp_session_t *s, ngx_pool_t *pool)
      * So not override them with empty values
      */
 
-    bsize = sizeof("&addr=") - 1 + addr_text->len * 3 +
+    bsize = sizeof("addr=") - 1 + addr_text->len * 3 +
             sizeof("&clientid=") - 1 + NGX_INT_T_LEN;
 
+    // Indicator of additional vars from session
+    // Event `connect` don't have them, for example
     if (s->app.len) {
-        bsize += sizeof("app=") - 1 + s->app.len * 3;
+        bsize += sizeof("&app=") - 1 + s->app.len * 3;
     }
     if (s->flashver.len) {
         bsize += sizeof("&flashver=") - 1 + s->flashver.len * 3;
@@ -613,8 +615,16 @@ ngx_rtmp_netcall_http_format_session(ngx_rtmp_session_t *s, ngx_pool_t *pool)
     cl->buf = b;
     cl->next = NULL;
 
+    b->last = ngx_cpymem(b->last, (u_char*) "addr=", sizeof("addr=") - 1);
+    b->last = (u_char*) ngx_escape_uri(b->last, addr_text->data,
+                                       addr_text->len, NGX_ESCAPE_ARGS);
+
+    b->last = ngx_cpymem(b->last, (u_char*) "&clientid=",
+                         sizeof("&clientid=") - 1);
+    b->last = ngx_sprintf(b->last, "%ui", (ngx_uint_t) s->connection->number);
+
     if (s->app.len) {
-        b->last = ngx_cpymem(b->last, (u_char*) "app=", sizeof("app=") - 1);
+        b->last = ngx_cpymem(b->last, (u_char*) "&app=", sizeof("&app=") - 1);
         b->last = (u_char*) ngx_escape_uri(b->last, s->app.data, s->app.len,
                                            NGX_ESCAPE_ARGS);
     }
@@ -642,14 +652,6 @@ ngx_rtmp_netcall_http_format_session(ngx_rtmp_session_t *s, ngx_pool_t *pool)
         b->last = (u_char*) ngx_escape_uri(b->last, s->page_url.data,
                                            s->page_url.len, NGX_ESCAPE_ARGS);
     }
-
-    b->last = ngx_cpymem(b->last, (u_char*) "&addr=", sizeof("&addr=") - 1);
-    b->last = (u_char*) ngx_escape_uri(b->last, addr_text->data,
-                                       addr_text->len, NGX_ESCAPE_ARGS);
-
-    b->last = ngx_cpymem(b->last, (u_char*) "&clientid=",
-                         sizeof("&clientid=") - 1);
-    b->last = ngx_sprintf(b->last, "%ui", (ngx_uint_t) s->connection->number);
 
     return cl;
 }

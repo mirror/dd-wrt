@@ -30,8 +30,12 @@ static ngx_int_t ngx_rtmp_hls_ensure_directory(ngx_rtmp_session_t *s,
        ngx_str_t *path);
 
 
-#define NGX_RTMP_HLS_BUFSIZE            (1024*1024)
-#define NGX_RTMP_HLS_DIR_ACCESS         0744
+/* Big buffer for 8k (QHD) cameras */
+#ifndef NGX_RTMP_HLS_BUFSIZE
+#define NGX_RTMP_HLS_BUFSIZE            (16*1024*1024)
+#endif
+/* Allow access to www-data (web-server) and others too */
+#define NGX_RTMP_HLS_DIR_ACCESS         0755
 
 
 typedef struct {
@@ -39,8 +43,8 @@ typedef struct {
     uint64_t                            key_id;
     ngx_str_t                          *datetime;
     double                              duration;
-    unsigned                            active:1;
-    unsigned                            discont:1; /* before */
+    u_char                              active;     /* small int, 0/1 */
+    u_char                              discont;    /* small int, 0/1 */
 } ngx_rtmp_hls_frag_t;
 
 
@@ -51,7 +55,7 @@ typedef struct {
 
 
 typedef struct {
-    unsigned                            opened:1;
+    u_char                              opened;     /* small int, 0/1 */
 
     ngx_rtmp_mpegts_file_t              file;
 
@@ -534,7 +538,9 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
     ssize_t                         n;
     ngx_rtmp_hls_app_conf_t        *hacf;
     ngx_rtmp_hls_frag_t            *f;
-    ngx_uint_t                      i, max_frag;
+    ngx_int_t                      i, start_i;
+    ngx_uint_t                      max_frag;
+    double                          fragments_length;
     ngx_str_t                       name_part, key_name_part;
     uint64_t                        prev_key_id;
     const char                     *sep, *key_sep;
@@ -559,7 +565,32 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
 
     max_frag = hacf->fraglen / 1000;
 
-    for (i = 0; i < ctx->nfrags; i++) {
+    /**
+     * Need to check fragments length sum and playlist max length
+     * Do backward search
+     */
+    start_i = 0;
+    fragments_length = 0.;
+    for (i = ctx->nfrags-1; i >= 0; i--) {
+        f = ngx_rtmp_hls_get_frag(s, i);
+        if (f->duration) {
+            fragments_length += f->duration;
+        }
+        /**
+         * Think that sum of frag length is more than playlist desired length - half minimal frag length
+         * XXX: sometimes sum of frag lengths are almost playlist length
+         *      but key-frames come at random rate...
+         */
+        if (fragments_length >= hacf->playlen/1000. - max_frag/2) {
+            start_i = i;
+            break;
+        }
+    }
+
+    ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
+                   "hls: found starting fragment=%i", start_i);
+
+    for (i = start_i; i < (ngx_int_t)ctx->nfrags; i++) {
         f = ngx_rtmp_hls_get_frag(s, i);
         if (f->duration > max_frag) {
             max_frag = (ngx_uint_t) (f->duration + .5);
@@ -606,7 +637,7 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
 
     prev_key_id = 0;
 
-    for (i = 0; i < ctx->nfrags; i++) {
+    for (i = start_i; i < (ngx_int_t)ctx->nfrags; i++) {
         f = ngx_rtmp_hls_get_frag(s, i);
         if ((i == 0 || f->discont) && f->datetime && f->datetime->len > 0) {
             p = ngx_snprintf(buffer, sizeof(buffer), "#EXT-X-PROGRAM-DATE-TIME:");
@@ -648,7 +679,7 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
         ngx_log_debug5(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
                        "hls: fragment frag=%uL, n=%ui/%ui, duration=%.3f, "
                        "discont=%i",
-                       ctx->frag, i + 1, ctx->nfrags, f->duration, f->discont);
+                       ctx->frag, i + 1, ctx->nfrags, f->duration, (ngx_int_t)f->discont);
 
         n = ngx_write_fd(fd, buffer, p - buffer);
         if (n < 0) {
@@ -914,12 +945,13 @@ ngx_rtmp_hls_get_fragment_datetime(ngx_rtmp_session_t *s, uint64_t ts)
         msec += (ts / 90);
         ngx_gmtime(msec / 1000, &tm);
 
-        datetime->data = (u_char *) ngx_pcalloc(s->connection->pool, ngx_cached_http_log_iso8601.len * sizeof(u_char));
-        (void) ngx_sprintf(datetime->data, "%4d-%02d-%02dT%02d:%02d:%02d-00:00",
+        datetime->len = sizeof("1970-01-01T00:00:00.000-00:00") - 1;
+        datetime->data = (u_char *) ngx_pcalloc(s->connection->pool, datetime->len * sizeof(u_char));
+        (void) ngx_sprintf(datetime->data, "%4d-%02d-%02dT%02d:%02d:%02d.%03d-00:00",
                            tm.ngx_tm_year, tm.ngx_tm_mon,
                            tm.ngx_tm_mday, tm.ngx_tm_hour,
-                           tm.ngx_tm_min, tm.ngx_tm_sec);
-        datetime->len = ngx_cached_http_log_iso8601.len;
+                           tm.ngx_tm_min, tm.ngx_tm_sec,
+                           msec % 1000);
         return datetime;
 
     case NGX_RTMP_HLS_DATETIME_SYSTEM:
