@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6430 | brainslayer | 2022-02-10 20:20:49 +0700 (Thu, 10 Feb 2022) | 1 line
+
+add missing field
+------------------------------------------------------------------------
 r6429 | brainslayer | 2022-02-10 20:08:11 +0700 (Thu, 10 Feb 2022) | 1 line
 
 check for null pointer. on wrt32x/wrt1900 local is null here under some conditions
