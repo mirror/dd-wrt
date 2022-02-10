@@ -69,6 +69,10 @@ void start_smartdns(void)
 	fprintf(fp, "log-num 1\n");
 	fprintf(fp, "log-level error\n");
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
+#ifdef HAVE_TOR
+	if (nvram_match("tor_enable","1"))
+		fprintf(fp, "server %s:5353\n", nvram_safe_get("lan_ipaddr"));
+#endif
 	struct dns_lists *dns_list = NULL;
 	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "server 127.0.0.1:7053\n");

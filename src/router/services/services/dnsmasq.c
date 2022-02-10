@@ -726,6 +726,11 @@ void start_dnsmasq(void)
 		fprintf(fp, "no-resolv\n");
 	}
 #endif
+#ifdef HAVE_TOR
+	if (nvram_match("tor_enable","1") && !nvram_matchi("smartdns", 1))
+		fprintf(fp, "server=%s#5353\n", nvram_safe_get("lan_ipaddr"));
+#endif
+
 	/*
 	 * Domain 
 	 */
