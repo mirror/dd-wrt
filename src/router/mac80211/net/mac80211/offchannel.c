@@ -768,10 +768,10 @@ void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
 	int extraie = 0;
 
-	if (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
+	if (sdata && ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
 		extraie = sizeof(struct ieee80211_brcm_ie) + sizeof(struct ieee80211_mtik_ie);
 	}
-	if (extraie) {
+	if (sdata && extraie) {
 		u8 *oldbuf = params->buf;
 		params->buf = kmalloc(params->len + extraie, GFP_KERNEL);
 		memcpy(params->buf, oldbuf, params->len);
@@ -784,7 +784,7 @@ void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev 
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie) {
 
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
-	if (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
+	if (sdata && ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
 		kfree(params->buf);
 	}
 }
