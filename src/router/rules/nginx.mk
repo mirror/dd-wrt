@@ -37,9 +37,7 @@ nginx-configure:
 	cp nginx/Makefile.use nginx/objs/Makefile
 
 nginx-clean:
-	rm -rf nginx/objs/addon 
-	rm -rf nginx/objs/src
-	rm -f nginx/objs/ngx_modules.o
+	find $(TOP)/nginx/objs -name *.o -delete
 #	$(MAKE) -C nginx clean 
 
 nginx: openssl
