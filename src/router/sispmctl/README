@@ -111,10 +111,11 @@ dXNlcjpwYXNzd29yZA==. You can use the `base64` command for encoding. Enter
 CRTL+D twice after entering user:password.
 
     mkdir /etc/sispmctl
-    # enter the base64 encoded user and password in the editor
-    nano /etc/sispmctl/password
+    base64 > /etc/sispmctl/password
     chown sispmctl:sispmctl /etc/sispmctl/password
     chmod 400 /etc/sispmctl/password
+
+Or just use the bash script examples/passwordsetup.sh.
 
 There are multiple skins between you might select:
 
