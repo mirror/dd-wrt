@@ -60,11 +60,11 @@ char *get_serial(usb_dev_handle * udev)
 {
 	int reqtype = 0xa1;	//USB_DIR_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE /* request type */,
 	int req = 0x01;
-	char buffer[6] = { 0, 0, 0, 0, 0, 0 };
+	unsigned char buffer[6] = {0, 0, 0, 0, 0, 0};
 
 	if (usb_control_msg_tries(udev,	/* handle */
 				  reqtype, req, (0x03 << 8) | 1, 0,	/* index  */
-				  buffer,	/* bytes  */
+                        	  (char *)buffer,     /* bytes  */
 				  5,	/* size   */
 				  5000) < 2) {
 		fprintf(stderr, "Error performing requested action\n" "Libusb error string: %s\nTerminating\n", usb_strerror());

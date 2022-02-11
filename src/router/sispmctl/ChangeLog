@@ -1,3 +1,6 @@
+09 Apr 2021 - 4.9
+	Correct display of serial number.
+	Fix build error with GCC 4.8.
 12 Aug 2020 - 4.8
 	Sleep two seconds upon wrong webserver password.
 	Improve parameter checks.
