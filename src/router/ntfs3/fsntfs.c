@@ -1538,7 +1538,7 @@ new_bio:
 	}
 out:
 	if (!err)
-		err = submit_bio_wait(bio);
+		err = compat_submit_bio_wait(bio);
 	bio_put(bio);
 
 	blk_finish_plug(&plug);
