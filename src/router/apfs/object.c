@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Checksum routines for an APFS object
  */
@@ -19,9 +19,10 @@ static u64 apfs_fletcher64(void *addr, size_t len)
 	u64 sum1 = 0;
 	u64 sum2 = 0;
 	u64 c1, c2;
-	int i;
+	int i, count_32;
 
-	for (i = 0; i < len/sizeof(u32); i++) {
+	count_32 = len >> 2;
+	for (i = 0; i < count_32; i++) {
 		sum1 += le32_to_cpu(buff[i]);
 		sum2 += sum1;
 	}
@@ -338,7 +339,7 @@ struct buffer_head *apfs_read_object_block(struct super_block *sb, u64 bno,
 	err = apfs_spaceman_allocate_block(sb, &new_bno, true /* backwards */);
 	if (err)
 		goto fail;
-	new_bh = apfs_sb_bread(sb, new_bno);
+	new_bh = apfs_getblk(sb, new_bno);
 	if (!new_bh) {
 		err = -EIO;
 		goto fail;

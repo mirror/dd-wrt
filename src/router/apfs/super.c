@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2018 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  */
@@ -536,7 +536,7 @@ static void apfs_put_super(struct super_block *sb)
 		set_buffer_csum(vsb_bh);
 
 		/* Guarantee commit */
-		sbi->s_nxi->nx_transaction.force_commit = true;
+		sbi->s_nxi->nx_transaction.t_state |= APFS_NX_TRANS_FORCE_COMMIT;
 		if (apfs_transaction_commit(sb)) {
 			apfs_transaction_abort(sb);
 			goto fail;
@@ -568,17 +568,20 @@ static struct kmem_cache *apfs_inode_cachep;
 static struct inode *apfs_alloc_inode(struct super_block *sb)
 {
 	struct apfs_inode_info *ai;
+	struct apfs_dstream_info *dstream;
 
 	ai = kmem_cache_alloc(apfs_inode_cachep, GFP_KERNEL);
 	if (!ai)
 		return NULL;
+	dstream = &ai->i_dstream;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0) /* iversion came in 4.16 */
 	inode_set_iversion(&ai->vfs_inode, 1);
 #else
 	ai->vfs_inode.i_version = 1;
 #endif
-	ai->i_cached_extent.len = 0;
-	ai->i_extent_dirty = false;
+	dstream->ds_sb = sb;
+	dstream->ds_cached_ext.len = 0;
+	dstream->ds_ext_dirty = false;
 	ai->i_nchildren = 0;
 	INIT_LIST_HEAD(&ai->i_list);
 	return &ai->vfs_inode;
@@ -599,8 +602,9 @@ static void apfs_destroy_inode(struct inode *inode)
 static void init_once(void *p)
 {
 	struct apfs_inode_info *ai = (struct apfs_inode_info *)p;
+	struct apfs_dstream_info *dstream = &ai->i_dstream;
 
-	spin_lock_init(&ai->i_extent_lock);
+	spin_lock_init(&dstream->ds_ext_lock);
 	inode_init_once(&ai->vfs_inode);
 }
 
@@ -619,6 +623,7 @@ static int __init init_inodecache(void)
 static int apfs_write_inode(struct inode *inode, struct writeback_control *wbc)
 {
 	struct super_block *sb = inode->i_sb;
+	struct apfs_nxsb_info *nxi = APFS_SB(sb)->s_nxi;
 	struct apfs_max_ops maxops;
 	int err;
 
@@ -631,6 +636,8 @@ static int apfs_write_inode(struct inode *inode, struct writeback_control *wbc)
 	err = apfs_update_inode(inode, NULL /* new_name */);
 	if (err)
 		goto fail;
+	/* Don't commit yet, or the inode will get flushed again and lock up */
+	nxi->nx_transaction.t_state |= APFS_NX_TRANS_DEFER_COMMIT;
 	err = apfs_transaction_commit(sb);
 	if (err)
 		goto fail;
@@ -797,11 +804,33 @@ int apfs_sync_fs(struct super_block *sb, int wait)
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
-	APFS_SB(sb)->s_nxi->nx_transaction.force_commit = true;
+	APFS_SB(sb)->s_nxi->nx_transaction.t_state |= APFS_NX_TRANS_FORCE_COMMIT;
 	err = apfs_transaction_commit(sb);
 	if (err)
 		apfs_transaction_abort(sb);
 	return err;
+}
+
+/* Only supports read-only remounts, everything else is silently ignored */
+static int apfs_remount(struct super_block *sb, int *flags, char *data)
+{
+	int err = 0;
+
+	err = sync_filesystem(sb);
+	if (err)
+		return err;
+
+	/* TODO: race? Could a new transaction have started already? */
+	if (*flags & SB_RDONLY)
+		sb->s_flags |= SB_RDONLY;
+
+	/*
+	 * TODO: readwrite remounts seem simple enough, but I worry about
+	 * remounting aborted transactions. I would probably also need a
+	 * dry-run version of parse_options().
+	 */
+	apfs_notice(sb, "all remounts can do is turn a volume read-only");
+	return 0;
 }
 
 static const struct super_operations apfs_sops = {
@@ -812,6 +841,7 @@ static const struct super_operations apfs_sops = {
 	.put_super	= apfs_put_super,
 	.sync_fs	= apfs_sync_fs,
 	.statfs		= apfs_statfs,
+	.remount_fs	= apfs_remount,
 	.show_options	= apfs_show_options,
 };
 
@@ -1025,6 +1055,54 @@ static int apfs_check_features(struct super_block *sb)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+
+/**
+ * apfs_setup_bdi - Set up the bdi for the superblock
+ * @sb: superblock structure
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+static int apfs_setup_bdi(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct backing_dev_info *bdi_dev = NULL, *bdi_sb = NULL;
+	int err;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
+	bdi_dev = nxi->nx_bdev->bd_bdi;
+#else
+	bdi_dev = nxi->nx_bdev->bd_disk->bdi;
+#endif
+
+	err = super_setup_bdi(sb);
+	if (err)
+		return err;
+	bdi_sb = sb->s_bdi;
+
+	bdi_sb->ra_pages = bdi_dev->ra_pages;
+	bdi_sb->io_pages = bdi_dev->io_pages;
+
+	bdi_sb->capabilities = bdi_dev->capabilities;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+	bdi_sb->capabilities &= ~BDI_CAP_WRITEBACK;
+#else
+	bdi_sb->capabilities |= BDI_CAP_NO_WRITEBACK | BDI_CAP_NO_ACCT_DIRTY;
+#endif
+
+	return 0;
+}
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0) */
+
+/* This is needed for readahead, so old kernels will be slower */
+static int apfs_setup_bdi(struct super_block *sb)
+{
+	return 0;
+}
+
+#endif
+
 static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
@@ -1033,6 +1111,10 @@ static int apfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	ASSERT(sbi);
 	lockdep_assert_held(&nxs_mutex);
+
+	err = apfs_setup_bdi(sb);
+	if (err)
+		return err;
 
 	sbi->s_uid = INVALID_UID;
 	sbi->s_gid = INVALID_GID;

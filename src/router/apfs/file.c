@@ -1,22 +1,24 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2018 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  */
 
 #include "apfs.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) /* SB_RDONLY came in 4.14 */
-static vma_fault_t apfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+typedef int vm_fault_t;
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+static vm_fault_t apfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
-	struct page *page = vmf->page;
-	struct inode *inode = file_inode(vma->vm_file);
 #else
 static vma_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
-	struct page *page = vmf->page;
-	struct inode *inode = file_inode(vmf->vma->vm_file);
 #endif
+	struct page *page = vmf->page;
+	struct inode *inode = file_inode(vma->vm_file);
 	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh, *head;
 	vma_fault_t ret = VM_FAULT_LOCKED;
@@ -73,6 +75,9 @@ static vma_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 	if (err)
 		goto out_abort;
 	set_page_dirty(page);
+
+	/* An immediate commit would leave the page unlocked */
+	APFS_SB(sb)->s_nxi->nx_transaction.t_state |= APFS_NX_TRANS_DEFER_COMMIT;
 
 	err = apfs_transaction_commit(sb);
 	if (err)
@@ -134,4 +139,8 @@ const struct inode_operations apfs_file_inode_operations = {
 	.listxattr	= apfs_listxattr,
 	.setattr	= apfs_setattr,
 	.update_time	= apfs_update_time,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
+	.fileattr_get	= apfs_fileattr_get,
+	.fileattr_set	= apfs_fileattr_set,
+#endif
 };
