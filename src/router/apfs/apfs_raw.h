@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2019 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  *
@@ -263,6 +263,14 @@ struct extref_record {
 #define APFS_FILE_EXTENT_FLAG_SHIFT	56
 
 /*
+ * Put a bound on maximum file size so that a growing truncation will always
+ * produce a single hole extent, even if 64k block sizes were in use. Larger
+ * file sizes could be supported with multiple extents of course, but it takes
+ * some work and I don't see the point.
+ */
+#define APFS_MAX_FILE_SIZE		0x00ffffffffff0000ULL
+
+/*
  * Structure of a file extent record
  */
 struct apfs_file_extent_val {
@@ -340,6 +348,9 @@ struct apfs_crypto_state_val {
 						| APFS_INODE_PINNED_TO_TIER2)
 
 /* BSD flags */
+#define APFS_INOBSD_NODUMP			0x00000001
+#define APFS_INOBSD_IMMUTABLE			0x00000002
+#define APFS_INOBSD_APPEND			0x00000004
 #define APFS_INOBSD_COMPRESSED			0x00000020
 
 /*

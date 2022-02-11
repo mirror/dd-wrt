@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2019 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  */
@@ -8,8 +8,8 @@
 #include "apfs.h"
 
 #define TRANSACTION_MAIN_QUEUE_MAX	4096
-#define TRANSACTION_BUFFERS_MAX		1024
-#define TRANSACTION_STARTS_MAX		1024
+#define TRANSACTION_BUFFERS_MAX		65536
+#define TRANSACTION_STARTS_MAX		65536
 
 /**
  * apfs_cpoint_init_area - Initialize the new blocks of a checkpoint area
@@ -37,7 +37,7 @@ static int apfs_cpoint_init_area(struct super_block *sb, u64 base, u32 blks,
 		u32 type;
 		int err;
 
-		new_bh = apfs_sb_bread(sb, base + new_index);
+		new_bh = apfs_getblk(sb, base + new_index);
 		old_bh = apfs_sb_bread(sb, base + old_index);
 		if (!new_bh || !old_bh) {
 			apfs_err(sb, "unable to read the checkpoint areas");
@@ -287,7 +287,7 @@ int apfs_cpoint_data_free(struct super_block *sb, u64 bno)
 		struct buffer_head *old_bh, *new_bh;
 		int err;
 
-		new_bh = apfs_sb_bread(sb, data_base + (data_index + i) % data_blks);
+		new_bh = apfs_getblk(sb, data_base + (data_index + i) % data_blks);
 		old_bh = apfs_sb_bread(sb, data_base + (data_index + i + 1) % data_blks);
 		if (!new_bh || !old_bh) {
 			brelse(new_bh);
@@ -456,9 +456,11 @@ int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops)
 	/* Don't start transactions unless we are sure they fit in disk */
 	if (!apfs_transaction_has_room(sb, maxops)) {
 		/* Commit what we have so far to flush the queues */
-		nx_trans->force_commit = true;
+		nx_trans->t_state |= APFS_NX_TRANS_FORCE_COMMIT;
 		err = apfs_transaction_commit(sb);
-		return err ? err : -ENOSPC;
+		if (err)
+			goto fail;
+		return -ENOSPC;
 	}
 
 	if (!vol_trans->t_old_vsb) {
@@ -493,6 +495,37 @@ fail:
 }
 
 /**
+ * apfs_end_buffer_write_sync - Clean up a buffer head just synced to disk
+ * @bh:		the buffer head to clean
+ * @uptodate:	has the write succeeded?
+ */
+static void apfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+{
+	struct page *page = NULL;
+	bool must_unlock, is_metadata;
+
+	page = bh->b_page;
+	get_page(page);
+
+	is_metadata = buffer_csum(bh);
+	clear_buffer_csum(bh);
+	end_buffer_write_sync(bh, uptodate);
+	bh = NULL;
+
+	/* Future writes to mmapped areas should fault for CoW */
+	must_unlock = trylock_page(page);
+	page_mkclean(page);
+
+	/* XXX: otherwise, the page cache fills up and crashes the machine */
+	if (!is_metadata)
+		try_to_free_buffers(page);
+
+	if (must_unlock)
+		unlock_page(page);
+	put_page(page);
+}
+
+/**
  * apfs_transaction_commit_nx - Definitely commit the current transaction
  * @sb: superblock structure
  */
@@ -519,6 +552,7 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 		curr_err = apfs_update_inode(inode, NULL /* new_name */);
 		if (curr_err)
 			err = curr_err;
+		inode->i_state &= ~I_DIRTY_ALL;
 
 		/*
 		 * The same inode may get dirtied again as soon as we release
@@ -526,7 +560,7 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 		 */
 		list_del_init(&ai->i_list);
 
-		nx_trans->commiting = true;
+		nx_trans->t_state |= APFS_NX_TRANS_COMMITTING;
 		mutex_unlock(&nxs_mutex);
 		up_write(&nxi->nx_big_sem);
 
@@ -535,7 +569,7 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 
 		down_write(&nxi->nx_big_sem);
 		mutex_lock(&nxs_mutex);
-		nx_trans->commiting = false;
+		nx_trans->t_state = 0;
 
 		/* Transaction aborted by ->evict_inode(), error code is lost */
 		if (sb->s_flags & SB_RDONLY)
@@ -551,27 +585,21 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 
 		if (buffer_csum(bh))
 			apfs_obj_set_csum(sb, (void *)bh->b_data);
-		mark_buffer_dirty(bh);
-		curr_err = sync_dirty_buffer(bh);
-		if (curr_err)
-			err = curr_err;
 
-		/* Future writes to mmapped areas should fault for CoW */
-		trylock_page(bh->b_page);
-		page_mkclean(bh->b_page);
-		unlock_page(bh->b_page);
+		list_del(&bhi->list);
+		clear_buffer_trans(bh);
+		nx_trans->t_buffers_count--;
 
 		bh->b_private = NULL;
-		clear_buffer_trans(bh);
-		clear_buffer_csum(bh);
-		brelse(bh);
 		bhi->bh = NULL;
-		list_del(&bhi->list);
-		nx_trans->t_buffers_count --;
 		kfree(bhi);
+		bhi = NULL;
+
+		clear_buffer_dirty(bh);
+		lock_buffer(bh);
+		bh->b_end_io = apfs_end_buffer_write_sync;
+		submit_bh(REQ_OP_WRITE, REQ_SYNC, bh);
 	}
-	if (err)
-		return err;
 	err = apfs_checkpoint_end(sb);
 	if (err)
 		return err;
@@ -612,12 +640,17 @@ static bool apfs_transaction_need_commit(struct super_block *sb)
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
 
+	if (nx_trans->t_state & APFS_NX_TRANS_DEFER_COMMIT) {
+		nx_trans->t_state &= ~APFS_NX_TRANS_DEFER_COMMIT;
+		return false;
+	}
+
 	/* Avoid nested commits on ->evict_inode() */
-	if (nx_trans->commiting)
+	if (nx_trans->t_state & APFS_NX_TRANS_COMMITTING)
 		return false;
 
-	if (nx_trans->force_commit) {
-		nx_trans->force_commit = false;
+	if (nx_trans->t_state & APFS_NX_TRANS_FORCE_COMMIT) {
+		nx_trans->t_state = 0;
 		return true;
 	}
 
@@ -625,10 +658,24 @@ static bool apfs_transaction_need_commit(struct super_block *sb)
 		struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 		struct apfs_spaceman_free_queue *fq_ip = &sm_raw->sm_fq[APFS_SFQ_IP];
 		struct apfs_spaceman_free_queue *fq_main = &sm_raw->sm_fq[APFS_SFQ_MAIN];
+		int buffers_max = TRANSACTION_BUFFERS_MAX;
+		int starts_max = TRANSACTION_STARTS_MAX;
+		int mq_max = TRANSACTION_MAIN_QUEUE_MAX;
 
-		if(nx_trans->t_buffers_count > TRANSACTION_BUFFERS_MAX)
+		/*
+		 * Try to avoid committing halfway through a data block write,
+		 * otherwise the block will be put through copy-on-write again,
+		 * causing unnecessary fragmentation.
+		 */
+		if (nx_trans->t_state & APFS_NX_TRANS_INCOMPLETE_BLOCK) {
+			buffers_max += 50;
+			starts_max += 50;
+			mq_max += 20;
+		}
+
+		if(nx_trans->t_buffers_count > buffers_max)
 			return true;
-		if (nx_trans->t_starts_count > TRANSACTION_STARTS_MAX)
+		if (nx_trans->t_starts_count > starts_max)
 			return true;
 
 		/*
@@ -640,7 +687,7 @@ static bool apfs_transaction_need_commit(struct super_block *sb)
 			return true;
 
 		/* Don't let the main queue get too full either */
-		if(le64_to_cpu(fq_main->sfq_count) > TRANSACTION_MAIN_QUEUE_MAX)
+		if(le64_to_cpu(fq_main->sfq_count) > mq_max)
 			return true;
 	}
 
@@ -651,8 +698,9 @@ static bool apfs_transaction_need_commit(struct super_block *sb)
  * apfs_transaction_commit - Possibly commit the current transaction
  * @sb: superblock structure
  *
- * Also releases the big filesystem lock; returns 0 on success or a negative
- * error code in case of failure.
+ * On success returns 0 and releases the big filesystem lock. On failure,
+ * returns a negative error code, and the caller is responsibly for aborting
+ * the transaction.
  */
 int apfs_transaction_commit(struct super_block *sb)
 {
@@ -663,15 +711,13 @@ int apfs_transaction_commit(struct super_block *sb)
 		err = apfs_transaction_commit_nx(sb);
 		if (err) {
 			apfs_warn(sb, "transaction commit failed");
-			apfs_transaction_abort(sb);
 			return err;
 		}
 	}
 
 	mutex_unlock(&nxs_mutex);
 	up_write(&nxi->nx_big_sem);
-
-	return err;
+	return 0;
 }
 
 /**
@@ -771,7 +817,7 @@ void apfs_transaction_abort(struct super_block *sb)
 	}
 
 	ASSERT(nx_trans->t_old_msb);
-	nx_trans->force_commit = false;
+	nx_trans->t_state = 0;
 	apfs_warn(sb, "aborting transaction");
 
 	--nxi->nx_xid;

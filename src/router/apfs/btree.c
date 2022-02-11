@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2018 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  */
@@ -28,6 +28,81 @@ static int apfs_child_from_query(struct apfs_query *query, u64 *child)
 }
 
 /**
+ * apfs_omap_cache_lookup - Look for an oid in the volume's omap cache
+ * @sb:		filesystem superblock for the volume
+ * @oid:	object id to look up
+ * @bno:	on return, the block number for the oid
+ *
+ * Returns 0 on success, or -ENODATA if this mapping is not cached.
+ */
+static int apfs_omap_cache_lookup(struct super_block *sb, u64 oid, u64 *bno)
+{
+	struct apfs_omap_cache *cache = &APFS_SB(sb)->s_omap_cache;
+	struct apfs_omap_rec *record = NULL;
+	int slot;
+	int ret = -1;
+
+	/* Uninitialized cache records use OID 0, so check this just in case */
+	if (!oid)
+		return -1;
+
+	slot = oid & APFS_OMAP_CACHE_SLOT_MASK;
+	record = &cache->recs[slot];
+
+	spin_lock(&cache->lock);
+	if (record->oid == oid) {
+		*bno = record->bno;
+		ret = 0;
+	}
+	spin_unlock(&cache->lock);
+
+	return ret;
+}
+
+/**
+ * apfs_omap_cache_save - Save a record in the volume's omap cache
+ * @sb:		filesystem superblock for the volume
+ * @oid:	object id of the record
+ * @bno:	block number for the oid
+ */
+static void apfs_omap_cache_save(struct super_block *sb, u64 oid, u64 bno)
+{
+	struct apfs_omap_cache *cache = &APFS_SB(sb)->s_omap_cache;
+	struct apfs_omap_rec *record = NULL;
+	int slot;
+
+	slot = oid & APFS_OMAP_CACHE_SLOT_MASK;
+	record = &cache->recs[slot];
+
+	spin_lock(&cache->lock);
+	record->oid = oid;
+	record->bno = bno;
+	spin_unlock(&cache->lock);
+}
+
+/**
+ * apfs_omap_cache_delete - Try to delete a record from the volume's omap cache
+ * @sb:		filesystem superblock for the volume
+ * @oid:	object id of the record
+ */
+static void apfs_omap_cache_delete(struct super_block *sb, u64 oid)
+{
+	struct apfs_omap_cache *cache = &APFS_SB(sb)->s_omap_cache;
+	struct apfs_omap_rec *record = NULL;
+	int slot;
+
+	slot = oid & APFS_OMAP_CACHE_SLOT_MASK;
+	record = &cache->recs[slot];
+
+	spin_lock(&cache->lock);
+	if (record->oid == oid) {
+		record->oid = 0;
+		record->bno = 0;
+	}
+	spin_unlock(&cache->lock);
+}
+
+/**
  * apfs_omap_lookup_block - Find the block number of a b-tree node from its id
  * @sb:		filesystem superblock
  * @tbl:	Root of the object map to be searched
@@ -44,6 +119,11 @@ int apfs_omap_lookup_block(struct super_block *sb, struct apfs_node *tbl,
 	struct apfs_query *query;
 	struct apfs_key key;
 	int ret = 0;
+
+	if (!write) {
+		if (!apfs_omap_cache_lookup(sb, id, block))
+			return 0;
+	}
 
 	query = apfs_alloc_query(tbl, NULL /* parent */);
 	if (!query)
@@ -86,6 +166,8 @@ int apfs_omap_lookup_block(struct super_block *sb, struct apfs_node *tbl,
 		*block = new_bh->b_blocknr;
 		brelse(new_bh);
 	}
+
+	apfs_omap_cache_save(sb, id, *block);
 
 fail:
 	apfs_free_query(sb, query);
@@ -130,6 +212,10 @@ int apfs_create_omap_rec(struct super_block *sb, u64 oid, u64 bno)
 
 	ret = apfs_btree_insert(query, &raw_key, sizeof(raw_key),
 				&raw_val, sizeof(raw_val));
+	if (ret)
+		goto fail;
+
+	apfs_omap_cache_save(sb, oid, bno);
 
 fail:
 	apfs_free_query(sb, query);
@@ -164,6 +250,8 @@ int apfs_delete_omap_rec(struct super_block *sb, u64 oid)
 		ret = -EFSCORRUPTED;
 	if (!ret)
 		ret = apfs_btree_remove(query);
+	if (!ret)
+		apfs_omap_cache_delete(sb, oid);
 
 	apfs_free_query(sb, query);
 	return ret;
@@ -234,7 +322,8 @@ void apfs_free_query(struct super_block *sb, struct apfs_query *query)
  */
 static int apfs_query_set_before_first(struct super_block *sb, struct apfs_query **query)
 {
-	struct apfs_node *node;
+	struct apfs_node *node = NULL;
+	struct apfs_query *parent = NULL;
 	u64 child_id;
 	u32 storage = apfs_query_storage(*query);
 	int err;
@@ -258,8 +347,14 @@ static int apfs_query_set_before_first(struct super_block *sb, struct apfs_query
 		if (IS_ERR(node))
 			return PTR_ERR(node);
 
-		*query = apfs_alloc_query(node, *query);
+		parent = *query;
+		*query = apfs_alloc_query(node, parent);
 		apfs_node_put(node);
+		node = NULL;
+		if (!*query) {
+			*query = parent;
+			return -ENOMEM;
+		}
 	}
 
 	apfs_alert(sb, "b-tree is corrupted");
@@ -344,8 +439,14 @@ next_node:
 	 * Remember the parent node and index in case the search needs
 	 * to be continued later.
 	 */
-	*query = apfs_alloc_query(node, *query);
+	parent = *query;
+	*query = apfs_alloc_query(node, parent);
 	apfs_node_put(node);
+	node = NULL;
+	if (!*query) {
+		*query = parent;
+		return -ENOMEM;
+	}
 	goto next_node;
 }
 
@@ -570,7 +671,6 @@ int apfs_btree_insert(struct apfs_query *query, void *key, int key_len,
 		      void *val, int val_len)
 {
 	struct apfs_node *node = query->node;
-	struct super_block *sb = node->object.sb;
 	struct apfs_btree_node_phys *node_raw;
 	int err;
 
@@ -591,13 +691,13 @@ again:
 	err = apfs_node_insert(query, key, key_len, val, val_len);
 	if (err == -ENOSPC) {
 		if (!query->parent && !apfs_node_is_root(node)) {
-			if (node->records == 1) {
-				apfs_warn(sb, "huge inline xattr fills a node");
-				return -EOPNOTSUPP;
-			}
 			err = apfs_query_refresh(query);
 			if (err)
 				return err;
+			if (node->records == 1) {
+				/* The new record just won't fit in the node */
+				return apfs_create_single_rec_node(query, key, key_len, val, val_len);
+			}
 		}
 		err = apfs_node_split(query);
 		if (err)
@@ -754,8 +854,9 @@ again:
 	if (err == -ENOSPC) {
 		if (!query->parent && !apfs_node_is_root(node)) {
 			if (node->records == 1) {
-				apfs_warn(sb, "huge inline xattr fills a node");
-				return -EOPNOTSUPP;
+				/* Node is defragmented, ENOSPC is absurd */
+				WARN_ON(1);
+				return -EFSCORRUPTED;
 			}
 			err = apfs_query_refresh(query);
 			if (err)
