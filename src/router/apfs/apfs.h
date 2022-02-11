@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2018 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
  */
@@ -134,13 +134,18 @@ struct apfs_spaceman {
 	u32 sm_addr_offset;		/* Offset of cib addresses in @sm_raw */
 };
 
+/* Possible states for the container transaction structure */
+#define APFS_NX_TRANS_FORCE_COMMIT	1	/* Commit guaranteed */
+#define APFS_NX_TRANS_DEFER_COMMIT	2	/* Commit banned right now */
+#define APFS_NX_TRANS_COMMITTING	4	/* Commit ongoing */
+#define APFS_NX_TRANS_INCOMPLETE_BLOCK	8	/* A data block is not written in full */
+
 /*
  * Structure that keeps track of a container transaction.
  */
 struct apfs_nx_transaction {
 	struct buffer_head *t_old_msb;  /* Main superblock being replaced */
-	bool force_commit;		/* If set, commit is guaranteed */
-	bool commiting;			/* The transaction is being commited */
+	unsigned int t_state;
 
 	struct list_head t_inodes;	/* List of inodes in the transaction */
 	struct list_head t_buffers;	/* List of buffers in the transaction */
@@ -215,6 +220,26 @@ struct apfs_nxsb_info {
 extern struct mutex nxs_mutex;
 
 /*
+ * Omap record data in memory
+ */
+struct apfs_omap_rec {
+	u64 oid;
+	u64 bno;
+};
+
+#define APFS_OMAP_CACHE_SLOTS		128
+#define APFS_OMAP_CACHE_SLOT_MASK	(APFS_OMAP_CACHE_SLOTS - 1)
+
+/**
+ * Cache of omap records
+ */
+struct apfs_omap_cache {
+	struct apfs_omap_rec recs[APFS_OMAP_CACHE_SLOTS];
+	int oldest;
+	spinlock_t lock;
+};
+
+/*
  * Volume superblock data in memory
  */
 struct apfs_sb_info {
@@ -224,6 +249,7 @@ struct apfs_sb_info {
 
 	struct apfs_node *s_cat_root;	/* Root of the catalog tree */
 	struct apfs_node *s_omap_root;	/* Root of the object map tree */
+	struct apfs_omap_cache s_omap_cache;
 
 	struct apfs_object s_vobject;	/* Volume superblock object */
 
@@ -436,7 +462,7 @@ static inline void apfs_init_sibling_map_key(u64 id, struct apfs_key *key)
 }
 
 extern void apfs_init_drec_key(struct super_block *sb, u64 ino, const char *name,
-			       struct apfs_key *key, bool hashed);
+			       unsigned int name_len, struct apfs_key *key, bool hashed);
 
 /**
  * apfs_init_xattr_key - Initialize an in-memory key for a xattr query
@@ -558,23 +584,49 @@ struct apfs_phys_extent {
 };
 
 /*
+ * Data stream info in memory
+ */
+struct apfs_dstream_info {
+	struct super_block	*ds_sb;		/* Filesystem superblock */
+	u64			ds_id;		/* ID of the extent records */
+	u64			ds_size;	/* Length of the stream */
+	u64			ds_sparse_bytes;/* Hole byte count in stream */
+	struct apfs_file_extent	ds_cached_ext;	/* Latest extent record */
+	bool			ds_ext_dirty;	/* Is ds_cached_ext dirty? */
+	spinlock_t		ds_ext_lock;	/* Protects ds_cached_ext */
+};
+
+/**
+ * apfs_alloced_size - Return the alloced size for a data stream
+ * @dstream: data stream info
+ *
+ * TODO: is this always correct? Or could the extents have an unused tail?
+ */
+static inline u64 apfs_alloced_size(struct apfs_dstream_info *dstream)
+{
+	struct super_block *sb = dstream->ds_sb;
+	u64 blks = (dstream->ds_size + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
+
+	return blks << sb->s_blocksize_bits;
+}
+
+/*
  * APFS inode data in memory
  */
 struct apfs_inode_info {
 	u64			i_ino64;	 /* 32-bit-safe inode number */
 	u64			i_parent_id;	 /* ID of primary parent */
-	u64			i_extent_id;	 /* ID of the extent records */
-	struct apfs_file_extent	i_cached_extent; /* Latest extent record */
-	bool			i_extent_dirty;	 /* Is i_cached_extent dirty? */
-	spinlock_t		i_extent_lock;	 /* Protects i_cached_extent */
 	struct timespec		i_crtime;	 /* Time of creation */
 	u32			i_nchildren;	 /* Child count for directory */
 	uid_t			i_saved_uid;	 /* User ID on disk */
 	gid_t			i_saved_gid;	 /* Group ID on disk */
 	u32			i_key_class;	 /* Security class for directory */
 	u64			i_int_flags;	 /* Internal flags */
-	u64			i_sparse_bytes;	 /* Sparse byte count in file */
+	u32			i_bsd_flags;	 /* BSD flags */
 	struct list_head	i_list;		 /* List of inodes in transaction */
+
+	bool			 i_has_dstream;	 /* Is there a dstream record? */
+	struct apfs_dstream_info i_dstream;	 /* Dstream data, if any */
 
 	struct inode vfs_inode;
 };
@@ -719,15 +771,16 @@ extern int APFS_DELETE_ORPHAN_LINK_MAXOPS(void);
 /* extents.c */
 extern int apfs_extent_from_query(struct apfs_query *query,
 				  struct apfs_file_extent *extent);
-extern int __apfs_get_block(struct inode *inode, sector_t iblock,
+extern int __apfs_get_block(struct apfs_dstream_info *dstream, sector_t iblock,
 			    struct buffer_head *bh_result, int create);
 extern int apfs_get_block(struct inode *inode, sector_t iblock,
 			  struct buffer_head *bh_result, int create);
-extern int apfs_flush_extent_cache(struct inode *inode);
+extern int apfs_flush_extent_cache(struct apfs_dstream_info *dstream);
+extern int apfs_dstream_get_new_block(struct apfs_dstream_info *dstream, u64 dsblock, struct buffer_head *bh_result);
 extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
 			      struct buffer_head *bh_result, int create);
 extern int APFS_GET_NEW_BLOCK_MAXOPS(void);
-extern int apfs_truncate(struct inode *inode, loff_t new_size);
+extern int apfs_truncate(struct apfs_dstream_info *dstream, loff_t new_size);
 
 /* file.c */
 extern int apfs_fsync(struct file *file, loff_t start, loff_t end, int datasync);
@@ -769,9 +822,13 @@ extern int apfs_getattr(struct user_namespace *mnt_userns,
 extern int apfs_crypto_adj_refcnt(struct super_block *sb, u64 crypto_id, int delta);
 extern int APFS_CRYPTO_ADJ_REFCNT_MAXOPS(void);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
+extern int apfs_fileattr_get(struct dentry *dentry, struct fileattr *fa);
+extern int apfs_fileattr_set(struct user_namespace *mnt_userns, struct dentry *dentry, struct fileattr *fa);
+#endif
+
 /* key.c */
-extern int apfs_filename_cmp(struct super_block *sb,
-			     const char *name1, const char *name2);
+extern int apfs_filename_cmp(struct super_block *sb, const char *name1, unsigned int len1, const char *name2, unsigned int len2);
 extern int apfs_keycmp(struct super_block *sb,
 		       struct apfs_key *k1, struct apfs_key *k2);
 extern int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed);
@@ -798,6 +855,7 @@ extern void apfs_node_put(struct apfs_node *node);
 extern void apfs_node_free_range(struct apfs_node *node, u16 off, u16 len);
 extern int apfs_node_replace(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 extern int apfs_node_insert(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
+extern int apfs_create_single_rec_node(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 
 /* object.c */
 extern int apfs_obj_verify_csum(struct super_block *sb,
@@ -837,8 +895,6 @@ extern int ____apfs_xattr_get(struct inode *inode, const char *name, void *buffe
 			      size_t size, bool only_whole);
 extern int __apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 			    size_t size);
-extern int apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
-			  size_t size);
 extern int apfs_delete_all_xattrs(struct inode *inode);
 extern int apfs_xattr_set(struct inode *inode, const char *name, const void *value,
 			  size_t size, int flags);
@@ -896,6 +952,18 @@ static inline struct buffer_head *
 apfs_sb_bread(struct super_block *sb, sector_t block)
 {
 	return __bread_gfp(APFS_NXI(sb)->nx_bdev, block, sb->s_blocksize, __GFP_MOVABLE);
+}
+
+/* Use instead of apfs_sb_bread() for blocks that will just be overwritten */
+static inline struct buffer_head *
+apfs_getblk(struct super_block *sb, sector_t block)
+{
+	struct buffer_head *bh;
+
+	bh = __getblk_gfp(APFS_NXI(sb)->nx_bdev, block, sb->s_blocksize, __GFP_MOVABLE);
+	if (bh)
+		set_buffer_uptodate(bh);
+	return bh;
 }
 
 #endif	/* _APFS_H */
