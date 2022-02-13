@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Common finctions (used from some other mcviewer functions)
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -217,9 +217,9 @@ mcview_done (WView * view)
 
     /* Free memory used by the viewer */
     /* view->widget needs no destructor */
-    vfs_path_free (view->filename_vpath);
+    vfs_path_free (view->filename_vpath, TRUE);
     view->filename_vpath = NULL;
-    vfs_path_free (view->workdir_vpath);
+    vfs_path_free (view->workdir_vpath, TRUE);
     view->workdir_vpath = NULL;
     MC_PTR_FREE (view->command);
 
@@ -238,10 +238,9 @@ mcview_done (WView * view)
         view->converter = str_cnv_from_term;
     }
 
-    mc_search_free (view->search);
+    mcview_search_deinit (view);
     view->search = NULL;
-    MC_PTR_FREE (view->last_search_string);
-    mcview_nroff_seq_free (&view->search_nroff_seq);
+    view->last_search_string = NULL;
     mcview_hexedit_free_change_list (view);
 
     if (mc_global.mc_run_mode == MC_RUN_VIEWER && view->dir != NULL)

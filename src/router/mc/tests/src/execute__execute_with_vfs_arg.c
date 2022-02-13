@@ -1,7 +1,7 @@
 /*
    src - tests for execute_with_vfs_arg() function
 
-   Copyright (C) 2013-2020
+   Copyright (C) 2013-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -75,10 +75,10 @@ START_PARAMETRIZED_TEST (the_file_is_local, the_file_is_local_ds)
                                tmp_vpath), TRUE);
     }
     mctest_assert_int_eq (do_execute__flags__captured, EXECUTE_INTERNAL);
-    fail_unless (mc_getlocalcopy__pathname_vpath__captured == NULL,
-                 "\nFunction mc_getlocalcopy() shouldn't be called!");
+    ck_assert_msg (mc_getlocalcopy__pathname_vpath__captured == NULL,
+                   "\nFunction mc_getlocalcopy() shouldn't be called!");
 
-    vfs_path_free (filename_vpath);
+    vfs_path_free (filename_vpath, TRUE);
 }
 /* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
@@ -109,12 +109,12 @@ START_TEST (the_file_is_remote_but_empty)
     mctest_assert_int_eq (vfs_path_equal
                           (g_ptr_array_index (vfs_file_is_local__vpath__captured, 0),
                            vfs_get_raw_current_dir ()), TRUE);
-    fail_unless (g_ptr_array_index (vfs_file_is_local__vpath__captured, 1) == NULL,
-                 "\nParameter for second call to vfs_file_is_local() should be NULL!");
-    fail_unless (mc_getlocalcopy__pathname_vpath__captured == NULL,
-                 "\nFunction mc_getlocalcopy() shouldn't be called!");
+    ck_assert_msg (g_ptr_array_index (vfs_file_is_local__vpath__captured, 1) == NULL,
+                   "\nParameter for second call to vfs_file_is_local() should be NULL!");
+    ck_assert_msg (mc_getlocalcopy__pathname_vpath__captured == NULL,
+                   "\nFunction mc_getlocalcopy() shouldn't be called!");
 
-    vfs_path_free (filename_vpath);
+    vfs_path_free (filename_vpath, TRUE);
 }
 /* *INDENT-OFF* */
 END_TEST
@@ -156,7 +156,7 @@ START_TEST (the_file_is_remote_fail_to_create_local_copy)
                           _("Cannot fetch a local copy of /ftp://some.host/editme.txt"));
 
 
-    vfs_path_free (filename_vpath);
+    vfs_path_free (filename_vpath, TRUE);
 }
 /* *INDENT-OFF* */
 END_TEST
@@ -209,8 +209,8 @@ START_TEST (the_file_is_remote)
     mctest_assert_int_eq (vfs_path_equal (mc_ungetlocalcopy__local_vpath__captured, local_vpath),
                           TRUE);
 
-    vfs_path_free (filename_vpath);
-    vfs_path_free (local_vpath);
+    vfs_path_free (filename_vpath, TRUE);
+    vfs_path_free (local_vpath, TRUE);
 }
 /* *INDENT-OFF* */
 END_TEST
@@ -221,11 +221,9 @@ END_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -236,13 +234,7 @@ main (void)
     tcase_add_test (tc_core, the_file_is_remote);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "execute__execute_with_vfs_arg.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

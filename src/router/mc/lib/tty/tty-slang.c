@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Slang wrapper.
 
-   Copyright (C) 2005-2020
+   Copyright (C) 2005-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -310,7 +310,7 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
     tty_reset_prog_mode ();
     load_terminfo_keys ();
 
-    SLtt_Blink_Mode = (tty_use_256colors () || tty_use_truecolors (NULL)) ? 1 : 0;
+    SLtt_Blink_Mode = (tty_use_256colors (NULL) || tty_use_truecolors (NULL)) ? 1 : 0;
 
     tty_start_interrupt_key ();
 
@@ -618,6 +618,15 @@ void
 tty_fill_region (int y, int x, int rows, int cols, unsigned char ch)
 {
     SLsmg_fill_region (y, x, rows, cols, ch);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_colorize_area (int y, int x, int rows, int cols, int color)
+{
+    if (use_colors)
+        SLsmg_set_color_in_region (color, y, x, rows, cols);
 }
 
 /* --------------------------------------------------------------------------------------------- */

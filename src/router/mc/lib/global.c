@@ -1,7 +1,7 @@
 /*
    Global structure for some library-related variables
 
-   Copyright (C) 2009-2020
+   Copyright (C) 2009-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,8 +30,9 @@
 
 #include <config.h>
 
+#include "mc-version.h"
+
 #include "global.h"
-#include "lib/timer.h"
 
 /* *INDENT-OFF* */
 #ifdef ENABLE_SUBSHELL
@@ -48,10 +49,12 @@
 /*** global variables ****************************************************************************/
 
 /* *INDENT-OFF* */
-mc_global_t mc_global = {
+mc_global_t mc_global =
+{
+    .mc_version = MC_CURRENT_VERSION,
+
     .mc_run_mode = MC_RUN_FULL,
     .run_from_parent_mc = FALSE,
-    .timer = NULL,
     .midnight_shutdown = FALSE,
 
     .sysconfig_dir = NULL,
@@ -85,6 +88,7 @@ mc_global_t mc_global = {
     .tty =
     {
         .skin = NULL,
+        .shadows = TRUE,
         .setup_color_string = NULL,
         .term_color_string = NULL,
         .color_terminal_string = NULL,

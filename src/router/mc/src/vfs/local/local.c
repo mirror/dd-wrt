@@ -1,7 +1,7 @@
 /*
    Virtual File System: local file system.
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -87,13 +87,30 @@ static void *
 local_opendir (const vfs_path_t * vpath)
 {
     DIR **local_info;
-    DIR *dir;
+    DIR *dir = NULL;
     const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
-    dir = opendir (path_element->path);
-    if (dir == NULL)
-        return 0;
+
+    /* On Linux >= 5.1, MC sometimes shows empty directpries on mounted CIFS shares.
+     * Rereading directory restores the directory content.
+     *
+     * Reopen directory, if first readdir() returns NULL and errno == EINTR.
+     */
+    while (dir == NULL)
+    {
+        dir = opendir (path_element->path);
+        if (dir == NULL)
+            return NULL;
+
+        if (readdir (dir) == NULL && errno == EINTR)
+        {
+            closedir (dir);
+            dir = NULL;
+        }
+        else
+            rewinddir (dir);
+    }
 
     local_info = (DIR **) g_new (DIR *, 1);
     *local_info = dir;
@@ -103,10 +120,14 @@ local_opendir (const vfs_path_t * vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void *
+static struct vfs_dirent *
 local_readdir (void *data)
 {
-    return readdir (*(DIR **) data);
+    struct dirent *d;
+
+    d = readdir (*(DIR **) data);
+
+    return (d != NULL ? vfs_dirent_init (NULL, d->d_name, d->d_ino) : NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -179,7 +200,7 @@ local_utime (const vfs_path_t * vpath, mc_timesbuf_t * times)
 
     path_element = vfs_path_get_by_index (vpath, -1);
 #ifdef HAVE_UTIMENSAT
-    ret = utimensat (AT_FDCWD, path_element->path, *times, 0);
+    ret = utimensat (AT_FDCWD, path_element->path, *times, AT_SYMLINK_NOFOLLOW);
 #else
     ret = utime (path_element->path, times);
 #endif

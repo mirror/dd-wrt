@@ -1,7 +1,7 @@
 /*
    libmc - checks for initialization and deinitialization of WGroup widget
 
-   Copyright (C) 2020
+   Copyright (C) 2020-2021
    The Free Software Foundation, Inc.
 
    Written by:
@@ -30,6 +30,8 @@
 #include <check.h>
 
 #include "lib/widget.h"
+
+#include "tests/mctest.h"
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -115,15 +117,15 @@ START_TEST (test_group_init_deinit)
     widget_init (w0, 5, 5, 10, 10, widget_callback, NULL);
     group_add_widget (g, w0);
 
-    fail_unless (w0->id == 7, "last id (%d) != 7", ref);
+    ck_assert_msg (w0->id == 7, "last id (%d) != 7", ref);
 
     send_message (g, NULL, MSG_INIT, 0, NULL);
 
-    fail_unless (ref == 8, "ref (%d) != 8", ref);
+    ck_assert_msg (ref == 8, "ref (%d) != 8", ref);
 
     widget_destroy (WIDGET (g));
 
-    fail_unless (ref == 0, "ref (%d) != 0", ref);
+    ck_assert_msg (ref == 0, "ref (%d) != 0", ref);
 }
 /* *INDENT-OFF* */
 END_TEST
@@ -134,23 +136,15 @@ END_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     /* Add new tests here: *************** */
     tcase_add_test (tc_core, test_group_init_deinit);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "group_init_deinit.log");
-    srunner_run_all (sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? 0 : 1;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

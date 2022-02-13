@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Authors:
@@ -98,7 +98,7 @@ widget_default_resize (Widget * w, const WRect * r)
 static void
 widget_do_focus (Widget * w, gboolean enable)
 {
-    if (w != NULL && widget_get_state (WIDGET (w->owner), WST_FOCUSED))
+    if (w != NULL && widget_get_state (WIDGET (w->owner), WST_VISIBLE | WST_FOCUSED))
         widget_set_state (w, WST_FOCUSED, enable);
 }
 
@@ -332,23 +332,21 @@ widget_init (Widget * w, int y, int x, int lines, int cols,
     w->mouse.last_buttons_down = 0;
 
     w->options = WOP_DEFAULT;
-    w->state = WST_CONSTRUCT;
+    w->state = WST_CONSTRUCT | WST_VISIBLE;
+
+    w->make_global = widget_default_make_global;
+    w->make_local = widget_default_make_local;
+
+    w->make_global = widget_default_make_global;
+    w->make_local = widget_default_make_local;
 
     w->find = widget_default_find;
     w->find_by_type = widget_default_find_by_type;
     w->find_by_id = widget_default_find_by_id;
 
     w->set_state = widget_default_set_state;
+    w->destroy = widget_default_destroy;
     w->get_colors = widget_default_get_colors;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-widget_destroy (Widget * w)
-{
-    send_message (w, NULL, MSG_DESTROY, 0, NULL);
-    g_free (w);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -446,9 +444,7 @@ widget_set_size (Widget * w, int y, int x, int lines, int cols)
     WRect r = { y, x, lines, cols };
 
     send_message (w, NULL, MSG_RESIZE, 0, &r);
-
-    if (w->owner != NULL && widget_get_state (WIDGET (w->owner), WST_ACTIVE))
-        widget_draw (w);
+    widget_draw (w);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -478,6 +474,15 @@ widget_erase (Widget * w)
 {
     if (w != NULL)
         tty_fill_region (w->y, w->x, w->lines, w->cols, ' ');
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+widget_set_visibility (Widget * w, gboolean make_visible)
+{
+    if (widget_get_state (w, WST_VISIBLE) != make_visible)
+        widget_set_state (w, WST_VISIBLE, make_visible);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -518,7 +523,7 @@ widget_draw (Widget * w)
 {
     cb_ret_t ret = MSG_NOT_HANDLED;
 
-    if (w != NULL)
+    if (w != NULL && widget_get_state (w, WST_VISIBLE))
     {
         WGroup *g = w->owner;
 
@@ -568,9 +573,7 @@ widget_replace (Widget * old_w, Widget * new_w)
     {
         GList *l;
 
-        for (l = group_get_widget_next_of (holder);
-             !widget_get_options (WIDGET (l->data), WOP_SELECTABLE)
-             && !widget_get_state (WIDGET (l->data), WST_DISABLED);
+        for (l = group_get_widget_next_of (holder); widget_is_focusable (WIDGET (l->data));
              l = group_get_widget_next_of (l))
             ;
 
@@ -589,6 +592,15 @@ widget_replace (Widget * old_w, Widget * new_w)
         widget_select (new_w);
     else
         widget_draw (new_w);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+widget_is_focusable (const Widget * w)
+{
+    return (widget_get_options (w, WOP_SELECTABLE) && widget_get_state (w, WST_VISIBLE) &&
+            !widget_get_state (w, WST_DISABLED));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -673,6 +685,56 @@ widget_lookup_key (Widget * w, int key)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Default widget callback to convert widget coordinates from local (relative to owner) to global
+  * (relative to screen).
+  *
+  * @param w widget
+  * @delta offset for top-left corner coordinates. Used for child widgets of WGroup
+  */
+
+void
+widget_default_make_global (Widget * w, const WRect * delta)
+{
+    if (delta != NULL)
+    {
+        w->y += delta->y;
+        w->x += delta->x;
+    }
+    else if (w->owner != NULL)
+    {
+        w->y += WIDGET (w->owner)->y;
+        w->x += WIDGET (w->owner)->x;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Default widget callback to convert widget coordinates from global (relative to screen) to local
+  * (relative to owner).
+  *
+  * @param w widget
+  * @delta offset for top-left corner coordinates. Used for child widgets of WGroup
+  */
+
+void
+widget_default_make_local (Widget * w, const WRect * delta)
+{
+    if (delta != NULL)
+    {
+        w->y -= delta->y;
+        w->x -= delta->x;
+    }
+    else if (w->owner != NULL)
+    {
+        w->y -= WIDGET (w->owner)->y;
+        w->x -= WIDGET (w->owner)->x;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /**
  * Default callback function to find widget.
  *
@@ -738,6 +800,7 @@ cb_ret_t
 widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
 {
     gboolean ret = MSG_HANDLED;
+    Widget *owner = WIDGET (GROUP (w->owner));
 
     if (enable)
         w->state |= state;
@@ -757,14 +820,32 @@ widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
             w->state &= ~(WST_CONSTRUCT | WST_ACTIVE | WST_SUSPENDED);
     }
 
-    if (w->owner == NULL)
+    if (owner == NULL)
         return MSG_NOT_HANDLED;
 
     switch (state)
     {
+    case WST_VISIBLE:
+        if (widget_get_state (owner, WST_ACTIVE))
+        {
+            /* redraw owner to show/hide widget */
+            widget_draw (owner);
+
+            if (!enable)
+            {
+                /* try select another widget if current one got hidden */
+                if (w == GROUP (owner)->current->data)
+                    group_select_next_widget (GROUP (owner));
+
+                widget_update_cursor (owner);   /* FIXME: unneeded? */
+            }
+        }
+        break;
+
+
     case WST_DISABLED:
         ret = send_message (w, NULL, enable ? MSG_DISABLE : MSG_ENABLE, 0, NULL);
-        if (ret == MSG_HANDLED && widget_get_state (WIDGET (w->owner), WST_ACTIVE))
+        if (ret == MSG_HANDLED && widget_get_state (owner, WST_ACTIVE))
             ret = widget_draw (w);
         break;
 
@@ -774,11 +855,11 @@ widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
 
             msg = enable ? MSG_FOCUS : MSG_UNFOCUS;
             ret = send_message (w, NULL, msg, 0, NULL);
-            if (ret == MSG_HANDLED && widget_get_state (WIDGET (w->owner), WST_ACTIVE))
+            if (ret == MSG_HANDLED && widget_get_state (owner, WST_ACTIVE))
             {
                 widget_draw (w);
                 /* Notify owner that focus was moved from one widget to another */
-                send_message (w->owner, w, MSG_CHANGED_FOCUS, 0, NULL);
+                send_message (owner, w, MSG_CHANGED_FOCUS, 0, NULL);
             }
         }
         break;
@@ -791,6 +872,20 @@ widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+ * Default callback function to destroy widget.
+ *
+ * @param w widget
+ */
+
+void
+widget_default_destroy (Widget * w)
+{
+    send_message (w, NULL, MSG_DESTROY, 0, NULL);
+    g_free (w);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /* get mouse pointer location within widget */
 
 Gpm_Event
@@ -798,13 +893,9 @@ mouse_get_local (const Gpm_Event * global, const Widget * w)
 {
     Gpm_Event local;
 
+    memset (&local, 0, sizeof (local));
+
     local.buttons = global->buttons;
-#ifdef HAVE_LIBGPM
-    local.clicks = 0;
-    local.margin = 0;
-    local.modifiers = 0;
-    local.vc = 0;
-#endif
     local.x = global->x - w->x;
     local.y = global->y - w->y;
     local.type = global->type;

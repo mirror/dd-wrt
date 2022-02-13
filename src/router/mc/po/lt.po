@@ -14,8 +14,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
 "Last-Translator: Transifex Bot <>\n"
 "Language-Team: Lithuanian (http://www.transifex.com/mc/mc/language/lt/)\n"
 "Language: lt\n"
@@ -82,30 +82,6 @@ msgstr "Nepavyko sukurti %s aplanko"
 
 msgid "FATAL: not a directory:"
 msgstr "KLAIDA: ne aplankas:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Klaida perkeliant vartotojo nustatymus: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Jūsų anskstesni nustatymai buvo perkelti iš %s\n"
-"į Freedesktop rekomenduojamus aplankus.\n"
-"Daugiau informacijos rasite čia\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Jūsų anskstesni nustatymai buvo perkelti iš %s\n"
-"į %s\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -195,11 +171,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr ""
 
-msgid "True color not supported in this slang version."
-msgstr ""
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "Panašu, kad terminalas nepalaiko 256 spalvų režimo."
+
+msgid "True color not supported in this slang version."
+msgstr ""
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -558,18 +534,6 @@ msgstr ""
 msgid ""
 "Unexpected error in waitpid():\n"
 "%s"
-msgstr ""
-
-msgid "Warning"
-msgstr "Įspėjimas"
-
-msgid "Pipe failed"
-msgstr ""
-
-msgid "Dup failed"
-msgstr ""
-
-msgid "Error dup'ing old error pipe"
 msgstr ""
 
 #, c-format
@@ -1002,15 +966,6 @@ msgstr "Diff peržiūra: neteisingas režimas"
 msgid "Two files are needed to compare"
 msgstr "Palyginimui reikalingi du failai"
 
-msgid "Choose syntax highlighting"
-msgstr "Pasirinkti sintaksės žymėjimą"
-
-msgid "< Auto >"
-msgstr "< Auto >"
-
-msgid "< Reload Current Syntax >"
-msgstr "< Įkelti esamą sintaksę iš naujo >"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr ""
@@ -1045,6 +1000,9 @@ msgstr ""
 "Failas \"%s\" yra per didelis.\n"
 "Vis tiek atidaryti?"
 
+msgid "Warning"
+msgstr "Įspėjimas"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr ""
@@ -1052,14 +1010,6 @@ msgstr ""
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr ""
-
-#, c-format
-msgid "Searching %s"
-msgstr "Ieškoma %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
@@ -1106,9 +1056,6 @@ msgstr ""
 msgid "Save As"
 msgstr "Išsaugoti kaip"
 
-msgid "Collect completions"
-msgstr ""
-
 msgid "&Quick save"
 msgstr "&Greitas išsaugojimas"
 
@@ -1138,27 +1085,6 @@ msgstr "Perraš&yti"
 
 msgid "Cannot save file"
 msgstr "Nepavyko išsaugoti failo"
-
-msgid "Delete macro"
-msgstr "Šalinti macro"
-
-msgid "Press macro hotkey:"
-msgstr ""
-
-msgid "Macro not deleted"
-msgstr "Macro nepašalinta"
-
-msgid "Save macro"
-msgstr ""
-
-msgid "Press the macro's new hotkey:"
-msgstr ""
-
-msgid "Repeat last commands"
-msgstr ""
-
-msgid "Repeat times:"
-msgstr "Kartojimų skaičius:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1193,13 +1119,6 @@ msgstr "Kurį meniu failą norite redaguoti?"
 
 msgid "&Local"
 msgstr "&Vietinį"
-
-msgid "Replace"
-msgstr "Pakeisti"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr ""
 
 msgid "[NoName]"
 msgstr ""
@@ -1309,35 +1228,35 @@ msgstr ""
 "Teksto pakeitimai neišsaugoti faile.\n"
 "Tęsimas atšauks šiuos pakeitimus."
 
-msgid "In se&lection"
-msgstr ""
-
-msgid "&Find all"
-msgstr "&Rasti viską"
-
-msgid "Enter replacement string:"
-msgstr ""
-
-msgid "Replace with:"
-msgstr "Pakeisti:"
-
-msgid "&Replace"
-msgstr "Pa&keisti"
-
-msgid "A&ll"
-msgstr "&Visi"
-
-msgid "&Skip"
-msgstr "Pralei&sti"
-
-msgid "Confirm replace"
-msgstr "Patvirtinti pakeitimą"
-
 msgid "Cancel"
 msgstr "Atsisakyti"
 
+msgid "Collect completions"
+msgstr ""
+
 msgid "NoName"
 msgstr ""
+
+msgid "Save macro"
+msgstr ""
+
+msgid "Press the macro's new hotkey:"
+msgstr ""
+
+msgid "Delete macro"
+msgstr "Šalinti macro"
+
+msgid "Press macro hotkey:"
+msgstr ""
+
+msgid "Macro not deleted"
+msgstr "Macro nepašalinta"
+
+msgid "Repeat last commands"
+msgstr ""
+
+msgid "Repeat times:"
+msgstr "Kartojimų skaičius:"
 
 msgid "&Open file..."
 msgstr "At&verti failą..."
@@ -1627,6 +1546,45 @@ msgstr ""
 msgid "Editor options"
 msgstr "Redaktoriaus parinktys"
 
+msgid "In se&lection"
+msgstr ""
+
+msgid "&Find all"
+msgstr "&Rasti viską"
+
+msgid "Enter replacement string:"
+msgstr ""
+
+msgid "Replace"
+msgstr "Pakeisti"
+
+msgid "Replace with:"
+msgstr "Pakeisti:"
+
+msgid "&Replace"
+msgstr "Pa&keisti"
+
+msgid "A&ll"
+msgstr "&Visi"
+
+msgid "&Skip"
+msgstr "Pralei&sti"
+
+msgid "Confirm replace"
+msgstr "Patvirtinti pakeitimą"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Ieškoma %s"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr ""
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1634,7 +1592,7 @@ msgstr ""
 "Lengvas vartoti teksto redaktorius\n"
 "sukurtas Midnight Commander aplinkai."
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1753,6 +1711,15 @@ msgstr "Pasiūlyti"
 
 msgid "Select language"
 msgstr "Pasirinkti kalbą"
+
+msgid "Choose syntax highlighting"
+msgstr "Pasirinkti sintaksės žymėjimą"
+
+msgid "< Auto >"
+msgstr "< Auto >"
+
+msgid "< Reload Current Syntax >"
+msgstr "< Įkelti esamą sintaksę iš naujo >"
 
 msgid "Load syntax file"
 msgstr "Įkelti sintaksės failą"
@@ -1935,6 +1902,9 @@ msgstr "Keisti parinktis"
 
 msgid "Skin:"
 msgstr "Išvaizda"
+
+msgid "&Shadows"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Išvaizda"
@@ -2159,6 +2129,12 @@ msgstr "Prisijungimo vardas:"
 msgid "SMB authentication"
 msgstr ""
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2217,6 +2193,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2491,12 +2470,6 @@ msgstr ""
 msgid "Cannot execute commands on non-local filesystems"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-
 msgid "Parameter"
 msgstr "Parametras"
 
@@ -2504,6 +2477,9 @@ msgstr "Parametras"
 msgid ""
 "Cannot create temporary command file\n"
 "%s"
+msgstr ""
+
+msgid "Pipe failed"
 msgstr ""
 
 #, c-format
@@ -2978,6 +2954,227 @@ msgstr "&Foninis režimas"
 msgid "Invalid source pattern '%s'"
 msgstr ""
 
+msgid "File listin&g"
+msgstr ""
+
+msgid "&Quick view"
+msgstr "Greitasis rodymas"
+
+msgid "&Info"
+msgstr "&Informacija"
+
+msgid "&Tree"
+msgstr "&Medis"
+
+msgid "&Listing format..."
+msgstr ""
+
+msgid "&Sort order..."
+msgstr "Rik. t&varka..."
+
+msgid "&Filter..."
+msgstr "&Filtras..."
+
+msgid "&Encoding..."
+msgstr ""
+
+msgid "FT&P link..."
+msgstr "FT&P ryšys..."
+
+msgid "S&hell link..."
+msgstr "Apli&nkos ryšys..."
+
+msgid "S&FTP link..."
+msgstr ""
+
+msgid "SM&B link..."
+msgstr "SM&B ryšys..."
+
+msgid "Paneli&ze"
+msgstr ""
+
+msgid "&Rescan"
+msgstr ""
+
+msgid "&View"
+msgstr "&Rodymas"
+
+msgid "Vie&w file..."
+msgstr "&Peržiūrėti failą..."
+
+msgid "&Filtered view"
+msgstr ""
+
+msgid "&Copy"
+msgstr "&Kopijuoti"
+
+msgid "C&hmod"
+msgstr "Leidimai (c&hmod)"
+
+msgid "&Link"
+msgstr "&Nuoroda"
+
+msgid "&Symlink"
+msgstr "Simbolinė nuoroda"
+
+msgid "Relative symlin&k"
+msgstr ""
+
+msgid "Edit s&ymlink"
+msgstr ""
+
+msgid "Ch&own"
+msgstr "Keisti savininką (ch&own)"
+
+msgid "&Advanced chown"
+msgstr ""
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "Pe&rvadinti/Perkelti"
+
+msgid "&Mkdir"
+msgstr "Mkdir"
+
+msgid "&Quick cd"
+msgstr "Greitas cd"
+
+msgid "Select &group"
+msgstr "Pasirinkti &grupę"
+
+msgid "U&nselect group"
+msgstr "Šali&nti iš parinktųjų grupės"
+
+msgid "&Invert selection"
+msgstr "Atv&irkštinis pasirinkimas"
+
+msgid "E&xit"
+msgstr "Išeiti"
+
+msgid "&User menu"
+msgstr "Vartotojo meni&u"
+
+msgid "&Directory tree"
+msgstr "&Aplankų medis"
+
+msgid "&Find file"
+msgstr "&Rasti failą"
+
+msgid "S&wap panels"
+msgstr ""
+
+msgid "Switch &panels on/off"
+msgstr ""
+
+msgid "&Compare directories"
+msgstr "Palyginti katalogus"
+
+msgid "C&ompare files"
+msgstr "Palyginti failus"
+
+msgid "E&xternal panelize"
+msgstr ""
+
+msgid "Show directory s&izes"
+msgstr "Rodyti aplankų dydžius"
+
+msgid "Command &history"
+msgstr "Komandų istorija"
+
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
+msgid "Di&rectory hotlist"
+msgstr "Aplankų są&rašas"
+
+msgid "&Active VFS list"
+msgstr ""
+
+msgid "&Background jobs"
+msgstr "&Foninio režimo užduotys"
+
+msgid "Screen lis&t"
+msgstr ""
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "Atk&urti failus  (tik ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "Keisti r&odymo formatą"
+
+msgid "Edit &extension file"
+msgstr "K&eisti plėtinių failą"
+
+msgid "Edit &menu file"
+msgstr "Keisti &meniu failą"
+
+msgid "Edit hi&ghlighting group file"
+msgstr ""
+
+msgid "&Configuration..."
+msgstr "Konfigūra&cija..."
+
+msgid "&Layout..."
+msgstr "&Išdėstymas..."
+
+msgid "&Panel options..."
+msgstr "Skydelio &parinktys..."
+
+msgid "C&onfirmation..."
+msgstr "Patvirtinimas..."
+
+msgid "&Appearance..."
+msgstr "Išvaizda..."
+
+msgid "&Display bits..."
+msgstr "Iš&vesties bitai..."
+
+msgid "&Virtual FS..."
+msgstr "&Virtuali failų sistema..."
+
+msgid "Panels:"
+msgstr ""
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+
+msgid "The Midnight Commander"
+msgstr ""
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr ""
+
+msgid "&Above"
+msgstr "&Viršuj"
+
+msgid "&Left"
+msgstr "Kairė"
+
+msgid "&Below"
+msgstr ""
+
+msgid "&Right"
+msgstr "Dešinė"
+
+msgid "ButtonBar|Menu"
+msgstr ""
+
+msgid "ButtonBar|View"
+msgstr "ButtonBar|Rodyt"
+
+msgid "ButtonBar|RenMov"
+msgstr "ButtonBar|Perkelt"
+
+msgid "ButtonBar|Mkdir"
+msgstr "ButtonBar|Kurt-Aplanką"
+
 msgid "&Chdir"
 msgstr "&Eiti į katal."
 
@@ -3006,6 +3203,9 @@ msgstr "Failo pavadinimas:"
 msgid "&Find recursively"
 msgstr "&Rasti rekursyviai"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr ""
 
@@ -3023,9 +3223,6 @@ msgstr "Visos &koduotės"
 
 msgid "Fir&st hit"
 msgstr ""
-
-msgid "&Tree"
-msgstr "&Medis"
 
 msgid "Find File"
 msgstr "Rasti failą"
@@ -3287,224 +3484,6 @@ msgstr ""
 msgid "Layout"
 msgstr "Išdėstymas"
 
-msgid "File listin&g"
-msgstr ""
-
-msgid "&Quick view"
-msgstr "Greitasis rodymas"
-
-msgid "&Info"
-msgstr "&Informacija"
-
-msgid "&Listing format..."
-msgstr ""
-
-msgid "&Sort order..."
-msgstr "Rik. t&varka..."
-
-msgid "&Filter..."
-msgstr "&Filtras..."
-
-msgid "&Encoding..."
-msgstr ""
-
-msgid "FT&P link..."
-msgstr "FT&P ryšys..."
-
-msgid "S&hell link..."
-msgstr "Apli&nkos ryšys..."
-
-msgid "S&FTP link..."
-msgstr ""
-
-msgid "SM&B link..."
-msgstr "SM&B ryšys..."
-
-msgid "Paneli&ze"
-msgstr ""
-
-msgid "&Rescan"
-msgstr ""
-
-msgid "&View"
-msgstr "&Rodymas"
-
-msgid "Vie&w file..."
-msgstr "&Peržiūrėti failą..."
-
-msgid "&Filtered view"
-msgstr ""
-
-msgid "&Copy"
-msgstr "&Kopijuoti"
-
-msgid "C&hmod"
-msgstr "Leidimai (c&hmod)"
-
-msgid "&Link"
-msgstr "&Nuoroda"
-
-msgid "&Symlink"
-msgstr "Simbolinė nuoroda"
-
-msgid "Relative symlin&k"
-msgstr ""
-
-msgid "Edit s&ymlink"
-msgstr ""
-
-msgid "Ch&own"
-msgstr "Keisti savininką (ch&own)"
-
-msgid "&Advanced chown"
-msgstr ""
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "Pe&rvadinti/Perkelti"
-
-msgid "&Mkdir"
-msgstr "Mkdir"
-
-msgid "&Quick cd"
-msgstr "Greitas cd"
-
-msgid "Select &group"
-msgstr "Pasirinkti &grupę"
-
-msgid "U&nselect group"
-msgstr "Šali&nti iš parinktųjų grupės"
-
-msgid "&Invert selection"
-msgstr "Atv&irkštinis pasirinkimas"
-
-msgid "E&xit"
-msgstr "Išeiti"
-
-msgid "&User menu"
-msgstr "Vartotojo meni&u"
-
-msgid "&Directory tree"
-msgstr "&Aplankų medis"
-
-msgid "&Find file"
-msgstr "&Rasti failą"
-
-msgid "S&wap panels"
-msgstr ""
-
-msgid "Switch &panels on/off"
-msgstr ""
-
-msgid "&Compare directories"
-msgstr "Palyginti katalogus"
-
-msgid "C&ompare files"
-msgstr "Palyginti failus"
-
-msgid "E&xternal panelize"
-msgstr ""
-
-msgid "Show directory s&izes"
-msgstr "Rodyti aplankų dydžius"
-
-msgid "Command &history"
-msgstr "Komandų istorija"
-
-msgid "Viewed/edited files hi&story"
-msgstr ""
-
-msgid "Di&rectory hotlist"
-msgstr "Aplankų są&rašas"
-
-msgid "&Active VFS list"
-msgstr ""
-
-msgid "&Background jobs"
-msgstr "&Foninio režimo užduotys"
-
-msgid "Screen lis&t"
-msgstr ""
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "Atk&urti failus  (tik ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "Keisti r&odymo formatą"
-
-msgid "Edit &extension file"
-msgstr "K&eisti plėtinių failą"
-
-msgid "Edit &menu file"
-msgstr "Keisti &meniu failą"
-
-msgid "Edit hi&ghlighting group file"
-msgstr ""
-
-msgid "&Configuration..."
-msgstr "Konfigūra&cija..."
-
-msgid "&Layout..."
-msgstr "&Išdėstymas..."
-
-msgid "&Panel options..."
-msgstr "Skydelio &parinktys..."
-
-msgid "C&onfirmation..."
-msgstr "Patvirtinimas..."
-
-msgid "&Appearance..."
-msgstr "Išvaizda..."
-
-msgid "&Display bits..."
-msgstr "Iš&vesties bitai..."
-
-msgid "&Virtual FS..."
-msgstr "&Virtuali failų sistema..."
-
-msgid "Panels:"
-msgstr ""
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-
-msgid "The Midnight Commander"
-msgstr ""
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr ""
-
-msgid "&Above"
-msgstr "&Viršuj"
-
-msgid "&Left"
-msgstr "Kairė"
-
-msgid "&Below"
-msgstr ""
-
-msgid "&Right"
-msgstr "Dešinė"
-
-msgid "ButtonBar|Menu"
-msgstr ""
-
-msgid "ButtonBar|View"
-msgstr "ButtonBar|Rodyt"
-
-msgid "ButtonBar|RenMov"
-msgstr "ButtonBar|Perkelt"
-
-msgid "ButtonBar|Mkdir"
-msgstr "ButtonBar|Kurt-Aplanką"
-
 msgid "Memory exhausted!"
 msgstr ""
 
@@ -3669,11 +3648,18 @@ msgstr ""
 msgid "Enter command label:"
 msgstr "Įvesti komandos etiketę:"
 
-msgid "Cannot invoke command."
-msgstr "Nepavyko iškviesti komandos."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "Konvejerio užvėrimas nepavyko"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
@@ -4056,13 +4042,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"Nepavyko atverti „%s“ archyvo\n"
-"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "Prieštaringas „extfs“ archyvas"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4229,6 +4217,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: Įspėjimas: failas %s nerastas\n"
 
@@ -4262,6 +4256,9 @@ msgstr ""
 msgid "sftp: %s"
 msgstr ""
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr ""
@@ -4271,6 +4268,50 @@ msgstr "sftp:  jungimasis nutrauktas"
 
 #, c-format
 msgid "sftp: connection to server failed: %s"
+msgstr ""
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
 msgstr ""
 
 #, c-format
@@ -4287,7 +4328,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-msgid "sftp: Failure establishing SSH session"
+msgid "sftp: failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

@@ -1,7 +1,7 @@
 /*
    Editor initialisation and callback handler.
 
-   Copyright (C) 1996-2020
+   Copyright (C) 1996-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,7 +55,7 @@
 #include "lib/charsets.h"
 #endif
 
-#include "src/keybind-defaults.h"       /* keybind_lookup_keymap_command() */
+#include "src/keymap.h"         /* keybind_lookup_keymap_command() */
 #include "src/setup.h"          /* home_dir */
 #include "src/execute.h"        /* toggle_subshell()  */
 #include "src/filemanager/cmd.h"        /* save_setup_cmd()  */
@@ -64,6 +64,7 @@
 
 #include "edit-impl.h"
 #include "editwidget.h"
+#include "editmacros.h"         /* edit_execute_macro() */
 #ifdef HAVE_ASPELL
 #include "spell.h"
 #endif
@@ -96,7 +97,9 @@ static cb_ret_t edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t 
 static void
 edit_dlg_init (void)
 {
-    if (edit_dlg_init_refcounter == 0)
+    edit_dlg_init_refcounter++;
+
+    if (edit_dlg_init_refcounter == 1)
     {
         edit_window_state_char = mc_skin_get ("widget-editor", "window-state-char", "*");
         edit_window_close_char = mc_skin_get ("widget-editor", "window-close-char", "X");
@@ -105,8 +108,6 @@ edit_dlg_init (void)
         aspell_init ();
 #endif
     }
-
-    edit_dlg_init_refcounter++;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -117,10 +118,7 @@ edit_dlg_init (void)
 static void
 edit_dlg_deinit (void)
 {
-    if (edit_dlg_init_refcounter != 0)
-        edit_dlg_init_refcounter--;
-
-    if (edit_dlg_init_refcounter == 0)
+    if (edit_dlg_init_refcounter == 1)
     {
         g_free (edit_window_state_char);
         g_free (edit_window_close_char);
@@ -129,6 +127,9 @@ edit_dlg_deinit (void)
         aspell_clean ();
 #endif
     }
+
+    if (edit_dlg_init_refcounter != 0)
+        edit_dlg_init_refcounter--;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -139,31 +140,39 @@ edit_dlg_deinit (void)
 static void
 edit_about (void)
 {
-    quick_widget_t quick_widgets[] = {
-        /* *INDENT-OFF* */
-        QUICK_LABEL ("MCEdit " VERSION, NULL),
-        QUICK_SEPARATOR (TRUE),
-        QUICK_LABEL (N_("A user friendly text editor\n"
-                        "written for the Midnight Commander."), NULL),
-        QUICK_SEPARATOR (FALSE),
-        QUICK_LABEL (N_("Copyright (C) 1996-2020 the Free Software Foundation"), NULL),
-        QUICK_START_BUTTONS (TRUE, TRUE),
+    char *ver;
+
+    ver = g_strdup_printf ("MCEdit %s", mc_global.mc_version);
+
+    {
+        quick_widget_t quick_widgets[] = {
+            /* *INDENT-OFF* */
+            QUICK_LABEL (ver, NULL),
+            QUICK_SEPARATOR (TRUE),
+            QUICK_LABEL (N_("A user friendly text editor\n"
+                            "written for the Midnight Commander."), NULL),
+            QUICK_SEPARATOR (FALSE),
+            QUICK_LABEL (N_("Copyright (C) 1996-2021 the Free Software Foundation"), NULL),
+            QUICK_START_BUTTONS (TRUE, TRUE),
             QUICK_BUTTON (N_("&OK"), B_ENTER, NULL, NULL),
-        QUICK_END
-        /* *INDENT-ON* */
-    };
+            QUICK_END
+            /* *INDENT-ON* */
+        };
 
-    quick_dialog_t qdlg = {
-        -1, -1, 40,
-        N_("About"), "[Internal File Editor]",
-        quick_widgets, NULL, NULL
-    };
+        quick_dialog_t qdlg = {
+            -1, -1, 40,
+            N_("About"), "[Internal File Editor]",
+            quick_widgets, NULL, NULL
+        };
 
-    quick_widgets[0].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
-    quick_widgets[2].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
-    quick_widgets[4].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
+        quick_widgets[0].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
+        quick_widgets[2].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
+        quick_widgets[4].pos_flags = WPOS_KEEP_TOP | WPOS_CENTER_HORZ;
 
-    (void) quick_dialog (&qdlg);
+        (void) quick_dialog (&qdlg);
+    }
+
+    g_free (ver);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -822,7 +831,7 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
         edit_quit (h);
         return MSG_HANDLED;
 
-    case MSG_END:
+    case MSG_DESTROY:
         edit_dlg_deinit ();
         return MSG_HANDLED;
 
@@ -1249,12 +1258,12 @@ edit_files (const GList * files)
                 (1, 0, wd->lines - 2, wd->cols, EDITOR_BACKGROUND, ' ', edit_dialog_bg_callback));
     group_add_widget (g, edit_dlg->bg);
 
-    menubar = menubar_new (NULL, TRUE);
+    menubar = menubar_new (NULL);
     w = WIDGET (menubar);
     group_add_widget_autopos (g, w, w->pos_flags, NULL);
     edit_init_menu (menubar);
 
-    w = WIDGET (buttonbar_new (TRUE));
+    w = WIDGET (buttonbar_new ());
     group_add_widget_autopos (g, w, w->pos_flags, NULL);
 
     for (file = files; file != NULL; file = g_list_next (file))
@@ -1272,7 +1281,7 @@ edit_files (const GList * files)
         dlg_run (edit_dlg);
 
     if (!ok || widget_get_state (wd, WST_CLOSED))
-        dlg_destroy (edit_dlg);
+        widget_destroy (wd);
 
     return ok;
 }

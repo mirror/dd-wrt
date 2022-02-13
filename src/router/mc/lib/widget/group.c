@@ -1,7 +1,7 @@
 /*
    Widget group features module for the Midnight Commander
 
-   Copyright (C) 2020
+   Copyright (C) 2020-2021
    The Free Software Foundation, Inc.
 
    Written by:
@@ -113,15 +113,12 @@ group_select_next_or_prev (WGroup * g, gboolean next)
     if (g->widgets != NULL && g->current != NULL)
     {
         GList *l = g->current;
-        Widget *w;
 
         do
         {
             l = group_get_next_or_prev_of (l, next);
-            w = WIDGET (l->data);
         }
-        while ((widget_get_state (w, WST_DISABLED) || !widget_get_options (w, WOP_SELECTABLE))
-               && l != g->current);
+        while (!widget_is_focusable (l->data) && l != g->current);
 
         widget_select (l->data);
     }
@@ -170,9 +167,79 @@ group_send_broadcast_msg_custom (WGroup * g, widget_msg_t msg, gboolean reverse,
         p = group_get_next_or_prev_of (p, !reverse);
 
         if (options == WOP_DEFAULT || (options & w->options) != 0)
-            send_message (w, NULL, msg, 0, NULL);
+            /* special case: don't draw invisible widgets */
+            if (msg != MSG_DRAW || widget_get_state (w, WST_VISIBLE))
+                send_message (w, NULL, msg, 0, NULL);
     }
     while (first != p);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Default group callback to convert group coordinates from local (relative to owner) to global
+  * (relative to screen).
+  *
+  * @param w widget
+  */
+
+static void
+group_default_make_global (Widget * w, const WRect * delta)
+{
+    GList *iter;
+
+    if (delta != NULL)
+    {
+        /* change own coordinates */
+        widget_default_make_global (w, delta);
+        /* change child widget coordinates */
+        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+            WIDGET (iter->data)->make_global (WIDGET (iter->data), delta);
+    }
+    else if (w->owner != NULL)
+    {
+        WRect r = { WIDGET (w->owner)->y, WIDGET (w->owner)->x, 0, 0 };
+
+        /* change own coordinates */
+        widget_default_make_global (w, &r);
+        /* change child widget coordinates */
+        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+            WIDGET (iter->data)->make_global (WIDGET (iter->data), &r);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Default group callback to convert group coordinates from global (relative to screen) to local
+  * (relative to owner).
+  *
+  * @param w widget
+  */
+
+static void
+group_default_make_local (Widget * w, const WRect * delta)
+{
+    GList *iter;
+
+    if (delta != NULL)
+    {
+        /* change own coordinates */
+        widget_default_make_local (w, delta);
+        /* change child widget coordinates */
+        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+            WIDGET (iter->data)->make_local (WIDGET (iter->data), delta);
+    }
+    else if (w->owner != NULL)
+    {
+        WRect r = { WIDGET (w->owner)->y, WIDGET (w->owner)->x, 0, 0 };
+
+        /* change own coordinates */
+        widget_default_make_local (w, &r);
+        /* change child widget coordinates */
+        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+            WIDGET (iter->data)->make_local (WIDGET (iter->data), &r);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -196,7 +263,7 @@ group_default_find (const Widget * w, const Widget * what)
     {
         GList *iter;
 
-        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+        for (iter = CONST_GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
         {
             w0 = widget_find (WIDGET (iter->data), what);
             if (w0 != NULL)
@@ -228,7 +295,7 @@ group_default_find_by_type (const Widget * w, widget_cb_fn cb)
     {
         GList *iter;
 
-        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+        for (iter = CONST_GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
         {
             w0 = widget_find_by_type (WIDGET (iter->data), cb);
             if (w0 != NULL)
@@ -260,7 +327,7 @@ group_default_find_by_id (const Widget * w, unsigned long id)
     {
         GList *iter;
 
-        for (iter = GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
+        for (iter = CONST_GROUP (w)->widgets; iter != NULL; iter = g_list_next (iter))
         {
             w0 = widget_find_by_id (WIDGET (iter->data), id);
             if (w0 != NULL)
@@ -290,8 +357,11 @@ group_update_cursor (WGroup * g)
         {
             Widget *w = WIDGET (p->data);
 
-            if (widget_get_options (w, WOP_WANT_CURSOR) && !widget_get_state (w, WST_DISABLED)
-                && widget_update_cursor (WIDGET (p->data)))
+            /* Don't use widget_is_selectable() here.
+               If WOP_SELECTABLE option is not set, widget can handle mouse events.
+               For example, commandl line in file manager */
+            if (widget_get_options (w, WOP_WANT_CURSOR) && widget_get_state (w, WST_VISIBLE)
+                && !widget_get_state (w, WST_DISABLED) && widget_update_cursor (WIDGET (p->data)))
                 return MSG_HANDLED;
 
             p = group_get_widget_next_of (p);
@@ -462,7 +532,7 @@ group_handle_hotkey (WGroup * g, int key)
 
     w = WIDGET (g->current->data);
 
-    if (widget_get_state (w, WST_DISABLED))
+    if (!widget_get_state (w, WST_VISIBLE) || widget_get_state (w, WST_DISABLED))
         return MSG_NOT_HANDLED;
 
     /* Explanation: we don't send letter hotkeys to other widgets
@@ -537,6 +607,9 @@ group_init (WGroup * g, int y1, int x1, int lines, int cols, widget_cb_fn callba
 
     w->mouse_handler = group_handle_mouse_event;
 
+    w->make_global = group_default_make_global;
+    w->make_local = group_default_make_local;
+
     w->find = group_default_find;
     w->find_by_type = group_default_find_by_type;
     w->find_by_id = group_default_find_by_id;
@@ -579,6 +652,7 @@ group_default_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
     case MSG_DESTROY:
         g_list_foreach (g->widgets, (GFunc) widget_destroy, NULL);
         g_list_free (g->widgets);
+        g->widgets = NULL;
         return MSG_HANDLED;
 
     default:
@@ -654,7 +728,10 @@ group_handle_mouse_event (Widget * w, Gpm_Event * event)
         {
             Widget *wp = WIDGET (p->data);
 
-            if (!widget_get_state (wp, WST_DISABLED))
+            /* Don't use widget_is_selectable() here.
+               If WOP_SELECTABLE option is not set, widget can handle mouse events.
+               For example, commandl line in file manager */
+            if (widget_get_state (w, WST_VISIBLE) && !widget_get_state (wp, WST_DISABLED))
             {
                 /* put global cursor position to the widget */
                 int ret;
@@ -698,14 +775,13 @@ group_add_widget_autopos (WGroup * g, void *w, widget_pos_flags_t pos_flags, con
 
     if ((pos_flags & WPOS_CENTER_HORZ) != 0)
         ww->x = (wg->cols - ww->cols) / 2;
-    ww->x += wg->x;
 
     if ((pos_flags & WPOS_CENTER_VERT) != 0)
         ww->y = (wg->lines - ww->lines) / 2;
-    ww->y += wg->y;
 
     ww->owner = g;
     ww->pos_flags = pos_flags;
+    widget_make_global (ww);
 
     if (g->widgets == NULL || before == NULL)
     {
@@ -751,15 +827,16 @@ group_add_widget_autopos (WGroup * g, void *w, widget_pos_flags_t pos_flags, con
 void
 group_remove_widget (void *w)
 {
+    Widget *ww = WIDGET (w);
     WGroup *g;
     GList *d;
 
     /* Don't accept NULL widget. This shouldn't happen */
     assert (w != NULL);
 
-    g = WIDGET (w)->owner;
+    g = ww->owner;
 
-    d = g_list_find (g->widgets, w);
+    d = g_list_find (g->widgets, ww);
     if (d == g->current)
         group_set_current_widget_next (g);
 
@@ -774,7 +851,8 @@ group_remove_widget (void *w)
         group_select_current_widget (g);
     }
 
-    WIDGET (w)->owner = NULL;
+    widget_make_local (ww);
+    ww->owner = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */

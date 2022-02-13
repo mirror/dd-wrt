@@ -1,7 +1,7 @@
 /*
    Editor low level data handling and cursor fundamentals.
 
-   Copyright (C) 1996-2020
+   Copyright (C) 1996-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -64,10 +64,14 @@
 #include "src/usermenu.h"       /* user_menu_cmd() */
 
 #include "src/setup.h"          /* option_tab_spacing */
-#include "src/keybind-defaults.h"
+#include "src/keymap.h"
 
 #include "edit-impl.h"
 #include "editwidget.h"
+#include "editsearch.h"
+#include "editcomplete.h"       /* edit_complete_word_cmd() */
+#include "editmacros.h"
+#include "etags.h"              /* edit_get_match_keyword_cmd() */
 #ifdef HAVE_ASPELL
 #include "spell.h"
 #endif
@@ -1801,7 +1805,7 @@ user_menu (WEdit * edit, const char *menu_file, int selected_entry)
             fclose (fd);
     }
     g_free (block_file);
-    vfs_path_free (block_file_vpath);
+    vfs_path_free (block_file_vpath, TRUE);
 
     edit_cursor_move (edit, curs - edit->buffer.curs1);
     edit->force |= REDRAW_PAGE;
@@ -2202,10 +2206,9 @@ edit_clean (WEdit * edit)
 
     g_free (edit->undo_stack);
     g_free (edit->redo_stack);
-    vfs_path_free (edit->filename_vpath);
-    vfs_path_free (edit->dir_vpath);
-    mc_search_free (edit->search);
-    g_free (edit->last_search_string);
+    vfs_path_free (edit->filename_vpath, TRUE);
+    vfs_path_free (edit->dir_vpath, TRUE);
+    edit_search_deinit (edit);
 
 #ifdef HAVE_CHARSET
     if (edit->converter != str_cnv_from_term)
@@ -3426,6 +3429,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
             edit->column_highlight = 0;
             edit_mark_cmd (edit, TRUE);
         }
+        break;
     default:
         break;
     }
@@ -3454,6 +3458,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
     case CK_MarkLeft:
     case CK_MarkRight:
         edit->force |= REDRAW_CHAR_ONLY;
+        break;
     default:
         break;
     }
@@ -3910,7 +3915,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
     case CK_ExternalCommand:
         edit_ext_cmd (edit);
         break;
-    case CK_Mail:
+    case CK_EditMail:
         edit_mail_dialog (edit);
         break;
 #ifdef HAVE_CHARSET
@@ -3998,6 +4003,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         case CK_DeleteToEnd:
             format_paragraph (edit, FALSE);
             edit->force |= REDRAW_PAGE;
+            break;
         default:
             break;
         }
@@ -4024,7 +4030,7 @@ void
 edit_stack_free (void)
 {
     for (edit_stack_iterator = 0; edit_stack_iterator < MAX_HISTORY_MOVETO; edit_stack_iterator++)
-        vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
+        vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */

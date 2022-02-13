@@ -1,7 +1,7 @@
 /*
    Chown command -- for the Midnight Commander
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -45,9 +45,8 @@
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* panels_options */
-#include "midnight.h"           /* current_panel */
 
-#include "chown.h"
+#include "cmd.h"                /* chown_cmd() */
 
 /*** global variables ****************************************************************************/
 
@@ -187,7 +186,7 @@ chown_bg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 /* --------------------------------------------------------------------------------------------- */
 
 static WDialog *
-chown_dlg_create (void)
+chown_dlg_create (WPanel * panel)
 {
     int single_set;
     WDialog *ch_dlg;
@@ -197,7 +196,7 @@ chown_dlg_create (void)
     struct passwd *l_pass;
     struct group *l_grp;
 
-    single_set = (current_panel->marked < 2) ? 3 : 0;
+    single_set = (panel->marked < 2) ? 3 : 0;
     lines = GH + 4 + (single_set != 0 ? 2 : 4);
     cols = GW * 3 + 2 + 6;
 
@@ -284,13 +283,13 @@ chown_done (gboolean need_update)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static const char *
-next_file (void)
+static const GString *
+next_file (const WPanel * panel)
 {
-    while (!current_panel->dir.list[current_file].f.marked)
+    while (!panel->dir.list[current_file].f.marked)
         current_file++;
 
-    return current_panel->dir.list[current_file].fname;
+    return panel->dir.list[current_file].fname;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -340,13 +339,13 @@ try_chown (const vfs_path_t * p, uid_t u, gid_t g)
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
-do_chown (const vfs_path_t * p, uid_t u, gid_t g)
+do_chown (WPanel * panel, const vfs_path_t * p, uid_t u, gid_t g)
 {
     gboolean ret;
 
     ret = try_chown (p, u, g);
 
-    do_file_mark (current_panel, current_file, 0);
+    do_file_mark (panel, current_file, 0);
 
     return ret;
 }
@@ -354,37 +353,37 @@ do_chown (const vfs_path_t * p, uid_t u, gid_t g)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-apply_chowns (vfs_path_t * vpath, uid_t u, gid_t g)
+apply_chowns (WPanel * panel, vfs_path_t * vpath, uid_t u, gid_t g)
 {
     gboolean ok;
 
-    if (!do_chown (vpath, u, g))
+    if (!do_chown (panel, vpath, u, g))
         return;
 
     do
     {
-        const char *fname;
+        const GString *fname;
         struct stat sf;
 
-        fname = next_file ();
-        vpath = vfs_path_from_str (fname);
+        fname = next_file (panel);
+        vpath = vfs_path_from_str (fname->str);
         ok = (mc_stat (vpath, &sf) == 0);
 
         if (!ok)
         {
             /* if current file was deleted outside mc -- try next file */
-            /* decrease current_panel->marked */
-            do_file_mark (current_panel, current_file, 0);
+            /* decrease panel->marked */
+            do_file_mark (panel, current_file, 0);
 
             /* try next file */
             ok = TRUE;
         }
         else
-            ok = do_chown (vpath, u, g);
+            ok = do_chown (panel, vpath, u, g);
 
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
     }
-    while (ok && current_panel->marked != 0);
+    while (ok && panel->marked != 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -392,7 +391,7 @@ apply_chowns (vfs_path_t * vpath, uid_t u, gid_t g)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-chown_cmd (void)
+chown_cmd (WPanel * panel)
 {
     gboolean need_update;
     gboolean end_chown;
@@ -407,7 +406,7 @@ chown_cmd (void)
         vfs_path_t *vpath;
         WDialog *ch_dlg;
         struct stat sf_stat;
-        const char *fname;
+        const GString *fname;
         int result;
         char buffer[BUF_TINY];
         uid_t new_user = (uid_t) (-1);
@@ -418,26 +417,26 @@ chown_cmd (void)
         need_update = FALSE;
         end_chown = FALSE;
 
-        if (current_panel->marked != 0)
-            fname = next_file ();       /* next marked file */
+        if (panel->marked != 0)
+            fname = next_file (panel);  /* next marked file */
         else
-            fname = selection (current_panel)->fname;   /* single file */
+            fname = selection (panel)->fname;   /* single file */
 
-        vpath = vfs_path_from_str (fname);
+        vpath = vfs_path_from_str (fname->str);
 
         if (mc_stat (vpath, &sf_stat) != 0)
         {
-            vfs_path_free (vpath);
+            vfs_path_free (vpath, TRUE);
             break;
         }
 
-        ch_dlg = chown_dlg_create ();
+        ch_dlg = chown_dlg_create (panel);
 
         /* select in listboxes */
         listbox_select_entry (l_user, listbox_search_text (l_user, get_owner (sf_stat.st_uid)));
         listbox_select_entry (l_group, listbox_search_text (l_group, get_group (sf_stat.st_gid)));
 
-        chown_label (0, str_trunc (fname, GW - 4));
+        chown_label (0, str_trunc (fname->str, GW - 4));
         chown_label (1, str_trunc (get_owner (sf_stat.st_uid), GW - 4));
         chown_label (2, str_trunc (get_group (sf_stat.st_gid), GW - 4));
         size_trunc_len (buffer, GW - 4, sf_stat.st_size, 0, panels_options.kilobyte_si);
@@ -469,12 +468,12 @@ chown_cmd (void)
                     new_user = user->pw_uid;
                 if (result == B_ENTER)
                 {
-                    if (current_panel->marked <= 1)
+                    if (panel->marked <= 1)
                     {
                         /* single or last file */
                         if (mc_chown (vpath, new_user, new_group) == -1)
                             message (D_ERROR, MSG_ERROR, _("Cannot chown \"%s\"\n%s"),
-                                     fname, unix_error_string (errno));
+                                     fname->str, unix_error_string (errno));
                         end_chown = TRUE;
                     }
                     else if (!try_chown (vpath, new_user, new_group))
@@ -486,7 +485,7 @@ chown_cmd (void)
                 }
                 else
                 {
-                    apply_chowns (vpath, new_user, new_group);
+                    apply_chowns (panel, vpath, new_user, new_group);
                     end_chown = TRUE;
                 }
 
@@ -504,7 +503,7 @@ chown_cmd (void)
                 if (user != NULL)
                 {
                     new_user = user->pw_uid;
-                    apply_chowns (vpath, new_user, new_group);
+                    apply_chowns (panel, vpath, new_user, new_group);
                     need_update = TRUE;
                     end_chown = TRUE;
                 }
@@ -521,7 +520,7 @@ chown_cmd (void)
                 if (grp != NULL)
                 {
                     new_group = grp->gr_gid;
-                    apply_chowns (vpath, new_user, new_group);
+                    apply_chowns (panel, vpath, new_user, new_group);
                     need_update = TRUE;
                     end_chown = TRUE;
                 }
@@ -532,17 +531,17 @@ chown_cmd (void)
             break;
         }
 
-        if (current_panel->marked != 0 && result != B_CANCEL)
+        if (panel->marked != 0 && result != B_CANCEL)
         {
-            do_file_mark (current_panel, current_file, 0);
+            do_file_mark (panel, current_file, 0);
             need_update = TRUE;
         }
 
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
 
-        dlg_destroy (ch_dlg);
+        widget_destroy (WIDGET (ch_dlg));
     }
-    while (current_panel->marked != 0 && !end_chown);
+    while (panel->marked != 0 && !end_chown);
 
     chown_done (need_update);
 }

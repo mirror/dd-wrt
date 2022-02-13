@@ -1,7 +1,7 @@
 /*
    libmc - check mcconfig submodule. Get full paths to user's config files.
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -37,15 +37,9 @@
 
 #define HOME_DIR "/home/testuser"
 
-#if MC_HOMEDIR_XDG
 #define CONF_MAIN HOME_DIR PATH_SEP_STR ".config"
 #define CONF_DATA HOME_DIR PATH_SEP_STR ".local" PATH_SEP_STR "share"
 #define CONF_CACHE HOME_DIR PATH_SEP_STR ".cache"
-#else
-#define CONF_MAIN HOME_DIR
-#define CONF_DATA CONF_MAIN
-#define CONF_CACHE CONF_MAIN
-#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -54,12 +48,9 @@ static void
 setup (void)
 {
     g_setenv ("HOME", HOME_DIR, TRUE);
-#if MC_HOMEDIR_XDG
     g_setenv ("XDG_CONFIG_HOME", CONF_MAIN, TRUE);
     g_setenv ("XDG_DATA_HOME", CONF_DATA, TRUE);
     g_setenv ("XDG_CACHE_HOME", CONF_CACHE, TRUE);
-#endif
-    mc_global.timer = mc_timer_new ();
     str_init_strings ("UTF-8");
     vfs_init ();
     vfs_init_localfs ();
@@ -73,7 +64,6 @@ teardown (void)
 {
     vfs_shut ();
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -132,49 +122,53 @@ static const struct test_user_config_paths_ds
     },
     { /* 11. */
         CONF_DATA,
-        "ashrc"
+        MC_ASHRC_FILE
     },
     { /* 12. */
         CONF_DATA,
-        "bashrc"
+        MC_BASHRC_FILE
     },
     { /* 13. */
         CONF_DATA,
-        "inputrc"
+        MC_INPUTRC_FILE
     },
     { /* 14. */
         CONF_DATA,
-        MC_EXTFS_DIR
+        MC_ZSHRC_FILE
     },
     { /* 15. */
         CONF_DATA,
-        MC_HISTORY_FILE
+        MC_EXTFS_DIR
     },
     { /* 16. */
         CONF_DATA,
-        MC_FILEPOS_FILE
+        MC_HISTORY_FILE
     },
     { /* 17. */
         CONF_DATA,
-        EDIT_HOME_CLIP_FILE
+        MC_FILEPOS_FILE
     },
     { /* 18. */
         CONF_DATA,
-        MC_MACRO_FILE
+        EDIT_HOME_CLIP_FILE
     },
     { /* 19. */
-        CONF_CACHE,
-        "mc.log"
+        CONF_DATA,
+        MC_MACRO_FILE
     },
     { /* 20. */
         CONF_CACHE,
-        MC_TREESTORE_FILE
+        "mc.log"
     },
     { /* 21. */
         CONF_CACHE,
-        EDIT_HOME_TEMP_FILE
+        MC_TREESTORE_FILE
     },
     { /* 22. */
+        CONF_CACHE,
+        EDIT_HOME_TEMP_FILE
+    },
+    { /* 23. */
         CONF_CACHE,
         EDIT_HOME_BLOCK_FILE
     },
@@ -213,11 +207,9 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -225,13 +217,7 @@ main (void)
     mctest_add_parameterized_test (tc_core, test_user_config_paths, test_user_config_paths_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "user_configs_path.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

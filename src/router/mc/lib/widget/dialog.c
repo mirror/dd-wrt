@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -121,7 +121,7 @@ refresh_cmd (void)
     mc_refresh ();
 #else
     /* Use this if the refreshes fail */
-    clr_scr ();
+    tty_clear_screen ();
     repaint_screen ();
 #endif /* HAVE_SLANG */
 }
@@ -206,6 +206,8 @@ dlg_handle_key (WDialog * h, int d_key)
     long command;
 
     command = widget_lookup_key (WIDGET (h), d_key);
+    if (command == CK_IgnoreKey)
+        command = keybind_lookup_keymap_command (dialog_map, d_key);
     if (command != CK_IgnoreKey)
         return dlg_execute_cmd (h, command);
 
@@ -323,6 +325,23 @@ frontend_dlg_run (WDialog * h)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static void
+dlg_default_destroy (Widget * w)
+{
+    WDialog *h = DIALOG (w);
+
+    /* if some widgets have history, save all histories at one moment here */
+    dlg_save_history (h);
+    group_default_callback (w, NULL, MSG_DESTROY, 0, NULL);
+    mc_event_group_del (h->event_group);
+    g_free (h->event_group);
+    g_free (h);
+
+    do_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 /** Default dialog callback */
@@ -332,9 +351,17 @@ dlg_default_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
 {
     switch (msg)
     {
+    case MSG_INIT:
+        /* nothing to init in dialog itself */
+        return MSG_HANDLED;
+
     case MSG_IDLE:
         /* we don't want endless loop */
         widget_idle (w, FALSE);
+        return MSG_HANDLED;
+
+    case MSG_DESTROY:
+        /* nothing to deinit in dialog itself */
         return MSG_HANDLED;
 
     default:
@@ -393,6 +420,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols, widget_pos_flag
     w->mouse_handler = dlg_handle_mouse_event;
     w->mouse.forced_capture = mouse_close_dialog && (w->pos_flags & WPOS_FULLSCREEN) == 0;
 
+    w->destroy = dlg_default_destroy;
     w->get_colors = dlg_default_get_colors;
 
     new_d->colors = colors;
@@ -504,8 +532,7 @@ dlg_init (WDialog * h)
     }
 
     /* Select the first widget that takes focus */
-    while (g->current != NULL && !widget_get_options (WIDGET (g->current->data), WOP_SELECTABLE)
-           && !widget_get_state (WIDGET (g->current->data), WST_DISABLED))
+    while (g->current != NULL && !widget_is_focusable (g->current->data))
         group_set_current_widget_next (g);
 
     widget_set_state (wh, WST_ACTIVE, TRUE);
@@ -573,21 +600,6 @@ dlg_run (WDialog * h)
     frontend_dlg_run (h);
     dlg_run_done (h);
     return h->ret_value;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-dlg_destroy (WDialog * h)
-{
-    /* if some widgets have history, save all history at one moment here */
-    dlg_save_history (h);
-    group_default_callback (WIDGET (h), NULL, MSG_DESTROY, 0, NULL);
-    mc_event_group_del (h->event_group);
-    g_free (h->event_group);
-    g_free (h);
-
-    do_refresh ();
 }
 
 /* --------------------------------------------------------------------------------------------- */

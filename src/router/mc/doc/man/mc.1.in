@@ -1,6 +1,6 @@
 .\" -*- mode: troff; coding: UTF-8 -*-
 .\"TOPICS "Topics:"
-.TH MC 1 "%DATE_OF_MAN_PAGE%" "MC Version %DISTR_VERSION%" "GNU Midnight Commander"
+.TH MC 1 "%DATE_OF_MAN_PAGE%" "MC Version %MAN_VERSION%" "GNU Midnight Commander"
 .\"SKIP_SECTION"
 .SH "NAME"
 mc \- Visual shell for Unix\-like systems.
@@ -2113,13 +2113,17 @@ overwriting files, execution by pressing enter, quitting the program,
 directory hotlist entries deletion and history cleanup.
 .\"NODE "    Appearance"
 .SH "    Appearance"
-In this dialog you can select the skin to be used.
+In this dialog you can select the skin to be used and enable shadow
+for dialogs and drop down menus.
 .PP
 See the
 .\"LINK2"
 Skins
 .\"Skins"
 section for technical details about the skin definition files.
+.PP
+.I Shadows.
+If this option is enabled, all dialogs and drop down menus will have a shadow.
 .\"NODE "    Display bits"
 .SH "    Display bits"
 This is used to configure the range of visible characters on the
@@ -2461,7 +2465,10 @@ and special keyboard maps in ~/.local/share/mc/inputrc (fallback ~/.inputrc).
 .B ash/dash
 users (BusyBox or Debian) may specify startup commands in ~/.local/share/mc/ashrc (fallback ~/.profile).
 .PP
-.B tcsh, zsh, fish
+.B zsh
+users may specify startup commands in ~/.local/share/mc/.zshrc (fallback ~/.zshrc).
+.PP
+.B tcsh, fish
 users cannot specify mc-specific startup commands at present. They have to rely on
 shell-specific startup files.
 .PP
@@ -3357,6 +3364,21 @@ Examples:
     sftp://joe@noncompressed.ssh.edu/private
     sftp://joe@somehost.ssh.edu:2222/private
 .fi
+.PP
+When establishing the connection, server key fingerprint is verified using
+the ~/.ssh/known_hosts file. If the host/key pair is not found or the host is found,
+but the key doesn't match, an appropriate message is shown.
+There are three buttons in the message dialog:
+.PP
+.B [Yes]
+add new host/key pair to the ~/.ssh/known_hosts file and continue.
+.PP
+.B [Ignore]
+do not add new host/key pair to the ~/.ssh/known_hosts file, but continue
+nevertheless (at you own risk).
+.PP
+.B [No]
+abort connection.
 .\"NODE "  Undelete File System"
 .SH "  Undelete File System"
 On Linux systems, if you asked configure to use the ext2fs undelete

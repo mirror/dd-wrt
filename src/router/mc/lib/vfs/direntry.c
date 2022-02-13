@@ -1,7 +1,7 @@
 /*
    Directory cache support
 
-   Copyright (C) 1998-2020
+   Copyright (C) 1998-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -70,7 +70,6 @@
 
 #include "lib/tty/tty.h"        /* enable/disable interrupt key */
 #include "lib/util.h"           /* custom_canonicalize_pathname() */
-#include "lib/timer.h"
 #if 0
 #include "lib/widget.h"         /* message() */
 #endif
@@ -453,10 +452,10 @@ vfs_s_opendir (const vfs_path_t * vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void *
+static struct vfs_dirent *
 vfs_s_readdir (void *data)
 {
-    static union vfs_dirent dir;
+    struct vfs_dirent *dir = NULL;
     struct dirhandle *info = (struct dirhandle *) data;
     const char *name;
 
@@ -465,13 +464,13 @@ vfs_s_readdir (void *data)
 
     name = VFS_ENTRY (info->cur->data)->name;
     if (name != NULL)
-        g_strlcpy (dir.dent.d_name, name, MC_MAXPATHLEN);
+        dir = vfs_dirent_init (NULL, name, 0);
     else
         vfs_die ("Null in structure-cannot happen");
 
     info->cur = g_list_next (info->cur);
 
-    return (void *) &dir;
+    return dir;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -863,7 +862,7 @@ vfs_s_free (vfsid id)
 static gboolean
 vfs_s_dir_uptodate (struct vfs_class *me, struct vfs_s_inode *ino)
 {
-    guint64 tim;
+    gint64 tim;
 
     if (me->flush)
     {
@@ -871,7 +870,7 @@ vfs_s_dir_uptodate (struct vfs_class *me, struct vfs_s_inode *ino)
         return 0;
     }
 
-    tim = mc_timer_elapsed (mc_global.timer);
+    tim = g_get_real_time ();
 
     return (tim < ino->timestamp);
 }
@@ -1155,7 +1154,7 @@ vfs_get_super_by_vpath (const vfs_path_t * vpath)
     }
 
   ret:
-    vfs_path_free (vpath_archive);
+    vfs_path_free (vpath_archive, TRUE);
     return super;
 }
 
@@ -1206,7 +1205,7 @@ vfs_s_get_path (const vfs_path_t * vpath, struct vfs_s_super **archive, int flag
         vfs_path_remove_element_by_index (vpath_archive, -1);
 
         result = subclass->open_archive (super, vpath_archive, path_element);
-        vfs_path_free (vpath_archive);
+        vfs_path_free (vpath_archive, TRUE);
     }
     if (result == -1)
     {
@@ -1345,8 +1344,7 @@ vfs_s_open (const vfs_path_t * vpath, int flags, mode_t mode)
             vfs_path_t *tmp_vpath;
 
             tmp_handle = vfs_mkstemps (&tmp_vpath, path_element->class->name, name);
-            ino->localname = g_strdup (vfs_path_as_str (tmp_vpath));
-            vfs_path_free (tmp_vpath);
+            ino->localname = vfs_path_free (tmp_vpath, FALSE);
             if (tmp_handle == -1)
             {
                 g_free (dirname);
@@ -1448,8 +1446,7 @@ vfs_s_retrieve_file (struct vfs_class *me, struct vfs_s_inode *ino)
         return (-1);
 
     handle = vfs_mkstemps (&tmp_vpath, me->name, ino->ent->name);
-    ino->localname = g_strdup (vfs_path_as_str (tmp_vpath));
-    vfs_path_free (tmp_vpath);
+    ino->localname = vfs_path_free (tmp_vpath, FALSE);
     if (handle == -1)
     {
         me->verrno = errno;

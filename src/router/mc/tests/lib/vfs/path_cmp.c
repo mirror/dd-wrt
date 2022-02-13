@@ -1,6 +1,6 @@
 /* lib/vfs - vfs_path_t compare functions
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -42,7 +42,6 @@
 static void
 setup (void)
 {
-    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -67,7 +66,6 @@ teardown (void)
 
     vfs_shut ();
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -139,8 +137,8 @@ START_PARAMETRIZED_TEST (test_path_equal, test_path_equal_ds)
     /* then */
     mctest_assert_int_eq (actual_result, data->expected_result);
 
-    vfs_path_free (vpath1);
-    vfs_path_free (vpath2);
+    vfs_path_free (vpath1, TRUE);
+    vfs_path_free (vpath2, TRUE);
 }
 /* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
@@ -227,8 +225,8 @@ START_PARAMETRIZED_TEST (test_path_equal_len, test_path_equal_len_ds)
     /* then */
     mctest_assert_int_eq (actual_result, data->expected_result);
 
-    vfs_path_free (vpath1);
-    vfs_path_free (vpath2);
+    vfs_path_free (vpath1, TRUE);
+    vfs_path_free (vpath2, TRUE);
 }
 /* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
@@ -239,11 +237,9 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -252,13 +248,7 @@ main (void)
     mctest_add_parameterized_test (tc_core, test_path_equal_len, test_path_equal_len_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "path_cmp.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */
