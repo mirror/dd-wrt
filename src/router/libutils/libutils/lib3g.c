@@ -252,17 +252,6 @@ static void select_config3(int needreset, int devicecount)
 	eval("usb_modeswitch", "-c", "/tmp/usb_modeswitch.conf");
 }
 
-static void select_config4(int needreset, int devicecount)
-{
-	FILE *out;
-	out = fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out, "Configuration=4\n");
-	fclose(out);
-	eval("usb_modeswitch", "-c", "/tmp/usb_modeswitch.conf");
-}
-
 static void modeswitch_std_eject(int needreset, int devicecount)
 {
 	FILE *out;
@@ -528,7 +517,7 @@ static struct DEVICES devicelist[] = {
 	{ 0x05c6, 0x3100, acm, 0, 0, 0, NULL, "Maxon MM-5100" },	//
 	{ 0x05c6, 0x3196, acm, 0, 0, 0, NULL, "Maxon MM-5500" },	//
 	{ 0x05c6, 0x3197, generic, 0, 0, 0, NULL, "SpeedUp SU-6500U/SU-6600U" },	//
-	{ 0x05c6, 0x6000, generic, 2, 0, 0, NULL, "Siemens SG75" },	//
+	{ 0x05c6, 0x6000, option, 2, 0, 0, NULL, "Siemens SG75" },	//
 	{ 0x05c6, 0x6280, generic, 2, 0, 0, NULL, "Qualcomm generic" },	//
 	{ 0x05c6, 0x6500, generic, 2, 0, 0, NULL, "Venus VT-80n" },	//
 	{ 0x05c6, 0x6503, none, 0, 0, 0, &modeswitch_std_eject, "Generic Qualcomm" },	//
@@ -553,7 +542,7 @@ static struct DEVICES devicelist[] = {
 /* Netgear */
 	{ 0x0846, 0x0fff, none, 0, 0, 1, &modeswitch_sierra, "Sierra Device" },	//
 	{ 0x0846, 0x68a2, sierra, 2, 0, 1 | QMI, NULL, "Sierra MC7710" },	//
-//      {0x0846, 0x68d3, generic, 0, 0, 1 | QMI, &select_config2, "Netgear AC778S"}, // not yet in driver
+    { 0x0846, 0x68d3, generic, 0, 0, 1 | QMI, &select_config2, "Netgear AC778S"}, //
 //      {0x0846, 0x68e1, none, 0, 0, 1 | ETH, &select_config2, "Netgear AC785S"}, // rndis in default config1
 //      {0x0846, 0x68e2, none, 0, 0, 1 | ETH, &select_config2, "Netgear AC78xS"}, // rndis in default config1
 
@@ -989,8 +978,8 @@ static struct DEVICES devicelist[] = {
 	{ 0x1410, 0x7042, option, 0, 0, 2, NULL, "Novatel Ovation MC545/MC547" },	//
 	{ 0x1410, 0x9010, option, 1, 0, 2 | QMI, NULL, "Novatel E362" },	//
 	{ 0x1410, 0x9011, option, 1, 0, 2 | QMI, NULL, "Novatel E371" },	//
-	{ 0x1410, 0x9030, option, 1, 0, 2, &select_config4, "Novatel E730" },	//
-	{ 0x1410, 0x9032, option, 0, 0, 2, NULL, "Novatel E730" },	//
+//	{ 0x1410, 0x9030, option, 1, 0, 2, &select_config3, "Novatel USB730L" },	// can not support, same usb id used for both ndis_host and cdc_ether versions
+//	{ 0x1410, 0x9032, option, 0, 0, 2, NULL, "Novatel USB730L" },	// can not support, same usb id used for both ndis_host and cdc_ether versions
 	{ 0x1410, 0xa001, qcserial, 1, 0, 2 | QMI, NULL, "Novatel USB1000" },	//
 	{ 0x1410, 0xa021, qcserial, 1, 0, 2 | QMI, NULL, "Novatel E396" },	//
 	{ 0x1410, 0xb001, option, 1, 0, 2 | QMI, NULL, "Novatel MC551/USB551L" },	//
@@ -1313,8 +1302,8 @@ static struct DEVICES devicelist[] = {
 	{ 0x1c9e, 0x9605, option, 1, 3, 2, NULL, "4G Systems XS Stick W14" },	//
 	{ 0x1c9e, 0x9607, option, 1, 3, 2, NULL, "4G Systems XS Stick W14" },	//
 	{ 0x1c9e, 0x9800, generic, 2, 1, 2, &modeswitch_alcatel, "SU-9800" },	//
-	{ 0x1c9e, 0x9801, generic, 2, 1, 2, NULL, "4G Systems XS Stick W21" },	// also qmi but not yet in driver
-	{ 0x1c9e, 0x9803, generic, 2, 1, 2, NULL, "SmartBro WM66E" },	// also qmi but not yet in driver
+	{ 0x1c9e, 0x9801, option, 2, 1, 2 | QMI, NULL, "4G Systems XS Stick W21" },
+	{ 0x1c9e, 0x9803, option, 2, 1, 2 | QMI, NULL, "SmartBro WM66E" },
 	{ 0x1c9e, 0x98ff, none, 0, 0, 2, &modeswitch_alcatel, "4G Systems XS Stick W21" },	//
 	{ 0x1c9e, 0x9900, generic, 1, 2, 2, NULL, "Softbank C02LC" },	//
 	{ 0x1c9e, 0x9a00, generic, 2, 0, 2, NULL, "4G Systems XS Stick TV" },	//
@@ -1342,7 +1331,7 @@ static struct DEVICES devicelist[] = {
 
 /* Qualcomm /ALink /Hyundai */
 	{ 0x1e0e, 0x9000, option, 1, 2, 3, NULL, "PROLink PHS100, Hyundai MB-810, A-Link 3GU" },	//
-	{ 0x1e0e, 0x9001, option, 1, 2, 3, NULL, "Simcom SIM7100" },	//
+	{ 0x1e0e, 0x9001, option, 1, 2, 3 | QMI, NULL, "Simcom SIM7100" },	//
 	{ 0x1e0e, 0x9100, option, 1, 2, 3, NULL, "PROLink PHS300, A-Link 3GU" },	//
 	{ 0x1e0e, 0x9200, option, 1, 2, 3, NULL, "PROLink PHS100, Hyundai MB-810, A-Link 3GU" },	//
 	{ 0x1e0e, 0x9a00, generic, 1, 2, 3, NULL, "PROLink PEM330" },	// also qmi but not yet in driver
@@ -1411,8 +1400,9 @@ static struct DEVICES devicelist[] = {
 	{ 0x2001, 0x7d10, generic, 3, 2, 2, NULL, "D-Link DWM-156 A8" },	// also cdc_mbim
 	{ 0x2001, 0x7e16, generic, 2, 1, 2, NULL, "D-Link DWM-221 A1" },	// also qmi but not yet in driver
 	{ 0x2001, 0x7e19, option, 2, 1, 2 | QMI, NULL, "D-Link DWM-221 B1" },	//
-	{ 0x2001, 0x7e35, generic, 2, 1, 2, NULL, "D-Link DWM-222 A1" },	// also qmi but not yet in driver
+	{ 0x2001, 0x7e35, option, 2, 1, 2 | QMI, NULL, "D-Link DWM-222 A1" },
 //      {0x2001, 0x7e38, none, 0, 0, 2 | ETH, NULL, "D-Link DWR-910"},    //
+	{ 0x2001, 0x7e3d, option, 2, 1, 2 | QMI, NULL, "D-Link DWM-222 A2" },
 	{ 0x2001, 0x98ff, none, 0, 0, 2, &modeswitch_alcatel, "D-Link DWM-221 A1" },	//
 	{ 0x2001, 0xa401, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-221 B1" },	//
 	{ 0x2001, 0xa403, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-156 A8" },	//
@@ -1427,6 +1417,7 @@ static struct DEVICES devicelist[] = {
 	{ 0x2001, 0xa809, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-157 A1" },	//
 	{ 0x2001, 0xa80b, none, 0, 0, 2, &modeswitch_mediatek, "D-Link DWM-156 A6" },	//
 	{ 0x2001, 0xab00, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-222 A1" },	//
+	{ 0x2001, 0xac01, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-222 A2" },	//
 
 /* Haier */
 	{ 0x201e, 0x1022, generic, 0, 0, 2, NULL, "Haier CE862" },	//
@@ -1440,7 +1431,7 @@ static struct DEVICES devicelist[] = {
 	{ 0x2020, 0x1008, generic, 1, 3, 2, NULL, "SpeedUp SU-9300U" },	//
 	{ 0x2020, 0x1012, generic, 1, 3, 2, NULL, "Prolink PHS100" },	//
 	{ 0x2020, 0x2000, generic, 1, 0, 2, NULL, "Beetel BG64" },	//
-	{ 0x2020, 0x4000, generic, 1, 0, 2, NULL, "Rostelecom Sense R41" },	// also mbim
+	{ 0x2020, 0x4000, option, 1, 0, 2, NULL, "Rostelecom Sense R41" },	// also mbim
 	{ 0x2020, 0x4002, generic, 1, 0, 2, NULL, "Rostelecom Sense R41" },	// also mbim
 	{ 0x2020, 0x4010, generic, 1, 0, 2, NULL, "MicroMax MMX 377G" },	// also mbim
 	{ 0x2020, 0xf00e, none, 0, 0, 2, &modeswitch_std_eject, "SpeedUp SU-8000" },	//
