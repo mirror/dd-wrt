@@ -3,6 +3,11 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+#ifndef G_OPTION_ENTRY_NULL
+#define G_OPTION_ENTRY_NULL \
+  { NULL, '\0', 0, 0, NULL, NULL, NULL }
+#endif /* G_OPTION_ENTRY_NULL */
+
 /*** enums ***************************************************************************************/
 
 /*** structures declarations (and typedefs of structures)*****************************************/
@@ -23,6 +28,12 @@ void g_queue_free_full (GQueue * queue, GDestroyNotify free_func);
 #if ! GLIB_CHECK_VERSION (2, 60, 0)
 void g_queue_clear_full (GQueue * queue, GDestroyNotify free_func);
 #endif /* ! GLIB_CHECK_VERSION (2, 60, 0) */
+
+/* There is no such API in GLib2 */
+GString *mc_g_string_copy (GString * dest, const GString * src);
+
+/* There is no such API in GLib2 */
+GString *mc_g_string_dup (const GString * s);
 
 /*** inline functions ****************************************************************************/
 

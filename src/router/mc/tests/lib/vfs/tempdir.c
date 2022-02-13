@@ -1,7 +1,7 @@
 /*
    lib/vfs - manipulations with temp files and  dirs
 
-   Copyright (C) 2012-2020
+   Copyright (C) 2012-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -45,7 +45,6 @@
 static void
 setup (void)
 {
-    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -61,7 +60,6 @@ teardown (void)
 {
     vfs_shut ();
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -80,8 +78,8 @@ START_TEST (test_mc_tmpdir)
     env_tmpdir = g_getenv ("MC_TMPDIR");
 
     /* then */
-    fail_unless (g_file_test (tmpdir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR),
-                 "\nNo such directory: %s\n", tmpdir);
+    ck_assert_msg (g_file_test (tmpdir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR),
+                   "\nNo such directory: %s\n", tmpdir);
     mctest_assert_str_eq (env_tmpdir, tmpdir);
 }
 /* *INDENT-OFF* */
@@ -107,14 +105,14 @@ START_TEST (test_mc_mkstemps)
     /* then */
     close (fd);
     mctest_assert_int_ne (fd, -1);
-    fail_unless (g_file_test
-                 (vfs_path_as_str (pname_vpath), G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR),
-                 "\nNo such file: %s\n", vfs_path_as_str (pname_vpath));
+    ck_assert_msg (g_file_test
+                   (vfs_path_as_str (pname_vpath), G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR),
+                   "\nNo such file: %s\n", vfs_path_as_str (pname_vpath));
     unlink (vfs_path_as_str (pname_vpath));
-    fail_unless (strncmp (vfs_path_as_str (pname_vpath), begin_pname, strlen (begin_pname)) == 0,
-                 "\nstart of %s should be equal to %s\n", vfs_path_as_str (pname_vpath),
-                 begin_pname);
-    vfs_path_free (pname_vpath);
+    ck_assert_msg (strncmp (vfs_path_as_str (pname_vpath), begin_pname, strlen (begin_pname)) == 0,
+                   "\nstart of %s should be equal to %s\n", vfs_path_as_str (pname_vpath),
+                   begin_pname);
+    vfs_path_free (pname_vpath, TRUE);
 }
 /* *INDENT-OFF* */
 END_TEST
@@ -125,11 +123,9 @@ END_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -138,13 +134,7 @@ main (void)
     tcase_add_test (tc_core, test_mc_mkstemps);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "tempdir.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

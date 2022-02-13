@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
 "Last-Translator: Transifex Bot <>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
@@ -75,30 +75,6 @@ msgstr "%s direktorioa ezin sortu"
 
 msgid "FATAL: not a directory:"
 msgstr "LARRIA: ez da direktorioa:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Errore bat gertatu da erabiltzaile-ezarpenak migratzean: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Zure ezarpen zaharrak %s-tik \n"
-"Freedesktop-ek gomendatutako direktorioetara migratu dira.\n"
-"Info gehiago nahi baduzu, mesedez bisitatu\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Zure ezarpen zaharrak %s-tik⏎\n"
-"%s-ra migratu dira⏎\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -188,11 +164,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "Benetako-kolorea ez du onartzen ncurses-ek."
 
-msgid "True color not supported in this slang version."
-msgstr "Benetako-kolorea ez da onartzen slang bertsio honetan."
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "Ematen du zure terminalak 256 kolore ere ez dituela onartzen."
+
+msgid "True color not supported in this slang version."
+msgstr "Benetako-kolorea ez da onartzen slang bertsio honetan."
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -555,18 +531,6 @@ msgid ""
 msgstr ""
 "Ustekabeko errorea waitpid()-en:\n"
 "%s"
-
-msgid "Warning"
-msgstr "Abisua"
-
-msgid "Pipe failed"
-msgstr "Hodiak huts egin du"
-
-msgid "Dup failed"
-msgstr "\"Dup\"-ek huts egin du"
-
-msgid "Error dup'ing old error pipe"
-msgstr "Akatsa akats hodi zaharra bikoizterakoan (\"dup\")"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1034,15 +998,6 @@ msgstr "Diff erakuslea: modu baliogabea"
 msgid "Two files are needed to compare"
 msgstr "Bi fitxategi behar dira konparatzeko"
 
-msgid "Choose syntax highlighting"
-msgstr "Hautatu sintaxi nabarmentzea"
-
-msgid "< Auto >"
-msgstr "< Auto >"
-
-msgid "< Reload Current Syntax >"
-msgstr "< Birzamatu uneko sintaxia >"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "Zamatzen: %3d%%"
@@ -1077,6 +1032,9 @@ msgstr ""
 "\"%s\" fitxategia handiegia da.\n"
 "Ireki hala ere?"
 
+msgid "Warning"
+msgstr "Abisua"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "Akatsa hoditik irakurtzerakoan: %s"
@@ -1084,14 +1042,6 @@ msgstr "Akatsa hoditik irakurtzerakoan: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "Hodia irakurtzeko ezin ireki: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "%s bilatzen: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "%s bilatzen"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "Fitxategiak esteka-trinkoak dauzka. Deslotu gorde aurretik?"
@@ -1138,9 +1088,6 @@ msgstr "Aldatu lerro hausturak hontara:"
 msgid "Save As"
 msgstr "Gorde honela"
 
-msgid "Collect completions"
-msgstr "Osatzeak bildu"
-
 msgid "&Quick save"
 msgstr "&Azker gordetzea"
 
@@ -1170,27 +1117,6 @@ msgstr "&Gainidatzi"
 
 msgid "Cannot save file"
 msgstr "Fitxategia ezin gorde"
-
-msgid "Delete macro"
-msgstr "Ezabatu makroa"
-
-msgid "Press macro hotkey:"
-msgstr "Sakatu makroaren laster-tekla:"
-
-msgid "Macro not deleted"
-msgstr "Makro ez ezabatua"
-
-msgid "Save macro"
-msgstr "Gorde makroa"
-
-msgid "Press the macro's new hotkey:"
-msgstr "Sakatu makroaren laster-tekla berria:"
-
-msgid "Repeat last commands"
-msgstr "Errepikatu azken komandoa"
-
-msgid "Repeat times:"
-msgstr "Zenbat aldiz errepikatu:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1225,13 +1151,6 @@ msgstr "Zein menu fitxategi editatuko nahi duzu?"
 
 msgid "&Local"
 msgstr "&Lokala"
-
-msgid "Replace"
-msgstr "Ordezkatu"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "%ld ordezkapen egin dira"
 
 msgid "[NoName]"
 msgstr "[Izengabe]"
@@ -1343,35 +1262,35 @@ msgstr ""
 "Uneko testua aldatu da baino ez da fitxategian gorde.\n"
 "Jarraitzeak aldaketa hauek baztertuko ditu."
 
-msgid "In se&lection"
-msgstr "&Hautapenean"
-
-msgid "&Find all"
-msgstr "&Aurkitu dena"
-
-msgid "Enter replacement string:"
-msgstr "Sartu ordezko katea:"
-
-msgid "Replace with:"
-msgstr "Ordezkatu honekin:"
-
-msgid "&Replace"
-msgstr "&Ordeztu"
-
-msgid "A&ll"
-msgstr "&Guztia"
-
-msgid "&Skip"
-msgstr "&Saltatu"
-
-msgid "Confirm replace"
-msgstr "Berretsi ordezkapena"
-
 msgid "Cancel"
 msgstr "Utzi"
 
+msgid "Collect completions"
+msgstr "Osatzeak bildu"
+
 msgid "NoName"
 msgstr "Izengabe"
+
+msgid "Save macro"
+msgstr "Gorde makroa"
+
+msgid "Press the macro's new hotkey:"
+msgstr "Sakatu makroaren laster-tekla berria:"
+
+msgid "Delete macro"
+msgstr "Ezabatu makroa"
+
+msgid "Press macro hotkey:"
+msgstr "Sakatu makroaren laster-tekla:"
+
+msgid "Macro not deleted"
+msgstr "Makro ez ezabatua"
+
+msgid "Repeat last commands"
+msgstr "Errepikatu azken komandoa"
+
+msgid "Repeat times:"
+msgstr "Zenbat aldiz errepikatu:"
 
 msgid "&Open file..."
 msgstr "&Ireki fitxategia..."
@@ -1661,6 +1580,45 @@ msgstr "Itzulbiratutako lerroaren luzeera:"
 msgid "Editor options"
 msgstr "Editorearen aukerak"
 
+msgid "In se&lection"
+msgstr "&Hautapenean"
+
+msgid "&Find all"
+msgstr "&Aurkitu dena"
+
+msgid "Enter replacement string:"
+msgstr "Sartu ordezko katea:"
+
+msgid "Replace"
+msgstr "Ordezkatu"
+
+msgid "Replace with:"
+msgstr "Ordezkatu honekin:"
+
+msgid "&Replace"
+msgstr "&Ordeztu"
+
+msgid "A&ll"
+msgstr "&Guztia"
+
+msgid "&Skip"
+msgstr "&Saltatu"
+
+msgid "Confirm replace"
+msgstr "Berretsi ordezkapena"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "%s bilatzen: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "%s bilatzen"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "%ld ordezkapen egin dira"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1668,7 +1626,7 @@ msgstr ""
 "Testu editore lagunkoi bat\n"
 "Midnight Commander-rarentzako idatzia."
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1787,6 +1745,15 @@ msgstr "Iradoki"
 
 msgid "Select language"
 msgstr "Hautatu hizkuntza"
+
+msgid "Choose syntax highlighting"
+msgstr "Hautatu sintaxi nabarmentzea"
+
+msgid "< Auto >"
+msgstr "< Auto >"
+
+msgid "< Reload Current Syntax >"
+msgstr "< Birzamatu uneko sintaxia >"
 
 msgid "Load syntax file"
 msgstr "Zamatu sintaxi fitxategia"
@@ -1977,6 +1944,9 @@ msgstr "Konfiguratu aukerak"
 
 msgid "Skin:"
 msgstr "Azala:"
+
+msgid "&Shadows"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Itxura"
@@ -2203,6 +2173,14 @@ msgstr "Erabiltzaile izena:"
 msgid "SMB authentication"
 msgstr "SMB autentikazioa"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"Ezin da \"%s\" direktoriora aldatu\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2261,6 +2239,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2539,14 +2520,6 @@ msgstr "Ezarpenak ezin gorde %s-ra"
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "Komandoak ezin exekutatu bertakoa ez den fitxategi-sistema batean"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"Ezin da \"%s\" direktoriora aldatu\n"
-"%s"
-
 msgid "Parameter"
 msgstr "Parametroa"
 
@@ -2557,6 +2530,9 @@ msgid ""
 msgstr ""
 "%s\n"
 "aldiuneko komando fitxategia ezin sortu"
+
+msgid "Pipe failed"
+msgstr "Hodiak huts egin du"
 
 #, c-format
 msgid " %s%s file error"
@@ -3084,6 +3060,225 @@ msgstr "&Atzeko planoa"
 msgid "Invalid source pattern '%s'"
 msgstr "Iturburu eredu baliogabea '%s'"
 
+msgid "File listin&g"
+msgstr "&Fitxategien zerrendatzea"
+
+msgid "&Quick view"
+msgstr "Ikuspegi &azkarra"
+
+msgid "&Info"
+msgstr "&Info"
+
+msgid "&Tree"
+msgstr "Zu&haitza"
+
+msgid "&Listing format..."
+msgstr "&Zerrenda formatua"
+
+msgid "&Sort order..."
+msgstr "&Sailkatzeko ordena..."
+
+msgid "&Filter..."
+msgstr "I&ragazkia..."
+
+msgid "&Encoding..."
+msgstr "&Kodeketa..."
+
+msgid "FT&P link..."
+msgstr "FT&P esteka..."
+
+msgid "S&hell link..."
+msgstr "S&hell esteka..."
+
+msgid "S&FTP link..."
+msgstr "S&FTP esteka..."
+
+msgid "SM&B link..."
+msgstr "S&MB esteka..."
+
+msgid "Paneli&ze"
+msgstr "Panelerat&u"
+
+msgid "&Rescan"
+msgstr "&Berraztertu"
+
+msgid "&View"
+msgstr "&Ikusi"
+
+msgid "Vie&w file..."
+msgstr "Ikusi &fitxategia..."
+
+msgid "&Filtered view"
+msgstr "I&ragazitako ikuspegia"
+
+msgid "&Copy"
+msgstr "&Kopiatu"
+
+msgid "C&hmod"
+msgstr "C&hmod"
+
+msgid "&Link"
+msgstr "&Esteka"
+
+msgid "&Symlink"
+msgstr "E&steka sinbolikoa"
+
+msgid "Relative symlin&k"
+msgstr "Es&teka sinboliko erlatiboa"
+
+msgid "Edit s&ymlink"
+msgstr "E&ditatu esteka sinbolikoa"
+
+msgid "Ch&own"
+msgstr "&Chown"
+
+msgid "&Advanced chown"
+msgstr "Ch&own aurreratua"
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "Berrizendatu/Mu&gitu"
+
+msgid "&Mkdir"
+msgstr "&Mkdir"
+
+msgid "&Quick cd"
+msgstr "Cd a&zkarra"
+
+msgid "Select &group"
+msgstr "Hautatu ta&ldea"
+
+msgid "U&nselect group"
+msgstr "&Hautua kendu taldeari"
+
+msgid "&Invert selection"
+msgstr "&Alderantzikatu hautapena"
+
+msgid "E&xit"
+msgstr "Irte&n"
+
+msgid "&User menu"
+msgstr "&Erabiltzailearen menua"
+
+msgid "&Directory tree"
+msgstr "&Direktorio zuhaitza"
+
+msgid "&Find file"
+msgstr "&Aurkitu fitxategia"
+
+msgid "S&wap panels"
+msgstr "&Trukatu panelak"
+
+msgid "Switch &panels on/off"
+msgstr "&Panelak ezkutatu/erakutsi"
+
+msgid "&Compare directories"
+msgstr "&Konparatu direktorioak"
+
+msgid "C&ompare files"
+msgstr "Fitxategiak al&deratu"
+
+msgid "E&xternal panelize"
+msgstr "Ka&npokora paneleratu"
+
+msgid "Show directory s&izes"
+msgstr "E&rakutsi direktorioen neurriak"
+
+msgid "Command &history"
+msgstr "Ko&mandoen historia"
+
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
+msgid "Di&rectory hotlist"
+msgstr "&Gogoko direktorioak"
+
+msgid "&Active VFS list"
+msgstr "&Jarduneko VFS zerrenda"
+
+msgid "&Background jobs"
+msgstr "&Hondoko lanak"
+
+msgid "Screen lis&t"
+msgstr "Pantaila &zerrenda"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "&Berreskuratu fitxategiak (soilik ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "Zerrendatzeko &formatua editatu"
+
+msgid "Edit &extension file"
+msgstr "Editatu &luzapen fitxategia"
+
+msgid "Edit &menu file"
+msgstr "Editat&u menu fitxategia"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "Editatu nabarmentzeko taldeen &fitxategia"
+
+msgid "&Configuration..."
+msgstr "&Konfigurazioa..."
+
+msgid "&Layout..."
+msgstr "&Diseinua..."
+
+msgid "&Panel options..."
+msgstr "&Panelen aukerak..."
+
+msgid "C&onfirmation..."
+msgstr "&Berrespena..."
+
+msgid "&Appearance..."
+msgstr "&Itxura..."
+
+msgid "&Display bits..."
+msgstr "&Bistaratu bitak..."
+
+msgid "&Virtual FS..."
+msgstr "Alegiazko &FS..."
+
+msgid "Panels:"
+msgstr "Panelak:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "Pantaila %zu irekita duzu. Irten hala ere?"
+msgstr[1] "%zu pantaila irekita dituzu. Irten hala ere?"
+
+msgid "The Midnight Commander"
+msgstr "Midnight Commander-ra"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "Benetan utzi nahi duzu Midnight Commander-ra?"
+
+msgid "&Above"
+msgstr "&Gainean"
+
+msgid "&Left"
+msgstr "E&zkerra"
+
+msgid "&Below"
+msgstr "&Azpian"
+
+msgid "&Right"
+msgstr "E&skuina"
+
+msgid "ButtonBar|Menu"
+msgstr "Menua"
+
+msgid "ButtonBar|View"
+msgstr "Ikusi"
+
+msgid "ButtonBar|RenMov"
+msgstr "BerrizenMug"
+
+msgid "ButtonBar|Mkdir"
+msgstr "SortuDir"
+
 msgid "&Chdir"
 msgstr "&Aldatu direktorioa"
 
@@ -3112,6 +3307,9 @@ msgstr "Fitxategi izena:"
 msgid "&Find recursively"
 msgstr "&Bilatu errekurtsiboki"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr "B&aztertu ezkutukoak"
 
@@ -3129,9 +3327,6 @@ msgstr "Karaktere-&multzo guztiak"
 
 msgid "Fir&st hit"
 msgstr "&Lehenengo agerraldia"
-
-msgid "&Tree"
-msgstr "Zu&haitza"
 
 msgid "Find File"
 msgstr "Bilatu fitxategia"
@@ -3391,222 +3586,6 @@ msgstr "Irteera lerroak:"
 msgid "Layout"
 msgstr "Diseinua"
 
-msgid "File listin&g"
-msgstr "&Fitxategien zerrendatzea"
-
-msgid "&Quick view"
-msgstr "Ikuspegi &azkarra"
-
-msgid "&Info"
-msgstr "&Info"
-
-msgid "&Listing format..."
-msgstr "&Zerrenda formatua"
-
-msgid "&Sort order..."
-msgstr "&Sailkatzeko ordena..."
-
-msgid "&Filter..."
-msgstr "I&ragazkia..."
-
-msgid "&Encoding..."
-msgstr "&Kodeketa..."
-
-msgid "FT&P link..."
-msgstr "FT&P esteka..."
-
-msgid "S&hell link..."
-msgstr "S&hell esteka..."
-
-msgid "S&FTP link..."
-msgstr "S&FTP esteka..."
-
-msgid "SM&B link..."
-msgstr "S&MB esteka..."
-
-msgid "Paneli&ze"
-msgstr "Panelerat&u"
-
-msgid "&Rescan"
-msgstr "&Berraztertu"
-
-msgid "&View"
-msgstr "&Ikusi"
-
-msgid "Vie&w file..."
-msgstr "Ikusi &fitxategia..."
-
-msgid "&Filtered view"
-msgstr "I&ragazitako ikuspegia"
-
-msgid "&Copy"
-msgstr "&Kopiatu"
-
-msgid "C&hmod"
-msgstr "C&hmod"
-
-msgid "&Link"
-msgstr "&Esteka"
-
-msgid "&Symlink"
-msgstr "E&steka sinbolikoa"
-
-msgid "Relative symlin&k"
-msgstr "Es&teka sinboliko erlatiboa"
-
-msgid "Edit s&ymlink"
-msgstr "E&ditatu esteka sinbolikoa"
-
-msgid "Ch&own"
-msgstr "&Chown"
-
-msgid "&Advanced chown"
-msgstr "Ch&own aurreratua"
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "Berrizendatu/Mu&gitu"
-
-msgid "&Mkdir"
-msgstr "&Mkdir"
-
-msgid "&Quick cd"
-msgstr "Cd a&zkarra"
-
-msgid "Select &group"
-msgstr "Hautatu ta&ldea"
-
-msgid "U&nselect group"
-msgstr "&Hautua kendu taldeari"
-
-msgid "&Invert selection"
-msgstr "&Alderantzikatu hautapena"
-
-msgid "E&xit"
-msgstr "Irte&n"
-
-msgid "&User menu"
-msgstr "&Erabiltzailearen menua"
-
-msgid "&Directory tree"
-msgstr "&Direktorio zuhaitza"
-
-msgid "&Find file"
-msgstr "&Aurkitu fitxategia"
-
-msgid "S&wap panels"
-msgstr "&Trukatu panelak"
-
-msgid "Switch &panels on/off"
-msgstr "&Panelak ezkutatu/erakutsi"
-
-msgid "&Compare directories"
-msgstr "&Konparatu direktorioak"
-
-msgid "C&ompare files"
-msgstr "Fitxategiak al&deratu"
-
-msgid "E&xternal panelize"
-msgstr "Ka&npokora paneleratu"
-
-msgid "Show directory s&izes"
-msgstr "E&rakutsi direktorioen neurriak"
-
-msgid "Command &history"
-msgstr "Ko&mandoen historia"
-
-msgid "Viewed/edited files hi&story"
-msgstr ""
-
-msgid "Di&rectory hotlist"
-msgstr "&Gogoko direktorioak"
-
-msgid "&Active VFS list"
-msgstr "&Jarduneko VFS zerrenda"
-
-msgid "&Background jobs"
-msgstr "&Hondoko lanak"
-
-msgid "Screen lis&t"
-msgstr "Pantaila &zerrenda"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "&Berreskuratu fitxategiak (soilik ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "Zerrendatzeko &formatua editatu"
-
-msgid "Edit &extension file"
-msgstr "Editatu &luzapen fitxategia"
-
-msgid "Edit &menu file"
-msgstr "Editat&u menu fitxategia"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "Editatu nabarmentzeko taldeen &fitxategia"
-
-msgid "&Configuration..."
-msgstr "&Konfigurazioa..."
-
-msgid "&Layout..."
-msgstr "&Diseinua..."
-
-msgid "&Panel options..."
-msgstr "&Panelen aukerak..."
-
-msgid "C&onfirmation..."
-msgstr "&Berrespena..."
-
-msgid "&Appearance..."
-msgstr "&Itxura..."
-
-msgid "&Display bits..."
-msgstr "&Bistaratu bitak..."
-
-msgid "&Virtual FS..."
-msgstr "Alegiazko &FS..."
-
-msgid "Panels:"
-msgstr "Panelak:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] "Pantaila %zu irekita duzu. Irten hala ere?"
-msgstr[1] "%zu pantaila irekita dituzu. Irten hala ere?"
-
-msgid "The Midnight Commander"
-msgstr "Midnight Commander-ra"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Benetan utzi nahi duzu Midnight Commander-ra?"
-
-msgid "&Above"
-msgstr "&Gainean"
-
-msgid "&Left"
-msgstr "E&zkerra"
-
-msgid "&Below"
-msgstr "&Azpian"
-
-msgid "&Right"
-msgstr "E&skuina"
-
-msgid "ButtonBar|Menu"
-msgstr "Menua"
-
-msgid "ButtonBar|View"
-msgstr "Ikusi"
-
-msgid "ButtonBar|RenMov"
-msgstr "BerrizenMug"
-
-msgid "ButtonBar|Mkdir"
-msgstr "SortuDir"
-
 msgid "Memory exhausted!"
 msgstr "Memoria agortuta!"
 
@@ -3769,11 +3748,18 @@ msgstr "Erantsi kanpokora paneleraturi"
 msgid "Enter command label:"
 msgstr "Sartu komandoaren etiketa:"
 
-msgid "Cannot invoke command."
-msgstr "Ezin da komandoa deitu."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "Hodi ixteak huts egin du"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
@@ -4165,13 +4151,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"%s artxiboa ezin ireki\n"
-"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "extfs artxibo inkoherentea"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4341,6 +4329,12 @@ msgstr ""
 "Kendu pasahitza edo zuzendu modua"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: Abisua: %s fitxategia ez da aurkitu\n"
 
@@ -4374,6 +4368,9 @@ msgstr "sftp: ostalari-izen baliogabea."
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: %s-ra konektatzen"
@@ -4384,6 +4381,50 @@ msgstr "sftp: erabiltzaileak konexioa etenarazi du"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: zerbitzarira konexioak huts egin du: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4399,8 +4440,8 @@ msgstr "sftp: Sartu %s-rako pasahitza "
 msgid "sftp: Password is empty."
 msgstr "sftp: pasahitza hutsik dago."
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: Hutsegitea SSH saioa ezartzean"
+msgid "sftp: failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Ez dago fitxategi maneiatzaile daturik fitxategia irakurtzeko"

@@ -42,6 +42,9 @@ typedef struct
     sftpfs_auth_type_t auth_type;
     sftpfs_auth_type_t config_auth_type;
 
+    LIBSSH2_KNOWNHOSTS *known_hosts;
+    char *known_hosts_file;
+
     LIBSSH2_SESSION *session;
     LIBSSH2_SFTP *sftp_session;
 
@@ -51,7 +54,7 @@ typedef struct
     char *privkey;
 
     int socket_handle;
-    const char *fingerprint;
+    const char *ip_address;
     vfs_path_element_t *original_connection_info;
 } sftpfs_super_t;
 
@@ -72,7 +75,7 @@ gboolean sftpfs_is_sftp_error (LIBSSH2_SFTP * sftp_session, int sftp_res, int sf
 void sftpfs_ssherror_to_gliberror (sftpfs_super_t * super, int libssh_errno, GError ** mcerror);
 gboolean sftpfs_waitsocket (sftpfs_super_t * super, int sftp_res, GError ** mcerror);
 
-const char *sftpfs_fix_filename (const char *file_name, unsigned int *length);
+const GString *sftpfs_fix_filename (const char *file_name);
 void sftpfs_attr_to_stat (const LIBSSH2_SFTP_ATTRIBUTES * attrs, struct stat *s);
 int sftpfs_lstat (const vfs_path_t * vpath, struct stat *buf, GError ** mcerror);
 int sftpfs_stat (const vfs_path_t * vpath, struct stat *buf, GError ** mcerror);
@@ -91,7 +94,7 @@ void sftpfs_close_connection (struct vfs_s_super *super, const char *shutdown_me
 vfs_file_handler_t *sftpfs_fh_new (struct vfs_s_inode *ino, gboolean changed);
 
 void *sftpfs_opendir (const vfs_path_t * vpath, GError ** mcerror);
-void *sftpfs_readdir (void *data, GError ** mcerror);
+struct vfs_dirent *sftpfs_readdir (void *data, GError ** mcerror);
 int sftpfs_closedir (void *data, GError ** mcerror);
 int sftpfs_mkdir (const vfs_path_t * vpath, mode_t mode, GError ** mcerror);
 int sftpfs_rmdir (const vfs_path_t * vpath, GError ** mcerror);

@@ -1,4 +1,4 @@
-.TH MCEDIT 1 "%DATE_OF_MAN_PAGE%" "MC Version %DISTR_VERSION%" "GNU Midnight Commander"
+.TH MCEDIT 1 "%DATE_OF_MAN_PAGE%" "MC Version %MAN_VERSION%" "GNU Midnight Commander"
 .SH NAME
 mcedit \- Internal file editor of GNU Midnight Commander.
 .SH SYNOPSIS
@@ -585,6 +585,10 @@ deleting, navigating, typing)
 .I editor_wordcompletion_collect_entire_file
 Search autocomplete candidates in entire file (1) or just from
 beginning of file to cursor position (0).
+.TP
+.I editor_wordcompletion_collect_all_files
+Search autocomplete candidates from all loaded files (1, default), not only from
+the currently edited one (0).
 .TP
 .I spell_language
 Spelling language (en, en\-variant_0, ru, etc) installed with aspell

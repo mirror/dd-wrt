@@ -1,7 +1,7 @@
 /*
    Print features specific for this build
 
-   Copyright (C) 2000-2020
+   Copyright (C) 2000-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -138,7 +138,7 @@ show_version (void)
 {
     size_t i;
 
-    printf (_("GNU Midnight Commander %s\n"), VERSION);
+    printf (_("GNU Midnight Commander %s\n"), mc_global.mc_version);
 
     printf (_("Built with GLib %d.%d.%d\n"),
             GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION);

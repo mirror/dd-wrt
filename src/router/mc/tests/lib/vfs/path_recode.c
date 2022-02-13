@@ -1,7 +1,7 @@
 /*
    lib/vfs - vfs_path_t charset recode functions
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,7 +65,6 @@ teardown (void)
 static void
 test_init_vfs (const char *encoding)
 {
-    mc_global.timer = mc_timer_new ();
     str_init_strings (encoding);
 
     vfs_init ();
@@ -86,7 +85,6 @@ test_deinit_vfs (void)
     free_codepages_list ();
     str_uninit_strings ();
     vfs_shut ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -156,7 +154,7 @@ START_PARAMETRIZED_TEST (test_path_recode, test_path_recode_ds)
     mctest_assert_str_eq (element->path, data->expected_element_path);
     mctest_assert_str_eq (vpath_str, data->expected_recoded_path);
 
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
     test_deinit_vfs ();
 }
 /* *INDENT-OFF* */
@@ -258,7 +256,7 @@ START_PARAMETRIZED_TEST (test_path_to_str_flags, test_path_to_str_flags_ds)
     mctest_assert_str_eq (str_path, data->expected_path);
 
     g_free (str_path);
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
     test_deinit_vfs ();
 }
 /* *INDENT-OFF* */
@@ -270,11 +268,9 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -283,13 +279,7 @@ main (void)
     mctest_add_parameterized_test (tc_core, test_path_to_str_flags, test_path_to_str_flags_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "path_recode.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

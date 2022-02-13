@@ -2,7 +2,7 @@
    src/filemanager - filemanager functions.
    Tests for getting random hints.
 
-   Copyright (C) 2013-2020
+   Copyright (C) 2013-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,9 +30,8 @@
 
 #include "lib/strutil.h"
 #include "lib/util.h"
-#include "lib/timer.h"
 
-#include "src/filemanager/midnight.h"
+#include "src/filemanager/filemanager.h"
 
 
 /* --------------------------------------------------------------------------------------------- */
@@ -62,7 +61,6 @@ rand (void)
 static void
 setup (void)
 {
-    mc_global.timer = mc_timer_new ();
     mc_global.share_data_dir = (char *) TEST_SHARE_DIR;
     str_init_strings (NULL);
 }
@@ -71,7 +69,6 @@ static void
 teardown (void)
 {
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -166,11 +163,9 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -179,13 +174,7 @@ main (void)
     mctest_add_parameterized_test (tc_core, get_random, get_random_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "get_random_hint.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 /*
    Editor text drawing.
 
-   Copyright (C) 1996-2020
+   Copyright (C) 1996-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -507,7 +507,6 @@ edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_c
     line_s *p = line;
     off_t q;
     int col, start_col_real;
-    int color;
     int abn_style;
     int book_mark = 0;
     char line_stat[LINE_STATE_WIDTH + 1] = "\0";
@@ -533,7 +532,6 @@ edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_c
             end_col--;
     }
 
-    color = edit_get_syntax_color (edit, b - 1);
     q = edit_move_forward3 (edit, b, start_col - edit->start_col, 0);
     col = (int) edit_move_forward3 (edit, b, 0, q);
     start_col_real = col + edit->start_col;
@@ -623,6 +621,8 @@ edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_c
                     p->style |= book_mark << 16;
                 else
                 {
+                    int color;
+
                     color = edit_get_syntax_color (edit, q);
                     p->style |= color << 16;
                 }
@@ -921,10 +921,9 @@ render_edit_text (WEdit * edit, long start_row, long start_column, long end_row,
             {
                 long upto;
 
-                row = start_row;
                 b = edit->start_display;
                 upto = MIN (curs_row - 1, end_row);
-                while (row <= upto)
+                for (row = start_row; row <= upto; row++)
                 {
                     if (key_pending (edit))
                         return;
@@ -1093,7 +1092,7 @@ edit_scroll_screen_over_cursor (WEdit * edit)
     {
         int n;
 
-        n = l_extreme + t_extreme;
+        n = l_extreme + r_extreme;
         if (n == 0)
             n = 1;
         l_extreme = (l_extreme * (w->cols - 1)) / n;

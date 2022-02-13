@@ -49,6 +49,9 @@
 /* Define if the file command accepts the -L option */
 #undef FILE_L
 
+/* Define if file command accepts the -S option */
+#undef FILE_S
+
 /* Define to disable assertions */
 #undef G_DISABLE_ASSERT
 
@@ -61,11 +64,11 @@
 /* Define to 1 if you have the <aspell.h> header file. */
 #undef HAVE_ASPELL_H
 
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
 
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
 #undef HAVE_CFPREFERENCESCOPYAPPVALUE
 
@@ -87,12 +90,6 @@
 
 /* Define if ncursesw has ESCDELAY variable */
 #undef HAVE_ESCDELAY
-
-/* Define to 1 if you have the <ext2fs/ext2fs.h> header file. */
-#undef HAVE_EXT2FS_EXT2FS_H
-
-/* Define to 1 if you have the <ext2fs/ext2_fs.h> header file. */
-#undef HAVE_EXT2FS_EXT2_FS_H
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -154,9 +151,6 @@
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
-
-/* Define to 1 if you have the <linux/ext2_fs.h> header file. */
-#undef HAVE_LINUX_EXT2_FS_H
 
 /* Define to 1 if you have the <linux/fs.h> header file. */
 #undef HAVE_LINUX_FS_H
@@ -253,12 +247,6 @@
 
 /* Define to use S-Lang library for screen management */
 #undef HAVE_SLANG
-
-/* Define to use slang.h */
-#undef HAVE_SLANG_H
-
-/* Define to use slang.h */
-#undef HAVE_SLANG_SLANG_H
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
@@ -387,7 +375,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if the system has the type `unsigned long long int'. */
+/* Define to 1 if the system has the type 'unsigned long long int'. */
 #undef HAVE_UNSIGNED_LONG_LONG_INT
 
 /* Define to 1 if you have the <util.h> header file. */
@@ -415,12 +403,6 @@
 
 /* MC configure arguments */
 #undef MC_CONFIGURE_ARGS
-
-/* Define to disable XDG standard support */
-#undef MC_HOMEDIR_XDG
-
-/* Where configs will be placed relative to $HOME */
-#undef MC_USERCONF_DIR
 
 /* Define if (like SVR2) there is no specific function for reading the list of
    mounted file systems, and your system has these header files: <sys/fstyp.h>
@@ -560,6 +542,9 @@
 /* Define to enable diff viewer */
 #undef USE_DIFF_VIEW
 
+/* Define if the file command accepts the -z option */
+#undef USE_FILE_CMD
+
 /* Define to enable internal editor */
 #undef USE_INTERNAL_EDIT
 
@@ -597,9 +582,6 @@
 /* Define to use termcap database */
 #undef USE_TERMCAP
 
-/* Version number of package */
-#undef VERSION
-
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
 
@@ -623,9 +605,6 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
-
-/* Define to ino_t if undefined. */
-#undef ext2_ino_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t

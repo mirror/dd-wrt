@@ -7,7 +7,7 @@
    Parts of this program were taken from the lsdel.c and dump.c files
    written by Ted Ts'o (tytso@mit.edu) for the ext2fs package.
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,15 +49,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>             /* memset() */
-
-#ifdef HAVE_EXT2FS_EXT2_FS_H
 #include <ext2fs/ext2_fs.h>
-#else
-/* asm/types.h defines its own umode_t */
-#undef umode_t
-#include <linux/ext2_fs.h>
-#endif
-
 #include <ext2fs/ext2fs.h>
 #include <ctype.h>
 
@@ -400,11 +392,10 @@ undelfs_opendir (const vfs_path_t * vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void *
+static struct vfs_dirent *
 undelfs_readdir (void *vfs_info)
 {
-    static union vfs_dirent undelfs_readdir_data;
-    static char *const dirent_dest = undelfs_readdir_data.dent.d_name;
+    struct vfs_dirent *dirent;
 
     if (vfs_info != fs)
     {
@@ -414,13 +405,18 @@ undelfs_readdir (void *vfs_info)
     if (readdir_ptr == num_delarray)
         return NULL;
     if (readdir_ptr < 0)
-        strcpy (dirent_dest, readdir_ptr == -2 ? "." : "..");
+        dirent = vfs_dirent_init (NULL, readdir_ptr == -2 ? "." : "..", 0);     /* FIXME: inode */
     else
+    {
+        char dirent_dest[MC_MAXPATHLEN];
+
         g_snprintf (dirent_dest, MC_MAXPATHLEN, "%ld:%d",
                     (long) delarray[readdir_ptr].ino, delarray[readdir_ptr].num_blocks);
+        dirent = vfs_dirent_init (NULL, dirent_dest, 0);        /* FIXME: inode */
+    }
     readdir_ptr++;
 
-    return &undelfs_readdir_data;
+    return dirent;
 }
 
 /* --------------------------------------------------------------------------------------------- */

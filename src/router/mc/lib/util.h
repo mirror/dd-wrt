@@ -38,6 +38,25 @@
 #define MC_PIPE_ERROR_CREATE_PIPE_STREAM -4
 #define MC_PIPE_ERROR_READ -5
 
+/* gnulib efa15594e17fc20827dba66414fb391e99905394
+
+ *_GL_CMP (n1, n2) performs a three-valued comparison on n1 vs. n2.
+ *  It returns
+ *    1  if n1 > n2
+ *    0  if n1 == n2
+ *    -1 if n1 < n2
+ *  The native code   (n1 > n2 ? 1 : n1 < n2 ? -1 : 0)  produces a conditional
+ *  jump with nearly all GCC versions up to GCC 10.
+ *  This variant      (n1 < n2 ? -1 : n1 > n2)  produces a conditional with many
+ *  GCC versions up to GCC 9.
+ *  The better code  (n1 > n2) - (n1 < n2)  from Hacker's Delight para 2-9
+ *  avoids conditional jumps in all GCC versions >= 3.4.
+ */
+#define _GL_CMP(n1, n2) (((n1) > (n2)) - ((n1) < (n2)))
+
+/* Difference of zero */
+#define DOZ(a, b) ((a) > (b) ? (a) - (b) : 0)
+
 /*** enums ***************************************************************************************/
 
 /* Pathname canonicalization */
@@ -71,11 +90,12 @@ typedef struct
     int fd;
     /* data read from fd */
     char buf[MC_PIPE_BUFSIZE];
-    /* positive: length of data in buf as before read as after;
-     * zero or negative before read: do not read drom fd;
-     * MC_PIPE_STREAM_EOF after read: EOF of fd;
-     * MC_PIPE_STREAM_UNREAD after read: there was not read from fd;
-     * MC_PIPE_ERROR_READ after read: reading error from fd.
+    /* current position in @buf (used by mc_pstream_get_string()) */
+    size_t pos;
+    /* positive: length of data in buf;
+     * MC_PIPE_STREAM_EOF: EOF of fd;
+     * MC_PIPE_STREAM_UNREAD: there was not read from fd;
+     * MC_PIPE_ERROR_READ: reading error from fd.
      */
     ssize_t len;
     /* whether buf is null-terminated or not */
@@ -101,8 +121,7 @@ typedef struct
 typedef struct
 {
     /* File attributes */
-    size_t fnamelen;
-    char *fname;
+    GString *fname;
     struct stat st;
     /* key used for comparing names */
     char *sort_key;
@@ -191,35 +210,32 @@ const char *get_owner (uid_t uid);
 /* Returns a copy of *s until a \n is found and is below top */
 const char *extract_line (const char *s, const char *top);
 
-/* Error pipes */
-void open_error_pipe (void);
-void check_error_pipe (void);
-int close_error_pipe (int error, const char *text);
-
 /* Process spawning */
 int my_system (int flags, const char *shell, const char *command);
 int my_systeml (int flags, const char *shell, ...);
 int my_systemv (const char *command, char *const argv[]);
 int my_systemv_flags (int flags, const char *command, char *const argv[]);
 
-mc_pipe_t *mc_popen (const char *command, GError ** error);
+mc_pipe_t *mc_popen (const char *command, gboolean read_out, gboolean read_err, GError ** error);
 void mc_pread (mc_pipe_t * p, GError ** error);
 void mc_pclose (mc_pipe_t * p, GError ** error);
+
+GString *mc_pstream_get_string (mc_pipe_stream_t * ps);
 
 void my_exit (int status);
 void save_stop_handler (void);
 
 /* Tilde expansion */
-char *tilde_expand (const char *);
+char *tilde_expand (const char *directory);
 
-void custom_canonicalize_pathname (char *, CANON_PATH_FLAGS);
-void canonicalize_pathname (char *);
+void custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags);
+void canonicalize_pathname (char *path);
 
 char *mc_realpath (const char *path, char *resolved_path);
 
 /* Looks for "magic" bytes at the start of the VFS file to guess the
  * compression type. Side effect: modifies the file position. */
-enum compression_type get_compression_type (int fd, const char *);
+enum compression_type get_compression_type (int fd, const char *name);
 const char *decompress_extension (int type);
 
 GList *list_append_unique (GList * list, char *text);
@@ -240,9 +256,9 @@ extern int ascii_alpha_to_cntrl (int ch);
 #undef Q_
 const char *Q_ (const char *s);
 
-gboolean mc_util_make_backup_if_possible (const char *, const char *);
-gboolean mc_util_restore_from_backup_if_possible (const char *, const char *);
-gboolean mc_util_unlink_backup_if_possible (const char *, const char *);
+gboolean mc_util_make_backup_if_possible (const char *file_name, const char *backup_suffix);
+gboolean mc_util_restore_from_backup_if_possible (const char *file_name, const char *backup_suffix);
+gboolean mc_util_unlink_backup_if_possible (const char *file_name, const char *backup_suffix);
 
 char *guess_message_value (void);
 
@@ -256,7 +272,7 @@ void mc_propagate_error (GError ** dest, int code, const char *format, ...) G_GN
 void mc_replace_error (GError ** dest, int code, const char *format, ...) G_GNUC_PRINTF (3, 4);
 /* *INDENT-ON* */
 
-gboolean mc_time_elapsed (guint64 * timestamp, guint64 delay);
+gboolean mc_time_elapsed (gint64 * timestamp, gint64 delay);
 
 /*** inline functions **************************************************/
 
@@ -269,7 +285,7 @@ exist_file (const char *name)
 static inline gboolean
 is_exe (mode_t mode)
 {
-    return (gboolean) ((S_IXUSR & mode) || (S_IXGRP & mode) || (S_IXOTH & mode));
+    return ((mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0);
 }
 
 #endif /* MC_UTIL_H */

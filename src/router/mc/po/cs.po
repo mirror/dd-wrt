@@ -4,7 +4,7 @@
 #
 # Translators:
 # Jiří Vírava <appukonrad@gmail.com>, 2015,2017
-# k3dar <k3dar7@gmail.com>, 2020
+# k3dar <k3dar7@gmail.com>, 2020-2021
 # Karel Kopecky <kdkopx@protonmail.com>, 2017
 # Pavel Borecki <pavel.borecki@gmail.com>, 2017-2020
 # Radek Valášek <valin@buchlovice.org>, 2014
@@ -14,9 +14,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-06-25 07:12+0000\n"
-"Last-Translator: k3dar <k3dar7@gmail.com>\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Czech (http://www.transifex.com/mc/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -81,30 +81,6 @@ msgstr "Nedaří se vytvořit složku %s"
 
 msgid "FATAL: not a directory:"
 msgstr "FATÁLNÍ: není složkou:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Nastala chyba při stěhování uživatelských nastavení: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Vaše původní nastavení byla přestěhována z %s\n"
-"do složek dle doporučení Freedesktop.\n"
-"Další informace naleznete na\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Vaše původní nastavení byla přestěhována z %s\n"
-"do %s\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -194,11 +170,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "Knihovna ncurses nepodporuje 24 bitové barvy."
 
-msgid "True color not supported in this slang version."
-msgstr "24 bitové barvy nejsou podporovány v tomto nářečí."
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "Váš terminál pravděpodobně nepodporuje ani spektrum 256 barev."
+
+msgid "True color not supported in this slang version."
+msgstr "24 bitové barvy nejsou podporovány v tomto nářečí."
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -568,18 +544,6 @@ msgid ""
 msgstr ""
 "Neočekávaná chyba ve waitpid():\n"
 "%s"
-
-msgid "Warning"
-msgstr "Varování"
-
-msgid "Pipe failed"
-msgstr "pipe() se nezdařilo"
-
-msgid "Dup failed"
-msgstr "dup() se nezdařilo"
-
-msgid "Error dup'ing old error pipe"
-msgstr "Chyba při duplikaci staré chybové roury"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1045,15 +1009,6 @@ msgstr "Prohlížeč rozdílů: neplatný režim"
 msgid "Two files are needed to compare"
 msgstr "K porovnání jsou potřeba dva soubory"
 
-msgid "Choose syntax highlighting"
-msgstr "Vyberte zvýraznění syntaxe"
-
-msgid "< Auto >"
-msgstr "< Auto >"
-
-msgid "< Reload Current Syntax >"
-msgstr "< Znovu načíst aktuální syntaxi >"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "Načítání: %3d%%"
@@ -1088,6 +1043,9 @@ msgstr ""
 "Soubor „%s“ je příliš velký.\n"
 "Přesto otevřít?"
 
+msgid "Warning"
+msgstr "Varování"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "Chyba při čtení z roury: %s"
@@ -1095,14 +1053,6 @@ msgstr "Chyba při čtení z roury: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "Nelze otevřít rouru pro čtení: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "Hledání %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "Hledání %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "Soubor má pevné odkazy. Odpojit před uložením?"
@@ -1149,9 +1099,6 @@ msgstr "Změnit konce řádků na:"
 msgid "Save As"
 msgstr "Uložit jako"
 
-msgid "Collect completions"
-msgstr "Sbírat dokončení"
-
 msgid "&Quick save"
 msgstr "&Rychlé ukládání "
 
@@ -1181,27 +1128,6 @@ msgstr "&Přepsat"
 
 msgid "Cannot save file"
 msgstr "Chyba při zápisu do souboru"
-
-msgid "Delete macro"
-msgstr "Smazat makro"
-
-msgid "Press macro hotkey:"
-msgstr "Stiskněte hotkey makra:"
-
-msgid "Macro not deleted"
-msgstr "Makro nebylo smazáno"
-
-msgid "Save macro"
-msgstr "Uložit makro"
-
-msgid "Press the macro's new hotkey:"
-msgstr "Stiskněte novou hotkey pro makro:"
-
-msgid "Repeat last commands"
-msgstr "Opakovat poslední příkazy"
-
-msgid "Repeat times:"
-msgstr "Kolikrát opakovat:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1236,13 +1162,6 @@ msgstr "Soubor které nabídky chcete upravit?"
 
 msgid "&Local"
 msgstr "&Lokální"
-
-msgid "Replace"
-msgstr "Nahradit"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "Provedeno %ld nahrazení"
 
 msgid "[NoName]"
 msgstr "[beze názvu]"
@@ -1352,35 +1271,35 @@ msgstr ""
 "Tento text byl změněn, ale změny nebyly uloženy.\n"
 "Pokračováním se změny ztratí."
 
-msgid "In se&lection"
-msgstr "&Ve výběru"
-
-msgid "&Find all"
-msgstr "&Najít všechny"
-
-msgid "Enter replacement string:"
-msgstr "Zadejte nahrazující text:"
-
-msgid "Replace with:"
-msgstr "Nahradit textem:"
-
-msgid "&Replace"
-msgstr "Nah&radit"
-
-msgid "A&ll"
-msgstr "&Všechny"
-
-msgid "&Skip"
-msgstr "Pře&skočit"
-
-msgid "Confirm replace"
-msgstr "Potvrdit nahrazení"
-
 msgid "Cancel"
 msgstr "Storno"
 
+msgid "Collect completions"
+msgstr "Sbírat dokončení"
+
 msgid "NoName"
 msgstr "Beze názvu"
+
+msgid "Save macro"
+msgstr "Uložit makro"
+
+msgid "Press the macro's new hotkey:"
+msgstr "Stiskněte novou hotkey pro makro:"
+
+msgid "Delete macro"
+msgstr "Smazat makro"
+
+msgid "Press macro hotkey:"
+msgstr "Stiskněte hotkey makra:"
+
+msgid "Macro not deleted"
+msgstr "Makro nebylo smazáno"
+
+msgid "Repeat last commands"
+msgstr "Opakovat poslední příkazy"
+
+msgid "Repeat times:"
+msgstr "Kolikrát opakovat:"
 
 msgid "&Open file..."
 msgstr "&Otevřít soubor…"
@@ -1670,6 +1589,45 @@ msgstr "Délka řádku pro zalomení slova:"
 msgid "Editor options"
 msgstr "Nastavení editoru"
 
+msgid "In se&lection"
+msgstr "&Ve výběru"
+
+msgid "&Find all"
+msgstr "&Najít všechny"
+
+msgid "Enter replacement string:"
+msgstr "Zadejte nahrazující text:"
+
+msgid "Replace"
+msgstr "Nahradit"
+
+msgid "Replace with:"
+msgstr "Nahradit textem:"
+
+msgid "&Replace"
+msgstr "Nah&radit"
+
+msgid "A&ll"
+msgstr "&Všechny"
+
+msgid "&Skip"
+msgstr "Pře&skočit"
+
+msgid "Confirm replace"
+msgstr "Potvrdit nahrazení"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Hledání %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Hledání %s"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "Provedeno %ld nahrazení"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1677,8 +1635,8 @@ msgstr ""
 "Uživatelsky přívětivý textový editor\n"
 "napsaný pro Midnight Commander."
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
-msgstr "Autorská práva © 1996-2020 nadace Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "O programu"
@@ -1796,6 +1754,15 @@ msgstr "Navrhnout"
 
 msgid "Select language"
 msgstr "Výběr jazyka"
+
+msgid "Choose syntax highlighting"
+msgstr "Vyberte zvýraznění syntaxe"
+
+msgid "< Auto >"
+msgstr "< Auto >"
+
+msgid "< Reload Current Syntax >"
+msgstr "< Znovu načíst aktuální syntaxi >"
 
 msgid "Load syntax file"
 msgstr "Načíst soubor se syntaxí"
@@ -1989,6 +1956,9 @@ msgstr "Změna nastavení"
 
 msgid "Skin:"
 msgstr "Schéma vzhledu:"
+
+msgid "&Shadows"
+msgstr "&Stíny"
 
 msgid "Appearance"
 msgstr "Vzhled"
@@ -2213,6 +2183,14 @@ msgstr "Uživatelské jméno:"
 msgid "SMB authentication"
 msgstr "SMB ověření"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"Nedaří se přejít do složky „%s“\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr "Bezpečné smazání"
 
@@ -2272,6 +2250,9 @@ msgstr "Obrovský soubor"
 
 msgid "No COW"
 msgstr "Nepoužít kopírování při zápisu (CoW)"
+
+msgid "Direct access for files"
+msgstr ""
 
 msgid "Casefolded file"
 msgstr "Casefolded file"
@@ -2555,14 +2536,6 @@ msgstr ""
 "Pokud nepracujete se soubory, nacházejícími se v tomto počítači, nelze "
 "spouštět žádné příkazy"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"Nedaří se přejít do složky „%s“\n"
-"%s"
-
 msgid "Parameter"
 msgstr "Parametr"
 
@@ -2573,6 +2546,9 @@ msgid ""
 msgstr ""
 "Nedaří se vytvořit dočasný příkazový soubor\n"
 "%s"
+
+msgid "Pipe failed"
+msgstr "pipe() se nezdařilo"
 
 #, c-format
 msgid " %s%s file error"
@@ -3097,6 +3073,227 @@ msgstr "&Na pozadí"
 msgid "Invalid source pattern '%s'"
 msgstr "Neplatný zdrojový vzor „%s“"
 
+msgid "File listin&g"
+msgstr "&Seznam souborů"
+
+msgid "&Quick view"
+msgstr "&Rychlé zobrazení "
+
+msgid "&Info"
+msgstr "&Info"
+
+msgid "&Tree"
+msgstr "S&trom"
+
+msgid "&Listing format..."
+msgstr "&Formát výpisu…"
+
+msgid "&Sort order..."
+msgstr "&Pořadí…"
+
+msgid "&Filter..."
+msgstr "&Filtr…"
+
+msgid "&Encoding..."
+msgstr "&Kódování…"
+
+msgid "FT&P link..."
+msgstr "FT&P spojení…"
+
+msgid "S&hell link..."
+msgstr "S&hell spojení…"
+
+msgid "S&FTP link..."
+msgstr "SFTP sp&ojení…"
+
+msgid "SM&B link..."
+msgstr "SM&B spojení…"
+
+msgid "Paneli&ze"
+msgstr "Zobra&zit v panelu"
+
+msgid "&Rescan"
+msgstr "Znovu p&roskenovat"
+
+msgid "&View"
+msgstr "&Prohlížet"
+
+msgid "Vie&w file..."
+msgstr "Pro&hlížet soubor…"
+
+msgid "&Filtered view"
+msgstr "&Filtrovaný pohled"
+
+msgid "&Copy"
+msgstr "&Kopírovat"
+
+msgid "C&hmod"
+msgstr "&Změna práv"
+
+msgid "&Link"
+msgstr "O&dkaz"
+
+msgid "&Symlink"
+msgstr "&Symbolický odkaz"
+
+msgid "Relative symlin&k"
+msgstr "Relativní symbolic&ký odkaz"
+
+msgid "Edit s&ymlink"
+msgstr "Upravit s&ymbolický odkaz"
+
+msgid "Ch&own"
+msgstr "Změna &vlastníka"
+
+msgid "&Advanced chown"
+msgstr "&Rozšířená změna práv/vlastníka"
+
+msgid "Cha&ttr"
+msgstr "Cha&ttr"
+
+msgid "&Rename/Move"
+msgstr "Přej&menovat/přesunout"
+
+msgid "&Mkdir"
+msgstr "&Nová složka"
+
+msgid "&Quick cd"
+msgstr "Ry&chlá změna složky"
+
+msgid "Select &group"
+msgstr "Vy&brat skupinu"
+
+msgid "U&nselect group"
+msgstr "Zrušit výběr skupi&ny"
+
+msgid "&Invert selection"
+msgstr "Převrát&it výběr"
+
+msgid "E&xit"
+msgstr "Ukonč&it"
+
+msgid "&User menu"
+msgstr "&Uživatelská nabídka"
+
+msgid "&Directory tree"
+msgstr "Strom a&dresářů"
+
+msgid "&Find file"
+msgstr "&Najít soubor"
+
+msgid "S&wap panels"
+msgstr "Proh&odit panely"
+
+msgid "Switch &panels on/off"
+msgstr "&Panely ano/ne"
+
+msgid "&Compare directories"
+msgstr "Porovnat &složky"
+
+msgid "C&ompare files"
+msgstr "P&orovnat soubory"
+
+msgid "E&xternal panelize"
+msgstr "E&xterní panelizace"
+
+msgid "Show directory s&izes"
+msgstr "Zobrazit velikost&i složek"
+
+msgid "Command &history"
+msgstr "&Historie příkazů"
+
+msgid "Viewed/edited files hi&story"
+msgstr "Hi&storie zobrazených/upravovaných souborů"
+
+msgid "Di&rectory hotlist"
+msgstr "&Rychlý přístup ke složkám"
+
+msgid "&Active VFS list"
+msgstr "Seznam právě použív&aných VFS souborových systémů"
+
+msgid "&Background jobs"
+msgstr "Úlohy na po&zadí"
+
+msgid "Screen lis&t"
+msgstr "Seznam obrazove&k"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "&Obnovit smazané soubory (jen ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "Upravit formát &výpisu"
+
+msgid "Edit &extension file"
+msgstr "Upravit akc&e k příponám"
+
+msgid "Edit &menu file"
+msgstr "Upravit uživatelskou &nabídku"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "Upravit z&výrazňování skupin"
+
+msgid "&Configuration..."
+msgstr "&Nastavení…"
+
+msgid "&Layout..."
+msgstr "&Rozvržení…"
+
+msgid "&Panel options..."
+msgstr "Nastavení &panelu…"
+
+msgid "C&onfirmation..."
+msgstr "P&otvrzování…"
+
+msgid "&Appearance..."
+msgstr "&Vzhled…"
+
+msgid "&Display bits..."
+msgstr "&Zobrazení bitů…"
+
+msgid "&Virtual FS..."
+msgstr "&Virtuální souborový systém…"
+
+msgid "Panels:"
+msgstr "Panely:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "Máte %zu otevřenou obrazovku. Ukončit i tak?"
+msgstr[1] "Máte %zu otevřené obrazovky. Ukončit i tak?"
+msgstr[2] "Máte otevřeno %zu obrazovek. Ukončit i tak?"
+msgstr[3] "Máte otevřeno %zu obrazovek. Ukončit i tak?"
+
+msgid "The Midnight Commander"
+msgstr "Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "Opravdu chcete Midnight Commander ukončit?"
+
+msgid "&Above"
+msgstr "N&ad"
+
+msgid "&Left"
+msgstr "V&levo"
+
+msgid "&Below"
+msgstr "&Pod"
+
+msgid "&Right"
+msgstr "Vp&ravo"
+
+msgid "ButtonBar|Menu"
+msgstr "ButtonBar|Nabídka"
+
+msgid "ButtonBar|View"
+msgstr "ButtonBar|Zobraz"
+
+msgid "ButtonBar|RenMov"
+msgstr "ButtonBar|Přejm/Přesun"
+
+msgid "ButtonBar|Mkdir"
+msgstr "ButtonBar|Nová slož."
+
 msgid "&Chdir"
 msgstr "&Chdir"
 
@@ -3125,6 +3322,9 @@ msgstr "Název souboru:"
 msgid "&Find recursively"
 msgstr "&Hledat i v podsložkách"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr "Přes&kočit skryté"
 
@@ -3142,9 +3342,6 @@ msgstr "&Všechny znakové sady"
 
 msgid "Fir&st hit"
 msgstr "První vý&skyt"
-
-msgid "&Tree"
-msgstr "S&trom"
 
 msgid "Find File"
 msgstr "Najít soubor"
@@ -3408,224 +3605,6 @@ msgstr "Řádky výstupu:"
 msgid "Layout"
 msgstr "Rozvržení"
 
-msgid "File listin&g"
-msgstr "&Seznam souborů"
-
-msgid "&Quick view"
-msgstr "&Rychlé zobrazení "
-
-msgid "&Info"
-msgstr "&Info"
-
-msgid "&Listing format..."
-msgstr "&Formát výpisu…"
-
-msgid "&Sort order..."
-msgstr "&Pořadí…"
-
-msgid "&Filter..."
-msgstr "&Filtr…"
-
-msgid "&Encoding..."
-msgstr "&Kódování…"
-
-msgid "FT&P link..."
-msgstr "FT&P spojení…"
-
-msgid "S&hell link..."
-msgstr "S&hell spojení…"
-
-msgid "S&FTP link..."
-msgstr "SFTP sp&ojení…"
-
-msgid "SM&B link..."
-msgstr "SM&B spojení…"
-
-msgid "Paneli&ze"
-msgstr "Zobra&zit v panelu"
-
-msgid "&Rescan"
-msgstr "Znovu p&roskenovat"
-
-msgid "&View"
-msgstr "&Prohlížet"
-
-msgid "Vie&w file..."
-msgstr "Pro&hlížet soubor…"
-
-msgid "&Filtered view"
-msgstr "&Filtrovaný pohled"
-
-msgid "&Copy"
-msgstr "&Kopírovat"
-
-msgid "C&hmod"
-msgstr "&Změna práv"
-
-msgid "&Link"
-msgstr "O&dkaz"
-
-msgid "&Symlink"
-msgstr "&Symbolický odkaz"
-
-msgid "Relative symlin&k"
-msgstr "Relativní symbolic&ký odkaz"
-
-msgid "Edit s&ymlink"
-msgstr "Upravit s&ymbolický odkaz"
-
-msgid "Ch&own"
-msgstr "Změna &vlastníka"
-
-msgid "&Advanced chown"
-msgstr "&Rozšířená změna práv/vlastníka"
-
-msgid "Cha&ttr"
-msgstr "Cha&ttr"
-
-msgid "&Rename/Move"
-msgstr "Přej&menovat/přesunout"
-
-msgid "&Mkdir"
-msgstr "&Nová složka"
-
-msgid "&Quick cd"
-msgstr "Ry&chlá změna složky"
-
-msgid "Select &group"
-msgstr "Vy&brat skupinu"
-
-msgid "U&nselect group"
-msgstr "Zrušit výběr skupi&ny"
-
-msgid "&Invert selection"
-msgstr "Převrát&it výběr"
-
-msgid "E&xit"
-msgstr "Ukonč&it"
-
-msgid "&User menu"
-msgstr "&Uživatelská nabídka"
-
-msgid "&Directory tree"
-msgstr "Strom a&dresářů"
-
-msgid "&Find file"
-msgstr "&Najít soubor"
-
-msgid "S&wap panels"
-msgstr "Proh&odit panely"
-
-msgid "Switch &panels on/off"
-msgstr "&Panely ano/ne"
-
-msgid "&Compare directories"
-msgstr "Porovnat &složky"
-
-msgid "C&ompare files"
-msgstr "P&orovnat soubory"
-
-msgid "E&xternal panelize"
-msgstr "E&xterní panelizace"
-
-msgid "Show directory s&izes"
-msgstr "Zobrazit velikost&i složek"
-
-msgid "Command &history"
-msgstr "&Historie příkazů"
-
-msgid "Viewed/edited files hi&story"
-msgstr "Hi&storie zobrazených/upravovaných souborů"
-
-msgid "Di&rectory hotlist"
-msgstr "&Rychlý přístup ke složkám"
-
-msgid "&Active VFS list"
-msgstr "Seznam právě použív&aných VFS souborových systémů"
-
-msgid "&Background jobs"
-msgstr "Úlohy na po&zadí"
-
-msgid "Screen lis&t"
-msgstr "Seznam obrazove&k"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "&Obnovit smazané soubory (jen ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "Upravit formát &výpisu"
-
-msgid "Edit &extension file"
-msgstr "Upravit akc&e k příponám"
-
-msgid "Edit &menu file"
-msgstr "Upravit uživatelskou &nabídku"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "Upravit z&výrazňování skupin"
-
-msgid "&Configuration..."
-msgstr "&Nastavení…"
-
-msgid "&Layout..."
-msgstr "&Rozvržení…"
-
-msgid "&Panel options..."
-msgstr "Nastavení &panelu…"
-
-msgid "C&onfirmation..."
-msgstr "P&otvrzování…"
-
-msgid "&Appearance..."
-msgstr "&Vzhled…"
-
-msgid "&Display bits..."
-msgstr "&Zobrazení bitů…"
-
-msgid "&Virtual FS..."
-msgstr "&Virtuální souborový systém…"
-
-msgid "Panels:"
-msgstr "Panely:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] "Máte %zu otevřenou obrazovku. Ukončit i tak?"
-msgstr[1] "Máte %zu otevřené obrazovky. Ukončit i tak?"
-msgstr[2] "Máte otevřeno %zu obrazovek. Ukončit i tak?"
-msgstr[3] "Máte otevřeno %zu obrazovek. Ukončit i tak?"
-
-msgid "The Midnight Commander"
-msgstr "Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Opravdu chcete Midnight Commander ukončit?"
-
-msgid "&Above"
-msgstr "N&ad"
-
-msgid "&Left"
-msgstr "V&levo"
-
-msgid "&Below"
-msgstr "&Pod"
-
-msgid "&Right"
-msgstr "Vp&ravo"
-
-msgid "ButtonBar|Menu"
-msgstr "ButtonBar|Nabídka"
-
-msgid "ButtonBar|View"
-msgstr "ButtonBar|Zobraz"
-
-msgid "ButtonBar|RenMov"
-msgstr "ButtonBar|Přejm/Přesun"
-
-msgid "ButtonBar|Mkdir"
-msgstr "ButtonBar|Nová slož."
-
 msgid "Memory exhausted!"
 msgstr "Došla volná paměť!"
 
@@ -3790,11 +3769,18 @@ msgstr "Přidat do externí panelizace"
 msgid "Enter command label:"
 msgstr "Zadejte označení příkazu:"
 
-msgid "Cannot invoke command."
-msgstr "Příkaz se nedaří vyvolat."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "Rouru (pipe) se nepodařilo zavřít"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Při práci se složkou, která není místní, není možné zobrazit v panelu"
@@ -4190,13 +4176,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"Nedaří se otevřít %s archiv\n"
-"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "Poškozený extfs archiv"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4366,6 +4354,12 @@ msgstr ""
 "Odstraňte heslo nebo změňte práva"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: Varování: soubor %s nenalezen\n"
 
@@ -4399,6 +4393,9 @@ msgstr "sftp: Chybný název počítače."
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: navazování spojení s %s"
@@ -4409,6 +4406,50 @@ msgstr "sftp: připojování přerušeno uživatelem"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: připojování k serveru se nezdařilo: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4424,8 +4465,8 @@ msgstr "sftp: Zadejte heslo pro %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: Heslo není vyplněné."
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: Nepodařilo se navázat SSH sezení"
+msgid "sftp: failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Není přítomen žádný obslužný program pro čtení souboru"

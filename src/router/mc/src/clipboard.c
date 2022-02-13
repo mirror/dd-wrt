@@ -1,7 +1,7 @@
 /*
    Util for external clipboard.
 
-   Copyright (C) 2009-2020
+   Copyright (C) 2009-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -71,14 +71,13 @@ clipboard_file_to_ext_clip (const gchar * event_group_name, const gchar * event_
                             gpointer init_data, gpointer data)
 {
     char *tmp, *cmd;
-    const char *d = getenv ("DISPLAY");
 
     (void) event_group_name;
     (void) event_name;
     (void) init_data;
     (void) data;
 
-    if (d == NULL || clipboard_store_path == NULL || clipboard_store_path[0] == '\0')
+    if (clipboard_store_path == NULL || clipboard_store_path[0] == '\0')
         return TRUE;
 
     tmp = mc_config_get_full_path (EDIT_HOME_CLIP_FILE);
@@ -101,17 +100,16 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
 {
     mc_pipe_t *p;
     int file = -1;
-    const char *d = getenv ("DISPLAY");
 
     (void) event_group_name;
     (void) event_name;
     (void) init_data;
     (void) data;
 
-    if (d == NULL || clipboard_paste_path == NULL || clipboard_paste_path[0] == '\0')
+    if (clipboard_paste_path == NULL || clipboard_paste_path[0] == '\0')
         return TRUE;
 
-    p = mc_popen (clipboard_paste_path, NULL);
+    p = mc_popen (clipboard_paste_path, TRUE, TRUE, NULL);
     if (p == NULL)
         return TRUE;            /* don't show error message */
 
@@ -148,7 +146,7 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
 
                 fname_vpath = mc_config_get_full_vpath (EDIT_HOME_CLIP_FILE);
                 file = mc_open (fname_vpath, clip_open_flags, clip_open_mode);
-                vfs_path_free (fname_vpath);
+                vfs_path_free (fname_vpath, TRUE);
 
                 if (file < 0)
                     break;
@@ -188,7 +186,7 @@ clipboard_text_to_file (const gchar * event_group_name, const gchar * event_name
 
     fname_vpath = mc_config_get_full_vpath (EDIT_HOME_CLIP_FILE);
     file = mc_open (fname_vpath, clip_open_flags, clip_open_mode);
-    vfs_path_free (fname_vpath);
+    vfs_path_free (fname_vpath, TRUE);
 
     if (file == -1)
         return TRUE;

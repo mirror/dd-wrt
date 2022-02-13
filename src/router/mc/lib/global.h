@@ -148,8 +148,6 @@
 
 #define DEFAULT_CHARSET "ASCII"
 
-#include "lib/timer.h"          /* mc_timer_t */
-
 /*** enums ***************************************************************************************/
 
 /* run mode and params */
@@ -165,10 +163,10 @@ typedef enum
 
 typedef struct
 {
+    const char *mc_version;
+
     mc_run_mode_t mc_run_mode;
     gboolean run_from_parent_mc;
-    /* global timer */
-    mc_timer_t *timer;
     /* Used so that widgets know if they are being destroyed or shut down */
     gboolean midnight_shutdown;
 
@@ -230,6 +228,8 @@ typedef struct
     {
         /* Use the specified skin */
         char *skin;
+        /* Dialog window and frop down menu have a shadow */
+        gboolean shadows;
 
         char *setup_color_string;
         char *term_color_string;

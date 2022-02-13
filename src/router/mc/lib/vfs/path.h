@@ -60,7 +60,7 @@ typedef struct
 vfs_path_t *vfs_path_new (void);
 vfs_path_t *vfs_path_clone (const vfs_path_t * vpath);
 void vfs_path_remove_element_by_index (vfs_path_t * vpath, int element_index);
-void vfs_path_free (vfs_path_t * path);
+char *vfs_path_free (vfs_path_t * path, gboolean free_str);
 int vfs_path_elements_count (const vfs_path_t * path);
 
 char *vfs_path_to_str_elements_count (const vfs_path_t * path, int elements_count);
@@ -70,7 +70,7 @@ vfs_path_t *vfs_path_from_str_flags (const char *path_str, vfs_path_flag_t flags
 vfs_path_t *vfs_path_build_filename (const char *first_element, ...);
 vfs_path_t *vfs_path_append_new (const vfs_path_t * vpath, const char *first_element, ...);
 vfs_path_t *vfs_path_append_vpath_new (const vfs_path_t * first_vpath, ...);
-size_t vfs_path_tokens_count (const vfs_path_t *);
+size_t vfs_path_tokens_count (const vfs_path_t * vpath);
 char *vfs_path_tokens_get (const vfs_path_t * vpath, ssize_t start_position, ssize_t length);
 vfs_path_t *vfs_path_vtokens_get (const vfs_path_t * vpath, ssize_t start_position, ssize_t length);
 

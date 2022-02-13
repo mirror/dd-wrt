@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Interface functions
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc
 
    Written by:
@@ -44,7 +44,7 @@
 #include "lib/widget.h"
 
 #include "src/filemanager/layout.h"
-#include "src/filemanager/midnight.h"   /* the_menubar */
+#include "src/filemanager/filemanager.h"        /* the_menubar */
 
 #include "internal.h"
 
@@ -108,7 +108,7 @@ mcview_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             if (!widget_get_state (w, WST_FOCUSED))
             {
                 /* Grab focus */
-                change_panel ();
+                (void) change_panel ();
             }
         }
         MC_FALLTHROUGH;
@@ -250,7 +250,7 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
     lc_mcview = mcview_new (vw->y, vw->x, vw->lines - 1, vw->cols, FALSE);
     group_add_widget_autopos (g, lc_mcview, WPOS_KEEP_ALL, NULL);
 
-    b = WIDGET (buttonbar_new (TRUE));
+    b = WIDGET (buttonbar_new ());
     group_add_widget_autopos (g, b, b->pos_flags, NULL);
 
     view_dlg->get_title = mcview_get_title;
@@ -265,7 +265,7 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
         dlg_stop (view_dlg);
 
     if (widget_get_state (vw, WST_CLOSED))
-        dlg_destroy (view_dlg);
+        widget_destroy (vw);
 
     return succeeded;
 }
@@ -288,7 +288,7 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
     /* get working dir */
     if (file != NULL && file[0] != '\0')
     {
-        vfs_path_free (view->workdir_vpath);
+        vfs_path_free (view->workdir_vpath, TRUE);
 
         if (!g_path_is_absolute (file))
         {
@@ -296,7 +296,7 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
 
             p = vfs_path_clone (vfs_get_raw_current_dir ());
             view->workdir_vpath = vfs_path_append_new (p, file, (char *) NULL);
-            vfs_path_free (p);
+            vfs_path_free (p, TRUE);
         }
         else
         {
@@ -335,9 +335,9 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
                         file, unix_error_string (errno));
             mcview_close_datasource (view);
             mcview_show_error (view, tmp);
-            vfs_path_free (view->filename_vpath);
+            vfs_path_free (view->filename_vpath, TRUE);
             view->filename_vpath = NULL;
-            vfs_path_free (view->workdir_vpath);
+            vfs_path_free (view->workdir_vpath, TRUE);
             view->workdir_vpath = NULL;
             goto finish;
         }
@@ -350,9 +350,9 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
                         file, unix_error_string (errno));
             mcview_close_datasource (view);
             mcview_show_error (view, tmp);
-            vfs_path_free (view->filename_vpath);
+            vfs_path_free (view->filename_vpath, TRUE);
             view->filename_vpath = NULL;
-            vfs_path_free (view->workdir_vpath);
+            vfs_path_free (view->workdir_vpath, TRUE);
             view->workdir_vpath = NULL;
             goto finish;
         }
@@ -362,9 +362,9 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
             mc_close (fd);
             mcview_close_datasource (view);
             mcview_show_error (view, _("Cannot view: not a regular file"));
-            vfs_path_free (view->filename_vpath);
+            vfs_path_free (view->filename_vpath, TRUE);
             view->filename_vpath = NULL;
-            vfs_path_free (view->workdir_vpath);
+            vfs_path_free (view->workdir_vpath, TRUE);
             view->workdir_vpath = NULL;
             goto finish;
         }
@@ -392,7 +392,7 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
                     vpath1 = vfs_path_from_str (tmp_filename);
                     g_free (tmp_filename);
                     fd1 = mc_open (vpath1, O_RDONLY | O_NONBLOCK);
-                    vfs_path_free (vpath1);
+                    vfs_path_free (vpath1, TRUE);
 
                     if (fd1 == -1)
                     {
@@ -457,7 +457,7 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
     view->hexedit_lownibble = FALSE;
     view->hexview_in_text = FALSE;
     view->change_list = NULL;
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
     return retval;
 }
 

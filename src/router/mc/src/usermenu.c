@@ -1,7 +1,7 @@
 /*
    User Menu implementation
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -54,7 +54,7 @@
 #include "src/history.h"
 
 #include "src/filemanager/dir.h"
-#include "src/filemanager/midnight.h"
+#include "src/filemanager/filemanager.h"
 #include "src/filemanager/layout.h"
 
 #include "usermenu.h"
@@ -255,7 +255,7 @@ test_condition (const WEdit * edit_widget, char *p, gboolean * condition)
             else
 #endif
                 *condition = panel != NULL &&
-                    mc_search (arg, DEFAULT_CHARSET, panel->dir.list[panel->selected].fname,
+                    mc_search (arg, DEFAULT_CHARSET, panel->dir.list[panel->selected].fname->str,
                                search_type);
             break;
         case 'y':              /* syntax pattern */
@@ -433,6 +433,7 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
     int col;
     vfs_path_t *file_name_vpath;
     gboolean run_view = FALSE;
+    char *cmd;
 
     /* Skip menu entry title line */
     commands = strchr (commands, '\n');
@@ -445,7 +446,6 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
     {
         message (D_ERROR, MSG_ERROR, _("Cannot create temporary command file\n%s"),
                  unix_error_string (errno));
-        vfs_path_free (file_name_vpath);
         return;
     }
 
@@ -480,9 +480,10 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
                 if (parameter == NULL || *parameter == '\0')
                 {
                     /* User canceled */
+                    g_free (parameter);
                     fclose (cmd_file);
                     mc_unlink (file_name_vpath);
-                    vfs_path_free (file_name_vpath);
+                    vfs_path_free (file_name_vpath, TRUE);
                     return;
                 }
                 if (do_quote)
@@ -544,28 +545,41 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
     fclose (cmd_file);
     mc_chmod (file_name_vpath, S_IRWXU);
 
+    /* Execute the command indirectly to allow execution even on no-exec filesystems. */
+    cmd = g_strconcat ("/bin/sh ", vfs_path_as_str (file_name_vpath), (char *) NULL);
+
     if (run_view)
     {
-        mcview_viewer (vfs_path_as_str (file_name_vpath), NULL, 0, 0, 0);
+        mcview_viewer (cmd, NULL, 0, 0, 0);
         dialog_switch_process_pending ();
     }
+    else if (show_prompt)
+        shell_execute (cmd, EXECUTE_HIDE);
     else
     {
-        /* execute the command indirectly to allow execution even
-         * on no-exec filesystems. */
-        char *cmd;
+        gboolean ok;
 
-        cmd = g_strconcat ("/bin/sh ", vfs_path_as_str (file_name_vpath), (char *) NULL);
+        /* Prepare the terminal by setting its flag to the initial ones. This will cause \r
+         * to work as expected, instead of being ignored. */
+        tty_reset_shell_mode ();
 
-        if (show_prompt)
-            shell_execute (cmd, EXECUTE_HIDE);
-        else if (system (cmd) == -1)
+        ok = (system (cmd) != -1);
+
+        /* Restore terminal configuration. */
+        tty_raw_mode ();
+
+        /* Redraw the original screen's contents. */
+        tty_clear_screen ();
+        repaint_screen ();
+
+        if (!ok)
             message (D_ERROR, MSG_ERROR, "%s", _("Error calling program"));
-
-        g_free (cmd);
     }
+
+    g_free (cmd);
+
     mc_unlink (file_name_vpath);
-    vfs_path_free (file_name_vpath);
+    vfs_path_free (file_name_vpath, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -757,7 +771,7 @@ expand_format (const WEdit * edit_widget, char c, gboolean do_quote)
                 panel = other_panel;
             }
 
-            fname = panel->dir.list[panel->selected].fname;
+            fname = panel->dir.list[panel->selected].fname->str;
         }
         break;
 
@@ -899,7 +913,7 @@ expand_format (const WEdit * edit_widget, char c, gboolean do_quote)
                 {
                     char *tmp;
 
-                    tmp = quote_func (panel->dir.list[i].fname, FALSE);
+                    tmp = quote_func (panel->dir.list[i].fname->str, FALSE);
                     g_string_append (block, tmp);
                     g_string_append_c (block, ' ');
                     g_free (tmp);
@@ -1026,7 +1040,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
             switch (*p)
             {
             case '#':
-                /* show prompt if first line of external script is #interactive */
+                /* do not show prompt if first line of external script is #silent */
                 if (selected_entry >= 0 && strncmp (p, "#silent", 7) == 0)
                     interactive = FALSE;
                 /* A commented menu entry */

@@ -1,7 +1,7 @@
 /*
    Hypertext file browser.
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -65,7 +65,7 @@
 #include "lib/widget.h"
 #include "lib/event-types.h"
 
-#include "keybind-defaults.h"
+#include "keymap.h"
 #include "help.h"
 
 /*** global variables ****************************************************************************/
@@ -512,8 +512,8 @@ help_show (WDialog * h, const char *paint_start)
                 break;
             case CHAR_VERSION:
                 widget_gotoyx (h, line + 2, col + 2);
-                tty_print_string (VERSION);
-                col += str_term_width1 (VERSION);
+                tty_print_string (mc_global.mc_version);
+                col += str_term_width1 (mc_global.mc_version);
                 break;
             case CHAR_FONT_BOLD:
                 tty_setcolor (HELP_BOLD_COLOR);
@@ -1153,14 +1153,14 @@ help_interactive_display (const gchar * event_group_name, const gchar * event_na
         history[history_ptr].link = selected_item;
     }
 
-    help_bar = buttonbar_new (TRUE);
+    help_bar = buttonbar_new ();
     WIDGET (help_bar)->y -= wh->y;
     WIDGET (help_bar)->x -= wh->x;
 
     md = mousedispatch_new (1, 1, help_lines, HELP_WINDOW_WIDTH - 2);
 
     group_add_widget (g, md);
-    group_add_widget (g, help_bar);
+    group_add_widget (g, help_bar);     /* FIXME */
 
     buttonbar_set_label (help_bar, 1, Q_ ("ButtonBar|Help"), wh->keymap, NULL);
     buttonbar_set_label (help_bar, 2, Q_ ("ButtonBar|Index"), wh->keymap, NULL);
@@ -1175,7 +1175,7 @@ help_interactive_display (const gchar * event_group_name, const gchar * event_na
 
     dlg_run (whelp);
     interactive_display_finish ();
-    dlg_destroy (whelp);
+    widget_destroy (wh);
     return TRUE;
 }
 

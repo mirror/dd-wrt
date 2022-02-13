@@ -1,7 +1,7 @@
 /*
    Virtual File System: GNU Tar file system.
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -368,7 +368,7 @@ tar_open_archive_int (struct vfs_class *me, const vfs_path_t * vpath, struct vfs
         s = g_strconcat (archive->name, decompress_extension (type), (char *) NULL);
         tmp_vpath = vfs_path_from_str_flags (s, VPF_NO_CANON);
         result = mc_open (tmp_vpath, O_RDONLY);
-        vfs_path_free (tmp_vpath);
+        vfs_path_free (tmp_vpath, TRUE);
         if (result == -1)
             message (D_ERROR, MSG_ERROR, _("Cannot open tar archive\n%s"), s);
         g_free (s);
@@ -565,11 +565,11 @@ tar_fill_stat (struct vfs_s_super *archive, struct stat *st, union block *header
     case TAR_POSIX:
     case TAR_GNU:
         /* *INDENT-OFF* */
-        st->st_uid = *header->header.uname
-            ? vfs_finduid (header->header.uname)
+        st->st_uid = *header->header.uname != '\0'
+            ? (uid_t) vfs_finduid (header->header.uname)
             : tar_from_oct (8, header->header.uid);
-        st->st_gid = *header->header.gname
-            ? vfs_findgid (header->header.gname)
+        st->st_gid = *header->header.gname != '\0'
+            ? (gid_t)  vfs_findgid (header->header.gname)
             : tar_from_oct (8,header->header.gid);
         /* *INDENT-ON* */
 
@@ -796,7 +796,9 @@ tar_read_header (struct vfs_class *me, struct vfs_s_super *archive, int tard, si
             }
         }
 
+        memset (&st, 0, sizeof (st));
         tar_fill_stat (archive, &st, header, *h_size);
+
         if (S_ISDIR (st.st_mode))
         {
             entry = VFS_SUBCLASS (me)->find_entry (me, parent, p, LINK_NO_FOLLOW, FL_NONE);

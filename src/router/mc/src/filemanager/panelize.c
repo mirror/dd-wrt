@@ -1,7 +1,7 @@
 /*
    External panelize
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -50,7 +50,7 @@
 #include "src/history.h"
 
 #include "dir.h"
-#include "midnight.h"           /* current_panel */
+#include "filemanager.h"        /* current_panel */
 #include "layout.h"             /* rotate_dash() */
 #include "panel.h"              /* WPanel */
 
@@ -217,7 +217,7 @@ init_panelize (void)
 static void
 panelize_done (void)
 {
-    dlg_destroy (panelize_dlg);
+    widget_destroy (WIDGET (panelize_dlg));
     repaint_screen ();
 }
 
@@ -306,15 +306,18 @@ static void
 do_external_panelize (char *command)
 {
     dir_list *list = &current_panel->dir;
-    FILE *external;
+    mc_pipe_t *external;
+    GError *error = NULL;
+    GString *remain_file_name = NULL;
 
-    open_error_pipe ();
-    external = popen (command, "r");
+    external = mc_popen (command, TRUE, TRUE, &error);
     if (external == NULL)
     {
-        close_error_pipe (D_ERROR, _("Cannot invoke command."));
+        message (D_ERROR, _("External panelize"), "%s", error->message);
+        g_error_free (error);
         return;
     }
+
     /* Clear the counters and the directory list */
     panel_clean_dir (current_panel);
 
@@ -324,48 +327,109 @@ do_external_panelize (char *command)
 
     while (TRUE)
     {
-        char line[MC_MAXPATHLEN];
-        size_t len;
-        char *name;
-        gboolean link_to_dir, stale_link;
-        struct stat st;
+        GString *line;
+        gboolean ok;
 
-        clearerr (external);
-        if (fgets (line, sizeof (line), external) == NULL)
+        /* init buffers before call of mc_pread() */
+        external->out.len = MC_PIPE_BUFSIZE;
+        external->err.len = MC_PIPE_BUFSIZE;
+
+        mc_pread (external, &error);
+
+        if (error != NULL)
         {
-            if (ferror (external) != 0 && errno == EINTR)
-                continue;
+            message (D_ERROR, MSG_ERROR, _("External panelize:\n%s"), error->message);
+            g_error_free (error);
             break;
         }
 
-        len = strlen (line);
-        if (line[len - 1] == '\n')
-            line[len - 1] = '\0';
-        if (line[0] == '\0')
-            continue;
+        if (external->err.len > 0)
+            message (D_ERROR, MSG_ERROR, _("External panelize:\n%s"), external->err.buf);
 
-        name = line;
-        if (line[0] == '.' && IS_PATH_SEP (line[1]))
-            name += 2;
-
-        if (!handle_path (name, &st, &link_to_dir, &stale_link))
-            continue;
-
-        if (!dir_list_append (list, name, &st, link_to_dir, stale_link))
+        if (external->out.len == MC_PIPE_STREAM_EOF)
             break;
 
-        file_mark (current_panel, list->len - 1, 0);
+        if (external->out.len == 0)
+            continue;
 
-        if ((list->len & 31) == 0)
-            rotate_dash (TRUE);
+        if (external->out.len == MC_PIPE_ERROR_READ)
+        {
+            message (D_ERROR, MSG_ERROR,
+                     _("External panelize:\nfailed to read data from child stdout:\n%s"),
+                     unix_error_string (external->out.error));
+            break;
+        }
+
+        ok = TRUE;
+
+        while (ok && (line = mc_pstream_get_string (&external->out)) != NULL)
+        {
+            char *name;
+            gboolean link_to_dir, stale_link;
+            struct stat st;
+
+            /* handle a \n-separated file list */
+
+            if (line->str[line->len - 1] == '\n')
+            {
+                /* entire file name or last chunk */
+
+                g_string_truncate (line, line->len - 1);
+
+                /* join filename chunks */
+                if (remain_file_name != NULL)
+                {
+                    g_string_append_len (remain_file_name, line->str, line->len);
+                    g_string_free (line, TRUE);
+                    line = remain_file_name;
+                    remain_file_name = NULL;
+                }
+            }
+            else
+            {
+                /* first or middle chunk of file name */
+
+                if (remain_file_name == NULL)
+                    remain_file_name = line;
+                else
+                {
+                    g_string_append_len (remain_file_name, line->str, line->len);
+                    g_string_free (line, TRUE);
+                }
+
+                continue;
+            }
+
+            name = line->str;
+
+            if (name[0] == '.' && IS_PATH_SEP (name[1]))
+                name += 2;
+
+            if (handle_path (name, &st, &link_to_dir, &stale_link))
+            {
+                ok = dir_list_append (list, name, &st, link_to_dir, stale_link);
+
+                if (ok)
+                {
+                    file_mark (current_panel, list->len - 1, 0);
+
+                    if ((list->len & 31) == 0)
+                        rotate_dash (TRUE);
+                }
+            }
+
+            g_string_free (line, TRUE);
+        }
     }
+
+    if (remain_file_name != NULL)
+        g_string_free (remain_file_name, TRUE);
+
+    mc_pclose (external, NULL);
 
     current_panel->is_panelized = TRUE;
     panelize_absolutize_if_needed (current_panel);
 
-    if (pclose (external) < 0)
-        message (D_NORMAL, _("External panelize"), _("Pipe close failed"));
-    close_error_pipe (D_NORMAL, NULL);
     try_to_select (current_panel, NULL);
     panel_re_sort (current_panel);
     rotate_dash (FALSE);
@@ -396,24 +460,17 @@ do_panelize_cd (WPanel * panel)
 
     for (i = 0; i < panelized_panel.list.len; i++)
     {
-        if (panelized_same || DIR_IS_DOTDOT (panelized_panel.list.list[i].fname))
-        {
-            list->list[i].fnamelen = panelized_panel.list.list[i].fnamelen;
-            list->list[i].fname = g_strndup (panelized_panel.list.list[i].fname,
-                                             panelized_panel.list.list[i].fnamelen);
-        }
+        if (panelized_same || DIR_IS_DOTDOT (panelized_panel.list.list[i].fname->str))
+            list->list[i].fname = mc_g_string_dup (panelized_panel.list.list[i].fname);
         else
         {
             vfs_path_t *tmp_vpath;
-            const char *fname;
 
             tmp_vpath =
-                vfs_path_append_new (panelized_panel.root_vpath, panelized_panel.list.list[i].fname,
-                                     (char *) NULL);
-            fname = vfs_path_as_str (tmp_vpath);
-            list->list[i].fnamelen = strlen (fname);
-            list->list[i].fname = g_strndup (fname, list->list[i].fnamelen);
-            vfs_path_free (tmp_vpath);
+                vfs_path_append_new (panelized_panel.root_vpath,
+                                     panelized_panel.list.list[i].fname->str, (char *) NULL);
+            list->list[i].fname = g_string_new (vfs_path_as_str (tmp_vpath));
+            vfs_path_free (tmp_vpath, TRUE);
         }
         list->list[i].f.link_to_dir = panelized_panel.list.list[i].f.link_to_dir;
         list->list[i].f.stale_link = panelized_panel.list.list[i].f.stale_link;
@@ -441,7 +498,7 @@ do_panelize_cd (WPanel * panel)
 void
 panelize_change_root (const vfs_path_t * new_root)
 {
-    vfs_path_free (panelized_panel.root_vpath);
+    vfs_path_free (panelized_panel.root_vpath, TRUE);
     panelized_panel.root_vpath = vfs_path_clone (new_root);
 }
 
@@ -466,9 +523,7 @@ panelize_save_panel (WPanel * panel)
 
     for (i = 0; i < panel->dir.len; i++)
     {
-        panelized_panel.list.list[i].fnamelen = list->list[i].fnamelen;
-        panelized_panel.list.list[i].fname =
-            g_strndup (list->list[i].fname, list->list[i].fnamelen);
+        panelized_panel.list.list[i].fname = mc_g_string_dup (list->list[i].fname);
         panelized_panel.list.list[i].f.link_to_dir = list->list[i].f.link_to_dir;
         panelized_panel.list.list[i].f.stale_link = list->list[i].f.stale_link;
         panelized_panel.list.list[i].f.dir_size_computed = list->list[i].f.dir_size_computed;
@@ -505,7 +560,7 @@ panelize_absolutize_if_needed (WPanel * panel)
 
     /* Note: We don't support mixing of absolute and relative paths, which is
      * why it's ok for us to check only the 1st entry. */
-    if (list->len > 1 && g_path_is_absolute (list->list[1].fname))
+    if (list->len > 1 && g_path_is_absolute (list->list[1].fname->str))
     {
         vfs_path_t *root;
 
@@ -513,7 +568,7 @@ panelize_absolutize_if_needed (WPanel * panel)
         panel_set_cwd (panel, root);
         if (panel == current_panel)
             mc_chdir (root);
-        vfs_path_free (root);
+        vfs_path_free (root, TRUE);
     }
 }
 
@@ -568,7 +623,7 @@ external_panelize (void)
             char *cmd;
 
             cmd = g_strdup (pname->buffer);
-            dlg_destroy (panelize_dlg);
+            widget_destroy (WIDGET (panelize_dlg));
             do_external_panelize (cmd);
             g_free (cmd);
             repaint_screen ();

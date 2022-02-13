@@ -1,7 +1,7 @@
 /*
    GLIB - Library of useful routines for C programming
 
-   Copyright (C) 2009-2020
+   Copyright (C) 2009-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -158,5 +158,53 @@ g_queue_clear_full (GQueue * queue, GDestroyNotify free_func)
     g_queue_clear (queue);
 }
 #endif /* ! GLIB_CHECK_VERSION (2, 60, 0) */
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * mc_g_string_copy:
+ * @dest: (not nullable): the destination #GString. Its current contents are destroyed
+ * @src: (not nullable): the source #GString
+ * @return: @dest
+ *
+ * Copies the bytes from a #GString into a #GString, destroying any previous contents.
+ * It is rather like the standard strcpy() function, except that you do not have to worry about
+ * having enough space to copy the string.
+ *
+ * There is no such API in GLib2.
+ */
+GString *
+mc_g_string_copy (GString * dest, const GString * src)
+{
+    g_return_val_if_fail (src != NULL, NULL);
+    g_return_val_if_fail (dest != NULL, NULL);
+
+    g_string_set_size (dest, 0);
+    g_string_append_len (dest, src->str, src->len);
+
+    return dest;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * mc_g_string_dup:
+ * @s: (nullable): the source #GString
+ * @return: @copy of @s
+ *
+ * Copies the bytes from one #GString to another.
+ *
+ * There is no such API in GLib2.
+ */
+GString *
+mc_g_string_dup (const GString * s)
+{
+    GString *ret = NULL;
+
+    if (s != NULL)
+        ret = g_string_new_len (s->str, s->len);
+
+    return ret;
+}
 
 /* --------------------------------------------------------------------------------------------- */

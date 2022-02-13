@@ -1,7 +1,7 @@
 /*
    Proxy functions for getting access to public variables into 'filemanager' module.
 
-   Copyright (C) 2015-2020
+   Copyright (C) 2015-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -34,7 +34,7 @@
 #include "lib/vfs/vfs.h"        /* vfs_get_raw_current_dir() */
 
 #include "src/setup.h"          /* quit */
-#include "src/filemanager/midnight.h"   /* current_panel */
+#include "src/filemanager/filemanager.h"        /* current_panel */
 #include "src/consaver/cons.saver.h"    /* handle_console() */
 
 #include "internal.h"

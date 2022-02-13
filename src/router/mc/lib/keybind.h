@@ -9,8 +9,8 @@
 /*** typedefs(not structures) and defined constants **********************************************/
 
 /* keymap sections */
-#define KEYMAP_SECTION_MAIN "main"
-#define KEYMAP_SECTION_MAIN_EXT "main:xmap"
+#define KEYMAP_SECTION_FILEMANAGER "filemanager"
+#define KEYMAP_SECTION_FILEMANAGER_EXT "filemanager:xmap"
 #define KEYMAP_SECTION_PANEL "panel"
 #define KEYMAP_SECTION_DIALOG "dialog"
 #define KEYMAP_SECTION_MENU "menu"
@@ -316,7 +316,7 @@ enum
     CK_InsertLiteral,
     CK_ExternalCommand,
     CK_Date,
-    CK_Mail,
+    CK_EditMail,
 
     /* viewer */
     CK_WrapMode = 600L,
@@ -347,20 +347,6 @@ enum
 };
 
 /*** structures declarations (and typedefs of structures)*****************************************/
-
-typedef struct name_keymap_t
-{
-    const char *name;
-    long val;
-} name_keymap_t;
-
-typedef struct key_config_t
-{
-    time_t mtime;               /* mtime at the moment we read config file */
-    GArray *keymap;
-    GArray *ext_keymap;
-    gchar *labels[10];
-} key_config_t;
 
 /* The global keymaps are of this type */
 typedef struct global_keymap_t

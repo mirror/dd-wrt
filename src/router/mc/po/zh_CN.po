@@ -17,8 +17,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
 "Last-Translator: Transifex Bot <>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/mc/mc/language/"
 "zh_CN/)\n"
@@ -84,30 +84,6 @@ msgstr "无法建立目录%s"
 
 msgid "FATAL: not a directory:"
 msgstr "严重错误: 不是一个目录: "
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "迁移用户设置时发生了一个错误: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"您的旧设置被从 %s 迁移\n"
-"到 Freedesktop 推荐目录。\n"
-"更多信息，请访问\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"您的旧设置被从 %s 迁移\n"
-"到 %s\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -195,11 +171,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "ncurses 不支持真色彩模式"
 
-msgid "True color not supported in this slang version."
-msgstr "此 slang 版本不支持真色彩模式"
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "你的终端连 256 色都不支持"
+
+msgid "True color not supported in this slang version."
+msgstr "此 slang 版本不支持真色彩模式"
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr "如果你的终端真的支持真色彩的话，请设置环境变量 COLORTERM=truecolor"
@@ -561,18 +537,6 @@ msgid ""
 msgstr ""
 "位于 waitpid() 中未预期的错误:\n"
 "%s"
-
-msgid "Warning"
-msgstr "警告"
-
-msgid "Pipe failed"
-msgstr "管道失败"
-
-msgid "Dup failed"
-msgstr "复制失败"
-
-msgid "Error dup'ing old error pipe"
-msgstr "复制原有出错管道时发生错误"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1037,15 +1001,6 @@ msgstr "Diff 查看器: 模式无效"
 msgid "Two files are needed to compare"
 msgstr "比较时需要两个文件"
 
-msgid "Choose syntax highlighting"
-msgstr "选择语法突出显示"
-
-msgid "< Auto >"
-msgstr "<自动>"
-
-msgid "< Reload Current Syntax >"
-msgstr "<重新加载当前语法>"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "正在载入: %3d%%"
@@ -1080,6 +1035,9 @@ msgstr ""
 "文件“%s”体积过大。\n"
 "仍然打开?"
 
+msgid "Warning"
+msgstr "警告"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "读取管道时发生错误: %s"
@@ -1087,14 +1045,6 @@ msgstr "读取管道时发生错误: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "无法打开管道读取: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "正在搜索 %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "正在搜索 %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "文件有硬链接。保存文件前分离该链接吗?"
@@ -1141,9 +1091,6 @@ msgstr "更改换行符为: "
 msgid "Save As"
 msgstr "另存为"
 
-msgid "Collect completions"
-msgstr "收集补全"
-
 msgid "&Quick save"
 msgstr "快速保存(&Q)"
 
@@ -1173,27 +1120,6 @@ msgstr "覆盖(&O)"
 
 msgid "Cannot save file"
 msgstr "无法保存文件"
-
-msgid "Delete macro"
-msgstr "删除宏"
-
-msgid "Press macro hotkey:"
-msgstr "按下宏热键: "
-
-msgid "Macro not deleted"
-msgstr "宏没有删除"
-
-msgid "Save macro"
-msgstr "保存宏"
-
-msgid "Press the macro's new hotkey:"
-msgstr "为该宏按下新热键: "
-
-msgid "Repeat last commands"
-msgstr "重复上一个命令"
-
-msgid "Repeat times:"
-msgstr "重复次数: "
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1228,13 +1154,6 @@ msgstr "您要编辑哪个菜单文件?"
 
 msgid "&Local"
 msgstr "本地(&L)"
-
-msgid "Replace"
-msgstr "替换"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "替换了 %ld 处"
 
 msgid "[NoName]"
 msgstr "[未命名]"
@@ -1344,35 +1263,35 @@ msgstr ""
 "当前文字被修改但没有保存。\n"
 "选择继续将丢失这些修改。"
 
-msgid "In se&lection"
-msgstr "在选择区域(&L)"
-
-msgid "&Find all"
-msgstr "查找全部(&F)"
-
-msgid "Enter replacement string:"
-msgstr "输入替换字符串: "
-
-msgid "Replace with:"
-msgstr "替换为: "
-
-msgid "&Replace"
-msgstr "替换(&R)"
-
-msgid "A&ll"
-msgstr "全部(&L)"
-
-msgid "&Skip"
-msgstr "跳过(&S)"
-
-msgid "Confirm replace"
-msgstr "确认替换"
-
 msgid "Cancel"
 msgstr "取消"
 
+msgid "Collect completions"
+msgstr "收集补全"
+
 msgid "NoName"
 msgstr "未命名"
+
+msgid "Save macro"
+msgstr "保存宏"
+
+msgid "Press the macro's new hotkey:"
+msgstr "为该宏按下新热键: "
+
+msgid "Delete macro"
+msgstr "删除宏"
+
+msgid "Press macro hotkey:"
+msgstr "按下宏热键: "
+
+msgid "Macro not deleted"
+msgstr "宏没有删除"
+
+msgid "Repeat last commands"
+msgstr "重复上一个命令"
+
+msgid "Repeat times:"
+msgstr "重复次数: "
 
 msgid "&Open file..."
 msgstr "打开文件(&O)..."
@@ -1662,6 +1581,45 @@ msgstr "换行位置: "
 msgid "Editor options"
 msgstr "编辑器选项"
 
+msgid "In se&lection"
+msgstr "在选择区域(&L)"
+
+msgid "&Find all"
+msgstr "查找全部(&F)"
+
+msgid "Enter replacement string:"
+msgstr "输入替换字符串: "
+
+msgid "Replace"
+msgstr "替换"
+
+msgid "Replace with:"
+msgstr "替换为: "
+
+msgid "&Replace"
+msgstr "替换(&R)"
+
+msgid "A&ll"
+msgstr "全部(&L)"
+
+msgid "&Skip"
+msgstr "跳过(&S)"
+
+msgid "Confirm replace"
+msgstr "确认替换"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "正在搜索 %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "正在搜索 %s"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "替换了 %ld 处"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1669,7 +1627,7 @@ msgstr ""
 "为 Midnight Commander 编写的\n"
 "一个界面友好的文本编辑器。"
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1788,6 +1746,15 @@ msgstr "建议"
 
 msgid "Select language"
 msgstr "选择语言"
+
+msgid "Choose syntax highlighting"
+msgstr "选择语法突出显示"
+
+msgid "< Auto >"
+msgstr "<自动>"
+
+msgid "< Reload Current Syntax >"
+msgstr "<重新加载当前语法>"
 
 msgid "Load syntax file"
 msgstr "加载语法文件"
@@ -1977,6 +1944,9 @@ msgstr "配置选项"
 
 msgid "Skin:"
 msgstr "皮肤:"
+
+msgid "&Shadows"
+msgstr ""
 
 msgid "Appearance"
 msgstr "外观"
@@ -2200,6 +2170,14 @@ msgstr "用户名: "
 msgid "SMB authentication"
 msgstr "SMB 认证"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"无法进入目录“%s”\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2258,6 +2236,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2536,14 +2517,6 @@ msgstr "无法保存设置到 %s"
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "您无法在非本地文件系统上执行命令"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"无法进入目录“%s”\n"
-"%s"
-
 msgid "Parameter"
 msgstr "参数"
 
@@ -2554,6 +2527,9 @@ msgid ""
 msgstr ""
 "无法创建临时命令文件\n"
 "%s"
+
+msgid "Pipe failed"
+msgstr "管道失败"
 
 #, c-format
 msgid " %s%s file error"
@@ -3075,6 +3051,224 @@ msgstr "后台(&B)"
 msgid "Invalid source pattern '%s'"
 msgstr "源模式“%s”无效"
 
+msgid "File listin&g"
+msgstr "完整文件列表(&G)"
+
+msgid "&Quick view"
+msgstr "快速查看(&Q)"
+
+msgid "&Info"
+msgstr "信息(&I)"
+
+msgid "&Tree"
+msgstr "树(&T)"
+
+msgid "&Listing format..."
+msgstr "列表格式(&L)…"
+
+msgid "&Sort order..."
+msgstr "排序(&S)..."
+
+msgid "&Filter..."
+msgstr "过滤(&F)..."
+
+msgid "&Encoding..."
+msgstr "编码(&E)..."
+
+msgid "FT&P link..."
+msgstr "FTP 链接(&P)..."
+
+msgid "S&hell link..."
+msgstr "S&hell 链接..."
+
+msgid "S&FTP link..."
+msgstr "SFTP 链接(&S)..."
+
+msgid "SM&B link..."
+msgstr "SMB 链接(&B)..."
+
+msgid "Paneli&ze"
+msgstr "面板化(&Z)"
+
+msgid "&Rescan"
+msgstr "重新扫描(&R)"
+
+msgid "&View"
+msgstr "查看(&V)"
+
+msgid "Vie&w file..."
+msgstr "查看文件(&W)..."
+
+msgid "&Filtered view"
+msgstr "过滤视图(&F)"
+
+msgid "&Copy"
+msgstr "复制(&C)"
+
+msgid "C&hmod"
+msgstr "更改文件权限(&H)"
+
+msgid "&Link"
+msgstr "链接(&L)"
+
+msgid "&Symlink"
+msgstr "符号链接(&S)"
+
+msgid "Relative symlin&k"
+msgstr "相关符号链接(&K)"
+
+msgid "Edit s&ymlink"
+msgstr "编辑符号链接(&Y)"
+
+msgid "Ch&own"
+msgstr "更改文件所有者(&O)"
+
+msgid "&Advanced chown"
+msgstr "高级 chown (&A)"
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "更名/移动(&R)"
+
+msgid "&Mkdir"
+msgstr "建目录(&M)"
+
+msgid "&Quick cd"
+msgstr "快速切换目录(&Q)"
+
+msgid "Select &group"
+msgstr "选择群组(&G)"
+
+msgid "U&nselect group"
+msgstr "取消选择组(&U)"
+
+msgid "&Invert selection"
+msgstr "反选(&I)"
+
+msgid "E&xit"
+msgstr "退出(&X)"
+
+msgid "&User menu"
+msgstr "用户菜单(&U)"
+
+msgid "&Directory tree"
+msgstr "目录树(&D)"
+
+msgid "&Find file"
+msgstr "查找文件(&F)"
+
+msgid "S&wap panels"
+msgstr "交换面板(&W)"
+
+msgid "Switch &panels on/off"
+msgstr "切换面板开/关(&P)"
+
+msgid "&Compare directories"
+msgstr "比较目录(&C)"
+
+msgid "C&ompare files"
+msgstr "比较文件(&O)"
+
+msgid "E&xternal panelize"
+msgstr "外部面板(&X)"
+
+msgid "Show directory s&izes"
+msgstr "显示目录大小(&I)"
+
+msgid "Command &history"
+msgstr "命令历史(&H)"
+
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
+msgid "Di&rectory hotlist"
+msgstr "目录活动列表(&R)"
+
+msgid "&Active VFS list"
+msgstr "活动的 VFS 列表(&A)"
+
+msgid "&Background jobs"
+msgstr "后台任务(&B)"
+
+msgid "Screen lis&t"
+msgstr "屏幕列表(&T)"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "反删除文件(仅限 ext2fs)(&U)"
+
+msgid "&Listing format edit"
+msgstr "列表格式编辑(&L)"
+
+msgid "Edit &extension file"
+msgstr "扩展文件编辑(&E)"
+
+msgid "Edit &menu file"
+msgstr "菜单文件编辑(&M)"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "编辑突出显示组文件(&G)"
+
+msgid "&Configuration..."
+msgstr "配置(&C)..."
+
+msgid "&Layout..."
+msgstr "布局(&L)..."
+
+msgid "&Panel options..."
+msgstr "面板选项(&P)..."
+
+msgid "C&onfirmation..."
+msgstr "确认(&O)..."
+
+msgid "&Appearance..."
+msgstr "外观(&A)..."
+
+msgid "&Display bits..."
+msgstr "显示位(&D)..."
+
+msgid "&Virtual FS..."
+msgstr "虚拟文件系统(&V)..."
+
+msgid "Panels:"
+msgstr "面板: "
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "您打开了 %zu 个屏幕。确定要退出吗?"
+
+msgid "The Midnight Commander"
+msgstr "Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "您真的要退出 Midnight Commander吗?"
+
+msgid "&Above"
+msgstr "上(&A)"
+
+msgid "&Left"
+msgstr "左(&L)"
+
+msgid "&Below"
+msgstr "下(&B)"
+
+msgid "&Right"
+msgstr "右(&R)"
+
+msgid "ButtonBar|Menu"
+msgstr "ButtonBar|目录"
+
+msgid "ButtonBar|View"
+msgstr "ButtonBar|显示"
+
+msgid "ButtonBar|RenMov"
+msgstr "ButtonBar|更名或移动"
+
+msgid "ButtonBar|Mkdir"
+msgstr "ButtonBar|建目录"
+
 msgid "&Chdir"
 msgstr "改目录(&C)"
 
@@ -3103,6 +3297,9 @@ msgstr "文件名: "
 msgid "&Find recursively"
 msgstr "递归查找(&F)"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr "跳过隐藏(&K)"
 
@@ -3120,9 +3317,6 @@ msgstr "所有字符集(&L)"
 
 msgid "Fir&st hit"
 msgstr "第一个命中(&S)"
-
-msgid "&Tree"
-msgstr "树(&T)"
 
 msgid "Find File"
 msgstr "搜索文件"
@@ -3380,221 +3574,6 @@ msgstr "输出行: "
 msgid "Layout"
 msgstr "布局"
 
-msgid "File listin&g"
-msgstr "完整文件列表(&G)"
-
-msgid "&Quick view"
-msgstr "快速查看(&Q)"
-
-msgid "&Info"
-msgstr "信息(&I)"
-
-msgid "&Listing format..."
-msgstr "列表格式(&L)…"
-
-msgid "&Sort order..."
-msgstr "排序(&S)..."
-
-msgid "&Filter..."
-msgstr "过滤(&F)..."
-
-msgid "&Encoding..."
-msgstr "编码(&E)..."
-
-msgid "FT&P link..."
-msgstr "FTP 链接(&P)..."
-
-msgid "S&hell link..."
-msgstr "S&hell 链接..."
-
-msgid "S&FTP link..."
-msgstr "SFTP 链接(&S)..."
-
-msgid "SM&B link..."
-msgstr "SMB 链接(&B)..."
-
-msgid "Paneli&ze"
-msgstr "面板化(&Z)"
-
-msgid "&Rescan"
-msgstr "重新扫描(&R)"
-
-msgid "&View"
-msgstr "查看(&V)"
-
-msgid "Vie&w file..."
-msgstr "查看文件(&W)..."
-
-msgid "&Filtered view"
-msgstr "过滤视图(&F)"
-
-msgid "&Copy"
-msgstr "复制(&C)"
-
-msgid "C&hmod"
-msgstr "更改文件权限(&H)"
-
-msgid "&Link"
-msgstr "链接(&L)"
-
-msgid "&Symlink"
-msgstr "符号链接(&S)"
-
-msgid "Relative symlin&k"
-msgstr "相关符号链接(&K)"
-
-msgid "Edit s&ymlink"
-msgstr "编辑符号链接(&Y)"
-
-msgid "Ch&own"
-msgstr "更改文件所有者(&O)"
-
-msgid "&Advanced chown"
-msgstr "高级 chown (&A)"
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "更名/移动(&R)"
-
-msgid "&Mkdir"
-msgstr "建目录(&M)"
-
-msgid "&Quick cd"
-msgstr "快速切换目录(&Q)"
-
-msgid "Select &group"
-msgstr "选择群组(&G)"
-
-msgid "U&nselect group"
-msgstr "取消选择组(&U)"
-
-msgid "&Invert selection"
-msgstr "反选(&I)"
-
-msgid "E&xit"
-msgstr "退出(&X)"
-
-msgid "&User menu"
-msgstr "用户菜单(&U)"
-
-msgid "&Directory tree"
-msgstr "目录树(&D)"
-
-msgid "&Find file"
-msgstr "查找文件(&F)"
-
-msgid "S&wap panels"
-msgstr "交换面板(&W)"
-
-msgid "Switch &panels on/off"
-msgstr "切换面板开/关(&P)"
-
-msgid "&Compare directories"
-msgstr "比较目录(&C)"
-
-msgid "C&ompare files"
-msgstr "比较文件(&O)"
-
-msgid "E&xternal panelize"
-msgstr "外部面板(&X)"
-
-msgid "Show directory s&izes"
-msgstr "显示目录大小(&I)"
-
-msgid "Command &history"
-msgstr "命令历史(&H)"
-
-msgid "Viewed/edited files hi&story"
-msgstr ""
-
-msgid "Di&rectory hotlist"
-msgstr "目录活动列表(&R)"
-
-msgid "&Active VFS list"
-msgstr "活动的 VFS 列表(&A)"
-
-msgid "&Background jobs"
-msgstr "后台任务(&B)"
-
-msgid "Screen lis&t"
-msgstr "屏幕列表(&T)"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "反删除文件(仅限 ext2fs)(&U)"
-
-msgid "&Listing format edit"
-msgstr "列表格式编辑(&L)"
-
-msgid "Edit &extension file"
-msgstr "扩展文件编辑(&E)"
-
-msgid "Edit &menu file"
-msgstr "菜单文件编辑(&M)"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "编辑突出显示组文件(&G)"
-
-msgid "&Configuration..."
-msgstr "配置(&C)..."
-
-msgid "&Layout..."
-msgstr "布局(&L)..."
-
-msgid "&Panel options..."
-msgstr "面板选项(&P)..."
-
-msgid "C&onfirmation..."
-msgstr "确认(&O)..."
-
-msgid "&Appearance..."
-msgstr "外观(&A)..."
-
-msgid "&Display bits..."
-msgstr "显示位(&D)..."
-
-msgid "&Virtual FS..."
-msgstr "虚拟文件系统(&V)..."
-
-msgid "Panels:"
-msgstr "面板: "
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] "您打开了 %zu 个屏幕。确定要退出吗?"
-
-msgid "The Midnight Commander"
-msgstr "Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "您真的要退出 Midnight Commander吗?"
-
-msgid "&Above"
-msgstr "上(&A)"
-
-msgid "&Left"
-msgstr "左(&L)"
-
-msgid "&Below"
-msgstr "下(&B)"
-
-msgid "&Right"
-msgstr "右(&R)"
-
-msgid "ButtonBar|Menu"
-msgstr "ButtonBar|目录"
-
-msgid "ButtonBar|View"
-msgstr "ButtonBar|显示"
-
-msgid "ButtonBar|RenMov"
-msgstr "ButtonBar|更名或移动"
-
-msgid "ButtonBar|Mkdir"
-msgstr "ButtonBar|建目录"
-
 msgid "Memory exhausted!"
 msgstr "内存已耗尽!"
 
@@ -3756,11 +3735,18 @@ msgstr "添加到外部面板"
 msgid "Enter command label:"
 msgstr "输入命令标签: "
 
-msgid "Cannot invoke command."
-msgstr "无法调用命令。"
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "关闭管道失败"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "在非本地目录无法执行外部面板"
@@ -4151,13 +4137,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"无法打开 %s 档案\n"
-"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "不完整的 extfs 档案"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4326,6 +4314,12 @@ msgstr ""
 "删除密码或者改正权限"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: 警告: 文件 %s 没有找到\n"
 
@@ -4359,6 +4353,9 @@ msgstr "sftp: 无效的主机名。"
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: 正在连接 %s"
@@ -4369,6 +4366,50 @@ msgstr "sftp: 连接被用户中断"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: 连接服务器失败: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4384,8 +4425,8 @@ msgstr "sftp: 请输入 %s 的密码 "
 msgid "sftp: Password is empty."
 msgstr "sftp: 密码为空。"
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: SSH 会话建立失败"
+msgid "sftp: failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: 读取的文件没有指定处理程序"

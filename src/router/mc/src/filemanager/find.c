@@ -1,7 +1,7 @@
 /*
    Find file command for the Midnight Commander
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    Written  by:
@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 
 #include "lib/global.h"
 
@@ -55,7 +54,6 @@
 
 #include "dir.h"
 #include "cmd.h"                /* find_cmd(), view_file_at_line() */
-#include "midnight.h"           /* current_panel */
 #include "boxes.h"
 #include "panelize.h"
 
@@ -92,6 +90,7 @@ typedef struct
     gboolean file_case_sens;
     gboolean file_pattern;
     gboolean find_recurs;
+    gboolean follow_symlinks;
     gboolean skip_hidden;
     gboolean file_all_charsets;
 
@@ -134,6 +133,7 @@ static WLabel *content_label;   /* 'Content:' label */
 static WCheck *file_case_sens_cbox;     /* "case sensitive" checkbox */
 static WCheck *file_pattern_cbox;       /* File name is glob or regexp */
 static WCheck *recursively_cbox;
+static WCheck *follow_sym_cbox;
 static WCheck *skip_hidden_cbox;
 static WCheck *content_case_sens_cbox;  /* "case sensitive" checkbox */
 static WCheck *content_regexp_cbox;     /* "find regular expression" checkbox */
@@ -155,7 +155,7 @@ static unsigned long matches;   /* Number of matches */
 static gboolean is_start = FALSE;       /* Status of the start/stop toggle button */
 static char *old_dir = NULL;
 
-static struct timeval last_refresh;
+static gint64 last_refresh;
 
 /* Where did we stop */
 static gboolean resuming;
@@ -203,7 +203,7 @@ static const size_t quit_button = 4;    /* index of "Quit" button */
 static WListbox *find_list;     /* Listbox with the file list */
 
 static find_file_options_t options = {
-    TRUE, TRUE, TRUE, FALSE, FALSE,
+    TRUE, TRUE, TRUE, FALSE, FALSE, FALSE,
     TRUE, FALSE, FALSE, FALSE, FALSE,
     FALSE, NULL
 };
@@ -288,6 +288,8 @@ find_load_options (void)
         mc_config_get_bool (mc_global.main_config, "FindFile", "file_shell_pattern", TRUE);
     options.find_recurs =
         mc_config_get_bool (mc_global.main_config, "FindFile", "file_find_recurs", TRUE);
+    options.follow_symlinks =
+        mc_config_get_bool (mc_global.main_config, "FindFile", "follow_symlinks", FALSE);
     options.skip_hidden =
         mc_config_get_bool (mc_global.main_config, "FindFile", "file_skip_hidden", FALSE);
     options.file_all_charsets =
@@ -321,6 +323,8 @@ find_save_options (void)
     mc_config_set_bool (mc_global.main_config, "FindFile", "file_shell_pattern",
                         options.file_pattern);
     mc_config_set_bool (mc_global.main_config, "FindFile", "file_find_recurs", options.find_recurs);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "follow_symlinks",
+                        options.follow_symlinks);
     mc_config_set_bool (mc_global.main_config, "FindFile", "file_skip_hidden", options.skip_hidden);
     mc_config_set_bool (mc_global.main_config, "FindFile", "file_all_charsets",
                         options.file_all_charsets);
@@ -558,16 +562,16 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
  */
 
 static gboolean
-find_parameters (char **start_dir, ssize_t * start_dir_len,
+find_parameters (WPanel * panel, char **start_dir, ssize_t * start_dir_len,
                  char **ignore_dirs, char **pattern, char **content)
 {
     WGroup *g;
 
     /* Size of the find parameters window */
 #ifdef HAVE_CHARSET
-    const int lines = 18;
+    const int lines = 19;
 #else
-    const int lines = 17;
+    const int lines = 18;
 #endif
     int cols = 68;
 
@@ -576,6 +580,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     /* file name */
     const char *file_name_label = N_("File name:");
     const char *file_recurs_label = N_("&Find recursively");
+    const char *file_follow_symlinks = N_("Follow s&ymlinks");
     const char *file_pattern_label = N_("&Using shell patterns");
 #ifdef HAVE_CHARSET
     const char *file_all_charsets_label = N_("&All charsets");
@@ -608,6 +613,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
 
         file_name_label = _(file_name_label);
         file_recurs_label = _(file_recurs_label);
+        file_follow_symlinks = _(file_follow_symlinks);
         file_pattern_label = _(file_pattern_label);
 #ifdef HAVE_CHARSET
         file_all_charsets_label = _(file_all_charsets_label);
@@ -636,6 +642,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     /* widget widths */
     cw = str_term_width1 (file_name_label);
     cw = max (cw, str_term_width1 (file_recurs_label) + 4);
+    cw = max (cw, str_term_width1 (file_follow_symlinks) + 4);
     cw = max (cw, str_term_width1 (file_pattern_label) + 4);
 #ifdef HAVE_CHARSET
     cw = max (cw, str_term_width1 (file_all_charsets_label) + 4);
@@ -718,6 +725,9 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     recursively_cbox = check_new (y1++, x1, options.find_recurs, file_recurs_label);
     group_add_widget (g, recursively_cbox);
 
+    follow_sym_cbox = check_new (y1++, x1, options.follow_symlinks, file_follow_symlinks);
+    group_add_widget (g, follow_sym_cbox);
+
     file_pattern_cbox = check_new (y1++, x1, options.file_pattern, file_pattern_label);
     group_add_widget (g, file_pattern_cbox);
 
@@ -776,7 +786,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
 
             temp_dir = in_start->buffer;
             if (*temp_dir == '\0' || DIR_IS_DOT (temp_dir))
-                temp_dir = g_strdup (vfs_path_as_str (current_panel->cwd_vpath));
+                temp_dir = g_strdup (vfs_path_as_str (panel->cwd_vpath));
             else
                 temp_dir = g_strdup (temp_dir);
 
@@ -807,6 +817,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
             options.content_first_hit = content_first_hit_cbox->state;
             options.content_whole_words = content_whole_words_cbox->state;
             options.find_recurs = recursively_cbox->state;
+            options.follow_symlinks = follow_sym_cbox->state;
             options.file_pattern = file_pattern_cbox->state;
             options.file_case_sens = file_case_sens_cbox->state;
             options.skip_hidden = skip_hidden_cbox->state;
@@ -829,8 +840,8 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
 
             if (DIR_IS_DOT (s))
             {
-                *start_dir = g_strdup (vfs_path_as_str (current_panel->cwd_vpath));
-                /* FIXME: is current_panel->cwd_vpath canonicalized? */
+                *start_dir = g_strdup (vfs_path_as_str (panel->cwd_vpath));
+                /* FIXME: is panel->cwd_vpath canonicalized? */
                 /* relative paths will be used in panelization */
                 *start_dir_len = (ssize_t) strlen (*start_dir);
                 g_free (s);
@@ -844,9 +855,8 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
             {
                 /* relative paths will be used in panelization */
                 *start_dir =
-                    mc_build_filename (vfs_path_as_str (current_panel->cwd_vpath), s,
-                                       (char *) NULL);
-                *start_dir_len = (ssize_t) strlen (vfs_path_as_str (current_panel->cwd_vpath));
+                    mc_build_filename (vfs_path_as_str (panel->cwd_vpath), s, (char *) NULL);
+                *start_dir_len = (ssize_t) strlen (vfs_path_as_str (panel->cwd_vpath));
                 g_free (s);
             }
 
@@ -862,7 +872,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
         }
     }
 
-    dlg_destroy (find_dlg);
+    widget_destroy (WIDGET (find_dlg));
 
     return return_value;
 }
@@ -884,12 +894,20 @@ pop_directory (void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static void
+queue_dir_free (gpointer data)
+{
+    vfs_path_free ((vfs_path_t *) data, TRUE);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /** Remove all the items from the stack */
 
 static void
 clear_stack (void)
 {
-    g_queue_clear_full (&dir_queue, (GDestroyNotify) vfs_path_free);
+    g_queue_clear_full (&dir_queue, queue_dir_free);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -988,45 +1006,31 @@ static gboolean
 search_content (WDialog * h, const char *directory, const char *filename)
 {
     struct stat s;
-    char buffer[BUF_4K];        /* raw input buffer */
+    char buffer[BUF_4K] = "";   /* raw input buffer */
     int file_fd;
     gboolean ret_val = FALSE;
     vfs_path_t *vpath;
-    struct timeval tv;
-    time_t seconds;
-    suseconds_t useconds;
+    gint64 tv;
     gboolean status_updated = FALSE;
 
     vpath = vfs_path_build_filename (directory, filename, (char *) NULL);
 
     if (mc_stat (vpath, &s) != 0 || !S_ISREG (s.st_mode))
     {
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
         return FALSE;
     }
 
     file_fd = mc_open (vpath, O_RDONLY);
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
 
     if (file_fd == -1)
         return FALSE;
 
     /* get time elapsed from last refresh */
-    if (gettimeofday (&tv, NULL) == -1)
-    {
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
-        last_refresh = tv;
-    }
-    seconds = tv.tv_sec - last_refresh.tv_sec;
-    useconds = tv.tv_usec - last_refresh.tv_usec;
-    if (useconds < 0)
-    {
-        seconds--;
-        useconds += G_USEC_PER_SEC;
-    }
+    tv = g_get_real_time ();
 
-    if (s.st_size >= MIN_REFRESH_FILE_SIZE || seconds > 0 || useconds > MAX_REFRESH_INTERVAL)
+    if (s.st_size >= MIN_REFRESH_FILE_SIZE || (tv - last_refresh) > MAX_REFRESH_INTERVAL)
     {
         g_snprintf (buffer, sizeof (buffer), _("Grepping in %s"), filename);
         status_update (str_trunc (buffer, WIDGET (h)->cols - 8));
@@ -1262,7 +1266,7 @@ find_rotate_dash (const WDialog * h, gboolean show)
 static int
 do_search (WDialog * h)
 {
-    static struct dirent *dp = NULL;
+    static struct vfs_dirent *dp = NULL;
     static DIR *dirp = NULL;
     static char *directory = NULL;
     struct stat tmp_stat;
@@ -1330,7 +1334,7 @@ do_search (WDialog * h)
                             break;
                     }
 
-                    vfs_path_free (tmp_vpath);
+                    vfs_path_free (tmp_vpath, TRUE);
                     ignore_count++;
                 }
 
@@ -1346,7 +1350,7 @@ do_search (WDialog * h)
                 }
 
                 dirp = mc_opendir (tmp_vpath);
-                vfs_path_free (tmp_vpath);
+                vfs_path_free (tmp_vpath, TRUE);
             }                   /* while (!dirp) */
 
             /* skip invalid filenames */
@@ -1375,13 +1379,19 @@ do_search (WDialog * h)
                 else
                 {
                     vfs_path_t *tmp_vpath;
+                    int stat_res;
 
                     tmp_vpath = vfs_path_build_filename (directory, dp->d_name, (char *) NULL);
 
-                    if (mc_lstat (tmp_vpath, &tmp_stat) == 0 && S_ISDIR (tmp_stat.st_mode))
+                    if (options.follow_symlinks)
+                        stat_res = mc_stat (tmp_vpath, &tmp_stat);
+                    else
+                        stat_res = mc_lstat (tmp_vpath, &tmp_stat);
+
+                    if (stat_res == 0 && S_ISDIR (tmp_stat.st_mode))
                         push_directory (tmp_vpath);
                     else
-                        vfs_path_free (tmp_vpath);
+                        vfs_path_free (tmp_vpath, TRUE);
                 }
             }
 
@@ -1451,7 +1461,7 @@ find_do_view_edit (gboolean unparsed_view, gboolean edit, char *dir, char *file,
     else
         view_file_at_line (fullname_vpath, unparsed_view, use_internal_view, line, search_start,
                            search_end);
-    vfs_path_free (fullname_vpath);
+    vfs_path_free (fullname_vpath, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1757,14 +1767,16 @@ run_process (void)
 static void
 kill_gui (void)
 {
-    widget_idle (WIDGET (find_dlg), FALSE);
-    dlg_destroy (find_dlg);
+    Widget *w = WIDGET (find_dlg);
+
+    widget_idle (w, FALSE);
+    widget_destroy (w);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
+do_find (WPanel * panel, const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
          char **dirname, char **filename)
 {
     int return_value = 0;
@@ -1793,10 +1805,10 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
         int i;
         struct stat st;
         GList *entry;
-        dir_list *list = &current_panel->dir;
+        dir_list *list = &panel->dir;
         char *name = NULL;
 
-        panel_clean_dir (current_panel);
+        panel_clean_dir (panel);
         dir_list_init (list);
 
         for (i = 0, entry = listbox_get_first_link (find_list); entry != NULL;
@@ -1841,14 +1853,13 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
 
             /* don't add files more than once to the panel */
             if (!content_is_empty && list->len != 0
-                && strcmp (list->list[list->len - 1].fname, p) == 0)
+                && strcmp (list->list[list->len - 1].fname->str, p) == 0)
             {
                 g_free (name);
                 continue;
             }
 
-            list->list[list->len].fnamelen = strlen (p);
-            list->list[list->len].fname = g_strndup (p, list->list[list->len].fnamelen);
+            list->list[list->len].fname = g_string_new (p);
             list->list[list->len].f.marked = 0;
             list->list[list->len].f.link_to_dir = link_to_dir ? 1 : 0;
             list->list[list->len].f.stale_link = stale_link ? 1 : 0;
@@ -1862,9 +1873,9 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
                 rotate_dash (TRUE);
         }
 
-        current_panel->is_panelized = TRUE;
-        panelize_absolutize_if_needed (current_panel);
-        panelize_save_panel (current_panel);
+        panel->is_panelized = TRUE;
+        panelize_absolutize_if_needed (panel);
+        panelize_save_panel (panel);
     }
 
     kill_gui ();
@@ -1880,7 +1891,7 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
 /* --------------------------------------------------------------------------------------------- */
 
 void
-find_cmd (void)
+find_cmd (WPanel * panel)
 {
     char *start_dir = NULL, *ignore_dirs = NULL;
     ssize_t start_dir_len;
@@ -1888,7 +1899,7 @@ find_cmd (void)
     find_pattern = NULL;
     content_pattern = NULL;
 
-    while (find_parameters (&start_dir, &start_dir_len,
+    while (find_parameters (panel, &start_dir, &start_dir_len,
                             &ignore_dirs, &find_pattern, &content_pattern))
     {
         char *filename = NULL, *dirname = NULL;
@@ -1898,15 +1909,14 @@ find_cmd (void)
 
         if (find_pattern[0] != '\0')
         {
-            last_refresh.tv_sec = 0;
-            last_refresh.tv_usec = 0;
+            last_refresh = 0;
 
             is_start = FALSE;
 
             if (!content_is_empty && !str_is_valid_string (content_pattern))
                 MC_PTR_FREE (content_pattern);
 
-            v = do_find (start_dir, start_dir_len, ignore_dirs, &dirname, &filename);
+            v = do_find (panel, start_dir, start_dir_len, ignore_dirs, &dirname, &filename);
         }
 
         g_free (start_dir);
@@ -1920,10 +1930,10 @@ find_cmd (void)
                 vfs_path_t *dirname_vpath;
 
                 dirname_vpath = vfs_path_from_str (dirname);
-                do_cd (dirname_vpath, cd_exact);
-                vfs_path_free (dirname_vpath);
+                panel_cd (panel, dirname_vpath, cd_exact);
+                vfs_path_free (dirname_vpath, TRUE);
                 if (filename != NULL)
-                    try_to_select (current_panel,
+                    try_to_select (panel,
                                    filename + (content_pattern != NULL
                                                ? strchr (filename + 4, ':') - filename + 1 : 4));
             }
@@ -1932,8 +1942,8 @@ find_cmd (void)
                 vfs_path_t *filename_vpath;
 
                 filename_vpath = vfs_path_from_str (filename);
-                do_cd (filename_vpath, cd_exact);
-                vfs_path_free (filename_vpath);
+                panel_cd (panel, filename_vpath, cd_exact);
+                vfs_path_free (filename_vpath, TRUE);
             }
         }
 
@@ -1946,8 +1956,8 @@ find_cmd (void)
 
         if (v == B_PANELIZE)
         {
-            panel_re_sort (current_panel);
-            try_to_select (current_panel, NULL);
+            panel_re_sort (panel);
+            try_to_select (panel, NULL);
             break;
         }
     }

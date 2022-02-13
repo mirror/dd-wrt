@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for whow info on display
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -48,7 +48,7 @@
 #endif
 
 #include "src/setup.h"          /* panels_options */
-#include "src/keybind-defaults.h"
+#include "src/keymap.h"
 
 #include "internal.h"
 
@@ -268,8 +268,8 @@ mcview_compute_areas (WView * view)
 
     view_area.top = view->dpy_frame_size;
     view_area.left = view->dpy_frame_size;
-    view_area.height = mcview_dimen_doz (WIDGET (view)->lines, 2 * view->dpy_frame_size);
-    view_area.width = mcview_dimen_doz (WIDGET (view)->cols, 2 * view->dpy_frame_size);
+    view_area.height = DOZ ((screen_dimen) WIDGET (view)->lines, 2 * view->dpy_frame_size);
+    view_area.width = DOZ ((screen_dimen) WIDGET (view)->cols, 2 * view->dpy_frame_size);
 
     /* Most coordinates of the areas equal those of the whole viewer */
     view->status_area = view_area;

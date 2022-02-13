@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -51,7 +51,6 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
-#include "lib/timer.h"
 
 /*** global variables ****************************************************************************/
 
@@ -332,7 +331,7 @@ path_trunc (const char *path, size_t trunc_len)
 
     vpath = vfs_path_from_str (path);
     secure_path = vfs_path_to_str_flags (vpath, 0, VPF_STRIP_PASSWORD);
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
 
     ret = str_trunc (secure_path, trunc_len);
     g_free (secure_path);
@@ -664,7 +663,7 @@ x_basename (const char *s)
     {
         /* avoid trailing PATH_SEP, if present */
         if (!IS_PATH_SEP (s[strlen (s) - 1]))
-            return (path_sep != NULL) ? path_sep + 1 : s;
+            return path_sep + 1;
 
         while (--path_sep > s && !IS_PATH_SEP (*path_sep))
             ;
@@ -783,6 +782,7 @@ strip_ctrl_codes (char *s)
                             r = new_r + 1;
                             goto osc_out;
                         }
+                        break;
                     default:
                         break;
                     }
@@ -1384,7 +1384,7 @@ mc_util_unlink_backup_if_possible (const char *file_name, const char *backup_suf
 
         vpath = vfs_path_from_str (backup_path);
         mc_unlink (vpath);
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
     }
 
     g_free (backup_path);
@@ -1513,16 +1513,16 @@ mc_replace_error (GError ** dest, int code, const char *format, ...)
  * and if it has then updates the timestamp.
  *
  * @param timestamp the last timestamp in microseconds, updated if the given time elapsed
- * @param deleay amount of time in microseconds
+ * @param delay amount of time in microseconds
 
  * @return TRUE if clock skew detected, FALSE otherwise
  */
 gboolean
-mc_time_elapsed (guint64 * timestamp, guint64 delay)
+mc_time_elapsed (gint64 * timestamp, gint64 delay)
 {
-    guint64 now;
+    gint64 now;
 
-    now = mc_timer_elapsed (mc_global.timer);
+    now = g_get_real_time ();
 
     if (now >= *timestamp && now < *timestamp + delay)
         return FALSE;

@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for datasources
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -354,6 +354,7 @@ mcview_close_datasource (WView * view)
         break;
     case DS_STRING:
         MC_PTR_FREE (view->ds_string_data);
+        break;
     default:
         break;
     }
@@ -384,7 +385,7 @@ mcview_load_command_output (WView * view, const char *command)
 
     mcview_close_datasource (view);
 
-    p = mc_popen (command, &error);
+    p = mc_popen (command, TRUE, TRUE, &error);
     if (p == NULL)
     {
         mcview_display (view);

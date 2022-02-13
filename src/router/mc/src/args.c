@@ -1,7 +1,7 @@
 /*
    Handle command line arguments.
 
-   Copyright (C) 2009-2020
+   Copyright (C) 2009-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -191,11 +191,10 @@ static const GOptionEntry argument_main_table[] = {
      "edit", 'e', G_OPTION_FLAG_IN_MAIN | G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
      (gpointer) parse_mc_e_argument,
      N_("Edit files"),
-     N_("<file> ...") },
+     N_("<file> ...")
+    },
 
-    {
-     NULL, '\0', 0, 0, NULL, NULL, NULL /* Complete struct initialization */
-    }
+    G_OPTION_ENTRY_NULL
     /* *INDENT-ON* */
 };
 
@@ -278,9 +277,7 @@ static const GOptionEntry argument_terminal_table[] = {
      NULL
     },
 
-    {
-     NULL, '\0', 0, 0, NULL, NULL, NULL /* Complete struct initialization */
-    }
+    G_OPTION_ENTRY_NULL
     /* *INDENT-ON* */
 };
 
@@ -320,9 +317,7 @@ static const GOptionEntry argument_color_table[] = {
      N_("<string>")
     },
 
-    {
-     NULL, '\0', 0, 0, NULL, NULL, NULL /* Complete struct initialization */
-    }
+    G_OPTION_ENTRY_NULL
     /* *INDENT-ON* */
 };
 
@@ -333,9 +328,10 @@ static gchar *mc_args__loc__footer_string = NULL;
 static gchar *mc_args__loc__header_string = NULL;
 static gchar *mc_args__loc__usage_string = NULL;
 
-/*** file scope functions ************************************************************************/
-
 /* --------------------------------------------------------------------------------------------- */
+/*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
 static void
 mc_args_clean_temp_help_strings (void)
 {
@@ -350,7 +346,7 @@ mc_args_clean_temp_help_strings (void)
 static GOptionGroup *
 mc_args_new_color_group (void)
 {
-/* *INDENT-OFF* */
+    /* *INDENT-OFF* */
     /* FIXME: to preserve translations, lines should be split. */
     mc_args__loc__colors_string = g_strdup_printf ("%s\n%s",
                                                    /* TRANSLATORS: don't translate keywords */
@@ -380,7 +376,7 @@ mc_args_new_color_group (void)
                                                     "Attributes:\n"
                                                     "   bold, italic, underline, reverse, blink; append more with '+'\n")
                                                     );
-/* *INDENT-ON* */
+    /* *INDENT-ON* */
 
     return g_option_group_new ("color", mc_args__loc__colors_string,
                                _("Color options"), NULL, NULL);
@@ -427,7 +423,8 @@ mc_args_add_extended_info_to_help (void)
                                                    ("\n"
                                                     "Please send any bug reports (including the output of 'mc -V')\n"
                                                     "as tickets at www.midnight-commander.org\n"));
-    mc_args__loc__header_string = g_strdup_printf (_("GNU Midnight Commander %s\n"), VERSION);
+    mc_args__loc__header_string =
+        g_strdup_printf (_("GNU Midnight Commander %s\n"), mc_global.mc_version);
 
     g_option_context_set_description (context, mc_args__loc__footer_string);
     g_option_context_set_summary (context, mc_args__loc__header_string);
@@ -599,12 +596,12 @@ parse_mcedit_arguments (int argc, char **argv)
             if (mc_stat (tmp_vpath, &st) == -1 && mc_stat (fname_vpath, &st) != -1)
             {
                 arg = mcedit_arg_vpath_new (fname_vpath, atoi (p));
-                vfs_path_free (tmp_vpath);
+                vfs_path_free (tmp_vpath, TRUE);
             }
             else
             {
                 arg = mcedit_arg_vpath_new (tmp_vpath, 0);
-                vfs_path_free (fname_vpath);
+                vfs_path_free (fname_vpath, TRUE);
             }
 
             g_free (fname);
@@ -801,12 +798,12 @@ mc_setup_by_args (int argc, char **argv, GError ** mcerror)
 #ifdef ENABLE_VFS_FTP
         vpath = vfs_path_from_str ("ftp://");
         mc_setctl (vpath, VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
 #endif /* ENABLE_VFS_FTP */
 #ifdef ENABLE_VFS_SMB
         vpath = vfs_path_from_str ("smb://");
         mc_setctl (vpath, VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
 #endif /* ENABLE_VFS_SMB */
         (void) vpath;
     }
@@ -867,7 +864,7 @@ mc_setup_by_args (int argc, char **argv, GError ** mcerror)
 void
 mcedit_arg_free (mcedit_arg_t * arg)
 {
-    vfs_path_free (arg->file_vpath);
+    vfs_path_free (arg->file_vpath, TRUE);
     g_free (arg);
 }
 

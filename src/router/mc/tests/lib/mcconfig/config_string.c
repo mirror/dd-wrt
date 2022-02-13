@@ -1,7 +1,7 @@
 /*
    libmc - check mcconfig submodule. read and write config files
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -56,7 +56,7 @@ config_object__reopen (void)
 
     if (!mc_config_save_file (mc_config, &error))
     {
-        fail ("Unable to save config file: %s", error->message);
+        ck_abort_msg ("Unable to save config file: %s", error->message);
         g_error_free (error);
     }
 
@@ -79,7 +79,6 @@ config_object__deinit (void)
 static void
 setup (void)
 {
-    mc_global.timer = mc_timer_new ();
     str_init_strings ("KOI8-R");
     vfs_init ();
     vfs_init_localfs ();
@@ -97,7 +96,6 @@ teardown (void)
 
     vfs_shut ();
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -240,11 +238,9 @@ END_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -253,13 +249,7 @@ main (void)
     tcase_add_test (tc_core, emulate__learn_save);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "config_string.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

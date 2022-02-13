@@ -3,36 +3,19 @@ dnl
 dnl Get current version of Midnight Commander from git tags
 dnl
 dnl @author Slava Zanko <slavazanko@gmail.com>
-dnl @version 2009-12-30
+dnl @version 2021-04-04
 dnl @license GPL
 dnl @copyright Free Software Foundation, Inc.
+dnl @modified Andrew Borodin <aborodin@vmail.ru>
 
 AC_DEFUN([mc_VERSION],[
-    if test ! -f ${srcdir}/version.h; then
-        ${srcdir}/maint/utils/version.sh ${srcdir}
-    fi
-    if test -f ${srcdir}/version.h; then
-        VERSION=$(grep '^#define MC_CURRENT_VERSION' ${srcdir}/version.h | sed 's/.*"\(.*\)"$/\1/')
+    if test -f ${srcdir}/mc-version.h; then
+        VERSION=$(grep '^#define MC_CURRENT_VERSION' ${srcdir}/mc-version.h | sed 's/.*"\(.*\)"$/\1/')
     else
         VERSION="unknown"
     fi
-    AC_SUBST(VERSION)
 
-    dnl Version and Release without dashes for the distro packages
-    DISTR_VERSION=`echo $VERSION | sed 's/^\([[^\-]]*\).*/\1/'`
-    DISTR_RELEASE=`echo $VERSION | sed 's/^[[^\-]]*\-\(.*\)/\1/' | sed 's/-/./g'`
-
-    if test `echo $VERSION | grep -c '\-pre'` -ne 0; then
-        DISTR_RELEASE="0.$DISTR_RELEASE"
-    else
-        if test `echo $VERSION | grep -c '\-'` -eq 0; then
-            DISTR_RELEASE=1
-        else
-            DISTR_RELEASE="2.$DISTR_RELEASE"
-        fi
-    fi
-
-    AC_SUBST(DISTR_VERSION)
-    AC_SUBST(DISTR_RELEASE)
-
+    dnl Version without dashes for the man page
+    MAN_VERSION=`echo $VERSION | sed 's/^\([[^\-]]*\).*/\1/'`
+    AC_SUBST(MAN_VERSION)
 ])

@@ -1,7 +1,7 @@
 /*
    Chattr command -- for the Midnight Commander
 
-   Copyright (C) 2020
+   Copyright (C) 2020-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -46,12 +46,9 @@
 #include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 
-#include "src/keybind-defaults.h"       /* chattr_map */
+#include "src/keymap.h"         /* chattr_map */
 
-#include "midnight.h"           /* current_panel */
-#include "panel.h"              /* do_file_mark() */
-
-#include "chattr.h"
+#include "cmd.h"                /* chattr_cmd(), chattr_get_as_str() */
 
 /*** global variables ****************************************************************************/
 
@@ -122,7 +119,7 @@ struct WChattrBoxes
  * EXT4_EOFBLOCKS_FL        0x00400000 was here, unused
  * FS_NOCOW_FL              0x00800000 -- Do not cow file
  * EXT4_SNAPFILE_FL         0x01000000 -- Inode is a snapshot
- *                          0x02000000 -- unused yet
+ * FS_DAX_FL                0x02000000 -- Inode is DAX
  * EXT4_SNAPFILE_DELETED_FL 0x04000000 -- Snapshot is being deleted
  * EXT4_SNAPFILE_SHRUNK_FL  0x08000000 -- Snapshot shrink has completed
  * EXT4_INLINE_DATA_FL      0x10000000 -- Inode has inline data
@@ -179,6 +176,11 @@ static struct
     { EXT4_HUGE_FILE_FL,    'h', N_("Huge_file"),                     FALSE, FALSE },
 #endif
     { FS_NOCOW_FL,          'C', N_("No COW"),                        FALSE, FALSE },
+#ifdef FS_DAX_FL
+    /* added in v1.45.7
+       ext2fsprogs 1dd48bc23c3776df76459aff0c7723fff850ea45 2020-07-28 */
+    { FS_DAX_FL,            'x', N_("Direct access for files"),       FALSE, FALSE },
+#endif
 #ifdef EXT4_CASEFOLD_FL
     /* added in v1.45.0
        ext2fsprogs 1378bb6515e98a27f0f5c220381d49d20544204e 2018-12-01 */
@@ -392,7 +394,7 @@ chattr_toggle_select (const WChattrBoxes * cb, int Id)
     Widget *w;
 
     /* find checkbox */
-    w = WIDGET (g_list_nth_data (GROUP (cb)->widgets, Id - cb->top));
+    w = WIDGET (g_list_nth_data (CONST_GROUP (cb)->widgets, Id - cb->top));
 
     check_attr[Id].selected = !check_attr[Id].selected;
 
@@ -509,7 +511,7 @@ checkboxes_save_state (const WChattrBoxes * cb)
     int i;
     GList *l;
 
-    for (i = cb->top, l = GROUP (cb)->widgets; l != NULL; i++, l = g_list_next (l))
+    for (i = cb->top, l = CONST_GROUP (cb)->widgets; l != NULL; i++, l = g_list_next (l))
     {
         int m;
 
@@ -865,6 +867,8 @@ chattrboxes_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         break;
 
     default:
+        /* return MOU_UNHANDLED */
+        event->result.abort = TRUE;
         break;
     }
 }
@@ -876,16 +880,36 @@ chattrboxes_new (int y, int x, int height, int width)
 {
     WChattrBoxes *cb;
     Widget *w;
+    WGroup *cbg;
+    int i;
 
     if (height <= 0)
         height = 1;
 
     cb = g_new0 (WChattrBoxes, 1);
     w = WIDGET (cb);
-    group_init (GROUP (cb), y, x, height, width, chattrboxes_callback, chattrboxes_mouse_callback);
+    cbg = GROUP (cb);
+    group_init (cbg, y, x, height, width, chattrboxes_callback, chattrboxes_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_WANT_CURSOR;
     w->mouse_handler = chattrboxes_handle_mouse_event;
     w->keymap = chattr_map;
+
+    /* create checkboxes */
+    for (i = 0; i < height; i++)
+    {
+        int m;
+        WCheck *check;
+
+        m = check_attr_mod[i];
+
+        check = check_new (i, 0, check_attr[m].state, NULL);
+        group_add_widget (cbg, check);
+    }
+
+    chattrboxes_rename (cb);
+
+    /* select first checkbox */
+    cbg->current = cbg->widgets;
 
     return cb;
 }
@@ -938,9 +962,9 @@ chattr_init (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static WDialog *
-chattr_dlg_create (const char *fname, unsigned long attr)
+chattr_dlg_create (WPanel * panel, const char *fname, unsigned long attr)
 {
-    const Widget *mw = CONST_WIDGET (midnight_dlg);
+    Widget *mw = WIDGET (WIDGET (panel)->owner);
     gboolean single_set;
     WDialog *ch_dlg;
     int lines, cols;
@@ -948,7 +972,7 @@ chattr_dlg_create (const char *fname, unsigned long attr)
     size_t i;
     int y;
     Widget *dw;
-    WGroup *dg, *cbg;
+    WGroup *dg;
     WChattrBoxes *cb;
     const int cb_scrollbar_width = 1;
 
@@ -958,7 +982,7 @@ chattr_dlg_create (const char *fname, unsigned long attr)
 
     cols = check_attr_width + cb_scrollbar_width;
 
-    single_set = (current_panel->marked < 2);
+    single_set = (panel->marked < 2);
 
     lines = 5 + checkboxes_lines + 4;
     if (!single_set)
@@ -992,25 +1016,11 @@ chattr_dlg_create (const char *fname, unsigned long attr)
         widget_set_size (dw, dw->y, dw->x, lines, cols + wx * 2);
     }
 
+    checkboxes_lines = MIN (check_attr_mod_num, checkboxes_lines);
     cb = chattrboxes_new (y++, wx, checkboxes_lines, cols);
-    cbg = GROUP (cb);
     group_add_widget_autopos (dg, cb, WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
 
-    /* create checkboxes */
-    for (i = 0; i < (size_t) check_attr_mod_num && i < (size_t) checkboxes_lines; i++)
-    {
-        int m;
-        WCheck *check;
-
-        m = check_attr_mod[i];
-
-        check = check_new (i, 0, check_attr[m].state, NULL);
-        group_add_widget (cbg, check);
-    }
-
-    chattrboxes_rename (cb);
-
-    y += i - 1;
+    y += checkboxes_lines - 1;
     cols = 0;
 
     for (i = single_set ? (BUTTONS - 2) : 0; i < BUTTONS; i++)
@@ -1053,8 +1063,6 @@ chattr_dlg_create (const char *fname, unsigned long attr)
         }
     }
 
-    /* select first checkbox */
-    cbg->current = cbg->widgets;
     widget_select (WIDGET (cb));
 
     return ch_dlg;
@@ -1072,13 +1080,13 @@ chattr_done (gboolean need_update)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static const char *
-next_file (void)
+static const GString *
+next_file (const WPanel * panel)
 {
-    while (!current_panel->dir.list[current_file].f.marked)
+    while (!panel->dir.list[current_file].f.marked)
         current_file++;
 
-    return current_panel->dir.list[current_file].fname;
+    return panel->dir.list[current_file].fname;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1128,7 +1136,7 @@ try_chattr (const char *p, unsigned long m)
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
-do_chattr (const vfs_path_t * p, unsigned long m)
+do_chattr (WPanel * panel, const vfs_path_t * p, unsigned long m)
 {
     gboolean ret;
 
@@ -1137,7 +1145,7 @@ do_chattr (const vfs_path_t * p, unsigned long m)
 
     ret = try_chattr (vfs_path_as_str (p), m);
 
-    do_file_mark (current_panel, current_file, 0);
+    do_file_mark (panel, current_file, 0);
 
     return ret;
 }
@@ -1145,38 +1153,38 @@ do_chattr (const vfs_path_t * p, unsigned long m)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-chattr_apply_mask (vfs_path_t * vpath, unsigned long m)
+chattr_apply_mask (WPanel * panel, vfs_path_t * vpath, unsigned long m)
 {
     gboolean ok;
 
-    if (!do_chattr (vpath, m))
+    if (!do_chattr (panel, vpath, m))
         return;
 
     do
     {
-        const char *fname;
+        const GString *fname;
 
-        fname = next_file ();
-        ok = (fgetflags (fname, &m) == 0);
+        fname = next_file (panel);
+        ok = (fgetflags (fname->str, &m) == 0);
 
         if (!ok)
         {
             /* if current file was deleted outside mc -- try next file */
-            /* decrease current_panel->marked */
-            do_file_mark (current_panel, current_file, 0);
+            /* decrease panel->marked */
+            do_file_mark (panel, current_file, 0);
 
             /* try next file */
             ok = TRUE;
         }
         else
         {
-            vpath = vfs_path_from_str (fname);
+            vpath = vfs_path_from_str (fname->str);
             flags = m;
-            ok = do_chattr (vpath, m);
-            vfs_path_free (vpath);
+            ok = do_chattr (panel, vpath, m);
+            vfs_path_free (vpath, TRUE);
         }
     }
-    while (ok && current_panel->marked != 0);
+    while (ok && panel->marked != 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1184,7 +1192,7 @@ chattr_apply_mask (vfs_path_t * vpath, unsigned long m)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-chattr_cmd (void)
+chattr_cmd (WPanel * panel)
 {
     gboolean need_update = FALSE;
     gboolean end_chattr = FALSE;
@@ -1198,7 +1206,8 @@ chattr_cmd (void)
     {                           /* do while any files remaining */
         vfs_path_t *vpath;
         WDialog *ch_dlg;
-        const char *fname, *fname2;
+        const GString *fname;
+        const char *fname2;
         size_t i;
         int result;
 
@@ -1214,27 +1223,27 @@ chattr_cmd (void)
         need_update = FALSE;
         end_chattr = FALSE;
 
-        if (current_panel->marked != 0)
-            fname = next_file ();       /* next marked file */
+        if (panel->marked != 0)
+            fname = next_file (panel);  /* next marked file */
         else
-            fname = selection (current_panel)->fname;   /* single file */
+            fname = selection (panel)->fname;   /* single file */
 
-        vpath = vfs_path_from_str (fname);
+        vpath = vfs_path_from_str (fname->str);
         fname2 = vfs_path_as_str (vpath);
 
         if (fgetflags (fname2, &flags) != 0)
         {
-            message (D_ERROR, MSG_ERROR, _("Cannot get flags of \"%s\"\n%s"), fname,
+            message (D_ERROR, MSG_ERROR, _("Cannot get flags of \"%s\"\n%s"), fname->str,
                      unix_error_string (errno));
-            vfs_path_free (vpath);
+            vfs_path_free (vpath, TRUE);
             break;
         }
 
         flags_changed = FALSE;
 
-        ch_dlg = chattr_dlg_create (fname, flags);
+        ch_dlg = chattr_dlg_create (panel, fname->str, flags);
         result = dlg_run (ch_dlg);
-        dlg_destroy (ch_dlg);
+        widget_destroy (WIDGET (ch_dlg));
 
         switch (result)
         {
@@ -1245,11 +1254,11 @@ chattr_cmd (void)
         case B_ENTER:
             if (flags_changed)
             {
-                if (current_panel->marked <= 1)
+                if (panel->marked <= 1)
                 {
                     /* single or last file */
                     if (fsetflags (fname2, flags) == -1 && !ignore_all)
-                        message (D_ERROR, MSG_ERROR, _("Cannot chattr \"%s\"\n%s"), fname,
+                        message (D_ERROR, MSG_ERROR, _("Cannot chattr \"%s\"\n%s"), fname->str,
                                  unix_error_string (errno));
                     end_chattr = TRUE;
                 }
@@ -1278,7 +1287,7 @@ chattr_cmd (void)
                         and_mask &= ~check_attr[i].flags;
                 }
 
-            chattr_apply_mask (vpath, flags);
+            chattr_apply_mask (panel, vpath, flags);
             need_update = TRUE;
             end_chattr = TRUE;
             break;
@@ -1291,7 +1300,7 @@ chattr_cmd (void)
                 if (chattr_is_modifiable (i) && check_attr[i].selected)
                     or_mask |= check_attr[i].flags;
 
-            chattr_apply_mask (vpath, flags);
+            chattr_apply_mask (panel, vpath, flags);
             need_update = TRUE;
             end_chattr = TRUE;
             break;
@@ -1304,7 +1313,7 @@ chattr_cmd (void)
                 if (chattr_is_modifiable (i) && check_attr[i].selected)
                     and_mask &= ~check_attr[i].flags;
 
-            chattr_apply_mask (vpath, flags);
+            chattr_apply_mask (panel, vpath, flags);
             need_update = TRUE;
             end_chattr = TRUE;
             break;
@@ -1313,16 +1322,16 @@ chattr_cmd (void)
             break;
         }
 
-        if (current_panel->marked != 0 && result != B_CANCEL)
+        if (panel->marked != 0 && result != B_CANCEL)
         {
-            do_file_mark (current_panel, current_file, 0);
+            do_file_mark (panel, current_file, 0);
             need_update = TRUE;
         }
 
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
 
     }
-    while (current_panel->marked != 0 && !end_chattr);
+    while (panel->marked != 0 && !end_chattr);
 
     chattr_done (need_update);
 }

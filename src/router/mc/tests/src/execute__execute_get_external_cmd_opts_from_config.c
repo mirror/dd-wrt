@@ -1,7 +1,7 @@
 /*
    src - tests for execute_external_editor_or_viewer() function
 
-   Copyright (C) 2013-2020
+   Copyright (C) 2013-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -33,7 +33,8 @@
 #include "src/vfs/local/local.c"
 
 char *execute_get_external_cmd_opts_from_config (const char *command,
-                                                 const vfs_path_t * filename_vpath, int start_line);
+                                                 const vfs_path_t * filename_vpath,
+                                                 long start_line);
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -95,7 +96,6 @@ mc_config_get_string__deinit (void)
 static void
 setup (void)
 {
-    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
     vfs_init ();
     vfs_init_localfs ();
@@ -114,7 +114,6 @@ teardown (void)
 
     vfs_shut ();
     str_uninit_strings ();
-    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -177,7 +176,7 @@ START_PARAMETRIZED_TEST (check_if_filename_and_lineno_will_be_subtituted, check_
     mctest_assert_str_eq (g_ptr_array_index (mc_config_get_string__default_value__captured, 0),
                           NULL);
 
-    vfs_path_free (filename_vpath);
+    vfs_path_free (filename_vpath, TRUE);
 
 }
 /* *INDENT-OFF* */
@@ -189,11 +188,9 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
@@ -202,13 +199,7 @@ main (void)
                                    check_subtitute_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "execute__execute_get_external_cmd_opts_from_config.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */
