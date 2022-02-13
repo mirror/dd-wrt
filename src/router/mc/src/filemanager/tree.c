@@ -6,7 +6,7 @@
    created and destroyed.  This is required for the future vfs layer,
    it will be possible to have tree views over virtual file systems.
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -56,11 +56,11 @@
 #include "lib/event.h"          /* mc_event_raise() */
 
 #include "src/setup.h"          /* confirm_delete, panels_options */
-#include "src/keybind-defaults.h"
+#include "src/keymap.h"
 #include "src/history.h"
 
 #include "dir.h"
-#include "midnight.h"           /* the_menubar */
+#include "filemanager.h"        /* the_menubar */
 #include "file.h"               /* copy_dir_dir(), move_dir_dir(), erase_dir() */
 #include "layout.h"             /* command_prompt */
 #include "treestore.h"
@@ -92,7 +92,7 @@ struct WTree
     Widget widget;
     struct TreeStore *store;
     tree_entry *selected_ptr;   /* The selected directory */
-    char search_buffer[MC_MAXFILENAMELEN];      /* Current search string */
+    GString *search_buffer;     /* Current search string */
     tree_entry **tree_shown;    /* Entries currently on screen */
     gboolean is_panel;          /* panel or plain widget flag */
     gboolean searching;         /* Are we on searching mode? */
@@ -195,6 +195,7 @@ tree_destroy (WTree * tree)
     save_tree (tree);
 
     MC_PTR_FREE (tree->tree_shown);
+    g_string_free (tree->search_buffer, TRUE);
     tree->selected_ptr = NULL;
 }
 
@@ -211,7 +212,7 @@ load_tree (WTree * tree)
     tree->selected_ptr = tree->store->tree_first;
     vpath = vfs_path_from_str (mc_config_get_home_dir ());
     tree_chdir (tree, vpath);
-    vfs_path_free (vpath);
+    vfs_path_free (vpath, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -239,7 +240,7 @@ tree_show_mini_info (WTree * tree, int tree_lines, int tree_cols)
         tty_draw_hline (w->y + line, w->x + 1, ' ', tree_cols);
         widget_gotoyx (w, line, 1);
         tty_print_char (PATH_SEP);
-        tty_print_string (str_fit_to_term (tree->search_buffer, tree_cols - 2, J_LEFT_FIT));
+        tty_print_string (str_fit_to_term (tree->search_buffer->str, tree_cols - 2, J_LEFT_FIT));
         tty_print_char (' ');
     }
     else
@@ -585,16 +586,18 @@ tree_chdir_sel (WTree * tree)
 {
     if (tree->is_panel)
     {
-        change_panel ();
+        WPanel *p;
 
-        if (do_cd (tree->selected_ptr->name, cd_exact))
-            select_item (current_panel);
+        p = change_panel ();
+
+        if (panel_cd (p, tree->selected_ptr->name, cd_exact))
+            select_item (p);
         else
             message (D_ERROR, MSG_ERROR, _("Cannot chdir to \"%s\"\n%s"),
                      vfs_path_as_str (tree->selected_ptr->name), unix_error_string (errno));
 
-        widget_draw (WIDGET (current_panel));
-        change_panel ();
+        widget_draw (WIDGET (p));
+        (void) change_panel ();
         show_tree (tree);
     }
     else
@@ -618,19 +621,15 @@ maybe_chdir (WTree * tree)
 /* --------------------------------------------------------------------------------------------- */
 /** Search tree for text */
 
-static int
-search_tree (WTree * tree, char *text)
+static gboolean
+search_tree (WTree * tree, const GString * text)
 {
-    tree_entry *current;
-    size_t len;
+    tree_entry *current = tree->selected_ptr;
     gboolean wrapped = FALSE;
     gboolean found = FALSE;
 
-    len = strlen (text);
-    current = tree->selected_ptr;
-
     while (!found && (!wrapped || current != tree->selected_ptr))
-        if (strncmp (current->subname, text, len) == 0)
+        if (strncmp (current->subname, text->str, text->len) == 0)
         {
             tree->selected_ptr = current;
             found = TRUE;
@@ -656,19 +655,15 @@ search_tree (WTree * tree, char *text)
 static void
 tree_do_search (WTree * tree, int key)
 {
-    size_t l;
+    /* TODO: support multi-byte characters, see do_search() in panel.c */
 
-    l = strlen (tree->search_buffer);
-    if ((l != 0) && (key == KEY_BACKSPACE))
-        tree->search_buffer[--l] = '\0';
-    else if (key && l < sizeof (tree->search_buffer) - 1)
-    {
-        tree->search_buffer[l] = key;
-        tree->search_buffer[++l] = '\0';
-    }
+    if (tree->search_buffer->len != 0 && key == KEY_BACKSPACE)
+        g_string_set_size (tree->search_buffer, tree->search_buffer->len - 1);
+    else if (key != 0)
+        g_string_append_c (tree->search_buffer, (gchar) key);
 
     if (!search_tree (tree, tree->search_buffer))
-        tree->search_buffer[--l] = '\0';
+        g_string_set_size (tree->search_buffer, tree->search_buffer->len - 1);
 
     show_tree (tree);
     maybe_chdir (tree);
@@ -694,7 +689,7 @@ tree_rescan (void *data)
         ret = mc_chdir (old_vpath);
         (void) ret;
     }
-    vfs_path_free (old_vpath);
+    vfs_path_free (old_vpath, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -790,7 +785,7 @@ tree_move (WTree * tree, const char *default_dest)
     file_op_context_destroy (ctx);
 
   ret:
-    vfs_path_free (dest_vpath);
+    vfs_path_free (dest_vpath, TRUE);
     g_free (dest);
 }
 
@@ -970,7 +965,7 @@ tree_start_search (WTree * tree)
     else
     {
         tree->searching = TRUE;
-        tree->search_buffer[0] = '\0';
+        g_string_set_size (tree->search_buffer, 0);
     }
 }
 
@@ -1236,7 +1231,7 @@ tree_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             event->result.abort = TRUE;
         }
         else if (!widget_get_state (w, WST_FOCUSED))
-            change_panel ();
+            (void) change_panel ();
         break;
 
     case MSG_MOUSE_CLICK:
@@ -1301,7 +1296,7 @@ tree_new (int y, int x, int lines, int cols, gboolean is_panel)
     tree->store = tree_store_get ();
     tree_store_add_entry_remove_hook (remove_callback, tree);
     tree->tree_shown = NULL;
-    tree->search_buffer[0] = '\0';
+    tree->search_buffer = g_string_sized_new (MC_MAXPATHLEN);
     tree->topdiff = w->lines / 2;
     tree->searching = FALSE;
 

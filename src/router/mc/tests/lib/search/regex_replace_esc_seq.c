@@ -1,7 +1,7 @@
 /*
    libmc - checks for processing esc sequences in replace string
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -32,9 +32,10 @@
 /* --------------------------------------------------------------------------------------------- */
 #define test_helper_check_valid_data( a, b, c, d, e, f ) \
 { \
-    fail_unless( a == b, "ret_value != %s", (b) ? "TRUE": "FALSE" ); \
-    fail_unless( c == d, "skip_len(%d) != %d", c, d ); \
-    if (f!=0) fail_unless( e == f, "ret(%d) != %d", e, f ); \
+    ck_assert_msg (a == b, "ret_value != %s", (b) ? "TRUE": "FALSE"); \
+    ck_assert_msg (c == d, "skip_len(%d) != %d", c, d); \
+    if (f != 0) \
+        ck_assert_msg (e == f, "ret(%d) != %d", e, f); \
 }
 
 #define test_helper_handle_esc_seq( pos, r, skip, flag ) \
@@ -210,24 +211,16 @@ END_PARAMETRIZED_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     /* Add new tests here: *************** */
     mctest_add_parameterized_test (tc_core, test_regex_replace_esc_seq_prepare,
                                    test_regex_replace_esc_seq_prepare_ds);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "regex_replace_esc_seq.log");
-    srunner_run_all (sr, CK_ENV);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

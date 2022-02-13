@@ -1,7 +1,7 @@
 /*
    Return a list of mounted file systems
 
-   Copyright (C) 1991-2020
+   Copyright (C) 1991-2021
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -205,6 +205,7 @@
    || strcmp (Fs_type, "debugfs") == 0          \
    || strcmp (Fs_type, "devpts") == 0           \
    || strcmp (Fs_type, "fusectl") == 0          \
+   || strcmp (Fs_type, "fuse.portal") == 0      \
    || strcmp (Fs_type, "mqueue") == 0           \
    || strcmp (Fs_type, "rpc_pipefs") == 0       \
    || strcmp (Fs_type, "sysfs") == 0            \
@@ -257,8 +258,9 @@ me_remote (char const *fs_name, char const *fs_type)
 #ifndef ME_REMOTE
 /* A file system is 'remote' if its Fs_name contains a ':'
    or if (it is of type (smbfs or smb3 or cifs) and its Fs_name starts with '//')
-   or if it is of type (afs or auristorfs)
-   or Fs_name is equal to "-hosts" (used by autofs to mount remote fs).  */
+   or if it is of any other of the listed types
+   or Fs_name is equal to "-hosts" (used by autofs to mount remote fs).
+   "VM" file systems like prl_fs or vboxsf are not considered remote here. */
 #define ME_REMOTE(Fs_name, Fs_type) \
     (strchr (Fs_name, ':') != NULL \
      || ((Fs_name)[0] == '/' \
@@ -266,8 +268,15 @@ me_remote (char const *fs_name, char const *fs_type)
          && (strcmp (Fs_type, "smbfs") == 0 \
              || strcmp (Fs_type, "smb3") == 0 \
              || strcmp (Fs_type, "cifs") == 0)) \
+     || strcmp (Fs_type, "acfs") == 0 \
      || strcmp (Fs_type, "afs") == 0 \
+     || strcmp (Fs_type, "coda") == 0 \
      || strcmp (Fs_type, "auristorfs") == 0 \
+     || strcmp (Fs_type, "fhgfs") == 0 \
+     || strcmp (Fs_type, "gpfs") == 0 \
+     || strcmp (Fs_type, "ibrix") == 0 \
+     || strcmp (Fs_type, "ocfs2") == 0 \
+     || strcmp (Fs_type, "vxfs") == 0 \
      || strcmp ("-hosts", Fs_name) == 0)
 #endif
 
@@ -1430,12 +1439,7 @@ get_fs_usage (char const *file, char const *disk, struct fs_usage *fsp)
         /* Empirically, the block counts on most SVR3 and SVR3-derived
            systems seem to always be in terms of 512-byte blocks,
            no matter what value f_bsize has.  */
-#if defined _CRAY
-        fsp->fsu_blocksize = PROPAGATE_ALL_ONES (fsd.f_bsize);
-#else
         fsp->fsu_blocksize = 512;
-#endif
-
 #endif
 
 #if (defined STAT_STATVFS64 || defined STAT_STATFS3_OSF1 \

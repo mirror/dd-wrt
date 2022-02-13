@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -50,11 +50,11 @@
 
 #include "src/setup.h"          /* panels_options */
 
-#include "midnight.h"           /* the_menubar */
+#include "filemanager.h"        /* the_menubar */
 #include "layout.h"
 #include "mountlist.h"
 #ifdef ENABLE_EXT2FS_ATTR
-#include "chattr.h"
+#include "cmd.h"                /* chattr_get_as_str() */
 #endif
 
 #include "info.h"
@@ -62,10 +62,6 @@
 /*** global variables ****************************************************************************/
 
 /*** file scope macro definitions ****************************************************************/
-
-#ifndef VERSION
-#define VERSION "undefined"
-#endif
 
 /*** file scope type declarations ****************************************************************/
 
@@ -125,7 +121,7 @@ info_show_info (WInfo * info)
 
     tty_setcolor (MARKED_COLOR);
     widget_gotoyx (w, 1, 3);
-    tty_printf (_("Midnight Commander %s"), VERSION);
+    tty_printf (_("Midnight Commander %s"), mc_global.mc_version);
 
     if (!info->ready)
         return;
@@ -270,14 +266,14 @@ info_show_info (WInfo * info)
             vfs_path_t *vpath;
             unsigned long attr;
 
-            vpath = vfs_path_from_str (current_panel->dir.list[current_panel->selected].fname);
+            vpath = vfs_path_from_str (current_panel->dir.list[current_panel->selected].fname->str);
 
             if (fgetflags (vfs_path_as_str (vpath), &attr) == 0)
                 tty_printf (_("Attributes: %s"), chattr_get_as_str (attr));
             else
                 tty_print_string (_("Attributes: unavailable"));
 
-            vfs_path_free (vpath);
+            vfs_path_free (vpath, TRUE);
         }
 #else
         tty_print_string (_("Attributes: not supported"));
@@ -297,7 +293,7 @@ info_show_info (WInfo * info)
             const char *fname;
 
             widget_gotoyx (w, 3, 2);
-            fname = current_panel->dir.list[current_panel->selected].fname;
+            fname = current_panel->dir.list[current_panel->selected].fname->str;
             str_printf (buff, file_label, str_trunc (fname, w->cols - i18n_adjust));
             tty_print_string (buff->str);
         }

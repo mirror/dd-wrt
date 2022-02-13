@@ -7,14 +7,15 @@
 # Tadashi Jokagi <elf@poyo.jp>, 2012
 # Tadashi Jokagi <elf@poyo.jp>, 2011
 # linuxmetel <linuxmetel@gmail.com>, 2020
+# Takuro Onoue <kusanaginoturugi@gmail.com>, 2021
 # Yoshitaka Yamashita <drum@magic-touch.org>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-20 02:37+0000\n"
-"Last-Translator: linuxmetel <linuxmetel@gmail.com>\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Japanese (http://www.transifex.com/mc/mc/language/ja/)\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -78,24 +79,6 @@ msgstr "ディレクトリー %s が作成できません"
 
 msgid "FATAL: not a directory:"
 msgstr "致命的なエラー:ディレクトリではありません:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr ""
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -175,10 +158,10 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr ""
 
-msgid "True color not supported in this slang version."
+msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr ""
 
-msgid "Your terminal doesn't even seem to support 256 colors."
+msgid "True color not supported in this slang version."
 msgstr ""
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
@@ -380,7 +363,7 @@ msgid "Colon"
 msgstr "コロン"
 
 msgid "Semicolon"
-msgstr ""
+msgstr "セミコロン"
 
 msgid "Exclamation mark"
 msgstr "感嘆符（！）"
@@ -389,16 +372,16 @@ msgid "Question mark"
 msgstr "疑問符（？）"
 
 msgid "Ampersand"
-msgstr ""
+msgstr "アンパサンド"
 
 msgid "Dollar sign"
 msgstr "＄"
 
 msgid "Quotation mark"
-msgstr ""
+msgstr "クォーテーションマーク"
 
 msgid "Percent sign"
-msgstr ""
+msgstr "パーセント記号"
 
 msgid "Caret"
 msgstr "キャレット"
@@ -419,22 +402,22 @@ msgid "Pipe"
 msgstr "パイプ"
 
 msgid "Left parenthesis"
-msgstr ""
+msgstr "左カッコ"
 
 msgid "Right parenthesis"
-msgstr ""
+msgstr "右カッコ"
 
 msgid "Left bracket"
-msgstr ""
+msgstr "左角カッコ"
 
 msgid "Right bracket"
-msgstr ""
+msgstr "右角カッコ"
 
 msgid "Left brace"
-msgstr ""
+msgstr "左中カッコ"
 
 msgid "Right brace"
-msgstr ""
+msgstr "右中カッコ"
 
 msgid "Enter"
 msgstr "エンター"
@@ -452,11 +435,11 @@ msgid "Backslash key"
 msgstr "バックスラッシュ キー"
 
 msgid "Number sign #"
-msgstr ""
+msgstr "番号記号 #"
 
 #. TRANSLATORS: Please translate as in "at sign" (@).
 msgid "At sign"
-msgstr ""
+msgstr "アットマーク"
 
 msgid "Ctrl"
 msgstr "Ctrl"
@@ -471,7 +454,7 @@ msgid "The TERM environment variable is unset!\n"
 msgstr "環境変数 TERM がセットされていません\n"
 
 msgid "Cannot check SIGWINCH pipe"
-msgstr ""
+msgstr "SIGWINCH パイプをチェックできません"
 
 #, c-format
 msgid ""
@@ -536,18 +519,6 @@ msgstr ""
 msgid ""
 "Unexpected error in waitpid():\n"
 "%s"
-msgstr ""
-
-msgid "Warning"
-msgstr "警告"
-
-msgid "Pipe failed"
-msgstr "パイプの受け渡しに失敗しました"
-
-msgid "Dup failed"
-msgstr "複製に失敗しました"
-
-msgid "Error dup'ing old error pipe"
 msgstr ""
 
 #, c-format
@@ -970,15 +941,6 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
-msgid "Choose syntax highlighting"
-msgstr ""
-
-msgid "< Auto >"
-msgstr ""
-
-msgid "< Reload Current Syntax >"
-msgstr ""
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr ""
@@ -1011,6 +973,9 @@ msgid ""
 "Open it anyway?"
 msgstr ""
 
+msgid "Warning"
+msgstr "警告"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr ""
@@ -1018,14 +983,6 @@ msgstr ""
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr ""
-
-#, c-format
-msgid "Searching %s"
-msgstr "%sを検索中"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
@@ -1072,9 +1029,6 @@ msgstr ""
 msgid "Save As"
 msgstr "別名で保存"
 
-msgid "Collect completions"
-msgstr ""
-
 msgid "&Quick save"
 msgstr ""
 
@@ -1104,27 +1058,6 @@ msgstr "上書き(&O)"
 
 msgid "Cannot save file"
 msgstr "ファイルを保存できません"
-
-msgid "Delete macro"
-msgstr "マクロの削除"
-
-msgid "Press macro hotkey:"
-msgstr ""
-
-msgid "Macro not deleted"
-msgstr ""
-
-msgid "Save macro"
-msgstr "マクロの保存"
-
-msgid "Press the macro's new hotkey:"
-msgstr ""
-
-msgid "Repeat last commands"
-msgstr "最後のコマンドを繰り返す"
-
-msgid "Repeat times:"
-msgstr "繰り返し回数:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1159,13 +1092,6 @@ msgstr ""
 
 msgid "&Local"
 msgstr "ローカル(&L)"
-
-msgid "Replace"
-msgstr "置換"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr ""
 
 msgid "[NoName]"
 msgstr ""
@@ -1269,35 +1195,35 @@ msgid ""
 "Continue discards these changes."
 msgstr ""
 
-msgid "In se&lection"
-msgstr ""
-
-msgid "&Find all"
-msgstr "すべて検索(&F)"
-
-msgid "Enter replacement string:"
-msgstr ""
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "&Replace"
-msgstr "置換(&R)"
-
-msgid "A&ll"
-msgstr "全部(&L)"
-
-msgid "&Skip"
-msgstr "スキップ(&S)"
-
-msgid "Confirm replace"
-msgstr "置換の確認"
-
 msgid "Cancel"
 msgstr "キャンセル"
 
+msgid "Collect completions"
+msgstr ""
+
 msgid "NoName"
 msgstr ""
+
+msgid "Save macro"
+msgstr "マクロの保存"
+
+msgid "Press the macro's new hotkey:"
+msgstr ""
+
+msgid "Delete macro"
+msgstr "マクロの削除"
+
+msgid "Press macro hotkey:"
+msgstr ""
+
+msgid "Macro not deleted"
+msgstr ""
+
+msgid "Repeat last commands"
+msgstr "最後のコマンドを繰り返す"
+
+msgid "Repeat times:"
+msgstr "繰り返し回数:"
 
 msgid "&Open file..."
 msgstr "ファイルを開く(&O)..."
@@ -1587,12 +1513,51 @@ msgstr ""
 msgid "Editor options"
 msgstr "編集のオプション"
 
+msgid "In se&lection"
+msgstr ""
+
+msgid "&Find all"
+msgstr "すべて検索(&F)"
+
+msgid "Enter replacement string:"
+msgstr ""
+
+msgid "Replace"
+msgstr "置換"
+
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "置換(&R)"
+
+msgid "A&ll"
+msgstr "全部(&L)"
+
+msgid "&Skip"
+msgstr "スキップ(&S)"
+
+msgid "Confirm replace"
+msgstr "置換の確認"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "%sを検索中"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr ""
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1710,6 +1675,15 @@ msgid "Suggest"
 msgstr ""
 
 msgid "Select language"
+msgstr ""
+
+msgid "Choose syntax highlighting"
+msgstr ""
+
+msgid "< Auto >"
+msgstr ""
+
+msgid "< Reload Current Syntax >"
 msgstr ""
 
 msgid "Load syntax file"
@@ -1894,6 +1868,9 @@ msgid "Configure options"
 msgstr "設定オプション"
 
 msgid "Skin:"
+msgstr ""
+
+msgid "&Shadows"
 msgstr ""
 
 msgid "Appearance"
@@ -2115,6 +2092,14 @@ msgstr "ユーザ名:"
 msgid "SMB authentication"
 msgstr ""
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"「%s」に移動できません\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2173,6 +2158,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2447,14 +2435,6 @@ msgstr ""
 msgid "Cannot execute commands on non-local filesystems"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"「%s」に移動できません\n"
-"%s"
-
 msgid "Parameter"
 msgstr "パラメーター"
 
@@ -2463,6 +2443,9 @@ msgid ""
 "Cannot create temporary command file\n"
 "%s"
 msgstr ""
+
+msgid "Pipe failed"
+msgstr "パイプの受け渡しに失敗しました"
 
 #, c-format
 msgid " %s%s file error"
@@ -2906,6 +2889,224 @@ msgstr "バックグラウンド(&B)"
 msgid "Invalid source pattern '%s'"
 msgstr ""
 
+msgid "File listin&g"
+msgstr ""
+
+msgid "&Quick view"
+msgstr ""
+
+msgid "&Info"
+msgstr "情報(&I)"
+
+msgid "&Tree"
+msgstr "ツリー(&T)"
+
+msgid "&Listing format..."
+msgstr ""
+
+msgid "&Sort order..."
+msgstr "整列順(&S)..."
+
+msgid "&Filter..."
+msgstr "フィルタ(&F)..."
+
+msgid "&Encoding..."
+msgstr "エンコード(&E)..."
+
+msgid "FT&P link..."
+msgstr "FTP リンク(&P)..."
+
+msgid "S&hell link..."
+msgstr ""
+
+msgid "S&FTP link..."
+msgstr ""
+
+msgid "SM&B link..."
+msgstr "SMBリンク(&B)..."
+
+msgid "Paneli&ze"
+msgstr ""
+
+msgid "&Rescan"
+msgstr "再検索(&R)"
+
+msgid "&View"
+msgstr "表示(&V)"
+
+msgid "Vie&w file..."
+msgstr "ファイルの表示(&W)"
+
+msgid "&Filtered view"
+msgstr ""
+
+msgid "&Copy"
+msgstr "コピー(&C)"
+
+msgid "C&hmod"
+msgstr "パーミッション設定(&H)"
+
+msgid "&Link"
+msgstr "リンク(&L)"
+
+msgid "&Symlink"
+msgstr "シンボリックリンク(&S)"
+
+msgid "Relative symlin&k"
+msgstr ""
+
+msgid "Edit s&ymlink"
+msgstr "シンボリックリンクの編集(&Y)"
+
+msgid "Ch&own"
+msgstr "所有者変更(&O)"
+
+msgid "&Advanced chown"
+msgstr ""
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "名称変更/移動(&R)"
+
+msgid "&Mkdir"
+msgstr "ディレクトリー作成(&M)"
+
+msgid "&Quick cd"
+msgstr ""
+
+msgid "Select &group"
+msgstr "グループの選択(&G)"
+
+msgid "U&nselect group"
+msgstr "グループの選択解除(&N)"
+
+msgid "&Invert selection"
+msgstr "選択の反転(&I)"
+
+msgid "E&xit"
+msgstr "終了(&X)"
+
+msgid "&User menu"
+msgstr "ユーザーのメニュー(&U)"
+
+msgid "&Directory tree"
+msgstr "ディレクトリツリー(&D)"
+
+msgid "&Find file"
+msgstr "ファイルの検索(&F)"
+
+msgid "S&wap panels"
+msgstr "パネルの入れ替え(&W)"
+
+msgid "Switch &panels on/off"
+msgstr ""
+
+msgid "&Compare directories"
+msgstr ""
+
+msgid "C&ompare files"
+msgstr "ファイルの比較(&O)"
+
+msgid "E&xternal panelize"
+msgstr ""
+
+msgid "Show directory s&izes"
+msgstr ""
+
+msgid "Command &history"
+msgstr "コマンド履歴(&H)"
+
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
+msgid "Di&rectory hotlist"
+msgstr ""
+
+msgid "&Active VFS list"
+msgstr ""
+
+msgid "&Background jobs"
+msgstr ""
+
+msgid "Screen lis&t"
+msgstr "画面の一覧(&T)"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "ファイルの復活(&U) (ext2fsのみ)"
+
+msgid "&Listing format edit"
+msgstr "一覧形式編集(&L)"
+
+msgid "Edit &extension file"
+msgstr "拡張ファイルを編集(&E)"
+
+msgid "Edit &menu file"
+msgstr "メニューファイル編集(&M)"
+
+msgid "Edit hi&ghlighting group file"
+msgstr ""
+
+msgid "&Configuration..."
+msgstr "設定(&C)..."
+
+msgid "&Layout..."
+msgstr "レイアウト(&L)..."
+
+msgid "&Panel options..."
+msgstr "パネルのオプション(&P)"
+
+msgid "C&onfirmation..."
+msgstr "確認(&O)..."
+
+msgid "&Appearance..."
+msgstr ""
+
+msgid "&Display bits..."
+msgstr "表示ビット数(&D)..."
+
+msgid "&Virtual FS..."
+msgstr "仮想FS(&V)..."
+
+msgid "Panels:"
+msgstr "パネル:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+
+msgid "The Midnight Commander"
+msgstr "The Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "本当に Midnight Commander を終了しますか?"
+
+msgid "&Above"
+msgstr "上(&A)"
+
+msgid "&Left"
+msgstr "左(&L)"
+
+msgid "&Below"
+msgstr "下(&B)"
+
+msgid "&Right"
+msgstr "右(&R)"
+
+msgid "ButtonBar|Menu"
+msgstr ""
+
+msgid "ButtonBar|View"
+msgstr ""
+
+msgid "ButtonBar|RenMov"
+msgstr ""
+
+msgid "ButtonBar|Mkdir"
+msgstr ""
+
 msgid "&Chdir"
 msgstr "ディレクトリ移動(&C)"
 
@@ -2934,6 +3135,9 @@ msgstr "ファイル名:"
 msgid "&Find recursively"
 msgstr ""
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr ""
 
@@ -2951,9 +3155,6 @@ msgstr "全文字セット(&L)"
 
 msgid "Fir&st hit"
 msgstr ""
-
-msgid "&Tree"
-msgstr "ツリー(&T)"
 
 msgid "Find File"
 msgstr "ファイル検索"
@@ -3207,221 +3408,6 @@ msgstr "出力行:"
 msgid "Layout"
 msgstr "レイアウト"
 
-msgid "File listin&g"
-msgstr ""
-
-msgid "&Quick view"
-msgstr ""
-
-msgid "&Info"
-msgstr "情報(&I)"
-
-msgid "&Listing format..."
-msgstr ""
-
-msgid "&Sort order..."
-msgstr "整列順(&S)..."
-
-msgid "&Filter..."
-msgstr "フィルタ(&F)..."
-
-msgid "&Encoding..."
-msgstr "エンコード(&E)..."
-
-msgid "FT&P link..."
-msgstr "FTP リンク(&P)..."
-
-msgid "S&hell link..."
-msgstr ""
-
-msgid "S&FTP link..."
-msgstr ""
-
-msgid "SM&B link..."
-msgstr "SMBリンク(&B)..."
-
-msgid "Paneli&ze"
-msgstr ""
-
-msgid "&Rescan"
-msgstr "再検索(&R)"
-
-msgid "&View"
-msgstr "表示(&V)"
-
-msgid "Vie&w file..."
-msgstr "ファイルの表示(&W)"
-
-msgid "&Filtered view"
-msgstr ""
-
-msgid "&Copy"
-msgstr "コピー(&C)"
-
-msgid "C&hmod"
-msgstr "パーミッション設定(&H)"
-
-msgid "&Link"
-msgstr "リンク(&L)"
-
-msgid "&Symlink"
-msgstr "シンボリックリンク(&S)"
-
-msgid "Relative symlin&k"
-msgstr ""
-
-msgid "Edit s&ymlink"
-msgstr "シンボリックリンクの編集(&Y)"
-
-msgid "Ch&own"
-msgstr "所有者変更(&O)"
-
-msgid "&Advanced chown"
-msgstr ""
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "名称変更/移動(&R)"
-
-msgid "&Mkdir"
-msgstr "ディレクトリー作成(&M)"
-
-msgid "&Quick cd"
-msgstr ""
-
-msgid "Select &group"
-msgstr "グループの選択(&G)"
-
-msgid "U&nselect group"
-msgstr "グループの選択解除(&N)"
-
-msgid "&Invert selection"
-msgstr "選択の反転(&I)"
-
-msgid "E&xit"
-msgstr "終了(&X)"
-
-msgid "&User menu"
-msgstr "ユーザーのメニュー(&U)"
-
-msgid "&Directory tree"
-msgstr "ディレクトリツリー(&D)"
-
-msgid "&Find file"
-msgstr "ファイルの検索(&F)"
-
-msgid "S&wap panels"
-msgstr "パネルの入れ替え(&W)"
-
-msgid "Switch &panels on/off"
-msgstr ""
-
-msgid "&Compare directories"
-msgstr ""
-
-msgid "C&ompare files"
-msgstr "ファイルの比較(&O)"
-
-msgid "E&xternal panelize"
-msgstr ""
-
-msgid "Show directory s&izes"
-msgstr ""
-
-msgid "Command &history"
-msgstr "コマンド履歴(&H)"
-
-msgid "Viewed/edited files hi&story"
-msgstr ""
-
-msgid "Di&rectory hotlist"
-msgstr ""
-
-msgid "&Active VFS list"
-msgstr ""
-
-msgid "&Background jobs"
-msgstr ""
-
-msgid "Screen lis&t"
-msgstr "画面の一覧(&T)"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "ファイルの復活(&U) (ext2fsのみ)"
-
-msgid "&Listing format edit"
-msgstr "一覧形式編集(&L)"
-
-msgid "Edit &extension file"
-msgstr "拡張ファイルを編集(&E)"
-
-msgid "Edit &menu file"
-msgstr "メニューファイル編集(&M)"
-
-msgid "Edit hi&ghlighting group file"
-msgstr ""
-
-msgid "&Configuration..."
-msgstr "設定(&C)..."
-
-msgid "&Layout..."
-msgstr "レイアウト(&L)..."
-
-msgid "&Panel options..."
-msgstr "パネルのオプション(&P)"
-
-msgid "C&onfirmation..."
-msgstr "確認(&O)..."
-
-msgid "&Appearance..."
-msgstr ""
-
-msgid "&Display bits..."
-msgstr "表示ビット数(&D)..."
-
-msgid "&Virtual FS..."
-msgstr "仮想FS(&V)..."
-
-msgid "Panels:"
-msgstr "パネル:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] ""
-
-msgid "The Midnight Commander"
-msgstr "The Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "本当に Midnight Commander を終了しますか?"
-
-msgid "&Above"
-msgstr "上(&A)"
-
-msgid "&Left"
-msgstr "左(&L)"
-
-msgid "&Below"
-msgstr "下(&B)"
-
-msgid "&Right"
-msgstr "右(&R)"
-
-msgid "ButtonBar|Menu"
-msgstr ""
-
-msgid "ButtonBar|View"
-msgstr ""
-
-msgid "ButtonBar|RenMov"
-msgstr ""
-
-msgid "ButtonBar|Mkdir"
-msgstr ""
-
 msgid "Memory exhausted!"
 msgstr ""
 
@@ -3583,11 +3569,18 @@ msgstr ""
 msgid "Enter command label:"
 msgstr ""
 
-msgid "Cannot invoke command."
-msgstr "コマンドを実行できません"
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "パイプのクローズに失敗"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
@@ -3963,13 +3956,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"%s アーカイブを開くことが出来ません\n"
-"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "不整合な extfs アーカイブです"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4136,6 +4131,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr ""
 
@@ -4169,6 +4170,9 @@ msgstr ""
 msgid "sftp: %s"
 msgstr ""
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr ""
@@ -4178,6 +4182,50 @@ msgstr ""
 
 #, c-format
 msgid "sftp: connection to server failed: %s"
+msgstr ""
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
 msgstr ""
 
 #, c-format
@@ -4194,7 +4242,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-msgid "sftp: Failure establishing SSH session"
+msgid "sftp: failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

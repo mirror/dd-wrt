@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
 "Last-Translator: Transifex Bot <>\n"
 "Language-Team: Telugu (http://www.transifex.com/mc/mc/language/te/)\n"
 "Language: te\n"
@@ -69,24 +69,6 @@ msgid "Cannot create %s directory"
 msgstr ""
 
 msgid "FATAL: not a directory:"
-msgstr ""
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr ""
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
 msgstr ""
 
 msgid ""
@@ -163,10 +145,10 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr ""
 
-msgid "True color not supported in this slang version."
+msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr ""
 
-msgid "Your terminal doesn't even seem to support 256 colors."
+msgid "True color not supported in this slang version."
 msgstr ""
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
@@ -522,18 +504,6 @@ msgstr ""
 msgid ""
 "Unexpected error in waitpid():\n"
 "%s"
-msgstr ""
-
-msgid "Warning"
-msgstr ""
-
-msgid "Pipe failed"
-msgstr ""
-
-msgid "Dup failed"
-msgstr ""
-
-msgid "Error dup'ing old error pipe"
 msgstr ""
 
 #, c-format
@@ -956,15 +926,6 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
-msgid "Choose syntax highlighting"
-msgstr ""
-
-msgid "< Auto >"
-msgstr ""
-
-msgid "< Reload Current Syntax >"
-msgstr ""
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr ""
@@ -997,20 +958,15 @@ msgid ""
 "Open it anyway?"
 msgstr ""
 
+msgid "Warning"
+msgstr ""
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr ""
 
 #, c-format
 msgid "Cannot open pipe for reading: %s"
-msgstr ""
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr ""
-
-#, c-format
-msgid "Searching %s"
 msgstr ""
 
 msgid "File has hard-links. Detach before saving?"
@@ -1058,9 +1014,6 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
-msgid "Collect completions"
-msgstr ""
-
 msgid "&Quick save"
 msgstr ""
 
@@ -1089,27 +1042,6 @@ msgid "&Overwrite"
 msgstr ""
 
 msgid "Cannot save file"
-msgstr ""
-
-msgid "Delete macro"
-msgstr ""
-
-msgid "Press macro hotkey:"
-msgstr ""
-
-msgid "Macro not deleted"
-msgstr ""
-
-msgid "Save macro"
-msgstr ""
-
-msgid "Press the macro's new hotkey:"
-msgstr ""
-
-msgid "Repeat last commands"
-msgstr ""
-
-msgid "Repeat times:"
 msgstr ""
 
 #, c-format
@@ -1144,13 +1076,6 @@ msgid "Which menu file do you want to edit?"
 msgstr ""
 
 msgid "&Local"
-msgstr ""
-
-msgid "Replace"
-msgstr ""
-
-#, c-format
-msgid "%ld replacements made"
 msgstr ""
 
 msgid "[NoName]"
@@ -1255,34 +1180,34 @@ msgid ""
 "Continue discards these changes."
 msgstr ""
 
-msgid "In se&lection"
-msgstr ""
-
-msgid "&Find all"
-msgstr ""
-
-msgid "Enter replacement string:"
-msgstr ""
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "&Replace"
-msgstr ""
-
-msgid "A&ll"
-msgstr ""
-
-msgid "&Skip"
-msgstr ""
-
-msgid "Confirm replace"
-msgstr ""
-
 msgid "Cancel"
 msgstr ""
 
+msgid "Collect completions"
+msgstr ""
+
 msgid "NoName"
+msgstr ""
+
+msgid "Save macro"
+msgstr ""
+
+msgid "Press the macro's new hotkey:"
+msgstr ""
+
+msgid "Delete macro"
+msgstr ""
+
+msgid "Press macro hotkey:"
+msgstr ""
+
+msgid "Macro not deleted"
+msgstr ""
+
+msgid "Repeat last commands"
+msgstr ""
+
+msgid "Repeat times:"
 msgstr ""
 
 msgid "&Open file..."
@@ -1573,12 +1498,51 @@ msgstr ""
 msgid "Editor options"
 msgstr ""
 
+msgid "In se&lection"
+msgstr ""
+
+msgid "&Find all"
+msgstr ""
+
+msgid "Enter replacement string:"
+msgstr ""
+
+msgid "Replace"
+msgstr ""
+
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr ""
+
+msgid "A&ll"
+msgstr ""
+
+msgid "&Skip"
+msgstr ""
+
+msgid "Confirm replace"
+msgstr ""
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr ""
+
+#, c-format
+msgid "%ld replacements made"
+msgstr ""
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1696,6 +1660,15 @@ msgid "Suggest"
 msgstr ""
 
 msgid "Select language"
+msgstr ""
+
+msgid "Choose syntax highlighting"
+msgstr ""
+
+msgid "< Auto >"
+msgstr ""
+
+msgid "< Reload Current Syntax >"
 msgstr ""
 
 msgid "Load syntax file"
@@ -1876,6 +1849,9 @@ msgid "Configure options"
 msgstr ""
 
 msgid "Skin:"
+msgstr ""
+
+msgid "&Shadows"
 msgstr ""
 
 msgid "Appearance"
@@ -2097,6 +2073,12 @@ msgstr ""
 msgid "SMB authentication"
 msgstr ""
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2155,6 +2137,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2429,12 +2414,6 @@ msgstr ""
 msgid "Cannot execute commands on non-local filesystems"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-
 msgid "Parameter"
 msgstr ""
 
@@ -2442,6 +2421,9 @@ msgstr ""
 msgid ""
 "Cannot create temporary command file\n"
 "%s"
+msgstr ""
+
+msgid "Pipe failed"
 msgstr ""
 
 #, c-format
@@ -2886,6 +2868,225 @@ msgstr ""
 msgid "Invalid source pattern '%s'"
 msgstr ""
 
+msgid "File listin&g"
+msgstr ""
+
+msgid "&Quick view"
+msgstr ""
+
+msgid "&Info"
+msgstr ""
+
+msgid "&Tree"
+msgstr ""
+
+msgid "&Listing format..."
+msgstr ""
+
+msgid "&Sort order..."
+msgstr ""
+
+msgid "&Filter..."
+msgstr ""
+
+msgid "&Encoding..."
+msgstr ""
+
+msgid "FT&P link..."
+msgstr ""
+
+msgid "S&hell link..."
+msgstr ""
+
+msgid "S&FTP link..."
+msgstr ""
+
+msgid "SM&B link..."
+msgstr ""
+
+msgid "Paneli&ze"
+msgstr ""
+
+msgid "&Rescan"
+msgstr ""
+
+msgid "&View"
+msgstr ""
+
+msgid "Vie&w file..."
+msgstr ""
+
+msgid "&Filtered view"
+msgstr ""
+
+msgid "&Copy"
+msgstr ""
+
+msgid "C&hmod"
+msgstr ""
+
+msgid "&Link"
+msgstr ""
+
+msgid "&Symlink"
+msgstr ""
+
+msgid "Relative symlin&k"
+msgstr ""
+
+msgid "Edit s&ymlink"
+msgstr ""
+
+msgid "Ch&own"
+msgstr ""
+
+msgid "&Advanced chown"
+msgstr ""
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr ""
+
+msgid "&Mkdir"
+msgstr ""
+
+msgid "&Quick cd"
+msgstr ""
+
+msgid "Select &group"
+msgstr ""
+
+msgid "U&nselect group"
+msgstr ""
+
+msgid "&Invert selection"
+msgstr ""
+
+msgid "E&xit"
+msgstr ""
+
+msgid "&User menu"
+msgstr ""
+
+msgid "&Directory tree"
+msgstr ""
+
+msgid "&Find file"
+msgstr ""
+
+msgid "S&wap panels"
+msgstr ""
+
+msgid "Switch &panels on/off"
+msgstr ""
+
+msgid "&Compare directories"
+msgstr ""
+
+msgid "C&ompare files"
+msgstr ""
+
+msgid "E&xternal panelize"
+msgstr ""
+
+msgid "Show directory s&izes"
+msgstr ""
+
+msgid "Command &history"
+msgstr ""
+
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
+msgid "Di&rectory hotlist"
+msgstr ""
+
+msgid "&Active VFS list"
+msgstr ""
+
+msgid "&Background jobs"
+msgstr ""
+
+msgid "Screen lis&t"
+msgstr ""
+
+msgid "&Undelete files (ext2fs only)"
+msgstr ""
+
+msgid "&Listing format edit"
+msgstr ""
+
+msgid "Edit &extension file"
+msgstr ""
+
+msgid "Edit &menu file"
+msgstr ""
+
+msgid "Edit hi&ghlighting group file"
+msgstr ""
+
+msgid "&Configuration..."
+msgstr ""
+
+msgid "&Layout..."
+msgstr ""
+
+msgid "&Panel options..."
+msgstr ""
+
+msgid "C&onfirmation..."
+msgstr ""
+
+msgid "&Appearance..."
+msgstr ""
+
+msgid "&Display bits..."
+msgstr ""
+
+msgid "&Virtual FS..."
+msgstr ""
+
+msgid "Panels:"
+msgstr ""
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "The Midnight Commander"
+msgstr ""
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr ""
+
+msgid "&Above"
+msgstr ""
+
+msgid "&Left"
+msgstr ""
+
+msgid "&Below"
+msgstr ""
+
+msgid "&Right"
+msgstr ""
+
+msgid "ButtonBar|Menu"
+msgstr ""
+
+msgid "ButtonBar|View"
+msgstr ""
+
+msgid "ButtonBar|RenMov"
+msgstr ""
+
+msgid "ButtonBar|Mkdir"
+msgstr ""
+
 msgid "&Chdir"
 msgstr ""
 
@@ -2914,6 +3115,9 @@ msgstr ""
 msgid "&Find recursively"
 msgstr ""
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr ""
 
@@ -2930,9 +3134,6 @@ msgid "A&ll charsets"
 msgstr ""
 
 msgid "Fir&st hit"
-msgstr ""
-
-msgid "&Tree"
 msgstr ""
 
 msgid "Find File"
@@ -3189,222 +3390,6 @@ msgstr ""
 msgid "Layout"
 msgstr ""
 
-msgid "File listin&g"
-msgstr ""
-
-msgid "&Quick view"
-msgstr ""
-
-msgid "&Info"
-msgstr ""
-
-msgid "&Listing format..."
-msgstr ""
-
-msgid "&Sort order..."
-msgstr ""
-
-msgid "&Filter..."
-msgstr ""
-
-msgid "&Encoding..."
-msgstr ""
-
-msgid "FT&P link..."
-msgstr ""
-
-msgid "S&hell link..."
-msgstr ""
-
-msgid "S&FTP link..."
-msgstr ""
-
-msgid "SM&B link..."
-msgstr ""
-
-msgid "Paneli&ze"
-msgstr ""
-
-msgid "&Rescan"
-msgstr ""
-
-msgid "&View"
-msgstr ""
-
-msgid "Vie&w file..."
-msgstr ""
-
-msgid "&Filtered view"
-msgstr ""
-
-msgid "&Copy"
-msgstr ""
-
-msgid "C&hmod"
-msgstr ""
-
-msgid "&Link"
-msgstr ""
-
-msgid "&Symlink"
-msgstr ""
-
-msgid "Relative symlin&k"
-msgstr ""
-
-msgid "Edit s&ymlink"
-msgstr ""
-
-msgid "Ch&own"
-msgstr ""
-
-msgid "&Advanced chown"
-msgstr ""
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr ""
-
-msgid "&Mkdir"
-msgstr ""
-
-msgid "&Quick cd"
-msgstr ""
-
-msgid "Select &group"
-msgstr ""
-
-msgid "U&nselect group"
-msgstr ""
-
-msgid "&Invert selection"
-msgstr ""
-
-msgid "E&xit"
-msgstr ""
-
-msgid "&User menu"
-msgstr ""
-
-msgid "&Directory tree"
-msgstr ""
-
-msgid "&Find file"
-msgstr ""
-
-msgid "S&wap panels"
-msgstr ""
-
-msgid "Switch &panels on/off"
-msgstr ""
-
-msgid "&Compare directories"
-msgstr ""
-
-msgid "C&ompare files"
-msgstr ""
-
-msgid "E&xternal panelize"
-msgstr ""
-
-msgid "Show directory s&izes"
-msgstr ""
-
-msgid "Command &history"
-msgstr ""
-
-msgid "Viewed/edited files hi&story"
-msgstr ""
-
-msgid "Di&rectory hotlist"
-msgstr ""
-
-msgid "&Active VFS list"
-msgstr ""
-
-msgid "&Background jobs"
-msgstr ""
-
-msgid "Screen lis&t"
-msgstr ""
-
-msgid "&Undelete files (ext2fs only)"
-msgstr ""
-
-msgid "&Listing format edit"
-msgstr ""
-
-msgid "Edit &extension file"
-msgstr ""
-
-msgid "Edit &menu file"
-msgstr ""
-
-msgid "Edit hi&ghlighting group file"
-msgstr ""
-
-msgid "&Configuration..."
-msgstr ""
-
-msgid "&Layout..."
-msgstr ""
-
-msgid "&Panel options..."
-msgstr ""
-
-msgid "C&onfirmation..."
-msgstr ""
-
-msgid "&Appearance..."
-msgstr ""
-
-msgid "&Display bits..."
-msgstr ""
-
-msgid "&Virtual FS..."
-msgstr ""
-
-msgid "Panels:"
-msgstr ""
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "The Midnight Commander"
-msgstr ""
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr ""
-
-msgid "&Above"
-msgstr ""
-
-msgid "&Left"
-msgstr ""
-
-msgid "&Below"
-msgstr ""
-
-msgid "&Right"
-msgstr ""
-
-msgid "ButtonBar|Menu"
-msgstr ""
-
-msgid "ButtonBar|View"
-msgstr ""
-
-msgid "ButtonBar|RenMov"
-msgstr ""
-
-msgid "ButtonBar|Mkdir"
-msgstr ""
-
 msgid "Memory exhausted!"
 msgstr ""
 
@@ -3567,10 +3552,17 @@ msgstr ""
 msgid "Enter command label:"
 msgstr ""
 
-msgid "Cannot invoke command."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
 msgstr ""
 
-msgid "Pipe close failed"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
 msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
@@ -3920,10 +3912,14 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
 
-msgid "Inconsistent extfs archive"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
 msgstr ""
 
 #, c-format
@@ -4091,6 +4087,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr ""
 
@@ -4120,6 +4122,9 @@ msgstr ""
 msgid "sftp: %s"
 msgstr ""
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr ""
@@ -4129,6 +4134,50 @@ msgstr ""
 
 #, c-format
 msgid "sftp: connection to server failed: %s"
+msgstr ""
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
 msgstr ""
 
 #, c-format
@@ -4145,7 +4194,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-msgid "sftp: Failure establishing SSH session"
+msgid "sftp: failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

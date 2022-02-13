@@ -3,16 +3,17 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
+# Ivar Smolin <okul@linux.ee>, 2021
 # Kristjan Räts <kristjanrats@gmail.com>, 2013-2016,2018-2019
-# Priit Jõerüüt <transifex@joeruut.com>, 2020
-# vaba <vaba@riseup.net>, 2020
+# Priit Jõerüüt <transifex@joeruut.com>, 2020-2021
+# Marko Silluste <vaba@riseup.net>, 2020
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-08-08 12:32+0000\n"
+"Last-Translator: Priit Jõerüüt <transifex@joeruut.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
@@ -76,30 +77,6 @@ msgstr "%s kataloogi loomine nurjus"
 
 msgid "FATAL: not a directory:"
 msgstr "Viga: ei ole kataloog:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Viga kasutaja seadete migreerimisel: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Su vanad seaded toodi %s'st üle\n"
-"Freedesktopi soovitatud kataloogidesse.\n"
-"Lisainfot leiad aadressilt\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Su vanad seaded toodi failist %s\n"
-"üle faili %s\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -189,11 +166,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "Tõelised värvid ei ole toetatud teegiga ncurses."
 
-msgid "True color not supported in this slang version."
-msgstr "Tõelised värvid ei ole teegi slang selle versiooniga toetatud."
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "Su terminal ei paista toetavat isegi 256 värvi."
+
+msgid "True color not supported in this slang version."
+msgstr "Tõelised värvid ei ole teegi slang selle versiooniga toetatud."
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -557,18 +534,6 @@ msgid ""
 msgstr ""
 "Tundmatu viga funktsioonis waitpid():\n"
 "%s"
-
-msgid "Warning"
-msgstr "Hoiatus"
-
-msgid "Pipe failed"
-msgstr "Funktsioon pipe nurjus"
-
-msgid "Dup failed"
-msgstr "Funktsioon dup nurjus"
-
-msgid "Error dup'ing old error pipe"
-msgstr "Tõrge vana veatoru paljundamisel"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1035,15 +1000,6 @@ msgstr "Erinevuste vaatur: vale režiim"
 msgid "Two files are needed to compare"
 msgstr "Võrdlemiseks on vaja kahte faili"
 
-msgid "Choose syntax highlighting"
-msgstr "Valsi süntaksi esiletoomine"
-
-msgid "< Auto >"
-msgstr "<Auto>"
-
-msgid "< Reload Current Syntax >"
-msgstr "<Valitud süntaksi taaslaadimine>"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "Laaditakse: %3d%%"
@@ -1078,6 +1034,9 @@ msgstr ""
 "Fail \"%s\" on liiga suur.\n"
 "Kas avada ta ikkagi?"
 
+msgid "Warning"
+msgstr "Hoiatus"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "Viga torust lugemisel: %s"
@@ -1085,14 +1044,6 @@ msgstr "Viga torust lugemisel: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "Toru avamine lugemiseks nurjus: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "Otsitakse %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "Otsitakse %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "Failil on jäiku viitasid. Kas võtta need enne salvestamist lahti?"
@@ -1139,9 +1090,6 @@ msgstr "Vaheta reavahetused:"
 msgid "Save As"
 msgstr "Salvesta kui"
 
-msgid "Collect completions"
-msgstr "Koonda lõpetamised"
-
 msgid "&Quick save"
 msgstr "&Kiirsalvestus"
 
@@ -1171,27 +1119,6 @@ msgstr "K&irjuta üle"
 
 msgid "Cannot save file"
 msgstr "Faili salvestamine nurjus"
-
-msgid "Delete macro"
-msgstr "Kustuta makro"
-
-msgid "Press macro hotkey:"
-msgstr "Vajuta makro kiirklahv:"
-
-msgid "Macro not deleted"
-msgstr "Makrot ei kustutatud"
-
-msgid "Save macro"
-msgstr "Salvesta makro"
-
-msgid "Press the macro's new hotkey:"
-msgstr "Vajuta makro uus kiirklahv:"
-
-msgid "Repeat last commands"
-msgstr "Korda viimaseid käske"
-
-msgid "Repeat times:"
-msgstr "Korduste arv:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1226,13 +1153,6 @@ msgstr "Millist menüü failidi soovid muuta?"
 
 msgid "&Local"
 msgstr "&Kohalik"
-
-msgid "Replace"
-msgstr "Asenda"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "Teostati %ld asendust"
 
 msgid "[NoName]"
 msgstr "[Nimetu]"
@@ -1342,35 +1262,35 @@ msgstr ""
 "Teksti on muudetud faili salvestamata.\n"
 "Jätkamine viskab muudatused ära."
 
-msgid "In se&lection"
-msgstr "&Valikus"
-
-msgid "&Find all"
-msgstr "&Otsi kõikjalt"
-
-msgid "Enter replacement string:"
-msgstr "Sisesta asendus string:"
-
-msgid "Replace with:"
-msgstr "Asenda:"
-
-msgid "&Replace"
-msgstr "&Asenda"
-
-msgid "A&ll"
-msgstr "&Kõik"
-
-msgid "&Skip"
-msgstr "&Jäta vahele"
-
-msgid "Confirm replace"
-msgstr "Kinnita asendamine"
-
 msgid "Cancel"
 msgstr "Tühista"
 
+msgid "Collect completions"
+msgstr "Koonda lõpetamised"
+
 msgid "NoName"
 msgstr "Nimetu"
+
+msgid "Save macro"
+msgstr "Salvesta makro"
+
+msgid "Press the macro's new hotkey:"
+msgstr "Vajuta makro uus kiirklahv:"
+
+msgid "Delete macro"
+msgstr "Kustuta makro"
+
+msgid "Press macro hotkey:"
+msgstr "Vajuta makro kiirklahv:"
+
+msgid "Macro not deleted"
+msgstr "Makrot ei kustutatud"
+
+msgid "Repeat last commands"
+msgstr "Korda viimaseid käske"
+
+msgid "Repeat times:"
+msgstr "Korduste arv:"
 
 msgid "&Open file..."
 msgstr "&Ava fail..."
@@ -1660,6 +1580,45 @@ msgstr "Sõna täpsusega reavahetuse rea pikkus:"
 msgid "Editor options"
 msgstr "Redaktori suvandid"
 
+msgid "In se&lection"
+msgstr "&Valikus"
+
+msgid "&Find all"
+msgstr "&Otsi kõikjalt"
+
+msgid "Enter replacement string:"
+msgstr "Sisesta asendus string:"
+
+msgid "Replace"
+msgstr "Asenda"
+
+msgid "Replace with:"
+msgstr "Asenda:"
+
+msgid "&Replace"
+msgstr "&Asenda"
+
+msgid "A&ll"
+msgstr "&Kõik"
+
+msgid "&Skip"
+msgstr "&Jäta vahele"
+
+msgid "Confirm replace"
+msgstr "Kinnita asendamine"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Otsitakse %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Otsitakse %s"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "Teostati %ld asendust"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1667,8 +1626,8 @@ msgstr ""
 "Kasutajasõbralik tekstitoimeti, mis\n"
 "on loodud Midnight Commanderile."
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
-msgstr "Autoriõigus (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgstr "Autoriõigused (C) 1996-2021 the Free Software Foundation"
 
 msgid "About"
 msgstr "Programmist"
@@ -1787,6 +1746,15 @@ msgstr "Soovita"
 msgid "Select language"
 msgstr "Vali keel"
 
+msgid "Choose syntax highlighting"
+msgstr "Valsi süntaksi esiletoomine"
+
+msgid "< Auto >"
+msgstr "<Auto>"
+
+msgid "< Reload Current Syntax >"
+msgstr "<Valitud süntaksi taaslaadimine>"
+
 msgid "Load syntax file"
 msgstr "Lae süntaksi fail"
 
@@ -1823,6 +1791,8 @@ msgid ""
 "Not an xterm or Linux console;\n"
 "the subshell cannot be toggled."
 msgstr ""
+"Sa ei kasuta xtermi või Linuxi konsooli;\n"
+"alamkesta ei saa sisse/välja lülitada."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Midnight Commanderisse tagasipöördumiseks sisesta 'exit'"
@@ -1850,7 +1820,7 @@ msgstr "Lipp"
 
 #, c-format
 msgid "Permissions (octal): %o"
-msgstr ""
+msgstr "Õigused (8nd süsteemis): %o"
 
 msgid "Chown advanced command"
 msgstr "Keerukas omanikuvahetus"
@@ -1975,6 +1945,9 @@ msgstr "Häälestuse suvandid"
 
 msgid "Skin:"
 msgstr "Nahk:"
+
+msgid "&Shadows"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Välimus"
@@ -2198,6 +2171,14 @@ msgstr "Kasutaja:"
 msgid "SMB authentication"
 msgstr "SMB autentimine"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"Kataloogi \"%s\" sisenemine nurjus\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr "Turvaline kustutamine"
 
@@ -2211,7 +2192,7 @@ msgid "Synchronous directory updates"
 msgstr "Sünkroonsed kataloogivärskendused"
 
 msgid "Immutable"
-msgstr ""
+msgstr "Muudetamatu"
 
 msgid "Append only"
 msgstr ""
@@ -2220,7 +2201,7 @@ msgid "No dump"
 msgstr ""
 
 msgid "No update atime"
-msgstr ""
+msgstr "Jäta atime uuendamata"
 
 msgid "Compress"
 msgstr ""
@@ -2258,6 +2239,9 @@ msgstr ""
 msgid "No COW"
 msgstr ""
 
+msgid "Direct access for files"
+msgstr ""
+
 msgid "Casefolded file"
 msgstr ""
 
@@ -2289,7 +2273,7 @@ msgid ""
 msgstr ""
 
 msgid "Cannot change attributes on non-local filesystems"
-msgstr ""
+msgstr "Kaugfailisüsteemides ei saa atribuute muuta "
 
 #, c-format
 msgid ""
@@ -2534,14 +2518,6 @@ msgstr "Nurjus seadete salvestamine faili %s"
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "Käske ei saa käivitada kaugfailisüsteemidel"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"Kataloogi \"%s\" sisenemine nurjus\n"
-"%s"
-
 msgid "Parameter"
 msgstr "Parameeter"
 
@@ -2552,6 +2528,9 @@ msgid ""
 msgstr ""
 "Ajutise käsufaili loomine nurjus\n"
 "%s"
+
+msgid "Pipe failed"
+msgstr "Funktsioon pipe nurjus"
 
 #, c-format
 msgid " %s%s file error"
@@ -3075,6 +3054,225 @@ msgstr "&Taustale"
 msgid "Invalid source pattern '%s'"
 msgstr "Vigane lähtemuster \"%s\""
 
+msgid "File listin&g"
+msgstr "F&ailide loend"
+
+msgid "&Quick view"
+msgstr "&Kiirvaade"
+
+msgid "&Info"
+msgstr "&Info"
+
+msgid "&Tree"
+msgstr "&Puu"
+
+msgid "&Listing format..."
+msgstr "&Loendi vormindus"
+
+msgid "&Sort order..."
+msgstr "&Sortimine..."
+
+msgid "&Filter..."
+msgstr "Filtreeri&mine..."
+
+msgid "&Encoding..."
+msgstr "Ko&deering..."
+
+msgid "FT&P link..."
+msgstr "F&TP ühendus..."
+
+msgid "S&hell link..."
+msgstr "K&esta ühendus..."
+
+msgid "S&FTP link..."
+msgstr "S&FTP ühendus..."
+
+msgid "SM&B link..."
+msgstr "SM&B ühendus..."
+
+msgid "Paneli&ze"
+msgstr "Pa&neelile"
+
+msgid "&Rescan"
+msgstr "Ko&rdusskannimine"
+
+msgid "&View"
+msgstr "V&aata"
+
+msgid "Vie&w file..."
+msgstr "Vaa&ta faili..."
+
+msgid "&Filtered view"
+msgstr "&Filtreeritud vaade"
+
+msgid "&Copy"
+msgstr "Ko&peeri"
+
+msgid "C&hmod"
+msgstr "Õi&guste muutmine"
+
+msgid "&Link"
+msgstr "&Jäikviit"
+
+msgid "&Symlink"
+msgstr "A&bsoluutne nimeviit"
+
+msgid "Relative symlin&k"
+msgstr "&Suhteline nimeviit"
+
+msgid "Edit s&ymlink"
+msgstr "Muuda &nimeviita"
+
+msgid "Ch&own"
+msgstr "Vaheta &omanik"
+
+msgid "&Advanced chown"
+msgstr "Täpsem omani&ku vahetus"
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "Teisal&da/nimeta"
+
+msgid "&Mkdir"
+msgstr "&Loo kataloog"
+
+msgid "&Quick cd"
+msgstr "Kataloogi k&iirvahetus"
+
+msgid "Select &group"
+msgstr "Vali g&rupp"
+
+msgid "U&nselect group"
+msgstr "Tü&hista grupi valik"
+
+msgid "&Invert selection"
+msgstr "Vah&eta valik"
+
+msgid "E&xit"
+msgstr "&Välju"
+
+msgid "&User menu"
+msgstr "Kas&utaja menüü"
+
+msgid "&Directory tree"
+msgstr "Kataloogi&puu"
+
+msgid "&Find file"
+msgstr "&Failide otsimine"
+
+msgid "S&wap panels"
+msgstr "&Vaheta paneelid"
+
+msgid "Switch &panels on/off"
+msgstr "&Kuva/peida paneelid"
+
+msgid "&Compare directories"
+msgstr "Võr&dle katalooge"
+
+msgid "C&ompare files"
+msgstr "Võ&rdle faile"
+
+msgid "E&xternal panelize"
+msgstr "Väliskäsk pa&neelile"
+
+msgid "Show directory s&izes"
+msgstr "Kuva kataloogide &suurused"
+
+msgid "Command &history"
+msgstr "Käskude a&jalugu"
+
+msgid "Viewed/edited files hi&story"
+msgstr "Vaadatud/muudetud failide ajalugu"
+
+msgid "Di&rectory hotlist"
+msgstr "Katal&oogide kiirvalik"
+
+msgid "&Active VFS list"
+msgstr "Akt&iivsete VFSde loend"
+
+msgid "&Background jobs"
+msgstr "&Tööd taustal"
+
+msgid "Screen lis&t"
+msgstr "&Ekraanide loend"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "F&ailide taastamine (ainult ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "&Loend vorminduse muutmine"
+
+msgid "Edit &extension file"
+msgstr "Muuda &laiendite faili"
+
+msgid "Edit &menu file"
+msgstr "Muuda &menüü faili"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "Muuda esiletõstu &grupi faili"
+
+msgid "&Configuration..."
+msgstr "&Häälestus..."
+
+msgid "&Layout..."
+msgstr "&Kujundus..."
+
+msgid "&Panel options..."
+msgstr "&Paneeli häälestus..."
+
+msgid "C&onfirmation..."
+msgstr "K&innitused..."
+
+msgid "&Appearance..."
+msgstr "&Välimus..."
+
+msgid "&Display bits..."
+msgstr "K&uva bitid"
+
+msgid "&Virtual FS..."
+msgstr "Vi&rtuaalne FS..."
+
+msgid "Panels:"
+msgstr "Paneelid:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "Sul on %zu avatud ekraan. Kas ikkagi lõpetada?"
+msgstr[1] "Sul on %zu avatud ekraani. Kas ikkagi lõpetada?"
+
+msgid "The Midnight Commander"
+msgstr "Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "Kas sa soovid tõesti Midnight Commanderist väljuda?"
+
+msgid "&Above"
+msgstr "Ü&lal"
+
+msgid "&Left"
+msgstr "&Vasak"
+
+msgid "&Below"
+msgstr "&All"
+
+msgid "&Right"
+msgstr "&Parem"
+
+msgid "ButtonBar|Menu"
+msgstr "ButtonBar|Menüü"
+
+msgid "ButtonBar|View"
+msgstr "ButtonBar|Vaata"
+
+msgid "ButtonBar|RenMov"
+msgstr "ButtonBar|NimTeisalda"
+
+msgid "ButtonBar|Mkdir"
+msgstr "ButtonBar|LooKataloog"
+
 msgid "&Chdir"
 msgstr "&Chdir"
 
@@ -3103,6 +3301,9 @@ msgstr "Faili nimi:"
 msgid "&Find recursively"
 msgstr "&Otsi rekursiivselt"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr "&Eira peidetud"
 
@@ -3120,9 +3321,6 @@ msgstr "&Kõik märgistikud"
 
 msgid "Fir&st hit"
 msgstr "E&simene sobiv"
-
-msgid "&Tree"
-msgstr "&Puu"
 
 msgid "Find File"
 msgstr "Failide otsimine"
@@ -3326,14 +3524,14 @@ msgid "Links:      %d"
 msgstr "Viidad: %d"
 
 msgid "Attributes: not supported"
-msgstr ""
+msgstr "Atribuudid: ei ole toetatud"
 
 #, c-format
 msgid "Attributes: %s"
-msgstr ""
+msgstr "Atribuudid: %s"
 
 msgid "Attributes: unavailable"
-msgstr ""
+msgstr "Atribuudid: ei ole saadaval"
 
 #, c-format
 msgid "Mode:       %s (%04o)"
@@ -3381,222 +3579,6 @@ msgstr "Väljundi ridu:"
 
 msgid "Layout"
 msgstr "Kujundus"
-
-msgid "File listin&g"
-msgstr "F&ailide loend"
-
-msgid "&Quick view"
-msgstr "&Kiirvaade"
-
-msgid "&Info"
-msgstr "&Info"
-
-msgid "&Listing format..."
-msgstr "&Loendi vormindus"
-
-msgid "&Sort order..."
-msgstr "&Sortimine..."
-
-msgid "&Filter..."
-msgstr "Filtreeri&mine..."
-
-msgid "&Encoding..."
-msgstr "Ko&deering..."
-
-msgid "FT&P link..."
-msgstr "F&TP ühendus..."
-
-msgid "S&hell link..."
-msgstr "K&esta ühendus..."
-
-msgid "S&FTP link..."
-msgstr "S&FTP ühendus..."
-
-msgid "SM&B link..."
-msgstr "SM&B ühendus..."
-
-msgid "Paneli&ze"
-msgstr "Pa&neelile"
-
-msgid "&Rescan"
-msgstr "Ko&rdusskannimine"
-
-msgid "&View"
-msgstr "V&aata"
-
-msgid "Vie&w file..."
-msgstr "Vaa&ta faili..."
-
-msgid "&Filtered view"
-msgstr "&Filtreeritud vaade"
-
-msgid "&Copy"
-msgstr "Ko&peeri"
-
-msgid "C&hmod"
-msgstr "Õi&guste muutmine"
-
-msgid "&Link"
-msgstr "&Jäikviit"
-
-msgid "&Symlink"
-msgstr "A&bsoluutne nimeviit"
-
-msgid "Relative symlin&k"
-msgstr "&Suhteline nimeviit"
-
-msgid "Edit s&ymlink"
-msgstr "Muuda &nimeviita"
-
-msgid "Ch&own"
-msgstr "Vaheta &omanik"
-
-msgid "&Advanced chown"
-msgstr "Täpsem omani&ku vahetus"
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "Teisal&da/nimeta"
-
-msgid "&Mkdir"
-msgstr "&Loo kataloog"
-
-msgid "&Quick cd"
-msgstr "Kataloogi k&iirvahetus"
-
-msgid "Select &group"
-msgstr "Vali g&rupp"
-
-msgid "U&nselect group"
-msgstr "Tü&hista grupi valik"
-
-msgid "&Invert selection"
-msgstr "Vah&eta valik"
-
-msgid "E&xit"
-msgstr "&Välju"
-
-msgid "&User menu"
-msgstr "Kas&utaja menüü"
-
-msgid "&Directory tree"
-msgstr "Kataloogi&puu"
-
-msgid "&Find file"
-msgstr "&Failide otsimine"
-
-msgid "S&wap panels"
-msgstr "&Vaheta paneelid"
-
-msgid "Switch &panels on/off"
-msgstr "&Kuva/peida paneelid"
-
-msgid "&Compare directories"
-msgstr "Kataloogi&de võrdlemine"
-
-msgid "C&ompare files"
-msgstr "Võ&rdle faile"
-
-msgid "E&xternal panelize"
-msgstr "Väliskäsk pa&neelile"
-
-msgid "Show directory s&izes"
-msgstr "Kuva kataloogide &suurused"
-
-msgid "Command &history"
-msgstr "Käskude a&jalugu"
-
-msgid "Viewed/edited files hi&story"
-msgstr "Vaadatud/muudetud failide ajalugu"
-
-msgid "Di&rectory hotlist"
-msgstr "Katal&oogide kiirvalik"
-
-msgid "&Active VFS list"
-msgstr "Akt&iivsete VFSde loend"
-
-msgid "&Background jobs"
-msgstr "&Tööd taustal"
-
-msgid "Screen lis&t"
-msgstr "&Ekraanide loend"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "F&ailide taastamine (ainult ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "&Loend vorminduse muutmine"
-
-msgid "Edit &extension file"
-msgstr "Muuda &laiendite faili"
-
-msgid "Edit &menu file"
-msgstr "Muuda &menüü faili"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "Muuda esiletõstu &grupi faili"
-
-msgid "&Configuration..."
-msgstr "&Häälestus..."
-
-msgid "&Layout..."
-msgstr "&Kujundus..."
-
-msgid "&Panel options..."
-msgstr "&Paneeli häälestus..."
-
-msgid "C&onfirmation..."
-msgstr "K&innitused..."
-
-msgid "&Appearance..."
-msgstr "&Välimus..."
-
-msgid "&Display bits..."
-msgstr "K&uva bitid"
-
-msgid "&Virtual FS..."
-msgstr "Vi&rtuaalne FS..."
-
-msgid "Panels:"
-msgstr "Paneelid:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] "Sul on %zu avatud ekraan. Kas ikkagi lõpetada?"
-msgstr[1] "Sul on %zu avatud ekraani. Kas ikkagi lõpetada?"
-
-msgid "The Midnight Commander"
-msgstr "Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Kas sa soovid tõesti Midnight Commanderist väljuda?"
-
-msgid "&Above"
-msgstr "Ü&lal"
-
-msgid "&Left"
-msgstr "&Vasak"
-
-msgid "&Below"
-msgstr "&All"
-
-msgid "&Right"
-msgstr "&Parem"
-
-msgid "ButtonBar|Menu"
-msgstr "ButtonBar|Menüü"
-
-msgid "ButtonBar|View"
-msgstr "ButtonBar|Vaata"
-
-msgid "ButtonBar|RenMov"
-msgstr "ButtonBar|NimTeisalda"
-
-msgid "ButtonBar|Mkdir"
-msgstr "ButtonBar|LooKataloog"
 
 msgid "Memory exhausted!"
 msgstr "Mälu otsas!"
@@ -3760,11 +3742,18 @@ msgstr "Lisa väliskäsk paneelile"
 msgid "Enter command label:"
 msgstr "Sisesta käsu silt:"
 
-msgid "Cannot invoke command."
-msgstr "Käsu käivitamine nurjus."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "Toru sulgemine nurjus"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Väliskäsu paneelile saatmine töötab ainult kohalike kataloogidega"
@@ -3930,6 +3919,9 @@ msgid ""
 "is already running on this terminal.\n"
 "Subshell support will be disabled."
 msgstr ""
+"GNU Midnight Commander juba\n"
+"töötab selles terminalis.\n"
+"Alamkesta tugi keelatakse."
 
 #, c-format
 msgid ""
@@ -3973,37 +3965,37 @@ msgid "Warning: Cannot change to %s.\n"
 msgstr "Hoiatus: sisenemine kataloogi %s nurjus.\n"
 
 msgid "With builtin Editor and Aspell support"
-msgstr ""
+msgstr "Sisseehitatud toimeti ja Aspelli toega"
 
 msgid "With builtin Editor"
-msgstr ""
+msgstr "Sisseehitatud toimetiga"
 
 msgid "With optional subshell support"
-msgstr ""
+msgstr "Valikulise alamkesta toega"
 
 msgid "With subshell support as default"
-msgstr ""
+msgstr "Alamkesta tugi vaikeväärtusena"
 
 msgid "With support for background operations"
-msgstr ""
+msgstr "Taustategevuste toega"
 
 msgid "With mouse support on xterm and Linux console"
-msgstr ""
+msgstr "Hiire toega xtermis ja Linuxi konsoolil"
 
 msgid "With mouse support on xterm"
-msgstr ""
+msgstr "Hiire toega xtermis"
 
 msgid "With support for X11 events"
-msgstr ""
+msgstr "X11 sündmuste toega"
 
 msgid "With internationalization support"
-msgstr ""
+msgstr "Internatsionaliseerimise toega"
 
 msgid "With multiple codepages support"
-msgstr ""
+msgstr "Mitme kooditabeli toega"
 
 msgid "With ext2fs attributes support"
-msgstr ""
+msgstr "Sealhulgas ext2fs atribuutide tugi"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
@@ -4011,21 +4003,21 @@ msgstr "Ehitatud GLib teegiga %d.%d.%d\n"
 
 #, c-format
 msgid "Built with S-Lang %s with terminfo database\n"
-msgstr ""
+msgstr "Kompileerimisel on kaasatud S-Lang %s terminfo andmekoguga\n"
 
 #, c-format
 msgid "Built with ncurses %s\n"
-msgstr ""
+msgstr "Kompileerimisel on kaasatud ncurses %s\n"
 
 msgid "Built with ncurses (unknown version)"
-msgstr ""
+msgstr "Kompileerimisel on kaasatud ncurses (versioon pole teada)"
 
 #, c-format
 msgid "Built with ncursesw %s\n"
-msgstr ""
+msgstr "Kompileerimisel on kaasatud ncursesw %s\n"
 
 msgid "Built with ncursesw (unknown version)"
-msgstr ""
+msgstr "Kompileerimisel on kaasatud ncursesw (versioon pole teada)"
 
 msgid "Virtual File Systems:"
 msgstr "Virtuaalsed failisüsteemid:"
@@ -4155,13 +4147,20 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"%s arhiivi avamine nurjus\n"
-" %s"
+"%s arhiivi avamine ei õnnestu\n"
+"%s:\n"
+"%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "Vasturääkiv extfs arhiiv"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
+"EXTFS virtuaalne failisüsteem:\n"
+"%s"
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4330,6 +4329,14 @@ msgstr ""
 "Kustuta failist salasõna või muuda õigused"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+"SFS virtuaalne failisüsteem:\n"
+"%s"
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: hoiatus: faili %s ei leitud\n"
 
@@ -4363,6 +4370,9 @@ msgstr "sftp: vigane hosti nimi."
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: ühenduse loomine masinaga %s"
@@ -4373,6 +4383,50 @@ msgstr "sftp: kasutaja katkestas ühenduse"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: ühenduse loomine masinaga nurjus: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4388,8 +4442,8 @@ msgstr "sftp: sisesta parool masinale %s"
 msgid "sftp: Password is empty."
 msgstr "sftp: parool on tühi."
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: nurjus SSH ühenduse loomine"
+msgid "sftp: failure establishing SSH session"
+msgstr "sftp: SSH sessiooni loomine ei õnnestu"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: faili lugemiseks puuduvad faili käsitleja andmed"
@@ -4627,7 +4681,7 @@ msgstr ""
 "%s"
 
 msgid "Cannot view: not a regular file"
-msgstr "Vaataamine ei ole võimalik: tegemist ei ole hariliku failiga"
+msgstr "Vaatamine pole võimalik: see pole harilik fail"
 
 #, c-format
 msgid ""

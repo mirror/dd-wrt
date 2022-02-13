@@ -13,6 +13,7 @@
 
 #include "lib/global.h"
 #include "lib/hook.h"           /* hook_t */
+#include "lib/keybind.h"        /* global_keymap_t */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
@@ -105,7 +106,6 @@ void dlg_set_default_colors (void);
 
 void dlg_init (WDialog * h);
 int dlg_run (WDialog * d);
-void dlg_destroy (WDialog * h);
 
 void dlg_run_done (WDialog * h);
 void dlg_save_history (WDialog * h);

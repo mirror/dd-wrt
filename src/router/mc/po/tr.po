@@ -14,8 +14,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
 "Last-Translator: Transifex Bot <>\n"
 "Language-Team: Turkish (http://www.transifex.com/mc/mc/language/tr/)\n"
 "Language: tr\n"
@@ -80,30 +80,6 @@ msgstr "Dizin %s oluşturulamıyor"
 
 msgid "FATAL: not a directory:"
 msgstr "ÖLÜMCÜL HATA: bir dizin değil:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Kullanıcı ayarları taşınırken hata oluştu: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Eski ayarlarınız %s dizininden \n"
-"Freedesktop önerilen dizinlerine taşındı.\n"
-"Daha fazla bilgi için, lütfen şu adresi ziyaret edin:\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Eski ayarlarınız %sden\n"
-"%s'e taşındı\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -186,11 +162,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "Gerçek renk ncurses ile desteklenmiyor."
 
-msgid "True color not supported in this slang version."
-msgstr "Gerçek renk bu slang sürümünde desteklenmiyor."
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "Uçbiriminiz 256 rengi bile desteklemiyor gibi görünüyor."
+
+msgid "True color not supported in this slang version."
+msgstr "Gerçek renk bu slang sürümünde desteklenmiyor."
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -552,18 +528,6 @@ msgid ""
 msgstr ""
 "waitpid()'de beklenmedik hata:\n"
 "%s"
-
-msgid "Warning"
-msgstr "Uyarı"
-
-msgid "Pipe failed"
-msgstr "Boru açılamadı"
-
-msgid "Dup failed"
-msgstr "Tekrar başarısız"
-
-msgid "Error dup'ing old error pipe"
-msgstr "Eski hata borusu hata ikilemi"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1030,15 +994,6 @@ msgstr "Fark görüntüleyici: geçersiz kip"
 msgid "Two files are needed to compare"
 msgstr "İki dosya karşılaştırma gerektiriyor"
 
-msgid "Choose syntax highlighting"
-msgstr "Sözdizimi aydınlatma seç"
-
-msgid "< Auto >"
-msgstr "< Otomatik >"
-
-msgid "< Reload Current Syntax >"
-msgstr "< Mevcut Sözdizimini Yükle >"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "Yükleniyor: %3d%%"
@@ -1073,6 +1028,9 @@ msgstr ""
 "\"%s\" dosyası çok büyük.\n"
 "Yine de açılsın mı?"
 
+msgid "Warning"
+msgstr "Uyarı"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "Borudan okuma hatası: %s"
@@ -1080,14 +1038,6 @@ msgstr "Borudan okuma hatası: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "Boru okumak için açılamıyor: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "Aranıyor %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "%s aranıyor"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "Dosyanın sabit bağları var. Kaydetmeden önce ayrılsın mı?"
@@ -1134,9 +1084,6 @@ msgstr "Satır sonu şunla değiştiriliyor:"
 msgid "Save As"
 msgstr "Farklı kaydet..."
 
-msgid "Collect completions"
-msgstr "Tamamlamaları topla"
-
 msgid "&Quick save"
 msgstr "&Çabuk kaydet"
 
@@ -1168,27 +1115,6 @@ msgstr "&Üzerine Yaz"
 
 msgid "Cannot save file"
 msgstr "Dosyayı kaydedilemiyor"
-
-msgid "Delete macro"
-msgstr "Makroyu sil"
-
-msgid "Press macro hotkey:"
-msgstr "Makro tuşuna bas:"
-
-msgid "Macro not deleted"
-msgstr "Makro silinmedi"
-
-msgid "Save macro"
-msgstr "Makroyu kaydet"
-
-msgid "Press the macro's new hotkey:"
-msgstr "Yeni Makro tuşuna basınız:"
-
-msgid "Repeat last commands"
-msgstr "1"
-
-msgid "Repeat times:"
-msgstr "Tekrar sayısı:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1223,13 +1149,6 @@ msgstr "Düzenlenecek menü hangisi?"
 
 msgid "&Local"
 msgstr "Yere&l"
-
-msgid "Replace"
-msgstr "Yerleştir"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "%ld yerleştirme yapıldı"
 
 msgid "[NoName]"
 msgstr "[İsimsiz]"
@@ -1340,35 +1259,35 @@ msgstr ""
 "Mevcut metin kaydedilmemiş değişiklikler içeriyor\n"
 "Bu değişiklikler yoksayılarak devam edilsin mi?."
 
-msgid "In se&lection"
-msgstr "Seçi&li kısımda"
-
-msgid "&Find all"
-msgstr "&Tümünü bul"
-
-msgid "Enter replacement string:"
-msgstr "Yerleştirilecek metni verin:"
-
-msgid "Replace with:"
-msgstr "Bununla değiştir:"
-
-msgid "&Replace"
-msgstr "&Yerleştir"
-
-msgid "A&ll"
-msgstr "&Tümü"
-
-msgid "&Skip"
-msgstr "&Atla"
-
-msgid "Confirm replace"
-msgstr "Yer değişikliğini onaylat"
-
 msgid "Cancel"
 msgstr "Vazgeç"
 
+msgid "Collect completions"
+msgstr "Tamamlamaları topla"
+
 msgid "NoName"
 msgstr "İsimsiz"
+
+msgid "Save macro"
+msgstr "Makroyu kaydet"
+
+msgid "Press the macro's new hotkey:"
+msgstr "Yeni Makro tuşuna basınız:"
+
+msgid "Delete macro"
+msgstr "Makroyu sil"
+
+msgid "Press macro hotkey:"
+msgstr "Makro tuşuna bas:"
+
+msgid "Macro not deleted"
+msgstr "Makro silinmedi"
+
+msgid "Repeat last commands"
+msgstr "1"
+
+msgid "Repeat times:"
+msgstr "Tekrar sayısı:"
 
 msgid "&Open file..."
 msgstr "D&osyayı aç..."
@@ -1658,6 +1577,45 @@ msgstr "Satır sarmalama uzunluğu:"
 msgid "Editor options"
 msgstr "Düzenleyici seçenekleri"
 
+msgid "In se&lection"
+msgstr "Seçi&li kısımda"
+
+msgid "&Find all"
+msgstr "&Tümünü bul"
+
+msgid "Enter replacement string:"
+msgstr "Yerleştirilecek metni verin:"
+
+msgid "Replace"
+msgstr "Yerleştir"
+
+msgid "Replace with:"
+msgstr "Bununla değiştir:"
+
+msgid "&Replace"
+msgstr "&Yerleştir"
+
+msgid "A&ll"
+msgstr "&Tümü"
+
+msgid "&Skip"
+msgstr "&Atla"
+
+msgid "Confirm replace"
+msgstr "Yer değişikliğini onaylat"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Aranıyor %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "%s aranıyor"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "%ld yerleştirme yapıldı"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1665,7 +1623,7 @@ msgstr ""
 "Kullanıcı dostu bir metin düzenleyici\n"
 "Midnight Commander için yazıldı"
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1786,6 +1744,15 @@ msgstr "Öner"
 
 msgid "Select language"
 msgstr "Dil seç"
+
+msgid "Choose syntax highlighting"
+msgstr "Sözdizimi aydınlatma seç"
+
+msgid "< Auto >"
+msgstr "< Otomatik >"
+
+msgid "< Reload Current Syntax >"
+msgstr "< Mevcut Sözdizimini Yükle >"
 
 msgid "Load syntax file"
 msgstr "Sözdizimi dosyasını yükle"
@@ -1976,6 +1943,9 @@ msgstr "Yapılandırma seçenekleri"
 
 msgid "Skin:"
 msgstr "Tema"
+
+msgid "&Shadows"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Görünüm"
@@ -2201,6 +2171,14 @@ msgstr "Kullanıcı: "
 msgid "SMB authentication"
 msgstr "SMB kimlik doğrulama"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+" \"%s\" dizinine geçilemedi \n"
+" %s "
+
 msgid "Secure deletion"
 msgstr ""
 
@@ -2259,6 +2237,9 @@ msgid "Huge_file"
 msgstr ""
 
 msgid "No COW"
+msgstr ""
+
+msgid "Direct access for files"
 msgstr ""
 
 msgid "Casefolded file"
@@ -2537,14 +2518,6 @@ msgstr "Ayarlar %s'e kaydedilemedi"
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "Yerel dosya sistemi dışında komut çalıştırılamaz"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-" \"%s\" dizinine geçilemedi \n"
-" %s "
-
 msgid "Parameter"
 msgstr "Parametre"
 
@@ -2555,6 +2528,9 @@ msgid ""
 msgstr ""
 "Geçici komut dosyası oluşturulamıyor:\n"
 " %s"
+
+msgid "Pipe failed"
+msgstr "Boru açılamadı"
 
 #, c-format
 msgid " %s%s file error"
@@ -3074,6 +3050,225 @@ msgstr "A&rtalan"
 msgid "Invalid source pattern '%s'"
 msgstr "Geçersiz kaynak deseni '%s'"
 
+msgid "File listin&g"
+msgstr "Dosya listesi"
+
+msgid "&Quick view"
+msgstr "Dosya içe&Riği"
+
+msgid "&Info"
+msgstr "&Bilgi kipi"
+
+msgid "&Tree"
+msgstr "&Ağaç"
+
+msgid "&Listing format..."
+msgstr "&Listeleme biçimi..."
+
+msgid "&Sort order..."
+msgstr "&Sıralama türü..."
+
+msgid "&Filter..."
+msgstr "&Süzgeç..."
+
+msgid "&Encoding..."
+msgstr "Kodlama..."
+
+msgid "FT&P link..."
+msgstr "FT&P bağı..."
+
+msgid "S&hell link..."
+msgstr "&SSH bağı..."
+
+msgid "S&FTP link..."
+msgstr "FT&P bağı..."
+
+msgid "SM&B link..."
+msgstr "S&MB bağı..."
+
+msgid "Paneli&ze"
+msgstr "Pane&lle"
+
+msgid "&Rescan"
+msgstr "&Tazele"
+
+msgid "&View"
+msgstr "&Görünüm"
+
+msgid "Vie&w file..."
+msgstr "Bir dos&ya göster...  "
+
+msgid "&Filtered view"
+msgstr "&Görünüm Süzgeci"
+
+msgid "&Copy"
+msgstr "&Kopyala"
+
+msgid "C&hmod"
+msgstr "Dosya ki&Pini değiştir"
+
+msgid "&Link"
+msgstr "&bağlantı"
+
+msgid "&Symlink"
+msgstr "&Sembolik bağ"
+
+msgid "Relative symlin&k"
+msgstr "İlgili sembolik bağ"
+
+msgid "Edit s&ymlink"
+msgstr "Sembolik bağı düzenle"
+
+msgid "Ch&own"
+msgstr "Sa&hip/Grup değiştir"
+
+msgid "&Advanced chown"
+msgstr "&Dosya Özelliklerini Değiştir   "
+
+msgid "Cha&ttr"
+msgstr ""
+
+msgid "&Rename/Move"
+msgstr "Taşıma / &Ad Değiştirme F6"
+
+msgid "&Mkdir"
+msgstr "&DizinAç"
+
+msgid "&Quick cd"
+msgstr "&Çabuk dizin değiştirme"
+
+msgid "Select &group"
+msgstr "Bl&ok Seçimi                 M"
+
+msgid "U&nselect group"
+msgstr "Blok seçimi&ni kaldır"
+
+msgid "&Invert selection"
+msgstr "&Seçimi tersine çevir"
+
+msgid "E&xit"
+msgstr "Çıkış"
+
+msgid "&User menu"
+msgstr "&Kullanıcı menüsü"
+
+msgid "&Directory tree"
+msgstr "&Dizin ağacı"
+
+msgid "&Find file"
+msgstr "&Dosyayı bul"
+
+msgid "S&wap panels"
+msgstr "Panelleri yer &değiştir       C-u"
+
+msgid "Switch &panels on/off"
+msgstr "&Panelleri kapat/aç"
+
+msgid "&Compare directories"
+msgstr "&Dizinleri karşılaştır"
+
+msgid "C&ompare files"
+msgstr "Dizinleri karşılaştır"
+
+msgid "E&xternal panelize"
+msgstr "Dış panelleme"
+
+msgid "Show directory s&izes"
+msgstr "diz&in boyutlarını göster"
+
+msgid "Command &history"
+msgstr "Komut Geçmişi"
+
+msgid "Viewed/edited files hi&story"
+msgstr "Görüntülenen/düzenlenen dosya &geçmişi"
+
+msgid "Di&rectory hotlist"
+msgstr "Dizin listesi"
+
+msgid "&Active VFS list"
+msgstr "Etkin &VFS listesi"
+
+msgid "&Background jobs"
+msgstr "&Artalan İşleri"
+
+msgid "Screen lis&t"
+msgstr "Ekran listes&i"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "Dosyaları k&urtar (sadece ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "&Listeleme biçimini düzenle"
+
+msgid "Edit &extension file"
+msgstr "Dosya &Uzantılarını düzenle"
+
+msgid "Edit &menu file"
+msgstr "Men&ü dosyasını düzenle"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "Vur&gulu grup dosyalarını düzenle"
+
+msgid "&Configuration..."
+msgstr "&Yapılandırma..."
+
+msgid "&Layout..."
+msgstr "&Yerleşim...     "
+
+msgid "&Panel options..."
+msgstr "&Panel seçenekleri..."
+
+msgid "C&onfirmation..."
+msgstr "Onaylama..."
+
+msgid "&Appearance..."
+msgstr "&Görünüm..."
+
+msgid "&Display bits..."
+msgstr "Bit &gösterimi..."
+
+msgid "&Virtual FS..."
+msgstr "&Sanal Dosya Sistemi..."
+
+msgid "Panels:"
+msgstr "Paneller:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "The Midnight Commander"
+msgstr "Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "Midnight Commander'dan gerçekten çıkmak istiyor musunuz?"
+
+msgid "&Above"
+msgstr "&Üst"
+
+msgid "&Left"
+msgstr "&Sol"
+
+msgid "&Below"
+msgstr "&Alt"
+
+msgid "&Right"
+msgstr "&Sağ"
+
+msgid "ButtonBar|Menu"
+msgstr "Düğme Çubuğu|Menü"
+
+msgid "ButtonBar|View"
+msgstr "Düğme Çubuğu|Görünüm"
+
+msgid "ButtonBar|RenMov"
+msgstr "Düğme Çubuğu|Taşı"
+
+msgid "ButtonBar|Mkdir"
+msgstr "Düğme Çubuğu|Dizin Aç"
+
 msgid "&Chdir"
 msgstr "Di&zin değiştir"
 
@@ -3102,6 +3297,9 @@ msgstr "Dosya ismi:"
 msgid "&Find recursively"
 msgstr "&özyinemeli bul"
 
+msgid "Follow s&ymlinks"
+msgstr ""
+
 msgid "S&kip hidden"
 msgstr "Gizlileri a&tla"
 
@@ -3119,9 +3317,6 @@ msgstr "&Tüm karakter kümeleri"
 
 msgid "Fir&st hit"
 msgstr "İ&lk vuruş"
-
-msgid "&Tree"
-msgstr "&Ağaç"
 
 msgid "Find File"
 msgstr "Dosyayı bul"
@@ -3381,222 +3576,6 @@ msgstr "çıktı satırları:"
 msgid "Layout"
 msgstr "Yerleşim"
 
-msgid "File listin&g"
-msgstr "Dosya listesi"
-
-msgid "&Quick view"
-msgstr "Dosya içe&Riği"
-
-msgid "&Info"
-msgstr "&Bilgi kipi"
-
-msgid "&Listing format..."
-msgstr "&Listeleme biçimi..."
-
-msgid "&Sort order..."
-msgstr "&Sıralama türü..."
-
-msgid "&Filter..."
-msgstr "&Süzgeç..."
-
-msgid "&Encoding..."
-msgstr "Kodlama..."
-
-msgid "FT&P link..."
-msgstr "FT&P bağı..."
-
-msgid "S&hell link..."
-msgstr "&SSH bağı..."
-
-msgid "S&FTP link..."
-msgstr "FT&P bağı..."
-
-msgid "SM&B link..."
-msgstr "S&MB bağı..."
-
-msgid "Paneli&ze"
-msgstr "Pane&lle"
-
-msgid "&Rescan"
-msgstr "&Tazele"
-
-msgid "&View"
-msgstr "&Görünüm"
-
-msgid "Vie&w file..."
-msgstr "Bir dos&ya göster...  "
-
-msgid "&Filtered view"
-msgstr "&Görünüm Süzgeci"
-
-msgid "&Copy"
-msgstr "&Kopyala"
-
-msgid "C&hmod"
-msgstr "Dosya ki&Pini değiştir"
-
-msgid "&Link"
-msgstr "&bağlantı"
-
-msgid "&Symlink"
-msgstr "&Sembolik bağ"
-
-msgid "Relative symlin&k"
-msgstr "İlgili sembolik bağ"
-
-msgid "Edit s&ymlink"
-msgstr "Sembolik bağı düzenle"
-
-msgid "Ch&own"
-msgstr "Sa&hip/Grup değiştir"
-
-msgid "&Advanced chown"
-msgstr "&Dosya Özelliklerini Değiştir   "
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "Taşıma / &Ad Değiştirme F6"
-
-msgid "&Mkdir"
-msgstr "&DizinAç"
-
-msgid "&Quick cd"
-msgstr "&Çabuk dizin değiştirme"
-
-msgid "Select &group"
-msgstr "Bl&ok Seçimi                 M"
-
-msgid "U&nselect group"
-msgstr "Blok seçimi&ni kaldır"
-
-msgid "&Invert selection"
-msgstr "&Seçimi tersine çevir"
-
-msgid "E&xit"
-msgstr "Çıkış"
-
-msgid "&User menu"
-msgstr "&Kullanıcı menüsü"
-
-msgid "&Directory tree"
-msgstr "&Dizin ağacı"
-
-msgid "&Find file"
-msgstr "&Dosyayı bul"
-
-msgid "S&wap panels"
-msgstr "Panelleri yer &değiştir       C-u"
-
-msgid "Switch &panels on/off"
-msgstr "&Panelleri kapat/aç"
-
-msgid "&Compare directories"
-msgstr "&Dizinleri karşılaştır"
-
-msgid "C&ompare files"
-msgstr "Dizinleri karşılaştır"
-
-msgid "E&xternal panelize"
-msgstr "Dış panelleme"
-
-msgid "Show directory s&izes"
-msgstr "diz&in boyutlarını göster"
-
-msgid "Command &history"
-msgstr "Komut Geçmişi"
-
-msgid "Viewed/edited files hi&story"
-msgstr "Görüntülenen/düzenlenen dosya &geçmişi"
-
-msgid "Di&rectory hotlist"
-msgstr "Dizin listesi"
-
-msgid "&Active VFS list"
-msgstr "Etkin &VFS listesi"
-
-msgid "&Background jobs"
-msgstr "&Artalan İşleri"
-
-msgid "Screen lis&t"
-msgstr "Ekran listes&i"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "Dosyaları k&urtar (sadece ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "&Listeleme biçimini düzenle"
-
-msgid "Edit &extension file"
-msgstr "Dosya &Uzantılarını düzenle"
-
-msgid "Edit &menu file"
-msgstr "Men&ü dosyasını düzenle"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "Vur&gulu grup dosyalarını düzenle"
-
-msgid "&Configuration..."
-msgstr "&Yapılandırma..."
-
-msgid "&Layout..."
-msgstr "&Yerleşim...     "
-
-msgid "&Panel options..."
-msgstr "&Panel seçenekleri..."
-
-msgid "C&onfirmation..."
-msgstr "Onaylama..."
-
-msgid "&Appearance..."
-msgstr "&Görünüm..."
-
-msgid "&Display bits..."
-msgstr "Bit &gösterimi..."
-
-msgid "&Virtual FS..."
-msgstr "&Sanal Dosya Sistemi..."
-
-msgid "Panels:"
-msgstr "Paneller:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "The Midnight Commander"
-msgstr "Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Midnight Commander'dan gerçekten çıkmak istiyor musunuz?"
-
-msgid "&Above"
-msgstr "&Üst"
-
-msgid "&Left"
-msgstr "&Sol"
-
-msgid "&Below"
-msgstr "&Alt"
-
-msgid "&Right"
-msgstr "&Sağ"
-
-msgid "ButtonBar|Menu"
-msgstr "Düğme Çubuğu|Menü"
-
-msgid "ButtonBar|View"
-msgstr "Düğme Çubuğu|Görünüm"
-
-msgid "ButtonBar|RenMov"
-msgstr "Düğme Çubuğu|Taşı"
-
-msgid "ButtonBar|Mkdir"
-msgstr "Düğme Çubuğu|Dizin Aç"
-
 msgid "Memory exhausted!"
 msgstr "Bellek tükendi!"
 
@@ -3759,11 +3738,18 @@ msgstr "Dış panellemeye ekle"
 msgid "Enter command label:"
 msgstr "Komut yaftası:"
 
-msgid "Cannot invoke command."
-msgstr "komut hatırlatmaz."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
 
-msgid "Pipe close failed"
-msgstr "Veri yolu kapatılamadı"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Bir uzak dizine girilirken dış panalleme çalıştırılamaz"
@@ -4155,13 +4141,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
-"%s\n"
-"%s arşivini açamadı"
 
-msgid "Inconsistent extfs archive"
-msgstr "Kararsız extfs arşivi"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4331,6 +4319,12 @@ msgstr ""
 "Ya parolayı silin ya da kipi düzeltin"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: Uyarı: %s dosyası bulunamadı\n"
 
@@ -4364,6 +4358,9 @@ msgstr "sftp: Geçersiz sunucu ismi."
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: %s'e bağlanılıyor"
@@ -4374,6 +4371,50 @@ msgstr "sftp: bağlantı kullanıcı tarafından kesildi"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: sunucuya bağlanma başarısız: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4389,8 +4430,8 @@ msgstr "sftp: %s için parola girin "
 msgid "sftp: Password is empty."
 msgstr "sftp: Parola boş."
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "stp: SSH oturumu kurarken hata oluştu"
+msgid "sftp: failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Dosya okumak için hiç dosya işleyici verisi mevcut değil "

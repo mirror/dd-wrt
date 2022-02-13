@@ -126,16 +126,21 @@ extern void tty_print_one_hline (gboolean single);
 extern void tty_draw_hline (int y, int x, int ch, int len);
 extern void tty_draw_vline (int y, int x, int ch, int len);
 extern void tty_draw_box (int y, int x, int rows, int cols, gboolean single);
+extern void tty_draw_box_shadow (int y, int x, int rows, int cols, int shadow_color);
 extern void tty_fill_region (int y, int x, int rows, int cols, unsigned char ch);
 
 extern int tty_resize (int fd);
 extern void tty_refresh (void);
 extern void tty_change_screen_size (void);
 
-extern int mc_tty_normalize_lines_char (const char *);
+/* Clear screen */
+extern void tty_clear_screen (void);
+
+extern int mc_tty_normalize_lines_char (const char *str);
 
 extern void tty_enter_ca_mode (void);
 extern void tty_exit_ca_mode (void);
 
 /*** inline functions ****************************************************************************/
-#endif /* MC_TTY_H */
+
+#endif /* MC__TTY_H */

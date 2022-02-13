@@ -116,6 +116,9 @@ alt-shift-left=\\e[1\;4D
 alt-shift-up=\\e[1\;4A
 alt-shift-down=\\e[1\;4B
 
+[terminal:alacritty]
+copy=xterm
+
 [terminal:gnome]
 copy=xterm
 
@@ -135,6 +138,12 @@ copy=xterm
 copy=xterm
 
 [terminal:screen-256color]
+copy=xterm
+
+[terminal:tmux]
+copy=xterm
+
+[terminal:tmux-256color]
 copy=xterm
 
 [terminal:ibmpc3]
@@ -165,3 +174,19 @@ f17=\\e[e
 f18=\\e[f
 f19=\\e[g
 f20=\\e[h
+
+[terminal:st]
+shift-right=\\e[1\;2C
+shift-left=\\e[1\;2D
+shift-up=\\e[1\;2A
+shift-down=\\e[1\;2B
+alt-shift-right=\\e[1\;4C
+alt-shift-left=\\e[1\;4D
+alt-shift-up=\\e[1\;4A
+alt-shift-down=\\e[1\;4B
+
+[terminal:st-256color]
+copy=st
+
+[terminal:st-git-256color]
+copy=st

@@ -44,6 +44,7 @@ SYNTAXFILES =			\
 	jal.syntax		\
 	java.syntax		\
 	js.syntax		\
+	json.syntax		\
 	kotlin.syntax		\
 	latex.syntax		\
 	lisp.syntax		\
@@ -81,6 +82,7 @@ SYNTAXFILES =			\
 	spec.syntax		\
 	sql.syntax		\
 	strace.syntax 		\
+	swift.syntax		\
 	swig.syntax		\
 	syntax.syntax		\
 	tcl.syntax		\

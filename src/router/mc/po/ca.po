@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2020
+# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2021
 # Daniel <danicases@gmail.com>, 2011
 # Daniel <danicases@gmail.com>, 2011-2012
 # Daniel <danicases@gmail.com>, 2012
@@ -16,9 +16,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-07-13 00:21+0400\n"
-"PO-Revision-Date: 2020-05-18 08:43+0000\n"
-"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>\n"
+"POT-Creation-Date: 2021-08-15 16:03+0200\n"
+"PO-Revision-Date: 2021-07-26 20:16+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
@@ -82,30 +82,6 @@ msgstr "No s'ha pogut crear el directori %s"
 
 msgid "FATAL: not a directory:"
 msgstr "FATAL: no és un directori:"
-
-#, c-format
-msgid "An error occurred while migrating user settings: %s"
-msgstr "Hi ha hagut un error mentre es migraven els ajustaments d'usuari: %s"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to Freedesktop recommended dirs.\n"
-"To get more info, please visit\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-msgstr ""
-"Els vostres antics ajustaments s'han migrat de %s\n"
-"cap als directoris recomanats per Freedesktop.\n"
-"Per obtenir més informació, si us plau, visiteu\n"
-"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
-
-#, c-format
-msgid ""
-"Your old settings were migrated from %s\n"
-"to %s\n"
-msgstr ""
-"Els vostres antics ajustaments s'han migrat de %s\n"
-"cap a %s\n"
 
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
@@ -197,11 +173,11 @@ msgstr ""
 msgid "True color not supported with ncurses."
 msgstr "El color veritable no està admès amb «ncurses»."
 
-msgid "True color not supported in this slang version."
-msgstr "El color veritable no està admès en aquesta versió de «slang»."
-
 msgid "Your terminal doesn't even seem to support 256 colors."
 msgstr "El terminal no sembla admetre 256 colors."
+
+msgid "True color not supported in this slang version."
+msgstr "El color veritable no està admès en aquesta versió de «slang»."
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
@@ -573,18 +549,6 @@ msgid ""
 msgstr ""
 "S'ha produït un error inesperat en waitpid():\n"
 "%s"
-
-msgid "Warning"
-msgstr "Avís"
-
-msgid "Pipe failed"
-msgstr "Ha fallat la canonada"
-
-msgid "Dup failed"
-msgstr "Dup ha fallat"
-
-msgid "Error dup'ing old error pipe"
-msgstr "Error en fer «dup» per un error de canonada antiga"
 
 #, c-format
 msgid "Directory cache expired for %s"
@@ -1053,15 +1017,6 @@ msgstr "Visor de diferències: mode no vàlid"
 msgid "Two files are needed to compare"
 msgstr "Per a comparar calen dos fitxers"
 
-msgid "Choose syntax highlighting"
-msgstr "Tria mode de ressaltat"
-
-msgid "< Auto >"
-msgstr "< Auto >"
-
-msgid "< Reload Current Syntax >"
-msgstr "< Torna a carregar la sintaxi actual >"
-
 #, c-format
 msgid "Loading: %3d%%"
 msgstr "S'està carregant: %3d%%"
@@ -1096,6 +1051,9 @@ msgstr ""
 "El fitxer «%s» és massa gran.\n"
 "L'obro igualment?"
 
+msgid "Warning"
+msgstr "Avís"
+
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr "Error en llegir des de la canonada: %s"
@@ -1103,14 +1061,6 @@ msgstr "Error en llegir des de la canonada: %s"
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr "No s'ha pogut obrir la canonada per a lectura: %s"
-
-#, c-format
-msgid "Searching %s: %3d%%"
-msgstr "S'està cercant %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "S'està cercant a %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "El fitxer té enllaços durs. Els separo abans de desar?"
@@ -1157,9 +1107,6 @@ msgstr "Canvia els salts de línia a:"
 msgid "Save As"
 msgstr "Desa com a"
 
-msgid "Collect completions"
-msgstr "Recull completat"
-
 msgid "&Quick save"
 msgstr "Desament &ràpid"
 
@@ -1189,27 +1136,6 @@ msgstr "S&obreescriu"
 
 msgid "Cannot save file"
 msgstr "No s'ha pogut desar el fitxer"
-
-msgid "Delete macro"
-msgstr "Suprimeix una macro"
-
-msgid "Press macro hotkey:"
-msgstr "Premeu la tecla de la macro:"
-
-msgid "Macro not deleted"
-msgstr "La macro no s'ha suprimit"
-
-msgid "Save macro"
-msgstr "Desa la macro"
-
-msgid "Press the macro's new hotkey:"
-msgstr "Premeu la tecla nova per a la macro:"
-
-msgid "Repeat last commands"
-msgstr "Repeteix la darrera ordre"
-
-msgid "Repeat times:"
-msgstr "Repeteix vegades:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1244,13 +1170,6 @@ msgstr "Quin fitxer de menú voleu editar?"
 
 msgid "&Local"
 msgstr "&Local"
-
-msgid "Replace"
-msgstr "Substitueix"
-
-#, c-format
-msgid "%ld replacements made"
-msgstr "S'han fet %ld substitucions"
 
 msgid "[NoName]"
 msgstr "[SenseNom]"
@@ -1362,35 +1281,35 @@ msgstr ""
 "El text actual ha estat modificat sense desar-lo a un fitxer.\n"
 "Continueu i es descartaran aquests canvis."
 
-msgid "In se&lection"
-msgstr "A la se&lecció"
-
-msgid "&Find all"
-msgstr "Cer&ca'ls tots"
-
-msgid "Enter replacement string:"
-msgstr "Introduïu la cadena de substitució:"
-
-msgid "Replace with:"
-msgstr "Substitueix amb:"
-
-msgid "&Replace"
-msgstr "Su&bstitueix"
-
-msgid "A&ll"
-msgstr "&Tots"
-
-msgid "&Skip"
-msgstr "&Salta"
-
-msgid "Confirm replace"
-msgstr "Consigna la substitució"
-
 msgid "Cancel"
 msgstr "Cancel·la"
 
+msgid "Collect completions"
+msgstr "Recull completat"
+
 msgid "NoName"
 msgstr "Sense nom"
+
+msgid "Save macro"
+msgstr "Desa la macro"
+
+msgid "Press the macro's new hotkey:"
+msgstr "Premeu la tecla nova per a la macro:"
+
+msgid "Delete macro"
+msgstr "Suprimeix una macro"
+
+msgid "Press macro hotkey:"
+msgstr "Premeu la tecla de la macro:"
+
+msgid "Macro not deleted"
+msgstr "La macro no s'ha suprimit"
+
+msgid "Repeat last commands"
+msgstr "Repeteix la darrera ordre"
+
+msgid "Repeat times:"
+msgstr "Repeteix vegades:"
 
 msgid "&Open file..."
 msgstr "&Obre el fitxer..."
@@ -1680,6 +1599,45 @@ msgstr "Llargada de l'ajust de línia:"
 msgid "Editor options"
 msgstr "Opcions de l'editor"
 
+msgid "In se&lection"
+msgstr "A la se&lecció"
+
+msgid "&Find all"
+msgstr "Cer&ca'ls tots"
+
+msgid "Enter replacement string:"
+msgstr "Introduïu la cadena de substitució:"
+
+msgid "Replace"
+msgstr "Substitueix"
+
+msgid "Replace with:"
+msgstr "Substitueix amb:"
+
+msgid "&Replace"
+msgstr "Su&bstitueix"
+
+msgid "A&ll"
+msgstr "&Tots"
+
+msgid "&Skip"
+msgstr "&Salta"
+
+msgid "Confirm replace"
+msgstr "Consigna la substitució"
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "S'està cercant %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "S'està cercant a %s"
+
+#, c-format
+msgid "%ld replacements made"
+msgstr "S'han fet %ld substitucions"
+
 msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
@@ -1687,8 +1645,8 @@ msgstr ""
 "Un editor de text fàcil d'emprar\n"
 "escrit per al Midnight Commander."
 
-msgid "Copyright (C) 1996-2020 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2020 la Free Software Foundation"
+msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2021 la Free Software Foundation"
 
 msgid "About"
 msgstr "Quant a"
@@ -1807,6 +1765,15 @@ msgstr "Suggereix"
 msgid "Select language"
 msgstr "Escull un idioma"
 
+msgid "Choose syntax highlighting"
+msgstr "Tria mode de ressaltat"
+
+msgid "< Auto >"
+msgstr "< Auto >"
+
+msgid "< Reload Current Syntax >"
+msgstr "< Torna a carregar la sintaxi actual >"
+
 msgid "Load syntax file"
 msgstr "Carrega el fitxer de sintaxi"
 
@@ -1869,7 +1836,7 @@ msgid "other"
 msgstr "altres"
 
 msgid "Flag"
-msgstr "Bandera"
+msgstr "Indicador"
 
 #, c-format
 msgid "Permissions (octal): %o"
@@ -1998,6 +1965,9 @@ msgstr "Opcions de configuració"
 
 msgid "Skin:"
 msgstr "Tema:"
+
+msgid "&Shadows"
+msgstr "Ombre&s"
 
 msgid "Appearance"
 msgstr "Aparença"
@@ -2222,6 +2192,14 @@ msgstr "Nom d'usuari:"
 msgid "SMB authentication"
 msgstr "Autenticació SMB"
 
+#, c-format
+msgid ""
+"Cannot chdir to \"%s\"\n"
+"%s"
+msgstr ""
+"No s'ha pogut fer chdir a «%s»\n"
+"%s"
+
 msgid "Secure deletion"
 msgstr "Supressió segura"
 
@@ -2274,25 +2252,28 @@ msgid "Top of directory hierarchies"
 msgstr "Començament de les jerarquies de directori"
 
 msgid "Inode uses extents"
-msgstr ""
+msgstr "L'ínode usa extensions"
 
 msgid "Huge_file"
-msgstr ""
+msgstr "Fitxer_enorme"
 
 msgid "No COW"
-msgstr ""
+msgstr "Sense COW"
+
+msgid "Direct access for files"
+msgstr "Accés directe als fitxers"
 
 msgid "Casefolded file"
-msgstr ""
+msgstr "Fitxer insensible a majúscules"
 
 msgid "Inode has inline data"
-msgstr ""
+msgstr "L'ínode té dades incloses"
 
 msgid "Project hierarchy"
-msgstr ""
+msgstr "Jerarquia del projecte"
 
 msgid "Verity protected inode"
-msgstr ""
+msgstr "Ínode protegit de veritat"
 
 msgid "&Marked all"
 msgstr "&Marca'ls tots"
@@ -2304,22 +2285,26 @@ msgid "C&lear marked"
 msgstr "&Esborra els marcats"
 
 msgid "Chattr command"
-msgstr ""
+msgstr "Ordre «chattr»"
 
 #, c-format
 msgid ""
 "Cannot chattr \"%s\"\n"
 "%s"
 msgstr ""
+"No s'ha pogut fer chattr «%s»\n"
+"%s"
 
 msgid "Cannot change attributes on non-local filesystems"
-msgstr ""
+msgstr "No es poden canviar els atributs en sistemes de fitxers no locals"
 
 #, c-format
 msgid ""
 "Cannot get flags of \"%s\"\n"
 "%s"
 msgstr ""
+"No s'han pogut obtenir els indicadors de «%s»\n"
+"%s"
 
 msgid "set &user ID on execution"
 msgstr "estableix l'ID d'&usuari en l'execució"
@@ -2558,14 +2543,6 @@ msgstr "No s'ha pogut desar la configuració %s"
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "No es poden executar ordres en sistemes de fitxers no locals"
 
-#, c-format
-msgid ""
-"Cannot chdir to \"%s\"\n"
-"%s"
-msgstr ""
-"No s'ha pogut fer chdir a «%s»\n"
-"%s"
-
 msgid "Parameter"
 msgstr "Paràmetre"
 
@@ -2576,6 +2553,9 @@ msgid ""
 msgstr ""
 "No s'ha pogut crear el fitxer d'ordre temporal\n"
 "%s"
+
+msgid "Pipe failed"
+msgstr "Ha fallat la canonada"
 
 #, c-format
 msgid " %s%s file error"
@@ -3101,6 +3081,225 @@ msgstr "&Segon pla"
 msgid "Invalid source pattern '%s'"
 msgstr "Patró d'origen «%s» no vàlid"
 
+msgid "File listin&g"
+msgstr "&Llistat de fitxers"
+
+msgid "&Quick view"
+msgstr "Vista &ràpida"
+
+msgid "&Info"
+msgstr "&Informació"
+
+msgid "&Tree"
+msgstr "Ar&bre"
+
+msgid "&Listing format..."
+msgstr "Format del &llistat..."
+
+msgid "&Sort order..."
+msgstr "&Ordenació..."
+
+msgid "&Filter..."
+msgstr "&Filtra..."
+
+msgid "&Encoding..."
+msgstr "&Codificació..."
+
+msgid "FT&P link..."
+msgstr "Enllaç per a F&TP..."
+
+msgid "S&hell link..."
+msgstr "Enllaç per a l'i&ntèrpret..."
+
+msgid "S&FTP link..."
+msgstr "Enllaç per a &SFTP..."
+
+msgid "SM&B link..."
+msgstr "Enllaç per a SM&B..."
+
+msgid "Paneli&ze"
+msgstr "&Quadre de cerca"
+
+msgid "&Rescan"
+msgstr "To&rna a escanejar"
+
+msgid "&View"
+msgstr "&Visualitza"
+
+msgid "Vie&w file..."
+msgstr "Visualit&za el fitxer..."
+
+msgid "&Filtered view"
+msgstr "Vista &filtrada"
+
+msgid "&Copy"
+msgstr "&Copia"
+
+msgid "C&hmod"
+msgstr "Ca&nvia els permisos"
+
+msgid "&Link"
+msgstr "En&llaça"
+
+msgid "&Symlink"
+msgstr "Enllaç si&mbòlic"
+
+msgid "Relative symlin&k"
+msgstr "Enllaç sim&bòlic relatiu"
+
+msgid "Edit s&ymlink"
+msgstr "Edi&ta l'enllaç simbòlic"
+
+msgid "Ch&own"
+msgstr "Can&via el propietari"
+
+msgid "&Advanced chown"
+msgstr "C&anvi avançat del propietari"
+
+msgid "Cha&ttr"
+msgstr "Cha&ttr"
+
+msgid "&Rename/Move"
+msgstr "&Reanomena/Mou"
+
+msgid "&Mkdir"
+msgstr "Crea un &directori"
+
+msgid "&Quick cd"
+msgstr "Canvia ràpidament de direct&ori"
+
+msgid "Select &group"
+msgstr "Selecciona un &grup"
+
+msgid "U&nselect group"
+msgstr "Deseleccio&na un grup"
+
+msgid "&Invert selection"
+msgstr "&Inverteix la selecció"
+
+msgid "E&xit"
+msgstr "S&urt"
+
+msgid "&User menu"
+msgstr "Menú d'&usuari"
+
+msgid "&Directory tree"
+msgstr "Arbre de &directoris"
+
+msgid "&Find file"
+msgstr "Troba el &fitxer"
+
+msgid "S&wap panels"
+msgstr "Intercan&via els plafons"
+
+msgid "Switch &panels on/off"
+msgstr "Mostra/oculta els &plafons"
+
+msgid "&Compare directories"
+msgstr "&Compara els directoris"
+
+msgid "C&ompare files"
+msgstr "C&ompara els fitxers"
+
+msgid "E&xternal panelize"
+msgstr "Quadre de cerca e&xtern"
+
+msgid "Show directory s&izes"
+msgstr "Mostra les m&ides dels directoris"
+
+msgid "Command &history"
+msgstr "&Historial de les ordres"
+
+msgid "Viewed/edited files hi&story"
+msgstr "Hi&storial dels fitxers vistos/editats"
+
+msgid "Di&rectory hotlist"
+msgstr "Favorits dels di&rectoris"
+
+msgid "&Active VFS list"
+msgstr "Llista el VFS &activu"
+
+msgid "&Background jobs"
+msgstr "Tasques en se&gon pla"
+
+msgid "Screen lis&t"
+msgstr "Llis&ta les pantalles"
+
+msgid "&Undelete files (ext2fs only)"
+msgstr "Recupera el&s fitxers (només ext2fs)"
+
+msgid "&Listing format edit"
+msgstr "Edita el format del &llistat"
+
+msgid "Edit &extension file"
+msgstr "Edita el fitxer d'&extensions"
+
+msgid "Edit &menu file"
+msgstr "Edita el fitxer de &menús"
+
+msgid "Edit hi&ghlighting group file"
+msgstr "Edita el fitxer dels grups de &ressaltat"
+
+msgid "&Configuration..."
+msgstr "&Configuració..."
+
+msgid "&Layout..."
+msgstr "&Disposició..."
+
+msgid "&Panel options..."
+msgstr "Opcions del &plafó..."
+
+msgid "C&onfirmation..."
+msgstr "C&onfirmació..."
+
+msgid "&Appearance..."
+msgstr "&Aparença..."
+
+msgid "&Display bits..."
+msgstr "&Bits de visualització..."
+
+msgid "&Virtual FS..."
+msgstr "Sistema de fitxers &virtual..."
+
+msgid "Panels:"
+msgstr "Plafons:"
+
+#, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "Teniu oberta %zu pantalla. Surto igualment?"
+msgstr[1] "Teniu obertes %zu pantalles. Surto igualment?"
+
+msgid "The Midnight Commander"
+msgstr "El Midnight Commander"
+
+msgid "Do you really want to quit the Midnight Commander?"
+msgstr "Segur que voleu sortir del Midnight Commander?"
+
+msgid "&Above"
+msgstr "Qu&ant al"
+
+msgid "&Left"
+msgstr "&Esquerra"
+
+msgid "&Below"
+msgstr "A &sota"
+
+msgid "&Right"
+msgstr "&Dreta"
+
+msgid "ButtonBar|Menu"
+msgstr "ButtonBar|Menú"
+
+msgid "ButtonBar|View"
+msgstr "ButtonBar|Visualitza"
+
+msgid "ButtonBar|RenMov"
+msgstr "ButtonBar|ReanMou"
+
+msgid "ButtonBar|Mkdir"
+msgstr "ButtonBar|CreaDir"
+
 msgid "&Chdir"
 msgstr "Canvia de &dirextori"
 
@@ -3129,6 +3328,9 @@ msgstr "Nom del fitxer:"
 msgid "&Find recursively"
 msgstr "&Troba de forma recursiva"
 
+msgid "Follow s&ymlinks"
+msgstr "Segueix els enllaços s&imbòlics"
+
 msgid "S&kip hidden"
 msgstr "O&met els ocults"
 
@@ -3146,9 +3348,6 @@ msgstr "&Tots els jocs de caràcters"
 
 msgid "Fir&st hit"
 msgstr "Pr&Imera coincidència"
-
-msgid "&Tree"
-msgstr "Ar&bre"
 
 msgid "Find File"
 msgstr "Cerca el fitxer"
@@ -3408,222 +3607,6 @@ msgstr "Línies de la sortida:"
 msgid "Layout"
 msgstr "Disposició"
 
-msgid "File listin&g"
-msgstr "&Llistat de fitxers"
-
-msgid "&Quick view"
-msgstr "Vista &ràpida"
-
-msgid "&Info"
-msgstr "&Informació"
-
-msgid "&Listing format..."
-msgstr "Format del &llistat..."
-
-msgid "&Sort order..."
-msgstr "&Ordenació..."
-
-msgid "&Filter..."
-msgstr "&Filtra..."
-
-msgid "&Encoding..."
-msgstr "&Codificació..."
-
-msgid "FT&P link..."
-msgstr "Enllaç per a F&TP..."
-
-msgid "S&hell link..."
-msgstr "Enllaç per a l'i&ntèrpret..."
-
-msgid "S&FTP link..."
-msgstr "Enllaç per a &SFTP..."
-
-msgid "SM&B link..."
-msgstr "Enllaç per a SM&B..."
-
-msgid "Paneli&ze"
-msgstr "&Quadre de cerca"
-
-msgid "&Rescan"
-msgstr "To&rna a escanejar"
-
-msgid "&View"
-msgstr "&Visualitza"
-
-msgid "Vie&w file..."
-msgstr "Visualit&za el fitxer..."
-
-msgid "&Filtered view"
-msgstr "Vista &filtrada"
-
-msgid "&Copy"
-msgstr "&Copia"
-
-msgid "C&hmod"
-msgstr "Ca&nvia els permisos"
-
-msgid "&Link"
-msgstr "En&llaça"
-
-msgid "&Symlink"
-msgstr "Enllaç si&mbòlic"
-
-msgid "Relative symlin&k"
-msgstr "Enllaç sim&bòlic relatiu"
-
-msgid "Edit s&ymlink"
-msgstr "Edi&ta l'enllaç simbòlic"
-
-msgid "Ch&own"
-msgstr "Can&via el propietari"
-
-msgid "&Advanced chown"
-msgstr "C&anvi avançat del propietari"
-
-msgid "Cha&ttr"
-msgstr ""
-
-msgid "&Rename/Move"
-msgstr "&Reanomena/Mou"
-
-msgid "&Mkdir"
-msgstr "Crea un &directori"
-
-msgid "&Quick cd"
-msgstr "Canvia ràpidament de direct&ori"
-
-msgid "Select &group"
-msgstr "Selecciona un &grup"
-
-msgid "U&nselect group"
-msgstr "Deseleccio&na un grup"
-
-msgid "&Invert selection"
-msgstr "&Inverteix la selecció"
-
-msgid "E&xit"
-msgstr "S&urt"
-
-msgid "&User menu"
-msgstr "Menú d'&usuari"
-
-msgid "&Directory tree"
-msgstr "Arbre de &directoris"
-
-msgid "&Find file"
-msgstr "Troba el &fitxer"
-
-msgid "S&wap panels"
-msgstr "Intercan&via els plafons"
-
-msgid "Switch &panels on/off"
-msgstr "Mostra/oculta els &plafons"
-
-msgid "&Compare directories"
-msgstr "&Compara els directoris"
-
-msgid "C&ompare files"
-msgstr "C&ompara els fitxers"
-
-msgid "E&xternal panelize"
-msgstr "Quadre de cerca e&xtern"
-
-msgid "Show directory s&izes"
-msgstr "Mostra les m&ides dels directoris"
-
-msgid "Command &history"
-msgstr "&Historial de les ordres"
-
-msgid "Viewed/edited files hi&story"
-msgstr "Hi&storial dels fitxers vistos/editats"
-
-msgid "Di&rectory hotlist"
-msgstr "Favorits dels di&rectoris"
-
-msgid "&Active VFS list"
-msgstr "Llista el VFS &activu"
-
-msgid "&Background jobs"
-msgstr "Tasques en se&gon pla"
-
-msgid "Screen lis&t"
-msgstr "Llis&ta les pantalles"
-
-msgid "&Undelete files (ext2fs only)"
-msgstr "Recupera el&s fitxers (només ext2fs)"
-
-msgid "&Listing format edit"
-msgstr "Edita el format del &llistat"
-
-msgid "Edit &extension file"
-msgstr "Edita el fitxer d'&extensions"
-
-msgid "Edit &menu file"
-msgstr "Edita el fitxer de &menús"
-
-msgid "Edit hi&ghlighting group file"
-msgstr "Edita el fitxer dels grups de &ressaltat"
-
-msgid "&Configuration..."
-msgstr "&Configuració..."
-
-msgid "&Layout..."
-msgstr "&Disposició..."
-
-msgid "&Panel options..."
-msgstr "Opcions del &plafó..."
-
-msgid "C&onfirmation..."
-msgstr "C&onfirmació..."
-
-msgid "&Appearance..."
-msgstr "&Aparença..."
-
-msgid "&Display bits..."
-msgstr "&Bits de visualització..."
-
-msgid "&Virtual FS..."
-msgstr "Sistema de fitxers &virtual..."
-
-msgid "Panels:"
-msgstr "Plafons:"
-
-#, c-format
-msgid "You have %zu opened screen. Quit anyway?"
-msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] "Teniu oberta %zu pantalla. Surto igualment?"
-msgstr[1] "Teniu obertes %zu pantalles. Surto igualment?"
-
-msgid "The Midnight Commander"
-msgstr "El Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Segur que voleu sortir del Midnight Commander?"
-
-msgid "&Above"
-msgstr "Qu&ant al"
-
-msgid "&Left"
-msgstr "&Esquerra"
-
-msgid "&Below"
-msgstr "A &sota"
-
-msgid "&Right"
-msgstr "&Dreta"
-
-msgid "ButtonBar|Menu"
-msgstr "ButtonBar|Menú"
-
-msgid "ButtonBar|View"
-msgstr "ButtonBar|Visualitza"
-
-msgid "ButtonBar|RenMov"
-msgstr "ButtonBar|ReanMou"
-
-msgid "ButtonBar|Mkdir"
-msgstr "ButtonBar|CreaDir"
-
 msgid "Memory exhausted!"
 msgstr "Memòria exhaurida!"
 
@@ -3788,11 +3771,23 @@ msgstr "Afegeix al quadre de cerca extern"
 msgid "Enter command label:"
 msgstr "Introduïu una etiqueta per a l'ordre:"
 
-msgid "Cannot invoke command."
-msgstr "No puc cridar l'ordre."
+#, c-format
+msgid ""
+"External panelize:\n"
+"%s"
+msgstr ""
+"Quadre de cerca extern:\n"
+"%s"
 
-msgid "Pipe close failed"
-msgstr "Ha fallat el tancament del conducte"
+#, c-format
+msgid ""
+"External panelize:\n"
+"failed to read data from child stdout:\n"
+"%s"
+msgstr ""
+"Quadre de cerca extern:\n"
+"Ha fallat en llegir les dades des de la sortida estàndard filla:\n"
+"%s"
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
@@ -4189,13 +4184,20 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
+"%s:\n"
 "%s"
 msgstr ""
 "No s'ha pogut obrir l'arxiu %s\n"
+"%s:\n"
 "%s"
 
-msgid "Inconsistent extfs archive"
-msgstr "L'arxiu extfs no és consistent"
+#, c-format
+msgid ""
+"EXTFS virtual file system:\n"
+"%s"
+msgstr ""
+"Sistema de fitxers virtual EXTFS:\n"
+"%s"
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4365,6 +4367,14 @@ msgstr ""
 "Elimineu la contrasenya o el mode correcte"
 
 #, c-format
+msgid ""
+"SFS virtual file system:\n"
+"%s"
+msgstr ""
+"Sistema de fitxers virtual SFS:\n"
+"%s"
+
+#, c-format
 msgid "%s: Warning: file %s not found\n"
 msgstr "%s: Avís: no s'ha trobat el fitxer %s\n"
 
@@ -4381,7 +4391,7 @@ msgid ""
 "Warning: Invalid flag %c in %s:\n"
 "%s\n"
 msgstr ""
-"Avís: Bandera %c no vàlida a %s:\n"
+"Avís: Indicador %c no vàlid a %s:\n"
 "%s\n"
 
 #, c-format
@@ -4398,6 +4408,9 @@ msgstr "sftp: el nom de l'amfitrió no és vàlid."
 msgid "sftp: %s"
 msgstr "sftp: %s"
 
+msgid "sftp: failed to convert remote host IP address into text form"
+msgstr ""
+
 #, c-format
 msgid "sftp: making connection to %s"
 msgstr "sftp: s'està connectant amb %s"
@@ -4408,6 +4421,50 @@ msgstr "sftp: la connexió ha estat interrompuda per l'usuari"
 #, c-format
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: la connexió amb el servidor ha fallat: %s"
+
+msgid "sftp: found host key of unsupported type: RSA1"
+msgstr ""
+
+msgid "sftp: unknown host key type:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Permanently added\n"
+"%s (%s)\n"
+"to the list of known hosts."
+msgstr ""
+
+msgid "sftp: cannot get the remote host key"
+msgstr ""
+
+msgid "sftp: unsupported key type, can't check remote host key"
+msgstr ""
+
+msgid "sftp: can't compute host key fingerprint hash"
+msgstr ""
+
+#, c-format
+msgid ""
+"The authenticity of host\n"
+"%s (%s)\n"
+"can't be established!\n"
+"%s key fingerprint hash is\n"
+"SHA1:%s.\n"
+"Do you want to add it to the list of known hosts and continue connecting?"
+msgstr ""
+
+#, c-format
+msgid ""
+"%s (%s)\n"
+"is found in the list of known hosts but\n"
+"KEYS DO NOT MATCH! THIS COULD BE A MITM ATTACK!\n"
+"Are you sure you want to add it to the list of known hosts and continue "
+"connecting?"
+msgstr ""
+
+msgid "sftp: host key verification failed"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4423,8 +4480,8 @@ msgstr "sftp: introduïu la contrasenya per a %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: la contrasenya és buida."
 
-msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: ha fallat en establir la sessió SSH"
+msgid "sftp: failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr ""
@@ -4631,7 +4688,7 @@ msgid ""
 "Failed to read data from child stdout:\n"
 "%s"
 msgstr ""
-"Ha fallat en llegir les dades de la sortida estàndard filla:\n"
+"Ha fallat en llegir les dades des de la sortida estàndard filla:\n"
 "%s"
 
 #, c-format

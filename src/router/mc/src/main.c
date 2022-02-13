@@ -1,7 +1,7 @@
 /*
    Main program for the Midnight Commander
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,7 +49,6 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* For init_key() */
 #include "lib/tty/mouse.h"      /* init_mouse() */
-#include "lib/timer.h"
 #include "lib/skin.h"
 #include "lib/filehighlight.h"
 #include "lib/fileloc.h"
@@ -57,7 +56,7 @@
 #include "lib/util.h"
 #include "lib/vfs/vfs.h"        /* vfs_init(), vfs_shut() */
 
-#include "filemanager/midnight.h"       /* current_panel */
+#include "filemanager/filemanager.h"
 #include "filemanager/treestore.h"      /* tree_store_save */
 #include "filemanager/layout.h"
 #include "filemanager/ext.h"    /* flush_extension_file() */
@@ -71,6 +70,7 @@
 #ifdef ENABLE_SUBSHELL
 #include "subshell/subshell.h"
 #endif
+#include "keymap.h"
 #include "setup.h"              /* load_setup() */
 
 #ifdef HAVE_CHARSET
@@ -249,13 +249,9 @@ int
 main (int argc, char *argv[])
 {
     GError *mcerror = NULL;
-    gboolean config_migrated = FALSE;
-    char *config_migrate_msg = NULL;
     int exit_code = EXIT_FAILURE;
 
     mc_global.run_from_parent_mc = !check_sid ();
-
-    mc_global.timer = mc_timer_new ();
 
     /* We had LC_CTYPE before, LC_ALL includs LC_TYPE as well */
 #ifdef HAVE_SETLOCALE
@@ -277,7 +273,6 @@ main (int argc, char *argv[])
       startup_exit_ok:
         mc_shell_deinit ();
         str_uninit_strings ();
-        mc_timer_destroy (mc_global.timer);
         return exit_code;
     }
 
@@ -302,7 +297,6 @@ main (int argc, char *argv[])
         goto startup_exit_falure;
 
     mc_config_init_config_paths (&mcerror);
-    config_migrated = mc_config_migrate_from_old_place (&mcerror, &config_migrate_msg);
     if (mcerror != NULL)
     {
         mc_event_deinit (NULL);
@@ -346,7 +340,7 @@ main (int argc, char *argv[])
             saved_other_dir = buffer;
         else
             g_free (buffer);
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
     }
 
     /* check terminal type
@@ -388,7 +382,7 @@ main (int argc, char *argv[])
     /* Removing this from the X code let's us type C-c */
     load_key_defs ();
 
-    load_keymap_defs (!mc_args__nokeymap);
+    keymap_load (!mc_args__nokeymap);
 
 #ifdef USE_INTERNAL_EDIT
     macros_list = g_array_new (TRUE, FALSE, sizeof (macros_t));
@@ -452,12 +446,6 @@ main (int argc, char *argv[])
 
         /* subshell_prompt is NULL here */
         mc_prompt = (geteuid () == 0) ? "# " : "$ ";
-
-        if (config_migrated)
-        {
-            message (D_ERROR, _("Warning"), "%s", config_migrate_msg);
-            g_free (config_migrate_msg);
-        }
     }
 
     /* Program main loop */
@@ -473,7 +461,7 @@ main (int argc, char *argv[])
     /* Save the tree store */
     (void) tree_store_save ();
 
-    free_keymap_defs ();
+    keymap_free ();
 
     /* Virtual File System shutdown */
     vfs_shut ();
@@ -556,8 +544,6 @@ main (int argc, char *argv[])
         g_error_free (mcerror);
         exit_code = EXIT_FAILURE;
     }
-
-    mc_timer_destroy (mc_global.timer);
 
     (void) putchar ('\n');      /* Hack to make shell's prompt start at left of screen */
 

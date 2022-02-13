@@ -1,7 +1,7 @@
 /*
    Editor menu definitions and initialisation
 
-   Copyright (C) 1996-2020
+   Copyright (C) 1996-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,7 +49,7 @@
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* drop_menus */
-#include "src/keybind-defaults.h"
+#include "src/keymap.h"
 
 #include "edit-impl.h"
 #include "editwidget.h"
@@ -190,7 +190,7 @@ create_command_menu (void)
         entries = g_list_prepend (entries, menu_separator_create ());
     }
 #endif /* HAVE_ASPELL */
-    entries = g_list_prepend (entries, menu_entry_create (_("&Mail..."), CK_Mail));
+    entries = g_list_prepend (entries, menu_entry_create (_("&Mail..."), CK_EditMail));
 
 
     return g_list_reverse (entries);

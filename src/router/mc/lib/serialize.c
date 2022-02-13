@@ -1,7 +1,7 @@
 /*
    Provides a serialize/unserialize functionality for INI-like formats.
 
-   Copyright (C) 2011-2020
+   Copyright (C) 2011-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -251,6 +251,9 @@ mc_serialize_config (mc_config_t * data, GError ** error)
 
         g_strfreev (params);
     }
+
+    g_strfreev (groups);
+
     return g_string_free (buffer, FALSE);
 }
 

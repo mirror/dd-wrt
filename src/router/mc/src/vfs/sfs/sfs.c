@@ -1,7 +1,7 @@
 /*
    Single File fileSystem
 
-   Copyright (C) 1998-2020
+   Copyright (C) 1998-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -140,6 +140,8 @@ sfs_vfmake (const vfs_path_t * vpath, vfs_path_t * cache_vpath)
     vfs_path_t *pname;          /* name of parent archive */
     char *pqname;               /* name of parent archive, quoted */
     const vfs_path_element_t *path_element;
+    mc_pipe_t *pip;
+    GError *error = NULL;
 
     path_element = vfs_path_get_by_index (vpath, -1);
     pname = vfs_path_clone (vpath);
@@ -152,7 +154,7 @@ sfs_vfmake (const vfs_path_t * vpath, vfs_path_t * cache_vpath)
     if ((sfs_info[w].flags & F_1) == 0
         && strcmp (vfs_path_get_last_path_str (pname), PATH_SEP_STR) != 0)
     {
-        vfs_path_free (pname);
+        vfs_path_free (pname, TRUE);
         return (-1);
     }
 
@@ -166,15 +168,15 @@ sfs_vfmake (const vfs_path_t * vpath, vfs_path_t * cache_vpath)
         s = mc_getlocalcopy (pname);
         if (s == NULL)
         {
-            vfs_path_free (pname);
+            vfs_path_free (pname, TRUE);
             return (-1);
         }
 
         pqname = name_quote (vfs_path_get_last_path_str (s), FALSE);
-        vfs_path_free (s);
+        vfs_path_free (s, TRUE);
     }
 
-    vfs_path_free (pname);
+    vfs_path_free (pname, TRUE);
 
     for (s_iter = sfs_info[w].command; *s_iter != '\0'; s_iter++)
     {
@@ -216,14 +218,29 @@ sfs_vfmake (const vfs_path_t * vpath, vfs_path_t * cache_vpath)
     }
 
     g_free (pqname);
-    open_error_pipe ();
-    if (my_system (EXECUTE_AS_SHELL, "/bin/sh", pad))
+
+    /* don't read stdout */
+    pip = mc_popen (pad, FALSE, TRUE, &error);
+    if (pip == NULL)
     {
-        close_error_pipe (D_ERROR, NULL);
+        message (D_ERROR, MSG_ERROR, _("SFS virtual file system:\n%s"), error->message);
+        g_error_free (error);
         return (-1);
     }
 
-    close_error_pipe (D_NORMAL, NULL);
+    mc_pread (pip, &error);
+    if (error != NULL)
+    {
+        message (D_ERROR, MSG_ERROR, _("SFS virtual file system:\n%s"), error->message);
+        g_error_free (error);
+        mc_pclose (pip, NULL);
+        return (-1);
+    }
+
+    if (pip->err.len > 0)
+        message (D_ERROR, MSG_ERROR, _("SFS virtual file system:\n%s"), pip->err.buf);
+
+    mc_pclose (pip, NULL);
     return 0;                   /* OK */
 }
 
@@ -259,16 +276,15 @@ sfs_redirect (const vfs_path_t * vpath)
     {
         cf = g_new (cachedfile, 1);
         cf->name = g_strdup (vfs_path_as_str (vpath));
-        cf->cache = g_strdup (vfs_path_as_str (cache_vpath));
+        cf->cache = vfs_path_free (cache_vpath, FALSE);
         head = g_slist_prepend (head, cf);
-        vfs_path_free (cache_vpath);
 
         vfs_stamp_create (vfs_sfs_ops, (cachedfile *) head->data);
         return cf->cache;
     }
 
     mc_unlink (cache_vpath);
-    vfs_path_free (cache_vpath);
+    vfs_path_free (cache_vpath, TRUE);
     return "/I_MUST_NOT_EXIST";
 }
 

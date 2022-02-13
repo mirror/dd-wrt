@@ -1,7 +1,7 @@
 /*
    Virtual File System switch code
 
-   Copyright (C) 1995-2020
+   Copyright (C) 1995-2021
    Free Software Foundation, Inc.
 
    Written by: 1995 Miguel de Icaza
@@ -69,13 +69,14 @@
 #include "gc.h"
 
 /* TODO: move it to the separate .h */
-extern struct dirent *mc_readdir_result;
+extern struct vfs_dirent *mc_readdir_result;
 extern GPtrArray *vfs__classes_list;
 extern GString *vfs_str_buffer;
 extern vfs_class *current_vfs;
 
 /*** global variables ****************************************************************************/
 
+struct vfs_dirent *mc_readdir_result = NULL;
 GPtrArray *vfs__classes_list = NULL;
 GString *vfs_str_buffer = NULL;
 vfs_class *current_vfs = NULL;
@@ -428,7 +429,7 @@ vfs_get_raw_current_dir (void)
 void
 vfs_set_raw_current_dir (const vfs_path_t * vpath)
 {
-    vfs_path_free (current_path);
+    vfs_path_free (current_path, TRUE);
     current_path = (vfs_path_t *) vpath;
 }
 
@@ -469,6 +470,7 @@ vfs_init (void)
 
     vfs_str_buffer = g_string_new ("");
 
+    mc_readdir_result = vfs_dirent_init (NULL, "", -1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -518,10 +520,70 @@ vfs_shut (void)
     vfs_str_buffer = NULL;
     current_vfs = NULL;
     vfs_free_handle_list = -1;
-    MC_PTR_FREE (mc_readdir_result);
+    vfs_dirent_free (mc_readdir_result);
+    mc_readdir_result = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+  * Init or create vfs_dirent structure
+  *
+  * @d vfs_dirent structure to init. If NULL, new structure is created.
+  * @fname file name
+  * @ino file inode number
+  *
+  * @return pointer to d if d isn't NULL, or pointer to newly created structure.
+  */
+
+struct vfs_dirent *
+vfs_dirent_init (struct vfs_dirent *d, const char *fname, ino_t ino)
+{
+    struct vfs_dirent *ret = d;
+
+    if (ret == NULL)
+        ret = g_new0 (struct vfs_dirent, 1);
+
+    if (ret->d_name_str == NULL)
+        ret->d_name_str = g_string_sized_new (MC_MAXFILENAMELEN);
+
+    vfs_dirent_assign (ret, fname, ino);
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+  * Assign members of vfs_dirent structure
+  *
+  * @d vfs_dirent structure for assignment
+  * @fname file name
+  * @ino file inode number
+  */
+
+void
+vfs_dirent_assign (struct vfs_dirent *d, const char *fname, ino_t ino)
+{
+    g_string_assign (d->d_name_str, fname);
+    d->d_name = d->d_name_str->str;
+    d->d_ino = ino;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+  * Destroy vfs_dirent structure
+  *
+  * @d vfs_dirent structure to destroy.
+  */
+
+void
+vfs_dirent_free (struct vfs_dirent *d)
+{
+    g_string_free (d->d_name_str, TRUE);
+    g_free (d);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /**
  * These ones grab information from the VFS
  *  and handles them to an upper layer
@@ -591,7 +653,7 @@ vfs_setup_cwd (void)
             if (vfs_test_current_dir (tmp_vpath))
                 vfs_set_raw_current_dir (tmp_vpath);
             else
-                vfs_path_free (tmp_vpath);
+                vfs_path_free (tmp_vpath, TRUE);
         }
     }
 
@@ -611,7 +673,7 @@ vfs_setup_cwd (void)
             if (!vfs_test_current_dir (tmp_vpath))
                 vfs_set_raw_current_dir (tmp_vpath);
             else
-                vfs_path_free (tmp_vpath);
+                vfs_path_free (tmp_vpath, TRUE);
         }
     }
 }

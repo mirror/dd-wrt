@@ -1,7 +1,7 @@
 /*
    Virtual File System: Midnight Commander file system.
 
-   Copyright (C) 1999-2020
+   Copyright (C) 1999-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -915,11 +915,10 @@ smbfs_free_dir (dir_entry * de)
 /* It's too slow to ask the server each time */
 /* It now also sends the complete lstat information for each file */
 
-static void *
+static struct vfs_dirent *
 smbfs_readdir (void *info)
 {
-    static union vfs_dirent smbfs_readdir_data;
-    static char *const dirent_dest = smbfs_readdir_data.dent.d_name;
+    struct vfs_dirent *dirent;
     opendir_info *smbfs_info = (opendir_info *) info;
 
     DEBUG (4, ("smbfs_readdir(%s)\n", smbfs_info->dirname));
@@ -937,10 +936,12 @@ smbfs_readdir (void *info)
 #endif
         return NULL;
     }
-    g_strlcpy (dirent_dest, smbfs_info->current->text, MC_MAXPATHLEN);
+
+    dirent = vfs_dirent_init (NULL, smbfs_info->current->text, 0);      /* FIXME: inode */
+
     smbfs_info->current = smbfs_info->current->next;
 
-    return &smbfs_readdir_data;
+    return dirent;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1484,7 +1485,7 @@ smbfs_fake_share_stat (const char *server_url, const char *path, struct stat *bu
 
         vpath = vfs_path_from_str (path);
         p = smbfs_get_path (&sc, vpath);
-        vfs_path_free (vpath);
+        vfs_path_free (vpath, TRUE);
 
         if (p != NULL)
         {

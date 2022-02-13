@@ -1,7 +1,7 @@
 /*
    libmc - checks for search widget with requested ID
 
-   Copyright (C) 2020
+   Copyright (C) 2020-2021
    The Free Software Foundation, Inc.
 
    Written by:
@@ -30,6 +30,8 @@
 #include <check.h>
 
 #include "lib/widget.h"
+
+#include "tests/mctest.h"
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -73,15 +75,15 @@ START_TEST (test_widget_find_by_id)
 
     w0 = WIDGET (g);
 
-    fail_unless (widget_find_by_id (w0, 0) != NULL, "Not found ID=0");
-    fail_unless (widget_find_by_id (w0, 1) != NULL, "Not found ID=1");
-    fail_unless (widget_find_by_id (w0, 2) != NULL, "Not found ID=2");
-    fail_unless (widget_find_by_id (w0, 3) != NULL, "Not found ID=3");
-    fail_unless (widget_find_by_id (w0, 4) != NULL, "Not found ID=4");
-    fail_unless (widget_find_by_id (w0, 5) != NULL, "Not found ID=5");
-    fail_unless (widget_find_by_id (w0, 6) != NULL, "Not found ID=6");
-    fail_unless (widget_find_by_id (w0, 7) != NULL, "Not found ID=7");
-    fail_unless (widget_find_by_id (w0, 8) == NULL, "Found ID=8");
+    ck_assert_msg (widget_find_by_id (w0, 0) != NULL, "Not found ID=0");
+    ck_assert_msg (widget_find_by_id (w0, 1) != NULL, "Not found ID=1");
+    ck_assert_msg (widget_find_by_id (w0, 2) != NULL, "Not found ID=2");
+    ck_assert_msg (widget_find_by_id (w0, 3) != NULL, "Not found ID=3");
+    ck_assert_msg (widget_find_by_id (w0, 4) != NULL, "Not found ID=4");
+    ck_assert_msg (widget_find_by_id (w0, 5) != NULL, "Not found ID=5");
+    ck_assert_msg (widget_find_by_id (w0, 6) != NULL, "Not found ID=6");
+    ck_assert_msg (widget_find_by_id (w0, 7) != NULL, "Not found ID=7");
+    ck_assert_msg (widget_find_by_id (w0, 8) == NULL, "Found ID=8");
 
     send_message (g, NULL, MSG_INIT, 0, NULL);
     widget_destroy (w0);
@@ -95,23 +97,15 @@ END_TEST
 int
 main (void)
 {
-    int number_failed;
+    TCase *tc_core;
 
-    Suite *s = suite_create (TEST_SUITE_NAME);
-    TCase *tc_core = tcase_create ("Core");
-    SRunner *sr;
+    tc_core = tcase_create ("Core");
 
     /* Add new tests here: *************** */
     tcase_add_test (tc_core, test_widget_find_by_id);
     /* *********************************** */
 
-    suite_add_tcase (s, tc_core);
-    sr = srunner_create (s);
-    srunner_set_log (sr, "widget_find_by_id.log");
-    srunner_run_all (sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed (sr);
-    srunner_free (sr);
-    return (number_failed == 0) ? 0 : 1;
+    return mctest_run_all (tc_core);
 }
 
 /* --------------------------------------------------------------------------------------------- */

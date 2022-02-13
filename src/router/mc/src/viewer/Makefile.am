@@ -10,7 +10,6 @@ libmcviewer_la_SOURCES = \
 	display.c \
 	growbuf.c \
 	hex.c \
-	inlines.h \
 	internal.h \
 	lib.c \
 	mcviewer.c \
@@ -20,5 +19,3 @@ libmcviewer_la_SOURCES = \
 	search.c
 
 AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS) $(PCRE_CPPFLAGS)
-
-libmcviewer_la_LIBADD = ../../lib/libmc.la

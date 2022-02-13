@@ -2,17 +2,28 @@ dnl
 dnl Configure.in file for the Midnight Commander
 dnl
 
-AC_PREREQ(2.60)
-AC_INIT([GNU Midnight Commander], [], [mc-devel@gnome.org])
+dnl 2.64 is required at least for m4_esyscmd_s()
+AC_PREREQ(2.64)
+
+AC_INIT([GNU Midnight Commander], m4_esyscmd_s([./version.sh .]),
+        [https://www.midnight-commander.org/wiki/NewTicket], [mc],
+        [https://www.midnight-commander.org/])
+
 m4_pattern_forbid(MC_)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
 AC_CONFIG_HEADERS(config.h)
-mc_VERSION
-AM_INIT_AUTOMAKE(mc, ${VERSION} )
+
+dnl Apply "no-define" to avoid defining the VERSION macro in config.h
+AM_INIT_AUTOMAKE([no-define])
+dnl PACKAGE macro isn't defined if "no-define" is applied
+AC_DEFINE([PACKAGE], ["mc"], [Name of package])
+
 dnl Enable silent rules by default (if yes)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+mc_VERSION
 
 AM_MAINTAINER_MODE
 
@@ -115,23 +126,65 @@ fi
 AC_SUBST(MANDOC)
 AC_SUBST(MAN_FLAGS)
 
-dnl Check for -L option to file
+dnl Check for -z, -L, and -S options to file
 AC_CHECK_PROG(HAVE_FILECMD, file, true, false)
 if $HAVE_FILECMD; then
-    AC_MSG_CHECKING([for -L option to file command])
-    AC_CACHE_VAL(mc_cv_filel, [
-    file -L . > /dev/null 2>&1
-    if test $? = 0; then
-	mc_cv_filel=yes
-    else
-	mc_cv_filel=no
-    fi
+    dnl Don't use the file command if it doesn't accept the -z option
+    AC_MSG_CHECKING([for -z option to file command])
+    AC_CACHE_VAL(mc_cv_file_z, [
+        file -z . > /dev/null 2>&1
+        if test $? = 0; then
+            mc_cv_file_z=yes
+        else
+            mc_cv_file_z=no
+        fi
     ])
-    if test x$mc_cv_filel = xyes; then
-	AC_DEFINE(FILE_L, 1, [Define if the file command accepts the -L option])
+    AC_MSG_RESULT([$mc_cv_file_z])
+
+    if test x$mc_cv_file_z = xyes; then
+        AC_DEFINE(USE_FILE_CMD, 1, [Define if the file command accepts the -z option])
+    else
+        AC_MSG_WARN([The file command doesn't accept the -z option and will not be used])
     fi
-    filel=$mc_cv_filel
-    AC_MSG_RESULT([$filel])
+
+    if test x$mc_cv_file_z = xyes; then
+        dnl file is used; check -L and -S options
+
+        AC_MSG_CHECKING([for -L option to file command])
+        AC_CACHE_VAL(mc_cv_file_L, [
+            file -L . > /dev/null 2>&1
+            if test $? = 0; then
+                mc_cv_file_L=yes
+            else
+                mc_cv_file_L=no
+            fi
+        ])
+        AC_MSG_RESULT([$mc_cv_file_L])
+
+        if test x$mc_cv_file_L = xyes; then
+            AC_DEFINE(FILE_L, "-L ", [Define if the file command accepts the -L option])
+        else
+            AC_DEFINE(FILE_L, "", [Define if the file command accepts the -L option])
+        fi
+
+        dnl The file command accepts the -S option since 5.33
+        AC_MSG_CHECKING([for -S option to file command])
+        AC_CACHE_VAL(mc_cv_file_S, [
+            file -S . > /dev/null 2>&1
+            if test $? = 0; then
+                mc_cv_file_S=yes
+            else
+                mc_cv_file_S=no
+            fi
+        ])
+        AC_MSG_RESULT([$mc_cv_file_S])
+
+        if test x$mc_cv_file_S = xyes; then
+            AC_DEFINE(FILE_S, "-S ", [Define if file command accepts the -S option])
+        else
+            AC_DEFINE(FILE_S, "", [Define if file command accepts the -S option])
+        fi
+    fi
 fi
 
 dnl Only list browsers here that can be run in background (i.e. with `&')
@@ -275,7 +328,7 @@ dnl ############################################################################
 AC_CHECK_FUNCS([setlocale])
 
 AM_GNU_GETTEXT([external], [need-ngettext])
-AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT_VERSION([0.18.2])
 
 mc_I18N
 
@@ -397,43 +450,6 @@ AC_ARG_ENABLE([mclib],
         [enable_mclib=no])
 
 AM_CONDITIONAL([ENABLE_MCLIB], [test x$enable_mclib = xyes])
-
-
-dnl ############################################################################
-dnl Where config files should be placed
-dnl ############################################################################
-
-AC_ARG_WITH([homedir],
-    AS_HELP_STRING([--with-homedir],
-                   [Choose any place of user settings relative to home dir, or XDG for respect XDG standards @<:@XDG@:>@]),
-    [
-	dnl Unfortunately, there is no way to tell AC_ARG_WITH that the
-	dnl argument value is required, so we can't differentiate
-	dnl between `--with-homedir` and `--with-homedir=yes`, because
-	dnl `with_homedir` is set to `yes` in both cases.
-	dnl
-	dnl We opt to set `with_homedir` to `.mc` if the value is `yes`
-	dnl in order to avoid the surprise for users using
-	dnl `--with-homedir` w/o any value and then getting mc to store
-	dnl settings in the `yes` directory.
-
-	if test "x$withval" = "xXDG"; then
-	    with_homedir=XDG
-	elif test "x$withval" = "xyes"; then
-	    with_homedir=.mc
-	else
-	    with_homedir=$withval
-	fi
-    ],
-    [with_homedir=XDG])
-
-
-if test x$with_homedir = xXDG; then
-    AC_DEFINE(MC_HOMEDIR_XDG, 1, [Define to enable XDG standard support])
-else
-    AC_DEFINE(MC_HOMEDIR_XDG, 0, [Define to disable XDG standard support])
-    AC_DEFINE_UNQUOTED([MC_USERCONF_DIR], ["$with_homedir"], [Where configs will be placed relative to $HOME])
-fi
 
 
 dnl ############################################################################
@@ -567,12 +583,6 @@ AC_CONFIG_FILES([
 Makefile
 
 contrib/Makefile
-contrib/dist/Makefile
-contrib/dist/gentoo/Makefile
-contrib/dist/redhat/Makefile
-contrib/dist/redhat/mc.spec
-contrib/dist/pkginfo
-contrib/dist/prototype
 
 misc/Makefile
 misc/mc.charsets
@@ -625,7 +635,9 @@ src/vfs/extfs/helpers/ucab
 src/vfs/extfs/helpers/uha
 src/vfs/extfs/helpers/ulha
 src/vfs/extfs/helpers/ulib
+src/vfs/extfs/helpers/unar
 src/vfs/extfs/helpers/urar
+src/vfs/extfs/helpers/uwim
 src/vfs/extfs/helpers/uzip
 src/vfs/extfs/helpers/uzoo
 
@@ -703,6 +715,7 @@ tests/src/vfs/extfs/Makefile
 tests/src/vfs/extfs/helpers-list/Makefile
 tests/src/vfs/extfs/helpers-list/data/config.sh
 tests/src/vfs/extfs/helpers-list/misc/Makefile
+tests/src/vfs/ftpfs/Makefile
 ])
 
 AC_OUTPUT

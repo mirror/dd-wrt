@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 2020
+   Copyright (C) 2020-2021
    The Free Software Foundation, Inc.
 
    Authors:
@@ -75,6 +75,9 @@ frame_draw (const WFrame * f)
     const int *colors;
 
     colors = widget_get_colors (w);
+
+    if (mc_global.tty.shadows)
+        tty_draw_box_shadow (w->y, w->x, w->lines, w->cols, SHADOW_COLOR);
 
     tty_setcolor (colors[FRAME_COLOR_NORMAL]);
     tty_fill_region (w->y, w->x, w->lines, w->cols, ' ');

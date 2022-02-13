@@ -2,16 +2,18 @@
 noinst_LTLIBRARIES = libmcfilemanager.la
 
 libmcfilemanager_la_SOURCES = \
-	achown.c achown.h \
+	achown.c \
 	boxes.c boxes.h \
-	chmod.c chmod.h \
-	chown.c chown.h \
+	cd.c cd.h \
+	chmod.c \
+	chown.c \
 	cmd.c cmd.h \
 	command.c command.h \
 	dir.c dir.h \
 	ext.c ext.h \
 	file.c file.h \
 	filegui.c filegui.h \
+	filemanager.h filemanager.c \
 	filenot.c filenot.h \
 	fileopctx.c fileopctx.h \
 	find.c \
@@ -19,7 +21,6 @@ libmcfilemanager_la_SOURCES = \
 	info.c info.h \
 	ioblksize.h \
 	layout.c layout.h \
-	midnight.h midnight.c \
 	mountlist.c mountlist.h \
 	panelize.c panelize.h \
 	panel.c panel.h \
@@ -33,9 +34,7 @@ AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS) $(PCRE_CPPFLAGS)
 
 if ENABLE_EXT2FS_ATTR
 libmcfilemanager_la_SOURCES += \
-	chattr.c chattr.h
+	chattr.c
 
 AM_CPPFLAGS += @EXT2FS_CFLAGS@ @E2P_CFLAGS@
 endif
-
-libmcfilemanager_la_LIBADD = ../../lib/libmc.la

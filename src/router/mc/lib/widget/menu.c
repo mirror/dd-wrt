@@ -1,7 +1,7 @@
 /*
    Pulldown menu code
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -187,6 +187,10 @@ menubar_draw_drop (const WMenuBar * menubar)
     if (column + menu->max_entry_len + 5 > (gsize) w->cols)
         column = w->cols - menu->max_entry_len - 5;
 
+    if (mc_global.tty.shadows)
+        tty_draw_box_shadow (w->y + 1, w->x + column, count + 2, menu->max_entry_len + 5,
+                             SHADOW_COLOR);
+
     tty_setcolor (MENU_ENTRY_COLOR);
     tty_draw_box (w->y + 1, w->x + column, count + 2, menu->max_entry_len + 5, FALSE);
 
@@ -306,15 +310,20 @@ menubar_finish (WMenuBar * menubar)
 {
     Widget *w = WIDGET (menubar);
 
-    widget_set_state (w, WST_FOCUSED, FALSE);
     menubar->is_dropped = FALSE;
     w->lines = 1;
     widget_want_hotkey (w, FALSE);
     widget_set_options (w, WOP_SELECTABLE, FALSE);
 
-    /* Move the menubar to the bottom so that widgets displayed on top of
-     * an "invisible" menubar get the first chance to respond to mouse events. */
-    widget_set_bottom (w);
+    if (!mc_global.keybar_visible)
+        widget_hide (w);
+    else
+    {
+        /* Move the menubar to the bottom so that widgets displayed on top of
+         * an "invisible" menubar get the first chance to respond to mouse events. */
+        widget_set_bottom (w);
+    }
+
     /* background must be bottom */
     if (DIALOG (w->owner)->bg != NULL)
         widget_set_bottom (WIDGET (DIALOG (w->owner)->bg));
@@ -666,7 +675,7 @@ menubar_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
         return MSG_NOT_HANDLED;
 
     case MSG_DRAW:
-        if (menubar->is_visible || menubar_refresh (menubar))
+        if (widget_get_state (w, WST_VISIBLE) || menubar_refresh (menubar))
             menubar_draw (menubar);
         return MSG_HANDLED;
 
@@ -709,7 +718,7 @@ menubar_get_menu_by_x_coord (const WMenuBar * menubar, int x)
 static gboolean
 menubar_mouse_on_menu (const WMenuBar * menubar, int y, int x)
 {
-    Widget *w = WIDGET (menubar);
+    const Widget *w = CONST_WIDGET (menubar);
     menu_t *menu;
     int left_x, right_x, bottom_y;
 
@@ -937,7 +946,7 @@ destroy_menu (menu_t * menu)
 /* --------------------------------------------------------------------------------------------- */
 
 WMenuBar *
-menubar_new (GList * menu, gboolean visible)
+menubar_new (GList * menu)
 {
     WMenuBar *menubar;
     Widget *w;
@@ -950,7 +959,6 @@ menubar_new (GList * menu, gboolean visible)
     widget_set_options (w, WOP_SELECTABLE, FALSE);
     w->options |= WOP_TOP_SELECT;
     w->keymap = menu_map;
-    menubar->is_visible = visible;
     menubar_set_menu (menubar, menu);
 
     return menubar;
@@ -1060,11 +1068,12 @@ menubar_activate (WMenuBar * menubar, gboolean dropped, int which)
 {
     Widget *w = WIDGET (menubar);
 
+    widget_show (w);
+
     if (!widget_get_state (w, WST_FOCUSED))
     {
         widget_set_options (w, WOP_SELECTABLE, TRUE);
 
-        widget_set_state (w, WST_FOCUSED, TRUE);        /* FIXME: unneeded? */
         menubar->is_dropped = dropped;
         if (which >= 0)
             menubar->selected = (guint) which;

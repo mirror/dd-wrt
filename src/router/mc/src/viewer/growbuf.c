@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for work with growing bufers
 
-   Copyright (C) 1994-2020
+   Copyright (C) 1994-2021
    Free Software Foundation, Inc.
 
    Written by:
@@ -205,15 +205,13 @@ mcview_growbuf_read_until (WView * view, off_t ofs)
                     g_free (err_msg);
                 }
 
-                if (view->ds_stdio_pipe != NULL)
-                {
-                    /* when switch from parse to raw mode and back,
-                     * do not close the already closed pipe after following loop:
-                     * mcview_growbuf_read_until() -> mcview_show_error() ->
-                     * MSG_DRAW -> mcview_display() -> mcview_get_byte() -> mcview_growbuf_read_until()
-                     */
-                    mcview_growbuf_done (view);
-                }
+                /* when switch from parse to raw mode and back,
+                 * do not close the already closed pipe after following loop:
+                 * mcview_growbuf_read_until() -> mcview_show_error() ->
+                 * MSG_DRAW -> mcview_display() -> mcview_get_byte() -> mcview_growbuf_read_until()
+                 */
+                mcview_growbuf_done (view);
+
                 mcview_display (view);
                 return;
             }
