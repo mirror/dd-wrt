@@ -1921,6 +1921,7 @@ eoip.wireguard_delpeer="Partner Entfernen";
 eoip.wireguard_allowedips="Erlaubte IPs";
 eoip.wireguard_failgrp="Failover Mitglied";
 eoip.wireguard_failstate="Fehlerstatus (auto)";
+eoip.wireguard_failip="Watchdog IP";
 eoip.wireguard_standby="In Bereitschaft";
 eoip.wireguard_running="Läuft";
 eoip.wireguard_failed="Gescheitert";
