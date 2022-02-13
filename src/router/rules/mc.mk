@@ -23,7 +23,10 @@ mc-configure: glib20 ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	cd mc && autoreconf -fi
+	cd mc && libtoolize -ci --force 
+	cd mc && aclocal
+	cd mc && automake --add-missing
+	cd mc && autoreconf -fi 
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -fcommon -I$(TOP)/glib20/gettext" \
 		LDFLAGS="-L$(TOP)/glib20/gettext/.libs -lintl" \
