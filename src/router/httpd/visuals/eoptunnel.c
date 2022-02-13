@@ -737,6 +737,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_failip', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failstate", tun) == 2 ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_spbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_spbr", tun) ? "false" : "true");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_dpbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_dpbr", tun) ? "false" : "true");
 		websWrite(wp, "//]]>\n</script>\n");
