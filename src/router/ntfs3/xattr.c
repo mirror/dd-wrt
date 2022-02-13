@@ -544,7 +544,7 @@ struct posix_acl *ntfs_get_acl(struct inode *inode, int type)
 }
 
 static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
-				    int type, int locked)
+				    int type, int locked, bool init_acl)
 {
 	const char *name;
 	size_t size, name_len;
@@ -557,8 +557,9 @@ static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
 
 	switch (type) {
 	case ACL_TYPE_ACCESS:
-		if (acl) {
-			umode_t mode = inode->i_mode;
+		/* Do not change i_mode if we are in init_acl */
+		if (acl && !init_acl) {
+			umode_t mode;
 
 			err = posix_acl_update_mode(inode, &mode,
 						    &acl);
@@ -620,7 +621,7 @@ out:
 int ntfs_set_acl(struct inode *inode,
 		 struct posix_acl *acl, int type)
 {
-	return ntfs_set_acl_ex(inode, acl, type, 0);
+	return ntfs_set_acl_ex(inode, acl, type, 0, false);
 }
 
 static int ntfs_xattr_get_acl(struct inode *inode, int type, void *buffer,
@@ -703,7 +704,7 @@ int ntfs_init_acl(struct inode *inode,
 
 	if (default_acl) {
 		err = ntfs_set_acl_ex(inode, default_acl,
-				      ACL_TYPE_DEFAULT, 1);
+				      ACL_TYPE_DEFAULT, 1, true);
 		posix_acl_release(default_acl);
 	} else {
 		inode->i_default_acl = NULL;
@@ -714,7 +715,7 @@ int ntfs_init_acl(struct inode *inode,
 	else {
 		if (!err)
 			err = ntfs_set_acl_ex(inode, acl,
-					      ACL_TYPE_ACCESS, 1);
+					      ACL_TYPE_ACCESS, 1, true);
 		posix_acl_release(acl);
 	}
 	return err;
