@@ -1,10 +1,19 @@
 dnsmasq (2.87-1) unstable; urgency=low
 
-   * New upstream.
+   * New upstream. (closes: #1001209, #1003156)
    * Include new NFTset support in the build.
    * Fix crash on netboot with DNS server disabled. (closes: #996332)
+   * Fix rare lockup in DNSSEC. (closes: #1001576)
+   * Close old bug. (closes: #902963)
 
  -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 08 Sep 2021 23:11:25 +0000
+
+dnsmasq (2.86-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix --address=/#/...... which was lost in 2.86. (closes: #995655)
+
+ -- Michael Biebl <biebl@debian.org>  Wed, 10 Nov 2021 22:05:45 +0100
 
 dnsmasq (2.86-1) unstable; urgency=low
 
