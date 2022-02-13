@@ -2,7 +2,7 @@ PROG        = usb_modeswitch
 VERS        = 2.6.1
 CC          ?= gcc
 #CFLAGS      += -Wall
-CFLAGS     = $(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections    -D_GNU_SOURCE -DNEED_PRINTF -Ilibusb/libusb 
+CFLAGS     = $(COPTS) $(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections    -D_GNU_SOURCE -DNEED_PRINTF -Ilibusb/libusb 
 #-Ilibusb-compat/libusb
 #LIBS        = libusb.a
 #LIBS        = libusb-compat/libusb/.libs/libusb.a 
@@ -32,7 +32,7 @@ all-with-statlink-dispatcher: $(PROG) dispatcher-statlink
 $(PROG): $(OBJS) usb_modeswitch.h
 	cd libusb && make all
 	cd libusb-compat && make all
-	$(CC) -o $(PROG) $(OBJS) $(CFLAGS) $(LIBS) $(LDFLAGS)
+	$(CC) -o $(PROG) $(OBJS) $(CFLAGS) $(LDLTO) $(LIBS) $(LDFLAGS)
 	$(CC) $(CFLAGS) -Ilibusb-compat/libusb -o ozerocdoff ozerocdoff.c  libusb-compat/libusb/.libs/libusb.a $(LIBS) 
 
 dispatcher-script: usb_modeswitch_dispatcher.tcl
