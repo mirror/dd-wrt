@@ -351,12 +351,31 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.wireguard_failstate", NULL);
-					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_failip', false)\" %s />", temp, tun,
+						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
 					show_caption_simple(wp, "eoip.wireguard_standby");
-					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 2, 0) ? "checked=\"checked\"" : ""));
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_failip', true)\" %s />", temp, tun,
+						  (nvram_default_matchi(temp, 2, 0) ? "checked=\"checked\"" : ""));
 					show_caption_simple(wp, "eoip.wireguard_running");
-					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_failip', false)\" %s />", temp, tun,
+						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
 					show_caption(wp, NULL, "eoip.wireguard_failed", "&nbsp;");
+					websWrite(wp, "<div id=\"idoet%d_failip\">\n", tun);	//for show or hide tunnel state only if failgrp is checked
+					{
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							snprintf(temp, sizeof(temp), "oet%d_failip", tun);
+							show_caption(wp, "label", "eoip.wireguard_failip", NULL);
+							websWrite(wp,
+								  "<input size=\"20\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n\n",
+								  temp, nvram_safe_get(temp));
+
+						}
+						websWrite(wp, "</div>\n");
+					}
+					//end tunnel state
+					websWrite(wp, "</div>\n");	//end show hide tunnelstae
+
 				}
 				websWrite(wp, "</div>\n");
 				//end tunnel state
