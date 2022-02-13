@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2021 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2022 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -177,6 +177,10 @@ struct myoption {
 #define LOPT_NFTSET        368
 #define LOPT_FILTER_A      369
 #define LOPT_FILTER_AAAA   370
+#define LOPT_STRIP_SBNET   371
+#define LOPT_STRIP_MAC     372
+#define LOPT_CONF_OPT      373
+#define LOPT_CONF_SCRIPT   374
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -223,6 +227,7 @@ static const struct myoption opts[] =
     { "local", 1, 0, LOPT_LOCAL },
     { "address", 1, 0, 'A' },
     { "conf-file", 2, 0, 'C' },
+    { "conf-script", 1, 0, LOPT_CONF_SCRIPT },
     { "no-resolv", 0, 0, 'R' },
     { "expand-hosts", 0, 0, 'E' },
     { "localmx", 0, 0, 'L' },
@@ -314,7 +319,9 @@ static const struct myoption opts[] =
     { "dhcp-generate-names", 2, 0, LOPT_GEN_NAMES },
     { "rebind-localhost-ok", 0, 0,  LOPT_LOC_REBND },
     { "add-mac", 2, 0, LOPT_ADD_MAC },
+    { "strip-mac", 0, 0, LOPT_STRIP_MAC },
     { "add-subnet", 2, 0, LOPT_ADD_SBNET },
+    { "strip-subnet", 0, 0, LOPT_STRIP_SBNET },
     { "add-cpe-id", 1, 0 , LOPT_CPE_ID },
     { "proxy-dnssec", 0, 0, LOPT_DNSSEC },
     { "dhcp-sequential-ip", 0, 0,  LOPT_INCR_ADDR },
@@ -463,6 +470,7 @@ static struct {
   { LOPT_SCRIPTUSR, ARG_ONE, "<username>", gettext_noop("Run lease-change scripts as this user."), NULL },
   { LOPT_SCRIPT_ARP, OPT_SCRIPT_ARP, NULL, gettext_noop("Call dhcp-script with changes to local ARP table."), NULL },
   { '7', ARG_DUP, "<path>", gettext_noop("Read configuration from all the files in this directory."), NULL },
+  { LOPT_CONF_SCRIPT, ARG_DUP, "<path>", gettext_noop("Execute file and read configuration from stdin."), NULL },
   { '8', ARG_ONE, "<facility>|<file>", gettext_noop("Log to this syslog facility or file. (defaults to DAEMON)"), NULL },
   { '9', OPT_LEASE_RO, NULL, gettext_noop("Do not use leasefile."), NULL },
   { '0', ARG_ONE, "<integer>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
@@ -501,7 +509,9 @@ static struct {
   { LOPT_PXE_SERV, ARG_DUP, "<service>", gettext_noop("Boot service for PXE menu."), NULL },
   { LOPT_TEST, 0, NULL, gettext_noop("Check configuration syntax."), NULL },
   { LOPT_ADD_MAC, ARG_DUP, "[=base64|text]", gettext_noop("Add requestor's MAC address to forwarded DNS queries."), NULL },
+  { LOPT_STRIP_MAC, OPT_STRIP_MAC, NULL, gettext_noop("Strip MAC information from queries."), NULL },
   { LOPT_ADD_SBNET, ARG_ONE, "<v4 pref>[,<v6 pref>]", gettext_noop("Add specified IP subnet to forwarded DNS queries."), NULL },
+  { LOPT_STRIP_SBNET, OPT_STRIP_ECS, NULL, gettext_noop("Strip ECS information from queries."), NULL },
   { LOPT_CPE_ID, ARG_ONE, "<text>", gettext_noop("Add client identification to forwarded DNS queries."), NULL },
   { LOPT_DNSSEC, OPT_DNSSEC_PROXY, NULL, gettext_noop("Proxy DNSSEC validation results from upstream nameservers."), NULL },
   { LOPT_INCR_ADDR, OPT_CONSEC_ADDR, NULL, gettext_noop("Attempt to allocate sequential IP addresses to DHCP clients."), NULL },
@@ -1804,6 +1814,17 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	break;
       }
 
+    case LOPT_CONF_SCRIPT: /* --conf-script */
+      {
+	char *file = opt_string_alloc(arg);
+	if (file)
+	  {
+	    one_file(file, LOPT_CONF_SCRIPT);
+	    free(file);
+	  }
+	break;
+      }
+
     case '7': /* --conf-dir */	      
       {
 	DIR *dir_stream;
@@ -2531,13 +2552,13 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	      arg += 9;
 	      if (strlen(arg) != 16)
 		ret_err(gen_err);
-         
+	      
 	      for (p = arg; *p; p++)
 		if (!isxdigit((int)*p))
 		  ret_err(gen_err);
-          
+	      
 	      set_option_bool(OPT_UMBRELLA_DEVID);
-	   	      
+	      
 	      for (i = 0; i < (int)sizeof(daemon->umbrella_device); i++, arg+=2)
 		{
 		  memcpy(word, &(arg[0]), 2);
@@ -2549,13 +2570,13 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	      if (!strtoul_check(arg+6, &daemon->umbrella_org))
 		ret_err(gen_err);
 	    }
-        else if (strstr(arg, "assetid:"))
-	  {
-	    if (!strtoul_check(arg+8, &daemon->umbrella_asset))
-	      ret_err(gen_err);
-	  }
-	else
-	  ret_err(gen_err);
+	  else if (strstr(arg, "assetid:"))
+	    {
+	      if (!strtoul_check(arg+8, &daemon->umbrella_asset))
+		ret_err(gen_err);
+	    }
+	  else
+	    ret_err(gen_err);
 	  
 	  arg = comma;
 	}
@@ -4960,11 +4981,19 @@ static void read_file(char *file, FILE *f, int hard_opt)
   
   while (fgets(buff, MAXDNAME, f))
     {
-      int white, i;
-      volatile int option = (hard_opt == LOPT_REV_SERV) ? 0 : hard_opt;
+      int white, i, script = 0;
+      volatile int option;
       char *errmess, *p, *arg, *start;
       size_t len;
 
+      if (hard_opt == LOPT_CONF_SCRIPT)
+	{
+	  hard_opt = 0;
+	  script = 1;
+	}
+      
+      option = (hard_opt == LOPT_REV_SERV) ? 0 : hard_opt;
+ 
       /* Memory allocation failure longjmps here if mem_recover == 1 */ 
       if (option != 0 || hard_opt == LOPT_REV_SERV)
 	{
@@ -5078,7 +5107,11 @@ static void read_file(char *file, FILE *f, int hard_opt)
 	  
       if (errmess || !one_opt(option, arg, daemon->namebuff, _("error"), 0, hard_opt == LOPT_REV_SERV))
 	{
-	  sprintf(daemon->namebuff + strlen(daemon->namebuff), _(" at line %d of %s"), lineno, file);
+	  if (script)
+	    sprintf(daemon->namebuff + strlen(daemon->namebuff), _(" in output from %s"), file);
+	  else
+	    sprintf(daemon->namebuff + strlen(daemon->namebuff), _(" at line %d of %s"), lineno, file);
+	  
 	  if (hard_opt != 0)
 	    my_syslog(LOG_ERR, "%s", daemon->namebuff);
 	  else
@@ -5087,7 +5120,6 @@ static void read_file(char *file, FILE *f, int hard_opt)
     }
 
   mem_recover = 0;
-  fclose(f);
 }
 
 #if defined(HAVE_DHCP) && defined(HAVE_INOTIFY)
@@ -5107,7 +5139,7 @@ int option_read_dynfile(char *file, int flags)
 static int one_file(char *file, int hard_opt)
 {
   FILE *f;
-  int nofile_ok = 0;
+  int nofile_ok = 0, do_popen = 0;
   static int read_stdin = 0;
   static struct fileread {
     dev_t dev;
@@ -5115,13 +5147,13 @@ static int one_file(char *file, int hard_opt)
     struct fileread *next;
   } *filesread = NULL;
   
-  if (hard_opt == '7')
+  if (hard_opt == LOPT_CONF_OPT)
     {
       /* default conf-file reading */
       hard_opt = 0;
       nofile_ok = 1;
     }
-
+  
   if (hard_opt == 0 && strcmp(file, "-") == 0)
     {
       if (read_stdin == 1)
@@ -5135,6 +5167,12 @@ static int one_file(char *file, int hard_opt)
       /* ignore repeated files. */
       struct stat statbuf;
     
+      if (hard_opt == LOPT_CONF_SCRIPT)
+	{
+	  hard_opt = 0;
+	  do_popen = 1;
+	}
+      
       if (hard_opt == 0 && stat(file, &statbuf) == 0)
 	{
 	  struct fileread *r;
@@ -5149,8 +5187,13 @@ static int one_file(char *file, int hard_opt)
 	  r->dev = statbuf.st_dev;
 	  r->ino = statbuf.st_ino;
 	}
-      
-      if (!(f = fopen(file, "r")))
+
+      if (do_popen)
+	{
+	  if (!(f = popen(file, "r")))
+	    die(_("cannot execute %s: %s"), file, EC_FILE);
+	}
+      else if (!(f = fopen(file, "r")))
 	{   
 	  if (errno == ENOENT && nofile_ok)
 	    return 1; /* No conffile, all done. */
@@ -5168,7 +5211,21 @@ static int one_file(char *file, int hard_opt)
 	} 
     }
   
-  read_file(file, f, hard_opt);
+  read_file(file, f, do_popen ? LOPT_CONF_SCRIPT : hard_opt);
+
+  if (do_popen)
+    {
+      int rc;
+
+      if ((rc = pclose(f)) == -1)
+	die(_("error executing %s: %s"), file, EC_MISC);
+
+      if (rc != 0)
+	die(_("%s returns non-zero error code"), file, rc+10);
+    }
+  else
+    fclose(f);
+	
   return 1;
 }
 
@@ -5309,6 +5366,7 @@ void read_servers_file(void)
   
   mark_servers(SERV_FROM_FILE);
   read_file(daemon->servers_file, f, LOPT_REV_SERV);
+  fclose(f);
   cleanup_servers();
   check_servers(0);
 }
@@ -5534,7 +5592,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
       free(conffile);
     }
   else
-    one_file(CONFFILE, '7');
+    one_file(CONFFILE, LOPT_CONF_OPT);
 
   /* port might not be known when the address is parsed - fill in here */
   if (daemon->servers)
