@@ -9,8 +9,8 @@ usb_modeswitch - control the mode of 'multi-state' USB devices
 Several new USB devices have their proprietary Windows drivers onboard,
 most of them WWAN and WLAN  dongles. When plugged in for the first time,
 they act like a flash storage and start installing the Windows driver from
-there. If the driver is already installed, it makes the storage device
-disappear and a new device, mainly composite with modem ports, shows up.
+there. If the driver is installed, it makes the storage device disappear
+and a new device, mainly composite (e.g. with modem ports), shows up.
 .PP
 On Linux, in most cases the drivers are available as kernel modules,
 such as "usbserial" or "option". However, the device initially binds to
@@ -24,7 +24,8 @@ handled by custom functions, and no bulk message needs to be provided.
 Usually, the program is distributed with a set of configurations for many
 known devices, which allows a fully automatic handling of a device upon
 insertion, made possible by combining usb_modeswitch with the wrapper script
-\fBusb_modeswitch_dispatcher\fR which is launched by the udev daemon.
+\fBusb_modeswitch_dispatcher\fR which is launched by the udev daemon. This
+requires a Linux-flavoured system though.
 .PP
 Note that \fBusb_modeswitch\fR itself has no specific Linux dependencies.
 
@@ -69,12 +70,13 @@ A specific endpoint to use for data transfers. Only for testing purposes; usuall
 endpoints are determined from the device attributes
 .IP "\fB-M\fP \fB\-\-message-content STRING\fP         " 10
 A bulk message to send as a switching command. Provided as a hexadecimal string
-.IP "\fB-2, -3\fP  \fB\-\-message-content2, \-\-message-content3 STRING\fP         " 10
+.IP "\fB-2\fP  \fB\-\-message-content2 STRING\fP         "
+.IP "\fB-3\fP  \fB\-\-message-content3 STRING\fP         " 10
 Additional bulk messages to send as switching commands. Provided as hexadecimal strings.
 When used with mass storage commands, setting \fB\-\-need-response\fR is
 strongly advised to comply with specifications and to avoid likely errors
-.IP "\fB-w\fP \fB\-\-release-delay NUM\fP         " 10
-After issuing all bulk messages, wait for NUM milliseconds before releasing the interface.
+.IP "\fB-w\fP \fB\-\-release-delay <milliseconds>\fP         " 10
+After issuing all bulk messages, wait for the given time before releasing the interface.
 Required for some modems on older systems (especially after an EJECT message)
 .IP "\fB-n\fP \fB\-\-need-response\fP         " 10
 Obsolete. CSW is always attempted to being read after mass storage transfers. No downside
@@ -94,6 +96,8 @@ driver from individual interfaces
 Send a special control message used by older Huawei devices
 .IP "\fB-J\fP \fB\-\-huawei-new-mode\fP         " 10
 Send a specific bulk message used by all newer Huawei devices
+.IP "\fB-X\fP \fB\-\-huawei-alt-mode\fP         " 10
+Send an alternative bulk message to Huawei devices
 .IP "\fB-S\fP \fB\-\-sierra-mode\fP         " 10
 Send a special control message used by Sierra devices
 .IP "\fB-G\fP \fB\-\-gct-mode\fP         " 10
@@ -144,8 +148,8 @@ Print all settings before running and show libusb debug messages
 Changes the behaviour of the program slightly. A success message including the
 effective target device ID is put out and a syslog notice is issued. Mainly for
 integration with a wrapper script
-.IP "\fB-s\fP \fB\-\-check-success NUM\fP         " 10
-After switching, keep checking for the result up to max. NUM seconds. If target IDs
+.IP "\fB-s\fP \fB\-\-check-success <seconds>\fP         " 10
+After switching, keep checking for the result up to the given time. If target IDs
 or target class were provided, their appearance indicates certain success. Otherwise
 the disconnection of the original device is rated as likely proof
 .IP "\fB-I\fP \fB\-\-inquire\fP         " 10
@@ -169,4 +173,4 @@ later version published by the Free Software Foundation.
 The complete text of the current GNU General Public
 License can be found in http://www.gnu.org/licenses/gpl.txt
 
-.\" last edited 2016-01-11 for version 2.3.0
+.\" last edited 2017-08-06 for version 2.5.1
