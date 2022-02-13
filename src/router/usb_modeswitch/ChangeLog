@@ -2,6 +2,53 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.6.1, 2020/07/10
+    Wrapper now handles devices with non-continuous interface numbering:
+    www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=2&t=2915&p=19605
+    (thanks to Jakub Vaněk); catch error with retrieving the active confi-
+    guration, exit gracefully: https://bugs.launchpad.net/bugs/1880191
+Version 2.6.0, 2019/11/28
+    Removed included libjim source alltogether; rewrote parts of the
+    dispatcher script to make location of global config file into a
+    parameter: --config-file, so it can be customised now;
+    replaced tcl helper file for jim embedding with a sh script, dropping
+    the install dependency on a tcl interpreter (Attention maintainers!);
+    changed Makefile to prevent parallel build issues as reported here:
+    http://www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=2&t=2829,
+    make targets have changed names (Attention maintainers!)
+Version 2.5.2, 2017/12/31
+    Bugfix release: fixed additional MessageContent parameters not working,
+    reported by Frank Schmirler (see
+    http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18369 );
+    fixed "early crash" when killed before libusb context initialization
+    (see https://bugzilla.redhat.com/show_bug.cgi?id=1358472 ), reported
+    by Lubomir Rintel;
+    fixed bad string reference, reported by Lubomir Rintel, (see
+    http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18238 );
+    fixed detection of systemd if /sbin/init is a cascaded symlink
+    (see http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18218 );
+    fixed quirk in help message from usb_modeswitch binary
+Version 2.5.1, 2017/08/06
+    New parameter "HuaweiAltMode", uses an alternative Huawei standard bulk
+    message which will either provide NCM (newer modems) or plain PPP ports
+    (older modems); new option in the global configuration file
+    "HuaweiAltModeGlobal", allowing easy override of "HuwaeiNewMode" with
+    "HuaweiAltMode"; reworked USB configuration switching, configuring a
+    device reset first before setting the target configuration; improved
+    driver detachment, now taking all configured interfaces into account
+Version 2.5.0, 2017/01/17
+    ATTENTION: Parameter transmitted from udev now reduced to %k (kernel
+    name), however, rules file parameters can be '%b/%k' or '%k' - this
+    fixes issues with parameter handling by the systemd unit file;
+    remove endpoint reset ahead of bulk message transmission, only reset
+    if endpoints are actually stalled, helping with quirky device behaviour
+    (see www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=2&t=2582 );
+    stability fix by making a buffer in the config parser static, preventing
+    problems seen in Fedora (thanks to Lubomir Rintel for patches and hints
+    regarding the three previous issues); removed premature driver unbinding
+    in wrapper which could disrupt certain devices already in target mode
+    (reported by Aleksander Morgado); improved check for determining install
+    mode (essential with generic config files present, e.g. 12d1:#linux)
 Version 2.4.0, 2016/06/12
     ATTENTION: All ad-hoc driver binding code (using new_id driver attribute)
     removed - was a potential source of side effects and should now be

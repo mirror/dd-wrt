@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Josua Dietze, usb_modeswitch version 2.3.0
+ * Copyright (c) 2011-2020 Josua Dietze, usb_modeswitch version 2.6.1
  * Contains code under
  * Copyright (c) 2010 Wojciech A. Koszek <wkoszek@FreeBSD.org>
  * All rights reserved.
@@ -34,14 +34,14 @@
 
 #include <jim.h>
 
-/* RAW is defined to the complete Tcl code in that file: */
-#include "usb_modeswitch.string"
+/* RAWSCRIPT is defined to the complete Tcl code in that file: */
+#include "dispatcher.h"
 
 #define MAX_ARGSIZE 1024
 
 int main(int argc, char **argv)
 {
-	int i, retval;
+	int i, script_size, retval;
 	char arg[MAX_ARGSIZE];
 	char arglist[MAX_ARGSIZE]; 
 
@@ -62,10 +62,10 @@ int main(int argc, char **argv)
 		sprintf(arg,"{%s} ",argv[i]);
 		strncat(arglist,arg,MAX_ARGSIZE-1);
 	}
-
-	char code[sizeof(RAW) + sizeof(arglist) + 28];
+	script_size = sizeof(RAWSCRIPT);
+	char code[script_size + sizeof(arglist) + 28];
 	sprintf(code, "set argv {%s}\nset argc %d\n", arglist, argc-1);
-	strncat(code, RAW, sizeof(RAW));
+	strncat(code, RAWSCRIPT, script_size);
 
 	/* Create Jim instance */
 	interp = Jim_CreateInterp();
