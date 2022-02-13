@@ -1,5 +1,5 @@
 #!/bin/sh
-# part of usb_modeswitch 2.4.0
+# part of usb_modeswitch 2.6.1
 device_in()
 {
 	if [ ! -e /var/lib/usb_modeswitch/$1 ]; then
@@ -57,16 +57,19 @@ esac
 IFS='/' read -r p1 p2 <<EOF
 $1
 EOF
+if [ "$p2" = "" -a "$p1" != "" ]; then
+	p2=$p1
+fi
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
-init_path=`readlink /sbin/init`
+init_path=`readlink -f /sbin/init`
 if [ `basename $init_path` = "systemd" ]; then
-	systemctl --no-block start usb_modeswitch@$p1'_'$p2.service
+	systemctl --no-block restart usb_modeswitch@$p2.service
 elif [ -e "/etc/init/usb-modeswitch-upstart.conf" ]; then
-	initctl emit --no-wait usb-modeswitch-upstart UMS_PARAM=$1
+	initctl emit --no-wait usb-modeswitch-upstart UMS_PARAM=$p2
 else
 	# only old distros, new udev will kill all subprocesses
 	exec 1<&- 2<&- 5<&- 7<&-
-	exec usb_modeswitch_dispatcher --switch-mode $1 &
+	exec usb_modeswitch_dispatcher --switch-mode $p2 &
 fi
 exit 0
