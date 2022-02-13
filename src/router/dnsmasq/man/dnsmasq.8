@@ -345,8 +345,9 @@ forged answer to a DNS request for certain domain, before the correct answer can
 .B \-f, --filterwin2k
 Later versions of windows make periodic DNS requests which don't get sensible answers from
 the public DNS and can cause problems by triggering dial-on-demand links. This flag turns on an option
-to filter such requests. The requests blocked are for records of types SOA and SRV, and type ANY where the 
-requested name has underscores, to catch LDAP requests.
+to filter such requests. The requests blocked are for records of type ANY
+where the requested name has underscores, to catch LDAP requests, and for
+\fBall\fP records of types SOA and SRV.
 .TP
 .B --filter-A
 Remove A records from answers. No IPv4 addresses will be returned.
@@ -522,7 +523,7 @@ Allowed prefix lengths are 1-32 (IPv4) and 1-128 (IPv6). If the prefix length is
 .TP
 .B \-A, --address=/<domain>[/<domain>...]/[<ipaddr>]
 Specify an IP address to return for any host in the given domains.
-Queries in the domains are never forwarded and always replied to
+A (or AAAA) queries in the domains are never forwarded and always replied to
 with the specified IP address which may be IPv4 or IPv6. To give
 multiple addresses or both IPv4 and IPv6 addresses for a domain, use repeated \fB--address\fP flags.
 Note that /etc/hosts and DHCP leases override this for individual
@@ -542,6 +543,11 @@ address of 0.0.0.0 and its IPv6 equivalent of :: so
 its subdomains. This is partly syntactic sugar for \fB--address=/example.com/0.0.0.0\fP
 and \fB--address=/example.com/::\fP but is also more efficient than including both
 as separate configuration lines. Note that NULL addresses normally work in the same way as localhost, so beware that clients looking up these names are likely to end up talking to themselves.
+
+Note that the behaviour for queries which don't match the specified address literal changed in version 2.86.
+Previous versions, configured with (eg) --address=/example.com/1.2.3.4 and then queried for a RR type other than
+A would return a NoData answer. From  2.86, the query is sent upstream. To restore the pre-2.86 behaviour,
+use the configuration --address=/example.com/1.2.3.4 --local=/example.com/
 .TP
 .B --ipset=/<domain>[/<domain>...]/<ipset>[,<ipset>...]
 Places the resolved IP addresses of queries for one or more domains in
@@ -728,7 +734,7 @@ Specify the location of a pcap-format file which dnsmasq uses to dump copies of 
 .TP
 .B --dumpmask=<mask>
 Specify which types of packets should be added to the dumpfile. The argument should be the OR of the bitmasks for each type of packet to be dumped: it can be specified in hex by preceding the number with 0x in  the normal way. Each time a packet is written to the dumpfile, dnsmasq logs the packet sequence and the mask
-representing its type. The current types are: 0x0001 - DNS queries from clients 0x0002 DNS replies to clients 0x0004 - DNS queries to upstream 0x0008 - DNS replies from upstream 0x0010 - queries send upstream for DNSSEC validation 0x0020 - replies to queries for DNSSEC validation 0x0040 - replies to client queries which fail DNSSEC validation 0x0080 replies to queries for DNSSEC validation which fail validation.
+representing its type. The current types are: 0x0001 - DNS queries from clients, 0x0002 DNS replies to clients, 0x0004 - DNS queries to upstream, 0x0008 - DNS replies from upstream, 0x0010 - queries send upstream for DNSSEC validation, 0x0020 - replies to queries for DNSSEC validation, 0x0040 - replies to client queries which fail DNSSEC validation, 0x0080 replies to queries for DNSSEC validation which fail validation, 0x1000 - DHCPv4, 0x2000 - DHCPv6, 0x4000 - Router advertisement, 0x8000 - TFTP.
 .TP
 .B --add-mac[=base64|text]
 Add the MAC address of the requestor to DNS queries which are
@@ -740,6 +746,9 @@ experimental. Also note that exposing MAC addresses in this way may
 have security and privacy implications. The warning about caching
 given for \fB--add-subnet\fP applies to \fB--add-mac\fP too. An alternative encoding of the
 MAC, as base64, is enabled by adding the "base64" parameter and a human-readable encoding of hex-and-colons is enabled by added the "text" parameter.
+.TP
+.B --strip-mac
+Remove any MAC address information already in downstream queries before forwarding upstream.  
 .TP
 .B --add-cpe-id=<string>
 Add an arbitrary identifying string to DNS queries which are
@@ -765,6 +774,11 @@ will add the /24 and /96 subnets of the requestor for IPv4 and IPv6 requestors, 
 will add 1.2.3.0/24 for IPv4 requestors and ::/0 for IPv6 requestors.
 .B --add-subnet=1.2.3.4/24,1.2.3.4/24
 will add 1.2.3.0/24 for both IPv4 and IPv6 requestors.
+.TP
+.B --strip-subnet
+Remove any subnet address already present in a downstream query before forwarding it upstream. If --add-subnet is set this also
+ensures that any downstream-provided subnet is replaced by the one added by dnsmasq. Otherwise, dnsmasq will NOT replace an
+existing subnet in the query.
 .TP
 .B --umbrella[=[deviceid:<deviceid>][,orgid:<orgid>][,assetid:<id>]]
 Embeds the requestor's IP address in DNS queries forwarded upstream.
@@ -2127,6 +2141,23 @@ A special case of
 which differs in two respects. Firstly, only \fB--server\fP and \fB--rev-server\fP are allowed
 in the configuration file included. Secondly, the file is re-read and the configuration
 therein is updated when dnsmasq receives SIGHUP.
+.TP
+.B \--conf-script=<file>[ <arg]
+Execute <file>, and treat what it emits to stdout as the contents of a configuration file.
+If the script exits with a non-zero exit code, dnsmasq treats this as a fatal error.
+The script can be passed arguments, space seperated from the filename and each other so, for instance
+.B --conf-dir="/etc/dnsmasq-uncompress-ads /share/ads-domains.gz"
+
+with /etc/dnsmasq-uncompress-ads containing 
+
+set -e
+
+zcat ${1} | sed -e "s:^:address=/:" -e "s:$:/:" 
+
+exit 0
+
+and /share/ads-domains.gz containing a compressed
+list of ad server domains will save disk space with large ad-server blocklists.
 .SH CONFIG FILE
 At startup, dnsmasq reads
 .I /etc/dnsmasq.conf,
@@ -2523,7 +2554,9 @@ file/directory, permissions).
 5 - Other miscellaneous problem.
 .PP
 11 or greater - a non zero return code was received from the
-lease-script process "init" call. The exit code from dnsmasq is the
+lease-script process "init" call or a
+.B \--conf-script
+file. The exit code from dnsmasq is the
 script's exit code with 10 added. 
 
 .SH LIMITS

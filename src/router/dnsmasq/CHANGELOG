@@ -31,6 +31,24 @@ version 2.87
 	Thanks to Stefan Rink for the initial patch, which has been
 	re-worked by me (srk). All bugs mine.
 
+	Note in manpage the change in behaviour of -address. This behaviour
+	actually changed in v2.86, but was undocumented there. From 2.86 on,
+	(eg) --address=/example.com/1.2.3.4 ONLY applies to A queries. All other
+	types of query will be sent upstream. Pre 2.86, that would catch the
+	whole example.com domain and queries for other types would get
+	a local NODATA answer. The pre-2.86 behaviour is still available,
+	by configuring --address=/example.com/1.2.3.4 --local=/example.com/
+
+        Fix problem with binding DHCP sockets to an individual interface.
+	Despite the fact that the system call tales the interface _name_ as
+	a parameter, it actually, binds the socket to interface _index_.
+	Deleting the interface and creating a new one with the same name
+	leaves the socket bound to the old index. (Creating new sockets
+	always allocates a fresh index, they are not reused). We now
+	take this behaviour into account and keep up with changing indexes.
+
+	Add --conf-script configuration option.
+
 	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
