@@ -352,13 +352,13 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled"))
 		return;
 	dd_logdebug("mac80211", "%s:%d", __func__, __LINE__);
-	if (is_ath10k(dev)) {
+	if (is_ath10k(dev) && has_fwswitch(dev) ) {
 		char fwtype[32];
 		sprintf(fwtype, "%s_fwtype", dev);
 		char fwtype_use[32];
 		sprintf(fwtype_use, "%s_fwtype_use", dev);
 
-		if (has_fwswitch(dev) && !nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
+		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
 			if (nvram_match(fwtype, "vanilla"))
 				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
