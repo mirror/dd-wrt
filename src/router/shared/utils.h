@@ -1197,6 +1197,7 @@ extern int has_wave2(const char *prefix);
 extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
 extern int getath9kdevicecount(void);
+extern int has_customfw(const char *prefix);
 #else
 static inline int is_mac80211(const char *prefix)
 {
@@ -1270,6 +1271,11 @@ static inline int has_subquarter(char *prefix)
 }
 
 static inline int has_fwswitch(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_customfw(char *prefix)
 {
 	return 0;
 }
