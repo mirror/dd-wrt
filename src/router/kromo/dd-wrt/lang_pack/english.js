@@ -2236,6 +2236,7 @@ eoip.wireguard_cleanqr="Delete Peer Config";
 eoip.wireguard_allowedips="Allowed IPs";
 eoip.wireguard_failgrp="Failover member";
 eoip.wireguard_failstate="Fail state (auto)";
+eoip.wireguard_failip="Watchdog IP";
 eoip.wireguard_standby="Standby";
 eoip.wireguard_running="Running";
 eoip.wireguard_failed="Failed";
