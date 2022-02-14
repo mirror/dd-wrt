@@ -16,7 +16,7 @@ while sleep $SLEEP; do
 	while ! ping -qc1 -W6 -n $PINGIP -I oet${i} &> /dev/null; do
 		sleep 11
 		if ! ping -qc1 -W6 -n $PINGIP -I oet${i} &> /dev/null; then
-			logger -p user.info "WireGuard watchdog: oet${i} is DOWN, and is set to FAILED, Reboot or Reset of WireGuard with fail over is executed"
+			logger -p user.warning "WireGuard watchdog: oet${i} is DOWN, and is set to FAILED, Reboot or Reset of WireGuard with fail over is executed"
 			nvram set oet${i}_failstate=1
 			if [[ $RESET -eq 1 && $REBOOT -eq 1 ]]; then
 				wg_boot_delay=$(($(nvram get wg_boot_delay)+1))
@@ -25,7 +25,7 @@ while sleep $SLEEP; do
 				sleep $(($wg_boot_delay*$SLEEP))
 				reboot
 			elif [[ $RESET -eq 1 ]]; then
-				logger -p user.info "WireGuard watchdog: last tunnel failed, Resetting tunnel state, to reboot set wg_onfail_reboot=1"
+				logger -p user.warning "WireGuard watchdog: last tunnel failed, Resetting tunnel state, to reboot set wg_onfail_reboot=1"
 				tunnels=$(nvram get oet_tunnels)
 				for i in $(seq 1 $tunnels); do
 					nvram set oet${i}_failstate=0

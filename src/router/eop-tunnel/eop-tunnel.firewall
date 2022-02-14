@@ -17,6 +17,7 @@ for i in $(seq 1 $tunnels); do
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT
 		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT
 		$ipt -t nat -D POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr)
+		$ipt -t nat -D POSTROUTING -o br+ -s $($nv get oet${i}_ipaddrmask) -j MASQUERADE
 		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 		$ipt -F $FW_CHAIN
 		$ipt -X $FW_CHAIN
@@ -53,6 +54,10 @@ for i in $(seq 1 $tunnels); do
 			#add NAT out for DDWRT client
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
+			fi
+			#add NAT via br0 to allow seamless LAN access
+			if [[ $($nv get oet${i}_lanac) -eq 1 ]]; then
+				$ipt -t nat -I POSTROUTING -o br+ -s $($nv get oet${i}_ipaddrmask) -j MASQUERADE >/dev/null 2>&1
 			fi
 			#split DNS tunnel for PBR
 			if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]] && [[ $($nv get oet${i}_spbr) -ne 0 && $($nv get oet${i}_dnspbr) -eq 1 ]]; then
