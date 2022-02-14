@@ -39,6 +39,10 @@
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
+#define start_service(a) eval("service",a, "start");
+#define stop_service(a) eval("service",a, "stop");
+#define restart_service(a) eval("service",a, "restart");
+
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
@@ -266,49 +270,49 @@ void start_init_stop(void)
 	cprintf("STOP SERVICES\n");
 
 	stop_services();
-	stop_radio_timer();
+	stop_service("radio_timer");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-	stop_nas();
+	stop_service("nas");
 #endif
 	cprintf("STOP WAN\n");
-	stop_ttraff();
-	stop_wan();
+	stop_service("ttraff");
+	stop_service("wan");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-	stop_wlconf();
+	stop_service("wlconf");
 #endif
 	cprintf("STOP LAN\n");
 #ifdef HAVE_MADWIFI
-	stop_stabridge();
+	stop_service("stabridge");
 #endif
 #ifdef HAVE_EMF
-	stop_emf();
+	stop_service("emf");
 #endif
 #ifdef HAVE_IPVS
-	stop_ipvs();
+	stop_service("ipvs");
 #endif
 #ifdef HAVE_VLANTAGGING
-	stop_bridging();
+	stop_service("bridging");
 #endif
 #ifdef HAVE_BONDING
-	stop_bonding();
+	stop_service("bonding");
 #endif
 
 #ifdef HAVE_VLANTAGGING
-	stop_bridgesif();
-	stop_vlantagging();
+	stop_service("bridgesif");
+	stop_service("vlantagging");
 #endif
-	stop_lan();
+	stop_service("lan");
 #ifndef HAVE_RB500
-	stop_resetbutton();
+	stop_service("resetbutton");
 #endif
 #ifdef HAVE_IPV6
-	stop_ipv6();
+	stop_service("ipv6");
 #endif
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
 	{
-		start_run_rc_shutdown();
+		start_service("run_rc_shutdown");
 	}
 
 }
@@ -320,54 +324,54 @@ void start_init_start(void)
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
 #ifdef HAVE_JFFS2
-	start_jffs2();
+	start_service("jffs2");
 #endif
 #ifdef HAVE_SYSLOG
-	start_syslog();
+	start_service("syslog");
 #endif
 
 #ifdef HAVE_SMARTD
-	start_smartd();
+	start_service("smartd");
 #endif
 #ifdef HAVE_IPV6
-	start_ipv6();
+	start_service("ipv6");
 #endif
 #ifndef HAVE_RB500
-	start_resetbutton();
+	start_service("resetbutton");
 #endif
-	start_setup_vlans();
+	start_service("setup_vlans");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 //                      start_wlconf(); // doesnt make any sense. its already triggered by start lan
 #endif
 #ifdef HAVE_VLANTAGGING
-	start_bridging();
+	start_service("bridging");
 #endif
-	start_lan();
+	start_service("lan");
 	/* we need todo it a second time since the bridge did not exist before */
-	start_setup_vlans();
+	start_service("setup_vlans");
 #ifdef HAVE_IPVS
-	start_ipvs();
+	start_service("ipvs");
 #endif
 #ifdef HAVE_BONDING
-	start_bonding();
+	start_service("bonding");
 #endif
 #ifdef HAVE_REGISTER
-	start_mkfiles();
+	start_service("mkfiles");
 #endif
 #ifdef HAVE_MADWIFI
-	start_stabridge();
+	start_service("stabridge");
 #endif
 
 	cprintf("start services\n");
-	start_services();
+	start_service("services");
 
 	cprintf("start wan boot\n");
 #ifdef HAVE_VLANTAGGING
-	start_vlantagging();
-	start_bridgesif();
+	start_service("vlantagging");
+	start_service("bridgesif");
 #endif
-	start_wan_boot();
-	start_ttraff();
+	start_service("wan_boot");
+	start_service("ttraff");
 
 	cprintf("diag STOP LED\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -377,40 +381,39 @@ void start_init_start(void)
 
 	if (nvram_matchi("radiooff_button", 1)
 	    && nvram_matchi("radiooff_boot_off", 1)) {
-		start_radio_off();
+		start_service("radio_off");
 		led_control(LED_SEC, LED_OFF);
 		led_control(LED_SEC0, LED_OFF);
 		led_control(LED_SEC1, LED_OFF);
 	} else
 	{
-		start_radio_on();
+		start_service("radio_on");
 	}
 #ifdef HAVE_EMF
-	start_emf();
+	start_service("emf");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT2860) && !defined(HAVE_RT61)
-	start_nas();
+	start_service("nas");
 #endif
-	start_radio_timer();
+	start_service("radio_timer");
 #ifdef HAVE_CHILLI
-	start_chilli();
+	start_service("chilli");
 #endif
 #ifdef HAVE_WIFIDOG
-	start_wifidog();
+	start_service("wifidog");
 #endif
 	cprintf("start syslog\n");
 	system("/etc/postinit&");
-	start_httpd();
+	start_service("httpd");
 	led_control(LED_DIAG, LED_OFF);
 	lcdmessage("System Ready");
 #ifndef HAVE_RB500
-	stop_resetbutton();
-	start_resetbutton();
+	restart_service("resetbutton");
 #endif
 	load_drivers(1);
 	eval("startservice_f", "modules_wait");
 #ifdef HAVE_X86
-	eval("restart_f", "bootconfig");
+	eval("service", "bootconfig", "restart");
 #endif
 
 }
