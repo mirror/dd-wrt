@@ -363,7 +363,7 @@ void start_init_start(void)
 #endif
 
 	cprintf("start services\n");
-	start_service("services");
+	start_services();
 
 	cprintf("start wan boot\n");
 #ifdef HAVE_VLANTAGGING
