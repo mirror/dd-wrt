@@ -50,8 +50,8 @@
 #include "unl.h"
 #include <nl80211.h>
 
-#define ENTER dd_logdebug("mac80211","start %s",__func__)
-#define LEAVE dd_logdebug("mac80211","leave %s",__func__)
+#define ENTER syslog(LOG_DEBUG,"mac80211: start %s",__func__)
+#define LEAVE syslog(LOG_DEBUG,"mac80211: leave %s",__func__)
 void check_cryptomod(char *prefix);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
