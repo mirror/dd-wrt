@@ -38,6 +38,7 @@ char *plex_proc(void)
 	return "Plex Media Server";
 }
 
+void stop_plex(void);
 void start_plex(void)
 {
 	char *plex_argv[] = { "/usr/lib/plexmediaserver/lib/run.sh", nvram_safe_get("plex_appdir"), NULL };

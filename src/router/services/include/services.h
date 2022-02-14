@@ -163,6 +163,8 @@ extern void stop_nas(void);
 extern void start_chilli(void);
 extern void stop_chilli(void);
 #endif
+extern void run_pptp(int status);
+extern void run_l2tp(int status);
 extern void stop_l2tp(void);
 extern void start_l2tp_boot(void);
 extern void start_udhcpd(void);
