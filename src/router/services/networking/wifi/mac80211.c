@@ -52,6 +52,12 @@
 
 #define ENTER syslog(LOG_DEBUG,"mac80211: start %s",__func__)
 #define LEAVE syslog(LOG_DEBUG,"mac80211: leave %s",__func__)
+#define MAC80211DEBUG() do { } while(0)
+
+#ifndef MAC80211DEBUG
+#define MAC80211DEBUG() syslog(LOG_DEBUG,"mac80211: %s:%d", __func__,__LINE__)
+#endif
+
 void check_cryptomod(char *prefix);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
@@ -345,7 +351,7 @@ void configure_single_ath9k(int count)
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strcmp(netmode, "disabled"))
 		return;
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (is_ath10k(dev) && has_fwswitch(dev) ) {
 		char fwtype[32];
 		sprintf(fwtype, "%s_fwtype", dev);
@@ -361,12 +367,12 @@ void configure_single_ath9k(int count)
 			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash", wif);
 		}
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (has_airtime_fairness(dev)) {
 		sprintf(atf, "%s_atf", dev);
 		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
 	char *driver = "ath9k";
@@ -405,7 +411,7 @@ void configure_single_ath9k(int count)
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 #ifdef HAVE_ATH10K
 	if (is_ath10k(dev)) {
 
@@ -536,7 +542,7 @@ void configure_single_ath9k(int count)
 		}
 	}
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char macaddr[32];
 	// interface is created at this point, so that should work
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
@@ -572,7 +578,7 @@ void configure_single_ath9k(int count)
 
 	cprintf("done()\n");
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
@@ -598,7 +604,7 @@ void configure_single_ath9k(int count)
 	foreach(var, vifs, next) {
 		countvaps++;
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (countvaps < 4)
 		countvaps = 4;
 	if (countvaps > vapcount)
@@ -659,7 +665,7 @@ void configure_single_ath9k(int count)
 	sprintf(compr, "%s_fc_th", dev);
 	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 	sprintf(compr, "%s_fc", dev);
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 
 	if (nvram_default_matchi(compr, 1, 0)) {
 		load_compressor();
@@ -683,7 +689,7 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	int channel = 0;
 	int channel2 = 0;
 	int freq = 0;
@@ -765,7 +771,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (has_ac(prefix)) {
 		if (strcmp(netmode, "acn-mixed") &&	//
 		    strcmp(netmode, "ac-only ") &&	//
@@ -817,7 +823,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	} else {
 		ht = "HT20";
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char regdomain[32];
 	sprintf(regdomain, "%s_regdomain", prefix);
 
@@ -1045,7 +1051,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			channel2 = ieee80211_mhz2ieee(freq2);
 		}
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (!isath5k && !has_ad(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
@@ -1074,7 +1080,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		free(caps);
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
@@ -1169,7 +1175,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	}
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	fprintf(fp, "channel=%d\n", channel);
 	if (!has_ad(prefix))
 		fprintf(fp, "frequency=%d\n", freq);
@@ -1263,7 +1269,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (!isregistered())
 		return;
 #endif
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char psk[32];
 	char akm[32];
 	char mfp[32];
@@ -1300,7 +1306,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (aoss)
 		sprintf(ifname, "aoss");
 #endif
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	sprintf(akm, "%s_akm", ifname);
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
@@ -1352,7 +1358,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "vendor_vht=1\n");
 		}
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (!vapid)
 		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 #ifdef HAVE_MVEBU
@@ -1401,7 +1407,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 //              MAC_ADD(macaddr);
 	if (!has_ad(maininterface) && !is_brcmfmac(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
@@ -1455,7 +1461,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
 	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
 	int iswep = nvhas(akm, "wep");
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	// wep key support
 	if (iswep || aoss) {
 //              if (!isfirst || aoss)
@@ -1561,7 +1567,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	/* low signal drop */
 	char signal[32];
 	sprintf(signal, "%s_connect", ifname);
@@ -1587,7 +1593,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 #endif
 
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char rts[32];
 
 	sprintf(rts, "%s_protmode", ifname);
@@ -1605,7 +1611,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	if (has_wpa3(ifname)) {
 		char *owe_ifname = nvram_nget("%s_owe_ifname", ifname);
 		if (*owe_ifname) {
@@ -1625,7 +1631,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
 	if (v && *v)
@@ -1639,7 +1645,7 @@ void addvhtcaps(char *prefix, FILE * fp);
 
 static char *makescanlist(char *prefix, char *value)
 {
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char *clone = strdup(value);
 	int len = strlen(clone);
 	int i;
@@ -1711,13 +1717,13 @@ static char *makescanlist(char *prefix, char *value)
 		}
 	}
 	free(clone);
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	return new;
 }
 
 static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
 {
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char nfreq[32];
 	char nfreq2[32];
 	char fwd[32];
@@ -1781,7 +1787,7 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 		}
 #endif
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 
 }
 
@@ -1794,7 +1800,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	if (!isregistered())
 		return;
 #endif
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char akm[32];
 	int i;
 	char mcr[32];
@@ -1824,7 +1830,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		nvram_nseti(1, "%s_psk2-sha256", prefix);
 	if (ispsk3)
 		nvram_nseti(1, "%s_psk3", prefix);
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	check_cryptomod(prefix);
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
@@ -2106,7 +2112,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fwritenvram(extra, fp);
 		fclose(fp);
 	}
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 
 }
 
@@ -2116,7 +2122,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 // erst hostapd starten fuer repeater mode
 // dann wpa_supplicant mit link zu hostapd
 // dann bridgen und konfiguriren
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 	char *next;
 	char var[80];
 	char fstr[32];
@@ -2326,6 +2332,6 @@ void ath9k_start_supplicant(int count, char *prefix)
 		}
 	}
 	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
-	syslog(LOG_DEBUG, "%s:%d", __func__, __LINE__);
+	MAC80211DEBUG();
 }
 #endif
