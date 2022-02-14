@@ -568,8 +568,7 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 
 void check_cryptomod(char *prefix)
 {
-
-	if (has_wpa3(NULL)) {
+	if (has_wpa3(prefix)) {
 		char mfp[16];
 		char akm[16];
 		sprintf(mfp, "%s_mfp", prefix);
@@ -579,7 +578,6 @@ void check_cryptomod(char *prefix)
 		if (w == 1 || w == -1 || nvhas(akm, "psk3") || nvhas(akm, "owe") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa3-128") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
 			insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
 	}
-
 }
 
 /*
