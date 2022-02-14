@@ -1276,7 +1276,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char *ssid;
 	char nssid[32];
 	char maxassoc[32];
-	char ifname[10];
+	char ifname[32];
 	int isrepeater = 0;
 	unsigned char hwbuff[32];
 	char macaddr[32];
