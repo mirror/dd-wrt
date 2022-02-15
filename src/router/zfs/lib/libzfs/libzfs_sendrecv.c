@@ -2899,22 +2899,24 @@ recv_destroy(libzfs_handle_t *hdl, const char *name, int baselen,
 	zhp = zfs_open(hdl, name, ZFS_TYPE_DATASET);
 	if (zhp == NULL)
 		return (-1);
-	clp = changelist_gather(zhp, ZFS_PROP_NAME, 0,
-	    flags->force ? MS_FORCE : 0);
-	if (zfs_get_type(zhp) == ZFS_TYPE_SNAPSHOT &&
+	zfs_type_t type = zfs_get_type(zhp);
+	if (type == ZFS_TYPE_SNAPSHOT &&
 	    zfs_spa_version(zhp, &spa_version) == 0 &&
 	    spa_version >= SPA_VERSION_USERREFS)
 		defer = B_TRUE;
+	clp = changelist_gather(zhp, ZFS_PROP_NAME, 0,
+	    flags->force ? MS_FORCE : 0);
 	zfs_close(zhp);
 	if (clp == NULL)
 		return (-1);
+
 	err = changelist_prefix(clp);
 	if (err)
 		return (err);
 
 	if (flags->verbose)
 		(void) printf("attempting destroy %s\n", name);
-	if (zhp->zfs_type == ZFS_TYPE_SNAPSHOT) {
+	if (type == ZFS_TYPE_SNAPSHOT) {
 		nvlist_t *nv = fnvlist_alloc();
 		fnvlist_add_boolean(nv, name);
 		err = lzc_destroy_snaps(nv, defer, NULL);
@@ -4075,8 +4077,8 @@ zfs_setup_cmdline_props(libzfs_handle_t *hdl, zfs_type_t type,
 			 * properties: if we're asked to exclude this kind of
 			 * values we remove them from "recvprops" input nvlist.
 			 */
-			if (!zfs_prop_inheritable(prop) &&
-			    !zfs_prop_user(name) && /* can be inherited too */
+			if (!zfs_prop_user(name) && /* can be inherited too */
+			    !zfs_prop_inheritable(prop) &&
 			    nvlist_exists(recvprops, newname))
 				fnvlist_remove(recvprops, newname);
 			else
@@ -5021,11 +5023,10 @@ static boolean_t
 zfs_receive_checkprops(libzfs_handle_t *hdl, nvlist_t *props,
     const char *errbuf)
 {
-	nvpair_t *nvp;
+	nvpair_t *nvp = NULL;
 	zfs_prop_t prop;
 	const char *name;
 
-	nvp = NULL;
 	while ((nvp = nvlist_next_nvpair(props, nvp)) != NULL) {
 		name = nvpair_name(nvp);
 		prop = zfs_name_to_prop(name);
@@ -5084,7 +5085,7 @@ zfs_receive_impl(libzfs_handle_t *hdl, const char *tosnap,
 
 	/* check cmdline props, raise an error if they cannot be received */
 	if (!zfs_receive_checkprops(hdl, cmdprops, errbuf))
-		return (-1);
+		return (zfs_error(hdl, EZFS_BADPROP, errbuf));
 
 	if (flags->isprefix &&
 	    !zfs_dataset_exists(hdl, tosnap, ZFS_TYPE_DATASET)) {

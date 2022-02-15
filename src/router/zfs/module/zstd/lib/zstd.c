@@ -768,6 +768,12 @@ void __msan_poison(const volatile void *a, size_t size);
 intptr_t __msan_test_shadow(const volatile void *x, size_t size);
 #endif
 
+/* detects whether we are being compiled under asan */
+#if defined (ZFS_ASAN_ENABLED)
+#  define ADDRESS_SANITIZER 1
+#  define ZSTD_ASAN_DONT_POISON_WORKSPACE
+#endif
+
 #if ZSTD_ADDRESS_SANITIZER
 /* Not all platforms that support asan provide sanitizers/asan_interface.h.
  * We therefore declare the functions we need ourselves, rather than trying to
