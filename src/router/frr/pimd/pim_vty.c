@@ -263,6 +263,17 @@ int pim_global_config_write_worker(struct pim_instance *pim, struct vty *vty)
 		}
 	}
 
+	if (pim->msdp.hold_time != PIM_MSDP_PEER_HOLD_TIME
+	    || pim->msdp.keep_alive != PIM_MSDP_PEER_KA_TIME
+	    || pim->msdp.connection_retry != PIM_MSDP_PEER_CONNECT_RETRY_TIME) {
+		vty_out(vty, "%sip msdp timers %u %u", spaces,
+			pim->msdp.hold_time, pim->msdp.keep_alive);
+		if (pim->msdp.connection_retry
+		    != PIM_MSDP_PEER_CONNECT_RETRY_TIME)
+			vty_out(vty, " %u", pim->msdp.connection_retry);
+		vty_out(vty, "\n");
+	}
+
 	return writes;
 }
 
@@ -440,7 +451,7 @@ int pim_interface_config_write(struct vty *vty)
 				pim_bfd_write_config(vty, ifp);
 				++writes;
 			}
-			vty_endframe(vty, "!\n");
+			vty_endframe(vty, "exit\n!\n");
 			++writes;
 		}
 	}

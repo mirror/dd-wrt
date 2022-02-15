@@ -1012,6 +1012,8 @@ void nhg_ctx_free(struct nhg_ctx **ctx)
 	nh = nhg_ctx_get_nh(*ctx);
 
 	nexthop_del_labels(nh);
+	nexthop_del_srv6_seg6local(nh);
+	nexthop_del_srv6_seg6(nh);
 
 done:
 	XFREE(MTYPE_NHG_CTX, *ctx);
@@ -1382,6 +1384,8 @@ static struct nhg_hash_entry *depends_find_singleton(const struct nexthop *nh,
 
 	/* The copy may have allocated labels; free them if necessary. */
 	nexthop_del_labels(&lookup);
+	nexthop_del_srv6_seg6local(&lookup);
+	nexthop_del_srv6_seg6(&lookup);
 
 	if (IS_ZEBRA_DEBUG_NHG_DETAIL)
 		zlog_debug("%s: nh %pNHv => %p (%u)",
@@ -1769,6 +1773,14 @@ static struct nexthop *nexthop_set_resolved(afi_t afi,
 		nexthop_add_labels(resolved_hop, label_type, num_labels,
 				   labels);
 
+	if (nexthop->nh_srv6) {
+		nexthop_add_srv6_seg6local(resolved_hop,
+					   nexthop->nh_srv6->seg6local_action,
+					   &nexthop->nh_srv6->seg6local_ctx);
+		nexthop_add_srv6_seg6(resolved_hop,
+				      &nexthop->nh_srv6->seg6_segs);
+	}
+
 	resolved_hop->rparent = nexthop;
 	_nexthop_add(&nexthop->resolved, resolved_hop);
 
@@ -1961,7 +1973,7 @@ static int nexthop_active(struct nexthop *nexthop, struct nhg_hash_entry *nhe,
 	struct route_node *rn;
 	struct route_entry *match = NULL;
 	int resolved;
-	zebra_nhlfe_t *nhlfe;
+	struct zebra_nhlfe *nhlfe;
 	struct nexthop *newhop;
 	struct interface *ifp;
 	rib_dest_t *dest;
@@ -2049,11 +2061,13 @@ static int nexthop_active(struct nexthop *nexthop, struct nhg_hash_entry *nhe,
 		return 1;
 	}
 
-	if (top &&
-	    ((top->family == AF_INET && top->prefixlen == 32
-	      && nexthop->gate.ipv4.s_addr == top->u.prefix4.s_addr)
-	     || (top->family == AF_INET6 && top->prefixlen == 128
-		 && memcmp(&nexthop->gate.ipv6, &top->u.prefix6, 16) == 0))) {
+	if (top
+	    && ((top->family == AF_INET && top->prefixlen == IPV4_MAX_BITLEN
+		 && nexthop->gate.ipv4.s_addr == top->u.prefix4.s_addr)
+		|| (top->family == AF_INET6 && top->prefixlen == IPV6_MAX_BITLEN
+		    && memcmp(&nexthop->gate.ipv6, &top->u.prefix6,
+			      IPV6_MAX_BYTELEN)
+			       == 0))) {
 		if (IS_ZEBRA_DEBUG_RIB_DETAILED)
 			zlog_debug(
 				"        :%s: Attempting to install a max prefixlength route through itself",
@@ -2119,12 +2133,12 @@ static int nexthop_active(struct nexthop *nexthop, struct nhg_hash_entry *nhe,
 	switch (afi) {
 	case AFI_IP:
 		p.family = AF_INET;
-		p.prefixlen = IPV4_MAX_PREFIXLEN;
+		p.prefixlen = IPV4_MAX_BITLEN;
 		p.u.prefix4 = *ipv4;
 		break;
 	case AFI_IP6:
 		p.family = AF_INET6;
-		p.prefixlen = IPV6_MAX_PREFIXLEN;
+		p.prefixlen = IPV6_MAX_BITLEN;
 		p.u.prefix6 = nexthop->gate.ipv6;
 		break;
 	default:
@@ -2151,8 +2165,10 @@ static int nexthop_active(struct nexthop *nexthop, struct nhg_hash_entry *nhe,
 		 * host route.
 		 */
 		if (prefix_same(&rn->p, top))
-			if (((afi == AFI_IP) && (rn->p.prefixlen != 32))
-			    || ((afi == AFI_IP6) && (rn->p.prefixlen != 128))) {
+			if (((afi == AFI_IP)
+			     && (rn->p.prefixlen != IPV4_MAX_BITLEN))
+			    || ((afi == AFI_IP6)
+				&& (rn->p.prefixlen != IPV6_MAX_BITLEN))) {
 				if (IS_ZEBRA_DEBUG_RIB_DETAILED)
 					zlog_debug(
 						"        %s: Matched against ourself and prefix length is not max bit length",
@@ -2971,6 +2987,8 @@ void zebra_nhg_dplane_result(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_IPSET_ENTRY_DELETE:
 	case DPLANE_OP_NEIGH_TABLE_UPDATE:
 	case DPLANE_OP_GRE_SET:
+	case DPLANE_OP_INTF_ADDR_ADD:
+	case DPLANE_OP_INTF_ADDR_DEL:
 		break;
 	}
 

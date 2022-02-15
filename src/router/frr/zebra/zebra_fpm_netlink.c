@@ -42,6 +42,7 @@
 
 #include "zebra/zebra_fpm_private.h"
 #include "zebra/zebra_vxlan_private.h"
+#include "zebra/interface.h"
 
 /*
  * af_addr_size
@@ -164,7 +165,10 @@ static int netlink_route_info_add_nh(struct netlink_route_info *ri,
 {
 	struct netlink_nh_info nhi;
 	union g_addr *src;
-	zebra_l3vni_t *zl3vni = NULL;
+	struct zebra_vrf *zvrf = NULL;
+	struct interface *ifp = NULL, *link_if = NULL;
+	struct zebra_if *zif = NULL;
+	vni_t vni = 0;
 
 	memset(&nhi, 0, sizeof(nhi));
 	src = NULL;
@@ -185,7 +189,12 @@ static int netlink_route_info_add_nh(struct netlink_route_info *ri,
 
 	if (nexthop->type == NEXTHOP_TYPE_IPV6
 	    || nexthop->type == NEXTHOP_TYPE_IPV6_IFINDEX) {
-		nhi.gateway = &nexthop->gate;
+		/* Special handling for IPv4 route with IPv6 Link Local next hop
+		 */
+		if (ri->af == AF_INET)
+			nhi.gateway = &ipv4ll_gateway;
+		else
+			nhi.gateway = &nexthop->gate;
 	}
 
 	if (nexthop->type == NEXTHOP_TYPE_IFINDEX) {
@@ -199,12 +208,29 @@ static int netlink_route_info_add_nh(struct netlink_route_info *ri,
 	if (re && CHECK_FLAG(re->flags, ZEBRA_FLAG_EVPN_ROUTE)) {
 		nhi.encap_info.encap_type = FPM_NH_ENCAP_VXLAN;
 
-		zl3vni = zl3vni_from_vrf(nexthop->vrf_id);
-		if (zl3vni && is_l3vni_oper_up(zl3vni)) {
-
-			/* Add VNI to VxLAN encap info */
-			nhi.encap_info.vxlan_encap.vni = zl3vni->vni;
+		/* Extract VNI id for the nexthop SVI interface */
+		zvrf = zebra_vrf_lookup_by_id(nexthop->vrf_id);
+		if (zvrf) {
+			ifp = if_lookup_by_index_per_ns(zvrf->zns,
+							nexthop->ifindex);
+			if (ifp) {
+				zif = (struct zebra_if *)ifp->info;
+				if (zif) {
+					if (IS_ZEBRA_IF_BRIDGE(ifp))
+						link_if = ifp;
+					else if (IS_ZEBRA_IF_VLAN(ifp))
+						link_if =
+						if_lookup_by_index_per_ns(
+							zvrf->zns,
+							zif->link_ifindex);
+					if (link_if)
+						vni = vni_id_from_svi(ifp,
+								      link_if);
+				}
+			}
 		}
+
+		nhi.encap_info.vxlan_encap.vni = vni;
 	}
 
 	/*
@@ -255,7 +281,7 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
 	ri->af = rib_dest_af(dest);
 
 	if (zvrf && zvrf->zns)
-		ri->nlmsg_pid = zvrf->zns->netlink_dplane.snl.nl_pid;
+		ri->nlmsg_pid = zvrf->zns->netlink_dplane_out.snl.nl_pid;
 
 	ri->nlmsg_type = cmd;
 	ri->rtm_table = table_info->table_id;

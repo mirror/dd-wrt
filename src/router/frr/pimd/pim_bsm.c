@@ -28,6 +28,7 @@
 #include "pimd.h"
 #include "pim_iface.h"
 #include "pim_instance.h"
+#include "pim_neighbor.h"
 #include "pim_rpf.h"
 #include "pim_hello.h"
 #include "pim_pim.h"
@@ -419,9 +420,12 @@ static void pim_instate_pend_list(struct bsgrp_node *bsgrp_node)
 	active = bsm_rpinfos_first(bsgrp_node->bsrp_list);
 
 	/* Remove nodes with hold time 0 & check if list still has a head */
-	frr_each_safe (bsm_rpinfos, bsgrp_node->partial_bsrp_list, pend)
-		if (is_hold_time_zero(pend))
+	frr_each_safe (bsm_rpinfos, bsgrp_node->partial_bsrp_list, pend) {
+		if (is_hold_time_zero(pend)) {
 			bsm_rpinfos_del(bsgrp_node->partial_bsrp_list, pend);
+			pim_bsm_rpinfo_free(pend);
+		}
+	}
 
 	pend = bsm_rpinfos_first(bsgrp_node->partial_bsrp_list);
 
@@ -1253,7 +1257,7 @@ int pim_bsm_process(struct interface *ifp, struct ip *ip_hdr, uint8_t *buf,
 	bshdr = (struct bsm_hdr *)(buf + PIM_MSG_HEADER_LEN);
 	pim_inet4_dump("<bsr?>", bshdr->bsr_addr.addr, bsr_str,
 		       sizeof(bsr_str));
-	if (bshdr->hm_len > 32) {
+	if (bshdr->hm_len > IPV4_MAX_BITLEN) {
 		zlog_warn("Bad hashmask length for IPv4; got %hhu, expected value in range 0-32",
 			  bshdr->hm_len);
 		pim->bsm_dropped++;

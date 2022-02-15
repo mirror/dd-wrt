@@ -218,6 +218,8 @@ struct as_external_lsa {
 #define LS_AGE(x) (OSPF_LSA_MAXAGE < get_age(x) ? OSPF_LSA_MAXAGE : get_age(x))
 #define IS_LSA_SELF(L)          (CHECK_FLAG ((L)->flags, OSPF_LSA_SELF))
 #define IS_LSA_MAXAGE(L)        (LS_AGE ((L)) == OSPF_LSA_MAXAGE)
+#define IS_LSA_MAX_SEQ(L)                                                      \
+	((L)->data->ls_seqnum == htonl(OSPF_MAX_SEQUENCE_NUMBER))
 
 #define OSPF_LSA_UPDATE_DELAY		2
 
@@ -331,7 +333,6 @@ extern void ospf_lsa_maxage_delete(struct ospf *, struct ospf_lsa *);
 
 extern void ospf_discard_from_db(struct ospf *, struct ospf_lsdb *,
 				 struct ospf_lsa *);
-extern int is_prefix_default(struct prefix_ipv4 *);
 
 extern int metric_type(struct ospf *, uint8_t, unsigned short);
 extern int metric_value(struct ospf *, uint8_t, unsigned short);
@@ -348,6 +349,8 @@ extern struct ospf_lsa *ospf_translated_nssa_refresh(struct ospf *ospf,
 extern struct ospf_lsa *ospf_translated_nssa_originate(struct ospf *ospf,
 						       struct ospf_lsa *type7,
 						       struct ospf_lsa *type5);
+extern void ospf_check_and_gen_init_seq_lsa(struct ospf_interface *oi,
+					    struct ospf_lsa *lsa);
 extern void ospf_flush_lsa_from_area(struct ospf *ospf, struct in_addr area_id,
 				     int type);
 #endif /* _ZEBRA_OSPF_LSA_H */

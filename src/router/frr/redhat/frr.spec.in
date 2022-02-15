@@ -153,7 +153,7 @@
 %define all_daemons %{daemon_list} %{daemon_ldpd} %{daemon_pimd} %{daemon_nhrpd} %{daemon_eigrpd} %{daemon_babeld} %{daemon_watchfrr} %{daemon_pbrd} %{daemon_bfdd} %{daemon_vrrpd} %{daemon_pathd}
 
 #release sub-revision (the two digits after the CONFDATE)
-%{!?release_rev:        %global  release_rev        02 }
+%{!?release_rev:        %global  release_rev        01 }
 
 Summary: Routing daemon
 Name:           frr
@@ -770,11 +770,129 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 
 %changelog
-* Wed Aug 27 2021 Martin Winter <mwinter@opensourcerouting.org> - 8.0.1
-- Bug fix release
-- Many bug fixes across all protocols
-- Revert of per peer/peergroup dampening as it has various problems and
-  needs a rework
+* Tue Nov  4 2021 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+
+* Tue Nov  2 2021 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.1
+-    FRR 8.1 brings a long list of enhancements and fixes with 1200 commits from
+-    75 developers. Thanks to all contributers.
+- New Features:
+-    Lua hooks are now feature complete, with one hook available for use (http://docs.frrouting.org/en/latest/scripting.html)
+-    Improvements to SRv6 (Segment Routing over IPv6) (http://docs.frrouting.org/en/latest/zebra.html#segment-routing-ipv6)
+-    Improvements to Prefix-SID (Type 5)
+-    EVPN route type-5 gateway IP overlay Index (http://docs.frrouting.org/en/latest/bgp.html#evpn-overlay-index-gateway-ip)
+-    OSPFv3 NSSA and NSSA totally stub areas (http://docs.frrouting.org/en/latest/ospf6d.html#ospf6-area)
+-    OSPFv3 ASBR summarization (http://docs.frrouting.org/en/latest/ospf6d.html#asbr-summarisation-support-in-ospfv3)
+-    OSPFv3 Graceful Restart (http://docs.frrouting.org/en/latest/ospf6d.html#graceful-restart)
+-    OSPFv2 Graceful Restart (restarting mode added, helper was already implemented) (http://docs.frrouting.org/en/latest/ospfd.html#graceful-restart)
+- Behavior Changes
+-    Every node in running config now has an explicit "exit" tag
+-    Link bandwidth in BGP is now correctly encoded according to IEEE 754. To stay with old incorrect encoding use:
+-    `neighbor PEER disable-link-bw-encoding-ieee`
+- Changelog
+- alpine:
+    Fix path for daemons file install
+- BGP:
+-    Add "json" option to "show bgp as-path-access-list"
+-    Add `disable-addpath-rx` knob
+-    Add an ability to set extcommunity to none in route-maps
+-    Add counter of displayed show bgp summary when filtering
+-    Add knob to config cond-adv scanner period
+-    Add route-map `match alias` command
+-    Add rpki source address configuration
+-    Add show bgp summary filter by neighbor or as
+-    Add terse display option on show bgp summary
+-    Allow for auto-completion of community alias's created
+-    Bgp knob to teardown session immediately when peer is unreachable
+-    Expand 'bgp default <afi>-<safi>' cmds
+-    Extend evpn next hop tracking to type-1 and type-4 routes
+-    Fix "no router bgp x vrf default"
+-    Flowspec redirect vrf uses vrf table instead of allocated table id
+-    Handle quick flaps of an evpn prefix properly
+-    Initial batch of evpn lttng tracepoints
+-    Limit processing to what is needed in rpki validation
+-    Modify vrf/view display in show bgp summary
+-    Set 4096 instead of 65535 as new max packet size for a new peer
+-    Set extended msg size only if we advertised and received capability
+-    Show bgp community alias in json community list output
+-    Show bgp prefixes by community alias
+-    Show max packet size per update-group
+-    Split soft reconfigure table task into several jobs to not block vtysh
+-    Store distance received from a redistribute statement
+-    Update route-type-1 legend to match output
+- ISIS:
+-    Fix sending of lsp with null seqno
+- lib:
+-    Add "json" option to "show ip[v6] access-list"
+-    Add "json" option to "show ip[v6] prefix-list"
+-    Add "json" option to "show route-map"
+-    Prevent grpc assert on missing yang node
+- NHRP:
+-    Clear cache when shortcuts are cleared
+-    Fix corrupt address being shown for shortcuts with no cache entry
+-    Set prefix correctly in resolution request
+- OSPF6:
+-    Add debug commands for lsa all and route all
+-    Add warning log for late hello packets
+-    Add write-multiplier configuration
+-    Don't update router-id if at least one adjacency is full
+-    Extend the "redistribute" command with more options
+-    Fix issue when displaying the redistribute command
+-    Fix logging of border router routes
+-    Json output for database dump show command
+-    Link state id in lsa database json output
+-    Send lsa update immediately when ospf instance is deleted
+- OSPF:
+-    Fix crash when creating vlink in unknown vrf
+-    Gr conformance fix for hello packet dr election
+-    Print extra lsa information in some log messages
+-    Rfc conformance test case 25.23 issue fix
+-    Show ip ospf route json does not shown metric and tag
+-    Summary lsa is not originated when process is reset
+- pathd:
+-    Handle pcinitiated configuration, main thread
+-    Handle pcinitiated messages, thread controller
+-    Handle srp_id correctly
+-    If pce ret no-path to pcreq don't retry pcreq nor delegate
+- PBR:
+-    Add `match ip-protocol [tcp|udp]`
+-    Add ability to set/unset src and dest ports
+-    Nhg "add" edge case for last in table range
+-    Start inclusion of src and dst ports for pbrd
+- PIM:
+-    Add tos/ttl check for igmp conformance
+-    Allow join prune intervals to be as small as 5 seconds
+-    Allow msdp group name 'default'
+-    Fix register suppress timer code
+-    Fix uaf/heap corruption in bsm code
+-    Fix command "no ip msdp mesh-group member"
+-    Igmp groups are not getting timeout
+-    Igmp memberships are not querier specific
+-    Igmp sockets need to be iface-bound too
+-    Prevent uninited usage of nexthop
+-    Support msdp global timers configuration
+- vtysh
+-    Add cli timestamp '-t' flag
+-    Add error code if daemon is not running
+-    Fix searching commands in parent nodes
+- yang:
+-    Add msdp timer configuration
+-    Fix bgp multicast prefix type
+-    Mark a couple of prefix-list/access-list leafs as mandatory
+-    Move multicast prefix type definition
+-    Replace an empty pattern with a zero-length restriction
+-    Rework pim msdp mesh group
+-    Simplify msdp peer handling
+- zebra :
+-    Add "json" option to "show interface"
+-    Various improvment to dataplane interface
+-    Add message counts for `show zebra client`
+-    Add nhg id to show ip route json
+-    Add show command for ra interface lists
+-    Fix ipv4 routes with ipv6 link local next hops install in fpm
+-    Handle bridge mac address update in evpn contexts
+-    Move individual lines to table in `show zebra client` command
+-    Refresh vxlan evpn contexts, when bridge interface goes up
+-    Update zl3vni when bridge link refreshed in other namespaces
 
 * Wed Jul 21 2021 Martin Winter <mwinter@opensourcerouting.org> - 8.0
 - Major changes
