@@ -2054,7 +2054,7 @@ bool subgroup_announce_check(struct bgp_dest *dest, struct bgp_path_info *pi,
 		if ((CHECK_FLAG(peer->af_flags[afi][safi],
 				PEER_FLAG_NEXTHOP_LOCAL_UNCHANGED)
 		     && IN6_IS_ADDR_LINKLOCAL(&attr->mp_nexthop_local))
-		    || (!reflect
+		    || (!reflect && !transparent
 			&& IN6_IS_ADDR_LINKLOCAL(&peer->nexthop.v6_local)
 			&& peer->shared_network
 			&& (from == bgp->peer_self
@@ -7382,15 +7382,14 @@ void bgp_aggregate_delete(struct bgp *bgp, const struct prefix *p, afi_t afi,
 			if (pi->sub_type == BGP_ROUTE_AGGREGATE)
 				continue;
 
-			if (aggregate->summary_only && pi->extra
-			    && AGGREGATE_MED_VALID(aggregate)) {
-				if (aggr_unsuppress_path(aggregate, pi))
-					match++;
-			}
-
-			if (aggregate->suppress_map_name
-			    && AGGREGATE_MED_VALID(aggregate)
-			    && aggr_suppress_map_test(bgp, aggregate, pi)) {
+			/*
+			 * This route is suppressed: attempt to unsuppress it.
+			 *
+			 * `aggr_unsuppress_path` will fail if this particular
+			 * aggregate route was not the suppressor.
+			 */
+			if (pi->extra && pi->extra->aggr_suppressors &&
+			    listcount(pi->extra->aggr_suppressors)) {
 				if (aggr_unsuppress_path(aggregate, pi))
 					match++;
 			}
@@ -12461,7 +12460,7 @@ DEFPY (show_ip_bgp_instance_all,
        JSON_STR
       "Increase table width for longer prefixes\n")
 {
-	afi_t afi = AFI_IP;
+	afi_t afi = AFI_IP6;
 	safi_t safi = SAFI_UNICAST;
 	struct bgp *bgp = NULL;
 	int idx = 0;
@@ -13748,7 +13747,11 @@ static int peer_adj_routes(struct vty *vty, struct peer *peer, afi_t afi,
 			       &output_count, &filtered_count);
 
 	if (use_json) {
-		json_object_object_add(json, "advertisedRoutes", json_ar);
+		if (type == bgp_show_adj_route_advertised)
+			json_object_object_add(json, "advertisedRoutes",
+					       json_ar);
+		else
+			json_object_object_add(json, "receivedRoutes", json_ar);
 		json_object_int_add(json, "totalPrefixCounter", output_count);
 		json_object_int_add(json, "filteredPrefixCounter",
 				    filtered_count);
@@ -14084,7 +14087,7 @@ DEFUN (show_ip_bgp_flowspec_routes_detailed,
        "Detailed information on flowspec entries\n"
        JSON_STR)
 {
-	afi_t afi = AFI_IP;
+	afi_t afi = AFI_IP6;
 	safi_t safi = SAFI_UNICAST;
 	struct bgp *bgp = NULL;
 	int idx = 0;
