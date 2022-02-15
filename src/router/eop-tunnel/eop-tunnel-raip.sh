@@ -189,7 +189,7 @@ if [[ ! -z "$($nv get oet${i}_rtupscript | sed '/^[[:blank:]]*#/d')" ]]; then
 fi
 ip route flush cache
 # execute watchdog script
-if [[ $($nv get oet${i}_failstate) -eq 2 ]]; then
+if [[ $($nv get oet${i}_failstate) -eq 2 || $($nv get oet${i}_wdog) -eq 1 ]]; then
 	# only start if not already running
 	if ! ps | grep -q "[w]ireguard-fwatchdog\.sh $i"; then
 		logger -p user.info "WireGuard: wireguard-fwatchdog $i not running yet"

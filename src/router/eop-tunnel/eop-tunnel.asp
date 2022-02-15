@@ -153,9 +153,31 @@ if (value == 2) {
 }
 }
 
+function failover_show(F, index, value)
+{
+if (value == 1) {
+	show_layer_ext(F, "idoet" + index + "_tunnelstate", true);
+	show_layer_ext(F, "idoet" + index + "_wdog", true);
+	show_layer_ext(F, "idoet" + index + "_wdog2", false);
+} else {
+	show_layer_ext(F, "idoet" + index + "_tunnelstate", false);
+	show_layer_ext(F, "idoet" + index + "_wdog", false);
+	show_layer_ext(F, "idoet" + index + "_wdog2", true);
+}
+}
+function wdog_show(F, index, value)
+{
+if (value == 1) {
+	show_layer_ext(F, "idoet" + index + "_failgrp", false);
+	show_layer_ext(F, "idoet" + index + "_wdog", true);
+} else {
+	show_layer_ext(F, "idoet" + index + "_failgrp", true);
+	show_layer_ext(F, "idoet" + index + "_wdog", false);
+}
+}
 var update;
 
-addEvent(window, "load", function() {				
+addEvent(window, "load", function() {
 		update = new StatusbarUpdate();
 		update.start();
 		
