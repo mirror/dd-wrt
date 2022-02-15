@@ -35,8 +35,6 @@ extern unsigned char conf_debug_ospf6_spf;
 #define IS_OSPF6_DEBUG_SPF(level)                                              \
 	(conf_debug_ospf6_spf & OSPF6_DEBUG_SPF_##level)
 
-#define OSPF6_ASE_CALC_INTERVAL 1
-
 PREDECL_SKIPLIST_NONUNIQ(vertex_pqueue);
 /* Transit Vertex */
 struct ospf6_vertex {
@@ -93,7 +91,6 @@ struct ospf6_vertex {
 #define OSPF6_SPF_FLAGS_NETWORK_LSA_ORIGINATED   (1 << 7)
 #define OSPF6_SPF_FLAGS_CONFIG_CHANGE            (1 << 8)
 #define OSPF6_SPF_FLAGS_ASBR_STATUS_CHANGE       (1 << 9)
-#define OSPF6_SPF_FLAGS_GR_FINISH                (1 << 10)
 
 static inline void ospf6_set_spf_reason(struct ospf6 *ospf, unsigned int reason)
 {
@@ -164,7 +161,5 @@ extern struct ospf6_lsa *ospf6_create_single_router_lsa(struct ospf6_area *area,
 							struct ospf6_lsdb *lsdb,
 							uint32_t adv_router);
 extern void ospf6_remove_temp_router_lsa(struct ospf6_area *area);
-extern void ospf6_ase_calculate_timer_add(struct ospf6 *ospf6);
-extern int ospf6_ase_calculate_route(struct ospf6 *ospf6, struct ospf6_lsa *lsa,
-				     struct ospf6_area *area);
+
 #endif /* OSPF6_SPF_H */

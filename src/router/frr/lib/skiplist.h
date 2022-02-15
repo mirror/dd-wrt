@@ -60,7 +60,7 @@ struct skiplist {
 	int level; /* max lvl (1 + current # of levels in list) */
 	unsigned int count;
 	struct skiplistnode *header;
-	int *level_stats;
+	struct skiplistnode *stats;
 	struct skiplistnode
 		*last; /* last real list item (NULL if empty list) */
 
@@ -123,7 +123,6 @@ extern int skiplist_empty(register struct skiplist *l); /* in */
 
 extern unsigned int skiplist_count(register struct skiplist *l); /* in */
 
-struct vty;
 extern void skiplist_debug(struct vty *vty, struct skiplist *l);
 
 extern void skiplist_test(struct vty *vty);

@@ -1781,9 +1781,6 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 				    ospf->ti_lfa_protection_type);
 
 	ospf_spf_cleanup(area->spf, area->spf_vertex_list);
-
-	area->spf = NULL;
-	area->spf_vertex_list = NULL;
 }
 
 void ospf_spf_calculate_areas(struct ospf *ospf, struct route_table *new_table,
@@ -1906,8 +1903,6 @@ static int ospf_spf_calculate_schedule_worker(struct thread *thread)
 			strlcat(rbuf, "ASBR, ",	sizeof(rbuf));
 		if (spf_reason_flags & (1 << SPF_FLAG_MAXAGE))
 			strlcat(rbuf, "M, ", sizeof(rbuf));
-		if (spf_reason_flags & (1 << SPF_FLAG_GR_FINISH))
-			strlcat(rbuf, "GR, ", sizeof(rbuf));
 
 		size_t rbuflen = strlen(rbuf);
 		if (rbuflen >= 2)

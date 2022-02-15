@@ -469,10 +469,12 @@ static int run_job(struct restart_info *restart, const char *cmdtype,
 		return -1;
 	}
 
+#if defined HAVE_SYSTEMD
 	char buffer[512];
 
 	snprintf(buffer, sizeof(buffer), "restarting %s", restart->name);
 	systemd_send_status(buffer);
+#endif
 
 	/* Note: time_elapsed test must come before the force test, since we
 	   need
@@ -504,8 +506,9 @@ static int run_job(struct restart_info *restart, const char *cmdtype,
 			restart->pid = 0;
 	}
 
+#if defined HAVE_SYSTEMD
 	systemd_send_status("FRR Operational");
-
+#endif
 	/* Calculate the new restart interval. */
 	if (update_interval) {
 		if (delay.tv_sec > 2 * gs.max_restart_interval)
@@ -715,9 +718,10 @@ static void daemon_send_ready(int exitcode)
 	fp = fopen(started, "w");
 	if (fp)
 		fclose(fp);
-
-	systemd_send_started(master);
+#if defined HAVE_SYSTEMD
+	systemd_send_started(master, 0);
 	systemd_send_status("FRR Operational");
+#endif
 	sent = 1;
 }
 

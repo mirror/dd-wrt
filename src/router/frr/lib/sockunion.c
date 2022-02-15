@@ -606,7 +606,8 @@ static void __attribute__((unused)) sockunion_print(const union sockunion *su)
 	}
 }
 
-int in6addr_cmp(const struct in6_addr *addr1, const struct in6_addr *addr2)
+static int in6addr_cmp(const struct in6_addr *addr1,
+		       const struct in6_addr *addr2)
 {
 	unsigned int i;
 	const uint8_t *p1, *p2;

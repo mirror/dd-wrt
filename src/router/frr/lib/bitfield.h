@@ -60,8 +60,6 @@ typedef unsigned int word_t;
  */
 typedef struct {word_t *data; size_t n, m; } bitfield_t;
 
-DECLARE_MTYPE(BITFIELD);
-
 /**
  * Initialize the bits.
  * @v: an instance of bitfield_t struct.
@@ -72,7 +70,7 @@ DECLARE_MTYPE(BITFIELD);
 	do {                                                                   \
 		(v).n = 0;                                                     \
 		(v).m = ((N) / WORD_SIZE + 1);                                 \
-		(v).data = XCALLOC(MTYPE_BITFIELD, ((v).m * sizeof(word_t)));  \
+		(v).data = calloc(1, ((v).m * sizeof(word_t)));                \
 	} while (0)
 
 /**
@@ -195,7 +193,7 @@ static inline unsigned int bf_find_next_set_bit(bitfield_t v,
  */
 #define bf_free(v)                                                             \
 	do {                                                                   \
-		XFREE(MTYPE_BITFIELD, (v).data);                               \
+		free((v).data);                                                \
 		(v).data = NULL;                                               \
 	} while (0)
 

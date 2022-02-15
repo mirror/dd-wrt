@@ -74,7 +74,6 @@ const struct message tokennames[] = {
 	item(JOIN_TKN),
 	item(START_TKN),
 	item(END_TKN),
-	item(NEG_ONLY_TKN),
 	{0},
 };
 /* clang-format on */
@@ -259,9 +258,6 @@ static bool cmd_hash_cmp(const void *a, const void *b)
 /* Install top node of command vector. */
 void install_node(struct cmd_node *node)
 {
-#define CMD_HASH_STR_SIZE 256
-	char hash_name[CMD_HASH_STR_SIZE];
-
 	vector_set_index(cmdvec, node->node, node);
 	node->cmdgraph = graph_new();
 	node->cmd_vector = vector_init(VECTOR_MIN_SIZE);
@@ -270,10 +266,8 @@ void install_node(struct cmd_node *node)
 		cmd_token_new(START_TKN, CMD_ATTR_NORMAL, NULL, NULL);
 	graph_new_node(node->cmdgraph, token,
 		       (void (*)(void *)) & cmd_token_del);
-
-	snprintf(hash_name, sizeof(hash_name), "Command Hash: %s", node->name);
-	node->cmd_hash =
-		hash_create_size(16, cmd_hash_key, cmd_hash_cmp, hash_name);
+	node->cmd_hash = hash_create_size(16, cmd_hash_key, cmd_hash_cmp,
+					  "Command Hash");
 }
 
 /* Return prompt character of specified node. */
@@ -442,36 +436,6 @@ static int config_write_host(struct vty *vty)
 					host.enable);
 		}
 		log_config_write(vty);
-
-		/* print disable always, but enable only if default is flipped
-		 * => prep for future removal of compile-time knob
-		 */
-		if (!cputime_enabled)
-			vty_out(vty, "no service cputime-stats\n");
-#ifdef EXCLUDE_CPU_TIME
-		else
-			vty_out(vty, "service cputime-stats\n");
-#endif
-
-		if (!cputime_threshold)
-			vty_out(vty, "no service cputime-warning\n");
-#if defined(CONSUMED_TIME_CHECK) && CONSUMED_TIME_CHECK != 5000000
-		else /* again, always print non-default */
-#else
-		else if (cputime_threshold != 5000000)
-#endif
-			vty_out(vty, "service cputime-warning %lu\n",
-				cputime_threshold);
-
-		if (!walltime_threshold)
-			vty_out(vty, "no service walltime-warning\n");
-#if defined(CONSUMED_TIME_CHECK) && CONSUMED_TIME_CHECK != 5000000
-		else /* again, always print non-default */
-#else
-		else if (walltime_threshold != 5000000)
-#endif
-			vty_out(vty, "service walltime-warning %lu\n",
-				walltime_threshold);
 
 		if (host.advanced)
 			vty_out(vty, "service advanced-vty\n");
@@ -853,13 +817,87 @@ char **cmd_complete_command(vector vline, struct vty *vty, int *status)
 /* MUST eventually converge on CONFIG_NODE */
 enum node_type node_parent(enum node_type node)
 {
-	struct cmd_node *cnode;
+	enum node_type ret;
 
 	assert(node > CONFIG_NODE);
 
-	cnode = vector_lookup(cmdvec, node);
+	switch (node) {
+	case BGP_VPNV4_NODE:
+	case BGP_VPNV6_NODE:
+	case BGP_FLOWSPECV4_NODE:
+	case BGP_FLOWSPECV6_NODE:
+	case BGP_VRF_POLICY_NODE:
+	case BGP_VNC_DEFAULTS_NODE:
+	case BGP_VNC_NVE_GROUP_NODE:
+	case BGP_VNC_L2_GROUP_NODE:
+	case BGP_IPV4_NODE:
+	case BGP_IPV4M_NODE:
+	case BGP_IPV4L_NODE:
+	case BGP_IPV6_NODE:
+	case BGP_IPV6M_NODE:
+	case BGP_EVPN_NODE:
+	case BGP_IPV6L_NODE:
+	case BMP_NODE:
+		ret = BGP_NODE;
+		break;
+	case BGP_EVPN_VNI_NODE:
+		ret = BGP_EVPN_NODE;
+		break;
+	case KEYCHAIN_KEY_NODE:
+		ret = KEYCHAIN_NODE;
+		break;
+	case LINK_PARAMS_NODE:
+		ret = INTERFACE_NODE;
+		break;
+	case LDP_IPV4_NODE:
+	case LDP_IPV6_NODE:
+		ret = LDP_NODE;
+		break;
+	case LDP_IPV4_IFACE_NODE:
+		ret = LDP_IPV4_NODE;
+		break;
+	case LDP_IPV6_IFACE_NODE:
+		ret = LDP_IPV6_NODE;
+		break;
+	case LDP_PSEUDOWIRE_NODE:
+		ret = LDP_L2VPN_NODE;
+		break;
+	case BFD_PEER_NODE:
+		ret = BFD_NODE;
+		break;
+	case BFD_PROFILE_NODE:
+		ret = BFD_NODE;
+		break;
+	case SR_TRAFFIC_ENG_NODE:
+		ret = SEGMENT_ROUTING_NODE;
+		break;
+	case SR_SEGMENT_LIST_NODE:
+		ret = SR_TRAFFIC_ENG_NODE;
+		break;
+	case SR_POLICY_NODE:
+		ret = SR_TRAFFIC_ENG_NODE;
+		break;
+	case SR_CANDIDATE_DYN_NODE:
+		ret = SR_POLICY_NODE;
+		break;
+	case PCEP_NODE:
+		ret = SR_TRAFFIC_ENG_NODE;
+		break;
+	case PCEP_PCE_CONFIG_NODE:
+		ret = PCEP_NODE;
+		break;
+	case PCEP_PCE_NODE:
+		ret = PCEP_NODE;
+		break;
+	case PCEP_PCC_NODE:
+		ret = PCEP_NODE;
+		break;
+	default:
+		ret = CONFIG_NODE;
+		break;
+	}
 
-	return cnode->parent_node;
+	return ret;
 }
 
 /* Execute command by argument vline vector. */
@@ -1014,7 +1052,6 @@ int cmd_execute_command(vector vline, struct vty *vty,
 		return saved_ret;
 
 	if (ret != CMD_SUCCESS && ret != CMD_WARNING
-	    && ret != CMD_ERR_AMBIGUOUS && ret != CMD_ERR_INCOMPLETE
 	    && ret != CMD_NOT_MY_INSTANCE && ret != CMD_WARNING_CONFIG_FAILED) {
 		/* This assumes all nodes above CONFIG_NODE are childs of
 		 * CONFIG_NODE */
@@ -1028,7 +1065,6 @@ int cmd_execute_command(vector vline, struct vty *vty,
 			ret = cmd_execute_command_real(vline, FILTER_RELAXED,
 						       vty, cmd, 0);
 			if (ret == CMD_SUCCESS || ret == CMD_WARNING
-			    || ret == CMD_ERR_AMBIGUOUS || ret == CMD_ERR_INCOMPLETE
 			    || ret == CMD_NOT_MY_INSTANCE
 			    || ret == CMD_WARNING_CONFIG_FAILED)
 				return ret;
@@ -1227,7 +1263,6 @@ int command_config_read_one_line(struct vty *vty,
 	while (!(use_daemon && ret == CMD_SUCCESS_DAEMON)
 	       && !(!use_daemon && ret == CMD_ERR_NOTHING_TODO)
 	       && ret != CMD_SUCCESS && ret != CMD_WARNING
-	       && ret != CMD_ERR_AMBIGUOUS && ret != CMD_ERR_INCOMPLETE
 	       && ret != CMD_NOT_MY_INSTANCE && ret != CMD_WARNING_CONFIG_FAILED
 	       && ret != CMD_NO_LEVEL_UP)
 		ret = cmd_execute_command_real(vline, FILTER_STRICT, vty, cmd,
@@ -2340,29 +2375,25 @@ DEFUN(find,
 }
 
 #if defined(DEV_BUILD) && defined(HAVE_SCRIPTING)
-DEFUN(script, script_cmd, "script SCRIPT FUNCTION",
-      "Test command - execute a function in a script\n"
-      "Script name (same as filename in /etc/frr/scripts/)\n"
-      "Function name (in the script)\n")
+DEFUN(script,
+      script_cmd,
+      "script SCRIPT",
+      "Test command - execute a script\n"
+      "Script name (same as filename in /etc/frr/scripts/\n")
 {
 	struct prefix p;
 
 	(void)str2prefix("1.2.3.4/24", &p);
-	struct frrscript *fs = frrscript_new(argv[1]->arg);
 
-	if (frrscript_load(fs, argv[2]->arg, NULL)) {
-		vty_out(vty,
-			"/etc/frr/scripts/%s.lua or function '%s' not found\n",
-			argv[1]->arg, argv[2]->arg);
+	struct frrscript *fs = frrscript_load(argv[1]->arg, NULL);
+
+	if (fs == NULL) {
+		vty_out(vty, "Script '/etc/frr/scripts/%s.lua' not found\n",
+			argv[1]->arg);
+	} else {
+		int ret = frrscript_call(fs, NULL);
+		vty_out(vty, "Script result: %d\n", ret);
 	}
-
-	int ret = frrscript_call(fs, argv[2]->arg, ("p", &p));
-	char buf[40];
-	prefix2str(&p, buf, sizeof(buf));
-	vty_out(vty, "p: %s\n", buf);
-	vty_out(vty, "Script result: %d\n", ret);
-
-	frrscript_delete(fs);
 
 	return CMD_SUCCESS;
 }

@@ -53,6 +53,7 @@ static void register_zebra_rnh(struct bgp_nexthop_cache *bnc,
 			       int is_bgp_static_route);
 static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc,
 				 int is_bgp_static_route);
+static void evaluate_paths(struct bgp_nexthop_cache *bnc);
 static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p);
 static int bgp_nht_ifp_initial(struct thread *thread);
 
@@ -65,20 +66,9 @@ static int bgp_isvalid_nexthop(struct bgp_nexthop_cache *bnc)
 
 static int bgp_isvalid_labeled_nexthop(struct bgp_nexthop_cache *bnc)
 {
-	/*
-	 * In the case of MPLS-VPN, the label is learned from LDP or other
-	 * protocols, and nexthop tracking is enabled for the label.
-	 * The value is recorded as BGP_NEXTHOP_LABELED_VALID.
-	 * In the case of SRv6-VPN, we need to track the reachability to the
-	 * SID (in other words, IPv6 address). As in MPLS, we need to record
-	 * the value as BGP_NEXTHOP_SID_VALID. However, this function is
-	 * currently not implemented, and this function assumes that all
-	 * Transit routes for SRv6-VPN are valid.
-	 */
 	return (bgp_zebra_num_connects() == 0
-		|| (bnc && bnc->nexthop_num > 0
-		    && (CHECK_FLAG(bnc->flags, BGP_NEXTHOP_LABELED_VALID)
-			|| bnc->bgp->srv6_enabled)));
+		|| (bnc && CHECK_FLAG(bnc->flags, BGP_NEXTHOP_LABELED_VALID)
+		    && bnc->nexthop_num > 0));
 }
 
 static void bgp_unlink_nexthop_check(struct bgp_nexthop_cache *bnc)
@@ -254,9 +244,6 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 		}
 	}
 
-	if (pi && is_route_parent_evpn(pi))
-		bnc->is_evpn_gwip_nexthop = true;
-
 	if (is_bgp_static_route) {
 		SET_FLAG(bnc->flags, BGP_STATIC_ROUTE);
 
@@ -344,7 +331,7 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 		return 1;
 	else if (safi == SAFI_UNICAST && pi
 		 && pi->sub_type == BGP_ROUTE_IMPORTED && pi->extra
-		 && pi->extra->num_labels && !bnc->is_evpn_gwip_nexthop) {
+		 && pi->extra->num_labels) {
 		return bgp_isvalid_labeled_nexthop(bnc);
 	} else
 		return (bgp_isvalid_nexthop(bnc));
@@ -400,7 +387,6 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 	struct nexthop *nhlist_head = NULL;
 	struct nexthop *nhlist_tail = NULL;
 	int i;
-	bool evpn_resolved = false;
 
 	bnc->last_update = bgp_clock();
 	bnc->change_flags = 0;
@@ -431,8 +417,7 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 		if (!bnc->nexthop_num)
 			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED);
 
-		if (!bnc->is_evpn_gwip_nexthop)
-			bnc->flags |= BGP_NEXTHOP_VALID;
+		bnc->flags |= BGP_NEXTHOP_VALID;
 		bnc->metric = nhr->metric;
 		bnc->nexthop_num = nhr->nexthop_num;
 
@@ -503,40 +488,7 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 		}
 		bnc_nexthop_free(bnc);
 		bnc->nexthop = nhlist_head;
-
-		/*
-		 * Gateway IP nexthop is L3 reachable. Mark it as
-		 * BGP_NEXTHOP_VALID only if it is recursively resolved with a
-		 * remote EVPN RT-2.
-		 * Else, mark it as BGP_NEXTHOP_EVPN_INCOMPLETE.
-		 * When its mapping with EVPN RT-2 is established, unset
-		 * BGP_NEXTHOP_EVPN_INCOMPLETE and set BGP_NEXTHOP_VALID.
-		 */
-		if (bnc->is_evpn_gwip_nexthop) {
-			evpn_resolved = bgp_evpn_is_gateway_ip_resolved(bnc);
-
-			if (BGP_DEBUG(nht, NHT)) {
-				char buf2[PREFIX2STR_BUFFER];
-
-				prefix2str(&bnc->prefix, buf2, sizeof(buf2));
-				zlog_debug(
-					"EVPN gateway IP %s recursive MAC/IP lookup %s",
-					buf2,
-					(evpn_resolved ? "successful"
-						       : "failed"));
-			}
-
-			if (evpn_resolved) {
-				bnc->flags |= BGP_NEXTHOP_VALID;
-				bnc->flags &= ~BGP_NEXTHOP_EVPN_INCOMPLETE;
-				bnc->change_flags |= BGP_NEXTHOP_MACIP_CHANGED;
-			} else {
-				bnc->flags |= BGP_NEXTHOP_EVPN_INCOMPLETE;
-				bnc->flags &= ~BGP_NEXTHOP_VALID;
-			}
-		}
 	} else {
-		bnc->flags &= ~BGP_NEXTHOP_EVPN_INCOMPLETE;
 		bnc->flags &= ~BGP_NEXTHOP_VALID;
 		bnc->flags &= ~BGP_NEXTHOP_LABELED_VALID;
 		bnc->nexthop_num = nhr->nexthop_num;
@@ -742,7 +694,6 @@ void bgp_cleanup_nexthops(struct bgp *bgp)
 			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
 			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
 			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED);
-			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_EVPN_INCOMPLETE);
 		}
 	}
 }
@@ -948,7 +899,7 @@ static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc,
  * RETURNS:
  *   void.
  */
-void evaluate_paths(struct bgp_nexthop_cache *bnc)
+static void evaluate_paths(struct bgp_nexthop_cache *bnc)
 {
 	struct bgp_dest *dest;
 	struct bgp_path_info *path;
@@ -1002,18 +953,16 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		 * In case of unicast routes that were imported from vpn
 		 * and that have labels, they are valid only if there are
 		 * nexthops with labels
-		 *
-		 * If the nexthop is EVPN gateway-IP,
-		 * do not check for a valid label.
 		 */
 
 		bool bnc_is_valid_nexthop = false;
 		bool path_valid = false;
 
-		if (safi == SAFI_UNICAST && path->sub_type == BGP_ROUTE_IMPORTED
-		    && path->extra && path->extra->num_labels
-		    && (path->attr->evpn_overlay.type
-			!= OVERLAY_INDEX_GATEWAY_IP)) {
+		if (safi == SAFI_UNICAST &&
+			path->sub_type == BGP_ROUTE_IMPORTED &&
+			path->extra &&
+			path->extra->num_labels) {
+
 			bnc_is_valid_nexthop =
 				bgp_isvalid_labeled_nexthop(bnc) ? true : false;
 		} else {
@@ -1064,7 +1013,7 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		    || path->attr->srte_color != 0)
 			SET_FLAG(path->flags, BGP_PATH_IGP_CHANGED);
 
-		path_valid = CHECK_FLAG(path->flags, BGP_PATH_VALID);
+		path_valid = !!CHECK_FLAG(path->flags, BGP_PATH_VALID);
 		if (path_valid != bnc_is_valid_nexthop) {
 			if (path_valid) {
 				/* No longer valid, clear flag; also for EVPN

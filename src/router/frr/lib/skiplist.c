@@ -65,25 +65,17 @@
 
 DEFINE_MTYPE_STATIC(LIB, SKIP_LIST, "Skip List");
 DEFINE_MTYPE_STATIC(LIB, SKIP_LIST_NODE, "Skip Node");
-DEFINE_MTYPE_STATIC(LIB, SKIP_LIST_STATS, "Skiplist Counters");
 
 #define BitsInRandom 31
 
 #define MaxNumberOfLevels 16
 #define MaxLevel (MaxNumberOfLevels-1)
-#define newNodeOfLevel(l)                                                      \
-	XCALLOC(MTYPE_SKIP_LIST_NODE,                                          \
-		sizeof(struct skiplistnode)                                    \
-			+ (l) * sizeof(struct skiplistnode *))
-
-/* XXX must match type of (struct skiplist).level_stats */
-#define newStatsOfLevel(l)                                                     \
-	XCALLOC(MTYPE_SKIP_LIST_STATS, ((l) + 1) * sizeof(int))
+#define newNodeOfLevel(l) XCALLOC(MTYPE_SKIP_LIST_NODE, sizeof(struct skiplistnode)+(l)*sizeof(struct skiplistnode *))
 
 static int randomsLeft;
 static int randomBits;
 
-#ifdef SKIPLIST_DEBUG
+#if 1
 #define CHECKLAST(sl)                                                          \
 	do {                                                                   \
 		if ((sl)->header->forward[0] && !(sl)->last)                   \
@@ -146,7 +138,7 @@ struct skiplist *skiplist_new(int flags,
 	new->level = 0;
 	new->count = 0;
 	new->header = newNodeOfLevel(MaxNumberOfLevels);
-	new->level_stats = newStatsOfLevel(MaxNumberOfLevels);
+	new->stats = newNodeOfLevel(MaxNumberOfLevels);
 
 	new->flags = flags;
 	if (cmp)
@@ -174,7 +166,7 @@ void skiplist_free(struct skiplist *l)
 		p = q;
 	} while (p);
 
-	XFREE(MTYPE_SKIP_LIST_STATS, l->level_stats);
+	XFREE(MTYPE_SKIP_LIST_NODE, l->stats);
 	XFREE(MTYPE_SKIP_LIST, l);
 }
 
@@ -188,13 +180,11 @@ int skiplist_insert(register struct skiplist *l, register void *key,
 
 	CHECKLAST(l);
 
-#ifdef SKIPLIST_DEBUG
 	/* DEBUG */
 	if (!key) {
 		flog_err(EC_LIB_DEVELOPMENT, "%s: key is 0, value is %p",
 			 __func__, value);
 	}
-#endif
 
 	p = l->header;
 	k = l->level;
@@ -224,10 +214,10 @@ int skiplist_insert(register struct skiplist *l, register void *key,
 	q->flags = SKIPLIST_NODE_FLAG_INSERTED; /* debug */
 #endif
 
-	++(l->level_stats[k]);
+	++(l->stats->forward[k]);
 #ifdef SKIPLIST_DEBUG
-	zlog_debug("%s: incremented level_stats @%p:%d, now %d", __func__, l, k,
-		   l->level_stats[k]);
+	zlog_debug("%s: incremented stats @%p:%d, now %ld", __func__, l, k,
+		   l->stats->forward[k] - (struct skiplistnode *)NULL);
 #endif
 
 	do {
@@ -308,10 +298,12 @@ int skiplist_delete(register struct skiplist *l, register void *key,
 			     k++) {
 				p->forward[k] = q->forward[k];
 			}
-			--(l->level_stats[k - 1]);
+			--(l->stats->forward[k - 1]);
 #ifdef SKIPLIST_DEBUG
-			zlog_debug("%s: decremented level_stats @%p:%d, now %d",
-				   __func__, l, k - 1, l->level_stats[k - 1]);
+			zlog_debug("%s: decremented stats @%p:%d, now %ld",
+				   __func__, l, k - 1,
+				   l->stats->forward[k - 1]
+					   - (struct skiplistnode *)NULL);
 #endif
 			if (l->del)
 				(*l->del)(q->value);
@@ -567,10 +559,11 @@ int skiplist_delete_first(register struct skiplist *l)
 		l->last = NULL;
 	}
 
-	--(l->level_stats[nodelevel]);
+	--(l->stats->forward[nodelevel]);
 #ifdef SKIPLIST_DEBUG
-	zlog_debug("%s: decremented level_stats @%p:%d, now %d", __func__, l,
-		   nodelevel, l->level_stats[nodelevel]);
+	zlog_debug("%s: decremented stats @%p:%d, now %ld", __func__, l,
+		   nodelevel,
+		   l->stats->forward[nodelevel] - (struct skiplistnode *)NULL);
 #endif
 
 	if (l->del)
@@ -594,7 +587,9 @@ void skiplist_debug(struct vty *vty, struct skiplist *l)
 
 	vty_out(vty, "Skiplist %p has max level %d\n", l, l->level);
 	for (i = l->level; i >= 0; --i)
-		vty_out(vty, "  @%d: %d\n", i, l->level_stats[i]);
+		vty_out(vty, "  @%d: %ld\n", i,
+			(long)((l->stats->forward[i])
+			       - (struct skiplistnode *)NULL));
 }
 
 static void *scramble(int i)

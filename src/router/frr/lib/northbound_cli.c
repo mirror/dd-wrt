@@ -550,13 +550,6 @@ void nb_cli_show_config_prepare(struct nb_config *config, bool with_defaults)
 				       LYD_VALIDATE_NO_STATE, NULL);
 }
 
-static int lyd_node_cmp(struct lyd_node **dnode1, struct lyd_node **dnode2)
-{
-	struct nb_node *nb_node = (*dnode1)->schema->priv;
-
-	return nb_node->cbs.cli_cmp(*dnode1, *dnode2);
-}
-
 static void show_dnode_children_cmds(struct vty *vty, struct lyd_node *root,
 				     bool with_defaults)
 {
@@ -574,10 +567,6 @@ static void show_dnode_children_cmds(struct vty *vty, struct lyd_node *root,
 		 * it's time to print the config.
 		 */
 		if (sort_node && nb_node != sort_node) {
-			list_sort(sort_list,
-				  (int (*)(const void **,
-					   const void **))lyd_node_cmp);
-
 			for (ALL_LIST_ELEMENTS_RO(sort_list, listnode, data))
 				nb_cli_show_dnode_cmds(vty, data,
 						       with_defaults);
@@ -595,9 +584,11 @@ static void show_dnode_children_cmds(struct vty *vty, struct lyd_node *root,
 			if (!sort_node) {
 				sort_node = nb_node;
 				sort_list = list_new();
+				sort_list->cmp = (int (*)(void *, void *))
+						 nb_node->cbs.cli_cmp;
 			}
 
-			listnode_add(sort_list, child);
+			listnode_add_sort(sort_list, child);
 			continue;
 		}
 
@@ -605,9 +596,6 @@ static void show_dnode_children_cmds(struct vty *vty, struct lyd_node *root,
 	}
 
 	if (sort_node) {
-		list_sort(sort_list,
-			  (int (*)(const void **, const void **))lyd_node_cmp);
-
 		for (ALL_LIST_ELEMENTS_RO(sort_list, listnode, data))
 			nb_cli_show_dnode_cmds(vty, data, with_defaults);
 

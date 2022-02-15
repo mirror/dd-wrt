@@ -1021,7 +1021,6 @@ void pim_ifchannel_join_add(struct interface *ifp, struct in_addr neigh_addr,
 			if (remain > holdtime)
 				return;
 		}
-		THREAD_OFF(ch->t_ifjoin_expiry_timer);
 
 		break;
 	case PIM_IFJOIN_PRUNE_TMP:
@@ -1259,7 +1258,7 @@ int pim_ifchannel_local_membership_add(struct interface *ifp,
 					AFI_IP, pim->spt.plist);
 				struct prefix g;
 				g.family = AF_INET;
-				g.prefixlen = IPV4_MAX_BITLEN;
+				g.prefixlen = IPV4_MAX_PREFIXLEN;
 				g.u.prefix4 = up->sg.grp;
 
 				if (prefix_list_apply(plist, &g)

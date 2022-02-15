@@ -23,11 +23,11 @@
 #include "nexthop.h"
 #include "table.h"
 #include "srcdest_table.h"
-#include "northbound_cli.h"
 
 #include "static_vrf.h"
 #include "static_routes.h"
 #include "static_zebra.h"
+#include "static_vty.h"
 
 DEFINE_MTYPE_STATIC(STATIC, STATIC_RTABLE_INFO, "Static Route Table Info");
 
@@ -150,16 +150,24 @@ struct static_vrf *static_vrf_lookup_by_name(const char *name)
 
 static int static_vrf_config_write(struct vty *vty)
 {
-	struct lyd_node *dnode;
-	int written = 0;
+	struct vrf *vrf;
 
-	dnode = yang_dnode_get(running_config->dnode, "/frr-routing:routing");
-	if (dnode) {
-		nb_cli_show_dnode_cmds(vty, dnode, false);
-		written = 1;
+	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
+		if (vrf->vrf_id != VRF_DEFAULT)
+			vty_frame(vty, "vrf %s\n", vrf->name);
+
+		static_config(vty, vrf->info, AFI_IP,
+			      SAFI_UNICAST, "ip route");
+		static_config(vty, vrf->info, AFI_IP,
+			      SAFI_MULTICAST, "ip mroute");
+		static_config(vty, vrf->info, AFI_IP6,
+			      SAFI_UNICAST, "ipv6 route");
+
+		if (vrf->vrf_id != VRF_DEFAULT)
+			vty_endframe(vty, " exit-vrf\n!\n");
 	}
 
-	return written;
+	return 0;
 }
 
 void static_vrf_init(void)
@@ -167,7 +175,7 @@ void static_vrf_init(void)
 	vrf_init(static_vrf_new, static_vrf_enable,
 		 static_vrf_disable, static_vrf_delete, NULL);
 
-	vrf_cmd_init(static_vrf_config_write);
+	vrf_cmd_init(static_vrf_config_write, &static_privs);
 }
 
 void static_vrf_terminate(void)

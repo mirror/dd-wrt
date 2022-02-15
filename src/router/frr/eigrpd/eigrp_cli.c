@@ -96,7 +96,6 @@ void eigrp_cli_show_header(struct vty *vty, struct lyd_node *dnode,
 
 void eigrp_cli_show_end_header(struct vty *vty, struct lyd_node *dnode)
 {
-	vty_out(vty, "exit\n");
 	vty_out(vty, "!\n");
 }
 
@@ -862,6 +861,16 @@ static int eigrp_config_write(struct vty *vty)
 	return written;
 }
 
+static int eigrp_write_interface(struct vty *vty);
+static struct cmd_node eigrp_interface_node = {
+	.name = "interface",
+	.node = INTERFACE_NODE,
+	.parent_node = CONFIG_NODE,
+	.prompt = "%s(config-if)# ",
+	.config_write = eigrp_write_interface,
+};
+
+
 static int eigrp_write_interface(struct vty *vty)
 {
 	struct lyd_node *dnode;
@@ -910,9 +919,10 @@ eigrp_cli_init(void)
 	install_element(EIGRP_NODE, &eigrp_neighbor_cmd);
 	install_element(EIGRP_NODE, &eigrp_redistribute_source_metric_cmd);
 
-	vrf_cmd_init(NULL);
+	vrf_cmd_init(NULL, &eigrpd_privs);
 
-	if_cmd_init(eigrp_write_interface);
+	install_node(&eigrp_interface_node);
+	if_cmd_init();
 
 	install_element(INTERFACE_NODE, &eigrp_if_delay_cmd);
 	install_element(INTERFACE_NODE, &no_eigrp_if_delay_cmd);

@@ -283,6 +283,13 @@ SNMP_LOCAL_VARIABLES
  *
  * 2. I could be replaced in unit test environment
  */
+#ifndef ISIS_SNMP_HAVE_TIME_FUNC
+static uint32_t isis_snmp_time(void)
+{
+	return (uint32_t)time(NULL);
+}
+
+#endif
 
 /* ISIS-MIB instances. */
 static oid isis_oid[] = {ISIS_MIB};
@@ -2076,7 +2083,7 @@ static uint8_t *isis_snmp_find_circ(struct variable *v, oid *name,
 	struct isis_circuit *circuit;
 	uint32_t up_ticks;
 	uint32_t delta_ticks;
-	time_t now_time;
+	uint32_t now_time;
 	int res;
 
 	*write_method = NULL;
@@ -2184,7 +2191,7 @@ static uint8_t *isis_snmp_find_circ(struct variable *v, oid *name,
 			return SNMP_INTEGER(0);
 
 		up_ticks = (uint32_t)netsnmp_get_agent_uptime();
-		now_time = time(NULL);
+		now_time = isis_snmp_time();
 
 		if (circuit->last_uptime >= now_time)
 			return SNMP_INTEGER(up_ticks);
@@ -2494,11 +2501,11 @@ static uint8_t *isis_snmp_find_isadj(struct variable *v, oid *name,
 	oid *oid_idx;
 	size_t oid_idx_len;
 	int res;
-	time_t val;
+	uint32_t val;
 	struct isis_adjacency *adj;
 	uint32_t up_ticks;
 	uint32_t delta_ticks;
-	time_t now_time;
+	uint32_t now_time;
 
 	*write_method = NULL;
 
@@ -2570,7 +2577,7 @@ static uint8_t *isis_snmp_find_isadj(struct variable *v, oid *name,
 		 * It seems that we want remaining timer
 		 */
 		if (adj->last_upd != 0) {
-			val = time(NULL);
+			val = isis_snmp_time();
 			if (val < (adj->last_upd + adj->hold_time))
 				return SNMP_INTEGER(adj->last_upd
 						    + adj->hold_time - val);
@@ -2587,7 +2594,7 @@ static uint8_t *isis_snmp_find_isadj(struct variable *v, oid *name,
 
 		up_ticks = (uint32_t)netsnmp_get_agent_uptime();
 
-		now_time = time(NULL);
+		now_time = isis_snmp_time();
 
 		if (adj->last_flap >= now_time)
 			return SNMP_INTEGER(up_ticks);
@@ -2846,7 +2853,7 @@ static int isis_snmp_trap_throttle(oid trap_id)
 	if (isis == NULL || !isis->snmp_notifications || !smux_enabled())
 		return 0;
 
-	time_now = time(NULL);
+	time_now = isis_snmp_time();
 
 	if ((isis_snmp_trap_timestamp[trap_id] + 5) > time_now)
 		/* Throttle trap rate at 1 in 5 secs */

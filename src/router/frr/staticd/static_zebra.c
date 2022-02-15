@@ -261,10 +261,9 @@ static void static_nht_hash_free(void *data)
 	XFREE(MTYPE_TMP, nhtd);
 }
 
-void static_zebra_nht_register(struct static_nexthop *nh, bool reg)
+void static_zebra_nht_register(struct route_node *rn, struct static_nexthop *nh,
+			       bool reg)
 {
-	struct static_path *pn = nh->pn;
-	struct route_node *rn = pn->rn;
 	struct static_nht_data *nhtd, lookup;
 	uint32_t cmd;
 	struct prefix p;
@@ -340,10 +339,8 @@ void static_zebra_nht_register(struct static_nexthop *nh, bool reg)
  * When nexthop gets updated via configuration then use the
  * already registered NH and resend the route to zebra
  */
-int static_zebra_nh_update(struct static_nexthop *nh)
+int static_zebra_nh_update(struct route_node *rn, struct static_nexthop *nh)
 {
-	struct static_path *pn = nh->pn;
-	struct route_node *rn = pn->rn;
 	struct static_nht_data *nhtd, lookup = {};
 	struct prefix p = {};
 	afi_t afi = AFI_IP;
@@ -384,23 +381,25 @@ int static_zebra_nh_update(struct static_nexthop *nh)
 	return 0;
 }
 
-extern void static_zebra_route_add(struct static_path *pn, bool install)
+extern void static_zebra_route_add(struct route_node *rn,
+				   struct static_path *pn, safi_t safi,
+				   bool install)
 {
-	struct route_node *rn = pn->rn;
-	struct static_route_info *si = rn->info;
 	struct static_nexthop *nh;
 	const struct prefix *p, *src_pp;
 	struct zapi_nexthop *api_nh;
 	struct zapi_route api;
 	uint32_t nh_num = 0;
+	struct stable_info *info;
 
 	p = src_pp = NULL;
 	srcdest_rnode_prefixes(rn, &p, &src_pp);
 
 	memset(&api, 0, sizeof(api));
-	api.vrf_id = si->svrf->vrf->vrf_id;
+	info = static_get_stable_info(rn);
+	api.vrf_id = GET_STABLE_VRF_ID(info);
 	api.type = ZEBRA_ROUTE_STATIC;
-	api.safi = si->safi;
+	api.safi = safi;
 	memcpy(&api.prefix, p, sizeof(api.prefix));
 
 	if (src_pp) {
@@ -528,16 +527,6 @@ void static_zebra_init(void)
 	static_nht_hash = hash_create(static_nht_hash_key,
 				      static_nht_hash_cmp,
 				      "Static Nexthop Tracking hash");
-}
-
-/* static_zebra_stop used by tests/lib/test_grpc.cpp */
-void static_zebra_stop(void)
-{
-	if (!zclient)
-		return;
-	zclient_stop(zclient);
-	zclient_free(zclient);
-	zclient = NULL;
 }
 
 void static_zebra_vrf_register(struct vrf *vrf)

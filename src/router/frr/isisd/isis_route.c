@@ -221,11 +221,11 @@ isis_route_info_new(struct prefix *prefix, struct prefix_ipv6 *src_p,
 		/* update neighbor router address */
 		switch (prefix->family) {
 		case AF_INET:
-			if (depth == 2 && prefix->prefixlen == IPV4_MAX_BITLEN)
+			if (depth == 2 && prefix->prefixlen == 32)
 				adj->router_address = prefix->u.prefix4;
 			break;
 		case AF_INET6:
-			if (depth == 2 && prefix->prefixlen == IPV6_MAX_BITLEN
+			if (depth == 2 && prefix->prefixlen == 128
 			    && (!src_p || !src_p->prefixlen)) {
 				adj->router_address6 = prefix->u.prefix6;
 			}

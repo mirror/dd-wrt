@@ -232,7 +232,7 @@ void bgp_update_restarted_peers(struct peer *peer)
 	if (bgp_debug_neighbor_events(peer))
 		zlog_debug("Peer %s: Checking restarted", peer->host);
 
-	if (peer_established(peer)) {
+	if (peer->status == Established) {
 		peer->update_delay_over = 1;
 		peer->bgp->restarted_peers++;
 		bgp_check_update_delay(peer->bgp);
@@ -255,7 +255,7 @@ void bgp_update_implicit_eors(struct peer *peer)
 	if (bgp_debug_neighbor_events(peer))
 		zlog_debug("Peer %s: Checking implicit EORs", peer->host);
 
-	if (peer_established(peer)) {
+	if (peer->status == Established) {
 		peer->update_delay_over = 1;
 		peer->bgp->implicit_eors++;
 		bgp_check_update_delay(peer->bgp);
@@ -337,13 +337,11 @@ static void bgp_write_proceed_actions(struct peer *peer)
 	struct peer_af *paf;
 	struct bpacket *next_pkt;
 	struct update_subgroup *subgrp;
-	enum bgp_af_index index;
 
-	for (index = BGP_AF_START; index < BGP_AF_MAX; index++) {
-		paf = peer->peer_af_array[index];
+	FOREACH_AFI_SAFI (afi, safi) {
+		paf = peer_af_find(peer, afi, safi);
 		if (!paf)
 			continue;
-
 		subgrp = paf->subgroup;
 		if (!subgrp)
 			continue;
@@ -365,9 +363,6 @@ static void bgp_write_proceed_actions(struct peer *peer)
 				     bgp_generate_updgrp_packets, 0);
 			return;
 		}
-
-		afi = paf->afi;
-		safi = paf->safi;
 
 		/* No packets to send, see if EOR is pending */
 		if (CHECK_FLAG(peer->cap, PEER_CAP_RESTART_RCV)) {
@@ -409,7 +404,7 @@ int bgp_generate_updgrp_packets(struct thread *thread)
 	 * if peer is Established and updates are not on hold (as part of
 	 * update-delay processing).
 	 */
-	if (!peer_established(peer))
+	if (peer->status != Established)
 		return 0;
 
 	if ((peer->bgp->main_peers_update_hold)
@@ -420,16 +415,11 @@ int bgp_generate_updgrp_packets(struct thread *thread)
 		return 0;
 
 	do {
-		enum bgp_af_index index;
-
 		s = NULL;
-		for (index = BGP_AF_START; index < BGP_AF_MAX; index++) {
-			paf = peer->peer_af_array[index];
+		FOREACH_AFI_SAFI (afi, safi) {
+			paf = peer_af_find(peer, afi, safi);
 			if (!paf || !PAF_SUBGRP(paf))
 				continue;
-
-			afi = paf->afi;
-			safi = paf->safi;
 			next_pkt = paf->next_pkt_to_send;
 
 			/*
@@ -1029,7 +1019,7 @@ static int bgp_collision_detect(struct peer *new, struct in_addr remote_id)
 	 * states. Note that a peer GR is handled by closing the existing
 	 * connection upon receipt of new one.
 	 */
-	if (peer_established(peer) || peer->status == Clearing) {
+	if (peer->status == Established || peer->status == Clearing) {
 		bgp_notify_send(new, BGP_NOTIFY_CEASE,
 				BGP_NOTIFY_CEASE_COLLISION_RESOLUTION);
 		return -1;
@@ -1363,16 +1353,6 @@ static int bgp_open_receive(struct peer *peer, bgp_size_t size)
 		return BGP_Stop;
 	}
 
-	/* Send notification message when Hold Time received in the OPEN message
-	 * is smaller than configured minimum Hold Time. */
-	if (holdtime < peer->bgp->default_min_holdtime
-	    && peer->bgp->default_min_holdtime != 0) {
-		bgp_notify_send_with_data(peer, BGP_NOTIFY_OPEN_ERR,
-					  BGP_NOTIFY_OPEN_UNACEP_HOLDTIME,
-					  (uint8_t *)holdtime_ptr, 2);
-		return BGP_Stop;
-	}
-
 	/* From the rfc: A reasonable maximum time between KEEPALIVE messages
 	   would be one third of the Hold Time interval.  KEEPALIVE messages
 	   MUST NOT be sent more frequently than one per second.  An
@@ -1562,7 +1542,7 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 	struct bgp_nlri nlris[NLRI_TYPE_MAX];
 
 	/* Status must be Established. */
-	if (!peer_established(peer)) {
+	if (peer->status != Established) {
 		flog_err(EC_BGP_INVALID_STATUS,
 			 "%s [FSM] Update packet received under status %s",
 			 peer->host,
@@ -1752,7 +1732,7 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 		    && nlri_ret != BGP_NLRI_PARSE_ERROR_PREFIX_OVERFLOW) {
 			flog_err(EC_BGP_UPDATE_RCV,
 				 "%s [Error] Error parsing NLRI", peer->host);
-			if (peer_established(peer))
+			if (peer->status == Established)
 				bgp_notify_send(
 					peer, BGP_NOTIFY_UPDATE_ERR,
 					i <= NLRI_WITHDRAW
@@ -1975,7 +1955,7 @@ static int bgp_route_refresh_receive(struct peer *peer, bgp_size_t size)
 	}
 
 	/* Status must be Established. */
-	if (!peer_established(peer)) {
+	if (peer->status != Established) {
 		flog_err(
 			EC_BGP_INVALID_STATUS,
 			"%s [Error] Route refresh packet received under status %s",
@@ -2278,7 +2258,7 @@ static int bgp_route_refresh_receive(struct peer *peer, bgp_size_t size)
 			bgp_set_stale_route(peer, afi, safi);
 		}
 
-		if (peer_established(peer))
+		if (peer->status == Established)
 			thread_add_timer(bm->master,
 					 bgp_refresh_stalepath_timer_expire,
 					 paf, peer->bgp->stalepath_time,
@@ -2510,7 +2490,7 @@ int bgp_capability_receive(struct peer *peer, bgp_size_t size)
 	}
 
 	/* Status must be Established. */
-	if (!peer_established(peer)) {
+	if (peer->status != Established) {
 		flog_err(
 			EC_BGP_NO_CAP,
 			"%s [Error] Dynamic capability packet received under status %s",
@@ -2728,10 +2708,10 @@ int bgp_packet_process_error(struct thread *thread)
 
 	if (bgp_debug_neighbor_events(peer))
 		zlog_debug("%s [Event] BGP error %d on fd %d",
-			   peer->host, code, peer->fd);
+			   peer->host, peer->fd, code);
 
 	/* Closed connection or error on the socket */
-	if (peer_established(peer)) {
+	if (peer->status == Established) {
 		if ((CHECK_FLAG(peer->flags, PEER_FLAG_GRACEFUL_RESTART)
 		     || CHECK_FLAG(peer->flags,
 				   PEER_FLAG_GRACEFUL_RESTART_HELPER))

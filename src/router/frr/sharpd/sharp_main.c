@@ -140,7 +140,6 @@ static void sharp_global_init(void)
 	memset(&sg, 0, sizeof(sg));
 	sg.nhs = list_new();
 	sg.ted = NULL;
-	sg.srv6_locators = list_new();
 }
 
 static void sharp_start_configuration(void)
@@ -171,6 +170,7 @@ int main(int argc, char **argv, char **envp)
 			break;
 		default:
 			frr_help_exit(1);
+			break;
 		}
 	}
 
