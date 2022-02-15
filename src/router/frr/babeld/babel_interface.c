@@ -59,6 +59,15 @@ static void babel_interface_free (babel_interface_nfo *bi);
 
 
 static vector babel_enable_if;                 /* enable interfaces (by cmd). */
+static int interface_config_write(struct vty *vty);
+static struct cmd_node babel_interface_node = {
+    .name = "interface",
+    .node = INTERFACE_NODE,
+    .parent_node = CONFIG_NODE,
+    .prompt = "%s(config-if)# ",
+    .config_write = interface_config_write,
+};
+
 
 int
 babel_interface_up (ZAPI_CALLBACK_ARGS)
@@ -168,11 +177,10 @@ babel_interface_address_delete (ZAPI_CALLBACK_ARGS)
     if (prefix->family == AF_INET) {
         flush_interface_routes(ifc->ifp, 0);
         babel_ifp = babel_get_if_nfo(ifc->ifp);
-	if (babel_ifp->ipv4 != NULL
-	    && memcmp(babel_ifp->ipv4, &prefix->u.prefix4, IPV4_MAX_BYTELEN)
-		       == 0) {
-		free(babel_ifp->ipv4);
-		babel_ifp->ipv4 = NULL;
+        if (babel_ifp->ipv4 != NULL
+            && memcmp(babel_ifp->ipv4, &prefix->u.prefix4, 4) == 0) {
+            free(babel_ifp->ipv4);
+            babel_ifp->ipv4 = NULL;
         }
     }
 
@@ -817,11 +825,9 @@ is_interface_ll_address(struct interface *ifp, const unsigned char *address)
         return 0;
 
     FOR_ALL_INTERFACES_ADDRESSES(ifp, connected, node) {
-	    if (connected->address->family == AF_INET6
-		&& memcmp(&connected->address->u.prefix6, address,
-			  IPV6_MAX_BYTELEN)
-			   == 0)
-		    return 1;
+        if(connected->address->family == AF_INET6 &&
+           memcmp(&connected->address->u.prefix6, address, 16) == 0)
+            return 1;
     }
 
     return 0;
@@ -935,13 +941,13 @@ static int
 babel_prefix_eq(struct prefix *prefix, unsigned char *p, int plen)
 {
     if(prefix->family == AF_INET6) {
-	    if (prefix->prefixlen != plen
-		|| memcmp(&prefix->u.prefix6, p, IPV6_MAX_BYTELEN) != 0)
-		    return 0;
+        if(prefix->prefixlen != plen ||
+           memcmp(&prefix->u.prefix6, p, 16) != 0)
+            return 0;
     } else if(prefix->family == AF_INET) {
-	    if (plen < 96 || !v4mapped(p) || prefix->prefixlen != plen - 96
-		|| memcmp(&prefix->u.prefix4, p + 12, IPV4_MAX_BYTELEN) != 0)
-		    return 0;
+        if(plen < 96 || !v4mapped(p) || prefix->prefixlen != plen - 96 ||
+           memcmp(&prefix->u.prefix4, p + 12, 4) != 0)
+            return 0;
     } else {
         return 0;
     }
@@ -953,35 +959,31 @@ static void
 show_babel_routes_sub(struct babel_route *route, struct vty *vty,
                       struct prefix *prefix)
 {
-	const unsigned char *nexthop =
-		memcmp(route->nexthop, route->neigh->address, IPV6_MAX_BYTELEN)
-				== 0
-			? NULL
-			: route->nexthop;
-	char channels[100];
+    const unsigned char *nexthop =
+        memcmp(route->nexthop, route->neigh->address, 16) == 0 ?
+        NULL : route->nexthop;
+    char channels[100];
 
-	if (prefix
-	    && !babel_prefix_eq(prefix, route->src->prefix, route->src->plen))
-		return;
+    if(prefix && !babel_prefix_eq(prefix, route->src->prefix, route->src->plen))
+        return;
 
-	if (route->channels[0] == 0)
-		channels[0] = '\0';
-	else {
-		int k, j = 0;
-		snprintf(channels, sizeof(channels), " chan (");
-		j = strlen(channels);
-		for (k = 0; k < DIVERSITY_HOPS; k++) {
-			if (route->channels[k] == 0)
-				break;
-			if (k > 0)
-				channels[j++] = ',';
-			snprintf(channels + j, 100 - j, "%u",
-				 route->channels[k]);
-			j = strlen(channels);
-		}
-		snprintf(channels + j, 100 - j, ")");
-		if (k == 0)
-			channels[0] = '\0';
+    if(route->channels[0] == 0)
+        channels[0] = '\0';
+    else {
+        int k, j = 0;
+        snprintf(channels, sizeof(channels), " chan (");
+        j = strlen(channels);
+        for(k = 0; k < DIVERSITY_HOPS; k++) {
+            if(route->channels[k] == 0)
+                break;
+            if(k > 0)
+                channels[j++] = ',';
+            snprintf(channels + j, 100 - j, "%u", route->channels[k]);
+            j = strlen(channels);
+        }
+        snprintf(channels + j, 100 - j, ")");
+        if(k == 0)
+            channels[0] = '\0';
     }
 
     vty_out (vty,
@@ -1248,7 +1250,8 @@ babel_if_init(void)
     babel_enable_if = vector_init (1);
 
     /* install interface node and commands */
-    if_cmd_init(interface_config_write);
+    install_node(&babel_interface_node);
+    if_cmd_init();
 
     install_element(BABEL_NODE, &babel_network_cmd);
     install_element(BABEL_NODE, &no_babel_network_cmd);
@@ -1362,7 +1365,7 @@ interface_config_write (struct vty *vty)
                 write++;
             }
         }
-        vty_endframe (vty, "exit\n!\n");
+        vty_endframe (vty, "!\n");
         write++;
     }
     return write;

@@ -31,6 +31,7 @@
  * absolute end.
  */
 
+DECLARE_MGROUP(LOG);
 DEFINE_MGROUP_ACTIVEATEXIT(LOG, "logging subsystem");
 
 DEFINE_MTYPE_STATIC(LOG, LOG_FD,        "log file target");
@@ -78,17 +79,13 @@ void zlog_fd(struct zlog_target *zt, struct zlog_msg *msgs[], size_t nmsgs)
 		int prio = zlog_msg_prio(msg);
 
 		if (prio <= zt->prio_min) {
-			struct fbuf fbuf = {
-				.buf = ts_buf,
-				.pos = ts_pos,
-				.len = sizeof(ts_buf),
-			};
-
 			iov[iovpos].iov_base = ts_pos;
-			zlog_msg_ts(msg, &fbuf,
-				    ZLOG_TS_LEGACY | zte->ts_subsec);
-			ts_pos = fbuf.pos;
-
+			if (iovpos > 0)
+				*ts_pos++ = '\n';
+			ts_pos += zlog_msg_ts(msg, ts_pos,
+					      sizeof(ts_buf) - 1
+						      - (ts_pos - ts_buf),
+					      ZLOG_TS_LEGACY | zte->ts_subsec);
 			*ts_pos++ = ' ';
 			iov[iovpos].iov_len =
 				ts_pos - (char *)iov[iovpos].iov_base;
@@ -110,7 +107,7 @@ void zlog_fd(struct zlog_target *zt, struct zlog_msg *msgs[], size_t nmsgs)
 
 			iov[iovpos].iov_base =
 				(char *)zlog_msg_text(msg, &textlen);
-			iov[iovpos].iov_len = textlen + 1;
+			iov[iovpos].iov_len = textlen;
 
 			iovpos++;
 		}
@@ -123,6 +120,11 @@ void zlog_fd(struct zlog_target *zt, struct zlog_msg *msgs[], size_t nmsgs)
 		if (iovpos > 0 && (ts_buf + sizeof(ts_buf) - ts_pos < TS_LEN
 				   || i + 1 == nmsgs
 				   || array_size(iov) - iovpos < 5)) {
+			iov[iovpos].iov_base = (char *)"\n";
+			iov[iovpos].iov_len = 1;
+
+			iovpos++;
+
 			writev(fd, iov, iovpos);
 
 			iovpos = 0;
@@ -437,16 +439,13 @@ static void zlog_syslog(struct zlog_target *zt, struct zlog_msg *msgs[],
 {
 	size_t i;
 	struct zlt_syslog *zte = container_of(zt, struct zlt_syslog, zt);
-	const char *text;
-	size_t text_len;
 
 	for (i = 0; i < nmsgs; i++) {
 		if (zlog_msg_prio(msgs[i]) > zt->prio_min)
 			continue;
 
-		text = zlog_msg_text(msgs[i], &text_len);
-		syslog(zlog_msg_prio(msgs[i]) | zte->syslog_facility, "%.*s",
-		       (int)text_len, text);
+		syslog(zlog_msg_prio(msgs[i]) | zte->syslog_facility, "%s",
+		       zlog_msg_text(msgs[i], NULL));
 	}
 }
 

@@ -94,9 +94,10 @@ static void ldp_load_module(const char *name)
 {
 	const char *dir;
 	dir = ldpd_di.module_path ? ldpd_di.module_path : frr_moduledir;
+	char moderr[256];
 	struct frrmod_runtime *module;
 
-	module = frrmod_load(name, dir, NULL,NULL);
+	module = frrmod_load(name, dir, moderr, sizeof(moderr));
 	if (!module) {
 		fprintf(stderr, "%s: failed to load %s", __func__, name);
 		log_warnx("%s: failed to load %s", __func__, name);
@@ -303,6 +304,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			frr_help_exit(1);
+			break;
 		}
 	}
 

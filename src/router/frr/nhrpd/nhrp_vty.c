@@ -26,6 +26,15 @@ static struct cmd_node zebra_node = {
 	.config_write = nhrp_config_write,
 };
 
+static int interface_config_write(struct vty *vty);
+static struct cmd_node nhrp_interface_node = {
+	.name = "interface",
+	.node = INTERFACE_NODE,
+	.parent_node = CONFIG_NODE,
+	.prompt = "%s(config-if)# ",
+	.config_write = interface_config_write,
+};
+
 #define NHRP_DEBUG_FLAGS_CMD "<all|common|event|interface|kernel|route|vici>"
 
 #define NHRP_DEBUG_FLAGS_STR                                                   \
@@ -835,7 +844,6 @@ static void show_ip_nhrp_shortcut(struct nhrp_shortcut *s, void *pctx)
 	ctx->count++;
 
 	c = s->cache;
-	buf2[0] = '\0';
 	if (c)
 		sockunion2str(&c->remote_addr, buf2, sizeof(buf2));
 	prefix2str(s->p, buf1, sizeof(buf1));
@@ -1067,8 +1075,7 @@ static void clear_nhrp_cache(struct nhrp_cache *c, void *data)
 	if (c->cur.type <= NHRP_CACHE_DYNAMIC) {
 		nhrp_cache_update_binding(c, c->cur.type, -1, NULL, 0, NULL,
 					  NULL);
-		if (ctx)
-			ctx->count++;
+		ctx->count++;
 	}
 }
 
@@ -1098,12 +1105,6 @@ DEFUN(clear_nhrp, clear_nhrp_cmd,
 			nhrp_cache_foreach(ifp, clear_nhrp_cache, &ctx);
 	} else {
 		nhrp_shortcut_foreach(ctx.afi, clear_nhrp_shortcut, &ctx);
-		/* Clear cache also because when a shortcut is cleared then its
-		 * cache entry should be cleared as well (otherwise traffic
-		 * continues via the shortcut path)
-		 */
-		FOR_ALL_INTERFACES (vrf, ifp)
-			nhrp_cache_foreach(ifp, clear_nhrp_cache, NULL);
 	}
 
 	if (!ctx.count) {
@@ -1225,7 +1226,7 @@ static int interface_config_write(struct vty *vty)
 			}
 		}
 
-		vty_endframe(vty, "exit\n!\n");
+		vty_endframe(vty, "!\n");
 	}
 
 	return 0;
@@ -1259,10 +1260,12 @@ void nhrp_config_init(void)
 	install_element(CONFIG_NODE, &nhrp_multicast_nflog_group_cmd);
 	install_element(CONFIG_NODE, &no_nhrp_multicast_nflog_group_cmd);
 
-	vrf_cmd_init(NULL);
+	vrf_cmd_init(NULL, &nhrpd_privs);
 
 	/* interface specific commands */
-	if_cmd_init(interface_config_write);
+	install_node(&nhrp_interface_node);
+
+	if_cmd_init();
 	install_element(INTERFACE_NODE, &tunnel_protection_cmd);
 	install_element(INTERFACE_NODE, &no_tunnel_protection_cmd);
 	install_element(INTERFACE_NODE, &tunnel_source_cmd);

@@ -58,11 +58,12 @@
  * Returns -1 on failure, 0 when the msg doesn't fit entirely in the buffer
  * or the number of bytes written to buf.
  */
-static ssize_t netlink_rule_msg_encode(
-	int cmd, const struct zebra_dplane_ctx *ctx, uint32_t filter_bm,
-	uint32_t priority, uint32_t table, const struct prefix *src_ip,
-	const struct prefix *dst_ip, uint32_t fwmark, uint8_t dsfield,
-	uint8_t ip_protocol, void *buf, size_t buflen)
+static ssize_t
+netlink_rule_msg_encode(int cmd, const struct zebra_dplane_ctx *ctx,
+			uint32_t filter_bm, uint32_t priority, uint32_t table,
+			const struct prefix *src_ip,
+			const struct prefix *dst_ip, uint32_t fwmark,
+			uint8_t dsfield, void *buf, size_t buflen)
 {
 	uint8_t protocol = RTPROT_ZEBRA;
 	int family;
@@ -135,10 +136,6 @@ static ssize_t netlink_rule_msg_encode(
 	if (filter_bm & PBR_FILTER_DSFIELD)
 		req->frh.tos = dsfield;
 
-	/* protocol to match on */
-	if (filter_bm & PBR_FILTER_IP_PROTOCOL)
-		nl_attr_put8(&req->n, buflen, FRA_IP_PROTO, ip_protocol);
-
 	/* Route table to use to forward, if filter criteria matches. */
 	if (table < 256)
 		req->frh.table = table;
@@ -171,8 +168,7 @@ static ssize_t netlink_rule_msg_encoder(struct zebra_dplane_ctx *ctx, void *buf,
 		dplane_ctx_rule_get_table(ctx), dplane_ctx_rule_get_src_ip(ctx),
 		dplane_ctx_rule_get_dst_ip(ctx),
 		dplane_ctx_rule_get_fwmark(ctx),
-		dplane_ctx_rule_get_dsfield(ctx),
-		dplane_ctx_rule_get_ipproto(ctx), buf, buflen);
+		dplane_ctx_rule_get_dsfield(ctx), buf, buflen);
 }
 
 static ssize_t netlink_oldrule_msg_encoder(struct zebra_dplane_ctx *ctx,
@@ -185,8 +181,7 @@ static ssize_t netlink_oldrule_msg_encoder(struct zebra_dplane_ctx *ctx,
 		dplane_ctx_rule_get_old_src_ip(ctx),
 		dplane_ctx_rule_get_old_dst_ip(ctx),
 		dplane_ctx_rule_get_old_fwmark(ctx),
-		dplane_ctx_rule_get_old_dsfield(ctx),
-		dplane_ctx_rule_get_old_ipproto(ctx), buf, buflen);
+		dplane_ctx_rule_get_old_dsfield(ctx), buf, buflen);
 }
 
 /* Public functions */
@@ -241,7 +236,6 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 	char *ifname;
 	struct zebra_pbr_rule rule = {};
 	uint8_t proto = 0;
-	uint8_t ip_proto = 0;
 
 	/* Basic validation followed by extracting attributes. */
 	if (h->nlmsg_type != RTM_NEWRULE && h->nlmsg_type != RTM_DELRULE)
@@ -318,9 +312,6 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 	if (tb[FRA_PROTOCOL])
 		proto = *(uint8_t *)RTA_DATA(tb[FRA_PROTOCOL]);
 
-	if (tb[FRA_IP_PROTO])
-		ip_proto = *(uint8_t *)RTA_DATA(tb[FRA_IP_PROTO]);
-
 	ifname = (char *)RTA_DATA(tb[FRA_IFNAME]);
 	strlcpy(rule.ifname, ifname, sizeof(rule.ifname));
 
@@ -335,7 +326,7 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 			ret = dplane_pbr_rule_delete(&rule);
 
 			zlog_debug(
-				"%s: %s leftover rule: family %s IF %s Pref %u Src %pFX Dst %pFX Table %u ip-proto: %u",
+				"%s: %s leftover rule: family %s IF %s Pref %u Src %pFX Dst %pFX Table %u",
 				__func__,
 				((ret == ZEBRA_DPLANE_REQUEST_FAILURE)
 					 ? "Failed to remove"
@@ -343,7 +334,7 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 				nl_family_to_str(frh->family), rule.ifname,
 				rule.rule.priority, &rule.rule.filter.src_ip,
 				&rule.rule.filter.dst_ip,
-				rule.rule.action.table, ip_proto);
+				rule.rule.action.table);
 		}
 
 		/* TBD */
@@ -358,12 +349,11 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 
 	if (IS_ZEBRA_DEBUG_KERNEL)
 		zlog_debug(
-			"Rx %s family %s IF %s Pref %u Src %pFX Dst %pFX Table %u ip-proto: %u",
+			"Rx %s family %s IF %s Pref %u Src %pFX Dst %pFX Table %u",
 			nl_msg_type_to_str(h->nlmsg_type),
 			nl_family_to_str(frh->family), rule.ifname,
 			rule.rule.priority, &rule.rule.filter.src_ip,
-			&rule.rule.filter.dst_ip, rule.rule.action.table,
-			ip_proto);
+			&rule.rule.filter.dst_ip, rule.rule.action.table);
 
 	return kernel_pbr_rule_del(&rule);
 }

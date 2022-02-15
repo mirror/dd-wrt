@@ -49,9 +49,9 @@ bgp_check_rmap_prefixes_in_bgp_table(struct bgp_table *table,
 			RESET_FLAG(dummy_attr.rmap_change_flags);
 
 			ret = route_map_apply(rmap, dest_p, &path);
-			bgp_attr_flush(&dummy_attr);
-
-			if (ret == RMAP_PERMITMATCH) {
+			if (ret != RMAP_PERMITMATCH)
+				bgp_attr_flush(&dummy_attr);
+			else {
 				bgp_dest_unlock_node(dest);
 				if (BGP_DEBUG(update, UPDATE_OUT))
 					zlog_debug(
@@ -84,7 +84,6 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 	struct update_subgroup *subgrp;
 	struct attr dummy_attr = {0}, attr = {0};
 	struct bgp_path_info_extra path_extra = {0};
-	route_map_result_t ret;
 
 	paf = peer_af_find(peer, afi, safi);
 	if (!paf)
@@ -115,11 +114,11 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 
 			RESET_FLAG(dummy_attr.rmap_change_flags);
 
-			ret = route_map_apply(rmap, dest_p, &path);
-			bgp_attr_flush(&dummy_attr);
-
-			if (ret != RMAP_PERMITMATCH)
+			if (route_map_apply(rmap, dest_p, &path)
+			    != RMAP_PERMITMATCH) {
+				bgp_attr_flush(&dummy_attr);
 				continue;
+			}
 
 			if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED)
 			    || (addpath_capable
@@ -185,7 +184,7 @@ static int bgp_conditional_adv_timer(struct thread *t)
 	assert(bgp);
 
 	thread_add_timer(bm->master, bgp_conditional_adv_timer, bgp,
-			 bgp->condition_check_period, &bgp->t_condition_check);
+			 CONDITIONAL_ROUTES_POLL_TIME, &bgp->t_condition_check);
 
 	/* loop through each peer and advertise or withdraw routes if
 	 * advertise-map is configured and prefix(es) in condition-map
@@ -196,7 +195,7 @@ static int bgp_conditional_adv_timer(struct thread *t)
 		if (!CHECK_FLAG(peer->flags, PEER_FLAG_CONFIG_NODE))
 			continue;
 
-		if (!peer_established(peer))
+		if (peer->status != Established)
 			continue;
 
 		FOREACH_AFI_SAFI (afi, safi) {
@@ -316,7 +315,7 @@ void bgp_conditional_adv_enable(struct peer *peer, afi_t afi, safi_t safi)
 
 	/* Register for conditional routes polling timer */
 	thread_add_timer(bm->master, bgp_conditional_adv_timer, bgp,
-			 bgp->condition_check_period, &bgp->t_condition_check);
+			 CONDITIONAL_ROUTES_POLL_TIME, &bgp->t_condition_check);
 }
 
 void bgp_conditional_adv_disable(struct peer *peer, afi_t afi, safi_t safi)

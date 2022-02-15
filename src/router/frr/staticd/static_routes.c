@@ -98,24 +98,26 @@ void zebra_stable_node_cleanup(struct route_table *table,
 }
 
 /* Install static path into rib. */
-void static_install_path(struct static_path *pn)
+void static_install_path(struct route_node *rn, struct static_path *pn,
+			 safi_t safi, struct static_vrf *svrf)
 {
 	struct static_nexthop *nh;
 
 	frr_each(static_nexthop_list, &pn->nexthop_list, nh)
-		static_zebra_nht_register(nh, true);
+		static_zebra_nht_register(rn, nh, true);
 
-	if (static_nexthop_list_count(&pn->nexthop_list))
-		static_zebra_route_add(pn, true);
+	if (static_nexthop_list_count(&pn->nexthop_list) && svrf && svrf->vrf)
+		static_zebra_route_add(rn, pn, safi, true);
 }
 
 /* Uninstall static path from RIB. */
-static void static_uninstall_path(struct static_path *pn)
+static void static_uninstall_path(struct route_node *rn, struct static_path *pn,
+				  safi_t safi, struct static_vrf *svrf)
 {
 	if (static_nexthop_list_count(&pn->nexthop_list))
-		static_zebra_route_add(pn, true);
+		static_zebra_route_add(rn, pn, safi, true);
 	else
-		static_zebra_route_add(pn, false);
+		static_zebra_route_add(rn, pn, safi, false);
 }
 
 struct route_node *static_add_route(afi_t afi, safi_t safi, struct prefix *p,
@@ -126,16 +128,14 @@ struct route_node *static_add_route(afi_t afi, safi_t safi, struct prefix *p,
 	struct static_route_info *si;
 	struct route_table *stable = svrf->stable[afi][safi];
 
-	assert(stable);
+	if (!stable)
+		return NULL;
 
 	/* Lookup static route prefix. */
 	rn = srcdest_rnode_get(stable, p, src_p);
 
 	si = XCALLOC(MTYPE_STATIC_ROUTE, sizeof(struct static_route_info));
-
-	si->svrf = svrf;
-	si->safi = safi;
-	static_path_list_init(&(si->path_list));
+	static_route_info_init(si);
 
 	rn->info = si;
 
@@ -143,7 +143,8 @@ struct route_node *static_add_route(afi_t afi, safi_t safi, struct prefix *p,
 }
 
 /* To delete the srcnodes */
-static void static_del_src_route(struct route_node *rn)
+static void static_del_src_route(struct route_node *rn, safi_t safi,
+				 struct static_vrf *svrf)
 {
 	struct static_path *pn;
 	struct static_route_info *si;
@@ -151,14 +152,15 @@ static void static_del_src_route(struct route_node *rn)
 	si = rn->info;
 
 	frr_each_safe(static_path_list, &si->path_list, pn) {
-		static_del_path(pn);
+		static_del_path(rn, pn, safi, svrf);
 	}
 
 	XFREE(MTYPE_STATIC_ROUTE, rn->info);
 	route_unlock_node(rn);
 }
 
-void static_del_route(struct route_node *rn)
+void static_del_route(struct route_node *rn, safi_t safi,
+		      struct static_vrf *svrf)
 {
 	struct static_path *pn;
 	struct static_route_info *si;
@@ -168,7 +170,7 @@ void static_del_route(struct route_node *rn)
 	si = rn->info;
 
 	frr_each_safe(static_path_list, &si->path_list, pn) {
-		static_del_path(pn);
+		static_del_path(rn, pn, safi, svrf);
 	}
 
 	/* clean up for dst table */
@@ -179,15 +181,14 @@ void static_del_route(struct route_node *rn)
 		 */
 		for (src_node = route_top(src_table); src_node;
 		     src_node = route_next(src_node)) {
-			static_del_src_route(src_node);
+			static_del_src_route(src_node, safi, svrf);
 		}
 	}
 	XFREE(MTYPE_STATIC_ROUTE, rn->info);
 	route_unlock_node(rn);
 }
 
-bool static_add_nexthop_validate(const char *nh_vrf_name,
-				 enum static_nh_type type,
+bool static_add_nexthop_validate(const char *nh_vrf_name, static_types type,
 				 struct ipaddr *ipaddr)
 {
 	struct vrf *vrf;
@@ -227,7 +228,6 @@ struct static_path *static_add_path(struct route_node *rn, uint32_t table_id,
 	/* Make new static route structure. */
 	pn = XCALLOC(MTYPE_STATIC_PATH, sizeof(struct static_path));
 
-	pn->rn = rn;
 	pn->distance = distance;
 	pn->table_id = table_id;
 	static_nexthop_list_init(&(pn->nexthop_list));
@@ -238,9 +238,9 @@ struct static_path *static_add_path(struct route_node *rn, uint32_t table_id,
 	return pn;
 }
 
-void static_del_path(struct static_path *pn)
+void static_del_path(struct route_node *rn, struct static_path *pn, safi_t safi,
+		     struct static_vrf *svrf)
 {
-	struct route_node *rn = pn->rn;
 	struct static_route_info *si;
 	struct static_nexthop *nh;
 
@@ -249,7 +249,7 @@ void static_del_path(struct static_path *pn)
 	static_path_list_del(&si->path_list, pn);
 
 	frr_each_safe(static_nexthop_list, &pn->nexthop_list, nh) {
-		static_delete_nexthop(nh);
+		static_delete_nexthop(rn, pn, safi, svrf, nh);
 	}
 
 	route_unlock_node(rn);
@@ -257,13 +257,12 @@ void static_del_path(struct static_path *pn)
 	XFREE(MTYPE_STATIC_PATH, pn);
 }
 
-struct static_nexthop *static_add_nexthop(struct static_path *pn,
-					  enum static_nh_type type,
-					  struct ipaddr *ipaddr,
-					  const char *ifname,
-					  const char *nh_vrf, uint32_t color)
+struct static_nexthop *
+static_add_nexthop(struct route_node *rn, struct static_path *pn, safi_t safi,
+		   struct static_vrf *svrf, static_types type,
+		   struct ipaddr *ipaddr, const char *ifname,
+		   const char *nh_vrf, uint32_t color)
 {
-	struct route_node *rn = pn->rn;
 	struct static_nexthop *nh;
 	struct static_vrf *nh_svrf;
 	struct interface *ifp;
@@ -275,8 +274,6 @@ struct static_nexthop *static_add_nexthop(struct static_path *pn,
 
 	/* Make new static route structure. */
 	nh = XCALLOC(MTYPE_STATIC_NEXTHOP, sizeof(struct static_nexthop));
-
-	nh->pn = pn;
 
 	nh->type = type;
 	nh->color = color;
@@ -358,10 +355,11 @@ struct static_nexthop *static_add_nexthop(struct static_path *pn,
 	return nh;
 }
 
-void static_install_nexthop(struct static_nexthop *nh)
+void static_install_nexthop(struct route_node *rn, struct static_path *pn,
+			    struct static_nexthop *nh, safi_t safi,
+			    struct static_vrf *svrf, const char *ifname,
+			    static_types type, const char *nh_vrf)
 {
-	struct static_path *pn = nh->pn;
-	struct route_node *rn = pn->rn;
 	struct interface *ifp;
 
 	if (nh->nh_vrf_id == VRF_UNKNOWN) {
@@ -378,47 +376,48 @@ void static_install_nexthop(struct static_nexthop *nh)
 	switch (nh->type) {
 	case STATIC_IPV4_GATEWAY:
 	case STATIC_IPV6_GATEWAY:
-		if (!static_zebra_nh_update(nh))
-			static_zebra_nht_register(nh, true);
+		if (!static_zebra_nh_update(rn, nh))
+			static_zebra_nht_register(rn, nh, true);
 		break;
 	case STATIC_IPV4_GATEWAY_IFNAME:
 	case STATIC_IPV6_GATEWAY_IFNAME:
-		if (!static_zebra_nh_update(nh))
-			static_zebra_nht_register(nh, true);
+		if (!static_zebra_nh_update(rn, nh))
+			static_zebra_nht_register(rn, nh, true);
 		break;
 	case STATIC_BLACKHOLE:
-		static_install_path(pn);
+		static_install_path(rn, pn, safi, svrf);
 		break;
 	case STATIC_IFNAME:
-		ifp = if_lookup_by_name(nh->ifname, nh->nh_vrf_id);
+		ifp = if_lookup_by_name(ifname, nh->nh_vrf_id);
 		if (ifp && ifp->ifindex != IFINDEX_INTERNAL)
-			static_install_path(pn);
+			static_install_path(rn, pn, safi, svrf);
 
 		break;
 	}
 }
 
-void static_delete_nexthop(struct static_nexthop *nh)
+int static_delete_nexthop(struct route_node *rn, struct static_path *pn,
+			  safi_t safi, struct static_vrf *svrf,
+			  struct static_nexthop *nh)
 {
-	struct static_path *pn = nh->pn;
-	struct route_node *rn = pn->rn;
-
 	static_nexthop_list_del(&(pn->nexthop_list), nh);
 
 	if (nh->nh_vrf_id == VRF_UNKNOWN)
 		goto EXIT;
 
-	static_zebra_nht_register(nh, false);
+	static_zebra_nht_register(rn, nh, false);
 	/*
 	 * If we have other si nodes then route replace
 	 * else delete the route
 	 */
-	static_uninstall_path(pn);
+	static_uninstall_path(rn, pn, safi, svrf);
 
 EXIT:
 	route_unlock_node(rn);
 	/* Free static route configuration. */
 	XFREE(MTYPE_STATIC_NEXTHOP, nh);
+
+	return 1;
 }
 
 static void static_ifindex_update_nh(struct interface *ifp, bool up,
@@ -443,7 +442,7 @@ static void static_ifindex_update_nh(struct interface *ifp, bool up,
 		nh->ifindex = IFINDEX_INTERNAL;
 	}
 
-	static_install_path(pn);
+	static_install_path(rn, pn, safi, svrf);
 }
 
 static void static_ifindex_update_af(struct interface *ifp, bool up, afi_t afi,
@@ -522,7 +521,7 @@ static void static_fixup_vrf(struct static_vrf *svrf,
 						continue;
 				}
 
-				static_install_path(pn);
+				static_install_path(rn, pn, safi, svrf);
 			}
 		}
 	}
@@ -563,7 +562,7 @@ static void static_enable_vrf(struct static_vrf *svrf,
 				}
 				if (nh->nh_vrf_id == VRF_UNKNOWN)
 					continue;
-				static_install_path(pn);
+				static_install_path(rn, pn, safi, svrf);
 			}
 		}
 	}
@@ -630,7 +629,7 @@ static void static_cleanup_vrf(struct static_vrf *svrf,
 				    != 0)
 					continue;
 
-				static_uninstall_path(pn);
+				static_uninstall_path(rn, pn, safi, svrf);
 			}
 		}
 	}
@@ -650,7 +649,10 @@ static void static_disable_vrf(struct route_table *stable,
 	struct route_node *rn;
 	struct static_nexthop *nh;
 	struct static_path *pn;
+	struct stable_info *info;
 	struct static_route_info *si;
+
+	info = route_table_get_info(stable);
 
 	for (rn = route_top(stable); rn; rn = route_next(rn)) {
 		si = static_route_info_from_rnode(rn);
@@ -658,7 +660,7 @@ static void static_disable_vrf(struct route_table *stable,
 			continue;
 		frr_each(static_path_list, &si->path_list, pn) {
 			frr_each(static_nexthop_list, &pn->nexthop_list, nh) {
-				static_uninstall_path(pn);
+				static_uninstall_path(rn, pn, safi, info->svrf);
 			}
 		}
 	}
@@ -713,9 +715,12 @@ static void static_fixup_intf_nh(struct route_table *stable,
 				 afi_t afi, safi_t safi)
 {
 	struct route_node *rn;
+	struct stable_info *info;
 	struct static_nexthop *nh;
 	struct static_path *pn;
 	struct static_route_info *si;
+
+	info = route_table_get_info(stable);
 
 	for (rn = route_top(stable); rn; rn = route_next(rn)) {
 		si = static_route_info_from_rnode(rn);
@@ -729,7 +734,7 @@ static void static_fixup_intf_nh(struct route_table *stable,
 				if (nh->ifindex != ifp->ifindex)
 					continue;
 
-				static_install_path(pn);
+				static_install_path(rn, pn, safi, info->svrf);
 			}
 		}
 	}
@@ -773,7 +778,7 @@ void static_ifindex_update(struct interface *ifp, bool up)
 	static_ifindex_update_af(ifp, up, AFI_IP6, SAFI_MULTICAST);
 }
 
-void static_get_nh_type(enum static_nh_type stype, char *type, size_t size)
+void static_get_nh_type(static_types stype, char *type, size_t size)
 {
 	switch (stype) {
 	case STATIC_IFNAME:
@@ -804,6 +809,12 @@ struct stable_info *static_get_stable_info(struct route_node *rn)
 	table = srcdest_rnode_table(rn);
 	return table->info;
 }
+
+void static_route_info_init(struct static_route_info *si)
+{
+	static_path_list_init(&(si->path_list));
+}
+
 
 void static_get_nh_str(struct static_nexthop *nh, char *nexthop, size_t size)
 {

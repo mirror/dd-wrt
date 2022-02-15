@@ -20,10 +20,6 @@
 #ifndef __STATIC_VRF_H__
 #define __STATIC_VRF_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct static_vrf {
 	struct vrf *vrf;
 
@@ -46,9 +42,5 @@ void static_vrf_init(void);
 struct route_table *static_vrf_static_table(afi_t afi, safi_t safi,
 					    struct static_vrf *svrf);
 extern void static_vrf_terminate(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

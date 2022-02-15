@@ -166,8 +166,12 @@ struct lcommunity *lcommunity_dup(struct lcommunity *lcom)
 struct lcommunity *lcommunity_merge(struct lcommunity *lcom1,
 				    struct lcommunity *lcom2)
 {
-	lcom1->val = XREALLOC(MTYPE_LCOMMUNITY_VAL, lcom1->val,
-			      lcom_length(lcom1) + lcom_length(lcom2));
+	if (lcom1->val)
+		lcom1->val = XREALLOC(MTYPE_LCOMMUNITY_VAL, lcom1->val,
+				      lcom_length(lcom1) + lcom_length(lcom2));
+	else
+		lcom1->val = XMALLOC(MTYPE_LCOMMUNITY_VAL,
+				     lcom_length(lcom1) + lcom_length(lcom2));
 
 	memcpy(lcom1->val + lcom_length(lcom1), lcom2->val, lcom_length(lcom2));
 	lcom1->size += lcom2->size;
@@ -228,13 +232,11 @@ static void set_lcommunity_string(struct lcommunity *lcom, bool make_json)
 		snprintf(lcsb, sizeof(lcsb), "%u:%u:%u", global, local1,
 			 local2);
 
-		const char *com2alias = bgp_community2alias(lcsb);
-
-		len = strlcat(str_buf, com2alias, str_buf_sz);
+		len = strlcat(str_buf, bgp_community2alias(lcsb), str_buf_sz);
 		assert((unsigned int)len < str_buf_sz);
 
 		if (make_json) {
-			json_string = json_object_new_string(com2alias);
+			json_string = json_object_new_string(lcsb);
 			json_object_array_add(json_lcommunity_list,
 					      json_string);
 		}
@@ -287,7 +289,7 @@ void lcommunity_unintern(struct lcommunity **lcom)
 	}
 }
 
-/* Return string representation of lcommunities attribute. */
+/* Retrun string representation of communities attribute. */
 char *lcommunity_str(struct lcommunity *lcom, bool make_json)
 {
 	if (!lcom)

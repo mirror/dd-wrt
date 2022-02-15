@@ -55,6 +55,7 @@
 
 DEFINE_MTYPE_STATIC(OSPFD, OSPF_EXTERNAL, "OSPF External route table");
 DEFINE_MTYPE_STATIC(OSPFD, OSPF_REDISTRIBUTE, "OSPF Redistriute");
+DEFINE_MTYPE_STATIC(OSPFD, OSPF_DIST_ARGS, "OSPF Distribute arguments");
 
 
 /* Zebra structure to hold current status. */
@@ -137,7 +138,7 @@ static int ospf_interface_address_delete(ZAPI_CALLBACK_ARGS)
 
 	ifp = c->ifp;
 	p = *c->address;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 
 	rn = route_node_lookup(IF_OIFS(ifp), &p);
 	if (!rn) {
@@ -263,14 +264,6 @@ void ospf_zebra_add(struct ospf *ospf, struct prefix_ipv4 *p,
 	struct ospf_path *path;
 	struct listnode *node;
 
-	if (ospf->gr_info.restart_in_progress) {
-		if (IS_DEBUG_OSPF_GR)
-			zlog_debug(
-				"Zebra: Graceful Restart in progress -- not installing %pFX",
-				p);
-		return;
-	}
-
 	memset(&api, 0, sizeof(api));
 	api.vrf_id = ospf->vrf_id;
 	api.type = ZEBRA_ROUTE_OSPF;
@@ -330,14 +323,6 @@ void ospf_zebra_delete(struct ospf *ospf, struct prefix_ipv4 *p,
 {
 	struct zapi_route api;
 
-	if (ospf->gr_info.restart_in_progress) {
-		if (IS_DEBUG_OSPF_GR)
-			zlog_debug(
-				"Zebra: Graceful Restart in progress -- not uninstalling %pFX",
-				p);
-		return;
-	}
-
 	memset(&api, 0, sizeof(api));
 	api.vrf_id = ospf->vrf_id;
 	api.type = ZEBRA_ROUTE_OSPF;
@@ -354,14 +339,6 @@ void ospf_zebra_delete(struct ospf *ospf, struct prefix_ipv4 *p,
 void ospf_zebra_add_discard(struct ospf *ospf, struct prefix_ipv4 *p)
 {
 	struct zapi_route api;
-
-	if (ospf->gr_info.restart_in_progress) {
-		if (IS_DEBUG_OSPF_GR)
-			zlog_debug(
-				"Zebra: Graceful Restart in progress -- not installing %pFX",
-				p);
-		return;
-	}
 
 	memset(&api, 0, sizeof(api));
 	api.vrf_id = ospf->vrf_id;
@@ -380,14 +357,6 @@ void ospf_zebra_add_discard(struct ospf *ospf, struct prefix_ipv4 *p)
 void ospf_zebra_delete_discard(struct ospf *ospf, struct prefix_ipv4 *p)
 {
 	struct zapi_route api;
-
-	if (ospf->gr_info.restart_in_progress) {
-		if (IS_DEBUG_OSPF_GR)
-			zlog_debug(
-				"Zebra: Graceful Restart in progress -- not uninstalling %pFX",
-				p);
-		return;
-	}
 
 	memset(&api, 0, sizeof(api));
 	api.vrf_id = ospf->vrf_id;
@@ -964,7 +933,7 @@ static int ospf_external_lsa_originate_check(struct ospf *ospf,
 	}
 
 	/* Take care of default-originate. */
-	if (is_default_prefix4(&ei->p))
+	if (is_prefix_default(&ei->p))
 		if (ospf->default_originate == DEFAULT_ORIGINATE_NONE) {
 			zlog_info(
 				"LSA[Type5:0.0.0.0]: Not originate AS-external-LSA for default");
@@ -1120,8 +1089,8 @@ int ospf_redistribute_check(struct ospf *ospf, struct external_info *ei,
 	struct route_map_set_values save_values;
 	struct prefix_ipv4 *p = &ei->p;
 	struct ospf_redist *red;
-	uint8_t type = is_default_prefix4(&ei->p) ? DEFAULT_ROUTE : ei->type;
-	unsigned short instance = is_default_prefix4(&ei->p) ? 0 : ei->instance;
+	uint8_t type = is_prefix_default(&ei->p) ? DEFAULT_ROUTE : ei->type;
+	unsigned short instance = is_prefix_default(&ei->p) ? 0 : ei->instance;
 	route_tag_t saved_tag = 0;
 
 	/* Default is handled differently. */
@@ -1211,36 +1180,6 @@ void ospf_routemap_unset(struct ospf_redist *red)
 	ROUTEMAP(red) = NULL;
 }
 
-static int ospf_zebra_gr_update(struct ospf *ospf, int command,
-				uint32_t stale_time)
-{
-	struct zapi_cap api;
-
-	if (!zclient || zclient->sock < 0 || !ospf)
-		return 1;
-
-	memset(&api, 0, sizeof(struct zapi_cap));
-	api.cap = command;
-	api.stale_removal_time = stale_time;
-	api.vrf_id = ospf->vrf_id;
-
-	(void)zclient_capabilities_send(ZEBRA_CLIENT_CAPABILITIES, zclient,
-					&api);
-
-	return 0;
-}
-
-int ospf_zebra_gr_enable(struct ospf *ospf, uint32_t stale_time)
-{
-	return ospf_zebra_gr_update(ospf, ZEBRA_CLIENT_GR_CAPABILITIES,
-				    stale_time);
-}
-
-int ospf_zebra_gr_disable(struct ospf *ospf)
-{
-	return ospf_zebra_gr_update(ospf, ZEBRA_CLIENT_GR_DISABLE, 0);
-}
-
 /* Zebra route add and delete treatment. */
 static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 {
@@ -1274,7 +1213,7 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 	 * originate)ZEBRA_ROUTE_MAX is used to delete the ex-info.
 	 * Resolved this inconsistency by maintaining same route type.
 	 */
-	if (is_default_prefix4(&p))
+	if (is_prefix_default(&p))
 		rt_type = DEFAULT_ROUTE;
 
 	if (IS_DEBUG_OSPF(zebra, ZEBRA_REDISTRIBUTE))
@@ -1313,7 +1252,7 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 			return 0;
 		}
 		if (ospf->router_id.s_addr != INADDR_ANY) {
-			if (is_default_prefix4(&p))
+			if (is_prefix_default(&p))
 				ospf_external_lsa_refresh_default(ospf);
 			else {
 				struct ospf_external_aggr_rt *aggr;
@@ -1435,7 +1374,7 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 			ospf_external_info_delete(ospf, rt_type, api.instance,
 						  p);
 
-			if (is_default_prefix4(&p))
+			if (is_prefix_default(&p))
 				ospf_external_lsa_refresh_default(ospf);
 			else
 				ospf_external_lsa_flush(ospf, rt_type, &p,
@@ -1492,8 +1431,12 @@ static int ospf_distribute_list_update_timer(struct thread *thread)
 	struct external_info *ei;
 	struct route_table *rt;
 	struct ospf_lsa *lsa;
-	int type, default_refresh = 0;
-	struct ospf *ospf = THREAD_ARG(thread);
+	int type, default_refresh = 0, arg_type;
+	struct ospf *ospf = NULL;
+	void **arg = THREAD_ARG(thread);
+
+	ospf = (struct ospf *)arg[0];
+	arg_type = (int)(intptr_t)arg[1];
 
 	if (ospf == NULL)
 		return 0;
@@ -1503,9 +1446,10 @@ static int ospf_distribute_list_update_timer(struct thread *thread)
 	zlog_info("Zebra[Redistribute]: distribute-list update timer fired!");
 
 	if (IS_DEBUG_OSPF_EVENT) {
-		zlog_debug("%s: ospf distribute-list update vrf %s id %d",
-			   __func__, ospf_vrf_id_to_name(ospf->vrf_id),
-			   ospf->vrf_id);
+		zlog_debug(
+			"%s: ospf distribute-list update arg_type %d vrf %s id %d",
+			__func__, arg_type, ospf_vrf_id_to_name(ospf->vrf_id),
+			ospf->vrf_id);
 	}
 
 	/* foreach all external info. */
@@ -1527,7 +1471,7 @@ static int ospf_distribute_list_update_timer(struct thread *thread)
 				if (!ei)
 					continue;
 
-				if (is_default_prefix4(&ei->p))
+				if (is_prefix_default(&ei->p))
 					default_refresh = 1;
 				else {
 					struct ospf_external_aggr_rt *aggr;
@@ -1604,6 +1548,7 @@ static int ospf_distribute_list_update_timer(struct thread *thread)
 	if (default_refresh)
 		ospf_external_lsa_refresh_default(ospf);
 
+	XFREE(MTYPE_OSPF_DIST_ARGS, arg);
 	return 0;
 }
 
@@ -1612,14 +1557,27 @@ void ospf_distribute_list_update(struct ospf *ospf, int type,
 				 unsigned short instance)
 {
 	struct ospf_external *ext;
+	void **args = XCALLOC(MTYPE_OSPF_DIST_ARGS, sizeof(void *) * 2);
+
+	args[0] = ospf;
+	args[1] = (void *)((ptrdiff_t)type);
 
 	/* External info does not exist. */
 	ext = ospf_external_lookup(ospf, type, instance);
-	if (!ext || !EXTERNAL_INFO(ext))
+	if (!ext || !EXTERNAL_INFO(ext)) {
+		XFREE(MTYPE_OSPF_DIST_ARGS, args);
 		return;
+	}
 
-	/* Set timer. If timer is already started, this call does nothing. */
-	thread_add_timer_msec(master, ospf_distribute_list_update_timer, ospf,
+	/* If exists previously invoked thread, then let it continue. */
+	if (ospf->t_distribute_update) {
+		XFREE(MTYPE_OSPF_DIST_ARGS, args);
+		return;
+	}
+
+	/* Set timer. */
+	ospf->t_distribute_update = NULL;
+	thread_add_timer_msec(master, ospf_distribute_list_update_timer, args,
 			      ospf->min_ls_interval,
 			      &ospf->t_distribute_update);
 }

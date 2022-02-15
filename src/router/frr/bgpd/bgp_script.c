@@ -28,8 +28,9 @@
 #include "bgp_aspath.h"
 #include "frratomic.h"
 #include "frrscript.h"
+#include "frrlua.h"
 
-void lua_pushpeer(lua_State *L, const struct peer *peer)
+static void lua_pushpeer(lua_State *L, const struct peer *peer)
 {
 	lua_newtable(L);
 	lua_pushinteger(L, peer->as);
@@ -141,7 +142,7 @@ void lua_pushpeer(lua_State *L, const struct peer *peer)
 	lua_setfield(L, -2, "stats");
 }
 
-void lua_pushattr(lua_State *L, const struct attr *attr)
+static void lua_pushattr(lua_State *L, const struct attr *attr)
 {
 	lua_newtable(L);
 	lua_pushinteger(L, attr->med);
@@ -154,8 +155,10 @@ void lua_pushattr(lua_State *L, const struct attr *attr)
 	lua_setfield(L, -2, "localpref");
 }
 
-void lua_decode_attr(lua_State *L, int idx, struct attr *attr)
+static void *lua_toattr(lua_State *L, int idx)
 {
+	struct attr *attr = XCALLOC(MTYPE_TMP, sizeof(struct attr));
+
 	lua_getfield(L, -1, "metric");
 	attr->med = lua_tointeger(L, -1);
 	lua_pop(L, 1);
@@ -168,13 +171,7 @@ void lua_decode_attr(lua_State *L, int idx, struct attr *attr)
 	lua_getfield(L, -1, "localpref");
 	attr->local_pref = lua_tointeger(L, -1);
 	lua_pop(L, 1);
-}
 
-void *lua_toattr(lua_State *L, int idx)
-{
-	struct attr *attr = XCALLOC(MTYPE_TMP, sizeof(struct attr));
-
-	lua_decode_attr(L, idx, attr);
 	return attr;
 }
 

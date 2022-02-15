@@ -35,18 +35,6 @@ IP Access List
       access-list filter permit 10.0.0.0/8
       access-list filter seq 13 permit 10.0.0.0/7
 
-.. clicmd:: show <ip|ipv6> access-list [json]
-
-   Display all IPv4 or IPv6 access lists.
-
-   If the ``json`` option is specified, output is displayed in JSON format.
-
-.. clicmd:: show <ip|ipv6> access-list WORD [json]
-
-   Display the specified IPv4 or IPv6 access list.
-
-   If the ``json`` option is specified, output is displayed in JSON format.
-
 
 IP Prefix List
 ==============
@@ -123,24 +111,18 @@ ip prefix-list description
 Showing ip prefix-list
 ----------------------
 
-.. clicmd:: show ip prefix-list [json]
+.. clicmd:: show ip prefix-list
 
    Display all IP prefix lists.
 
-   If the ``json`` option is specified, output is displayed in JSON format.
-
-.. clicmd:: show ip prefix-list NAME [json]
+.. clicmd:: show ip prefix-list NAME
 
    Show IP prefix list can be used with a prefix list name.
 
-   If the ``json`` option is specified, output is displayed in JSON format.
-
-.. clicmd:: show ip prefix-list NAME seq NUM [json]
+.. clicmd:: show ip prefix-list NAME seq NUM
 
    Show IP prefix list can be used with a prefix list name and sequential
    number.
-
-   If the ``json`` option is specified, output is displayed in JSON format.
 
 .. clicmd:: show ip prefix-list NAME A.B.C.D/M
 
@@ -150,19 +132,10 @@ Showing ip prefix-list
 
 .. clicmd:: show ip prefix-list NAME A.B.C.D/M longer
 .. clicmd:: show ip prefix-list NAME A.B.C.D/M first-match
-.. clicmd:: show ip prefix-list summary [json]
-.. clicmd:: show ip prefix-list summary NAME [json]
-.. clicmd:: show ip prefix-list detail [json]
-.. clicmd:: show ip prefix-list detail NAME [json]
-
-.. clicmd:: debug prefix-list NAME match <A.B.C.D/M|X:X::X:X/M> [address-mode]
-
-   Execute the prefix list matching code for the specified list and prefix.
-   Shows which entry matched, if any.  (``address-mode`` is used for
-   PIM RP lookups and skips prefix length checks.)
-
-   The return value from this command is success only if the prefix-list
-   result is to permit the prefix, so the command can be used in scripting.
+.. clicmd:: show ip prefix-list summary
+.. clicmd:: show ip prefix-list summary NAME
+.. clicmd:: show ip prefix-list detail
+.. clicmd:: show ip prefix-list detail NAME
 
 Clear counter of ip prefix-list
 -------------------------------

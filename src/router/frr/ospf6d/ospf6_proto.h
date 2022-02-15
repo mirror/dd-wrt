@@ -35,8 +35,6 @@
 #define OSPF6_ROUTER_BIT_V     (1 << 2)
 #define OSPF6_ROUTER_BIT_E     (1 << 1)
 #define OSPF6_ROUTER_BIT_B     (1 << 0)
-#define OSPF6_ROUTER_BIT_NT    (1 << 4)
-
 
 /* OSPF options */
 /* present in HELLO, DD, LSA */

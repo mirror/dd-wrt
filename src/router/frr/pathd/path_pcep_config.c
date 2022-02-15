@@ -32,8 +32,6 @@
 #define MAX_FLOAT_LEN 22
 #define INETADDR4_MAXLEN 16
 #define INETADDR6_MAXLEN 40
-#define INITIATED_CANDIDATE_PREFERENCE 255
-#define INITIATED_POLICY_COLOR 1
 
 
 static void copy_candidate_objfun_info(struct srte_candidate *candidate,
@@ -149,7 +147,7 @@ struct path *candidate_to_path(struct srte_candidate *candidate)
 		.plsp_id = 0,
 		.name = name,
 		.type = candidate->type,
-		.srp_id = policy->srp_id,
+		.srp_id = 0,
 		.req_id = 0,
 		.binding_sid = policy->binding_sid,
 		.status = status,
@@ -278,94 +276,6 @@ path_pcep_config_list_path_hops(struct srte_segment_list *segment_list)
 	return hop;
 }
 
-int path_pcep_config_initiate_path(struct path *path)
-{
-	struct srte_policy *policy;
-	struct srte_candidate *candidate;
-
-	if (path->do_remove) {
-		zlog_warn("PCE %s tried to REMOVE pce-initiate a path ",
-			  path->originator);
-		candidate = lookup_candidate(&path->nbkey);
-		if (candidate) {
-			if (!path->is_delegated) {
-				zlog_warn(
-					"(%s)PCE tried to REMOVE but it's not Delegated!",
-					__func__);
-				return ERROR_19_1;
-			}
-			if (candidate->type != SRTE_CANDIDATE_TYPE_DYNAMIC) {
-				zlog_warn(
-					"(%s)PCE tried to REMOVE but it's not PCE origin!",
-					__func__);
-				return ERROR_19_9;
-			}
-			zlog_warn(
-				"(%s)PCE tried to REMOVE found canidate!, let's remove",
-				__func__);
-			candidate->policy->srp_id = path->srp_id;
-			SET_FLAG(candidate->policy->flags, F_POLICY_DELETED);
-			SET_FLAG(candidate->flags, F_CANDIDATE_DELETED);
-		} else {
-			zlog_warn("(%s)PCE tried to REMOVE not existing LSP!",
-				  __func__);
-			return ERROR_19_3;
-		}
-		srte_apply_changes();
-	} else {
-		assert(!IS_IPADDR_NONE(&path->nbkey.endpoint));
-
-		if (path->nbkey.preference == 0)
-			path->nbkey.preference = INITIATED_CANDIDATE_PREFERENCE;
-
-		if (path->nbkey.color == 0)
-			path->nbkey.color = INITIATED_POLICY_COLOR;
-
-		candidate = lookup_candidate(&path->nbkey);
-		if (!candidate) {
-			policy = srte_policy_add(
-				path->nbkey.color, &path->nbkey.endpoint,
-				SRTE_ORIGIN_PCEP, path->originator);
-			strlcpy(policy->name, path->name, sizeof(policy->name));
-			policy->binding_sid = path->binding_sid;
-			SET_FLAG(policy->flags, F_POLICY_NEW);
-			candidate = srte_candidate_add(
-				policy, path->nbkey.preference,
-				SRTE_ORIGIN_PCEP, path->originator);
-			candidate->policy->srp_id = path->srp_id;
-			strlcpy(candidate->name, path->name,
-				sizeof(candidate->name));
-			SET_FLAG(candidate->flags, F_CANDIDATE_NEW);
-		} else {
-			policy = candidate->policy;
-			if ((path->originator != candidate->originator)
-			    || (path->originator != policy->originator)) {
-				/* There is already an initiated path from
-				 * another PCE, show a warning and regect the
-				 * initiated path */
-				zlog_warn(
-					"PCE %s tried to initiate a path already initiated by PCE %s",
-					path->originator,
-					candidate->originator);
-				return 1;
-			}
-			if ((policy->protocol_origin != SRTE_ORIGIN_PCEP)
-			    || (candidate->protocol_origin
-				!= SRTE_ORIGIN_PCEP)) {
-				/* There is already an initiated path from
-				 * another PCE, show a warning and regect the
-				 * initiated path */
-				zlog_warn(
-					"PCE %s tried to initiate a path created localy",
-					path->originator);
-				return 1;
-			}
-		}
-		return path_pcep_config_update_path(path);
-	}
-	return 0;
-}
-
 int path_pcep_config_update_path(struct path *path)
 {
 	assert(path != NULL);
@@ -388,7 +298,6 @@ int path_pcep_config_update_path(struct path *path)
 	if (!candidate)
 		return 0;
 
-	candidate->policy->srp_id = path->srp_id;
 	// first clean up old segment list if present
 	if (candidate->lsp->segment_list) {
 		SET_FLAG(candidate->lsp->segment_list->flags,
@@ -472,12 +381,8 @@ struct srte_candidate *lookup_candidate(struct lsp_nb_key *key)
 
 char *candidate_name(struct srte_candidate *candidate)
 {
-	if (candidate->protocol_origin == SRTE_ORIGIN_PCEP
-	    || candidate->protocol_origin == SRTE_ORIGIN_BGP)
-		return asprintfrr(MTYPE_PCEP, "%s", candidate->policy->name);
-	else
-		return asprintfrr(MTYPE_PCEP, "%s-%s", candidate->policy->name,
-				  candidate->name);
+	return asprintfrr(MTYPE_PCEP, "%s-%s", candidate->policy->name,
+			  candidate->name);
 }
 
 enum pcep_lsp_operational_status

@@ -131,6 +131,8 @@ CLEANFILES =
 DISTCLEANFILES =
 SUFFIXES =
 
+examplesdir = $(exampledir)
+
 bin_PROGRAMS =
 sbin_PROGRAMS =
 sbin_SCRIPTS =
@@ -142,6 +144,7 @@ lib_LTLIBRARIES =
 module_LTLIBRARIES =
 pkginclude_HEADERS =
 nodist_pkginclude_HEADERS =
+dist_examples_DATA =
 dist_yangmodels_DATA =
 man_MANS =
 vtysh_scan =

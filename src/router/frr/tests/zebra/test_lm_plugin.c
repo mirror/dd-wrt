@@ -77,7 +77,7 @@ static int lm_release_chunk_pi(struct zserv *client, uint32_t start,
 
 
 /* use external allocations */
-static void lp_plugin_init(void)
+static void lp_plugin_init()
 {
 	/* register our own hooks */
 	hook_register(lm_client_connect, test_client_connect);
@@ -86,7 +86,7 @@ static void lp_plugin_init(void)
 	hook_register(lm_release_chunk, lm_release_chunk_pi);
 }
 
-static void lp_plugin_cleanup(void)
+static void lp_plugin_cleanup()
 {
 	/* register our own hooks */
 	hook_unregister(lm_client_connect, test_client_connect);
@@ -98,7 +98,7 @@ static void lp_plugin_cleanup(void)
 
 /* tests */
 
-static void test_lp_plugin(void)
+static void test_lp_plugin()
 {
 	struct label_manager_chunk *lmc;
 

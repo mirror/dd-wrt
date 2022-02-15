@@ -31,7 +31,6 @@
 #include "pim_pim.h"
 #include "pim_str.h"
 #include "pim_iface.h"
-#include "pim_neighbor.h"
 #include "pim_zlookup.h"
 #include "pim_ifchannel.h"
 #include "pim_time.h"
@@ -420,6 +419,8 @@ int pim_rpf_addr_is_inaddr_none(struct pim_rpf *rpf)
 	default:
 		return 0;
 	}
+
+	return 0;
 }
 
 int pim_rpf_addr_is_inaddr_any(struct pim_rpf *rpf)
@@ -433,6 +434,8 @@ int pim_rpf_addr_is_inaddr_any(struct pim_rpf *rpf)
 	default:
 		return 0;
 	}
+
+	return 0;
 }
 
 int pim_rpf_is_same(struct pim_rpf *rpf1, struct pim_rpf *rpf2)

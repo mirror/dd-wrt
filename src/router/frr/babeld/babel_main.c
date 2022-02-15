@@ -183,7 +183,8 @@ main(int argc, char **argv)
 	  case 0:
 	    break;
 	  default:
-	    frr_help_exit(1);
+	    frr_help_exit (1);
+	    break;
 	  }
     }
 

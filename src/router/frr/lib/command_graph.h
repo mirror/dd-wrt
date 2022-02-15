@@ -64,7 +64,6 @@ enum cmd_token_type {
 	JOIN_TKN,  // marks subgraph end
 	START_TKN, // first token in line
 	END_TKN,   // last token in line
-	NEG_ONLY_TKN,    // filter token, match if "no ..." command
 
 	SPECIAL_TKN = FORK_TKN,
 };
@@ -79,11 +78,11 @@ enum { CMD_ATTR_NORMAL,
        CMD_ATTR_YANG,
 };
 
-/* Command token struct. */
+/* Comamand token struct. */
 struct cmd_token {
 	enum cmd_token_type type; // token type
 	uint8_t attr;		  // token attributes
-	bool allowrepeat; // matcher allowed to match token repetitively?
+	bool allowrepeat;	 // matcher allowed to match token repetively?
 	uint32_t refcnt;
 
 	char *text;	 // token text

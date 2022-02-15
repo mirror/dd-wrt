@@ -44,6 +44,5 @@ extern int bgp_community_alias_write(struct vty *vty);
 extern const char *bgp_community2alias(char *community);
 extern const char *bgp_alias2community(char *alias);
 extern char *bgp_alias2community_str(const char *str);
-extern void bgp_community_alias_command_completion_setup(void);
 
 #endif /* FRR_BGP_COMMUNITY_ALIAS_H */

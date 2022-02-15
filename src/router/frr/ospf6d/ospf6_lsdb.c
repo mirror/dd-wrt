@@ -30,7 +30,6 @@
 #include "ospf6_proto.h"
 #include "ospf6_lsa.h"
 #include "ospf6_lsdb.h"
-#include "ospf6_asbr.h"
 #include "ospf6_route.h"
 #include "ospf6d.h"
 #include "bitfield.h"
@@ -195,28 +194,6 @@ struct ospf6_lsa *ospf6_lsdb_lookup(uint16_t type, uint32_t id,
 	return (struct ospf6_lsa *)node->info;
 }
 
-struct ospf6_lsa *ospf6_find_external_lsa(struct ospf6 *ospf6, struct prefix *p)
-{
-	struct ospf6_route *match;
-	struct ospf6_lsa *lsa;
-	struct ospf6_external_info *info;
-
-	match = ospf6_route_lookup(p, ospf6->external_table);
-	if (match == NULL) {
-		if (IS_OSPF6_DEBUG_ASBR)
-			zlog_debug("No such route %pFX to withdraw", p);
-
-		return NULL;
-	}
-
-	info = match->route_option;
-	assert(info);
-
-	lsa = ospf6_lsdb_lookup(htons(OSPF6_LSTYPE_AS_EXTERNAL),
-				htonl(info->id), ospf6->router_id, ospf6->lsdb);
-	return lsa;
-}
-
 struct ospf6_lsa *ospf6_lsdb_lookup_next(uint16_t type, uint32_t id,
 					 uint32_t adv_router,
 					 struct ospf6_lsdb *lsdb)
@@ -343,17 +320,9 @@ int ospf6_lsdb_maxage_remover(struct ospf6_lsdb *lsdb)
 	struct ospf6_lsa *lsa, *lsanext;
 
 	for (ALL_LSDB(lsdb, lsa, lsanext)) {
-		if (!OSPF6_LSA_IS_MAXAGE(lsa)) {
-			if (IS_OSPF6_DEBUG_LSA_TYPE(lsa->header->type))
-				zlog_debug("Not MaxAge %s", lsa->name);
+		if (!OSPF6_LSA_IS_MAXAGE(lsa))
 			continue;
-		}
-
 		if (lsa->retrans_count != 0) {
-			if (IS_OSPF6_DEBUG_LSA_TYPE(lsa->header->type))
-				zlog_debug("Remove MaxAge %s retrans_count %d",
-					   lsa->name, lsa->retrans_count);
-
 			reschedule = 1;
 			continue;
 		}
@@ -372,7 +341,6 @@ int ospf6_lsdb_maxage_remover(struct ospf6_lsdb *lsdb)
 			THREAD_OFF(lsa->refresh);
 			thread_execute(master, ospf6_lsa_refresh, lsa, 0);
 		} else {
-			zlog_debug("calling ospf6_lsdb_remove %s", lsa->name);
 			ospf6_lsdb_remove(lsa, lsdb);
 		}
 	}

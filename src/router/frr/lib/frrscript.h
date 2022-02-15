@@ -25,7 +25,6 @@
 
 #include <lua.h>
 #include "frrlua.h"
-#include "bgpd/bgp_script.h" // for peer and attr encoders/decoders
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,29 +39,13 @@ struct frrscript_codec {
 	decoder_func decoder;
 };
 
-struct lua_function_state {
-	const char *name;
-	lua_State *L;
-};
-
 struct frrscript {
 	/* Script name */
 	char *name;
 
-	/* Hash of Lua function name to Lua function state */
-	struct hash *lua_function_hash;
+	/* Lua state */
+	struct lua_State *L;
 };
-
-
-/*
- * Hash related functions for lua_function_hash
- */
-
-void *lua_function_alloc(void *arg);
-
-unsigned int lua_function_hash_key(const void *data);
-
-bool lua_function_hash_cmp(const void *d1, const void *d2);
 
 struct frrscript_env {
 	/* Value type */
@@ -76,24 +59,15 @@ struct frrscript_env {
 };
 
 /*
- * Create new struct frrscript for a Lua script.
- * This will hold the states for the Lua functions in this script.
- *
- * scriptname
- *     Name of the Lua script file, without the .lua
+ * Create new FRR script.
  */
-struct frrscript *frrscript_new(const char *scriptname);
+struct frrscript *frrscript_load(const char *name,
+				 int (*load_cb)(struct frrscript *));
 
 /*
- * Load a function into frrscript, run callback if any
+ * Destroy FRR script.
  */
-int frrscript_load(struct frrscript *fs, const char *function_name,
-		   int (*load_cb)(struct frrscript *));
-
-/*
- * Delete Lua function states and frrscript
- */
-void frrscript_delete(struct frrscript *fs);
+void frrscript_unload(struct frrscript *fs);
 
 /*
  * Register a Lua codec for a type.
@@ -122,162 +96,38 @@ void frrscript_register_type_codecs(struct frrscript_codec *codecs);
  */
 void frrscript_init(const char *scriptdir);
 
-/*
- * This macro is mapped to every (name, value) in frrscript_call,
- * so this in turn maps them onto their encoders
- */
-#define ENCODE_ARGS(name, value) ENCODE_ARGS_WITH_STATE(lfs->L, (value))
 
 /*
- * This macro is also mapped to every (name, value) in frrscript_call, but
- * not every value can be mapped to its decoder - only those that appear
- * in the returned table will. To find out if they appear in the returned
- * table, first pop the value and check if its nil. Only call the decoder
- * if non-nil.
- *
- * At the end, the only thing left on the stack should be the
- * returned table.
- */
-#define DECODE_ARGS(name, value)                                               \
-	do {                                                                   \
-		lua_getfield(lfs->L, 1, (name));                               \
-		if (lua_isnil(lfs->L, 2)) {                                    \
-			lua_pop(lfs->L, 1);                                    \
-		} else {                                                       \
-			DECODE_ARGS_WITH_STATE(lfs->L, (value));               \
-		}                                                              \
-		assert(lua_gettop(lfs->L) == 1);                               \
-	} while (0)
-
-/*
- * Maps the type of value to its encoder/decoder.
- * Add new mappings here.
- *
- * L
- *    Lua state
- * scriptdir
- *    Directory in which to look for scripts
- */
-#define ENCODE_ARGS_WITH_STATE(L, value)                                       \
-	_Generic((value), \
-int : lua_pushinteger,                                          \
-long long * : lua_pushintegerp,                                 \
-struct prefix * : lua_pushprefix,                               \
-struct interface * : lua_pushinterface,                         \
-struct in_addr * : lua_pushinaddr,                              \
-struct in6_addr * : lua_pushin6addr,                            \
-union sockunion * : lua_pushsockunion,                          \
-time_t * : lua_pushtimet,                                       \
-char * : lua_pushstring_wrapper,                                \
-struct attr * : lua_pushattr,                                   \
-struct peer * : lua_pushpeer,                                   \
-const struct prefix * : lua_pushprefix                          \
-)((L), (value))
-
-#define DECODE_ARGS_WITH_STATE(L, value)                                       \
-	_Generic((value), \
-int : lua_decode_integer_noop,                                  \
-long long * : lua_decode_integerp,                              \
-struct prefix * : lua_decode_prefix,                            \
-struct interface * : lua_decode_interface,                      \
-struct in_addr * : lua_decode_inaddr,                           \
-struct in6_addr * : lua_decode_in6addr,                         \
-union sockunion * : lua_decode_sockunion,                       \
-time_t * : lua_decode_timet,                                    \
-char * : lua_decode_stringp,                                    \
-struct attr * : lua_decode_attr,                                \
-struct peer * : lua_decode_noop,                                \
-const struct prefix * : lua_decode_noop                         \
-)((L), -1, (value))
-
-/*
- * Call Lua function state (abstraction for a single Lua function)
- *
- * lfs
- *    The Lua function to call; this should have been loaded in by
- *    frrscript_load(). nargs Number of arguments the function accepts
- *
- * Returns:
- *    0 if the script ran successfully, nonzero otherwise.
- */
-int _frrscript_call_lua(struct lua_function_state *lfs, int nargs);
-
-/*
- * Wrapper for calling Lua function state.
- *
- * The Lua function name (f) to run should have already been checked by
- * frrscript_load. So this wrapper will:
- * 1) Find the Lua function state, which contains the Lua state
- * 2) Clear the Lua state (there may be leftovers items from previous call)
- * 3) Push the Lua function (f)
- * 4) Map frrscript_call arguments onto their encoder and decoders, push those
- * 5) Call _frrscript_call_lua (Lua execution takes place)
- * 6) Write back to frrscript_call arguments using their decoders
- *
- * This wrapper can be called multiple times (after one frrscript_load).
+ * Call script.
  *
  * fs
- *    The struct frrscript in which the Lua fuction was loaded into
- * f
- *    Name of the Lua function.
+ *    The script to call; this is obtained from frrscript_load().
+ *
+ * env
+ *    The script's environment. Specify this as an array of frrscript_env.
  *
  * Returns:
  *    0 if the script ran successfully, nonzero otherwise.
  */
-#define frrscript_call(fs, f, ...)                                                                                                                                 \
-	({                                                                                                                                                         \
-		struct lua_function_state lookup = {.name = (f)};                                                                                                  \
-		struct lua_function_state *lfs;                                                                                                                    \
-		lfs = hash_lookup((fs)->lua_function_hash, &lookup);                                                                                               \
-		lfs == NULL ? ({                                                                                                                                   \
-			zlog_err(                                                                                                                                  \
-				"frrscript: '%s.lua': '%s': tried to call this function but it was not loaded",                                                    \
-				(fs)->name, (f));                                                                                                                  \
-			1;                                                                                                                                         \
-		})                                                                                                                                                 \
-			    : ({                                                                                                                                   \
-				      lua_settop(lfs->L, 0);                                                                                                       \
-				      lua_getglobal(lfs->L, f);                                                                                                    \
-				      MAP_LISTS(ENCODE_ARGS, ##__VA_ARGS__);                                                                                       \
-				      _frrscript_call_lua(                                                                                                         \
-					      lfs, PP_NARG(__VA_ARGS__));                                                                                          \
-			      }) != 0                                                                                                                              \
-				      ? ({                                                                                                                         \
-						zlog_err(                                                                                                          \
-							"frrscript: '%s.lua': '%s': this function called but returned non-zero exit code. No variables modified.", \
-							(fs)->name, (f));                                                                                          \
-						1;                                                                                                                 \
-					})                                                                                                                         \
-				      : ({                                                                                                                         \
-						MAP_LISTS(DECODE_ARGS,                                                                                             \
-							  ##__VA_ARGS__);                                                                                          \
-						0;                                                                                                                 \
-					});                                                                                                                        \
-	})
+int frrscript_call(struct frrscript *fs, struct frrscript_env *env);
+
 
 /*
- * Get result from finished function
+ * Get result from finished script.
  *
  * fs
  *    The script. This script must have been run already.
- * function_name
- *    Name of the Lua function.
- * name
- *    Name of the result.
- *    This will be used as a string key to retrieve from the table that the
- *    Lua function returns.
- *    The name here should *not* appear in frrscript_call.
- * lua_to
- *    Function pointer to a lua_to decoder function.
- *    This function should allocate and decode a value from the Lua state.
+ *
+ * result
+ *    The result to extract from the script.
+ *    This reuses the frrscript_env type, but only the typename and name fields
+ *    need to be set. The value is returned directly.
  *
  * Returns:
- *    A pointer to the decoded value from the Lua state, or NULL if no such
- *    value.
+ *    The script result of the specified name and type, or NULL.
  */
-void *frrscript_get_result(struct frrscript *fs, const char *function_name,
-			   const char *name,
-			   void *(*lua_to)(lua_State *L, int idx));
+void *frrscript_get_result(struct frrscript *fs,
+			   const struct frrscript_env *result);
 
 #ifdef __cplusplus
 }

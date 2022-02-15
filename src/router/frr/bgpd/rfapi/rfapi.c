@@ -1613,9 +1613,9 @@ rfapi_query_inner(void *handle, struct rfapi_ip_addr *target,
 			memset(&rprefix, 0, sizeof(rprefix));
 			rprefix.prefix.addr_family = target->addr_family;
 			if (target->addr_family == AF_INET) {
-				rprefix.length = IPV4_MAX_BITLEN;
+				rprefix.length = 32;
 			} else {
-				rprefix.length = IPV6_MAX_BITLEN;
+				rprefix.length = 128;
 			}
 
 			pNHE = rfapiEthRouteTable2NextHopList(
@@ -1690,9 +1690,9 @@ rfapi_query_inner(void *handle, struct rfapi_ip_addr *target,
 		memset(&rprefix, 0, sizeof(rprefix));
 		rprefix.prefix.addr_family = target->addr_family;
 		if (target->addr_family == AF_INET) {
-			rprefix.length = IPV4_MAX_BITLEN;
+			rprefix.length = 32;
 		} else {
-			rprefix.length = IPV6_MAX_BITLEN;
+			rprefix.length = 128;
 		}
 
 		pNHE = rfapiEthRouteNode2NextHopList(
@@ -2179,7 +2179,7 @@ int rfapi_close(void *handle)
 		vnc_zlog_debug_verbose("%s administrative close rfd=%p",
 				       __func__, rfd);
 
-		if (h->rfp_methods.close_cb) {
+		if (h && h->rfp_methods.close_cb) {
 			vnc_zlog_debug_verbose(
 				"%s calling close callback rfd=%p", __func__,
 				rfd);
