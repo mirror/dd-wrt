@@ -1854,6 +1854,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_dpbr", i);
 		copytonv(wp, "oet%d_firewallin", i);
 		copytonv(wp, "oet%d_failgrp", i);
+		copytonv(wp, "oet%d_wdog", i);
 		copytonv(wp, "oet%d_failstate", i);
 		copytonv(wp, "oet%d_failip", i);
 		copytonv(wp, "oet%d_ipaddrmask", i);
@@ -2102,6 +2103,7 @@ void add_tunnel(webs_t wp)
 	default_seti("dpbr", 0);
 	default_seti("firewallin", 1);
 	default_seti("failgrp", 0);
+	default_seti("wdog", 0);
 	default_set("failip", "8.8.8.8");
 	default_seti("failstate", 0);
 	default_set("ipaddrmask", "");
@@ -2239,6 +2241,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("dpbr", i, i - 1);
 		copytunvalue("firewallin", i, i - 1);
 		copytunvalue("failgrp", i, i - 1);
+		copytunvalue("wdog", i, i - 1);
 		copytunvalue("failstate", i, i - 1);
 		copytunvalue("failip", i, i - 1);
 		copytunvalue("ipaddrmask", i, i - 1);
@@ -2289,6 +2292,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("dpbr", tunnels);
 	deltunvalue("firewallin", tunnels);
 	deltunvalue("failgrp", tunnels);
+	deltunvalue("wdog", tunnels);
 	deltunvalue("failstate", tunnels);
 	deltunvalue("failip", tunnels);
 	deltunvalue("ipaddrmask", tunnels);
