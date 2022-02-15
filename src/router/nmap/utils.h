@@ -59,7 +59,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: utils.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: utils.h 38207 2021-04-26 17:58:01Z dmiller $ */
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -100,7 +100,7 @@ template<class T> T box(T bmin, T bmax, T bnum) {
   return bnum;
 }
 
-int wildtest(char *wild, char *test);
+int wildtest(const char *wild, const char *test);
 
 void nmap_hexdump(const unsigned char *cp, unsigned int length);
 
@@ -115,9 +115,9 @@ void arg_parse_free(char **argv);
 
 char *cstring_unescape(char *str, unsigned int *len);
 
-void bintohexstr(char *buf, int buflen, char *src, int srclen);
+void bintohexstr(char *buf, int buflen, const char *src, int srclen);
 
-u8 *parse_hex_string(char *str, size_t *outlen);
+u8 *parse_hex_string(const char *str, size_t *outlen);
 
 int cpe_get_part(const char *cpe);
 

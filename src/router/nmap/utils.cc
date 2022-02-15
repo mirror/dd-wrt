@@ -59,7 +59,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: utils.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: utils.cc 38219 2021-05-18 03:15:22Z nnposter $ */
 
 #include "nmap.h"
 #include "utils.h"
@@ -80,7 +80,7 @@ extern NmapOps o;
 /* Test a wildcard mask against a test string. Wildcard mask can include '*' and
    '?' which work the same as they do in /bin/sh (except it's case insensitive).
    Return val of 1 means it DID match. 0 means it DIDN'T. - Doug Hoyte, 2005 */
-int wildtest(char *wild, char *test) {
+int wildtest(const char *wild, const char *test) {
   int i;
 
   while (*wild != '\0'  ||  *test != '\0') {
@@ -412,7 +412,7 @@ char *cstring_unescape(char *str, unsigned int *newlen) {
 }
 
 
-void bintohexstr(char *buf, int buflen, char *src, int srclen) {
+void bintohexstr(char *buf, int buflen, const char *src, int srclen) {
   int bp = 0;
   int i;
 
@@ -439,12 +439,12 @@ void bintohexstr(char *buf, int buflen, char *src, int srclen) {
  *  hex spec or NULL in case of error.
  *  @warning Returned pointer points to a static buffer that subsequent calls
  *  will overwrite. */
-u8 *parse_hex_string(char *str, size_t *outlen) {
+u8 *parse_hex_string(const char *str, size_t *outlen) {
   char auxbuff[4096];
   static u8 dst[16384];
   size_t dstlen=16384;
   unsigned int i=0, j=0;
-  char *start=NULL;
+  const char *start=NULL;
 
   if(str==NULL || outlen==NULL)
     return NULL;
@@ -595,7 +595,7 @@ static HANDLE gmap = NULL;
 char *mmapfile(char *fname, s64 *length, int openflags) {
   HANDLE fd;
   DWORD mflags, oflags;
-  DWORD lowsize, highsize;
+  LARGE_INTEGER filesize;
   char *fileptr;
 
   if (!length || !fname) {
@@ -622,11 +622,10 @@ char *mmapfile(char *fname, s64 *length, int openflags) {
   if (!fd)
     pfatal ("%s(%u): CreateFile()", __FILE__, __LINE__);
 
-  lowsize = GetFileSize (fd, &highsize);
-  if (lowsize == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
-    pfatal("%s(%u): GetFileSize(), file '%s'", __FILE__, __LINE__, fname);
+  if (!GetFileSizeEx(fd, &filesize)) {
+    pfatal("%s(%u): GetFileSizeEx(), file '%s'", __FILE__, __LINE__, fname);
   }
-  *length = lowsize + highsize << sizeof(DWORD);
+  *length = (s64)filesize.QuadPart;
   if (*length < 0) {
     fatal("%s(%u): size too large, file '%s'", __FILE__, __LINE__, fname);
   }

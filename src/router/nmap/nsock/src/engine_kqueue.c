@@ -52,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: engine_kqueue.c 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: engine_kqueue.c 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #ifdef HAVE_CONFIG_H
 #include "nsock_config.h"

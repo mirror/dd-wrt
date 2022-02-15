@@ -114,7 +114,8 @@ int HopByHopHeader::storeRecvData(const u8 *buf, size_t len){
      /* Check that the HdrExtLen field makes sense:
       * 1) Check that it carries as many octets as it claims
       * 2) Check that we don't exceed our internal storage space. */
-     if( ((unsigned int)(this->h.len+1))*8 > len || (this->h.len+1)*8 > HOPBYHOP_MAX_HEADER_LEN){
+     // h.len cannot exceed 0xff, so max is (0xff+1)*8, but HOPBYHOP_MAX_HEADER_LEN is 8 + 0x100*8
+     if( ((unsigned int)(this->h.len+1))*8 > len){
        this->length=0;
        return OP_FAILURE;
      }else{
@@ -368,21 +369,21 @@ int HopByHopHeader::addOption(u8 type, u8 len, const u8 *data){
  * this method adds the necessary padding (either PadN or Pad1 options)*/
 int HopByHopHeader::addPadding(){
   u8 zeroes[8]={0,0,0,0,0,0,0,0};
-  int required_octets=8-(this->length%8);
+  // required_octets in range [0,7]
+  int required_octets=(8 - (this->length % 8)) % 8;
 
   /* Make sure we have enough space for the padding. */
   if ( (this->length+required_octets) > HOPBYHOP_MAX_HEADER_LEN )
     return OP_FAILURE;
 
   /* Insert Pad1 or PadN to fill the necessary octets */
-  if(required_octets>0 && required_octets<8){
-      if(required_octets==1){
-          curr_option[0]=EXTOPT_PAD1;
-          curr_option++;
-          this->length++;
-      }else{
-          this->addOption(EXTOPT_PADN, required_octets-2, zeroes );
-      }
+  if (required_octets == 1) {
+    curr_option[0]=EXTOPT_PAD1;
+    curr_option++;
+    this->length++;
+  }
+  else if (required_octets > 0) {
+    this->addOption(EXTOPT_PADN, required_octets-2, zeroes );
   }
   assert(this->length%8==0);
   this->h.len=(this->length/8)-1;

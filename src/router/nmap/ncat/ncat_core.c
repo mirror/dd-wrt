@@ -57,7 +57,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_core.c 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: ncat_core.c 38175 2021-01-07 17:52:24Z dmiller $ */
 
 #include "ncat.h"
 #include "util.h"
@@ -431,7 +431,7 @@ int ncat_broadcast(fd_set *fds, const fd_list_t *fdlist, const char *msg, size_t
 
     ret = 0;
     for (i = 0; i <= fdlist->fdmax; i++) {
-        if (!FD_ISSET(i, fds))
+        if (!checked_fd_isset(i, fds))
             continue;
 
         fdn = get_fdinfo(fdlist, i);

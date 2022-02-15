@@ -57,7 +57,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_addrset.c 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: nbase_addrset.c 38268 2021-08-06 16:17:46Z dmiller $ */
 
 /* The code in this file has tests in the file ncat/tests/test-addrset.sh. Run that
    program after making any big changes. Also, please add tests for any new
@@ -65,6 +65,7 @@
 
 #include <limits.h> /* CHAR_BIT */
 #include <errno.h>
+#include <assert.h>
 
 #include "nbase.h"
 
@@ -131,17 +132,13 @@ struct addrset {
 
 /* Special node pointer to represent "all possible addresses"
  * This will be used to represent netmask specifications. */
-static struct trie_node *TRIE_NODE_TRUE = NULL;
+static struct trie_node g_TRIE_NODE_TRUE = {0};
+#define TRIE_NODE_TRUE &g_TRIE_NODE_TRUE
 
 struct addrset *addrset_new()
 {
     struct addrset *set = (struct addrset *) safe_zalloc(sizeof(struct addrset));
     set->head = NULL;
-    /* We could simply allocate one byte to get a unique address, but this
-     * feels safer and is not too large. */
-    if (TRIE_NODE_TRUE == NULL) {
-      TRIE_NODE_TRUE = (struct trie_node *) safe_zalloc(sizeof(struct trie_node));
-    }
 
     /* Allocate the first node of the IPv4 trie */
     set->trie = (struct trie_node *) safe_zalloc(sizeof(struct trie_node));
@@ -153,7 +150,7 @@ static void trie_free(struct trie_node *curr)
   /* Since we descend only down one side, we at most accumulate one tree's-depth, or 128.
    * Add 4 for safety to account for special root node and special empty stack position 0.
    */
-  struct trie_node *stack[128+4];
+  struct trie_node *stack[128+4] = {NULL};
   int i = 1;
 
   while (i > 0 && curr != NULL && curr != TRIE_NODE_TRUE) {
@@ -295,7 +292,7 @@ static struct trie_node *new_trie_node(const u32 *addr, const u32 *mask)
 
 /* Split a node into 2: one that matches the greatest common prefix with addr
  * and one that does not. */
-static void trie_split (struct trie_node *this, const u32 *addr)
+static void trie_split (struct trie_node *this, const u32 *addr, const u32 *mask)
 {
   struct trie_node *new_node;
   u32 new_mask[4] = {0,0,0,0};
@@ -303,9 +300,30 @@ static void trie_split (struct trie_node *this, const u32 *addr)
   /* Calculate the mask of the common prefix */
   for (i=0; i < 4; i++) {
     new_mask[i] = common_mask(this->addr[i], addr[i]);
+    if (new_mask[i] > this->mask[i]){
+      /* Addrs have more bits in common than we care about for this node. */
+      new_mask[i] = this->mask[i];
+    }
+    if (new_mask[i] > mask[i]) {
+      /* new addr's mask is broader, so this node is superseded. */
+      this->mask[i] = mask[i];
+      for (i++; i < 4; i++) {
+        this->mask[i] = 0;
+      }
+      /* The longer mask is superseded. Delete following nodes. */
+      trie_free(this->next_bit_one);
+      trie_free(this->next_bit_zero);
+      /* Anything below here will always match. */
+      this->next_bit_one = this->next_bit_zero = TRIE_NODE_TRUE;
+      return;
+    }
     if (new_mask[i] < 0xffffffff) {
       break;
     }
+  }
+  if (new_mask[i] >= this->mask[i]) {
+    /* This node completely contains the new addr and mask. No need to split or add */
+    return;
   }
   /* Make a copy of this node to continue matching what it has been */
   new_node = new_trie_node(this->addr, this->mask);
@@ -329,35 +347,14 @@ static void trie_split (struct trie_node *this, const u32 *addr)
 /* Helper for address insertion */
 static void _trie_insert (struct trie_node *this, const u32 *addr, const u32 *mask)
 {
-  u8 i;
+  /* On entry, at least the 1st bit must match this node */
+  assert(this == TRIE_NODE_TRUE || (this->addr[0] ^ addr[0]) < (1 << 31));
+
   while (this != NULL && this != TRIE_NODE_TRUE) {
-    if (addr_matches(this->mask, this->addr, addr)) {
-      if (1 & this->mask[3]) {
-        /* 1. end of address: duplicate. return; */
-        return;
-      }
-    }
-    else {
-      /* Split the netmask to ensure a match */
-      trie_split(this, addr);
-    }
+    /* Split the node if necessary to ensure a match */
+    trie_split(this, addr, mask);
 
-    for (i=0; i < 4; i++) {
-      if (this->mask[i] > mask[i]) {
-        /* broader mask, truncate this one */
-        this->mask[i] = mask[i];
-        for (; i < 4; i++) {
-          this->mask[i] = 0;
-        }
-        /* The longer mask is superseded. Delete following nodes. */
-        trie_free(this->next_bit_one);
-        trie_free(this->next_bit_zero);
-        /* Anything below here will always match. */
-        this->next_bit_one = this->next_bit_zero = TRIE_NODE_TRUE;
-        return;
-      }
-    }
-
+    /* At this point, this node matches the addr up to this->mask. */
     if (addr_next_bit_is_one(this->mask, addr)) {
       /* next bit is one: insert on the one branch */
       if (this->next_bit_one == NULL) {
@@ -601,7 +598,7 @@ int addrset_add_spec(struct addrset *set, const char *spec, int af, int dns)
 {
     char *local_spec;
     char *netmask_s;
-    char *tail;
+    const char *tail;
     long netmask_bits;
     struct addrinfo *addrs, *addr;
     struct addrset_elem *elem;
@@ -788,7 +785,7 @@ static int parse_ipv4_ranges(struct addrset_elem *elem, const char *spec)
         } else {
             for (;;) {
                 long start, end;
-                char *tail;
+                const char *tail;
 
                 errno = 0;
                 start = parse_long(p, &tail);

@@ -59,15 +59,20 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: payload.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: payload.h 38259 2021-08-06 02:47:55Z dmiller $ */
 
 #ifndef PAYLOAD_H
 #define PAYLOAD_H
 
 #define PAYLOAD_FILENAME "nmap-payloads"
 
-const char *get_udp_payload(u16 dport, size_t *length, u8 tryno);
-const char *udp_port2payload(u16 dport, size_t *length, u8 tryno);
+// Semi-arbitrary limit, but we use u8 for indexing/retrieval
+// and we send all payloads at once and need to not overwhelm.
+#define MAX_PAYLOADS_PER_PORT 0xff
+
+const char *get_udp_payload(u16 dport, size_t *length, u8 index);
+const char *udp_port2payload(u16 dport, size_t *length, u8 index);
+u8 udp_payload_count(u16 dport);
 int init_payloads(void);
 
 #endif /* PAYLOAD_H */

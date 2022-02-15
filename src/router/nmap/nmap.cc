@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 38096 2020-10-09 22:18:58Z dmiller $ */
+/* $Id: nmap.cc 38251 2021-07-28 20:52:01Z dmiller $ */
 
 #ifdef WIN32
 #include "winfix.h"
@@ -111,6 +111,7 @@
 
 #if HAVE_OPENSSL
 #include <openssl/opensslv.h>
+#include <openssl/crypto.h>
 #endif
 
 #if HAVE_LIBSSH2
@@ -291,6 +292,7 @@ static void printusage() {
          "  --iflist: Print host interfaces and routes (for debugging)\n"
          "  --append-output: Append to rather than clobber specified output files\n"
          "  --resume <filename>: Resume an aborted scan\n"
+         "  --noninteractive: Disable runtime interactions via keyboard\n"
          "  --stylesheet <path/URL>: XSL stylesheet to transform XML output to HTML\n"
          "  --webxml: Reference stylesheet from Nmap.Org for more portable XML\n"
          "  --no-stylesheet: Prevent associating of XSL stylesheet w/XML output\n"
@@ -593,6 +595,7 @@ void parse_options(int argc, char **argv) {
     {"version-all", no_argument, 0, 0},
     {"system-dns", no_argument, 0, 0},
     {"resolve-all", no_argument, 0, 0},
+    {"unique", no_argument, 0, 0},
     {"log-errors", no_argument, 0, 0},
     {"deprecated-xml-osclass", no_argument, 0, 0},
     {(char*)k, no_argument, 0, 0},
@@ -710,8 +713,9 @@ void parse_options(int argc, char **argv) {
           }
         } else if (strcmp(long_options[option_index].name, "host-timeout") == 0) {
           l = tval2msecs(optarg);
-          if (l <= 0)
+          if (l < 0)
             fatal("Bogus --host-timeout argument specified");
+          // if (l == 0) this is the default "no timeout" value, overriding timing template
           if (l >= 10000 * 1000 && tval_unit(optarg) == NULL)
             fatal("Since April 2010, the default unit for --host-timeout is seconds, so your time of \"%s\" is %.1f hours. If this is what you want, use \"%ss\".", optarg, l / 1000.0 / 60 / 60, optarg);
           delayed_options.pre_host_timeout = l;
@@ -751,6 +755,7 @@ void parse_options(int argc, char **argv) {
           l = tval2msecs(optarg);
           if (l < 0)
             fatal("Bogus --scan-delay argument specified.");
+          // if (l == 0) this is the default "no delay" value, overriding timing template
           if (l >= 100 * 1000 && tval_unit(optarg) == NULL)
             fatal("Since April 2010, the default unit for --scan-delay is seconds, so your time of \"%s\" is %.1f minutes. Use \"%sms\" for %g milliseconds.", optarg, l / 1000.0 / 60, optarg, l / 1000.0);
           delayed_options.pre_scan_delay = l;
@@ -844,6 +849,8 @@ void parse_options(int argc, char **argv) {
           o.dns_servers = strdup(optarg);
         } else if (strcmp(long_options[option_index].name, "resolve-all") == 0) {
           o.resolve_all = true;
+        } else if (strcmp(long_options[option_index].name, "unique") == 0) {
+          o.unique = true;
         } else if (strcmp(long_options[option_index].name, "log-errors") == 0) {
           /*Nmap Log errors is deprecated and is now always enabled by default.
           This option is left in so as to not break anybody's scanning scripts.
@@ -896,7 +903,7 @@ void parse_options(int argc, char **argv) {
           } else {
             o.inputfd = fopen(optarg, "r");
             if (!o.inputfd) {
-              fatal("Failed to open input file %s for reading", optarg);
+              pfatal("Failed to open input file %s for reading", optarg);
             }
           }
         } else if (strcmp(long_options[option_index].name, "iR") == 0) {
@@ -1066,7 +1073,7 @@ void parse_options(int argc, char **argv) {
       } else {
         o.inputfd = fopen(optarg, "r");
         if (!o.inputfd) {
-          fatal("Failed to open input file %s for reading", optarg);
+          pfatal("Failed to open input file %s for reading", optarg);
         }
       }
       break;
@@ -1121,7 +1128,8 @@ void parse_options(int argc, char **argv) {
           Snprintf(buf, 3, "P%c", *optarg);
           delayed_options.warn_deprecated(buf, "Pn");
         }
-        error("Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.");
+        if (o.verbose > 0)
+          error("Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.");
         o.pingtype |= PINGTYPE_NONE;
       }
       else if (*optarg == 'R') {
@@ -1330,6 +1338,7 @@ void parse_options(int argc, char **argv) {
         o.setInitialRttTimeout(500);
         o.setMaxTCPScanDelay(10);
         o.setMaxSCTPScanDelay(10);
+        // No call to setMaxUDPScanDelay because of rate-limiting and unreliability
         o.setMaxRetransmissions(6);
       } else if (*optarg == '5' || (strcasecmp(optarg, "Insane") == 0)) {
         o.timing_level = 5;
@@ -1339,6 +1348,7 @@ void parse_options(int argc, char **argv) {
         o.host_timeout = 900000;
         o.setMaxTCPScanDelay(5);
         o.setMaxSCTPScanDelay(5);
+        // No call to setMaxUDPScanDelay because of rate-limiting and unreliability
         o.setMaxRetransmissions(2);
 #ifndef NOLUA
         o.scripttimeout = 600; // 10 minutes
@@ -1349,7 +1359,7 @@ void parse_options(int argc, char **argv) {
       break;
     case 'V':
 #ifdef WIN32
-      /* For pcap_get_version, since we need to get the correct Npcap/WinPcap
+      /* For pcap_get_version, since we need to get the correct Npcap
        * DLL loaded */
       win_init();
 #endif
@@ -1363,7 +1373,7 @@ void parse_options(int argc, char **argv) {
         if (o.verbose == 0) {
           o.nmap_stdout = fopen(DEVNULL, "w");
           if (!o.nmap_stdout)
-            fatal("Could not assign %s to stdout for writing", DEVNULL);
+            pfatal("Could not assign %s to stdout for writing", DEVNULL);
         }
       } else {
         const char *p;
@@ -1678,7 +1688,7 @@ void  apply_delayed_options() {
   if (delayed_options.exclude_file) {
     o.excludefd = fopen(delayed_options.exclude_file, "r");
     if (!o.excludefd)
-      fatal("Failed to open exclude file %s for reading", delayed_options.exclude_file);
+      pfatal("Failed to open exclude file %s for reading", delayed_options.exclude_file);
     free(delayed_options.exclude_file);
   }
   o.exclude_spec = delayed_options.exclude_spec;
@@ -1768,13 +1778,10 @@ int nmap_main(int argc, char *argv[]) {
   int i;
   std::vector<Target *> Targets;
   time_t now;
-  struct hostent *target = NULL;
   time_t timep;
   char mytime[128];
   struct addrset *exclude_group;
 #ifndef NOLUA
-  /* Only NSE scripts can add targets */
-  NewTargets *new_targets = NULL;
   /* Pre-Scan and Post-Scan script results datastructure */
   ScriptResults *script_scan_results = NULL;
 #endif
@@ -1871,14 +1878,12 @@ int nmap_main(int argc, char *argv[]) {
 
   /* If he wants to bounce off of an FTP site, that site better damn well be reachable! */
   if (o.bouncescan) {
-    if (!inet_pton(AF_INET, ftp.server_name, &ftp.server)) {
-      if ((target = gethostbyname(ftp.server_name)))
-        memcpy(&ftp.server, target->h_addr_list[0], 4);
-      else {
+    int rc = resolve(ftp.server_name, 0, &ss, &sslen, AF_INET);
+    if (rc != 0)
         fatal("Failed to resolve FTP bounce proxy hostname/IP: %s",
               ftp.server_name);
-      }
-    } else if (o.verbose) {
+    memcpy(&ftp.server, &((sockaddr_in *)&ss)->sin_addr, 4);
+    if (o.verbose) {
       log_write(LOG_STDOUT, "Resolved FTP bounce attack proxy to %s (%s).\n",
                 ftp.server_name, inet_ntoa(ftp.server));
     }
@@ -2017,14 +2022,14 @@ int nmap_main(int argc, char *argv[]) {
 
   /* Run the script pre-scanning phase */
   if (o.script) {
-    new_targets = NewTargets::get();
     script_scan_results = get_script_scan_results_obj();
     script_scan(Targets, SCRIPT_PRE_SCAN);
     printscriptresults(script_scan_results, SCRIPT_PRE_SCAN);
-    while (!script_scan_results->empty()) {
-      script_scan_results->front().clear();
-      script_scan_results->pop_front();
+    for (ScriptResults::iterator it = script_scan_results->begin();
+        it != script_scan_results->end(); it++) {
+      delete (*it);
     }
+    script_scan_results->clear();
   }
 #endif
 
@@ -2225,8 +2230,10 @@ int nmap_main(int argc, char *argv[]) {
         xml_open_start_tag("host");
         xml_attribute("starttime", "%lu", (unsigned long) currenths->StartTime());
         xml_attribute("endtime", "%lu", (unsigned long) currenths->EndTime());
+        xml_attribute("timedout", "true");
         xml_close_start_tag();
         write_host_header(currenths);
+        printtimes(currenths);
         xml_end_tag(); /* host */
         xml_newline();
         log_write(LOG_PLAIN, "Skipping host %s due to host timeout\n",
@@ -2275,16 +2282,16 @@ int nmap_main(int argc, char *argv[]) {
   if (o.script) {
     script_scan(Targets, SCRIPT_POST_SCAN);
     printscriptresults(script_scan_results, SCRIPT_POST_SCAN);
-    while (!script_scan_results->empty()) {
-      script_scan_results->front().clear();
-      script_scan_results->pop_front();
+    for (ScriptResults::iterator it = script_scan_results->begin();
+        it != script_scan_results->end(); it++) {
+      delete (*it);
     }
-    delete new_targets;
-    new_targets = NULL;
+    script_scan_results->clear();
   }
 #endif
 
   addrset_free(exclude_group);
+  NewTargets::free_new_targets();
 
   if (o.inputfd != NULL)
     fclose(o.inputfd);
@@ -2728,7 +2735,11 @@ static void display_nmap_version() {
 #endif
 
 #if HAVE_OPENSSL
-  with.push_back(std::string("openssl-") + get_word_or_quote(OPENSSL_VERSION_TEXT, 1));
+#ifdef SSLEAY_VERSION
+  with.push_back(std::string("openssl-") + get_word_or_quote(SSLeay_version(SSLEAY_VERSION), 1));
+#else
+  with.push_back(std::string("openssl-") + get_word_or_quote(OpenSSL_version(OPENSSL_VERSION), 1));
+#endif
 #else
   without.push_back("openssl");
 #endif

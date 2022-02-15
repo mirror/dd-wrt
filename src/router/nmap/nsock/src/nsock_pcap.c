@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_pcap.c 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: nsock_pcap.c 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"

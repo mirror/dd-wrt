@@ -58,7 +58,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NewTargets.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: NewTargets.h 38210 2021-04-27 19:22:10Z dmiller $ */
 
 #ifndef NEWTARGETS_H
 #define NEWTARGETS_H
@@ -90,6 +90,8 @@ public:
 
   /* get the new_targets object */
   static NewTargets *get (void);
+  /* Free the new_targets object. */
+  static void free_new_targets (void);
 
   /* insert targets to the new_targets_queue */
   static unsigned long insert (const char *target);

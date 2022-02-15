@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: services.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: services.h 38212 2021-04-27 19:22:12Z dmiller $ */
 
 
 #ifndef SERVICES_H
@@ -74,9 +74,9 @@
 
 #define SERVICE_TABLE_SIZE 1024
 
-int addportsfromservmask(char *mask, u8 *porttbl, int range_type);
-struct servent *nmap_getservbyport(int port, const char *proto);
-void gettoppts(double level, char *portlist, struct scan_lists * ports, char *exclude_list = NULL);
+int addportsfromservmask(const char *mask, u8 *porttbl, int range_type);
+const struct servent *nmap_getservbyport(int port, const char *proto);
+void gettoppts(double level, const char *portlist, struct scan_lists * ports, const char *exclude_list = NULL);
 
 void free_services();
 

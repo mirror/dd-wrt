@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: NmapOps.h 38143 2020-11-15 04:57:44Z dmiller $ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
@@ -304,6 +304,7 @@ class NmapOps {
   bool mass_dns;
   bool always_resolve;
   bool resolve_all;
+  bool unique;
   char *dns_servers;
 
   /* Do IPv4 ARP or IPv6 ND scan of directly connected Ethernet hosts, even if

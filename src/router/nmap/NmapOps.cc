@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: NmapOps.cc 38143 2020-11-15 04:57:44Z dmiller $ */
 #ifdef WIN32
 #include "winfix.h"
 #endif
@@ -257,6 +257,7 @@ void NmapOps::Initialize() {
   max_ips_to_scan = 0;
   extra_payload_length = 0;
   extra_payload = NULL;
+  host_timeout = 0;
   scan_delay = 0;
   open_only = false;
   scanflags = -1;
@@ -297,6 +298,7 @@ void NmapOps::Initialize() {
   deprecated_xml_osclass = false;
   always_resolve = false;
   resolve_all = false;
+  unique = false;
   dns_servers = NULL;
   implicitARPPing = true;
   numhosts_scanned = 0;

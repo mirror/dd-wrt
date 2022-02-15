@@ -59,7 +59,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_ftp.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: nmap_ftp.cc 38116 2020-10-15 18:19:06Z dmiller $ */
 #include "nmap.h"
 #include "nmap_ftp.h"
 #include "output.h"
@@ -321,14 +321,12 @@ void bounce_scan(Target *target, u16 *portarray, int numports,
                 }
                 else {
                   recvbuf[res] = '\0';
-                  if (res > 0) {
-                    if (o.debugging)
-                      log_write(LOG_STDOUT, "nxt line: %s", recvbuf);
-                    if (recvbuf[0] == '4' && recvbuf[1] == '2' && recvbuf[2] == '6') {
-                      target->ports.forgetPort(portarray[i], IPPROTO_TCP);
-                      if (o.debugging || o.verbose)
-                        log_write(LOG_STDOUT, "Changed my mind about port %i\n", portarray[i]);
-                    }
+                  if (o.debugging)
+                    log_write(LOG_STDOUT, "nxt line: %s", recvbuf);
+                  if (recvbuf[0] == '4' && recvbuf[1] == '2' && recvbuf[2] == '6') {
+                    target->ports.forgetPort(portarray[i], IPPROTO_TCP);
+                    if (o.debugging || o.verbose)
+                      log_write(LOG_STDOUT, "Changed my mind about port %i\n", portarray[i]);
                   }
                 }
               }

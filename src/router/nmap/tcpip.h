@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: tcpip.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: tcpip.h 38207 2021-04-26 17:58:01Z dmiller $ */
 
 
 #ifndef TCPIP_H
@@ -136,7 +136,7 @@ class PacketCounter {
    IPv6 IP address string.  Since a static buffer is returned, this is
    not thread-safe and can only be used once in calls like printf()
 */
-const char *inet_socktop(struct sockaddr_storage *ss);
+const char *inet_socktop(const struct sockaddr_storage *ss);
 
 /* Tries to resolve the given name (or literal IP) into a sockaddr
    structure. This function calls getaddrinfo and returns the same
@@ -369,7 +369,7 @@ const u8 *readip_pcap(pcap_t *pd, unsigned int *len, long to_usec,
    parameters (if non-null) are filled with 0.  Remember that the
    correct way to check for errors is to look at the return value
    since a zero ts or echots could possibly be valid. */
-int gettcpopt_ts(struct tcp_hdr *tcp, u32 *timestamp, u32 *echots);
+int gettcpopt_ts(const struct tcp_hdr *tcp, u32 *timestamp, u32 *echots);
 
 /* Maximize the receive buffer of a socket descriptor (up to 500K) */
 void max_rcvbuf(int sd);

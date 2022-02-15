@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: Target.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: Target.h 38213 2021-04-27 19:22:13Z dmiller $ */
 
 #ifndef TARGET_H
 #define TARGET_H
@@ -108,7 +108,7 @@ struct TracerouteHop {
   int ttl;
   float rtt; /* In milliseconds. */
 
-  int display_name(char *buf, size_t len) {
+  int display_name(char *buf, size_t len) const {
     if (name.empty())
       return Snprintf(buf, len, "%s", inet_ntop_ez(&addr, sizeof(addr)));
     else
@@ -120,9 +120,6 @@ class Target {
  public: /* For now ... TODO: a lot of the data members should be made private */
   Target();
   ~Target();
-  /* Recycles the object by freeing internal objects and reinitializing
-     to default state */
-  void Recycle();
   /* Returns the address family of the destination address. */
   int af() const;
   /* Fills a sockaddr_storage with the AF_INET or AF_INET6 address
@@ -175,7 +172,7 @@ class Target {
   /* Give the name from the last setTargetName() call, which is the
    name of the target given on the command line if it's a named
    host. */
-  const char *TargetName() { return targetname; }
+  const char *TargetName() const { return targetname; }
   /* You can set to NULL to erase a name.  The targetname is blown
      away when you setTargetSockAddr(), so make sure you do these in proper
      order
@@ -192,21 +189,21 @@ class Target {
   /* If the host is NOT directly connected, you can set the next hop
      value here. It is OK to pass in a sockaddr_in or sockaddr_in6
      casted to sockaddr_storage*/
-  void setNextHop(struct sockaddr_storage *next_hop, size_t next_hop_len);
+  void setNextHop(const struct sockaddr_storage *next_hop, size_t next_hop_len);
   /* Returns the next hop for sending packets to this host.  Returns true if
      next_hop was filled in.  It might be false, for example, if
      next_hop has never been set */
-  bool nextHop(struct sockaddr_storage *next_hop, size_t *next_hop_len);
+  bool nextHop(struct sockaddr_storage *next_hop, size_t *next_hop_len) const;
 
   void setMTU(int devmtu);
-  int MTU(void);
+  int MTU(void) const;
 
   /* Sets the interface type to one of:
      devt_ethernet, devt_loopback, devt_p2p, devt_other
    */
   void setIfType(devtype iftype) { interface_type = iftype; }
   /* Returns -1 if it has not yet been set with setIfType() */
-  devtype ifType() { return interface_type; }
+  devtype ifType() const { return interface_type; }
   /* Starts the timeout clock for the host running (e.g. you are
      beginning a scan).  If you do not have the current time handy,
      you can pass in NULL.  When done, call stopTimeOutClock (it will
@@ -215,15 +212,15 @@ class Target {
   /* The complement to startTimeOutClock. */
   void stopTimeOutClock(const struct timeval *now);
   /* Is the timeout clock currently running? */
-  bool timeOutClockRunning() { return htn.toclock_running; }
+  bool timeOutClockRunning() const { return htn.toclock_running; }
   /* Returns whether the host is timedout.  If the timeoutclock is
      running, counts elapsed time for that.  Pass NULL if you don't have the
      current time handy.  You might as well also pass NULL if the
      clock is not running, as the func won't need the time. */
-  bool timedOut(const struct timeval *now);
+  bool timedOut(const struct timeval *now) const;
   /* Return time_t for the start and end time of this host */
-  time_t StartTime() { return htn.host_start; }
-  time_t EndTime() { return htn.host_end; }
+  time_t StartTime() const { return htn.host_start; }
+  time_t EndTime() const { return htn.host_end; }
 
   /* Takes a 6-byte MAC address */
   int setMACAddress(const u8 *addy);
@@ -243,7 +240,7 @@ class Target {
   const char *deviceName() const;
   const char *deviceFullName() const;
 
-  int osscanPerformed(void);
+  int osscanPerformed(void) const;
   void osscanSetFlag(int flag);
 
   struct seq_info seq;
@@ -279,7 +276,6 @@ class Target {
   int pingprobe_state;
 
   private:
-  void Initialize();
   void FreeInternal(); // Free memory allocated inside this object
  // Creates a "presentation" formatted string out of the target's IPv4/IPv6 address
   void GenerateTargetIPString();

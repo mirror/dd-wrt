@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: strcasecmp.c 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: strcasecmp.c 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #if !defined(HAVE_STRCASECMP) || !defined(HAVE_STRNCASECMP)
 #include <stdlib.h>
