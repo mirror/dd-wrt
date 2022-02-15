@@ -88,22 +88,45 @@ FRR employs a ``<MAJOR>.<MINOR>.<BUGFIX>`` versioning scheme.
 ``BUGFIX``
    Fixes for actual bugs and/or security issues.  Fully compatible.
 
-We will pull a new development branch for the next release every 4 months.  The
-current schedule is Feb/June/October 1. The decision for a ``MAJOR/MINOR``
-release is made at the time of branch pull based on what has been received the
-previous 4 months. The branch name will be ``dev/MAJOR.MINOR``. At this point
-in time the master branch and this new branch, :file:`configure.ac`,
-documentation and packaging systems will be updated to reflect the next
-possible release name to allow for easy distinguishing.
+Releases are scheduled in a 4-month cycle on the first Tuesday each
+March/July/November.  Walking backwards from this date:
 
-After one month the development branch will be renamed to
-``stable/MAJOR.MINOR``.  The branch is a stable branch. This process is not
-held up unless a crash or security issue has been found and needs to
-be addressed. Issues being fixed will not cause a delay.
+ - 6 weeks earlier, ``master`` is frozen for new features, and feature PRs
+   are considered lowest priority (regardless of when they were opened.)
 
-Bugfix releases are made as needed at 1 month intervals until the next
-``MAJOR.MINOR`` release branch is pulled. Depending on the severity of the bugs,
-bugfix releases may occur sooner.
+ - 4 weeks earlier, the stable branch separates from master (named
+   ``dev/MAJOR.MINOR`` at this point) and a ``rc1`` release candidate is
+   tagged.  Master is unfrozen and new features may again proceed.
+
+ - 2 weeks earlier, a ``rc2`` release candidate is tagged.
+
+ - on release date, the branch is renamed to ``stable/MAJOR.MINOR``.
+
+The 2 week window between each of these events should be used to run any and
+all testing possible for the release in progress.  However, the current
+intention is to stick to the schedule even if known issues remain.  This would
+hopefully occur only after all avenues of fixing issues are exhausted, but to
+achieve this, an as exhaustive as possible list of issues needs to be available
+as early as possible, i.e. the first 2-week window.
+
+For reference, the expected release schedule according to the above is:
+
++------------+------------+------------+------------+------------+------------+
+| Release    | 2021-11-02 | 2022-03-01 | 2022-07-05 | 2022-11-01 | 2023-03-07 |
++------------+------------+------------+------------+------------+------------+
+| rc2        | 2021-10-19 | 2022-02-15 | 2022-06-21 | 2022-10-18 | 2023-02-21 |
++------------+------------+------------+------------+------------+------------+
+| rc1/branch | 2021-10-05 | 2022-02-01 | 2022-06-07 | 2022-10-04 | 2023-02-07 |
++------------+------------+------------+------------+------------+------------+
+| freeze     | 2021-09-21 | 2022-01-18 | 2022-05-24 | 2022-09-20 | 2023-01-24 |
++------------+------------+------------+------------+------------+------------+
+
+Each release is managed by one or more volunteer release managers from the FRR
+community.  To spread and distribute this workload, this should be rotated for
+subsequent releases.  The release managers are currently assumed/expected to
+run a release management meeting during the weeks listed above.  Barring other
+constraints, this would be scheduled before the regular weekly FRR community
+call such that important items can be carried over into that call.
 
 Bugfixes are applied to the two most recent releases. However, backporting of bug
 fixes to older than the two most recent releases will not be prevented, if acked
@@ -614,6 +637,39 @@ well as CERT or MISRA C guidelines may provide useful input on safe C code.
 However, these rules are not applied as-is;  some of them expressly collide
 with established practice.
 
+
+Container implementations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In particular to gain defensive coding benefits from better compiler type
+checks, there is a set of replacement container data structures to be found
+in :file:`lib/typesafe.h`.  They're documented under :ref:`lists`.
+
+Unfortunately, the FRR codebase is quite large, and migrating existing code to
+use these new structures is a tedious and far-reaching process (even if it
+can be automated with coccinelle, the patches would touch whole swaths of code
+and create tons of merge conflicts for ongoing work.)  Therefore, little
+existing code has been migrated.
+
+However, both **new code and refactors of existing code should use the new
+containers**.  If there are any reasons this can't be done, please work to
+remove these reasons (e.g. by adding necessary features to the new containers)
+rather than falling back to the old code.
+
+In order of likelyhood of removal, these are the old containers:
+
+- :file:`nhrpd/list.*`, ``hlist_*`` ⇒ ``DECLARE_LIST``
+- :file:`nhrpd/list.*`, ``list_*`` ⇒ ``DECLARE_DLIST``
+- :file:`lib/skiplist.*`, ``skiplist_*`` ⇒ ``DECLARE_SKIPLIST``
+- :file:`lib/*_queue.h` (BSD), ``SLIST_*`` ⇒ ``DECLARE_LIST``
+- :file:`lib/*_queue.h` (BSD), ``LIST_*`` ⇒ ``DECLARE_DLIST``
+- :file:`lib/*_queue.h` (BSD), ``STAILQ_*`` ⇒ ``DECLARE_LIST``
+- :file:`lib/*_queue.h` (BSD), ``TAILQ_*`` ⇒ ``DECLARE_DLIST``
+- :file:`lib/hash.*`, ``hash_*`` ⇒ ``DECLARE_HASH``
+- :file:`lib/linklist.*`, ``list_*`` ⇒ ``DECLARE_DLIST``
+- open-coded linked lists ⇒ ``DECLARE_LIST``/``DECLARE_DLIST``
+
+
 Code Formatting
 ---------------
 
@@ -880,6 +936,104 @@ doesn't warrant an update to checkpatch, it is documented here.
 | should be wrapped in parentheses         | all usages of the macro, which would be highly disruptive.    |
 +------------------------------------------+---------------------------------------------------------------+
 
+Types of configurables
+----------------------
+
+.. note::
+
+   This entire section essentially just argues to not make configuration
+   unnecessarily involved for the user.  Rather than rules, this is more of
+   a list of conclusions intended to help make FRR usable for operators.
+
+
+Almost every feature FRR has comes with its own set of switches and options.
+There are several stages at which configuration can be applied.  In order of
+preference, these are:
+
+-  at configuration/runtime, through YANG.
+
+   This is the preferred way for all FRR knobs.  Not all daemons and features
+   are fully YANGified yet, so in some cases new features cannot rely on a
+   YANG interface.  If a daemon already implements a YANG interface (even
+   partial), new CLI options must be implemented through a YANG model.
+
+   .. warning::
+
+      Unlike everything else in this section being guidelines with some slack,
+      implementing and using a YANG interface for new CLI options in (even
+      partially!) YANGified daemons is a hard requirement.
+
+
+-  at configuration/runtime, through the CLI.
+
+   The "good old" way for all regular configuration.  More involved for users
+   to automate *correctly* than YANG.
+
+-  at startup, by loading additional modules.
+
+   If a feature introduces a dependency on additional libraries (e.g. libsnmp,
+   rtrlib, etc.), this is the best way to encapsulate the dependency.  Having
+   a separate module allows the distribution to create a separate package
+   with the extra dependency, so FRR can still be installed without pulling
+   everything in.
+
+   A module may also be appropriate if a feature is large and reasonably well
+   isolated.  Reducing the amount of running the code is a security benefit,
+   so even if there are no new external dependencies, modules can be useful.
+
+   While modules cannot currently be loaded at runtime, this is a tradeoff
+   decision that was made to allow modules to change/extend code that is very
+   hard to (re)adjust at runtime.  If there is a case for runtime (un)loading
+   of modules, this tradeoff can absolutely be reevaluated.
+
+-  at startup, with command line options.
+
+   This interface is only appropriate for options that have an effect very
+   early in FRR startup, i.e. before configuration is loaded.  Anything that
+   affects configuration load itself should be here, as well as options
+   changing the environment FRR runs in.
+
+   If a tunable can be changed at runtime, a command line option is only
+   acceptable if the configured value has an effect before configuration is
+   loaded (e.g. zebra reads routes from the kernel before loading config, so
+   the netlink buffer size is an appropriate command line option.)
+
+-  at compile time, with ``./configure`` options.
+
+   This is the absolute last preference for tunables, since the distribution
+   needs to make the decision for the user and/or the user needs to rebuild
+   FRR in order to change the option.
+
+   "Good" configure options do one of three things:
+
+   -  set distribution-specific parameters, most prominently all the path
+      options.  File system layout is a distribution/packaging choice, so the
+      user would hopefully never need to adjust these.
+
+   -  changing toolchain behavior, e.g. instrumentation, warnings,
+      optimizations and sanitizers.
+
+   -  enabling/disabling parts of the build, especially if they need
+      additional dependencies.  Being able to build only parts of FRR, or
+      without some library, is useful.  **The only effect these options should
+      have is adding or removing files from the build result.**  If a knob
+      in this category causes the same binary to exist in different variants,
+      it is likely implemented incorrectly!
+
+      .. note::
+
+         This last guideline is currently ignored by several configure options.
+         ``vtysh`` in general depends on the entire list of enabled daemons,
+         and options like ``--enable-bgp-vnc`` and ``--enable-ospfapi`` change
+         daemons internally.  Consider this more of an "ideal" than a "rule".
+
+
+Whenever adding new knobs, please try reasonably hard to go up as far as
+possible on the above list.  Especially ``./configure`` flags are often enough
+the "easy way out" but should be avoided when at all possible.  To a lesser
+degree, the same applies to command line options.
+
+
 Compile-time conditional code
 -----------------------------
 
@@ -1095,6 +1249,20 @@ callers about the limits to side-effects from your apis, and it makes
 it possible to use your apis in paths that involve ``const``
 objects. If you encounter existing apis that *could* be ``const``,
 consider including changes in your own pull-request.
+
+Help with specific warnings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FRR's configure script enables a whole batch of extra warnings, some of which
+may not be obvious in how to fix.  Here are some notes on specific warnings:
+
+* ``-Wstrict-prototypes``:  you probably just forgot the ``void`` in a function
+  declaration with no parameters, i.e. ``static void foo() {...}`` rather than
+  ``static void foo(void) {...}``.
+
+  Without the ``void``, in C, it's a function with *unspecified* parameters
+  (and varargs calling convention.)  This is a notable difference to C++, where
+  the ``void`` is optional and an empty parameter list means no parameters.
 
 
 .. _documentation:

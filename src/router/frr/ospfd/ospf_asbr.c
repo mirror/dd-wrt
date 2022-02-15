@@ -334,7 +334,7 @@ void ospf_redistribute_withdraw(struct ospf *ospf, uint8_t type,
 
 		struct ospf_external_aggr_rt *aggr;
 
-		if (is_prefix_default(&ei->p)
+		if (is_default_prefix4(&ei->p)
 		    && ospf->default_originate != DEFAULT_ORIGINATE_NONE)
 			continue;
 
@@ -361,7 +361,7 @@ bool is_valid_summary_addr(struct prefix_ipv4 *p)
 		return false;
 
 	/*Host route shouldn't be configured as summary addres*/
-	if (p->prefixlen == IPV4_MAX_PREFIXLEN)
+	if (p->prefixlen == IPV4_MAX_BITLEN)
 		return false;
 
 	return true;
@@ -862,7 +862,7 @@ static void ospf_handle_external_aggr_add(struct ospf *ospf)
 					continue;
 
 				ei = rn->info;
-				if (is_prefix_default(&ei->p))
+				if (is_default_prefix4(&ei->p))
 					continue;
 
 				/* Check the AS-external-LSA

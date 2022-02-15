@@ -25,7 +25,6 @@
 #include "lib/command.h"
 #include "lib/northbound_cli.h"
 #include "lib/routemap.h"
-#include "bgpd/bgp_ecommunity.h"
 
 #ifndef VTYSH_EXTRACT_PL
 #include "lib/routemap_cli_clippy.c"
@@ -125,6 +124,7 @@ void route_map_instance_show(struct vty *vty, struct lyd_node *dnode,
 
 void route_map_instance_show_end(struct vty *vty, struct lyd_node *dnode)
 {
+	vty_out(vty, "exit\n");
 	vty_out(vty, "!\n");
 }
 
@@ -635,6 +635,11 @@ void route_map_condition_show(struct vty *vty, struct lyd_node *dnode,
 			yang_dnode_get_string(
 				dnode,
 				"./rmap-match-condition/frr-bgp-route-map:local-preference"));
+	} else if (IS_MATCH_ALIAS(condition)) {
+		vty_out(vty, " match alias %s\n",
+			yang_dnode_get_string(
+				dnode,
+				"./rmap-match-condition/frr-bgp-route-map:alias"));
 	} else if (IS_MATCH_ORIGIN(condition)) {
 		vty_out(vty, " match origin %s\n",
 			yang_dnode_get_string(
@@ -1218,6 +1223,11 @@ void route_map_action_show(struct vty *vty, struct lyd_node *dnode,
 			strlcat(str, " non-transitive", sizeof(str));
 
 		vty_out(vty, " set extcommunity bandwidth %s\n", str);
+	} else if (IS_SET_EXTCOMMUNITY_NONE(action)) {
+		if (yang_dnode_get_bool(
+			    dnode,
+			    "./rmap-set-action/frr-bgp-route-map:extcommunity-none"))
+			vty_out(vty, " set extcommunity none\n");
 	} else if (IS_SET_AGGREGATOR(action)) {
 		vty_out(vty, " set aggregator as %s %s\n",
 			yang_dnode_get_string(
@@ -1277,6 +1287,16 @@ void route_map_action_show(struct vty *vty, struct lyd_node *dnode,
 			yang_dnode_get_string(
 				dnode,
 				"./rmap-set-action/frr-bgp-route-map:ipv4-nexthop"));
+	} else if (IS_SET_BGP_EVPN_GATEWAY_IP_IPV4(action)) {
+		vty_out(vty, " set evpn gateway-ip ipv4 %s\n",
+			yang_dnode_get_string(
+				dnode,
+				"./rmap-set-action/frr-bgp-route-map:evpn-gateway-ip-ipv4"));
+	} else if (IS_SET_BGP_EVPN_GATEWAY_IP_IPV6(action)) {
+		vty_out(vty, " set evpn gateway-ip ipv6 %s\n",
+			yang_dnode_get_string(
+				dnode,
+				"./rmap-set-action/frr-bgp-route-map:evpn-gateway-ip-ipv6"));
 	}
 }
 

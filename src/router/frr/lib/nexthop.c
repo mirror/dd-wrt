@@ -36,6 +36,7 @@
 
 DEFINE_MTYPE_STATIC(LIB, NEXTHOP, "Nexthop");
 DEFINE_MTYPE_STATIC(LIB, NH_LABEL, "Nexthop label");
+DEFINE_MTYPE_STATIC(LIB, NH_SRV6, "Nexthop srv6");
 
 static int _nexthop_labels_cmp(const struct nexthop *nh1,
 			       const struct nexthop *nh2)
@@ -64,6 +65,39 @@ static int _nexthop_labels_cmp(const struct nexthop *nh1,
 
 	return memcmp(nhl1->label, nhl2->label,
 		      (nhl1->num_labels * sizeof(mpls_label_t)));
+}
+
+static int _nexthop_srv6_cmp(const struct nexthop *nh1,
+			     const struct nexthop *nh2)
+{
+	int ret = 0;
+
+	if (!nh1->nh_srv6 && !nh2->nh_srv6)
+		return 0;
+
+	if (nh1->nh_srv6 && !nh2->nh_srv6)
+		return 1;
+
+	if (!nh1->nh_srv6 && nh2->nh_srv6)
+		return -1;
+
+	if (nh1->nh_srv6->seg6local_action > nh2->nh_srv6->seg6local_action)
+		return 1;
+
+	if (nh2->nh_srv6->seg6local_action < nh1->nh_srv6->seg6local_action)
+		return -1;
+
+	ret = memcmp(&nh1->nh_srv6->seg6local_ctx,
+		     &nh2->nh_srv6->seg6local_ctx,
+		     sizeof(struct seg6local_context));
+	if (ret != 0)
+		return ret;
+
+	ret = memcmp(&nh1->nh_srv6->seg6_segs,
+		     &nh2->nh_srv6->seg6_segs,
+		     sizeof(struct in6_addr));
+
+	return ret;
 }
 
 int nexthop_g_addr_cmp(enum nexthop_types_t type, const union g_addr *addr1,
@@ -199,6 +233,10 @@ int nexthop_cmp(const struct nexthop *next1, const struct nexthop *next2)
 		return ret;
 
 	ret = _nexthop_labels_cmp(next1, next2);
+	if (ret != 0)
+		return ret;
+
+	ret = _nexthop_srv6_cmp(next1, next2);
 
 	return ret;
 }
@@ -353,6 +391,8 @@ struct nexthop *nexthop_new(void)
 void nexthop_free(struct nexthop *nexthop)
 {
 	nexthop_del_labels(nexthop);
+	nexthop_del_srv6_seg6local(nexthop);
+	nexthop_del_srv6_seg6(nexthop);
 	if (nexthop->resolved)
 		nexthops_free(nexthop->resolved);
 	XFREE(MTYPE_NEXTHOP, nexthop);
@@ -479,12 +519,13 @@ struct nexthop *nexthop_from_ipv6_ifindex(const struct in6_addr *ipv6,
 	return nexthop;
 }
 
-struct nexthop *nexthop_from_blackhole(enum blackhole_type bh_type)
+struct nexthop *nexthop_from_blackhole(enum blackhole_type bh_type,
+				       vrf_id_t nh_vrf_id)
 {
 	struct nexthop *nexthop;
 
 	nexthop = nexthop_new();
-	nexthop->vrf_id = VRF_DEFAULT;
+	nexthop->vrf_id = nh_vrf_id;
 	nexthop->type = NEXTHOP_TYPE_BLACKHOLE;
 	nexthop->bh_type = bh_type;
 
@@ -523,6 +564,57 @@ void nexthop_del_labels(struct nexthop *nexthop)
 	nexthop->nh_label_type = ZEBRA_LSP_NONE;
 }
 
+void nexthop_add_srv6_seg6local(struct nexthop *nexthop, uint32_t action,
+				const struct seg6local_context *ctx)
+{
+	if (action == ZEBRA_SEG6_LOCAL_ACTION_UNSPEC)
+		return;
+
+	if (!nexthop->nh_srv6)
+		nexthop->nh_srv6 = XCALLOC(MTYPE_NH_SRV6,
+					   sizeof(struct nexthop_srv6));
+
+	nexthop->nh_srv6->seg6local_action = action;
+	nexthop->nh_srv6->seg6local_ctx = *ctx;
+}
+
+void nexthop_del_srv6_seg6local(struct nexthop *nexthop)
+{
+	if (!nexthop->nh_srv6)
+		return;
+
+	nexthop->nh_srv6->seg6local_action = ZEBRA_SEG6_LOCAL_ACTION_UNSPEC;
+
+	if (sid_zero(&nexthop->nh_srv6->seg6_segs))
+		XFREE(MTYPE_NH_SRV6, nexthop->nh_srv6);
+}
+
+void nexthop_add_srv6_seg6(struct nexthop *nexthop,
+			   const struct in6_addr *segs)
+{
+	if (!segs)
+		return;
+
+	if (!nexthop->nh_srv6)
+		nexthop->nh_srv6 = XCALLOC(MTYPE_NH_SRV6,
+					   sizeof(struct nexthop_srv6));
+
+	nexthop->nh_srv6->seg6_segs = *segs;
+}
+
+void nexthop_del_srv6_seg6(struct nexthop *nexthop)
+{
+	if (!nexthop->nh_srv6)
+		return;
+
+	memset(&nexthop->nh_srv6->seg6_segs, 0,
+	       sizeof(nexthop->nh_srv6->seg6_segs));
+
+	if (nexthop->nh_srv6->seg6local_action ==
+	    ZEBRA_SEG6_LOCAL_ACTION_UNSPEC)
+		XFREE(MTYPE_NH_SRV6, nexthop->nh_srv6);
+}
+
 const char *nexthop2str(const struct nexthop *nexthop, char *str, int size)
 {
 	switch (nexthop->type) {
@@ -541,9 +633,6 @@ const char *nexthop2str(const struct nexthop *nexthop, char *str, int size)
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
 		snprintf(str, size, "blackhole");
-		break;
-	default:
-		snprintf(str, size, "unknown");
 		break;
 	}
 
@@ -668,6 +757,14 @@ uint32_t nexthop_hash_quick(const struct nexthop *nexthop)
 			key = jhash_1word(nexthop->backup_idx[i], key);
 	}
 
+	if (nexthop->nh_srv6) {
+		key = jhash_1word(nexthop->nh_srv6->seg6local_action, key);
+		key = jhash(&nexthop->nh_srv6->seg6local_ctx,
+			    sizeof(nexthop->nh_srv6->seg6local_ctx), key);
+		key = jhash(&nexthop->nh_srv6->seg6_segs,
+			    sizeof(nexthop->nh_srv6->seg6_segs), key);
+	}
+
 	return key;
 }
 
@@ -720,6 +817,17 @@ void nexthop_copy_no_recurse(struct nexthop *copy,
 		nexthop_add_labels(copy, nexthop->nh_label_type,
 				   nexthop->nh_label->num_labels,
 				   &nexthop->nh_label->label[0]);
+
+	if (nexthop->nh_srv6) {
+		if (nexthop->nh_srv6->seg6local_action !=
+		    ZEBRA_SEG6_LOCAL_ACTION_UNSPEC)
+			nexthop_add_srv6_seg6local(copy,
+				nexthop->nh_srv6->seg6local_action,
+				&nexthop->nh_srv6->seg6local_ctx);
+		if (!sid_zero(&nexthop->nh_srv6->seg6_segs))
+			nexthop_add_srv6_seg6(copy,
+				&nexthop->nh_srv6->seg6_segs);
+	}
 }
 
 void nexthop_copy(struct nexthop *copy, const struct nexthop *nexthop,
@@ -828,6 +936,12 @@ int nexthop_str2backups(const char *str, int *num_backups,
  *		unreachable (blackhole)
  *	%pNHs
  *		nexthop2str()
+ *	%pNHcg
+ *		1.2.3.4
+ *		(0-length if no IP address present)
+ *	%pNHci
+ *		eth0
+ *		(0-length if no interface present)
  */
 printfrr_ext_autoreg_p("NH", printfrr_nh)
 static ssize_t printfrr_nh(struct fbuf *buf, struct printfrr_eargs *ea,
@@ -882,11 +996,9 @@ static ssize_t printfrr_nh(struct fbuf *buf, struct printfrr_eargs *ea,
 			case BLACKHOLE_NULL:
 				ret += bputs(buf, " (blackhole)");
 				break;
-			default:
+			case BLACKHOLE_UNSPEC:
 				break;
 			}
-			break;
-		default:
 			break;
 		}
 		if (do_ifi && nexthop->ifindex)
@@ -918,9 +1030,54 @@ static ssize_t printfrr_nh(struct fbuf *buf, struct printfrr_eargs *ea,
 		case NEXTHOP_TYPE_BLACKHOLE:
 			ret += bputs(buf, "blackhole");
 			break;
-		default:
-			ret += bputs(buf, "unknown");
-			break;
+		}
+		return ret;
+	case 'c':
+		ea->fmt++;
+		if (*ea->fmt == 'g') {
+			ea->fmt++;
+			if (!nexthop)
+				return bputs(buf, "(null)");
+			switch (nexthop->type) {
+			case NEXTHOP_TYPE_IPV4:
+			case NEXTHOP_TYPE_IPV4_IFINDEX:
+				ret += bprintfrr(buf, "%pI4",
+						 &nexthop->gate.ipv4);
+				break;
+			case NEXTHOP_TYPE_IPV6:
+			case NEXTHOP_TYPE_IPV6_IFINDEX:
+				ret += bprintfrr(buf, "%pI6",
+						 &nexthop->gate.ipv6);
+				break;
+			case NEXTHOP_TYPE_IFINDEX:
+			case NEXTHOP_TYPE_BLACKHOLE:
+				break;
+			}
+		} else if (*ea->fmt == 'i') {
+			ea->fmt++;
+			if (!nexthop)
+				return bputs(buf, "(null)");
+			switch (nexthop->type) {
+			case NEXTHOP_TYPE_IFINDEX:
+				ret += bprintfrr(
+					buf, "%s",
+					ifindex2ifname(nexthop->ifindex,
+						       nexthop->vrf_id));
+				break;
+			case NEXTHOP_TYPE_IPV4:
+			case NEXTHOP_TYPE_IPV4_IFINDEX:
+			case NEXTHOP_TYPE_IPV6:
+			case NEXTHOP_TYPE_IPV6_IFINDEX:
+				if (nexthop->ifindex)
+					ret += bprintfrr(
+						buf, "%s",
+						ifindex2ifname(
+							nexthop->ifindex,
+							nexthop->vrf_id));
+				break;
+			case NEXTHOP_TYPE_BLACKHOLE:
+				break;
+			}
 		}
 		return ret;
 	}

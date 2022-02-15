@@ -366,6 +366,9 @@ int zclient_bfd_command(struct zclient *zc, struct bfd_session_arg *args)
 		if (args->ifnamelen)
 			stream_put(s, args->ifname, args->ifnamelen);
 	}
+
+	/* Send the C bit indicator. */
+	stream_putc(s, args->cbit);
 #endif /* HAVE_BFDD */
 
 	/* Finish the message by writing the size. */
@@ -549,7 +552,8 @@ static bool bfd_sess_address_changed(const struct bfd_session_params *bsp,
 }
 
 void bfd_sess_set_ipv4_addrs(struct bfd_session_params *bsp,
-			     struct in_addr *src, struct in_addr *dst)
+			     const struct in_addr *src,
+			     const struct in_addr *dst)
 {
 	if (!bfd_sess_address_changed(bsp, AF_INET, (struct in6_addr *)src,
 				      (struct in6_addr *)dst))
@@ -573,10 +577,10 @@ void bfd_sess_set_ipv4_addrs(struct bfd_session_params *bsp,
 }
 
 void bfd_sess_set_ipv6_addrs(struct bfd_session_params *bsp,
-			     struct in6_addr *src, struct in6_addr *dst)
+			     const struct in6_addr *src,
+			     const struct in6_addr *dst)
 {
-	if (!bfd_sess_address_changed(bsp, AF_INET, (struct in6_addr *)src,
-				      (struct in6_addr *)dst))
+	if (!bfd_sess_address_changed(bsp, AF_INET6, src, dst))
 		return;
 
 	/* If already installed, remove the old setting. */

@@ -1,0 +1,11 @@
+/frr
+/gen_northbound_callbacks
+/gen_yang_deviations
+/permutations
+/ssd
+/watchfrr.sh
+/frrinit.sh
+/frrcommon.sh
+/frr.service
+/frr@.service
+/frr-llvm-cg

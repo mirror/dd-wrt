@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Frr Reloader
 # Copyright (C) 2014 Cumulus Networks, Inc.
 #
@@ -30,7 +30,6 @@ This program
 
 from __future__ import print_function, unicode_literals
 import argparse
-import copy
 import logging
 import os, os.path
 import random
@@ -39,25 +38,12 @@ import string
 import subprocess
 import sys
 from collections import OrderedDict
-
-try:
-    from ipaddress import IPv6Address, ip_network
-except ImportError:
-    from ipaddr import IPv6Address, IPNetwork
+from ipaddress import IPv6Address, ip_network
 from pprint import pformat
 
-try:
-    dict.iteritems
-except AttributeError:
-    # Python 3
-    def iteritems(d):
-        return iter(d.items())
-
-
-else:
-    # Python 2
-    def iteritems(d):
-        return d.iteritems()
+# Python 3
+def iteritems(d):
+    return iter(d.items())
 
 
 log = logging.getLogger(__name__)
@@ -372,22 +358,13 @@ class Config(object):
             addr = re_key_rt.group(2)
             if "/" in addr:
                 try:
-                    if "ipaddress" not in sys.modules:
-                        newaddr = IPNetwork(addr)
-                        key[0] = "%s route %s/%s%s" % (
-                            re_key_rt.group(1),
-                            newaddr.network,
-                            newaddr.prefixlen,
-                            re_key_rt.group(3),
-                        )
-                    else:
-                        newaddr = ip_network(addr, strict=False)
-                        key[0] = "%s route %s/%s%s" % (
-                            re_key_rt.group(1),
-                            str(newaddr.network_address),
-                            newaddr.prefixlen,
-                            re_key_rt.group(3),
-                        )
+                    newaddr = ip_network(addr, strict=False)
+                    key[0] = "%s route %s/%s%s" % (
+                        re_key_rt.group(1),
+                        str(newaddr.network_address),
+                        newaddr.prefixlen,
+                        re_key_rt.group(3),
+                    )
                 except ValueError:
                     pass
 
@@ -398,17 +375,11 @@ class Config(object):
             addr = re_key_rt.group(4)
             if "/" in addr:
                 try:
-                    if "ipaddress" not in sys.modules:
-                        newaddr = "%s/%s" % (
-                            IPNetwork(addr).network,
-                            IPNetwork(addr).prefixlen,
-                        )
-                    else:
-                        network_addr = ip_network(addr, strict=False)
-                        newaddr = "%s/%s" % (
-                            str(network_addr.network_address),
-                            network_addr.prefixlen,
-                        )
+                    network_addr = ip_network(addr, strict=False)
+                    newaddr = "%s/%s" % (
+                        str(network_addr.network_address),
+                        network_addr.prefixlen,
+                    )
                 except ValueError:
                     newaddr = addr
             else:
@@ -444,20 +415,12 @@ class Config(object):
                         addr = addr + "/8"
 
                     try:
-                        if "ipaddress" not in sys.modules:
-                            newaddr = IPNetwork(addr)
-                            line = "network %s/%s %s" % (
-                                newaddr.network,
-                                newaddr.prefixlen,
-                                re_net.group(2),
-                            )
-                        else:
-                            network_addr = ip_network(addr, strict=False)
-                            line = "network %s/%s %s" % (
-                                str(network_addr.network_address),
-                                network_addr.prefixlen,
-                                re_net.group(2),
-                            )
+                        network_addr = ip_network(addr, strict=False)
+                        line = "network %s/%s %s" % (
+                            str(network_addr.network_address),
+                            network_addr.prefixlen,
+                            re_net.group(2),
+                        )
                         newlines.append(line)
                     except ValueError:
                         # Really this should be an error. Whats a network
@@ -512,9 +475,6 @@ class Config(object):
         """
         Parse the configuration and create contexts for each appropriate block
         """
-
-        current_context_lines = []
-        ctx_keys = []
 
         """
         The end of a context is flagged via the 'end' keyword:
@@ -574,42 +534,57 @@ end
         # key of the context. So "router bgp 10" is the key for the non-address
         # family part of bgp, "router bgp 10, address-family ipv6 unicast" is
         # the key for the subcontext and so on.
-        ctx_keys = []
-        main_ctx_key = []
-        new_ctx = True
 
-        # the keywords that we know are single line contexts. bgp in this case
-        # is not the main router bgp block, but enabling multi-instance
-        oneline_ctx_keywords = (
-            "access-list ",
-            "agentx",
-            "allow-external-route-update",
-            "bgp ",
-            "debug ",
-            "domainname ",
-            "dump ",
-            "enable ",
-            "frr ",
-            "fpm ",
-            "hostname ",
-            "ip ",
-            "ipv6 ",
-            "log ",
-            "mac access-list ",
-            "mpls lsp",
-            "mpls label",
-            "no ",
-            "password ",
-            "pbr ",
-            "ptm-enable",
-            "router-id ",
-            "service ",
-            "table ",
-            "username ",
-            "zebra ",
-            "vrrp autoconfigure",
-            "evpn mh",
-        )
+        # This dictionary contains a tree of all commands that we know start a
+        # new multi-line context. All other commands are treated either as
+        # commands inside a multi-line context or as single-line contexts. This
+        # dictionary should be updated whenever a new node is added to FRR.
+        ctx_keywords = {
+            "router bgp ": {
+                "address-family ": {
+                    "vni ": {},
+                },
+                "vnc ": {},
+                "vrf-policy ": {},
+                "bmp ": {},
+                "segment-routing srv6": {},
+            },
+            "router rip": {},
+            "router ripng": {},
+            "router isis ": {},
+            "router openfabric ": {},
+            "router ospf": {},
+            "router ospf6": {},
+            "router eigrp ": {},
+            "router babel": {},
+            "mpls ldp": {"address-family ": {"interface ": {}}},
+            "l2vpn ": {"member pseudowire ": {}},
+            "key chain ": {"key ": {}},
+            "vrf ": {},
+            "interface ": {"link-params": {}},
+            "pseudowire ": {},
+            "segment-routing": {
+                "traffic-eng": {
+                    "segment-list ": {},
+                    "policy ": {"candidate-path ": {}},
+                    "pcep": {"pcc": {}, "pce ": {}, "pce-config ": {}},
+                },
+                "srv6": {"locators": {"locator ": {}}},
+            },
+            "nexthop-group ": {},
+            "route-map ": {},
+            "pbr-map ": {},
+            "rpki": {},
+            "bfd": {"peer ": {}, "profile ": {}},
+            "line vty": {},
+        }
+
+        # stack of context keys
+        ctx_keys = []
+        # stack of context keywords
+        cur_ctx_keywords = [ctx_keywords]
+        # list of stored commands
+        cur_ctx_lines = []
 
         for line in self.lines:
 
@@ -619,357 +594,77 @@ end
             if line.startswith("!") or line.startswith("#"):
                 continue
 
-            if (
-                len(ctx_keys) == 2
-                and ctx_keys[0].startswith("bfd")
-                and ctx_keys[1].startswith("profile ")
-                and line == "end"
-            ):
-                log.debug("LINE %-50s: popping from sub context, %-50s", line, ctx_keys)
-
-                if main_ctx_key:
-                    self.save_contexts(ctx_keys, current_context_lines)
-                    ctx_keys = copy.deepcopy(main_ctx_key)
-                    current_context_lines = []
+            if line.startswith("exit"):
+                # ignore on top level
+                if len(ctx_keys) == 0:
                     continue
 
-            # one line contexts
-            # there is one exception though: ldpd accepts a 'router-id' clause
-            # as part of its 'mpls ldp' config context. If we are processing
-            # ldp configuration and encounter a router-id we should NOT switch
-            # to a new context
-            if (
-                new_ctx is True
-                and any(line.startswith(keyword) for keyword in oneline_ctx_keywords)
-                and not (
-                    ctx_keys
-                    and ctx_keys[0].startswith("mpls ldp")
-                    and line.startswith("router-id ")
-                )
-            ):
-                self.save_contexts(ctx_keys, current_context_lines)
+                # save current context
+                self.save_contexts(ctx_keys, cur_ctx_lines)
 
-                # Start a new context
-                main_ctx_key = []
-                ctx_keys = [
-                    line,
-                ]
-                current_context_lines = []
+                # exit current context
+                log.debug("LINE %-50s: exit context %-50s", line, ctx_keys)
 
-                log.debug("LINE %-50s: entering new context, %-50s", line, ctx_keys)
-                self.save_contexts(ctx_keys, current_context_lines)
-                new_ctx = True
+                ctx_keys.pop()
+                cur_ctx_keywords.pop()
+                cur_ctx_lines = []
 
-            elif line == "end":
-                self.save_contexts(ctx_keys, current_context_lines)
-                log.debug("LINE %-50s: exiting old context, %-50s", line, ctx_keys)
+                continue
 
-                # Start a new context
-                new_ctx = True
-                main_ctx_key = []
-                ctx_keys = []
-                current_context_lines = []
+            if line.startswith("end"):
+                # exit all contexts
+                while len(ctx_keys) > 0:
+                    # save current context
+                    self.save_contexts(ctx_keys, cur_ctx_lines)
 
-            elif line == "exit" and ctx_keys[0].startswith("rpki"):
-                self.save_contexts(ctx_keys, current_context_lines)
-                log.debug("LINE %-50s: exiting old context, %-50s", line, ctx_keys)
+                    # exit current context
+                    log.debug("LINE %-50s: exit context %-50s", line, ctx_keys)
 
-                # Start a new context
-                new_ctx = True
-                main_ctx_key = []
-                ctx_keys = []
-                current_context_lines = []
+                    ctx_keys.pop()
+                    cur_ctx_keywords.pop()
+                    cur_ctx_lines = []
 
-            elif line == "exit-vrf":
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines.append(line)
-                log.debug(
-                    "LINE %-50s: append to current_context_lines, %-50s", line, ctx_keys
-                )
+                continue
 
-                # Start a new context
-                new_ctx = True
-                main_ctx_key = []
-                ctx_keys = []
-                current_context_lines = []
+            new_ctx = False
 
-            elif (
-                line == "exit"
-                and len(ctx_keys) > 1
-                and ctx_keys[0].startswith("segment-routing")
-            ):
-                self.save_contexts(ctx_keys, current_context_lines)
+            # check if the line is a context-entering keyword
+            for k, v in cur_ctx_keywords[-1].items():
+                if line.startswith(k):
+                    # candidate-path is a special case. It may be a node and
+                    # may be a single-line command. The distinguisher is the
+                    # word "dynamic" or "explicit" at the middle of the line.
+                    # It was perhaps not the best choice by the pathd authors
+                    # but we have what we have.
+                    if k == "candidate-path " and "explicit" in line:
+                        # this is a single-line command
+                        break
 
-                # Start a new context
-                ctx_keys = ctx_keys[:-1]
-                current_context_lines = []
-                log.debug(
-                    "LINE %-50s: popping segment routing sub-context to ctx%-50s",
-                    line,
-                    ctx_keys,
-                )
+                    # save current context
+                    self.save_contexts(ctx_keys, cur_ctx_lines)
 
-            elif line in ["exit-address-family", "exit", "exit-vnc"]:
-                # if this exit is for address-family ipv4 unicast, ignore the pop
-                if main_ctx_key:
-                    self.save_contexts(ctx_keys, current_context_lines)
-
-                    # Start a new context
-                    ctx_keys = copy.deepcopy(main_ctx_key)
-                    current_context_lines = []
-                    log.debug(
-                        "LINE %-50s: popping from subcontext to ctx%-50s",
-                        line,
-                        ctx_keys,
-                    )
-
-            elif line in ["exit-vni", "exit-ldp-if"]:
-                if sub_main_ctx_key:
-                    self.save_contexts(ctx_keys, current_context_lines)
-
-                    # Start a new context
-                    ctx_keys = copy.deepcopy(sub_main_ctx_key)
-                    current_context_lines = []
-                    log.debug(
-                        "LINE %-50s: popping from sub-subcontext to ctx%-50s",
-                        line,
-                        ctx_keys,
-                    )
-
-            elif new_ctx is True:
-                if not main_ctx_key:
-                    ctx_keys = [
-                        line,
-                    ]
-                else:
-                    ctx_keys = copy.deepcopy(main_ctx_key)
-                    main_ctx_key = []
-
-                current_context_lines = []
-                new_ctx = False
-                log.debug("LINE %-50s: entering new context, %-50s", line, ctx_keys)
-
-            elif (
-                line.startswith("address-family ")
-                or line.startswith("vnc defaults")
-                or line.startswith("vnc l2-group")
-                or line.startswith("vnc nve-group")
-                or line.startswith("peer")
-                or line.startswith("key ")
-                or line.startswith("member pseudowire")
-            ):
-                main_ctx_key = []
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug("LINE %-50s: entering sub-context, append to ctx_keys", line)
-
-                if line == "address-family ipv6" and not ctx_keys[0].startswith(
-                    "mpls ldp"
-                ):
-                    ctx_keys.append("address-family ipv6 unicast")
-                elif line == "address-family ipv4" and not ctx_keys[0].startswith(
-                    "mpls ldp"
-                ):
-                    ctx_keys.append("address-family ipv4 unicast")
-                elif line == "address-family evpn":
-                    ctx_keys.append("address-family l2vpn evpn")
-                else:
+                    # enter new context
+                    new_ctx = True
                     ctx_keys.append(line)
+                    cur_ctx_keywords.append(v)
+                    cur_ctx_lines = []
 
-            elif (
-                line.startswith("vni ")
-                and len(ctx_keys) == 2
-                and ctx_keys[0].startswith("router bgp")
-                and ctx_keys[1] == "address-family l2vpn evpn"
-            ):
+                    log.debug("LINE %-50s: enter context %-50s", line, ctx_keys)
+                    break
 
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                sub_main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering sub-sub-context, append to ctx_keys", line
-                )
-                ctx_keys.append(line)
+            if new_ctx:
+                continue
 
-            elif (
-                line.startswith("interface ")
-                and len(ctx_keys) == 2
-                and ctx_keys[0].startswith("mpls ldp")
-                and ctx_keys[1].startswith("address-family")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                sub_main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering sub-sub-context, append to ctx_keys", line
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("traffic-eng")
-                and len(ctx_keys) == 1
-                and ctx_keys[0].startswith("segment-routing")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                log.debug(
-                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("segment-list ")
-                and len(ctx_keys) == 2
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                log.debug(
-                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("policy ")
-                and len(ctx_keys) == 2
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                log.debug(
-                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("candidate-path ")
-                and line.endswith(" dynamic")
-                and len(ctx_keys) == 3
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-                and ctx_keys[2].startswith("policy")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering candidate-path sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("pcep")
-                and len(ctx_keys) == 2
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering pcep sub-context, append to ctx_keys", line
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("pce-config ")
-                and len(ctx_keys) == 3
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-                and ctx_keys[2].startswith("pcep")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering pce-config sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("pce ")
-                and len(ctx_keys) == 3
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-                and ctx_keys[2].startswith("pcep")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering pce sub-context, append to ctx_keys", line
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("pcc")
-                and len(ctx_keys) == 3
-                and ctx_keys[0].startswith("segment-routing")
-                and ctx_keys[1].startswith("traffic-eng")
-                and ctx_keys[2].startswith("pcep")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering pcc sub-context, append to ctx_keys", line
-                )
-                ctx_keys.append(line)
-
-            elif (
-                line.startswith("profile ")
-                and len(ctx_keys) == 1
-                and ctx_keys[0].startswith("bfd")
-            ):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug(
-                    "LINE %-50s: entering BFD profile sub-context, append to ctx_keys",
-                    line,
-                )
-                ctx_keys.append(line)
-
+            if len(ctx_keys) == 0:
+                log.debug("LINE %-50s: single-line context", line)
+                self.save_contexts([line], [])
             else:
-                # Continuing in an existing context, add non-commented lines to it
-                current_context_lines.append(line)
-                log.debug(
-                    "LINE %-50s: append to current_context_lines, %-50s", line, ctx_keys
-                )
+                log.debug("LINE %-50s: add to current context %-50s", line, ctx_keys)
+                cur_ctx_lines.append(line)
 
         # Save the context of the last one
-        self.save_contexts(ctx_keys, current_context_lines)
+        if len(ctx_keys) > 0:
+            self.save_contexts(ctx_keys, cur_ctx_lines)
 
 
 def lines_to_config(ctx_keys, line, delete):
@@ -1030,15 +725,11 @@ def get_normalized_ipv6_line(line):
             norm_word = None
             if "/" in word:
                 try:
-                    if "ipaddress" not in sys.modules:
-                        v6word = IPNetwork(word)
-                        norm_word = "%s/%s" % (v6word.network, v6word.prefixlen)
-                    else:
-                        v6word = ip_network(word, strict=False)
-                        norm_word = "%s/%s" % (
-                            str(v6word.network_address),
-                            v6word.prefixlen,
-                        )
+                    v6word = ip_network(word, strict=False)
+                    norm_word = "%s/%s" % (
+                        str(v6word.network_address),
+                        v6word.prefixlen,
+                    )
                 except ValueError:
                     pass
             if not norm_word:
@@ -1093,6 +784,175 @@ def check_for_exit_vrf(lines_to_add, lines_to_del):
         if line == "exit-vrf":
             if line_exist(lines_to_add, ctx_keys, line):
                 lines_to_del.remove((ctx_keys, line))
+
+    return (lines_to_add, lines_to_del)
+
+
+"""
+This method handles deletion of bgp peer group config.
+The objective is to delete config lines related to peers
+associated with the peer-group and move the peer-group
+config line to the end of the lines_to_del list.
+"""
+
+
+def delete_move_lines(lines_to_add, lines_to_del):
+
+    del_dict = dict()
+    # Stores the lines to move to the end of the pending list.
+    lines_to_del_to_del = []
+    # Stores the lines to move to end of the pending list.
+    lines_to_del_to_app = []
+    found_pg_del_cmd = False
+
+    """
+    When "neighbor <pg_name> peer-group" under a bgp instance is removed,
+    it also deletes the associated peer config. Any config line below no form of
+    peer-group related to a peer are errored out as the peer no longer exists.
+    To cleanup peer-group and associated peer(s) configs:
+    - Remove all the peers config lines from the pending list (lines_to_del list).
+    - Move peer-group deletion line to the end of the pending list, to allow
+    removal of any of the peer-group specific configs.
+
+    Create a dictionary of config context (i.e. router bgp vrf x).
+    Under each context node, create a dictionary of a peer-group name.
+    Append a peer associated to the peer-group into a list under a peer-group node.
+    Remove all of the peer associated config lines from the pending list.
+    Append peer-group deletion line to end of the pending list.
+
+    Example:
+      neighbor underlay peer-group
+      neighbor underlay remote-as external
+      neighbor underlay advertisement-interval 0
+      neighbor underlay timers 3 9
+      neighbor underlay timers connect 10
+      neighbor swp1 interface peer-group underlay
+      neighbor swp1 advertisement-interval 0
+      neighbor swp1 timers 3 9
+      neighbor swp1 timers connect 10
+      neighbor swp2 interface peer-group underlay
+      neighbor swp2 advertisement-interval 0
+      neighbor swp2 timers 3 9
+      neighbor swp2 timers connect 10
+      neighbor swp3 interface peer-group underlay
+      neighbor uplink1 interface remote-as internal
+      neighbor uplink1 advertisement-interval 0
+      neighbor uplink1 timers 3 9
+      neighbor uplink1 timers connect 10
+
+    New order:
+      "router bgp 200  no bgp bestpath as-path multipath-relax"
+      "router bgp 200  no neighbor underlay advertisement-interval 0"
+      "router bgp 200  no neighbor underlay timers 3 9"
+      "router bgp 200  no neighbor underlay timers connect 10"
+      "router bgp 200  no neighbor uplink1 advertisement-interval 0"
+      "router bgp 200  no neighbor uplink1 timers 3 9"
+      "router bgp 200  no neighbor uplink1 timers connect 10"
+      "router bgp 200  no neighbor underlay remote-as external"
+      "router bgp 200  no neighbor uplink1 interface remote-as internal"
+      "router bgp 200  no neighbor underlay peer-group"
+
+    """
+
+    for (ctx_keys, line) in lines_to_del:
+        if (
+            ctx_keys[0].startswith("router bgp")
+            and line
+            and line.startswith("neighbor ")
+        ):
+            """
+            When 'neighbor <peer> remote-as <>' is removed it deletes the peer,
+            there might be a peer associated config which also needs to be removed
+            prior to peer.
+            Append the 'neighbor <peer> remote-as <>' to the lines_to_del.
+            Example:
+
+             neighbor uplink1 interface remote-as internal
+             neighbor uplink1 advertisement-interval 0
+             neighbor uplink1 timers 3 9
+             neighbor uplink1 timers connect 10
+
+             Move to end:
+             neighbor uplink1 advertisement-interval 0
+             neighbor uplink1 timers 3 9
+             neighbor uplink1 timers connect 10
+             ...
+
+             neighbor uplink1 interface remote-as internal
+
+            """
+            # 'no neighbor peer [interface] remote-as <>'
+            nb_remoteas = "neighbor (\S+) .*remote-as (\S+)"
+            re_nb_remoteas = re.search(nb_remoteas, line)
+            if re_nb_remoteas:
+                lines_to_del_to_app.append((ctx_keys, line))
+
+            """
+            {'router bgp 65001': {'PG': [], 'PG1': []},
+            'router bgp 65001 vrf vrf1': {'PG': [], 'PG1': []}}
+            """
+            if ctx_keys[0] not in del_dict:
+                del_dict[ctx_keys[0]] = dict()
+            # find 'no neighbor <pg_name> peer-group'
+            re_pg = re.match("neighbor (\S+) peer-group$", line)
+            if re_pg and re_pg.group(1) not in del_dict[ctx_keys[0]]:
+                del_dict[ctx_keys[0]][re_pg.group(1)] = list()
+
+    for (ctx_keys, line) in lines_to_del_to_app:
+        lines_to_del.remove((ctx_keys, line))
+        lines_to_del.append((ctx_keys, line))
+
+    if found_pg_del_cmd == False:
+        return (lines_to_add, lines_to_del)
+
+    """
+    {'router bgp 65001': {'PG': ['10.1.1.2'], 'PG1': ['10.1.1.21']},
+     'router bgp 65001 vrf vrf1': {'PG': ['10.1.1.2'], 'PG1': ['10.1.1.21']}}
+    """
+    for (ctx_keys, line) in lines_to_del:
+        if (
+            ctx_keys[0].startswith("router bgp")
+            and line
+            and line.startswith("neighbor ")
+        ):
+            if ctx_keys[0] in del_dict:
+                for pg_key in del_dict[ctx_keys[0]]:
+                    # 'neighbor <peer> [interface] peer-group <pg_name>'
+                    nb_pg = "neighbor (\S+) .*peer-group %s$" % pg_key
+                    re_nbr_pg = re.search(nb_pg, line)
+                    if (
+                        re_nbr_pg
+                        and re_nbr_pg.group(1) not in del_dict[ctx_keys[0]][pg_key]
+                    ):
+                        del_dict[ctx_keys[0]][pg_key].append(re_nbr_pg.group(1))
+
+    lines_to_del_to_app = []
+    for (ctx_keys, line) in lines_to_del:
+        if (
+            ctx_keys[0].startswith("router bgp")
+            and line
+            and line.startswith("neighbor ")
+        ):
+            if ctx_keys[0] in del_dict:
+                for pg in del_dict[ctx_keys[0]]:
+                    for nbr in del_dict[ctx_keys[0]][pg]:
+                        nb_exp = "neighbor %s .*" % nbr
+                        re_nb = re.search(nb_exp, line)
+                        # add peer configs to delete list.
+                        if re_nb and line not in lines_to_del_to_del:
+                            lines_to_del_to_del.append((ctx_keys, line))
+
+                    pg_exp = "neighbor %s peer-group$" % pg
+                    re_pg = re.match(pg_exp, line)
+                    if re_pg:
+                        lines_to_del_to_app.append((ctx_keys, line))
+
+    for (ctx_keys, line) in lines_to_del_to_del:
+        lines_to_del.remove((ctx_keys, line))
+
+    for (ctx_keys, line) in lines_to_del_to_app:
+        lines_to_del.remove((ctx_keys, line))
+        lines_to_del.append((ctx_keys, line))
 
     return (lines_to_add, lines_to_del)
 
@@ -1773,6 +1633,7 @@ def compare_context_objects(newconf, running):
     (lines_to_add, lines_to_del) = ignore_delete_re_add_lines(
         lines_to_add, lines_to_del
     )
+    (lines_to_add, lines_to_del) = delete_move_lines(lines_to_add, lines_to_del)
     (lines_to_add, lines_to_del) = ignore_unconfigurable_lines(
         lines_to_add, lines_to_del
     )
@@ -1841,6 +1702,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--daemon", help="daemon for which want to replace the config", default=""
+    )
+    parser.add_argument(
+        "--test-reset",
+        action="store_true",
+        help="Used by topotest to not delete debug or log file commands",
     )
 
     args = parser.parse_args()
@@ -1955,7 +1821,7 @@ if __name__ == "__main__":
                     service_integrated_vtysh_config = False
                     break
 
-    if not service_integrated_vtysh_config and not args.daemon:
+    if not args.test and not service_integrated_vtysh_config and not args.daemon:
         log.error(
             "'service integrated-vtysh-config' is not configured, this is required for 'service frr reload'"
         )
@@ -1983,35 +1849,58 @@ if __name__ == "__main__":
             running.load_from_show_running(args.daemon)
 
         (lines_to_add, lines_to_del) = compare_context_objects(newconf, running)
-        lines_to_configure = []
 
         if lines_to_del:
-            print("\nLines To Delete")
-            print("===============")
+            if not args.test_reset:
+                print("\nLines To Delete")
+                print("===============")
 
             for (ctx_keys, line) in lines_to_del:
 
                 if line == "!":
                     continue
 
-                cmd = "\n".join(lines_to_config(ctx_keys, line, True))
-                lines_to_configure.append(cmd)
+                nolines = lines_to_config(ctx_keys, line, True)
+
+                if args.test_reset:
+                    # For topotests the original code stripped the lines, and ommitted blank lines
+                    # after, do that here
+                    nolines = [x.strip() for x in nolines]
+                    # For topotests leave these lines in (don't delete them)
+                    # [chopps: why is "log file" more special than other "log" commands?]
+                    nolines = [
+                        x for x in nolines if "debug" not in x and "log file" not in x
+                    ]
+                    if not nolines:
+                        continue
+
+                cmd = "\n".join(nolines)
                 print(cmd)
 
         if lines_to_add:
-            print("\nLines To Add")
-            print("============")
+            if not args.test_reset:
+                print("\nLines To Add")
+                print("============")
 
             for (ctx_keys, line) in lines_to_add:
 
                 if line == "!":
                     continue
 
-                cmd = "\n".join(lines_to_config(ctx_keys, line, False))
-                lines_to_configure.append(cmd)
+                lines = lines_to_config(ctx_keys, line, False)
+
+                if args.test_reset:
+                    # For topotests the original code stripped the lines, and ommitted blank lines
+                    # after, do that here
+                    lines = [x.strip() for x in lines if x.strip()]
+                    if not lines:
+                        continue
+
+                cmd = "\n".join(lines)
                 print(cmd)
 
     elif args.reload:
+        lines_to_configure = []
 
         # We will not be able to do anything, go ahead and exit(1)
         if not vtysh.is_config_available():
