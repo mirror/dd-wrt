@@ -120,6 +120,7 @@ enum node_type {
 	BGP_VNC_L2_GROUP_NODE,   /* BGP VNC L2 group */
 	RFP_DEFAULTS_NODE,       /* RFP defaults node */
 	BGP_EVPN_NODE,		 /* BGP EVPN node. */
+	BGP_SRV6_NODE,		 /* BGP SRv6 node. */
 	OSPF_NODE,		 /* OSPF protocol mode */
 	OSPF6_NODE,		 /* OSPF protocol for IPv6 mode */
 	LDP_NODE,		 /* LDP protocol mode */
@@ -155,6 +156,9 @@ enum node_type {
 	PCEP_PCE_CONFIG_NODE,	 /* PCE shared configuration node */
 	PCEP_PCE_NODE,		 /* PCE configuration node */
 	PCEP_PCC_NODE,		 /* PCC configuration node */
+	SRV6_NODE,		 /* SRv6 node */
+	SRV6_LOCS_NODE,		 /* SRv6 locators node */
+	SRV6_LOC_NODE,		 /* SRv6 locator node */
 	VTY_NODE,		 /* Vty node. */
 	FPM_NODE,		 /* Dataplane FPM node. */
 	LINK_PARAMS_NODE,	/* Link-parameters node */
@@ -225,6 +229,7 @@ struct cmd_node {
 #define CMD_WARNING_CONFIG_FAILED 13
 #define CMD_NOT_MY_INSTANCE	14
 #define CMD_NO_LEVEL_UP 15
+#define CMD_ERR_NO_DAEMON 16
 
 /* Argc max counts. */
 #define CMD_ARGC_MAX   256
@@ -385,6 +390,7 @@ struct cmd_node {
 #define SRTE_STR "SR-TE information\n"
 #define SRTE_COLOR_STR "SR-TE Color information\n"
 #define NO_STR "Negate a command or set its defaults\n"
+#define IGNORED_IN_NO_STR "Ignored value in no form\n"
 #define REDIST_STR "Redistribute information from another routing protocol\n"
 #define CLEAR_STR "Reset functions\n"
 #define RIP_STR "RIP information\n"
@@ -434,6 +440,8 @@ struct cmd_node {
 #define BFD_PROFILE_STR "BFD profile.\n"
 #define BFD_PROFILE_NAME_STR "BFD profile name.\n"
 #define SHARP_STR "Sharp Routing Protocol\n"
+#define OSPF_GR_STR                                                            \
+	"OSPF non-stop forwarding (NSF) also known as OSPF Graceful Restart\n"
 
 #define CMD_VNI_RANGE "(1-16777215)"
 #define CONF_BACKUP_EXT ".sav"

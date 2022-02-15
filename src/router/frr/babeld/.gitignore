@@ -1,0 +1,7 @@
+*
+!*.c
+!*.h
+!LICENCE
+!Makefile
+!subdir.am
+!.gitignore

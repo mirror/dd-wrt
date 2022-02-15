@@ -358,8 +358,7 @@ void bgp_timer_set(struct peer *peer)
 		   status start timer is on unless peer is shutdown or peer is
 		   inactive.  All other timer must be turned off */
 		if (BGP_PEER_START_SUPPRESSED(peer) || !peer_active(peer)
-		    || (peer->bgp->inst_type != BGP_INSTANCE_TYPE_VIEW &&
-			peer->bgp->vrf_id == VRF_UNKNOWN)) {
+		    || peer->bgp->vrf_id == VRF_UNKNOWN) {
 			BGP_TIMER_OFF(peer->t_start);
 		} else {
 			BGP_TIMER_ON(peer->t_start, bgp_start_timer,
@@ -640,7 +639,8 @@ const char *const peer_down_str[] = {"",
 			       "No AFI/SAFI activated for peer",
 			       "AS Set config change",
 			       "Waiting for peer OPEN",
-			       "Reached received prefix count"};
+			       "Reached received prefix count",
+			       "Socket Error"};
 
 static int bgp_graceful_restart_timer_expire(struct thread *thread)
 {
@@ -808,7 +808,7 @@ void bgp_start_routeadv(struct bgp *bgp)
 			 sizeof(bgp->update_delay_peers_resume_time));
 
 	for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
-		if (peer->status != Established)
+		if (!peer_established(peer))
 			continue;
 		BGP_TIMER_OFF(peer->t_routeadv);
 		BGP_TIMER_ON(peer->t_routeadv, bgp_routeadv_timer, 0);
@@ -1001,7 +1001,7 @@ static void bgp_maxmed_onstartup_begin(struct bgp *bgp)
 
 static void bgp_maxmed_onstartup_process_status_change(struct peer *peer)
 {
-	if (peer->status == Established && !peer->bgp->established) {
+	if (peer_established(peer) && !peer->bgp->established) {
 		bgp_maxmed_onstartup_begin(peer->bgp);
 	}
 }
@@ -1063,7 +1063,7 @@ static void bgp_update_delay_begin(struct bgp *bgp)
 
 static void bgp_update_delay_process_status_change(struct peer *peer)
 {
-	if (peer->status == Established) {
+	if (peer_established(peer)) {
 		if (!peer->bgp->established++) {
 			bgp_update_delay_begin(peer->bgp);
 			zlog_info(
@@ -1099,7 +1099,7 @@ void bgp_fsm_change_status(struct peer *peer, int status)
 
 	if (status == Established)
 		bgp->established_peers++;
-	else if ((peer->status == Established) && (status != Established))
+	else if ((peer_established(peer)) && (status != Established))
 		bgp->established_peers--;
 
 	if (bgp_debug_neighbor_events(peer)) {
@@ -1232,7 +1232,7 @@ int bgp_stop(struct peer *peer)
 	}
 
 	/* Increment Dropped count. */
-	if (peer->status == Established) {
+	if (peer_established(peer)) {
 		peer->dropped++;
 
 		/* bgp log-neighbor-changes of neighbor Down */
@@ -1396,8 +1396,7 @@ int bgp_stop(struct peer *peer)
 		/* Received ORF prefix-filter */
 		peer->orf_plist[afi][safi] = NULL;
 
-		if ((peer->status == OpenConfirm)
-		    || (peer->status == Established)) {
+		if ((peer->status == OpenConfirm) || (peer_established(peer))) {
 			/* ORF received prefix-filter pnt */
 			snprintf(orf_name, sizeof(orf_name), "%s.%d.%d",
 				 peer->host, afi, safi);
@@ -1695,8 +1694,7 @@ int bgp_start(struct peer *peer)
 		return 0;
 	}
 
-	if (peer->bgp->inst_type != BGP_INSTANCE_TYPE_VIEW &&
-	    peer->bgp->vrf_id == VRF_UNKNOWN) {
+	if (peer->bgp->vrf_id == VRF_UNKNOWN) {
 		if (bgp_debug_neighbor_events(peer))
 			flog_err(
 				EC_BGP_FSM,
@@ -2197,7 +2195,8 @@ void bgp_fsm_nht_update(struct peer *peer, bool has_valid_nexthops)
 	case OpenConfirm:
 	case Established:
 		if (!has_valid_nexthops
-		    && (peer->gtsm_hops == BGP_GTSM_HOPS_CONNECTED))
+		    && (peer->gtsm_hops == BGP_GTSM_HOPS_CONNECTED
+			|| peer->bgp->fast_convergence))
 			BGP_EVENT_ADD(peer, TCP_fatal_error);
 	case Clearing:
 	case Deleted:
