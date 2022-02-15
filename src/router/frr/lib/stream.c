@@ -1097,8 +1097,7 @@ ssize_t stream_read_try(struct stream *s, int fd, size_t size)
 		return -1;
 	}
 
-	nbytes = read(fd, s->data + s->endp, size);
-	if (nbytes >= 0) {
+	if ((nbytes = read(fd, s->data + s->endp, size)) >= 0) {
 		s->endp += nbytes;
 		return nbytes;
 	}
@@ -1127,8 +1126,9 @@ ssize_t stream_recvfrom(struct stream *s, int fd, size_t size, int flags,
 		return -1;
 	}
 
-	nbytes = recvfrom(fd, s->data + s->endp, size, flags, from, fromlen);
-	if (nbytes >= 0) {
+	if ((nbytes = recvfrom(fd, s->data + s->endp, size, flags, from,
+			       fromlen))
+	    >= 0) {
 		s->endp += nbytes;
 		return nbytes;
 	}

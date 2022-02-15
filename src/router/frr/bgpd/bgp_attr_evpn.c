@@ -315,4 +315,3 @@ extern bool is_zero_gw_ip(const union gw_addr *gw_ip, const afi_t afi)
 
 	return false;
 }
-

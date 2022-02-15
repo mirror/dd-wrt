@@ -97,7 +97,7 @@ module frr-pim {
 
     leaf keep-alive-timer {
       type uint16 {
-        range "1..max";
+        range "31..60000";
       }
       default "210";
       description
@@ -106,54 +106,13 @@ module frr-pim {
 
     leaf rp-keep-alive-timer {
       type uint16 {
-        range "1..max";
+        range "31..60000";
       }
       default "210";
       description
         "RP keep alive Timer in seconds.";
     }
   }
-
-  grouping msdp-timers {
-    leaf hold-time {
-      type uint16 {
-        range "1..max";
-      }
-      units seconds;
-      default 75;
-      description
-        "Hold period is started at the MSDP peer connection establishment
-         and is reset every new message. When the period expires the
-         connection is closed. This value should be greater than the
-         remote keep-alive time.";
-    }
-
-    leaf keep-alive {
-      type uint16 {
-        range "1..max";
-      }
-      units seconds;
-      default 60;
-      description
-        "To maintain a connection established it is necessary to send
-         keep alive messages in a certain frequency and this allows its
-         configuration. This value should be less than the remote
-         hold time.";
-    }
-
-    leaf connection-retry {
-      type uint16 {
-        range "1..max";
-      }
-      units seconds;
-      default 30;
-      description
-        "This period is used in the MSDP peer with the highest IP value
-         in the pair and configures the interval between TCP connection
-         attempts.";
-    }
-  }
-
   grouping per-af-global-pim-config-attributes {
     description
       "A grouping defining per address family pim global attributes";
@@ -215,42 +174,26 @@ module frr-pim {
         "Enable ssmpingd operation.";
     }
 
-    /* Global timers configuration. */
-    container msdp {
-      description "Global MSDP configuration.";
-      uses msdp-timers;
-    }
+    container msdp-mesh-group {
+      presence
+        "Configure MSDP mesh-group.";
 
-    list msdp-mesh-groups {
-      key "name";
-      description
-        "RFC 3618 Section 10.2. MSDP mesh-group semantics
-
-         Groups multiple MSDP peers to reduce SA flooding typically used
-         in intra-domain settings.";
-
-      leaf name {
-        type string {
-          length 1..64;
-        }
+      leaf mesh-group-name {
+        type string;
         description
-          "The mesh group name.";
+          "MSDP mesh group name.";
       }
 
-      leaf source {
+      leaf-list member-ip {
         type inet:ip-address;
         description
-          "Source IP address for the TCP connections.";
+          "Peer ip address.";
       }
 
-      list members {
-        key "address";
-
-        leaf address {
-          type inet:ip-address;
-          description
-            "Peer member IP address.";
-        }
+      leaf source-ip {
+        type inet:ip-address;
+        description
+          "Source ip address for the TCP connection.";
       }
     }
 
@@ -266,7 +209,6 @@ module frr-pim {
       }
 
       leaf source-ip {
-        mandatory true;
         type inet:ip-address;
         description
           "MSDP source IP address.";
@@ -341,7 +283,7 @@ module frr-pim {
 
     leaf hello-interval {
       type uint8 {
-        range "1..max";
+        range "1..180";
       }
       default "30";
       description
@@ -349,8 +291,8 @@ module frr-pim {
     }
 
     leaf hello-holdtime {
-      type uint16 {
-        range "1..max";
+      type uint8 {
+        range "1..180";
       }
       must ". > ./../hello-interval" {
       error-message "HoldTime must be greater than Hello";
@@ -365,7 +307,7 @@ module frr-pim {
 
       leaf min-rx-interval {
         type uint16 {
-          range "1..max";
+          range "50..60000";
         }
         default "300";
           description
@@ -374,7 +316,7 @@ module frr-pim {
 
       leaf min-tx-interval {
         type uint16 {
-          range "1..max";
+          range "50..60000";
         }
         default "300";
         description
@@ -420,7 +362,7 @@ module frr-pim {
 
     leaf dr-priority {
       type uint32 {
-        range "1..max";
+        range "1..4294967295";
       }
       default 1;
       description
@@ -519,7 +461,7 @@ module frr-pim {
       "PIM router parameters.";
     leaf packets {
       type uint8 {
-        range "1..max";
+        range "1..100";
       }
       default "3";
       description
@@ -527,7 +469,7 @@ module frr-pim {
     }
     leaf join-prune-interval {
       type uint16 {
-        range "1..max";
+        range "60..600";
       }
       default "60";
       description
@@ -535,7 +477,7 @@ module frr-pim {
     }
     leaf register-suppress-time {
       type uint16 {
-        range "1..max";
+        range "5..60000";
       }
       default "60";
       description

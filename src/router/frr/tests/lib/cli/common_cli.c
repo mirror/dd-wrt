@@ -59,13 +59,10 @@ static void vty_do_exit(int isexit)
 		exit(0);
 }
 
-const struct frr_yang_module_info *const *test_yang_modules = NULL;
-
 /* main routine. */
 int main(int argc, char **argv)
 {
 	struct thread thread;
-	size_t yangcount;
 
 	/* Set umask before anything for security */
 	umask(0027);
@@ -82,11 +79,7 @@ int main(int argc, char **argv)
 
 	vty_init(master, false);
 	lib_cmd_init();
-
-	for (yangcount = 0; test_yang_modules && test_yang_modules[yangcount];
-	     yangcount++)
-		;
-	nb_init(master, test_yang_modules, yangcount, false);
+	nb_init(master, NULL, 0, false);
 
 	test_init(argc, argv);
 

@@ -452,8 +452,7 @@ void nhrp_send_zebra_nbr(union sockunion *in,
 	stream_reset(s);
 	zclient_neigh_ip_encode(s, out ? ZEBRA_NEIGH_IP_ADD :
 				ZEBRA_NEIGH_IP_DEL, in, out,
-				ifp, out ? ZEBRA_NEIGH_STATE_REACHABLE
-				: ZEBRA_NEIGH_STATE_FAILED);
+				ifp);
 	stream_putw_at(s, 0, stream_get_endp(s));
 	zclient_send_message(zclient);
 }

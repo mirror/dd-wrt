@@ -101,7 +101,6 @@ void bfd_cli_show_header(struct vty *vty,
 void bfd_cli_show_header_end(struct vty *vty,
 			     struct lyd_node *dnode __attribute__((__unused__)))
 {
-	vty_out(vty, "exit\n");
 	vty_out(vty, "!\n");
 }
 
@@ -276,7 +275,6 @@ void bfd_cli_show_multi_hop_peer(struct vty *vty,
 void bfd_cli_show_peer_end(struct vty *vty,
 			   struct lyd_node *dnode __attribute__((__unused__)))
 {
-	vty_out(vty, " exit\n");
 	vty_out(vty, " !\n");
 }
 

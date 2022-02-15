@@ -43,7 +43,7 @@ struct zebra_sr_policy {
 	char name[SRTE_POLICY_NAME_MAX_LENGTH];
 	enum zebra_sr_policy_status status;
 	struct zapi_srte_tunnel segment_list;
-	struct zebra_lsp *lsp;
+	zebra_lsp_t *lsp;
 	struct zebra_vrf *zvrf;
 };
 RB_HEAD(zebra_sr_policy_instance_head, zebra_sr_policy);

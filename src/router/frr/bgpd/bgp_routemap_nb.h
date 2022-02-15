@@ -29,10 +29,6 @@ extern const struct frr_yang_module_info frr_bgp_route_map_info;
 /* prototypes */
 int lib_route_map_entry_match_condition_rmap_match_condition_local_preference_modify(struct nb_cb_modify_args *args);
 int lib_route_map_entry_match_condition_rmap_match_condition_local_preference_destroy(struct nb_cb_destroy_args *args);
-int lib_route_map_entry_match_condition_rmap_match_condition_alias_modify(
-	struct nb_cb_modify_args *args);
-int lib_route_map_entry_match_condition_rmap_match_condition_alias_destroy(
-	struct nb_cb_destroy_args *args);
 int lib_route_map_entry_match_condition_rmap_match_condition_script_modify(struct nb_cb_modify_args *args);
 int lib_route_map_entry_match_condition_rmap_match_condition_script_destroy(struct nb_cb_destroy_args *args);
 int lib_route_map_entry_match_condition_rmap_match_condition_origin_modify(struct nb_cb_modify_args *args);
@@ -134,18 +130,6 @@ int lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_bandwidth_mod
 int lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_bandwidth_destroy(struct nb_cb_destroy_args *args);
 int lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_two_octet_as_specific_modify(struct nb_cb_modify_args *args);
 int lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_two_octet_as_specific_destroy(struct nb_cb_destroy_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_extcommunity_none_modify(
-	struct nb_cb_modify_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_extcommunity_none_destroy(
-	struct nb_cb_destroy_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv4_modify(
-	struct nb_cb_modify_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv4_destroy(
-	struct nb_cb_destroy_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv6_modify(
-	struct nb_cb_modify_args *args);
-int lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv6_destroy(
-	struct nb_cb_destroy_args *args);
 
 #ifdef __cplusplus
 }

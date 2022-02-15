@@ -191,10 +191,6 @@ Networking data types
 
    ``%pNHs``: :frrfmtout:`1.2.3.4 if 15` — same as :c:func:`nexthop2str()`
 
-   ``%pNHcg``: :frrfmtout:`1.2.3.4` — compact gateway only
-
-   ``%pNHci``: :frrfmtout:`eth0` — compact interface only
-
 .. frrfmt:: %pBD (struct bgp_dest *)
 
    :frrfmtout:`fe80::1234/64`

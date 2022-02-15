@@ -80,12 +80,10 @@ Routers
 
 To start OSPF process you have to specify the OSPF router.
 
-.. clicmd:: router ospf [{(1-65535)|vrf NAME}]
+.. clicmd:: router ospf [(1-65535)] vrf NAME
 
 
    Enable or disable the OSPF process.
-
-   Multiple instances don't support `vrf NAME`.
 
 .. clicmd:: ospf router-id A.B.C.D
 
@@ -300,13 +298,6 @@ To start OSPF process you have to specify the OSPF router.
    Use this command to control the maximum number of equal cost paths to reach
    a specific destination. The upper limit may differ if you change the value
    of MULTIPATH_NUM during compilation. The default is MULTIPATH_NUM (64).
-
-.. clicmd:: write-multiplier (1-100)
-
-   Use this command to tune the amount of work done in the packet read and
-   write threads before relinquishing control. The parameter is the number
-   of packets to process before returning. The defult value of this parameter
-   is 20.
 
 .. _ospf-area:
 
@@ -691,12 +682,13 @@ Redistribution
    the 'always' keyword is given then the default is always advertised, even
    when there is no default present in the routing table.
 
+.. clicmd:: distribute-list NAME out (kernel|connected|static|rip|ospf
+
+
 .. _ospf-distribute-list:
 
-.. clicmd:: distribute-list NAME out <kernel|connected|static|rip|isis|bgp|eigrp|nhrp|table|vnc|babel|openfabric>
-
    Apply the access-list filter, NAME, to redistributed routes of the given
-   type before allowing the routes to be redistributed into OSPF
+   type before allowing the routes to redistributed into OSPF
    (:ref:`ospf redistribution <ospf-redistribute>`).
 
 .. clicmd:: default-metric (0-16777214)
@@ -709,19 +701,10 @@ Redistribution
 
 
 
-Graceful Restart
-================
+Graceful Restart Helper
+=======================
 
-.. clicmd:: graceful-restart [grace-period (1-1800)]
-
-
-   Configure Graceful Restart (RFC 3623) restarting support.
-   When enabled, the default grace period is 120 seconds.
-
-   To perform a graceful shutdown, the "graceful-restart prepare ip ospf"
-   EXEC-level command needs to be issued before restarting the ospfd daemon.
-
-.. clicmd:: graceful-restart helper enable [A.B.C.D]
+.. clicmd:: graceful-restart helper-only [A.B.C.D]
 
 
    Configure Graceful Restart (RFC 3623) helper support.
@@ -750,17 +733,6 @@ Graceful Restart
    It helps to support as HELPER only for planned
    restarts. By default, it supports both planned and
    unplanned outages.
-
-
-.. clicmd:: graceful-restart prepare ip ospf
-
-
-   Initiate a graceful restart for all OSPF instances configured with the
-   "graceful-restart" command. The ospfd daemon should be restarted during
-   the instance-specific grace period, otherwise the graceful restart will fail.
-
-   This is an EXEC-level command.
-
 
 .. _showing-ospf-information:
 
@@ -953,6 +925,8 @@ Router Information
 
    Show Router Capabilities PCE parameters.
 
+.. _debugging-ospf:
+
 Segment Routing
 ===============
 
@@ -965,18 +939,15 @@ dataplane.
    support, it is preferable to also activate routing information, and set
    accordingly the Area or AS flooding.
 
-.. clicmd:: segment-routing global-block (16-1048575) (16-1048575) [local-block (16-1048575) (16-1048575)]
+.. clicmd:: segment-routing global-block (0-1048575) (0-1048575)
 
-   Set the Segment Routing Global Block i.e. the label range used by MPLS to
-   store label in the MPLS FIB for Prefix SID. Optionally also set the Local
-   Block, i.e. the label range used for Adjacency SID. The negative version
-   of the command always unsets both ranges.
+   Fix the Segment Routing Global Block i.e. the label range used by MPLS to
+   store label in the MPLS FIB for Prefix SID.
 
-.. clicmd:: segment-routing local-block (16-1048575) (16-1048575)
+.. clicmd:: segment-routing local-block (0-1048575) (0-1048575)
 
-   Set the Segment Routing Local Block i.e. the label range used by MPLS to
-   store label in the MPLS FIB for Adjacency SID. This command is deprecated
-   in favor of the combined command above.
+   Fix the Segment Routing Local Block i.e. the label range used by MPLS to
+   store label in the MPLS FIB for Adjacency SID.
 
 .. clicmd:: segment-routing node-msd (1-16)
 
@@ -1038,8 +1009,6 @@ TI-LFA requires a proper Segment Routing configuration.
    Configured on the router level. Activates TI-LFA for all interfaces.
 
    Note that so far only P2P interfaces are supported.
-
-.. _debugging-ospf:
 
 Debugging OSPF
 ==============

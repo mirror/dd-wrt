@@ -177,16 +177,15 @@ struct route_entry {
 
 /* meta-queue structure:
  * sub-queue 0: nexthop group objects
- * sub-queue 1: EVPN/VxLAN objects
- * sub-queue 2: connected
- * sub-queue 3: kernel
- * sub-queue 4: static
- * sub-queue 5: RIP, RIPng, OSPF, OSPF6, IS-IS, EIGRP, NHRP
- * sub-queue 6: iBGP, eBGP
- * sub-queue 7: any other origin (if any) typically those that
+ * sub-queue 1: connected
+ * sub-queue 2: kernel
+ * sub-queue 3: static
+ * sub-queue 4: RIP, RIPng, OSPF, OSPF6, IS-IS, EIGRP, NHRP
+ * sub-queue 5: iBGP, eBGP
+ * sub-queue 6: any other origin (if any) typically those that
  *              don't generate routes
  */
-#define MQ_SIZE 8
+#define MQ_SIZE 7
 struct meta_queue {
 	struct list *subq[MQ_SIZE];
 	uint32_t size; /* sum of lengths of all subqueues */
@@ -289,30 +288,16 @@ DECLARE_LIST(re_list, struct route_entry, next);
 #define RNODE_NEXT_RE(rn, re) RE_DEST_NEXT_ROUTE(rib_dest_from_rnode(rn), re)
 
 #if defined(HAVE_RTADV)
-PREDECL_SORTLIST_UNIQ(adv_if_list);
 /* Structure which hold status of router advertisement. */
 struct rtadv {
 	int sock;
 
-	struct adv_if_list_head adv_if;
-	struct adv_if_list_head adv_msec_if;
+	int adv_if_count;
+	int adv_msec_if_count;
 
 	struct thread *ra_read;
 	struct thread *ra_timer;
 };
-
-/* adv list node */
-struct adv_if {
-	char name[INTERFACE_NAMSIZ];
-	struct adv_if_list_item list_item;
-};
-
-static int adv_if_cmp(const struct adv_if *a, const struct adv_if *b)
-{
-	return if_cmp_name_func(a->name, b->name);
-}
-
-DECLARE_SORTLIST_UNIQ(adv_if_list, struct adv_if, list_item, adv_if_cmp);
 #endif /* HAVE_RTADV */
 
 /*
@@ -370,6 +355,9 @@ void rib_handle_nhg_replace(struct nhg_hash_entry *old_entry,
 extern void _route_entry_dump(const char *func, union prefixconstptr pp,
 			      union prefixconstptr src_pp,
 			      const struct route_entry *re);
+
+extern void rib_lookup_and_dump(struct prefix_ipv4 *p, vrf_id_t vrf_id);
+extern void rib_lookup_and_pushup(struct prefix_ipv4 *p, vrf_id_t vrf_id);
 
 #define ZEBRA_RIB_LOOKUP_ERROR -1
 #define ZEBRA_RIB_FOUND_EXACT 0
@@ -448,36 +436,6 @@ extern int rib_queue_nhg_ctx_add(struct nhg_ctx *ctx);
 
 /* Enqueue incoming nhg from proto daemon for processing */
 extern int rib_queue_nhe_add(struct nhg_hash_entry *nhe);
-
-/* Enqueue evpn route for processing */
-int zebra_rib_queue_evpn_route_add(vrf_id_t vrf_id, const struct ethaddr *rmac,
-				   const struct ipaddr *vtep_ip,
-				   const struct prefix *host_prefix);
-int zebra_rib_queue_evpn_route_del(vrf_id_t vrf_id,
-				   const struct ipaddr *vtep_ip,
-				   const struct prefix *host_prefix);
-/* Enqueue EVPN remote ES for processing */
-int zebra_rib_queue_evpn_rem_es_add(const esi_t *esi,
-				    const struct in_addr *vtep_ip,
-				    bool esr_rxed, uint8_t df_alg,
-				    uint16_t df_pref);
-int zebra_rib_queue_evpn_rem_es_del(const esi_t *esi,
-				    const struct in_addr *vtep_ip);
-/* Enqueue EVPN remote macip update for processing */
-int zebra_rib_queue_evpn_rem_macip_del(vni_t vni, const struct ethaddr *macaddr,
-				       const struct ipaddr *ip,
-				       struct in_addr vtep_ip);
-int zebra_rib_queue_evpn_rem_macip_add(vni_t vni, const struct ethaddr *macaddr,
-				       const struct ipaddr *ipaddr,
-				       uint8_t flags, uint32_t seq,
-				       struct in_addr vtep_ip,
-				       const esi_t *esi);
-/* Enqueue VXLAN remote vtep update for processing */
-int zebra_rib_queue_evpn_rem_vtep_add(vrf_id_t vrf_id, vni_t vni,
-				      struct in_addr vtep_ip,
-				      int flood_control);
-int zebra_rib_queue_evpn_rem_vtep_del(vrf_id_t vrf_id, vni_t vni,
-				      struct in_addr vtep_ip);
 
 extern void meta_queue_free(struct meta_queue *mq);
 extern int zebra_rib_labeled_unicast(struct route_entry *re);

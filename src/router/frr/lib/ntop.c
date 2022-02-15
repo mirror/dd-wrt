@@ -40,18 +40,14 @@ static inline void putbyte(uint8_t bytex, char **posx)
 	bool zero = false;
 	int byte = bytex, tmp, a, b;
 
-	tmp = byte - 200;
-	if (tmp >= 0) {
+	if ((tmp = byte - 200) >= 0) {
 		*pos++ = '2';
 		zero = true;
 		byte = tmp;
-	} else {
-		tmp = byte - 100;
-		if (tmp >= 0) {
-			*pos++ = '1';
-			zero = true;
-			byte = tmp;
-		}
+	} else if ((tmp = byte - 100) >= 0) {
+		*pos++ = '1';
+		zero = true;
+		byte = tmp;
 	}
 
 	/* make sure the compiler knows the value range of "byte" */

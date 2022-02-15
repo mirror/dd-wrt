@@ -54,7 +54,7 @@
 #include "ospfd/ospf_dump.h"
 #include "ospfd/ospf_errors.h"
 #include "ospfd/ospf_zebra.h"
-#include "ospfd/ospf_gr.h"
+#include "ospfd/ospf_gr_helper.h"
 
 /*
  * OSPF Fragmentation / fragmented writes
@@ -1081,25 +1081,6 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 		return;
 	}
 
-	if (OSPF_GR_IS_ACTIVE_HELPER(nbr)) {
-		/* As per the GR Conformance Test Case 7.2. Section 3
-		 * "Also, if X was the Designated Router on network segment S
-		 * when the helping relationship began, Y maintains X as the
-		 * Designated Router until the helping relationship is
-		 * terminated."
-		 * When I am helper for this neighbor, I should not trigger the
-		 * ISM Events. Also Intentionally not setting the priority and
-		 * other fields so that when the neighbor exits the Grace
-		 * period, it can handle if there is any change before GR and
-		 * after GR. */
-		if (IS_DEBUG_OSPF_GR)
-			zlog_debug(
-				"%s, Neighbor is under GR Restart, hence ignoring the ISM Events",
-				__PRETTY_FUNCTION__);
-
-		return;
-	}
-
 	/* If neighbor itself declares DR and no BDR exists,
 	   cause event BackupSeen */
 	if (IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->d_router))
@@ -2044,11 +2025,9 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 
 				ospf_ls_ack_send(nbr, lsa);
 
-				if (!ospf->gr_info.restart_in_progress) {
-					ospf_opaque_self_originated_lsa_received(
-						nbr, lsa);
-					continue;
-				}
+				ospf_opaque_self_originated_lsa_received(nbr,
+									 lsa);
+				continue;
 			}
 		}
 
@@ -2108,10 +2087,11 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 		if (current == NULL
 		    || (ret = ospf_lsa_more_recent(current, lsa)) < 0) {
 			/* CVE-2017-3224 */
-			if (current && (IS_LSA_MAX_SEQ(current))
-			    && (IS_LSA_MAX_SEQ(lsa)) && !IS_LSA_MAXAGE(lsa)) {
+			if (current && (lsa->data->ls_seqnum ==
+					htonl(OSPF_MAX_SEQUENCE_NUMBER)
+					&& !IS_LSA_MAXAGE(lsa))) {
 				zlog_debug(
-					"Link State Update[%s]: has Max Seq and higher checksum but not MaxAge. Dropping it",
+					"Link State Update[%s]: has Max Seq but not MaxAge. Dropping it",
 					dump_lsa_key(lsa));
 
 				DISCARD_LSA(lsa, 4);
@@ -2233,9 +2213,6 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 
 	assert(listcount(lsas) == 0);
 	list_delete(&lsas);
-
-	if (ospf->gr_info.restart_in_progress)
-		ospf_gr_check_lsdb_consistency(oi->ospf, oi->area);
 }
 
 /* OSPF Link State Acknowledgment message read -- RFC2328 Section 13.7. */
@@ -2289,10 +2266,8 @@ static void ospf_ls_ack(struct ip *iph, struct ospf_header *ospfh,
 
 		lsr = ospf_ls_retransmit_lookup(nbr, lsa);
 
-		if (lsr != NULL && ospf_lsa_more_recent(lsr, lsa) == 0) {
+		if (lsr != NULL && ospf_lsa_more_recent(lsr, lsa) == 0)
 			ospf_ls_retransmit_delete(nbr, lsr);
-			ospf_check_and_gen_init_seq_lsa(oi, lsa);
-		}
 
 		lsa->data = NULL;
 		ospf_lsa_discard(lsa);
@@ -3600,12 +3575,13 @@ static int ospf_make_ls_upd(struct ospf_interface *oi, struct list *update,
 		struct lsa_header *lsah;
 		uint16_t ls_age;
 
-		lsa = listgetdata(node);
-		assert(lsa->data);
-
 		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug("%s: List Iteration %d LSA[%s]", __func__,
-				   count, dump_lsa_key(lsa));
+			zlog_debug("ospf_make_ls_upd: List Iteration %d",
+				   count);
+
+		lsa = listgetdata(node);
+
+		assert(lsa->data);
 
 		/* Will it fit? Minimum it has to fit atleast one */
 		if ((length + delta + ntohs(lsa->data->length) > size_noauth) &&
@@ -4288,7 +4264,7 @@ void ospf_ls_ack_send(struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 	struct ospf_interface *oi = nbr->oi;
 
 	if (IS_GRACE_LSA(lsa)) {
-		if (IS_DEBUG_OSPF_GR)
+		if (IS_DEBUG_OSPF_GR_HELPER)
 			zlog_debug("%s, Sending GRACE ACK to Restarter.",
 				   __func__);
 	}

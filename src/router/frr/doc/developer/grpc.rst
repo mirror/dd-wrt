@@ -42,7 +42,6 @@ Generating C++ FRR Bindings
 Generating FRR northbound bindings for C++ example:
 
 ::
-
    # Install gRPC (e.g., on Ubuntu 20.04)
    sudo apt-get install libgrpc++-dev libgrpc-dev
 

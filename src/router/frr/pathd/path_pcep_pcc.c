@@ -93,8 +93,7 @@ static void send_pcep_message(struct pcc_state *pcc_state,
 			      struct pcep_message *msg);
 static void send_pcep_error(struct pcc_state *pcc_state,
 			    enum pcep_error_type error_type,
-			    enum pcep_error_value error_value,
-			    struct path *trigger_path);
+			    enum pcep_error_value error_value);
 static void send_report(struct pcc_state *pcc_state, struct path *path);
 static void send_comp_request(struct ctrl_state *ctrl_state,
 			      struct pcc_state *pcc_state,
@@ -128,8 +127,6 @@ static struct req_entry *push_new_req(struct pcc_state *pcc_state,
 				      struct path *path);
 static void repush_req(struct pcc_state *pcc_state, struct req_entry *req);
 static struct req_entry *pop_req(struct pcc_state *pcc_state, uint32_t reqid);
-static struct req_entry *pop_req_no_reqid(struct pcc_state *pcc_state,
-					  uint32_t reqid);
 static bool add_reqid_mapping(struct pcc_state *pcc_state, struct path *path);
 static void remove_reqid_mapping(struct pcc_state *pcc_state,
 				 struct path *path);
@@ -544,8 +541,8 @@ void pcep_pcc_send_report(struct ctrl_state *ctrl_state,
 		return;
 	}
 
-	PCEP_DEBUG("(%s)%s Send report for candidate path %s", __func__,
-		   pcc_state->tag, path->name);
+	PCEP_DEBUG("%s Send report for candidate path %s", pcc_state->tag,
+		   path->name);
 
 	/* ODL and Cisco requires the first reported
 	 * LSP to have a DOWN status, the later status changes
@@ -558,8 +555,7 @@ void pcep_pcc_send_report(struct ctrl_state *ctrl_state,
 	/* If no update is expected and the real status wasn't down, we need to
 	 * send a second report with the real status */
 	if (is_stable && (real_status != PCEP_LSP_OPERATIONAL_DOWN)) {
-		PCEP_DEBUG("(%s)%s Send report for candidate path (!DOWN) %s",
-			   __func__, pcc_state->tag, path->name);
+		path->srp_id = 0;
 		path->status = real_status;
 		send_report(pcc_state, path);
 	}
@@ -568,19 +564,6 @@ void pcep_pcc_send_report(struct ctrl_state *ctrl_state,
 }
 
 
-void pcep_pcc_send_error(struct ctrl_state *ctrl_state,
-			 struct pcc_state *pcc_state, struct pcep_error *error,
-			 bool sub_type)
-{
-
-	PCEP_DEBUG("(%s) Send error after PcInitiated ", __func__);
-
-
-	send_pcep_error(pcc_state, error->error_type, error->error_value,
-			error->path);
-	pcep_free_path(error->path);
-	XFREE(MTYPE_PCEP, error);
-}
 /* ------------ Timeout handler ------------ */
 
 void pcep_pcc_timeout_handler(struct ctrl_state *ctrl_state,
@@ -668,9 +651,6 @@ void pcep_pcc_pathd_event_handler(struct ctrl_state *ctrl_state,
 		PCEP_DEBUG("%s Candidate path %s removed", pcc_state->tag,
 			   path->name);
 		path->was_removed = true;
-		/* Removed as response to a PcInitiated 'R'emove*/
-		/* RFC 8281 #5.4 LSP Deletion*/
-		path->do_remove = path->was_removed;
 		if (pcc_state->caps.is_stateful)
 			send_report(pcc_state, path);
 		return;
@@ -1223,113 +1203,14 @@ void handle_pcep_lsp_initiate(struct ctrl_state *ctrl_state,
 			      struct pcc_state *pcc_state,
 			      struct pcep_message *msg)
 {
-	char err[MAX_ERROR_MSG_SIZE] = "";
-	struct path *path;
+	PCEP_DEBUG("%s Received LSP initiate, not supported yet",
+		   pcc_state->tag);
 
-	path = pcep_lib_parse_path(msg);
-
-	if (!pcc_state->pce_opts->config_opts.pce_initiated) {
-		/* PCE Initiated is not enabled */
-		flog_warn(EC_PATH_PCEP_UNSUPPORTED_PCEP_FEATURE,
-			  "Not allowed PCE initiated path received: %s",
-			  format_pcep_message(msg));
-		send_pcep_error(pcc_state, PCEP_ERRT_LSP_INSTANTIATE_ERROR,
-				PCEP_ERRV_UNACCEPTABLE_INSTANTIATE_ERROR, path);
-		return;
-	}
-
-	if (path->do_remove) {
-		// lookup in nbkey sequential as no endpoint
-		struct nbkey_map_data *key;
-		char endpoint[46];
-
-		frr_each (nbkey_map, &pcc_state->nbkey_map, key) {
-			ipaddr2str(&key->nbkey.endpoint, endpoint,
-				   sizeof(endpoint));
-			flog_warn(
-				EC_PATH_PCEP_UNSUPPORTED_PCEP_FEATURE,
-				"FOR_EACH nbkey [color (%d) endpoint (%s)] path [plsp_id (%d)] ",
-				key->nbkey.color, endpoint, path->plsp_id);
-			if (path->plsp_id == key->plspid) {
-				flog_warn(
-					EC_PATH_PCEP_UNSUPPORTED_PCEP_FEATURE,
-					"FOR_EACH MATCH nbkey [color (%d) endpoint (%s)] path [plsp_id (%d)] ",
-					key->nbkey.color, endpoint,
-					path->plsp_id);
-				path->nbkey = key->nbkey;
-				break;
-			}
-		}
-	} else {
-		if (path->first_hop == NULL /*ero sets first_hop*/) {
-			/* If the PCC receives a PCInitiate message without an
-			 * ERO and the R flag in the SRP object != zero, then it
-			 * MUST send a PCErr message with Error-type=6
-			 * (Mandatory Object missing) and Error-value=9 (ERO
-			 * object missing). */
-			flog_warn(EC_PATH_PCEP_UNSUPPORTED_PCEP_FEATURE,
-				  "ERO object missing or incomplete : %s",
-				  format_pcep_message(msg));
-			send_pcep_error(pcc_state,
-					PCEP_ERRT_LSP_INSTANTIATE_ERROR,
-					PCEP_ERRV_INTERNAL_ERROR, path);
-			return;
-		}
-
-		if (path->plsp_id != 0) {
-			/* If the PCC receives a PCInitiate message with a
-			 * non-zero PLSP-ID and the R flag in the SRP object set
-			 * to zero, then it MUST send a PCErr message with
-			 * Error-type=19 (Invalid Operation) and Error-value=8
-			 * (Non-zero PLSP-ID in the LSP Initiate Request) */
-			flog_warn(
-				EC_PATH_PCEP_PROTOCOL_ERROR,
-				"PCE initiated path with non-zero PLSP ID: %s",
-				format_pcep_message(msg));
-			send_pcep_error(pcc_state, PCEP_ERRT_INVALID_OPERATION,
-					PCEP_ERRV_LSP_INIT_NON_ZERO_PLSP_ID,
-					path);
-			return;
-		}
-
-		if (path->name == NULL) {
-			/* If the PCC receives a PCInitiate message without a
-			 * SYMBOLIC-PATH-NAME TLV, then it MUST send a PCErr
-			 * message with Error-type=10 (Reception of an invalid
-			 * object) and Error-value=8 (SYMBOLIC-PATH-NAME TLV
-			 * missing) */
-			flog_warn(
-				EC_PATH_PCEP_PROTOCOL_ERROR,
-				"PCE initiated path without symbolic name: %s",
-				format_pcep_message(msg));
-			send_pcep_error(
-				pcc_state, PCEP_ERRT_RECEPTION_OF_INV_OBJECT,
-				PCEP_ERRV_SYMBOLIC_PATH_NAME_TLV_MISSING, path);
-			return;
-		}
-	}
-
-	/* TODO: If there is a conflict with the symbolic path name of an
-	 * existing LSP, the PCC MUST send a PCErr message with Error-type=23
-	 * (Bad Parameter value) and Error-value=1 (SYMBOLIC-PATH-NAME in
-	 * use) */
-
-	specialize_incoming_path(pcc_state, path);
-	/* TODO: Validate the PCC address received from the PCE is valid */
-	PCEP_DEBUG("%s Received LSP initiate", pcc_state->tag);
-	PCEP_DEBUG_PATH("%s", format_path(path));
-
-	if (validate_incoming_path(pcc_state, path, err, sizeof(err))) {
-		pcep_thread_initiate_path(ctrl_state, pcc_state->id, path);
-	} else {
-		/* FIXME: Monitor the amount of errors from the PCE and
-		 * possibly disconnect and blacklist */
-		flog_warn(EC_PATH_PCEP_UNSUPPORTED_PCEP_FEATURE,
-			  "Unsupported PCEP protocol feature: %s", err);
-		pcep_free_path(path);
-		send_pcep_error(pcc_state, PCEP_ERRT_INVALID_OPERATION,
-				PCEP_ERRV_LSP_NOT_PCE_INITIATED, path);
-	}
+	/* TODO when we support both PCC and PCE initiated sessions,
+	 *      we should first check the session type before
+	 *      rejecting this message. */
+	send_pcep_error(pcc_state, PCEP_ERRT_INVALID_OPERATION,
+			PCEP_ERRV_LSP_NOT_PCE_INITIATED);
 }
 
 void handle_pcep_comp_reply(struct ctrl_state *ctrl_state,
@@ -1341,11 +1222,7 @@ void handle_pcep_comp_reply(struct ctrl_state *ctrl_state,
 	struct path *path;
 
 	path = pcep_lib_parse_path(msg);
-	if (path->no_path) {
-		req = pop_req_no_reqid(pcc_state, path->req_id);
-	} else {
-		req = pop_req(pcc_state, path->req_id);
-	}
+	req = pop_req(pcc_state, path->req_id);
 	if (req == NULL) {
 		/* TODO: check the rate of bad computation reply and close
 		 * the connection if more that a given rate.
@@ -1355,7 +1232,7 @@ void handle_pcep_comp_reply(struct ctrl_state *ctrl_state,
 			pcc_state->tag, path->req_id);
 		PCEP_DEBUG_PATH("%s", format_path(path));
 		send_pcep_error(pcc_state, PCEP_ERRT_UNKNOWN_REQ_REF,
-				PCEP_ERRV_UNASSIGNED, NULL);
+				PCEP_ERRV_UNASSIGNED);
 		return;
 	}
 
@@ -1377,9 +1254,6 @@ void handle_pcep_comp_reply(struct ctrl_state *ctrl_state,
 	if (path->no_path) {
 		PCEP_DEBUG("%s Computation for path %s did not find any result",
 			   pcc_state->tag, path->name);
-		free_req_entry(req);
-		pcep_free_path(path);
-		return;
 	} else if (validate_incoming_path(pcc_state, path, err, sizeof(err))) {
 		/* Updating a dynamic path will automatically delegate it */
 		pcep_thread_update_path(ctrl_state, pcc_state->id, path);
@@ -1573,14 +1447,13 @@ void send_pcep_message(struct pcc_state *pcc_state, struct pcep_message *msg)
 
 void send_pcep_error(struct pcc_state *pcc_state,
 		     enum pcep_error_type error_type,
-		     enum pcep_error_value error_value,
-		     struct path *trigger_path)
+		     enum pcep_error_value error_value)
 {
 	struct pcep_message *msg;
 	PCEP_DEBUG("%s Sending PCEP error type %s (%d) value %s (%d)",
 		   pcc_state->tag, pcep_error_type_name(error_type), error_type,
 		   pcep_error_value_name(error_type, error_value), error_value);
-	msg = pcep_lib_format_error(error_type, error_value, trigger_path);
+	msg = pcep_lib_format_error(error_type, error_value);
 	send_pcep_message(pcc_state, msg);
 }
 
@@ -1631,8 +1504,7 @@ void specialize_outgoing_path(struct pcc_state *pcc_state, struct path *path)
 /* Updates the path for the PCC */
 void specialize_incoming_path(struct pcc_state *pcc_state, struct path *path)
 {
-	if (IS_IPADDR_NONE(&path->pcc_addr))
-		set_pcc_address(pcc_state, &path->nbkey, &path->pcc_addr);
+	set_pcc_address(pcc_state, &path->nbkey, &path->pcc_addr);
 	path->sender = pcc_state->pce_opts->addr;
 	path->pcc_id = pcc_state->id;
 	path->update_origin = SRTE_ORIGIN_PCEP;
@@ -1666,7 +1538,7 @@ bool validate_incoming_path(struct pcc_state *pcc_state, struct path *path,
 	}
 
 	if (err_type != 0) {
-		send_pcep_error(pcc_state, err_type, err_value, NULL);
+		send_pcep_error(pcc_state, err_type, err_value);
 		return false;
 	}
 
@@ -1692,6 +1564,7 @@ void send_comp_request(struct ctrl_state *ctrl_state,
 	if (!pcc_state->is_best) {
 		return;
 	}
+	/* TODO: Add a timer to retry the computation request ? */
 
 	specialize_outgoing_path(pcc_state, req->path);
 
@@ -1706,7 +1579,10 @@ void send_comp_request(struct ctrl_state *ctrl_state,
 	send_pcep_message(pcc_state, msg);
 	req->was_sent = true;
 
-	timeout = pcc_state->pce_opts->config_opts.pcep_request_time_seconds;
+	/* TODO: Enable this back when the pcep config changes are merged back
+	 */
+	// timeout = pcc_state->pce_opts->config_opts.pcep_request_time_seconds;
+	timeout = 30;
 	pcep_thread_schedule_timeout(ctrl_state, pcc_state->id,
 				     TO_COMPUTATION_REQUEST, timeout,
 				     (void *)req, &req->t_retry);
@@ -1764,6 +1640,7 @@ void set_pcc_address(struct pcc_state *pcc_state, struct lsp_nb_key *nbkey,
 		addr->ipa_type = IPADDR_NONE;
 	}
 }
+
 
 /* ------------ Data Structure Helper Functions ------------ */
 
@@ -1855,20 +1732,6 @@ struct req_entry *pop_req(struct pcc_state *pcc_state, uint32_t reqid)
 	return req;
 }
 
-struct req_entry *pop_req_no_reqid(struct pcc_state *pcc_state, uint32_t reqid)
-{
-	struct path path = {.req_id = reqid};
-	struct req_entry key = {.path = &path};
-	struct req_entry *req;
-
-	req = RB_FIND(req_entry_head, &pcc_state->requests, &key);
-	if (req == NULL)
-		return NULL;
-	RB_REMOVE(req_entry_head, &pcc_state->requests, req);
-
-	return req;
-}
-
 bool add_reqid_mapping(struct pcc_state *pcc_state, struct path *path)
 {
 	struct req_map_data *mapping;
@@ -1905,33 +1768,6 @@ uint32_t lookup_reqid(struct pcc_state *pcc_state, struct path *path)
 
 bool has_pending_req_for(struct pcc_state *pcc_state, struct path *path)
 {
-	struct req_entry key = {.path = path};
-	struct req_entry *req;
-
-
-	PCEP_DEBUG_PATH("(%s) %s", format_path(path), __func__);
-	/* Looking for request without result */
-	if (path->no_path || !path->first_hop) {
-		PCEP_DEBUG_PATH("%s Path : no_path|!first_hop", __func__);
-		/* ...and already was handle */
-		req = RB_FIND(req_entry_head, &pcc_state->requests, &key);
-		if (!req) {
-			/* we must purge remaining reqid */
-			PCEP_DEBUG_PATH("%s Purge pending reqid: no_path(%s)",
-					__func__,
-					path->no_path ? "TRUE" : "FALSE");
-			if (lookup_reqid(pcc_state, path) != 0) {
-				PCEP_DEBUG_PATH("%s Purge pending reqid: DONE ",
-						__func__);
-				remove_reqid_mapping(pcc_state, path);
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-
-
 	return lookup_reqid(pcc_state, path) != 0;
 }
 

@@ -52,7 +52,7 @@ int session_id_ = 0;
 
 void send_pcep_open(pcep_session *session); /* forward decl */
 
-static bool run_session_logic_common(void)
+static bool run_session_logic_common()
 {
 	if (session_logic_handle_ != NULL) {
 		pcep_log(LOG_WARNING,
@@ -369,7 +369,7 @@ void pcep_session_cancel_timers(pcep_session *session)
 }
 
 /* Internal util function */
-static int get_next_session_id(void)
+static int get_next_session_id()
 {
 	if (session_id_ == INT_MAX) {
 		session_id_ = 0;

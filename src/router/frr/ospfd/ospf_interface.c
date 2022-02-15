@@ -188,7 +188,7 @@ struct ospf_interface *ospf_if_table_lookup(struct interface *ifp,
 	struct ospf_interface *rninfo = NULL;
 
 	p = *prefix;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 
 	/* route_node_get implicitely locks */
 	if ((rn = route_node_lookup(IF_OIFS(ifp), &p))) {
@@ -205,7 +205,7 @@ static void ospf_add_to_if(struct interface *ifp, struct ospf_interface *oi)
 	struct prefix p;
 
 	p = *oi->address;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 	apply_mask(&p);
 
 	rn = route_node_get(IF_OIFS(ifp), &p);
@@ -223,7 +223,7 @@ static void ospf_delete_from_if(struct interface *ifp,
 	struct prefix p;
 
 	p = *oi->address;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 
 	rn = route_node_lookup(IF_OIFS(oi->ifp), &p);
 	assert(rn);
@@ -566,7 +566,7 @@ void ospf_free_if_params(struct interface *ifp, struct in_addr addr)
 	struct route_node *rn;
 
 	p.family = AF_INET;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 	p.prefix = addr;
 	rn = route_node_lookup(IF_OIFS_PARAMS(ifp), (struct prefix *)&p);
 	if (!rn || !rn->info)
@@ -601,7 +601,7 @@ struct ospf_if_params *ospf_lookup_if_params(struct interface *ifp,
 	struct route_node *rn;
 
 	p.family = AF_INET;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 	p.prefix = addr;
 
 	rn = route_node_lookup(IF_OIFS_PARAMS(ifp), (struct prefix *)&p);
@@ -621,7 +621,7 @@ struct ospf_if_params *ospf_get_if_params(struct interface *ifp,
 	struct route_node *rn;
 
 	p.family = AF_INET;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 	p.prefix = addr;
 	apply_mask_ipv4(&p);
 
@@ -705,11 +705,11 @@ static int ospf_if_delete_hook(struct interface *ifp)
 	 */
 	ospf_del_if_params(ifp, IF_DEF_PARAMS(ifp));
 
+	route_table_finish(IF_OIFS(ifp));
+
 	for (rn = route_top(IF_OIFS_PARAMS(ifp)); rn; rn = route_next(rn))
 		if (rn->info)
 			ospf_del_if_params(ifp, rn->info);
-
-	route_table_finish(IF_OIFS(ifp));
 	route_table_finish(IF_OIFS_PARAMS(ifp));
 
 	XFREE(MTYPE_OSPF_IF_INFO, ifp->info);
@@ -906,13 +906,6 @@ struct ospf_interface *ospf_vl_new(struct ospf *ospf,
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"ospf_vl_new(): Alarm: cannot create more than OSPF_MAX_VL_COUNT virtual links");
-		return NULL;
-	}
-
-	if (ospf->vrf_id == VRF_UNKNOWN) {
-		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug(
-				"ospf_vl_new(): Alarm: cannot create pseudo interface in unknown VRF");
 		return NULL;
 	}
 
@@ -1452,59 +1445,6 @@ static int ospf_ifp_destroy(struct interface *ifp)
 			ospf_if_free((struct ospf_interface *)rn->info);
 
 	return 0;
-}
-
-/* Resetting ospf hello timer */
-void ospf_reset_hello_timer(struct interface *ifp, struct in_addr addr,
-			    bool is_addr)
-{
-	struct route_node *rn;
-
-	if (is_addr) {
-		struct prefix p;
-		struct ospf_interface *oi = NULL;
-
-		p.u.prefix4 = addr;
-		p.family = AF_INET;
-		p.prefixlen = IPV4_MAX_BITLEN;
-
-		oi = ospf_if_table_lookup(ifp, &p);
-
-		if (oi) {
-			/* Send hello before restart the hello timer
-			 * to avoid session flaps in case of bigger
-			 * hello interval configurations.
-			 */
-			ospf_hello_send(oi);
-
-			/* Restart hello timer for this interface */
-			OSPF_ISM_TIMER_OFF(oi->t_hello);
-			OSPF_HELLO_TIMER_ON(oi);
-		}
-
-		return;
-	}
-
-	for (rn = route_top(IF_OIFS(ifp)); rn; rn = route_next(rn)) {
-		struct ospf_interface *oi = rn->info;
-
-		if (!oi)
-			continue;
-
-		/* If hello interval configured on this oi, don't restart. */
-		if (OSPF_IF_PARAM_CONFIGURED(oi->params, v_hello))
-			continue;
-
-		/* Send hello before restart the hello timer
-		 * to avoid session flaps in case of bigger
-		 * hello interval configurations.
-		 */
-		ospf_hello_send(oi);
-
-		/* Restart the hello timer. */
-		OSPF_ISM_TIMER_OFF(oi->t_hello);
-		OSPF_HELLO_TIMER_ON(oi);
-	}
 }
 
 void ospf_if_init(void)

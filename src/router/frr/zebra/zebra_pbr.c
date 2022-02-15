@@ -166,8 +166,10 @@ uint32_t zebra_pbr_rules_hash_key(const void *arg)
 			   rule->rule.action.table,
 			   prefix_hash_key(&rule->rule.filter.src_ip));
 
-	key = jhash_3words(rule->rule.filter.fwmark, rule->vrf_id,
-			   rule->rule.filter.ip_proto, key);
+	if (rule->rule.filter.fwmark)
+		key = jhash_2words(rule->rule.filter.fwmark, rule->vrf_id, key);
+	else
+		key = jhash_1word(rule->vrf_id, key);
 
 	key = jhash(rule->ifname, strlen(rule->ifname), key);
 
@@ -203,9 +205,6 @@ bool zebra_pbr_rules_hash_equal(const void *arg1, const void *arg2)
 		return false;
 
 	if (r1->rule.filter.fwmark != r2->rule.filter.fwmark)
-		return false;
-
-	if (r1->rule.filter.ip_proto != r2->rule.filter.ip_proto)
 		return false;
 
 	if (!prefix_same(&r1->rule.filter.src_ip, &r2->rule.filter.src_ip))
@@ -926,8 +925,8 @@ static const char *zebra_pbr_prefix2str(union prefixconstptr pu,
 	const struct prefix *p = pu.p;
 	char buf[PREFIX2STR_BUFFER];
 
-	if ((p->family == AF_INET && p->prefixlen == IPV4_MAX_BITLEN)
-	    || (p->family == AF_INET6 && p->prefixlen == IPV6_MAX_BITLEN)) {
+	if ((p->family == AF_INET && p->prefixlen == IPV4_MAX_PREFIXLEN) ||
+	    (p->family == AF_INET6 && p->prefixlen == IPV6_MAX_PREFIXLEN)) {
 		snprintf(str, size, "%s", inet_ntop(p->family, &p->u.prefix,
 						    buf, PREFIX2STR_BUFFER));
 		return str;

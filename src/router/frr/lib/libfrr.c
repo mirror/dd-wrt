@@ -44,7 +44,6 @@
 #include "frr_pthread.h"
 #include "defaults.h"
 #include "frrscript.h"
-#include "systemd.h"
 
 DEFINE_HOOK(frr_late_init, (struct thread_master * tm), (tm));
 DEFINE_HOOK(frr_config_pre, (struct thread_master * tm), (tm));
@@ -364,11 +363,6 @@ void frr_preinit(struct frr_daemon_info *daemon, int argc, char **argv)
 
 		startup_fds |= UINT64_C(0x1) << (uint64_t)i;
 	}
-
-	/* note this doesn't do anything, it just grabs state, so doing it
-	 * early in _preinit is perfect.
-	 */
-	systemd_init_env();
 }
 
 bool frr_is_startup_fd(int fd)
@@ -418,6 +412,7 @@ static int frr_opt(int opt)
 	switch (opt) {
 	case 'h':
 		frr_help_exit(0);
+		break;
 	case 'v':
 		print_version(di->progname);
 		exit(0);
@@ -674,19 +669,13 @@ static void frr_mkdir(const char *path, bool strip)
 			 strerror(errno));
 }
 
-static void _err_print(const void *cookie, const char *errstr)
-{
-	const char *prefix = (const char *)cookie;
-
-	fprintf(stderr, "%s: %s\n", prefix, errstr);
-}
-
 static struct thread_master *master;
 struct thread_master *frr_init(void)
 {
 	struct option_chain *oc;
 	struct frrmod_runtime *module;
 	struct zprivs_ids_t ids;
+	char moderr[256];
 	char p_instance[16] = "", p_pathspace[256] = "";
 	const char *dir;
 	dir = di->module_path ? di->module_path : frr_moduledir;
@@ -740,9 +729,11 @@ struct thread_master *frr_init(void)
 	frrmod_init(di->module);
 	while (modules) {
 		modules = (oc = modules)->next;
-		module = frrmod_load(oc->arg, dir, _err_print, __func__);
-		if (!module)
+		module = frrmod_load(oc->arg, dir, moderr, sizeof(moderr));
+		if (!module) {
+			fprintf(stderr, "%s\n", moderr);
 			exit(1);
+		}
 		XFREE(MTYPE_TMP, oc);
 	}
 

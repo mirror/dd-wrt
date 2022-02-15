@@ -42,13 +42,6 @@ struct bgp_table {
 
 	int lock;
 
-	/* soft_reconfig_table in progress */
-	bool soft_reconfig_init;
-	struct thread *soft_reconfig_thread;
-
-	/* list of peers on which soft_reconfig_table has to run */
-	struct list *soft_reconfig_peers;
-
 	struct route_table *route_table;
 	uint64_t version;
 };
@@ -103,7 +96,7 @@ struct bgp_node {
 
 	mpls_label_t local_label;
 
-	uint16_t flags;
+	uint8_t flags;
 #define BGP_NODE_PROCESS_SCHEDULED	(1 << 0)
 #define BGP_NODE_USER_CLEAR             (1 << 1)
 #define BGP_NODE_LABEL_CHANGED          (1 << 2)
@@ -112,7 +105,6 @@ struct bgp_node {
 #define BGP_NODE_FIB_INSTALL_PENDING    (1 << 5)
 #define BGP_NODE_FIB_INSTALLED          (1 << 6)
 #define BGP_NODE_LABEL_REQUESTED        (1 << 7)
-#define BGP_NODE_SOFT_RECONFIG (1 << 8)
 
 	struct bgp_addpath_node_data tx_addpath;
 
@@ -134,9 +126,6 @@ extern struct bgp_table *bgp_table_init(struct bgp *bgp, afi_t, safi_t);
 extern void bgp_table_lock(struct bgp_table *);
 extern void bgp_table_unlock(struct bgp_table *);
 extern void bgp_table_finish(struct bgp_table **);
-extern void bgp_dest_unlock_node(struct bgp_dest *dest);
-extern struct bgp_dest *bgp_dest_lock_node(struct bgp_dest *dest);
-extern const char *bgp_dest_get_prefix_str(struct bgp_dest *dest);
 
 
 /*
@@ -179,6 +168,15 @@ static inline struct bgp_dest *bgp_dest_parent_nolock(struct bgp_dest *dest)
 	struct route_node *rn = bgp_dest_to_rnode(dest)->parent;
 
 	return bgp_dest_from_rnode(rn);
+}
+
+/*
+ * bgp_dest_unlock_node
+ */
+static inline void bgp_dest_unlock_node(struct bgp_dest *dest)
+{
+	bgp_delete_listnode(dest);
+	route_unlock_node(bgp_dest_to_rnode(dest));
 }
 
 /*
@@ -241,6 +239,16 @@ static inline struct bgp_dest *
 bgp_node_lookup(const struct bgp_table *const table, const struct prefix *p)
 {
 	struct route_node *rn = route_node_lookup(table->route_table, p);
+
+	return bgp_dest_from_rnode(rn);
+}
+
+/*
+ * bgp_dest_lock_node
+ */
+static inline struct bgp_dest *bgp_dest_lock_node(struct bgp_dest *dest)
+{
+	struct route_node *rn = route_lock_node(bgp_dest_to_rnode(dest));
 
 	return bgp_dest_from_rnode(rn);
 }

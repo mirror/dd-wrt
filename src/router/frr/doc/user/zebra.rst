@@ -630,130 +630,6 @@ presence of the entry.
    21     Static       10.125.0.2  IPv4 Explicit Null
 
 
-.. _zebra-srv6:
-
-Segment-Routing IPv6
-====================
-
-Segment-Routing is source routing paradigm that allows
-network operator to encode network intent into the packets.
-SRv6 is an implementation of Segment-Routing
-with application of IPv6 and segment-routing-header.
-
-All routing daemon can use the Segment-Routing base
-framework implemented on zebra to use SRv6 routing mechanism.
-In that case, user must configure initial srv6 setting on
-FRR's cli or frr.conf or zebra.conf. This section shows how
-to configure SRv6 on FRR. Of course SRv6 can be used as standalone,
-and this section also helps that case.
-
-.. clicmd:: show segment-routing srv6 locator [json]
-
-   This command dump SRv6-locator configured on zebra.  SRv6-locator is used
-   to route to the node before performing the SRv6-function. and that works as
-   aggregation of SRv6-function's IDs.  Following console log shows two
-   SRv6-locators loc1 and loc2.  All locators are identified by unique IPv6
-   prefix.  User can get that information as JSON string when ``json`` key word
-   at the end of cli is presented.
-
-::
-
-   router# sh segment-routing srv6 locator
-   Locator:
-   Name                 ID      Prefix                   Status
-   -------------------- ------- ------------------------ -------
-   loc1                       1 2001:db8:1:1::/64        Up
-   loc2                       2 2001:db8:2:2::/64        Up
-
-.. clicmd:: show segment-routing srv6 locator NAME detail [json]
-
-   As shown in the example, by specifying the name of the locator, you
-   can see the detailed information for each locator.  Locator can be
-   represented by a single IPv6 prefix, but SRv6 is designed to share this
-   Locator among multiple Routing Protocols. For this purpose, zebra divides
-   the IPv6 prefix block that makes the Locator unique into multiple chunks,
-   and manages the ownership of each chunk.
-
-   For example, loc1 has system as its owner. For example, loc1 is owned by
-   system, which means that it is not yet proprietary to any routing protocol.
-   For example, loc2 has sharp as its owner. This means that the shaprd for
-   function development holds the owner of the chunk of this locator, and no
-   other routing protocol will use this area.
-
-::
-
-   router# show segment-routing srv6 locator loc1 detail
-   Name: loc1
-   Prefix: 2001:db8:1:1::/64
-   Chunks:
-   - prefix: 2001:db8:1:1::/64, owner: system
-
-   router# show segment-routing srv6 locator loc2 detail
-   Name: loc2
-   Prefix: 2001:db8:2:2::/64
-   Chunks:
-   - prefix: 2001:db8:2:2::/64, owner: sharp
-
-.. clicmd:: segment-routing
-
-   Move from configure mode to segment-routing node.
-
-.. clicmd:: srv6
-
-   Move from segment-routing node to srv6 node.
-
-.. clicmd:: locators
-
-   Move from srv6 node to locator node. In this locator node, user can
-   configure detailed settings such as the actual srv6 locator.
-
-.. clicmd:: locator NAME
-
-   Create a new locator. If the name of an existing locator is specified,
-   move to specified locator's configuration node to change the settings it.
-
-.. clicmd:: prefix X:X::X:X/M [function-bits-length 32]
-
-   Set the ipv6 prefix block of the locator. SRv6 locator is defined by
-   RFC8986. The actual routing protocol specifies the locator and allocates a
-   SID to be used by each routing protocol. This SID is included in the locator
-   as an IPv6 prefix.
-
-   Following example console log shows the typical configuration of SRv6
-   data-plane. After a new SRv6 locator, named loc1, is created, loc1's prefix
-   is configured as ``2001:db8:1:1::/64``.  If user or some routing daemon
-   allocates new SID on this locator, new SID will allocated in range of this
-   prefix. For example, if some routing daemon creates new SID on locator
-   (``2001:db8:1:1::/64``), Then new SID will be ``2001:db8:1:1:7::/80``,
-   ``2001:db8:1:1:8::/80``, and so on.  Each locator has default SID that is
-   SRv6 local function "End".  Usually default SID is allocated as
-   ``PREFIX:1::``.  (``PREFIX`` is locator's prefix) For example, if user
-   configure the locator's prefix as ``2001:db8:1:1::/64``, then default SID
-   will be ``2001:db8:1:1:1::``)
-
-   The function bits range is 16bits by default.  If operator want to change
-   function bits range, they can configure with ``function-bits-length``
-   option.
-
-::
-
-   router# configure terminal
-   router(config)# segment-routinig
-   router(config-sr)# srv6
-   router(config-srv6)# locators
-   router(config-srv6-locs)# locator loc1
-   router(config-srv6-loc)# prefix 2001:db8:1:1::/64
-
-   router(config-srv6-loc)# show run
-   ...
-   segment-routing
-    srv6
-     locators
-      locator loc1
-       prefix 2001:db8:1:1::/64
-      !
-   ...
-
 .. _multicast-rib-commands:
 
 Multicast RIB Commands
@@ -1140,10 +1016,6 @@ zebra Terminal Mode Commands
    Display detailed information about a route. If [nexthop-group] is
    included, it will display the nexthop group ID the route is using as well.
 
-.. clicmd:: show interface [NAME] [{vrf VRF|brief}] [json]
-
-.. clicmd:: show interface [NAME] [{vrf all|brief}] [json]
-
 .. clicmd:: show interface [NAME] [{vrf VRF|brief}] [nexthop-group]
 
 .. clicmd:: show interface [NAME] [{vrf all|brief}] [nexthop-group]
@@ -1152,8 +1024,6 @@ zebra Terminal Mode Commands
    dump information on all interfaces. If [NAME] is specified, it will display
    detailed information about that single interface. If [nexthop-group] is
    specified, it will display nexthop groups pointing out that interface.
-
-   If the ``json`` option is specified, output is displayed in JSON format.
 
 .. clicmd:: show ip prefix-list [NAME]
 
@@ -1199,11 +1069,6 @@ zebra Terminal Mode Commands
    nexthop groups that do have an afi. [type] allows you to filter those
    only coming from a specific NHG type (protocol).
 
-.. clicmd:: show <ip|ipv6> zebra route dump [<vrf> VRFNAME]
-
-   It dumps all the routes from RIB with detailed information including
-   internal flags, status etc. This is defined as a hidden command.
-
 
 Router-id
 =========
@@ -1241,102 +1106,35 @@ For protocols requiring an IPv6 router-id, the following commands are available:
 
 .. _zebra-sysctl:
 
-sysctl settings
-===============
+Expected sysctl settings
+========================
 
 The linux kernel has a variety of sysctl's that affect it's operation as a router.  This
 section is meant to act as a starting point for those sysctl's that must be used in
 order to provide FRR with smooth operation as a router.  This section is not meant
 as the full documentation for sysctl's.  The operator must use the sysctl documentation
-with the linux kernel for that. The following link has helpful references to many relevant
-sysctl values:  https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt
-
-Expected sysctl settings
-------------------------
+with the linux kernel for that.
 
 .. option:: net.ipv4.ip_forward = 1
 
-   This global option allows the linux kernel to forward (route) ipv4 packets incoming from one
-   interface to an outgoing interface. If this is set to 0, the system will not route transit
-   ipv4 packets, i.e. packets that are not sent to/from a process running on the local system.
+   This option allows the linux kernel to forward ipv4 packets incoming from one interface
+   to an outgoing interface.  Without this no forwarding will take place from off box packets.
 
-.. option:: net.ipv4.conf.{all,default,<interface>}.forwarding = 1
+.. option:: net.ipv6.conf.all_forwarding=1
 
-   The linux kernel can selectively enable forwarding (routing) of ipv4 packets on a per
-   interface basis. The forwarding check in the kernel dataplane occurs against the ingress
-   Layer 3 interface, i.e. if the ingress L3 interface has forwarding set to 0, packets will not
-   be routed.
+   This option allows the linux kernel to forward ipv6 packets incoming from one interface
+   to an outgoing interface.  Without this no forwarding will take place from off box packets.
 
-.. option:: net.ipv6.conf.{all,default,<interface>}.forwarding = 1
-
-   This per interface option allows the linux kernel to forward (route) transit ipv6 packets
-   i.e. incoming from one Layer 3 interface to an outgoing Layer 3 interface.
-   The forwarding check in the kernel dataplane occurs against the ingress Layer 3 interface,
-   i.e. if the ingress L3 interface has forwarding set to 0, packets will not be routed.
-
-.. option:: net.ipv6.conf.all.keep_addr_on_down = 1
+.. option:: net.ipv6.conf.all.keep_addr_on_down=1
 
    When an interface is taken down, do not remove the v6 addresses associated with the interface.
    This option is recommended because this is the default behavior for v4 as well.
 
-.. option:: net.ipv6.route.skip_notify_on_dev_down = 1
+.. option:: net.ipv6.route.skip_notify_on_dev_down=1
 
    When an interface is taken down, the linux kernel will not notify, via netlink, about routes
    that used that interface being removed from the FIB.  This option is recommended because this
    is the default behavior for v4 as well.
-
-Optional sysctl settings
-------------------------
-
-.. option:: net.ipv4.conf.{all,default,<interface>}.bc_forwarding = 0
-
-   This per interface option allows the linux kernel to optionally allow Directed Broadcast
-   (i.e. Routed Broadcast or Subnet Broadcast) packets to be routed onto the connected network
-   segment where the subnet exists.
-   If the local router receives a routed packet destined for a broadcast address of a connected
-   subnet, setting bc_forwarding to 1 on the interface with the target subnet assigned to it will
-   allow non locally-generated packets to be routed via the broadcast route.
-   If bc_forwarding is set to 0, routed packets destined for a broadcast route will be dropped.
-   e.g.
-   Host1 (SIP:192.0.2.10, DIP:10.0.0.255) -> (eth0:192.0.2.1/24) Router1 (eth1:10.0.0.1/24) -> BC
-   If net.ipv4.conf.{all,default,<interface>}.bc_forwarding=1, then Router1 will forward each
-   packet destined to 10.0.0.255 onto the eth1 interface with a broadcast DMAC (ff:ff:ff:ff:ff:ff).
-
-.. option:: net.ipv4.conf.{all,default,<interface>}.arp_accept = 1
-
-   This per interface option allows the linux kernel to optionally skip the creation of ARP
-   entries upon the receipt of a Gratuitous ARP (GARP) frame carrying an IP that is not already
-   present in the ARP cache. Setting arp_accept to 0 on an interface will ensure NEW ARP entries
-   are not created due to the arrival of a GARP frame.
-   Note: This does not impact how the kernel reacts to GARP frames that carry a "known" IP
-   (that is already in the ARP cache) -- an existing ARP entry will always be updated
-   when a GARP for that IP is received.
-
-.. option:: net.ipv4.conf.{all,default,<interface>}.arp_ignore = 0
-
-   This per interface option allows the linux kernel to control what conditions must be met in
-   order for an ARP reply to be sent in response to an ARP request targeting a local IP address.
-   When arp_ignore is set to 0, the kernel will send ARP replies in response to any ARP Request
-   with a Target-IP matching a local address.
-   When arp_ignore is set to 1, the kernel will send ARP replies if the Target-IP in the ARP
-   Request matches an IP address on the interface the Request arrived at.
-   When arp_ignore is set to 2, the kernel will send ARP replies only if the Target-IP matches an
-   IP address on the interface where the Request arrived AND the Sender-IP falls within the subnet
-   assigned to the local IP/interface.
-
-.. option:: net.ipv4.conf.{all,default,<interface>}.arp_notify = 1
-
-   This per interface option allows the linux kernel to decide whether to send a Gratuitious ARP
-   (GARP) frame when the Layer 3 interface comes UP.
-   When arp_notify is set to 0, no GARP is sent.
-   When arp_notify is set to 1, a GARP is sent when the interface comes UP.
-
-.. option:: net.ipv6.conf.{all,default,<interface>}.ndisc_notify = 1
-
-   This per interface option allows the linux kernel to decide whether to send an Unsolicited
-   Neighbor Advertisement (U-NA) frame when the Layer 3 interface comes UP.
-   When ndisc_notify is set to 0, no U-NA is sent.
-   When ndisc_notify is set to 1, a U-NA is sent when the interface comes UP.
 
 Debugging
 =========

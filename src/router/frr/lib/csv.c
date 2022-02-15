@@ -641,8 +641,7 @@ static int get_memory_usage(pid_t pid)
 	char *vm;
 
 	snprintf(status_child, sizeof(status_child), "/proc/%d/status", pid);
-	fd = open(status_child, O_RDONLY);
-	if (fd < 0)
+	if ((fd = open(status_child, O_RDONLY)) < 0)
 		return -1;
 
 	read(fd, buf, 4095);

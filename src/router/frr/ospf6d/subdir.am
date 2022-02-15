@@ -6,14 +6,11 @@ if OSPF6D
 noinst_LIBRARIES += ospf6d/libospf6.a
 sbin_PROGRAMS += ospf6d/ospf6d
 vtysh_scan += \
-	ospf6d/ospf6_nssa.c \
 	ospf6d/ospf6_abr.c \
 	ospf6d/ospf6_asbr.c \
 	ospf6d/ospf6_area.c \
 	ospf6d/ospf6_bfd.c \
 	ospf6d/ospf6_flood.c \
-	ospf6d/ospf6_gr.c \
-	ospf6d/ospf6_gr_helper.c \
 	ospf6d/ospf6_interface.c \
 	ospf6d/ospf6_intra.c \
 	ospf6d/ospf6_lsa.c \
@@ -33,7 +30,6 @@ man8 += $(MANBUILD)/frr-ospf6d.8
 endif
 
 ospf6d_libospf6_a_SOURCES = \
-	ospf6d/ospf6_nssa.c \
 	ospf6d/ospf6_abr.c \
 	ospf6d/ospf6_area.c \
 	ospf6d/ospf6_asbr.c \
@@ -41,8 +37,6 @@ ospf6d_libospf6_a_SOURCES = \
 	ospf6d/ospf6_routemap_nb_config.c \
 	ospf6d/ospf6_bfd.c \
 	ospf6d/ospf6_flood.c \
-	ospf6d/ospf6_gr.c \
-	ospf6d/ospf6_gr_helper.c \
 	ospf6d/ospf6_interface.c \
 	ospf6d/ospf6_intra.c \
 	ospf6d/ospf6_lsa.c \
@@ -59,13 +53,11 @@ ospf6d_libospf6_a_SOURCES = \
 	# end
 
 noinst_HEADERS += \
-	ospf6d/ospf6_nssa.h \
 	ospf6d/ospf6_abr.h \
 	ospf6d/ospf6_area.h \
 	ospf6d/ospf6_asbr.h \
 	ospf6d/ospf6_bfd.h \
 	ospf6d/ospf6_flood.h \
-	ospf6d/ospf6_gr.h \
 	ospf6d/ospf6_interface.h \
 	ospf6d/ospf6_intra.h \
 	ospf6d/ospf6_lsa.h \
@@ -93,13 +85,7 @@ ospf6d_ospf6d_snmp_la_LDFLAGS = $(MODULE_LDFLAGS)
 ospf6d_ospf6d_snmp_la_LIBADD = lib/libfrrsnmp.la
 
 clippy_scan += \
-	ospf6d/ospf6_top.c \
-	ospf6d/ospf6_area.c \
 	ospf6d/ospf6_asbr.c \
-	ospf6d/ospf6_lsa.c \
-	ospf6d/ospf6_gr_helper.c \
-	ospf6d/ospf6_gr.c \
-	ospf6d/ospf6_route.c \
 	# end
 
 nodist_ospf6d_ospf6d_SOURCES = \

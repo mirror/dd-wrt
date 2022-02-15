@@ -11,16 +11,16 @@ module frr-bgp {
     prefix inet;
   }
 
+  import ietf-routing-types {
+    prefix rt-types;
+  }
+
   import frr-interface {
     prefix frr-interface;
   }
 
   import frr-bgp-types {
     prefix frr-bt;
-  }
-
-  import frr-route-types {
-    prefix frr-route-types;
   }
 
   include "frr-bgp-common";
@@ -230,8 +230,6 @@ module frr-bgp {
           }
 
           uses neighbor-parameters;
-
-          uses structure-neighbor-group-capability-options;
         }
 
         list unnumbered-neighbor {
@@ -266,12 +264,6 @@ module frr-bgp {
           uses neighbor-remote-as;
 
           uses neighbor-parameters;
-
-          uses structure-neighbor-group-capability-options {
-            refine "frr-bgp:capability-options/extended-nexthop-capability" {
-              default "true";
-            }
-          }
         }
       }
 
@@ -413,7 +405,7 @@ module frr-bgp {
       description
         "A list of network routes.";
       leaf prefix {
-        type frr-route-types:ipv4-multicast-group-prefix;
+        type rt-types:ipv4-multicast-group-address;
         description
           "IPv4 multicast destination prefix.";
       }
@@ -433,7 +425,7 @@ module frr-bgp {
       description
         "A list of aggregated routes.";
       leaf prefix {
-        type frr-route-types:ipv4-multicast-group-prefix;
+        type rt-types:ipv4-multicast-group-address;
         description
           "IPv4 multicast destination prefix.";
       }
@@ -446,7 +438,7 @@ module frr-bgp {
       description
         "A list of routes with a particular admin distance.";
       leaf prefix {
-        type frr-route-types:ipv4-multicast-group-prefix;
+        type rt-types:ipv4-multicast-group-address;
         description
           "IPv4 multicast destination prefix.";
       }
@@ -467,7 +459,7 @@ module frr-bgp {
       description
         "A list of network routes.";
       leaf prefix {
-        type frr-route-types:ipv6-multicast-group-prefix;
+        type rt-types:ipv6-multicast-group-address;
         description
           "IPv6 multicast destination prefix.";
       }
@@ -487,7 +479,7 @@ module frr-bgp {
       description
         "A list of aggregated routes.";
       leaf prefix {
-        type frr-route-types:ipv6-multicast-group-prefix;
+        type rt-types:ipv6-multicast-group-address;
         description
           "IPv6 multicast destination prefix.";
       }
@@ -500,7 +492,7 @@ module frr-bgp {
       description
         "A list of routes with a particular admin distance.";
       leaf prefix {
-        type frr-route-types:ipv6-multicast-group-prefix;
+        type rt-types:ipv6-multicast-group-address;
         description
           "IPv6 multicast destination prefix.";
       }

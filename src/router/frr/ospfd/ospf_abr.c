@@ -1694,9 +1694,6 @@ static void ospf_abr_manage_discard_routes(struct ospf *ospf)
 
 static void ospf_abr_nssa_task(struct ospf *ospf) /* called only if any_nssa */
 {
-	if (ospf->gr_info.restart_in_progress)
-		return;
-
 	if (IS_DEBUG_OSPF_NSSA)
 		zlog_debug("Check for NSSA-ABR Tasks():");
 
@@ -1761,9 +1758,6 @@ static void ospf_abr_nssa_task(struct ospf *ospf) /* called only if any_nssa */
    summary-LSA origination and flooding. */
 void ospf_abr_task(struct ospf *ospf)
 {
-	if (ospf->gr_info.restart_in_progress)
-		return;
-
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("ospf_abr_task(): Start");
 

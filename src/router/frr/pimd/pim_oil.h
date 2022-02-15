@@ -20,9 +20,8 @@
 #ifndef PIM_OIL_H
 #define PIM_OIL_H
 
-struct pim_interface;
-
 #include "pim_mroute.h"
+#include "pim_iface.h"
 
 /*
  * Where did we get this (S,G) from?

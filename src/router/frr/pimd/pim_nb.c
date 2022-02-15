@@ -118,42 +118,31 @@ const struct frr_yang_module_info frr_pim_info = {
 			}
 		},
 		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp/hold-time",
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-group",
 			.cbs = {
-				.modify = pim_msdp_hold_time_modify,
+				.create = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_create,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_destroy,
 			}
 		},
 		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp/keep-alive",
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-group/mesh-group-name",
 			.cbs = {
-				.modify = pim_msdp_keep_alive_modify,
+				.modify = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_mesh_group_name_modify,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_mesh_group_name_destroy,
 			}
 		},
 		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp/connection-retry",
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-group/member-ip",
 			.cbs = {
-				.modify = pim_msdp_connection_retry_modify,
+				.create = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_member_ip_create,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_member_ip_destroy,
 			}
 		},
 		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-groups",
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-group/source-ip",
 			.cbs = {
-				.create = pim_msdp_mesh_group_create,
-				.destroy = pim_msdp_mesh_group_destroy,
-			}
-		},
-		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-groups/source",
-			.cbs = {
-				.modify = pim_msdp_mesh_group_source_modify,
-				.destroy = pim_msdp_mesh_group_source_destroy,
-			}
-		},
-		{
-			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-mesh-groups/members",
-			.cbs = {
-				.create = pim_msdp_mesh_group_members_create,
-				.destroy = pim_msdp_mesh_group_members_destroy,
+				.modify = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_source_ip_modify,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_mesh_group_source_ip_destroy,
 			}
 		},
 		{
@@ -167,6 +156,7 @@ const struct frr_yang_module_info frr_pim_info = {
 			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-peer/source-ip",
 			.cbs = {
 				.modify = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_peer_source_ip_modify,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_msdp_peer_source_ip_destroy,
 			}
 		},
 		{

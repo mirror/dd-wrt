@@ -123,7 +123,6 @@ int zebra_ns_enable(ns_id_t ns_id, void **info)
 	zns->ns_id = ns_id;
 
 	kernel_init(zns);
-	zebra_dplane_ns_enable(zns, true);
 	interface_list(zns);
 	route_read(zns);
 	kernel_read_pbr_rules(zns);
@@ -140,8 +139,6 @@ int zebra_ns_enable(ns_id_t ns_id, void **info)
 static int zebra_ns_disable_internal(struct zebra_ns *zns, bool complete)
 {
 	route_table_finish(zns->if_table);
-
-	zebra_dplane_ns_enable(zns, false /*Disable*/);
 
 	kernel_terminate(zns, complete);
 

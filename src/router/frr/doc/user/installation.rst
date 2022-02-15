@@ -146,6 +146,11 @@ options from the list below.
    software available on your machine.  This is needed for systemd integration, if you
    disable watchfrr you cannot have any systemd integration.
 
+.. option:: --enable-systemd
+
+   Build watchfrr with systemd integration, this will allow FRR to communicate with
+   systemd to tell systemd if FRR has come up properly.
+
 .. option:: --enable-werror
 
    Build with all warnings converted to errors as a compile option.  This
@@ -193,10 +198,6 @@ options from the list below.
    Turn off BGP BMP support
 
 .. option:: --enable-datacenter
-
-   This option is deprecated as it is superseded by the `-F` (profile) command
-   line option which allows adjusting the setting at startup rather than
-   compile time.
 
    Enable system defaults to work as if in a Data Center. See defaults.h
    for what is changed by this configure option.
@@ -342,17 +343,20 @@ options from the list below.
 
 .. option:: --enable-time-check XXX
 
-   This option is deprecated as it was replaced by the
-   :clicmd:`service cputime-stats` CLI command, which may be adjusted at
-   runtime rather than being a compile-time setting.  See there for further
-   detail.
+   When this is enabled with a XXX value in microseconds, any thread that
+   runs for over this value will cause a warning to be issued to the log.
+   If you do not specify any value or don't include this option then
+   the default time is 5 seconds.  If --disable-time-check is specified
+   then no warning is issued for any thread run length.
 
 .. option:: --disable-cpu-time
 
-   This option is deprecated as it was replaced by the
-   :clicmd:`service cputime-warning NNN` CLI command, which may be adjusted at
-   runtime rather than being a compile-time setting.  See there for further
-   detail.
+   Disable cpu process accounting, this command also disables the `show thread cpu`
+   command.  If this option is disabled, --enable-time-check is ignored.  This
+   disabling of cpu time effectively means that the getrusage call is skipped.
+   Since this is a process switch into the kernel, systems with high FRR
+   load might see improvement in behavior.  Be aware that `show thread cpu`
+   is considered a good data gathering tool from the perspective of developers.
 
 .. option:: --enable-pcreposix
 
@@ -398,12 +402,6 @@ options to the configuration script.
 .. option:: --with-vici-socket <path>
 
    Set StrongSWAN vici interface socket path [/var/run/charon.vici].
-
-.. note::
-
-   The former ``--enable-systemd`` option does not exist anymore.  Support for
-   systemd is now always available through built-in functions, without
-   depending on libsystemd.
 
 Python dependency, documentation and tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -563,6 +561,7 @@ the options you chose:
 
    ./configure \
        --prefix=/usr \
+       --enable-exampledir=/usr/share/doc/frr/examples/ \
        --localstatedir=/var/run/frr \
        --sbindir=/usr/lib/frr \
        --sysconfdir=/etc/frr \

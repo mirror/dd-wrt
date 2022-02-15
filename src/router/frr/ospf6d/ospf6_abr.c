@@ -49,38 +49,22 @@
 #include "ospf6_asbr.h"
 #include "ospf6_abr.h"
 #include "ospf6d.h"
-#include "ospf6_nssa.h"
 
 unsigned char conf_debug_ospf6_abr;
 
-bool ospf6_check_and_set_router_abr(struct ospf6 *o)
+int ospf6_is_router_abr(struct ospf6 *o)
 {
 	struct listnode *node;
 	struct ospf6_area *oa;
 	int area_count = 0;
-	bool is_backbone = false;
 
-	for (ALL_LIST_ELEMENTS_RO(o->area_list, node, oa)) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug("%s, area_id %pI4", __func__, &oa->area_id);
+	for (ALL_LIST_ELEMENTS_RO(o->area_list, node, oa))
 		if (IS_AREA_ENABLED(oa))
 			area_count++;
 
-		if (o->backbone == oa)
-			is_backbone = true;
-	}
-
-	if ((area_count > 1) && (is_backbone)) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug("%s : set flag OSPF6_FLAG_ABR", __func__);
-		SET_FLAG(o->flag, OSPF6_FLAG_ABR);
-		return true;
-	} else {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug("%s : reset flag OSPF6_FLAG_ABR", __func__);
-		UNSET_FLAG(o->flag, OSPF6_FLAG_ABR);
-		return false;
-	}
+	if (area_count > 1)
+		return 1;
+	return 0;
 }
 
 static int ospf6_abr_nexthops_belong_to_area(struct ospf6_route *route,
@@ -172,145 +156,37 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 	uint16_t type;
 	int is_debug = 0;
 
-	if (IS_OSPF6_DEBUG_ABR) {
-		char buf[BUFSIZ];
-
-		if (route->type == OSPF6_DEST_TYPE_ROUTER)
-			inet_ntop(AF_INET,
-				  &ADV_ROUTER_IN_PREFIX(&route->prefix), buf,
-				  sizeof(buf));
-		else
-			prefix2str(&route->prefix, buf, sizeof(buf));
-
-		zlog_debug("%s : start area %s, route %s", __func__, area->name,
-			   buf);
-	}
-
-	if (route->type == OSPF6_DEST_TYPE_ROUTER)
-		summary_table = area->summary_router;
-	else
-		summary_table = area->summary_prefix;
-
-	summary = ospf6_route_lookup(&route->prefix, summary_table);
-	if (summary) {
-		old = ospf6_lsdb_lookup(summary->path.origin.type,
-					summary->path.origin.id,
-					area->ospf6->router_id, area->lsdb);
-		/* Reset the OSPF6_LSA_UNAPPROVED flag */
-		if (old)
-			UNSET_FLAG(old->flag, OSPF6_LSA_UNAPPROVED);
-	}
-
 	/* Only destination type network, range or ASBR are considered */
 	if (route->type != OSPF6_DEST_TYPE_NETWORK
 	    && route->type != OSPF6_DEST_TYPE_RANGE
 	    && ((route->type != OSPF6_DEST_TYPE_ROUTER)
 		|| !CHECK_FLAG(route->path.router_bits, OSPF6_ROUTER_BIT_E))) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug(
-				"%s: Route type %d flag 0x%x is none of network, range nor ASBR, ignore",
-				__func__, route->type, route->path.router_bits);
 		return 0;
 	}
 
 	/* AS External routes are never considered */
 	if (route->path.type == OSPF6_PATH_TYPE_EXTERNAL1
 	    || route->path.type == OSPF6_PATH_TYPE_EXTERNAL2) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug("%s : Path type is external, skip",
-				   __func__);
 		return 0;
 	}
 
 	/* do not generate if the path's area is the same as target area */
 	if (route->path.area_id == area->area_id) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug(
-				"%s: The route is in the area itself, ignore",
-				__func__);
 		return 0;
-	}
-
-	if (route->type == OSPF6_DEST_TYPE_NETWORK) {
-		bool filter = false;
-
-		route_area =
-			ospf6_area_lookup(route->path.area_id, area->ospf6);
-		assert(route_area);
-
-		/* Check export-list */
-		if (EXPORT_LIST(route_area)
-		    && access_list_apply(EXPORT_LIST(route_area),
-					 &route->prefix)
-			       == FILTER_DENY) {
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"%s: prefix %pFX was denied by export-list",
-					__func__, &route->prefix);
-			filter = true;
-		}
-
-		/* Check output prefix-list */
-		if (PREFIX_LIST_OUT(route_area)
-		    && prefix_list_apply(PREFIX_LIST_OUT(route_area),
-					 &route->prefix)
-			       != PREFIX_PERMIT) {
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"%s: prefix %pFX was denied by prefix-list out",
-					__func__, &route->prefix);
-			filter = true;
-		}
-
-		/* Check import-list */
-		if (IMPORT_LIST(area)
-		    && access_list_apply(IMPORT_LIST(area), &route->prefix)
-			       == FILTER_DENY) {
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"%s: prefix %pFX was denied by import-list",
-					__func__, &route->prefix);
-			filter = true;
-		}
-
-		/* Check input prefix-list */
-		if (PREFIX_LIST_IN(area)
-		    && prefix_list_apply(PREFIX_LIST_IN(area), &route->prefix)
-			       != PREFIX_PERMIT) {
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"%s: prefix %pFX was denied by prefix-list in",
-					__func__, &route->prefix);
-			filter = true;
-		}
-
-		if (filter) {
-			if (summary) {
-				ospf6_route_remove(summary, summary_table);
-				if (old)
-					ospf6_lsa_purge(old);
-			}
-			return 0;
-		}
 	}
 
 	/* do not generate if the nexthops belongs to the target area */
 	if (ospf6_abr_nexthops_belong_to_area(route, area)) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug(
-				"%s: The route's nexthop is in the same area, ignore",
-				__func__);
 		return 0;
 	}
 
 	if (route->type == OSPF6_DEST_TYPE_ROUTER) {
 		if (ADV_ROUTER_IN_PREFIX(&route->prefix)
 		    == area->ospf6->router_id) {
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"%s: Skipping ASBR announcement for ABR (%pI4)",
-					__func__,
-					&ADV_ROUTER_IN_PREFIX(&route->prefix));
+			zlog_debug(
+				"%s: Skipping ASBR announcement for ABR (%pI4)",
+				__func__,
+				&ADV_ROUTER_IN_PREFIX(&route->prefix));
 			return 0;
 		}
 	}
@@ -319,12 +195,12 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 		if (IS_OSPF6_DEBUG_ABR
 		    || IS_OSPF6_DEBUG_ORIGINATE(INTER_ROUTER)) {
 			is_debug++;
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"Originating summary in area %s for ASBR %pI4",
-					area->name,
-					&ADV_ROUTER_IN_PREFIX(&route->prefix));
+			zlog_debug(
+				"Originating summary in area %s for ASBR %pI4",
+				area->name,
+				&ADV_ROUTER_IN_PREFIX(&route->prefix));
 		}
+		summary_table = area->summary_router;
 	} else {
 		if (IS_OSPF6_DEBUG_ABR
 		    || IS_OSPF6_DEBUG_ORIGINATE(INTER_PREFIX))
@@ -359,7 +235,14 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 			zlog_debug(
 				"Originating summary in area %s for %pFX cost %u",
 				area->name, &route->prefix, route->path.cost);
+		summary_table = area->summary_prefix;
 	}
+
+	summary = ospf6_route_lookup(&route->prefix, summary_table);
+	if (summary)
+		old = ospf6_lsdb_lookup(summary->path.origin.type,
+					summary->path.origin.id,
+					area->ospf6->router_id, area->lsdb);
 
 	/* if this route has just removed, remove corresponding LSA */
 	if (CHECK_FLAG(route->flag, OSPF6_ROUTE_REMOVE)) {
@@ -493,6 +376,39 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 		}
 	}
 
+	/* Check export list */
+	if (EXPORT_NAME(area)) {
+		if (EXPORT_LIST(area) == NULL)
+			EXPORT_LIST(area) =
+				access_list_lookup(AFI_IP6, EXPORT_NAME(area));
+
+		if (EXPORT_LIST(area))
+			if (access_list_apply(EXPORT_LIST(area), &route->prefix)
+			    == FILTER_DENY) {
+				if (is_debug)
+					zlog_debug(
+						"prefix %pFX was denied by export list",
+						&route->prefix);
+				ospf6_abr_delete_route(route, summary,
+						       summary_table, old);
+				return 0;
+			}
+	}
+
+	/* Check filter-list */
+	if (PREFIX_LIST_OUT(area))
+		if (prefix_list_apply(PREFIX_LIST_OUT(area), &route->prefix)
+		    != PREFIX_PERMIT) {
+			if (is_debug)
+				zlog_debug(
+					"prefix %pFX was denied by filter-list out",
+					&route->prefix);
+			ospf6_abr_delete_route(route, summary, summary_table,
+					       old);
+
+			return 0;
+		}
+
 	/* the route is going to be originated. store it in area's summary_table
 	 */
 	if (summary == NULL) {
@@ -517,11 +433,11 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 		monotime(&summary->changed);
 	}
 
-	summary->prefix_options = route->prefix_options;
 	summary->path.router_bits = route->path.router_bits;
 	summary->path.options[0] = route->path.options[0];
 	summary->path.options[1] = route->path.options[1];
 	summary->path.options[2] = route->path.options[2];
+	summary->path.prefix_options = route->path.prefix_options;
 	summary->path.area_id = area->area_id;
 	summary->path.type = OSPF6_PATH_TYPE_INTER;
 	summary->path.subtype = route->path.subtype;
@@ -554,7 +470,7 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 		/* Fill Inter-Area-Prefix-LSA */
 		OSPF6_ABR_SUMMARY_METRIC_SET(prefix_lsa, route->path.cost);
 		prefix_lsa->prefix.prefix_length = route->prefix.prefixlen;
-		prefix_lsa->prefix.prefix_options = route->prefix_options;
+		prefix_lsa->prefix.prefix_options = route->path.prefix_options;
 
 		/* set Prefix */
 		memcpy(p, &route->prefix.u.prefix6,
@@ -580,14 +496,8 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 	/* create LSA */
 	lsa = ospf6_lsa_create(lsa_header);
 
-	/* Reset the unapproved flag */
-	UNSET_FLAG(lsa->flag, OSPF6_LSA_UNAPPROVED);
-
 	/* Originate */
 	ospf6_lsa_originate_area(lsa, area);
-
-	if (IS_OSPF6_DEBUG_ABR)
-		zlog_debug("%s : finish area %s", __func__, area->name);
 
 	return 1;
 }
@@ -656,7 +566,8 @@ ospf6_abr_range_summary_needs_update(struct ospf6_route *range, uint32_t cost)
 	return (redo_summary);
 }
 
-void ospf6_abr_range_update(struct ospf6_route *range, struct ospf6 *ospf6)
+static void ospf6_abr_range_update(struct ospf6_route *range,
+				   struct ospf6 *ospf6)
 {
 	uint32_t cost = 0;
 	struct listnode *node, *nnode;
@@ -667,10 +578,6 @@ void ospf6_abr_range_update(struct ospf6_route *range, struct ospf6 *ospf6)
 
 	/* update range's cost and active flag */
 	cost = ospf6_abr_range_compute_cost(range, ospf6);
-
-	if (IS_OSPF6_DEBUG_ABR)
-		zlog_debug("%s: range %pFX, cost %d", __func__, &range->prefix,
-			   cost);
 
 	/* Non-zero cost is a proxy for active longer prefixes in this range.
 	 * If there are active routes covered by this range AND either the
@@ -688,9 +595,6 @@ void ospf6_abr_range_update(struct ospf6_route *range, struct ospf6 *ospf6)
 	 */
 
 	if (ospf6_abr_range_summary_needs_update(range, cost)) {
-		if (IS_OSPF6_DEBUG_ABR)
-			zlog_debug("%s: range %pFX update", __func__,
-				   &range->prefix);
 		for (ALL_LIST_ELEMENTS(ospf6->area_list, node, nnode, oa))
 			summary_orig +=
 				ospf6_abr_originate_summary_to_area(range, oa);
@@ -724,18 +628,6 @@ void ospf6_abr_originate_summary(struct ospf6_route *route, struct ospf6 *ospf6)
 	struct ospf6_area *oa;
 	struct ospf6_route *range = NULL;
 
-	if (IS_OSPF6_DEBUG_ABR) {
-		char buf[BUFSIZ];
-
-		if (route->type == OSPF6_DEST_TYPE_ROUTER)
-			inet_ntop(AF_INET,
-				  &ADV_ROUTER_IN_PREFIX(&route->prefix), buf,
-				  sizeof(buf));
-		else
-			prefix2str(&route->prefix, buf, sizeof(buf));
-
-		zlog_debug("%s: route %s", __func__, buf);
-	}
 
 	if (route->type == OSPF6_DEST_TYPE_NETWORK) {
 		oa = ospf6_area_lookup(route->path.area_id, ospf6);
@@ -765,7 +657,7 @@ void ospf6_abr_defaults_to_stub(struct ospf6 *o)
 	if (!o->backbone)
 		return;
 
-	def = ospf6_route_create(o);
+	def = ospf6_route_create();
 	def->type = OSPF6_DEST_TYPE_NETWORK;
 	def->prefix.family = AF_INET6;
 	def->prefix.prefixlen = 0;
@@ -778,15 +670,7 @@ void ospf6_abr_defaults_to_stub(struct ospf6 *o)
 	def->path.cost = metric_value(o, type, 0);
 
 	for (ALL_LIST_ELEMENTS(o->area_list, node, nnode, oa)) {
-		if (IS_AREA_STUB(oa) || (IS_AREA_NSSA(oa) && oa->no_summary)) {
-			/* announce defaults to stubby areas */
-			if (IS_OSPF6_DEBUG_ABR)
-				zlog_debug(
-					"Announcing default route into stubby area %s",
-					oa->name);
-			UNSET_FLAG(def->flag, OSPF6_ROUTE_REMOVE);
-			ospf6_abr_originate_summary_to_area(def, oa);
-		} else {
+		if (!IS_AREA_STUB(oa)) {
 			/* withdraw defaults when an area switches from stub to
 			 * non-stub */
 			route = ospf6_route_lookup(&def->prefix,
@@ -800,6 +684,14 @@ void ospf6_abr_defaults_to_stub(struct ospf6 *o)
 				SET_FLAG(def->flag, OSPF6_ROUTE_REMOVE);
 				ospf6_abr_originate_summary_to_area(def, oa);
 			}
+		} else {
+			/* announce defaults to stubby areas */
+			if (IS_OSPF6_DEBUG_ABR)
+				zlog_debug(
+					"Announcing default route into stubby area %s",
+					oa->name);
+			UNSET_FLAG(def->flag, OSPF6_ROUTE_REMOVE);
+			ospf6_abr_originate_summary_to_area(def, oa);
 		}
 	}
 	ospf6_route_delete(def);
@@ -1164,14 +1056,46 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 		return;
 	}
 
+	/* Check import list */
+	if (IMPORT_NAME(oa)) {
+		if (IMPORT_LIST(oa) == NULL)
+			IMPORT_LIST(oa) =
+				access_list_lookup(AFI_IP6, IMPORT_NAME(oa));
+
+		if (IMPORT_LIST(oa))
+			if (access_list_apply(IMPORT_LIST(oa), &prefix)
+			    == FILTER_DENY) {
+				if (is_debug)
+					zlog_debug(
+						"Prefix %pFX was denied by import-list",
+						&prefix);
+				if (old)
+					ospf6_route_remove(old, table);
+				return;
+			}
+	}
+
+	/* Check input prefix-list */
+	if (PREFIX_LIST_IN(oa)) {
+		if (prefix_list_apply(PREFIX_LIST_IN(oa), &prefix)
+		    != PREFIX_PERMIT) {
+			if (is_debug)
+				zlog_debug(
+					"Prefix %pFX was denied by prefix-list in",
+					&prefix);
+			if (old)
+				ospf6_route_remove(old, table);
+			return;
+		}
+	}
+
 	/* (5),(6): the path preference is handled by the sorting
 	   in the routing table. Always install the path by substituting
 	   old route (if any). */
-	route = ospf6_route_create(oa->ospf6);
+	route = ospf6_route_create();
 
 	route->type = type;
 	route->prefix = prefix;
-	route->prefix_options = prefix_options;
 	route->path.origin.type = lsa->header->type;
 	route->path.origin.id = lsa->header->id;
 	route->path.origin.adv_router = lsa->header->adv_router;
@@ -1179,6 +1103,7 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 	route->path.options[0] = options[0];
 	route->path.options[1] = options[1];
 	route->path.options[2] = options[2];
+	route->path.prefix_options = prefix_options;
 	route->path.area_id = oa->area_id;
 	route->path.type = OSPF6_PATH_TYPE_INTER;
 	route->path.cost = abr_entry->path.cost + cost;
@@ -1198,16 +1123,9 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 				   __func__, &prefix, listcount(old->paths));
 	}
 	for (old_route = old; old_route; old_route = old_route->next) {
-
-		/* The route linked-list is grouped in batches of prefix.
-		 * If the new prefix is not the same as the one of interest
-		 * then we have walked over the end of the batch and so we
-		 * should break rather than continuing unnecessarily.
-		 */
-		if (!ospf6_route_is_same(old_route, route))
-			break;
-		if ((old_route->type != route->type)
-		    || (old_route->path.type != route->path.type))
+		if (!ospf6_route_is_same(old_route, route) ||
+			(old_route->type != route->type) ||
+			(old_route->path.type != route->path.type))
 			continue;
 
 		if ((ospf6_route_cmp(route, old_route) != 0)) {
@@ -1261,9 +1179,7 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 					listcount(old_route->nh_list));
 			}
 		} else {
-			struct ospf6_route *tmp_route;
-
-			tmp_route = ospf6_route_create(oa->ospf6);
+			struct ospf6_route *tmp_route = ospf6_route_create();
 
 			ospf6_copy_nexthops(tmp_route->nh_list,
 					    o_path->nh_list);
@@ -1350,6 +1266,35 @@ void ospf6_abr_examin_brouter(uint32_t router_id, struct ospf6_route *route,
 	type = htons(OSPF6_LSTYPE_INTER_PREFIX);
 	for (ALL_LSDB_TYPED_ADVRTR(oa->lsdb, type, router_id, lsa))
 		ospf6_abr_examin_summary(lsa, oa);
+}
+
+void ospf6_abr_reimport(struct ospf6_area *oa)
+{
+	struct ospf6_lsa *lsa;
+	uint16_t type;
+
+	type = htons(OSPF6_LSTYPE_INTER_ROUTER);
+	for (ALL_LSDB_TYPED(oa->lsdb, type, lsa))
+		ospf6_abr_examin_summary(lsa, oa);
+
+	type = htons(OSPF6_LSTYPE_INTER_PREFIX);
+	for (ALL_LSDB_TYPED(oa->lsdb, type, lsa))
+		ospf6_abr_examin_summary(lsa, oa);
+}
+
+/* export filter removed so determine if we should reoriginate summary LSAs */
+void ospf6_abr_reexport(struct ospf6_area *oa)
+{
+	struct ospf6_route *route;
+
+	/* if not a ABR return success */
+	if (!ospf6_is_router_abr(oa->ospf6))
+		return;
+
+	/* Redo summaries if required */
+	for (route = ospf6_route_head(oa->ospf6->route_table); route;
+	     route = ospf6_route_next(route))
+		ospf6_abr_originate_summary_to_area(route, oa);
 }
 
 void ospf6_abr_prefix_resummarize(struct ospf6 *o)

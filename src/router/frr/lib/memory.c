@@ -36,7 +36,6 @@ struct memgroup **mg_insert = &mg_first;
 
 DEFINE_MGROUP(LIB, "libfrr");
 DEFINE_MTYPE(LIB, TMP, "Temporary memory");
-DEFINE_MTYPE(LIB, BITFIELD, "Bitfield memory");
 
 static inline void mt_count_alloc(struct memtype *mt, size_t size, void *ptr)
 {

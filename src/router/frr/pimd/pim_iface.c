@@ -156,12 +156,14 @@ struct pim_interface *pim_if_new(struct interface *ifp, bool igmp, bool pim,
 	PIM_IF_DO_IGMP_LISTEN_ALLROUTERS(pim_ifp->options);
 
 	pim_ifp->igmp_join_list = NULL;
+	pim_ifp->igmp_socket_list = NULL;
 	pim_ifp->pim_neighbor_list = NULL;
 	pim_ifp->upstream_switch_list = NULL;
 	pim_ifp->pim_generation_id = 0;
 
 	/* list of struct igmp_sock */
-	pim_igmp_if_init(pim_ifp, ifp);
+	pim_ifp->igmp_socket_list = list_new();
+	pim_ifp->igmp_socket_list->del = (void (*)(void *))igmp_sock_free;
 
 	/* list of struct pim_neighbor */
 	pim_ifp->pim_neighbor_list = list_new();
@@ -212,8 +214,7 @@ void pim_if_delete(struct interface *ifp)
 	pim_if_del_vif(ifp);
 	pim_ifp->pim->mcast_if_count--;
 
-	pim_igmp_if_fini(pim_ifp);
-
+	list_delete(&pim_ifp->igmp_socket_list);
 	list_delete(&pim_ifp->pim_neighbor_list);
 	list_delete(&pim_ifp->upstream_switch_list);
 	list_delete(&pim_ifp->sec_addr_list);
@@ -1138,7 +1139,7 @@ struct pim_neighbor *pim_if_find_neighbor(struct interface *ifp,
 
 	p.family = AF_INET;
 	p.u.prefix4 = addr;
-	p.prefixlen = IPV4_MAX_BITLEN;
+	p.prefixlen = IPV4_MAX_PREFIXLEN;
 
 	for (ALL_LIST_ELEMENTS_RO(pim_ifp->pim_neighbor_list, neighnode,
 				  neigh)) {
