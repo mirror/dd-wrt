@@ -272,16 +272,11 @@ void vtysh_config_parse_line(void *arg, const char *line)
 					   strlen(" ip igmp query-interval")) == 0) {
 				config_add_line_uniq_end(config->line, line);
 			} else if (config->index == LINK_PARAMS_NODE
-				   && strncmp(line, "  exit-link-params",
-					      strlen("  exit"))
+				   && strncmp(line, " exit-link-params",
+					      strlen(" exit"))
 					      == 0) {
 				config_add_line(config->line, line);
 				config->index = INTERFACE_NODE;
-			} else if (config->index == VRF_NODE
-				   && strncmp(line, " exit-vrf",
-					      strlen(" exit-vrf"))
-					      == 0) {
-				config_add_line_uniq_end(config->line, line);
 			} else if (!strncmp(line, " vrrp", strlen(" vrrp"))
 				   || !strncmp(line, " no vrrp",
 					       strlen(" no vrrp"))) {
@@ -291,7 +286,6 @@ void vtysh_config_parse_line(void *arg, const char *line)
 			} else if (config->index == RMAP_NODE
 				   || config->index == INTERFACE_NODE
 				   || config->index == VTY_NODE
-				   || config->index == VRF_NODE
 				   || config->index == NH_GROUP_NODE)
 				config_add_line_uniq(config->line, line);
 			else
@@ -300,7 +294,10 @@ void vtysh_config_parse_line(void *arg, const char *line)
 			config_add_line(config_top, line);
 		break;
 	default:
-		if (strncmp(line, "interface", strlen("interface")) == 0)
+		if (strncmp(line, "exit", strlen("exit")) == 0) {
+			if (config)
+				config_add_line_uniq_end(config->line, line);
+		} else if (strncmp(line, "interface", strlen("interface")) == 0)
 			config = config_get(INTERFACE_NODE, line);
 		else if (strncmp(line, "pseudowire", strlen("pseudowire")) == 0)
 			config = config_get(PW_NODE, line);
@@ -430,8 +427,14 @@ void vtysh_config_parse_line(void *arg, const char *line)
 			config = config_get(PROTOCOL_NODE, line);
 		else if (strncmp(line, "mpls", strlen("mpls")) == 0)
 			config = config_get(MPLS_NODE, line);
+		else if (strncmp(line, "segment-routing",
+				 strlen("segment-routing"))
+			 == 0)
+			config = config_get(SEGMENT_ROUTING_NODE, line);
 		else if (strncmp(line, "bfd", strlen("bfd")) == 0)
 			config = config_get(BFD_NODE, line);
+		else if (strncmp(line, "rpki", strlen("rpki")) == 0)
+			config = config_get(RPKI_NODE, line);
 		else {
 			if (strncmp(line, "log", strlen("log")) == 0
 			    || strncmp(line, "hostname", strlen("hostname")) == 0
@@ -492,7 +495,9 @@ void vtysh_config_dump(void)
 				 * are not under the VRF node.
 				 */
 				if (config->index == INTERFACE_NODE
-				    && list_isempty(config->line)) {
+				    && (listcount(config->line) == 1)
+				    && (line = listnode_head(config->line))
+				    && strmatch(line, "exit")) {
 					config_del(config);
 					continue;
 				}
@@ -556,6 +561,7 @@ static int vtysh_read_file(FILE *confp, bool dry_run)
 int vtysh_read_config(const char *config_default_dir, bool dry_run)
 {
 	FILE *confp = NULL;
+	bool save;
 	int ret;
 
 	confp = fopen(config_default_dir, "r");
@@ -566,8 +572,13 @@ int vtysh_read_config(const char *config_default_dir, bool dry_run)
 		return CMD_ERR_NO_FILE;
 	}
 
+	save = vtysh_add_timestamp;
+	vtysh_add_timestamp = false;
+
 	ret = vtysh_read_file(confp, dry_run);
 	fclose(confp);
+
+	vtysh_add_timestamp = save;
 
 	return (ret);
 }

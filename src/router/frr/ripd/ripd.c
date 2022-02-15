@@ -99,7 +99,7 @@ RB_GENERATE(rip_instance_head, rip, entry, rip_instance_compare)
 
 struct rip_instance_head rip_instances = RB_INITIALIZER(&rip_instances);
 
-/* Utility function to set boradcast option to the socket. */
+/* Utility function to set broadcast option to the socket. */
 static int sockopt_broadcast(int sock)
 {
 	int ret;
@@ -480,7 +480,7 @@ static void rip_rte_process(struct rte *rte, struct sockaddr_in *from,
 	}
 
 	/* Once the entry has been validated, update the metric by
-	   adding the cost of the network on wich the message
+	   adding the cost of the network on which the message
 	   arrived. If the result is greater than infinity, use infinity
 	   (RFC2453 Sec. 3.9.2) */
 	/* Zebra ripd can handle offset-list in. */
@@ -2147,7 +2147,8 @@ void rip_output_process(struct connected *ifc, struct sockaddr_in *to,
 					       &rp->p)) {
 					if ((ifc->address->prefixlen
 					     != rp->p.prefixlen)
-					    && (rp->p.prefixlen != 32))
+					    && (rp->p.prefixlen
+						!= IPV4_MAX_BITLEN))
 						continue;
 				} else {
 					memcpy(&classfull, &rp->p,
@@ -2433,7 +2434,7 @@ static void rip_update_interface(struct connected *ifc, uint8_t version,
 				/* use specified broadcast or peer destination
 				 * addr */
 				to.sin_addr = ifc->destination->u.prefix4;
-			else if (ifc->address->prefixlen < IPV4_MAX_PREFIXLEN)
+			else if (ifc->address->prefixlen < IPV4_MAX_BITLEN)
 				/* calculate the appropriate broadcast address
 				 */
 				to.sin_addr.s_addr = ipv4_broadcast_addr(
@@ -3280,6 +3281,8 @@ static int config_write_rip(struct vty *vty)
 		/* Interface routemap configuration */
 		config_write_if_rmap(vty, rip->if_rmap_ctx);
 
+		vty_out(vty, "exit\n");
+
 		write = 1;
 	}
 
@@ -3695,7 +3698,7 @@ void rip_vrf_init(void)
 	vrf_init(rip_vrf_new, rip_vrf_enable, rip_vrf_disable, rip_vrf_delete,
 		 rip_vrf_enable);
 
-	vrf_cmd_init(NULL, &ripd_privs);
+	vrf_cmd_init(NULL);
 }
 
 void rip_vrf_terminate(void)

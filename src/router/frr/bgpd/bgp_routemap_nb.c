@@ -39,6 +39,13 @@ const struct frr_yang_module_info frr_bgp_route_map_info = {
 			}
 		},
 		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-bgp-route-map:alias",
+			.cbs = {
+				.modify = lib_route_map_entry_match_condition_rmap_match_condition_alias_modify,
+				.destroy = lib_route_map_entry_match_condition_rmap_match_condition_alias_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-bgp-route-map:script",
 			.cbs = {
 				.modify = lib_route_map_entry_match_condition_rmap_match_condition_script_modify,
@@ -345,6 +352,13 @@ const struct frr_yang_module_info frr_bgp_route_map_info = {
 			}
 		},
 		{
+			.xpath = "/frr-route-map:lib/route-map/entry/set-action/rmap-set-action/frr-bgp-route-map:extcommunity-none",
+			.cbs = {
+				.modify = lib_route_map_entry_set_action_rmap_set_action_extcommunity_none_modify,
+				.destroy = lib_route_map_entry_set_action_rmap_set_action_extcommunity_none_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-route-map:lib/route-map/entry/set-action/rmap-set-action/frr-bgp-route-map:extcommunity-lb",
 			.cbs = {
 				.apply_finish = lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_finish,
@@ -369,6 +383,20 @@ const struct frr_yang_module_info frr_bgp_route_map_info = {
 			.cbs = {
 				.modify = lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_two_octet_as_specific_modify,
 				.destroy = lib_route_map_entry_set_action_rmap_set_action_extcommunity_lb_two_octet_as_specific_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/set-action/rmap-set-action/frr-bgp-route-map:evpn-gateway-ip-ipv4",
+			.cbs = {
+				.modify = lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv4_modify,
+				.destroy = lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv4_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/set-action/rmap-set-action/frr-bgp-route-map:evpn-gateway-ip-ipv6",
+			.cbs = {
+				.modify = lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv6_modify,
+				.destroy = lib_route_map_entry_set_action_rmap_set_action_evpn_gateway_ip_ipv6_destroy,
 			}
 		},
 		{

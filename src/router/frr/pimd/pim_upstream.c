@@ -1800,12 +1800,16 @@ void pim_upstream_start_register_stop_timer(struct pim_upstream *up,
 	THREAD_OFF(up->t_rs_timer);
 
 	if (!null_register) {
-		uint32_t lower = (0.5 * PIM_REGISTER_SUPPRESSION_PERIOD);
-		uint32_t upper = (1.5 * PIM_REGISTER_SUPPRESSION_PERIOD);
-		time = lower + (frr_weak_random() % (upper - lower + 1))
-		       - PIM_REGISTER_PROBE_PERIOD;
+		uint32_t lower = (0.5 * router->register_suppress_time);
+		uint32_t upper = (1.5 * router->register_suppress_time);
+		time = lower + (frr_weak_random() % (upper - lower + 1));
+		/* Make sure we don't wrap around */
+		if (time >= router->register_probe_time)
+			time -= router->register_probe_time;
+		else
+			time = 0;
 	} else
-		time = PIM_REGISTER_PROBE_PERIOD;
+		time = router->register_probe_time;
 
 	if (PIM_DEBUG_PIM_TRACE) {
 		zlog_debug(
@@ -2174,7 +2178,7 @@ void pim_upstream_remove_lhr_star_pimreg(struct pim_instance *pim,
 	np = prefix_list_lookup(AFI_IP, nlist);
 
 	g.family = AF_INET;
-	g.prefixlen = IPV4_MAX_PREFIXLEN;
+	g.prefixlen = IPV4_MAX_BITLEN;
 
 	frr_each (rb_pim_upstream, &pim->upstream_head, up) {
 		if (up->sg.src.s_addr != INADDR_ANY)

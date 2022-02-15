@@ -26,6 +26,7 @@
 #include "prefix.h"
 #include "mpls.h"
 #include "vxlan.h"
+#include "srv6.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,6 +140,9 @@ struct nexthop {
 
 	/* SR-TE color used for matching SR-TE policies */
 	uint32_t srte_color;
+
+	/* SRv6 information */
+	struct nexthop_srv6 *nh_srv6;
 };
 
 /* Utility to append one nexthop to another. */
@@ -157,6 +161,12 @@ void nexthops_free(struct nexthop *nexthop);
 void nexthop_add_labels(struct nexthop *nexthop, enum lsp_types_t ltype,
 			uint8_t num_labels, const mpls_label_t *labels);
 void nexthop_del_labels(struct nexthop *);
+void nexthop_add_srv6_seg6local(struct nexthop *nexthop, uint32_t action,
+				const struct seg6local_context *ctx);
+void nexthop_del_srv6_seg6local(struct nexthop *nexthop);
+void nexthop_add_srv6_seg6(struct nexthop *nexthop,
+			   const struct in6_addr *segs);
+void nexthop_del_srv6_seg6(struct nexthop *nexthop);
 
 /*
  * Allocate a new nexthop object and initialize it from various args.
@@ -172,7 +182,8 @@ struct nexthop *nexthop_from_ipv6(const struct in6_addr *ipv6,
 				  vrf_id_t vrf_id);
 struct nexthop *nexthop_from_ipv6_ifindex(const struct in6_addr *ipv6,
 					  ifindex_t ifindex, vrf_id_t vrf_id);
-struct nexthop *nexthop_from_blackhole(enum blackhole_type bh_type);
+struct nexthop *nexthop_from_blackhole(enum blackhole_type bh_type,
+				       vrf_id_t nh_vrf_id);
 
 /*
  * Hash a nexthop. Suitable for use with hash tables.
