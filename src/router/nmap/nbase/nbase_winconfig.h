@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_winconfig.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: nbase_winconfig.h 38252 2021-07-29 21:09:44Z dmiller $ */
 
 #ifndef NBASE_WINCONFIG_H
 #define NBASE_WINCONFIG_H
@@ -72,9 +72,9 @@ are in <sdkddkver.h>.
 http://msdn.microsoft.com/en-us/library/aa383745.aspx
 http://blogs.msdn.com/oldnewthing/archive/2007/04/11/2079137.aspx */
 #undef _WIN32_WINNT
-#define _WIN32_WINNT _WIN32_WINNT_WIN6
+#define _WIN32_WINNT _WIN32_WINNT_WIN7
 #undef NTDDI_VERSION
-#define NTDDI_VERSION NTDDI_WIN6
+#define NTDDI_VERSION NTDDI_WIN7
 
 //This disables the warning 4800 http://msdn.microsoft.com/en-us/library/b6801kcy(v=vs.71).aspx
 #pragma warning(disable : 4800)

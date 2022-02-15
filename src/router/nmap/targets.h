@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: targets.h 38205 2021-04-23 20:37:41Z dmiller $ */
 
 #ifndef TARGETS_H
 #define TARGETS_H
@@ -106,12 +106,12 @@ public:
 };
 
 /* ports is used to pass information about what ports to use for host discovery */
-Target *nexthost(HostGroupState *hs,const struct addrset *exclude_group,
-                 struct scan_lists *ports, int pingtype);
+Target *nexthost(HostGroupState *hs, struct addrset *exclude_group,
+                 const struct scan_lists *ports, int pingtype);
 int load_exclude_file(struct addrset *exclude_group, FILE *fp);
 int load_exclude_string(struct addrset *exclude_group, const char *s);
 /* a debugging routine to dump an exclude list to stdout. */
-int dumpExclude(struct addrset *exclude_group);
+int dumpExclude(const struct addrset *exclude_group);
 /* Returns the last host obtained by nexthost.  It will be given again the next
    time you call nexthost(). */
 void returnhost(HostGroupState *hs);

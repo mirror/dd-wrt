@@ -54,7 +54,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_internal.h 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: nsock_internal.h 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #ifndef NSOCK_INTERNAL_H
 #define NSOCK_INTERNAL_H

@@ -58,7 +58,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NewTargets.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: NewTargets.cc 38210 2021-04-27 19:22:10Z dmiller $ */
 
 #include "NewTargets.h"
 #include "NmapOps.h"
@@ -74,6 +74,10 @@ NewTargets *NewTargets::get (void) {
     return new_targets;
   new_targets = new NewTargets();
   return new_targets;
+}
+
+void NewTargets::free_new_targets (void) {
+  delete new_targets;
 }
 
 NewTargets::NewTargets (void) {

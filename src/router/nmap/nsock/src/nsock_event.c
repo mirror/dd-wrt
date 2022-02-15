@@ -56,7 +56,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_event.c 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: nsock_event.c 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "nsock_log.h"

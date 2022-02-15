@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: targets.cc 38205 2021-04-23 20:37:41Z dmiller $ */
 
 
 #include <nbase.h>
@@ -191,12 +191,12 @@ int load_exclude_string(struct addrset *excludelist, const char *s) {
 
 /* A debug routine to dump some information to stdout. Invoked if debugging is
    set to 4 or higher. */
-int dumpExclude(struct addrset *exclude_group) {
+int dumpExclude(const struct addrset *exclude_group) {
   addrset_print(stdout, exclude_group);
   return 1;
 }
 
-static void massping(Target *hostbatch[], int num_hosts, struct scan_lists *ports) {
+static void massping(Target *hostbatch[], int num_hosts, const struct scan_lists *ports) {
   static struct timeout_info group_to = { 0, 0, 0 };
   static char prev_device_name[16] = "";
   const char *device_name;
@@ -423,8 +423,8 @@ bail:
   return NULL;
 }
 
-static Target *next_target(HostGroupState *hs, const struct addrset *exclude_group,
-  struct scan_lists *ports, int pingtype) {
+static Target *next_target(HostGroupState *hs, struct addrset *exclude_group,
+  const struct scan_lists *ports, int pingtype) {
   struct sockaddr_storage ss;
   size_t sslen;
   Target *t;
@@ -473,11 +473,15 @@ tryagain:
   if (t == NULL)
     goto tryagain;
 
+  if (o.unique) {
+    // Use the exclude list to avoid scanning this IP again if the user requested it.
+    addrset_add_spec(exclude_group, t->targetipstr(), o.af(), 0);
+  }
   return t;
 }
 
-static void refresh_hostbatch(HostGroupState *hs, const struct addrset *exclude_group,
-  struct scan_lists *ports, int pingtype) {
+static void refresh_hostbatch(HostGroupState *hs, struct addrset *exclude_group,
+  const struct scan_lists *ports, int pingtype) {
   int i;
   bool arpping_done = false;
   struct timeval now;
@@ -570,8 +574,8 @@ static void refresh_hostbatch(HostGroupState *hs, const struct addrset *exclude_
     nmap_mass_rdns(hs->hostbatch, hs->current_batch_sz);
 }
 
-Target *nexthost(HostGroupState *hs, const struct addrset *exclude_group,
-                 struct scan_lists *ports, int pingtype) {
+Target *nexthost(HostGroupState *hs, struct addrset *exclude_group,
+                 const struct scan_lists *ports, int pingtype) {
   if (hs->next_batch_no >= hs->current_batch_sz)
     refresh_hostbatch(hs, exclude_group, ports, pingtype);
   if (hs->next_batch_no >= hs->current_batch_sz)

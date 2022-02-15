@@ -64,7 +64,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: nbase.h 38207 2021-04-26 17:58:01Z dmiller $ */
 
 #ifndef NBASE_H
 #define NBASE_H
@@ -292,7 +292,7 @@ extern "C" int vsnprintf (char *, size_t, const char *, va_list);
 #define putenv _putenv
 #define tzset _tzset
 
-#if !defined(__GNUC__)
+#if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 
@@ -435,7 +435,7 @@ char *escape_windows_command_arg(const char *arg);
 
 /* parse_long is like strtol or atoi, but it allows digits only.
    No whitespace, sign, or radix prefix. */
-long parse_long(const char *s, char **tail);
+long parse_long(const char *s, const char **tail);
 
 /* This function takes a byte count and stores a short ascii equivalent
    in the supplied buffer. Eg: 0.122MB, 10.322Kb or 128B. */

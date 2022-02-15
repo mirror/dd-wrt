@@ -58,7 +58,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_main.c 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: ncat_main.c 38228 2021-07-19 23:06:49Z dmiller $ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -509,13 +509,14 @@ int main(int argc, char *argv[])
             } else if (strcmp(long_options[option_index].name, "ssl-servername") == 0) {
                 o.ssl = 1;
                 o.sslservername = Strdup(optarg);
+            }
 #ifdef HAVE_ALPN_SUPPORT
-            } else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
+            else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
                 o.ssl = 1;
                 o.sslalpn = Strdup(optarg);
             }
 #else
-            } else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
+            else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
                 bye("OpenSSL does not have ALPN support compiled in. The --ssl-alpn option cannot be chosen.");
             }
 #endif
@@ -846,7 +847,7 @@ int main(int argc, char *argv[])
             targetaddrs->addr.un.sun_family = AF_UNIX;
             strncpy(targetaddrs->addr.un.sun_path, argv[optind], sizeof(targetaddrs->addr.un.sun_path));
             targetaddrs->addrlen = SUN_LEN(&targetaddrs->addr.un);
-            o.target = argv[optind];
+            o.sslservername = o.target = argv[optind];
             optind++;
         } else
 #endif
@@ -865,7 +866,7 @@ int main(int argc, char *argv[])
                 targetaddrs->addr.vm.svm_cid = long_cid;
 
                 targetaddrs->addrlen = sizeof(targetaddrs->addr.vm);
-                o.target = argv[optind];
+                o.sslservername = o.target = argv[optind];
                 optind++;
             }
         } else

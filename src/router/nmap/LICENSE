@@ -1,4 +1,4 @@
-Nmap Public Source License Version 0.92
+Nmap Public Source License Version 0.93
 For more information on this license, see https://nmap.org/npsl/
 
 0. Preamble
@@ -6,13 +6,14 @@ For more information on this license, see https://nmap.org/npsl/
 The intent of this license is to establish freedom to share and change
 the software regulated by this license under the open source model. It
 also includes a Contributor Agreement and disclaims any warranty on
-Covered Software. Proprietary software companies wishing to use or
-incorporate Covered Software within their programs must contact
-Licensor to purchase a separate license. Open source developers who
-wish to incorporate parts of Covered Software into free software with
-conflicting licenses may write Licensor to request a waiver of terms.
+Covered Software. Companies wishing to use or incorporate Covered
+Software within their own products may find that our Nmap OEM product
+(https://nmap.org/oem/) better suits their needs. Open source
+developers who wish to incorporate parts of Covered Software into free
+software with conflicting licenses may write Licensor to request a
+waiver of terms.
 
-If the Nmap Project (directly or through one of it's commercial
+If the Nmap Project (directly or through one of its commercial
 licensing customers) has granted you additional rights to Nmap or Nmap
 OEM, those additional rights take precedence where they conflict with
 the terms of this license agreement.
@@ -407,7 +408,10 @@ your rights to work written entirely by you; rather, the intent is to
 exercise the right to control the distribution of derivative or
 collective works based on the Program.
 
-In addition, mere aggregation of another work not based on the Program with the Program (or with a work based on the Program) on a volume of a storage or distribution medium does not bring the other work under the scope of this License.
+In addition, mere aggregation of another work not based on the Program
+with the Program (or with a work based on the Program) on a volume of
+a storage or distribution medium does not bring the other work under
+the scope of this License.
 
 3. You may copy and distribute the Program (or a work based on it,
 under Section 2) in object code or executable form under the terms of
@@ -559,6 +563,6 @@ DAMAGES.
 END OF TERMS AND CONDITIONS
 
 [For brevity, we've cut out the GPL's final section on "How to Apply
-Tehse Terms to Your New Program", but you can find that at
+These Terms to Your New Program", but you can find that at
 https://www.gnu.org/licenses/gpl-2.0.html#SEC4 ]
 

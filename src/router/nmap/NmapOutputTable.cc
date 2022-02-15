@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOutputTable.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: NmapOutputTable.cc 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"

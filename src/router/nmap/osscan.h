@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: osscan.h 38205 2021-04-23 20:37:41Z dmiller $ */
 
 #ifndef OSSCAN_H
 #define OSSCAN_H
@@ -149,14 +149,14 @@ struct FingerPrintDB {
 
 /**********************  PROTOTYPES  ***********************************/
 
-const char *fp2ascii(FingerPrint *FP);
+const char *fp2ascii(const FingerPrint *FP);
 
 /* Parses a single fingerprint from the memory region given.  If a
  non-null fingerprint is returned, the user is in charge of freeing it
  when done.  This function does not require the fingerprint to be 100%
  complete since it is used by scripts such as scripts/fingerwatch for
  which some partial fingerpritns are OK. */
-FingerPrint *parse_single_fingerprint(char *fprint_orig);
+FingerPrint *parse_single_fingerprint(const char *fprint_orig);
 
 /* These functions take a file/db name and open+parse it, returning an
    (allocated) FingerPrintDB containing the results.  They exit with

@@ -1,4 +1,4 @@
-$Id: NMAP_MODIFICATIONS 37725 2019-09-03 19:13:14Z dmiller $
+$Id: NMAP_MODIFICATIONS 38245 2021-07-23 16:50:12Z dmiller $
 
 This is Dug Song's excellent Libdnet networking library version 1.12.
 It has been stripped down for inclusion within Nmap and modified as follows:
@@ -59,7 +59,7 @@ Index: configure.in
 --- configure.in	(revision 6317)
 +++ configure.in	(working copy)
 @@ -6,8 +6,6 @@
- dnl $Id: NMAP_MODIFICATIONS 37725 2019-09-03 19:13:14Z dmiller $
+ dnl $Id: NMAP_MODIFICATIONS 38245 2021-07-23 16:50:12Z dmiller $
  
  AC_INIT(include/dnet.h)
 -AC_CONFIG_AUX_DIR(config)
@@ -2543,3 +2543,21 @@ index 1399db2..352da4c 100644
  		if (strcmp(name, a->AdapterName) == 0)
  			break;
  	}
+
+o Remove call to FreeLibrary after GetModuleHandle. Windows API docs say:
+"do not pass a handle returned by GetModuleHandle to the FreeLibrary function.
+Doing so can cause a DLL module to be unmapped prematurely."
+
+diff --git a/libdnet-stripped/src/route-win32.c b/libdnet-stripped/src/route-win32.c
+index c69b29b..8a9d2bc 100644
+--- a/libdnet-stripped/src/route-win32.c
++++ b/libdnet-stripped/src/route-win32.c
+@@ -269,8 +269,6 @@ route_t *
+ route_close(route_t *r)
+ {
+ 	if (r != NULL) {
+-		if (r->iphlpapi != NULL)
+-			FreeLibrary(r->iphlpapi);
+ 		if (r->ipftable != NULL)
+ 			free(r->ipftable);
+ 		if (r->ipftable2 != NULL)

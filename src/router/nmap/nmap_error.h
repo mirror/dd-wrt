@@ -59,7 +59,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_error.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: nmap_error.h 38085 2020-10-05 23:00:30Z dmiller $ */
 
 #ifndef NMAP_ERROR_H
 #define NMAP_ERROR_H
