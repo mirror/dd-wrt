@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: scan_engine.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: scan_engine.h 38262 2021-08-06 02:47:58Z dmiller $ */
 
 #ifndef SCAN_ENGINE_H
 #define SCAN_ENGINE_H
@@ -81,7 +81,7 @@
 class Target;
 
 /* 3rd generation Nmap scanning function.  Handles most Nmap port scan types */
-void ultra_scan(std::vector<Target *> &Targets, struct scan_lists *ports,
+void ultra_scan(std::vector<Target *> &Targets, const struct scan_lists *ports,
                 stype scantype, struct timeout_info *to = NULL);
 
 /* Determines an ideal number of hosts to be scanned (port scan, os
@@ -93,7 +93,7 @@ void ultra_scan(std::vector<Target *> &Targets, struct scan_lists *ports,
    number of hosts scanned in parallel, though rarely to significant
    levels. */
 int determineScanGroupSize(int hosts_scanned_so_far,
-                           struct scan_lists *ports);
+                           const struct scan_lists *ports);
 
 class UltraScanInfo;
 
@@ -140,6 +140,15 @@ struct IPExtraProbeData {
   } pd;
 };
 
+union _tryno_u {
+  struct {
+  u8 isPing : 1; // Is this a ping, not a scanprobe?
+  u8 seqnum : 7; // Sequence number, 0-127
+  } fields;
+  u8 opaque;
+};
+typedef union _tryno_u tryno_t;
+
 /* At least for now, I'll just use this like a struct and access
    all the data members directly */
 class UltraProbe {
@@ -152,13 +161,13 @@ public:
      internal IPProbe.  The relevant probespec is necessary for setIP
      because pspec.type is ambiguous with just the ippacket (e.g. a
      tcp packet could be PS_PROTO or PS_TCP). */
-  void setIP(u8 *ippacket, u32 iplen, const probespec *pspec);
+  void setIP(const u8 *ippacket, u32 iplen, const probespec *pspec);
   /* Sets this UltraProbe as type UP_CONNECT, preparing to connect to given
    port number*/
   void setConnect(u16 portno);
   /* Pass an arp packet, including ethernet header. Must be 42bytes */
-  void setARP(u8 *arppkt, u32 arplen);
-  void setND(u8 *ndpkt, u32 ndlen);
+  void setARP(const u8 *arppkt, u32 arplen);
+  void setND(const u8 *ndpkt, u32 ndlen);
   // The 4 accessors below all return in HOST BYTE ORDER
   // source port used if TCP, UDP or SCTP
   u16 sport() const;
@@ -174,7 +183,7 @@ public:
   u8 protocol() const {
     return mypspec.proto;
   }
-  ConnectProbe *CP() {
+  ConnectProbe *CP() const {
     return probes.CP;  // if type == UP_CONNECT
   }
   // Arpprobe removed because not used.
@@ -187,14 +196,13 @@ public:
     return &mypspec;
   }
 
-  /* Returns true if the given tryno and pingseq match those within this
-     probe. */
-  bool check_tryno_pingseq(unsigned int tryno, unsigned int pingseq) const {
-    return (pingseq == 0 && tryno == this->tryno) || (pingseq > 0 && pingseq == this->pingseq);
+  /* Returns true if the given tryno matches this probe. */
+  bool check_tryno(u8 tryno) const {
+    return tryno == this->tryno.opaque;
   }
 
-  u8 tryno; /* Try (retransmission) number of this probe */
-  u8 pingseq; /* 0 if this is not a scanping. Otherwise a positive ping seq#. */
+  /* tryno/pingseq, depending on what type of probe this is (ping vs scanprobe) */
+  tryno_t tryno; /* Try (retransmission) number of this probe */
   /* If true, probe is considered no longer active due to timeout, but it
      may be kept around a while, just in case a reply comes late */
   bool timedout;
@@ -205,8 +213,11 @@ public:
   struct timeval sent;
   /* Time the previous probe was sent, if this is a retransmit (tryno > 0) */
   struct timeval prevSent;
-  bool isPing() {
-    return pingseq > 0;
+  bool isPing() const {
+    return tryno.fields.isPing;
+  }
+  u8 get_tryno() const {
+    return tryno.fields.seqnum;
   }
 
 private:
@@ -253,7 +264,7 @@ public:
   ~GroupScanStats();
   void probeSent(unsigned int nbytes);
   /* Returns true if the GLOBAL system says that sending is OK. */
-  bool sendOK(struct timeval *when);
+  bool sendOK(struct timeval *when) const;
   /* Total # of probes outstanding (active) for all Hosts */
   int num_probes_active;
   UltraScanInfo *USI; /* The USI which contains this GSS.  Use for at least
@@ -318,7 +329,8 @@ public:
   Target *target; /* A copy of the Target that these stats refer to. */
   HostScanStats(Target *t, UltraScanInfo *UltraSI);
   ~HostScanStats();
-  int freshPortsLeft(); /* Returns the number of ports remaining to probe */
+  bool freshPortsLeft() const; /* Returns true if there are ports remaining to probe */
+  int numFreshPortsLeft() const; /* Returns the number of ports remaining to probe */
   int next_portidx; /* Index of the next port to probe in the relevant
                        ports array in USI.ports */
   bool sent_arp; /* Has an ARP probe been sent for the target yet? */
@@ -356,25 +368,25 @@ public:
      before considering it timed out.  Uses the host values from
      target if they are available, otherwise from gstats.  Results
      returned in MICROseconds.  */
-  unsigned long probeTimeout();
+  unsigned long probeTimeout() const;
 
   /* How long I'll wait until completely giving up on a probe.
      Timedout probes are often marked as such (and sometimes
      considered a drop), but kept in the list juts in case they come
      really late.  But after probeExpireTime(), I don't waste time
      keeping them around. Give in MICROseconds */
-  unsigned long probeExpireTime(const UltraProbe *probe);
+  unsigned long probeExpireTime(const UltraProbe *probe) const;
   /* Returns OK if sending a new probe to this host is OK (to avoid
      flooding). If when is non-NULL, fills it with the time that sending
      will be OK assuming no pending probes are resolved by responses
      (call it again if they do).  when will become now if it returns
      true. */
-  bool sendOK(struct timeval *when);
+  bool sendOK(struct timeval *when) const;
 
   /* If there are pending probe timeouts, fills in when with the time of
      the earliest one and returns true.  Otherwise returns false and
      puts now in when. */
-  bool nextTimeout(struct timeval *when);
+  bool nextTimeout(struct timeval *when) const;
   UltraScanInfo *USI; /* The USI which contains this HSS */
 
   /* Removes a probe from probes_outstanding, adjusts HSS and USS
@@ -406,7 +418,7 @@ public:
      necessary.  Note that probes on probe_bench are not included
      in this value. */
   unsigned int num_probes_waiting_retransmit;
-  unsigned int num_probes_outstanding() {
+  unsigned int num_probes_outstanding() const {
     return probes_outstanding.size();
   }
 
@@ -437,7 +449,7 @@ public:
   /* Move all members of bench to retry_stack for probe retransmission */
   void retransmitBench();
 
-  bool completed(); /* Whether or not the scan of this Target has completed */
+  bool completed() const; /* Whether or not the scan of this Target has completed */
   struct timeval completiontime; /* When this Target completed */
 
   /* This function provides the proper cwnd and ssthresh to use.  It
@@ -445,7 +457,7 @@ public:
      responses have been received for this host, may look at others in
      the group.  For CHANGING this host's timing, use the timing
      memberval instead. */
-  void getTiming(struct ultra_timing_vals *tmng);
+  void getTiming(struct ultra_timing_vals *tmng) const;
   struct ultra_timing_vals timing;
   /* The most recently received probe response time -- initialized to scan start time. */
   struct timeval lastrcvd;
@@ -465,29 +477,18 @@ public:
      appropriate.  If mayincrease is non-NULL, it is set to whether
      the allowedTryno may increase again.  If it is false, any probes
      which have reached the given limit may be dealt with. */
-  unsigned int allowedTryno(bool *capped, bool *mayincrease);
+  unsigned int allowedTryno(bool *capped, bool *mayincrease) const;
 
-
-  /* Provides the next ping sequence number.  This starts at one, goes
-   up to 255, then wraps around back to 1.  If inc is true, it is
-   incremented.  Otherwise you just get a peek at what the next one
-   will be. */
-  u8 nextPingSeq(bool inc = true) {
-    u8 ret = nxtpseq;
-    if (inc) {
-      nxtpseq++;
-      if (nxtpseq == 0)
-        nxtpseq++;
-    }
-    return ret;
+  /* Provides the next ping sequence number.  This starts at zero, goes
+   up to 127, then wraps around back to 0. */
+  u8 nextPingSeq() {
+    // Has to fit in 7 bits: tryno.fields.seqnum
+    nxtpseq = (nxtpseq + 1) % 0x80;
+    return nxtpseq;
   }
   /* This is the highest try number that has produced useful results
      (such as port status change). */
   unsigned int max_successful_tryno;
-  /* This starts as true because tryno may increase based on results, but
-     it becomes false if it becomes clear that tryno will not increase
-     further during the scan */
-  bool tryno_mayincrease;
   int ports_finished; /* The number of ports of this host that have been determined */
   int numprobes_sent; /* Number of port probes (not counting pings, but counting retransmits) sent to this host */
   /* Boost the scan delay for this host, usually because too many packet
@@ -523,21 +524,21 @@ public:
 class UltraScanInfo {
 public:
   UltraScanInfo();
-  UltraScanInfo(std::vector<Target *> &Targets, struct scan_lists *pts, stype scantype) {
+  UltraScanInfo(std::vector<Target *> &Targets, const struct scan_lists *pts, stype scantype) {
     Init(Targets, pts, scantype);
   }
   ~UltraScanInfo();
   /* Must call Init if you create object with default constructor */
-  void Init(std::vector<Target *> &Targets, struct scan_lists *pts, stype scantp);
+  void Init(std::vector<Target *> &Targets, const struct scan_lists *pts, stype scantp);
 
-  unsigned int numProbesPerHost();
+  unsigned int numProbesPerHost() const;
 
   /* Consults with the group stats, and the hstats for every
      incomplete hosts to determine whether any probes may be sent.
      Returns true if they can be sent immediately.  If when is non-NULL,
      it is filled with the next possible time that probes can be sent
      (which will be now, if the function returns true */
-  bool sendOK(struct timeval *tv);
+  bool sendOK(struct timeval *tv) const;
   stype scantype;
   bool tcp_scan; /* scantype is a type of TCP scan */
   bool udp_scan;
@@ -561,7 +562,7 @@ public:
       rawprotoscan: 1;
   } ptech;
 
-  bool isRawScan();
+  bool isRawScan() const;
 
   struct timeval now; /* Updated after potentially meaningful delays.  This can
                          be used to save a call to gettimeofday() */
@@ -578,25 +579,25 @@ public:
   int removeCompletedHosts();
   /* Find a HostScanStats by its IP address in the incomplete and completed
      lists.  Returns NULL if none are found. */
-  HostScanStats *findHost(struct sockaddr_storage *ss);
+  HostScanStats *findHost(struct sockaddr_storage *ss) const;
 
-  double getCompletionFraction();
+  double getCompletionFraction() const;
 
-  unsigned int numIncompleteHosts() {
+  unsigned int numIncompleteHosts() const {
     return incompleteHosts.size();
   }
   /* Call this instead of checking for numIncompleteHosts() == 0 because it
      avoids a potential traversal of the list to find the size. */
-  bool incompleteHostsEmpty() {
+  bool incompleteHostsEmpty() const {
     return incompleteHosts.empty();
   }
-  bool numIncompleteHostsLessThan(unsigned int n);
+  bool numIncompleteHostsLessThan(unsigned int n) const;
 
-  unsigned int numInitialHosts() {
+  unsigned int numInitialHosts() const {
     return numInitialTargets;
   }
 
-  void log_overall_rates(int logt);
+  void log_overall_rates(int logt) const;
   void log_current_rates(int logt, bool update = true);
 
   /* Any function which messes with (removes elements from)
@@ -613,16 +614,48 @@ public:
 
   ScanProgressMeter *SPM;
   PacketRateMeter send_rate_meter;
-  struct scan_lists *ports;
+  const struct scan_lists *ports;
   int rawsd; /* raw socket descriptor */
   pcap_t *pd;
   eth_t *ethsd;
   u32 seqmask; /* This mask value is used to encode values in sequence
                   numbers.  It is set randomly in UltraScanInfo::Init() */
+  u16 base_port;
+
 private:
 
   unsigned int numInitialTargets;
   std::multiset<HostScanStats *, HssPredicate>::iterator nextI;
+  /* We encode per-probe information like the tryno in the source
+     port, for protocols that use ports. (Except when o.magic_port_set is
+     true--then we honor the requested source port.) The tryno is
+     encoded as offsets from base_port, a base source port number (see
+     sport_encode and sport_decode). To avoid interpreting a late response from a
+     previous invocation of ultra_scan as a response for the same port in the
+     current invocation, we increase base_port by a healthy amount designed to be
+     greater than any offset likely to be used by a probe, each time ultra_scan is
+     run.
+
+     If we don't increase the base port, then there is the risk of something like
+     the following happening:
+     1. Nmap sends an ICMP echo and a TCP ACK probe to port 80 for host discovery.
+     2. Nmap receives an ICMP echo reply and marks the host up.
+     3. Nmap sends a TCP SYN probe to port 80 for port scanning.
+     4. Nmap finally receives a delayed TCP RST in response to its earlier ACK
+     probe, and wrongly marks port 80 as closed. */
+
+  /* Base port must be chosen so that there is room to add an 8-bit value (tryno)
+   * without exceeding 16 bits. We increment modulo the largest prime number N
+   * such that 33000 + N + 256 < 65536, which ensures no overlapping cycles. */
+  // Nearest prime not exceeding 65536 - 256 - 33000:
+#define PRIME_32K 32261
+  /* Change base_port to a new number in a safe port range that is unlikely to
+     conflict with nearby past or future invocations of ultra_scan. */
+  static u16 increment_base_port() {
+    static u16 g_base_port = 33000 + get_random_uint() % PRIME_32K;
+    g_base_port = 33000 + (g_base_port - 33000 + 256) % PRIME_32K;
+    return g_base_port;
+  }
 
 };
 

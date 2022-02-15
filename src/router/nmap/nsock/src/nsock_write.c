@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_write.c 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: nsock_write.c 38268 2021-08-06 16:17:46Z dmiller $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -191,7 +191,7 @@ nsock_event_id nsock_printf(nsock_pool ms_pool, nsock_iod ms_iod,
       va_start(ap,format);
       res2 = Vsnprintf(buf2, buf2size, format, ap);
       va_end(ap);
-      if (res2 < 0 || res2 >= buf2size) {
+      if (res2 < 0 || (size_t) res2 >= buf2size) {
         free(buf2);
         buf2 = NULL;
       } else

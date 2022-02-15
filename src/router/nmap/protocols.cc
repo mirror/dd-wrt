@@ -60,7 +60,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: protocols.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: protocols.cc 38169 2020-12-28 17:51:16Z dmiller $ */
 
 #include "protocols.h"
 #include "NmapOps.h"
@@ -93,7 +93,7 @@ static int nmap_protocols_init() {
 
   fp = fopen(filename, "r");
   if (!fp) {
-    fatal("Unable to open %s for reading protocol information", filename);
+    pfatal("Unable to open %s for reading protocol information", filename);
   }
   /* Record where this data file was found. */
   o.loaded_data_files["nmap-protocols"] = filename;

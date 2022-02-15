@@ -57,7 +57,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_connect.c 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: ncat_connect.c 38198 2021-03-16 02:34:35Z nnposter $ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -552,6 +552,8 @@ static int do_proxy_socks4(void)
     union sockaddr_u addr;
     size_t sslen;
     int sd;
+    size_t remainderlen;
+    char* remainder;
 
     if (getaddrfamily(o.target) == 2) {
         loguser("Error: IPv6 addresses are not supported with Socks4.\n");
@@ -629,6 +631,10 @@ static int do_proxy_socks4(void)
         return -1;
     }
 
+    /* whatever is left in the buffer is part of the proxied connection */
+    remainder = socket_buffer_remainder(&stateful_buf, &remainderlen);
+    Write(STDOUT_FILENO, remainder, remainderlen);
+
     return sd;
 }
 
@@ -641,7 +647,7 @@ static int do_proxy_socks5(void)
     struct socket_buffer stateful_buf;
     struct socks5_connect socks5msg;
     uint16_t proxyport = htons(o.portno);
-    char socksbuf[8];
+    char socksbuf[4];
     int sd;
     size_t dstlen, targetlen;
     struct socks5_request socks5msg2;
@@ -653,6 +659,10 @@ static int do_proxy_socks5(void)
     void *addrbuf;
     size_t addrlen;
     char addrstr[INET6_ADDRSTRLEN];
+    size_t bndaddrlen;
+    char bndaddr[16 + 2]; /* IPv4/IPv6 address and port */
+    size_t remainderlen;
+    char* remainder;
 
     sd = do_connect(SOCK_STREAM);
     if (sd == -1) {
@@ -681,15 +691,15 @@ static int do_proxy_socks5(void)
         return -1;
     }
 
-    /* first response just two bytes, version and auth method */
+    /* connect response just two bytes, version and auth method */
     if (socket_buffer_readcount(&stateful_buf, socksbuf, 2) < 0) {
-        loguser("Error: malformed first response from proxy.\n");
+        loguser("Error: malformed connect response from proxy.\n");
         close(sd);
         return -1;
     }
 
     if (socksbuf[0] != SOCKS5_VERSION) {
-        loguser("Error: got wrong server version in response.\n");
+        loguser("Error: wrong SOCKS version in connect response.\n");
         close(sd);
         return -1;
     }
@@ -744,8 +754,8 @@ static int do_proxy_socks5(void)
              * Server response for username/password authentication:
              * field 1: version, 1 byte
              * field 2: status code, 1 byte.
-             * 0x00 = success
-             * any other value = failure, connection must be closed
+             *          0x00 = success
+             *          any other value = failure, connection must be closed
              */
 
             socks5auth.ver = 1;
@@ -805,7 +815,7 @@ static int do_proxy_socks5(void)
         if (o.verbose)
             loguser("Host %s will be resolved by the proxy.\n", o.target);
         socks5msg2.atyp = SOCKS5_ATYP_NAME;
-        targetlen=strlen(o.target);
+        targetlen = strlen(o.target);
         if (targetlen > SOCKS5_DST_MAXLEN){
             loguser("Error: hostname length exceeds %d.\n", SOCKS5_DST_MAXLEN);
             close(sd);
@@ -847,9 +857,14 @@ static int do_proxy_socks5(void)
         return -1;
     }
 
-    /* TODO just two bytes for now, need to read more for bind */
-    if (socket_buffer_readcount(&stateful_buf, socksbuf, 2) < 0) {
-        loguser("Error: malformed second response from proxy.\n");
+    if (socket_buffer_readcount(&stateful_buf, socksbuf, 4) < 0) {
+        loguser("Error: malformed request response from proxy.\n");
+        close(sd);
+        return -1;
+    }
+
+    if (socksbuf[0] != SOCKS5_VERSION) {
+        loguser("Error: wrong SOCKS version in request response.\n");
         close(sd);
         return -1;
     }
@@ -896,6 +911,29 @@ static int do_proxy_socks5(void)
             close(sd);
             return -1;
     }
+
+    switch (socksbuf[3]) {
+    case SOCKS5_ATYP_IPv4:
+        bndaddrlen = 4 + 2;
+        break;
+    case SOCKS5_ATYP_IPv6:
+        bndaddrlen = 16 + 2;
+        break;
+    default:
+        loguser("Error: invalid proxy bind address type.\n");
+        close(sd);
+        return -1;
+    }
+
+    if (socket_buffer_readcount(&stateful_buf, bndaddr, bndaddrlen) < 0) {
+        loguser("Error: malformed request response from proxy.\n");
+        close(sd);
+        return -1;
+    }
+
+    /* whatever is left in the buffer is part of the proxied connection */
+    remainder = socket_buffer_remainder(&stateful_buf, &remainderlen);
+    Write(STDOUT_FILENO, remainder, remainderlen);
 
     return(sd);
 }
@@ -1064,12 +1102,17 @@ int ncat_connect(void)
             bye("Failed to set hostname on iod.");
         if (o.ssl)
         {
+            /* connect_handler creates stdin_nsi and calls post_connect */
             nsock_reconnect_ssl(mypool, cs.sock_nsi, connect_handler, o.conntimeout, NULL, NULL);
         }
+        else
+        {
+            /* Create IOD for nsp->stdin */
+            if ((cs.stdin_nsi = nsock_iod_new2(mypool, 0, NULL)) == NULL)
+                bye("Failed to create stdin nsiod.");
 
-        /* Create IOD for nsp->stdin */
-        if ((cs.stdin_nsi = nsock_iod_new2(mypool, 0, NULL)) == NULL)
-            bye("Failed to create stdin nsiod.");
+            post_connect(mypool, cs.sock_nsi);
+        }
     }
 
     /* connect */

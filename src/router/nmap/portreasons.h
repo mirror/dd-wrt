@@ -107,6 +107,8 @@ typedef struct port_reason_summary {
         reason_t reason_id;
         unsigned int count;
         struct port_reason_summary *next;
+        unsigned short proto;
+        unsigned short ports[0xffff+1];
 } state_reason_summary_t;
 
 
@@ -135,8 +137,8 @@ private:
     std::map<reason_codes,reason_string > reason_map;
 public:
     reason_map_type();
-    std::map<reason_codes,reason_string>::iterator find(const reason_codes& x){
-        std::map<reason_codes,reason_string>::iterator itr = reason_map.find(x);
+    std::map<reason_codes,reason_string>::const_iterator find(const reason_codes& x) const {
+        std::map<reason_codes,reason_string>::const_iterator itr = reason_map.find(x);
         if(itr == reason_map.end())
             return reason_map.find(ER_UNKNOWN);
         return itr;
@@ -145,12 +147,6 @@ public:
 
 /* Function to translate ICMP code and typ to reason code */
 reason_codes icmp_to_reason(u8 proto, int icmp_type, int icmp_code);
-
-/* passed to the print_state_summary.
- * STATE_REASON_EMPTY will append to the current line, prefixed with " because of"
- * STATE_REASON_FULL will start a new line, prefixed with "Reason:" */
-#define STATE_REASON_EMPTY 0
-#define STATE_REASON_FULL 1
 
 /* Passed to reason_str to determine if string should be in
  * plural of singular form */
@@ -164,15 +160,16 @@ void state_reason_init(state_reason_t *reason);
  * port the plural is used, otherwise the singular is used. */
 const char *reason_str(reason_t reason_id, unsigned int number);
 
-/* Displays reason summary messages */
-void print_state_summary(PortList *Ports, unsigned short type);
-void print_xml_state_summary(PortList *Ports, int state);
+/* Returns a linked list of reasons why ports are in a given state */
+state_reason_summary_t *get_state_reason_summary(const PortList *Ports, int state);
+/* Frees the linked list from get_state_reason_summary */
+void state_reason_summary_dinit(state_reason_summary_t *r);
 
 /* Build an output string based on reason and source ip address.
  * Uses static return value so previous values will be over
  * written by subsequent calls */
-char *port_reason_str(state_reason_t r);
-char *target_reason_str(Target *t);
+const char *port_reason_str(state_reason_t r);
+const char *target_reason_str(const Target *t);
 
 #endif
 

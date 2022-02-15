@@ -1,4 +1,4 @@
-$Id: 3rd-party-licenses.txt 38073 2020-10-02 13:55:49Z dmiller $
+$Id: 3rd-party-licenses.txt 38085 2020-10-05 23:00:30Z dmiller $
 
 This file is a list of the licenses of the third-party software used by
 Nmap and the other tools distributed with it. What follows is a

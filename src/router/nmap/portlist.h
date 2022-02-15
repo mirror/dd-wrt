@@ -59,7 +59,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.h 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: portlist.h 38214 2021-04-29 17:52:24Z dmiller $ */
 
 #ifndef PORTLIST_H
 #define PORTLIST_H
@@ -203,7 +203,7 @@ class PortList {
    except that if you ask for TCP, UDP & SCTP, all TCP ports will be
    returned before we start returning UDP and finally SCTP ports */
   Port *nextPort(const Port *cur, Port *next,
-                 int allowed_protocol, int allowed_state);
+                 int allowed_protocol, int allowed_state) const;
 
   int setStateReason(u16 portno, u8 proto, reason_t reason, u8 ttl, const struct sockaddr_storage *ip_addr);
 
@@ -240,7 +240,7 @@ class PortList {
   void getServiceDeductions(u16 portno, int protocol, struct serviceDeductions *sd) const;
 
 #ifndef NOLUA
-  void addScriptResult(u16 portno, int protocol, const ScriptResult& sr);
+  void addScriptResult(u16 portno, int protocol, ScriptResult *sr);
 #endif
 
   /* Cycles through the 0 or more "ignored" ports which should be
@@ -251,13 +251,13 @@ class PortList {
    most popular one.  Returns the state if there is one, but returns
    PORT_UNKNOWN if there are no (more) states which qualify for
    consolidation */
-  int nextIgnoredState(int prevstate);
+  int nextIgnoredState(int prevstate) const;
 
   /* Returns true if a state should be ignored (consolidated), false otherwise */
-  bool isIgnoredState(int state);
+  bool isIgnoredState(int state, int *count) const;
 
-  int numIgnoredStates();
-  int numIgnoredPorts();
+  int numIgnoredStates() const;
+  int numIgnoredPorts() const;
   int numPorts() const;
   bool hasOpenPorts() const;
 

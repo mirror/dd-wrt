@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_core.c 38071 2020-10-02 05:02:05Z fyodor $ */
+/* $Id: nsock_core.c 38106 2020-10-13 19:13:31Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "gh_list.h"
@@ -1214,7 +1214,7 @@ void process_expired_events(struct npool *nsp) {
     if (!event_timedout(nse))
       break;
 
-    gh_heap_pop(&nsp->expirables);
+    gh_heap_remove(&nsp->expirables, hnode);
     process_event(nsp, NULL, nse, EV_NONE);
     assert(nse->event_done);
     update_first_events(nse);

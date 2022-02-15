@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: MACLookup.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: MACLookup.cc 38169 2020-12-28 17:51:16Z dmiller $ */
 
 #include "nmap.h"
 
@@ -100,7 +100,7 @@ static void mac_prefix_init() {
 
   fp = fopen(filename, "r");
   if (!fp) {
-    error("Unable to open %s.  Ethernet vendor correlation will not be performed ", filename);
+    gh_perror("Unable to open %s.  Ethernet vendor correlation will not be performed ", filename);
     return;
   }
   /* Record where this data file was found. */

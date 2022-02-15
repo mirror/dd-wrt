@@ -64,7 +64,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: output.cc 38240 2021-07-21 22:42:46Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
@@ -235,10 +235,10 @@ void win32_fatal_raw_sockets(const char *devname) {
   }
 }
 
-/* Display the mapping from libdnet interface names (like "eth0") to WinPcap
+/* Display the mapping from libdnet interface names (like "eth0") to Npcap
    interface names (like "\Device\NPF_{...}"). This is the same mapping used by
    eth_open and so can help diagnose connection problems.  Additionally display
-   WinPcap interface names that are not mapped to by any libdnet name, in other
+   Npcap interface names that are not mapped to by any libdnet name, in other
    words the names of interfaces Nmap has no way of using.*/
 static void print_iflist_pcap_mapping(const struct interface_info *iflist,
                                       int numifs) {
@@ -446,13 +446,7 @@ std::string protect_xml(const std::string s) {
   return r;
 }
 
-/* This is a helper function to determine the ordering of the script results
-   based on their id. */
-static bool scriptid_lessthan(const ScriptResult &a, const ScriptResult &b) {
-  return strcmp(a.get_id(), b.get_id()) < 0;
-}
-
-static char *formatScriptOutput(const ScriptResult &sr) {
+static char *formatScriptOutput(const ScriptResult *sr) {
   std::vector<std::string> lines;
 
   std::string c_output;
@@ -460,7 +454,7 @@ static char *formatScriptOutput(const ScriptResult &sr) {
   std::string result;
   unsigned int i;
 
-  c_output = escape_for_screen(sr.get_output_str());
+  c_output = escape_for_screen(sr->get_output_str());
   if (c_output.empty())
     return NULL;
   p = c_output.c_str();
@@ -484,7 +478,7 @@ static char *formatScriptOutput(const ScriptResult &sr) {
     else
       result += "|_";
     if (i == 0)
-      result += std::string(sr.get_id()) + ": ";
+      result += std::string(sr->get_id()) + ": ";
     result += lines[i];
     if (i < lines.size() - 1)
       result += "\n";
@@ -494,11 +488,14 @@ static char *formatScriptOutput(const ScriptResult &sr) {
 }
 #endif /* NOLUA */
 
+/* Output a list of ports, compressing ranges like 80-85 */
+static void output_rangelist_given_ports(int logt, const unsigned short *ports, int numports);
+
 /* Prints the familiar Nmap tabular output showing the "interesting"
    ports found on the machine.  It also handles the Machine/Grepable
    output and the XML output.  It is pretty ugly -- in particular I
    should write helper functions to handle the table creation */
-void printportoutput(Target *currenths, PortList *plist) {
+void printportoutput(const Target *currenths, const PortList *plist) {
   char protocol[MAX_IPPROTOSTRLEN + 1];
   char portinfo[64];
   char grepvers[256];
@@ -523,61 +520,16 @@ void printportoutput(Target *currenths, PortList *plist) {
   int numrows;
   int numignoredports = plist->numIgnoredPorts();
   int numports = plist->numPorts();
+  state_reason_summary_t *reasons, *currentr;
 
   std::vector<const char *> saved_servicefps;
 
-  if (o.noportscan)
+  if (o.noportscan || numports == 0)
     return;
 
   xml_start_tag("ports");
-  int prevstate = PORT_UNKNOWN;
-  int istate;
-
-  while ((istate = plist->nextIgnoredState(prevstate)) != PORT_UNKNOWN) {
-    xml_open_start_tag("extraports");
-    xml_attribute("state", "%s", statenum2str(istate));
-    xml_attribute("count", "%d", plist->getStateCounts(istate));
-    xml_close_start_tag();
-    xml_newline();
-    print_xml_state_summary(plist, istate);
-    xml_end_tag();
-    xml_newline();
-    prevstate = istate;
-  }
-
-  if (numignoredports == numports) {
-    if (numignoredports == 0) {
-      log_write(LOG_PLAIN, "0 ports scanned on %s\n",
-                currenths->NameIP(hostname, sizeof(hostname)));
-    } else {
-      log_write(LOG_PLAIN, "%s %d scanned %s on %s %s ",
-                (numignoredports == 1) ? "The" : "All", numignoredports,
-                (numignoredports == 1) ? "port" : "ports",
-                currenths->NameIP(hostname, sizeof(hostname)),
-                (numignoredports == 1) ? "is" : "are");
-      if (plist->numIgnoredStates() == 1) {
-        log_write(LOG_PLAIN, "%s", statenum2str(plist->nextIgnoredState(PORT_UNKNOWN)));
-      } else {
-        prevstate = PORT_UNKNOWN;
-        while ((istate = plist->nextIgnoredState(prevstate)) != PORT_UNKNOWN) {
-          if (prevstate != PORT_UNKNOWN)
-            log_write(LOG_PLAIN, " or ");
-          log_write(LOG_PLAIN, "%s (%d)", statenum2str(istate),
-                    plist->getStateCounts(istate));
-          prevstate = istate;
-        }
-      }
-      if (o.reason)
-        print_state_summary(plist, STATE_REASON_EMPTY);
-      log_write(LOG_PLAIN, "\n");
-    }
-
-    log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Up",
-              currenths->targetipstr(), currenths->HostName());
-    xml_end_tag(); /* ports */
-    xml_newline();
-    return;
-  }
+  log_write(LOG_MACHINE, "Host: %s (%s)", currenths->targetipstr(),
+            currenths->HostName());
 
   if ((o.verbose > 1 || o.debugging) && currenths->StartTime()) {
     time_t tm_secs, tm_sece;
@@ -604,35 +556,82 @@ void printportoutput(Target *currenths, PortList *plist) {
       }
     }
   }
-  log_write(LOG_MACHINE, "Host: %s (%s)", currenths->targetipstr(),
-            currenths->HostName());
 
-  /* Show line like:
-     Not shown: 3995 closed ports, 514 filtered ports
-     if appropriate (note that states are reverse-sorted by # of ports) */
-  prevstate = PORT_UNKNOWN;
+  int prevstate = PORT_UNKNOWN;
+  int istate;
+
   while ((istate = plist->nextIgnoredState(prevstate)) != PORT_UNKNOWN) {
-    if (prevstate == PORT_UNKNOWN)
+    i = plist->getStateCounts(istate);
+    xml_open_start_tag("extraports");
+    xml_attribute("state", "%s", statenum2str(istate));
+    xml_attribute("count", "%d", i);
+    xml_close_start_tag();
+    xml_newline();
+
+    /* Show line like:
+       Not shown: 98 open|filtered udp ports (no-response), 59 closed tcp ports (reset)
+       if appropriate (note that states are reverse-sorted by # of ports) */
+    if (prevstate == PORT_UNKNOWN) {
+      // First time through, check special case
+      if (numignoredports == numports) {
+        log_write(LOG_PLAIN, "All %d scanned ports on %s are in ignored states.\n",
+            numignoredports, currenths->NameIP(hostname, sizeof(hostname)));
+        log_write(LOG_MACHINE, "\t%s: ", (o.ipprotscan) ? "Protocols" : "Ports");
+        /* Grepable output supports only one ignored state. */
+        if (plist->numIgnoredStates() == 1) {
+          log_write(LOG_MACHINE, "\tIgnored State: %s (%d)", statenum2str(istate), i);
+        }
+      }
       log_write(LOG_PLAIN, "Not shown: ");
-    else
+    } else {
       log_write(LOG_PLAIN, ", ");
-    char desc[32];
-    if (o.ipprotscan)
-      Snprintf(desc, sizeof(desc),
-               (plist->getStateCounts(istate) ==
-                1) ? "protocol" : "protocols");
-    else
-      Snprintf(desc, sizeof(desc),
-               (plist->getStateCounts(istate) == 1) ? "port" : "ports");
-    log_write(LOG_PLAIN, "%d %s %s", plist->getStateCounts(istate),
-              statenum2str(istate), desc);
+    }
+
+    if((currentr = reasons = get_state_reason_summary(plist, istate)) == NULL) {
+      log_write(LOG_PLAIN, "%d %s %s%s", i, statenum2str(istate),
+          o.ipprotscan ? "protocol" : "port",
+          plist->getStateCounts(istate) == 1 ? "" : "s");
+      prevstate = istate;
+      continue;
+    }
+
+    while(currentr != NULL) {
+      if(currentr->count > 0) {
+        xml_open_start_tag("extrareasons");
+        xml_attribute("reason", "%s", reason_str(currentr->reason_id, SINGULAR));
+        xml_attribute("count", "%d", currentr->count);
+        xml_attribute("proto", "%s", IPPROTO2STR(currentr->proto));
+        xml_write_raw(" ports=\"");
+        output_rangelist_given_ports(LOG_XML, currentr->ports, currentr->count);
+        xml_write_raw("\"");
+        xml_close_empty_tag();
+        xml_newline();
+
+        if (currentr != reasons)
+          log_write(LOG_PLAIN, ", ");
+        log_write(LOG_PLAIN, "%d %s %s %s%s (%s)",
+            currentr->count, statenum2str(istate), IPPROTO2STR(currentr->proto),
+            o.ipprotscan ? "protocol" : "port",
+            plist->getStateCounts(istate) == 1 ? "" : "s",
+            reason_str(currentr->reason_id, SINGULAR));
+      }
+      currentr = currentr->next;
+    }
+    state_reason_summary_dinit(reasons);
+    xml_end_tag();
+    xml_newline();
     prevstate = istate;
   }
 
   log_write(LOG_PLAIN, "\n");
 
-  if (o.reason)
-    print_state_summary(plist, STATE_REASON_FULL);
+  if (numignoredports == numports) {
+    // Nothing left to show.
+    xml_end_tag(); /* ports */
+    xml_newline();
+    log_flush_all();
+    return;
+  }
 
   /* OK, now it is time to deal with the service table ... */
   colno = 0;
@@ -676,7 +675,7 @@ void printportoutput(Target *currenths, PortList *plist) {
   if (o.ipprotscan) {
     current = NULL;
     while ((current = plist->nextPort(current, &port, IPPROTO_IP, 0)) != NULL) {
-      if (!plist->isIgnoredState(current->state)) {
+      if (!plist->isIgnoredState(current->state, NULL)) {
         if (!first)
           log_write(LOG_MACHINE, ", ");
         else
@@ -729,7 +728,7 @@ void printportoutput(Target *currenths, PortList *plist) {
 
     current = NULL;
     while ((current = plist->nextPort(current, &port, TCPANDUDPANDSCTP, 0)) != NULL) {
-      if (!plist->isIgnoredState(current->state)) {
+      if (!plist->isIgnoredState(current->state, NULL)) {
         if (!first)
           log_write(LOG_MACHINE, ", ");
         else
@@ -805,11 +804,9 @@ void printportoutput(Target *currenths, PortList *plist) {
 #ifndef NOLUA
         if (o.script) {
           ScriptResults::const_iterator ssr_iter;
-          //Sort the results before outputting them on the screen
-          current->scriptResults.sort(scriptid_lessthan);
           for (ssr_iter = current->scriptResults.begin();
                ssr_iter != current->scriptResults.end(); ssr_iter++) {
-            ssr_iter->write_xml();
+            (*ssr_iter)->write_xml();
 
             char *script_output = formatScriptOutput((*ssr_iter));
             if (script_output != NULL) {
@@ -865,10 +862,16 @@ void printportoutput(Target *currenths, PortList *plist) {
 }
 
 
+/* MAX_STRFTIME_EXPANSION is the maximum length that a single %_ escape can
+ * expand to, not including null terminator. If you add another supported
+ * escape, check that it doesn't exceed this value, otherwise increase it.
+ */
+#define MAX_STRFTIME_EXPANSION 10
 char *logfilename(const char *str, struct tm *tm) {
   char *ret, *end, *p;
-  char tbuf[10];
-  int retlen = strlen(str) * 6 + 1;
+  // Max expansion: "%F" => "YYYY-mm-dd"
+  int retlen = strlen(str) * (MAX_STRFTIME_EXPANSION - 2) + 1;
+  size_t written = 0;
 
   ret = (char *) safe_malloc(retlen);
   end = ret + retlen;
@@ -876,52 +879,34 @@ char *logfilename(const char *str, struct tm *tm) {
   for (p = ret; *str; str++) {
     if (*str == '%') {
       str++;
+      written = 0;
 
       if (!*str)
         break;
 
+#define FTIME_CASE(_fmt, _fmt_str) case _fmt: \
+        written = strftime(p, end - p, _fmt_str, tm); \
+        break;
+
       switch (*str) {
-      case 'H':
-        strftime(tbuf, sizeof tbuf, "%H", tm);
-        break;
-      case 'M':
-        strftime(tbuf, sizeof tbuf, "%M", tm);
-        break;
-      case 'S':
-        strftime(tbuf, sizeof tbuf, "%S", tm);
-        break;
-      case 'T':
-        strftime(tbuf, sizeof tbuf, "%H%M%S", tm);
-        break;
-      case 'R':
-        strftime(tbuf, sizeof tbuf, "%H%M", tm);
-        break;
-      case 'm':
-        strftime(tbuf, sizeof tbuf, "%m", tm);
-        break;
-      case 'd':
-        strftime(tbuf, sizeof tbuf, "%d", tm);
-        break;
-      case 'y':
-        strftime(tbuf, sizeof tbuf, "%y", tm);
-        break;
-      case 'Y':
-        strftime(tbuf, sizeof tbuf, "%Y", tm);
-        break;
-      case 'D':
-        strftime(tbuf, sizeof tbuf, "%m%d%y", tm);
-        break;
-      case 'F':
-        strftime(tbuf, sizeof tbuf, "%Y-%m-%d", tm);
-        break;
+        FTIME_CASE('H', "%H");
+        FTIME_CASE('M', "%M");
+        FTIME_CASE('S', "%S");
+        FTIME_CASE('T', "%H%M%S");
+        FTIME_CASE('R', "%H%M");
+        FTIME_CASE('m', "%m");
+        FTIME_CASE('d', "%d");
+        FTIME_CASE('y', "%y");
+        FTIME_CASE('Y', "%Y");
+        FTIME_CASE('D', "%m%d%y");
+        FTIME_CASE('F', "%Y-%m-%d");
       default:
         *p++ = *str;
         continue;
       }
 
       assert(end - p > 1);
-      Strncpy(p, tbuf, end - p - 1);
-      p += strlen(tbuf);
+      p += written;
     } else {
       *p++ = *str;
     }
@@ -1082,7 +1067,7 @@ void log_flush_all() {
 /* Open a log descriptor of the type given to the filename given.  If
    append is true, the file will be appended instead of clobbered if
    it already exists.  If the file does not exist, it will be created */
-int log_open(int logt, bool append, char *filename) {
+int log_open(int logt, bool append, const char *filename) {
   int i = 0;
   if (logt <= 0 || logt > LOG_FILE_MASK)
     return -1;
@@ -1096,14 +1081,14 @@ int log_open(int logt, bool append, char *filename) {
     o.logfd[i] = stdout;
     o.nmap_stdout = fopen(DEVNULL, "w");
     if (!o.nmap_stdout)
-      fatal("Could not assign %s to stdout for writing", DEVNULL);
+      pfatal("Could not assign %s to stdout for writing", DEVNULL);
   } else {
     if (append)
       o.logfd[i] = fopen(filename, "a");
     else
       o.logfd[i] = fopen(filename, "w");
     if (!o.logfd[i])
-      fatal("Failed to open %s output file %s for writing", logtypes[i],
+      pfatal("Failed to open %s output file %s for writing", logtypes[i],
             filename);
   }
   return 1;
@@ -1113,7 +1098,7 @@ int log_open(int logt, bool append, char *filename) {
 /* The items in ports should be
    in sequential order for space savings and easier to read output.  Outputs the
    rangelist to the log stream given (such as LOG_MACHINE or LOG_XML) */
-static void output_rangelist_given_ports(int logt, unsigned short *ports,
+static void output_rangelist_given_ports(int logt, const unsigned short *ports,
                                          int numports) {
   int start, end;
 
@@ -1135,7 +1120,7 @@ static void output_rangelist_given_ports(int logt, unsigned short *ports,
 /* Output the list of ports scanned to the top of machine parseable
    logs (in a comment, unfortunately).  The items in ports should be
    in sequential order for space savings and easier to read output */
-void output_ports_to_machine_parseable_output(struct scan_lists *ports) {
+void output_ports_to_machine_parseable_output(const struct scan_lists *ports) {
   int tcpportsscanned = ports->tcp_count;
   int udpportsscanned = ports->udp_count;
   int sctpportsscanned = ports->sctp_count;
@@ -1185,7 +1170,7 @@ static void doscanflags() {
 
 /* Simple helper function for output_xml_scaninfo_records */
 static void doscaninfo(const char *type, const char *proto,
-                       unsigned short *ports, int numports) {
+                       const unsigned short *ports, int numports) {
   xml_open_start_tag("scaninfo");
   xml_attribute("type", "%s", type);
   if (strncmp(proto, "tcp", 3) == 0) {
@@ -1238,7 +1223,7 @@ std::string join_quoted(const char * const strings[], unsigned int n) {
 /* Similar to output_ports_to_machine_parseable_output, this function
    outputs the XML version, which is scaninfo records of each scan
    requested and the ports which it will scan for */
-void output_xml_scaninfo_records(struct scan_lists *scanlist) {
+void output_xml_scaninfo_records(const struct scan_lists *scanlist) {
   if (o.synscan)
     doscaninfo("syn", "tcp", scanlist->tcp_ports, scanlist->tcp_count);
   if (o.ackscan)
@@ -1269,7 +1254,7 @@ void output_xml_scaninfo_records(struct scan_lists *scanlist) {
 }
 
 /* Prints the MAC address (if discovered) to XML output */
-static void print_MAC_XML_Info(Target *currenths) {
+static void print_MAC_XML_Info(const Target *currenths) {
   const u8 *mac = currenths->MACAddress();
   char macascii[32];
 
@@ -1289,7 +1274,7 @@ static void print_MAC_XML_Info(Target *currenths) {
 
 /* Helper function to write the status and address/hostname info of a host
    into the XML log */
-static void write_xml_initial_hostinfo(Target *currenths,
+static void write_xml_initial_hostinfo(const Target *currenths,
                                        const char *status) {
   xml_open_start_tag("status");
   xml_attribute("state", "%s", status);
@@ -1328,7 +1313,7 @@ static void write_xml_initial_hostinfo(Target *currenths,
   log_flush_all();
 }
 
-void write_xml_hosthint(Target *currenths) {
+void write_xml_hosthint(const Target *currenths) {
   xml_start_tag("hosthint");
   write_xml_initial_hostinfo(currenths, (currenths->flags & HOST_UP) ? "up" : "down");
   xml_end_tag();
@@ -1406,7 +1391,7 @@ static char *num_to_string_sigdigits(double d, int digits) {
 
 /* Writes a heading for a full scan report ("Nmap scan report for..."),
    including host status and DNS records. */
-void write_host_header(Target *currenths) {
+void write_host_header(const Target *currenths) {
   if ((currenths->flags & HOST_UP) || o.verbose || o.always_resolve) {
     if (currenths->flags & HOST_UP) {
       log_write(LOG_PLAIN, "Nmap scan report for %s\n", currenths->NameIP());
@@ -1442,7 +1427,7 @@ void write_host_header(Target *currenths) {
 /* Writes host status info to the log streams (including STDOUT).  An
    example is "Host: 10.11.12.13 (foo.bar.example.com)\tStatus: Up\n" to
    machine log. */
-void write_host_status(Target *currenths) {
+void write_host_status(const Target *currenths) {
   if (o.listscan) {
     /* write "unknown" to machine and xml */
     log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Unknown\n",
@@ -1645,7 +1630,7 @@ static void printosclassificationoutput(const struct
    network.  This only prints to human output -- XML is handled by a
    separate call ( print_MAC_XML_Info ) because it needs to be printed
    in a certain place to conform to DTD. */
-void printmacinfo(Target *currenths) {
+void printmacinfo(const Target *currenths) {
   const u8 *mac = currenths->MACAddress();
   char macascii[32];
 
@@ -1848,7 +1833,7 @@ static void write_merged_fpr(const FingerPrintResults *FPR,
 
 /* Prints the formatted OS Scan output to stdout, logfiles, etc (but only
    if an OS Scan was performed).*/
-void printosscanoutput(Target *currenths) {
+void printosscanoutput(const Target *currenths) {
   int i;
   char numlst[512];             /* For creating lists of numbers */
   char *p;                      /* Used in manipulating numlst above */
@@ -2094,7 +2079,7 @@ static int hostcmp(const char *a, const char *b) {
 
 /* Prints the alternate hostname/OS/device information we got from the service
    scan (if it was performed) */
-void printserviceinfooutput(Target *currenths) {
+void printserviceinfooutput(const Target *currenths) {
   Port *p = NULL;
   Port port;
   struct serviceDeductions sd;
@@ -2109,8 +2094,6 @@ void printserviceinfooutput(Target *currenths) {
     hostname_tbl[i][0] = ostype_tbl[i][0] = devicetype_tbl[i][0] = cpe_tbl[i][0] = '\0';
 
   while ((p = currenths->ports.nextPort(p, &port, TCPANDUDPANDSCTP, PORT_OPEN))) {
-    std::vector<char *>::iterator it;
-
     // The following 2 lines (from portlist.h) tell us that we don't need to
     // worry about free()ing anything in the serviceDeductions struct. pass in
     // an allocated struct serviceDeductions (don't worry about initializing, and
@@ -2156,7 +2139,7 @@ void printserviceinfooutput(Target *currenths) {
       }
     }
 
-    for (it = sd.cpe.begin(); it != sd.cpe.end(); it++) {
+    for (std::vector<char *>::const_iterator it = sd.cpe.begin(); it != sd.cpe.end(); it++) {
       for (i = 0; i < MAX_SERVICE_INFO_FIELDS; i++) {
         if (cpe_tbl[i][0] && !strcmp(&cpe_tbl[i][0], *it))
           break;
@@ -2227,12 +2210,11 @@ void printserviceinfooutput(Target *currenths) {
 }
 
 #ifndef NOLUA
-void printscriptresults(ScriptResults *scriptResults, stype scantype) {
-  ScriptResults::iterator iter;
+void printscriptresults(const ScriptResults *scriptResults, stype scantype) {
+  ScriptResults::const_iterator iter;
   char *script_output;
 
   if (scriptResults->size() > 0) {
-    scriptResults->sort(scriptid_lessthan);
     if (scantype == SCRIPT_PRE_SCAN) {
       xml_start_tag("prescript");
       log_write(LOG_PLAIN, "Pre-scan script results:\n");
@@ -2241,7 +2223,7 @@ void printscriptresults(ScriptResults *scriptResults, stype scantype) {
       log_write(LOG_PLAIN, "Post-scan script results:\n");
     }
     for (iter = scriptResults->begin(); iter != scriptResults->end(); iter++) {
-      iter->write_xml();
+      (*iter)->write_xml();
       script_output = formatScriptOutput((*iter));
       if (script_output != NULL) {
         log_write(LOG_PLAIN, "%s\n", script_output);
@@ -2252,18 +2234,17 @@ void printscriptresults(ScriptResults *scriptResults, stype scantype) {
   }
 }
 
-void printhostscriptresults(Target *currenths) {
-  ScriptResults::iterator iter;
+void printhostscriptresults(const Target *currenths) {
+  ScriptResults::const_iterator iter;
   char *script_output;
 
   if (currenths->scriptResults.size() > 0) {
-    currenths->scriptResults.sort(scriptid_lessthan);
     xml_start_tag("hostscript");
     log_write(LOG_PLAIN, "\nHost script results:\n");
     for (iter = currenths->scriptResults.begin();
          iter != currenths->scriptResults.end();
          iter++) {
-      iter->write_xml();
+      (*iter)->write_xml();
 
       script_output = formatScriptOutput((*iter));
       if (script_output != NULL) {
@@ -2277,11 +2258,11 @@ void printhostscriptresults(Target *currenths) {
 #endif
 
 /* Print a table with traceroute hops. */
-static void printtraceroute_normal(Target *currenths) {
+static void printtraceroute_normal(const Target *currenths) {
   static const int HOP_COL = 0, RTT_COL = 1, HOST_COL = 2;
   NmapOutputTable Tbl(currenths->traceroute_hops.size() + 1, 3);
   struct probespec probe;
-  std::list<TracerouteHop>::iterator it;
+  std::list<TracerouteHop>::const_iterator it;
   int row;
 
   /* No trace, must be localhost. */
@@ -2321,7 +2302,7 @@ static void printtraceroute_normal(Target *currenths) {
 
   if (!o.debugging) {
     /* Consolidate shared hops. */
-    TracerouteHop *shared_hop = NULL;
+    const TracerouteHop *shared_hop = NULL;
     struct sockaddr_storage addr;
     size_t sslen;
 
@@ -2386,9 +2367,9 @@ static void printtraceroute_normal(Target *currenths) {
   log_flush(LOG_PLAIN);
 }
 
-static void printtraceroute_xml(Target *currenths) {
+static void printtraceroute_xml(const Target *currenths) {
   struct probespec probe;
-  std::list<TracerouteHop>::iterator it;
+  std::list<TracerouteHop>::const_iterator it;
 
   /* No trace, must be localhost. */
   if (currenths->traceroute_hops.size() == 0)
@@ -2408,7 +2389,7 @@ static void printtraceroute_xml(Target *currenths) {
     xml_attribute("port", "%d", probe.pd.sctp.dport);
     xml_attribute("proto", "%s", proto2ascii_lowercase(probe.proto));
   } else if (probe.type == PS_ICMP || probe.type == PS_PROTO) {
-    struct protoent *proto = nmap_getprotbynum(probe.proto);
+    const struct protoent *proto = nmap_getprotbynum(probe.proto);
     if (proto == NULL)
       xml_attribute("proto", "%d", probe.proto);
     else
@@ -2441,12 +2422,12 @@ static void printtraceroute_xml(Target *currenths) {
   log_flush(LOG_XML);
 }
 
-void printtraceroute(Target *currenths) {
+void printtraceroute(const Target *currenths) {
   printtraceroute_normal(currenths);
   printtraceroute_xml(currenths);
 }
 
-void printtimes(Target *currenths) {
+void printtimes(const Target *currenths) {
   if (currenths->to.srtt != -1 || currenths->to.rttvar != -1) {
     if (o.debugging) {
       log_write(LOG_STDOUT, "Final times for host: srtt: %d rttvar: %d  to: %d\n",
@@ -2468,7 +2449,7 @@ void printStatusMessage() {
   gettimeofday(&tv, NULL);
   int time = (int) (o.TimeSinceStart(&tv));
 
-  log_write(LOG_STDOUT, "Stats: %d:%02d:%02d elapsed; %d hosts completed (%d up), %d undergoing %s\n",
+  log_write(LOG_STDOUT, "Stats: %d:%02d:%02d elapsed; %u hosts completed (%u up), %d undergoing %s\n",
             time / 60 / 60, time / 60 % 60, time % 60, o.numhosts_scanned,
             o.numhosts_up, o.numhosts_scanning,
             scantype2str(o.current_scantype));
@@ -2507,9 +2488,9 @@ void print_xml_finished_open(time_t timep, const struct timeval *tv) {
 
 void print_xml_hosts() {
   xml_open_start_tag("hosts");
-  xml_attribute("up", "%d", o.numhosts_up);
-  xml_attribute("down", "%d", o.numhosts_scanned - o.numhosts_up);
-  xml_attribute("total", "%d", o.numhosts_scanned);
+  xml_attribute("up", "%u", o.numhosts_up);
+  xml_attribute("down", "%u", o.numhosts_scanned - o.numhosts_up);
+  xml_attribute("total", "%u", o.numhosts_scanned);
   xml_close_empty_tag();
 }
 
@@ -2615,8 +2596,8 @@ struct data_file_record {
    were found. */
 void printdatafilepaths() {
   std::list<struct data_file_record> df;
-  std::list<struct data_file_record>::iterator iter;
-  std::map<std::string, std::string>::iterator map_iter;
+  std::list<struct data_file_record>::const_iterator iter;
+  std::map<std::string, std::string>::const_iterator map_iter;
   std::string dir;
   unsigned int num_dirs;
 

@@ -61,7 +61,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan.cc 38078 2020-10-02 16:12:22Z dmiller $ */
+/* $Id: osscan.cc 38205 2021-04-23 20:37:41Z dmiller $ */
 
 #include "osscan.h"
 #include "NmapOps.h"
@@ -489,7 +489,7 @@ void WriteSInfo(char *ostr, int ostrlen, bool isGoodFP,
    No more than n bytes will be written. Unless n is 0, the string is always
    null-terminated. Returns the number of bytes written, excluding the
    terminator. */
-static int test2str(const FingerTest *test, char *s, size_t n) {
+static int test2str(const FingerTest *test, char *s, const size_t n) {
   std::vector<struct AVal>::const_iterator av;
   char *p;
   char *end;
@@ -541,8 +541,7 @@ static int test2str(const FingerTest *test, char *s, size_t n) {
   return p - s;
 
 error:
-  if (n > 0)
-    *s = '\0';
+  *s = '\0';
 
   return -1;
 }
@@ -773,9 +772,9 @@ const char *mergeFPs(FingerPrint *FPs[], int numFPs, bool isGoodFP,
   }
 }
 
-const char *fp2ascii(FingerPrint *FP) {
+const char *fp2ascii(const FingerPrint *FP) {
   static char str[2048];
-  std::vector<FingerTest>::iterator iter;
+  std::vector<FingerTest>::const_iterator iter;
   char *p = str;
 
   if (!FP)
@@ -869,7 +868,7 @@ static void parse_cpeline(FingerPrint *FP, char *thisline, int lineno) {
    which some partial fingerpritns are OK. */
 /* This function is not currently used by Nmap, but it is present here because
    it is used by fingerprint utilities that link with Nmap object files. */
-FingerPrint *parse_single_fingerprint(char *fprint_orig) {
+FingerPrint *parse_single_fingerprint(const char *fprint_orig) {
   int lineno = 0;
   char *p, *q;
   char *thisline, *nextline;
@@ -967,7 +966,7 @@ FingerPrintDB *parse_fingerprint_file(const char *fname) {
 
   fp = fopen(fname, "r");
   if (!fp)
-    fatal("Unable to open Nmap fingerprint file: %s", fname);
+    pfatal("Unable to open Nmap fingerprint file: %s", fname);
 
 top:
   while (fgets(line, sizeof(line), fp)) {
