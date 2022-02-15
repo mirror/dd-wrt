@@ -194,6 +194,11 @@ struct route_map_index {
 };
 DECLARE_QOBJ_TYPE(route_map_index);
 
+/* route map maximum length. Not strictly the maximum xpath length but cannot be
+ * greater
+ */
+#define RMAP_NAME_MAXLEN XPATH_MAXLEN
+
 /* Route map list structure. */
 struct route_map {
 	/* Name of route map. */
@@ -265,6 +270,7 @@ DECLARE_QOBJ_TYPE(route_map);
 /* BGP route-map match conditions */
 #define IS_MATCH_LOCAL_PREF(C)                                                 \
 	(strmatch(C, "frr-bgp-route-map:match-local-preference"))
+#define IS_MATCH_ALIAS(C) (strmatch(C, "frr-bgp-route-map:match-alias"))
 #define IS_MATCH_ORIGIN(C)                                                     \
 	(strmatch(C, "frr-bgp-route-map:match-origin"))
 #define IS_MATCH_RPKI(C) (strmatch(C, "frr-bgp-route-map:rpki"))
@@ -344,6 +350,8 @@ DECLARE_QOBJ_TYPE(route_map);
 	(strmatch(A, "frr-bgp-route-map:set-large-community"))
 #define IS_SET_COMMUNITY(A)                                                    \
 	(strmatch(A, "frr-bgp-route-map:set-community"))
+#define IS_SET_EXTCOMMUNITY_NONE(A)                                            \
+	(strmatch(A, "frr-bgp-route-map:set-extcommunity-none"))
 #define IS_SET_EXTCOMMUNITY_RT(A)                                              \
 	(strmatch(A, "frr-bgp-route-map:set-extcommunity-rt"))
 #define IS_SET_EXTCOMMUNITY_SOO(A)                                             \
@@ -368,6 +376,16 @@ DECLARE_QOBJ_TYPE(route_map);
 	(strmatch(A, "frr-bgp-route-map:ipv4-vpn-address"))
 #define IS_SET_BGP_IPV4_NH(A)                                                  \
 	(strmatch(A, "frr-bgp-route-map:set-ipv4-nexthop"))
+#define IS_SET_BGP_EVPN_GATEWAY_IP_IPV4(A)                                     \
+	(strmatch(A, "frr-bgp-route-map:set-evpn-gateway-ip-ipv4"))
+#define IS_SET_BGP_EVPN_GATEWAY_IP_IPV6(A)                                     \
+	(strmatch(A, "frr-bgp-route-map:set-evpn-gateway-ip-ipv6"))
+
+enum ecommunity_lb_type {
+	EXPLICIT_BANDWIDTH,
+	CUMULATIVE_BANDWIDTH,
+	COMPUTED_BANDWIDTH
+};
 
 /* Prototypes. */
 extern void route_map_init(void);
@@ -425,9 +443,12 @@ extern struct route_map *route_map_lookup_by_name(const char *name);
 struct route_map *route_map_lookup_warn_noexist(struct vty *vty, const char *name);
 
 /* Apply route map to the object. */
-extern route_map_result_t route_map_apply(struct route_map *map,
-					  const struct prefix *prefix,
-					  void *object);
+extern route_map_result_t route_map_apply_ext(struct route_map *map,
+					      const struct prefix *prefix,
+					      void *match_object,
+					      void *set_object);
+#define route_map_apply(map, prefix, object)                                   \
+	route_map_apply_ext(map, prefix, object, object)
 
 extern void route_map_add_hook(void (*func)(const char *));
 extern void route_map_delete_hook(void (*func)(const char *));

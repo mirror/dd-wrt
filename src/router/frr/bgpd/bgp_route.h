@@ -42,6 +42,7 @@ enum bgp_show_type {
 	bgp_show_type_neighbor,
 	bgp_show_type_cidr_only,
 	bgp_show_type_prefix_longer,
+	bgp_show_type_community_alias,
 	bgp_show_type_community_all,
 	bgp_show_type_community,
 	bgp_show_type_community_exact,
@@ -144,6 +145,14 @@ struct bgp_path_mh_info {
 	struct bgp_path_evpn_nh_info *nh_info;
 };
 
+struct bgp_sid_info {
+	struct in6_addr sid;
+	uint8_t loc_block_len;
+	uint8_t loc_node_len;
+	uint8_t func_len;
+	uint8_t arg_len;
+};
+
 /* Ancillary information to struct bgp_path_info,
  * used for uncommonly used data (aggregation, MPLS, etc.)
  * and lazily allocated to save memory.
@@ -167,7 +176,7 @@ struct bgp_path_info_extra {
 #define BGP_EVPN_MACIP_TYPE_SVI_IP (1 << 0)
 
 	/* SRv6 SID(s) for SRv6-VPN */
-	struct in6_addr sid[BGP_MAX_SIDS];
+	struct bgp_sid_info sid[BGP_MAX_SIDS];
 	uint32_t num_sids;
 
 #ifdef ENABLE_BGP_VNC
@@ -590,6 +599,7 @@ DECLARE_HOOK(bgp_process,
 #define BGP_SHOW_OPT_ESTABLISHED (1 << 5)
 #define BGP_SHOW_OPT_FAILED (1 << 6)
 #define BGP_SHOW_OPT_DETAIL (1 << 7)
+#define BGP_SHOW_OPT_TERSE (1 << 8)
 
 /* Prototypes. */
 extern void bgp_rib_remove(struct bgp_dest *dest, struct bgp_path_info *pi,
@@ -602,6 +612,9 @@ extern void bgp_announce_route(struct peer *, afi_t, safi_t);
 extern void bgp_stop_announce_route_timer(struct peer_af *paf);
 extern void bgp_announce_route_all(struct peer *);
 extern void bgp_default_originate(struct peer *, afi_t, safi_t, int);
+extern void bgp_soft_reconfig_table_task_cancel(const struct bgp *bgp,
+						const struct bgp_table *table,
+						const struct peer *peer);
 extern void bgp_soft_reconfig_in(struct peer *, afi_t, safi_t);
 extern void bgp_clear_route(struct peer *, afi_t, safi_t);
 extern void bgp_clear_route_all(struct peer *);
@@ -636,7 +649,8 @@ extern bool bgp_maximum_prefix_overflow(struct peer *, afi_t, safi_t, int);
 
 extern void bgp_redistribute_add(struct bgp *bgp, struct prefix *p,
 				 const union g_addr *nexthop, ifindex_t ifindex,
-				 enum nexthop_types_t nhtype, uint32_t metric,
+				 enum nexthop_types_t nhtype, uint8_t distance,
+				 enum blackhole_type bhtype, uint32_t metric,
 				 uint8_t type, unsigned short instance,
 				 route_tag_t tag);
 extern void bgp_redistribute_delete(struct bgp *, struct prefix *, uint8_t,

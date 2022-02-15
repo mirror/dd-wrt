@@ -60,6 +60,7 @@ DECLARE_MGROUP(MVTYSH);
 #define VTYSH_KEYS        VTYSH_RIPD|VTYSH_EIGRPD
 /* Daemons who can process nexthop-group configs */
 #define VTYSH_NH_GROUP    VTYSH_PBRD|VTYSH_SHARPD
+#define VTYSH_SR          VTYSH_ZEBRA|VTYSH_PATHD
 
 enum vtysh_write_integrated {
 	WRITE_INTEGRATED_UNSPECIFIED,
@@ -111,5 +112,7 @@ extern int execute_flag;
 extern struct vty *vty;
 
 extern int user_mode;
+
+extern bool vtysh_add_timestamp;
 
 #endif /* VTYSH_H */

@@ -7,7 +7,7 @@
 ##
 AC_PREREQ([2.69])
 
-AC_INIT([frr], [8.0.1], [https://github.com/frrouting/frr/issues])
+AC_INIT([frr], [8.1], [https://github.com/frrouting/frr/issues])
 PACKAGE_URL="https://frrouting.org/"
 AC_SUBST([PACKAGE_URL])
 PACKAGE_FULLNAME="FRRouting"
@@ -112,15 +112,6 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_PATH_PROG([PERL], [perl])
 PKG_PROG_PKG_CONFIG
-
-dnl default is to match previous behavior
-exampledir=${sysconfdir}
-AC_ARG_ENABLE([exampledir],
-	  AS_HELP_STRING([--enable-exampledir],
-			 [specify alternate directory for examples]),
-			 exampledir="$enableval",)
-dnl XXX add --exampledir to autoconf standard directory list somehow
-AC_SUBST([exampledir])
 
 dnl default is to match previous behavior
 pkgsrcrcdir=""
@@ -289,6 +280,8 @@ if test "$enable_clang_coverage" = "yes"; then
    ])
 fi
 
+AM_CONDITIONAL([SCRIPTING], [test "$enable_scripting" = "yes"])
+
 if test "$enable_scripting" = "yes"; then
    AX_PROG_LUA([5.3], [5.4], [], [
      AC_MSG_ERROR([Lua 5.3 is required to build with Lua support. No other version is supported.])
@@ -299,7 +292,9 @@ if test "$enable_scripting" = "yes"; then
    AX_LUA_LIBS([
      AC_DEFINE([HAVE_SCRIPTING], [1], [Have support for scripting])
      LIBS="$LIBS $LUA_LIB"
+     SCRIPTING=true
    ], [
+     SCRIPTING=false
      AC_MSG_ERROR([Lua 5.3 libraries are required to build with Lua support. No other version is supported.])
    ])
 fi
@@ -327,6 +322,7 @@ AC_C_FLAG([-fno-omit-frame-pointer])
 AC_C_FLAG([-funwind-tables])
 AC_C_FLAG([-Wall])
 AC_C_FLAG([-Wextra])
+AC_C_FLAG([-Wstrict-prototypes])
 AC_C_FLAG([-Wmissing-prototypes])
 AC_C_FLAG([-Wmissing-declarations])
 AC_C_FLAG([-Wpointer-arith])
@@ -335,7 +331,6 @@ AC_C_FLAG([-Wwrite-strings])
 AC_C_FLAG([-Wundef])
 if test "$enable_gcc_ultra_verbose" = "yes" ; then
   AC_C_FLAG([-Wcast-qual])
-  AC_C_FLAG([-Wstrict-prototypes])
   AC_C_FLAG([-Wmissing-noreturn])
   AC_C_FLAG([-Wmissing-format-attribute])
   AC_C_FLAG([-Wunreachable-code])
@@ -492,9 +487,12 @@ LT_INIT
 _LT_CONFIG_LIBTOOL([
   patch -N -i "${srcdir}/m4/libtool-whole-archive.patch" libtool >&AS_MESSAGE_LOG_FD || \
     AC_MSG_WARN([Could not patch libtool for static linking support.  Loading modules into a statically linked daemon will fail.])
-  sed -e 's%func_warning "relinking%true #\0%' -i libtool || true
-  sed -e 's%func_warning "remember to run%true #\0%' -i libtool || true
-  sed -e 's%func_warning ".*has not been installed in%true #\0%' -i libtool || true
+dnl the -i option is not POSIX sed and the BSDs implement it differently
+dnl cat'ing the output back instead of mv/cp keeps permissions on libtool intact
+  sed -e 's%func_warning "relinking%true #\0%'                   libtool > libtool.sed && cat libtool.sed > libtool
+  sed -e 's%func_warning "remember to run%true #\0%'             libtool > libtool.sed && cat libtool.sed > libtool
+  sed -e 's%func_warning ".*has not been installed in%true #\0%' libtool > libtool.sed && cat libtool.sed > libtool
+  test -f libtool.sed && rm libtool.sed
 ])
 if test "$enable_static_bin" = "yes"; then
   AC_LDFLAGS_EXEC="-static"
@@ -664,8 +662,6 @@ AC_ARG_ENABLE([irdp],
   AS_HELP_STRING([--disable-irdp], [disable IRDP server support in zebra (enabled by default if supported)]))
 AC_ARG_ENABLE([capabilities],
   AS_HELP_STRING([--disable-capabilities], [disable using POSIX capabilities]))
-AC_ARG_ENABLE([rusage],
-  AS_HELP_STRING([--disable-rusage], [disable using getrusage]))
 AC_ARG_ENABLE([gcc_ultra_verbose],
   AS_HELP_STRING([--enable-gcc-ultra-verbose], [enable ultra verbose GCC warnings]))
 AC_ARG_ENABLE([backtrace],
@@ -680,8 +676,6 @@ AC_ARG_ENABLE([fpm],
   AS_HELP_STRING([--enable-fpm], [enable Forwarding Plane Manager support]))
 AC_ARG_ENABLE([pcep],
   AS_HELP_STRING([--enable-pcep], [enable PCEP support for pathd]))
-AC_ARG_ENABLE([systemd],
-  AS_HELP_STRING([--enable-systemd], [enable Systemd support]))
 AC_ARG_ENABLE([werror],
   AS_HELP_STRING([--enable-werror], [enable -Werror (recommended for developers only)]))
 AC_ARG_ENABLE([cumulus],
@@ -713,7 +707,7 @@ AC_ARG_ENABLE([thread-sanitizer],
 AC_ARG_ENABLE([memory-sanitizer],
   AS_HELP_STRING([--enable-memory-sanitizer], [enable MemorySanitizer support for detecting uninitialized memory reads]))
 AC_ARG_ENABLE([undefined-sanitizer],
-  AS_HELP_STRING([--undefined-sanitizer], [enable UndefinedBehaviorSanitizer support for detecting undefined behavior]))
+  AS_HELP_STRING([--enable-undefined-sanitizer], [enable UndefinedBehaviorSanitizer support for detecting undefined behavior]))
 AC_ARG_WITH([crypto],
   AS_HELP_STRING([--with-crypto=<internal|openssl>], [choose between different implementations of cryptographic functions(default value is --with-crypto=internal)]))
 AC_ARG_WITH([frr-format],
@@ -776,26 +770,12 @@ case "${enable_cpu_time}" in
   ;;
 esac
 
-case "${enable_systemd}" in
-  "no") ;;
-  "yes")
-  AC_CHECK_LIB([systemd], [sd_notify], [LIBS="$LIBS -lsystemd"])
-  if test "$ac_cv_lib_systemd_sd_notify" = "no"; then
-    AC_MSG_ERROR([enable systemd has been specified but systemd development env not found on your system])
-  else
-    AC_DEFINE([HAVE_SYSTEMD], [1], [Compile systemd support in])
-  fi
-  ;;
-  "*") ;;
-esac
-
 if test "$enable_rr_semantics" != "no" ; then
   AC_DEFINE([HAVE_V6_RR_SEMANTICS], [1], [Compile in v6 Route Replacement Semantics])
 fi
 
 if test "$enable_datacenter" = "yes" ; then
   AC_DEFINE([HAVE_DATACENTER], [1], [Compile extensions for a DataCenter])
-  AC_MSG_WARN([The --enable-datacenter compile time option is deprecated.  Please modify the init script to pass -F datacenter to the daemons instead.])
   DFLT_NAME="datacenter"
 else
   DFLT_NAME="traditional"
@@ -1946,7 +1926,7 @@ dnl -----
 dnl LTTng
 dnl -----
 if test "$enable_lttng" = "yes"; then
-  PKG_CHECK_MODULES([UST], [lttng-ust >= 2.12.0], [
+  PKG_CHECK_MODULES([UST], [lttng-ust >= 2.9.0], [
     AC_DEFINE([HAVE_LTTNG], [1], [Enable LTTng support])
     LTTNG=true
   ], [
@@ -2242,6 +2222,10 @@ AC_CHECK_DECL([CLOCK_MONOTONIC],
 	 AC_DEFINE([HAVE_CLOCK_MONOTONIC], [1], [Have monotonic clock])
 ], [AC_MSG_RESULT([no])], [FRR_INCLUDES])
 
+AC_CHECK_DECL([CLOCK_THREAD_CPUTIME_ID], [
+	 AC_DEFINE([HAVE_CLOCK_THREAD_CPUTIME_ID], [1], [Have cpu-time clock])
+], [AC_MSG_RESULT([no])], [FRR_INCLUDES])
+
 AC_SEARCH_LIBS([clock_nanosleep], [rt], [
   AC_DEFINE([HAVE_CLOCK_NANOSLEEP], [1], [Have clock_nanosleep()])
 ])
@@ -2534,6 +2518,8 @@ AC_SUBST([frr_statedir])
 AC_DEFINE_UNQUOTED([LDPD_SOCKET], ["$frr_statedir%s%s/ldpd.sock"], [ldpd control socket])
 AC_DEFINE_UNQUOTED([ZEBRA_SERV_PATH], ["$frr_statedir%s%s/zserv.api"], [zebra api socket])
 AC_DEFINE_UNQUOTED([BFDD_CONTROL_SOCKET], ["$frr_statedir%s%s/bfdd.sock"], [bfdd control socket])
+AC_DEFINE_UNQUOTED([OSPFD_GR_STATE], ["$frr_statedir%s/ospfd-gr.json"], [ospfd GR state information])
+AC_DEFINE_UNQUOTED([OSPF6D_GR_STATE], ["$frr_statedir/ospf6d-gr.json"], [ospf6d GR state information])
 AC_DEFINE_UNQUOTED([DAEMON_VTY_DIR], ["$frr_statedir%s%s"], [daemon vty directory])
 AC_DEFINE_UNQUOTED([DAEMON_DB_DIR], ["$frr_statedir"], [daemon database directory])
 
@@ -2677,8 +2663,9 @@ if test "$enable_rpath" = "yes" ; then
 	true
 else
 	# See https://old-en.opensuse.org/openSUSE:Packaging_Guidelines#Removing_Rpath
-	sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
-	sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+	sed -e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool > libtool.sed && cat libtool.sed > libtool
+	sed -e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'         libtool > libtool.sed && cat libtool.sed > libtool
+	test -f libtool.sed && rm libtool.sed
 fi
 
 echo "
@@ -2688,12 +2675,11 @@ FRR version             : ${PACKAGE_VERSION}
 host operating system   : ${host_os}
 source code location    : ${srcdir}
 compiler                : ${CC}
-compiler flags          : ${CFLAGS} ${AC_CFLAGS} ${SAN_FLAGS}
+compiler flags          : ${CFLAGS} ${WERROR} ${AC_CFLAGS} ${SAN_FLAGS}
 make                    : ${MAKE-make}
 linker flags            : ${LDFLAGS} ${SAN_FLAGS} ${LIBS} ${LIBCAP} ${LIBREADLINE} ${LIBM}
 state file directory    : ${frr_statedir}
 config file directory   : `eval echo \`echo ${sysconfdir}\``
-example directory       : `eval echo \`echo ${exampledir}\``
 module directory        : ${CFG_MODULE}
 script directory        : ${CFG_SCRIPT}
 user to run as          : ${enable_user}
@@ -2706,6 +2692,16 @@ vici socket path        : ${vici_socket}
 
 The above user and group must have read/write access to the state file
 directory and to the config files in the config file directory."
+
+if test -n "$enable_datacenter"; then
+  AC_MSG_WARN([The --enable-datacenter compile time option is deprecated.  Please modify the init script to pass -F datacenter to the daemons instead.])
+fi
+if test -n "$enable_time_check"; then
+  AC_MSG_WARN([The --enable-time-check compile time option is deprecated.  Please use the service cputime-stats configuration option instead.])
+fi
+if test -n "$enable_cpu_time"; then
+  AC_MSG_WARN([The --enable-cpu-time compile time option is deprecated.  Please use the service cputime-warning NNN configuration option instead.])
+fi
 
 if test "$enable_doc" != "no" -a "$frr_py_mod_sphinx" = "false"; then
   AC_MSG_WARN([sphinx is missing but required to build documentation])

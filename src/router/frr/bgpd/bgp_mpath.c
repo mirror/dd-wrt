@@ -411,7 +411,8 @@ static void bgp_path_info_mpath_lb_update(struct bgp_path_info *path, bool set,
 {
 	struct bgp_path_info_mpath *mpath;
 
-	if ((mpath = path->mpath) == NULL) {
+	mpath = path->mpath;
+	if (mpath == NULL) {
 		if (!set || (cum_bw == 0 && !all_paths_lb))
 			return;
 
@@ -609,7 +610,8 @@ void bgp_path_info_mpath_update(struct bgp_dest *dest,
 				prev_mpath = cur_mpath;
 				mpath_count++;
 				if (ecommunity_linkbw_present(
-					cur_mpath->attr->ecommunity, &bwval))
+					    cur_mpath->attr->ecommunity,
+					    &bwval))
 					cum_bw += bwval;
 				else
 					all_paths_lb = false;
@@ -698,7 +700,8 @@ void bgp_path_info_mpath_update(struct bgp_dest *dest,
 				mpath_changed = 1;
 				mpath_count++;
 				if (ecommunity_linkbw_present(
-					new_mpath->attr->ecommunity, &bwval))
+					    new_mpath->attr->ecommunity,
+					    &bwval))
 					cum_bw += bwval;
 				else
 					all_paths_lb = false;
@@ -720,9 +723,9 @@ void bgp_path_info_mpath_update(struct bgp_dest *dest,
 
 	if (new_best) {
 		bgp_path_info_mpath_count_set(new_best, mpath_count - 1);
-		if (mpath_count <= 1 ||
-		    !ecommunity_linkbw_present(
-			new_best->attr->ecommunity, &bwval))
+		if (mpath_count <= 1
+		    || !ecommunity_linkbw_present(new_best->attr->ecommunity,
+						  &bwval))
 			all_paths_lb = false;
 		else
 			cum_bw += bwval;
