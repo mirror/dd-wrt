@@ -4755,15 +4755,7 @@ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
 	/* deliver to local stack */
 	skb->protocol = eth_type_trans(skb, fast_rx->dev);
 	memset(skb->cb, 0, sizeof(skb->cb));
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
-	if (rx->list)
-		list_add_tail(&skb->list, rx->list);
-#else
-	if (rx->napi)
-		napi_gro_receive(rx->napi, skb);
-#endif
-	else
-		netif_receive_skb(skb);
+	ieee80211_deliver_skb_to_local_stack(skb, rx);
 
 }
 
