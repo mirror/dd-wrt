@@ -1760,17 +1760,19 @@ zpool_do_create(int argc, char **argv)
 			    "feature@%s", feat->fi_uname);
 
 			if (!nvlist_lookup_string(props, propname, &propval)) {
-				if (strcmp(propval, ZFS_FEATURE_DISABLED) == 0)
+				if (strcmp(propval,
+				    ZFS_FEATURE_DISABLED) == 0) {
 					(void) nvlist_remove_all(props,
 					    propname);
-				if (strcmp(propval,
+				} else if (strcmp(propval,
 				    ZFS_FEATURE_ENABLED) == 0 &&
-				    !requested_features[i])
+				    !requested_features[i]) {
 					(void) fprintf(stderr, gettext(
 					    "Warning: feature \"%s\" enabled "
 					    "but is not in specified "
 					    "'compatibility' feature set.\n"),
 					    feat->fi_uname);
+				}
 			} else if (
 			    enable_pool_features &&
 			    feat->fi_zfs_mod_supported &&
@@ -4846,7 +4848,7 @@ children:
 			continue;
 
 		vname = zpool_vdev_name(g_zfs, zhp, newchild[c],
-		    cb->cb_vdevs.cb_name_flags);
+		    cb->cb_vdevs.cb_name_flags | VDEV_NAME_TYPE_ID);
 		ret += print_vdev_stats(zhp, vname, oldnv ? oldchild[c] : NULL,
 		    newchild[c], cb, depth + 2);
 		free(vname);
@@ -4890,7 +4892,7 @@ children:
 			}
 
 			vname = zpool_vdev_name(g_zfs, zhp, newchild[c],
-			    cb->cb_vdevs.cb_name_flags);
+			    cb->cb_vdevs.cb_name_flags | VDEV_NAME_TYPE_ID);
 			ret += print_vdev_stats(zhp, vname, oldnv ?
 			    oldchild[c] : NULL, newchild[c], cb, depth + 2);
 			free(vname);
@@ -6212,7 +6214,7 @@ print_list_stats(zpool_handle_t *zhp, const char *name, nvlist_t *nv,
 			continue;
 
 		vname = zpool_vdev_name(g_zfs, zhp, child[c],
-		    cb->cb_name_flags);
+		    cb->cb_name_flags | VDEV_NAME_TYPE_ID);
 		print_list_stats(zhp, vname, child[c], cb, depth + 2, B_FALSE);
 		free(vname);
 	}
@@ -6246,7 +6248,7 @@ print_list_stats(zpool_handle_t *zhp, const char *name, nvlist_t *nv,
 				printed = B_TRUE;
 			}
 			vname = zpool_vdev_name(g_zfs, zhp, child[c],
-			    cb->cb_name_flags);
+			    cb->cb_name_flags | VDEV_NAME_TYPE_ID);
 			print_list_stats(zhp, vname, child[c], cb, depth + 2,
 			    B_FALSE);
 			free(vname);
@@ -9210,7 +9212,7 @@ zpool_do_upgrade(int argc, char **argv)
 		}
 	}
 
-	(void) printf(gettext("This system supports ZFS pool feature "
+	(void) printf("%s", gettext("This system supports ZFS pool feature "
 	    "flags.\n\n"));
 	if (showversions) {
 		int i;

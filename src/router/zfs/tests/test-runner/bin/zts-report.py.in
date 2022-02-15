@@ -242,7 +242,6 @@ maybe = {
     'largest_pool/largest_pool_001_pos': ['FAIL', known_reason],
     'mmp/mmp_on_uberblocks': ['FAIL', known_reason],
     'pyzfs/pyzfs_unittest': ['SKIP', python_deps_reason],
-    'no_space/enospc_002_pos': ['FAIL', enospc_reason],
     'pool_checkpoint/checkpoint_discard_busy': ['FAIL', '11946'],
     'projectquota/setup': ['SKIP', exec_reason],
     'redundancy/redundancy_004_neg': ['FAIL', '7290'],
@@ -284,8 +283,6 @@ if sys.platform.startswith('freebsd'):
 elif sys.platform.startswith('linux'):
     maybe.update({
         'cli_root/zfs_rename/zfs_rename_002_pos': ['FAIL', known_reason],
-        'cli_root/zpool_expand/zpool_expand_001_pos': ['FAIL', known_reason],
-        'cli_root/zpool_expand/zpool_expand_005_pos': ['FAIL', known_reason],
         'cli_root/zpool_reopen/zpool_reopen_003_pos': ['FAIL', known_reason],
         'fault/auto_spare_shared': ['FAIL', '11889'],
         'io/io_uring': ['SKIP', 'io_uring support required'],
