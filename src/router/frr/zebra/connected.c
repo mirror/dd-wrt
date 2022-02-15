@@ -75,7 +75,7 @@ static void connected_announce(struct interface *ifp, struct connected *ifc)
 
 	if (!if_is_loopback(ifp) && ifc->address->family == AF_INET &&
 	    !IS_ZEBRA_IF_VRF(ifp)) {
-		if (ifc->address->prefixlen == 32)
+		if (ifc->address->prefixlen == IPV4_MAX_BITLEN)
 			SET_FLAG(ifc->flags, ZEBRA_IFA_UNNUMBERED);
 		else
 			UNSET_FLAG(ifc->flags, ZEBRA_IFA_UNNUMBERED);
@@ -307,9 +307,10 @@ void connected_up(struct interface *ifp, struct connected *ifc)
 }
 
 /* Add connected IPv4 route to the interface. */
-void connected_add_ipv4(struct interface *ifp, int flags, struct in_addr *addr,
-			uint16_t prefixlen, struct in_addr *dest,
-			const char *label, uint32_t metric)
+void connected_add_ipv4(struct interface *ifp, int flags,
+			const struct in_addr *addr, uint16_t prefixlen,
+			const struct in_addr *dest, const char *label,
+			uint32_t metric)
 {
 	struct prefix_ipv4 *p;
 	struct connected *ifc;
@@ -330,8 +331,8 @@ void connected_add_ipv4(struct interface *ifp, int flags, struct in_addr *addr,
 	p = prefix_ipv4_new();
 	p->family = AF_INET;
 	p->prefix = *addr;
-	p->prefixlen = CHECK_FLAG(flags, ZEBRA_IFA_PEER) ? IPV4_MAX_PREFIXLEN
-							 : prefixlen;
+	p->prefixlen =
+		CHECK_FLAG(flags, ZEBRA_IFA_PEER) ? IPV4_MAX_BITLEN : prefixlen;
 	ifc->address = (struct prefix *)p;
 
 	/* If there is a peer address. */
@@ -358,8 +359,7 @@ void connected_add_ipv4(struct interface *ifp, int flags, struct in_addr *addr,
 	}
 
 	/* no destination address was supplied */
-	if (!dest && (prefixlen == IPV4_MAX_PREFIXLEN)
-		&& if_is_pointopoint(ifp))
+	if (!dest && (prefixlen == IPV4_MAX_BITLEN) && if_is_pointopoint(ifp))
 		zlog_debug(
 			"PtP interface %s with addr %pI4/%d needs a peer address",
 			ifp->name, addr, prefixlen);
@@ -503,8 +503,8 @@ static void connected_delete_helper(struct connected *ifc, struct prefix *p)
 
 /* Delete connected IPv4 route to the interface. */
 void connected_delete_ipv4(struct interface *ifp, int flags,
-			   struct in_addr *addr, uint16_t prefixlen,
-			   struct in_addr *dest)
+			   const struct in_addr *addr, uint16_t prefixlen,
+			   const struct in_addr *dest)
 {
 	struct prefix p, d;
 	struct connected *ifc;
@@ -512,8 +512,8 @@ void connected_delete_ipv4(struct interface *ifp, int flags,
 	memset(&p, 0, sizeof(struct prefix));
 	p.family = AF_INET;
 	p.u.prefix4 = *addr;
-	p.prefixlen = CHECK_FLAG(flags, ZEBRA_IFA_PEER) ? IPV4_MAX_PREFIXLEN
-							: prefixlen;
+	p.prefixlen =
+		CHECK_FLAG(flags, ZEBRA_IFA_PEER) ? IPV4_MAX_BITLEN : prefixlen;
 
 	if (dest) {
 		memset(&d, 0, sizeof(struct prefix));
@@ -528,8 +528,9 @@ void connected_delete_ipv4(struct interface *ifp, int flags,
 }
 
 /* Add connected IPv6 route to the interface. */
-void connected_add_ipv6(struct interface *ifp, int flags, struct in6_addr *addr,
-			struct in6_addr *dest, uint16_t prefixlen,
+void connected_add_ipv6(struct interface *ifp, int flags,
+			const struct in6_addr *addr,
+			const struct in6_addr *dest, uint16_t prefixlen,
 			const char *label, uint32_t metric)
 {
 	struct prefix_ipv6 *p;
@@ -590,8 +591,9 @@ void connected_add_ipv6(struct interface *ifp, int flags, struct in6_addr *addr,
 	connected_update(ifp, ifc);
 }
 
-void connected_delete_ipv6(struct interface *ifp, struct in6_addr *address,
-			   struct in6_addr *dest, uint16_t prefixlen)
+void connected_delete_ipv6(struct interface *ifp,
+			   const struct in6_addr *address,
+			   const struct in6_addr *dest, uint16_t prefixlen)
 {
 	struct prefix p, d;
 	struct connected *ifc;

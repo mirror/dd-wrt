@@ -49,6 +49,7 @@
 #include "ospfd/ospf_flood.h"
 #include "ospfd/ospf_abr.h"
 #include "ospfd/ospf_bfd.h"
+#include "ospfd/ospf_gr.h"
 #include "ospfd/ospf_errors.h"
 
 DEFINE_HOOK(ospf_nsm_change,
@@ -75,7 +76,7 @@ static int ospf_inactivity_timer(struct thread *thread)
 	 */
 	if (!OSPF_GR_IS_ACTIVE_HELPER(nbr))
 		OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_InactivityTimer);
-	else if (IS_DEBUG_OSPF_GR_HELPER)
+	else if (IS_DEBUG_OSPF_GR)
 		zlog_debug(
 			"%s, Acting as HELPER for this neighbour, So inactivitytimer event will not be fired.",
 			__func__);
@@ -297,8 +298,6 @@ static int nsm_negotiation_done(struct ospf_neighbor *nbr)
 		ospf_db_summary_add(nbr, lsa);
 	LSDB_LOOP (SUMMARY_LSDB(area), rn, lsa)
 		ospf_db_summary_add(nbr, lsa);
-	LSDB_LOOP (ASBR_SUMMARY_LSDB(area), rn, lsa)
-		ospf_db_summary_add(nbr, lsa);
 
 	/* Process only if the neighbor is opaque capable. */
 	if (CHECK_FLAG(nbr->options, OSPF_OPTION_O)) {
@@ -313,10 +312,14 @@ static int nsm_negotiation_done(struct ospf_neighbor *nbr)
 			ospf_db_summary_add(nbr, lsa);
 	}
 
+	/* For Stub/NSSA area, we should not send Type-4 and Type-5 LSAs */
 	if (nbr->oi->type != OSPF_IFTYPE_VIRTUALLINK
-	    && area->external_routing == OSPF_AREA_DEFAULT)
+	    && area->external_routing == OSPF_AREA_DEFAULT) {
+		LSDB_LOOP (ASBR_SUMMARY_LSDB(area), rn, lsa)
+			ospf_db_summary_add(nbr, lsa);
 		LSDB_LOOP (EXTERNAL_LSDB(nbr->oi->ospf), rn, lsa)
 			ospf_db_summary_add(nbr, lsa);
+	}
 
 	if (CHECK_FLAG(nbr->options, OSPF_OPTION_O)
 	    && (nbr->oi->type != OSPF_IFTYPE_VIRTUALLINK
@@ -727,6 +730,9 @@ static void nsm_change_state(struct ospf_neighbor *nbr, int state)
 					ospf_network_lsa_update(oi);
 			}
 		}
+
+		if (state == NSM_Full && oi->ospf->gr_info.restart_in_progress)
+			ospf_gr_check_adjs(oi->ospf);
 	}
 
 	ospf_opaque_nsm_change(nbr, old_state);

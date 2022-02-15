@@ -286,11 +286,13 @@ static void route_add_helper(struct zapi_route *api, struct nexthop_group nhg,
 			api_nh->ifindex = nhop->ifindex;
 			break;
 		case NEXTHOP_TYPE_IPV6:
-			memcpy(&api_nh->gate.ipv6, &nhop->gate.ipv6, 16);
+			memcpy(&api_nh->gate.ipv6, &nhop->gate.ipv6,
+			       IPV6_MAX_BYTELEN);
 			break;
 		case NEXTHOP_TYPE_IPV6_IFINDEX:
 			api_nh->ifindex = nhop->ifindex;
-			memcpy(&api_nh->gate.ipv6, &nhop->gate.ipv6, 16);
+			memcpy(&api_nh->gate.ipv6, &nhop->gate.ipv6,
+			       IPV6_MAX_BYTELEN);
 			break;
 		case NEXTHOP_TYPE_BLACKHOLE:
 			api_nh->bh_type = nhop->bh_type;
@@ -460,13 +462,13 @@ void pbr_send_rnh(struct nexthop *nhop, bool reg)
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
 		p.family = AF_INET;
 		p.u.prefix4.s_addr = nhop->gate.ipv4.s_addr;
-		p.prefixlen = 32;
+		p.prefixlen = IPV4_MAX_BITLEN;
 		break;
 	case NEXTHOP_TYPE_IPV6:
 	case NEXTHOP_TYPE_IPV6_IFINDEX:
 		p.family = AF_INET6;
-		memcpy(&p.u.prefix6, &nhop->gate.ipv6, 16);
-		p.prefixlen = 128;
+		memcpy(&p.u.prefix6, &nhop->gate.ipv6, IPV6_MAX_BYTELEN);
+		p.prefixlen = IPV6_MAX_BITLEN;
 		if (IN6_IS_ADDR_LINKLOCAL(&nhop->gate.ipv6))
 			/*
 			 * Don't bother tracking link locals, just track their
@@ -532,10 +534,11 @@ static void pbr_encode_pbr_map_sequence(struct stream *s,
 	stream_putl(s, pbrms->seqno);
 	stream_putl(s, pbrms->ruleno);
 	stream_putl(s, pbrms->unique);
+	stream_putc(s, pbrms->ip_proto); /* The ip_proto */
 	pbr_encode_pbr_map_sequence_prefix(s, pbrms->src, family);
-	stream_putw(s, 0);  /* src port */
+	stream_putw(s, pbrms->src_prt);
 	pbr_encode_pbr_map_sequence_prefix(s, pbrms->dst, family);
-	stream_putw(s, 0);  /* dst port */
+	stream_putw(s, pbrms->dst_prt);
 	stream_putc(s, pbrms->dsfield);
 	stream_putl(s, pbrms->mark);
 

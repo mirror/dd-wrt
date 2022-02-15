@@ -573,6 +573,7 @@ static int update_group_show_walkcb(struct update_group *updgrp, void *arg)
 	struct update_subgroup *subgrp;
 	struct peer_af *paf;
 	struct bgp_filter *filter;
+	struct peer *peer = UPDGRP_PEER(updgrp);
 	int match = 0;
 
 	if (!ctx)
@@ -664,6 +665,9 @@ static int update_group_show_walkcb(struct update_group *updgrp, void *arg)
 			CHECK_FLAG(subgrp->flags, SUBGRP_FLAG_NEEDS_REFRESH)
 				? "R"
 				: "");
+		if (peer)
+			vty_out(vty, "    Max packet size: %d\n",
+				peer->max_packet_size);
 		if (subgrp->peer_count > 0) {
 			vty_out(vty, "    Peers:\n");
 			SUBGRP_FOREACH_PEER (subgrp, paf)
@@ -1706,13 +1710,13 @@ int update_group_adjust_soloness(struct peer *peer, int set)
 
 	if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
 		peer_lonesoul_or_not(peer, set);
-		if (peer->status == Established)
+		if (peer_established(peer))
 			bgp_announce_route_all(peer);
 	} else {
 		group = peer->group;
 		for (ALL_LIST_ELEMENTS(group->peer, node, nnode, peer)) {
 			peer_lonesoul_or_not(peer, set);
-			if (peer->status == Established)
+			if (peer_established(peer))
 				bgp_announce_route_all(peer);
 		}
 	}
@@ -1902,7 +1906,7 @@ void subgroup_trigger_write(struct update_subgroup *subgrp)
 	 * will trigger a write job on the I/O thread.
 	 */
 	SUBGRP_FOREACH_PEER (subgrp, paf)
-		if (paf->peer->status == Established)
+		if (peer_established(paf->peer))
 			thread_add_timer_msec(
 				bm->master, bgp_generate_updgrp_packets,
 				paf->peer, 0,

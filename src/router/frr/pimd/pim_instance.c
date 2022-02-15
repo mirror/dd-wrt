@@ -125,6 +125,12 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 	pim_instance_mlag_init(pim);
 
 	pim->last_route_change_time = -1;
+
+	/* MSDP global timer defaults. */
+	pim->msdp.hold_time = PIM_MSDP_PEER_HOLD_TIME;
+	pim->msdp.keep_alive = PIM_MSDP_PEER_KA_TIME;
+	pim->msdp.connection_retry = PIM_MSDP_PEER_CONNECT_RETRY_TIME;
+
 	return pim;
 }
 
@@ -214,7 +220,7 @@ static int pim_vrf_config_write(struct vty *vty)
 		pim_global_config_write_worker(pim, vty);
 
 		if (vrf->vrf_id != VRF_DEFAULT)
-			vty_endframe(vty, " exit-vrf\n!\n");
+			vty_endframe(vty, "exit-vrf\n!\n");
 	}
 
 	return 0;
@@ -225,7 +231,7 @@ void pim_vrf_init(void)
 	vrf_init(pim_vrf_new, pim_vrf_enable, pim_vrf_disable,
 		 pim_vrf_delete, NULL);
 
-	vrf_cmd_init(pim_vrf_config_write, &pimd_privs);
+	vrf_cmd_init(pim_vrf_config_write);
 }
 
 void pim_vrf_terminate(void)

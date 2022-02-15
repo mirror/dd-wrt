@@ -311,10 +311,12 @@ struct prefix_sg {
 #ifndef __cplusplus
 #define prefixtype(uname, typename, fieldname) \
 	typename *fieldname;
+#define TRANSPARENT_UNION __attribute__((transparent_union))
 #else
 #define prefixtype(uname, typename, fieldname) \
 	typename *fieldname; \
 	uname(typename *x) { this->fieldname = x; }
+#define TRANSPARENT_UNION
 #endif
 
 union prefixptr {
@@ -324,7 +326,7 @@ union prefixptr {
 	prefixtype(prefixptr, struct prefix_evpn, evp)
 	prefixtype(prefixptr, struct prefix_fs,   fs)
 	prefixtype(prefixptr, struct prefix_rd,   rd)
-} __attribute__((transparent_union));
+} TRANSPARENT_UNION;
 
 union prefixconstptr {
 	prefixtype(prefixconstptr, const struct prefix,      p)
@@ -333,7 +335,10 @@ union prefixconstptr {
 	prefixtype(prefixconstptr, const struct prefix_evpn, evp)
 	prefixtype(prefixconstptr, const struct prefix_fs,   fs)
 	prefixtype(prefixconstptr, const struct prefix_rd,   rd)
-} __attribute__((transparent_union));
+} TRANSPARENT_UNION;
+
+#undef prefixtype
+#undef TRANSPARENT_UNION
 
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16
@@ -363,7 +368,6 @@ union prefixconstptr {
 /* Max bit/byte length of IPv4 address. */
 #define IPV4_MAX_BYTELEN    4
 #define IPV4_MAX_BITLEN    32
-#define IPV4_MAX_PREFIXLEN 32
 #define IPV4_ADDR_CMP(D,S)   memcmp ((D), (S), IPV4_MAX_BYTELEN)
 
 static inline bool ipv4_addr_same(const struct in_addr *a,
@@ -389,7 +393,6 @@ static inline void ipv4_addr_copy(struct in_addr *dst,
 /* Max bit/byte length of IPv6 address. */
 #define IPV6_MAX_BYTELEN    16
 #define IPV6_MAX_BITLEN    128
-#define IPV6_MAX_PREFIXLEN 128
 #define IPV6_ADDR_CMP(D,S)   memcmp ((D), (S), IPV6_MAX_BYTELEN)
 #define IPV6_ADDR_SAME(D,S)  (memcmp ((D), (S), IPV6_MAX_BYTELEN) == 0)
 #define IPV6_ADDR_COPY(D,S)  memcpy ((D), (S), IPV6_MAX_BYTELEN)
@@ -505,7 +508,7 @@ extern char *esi_to_str(const esi_t *esi, char *buf, int size);
 extern char *evpn_es_df_alg2str(uint8_t df_alg, char *buf, int buf_len);
 extern void prefix_evpn_hexdump(const struct prefix_evpn *p);
 
-static inline int ipv6_martian(struct in6_addr *addr)
+static inline int ipv6_martian(const struct in6_addr *addr)
 {
 	struct in6_addr localhost_addr;
 
@@ -520,7 +523,7 @@ static inline int ipv6_martian(struct in6_addr *addr)
 extern int macstr2prefix_evpn(const char *str, struct prefix_evpn *p);
 
 /* NOTE: This routine expects the address argument in network byte order. */
-static inline int ipv4_martian(struct in_addr *addr)
+static inline int ipv4_martian(const struct in_addr *addr)
 {
 	in_addr_t ip = ntohl(addr->s_addr);
 
@@ -530,20 +533,32 @@ static inline int ipv4_martian(struct in_addr *addr)
 	return 0;
 }
 
-static inline int is_default_prefix(const struct prefix *p)
+static inline bool is_default_prefix4(const struct prefix_ipv4 *p)
 {
-	if (!p)
-		return 0;
+	return p && p->family == AF_INET && p->prefixlen == 0
+	       && p->prefix.s_addr == INADDR_ANY;
+}
 
-	if ((p->family == AF_INET) && (p->u.prefix4.s_addr == INADDR_ANY)
-	    && (p->prefixlen == 0))
-		return 1;
+static inline bool is_default_prefix6(const struct prefix_ipv6 *p)
+{
+	return p && p->family == AF_INET6 && p->prefixlen == 0
+	       && memcmp(&p->prefix, &in6addr_any, sizeof(struct in6_addr))
+			  == 0;
+}
 
-	if ((p->family == AF_INET6) && (p->prefixlen == 0)
-	    && (!memcmp(&p->u.prefix6, &in6addr_any, sizeof(struct in6_addr))))
-		return 1;
+static inline bool is_default_prefix(const struct prefix *p)
+{
+	if (p == NULL)
+		return false;
 
-	return 0;
+	switch (p->family) {
+	case AF_INET:
+		return is_default_prefix4((const struct prefix_ipv4 *)p);
+	case AF_INET6:
+		return is_default_prefix6((const struct prefix_ipv6 *)p);
+	}
+
+	return false;
 }
 
 static inline int is_host_route(const struct prefix *p)
