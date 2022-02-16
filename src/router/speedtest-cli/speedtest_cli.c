@@ -31,7 +31,7 @@
 #define DL_FILE_NUM 10
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
-#define UL_SIZE_NUM 2
+#define UL_SIZE_NUM 4
 
 /* Debug Print */
 #define DEBUG_NONE	0x000000
@@ -649,7 +649,7 @@ test_upload_speed(server_config_t *best_server)
 	char file_tmp[UL_SIZE_NUM][strlen(ul_file) + 2];
 	char ul_file_name[UL_SIZE_NUM][strlen(ul_file) + 3];
 	char ul_file_result_name[UL_SIZE_NUM * ul_times][strlen(ul_file_result) + 3];
-	double size[UL_SIZE_NUM] = {250000, 500000};
+	double size[UL_SIZE_NUM] = {250000, 500000, 1000000, 2000000};
 	double duration;
 	double time_ul_end;
 	int i, j, data_len, queue_count = 0;
