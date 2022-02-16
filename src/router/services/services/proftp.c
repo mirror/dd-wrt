@@ -197,7 +197,7 @@ void start_ftpsrv(void)
 		eval("proftpd");
 	dd_loginfo("proftpd", "server successfully started\n");
 	nvram_set("usb_reason", "proftp_start");
-	eval("startservice", "run_rc_usb", "-f");
+	eval("service", "run_rc_usb", "start");
 
 	return;
 }

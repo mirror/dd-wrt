@@ -90,7 +90,7 @@ void start_cron(void)
 	if (nvram_matchi("reconnect_enable", 1)) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
-		fprintf(fp, "%s %s * * * root /sbin/stopservice wan -f; /sbin/startservice wan_boot -f\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
+		fprintf(fp, "%s %s * * * root /sbin/service wan_redial start; /sbin/service wan_boot start\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
 		fclose(fp);
 	}
 	/*
@@ -101,7 +101,7 @@ void start_cron(void)
 	    && nvram_matchi("schedule_hour_time", 2)) {
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
-		fprintf(fp, "%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n", nvram_safe_get("schedule_minutes"), nvram_safe_get("schedule_hours"), nvram_safe_get("schedule_weekdays"));
+		fprintf(fp, "%s %s * * %s root /sbin/service run_rc_shutdown start; /sbin/reboot\n", nvram_safe_get("schedule_minutes"), nvram_safe_get("schedule_hours"), nvram_safe_get("schedule_weekdays"));
 		fclose(fp);
 	}
 	/*
@@ -148,6 +148,12 @@ void start_cron(void)
 
 		fclose(fp);
 	}
+#endif
+#ifdef HAVE_RAID
+		fp = fopen("/tmp/cron.d/fscheck", "w");
+		fprintf(fp, "* * * * 1 root /sbin/service fscheck\n");
+		fclose(fp);
+
 #endif
 
 	/*
