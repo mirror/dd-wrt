@@ -61,42 +61,42 @@ static void run_on_mount(char *p)
 /* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
 static bool usb_stopservices()
 {
-	eval("service", "cron", "stop");
-	eval("service", "samba3", "stop");
-	eval("service", "nfs", "stop");
-	eval("service", "rsync", "stop");
-	eval("service", "dlna", "stop");
-	eval("service", "ftpsrv", "stop");
+	eval("stopservice", "cron");
+	eval("stopservice", "samba3");
+	eval("stopservice", "nfs");
+	eval("stopservice", "rsync");
+	eval("stopservice", "dlna");
+	eval("stopservice", "ftpsrv");
 #ifdef HAVE_WEBSERVER
-	eval("service", "lighttpd", "stop");
+	eval("stopservice", "lighttpd");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("service", "transmission", "stop");
+	eval("stopservice", "transmission");
 #endif
 #ifdef HAVE_PLEX
-	eval("service", "plex", "stop");
+	eval("stopservice", "plex");
 #endif
-	eval("service", "run_rc_usb", "stop");
+	eval("stopservice", "run_rc_usb");
 	return 0;
 }
 
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
 static bool usb_startservices(void)
 {
-	eval("service", "cron", "start");
-	eval("service", "samba3", "start");
-	eval("service", "nfs", "start");
-	eval("service", "rsync", "start");
-	eval("service", "dlna", "start");
-	eval("service", "ftpsrv", "start");
+	eval("startservice", "cron", "-f");
+	eval("startservice", "samba3", "-f");
+	eval("startservice", "nfs", "-f");
+	eval("startservice", "rsync", "-f");
+	eval("startservice", "dlna", "-f");
+	eval("startservice", "ftpsrv", "-f");
 #ifdef HAVE_WEBSERVER
-	eval("service", "lighttpd", "start");
+	eval("startservice", "lighttpd", "-f");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("service", "transmission", "start");
+	eval("startservice", "transmission", "-f");
 #endif
 #ifdef HAVE_PLEX
-	eval("service", "plex", "start");
+	eval("startservice", "plex", "-f");
 #endif
 	return 0;
 }
@@ -364,7 +364,7 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
 		nvram_set("usb_reason", "blockdev_add");
 		nvram_set("usb_dev", mount_point);
-		eval("service", "run_rc_usb", "start");
+		eval("startservice", "run_rc_usb", "-f");
 
 	}
 	if (!ret)
