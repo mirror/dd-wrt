@@ -31,6 +31,27 @@
 #include <linux/fs.h>
 #include <fcntl.h>
 
+void fscheck_main(int argc, char *argv[])
+{
+	int i = 0;
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		if (!*raid)
+			break;
+		char *type = nvram_nget("raidtype%d", i);
+		char *poolname = nvram_nget("raidname%d", i);
+		if (!strcmp(type, "zfs")) {
+			dd_loginfo("raid", "start ZFS Scrubbing\n");
+			eval("zpool", "scrub", poolname);
+		}
+		if (!strcmp(type, "md")) {
+			dd_loginfo("raid", "start checking MD Raid\n");
+			sysprintf("echo check > /sys/block/md%d/md/sync_action", i);
+		}
+		i++;
+	}
+}
+
 void stop_raid(void)
 {
 	// cannot be unloaded
@@ -314,7 +335,7 @@ void start_raid(void)
 
 			nvram_set("usb_reason", "zfs_pool_add");
 			nvram_set("usb_dev", raid);
-			eval("startservice", "run_rc_usb", "-f");
+			eval("service", "run_rc_usb", "start");
 		}
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
@@ -362,7 +383,7 @@ void start_raid(void)
 			}
 			nvram_set("usb_reason", "md_raid_add");
 			nvram_set("usb_dev", poolname);
-			eval("startservice", "run_rc_usb", "-f");
+			eval("service", "run_rc_usb", "start");
 		}
 		if (!strcmp(type, "btrfs")) {
 			char *r = strdup(raid);
@@ -384,7 +405,7 @@ void start_raid(void)
 			free(r);
 			nvram_set("usb_reason", "btrfs_raid_add");
 			nvram_set("usb_dev", poolname);
-			eval("startservice", "run_rc_usb", "-f");
+			eval("service", "run_rc_usb", "start");
 		}
 
 		if (!strcmp(done, "0")) {
