@@ -90,7 +90,7 @@ void start_cron(void)
 	if (nvram_matchi("reconnect_enable", 1)) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
-		fprintf(fp, "%s %s * * * root /sbin/service wan_redial start; /sbin/service wan_boot start\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
+		fprintf(fp, "%s %s * * * root /sbin/service wan_redial start\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
 		fclose(fp);
 	}
 	/*
