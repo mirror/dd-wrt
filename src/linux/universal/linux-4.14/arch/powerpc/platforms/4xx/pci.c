@@ -1060,15 +1060,24 @@ static int __init apm821xx_pciex_init_port_hw(struct ppc4xx_pciex_port *port)
 	u32 val;
 
 	/*
-	 * Do a software reset on PCIe ports.
-	 * This code is to fix the issue that pci drivers doesn't re-assign
-	 * bus number for PCIE devices after Uboot
-	 * scanned and configured all the buses (eg. PCIE NIC IntelPro/1000
-	 * PT quad port, SAS LSI 1064E)
+	 * Only reset the PHY when no link is currently established.
+	 * This is for the Atheros PCIe board which has problems to establish
+	 * the link (again) after this PHY reset. All other currently tested
+	 * PCIe boards don't show this problem.
 	 */
+	val = mfdcri(SDR0, port->sdr_base + PESDRn_LOOP);
+	if (!(val & 0x00001000)) {
+		/*
+		 * Do a software reset on PCIe ports.
+		 * This code is to fix the issue that pci drivers doesn't re-assign
+		 * bus number for PCIE devices after Uboot
+		 * scanned and configured all the buses (eg. PCIE NIC IntelPro/1000
+		 * PT quad port, SAS LSI 1064E)
+		 */
 
-	mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x0);
-	mdelay(10);
+		mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x0);
+		mdelay(10);
+	}
 
 	if (port->endpoint)
 		val = PTYPE_LEGACY_ENDPOINT << 20;
@@ -1085,9 +1094,12 @@ static int __init apm821xx_pciex_init_port_hw(struct ppc4xx_pciex_port *port)
 	mtdcri(SDR0, PESDR0_460EX_L0DRV, 0x00000130);
 	mtdcri(SDR0, PESDR0_460EX_L0CLK, 0x00000006);
 
-	mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x10000000);
-	mdelay(50);
-	mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x30000000);
+	val = mfdcri(SDR0, port->sdr_base + PESDRn_LOOP);
+	if (!(val & 0x00001000)) {
+		mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x10000000);
+		mdelay(50);
+		mtdcri(SDR0, PESDR0_460EX_PHY_CTL_RST, 0x30000000);
+	}
 
 	mtdcri(SDR0, port->sdr_base + PESDRn_RCSSET,
 		mfdcri(SDR0, port->sdr_base + PESDRn_RCSSET) |
@@ -1891,9 +1903,9 @@ static void __init ppc4xx_configure_pciex_PIMs(struct ppc4xx_pciex_port *port,
 		 * if it works
 		 */
 		out_le32(mbase + PECFG_PIM0LAL, 0x00000000);
-		out_le32(mbase + PECFG_PIM0LAH, 0x00000000);
+		out_le32(mbase + PECFG_PIM0LAH, 0x00000008);
 		out_le32(mbase + PECFG_PIM1LAL, 0x00000000);
-		out_le32(mbase + PECFG_PIM1LAH, 0x00000000);
+		out_le32(mbase + PECFG_PIM1LAH, 0x0000000c);
 		out_le32(mbase + PECFG_PIM01SAH, 0xffff0000);
 		out_le32(mbase + PECFG_PIM01SAL, 0x00000000);
 
