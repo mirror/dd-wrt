@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.276 Kernel Configuration
+# Linux/mips 4.9.302 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -488,6 +488,7 @@ CONFIG_NET_EGRESS=y
 CONFIG_PACKET=y
 # CONFIG_PACKET_DIAG is not set
 CONFIG_UNIX=y
+CONFIG_UNIX_SCM=y
 # CONFIG_UNIX_DIAG is not set
 CONFIG_XFRM=y
 # CONFIG_XFRM_USER is not set
@@ -1736,8 +1737,6 @@ CONFIG_HID=m
 # CONFIG_HID_AUREAL is not set
 # CONFIG_HID_BELKIN is not set
 # CONFIG_HID_CHERRY is not set
-# CONFIG_HID_CHICONY is not set
-# CONFIG_HID_CORSAIR is not set
 # CONFIG_HID_CMEDIA is not set
 # CONFIG_HID_CYPRESS is not set
 # CONFIG_HID_DRAGONRISE is not set
@@ -1756,7 +1755,6 @@ CONFIG_HID=m
 # CONFIG_HID_LCPOWER is not set
 # CONFIG_HID_LED is not set
 # CONFIG_HID_LENOVO is not set
-# CONFIG_HID_LOGITECH is not set
 # CONFIG_HID_MAGICMOUSE is not set
 # CONFIG_HID_MICROSOFT is not set
 # CONFIG_HID_MONTEREY is not set
@@ -1768,7 +1766,6 @@ CONFIG_HID=m
 # CONFIG_HID_PLANTRONICS is not set
 # CONFIG_HID_PRIMAX is not set
 # CONFIG_HID_SAITEK is not set
-# CONFIG_HID_SAMSUNG is not set
 # CONFIG_HID_SPEEDLINK is not set
 # CONFIG_HID_STEELSERIES is not set
 # CONFIG_HID_SUNPLUS is not set
@@ -1779,7 +1776,6 @@ CONFIG_HID=m
 # CONFIG_HID_TOPSEED is not set
 # CONFIG_HID_THINGM is not set
 # CONFIG_HID_THRUSTMASTER is not set
-# CONFIG_HID_WACOM is not set
 # CONFIG_HID_WIIMOTE is not set
 # CONFIG_HID_XINMO is not set
 # CONFIG_HID_ZEROPLUS is not set
@@ -2648,5 +2644,4 @@ CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_UNWINDER_FRAME_POINTER=y
-# CONFIG_UNWINDER_ARM is not set
+# CONFIG_BPF_UNPRIV_DEFAULT_OFF is not set
