@@ -439,10 +439,14 @@ static int xhci_try_enable_msi(struct usb_hcd *hcd)
 		free_irq(hcd->irq, hcd);
 	hcd->irq = 0;
 
-	ret = xhci_setup_msix(xhci);
-	if (ret)
-		/* fall back to msi*/
+	if (xhci->quirks & XHCI_FORCE_MSI) {
 		ret = xhci_setup_msi(xhci);
+	} else {
+		ret = xhci_setup_msix(xhci);
+		if (ret)
+			/* fall back to msi*/
+			ret = xhci_setup_msi(xhci);
+	}
 
 	if (!ret) {
 		hcd->msi_enabled = 1;
