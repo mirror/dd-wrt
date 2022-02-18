@@ -678,7 +678,7 @@ ifeq ($(CONFIG_3G),y)
   OBJS += libutils/lib3g.o
 endif
 ifeq ($(CONFIG_UQMI),y)
-CFLAGS_EXTRA += -DHAVE_UQMI
+  CFLAGS += -DHAVE_UQMI
 endif
 ifeq ($(CONFIG_LIBQMI),y)
   CFLAGS += -DHAVE_LIBQMI
