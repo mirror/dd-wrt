@@ -63,4 +63,4 @@ if [ $($nv get oet$1_usepsk$2) = "1" ]
 then
 echo "PresharedKey = $($nv get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "PersistentKeepalive = $($nv get oet$1_clka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PersistentKeepalive = $($nv get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
