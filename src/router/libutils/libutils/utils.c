@@ -275,7 +275,7 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 
 const char *getifaddr_any(char *buf, char *ifname, int family)
 {
-	char *ip = getifaddr(buf, ifname family, 0);
+	char *ip = getifaddr(buf, ifname, family, 0);
 	if (!ip)
 		ip = getifaddr(buf, ifname, family, GIF_LINKLOCAL);
 	return 0;
