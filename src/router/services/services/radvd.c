@@ -134,7 +134,7 @@ void start_radvd(void)
 			return;
 
 		char buf[INET6_ADDRSTRLEN];
-		ip = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0) ? : "";
+		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ? : "";
 
 		fprintf(fp,
 			"interface %s\n"

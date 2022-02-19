@@ -631,7 +631,7 @@ void start_dnsmasq(void)
 			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
 			char buf[INET6_ADDRSTRLEN];
-			char *ip = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : NULL;
+			char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ? : NULL;
 			if (ip && nvram_matchi("ipv6_enable", 1))
 				fprintf(fp, ",%s", ip);
 #endif
@@ -691,7 +691,7 @@ void start_dnsmasq(void)
 				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
 #ifdef HAVE_IPV6
 				char buf[INET6_ADDRSTRLEN];
-				char *ip = getifaddr(buf, ifname, AF_INET6, 0) ? : NULL;
+				char *ip = getifaddr_any(buf, ifname, AF_INET6) ? : NULL;
 				if (ip && nvram_matchi("ipv6_enable", 1))
 					fprintf(fp, ",%s", ip);
 #endif
