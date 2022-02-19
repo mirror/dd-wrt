@@ -272,6 +272,14 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 	freeifaddrs(ifap);
 	return NULL;
 }
+
+const char *getifaddr_any(char *buf, char *ifname, int family)
+{
+	char *ip = getifaddr(buf, ifname family, 0);
+	if (!ip)
+		ip = getifaddr(buf, ifname, family, GIF_LINKLOCAL);
+	return 0;
+}
 #endif
 #ifdef HAVE_VLANTAGGING
 char *getBridge(char *ifname, char *word)
