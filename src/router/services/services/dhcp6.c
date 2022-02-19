@@ -264,7 +264,7 @@ void start_dhcp6s(void)
 		fprintf(fp, "option refreshtime %d;\n", 900);	/* 15 minutes for now */
 		if (nvram_matchi("dnsmasq_enable", 1)) {
 			char buf[INET6_ADDRSTRLEN];
-			fprintf(fp, "option domain-name-servers %s", getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL));
+			fprintf(fp, "option domain-name-servers %s", getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0));
 		} else {
 			struct dns_lists *list = get_dns_list(1);
 			fprintf(fp, "option domain-name-servers");

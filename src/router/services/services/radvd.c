@@ -134,7 +134,7 @@ void start_radvd(void)
 			return;
 
 		char buf[INET6_ADDRSTRLEN];
-		ip = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : "";
+		ip = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0) ? : "";
 
 		fprintf(fp,
 			"interface %s\n"
@@ -176,7 +176,7 @@ void start_radvd(void)
 		else
 			p = ipv6_dns_str;
 		if (nvram_matchi("dnsmasq_enable", 1)) {
-			fprintf(fp, " RDNSS %s ", getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL));
+			fprintf(fp, " RDNSS %s ", ip);
 			fprintf(fp, "{};\n");
 		} else {
 			cnt = write_ipv6_dns_servers(fp, " RDNSS ", (char *)((p && *p) ? p : ip), " ", 1);
