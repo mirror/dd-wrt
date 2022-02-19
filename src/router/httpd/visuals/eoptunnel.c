@@ -467,6 +467,14 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					}
 					websWrite(wp, "</div>\n");
 
+					websWrite(wp, "<div class=\"setting\">\n");
+					snprintf(temp, sizeof(temp), "oet%d_clka%d", tun, peer);
+					{
+						show_caption(wp, "label", "eoip.wireguard_clka", NULL);
+						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%s\" />\n", temp,
+							  nvram_safe_get(temp));
+					}
+					websWrite(wp, "</div>\n");
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
 					websWrite(wp, "</fieldset>\n");
 

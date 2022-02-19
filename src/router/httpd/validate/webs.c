@@ -1882,6 +1882,7 @@ void tunnel_save(webs_t wp)
 			copymergetonv(wp, "oet%d_cldns%d", i, peer);
 			copytonv(wp, "oet%d_clend%d", i, peer);
 			copytonv(wp, "oet%d_clconfig%d", i, peer);
+			copytonv(wp, "oet%d_clka%d", i, peer);
 			copytonv(wp, "oet%d_peerport%d", i, peer);
 			copytonv(wp, "oet%d_rem%d", i, peer);
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
@@ -1964,6 +1965,7 @@ void add_peer(webs_t wp)
 	default_seti("clconfig", 0);
 	default_set("cldns", "0.0.0.0");
 	default_set("clend", nvram_safe_get("wan_ipaddr"));
+	default_seti("clka", 25);
 #undef default_set
 #undef default_seti
 	peer++;
@@ -2009,6 +2011,7 @@ static void copypeer(int tun, int from, int to)
 	copypeervalue("ip", tun, from, to);
 	copypeervalue("cldns", tun, from, to);
 	copypeervalue("clend", tun, from, to);
+	copypeervalue("clka", tun, from, to);
 	copypeervalue("peerport", tun, from, to);
 	copypeervalue("rem", tun, from, to);
 	copypeervalue("usepsk", tun, from, to);
@@ -2028,6 +2031,7 @@ static void copytunpeer(int peer, int from, int to)
 	copypeertunvalue("ip", peer, from, to);
 	copypeertunvalue("cldns", peer, from, to);
 	copypeertunvalue("clend", peer, from, to);
+	copypeertunvalue("clka", peer, from, to);
 	copypeertunvalue("peerport", peer, from, to);
 	copypeertunvalue("rem", peer, from, to);
 	copypeertunvalue("usepsk", peer, from, to);
@@ -2047,6 +2051,7 @@ static void delpeer(int tun, int peer)
 	delpeervalue("ip", tun, peer);
 	delpeervalue("cldns", tun, peer);
 	delpeervalue("clend", tun, peer);
+	delpeervalue("clka", tun, peer);
 	delpeervalue("peerport", tun, peer);
 	delpeervalue("rem", tun, peer);
 	delpeervalue("usepsk", tun, peer);
