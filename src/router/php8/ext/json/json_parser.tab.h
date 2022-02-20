@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.5.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -91,6 +91,8 @@ typedef union PHP_JSON_YYSTYPE PHP_JSON_YYSTYPE;
 
 
 
+
 int php_json_yyparse (php_json_parser *parser);
+
 
 #endif /* !YY_PHP_JSON_YY_EXT_JSON_JSON_PARSER_TAB_H_INCLUDED  */
