@@ -22,6 +22,7 @@ static struct smb_version_values smb20_server_values = {
 	.max_read_size = CIFS_DEFAULT_IOSIZE,
 	.max_write_size = CIFS_DEFAULT_IOSIZE,
 	.max_trans_size = CIFS_DEFAULT_IOSIZE,
+	.max_credits = SMB2_MAX_CREDITS,
 	.large_lock_type = 0,
 	.exclusive_lock_type = SMB2_LOCKFLAG_EXCLUSIVE,
 	.shared_lock_type = SMB2_LOCKFLAG_SHARED,
