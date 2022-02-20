@@ -278,7 +278,7 @@ const char *getifaddr_any(char *buf, char *ifname, int family)
 	char *ip = getifaddr(buf, ifname, family, 0);
 	if (!ip)
 		ip = getifaddr(buf, ifname, family, GIF_LINKLOCAL);
-	return 0;
+	return ip;
 }
 #endif
 #ifdef HAVE_VLANTAGGING
