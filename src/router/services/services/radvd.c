@@ -56,25 +56,6 @@
 
 #if defined(HAVE_RADVD) && defined(HAVE_IPV6)
 
-static int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const char *suffix, int once)
-{
-	char p[INET6_ADDRSTRLEN + 1], *next = NULL;
-	struct in6_addr addr;
-	int cnt = 0;
-
-	foreach(p, dns, next) {
-		// verify that this is a valid IPv6 address
-		if (inet_pton(AF_INET6, p, &addr) == 1) {
-			fprintf(f, "%s%s%s", (once && cnt) ? "" : prefix, p, suffix);
-			++cnt;
-		}
-		if (cnt == 3)
-			break;
-	}
-
-	return cnt;
-}
-
 void start_radvd(void)
 {
 	int c = 0, manual = 0;
@@ -171,18 +152,16 @@ void start_radvd(void)
 			next += sprintf(next, *ipv6_dns_str ? " %s" : "%s", p);
 		}
 
-		if (!strcmp(nvram_safe_get("ipv6_typ"), "ipv6pd"))
-			p = nvram_safe_get("ipv6_get_dns");
-		else
-			p = ipv6_dns_str;
-		if (nvram_matchi("dnsmasq_enable", 1)) {
-			fprintf(fp, " RDNSS %s ", ip);
+		dns_list = get_dns_list(2);
+
+		if (dns_list && dns_list->num_servers) {
+			fprintf(fp, " RDNSS");
+			for (i = 0; i < dns_list->num_servers; i++) {
+				fprintf(fp_w, " %s", dns_list->dns_server[i].ip);
+			}
 			fprintf(fp, "{};\n");
-		} else {
-			cnt = write_ipv6_dns_servers(fp, " RDNSS ", (char *)((p && *p) ? p : ip), " ", 1);
-			if (cnt)
-				fprintf(fp, "{};\n");
 		}
+
 		fprintf(fp, "};\n");
 		fclose(fp);
 	}
