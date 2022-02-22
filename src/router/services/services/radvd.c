@@ -137,22 +137,9 @@ void start_radvd(void)
 			"%s%s%s"
 			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? get_wan_face() : "", do_6to4 ? ";\n" : "");
 
-		char ipv6_dns_str[1024] = "";
-		char nvname[sizeof("ipv6_dnsXXX")];
-		char *next = ipv6_dns_str;
-		int i, cnt;
+		int i;
 
-		ipv6_dns_str[0] = '\0';
-		for (i = 0; i < 2; i++) {
-			snprintf(nvname, sizeof(nvname), "ipv6_dns%d", i + 1);
-			p = nvram_safe_get(nvname);
-			if (!*p)
-				continue;
-
-			next += sprintf(next, *ipv6_dns_str ? " %s" : "%s", p);
-		}
-
-		dns_list = get_dns_list(2);
+		struct dns_lists *dns_list = get_dns_list(2);
 
 		if (dns_list && dns_list->num_servers) {
 			fprintf(fp, " RDNSS");
