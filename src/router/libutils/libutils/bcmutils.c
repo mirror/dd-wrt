@@ -511,37 +511,38 @@ struct dns_lists *get_dns_list(int v6)
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 	char *openvpn_get_dns = nvram_safe_get("openvpn_get_dns");
 	char *wg_get_dns = nvram_safe_get("wg_get_dns");
-
-	if (*openvpn_get_dns) {
-		add_dnslist(dns_list, openvpn_get_dns, 0, 0);
-	}
-	if (*wg_get_dns) {
-		add_dnslist(dns_list, wg_get_dns, 0, 0);
-	}
-	/*
-	 * if < 3 DNS servers found, try to insert alternates 
-	 */
-	while (altdns_index <= 3) {
-		char altdnsvar[32] = {
-			0
-		};
-
-		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
-
-		if (*(nvram_safe_get(altdnsvar))) {
-			add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
+	if (v6 != 2) {
+		if (*openvpn_get_dns) {
+			add_dnslist(dns_list, openvpn_get_dns, 0, 0);
 		}
-		altdns_index++;
-	}
-	if (*sv_localdns)
-		add_dnslist(dns_list, sv_localdns, 0, 0);
-	//egc if DNS server from WG or OpenVPN exist do not add existing DNS server from Static DNS to stop DNS leak
-	if (*wan_dns && ! *wg_get_dns && ! *openvpn_get_dns) {
-		add_dnslist(dns_list, wan_dns, 0, 0);
-	}
-	if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
-		if (*wan_get_dns) {
-			add_dnslist(dns_list, wan_get_dns, 0, 0);
+		if (*wg_get_dns) {
+			add_dnslist(dns_list, wg_get_dns, 0, 0);
+		}
+		/*
+		 * if < 3 DNS servers found, try to insert alternates 
+		 */
+		while (altdns_index <= 3) {
+			char altdnsvar[32] = {
+				0
+			};
+
+			snprintf(altdnsvar, 31, "altdns%d", altdns_index);
+
+			if (*(nvram_safe_get(altdnsvar))) {
+				add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
+			}
+			altdns_index++;
+		}
+		if (*sv_localdns)
+			add_dnslist(dns_list, sv_localdns, 0, 0);
+		//egc if DNS server from WG or OpenVPN exist do not add existing DNS server from Static DNS to stop DNS leak
+		if (*wan_dns && !*wg_get_dns && !*openvpn_get_dns) {
+			add_dnslist(dns_list, wan_dns, 0, 0);
+		}
+		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
+			if (*wan_get_dns) {
+				add_dnslist(dns_list, wan_get_dns, 0, 0);
+			}
 		}
 	}
 #ifdef HAVE_IPV6
