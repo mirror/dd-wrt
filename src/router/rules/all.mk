@@ -247,6 +247,7 @@ include rules/atm.mk
 include rules/aiccu.mk
 include rules/l2tpv3tun.mk
 include rules/rt3062.mk
+include rules/libudev.mk
 include rules/usbip.mk
 include rules/glib.mk
 include rules/libxml2.mk
