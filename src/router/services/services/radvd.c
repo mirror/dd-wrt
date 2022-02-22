@@ -157,7 +157,7 @@ void start_radvd(void)
 		if (dns_list && dns_list->num_servers) {
 			fprintf(fp, " RDNSS");
 			for (i = 0; i < dns_list->num_servers; i++) {
-				fprintf(fp_w, " %s", dns_list->dns_server[i].ip);
+				fprintf(fp, " %s", dns_list->dns_server[i].ip);
 			}
 			fprintf(fp, "{};\n");
 		}
