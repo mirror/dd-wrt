@@ -597,7 +597,7 @@ int dns_to_resolv(void)
 		}
 	}
 
-	dns_list = get_dns_list(0);
+	dns_list = get_dns_list(1);
 
 	for (i = 0; i < dns_list->num_servers; i++)
 		fprintf(fp_w, "nameserver %s\n", dns_list->dns_server[i].ip);
