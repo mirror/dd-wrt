@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6440 | brainslayer | 2022-02-24 06:03:11 +0700 (Thu, 24 Feb 2022) | 1 line
+
+fix bad pointer
+------------------------------------------------------------------------
 r6439 | brainslayer | 2022-02-24 03:08:37 +0700 (Thu, 24 Feb 2022) | 1 line
 
 use hw_random API instead of directly dumping into random.c
