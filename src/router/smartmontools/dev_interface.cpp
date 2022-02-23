@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2008-20 Christian Franke
+ * Copyright (C) 2008-21 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -21,13 +21,7 @@
 #include <stdlib.h> // realpath()
 #include <stdexcept>
 
-#if defined(HAVE_GETTIMEOFDAY)
-#include <sys/time.h>
-#elif defined(HAVE_FTIME)
-#include <sys/timeb.h>
-#endif
-
-const char * dev_interface_cpp_cvsid = "$Id: dev_interface.cpp 5115 2020-11-09 22:07:22Z chrfranke $"
+const char * dev_interface_cpp_cvsid = "$Id$"
   DEV_INTERFACE_H_CVSID;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -309,7 +303,7 @@ std::string smart_interface::get_valid_dev_types_str()
   // default
   std::string s =
     "ata, scsi[+TYPE], nvme[,NSID], sat[,auto][,N][+TYPE], usbcypress[,X], "
-    "usbjmicron[,p][,x][,N], usbprolific, usbsunplus, sntjmicron[,NSID], "
+    "usbjmicron[,p][,x][,N], usbprolific, usbsunplus, sntasmedia, sntjmicron[,NSID], "
     "sntrealtek, intelliprop,N[+TYPE], jmb39x[-q],N[,sLBA][,force][+TYPE], "
     "jms56x,N[,sLBA][,force][+TYPE]";
   // append custom
@@ -323,36 +317,6 @@ std::string smart_interface::get_valid_dev_types_str()
 std::string smart_interface::get_app_examples(const char * /*appname*/)
 {
   return "";
-}
-
-int64_t smart_interface::get_timer_usec()
-{
-#if defined(HAVE_GETTIMEOFDAY)
- #if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-  {
-    static bool have_clock_monotonic = true;
-    if (have_clock_monotonic) {
-      struct timespec ts;
-      if (!clock_gettime(CLOCK_MONOTONIC, &ts))
-        return ts.tv_sec * 1000000LL + ts.tv_nsec/1000;
-      have_clock_monotonic = false;
-    }
-  }
- #endif
-  {
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    return tv.tv_sec * 1000000LL + tv.tv_usec;
-  }
-#elif defined(HAVE_FTIME)
-  {
-    struct timeb tb;
-    ftime(&tb);
-    return tb.time * 1000000LL + tb.millitm * 1000;
-  }
-#else
-  return -1;
-#endif
 }
 
 bool smart_interface::disable_system_auto_standby(bool /*disable*/)

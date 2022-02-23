@@ -36,7 +36,7 @@
 #include "utility.h"
 #include "sg_unaligned.h"
 
-const char *scsicmds_c_cvsid="$Id: scsicmds.cpp 5131 2020-12-15 21:30:33Z dpgilbert $"
+const char *scsicmds_c_cvsid="$Id$"
   SCSICMDS_H_CVSID;
 
 static const char * logSenStr = "Log Sense";
@@ -341,6 +341,46 @@ scsiErrString(int scsiErr)
     }
 }
 
+static const char * sense_key_desc[] = {
+    "No Sense",                 /* Filemark, ILI and/or EOM; progress
+                                   indication (during FORMAT); power
+                                   condition sensing (REQUEST SENSE) */
+    "Recovered Error",          /* The last command completed successfully
+                                   but used error correction */
+    "Not Ready",                /* The addressed target is not ready */
+    "Medium Error",             /* Data error detected on the medium */
+    "Hardware Error",           /* Controller or device failure */
+    "Illegal Request",
+    "Unit Attention",           /* Removable medium was changed, or
+                                   the target has been reset */
+    "Data Protect",             /* Access to the data is blocked */
+    "Blank Check",              /* Reached unexpected written or unwritten
+                                   region of the medium */
+    "Vendor specific(9)",       /* Vendor specific */
+    "Copy Aborted",             /* COPY or COMPARE was aborted */
+    "Aborted Command",          /* The target aborted the command */
+    "Equal",                    /* SEARCH DATA found data equal (obsolete) */
+    "Volume Overflow",          /* Medium full with data to be written */
+    "Miscompare",               /* Source data and data on the medium
+                                   do not agree */
+    "Completed"                 /* may occur for successful cmd (spc4r23) */
+};
+
+/* Yield string associated with sense_key value. Returns 'buff'. */
+char *
+scsi_get_sense_key_str(int sense_key, int buff_len, char * buff)
+{
+    if (1 == buff_len) {
+        buff[0] = '\0';
+        return buff;
+    }
+    if ((sense_key >= 0) && (sense_key < 16))
+        snprintf(buff, buff_len, "%s", sense_key_desc[sense_key]);
+    else
+        snprintf(buff, buff_len, "invalid value: 0x%x", sense_key);
+    return buff;
+}
+
 /* Iterates to next designation descriptor in the device identification
  * VPD page. The 'initial_desig_desc' should point to start of first
  * descriptor with 'page_len' being the number of valid bytes in that
@@ -557,8 +597,6 @@ scsiLogSense(scsi_device * device, int pagenum, int subpagenum, uint8_t *pBuf,
         if (0 == u)
             return SIMPLE_ERR_BAD_RESP;
         pageLen = u + 4;
-        if (4 == pageLen)  /* why define a lpage with no payload? */
-            pageLen = 252; /* some IBM tape drives don't like double fetch */
         /* some SCSI HBA don't like "odd" length transfers */
         if (pageLen % 2)
             pageLen += 1;
@@ -1002,7 +1040,7 @@ scsiRequestSense(scsi_device * device, struct scsi_sense_disect * sense_info)
  * Power condition command. Returns 0 if ok, anything else major problem.
  * If power_cond is 0, treat as SSU(START) as that is better than
  * SSU(STOP) which would be the case if byte 4 of the cdb was zero.
- * Ref: SBC-4 revision 22, section 4.20 SSU and power conditions. 
+ * Ref: SBC-4 revision 22, section 4.20 SSU and power conditions.
  *
  * SCSI_POW_COND_ACTIVE                   0x1
  * SCSI_POW_COND_IDLE                     0x2
@@ -1026,7 +1064,7 @@ scsiSetPowerCondition(scsi_device * device, int power_cond, int pcond_modifier)
         cdb[3] = pcond_modifier & 0xf;
         cdb[4] = power_cond << 4;
     } else
-	cdb[4] = 0x1;	/* START */
+        cdb[4] = 0x1;   /* START */
     io_hdr.cmnd = cdb;
     io_hdr.cmnd_len = sizeof(cdb);
     io_hdr.sensep = sense;
@@ -1200,6 +1238,29 @@ scsiReadDefect12(scsi_device * device, int req_plist, int req_glist,
     return scsiSimpleSenseFilter(&sinfo);
 }
 
+/* Call scsi_pass_through, and retry only if a UNIT_ATTENTION is raised.
+ * As for scsi_pass_through, return false on error. */
+bool
+scsi_pass_through_with_retry(scsi_device * device, scsi_cmnd_io * iop)
+{
+    scsi_sense_disect sinfo;
+
+    if (!device->scsi_pass_through(iop))
+        return false;
+
+    scsi_do_sense_disect(iop, &sinfo);
+
+    int err = scsiSimpleSenseFilter(&sinfo);
+    if (SIMPLE_ERR_TRY_AGAIN != err)
+        return true;
+
+    if (scsi_debugmode > 0)
+        pout("%s failed with errno=%d [%s], retrying\n",
+             __func__, err, scsiErrString(err));
+
+    return device->scsi_pass_through(iop);
+}
+
 /* READ CAPACITY (10) command. Returns 0 if ok, 1 if NOT READY, 2 if
  * command not supported, 3 if field in command not supported or returns
  * negated errno. SBC-3 section 5.15 (rev 26) */
@@ -1227,7 +1288,7 @@ scsiReadCapacity10(scsi_device * device, unsigned int * last_lbap,
     io_hdr.max_sense_len = sizeof(sense);
     io_hdr.timeout = SCSI_TIMEOUT_DEFAULT;
 
-    if (!device->scsi_pass_through(&io_hdr))
+    if (!scsi_pass_through_with_retry(device, &io_hdr))
       return -device->get_errno();
     scsi_do_sense_disect(&io_hdr, &sinfo);
     res = scsiSimpleSenseFilter(&sinfo);
@@ -1265,7 +1326,7 @@ scsiReadCapacity16(scsi_device * device, uint8_t *pBuf, int bufLen)
     io_hdr.max_sense_len = sizeof(sense);
     io_hdr.timeout = SCSI_TIMEOUT_DEFAULT;
 
-    if (!device->scsi_pass_through(&io_hdr))
+    if (!scsi_pass_through_with_retry(device, &io_hdr))
       return -device->get_errno();
     scsi_do_sense_disect(&io_hdr, &sinfo);
     return scsiSimpleSenseFilter(&sinfo);
@@ -2298,10 +2359,25 @@ scsiFetchExtendedSelfTestTime(scsi_device * device, int * durationSec,
         return -EINVAL;
     if (buff[offset + 1] >= 0xa) {
         int res = sg_get_unaligned_be16(buff + offset + 10);
-        *durationSec = res;
-        return 0;
-    }
-    else
+
+        if (res < 0xffff) {
+            *durationSec = res;
+            return 0;
+        }
+        /* The value 0xffff (all bits set in 16 bit field) indicates that
+         * the Extended Inquiry VPD page should be consulted, it has a
+         * similarly named 16 bit field, but the unit is minutes. */
+        uint8_t b[64];
+
+        if ((0 == scsiInquiryVpd(device, SCSI_VPD_EXTENDED_INQUIRY_DATA,
+                                 b, sizeof(b))) &&
+            ((sg_get_unaligned_be16(b + 2)) > 11)) {
+            res = sg_get_unaligned_be16(b + 10);
+            *durationSec = res * 60;    /* VPD field is in minutes */
+            return 0;
+        } else
+            return -EINVAL;
+    } else
         return -EINVAL;
 }
 
@@ -2516,7 +2592,10 @@ scsiFetchControlGLTSD(scsi_device * device, int modese_len, int current)
 /* Returns a negative value on error, 0 if unknown and 1 if SSD,
  * otherwise the positive returned value is the speed in rpm. First checks
  * the Block Device Characteristics VPD page and if that fails it tries the
- * RIGID_DISK_DRIVE_GEOMETRY_PAGE mode page. */
+ * RIGID_DISK_DRIVE_GEOMETRY_PAGE mode page.
+ * In SBC-4 the 2 bit ZONED field in this VPD page is written to *haw_zbcp
+ * if haw_zbcp is non-NULL. In SBC-5 the ZONED field is now obsolete,
+ * the Zoned block device characteristics VPD page should be used instead. */
 
 int
 scsiGetRPM(scsi_device * device, int modese_len, int * form_factorp,
@@ -2534,7 +2613,7 @@ scsiGetRPM(scsi_device * device, int modese_len, int * form_factorp,
         if (form_factorp)
             *form_factorp = buff[7] & 0xf;
         if (haw_zbcp)
-            *haw_zbcp = !!(0x10 & buff[8]);
+            *haw_zbcp = (buff[8] >> 4) & 0x3;
         return speed;
     }
     if (form_factorp)

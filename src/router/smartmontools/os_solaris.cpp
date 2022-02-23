@@ -29,7 +29,7 @@
 
 #define ARGUSED(x) ((void)(x))
 
-const char *os_XXXX_cpp_cvsid = "$Id: os_solaris.cpp 5065 2020-06-20 13:47:36Z chrfranke $"
+const char *os_XXXX_cpp_cvsid = "$Id$"
   OS_SOLARIS_H_CVSID;
 
 // print examples for smartctl

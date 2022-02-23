@@ -10,7 +10,7 @@
  */
 #ifndef OS_QNXNTO_H_
 #define OS_QNXNTO_H_
-#define OS_QNXNTO_H_CVSID "$Id: os_qnxnto.h 4761 2018-08-20 19:33:04Z chrfranke $\n"
+#define OS_QNXNTO_H_CVSID "$Id$\n"
 
 // Additional material should start here.  Note: to keep the '-V' CVS
 // reporting option working as intended, you should only #include

@@ -13,7 +13,7 @@
 #ifndef OS_OPENBSD_H_
 #define OS_OPENBSD_H_
 
-#define OS_OPENBSD_H_CVSID "$Id: os_openbsd.h 4760 2018-08-19 18:45:53Z chrfranke $\n"
+#define OS_OPENBSD_H_CVSID "$Id$\n"
 
 /* from NetBSD: atareg.h,v 1.17, by Manuel Bouyer */
 /* Actually fits _perfectly_ into OBSDs wdcreg.h, but... */

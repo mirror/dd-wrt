@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-char svnid[] = "$Id: runcmd.c 4760 2018-08-19 18:45:53Z chrfranke $";
+char svnid[] = "$Id$";
 
 #include <stdio.h>
 #include <windows.h>

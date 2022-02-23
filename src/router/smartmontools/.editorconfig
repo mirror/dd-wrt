@@ -1,6 +1,6 @@
 # smartmontools indent style settings for EditorConfig
 # http://editorconfig.org/
-# $Id: .editorconfig 4385 2017-01-28 15:31:50Z chrfranke $
+# $Id$
 
 # top-most file
 root = true
