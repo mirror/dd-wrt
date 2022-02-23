@@ -2131,10 +2131,10 @@ static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char 
 {
 
 	DIR *directory;
+	struct dirent *entry;
 	char buf[256];
 	int cnt = 0;
 	if ((directory = opendir(path)) != NULL) {
-		struct dirent *entry;
 		while ((entry = readdir(directory)) != NULL) {
 			if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
 				continue;
