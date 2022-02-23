@@ -13,7 +13,7 @@
 
 #include "daemon_win32.h"
 
-const char * daemon_win32_cpp_cvsid = "$Id: daemon_win32.cpp 4842 2018-12-02 16:07:26Z chrfranke $"
+const char * daemon_win32_cpp_cvsid = "$Id$"
   DAEMON_WIN32_H_CVSID;
 
 #include <stdio.h>

@@ -26,7 +26,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> // RegisterEventSourceA(), ReportEventA(), ...
 
-const char *syslog_win32_cpp_cvsid = "$Id: syslog_win32.cpp 4974 2019-10-19 15:34:34Z chrfranke $"
+const char *syslog_win32_cpp_cvsid = "$Id$"
   SYSLOG_H_CVSID;
 
 #ifdef _MSC_VER

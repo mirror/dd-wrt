@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-const char * atacmdnames_cpp_cvsid = "$Id: atacmdnames.cpp 4934 2019-07-01 20:54:14Z chrfranke $"
+const char * atacmdnames_cpp_cvsid = "$Id$"
   ATACMDNAMES_H_CVSID;
 
 const char cmd_reserved[]        = "[RESERVED]";

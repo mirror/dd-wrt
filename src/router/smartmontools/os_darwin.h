@@ -11,7 +11,7 @@
 #ifndef OS_DARWIN_H_
 #define OS_DARWIN_H_
 
-#define OS_DARWIN_H_CVSID "$Id: os_darwin.h 5073 2020-06-24 08:08:38Z samm2 $\n"
+#define OS_DARWIN_H_CVSID "$Id$\n"
 
 #define kIOATABlockStorageDeviceClass   "IOATABlockStorageDevice"
 

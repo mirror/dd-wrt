@@ -7,7 +7,7 @@
 #
 # See also: smartd.conf(5), smartd(8).
 #
-# $Id: Example8 4937 2019-08-04 15:29:43Z chrfranke $
+# $Id$
 
 # Skip if '-m <nomailer>' is set
 test -n "$SMARTD_ADDRESS" || exit 0

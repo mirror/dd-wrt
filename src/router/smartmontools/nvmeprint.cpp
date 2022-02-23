@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2016-20 Christian Franke
+ * Copyright (C) 2016-21 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -13,7 +13,7 @@
 
 #include "nvmeprint.h"
 
-const char * nvmeprint_cvsid = "$Id: nvmeprint.cpp 5126 2020-12-04 21:02:46Z chrfranke $"
+const char * nvmeprint_cvsid = "$Id$"
   NVMEPRINT_H_CVSID;
 
 #include "utility.h"
@@ -201,11 +201,10 @@ static void print_drive_info(const nvme_id_ctrl & id_ctrl, const nvme_id_ns & id
     }
   }
 
-  time_t now = time(0);
-  char td[DATEANDEPOCHLEN]; dateandtimezoneepoch(td, now);
-  jout("Local Time is:                      %s\n", td);
-  jglb["local_time"]["time_t"] = now;
-  jglb["local_time"]["asctime"] = td;
+  // SMART/Health Information is mandatory
+  jglb["smart_support"] += { {"available", true}, {"enabled", true} };
+
+  jout_startup_datetime("Local Time is:                      ");
 }
 
 // Format scaled power value.
@@ -347,9 +346,12 @@ static void print_critical_warning(unsigned char w)
    if (w & 0x10)
      jout("- volatile memory backup device has failed\n");
    jref["volatile_memory_backup_failed"] = !!(w & 0x10);
-   if (w & ~0x1f)
-     jout("- unknown critical warning(s) (0x%02x)\n", w & ~0x1f);
-   jref["other"] = w & ~0x1f;
+   if (w & 0x20)
+     jout("- persistent memory region has become read-only or unreliable\n");
+   jref["persistent_memory_region_unreliable"] = !!(w & 0x20);
+   if (w & ~0x3f)
+     jout("- unknown critical warning(s) (0x%02x)\n", w & ~0x3f);
+   jref["other"] = w & ~0x3f;
   }
 
   jout("\n");
@@ -412,7 +414,7 @@ static void print_smart_log(const nvme_smart_log & smart_log,
 
   // Temperature sensors are optional
   for (int i = 0; i < 8; i++) {
-    int k = smart_log.temp_sensor[i];
+    k = smart_log.temp_sensor[i];
     if (show_all || k) {
       jout("Temperature Sensor %d:               %s\n", i + 1,
            kelvin_to_str(buf, k));

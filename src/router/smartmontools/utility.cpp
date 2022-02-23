@@ -4,7 +4,7 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-12 Bruce Allen
- * Copyright (C) 2008-20 Christian Franke
+ * Copyright (C) 2008-22 Christian Franke
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -42,7 +42,20 @@
 #include "dev_interface.h"
 #include "sg_unaligned.h"
 
-const char * utility_cpp_cvsid = "$Id: utility.cpp 5035 2020-03-01 16:19:44Z chrfranke $"
+#ifndef USE_CLOCK_MONOTONIC
+#ifdef __MINGW32__
+// If MinGW-w64 < 9.0.0 or Windows < 8, GetSystemTimeAsFileTime() is used for
+// std::chrono::high_resolution_clock.  This provides only 1/64s (>15ms) resolution.
+// CLOCK_MONOTONIC uses QueryPerformanceCounter() which provides <1us resolution.
+#define USE_CLOCK_MONOTONIC 1
+#else
+// Use std::chrono::high_resolution_clock.
+#include <chrono>
+#define USE_CLOCK_MONOTONIC 0
+#endif
+#endif // USE_CLOCK_MONOTONIC
+
+const char * utility_cpp_cvsid = "$Id$"
   UTILITY_H_CVSID;
 
 const char * packet_types[] = {
@@ -80,7 +93,7 @@ std::string format_version_info(const char * prog_name, bool full /*= false*/)
       "(build date " __DATE__ ")" // checkout without expansion of Id keywords
 #endif
       " [%s] " BUILD_INFO "\n"
-    "Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org\n",
+    "Copyright (C) 2002-22, Bruce Allen, Christian Franke, www.smartmontools.org\n",
     prog_name, smi()->get_os_version_str().c_str()
   );
   if (!full)
@@ -92,7 +105,7 @@ std::string format_version_info(const char * prog_name, bool full /*= false*/)
     "software, and you are welcome to redistribute it under\n"
     "the terms of the GNU General Public License; either\n"
     "version 2, or (at your option) any later version.\n"
-    "See http://www.gnu.org for further details.\n"
+    "See https://www.gnu.org for further details.\n"
     "\n"
     "smartmontools release " PACKAGE_VERSION
       " dated " SMARTMONTOOLS_RELEASE_DATE " at " SMARTMONTOOLS_RELEASE_TIME "\n"
@@ -134,9 +147,19 @@ std::string format_version_info(const char * prog_name, bool full /*= false*/)
 #endif
                                                           "\n"
     "smartmontools configure arguments:"
+#ifdef SOURCE_DATE_EPOCH
+                                      " [hidden in reproducible builds]\n"
+    "reproducible build SOURCE_DATE_EPOCH: "
+#endif
   ;
+#ifdef SOURCE_DATE_EPOCH
+  char ts[32]; struct tm tmbuf;
+  strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", time_to_tm_local(&tmbuf, SOURCE_DATE_EPOCH));
+  info += strprintf("%u (%s)", (unsigned)SOURCE_DATE_EPOCH, ts);
+#else
   info += (sizeof(SMARTMONTOOLS_CONFIGURE_ARGS) > 1 ?
            SMARTMONTOOLS_CONFIGURE_ARGS : " [no arguments given]");
+#endif
   info += '\n';
 
   return info;
@@ -810,6 +833,21 @@ const char * uint128_hilo_to_str(char * str, int strsize, uint64_t value_hi, uin
 }
 
 #endif // HAVE___INT128
+
+// Get microseconds since some unspecified starting point.
+long long get_timer_usec()
+{
+#if USE_CLOCK_MONOTONIC
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+    return -1;
+  return ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
+#else
+  return std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now().time_since_epoch()
+  ).count();
+#endif
+}
 
 // Runtime check of byte ordering, throws on error.
 static void check_endianness()

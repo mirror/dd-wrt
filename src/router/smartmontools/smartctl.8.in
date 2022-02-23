@@ -1,10 +1,10 @@
 .ig
 Copyright (C) 2002-10 Bruce Allen
-Copyright (C) 2004-20 Christian Franke
+Copyright (C) 2004-22 Christian Franke
 
 SPDX-License-Identifier: GPL-2.0-or-later
 
-$Id: smartctl.8.in 5143 2020-12-21 18:34:31Z chrfranke $
+$Id$
 
 ..
 .\" Macros borrowed from pages generated with Pod::Man
@@ -48,8 +48,8 @@ This version of \fBsmartctl\fP is compatible with
 ACS-3, ACS-2, ATA8-ACS, ATA/ATAPI-7 and earlier standards
 (see \fBREFERENCES\fP below).
 .PP
-\fBsmartctl\fP also provides support for polling TapeAlert messages
-from SCSI tape drives and changers.
+\fBsmartctl\fP also provides support for SCSI tape drives and
+changers (see \fBTAPE DRIVES\fP below).
 .PP
 The user must specify the device to be controlled or interrogated as
 the final argument to \fBsmartctl\fP.  The command set used by the device
@@ -60,7 +60,7 @@ Device paths are as follows:
 .\" %IF OS Linux
 .IP \fBLINUX\fP: 9
 Use the forms \fB"/dev/sd[a\-z]"\fP for ATA/SATA and SCSI/SAS devices.
-For SCSI Tape Drives and Changers with TapeAlert support use the
+For SCSI Tape Drives and Changers use the
 devices \fB"/dev/nst*"\fP and \fB"/dev/sg*"\fP.  For disks behind
 3ware controllers you may need \fB"/dev/sd[a\-z]"\fP or
 \fB"/dev/twe[0\-9]"\fP, \fB"/dev/twa[0\-9]"\fP or \fB"/dev/twl[0\-9]"\fP:
@@ -149,7 +149,6 @@ For disks behind Intel controller with RST driver or an AMD controller
 with AMD RAID driver, use \fB"/dev/csmi[0\-9],N"\fP where N specifies the
 port behind the logical scsi controller "\\\\.\\Scsi[0\-9]:".
 .br
-[NEW EXPERIMENTAL SMARTCTL FEATURE]
 The AMD RAID driver may return incomplete information about port assignment.
 To allow access to ports not reported, device scan returns all ports.
 Device open fails then if the port is unused.
@@ -249,8 +248,8 @@ shortest output and \*(Aq\-\-identify=wb\*(Aq (all words, all bits) produces
 the longest output.
 .TP
 .B \-a, \-\-all
-Prints all SMART information about the disk, or TapeAlert information
-about the tape drive or changer.  For ATA devices this is equivalent
+Prints all SMART information about the disk.
+For ATA devices this is equivalent
 to
 .br
 \*(Aq\-H \-i \-c \-A \-l error \-l selftest \-l selective\*(Aq
@@ -465,6 +464,11 @@ PL2571/2771/2773/2775 USB to SATA bridge.
 \- this device type is for SATA disks that are behind a SunplusIT USB to SATA
 bridge.
 .Sp
+.I sntasmedia
+\- [NEW EXPERIMENTAL SMARTCTL FEATURE]
+this device type is for NVMe disks that are behind an ASMedia USB to NVMe
+bridge.
+.Sp
 .I sntjmicron[,NSID]
 \- this device type is for NVMe disks that are behind a JMicron USB to NVMe
 bridge.
@@ -478,16 +482,34 @@ this device type is for NVMe disks that are behind a Realtek USB to NVMe
 bridge.
 .Sp
 .\" %ENDIF NOT OS Darwin
-.\" %IF OS Linux
+.\" %IF OS Linux FreeBSD
 .I marvell
 \- [Linux only] interact with SATA disks behind Marvell chip-set
 controllers (using the Marvell rather than libata driver).
 .Sp
 .I megaraid,N
-\- [Linux only] the device consists of one or more SCSI/SAS disks connected
+\- [FreeBSD and Linux only] the device consists of one or more SCSI/SAS disks connected
 to a MegaRAID controller.  The non-negative integer N (in the range of 0 to
-127 inclusive) denotes which disk on the controller is monitored.
+127 inclusive) denotes which disk on the controller is monitored. This interface
+will also work for Dell PERC controllers.
 Use syntax such as:
+.\" %ENDIF OS Linux FreeBSD
+.\" %IF OS ALL
+.br
+FreeBSD:
+.\" %ENDIF OS ALL
+.\" %IF OS FreeBSD
+.br
+\fBsmartctl \-a \-d megaraid,2 /dev/mfi0\fP
+.br
+\fBsmartctl \-a \-d megaraid,0 /dev/mrsas0\fP
+.br
+.Sp
+.\" %ENDIF OS FreeBSD
+.\" %IF OS ALL
+Linux:
+.\" %ENDIF OS ALL
+.\" %IF OS Linux
 .br
 \fBsmartctl \-a \-d megaraid,2 /dev/sda\fP
 .br
@@ -495,7 +517,6 @@ Use syntax such as:
 .br
 \fBsmartctl \-a \-d megaraid,0 /dev/bus/0\fP
 .br
-This interface will also work for Dell PERC controllers.
 It is possible to set RAID device name as /dev/bus/N, where N is a SCSI bus
 number.
 .Sp
@@ -824,7 +845,7 @@ Then \fBsmartctl\fP internally simulates an ATA device with the same
 behaviour.
 This is does not work for SCSI devices yet.
 .TP
-.B \-n POWERMODE[,STATUS], \-\-nocheck=POWERMODE[,STATUS]
+.B \-n POWERMODE[,STATUS[,STATUS2]], \-\-nocheck=POWERMODE[,STATUS[,STATUS2]]
 [ATA]
 [SCSI: NEW EXPERIMENTAL SMARTCTL FEATURE]
 Specifies if \fBsmartctl\fP should exit before performing any
@@ -852,19 +873,27 @@ The valid arguments to this option are:
 \- check the device always, but print the power mode if \*(Aq\-i\*(Aq is
 specified.
 .Sp
-.I sleep[,STATUS]
+.I sleep[,STATUS[,STATUS2]]
 \- check the device unless it is in SLEEP mode.
 .Sp
-.I standby[,STATUS]
+.I standby[,STATUS[,STATUS2]]
 \- check the device unless it is in SLEEP or STANDBY mode.  In
 these modes most disks are not spinning, so if you want to prevent
 a disk from spinning up, this is probably what you want.
 .Sp
-.I idle[,STATUS]
+.I idle[,STATUS[,STATUS2]]
 \- check the device unless it is in SLEEP, STANDBY or IDLE mode.
 In the IDLE state, most disks are still spinning, so this is probably
 not what you want.
 .Sp
+The \*(Aq\-n\*(Aq option is ignored if the power mode check is not supported
+or returns an unknown value.
+.br
+[ATA only][NEW EXPERIMENTAL SMARTCTL FEATURE]
+If the optional STATUS2 parameter is specified, \fBsmartctl\fP exits
+immediately with STATUS2 in this case.
+For example use \*(Aq\-n standby,3,5\*(Aq to return unique exit statuses in
+the STANDBY and UNSUPPORTED cases.
 .TP
 .B SMART FEATURE ENABLE/DISABLE COMMANDS:
 .IP
@@ -1100,7 +1129,11 @@ The dsn is usually disabled by default.
 .B SMART READ AND DISPLAY DATA OPTIONS:
 .TP
 .B \-H, \-\-health
-Prints the health status of the device or pending TapeAlert messages.
+Prints the health status of the device.
+.Sp
+[SCSI tape drive or changer] For SCSI tape drives the TapeAlert log page is
+not checked for pending alerts unless this option is given twice (see
+\fBTAPE DRIVES\fP for the rationale).
 .Sp
 If the device reports failing health status, this means
 .B either
@@ -1124,11 +1157,7 @@ Prefailure SMART Attribute value is less than or equal to its threshold
 (IE) log page (if supported) and/or from SCSI sense data.
 .Sp
 [SCSI tape drive or changer] TapeAlert status is obtained by reading the
-TapeAlert log page.
-Please note that the TapeAlert log page flags are cleared for the initiator
-when the page is read.
-This means that each alert condition is reported only once by \fBsmartctl\fP
-for each initiator for each activation of the condition.
+TapeAlert log page only when this option is given twice.
 .\" %IF OS Darwin FreeBSD Linux NetBSD Windows Cygwin
 .Sp
 [NVMe] NVMe status is obtained by reading the "Critical Warning" byte from
@@ -1491,7 +1520,7 @@ Otherwise, the setting is volatile and will be reverted to the last
 non-volatile setting by the next hard reset.  The default interval
 is vendor specific, typical values are 1, 2, or 5 minutes.
 .Sp
-.I scterc[,READTIME,WRITETIME]
+.I scterc[,READTIME,WRITETIME][,p|reset]
 \- [ATA only] prints values and descriptions of the SCT Error Recovery
 Control settings.
 These are equivalent to TLER (as used by Western Digital), CCTL (as used
@@ -1500,6 +1529,16 @@ READTIME and WRITETIME arguments (deciseconds) set the specified values.
 Values of 0 disable the feature, other values less than 65 are probably not
 supported.
 For RAID configurations, this is typically set to 70,70 deciseconds.
+.br
+[NEW EXPERIMENTAL SMARTCTL FEATURE]
+If \*(Aqscterc,READTIME,WRITETIME,p\*(Aq is specified, these time values
+will be persistent over a power-on reset.
+If \*(Aqscterc,p\*(Aq is specified, the persistent over power-on values
+are printed.
+If \*(Aqscterc,reset\*(Aq is specified, all SCT timer settings are restored
+to the manufacturer's default value.
+The \*(Aq,p\*(Aq and \*(Aq,reset\*(Aq options require the device to support
+ATA ACS-4 or higher.
 .Sp
 .I devstat[,PAGE]
 \- [ATA only] prints values and descriptions of the ATA Device Statistics
@@ -1527,6 +1566,15 @@ drives.
 \- [SAS (SCSI) only] prints values and descriptions of the SAS (SSP)
 Protocol Specific log page (log page 0x18).  If \*(Aq\-l sasphy,reset\*(Aq
 is specified, all counters are reset after reading the values.
+.Sp
+.I tapealert
+\- [SCSI tape drives and changers] prints values and descriptions of
+the (SSC) Tape Alert log page. See \fBTAPE DRIVES\fP below for issue
+associated with printing this log page.
+.Sp
+.I tapedevstat
+\- [SCSI tape drives and changers] prints values and descriptions of
+the (SSC) Device Statistics log page.
 .Sp
 .I gplog,ADDR[,FIRST[\-LAST|+SIZE]]
 \- [ATA only] prints a hex dump of any log accessible via General
@@ -1894,7 +1942,7 @@ if this option is not specified.
 .Sp
 If
 .\" %IF NOT OS Windows
-\fB/usr/local/share/smartmontools/drivedb.h\fP
+\fB/usr/local/var/lib/smartmontools/drivedb.h\fP
 .\" %ENDIF NOT OS Windows
 .\" %IF OS ALL
 (Windows: \fBEXEDIR/drivedb.h\fP)
@@ -2240,6 +2288,37 @@ approach is running a tool like smartmontools inside the RAID 1 box (e.g.
 a Network Attached Storage (NAS) box) and fetching the logs via a
 browser.
 .Sp
+.SH TAPE DRIVES
+Commands for SCSI Tape drives as defined in the SSC\-4 standard (ANSI
+INCITS 516\-2013). SSC stands for "SCSI Streaming Commands".  Draft
+standards can be found at <\fBhttps://www.t10.org/\fP> .
+.PP
+Many SMART related features of SCSI disks are shared by SCSI tape drives.
+One important tape\-specific log page is called "TapeAlert" which is used
+to report abnormal conditions. Unlike most other log pages the TapeAlert
+log page
+.B clears
+pending alerts after that page is fetched (i.e. read from
+the tape drive). To be more precise, the TapeAlert log page is cleared
+for the I_T nexus (initiator-target pair) that sent the (SCSI LOG SENSE)
+command; so another initiator (e.g.  a HBA on another machine) will still
+have pending alerts reported. [This clearing action can be controlled by
+the TAPLSD bit is the [SSC] Device Configuration Extension mode page but
+the original and default action remains: clear any pending TapeAlerts.
+The sdparm utility can be used to access and change TAPLSD.]
+.PP
+Previous versions of smartctl have supported polling the TapeAlert log
+page when the \-\-health option is given. This clearing of pending alerts
+has created problems for other tape\-specific tools. This version of
+smartctl will only fetch the TapeAlert log page if the \-\-health option
+is given
+.B twice
+in the command line invocation (or the \-\-log=tapealert option is given).
+.PP
+There are other tape\-specific log pages such as \-\-log=tapedevstat
+that behave normally (i.e. they don't change any state information in
+the tape drive).
+.Sp
 .SH EXAMPLES
 .B smartctl \-a /dev/sda
 .br
@@ -2392,7 +2471,7 @@ done
 full path of this executable.
 .\" %IF ENABLE_DRIVEDB
 .TP
-.B /usr/local/share/smartmontools/drivedb.h
+.B /usr/local/var/lib/smartmontools/drivedb.h
 drive database (see \*(Aq\-B\*(Aq option).
 .\" %ENDIF ENABLE_DRIVEDB
 .TP
@@ -2460,4 +2539,4 @@ Links to these and other documents may be found on the Links page of the
 .SH PACKAGE VERSION
 CURRENT_SVN_VERSION CURRENT_SVN_DATE CURRENT_SVN_REV
 .br
-$Id: smartctl.8.in 5143 2020-12-21 18:34:31Z chrfranke $
+$Id$

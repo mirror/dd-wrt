@@ -3,7 +3,7 @@
 #
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT([smartmontools], [7.2], [smartmontools-support@listi.jpberlin.de])
+AC_INIT([smartmontools],[7.3],[smartmontools-support@listi.jpberlin.de])
 AM_INIT_AUTOMAKE([1.10 foreign])
 LT_INIT
 LT_LIB_M
@@ -11,7 +11,7 @@ LT_LIB_M
 # Version of drive database branch
 smartmontools_drivedb_version=7.2
 
-smartmontools_cvs_tag=`echo '$Id: configure.ac 5155 2020-12-30 16:49:18Z chrfranke $'`
+smartmontools_cvs_tag=`echo '$Id$'`
 smartmontools_release_date=2020-12-30
 smartmontools_release_time="16:48:30 UTC"
 
@@ -63,6 +63,18 @@ case "${host}" in
     ;;
 esac
 
+AC_MSG_CHECKING([whether reproducible build is selected (SOURCE_DATE_EPOCH)])
+res=no
+if test -n "$SOURCE_DATE_EPOCH"; then
+  res=yes
+  test -z "`echo "$SOURCE_DATE_EPOCH" | sed 's,[[0-9]]*,,'`" || res=error
+fi
+AC_MSG_RESULT([$res])
+case $res in
+  error) AC_MSG_ERROR([Malformed SOURCE_DATE_EPOCH]) ;;
+  yes) CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-DSOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" ;;
+esac
+
 # Check for SVN.
 AC_MSG_CHECKING([whether this is a build from SVN])
 is_svn_build=no
@@ -80,10 +92,6 @@ fi
 AC_SUBST([svn_deps])
 AM_CONDITIONAL(IS_SVN_BUILD, [test "$is_svn_build" = "yes"])
 AC_MSG_RESULT([$is_svn_build])
-
-# Note: On Linux, clock_gettime() requires -lrt which implies -lpthreads
-# Check omitted for now, gettimeofday() provides reasonable precision
-# AC_SEARCH_LIBS(clock_gettime, rt)
 
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h])
@@ -111,6 +119,10 @@ case "$host" in
   *-*-netbsd*|*-*-openbsd*)
     AC_CHECK_HEADERS([dev/ata/atavar.h])
     ;;
+  *-*-mingw*)
+    # Older MinGW-w64 (5.0.3) require -lwinpthread
+    AC_SEARCH_LIBS([clock_gettime], [winpthread])
+    ;;
 esac
 
 # Checks for typedefs, and compiler characteristics.
@@ -120,8 +132,6 @@ AC_TYPE_LONG_DOUBLE_WIDER
 # Checks for library functions.
 AC_CHECK_FUNCS([getopt_long], [need_getopt_long=no], [need_getopt_long=yes])
 AM_CONDITIONAL(NEED_GETOPT_LONG, [test "$need_getopt_long" = "yes"])
-
-AC_CHECK_FUNCS([clock_gettime ftime gettimeofday])
 
 # Check byte ordering (defines WORDS_BIGENDIAN)
 AC_C_BIGENDIAN
@@ -179,9 +189,23 @@ AC_ARG_WITH(exampledir,
 AC_SUBST(exampledir)
 
 drivedbdir='${datadir}/${PACKAGE}'
+drivedbinstdir=
+AC_ARG_WITH(drivedbinstdir,
+  [AS_HELP_STRING([--with-drivedbinstdir@<:@=DIR|yes|no@:>@],
+    [Optional separate install location of drive database file [no] (yes=DATADIR/smartmontools)])],
+  [ case "$withval" in
+      no) ;;
+      yes) drivedbinstdir=$drivedbdir; drivedbdir='${localstatedir}/lib/${PACKAGE}' ;;
+      *)   drivedbinstdir=$withval;    drivedbdir='${localstatedir}/lib/${PACKAGE}' ;;
+    esac
+  ])
+
 AC_ARG_WITH(drivedbdir,
-  [AS_HELP_STRING([--with-drivedbdir@<:@=DIR|yes|no@:>@], [Location of drive database file [DATADIR/smartmontools]])],
+  [AS_HELP_STRING([--with-drivedbdir@<:@=DIR|yes|no@:>@],
+    [Location of drive database file [DATADIR/smartmontools or LOCALSTATEDIR/lib/smartmontools if separate INSTDIR]])],
   [case "$withval" in yes) ;; no) drivedbdir= ;; *) drivedbdir="$withval" ;; esac])
+test -n "$drivedbinstdir" || drivedbinstdir=$drivedbdir
+AC_SUBST(drivedbinstdir)
 AC_SUBST(drivedbdir)
 AM_CONDITIONAL(ENABLE_DRIVEDB, [test -n "$drivedbdir"])
 
@@ -513,52 +537,62 @@ esac
 
 AC_ARG_WITH(cxx11-option,
   [AS_HELP_STRING([--with-cxx11-option=@<:@OPTION|auto|no@:>@],
-    [Compiler option to enable C++11 support for future versions of smartmontools, 'no' if unsupported [auto]])],
+    [Compiler option to enable C++11 support, 'no' to skip check [auto]])],
   [], [with_cxx11_option=auto])
 
-check_cxx11_support()
-{
-  save_CXXFLAGS=$CXXFLAGS
-  CXXFLAGS=$1
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-      #if __cplusplus < 201103L
-      #error false
-      #endif
-      // use some C++11 features (and return v * 42 :-)
-      auto cxx11(long v) noexcept -> decltype(v) {
-        typedef decltype(v) t; t r = v;
-        static const t a[] = { -7, -1, 1, 2, 3 };
-        static_assert(sizeof(r) == sizeof(a[0]), "fail");
-        auto f = [](t x, t y){ return x * y; };
-        for (const auto & e : a) r = f(r, e);
-        return r;
-      }]])],
-    [CXXFLAGS=$save_CXXFLAGS; return 0], [CXXFLAGS=$save_CXXFLAGS; return 1])
-}
+cxx14_option=
+case "$with_cxx11_option" in
+  no) ;;
+  *)
+    AC_MSG_CHECKING([for $CXX option to accept C++14])
+    cxx14_option=unknown
+    save_CXXFLAGS=$CXXFLAGS
+    for option in "" "-std=gnu++14" "-std=gnu++1y" "-std=c++14" "-std=c++1y"; do
+      CXXFLAGS="$save_CXXFLAGS $option"
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #if __cplusplus < 201402
+          #error false
+        #endif]])], [cxx14_option=$option])
+      test "$cxx14_option" = "unknown" || break
+    done
+    CXXFLAGS=$save_CXXFLAGS
+    AC_MSG_RESULT([${cxx14_option:-none needed}])
+    ;;
+esac
 
 case "$with_cxx11_option" in
   no) ;;
   auto)
-    AC_MSG_CHECKING([for $CXX option to accept C++11])
-    with_cxx11_option=unknown
+    res=; test "$cxx14_option" = "unknown" || res=" but not C++14"
+    AC_MSG_CHECKING([for $CXX option to accept C++11$res])
+    save_CXXFLAGS=$CXXFLAGS
+    res=unknown
     for option in "" "-std=gnu++11" "-std=gnu++0x" "-std=c++11" "-std=c++0x"; do
-      if check_cxx11_support "$option"; then with_cxx11_option=$option; break; fi
+      test "$option" != "$cxx14_option" || continue
+      CXXFLAGS="$save_CXXFLAGS $option"
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #if __cplusplus < 201103 || 201402 <= __cplusplus
+          #error false
+        #endif]])], [res=$option])
+      test "$res" = "unknown" || break
     done
-    AC_MSG_RESULT([${with_cxx11_option:-none needed}])
-    test "$with_cxx11_option" != "unknown" || AC_MSG_ERROR([
-This version of smartmontools does not use C++11 features, but future
-versions possibly will.
-This script was unable to determine a compiler option to enable C++11.
-Use option '--with-cxx11-option=OPTION' to specify the compiler option
-(it will be used in the actual build only if '--with-cxx11-regex' is set).
-Use option '--without-cxx11-option' to suppress this error message if the
-compiler lacks C++11 support.
+    AC_MSG_RESULT([${res:-none needed}])
+    test "$res" != "unknown" || res=$cxx14_option
+    test "$res" != "unknown" || AC_MSG_ERROR([
+This script was unable to determine a compiler option to accept C++11.
+Use option '--with-cxx11-option=OPTION' to specify a compiler option.
+Use option '--without-cxx11-option' to try anyway without this check.
 In both cases, please send info about compiler and platform to
 $PACKAGE_BUGREPORT - Thanks!])
+    CXXFLAGS="$save_CXXFLAGS${res:+ }$res"
     ;;
   *)
     AC_MSG_CHECKING([whether $CXX $with_cxx11_option accepts C++11])
-    res=no; check_cxx11_support "$with_cxx11_option" && res=yes
+    CXXFLAGS="$CXXFLAGS${with_cxx11_option:+ }$with_cxx11_option"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+      #if __cplusplus < 201103
+        #error false
+      #endif]])], [res=yes], [res=no])
     AC_MSG_RESULT([$res])
     test "$res" = "yes" || AC_MSG_ERROR([$CXX $with_cxx11_option does not accept C++11])
     ;;
@@ -571,26 +605,10 @@ AC_ARG_WITH(cxx11-regex,
 need_regex=no
 if test "$with_cxx11_regex" = "yes"; then
   AC_DEFINE(WITH_CXX11_REGEX, 1, [Define to 1 to use C++11 std::regex instead of POSIX regex(3)])
-  case "$with_cxx11_option: $CXXFLAGS " in
-    no:*) AC_MSG_ERROR(['--with-cxx11-regex' requires C++11 support]) ;;
-    ?*:*\ $with_cxx11_option\ *) ;;
-    ?*:*) CXXFLAGS="$CXXFLAGS $with_cxx11_option" ;;
-  esac
 else
   AC_CHECK_FUNCS([regcomp], [], [need_regex=yes])
 fi
 AM_CONDITIONAL(NEED_REGEX, [test "$need_regex" = "yes"])
-
-# TODO: Remove after smartmontools 7.2
-AC_ARG_WITH(working-snprintf,
-  [AS_HELP_STRING([--with-working-snprintf], [(removed)])],
-  [ if test "$withval" != "yes"; then
-      AC_MSG_ERROR([
-The option '--without-working-snprintf' is no longer supported.
-If you still need support for pre-C99 snprintf(), please inform
-$PACKAGE_BUGREPORT.
-])
-    fi])
 
 AC_SUBST(releaseversion,['${PACKAGE}-${VERSION}'])
 AC_SUBST(smartmontools_release_date)
@@ -603,6 +621,7 @@ os_mailer=mail
 os_hostname="'hostname' 'uname -n'"
 os_dnsdomainname=
 os_nisdomainname="'domainname'"
+os_posix=yes
 os_darwin=no
 os_solaris=no
 os_win32=no
@@ -664,6 +683,7 @@ case "${host}" in
     ;;
   x86_64-*-mingw*)
     os_deps='os_win32.o dev_areca.o'
+    os_posix=no
     os_win32=yes
     os_win32_mingw=yes
     os_win64=yes
@@ -672,6 +692,7 @@ case "${host}" in
     ;;
   *-*-mingw*)
     os_deps='os_win32.o dev_areca.o'
+    os_posix=no
     os_win32=yes
     os_win32_mingw=yes
     os_man_filter=Windows
@@ -689,6 +710,7 @@ case "${host}" in
     ;;
   *-*-os2-*)
     os_deps='os_os2.o'
+    os_posix=no
     ;;
   *)
     os_deps='os_generic.o'
@@ -697,6 +719,12 @@ esac
 
 # Replace if '--with-os-deps' was specified
 test -z "$with_os_deps" || os_deps="$with_os_deps"
+
+AC_MSG_CHECKING([whether the OS provides a POSIX API])
+if test "$os_posix" = "yes"; then
+  AC_DEFINE(HAVE_POSIX_API, 1, [Define to 1 if the OS provides a POSIX API])
+fi
+AC_MSG_RESULT([$os_posix])
 
 # Check if we need adapter to old interface (dev_legacy.cpp)
 os_src=`echo "${os_deps}"|sed -n 's,^\([[^ .]]*\)\.o.*$,\1.cpp,p'`
@@ -742,6 +770,7 @@ fi
 AC_SUBST([DRIVEDB_BRANCH])
 
 # Enable platform-specific makefile sections
+AM_CONDITIONAL(OS_POSIX, [test "$os_posix" = "yes"])
 AM_CONDITIONAL(OS_DARWIN, [test "$os_darwin" = "yes"])
 AM_CONDITIONAL(OS_SOLARIS, [test "$os_solaris" = "yes"])
 AM_CONDITIONAL(OS_WIN32, [test "$os_win32" = "yes"])
@@ -760,15 +789,20 @@ if test "$GXX" = "yes"; then
     *\ -W\ *|*\ -Wextra\ *) ;;
     *) CXXFLAGS="$CXXFLAGS -W" ;;
   esac
-  # Add -Wformat=2 (GCC 3.0) -fstack-protector[-strong] (GCC 4.1[4.9]) if supported
-  # and no -W or -f option was set in configure cmdline (TODO: -Wformat-signedness)
-  for option in "-Wformat=2" "-fstack-protector-strong" "-fstack-protector"; do
+  # Add -Wformat=2 (GCC 3.0),
+  # -Werror=return-type (G++ >= 8.0 assumes that control never reaches the end of a non-void function),
+  # -fstack-protector[-strong] (GCC 4.1[4.9])
+  # if supported and no -W or -f option was set in configure cmdline (TODO: -Wformat-signedness)
+  for option in "-Wformat=2" "-Werror=return-type" "-fstack-protector-strong" "-fstack-protector"; do
     case " $orig_CXXFLAGS:$option" in *\ -W*:-W*|*\ -f*:-f*) continue ;; esac
     case " $CXXFLAGS:$option" in *\ -fstack-p*:-fstack-p*) continue ;; esac
     AC_MSG_CHECKING([whether $CXX supports $option])
     save_CXXFLAGS=$CXXFLAGS
     CXXFLAGS="$CXXFLAGS $option"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM()], [res=yes], [res=no; CXXFLAGS=$save_CXXFLAGS])
+    # For -fstack-protector*, check that '__stack_chk_*()' functions are available.
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[int i;]],
+      [[volatile char buf[10]; buf[i] = 0;]])],
+      [res=yes], [res=no; CXXFLAGS=$save_CXXFLAGS])
     AC_MSG_RESULT([$res])
   done
 else
@@ -875,6 +909,9 @@ info=`
       echo "doc file install path:  \`eval eval eval echo $docdir\`"
       echo "examples install path:  \`eval eval eval echo $exampledir\`"
       if test -n "$drivedbdir"; then
+        if test "$drivedbinstdir" != "$drivedbdir"; then
+          echo "installed drivedb file: \`eval eval eval echo $drivedbinstdir\`/drivedb.h"
+        fi
         echo "drive database file:    \`eval eval eval echo $drivedbdir\`/drivedb.h"
         if test "$with_update_smart_drivedb" = "yes"; then
           echo "database update script: \`eval eval eval echo $sbindir\`/update-smart-drivedb"
@@ -965,14 +1002,6 @@ Use option '--without-nvme-devicescan' to suppress this warning.
 ])  ;;
 esac
 
-# TODO: Remove after smartmontools 7.2
-if test -n "$with_working_snprintf"; then
-  AC_MSG_WARN([
-The option '--with-working-snprintf' is no longer needed and will be
-removed in a future version of smartmontools.
-])
-fi
-
 # TODO: Remove after smartmontools 7.3
 if test -n "$with_solaris_sparc_ata"; then
   AC_MSG_WARN([
@@ -992,3 +1021,10 @@ Use option '--without-libsystemd' to suppress this warning.
 ])
     fi ;;
 esac
+
+test "$cxx14_option" != "unknown" || AC_MSG_WARN([
+This version of smartmontools does not use C++14 enhancements, but
+future versions possibly will.
+This script was unable to determine a compiler option to enable C++14.
+Please send info about compiler and platform to
+$PACKAGE_BUGREPORT - Thanks!])

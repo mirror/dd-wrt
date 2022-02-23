@@ -11,7 +11,7 @@
 #define WINVER 0x0501
 #define _WIN32_WINNT WINVER
 
-char svnid[] = "$Id: wtssendmsg.c 4941 2019-08-08 18:56:36Z chrfranke $";
+char svnid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +24,7 @@ char svnid[] = "$Id: wtssendmsg.c 4941 2019-08-08 18:56:36Z chrfranke $";
 
 static int usage()
 {
-  printf("wtssendmsg $Revision: 4941 $ - Display a message box on client desktops\n"
+  printf("wtssendmsg $Revision$ - Display a message box on client desktops\n"
          "Copyright (C) 2012-19 Christian Franke, www.smartmontools.org\n\n"
          "Usage: wtssendmsg [-cas] [-t TIMEOUT] [-w 0..5] [-v] [\"Caption\"] \"Message\"|-\n"
          "       wtssendmsg -v\n\n"
