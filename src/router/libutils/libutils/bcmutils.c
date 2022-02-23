@@ -704,54 +704,55 @@ pid_t *find_pid_by_name(char *pidName)
 	pid_t *pidList = NULL;
 	int i = 0;
 
-	dir = opendir("/proc");
+	if ((dir = opendir("/proc")) != NULL) {
 
-	while ((next = readdir(dir)) != NULL) {
-		FILE *status;
-		char filename[READ_BUF_SIZE];
-		char buffer[READ_BUF_SIZE];
-		char name[READ_BUF_SIZE];
+		while ((next = readdir(dir)) != NULL) {
+			FILE *status;
+			char filename[READ_BUF_SIZE];
+			char buffer[READ_BUF_SIZE];
+			char name[READ_BUF_SIZE];
 
-		/*
-		 * Must skip ".." since that is outside /proc 
-		 */
-		if (strcmp(next->d_name, "..") == 0)
-			continue;
+			/*
+			 * Must skip ".." since that is outside /proc 
+			 */
+			if (strcmp(next->d_name, "..") == 0)
+				continue;
 
-		/*
-		 * If it isn't a number, we don't want it 
-		 */
-		if (!isdigit(*next->d_name))
-			continue;
+			/*
+			 * If it isn't a number, we don't want it 
+			 */
+			if (!isdigit(*next->d_name))
+				continue;
 
-		sprintf(filename, "/proc/%s/status", next->d_name);
-		if (!(status = fopen(filename, "r"))) {
-			continue;
-		}
-		if (fgets(buffer, READ_BUF_SIZE - 1, status) == NULL) {
+			sprintf(filename, "/proc/%s/status", next->d_name);
+			if (!(status = fopen(filename, "r"))) {
+				continue;
+			}
+			if (fgets(buffer, READ_BUF_SIZE - 1, status) == NULL) {
+				fclose(status);
+				continue;
+			}
 			fclose(status);
-			continue;
-		}
-		fclose(status);
 
-		/*
-		 * Buffer should contain a string like "Name: binary_name" 
-		 */
-		sscanf(buffer, "%*s %s", name);
-		// printf("buffer=[%s] name=[%s]\n",buffer,name);
-		if (strcmp(name, pidName) == 0) {
-			pidList = realloc(pidList, sizeof(pid_t) * (i + 2));
-			if (pidList)
-				pidList[i++] = strtol(next->d_name, NULL, 0);
+			/*
+			 * Buffer should contain a string like "Name: binary_name" 
+			 */
+			sscanf(buffer, "%*s %s", name);
+			// printf("buffer=[%s] name=[%s]\n",buffer,name);
+			if (strcmp(name, pidName) == 0) {
+				pidList = realloc(pidList, sizeof(pid_t) * (i + 2));
+				if (pidList)
+					pidList[i++] = strtol(next->d_name, NULL, 0);
+			}
 		}
-	}
 
-	if (pidList)
-		pidList[i] = 0;
-	else {
-		pidList = realloc(pidList, sizeof(pid_t));
 		if (pidList)
-			pidList[0] = -1;
+			pidList[i] = 0;
+		else {
+			pidList = realloc(pidList, sizeof(pid_t));
+			if (pidList)
+				pidList[0] = -1;
+		}
 	}
 	return pidList;
 
