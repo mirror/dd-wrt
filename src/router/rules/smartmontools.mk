@@ -5,7 +5,7 @@ smartmontools-configure:
 		CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		--prefix=/usr --libdir=/usr/lib
+		--prefix=/usr --libdir=/usr/lib --with-nvme-devicescan
 
 smartmontools:
 	$(MAKE) -C smartmontools svnversion.h
