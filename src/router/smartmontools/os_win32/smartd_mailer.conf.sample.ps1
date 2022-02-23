@@ -1,7 +1,7 @@
 # Sample file for smartd_mailer.conf.ps1
 #
 # Home page of code is: http://www.smartmontools.org
-# $Id: smartd_mailer.conf.sample.ps1 4338 2016-09-07 19:31:28Z chrfranke $
+# $Id$
 
 # SMTP Server
 $smtpServer = "smtp.domain.local"

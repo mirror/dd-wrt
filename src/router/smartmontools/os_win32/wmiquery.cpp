@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-const char * wmiquery_cpp_cvsid = "$Id: wmiquery.cpp 4760 2018-08-19 18:45:53Z chrfranke $"
+const char * wmiquery_cpp_cvsid = "$Id$"
   WMIQUERY_H_CVSID;
 
 

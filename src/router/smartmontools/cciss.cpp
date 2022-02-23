@@ -39,7 +39,7 @@
 #include "scsicmds.h"
 #include "utility.h"
 
-const char * cciss_cpp_cvsid = "$Id: cciss.cpp 4977 2019-11-22 19:57:04Z chrfranke $"
+const char * cciss_cpp_cvsid = "$Id$"
   CCISS_H_CVSID;
 
 typedef struct _ReportLUNdata_struct

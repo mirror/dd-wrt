@@ -14,7 +14,7 @@
 #ifndef NVMECMDS_H
 #define NVMECMDS_H
 
-#define NVMECMDS_H_CVSID "$Id: nvmecmds.h 5124 2020-12-04 20:40:43Z chrfranke $"
+#define NVMECMDS_H_CVSID "$Id$"
 
 #include "static_assert.h"
 

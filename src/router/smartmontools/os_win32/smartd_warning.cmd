@@ -8,7 +8,7 @@
 ::
 :: SPDX-License-Identifier: GPL-2.0-or-later
 ::
-:: $Id: smartd_warning.cmd 4760 2018-08-19 18:45:53Z chrfranke $
+:: $Id$
 ::
 
 verify other 2>nul

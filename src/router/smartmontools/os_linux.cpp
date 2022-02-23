@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2003-11 Bruce Allen
  * Copyright (C) 2003-11 Doug Gilbert <dgilbert@interlog.com>
- * Copyright (C) 2008-20 Christian Franke
+ * Copyright (C) 2008-22 Christian Franke
  *
  * Original AACRaid code:
  *  Copyright (C) 2014    Raghava Aditya <raghava.aditya@pmcs.com>
@@ -89,7 +89,7 @@
 
 #define ARGUSED(x) ((void)(x))
 
-const char * os_linux_cpp_cvsid = "$Id: os_linux.cpp 5089 2020-10-06 15:31:47Z chrfranke $"
+const char * os_linux_cpp_cvsid = "$Id$"
   OS_LINUX_H_CVSID;
 extern unsigned char failuretest_permissive;
 
@@ -110,11 +110,11 @@ public:
 
   virtual ~linux_smart_device();
 
-  virtual bool is_open() const;
+  virtual bool is_open() const override;
 
-  virtual bool open();
+  virtual bool open() override;
 
-  virtual bool close();
+  virtual bool close() override;
 
 protected:
   /// Return filedesc for derived classes.
@@ -214,7 +214,7 @@ public:
   linux_ata_device(smart_interface * intf, const char * dev_name, const char * req_type);
 
 protected:
-  virtual int ata_command_interface(smart_command_set command, int select, char * data);
+  virtual int ata_command_interface(smart_command_set command, int select, char * data) override;
 };
 
 linux_ata_device::linux_ata_device(smart_interface * intf, const char * dev_name, const char * req_type)
@@ -918,9 +918,9 @@ public:
   linux_scsi_device(smart_interface * intf, const char * dev_name,
                     const char * req_type, bool scanning = false);
 
-  virtual smart_device * autodetect_open();
+  virtual smart_device * autodetect_open() override;
 
-  virtual bool scsi_pass_through(scsi_cmnd_io * iop);
+  virtual bool scsi_pass_through(scsi_cmnd_io * iop) override;
 
 private:
   bool m_scanning; ///< true if created within scan_smart_devices
@@ -957,9 +957,9 @@ public:
 
   virtual ~linux_aacraid_device();
 
-  virtual bool open();
+  virtual bool open() override;
 
-  virtual bool scsi_pass_through(scsi_cmnd_io *iop);
+  virtual bool scsi_pass_through(scsi_cmnd_io *iop) override;
 
 private:
   //Device Host number
@@ -1022,7 +1022,7 @@ bool linux_aacraid_device::open()
       return set_err(ENOENT, "aac entry not found in /proc/devices");
 
     //Create misc device file in /dev/ used for communication with driver
-    if(mknod(dev_name,S_IFCHR,makedev(mjr,aHost)))
+    if(mknod(dev_name, S_IFCHR|0600, makedev(mjr,aHost)))
       return set_err(errno,"cannot create %s:%s",dev_name,strerror(errno));
 
     afd = ::open(dev_name,O_RDWR);
@@ -1193,12 +1193,12 @@ public:
 
   virtual ~linux_megaraid_device();
 
-  virtual smart_device * autodetect_open();
+  virtual smart_device * autodetect_open() override;
 
-  virtual bool open();
-  virtual bool close();
+  virtual bool open() override;
+  virtual bool close() override;
 
-  virtual bool scsi_pass_through(scsi_cmnd_io *iop);
+  virtual bool scsi_pass_through(scsi_cmnd_io *iop) override;
 
 private:
   unsigned int m_disknum;
@@ -1298,14 +1298,14 @@ bool linux_megaraid_device::open()
     while (fgets(line, sizeof(line), fp) != NULL) {
       int n1 = 0;
       if (sscanf(line, "%d megaraid_sas_ioctl%n", &mjr, &n1) == 1 && n1 == 22) {
-        n1=mknod("/dev/megaraid_sas_ioctl_node", S_IFCHR, makedev(mjr, 0));
+        n1=mknod("/dev/megaraid_sas_ioctl_node", S_IFCHR|0600, makedev(mjr, 0));
         if(report > 0)
           pout("Creating /dev/megaraid_sas_ioctl_node = %d\n", n1 >= 0 ? 0 : errno);
         if (n1 >= 0 || errno == EEXIST)
           break;
       }
       else if (sscanf(line, "%d megadev%n", &mjr, &n1) == 1 && n1 == 11) {
-        n1=mknod("/dev/megadev0", S_IFCHR, makedev(mjr, 0));
+        n1=mknod("/dev/megadev0", S_IFCHR|0600, makedev(mjr, 0));
         if(report > 0)
           pout("Creating /dev/megadev0 = %d\n", n1 >= 0 ? 0 : errno);
         if (n1 >= 0 || errno == EEXIST)
@@ -1511,7 +1511,7 @@ class linux_cciss_device
 public:
   linux_cciss_device(smart_interface * intf, const char * name, unsigned char disknum);
 
-  virtual bool scsi_pass_through(scsi_cmnd_io * iop);
+  virtual bool scsi_pass_through(scsi_cmnd_io * iop) override;
 
 private:
   unsigned char m_disknum; ///< Disk number.
@@ -1554,9 +1554,9 @@ public:
   linux_escalade_device(smart_interface * intf, const char * dev_name,
     escalade_type_t escalade_type, int disknum);
 
-  virtual bool open();
+  virtual bool open() override;
 
-  virtual bool ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out);
+  virtual bool ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out) override;
 
 private:
   escalade_type_t m_escalade_type; ///< Controller type
@@ -1986,10 +1986,10 @@ class linux_areca_ata_device
 {
 public:
   linux_areca_ata_device(smart_interface * intf, const char * dev_name, int disknum, int encnum = 1);
-  virtual smart_device * autodetect_open();
-  virtual bool arcmsr_lock();
-  virtual bool arcmsr_unlock();
-  virtual int arcmsr_do_scsi_io(struct scsi_cmnd_io * iop);
+  virtual smart_device * autodetect_open() override;
+  virtual bool arcmsr_lock() override;
+  virtual bool arcmsr_unlock() override;
+  virtual int arcmsr_do_scsi_io(struct scsi_cmnd_io * iop) override;
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -2000,10 +2000,10 @@ class linux_areca_scsi_device
 {
 public:
   linux_areca_scsi_device(smart_interface * intf, const char * dev_name, int disknum, int encnum = 1);
-  virtual smart_device * autodetect_open();
-  virtual bool arcmsr_lock();
-  virtual bool arcmsr_unlock();
-  virtual int arcmsr_do_scsi_io(struct scsi_cmnd_io * iop);
+  virtual smart_device * autodetect_open() override;
+  virtual bool arcmsr_lock() override;
+  virtual bool arcmsr_unlock() override;
+  virtual int arcmsr_do_scsi_io(struct scsi_cmnd_io * iop) override;
 };
 
 // Looks in /proc/scsi to suggest correct areca devices
@@ -2619,7 +2619,7 @@ smart_device * linux_scsi_device::autodetect_open()
 
     // DELL?
     if (!memcmp(req_buff + 8, "DELL    PERC", 12) || !memcmp(req_buff + 8, "MegaRAID", 8)
-        || !memcmp(req_buff + 16, "PERC H700", 9) || !memcmp(req_buff + 8, "LSI\0",4)
+        || !memcmp(req_buff + 16, "PERC ", 5) || !memcmp(req_buff + 8, "LSI\0",4)
     ) {
       close();
       set_err(EINVAL, "DELL or MegaRaid controller, please try adding '-d megaraid,N'");
@@ -2667,9 +2667,9 @@ public:
   linux_nvme_device(smart_interface * intf, const char * dev_name,
     const char * req_type, unsigned nsid);
 
-  virtual bool open();
+  virtual bool open() override;
 
-  virtual bool nvme_pass_through(const nvme_cmd_in & in, nvme_cmd_out & out);
+  virtual bool nvme_pass_through(const nvme_cmd_in & in, nvme_cmd_out & out) override;
 };
 
 linux_nvme_device::linux_nvme_device(smart_interface * intf, const char * dev_name,
@@ -2799,29 +2799,30 @@ class linux_smart_interface
 : public /*implements*/ smart_interface
 {
 public:
-  virtual std::string get_os_version_str();
+  virtual std::string get_os_version_str() override;
 
-  virtual std::string get_app_examples(const char * appname);
+  virtual std::string get_app_examples(const char * appname) override;
 
   virtual bool scan_smart_devices(smart_device_list & devlist,
-    const smart_devtype_list & types, const char * pattern = 0);
+    const smart_devtype_list & types, const char * pattern = 0) override;
 
 protected:
-  virtual ata_device * get_ata_device(const char * name, const char * type);
+  virtual ata_device * get_ata_device(const char * name, const char * type) override;
 
-  virtual scsi_device * get_scsi_device(const char * name, const char * type);
+  virtual scsi_device * get_scsi_device(const char * name, const char * type) override;
 
   virtual nvme_device * get_nvme_device(const char * name, const char * type,
-    unsigned nsid);
+    unsigned nsid) override;
 
-  virtual smart_device * autodetect_smart_device(const char * name);
+  virtual smart_device * autodetect_smart_device(const char * name) override;
 
-  virtual smart_device * get_custom_smart_device(const char * name, const char * type);
+  virtual smart_device * get_custom_smart_device(const char * name, const char * type) override;
 
-  virtual std::string get_valid_custom_dev_types_str();
+  virtual std::string get_valid_custom_dev_types_str() override;
 
 private:
-  static const int devxy_to_n_max = 103; // Max value of devxy_to_n() below
+  static constexpr int devxy_to_n_max = 701; // "/dev/sdzz"
+  static int devxy_to_n(const char * name, bool debug);
 
   void get_dev_list(smart_device_list & devlist, const char * pattern,
     bool scan_scsi, bool (* p_dev_sdxy_seen)[devxy_to_n_max+1],
@@ -2850,10 +2851,10 @@ std::string linux_smart_interface::get_app_examples(const char * appname)
   return "";
 }
 
-// "/dev/sdXY" -> 0-103
-// "/dev/disk/by-id/NAME" -> "../../sdXY" -> 0-103
+// "/dev/sdXY" -> 0-devxy_to_n_max
+// "/dev/disk/by-id/NAME" -> "../../sdXY" -> 0-devxy_to_n_max
 // Other -> -1
-static int devxy_to_n(const char * name, bool debug)
+int linux_smart_interface::devxy_to_n(const char * name, bool debug)
 {
   const char * xy;
   char dest[256];
@@ -2882,9 +2883,10 @@ static int devxy_to_n(const char * name, bool debug)
     // "[a-z]" -> 0-25
     return x - 'a';
 
-  if (!(x <= 'c' && 'a' <= y && y <= 'z' && !xy[2]))
+  if (!('a' <= y && y <= 'z' && !xy[2]))
     return -1;
-  // "[a-c][a-z]" -> 26-103
+  // "[a-z][a-z]" -> 26-701
+  STATIC_ASSERT((('z' - 'a' + 1) * ('z' - 'a' + 1) + ('z' - 'a')) == devxy_to_n_max);
   return (x - 'a' + 1) * ('z' - 'a' + 1) + (y - 'a');
 }
 
@@ -2970,7 +2972,7 @@ bool linux_smart_interface::get_dev_megasas(smart_device_list & devlist)
     n1=0;
     if (sscanf(line, "%d megaraid_sas_ioctl%n", &mjr, &n1) == 1 && n1 == 22) {
       scan_megasas = true;
-      n1=mknod("/dev/megaraid_sas_ioctl_node", S_IFCHR, makedev(mjr, 0));
+      n1=mknod("/dev/megaraid_sas_ioctl_node", S_IFCHR|0600, makedev(mjr, 0));
       if(scsi_debugmode > 0)
         pout("Creating /dev/megaraid_sas_ioctl_node = %d\n", n1 >= 0 ? 0 : errno);
       if (n1 >= 0 || errno == EEXIST)
@@ -3063,7 +3065,7 @@ bool linux_smart_interface::scan_smart_devices(smart_device_list & devlist,
     }
 
     get_dev_list(devlist, "/dev/sd[a-z]", true, p_dev_sdxy_seen, false, type_scsi_sat, autodetect);
-    get_dev_list(devlist, "/dev/sd[a-c][a-z]", true, p_dev_sdxy_seen, false, type_scsi_sat, autodetect);
+    get_dev_list(devlist, "/dev/sd[a-z][a-z]", true, p_dev_sdxy_seen, false, type_scsi_sat, autodetect);
 
     // get device list from the megaraid device
     get_dev_megasas(devlist);
@@ -3112,11 +3114,11 @@ linux_smart_interface::megasas_dcmd_cmd(int bus_no, uint32_t opcode, void *buf,
     return (-1);
   }
 
-  bzero(&ioc, sizeof(ioc));
+  memset(&ioc, 0, sizeof(ioc));
   struct megasas_dcmd_frame * dcmd = &ioc.frame.dcmd;
   ioc.host_no = bus_no;
   if (mbox)
-    bcopy(mbox, dcmd->mbox.w, mboxlen);
+    memcpy(dcmd->mbox.w, mbox, mboxlen);
   dcmd->cmd = MFI_CMD_DCMD;
   dcmd->timeout = 0;
   dcmd->flags = 0;
@@ -3168,7 +3170,7 @@ linux_smart_interface::megasas_pd_add_list(int bus_no, smart_device_list & devli
     list = reinterpret_cast<megasas_pd_list *>(realloc(list, list_size));
     if (!list)
       throw std::bad_alloc();
-    bzero(list, list_size);
+    memset(list, 0, list_size);
     if (megasas_dcmd_cmd(bus_no, MFI_DCMD_PD_GET_LIST, list, list_size, NULL, 0,
       NULL) < 0) 
     {
@@ -3206,8 +3208,8 @@ static unsigned get_kernel_release()
   return x * 100000 + y * 1000 + z;
 }
 
-// Check for SCSI host proc_name "hpsa"
-static bool is_hpsa(const char * name)
+// Check for SCSI host proc_name "hpsa" and HPSA raid_level
+static bool is_hpsa_in_raid_mode(const char * name)
 {
   char path[128];
   snprintf(path, sizeof(path), "/sys/block/%s/device", name);
@@ -3247,7 +3249,23 @@ static bool is_hpsa(const char * name)
   if (strcmp(proc_name, "hpsa"))
     return false;
 
-  return true;
+  // See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/scsi/hpsa.c?id=6417f03132a6952cd17ddd8eaddbac92b61b17e0#n693
+  snprintf(path, sizeof(path), "/sys/block/%s/device/raid_level", name);
+  fd = open(path, O_RDONLY);
+  if (fd < 0)
+    return false;
+
+  char raid_level[4];
+  n = read(fd, raid_level, sizeof(raid_level) - 1);
+  close(fd);
+  if (n < 3)
+    return false;
+  raid_level[n] = 0;
+
+  if (strcmp(raid_level, "N/A"))
+    return true;
+
+  return false;
 }
 
 // Guess device type (ata or scsi) based on device name (Linux
@@ -3302,8 +3320,8 @@ smart_device * linux_smart_interface::autodetect_smart_device(const char * name)
       return get_scsi_passthrough_device(usbtype, new linux_scsi_device(this, name, ""));
     }
 
-    // Fail if hpsa driver
-    if (is_hpsa(test_name))
+    // Fail if hpsa driver and device is using RAID
+    if (is_hpsa_in_raid_mode(test_name))
       return missing_option("-d cciss,N");
 
     // No USB bridge or hpsa driver found, assume regular SCSI device

@@ -4,7 +4,7 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-11 Bruce Allen
- * Copyright (C) 2008-20 Christian Franke
+ * Copyright (C) 2008-21 Christian Franke
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -42,7 +42,7 @@
 #include "utility.h"
 #include "svnversion.h"
 
-const char * smartctl_cpp_cvsid = "$Id: smartctl.cpp 5131 2020-12-15 21:30:33Z dpgilbert $"
+const char * smartctl_cpp_cvsid = "$Id$"
   CONFIG_H_CVSID SMARTCTL_H_CVSID;
 
 // Globals to control printing
@@ -145,7 +145,7 @@ static void Usage()
 "         Set action on bad checksum to one of: warn, exit, ignore\n\n"
 "  -r TYPE, --report=TYPE\n"
 "         Report transactions (see man page)\n\n"
-"  -n MODE[,STATUS], --nocheck=MODE[,STATUS]                     (ATA, SCSI)\n"
+"  -n MODE[,STATUS[,STATUS2]], --nocheck=MODE[,STATUS[,STATUS2]] (ATA, SCSI)\n"
 "         No check if: never, sleep, standby, idle (see man page)\n\n",
   getvalidarglist('d').c_str()); // TODO: Use this function also for other options ?
   pout(
@@ -176,8 +176,9 @@ static void Usage()
 "        Show device log. TYPE: error, selftest, selective, directory[,g|s],\n"
 "        xerror[,N][,error], xselftest[,N][,selftest], background,\n"
 "        sasphy[,reset], sataphy[,reset], scttemp[sts,hist],\n"
-"        scttempint,N[,p], scterc[,N,M], devstat[,N], defects[,N], ssd,\n"
-"        gplog,N[,RANGE], smartlog,N[,RANGE], nvmelog,N,SIZE\n\n"
+"        scttempint,N[,p], scterc[,N,M][,p|reset], devstat[,N], defects[,N],\n"
+"        ssd, gplog,N[,RANGE], smartlog,N[,RANGE], nvmelog,N,SIZE\n"
+"        tapedevstat\n\n"
 "  -v N,OPTION , --vendorattribute=N,OPTION                            (ATA)\n"
 "        Set display OPTION for vendor Attribute N (see man page)\n\n"
 "  -F TYPE, --firmwarebug=TYPE                                         (ATA)\n"
@@ -243,9 +244,9 @@ static std::string getvalidarglist(int opt)
            "xerror[,N][,error], xselftest[,N][,selftest], "
            "background, sasphy[,reset], sataphy[,reset], "
            "scttemp[sts,hist], scttempint,N[,p], "
-           "scterc[,N,M], devstat[,N], defects[,N], ssd, "
-           "gplog,N[,RANGE], smartlog,N[,RANGE], "
-           "nvmelog,N,SIZE";
+           "scterc[,N,M][,p|reset], devstat[,N], defects[,N], "
+           "ssd, gplog,N[,RANGE], smartlog,N[,RANGE], "
+           "nvmelog,N,SIZE, tapedevstat";
   case 'P':
     return "use, ignore, show, showall";
   case 't':
@@ -254,7 +255,8 @@ static std::string getvalidarglist(int opt)
   case 'F':
     return std::string(get_valid_firmwarebug_args()) + ", swapid";
   case 'n':
-    return "never, sleep[,STATUS], standby[,STATUS], idle[,STATUS]";
+    return "never, sleep[,STATUS[,STATUS2]], standby[,STATUS[,STATUS2]], "
+           "idle[,STATUS[,STATUS2]]";
   case 'f':
     return "old, brief, hex[,id|val]";
   case 'g':
@@ -491,6 +493,7 @@ static int parse_options(int argc, char** argv, const char * & type,
     case 'H':
       ataopts.smart_check_status = scsiopts.smart_check_status = nvmeopts.smart_check_status = true;
       scsiopts.smart_ss_media_log = true;
+      ++scsiopts.health_opt_count;
       break;
     case 'F':
       if (!strcmp(optarg, "swapid"))
@@ -540,13 +543,18 @@ static int parse_options(int argc, char** argv, const char * & type,
         ataopts.devstat_ssd_page = true;
         scsiopts.smart_ss_media_log = true;
       } else if (!strcmp(optarg,"scterc")) {
-        ataopts.sct_erc_get = true;
+        ataopts.sct_erc_get = 1;
       } else if (!strcmp(optarg,"scttemp")) {
         ataopts.sct_temp_sts = ataopts.sct_temp_hist = true;
+        scsiopts.smart_env_rep = true;
       } else if (!strcmp(optarg,"scttempsts")) {
         ataopts.sct_temp_sts = true;
       } else if (!strcmp(optarg,"scttemphist")) {
         ataopts.sct_temp_hist = true;
+      } else if (!strcmp(optarg,"tapealert")) {
+        scsiopts.tape_alert = true;
+      } else if (!strcmp(optarg,"tapedevstat")) {
+        scsiopts.tape_device_stats = true;
 
       } else if (!strncmp(optarg, "scttempint,", sizeof("scstempint,")-1)) {
         unsigned interval = 0; int n1 = -1, n2 = -1, len = strlen(optarg);
@@ -615,15 +623,20 @@ static int parse_options(int argc, char** argv, const char * & type,
           badarg = true;
 
       } else if (!strncmp(optarg, "scterc,", sizeof("scterc,")-1)) {
-        unsigned rt = ~0, wt = ~0; int n = -1;
-        sscanf(optarg,"scterc,%u,%u%n", &rt, &wt, &n);
-        if (n == (int)strlen(optarg) && rt <= 999 && wt <= 999) {
-          ataopts.sct_erc_set = true;
+        int n1 = -1, n2 = -1, len = strlen(optarg);
+        unsigned rt = ~0, wt = ~0;
+        sscanf(optarg, "scterc,%u,%u%n,p%n", &rt, &wt, &n1, &n2);
+        if ((n1 == len || n2 == len) && rt <= 999 && wt <= 999) {
+          ataopts.sct_erc_set = (n2 == len ? 2 : 1);
           ataopts.sct_erc_readtime = rt;
           ataopts.sct_erc_writetime = wt;
-        }
-        else {
-          snprintf(extraerror, sizeof(extraerror), "Option -l scterc,[READTIME,WRITETIME] syntax error\n");
+        } else if (!strcmp(optarg, "scterc,p")) {
+          ataopts.sct_erc_get = 2;
+        } else if (!strcmp(optarg, "scterc,reset")) {
+          ataopts.sct_erc_set = 3;
+          ataopts.sct_erc_readtime = ataopts.sct_erc_writetime = 0;
+        } else {
+          snprintf(extraerror, sizeof(extraerror), "Option -l scterc[,READTIME,WRITETIME][,p|reset] syntax error\n");
           badarg = true;
         }
       } else if (   !strncmp(optarg, "gplog,"   , sizeof("gplog,"   )-1)
@@ -717,7 +730,7 @@ static int parse_options(int argc, char** argv, const char * & type,
       ataopts.smart_selective_selftest_log = true;
       ataopts.smart_logdir = ataopts.gp_logdir = true;
       ataopts.sct_temp_sts = ataopts.sct_temp_hist = true;
-      ataopts.sct_erc_get = true;
+      ataopts.sct_erc_get = 1;
       ataopts.sct_wcache_reorder_get = true;
       ataopts.devstat_all_pages = true;
       ataopts.pending_defects_log = 31;
@@ -731,6 +744,8 @@ static int parse_options(int argc, char** argv, const char * & type,
       scsiopts.smart_background_log = true;
       scsiopts.smart_ss_media_log = true;
       scsiopts.sasphy = true;
+      scsiopts.smart_env_rep = true;
+      scsiopts.tape_device_stats = true;
       if (!output_format_set)
         ataopts.output_format |= ata_print_options::FMT_BRIEF;
       break;
@@ -863,10 +878,10 @@ static int parse_options(int argc, char** argv, const char * & type,
         scsiopts.powermode = 1;
       }
       else {
-        int n1 = -1, n2 = -1, len = strlen(optarg);
-        char s[7+1]; unsigned i = FAILPOWER;
-        sscanf(optarg, "%9[a-z]%n,%u%n", s, &n1, &i, &n2);
-        if (!((n1 == len || n2 == len) && i <= 255))
+        int n1 = -1, n2 = -1, n3 = -1, len = strlen(optarg);
+        char s[7+1]; unsigned i = FAILPOWER, j = 0;
+        sscanf(optarg, "%7[a-z]%n,%u%n,%u%n", s, &n1, &i, &n2, &j, &n3);
+        if (!((n1 == len || n2 == len || n3 == len) && i <= 255 && j <= 255))
           badarg = true;
         else if (!strcmp(s, "sleep")) {
           ataopts.powermode = 2;
@@ -881,6 +896,7 @@ static int parse_options(int argc, char** argv, const char * & type,
           badarg = true;
 
         ataopts.powerexit = i;
+        ataopts.powerexit_unsup = (n3 == len ? j : -1);
         scsiopts.powerexit = i;
       }
       break;
@@ -1134,7 +1150,7 @@ static int parse_options(int argc, char** argv, const char * & type,
       // Check whether the option is a long option that doesn't map to -h.
       if (arg[1] == '-' && optchar != 'h') {
         // Iff optopt holds a valid option then argument must be missing.
-        if (optopt && (optopt >= opt_scan || strchr(shortopts, optopt))) {
+        if (optopt && (optopt > '~' || strchr(shortopts, optopt))) {
           jerr("=======> ARGUMENT REQUIRED FOR OPTION: %s\n", arg+2);
           printvalidarglistmessage(optopt);
         } else
@@ -1405,6 +1421,14 @@ void jerr(const char *fmt, ...)
   va_end(ap);
 }
 
+static char startup_datetime_buf[DATEANDEPOCHLEN];
+
+// Print smartctl start-up date and time and timezone
+void jout_startup_datetime(const char *prefix)
+{
+  jout("%s%s\n", prefix, startup_datetime_buf);
+}
+
 // Globals to set failuretest() policy
 bool failuretest_conservative = false;
 unsigned char failuretest_permissive = 0;
@@ -1547,6 +1571,14 @@ static int main_worker(int argc, char **argv)
     int status = parse_options(argc, argv, type, ataopts, scsiopts, nvmeopts, print_type_only);
     if (status >= 0)
       return status;
+  }
+
+  // Store formatted current time for jout_startup_datetime()
+  // Output as JSON regardless of '-i' option
+  {
+    time_t now = time(nullptr);
+    dateandtimezoneepoch(startup_datetime_buf, now);
+    jglb["local_time"] += { {"time_t", now}, {"asctime", startup_datetime_buf} };
   }
 
   const char * name = argv[argc-1];

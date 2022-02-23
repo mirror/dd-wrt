@@ -11,7 +11,7 @@
 #ifndef STATIC_ASSERT_H
 #define STATIC_ASSERT_H
 
-#define STATIC_ASSERT_H_CVSID "$Id: static_assert.h 4934 2019-07-01 20:54:14Z chrfranke $"
+#define STATIC_ASSERT_H_CVSID "$Id$"
 
 #if __cplusplus >= 201103 || _MSVC_LANG >= 201103
 #define STATIC_ASSERT(x) static_assert((x), #x)

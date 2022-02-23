@@ -8,7 +8,7 @@
 # Please see man 8 smartd or man 5 smartd.conf for further
 # information.
 #
-# $Id: Example3 3958 2014-07-18 19:13:32Z chrfranke $
+# $Id$
 
 # Warn all users of a problem     
 wall <<EOF

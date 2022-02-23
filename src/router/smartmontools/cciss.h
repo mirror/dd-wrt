@@ -11,7 +11,7 @@
 #ifndef CCISS_H_
 #define CCISS_H_
 
-#define CCISS_H_CVSID "$Id: cciss.h 4761 2018-08-20 19:33:04Z chrfranke $"
+#define CCISS_H_CVSID "$Id$"
 
 int cciss_io_interface(int device, int target,
 			      struct scsi_cmnd_io * iop, int report);

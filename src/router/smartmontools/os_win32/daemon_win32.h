@@ -11,7 +11,7 @@
 #ifndef DAEMON_WIN32_H
 #define DAEMON_WIN32_H
 
-#define DAEMON_WIN32_H_CVSID "$Id: daemon_win32.h 4818 2018-10-17 05:32:17Z chrfranke $"
+#define DAEMON_WIN32_H_CVSID "$Id$"
 
 #include <signal.h>
 

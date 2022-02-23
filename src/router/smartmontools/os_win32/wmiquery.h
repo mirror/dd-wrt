@@ -11,7 +11,7 @@
 #ifndef WMIQUERY_H
 #define WMIQUERY_H
 
-#define WMIQUERY_H_CVSID "$Id: wmiquery.h 4760 2018-08-19 18:45:53Z chrfranke $"
+#define WMIQUERY_H_CVSID "$Id$"
 
 #include <wbemcli.h>
 

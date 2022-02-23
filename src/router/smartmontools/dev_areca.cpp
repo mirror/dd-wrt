@@ -13,7 +13,7 @@
 #include "dev_interface.h"
 #include "dev_areca.h"
 
-const char * dev_areca_cpp_cvsid = "$Id: dev_areca.cpp 5089 2020-10-06 15:31:47Z chrfranke $"
+const char * dev_areca_cpp_cvsid = "$Id$"
   DEV_ARECA_H_CVSID;
 
 #include "atacmds.h"

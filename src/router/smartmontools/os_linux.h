@@ -24,7 +24,7 @@
 #ifndef OS_LINUX_H_
 #define OS_LINUX_H_
 
-#define OS_LINUX_H_CVSID "$Id: os_linux.h 4842 2018-12-02 16:07:26Z chrfranke $\n"
+#define OS_LINUX_H_CVSID "$Id$\n"
 
 /* 
    The following definitions/macros/prototypes are used for three

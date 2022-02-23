@@ -11,7 +11,7 @@
 #ifndef SYSLOG_H
 #define SYSLOG_H
 
-#define SYSLOG_H_CVSID "$Id: syslog.h 4760 2018-08-19 18:45:53Z chrfranke $\n"
+#define SYSLOG_H_CVSID "$Id$\n"
 
 #include <stdarg.h>
 

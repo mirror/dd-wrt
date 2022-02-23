@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 #
-# $Id: Makefile.am 5036 2020-03-01 17:18:01Z chrfranke $
+# $Id$
 #
 
 @SET_MAKE@
@@ -151,6 +151,14 @@ EXTRA_smartd_SOURCES = \
         freebsd_nvme_ioctl.h \
         netbsd_nvme_ioctl.h \
         megaraid.h
+
+if OS_POSIX
+
+smartd_SOURCES += \
+        popen_as_ugid.cpp \
+        popen_as_ugid.h
+
+endif
 
 if OS_WIN32_MINGW
 
@@ -349,7 +357,7 @@ EXTRA_DIST = \
         os_win32/smartd_mailer.conf.sample.ps1 \
         os_win32/smartd_warning.cmd \
         os_win32/syslogevt.mc \
-        os_win32/update-smart-drivedb.nsi \
+        os_win32/update-smart-drivedb.ps1.in \
         os_win32/versioninfo.rc.in \
         os_win32/wtssendmsg.c \
         $(docs_DATA) \
@@ -432,7 +440,7 @@ endif
 
 
 if ENABLE_DRIVEDB
-drivedb_DATA = drivedb.h
+drivedbinst_DATA = drivedb.h
 endif
 
 update-smart-drivedb: update-smart-drivedb.in config.status
@@ -515,7 +523,7 @@ smartd.service: smartd.service.in Makefile
 # Create empty directories if configured.
 # Default install rules no longer create empty directories since automake 1.11.
 installdirs-local:
-	@for d in '$(smartdplugindir)' '$(savestatesdir)' '$(attributelogdir)'; do \
+	@for d in '$(smartdplugindir)' '$(drivedbdir)' '$(savestatesdir)' '$(attributelogdir)'; do \
 	  test -n "$$d" || continue; \
 	  echo " $(MKDIR_P) '$(DESTDIR)$$d'"; \
 	  $(MKDIR_P) "$(DESTDIR)$$d" || exit 1; \
@@ -543,9 +551,15 @@ MAN_FILTER = { \
         -e 's|/usr/bin/mail|/usr/bin/$(os_mailer)|g' \
         -e 's|RELEASE_6_0_DRIVEDB|$(DRIVEDB_BRANCH)|g' | \
     if test -n '$(drivedbdir)'; then \
-      sed 's|/usr/local/share/smartmontools/drivedb\.h|$(drivedbdir)/drivedb.h|g' ; \
+      sed -e 's|/usr/local/share/smartmontools/drivedb\.h|$(drivedbinstdir)/drivedb.h|g' \
+          -e 's|/usr/local/var/lib/smartmontools/drivedb\.h|$(drivedbdir)/drivedb.h|g'  ; \
     else \
       sed '/^\.\\" %IF ENABLE_DRIVEDB/,/^\.\\" %ENDIF ENABLE_DRIVEDB/ s,^,.\\"\# ,' ; \
+    fi | \
+    if test '$(drivedbinstdir)' != '$(drivedbdir)'; then \
+      cat; \
+    else \
+      sed '/^\.\\" %IF ENABLE_DB_INSTALL/,/^\.\\" %ENDIF ENABLE_DB_INSTALL/ s,^,.\\"\# ,' ; \
     fi | \
     if test '$(with_update_smart_drivedb)' = 'yes'; then \
       cat; \
@@ -687,7 +701,8 @@ txtman:  smartctl.8.txt smartd.8.txt smartd.conf.5.txt update-smart-drivedb.8.tx
 
 # Check drive database syntax
 check:
-	@if ./smartctl -B $(srcdir)/drivedb.h -P showall >/dev/null; then \
+	@if ./smartctl -P showall >/dev/null && \
+	    ./smartctl -B $(srcdir)/drivedb.h -P showall >/dev/null; then \
 	  echo "$(srcdir)/drivedb.h: OK"; \
 	else \
 	  echo "$(srcdir)/drivedb.h: Syntax check failed"; exit 1; \
@@ -794,10 +809,8 @@ EXEFILES_WIN32 = \
         $(exedir_win32)/wtssendmsg.exe
 
 if ENABLE_DRIVEDB
-if OS_WIN32_NSIS
 EXEFILES_WIN32 += \
-        $(exedir_win32)/update-smart-drivedb.exe
-endif
+        $(exedir_win32)/update-smart-drivedb.ps1
 endif
 
 FILES_WIN32 = \
@@ -834,7 +847,7 @@ CLEANFILES += \
         smartctl_res.rc smartd_res.rc \
         syslogevt.h \
         syslogevt.rc syslogevt_*.bin \
-        update-smart-drivedb.exe \
+        update-smart-drivedb.ps1 \
         wtssendmsg.exe wtssendmsg_res.rc
 
 # Note: Only use without options to be compatible with all variants
@@ -875,10 +888,6 @@ $(distinst_win32): os_win32/installer.nsi smartctl_res.rc distdir.mkdir $(FILES_
 	sha1sum $@ > $@.sha1
 	sha256sum $@ > $@.sha256
 
-# Build drivedb.h update tool
-update-smart-drivedb.exe: os_win32/update-smart-drivedb.nsi
-	"$(MAKENSIS)" -V2 -NOCD -DBRANCH=$(DRIVEDB_BRANCH) $<
-
 else
 $(distinst_win32):
 	@echo "makensis: command not found. Please install NSIS from http://nsis.sourceforge.net/" 1>&2
@@ -898,10 +907,6 @@ $(exedir_win32)/%.exe: %.exe
 	if test -n '$(STRIP)'; then $(STRIP) -s $@; else strip -s $@; fi
 	touch -r $< $@
 
-# strip would break NSIS integrity check
-$(exedir_win32)/update-smart-drivedb.exe: update-smart-drivedb.exe
-	cp -p $< $@
-
 $(exedir_win32)/%.h: $(srcdir)/%.h
 	$(UNIX2DOS) < $< > $@
 	touch -r $< $@
@@ -911,6 +916,10 @@ $(exedir_win32)/%.cmd: $(srcdir)/os_win32/%.cmd
 	touch -r $< $@
 
 $(exedir_win32)/%.ps1: $(srcdir)/os_win32/%.ps1
+	$(UNIX2DOS) < $< > $@
+	touch -r $< $@
+
+$(exedir_win32)/%.ps1: %.ps1
 	$(UNIX2DOS) < $< > $@
 	touch -r $< $@
 
@@ -962,9 +971,24 @@ runcmda.exe: runcmd.o runcmda_res.o
 wtssendmsg.exe: os_win32/wtssendmsg.c wtssendmsg_res.o
 	$(CC) -Os -o $@ $^ -lwtsapi32
 
-# Build os_win32/vc14/{config.h,smart*.rc,svnversion.h} for MSVC14 from MinGW files
+# Build drivedb.h update script
+update-smart-drivedb.ps1: os_win32/update-smart-drivedb.ps1.in config.status
+	$(SHELL) ./config.status --file=$@:$<
 
-vcver = 14
+# MSVC Version to change in make command line
+vc = 16
+vcver = $(vc)
+
+.PHONY: check-vc-version clean-vc config-vc distclean-vc maintainer-clean-vc
+
+check-vc-version:
+	@case '$(vcver)' in \
+	  14|15|16) test -d '$(srcdir)/os_win32/vc$(vcver)' || \
+	    { echo '$(srcdir)/os_win32/vc$(vcver): Not found (not included in src tarball)' >&2; exit 1; } ;; \
+	  *) echo 'Usage: $(MAKE) vc=14|15|16 config-vc clean-vc distclean-vc maintainer-clean-vc'; exit 1 ;; \
+	esac
+
+# Build os_win32/vcNN/{config.h,smart*.rc,svnversion.h} for MSVC14/15/16 from MinGW files
 
 CONFIG_VC_FILES = \
         $(srcdir)/os_win32/vc$(vcver)/config.h \
@@ -972,11 +996,11 @@ CONFIG_VC_FILES = \
         $(srcdir)/os_win32/vc$(vcver)/smartd_res.rc \
         $(srcdir)/os_win32/vc$(vcver)/svnversion.h
 
-config-vc$(vcver): $(CONFIG_VC_FILES)
+config-vc: check-vc-version $(CONFIG_VC_FILES)
 
 $(srcdir)/os_win32/vc$(vcver)/config.h: config.h Makefile
 	sed -e '1i/* os_win32/vc$(vcver)/config.h.  Generated from config.h by Makefile.  */' \
-	    -e 's,^#define HAVE_\(ATTR_PACKED\|GETTIMEOFDAY\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
+	    -e 's,^#define HAVE_\(ATTR_PACKED\|CLOCK_GETTIME\|GETTIMEOFDAY\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
 	    -e 's,^\(#define SMARTMONTOOLS_BUILD_HOST "[^-]*\)[^"]*,\1-pc-w32vc$(vcver),' $< > $@
 
 $(srcdir)/os_win32/vc$(vcver)/svnversion.h: svnversion.h
@@ -988,18 +1012,23 @@ $(srcdir)/os_win32/vc$(vcver)/smartctl_res.rc: smartctl_res.rc
 $(srcdir)/os_win32/vc$(vcver)/smartd_res.rc: smartd_res.rc
 	sed '/^1 24 /d' $< > $@
 
-clean-vc$(vcver):
+# VC14: smartmontools.VC.*, VC15/16: .vs/smartmontools/vNN/*
+clean-vc: check-vc-version
 	rm -f $(srcdir)/os_win32/vc$(vcver)/smartmontools.VC.VC.opendb
 	rm -f $(srcdir)/os_win32/vc$(vcver)/smartmontools.VC.db
+	rm -f $(srcdir)/os_win32/vc$(vcver)/.vs/smartmontools/v$(vcver)/Browse.VC.opendb
+	rm -f $(srcdir)/os_win32/vc$(vcver)/.vs/smartmontools/v$(vcver)/*.VC.db*
+	rm -rf $(srcdir)/os_win32/vc$(vcver)/.vs/smartmontools/v$(vcver)/ipch
 	rm -f $(srcdir)/os_win32/vc$(vcver)/syslogevt.h
 	rm -rf $(srcdir)/os_win32/vc$(vcver)/Debug
 	rm -rf $(srcdir)/os_win32/vc$(vcver)/Release
 	rm -rf $(srcdir)/os_win32/vc$(vcver)/x64
 
-distclean-vc$(vcver): clean-vc$(vcver)
+distclean-vc: clean-vc
 	rm -f $(CONFIG_VC_FILES)
 
-maintainer-clean-vc$(vcver): distclean-vc$(vcver)
+maintainer-clean-vc: distclean-vc
+	rm -f $(srcdir)/os_win32/vc$(vcver)/*.vcxproj.user
 	rm -rf $(srcdir)/os_win32/vc$(vcver)/.vs
 
 endif

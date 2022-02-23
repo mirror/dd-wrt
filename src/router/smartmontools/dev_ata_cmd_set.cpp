@@ -15,7 +15,7 @@
 
 #include <errno.h>
 
-const char * dev_ata_cmd_set_cpp_cvsid = "$Id: dev_ata_cmd_set.cpp 4760 2018-08-19 18:45:53Z chrfranke $"
+const char * dev_ata_cmd_set_cpp_cvsid = "$Id$"
   DEV_ATA_CMD_SET_H_CVSID;
 
 

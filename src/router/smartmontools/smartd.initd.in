@@ -3,7 +3,7 @@
 # smartmontools init file for smartd
 # Copyright (C) 2002-8 Bruce Allen
 # SPDX-License-Identifier: GPL-2.0-or-later
-# $Id: smartd.initd.in 4760 2018-08-19 18:45:53Z chrfranke $
+# $Id$
 
 # For RedHat and cousins:
 # chkconfig: 2345 40 40
