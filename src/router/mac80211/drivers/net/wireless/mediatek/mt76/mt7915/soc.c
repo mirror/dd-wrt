@@ -125,7 +125,7 @@ mt7986_wmac_adie_efuse_read(struct mt7915_dev *dev, u8 adie,
 		return ret;
 
 	ret = read_poll_timeout(mt76_wmac_spi_read, temp,
-				!FIELD_GET(MT_ADIE_EFUSE_KICK_MASK, val),
+				!temp && !FIELD_GET(MT_ADIE_EFUSE_KICK_MASK, val),
 				USEC_PER_MSEC, 50 * USEC_PER_MSEC, false,
 				dev, adie, MT_ADIE_EFUSE2_CTRL, &val);
 	if (ret)
@@ -327,14 +327,22 @@ out:
 	return 0;
 }
 
+static inline u16 mt7986_adie_idx(u8 adie, u32 adie_type)
+{
+	if (adie == 0)
+		return u32_get_bits(adie_type, MT_ADIE_IDX0);
+	else
+		return u32_get_bits(adie_type, MT_ADIE_IDX1);
+}
+
 static inline bool is_7975(struct mt7915_dev *dev, u8 adie, u32 adie_type)
 {
-	return u32_get_bits(adie_type, MT_ADIE_IDX(adie)) == 0x7975;
+	return mt7986_adie_idx(adie, adie_type) == 0x7975;
 }
 
 static inline bool is_7976(struct mt7915_dev *dev, u8 adie, u32 adie_type)
 {
-	return u32_get_bits(adie_type, MT_ADIE_IDX(adie)) == 0x7976;
+	return mt7986_adie_idx(adie, adie_type) == 0x7976;
 }
 
 static int mt7986_wmac_adie_thermal_cal(struct mt7915_dev *dev, u8 adie)
@@ -1126,9 +1134,9 @@ static int mt7986_wmac_probe(struct platform_device *pdev)
 	struct mt7915_dev *dev;
 	struct mt76_dev *mdev;
 	int irq, ret;
-	u64 chip_id;
+	u32 chip_id;
 
-	chip_id = (u64)of_device_get_match_data(&pdev->dev);
+	chip_id = (uintptr_t)of_device_get_match_data(&pdev->dev);
 
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0)
