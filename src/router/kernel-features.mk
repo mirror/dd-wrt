@@ -177,6 +177,8 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_DEBUG_FS is not set/CONFIG_DEBUG_FS=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_FW_LOADER is not set/CONFIG_FW_LOADER=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_HW_RANDOM is not set/CONFIG_HW_RANDOM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_HW_RANDOM=m/CONFIG_HW_RANDOM=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_GCOV_KERNEL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DYNAMIC_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IRQ_DOMAIN_DEBUG is not set" >> $(LINUXDIR)/.config; \
