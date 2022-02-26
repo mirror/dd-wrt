@@ -148,6 +148,9 @@ void start_radvd(void)
 			}
 			fprintf(fp, "{};\n");
 		}
+		if (dns_list)
+			free_dns_list(dns_list);
+
 
 		fprintf(fp, "};\n");
 		fclose(fp);

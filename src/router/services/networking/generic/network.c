@@ -4051,9 +4051,11 @@ void run_wan(int status)
 			dns_to_resolv();
 			dns_list = get_dns_list(0);
 
-			if (dns_list)
+			if (dns_list) {
 				for (i = 0; i < dns_list->num_servers; i++)
 					route_add(wan_iface, 0, dns_list->dns_server[i].ip, nvram_safe_get("pptp_wan_gateway_static"), "255.255.255.255");
+				free_dns_list(dns_list);
+			}
 			route_del(wan_iface, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway_static"), "0.0.0.0");
 
 			start_firewall();
