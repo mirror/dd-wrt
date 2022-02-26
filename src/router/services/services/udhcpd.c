@@ -242,8 +242,8 @@ void start_udhcpd(void)
 			fprintf(fp, "\n");
 		}
 	}
-
-	free_dns_list(dns_list);
+	if (dns_list)
+		free_dns_list(dns_list);
 
 	/*
 	 * DHCP Domain 
