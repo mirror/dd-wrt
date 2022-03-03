@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6442 | brainslayer | 2022-03-01 15:30:27 +0700 (Tue, 01 Mar 2022) | 1 line
+
+use only hw random if kernel as compiled in support for it
+------------------------------------------------------------------------
 r6441 | brainslayer | 2022-02-25 19:13:42 +0700 (Fri, 25 Feb 2022) | 1 line
 
 use older hwrng method
