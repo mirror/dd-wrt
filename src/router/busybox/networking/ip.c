@@ -265,7 +265,7 @@
 //usage:       "	[mode ipip|gre|sit] [remote ADDR] [local ADDR] [ttl TTL]"
 //usage:#define iptunnel_full_usage "\n\n"
 //usage:       "iptunnel add|change|del|show [NAME]\n"
-//usage:       "	[mode ipip|gre|sit] [remote ADDR] [local ADDR]\n"
+//usage:       "	[mode ipip|gre|sit|etherip] [remote ADDR] [local ADDR]\n"
 //usage:       "	[[i|o]seq] [[i|o]key KEY] [[i|o]csum]\n"
 //usage:       "	[ttl TTL] [tos TOS] [[no]pmtudisc] [dev PHYS_DEV]"
 //usage:
