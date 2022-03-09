@@ -547,3 +547,8 @@ td.bulle {
   padding: 2px;
   border-radius: 2px;
 }
+.remove[disabled], .add[disabled],
+.remove[disabled]:hover, .add[disabled]:hover {
+  background-color: transparent !important;
+  opacity: .6
+}
