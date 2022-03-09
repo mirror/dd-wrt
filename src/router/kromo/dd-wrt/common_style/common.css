@@ -280,9 +280,6 @@ table {
   width: 100%;
   border-spacing: .1em;
 }
-table td {
-  padding: 0;
-}
 table tr th {
   border-style: solid;
   border-width: 1px;
@@ -549,4 +546,9 @@ td.bulle {
   text-align: center;
   padding: 2px;
   border-radius: 2px;
+}
+.remove[disabled], .add[disabled],
+.remove[disabled]:hover, .add[disabled]:hover {
+  background-color: transparent !important;
+  opacity: .6
 }

@@ -34,7 +34,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
-	websWrite(wp, "<th>&nbsp;</th></tr>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th>", "</th>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
