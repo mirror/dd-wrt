@@ -151,7 +151,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbshare_del%s\\\" onclick=\\\"removeSambaShare(this);\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbshare_del%s\\\" onclick=\\\"removeSambaShare(this);\\\" />\");\n//]]>\n</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
@@ -279,7 +279,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		}
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbuser_del%s\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbuser_del%s\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");\n//]]>\n</script>\n",
 			  number);
 
 		websWrite(wp, "			</td>\n");

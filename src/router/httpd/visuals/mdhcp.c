@@ -95,7 +95,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>\n");
 		// 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</tr>\n");
 		count++;
@@ -136,7 +136,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, "1440");
 		websWrite(wp, "</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"bin\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
 			  i);
 		websWrite(wp, "</tr>\n");
 		totalcount++;

@@ -139,7 +139,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "				<td align=\"center\">\n");
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"bin\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
+			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
