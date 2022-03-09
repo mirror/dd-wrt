@@ -1877,7 +1877,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1885,7 +1885,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2472,6 +2472,15 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 
 void do_ddwrt_inspired_themes(webs_t wp);
 
+static int do_buttons_css(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+{
+	if (nvram_matchi("router_style_dark", 1)) {
+		return do_file(method, handler, "images/buttons_dark.css", stream);
+	} else {
+		return do_file(method, handler, url, stream);
+	}
+}
+
 #ifdef HAVE_STATUS_SYSLOG
 static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
@@ -2833,6 +2842,7 @@ static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_ROUTERSTYLE
 	{ "style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
+	{ "images/buttons.css", "text/css", do_cache, NULL, do_buttons_css, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
