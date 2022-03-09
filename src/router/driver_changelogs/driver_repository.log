@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6443 | brainslayer | 2022-03-09 20:58:37 +0700 (Wed, 09 Mar 2022) | 1 line
+
+need to consider additional config flags for rng
+------------------------------------------------------------------------
 r6442 | brainslayer | 2022-03-01 15:30:27 +0700 (Tue, 01 Mar 2022) | 1 line
 
 use only hw random if kernel as compiled in support for it
