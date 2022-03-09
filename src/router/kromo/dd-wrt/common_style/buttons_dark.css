@@ -1,23 +1,23 @@
 .remove {
-  background: url(/images/remove-white.svg) center no-repeat;
+  background: url(/images/remove-white.svg) center no-repeat !important;
   cursor: pointer;
   height: 16px;
   width: 16px;
 }
 .remove:hover {
-  background: url(/images/remove-white.svg) center no-repeat;
+  background: url(/images/remove-white.svg) center no-repeat !important;
   filter: saturate(4) contrast(2);
   height: 16px;
   width: 16px;
 }
 .add {
-  background: url(/images/add-white.svg) center no-repeat;
+  background: url(/images/add-white.svg) center no-repeat !important;
   cursor: pointer;
   height: 16px;
   width: 16px;
 }
 .add:hover {
-  background: url(/images/add-white.svg) center no-repeat;
+  background: url(/images/add-white.svg) center no-repeat !important;
   filter: saturate(4) contrast(2);
   height: 16px;
   width: 16px;
