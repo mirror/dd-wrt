@@ -81,7 +81,7 @@ function setUPnPTable(forwards) {
 		cell = row.insertCell(-1);
 		cell.title = upnp.msg1;
 		cell.align = "center";
-		cell.innerHTML = "<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deleteForward(" + i + ")\" />";
+		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deleteForward(" + i + ")\" />";
 	}
 }
 

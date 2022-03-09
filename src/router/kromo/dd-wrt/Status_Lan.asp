@@ -53,7 +53,7 @@ function setPPTPTable() {
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
 		cell.align = "center";
-		cell.innerHTML = "<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deletepptp('" + val[i + 4] + "')\" />";
+		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deletepptp('" + val[i + 4] + "')\" />";
 	}
 }
 
@@ -82,7 +82,7 @@ function setPPPOETable() {
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
 		cell.align = "center";
-		cell.innerHTML = "<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deletepptp('" + val[i + 3] + "')\" />";
+		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deletepptp('" + val[i + 3] + "')\" />";
 	}
 }
 
@@ -121,7 +121,7 @@ function setDHCPTable() {
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err58;
 		cell.align = "center";
-		cell.innerHTML = "<input class=\"bin\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deleteLease('" + val[i+1] + "', '" + val[i+2] + "')\" />";
+		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deleteLease('" + val[i+1] + "', '" + val[i+2] + "')\" />";
 		var cellbutton = row.insertCell(-1);
 		cellbutton.title = errmsg.err582;
 		cellbutton.align = "center";
@@ -343,9 +343,9 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
-											<th sortdir="up" width="32%"><% tran("share.hostname"); %></th>
+											<th sortdir="up" width="20%"><% tran("share.hostname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
-											<th sortdir="up" width="17%"><% tran("share.mac"); %></th>
+											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<th sortdir="up" width="5%"><% tran("share.del"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.static_lease"); %></th>
