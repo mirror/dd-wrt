@@ -280,9 +280,6 @@ table {
   width: 100%;
   border-spacing: .1em;
 }
-table td {
-  padding: 0;
-}
 table tr th {
   border-style: solid;
   border-width: 1px;

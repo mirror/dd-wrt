@@ -11,6 +11,7 @@
   width: 16px;
   border: 0;
   box-shadow: none;
+  outline: 0;
 }
 .add {
   background: url(/images/add-black.svg) center no-repeat;
@@ -25,4 +26,5 @@
   width: 16px;
   border: 0;
   box-shadow: none;
+  outline: 0
 }
