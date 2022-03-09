@@ -38,7 +38,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "share.start", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
-	websWrite(wp, "<th>&nbsp;</th></tr>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th>", "</th>\n");
 	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
