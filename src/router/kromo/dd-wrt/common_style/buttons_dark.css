@@ -1,24 +1,28 @@
 .remove {
-  background: url(/images/remove-white.svg) center no-repeat !important;
+  background: url(/images/remove-white.svg) center no-repeat;
   cursor: pointer;
   height: 16px;
   width: 16px;
+  border: 0;
 }
-.remove:hover {
-  background: url(/images/remove-white.svg) center no-repeat !important;
-  filter: saturate(4) contrast(2);
+.remove:hover, .remove:focus, .remove:focus-within, .remove:focus-visible {
+  background: url(/images/remove-hover.svg) center no-repeat;
   height: 16px;
   width: 16px;
+  border: 0;
+  box-shadow: none;
 }
 .add {
-  background: url(/images/add-white.svg) center no-repeat !important;
+  background: url(/images/add-white.svg) center no-repeat;
   cursor: pointer;
   height: 16px;
   width: 16px;
+  border: 0;
 }
-.add:hover {
-  background: url(/images/add-white.svg) center no-repeat !important;
-  filter: saturate(4) contrast(2);
+.add:hover, .add:focus, .add:focus-within, .add:focus-visible {
+  background: url(/images/add-hover.svg) center no-repeat;
   height: 16px;
   width: 16px;
+  border: 0;
+  box-shadow: none;
 }
