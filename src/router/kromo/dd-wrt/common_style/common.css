@@ -92,17 +92,25 @@ select[onchange='ServiceTable'] {
 #scorebar {
   background-image: url(/style/gradient.jpg);
   background-repeat: no-repeat;
-  background-position: 0 0;
+  border-radius: 2px;
   position: absolute;
   width: 100px;
   z-index: 0;
 }
 #scorebarBorder {
-  background: #333;
-  border: 1px solid #000;
+  background: #f6f6f6;
+  border: 1px solid #f6f6f6;
+  border-radius: 2px;
   height: 16px;
   margin-bottom: 2px;
   width: 100px;
+}
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  color: #000;
+  text-align: right;
+  vertical-align: middle;
 }
 #wrapper {
   position: relative;
@@ -546,9 +554,4 @@ td.bulle {
   text-align: center;
   padding: 2px;
   border-radius: 2px;
-}
-.remove[disabled], .add[disabled],
-.remove[disabled]:hover, .add[disabled]:hover {
-  background-color: transparent !important;
-  opacity: .6
 }

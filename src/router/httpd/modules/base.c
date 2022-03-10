@@ -2472,15 +2472,6 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 
 void do_ddwrt_inspired_themes(webs_t wp);
 
-static int do_buttons_css(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
-{
-	if (nvram_matchi("router_style_dark", 1)) {
-		return do_file(method, handler, "style/buttons_dark.css", stream);
-	} else {
-		return do_file(method, handler, url, stream);
-	}
-}
-
 #ifdef HAVE_STATUS_SYSLOG
 static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
@@ -2842,7 +2833,6 @@ static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_ROUTERSTYLE
 	{ "style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "style/buttons.css", "text/css", no_cache, NULL, do_buttons_css, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
