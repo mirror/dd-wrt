@@ -799,8 +799,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
 	websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
 	websWrite(wp, "//]]>\n</script>\n");
-
-	websWrite(wp, "<br />\n");
+  // comment out break, looks better.
+	//websWrite(wp, "<br />\n");
 
 }
 #endif
