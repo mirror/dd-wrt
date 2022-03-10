@@ -2846,8 +2846,9 @@ static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_REGISTER
 	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
+	{ "graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.css", "text/css", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
