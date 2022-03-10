@@ -2795,6 +2795,27 @@ ias.hl_client_access="Für Gerätezugang";
 ias.hl_for_conf="Für Konfiguration";
 ias.hl_guest_card="Gästekarte";
 
+// ** Speedchecker.asp **//
+var speedchecker=new Object();
+speedchecker.titl="Speedchecker";
+speedchecker.legend="Speedchecker";
+speedchecker.server="Speedchecker Service";
+speedchecker.regtitle="Bitte teilen sie Informationen mit uns:";
+speedchecker.savemessage="Bitte Speichern oder Wenden Sie an";
+// ** feature display boxes **//
+speedchecker.nfeath4title="WLAN Speedchecker";
+speedchecker.nfeath4txt="Wird deine WLAN Geschwindigkeit langsamer? Testen Sie ihre Geschwindigkeit mit nur einem Klick.";
+speedchecker.nfeatbutton="&nbsp;&nbsp;Klicken Sie hier um ihre Geschwindigkeit zu testen&nbsp;&nbsp;";
+
+var dnscrypt=new Object();
+dnscrypt.nfeath4title="DNSCrypt";
+dnscrypt.nfeath4txt="<a>DNSCrypt</a> Authentifiziert die Kommunikation mit ihrem DNS Client und einem DNS Resolver. Dies Verhindert DNS Spoofing.";
+dnscrypt.nfeatbutton="&nbsp;&nbsp;Gehen Sie auf den Services Reiter&nbsp;&nbsp;";
+
+var featureshead=new Object();
+featureshead.h2title="Efahren Sie mehr über unseren neuen Features!&nbsp;&nbsp;";
+featureshead.hidebtn="Diese Feld verstecken";
+
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
