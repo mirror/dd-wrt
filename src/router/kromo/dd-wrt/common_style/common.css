@@ -90,7 +90,7 @@ select[onchange='ServiceTable'] {
   font-weight: bold;
 }
 #scorebar {
-  background-image: url(/style/gradient.jpg);
+  background-image: url(/style/gradient.svg);
   background-repeat: no-repeat;
   border-radius: 2px;
   position: absolute;
