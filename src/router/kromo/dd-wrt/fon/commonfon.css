@@ -367,7 +367,7 @@ fieldset legend {
   font-weight: bold;
 }
 #scorebar {
-  background-image: url(/style/gradient.jpg);
+  background-image: url(/style/gradient.svg);
   background-repeat: no-repeat;
   background-position: 0 0;
   position: absolute;
