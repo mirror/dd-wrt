@@ -1,4 +1,4 @@
-<div id="contentsInfo">
+<div id="contentsInfo" style="padding-bottom: 5px">
 <div>
-<h2>Please check out our new Features!&nbsp;&nbsp;<input class="button" type="button" value="hide this Box" onclick="location.href='/Management.asp#wcshownf'">
+  <h2><% tran("featureshead.h2title"); %><input class="button" type="button" value="<% tran("featureshead.hidebtn"); %>" onclick="location.href='/Management.asp#wcshownf'">
 </div>

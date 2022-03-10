@@ -3271,8 +3271,19 @@ speedchecker.legend="Speedchecker";
 speedchecker.server="Speedchecker Service";
 speedchecker.regtitle="Please share information with us:";
 speedchecker.savemessage="Please save or apply";
+// ** feature display boxes **//
+speedchecker.nfeath4title="Wi-Fi Speedchecker";
+speedchecker.nfeath4txt="Is your Wi-Fi slowing you down? One-click speed test for both Internet and Wi-Fi speed.";
+speedchecker.nfeatbutton="&nbsp;&nbsp;Click here to test your speed&nbsp;&nbsp;";
 
+var dnscrypt=new Object();
+dnscrypt.nfeath4title="DNSCrypt";
+dnscrypt.nfeath4txt="<a>DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.";
+dnscrypt.nfeatbutton="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;";
 
+var featureshead=new Object();
+featureshead.h2title="Please check out our new Features!&nbsp;&nbsp;";
+featureshead.hidebtn="Hide this Box";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 var dhcp=new Object();
