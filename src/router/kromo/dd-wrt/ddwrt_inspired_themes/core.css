@@ -920,7 +920,7 @@ svg {
 }
 .ddwrt_content {
   background: var(--bg-1) !important;
-  color: var(--fg-1) !important;
+  color: var(--v9-8) !important;
 }
 .ddwrt_progress {
   mix-blend-mode: lighten;
@@ -1116,6 +1116,7 @@ select:focus-visible {
   border-color: var(--v0-8) !important;
   background-color: var(--v0-1) !important;
   box-shadow: 0 0 10px 0 var(--v0-4);
+  outline: 0;
 }
 select:hover {
   background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%23eee" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
