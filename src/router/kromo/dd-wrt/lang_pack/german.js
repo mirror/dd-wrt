@@ -2284,7 +2284,7 @@ wpa.leap="EAP-LEAP";
 wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistische WLAN Verschlüsselung";
-wpa.owe_ifname="OWE &Uumlbergangs Interface";
+wpa.owe_ifname="OWE Übergangs Interface";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";
@@ -2659,7 +2659,7 @@ wl_basic.fc="Frame Kompression";
 wl_basic.isolation="Netz Isolierung";
 wl_basic.tor_anon="TOR Anonymisierung";
 wl_basic.country_settings="Ländereinstellungen";
-wl_basic.ldpc="LDPC (F&uumlr ESP8266 Abschalten)";
+wl_basic.ldpc="LDPC (Für ESP8266 Abschalten)";
 wl_basic.uapsd="U-APSD (Automatisches Stromsparen)";
 wl_basic.disassoc_low_ack="Disassoc Low Ack";
 wl_basic.smps="Spatial Multiplex Power Save";
