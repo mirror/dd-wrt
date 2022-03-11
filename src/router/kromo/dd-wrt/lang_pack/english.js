@@ -3278,7 +3278,7 @@ speedchecker.nfeatbutton="&nbsp;&nbsp;Click here to test your speed&nbsp;&nbsp;"
 
 var dnscrypt=new Object();
 dnscrypt.nfeath4title="DNSCrypt";
-dnscrypt.nfeath4txt="<a>DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.";
+dnscrypt.nfeath4txt="<a href=\"https:\/\/www.dnscrypt.org\">DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.";
 dnscrypt.nfeatbutton="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;";
 
 var featureshead=new Object();
