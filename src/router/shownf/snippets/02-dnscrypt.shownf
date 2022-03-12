@@ -4,6 +4,10 @@
     </div>
     <div style="display: block; margin-bottom: 1em;">
       <h4 style="font-size: 12px; background-color: transparent; font-weight: 500; line-height: 1.1; padding: 0; margin-top: 0.7em; margin-bottom: 1.4em;"><% tran("dnscrypt.nfeath4txt"); %></h4>
-      <center><input class="button" type="button" value="<% tran("dnscrypt.nfeath4button"); %>" onclick="location.href='/Services.asp'"></center>
+      <script type="text/javascript">
+      //<![CDATA[
+      document.write("<center><input class=\"button\" type=\"button\" value=\"" + dnscrypt.nfeath4button + "\" onclick=\"location.href='/Services.asp'" /></center>");
+      //]]>
+      </script>
     </div>
 </fieldset>
