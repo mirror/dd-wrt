@@ -3283,7 +3283,7 @@ dnscrypt.nfeatbutton="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;";
 
 var featureshead=new Object();
 featureshead.h2title="Please check out our new Features!&nbsp;&nbsp;";
-featureshead.hidebtn="Hide this Box";
+featureshead.hidebtn="Hide This Box";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 var dhcp=new Object();
