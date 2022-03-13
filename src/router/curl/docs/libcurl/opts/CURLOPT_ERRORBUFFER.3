@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_ERRORBUFFER 3 "November 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_ERRORBUFFER 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_ERRORBUFFER \- error buffer for error messages
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ERRORBUFFER, char *buf);
+.fi
 .SH DESCRIPTION
 Pass a char * to a buffer that libcurl \fBmay\fP store human readable error
 messages on failures or problems. This may be more helpful than just the

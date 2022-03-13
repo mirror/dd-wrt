@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_DNS_CACHE_TIMEOUT 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_DNS_CACHE_TIMEOUT 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_DNS_CACHE_TIMEOUT \- life-time for DNS cache entries
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DNS_CACHE_TIMEOUT, long age);
+.fi
 .SH DESCRIPTION
 Pass a long, this sets the timeout in seconds. Name resolves will be kept in
 memory and used for this number of seconds. Set to zero to completely disable

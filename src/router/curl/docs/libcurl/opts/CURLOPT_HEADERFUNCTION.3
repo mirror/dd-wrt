@@ -20,11 +20,12 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HEADERFUNCTION 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HEADERFUNCTION 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HEADERFUNCTION \- callback that receives header data
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 size_t header_callback(char *buffer,
@@ -32,7 +33,9 @@ size_t header_callback(char *buffer,
                        size_t nitems,
                        void *userdata);
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HEADERFUNCTION, header_callback);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HEADERFUNCTION,
+                          header_callback);
+.fi
 .SH DESCRIPTION
 Pass a pointer to your callback function, which should match the prototype
 shown above.

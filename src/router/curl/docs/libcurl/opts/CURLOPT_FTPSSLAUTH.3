@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FTPSSLAUTH 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_FTPSSLAUTH 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_FTPSSLAUTH \- order in which to attempt TLS vs SSL
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_FTPSSLAUTH, long order);
+.fi
 .SH DESCRIPTION
 Pass a long using one of the values from below, to alter how libcurl issues
 \&"AUTH TLS" or "AUTH SSL" when FTP over SSL is activated. This is only

@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -61,21 +61,23 @@ test334 test335 test336 test337 test338 test339 test340 test341 test342 \
 test343 test344 test345 test346 test347 test348 test349 test350 test351 \
 test352 test353 test354 test355 test356 test357 test358 test359 test360 \
 test361 test362 test363 test364 test365 test366 test367 test368 test369 \
-test370 \
+test370 test371 test372 test373 test374 \
+\
+test380 test381 test383 test384 test385 test386 \
 \
 test392 test393 test394 test395 test396 test397 \
 \
 test400 test401 test402 test403 test404 test405 test406 test407 test408 \
 test409 test410 \
 \
-test430 test431 test432 test433 test434 test435 \
+test430 test431 test432 test433 test434 test435 test436 \
 \
 test490 test491 test492 test493 test494 \
 \
 test500 test501 test502 test503 test504 test505 test506 test507 test508 \
 test509 test510 test511 test512 test513 test514 test515 test516 test517 \
 test518 test519 test520 test521 test522 test523 test524 test525 test526 \
-test527 test528 test529         test531 test532 test533 test534 test535 \
+test527 test528 test529 test530 test531 test532 test533 test534 test535 \
         test537 test538 test539 test540 test541 test542 test543 test544 \
 test545 test546 test547 test548 test549 test550 test551 test552 test553 \
 test554 test555 test556 test557 test558 test559 test560 test561 test562 \
@@ -95,7 +97,7 @@ test670 test671 test672 test673 test674 test675 test676 test677 test678 \
 \
 test700 test701 test702 test703 test704 test705 test706 test707 test708 \
 test709 test710 test711 test712 test713 test714 test715 test716 test717 \
-test718 \
+test718 test719 test720 test721 \
 \
 test800 test801 test802 test803 test804 test805 test806 test807 test808 \
 test809 test810 test811 test812 test813 test814 test815 test816 test817 \
@@ -144,8 +146,7 @@ test1152 test1153 test1154 test1155 test1156 test1157 test1158 test1159 \
 test1160 test1161 test1162 test1163 test1164 test1165 test1166 test1167 \
 test1168 test1169 test1170 test1171 test1172 test1173 test1174 test1175 \
 test1176 test1177 test1178 test1179 test1180 test1181 test1182 test1183 \
-test1184 test1185 \
-test1188 \
+test1184 test1185 test1186 test1187 test1188 test1189 \
 \
 test1190 test1191 test1192 test1193 test1194 test1195 test1196 test1197 \
 test1198 test1199 \
@@ -216,7 +217,7 @@ test1800 test1801 \
 test1908 test1909 test1910 test1911 test1912 test1913 test1914 test1915 \
 test1916 test1917 test1918 \
 \
-test1933 test1934 test1935 test1936 test1937 test1938 \
+test1933 test1934 test1935 test1936 test1937 test1938 test1939 \
 \
 test2000 test2001 test2002 test2003 test2004 \
 \
@@ -237,4 +238,4 @@ test2200 test2201 test2202 test2203 test2204 test2205 \
 test3000 test3001 test3002 test3003 test3004 test3005 test3006 test3007 \
 test3008 test3009 test3010 test3011 test3012 test3013 test3014 test3015 \
 test3016 test3017 test3018 test3019 test3020 test3021 test3022 test3023 \
-test3024
+test3024 test3025

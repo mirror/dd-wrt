@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,15 +19,17 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_multi_assign 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_multi_assign 3 "March 05, 2022" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_multi_assign \- set data to associate with an internal socket
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLMcode curl_multi_assign(CURLM *multi_handle, curl_socket_t sockfd,
                             void *sockptr);
+.fi
 .SH DESCRIPTION
 This function creates an association in the multi handle between the given
 socket and a private pointer of the application. This is designed for
@@ -47,6 +49,8 @@ The idea here being that this association (socket to private pointer) is
 something that just about every application that uses this API will need and
 then libcurl can just as well do it since it already has an internal hash
 table lookup for this.
+
+It is acceptable to call this function from your multi callback functions.
 .SH EXAMPLE
 .nf
  /* make our struct pointer associated with socket fd */

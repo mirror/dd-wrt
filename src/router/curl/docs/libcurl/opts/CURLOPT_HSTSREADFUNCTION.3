@@ -20,16 +20,18 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HSTSREADFUNCTION 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HSTSREADFUNCTION 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HSTSREADFUNCTION \- read callback for HSTS hosts
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLSTScode hstsread(CURL *easy, struct curl_hstsentry *sts, void *userp);
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HSTSREADFUNCTION, hstsread);
+.fi
 .SH DESCRIPTION
 Pass a pointer to your callback function, as the prototype shows above.
 

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl-symbols 3 "Nov 10, 2021" "libcurl 7.41.0" "libcurl symbols"
+.TH libcurl-symbols 3 "Mar  5, 2022" "libcurl 7.41.0" "libcurl symbols"
 .SH NAME
 libcurl-symbols \- libcurl symbol version information
 .SH "libcurl symbols"
@@ -111,6 +111,7 @@ Introduced in 7.21.0
 Introduced in 7.15.4
 .IP CURLE_CONV_REQD
 Introduced in 7.15.4
+Deprecated since 7.82.0
 .IP CURLE_COULDNT_CONNECT
 Introduced in 7.1
 .IP CURLE_COULDNT_RESOLVE_HOST
@@ -218,6 +219,7 @@ Introduced in 7.12.0
 Introduced in 7.1
 .IP CURLE_LDAP_INVALID_URL
 Introduced in 7.10.8
+Deprecated since 7.82.0
 .IP CURLE_LDAP_SEARCH_FAILED
 Introduced in 7.1
 .IP CURLE_LIBRARY_NOT_FOUND
@@ -719,6 +721,8 @@ Introduced in 7.19.6
 Introduced in 7.19.6
 .IP CURLKHTYPE_UNKNOWN
 Introduced in 7.19.6
+.IP CURLMIMEOPT_FORMESCAPE
+Introduced in 7.81.0
 .IP CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE
 Introduced in 7.30.0
 .IP CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE
@@ -755,6 +759,8 @@ Introduced in 7.16.0
 Introduced in 7.9.6
 .IP CURLMSG_NONE
 Introduced in 7.9.6
+.IP CURLM_ABORTED_BY_CALLBACK
+Introduced in 7.81.0
 .IP CURLM_ADDED_ALREADY
 Introduced in 7.32.1
 .IP CURLM_BAD_EASY_HANDLE
@@ -854,10 +860,13 @@ Introduced in 7.15.2
 Introduced in 7.49.0
 .IP CURLOPT_CONV_FROM_NETWORK_FUNCTION
 Introduced in 7.15.4
+Deprecated since 7.82.0
 .IP CURLOPT_CONV_FROM_UTF8_FUNCTION
 Introduced in 7.15.4
+Deprecated since 7.82.0
 .IP CURLOPT_CONV_TO_NETWORK_FUNCTION
 Introduced in 7.15.4
+Deprecated since 7.82.0
 .IP CURLOPT_COOKIE
 Introduced in 7.1
 .IP CURLOPT_COOKIEFILE
@@ -1092,6 +1101,8 @@ Introduced in 7.15.5
 Introduced in 7.15.5
 .IP CURLOPT_MIMEPOST
 Introduced in 7.56.0
+.IP CURLOPT_MIME_OPTIONS
+Introduced in 7.81.0
 .IP CURLOPT_MUTE
 Introduced in 7.1
 Deprecated since 7.8
@@ -1774,12 +1785,34 @@ Introduced in 7.74.0
 Introduced in 7.74.0
 .IP CURLSTS_OK
 Introduced in 7.74.0
+.IP CURLUE_BAD_FILE_URL
+Introduced in 7.81.0
+.IP CURLUE_BAD_FRAGMENT
+Introduced in 7.81.0
 .IP CURLUE_BAD_HANDLE
 Introduced in 7.62.0
+.IP CURLUE_BAD_HOSTNAME
+Introduced in 7.81.0
+.IP CURLUE_BAD_IPV6
+Introduced in 7.81.0
+.IP CURLUE_BAD_LOGIN
+Introduced in 7.81.0
 .IP CURLUE_BAD_PARTPOINTER
 Introduced in 7.62.0
+.IP CURLUE_BAD_PASSWORD
+Introduced in 7.81.0
+.IP CURLUE_BAD_PATH
+Introduced in 7.81.0
 .IP CURLUE_BAD_PORT_NUMBER
 Introduced in 7.62.0
+.IP CURLUE_BAD_QUERY
+Introduced in 7.81.0
+.IP CURLUE_BAD_SCHEME
+Introduced in 7.81.0
+.IP CURLUE_BAD_SLASHES
+Introduced in 7.81.0
+.IP CURLUE_BAD_USER
+Introduced in 7.81.0
 .IP CURLUE_MALFORMED_INPUT
 Introduced in 7.62.0
 .IP CURLUE_NO_FRAGMENT
@@ -1798,6 +1831,8 @@ Introduced in 7.62.0
 Introduced in 7.62.0
 .IP CURLUE_NO_USER
 Introduced in 7.62.0
+.IP CURLUE_NO_ZONEID
+Introduced in 7.81.0
 .IP CURLUE_OK
 Introduced in 7.62.0
 .IP CURLUE_OUT_OF_MEMORY

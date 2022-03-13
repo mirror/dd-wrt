@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TCP_FASTOPEN 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TCP_FASTOPEN 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TCP_FASTOPEN \- TCP Fast Open
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_FASTOPEN, long enable);
+.fi
 .SH DESCRIPTION
 Pass a long as parameter set to 1L to enable or 0 to disable.
 

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HEADEROPT 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HEADEROPT 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HEADEROPT \- send HTTP headers to both proxy and host or separately
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HEADEROPT, long bitmask);
+.fi
 .SH DESCRIPTION
 Pass a long that is a bitmask of options of how to deal with headers. The two
 mutually exclusive options are:

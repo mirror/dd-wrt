@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,12 +19,13 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_url_set 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_url_set 3 "January 08, 2022" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_url_set - set a URL part
 .SH SYNOPSIS
-.B #include <curl/curl.h>
+.nf
+#include <curl/curl.h>
 
 CURLUcode curl_url_set(CURLU *url,
                        CURLUPart part,
@@ -59,7 +60,8 @@ Pass a pointer to a null-terminated string to the \fIurl\fP parameter. The
 string must point to a correctly formatted "RFC 3986+" URL or be a NULL
 pointer.
 .IP CURLUPART_SCHEME
-Scheme cannot be URL decoded on set.
+Scheme cannot be URL decoded on set. libcurl only accepts setting schemes up
+to 40 bytes long.
 .IP CURLUPART_USER
 .IP CURLUPART_PASSWORD
 .IP CURLUPART_OPTIONS
@@ -112,7 +114,7 @@ sets that to the default scheme: HTTPS. Overrides the \fICURLU_GUESS_SCHEME\fP
 option if both are set.
 .IP CURLU_GUESS_SCHEME
 If set, will make libcurl allow the URL to be set without a scheme and it
-instead "guesses" which scheme that was intended based on the host name.  If
+instead "guesses" which scheme that was intended based on the host name. If
 the outermost sub-domain name matches DICT, FTP, IMAP, LDAP, POP3 or SMTP then
 that scheme will be used, otherwise it picks HTTP. Conflicts with the
 \fICURLU_DEFAULT_SCHEME\fP option which takes precedence if both are set.
@@ -134,7 +136,7 @@ When space is used and allowed in a URL, it will be stored as-is unless
 \fICURLU_URLENCODE\fP is also set, which then makes libcurl URL-encode the
 space before stored. This affects how the URL will be constructed when
 \fIcurl_url_get(3)\fP is subsequently used to extract the full URL or
-individual parts.
+individual parts. (Added in 7.78.0)
 .SH EXAMPLE
 .nf
   CURLUcode rc;
@@ -151,7 +153,7 @@ individual parts.
 Added in 7.62.0. CURLUPART_ZONEID was added in 7.65.0.
 .SH RETURN VALUE
 Returns a CURLUcode error value, which is CURLUE_OK (0) if everything went
-fine.  See the \fIlibcurl-errors(3)\fP man page for the full list with
+fine. See the \fIlibcurl-errors(3)\fP man page for the full list with
 descriptions.
 
 A URL string passed on to \fIcurl_url_set(3)\fP for the \fBCURLUPART_URL\fP

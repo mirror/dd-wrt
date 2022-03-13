@@ -28,7 +28,7 @@ even maybe not a terribly experienced developer, here's our advice:
  - Read through this document to get a grasp on a general approach to use
  - Consider adding a test case for something not currently tested (correctly)
  - Consider updating or adding documentation
- - One way to get your feet wet gently in the project, is to participate in an
+ - One way to get started gently in the project, is to participate in an
    existing issue/PR and help out by reproducing the issue, review the code in
    the PR etc.
 
@@ -84,4 +84,4 @@ the specific implementation. Either way is fine.
 We offer [guidelines](https://curl.se/dev/contribute.html) that are
 suitable to be familiar with before you decide to contribute to curl. If
 you are used to open source development, you will probably not find many
-surprises in there.
+surprises there.

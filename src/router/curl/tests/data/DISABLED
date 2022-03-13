@@ -50,25 +50,15 @@
 580
 581
 587
-661
 670
 671
 672
 673
 718
 1021
-1156
 1417
-1455
-1456
-1525
-1526
-1527
-1528
 1533
 1540
-1554
-1556
 1591
 1700
 1701
@@ -76,3 +66,22 @@
 1800
 %endif
 2043
+# Tests that are disabled here for rustls are SUPPOSED to work
+%if rustls
+312
+313
+400
+401
+403
+404
+406
+407
+408
+409
+1112
+1272
+%endif
+# The CRL test doesn't work with wolfSSL
+%if wolfssl
+313
+%endif

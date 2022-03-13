@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_EC_CURVES 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_SSL_EC_CURVES 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_SSL_EC_CURVES \- key exchange curves
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_EC_CURVES, char *alg_list);
+.fi
 .SH DESCRIPTION
 Pass a string as parameter with a colon delimited list of (EC) algorithms. This
 option defines the client's key exchange algorithms in the SSL handshake (if

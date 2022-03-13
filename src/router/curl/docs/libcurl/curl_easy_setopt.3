@@ -20,26 +20,28 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_setopt 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_easy_setopt 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_setopt \- set options for a curl easy handle
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLoption option, parameter);
+.fi
 .SH DESCRIPTION
 \fIcurl_easy_setopt(3)\fP is used to tell libcurl how to behave. By setting
-the appropriate options, the application can change libcurl's behavior.  All
+the appropriate options, the application can change libcurl's behavior. All
 options are set with an \fIoption\fP followed by a \fIparameter\fP. That
 parameter can be a \fBlong\fP, a \fBfunction pointer\fP, an \fBobject
 pointer\fP or a \fBcurl_off_t\fP, depending on what the specific option
 expects. Read this manual carefully as bad input values may cause libcurl to
-behave badly!  You can only set one option in each function call. A typical
+behave badly! You can only set one option in each function call. A typical
 application uses many \fIcurl_easy_setopt(3)\fP calls in the setup phase.
 
 Options set with this function call are valid for all forthcoming transfers
-performed using this \fIhandle\fP.  The options are not in any way reset
+performed using this \fIhandle\fP. The options are not in any way reset
 between transfers, so if you want subsequent transfers with different options,
 you must change them between the transfers. You can optionally reset all
 options back to internal default with \fIcurl_easy_reset(3)\fP.
@@ -463,6 +465,8 @@ Upload data. See \fICURLOPT_UPLOAD(3)\fP
 Set upload buffer size. See \fICURLOPT_UPLOAD_BUFFERSIZE(3)\fP
 .IP CURLOPT_MIMEPOST
 Post/send MIME data. See \fICURLOPT_MIMEPOST(3)\fP
+.IP CURLOPT_MIME_OPTIONS
+Set MIME option flags. See \fICURLOPT_MIME_OPTIONS(3)\fP
 .IP CURLOPT_MAXFILESIZE
 Maximum file size to get. See \fICURLOPT_MAXFILESIZE(3)\fP
 .IP CURLOPT_MAXFILESIZE_LARGE
@@ -535,9 +539,9 @@ Proxy client cert. See \fICURLOPT_PROXY_SSLCERT(3)\fP
 .IP CURLOPT_PROXY_SSLCERT_BLOB
 Proxy client cert memory buffer. See \fICURLOPT_PROXY_SSLCERT_BLOB(3)\fP
 .IP CURLOPT_SSLCERTTYPE
-Client cert type.  See \fICURLOPT_SSLCERTTYPE(3)\fP
+Client cert type. See \fICURLOPT_SSLCERTTYPE(3)\fP
 .IP CURLOPT_PROXY_SSLCERTTYPE
-Proxy client cert type.  See \fICURLOPT_PROXY_SSLCERTTYPE(3)\fP
+Proxy client cert type. See \fICURLOPT_PROXY_SSLCERTTYPE(3)\fP
 .IP CURLOPT_SSLKEY
 Client key. See \fICURLOPT_SSLKEY(3)\fP
 .IP CURLOPT_SSLKEY_BLOB

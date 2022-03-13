@@ -43,7 +43,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -141,8 +141,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compile_check_sizeof.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
 	$(top_srcdir)/m4/curl-gnutls.m4 \
-	$(top_srcdir)/m4/curl-mbedtls.m4 \
-	$(top_srcdir)/m4/curl-mesalink.m4 $(top_srcdir)/m4/curl-nss.m4 \
+	$(top_srcdir)/m4/curl-mbedtls.m4 $(top_srcdir)/m4/curl-nss.m4 \
 	$(top_srcdir)/m4/curl-openssl.m4 \
 	$(top_srcdir)/m4/curl-override.m4 \
 	$(top_srcdir)/m4/curl-reentrant.m4 \
@@ -328,7 +327,6 @@ USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
 USE_MBEDTLS = @USE_MBEDTLS@
-USE_MESALINK = @USE_MESALINK@
 USE_NGHTTP2 = @USE_NGHTTP2@
 USE_NGHTTP3 = @USE_NGHTTP3@
 USE_NGTCP2 = @USE_NGTCP2@
@@ -400,7 +398,6 @@ runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -462,6 +459,7 @@ DPAGES = \
   fail-with-body.d \
   fail.d \
   false-start.d \
+  form-escape.d \
   form-string.d \
   form.d \
   ftp-account.d \
@@ -497,6 +495,7 @@ DPAGES = \
   interface.d \
   ipv4.d \
   ipv6.d \
+  json.d \
   junk-session-cookies.d \
   keepalive-time.d \
   key-type.d \

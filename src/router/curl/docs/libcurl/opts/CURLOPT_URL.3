@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_URL 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_URL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_URL \- URL for this transfer
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_URL, char *URL);
+.fi
 .SH DESCRIPTION
 Pass in a pointer to the \fIURL\fP to work with. The parameter should be a
 char * to a null-terminated string which must be URL-encoded in the following

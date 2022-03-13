@@ -118,8 +118,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compile_check_sizeof.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
 	$(top_srcdir)/m4/curl-gnutls.m4 \
-	$(top_srcdir)/m4/curl-mbedtls.m4 \
-	$(top_srcdir)/m4/curl-mesalink.m4 $(top_srcdir)/m4/curl-nss.m4 \
+	$(top_srcdir)/m4/curl-mbedtls.m4 $(top_srcdir)/m4/curl-nss.m4 \
 	$(top_srcdir)/m4/curl-openssl.m4 \
 	$(top_srcdir)/m4/curl-override.m4 \
 	$(top_srcdir)/m4/curl-reentrant.m4 \
@@ -393,7 +392,6 @@ USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
 USE_MBEDTLS = @USE_MBEDTLS@
-USE_MESALINK = @USE_MESALINK@
 USE_NGHTTP2 = @USE_NGHTTP2@
 USE_NGHTTP3 = @USE_NGHTTP3@
 USE_NGTCP2 = @USE_NGTCP2@
@@ -465,7 +463,6 @@ runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -505,7 +502,6 @@ EXTRA_DIST = \
  CURL-DISABLE.md                                \
  DEPRECATE.md                                   \
  DYNBUF.md                                      \
- ECH.md                                         \
  EXPERIMENTAL.md                                \
  FAQ                                            \
  FEATURES.md                                    \

@@ -9,7 +9,7 @@ check that it adheres to our [Source Code Style guide](CODE_STYLE.md).
 
 ## Command line options
 
-`-W[file]` skip that file and excludes it from being checked. Helpful
+`-W[file]` skip that file and exclude it from being checked. Helpful
 when, for example, one of the files is generated.
 
 `-D[dir]` directory name to prepend to file names when accessing them.
@@ -18,11 +18,11 @@ when, for example, one of the files is generated.
 
 ## What does checksrc warn for?
 
-checksrc does not check and verify the code against the entire style guide,
-but the script is instead an effort to detect the most common mistakes and
-syntax mistakes that contributors make before they get accustomed to our code
-style. Heck, many of us regulars do the mistakes too and this script helps us
-keep the code in shape.
+checksrc does not check and verify the code against the entire style guide.
+The script is an effort to detect the most common mistakes and syntax mistakes
+that contributors make before they get accustomed to our code style. Heck,
+many of us regulars do the mistakes too and this script helps us keep the code
+in shape.
 
     checksrc.pl -h
 
@@ -41,7 +41,7 @@ warnings are:
    more appropriate `char *name` style. The asterisk should sit right next to
    the name without a space in between.
 
-- `BADCOMMAND`: There's a bad !checksrc! instruction in the code. See the
+- `BADCOMMAND`: There's a bad `!checksrc!` instruction in the code. See the
    **Ignore certain warnings** section below for details.
 
 - `BANNEDFUNC`: A banned function was used. The functions sprintf, vsprintf,
@@ -130,10 +130,12 @@ the directory where they should be activated with commands to enable the
 warnings you are interested in. The format of the file is to enable one
 warning per line like so: `enable <EXTENDEDWARNING>`
 
-Currently there is one extended warning which can be enabled:
+Currently these are the extended warnings which can be enabled:
 
 - `COPYRIGHTYEAR`: the current changeset has not updated the copyright year in
    the source file
+
+- `STRERROR`: use of banned function strerror()
 
 ## Ignore certain warnings
 

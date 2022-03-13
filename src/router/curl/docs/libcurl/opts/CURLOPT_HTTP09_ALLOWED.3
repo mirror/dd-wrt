@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HTTP09_ALLOWED 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HTTP09_ALLOWED 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HTTP09_ALLOWED \- allow HTTP/0.9 response
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTP09_ALLOWED, long allowed);
+.fi
 .SH DESCRIPTION
 Pass the long argument \fIallowed\fP set to 1L to allow HTTP/0.9 responses.
 

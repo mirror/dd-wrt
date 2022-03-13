@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PIPEWAIT 3 "September 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PIPEWAIT 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PIPEWAIT \- wait for pipelining/multiplexing
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PIPEWAIT, long wait);
+.fi
 .SH DESCRIPTION
 Set \fIwait\fP to 1L to tell libcurl to prefer to wait for a connection to
 confirm or deny that it can do pipelining or multiplexing before continuing.

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROXYTYPE 3 "November 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PROXYTYPE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PROXYTYPE \- proxy protocol type
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROXYTYPE, long type);
+.fi
 .SH DESCRIPTION
 Pass one of the values below to set the type of the proxy.
 

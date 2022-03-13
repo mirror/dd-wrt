@@ -124,8 +124,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compile_check_sizeof.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
 	$(top_srcdir)/m4/curl-gnutls.m4 \
-	$(top_srcdir)/m4/curl-mbedtls.m4 \
-	$(top_srcdir)/m4/curl-mesalink.m4 $(top_srcdir)/m4/curl-nss.m4 \
+	$(top_srcdir)/m4/curl-mbedtls.m4 $(top_srcdir)/m4/curl-nss.m4 \
 	$(top_srcdir)/m4/curl-openssl.m4 \
 	$(top_srcdir)/m4/curl-override.m4 \
 	$(top_srcdir)/m4/curl-reentrant.m4 \
@@ -648,7 +647,6 @@ USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
 USE_MBEDTLS = @USE_MBEDTLS@
-USE_MESALINK = @USE_MESALINK@
 USE_NGHTTP2 = @USE_NGHTTP2@
 USE_NGHTTP3 = @USE_NGHTTP3@
 USE_NGTCP2 = @USE_NGTCP2@
@@ -720,7 +718,6 @@ runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -734,7 +731,7 @@ top_srcdir = @top_srcdir@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -749,9 +746,6 @@ top_srcdir = @top_srcdir@
 #
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign nostdinc
-@USE_EMBEDDED_ARES_FALSE@AM_CPPFLAGS = -I$(top_srcdir)/include \
-@USE_EMBEDDED_ARES_FALSE@	-I$(top_builddir)/lib \
-@USE_EMBEDDED_ARES_FALSE@	-I$(top_srcdir)/lib $(am__append_1)
 
 # Specify our include paths here, and do it relative to $(top_srcdir) and
 # $(top_builddir), to ensure that these paths which belong to the library
@@ -761,13 +755,8 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
 # $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
-# $(top_builddir)/ares is for in-tree c-ares's generated ares_build.h file
-# $(top_srcdir)/ares is for in-tree c-ares's external include files
-@USE_EMBEDDED_ARES_TRUE@AM_CPPFLAGS = -I$(top_srcdir)/include \
-@USE_EMBEDDED_ARES_TRUE@	-I$(top_builddir)/lib \
-@USE_EMBEDDED_ARES_TRUE@	-I$(top_srcdir)/lib \
-@USE_EMBEDDED_ARES_TRUE@	-I$(top_builddir)/ares \
-@USE_EMBEDDED_ARES_TRUE@	-I$(top_srcdir)/ares $(am__append_1)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
+	-I$(top_srcdir)/lib $(am__append_1)
 CURLX_SRCS = \
  ../../lib/mprintf.c \
  ../../lib/nonblock.c \

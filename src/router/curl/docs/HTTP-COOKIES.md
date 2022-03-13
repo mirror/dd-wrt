@@ -20,12 +20,12 @@
   In 2011, [RFC6265](https://www.ietf.org/rfc/rfc6265.txt) was finally
   published and details how cookies work within HTTP. In 2016, an update which
   added support for prefixes was
-  [proposed](https://tools.ietf.org/html/draft-ietf-httpbis-cookie-prefixes-00),
+  [proposed](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-cookie-prefixes-00),
   and in 2017, another update was
-  [drafted](https://tools.ietf.org/html/draft-ietf-httpbis-cookie-alone-01)
+  [drafted](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-cookie-alone-01)
   to deprecate modification of 'secure' cookies from non-secure origins. Both
   of these drafts have been incorporated into a proposal to
-  [replace](https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-02)
+  [replace](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-02)
   RFC6265. Cookie prefixes and secure cookie modification protection has been
   implemented by curl.
 
@@ -36,7 +36,7 @@
   sharing the cookies with browsers, only to see browsers move away from that
   format. Modern browsers no longer use it, while curl still does.
 
-  The netscape cookie file format stores one cookie per physical line in the
+  The Netscape cookie file format stores one cookie per physical line in the
   file with a bunch of associated meta data, each field separated with
   TAB. That file is called the cookiejar in curl terminology.
 
@@ -112,7 +112,7 @@
 
   Provide detailed information about a single cookie to add to the internal
   storage of cookies. Pass in the cookie as a HTTP header with all the details
-  set, or pass in a line from a netscape cookie file. This option can also be
+  set, or pass in a line from a Netscape cookie file. This option can also be
   used to flush the cookies etc.
 
   `CURLINFO_COOKIELIST`

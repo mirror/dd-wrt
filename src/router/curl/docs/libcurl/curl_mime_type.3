@@ -19,16 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_mime_type 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_mime_type 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_mime_type - set a mime part's content type
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "CURLcode curl_mime_type(curl_mimepart * " part ,
-.BI "const char * " mimetype ");"
-.ad
+.nf
+#include <curl/curl.h>
+
+CURLcode curl_mime_type(curl_mimepart *part, const char *mimetype);
+.fi
 .SH DESCRIPTION
 \fIcurl_mime_type(3)\fP sets a mime part's content type.
 

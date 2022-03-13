@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MAXCONNECTS 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_MAXCONNECTS 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_MAXCONNECTS \- maximum connection cache size
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAXCONNECTS, long amount);
+.fi
 .SH DESCRIPTION
 Pass a long. The set \fIamount\fP will be the maximum number of simultaneously
 open persistent connections that libcurl may cache in the pool associated with
