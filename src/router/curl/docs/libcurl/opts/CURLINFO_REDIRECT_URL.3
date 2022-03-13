@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_REDIRECT_URL 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
+.TH CURLINFO_REDIRECT_URL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_REDIRECT_URL \- get the URL a redirect would go to
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_REDIRECT_URL, char **urlp);
+.fi
 .SH DESCRIPTION
 Pass a pointer to a char pointer to receive the URL a redirect \fIwould\fP
 take you to if you would enable \fICURLOPT_FOLLOWLOCATION(3)\fP. This can come

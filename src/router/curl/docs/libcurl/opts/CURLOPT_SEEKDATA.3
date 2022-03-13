@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SEEKDATA 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_SEEKDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_SEEKDATA \- pointer passed to the seek callback
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SEEKDATA, void *pointer);
+.fi
 .SH DESCRIPTION
 Data \fIpointer\fP to pass to the seek callback function. If you use the
 \fICURLOPT_SEEKFUNCTION(3)\fP option, this is the pointer you will get as

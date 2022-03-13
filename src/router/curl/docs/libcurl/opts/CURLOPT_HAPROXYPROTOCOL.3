@@ -20,15 +20,17 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HAPROXYPROTOCOL 3 "September 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HAPROXYPROTOCOL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HAPROXYPROTOCOL \- send HAProxy PROXY protocol v1 header
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HAPROXYPROTOCOL,
                           long haproxy_protocol);
+.fi
 .SH DESCRIPTION
 A long parameter set to 1 tells the library to send an HAProxy PROXY
 protocol v1 header at beginning of the connection. The default action is not to

@@ -26,7 +26,7 @@ command line.
 
 HttpGet 1.0 was released on April 8th 1997 with brand new HTTP proxy support.
 
-We soon found and fixed support for getting currencies over GOPHER.  Once FTP
+We soon found and fixed support for getting currencies over GOPHER. Once FTP
 download support was added, the name of the project was changed and urlget 2.0
 was released in August 1997. The http-only days were already passed.
 
@@ -145,7 +145,7 @@ June: the curl website gets 13000 visits weekly. curl and libcurl is
 35000 lines of code. Reported successful compiles on more than 40 combinations
 of CPUs and operating systems.
 
-To estimate number of users of the curl tool or libcurl library is next to
+To estimate the number of users of the curl tool or libcurl library is next to
 impossible. Around 5000 downloaded packages each week from the main site gives
 a hint, but the packages are mirrored extensively, bundled with numerous OS
 distributions and otherwise retrieved as part of other software.
@@ -406,9 +406,13 @@ April: added the cyassl backend (later renamed to WolfSSL)
 
  November: the website moves to curl.se. The website serves 10TB data monthly.
 
+ December: alt-svc support
+
 2021
 ----
 
  February 3: curl 7.75.0 ships with support for Hyper is a HTTP backend
 
  March 31: curl 7.76.0 ships with support for rustls
+
+ July: HSTS is supported

@@ -20,14 +20,17 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_RETRY_AFTER 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
+.TH CURLINFO_RETRY_AFTER 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_RETRY_AFTER \- returns the Retry-After retry delay
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
-CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_RETRY_AFTER, curl_off_t *retry);
+CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_RETRY_AFTER,
+                           curl_off_t *retry);
+.fi
 .SH DESCRIPTION
 Pass a pointer to a curl_off_t variable to receive the number of seconds the
 HTTP server suggests the client should wait until the next request is

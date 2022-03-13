@@ -7,14 +7,14 @@
                 Things that could be nice to do in the future
 
  Things to do in project curl. Please tell us what you think, contribute and
- send us patches that improve things!
+ send us patches that improve things.
 
  Be aware that these are things that we could do, or have once been considered
  things we could do. If you want to work on any of these areas, please
  consider bringing it up for discussions first on the mailing list so that we
- all agree it is still a good idea for the project!
+ all agree it is still a good idea for the project.
 
- All bugs documented in the KNOWN_BUGS document are subject for fixing!
+ All bugs documented in the KNOWN_BUGS document are subject for fixing.
 
  1. libcurl
  1.1 TFO support on Windows
@@ -30,7 +30,6 @@
  1.11 minimize dependencies with dynamically loaded modules
  1.12 updated DNS server while running
  1.13 c-ares and CURLOPT_OPENSOCKETFUNCTION
- 1.14 Typesafe curl_easy_setopt()
  1.15 Monitor connections in the connection pool
  1.16 Try to URL encode given URL
  1.17 Add support for IRIs
@@ -40,9 +39,7 @@
  1.21 netrc caching and sharing
  1.22 CURLINFO_PAUSE_STATE
  1.23 Offer API to flush the connection pool
- 1.24 TCP Fast Open for windows
  1.25 Expose tried IP addresses that failed
- 1.27 hardcode the "localhost" addresses
  1.28 FD_CLOEXEC
  1.29 Upgrade to websockets
  1.30 config file parsing
@@ -70,15 +67,14 @@
  4.5 ASCII support
  4.6 GSSAPI via Windows SSPI
  4.7 STAT for LIST without data connection
- 4.8 Option to ignore private IP addresses in PASV response
 
  5. HTTP
- 5.1 Better persistency for HTTP 1.0
  5.2 Set custom client ip when using haproxy protocol
  5.3 Rearrange request header order
  5.4 Allow SAN names in HTTP/2 server push
  5.5 auth= in URLs
  5.6 alt-svc should fallback if alt-svc does not work
+ 5.7 Require HTTP version X or higher
 
  6. TELNET
  6.1 ditch stdin
@@ -86,6 +82,7 @@
  6.3 feature negotiation debug data
 
  7. SMTP
+ 7.1 Passing NOTIFY option to CURLOPT_MAIL_RCPT
  7.2 Enhanced capability support
  7.3 Add CURLOPT_MAIL_CLIENT option
 
@@ -109,12 +106,14 @@
  12. FILE
  12.1 Directory listing for FILE:
 
- 13. SSL
+ 13. TLS
  13.1 TLS-PSK with OpenSSL
  13.2 Provide mutex locking API
+ 13.3 Defeat TLS fingerprinting
  13.4 Cache/share OpenSSL contexts
  13.5 Export session ids
  13.6 Provide callback for cert verification
+ 13.7 Less memory massaging with Schannel
  13.8 Support DANE
  13.9 TLS record padding
  13.10 Support Authority Information Access certificate extension (AIA)
@@ -183,7 +182,6 @@
  20.6 Use the RFC6265 test suite
  20.7 Support LD_PRELOAD on macOS
  20.8 Run web-platform-tests url tests
- 20.9 Bring back libssh tests on Travis
 
  21. MQTT
  21.1 Support rate-limiting
@@ -193,6 +191,10 @@
 1. libcurl
 
 1.1 TFO support on Windows
+
+ libcurl supports the CURLOPT_TCP_FASTOPEN option since 7.49.0 for Linux and
+ Mac OS. Windows supports TCP Fast Open starting with Windows 10, version 1607
+ and we should add support for it.
 
  TCP Fast Open is supported on several platforms but not on Windows. Work on
  this was once started but never finished.
@@ -273,7 +275,7 @@
  We can create a system with loadable modules/plug-ins, where these modules
  would be the ones that link to 3rd party libs. That would allow us to avoid
  having to load ALL dependencies since only the necessary ones for this
- app/invoke/used protocols would be necessary to load.  See
+ app/invoke/used protocols would be necessary to load. See
  https://github.com/curl/curl/issues/349
 
 1.12 updated DNS server while running
@@ -295,23 +297,6 @@
  CURLMOPT_SOCKETFUNCTION it is not owned by the application like other sockets.
 
  See https://github.com/curl/curl/issues/2734
-
-1.14 Typesafe curl_easy_setopt()
-
- One of the most common problems in libcurl using applications is the lack of
- type checks for curl_easy_setopt() which happens because it accepts varargs
- and thus can take any type.
-
- One possible solution to this is to introduce a few different versions of the
- setopt version for the different kinds of data you can set.
-
-  curl_easy_set_num() - sets a long value
-
-  curl_easy_set_large() - sets a curl_off_t value
-
-  curl_easy_set_ptr() - sets a pointer
-
-  curl_easy_set_cb() - sets a callback PLUS its callback data
 
 1.15 Monitor connections in the connection pool
 
@@ -366,7 +351,7 @@
 1.20 SRV and URI DNS records
 
  Offer support for resolving SRV and URI DNS records for libcurl to know which
- server to connect to for various protocols (including HTTP!).
+ server to connect to for various protocols (including HTTP).
 
 1.21 netrc caching and sharing
 
@@ -386,30 +371,12 @@
  An API could allow a forced flush or just a forced loop that would properly
  close all connections that have been closed by the server already.
 
-1.24 TCP Fast Open for windows
-
- libcurl supports the CURLOPT_TCP_FASTOPEN option since 7.49.0 for Linux and
- Mac OS. Windows supports TCP Fast Open starting with Windows 10, version 1607
- and we should add support for it.
-
 1.25 Expose tried IP addresses that failed
 
  When libcurl fails to connect to a host, it should be able to offer the
  application the list of IP addresses that were used in the attempt.
 
  https://github.com/curl/curl/issues/2126
-
-1.27 hardcode the "localhost" addresses
-
- There's this new spec getting adopted that says "localhost" should always and
- unconditionally be a local address and not get resolved by a DNS server. A
- fine way for curl to fix this would be to simply hard-code the response to
- 127.0.0.1 and/or ::1 (depending on what IP versions that are requested). This
- is what the browsers probably will do with this hostname.
-
- https://bugzilla.mozilla.org/show_bug.cgi?id=1220810
-
- https://tools.ietf.org/html/draft-ietf-dnsop-let-localhost-be-localhost-02
 
 1.28 FD_CLOEXEC
 
@@ -550,7 +517,7 @@
  HOST is a command for a client to tell which host name to use, to offer FTP
  servers named-based virtual hosting:
 
- https://tools.ietf.org/html/rfc7151
+ https://datatracker.ietf.org/doc/html/rfc7151
 
 4.2 Alter passive/active on failure and retry
 
@@ -583,18 +550,7 @@
 
  This is not detailed in any FTP specification.
 
-4.8 Option to ignore private IP addresses in PASV response
-
- Some servers respond with and some other FTP client implementations can
- ignore private (RFC 1918 style) IP addresses when received in PASV responses.
- To consider for libcurl as well. See https://github.com/curl/curl/issues/1455
-
 5. HTTP
-
-5.1 Better persistency for HTTP 1.0
-
- "Better" support for persistent connections over HTTP 1.0
- https://curl.se/bug/feature.cgi?id=1089001
 
 5.2 Set custom client ip when using haproxy protocol
 
@@ -644,6 +600,14 @@
 
  See https://github.com/curl/curl/issues/4908
 
+5.7 Require HTTP version X or higher
+
+ curl and libcurl provide options for trying higher HTTP versions (for example
+ HTTP/2) but then still allows the server to pick version 1.1. We could
+ consider adding a way to require a minimum version.
+
+ See https://github.com/curl/curl/issues/7980
+
 6. TELNET
 
 6.1 ditch stdin
@@ -664,6 +628,14 @@
 
 
 7. SMTP
+
+7.1 Passing NOTIFY option to CURLOPT_MAIL_RCPT
+
+ Is there a way to pass the NOTIFY option to the CURLOPT_MAIL_RCPT option ?  I
+ set a string that already contains a bracket. For instance something like
+ that: curl_slist_append( recipients, "<foo@bar> NOTIFY=SUCCESS,FAILURE" );
+
+ https://github.com/curl/curl/issues/8232
 
 7.2 Enhanced capability support
 
@@ -746,7 +718,7 @@
  output should probably be the same as/similar to FTP.
 
 
-13. SSL
+13. TLS
 
 13.1 TLS-PSK with OpenSSL
 
@@ -762,6 +734,14 @@
  Provide a libcurl API for setting mutex callbacks in the underlying SSL
  library, so that the same application code can use mutex-locking
  independently of OpenSSL or GnutTLS being used.
+
+13.3 Defeat TLS fingerprinting
+
+ By changing the order of TLS extensions provided in the TLS handshake, it is
+ sometimes possible to circumvent TLS fingerprinting by servers. The TLS
+ extension order is of course not the only way to fingerprint a client.
+
+ See https://github.com/curl/curl/issues/8119
 
 13.4 Cache/share OpenSSL contexts
 
@@ -791,7 +771,14 @@
 
  OpenSSL supports a callback for customised verification of the peer
  certificate, but this does not seem to be exposed in the libcurl APIs. Could
- it be? There's so much that could be done if it were!
+ it be? There's so much that could be done if it were.
+
+13.7 Less memory massaging with Schannel
+
+ The Schannel backend does a lot of custom memory management we would rather
+ avoid: the repeated alloc + free in sends and the custom memory + realloc
+ system for encrypted and decrypted data. That should be avoided and reduced
+ for 1) efficiency and 2) safety.
 
 13.8 Support DANE
 
@@ -852,7 +839,7 @@
  that previously (in older TLS version) were not set. The clienthello
  extension adds padding to avoid that size range.
 
- https://tools.ietf.org/html/rfc7685
+ https://datatracker.ietf.org/doc/html/rfc7685
  https://github.com/curl/curl/issues/2299
 
 14. GnuTLS
@@ -928,7 +915,7 @@
 17.4 Support CURLOPT_PREQUOTE
 
  The two other QUOTE options are supported for SFTP, but this was left out for
- unknown reasons!
+ unknown reasons.
 
 17.5 SSH over HTTPS proxy with more backends
 
@@ -1283,16 +1270,9 @@
 
  See https://github.com/curl/curl/issues/4477
 
-20.9 Bring back libssh tests on Travis
-
- In https://github.com/curl/curl/pull/7012 we remove the libssh builds and
- tests from Travis CI due to them not working. This should be remedied and
- libssh builds be brought back.
-
-
 21. MQTT
 
 21.1 Support rate-limiting
 
  The rate-limiting logic is done in the PERFORMING state in multi.c but MQTT
- is not (yet) implemented to use that!
+ is not (yet) implemented to use that.

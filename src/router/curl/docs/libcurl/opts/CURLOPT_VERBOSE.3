@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_VERBOSE 3 "November 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_VERBOSE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_VERBOSE \- verbose mode
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_VERBOSE, long onoff);
+.fi
 .SH DESCRIPTION
 Set the \fIonoff\fP parameter to 1 to make the library display a lot of
 verbose information about its operations on this \fIhandle\fP. Useful for

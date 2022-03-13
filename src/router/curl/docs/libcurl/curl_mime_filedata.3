@@ -19,16 +19,17 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_mime_filedata 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_mime_filedata 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_mime_filedata - set a mime part's body data from a file contents
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "CURLcode curl_mime_filedata(curl_mimepart * " part ,
-.BI " const char * " filename ");"
-.ad
+.nf
+#include <curl/curl.h>
+
+CURLcode curl_mime_filedata(curl_mimepart *part,
+                            const char *filename);
+.fi
 .SH DESCRIPTION
 \fIcurl_mime_filedata(3)\fP sets a mime part's body content from the named
 file's contents. This is an alternative to \fIcurl_mime_data(3)\fP for setting
@@ -37,7 +38,7 @@ data to a mime part.
 \fIpart\fP is the part's to assign contents to.
 
 \fIfilename\fP points to the null-terminated file's path name. The pointer can
-be NULL to detach the previous part contents settings.  Filename storage can
+be NULL to detach the previous part contents settings. Filename storage can
 be safely be reused after this call.
 
 As a side effect, the part's remote file name is set to the base name of the

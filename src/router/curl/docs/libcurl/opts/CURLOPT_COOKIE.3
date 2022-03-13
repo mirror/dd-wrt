@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_COOKIE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_COOKIE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_COOKIE \- HTTP Cookie header
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_COOKIE, char *cookie);
+.fi
 .SH DESCRIPTION
 Pass a pointer to a null-terminated string as parameter. It will be used to
 set a cookie in the HTTP request. The format of the string should be

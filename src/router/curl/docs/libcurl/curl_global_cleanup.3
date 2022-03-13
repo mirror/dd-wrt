@@ -19,15 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_global_cleanup 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_global_cleanup 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_global_cleanup - global libcurl cleanup
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "void curl_global_cleanup(void);"
-.ad
+.nf
+#include <curl/curl.h>
+
+void curl_global_cleanup(void);
+.fi
 .SH DESCRIPTION
 This function releases resources acquired by \fIcurl_global_init(3)\fP.
 
@@ -36,7 +37,7 @@ You should call \fIcurl_global_cleanup(3)\fP once for each call you make to
 
 \fBThis function is not thread safe.\fP You must not call it when any other
 thread in the program (i.e. a thread sharing the same memory) is running.
-This does not just mean no other thread that is using libcurl.  Because
+This does not just mean no other thread that is using libcurl. Because
 \fIcurl_global_cleanup(3)\fP calls functions of other libraries that are
 similarly thread unsafe, it could conflict with any other thread that uses
 these other libraries.

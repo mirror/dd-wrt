@@ -4,6 +4,7 @@ Help: Must read .netrc for user name and password
 Category: curl
 Example: --netrc $URL
 Added: 4.6
+See-also: netrc-file config user
 ---
 Makes curl scan the *.netrc* (*_netrc* on Windows) file in the user's home
 directory for login name and password. This is typically used for FTP on
@@ -15,6 +16,8 @@ to find the home directory.
 
 A quick and simple example of how to setup a *.netrc* to allow curl to FTP to
 the machine host.domain.com with user name \&'myself' and password \&'secret'
-should look similar to:
+could look similar to:
 
-.B "machine host.domain.com login myself password secret"
+ machine host.domain.com
+ login myself
+ password secret"

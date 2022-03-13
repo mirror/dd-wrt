@@ -20,14 +20,17 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_ABSTRACT_UNIX_SOCKET 3 "October 27, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_ABSTRACT_UNIX_SOCKET 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_ABSTRACT_UNIX_SOCKET \- abstract Unix domain socket
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ABSTRACT_UNIX_SOCKET, char *path);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ABSTRACT_UNIX_SOCKET,
+                          char *path);
+.fi
 .SH DESCRIPTION
 Enables the use of an abstract Unix domain socket instead of establishing a
 TCP connection to a host. The parameter should be a char * to a

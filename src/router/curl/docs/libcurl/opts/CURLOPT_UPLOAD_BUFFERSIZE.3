@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_UPLOAD_BUFFERSIZE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_UPLOAD_BUFFERSIZE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_UPLOAD_BUFFERSIZE \- upload buffer size
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_UPLOAD_BUFFERSIZE, long size);
+.fi
 .SH DESCRIPTION
 Pass a long specifying your preferred \fIsize\fP (in bytes) for the upload
 buffer in libcurl. It makes libcurl uses a larger buffer that gets passed to

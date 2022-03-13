@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_EFFECTIVE_URL 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
+.TH CURLINFO_EFFECTIVE_URL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_EFFECTIVE_URL \- get the last used URL
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_EFFECTIVE_URL, char **urlp);
+.fi
 .SH DESCRIPTION
 Pass in a pointer to a char pointer and get the last used effective URL.
 

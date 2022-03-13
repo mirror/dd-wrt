@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_RANGE 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_RANGE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_RANGE \- byte range to request
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_RANGE, char *range);
+.fi
 .SH DESCRIPTION
 Pass a char * as parameter, which should contain the specified range you want
 to retrieve. It should be in the format "X-Y", where either X or Y may be left

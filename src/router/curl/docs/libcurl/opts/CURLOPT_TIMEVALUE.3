@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TIMEVALUE 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TIMEVALUE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TIMEVALUE \- time value for conditional
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TIMEVALUE, long val);
+.fi
 .SH DESCRIPTION
 Pass a long \fIval\fP as parameter. This should be the time counted as seconds
 since 1 Jan 1970, and the time will be used in a condition as specified with

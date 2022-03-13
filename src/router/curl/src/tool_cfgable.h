@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -189,6 +189,7 @@ struct OperationConfig {
   bool proxydigest;
   bool proxybasic;
   bool proxyanyauth;
+  bool jsoned; /* added json content-type */
   char *writeout;           /* %-styled format string to output */
   struct curl_slist *quote;
   struct curl_slist *postquote;
@@ -239,6 +240,7 @@ struct OperationConfig {
   char *ftp_account;        /* for ACCT */
   char *ftp_alternative_to_user;  /* send command if USER/PASS fails */
   int ftp_filemethod;
+  long mime_options;        /* Mime option flags. */
   long tftp_blksize;        /* TFTP BLKSIZE option */
   bool tftp_no_options;     /* do not send TFTP options requests */
   bool ignorecl;            /* --ignore-content-length */

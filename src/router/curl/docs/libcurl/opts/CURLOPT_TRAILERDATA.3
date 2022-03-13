@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TRAILERDATA 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TRAILERDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TRAILERDATA \- pointer passed to trailing headers callback
 .SH SYNOPSIS
+.nf
 #include <curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TRAILERDATA, void *userdata);
+.fi
 .SH DESCRIPTION
 Data pointer to be passed to the HTTP trailer callback function.
 .SH DEFAULT

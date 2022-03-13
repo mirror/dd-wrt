@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2004 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2004 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -24,12 +24,9 @@
 
 #ifdef HAVE_STRERROR_R
 #  if (!defined(HAVE_POSIX_STRERROR_R) && \
-       !defined(HAVE_GLIBC_STRERROR_R) && \
-       !defined(HAVE_VXWORKS_STRERROR_R)) || \
-      (defined(HAVE_POSIX_STRERROR_R) && defined(HAVE_VXWORKS_STRERROR_R)) || \
-      (defined(HAVE_GLIBC_STRERROR_R) && defined(HAVE_VXWORKS_STRERROR_R)) || \
+       !defined(HAVE_GLIBC_STRERROR_R)) || \
       (defined(HAVE_POSIX_STRERROR_R) && defined(HAVE_GLIBC_STRERROR_R))
-#    error "strerror_r MUST be either POSIX, glibc or vxworks-style"
+#    error "strerror_r MUST be either POSIX, glibc style"
 #  endif
 #endif
 
@@ -224,9 +221,6 @@ curl_easy_strerror(CURLcode error)
   case CURLE_BAD_CONTENT_ENCODING:
     return "Unrecognized or bad HTTP Content or Transfer-Encoding";
 
-  case CURLE_LDAP_INVALID_URL:
-    return "Invalid LDAP URL";
-
   case CURLE_FILESIZE_EXCEEDED:
     return "Maximum file size exceeded";
 
@@ -271,9 +265,6 @@ curl_easy_strerror(CURLcode error)
 
   case CURLE_CONV_FAILED:
     return "Conversion failed";
-
-  case CURLE_CONV_REQD:
-    return "Caller must register CURLOPT_CONV_ callback options";
 
   case CURLE_REMOTE_FILE_NOT_FOUND:
     return "Remote file not found";
@@ -337,6 +328,8 @@ curl_easy_strerror(CURLcode error)
   case CURLE_OBSOLETE50:
   case CURLE_OBSOLETE51:
   case CURLE_OBSOLETE57:
+  case CURLE_OBSOLETE62:
+  case CURLE_OBSOLETE76:
   case CURL_LAST:
     break;
   }
@@ -404,6 +397,9 @@ curl_multi_strerror(CURLMcode error)
   case CURLM_BAD_FUNCTION_ARGUMENT:
     return "A libcurl function was given a bad argument";
 
+  case CURLM_ABORTED_BY_CALLBACK:
+    return "Operation was aborted by an application callback";
+
   case CURLM_LAST:
     break;
   }
@@ -468,10 +464,10 @@ curl_url_strerror(CURLUcode error)
     return "An invalid 'part' argument was passed as argument";
 
   case CURLUE_MALFORMED_INPUT:
-    return "A malformed input was passed to a URL API function";
+    return "Malformed input to a URL function";
 
   case CURLUE_BAD_PORT_NUMBER:
-    return "The port number was not a decimal number between 0 and 65535";
+    return "Port number was not a decimal number between 0 and 65535";
 
   case CURLUE_UNSUPPORTED_SCHEME:
     return "This libcurl build doesn't support the given URL scheme";
@@ -489,28 +485,64 @@ curl_url_strerror(CURLUcode error)
     return "An unknown part ID was passed to a URL API function";
 
   case CURLUE_NO_SCHEME:
-    return "There is no scheme part in the URL";
+    return "No scheme part in the URL";
 
   case CURLUE_NO_USER:
-    return "There is no user part in the URL";
+    return "No user part in the URL";
 
   case CURLUE_NO_PASSWORD:
-    return "There is no password part in the URL";
+    return "No password part in the URL";
 
   case CURLUE_NO_OPTIONS:
-    return "There is no options part in the URL";
+    return "No options part in the URL";
 
   case CURLUE_NO_HOST:
-    return "There is no host part in the URL";
+    return "No host part in the URL";
 
   case CURLUE_NO_PORT:
-    return "There is no port part in the URL";
+    return "No port part in the URL";
 
   case CURLUE_NO_QUERY:
-    return "There is no query part in the URL";
+    return "No query part in the URL";
 
   case CURLUE_NO_FRAGMENT:
-    return "There is no fragment part in the URL";
+    return "No fragment part in the URL";
+
+  case CURLUE_NO_ZONEID:
+    return "No zoneid part in the URL";
+
+  case CURLUE_BAD_LOGIN:
+    return "Bad login part";
+
+  case CURLUE_BAD_IPV6:
+    return "Bad IPv6 address";
+
+  case CURLUE_BAD_HOSTNAME:
+    return "Bad hostname";
+
+  case CURLUE_BAD_FILE_URL:
+    return "Bad file:// URL";
+
+  case CURLUE_BAD_SLASHES:
+    return "Unsupported number of slashes";
+
+  case CURLUE_BAD_SCHEME:
+    return "Bad scheme";
+
+  case CURLUE_BAD_PATH:
+    return "Bad path";
+
+  case CURLUE_BAD_FRAGMENT:
+    return "Bad fragment";
+
+  case CURLUE_BAD_QUERY:
+    return "Bad query";
+
+  case CURLUE_BAD_PASSWORD:
+    return "Bad password";
+
+  case CURLUE_BAD_USER:
+    return "Bad user";
 
   case CURLUE_LAST:
     break;
@@ -841,18 +873,6 @@ const char *Curl_strerror(int err, char *buf, size_t buflen)
     char *msg = strerror_r(err, buffer, sizeof(buffer));
     if(msg)
       strncpy(buf, msg, max);
-    else
-      msnprintf(buf, max, "Unknown error %d", err);
-  }
-#elif defined(HAVE_STRERROR_R) && defined(HAVE_VXWORKS_STRERROR_R)
- /*
-  * The vxworks-style strerror_r() does use the buffer we pass to the function.
-  * The buffer size should be at least NAME_MAX (256)
-  */
-  {
-    char buffer[256];
-    if(OK == strerror_r(err, buffer))
-      strncpy(buf, buffer, max);
     else
       msnprintf(buf, max, "Unknown error %d", err);
   }

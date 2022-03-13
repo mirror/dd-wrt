@@ -20,13 +20,17 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MAXLIFETIME_CONN 3 "10 Nov 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_MAXLIFETIME_CONN 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+
 .SH NAME
 CURLOPT_MAXLIFETIME_CONN \- max lifetime (since creation) allowed for reusing a connection
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAXLIFETIME_CONN, long maxlifetime);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAXLIFETIME_CONN,
+                          long maxlifetime);
+.fi
 .SH DESCRIPTION
 Pass a long as parameter containing \fImaxlifetime\fP - the maximum time in
 seconds, since the creation of the connection, that you allow an existing

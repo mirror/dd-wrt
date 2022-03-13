@@ -19,14 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_url 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_url 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_url - returns a new CURLU handle
 .SH SYNOPSIS
-.B #include <curl/curl.h>
+.nf
+#include <curl/curl.h>
 
 CURLU *curl_url();
+.fi
 .SH DESCRIPTION
 This function will allocates and returns a pointer to a fresh CURLU handle, to
 be used for further use of the URL API.

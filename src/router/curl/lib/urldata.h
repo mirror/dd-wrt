@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -352,10 +352,6 @@ typedef enum {
   GSS_AUTHSUCC
 } curlnegotiate;
 
-#if defined(CURL_DOES_CONVERSIONS) && defined(HAVE_ICONV)
-#include <iconv.h>
-#endif
-
 /* Struct used for GSSAPI (Kerberos V5) authentication */
 #if defined(USE_KERBEROS5)
 struct kerberos5data {
@@ -450,6 +446,11 @@ struct negotiatedata {
 };
 #endif
 
+#ifdef CURL_DISABLE_PROXY
+#define CONN_IS_PROXIED(x) 0
+#else
+#define CONN_IS_PROXIED(x) x->bits.proxy
+#endif
 
 /*
  * Boolean values that concerns this connection.
@@ -470,6 +471,7 @@ struct ConnectBits {
   BIT(proxy_connect_closed); /* TRUE if a proxy disconnected the connection
                                 in a CONNECT request with auth, so that
                                 libcurl should reconnect and continue. */
+  BIT(proxy); /* if set, this transfer is done through a proxy - any type */
 #endif
   /* always modify bits.close with the connclose() and connkeep() macros! */
   BIT(close); /* if set, we close the connection after this request */
@@ -479,8 +481,6 @@ struct ConnectBits {
                         that overrides the host in the URL */
   BIT(conn_to_port); /* if set, this connection has a "connect to port"
                         that overrides the port in the URL (remote port) */
-  BIT(proxy); /* if set, this transfer is done through a proxy - any type */
-  BIT(user_passwd); /* do we use user+password for this connection? */
   BIT(ipv6_ip); /* we communicate with a remote site specified with pure IPv6
                    IP address */
   BIT(ipv6);    /* we communicate with a site using an IPv6 address */
@@ -518,7 +518,9 @@ struct ConnectBits {
   BIT(tls_enable_npn);  /* TLS NPN extension? */
   BIT(tls_enable_alpn); /* TLS ALPN extension? */
   BIT(connect_only);
+#ifndef CURL_DISABLE_DOH
   BIT(doh);
+#endif
 #ifdef USE_UNIX_SOCKETS
   BIT(abstract_unix_socket);
 #endif
@@ -835,6 +837,7 @@ struct Curl_handler {
 #define PROTOPT_WILDCARD (1<<12) /* protocol supports wildcard matching */
 #define PROTOPT_USERPWDCTRL (1<<13) /* Allow "control bytes" (< 32 ascii) in
                                        user name and password */
+#define PROTOPT_NOTCPPROXY (1<<14) /* this protocol can't proxy over TCP */
 
 #define CONNCHECK_NONE 0                 /* No checks */
 #define CONNCHECK_ISDEAD (1<<0)          /* Check if the connection is dead. */
@@ -936,8 +939,9 @@ struct connectdata {
      cache entry remains locked. It gets unlocked in multi_done() */
   struct Curl_addrinfo *ip_addr;
   struct Curl_addrinfo *tempaddr[2]; /* for happy eyeballs */
-
+#ifdef ENABLE_IPV6
   unsigned int scope_id;  /* Scope id for IPv6 */
+#endif
 
   enum {
     TRNSPRT_TCP = 3,
@@ -1656,13 +1660,6 @@ struct UserDefined {
   void *prereq_userp; /* pre-initial request user data */
 
   void *seek_client;    /* pointer to pass to the seek callback */
-  /* the 3 curl_conv_callback functions below are used on non-ASCII hosts */
-  /* function to convert from the network encoding: */
-  curl_conv_callback convfromnetwork;
-  /* function to convert to the network encoding: */
-  curl_conv_callback convtonetwork;
-  /* function to convert from UTF-8 encoding: */
-  curl_conv_callback convfromutf8;
 #ifndef CURL_DISABLE_HSTS
   curl_hstsread_callback hsts_read;
   void *hsts_read_userp;
@@ -1746,9 +1743,12 @@ struct UserDefined {
   long ssh_auth_types;   /* allowed SSH auth types */
   char *str[STRING_LAST]; /* array of strings, pointing to allocated memory */
   struct curl_blob *blobs[BLOB_LAST];
+#ifdef ENABLE_IPV6
   unsigned int scope_id;  /* Scope id for IPv6 */
+#endif
   long allowed_protocols;
   long redir_protocols;
+  long mime_options;      /* Mime option flags. */
   struct curl_slist *mail_rcpt; /* linked list of mail recipients */
   /* Common RTSP header options */
   Curl_RtspReq rtspreq; /* RTSP request type */
@@ -1856,10 +1856,12 @@ struct UserDefined {
                            header */
   BIT(abstract_unix_socket);
   BIT(disallow_username_in_url); /* disallow username in url */
+#ifndef CURL_DISABLE_DOH
   BIT(doh); /* DNS-over-HTTPS enabled */
   BIT(doh_verifypeer);     /* DoH certificate peer verification */
   BIT(doh_verifyhost);     /* DoH certificate hostname verification */
   BIT(doh_verifystatus);   /* DoH certificate status verification */
+#endif
   BIT(http09_allowed); /* allow HTTP/0.9 responses */
   BIT(mail_rcpt_allowfails); /* allow RCPT TO command to fail for some
                                 recipients */
@@ -1943,11 +1945,6 @@ struct Curl_easy {
   struct PureInfo info;        /* stats, reports and info data */
   struct curl_tlssessioninfo tsi; /* Information about the TLS session, only
                                      valid after a client has asked for it */
-#if defined(CURL_DOES_CONVERSIONS) && defined(HAVE_ICONV)
-  iconv_t outbound_cd;         /* for translating to the network encoding */
-  iconv_t inbound_cd;          /* for translating from the network encoding */
-  iconv_t utf8_cd;             /* for translating to UTF8 */
-#endif /* CURL_DOES_CONVERSIONS && HAVE_ICONV */
 #ifdef USE_HYPER
   struct hyptransfer hyp;
 #endif

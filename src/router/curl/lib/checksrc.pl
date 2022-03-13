@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2011 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 2011 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -502,7 +502,7 @@ sub scanfile {
         }
         # check for '== NULL' in if/while conditions but not if the thing on
         # the left of it is a function call
-        if($nostr =~ /^(.*)(if|while)(\(.*[^)]) == NULL/) {
+        if($nostr =~ /^(.*)(if|while)(\(.*?)([!=]= NULL|NULL [!=]=)/) {
             checkwarn("EQUALSNULL", $line,
                       length($1) + length($2) + length($3),
                       $file, $l, "we prefer !variable instead of \"== NULL\" comparisons");
@@ -827,7 +827,7 @@ sub scanfile {
         # A rather more interesting, and correct, check would be to not test
         # only locally committed files but inspect all files wrt the year of
         # their last commit. Removing the `git rev-list origin/master..HEAD`
-        # condition below will enfore copyright year checks against the year
+        # condition below will enforce copyright year checks against the year
         # the file was last committed (and thus edited to some degree).
         my $commityear = undef;
         @copyright = sort {$$b{year} cmp $$a{year}} @copyright;

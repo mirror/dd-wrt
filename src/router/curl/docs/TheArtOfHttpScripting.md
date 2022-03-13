@@ -59,7 +59,7 @@
  want to know the amount of milliseconds between two points in a transfer. For
  those, and other similar situations, the
  [`--trace-time`](https://curl.se/docs/manpage.html#--trace-time) option
- is what you need. it will prepend the time to each trace output line:
+ is what you need. It will prepend the time to each trace output line:
 
     curl --trace-ascii d.txt --trace-time http://example.com/
 
@@ -166,7 +166,7 @@
 
  A single curl command line may involve one or many URLs. The most common case
  is probably to just use one, but you can specify any amount of URLs. Yes
- any. No limits. you will then get requests repeated over and over for all the
+ any. No limits. You will then get requests repeated over and over for all the
  given URLs.
 
  Example, send two GETs:
@@ -270,7 +270,7 @@
  And to use curl to post this form with the same data filled in as before, we
  could do it like:
 
-    curl --data "birthyear=1905&press=%20OK%20" http://www.example.com/when.cgi
+    curl --data "birthyear=1905&press=%20OK%20" http://www.example.com/when/junk.cgi
 
  This kind of POST will use the Content-Type
  `application/x-www-form-urlencoded` and is the most widely used POST kind.
@@ -336,9 +336,9 @@
 
 ## Figure Out What A POST Looks Like
 
- When you are about fill in a form and send to a server by using curl instead
- of a browser, you are of course interested in sending a POST exactly the way
- your browser does.
+ When you are about to fill in a form and send it to a server by using curl
+ instead of a browser, you are of course interested in sending a POST exactly
+ the way your browser does.
 
  An easy way to get to see this, is to save the HTML page with the form on
  your local disk, modify the 'method' to a GET, and press the submit button
@@ -471,12 +471,12 @@
  If you use curl to POST to a site that immediately redirects you to another
  page, you can safely use
  [`--location`](https://curl.se/docs/manpage.html#-L) (`-L`) and
- `--data`/`--form` together. curl will only use POST in the first request, and
+ `--data`/`--form` together. Curl will only use POST in the first request, and
  then revert to GET in the following operations.
 
 ## Other redirects
 
- Browser typically support at least two other ways of redirects that curl
+ Browsers typically support at least two other ways of redirects that curl
  does not: first the html may contain a meta refresh tag that asks the browser
  to load a specific URL after a set number of seconds, or it may use
  javascript to do it.

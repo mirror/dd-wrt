@@ -19,15 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_share_cleanup 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_share_cleanup 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_share_cleanup - Clean up a shared object
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "CURLSHcode curl_share_cleanup(CURLSH *" share_handle ");"
-.ad
+.nf
+#include <curl/curl.h>
+
+CURLSHcode curl_share_cleanup(CURLSH *share_handle);
+.fi
 .SH DESCRIPTION
 This function deletes a shared object. The share handle cannot be used anymore
 when this function has been called.

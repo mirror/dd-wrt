@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -193,6 +193,9 @@ const struct helptxt helptext[] = {
   {"-F, --form <name=content>",
    "Specify multipart MIME data",
    CURLHELP_HTTP | CURLHELP_UPLOAD},
+  {"    --form-escape",
+   "Escape multipart form field/file names using backslash",
+   CURLHELP_HTTP | CURLHELP_POST},
   {"    --form-string <name=string>",
    "Specify multipart MIME data",
    CURLHELP_HTTP | CURLHELP_UPLOAD},
@@ -284,8 +287,8 @@ const struct helptxt helptext[] = {
    "Include protocol response headers in the output",
    CURLHELP_IMPORTANT | CURLHELP_VERBOSE},
   {"-k, --insecure",
-   "Allow insecure server connections when using SSL",
-   CURLHELP_TLS},
+   "Allow insecure server connections",
+   CURLHELP_TLS | CURLHELP_SFTP | CURLHELP_SCP},
   {"    --interface <name>",
    "Use network INTERFACE (or address)",
    CURLHELP_CONNECTION},
@@ -295,6 +298,9 @@ const struct helptxt helptext[] = {
   {"-6, --ipv6",
    "Resolve names to IPv6 addresses",
    CURLHELP_CONNECTION | CURLHELP_DNS},
+  {"    --json <data>",
+   "HTTP POST JSON",
+   CURLHELP_HTTP | CURLHELP_POST | CURLHELP_UPLOAD},
   {"-j, --junk-session-cookies",
    "Ignore session cookies read from file",
    CURLHELP_HTTP},
@@ -568,8 +574,8 @@ const struct helptxt helptext[] = {
   {"-R, --remote-time",
    "Set the remote file's time on the local output",
    CURLHELP_OUTPUT},
-  {"-X, --request <command>",
-   "Specify request command to use",
+  {"-X, --request <method>",
+   "Specify request method to use",
    CURLHELP_CONNECTION},
   {"    --request-target <path>",
    "Specify the target for this request",

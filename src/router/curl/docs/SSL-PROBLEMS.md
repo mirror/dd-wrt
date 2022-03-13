@@ -11,7 +11,7 @@
   ago.
 
   There are several known reasons why a connection that involves SSL might
-  fail. This is a document that attempts to details the most common ones and
+  fail. This is a document that attempts to detail the most common ones and
   how to mitigate them.
 
 ## CA certs
@@ -70,7 +70,7 @@
 
   References:
 
-  https://tools.ietf.org/html/draft-popov-tls-prohibiting-rc4-01
+  https://datatracker.ietf.org/doc/html/draft-popov-tls-prohibiting-rc4-01
 
 ## Allow BEAST
 

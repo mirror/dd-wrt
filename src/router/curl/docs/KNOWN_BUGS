@@ -7,9 +7,9 @@
                                   Known Bugs
 
 These are problems and bugs known to exist at the time of this release. Feel
-free to join in and help us correct one or more of these! Also be sure to
+free to join in and help us correct one or more of these. Also be sure to
 check the changelog of the current development status, as one or more of these
-problems may have been fixed or changed somewhat since this was written!
+problems may have been fixed or changed somewhat since this was written.
 
  1. HTTP
  1.2 Multiple methods in a single WWW-Authenticate: header
@@ -54,10 +54,11 @@ problems may have been fixed or changed somewhat since this was written!
  5.3 curl compiled on OSX 10.13 failed to run on OSX 10.10
  5.4 Build with statically built dependency
  5.5 cannot handle Unicode arguments in non-Unicode builds on Windows
+ 5.6 make distclean loops forever
  5.7 Visual Studio project gaps
  5.8 configure finding libs in wrong directory
  5.9 Utilize Requires.private directives in libcurl.pc
- 5.10 SMB tests fail with Python 2
+ 5.10 curl hangs on SMB upload over stdin
  5.11 configure --with-gssapi with Heimdal is ignored on macOS
  5.12 flaky Windows CI builds
 
@@ -107,7 +108,6 @@ problems may have been fixed or changed somewhat since this was written!
  11.3 Disconnects do not do verbose
  11.4 HTTP test server 'connection-monitor' problems
  11.5 Connection information when using TCP Fast Open
- 11.6 slow connect to localhost on Windows
  11.7 signal-based resolver timeouts
  11.8 DoH leaks memory after followlocation
  11.9 DoH does not inherit all transfer options
@@ -127,6 +127,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  13. TCP/IP
  13.1 --interface for ipv6 binds to unusable IP address
+ 13.2 Trying local ports fails on Windows
 
  14. DICT
  14.1 DICT responses show the underlying protocol
@@ -141,13 +142,12 @@ problems may have been fixed or changed somewhat since this was written!
  15.7 generated .pc file contains strange entries
  15.8 libcurl.pc uses absolute library paths
  15.9 cert paths autodetected when cross-compiling
- 15.10 libspsl is not supported
+ 15.10 libpsl is not supported
  15.11 ExternalProject_Add does not set CURL_CA_PATH
  15.12 cannot enable LDAPS on Windows
  15.13 CMake build with MIT Kerberos does not work
 
  16. Applications
- 16.1 pulseUI VPN client
 
  17. HTTP/2
  17.1 Excessive HTTP/2 packets with TCP_NODELAY
@@ -158,12 +158,6 @@ problems may have been fixed or changed somewhat since this was written!
 
  18. HTTP/3
  18.1 If the HTTP/3 server closes connection during upload curl hangs
- 18.2 Uploading HTTP/3 files gets interrupted at certain file sizes
- 18.3 HTTP/3 download is 5x times slower than HTTP/2
- 18.4 Downloading with HTTP/3 produces broken files
- 18.5 HTTP/3 download with quiche halts after a while
- 18.6 HTTP/3 multipart POST with quiche fails
- 18.7 HTTP/3 quiche upload large file fails
  18.8 HTTP/3 does not support client certs
  18.9 connection migration does not work
 
@@ -194,12 +188,12 @@ problems may have been fixed or changed somewhat since this was written!
  something beyond ascii but currently libcurl will only pass in the verbatim
  string the app provides. There are several browsers that already do this
  encoding. The key seems to be the updated draft to RFC2231:
- https://tools.ietf.org/html/draft-reschke-rfc2231-in-http-02
+ https://datatracker.ietf.org/doc/html/draft-reschke-rfc2231-in-http-02
 
 1.5 Expect-100 meets 417
 
  If an upload using Expect: 100-continue receives an HTTP 417 response, it
- ought to be automatically resent without the Expect:.  A workaround is for
+ ought to be automatically resent without the Expect:. A workaround is for
  the client application to redo the transfer after disabling Expect:.
  https://curl.se/mail/archive-2008-02/0043.html
 
@@ -410,9 +404,9 @@ problems may have been fixed or changed somewhat since this was written!
 4.2 -J with -C - fails
 
  When using -J (with -O), automatically resumed downloading together with "-C
- -" fails. Without -J the same command line works! This happens because the
+ -" fails. Without -J the same command line works. This happens because the
  resume logic is worked out before the target file name (and thus its
- pre-transfer size) has been figured out!
+ pre-transfer size) has been figured out.
  https://curl.se/bug/view.cgi?id=1169
 
 4.3 --retry and transfer timeouts
@@ -479,6 +473,13 @@ problems may have been fixed or changed somewhat since this was written!
   https://curl.se/bug/?i=731
   https://curl.se/bug/?i=3747
 
+5.6 make distclean loops forever
+
+ Due to an issue (probably) in automake, "make distclean" can end up in a
+ never-ending loop.
+
+ See https://github.com/curl/curl/issues/7716
+
 5.7 Visual Studio project gaps
 
  The Visual Studio projects lack some features that the autoconf and nmake
@@ -503,7 +504,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  This can make subsequent checks for libraries wrongly detect another
  installation in a directory that was previously added to LDFLAGS by another
- library check!
+ library check.
 
  A possibly better way to do these checks would be to keep the pristine LDFLAGS
  even after successful checks and instead add those verified paths to a
@@ -514,11 +515,9 @@ problems may have been fixed or changed somewhat since this was written!
 
  https://github.com/curl/curl/issues/864
 
-5.10 SMB tests fail with Python 2
+5.10 curl hangs on SMB upload over stdin
 
- The error message says "TreeConnectAndX not found".
-
- See https://github.com/curl/curl/issues/5983
+ See https://github.com/curl/curl/issues/7896
 
 5.11 configure --with-gssapi with Heimdal is ignored on macOS
 
@@ -564,7 +563,7 @@ problems may have been fixed or changed somewhat since this was written!
 6.4 Negotiate and Kerberos V5 need a fake user name
 
  In order to get Negotiate (SPNEGO) authentication to work in HTTP or Kerberos
- V5 in the e-mail protocols, you need to  provide a (fake) user name (this
+ V5 in the email protocols, you need to  provide a (fake) user name (this
  concerns both curl and the lib) because the code wrongly only considers
  authentication if there's a user name provided by setting
  conn->bits.user_passwd in url.c  https://curl.se/bug/view.cgi?id=440 How?
@@ -670,7 +669,7 @@ problems may have been fixed or changed somewhat since this was written!
 
     The sender converts the data from an internal character representation to
     the standard 8-bit NVT-ASCII representation (see the Telnet
-    specification).  The receiver will convert the data from the standard
+    specification). The receiver will convert the data from the standard
     form to his own internal form.
 
  Since 7.15.4 at least line endings are converted.
@@ -678,19 +677,19 @@ problems may have been fixed or changed somewhat since this was written!
 7.6 FTP with NULs in URL parts
 
  FTP URLs passed to curl may contain NUL (0x00) in the RFC 1738 <user>,
- <password>, and <fpath> components, encoded as "%00".  The problem is that
+ <password>, and <fpath> components, encoded as "%00". The problem is that
  curl_unescape does not detect this, but instead returns a shortened C string.
  From a strict FTP protocol standpoint, NUL is a valid character within RFC
  959 <string>, so the way to handle this correctly in curl would be to use a
  data structure other than a plain C string, one that can handle embedded NUL
- characters.  From a practical standpoint, most FTP servers would not
+ characters. From a practical standpoint, most FTP servers would not
  meaningfully support NUL characters within RFC 959 <string>, anyway (e.g.,
  Unix pathnames may not contain NUL).
 
 7.7 FTP and empty path parts in the URL
 
  libcurl ignores empty path parts in FTP URLs, whereas RFC1738 states that
- such parts should be sent to the server as 'CWD ' (without an argument).  The
+ such parts should be sent to the server as 'CWD ' (without an argument). The
  only exception to this rule, is that we knowingly break this if the empty
  part is first in the path, as then we use the double slashes to indicate that
  the user wants to reach the root dir (this exception SHALL remain even when
@@ -779,7 +778,7 @@ problems may have been fixed or changed somewhat since this was written!
 9.3 Remote recursive folder creation with SFTP
 
  On this servers, the curl fails to create directories on the remote server
- even when CURLOPT_FTP_CREATE_MISSING_DIRS option is set.
+ even when the CURLOPT_FTP_CREATE_MISSING_DIRS option is set.
 
  See https://github.com/curl/curl/issues/5204
 
@@ -801,7 +800,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  Curl sends DNS requests for hostnames with a .onion TLD. This leaks
  information about what the user is attempting to access, and violates this
- requirement of RFC7686: https://tools.ietf.org/html/rfc7686
+ requirement of RFC7686: https://datatracker.ietf.org/doc/html/rfc7686
 
  Issue: https://github.com/curl/curl/issues/543
 
@@ -818,11 +817,11 @@ problems may have been fixed or changed somewhat since this was written!
  to potentially transcend the life-time of the initial easy handle that was
  used to drive the transfer over that connection, it uses a *separate* and
  internal easy handle when it shuts down the connection. That separate
- connection might not have the exact same settings as the original easy
- handle, and in particular it is often note-worthy that it does not have the
- same VERBOSE and debug callbacks setup so that an application will not get
- the protocol data for the disconnect phase of a transfer the same way it got
- all the other data.
+ connection might not have the same settings as the original easy handle, and
+ in particular it is often note-worthy that it does not have the same VERBOSE
+ and debug callbacks setup so that an application will not get the protocol
+ data for the disconnect phase of a transfer the same way it got all the other
+ data.
 
  This is because the original easy handle might have already been freed at that
  point and the application might not at all be prepared that the callback
@@ -844,20 +843,6 @@ problems may have been fixed or changed somewhat since this was written!
 
  See https://github.com/curl/curl/issues/1332 and
  https://github.com/curl/curl/issues/4296
-
-11.6 slow connect to localhost on Windows
-
- When connecting to "localhost" on Windows, curl will resolve the name for
- both ipv4 and ipv6 and try to connect to both happy eyeballs-style. Something
- in there does however make it take 200 milliseconds to succeed - which is the
- HAPPY_EYEBALLS_TIMEOUT define exactly. Lowering that define speeds up the
- connection, suggesting a problem in the HE handling.
-
- If we can *know* that we are talking to a local host, we should lower the
- happy eyeballs delay timeout for IPv6 (related: hardcode the "localhost"
- addresses, mentioned in TODO). Possibly we should reduce that delay for all.
-
- https://github.com/curl/curl/issues/2281
 
 11.7 signal-based resolver timeouts
 
@@ -933,7 +918,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  When libcurl creates sockets with socketpair(), those are not "exposed" in
  CURLOPT_OPENSOCKETFUNCTION and therefore might surprise and be unknown to
- applications that expects and wants all sockets known beforehand. One way to
+ applications that expect and want all sockets known beforehand. One way to
  address this issue is to introduce a CURLOPT_OPENSOCKETPAIRFUNCTION callback.
 
  https://github.com/curl/curl/issues/5747
@@ -992,6 +977,14 @@ problems may have been fixed or changed somewhat since this was written!
  locally scoped address as that is bound to fail.
 
  https://github.com/curl/curl/issues/686
+
+13.2 Trying local ports fails on Windows
+
+ This makes '--local-port [range]' to not work since curl can't properly
+ detect if a port is already in use, so it'll try the first port, use that and
+ then subsequently fail anyway if that was actually in use.
+
+ https://github.com/curl/curl/issues/8112
 
 14. DICT
 
@@ -1055,7 +1048,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  See https://github.com/curl/curl/issues/6178
 
-15.10 libspsl is not supported
+15.10 libpsl is not supported
 
  See https://github.com/curl/curl/issues/6214
 
@@ -1073,7 +1066,7 @@ problems may have been fixed or changed somewhat since this was written!
 15.13 CMake build with MIT Kerberos does not work
 
  Minimum CMake version was bumped in curl 7.71.0 (#5358) Since CMake 3.2
- try_compile started respecting the CMAKE_EXE_FLAGS.  The code dealing with
+ try_compile started respecting the CMAKE_EXE_FLAGS. The code dealing with
  MIT Kerberos detection sets few variables to potentially weird mix of space,
  and ;-separated flags. It had to blow up at some point. All the CMake checks
  that involve compilation are doomed from that point, the configured tree
@@ -1082,19 +1075,6 @@ problems may have been fixed or changed somewhat since this was written!
  https://github.com/curl/curl/issues/6904
 
 16. Applications
-
-16.1 pulseUI VPN client
-
- This application crashes at startup with libcurl 7.74.0 (and presumably later
- versions too) after we cleaned up OpenSSL initialization. Since this is the
- only known application to do this, we suspect it is related to something they
- are doing in their setup that is not kosher. We have not been able to get in
- contact with them nor got any technical details to help us debug this
- further.
-
- See
- https://community.pulsesecure.net/t5/Pulse-Desktop-Clients/Linux-Pulse-Client-does-not-work-with-curl-7-74/m-p/44378
- and https://github.com/curl/curl/issues/6306
 
 17. HTTP/2
 
@@ -1138,30 +1118,6 @@ problems may have been fixed or changed somewhat since this was written!
 18.1 If the HTTP/3 server closes connection during upload curl hangs
 
  See https://github.com/curl/curl/issues/6606
-
-18.2 Uploading HTTP/3 files gets interrupted at certain file sizes
-
- See https://github.com/curl/curl/issues/6510
-
-18.3 HTTP/3 download is 5x times slower than HTTP/2
-
- See https://github.com/curl/curl/issues/6494
-
-18.4 Downloading with HTTP/3 produces broken files
-
- See https://github.com/curl/curl/issues/7351
-
-18.5 HTTP/3 download with quiche halts after a while
-
- See https://github.com/curl/curl/issues/7339
-
-18.6 HTTP/3 multipart POST with quiche fails
-
- https://github.com/curl/curl/issues/7125
-
-18.7 HTTP/3 quiche upload large file fails
-
- https://github.com/curl/curl/issues/7532
 
 18.8 HTTP/3 does not support client certs
 

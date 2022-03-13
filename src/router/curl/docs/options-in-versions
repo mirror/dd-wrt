@@ -64,6 +64,7 @@
 --fail-with-body                     7.76.0
 --false-start                        7.42.0
 --form (-F)                          5.0
+--form-escape                        7.81.0
 --form-string                        7.13.2
 --ftp-account                        7.13.0
 --ftp-alternative-to-user            7.15.5
@@ -98,6 +99,7 @@
 --interface                          7.3
 --ipv4 (-4)                          7.10.8
 --ipv6 (-6)                          7.10.8
+--json                               7.82.0
 --junk-session-cookies (-j)          7.9.7
 --keepalive-time                     7.18.0
 --key                                7.9.3

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_DNS_INTERFACE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_DNS_INTERFACE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_DNS_INTERFACE \- interface to speak DNS over
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DNS_INTERFACE, char *ifname);
+.fi
 .SH DESCRIPTION
 Pass a char * as parameter. Set the name of the network interface that the DNS
 resolver should bind to. This must be an interface name (not an address). Set
