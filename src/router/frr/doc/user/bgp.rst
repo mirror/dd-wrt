@@ -515,7 +515,7 @@ Disable checking if nexthop is connected on EBGP sessions
 Route Flap Dampening
 --------------------
 
-.. clicmd:: bgp dampening (1-45) (1-20000) (1-20000) (1-255)
+.. clicmd:: bgp dampening (1-45) (1-20000) (1-50000) (1-255)
 
    This command enables BGP route-flap dampening and specifies dampening parameters.
 
@@ -924,6 +924,17 @@ However, it MUST defer route selection for an address family until it either.
 
    This is command, will set the time for which stale routes are kept in RIB.
 
+.. clicmd:: bgp graceful-restart restart-time (0-4095)
+
+   Set the time to wait to delete stale routes before a BGP open message
+   is received.
+
+   Using with Long-lived Graceful Restart capability, this is recommended
+   setting this timer to 0 and control stale routes with
+   ``bgp long-lived-graceful-restart stale-time``.
+
+   Default value is 120.
+
 .. clicmd:: bgp graceful-restart stalepath-time (1-4095)
 
    This is command, will set the max time (in seconds) to hold onto
@@ -988,6 +999,20 @@ BGP GR Peer Mode Commands
    This command will disable the entire BGP graceful restart functionality
    at the peer level.
 
+
+Long-lived Graceful Restart
+---------------------------
+
+Currently, only restarter mode is supported. This capability is advertised only
+if graceful restart capability is negotiated.
+
+.. clicmd:: bgp long-lived-graceful-restart stale-time (1-4294967295)
+
+   Specifies the maximum time to wait before purging long-lived stale routes for
+   helper routers.
+
+   Default is 0, which means the feature is off by default. Only graceful
+   restart takes into account.
 
 .. _bgp-shutdown:
 
@@ -1411,6 +1436,15 @@ Configuring Peers
    value is carried encoded as uint32. To enable backward compatibility we
    need to disable IEEE floating-point encoding option per-peer.
 
+.. clicmd:: neighbor PEER extended-optional-parameters
+
+   Force Extended Optional Parameters Length format to be used for OPEN messages.
+
+   By default, it's disabled. If the standard optional parameters length is
+   higher than one-octet (255), then extended format is enabled automatically.
+
+   For testing purposes, extended format can be enabled with this command.
+
 .. clicmd:: neighbor PEER ebgp-multihop
 
    Specifying ``ebgp-multihop`` allows sessions with eBGP neighbors to
@@ -1424,15 +1458,6 @@ Configuring Peers
 .. clicmd:: neighbor PEER description ...
 
    Set description of the peer.
-
-.. clicmd:: neighbor PEER version VERSION
-
-   Set up the neighbor's BGP version. `version` can be `4`, `4+` or `4-`. BGP
-   version `4` is the default value used for BGP peering. BGP version `4+`
-   means that the neighbor supports Multiprotocol Extensions for BGP-4. BGP
-   version `4-` is similar but the neighbor speaks the old Internet-Draft
-   revision 00's Multiprotocol Extensions for BGP-4. Some routing software is
-   still using this version.
 
 .. clicmd:: neighbor PEER interface IFNAME
 
@@ -1476,11 +1501,29 @@ Configuring Peers
        neighbor bar update-source lo0
 
 
-.. clicmd:: neighbor PEER default-originate
+.. clicmd:: neighbor PEER default-originate [route-map WORD]
 
    *bgpd*'s default is to not announce the default route (0.0.0.0/0) even if it
    is in routing table. When you want to announce default routes to the peer,
    use this command.
+
+   If ``route-map`` keyword is specified, then the default route will be
+   originated only if route-map conditions are met. For example, announce
+   the default route only if ``10.10.10.10/32`` route exists and set an
+   arbitrary community for a default route.
+
+   .. code-block:: frr
+
+      router bgp 64555
+       address-family ipv4 unicast
+        neighbor 192.168.255.1 default-originate route-map default
+      !
+      ip prefix-list p1 seq 5 permit 10.10.10.10/32
+      !
+      route-map default permit 10
+       match ip address prefix-list p1
+       set community 123:123
+      !
 
 .. clicmd:: neighbor PEER port PORT
 
@@ -2789,9 +2832,8 @@ at the same time.
 
 EVPN Overlay Index Gateway IP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Draft https://tools.ietf.org/html/draft-ietf-bess-evpn-prefix-advertisement-11
-explains the use of overlay indexes for recursive route resolution for EVPN
-type-5 route.
+RFC https://datatracker.ietf.org/doc/html/rfc9136 explains the use of overlay
+indexes for recursive route resolution for EVPN type-5 route.
 
 We support gateway IP overlay index.
 A gateway IP, advertised with EVPN prefix route, is used to find an EVPN MAC/IP
@@ -3003,8 +3045,8 @@ following zebra command -
 
 .. clicmd:: evpn mh startup-delay (0-3600)
 
-+Support with VRF network namespace backend
-+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Support with VRF network namespace backend
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 It is possible to separate overlay networks contained in VXLAN interfaces from
 underlay networks by using VRFs. VRF-lite and VRF-netns backends can be used for
 that. In the latter case, it is necessary to set both bridge and vxlan interface
@@ -3350,6 +3392,11 @@ The following are available in the top level *enable* mode:
 
    Clear peer using soft reconfiguration in this address-family and sub-address-family.
 
+.. clicmd:: clear bgp [ipv4|ipv6] [unicast] PEER|\* message-stats
+
+   Clear BGP message statistics for a specified peer or for all peers,
+   optionally filtered by activated address-family and sub-address-family.
+
 The following are available in the ``router bgp`` mode:
 
 .. clicmd:: write-quanta (1-64)
@@ -3537,6 +3584,10 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
    The ``received-routes`` keyword displays all routes belonging to this
    address-family (prior to inbound policy) that were received by this peer.
 
+.. clicmd:: show bgp [<view|vrf> VIEWVRFNAME] [afi] [safi] neighbors PEER received prefix-filter [json]
+
+   Display Address Prefix ORFs received from this peer.
+
 .. clicmd:: show bgp [afi] [safi] [all] dampening dampened-paths [wide|json]
 
    Display paths suppressed due to dampening of the selected afi and safi
@@ -3545,6 +3596,13 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
 .. clicmd:: show bgp [afi] [safi] [all] dampening flap-statistics [wide|json]
 
    Display flap statistics of routes of the selected afi and safi selected.
+
+.. clicmd:: show bgp [afi] [safi] [all] dampening parameters [json]
+
+   Display details of configured dampening parameters of the selected afi and
+   safi.
+
+   If the ``json`` option is specified, output is displayed in JSON format.
 
 .. clicmd:: show bgp [afi] [safi] [all] version (1-4294967295) [wide|json]
 
@@ -3577,6 +3635,42 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
 .. clicmd:: show [ip] bgp [afi] [safi] [all] cidr-only [wide|json]
 
    Display routes with non-natural netmasks.
+
+.. clicmd:: show [ip] bgp [afi] [safi] [all] prefix-list WORD [wide|json]
+
+   Display routes that match the specified prefix-list.
+
+   If ``wide`` option is specified, then the prefix table's width is increased
+   to fully display the prefix and the nexthop.
+
+   If the ``json`` option is specified, output is displayed in JSON format.
+
+.. clicmd:: show [ip] bgp [afi] [safi] [all] filter-list WORD [wide|json]
+
+   Display routes that match the specified AS-Path filter-list.
+
+   If ``wide`` option is specified, then the prefix table's width is increased
+   to fully display the prefix and the nexthop.
+
+   If the ``json`` option is specified, output is displayed in JSON format.
+
+.. clicmd:: show [ip] bgp [afi] [safi] [all] route-map WORD [wide|json]
+
+   Display routes that match the specified route-map.
+
+   If ``wide`` option is specified, then the prefix table's width is increased
+   to fully display the prefix and the nexthop.
+
+   If the ``json`` option is specified, output is displayed in JSON format.
+
+.. clicmd:: show [ip] bgp [afi] [safi] [all] <A.B.C.D/M|X:X::X:X/M> longer-prefixes [wide|json]
+
+   Displays the specified route and all more specific routes.
+
+   If ``wide`` option is specified, then the prefix table's width is increased
+   to fully display the prefix and the nexthop.
+
+   If the ``json`` option is specified, output is displayed in JSON format.
 
 .. clicmd:: show [ip] bgp [afi] [safi] [all] neighbors A.B.C.D [advertised-routes|received-routes|filtered-routes] [json|wide]
 
@@ -3616,9 +3710,9 @@ attribute.
    community are displayed. When `exact-match` is specified, it display only
    routes that have an exact match.
 
-.. clicmd:: show [ip] bgp <ipv4|ipv6> community-list WORD
+.. clicmd:: show [ip] bgp <ipv4|ipv6> community-list WORD [json]
 
-.. clicmd:: show [ip] bgp <ipv4|ipv6> community-list WORD exact-match
+.. clicmd:: show [ip] bgp <ipv4|ipv6> community-list WORD exact-match [json]
 
    These commands display BGP routes for the address family specified that
    match the specified community list. When `exact-match` is specified, it
@@ -3827,11 +3921,11 @@ configuration write operation.
 
 .. clicmd:: bgp send-extra-data zebra
 
-This Command turns off the ability of BGP to send extra data to zebra.
-In this case it's the AS-Path being used for the path.  The default behavior
-in BGP is to send this data and to turn it off enter the no form of the command.
-If extra data was sent to zebra, and this command is turned on there is no
-effort to clean up this data in the rib.
+This command turns on the ability of BGP to send extra data to zebra. Currently,
+it's the AS-Path, communities, and the path selection reason. The default
+behavior in BGP is not to send this data. If the routes were sent to zebra and
+the option is changed, bgpd doesn't reinstall the routes to comply with the new
+setting.
 
 .. _bgp-suppress-fib:
 

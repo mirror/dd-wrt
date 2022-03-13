@@ -85,6 +85,11 @@ OSPF6 router
    change to take effect, user can use this cli instead of restarting the
    ospf6d daemon.
 
+.. clicmd:: clear ipv6 ospf6 [vrf NAME] interface [IFNAME]
+
+   This command restarts the interface state machine for all interfaces in the
+   VRF or only for the specific interface if ``IFNAME`` is specified.
+
 ASBR Summarisation Support in OSPFv3
 ====================================
 
@@ -176,7 +181,7 @@ OSPF6 area
     The `not-advertise` option, when present, prevents the summary route from
     being advertised, effectively filtering the summarized routes.
 
-.. clicmd:: area A.B.C.D nssa [no-summary]
+.. clicmd:: area A.B.C.D nssa [no-summary] [default-information-originate [metric-type (1-2)] [metric (0-16777214)]]
 
 .. clicmd:: area (0-4294967295) nssa [no-summary] [default-information-originate [metric-type (1-2)] [metric (0-16777214)]]
 
@@ -203,6 +208,21 @@ OSPF6 area
    of NSSA ASBRs, the origination of the default route is conditioned to the
    existence of a default route in the RIB that wasn't learned via the OSPF
    protocol.
+
+.. clicmd:: area A.B.C.D nssa range X:X::X:X/M [<not-advertise|cost (0-16777215)>]
+
+.. clicmd:: area (0-4294967295) nssa range X:X::X:X/M [<not-advertise|cost (0-16777215)>]
+
+    Summarize a group of external subnets into a single Type-7 LSA, which is
+    then translated to a Type-5 LSA and avertised to the backbone.
+    This command can only be used at the area boundary (NSSA ABR router).
+
+    By default, the metric of the summary route is calculated as the highest
+    metric among the summarized routes. The `cost` option, however, can be used
+    to set an explicit metric.
+
+    The `not-advertise` option, when present, prevents the summary route from
+    being advertised, effectively filtering the summarized routes.
 
 .. clicmd:: area A.B.C.D export-list NAME
 
@@ -476,9 +496,10 @@ The following debug commands are supported:
 
    Toggle OSPFv3 ASBR debugging messages.
 
-.. clicmd:: debug ospf6 border-routers
+.. clicmd:: debug ospf6 border-routers {router-id [A.B.C.D] | area-id [A.B.C.D]}
 
-   Toggle OSPFv3 border router debugging messages.
+   Toggle OSPFv3 border router debugging messages. This can be specified for a
+   router with specific Router-ID/Area-ID.
 
 .. clicmd:: debug ospf6 flooding
 

@@ -518,7 +518,7 @@ static int zebra_ptm_handle_bfd_msg(void *arg, void *in_ctxt,
 	}
 
 	if (!strcmp(ZEBRA_PTM_INVALID_VRF, vrf_str) && ifp) {
-		vrf_id = ifp->vrf_id;
+		vrf_id = ifp->vrf->vrf_id;
 	} else {
 		struct vrf *pVrf;
 
@@ -609,11 +609,27 @@ static int zebra_ptm_handle_msg_cb(void *arg, void *in_ctxt)
 	}
 
 	if (strcmp(ZEBRA_PTM_INVALID_PORT_NAME, port_str)) {
-		ifp = if_lookup_by_name_all_vrf(port_str);
+		struct vrf *vrf;
+		int count = 0;
+
+		RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
+			ifp = if_lookup_by_name_vrf(port_str, vrf);
+			if (ifp) {
+				count++;
+				if (!vrf_is_backend_netns())
+					break;
+			}
+		}
 
 		if (!ifp) {
 			flog_warn(EC_ZEBRA_UNKNOWN_INTERFACE,
 				  "%s: %s not found in interface list",
+				  __func__, port_str);
+			return -1;
+		}
+		if (count > 1) {
+			flog_warn(EC_ZEBRA_UNKNOWN_INTERFACE,
+				  "%s: multiple interface with name %s",
 				  __func__, port_str);
 			return -1;
 		}
@@ -1364,7 +1380,7 @@ static int _zebra_ptm_bfd_client_deregister(struct zserv *zs)
 	}
 
 	/*
-	 * The message type will be BFD_DEST_REPLY so we can use only
+	 * The message type will be ZEBRA_BFD_DEST_REPLAY so we can use only
 	 * one callback at the `bfdd` side, however the real command
 	 * number will be included right after the zebra header.
 	 */

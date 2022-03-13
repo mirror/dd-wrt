@@ -142,7 +142,6 @@ static int rip_garbage_collect(struct thread *t)
 	struct route_node *rp;
 
 	rinfo = THREAD_ARG(t);
-	rinfo->t_garbage_collect = NULL;
 
 	/* Off timeout timer. */
 	RIP_TIMER_OFF(rinfo->t_timeout);
@@ -1523,6 +1522,7 @@ static int rip_send_packet(uint8_t *buf, int size, struct sockaddr_in *to,
 	cmsgptr->cmsg_type = IP_PKTINFO;
 	pkt = (struct in_pktinfo *)CMSG_DATA(cmsgptr);
 	pkt->ipi_ifindex = ifc->ifp->ifindex;
+	pkt->ipi_spec_dst.s_addr = ifc->address->u.prefix4.s_addr;
 #endif /* GNU_LINUX */
 
 	ret = sendmsg(rip->sock, &msg, 0);
@@ -1744,7 +1744,6 @@ static int rip_read(struct thread *t)
 
 	/* Fetch socket then register myself. */
 	sock = THREAD_FD(t);
-	rip->t_read = NULL;
 
 	/* Add myself to tne next event */
 	rip_event(rip, RIP_READ, sock);
@@ -2545,9 +2544,6 @@ static int rip_update(struct thread *t)
 {
 	struct rip *rip = THREAD_ARG(t);
 
-	/* Clear timer pointer. */
-	rip->t_update = NULL;
-
 	if (IS_RIP_DEBUG_EVENT)
 		zlog_debug("update timer fire!");
 
@@ -2588,8 +2584,6 @@ static int rip_triggered_interval(struct thread *t)
 {
 	struct rip *rip = THREAD_ARG(t);
 
-	rip->t_triggered_interval = NULL;
-
 	if (rip->trigger) {
 		rip->trigger = 0;
 		rip_triggered_update(t);
@@ -2602,9 +2596,6 @@ static int rip_triggered_update(struct thread *t)
 {
 	struct rip *rip = THREAD_ARG(t);
 	int interval;
-
-	/* Clear thred pointer. */
-	rip->t_triggered_update = NULL;
 
 	/* Cancel interval timer. */
 	RIP_TIMER_OFF(rip->t_triggered_interval);
@@ -2628,7 +2619,6 @@ static int rip_triggered_update(struct thread *t)
 	 update is triggered when the timer expires. */
 	interval = (frr_weak_random() % 5) + 1;
 
-	rip->t_triggered_interval = NULL;
 	thread_add_timer(master, rip_triggered_interval, rip, interval,
 			 &rip->t_triggered_interval);
 
@@ -2834,7 +2824,6 @@ void rip_event(struct rip *rip, enum rip_event event, int sock)
 
 	switch (event) {
 	case RIP_READ:
-		rip->t_read = NULL;
 		thread_add_read(master, rip_read, rip, sock, &rip->t_read);
 		break;
 	case RIP_UPDATE_EVENT:
@@ -3618,43 +3607,6 @@ static int rip_vrf_enable(struct vrf *vrf)
 	int socket;
 
 	rip = rip_lookup_by_vrf_name(vrf->name);
-	if (!rip) {
-		char *old_vrf_name = NULL;
-
-		rip = (struct rip *)vrf->info;
-		if (!rip)
-			return 0;
-		/* update vrf name */
-		if (rip->vrf_name)
-			old_vrf_name = rip->vrf_name;
-		rip->vrf_name = XSTRDUP(MTYPE_RIP_VRF_NAME, vrf->name);
-		/*
-		 * HACK: Change the RIP VRF in the running configuration directly,
-		 * bypassing the northbound layer. This is necessary to avoid deleting
-		 * the RIP and readding it in the new VRF, which would have
-		 * several implications.
-		 */
-		if (yang_module_find("frr-ripd") && old_vrf_name) {
-			struct lyd_node *rip_dnode;
-			char oldpath[XPATH_MAXLEN];
-			char newpath[XPATH_MAXLEN];
-
-			rip_dnode = yang_dnode_getf(
-				running_config->dnode,
-				"/frr-ripd:ripd/instance[vrf='%s']/vrf",
-				old_vrf_name);
-			if (rip_dnode) {
-				yang_dnode_get_path(lyd_parent(rip_dnode),
-						    oldpath, sizeof(oldpath));
-				yang_dnode_change_leaf(rip_dnode, vrf->name);
-				yang_dnode_get_path(lyd_parent(rip_dnode),
-						    newpath, sizeof(newpath));
-				nb_running_move_tree(oldpath, newpath);
-				running_config->version++;
-			}
-		}
-		XFREE(MTYPE_RIP_VRF_NAME, old_vrf_name);
-	}
 	if (!rip || rip->enabled)
 		return 0;
 
@@ -3695,8 +3647,7 @@ static int rip_vrf_disable(struct vrf *vrf)
 
 void rip_vrf_init(void)
 {
-	vrf_init(rip_vrf_new, rip_vrf_enable, rip_vrf_disable, rip_vrf_delete,
-		 rip_vrf_enable);
+	vrf_init(rip_vrf_new, rip_vrf_enable, rip_vrf_disable, rip_vrf_delete);
 
 	vrf_cmd_init(NULL);
 }

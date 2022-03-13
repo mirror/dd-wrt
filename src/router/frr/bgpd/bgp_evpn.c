@@ -54,6 +54,7 @@
 #include "bgpd/bgp_mac.h"
 #include "bgpd/bgp_vty.h"
 #include "bgpd/bgp_nht.h"
+#include "bgpd/bgp_trace.h"
 
 /*
  * Definitions and external declarations.
@@ -653,6 +654,9 @@ static int bgp_zebra_send_remote_macip(struct bgp *bgp, struct bgpevpn *vpn,
 			&p->prefix.macip_addr.mac, &p->prefix.macip_addr.ip,
 			flags, seq, &remote_vtep_ip);
 
+	frrtrace(5, frr_bgp, evpn_mac_ip_zsend, add, vpn, p, remote_vtep_ip,
+		 esi);
+
 	return zclient_send_message(zclient);
 }
 
@@ -702,6 +706,8 @@ static int bgp_zebra_send_remote_vtep(struct bgp *bgp, struct bgpevpn *vpn,
 		zlog_debug("Tx %s Remote VTEP, VNI %u remote VTEP %pI4",
 			   add ? "ADD" : "DEL", vpn->vni,
 			   &p->prefix.imet_addr.ip.ipaddr_v4);
+
+	frrtrace(3, frr_bgp, evpn_bum_vtep_zsend, add, vpn, p);
 
 	return zclient_send_message(zclient);
 }
@@ -1329,7 +1335,8 @@ static int update_evpn_type5_route(struct bgp *bgp_vrf, struct prefix_evpn *evp,
 		if (src_attr &&
 		    !IN6_IS_ADDR_UNSPECIFIED(&src_attr->mp_nexthop_global)) {
 			attr.evpn_overlay.type = OVERLAY_INDEX_GATEWAY_IP;
-			memcpy(&attr.evpn_overlay.gw_ip.ipv6,
+			SET_IPADDR_V6(&attr.evpn_overlay.gw_ip);
+			memcpy(&attr.evpn_overlay.gw_ip.ipaddr_v6,
 			       &src_attr->mp_nexthop_global,
 			       sizeof(struct in6_addr));
 		}
@@ -1338,7 +1345,8 @@ static int update_evpn_type5_route(struct bgp *bgp_vrf, struct prefix_evpn *evp,
 			      BGP_L2VPN_EVPN_ADV_IPV4_UNICAST_GW_IP)) {
 		if (src_attr && src_attr->nexthop.s_addr != 0) {
 			attr.evpn_overlay.type = OVERLAY_INDEX_GATEWAY_IP;
-			memcpy(&attr.evpn_overlay.gw_ip.ipv4,
+			SET_IPADDR_V4(&attr.evpn_overlay.gw_ip);
+			memcpy(&attr.evpn_overlay.gw_ip.ipaddr_v4,
 			       &src_attr->nexthop, sizeof(struct in_addr));
 		}
 	}
@@ -2464,11 +2472,11 @@ static int install_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 
 		if (afi == AFI_IP6) {
 			memcpy(&attr.mp_nexthop_global,
-			       &attr.evpn_overlay.gw_ip.ipv6,
+			       &attr.evpn_overlay.gw_ip.ipaddr_v6,
 			       sizeof(struct in6_addr));
 			attr.mp_nexthop_len = IPV6_MAX_BYTELEN;
 		} else {
-			attr.nexthop = attr.evpn_overlay.gw_ip.ipv4;
+			attr.nexthop = attr.evpn_overlay.gw_ip.ipaddr_v4;
 			attr.flag |= ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP);
 		}
 	}
@@ -4035,7 +4043,6 @@ static int process_type5_route(struct peer *peer, afi_t afi, safi_t safi,
 	uint32_t eth_tag;
 	mpls_label_t label; /* holds the VNI as in the packet */
 	int ret;
-	afi_t gw_afi;
 	bool is_valid_update = true;
 
 	/* Type-5 route should be 34 or 58 bytes:
@@ -4094,17 +4101,17 @@ static int process_type5_route(struct peer *peer, afi_t afi, safi_t safi,
 		SET_IPADDR_V4(&p.prefix.prefix_addr.ip);
 		memcpy(&p.prefix.prefix_addr.ip.ipaddr_v4, pfx, 4);
 		pfx += 4;
-		memcpy(&evpn.gw_ip.ipv4, pfx, 4);
+		SET_IPADDR_V4(&evpn.gw_ip);
+		memcpy(&evpn.gw_ip.ipaddr_v4, pfx, 4);
 		pfx += 4;
-		gw_afi = AF_INET;
 	} else {
 		SET_IPADDR_V6(&p.prefix.prefix_addr.ip);
 		memcpy(&p.prefix.prefix_addr.ip.ipaddr_v6, pfx,
 		       IPV6_MAX_BYTELEN);
 		pfx += IPV6_MAX_BYTELEN;
-		memcpy(&evpn.gw_ip.ipv6, pfx, IPV6_MAX_BYTELEN);
+		SET_IPADDR_V6(&evpn.gw_ip);
+		memcpy(&evpn.gw_ip.ipaddr_v6, pfx, IPV6_MAX_BYTELEN);
 		pfx += IPV6_MAX_BYTELEN;
-		gw_afi = AF_INET6;
 	}
 
 	/* Get the VNI (in MPLS label field). Stored as bytes here. */
@@ -4121,20 +4128,20 @@ static int process_type5_route(struct peer *peer, afi_t afi, safi_t safi,
 	 * An update containing a non-zero gateway IP and a non-zero ESI
 	 * at the same time is should be treated as withdraw
 	 */
-	if (bgp_evpn_is_esi_valid(&evpn.eth_s_id)
-	    && !is_zero_gw_ip(&evpn.gw_ip, gw_afi)) {
+	if (bgp_evpn_is_esi_valid(&evpn.eth_s_id) &&
+	    !ipaddr_is_zero(&evpn.gw_ip)) {
 		flog_err(EC_BGP_EVPN_ROUTE_INVALID,
 			 "%s - Rx EVPN Type-5 ESI and gateway-IP both non-zero.",
 			 peer->host);
 		is_valid_update = false;
 	} else if (bgp_evpn_is_esi_valid(&evpn.eth_s_id))
 		evpn.type = OVERLAY_INDEX_ESI;
-	else if (!is_zero_gw_ip(&evpn.gw_ip, gw_afi))
+	else if (!ipaddr_is_zero(&evpn.gw_ip))
 		evpn.type = OVERLAY_INDEX_GATEWAY_IP;
 	if (attr) {
-		if (is_zero_mac(&attr->rmac)
-		    && !bgp_evpn_is_esi_valid(&evpn.eth_s_id)
-		    && is_zero_gw_ip(&evpn.gw_ip, gw_afi) && label == 0) {
+		if (is_zero_mac(&attr->rmac) &&
+		    !bgp_evpn_is_esi_valid(&evpn.eth_s_id) &&
+		    ipaddr_is_zero(&evpn.gw_ip) && label == 0) {
 			flog_err(EC_BGP_EVPN_ROUTE_INVALID,
 				 "%s - Rx EVPN Type-5 ESI, gateway-IP, RMAC and label all zero",
 				 peer->host);
@@ -4207,9 +4214,10 @@ static void evpn_mpattr_encode_type5(struct stream *s, const struct prefix *p,
 			bgp_attr_get_evpn_overlay(attr);
 
 		if (IS_IPADDR_V4(&p_evpn_p->prefix_addr.ip))
-			stream_put_ipv4(s, evpn_overlay->gw_ip.ipv4.s_addr);
+			stream_put_ipv4(s,
+					evpn_overlay->gw_ip.ipaddr_v4.s_addr);
 		else
-			stream_put(s, &(evpn_overlay->gw_ip.ipv6), 16);
+			stream_put(s, &(evpn_overlay->gw_ip.ipaddr_v6), 16);
 	} else {
 		if (IS_IPADDR_V4(&p_evpn_p->prefix_addr.ip))
 			stream_put_ipv4(s, 0);
@@ -4895,12 +4903,12 @@ void bgp_evpn_route2json(const struct prefix_evpn *p, json_object *json)
 void bgp_evpn_encode_prefix(struct stream *s, const struct prefix *p,
 			    const struct prefix_rd *prd, mpls_label_t *label,
 			    uint32_t num_labels, struct attr *attr,
-			    int addpath_encode, uint32_t addpath_tx_id)
+			    bool addpath_capable, uint32_t addpath_tx_id)
 {
 	struct prefix_evpn *evp = (struct prefix_evpn *)p;
 	int len, ipa_len = 0;
 
-	if (addpath_encode)
+	if (addpath_capable)
 		stream_putl(s, addpath_tx_id);
 
 	/* Route type */
@@ -4982,7 +4990,7 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 	afi_t afi;
 	safi_t safi;
 	uint32_t addpath_id;
-	int addpath_encoded;
+	bool addpath_capable;
 	int psize = 0;
 	uint8_t rtype;
 	struct prefix p;
@@ -4994,17 +5002,14 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 	safi = packet->safi;
 	addpath_id = 0;
 
-	addpath_encoded =
-		(CHECK_FLAG(peer->af_cap[afi][safi], PEER_CAP_ADDPATH_AF_RX_ADV)
-		 && CHECK_FLAG(peer->af_cap[afi][safi],
-			       PEER_CAP_ADDPATH_AF_TX_RCV));
+	addpath_capable = bgp_addpath_encode_rx(peer, afi, safi);
 
 	for (; pnt < lim; pnt += psize) {
 		/* Clear prefix structure. */
 		memset(&p, 0, sizeof(struct prefix));
 
 		/* Deal with path-id if AddPath is supported. */
-		if (addpath_encoded) {
+		if (addpath_capable) {
 			/* When packet overflow occurs return immediately. */
 			if (pnt + BGP_ADDPATH_ID_LEN > lim)
 				return BGP_NLRI_PARSE_ERROR_PACKET_OVERFLOW;
@@ -6138,7 +6143,7 @@ static bool bgp_evpn_remote_ip_hash_cmp(const void *p1, const void *p2)
 	const struct evpn_remote_ip *ip1 = p1;
 	const struct evpn_remote_ip *ip2 = p2;
 
-	return (memcmp(&ip1->addr, &ip2->addr, sizeof(struct ipaddr)) == 0);
+	return !ipaddr_cmp(&ip1->addr, &ip2->addr);
 }
 
 static void bgp_evpn_remote_ip_hash_init(struct bgpevpn *vpn)

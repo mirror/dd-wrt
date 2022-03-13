@@ -532,7 +532,7 @@ DEFPY(vrf_label, vrf_label_cmd,
 		vrf = vrf_lookup_by_name(vrf_name);
 
 	if (!vrf) {
-		vty_out(vty, "Unable to find vrf you silly head");
+		vty_out(vty, "Unable to find vrf you silly head\n");
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
@@ -1065,12 +1065,8 @@ DEFUN (show_sharp_ted,
 		ls_show_ted(sg.ted, vty, json, verbose);
 	}
 
-	if (uj) {
-		vty_out(vty, "%s\n",
-			json_object_to_json_string_ext(
-				json, JSON_C_TO_STRING_PRETTY));
-		json_object_free(json);
-	}
+	if (uj)
+		vty_json(vty, json);
 
 	return CMD_SUCCESS;
 }
@@ -1137,9 +1133,7 @@ DEFPY (show_sharp_segment_routing_srv6,
 			}
 		}
 
-		vty_out(vty, "%s\n", json_object_to_json_string_ext(
-				jo_locs, JSON_C_TO_STRING_PRETTY));
-		json_object_free(jo_locs);
+		vty_json(vty, jo_locs);
 	} else {
 		for (ALL_LIST_ELEMENTS_RO(sg.srv6_locators, loc_node, loc)) {
 			vty_out(vty, "Locator %s has %d prefix chunks\n",

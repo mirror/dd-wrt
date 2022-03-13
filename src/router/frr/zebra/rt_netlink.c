@@ -507,7 +507,7 @@ parse_nexthop_unicast(ns_id_t ns_id, struct rtmsg *rtm, struct rtattr **tb,
 	if (index) {
 		ifp = if_lookup_by_index_per_ns(zebra_ns_lookup(ns_id), index);
 		if (ifp)
-			nh_vrf_id = ifp->vrf_id;
+			nh_vrf_id = ifp->vrf->vrf_id;
 	}
 	nh.vrf_id = nh_vrf_id;
 
@@ -581,7 +581,7 @@ static uint8_t parse_multipath_nexthops_unicast(ns_id_t ns_id,
 			ifp = if_lookup_by_index_per_ns(zebra_ns_lookup(ns_id),
 							index);
 			if (ifp)
-				nh_vrf_id = ifp->vrf_id;
+				nh_vrf_id = ifp->vrf->vrf_id;
 			else {
 				flog_warn(
 					EC_ZEBRA_UNKNOWN_INTERFACE,
@@ -1171,7 +1171,7 @@ int netlink_route_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_route_change_read_unicast,
-				 &zns->netlink_cmd, &dp_info, 0, 1);
+				 &zns->netlink_cmd, &dp_info, 0, true);
 	if (ret < 0)
 		return ret;
 
@@ -1180,7 +1180,7 @@ int netlink_route_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_route_change_read_unicast,
-				 &zns->netlink_cmd, &dp_info, 0, 1);
+				 &zns->netlink_cmd, &dp_info, 0, true);
 	if (ret < 0)
 		return ret;
 
@@ -1810,7 +1810,7 @@ static int netlink_neigh_update(int cmd, int ifindex, void *addr, char *lla,
 		nl_attr_put(&req.n, sizeof(req), NDA_LLADDR, lla, llalen);
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,
-			    0);
+			    false);
 }
 
 static bool nexthop_set_src(const struct nexthop *nexthop, int family,
@@ -2268,7 +2268,7 @@ int kernel_get_ipmr_sg_stats(struct zebra_vrf *zvrf, void *in)
 	nl_attr_put32(&req.n, sizeof(req), RTA_TABLE, actual_table);
 
 	suc = netlink_talk(netlink_route_change_read_multicast, &req.n,
-			   &zns->netlink_cmd, zns, 0);
+			   &zns->netlink_cmd, zns, false);
 
 	mroute = NULL;
 	return suc;
@@ -2799,7 +2799,7 @@ static struct nexthop netlink_nexthop_process_nh(struct rtattr **tb,
 	if (ifp)
 		*ifp = ifp_lookup;
 	if (ifp_lookup)
-		nh.vrf_id = ifp_lookup->vrf_id;
+		nh.vrf_id = ifp_lookup->vrf->vrf_id;
 	else {
 		flog_warn(
 			EC_ZEBRA_UNKNOWN_INTERFACE,
@@ -2892,7 +2892,8 @@ int netlink_nexthop_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 		return -1;
 	}
 
-	netlink_parse_rtattr(tb, NHA_MAX, RTM_NHA(nhm), len);
+	netlink_parse_rtattr_flags(tb, NHA_MAX, RTM_NHA(nhm), len,
+				   NLA_F_NESTED);
 
 
 	if (!tb[NHA_ID]) {
@@ -3019,7 +3020,7 @@ int netlink_nexthop_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_nexthop_change, &zns->netlink_cmd,
-				 &dp_info, 0, 1);
+				 &dp_info, 0, true);
 
 	if (!ret)
 		/* If we succesfully read in nexthop objects,
@@ -3427,7 +3428,7 @@ int netlink_macfdb_read(struct zebra_ns *zns)
 	/* We are reading entire table. */
 	filter_vlan = 0;
 	ret = netlink_parse_info(netlink_macfdb_table, &zns->netlink_cmd,
-				 &dp_info, 0, 1);
+				 &dp_info, 0, true);
 
 	return ret;
 }
@@ -3461,7 +3462,7 @@ int netlink_macfdb_read_for_bridge(struct zebra_ns *zns, struct interface *ifp,
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_macfdb_table, &zns->netlink_cmd,
-				 &dp_info, 0, 0);
+				 &dp_info, 0, false);
 
 	/* Reset VLAN filter. */
 	filter_vlan = 0;
@@ -3502,8 +3503,8 @@ static int netlink_request_specific_mac_in_bridge(struct zebra_ns *zns,
 		zlog_debug(
 			"%s: Tx family %s IF %s(%u) vrf %s(%u) MAC %pEA vid %u",
 			__func__, nl_family_to_str(req.ndm.ndm_family),
-			br_if->name, br_if->ifindex,
-			vrf_id_to_name(br_if->vrf_id), br_if->vrf_id, mac, vid);
+			br_if->name, br_if->ifindex, br_if->vrf->name,
+			br_if->vrf->vrf_id, mac, vid);
 
 	return netlink_request(&zns->netlink_cmd, &req);
 }
@@ -3526,7 +3527,7 @@ int netlink_macfdb_read_specific_mac(struct zebra_ns *zns,
 		return ret;
 
 	ret = netlink_parse_info(netlink_macfdb_table, &zns->netlink_cmd,
-				 &dp_info, 1, 0);
+				 &dp_info, 1, false);
 
 	return ret;
 }
@@ -3675,7 +3676,6 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 	struct interface *link_if;
 	struct ethaddr mac;
 	struct ipaddr ip;
-	struct vrf *vrf;
 	char buf[ETHER_ADDR_STRLEN];
 	int mac_present = 0;
 	bool is_ext;
@@ -3694,7 +3694,6 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 	if (!ifp || !ifp->info)
 		return 0;
 
-	vrf = vrf_lookup_by_id(ifp->vrf_id);
 	zif = (struct zebra_if *)ifp->info;
 
 	/* Parse attributes and extract fields of interest. */
@@ -3704,7 +3703,7 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 		zlog_debug("%s family %s IF %s(%u) vrf %s(%u) - no DST",
 			   nl_msg_type_to_str(h->nlmsg_type),
 			   nl_family_to_str(ndm->ndm_family), ifp->name,
-			   ndm->ndm_ifindex, VRF_LOGNAME(vrf), ifp->vrf_id);
+			   ndm->ndm_ifindex, ifp->vrf->name, ifp->vrf->vrf_id);
 		return 0;
 	}
 
@@ -3800,7 +3799,8 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 						nl_family_to_str(
 							ndm->ndm_family),
 						ifp->name, ndm->ndm_ifindex,
-						VRF_LOGNAME(vrf), ifp->vrf_id,
+						ifp->vrf->name,
+						ifp->vrf->vrf_id,
 						(unsigned long)RTA_PAYLOAD(
 							tb[NDA_LLADDR]));
 				return 0;
@@ -3824,8 +3824,8 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 				"Rx %s family %s IF %s(%u) vrf %s(%u) IP %pIA MAC %s state 0x%x flags 0x%x ext_flags 0x%x",
 				nl_msg_type_to_str(h->nlmsg_type),
 				nl_family_to_str(ndm->ndm_family), ifp->name,
-				ndm->ndm_ifindex, VRF_LOGNAME(vrf), ifp->vrf_id,
-				&ip,
+				ndm->ndm_ifindex, ifp->vrf->name,
+				ifp->vrf->vrf_id, &ip,
 				mac_present
 					? prefix_mac2str(&mac, buf, sizeof(buf))
 					: "",
@@ -3860,7 +3860,7 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 		zlog_debug("Rx %s family %s IF %s(%u) vrf %s(%u) IP %pIA",
 			   nl_msg_type_to_str(h->nlmsg_type),
 			   nl_family_to_str(ndm->ndm_family), ifp->name,
-			   ndm->ndm_ifindex, VRF_LOGNAME(vrf), ifp->vrf_id,
+			   ndm->ndm_ifindex, ifp->vrf->name, ifp->vrf->vrf_id,
 			   &ip);
 
 	/* Process the delete - it may result in re-adding the neighbor if it is
@@ -3929,7 +3929,7 @@ int netlink_neigh_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_neigh_table, &zns->netlink_cmd,
-				 &dp_info, 0, 1);
+				 &dp_info, 0, true);
 
 	return ret;
 }
@@ -3950,7 +3950,7 @@ int netlink_neigh_read_for_vlan(struct zebra_ns *zns, struct interface *vlan_if)
 	if (ret < 0)
 		return ret;
 	ret = netlink_parse_info(netlink_neigh_table, &zns->netlink_cmd,
-				 &dp_info, 0, 0);
+				 &dp_info, 0, false);
 
 	return ret;
 }
@@ -4003,7 +4003,7 @@ int netlink_neigh_read_specific_ip(const struct ipaddr *ip,
 {
 	int ret = 0;
 	struct zebra_ns *zns;
-	struct zebra_vrf *zvrf = zebra_vrf_lookup_by_id(vlan_if->vrf_id);
+	struct zebra_vrf *zvrf = vlan_if->vrf->info;
 	struct zebra_dplane_info dp_info;
 
 	zns = zvrf->zns;
@@ -4013,7 +4013,7 @@ int netlink_neigh_read_specific_ip(const struct ipaddr *ip,
 	if (IS_ZEBRA_DEBUG_KERNEL)
 		zlog_debug("%s: neigh request IF %s(%u) IP %pIA vrf %s(%u)",
 			   __func__, vlan_if->name, vlan_if->ifindex, ip,
-			   vrf_id_to_name(vlan_if->vrf_id), vlan_if->vrf_id);
+			   vlan_if->vrf->name, vlan_if->vrf->vrf_id);
 
 	ret = netlink_request_specific_neigh_in_vlan(zns, RTM_GETNEIGH, ip,
 					    vlan_if->ifindex);
@@ -4021,7 +4021,7 @@ int netlink_neigh_read_specific_ip(const struct ipaddr *ip,
 		return ret;
 
 	ret = netlink_parse_info(netlink_neigh_table, &zns->netlink_cmd,
-				 &dp_info, 1, 0);
+				 &dp_info, 1, false);
 
 	return ret;
 }
@@ -4441,7 +4441,7 @@ static int netlink_fdb_nh_update(uint32_t nh_id, struct in_addr vtep_ip)
 	}
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,
-			    0);
+			    false);
 }
 
 static int netlink_fdb_nh_del(uint32_t nh_id)
@@ -4476,7 +4476,7 @@ static int netlink_fdb_nh_del(uint32_t nh_id)
 	}
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,
-			    0);
+			    false);
 }
 
 static int netlink_fdb_nhg_update(uint32_t nhg_id, uint32_t nh_cnt,
@@ -4536,7 +4536,7 @@ static int netlink_fdb_nhg_update(uint32_t nhg_id, uint32_t nh_cnt,
 	}
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,
-			    0);
+			    false);
 }
 
 static int netlink_fdb_nhg_del(uint32_t nhg_id)

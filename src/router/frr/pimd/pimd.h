@@ -27,6 +27,7 @@
 #include "vty.h"
 #include "plist.h"
 
+#include "pim_addr.h"
 #include "pim_instance.h"
 #include "pim_str.h"
 #include "pim_memory.h"
@@ -84,8 +85,6 @@
 #define PIM_NET_INADDR_ANY (htonl(INADDR_ANY))
 #define PIM_INADDR_IS_ANY(addr) (addr).s_addr == PIM_NET_INADDR_ANY
 #define PIM_INADDR_ISNOT_ANY(addr) ((addr).s_addr != PIM_NET_INADDR_ANY) /* struct in_addr addr */
-
-#define max(x,y) ((x) > (y) ? (x) : (y))
 
 #define PIM_MASK_PIM_EVENTS          (1 << 0)
 #define PIM_MASK_PIM_EVENTS_DETAIL   (1 << 1)
