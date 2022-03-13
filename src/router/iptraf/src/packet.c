@@ -302,6 +302,13 @@ int packet_is_first_fragment(struct pkt_hdr *pkt)
 	}
 }
 
+#ifndef PACKET_USER
+#define PACKET_USER		6		/* To user space	*/
+#endif
+#ifndef PACKET_KERNEL
+#define PACKET_KERNEL		7		/* To kernel space	*/
+#endif
+
 static char *pkttype_to_string(unsigned int type)
 {
 	switch(type) {
