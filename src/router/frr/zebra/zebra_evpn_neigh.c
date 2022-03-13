@@ -72,7 +72,7 @@ static bool neigh_cmp(const void *p1, const void *p2)
 	if (n1 == NULL || n2 == NULL)
 		return false;
 
-	return (memcmp(&n1->ip, &n2->ip, sizeof(struct ipaddr)) == 0);
+	return ipaddr_cmp(&n1->ip, &n2->ip) == 0;
 }
 
 int neigh_list_cmp(void *p1, void *p2)
@@ -80,7 +80,7 @@ int neigh_list_cmp(void *p1, void *p2)
 	const struct zebra_neigh *n1 = p1;
 	const struct zebra_neigh *n2 = p2;
 
-	return memcmp(&n1->ip, &n2->ip, sizeof(struct ipaddr));
+	return ipaddr_cmp(&n1->ip, &n2->ip);
 }
 
 struct hash *zebra_neigh_db_create(const char *desc)
@@ -923,7 +923,7 @@ void zebra_evpn_process_neigh_on_local_mac_change(struct zebra_evpn *zevpn,
 	struct listnode *node = NULL;
 	struct zebra_vrf *zvrf = NULL;
 
-	zvrf = vrf_info_lookup(zevpn->vxlan_if->vrf_id);
+	zvrf = zevpn->vxlan_if->vrf->info;
 
 	if (IS_ZEBRA_DEBUG_VXLAN)
 		zlog_debug("Processing neighbors on local MAC %pEA %s, VNI %u",
@@ -1286,12 +1286,6 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 				   macaddr, ip, zevpn->vni);
 
 		zmac = zebra_evpn_mac_add(zevpn, macaddr);
-		if (!zmac) {
-			zlog_debug("Failed to add MAC %pEA VNI %u", macaddr,
-				   zevpn->vni);
-			return -1;
-		}
-
 		zebra_evpn_mac_clear_fwd_info(zmac);
 		memset(&zmac->flags, 0, sizeof(uint32_t));
 		SET_FLAG(zmac->flags, ZEBRA_MAC_AUTO);
@@ -1308,11 +1302,11 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 		}
 	}
 
-	zvrf = vrf_info_lookup(zevpn->vxlan_if->vrf_id);
+	zvrf = zevpn->vxlan_if->vrf->info;
 	if (!zvrf) {
 		if (IS_ZEBRA_DEBUG_VXLAN)
 			zlog_debug("        Unable to find vrf for: %d",
-				   zevpn->vxlan_if->vrf_id);
+				   zevpn->vxlan_if->vrf->vrf_id);
 		return -1;
 	}
 
@@ -1725,7 +1719,6 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 	struct vty *vty;
 	char buf1[ETHER_ADDR_STRLEN];
 	char buf2[INET6_ADDRSTRLEN];
-	char addr_buf[PREFIX_STRLEN];
 	const char *type_str;
 	const char *state_str;
 	bool flags_present = false;
@@ -1812,10 +1805,8 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 					n->mac->es->esi_str);
 		} else {
 			if (json)
-				json_object_string_add(
-					json, "remoteVtep",
-					inet_ntop(AF_INET, &n->r_vtep_ip,
-						  addr_buf, sizeof(addr_buf)));
+				json_object_string_addf(json, "remoteVtep",
+							"%pI4", &n->r_vtep_ip);
 			else
 				vty_out(vty, " Remote VTEP: %pI4\n",
 					&n->r_vtep_ip);
@@ -1974,10 +1965,8 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 				json_object_string_add(json_row, "remoteEs",
 						       n->mac->es->esi_str);
 			else
-				json_object_string_add(
-					json_row, "remoteVtep",
-					inet_ntop(AF_INET, &n->r_vtep_ip,
-						  addr_buf, sizeof(addr_buf)));
+				json_object_string_addf(json_row, "remoteVtep",
+							"%pI4", &n->r_vtep_ip);
 			if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_DEF_GW))
 				json_object_boolean_true_add(json_row,
 							     "defaultGateway");
@@ -2342,7 +2331,7 @@ int zebra_evpn_neigh_del_ip(struct zebra_evpn *zevpn, const struct ipaddr *ip)
 		return 0;
 	}
 
-	zvrf = vrf_info_lookup(zevpn->vxlan_if->vrf_id);
+	zvrf = zevpn->vxlan_if->vrf->info;
 	if (!zvrf) {
 		zlog_debug("%s: VNI %u vrf lookup failed.", __func__,
 			   zevpn->vni);

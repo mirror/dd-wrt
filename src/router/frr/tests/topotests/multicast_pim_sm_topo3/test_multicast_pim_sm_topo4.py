@@ -78,11 +78,13 @@ from lib.pim import (
     verify_upstream_iif,
     clear_ip_mroute,
     verify_pim_rp_info,
-    verify_pim_interface_traffic,
+    get_pim_interface_traffic,
     McastTesterHelper,
 )
 from lib.topolog import logger
 from lib.topojson import build_config_from_json
+from time import sleep
+
 
 TOPOLOGY = """
 
@@ -193,6 +195,28 @@ def teardown_module():
 #   Testcases
 #
 #####################################################
+
+
+def reset_stats(stats):
+    """
+    API to reset the stats
+
+    Parameters
+    ----------
+    * `stats` : State dictionary holding helloRx and helloTx values
+    """
+
+    for router, state_data in stats.items():
+        for state, value in state_data.items():
+            stats[router][state] = 0
+            logger.info(
+                "[DUT: %s]: stats %s value has reset" " reset, Current value: %s",
+                router,
+                state,
+                stats[router][state],
+            )
+
+    return True
 
 
 def verify_state_incremented(state_before, state_after):
@@ -923,14 +947,13 @@ def test_PIM_hello_tx_rx_p1(request):
     intf_l1_c1 = topo["routers"]["l1"]["links"]["c1"]["interface"]
     intf_c1_l1 = topo["routers"]["c1"]["links"]["l1"]["interface"]
 
-    step("verify before stats on C1")
     state_dict = {
         "c1": {
             intf_c1_l1: ["helloTx", "helloRx"],
         }
     }
 
-    c1_state_before = verify_pim_interface_traffic(tgen, state_dict)
+    c1_state_before = get_pim_interface_traffic(tgen, state_dict)
     assert isinstance(
         c1_state_before, dict
     ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
@@ -940,25 +963,35 @@ def test_PIM_hello_tx_rx_p1(request):
     step("Flap PIM nbr while doing interface c1-l1 interface shut from f1 side")
     shutdown_bringup_interface(tgen, "c1", intf_c1_l1, False)
 
-    step(
-        "After shut of local interface from c1 , verify rx/tx hello counters are cleared on c1 side"
-        "verify using 'show ip pim interface traffic'"
-    )
+    """ Resetting the stats here since shutdown resets the stats.
+    """
+    reset_stats(c1_state_before)
     shutdown_bringup_interface(tgen, "c1", intf_c1_l1, True)
 
-    step("verify stats after on c1")
-    c1_state_after = verify_pim_interface_traffic(tgen, state_dict)
-    assert isinstance(
-        c1_state_after, dict
-    ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
+    step("verify stats after no shutdown on c1 and that they are incremented")
+
+    count = 0
+    done = False
+    while not done and count <= 7:
+        c1_state_after = get_pim_interface_traffic(tgen, state_dict)
+        assert isinstance(
+            c1_state_after, dict
+        ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
+            tc_name, result
+        )
+
+        result = verify_state_incremented(c1_state_before, c1_state_after)
+        if result is not True:
+            sleep(5)
+            count += 1
+        else:
+            done = True
+
+    assert (
+        result is True
+    ), "Testcase{} : Failed Error: {}" "stats is not incremented".format(
         tc_name, result
     )
-
-    step("verify stats not increamented on c1")
-    result = verify_state_incremented(c1_state_before, c1_state_after)
-    assert (
-        result is not True
-    ), "Testcase{} : Failed Error: {}" "stats incremented".format(tc_name, result)
 
     step("verify before stats on l1")
     l1_state_dict = {
@@ -967,7 +1000,7 @@ def test_PIM_hello_tx_rx_p1(request):
         }
     }
 
-    l1_state_before = verify_pim_interface_traffic(tgen, l1_state_dict)
+    l1_state_before = get_pim_interface_traffic(tgen, l1_state_dict)
     assert isinstance(
         l1_state_before, dict
     ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
@@ -983,16 +1016,24 @@ def test_PIM_hello_tx_rx_p1(request):
     )
     shutdown_bringup_interface(tgen, "l1", intf_l1_c1, True)
 
-    step("verify stats after on l1")
-    l1_state_after = verify_pim_interface_traffic(tgen, l1_state_dict)
-    assert isinstance(
-        l1_state_after, dict
-    ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
-        tc_name, result
-    )
+    step("verify stats after on l1 are incremented")
+    count = 0
+    done = False
+    while not done and count <= 7:
+        l1_state_after = get_pim_interface_traffic(tgen, l1_state_dict)
+        assert isinstance(
+            l1_state_after, dict
+        ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
+            tc_name, result
+        )
 
-    step("verify stats not increamented on l1")
-    result = verify_state_incremented(l1_state_before, l1_state_after)
+        result = verify_state_incremented(l1_state_before, l1_state_after)
+        if result is True:
+            sleep(5)
+            count += 1
+        else:
+            done = True
+
     assert (
         result is not True
     ), "Testcase{} : Failed Error: {}" "stats incremented".format(tc_name, result)
@@ -1010,7 +1051,7 @@ def test_PIM_hello_tx_rx_p1(request):
         }
     }
 
-    c1_state_before = verify_pim_interface_traffic(tgen, state_dict)
+    c1_state_before = get_pim_interface_traffic(tgen, state_dict)
     assert isinstance(
         c1_state_before, dict
     ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
@@ -1033,19 +1074,27 @@ def test_PIM_hello_tx_rx_p1(request):
     result = apply_raw_config(tgen, raw_config)
     assert result is True, "Testcase {} : Failed Error: {}".format(tc_name, result)
 
-    step("verify stats after on c1")
-    c1_state_after = verify_pim_interface_traffic(tgen, state_dict)
-    assert isinstance(
-        c1_state_after, dict
-    ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
+    step("verify stats after on c1 are incremented")
+    count = 0
+    done = False
+    while not done and count <= 7:
+        c1_state_after = get_pim_interface_traffic(tgen, state_dict)
+        assert isinstance(
+            c1_state_after, dict
+        ), "Testcase{} : Failed \n state_before is not dictionary \n Error: {}".format(
+            tc_name, result
+        )
+
+        result = verify_state_incremented(c1_state_before, c1_state_after)
+        if result is not True:
+            sleep(5)
+            count += 1
+        else:
+            done = True
+
+    assert result is True, "Testcase{} : Failed Error: {}" "stats incremented".format(
         tc_name, result
     )
-
-    step("verify stats not increamented on c1")
-    result = verify_state_incremented(c1_state_before, c1_state_after)
-    assert (
-        result is not True
-    ), "Testcase{} : Failed Error: {}" "stats incremented".format(tc_name, result)
 
     write_test_footer(tc_name)
 

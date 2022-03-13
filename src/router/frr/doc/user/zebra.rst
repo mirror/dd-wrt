@@ -29,6 +29,9 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
    Zebra, when started, will read in routes.  Those routes that Zebra
    identifies that it was the originator of will be swept in TIME seconds.
    If no time is specified then we will sweep those routes immediately.
+   Under the *BSD's, there is no way to properly store the originating
+   route and the route types in this case will show up as a static route
+   with an admin distance of 255.
 
 .. option:: -r, --retain
 
@@ -48,13 +51,6 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
    network namespaces. That implies that all network namespaces discovered by
    ZEBRA will create an associated VRF. The other daemons will operate on the VRF
    VRF defined by *Zebra*, as usual.
-
-   .. seealso:: :ref:`zebra-vrf`
-
-.. option:: -o, --vrfdefaultname
-
-   When *Zebra* starts with this option, the default VRF name is changed to the
-   parameter.
 
    .. seealso:: :ref:`zebra-vrf`
 
@@ -84,6 +80,11 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
    or notify_on_ack.  This signals to zebra to notify upper level
    protocols about route installation/update on ack received from
    the linux kernel or from offload notification.
+
+.. option:: -s <SIZE>, --nl-bufsize <SIZE>
+
+   Allow zebra to modify the default receive buffer size to SIZE
+   in bytes.  Under \*BSD only the -s option is available.
 
 .. _interface-commands:
 
@@ -143,8 +144,8 @@ Standard Commands
    Configure an IPv4 Point-to-Point address on the interface. (The concept of
    PtP addressing does not exist for IPv6.)
 
-   `local-addr` has no subnet mask since the local side in PtP addressing is
-   always a single (/32) address. `peer-addr/prefix` can be an arbitrary subnet
+   ``local-addr`` has no subnet mask since the local side in PtP addressing is
+   always a single (/32) address. ``peer-addr/prefix`` can be an arbitrary subnet
    behind the other end of the link (or even on the link in Point-to-Multipoint
    setups), though generally /32s are used.
 
@@ -157,7 +158,7 @@ Standard Commands
 .. clicmd:: multicast
 
 
-   Enable or disables multicast flag for the interface.
+   Enable or disable multicast flag for the interface.
 
 
 .. clicmd:: bandwidth (1-10000000)
@@ -171,7 +172,7 @@ Standard Commands
 .. clicmd:: link-detect
 
 
-   Enable/disable link-detect on platforms which support this. Currently only
+   Enable or disable link-detect on platforms which support this. Currently only
    Linux, and only where network interface drivers support reporting
    link-state via the ``IFF_RUNNING`` flag.
 
@@ -363,7 +364,13 @@ separate for each set of VRF, and routing daemons can have their own context
 for each VRF.
 
 This conceptual view introduces the *Default VRF* case. If the user does not
-configure any specific VRF, then by default, FRR uses the *Default VRF*.
+configure any specific VRF, then by default, FRR uses the *Default VRF*. The
+name "default" is used to refer to this VRF in various CLI commands and YANG
+models. It is possible to change that name by passing the ``-o`` option to all
+daemons, for example, one can use ``-o vrf0`` to change the name to "vrf0".
+The easiest way to pass the same option to all daemons is to use the
+``frr_global_options`` variable in the
+:ref:`Daemons Configuration File <daemons-configuration-file>`.
 
 Configuring VRF networking contexts can be done in various ways on FRR. The VRF
 interfaces can be configured by entering in interface configuration mode
@@ -430,7 +437,7 @@ commands in relationship to VRF. Here is an extract of some of those commands:
 
 .. clicmd:: show ip route vrf VRF tables
 
-   This command will dump the routing tables within the vrf scope. If `vrf all`
+   This command will dump the routing tables within the vrf scope. If ``vrf all``
    is executed, all routing tables will be dumped.
 
 .. clicmd:: show <ip|ipv6> route summary [vrf VRF] [table TABLENO] [prefix]
@@ -440,38 +447,20 @@ commands in relationship to VRF. Here is an extract of some of those commands:
    the default vrf and default table.  If prefix is specified dump the
    number of prefix routes.
 
-By using the :option:`-n` option, the *Linux network namespace* will be mapped
-over the *Zebra* VRF. One nice feature that is possible by handling *Linux
-network namespace* is the ability to name default VRF. At startup, *Zebra*
-discovers the available *Linux network namespace* by parsing folder
-`/var/run/netns`. Each file stands for a *Linux network namespace*, but not all
-*Linux network namespaces* are available under that folder. This is the case for
-default VRF. It is possible to name the default VRF, by creating a file, by
-executing following commands.
+.. _zebra-table-allocation:
 
-.. code-block:: shell
+Table Allocation
+================
 
-   touch /var/run/netns/vrf0
-   mount --bind /proc/self/ns/net /var/run/netns/vrf0
+Some services like BGP flowspec allocate routing tables to perform policy
+routing based on netfilter criteria and IP rules. In order to avoid
+conflicts between VRF allocated routing tables and those services, Zebra
+proposes to define a chunk of routing tables to use by other services.
 
-Above command illustrates what happens when the default VRF is visible under
-`var/run/netns/`. Here, the default VRF file is `vrf0`.
-At startup, FRR detects the presence of that file. It detects that the file
-statistics information matches the same file statistics information as
-`/proc/self/ns/net` ( through stat() function). As statistics information
-matches, then `vrf0` stands for the new default namespace name.
-Consequently, the VRF naming `Default` will be overridden by the new discovered
-namespace name `vrf0`.
+Allocation configuration can be done like below, with the range of the
+chunk of routing tables to be used by the given service.
 
-For those who don't use VRF backend with *Linux network namespace*, it is
-possible to statically configure and recompile FRR. It is possible to choose an
-alternate name for default VRF. Then, the default VRF naming will automatically
-be updated with the new name. To illustrate, if you want to recompile with
-`global` value, use the following command:
-
-.. code-block:: shell
-
-   ./configure --with-defaultvrfname=global
+.. clicmd:: ip table range <STARTTABLENO> <ENDTABLENO>
 
 .. _zebra-ecmp:
 
@@ -484,7 +473,7 @@ options on compilation if the end operator desires to do so.  Individual
 protocols each have their own way of dictating ECMP policy and their
 respective documentation should be read.
 
-ECMP can be inspected in zebra by doing a `show ip route X` command.
+ECMP can be inspected in zebra by doing a ``show ip route X`` command.
 
 .. code-block:: shell
 
@@ -513,11 +502,11 @@ ECMP can be inspected in zebra by doing a `show ip route X` command.
      *                    via 192.168.161.15, enp39s0, weight 1, 00:00:02
      *                    via 192.168.161.16, enp39s0, weight 1, 00:00:02
 
-In this example we have 16 way ecmp for the 4.4.4.4/32 route.  The `*` character
+In this example we have 16 way ecmp for the 4.4.4.4/32 route.  The ``*`` character
 tells us that the route is installed in the Data Plane, or FIB.
 
 If you are using the Linux kernel as a Data Plane, this can be inspected
-via a `ip route show X` command:
+via a ``ip route show X`` command:
 
 .. code-block:: shell
 
@@ -542,7 +531,7 @@ via a `ip route show X` command:
 
 Once installed into the FIB, FRR currently has little control over what
 nexthops are choosen to forward packets on.  Currently the Linux kernel
-has a `fib_multipath_hash_policy` sysctl which dictates how the hashing
+has a ``fib_multipath_hash_policy`` sysctl which dictates how the hashing
 algorithm is used to forward packets.
 
 .. _zebra-mpls:
@@ -796,7 +785,7 @@ unicast topology!
       with the longer prefix length is used;  if they're equal, the
       Multicast RIB takes precedence.
 
-      The `mrib-then-urib` setting is the default behavior if nothing is
+      The ``mrib-then-urib`` setting is the default behavior if nothing is
       configured. If this is the desired behavior, it should be explicitly
       configured to make the configuration immune against possible changes in
       what the default behavior is.
@@ -889,8 +878,8 @@ that sets the preferred source address, and applies the route-map to all
 
    ip prefix-list ANY permit 0.0.0.0/0 le 32
    route-map RM1 permit 10
-        match ip address prefix-list ANY
-        set src 10.0.0.1
+     match ip address prefix-list ANY
+     set src 10.0.0.1
 
    ip protocol rip route-map RM1
 
@@ -900,8 +889,8 @@ IPv6 example for OSPFv3.
 
    ipv6 prefix-list ANY seq 10 permit any
    route-map RM6 permit 10
-       match ipv6 address prefix-list ANY
-       set src 2001:db8:425:1000::3
+     match ipv6 address prefix-list ANY
+     set src 2001:db8:425:1000::3
 
    ipv6 protocol ospf6 route-map RM6
 
@@ -936,7 +925,7 @@ latter information makes up the Forwarding Information Base
 (FIB). Zebra feeds the FIB to the kernel, which allows the IP stack in
 the kernel to forward packets according to the routes computed by
 FRR. The kernel FIB is updated in an OS-specific way. For example,
-the `Netlink` interface is used on Linux, and route sockets are
+the ``Netlink`` interface is used on Linux, and route sockets are
 used on FreeBSD.
 
 The FIB push interface aims to provide a cross-platform mechanism to
@@ -1338,6 +1327,15 @@ Optional sysctl settings
    When ndisc_notify is set to 0, no U-NA is sent.
    When ndisc_notify is set to 1, a U-NA is sent when the interface comes UP.
 
+Useful sysctl settings
+----------------------
+
+.. option:: net.ipv6.conf.all.use_oif_addrs_only = 1
+
+   When enabled, the candidate source addresses for destinations routed via this interface are
+   restricted to the set of addresses configured on this interface (RFC 6724 section 4).  If
+   an operator has hundreds of IP addresses per interface this solves the latency problem.
+
 Debugging
 =========
 
@@ -1401,3 +1399,199 @@ Debugging
 
    Nexthop and nexthop-group events.
 
+Scripting
+=========
+
+.. clicmd:: zebra on-rib-process script SCRIPT
+
+   Set a Lua script for :ref:`on-rib-process-dplane-results` hook call.
+   SCRIPT is the basename of the script, without ``.lua``.
+
+Data structures
+---------------
+
+.. _const-struct-zebra-dplane-ctx:
+
+const struct zebra_dplane_ctx
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   * integer zd_op
+   * integer zd_status
+   * integer zd_provider
+   * integer zd_vrf_id
+   * integer zd_table_id
+   * integer zd_ifname
+   * integer zd_ifindex
+   * table rinfo (if zd_op is DPLANE_OP_ROUTE*, DPLANE_NH_*)
+
+     * prefix zd_dest
+     * prefix zd_src
+     * integer zd_afi
+     * integer zd_safi
+     * integer zd_type
+     * integer zd_old_type
+     * integer zd_tag
+     * integer zd_old_tag
+     * integer zd_metric
+     * integer zd_old_metric
+     * integer zd_instance
+     * integer zd_old_instance
+     * integer zd_distance
+     * integer zd_old_distance
+     * integer zd_mtu
+     * integer zd_nexthop_mtu
+     * table nhe
+
+       * integer id
+       * integer old_id
+       * integer afi
+       * integer vrf_id
+       * integer type
+       * nexthop_group ng
+       * nh_grp
+       * integer nh_grp_count
+
+     * integer zd_nhg_id
+     * nexthop_group zd_ng
+     * nexthop_group backup_ng
+     * nexthop_group zd_old_ng
+     * nexthop_group old_backup_ng
+
+   * integer label (if zd_op is DPLANE_OP_LSP_*)
+   * table pw (if zd_op is DPLANE_OP_PW_*)
+
+     * integer type
+     * integer af
+     * integer status
+     * integer flags
+     * integer local_label
+     * integer remote_label
+
+   * table macinfo (if zd_op is DPLANE_OP_MAC_*)
+
+     * integer vid
+     * integer br_ifindex
+     * ethaddr mac
+     * integer vtep_ip
+     * integer is_sticky
+     * integer nhg_id
+     * integer update_flags
+
+   * table rule (if zd_op is DPLANE_OP_RULE_*)
+
+     * integer sock
+     * integer unique
+     * integer seq
+     * string ifname
+     * integer priority
+     * integer old_priority
+     * integer table
+     * integer old_table
+     * integer filter_bm
+     * integer old_filter_bm
+     * integer fwmark
+     * integer old_fwmark
+     * integer dsfield
+     * integer old_dsfield
+     * integer ip_proto
+     * integer old_ip_proto
+     * prefix src_ip
+     * prefix old_src_ip
+     * prefix dst_ip
+     * prefix old_dst_ip
+
+   * table iptable (if zd_op is DPLANE_OP_IPTABLE_*)
+
+     * integer sock
+     * integer vrf_id
+     * integer unique
+     * integer type
+     * integer filter_bm
+     * integer fwmark
+     * integer action
+     * integer pkt_len_min
+     * integer pkt_len_max
+     * integer tcp_flags
+     * integer dscp_value
+     * integer fragment
+     * integer protocol
+     * integer nb_interface
+     * integer flow_label
+     * integer family
+     * string ipset_name
+
+   * table ipset (if zd_op is DPLANE_OP_IPSET_*)
+     * integer sock
+     * integer vrf_id
+     * integer unique
+     * integer type
+     * integer family
+     * string ipset_name
+
+   * table neigh (if zd_op is DPLANE_OP_NEIGH_*)
+
+     * ipaddr ip_addr
+     * table link
+
+       * ethaddr mac
+       * ipaddr ip_addr
+
+     * integer flags
+     * integer state
+     * integer update_flags
+
+   * table br_port (if zd_op is DPLANE_OP_BR_PORT_UPDATE)
+
+     * integer sph_filter_cnt
+     * integer flags
+     * integer backup_nhg_id
+
+   * table neightable (if zd_op is DPLANE_OP_NEIGH_TABLE_UPDATE)
+
+     * integer family
+     * integer app_probes
+     * integer ucast_probes
+     * integer mcast_probes
+
+   * table gre (if zd_op is DPLANE_OP_GRE_SET)**
+
+     * integer link_ifindex
+     * integer mtu
+
+
+.. _const-struct-nh-grp:
+
+const struct nh_grp
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   * integer id
+   * integer weight
+
+
+.. _zebra-hook-calls:
+
+Zebra Hook calls
+----------------
+
+.. _on-rib-process-dplane-results:
+
+on_rib_process_dplane_results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Called when RIB processes dataplane events.
+Set script location with the ``zebra on-rib-process script SCRIPT`` command.
+
+**Arguments**
+
+* :ref:`const struct zebra_dplane_ctx<const-struct-zebra-dplane-ctx>` ctx
+
+
+.. code-block:: lua
+
+   function on_rib_process_dplane_results(ctx)
+      log.info(ctx.rinfo.zd_dest.network)
+      return {}

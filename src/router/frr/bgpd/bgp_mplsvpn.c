@@ -112,7 +112,7 @@ int bgp_nlri_parse_vpn(struct peer *peer, struct attr *attr,
 	mpls_label_t label = {0};
 	afi_t afi;
 	safi_t safi;
-	int addpath_encoded;
+	bool addpath_capable;
 	uint32_t addpath_id;
 	int ret = 0;
 
@@ -126,17 +126,14 @@ int bgp_nlri_parse_vpn(struct peer *peer, struct attr *attr,
 	safi = packet->safi;
 	addpath_id = 0;
 
-	addpath_encoded =
-		(CHECK_FLAG(peer->af_cap[afi][safi], PEER_CAP_ADDPATH_AF_RX_ADV)
-		 && CHECK_FLAG(peer->af_cap[afi][safi],
-			       PEER_CAP_ADDPATH_AF_TX_RCV));
+	addpath_capable = bgp_addpath_encode_rx(peer, afi, safi);
 
 #define VPN_PREFIXLEN_MIN_BYTES (3 + 8) /* label + RD */
 	while (STREAM_READABLE(data) > 0) {
 		/* Clear prefix structure. */
 		memset(&p, 0, sizeof(struct prefix));
 
-		if (addpath_encoded) {
+		if (addpath_capable) {
 			STREAM_GET(&addpath_id, data, BGP_ADDPATH_ID_LEN);
 			addpath_id = ntohl(addpath_id);
 		}
@@ -529,7 +526,7 @@ static uint32_t alloc_new_sid(struct bgp *bgp, uint32_t index,
 	struct prefix_ipv6 *chunk;
 	struct in6_addr sid_buf;
 	bool alloced = false;
-	int label;
+	int label = 0;
 
 	if (!bgp || !sid)
 		return false;
@@ -779,10 +776,7 @@ leak_update(struct bgp *bgp, /* destination bgp instance */
 	 * schemes that could be implemented in the future.
 	 *
 	 */
-	for (bpi_ultimate = source_bpi;
-	     bpi_ultimate->extra && bpi_ultimate->extra->parent;
-	     bpi_ultimate = bpi_ultimate->extra->parent)
-		;
+	bpi_ultimate = bgp_get_imported_bpi_ultimate(source_bpi);
 
 	/*
 	 * match parent
@@ -1619,10 +1613,7 @@ vpn_leak_to_vrf_update_onevrf(struct bgp *bgp_vrf,	    /* to */
 	if (!CHECK_FLAG(bgp_vrf->af_flags[afi][safi],
 			BGP_CONFIG_VRF_TO_VRF_IMPORT)) {
 		/* work back to original route */
-		for (bpi_ultimate = path_vpn;
-		     bpi_ultimate->extra && bpi_ultimate->extra->parent;
-		     bpi_ultimate = bpi_ultimate->extra->parent)
-			;
+		bpi_ultimate = bgp_get_imported_bpi_ultimate(path_vpn);
 
 		/*
 		 * if original route was unicast,

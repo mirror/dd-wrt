@@ -68,9 +68,6 @@ static const struct message attr_str[] = {
 	{BGP_ATTR_COMMUNITIES, "COMMUNITY"},
 	{BGP_ATTR_ORIGINATOR_ID, "ORIGINATOR_ID"},
 	{BGP_ATTR_CLUSTER_LIST, "CLUSTER_LIST"},
-	{BGP_ATTR_DPA, "DPA"},
-	{BGP_ATTR_ADVERTISER, "ADVERTISER"},
-	{BGP_ATTR_RCID_PATH, "RCID_PATH"},
 	{BGP_ATTR_MP_REACH_NLRI, "MP_REACH_NLRI"},
 	{BGP_ATTR_MP_UNREACH_NLRI, "MP_UNREACH_NLRI"},
 	{BGP_ATTR_EXT_COMMUNITIES, "EXT_COMMUNITIES"},
@@ -407,9 +404,8 @@ static bool overlay_index_same(const struct attr *a1, const struct attr *a2)
 	if (!a1 && !a2)
 		return true;
 
-	return !memcmp(bgp_attr_get_evpn_overlay(a1),
-		       bgp_attr_get_evpn_overlay(a2),
-		       sizeof(struct bgp_route_evpn));
+	return bgp_route_evpn_same(bgp_attr_get_evpn_overlay(a1),
+				   bgp_attr_get_evpn_overlay(a2));
 }
 
 /* Unknown transit attribute. */
@@ -834,10 +830,6 @@ static void *bgp_attr_hash_alloc(void *p)
 	if (vnc_subtlvs)
 		bgp_attr_set_vnc_subtlvs(val, NULL);
 #endif
-	if (val->srv6_l3vpn)
-		val->srv6_l3vpn = NULL;
-	if (val->srv6_vpn)
-		val->srv6_vpn = NULL;
 
 	attr->refcnt = 0;
 	return attr;
@@ -3735,11 +3727,11 @@ size_t bgp_packet_mpattr_start(struct stream *s, struct peer *peer, afi_t afi,
 void bgp_packet_mpattr_prefix(struct stream *s, afi_t afi, safi_t safi,
 			      const struct prefix *p,
 			      const struct prefix_rd *prd, mpls_label_t *label,
-			      uint32_t num_labels, int addpath_encode,
+			      uint32_t num_labels, bool addpath_capable,
 			      uint32_t addpath_tx_id, struct attr *attr)
 {
 	if (safi == SAFI_MPLS_VPN) {
-		if (addpath_encode)
+		if (addpath_capable)
 			stream_putl(s, addpath_tx_id);
 		/* Label, RD, Prefix write. */
 		stream_putc(s, p->prefixlen + 88);
@@ -3749,17 +3741,17 @@ void bgp_packet_mpattr_prefix(struct stream *s, afi_t afi, safi_t safi,
 	} else if (afi == AFI_L2VPN && safi == SAFI_EVPN) {
 		/* EVPN prefix - contents depend on type */
 		bgp_evpn_encode_prefix(s, p, prd, label, num_labels, attr,
-				       addpath_encode, addpath_tx_id);
+				       addpath_capable, addpath_tx_id);
 	} else if (safi == SAFI_LABELED_UNICAST) {
 		/* Prefix write with label. */
-		stream_put_labeled_prefix(s, p, label, addpath_encode,
+		stream_put_labeled_prefix(s, p, label, addpath_capable,
 					  addpath_tx_id);
 	} else if (safi == SAFI_FLOWSPEC) {
 		stream_putc(s, p->u.prefix_flowspec.prefixlen);
 		stream_put(s, (const void *)p->u.prefix_flowspec.ptr,
 			   p->u.prefix_flowspec.prefixlen);
 	} else
-		stream_put_prefix_addpath(s, p, addpath_encode, addpath_tx_id);
+		stream_put_prefix_addpath(s, p, addpath_capable, addpath_tx_id);
 }
 
 size_t bgp_packet_mpattr_prefix_size(afi_t afi, safi_t safi,
@@ -3903,7 +3895,7 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer,
 				struct prefix *p, afi_t afi, safi_t safi,
 				struct peer *from, struct prefix_rd *prd,
 				mpls_label_t *label, uint32_t num_labels,
-				int addpath_encode, uint32_t addpath_tx_id)
+				bool addpath_capable, uint32_t addpath_tx_id)
 {
 	size_t cp;
 	size_t aspath_sizep;
@@ -3927,7 +3919,7 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer,
 		mpattrlen_pos = bgp_packet_mpattr_start(s, peer, afi, safi,
 							vecarr, attr);
 		bgp_packet_mpattr_prefix(s, afi, safi, p, prd, label,
-					 num_labels, addpath_encode,
+					 num_labels, addpath_capable,
 					 addpath_tx_id, attr);
 		bgp_packet_mpattr_end(s, mpattrlen_pos);
 	}
@@ -4426,7 +4418,7 @@ void bgp_packet_mpunreach_prefix(struct stream *s, const struct prefix *p,
 				 afi_t afi, safi_t safi,
 				 const struct prefix_rd *prd,
 				 mpls_label_t *label, uint32_t num_labels,
-				 int addpath_encode, uint32_t addpath_tx_id,
+				 bool addpath_capable, uint32_t addpath_tx_id,
 				 struct attr *attr)
 {
 	uint8_t wlabel[3] = {0x80, 0x00, 0x00};
@@ -4437,7 +4429,7 @@ void bgp_packet_mpunreach_prefix(struct stream *s, const struct prefix *p,
 	}
 
 	bgp_packet_mpattr_prefix(s, afi, safi, p, prd, label, num_labels,
-				 addpath_encode, addpath_tx_id, attr);
+				 addpath_capable, addpath_tx_id, attr);
 }
 
 void bgp_packet_mpunreach_end(struct stream *s, size_t attrlen_pnt)
@@ -4480,7 +4472,7 @@ void bgp_dump_routes_attr(struct stream *s, struct attr *attr,
 	unsigned long len;
 	size_t aspath_lenp;
 	struct aspath *aspath;
-	int addpath_encode = 0;
+	bool addpath_capable = false;
 	uint32_t addpath_tx_id = 0;
 
 	/* Remember current pointer. */
@@ -4609,7 +4601,7 @@ void bgp_dump_routes_attr(struct stream *s, struct attr *attr,
 		stream_putc(s, 0);
 
 		/* Prefix */
-		stream_put_prefix_addpath(s, prefix, addpath_encode,
+		stream_put_prefix_addpath(s, prefix, addpath_capable,
 					  addpath_tx_id);
 
 		/* Set MP attribute length. */

@@ -154,7 +154,6 @@ static const struct message rttype_str[] = {{RTN_UNSPEC, "none"},
 					    {0}};
 
 extern struct thread_master *master;
-extern uint32_t nl_rcvbufsize;
 
 extern struct zebra_privs_t zserv_privs;
 
@@ -251,12 +250,11 @@ static int netlink_recvbuf(struct nlsock *nl, uint32_t newsize)
 	/* Try force option (linux >= 2.6.14) and fall back to normal set */
 	frr_with_privs(&zserv_privs) {
 		ret = setsockopt(nl->sock, SOL_SOCKET, SO_RCVBUFFORCE,
-				 &nl_rcvbufsize,
-				 sizeof(nl_rcvbufsize));
+				 &rcvbufsize, sizeof(rcvbufsize));
 	}
 	if (ret < 0)
-		ret = setsockopt(nl->sock, SOL_SOCKET, SO_RCVBUF,
-				 &nl_rcvbufsize, sizeof(nl_rcvbufsize));
+		ret = setsockopt(nl->sock, SOL_SOCKET, SO_RCVBUF, &rcvbufsize,
+				 sizeof(rcvbufsize));
 	if (ret < 0) {
 		flog_err_sys(EC_LIB_SOCKET,
 			     "Can't set %s receive buffer size: %s", nl->name,
@@ -271,9 +269,6 @@ static int netlink_recvbuf(struct nlsock *nl, uint32_t newsize)
 			     safe_strerror(errno));
 		return -1;
 	}
-
-	zlog_info("Setting netlink socket receive buffer size: %u -> %u",
-		  oldsize, newsize);
 	return 0;
 }
 
@@ -419,7 +414,7 @@ static int kernel_read(struct thread *thread)
 	zebra_dplane_info_from_zns(&dp_info, zns, false);
 
 	netlink_parse_info(netlink_information_fetch, &zns->netlink, &dp_info,
-			   5, 0);
+			   5, false);
 
 	thread_add_read(zrouter.master, kernel_read, zns, zns->netlink.sock,
 			&zns->t_netlink);
@@ -433,7 +428,7 @@ static int kernel_read(struct thread *thread)
 int kernel_dplane_read(struct zebra_dplane_info *info)
 {
 	netlink_parse_info(dplane_netlink_information_fetch, &info->nls, info,
-			   5, 0);
+			   5, false);
 
 	return 0;
 }
@@ -933,7 +928,7 @@ static int netlink_parse_error(const struct nlsock *nl, struct nlmsghdr *h,
 int netlink_parse_info(int (*filter)(struct nlmsghdr *, ns_id_t, int),
 		       const struct nlsock *nl,
 		       const struct zebra_dplane_info *zns,
-		       int count, int startup)
+		       int count, bool startup)
 {
 	int status;
 	int ret = 0;
@@ -1036,7 +1031,7 @@ int netlink_parse_info(int (*filter)(struct nlmsghdr *, ns_id_t, int),
 static int
 netlink_talk_info(int (*filter)(struct nlmsghdr *, ns_id_t, int startup),
 		  struct nlmsghdr *n, const struct zebra_dplane_info *dp_info,
-		  int startup)
+		  bool startup)
 {
 	const struct nlsock *nl;
 
@@ -1067,7 +1062,7 @@ netlink_talk_info(int (*filter)(struct nlmsghdr *, ns_id_t, int startup),
  */
 int netlink_talk(int (*filter)(struct nlmsghdr *, ns_id_t, int startup),
 		 struct nlmsghdr *n, struct nlsock *nl, struct zebra_ns *zns,
-		 int startup)
+		 bool startup)
 {
 	struct zebra_dplane_info dp_info;
 
@@ -1128,8 +1123,25 @@ static int nl_batch_read_resp(struct nl_batch *bth)
 	while (true) {
 		status = netlink_recv_msg(nl, msg, nl_batch_rx_buf,
 					  sizeof(nl_batch_rx_buf));
-		if (status == -1 || status == 0)
+		/*
+		 * status == -1 is a full on failure somewhere
+		 * since we don't know where the problem happened
+		 * we must mark all as failed
+		 *
+		 * Else we mark everything as worked
+		 *
+		 */
+		if (status == -1 || status == 0) {
+			while ((ctx = dplane_ctx_dequeue(&(bth->ctx_list))) !=
+			       NULL) {
+				if (status == -1)
+					dplane_ctx_set_status(
+						ctx,
+						ZEBRA_DPLANE_REQUEST_FAILURE);
+				dplane_ctx_enqueue_tail(bth->ctx_out_q, ctx);
+			}
 			return status;
+		}
 
 		h = (struct nlmsghdr *)nl_batch_rx_buf;
 		ignore_msg = false;
@@ -1141,15 +1153,18 @@ static int nl_batch_read_resp(struct nl_batch *bth)
 		 * requests at same time.
 		 */
 		while (true) {
-			ctx = dplane_ctx_dequeue(&(bth->ctx_list));
-			if (ctx == NULL)
+			ctx = dplane_ctx_get_head(&(bth->ctx_list));
+			if (ctx == NULL) {
+				/*
+				 * This is a situation where we have gotten
+				 * into a bad spot.  We need to know that
+				 * this happens( does it? )
+				 */
+				zlog_err(
+					"%s:WARNING Received netlink Response for an error and no Contexts to associate with it",
+					__func__);
 				break;
-
-			dplane_ctx_enqueue_tail(bth->ctx_out_q, ctx);
-
-			/* We have found corresponding context object. */
-			if (dplane_ctx_get_ns(ctx)->nls.seq == seq)
-				break;
+			}
 
 			/*
 			 * 'update' context objects take two consecutive
@@ -1164,10 +1179,35 @@ static int nl_batch_read_resp(struct nl_batch *bth)
 				ignore_msg = true;
 				break;
 			}
+
+			ctx = dplane_ctx_dequeue(&(bth->ctx_list));
+			dplane_ctx_enqueue_tail(bth->ctx_out_q, ctx);
+
+			/* We have found corresponding context object. */
+			if (dplane_ctx_get_ns(ctx)->nls.seq == seq)
+				break;
+
+			if (dplane_ctx_get_ns(ctx)->nls.seq > seq)
+				zlog_warn(
+					"%s:WARNING Recieved %u is less than any context on the queue ctx->seq %u",
+					__func__, seq,
+					dplane_ctx_get_ns(ctx)->nls.seq);
 		}
 
-		if (ignore_msg)
+		if (ignore_msg) {
+			/*
+			 * If we ignore the message due to an update
+			 * above we should still fricking decode the
+			 * message for our operator to understand
+			 * what is going on
+			 */
+			int err = netlink_parse_error(nl, h, bth->zns->is_cmd,
+						      false);
+
+			zlog_debug("%s: netlink error message seq=%d %d",
+				   __func__, h->nlmsg_seq, err);
 			continue;
+		}
 
 		/*
 		 * We received a message with the sequence number that isn't
@@ -1582,11 +1622,11 @@ void kernel_init(struct zebra_ns *zns)
 			 errno);
 
 	/* Set receive buffer size if it's set from command line */
-	if (nl_rcvbufsize) {
-		netlink_recvbuf(&zns->netlink, nl_rcvbufsize);
-		netlink_recvbuf(&zns->netlink_cmd, nl_rcvbufsize);
-		netlink_recvbuf(&zns->netlink_dplane_out, nl_rcvbufsize);
-		netlink_recvbuf(&zns->netlink_dplane_in, nl_rcvbufsize);
+	if (rcvbufsize) {
+		netlink_recvbuf(&zns->netlink, rcvbufsize);
+		netlink_recvbuf(&zns->netlink_cmd, rcvbufsize);
+		netlink_recvbuf(&zns->netlink_dplane_out, rcvbufsize);
+		netlink_recvbuf(&zns->netlink_dplane_in, rcvbufsize);
 	}
 
 	/* Set filter for inbound sockets, to exclude events we've generated

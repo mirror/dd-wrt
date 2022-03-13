@@ -21,8 +21,10 @@ import os
 import re
 import sys
 import traceback
+import functools
 from copy import deepcopy
 from time import sleep
+from lib import topotest
 
 
 # Import common_config to use commomnly used APIs
@@ -1441,16 +1443,16 @@ def verify_pim_state(
     return True
 
 
-def verify_pim_interface_traffic(tgen, input_dict):
+def get_pim_interface_traffic(tgen, input_dict):
     """
-    Verify ip pim interface traffice by running
+    get ip pim interface traffice by running
     "show ip pim interface traffic" cli
 
     Parameters
     ----------
     * `tgen`: topogen object
     * `input_dict(dict)`: defines DUT, what and from which interfaces
-                          traffic needs to be verified
+                          traffic needs to be retrieved
     Usage
     -----
     input_dict = {
@@ -1464,7 +1466,7 @@ def verify_pim_interface_traffic(tgen, input_dict):
         }
     }
 
-    result = verify_pim_interface_traffic(tgen, input_dict)
+    result = get_pim_interface_traffic(tgen, input_dict)
 
     Returns
     -------
@@ -1481,24 +1483,34 @@ def verify_pim_interface_traffic(tgen, input_dict):
         rnode = tgen.routers()[dut]
 
         logger.info("[DUT: %s]: Verifying pim interface traffic", dut)
-        show_pim_intf_traffic_json = run_frr_cmd(
-            rnode, "show ip pim interface traffic json", isjson=True
+
+        def show_pim_intf_traffic(rnode, dut, input_dict, output_dict):
+            show_pim_intf_traffic_json = run_frr_cmd(
+                rnode, "show ip pim interface traffic json", isjson=True
+            )
+
+            output_dict[dut] = {}
+            for intf, data in input_dict[dut].items():
+                interface_json = show_pim_intf_traffic_json[intf]
+                for state in data:
+
+                    # Verify Tx/Rx
+                    if state in interface_json:
+                        output_dict[dut][state] = interface_json[state]
+                    else:
+                        errormsg = (
+                            "[DUT %s]: %s is not present"
+                            "for interface %s [FAILED]!! " % (dut, state, intf)
+                        )
+                        return errormsg
+            return None
+
+        test_func = functools.partial(
+            show_pim_intf_traffic, rnode, dut, input_dict, output_dict
         )
-
-        output_dict[dut] = {}
-        for intf, data in input_dict[dut].items():
-            interface_json = show_pim_intf_traffic_json[intf]
-            for state in data:
-
-                # Verify Tx/Rx
-                if state in interface_json:
-                    output_dict[dut][state] = interface_json[state]
-                else:
-                    errormsg = (
-                        "[DUT %s]: %s is not present"
-                        "for interface %s [FAILED]!! " % (dut, state, intf)
-                    )
-                    return errormsg
+        (result, out) = topotest.run_and_expect(test_func, None, count=20, wait=1)
+        if not result:
+            return out
 
     logger.debug("Exiting lib API: {}".format(sys._getframe().f_code.co_name))
     return output_dict

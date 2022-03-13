@@ -86,6 +86,9 @@ vector cmdvec = NULL;
 /* Host information structure. */
 struct host host;
 
+/* for vtysh, put together CLI trees only when switching into node */
+static bool defer_cli_tree;
+
 /*
  * Returns host.name if any, otherwise
  * it returns the system hostname.
@@ -141,31 +144,6 @@ static struct cmd_node config_node = {
 	.config_write = config_write_host,
 	.node_exit = vty_config_node_exit,
 };
-
-static bool vty_check_node_for_xpath_decrement(enum node_type target_node,
-					       enum node_type node)
-{
-	/* bgp afi-safi (`address-family <afi> <safi>`) node
-	 * does not increment xpath_index.
-	 * In order to use (`router bgp`) BGP_NODE's xpath as a base,
-	 * retain xpath_index as 1 upon exiting from
-	 * afi-safi node.
-	 */
-
-	if (target_node == BGP_NODE
-	    && (node == BGP_IPV4_NODE || node == BGP_IPV6_NODE
-		|| node == BGP_IPV4M_NODE || node == BGP_IPV6M_NODE
-		|| node == BGP_VPNV4_NODE || node == BGP_VPNV6_NODE
-		|| node == BGP_EVPN_NODE || node == BGP_IPV4L_NODE
-		|| node == BGP_IPV6L_NODE || node == BGP_FLOWSPECV4_NODE
-		|| node == BGP_FLOWSPECV6_NODE))
-		return false;
-
-	if (target_node == INTERFACE_NODE && node == LINK_PARAMS_NODE)
-		return false;
-
-	return true;
-}
 
 /* This is called from main when a daemon is invoked with -v or --version. */
 void print_version(const char *progname)
@@ -285,6 +263,11 @@ const char *cmd_prompt(enum node_type node)
 	return cnode->prompt;
 }
 
+void cmd_defer_tree(bool val)
+{
+	defer_cli_tree = val;
+}
+
 /* Install a command into a node. */
 void _install_element(enum node_type ntype, const struct cmd_element *cmd)
 {
@@ -319,20 +302,50 @@ void _install_element(enum node_type ntype, const struct cmd_element *cmd)
 
 	assert(hash_get(cnode->cmd_hash, (void *)cmd, hash_alloc_intern));
 
+	if (cnode->graph_built || !defer_cli_tree) {
+		struct graph *graph = graph_new();
+		struct cmd_token *token =
+			cmd_token_new(START_TKN, CMD_ATTR_NORMAL, NULL, NULL);
+		graph_new_node(graph, token,
+			       (void (*)(void *)) & cmd_token_del);
+
+		cmd_graph_parse(graph, cmd);
+		cmd_graph_names(graph);
+		cmd_graph_merge(cnode->cmdgraph, graph, +1);
+		graph_delete_graph(graph);
+
+		cnode->graph_built = true;
+	}
+
+	vector_set(cnode->cmd_vector, (void *)cmd);
+
+	if (ntype == VIEW_NODE)
+		_install_element(ENABLE_NODE, cmd);
+}
+
+static void cmd_finalize_iter(struct hash_bucket *hb, void *arg)
+{
+	struct cmd_node *cnode = arg;
+	const struct cmd_element *cmd = hb->data;
 	struct graph *graph = graph_new();
 	struct cmd_token *token =
 		cmd_token_new(START_TKN, CMD_ATTR_NORMAL, NULL, NULL);
+
 	graph_new_node(graph, token, (void (*)(void *)) & cmd_token_del);
 
 	cmd_graph_parse(graph, cmd);
 	cmd_graph_names(graph);
 	cmd_graph_merge(cnode->cmdgraph, graph, +1);
 	graph_delete_graph(graph);
+}
 
-	vector_set(cnode->cmd_vector, (void *)cmd);
+void cmd_finalize_node(struct cmd_node *cnode)
+{
+	if (cnode->graph_built)
+		return;
 
-	if (ntype == VIEW_NODE)
-		_install_element(ENABLE_NODE, cmd);
+	hash_iterate(cnode->cmd_hash, cmd_finalize_iter, cnode);
+	cnode->graph_built = true;
 }
 
 void uninstall_element(enum node_type ntype, const struct cmd_element *cmd)
@@ -368,15 +381,18 @@ void uninstall_element(enum node_type ntype, const struct cmd_element *cmd)
 
 	vector_unset_value(cnode->cmd_vector, (void *)cmd);
 
-	struct graph *graph = graph_new();
-	struct cmd_token *token =
-		cmd_token_new(START_TKN, CMD_ATTR_NORMAL, NULL, NULL);
-	graph_new_node(graph, token, (void (*)(void *)) & cmd_token_del);
+	if (cnode->graph_built) {
+		struct graph *graph = graph_new();
+		struct cmd_token *token =
+			cmd_token_new(START_TKN, CMD_ATTR_NORMAL, NULL, NULL);
+		graph_new_node(graph, token,
+			       (void (*)(void *)) & cmd_token_del);
 
-	cmd_graph_parse(graph, cmd);
-	cmd_graph_names(graph);
-	cmd_graph_merge(cnode->cmdgraph, graph, -1);
-	graph_delete_graph(graph);
+		cmd_graph_parse(graph, cmd);
+		cmd_graph_names(graph);
+		cmd_graph_merge(cnode->cmdgraph, graph, -1);
+		graph_delete_graph(graph);
+	}
 
 	if (ntype == VIEW_NODE)
 		uninstall_element(ENABLE_NODE, cmd);
@@ -503,6 +519,8 @@ static int config_write_host(struct vty *vty)
 static struct graph *cmd_node_graph(vector v, enum node_type ntype)
 {
 	struct cmd_node *cnode = vector_slot(v, ntype);
+
+	cmd_finalize_node(cnode);
 	return cnode->cmdgraph;
 }
 
@@ -879,13 +897,15 @@ static int cmd_execute_command_real(vector vline, enum cmd_filter_type filter,
 	 * a match before calling node_exit handlers below
 	 */
 	for (i = 0; i < up_level; i++) {
+		struct cmd_node *cnode;
+
 		if (node <= CONFIG_NODE)
 			return CMD_NO_LEVEL_UP;
 
+		cnode = vector_slot(cmdvec, node);
 		node = node_parent(node);
 
-		if (xpath_index > 0
-		    && vty_check_node_for_xpath_decrement(node, vty->node))
+		if (xpath_index > 0 && !cnode->no_xpath)
 			xpath_index--;
 	}
 
@@ -1019,12 +1039,13 @@ int cmd_execute_command(vector vline, struct vty *vty,
 		/* This assumes all nodes above CONFIG_NODE are childs of
 		 * CONFIG_NODE */
 		while (vty->node > CONFIG_NODE) {
+			struct cmd_node *cnode = vector_slot(cmdvec, try_node);
+
 			try_node = node_parent(try_node);
 			vty->node = try_node;
-			if (vty->xpath_index > 0
-			    && vty_check_node_for_xpath_decrement(try_node,
-								  onode))
+			if (vty->xpath_index > 0 && !cnode->no_xpath)
 				vty->xpath_index--;
+
 			ret = cmd_execute_command_real(vline, FILTER_RELAXED,
 						       vty, cmd, 0);
 			if (ret == CMD_SUCCESS || ret == CMD_WARNING
@@ -1343,8 +1364,7 @@ void cmd_exit(struct vty *vty)
 	}
 	if (cnode->parent_node)
 		vty->node = cnode->parent_node;
-	if (vty->xpath_index > 0
-	    && vty_check_node_for_xpath_decrement(vty->node, cnode->node))
+	if (vty->xpath_index > 0 && !cnode->no_xpath)
 		vty->xpath_index--;
 }
 
@@ -1506,9 +1526,10 @@ int cmd_list_cmds(struct vty *vty, int do_permute)
 {
 	struct cmd_node *node = vector_slot(cmdvec, vty->node);
 
-	if (do_permute)
+	if (do_permute) {
+		cmd_finalize_node(node);
 		permute(vector_slot(node->cmdgraph->nodes, 0), vty);
-	else {
+	} else {
 		/* loop over all commands at this node */
 		const struct cmd_element *element = NULL;
 		for (unsigned int i = 0; i < vector_active(node->cmd_vector);
@@ -1551,7 +1572,10 @@ DEFUN_HIDDEN(show_cli_graph,
              "Dump current command space as DOT graph\n")
 {
 	struct cmd_node *cn = vector_slot(cmdvec, vty->node);
-	char *dot = cmd_graph_dump_dot(cn->cmdgraph);
+	char *dot;
+
+	cmd_finalize_node(cn);
+	dot = cmd_graph_dump_dot(cn->cmdgraph);
 
 	vty_out(vty, "%s\n", dot);
 	XFREE(MTYPE_TMP, dot);
@@ -2199,9 +2223,9 @@ DEFUN (banner_motd_file,
 	int cmd = cmd_banner_motd_file(filename);
 
 	if (cmd == CMD_ERR_NO_FILE)
-		vty_out(vty, "%s does not exist", filename);
+		vty_out(vty, "%s does not exist\n", filename);
 	else if (cmd == CMD_WARNING_CONFIG_FAILED)
-		vty_out(vty, "%s must be in %s", filename, SYSCONFDIR);
+		vty_out(vty, "%s must be in %s\n", filename, SYSCONFDIR);
 
 	return cmd;
 }

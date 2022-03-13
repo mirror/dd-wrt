@@ -2090,8 +2090,7 @@ static struct external_info *ospf_default_external_info(struct ospf *ospf)
 	p.prefix.s_addr = 0;
 	p.prefixlen = 0;
 
-	default_ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE,
-					       ospf->instance, &p);
+	default_ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE, 0, &p);
 	if (!default_ei)
 		return NULL;
 
@@ -2185,7 +2184,7 @@ void ospf_external_lsa_rid_change(struct ospf *ospf)
 						continue;
 
 					if (!ospf_external_lsa_originate(ospf,
-									 NULL))
+									 ei))
 						flog_warn(
 							EC_OSPF_LSA_INSTALL_FAILURE,
 							"LSA: AS-external-LSA was not originated.");
@@ -2480,10 +2479,6 @@ ospf_router_lsa_install(struct ospf *ospf, struct ospf_lsa *new, int rt_recalc)
 	return new;
 }
 
-#define OSPF_INTERFACE_TIMER_ON(T, F, V)                                       \
-	if (!(T))                                                              \
-	(T) = thread_add_timer(master, (F), oi, (V))
-
 /* Install network-LSA to an area. */
 static struct ospf_lsa *ospf_network_lsa_install(struct ospf *ospf,
 						 struct ospf_interface *oi,
@@ -2696,7 +2691,7 @@ struct ospf_lsa *ospf_lsa_install(struct ospf *ospf, struct ospf_interface *oi,
 
 	/* Do comparision and record if recalc needed. */
 	rt_recalc = 0;
-	if (old == NULL || ospf_lsa_different(old, lsa)) {
+	if (old == NULL || ospf_lsa_different(old, lsa, false)) {
 		/* Ref rfc3623 section 3.2.3
 		 * Installing new lsa or change in the existing LSA
 		 * or flushing existing LSA leads to topo change
@@ -2704,7 +2699,9 @@ struct ospf_lsa *ospf_lsa_install(struct ospf *ospf, struct ospf_interface *oi,
 		 * So, router should be aborted from HELPER role
 		 * if it is detected as TOPO  change.
 		 */
-		if (CHECK_LSA_TYPE_1_TO_5_OR_7(lsa->data->type))
+		if (ospf->active_restarter_cnt
+		    && CHECK_LSA_TYPE_1_TO_5_OR_7(lsa->data->type)
+		    && ospf_lsa_different(old, lsa, true))
 			ospf_helper_handle_topo_chg(ospf, lsa);
 
 		rt_recalc = 1;
@@ -3306,8 +3303,25 @@ int ospf_lsa_more_recent(struct ospf_lsa *l1, struct ospf_lsa *l2)
 	return 0;
 }
 
-/* If two LSAs are different, return 1, otherwise return 0. */
-int ospf_lsa_different(struct ospf_lsa *l1, struct ospf_lsa *l2)
+/*
+ * Check if two LSAs are different.
+ *
+ * l1
+ *    The first LSA to compare.
+ *
+ * l2
+ *    The second LSA to compare.
+ *
+ * ignore_rcvd_flag
+ *    When set to true, ignore whether the LSAs were received from the network
+ *    or not. This parameter should be set to true when checking for topology
+ *    changes as part of the Graceful Restart helper neighbor procedures.
+ *
+ * Returns:
+ *    true if the LSAs are different, false otherwise.
+ */
+int ospf_lsa_different(struct ospf_lsa *l1, struct ospf_lsa *l2,
+		       bool ignore_rcvd_flag)
 {
 	char *p1, *p2;
 	assert(l1);
@@ -3330,7 +3344,8 @@ int ospf_lsa_different(struct ospf_lsa *l1, struct ospf_lsa *l2)
 	if (l1->size == 0)
 		return 1;
 
-	if (CHECK_FLAG((l1->flags ^ l2->flags), OSPF_LSA_RECEIVED))
+	if (!ignore_rcvd_flag
+	    && CHECK_FLAG((l1->flags ^ l2->flags), OSPF_LSA_RECEIVED))
 		return 1; /* May be a stale LSA in the LSBD */
 
 	assert(l1->size > OSPF_LSA_HEADER_SIZE);
