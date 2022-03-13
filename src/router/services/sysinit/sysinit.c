@@ -3214,11 +3214,6 @@ void load_drivers(int boot)
 		rmmod("antfs");
 		rmmod("ntfs3");
 #endif
-		led_control(USB_POWER, LED_OFF);
-		led_control(USB_POWER1, LED_OFF);
-
-		led_control(LED_USB, LED_OFF);
-		led_control(LED_USB1, LED_OFF);
 		eval("startservice_f", "cron");
 		eval("startservice_f", "samba3");
 		eval("startservice_f", "nfs");
@@ -3235,6 +3230,12 @@ void load_drivers(int boot)
 		eval("startservice_f", "plex");
 #endif
 
+	} else {
+		led_control(USB_POWER, LED_OFF);
+		led_control(USB_POWER1, LED_OFF);
+
+		led_control(LED_USB, LED_OFF);
+		led_control(LED_USB1, LED_OFF);
 	}
 #endif
 /*#ifdef HAVE_R9000
