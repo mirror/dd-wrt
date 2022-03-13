@@ -38,7 +38,7 @@ extern void nf_register_queue_imq_handler(const struct nf_queue_handler *qh);
 extern void nf_unregister_queue_imq_handler(void);
 #endif
 
-void nf_queue_entry_get_refs(struct nf_queue_entry *entry);
+bool nf_queue_entry_get_refs(struct nf_queue_entry *entry);
 void nf_queue_entry_release_refs(struct nf_queue_entry *entry);
 
 static inline void init_hashrandom(u32 *jhash_initval)
