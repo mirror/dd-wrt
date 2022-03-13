@@ -6,6 +6,122 @@
 #include "packet.h"
 #include "capt.h"
 
+#define TPACKET_V3 2
+
+
+#define TPACKET_ALIGNMENT	16
+#define TPACKET_ALIGN(x)	(((x)+TPACKET_ALIGNMENT-1)&~(TPACKET_ALIGNMENT-1))
+#define TPACKET_HDRLEN		(TPACKET_ALIGN(sizeof(struct tpacket_hdr)) + sizeof(struct sockaddr_ll))
+
+#define TPACKET3_HDRLEN		(TPACKET_ALIGN(sizeof(struct tpacket3_hdr)) + sizeof(struct sockaddr_ll))
+
+struct tpacket_req3 {
+	unsigned int	tp_block_size;	/* Minimal size of contiguous block */
+	unsigned int	tp_block_nr;	/* Number of blocks */
+	unsigned int	tp_frame_size;	/* Size of frame */
+	unsigned int	tp_frame_nr;	/* Total number of frames */
+	unsigned int	tp_retire_blk_tov; /* timeout in msecs */
+	unsigned int	tp_sizeof_priv; /* offset to private data area */
+	unsigned int	tp_feature_req_word;
+};
+
+struct tpacket_stats_v3 {
+	unsigned int	tp_packets;
+	unsigned int	tp_drops;
+	unsigned int	tp_freeze_q_cnt;
+};
+
+struct tpacket_hdr_variant1 {
+	__u32	tp_rxhash;
+	__u32	tp_vlan_tci;
+	__u16	tp_vlan_tpid;
+	__u16	tp_padding;
+};
+
+struct tpacket3_hdr {
+	__u32		tp_next_offset;
+	__u32		tp_sec;
+	__u32		tp_nsec;
+	__u32		tp_snaplen;
+	__u32		tp_len;
+	__u32		tp_status;
+	__u16		tp_mac;
+	__u16		tp_net;
+	/* pkt_hdr variants */
+	union {
+		struct tpacket_hdr_variant1 hv1;
+	};
+	__u8		tp_padding[8];
+};
+
+struct tpacket_bd_ts {
+	unsigned int ts_sec;
+	union {
+		unsigned int ts_usec;
+		unsigned int ts_nsec;
+	};
+};
+
+struct tpacket_hdr_v1 {
+	__u32	block_status;
+	__u32	num_pkts;
+	__u32	offset_to_first_pkt;
+
+	/* Number of valid bytes (including padding)
+	 * blk_len <= tp_block_size
+	 */
+	__u32	blk_len;
+
+	/*
+	 * Quite a few uses of sequence number:
+	 * 1. Make sure cache flush etc worked.
+	 *    Well, one can argue - why not use the increasing ts below?
+	 *    But look at 2. below first.
+	 * 2. When you pass around blocks to other user space decoders,
+	 *    you can see which blk[s] is[are] outstanding etc.
+	 * 3. Validate kernel code.
+	 */
+	__aligned_u64	seq_num;
+
+	/*
+	 * ts_last_pkt:
+	 *
+	 * Case 1.	Block has 'N'(N >=1) packets and TMO'd(timed out)
+	 *		ts_last_pkt == 'time-stamp of last packet' and NOT the
+	 *		time when the timer fired and the block was closed.
+	 *		By providing the ts of the last packet we can absolutely
+	 *		guarantee that time-stamp wise, the first packet in the
+	 *		next block will never precede the last packet of the
+	 *		previous block.
+	 * Case 2.	Block has zero packets and TMO'd
+	 *		ts_last_pkt = time when the timer fired and the block
+	 *		was closed.
+	 * Case 3.	Block has 'N' packets and NO TMO.
+	 *		ts_last_pkt = time-stamp of the last pkt in the block.
+	 *
+	 * ts_first_pkt:
+	 *		Is always the time-stamp when the block was opened.
+	 *		Case a)	ZERO packets
+	 *			No packets to deal with but atleast you know the
+	 *			time-interval of this block.
+	 *		Case b) Non-zero packets
+	 *			Use the ts of the first packet in the block.
+	 *
+	 */
+	struct tpacket_bd_ts	ts_first_pkt, ts_last_pkt;
+};
+
+union tpacket_bd_header_u {
+	struct tpacket_hdr_v1 bh1;
+};
+
+struct tpacket_block_desc {
+	__u32 version;
+	__u32 offset_to_priv;
+	union tpacket_bd_header_u hdr;
+};
+
+
 struct capt_data_mmap_v3 {
 	void				*mmap;
 	size_t				mmap_size;
