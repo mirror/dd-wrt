@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSH_KEYDATA 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_SSH_KEYDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_SSH_KEYDATA \- pointer passed to the SSH key callback
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSH_KEYDATA, void *pointer);
+.fi
 .SH DESCRIPTION
 Pass a void * as parameter. This \fIpointer\fP will be passed along verbatim
 to the callback set with \fICURLOPT_SSH_KEYFUNCTION(3)\fP.

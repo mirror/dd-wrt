@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_LASTSOCKET 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_getinfo options"
+.TH CURLINFO_LASTSOCKET 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_LASTSOCKET \- get the last socket used
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_LASTSOCKET, long *socket);
+.fi
 .SH DESCRIPTION
 Deprecated since 7.45.0. Use \fICURLINFO_ACTIVESOCKET(3)\fP instead.
 

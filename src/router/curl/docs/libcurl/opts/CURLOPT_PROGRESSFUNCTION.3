@@ -20,11 +20,12 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROGRESSFUNCTION 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PROGRESSFUNCTION 3 "February 23, 2022" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PROGRESSFUNCTION \- progress meter callback
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 int progress_callback(void *clientp,
@@ -33,7 +34,9 @@ int progress_callback(void *clientp,
                       double ultotal,
                       double ulnow);
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROGRESSFUNCTION, progress_callback);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROGRESSFUNCTION,
+                          progress_callback);
+.fi
 .SH DESCRIPTION
 Pass a pointer to your callback function, which should match the prototype
 shown above.
@@ -91,7 +94,7 @@ All
                                  double ultotal,
                                  double ulnow)
  {
-   struct memory *progress = (struct progress *)userp;
+   struct progress *memory = (struct progress *)userp;
 
    /* use the values */
 

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TCP_NODELAY 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TCP_NODELAY 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TCP_NODELAY \- the TCP_NODELAY option
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_NODELAY, long nodelay);
+.fi
 .SH DESCRIPTION
 Pass a long specifying whether the TCP_NODELAY option is to be set or cleared
 (1L = set, 0 = clear). The option is set by default. This will have no effect

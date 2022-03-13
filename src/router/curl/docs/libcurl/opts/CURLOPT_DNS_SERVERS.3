@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_DNS_SERVERS 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_DNS_SERVERS 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_DNS_SERVERS \- DNS servers to use
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DNS_SERVERS, char *servers);
+.fi
 .SH DESCRIPTION
 Pass a char * that is the list of DNS servers to be used instead of the system
 default. The format of the dns servers option is:

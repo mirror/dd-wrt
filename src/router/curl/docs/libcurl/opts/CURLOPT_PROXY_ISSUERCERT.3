@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROXY_ISSUERCERT 3 "October 25, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PROXY_ISSUERCERT 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PROXY_ISSUERCERT \- proxy issuer SSL certificate filename
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROXY_ISSUERCERT, char *file);
+.fi
 .SH DESCRIPTION
 Pass a char * to a null-terminated string naming a \fIfile\fP holding a CA
 certificate in PEM format. If the option is set, an additional check against

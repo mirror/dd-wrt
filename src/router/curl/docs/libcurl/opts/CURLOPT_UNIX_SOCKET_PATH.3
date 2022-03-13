@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_UNIX_SOCKET_PATH 3 "October 27, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_UNIX_SOCKET_PATH 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_UNIX_SOCKET_PATH \- Unix domain socket
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_UNIX_SOCKET_PATH, char *path);
+.fi
 .SH DESCRIPTION
 Enables the use of Unix domain sockets as connection endpoint and sets the path
 to \fIpath\fP. If \fIpath\fP is NULL, then Unix domain sockets are disabled. An

@@ -19,15 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_getenv 3 "October 31, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_getenv 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_getenv - return value for environment name
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "char *curl_getenv(const char *" name ");"
-.ad
+.nf
+#include <curl/curl.h>
+
+char *curl_getenv(const char *name);
+.fi
 .SH DESCRIPTION
 curl_getenv() is a portable wrapper for the getenv() function, meant to
 emulate its behavior and provide an identical interface for all operating

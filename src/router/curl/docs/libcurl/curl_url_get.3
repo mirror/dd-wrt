@@ -19,14 +19,14 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_url_get 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_url_get 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_url_get - extract a part from a URL
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-
 .nf
+#include <curl/curl.h>
+
 CURLUcode curl_url_get(CURLU *url,
                        CURLUPart what,
                        char **part,
@@ -125,7 +125,7 @@ decode on get with the CURLU_URLDECODE bit.
 Added in 7.62.0. CURLUPART_ZONEID was added in 7.65.0.
 .SH RETURN VALUE
 Returns a CURLUcode error value, which is CURLUE_OK (0) if everything went
-fine.  See the \fIlibcurl-errors(3)\fP man page for the full list with
+fine. See the \fIlibcurl-errors(3)\fP man page for the full list with
 descriptions.
 
 If this function returns an error, no URL part is returned.

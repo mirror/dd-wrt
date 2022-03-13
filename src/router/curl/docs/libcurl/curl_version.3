@@ -19,15 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_version 3 "November 04, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_version 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_version - returns the libcurl version string
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "char *curl_version( );"
-.ad
+.nf
+#include <curl/curl.h>
+
+char *curl_version();
+.fi
 .SH DESCRIPTION
 Returns a human readable string with the version number of libcurl and some of
 its important components (like OpenSSL version).

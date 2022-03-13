@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PUT 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PUT 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PUT \- make an HTTP PUT request
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PUT, long put);
+.fi
 .SH DESCRIPTION
 A parameter set to 1 tells the library to use HTTP PUT to transfer data. The
 data should be set with \fICURLOPT_READDATA(3)\fP and

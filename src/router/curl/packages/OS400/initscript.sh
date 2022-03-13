@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -21,6 +21,10 @@
 #
 ###########################################################################
 
+system ()
+{
+    /usr/bin/system "$@" || exit 1
+}
 
 setenv()
 
@@ -71,7 +75,7 @@ setenv TGTCCSID         '500'                   # Target CCSID of objects.
 setenv DEBUG            '*ALL'                  # Debug level.
 setenv OPTIMIZE         '10'                    # Optimisation level
 setenv OUTPUT           '*NONE'                 # Compilation output option.
-setenv TGTRLS           'V6R1M0'                # Target OS release.
+setenv TGTRLS           '*CURRENT'              # Target OS release.
 setenv IFSDIR           '/curl'                 # Installation IFS directory.
 
 #       Define ZLIB availability and locations.

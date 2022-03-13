@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HEADER 3 "September 01, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_HEADER 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HEADER \- pass headers to the data stream
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HEADER, long onoff);
+.fi
 .SH DESCRIPTION
 Pass the long value \fIonoff\fP set to 1 to ask libcurl to include the headers
 in the write callback (\fICURLOPT_WRITEFUNCTION(3)\fP). This option is

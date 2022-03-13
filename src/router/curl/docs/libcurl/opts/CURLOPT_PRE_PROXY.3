@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PRE_PROXY 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_PRE_PROXY 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PRE_PROXY \- pre-proxy host to use
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PRE_PROXY, char *preproxy);
+.fi
 .SH DESCRIPTION
 Set the \fIpreproxy\fP to use for the upcoming request. The parameter
 should be a char * to a null-terminated string holding the host name or dotted

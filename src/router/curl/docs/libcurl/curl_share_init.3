@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,15 +19,16 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_share_init 3 "November 04, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_share_init 3 "January 05, 2022" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_share_init - Create a shared object
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "CURLSH *curl_share_init( );"
-.ad
+.nf
+#include <curl/curl.h>
+
+CURLSH *curl_share_init();
+.fi
 .SH DESCRIPTION
 This function returns a CURLSH handle to be used as input to all the other
 share-functions, sometimes referred to as a share handle in some places in the

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_COOKIEFILE 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_COOKIEFILE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_COOKIEFILE \- file name to read cookies from
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_COOKIEFILE, char *filename);
+.fi
 .SH DESCRIPTION
 Pass a pointer to a null-terminated string as parameter. It should point to
 the file name of your file holding cookie data to read. The cookie data can be

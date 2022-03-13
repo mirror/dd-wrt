@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH libcurl-tutorial 3 "October 31, 2021" "libcurl 7.80.0" "libcurl programming"
+.TH libcurl-tutorial 3 "December 20, 2021" "libcurl 7.82.0" "libcurl programming"
 
 .SH NAME
 libcurl-tutorial \- libcurl programming tutorial
@@ -237,8 +237,8 @@ commands and receive the transfer. Whenever it receives data, it calls the
 callback function we previously set. The function may get one byte at a time,
 or it may get many kilobytes at once. libcurl delivers as much as possible as
 often as possible. Your callback function should return the number of bytes it
-\&"took care of". If that is not the exact same amount of bytes that was
-passed to it, libcurl will abort the operation and return with an error code.
+\&"took care of". If that is not the same amount of bytes that was passed to
+it, libcurl will abort the operation and return with an error code.
 
 When the transfer is complete, the function returns a return code that informs
 you if it succeeded in its mission or not. If a return code is not enough for
@@ -275,7 +275,7 @@ a better understanding why the server behaves the way it does. Include headers
 in the normal body output with \fICURLOPT_HEADER(3)\fP set 1.
 
 Of course, there are bugs left. We need to know about them to be able to fix
-them, so we are quite dependent on your bug reports! When you do report
+them, so we are quite dependent on your bug reports. When you do report
 suspected bugs in libcurl, please include as many details as you possibly can:
 a protocol dump that \fICURLOPT_VERBOSE(3)\fP produces, library version, as
 much as possible of your code that uses libcurl, operating system name and
@@ -862,7 +862,7 @@ remote host").
 
 Because of the nature of this operation, where the proxy has no idea what kind
 of data that is passed in and out through this tunnel, this breaks some of the
-few advantages that come from using a proxy, such as caching.  Many
+few advantages that come from using a proxy, such as caching. Many
 organizations prevent this kind of tunneling to other destination port numbers
 than 443 (which is the default HTTPS port number).
 
@@ -1189,12 +1189,12 @@ this behavior by setting \fICURLOPT_FTP_USE_EPRT(3)\fP to zero.
 
 .SH "MIME API revisited for SMTP and IMAP"
 In addition to support HTTP multi-part form fields, the MIME API can be used
-to build structured e-mail messages and send them via SMTP or append such
+to build structured email messages and send them via SMTP or append such
 messages to IMAP directories.
 
-A structured e-mail message may contain several parts: some are displayed
+A structured email message may contain several parts: some are displayed
 inline by the MUA, some are attachments. Parts can also be structured as
-multi-part, for example to include another e-mail message or to offer several
+multi-part, for example to include another email message or to offer several
 text formats alternatives. This can be nested to any level.
 
 To build such a message, you prepare the nth-level multi-part and then include
@@ -1203,26 +1203,26 @@ it as a source to the parent multi-part using function
 bound to its parent multi-part, a nth-level multi-part belongs to it and
 should not be freed explicitly.
 
-E-mail messages data is not supposed to be non-ascii and line length is
-limited: fortunately, some transfer encodings are defined by the standards
-to support the transmission of such incompatible data. Function
+Email messages data is not supposed to be non-ascii and line length is
+limited: fortunately, some transfer encodings are defined by the standards to
+support the transmission of such incompatible data. Function
 \fIcurl_mime_encoder(3)\fP tells a part that its source data must be encoded
 before being sent. It also generates the corresponding header for that part.
-If the part data you want to send is already encoded in such a scheme,
-do not use this function (this would over-encode it), but explicitly set the
+If the part data you want to send is already encoded in such a scheme, do not
+use this function (this would over-encode it), but explicitly set the
 corresponding part header.
 
 Upon sending such a message, libcurl prepends it with the header list
 set with \fICURLOPT_HTTPHEADER(3)\fP, as 0th-level mime part headers.
 
-Here is an example building an e-mail message with an inline plain/html text
+Here is an example building an email message with an inline plain/html text
 alternative and a file attachment encoded in base64:
 
 .nf
  curl_mime *message = curl_mime_init(easyhandle);
 
  /* The inline part is an alternative proposing the html and the text
-    versions of the e-mail. */
+    versions of the email. */
  curl_mime *alt = curl_mime_init(easyhandle);
 
  /* HTML message. */
@@ -1293,10 +1293,10 @@ done.
 
 The multi interface, on the other hand, allows your program to transfer
 multiple files in both directions at the same time, without forcing you to use
-multiple threads.  The name might make it seem that the multi interface is for
-multi-threaded programs, but the truth is almost the reverse.  The multi
+multiple threads. The name might make it seem that the multi interface is for
+multi-threaded programs, but the truth is almost the reverse. The multi
 interface allows a single-threaded application to perform the same kinds of
-multiple, simultaneous transfers that multi-threaded programs can perform.  It
+multiple, simultaneous transfers that multi-threaded programs can perform. It
 allows many of the benefits of multi-threaded transfers without the complexity
 of managing and synchronizing many threads.
 
@@ -1321,7 +1321,7 @@ ones at any time), you start the transfers by calling
 \fIcurl_multi_perform(3)\fP.
 
 \fIcurl_multi_perform(3)\fP is asynchronous. It will only perform what can be
-done now and then return back control to your program. It is designed to never
+done now and then return control to your program. It is designed to never
 block. You need to keep calling the function until all transfers are
 completed.
 

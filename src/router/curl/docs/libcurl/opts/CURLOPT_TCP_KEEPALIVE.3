@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TCP_KEEPALIVE 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TCP_KEEPALIVE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TCP_KEEPALIVE \- TCP keep-alive probing
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_KEEPALIVE, long probe);
+.fi
 .SH DESCRIPTION
 Pass a long. If set to 1, TCP keepalive probes will be sent. The delay and
 frequency of these probes can be controlled by the

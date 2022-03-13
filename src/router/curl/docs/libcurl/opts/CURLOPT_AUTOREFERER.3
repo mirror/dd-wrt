@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_AUTOREFERER 3 "March 30, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_AUTOREFERER 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_AUTOREFERER \- automatically update the referer header
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_AUTOREFERER, long autorefer);
+.fi
 .SH DESCRIPTION
 Pass a parameter set to 1 to enable this. When enabled, libcurl will
 automatically set the Referer: header field in HTTP requests to the full URL

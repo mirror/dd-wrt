@@ -19,18 +19,19 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH curl_mime_free 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_mime_free 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_mime_free - free a previously built mime structure
 .SH SYNOPSIS
-.B #include <curl/curl.h>
-.sp
-.BI "void curl_mime_free(curl_mime *" mime);
-.ad
+.nf
+#include <curl/curl.h>
+
+void curl_mime_free(curl_mime *mime);
+.fi
 .SH DESCRIPTION
 \fIcurl_mime_free(3)\fP is used to clean up data previously built/appended
-with \fIcurl_mime_addpart(3)\fP and other mime-handling functions.  This must
+with \fIcurl_mime_addpart(3)\fP and other mime-handling functions. This must
 be called when the data has been used, which typically means after
 \fIcurl_easy_perform(3)\fP has been called.
 

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TIMEOUT_MS 3 "September 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_TIMEOUT_MS 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TIMEOUT_MS \- maximum time the transfer is allowed to complete
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TIMEOUT_MS, long timeout);
+.fi
 .SH DESCRIPTION
 Pass a long as parameter containing \fItimeout\fP - the maximum time in
 milliseconds that you allow the libcurl transfer operation to take. Normally,

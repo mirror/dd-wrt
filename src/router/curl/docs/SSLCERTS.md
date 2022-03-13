@@ -29,12 +29,12 @@ Which CAs do you trust? You can decide to trust the same set of companies your
 operating system trusts, or the set one of the known browsers trust. That is
 basically trust via someone else you trust. You should just be aware that
 modern operating systems and browsers are setup to trust *hundreds* of
-companies and recent years several such CAs have been found untrustworthy.
+companies and in recent years several such CAs have been found untrustworthy.
 
 Certificate Verification
 ------------------------
 
-libcurl performs peer SSL certificate verification by default.  This is done
+libcurl performs peer SSL certificate verification by default. This is done
 by using a CA certificate store that the SSL library can use to make sure the
 peer's server certificate is valid.
 
@@ -63,8 +63,8 @@ server, do one of the following:
     store. The default CA certificate store can be changed at compile time with
     the following configure options:
 
-    --with-ca-bundle=FILE: use the specified file as CA certificate store. CA
-    certificates need to be concatenated in PEM format into this file.
+    --with-ca-bundle=FILE: use the specified file as the CA certificate store.
+    CA certificates need to be concatenated in PEM format into this file.
 
     --with-ca-path=PATH: use the specified path as CA certificate store. CA
     certificates need to be stored as individual PEM files in this directory.

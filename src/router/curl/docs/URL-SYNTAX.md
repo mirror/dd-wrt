@@ -5,7 +5,7 @@
 The official "URL syntax" is primarily defined in these two different
 specifications:
 
- - [RFC 3986](https://tools.ietf.org/html/rfc3986) (although URL is called
+ - [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986) (although URL is called
    "URI" in there)
  - [The WHATWG URL Specification](https://url.spec.whatwg.org/)
 
@@ -20,7 +20,7 @@ changes over time.
 URL parsers as implemented in browsers, libraries and tools usually opt to
 support one of the mentioned specifications. Bugs, differences in
 interpretations and the moving nature of the WHATWG spec does however make it
-unlikely that multiple parsers treat URLs the exact same way!
+unlikely that multiple parsers treat URLs the same way.
 
 ## Security
 
@@ -63,10 +63,13 @@ inter-operate better with URLs that appear in the wild.
 
 ### spaces
 
-In particular `Location:` headers that indicate to the client where a resource
-has been redirected to, sometimes contain spaces. This is a violation of RFC
-3986 but is fine in the WHATWG spec. curl handles these by re-encoding them to
-`%20`.
+A URL provided to curl cannot contain spaces. They need to be provided URL
+encoded to be accepted in a URL by curl.
+
+An exception to this rule: `Location:` response headers that indicate to a
+client where a resource has been redirected to, sometimes contain spaces. This
+is a violation of RFC 3986 but is fine in the WHATWG spec. curl handles these
+by re-encoding them to `%20`.
 
 ### non-ASCII
 
@@ -150,7 +153,7 @@ since it often means passing around the password in plain text and is thus a
 security risk.
 
 URLs for IMAP, POP3 and SMTP also support *login options* as part of the
-userinfo field. they are provided as a semicolon after the password and then
+userinfo field. They are provided as a semicolon after the password and then
 the options.
 
 ## Hostname
@@ -171,9 +174,9 @@ brackets). For example:
 
 ### "localhost"
 
-Starting in curl 7.77.0, curl will use loopback IP addresses for the name
-`localhost`: `127.0.0.1` and `::1`. It will not try to resolve the name using
-the resolver functions.
+Starting in curl 7.77.0, curl uses loopback IP addresses for the name
+`localhost`: `127.0.0.1` and `::1`. It does not resolve the name using the
+resolver functions.
 
 This is done to make sure the host accessed is truly the localhost - the local
 machine.
@@ -217,7 +220,7 @@ directory listing for the root / home directory will be returned.
 
 FTP servers typically put the user in its "home directory" after login, which
 then differs between users. To explicitly specify the root directory of an FTP
-server start the path with double slash `//` or `/%2f` (2F is the hexadecimal
+server, start the path with double slash `//` or `/%2f` (2F is the hexadecimal
 value of the ascii code for the slash).
 
 ## FILE
@@ -328,7 +331,7 @@ Search for an empty DN and request information about the
     ldap://ldap.example.com/?rootDomainNamingContext
 
 For more information about the individual components of a LDAP URL please
-see [RFC 4516](https://tools.ietf.org/html/rfc4516).
+see [RFC 4516](https://datatracker.ietf.org/doc/html/rfc4516).
 
 ## POP3
 

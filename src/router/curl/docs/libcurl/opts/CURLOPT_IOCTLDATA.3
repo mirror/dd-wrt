@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_IOCTLDATA 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_IOCTLDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_IOCTLDATA \- pointer passed to I/O callback
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_IOCTLDATA, void *pointer);
+.fi
 .SH DESCRIPTION
 Pass the \fIpointer\fP that will be untouched by libcurl and passed as the 3rd
 argument in the ioctl callback set with \fICURLOPT_IOCTLFUNCTION(3)\fP.

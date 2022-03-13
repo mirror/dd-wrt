@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_upkeep 3 "October 25, 2021" "libcurl 7.80.0" "libcurl Manual"
+.TH curl_easy_upkeep 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_upkeep - Perform any connection upkeep checks.
 .SH SYNOPSIS
-.B #include <curl/curl.h>
+.nf
+#include <curl/curl.h>
 
-.BI "CURLcode curl_easy_upkeep(CURL *" handle ");"
+CURLcode curl_easy_upkeep(CURL *handle);
+.fi
 .SH DESCRIPTION
 
 Some protocols have "connection upkeep" mechanisms. These mechanisms usually

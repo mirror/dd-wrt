@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_POST 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_POST 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_POST \- make an HTTP POST
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_POST, long post);
+.fi
 .SH DESCRIPTION
 A parameter set to 1 tells libcurl to do a regular HTTP post. This will also
 make the library use a "Content-Type: application/x-www-form-urlencoded"

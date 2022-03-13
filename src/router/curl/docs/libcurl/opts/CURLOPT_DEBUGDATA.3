@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_DEBUGDATA 3 "November 08, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_DEBUGDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_DEBUGDATA \- pointer passed to the debug callback
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DEBUGDATA, void *pointer);
+.fi
 .SH DESCRIPTION
 Pass a \fIpointer\fP to whatever you want passed in to your
 \fICURLOPT_DEBUGFUNCTION(3)\fP in the last void * argument. This pointer is

@@ -20,14 +20,16 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_KRBLEVEL 3 "October 31, 2021" "libcurl 7.80.0" "curl_easy_setopt options"
+.TH CURLOPT_KRBLEVEL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_KRBLEVEL \- FTP kerberos security level
 .SH SYNOPSIS
+.nf
 #include <curl/curl.h>
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_KRBLEVEL, char *level);
+.fi
 .SH DESCRIPTION
 Pass a char * as parameter. Set the kerberos security level for FTP; this also
 enables kerberos awareness.  This is a string that should match one of the
