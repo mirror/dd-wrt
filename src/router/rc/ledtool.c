@@ -18,6 +18,11 @@
 
 static int ledtool_main(int argc, char **argv)
 {
+	if (args < 2) {
+		fprintf(stderr, "invalid argument\n");
+		fprintf(stderr, "ledtool blink_times [type]\n");
+		exit(-1);
+	}
 	/* 
 	 * Run it in the background 
 	 */
