@@ -7,12 +7,16 @@ revname.h - public declarations related to reverse name resolution
 
 ***/
 
-int rvnamedactive(void);
-void killrvnamed(void);
-void open_rvn_socket(int *fd);
-void close_rvn_socket(int fd);
+struct resolver {
+	bool lookup;
+	int sock;
+	pid_t server;
+};
 
-int revname(int *lookup, struct sockaddr_storage *addr,
-	    char *target, size_t target_size, int rvnfd);
+void resolver_init(struct resolver *r, bool lookup);
+void resolver_destroy(struct resolver *r);
+
+int revname(struct resolver *res, struct sockaddr_storage *addr,
+	    char *target, size_t target_size);
 
 #endif	/* IPTRAF_NG_REVNAME_H */

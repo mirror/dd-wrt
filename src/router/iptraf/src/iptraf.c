@@ -19,7 +19,6 @@ An IP Network Statistics Utility
 #include "fltmgr.h"
 #include "fltedit.h"
 #include "serv.h"
-#include "ddwatch.h"
 #include "options.h"
 #include "attrs.h"
 #include "rvnamed.h"
@@ -68,7 +67,7 @@ static void clearfiles(char *prefix, char *directory)
 {
 	DIR *dir;
 	struct dirent *dir_entry;
-	char target_name[80];
+	char target_name[PATH_MAX];
 
 	dir = opendir(directory);
 
@@ -84,8 +83,9 @@ static void clearfiles(char *prefix, char *directory)
 		if (dir_entry != NULL) {
 			if (strncmp(dir_entry->d_name, prefix, strlen(prefix))
 			    == 0) {
-				snprintf(target_name, 80, "%s/%s", directory,
-					 dir_entry->d_name);
+				snprintf(target_name, sizeof(target_name) - 1,
+					 "%s/%s", directory, dir_entry->d_name);
+				target_name[sizeof(target_name) - 1] = '\0';
 				unlink(target_name);
 			}
 		}
@@ -115,14 +115,12 @@ static void term_usr2_handler(int s __unused)
 
 static void init_break_menu(struct MENU *break_menu)
 {
-	tx_initmenu(break_menu, 7, 20, (LINES - 6) / 2, COLS / 2, BOXATTR,
+	tx_initmenu(break_menu, 6, 20, (LINES - 6) / 2, COLS / 2, BOXATTR,
 		    STDATTR, HIGHATTR, BARSTDATTR, BARHIGHATTR, DESCATTR);
 	tx_additem(break_menu, " By packet ^s^ize",
 		   "Displays packet counts by packet size range");
 	tx_additem(break_menu, " By TCP/UDP ^p^ort",
 		   "Displays packet and byte counts by service port");
-	tx_additem(break_menu, " By ^i^p",
-		   "Displays packet and byte counts by Ip");
 	tx_additem(break_menu, NULL, NULL);
 	tx_additem(break_menu, " E^x^it menu", "Return to main menu");
 }
@@ -217,17 +215,7 @@ static void program_interface(void)
 				if (!aborted)
 					servmon(ifname, 0);
 				break;
-			case 3:
-				selectiface(ifname, WITHOUTALL, &aborted);
-				if (!aborted)
-					ddmon(ifname, 0);
-				break;
 			case 4:
-				selectiface(ifname, WITHOUTALL, &aborted);
-				if (!aborted)
-					ddmon(ifname, 0);
-				break;
-			case 5:
 				break;
 			}
 			tx_destroymenu(&break_menu);
@@ -297,6 +285,12 @@ static struct options iptraf_ng_options[] = {
 	OPT_STRING('L', NULL, &L_opt, "logfile",
 		   "specifies an alternate log file"),
 	//    OPT_INTEGER('I', NULL, &I_opt, "the log interval for all facilities except the IP traffic monitor. Value is in minutes"),
+// PHIL  From manual:
+// Sets the logging interval (in minutes) when the -L parameter is used. This over-
+// rides the Log interval... setting in the Configure... menu. If omitted, the configured
+// value is used. This parameter is ignored when the -L parameter is omitted and
+// logging is disabled.
+// The value specified here will affect all facilities except for the IP traffic monitor.
 	OPT_END()
 };
 
@@ -469,6 +463,7 @@ int main(int argc, char **argv)
 	sanitize_dir(LOCKDIR);
 	sanitize_dir(WORKDIR);
 
+	setlocale(LC_ALL, "");	/* needed to properly init (n)curses library */
 	initscr();
 
 	if ((LINES < 24) || (COLS < 80)) {

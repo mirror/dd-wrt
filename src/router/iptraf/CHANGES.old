@@ -246,11 +246,11 @@ New features in IPTraf 2.4.0 and changes to IPTraf 2.3.1
 
 	This version now allows multiple instances of the same facility
 	in different processes, but only one instance can monitor an
-	interface.  Please see the RELEASE-NOTES file.
+	interface.
 
 	As a consequence of the above changes, the default names of the
 	logfiles then reflect the instance or interface being
-	monitored.  See the RELEASE-NOTES file.
+	monitored.
 	
 	Implemented a dialog box allowing the user to log to a custom
 	log file.

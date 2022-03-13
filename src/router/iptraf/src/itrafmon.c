@@ -13,17 +13,16 @@ itrafmon.c - the IP traffic monitor module
 #include "tui/winops.h"
 
 #include "options.h"
+#include "revname.h"
 #include "tcptable.h"
 #include "othptab.h"
 #include "fltdefs.h"
 #include "packet.h"
 #include "ifaces.h"
-#include "promisc.h"
 #include "deskman.h"
 #include "error.h"
 #include "attrs.h"
 #include "log.h"
-#include "revname.h"
 #include "rvnamed.h"
 #include "dirs.h"
 #include "timer.h"
@@ -31,6 +30,7 @@ itrafmon.c - the IP traffic monitor module
 #include "logvars.h"
 #include "itrafmon.h"
 #include "sockaddr.h"
+#include "capt.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
@@ -163,8 +163,6 @@ static void move_tcp_bar_one(struct tcptable *table, int direction)
 			scrollupperwin(table, SCROLLUP);
 
 		table->barptr = table->barptr->next_entry;
-		printentry(table, table->barptr->prev_entry);	/* hide bar */
-		printentry(table, table->barptr);		/* show bar */
 
 		break;
 	case SCROLLDOWN:
@@ -175,8 +173,6 @@ static void move_tcp_bar_one(struct tcptable *table, int direction)
 			scrollupperwin(table, SCROLLDOWN);
 
 		table->barptr = table->barptr->prev_entry;
-		printentry(table, table->barptr->next_entry);	/* hide bar */
-		printentry(table, table->barptr);		/* show bar */
 
 		break;
 	}
@@ -205,7 +201,6 @@ static void move_tcp_bar_many(struct tcptable *table, int direction, int lines)
 		table->barptr = table->firstvisible;
 		break;
 	}
-	refreshtcpwin(table);
 }
 
 static void move_tcp_bar(struct tcptable *table, int direction, int lines)
@@ -221,6 +216,7 @@ static void move_tcp_bar(struct tcptable *table, int direction, int lines)
 		move_tcp_bar_many(table, direction, lines);
 
 	print_flowrate(table);
+	refreshtcpwin(table, false);
 }
 
 /*
@@ -326,13 +322,7 @@ static void show_tcpsort_win(WINDOW ** win, PANEL ** panel)
 	wmove(*win, 5, 2);
 	tx_printkeyhelp("B", " - sort by byte count", *win, DLGHIGHATTR,
 			DLGTEXTATTR);
-        wmove(*win, 6, 2);
-        tx_printkeyhelp("S", " - sort by Source", *win, DLGHIGHATTR,
-                        DLGTEXTATTR);
-        wmove(*win, 7, 2);
-        tx_printkeyhelp("D", " - sort by Destination", *win, DLGHIGHATTR,
-                        DLGTEXTATTR);
-	wmove(*win, 8, 2);
+	wmove(*win, 6, 2);
 	tx_printkeyhelp("Any other key", " - cancel sort", *win, DLGHIGHATTR,
 			DLGTEXTATTR);
 	update_panels();
@@ -390,32 +380,7 @@ static void swap_tcp_entries(struct tcptable *table, struct tcptableent *p1,
 static unsigned long long qt_getkey(struct tcptableent *entry, int ch)
 {
 	if (ch == 'B')
-	  return (max(entry->bcount, entry->oth_connection->bcount));
-	if (ch == 'S')
-	  switch (entry->saddr.ss_family) {
-	    case AF_INET: {
-	      struct sockaddr_in *sa = (struct sockaddr_in *)&(entry->saddr);
-	      return sa->sin_addr.s_addr;
-	    }
-	  case AF_INET6: {
-	    struct sockaddr_in6 *sa = (struct sockaddr_in6 *)&(entry->saddr);
-	    return (uint32_t)*(sa->sin6_addr.s6_addr);
-	    }
-	  }
-	if (ch == 'D')
-	  switch (entry->saddr.ss_family) {
-	    case AF_INET: {
-	      struct sockaddr_in *sa = (struct sockaddr_in *)&(entry->daddr);
-	      return sa->sin_addr.s_addr;
-	    }
-	    case AF_INET6: {
-	      struct sockaddr_in6 *sa = (struct sockaddr_in6 *)&(entry->daddr);
-	      return (uint32_t)*(sa->sin6_addr.s6_addr);
-
-	    }
-	  }
-
-
+		return (max(entry->bcount, entry->oth_connection->bcount));
 
 	return (max(entry->pcount, entry->oth_connection->pcount));
 }
@@ -476,6 +441,7 @@ static void quicksort_tcp_entries(struct tcptable *table,
 				  struct tcptableent *high, int ch)
 {
 	struct tcptableent *pivot;
+
 	if ((high == NULL) || (low == NULL))
 		return;
 
@@ -505,7 +471,7 @@ static void sortipents(struct tcptable *table, int ch)
 
 	ch = toupper(ch);
 
-	if ((ch != 'P') && (ch != 'B')&& (ch != 'S')&& (ch != 'D'))
+	if ((ch != 'P') && (ch != 'B'))
 		return;
 
 	quicksort_tcp_entries(table, table->head, table->tail->prev_entry, ch);
@@ -517,52 +483,6 @@ static void sortipents(struct tcptable *table, int ch)
 		table->lastvisible = ptmp;
 		ptmp = ptmp->next_entry;
 	}
-}
-
-/*
- * Attempt to communicate with rvnamed, and if it doesn't respond, try
- * to start it.
- */
-
-static int checkrvnamed(void)
-{
-	pid_t cpid = 0;
-	int cstat;
-
-	indicate("Trying to communicate with reverse lookup server");
-	if (!rvnamedactive()) {
-		indicate("Starting reverse lookup server");
-
-		if ((cpid = fork()) == 0) {
-			char *args[] = {
-				"rvnamed-ng",
-				NULL
-			};
-			execvp("rvnamed-ng", args);
-			/*
-			 * execvp() never returns, so if we reach this point, we have
-			 * a problem.
-			 */
-
-			die("unable execvp() rvnamed-ng");
-		} else if (cpid == -1) {
-			write_error("Can't spawn new process; lookups will block");
-			return 0;
-		} else {
-			while (waitpid(cpid, &cstat, 0) < 0)
-				if (errno != EINTR)
-					break;
-
-			if (WEXITSTATUS(cstat) == 1) {
-				write_error("Can't start rvnamed; lookups will block");
-				return 0;
-			} else {
-				sleep(1);
-				return 1;
-			}
-		}
-	}
-	return 1;
 }
 
 static void ipmon_process_key(int ch, int *curwin, struct tcptable *table, struct othptable *othptbl)
@@ -637,6 +557,7 @@ static void ipmon_process_key(int ch, int *curwin, struct tcptable *table, struc
 			markactive(*curwin, table->borderwin,
 				   othptbl->borderwin);
 			uniq_help(*curwin);
+			refreshtcpwin(table, false);
 			break;
 		case 'm':
 		case 'M':
@@ -645,7 +566,7 @@ static void ipmon_process_key(int ch, int *curwin, struct tcptable *table, struc
 			table->mode = (table->mode + 1) % 3;
 			if ((table->mode == 1) && !options.mac)
 				table->mode = 2;
-			refreshtcpwin(table);
+			refreshtcpwin(table, true);
 			break;
 		case 12:
 		case 'l':
@@ -658,7 +579,7 @@ static void ipmon_process_key(int ch, int *curwin, struct tcptable *table, struc
 		case 'c':
 		case 'C':
 			flushclosedentries(table);
-			refreshtcpwin(table);
+			refreshtcpwin(table, true);
 			break;
 		case 's':
 		case 'S':
@@ -683,7 +604,7 @@ static void ipmon_process_key(int ch, int *curwin, struct tcptable *table, struc
 		if (table->barptr != NULL) {
 			table->barptr = table->firstvisible;
 		}
-		refreshtcpwin(table);
+		refreshtcpwin(table, true);
 	}
 }
 
@@ -691,7 +612,7 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 				 struct tcptable *table,
 				 struct othptable *othptbl,
 				 int logging, FILE *logfile,
-				 int *revlook, int rvnfd)
+				 struct resolver *res)
 {
 	in_port_t sport = 0, dport = 0;	/* TCP/UDP port values */
 	unsigned int br;	/* bytes read.  Differs from readlen */
@@ -731,8 +652,8 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 		add_othp_entry(othptbl, pkt, NULL, NULL,
 			       NOT_IP,
 			       pkt->pkt_protocol,
-			       pkt->pkt_payload, ifname, 0,
-			       0, logging, logfile);
+			       pkt->pkt_payload, ifname, NULL,
+			       logging, logfile);
 		return;
 	}
 
@@ -758,17 +679,9 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 			 * Ok, so we have a packet.  Add it if this connection
 			 * is not yet closed, or if it is a SYN packet.
 			 */
-			int wasempty = (table->head == NULL);
 			tcpentry = addentry(table, &saddr, &daddr,
 					    pkt_ip_protocol(pkt),
-					    ifname, revlook, rvnfd);
-			if (tcpentry != NULL) {
-				printentry(table, tcpentry->oth_connection);
-
-				if (wasempty) {
-					table->barptr = table->firstvisible;
-				}
-			}
+					    ifname, res);
 		}
 		/*
 		 * If we had an addentry() success, we should have no
@@ -778,7 +691,6 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 
 		if ((tcpentry != NULL)
 		    && !(tcpentry->stat & FLAG_RST)) {
-			int p_sstat = 0, p_dstat = 0;	/* Reverse lookup statuses prior to */
 
 			/*
 			 * Don't bother updating the entry if the connection
@@ -786,20 +698,15 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 			 * happen in practice?)
 			 */
 
-			if (*revlook) {
-				p_sstat = tcpentry->s_fstat;
-				p_dstat = tcpentry->d_fstat;
-			}
-
 			if (pkt->iphdr)
 				updateentry(table, pkt, tcpentry, tcp,
 					    br,
-					    revlook, rvnfd,
+					    res,
 					    logging, logfile);
 			else
 				updateentry(table, pkt, tcpentry, tcp,
 					    pkt->pkt_len,
-					    revlook, rvnfd,
+					    res,
 					    logging, logfile);
 			/*
 			 * Log first packet of a TCP connection except if
@@ -818,47 +725,18 @@ static void ipmon_process_packet(struct pkt_hdr *pkt, char *ifname,
 				writetcplog(logging, logfile, tcpentry,
 					    pkt->pkt_len, msgstring);
 			}
-
-			if (*revlook
-			    && (((p_sstat != RESOLVED)
-				 && (tcpentry->s_fstat == RESOLVED))
-				|| ((p_dstat != RESOLVED)
-				    && (tcpentry->d_fstat == RESOLVED)))) {
-				clearaddr(table, tcpentry);
-				clearaddr(table, tcpentry->oth_connection);
-			}
-			printentry(table, tcpentry);
-
-			/*
-			 * Special cases: Update other direction if it's
-			 * an ACK in response to a FIN.
-			 *
-			 *         -- or --
-			 *
-			 * Addresses were just resolved for the other
-			 * direction, so we should also do so here.
-			 */
-
-			if (((tcpentry->oth_connection->finsent == 2)
-			     &&	/* FINed and ACKed */
-			     (ntohl(tcp->seq) == tcpentry->oth_connection->finack))
-			    || (*revlook
-				&& (((p_sstat != RESOLVED)
-				     && (tcpentry->s_fstat == RESOLVED))
-				    || ((p_dstat != RESOLVED)
-					&& (tcpentry->d_fstat == RESOLVED)))))
-				printentry(table, tcpentry->oth_connection);
 		}
 		break; }
 	case IPPROTO_ICMP:
 	case IPPROTO_ICMPV6:
 		check_icmp_dest_unreachable(table, pkt, ifname);
-		/* print this ICMP(v6): fall through */
+		/* print this ICMP(v6) and ... */
+		/* fall through */
 	default:
 		add_othp_entry(othptbl, pkt, &saddr, &daddr,
 			       IS_IP, pkt_ip_protocol(pkt),
 			       ip_payload, ifname,
-			       revlook, rvnfd, logging, logfile);
+			       res, logging, logfile);
 		break;
 	}
 }
@@ -878,44 +756,25 @@ void ipmon(time_t facilitytime, char *ifptr)
 
 	struct othptable othptbl;
 
-	int fd;
+	struct capt capt;
 
 	struct pkt_hdr pkt;
 
-	unsigned long dropped = 0UL;
+	struct resolver res;
 
 	int ch;
-
-	int rvnfd = 0;
-
-	int revlook = options.revlook;
 
 	if (ifptr && !dev_up(ifptr)) {
 		err_iface_down();
 		return;
 	}
 
-	LIST_HEAD(promisc);
-	if (options.promisc) {
-		promisc_init(&promisc, ifptr);
-		promisc_set_list(&promisc);
+	if (capt_init(&capt, ifptr) == -1) {
+		write_error("Unable to initialize packet capture interface");
+		return;
 	}
 
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
-		goto err;
-	}
-	if(ifptr && dev_bind_ifname(fd, ifptr) == -1) {
-		write_error("Unable to bind interface on the socket");
-		goto err_close;
-	}
-
-	if (revlook) {
-		if (checkrvnamed())
-			open_rvn_socket(&rvnfd);
-	} else
-		rvnfd = 0;
+	resolver_init(&res, options.revlook);
 
 	if (options.servnames)
 		setservent(1);
@@ -966,10 +825,10 @@ void ipmon(time_t facilitytime, char *ifptr)
 
 	exitloop = 0;
 
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	struct timeval last_time = now;
-	struct timeval updtime = now;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct timespec last_time = now;
+	struct timespec next_screen_update = { 0 };
 	time_t starttime = now.tv_sec;
 
 	time_t check_closed;
@@ -986,36 +845,28 @@ void ipmon(time_t facilitytime, char *ifptr)
 		endtime = INT_MAX;
 
 	while (!exitloop) {
-		gettimeofday(&now, NULL);
-
-		/* update screen at configured intervals. */
-		if (screen_update_needed(&now, &updtime)) {
-			show_stats(table.statwin, total_pkts);
-			update_panels();
-			doupdate();
-
-			updtime = now;
-		}
+		clock_gettime(CLOCK_MONOTONIC, &now);
 
 		if (now.tv_sec > last_time.tv_sec) {
-			unsigned long msecs = timeval_diff_msec(&now, &last_time);
+			unsigned long msecs = timespec_diff_msec(&now, &last_time);
 			/* update all flowrates ... */
 			update_flowrates(&table, msecs);
 			/* ... and print the current one every second */
 			print_flowrate(&table);
 
+			resolve_visible_entries(&table, &res);
+
 			/* print timer at bottom of screen */
 			printelapsedtime(now.tv_sec - starttime, 15, othptbl.borderwin);
 
-			dropped += packet_get_dropped(fd);
-			print_packet_drops(dropped, othptbl.borderwin, 40);
+			print_packet_drops(capt_get_dropped(&capt), othptbl.borderwin, 40);
 
 			mark_timeouted_entries(&table, logging, logfile);
 
 			/* automatically clear closed/timed out entries */
 			if (now.tv_sec > check_closed) {
 				flushclosedentries(&table);
-				refreshtcpwin(&table);
+				refreshtcpwin(&table, true);
 				check_closed = now.tv_sec + options.closedint * 60;
 			}
 
@@ -1035,7 +886,18 @@ void ipmon(time_t facilitytime, char *ifptr)
 			last_time = now;
 		}
 
-		if (packet_get(fd, &pkt, &ch, table.tcpscreen) == -1) {
+		/* update screen at configured intervals. */
+		if (time_after(&now, &next_screen_update)) {
+			refreshtcpwin(&table, false);
+			show_stats(table.statwin, total_pkts);
+
+			update_panels();
+			doupdate();
+
+			set_next_screen_update(&next_screen_update, &now);
+		}
+
+		if (capt_get_packet(&capt, &pkt, &ch, table.tcpscreen) == -1) {
 			write_error("Packet receive failed");
 			exitloop = 1;
 			break;
@@ -1048,7 +910,8 @@ void ipmon(time_t facilitytime, char *ifptr)
 			total_pkts++;
 			ipmon_process_packet(&pkt, ifptr, &table, &othptbl,
 					     logging, logfile,
-					     &revlook, rvnfd);
+					     &res);
+			capt_put_packet(&capt, &pkt);
 		}
 	}
 	packet_destroy(&pkt);
@@ -1070,14 +933,7 @@ void ipmon(time_t facilitytime, char *ifptr)
 	if (options.servnames)
 		endservent();
 
-	killrvnamed();
-	close_rvn_socket(rvnfd);
+	resolver_destroy(&res);
 
-err_close:
-	close(fd);
-err:
-	if (options.promisc) {
-		promisc_restore_list(&promisc);
-		promisc_destroy(&promisc);
-	}
+	capt_destroy(&capt);
 }

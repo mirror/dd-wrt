@@ -1,5 +1,45 @@
 CHANGES file for iptraf-ng
 
+* Tue Jul 21 2020 Vitezslav Samel <vitezslav@samel.cz> - 1.2.1
+- Makefile: protect mandatory compile flags
+- packet capture: don't reuse socket for multiple receive functions
+- TPACKET_V[23]: continue even if mlock() fails
+
+* Thu Jun 04 2020 Vitezslav Samel <vitezslav@samel.cz> - 1.2.0
+- ipfrag: code refactoring (Nikola Pajkovsky)
+- ifstats: sort interfaces by name (Jan Engelhardt)
+- ifstats: fix memory leak (Phil Cameron)
+- documentation update (Phil Cameron)
+All changes below are done by Vitezslav Samel:
+Fixes:
+- ipmon: fix division by zero
+- fix: detstats(), ifstats(): handle packets with incorrect header checksum
+- fix: positionptr(): properly allocate newly created interfaces
+- fix: detstats(): properly account non-IP packets
+- fix: properly init curses (fixes view on some utf-8 terminals)
+- fix: cidr_split_address(): fix buffer overflow
+- ipmon: printentry(): fix printing of huge values
+- build: use correct libraries (wide version of -lpanel)
+- fix unsafe handling of printf() args (RedHat Bugzilla: 1842690)
+- fix the CPU hog if the interface gets removed (RedHat Bugzilla: 1572750)
+Enhancements:
+- introduce packet capturing abstraction: add recvmmsg(), TPACKET_V2
+  and TPACKET_V3 mmap()ed capturing modules: this allow us to capture
+  in multigigabit speeds
+- add partial support for IPoIB interfaces (full support cannot be done
+  because the kernel interface doesn't give us source address)
+  (RedHat Bugzilla: 1140211)
+- merge rvnamed-ng into iptraf-ng
+- allow scrolling with Home, End, PageUp and PageDown keys
+- show dropped packet count
+- pktsize: print in and out counters
+- ifstats: show total packet rate and packet drop across all interfaces
+- ipmon: show OSPF protocol version
+- hostmon, ipmon: update screen only when needed (vastly reduces CPU
+  usage and also reduces packet drops)
+- update source code to compile cleanly on modern gcc
+- numerous code refactoring/cleaning up all over the source tree
+
 * Tue Jul 23 2013 Nikola Pajkovsky <npajkovs@redhat.com> - 1.1.4
 - locking code rewrite: only one instance is allowed now
 - promiscuous mode rewrite

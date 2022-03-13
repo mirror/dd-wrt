@@ -40,6 +40,8 @@ socket protocol.
 #include <string.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <stdbool.h>
+
 #include "rvnamed.h"
 #include "dirs.h"
 #include "sockaddr.h"
@@ -81,26 +83,15 @@ static void auto_terminate(int s __unused)
 
 static void process_rvn_packet(struct rvn *rvnpacket)
 {
-	int ccfd;
+	sockaddr_gethostbyaddr(&rvnpacket->addr,
+				rvnpacket->fqdn,
+				sizeof(rvnpacket->fqdn));
+
 	struct sockaddr_un ccsa;
-
-	struct hostent *he;
-
-	ccfd = socket(PF_UNIX, SOCK_DGRAM, 0);
-
-	he = sockaddr_gethostbyaddr(&rvnpacket->addr);
-	if (he == NULL) {
-		sockaddr_ntop(&rvnpacket->addr, rvnpacket->fqdn,
-			      sizeof(rvnpacket->fqdn));
-	} else {
-		memset(rvnpacket->fqdn, 0, sizeof(rvnpacket->fqdn));
-		strncpy(rvnpacket->fqdn, he->h_name,
-			sizeof(rvnpacket->fqdn) - 1);
-	}
-
 	ccsa.sun_family = AF_UNIX;
 	strcpy(ccsa.sun_path, CHILDSOCKNAME);
 
+	int ccfd = socket(PF_UNIX, SOCK_DGRAM, 0);
 	sendto(ccfd, rvnpacket, sizeof(struct rvn), 0,
 	       (struct sockaddr *) &ccsa,
 	       sizeof(ccsa.sun_family) + strlen(ccsa.sun_path));
@@ -116,7 +107,7 @@ static int name_resolved(struct rvn *rvnpacket, struct hosts *hostlist,
 {
 	for (unsigned int i = 0; i != lastfree; i++)
 		if ((hostlist[i].ready == RESOLVED)
-		    && sockaddr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
+		    && sockaddr_addr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
 			return i;
 
 	return -1;
@@ -131,7 +122,7 @@ static int addrstat(struct rvn *rvnpacket, struct hosts *hostlist,
 		    unsigned int lastfree)
 {
 	for (unsigned int i = 0; i != lastfree; i++)
-		if (sockaddr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
+		if (sockaddr_addr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
 			return hostlist[i].ready;
 
 	return NOTRESOLVED;
@@ -150,10 +141,9 @@ static void writervnlog(FILE * fd, char *msg)
 	fprintf(fd, "%s: %s\n", atime, msg);
 }
 
-int main(void)
+int rvnamed(int ifd)
 {
 	int cfd;
-	int ifd;
 
 	struct hosts hostlist[NUM_CACHE_ENTRIES];
 	char logmsg[160];
@@ -173,27 +163,11 @@ int main(void)
 
 	fd_set sockset;
 
-	struct sockaddr_un csa, isa;	/* child and iptraf comm sockets */
+	struct sockaddr_un csa;
 	struct sockaddr_un fromaddr;
 	socklen_t fromlen;
 
 	FILE *logfile;
-
-	/* Daemonization Sequence */
-
-	switch (fork()) {
-	case -1:
-		exit(1);
-	case 0:
-		break;
-	default:
-		exit(0);
-	}
-
-	setsid();
-	int i = chdir("/");
-
-	(void) i;
 
 	signal(SIGCHLD, childreap);
 
@@ -211,14 +185,10 @@ int main(void)
 	 */
 
 	unlink(CHILDSOCKNAME);
-	unlink(IPTSOCKNAME);
 
 	writervnlog(logfile, "Opening sockets");
 	csa.sun_family = AF_UNIX;
 	strcpy(csa.sun_path, CHILDSOCKNAME);
-
-	isa.sun_family = AF_UNIX;
-	strcpy(isa.sun_path, IPTSOCKNAME);
 
 	cfd = socket(PF_UNIX, SOCK_DGRAM, 0);
 
@@ -234,27 +204,14 @@ int main(void)
 			    "Error binding child communication socket, aborting");
 		exit(1);
 	}
-	ifd = socket(PF_UNIX, SOCK_DGRAM, 0);
-
-	if (ifd < 0) {
-		writervnlog(logfile,
-			    "Unable to open client communication socket, aborting");
-		exit(1);
-	}
-	if (bind
-	    (ifd, (struct sockaddr *) &isa,
-	     sizeof(isa.sun_family) + strlen(isa.sun_path)) < 0) {
-		writervnlog(logfile,
-			    "Error binding client communication socket, aborting");
-		exit(1);
-	}
 	while (1) {
 		FD_ZERO(&sockset);
 		FD_SET(cfd, &sockset);
 		FD_SET(ifd, &sockset);
+		int maxfd = cfd > ifd ? cfd : ifd;
 
 		do {
-			ss = select(ifd + 1, &sockset, NULL, NULL, NULL);
+			ss = select(maxfd + 1, &sockset, NULL, NULL, NULL);
 		} while ((ss < 0) && (errno != ENOMEM));
 
 		if (errno == ENOMEM) {
@@ -280,7 +237,7 @@ int main(void)
 				hi = 0;
 
 				while (hi <= lastfree) {
-					if (sockaddr_is_equal(&hostlist[hi].addr, &rvnpacket.addr))
+					if (sockaddr_addr_is_equal(&hostlist[hi].addr, &rvnpacket.addr))
 						break;
 					hi++;
 				}
@@ -295,7 +252,8 @@ int main(void)
 
 					sockaddr_copy(&hostlist[hi].addr, &rvnpacket.addr);
 				}
-				strncpy(hostlist[hi].fqdn, rvnpacket.fqdn, sizeof(hostlist[hi].fqdn) - 1);
+				strncpy(hostlist[hi].fqdn, rvnpacket.fqdn, sizeof(hostlist[hi].fqdn));
+				hostlist[hi].fqdn[sizeof(hostlist[hi].fqdn) - 1] = '\0';
 
 				hostlist[hi].ready = RESOLVED;
 			}
@@ -306,18 +264,11 @@ int main(void)
 		 */
 
 		if (FD_ISSET(ifd, &sockset)) {
-			fromlen = sizeof(struct sockaddr_un);
-			br = recvfrom(ifd, &rvnpacket, sizeof(struct rvn), 0,
-				      (struct sockaddr *) &fromaddr, &fromlen);
+			br = recv(ifd, &rvnpacket, sizeof(struct rvn), 0);
 			if (br > 0) {
 				switch (rvnpacket.type) {
 				case RVN_HELLO:
-					sendto(ifd, &rvnpacket,
-					       sizeof(struct rvn), 0,
-					       (struct sockaddr *)
-					       &fromaddr,
-					       sizeof(fromaddr.sun_family) +
-					       strlen(fromaddr.sun_path));
+					send(ifd, &rvnpacket, sizeof(rvnpacket), 0);
 					break;
 				case RVN_QUIT:
 					writervnlog(logfile,
@@ -327,7 +278,6 @@ int main(void)
 					close(cfd);
 					writervnlog(logfile,
 						    "Clearing socket names");
-					unlink(IPTSOCKNAME);
 					unlink(CHILDSOCKNAME);
 					sprintf(logmsg,
 						"rvnamed terminating: max processes spawned: %d",
@@ -349,16 +299,7 @@ int main(void)
 							sizeof(rvnpacket.fqdn)-1);
 						rvnpacket.ready = RESOLVED;
 
-						br = sendto(ifd, &rvnpacket,
-							    sizeof(struct rvn),
-							    0,
-							    (struct sockaddr *)
-							    &fromaddr,
-							    sizeof(fromaddr.
-								   sun_family)
-							    +
-							    strlen(fromaddr.
-								   sun_path));
+						br = send(ifd, &rvnpacket, sizeof(struct rvn), 0);
 					} else {
 
 						/*
@@ -459,17 +400,7 @@ int main(void)
 						sockaddr_ntop(&rvnpacket.addr, rvnpacket.fqdn, sizeof(rvnpacket.fqdn));
 						rvnpacket.ready = RESOLVING;
 
-						br = sendto(ifd, &rvnpacket,
-							    sizeof(struct rvn),
-							    0,
-							    (struct sockaddr *)
-							    &fromaddr,
-							    sizeof(fromaddr.
-								   sun_family)
-							    +
-							    strlen(fromaddr.
-								   sun_path));
-
+						br = send(ifd, &rvnpacket, sizeof(struct rvn), 0);
 					}
 				}
 			}

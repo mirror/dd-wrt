@@ -23,10 +23,10 @@ detstats.c	- the interface statistics module
 #include "serv.h"
 #include "timer.h"
 #include "logvars.h"
-#include "promisc.h"
 #include "error.h"
 #include "detstats.h"
 #include "rate.h"
+#include "capt.h"
 
 struct ifcounts {
 	struct proto_counter total;
@@ -517,11 +517,9 @@ void detstats(char *iface, time_t facilitytime)
 
 	int ch;
 
-	int fd;
+	struct capt capt;
 
 	struct pkt_hdr pkt;
-
-	unsigned long dropped = 0UL;
 
 	if (!dev_up(iface)) {
 		err_iface_down();
@@ -545,20 +543,9 @@ void detstats(char *iface, time_t facilitytime)
 	update_panels();
 	doupdate();
 
-	LIST_HEAD(promisc);
-	if (options.promisc) {
-		promisc_init(&promisc, iface);
-		promisc_set_list(&promisc);
-	}
-
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
+	if (capt_init(&capt, iface) == -1) {
+		write_error("Unable to initialize packet capture interface");
 		goto err;
-	}
-	if(dev_bind_ifname(fd, iface) == -1) {
-		write_error("Unable to bind interface on the socket");
-		goto err_close;
 	}
 
 	ifcounts_init(&ifcounts);
@@ -597,10 +584,10 @@ void detstats(char *iface, time_t facilitytime)
 
 	exitloop = 0;
 
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	struct timeval last_time = now;
-	struct timeval last_update = now;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct timespec last_time = now;
+	struct timespec next_screen_update = { 0 };
 
 	time_t starttime = now.tv_sec;
 	time_t endtime = INT_MAX;
@@ -613,18 +600,17 @@ void detstats(char *iface, time_t facilitytime)
 
 	/* data-gathering loop */
 	while (!exitloop) {
-		gettimeofday(&now, NULL);
+		clock_gettime(CLOCK_MONOTONIC, &now);
 
 		if (now.tv_sec > last_time.tv_sec) {
-			unsigned long msecs = timeval_diff_msec(&now, &last_time);
+			unsigned long msecs = timespec_diff_msec(&now, &last_time);
 			ifrates_update(&ifrates, &ifcounts, msecs);
 			ifrates_show(&ifrates, statwin);
 
 			wattrset(statwin, BOXATTR);
 			printelapsedtime(now.tv_sec - starttime, 1, statwin);
 
-			dropped += packet_get_dropped(fd);
-			print_packet_drops(dropped, statwin, 49);
+			print_packet_drops(capt_get_dropped(&capt), statwin, 49);
 
 			if (now.tv_sec > endtime)
 				exitloop = 1;
@@ -639,15 +625,15 @@ void detstats(char *iface, time_t facilitytime)
 
 			last_time = now;
 		}
-		if (screen_update_needed(&now, &last_update)) {
+		if (time_after(&now, &next_screen_update)) {
 			printdetails(&ifcounts, statwin);
 			update_panels();
 			doupdate();
 
-			last_update = now;
+			set_next_screen_update(&next_screen_update, &now);
 		}
 
-		if (packet_get(fd, &pkt, &ch, statwin) == -1) {
+		if (capt_get_packet(&capt, &pkt, &ch, statwin) == -1) {
 			write_error("Packet receive failed");
 			exitloop = 1;
 			break;
@@ -656,8 +642,10 @@ void detstats(char *iface, time_t facilitytime)
 		if (ch != ERR)
 			detstats_process_key(ch);
 
-		if (pkt.pkt_len > 0)
+		if (pkt.pkt_len > 0) {
 			detstats_process_packet(&ifcounts, &pkt);
+			capt_put_packet(&capt, &pkt);
+		}
 
 	}
 	packet_destroy(&pkt);
@@ -674,15 +662,8 @@ void detstats(char *iface, time_t facilitytime)
 
 	ifrates_destroy(&ifrates);
 	ifcounts_destroy(&ifcounts);
-
-err_close:
-	close(fd);
+	capt_destroy(&capt);
 err:
-	if (options.promisc) {
-		promisc_restore_list(&promisc);
-		promisc_destroy(&promisc);
-	}
-
 	del_panel(statpanel);
 	delwin(statwin);
 	update_panels();

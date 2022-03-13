@@ -85,9 +85,9 @@ void tx_infobox(char *text, char *prompt)
 	tx_colorwin(win);
 	tx_box(win, ACS_VLINE, ACS_HLINE);
 	wattrset(win, INFO_TEXT_ATTR);
-	mvwprintw(win, 1, 2, text);
+	mvwprintw(win, 1, 2, "%s", text);
 	wattrset(win, INFO_PROMPT_ATTR);
-	mvwprintw(win, 2, 2, prompt);
+	mvwprintw(win, 2, 2, "%s", prompt);
 	update_panels();
 	doupdate();
 

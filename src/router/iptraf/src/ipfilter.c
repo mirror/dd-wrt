@@ -52,7 +52,6 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 	int doagain;
 	unsigned int i;
 	char msgstr[60];
-	char actual_address[30];
 	unsigned int maskbits;
 
 	const char *WILDCARD = "0.0.0.0";
@@ -171,9 +170,7 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 			strcpy(data->s_fqdn, fieldptr->buf);
 
 		if (strchr(data->s_fqdn, '/') != NULL) {
-			cidr_split_address(data->s_fqdn, actual_address,
-					   &maskbits);
-			strcpy(data->s_fqdn, actual_address);
+			cidr_split_address(data->s_fqdn, &maskbits);
 		}
 
 		/*
@@ -185,7 +182,8 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 				strcpy(data->s_mask, WILDCARD);
 			} else {
 				strncpy(data->s_mask,
-					cidr_get_quad_mask(maskbits), 20);
+					cidr_get_quad_mask(maskbits),
+					sizeof(data->s_mask) - 1);
 			}
 		} else
 			strcpy(data->s_mask, fieldptr->buf);
@@ -210,9 +208,7 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 
 		maskbits = 0;
 		if (strchr(data->d_fqdn, '/') != NULL) {
-			cidr_split_address(data->d_fqdn, actual_address,
-					   &maskbits);
-			strcpy(data->d_fqdn, actual_address);
+			cidr_split_address(data->d_fqdn, &maskbits);
 		}
 
 		/*
@@ -224,7 +220,8 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 				strcpy(data->d_mask, WILDCARD);
 			} else {
 				strncpy(data->d_mask,
-					cidr_get_quad_mask(maskbits), 20);
+					cidr_get_quad_mask(maskbits),
+					sizeof(data->d_mask) - 1);
 			}
 		} else
 			strcpy(data->d_mask, fieldptr->buf);
