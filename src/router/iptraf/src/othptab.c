@@ -13,12 +13,12 @@ othptab.c - non-TCP protocol display module
 
 #include "arphdr.h"
 #include "options.h"
+#include "revname.h"
 #include "tcptable.h"
 #include "othptab.h"
 #include "deskman.h"
 #include "attrs.h"
 #include "log.h"
-#include "revname.h"
 #include "rvnamed.h"
 #include "servname.h"
 #include "addproto.h"
@@ -188,7 +188,7 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 				  int is_ip,
 				  int protocol,
 				  char *packet2,
-				  char *ifname, int *rev_lookup, int rvnfd,
+				  char *ifname, struct resolver *res,
 				  int logging, FILE *logfile)
 {
 	struct othptabent *new_entry;
@@ -213,10 +213,10 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 		sockaddr_copy(&new_entry->saddr, saddr);
 		sockaddr_copy(&new_entry->daddr, daddr);
 
-		revname(rev_lookup, saddr, new_entry->s_fqdn,
-			sizeof(new_entry->s_fqdn), rvnfd);
-		revname(rev_lookup, daddr, new_entry->d_fqdn,
-			sizeof(new_entry->d_fqdn), rvnfd);
+		revname(res, saddr, new_entry->s_fqdn,
+			sizeof(new_entry->s_fqdn));
+		revname(res, daddr, new_entry->d_fqdn,
+			sizeof(new_entry->d_fqdn));
 
 		if (!new_entry->fragment) {
 			if (protocol == IPPROTO_ICMP) {
@@ -237,6 +237,8 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 					 IPPROTO_UDP, new_entry->un.udp.d_sname,
 					 10);
 			} else if (protocol == IPPROTO_OSPFIGP) {
+				new_entry->un.ospf.version =
+				    ((struct ospfhdr *) packet2)->ospf_version;
 				new_entry->un.ospf.type =
 				    ((struct ospfhdr *) packet2)->ospf_type;
 				new_entry->un.ospf.area =
@@ -358,7 +360,7 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 	char description[SHORTSTRING_MAX];
 	char additional[MSGSTRING_MAX];
 	char msgstring[MSGSTRING_MAX];
-	char scratchpad[MSGSTRING_MAX];
+	char scratchpad[2 * MSGSTRING_MAX];
 	char *startstr;
 
 	char *packet_type;
@@ -681,6 +683,14 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 				break;
 			}
 		} else if (entry->protocol == IPPROTO_OSPFIGP) {
+			switch (entry->un.ospf.version) {
+			case 2:
+				strcat(protname, "v2");
+				break;
+			case 3:
+				strcat(protname, "v3");
+				break;
+			}
 			switch (entry->un.ospf.type) {
 			case OSPF_TYPE_HELLO:
 				strcpy(description, "hlo");

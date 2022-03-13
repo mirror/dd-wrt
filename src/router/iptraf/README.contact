@@ -6,24 +6,11 @@ CONTACT INFORMATION
 Individual Contact
 ~~~~~~~~~~~~~~~~~~
     IPTraf was written and primarily maintained by Gerard Paul Java
-(riker@seul.org). Fork was made by Nikola Pajkovsky(npajkovs@redhat.com).
+(riker@seul.org). Fork to IPTraf-ng was made by Nikola Pajkovsky(npajkovs@redhat.com).
+Current maintainer is Philip Cameron(pcameron@redhat.com)
 
 ===============
 Web information
 ~~~~~~~~~~~~~~~
-The official IPTraf sites are http://cebu.mozcom.com/riker/iptraf and
-http://iptraf.seul.org. IPTraf-ng sites is https://fedorahosted.org/iptraf-ng/
-
-============
-Mailing list
-~~~~~~~~~~~~
-One mailing list is available: iptraf-ng@lists.fedorahosted.org
-
-Please register yourself here:
-https://fedorahosted.org/mailman/listinfo/iptraf-ng
-
-===
-IRC and Jabber
-~~~
-I'm reachable on irc channel iptraf-ng@irc.freenode.net or jabber nikis@isgeek.info
+IPTraf-ng sites are https://github.com/iptraf-ng/iptraf-ng/
 

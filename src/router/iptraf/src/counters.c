@@ -38,24 +38,3 @@ void proto_counter_reset(struct proto_counter *proto_counter)
 		pkt_counter_reset(&proto_counter->proto_in);
 	}
 }
-
-
-void ip_counter_update(struct ip_counter *ip_counter, int outgoing, int bytes)
-{
-	if (ip_counter) {
-		pkt_counter_update(&ip_counter->ip_total, bytes);
-		if (outgoing)
-			pkt_counter_update(&ip_counter->ip_out, bytes);
-		else
-			pkt_counter_update(&ip_counter->ip_in, bytes);
-	}
-}
-
-void ip_counter_reset(struct ip_counter *ip_counter)
-{
-	if (ip_counter) {
-		pkt_counter_reset(&ip_counter->ip_total);
-		pkt_counter_reset(&ip_counter->ip_out);
-		pkt_counter_reset(&ip_counter->ip_in);
-	}
-}

@@ -19,7 +19,6 @@ options.c - implements the configuration section of the utility
 #include "deskman.h"
 #include "attrs.h"
 #include "landesc.h"
-#include "promisc.h"
 #include "dirs.h"
 
 #define ALLOW_ZERO 1
@@ -58,7 +57,7 @@ static void makeoptionmenu(struct MENU *menu)
 	tx_additem(menu, NULL, NULL);
 	tx_additem(menu, " ^E^thernet/PLIP host descriptions...",
 		   "Manages descriptions for Ethernet and PLIP addresses");
-	tx_additem(menu, " ^F^DDI/Token Ring host descriptions...",
+	tx_additem(menu, " ^F^DDI host descriptions...",
 		   "Manages descriptions for FDDI and FDDI addresses");
 	tx_additem(menu, NULL, NULL);
 	tx_additem(menu, " E^x^it configuration", "Returns to main menu");

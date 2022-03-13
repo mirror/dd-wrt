@@ -25,10 +25,11 @@ ifstats.c	- the interface statistics module
 #include "serv.h"
 #include "timer.h"
 #include "logvars.h"
-#include "promisc.h"
 #include "error.h"
 #include "ifstats.h"
 #include "rate.h"
+#include "capt.h"
+#include "counters.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
@@ -55,6 +56,9 @@ struct iftab {
 	struct iflist *tail;
 	struct iflist *firstvisible;
 	struct iflist *lastvisible;
+	struct pkt_counter totals;
+	struct rate rate_total;
+	struct rate rate_totalpps;
 	WINDOW *borderwin;
 	PANEL *borderpanel;
 	WINDOW *statwin;
@@ -134,6 +138,15 @@ static struct iflist *alloc_iflist_entry(void)
 	return tmp;
 }
 
+static void free_iflist_entry(struct iflist *ptr)
+{
+	if (!ptr)
+		return;
+
+	rate_destroy(&ptr->rate);
+	free(ptr);
+}
+
 /*
  * Initialize the list of interfaces.  This linked list is used in the
  * selection boxes as well as in the general interface statistics screen.
@@ -185,7 +198,7 @@ static void initiflist(struct iflist **list)
 
 		/* make the linked list sorted by ifindex */
 		struct iflist *cur = *list, *last = NULL;
-		while (cur != NULL && cur->ifindex < ifindex) {
+		while (cur != NULL && strcmp(cur->ifname, ifname) < 0) {
 			last = cur;
 			cur = cur->next_entry;
 		}
@@ -224,6 +237,7 @@ static struct iflist *positionptr(struct iflist *iflist, const int ifindex)
 		int r = dev_get_ifname(ifindex, itmp->ifname);
 		if (r != 0) {
 			write_error("Error getting interface name");
+			free_iflist_entry(itmp);
 			return(NULL);
 		}
 
@@ -243,8 +257,7 @@ static void destroyiflist(struct iflist *list)
 	while (ptmp != NULL) {
 		struct iflist *ctmp = ptmp->next_entry;
 
-		rate_destroy(&ptmp->rate);
-		free(ptmp);
+		free_iflist_entry(ptmp);
 		ptmp = ctmp;
 	}
 }
@@ -259,6 +272,9 @@ static void updaterates(struct iftab *table, unsigned long msecs)
 	struct iflist *ptmp = table->head;
 	unsigned long rate;
 
+	rate_add_rate(&table->rate_total, table->totals.pc_bytes, msecs);
+	rate_add_rate(&table->rate_totalpps, table->totals.pc_packets, msecs);
+	pkt_counter_reset(&table->totals);
 	while (ptmp != NULL) {
 		rate_add_rate(&ptmp->rate, ptmp->spanbr, msecs);
 		rate = rate_get_average(&ptmp->rate);
@@ -349,6 +365,10 @@ static void initiftab(struct iftab *table)
 {
 	table->borderwin = newwin(LINES - 2, COLS, 1, 0);
 	table->borderpanel = new_panel(table->borderwin);
+
+	rate_alloc(&table->rate_total, 5);
+	rate_alloc(&table->rate_totalpps, 5);
+	pkt_counter_reset(&table->totals);
 
 	move(LINES - 1, 1);
 	scrollkeyhelp();
@@ -464,6 +484,8 @@ static void ifstats_process_packet(struct iftab *table, struct pkt_hdr *pkt)
 		return;
 	}
 
+	pkt_counter_update(&table->totals, pkt->pkt_len);
+
 	struct iflist *ptmp = positionptr(table->head, pkt->from->sll_ifindex);
 	if (!ptmp)
 		return;
@@ -500,11 +522,9 @@ void ifstats(time_t facilitytime)
 
 	int ch;
 
-	int fd;
+	struct capt capt;
 
 	struct pkt_hdr pkt;
-
-	unsigned long dropped = 0UL;
 
 	initiflist(&(table.head));
 	if (!table.head) {
@@ -514,15 +534,8 @@ void ifstats(time_t facilitytime)
 
 	initiftab(&table);
 
-	LIST_HEAD(promisc);
-	if (options.promisc) {
-		promisc_init(&promisc, NULL);
-		promisc_set_list(&promisc);
-	}
-
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
+	if (capt_init(&capt, NULL) == -1) {
+		write_error("Unable to initialize packet capture interface");
 		goto err;
 	}
 
@@ -560,10 +573,10 @@ void ifstats(time_t facilitytime)
 
 	exitloop = 0;
 
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	struct timeval last_time = now;
-	struct timeval last_update = now;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct timespec last_time = now;
+	struct timespec next_screen_update = { 0 };
 
 	time_t starttime = now.tv_sec;
 	time_t endtime = INT_MAX;
@@ -575,17 +588,25 @@ void ifstats(time_t facilitytime)
 		log_next = now.tv_sec + options.logspan;
 
 	while (!exitloop) {
-		gettimeofday(&now, NULL);
+		clock_gettime(CLOCK_MONOTONIC, &now);
 
 		if (now.tv_sec > last_time.tv_sec) {
-			unsigned long msecs = timeval_diff_msec(&now, &last_time);
+			unsigned long msecs = timespec_diff_msec(&now, &last_time);
 			updaterates(&table, msecs);
 			showrates(&table);
 
 			printelapsedtime(now.tv_sec - starttime, 1, table.borderwin);
 
-			dropped += packet_get_dropped(fd);
-			print_packet_drops(dropped, table.borderwin, 49);
+			print_packet_drops(capt_get_dropped(&capt), table.borderwin, 61);
+
+			wattrset(table.borderwin, BOXATTR);
+			char buf[64];
+			rate_print(rate_get_average(&table.rate_total), buf, sizeof(buf));
+			mvwprintw(table.borderwin,
+				  getmaxy(table.borderwin) - 1, 19,
+				  " Total: %s / %9lu pps ",
+				  buf,
+				  rate_get_average(&table.rate_totalpps));
 
 			if (logging && (now.tv_sec > log_next)) {
 				check_rotate_flag(&logfile);
@@ -598,15 +619,15 @@ void ifstats(time_t facilitytime)
 
 			last_time = now;
 		}
-		if (screen_update_needed(&now, &last_update)) {
+		if (time_after(&now, &next_screen_update)) {
 			print_if_entries(&table);
 			update_panels();
 			doupdate();
 
-			last_update = now;
+			set_next_screen_update(&next_screen_update, &now);
 		}
 
-		if (packet_get(fd, &pkt, &ch, table.statwin) == -1) {
+		if (capt_get_packet(&capt, &pkt, &ch, table.statwin) == -1) {
 			write_error("Packet receive failed");
 			exitloop = 1;
 			break;
@@ -615,8 +636,10 @@ void ifstats(time_t facilitytime)
 		if (ch != ERR)
 			ifstats_process_key(&table, ch);
 
-		if (pkt.pkt_len > 0)
+		if (pkt.pkt_len > 0) {
 			ifstats_process_packet(&table, &pkt);
+			capt_put_packet(&capt, &pkt);
+		}
 
 	}
 	packet_destroy(&pkt);
@@ -630,13 +653,8 @@ void ifstats(time_t facilitytime)
 	}
 	strcpy(current_logfile, "");
 
-	close(fd);
+	capt_destroy(&capt);
 err:
-	if (options.promisc) {
-		promisc_restore_list(&promisc);
-		promisc_destroy(&promisc);
-	}
-
 	del_panel(table.statpanel);
 	delwin(table.statwin);
 	del_panel(table.borderpanel);
@@ -645,6 +663,8 @@ err:
 	doupdate();
 
 	destroyiflist(table.head);
+	rate_destroy(&table.rate_total);
+	rate_destroy(&table.rate_totalpps);
 }
 
 void selectiface(char *ifname, int withall, int *aborted)
@@ -663,10 +683,9 @@ void selectiface(char *ifname, int withall, int *aborted)
 	}
 
 	if ((withall) && (list != NULL)) {
-		ptmp = xmalloc(sizeof(struct iflist));
+		ptmp = alloc_iflist_entry();
 		strncpy(ptmp->ifname, "All interfaces", sizeof(ptmp->ifname));
 		ptmp->ifindex = 0;
-		rate_alloc(&ptmp->rate, 5);	/* FIXME: need iflist_entry_init() */
 
 		ptmp->prev_entry = NULL;
 		list->prev_entry = ptmp;

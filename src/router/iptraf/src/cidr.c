@@ -55,31 +55,17 @@ unsigned int cidr_get_maskbits(unsigned long mask)
 }
 
 /*
- * Splits a CIDR-style address/mask string into its constituent address and
- * mask parts.  In case of absent or invalid input in the mask part, 255 is
- * returned in *maskbits (255 is invalid for an IPv4 address).
+ * Parse and cut off mask from CIDR-style address/mask string. In case of
+ * absent or invalid input in the mask, 255 is returned in *maskbits
+ * (255 is invalid for an IPv4 address).
  */
-void cidr_split_address(char *cidr_addr, char *addresspart,
-			unsigned int *maskbits)
+void cidr_split_address(char *cidr_addr, unsigned int *maskbits)
 {
-	char maskpart[4];
-	char *endptr;
-	char *slashptr;
-
-	char address_buffer[80];
-
-	if (strchr(cidr_addr, '/') == NULL) {
-		strncpy(addresspart, cidr_addr, 80);
+	char *slashptr = strchr(cidr_addr, '/');
+	if (slashptr == NULL) {
 		*maskbits = 255;
 		return;
 	}
-
-	memset(address_buffer, 0, 80);
-	memset(addresspart, 0, 80);
-	memset(maskpart, 0, 4);
-
-	strncpy(address_buffer, cidr_addr, 80);
-	slashptr = strchr(address_buffer, '/');
 
 	/*
 	 * Cut out the mask part and move past the slash
@@ -87,14 +73,14 @@ void cidr_split_address(char *cidr_addr, char *addresspart,
 	*slashptr = '\0';
 	slashptr++;
 
-	/*
-	 * Copy out the address and mask parts into their buffers.
-	 */
-	strncpy(addresspart, address_buffer, 80);
-	strncpy(maskpart, slashptr, 4);
+	if (*slashptr != '\0') {
+		unsigned long val;
+		char *endptr;
 
-	if (maskpart[0] != '\0') {
-		*maskbits = strtoul(maskpart, &endptr, 10);
+		val = strtoul(slashptr, &endptr, 10);
+		if (val > UINT_MAX)
+			val = UINT_MAX;
+		*maskbits = (unsigned int)val;
 		if (*endptr != '\0')
 			*maskbits = 255;
 	} else

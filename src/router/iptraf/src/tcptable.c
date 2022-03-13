@@ -12,11 +12,11 @@ tcptable.c - table manipulation routines for the IP monitor
 #include "tui/winops.h"
 
 #include "options.h"
+#include "revname.h"
 #include "tcptable.h"
 #include "deskman.h"
 #include "attrs.h"
 #include "log.h"
-#include "revname.h"
 #include "rvnamed.h"
 #include "servname.h"
 #include "hostmon.h"
@@ -54,7 +54,7 @@ static unsigned int tcp_hash(struct sockaddr_storage *saddr,
 	size_t i;
 	unsigned int ifsum = 0;
 
-	for (i = 0; i <= strlen(ifname) - 1; i++)
+	for (i = 0; i < strlen(ifname); i++)
 		ifsum += ifname[i];
 
 	switch (saddr->ss_family) {
@@ -238,15 +238,30 @@ static void del_tcp_hash_node(struct tcptable *table, struct tcptableent *entry)
 	free(ptmp);
 }
 
+static void resolve_entry(struct tcptableent *entry, struct resolver *res)
+{
+	if (entry->s_fstat != RESOLVED) {
+		entry->s_fstat = revname(res, &entry->saddr,
+					 entry->s_fqdn, sizeof(entry->s_fqdn));
+		strcpy(entry->oth_connection->d_fqdn, entry->s_fqdn);
+		entry->oth_connection->d_fstat = entry->s_fstat;
+	}
+	if (entry->d_fstat != RESOLVED) {
+		entry->d_fstat = revname(res, &entry->daddr,
+					 entry->d_fqdn, sizeof(entry->d_fqdn));
+		strcpy(entry->oth_connection->s_fqdn, entry->d_fqdn);
+		entry->oth_connection->s_fstat = entry->d_fstat;
+	}
+}
+
 /*
  * Add a new entry to the TCP screen table
  */
-
 struct tcptableent *addentry(struct tcptable *table,
 			     struct sockaddr_storage *saddr,
 			     struct sockaddr_storage *daddr,
 			     int protocol, char *ifname,
-			     int *rev_lookup, int rvnfd)
+			     struct resolver *res)
 {
 	struct tcptableent *new_entry;
 	struct closedlist *ctemp;
@@ -266,6 +281,7 @@ struct tcptableent *addentry(struct tcptable *table,
 			table->head = new_entry;
 
 			table->firstvisible = new_entry;
+			table->barptr = new_entry;
 		}
 		if (table->tail != NULL) {
 			table->tail->next_entry = new_entry;
@@ -289,13 +305,10 @@ struct tcptableent *addentry(struct tcptable *table,
 			 table->firstvisible->index + (table->imaxy - 1))
 			table->lastvisible = new_entry;
 
-		new_entry->reused = new_entry->oth_connection->reused = 0;
 		table->count++;
 
 		rate_alloc(&new_entry->rate, 5);
 		rate_alloc(&new_entry->oth_connection->rate, 5);
-
-		print_tcp_num_entries(table);
 	} else {
 		/*
 		 * If we reach this point, we're allocating off the list of closed
@@ -318,8 +331,6 @@ struct tcptableent *addentry(struct tcptable *table,
 
 		if (table->closedentries == NULL)
 			table->closedtail = NULL;
-
-		new_entry->reused = new_entry->oth_connection->reused = 1;
 
 		/*
 		 * Delete the old hash entries for this reallocated node;
@@ -366,13 +377,9 @@ struct tcptableent *addentry(struct tcptable *table,
 
 	new_entry->stat = new_entry->oth_connection->stat = 0;
 
-	new_entry->s_fstat =
-	    revname(rev_lookup, &new_entry->saddr,
-		    new_entry->s_fqdn, sizeof(new_entry->s_fqdn), rvnfd);
-
-	new_entry->d_fstat =
-	    revname(rev_lookup, &new_entry->daddr,
-		    new_entry->d_fqdn, sizeof(new_entry->d_fqdn), rvnfd);
+	new_entry->s_fstat = NOTRESOLVED;
+	new_entry->d_fstat = NOTRESOLVED;
+	resolve_entry(new_entry, res);
 
 	/* set port service names (where applicable) */
 	servlook(sockaddr_get_port(saddr), IPPROTO_TCP, new_entry->s_sname, 10);
@@ -458,7 +465,7 @@ static char *tcplog_flowrate_msg(struct tcptableent *entry, char *buf,
 	if (interval < 1)
 		interval = 1;
 
-	char rbuf[64];
+	char rbuf[32];
 	rate_print(entry->bcount / interval, rbuf, sizeof(rbuf));
 
 	snprintf(buf, bufsize - 1, "avg flow rate %s", rbuf);
@@ -516,7 +523,7 @@ struct tcptableent *in_table(struct tcptable *table,
 	unsigned int hp;
 
 	if (table->head == NULL) {
-		return 0;
+		return NULL;
 	}
 	/*
 	 * Determine hash table index for this set of addresses and ports
@@ -557,26 +564,14 @@ struct tcptableent *in_table(struct tcptable *table,
 
 void updateentry(struct tcptable *table, struct pkt_hdr *pkt,
 		 struct tcptableent *tableentry, struct tcphdr *tcp,
-		 unsigned int bcount, int *revlook, int rvnfd, int logging,
+		 unsigned int bcount, struct resolver *res, int logging,
 		 FILE *logfile)
 {
 	char msgstring[MSGSTRING_MAX];
 	char newmacaddr[18];
 
-	if (tableentry->s_fstat != RESOLVED) {
-		tableentry->s_fstat =
-		    revname(revlook, &tableentry->saddr, tableentry->s_fqdn,
-			    sizeof(tableentry->s_fqdn), rvnfd);
-		strcpy(tableentry->oth_connection->d_fqdn, tableentry->s_fqdn);
-		tableentry->oth_connection->d_fstat = tableentry->s_fstat;
-	}
-	if (tableentry->d_fstat != RESOLVED) {
-		tableentry->d_fstat =
-		    revname(revlook, &tableentry->daddr, tableentry->d_fqdn,
-			    sizeof(tableentry->d_fqdn), rvnfd);
-		strcpy(tableentry->oth_connection->s_fqdn, tableentry->d_fqdn);
-		tableentry->oth_connection->s_fstat = tableentry->d_fstat;
-	}
+	resolve_entry(tableentry, res);
+
 	tableentry->pcount++;
 	tableentry->bcount += bcount;
 	tableentry->psize = pkt->pkt_len;
@@ -756,29 +751,6 @@ void updateentry(struct tcptable *table, struct pkt_hdr *pkt,
 }
 
 /*
- * Clears out the resolved IP addresses from the window.  This prevents
- * overlapping port numbers (in cases where the resolved DNS name is shorter
- * than its IP address), that may cause the illusion of large ports.  Plus,
- * such output, while may be interpreted by people with a little know-how,
- * is just plain wrong.
- *
- * Returns immediately if the entry is not visible in the window.
- */
-
-void clearaddr(struct tcptable *table, struct tcptableent *tableentry)
-{
-	unsigned int target_row;
-
-	if ((tableentry->index < table->firstvisible->index)
-	    || (tableentry->index > table->lastvisible->index))
-		return;
-
-	target_row = tableentry->index - table->firstvisible->index;
-
-	mvwprintw(table->tcpscreen, target_row, 1, "%44c", ' ');
-}
-
-/*
  * Display a TCP connection line.  Returns immediately if the entry is
  * not visible in the window.
  */
@@ -787,9 +759,12 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry)
 {
 	char stat[7] = "";
 	unsigned int target_row;
-	char sp_buf[MSGSTRING_MAX];
 	int normalattr;
 	int highattr;
+
+	if ((tableentry->index < table->firstvisible->index)
+	    || (tableentry->index > table->lastvisible->index))
+		return;
 
 	/*
 	 * Set appropriate attributes for this entry
@@ -803,38 +778,25 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry)
 		highattr = HIGHATTR;
 	}
 
-	if ((tableentry->index < table->firstvisible->index)
-	    || (tableentry->index > table->lastvisible->index))
-		return;
-
 	target_row = tableentry->index - table->firstvisible->index;
 
-	/* clear the data if it's a reused entry */
+	/* clear the target line */
+	wattrset(table->tcpscreen, normalattr);
+	scrollok(table->tcpscreen, 0);
+	mvwprintw(table->tcpscreen, target_row, 0, "%*c", COLS - 2, ' ');
+	scrollok(table->tcpscreen, 1);
 
-	wattrset(table->tcpscreen, PTRATTR);
-	wmove(table->tcpscreen, target_row, 2);
-	if (tableentry->reused) {
-		scrollok(table->tcpscreen, 0);
-		wprintw(table->tcpscreen, "%*c", COLS - 4, ' ');
-		scrollok(table->tcpscreen, 1);
-		tableentry->reused = 0;
-		wmove(table->tcpscreen, target_row, 1);
-	}
 	/* print half of connection indicator bracket */
-
-	wmove(table->tcpscreen, target_row, 0);
-	waddch(table->tcpscreen, tableentry->half_bracket);
+	wattrset(table->tcpscreen, PTRATTR);
+	mvwaddch(table->tcpscreen, target_row, 0, tableentry->half_bracket);
 
 	/* proceed with the actual entry */
-
 	wattrset(table->tcpscreen, normalattr);
-	mvwprintw(table->tcpscreen, target_row, 2, "%*c", COLS - 5, ' ');
-
-	sprintf(sp_buf, "%%.%ds:%%.%ds", 32 * COLS / 80, 10);
-
-	wmove(table->tcpscreen, target_row, 1);
-	wprintw(table->tcpscreen, sp_buf, tableentry->s_fqdn,
-		tableentry->s_sname);
+	mvwprintw(table->tcpscreen,
+		  target_row, 1,
+		  "%.*s:%.*s",
+		  32 * COLS / 80, tableentry->s_fqdn,
+		  10, tableentry->s_sname);
 
 	wattrset(table->tcpscreen, highattr);
 
@@ -850,9 +812,9 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry)
 			wprintw(table->tcpscreen, ">");
 		else
 			wprintw(table->tcpscreen, "=");
-		wprintw(table->tcpscreen, "%8u  ", tableentry->pcount);
+		printlargenum(tableentry->pcount, table->tcpscreen);
 		wmove(table->tcpscreen, target_row, 59 * COLS / 80 - 4);
-		wprintw(table->tcpscreen, "%9u  ", tableentry->bcount);
+		printlargenum(tableentry->bcount, table->tcpscreen);
 		break;
 	case 1:
 		wmove(table->tcpscreen, target_row, 50 * COLS / 80);
@@ -892,25 +854,38 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry)
 		tableentry->ifname);
 }
 
+void resolve_visible_entries(struct tcptable *table, struct resolver *res)
+{
+
+	if(res->lookup == false)
+		return;
+
+	struct tcptableent *entry = table->firstvisible;
+	while ((entry != NULL) && (entry->prev_entry != table->lastvisible)) {
+		resolve_entry(entry, res);
+
+		entry = entry->next_entry;
+	}
+}
+
 /*
  * Redraw the TCP window
  */
-
-void refreshtcpwin(struct tcptable *table)
+void refreshtcpwin(struct tcptable *table, bool clear)
 {
 	struct tcptableent *ptmp;
 
-	setlabels(table->borderwin, table->mode);
-	wattrset(table->tcpscreen, STDATTR);
-	tx_colorwin(table->tcpscreen);
-	ptmp = table->firstvisible;
+	if (clear) {
+		setlabels(table->borderwin, table->mode);
+		wattrset(table->tcpscreen, STDATTR);
+		tx_colorwin(table->tcpscreen);
+	}
 
+	ptmp = table->firstvisible;
 	while ((ptmp != NULL) && (ptmp->prev_entry != table->lastvisible)) {
 		printentry(table, ptmp);
 		ptmp = ptmp->next_entry;
 	}
-
-	wmove(table->borderwin, table->bmaxy - 1, 1);
 
 	print_tcp_num_entries(table);
 
