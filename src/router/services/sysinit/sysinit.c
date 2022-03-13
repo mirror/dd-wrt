@@ -3135,6 +3135,11 @@ void load_drivers(int boot)
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else if (!boot) {
+		led_control(USB_POWER, LED_OFF);
+		led_control(USB_POWER1, LED_OFF);
+
+		led_control(LED_USB, LED_OFF);
+		led_control(LED_USB1, LED_OFF);
 		eval("stopservice", "cron");
 		eval("stopservice", "samba3");
 		eval("stopservice", "nfs");
