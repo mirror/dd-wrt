@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2020, The Regents of the University of
+ * iperf, Copyright (c) 2014-2022, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -179,7 +179,7 @@ iperf_udp_recv(struct iperf_stream *sp)
 	    sp->packet_count = pcount;
 	} else {
 
-	    /* 
+	    /*
 	     * Sequence number went backward (or was stationary?!?).
 	     * This counts as an out-of-order packet.
 	     */
@@ -193,9 +193,9 @@ iperf_udp_recv(struct iperf_stream *sp)
 	     */
 	    if (sp->cnt_error > 0)
 		sp->cnt_error--;
-	
+
 	    /* Log the out-of-order packet */
-	    if (sp->test->debug) 
+	    if (sp->test->debug)
 		fprintf(stderr, "OUT OF ORDER - incoming packet sequence %" PRIu64 " but expected sequence %d on stream %d", pcount, sp->packet_count + 1, sp->socket);
 	}
 
@@ -257,11 +257,11 @@ iperf_udp_send(struct iperf_stream *sp)
 	sec = htonl(before.secs);
 	usec = htonl(before.usecs);
 	pcount = htobe64(sp->packet_count);
-	
+
 	memcpy(sp->buffer, &sec, sizeof(sec));
 	memcpy(sp->buffer+4, &usec, sizeof(usec));
 	memcpy(sp->buffer+8, &pcount, sizeof(pcount));
-	
+
     }
     else {
 
@@ -270,11 +270,11 @@ iperf_udp_send(struct iperf_stream *sp)
 	sec = htonl(before.secs);
 	usec = htonl(before.usecs);
 	pcount = htonl(sp->packet_count);
-	
+
 	memcpy(sp->buffer, &sec, sizeof(sec));
 	memcpy(sp->buffer+4, &usec, sizeof(usec));
 	memcpy(sp->buffer+8, &pcount, sizeof(pcount));
-	
+
     }
 
     r = Nwrite(sp->socket, sp->buffer, size, Pudp);
@@ -320,7 +320,7 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
      */
     int opt;
     socklen_t optlen;
-    
+
     if ((opt = test->settings->socket_bufsize)) {
         if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
             i_errno = IESETBUF;
@@ -346,7 +346,7 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
 	return -1;
     }
     if (test->settings->blksize > sndbuf_actual) {
-	char str[80];
+	char str[WARN_STR_LEN];
 	snprintf(str, sizeof(str),
 		 "Block size %d > sending socket buffer size %d",
 		 test->settings->blksize, sndbuf_actual);
@@ -368,7 +368,7 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
 	return -1;
     }
     if (test->settings->blksize > rcvbuf_actual) {
-	char str[80];
+	char str[WARN_STR_LEN];
 	snprintf(str, sizeof(str),
 		 "Block size %d > receiving socket buffer size %d",
 		 test->settings->blksize, rcvbuf_actual);
@@ -432,16 +432,18 @@ iperf_udp_accept(struct iperf_test *test)
      */
     if (rc > 0) {
 	if (test->settings->socket_bufsize == 0) {
+            char str[WARN_STR_LEN];
 	    int bufsize = test->settings->blksize + UDP_BUFFER_EXTRA;
-	    printf("Increasing socket buffer size to %d\n",
-		bufsize);
+	    snprintf(str, sizeof(str), "Increasing socket buffer size to %d",
+	             bufsize);
+	    warning(str);
 	    test->settings->socket_bufsize = bufsize;
 	    rc = iperf_udp_buffercheck(test, s);
 	    if (rc < 0)
 		return rc;
 	}
     }
-	
+
 #if defined(HAVE_SO_MAX_PACING_RATE)
     /* If socket pacing is specified, try it. */
     if (test->settings->fqrate) {
@@ -544,16 +546,18 @@ iperf_udp_connect(struct iperf_test *test)
      */
     if (rc > 0) {
 	if (test->settings->socket_bufsize == 0) {
+            char str[WARN_STR_LEN];
 	    int bufsize = test->settings->blksize + UDP_BUFFER_EXTRA;
-	    printf("Increasing socket buffer size to %d\n",
-		bufsize);
+	    snprintf(str, sizeof(str), "Increasing socket buffer size to %d",
+	             bufsize);
+	    warning(str);
 	    test->settings->socket_bufsize = bufsize;
 	    rc = iperf_udp_buffercheck(test, s);
 	    if (rc < 0)
 		return rc;
 	}
     }
-	
+
 #if defined(HAVE_SO_MAX_PACING_RATE)
     /* If socket pacing is available and not disabled, try it. */
     if (test->settings->fqrate) {
@@ -591,7 +595,7 @@ iperf_udp_connect(struct iperf_test *test)
      */
     buf = 123456789;		/* this can be pretty much anything */
     if (write(s, &buf, sizeof(buf)) < 0) {
-        // XXX: Should this be changed to IESTREAMCONNECT? 
+        // XXX: Should this be changed to IESTREAMCONNECT?
         i_errno = IESTREAMWRITE;
         return -1;
     }

@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2021, The Regents of the University of
+ * iperf, Copyright (c) 2014-2022, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -59,7 +59,7 @@ iperf_err(struct iperf_test *test, const char *format, ...)
     vsnprintf(str, sizeof(str), format, argp);
     if (test != NULL && test->json_output && test->json_top != NULL)
 	cJSON_AddStringToObject(test->json_top, "error", str);
-    else
+    else {
 	if (test && test->outfile && test->outfile != stdout) {
 	    if (ct) {
 		fprintf(test->outfile, "%s", ct);
@@ -72,6 +72,7 @@ iperf_err(struct iperf_test *test, const char *format, ...)
 	    }
 	    fprintf(stderr, "iperf3: %s\n", str);
 	}
+    }
     va_end(argp);
 }
 
@@ -400,7 +401,7 @@ iperf_strerror(int int_errno)
             perr = 1;
             break;
         case IESETCONGESTION:
-            snprintf(errstr, len, "unable to set TCP_CONGESTION: " 
+            snprintf(errstr, len, "unable to set TCP_CONGESTION: "
                                   "Supplied congestion control algorithm not supported on this host");
             break;
 	case IEPIDFILE:
@@ -436,8 +437,17 @@ iperf_strerror(int int_errno)
 	    snprintf(errstr, len, "skew threshold must be a positive number");
             break;
 	case IEIDLETIMEOUT:
-	    snprintf(errstr, len, "idle timeout parameter is not positive or larget then allowed limit");
+	    snprintf(errstr, len, "idle timeout parameter is not positive or larger than allowed limit");
             break;
+	case IEBINDDEV:
+	    snprintf(errstr, len, "Unable to bind-to-device (check perror, maybe permissions?)");
+            break;
+    case IEBINDDEVNOSUPPORT:
+	    snprintf(errstr, len, "`<ip>%%<dev>` is not supported as system does not support bind to device");
+            break;
+    case IEHOSTDEV:
+	    snprintf(errstr, len, "host device name (ip%%<dev>) is supported (and required) only for IPv6 link-local address");
+            break;        
 	case IENOMSG:
 	    snprintf(errstr, len, "idle timeout for receiving data");
             break;

@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2020, The Regents of the University of
+ * iperf, Copyright (c) 2014-2022, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -59,6 +59,8 @@ typedef uint64_t iperf_size_t;
 #define DEFAULT_PACING_TIMER 1000
 #define DEFAULT_NO_MSG_RCVD_TIMEOUT 120000
 #define MIN_NO_MSG_RCVD_TIMEOUT 100
+
+#define WARN_STR_LEN 128
 
 /* short option equivalents, used to support options that only have long form */
 #define OPT_SCTP 1
@@ -137,6 +139,7 @@ int	iperf_get_test_json_output( struct iperf_test* ipt );
 char*	iperf_get_test_json_output_string ( struct iperf_test* ipt );
 int	iperf_get_test_zerocopy( struct iperf_test* ipt );
 int	iperf_get_test_get_server_output( struct iperf_test* ipt );
+char	iperf_get_test_unit_format(struct iperf_test *ipt);
 char*	iperf_get_test_bind_address ( struct iperf_test* ipt );
 int	iperf_get_test_udp_counters_64bit( struct iperf_test* ipt );
 int	iperf_get_test_one_off( struct iperf_test* ipt );
@@ -177,6 +180,7 @@ void	iperf_set_test_json_output( struct iperf_test* ipt, int json_output );
 int	iperf_has_zerocopy( void );
 void	iperf_set_test_zerocopy( struct iperf_test* ipt, int zerocopy );
 void	iperf_set_test_get_server_output( struct iperf_test* ipt, int get_server_output );
+void	iperf_set_test_unit_format(struct iperf_test *ipt, char unit_format);
 void	iperf_set_test_bind_address( struct iperf_test* ipt, const char *bind_address );
 void	iperf_set_test_udp_counters_64bit( struct iperf_test* ipt, int udp_counters_64bit );
 void	iperf_set_test_one_off( struct iperf_test* ipt, int one_off );
@@ -425,11 +429,13 @@ enum {
     IEAUTHTEST = 142,       // Test authorization failed
     IEBINDDEV = 143,        // Unable to bind-to-device (check perror, maybe permissions?)
     IENOMSG = 144,          // No message was received for NO_MSG_RCVD_TIMEOUT time period
-    IESETDONTFRAGMENT = 145,    // Unable to set IP Do-Not-Fragment
+    IESETDONTFRAGMENT = 145,   // Unable to set IP Do-Not-Fragment
+    IEBINDDEVNOSUPPORT = 146,  // `ip%%dev` is not supported as system does not support bind to device
+    IEHOSTDEV = 147,        // host device name (ip%%<dev>) is supported (and required) only for IPv6 link-local address
     /* Stream errors */
     IECREATESTREAM = 200,   // Unable to create a new stream (check herror/perror)
     IEINITSTREAM = 201,     // Unable to initialize stream (check herror/perror)
-    IESTREAMLISTEN = 202,   // Unable to start stream listener (check perror) 
+    IESTREAMLISTEN = 202,   // Unable to start stream listener (check perror)
     IESTREAMCONNECT = 203,  // Unable to connect stream (check herror/perror)
     IESTREAMACCEPT = 204,   // Unable to accepte stream connection (check perror)
     IESTREAMWRITE = 205,    // Unable to write to stream socket (check perror)
