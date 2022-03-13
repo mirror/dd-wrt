@@ -1865,7 +1865,7 @@ restart:
 			if (radix_tree_deref_retry(page))
 				goto restart;
 		} else if (!PageTail(page) && page_count(page) !=
-			   hpage_nr_pages(page) + total_mapcount(page)) {
+			   hpage_nr_pages(page) + page_mapcount(page)) {
 			radix_tree_tag_set(&mapping->page_tree, iter.index,
 					   SHMEM_TAG_PINNED);
 		}
@@ -1926,7 +1926,7 @@ restart:
 			}
 
 			if (page && page_count(page) !=
-			    hpage_nr_pages(page) + total_mapcount(page)) {
+			    hpage_nr_pages(page) + page_mapcount(page)) {
 				if (scan < LAST_SCAN)
 					goto continue_resched;
 
