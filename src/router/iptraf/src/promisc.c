@@ -14,24 +14,70 @@ promisc.c	- handles the promiscuous mode flag for the Ethernet/FDDI/
 #include "error.h"
 #include "promisc.h"
 
-static void promisc_add_dev(struct list_head *promisc, const char *dev_name)
-{
-	struct promisc_list *p = xmallocz(sizeof(*p));
-	strcpy(p->ifname, dev_name);
-	INIT_LIST_HEAD(&p->list);
+struct promisc_list {
+	struct list_head list;
+	int ifindex;
+	char ifname[IFNAMSIZ];
+};
 
-	list_add_tail(&p->list, promisc);
+static bool promisc_dev_suitable(const char *dev_name)
+{
+	int flags = dev_get_flags(dev_name);
+	if (flags < 0)
+		return false;
+
+	if ((flags & (IFF_UP | IFF_PROMISC)) == IFF_UP)
+		return true;
+	else
+		return false;
 }
 
-void promisc_init(struct list_head *promisc, const char *device_name)
+static int sock_change_promisc(int sock, int action, int ifindex)
+{
+	struct packet_mreq mreq;
+
+	mreq.mr_ifindex = ifindex;
+	mreq.mr_type = PACKET_MR_PROMISC;
+
+	return setsockopt(sock, SOL_PACKET, action, &mreq, sizeof(mreq));
+}
+
+static int sock_enable_promisc(int sock, int ifindex)
+{
+	return sock_change_promisc(sock, PACKET_ADD_MEMBERSHIP, ifindex);
+}
+
+static int sock_disable_promisc(int sock, int ifindex)
+{
+	return sock_change_promisc(sock, PACKET_DROP_MEMBERSHIP, ifindex);
+}
+
+static void promisc_enable_dev(struct list_head *promisc, int sock, const char *dev)
+{
+	if (!promisc_dev_suitable(dev))
+		return;
+
+	int ifindex = dev_get_ifindex(dev);
+	if (ifindex < 0)
+		return;
+
+	int r = sock_enable_promisc(sock, ifindex);
+	if (r < 0) {
+		write_error("Failed to set promiscuous mode on %s", dev);
+		return;
+	}
+
+	struct promisc_list *new = xmallocz(sizeof(*new));
+
+	new->ifindex = ifindex;
+	strcpy(new->ifname, dev);
+	list_add_tail(&new->list, promisc);
+}
+
+void promisc_enable(int sock, struct list_head *promisc, const char *device_name)
 {
 	if (device_name) {
-		int flags = dev_promisc_flag(device_name);
-		if (flags < 0)
-			return;
-
-		promisc_add_dev(promisc, device_name);
-
+		promisc_enable_dev(promisc, sock, device_name);
 		return;
 	}
 
@@ -44,40 +90,20 @@ void promisc_init(struct list_head *promisc, const char *device_name)
 		if (!strcmp(dev_name, ""))
 			continue;
 
-		int flags = dev_promisc_flag(dev_name);
-		if (flags < 0)
-			continue;
-
-		promisc_add_dev(promisc, dev_name);
+		promisc_enable_dev(promisc, sock, dev_name);
 	}
 
 	fclose(fp);
 }
 
-void promisc_set_list(struct list_head *promisc)
-{
-	struct promisc_list *entry = NULL;
-	list_for_each_entry(entry, promisc, list) {
-		int r = dev_set_promisc(entry->ifname);
-		if (r < 0)
-			write_error("Failed to set promiscuous mode on %s", entry->ifname);
-	}
-}
-
-void promisc_restore_list(struct list_head *promisc)
-{
-	struct promisc_list *entry = NULL;
-	list_for_each_entry(entry, promisc, list) {
-		int r = dev_clr_promisc(entry->ifname);
-		if (r < 0)
-			write_error("Failed to clear promiscuous mode on %s", entry->ifname);
-	}
-}
-
-void promisc_destroy(struct list_head *promisc)
+void promisc_disable(int sock, struct list_head *promisc)
 {
 	struct promisc_list *entry, *tmp;
 	list_for_each_entry_safe(entry, tmp, promisc, list) {
+		int r = sock_disable_promisc(sock, entry->ifindex);
+		if (r < 0)
+			write_error("Failed to clear promiscuous mode on %s", entry->ifname);
+
 		list_del(&entry->list);
 		free(entry);
 	}

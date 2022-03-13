@@ -6,7 +6,6 @@
 
 #define CHILDSOCKNAME "/dev/rvndcldcomsk"
 #define PARENTSOCKNAME "/dev/rvndpntcomsk"
-#define IPTSOCKNAME "/dev/rvndiptcomsk"
 
 #define SOCKET_PREFIX	"isock"
 
@@ -27,5 +26,7 @@ struct rvn {
 	struct sockaddr_storage addr;
 	char fqdn[45];
 };
+
+int rvnamed(int ifd);
 
 #endif	/* IPTRAF_NG_RVNAMED_H */

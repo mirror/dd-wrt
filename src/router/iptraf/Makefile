@@ -56,16 +56,8 @@ BASIC_LDFLAGS =
 # Guard against environment variables
 iptraf-h :=
 iptraf-o :=
-rvnamed-o :=
-rvnamed-h :=
 
-
-ALL_PROGRAMS =
-
-# Empty...
-EXTRA_PROGRAMS =
-
-ALL_PROGRAMS += iptraf-ng rvnamed-ng
+ALL_PROGRAMS := iptraf-ng
 
 ifndef SHELL_PATH
 	SHELL_PATH = /bin/sh
@@ -92,7 +84,6 @@ iptraf-h += src/ipfilter.h
 iptraf-h += src/fltmgr.h
 iptraf-h += src/ipfrag.h
 iptraf-h += src/serv.h
-iptraf-h += src/ddwatch.h
 iptraf-h += src/servname.h
 iptraf-h += src/timer.h
 iptraf-h += src/ifaces.h
@@ -116,6 +107,11 @@ iptraf-h += src/counters.h
 iptraf-h += src/rate.h
 iptraf-h += src/built-in.h
 iptraf-h += src/sockaddr.h
+iptraf-h += src/capt.h
+iptraf-h += src/capt-recvmsg.h
+iptraf-h += src/capt-recvmmsg.h
+iptraf-h += src/capt-mmap-v2.h
+iptraf-h += src/capt-mmap-v3.h
 
 iptraf-o += src/tui/input.o
 iptraf-o += src/tui/labels.o
@@ -132,7 +128,6 @@ iptraf-o += src/ipfilter.o
 iptraf-o += src/fltmgr.o
 iptraf-o += src/ipfrag.o
 iptraf-o += src/serv.o
-iptraf-o += src/ddwatch.o
 iptraf-o += src/servname.o
 iptraf-o += src/timer.o
 iptraf-o += src/revname.o
@@ -159,14 +154,12 @@ iptraf-o += src/counters.o
 iptraf-o += src/rate.o
 iptraf-o += src/capture-pkt.o
 iptraf-o += src/sockaddr.o
-
-rvnamed-o += src/rvnamed.o
-rvnamed-o += src/getpath.o
-rvnamed-o += src/sockaddr.o
-rvnamed-o += src/usage.o
-
--include config.mak.autogen
--include config.mak
+iptraf-o += src/capt.o
+iptraf-o += src/capt-recvmsg.o
+iptraf-o += src/capt-recvmmsg.o
+iptraf-o += src/capt-mmap-v2.o
+iptraf-o += src/capt-mmap-v3.o
+iptraf-o += src/rvnamed.o
 
 ifndef sysconfdir
 ifeq ($(prefix),/usr)
@@ -264,18 +257,7 @@ src/deskman.o src/iptraf.o src/capture-pkt.o: EXTRA_CPPFLAGS = \
 	-DIPTRAF_VERSION='"$(IPTRAF_VERSION)"' \
 	-DIPTRAF_NAME='"iptraf-ng"'
 
-rvnamed-ng: $(rvnamed-o)
-	$(QUIET_LINK)$(CC) $(ALL_CFLAGS) -o $@ \
-		$(rvnamed-o) $(ALL_LDFLAGS)
-
-configure: configure.ac
-	$(QUIET_GEN)$(RM) $@ $<+ && \
-	sed -e 's/@@IPTRAF_VERSION@@/$(IPTRAF_VERSION)/g' \
-	    $< > $<+ && \
-	autoconf -o $@ $<+ && \
-	$(RM) $<+
-
-OBJECTS := $(sort $(iptraf-o) $(rvnamed-o))
+OBJECTS := $(sort $(iptraf-o))
 
 dep_files := $(foreach f,$(OBJECTS),$(dir $f).depend/$(notdir $f).d)
 dep_dirs := $(addsuffix .depend,$(sort $(dir $(OBJECTS))))
@@ -347,26 +329,29 @@ endif
 
 ### Maintainer's dist rules
 
-iptraf-ng.spec: iptraf-ng.spec.in
-	sed -e 's/@@IPTRAF_VERSION@@/$(IPTRAF_VERSION)/g' < $< > $@+
-	mv $@+ $@
-
 IPTRAF_TARNAME = iptraf-ng-$(IPTRAF_VERSION)
-dist: iptraf-ng.spec configure
+dist:
 	@mkdir -p $(IPTRAF_TARNAME)
-	@cp iptraf-ng.spec configure $(IPTRAF_TARNAME)
 	@cp --parents `git ls-files` $(IPTRAF_TARNAME)
-	@echo $(IPTRAF_VERSION) > $(IPTRAF_TARNAME)/version
 	$(TAR) cf $(IPTRAF_TARNAME).tar $(IPTRAF_TARNAME)
 	@$(RM) -rf $(IPTRAF_TARNAME)
 	gzip -f -9 $(IPTRAF_TARNAME).tar
 
-rpm: dist
-	$(RPMBUILD) \
-		--define "_source_filedigest_algorithm md5" \
-		--define "_binary_filedigest_algorithm md5" \
-		-ta $(IPTRAF_TARNAME).tar.gz
+### Documentation rules
+html: Documentation/book1.html
+pdf: Documentation/manual.pdf
 
+Documentation/book1.html: Documentation/manual.sgml
+	cd Documentation && docbook2html manual.sgml
+
+Documentation/manual.pdf: Documentation/manual.sgml
+	cd Documentation && docbook2pdf manual.sgml
+
+Documentation/manual.sgml: Documentation/manual.sgml.in VERSION-FILE
+	cat $< | sed \
+		-e s/@@version@@/`echo $(IPTRAF_VERSION) | cut -d. -f1-3`/ \
+		-e s/@@major@@/`echo $(IPTRAF_VERSION) | cut -d. -f1-2`/ \
+	> $@
 
 ## TODO: use asciidoc to generate mans
 

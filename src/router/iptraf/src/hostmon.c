@@ -25,9 +25,9 @@ Discovers LAN hosts and displays packet statistics for them
 #include "landesc.h"
 #include "options.h"
 #include "logvars.h"
-#include "promisc.h"
 #include "error.h"
 #include "rate.h"
+#include "capt.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
@@ -242,7 +242,7 @@ void convmacaddr(char *addr, char *result)
 }
 
 static struct ethtabent *addethentry(struct ethtab *table,
-				     unsigned int linktype, char *ifname,
+				     unsigned int linktype, int ifindex,
 				     char *addr, struct eth_desc *list)
 {
 	struct ethtabent *ptemp;
@@ -265,7 +265,7 @@ static struct ethtabent *addethentry(struct ethtab *table,
 		if (!strcasecmp(desc->hd_mac, ptemp->un.desc.ascaddr))
 			strcpy(ptemp->un.desc.desc, desc->hd_desc);
 
-	strcpy(ptemp->un.desc.ifname, ifname);
+	dev_get_ifname(ifindex, ptemp->un.desc.ifname);
 
 	if (strcmp(ptemp->un.desc.desc, "") == 0)
 		ptemp->un.desc.withdesc = 0;
@@ -434,18 +434,6 @@ static void print_entry_rates(struct ethtab *table, struct ethtabent *entry)
 	mvwprintw(table->tabwin, target_row, 69 * COLS / 80, "%s", buf);
 }
 
-static void print_visible_rates(struct ethtab *table)
-{
-	struct ethtabent *entry = table->firstvisible;
-
-	while ((entry != NULL) && (entry->prev_entry != table->lastvisible)) {
-		print_entry_rates(table, entry);
-		entry = entry->next_entry;
-	}
-	update_panels();
-	doupdate();
-}
-
 static void updateethrates(struct ethtab *table, unsigned long msecs)
 {
 	struct ethtabent *ptmp = table->head;
@@ -465,17 +453,24 @@ static void updateethrates(struct ethtab *table, unsigned long msecs)
 	}
 }
 
-static void refresh_hostmon_screen(struct ethtab *table)
+static void print_visible_entries(struct ethtab *table)
 {
 	struct ethtabent *ptmp = table->firstvisible;
 
+	while ((ptmp != NULL) && (ptmp->prev_entry != table->lastvisible)) {
+		printethent(table, ptmp);
+		print_entry_rates(table, ptmp);
+
+		ptmp = ptmp->next_entry;
+	}
+}
+
+static void refresh_hostmon_screen(struct ethtab *table)
+{
 	wattrset(table->tabwin, STDATTR);
 	tx_colorwin(table->tabwin);
 
-	while ((ptmp != NULL) && (ptmp->prev_entry != table->lastvisible)) {
-		printethent(table, ptmp);
-		ptmp = ptmp->next_entry;
-	}
+	print_visible_entries(table);
 
 	update_panels();
 	doupdate();
@@ -530,7 +525,6 @@ static void scrollethwin_many(struct ethtab *table, int direction, int lines)
 		break;
 	}
 	refresh_hostmon_screen(table);
-	print_visible_rates(table);
 }
 
 static void scrollethwin(struct ethtab *table, int direction, int lines)
@@ -802,33 +796,16 @@ static void hostmon_process_key(struct ethtab *table, int ch)
 		sort_hosttab(table, ch);
 		keymode = 0;
 		refresh_hostmon_screen(table);
-		print_visible_rates(table);
 	}
 }
 
-static void hostmon_process_packet(struct ethtab *table, struct pkt_hdr *pkt,
-				   char *ifptr)
+static void hostmon_process_packet(struct ethtab *table, struct pkt_hdr *pkt)
 {
-	char ifnamebuf[IFNAMSIZ];
-	char *ifname = ifptr;
-
 	int pkt_result = packet_process(pkt, NULL, NULL, NULL,
 					MATCH_OPPOSITE_USECONFIG, 0);
 
 	if (pkt_result != PACKET_OK)
 		return;
-
-	if (ifptr == NULL) {
-		/* we're capturing on "All interfaces", */
-		/* so get the name of the interface */
-		/* of this packet */
-		int r = dev_get_ifname(pkt->from->sll_ifindex, ifnamebuf);
-		if (r != 0) {
-			write_error("Unable to get interface name");
-			return;	/* can't get interface name, get out! */
-		}
-		ifname = ifnamebuf;
-	}
 
 	char scratch_saddr[ETH_ALEN];
 	char scratch_daddr[ETH_ALEN];
@@ -867,29 +844,21 @@ static void hostmon_process_packet(struct ethtab *table, struct pkt_hdr *pkt,
 	entry = in_ethtable(table, pkt->from->sll_hatype, scratch_saddr);
 	if (!entry)
 		entry = addethentry(table, pkt->from->sll_hatype,
-				    ifname, scratch_saddr, list);
+				    pkt->from->sll_ifindex, scratch_saddr,
+				    list);
 
-	if (entry != NULL) {
+	if (entry != NULL)
 		updateethent(entry, pkt->pkt_len, is_ip, 1);
-		if (!entry->prev_entry->un.desc.printed)
-			printethent(table, entry->prev_entry);
-
-		printethent(table, entry);
-	}
 
 	/* Check destination address entry */
 	entry = in_ethtable(table, pkt->from->sll_hatype, scratch_daddr);
 	if (!entry)
 		entry = addethentry(table, pkt->from->sll_hatype,
-				    ifname, scratch_daddr, list);
+				    pkt->from->sll_ifindex, scratch_daddr,
+				    list);
 
-	if (entry != NULL) {
+	if (entry != NULL)
 		updateethent(entry, pkt->pkt_len, is_ip, 0);
-		if (!entry->prev_entry->un.desc.printed)
-			printethent(table, entry->prev_entry);
-
-		printethent(table, entry);
-	}
 }
 
 /*
@@ -905,11 +874,9 @@ void hostmon(time_t facilitytime, char *ifptr)
 
 	FILE *logfile = NULL;
 
-	int fd;
+	struct capt capt;
 
 	struct pkt_hdr pkt;
-
-	unsigned long dropped = 0UL;
 
 	if (ifptr && !dev_up(ifptr)) {
 		err_iface_down();
@@ -918,20 +885,9 @@ void hostmon(time_t facilitytime, char *ifptr)
 
 	initethtab(&table);
 
-	LIST_HEAD(promisc);
-	if (options.promisc) {
-		promisc_init(&promisc, ifptr);
-		promisc_set_list(&promisc);
-	}
-
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
+	if (capt_init(&capt, ifptr) == -1) {
+		write_error("Unable to initialize packet capture interface");
 		goto err;
-	}
-	if(ifptr && dev_bind_ifname(fd, ifptr) == -1) {
-		write_error("Unable to bind interface on the socket");
-		goto err_close;
 	}
 
 	if (logging) {
@@ -962,10 +918,10 @@ void hostmon(time_t facilitytime, char *ifptr)
 
 	exitloop = 0;
 
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	struct timeval last_time = now;
-	struct timeval last_update = now;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct timespec last_time = now;
+	struct timespec next_screen_update = { 0 };
 
 	time_t starttime = now.tv_sec;
 	time_t endtime = INT_MAX;
@@ -977,17 +933,15 @@ void hostmon(time_t facilitytime, char *ifptr)
 		log_next = now.tv_sec + options.logspan;
 
 	while (!exitloop) {
-		gettimeofday(&now, NULL);
+		clock_gettime(CLOCK_MONOTONIC, &now);
 
 		if (now.tv_sec > last_time.tv_sec) {
-			unsigned long msecs = timeval_diff_msec(&now, &last_time);
+			unsigned long msecs = timespec_diff_msec(&now, &last_time);
 			updateethrates(&table, msecs);
-			print_visible_rates(&table);
 
 			printelapsedtime(now.tv_sec - starttime, 15, table.borderwin);
 
-			dropped += packet_get_dropped(fd);
-			print_packet_drops(dropped, table.borderwin, 49);
+			print_packet_drops(capt_get_dropped(&capt), table.borderwin, 49);
 
 			if (logging && (now.tv_sec > log_next)) {
 				check_rotate_flag(&logfile);
@@ -1001,15 +955,15 @@ void hostmon(time_t facilitytime, char *ifptr)
 
 			last_time = now;
 		}
-
-		if (screen_update_needed(&now, &last_update)) {
+		if (time_after(&now, &next_screen_update)) {
+			print_visible_entries(&table);
 			update_panels();
 			doupdate();
 
-			last_update = now;
+			set_next_screen_update(&next_screen_update, &now);
 		}
 
-		if (packet_get(fd, &pkt, &ch, table.tabwin) == -1) {
+		if (capt_get_packet(&capt, &pkt, &ch, table.tabwin) == -1) {
 			write_error("Packet receive failed");
 			exitloop = 1;
 			break;
@@ -1018,8 +972,10 @@ void hostmon(time_t facilitytime, char *ifptr)
 		if (ch != ERR)
 			hostmon_process_key(&table, ch);
 
-		if (pkt.pkt_len > 0)
-			hostmon_process_packet(&table, &pkt, ifptr);
+		if (pkt.pkt_len > 0) {
+			hostmon_process_packet(&table, &pkt);
+			capt_put_packet(&capt, &pkt);
+		}
 
 	}
 
@@ -1034,13 +990,7 @@ void hostmon(time_t facilitytime, char *ifptr)
 	}
 	strcpy(current_logfile, "");
 
-err_close:
-	close(fd);
+	capt_destroy(&capt);
 err:
-	if (options.promisc) {
-		promisc_restore_list(&promisc);
-		promisc_destroy(&promisc);
-	}
-
 	destroyethtab(&table);
 }

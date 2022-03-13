@@ -52,7 +52,6 @@ struct tcptableent {
 	int finsent;
 	char ifname[IFNAMSIZ];
 	unsigned int index;
-	int reused;
 	int timedout;
 	int inclosed;
 	int half_bracket;
@@ -113,7 +112,7 @@ struct tcptableent *addentry(struct tcptable *table,
 			     struct sockaddr_storage *saddr,
 			     struct sockaddr_storage *daddr,
 			     int protocol, char *ifname,
-			     int *rev_lookup, int rvnamedon);
+			     struct resolver *res);
 
 void mark_timeouted_entries(struct tcptable *table, int logging, FILE *logfile);
 
@@ -124,16 +123,15 @@ struct tcptableent *in_table(struct tcptable *table,
 
 void updateentry(struct tcptable *table, struct pkt_hdr *pkt,
 		 struct tcptableent *tableentry, struct tcphdr *transpacket,
-		 unsigned int bcount, int *revlook, int rvnfd, int logging,
+		 unsigned int bcount, struct resolver *res, int logging,
 		 FILE *logfile);
 
 void addtoclosedlist(struct tcptable *table, struct tcptableent *tableentry);
 
-void clearaddr(struct tcptable *table, struct tcptableent *tableentry);
-
 void printentry(struct tcptable *table, struct tcptableent *tableentry);
 
-void refreshtcpwin(struct tcptable *table);
+void resolve_visible_entries(struct tcptable *table, struct resolver *res);
+void refreshtcpwin(struct tcptable *table, bool clear);
 
 void destroytcptable(struct tcptable *table);
 

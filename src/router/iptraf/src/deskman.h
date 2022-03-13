@@ -18,7 +18,7 @@ void stdexitkeyhelp(void);
 void indicate(char *message);
 void printlargenum(unsigned long long i, WINDOW * win);
 void print_packet_drops(unsigned long count, WINDOW *win, int x);
-int screen_update_needed(const struct timeval *now, const struct timeval *last);
+void set_next_screen_update(struct timespec *next_screen_update, struct timespec *now);
 void infobox(char *text, char *prompt);
 void standardcolors(int color);
 void show_sort_statwin(WINDOW **, PANEL **);

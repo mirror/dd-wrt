@@ -43,6 +43,7 @@ struct othptabent {
 			unsigned int code;
 		} icmp;
 		struct {
+			unsigned char version;
 			unsigned char type;
 			unsigned long area;
 			char routerid[16];
@@ -127,7 +128,7 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 				  int is_ip,
 				  int protocol,
 				  char *packet2,
-				  char *ifname, int *rev_lookup, int rvnamedon,
+				  char *ifname, struct resolver *res,
 				  int logging, FILE *logfile);
 
 void printothpentry(struct othptable *table, struct othptabent *entry,

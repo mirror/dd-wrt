@@ -7,9 +7,10 @@
 #include "parse-options.h"
 #include "ifaces.h"
 #include "packet.h"
+#include "capt.h"
 
 static const char *const capture_usage[] = {
-	IPTRAF_NAME " capture [-c] <device>",
+	IPTRAF_NAME " capture [options] <device>",
 	NULL
 };
 
@@ -19,8 +20,8 @@ static char *ofilename;
 static struct options capture_options[] = {
 	OPT__HELP(&help_opt),
 	OPT_GROUP(""),
-	OPT_INTEGER('c', "capture", &cap_nr_pkt, "capture <n> packets"),
-	OPT_STRING('o', "output", &ofilename, "file", "save captured packet into <file>"),
+	OPT_INTEGER('c', "capture", &cap_nr_pkt, "capture <n> packets (default: 1)"),
+	OPT_STRING('o', "output", &ofilename, "file", "save captured packet into <file> (default: <stdout>)"),
 	OPT_END()
 };
 
@@ -33,48 +34,43 @@ int cmd_capture(int argc, char **argv)
 
 	char *dev = argv[0];
 
-	int fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (fd < 0)
-		die_errno("Unable to obtain monitoring socket");
+	struct capt capt;
+	if (capt_init(&capt, dev) == -1)
+		die_errno("Unable to initialize packet capture interface");
 
-	if (dev_bind_ifname(fd, dev) < 0)
-		perror("Unable to bind device on the socket");
-
-	FILE *fp = NULL;
+	FILE *fp = stdout;
 	if (ofilename) {
 		fp = fopen(ofilename, "wb");
 		if (!fp)
-			die_errno("fopen");
+			die_errno("Unable to open file");
 	}
 
 	struct pkt_hdr pkt;
 	packet_init(&pkt);
 
 	int captured = 0;
-	for (;;) {
-		if (packet_get(fd, &pkt, NULL, NULL) == -1)
-			die_errno("fail to get packet");
+	do {
+		if (capt_get_packet(&capt, &pkt, NULL, NULL) == -1)
+			die_errno("Failed to get packet");
 
 		if (!pkt.pkt_len)
 			continue;
 
-		printf(".");
-		fflush(stdout);
+		packet_dump(&pkt, fp);
+		capt_put_packet(&capt, &pkt);
 
-		if (fp)
-			fwrite(&pkt, sizeof(pkt), 1, fp);
-
-		if (++captured == cap_nr_pkt)
-			break;
-	}
-	printf("\n");
+		captured++;
+		fprintf(stderr, "\rCaptured %d packet(s) out of %d", captured, cap_nr_pkt);
+		fflush(stderr);
+	} while (captured < cap_nr_pkt);
+	fprintf(stderr, "\n");
 
 	packet_destroy(&pkt);
 
-	close(fd);
-
-	if (fp)
+	if (fp && fp != stderr)
 		fclose(fp);
+
+	capt_destroy(&capt);
 
 	return 0;
 }

@@ -3,15 +3,7 @@
 
 #include "list.h"
 
-struct promisc_list {
-	struct list_head list;
-	char ifname[IFNAMSIZ];
-};
-
-void promisc_init(struct list_head *promisc, const char *device_name);
-void promisc_destroy(struct list_head *promisc);
-
-void promisc_set_list(struct list_head *promisc);
-void promisc_restore_list(struct list_head *promisc);
+void promisc_enable(int sock, struct list_head *promisc, const char *device_name);
+void promisc_disable(int sock, struct list_head *promisc);
 
 #endif	/* IPTRAF_NG_PROMISC_H */

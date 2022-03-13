@@ -10,12 +10,14 @@ a fork named iptraf-ng.
 
 iptraf-ng maintainer:
 ---------------------
-	2010 -		Nikola Pajkovsky <npajkovs@redhat.com>
+	2010 -2015	Nikola Pajkovsky <npajkovs@redhat.com>
+	2016 -		Phil Cameron <pcameron@redhat.com>
 
 Contributors:
 -------------
-	2010 - now	Nikola Pajkovsky <npajkovs@redhat.com>
+	2010 - 2015	Nikola Pajkovsky <npajkovs@redhat.com>
 	2010		Jan Rafaj <jr-tools@cedric.unob.cz>
 	2010		Petr Uzel <petr.uzel@suse.cz>
 	2011		Jan Engelhardt <jengelh@medozas.de>
-	2012		Vitezslav Samel <vitezslav@samel.cz>
+	2012 - now	Vitezslav Samel <vitezslav@samel.cz>
+	2016 - now	Phil Cameron <pcameron@redhat.com>

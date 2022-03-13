@@ -7,6 +7,9 @@
 *.o
 *.lo
 *.la
+*.html
+*.pdf
+*.sgml
 
 # ignore binaries
 /iptraf-ng
@@ -38,3 +41,4 @@ ncscope.*
 \#*#
 /iptraf-ng.spec
 VERSION-FILE
+Documentation/version
