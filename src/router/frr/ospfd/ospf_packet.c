@@ -99,18 +99,18 @@ static const uint16_t ospf_packet_minlen[] = {
 /* Minimum (besides OSPF_LSA_HEADER_SIZE) lengths for LSAs of particular
    types, offset is the "LSA type" field. */
 static const uint16_t ospf_lsa_minlen[] = {
-	0,
-	OSPF_ROUTER_LSA_MIN_SIZE,
-	OSPF_NETWORK_LSA_MIN_SIZE,
-	OSPF_SUMMARY_LSA_MIN_SIZE,
-	OSPF_SUMMARY_LSA_MIN_SIZE,
-	OSPF_AS_EXTERNAL_LSA_MIN_SIZE,
-	0,
-	OSPF_AS_EXTERNAL_LSA_MIN_SIZE,
-	0,
-	0,
-	0,
-	0,
+	0,                             /* OSPF_UNKNOWN_LSA */
+	OSPF_ROUTER_LSA_MIN_SIZE,      /* OSPF_ROUTER_LSA */
+	OSPF_NETWORK_LSA_MIN_SIZE,     /* OSPF_NETWORK_LSA */
+	OSPF_SUMMARY_LSA_MIN_SIZE,     /* OSPF_SUMMARY_LSA */
+	OSPF_SUMMARY_LSA_MIN_SIZE,     /* OSPF_ASBR_SUMMARY_LSA */
+	OSPF_AS_EXTERNAL_LSA_MIN_SIZE, /* OSPF_AS_EXTERNAL_LSA */
+	0,                             /* Unsupported, OSPF_GROUP_MEMBER_LSA */
+	OSPF_AS_EXTERNAL_LSA_MIN_SIZE, /* OSPF_AS_NSSA_LSA */
+	0,                             /* Unsupported, OSPF_EXTERNAL_ATTRIBURES_LSA */
+	OSPF_OPAQUE_LSA_MIN_SIZE,      /* OSPF_OPAQUE_LINK_LSA */
+	OSPF_OPAQUE_LSA_MIN_SIZE,      /* OSPF_OPAQUE_AREA_LSA */
+	OSPF_OPAQUE_LSA_MIN_SIZE,      /* OSPF_OPAQUE_AS_LSA */
 };
 
 /* for ospf_check_auth() */
@@ -398,7 +398,7 @@ static int ospf_make_md5_digest(struct ospf_interface *oi,
 	/* We do this here so when we dup a packet, we don't have to
 	   waste CPU rewriting other headers.
 
-	   Note that quagga_time /deliberately/ is not used here */
+	   Note that frr_time /deliberately/ is not used here */
 	t = (time(NULL) & 0xFFFFFFFF);
 	if (t > oi->crypt_seqnum)
 		oi->crypt_seqnum = t;
@@ -1031,7 +1031,7 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 	old_state = nbr->state;
 
 	/* Add event to thread. */
-	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_PacketReceived);
+	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_HelloReceived);
 
 	/*  RFC2328  Section 9.5.1
 	    If the router is not eligible to become Designated Router,
@@ -1096,44 +1096,61 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 			zlog_debug(
 				"%s, Neighbor is under GR Restart, hence ignoring the ISM Events",
 				__PRETTY_FUNCTION__);
+	} else {
+		/* If neighbor itself declares DR and no BDR exists,
+		   cause event BackupSeen */
+		if (IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->d_router))
+			if (hello->bd_router.s_addr == INADDR_ANY
+			    && oi->state == ISM_Waiting)
+				OSPF_ISM_EVENT_SCHEDULE(oi, ISM_BackupSeen);
 
-		return;
-	}
-
-	/* If neighbor itself declares DR and no BDR exists,
-	   cause event BackupSeen */
-	if (IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->d_router))
-		if (hello->bd_router.s_addr == INADDR_ANY
-		    && oi->state == ISM_Waiting)
+		/* neighbor itself declares BDR. */
+		if (oi->state == ISM_Waiting
+		    && IPV4_ADDR_SAME(&nbr->address.u.prefix4,
+				      &hello->bd_router))
 			OSPF_ISM_EVENT_SCHEDULE(oi, ISM_BackupSeen);
 
-	/* neighbor itself declares BDR. */
-	if (oi->state == ISM_Waiting
-	    && IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->bd_router))
-		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_BackupSeen);
+		/* had not previously. */
+		if ((IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->d_router)
+		     && IPV4_ADDR_CMP(&nbr->address.u.prefix4, &nbr->d_router))
+		    || (IPV4_ADDR_CMP(&nbr->address.u.prefix4, &hello->d_router)
+			&& IPV4_ADDR_SAME(&nbr->address.u.prefix4,
+					  &nbr->d_router)))
+			OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
 
-	/* had not previously. */
-	if ((IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->d_router)
-	     && IPV4_ADDR_CMP(&nbr->address.u.prefix4, &nbr->d_router))
-	    || (IPV4_ADDR_CMP(&nbr->address.u.prefix4, &hello->d_router)
-		&& IPV4_ADDR_SAME(&nbr->address.u.prefix4, &nbr->d_router)))
-		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
+		/* had not previously. */
+		if ((IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->bd_router)
+		     && IPV4_ADDR_CMP(&nbr->address.u.prefix4, &nbr->bd_router))
+		    || (IPV4_ADDR_CMP(&nbr->address.u.prefix4,
+				      &hello->bd_router)
+			&& IPV4_ADDR_SAME(&nbr->address.u.prefix4,
+					  &nbr->bd_router)))
+			OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
 
-	/* had not previously. */
-	if ((IPV4_ADDR_SAME(&nbr->address.u.prefix4, &hello->bd_router)
-	     && IPV4_ADDR_CMP(&nbr->address.u.prefix4, &nbr->bd_router))
-	    || (IPV4_ADDR_CMP(&nbr->address.u.prefix4, &hello->bd_router)
-		&& IPV4_ADDR_SAME(&nbr->address.u.prefix4, &nbr->bd_router)))
-		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
-
-	/* Neighbor priority check. */
-	if (nbr->priority >= 0 && nbr->priority != hello->priority)
-		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
+		/* Neighbor priority check. */
+		if (nbr->priority >= 0 && nbr->priority != hello->priority)
+			OSPF_ISM_EVENT_SCHEDULE(oi, ISM_NeighborChange);
+	}
 
 	/* Set neighbor information. */
 	nbr->priority = hello->priority;
 	nbr->d_router = hello->d_router;
 	nbr->bd_router = hello->bd_router;
+
+	/*
+	 * RFC 3623 - Section 2:
+	 * "If the restarting router determines that it was the Designated
+	 * Router on a given segment prior to the restart, it elects
+	 * itself as the Designated Router again.  The restarting router
+	 * knows that it was the Designated Router if, while the
+	 * associated interface is in Waiting state, a Hello packet is
+	 * received from a neighbor listing the router as the Designated
+	 * Router".
+	 */
+	if (oi->area->ospf->gr_info.restart_in_progress
+	    && oi->state == ISM_Waiting
+	    && IPV4_ADDR_SAME(&hello->d_router, &oi->address->u.prefix4))
+		DR(oi) = hello->d_router;
 }
 
 /* Save DD flags/options/Seqnum received. */
@@ -1375,14 +1392,10 @@ static void ospf_db_desc(struct ip *iph, struct ospf_header *ospfh,
 		UNSET_FLAG(dd->options, OSPF_OPTION_O);
 	}
 
-	/* Add event to thread. */
-	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_PacketReceived);
-
 	if (CHECK_FLAG(oi->ospf->config, OSPF_LOG_ADJACENCY_DETAIL))
 		zlog_info(
 			"%s:Packet[DD]: Neighbor %pI4 state is %s, seq_num:0x%x, local:0x%x",
-			(oi->ospf->name) ? oi->ospf->name : VRF_DEFAULT_NAME,
-			&nbr->router_id,
+			ospf_get_name(oi->ospf), &nbr->router_id,
 			lookup_msg(ospf_nsm_state_msg, nbr->state, NULL),
 			ntohl(dd->dd_seqnum), nbr->dd_seqnum);
 
@@ -1619,9 +1632,6 @@ static void ospf_ls_req(struct ip *iph, struct ospf_header *ospfh,
 			  &ospfh->router_id);
 		return;
 	}
-
-	/* Add event to thread. */
-	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_PacketReceived);
 
 	/* Neighbor State should be Exchange or later. */
 	if (nbr->state != NSM_Exchange && nbr->state != NSM_Loading
@@ -1866,9 +1876,6 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 			  &ospfh->router_id, IF_NAME(oi));
 		return;
 	}
-
-	/* Add event to thread. */
-	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_PacketReceived);
 
 	/* Check neighbor state. */
 	if (nbr->state < NSM_Exchange) {
@@ -2255,9 +2262,6 @@ static void ospf_ls_ack(struct ip *iph, struct ospf_header *ospfh,
 			  &ospfh->router_id);
 		return;
 	}
-
-	/* Add event to thread. */
-	OSPF_NSM_EVENT_SCHEDULE(nbr, NSM_PacketReceived);
 
 	if (nbr->state < NSM_Exchange) {
 		if (IS_DEBUG_OSPF(nsm, NSM_EVENTS))
@@ -3008,7 +3012,7 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 		}
 	}
 
-	if (ospf->vrf_id == VRF_DEFAULT && ospf->vrf_id != ifp->vrf_id) {
+	if (ospf->vrf_id == VRF_DEFAULT && ospf->vrf_id != ifp->vrf->vrf_id) {
 		/*
 		 * We may have a situation where l3mdev_accept == 1
 		 * let's just kindly drop the packet and move on.
@@ -3891,9 +3895,8 @@ void ospf_db_desc_send(struct ospf_neighbor *nbr)
 	if (CHECK_FLAG(oi->ospf->config, OSPF_LOG_ADJACENCY_DETAIL))
 		zlog_info(
 			"%s:Packet[DD]: %pI4 DB Desc send with seqnum:%x , flags:%x",
-			(oi->ospf->name) ? oi->ospf->name : VRF_DEFAULT_NAME,
-			&nbr->router_id, nbr->dd_seqnum,
-			nbr->dd_flags);
+			ospf_get_name(oi->ospf), &nbr->router_id,
+			nbr->dd_seqnum, nbr->dd_flags);
 }
 
 /* Re-send Database Description. */
@@ -3911,9 +3914,8 @@ void ospf_db_desc_resend(struct ospf_neighbor *nbr)
 	if (CHECK_FLAG(oi->ospf->config, OSPF_LOG_ADJACENCY_DETAIL))
 		zlog_info(
 			"%s:Packet[DD]: %pI4 DB Desc resend with seqnum:%x , flags:%x",
-			(oi->ospf->name) ? oi->ospf->name : VRF_DEFAULT_NAME,
-			&nbr->router_id, nbr->dd_seqnum,
-			nbr->dd_flags);
+			ospf_get_name(oi->ospf), &nbr->router_id,
+			nbr->dd_seqnum, nbr->dd_flags);
 }
 
 /* Send Link State Request. */

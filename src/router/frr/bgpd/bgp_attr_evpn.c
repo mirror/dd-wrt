@@ -36,6 +36,14 @@
 #include "bgpd/bgp_evpn.h"
 #include "bgpd/bgp_evpn_private.h"
 
+bool bgp_route_evpn_same(const struct bgp_route_evpn *e1,
+			 const struct bgp_route_evpn *e2)
+{
+	return (e1->type == e2->type &&
+		!memcmp(&(e1->eth_s_id), &(e2->eth_s_id), sizeof(esi_t)) &&
+		!ipaddr_cmp(&(e1->gw_ip), &(e2->gw_ip)));
+}
+
 void bgp_add_routermac_ecom(struct attr *attr, struct ethaddr *routermac)
 {
 	struct ecommunity_val routermac_ecom;
@@ -304,15 +312,3 @@ extern int bgp_build_evpn_prefix(int evpn_type, uint32_t eth_tag,
 		return -1;
 	return 0;
 }
-
-extern bool is_zero_gw_ip(const union gw_addr *gw_ip, const afi_t afi)
-{
-	if (afi == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED(&gw_ip->ipv6))
-		return true;
-
-	if (afi == AF_INET && gw_ip->ipv4.s_addr == INADDR_ANY)
-		return true;
-
-	return false;
-}
-

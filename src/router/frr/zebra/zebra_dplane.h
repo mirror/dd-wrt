@@ -274,6 +274,7 @@ void dplane_ctx_list_append(struct dplane_ctx_q *to_list,
 
 /* Dequeue a context block from the head of caller's tailq */
 struct zebra_dplane_ctx *dplane_ctx_dequeue(struct dplane_ctx_q *q);
+struct zebra_dplane_ctx *dplane_ctx_get_head(struct dplane_ctx_q *q);
 
 /*
  * Accessors for information from the context object
@@ -526,17 +527,14 @@ const struct prefix *
 dplane_ctx_rule_get_old_dst_ip(const struct zebra_dplane_ctx *ctx);
 /* Accessors for policy based routing iptable information */
 struct zebra_pbr_iptable;
-bool
-dplane_ctx_get_pbr_iptable(const struct zebra_dplane_ctx *ctx,
-			   struct zebra_pbr_iptable *table);
+void dplane_ctx_get_pbr_iptable(const struct zebra_dplane_ctx *ctx,
+				struct zebra_pbr_iptable *table);
 struct zebra_pbr_ipset;
-bool
-dplane_ctx_get_pbr_ipset(const struct zebra_dplane_ctx *ctx,
-			 struct zebra_pbr_ipset *ipset);
+void dplane_ctx_get_pbr_ipset(const struct zebra_dplane_ctx *ctx,
+			      struct zebra_pbr_ipset *ipset);
 struct zebra_pbr_ipset_entry;
-bool
-dplane_ctx_get_pbr_ipset_entry(const struct zebra_dplane_ctx *ctx,
-			       struct zebra_pbr_ipset_entry *entry);
+void dplane_ctx_get_pbr_ipset_entry(const struct zebra_dplane_ctx *ctx,
+				    struct zebra_pbr_ipset_entry *entry);
 /* Accessors for bridge port information */
 uint32_t dplane_ctx_get_br_port_flags(const struct zebra_dplane_ctx *ctx);
 uint32_t

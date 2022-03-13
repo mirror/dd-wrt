@@ -315,45 +315,28 @@ int bfd_session_enable(struct bfd_session *bs)
 		vrf = vrf_lookup_by_name(bs->key.vrfname);
 		if (vrf == NULL) {
 			zlog_err(
-				"session-enable: specified VRF doesn't exists.");
+				"session-enable: specified VRF %s doesn't exists.",
+				bs->key.vrfname);
 			return 0;
 		}
+	} else {
+		vrf = vrf_lookup_by_id(VRF_DEFAULT);
 	}
 
-	if (!vrf_is_backend_netns() && vrf && vrf->vrf_id != VRF_DEFAULT
-	    && !if_lookup_by_name(vrf->name, vrf->vrf_id)) {
-		zlog_err("session-enable: vrf interface %s not available yet",
-			 vrf->name);
-		return 0;
-	}
+	assert(vrf);
 
 	if (bs->key.ifname[0]) {
-		if (vrf)
-			ifp = if_lookup_by_name(bs->key.ifname, vrf->vrf_id);
-		else
-			ifp = if_lookup_by_name_all_vrf(bs->key.ifname);
+		ifp = if_lookup_by_name(bs->key.ifname, vrf->vrf_id);
 		if (ifp == NULL) {
 			zlog_err(
 				"session-enable: specified interface %s (VRF %s) doesn't exist.",
-				bs->key.ifname, vrf ? vrf->name : "<all>");
+				bs->key.ifname, vrf->name);
 			return 0;
-		}
-		if (bs->key.ifname[0] && !vrf) {
-			vrf = vrf_lookup_by_id(ifp->vrf_id);
-			if (vrf == NULL) {
-				zlog_err(
-					"session-enable: specified VRF %u doesn't exist.",
-					ifp->vrf_id);
-				return 0;
-			}
 		}
 	}
 
 	/* Assign interface/VRF pointers. */
 	bs->vrf = vrf;
-	if (bs->vrf == NULL)
-		bs->vrf = vrf_lookup_by_id(VRF_DEFAULT);
-	assert(bs->vrf);
 
 	/* Assign interface pointer (if any). */
 	bs->ifp = ifp;
@@ -607,10 +590,10 @@ static struct bfd_session *bfd_find_disc(struct sockaddr_any *sa,
 struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp,
 				      struct sockaddr_any *peer,
 				      struct sockaddr_any *local,
-				      ifindex_t ifindex, vrf_id_t vrfid,
+				      struct interface *ifp,
+				      vrf_id_t vrfid,
 				      bool is_mhop)
 {
-	struct interface *ifp;
 	struct vrf *vrf;
 	struct bfd_key key;
 
@@ -618,21 +601,8 @@ struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp,
 	if (cp->discrs.remote_discr)
 		return bfd_find_disc(peer, ntohl(cp->discrs.remote_discr));
 
-	/*
-	 * Search for session without using discriminator.
-	 *
-	 * XXX: we can't trust `vrfid` because the VRF handling is not
-	 * properly implemented. Meanwhile we should use the interface
-	 * VRF to find out which one it belongs.
-	 */
-	ifp = if_lookup_by_index_all_vrf(ifindex);
-	if (ifp == NULL) {
-		if (vrfid != VRF_DEFAULT)
-			vrf = vrf_lookup_by_id(vrfid);
-		else
-			vrf = NULL;
-	} else
-		vrf = vrf_lookup_by_id(ifp->vrf_id);
+	/* Search for session without using discriminator. */
+	vrf = vrf_lookup_by_id(vrfid);
 
 	gen_bfd_key(&key, peer, local, is_mhop, ifp ? ifp->name : NULL,
 		    vrf ? vrf->name : VRF_DEFAULT_NAME);
@@ -669,14 +639,6 @@ int bfd_recvtimer_cb(struct thread *t)
 	case PTM_BFD_INIT:
 	case PTM_BFD_UP:
 		ptm_bfd_sess_dn(bs, BD_CONTROL_EXPIRED);
-		bfd_recvtimer_update(bs);
-		break;
-
-	default:
-		/* Second detect time expiration, zero remote discr (section
-		 * 6.5.1)
-		 */
-		bs->discrs.remote_discr = 0;
 		break;
 	}
 
@@ -1491,7 +1453,7 @@ int strtosa(const char *addr, struct sockaddr_any *sa)
 
 void integer2timestr(uint64_t time, char *buf, size_t buflen)
 {
-	unsigned int year, month, day, hour, minute, second;
+	uint64_t year, month, day, hour, minute, second;
 	int rv;
 
 #define MINUTES (60)
@@ -1503,7 +1465,7 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 		year = time / YEARS;
 		time -= year * YEARS;
 
-		rv = snprintf(buf, buflen, "%u year(s), ", year);
+		rv = snprintfrr(buf, buflen, "%" PRIu64 " year(s), ", year);
 		buf += rv;
 		buflen -= rv;
 	}
@@ -1511,7 +1473,7 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 		month = time / MONTHS;
 		time -= month * MONTHS;
 
-		rv = snprintf(buf, buflen, "%u month(s), ", month);
+		rv = snprintfrr(buf, buflen, "%" PRIu64 " month(s), ", month);
 		buf += rv;
 		buflen -= rv;
 	}
@@ -1519,7 +1481,7 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 		day = time / DAYS;
 		time -= day * DAYS;
 
-		rv = snprintf(buf, buflen, "%u day(s), ", day);
+		rv = snprintfrr(buf, buflen, "%" PRIu64 " day(s), ", day);
 		buf += rv;
 		buflen -= rv;
 	}
@@ -1527,7 +1489,7 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 		hour = time / HOURS;
 		time -= hour * HOURS;
 
-		rv = snprintf(buf, buflen, "%u hour(s), ", hour);
+		rv = snprintfrr(buf, buflen, "%" PRIu64 " hour(s), ", hour);
 		buf += rv;
 		buflen -= rv;
 	}
@@ -1535,12 +1497,12 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 		minute = time / MINUTES;
 		time -= minute * MINUTES;
 
-		rv = snprintf(buf, buflen, "%u minute(s), ", minute);
+		rv = snprintfrr(buf, buflen, "%" PRIu64 " minute(s), ", minute);
 		buf += rv;
 		buflen -= rv;
 	}
 	second = time % MINUTES;
-	snprintf(buf, buflen, "%u second(s)", second);
+	snprintfrr(buf, buflen, "%" PRIu64 " second(s)", second);
 }
 
 const char *bs_to_string(const struct bfd_session *bs)
@@ -1984,19 +1946,6 @@ static int bfd_vrf_delete(struct vrf *vrf)
 	return 0;
 }
 
-static int bfd_vrf_update(struct vrf *vrf)
-{
-	if (!vrf_is_enabled(vrf))
-		return 0;
-
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF update: %s(%u)", vrf->name, vrf->vrf_id);
-
-	/* a different name is given; update bfd list */
-	bfdd_sessions_enable_vrf(vrf);
-	return 0;
-}
-
 static int bfd_vrf_enable(struct vrf *vrf)
 {
 	struct bfd_vrf_global *bvrf;
@@ -2108,8 +2057,7 @@ static int bfd_vrf_disable(struct vrf *vrf)
 
 void bfd_vrf_init(void)
 {
-	vrf_init(bfd_vrf_new, bfd_vrf_enable, bfd_vrf_disable,
-		 bfd_vrf_delete, bfd_vrf_update);
+	vrf_init(bfd_vrf_new, bfd_vrf_enable, bfd_vrf_disable, bfd_vrf_delete);
 }
 
 void bfd_vrf_terminate(void)
@@ -2132,63 +2080,6 @@ struct bfd_vrf_global *bfd_vrf_look_by_session(struct bfd_session *bfd)
 	if (!bfd->vrf)
 		return NULL;
 	return bfd->vrf->info;
-}
-
-void bfd_session_update_vrf_name(struct bfd_session *bs, struct vrf *vrf)
-{
-	if (!vrf || !bs)
-		return;
-	/* update key */
-	hash_release(bfd_key_hash, bs);
-	/*
-	 * HACK: Change the BFD VRF in the running configuration directly,
-	 * bypassing the northbound layer. This is necessary to avoid deleting
-	 * the BFD and readding it in the new VRF, which would have
-	 * several implications.
-	 */
-	if (yang_module_find("frr-bfdd") && bs->key.vrfname[0]) {
-		struct lyd_node *bfd_dnode;
-		char xpath[XPATH_MAXLEN], xpath_srcaddr[XPATH_MAXLEN + 32];
-		char oldpath[XPATH_MAXLEN], newpath[XPATH_MAXLEN];
-		char addr_buf[INET6_ADDRSTRLEN];
-		int slen;
-
-		/* build xpath */
-		if (bs->key.mhop) {
-			inet_ntop(bs->key.family, &bs->key.local, addr_buf, sizeof(addr_buf));
-			snprintf(xpath_srcaddr, sizeof(xpath_srcaddr), "[source-addr='%s']",
-				 addr_buf);
-		} else
-			xpath_srcaddr[0] = 0;
-		inet_ntop(bs->key.family, &bs->key.peer, addr_buf, sizeof(addr_buf));
-		slen = snprintf(xpath, sizeof(xpath),
-				"/frr-bfdd:bfdd/bfd/sessions/%s%s[dest-addr='%s']",
-				bs->key.mhop ? "multi-hop" : "single-hop", xpath_srcaddr,
-				addr_buf);
-		if (bs->key.ifname[0])
-			slen += snprintf(xpath + slen, sizeof(xpath) - slen,
-					 "[interface='%s']", bs->key.ifname);
-		else
-			slen += snprintf(xpath + slen, sizeof(xpath) - slen,
-					 "[interface='*']");
-		snprintf(xpath + slen, sizeof(xpath) - slen, "[vrf='%s']/vrf",
-			 bs->key.vrfname);
-
-		bfd_dnode = yang_dnode_getf(running_config->dnode, xpath,
-					    bs->key.vrfname);
-		if (bfd_dnode) {
-			yang_dnode_get_path(lyd_parent(bfd_dnode), oldpath,
-					    sizeof(oldpath));
-			yang_dnode_change_leaf(bfd_dnode, vrf->name);
-			yang_dnode_get_path(lyd_parent(bfd_dnode), newpath,
-					    sizeof(newpath));
-			nb_running_move_tree(oldpath, newpath);
-			running_config->version++;
-		}
-	}
-	memset(bs->key.vrfname, 0, sizeof(bs->key.vrfname));
-	strlcpy(bs->key.vrfname, vrf->name, sizeof(bs->key.vrfname));
-	hash_get(bfd_key_hash, bs, hash_alloc_intern);
 }
 
 unsigned long bfd_get_session_count(void)

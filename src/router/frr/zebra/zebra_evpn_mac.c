@@ -619,7 +619,6 @@ void zebra_evpn_print_mac(struct zebra_mac *mac, void *ctxt, json_object *json)
 	struct listnode *node = NULL;
 	char buf1[ETHER_ADDR_STRLEN];
 	char buf2[INET6_ADDRSTRLEN];
-	char addr_buf[PREFIX_STRLEN];
 	struct zebra_vrf *zvrf;
 	struct timeval detect_start_time = {0, 0};
 	char timebuf[MONOTIME_STRLEN];
@@ -658,10 +657,8 @@ void zebra_evpn_print_mac(struct zebra_mac *mac, void *ctxt, json_object *json)
 				json_object_int_add(json_mac, "vlan", vid);
 		} else if (CHECK_FLAG(mac->flags, ZEBRA_MAC_REMOTE)) {
 			json_object_string_add(json_mac, "type", "remote");
-			json_object_string_add(
-				json_mac, "remoteVtep",
-				inet_ntop(AF_INET, &mac->fwd_info.r_vtep_ip,
-					  addr_buf, sizeof(addr_buf)));
+			json_object_string_addf(json_mac, "remoteVtep", "%pI4",
+						&mac->fwd_info.r_vtep_ip);
 		} else if (CHECK_FLAG(mac->flags, ZEBRA_MAC_AUTO))
 			json_object_string_add(json_mac, "type", "auto");
 
@@ -944,10 +941,8 @@ void zebra_evpn_print_mac_hash(struct hash_bucket *bucket, void *ctxt)
 				"", mac->loc_seq, mac->rem_seq);
 		} else {
 			json_object_string_add(json_mac, "type", "remote");
-			json_object_string_add(
-				json_mac, "remoteVtep",
-				inet_ntop(AF_INET, &mac->fwd_info.r_vtep_ip,
-					  addr_buf, sizeof(addr_buf)));
+			json_object_string_addf(json_mac, "remoteVtep", "%pI4",
+						&mac->fwd_info.r_vtep_ip);
 			json_object_object_add(json_mac_hdr, buf1, json_mac);
 			json_object_int_add(json_mac, "localSequence",
 					    mac->loc_seq);
@@ -1347,6 +1342,25 @@ int zebra_evpn_sync_mac_dp_install(struct zebra_mac *mac, bool set_inactive,
 	vlanid_t vid;
 	struct zebra_if *zif;
 	struct interface *br_ifp;
+
+	/* If the ES-EVI doesn't exist defer install. When the ES-EVI is
+	 * created we will attempt to install the mac entry again
+	 */
+	if (mac->es) {
+		struct zebra_evpn_es_evi *es_evi;
+
+		es_evi = zebra_evpn_es_evi_find(mac->es, mac->zevpn);
+		if (!es_evi) {
+			if (IS_ZEBRA_DEBUG_EVPN_MH_MAC)
+				zlog_debug(
+					"%s: dp-install sync-mac vni %u mac %pEA es %s 0x%x %sskipped, no es-evi",
+					caller, zevpn->vni, &mac->macaddr,
+					mac->es ? mac->es->esi_str : "-",
+					mac->flags,
+					set_inactive ? "inactive " : "");
+			return -1;
+		}
+	}
 
 	/* get the access vlan from the vxlan_device */
 	zebra_evpn_mac_get_access_info(mac, &ifp, &vid);
@@ -1863,7 +1877,7 @@ static bool zebra_evpn_local_mac_update_fwd_info(struct zebra_mac *mac,
 	struct zebra_vrf *zvrf;
 	struct zebra_evpn_es *es;
 
-	zvrf = zebra_vrf_lookup_by_id(ifp->vrf_id);
+	zvrf = ifp->vrf->info;
 	if (zvrf && zvrf->zns)
 		local_ns_id = zvrf->zns->ns_id;
 
@@ -2020,13 +2034,6 @@ int zebra_evpn_mac_remote_macip_add(
 	if (update_mac) {
 		if (!mac) {
 			mac = zebra_evpn_mac_add(zevpn, macaddr);
-			if (!mac) {
-				zlog_warn(
-					"Failed to add MAC %pEA VNI %u Remote VTEP %pI4",
-					macaddr, zevpn->vni, &vtep_ip);
-				return -1;
-			}
-
 			zebra_evpn_es_mac_ref(mac, esi);
 
 			/* Is this MAC created for a MACIP? */
@@ -2168,14 +2175,6 @@ int zebra_evpn_add_update_local_mac(struct zebra_vrf *zvrf,
 				local_inactive ? " local-inactive" : "");
 
 		mac = zebra_evpn_mac_add(zevpn, macaddr);
-		if (!mac) {
-			flog_err(
-				EC_ZEBRA_MAC_ADD_FAILED,
-				"Failed to add MAC %pEA intf %s(%u) VID %u VNI %u",
-				macaddr, ifp->name, ifp->ifindex, vid,
-				zevpn->vni);
-			return -1;
-		}
 		SET_FLAG(mac->flags, ZEBRA_MAC_LOCAL);
 		es_change = zebra_evpn_local_mac_update_fwd_info(mac, ifp, vid);
 		if (sticky)
@@ -2222,7 +2221,7 @@ int zebra_evpn_add_update_local_mac(struct zebra_vrf *zvrf,
 					zlog_debug(
 						"        Add/Update %sMAC %pEA intf %s(%u) VID %u -> VNI %u%s, "
 						"entry exists and has not changed ",
-						sticky ? "sticky " : "", 
+						sticky ? "sticky " : "",
 						macaddr, ifp->name,
 						ifp->ifindex, vid, zevpn->vni,
 						local_inactive
@@ -2467,20 +2466,13 @@ int zebra_evpn_mac_gw_macip_add(struct interface *ifp, struct zebra_evpn *zevpn,
 	ns_id_t local_ns_id = NS_DEFAULT;
 	struct zebra_vrf *zvrf;
 
-	zvrf = zebra_vrf_lookup_by_id(ifp->vrf_id);
+	zvrf = ifp->vrf->info;
 	if (zvrf && zvrf->zns)
 		local_ns_id = zvrf->zns->ns_id;
 
 	mac = zebra_evpn_mac_lookup(zevpn, macaddr);
-	if (!mac) {
+	if (!mac)
 		mac = zebra_evpn_mac_add(zevpn, macaddr);
-		if (!mac) {
-			flog_err(EC_ZEBRA_MAC_ADD_FAILED,
-				 "Failed to add MAC %pEA intf %s(%u) VID %u",
-				 macaddr, ifp->name, ifp->ifindex, vlan_id);
-			return -1;
-		}
-	}
 
 	/* Set "local" forwarding info. */
 	zebra_evpn_mac_clear_fwd_info(mac);

@@ -204,11 +204,10 @@ int ospf6_orig_as_external_lsa(struct thread *thread)
 	uint32_t type, adv_router;
 
 	oi = (struct ospf6_interface *)THREAD_ARG(thread);
-	oi->thread_as_extern_lsa = NULL;
 
 	if (oi->state == OSPF6_INTERFACE_DOWN)
 		return 0;
-	if (IS_AREA_NSSA(oi->area))
+	if (IS_AREA_NSSA(oi->area) || IS_AREA_STUB(oi->area))
 		return 0;
 
 	type = htons(OSPF6_LSTYPE_AS_EXTERNAL);
@@ -290,9 +289,7 @@ void ospf6_asbr_update_route_ecmp_path(struct ospf6_route *old,
 			 * origin.
 			 */
 			if (o_path->area_id != route->path.area_id
-			    || (memcmp(&(o_path)->origin, &(route)->path.origin,
-				       sizeof(struct ospf6_ls_origin))
-				!= 0))
+			    || !ospf6_ls_origin_same(o_path, &route->path))
 				continue;
 
 			/* Cost is not same then delete current path */
@@ -411,10 +408,7 @@ void ospf6_asbr_update_route_ecmp_path(struct ospf6_route *old,
 			for (ALL_LIST_ELEMENTS_RO(old_route->paths, anode,
 						  o_path)) {
 				if (o_path->area_id == route->path.area_id
-				    && (memcmp(&(o_path)->origin,
-					       &(route)->path.origin,
-					       sizeof(struct ospf6_ls_origin))
-					== 0))
+				    && ospf6_ls_origin_same(o_path, &route->path))
 					break;
 			}
 			/* If path is not found in old_route paths's list,
@@ -1096,8 +1090,6 @@ static int ospf6_asbr_routemap_update_timer(struct thread *thread)
 	struct ospf6_redist *red;
 	int type;
 
-	ospf6->t_distribute_update = NULL;
-
 	for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
 		red = ospf6_redist_lookup(ospf6, type, 0);
 
@@ -1139,7 +1131,6 @@ void ospf6_asbr_distribute_list_update(struct ospf6 *ospf6,
 	if (IS_OSPF6_DEBUG_ASBR)
 		zlog_debug("%s: trigger redistribute reset thread", __func__);
 
-	ospf6->t_distribute_update = NULL;
 	thread_add_timer_msec(master, ospf6_asbr_routemap_update_timer, ospf6,
 			      OSPF_MIN_LS_INTERVAL,
 			      &ospf6->t_distribute_update);
@@ -1317,7 +1308,8 @@ static void ospf6_asbr_redistribute_set(struct ospf6 *ospf6, int type)
 {
 	ospf6_zebra_redistribute(type, ospf6->vrf_id);
 
-	ospf6_asbr_status_update(ospf6, ++ospf6->redist_count);
+	++ospf6->redist_count;
+	ospf6_asbr_status_update(ospf6, ospf6->redist_count);
 }
 
 static void ospf6_asbr_redistribute_unset(struct ospf6 *ospf6,
@@ -1339,7 +1331,8 @@ static void ospf6_asbr_redistribute_unset(struct ospf6 *ospf6,
 	}
 
 	ospf6_asbr_routemap_unset(red);
-	ospf6_asbr_status_update(ospf6, --ospf6->redist_count);
+	--ospf6->redist_count;
+	ospf6_asbr_status_update(ospf6, ospf6->redist_count);
 }
 
 /* When an area is unstubified, flood all the external LSAs in the area */
@@ -1416,9 +1409,6 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 	struct ospf6_external_info tinfo;
 	struct ospf6_route *route, *match;
 	struct ospf6_external_info *info;
-	struct prefix prefix_id;
-	struct route_node *node;
-	char ibuf[16];
 	struct ospf6_redist *red;
 
 	red = ospf6_redist_lookup(ospf6, type, 0);
@@ -1504,21 +1494,6 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 		else
 			ospf6_route_add_nexthop(match, ifindex, NULL);
 
-		/* create/update binding in external_id_table */
-		prefix_id.family = AF_INET;
-		prefix_id.prefixlen = IPV4_MAX_BITLEN;
-		prefix_id.u.prefix4.s_addr = htonl(info->id);
-		node = route_node_get(ospf6->external_id_table, &prefix_id);
-		node->info = match;
-
-		if (IS_OSPF6_DEBUG_ASBR) {
-			inet_ntop(AF_INET, &prefix_id.u.prefix4, ibuf,
-				  sizeof(ibuf));
-			zlog_debug(
-				"Advertise as AS-External Id:%s prefix %pFX metric %u",
-				ibuf, prefix, match->path.metric_type);
-		}
-
 		match->path.origin.id = htonl(info->id);
 		ospf6_handle_external_lsa_origination(ospf6, match, prefix);
 
@@ -1531,7 +1506,6 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 	route = ospf6_route_create(ospf6);
 	route->type = OSPF6_DEST_TYPE_NETWORK;
 	prefix_copy(&route->prefix, prefix);
-	route->ospf6 = ospf6;
 
 	info = (struct ospf6_external_info *)XCALLOC(
 		MTYPE_OSPF6_EXTERNAL_INFO, sizeof(struct ospf6_external_info));
@@ -1952,13 +1926,13 @@ DEFPY (ospf6_default_route_originate,
 	if (mtype_str == NULL)
 		mtype = -1;
 
-	/* To check ,if user is providing same route map */
-	if ((rtmap == ROUTEMAP_NAME(red))
-	    || (rtmap && ROUTEMAP_NAME(red)
-		&& (strcmp(rtmap, ROUTEMAP_NAME(red)) == 0)))
+	/* To check if user is providing same route map */
+	if ((!rtmap && !ROUTEMAP_NAME(red)) ||
+	    (rtmap && ROUTEMAP_NAME(red) &&
+	     (strcmp(rtmap, ROUTEMAP_NAME(red)) == 0)))
 		sameRtmap = true;
 
-	/* Don't allow if the same lsa is aleardy originated. */
+	/* Don't allow if the same lsa is already originated. */
 	if ((sameRtmap) && (red->dmetric.type == mtype)
 	    && (red->dmetric.value == mval)
 	    && (cur_originate == default_originate))
@@ -2051,10 +2025,12 @@ ospf6_routemap_rule_match_interface(void *rule, const struct prefix *prefix,
 				    void *object)
 {
 	struct interface *ifp;
+	struct ospf6_route *route;
 	struct ospf6_external_info *ei;
 
-	ei = ((struct ospf6_route *)object)->route_option;
-	ifp = if_lookup_by_name_all_vrf((char *)rule);
+	route = object;
+	ei = route->route_option;
+	ifp = if_lookup_by_name((char *)rule, route->ospf6->vrf_id);
 
 	if (ifp != NULL && ei->ifindex == ifp->ifindex)
 		return RMAP_MATCH;
@@ -2559,16 +2535,15 @@ DEFUN(show_ipv6_ospf6_redistribute, show_ipv6_ospf6_redistribute_cmd,
 			if (uj) {
 				json_object_object_add(json, "routes",
 						       json_array_routes);
-				vty_out(vty, "%s\n",
-					json_object_to_json_string_ext(
-						json, JSON_C_TO_STRING_PRETTY));
-				json_object_free(json);
+				vty_json(vty, json);
 			}
 
 			if (!all_vrf)
 				break;
 		}
 	}
+
+	OSPF6_CMD_CHECK_VRF(uj, all_vrf, ospf6);
 
 	return CMD_SUCCESS;
 }
@@ -2793,7 +2768,6 @@ static void ospf6_originate_new_aggr_lsa(struct ospf6 *ospf6,
 					 struct ospf6_external_aggr_rt *aggr)
 {
 	struct prefix prefix_id;
-	struct route_node *node;
 	struct ospf6_lsa *lsa = NULL;
 
 	if (IS_OSPF6_DEBUG_AGGR)
@@ -2801,13 +2775,6 @@ static void ospf6_originate_new_aggr_lsa(struct ospf6 *ospf6,
 			   &aggr->p);
 
 	aggr->id = ospf6->external_id++;
-
-	/* create/update binding in external_id_table */
-	prefix_id.family = AF_INET;
-	prefix_id.prefixlen = 32;
-	prefix_id.u.prefix4.s_addr = htonl(aggr->id);
-	node = route_node_get(ospf6->external_id_table, &prefix_id);
-	node->info = aggr;
 
 	if (IS_OSPF6_DEBUG_AGGR)
 		zlog_debug(
@@ -3020,8 +2987,6 @@ static void ospf6_aggr_handle_external_info(void *data)
 	struct ospf6_lsa *lsa = NULL;
 	struct ospf6_external_info *info;
 	struct ospf6 *ospf6 = NULL;
-	struct prefix prefix_id;
-	struct route_node *node;
 
 	rt->aggr_route = NULL;
 
@@ -3060,13 +3025,6 @@ static void ospf6_aggr_handle_external_info(void *data)
 
 	info->id  = ospf6->external_id++;
 	rt->path.origin.id = htonl(info->id);
-
-	/* create/update binding in external_id_table */
-	prefix_id.family = AF_INET;
-	prefix_id.prefixlen = 32;
-	prefix_id.u.prefix4.s_addr = htonl(info->id);
-	node = route_node_get(ospf6->external_id_table, &prefix_id);
-	node->info = rt;
 
 	(void)ospf6_originate_type5_type7_lsas(rt, ospf6);
 }
@@ -3378,7 +3336,6 @@ static int ospf6_asbr_summary_process(struct thread *thread)
 	struct ospf6 *ospf6 = THREAD_ARG(thread);
 	int operation = 0;
 
-	ospf6->t_external_aggr = NULL;
 	operation = ospf6->aggr_action;
 
 	if (IS_OSPF6_DEBUG_AGGR)
@@ -3649,7 +3606,6 @@ void ospf6_handle_external_lsa_origination(struct ospf6 *ospf6,
 	struct ospf6_external_aggr_rt *aggr;
 	struct ospf6_external_info *info;
 	struct prefix prefix_id;
-	struct route_node *node;
 
 	if (!is_default_prefix(p)) {
 		aggr = ospf6_external_aggr_match(ospf6,
@@ -3685,14 +3641,6 @@ void ospf6_handle_external_lsa_origination(struct ospf6 *ospf6,
 	 */
 	if (!info->id) {
 		info->id = ospf6->external_id++;
-
-		/* create/update binding in external_id_table */
-		prefix_id.family = AF_INET;
-		prefix_id.prefixlen = 32;
-		prefix_id.u.prefix4.s_addr = htonl(info->id);
-		node = route_node_get(ospf6->external_id_table, &prefix_id);
-		node->info = rt;
-
 	} else {
 		prefix_id.family = AF_INET;
 		prefix_id.prefixlen = 32;

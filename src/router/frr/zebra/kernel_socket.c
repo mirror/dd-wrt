@@ -61,7 +61,7 @@ extern struct zebra_privs_t zserv_privs;
  * Alignment of zero-sized sockaddrs is nonsensical, but historically
  * BSD defines RT_ROUNDUP(0) to be the alignment interval (rather than
  * 0).  We follow this practice without questioning it, but it is a
- * bug if quagga calls ROUNDUP with 0.
+ * bug if frr calls ROUNDUP with 0.
  */
 #ifdef __APPLE__
 #define ROUNDUP_TYPE	int
@@ -443,7 +443,8 @@ static int ifan_read(struct if_announcemsghdr *ifan)
 				__func__, ifan->ifan_index, ifan->ifan_name);
 
 		/* Create Interface */
-		ifp = if_get_by_name(ifan->ifan_name, VRF_DEFAULT);
+		ifp = if_get_by_name(ifan->ifan_name, VRF_DEFAULT,
+				     VRF_DEFAULT_NAME);
 		if_set_index(ifp, ifan->ifan_index);
 
 		if_get_metric(ifp);
@@ -624,7 +625,8 @@ int ifm_read(struct if_msghdr *ifm)
 		if (ifp == NULL) {
 			/* Interface that zebra was not previously aware of, so
 			 * create. */
-			ifp = if_create_name(ifname, VRF_DEFAULT);
+			ifp = if_get_by_name(ifname, VRF_DEFAULT,
+					     VRF_DEFAULT_NAME);
 			if (IS_ZEBRA_DEBUG_KERNEL)
 				zlog_debug("%s: creating ifp for ifindex %d",
 					   __func__, ifm->ifm_index);
@@ -1009,6 +1011,8 @@ void rtm_read(struct rt_msghdr *rtm)
 	ifindex_t ifindex = 0;
 	afi_t afi;
 	char fbuf[64];
+	int32_t proto = ZEBRA_ROUTE_KERNEL;
+	uint8_t distance = 0;
 
 	zebra_flags = 0;
 
@@ -1040,8 +1044,11 @@ void rtm_read(struct rt_msghdr *rtm)
 	if (!(flags & RTF_GATEWAY))
 		return;
 
-	if (flags & RTF_PROTO1)
+	if (flags & RTF_PROTO1) {
 		SET_FLAG(zebra_flags, ZEBRA_FLAG_SELFROUTE);
+		proto = ZEBRA_ROUTE_STATIC;
+		distance = 255;
+	}
 
 	memset(&nh, 0, sizeof(nh));
 
@@ -1109,13 +1116,12 @@ void rtm_read(struct rt_msghdr *rtm)
 			   0, true);
 	if (rtm->rtm_type == RTM_GET || rtm->rtm_type == RTM_ADD
 	    || rtm->rtm_type == RTM_CHANGE)
-		rib_add(afi, SAFI_UNICAST, VRF_DEFAULT, ZEBRA_ROUTE_KERNEL, 0,
-			zebra_flags, &p, NULL, &nh, 0, RT_TABLE_MAIN,
-			0, 0, 0, 0);
+		rib_add(afi, SAFI_UNICAST, VRF_DEFAULT, proto, 0, zebra_flags,
+			&p, NULL, &nh, 0, RT_TABLE_MAIN, 0, 0, distance, 0);
 	else
-		rib_delete(afi, SAFI_UNICAST, VRF_DEFAULT, ZEBRA_ROUTE_KERNEL,
-			   0, zebra_flags, &p, NULL, &nh, 0, RT_TABLE_MAIN, 0,
-			   0, true);
+		rib_delete(afi, SAFI_UNICAST, VRF_DEFAULT, proto, 0,
+			   zebra_flags, &p, NULL, &nh, 0, RT_TABLE_MAIN, 0,
+			   distance, true);
 }
 
 /* Interface function for the kernel routing table updates.  Support
@@ -1407,6 +1413,9 @@ static int kernel_read(struct thread *thread)
 /* Make routing socket. */
 static void routing_socket(struct zebra_ns *zns)
 {
+	uint32_t default_rcvbuf;
+	socklen_t optlen;
+
 	frr_with_privs(&zserv_privs) {
 		routing_sock = ns_socket(AF_ROUTE, SOCK_RAW, 0, zns->ns_id);
 
@@ -1440,6 +1449,23 @@ static void routing_socket(struct zebra_ns *zns)
 	 */
 	/*if (fcntl (routing_sock, F_SETFL, O_NONBLOCK) < 0)
 	  zlog_warn ("Can't set O_NONBLOCK to routing socket");*/
+
+	/*
+	 * Attempt to set a more useful receive buffer size
+	 */
+	optlen = sizeof(default_rcvbuf);
+	if (getsockopt(routing_sock, SOL_SOCKET, SO_RCVBUF, &default_rcvbuf,
+		       &optlen) == -1)
+		flog_err_sys(EC_LIB_SOCKET,
+			     "routing_sock sockopt SOL_SOCKET SO_RCVBUF");
+	else {
+		for (; rcvbufsize > default_rcvbuf &&
+		       setsockopt(routing_sock, SOL_SOCKET, SO_RCVBUF,
+				  &rcvbufsize, sizeof(rcvbufsize)) == -1 &&
+		       errno == ENOBUFS;
+		     rcvbufsize /= 2)
+			;
+	}
 
 	/* kernel_read needs rewrite. */
 	thread_add_read(zrouter.master, kernel_read, NULL, routing_sock, NULL);
