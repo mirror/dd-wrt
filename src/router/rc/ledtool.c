@@ -19,8 +19,14 @@
 static int ledtool_main(int argc, char **argv)
 {
 	if (args < 2) {
-		fprintf(stderr, "invalid argument\n");
-		fprintf(stderr, "ledtool blink_times [type]\n");
+		fprintf(stdout, "invalid argument\n");
+		fprintf(stdout, "ledtool blink_times [type]\n");
+		fprintf(stdout, "types:\n");
+		fprintf(stdout, "1 = led connected (blink 1 time)\n");
+		fprintf(stdout, "2 = ses led (blink 2 times)\n");
+		fprintf(stdout, "3 = ses error (blink 5 times)\n");
+		fprintf(stdout, "4 = beeper (on supported devices)\n");
+		fprintf(stdout, "default = diag led (blink 1 time)\n");
 		exit(-1);
 	}
 	/* 
