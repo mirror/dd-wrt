@@ -30,6 +30,8 @@ For more information see: https://software.es.net/iperf
 
 Source code and issue tracker: https://github.com/esnet/iperf
 
+Discussion forums: https://github.com/esnet/iperf/discussions
+
 Obtaining iperf3
 ----------------
 
@@ -60,7 +62,7 @@ Invoking iperf3
 iperf3 includes a manual page listing all of the command-line options.
 The manual page is the most up-to-date reference to the various flags and parameters.
 
-For sample command line usage, see: 
+For sample command line usage, see:
 
 https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/iperf/
 
@@ -100,11 +102,10 @@ submit an issue.  Please use one of the mailing lists for that.
 Relation to iperf 2.x
 ---------------------
 
-Note that iperf2 is no longer being developed by its original
-maintainers.  However, beginning in 2014, another developer began
-fixing bugs and enhancing functionality, and generating releases of
-iperf2.  Both projects (as of late 2017) are currently being developed
-actively, but independently.  The continuing iperf2 development
+Although iperf2 and iperf3 both measure network performance,
+they are not compatible with each other.
+The projects (as of mid-2021) are in active, but separate, development.
+The continuing iperf2 development
 project can be found at https://sourceforge.net/projects/iperf2/.
 
 iperf3 contains a number of options and functions not present in
@@ -120,7 +121,7 @@ Some iperf2 options are not available in iperf3:
 
     -r, --tradeoff           Do a bidirectional test individually
     -T, --ttl                time-to-live, for multicast (default 1)
-    -x, --reportexclude [CDMSV]   exclude C(connection) D(data) M(multicast) 
+    -x, --reportexclude [CDMSV]   exclude C(connection) D(data) M(multicast)
                                   S(settings) V(server) reports
     -y, --reportstyle C      report as a Comma-Separated Values
 
@@ -149,7 +150,7 @@ responsibility for the content of these pages.
 Copyright
 ---------
 
-iperf, Copyright (c) 2014-2021, The Regents of the University of
+iperf, Copyright (c) 2014-2022, The Regents of the University of
 California, through Lawrence Berkeley National Laboratory (subject
 to receipt of any required approvals from the U.S. Dept. of
 Energy).  All rights reserved.
