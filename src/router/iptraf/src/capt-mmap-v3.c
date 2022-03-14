@@ -6,6 +6,8 @@
 #include "packet.h"
 #include "capt.h"
 
+#if !defined(TPACKET3_HDRLEN)
+
 #define TPACKET_V3 2
 
 
@@ -120,7 +122,7 @@ struct tpacket_block_desc {
 	__u32 offset_to_priv;
 	union tpacket_bd_header_u hdr;
 };
-
+#endif
 
 struct capt_data_mmap_v3 {
 	void				*mmap;
