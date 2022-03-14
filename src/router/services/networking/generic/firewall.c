@@ -3052,6 +3052,7 @@ void start_firewall6(void)
 	int remotessh = 0;
 	int remotetelnet = 0;
 	int remotemanage = 0;
+	char *wanface = get_wan_face();
 	if (nvram_matchi("ipv6_enable", 0))
 		return;
 
@@ -3123,7 +3124,7 @@ void start_firewall6(void)
 		if (nvram_match("wan_proto", "disabled")) {
 			eval("ip6tables", "-A", "FORWARD", "-o", nvram_safe_get("lan_ifname"), "-j", "ACCEPT");
 		} else {
-			eval("ip6tables", "-A", "FORWARD", "-o", get_wan_face(), "-j", "ACCEPT");
+			eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-j", "ACCEPT");
 		}
 	}
 
