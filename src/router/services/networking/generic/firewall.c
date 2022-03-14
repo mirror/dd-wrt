@@ -3049,14 +3049,50 @@ int isregistered_real(void);
 #ifdef HAVE_IPV6
 void start_firewall6(void)
 {
-
+	int remotessh = 0;
+	int remotetelnet = 0;
+	int remotemanage = 0;
 	if (nvram_matchi("ipv6_enable", 0))
 		return;
-	fprintf(stderr, "start firewall6\n");
+
+	if (nvram_matchi("remote_management", 1) && nvram_invmatch("http_wanport", "") && nvram_invmatchi("http_wanport", 0))
+		remotemanage = 1;
+	else
+		remotemanage = 0;
+#ifdef HAVE_SSHD
+	if (nvram_matchi("remote_mgt_ssh", 1) && nvram_invmatch("sshd_wanport", "") && nvram_invmatchi("sshd_wanport", 0) && nvram_matchi("sshd_enable", 1))
+		remotessh = 1;
+	else
+		remotessh = 0;
+#endif
+#ifdef HAVE_TELNET
+	if (nvram_matchi("remote_mgt_telnet", 1) && nvram_invmatch("telnet_wanport", "") && nvram_invmatchi("telnet_wanport", 0) && nvram_matchi("telnetd_enable", 1))
+		remotetelnet = 1;
+	else
+		remotetelnet = 0;
+#endif
 	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle");
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
 	eval("ip6tables", "-F", "OUTPUT");
+
+	if (remotemanage) {
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, "ACCEPT");
+	}
+#ifdef HAVE_SSHD
+	if (remotessh) {
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), "ACCEPT");
+	}
+#endif
+
+#ifdef HAVE_TELNET
+	if (remotetelnet) {
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, "ACCEPT");
+	}
+#endif
+
+
+
 	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-p", "icmpv6", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/64", "-j", "ACCEPT");
@@ -3076,7 +3112,12 @@ void start_firewall6(void)
 
 	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native"))
 		eval("ip6tables", "-A", "INPUT", "-p", "udp", "--dport", "546", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-j", "DROP");
+
+	if (nvram_invmatch("filter", "off"))
+		eval("ip6tables", "-A", "INPUT", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
+	else
+		eval("ip6tables", "-A", "INPUT", "-j", "ACCEPT");
+
 	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
 	if (nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd")) {
 		if (nvram_match("wan_proto", "disabled")) {
@@ -3089,6 +3130,8 @@ void start_firewall6(void)
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		eval("ip6tables", "-A", "FORWARD", "-o", "ip6tun", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "FORWARD", "-p", "icmpv6", "--icmpv6-type", "echo-request", "-m", "limit", "--limit", "2/s", "-j", "ACCEPT");
+
+
 	if (nvram_invmatch("filter", "off"))
 		eval("ip6tables", "-A", "FORWARD", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
 	else
