@@ -3089,7 +3089,10 @@ void start_firewall6(void)
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		eval("ip6tables", "-A", "FORWARD", "-o", "ip6tun", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "FORWARD", "-p", "icmpv6", "--icmpv6-type", "echo-request", "-m", "limit", "--limit", "2/s", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-j", "DROP");
+	if (nvram_invmatch("filter", "off"))
+		eval("ip6tables", "-A", "FORWARD", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
+	else
+		eval("ip6tables", "-A", "FORWARD", "-j", "ACCEPT");
 }
 #endif
 
