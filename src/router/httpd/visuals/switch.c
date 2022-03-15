@@ -121,7 +121,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
 	websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + !nowan);
-	websWrite(wp, "<th rowspan=\"2\">&nbsp;</th>\n");
+	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
