@@ -85,7 +85,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 		// display filesystems to mount
 		found = 0;
-		//sprintfrowspan=\"2\"( perms, "");
+		//sprintf( perms, "");
 		perms[0] = '\0';
 		websWrite(wp,
 			  "			<td id=\"n_share_mp%s\" style=\"width: 17.816em;\"><select name=\"smbshare_mp%s\" id=\"smbshare_mp%s\" style=\"width: 100%%;\" onchange=\"setSambaShareAccessOptions(this);\">\n",
