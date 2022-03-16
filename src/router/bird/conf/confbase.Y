@@ -43,6 +43,8 @@ CF_DECLS
   char *t;
   struct rtable_config *r;
   struct f_inst *x;
+  struct f_dynamic_attr fda;
+  struct f_static_attr fsa;
   struct filter *f;
   struct f_tree *e;
   struct f_trie *trie;
@@ -53,6 +55,7 @@ CF_DECLS
   struct roa_show_data *ro;
   struct sym_show_data *sd;
   struct lsadb_show_data *ld;
+  struct mrt_dump_data *md;
   struct iface *iface;
   struct roa_table *rot;
   void *g;
@@ -77,7 +80,7 @@ CF_DECLS
 %type <time> datetime
 %type <a> ipa
 %type <px> prefix prefix_or_ipa
-%type <t> text
+%type <t> text opttext
 %type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
@@ -198,6 +201,11 @@ text:
      if ($1->class != (SYM_CONSTANT | T_STRING)) cf_error("String expected");
      $$ = SYM_VAL($1).s;
    }
+ ;
+
+opttext:
+    TEXT
+ | /* empty */ { $$ = NULL; }
  ;
 
 text_or_none:

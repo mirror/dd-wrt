@@ -34,8 +34,13 @@ struct iface {
   unsigned flags;
   unsigned mtu;
   unsigned index;			/* OS-dependent interface index */
+  unsigned master_index;		/* Interface index of master iface */
   list addrs;				/* Addresses assigned to this interface */
   struct ifa *addr;			/* Primary address */
+#ifdef IPV6
+  struct ifa *llv6;			/* Selected IPv6 link-local address */
+#endif
+  struct iface *master;			/* Master iface (e.g. for VRF) */
   list neighbors;			/* All neighbors on this interface */
 };
 
@@ -100,6 +105,16 @@ struct iface *if_find_by_index(unsigned);
 struct iface *if_find_by_name(char *);
 struct iface *if_get_by_name(char *);
 void ifa_recalc_all_primary_addresses(void);
+
+static inline struct ifa *
+ifa_llv6(struct iface *i UNUSED4)
+{
+#ifdef IPV6
+  return i->llv6;
+#else
+  return NULL;
+#endif
+}
 
 
 /* The Neighbor Cache */

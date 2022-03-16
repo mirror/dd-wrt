@@ -46,22 +46,24 @@ cmd_show_status(void)
 void
 cmd_show_symbols(struct sym_show_data *sd)
 {
-  int pos = 0;
-  struct symbol *sym = sd->sym;
-
-  if (sym)
-    cli_msg(1010, "%-8s\t%s", sym->name, cf_symbol_class_name(sym));
+  if (sd->sym)
+    cli_msg(1010, "%-8s\t%s", sd->sym->name, cf_symbol_class_name(sd->sym));
   else
+  {
+    HASH_WALK(config->sym_hash, next, sym)
     {
-      while (sym = cf_walk_symbols(config, sym, &pos))
-	{
-	  if (sd->type && (sym->class != sd->type))
-	    continue;
+      if (!sym->scope->active)
+	continue;
 
-	  cli_msg(-1010, "%-8s\t%s", sym->name, cf_symbol_class_name(sym));
-	}
-      cli_msg(0, "");
+      if (sd->type && (sym->class != sd->type))
+	continue;
+
+      cli_msg(-1010, "%-8s\t%s", sym->name, cf_symbol_class_name(sym));
     }
+    HASH_WALK_END;
+
+    cli_msg(0, "");
+  }
 }
 
 static void

@@ -283,7 +283,7 @@ ospf_receive_hello(struct ospf_packet *pkt, struct ospf_iface *ifa,
       if (!ipa_equal(faddr, n->ip))
       {
 	OSPF_TRACE(D_EVENTS, "Neighbor %R on %s changed IP address to %I",
-		   n->rid, ifa->ifname, n->ip, faddr);
+		   n->rid, ifa->ifname, faddr);
 	n->ip = faddr;
       }
     }

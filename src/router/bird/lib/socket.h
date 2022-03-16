@@ -26,6 +26,7 @@ typedef struct birdsock {
   int ttl;				/* Time To Live, -1 = default */
   u32 flags;
   struct iface *iface;			/* Interface; specify this for broad/multicast sockets */
+  struct iface *vrf;			/* Related VRF instance, NULL if global */
 
   byte *rbuf, *rpos;			/* NULL=allocate automatically */
   uint fast_rx;				/* RX has higher priority in event loop */

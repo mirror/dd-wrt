@@ -504,7 +504,8 @@ rip_update_bfd(struct rip_proto *p, struct rip_neighbor *n)
      */
     ip_addr saddr = rip_is_v2(p) ? n->ifa->sk->saddr : n->nbr->ifa->ip;
     n->bfd_req = bfd_request_session(p->p.pool, n->nbr->addr, saddr,
-				     n->nbr->iface, rip_bfd_notify, n);
+				     n->nbr->iface, p->p.vrf,
+				     rip_bfd_notify, n);
   }
 
   if (!use_bfd && n->bfd_req)
@@ -763,6 +764,10 @@ rip_if_notify(struct proto *P, unsigned flags, struct iface *iface)
   if (flags & IF_CHANGE_UP)
   {
     struct rip_iface_config *ic = (void *) iface_patt_find(&cf->patt_list, iface, NULL);
+
+    /* For RIPng, ignore ifaces without link-local address */
+    if (rip_is_ng(p) && !ifa_llv6(iface))
+      return;
 
     if (ic)
       rip_add_iface(p, iface, ic);

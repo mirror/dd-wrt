@@ -48,7 +48,7 @@ pool *rt_table_pool;
 static slab *rte_slab;
 static linpool *rte_update_pool;
 
-static list routing_tables;
+list routing_tables;
 
 static byte *rt_format_via(rte *e);
 static void rt_free_hostcache(rtable *tab);
@@ -59,14 +59,6 @@ static inline int rt_prune_table(rtable *tab);
 static inline void rt_schedule_gc(rtable *tab);
 static inline void rt_schedule_prune(rtable *tab);
 
-
-static inline struct ea_list *
-make_tmp_attrs(struct rte *rt, struct linpool *pool)
-{
-  struct ea_list *(*mta)(struct rte *rt, struct linpool *pool);
-  mta = rt->attrs->src->proto->make_tmp_attrs;
-  return mta ? mta(rt, pool) : NULL;
-}
 
 /* Like fib_route(), but skips empty net entries */
 static net *
@@ -260,7 +252,7 @@ export_filter_(struct announce_hook *ah, rte *rt0, rte **rt_free, ea_list **tmpa
   if (!tmpa)
     tmpa = &tmpb;
 
-  *tmpa = make_tmp_attrs(rt, pool);
+  *tmpa = rte_make_tmp_attrs(rt, pool);
 
   v = p->import_control ? p->import_control(p, &rt, tmpa, pool) : 0;
   if (v < 0)
@@ -281,7 +273,8 @@ export_filter_(struct announce_hook *ah, rte *rt0, rte **rt_free, ea_list **tmpa
     }
 
   v = filter && ((filter == FILTER_REJECT) ||
-		 (f_run(filter, &rt, tmpa, pool, FF_FORCE_TMPATTR) > F_ACCEPT));
+		 (f_run(filter, &rt, tmpa, pool,
+			FF_FORCE_TMPATTR | (silent ? FF_SILENT : 0)) > F_ACCEPT));
   if (v)
     {
       if (silent)
@@ -433,7 +426,8 @@ rt_notify_basic(struct announce_hook *ah, net *net, rte *new0, rte *old0, int re
    * reconfiguration and the end of refeed - if a newly filtered
    * route disappears during this period, proper withdraw is not
    * sent (because old would be also filtered) and the route is
-   * not refeeded (because it disappeared before that).
+   * not refeeded (because it disappeared before that). This is
+   * handled below as a special case.
    */
 
   if (new)
@@ -446,19 +440,34 @@ rt_notify_basic(struct announce_hook *ah, net *net, rte *new0, rte *old0, int re
   {
     /*
      * As mentioned above, 'old' value may be incorrect in some race conditions.
-     * We generally ignore it with the exception of withdraw to pipe protocol.
-     * In that case we rather propagate unfiltered withdraws regardless of
-     * export filters to ensure that when a protocol is flushed, its routes are
-     * removed from all tables. Possible spurious unfiltered withdraws are not
-     * problem here as they are ignored if there is no corresponding route at
-     * the other end of the pipe. We directly call rt_notify() hook instead of
+     * We generally ignore it with two exceptions:
+     *
+     * First, withdraw to pipe protocol. In that case we rather propagate
+     * unfiltered withdraws regardless of export filters to ensure that when a
+     * protocol is flushed, its routes are removed from all tables. Possible
+     * spurious unfiltered withdraws are not problem here as they are ignored if
+     * there is no corresponding route at the other end of the pipe.
+     *
+     * Second, recent filter change. If old route is older than filter change,
+     * then it was previously evaluated by a different filter and we do not know
+     * whether it was really propagated. In that case we rather send spurious
+     * withdraw than do nothing and possibly cause phantom routes.
+     *
+     * In both cases wqe directly call rt_notify() hook instead of
      * do_rt_notify() to avoid logging and stat counters.
      */
 
+    int pipe_withdraw = 0, filter_change = 0;
 #ifdef CONFIG_PIPE
-    if ((p->proto == &proto_pipe) && !new0 && (p != old0->sender->proto))
-      p->rt_notify(p, ah->table, net, NULL, old0, NULL);
+    pipe_withdraw = (p->proto == &proto_pipe) && !new0;
 #endif
+    filter_change = old0 && (old0->lastmod <= ah->last_out_filter_change);
+
+    if ((pipe_withdraw || filter_change) && (p != old0->sender->proto))
+    {
+      stats->exp_withdraws_accepted++;
+      p->rt_notify(p, ah->table, net, NULL, old0, NULL);
+    }
 
     return;
   }
@@ -475,7 +484,7 @@ rt_notify_basic(struct announce_hook *ah, net *net, rte *new0, rte *old0, int re
 static void
 rt_notify_accepted(struct announce_hook *ah, net *net, rte *new_changed, rte *old_changed, rte *before_old, int feed)
 {
-  // struct proto *p = ah->proto;
+  struct proto *p = ah->proto;
   struct proto_stats *stats = ah->stats;
 
   rte *r;
@@ -548,7 +557,19 @@ rt_notify_accepted(struct announce_hook *ah, net *net, rte *new_changed, rte *ol
    *
    * - We found new_best the same as new_changed, therefore it cannot
    *   be old_best and we have to continue search for old_best.
+   *
+   * There is also a hack to ensure consistency in case of changed filters.
+   * It does not find the proper old_best, just selects a non-NULL route.
    */
+
+  /* Hack for changed filters */
+  if (old_changed &&
+      (p != old_changed->sender->proto) &&
+      (old_changed->lastmod <= ah->last_out_filter_change))
+    {
+      old_best = old_changed;
+      goto found;
+    }
 
   /* First case */
   if (old_meet)
@@ -844,12 +865,13 @@ rte_free_quick(rte *e)
 static int
 rte_same(rte *x, rte *y)
 {
+  /* rte.flags are not checked, as they are mostly internal to rtable */
   return
     x->attrs == y->attrs &&
-    x->flags == y->flags &&
     x->pflags == y->pflags &&
     x->pref == y->pref &&
-    (!x->attrs->src->proto->rte_same || x->attrs->src->proto->rte_same(x, y));
+    (!x->attrs->src->proto->rte_same || x->attrs->src->proto->rte_same(x, y)) &&
+    rte_is_filtered(x) == rte_is_filtered(y);
 }
 
 static inline int rte_is_ok(rte *e) { return e && !rte_is_filtered(e); }
@@ -893,7 +915,9 @@ rte_recalculate(struct announce_hook *ah, net *net, rte *new, struct rte_src *sr
 
 	  if (new && rte_same(old, new))
 	    {
-	      /* No changes, ignore the new route */
+	      /* No changes, ignore the new route and refresh the old one */
+
+	      old->flags &= ~(REF_STALE | REF_DISCARD | REF_MODIFY);
 
 	      if (!rte_is_filtered(new))
 		{
@@ -1223,7 +1247,7 @@ rte_update2(struct announce_hook *ah, net *net, rte *new, struct rte_src *src)
 	}
       else
 	{
-	  tmpa = make_tmp_attrs(new, rte_update_pool);
+	  tmpa = rte_make_tmp_attrs(new, rte_update_pool);
 	  if (filter && (filter != FILTER_REJECT))
 	    {
 	      ea_list *old_tmpa = tmpa;
@@ -1290,6 +1314,28 @@ rte_discard(rte *old)	/* Non-filtered route deletion, used during garbage collec
   rte_update_unlock();
 }
 
+/* Modify existing route by protocol hook, used for long-lived graceful restart */
+static inline void
+rte_modify(rte *old)
+{
+  rte_update_lock();
+
+  rte *new = old->sender->proto->rte_modify(old, rte_update_pool);
+  if (new != old)
+  {
+    if (new)
+    {
+      if (!rta_is_cached(new->attrs))
+	new->attrs = rta_lookup(new->attrs);
+      new->flags = (old->flags & ~REF_MODIFY) | REF_COW;
+    }
+
+    rte_recalculate(old->sender, old->net, new, old->attrs->src);
+  }
+
+  rte_update_unlock();
+}
+
 /* Check rtable for best route to given net whether it would be exported do p */
 int
 rt_examine(rtable *t, ip_addr prefix, int pxlen, struct proto *p, struct filter *filter)
@@ -1303,10 +1349,11 @@ rt_examine(rtable *t, ip_addr prefix, int pxlen, struct proto *p, struct filter 
   rte_update_lock();
 
   /* Rest is stripped down export_filter() */
-  ea_list *tmpa = make_tmp_attrs(rt, rte_update_pool);
+  ea_list *tmpa = rte_make_tmp_attrs(rt, rte_update_pool);
   int v = p->import_control ? p->import_control(p, &rt, &tmpa, rte_update_pool) : 0;
   if (v == RIC_PROCESS)
-    v = (f_run(filter, &rt, &tmpa, rte_update_pool, FF_FORCE_TMPATTR) <= F_ACCEPT);
+    v = (f_run(filter, &rt, &tmpa, rte_update_pool,
+	       FF_FORCE_TMPATTR | FF_SILENT) <= F_ACCEPT);
 
    /* Discard temporary rte */
   if (rt != n->routes)
@@ -1370,6 +1417,29 @@ rt_refresh_end(rtable *t, struct announce_hook *ah)
 	if ((e->sender == ah) && (e->flags & REF_STALE))
 	  {
 	    e->flags |= REF_DISCARD;
+	    prune = 1;
+	  }
+    }
+  FIB_WALK_END;
+
+  if (prune)
+    rt_schedule_prune(t);
+}
+
+void
+rt_modify_stale(rtable *t, struct announce_hook *ah)
+{
+  int prune = 0;
+  net *n;
+  rte *e;
+
+  FIB_WALK(&t->fib, fn)
+    {
+      n = (net *) fn;
+      for (e = n->routes; e; e = e->next)
+	if ((e->sender == ah) && (e->flags & REF_STALE) && !(e->flags & REF_FILTERED))
+	  {
+	    e->flags |= REF_MODIFY;
 	    prune = 1;
 	  }
     }
@@ -1598,6 +1668,7 @@ again:
 
     rescan:
       for (e=n->routes; e; e=e->next)
+      {
 	if (e->sender->proto->flushing || (e->flags & REF_DISCARD))
 	  {
 	    if (*limit <= 0)
@@ -1611,6 +1682,22 @@ again:
 
 	    goto rescan;
 	  }
+
+	if (e->flags & REF_MODIFY)
+	  {
+	    if (*limit <= 0)
+	      {
+		FIB_ITERATE_PUT(fit, fn);
+		return 0;
+	      }
+
+	    rte_modify(e);
+	    (*limit)--;
+
+	    goto rescan;
+	  }
+      }
+
       if (!n->routes)		/* Orphaned FIB entry */
 	{
 	  FIB_ITERATE_PUT(fit, fn);
@@ -2470,7 +2557,7 @@ rt_show_net(struct cli *c, net *n, struct rt_show_data *d)
 
       ee = e;
       rte_update_lock();		/* We use the update buffer for filtering */
-      tmpa = make_tmp_attrs(e, rte_update_pool);
+      tmpa = rte_make_tmp_attrs(e, rte_update_pool);
 
       /* Special case for merged export */
       if ((d->export_mode == RSEM_EXPORT) && (d->export_protocol->accept_ra_types == RA_MERGED))
@@ -2501,7 +2588,8 @@ rt_show_net(struct cli *c, net *n, struct rt_show_data *d)
 	       * command may change the export filter and do not update routes.
 	       */
 	      int do_export = (ic > 0) ||
-		(f_run(a->out_filter, &e, &tmpa, rte_update_pool, FF_FORCE_TMPATTR) <= F_ACCEPT);
+		(f_run(a->out_filter, &e, &tmpa, rte_update_pool,
+		       FF_FORCE_TMPATTR | FF_SILENT) <= F_ACCEPT);
 
 	      if (do_export != (d->export_mode == RSEM_EXPORT))
 		goto skip;

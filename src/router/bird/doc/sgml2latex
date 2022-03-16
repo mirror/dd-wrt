@@ -17,8 +17,10 @@ use strict;
 
 use vars qw($prefix $DataDir $BinDir $progs);
 
+use FindBin;
+
 $prefix = "/usr";
-$DataDir = "sbase";
+$DataDir = "$FindBin::Bin/sbase";
 $BinDir = "/usr/bin";
 
 use lib "/usr/share/linuxdoc-tools";
@@ -32,9 +34,14 @@ $progs = {
   "GROFFMACRO" => "-ms",
   "AWK" => "/usr/share/linuxdoc-tools/awkwhich"
 };
-$ENV{"SGML_CATALOG_FILES"} = "sbase/dtd/catalog";
 
-require "./LinuxDocTools.pm";
+if (! -x $progs->{"NSGMLS"})
+  { $progs->{"NSGMLS"} = "/usr/bin/onsgmls"; }
+
+$ENV{"SGML_CATALOG_FILES"} = "$DataDir/dtd/catalog" .
+  (defined $ENV{SGML_CATALOG_FILES} ? ":$ENV{SGML_CATALOG_FILES}" : "");
+
+require "$FindBin::Bin/LinuxDocTools.pm";
 &LinuxDocTools::init;
 
 my @FileList = LinuxDocTools::process_options ("latex", @ARGV);

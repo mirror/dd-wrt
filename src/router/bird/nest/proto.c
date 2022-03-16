@@ -386,6 +386,8 @@ proto_init(struct proto_config *c)
   q->core_state = FS_HUNGRY;
   q->export_state = ES_DOWN;
   q->last_state_change = now;
+  q->vrf = c->vrf;
+  q->vrf_set = c->vrf_set;
 
   add_tail(&initial_proto_list, &q->n);
 
@@ -409,6 +411,8 @@ proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config 
   /* If there is a too big change in core attributes, ... */
   if ((nc->protocol != oc->protocol) ||
       (nc->disabled != p->disabled) ||
+      (nc->vrf != oc->vrf) ||
+      (nc->vrf_set != oc->vrf_set) ||
       (nc->table->table != oc->table->table))
     return 0;
 
@@ -431,10 +435,17 @@ proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config 
   if (p->proto->multitable)
     return 1;
 
+  int import_changed = ! filter_same(nc->in_filter, oc->in_filter);
+  int export_changed = ! filter_same(nc->out_filter, oc->out_filter);
+
+  /* We treat a change in preferences by reimporting routes */
+  if (nc->preference != oc->preference)
+    import_changed = 1;
+
   /* Update filters and limits in the main announce hook
      Note that this also resets limit state */
   if (p->main_ahook)
-    {  
+    {
       struct announce_hook *ah = p->main_ahook;
       ah->in_filter = nc->in_filter;
       ah->out_filter = nc->out_filter;
@@ -443,19 +454,15 @@ proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config 
       ah->out_limit = nc->out_limit;
       ah->in_keep_filtered = nc->in_keep_filtered;
       proto_verify_limits(ah);
+
+      if (export_changed)
+	ah->last_out_filter_change = now;
     }
 
   /* Update routes when filters changed. If the protocol in not UP,
      it has no routes and we can ignore such changes */
   if ((p->proto_state != PS_UP) || (type == RECONFIG_SOFT))
     return 1;
-
-  int import_changed = ! filter_same(nc->in_filter, oc->in_filter);
-  int export_changed = ! filter_same(nc->out_filter, oc->out_filter);
-
-  /* We treat a change in preferences by reimporting routes */
-  if (nc->preference != oc->preference)
-    import_changed = 1;
 
   if (import_changed || export_changed)
     log(L_INFO "Reloading protocol %s", p->name);
@@ -608,6 +615,7 @@ proto_rethink_goal(struct proto *p)
       config_del_obstacle(p->cf->global);
       rem_node(&p->n);
       rem_node(&p->glob_node);
+      mb_free(p->message);
       mb_free(p);
       if (!nc)
 	return;
@@ -907,6 +915,9 @@ protos_build(void)
 #ifdef CONFIG_STATIC
   proto_build(&proto_static);
 #endif
+#ifdef CONFIG_MRT
+  proto_build(&proto_mrt);
+#endif
 #ifdef CONFIG_OSPF
   proto_build(&proto_ospf);
 #endif
@@ -1092,6 +1103,39 @@ proto_schedule_down(struct proto *p, byte restart, byte code)
   p->down_sched = restart ? PDS_RESTART : PDS_DISABLE;
   p->down_code = code;
   tm_start_max(proto_shutdown_timer, restart ? 2 : 0);
+}
+
+/**
+ * proto_set_message - set administrative message to protocol
+ * @p: protocol
+ * @msg: message
+ * @len: message length (-1 for NULL-terminated string)
+ *
+ * The function sets administrative message (string) related to protocol state
+ * change. It is called by the nest code for manual enable/disable/restart
+ * commands all routes to the protocol, and by protocol-specific code when the
+ * protocol state change is initiated by the protocol. Using NULL message clears
+ * the last message. The message string may be either NULL-terminated or with an
+ * explicit length.
+ */
+void
+proto_set_message(struct proto *p, char *msg, int len)
+{
+  mb_free(p->message);
+  p->message = NULL;
+
+  if (!msg || !len)
+    return;
+
+  if (len < 0)
+    len = strlen(msg);
+
+  if (!len)
+    return;
+
+  p->message = mb_alloc(proto_pool, len + 1);
+  memcpy(p->message, msg, len);
+  p->message[len] = 0;
 }
 
 
@@ -1474,7 +1518,9 @@ proto_show_limit(struct proto_limit *l, const char *dsc)
 void
 proto_show_basic_info(struct proto *p)
 {
-  // cli_msg(-1006, "  Table:          %s", p->table->name);
+  if (p->vrf)
+    cli_msg(-1006, "  VRF:            %s", p->vrf->name);
+
   cli_msg(-1006, "  Preference:     %d", p->preference);
   cli_msg(-1006, "  Input filter:   %s", filter_name(p->cf->in_filter));
   cli_msg(-1006, "  Output filter:  %s", filter_name(p->cf->out_filter));
@@ -1493,7 +1539,7 @@ proto_show_basic_info(struct proto *p)
 }
 
 void
-proto_cmd_show(struct proto *p, uint verbose, int cnt)
+proto_cmd_show(struct proto *p, uintptr_t verbose, int cnt)
 {
   byte buf[256], tbuf[TM_DATETIME_BUFFER_SIZE];
 
@@ -1516,8 +1562,15 @@ proto_cmd_show(struct proto *p, uint verbose, int cnt)
     {
       if (p->cf->dsc)
 	cli_msg(-1006, "  Description:    %s", p->cf->dsc);
+
+      if (p->message)
+	cli_msg(-1006, "  Message:        %s", p->message);
+
       if (p->cf->router_id)
 	cli_msg(-1006, "  Router ID:      %R", p->cf->router_id);
+
+      if (p->vrf_set)
+	cli_msg(-1006, "  VRF:            %s", p->vrf ? p->vrf->name : "default");
 
       if (p->proto->show_proto_info)
 	p->proto->show_proto_info(p);
@@ -1529,7 +1582,7 @@ proto_cmd_show(struct proto *p, uint verbose, int cnt)
 }
 
 void
-proto_cmd_disable(struct proto *p, uint arg UNUSED, int cnt UNUSED)
+proto_cmd_disable(struct proto *p, uintptr_t arg, int cnt UNUSED)
 {
   if (p->disabled)
     {
@@ -1540,12 +1593,13 @@ proto_cmd_disable(struct proto *p, uint arg UNUSED, int cnt UNUSED)
   log(L_INFO "Disabling protocol %s", p->name);
   p->disabled = 1;
   p->down_code = PDC_CMD_DISABLE;
+  proto_set_message(p, (char *) arg, -1);
   proto_rethink_goal(p);
   cli_msg(-9, "%s: disabled", p->name);
 }
 
 void
-proto_cmd_enable(struct proto *p, uint arg UNUSED, int cnt UNUSED)
+proto_cmd_enable(struct proto *p, uintptr_t arg, int cnt UNUSED)
 {
   if (!p->disabled)
     {
@@ -1555,12 +1609,13 @@ proto_cmd_enable(struct proto *p, uint arg UNUSED, int cnt UNUSED)
 
   log(L_INFO "Enabling protocol %s", p->name);
   p->disabled = 0;
+  proto_set_message(p, (char *) arg, -1);
   proto_rethink_goal(p);
   cli_msg(-11, "%s: enabled", p->name);
 }
 
 void
-proto_cmd_restart(struct proto *p, uint arg UNUSED, int cnt UNUSED)
+proto_cmd_restart(struct proto *p, uintptr_t arg, int cnt UNUSED)
 {
   if (p->disabled)
     {
@@ -1571,6 +1626,7 @@ proto_cmd_restart(struct proto *p, uint arg UNUSED, int cnt UNUSED)
   log(L_INFO "Restarting protocol %s", p->name);
   p->disabled = 1;
   p->down_code = PDC_CMD_RESTART;
+  proto_set_message(p, (char *) arg, -1);
   proto_rethink_goal(p);
   p->disabled = 0;
   proto_rethink_goal(p);
@@ -1578,7 +1634,7 @@ proto_cmd_restart(struct proto *p, uint arg UNUSED, int cnt UNUSED)
 }
 
 void
-proto_cmd_reload(struct proto *p, uint dir, int cnt UNUSED)
+proto_cmd_reload(struct proto *p, uintptr_t dir, int cnt UNUSED)
 {
   if (p->disabled)
     {
@@ -1620,19 +1676,19 @@ proto_cmd_reload(struct proto *p, uint dir, int cnt UNUSED)
 }
 
 void
-proto_cmd_debug(struct proto *p, uint mask, int cnt UNUSED)
+proto_cmd_debug(struct proto *p, uintptr_t mask, int cnt UNUSED)
 {
   p->debug = mask;
 }
 
 void
-proto_cmd_mrtdump(struct proto *p, uint mask, int cnt UNUSED)
+proto_cmd_mrtdump(struct proto *p, uintptr_t mask, int cnt UNUSED)
 {
   p->mrtdump = mask;
 }
 
 static void
-proto_apply_cmd_symbol(struct symbol *s, void (* cmd)(struct proto *, uint, int), uint arg)
+proto_apply_cmd_symbol(struct symbol *s, void (* cmd)(struct proto *, uintptr_t, int), uintptr_t arg)
 {
   if (s->class != SYM_PROTO)
     {
@@ -1645,7 +1701,7 @@ proto_apply_cmd_symbol(struct symbol *s, void (* cmd)(struct proto *, uint, int)
 }
 
 static void
-proto_apply_cmd_patt(char *patt, void (* cmd)(struct proto *, uint, int), uint arg)
+proto_apply_cmd_patt(char *patt, void (* cmd)(struct proto *, uintptr_t, int), uintptr_t arg)
 {
   int cnt = 0;
 
@@ -1665,8 +1721,8 @@ proto_apply_cmd_patt(char *patt, void (* cmd)(struct proto *, uint, int), uint a
 }
 
 void
-proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, uint, int),
-		int restricted, uint arg)
+proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, uintptr_t, int),
+		int restricted, uintptr_t arg)
 {
   if (restricted && cli_access_restricted())
     return;

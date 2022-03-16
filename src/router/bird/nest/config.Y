@@ -55,7 +55,7 @@ get_passwords(void)
 CF_DECLS
 
 CF_KEYWORDS(ROUTER, ID, PROTOCOL, TEMPLATE, PREFERENCE, DISABLED, DEBUG, ALL, OFF, DIRECT)
-CF_KEYWORDS(INTERFACE, IMPORT, EXPORT, FILTER, NONE, TABLE, STATES, ROUTES, FILTERS)
+CF_KEYWORDS(INTERFACE, IMPORT, EXPORT, FILTER, NONE, VRF, DEFAULT, TABLE, STATES, ROUTES, FILTERS)
 CF_KEYWORDS(RECEIVE, LIMIT, ACTION, WARN, BLOCK, RESTART, DISABLE, KEEP, FILTERED)
 CF_KEYWORDS(PASSWORD, FROM, PASSIVE, TO, ID, EVENTS, PACKETS, PROTOCOLS, INTERFACES)
 CF_KEYWORDS(ALGORITHM, KEYED, HMAC, MD5, SHA1, SHA256, SHA384, SHA512)
@@ -227,6 +227,8 @@ proto_item:
  | IMPORT LIMIT limit_spec { this_proto->in_limit = $3; }
  | EXPORT LIMIT limit_spec { this_proto->out_limit = $3; }
  | IMPORT KEEP FILTERED bool { this_proto->in_keep_filtered = $4; }
+ | VRF text { this_proto->vrf = if_get_by_name($2); this_proto->vrf_set = 1; }
+ | VRF DEFAULT { this_proto->vrf = NULL; this_proto->vrf_set = 1; }
  | TABLE rtable { this_proto->table = $2; }
  | ROUTER ID idval { this_proto->router_id = $3; }
  | DESCRIPTION text { this_proto->dsc = $2; }
@@ -695,12 +697,12 @@ echo_size:
    }
  ;
 
-CF_CLI(DISABLE, proto_patt, <protocol> | \"<pattern>\" | all, [[Disable protocol]])
-{ proto_apply_cmd($2, proto_cmd_disable, 1, 0); } ;
-CF_CLI(ENABLE, proto_patt, <protocol> | \"<pattern>\" | all, [[Enable protocol]])
-{ proto_apply_cmd($2, proto_cmd_enable, 1, 0); } ;
-CF_CLI(RESTART, proto_patt, <protocol> | \"<pattern>\" | all, [[Restart protocol]])
-{ proto_apply_cmd($2, proto_cmd_restart, 1, 0); } ;
+CF_CLI(DISABLE, proto_patt text_or_none, (<protocol> | \"<pattern>\" | all) [message], [[Disable protocol]])
+{ proto_apply_cmd($2, proto_cmd_disable, 1, (uintptr_t) $3); } ;
+CF_CLI(ENABLE, proto_patt text_or_none, (<protocol> | \"<pattern>\" | all) [message], [[Enable protocol]])
+{ proto_apply_cmd($2, proto_cmd_enable, 1, (uintptr_t) $3); } ;
+CF_CLI(RESTART, proto_patt text_or_none, (<protocol> | \"<pattern>\" | all) [message], [[Restart protocol]])
+{ proto_apply_cmd($2, proto_cmd_restart, 1, (uintptr_t) $3); } ;
 CF_CLI(RELOAD, proto_patt, <protocol> | \"<pattern>\" | all, [[Reload protocol]])
 { proto_apply_cmd($2, proto_cmd_reload, 1, CMD_RELOAD); } ;
 CF_CLI(RELOAD IN, proto_patt, <protocol> | \"<pattern>\" | all, [[Reload protocol (just imported routes)]])

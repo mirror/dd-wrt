@@ -67,7 +67,7 @@ typedef struct ip4_addr {
 
 typedef u32 ip4_addr;
 
-#define _MI4(x) (x)
+#define _MI4(x) ((u32) (x))
 #define _I(x) (x)
 
 #endif
@@ -99,6 +99,7 @@ typedef ip6_addr ip_addr;
 #define ipa_to_u32(x) ip4_to_u32(ipa_to_ip4(x))
 
 #define ipa_is_ip4(a) ip6_is_v4mapped(a)
+#define ipa_is_ip6(a) (! ip6_is_v4mapped(a))
 
 #else
 
@@ -115,6 +116,7 @@ typedef ip4_addr ip_addr;
 #define ipa_to_u32(x) ip4_to_u32(ipa_to_ip4(x))
 
 #define ipa_is_ip4(a) 1
+#define ipa_is_ip6(a) 0
 
 #endif
 
@@ -308,6 +310,9 @@ static inline int ip6_is_v4mapped(ip6_addr a)
 #define ipa_classify(x) ip4_classify(x)
 #define ipa_is_link_local(x) 0
 #endif
+
+static inline int ip4_is_unicast(ip4_addr a)
+{ return _I(a) < 0xe0000000; }
 
 static inline int ipa_classify_net(ip_addr a)
 { return ipa_zero2(a) ? (IADDR_HOST | SCOPE_UNIVERSE) : ipa_classify(a); }

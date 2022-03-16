@@ -319,10 +319,26 @@ change in the future. Default: <CODE>off</CODE>.
 <P>
 <DT><CODE>
 <A NAME="proto-description"></A> description "<I>text</I>"</CODE><DD><P>This is an optional description of the protocol. It is displayed as a
-part of the output of 'show route all' command.
+part of the output of 'show protocols all' command.
 <P>
 <DT><CODE>
 <A NAME="proto-table"></A> table <I>name</I></CODE><DD><P>Connect this protocol to a non-default routing table.
+<P>
+<DT><CODE>
+<A NAME="proto-vrf"></A> vrf "<I>text</I>"|default</CODE><DD><P>Associate the protocol with specific VRF. The protocol will be
+restricted to interfaces assigned to the VRF and will use sockets bound
+to the VRF. A corresponding VRF interface must exist on OS level. For
+kernel protocol, an appropriate table still must be explicitly selected
+by <CODE>table</CODE> option.
+<P>By selecting <CODE>default</CODE>, the protocol is associated with the default
+VRF; i.e., it will be restricted to interfaces not assigned to any
+regular VRF. That is different from not specifying <CODE>vrf</CODE> at all, in
+which case the protocol may use any interface regardless of its VRF
+status.
+<P>Note that for proper VRF support it is necessary to use Linux kernel
+version at least 4.14, older versions have limited VRF implementation.
+Before Linux kernel 5.0, a socket bound to a port in default VRF collide
+with others in regular VRFs.
 </DL>
 <P>
 <P>There are several options that give sense only with certain protocols:

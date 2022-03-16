@@ -150,7 +150,7 @@ static_update_bfd(struct proto *p, struct static_route *r)
   if (bfd_up && !r->bfd_req)
   {
     // ip_addr local = ipa_nonzero(r->local) ? r->local : nb->ifa->ip;
-    r->bfd_req = bfd_request_session(p->pool, r->via, nb->ifa->ip, nb->iface,
+    r->bfd_req = bfd_request_session(p->pool, r->via, nb->ifa->ip, nb->iface, p->vrf,
 				     static_bfd_notify, r);
   }
 
@@ -498,7 +498,8 @@ static_same_dest(struct static_route *x, struct static_route *y)
 static inline int
 static_same_rte(struct static_route *x, struct static_route *y)
 {
-  return static_same_dest(x, y) && i_same(x->cmds, y->cmds);
+  /* Note that i_same() requires arguments in (new, old) order */
+  return static_same_dest(x, y) && i_same(y->cmds, x->cmds);
 }
 
 
@@ -516,6 +517,11 @@ static_match(struct proto *p, struct static_route *r, struct static_config *n)
 
   if (r->neigh)
     r->neigh->data = NULL;
+
+  if (r->dest == RTD_MULTIPATH)
+    for (t = r->mp_next; t; t = t->mp_next)
+      if (t->neigh)
+	t->neigh->data = NULL;
 
   WALK_LIST(t, n->iface_routes)
     if (static_same_net(r, t))

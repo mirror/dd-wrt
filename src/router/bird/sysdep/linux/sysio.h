@@ -7,16 +7,6 @@
  */
 
 
-#ifndef HAVE_STRUCT_IP_MREQN
-/* Several versions of glibc don't define this structure, so we have to do it ourselves */
-struct ip_mreqn
-{
-  struct in_addr imr_multiaddr;			/* IP multicast address of group */
-  struct in_addr imr_address;			/* local IP address of interface */
-  int		 imr_ifindex;			/* Interface index */
-};
-#endif
-
 #ifndef IP_MINTTL
 #define IP_MINTTL 21
 #endif

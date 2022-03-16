@@ -180,7 +180,7 @@ in the future. Also note that we currently support at most one protocol instance
 <P>BFD packets are sent with a dynamic source port number. Linux systems use by
 default a bit different dynamic port range than the IANA approved one
 (49152-65535). If you experience problems with compatibility, please adjust
-<CODE>/proc/sys/net/ipv4/ip_local_port_range</CODE>
+<CODE>/proc/sys/net/ipv4/ip_local_port_range</CODE>.
 <P>
 <H3><A NAME="bfd-config"></A> Configuration</H3>
 
@@ -195,6 +195,14 @@ configuration is often sufficient.
 <P>
 <P>Note that to use BFD for other protocols like OSPF or BGP, these protocols
 also have to be configured to request BFD sessions, usually by <CODE>bfd</CODE> option.
+<P>
+<P>A BFD instance not associated with any VRF handles session requests from all
+other protocols, even ones associated with a VRF. Such setup would work for
+single-hop BFD sessions if <CODE>net.ipv4.udp_l3mdev_accept</CODE> sysctl is enabled,
+but does not currently work for multihop sessions. Another approach is to
+configure multiple BFD instances, one for each VRF (including the default VRF).
+Each BFD instance associated with a VRF (regular or default) only handles
+session requests from protocols in the same VRF.
 <P>
 <P>Some of BFD session options require <I>time</I> value, which has to be specified
 with the appropriate unit: <I>num</I> <CODE>s</CODE>|<CODE>ms</CODE>|<CODE>us</CODE>. Although microseconds
@@ -325,7 +333,7 @@ offers better resistance to replay attacks but may require more
 computation.
 <P>
 <DT><CODE>password "<I>text</I>"</CODE><DD><P>Specifies a password used for authentication. See 
-<A HREF="bird-3.html#proto-iface">interface</A><@@ref>dsc-passpassword</A> common option for detailed description. Note that
+<A HREF="bird-3.html#proto-pass">password</A> common option for detailed description. Note that
 password option <CODE>algorithm</CODE> is not available in BFD protocol. The
 algorithm is selected by <CODE>authentication</CODE> option for all passwords.
 <P>
@@ -449,8 +457,9 @@ mandatory.
 <DT><CODE>
 <A NAME="bgp-iface"></A> interface <I>string</I></CODE><DD><P>Define interface we should use for link-local BGP IPv6 sessions.
 Interface can also be specified as a part of <CODE>neighbor address</CODE>
-(e.g., <CODE>neighbor fe80::1234%eth0 as 65000;</CODE>). It is an error to use
-this parameter for non link-local sessions.
+(e.g., <CODE>neighbor fe80::1234%eth0 as 65000;</CODE>). The option may also be
+used for non link-local sessions when it is necessary to explicitly
+specify an interface, but only for direct (not multihop) sessions.
 <P>
 <DT><CODE>
 <A NAME="bgp-direct"></A> direct</CODE><DD><P>Specify that the neighbor is directly connected. The IP address of the
@@ -530,12 +539,16 @@ immediately shut down. Note that this option cannot be used with
 multihop BGP. Default: disabled.
 <P>
 <DT><CODE>
-<A NAME="bgp-bfd"></A> bfd <I>switch</I></CODE><DD><P>BGP could use BFD protocol as an advisory mechanism for neighbor
+<A NAME="bgp-bfd"></A> bfd <I>switch</I>|graceful</CODE><DD><P>BGP could use BFD protocol as an advisory mechanism for neighbor
 liveness and failure detection. If enabled, BIRD setups a BFD session
 for the BGP neighbor and tracks its liveness by it. This has an
 advantage of an order of magnitude lower detection times in case of
-failure. Note that BFD protocol also has to be configured, see
-<A HREF="#bfd">BFD</A> section for details. Default: disabled.
+failure. When a neighbor failure is detected, the BGP session is
+restarted. Optionally, it can be configured (by <CODE>graceful</CODE> argument)
+to trigger graceful restart instead of regular restart.  Note that BFD
+protocol also has to be configured, see 
+<A HREF="#bfd">BFD</A>
+section for details. Default: disabled.
 <P>
 <DT><CODE>
 <A NAME="bgp-ttl-security"></A> ttl security <I>switch</I></CODE><DD><P>Use GTSM (<A HREF="http://www.rfc-editor.org/info/rfc5082">RFC 5082</A> - the generalized TTL security mechanism). GTSM
@@ -611,6 +624,14 @@ TX direction. When active, all available routes accepted by the export
 filter are advertised to the neighbor. Default: off.
 <P>
 <DT><CODE>
+<A NAME="bgp-allow-local-pref"></A> allow bgp_local_pref <I>switch</I></CODE><DD><P>A standard BGP implementation do not send the Local Preference attribute
+to eBGP neighbors and ignore this attribute if received from eBGP
+neighbors, as per <A HREF="http://www.rfc-editor.org/info/rfc4271">RFC 4271</A>.  When this option is enabled on an
+eBGP session, this attribute will be sent to and accepted from the peer,
+which is useful for example if you have a setup like in <A HREF="http://www.rfc-editor.org/info/rfc7938">RFC 7938</A>.
+The option does not affect iBGP sessions. Default: off.
+<P>
+<DT><CODE>
 <A NAME="bgp-allow-local-as"></A> allow local as [<I>number</I>]</CODE><DD><P>BGP prevents routing loops by rejecting received routes with the local
 AS number in the AS path. This option allows to loose or disable the
 check. Optional <CODE>number</CODE> argument can be used to specify the maximum
@@ -651,6 +672,25 @@ configuration of other protocols.  Default: aware.
 and specifies how long the neighbor would wait for the BGP session to
 re-establish after a restart before deleting stale routes. Default:
 120 seconds.
+<P>
+<DT><CODE>
+<A NAME="bgp-long-lived-graceful-restart"></A> long lived graceful restart <I>switch</I>|aware</CODE><DD><P>The long-lived graceful restart is an extension of the traditional
+<A HREF="#bgp-graceful-restart">BGP graceful restart</A>, where stale
+routes are kept even after the 
+<A HREF="#bgp-graceful-restart-time">restart time</A> expires for additional long-lived stale time, but
+they are marked with the LLGR_STALE community, depreferenced, and
+withdrawn from routers not supporting LLGR. Like traditional BGP
+graceful restart, it has three states: disabled, aware (receiving-only),
+and enabled. Note that long-lived graceful restart requires at least
+aware level of traditional BGP graceful restart. Default: aware, unless
+graceful restart is disabled.
+<P>
+<DT><CODE>
+<A NAME="bgp-long-lived-stale-time"></A> long lived stale time <I>number</I></CODE><DD><P>The long-lived stale time is announced in the BGP long-lived graceful
+restart capability and specifies how long the neighbor would keep stale
+routes depreferenced during long-lived graceful restart until either the
+session is re-stablished and synchronized or the stale time expires and
+routes are removed. Default: 3600 seconds.
 <P>
 <DT><CODE>
 <A NAME="bgp-interpret-communities"></A> interpret communities <I>switch</I></CODE><DD><P><A HREF="http://www.rfc-editor.org/info/rfc1997">RFC 1997</A> demands that BGP speaker should process well-known
@@ -702,6 +742,18 @@ restart</CODE>. This option is obsolete and it is replaced by
 <A NAME="bgp-disable-after-error"></A> disable after error <I>switch</I></CODE><DD><P>When an error is encountered (either locally or by the other side),
 disable the instance automatically and wait for an administrator to fix
 the problem manually. Default: off.
+<P>
+<DT><CODE>
+<A NAME="bgp-disable-after-cease"></A> disable after cease <I>switch</I>|<I>set-of-flags</I></CODE><DD><P>When a Cease notification is received, disable the instance
+automatically and wait for an administrator to fix the problem manually.
+When used with <I>switch</I> argument, it means handle every Cease subtype
+with the exception of <CODE>connection collision</CODE>. Default: off.
+<P>The <I>set-of-flags</I> allows to narrow down relevant Cease subtypes. The
+syntax is <CODE>{<I>flag</I> [, <I>...</I>] }</CODE>, where flags are: <CODE>cease</CODE>,
+<CODE>prefix limit hit</CODE>, <CODE>administrative shutdown</CODE>,
+<CODE>peer deconfigured</CODE>, <CODE>administrative reset</CODE>,
+<CODE>connection rejected</CODE>, <CODE>configuration change</CODE>,
+<CODE>connection collision</CODE>, <CODE>out of resources</CODE>.
 <P>
 <DT><CODE>
 <A NAME="bgp-hold-time"></A> hold time <I>number</I></CODE><DD><P>Time in seconds to wait for a Keepalive message from the other side
@@ -793,17 +845,17 @@ some of them (marked with `<CODE>O</CODE>') are optional.
 <P>
 <DL>
 <DT><CODE>
-<A NAME="rta-bgp-path"></A> bgppath bgp_path/</CODE><DD><P>Sequence of AS numbers describing the AS path the packet will travel
+<A NAME="rta-bgp-path"></A> bgppath bgp_path</CODE><DD><P>Sequence of AS numbers describing the AS path the packet will travel
 through when forwarded according to the particular route. In case of
 internal BGP it doesn't contain the number of the local AS.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-local-pref"></A> int bgp_local_pref/ [I]</CODE><DD><P>Local preference value used for selection among multiple BGP routes (see
+<A NAME="rta-bgp-local-pref"></A> int bgp_local_pref [I]</CODE><DD><P>Local preference value used for selection among multiple BGP routes (see
 the selection rules above). It's used as an additional metric which is
 propagated through the whole local AS.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-med"></A> int bgp_med/ [O]</CODE><DD><P>The Multiple Exit Discriminator of the route is an optional attribute
+<A NAME="rta-bgp-med"></A> int bgp_med [O]</CODE><DD><P>The Multiple Exit Discriminator of the route is an optional attribute
 which is used on external (inter-AS) links to convey to an adjacent AS
 the optimal entry point into the local AS. The received attribute is
 also propagated over internal BGP links. The attribute value is zeroed
@@ -814,25 +866,25 @@ external BGP instance. See <A HREF="http://www.rfc-editor.org/info/rfc4451">RFC 
 BGP MED attribute.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-origin"></A> enum bgp_origin/</CODE><DD><P>Origin of the route: either <CODE>ORIGIN_IGP</CODE> if the route has originated
+<A NAME="rta-bgp-origin"></A> enum bgp_origin</CODE><DD><P>Origin of the route: either <CODE>ORIGIN_IGP</CODE> if the route has originated
 in an interior routing protocol or <CODE>ORIGIN_EGP</CODE> if it's been imported
 from the <CODE>EGP</CODE> protocol (nowadays it seems to be obsolete) or
 <CODE>ORIGIN_INCOMPLETE</CODE> if the origin is unknown.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-next-hop"></A> ip bgp_next_hop/</CODE><DD><P>Next hop to be used for forwarding of packets to this destination. On
+<A NAME="rta-bgp-next-hop"></A> ip bgp_next_hop</CODE><DD><P>Next hop to be used for forwarding of packets to this destination. On
 internal BGP connections, it's an address of the originating router if
 it's inside the local AS or a boundary router the packet will leave the
 AS through if it's an exterior route, so each BGP speaker within the AS
 has a chance to use the shortest interior path possible to this point.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-atomic-aggr"></A> void bgp_atomic_aggr/ [O]</CODE><DD><P>This is an optional attribute which carries no value, but the sole
+<A NAME="rta-bgp-atomic-aggr"></A> void bgp_atomic_aggr [O]</CODE><DD><P>This is an optional attribute which carries no value, but the sole
 presence of which indicates that the route has been aggregated from
 multiple routes by some router on the path from the originator.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-community"></A> clist bgp_community/ [O]</CODE><DD><P>List of community values associated with the route. Each such value is a
+<A NAME="rta-bgp-community"></A> clist bgp_community [O]</CODE><DD><P>List of community values associated with the route. Each such value is a
 pair (represented as a <CODE>pair</CODE> data type inside the filters) of 16-bit
 integers, the first of them containing the number of the AS which
 defines the community and the second one being a per-AS identifier.
@@ -843,14 +895,14 @@ freedom about which community attributes it defines and what will their
 semantics be.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-ext-community"></A> eclist bgp_ext_community/ [O]</CODE><DD><P>List of extended community values associated with the route. Extended
+<A NAME="rta-bgp-ext-community"></A> eclist bgp_ext_community [O]</CODE><DD><P>List of extended community values associated with the route. Extended
 communities have similar usage as plain communities, but they have an
 extended range (to allow 4B ASNs) and a nontrivial structure with a type
 field. Individual community values are represented using an <CODE>ec</CODE> data
 type inside the filters.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-large-community"></A> lclist <CODE>bgp_large_community</CODE> [O]</CODE><DD><P>List of large community values associated with the route. Large BGP
+<A NAME="rta-bgp-large-community"></A> lclist bgp_large_community [O]</CODE><DD><P>List of large community values associated with the route. Large BGP
 communities is another variant of communities, but contrary to extended
 communities they behave very much the same way as regular communities,
 just larger -- they are uniform untyped triplets of 32bit numbers.
@@ -858,12 +910,12 @@ Individual community values are represented using an <CODE>lc</CODE> data type
 inside the filters.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-originator-id"></A> quad bgp_originator_id/ [I, O]</CODE><DD><P>This attribute is created by the route reflector when reflecting the
+<A NAME="rta-bgp-originator-id"></A> quad bgp_originator_id [I, O]</CODE><DD><P>This attribute is created by the route reflector when reflecting the
 route and contains the router ID of the originator of the route in the
 local AS.
 <P>
 <DT><CODE>
-<A NAME="rta-bgp-cluster-list"></A> clist bgp_cluster_list/ [I, O]</CODE><DD><P>This attribute contains a list of cluster IDs of route reflectors. Each
+<A NAME="rta-bgp-cluster-list"></A> clist bgp_cluster_list [I, O]</CODE><DD><P>This attribute contains a list of cluster IDs of route reflectors. Each
 route reflector prepends its cluster ID when reflecting the route.
 </DL>
 <P>
@@ -1106,29 +1158,29 @@ these attributes:
 <P>
 <DL>
 <DT><CODE>
-<A NAME="rta-krt-source"></A> int krt_source/</CODE><DD><P>The original source of the imported kernel route. The value is
+<A NAME="rta-krt-source"></A> int krt_source</CODE><DD><P>The original source of the imported kernel route. The value is
 system-dependent. On Linux, it is a value of the protocol field of the
 route. See /etc/iproute2/rt_protos for common values. On BSD, it is
 based on STATIC and PROTOx flags. The attribute is read-only.
 <P>
 <DT><CODE>
-<A NAME="rta-krt-metric"></A> int krt_metric/</CODE><DD><P>(Linux)
+<A NAME="rta-krt-metric"></A> int krt_metric</CODE><DD><P>(Linux)
 The kernel metric of the route. When multiple same routes are in a
 kernel routing table, the Linux kernel chooses one with lower metric.
 Note that preferred way to set kernel metric is to use protocol option
 <CODE>metric</CODE>, unless per-route metric values are needed.
 <P>
 <DT><CODE>
-<A NAME="rta-krt-prefsrc"></A> ip krt_prefsrc/</CODE><DD><P>(Linux)
+<A NAME="rta-krt-prefsrc"></A> ip krt_prefsrc</CODE><DD><P>(Linux)
 The preferred source address. Used in source address selection for
 outgoing packets. Has to be one of the IP addresses of the router.
 <P>
 <DT><CODE>
-<A NAME="rta-krt-realm"></A> int krt_realm/</CODE><DD><P>(Linux)
+<A NAME="rta-krt-realm"></A> int krt_realm</CODE><DD><P>(Linux)
 The realm of the route. Can be used for traffic classification.
 <P>
 <DT><CODE>
-<A NAME="rta-krt-scope"></A> int krt_scope/</CODE><DD><P>(Linux IPv4)
+<A NAME="rta-krt-scope"></A> int krt_scope</CODE><DD><P>(Linux IPv4)
 The scope of the route. Valid values are 0-254, although Linux kernel
 may reject some values depending on route type and nexthop. It is
 supposed to represent `indirectness' of the route, where nexthops of
@@ -1186,7 +1238,81 @@ protocol kernel {               # Secondary routing table
 <HR>
 <P>
 <P>
-<H2><A NAME="ospf"></A> <A NAME="ss6.7">6.7</A> <A HREF="bird.html#toc6.7">OSPF</A>
+<H2><A NAME="mrt"></A> <A NAME="ss6.7">6.7</A> <A HREF="bird.html#toc6.7">MRT</A>
+</H2>
+
+<H3><A NAME="mrt-intro"></A> Introduction</H3>
+
+<P>The MRT protocol is a component responsible for handling the Multi-Threaded
+Routing Toolkit (MRT) routing information export format, which is mainly used
+for collecting and analyzing of routing information from BGP routers. The MRT
+protocol can be configured to do periodic dumps of routing tables, created MRT
+files can be analyzed later by other tools. Independent MRT table dumps can also
+be requested from BIRD client. There is also a feature to save incoming BGP
+messages in MRT files, but it is controlled by 
+<A HREF="bird-3.html#proto-mrtdump">mrtdump</A> options independently of MRT protocol, although that might
+change in the future.
+<P>BIRD implements the main MRT format specification as defined in <A HREF="http://www.rfc-editor.org/info/rfc6396">RFC 6396</A>
+and the ADD_PATH extension (<A HREF="http://www.rfc-editor.org/info/rfc8050">RFC 8050</A>).
+<P>
+<H3><A NAME="mrt-config"></A> Configuration</H3>
+
+<P>MRT configuration consists of several statements describing routing table
+dumps. Multiple independent periodic dumps can be done as multiple MRT protocol
+instances. There are two mandatory statements: <CODE>filename</CODE> and <CODE>period</CODE>.
+The behavior can be modified by following configuration parameters:
+<P>
+<DL>
+<DT><CODE>
+<A NAME="mrt-table"></A> table <I>name</I> | "<I>pattern</I>"</CODE><DD><P>Specify a routing table (or a set of routing tables described by a
+wildcard pattern) that are to be dumped by the MRT protocol instance.
+Default: the master table.
+<P>
+<DT><CODE>
+<A NAME="mrt-filter"></A> filter { <I>filter commands</I> }</CODE><DD><P>The MRT protocol allows to specify a filter that is applied to routes as
+they are dumped. Rejected routes are ignored and not saved to the MRT
+dump file. Default: no filter.
+<P>
+<DT><CODE>
+<A NAME="mrt-where"></A> where <I>filter expression</I></CODE><DD><P>An alternative way to specify a filter for the MRT protocol.
+<P>
+<DT><CODE>
+<A NAME="mrt-filename"></A> filename "<I>filename</I>"</CODE><DD><P>Specify a filename for MRT dump files. The filename may contain time
+format sequences with <I>strftime(3)</I> notation (see <I>man strftime</I>
+for details), there is also a sequence "%N" that is expanded to the name
+of dumped table. Therefore, each periodic dump of each table can be
+saved to a different file. Mandatory, see example below.
+<P>
+<DT><CODE>
+<A NAME="mrt-period"></A> period <I>number</I></CODE><DD><P>Specify the time interval (in seconds) between periodic dumps.
+Mandatory.
+<P>
+<DT><CODE>
+<A NAME="mrt-always-add-path"></A> always add path <I>switch</I></CODE><DD><P>The MRT format uses special records (specified in <A HREF="http://www.rfc-editor.org/info/rfc8050">RFC 8050</A>) for
+routes received using BGP ADD_PATH extension to keep Path ID, while
+other routes use regular records. This has advantage of better
+compatibility with tools that do not know special records, but it loses
+information about which route is the best route. When this option is
+enabled, both ADD_PATH and non-ADD_PATH routes are stored in ADD_PATH
+records and order of routes for network is preserved. Default: disabled.
+</DL>
+<P>
+<H3><A NAME="mrt-exam"></A> Example</H3>
+
+<P>
+<HR>
+<PRE>
+protocol mrt {
+        table "tab*";
+        where source = RTS_BGP;
+        filename "/var/log/bird/%N_%F_%T.mrt";
+        period 300;
+}
+</PRE>
+<HR>
+<P>
+<P>
+<H2><A NAME="ospf"></A> <A NAME="ss6.8">6.8</A> <A HREF="bird.html#toc6.8">OSPF</A>
 </H2>
 
 <H3><A NAME="ospf-intro"></A> Introduction</H3>
@@ -1492,6 +1618,11 @@ neighbors on NBMA network. Default value is 20.
 updates. Default value is 5.
 <P>
 <DT><CODE>
+<A NAME="ospf-transmit-delay"></A> transmit delay <I>num</I></CODE><DD><P>Specifies estimated transmission delay of link state updates send over
+the interface. The value is added to LSA age of LSAs propagated through
+it. Default value is 1.
+<P>
+<DT><CODE>
 <A NAME="ospf-priority"></A> priority <I>num</I></CODE><DD><P>On every multiple access network (e.g., the Ethernet) Designated Router
 and Backup Designated router are elected. These routers have some special
 functions in the flooding process. Higher priority increases preferences
@@ -1754,7 +1885,7 @@ protocol ospf MyOSPF {
 <HR>
 <P>
 <P>
-<H2><A NAME="pipe"></A> <A NAME="ss6.8">6.8</A> <A HREF="bird.html#toc6.8">Pipe</A>
+<H2><A NAME="pipe"></A> <A NAME="ss6.9">6.9</A> <A HREF="bird.html#toc6.9">Pipe</A>
 </H2>
 
 <H3><A NAME="pipe-intro"></A> Introduction</H3>
@@ -1879,7 +2010,7 @@ protocol pipe {                         # The Pipe
 <HR>
 <P>
 <P>
-<H2><A NAME="radv"></A> <A NAME="ss6.9">6.9</A> <A HREF="bird.html#toc6.9">RAdv</A>
+<H2><A NAME="radv"></A> <A NAME="ss6.10">6.10</A> <A HREF="bird.html#toc6.10">RAdv</A>
 </H2>
 
 <H3><A NAME="radv-intro"></A> Introduction</H3>
@@ -1890,7 +2021,8 @@ time intervals or as an answer to a request) advertisement packets to connected
 networks. These packets contain basic information about a local network (e.g. a
 list of network prefixes), which allows network hosts to autoconfigure network
 addresses and choose a default route. BIRD implements router behavior as defined
-in <A HREF="http://www.rfc-editor.org/info/rfc4861">RFC 4861</A> and also the DNS extensions from <A HREF="http://www.rfc-editor.org/info/rfc6106">RFC 6106</A>.
+in <A HREF="http://www.rfc-editor.org/info/rfc4861">RFC 4861</A>, router preferences and specific routes (<A HREF="http://www.rfc-editor.org/info/rfc4191">RFC 4191</A>),
+and DNS extensions (<A HREF="http://www.rfc-editor.org/info/rfc6106">RFC 6106</A>).
 <P>
 <H3><A NAME="radv-config"></A> Configuration</H3>
 
@@ -1926,7 +2058,7 @@ specifies one DNS server. Multiple definitions are cumulative. RDNSS
 definitions may also be interface-specific when used inside interface
 options. By default, interface uses both global and interface-specific
 options, but that can be changed by <CODE>rdnss local</CODE> option.
-dsc-iface
+<P>
 <DT><CODE>
 <A NAME="radv-dnssl"></A> dnssl { <I>options</I> }</CODE><DD><P>DNSSL definitions allow to specify a list of advertised DNS search
 domains together with their options. Like <CODE>rdnss</CODE> above, multiple
@@ -1938,7 +2070,7 @@ specifies one DNS search domain.
 <A NAME="radv-trigger"></A> trigger <I>prefix</I></CODE><DD><P>RAdv protocol could be configured to change its behavior based on
 availability of routes. When this option is used, the protocol waits in
 suppressed state until a <I>trigger route</I> (for the specified network)
-is exported to the protocol, the protocol also returnsd to suppressed
+is exported to the protocol, the protocol also returns to suppressed
 state if the <I>trigger route</I> disappears. Note that route export
 depends on specified export filter, as usual. This option could be used,
 e.g., for handling failover in multihoming scenarios.
@@ -1950,6 +2082,17 @@ lifetime</CODE>) is zeroed, which means hosts cannot use the router as a
 default router. <CODE>preferred lifetime</CODE> and <CODE>valid lifetime</CODE> could
 also be configured as <CODE>sensitive</CODE> for a prefix, which would cause
 autoconfigured IPs to be deprecated or even removed.
+<P>
+<DT><CODE>
+<A NAME="radv-propagate-routes"></A> propagate routes <I>switch</I></CODE><DD><P>This option controls propagation of more specific routes, as defined in
+<A HREF="http://www.rfc-editor.org/info/rfc4191">RFC 4191</A>. If enabled, all routes exported to the RAdv protocol,
+with the exception of the trigger prefix, are added to advertisments as
+additional options. The lifetime and preference of advertised routes can
+be set individually by <CODE>ra_lifetime</CODE> and <CODE>ra_preference</CODE> route
+attributes, or per interface by <CODE>route lifetime</CODE> and
+<CODE>route preference</CODE> options. Default: disabled.
+<P>Note that the RFC discourages from sending more than 17 routes and
+recommends the routes to be configured manually.
 </DL>
 <P>
 <P>Interface specific options:
@@ -1996,15 +2139,47 @@ unspecified. Default 0.
 hosts. Valid values are 0-255, 0 means unspecified. Default: 64
 <P>
 <DT><CODE>
-<A NAME="radv-iface-default-lifetime"></A> default lifetime <I>expr</I> [sensitive <I>switch</I>]</CODE><DD><P>This option specifies the time (in seconds) how long (after the receipt
+<A NAME="radv-iface-default-lifetime"></A> default lifetime <I>expr</I> [sensitive <I>switch</I>]</CODE><DD><P>This option specifies the time (in seconds) how long (since the receipt
 of RA) hosts may use the router as a default router. 0 means do not use
 as a default router. For <CODE>sensitive</CODE> option, see 
 <A HREF="#radv-trigger">trigger</A>.
 Default: 3 * <CODE>max ra       interval</CODE>, <CODE>sensitive</CODE> yes.
 <P>
 <DT><CODE>
-<A NAME="radv-iface-default-preference-low"></A> default preference low|medium|high</CODE><DD><P>This option specifies the Default Router Preference value to advertise
+<A NAME="radv-iface-default-preference"></A> default preference low|medium|high</CODE><DD><P>This option specifies the Default Router Preference value to advertise
 to hosts. Default: medium.
+<P>
+<DT><CODE>
+<A NAME="radv-iface-route-lifetime"></A> route lifetime <I>expr</I> [sensitive <I>switch</I>]</CODE><DD><P>This option specifies the default value of advertised lifetime for
+specific routes; i.e., the time (in seconds) for how long (since the
+receipt of RA) hosts should consider these routes valid. A special value
+0xffffffff represents infinity. The lifetime can be overriden on a per
+route basis by the 
+<A HREF="#rta-ra-lifetime">ra_lifetime</A> route
+attribute. Default: 3 * <CODE>max ra interval</CODE>, <CODE>sensitive</CODE> no.
+<P>For the <CODE>sensitive</CODE> option, see 
+<A HREF="#radv-trigger">trigger</A>.
+If <CODE>sensitive</CODE> is enabled, even the routes with the <CODE>ra_lifetime</CODE>
+attribute become sensitive to the trigger.
+<P>
+<DT><CODE>
+<A NAME="radv-iface-route-preference"></A> route preference low|medium|high</CODE><DD><P>This option specifies the default value of advertised route preference
+for specific routes. The value can be overriden on a per route basis by
+the 
+<A HREF="#rta-ra-preference">ra_preference</A> route attribute.
+Default: medium.
+<P>
+<DT><CODE>
+<A NAME="radv-prefix-linger-time"></A> prefix linger time <I>expr</I></CODE><DD><P>When a prefix or a route disappears, it is advertised for some time with
+zero lifetime, to inform clients it is no longer valid. This option
+specifies the time (in seconds) for how long prefixes are advertised
+that way. Default: 3 * <CODE>max ra interval</CODE>.
+<P>
+<DT><CODE>
+<A NAME="radv-route-linger-time"></A> route linger time <I>expr</I></CODE><DD><P>When a prefix or a route disappears, it is advertised for some time with
+zero lifetime, to inform clients it is no longer valid. This option
+specifies the time (in seconds) for how long routes are advertised
+that way. Default: 3 * <CODE>max ra interval</CODE>.
 <P>
 <DT><CODE>
 <A NAME="radv-iface-rdnss-local"></A> rdnss local <I>switch</I></CODE><DD><P>Use only local (interface-specific) RDNSS definitions for this
@@ -2054,7 +2229,6 @@ see
 <CODE>sensitive</CODE> no.
 </DL>
 <P>
-<P>
 <P>RDNSS specific options:
 <P>
 <DL>
@@ -2087,13 +2261,49 @@ used by clients after the receipt of RA. Details are the same as for
 RDNSS <CODE>lifetime</CODE> option above. Default: 3 * <CODE>max ra interval</CODE>.
 </DL>
 <P>
+<H3><A NAME="radv-attr"></A> Attributes</H3>
+
+<P>RAdv defines two route attributes:
+<P>
+<DL>
+<DT><CODE>
+<A NAME="rta-ra-preference"></A> enum ra_preference</CODE><DD><P>The preference of the route. The value can be <I>RA_PREF_LOW</I>,
+<I>RA_PREF_MEDIUM</I> or <I>RA_PREF_HIGH</I>. If the attribute is not set,
+the 
+<A HREF="#radv-iface-route-preference">route preference</A>
+option is used.
+<P>
+<DT><CODE>
+<A NAME="rta-ra-lifetime"></A> int ra_lifetime</CODE><DD><P>The advertised lifetime of the route, in seconds. The special value of
+0xffffffff represents infinity. If the attribute is not set, the
+<A HREF="#radv-iface-route-lifetime">route lifetime</A>
+option is used.
+</DL>
 <P>
 <H3><A NAME="radv-exam"></A> Example</H3>
 
 <P>
 <HR>
 <PRE>
+table radv_routes;                      # Manually configured routes go here
+
+protocol static {
+        table radv_routes;
+
+        route 2001:0DB8:4000::/48 unreachable;
+        route 2001:0DB8:4010::/48 unreachable;
+
+        route 2001:0DB8:4020::/48 unreachable {
+                ra_preference = RA_PREF_HIGH;
+                ra_lifetime = 3600;
+        };
+}
+
 protocol radv {
+        propagate routes yes;           # Propagate the routes from the radv_routes table
+        table radv_routes;
+        export all;
+
         interface "eth2" {
                 max ra interval 5;      # Fast failover with more routers
                 managed yes;            # Using DHCPv6 on eth2
@@ -2130,7 +2340,7 @@ protocol radv {
 <HR>
 <P>
 <P>
-<H2><A NAME="rip"></A> <A NAME="ss6.10">6.10</A> <A HREF="bird.html#toc6.10">RIP</A>
+<H2><A NAME="rip"></A> <A NAME="ss6.11">6.11</A> <A HREF="bird.html#toc6.11">RIP</A>
 </H2>
 
 <H3><A NAME="rip-intro"></A> Introduction</H3>
@@ -2365,13 +2575,13 @@ Default: no.
 <P>
 <DL>
 <DT><CODE>
-<A NAME="rta-rip-metric"></A> int rip_metric/</CODE><DD><P>RIP metric of the route (ranging from 0 to <CODE>infinity</CODE>).  When routes
+<A NAME="rta-rip-metric"></A> int rip_metric</CODE><DD><P>RIP metric of the route (ranging from 0 to <CODE>infinity</CODE>).  When routes
 from different RIP instances are available and all of them have the same
 preference, BIRD prefers the route with lowest <CODE>rip_metric</CODE>. When a
 non-RIP route is exported to RIP, the default metric is 1.
 <P>
 <DT><CODE>
-<A NAME="rta-rip-tag"></A> int rip_tag/</CODE><DD><P>RIP route tag: a 16-bit number which can be used to carry additional
+<A NAME="rta-rip-tag"></A> int rip_tag</CODE><DD><P>RIP route tag: a 16-bit number which can be used to carry additional
 information with the route (for example, an originating AS number in
 case of external routes). When a non-RIP route is exported to RIP, the
 default tag is 0.
@@ -2383,22 +2593,23 @@ default tag is 0.
 <HR>
 <PRE>
 protocol rip {
-        debug all;
-        port 1520;
-        period 12;
-        garbage time 60;
-        interface "eth0" { metric 3; mode multicast; };
-        interface "eth*" { metric 2; mode broadcast; };
-        authentication cryptographic;
-        password "secret-shared-key" { algorithm hmac sha256; };
-        import filter { print "importing"; accept; };
-        export filter { print "exporting"; accept; };
+        import all;
+        export all;
+        interface "eth*" {
+                metric 2;
+                port 1520;
+                mode multicast;
+                update time 12;
+                timeout time 60;
+                authentication cryptographic;
+                password "secret" { algorithm hmac sha256; };
+        };
 }
 </PRE>
 <HR>
 <P>
 <P>
-<H2><A NAME="static"></A> <A NAME="ss6.11">6.11</A> <A HREF="bird.html#toc6.11">Static</A>
+<H2><A NAME="static"></A> <A NAME="ss6.12">6.12</A> <A HREF="bird.html#toc6.12">Static</A>
 </H2>
 
 <P>The Static protocol doesn't communicate with other routers in the network,

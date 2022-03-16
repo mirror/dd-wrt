@@ -42,9 +42,9 @@ syslog_name:
 
 log_file:
    text {
-     FILE *f = tracked_fopen(new_config->pool, $1, "a");
+     struct rfile *f = rf_open(new_config->pool, $1, "a");
      if (!f) cf_error("Unable to open log file `%s': %m", $1);
-     $$ = f;
+     $$ = rf_file(f);
    }
  | SYSLOG syslog_name { $$ = NULL; new_config->syslog_name = $2; }
  | STDERR { $$ = stderr; }
@@ -78,9 +78,9 @@ CF_ADDTO(conf, mrtdump_base)
 mrtdump_base:
    MRTDUMP PROTOCOLS mrtdump_mask ';' { new_config->proto_default_mrtdump = $3; }
  | MRTDUMP text ';' {
-     FILE *f = tracked_fopen(new_config->pool, $2, "a");
+     struct rfile *f = rf_open(new_config->pool, $2, "a");
      if (!f) cf_error("Unable to open MRTDump file '%s': %m", $2);
-     new_config->mrtdump_file = fileno(f);
+     new_config->mrtdump_file = rf_fileno(f);
    }
  ;
 
