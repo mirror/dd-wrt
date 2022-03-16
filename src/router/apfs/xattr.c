@@ -132,20 +132,19 @@ static int apfs_xattr_extents_read(struct inode *parent,
 	blkcnt = (length + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
 	bhs = kcalloc(blkcnt, sizeof(*bhs), GFP_KERNEL);
 	for (i = 0; i < blkcnt; i++) {
-		struct buffer_head tmp; /* XXX */
 		struct buffer_head *bh = NULL;
+		u64 bno = 0;
 
-		tmp.b_blocknr = -1;
-		ret = __apfs_get_block(dstream, i, &tmp, false /* create */);
+		ret = apfs_logic_to_phys_bno(dstream, i, &bno);
 		if (ret)
 			goto out;
-		if (tmp.b_blocknr == -1) {
+		if (bno == 0) {
 			/* No holes in xattr dstreams, I believe */
 			ret = -EFSCORRUPTED;
 			goto out;
 		}
 
-		bhs[i] = __getblk_gfp(APFS_NXI(sb)->nx_bdev, tmp.b_blocknr, sb->s_blocksize, __GFP_MOVABLE);
+		bhs[i] = __getblk_gfp(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
 		if (!bhs[i]) {
 			ret = -EIO;
 			goto out;
@@ -526,15 +525,14 @@ static struct apfs_dstream_info *apfs_create_xattr_dstream(struct super_block *s
 
 	blkcnt = (size + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
 	for (i = 0; i < blkcnt; i++) {
-		struct buffer_head tmp; /* XXX */
 		struct buffer_head *bh;
 		int off, tocopy;
+		u64 bno;
 
-		set_buffer_trans(&tmp); /* Prevent the fake bh from joining */
-		err = apfs_dstream_get_new_block(dstream, i, &tmp);
+		err = apfs_dstream_get_new_bno(dstream, i, &bno);
 		if (err)
 			goto fail;
-		bh = apfs_sb_bread(sb, tmp.b_blocknr);
+		bh = apfs_sb_bread(sb, bno);
 		if (!bh) {
 			err = -EIO;
 			goto fail;

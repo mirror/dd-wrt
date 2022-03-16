@@ -462,7 +462,7 @@ static inline void apfs_init_sibling_map_key(u64 id, struct apfs_key *key)
 }
 
 extern void apfs_init_drec_key(struct super_block *sb, u64 ino, const char *name,
-			       unsigned int name_len, struct apfs_key *key, bool hashed);
+			       unsigned int name_len, struct apfs_key *key);
 
 /**
  * apfs_init_xattr_key - Initialize an in-memory key for a xattr query
@@ -771,12 +771,13 @@ extern int APFS_DELETE_ORPHAN_LINK_MAXOPS(void);
 /* extents.c */
 extern int apfs_extent_from_query(struct apfs_query *query,
 				  struct apfs_file_extent *extent);
+extern int apfs_logic_to_phys_bno(struct apfs_dstream_info *dstream, sector_t dsblock, u64 *bno);
 extern int __apfs_get_block(struct apfs_dstream_info *dstream, sector_t iblock,
 			    struct buffer_head *bh_result, int create);
 extern int apfs_get_block(struct inode *inode, sector_t iblock,
 			  struct buffer_head *bh_result, int create);
 extern int apfs_flush_extent_cache(struct apfs_dstream_info *dstream);
-extern int apfs_dstream_get_new_block(struct apfs_dstream_info *dstream, u64 dsblock, struct buffer_head *bh_result);
+extern int apfs_dstream_get_new_bno(struct apfs_dstream_info *dstream, u64 dsblock, u64 *bno);
 extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
 			      struct buffer_head *bh_result, int create);
 extern int APFS_GET_NEW_BLOCK_MAXOPS(void);
