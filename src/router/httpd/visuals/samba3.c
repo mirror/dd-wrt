@@ -67,7 +67,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n</tr>\n");
+	websWrite(wp, "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -204,10 +204,10 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
 	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:180px;\">", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th>", "</th>\n");
-	websWrite(wp, "			<th>samba</th>\n");
-	websWrite(wp, "			<th>ftp</th>\n");
+	websWrite(wp, "			<th>Samba</th>\n");
+	websWrite(wp, "			<th>FTP</th>\n");
 
-	websWrite(wp, "			<th style=\"width:50px;\">&nbsp;</th>\n");
+	websWrite(wp, "			<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
