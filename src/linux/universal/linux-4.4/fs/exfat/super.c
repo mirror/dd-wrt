@@ -4,7 +4,7 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 #include <linux/fs_context.h>
 #include <linux/fs_parser.h>
 #else
@@ -76,7 +76,7 @@ static int exfat_sync_fs(struct super_block *sb, int wait)
 	/* If there are some dirty buffers in the bdev inode */
 	mutex_lock(&sbi->s_lock);
 	sync_blockdev(sb->s_bdev);
-	if (exfat_set_vol_flags(sb, VOL_CLEAN))
+	if (exfat_clear_volume_dirty(sb))
 		err = -EIO;
 	mutex_unlock(&sbi->s_lock);
 	return err;
@@ -109,17 +109,20 @@ static int exfat_statfs(struct dentry *dentry, struct kstatfs *buf)
 	return 0;
 }
 
-int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flag)
+static int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flags)
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	struct boot_sector *p_boot = (struct boot_sector *)sbi->boot_bh->b_data;
 	bool sync;
 
+	/* retain persistent-flags */
+	new_flags |= sbi->vol_flags_persistent;
+
 	/* flags are not changed */
-	if (sbi->vol_flag == new_flag)
+	if (sbi->vol_flags == new_flags)
 		return 0;
 
-	sbi->vol_flag = new_flag;
+	sbi->vol_flags = new_flags;
 
 	/* skip updating volume dirty flag,
 	 * if this volume has been mounted with read-only
@@ -131,9 +134,9 @@ int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flag)
 #endif
 		return 0;
 
-	p_boot->vol_flags = cpu_to_le16(new_flag);
+	p_boot->vol_flags = cpu_to_le16(new_flags);
 
-	if (new_flag == VOL_DIRTY && !buffer_dirty(sbi->boot_bh))
+	if ((new_flags & VOLUME_DIRTY) && !buffer_dirty(sbi->boot_bh))
 		sync = true;
 	else
 		sync = false;
@@ -144,6 +147,20 @@ int exfat_set_vol_flags(struct super_block *sb, unsigned short new_flag)
 	if (sync)
 		sync_dirty_buffer(sbi->boot_bh);
 	return 0;
+}
+
+int exfat_set_volume_dirty(struct super_block *sb)
+{
+	struct exfat_sb_info *sbi = EXFAT_SB(sb);
+
+	return exfat_set_vol_flags(sb, sbi->vol_flags | VOLUME_DIRTY);
+}
+
+int exfat_clear_volume_dirty(struct super_block *sb)
+{
+	struct exfat_sb_info *sbi = EXFAT_SB(sb);
+
+	return exfat_set_vol_flags(sb, sbi->vol_flags & ~VOLUME_DIRTY);
 }
 
 static int exfat_show_options(struct seq_file *m, struct dentry *root)
@@ -207,7 +224,9 @@ static void exfat_destroy_inode(struct inode *inode)
 {
 	call_rcu(&inode->i_rcu, exfat_i_callback);
 }
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 static int exfat_remount(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
@@ -227,6 +246,8 @@ static const struct super_operations exfat_sops = {
 	.free_inode	= exfat_free_inode,
 #else
 	.destroy_inode	= exfat_destroy_inode,
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	.remount_fs	= exfat_remount,
 #endif
 	.write_inode	= exfat_write_inode,
@@ -237,7 +258,7 @@ static const struct super_operations exfat_sops = {
 	.show_options	= exfat_show_options,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 enum {
 	Opt_uid,
 	Opt_gid,
@@ -303,7 +324,7 @@ static const struct fs_parameter_spec exfat_param_specs[] = {
 	{}
 };
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 5, 0)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 6, 0)
 static const struct fs_parameter_description exfat_parameters = {
 	.name		= "exfat",
 	.specs		= exfat_param_specs,
@@ -560,7 +581,6 @@ static int exfat_read_root(struct inode *inode)
 	ei->flags = ALLOC_FAT_CHAIN;
 	ei->type = TYPE_DIR;
 	ei->version = 0;
-	ei->rwoffset = 0;
 	ei->hint_bmap.off = EXFAT_EOF_CLUSTER;
 	ei->hint_stat.eidx = 0;
 	ei->hint_stat.clu = sbi->root_dir;
@@ -589,11 +609,11 @@ static int exfat_read_root(struct inode *inode)
 	inode->i_op = &exfat_dir_inode_operations;
 	inode->i_fop = &exfat_dir_operations;
 
-	inode->i_blocks = ((i_size_read(inode) + (sbi->cluster_size - 1))
-			& ~(sbi->cluster_size - 1)) >> inode->i_blkbits;
-	EXFAT_I(inode)->i_pos = ((loff_t)sbi->root_dir << 32) | 0xffffffff;
-	EXFAT_I(inode)->i_size_aligned = i_size_read(inode);
-	EXFAT_I(inode)->i_size_ondisk = i_size_read(inode);
+	inode->i_blocks = ((i_size_read(inode) + (sbi->cluster_size - 1)) &
+		~((loff_t)sbi->cluster_size - 1)) >> inode->i_blkbits;
+	ei->i_pos = ((loff_t)sbi->root_dir << 32) | 0xffffffff;
+	ei->i_size_aligned = i_size_read(inode);
+	ei->i_size_ondisk = i_size_read(inode);
 
 	exfat_save_attr(inode, ATTR_SUBDIR);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -604,7 +624,6 @@ static int exfat_read_root(struct inode *inode)
 		CURRENT_TIME_SEC;
 #endif
 	exfat_truncate_atime(&inode->i_atime);
-	exfat_cache_init_inode(inode);
 	return 0;
 }
 
@@ -612,8 +631,7 @@ static int exfat_calibrate_blocksize(struct super_block *sb, int logical_sect)
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 
-	if (!is_power_of_2(logical_sect) ||
-	    logical_sect < 512 || logical_sect > 4096) {
+	if (!is_power_of_2(logical_sect)) {
 		exfat_err(sb, "bogus logical sector size %u", logical_sect);
 		return -EIO;
 	}
@@ -682,6 +700,25 @@ static int exfat_read_boot_sector(struct super_block *sb)
 		return -EINVAL;
 	}
 
+	/*
+	 * sect_size_bits could be at least 9 and at most 12.
+	 */
+	if (p_boot->sect_size_bits < EXFAT_MIN_SECT_SIZE_BITS ||
+	    p_boot->sect_size_bits > EXFAT_MAX_SECT_SIZE_BITS) {
+		exfat_err(sb, "bogus sector size bits : %u\n",
+				p_boot->sect_size_bits);
+		return -EINVAL;
+	}
+
+	/*
+	 * sect_per_clus_bits could be at least 0 and at most 25 - sect_size_bits.
+	 */
+	if (p_boot->sect_per_clus_bits > EXFAT_MAX_SECT_PER_CLUS_BITS(p_boot)) {
+		exfat_err(sb, "bogus sectors bits per cluster : %u\n",
+				p_boot->sect_per_clus_bits);
+		return -EINVAL;
+	}
+
 	sbi->sect_per_clus = 1 << p_boot->sect_per_clus_bits;
 	sbi->sect_per_clus_bits = p_boot->sect_per_clus_bits;
 	sbi->cluster_size_bits = p_boot->sect_per_clus_bits +
@@ -702,24 +739,28 @@ static int exfat_read_boot_sector(struct super_block *sb)
 	sbi->dentries_per_clu = 1 <<
 		(sbi->cluster_size_bits - DENTRY_SIZE_BITS);
 
-	sbi->vol_flag = le16_to_cpu(p_boot->vol_flags);
+	sbi->vol_flags = le16_to_cpu(p_boot->vol_flags);
+	sbi->vol_flags_persistent = sbi->vol_flags & (VOLUME_DIRTY | MEDIA_FAILURE);
 	sbi->clu_srch_ptr = EXFAT_FIRST_CLUSTER;
 	sbi->used_clusters = EXFAT_CLUSTERS_UNTRACKED;
 
 	/* check consistencies */
-	if (sbi->num_FAT_sectors << p_boot->sect_size_bits <
-	    sbi->num_clusters * 4) {
+	if ((u64)sbi->num_FAT_sectors << p_boot->sect_size_bits <
+	    (u64)sbi->num_clusters * 4) {
 		exfat_err(sb, "bogus fat length");
 		return -EINVAL;
 	}
+
 	if (sbi->data_start_sector <
-	    sbi->FAT1_start_sector + sbi->num_FAT_sectors * p_boot->num_fats) {
+	    (u64)sbi->FAT1_start_sector +
+	    (u64)sbi->num_FAT_sectors * p_boot->num_fats) {
 		exfat_err(sb, "bogus data start sector");
 		return -EINVAL;
 	}
-	if (sbi->vol_flag & VOL_DIRTY)
+
+	if (sbi->vol_flags & VOLUME_DIRTY)
 		exfat_warn(sb, "Volume was not properly unmounted. Some data may be corrupt. Please run fsck.");
-	if (sbi->vol_flag & ERR_MEDIUM)
+	if (sbi->vol_flags & MEDIA_FAILURE)
 		exfat_warn(sb, "Medium has reported failures. Some data may be lost.");
 
 	/* exFAT file size is limited by a disk volume size */
@@ -824,7 +865,7 @@ free_bh:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 static int exfat_fill_super(struct super_block *sb, struct fs_context *fc)
 #else
 static int exfat_fill_super(struct super_block *sb, void *data, int silent)
@@ -832,7 +873,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct inode *root_inode;
 	int err;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 	struct exfat_sb_info *sbi = sb->s_fs_info;
 	struct exfat_mount_options *opts = &sbi->options;
 
@@ -861,6 +902,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 		return -ENOMEM;
 
 	mutex_init(&sbi->s_lock);
+	mutex_init(&sbi->bitmap_lock);
 	sb->s_fs_info = sbi;
 	ratelimit_state_init(&sbi->ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			DEFAULT_RATELIMIT_BURST);
@@ -895,7 +937,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	exfat_hash_init(sb);
 
 	if (!strcmp(sbi->options.iocharset, "utf8"))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 		opts->utf8 = 1;
 #else
 		sbi->options.utf8 = 1;
@@ -942,7 +984,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	if (!sb->s_root) {
 		exfat_err(sb, "failed to get the root dentry");
 		err = -ENOMEM;
-		goto put_inode;
+		goto free_table;
 	}
 
 	return 0;
@@ -964,7 +1006,7 @@ check_nls_io:
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 static int exfat_get_tree(struct fs_context *fc)
 {
 	return get_tree_bdev(fc, exfat_fill_super);
@@ -1005,6 +1047,7 @@ static int exfat_init_fs_context(struct fs_context *fc)
 		return -ENOMEM;
 
 	mutex_init(&sbi->s_lock);
+	mutex_init(&sbi->bitmap_lock);
 	ratelimit_state_init(&sbi->ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			DEFAULT_RATELIMIT_BURST);
 
@@ -1031,13 +1074,9 @@ static struct dentry *exfat_fs_mount(struct file_system_type *fs_type,
 static struct file_system_type exfat_fs_type = {
 	.owner			= THIS_MODULE,
 	.name			= "exfat",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
-	.init_fs_context	= exfat_init_fs_context,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
+	.init_fs_context	= exfat_init_fs_context,
 	.parameters		= exfat_parameters,
-#else
-	.parameters		= &exfat_parameters,
-#endif
 #else
 	.mount			= exfat_fs_mount,
 #endif
@@ -1049,6 +1088,10 @@ static void exfat_inode_init_once(void *foo)
 {
 	struct exfat_inode_info *ei = (struct exfat_inode_info *)foo;
 
+	spin_lock_init(&ei->cache_lru_lock);
+	ei->nr_caches = 0;
+	ei->cache_valid_id = EXFAT_CACHE_VALID + 1;
+	INIT_LIST_HEAD(&ei->cache_lru);
 	INIT_HLIST_NODE(&ei->i_hash_fat);
 	inode_init_once(&ei->vfs_inode);
 }
