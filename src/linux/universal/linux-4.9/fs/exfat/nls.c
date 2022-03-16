@@ -3,15 +3,19 @@
  * Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  */
 
+#include <linux/version.h>
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/buffer_head.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+#include <linux/vmalloc.h>
+#endif
 #include <asm/unaligned.h>
 
 #include "exfat_raw.h"
 #include "exfat_fs.h"
 
-/* Upcase tabel macro */
+/* Upcase table macro */
 #define EXFAT_NUM_UPCASE	(2918)
 #define UTBL_COUNT		(0x10000)
 
@@ -495,7 +499,7 @@ static int exfat_utf8_to_utf16(struct super_block *sb,
 		struct exfat_uni_name *p_uniname, int *p_lossy)
 {
 	int i, unilen, lossy = NLS_NAME_NO_LOSSY;
-	unsigned short upname[MAX_NAME_LENGTH + 1];
+	__le16 upname[MAX_NAME_LENGTH + 1];
 	unsigned short *uniname = p_uniname->name;
 
 	WARN_ON(!len);
@@ -519,7 +523,7 @@ static int exfat_utf8_to_utf16(struct super_block *sb,
 		    exfat_wstrchr(bad_uni_chars, *uniname))
 			lossy |= NLS_NAME_LOSSY;
 
-		upname[i] = exfat_toupper(sb, *uniname);
+		upname[i] = cpu_to_le16(exfat_toupper(sb, *uniname));
 		uniname++;
 	}
 
@@ -597,7 +601,7 @@ static int exfat_nls_to_ucs2(struct super_block *sb,
 		struct exfat_uni_name *p_uniname, int *p_lossy)
 {
 	int i = 0, unilen = 0, lossy = NLS_NAME_NO_LOSSY;
-	unsigned short upname[MAX_NAME_LENGTH + 1];
+	__le16 upname[MAX_NAME_LENGTH + 1];
 	unsigned short *uniname = p_uniname->name;
 	struct nls_table *nls = EXFAT_SB(sb)->nls_io;
 
@@ -611,7 +615,7 @@ static int exfat_nls_to_ucs2(struct super_block *sb,
 		    exfat_wstrchr(bad_uni_chars, *uniname))
 			lossy |= NLS_NAME_LOSSY;
 
-		upname[unilen] = exfat_toupper(sb, *uniname);
+		upname[unilen] = cpu_to_le16(exfat_toupper(sb, *uniname));
 		uniname++;
 		unilen++;
 	}
@@ -659,7 +663,11 @@ static int exfat_load_upcase_table(struct super_block *sb,
 	unsigned char skip = false;
 	unsigned short *upcase_table;
 
-	upcase_table = kcalloc(UTBL_COUNT, sizeof(unsigned short), GFP_KERNEL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	upcase_table = kvcalloc(UTBL_COUNT, sizeof(unsigned short), GFP_KERNEL);
+#else
+	upcase_table = vzalloc(UTBL_COUNT * sizeof(unsigned short));
+#endif
 	if (!upcase_table)
 		return -ENOMEM;
 
@@ -715,7 +723,11 @@ static int exfat_load_default_upcase_table(struct super_block *sb)
 	unsigned short uni = 0, *upcase_table;
 	unsigned int index = 0;
 
-	upcase_table = kcalloc(UTBL_COUNT, sizeof(unsigned short), GFP_KERNEL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	upcase_table = kvcalloc(UTBL_COUNT, sizeof(unsigned short), GFP_KERNEL);
+#else
+	upcase_table = vzalloc(UTBL_COUNT * sizeof(unsigned short));
+#endif
 	if (!upcase_table)
 		return -ENOMEM;
 
@@ -761,7 +773,7 @@ int exfat_create_upcase_table(struct super_block *sb)
 
 	while (clu.dir != EXFAT_EOF_CLUSTER) {
 		for (i = 0; i < sbi->dentries_per_clu; i++) {
-			ep = exfat_get_dentry(sb, &clu, i, &bh, NULL);
+			ep = exfat_get_dentry(sb, &clu, i, &bh);
 			if (!ep)
 				return -EIO;
 
@@ -803,5 +815,9 @@ load_default:
 
 void exfat_free_upcase_table(struct exfat_sb_info *sbi)
 {
-	kfree(sbi->vol_utbl);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	kvfree(sbi->vol_utbl);
+#else
+	vfree(sbi->vol_utbl);
+#endif
 }
