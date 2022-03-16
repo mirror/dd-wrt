@@ -115,6 +115,36 @@ done:
 	return ret;
 }
 
+/**
+ * apfs_logic_to_phys_bno - Find the physical block number for a dstream block
+ * @dstream:	data stream info
+ * @dsblock:	logical number of the wanted block
+ * @bno:	on return, the physical block number (or zero for holes)
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+int apfs_logic_to_phys_bno(struct apfs_dstream_info *dstream, sector_t dsblock, u64 *bno)
+{
+	struct super_block *sb = dstream->ds_sb;
+	struct apfs_file_extent ext;
+	u64 blk_off;
+	int ret;
+
+	ret = apfs_extent_read(dstream, dsblock, &ext);
+	if (ret)
+		return ret;
+
+	if (apfs_ext_is_hole(&ext)) {
+		*bno = 0;
+		return 0;
+	}
+
+	/* Find the block offset of iblock within the extent */
+	blk_off = dsblock - (ext.logical_addr >> sb->s_blocksize_bits);
+	*bno = ext.phys_block_num + blk_off;
+	return 0;
+}
+
 /* This does the same as apfs_get_block(), but without taking any locks */
 int __apfs_get_block(struct apfs_dstream_info *dstream, sector_t dsblock,
 		     struct buffer_head *bh_result, int create)
@@ -1107,9 +1137,8 @@ static inline u64 apfs_size_to_blocks(struct super_block *sb, u64 size)
 static int apfs_zero_dstream_tail(struct apfs_dstream_info *dstream)
 {
 	struct super_block *sb = dstream->ds_sb;
-	struct buffer_head tmp;
 	struct buffer_head *bh;
-	u64 dstream_blks;
+	u64 bno = 0, dstream_blks;
 	int valid_length;
 	int err;
 
@@ -1124,15 +1153,13 @@ static int apfs_zero_dstream_tail(struct apfs_dstream_info *dstream)
 
 	dstream_blks = apfs_size_to_blocks(sb, dstream->ds_size);
 
-	/* XXX: refactor this to get rid of the fake buffer head */
-	tmp.b_blocknr = -1;
-	err = __apfs_get_block(dstream, dstream_blks - 1, &tmp, false /* create */);
+	err = apfs_logic_to_phys_bno(dstream, dstream_blks - 1, &bno);
 	if (err)
 		return err;
-	if (tmp.b_blocknr == -1) /* No stale bytes in holes */
+	if (bno == 0) /* No stale bytes in holes */
 		return 0;
 
-	bh = apfs_sb_bread(sb, tmp.b_blocknr);
+	bh = apfs_sb_bread(sb, bno);
 	if (!bh)
 		return -EIO;
 
@@ -1164,11 +1191,12 @@ static void apfs_zero_bh_tail(struct super_block *sb, struct buffer_head *bh, u6
  * apfs_dstream_get_new_block - Like the get_block_t function, but for dstreams
  * @dstream:	data stream info
  * @dsblock:	logical dstream block to map
- * @bh_result:	buffer head to map
+ * @bh_result:	buffer head to map (NULL if none)
+ * @bno:	if not NULL, the new block number is returned here
  *
  * Returns 0 on success, or a negative error code in case of failure.
  */
-int apfs_dstream_get_new_block(struct apfs_dstream_info *dstream, u64 dsblock, struct buffer_head *bh_result)
+static int apfs_dstream_get_new_block(struct apfs_dstream_info *dstream, u64 dsblock, struct buffer_head *bh_result, u64 *bno)
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
@@ -1186,21 +1214,28 @@ int apfs_dstream_get_new_block(struct apfs_dstream_info *dstream, u64 dsblock, s
 		return err;
 	apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 	le64_add_cpu(&vsb_raw->apfs_fs_alloc_count, 1);
+	if (bno)
+		*bno = phys_bno;
 
-	apfs_map_bh(bh_result, sb, phys_bno);
-	err = apfs_transaction_join(sb, bh_result);
-	if (err)
-		return err;
+	if (bh_result) {
+		apfs_map_bh(bh_result, sb, phys_bno);
+		err = apfs_transaction_join(sb, bh_result);
+		if (err)
+			return err;
 
-	if (!buffer_uptodate(bh_result)) {
-		/*
-		 * Truly new buffers need to be marked as such, to get zeroed;
-		 * this also takes care of holes in sparse files.
-		 */
-		set_buffer_new(bh_result);
-	} else if (dstream->ds_size > logical_addr) {
-		/* The last block may have stale data left from a truncation */
-		apfs_zero_bh_tail(sb, bh_result, dstream->ds_size - logical_addr);
+		if (!buffer_uptodate(bh_result)) {
+			/*
+			 * Truly new buffers need to be marked as such, to get
+			 * zeroed; this also takes care of holes in sparse files
+			 */
+			set_buffer_new(bh_result);
+		} else if (dstream->ds_size > logical_addr) {
+			/*
+			 * The last block may have stale data left from a
+			 * truncation
+			 */
+			apfs_zero_bh_tail(sb, bh_result, dstream->ds_size - logical_addr);
+		}
 	}
 
 	if (apfs_dstream_cache_is_tail(dstream) &&
@@ -1236,13 +1271,26 @@ int APFS_GET_NEW_BLOCK_MAXOPS(void)
 	return APFS_FLUSH_EXTENT_CACHE;
 }
 
+/**
+ * apfs_dstream_get_new_bno - Allocate a new block inside a dstream
+ * @dstream:	data stream info
+ * @dsblock:	logical dstream block to allocate
+ * @bno:	on return, the new block number
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+int apfs_dstream_get_new_bno(struct apfs_dstream_info *dstream, u64 dsblock, u64 *bno)
+{
+	return apfs_dstream_get_new_block(dstream, dsblock, NULL /* bh_result */, bno);
+}
+
 int apfs_get_new_block(struct inode *inode, sector_t iblock,
 		       struct buffer_head *bh_result, int create)
 {
 	struct apfs_inode_info *ai = APFS_I(inode);
 
 	ASSERT(create);
-	return apfs_dstream_get_new_block(&ai->i_dstream, iblock, bh_result);
+	return apfs_dstream_get_new_block(&ai->i_dstream, iblock, bh_result, NULL /* bno */);
 }
 
 /**
