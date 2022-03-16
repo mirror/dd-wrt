@@ -148,9 +148,11 @@ script:
  - sudo ./check generic/248
  - sudo ./check generic/249
  - sudo ./check generic/257
+ - sudo ./check generic/260
  - sudo ./check generic/263
  - sudo ./check generic/285
  - sudo ./check generic/286
+ - sudo ./check generic/288
  - sudo ./check generic/308
  - sudo ./check generic/309
  - sudo ./check generic/310
