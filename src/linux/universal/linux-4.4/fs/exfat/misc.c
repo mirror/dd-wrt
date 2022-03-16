@@ -10,6 +10,7 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/buffer_head.h>
+#include <linux/blk_types.h>
 
 #include "exfat_raw.h"
 #include "exfat_fs.h"
@@ -119,12 +120,25 @@ void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
 #else
+#undef EXFAT_MAX_TIMESTAMP_SECS
+#define EXFAT_MAX_TIMESTAMP_SECS 0xffffffff
 void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
 #endif
 {
 	struct tm tm;
 	u16 t, d;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+	if (ts->tv_sec < EXFAT_MIN_TIMESTAMP_SECS) {
+		ts->tv_sec = EXFAT_MIN_TIMESTAMP_SECS;
+		ts->tv_nsec = 0;
+	}
+	else if (ts->tv_sec > EXFAT_MAX_TIMESTAMP_SECS) {
+		ts->tv_sec = EXFAT_MAX_TIMESTAMP_SECS;
+		ts->tv_nsec = 0;
+	}
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 	time64_to_tm(ts->tv_sec, 0, &tm);
@@ -204,7 +218,7 @@ int exfat_update_bhs(struct buffer_head **bhs, int nr_bhs, int sync)
 		set_buffer_uptodate(bhs[i]);
 		mark_buffer_dirty(bhs[i]);
 		if (sync)
-			write_dirty_buffer(bhs[i], 0);
+			write_dirty_buffer(bhs[i], REQ_SYNC);
 	}
 
 	for (i = 0; i < nr_bhs && sync; i++) {
