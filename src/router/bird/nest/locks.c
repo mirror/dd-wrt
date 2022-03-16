@@ -45,6 +45,7 @@ olock_same(struct object_lock *x, struct object_lock *y)
   return
     x->type == y->type &&
     x->iface == y->iface &&
+    x->vrf == y->vrf &&
     x->port == y->port &&
     x->inst == y->inst &&
     ipa_equal(x->addr, y->addr);

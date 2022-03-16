@@ -12,10 +12,11 @@
 #include "lib/lists.h"
 #include "lib/resource.h"
 #include "lib/timer.h"
-#include "nest/protocol.h"
 
+struct ea_list;
 struct protocol;
 struct proto;
+struct rte_src;
 struct symbol;
 struct filter;
 struct cli;
@@ -218,6 +219,7 @@ typedef struct rte {
 #ifdef CONFIG_BGP
     struct {
       u8 suppressed;			/* Used for deterministic MED comparison */
+      s8 stale;				/* Route is LLGR_STALE, -1 if unknown */
     } bgp;
 #endif
 #ifdef CONFIG_BABEL
@@ -240,6 +242,7 @@ typedef struct rte {
 #define REF_FILTERED	2		/* Route is rejected by import filter */
 #define REF_STALE	4		/* Route is stale in a refresh cycle */
 #define REF_DISCARD	8		/* Route is scheduled for discard */
+#define REF_MODIFY	16		/* Route is scheduled for modify */
 
 /* Route is valid for propagation (may depend on other flags in the future), accepts NULL */
 static inline int rte_is_valid(rte *r) { return r && !(r->flags & REF_FILTERED); }
@@ -260,6 +263,7 @@ static inline int rte_is_filtered(rte *r) { return !!(r->flags & REF_FILTERED); 
 #define RIC_REJECT	-1		/* Rejected by protocol */
 #define RIC_DROP	-2		/* Silently dropped by protocol */
 
+extern list routing_tables;
 struct config;
 
 void rt_init(void);
@@ -273,11 +277,12 @@ static inline net *net_get(rtable *tab, ip_addr addr, unsigned len) { return (ne
 rte *rte_find(net *net, struct rte_src *src);
 rte *rte_get_temp(struct rta *);
 void rte_update2(struct announce_hook *ah, net *net, rte *new, struct rte_src *src);
-static inline void rte_update(struct proto *p, net *net, rte *new) { rte_update2(p->main_ahook, net, new, p->main_source); }
+/* rte_update() moved to protocol.h to avoid dependency conflicts */
 int rt_examine(rtable *t, ip_addr prefix, int pxlen, struct proto *p, struct filter *filter);
 rte *rt_export_merged(struct announce_hook *ah, net *net, rte **rt_free, struct ea_list **tmpa, linpool *pool, int silent);
 void rt_refresh_begin(rtable *t, struct announce_hook *ah);
 void rt_refresh_end(rtable *t, struct announce_hook *ah);
+void rt_modify_stale(rtable *t, struct announce_hook *ah);
 void rte_dump(rte *);
 void rte_free(rte *);
 rte *rte_do_cow(rte *);
@@ -429,7 +434,8 @@ typedef struct eattr {
 #define EAP_OSPF 3			/* OSPF */
 #define EAP_KRT 4			/* Kernel route attributes */
 #define EAP_BABEL 5			/* Babel attributes */
-#define EAP_MAX 6
+#define EAP_RADV 6			/* Router advertisment attributes */
+#define EAP_MAX 7
 
 #define EA_CODE(proto,id) (((proto) << 8) | (id))
 #define EA_PROTO(ea) ((ea) >> 8)

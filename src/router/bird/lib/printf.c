@@ -314,14 +314,14 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 			if(qualifier == 'l') {
 				X = va_arg(args, u64);
 				bsprintf(ipbuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-					((X >> 56) & 0xff),
-					((X >> 48) & 0xff),
-					((X >> 40) & 0xff),
-					((X >> 32) & 0xff),
-					((X >> 24) & 0xff),
-					((X >> 16) & 0xff),
-					((X >> 8) & 0xff),
-					(X & 0xff));
+					 (uint) ((X >> 56) & 0xff),
+					 (uint) ((X >> 48) & 0xff),
+					 (uint) ((X >> 40) & 0xff),
+					 (uint) ((X >> 32) & 0xff),
+					 (uint) ((X >> 24) & 0xff),
+					 (uint) ((X >> 16) & 0xff),
+					 (uint) ((X >> 8) & 0xff),
+					 (uint) (X & 0xff));
 			}
 			else
 			{
@@ -342,6 +342,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 
 		case 'X':
 			flags |= LARGE;
+			/* fallthrough */
 		case 'x':
 			base = 16;
 			break;

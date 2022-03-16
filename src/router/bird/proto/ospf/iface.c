@@ -118,6 +118,7 @@ ospf_sk_open(struct ospf_iface *ifa)
   sk->dport = OSPF_PROTO;
   sk->saddr = ifa->addr->ip;
   sk->iface = ifa->iface;
+  sk->vrf = p->p.vrf;
 
   sk->tos = ifa->cf->tx_tos;
   sk->priority = ifa->cf->tx_priority;
@@ -200,6 +201,7 @@ ospf_open_vlink_sk(struct ospf_proto *p)
   sock *sk = sk_new(p->p.pool);
   sk->type = SK_IP;
   sk->dport = OSPF_PROTO;
+  sk->vrf = p->p.vrf;
 
   /* FIXME: configurable tos/priority ? */
   sk->tos = IP_PREC_INTERNET_CONTROL;
@@ -522,6 +524,10 @@ add_nbma_node(struct ospf_iface *ifa, struct nbma_node *src, int found)
 static int
 ospf_iface_stubby(struct ospf_iface_patt *ip, struct ifa *addr)
 {
+  /* vlink cannot be stub */
+  if (ip->type == OSPF_IT_VLINK)
+    return 0;
+
   /* a host address */
   if (addr->flags & IA_HOST)
     return 1;
@@ -859,6 +865,7 @@ ospf_iface_reconfigure(struct ospf_iface *ifa, struct ospf_iface_patt *new)
 	       ifname, ifa->priority, new->priority);
 
     ifa->priority = new->priority;
+    ospf_iface_sm(ifa, ISM_NEICH);
     ospf_notify_link_lsa(ifa);
   }
 
@@ -1254,7 +1261,8 @@ ospf_iface_change_mtu(struct ospf_proto *p, struct ospf_iface *ifa)
 {
   /* ifa is not vlink */
 
-  OSPF_TRACE(D_EVENTS, "Interface %s changed MTU to %d", ifa->iface->mtu);
+  OSPF_TRACE(D_EVENTS, "Interface %s changed MTU to %d",
+	     ifa->ifname, ifa->iface->mtu);
 
   ifa->tx_length = ifa_tx_length(ifa);
 

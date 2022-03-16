@@ -306,10 +306,10 @@ void
 roa_commit(struct config *new, struct config *old)
 {
   struct roa_table_config *cf;
-  struct roa_table *t;
+  struct roa_table *t, *tx;
 
   if (old)
-    WALK_LIST(t, roa_table_list)
+    WALK_LIST_DELSAFE(t, tx, roa_table_list)
       {
 	struct symbol *sym = cf_find_symbol(new, t->name);
 	if (sym && sym->class == SYM_ROA)

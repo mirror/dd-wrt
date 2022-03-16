@@ -1251,7 +1251,7 @@ void
 rta_show(struct cli *c, rta *a, ea_list *eal)
 {
   static char *src_names[] = { "dummy", "static", "inherit", "device", "static-device", "redirect",
-			       "RIP", "OSPF", "OSPF-IA", "OSPF-E1", "OSPF-E2", "BGP", "pipe" };
+			       "RIP", "OSPF", "OSPF-IA", "OSPF-E1", "OSPF-E2", "BGP", "pipe", "babel" };
   static char *cast_names[] = { "unicast", "broadcast", "multicast", "anycast" };
   int i;
 

@@ -7,7 +7,7 @@
 #define _BIRD_CONFIG_H_
 
 /* BIRD version */
-#define BIRD_VERSION "1.6.3"
+#define BIRD_VERSION "1.6.8"
 
 /* Include parameters determined by configure script */
 #include "sysdep/autoconf.h"
@@ -24,16 +24,18 @@
 #include "sysdep/paths.h"
 
 /* Types */
-typedef signed INTEGER_8 s8;
-typedef unsigned INTEGER_8 u8;
-typedef INTEGER_16 s16;
-typedef unsigned INTEGER_16 u16;
-typedef INTEGER_32 s32;
-typedef unsigned INTEGER_32 u32;
-typedef INTEGER_64 s64;
-typedef unsigned INTEGER_64 u64;
-typedef u8 byte;
-typedef u16 word;
+
+#include <stdint.h>
+typedef int8_t s8;
+typedef uint8_t u8;
+typedef int16_t s16;
+typedef uint16_t u16;
+typedef int32_t s32;
+typedef uint32_t u32;
+typedef int64_t s64;
+typedef uint64_t u64;
+typedef uint8_t byte;
+typedef uint16_t word;
 typedef unsigned int uint;
 
 #endif

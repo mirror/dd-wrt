@@ -38,10 +38,6 @@ bfd_proto_start: proto_start BFD
   this_proto = proto_config_new(&proto_bfd, $1);
   init_list(&BFD_CFG->patt_list);
   init_list(&BFD_CFG->neigh_list);
-
-  if (bfd_cf)
-    cf_error("Only one BFD instance allowed");
-  bfd_cf = BFD_CFG;
 };
 
 bfd_proto_item:

@@ -45,6 +45,12 @@ get_u64(const void *p)
 }
 
 static inline void
+put_u8(void *p, u8 x)
+{
+  memcpy(p, &x, 1);
+}
+
+static inline void
 put_u16(void *p, u16 x)
 {
   x = htons(x);

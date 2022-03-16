@@ -123,6 +123,11 @@ number of networks, number of routes before and after filtering). If
 you use <CODE>count</CODE> instead, only the statistics will be printed.
 <P>
 <DT><CODE>
+<A NAME="cli-mrt-dump"></A> mrt dump table <I>name</I>|"<I>pattern</I>" to "<I>filename</I>" [filter <I>f</I>|where <I>c</I>]</CODE><DD><P>Dump content of a routing table to a specified file in MRT table dump
+format. See 
+<A HREF="bird-6.html#mrt">MRT protocol</A> for details.
+<P>
+<DT><CODE>
 <A NAME="cli-show-roa"></A> show roa [<I>prefix</I> | in <I>prefix</I> | for <I>prefix</I>] [as <I>num</I>] [table <I>t</I>]</CODE><DD><P>Show contents of a ROA table (by default of the first one). You can
 specify a <I>prefix</I> to print ROA entries for a specific network. If you
 use <CODE>for <I>prefix</I></CODE>, you'll get all entries relevant for route

@@ -1,0 +1,445 @@
+variables:
+  DEBIAN_FRONTEND: noninteractive
+  LC_ALL: C
+  GIT_STRATEGY: fetch
+  DOCKER_CMD: docker --config="$HOME/.docker/$CI_JOB_ID/"
+  IMG_BASE: registry.labs.nic.cz/labs/bird
+
+stages:
+  - image
+  - build
+
+.docker: &docker_build
+  stage: image
+  allow_failure: true
+  script:
+  - $DOCKER_CMD login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.labs.nic.cz
+  # Make sure we refresh the base image if it updates (eg. security updates, etc)
+  # If we do just the build, cache is always reused and the freshness of the
+  # base image is never checked. However, pull always asks and updates the
+  # image only if it changed ‒ therefore, the cache is used unless there's a
+  # change.
+  - $DOCKER_CMD pull `sed -ne 's/^FROM //p' "misc/docker/$IMG_NAME/Dockerfile"`
+  - $DOCKER_CMD build -t "bird:$IMG_NAME" "misc/docker/$IMG_NAME"
+  - $DOCKER_CMD tag "bird:$IMG_NAME" "$IMG_BASE:$IMG_NAME"
+  - $DOCKER_CMD push "$IMG_BASE:$IMG_NAME"
+  after_script:
+  - rm -f "$HOME/.docker/$CI_JOB_ID/" # cleanup the credentials
+  tags:
+  # That's Docker in Docker
+  - dind
+
+docker_debian-7-amd64:
+  variables:
+    IMG_NAME: "debian-7-amd64"
+  <<: *docker_build
+
+docker_debian-8-amd64:
+  variables:
+    IMG_NAME: "debian-8-amd64"
+  <<: *docker_build
+
+docker_debian-9-amd64:
+  variables:
+    IMG_NAME: "debian-9-amd64"
+  <<: *docker_build
+
+docker_debian-testing-amd64:
+  variables:
+    IMG_NAME: "debian-testing-amd64"
+  <<: *docker_build
+
+docker_debian-7-i386:
+  variables:
+    IMG_NAME: "debian-7-i386"
+  <<: *docker_build
+
+docker_debian-8-i386:
+  variables:
+    IMG_NAME: "debian-8-i386"
+  <<: *docker_build
+
+docker_debian-9-i386:
+  variables:
+    IMG_NAME: "debian-9-i386"
+  <<: *docker_build
+
+docker_debian-testing-i386:
+  variables:
+    IMG_NAME: "debian-testing-i386"
+  <<: *docker_build
+
+docker_fedora-25-amd64:
+  variables:
+    IMG_NAME: "fedora-25-amd64"
+  <<: *docker_build
+
+docker_fedora-26-amd64:
+  variables:
+    IMG_NAME: "fedora-26-amd64"
+  <<: *docker_build
+
+docker_centos-6-amd64:
+  variables:
+    IMG_NAME: "centos-6-amd64"
+  <<: *docker_build
+
+docker_centos-7-amd64:
+  variables:
+    IMG_NAME: "centos-7-amd64"
+  <<: *docker_build
+
+docker_opensuse-42_3-amd64:
+  variables:
+    IMG_NAME: "opensuse-42.3-amd64"
+  <<: *docker_build
+
+docker_ubuntu-14_04-amd64:
+  variables:
+    IMG_NAME: "ubuntu-14.04-amd64"
+  <<: *docker_build
+
+docker_ubuntu-16_04-amd64:
+  variables:
+    IMG_NAME: "ubuntu-16.04-amd64"
+  <<: *docker_build
+
+.debian-7-i386: &debian-7-i386_env
+  image: registry.labs.nic.cz/labs/bird:debian-7-i386
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-8-i386: &debian-8-i386_env
+  image: registry.labs.nic.cz/labs/bird:debian-8-i386
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-9-i386: &debian-9-i386_env
+  image: registry.labs.nic.cz/labs/bird:debian-9-i386
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-testing-i386: &debian-testing-i386_env
+  image: registry.labs.nic.cz/labs/bird:debian-testing-i386
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-7-amd64: &debian-7-amd64_env
+  image: registry.labs.nic.cz/labs/bird:debian-7-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-8-amd64: &debian-8-amd64_env
+  image: registry.labs.nic.cz/labs/bird:debian-8-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-9-amd64: &debian-9-amd64_env
+  image: registry.labs.nic.cz/labs/bird:debian-9-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.debian-testing-amd64: &debian-testing-amd64_env
+  image: registry.labs.nic.cz/labs/bird:debian-testing-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.fedora-25-amd64: &fedora-25-amd64_env
+  image: registry.labs.nic.cz/labs/bird:fedora-25-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.fedora-26-amd64: &fedora-26-amd64_env
+  image: registry.labs.nic.cz/labs/bird:fedora-26-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.centos-6-amd64: &centos-6-amd64_env
+  image: registry.labs.nic.cz/labs/bird:centos-6-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.centos-7-amd64: &centos-7-amd64_env
+  image: registry.labs.nic.cz/labs/bird:centos-7-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.opensuse-42_3-amd64: &opensuse-42_3-amd64_env
+  image: registry.labs.nic.cz/labs/bird:opensuse-42.3-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.ubuntu-14_04-amd64: &ubuntu-14_04-amd64_env
+  image: registry.labs.nic.cz/labs/bird:ubuntu-14.04-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+.ubuntu-16_04-amd64: &ubuntu-16_04-amd64_env
+  image: registry.labs.nic.cz/labs/bird:ubuntu-16.04-amd64
+  tags:
+  - docker
+  - linux
+  - amd64
+
+# TODO We want to copy these BSDs to our own virtual machines, to make sure someone doesn't update them by accident.
+.freebsd-11-i386: &freebsd-11-i386_env
+  tags:
+  - freebsd
+  - i386
+  #only:
+  #- master
+  #- triggers
+  #- tags
+
+.freebsd-11-amd64: &freebsd-11-amd64_env
+  tags:
+  - freebsd
+  - amd64
+  #only:
+  #- master
+  #- triggers
+  #- tags
+
+.build: &build_job
+  stage: build
+  script:
+  - autoreconf
+  - ./configure --enable-ipv6=$IPV6 CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS"
+  # Detect which make is available
+  - MAKE=make
+  - which gmake 2>/dev/null >/dev/null && MAKE=gmake
+  - $MAKE
+  # Run tests if they are available (eg. don't fail if "check" isn't a valid make target)
+  - $MAKE check || [ "$?" = 2 ]
+
+build-debian-7-amd64:
+  variables:
+    IPV6: "no"
+  <<: *debian-7-amd64_env
+  <<: *build_job
+
+build-debian-8-amd64:
+  variables:
+    IPV6: "no"
+  <<: *debian-8-amd64_env
+  <<: *build_job
+
+build-debian-9-amd64:
+  variables:
+    IPV6: "no"
+  <<: *debian-9-amd64_env
+  <<: *build_job
+
+build-debian-testing-amd64:
+  variables:
+    IPV6: "no"
+  <<: *debian-testing-amd64_env
+  <<: *build_job
+
+build-debian-7-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-7-amd64_env
+  <<: *build_job
+
+build-debian-8-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-8-amd64_env
+  <<: *build_job
+
+build-debian-9-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-9-amd64_env
+  <<: *build_job
+
+build-debian-testing-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-testing-amd64_env
+  <<: *build_job
+
+build-fedora-25-amd64:
+  variables:
+    IPV6: "no"
+  <<: *fedora-25-amd64_env
+  <<: *build_job
+
+build-fedora-25-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *fedora-25-amd64_env
+  <<: *build_job
+
+build-fedora-26-amd64:
+  variables:
+    IPV6: "no"
+  <<: *fedora-26-amd64_env
+  <<: *build_job
+
+build-fedora-26-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *fedora-26-amd64_env
+  <<: *build_job
+
+build-centos-6-amd64:
+  variables:
+    IPV6: "no"
+  <<: *centos-6-amd64_env
+  <<: *build_job
+
+build-centos-6-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *centos-6-amd64_env
+  <<: *build_job
+
+build-centos-7-amd64:
+  variables:
+    IPV6: "no"
+  <<: *centos-7-amd64_env
+  <<: *build_job
+
+build-centos-7-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *centos-7-amd64_env
+  <<: *build_job
+
+build-opensuse-42_3-amd64:
+  variables:
+    IPV6: "no"
+  <<: *opensuse-42_3-amd64_env
+  <<: *build_job
+
+build-opensuse-42_3-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *opensuse-42_3-amd64_env
+  <<: *build_job
+
+build-ubuntu-14_04-amd64:
+  variables:
+    IPV6: "no"
+  <<: *ubuntu-14_04-amd64_env
+  <<: *build_job
+
+build-ubuntu-14_04-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *ubuntu-14_04-amd64_env
+  <<: *build_job
+
+build-ubuntu-16_04-amd64:
+  variables:
+    IPV6: "no"
+  <<: *ubuntu-16_04-amd64_env
+  <<: *build_job
+
+build-ubuntu-16_04-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *ubuntu-16_04-amd64_env
+  <<: *build_job
+
+build-debian-7-i386:
+  variables:
+    IPV6: "no"
+  <<: *debian-7-i386_env
+  <<: *build_job
+
+build-debian-7-i386-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-7-i386_env
+  <<: *build_job
+
+build-debian-8-i386:
+  variables:
+    IPV6: "no"
+  <<: *debian-8-i386_env
+  <<: *build_job
+
+build-debian-8-i386-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-8-i386_env
+  <<: *build_job
+
+build-debian-9-i386:
+  variables:
+    IPV6: "no"
+  <<: *debian-9-i386_env
+  <<: *build_job
+
+build-debian-9-i386-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-9-i386_env
+  <<: *build_job
+
+build-debian-testing-i386:
+  variables:
+    IPV6: "no"
+  <<: *debian-testing-i386_env
+  <<: *build_job
+
+build-debian-testing-i386-v6:
+  variables:
+    IPV6: "yes"
+  <<: *debian-testing-i386_env
+  <<: *build_job
+
+build-freebsd-11-amd64:
+  variables:
+    IPV6: "no"
+  <<: *freebsd-11-amd64_env
+  <<: *build_job
+
+build-freebsd-11-amd64-v6:
+  variables:
+    IPV6: "yes"
+  <<: *freebsd-11-amd64_env
+  <<: *build_job
+
+build-freebsd-11-i386:
+  variables:
+    IPV6: "no"
+  <<: *freebsd-11-i386_env
+  <<: *build_job
+
+build-freebsd-i386-v6:
+  variables:
+    IPV6: "yes"
+  <<: *freebsd-11-i386_env
+  <<: *build_job

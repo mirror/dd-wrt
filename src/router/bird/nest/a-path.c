@@ -535,8 +535,7 @@ as_path_match(struct adata *path, struct f_path_mask *mask)
 	  val2 = val = mask->val;
 	  goto step;
 	case PM_ASN_EXPR:
-	  val2 = val = f_eval_asn((struct f_inst *) mask->val);
-	  goto step;
+	  ASSERT(0);
 	case PM_ASN_RANGE:
 	  val = mask->val;
 	  val2 = mask->val2;

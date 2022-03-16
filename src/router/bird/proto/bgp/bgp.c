@@ -290,7 +290,7 @@ bgp_update_startup_delay(struct bgp_proto *p)
 }
 
 static void
-bgp_graceful_close_conn(struct bgp_conn *conn, unsigned subcode)
+bgp_graceful_close_conn(struct bgp_conn *conn, uint subcode, byte *data, uint len)
 {
   switch (conn->state)
     {
@@ -304,7 +304,7 @@ bgp_graceful_close_conn(struct bgp_conn *conn, unsigned subcode)
     case BS_OPENSENT:
     case BS_OPENCONFIRM:
     case BS_ESTABLISHED:
-      bgp_error(conn, 6, subcode, NULL, 0);
+      bgp_error(conn, 6, subcode, data, len);
       return;
     default:
       bug("bgp_graceful_close_conn: Unknown state %d", conn->state);
@@ -340,11 +340,11 @@ bgp_decision(void *vp)
 }
 
 void
-bgp_stop(struct bgp_proto *p, unsigned subcode)
+bgp_stop(struct bgp_proto *p, uint subcode, byte *data, uint len)
 {
   proto_notify_state(&p->p, PS_STOP);
-  bgp_graceful_close_conn(&p->outgoing_conn, subcode);
-  bgp_graceful_close_conn(&p->incoming_conn, subcode);
+  bgp_graceful_close_conn(&p->outgoing_conn, subcode, data, len);
+  bgp_graceful_close_conn(&p->incoming_conn, subcode, data, len);
   ev_schedule(p->event);
 }
 
@@ -352,7 +352,7 @@ static inline void
 bgp_conn_set_state(struct bgp_conn *conn, unsigned new_state)
 {
   if (conn->bgp->p.mrtdump & MD_STATES)
-    mrt_dump_bgp_state_change(conn, conn->state, new_state);
+    bgp_dump_state_change(conn, conn->state, new_state);
 
   conn->state = new_state;
 }
@@ -394,10 +394,17 @@ bgp_conn_enter_established_state(struct bgp_conn *conn)
   if (p->p.gr_recovery && (p->cf->gr_mode == BGP_GR_ABLE) && peer_gr_ready)
     p->p.gr_wait = 1;
 
-  if (p->gr_active)
+  if (p->gr_active == BGP_GRS_ACTIVE)
     tm_stop(p->gr_timer);
 
-  if (p->gr_active && (!conn->peer_gr_able || !(conn->peer_gr_aflags & BGP_GRF_FORWARDING)))
+  /* Check F-bit for regular graceful restart */
+  if ((p->gr_active == BGP_GRS_ACTIVE) &&
+      (!conn->peer_gr_able || !(conn->peer_gr_aflags & BGP_GRF_FORWARDING)))
+    bgp_graceful_restart_done(p);
+
+  /* Check F-bit for long-lived graceful restart */
+  if (((p->gr_active == BGP_GRS_LLGR_1) || (p->gr_active == BGP_GRS_LLGR_2)) &&
+      (!conn->peer_llgr_able || !(conn->peer_llgr_aflags & BGP_LLGRF_FORWARDING)))
     bgp_graceful_restart_done(p);
 
   /* GR capability implies that neighbor will send End-of-RIB */
@@ -420,7 +427,7 @@ bgp_conn_leave_established_state(struct bgp_proto *p)
   bgp_free_bucket_table(p);
 
   if (p->p.proto_state == PS_UP)
-    bgp_stop(p, 0);
+    bgp_stop(p, 0, NULL, 0);
 }
 
 void
@@ -474,11 +481,25 @@ bgp_handle_graceful_restart(struct bgp_proto *p)
 	    p->gr_active ? " - already pending" : "");
   proto_notify_state(&p->p, PS_START);
 
-  if (p->gr_active)
+  switch (p->gr_active)
+  {
+  case BGP_GRS_ACTIVE:
     rt_refresh_end(p->p.main_ahook->table, p->p.main_ahook);
+    break;
 
-  p->gr_active = 1;
-  bgp_start_timer(p->gr_timer, p->conn->peer_gr_time);
+  case BGP_GRS_LLGR_1:
+    rt_refresh_begin(p->p.main_ahook->table, p->p.main_ahook);
+    return;
+
+  case BGP_GRS_LLGR_2:
+    rt_refresh_begin(p->p.main_ahook->table, p->p.main_ahook);
+    rt_modify_stale(p->p.main_ahook->table, p->p.main_ahook);
+    return;
+  }
+
+  p->stale_time = p->cf->llgr_mode ? p->conn->peer_llgr_time : 0;
+  p->gr_active = !p->stale_time ? BGP_GRS_ACTIVE : BGP_GRS_LLGR_1;
+  tm_start(p->gr_timer, p->conn->peer_gr_time);
   rt_refresh_begin(p->p.main_ahook->table, p->p.main_ahook);
 }
 
@@ -515,10 +536,27 @@ bgp_graceful_restart_timeout(timer *t)
 {
   struct bgp_proto *p = t->data;
 
-  BGP_TRACE(D_EVENTS, "Neighbor graceful restart timeout");
-  bgp_stop(p, 0);
-}
+  switch (p->gr_active)
+  {
+  case BGP_GRS_ACTIVE:
+    BGP_TRACE(D_EVENTS, "Neighbor graceful restart timeout");
+    bgp_stop(p, 0, NULL, 0);
+    return;
 
+  case BGP_GRS_LLGR_1:
+    BGP_TRACE(D_EVENTS, "Neighbor graceful restart timeout");
+    p->gr_active = BGP_GRS_LLGR_2;
+    tm_start(p->gr_timer, p->stale_time);
+    rt_modify_stale(p->p.main_ahook->table, p->p.main_ahook);
+    return;
+
+  case BGP_GRS_LLGR_2:
+    BGP_TRACE(D_EVENTS, "Long-lived graceful restart timeout");
+    p->gr_active = 0;
+    rt_refresh_end(p->p.main_ahook->table, p->p.main_ahook);
+    return;
+  }
+}
 
 /**
  * bgp_refresh_begin - start incoming enhanced route refresh sequence
@@ -576,6 +614,10 @@ bgp_send_open(struct bgp_conn *conn)
   conn->peer_gr_time = 0;
   conn->peer_gr_flags = 0;
   conn->peer_gr_aflags = 0;
+  conn->peer_llgr_aware = 0;
+  conn->peer_llgr_able = 0;
+  conn->peer_llgr_time = 0;
+  conn->peer_llgr_aflags = 0;
   conn->peer_ext_messages_support = 0;
 
   DBG("BGP: Sending open\n");
@@ -662,6 +704,12 @@ bgp_hold_timeout(timer *t)
 
   if (sk_rx_ready(conn->sk) > 0)
     bgp_start_timer(conn->hold_timer, 10);
+  else if ((conn->state == BS_ESTABLISHED) && p->gr_ready && conn->peer_llgr_able)
+  {
+    BGP_TRACE(D_EVENTS, "Hold timer expired");
+    bgp_handle_graceful_restart(p);
+    bgp_conn_enter_idle_state(conn);
+  }
   else
     bgp_error(conn, 4, 0, NULL, 0);
 }
@@ -745,6 +793,7 @@ bgp_connect(struct bgp_proto *p)	/* Enter Connect state and start establishing c
   s->daddr = p->cf->remote_ip;
   s->dport = p->cf->remote_port;
   s->iface = p->neigh ? p->neigh->iface : NULL;
+  s->vrf = p->p.vrf;
   s->ttl = p->cf->ttl_security ? 255 : hops;
   s->rbsize = p->cf->enable_extended_messages ? BGP_RX_BUFFER_EXT_SIZE : BGP_RX_BUFFER_SIZE;
   s->tbsize = p->cf->enable_extended_messages ? BGP_TX_BUFFER_EXT_SIZE : BGP_TX_BUFFER_SIZE;
@@ -790,7 +839,7 @@ bgp_find_proto(sock *sk)
       {
 	struct bgp_proto *p = (struct bgp_proto *) pc->proto;
 	if (ipa_equal(p->cf->remote_ip, sk->daddr) &&
-	    (!ipa_is_link_local(sk->daddr) || (p->cf->iface == sk->iface)))
+	    (!p->cf->iface || (p->cf->iface == sk->iface)))
 	  return p;
       }
 
@@ -972,7 +1021,7 @@ bgp_neigh_notify(neighbor *n)
 	  BGP_TRACE(D_EVENTS, "Neighbor lost");
 	  bgp_store_error(p, NULL, BE_MISC, BEM_NEIGHBOR_LOST);
 	  /* Perhaps also run bgp_update_startup_delay(p)? */
-	  bgp_stop(p, 0);
+	  bgp_stop(p, 0, NULL, 0);
 	}
     }
   else if (p->cf->check_link && !(n->iface->flags & IF_LINK_UP))
@@ -983,7 +1032,7 @@ bgp_neigh_notify(neighbor *n)
 	  bgp_store_error(p, NULL, BE_MISC, BEM_LINK_DOWN);
 	  if (ps == PS_UP)
 	    bgp_update_startup_delay(p);
-	  bgp_stop(p, 0);
+	  bgp_stop(p, 0, NULL, 0);
 	}
     }
   else
@@ -1003,13 +1052,30 @@ bgp_bfd_notify(struct bfd_request *req)
   int ps = p->p.proto_state;
 
   if (req->down && ((ps == PS_START) || (ps == PS_UP)))
+  {
+    BGP_TRACE(D_EVENTS, "BFD session down");
+    bgp_store_error(p, NULL, BE_MISC, BEM_BFD_DOWN);
+
+    if (p->cf->bfd == BGP_BFD_GRACEFUL)
     {
-      BGP_TRACE(D_EVENTS, "BFD session down");
-      bgp_store_error(p, NULL, BE_MISC, BEM_BFD_DOWN);
+      /* Trigger graceful restart */
+      if (p->conn && (p->conn->state == BS_ESTABLISHED) && p->gr_ready)
+	bgp_handle_graceful_restart(p);
+
+      if (p->incoming_conn.state > BS_IDLE)
+	bgp_conn_enter_idle_state(&p->incoming_conn);
+
+      if (p->outgoing_conn.state > BS_IDLE)
+	bgp_conn_enter_idle_state(&p->outgoing_conn);
+    }
+    else
+    {
+      /* Trigger session down */
       if (ps == PS_UP)
 	bgp_update_startup_delay(p);
-      bgp_stop(p, 0);
+      bgp_stop(p, 0, NULL, 0);
     }
+  }
 }
 
 static void
@@ -1018,7 +1084,7 @@ bgp_update_bfd(struct bgp_proto *p, int use_bfd)
   if (use_bfd && !p->bfd_req)
     p->bfd_req = bfd_request_session(p->p.pool, p->cf->remote_ip, p->source_addr,
 				     p->cf->multihop ? NULL : p->neigh->iface,
-				     bgp_bfd_notify, p);
+				     p->p.vrf, bgp_bfd_notify, p);
 
   if (!use_bfd && p->bfd_req)
     {
@@ -1180,6 +1246,7 @@ bgp_start(struct proto *P)
   lock->addr = p->cf->remote_ip;
   lock->port = p->cf->remote_port;
   lock->iface = p->cf->iface;
+  lock->vrf = p->cf->iface ? NULL : p->p.vrf;
   lock->type = OBJLOCK_TCP;
   lock->hook = bgp_start_locked;
   lock->data = p;
@@ -1194,7 +1261,11 @@ static int
 bgp_shutdown(struct proto *P)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
-  unsigned subcode = 0;
+  uint subcode = 0;
+
+  char *message = NULL;
+  byte *data = NULL;
+  uint len = 0;
 
   BGP_TRACE(D_EVENTS, "Shutdown requested");
 
@@ -1212,10 +1283,12 @@ bgp_shutdown(struct proto *P)
     case PDC_CMD_DISABLE:
     case PDC_CMD_SHUTDOWN:
       subcode = 2; // Errcode 6, 2 - administrative shutdown
+      message = P->message;
       break;
 
     case PDC_CMD_RESTART:
       subcode = 4; // Errcode 6, 4 - administrative reset
+      message = P->message;
       break;
 
     case PDC_RX_LIMIT_HIT:
@@ -1240,8 +1313,22 @@ bgp_shutdown(struct proto *P)
   bgp_store_error(p, NULL, BE_MAN_DOWN, 0);
   p->startup_delay = 0;
 
- done:
-  bgp_stop(p, subcode);
+  /* RFC 8203 - shutdown communication */
+  if (message)
+  {
+    uint msg_len = strlen(message);
+    msg_len = MIN(msg_len, 255);
+
+    /* Buffer will be freed automatically by protocol shutdown */
+    data = mb_alloc(p->p.pool, msg_len + 1);
+    len = msg_len + 1;
+
+    data[0] = msg_len;
+    memcpy(data+1, message, msg_len);
+  }
+
+done:
+  bgp_stop(p, subcode, data, len);
   return p->p.proto_state;
 }
 
@@ -1275,6 +1362,7 @@ bgp_init(struct proto_config *C)
   P->rte_better = bgp_rte_better;
   P->rte_mergable = bgp_rte_mergable;
   P->rte_recalculate = c->deterministic_med ? bgp_rte_recalculate : NULL;
+  P->rte_modify = bgp_rte_modify_stale;
 
   p->cf = c;
   p->local_as = c->local_as;
@@ -1310,6 +1398,10 @@ bgp_check_config(struct bgp_config *c)
   if (!c->missing_lladdr)
     c->missing_lladdr = c->rs_client ? MLL_IGNORE : MLL_SELF;
 
+  /* LLGR mode default based on GR mode */
+  if (c->llgr_mode < 0)
+    c->llgr_mode = c->gr_mode ? BGP_LLGR_AWARE : 0;
+
   /* Disable after error incompatible with restart limit action */
   if (c->c.in_limit && (c->c.in_limit->action == PLA_RESTART) && c->disable_after_error)
     c->c.in_limit->action = PLA_DISABLE;
@@ -1324,11 +1416,8 @@ bgp_check_config(struct bgp_config *c)
   if (!c->remote_as)
     cf_error("Remote AS number must be set");
 
-  // if (ipa_is_link_local(c->remote_ip) && !c->iface)
-  //   cf_error("Link-local neighbor address requires specified interface");
-
-  if (!ipa_is_link_local(c->remote_ip) != !c->iface)
-    cf_error("Link-local address and interface scope must be used together");
+  if (ipa_is_link_local(c->remote_ip) && !c->iface)
+    cf_error("Link-local neighbor address requires specified interface");
 
   if (!(c->capabilities && c->enable_as4) && (c->remote_as > 0xFFFF))
     cf_error("Neighbor AS number out of range (AS4 not available)");
@@ -1346,6 +1435,9 @@ bgp_check_config(struct bgp_config *c)
 		      ipa_is_link_local(c->source_addr)))
     cf_error("Multihop BGP cannot be used with link-local addresses");
 
+  if (c->multihop && c->iface)
+    cf_error("Multihop BGP cannot be bound to interface");
+
   if (c->multihop && c->check_link)
     cf_error("Multihop BGP cannot depend on link state");
 
@@ -1360,6 +1452,9 @@ bgp_check_config(struct bgp_config *c)
 
   if (c->secondary && !c->c.table->sorted)
     cf_error("BGP with secondary option requires sorted table");
+
+  if (!c->gr_mode && c->llgr_mode)
+    cf_error("Long-lived graceful restart requires basic graceful restart");
 }
 
 static int
@@ -1431,7 +1526,7 @@ bgp_error(struct bgp_conn *c, unsigned code, unsigned subcode, byte *data, int l
   if (code != 6)
     {
       bgp_update_startup_delay(p);
-      bgp_stop(p, 0);
+      bgp_stop(p, 0, NULL, 0);
     }
 }
 
@@ -1528,6 +1623,11 @@ bgp_show_proto_info(struct proto *P)
   if (p->gr_active)
     cli_msg(-1006, "    Neighbor graceful restart active");
 
+  if (p->gr_active && p->gr_timer->expires)
+    cli_msg(-1006, "    %-15s   %d/-",
+	    (p->gr_active != BGP_GRS_LLGR_2) ? "Restart timer:" : "LL stale timer:",
+	    p->gr_timer->expires - now);
+
   if (P->proto_state == PS_START)
     {
       struct bgp_conn *oc = &p->outgoing_conn;
@@ -1541,9 +1641,6 @@ bgp_show_proto_info(struct proto *P)
 	  (oc->connect_retry_timer->expires))
 	cli_msg(-1006, "    Connect delay:    %d/%d",
 		oc->connect_retry_timer->expires - now, p->cf->connect_delay_time);
-
-      if (p->gr_active && p->gr_timer->expires)
-	cli_msg(-1006, "    Restart timer:    %d/-", p->gr_timer->expires - now);
     }
   else if (P->proto_state == PS_UP)
     {
@@ -1552,6 +1649,7 @@ bgp_show_proto_info(struct proto *P)
 	      c->peer_refresh_support ? " refresh" : "",
 	      c->peer_enhanced_refresh_support ? " enhanced-refresh" : "",
 	      c->peer_gr_able ? " restart-able" : (c->peer_gr_aware ? " restart-aware" : ""),
+	      c->peer_llgr_able ? " llgr-able" : (c->peer_llgr_aware ? " llgr-aware" : ""),
 	      c->peer_as4_support ? " AS4" : "",
 	      (c->peer_add_path & ADD_PATH_RX) ? " add-path-rx" : "",
 	      (c->peer_add_path & ADD_PATH_TX) ? " add-path-tx" : "",

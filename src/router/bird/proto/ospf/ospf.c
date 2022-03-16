@@ -1203,6 +1203,7 @@ ospf_sh_state(struct proto *P, int verbose, int reachable)
 	he->domain = 1; /* Abuse domain field to mark the LSA */
 	hex[jx++] = he;
       }
+      /* fallthrough */
     default:
       accept = 0;
     }

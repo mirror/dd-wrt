@@ -168,7 +168,7 @@ struct ks_msg
 {
   struct rt_msghdr rtm;
   struct sockaddr_storage buf[RTAX_MAX];
-};
+} PACKED;
 
 #define ROUNDUP(a) \
         ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))

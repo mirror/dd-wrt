@@ -39,6 +39,7 @@ bindir=@bindir@
 sbindir=@sbindir@
 sysconfdir=@sysconfdir@
 localstatedir=@localstatedir@
+runstatedir=@runstatedir@
 docdir=@prefix@/doc
 
 ifdef source

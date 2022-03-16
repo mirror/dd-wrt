@@ -259,6 +259,7 @@ cli_command(struct cli *c)
     log(L_TRACE "CLI: %s", c->rx_buf);
   bzero(&f, sizeof(f));
   f.mem = c->parser_pool;
+  f.pool = rp_new(c->pool, "Config");
   cf_read_hook = cli_cmd_read_hook;
   cli_rh_pos = c->rx_buf;
   cli_rh_len = strlen(c->rx_buf);
@@ -268,6 +269,8 @@ cli_command(struct cli *c)
   res = cli_parse(&f);
   if (!res)
     cli_printf(c, 9001, f.err_msg);
+
+  config_free(&f);
 }
 
 static void

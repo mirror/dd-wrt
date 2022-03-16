@@ -146,7 +146,6 @@ CF_KEYWORDS(WAIT, DELAY, LSADB, ECMP, LIMIT, WEIGHT, NSSA, TRANSLATOR, STABILITY
 CF_KEYWORDS(GLOBAL, LSID, ROUTER, SELF, INSTANCE, REAL, NETMASK, TX, PRIORITY, LENGTH)
 CF_KEYWORDS(SECONDARY, MERGE, LSA, SUPPRESSION)
 
-%type <t> opttext
 %type <ld> lsadb_args
 %type <i> nbma_eligible
 
@@ -413,11 +412,6 @@ ospf_iface_opt_list:
 
 ospf_iface:
   ospf_iface_start ospf_iface_patt_list ospf_iface_opt_list { ospf_iface_finish(); }
- ;
-
-opttext:
-    TEXT
- | /* empty */ { $$ = NULL; }
  ;
 
 CF_ADDTO(dynamic_attr, OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); })

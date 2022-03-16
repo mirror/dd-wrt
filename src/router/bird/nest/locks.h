@@ -30,6 +30,7 @@ struct object_lock {
   uint port;		/* ... port number */
   uint inst;		/* ... instance ID */
   struct iface *iface;	/* ... interface */
+  struct iface *vrf;	/* ... or VRF (if iface is unknown) */
   void (*hook)(struct object_lock *);	/* Called when the lock succeeds */
   void *data;		/* User data */
   /* ... internal to lock manager, don't touch ... */

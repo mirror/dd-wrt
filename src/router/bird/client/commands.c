@@ -36,6 +36,8 @@ struct cmd_node {
 
 static struct cmd_node cmd_root;
 
+#define isspace_(X) isspace((unsigned char) (X))
+
 void
 cmd_build_tree(void)
 {
@@ -53,7 +55,7 @@ cmd_build_tree(void)
       while (*c)
 	{
 	  char *d = c;
-	  while (*c && !isspace(*c))
+	  while (*c && !isspace_(*c))
 	    c++;
 	  for(new=old->son; new; new=new->sibling)
 	    if (new->len == c-d && !memcmp(new->token, d, c-d))
@@ -71,7 +73,7 @@ cmd_build_tree(void)
 	      new->prio = (new->len == 3 && (!memcmp(new->token, "roa", 3) || !memcmp(new->token, "rip", 3))) ? 0 : 1; /* Hack */
 	    }
 	  old = new;
-	  while (isspace(*c))
+	  while (isspace_(*c))
 	    c++;
 	}
       if (cmd->is_real_cmd)
@@ -132,7 +134,7 @@ cmd_list_ambiguous(struct cmd_node *root, char *cmd, int len)
   struct cmd_node *m;
 
   for(m=root->son; m; m=m->sibling)
-    if (m->len > len && !memcmp(m->token, cmd, len))	
+    if (m->len > len && !memcmp(m->token, cmd, len))
       cmd_display_help(m->help, m->cmd);
 }
 
@@ -147,13 +149,13 @@ cmd_help(char *cmd, int len)
   n = &cmd_root;
   while (cmd < end)
     {
-      if (isspace(*cmd))
+      if (isspace_(*cmd))
 	{
 	  cmd++;
 	  continue;
 	}
       z = cmd;
-      while (cmd < end && !isspace(*cmd))
+      while (cmd < end && !isspace_(*cmd))
 	cmd++;
       m = cmd_find_abbrev(n, z, cmd-z, &ambig);
       if (ambig)
@@ -222,20 +224,20 @@ cmd_complete(char *cmd, int len, char *buf, int again)
   int ambig, cnt = 0, common;
 
   /* Find the last word we want to complete */
-  for(fin=end; fin > start && !isspace(fin[-1]); fin--)
+  for(fin=end; fin > start && !isspace_(fin[-1]); fin--)
     ;
 
   /* Find the context */
   n = &cmd_root;
   while (cmd < fin && n->son)
     {
-      if (isspace(*cmd))
+      if (isspace_(*cmd))
 	{
 	  cmd++;
 	  continue;
 	}
       z = cmd;
-      while (cmd < fin && !isspace(*cmd))
+      while (cmd < fin && !isspace_(*cmd))
 	cmd++;
       m = cmd_find_abbrev(n, z, cmd-z, &ambig);
       if (ambig)
@@ -290,13 +292,13 @@ cmd_expand(char *cmd)
   n = &cmd_root;
   while (*c)
     {
-      if (isspace(*c))
+      if (isspace_(*c))
 	{
 	  c++;
 	  continue;
 	}
       b = c;
-      while (*c && !isspace(*c))
+      while (*c && !isspace_(*c))
 	c++;
       m = cmd_find_abbrev(n, b, c-b, &ambig);
       if (!m)

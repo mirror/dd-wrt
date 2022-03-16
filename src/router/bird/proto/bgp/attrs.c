@@ -51,10 +51,9 @@
  * implementations that pass invalid AS_CONFED_* segments are
  * widespread.
  *
- * Error handling of AS4_* attributes is done as specified by
- * draft-ietf-idr-rfc4893bis-03. There are several possible
- * inconsistencies between AGGREGATOR and AS4_AGGREGATOR that are not
- * handled by that draft, these are logged and ignored (see
+ * Error handling of AS4_* attributes is done as specified by RFC 6793. There
+ * are several possible inconsistencies between AGGREGATOR and AS4_AGGREGATOR
+ * that are not handled by that RFC, these are logged and ignored (see
  * bgp_reconstruct_4b_attrs()).
  */
 
@@ -307,7 +306,7 @@ static struct attr_desc bgp_attr_table[] = {
     bgp_check_next_hop, bgp_format_next_hop },
   { "med", 4, BAF_OPTIONAL, EAF_TYPE_INT, 1,					/* BA_MULTI_EXIT_DISC */
     NULL, NULL },
-  { "local_pref", 4, BAF_TRANSITIVE, EAF_TYPE_INT, 0,				/* BA_LOCAL_PREF */
+  { "local_pref", 4, BAF_TRANSITIVE, EAF_TYPE_INT, 1,				/* BA_LOCAL_PREF */
     NULL, NULL },
   { "atomic_aggr", 0, BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,			/* BA_ATOMIC_AGGR */
     NULL, NULL },
@@ -470,11 +469,9 @@ bgp_get_attr_len(eattr *a)
   return len;
 }
 
-#define ADVANCE(w, r, l) do { r -= l; w += l; } while (0)
-
 /**
  * bgp_encode_attrs - encode BGP attributes
- * @p: BGP instance
+ * @p: BGP instance (or NULL)
  * @w: buffer
  * @attrs: a list of extended attributes
  * @remains: remaining space in the buffer
@@ -488,6 +485,7 @@ uint
 bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 {
   uint i, code, type, flags;
+  int as4_session = p ? p->as4_session : 1;
   byte *start = w;
   int len, rv;
 
@@ -507,7 +505,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
        * we have to convert our 4B AS_PATH to 2B AS_PATH and send our AS_PATH 
        * as optional AS4_PATH attribute.
        */
-      if ((code == BA_AS_PATH) && (! p->as4_session))
+      if ((code == BA_AS_PATH) && !as4_session)
 	{
 	  len = a->u.ptr->length;
 
@@ -549,7 +547,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 	}
 
       /* The same issue with AGGREGATOR attribute */
-      if ((code == BA_AGGREGATOR) && (! p->as4_session))
+      if ((code == BA_AGGREGATOR) && !as4_session)
 	{
 	  int new_used;
 
@@ -822,8 +820,13 @@ bgp_get_bucket(struct bgp_proto *p, net *n, ea_list *attrs, int originate)
       code = EA_ID(a->id);
       if (ATTR_KNOWN(code))
 	{
-	  if (!bgp_attr_table[code].allow_in_ebgp && !p->is_internal)
-	    continue;
+	  if (!p->is_internal)
+	    {
+	      if (!bgp_attr_table[code].allow_in_ebgp)
+		continue;
+	      if ((code == BA_LOCAL_PREF) && !p->cf->allow_local_pref)
+		continue;
+	    }
 	  /* The flags might have been zero if the attr was added by filters */
 	  a->flags = (a->flags & BAF_PARTIAL) | bgp_attr_table[code].expected_flags;
 	  if (code < 32)
@@ -921,7 +924,7 @@ bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck)
 #define PXH_FN(p,l,i)		ipa_hash32(p) ^ u32_hash((l << 16) ^ i)
 
 #define PXH_REHASH		bgp_pxh_rehash
-#define PXH_PARAMS		/8, *2, 2, 2, 8, 20
+#define PXH_PARAMS		/8, *2, 2, 2, 8, 24
 
 
 HASH_DEFINE_REHASH_FN(PXH, struct bgp_prefix)
@@ -1171,6 +1174,9 @@ bgp_community_filter(struct bgp_proto *p, rte *e)
 	  DBG("\tNO_EXPORT\n");
 	  return 1;
 	}
+
+      if (!p->conn->peer_llgr_aware && int_set_contains(d, BGP_COMM_LLGR_STALE))
+	return 1;
     }
 
   return 0;
@@ -1231,6 +1237,19 @@ rte_resolvable(rte *rt)
   return (rd == RTD_ROUTER) || (rd == RTD_DEVICE) || (rd == RTD_MULTIPATH);
 }
 
+static inline int
+rte_stale(rte *r)
+{
+  if (r->u.bgp.stale < 0)
+  {
+    /* If staleness is unknown, compute and cache it */
+    eattr *a = ea_find(r->attrs->eattrs, EA_CODE(EAP_BGP, BA_COMMUNITY));
+    r->u.bgp.stale = a && int_set_contains(a->u.ptr, BGP_COMM_LLGR_STALE);
+  }
+
+  return r->u.bgp.stale;
+}
+
 int
 bgp_rte_better(rte *new, rte *old)
 {
@@ -1254,6 +1273,14 @@ bgp_rte_better(rte *new, rte *old)
     return 1;
   if (n < o)
     return 0;
+
+  /* LLGR draft - depreference stale routes */
+  n = rte_stale(new);
+  o = rte_stale(old);
+  if (n > o)
+    return 0;
+  if (n < o)
+    return 1;
 
   /* Start with local preferences */
   x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_LOCAL_PREF));
@@ -1374,6 +1401,10 @@ bgp_rte_mergable(rte *pri, rte *sec)
 
   /* RFC 4271 9.1.2.1. Route resolvability test */
   if (!rte_resolvable(sec))
+    return 0;
+
+  /* LLGR draft - depreference stale routes */
+  if (rte_stale(pri) != rte_stale(sec))
     return 0;
 
   /* Start with local preferences */
@@ -1578,6 +1609,27 @@ bgp_rte_recalculate(rtable *table, net *net, rte *new, rte *old, rte *old_best)
     return old_is_group_best;
 }
 
+struct rte *
+bgp_rte_modify_stale(struct rte *r, struct linpool *pool)
+{
+  eattr *a = ea_find(r->attrs->eattrs, EA_CODE(EAP_BGP, BA_COMMUNITY));
+  struct adata *ad = a ? a->u.ptr : NULL;
+
+  if (ad && int_set_contains(ad, BGP_COMM_NO_LLGR))
+    return NULL;
+
+  if (ad && int_set_contains(ad, BGP_COMM_LLGR_STALE))
+    return r;
+
+  r = rte_cow_rta(r, pool);
+  bgp_attach_attr(&(r->attrs->eattrs), pool, BA_COMMUNITY,
+		  (uintptr_t) int_set_add(pool, ad, BGP_COMM_LLGR_STALE));
+  r->u.bgp.stale = 1;
+
+  return r;
+}
+
+
 static struct adata *
 bgp_aggregator_convert_to_new(struct adata *old, struct linpool *pool)
 {
@@ -1586,7 +1638,6 @@ bgp_aggregator_convert_to_new(struct adata *old, struct linpool *pool)
   aggregator_convert_to_new(old, newa->data);
   return newa;
 }
-
 
 /* Take last req_as ASNs from path old2 (in 2B format), convert to 4B format
  * and append path old4 (in 4B format).
@@ -1777,8 +1828,13 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, uint len, struct linpool *po
 	    { errcode = 5; goto err; }
 	  if ((desc->expected_flags ^ flags) & (BAF_OPTIONAL | BAF_TRANSITIVE))
 	    { errcode = 4; goto err; }
-	  if (!desc->allow_in_ebgp && !bgp->is_internal)
-	    continue;
+	  if (!bgp->is_internal)
+	    {
+	      if (!desc->allow_in_ebgp)
+		continue;
+	      if ((code == BA_LOCAL_PREF) && !bgp->cf->allow_local_pref)
+		continue;
+	    }
 	  if (desc->validate)
 	    {
 	      errcode = desc->validate(bgp, z, l);
@@ -1977,6 +2033,9 @@ bgp_get_route_info(rte *e, byte *buf, ea_list *attrs)
 
   if (e->u.bgp.suppressed)
     buf += bsprintf(buf, "-");
+
+  if (rte_stale(e))
+    buf += bsprintf(buf, "s");
 
   if (e->attrs->hostentry)
     {

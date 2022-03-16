@@ -1488,16 +1488,9 @@ babel_add_iface(struct babel_proto *p, struct iface *new, struct babel_iface_con
   ifa->cf = ic;
   ifa->pool = pool;
   ifa->ifname = new->name;
+  ifa->addr = new->llv6->ip;
 
   add_tail(&p->interfaces, NODE ifa);
-
-  struct ifa *addr;
-  WALK_LIST(addr, new->addrs)
-    if (ipa_is_link_local(addr->ip))
-      ifa->addr = addr->ip;
-
-  if (ipa_zero(ifa->addr))
-    log(L_WARN "%s: Cannot find link-local addr on %s", p->p.name, new->name);
 
   init_list(&ifa->neigh_list);
   ifa->hello_seqno = 1;
@@ -1549,6 +1542,10 @@ babel_if_notify(struct proto *P, unsigned flags, struct iface *iface)
 
     /* we only speak multicast */
     if (!(iface->flags & IF_MULTICAST))
+      return;
+
+    /* Ignore ifaces without link-local address */
+    if (!iface->llv6)
       return;
 
     if (ic)

@@ -6,7 +6,7 @@
                 (c) 1998--2008  Martin Mares <mj@ucw.cz>
                 (c) 1998--2000  Pavel Machek <pavel@ucw.cz>
                 (c) 1998--2008  Ondrej Filip <feela@network.cz>
-                (c) 2009--2016  CZ.NIC z.s.p.o.
+                (c) 2009--2019  CZ.NIC z.s.p.o.
 
 ================================================================================
 
@@ -48,20 +48,10 @@ How to install BIRD
 	   ftp://bird.network.cz/pub/bird/redhat/
 	o  From source code of the latest stable release version
 	   ftp://bird.network.cz/pub/bird/
-	o  From source code of the actual development version
-	   git://git.nic.cz/bird.git
+	o  From current development code in Git repository
 	   https://gitlab.labs.nic.cz/labs/bird/
 
-How to install BIRD from source code
-------------------------------------
-
-	$  ./configure
-	$  make
-	$  su
-	#  make install
-	#  vi /usr/local/etc/bird.conf
-
-See the file INSTALL for more information about installation from source code.
+See the file INSTALL for information about installation from source code.
 
 Documentation
 =============
@@ -69,7 +59,7 @@ Documentation
 Online documentation is available at http://bird.network.cz/?get_doc or as HTML
 files in the doc directory, you can install it by `make install-docs' and
 rebuild it by `make docs', but you'll need SGMLtools and LaTeX to be installed
-on your machine. You can also download a neatly formatted PostScript version as
+on your machine. You can also download a neatly formatted PDF version as
 a separate archive (bird-doc-*.tar.gz) from ftp://bird.network.cz/pub/bird/
 
 User support
