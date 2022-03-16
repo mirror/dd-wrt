@@ -5,7 +5,7 @@
 #
 
 set -e
-AC=`if [ -x /usr/bin/autoconf2.50 ] ; then echo autoconf2.50 ; else echo autoconf ; fi`
+AC=autoreconf
 $AC
 ./configure
 make distclean
@@ -22,7 +22,7 @@ mkdir -p $T/$REL $T/$DREL $T/$DREL/doc
 cp -a . $T/$REL
 echo Generating ChangeLog
 git log  >$T/$REL/ChangeLog
-mv $T/$REL/doc/*.ps $T/$DREL/doc
+mv $T/$REL/doc/*.pdf $T/$DREL/doc
 rm -f $T/$REL/bird.conf*
 rm -rf $T/$REL/.git/
 rm -rf `find $T/$REL -name CVS -o -name tmp` $T/$REL/{misc,rfc,doc/slides}

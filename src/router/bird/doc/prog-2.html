@@ -38,6 +38,21 @@ are automatically moved to the next node in the table.
 <P>Basic FIB operations are performed by functions defined by this module,
 enumerating of FIB contents is accomplished by using the <B>FIB_WALK()</B> macro
 or <B>FIB_ITERATE_START()</B> if you want to do it asynchronously.
+<P>For simple iteration just place the body of the loop between <B>FIB_WALK()</B> and
+<B>FIB_WALK_END()</B>. You can't modify the FIB during the iteration (you can modify
+data in the node, but not add or remove nodes).
+<P>If you need more freedom, you can use the FIB_ITERATE_*() group of macros.
+First, you initialize an iterator with <B>FIB_ITERATE_INIT()</B>. Then you can put
+the loop body in between <B>FIB_ITERATE_START()</B> and <B>FIB_ITERATE_END()</B>. In
+addition, the iteration can be suspended by calling <B>FIB_ITERATE_PUT()</B>.
+This'll link the iterator inside the FIB. While suspended, you may modify the
+FIB, exit the current function, etc. To resume the iteration, enter the loop
+again. You can use <B>FIB_ITERATE_UNLINK()</B> to unlink the iterator (while
+iteration is suspended) in cases like premature end of FIB iteration.
+<P>Note that the iterator must not be destroyed when the iteration is suspended,
+the FIB would then contain a pointer to invalid memory. Therefore, after each
+<B>FIB_ITERATE_INIT()</B> or <B>FIB_ITERATE_PUT()</B> there must be either
+<B>FIB_ITERATE_START()</B> or <B>FIB_ITERATE_UNLINK()</B> before the iterator is destroyed.
 <P>
 <P><HR><H3>Function</H3>
 <P><I>void</I>
@@ -1346,6 +1361,27 @@ startup code.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
+<B>proto_set_message</B>
+(<I>struct proto *</I> <B>p</B>, <I>char *</I> <B>msg</B>, <I>int</I> <B>len</B>) --     set administrative message to protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol
+<DT><I>char *</I> <B>msg</B><DD><P>message
+<DT><I>int</I> <B>len</B><DD><P>message length (-1 for NULL-terminated string)
+</DL>
+<H3>Description</H3>
+<P>The function sets administrative message (string) related to protocol state
+change. It is called by the nest code for manual enable/disable/restart
+commands all routes to the protocol, and by protocol-specific code when the
+protocol state change is initiated by the protocol. Using NULL message clears
+the last message. The message string may be either NULL-terminated or with an
+explicit length.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
 <B>proto_request_feeding</B>
 (<I>struct proto *</I> <B>p</B>) --     request feeding routes to the protocol
 <P>
@@ -2066,7 +2102,8 @@ processing of interface change events). Inactive entries exist only
 when the protocol has explicitly requested it via the <I>NEF_STICKY</I>
 flag because it wishes to be notified when the node will again become
 a neighbor. Such entries are enqueued in a special list which is walked
-whenever an interface changes its state to up.
+whenever an interface changes its state to up. Neighbor entry VRF
+association is implied by respective protocol.
 <P>When a neighbor event occurs (a neighbor gets disconnected or a sticky
 inactive neighbor becomes connected), the protocol hook <B>neigh_notify()</B>
 is called to advertise the change.

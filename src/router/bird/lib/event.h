@@ -36,5 +36,14 @@ ev_active(event *e)
   return e->n.next != NULL;
 }
 
+static inline event*
+ev_new_set(pool *p, void (*hook)(void *), void *data)
+{
+  event *e = ev_new(p);
+  e->hook = hook;
+  e->data = data;
+  return e;
+}
+
 
 #endif

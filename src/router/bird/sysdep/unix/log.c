@@ -23,7 +23,7 @@
 
 #include "nest/bird.h"
 #include "nest/cli.h"
-#include "nest/mrtdump.h"
+#include "conf/conf.h"
 #include "lib/string.h"
 #include "lib/lists.h"
 #include "lib/unix.h"
@@ -57,7 +57,7 @@ static FILE *dbgf;
 static list *current_log_list;
 static char *current_syslog_name; /* NULL -> syslog closed */
 
-#ifdef HAVE_SYSLOG
+#ifdef HAVE_SYSLOG_H
 #include <sys/syslog.h>
 
 static int syslog_priorities[] = {
@@ -127,7 +127,7 @@ log_commit(int class, buffer *buf)
 	  fputc('\n', l->fh);
 	  fflush(l->fh);
 	}
-#ifdef HAVE_SYSLOG
+#ifdef HAVE_SYSLOG_H
       else
 	syslog(syslog_priorities[class], "%s", buf->start);
 #endif
@@ -242,14 +242,23 @@ die(const char *msg, ...)
 void
 debug(const char *msg, ...)
 {
+#define MAX_DEBUG_BUFSIZE       65536
   va_list args;
-  char buf[1024];
+  static uint bufsize = 4096;
+  static char *buf = NULL;
+
+  if (!buf)
+    buf = mb_alloc(&root_pool, bufsize);
 
   va_start(args, msg);
   if (dbgf)
     {
-      if (bvsnprintf(buf, sizeof(buf), msg, args) < 0)
-	bsprintf(buf + sizeof(buf) - 100, " ... <too long>\n");
+      while (bvsnprintf(buf, bufsize, msg, args) < 0)
+        if (bufsize >= MAX_DEBUG_BUFSIZE)
+          bug("Extremely long debug output, split it.");
+        else
+          buf = mb_realloc(buf, (bufsize *= 2));
+
       fputs(buf, dbgf);
     }
   va_end(args);
@@ -262,7 +271,7 @@ default_log_list(int debug, int init, char **syslog_name)
   init_list(&init_log_list);
   *syslog_name = NULL;
 
-#ifdef HAVE_SYSLOG
+#ifdef HAVE_SYSLOG_H
   if (!debug)
     {
       static struct log_config lc_syslog = { .mask = ~0 };
@@ -285,12 +294,14 @@ log_switch(int debug, list *l, char *new_syslog_name)
   if (!l || EMPTY_LIST(*l))
     l = default_log_list(debug, !l, &new_syslog_name);
 
+  log_lock();
+
   current_log_list = l;
 
-#ifdef HAVE_SYSLOG
+#ifdef HAVE_SYSLOG_H
   if (current_syslog_name && new_syslog_name &&
       !strcmp(current_syslog_name, new_syslog_name))
-    return;
+    goto done;
 
   if (current_syslog_name)
   {
@@ -305,6 +316,9 @@ log_switch(int debug, list *l, char *new_syslog_name)
     openlog(current_syslog_name, LOG_CONS | LOG_NDELAY, LOG_DAEMON);
   }
 #endif
+
+done:
+  log_unlock();
 }
 
 
@@ -326,18 +340,5 @@ log_init_debug(char *f)
   }
   if (dbgf)
     setvbuf(dbgf, NULL, _IONBF, 0);
-}
-
-void
-mrt_dump_message(struct proto *p, u16 type, u16 subtype, byte *buf, u32 len)
-{
-  /* Prepare header */
-  put_u32(buf+0, now_real);
-  put_u16(buf+4, type);
-  put_u16(buf+6, subtype);
-  put_u32(buf+8, len - MRTDUMP_HDR_LENGTH);
-
-  if (p->cf->global->mrtdump_file != -1)
-    write(p->cf->global->mrtdump_file, buf, len);
 }
 #endif

@@ -1,3 +1,33 @@
+Version 1.6.8 (2019-09-10)
+  o Several important bugfixes
+
+Version 1.6.7 (2019-08-01)
+  o BFD: Support for VRFs
+  o Several bugfixes
+
+Version 1.6.6 (2019-02-27)
+  o Several bugfixes related to route propagation
+
+Version 1.6.5 (2019-01-05)
+  o MRT table dumps (RFC 6396)
+  o BGP Long-lived graceful restart
+  o Filter: Make ifname attribute modifiable
+  o Improved keeping track of IPv6 link-local addresses
+  o Many bugfixes
+
+Version 1.6.4 (2018-03-22)
+  o Basic VRF support
+  o Simplified autoconf scripts
+  o BGP: Shutdown communication (RFC 8203)
+  o BGP: Allow exchanging LOCAL_PREF with eBGP peers
+  o BGP: Allow to specify interface for regular sessions
+  o BGP: New option 'disable after cease'
+  o RAdv: Support for more specific routes (RFC 4191)
+  o RAdv: Proper handling of prefix retraction
+  o Filter: Allow silent filter execution
+  o Filter: Fixed stack overflow in BGP mask expressions
+  o Several bug fixes
+
 Version 1.6.3 (2016-12-21)
   o Large BGP communities
   o BFD authentication (MD5, SHA1)

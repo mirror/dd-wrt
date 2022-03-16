@@ -584,8 +584,11 @@ ospf_neigh_bfd_hook(struct bfd_request *req)
 void
 ospf_neigh_update_bfd(struct ospf_neighbor *n, int use_bfd)
 {
+  struct ospf_proto *p = n->ifa->oa->po;
+
   if (use_bfd && !n->bfd_req)
-    n->bfd_req = bfd_request_session(n->pool, n->ip, n->ifa->addr->ip, n->ifa->iface,
+    n->bfd_req = bfd_request_session(n->pool, n->ip, n->ifa->addr->ip,
+				     n->ifa->iface, p->p.vrf,
 				     ospf_neigh_bfd_hook, n);
 
   if (!use_bfd && n->bfd_req)

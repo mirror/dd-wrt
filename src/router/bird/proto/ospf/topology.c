@@ -404,6 +404,8 @@ ospf_refresh_lsa(struct ospf_proto *p, struct top_hash_entry *en)
 void
 ospf_flush_lsa(struct ospf_proto *p, struct top_hash_entry *en)
 {
+  en->nf = NULL;
+
   if (en->next_lsa_body)
   {
     mb_free(en->next_lsa_body);

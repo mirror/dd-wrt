@@ -116,7 +116,7 @@ if_what_changed(struct iface *i, struct iface *j)
   unsigned c;
 
   if (((i->flags ^ j->flags) & ~(IF_UP | IF_SHUTDOWN | IF_UPDATED | IF_ADMIN_UP | IF_LINK_UP | IF_TMP_DOWN | IF_JUST_CREATED))
-      || i->index != j->index)
+      || (i->index != j->index) || (i->master != j->master))
     return IF_CHANGE_TOO_MUCH;
   c = 0;
   if ((i->flags ^ j->flags) & IF_UP)
@@ -133,16 +133,18 @@ if_copy(struct iface *to, struct iface *from)
 {
   to->flags = from->flags | (to->flags & IF_TMP_DOWN);
   to->mtu = from->mtu;
+  to->master_index = from->master_index;
+  to->master = from->master;
 }
 
 static inline void
 ifa_send_notify(struct proto *p, unsigned c, struct ifa *a)
 {
-  if (p->ifa_notify)
+  if (p->ifa_notify && (!p->vrf_set || p->vrf == a->iface->master))
     {
       if (p->debug & D_IFACES)
-	log(L_TRACE "%s < %s address %I/%d on interface %s %s",
-	    p->name, (a->flags & IA_PRIMARY) ? "primary" : "secondary",
+	log(L_TRACE "%s <%s address %I/%d on interface %s %s",
+	    p->name, (a->flags & IA_PRIMARY) ? " primary" : "",
 	    a->prefix, a->pxlen, a->iface->name,
 	    (c & IF_CHANGE_UP) ? "added" : "removed");
       p->ifa_notify(p, c, a);
@@ -175,7 +177,7 @@ ifa_notify_change(unsigned c, struct ifa *a)
 static inline void
 if_send_notify(struct proto *p, unsigned c, struct iface *i)
 {
-  if (p->if_notify)
+  if (p->if_notify && (!p->vrf_set || p->vrf == i->master))
     {
       if (p->debug & D_IFACES)
 	log(L_TRACE "%s < interface %s %s", p->name, i->name,
@@ -238,7 +240,8 @@ if_recalc_flags(struct iface *i, unsigned flags)
 {
   if ((flags & (IF_SHUTDOWN | IF_TMP_DOWN)) ||
       !(flags & IF_ADMIN_UP) ||
-      !i->addr)
+      !i->addr ||
+      (i->master_index && !i->master))
     flags &= ~IF_UP;
   else
     flags |= IF_UP;
@@ -438,7 +441,7 @@ if_find_by_name(char *name)
   struct iface *i;
 
   WALK_LIST(i, iface_list)
-    if (!strcmp(i->name, name))
+    if (!strcmp(i->name, name) && !(i->flags & IF_SHUTDOWN))
       return i;
   return NULL;
 }
@@ -448,8 +451,9 @@ if_get_by_name(char *name)
 {
   struct iface *i;
 
-  if (i = if_find_by_name(name))
-    return i;
+  WALK_LIST(i, iface_list)
+    if (!strcmp(i->name, name))
+      return i;
 
   /* No active iface, create a dummy */
   i = mb_allocz(if_pool, sizeof(struct iface));
@@ -466,10 +470,24 @@ struct ifa *kif_choose_primary(struct iface *i);
 static int
 ifa_recalc_primary(struct iface *i)
 {
-  struct ifa *a = kif_choose_primary(i);
+  struct ifa *a;
+  int c = 0;
+
+#ifdef IPV6
+  struct ifa *ll = NULL;
+
+  WALK_LIST(a, i->addrs)
+    if (ipa_is_link_local(a->ip) && (!ll || (a == i->llv6)))
+      ll = a;
+
+  c = (ll != i->llv6);
+  i->llv6 = ll;
+#endif
+
+  a = kif_choose_primary(i);
 
   if (a == i->addr)
-    return 0;
+    return c;
 
   if (i->addr)
     i->addr->flags &= ~IA_PRIMARY;
@@ -573,7 +591,7 @@ ifa_delete(struct ifa *a)
 	    b->flags &= ~IF_UP;
 	    ifa_notify_change(IF_CHANGE_DOWN, b);
 	  }
-	if (b->flags & IA_PRIMARY)
+	if ((b->flags & IA_PRIMARY) || (b == ifa_llv6(i)))
 	  {
 	    if_change_flags(i, i->flags | IF_TMP_DOWN);
 	    ifa_recalc_primary(i);
@@ -771,7 +789,13 @@ if_show(void)
       if (i->flags & IF_SHUTDOWN)
 	continue;
 
-      cli_msg(-1001, "%s %s (index=%d)", i->name, (i->flags & IF_UP) ? "up" : "DOWN", i->index);
+      char mbuf[16 + sizeof(i->name)] = {};
+      if (i->master)
+	bsprintf(mbuf, " master=%s", i->master->name);
+      else if (i->master_index)
+	bsprintf(mbuf, " master=#%u", i->master_index);
+
+      cli_msg(-1001, "%s %s (index=%d%s)", i->name, (i->flags & IF_UP) ? "up" : "DOWN", i->index, mbuf);
       if (!(i->flags & IF_MULTIACCESS))
 	type = "PtP";
       else
@@ -803,6 +827,9 @@ if_show_summary(void)
   cli_msg(-2005, "interface state address");
   WALK_LIST(i, iface_list)
     {
+      if (i->flags & IF_SHUTDOWN)
+	continue;
+
       if (i->addr)
 	bsprintf(addr, "%I/%d", i->addr->ip, i->addr->pxlen);
       else

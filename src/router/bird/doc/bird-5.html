@@ -269,6 +269,7 @@ ASN, for example if the path contains an AS set element as the first (or
 the last) part. If the path ends with an AS set, <CODE>last_nonaggregated</CODE>
 may be used to get last ASN before any AS set.
 <P><CODE><I>P</I>.len</CODE> returns the length of path <I>P</I>.
+<P><CODE><I>P</I>.empty</CODE> resets path <I>P</I> to empty path.
 <P><CODE>prepend(<I>P</I>,<I>A</I>)</CODE> prepends ASN <I>A</I> to path <I>P</I> and
 returns the result.
 <P><CODE>delete(<I>P</I>,<I>A</I>)</CODE> deletes all instances of ASN <I>A</I> from
@@ -302,6 +303,7 @@ modified. The type is used for community list (a set of pairs) and for
 cluster list (a set of quads). There exist no literals of this type.
 There are three special operators on clists:
 <P><CODE><I>C</I>.len</CODE> returns the length of clist <I>C</I>.
+<P><CODE><I>C</I>.empty</CODE> resets clist <I>C</I> to empty clist.
 <P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair (or quad) <I>P</I> to clist <I>C</I> and
 returns the result. If item <I>P</I> is already in clist <I>C</I>, it does
 nothing. <I>P</I> may also be a clist, in that case all its members are
@@ -467,7 +469,8 @@ messages). Can be changed, but only to <CODE>RTD_BLACKHOLE</CODE>,
 <DT><CODE>
 <A NAME="rta-ifname"></A> <I>string</I> ifname</CODE><DD><P>Name of the outgoing interface. Sink routes (like blackhole, unreachable
 or prohibit) and multipath routes have no interface associated with
-them, so <CODE>ifname</CODE> returns an empty string for such routes. Read-only.
+them, so <CODE>ifname</CODE> returns an empty string for such routes. Setting it
+would also change route to a direct one (remove gateway).
 <P>
 <DT><CODE>
 <A NAME="rta-ifindex"></A> <I>int</I> ifindex</CODE><DD><P>Index of the outgoing interface. System wide index of the interface. May

@@ -141,6 +141,7 @@ bfd_fill_authentication(struct bfd_proto *p, struct bfd_session *s, struct bfd_c
   case BFD_AUTH_METICULOUS_KEYED_MD5:
   case BFD_AUTH_METICULOUS_KEYED_SHA1:
     meticulous = 1;
+    /* fallthrough */
 
   case BFD_AUTH_KEYED_MD5:
   case BFD_AUTH_KEYED_SHA1:
@@ -230,6 +231,7 @@ bfd_check_authentication(struct bfd_proto *p, struct bfd_session *s, struct bfd_
   case BFD_AUTH_METICULOUS_KEYED_MD5:
   case BFD_AUTH_METICULOUS_KEYED_SHA1:
     meticulous = 1;
+    /* fallthrough */
 
   case BFD_AUTH_KEYED_MD5:
   case BFD_AUTH_KEYED_SHA1:
@@ -410,6 +412,7 @@ bfd_open_rx_sk(struct bfd_proto *p, int multihop)
   sock *sk = sk_new(p->tpool);
   sk->type = SK_UDP;
   sk->sport = !multihop ? BFD_CONTROL_PORT : BFD_MULTI_CTL_PORT;
+  sk->vrf = p->p.vrf;
   sk->data = p;
 
   sk->rbsize = BFD_MAX_LEN;
@@ -445,6 +448,7 @@ bfd_open_tx_sk(struct bfd_proto *p, ip_addr local, struct iface *ifa)
   sk->saddr = local;
   sk->dport = ifa ? BFD_CONTROL_PORT : BFD_MULTI_CTL_PORT;
   sk->iface = ifa;
+  sk->vrf = p->p.vrf;
   sk->data = p;
 
   sk->tbsize = BFD_MAX_LEN;

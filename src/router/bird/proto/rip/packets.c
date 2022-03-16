@@ -739,14 +739,8 @@ rip_open_socket(struct rip_iface *ifa)
   sk->sport = ifa->cf->port;
   sk->dport = ifa->cf->port;
   sk->iface = ifa->iface;
-
-  /*
-   * For RIPv2, we explicitly choose a primary address, mainly to ensure that
-   * RIP and BFD uses the same one. For RIPng, we left it to kernel, which
-   * should choose some link-local address based on the same scope rule.
-   */
-  if (rip_is_v2(p))
-    sk->saddr = ifa->iface->addr->ip;
+  sk->saddr = rip_is_v2(p) ? ifa->iface->addr->ip : ifa_llv6(ifa->iface)->ip;
+  sk->vrf = p->p.vrf;
 
   sk->rx_hook = rip_rx_hook;
   sk->tx_hook = rip_tx_hook;

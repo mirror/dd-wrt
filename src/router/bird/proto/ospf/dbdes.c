@@ -121,7 +121,7 @@ ospf_prepare_dbdes(struct ospf_proto *p, struct ospf_neighbor *n)
   {
     struct ospf_dbdes2_packet *ps = (void *) pkt;
     ps->iface_mtu = htons(iface_mtu);
-    ps->options = ifa->oa->options;
+    ps->options = ifa->oa->options & ~OPT_N;
     ps->imms = 0;	/* Will be set later */
     ps->ddseq = htonl(n->dds);
     length = sizeof(struct ospf_dbdes2_packet);
@@ -129,7 +129,7 @@ ospf_prepare_dbdes(struct ospf_proto *p, struct ospf_neighbor *n)
   else /* OSPFv3 */
   {
     struct ospf_dbdes3_packet *ps = (void *) pkt;
-    ps->options = htonl(ifa->oa->options);
+    ps->options = htonl(ifa->oa->options & ~OPT_N);
     ps->iface_mtu = htons(iface_mtu);
     ps->padding = 0;
     ps->imms = 0;	/* Will be set later */
@@ -347,6 +347,7 @@ ospf_receive_dbdes(struct ospf_packet *pkt, struct ospf_iface *ifa,
     ospf_neigh_sm(n, INM_2WAYREC);
     if (n->state != NEIGHBOR_EXSTART)
       return;
+    /* fallthrough */
 
   case NEIGHBOR_EXSTART:
     if ((ifa->type != OSPF_IT_VLINK) &&

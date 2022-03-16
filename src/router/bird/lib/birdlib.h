@@ -14,9 +14,12 @@
 
 /* Ugly structure offset handling macros */
 
+struct align_probe { char x; long int y; };
+
 #define OFFSETOF(s, i) ((size_t) &((s *)0)->i)
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define BIRD_ALIGN(s, a) (((s)+a-1)&~(a-1))
+#define CPU_STRUCT_ALIGN (sizeof(struct align_probe))
 
 /* Utility macros */
 
@@ -34,6 +37,9 @@
 #define ABS(a)   ((a)>=0 ? (a) : -(a))
 #define DELTA(a,b) (((a)>=(b))?(a)-(b):(b)-(a))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+#define BYTES(n) ((((uint) (n)) + 7) / 8)
+#define CALL(fn, args...) ({ if (fn) fn(args); })
+#define ADVANCE(w, r, l) ({ r -= l; w += l; })
 
 
 /* Bitfield macros */

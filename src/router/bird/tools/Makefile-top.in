@@ -16,5 +16,5 @@ clean:
 distclean: clean
 	$(MAKE) -C doc distclean
 	rm -rf $(objdir) autom4te.cache
-	rm -f config.* configure sysdep/autoconf.h sysdep/paths.h Makefile
+	rm -f config.* configure sysdep/autoconf.h.in sysdep/paths.h Makefile
 

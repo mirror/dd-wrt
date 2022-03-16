@@ -32,6 +32,24 @@
  * Basic FIB operations are performed by functions defined by this module,
  * enumerating of FIB contents is accomplished by using the FIB_WALK() macro
  * or FIB_ITERATE_START() if you want to do it asynchronously.
+ *
+ * For simple iteration just place the body of the loop between FIB_WALK() and
+ * FIB_WALK_END(). You can't modify the FIB during the iteration (you can modify
+ * data in the node, but not add or remove nodes).
+ *
+ * If you need more freedom, you can use the FIB_ITERATE_*() group of macros.
+ * First, you initialize an iterator with FIB_ITERATE_INIT(). Then you can put
+ * the loop body in between FIB_ITERATE_START() and FIB_ITERATE_END(). In
+ * addition, the iteration can be suspended by calling FIB_ITERATE_PUT().
+ * This'll link the iterator inside the FIB. While suspended, you may modify the
+ * FIB, exit the current function, etc. To resume the iteration, enter the loop
+ * again. You can use FIB_ITERATE_UNLINK() to unlink the iterator (while
+ * iteration is suspended) in cases like premature end of FIB iteration.
+ *
+ * Note that the iterator must not be destroyed when the iteration is suspended,
+ * the FIB would then contain a pointer to invalid memory. Therefore, after each
+ * FIB_ITERATE_INIT() or FIB_ITERATE_PUT() there must be either
+ * FIB_ITERATE_START() or FIB_ITERATE_UNLINK() before the iterator is destroyed.
  */
 
 #undef LOCAL_DEBUG
