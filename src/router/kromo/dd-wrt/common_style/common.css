@@ -254,7 +254,7 @@ h2, h3 {
 .setting {
   position: relative;
   margin-bottom: .453em;
-  line-height: 1.993em;
+  line-height: 1.993;
   width: 100%;
 }
 .setting .label {
@@ -295,6 +295,7 @@ table tr th {
   font-weight: normal;
   padding: .09em .543em;
   text-align: left;
+  line-height: normal;
   vertical-align: bottom;
 }
 table tr th[sortdir] {
@@ -403,7 +404,7 @@ div.center {
   width: 100%;
   height: 1.268em;
   text-align: center;
-  line-height: 1.181em;
+  line-height: 1.181;
 }
 td .meter {
   float: none;
@@ -428,7 +429,7 @@ td .meter {
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href="http://www.dd-wrt.com/"] {
-  line-height: 2.2rem;
+  line-height: 2.2;
 }
 /*! Find out where this is called from, if at all; extracted from of fresh.css */
 button {
