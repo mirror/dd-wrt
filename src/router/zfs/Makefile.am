@@ -103,7 +103,7 @@ endif
 endif
 
 PHONY += codecheck
-codecheck: cstyle shellcheck checkbashisms flake8 mancheck testscheck vcscheck
+codecheck: cstyle shellcheck checkbashisms flake8 mancheck testscheck vcscheck zstdcheck
 
 PHONY += checkstyle
 checkstyle: codecheck commitcheck
@@ -125,6 +125,7 @@ cstyle:
 		-o -type f -name '*.[hc]' \
 		! -name 'zfs_config.*' ! -name '*.mod.c' \
 		! -name 'opt_global.h' ! -name '*_if*.h' \
+		! -name 'zstd_compat_wrapper.h' \
 		! -path './module/zstd/lib/*' \
 		! -path './include/sys/lua/*' \
 		! -path './module/lua/l*.[ch]' \
@@ -139,20 +140,10 @@ SHELLCHECKSCRIPTS = autogen.sh
 
 PHONY += checkabi storeabi
 
-checklibabiversion:
-	libabiversion=`abidw -v | $(SED) 's/[^0-9]//g'`; \
-	if test $$libabiversion -lt "200"; then \
-        /bin/echo -e "\n" \
-        "*** Please use libabigail 2.0.0 version or newer;\n" \
-        "*** otherwise results are not consistent!\n" \
-        "(or see https://github.com/openzfs/libabigail-docker )\n"; \
-        exit 1; \
-    fi;
-
-checkabi: checklibabiversion lib
+checkabi: lib
 	$(MAKE) -C lib checkabi
 
-storeabi: checklibabiversion lib
+storeabi: lib
 	$(MAKE) -C lib storeabi
 
 PHONY += mancheck
@@ -174,6 +165,10 @@ vcscheck:
 		git ls-files . --exclude-standard --others | \
 		awk '{c++; print} END {if(c>0) exit 1}' ; \
 	fi
+
+PHONY += zstdcheck
+zstdcheck:
+	@$(MAKE) -C module/zstd checksymbols
 
 PHONY += lint
 lint: cppcheck paxcheck

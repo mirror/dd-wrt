@@ -55,7 +55,7 @@ extern "C" {
 #include <sys/disp.h>
 #include <sys/debug.h>
 #include <sys/random.h>
-#include <sys/strings.h>
+#include <sys/string.h>
 #include <sys/byteorder.h>
 #include <sys/list.h>
 #include <sys/time.h>
@@ -91,7 +91,6 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <strings.h>
 #include <pthread.h>
 #include <setjmp.h>
 #include <assert.h>
@@ -153,8 +152,8 @@ extern void dprintf_setup(int *argc, char **argv);
 
 extern void cmn_err(int, const char *, ...);
 extern void vcmn_err(int, const char *, va_list);
-extern void panic(const char *, ...)  __NORETURN;
-extern void vpanic(const char *, va_list)  __NORETURN;
+extern _Noreturn void panic(const char *, ...);
+extern _Noreturn void vpanic(const char *, va_list);
 
 #define	fm_panic	panic
 
@@ -509,7 +508,6 @@ extern taskq_t	*taskq_of_curthread(void);
 extern int	taskq_cancel_id(taskq_t *, taskqid_t);
 extern void	system_taskq_init(void);
 extern void	system_taskq_fini(void);
-extern boolean_t taskq_empty(taskq_t *);
 
 #define	XVA_MAPSIZE	3
 #define	XVA_MAGIC	0x78766174

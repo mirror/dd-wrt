@@ -259,12 +259,12 @@ zil_read_log_block(zilog_t *zilog, boolean_t decrypt, const blkptr_t *bp,
 			char *lr = (char *)(zilc + 1);
 			uint64_t len = zilc->zc_nused - sizeof (zil_chain_t);
 
-			if (bcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
+			if (memcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
 			    sizeof (cksum)) || BP_IS_HOLE(&zilc->zc_next_blk)) {
 				error = SET_ERROR(ECKSUM);
 			} else {
 				ASSERT3U(len, <=, SPA_OLD_MAXBLOCKSIZE);
-				bcopy(lr, dst, len);
+				memcpy(dst, lr, len);
 				*end = (char *)dst + len;
 				*nbp = zilc->zc_next_blk;
 			}
@@ -273,14 +273,14 @@ zil_read_log_block(zilog_t *zilog, boolean_t decrypt, const blkptr_t *bp,
 			uint64_t size = BP_GET_LSIZE(bp);
 			zil_chain_t *zilc = (zil_chain_t *)(lr + size) - 1;
 
-			if (bcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
+			if (memcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
 			    sizeof (cksum)) || BP_IS_HOLE(&zilc->zc_next_blk) ||
 			    (zilc->zc_nused > (size - sizeof (*zilc)))) {
 				error = SET_ERROR(ECKSUM);
 			} else {
 				ASSERT3U(zilc->zc_nused, <=,
 				    SPA_OLD_MAXBLOCKSIZE);
-				bcopy(lr, dst, zilc->zc_nused);
+				memcpy(dst, lr, zilc->zc_nused);
 				*end = (char *)dst + zilc->zc_nused;
 				*nbp = zilc->zc_next_blk;
 			}
@@ -307,7 +307,7 @@ zil_read_log_data(zilog_t *zilog, const lr_write_t *lr, void *wbuf)
 
 	if (BP_IS_HOLE(bp)) {
 		if (wbuf != NULL)
-			bzero(wbuf, MAX(BP_GET_LSIZE(bp), lr->lr_length));
+			memset(wbuf, 0, MAX(BP_GET_LSIZE(bp), lr->lr_length));
 		return (0);
 	}
 
@@ -330,7 +330,7 @@ zil_read_log_data(zilog_t *zilog, const lr_write_t *lr, void *wbuf)
 
 	if (error == 0) {
 		if (wbuf != NULL)
-			bcopy(abuf->b_data, wbuf, arc_buf_size(abuf));
+			memcpy(wbuf, abuf->b_data, arc_buf_size(abuf));
 		arc_buf_destroy(abuf, &abuf);
 	}
 
@@ -353,11 +353,9 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 	uint64_t max_lr_seq = 0;
 	uint64_t blk_count = 0;
 	uint64_t lr_count = 0;
-	blkptr_t blk, next_blk;
+	blkptr_t blk, next_blk = {{{{0}}}};
 	char *lrbuf, *lrp;
 	int error = 0;
-
-	bzero(&next_blk, sizeof (blkptr_t));
 
 	/*
 	 * Old logs didn't record the maximum zh_claim_lr_seq.
@@ -664,6 +662,38 @@ zilog_is_dirty(zilog_t *zilog)
 }
 
 /*
+ * Its called in zil_commit context (zil_process_commit_list()/zil_create()).
+ * It activates SPA_FEATURE_ZILSAXATTR feature, if its enabled.
+ * Check dsl_dataset_feature_is_active to avoid txg_wait_synced() on every
+ * zil_commit.
+ */
+static void
+zil_commit_activate_saxattr_feature(zilog_t *zilog)
+{
+	dsl_dataset_t *ds = dmu_objset_ds(zilog->zl_os);
+	uint64_t txg = 0;
+	dmu_tx_t *tx = NULL;
+
+	if (spa_feature_is_enabled(zilog->zl_spa,
+	    SPA_FEATURE_ZILSAXATTR) &&
+	    dmu_objset_type(zilog->zl_os) != DMU_OST_ZVOL &&
+	    !dsl_dataset_feature_is_active(ds,
+	    SPA_FEATURE_ZILSAXATTR)) {
+		tx = dmu_tx_create(zilog->zl_os);
+		VERIFY0(dmu_tx_assign(tx, TXG_WAIT));
+		dsl_dataset_dirty(ds, tx);
+		txg = dmu_tx_get_txg(tx);
+
+		mutex_enter(&ds->ds_lock);
+		ds->ds_feature_activation[SPA_FEATURE_ZILSAXATTR] =
+		    (void *)B_TRUE;
+		mutex_exit(&ds->ds_lock);
+		dmu_tx_commit(tx);
+		txg_wait_synced(zilog->zl_dmu_pool, txg);
+	}
+}
+
+/*
  * Create an on-disk intent log.
  */
 static lwb_t *
@@ -677,6 +707,8 @@ zil_create(zilog_t *zilog)
 	int error = 0;
 	boolean_t fastwrite = FALSE;
 	boolean_t slog = FALSE;
+	dsl_dataset_t *ds = dmu_objset_ds(zilog->zl_os);
+
 
 	/*
 	 * Wait for any previous destroy to complete.
@@ -724,11 +756,35 @@ zil_create(zilog_t *zilog)
 	 * (zh is part of the MOS, so we cannot modify it in open context.)
 	 */
 	if (tx != NULL) {
+		/*
+		 * If "zilsaxattr" feature is enabled on zpool, then activate
+		 * it now when we're creating the ZIL chain. We can't wait with
+		 * this until we write the first xattr log record because we
+		 * need to wait for the feature activation to sync out.
+		 */
+		if (spa_feature_is_enabled(zilog->zl_spa,
+		    SPA_FEATURE_ZILSAXATTR) && dmu_objset_type(zilog->zl_os) !=
+		    DMU_OST_ZVOL) {
+			mutex_enter(&ds->ds_lock);
+			ds->ds_feature_activation[SPA_FEATURE_ZILSAXATTR] =
+			    (void *)B_TRUE;
+			mutex_exit(&ds->ds_lock);
+		}
+
 		dmu_tx_commit(tx);
 		txg_wait_synced(zilog->zl_dmu_pool, txg);
+	} else {
+		/*
+		 * This branch covers the case where we enable the feature on a
+		 * zpool that has existing ZIL headers.
+		 */
+		zil_commit_activate_saxattr_feature(zilog);
 	}
+	IMPLY(spa_feature_is_enabled(zilog->zl_spa, SPA_FEATURE_ZILSAXATTR) &&
+	    dmu_objset_type(zilog->zl_os) != DMU_OST_ZVOL,
+	    dsl_dataset_feature_is_active(ds, SPA_FEATURE_ZILSAXATTR));
 
-	ASSERT(error != 0 || bcmp(&blk, &zh->zh_log, sizeof (blk)) == 0);
+	ASSERT(error != 0 || memcmp(&blk, &zh->zh_log, sizeof (blk)) == 0);
 	IMPLY(error == 0, lwb != NULL);
 
 	return (lwb);
@@ -1590,7 +1646,7 @@ zil_lwb_write_issue(zilog_t *zilog, lwb_t *lwb)
 	/*
 	 * clear unused data for security
 	 */
-	bzero(lwb->lwb_buf + lwb->lwb_nused, wsz - lwb->lwb_nused);
+	memset(lwb->lwb_buf + lwb->lwb_nused, 0, wsz - lwb->lwb_nused);
 
 	spa_config_enter(zilog->zl_spa, SCL_STATE, lwb, RW_READER);
 
@@ -1724,7 +1780,7 @@ cont:
 
 	dnow = MIN(dlen, lwb_sp - reclen);
 	lr_buf = lwb->lwb_buf + lwb->lwb_nused;
-	bcopy(lrc, lr_buf, reclen);
+	memcpy(lr_buf, lrc, reclen);
 	lrcb = (lr_t *)lr_buf;		/* Like lrc, but inside lwb. */
 	lrwb = (lr_write_t *)lrcb;	/* Like lrw, but inside lwb. */
 
@@ -1780,7 +1836,7 @@ cont:
 			    lwb->lwb_write_zio);
 			if (dbuf != NULL && error == 0 && dnow == dlen)
 				/* Zero any padding bytes in the last block. */
-				bzero((char *)dbuf + lrwb->lr_length, dpad);
+				memset((char *)dbuf + lrwb->lr_length, 0, dpad);
 
 			if (error == EIO) {
 				txg_wait_synced(zilog->zl_dmu_pool, txg);
@@ -1830,7 +1886,7 @@ zil_itx_create(uint64_t txtype, size_t olrsize)
 	itx->itx_lr.lrc_txtype = txtype;
 	itx->itx_lr.lrc_reclen = lrsize;
 	itx->itx_lr.lrc_seq = 0;	/* defensive */
-	bzero((char *)&itx->itx_lr + olrsize, lrsize - olrsize);
+	memset((char *)&itx->itx_lr + olrsize, 0, lrsize - olrsize);
 	itx->itx_sync = B_TRUE;		/* default is synchronous */
 	itx->itx_callback = NULL;
 	itx->itx_callback_data = NULL;
@@ -2297,6 +2353,11 @@ zil_process_commit_list(zilog_t *zilog)
 	if (lwb == NULL) {
 		lwb = zil_create(zilog);
 	} else {
+		/*
+		 * Activate SPA_FEATURE_ZILSAXATTR for the cases where ZIL will
+		 * have already been created (zl_lwb_list not empty).
+		 */
+		zil_commit_activate_saxattr_feature(zilog);
 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_ISSUED);
 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_WRITE_DONE);
 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_FLUSH_DONE);
@@ -3075,11 +3136,13 @@ zil_sync(zilog_t *zilog, dmu_tx_t *tx)
 
 	if (zilog->zl_destroy_txg == txg) {
 		blkptr_t blk = zh->zh_log;
+		dsl_dataset_t *ds = dmu_objset_ds(zilog->zl_os);
 
 		ASSERT(list_head(&zilog->zl_lwb_list) == NULL);
 
-		bzero(zh, sizeof (zil_header_t));
-		bzero(zilog->zl_replayed_seq, sizeof (zilog->zl_replayed_seq));
+		memset(zh, 0, sizeof (zil_header_t));
+		memset(zilog->zl_replayed_seq, 0,
+		    sizeof (zilog->zl_replayed_seq));
 
 		if (zilog->zl_keep_first) {
 			/*
@@ -3092,6 +3155,16 @@ zil_sync(zilog_t *zilog, dmu_tx_t *tx)
 			 */
 			zil_init_log_chain(zilog, &blk);
 			zh->zh_log = blk;
+		} else {
+			/*
+			 * A destroyed ZIL chain can't contain any TX_SETSAXATTR
+			 * records. So, deactivate the feature for this dataset.
+			 * We activate it again when we start a new ZIL chain.
+			 */
+			if (dsl_dataset_feature_is_active(ds,
+			    SPA_FEATURE_ZILSAXATTR))
+				dsl_dataset_deactivate_feature(ds,
+				    SPA_FEATURE_ZILSAXATTR, tx);
 		}
 	}
 
@@ -3571,7 +3644,7 @@ zil_replay_log_record(zilog_t *zilog, const lr_t *lr, void *zra,
 	/*
 	 * Make a copy of the data so we can revise and extend it.
 	 */
-	bcopy(lr, zr->zr_lr, reclen);
+	memcpy(zr->zr_lr, lr, reclen);
 
 	/*
 	 * If this is a TX_WRITE with a blkptr, suck in the data.

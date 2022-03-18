@@ -10,9 +10,8 @@ library, besides upgrading to a newer ZSTD release.
 Tree structure:
 
 * `zfs_zstd.c` is the actual `zzstd` kernel module.
-* `lib/` contains the unmodified, [_"amalgamated"_](https://github.com/facebook/zstd/blob/dev/contrib/single_file_libs/README.md)
-  version of the `Zstandard` library, generated from our template file
-* `zstd-in.c` is our template file for generating the library
+* `lib/` contains the unmodified version of the `Zstandard` library
+* `zstd-in.c` is our template file for generating the single-file library
 * `include/`: This directory contains supplemental includes for platform
   compatibility, which are not expected to be used by ZFS elsewhere in the
   future. Thus we keep them private to ZSTD.
@@ -22,13 +21,21 @@ Tree structure:
 To update ZSTD the following steps need to be taken:
 
 1. Grab the latest release of [ZSTD](https://github.com/facebook/zstd/releases).
-2. Update `module/zstd/zstd-in.c` if required. (see
-   `zstd/contrib/single_file_libs/zstd-in.c` in the zstd repository)
-3. Generate the "single-file-library" and put it to `module/zstd/lib/`.
-4. Copy the following files to `module/zstd/lib/`:
-   - `zstd/lib/zstd.h`
-   - `zstd/lib/common/zstd_errors.h`
+2. Copy the files output by the following script to `module/zstd/lib/`:
+`grep include [path to zstd]/contrib/single_file_libs/zstd-in.c  | awk '{ print $2 }'`
+3. Remove debug.c, threading.c, and zstdmt_compress.c.
+4. Update Makefiles with resulting file lists.
 
+<<<<<<< HEAD
+~~~
+
+Note: if the zstd library for zfs is updated to a newer version,
+the macro list in include/zstd_compat_wrapper.h usually needs to be updated.
+this can be done with some hand crafting of the output of the following
+script (on the object file generated from the "single-file library" script in zstd's
+contrib/single_file_libs):
+`nm zstd.o | awk '{print "#define "$3 " zfs_" $3}' > macrotable`
+=======
 This can be done using a few shell commands from inside the zfs repo.
 "update_zstd.sh" is included as a scripted example of how to update the ZSTD library.
 It should be run for from the ZFS root directory like this:
@@ -49,6 +56,7 @@ script:
 ```
 nm -fposix zstd.o | awk '{print "#define "$1 " zfs_" $1}' | sort -u > macrotable
 ```
+>>>>>>> eaa255c23 (update zstd to 1.4.8)
 
 The output, contained in a file called 'macrotable', still needs a lot of manual editing:
 - Removal of .part.number and similair endings

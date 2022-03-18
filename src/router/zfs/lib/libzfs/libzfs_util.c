@@ -600,8 +600,8 @@ zfs_setprop_error(libzfs_handle_t *hdl, zfs_prop_t prop, int err,
 			(void) zfs_error(hdl, EZFS_VOLTOOBIG, errbuf);
 			break;
 		}
+		zfs_fallthrough;
 #endif
-		fallthrough;
 	default:
 		(void) zfs_standard_error(hdl, err, errbuf);
 	}
@@ -807,7 +807,7 @@ zfs_realloc(libzfs_handle_t *hdl, void *ptr, size_t oldsize, size_t newsize)
 		return (NULL);
 	}
 
-	bzero((char *)ret + oldsize, (newsize - oldsize));
+	memset((char *)ret + oldsize, 0, newsize - oldsize);
 	return (ret);
 }
 
@@ -1199,10 +1199,8 @@ zcmd_write_nvlist_com(libzfs_handle_t *hdl, uint64_t *outnv, uint64_t *outlen,
     nvlist_t *nvl)
 {
 	char *packed;
-	size_t len;
 
-	verify(nvlist_size(nvl, &len, NV_ENCODE_NATIVE) == 0);
-
+	size_t len = fnvlist_size(nvl);
 	if ((packed = zfs_alloc(hdl, len)) == NULL)
 		return (-1);
 
@@ -1751,14 +1749,10 @@ error:
 }
 
 static int
-addlist(libzfs_handle_t *hdl, char *propname, zprop_list_t **listp,
+addlist(libzfs_handle_t *hdl, const char *propname, zprop_list_t **listp,
     zfs_type_t type)
 {
-	int prop;
-	zprop_list_t *entry;
-
-	prop = zprop_name_to_prop(propname, type);
-
+	int prop = zprop_name_to_prop(propname, type);
 	if (prop != ZPROP_INVAL && !zprop_valid_for_type(prop, type, B_FALSE))
 		prop = ZPROP_INVAL;
 
@@ -1778,16 +1772,11 @@ addlist(libzfs_handle_t *hdl, char *propname, zprop_list_t **listp,
 		    dgettext(TEXT_DOMAIN, "bad property list")));
 	}
 
-	if ((entry = zfs_alloc(hdl, sizeof (zprop_list_t))) == NULL)
-		return (-1);
+	zprop_list_t *entry = zfs_alloc(hdl, sizeof (*entry));
 
 	entry->pl_prop = prop;
 	if (prop == ZPROP_INVAL) {
-		if ((entry->pl_user_prop = zfs_strdup(hdl, propname)) ==
-		    NULL) {
-			free(entry);
-			return (-1);
-		}
+		entry->pl_user_prop = zfs_strdup(hdl, propname);
 		entry->pl_width = strlen(propname);
 	} else {
 		entry->pl_width = zprop_width(prop, &entry->pl_fixed,
@@ -1827,61 +1816,24 @@ zprop_get_list(libzfs_handle_t *hdl, char *props, zprop_list_t **listp,
 		    "bad property list")));
 	}
 
-	/*
-	 * It would be nice to use getsubopt() here, but the inclusion of column
-	 * aliases makes this more effort than it's worth.
-	 */
-	while (*props != '\0') {
-		size_t len;
-		char *p;
-		char c;
-
-		if ((p = strchr(props, ',')) == NULL) {
-			len = strlen(props);
-			p = props + len;
-		} else {
-			len = p - props;
-		}
-
-		/*
-		 * Check for empty options.
-		 */
-		if (len == 0) {
-			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
-			    "empty property name"));
-			return (zfs_error(hdl, EZFS_BADPROP,
-			    dgettext(TEXT_DOMAIN, "bad property list")));
-		}
-
-		/*
-		 * Check all regular property names.
-		 */
-		c = props[len];
-		props[len] = '\0';
-
-		if (strcmp(props, "space") == 0) {
-			static char *spaceprops[] = {
+	for (char *p; (p = strsep(&props, ",")); )
+		if (strcmp(p, "space") == 0) {
+			static const char *const spaceprops[] = {
 				"name", "avail", "used", "usedbysnapshots",
 				"usedbydataset", "usedbyrefreservation",
-				"usedbychildren", NULL
+				"usedbychildren"
 			};
-			int i;
 
-			for (i = 0; spaceprops[i]; i++) {
+			for (int i = 0; i < ARRAY_SIZE(spaceprops); i++) {
 				if (addlist(hdl, spaceprops[i], listp, type))
 					return (-1);
 				listp = &(*listp)->pl_next;
 			}
 		} else {
-			if (addlist(hdl, props, listp, type))
+			if (addlist(hdl, p, listp, type))
 				return (-1);
 			listp = &(*listp)->pl_next;
 		}
-
-		props = p;
-		if (c == ',')
-			props++;
-	}
 
 	return (0);
 }
@@ -1951,9 +1903,7 @@ zprop_expand_list(libzfs_handle_t *hdl, zprop_list_t **plp, zfs_type_t type)
 		 * Add 'name' to the beginning of the list, which is handled
 		 * specially.
 		 */
-		if ((entry = zfs_alloc(hdl, sizeof (zprop_list_t))) == NULL)
-			return (-1);
-
+		entry = zfs_alloc(hdl, sizeof (zprop_list_t));
 		entry->pl_prop = ((type == ZFS_TYPE_POOL) ?  ZPOOL_PROP_NAME :
 		    ((type == ZFS_TYPE_VDEV) ? VDEV_PROP_NAME : ZFS_PROP_NAME));
 		entry->pl_width = zprop_width(entry->pl_prop,

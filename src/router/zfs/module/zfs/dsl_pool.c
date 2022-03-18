@@ -950,6 +950,12 @@ dsl_pool_unreserved_space(dsl_pool_t *dp, zfs_space_check_t slop_policy)
 	return (quota);
 }
 
+uint64_t
+dsl_pool_deferred_space(dsl_pool_t *dp)
+{
+	return (metaslab_class_get_deferred(spa_normal_class(dp->dp_spa)));
+}
+
 boolean_t
 dsl_pool_need_dirty_delay(dsl_pool_t *dp)
 {
@@ -1010,7 +1016,6 @@ dsl_pool_undirty_space(dsl_pool_t *dp, int64_t space, uint64_t txg)
 	mutex_exit(&dp->dp_lock);
 }
 
-/* ARGSUSED */
 static int
 upgrade_clones_cb(dsl_pool_t *dp, dsl_dataset_t *hds, void *arg)
 {
@@ -1101,7 +1106,6 @@ dsl_pool_upgrade_clones(dsl_pool_t *dp, dmu_tx_t *tx)
 	    tx, DS_FIND_CHILDREN | DS_FIND_SERIALIZE));
 }
 
-/* ARGSUSED */
 static int
 upgrade_dir_clones_cb(dsl_pool_t *dp, dsl_dataset_t *ds, void *arg)
 {
