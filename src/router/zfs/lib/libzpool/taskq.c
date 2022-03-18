@@ -211,7 +211,7 @@ taskq_wait_outstanding(taskq_t *tq, taskqid_t id)
 	taskq_wait(tq);
 }
 
-static void
+static _Noreturn void
 taskq_thread(void *arg)
 {
 	taskq_t *tq = arg;
@@ -361,12 +361,6 @@ taskq_cancel_id(taskq_t *tq, taskqid_t id)
 {
 	(void) tq, (void) id;
 	return (ENOENT);
-}
-
-boolean_t
-taskq_empty(taskq_t *tq)
-{
-	return (tq->tq_task.tqent_next == &tq->tq_task || tq->tq_active == 0);
 }
 
 void
