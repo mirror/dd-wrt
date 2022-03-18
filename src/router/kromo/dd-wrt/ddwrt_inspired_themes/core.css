@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.0
+ * style-name: DD-WRT Inspired Themes v6.0.1
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -184,6 +184,11 @@ body input[name*='reboot']:focus-within {
   background: none repeat scroll 0 0 var(--v1-6) !important;
   border-color: var(--v1-7) !important;
   box-shadow: 0 0 10px 0 var(--v1-6) !important;
+}
+body input[name*='reboot']:disabled,
+body input[name*='reboot']:disabled:hover {
+  background: none repeat scroll 0 0 var(--v1-4) !important;
+  border-color: var(--v1-5) !important;
 }
 body div.progressbar {
   background-color: var(--bg-4);
