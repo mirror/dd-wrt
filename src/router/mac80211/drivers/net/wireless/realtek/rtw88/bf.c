@@ -130,7 +130,8 @@ void rtw_bf_cfg_sounding(struct rtw_dev *rtwdev, struct rtw_vif *vif,
 		  BIT_WMAC_USE_NDPARATE |
 		  (csi_rsc << 13);
 
-	rtw_write8(rtwdev, REG_SND_PTCL_CTRL, RTW_SND_CTRL_SOUNDING);
+	rtw_write8_mask(rtwdev, REG_SND_PTCL_CTRL, BIT_MASK_BEAMFORM,
+			RTW_SND_CTRL_SOUNDING);
 	rtw_write8(rtwdev, REG_SND_PTCL_CTRL + 3, 0x26);
 	rtw_write8_clr(rtwdev, REG_RXFLTMAP1, BIT_RXFLTMAP1_BF_REPORT_POLL);
 	rtw_write8_clr(rtwdev, REG_RXFLTMAP4, BIT_RXFLTMAP4_BF_REPORT_POLL);
@@ -177,13 +178,13 @@ void rtw_bf_del_bfer_entry_mu(struct rtw_dev *rtwdev)
 
 void rtw_bf_del_sounding(struct rtw_dev *rtwdev)
 {
-	rtw_write8(rtwdev, REG_SND_PTCL_CTRL, 0);
+	rtw_write8_mask(rtwdev, REG_SND_PTCL_CTRL, BIT_MASK_BEAMFORM, 0);
 }
 
 void rtw_bf_enable_bfee_su(struct rtw_dev *rtwdev, struct rtw_vif *vif,
 			   struct rtw_bfee *bfee)
 {
-	u8 nc_index = 1;
+	u8 nc_index = hweight8(rtwdev->hal.antenna_rx) - 1;
 	u8 nr_index = bfee->sound_dim;
 	u8 grouping = 0, codebookinfo = 1, coefficientsize = 3;
 	u32 addr_bfer_info, addr_csi_rpt, csi_param;
@@ -204,7 +205,8 @@ void rtw_bf_enable_bfee_su(struct rtw_dev *rtwdev, struct rtw_vif *vif,
 	}
 
 	/* Sounding protocol control */
-	rtw_write8(rtwdev, REG_SND_PTCL_CTRL, RTW_SND_CTRL_SOUNDING);
+	rtw_write8_mask(rtwdev, REG_SND_PTCL_CTRL, BIT_MASK_BEAMFORM,
+			RTW_SND_CTRL_SOUNDING);
 
 	/* MAC address/Partial AID of Beamformer */
 	for (i = 0; i < ETH_ALEN; i++)
@@ -231,7 +233,8 @@ void rtw_bf_enable_bfee_mu(struct rtw_dev *rtwdev, struct rtw_vif *vif,
 {
 	struct rtw_bf_info *bf_info = &rtwdev->bf_info;
 	struct mu_bfer_init_para param;
-	u8 nc_index = 1, nr_index = 1;
+	u8 nc_index = hweight8(rtwdev->hal.antenna_rx) - 1;
+	u8 nr_index = 1;
 	u8 grouping = 0, codebookinfo = 1, coefficientsize = 0;
 	u32 csi_param;
 
@@ -272,7 +275,8 @@ void rtw_bf_remove_bfee_su(struct rtw_dev *rtwdev,
 	struct rtw_bf_info *bfinfo = &rtwdev->bf_info;
 
 	rtw_dbg(rtwdev, RTW_DBG_BF, "remove as a su bfee\n");
-	rtw_write8(rtwdev, REG_SND_PTCL_CTRL, RTW_SND_CTRL_REMOVE);
+	rtw_write8_mask(rtwdev, REG_SND_PTCL_CTRL, BIT_MASK_BEAMFORM,
+			RTW_SND_CTRL_REMOVE);
 
 	switch (bfee->su_reg_index) {
 	case 0:
@@ -297,7 +301,8 @@ void rtw_bf_remove_bfee_mu(struct rtw_dev *rtwdev,
 {
 	struct rtw_bf_info *bfinfo = &rtwdev->bf_info;
 
-	rtw_write8(rtwdev, REG_SND_PTCL_CTRL, RTW_SND_CTRL_REMOVE);
+	rtw_write8_mask(rtwdev, REG_SND_PTCL_CTRL, BIT_MASK_BEAMFORM,
+			RTW_SND_CTRL_REMOVE);
 
 	rtw_bf_del_bfer_entry_mu(rtwdev);
 

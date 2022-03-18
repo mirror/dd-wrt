@@ -18,6 +18,7 @@ rtw88_core-y += main.o \
 	   wow.o \
 	   regd.o
 
+rtw88_core-$(CONFIG_PM) += wow.o
 
 obj-$(CPTCFG_RTW88_8822B)	+= rtw88_8822b.o
 rtw88_8822b-objs		:= rtw8822b.o rtw8822b_table.o
@@ -36,6 +37,12 @@ rtw88_8723d-objs		:= rtw8723d.o rtw8723d_table.o
 
 obj-$(CPTCFG_RTW88_8723DE)	+= rtw88_8723de.o
 rtw88_8723de-objs		:= rtw8723de.o
+
+obj-$(CPTCFG_RTW88_8821C)	+= rtw88_8821c.o
+rtw88_8821c-objs		:= rtw8821c.o rtw8821c_table.o
+
+obj-$(CPTCFG_RTW88_8821CE)	+= rtw88_8821ce.o
+rtw88_8821ce-objs		:= rtw8821ce.o
 
 obj-$(CPTCFG_RTW88_PCI)		+= rtw88_pci.o
 rtw88_pci-objs			:= pci.o

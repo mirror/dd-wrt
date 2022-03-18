@@ -144,13 +144,9 @@ enum dbgp_flag_e {
 	DBGP_TYPE_MAX
 };
 
-#ifdef CPTCFG_RTLWIFI_DEBUG
+#ifdef CONFIG_RTLWIFI_DEBUG
 
 struct rtl_priv;
-
-__printf(4, 5)
-void _rtl_dbg_trace(struct rtl_priv *rtlpriv, u64 comp, int level,
-		    const char *fmt, ...);
 
 __printf(4, 5)
 void _rtl_dbg_print(struct rtl_priv *rtlpriv, u64 comp, int level,
@@ -160,8 +156,8 @@ void _rtl_dbg_print_data(struct rtl_priv *rtlpriv, u64 comp, int level,
 			 const char *titlestring,
 			 const void *hexdata, int hexdatalen);
 
-#define RT_TRACE(rtlpriv, comp, level, fmt, ...)			\
-	_rtl_dbg_trace(rtlpriv, comp, level,				\
+#define rtl_dbg(rtlpriv, comp, level, fmt, ...)				\
+	_rtl_dbg_print(rtlpriv, comp, level,				\
 		       fmt, ##__VA_ARGS__)
 
 #define RTPRINT(rtlpriv, dbgtype, dbgflag, fmt, ...)			\
@@ -177,9 +173,9 @@ void _rtl_dbg_print_data(struct rtl_priv *rtlpriv, u64 comp, int level,
 struct rtl_priv;
 
 __printf(4, 5)
-static inline void RT_TRACE(struct rtl_priv *rtlpriv,
-			    u64 comp, int level,
-			    const char *fmt, ...)
+static inline void rtl_dbg(struct rtl_priv *rtlpriv,
+			   u64 comp, int level,
+			   const char *fmt, ...)
 {
 }
 
@@ -199,7 +195,7 @@ static inline void RT_PRINT_DATA(struct rtl_priv *rtlpriv,
 
 #endif
 
-#ifdef CPTCFG_RTLWIFI_DEBUG
+#ifdef CONFIG_RTLWIFI_DEBUG
 void rtl_debug_add_one(struct ieee80211_hw *hw);
 void rtl_debug_remove_one(struct ieee80211_hw *hw);
 void rtl_debugfs_add_topdir(void);

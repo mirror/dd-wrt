@@ -114,18 +114,13 @@ static int rtw_mac_pre_system_cfg(struct rtw_dev *rtwdev)
 
 static bool do_pwr_poll_cmd(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 target)
 {
-	u32 cnt;
+	u32 val;
 
 	target &= mask;
 
-	for (cnt = 0; cnt < RTW_PWR_POLLING_CNT; cnt++) {
-		if ((rtw_read8(rtwdev, addr) & mask) == target)
-			return true;
-
-		udelay(50);
-	}
-
-	return false;
+	return read_poll_timeout_atomic(rtw_read8, val, (val & mask) == target,
+					50, 50 * RTW_PWR_POLLING_CNT, false,
+					rtwdev, addr) == 0;
 }
 
 static int rtw_pwr_cmd_polling(struct rtw_dev *rtwdev,
@@ -531,6 +526,25 @@ static int iddma_download_firmware(struct rtw_dev *rtwdev, u32 src, u32 dst,
 
 	if (iddma_enable(rtwdev, src, dst, ch0_ctrl))
 		return -EBUSY;
+
+	return 0;
+}
+
+int rtw_ddma_to_fw_fifo(struct rtw_dev *rtwdev, u32 ocp_src, u32 size)
+{
+	u32 ch0_ctrl = BIT_DDMACH0_OWN | BIT_DDMACH0_DDMA_MODE;
+
+	if (!check_hw_ready(rtwdev, REG_DDMA_CH0CTRL, BIT_DDMACH0_OWN, 0)) {
+		rtw_dbg(rtwdev, RTW_DBG_FW, "busy to start ddma\n");
+		return -EBUSY;
+	}
+
+	ch0_ctrl |= size & BIT_MASK_DDMACH0_DLEN;
+
+	if (iddma_enable(rtwdev, ocp_src, OCPBASE_RXBUF_FW_88XX, ch0_ctrl)) {
+		rtw_dbg(rtwdev, RTW_DBG_FW, "busy to complete ddma\n");
+		return -EBUSY;
+	}
 
 	return 0;
 }
