@@ -141,6 +141,7 @@ static char *pcidrivers[] = {
 	"xirc2ps_cs",
 	"xircom_cb",
 	"yellowfin",
+	"rtl8125",
 	NULL
 };
 
