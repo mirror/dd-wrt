@@ -109,6 +109,7 @@ static char *pcidrivers[] = {
 	"qlge",
 	"r6040",
 	"r8169",
+	"r8125",
 	"s2io",
 	"samsung-sxgbe",
 	"sc92031",
@@ -141,7 +142,6 @@ static char *pcidrivers[] = {
 	"xirc2ps_cs",
 	"xircom_cb",
 	"yellowfin",
-	"rtl8125",
 	NULL
 };
 
