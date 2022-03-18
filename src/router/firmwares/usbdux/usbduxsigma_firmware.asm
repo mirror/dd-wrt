@@ -1,5 +1,5 @@
 ;   usbdux_firmware.asm
-;   Copyright (C) 2010,2011 Bernd Porr, Bernd.Porr@f2s.com
+;   Copyright (C) 2010,2015 Bernd Porr, mail@berndporr.me.uk
 ;   For usbduxsigma.c 0.5+
 ;
 ;   This program is free software; you can redistribute it and/or modify
@@ -20,8 +20,8 @@
 ; Firmware: usbduxsigma_firmware.asm for usbduxsigma.c
 ; Description: University of Stirling USB DAQ & INCITE Technology Limited
 ; Devices: [ITL] USB-DUX-SIGMA (usbduxsigma.ko)
-; Author: Bernd Porr <Bernd.Porr@f2s.com>
-; Updated: 24 Jul 2011
+; Author: Bernd Porr <mail@berndporr.me.uk>
+; Updated: 20 Jul 2015
 ; Status: testing
 ;
 ;;;
@@ -30,19 +30,31 @@
 	
 	.inc	fx2-include.asm
 
-;;; a couple of flags
+;;; a couple of flags in high memory
 	.equ	CMD_FLAG,80h	; flag for the next in transfer
 	.equ	PWMFLAG,81h	; PWM on or off?
 	.equ	MAXSMPL,82H	; maximum number of samples, n channellist
 	.equ	MUXSG0,83H	; content of the MUXSG0 register
+	.equ	INTERVAL,88h	; uframe/frame interval
+	.equ	INTCTR,89h	; interval counter
+	.equ	DABUFFER,0F0h	; buffer with DA values
+
+;;; in precious low memory but accessible within one clock cycle
+	.equ	DPTRL,70H
+	.equ	DPTRH,71h
+	.equ	ASYNC_ON,72h
+	.equ	SMPLCTR,73h
 
 ;;; actual code
 	.org	0000h		; after reset the processor starts here
 	ljmp	main		; jump to the main loop
 
+	.org	0003h
+	ljmp	isr0		; external interrupt 0: /DRY
+
 	.org	0043h		; the IRQ2-vector
 	ljmp	jmptbl		; irq service-routine
-	
+
 	.org	0100h		; start of the jump table
 
 jmptbl:	ljmp	sudav_isr
@@ -120,7 +132,6 @@ ep0ack_isr:
 spare_isr:	
 ep0in_isr:	
 ep0out_isr:	
-ep1in_isr:	
 ibn_isr:	
 ep0ping_isr:	
 ep1ping_isr:	
@@ -160,6 +171,121 @@ ep4_isr:
 	
 	reti
 
+
+ep1in_isr:	
+	push	dps
+	push	dpl
+	push	dph
+	push	dpl1
+	push	dph1
+	push	acc
+	push	psw
+		
+	mov	dptr,#0E7C0h	; EP1in
+	mov	a,IOB		; get DIO D
+	movx	@dptr,a		; store it
+	inc	dptr		; next byte
+	mov	a,IOC		; get DIO C
+	movx	@dptr,a		; store it
+	inc	dptr		; next byte
+	mov	a,IOD		; get DIO B
+	movx	@dptr,a		; store it
+	inc	dptr		; next byte
+	mov	a,#0		; just zero
+	movx	@dptr,a		; pad it up
+
+	;; clear INT2
+	mov	a,EXIF		; FIRST clear the USB (INT2) interrupt request
+	clr	acc.4
+	mov	EXIF,a		; Note: EXIF reg is not 8051 bit-addressable
+
+	mov	DPTR,#EPIRQ	; 
+	mov	a,#00000100b	; clear the ep1in
+	movx	@DPTR,a
+
+	pop	psw
+	pop	acc 
+	pop	dph1 
+	pop	dpl1
+	pop	dph 
+	pop	dpl 
+	pop	dps
+	reti
+
+
+
+;;; this is triggered when DRY goes low
+isr0:	
+	push	dps
+	push	dpl
+	push	dph
+	push	dpl1
+	push	dph1
+	push	acc
+	push	psw
+	push	00h		; R0
+	push	01h		; R1
+	push	02h		; R2
+	push	03h		; R3
+	push	04h		; R4
+	push	05h		; R5
+	push	06h		; R6
+	push	07h		; R7
+
+	mov	a,ASYNC_ON
+	jz	noepsubmit
+
+	mov	DPS,#0
+	mov	dpl,DPTRL
+	mov	dph,DPTRH
+
+	lcall	readADCch	; read one channel
+
+	mov	DPTRL,dpl
+	mov	DPTRH,dph
+
+	mov	a,SMPLCTR
+	dec	a
+	mov	SMPLCTR,a
+	jnz	noepsubmit
+
+	mov	ASYNC_ON,#0
+
+	clr	IOA.7		; START = 0
+	
+	;; arm the endpoint and send off the data
+	mov	DPTR,#EP6BCH	; byte count H
+	mov	a,#0		; is zero
+	lcall	syncdelaywr	; wait until we can write again
+	
+	mov	r0,#MAXSMPL	; number of samples to transmit
+	mov	a,@r0		; get them
+	rl	a		; a=a*2
+	rl	a		; a=a*2
+	add	a,#4		; four bytes for DIO
+	mov	DPTR,#EP6BCL	; byte count L
+	lcall	syncdelaywr	; wait until we can write again
+
+noepsubmit:
+	pop	07h
+	pop	06h
+	pop	05h
+	pop	04h		; R4
+	pop	03h		; R3
+	pop	02h		; R2
+	pop	01h		; R1
+	pop	00h		; R0
+	pop	psw
+	pop	acc 
+	pop	dph1 
+	pop	dpl1
+	pop	dph 
+	pop	dpl 
+	pop	dps
+
+	reti
+
+	
 		
 ;;; main program
 ;;; basically only initialises the processor and
@@ -173,9 +299,6 @@ main:
         mov     a,#00000011b    ; allows skip
         lcall   syncdelaywr
 
-	mov	IP,#0		; all std 8051 int have low priority
-	mov	EIP,#0FFH	; all FX2 interrupts have high priority
-	
 	mov	dptr,#INTSETUP	; IRQ setup register
 	mov	a,#08h		; enable autovector
 	lcall	syncdelaywr
@@ -183,6 +306,9 @@ main:
 	mov	dptr,#PORTCCFG
 	mov	a,#0
 	lcall	syncdelaywr
+
+	mov	IP,#01H		; int0 has highest interrupt priority
+	mov	EIP,#0		; all USB interrupts have low priority
 
 	lcall	initAD		; init the ports to the converters
 
@@ -210,6 +336,11 @@ mloop2:	nop
 initAD:
 	mov	r0,#MAXSMPL	; length of channellist
 	mov	@r0,#0		; we don't want to accumlate samples
+
+	mov	ASYNC_ON,#0	; async enable
+
+	mov	r0,#DABUFFER
+	mov	@r0,#0
 
 	mov	OEA,#11100000b	; PortA7,A6,A5 Outputs
 	mov	IOA,#01100000b	; /CS = 1 and START = 0
@@ -379,21 +510,27 @@ initeps:
 	mov	a,#11100000b	; BULK data from here to the host
 	movx	@DPTR,a		;
 
+	mov	dptr,#PORTACFG
+	mov	a,#1		; interrupt on pin A0
+	lcall	syncdelaywr
+
 	;; enable interrupts
 	mov	dptr,#EPIE	; interrupt enable
-	mov	a,#10001000b	; enable irq for ep1out,8
+	mov	a,#10001100b	; enable irq for ep1out,8,ep1in
 	movx	@dptr,a		; do it
 
 	mov	dptr,#EPIRQ	; clear IRQs
-	mov	a,#10001000b
+	mov	a,#10001100b
 	movx	@dptr,a
 	
         mov     DPTR,#USBIE	; USB int enables register
         mov     a,#2            ; enables SOF (1ms/125us interrupt)
         movx    @DPTR,a         ; 
 
+	setb	TCON.0		; make INT0 edge triggered, falling edge
+
 	mov	EIE,#00000001b	; enable INT2/USBINT in the 8051's SFR
-	mov	IE,#80h		; IE, enable all interrupts
+	mov	IE,#81h		; IE, enable all interrupts and INT0
 
 	ret
 
@@ -401,10 +538,6 @@ initeps:
 ;;; Reads one ADC channel from the converter and stores
 ;;; the result at dptr
 readADCch:
-	;; we do polling: we wait until DATA READY is zero
-	mov	a,IOA		; get /DRDY
-	jb	ACC.0,readADCch	; wait until data ready (DRDY=0)
-	
 	;; reading data is done by just dropping /CS and start reading and
 	;; while keeping the IN signal to the ADC inactive
 	clr	IOA.5		; /cs to 0
@@ -454,13 +587,23 @@ sof_isr:
 	push	06h		; R6
 	push	07h		; R7
 
-	clr	IE.7		; make sure that no other int's disturbe us
+	mov	r0,#INTCTR	; interval counter
+	mov	a,@r0		; get the value
+	dec	a		; decrement
+	mov	@r0,a		; save it again
+	jz	sof_adc		; we do ADC functions
+	ljmp	epfull		; we skip all adc functions
 	
+sof_adc:
+	mov	r1,#INTERVAL	; get the interval
+	mov	a,@r1		; get it
+	mov	@r0,a		; save it in the counter
 	mov	a,EP2468STAT
 	anl	a,#20H		; full?
 	jnz	epfull		; EP6-buffer is full
 
-	clr	IOA.7		; stop converter, START = 0
+	mov	a,IOA		; conversion running?
+	jb	ACC.7,epfull
 
 	;; make sure that we are starting with the first channel
 	mov	r0,#MUXSG0	;
@@ -471,8 +614,6 @@ sof_isr:
 
 	setb	IOA.7		; start converter, START = 1
 	
-	;; get the data from the ADC as fast as possible and transfer it
-	;; to the EP buffer
 	mov	dptr,#0f800h	; EP6 buffer
 	mov	a,IOD		; get DIO D
 	movx	@dptr,a		; store it
@@ -486,30 +627,14 @@ sof_isr:
 	mov	a,#0		; just zero
 	movx	@dptr,a		; pad it up
 	inc	dptr		; algin along a 32 bit word
+	mov	DPTRL,dpl
+	mov	DPTRH,dph
 
-	mov	r0,#MAXSMPL	; number of samples to transmit
-	mov	a,@r0		; get them
-	mov	r1,a		; counter
+	mov	r0,#MAXSMPL
+	mov	a,@r0
+	mov	SMPLCTR,a
 
-	;; main loop, get all the data
-eptrans:	
-	lcall	readADCch	; get one reading
-	djnz	r1,eptrans	; do until we have all content transf'd
-
-	clr	IOA.7		; stop converter, START = 0
-
-	;; arm the endpoint and send off the data
-	mov	DPTR,#EP6BCH	; byte count H
-	mov	a,#0		; is zero
-	lcall	syncdelaywr	; wait until we can write again
-	
-	mov	r0,#MAXSMPL	; number of samples to transmit
-	mov	a,@r0		; get them
-	rl	a		; a=a*2
-	rl	a		; a=a*2
-	add	a,#4		; four bytes for DIO
-	mov	DPTR,#EP6BCL	; byte count L
-	lcall	syncdelaywr	; wait until we can write again
+	mov	ASYNC_ON,#1
 
 epfull:
 	;; do the D/A conversion
@@ -525,7 +650,13 @@ epfull:
 	lcall	syncdelaywr	; wait for the rec to sync
 	lcall	syncdelaywr	; wait for the rec to sync
 
-epempty:	
+epempty:
+	mov	a,IOA		; conversion running?
+	jb	ACC.7,sofend
+
+	lcall	DAsend
+
+sofend:	
 	;; clear INT2
 	mov	a,EXIF		; FIRST clear the USB (INT2) interrupt request
 	clr	acc.4
@@ -536,8 +667,6 @@ epempty:
 	movx	@DPTR,a
 
 nosof:
-	setb	IE.7		; re-enable global interrupts
-	
 	pop	07h
 	pop	06h
 	pop	05h
@@ -662,8 +791,6 @@ ep1out_isr:
 	push	06h		; R6
 	push	07h		; R7
 
-	clr	IE.7		; block other interrupts
-		
 	mov	dptr,#0E780h	; FIFO buffer of EP1OUT
 	movx	a,@dptr		; get the first byte
 	mov	r0,#CMD_FLAG	; pointer to the command byte
@@ -684,6 +811,7 @@ ep1out_jmp:
 	sjmp	nothing		; a=6
 	sjmp	pwm_on		; a=7
 	sjmp	pwm_off		; a=8
+	sjmp	startadcint	; a=9
 
 nothing:
 	ljmp	over_da
@@ -697,6 +825,8 @@ pwm_off:
 	sjmp	over_da
 
 initsgADchannel:
+	mov	ASYNC_ON,#0
+	
 	mov	dptr,#0e781h	; FIFO buffer of EP1OUT
 	lcall	configADC	; configures the ADC esp sel the channel
 
@@ -709,18 +839,34 @@ initsgADchannel:
 		
 	sjmp	over_da
 
+startadcint:
+	mov	dptr,#0e781h	; FIFO buffer of EP1OUT from 2nd byte
+
+	movx	a,@dptr		; interval is the 1st byte
+	inc	dptr		; data pointer
+	sjmp	startadc2	; the other paramters as with startadc
 	
 ;;; config AD:
 ;;; we write to the registers of the A/D converter
 startadc:
 	mov	dptr,#0e781h	; FIFO buffer of EP1OUT from 2nd byte
 
+	mov	a,#1		; interval is 1 here all the time
+startadc2:	
+	mov	r0,#INTERVAL	; set it
+	mov	@r0,a
+	mov	r0,#INTCTR	; the counter is also just one
+	mov	@r0,a
+
 	movx	a,@dptr		; get length of channel list
 	inc	dptr
 	mov	r0,#MAXSMPL
 	mov	@r0,a 		; length of the channel list
+	mov	SMPLCTR,a
 
 	lcall	configADC	; configures all registers
+
+	mov	ASYNC_ON,#1	; async enable
 
 	lcall	reset_ep6	; reset FIFO
 	
@@ -803,8 +949,6 @@ over_da:
 	mov	a,#00001000b	; clear the ep1outirq
 	movx	@DPTR,a
 
-	setb	IE.7		; re-enable interrupts
-
 	pop	07h
 	pop	06h
 	pop	05h
@@ -824,19 +968,45 @@ over_da:
 
 
 	
-;;; all channels
+;;; save all DA channels from the endpoint buffer in a local buffer
 dalo:
 	movx	a,@dptr		; number of bytes to send out
 	inc	dptr		; pointer to the first byte
+	mov	r1,#DABUFFER	; buffer for DA values
+	mov	@r1,a		; save it
+	inc	r1		; inc pointer to local buffer
 	mov	r0,a		; counter
-nextDA:	
+nextDAlo:	
 	movx	a,@dptr		; get the byte
 	inc	dptr		; point to the high byte
-	mov	r3,a		; store in r3 for writeDA
+	mov	@r1,a		; save it in the buffer
+	inc	r1
 	movx	a,@dptr		; get the channel number
 	inc	dptr		; get ready for the next channel
+	mov	@r1,a		; save it
+	inc	r1
+	djnz	r0,nextDAlo	; next channel
+	ret
+
+
+;;; write to the DA converter
+DAsend:
+	mov	r1,#DABUFFER	; buffer of the DA values
+	mov	a,@r1		; get the channel count
+	jz	DAret		; nothing to do
+	inc	r1		; pointer to the first byte
+	mov	r0,a		; counter
+nextDA:	
+	mov	a,@r1		; get the byte
+	inc	r1		; point to the high byte
+	mov	r3,a		; store in r3 for writeDA
+	mov	a,@r1		; get the channel number
+	inc	r1		; get ready for the next channel
+	push	1		; is modified in the subroutine
 	lcall	writeDA		; write value to the DAC
+	pop	1		; get the pointer back
 	djnz	r0,nextDA	; next channel
+DAret:	
 	ret
 
 
@@ -859,7 +1029,7 @@ writeDA3:
 	rr	a		; shift to the upper to the lower
 	djnz	r1,writeDA3
 	orl	a,r2		; merge with the channel info
-	clr	IOA.6		; /SYNC of the DA to 0
+	clr	IOA.6		; /SYNC (/CS) of the DA to 0
 	lcall	sendSPI		; send it out to the SPI
 	mov	a,r3		; get data again
 	anl	a,#00001111b	; get the lower nibble
@@ -869,7 +1039,7 @@ writeDA4:
 	djnz	r1,writeDA4
 	anl	a,#11110000b	; make sure that's empty
 	lcall	sendSPI
-	setb	IOA.6		; /SYNC of the DA to 1
+	setb	IOA.6		; /SYNC (/CS) of the DA to 1
 noDA:	ret
 	
 
@@ -915,8 +1085,12 @@ ep8_jmp:
 
 	;; read one A/D channel
 ep8_sglchannel:
-	mov 	DPTR,#0fc01h	; EP8 FIFO
 	setb	IOA.7		; start converter, START = 1
+	;; we do polling: we wait until DATA READY is zero
+sglchwait:	
+	mov	a,IOA		; get /DRDY
+	jb	ACC.0,sglchwait	; wait until data ready (DRDY=0)
+	mov 	DPTR,#0fc01h	; EP8 FIFO
 	lcall	readADCch	; get one reading
 	clr	IOA.7		; stop the converter, START = 0
 
