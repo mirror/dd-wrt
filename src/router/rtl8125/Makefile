@@ -30,7 +30,7 @@
 #  US6,570,884, US6,115,776, and US6,327,625.
 ################################################################################
 KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
-IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/ethernet
+IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
 KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
