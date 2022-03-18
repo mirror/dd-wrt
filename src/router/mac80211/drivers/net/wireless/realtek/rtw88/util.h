@@ -17,6 +17,8 @@ struct rtw_dev;
 	ieee80211_iterate_stations_atomic(rtwdev->hw, iterator, data)
 #define rtw_iterate_keys(rtwdev, vif, iterator, data)			       \
 	ieee80211_iter_keys(rtwdev->hw, vif, iterator, data)
+#define rtw_iterate_keys_rcu(rtwdev, vif, iterator, data)		       \
+	ieee80211_iter_keys_rcu((rtwdev)->hw, vif, iterator, data)
 
 static inline u8 *get_hdr_bssid(struct ieee80211_hdr *hdr)
 {
@@ -32,52 +34,5 @@ static inline u8 *get_hdr_bssid(struct ieee80211_hdr *hdr)
 
 	return bssid;
 }
-
-#define read_poll_timeout(op, val, cond, sleep_us, timeout_us, \
-				sleep_before_read, args...) \
-({ \
-	u64 __timeout_us = (timeout_us); \
-	unsigned long __sleep_us = (sleep_us); \
-	ktime_t __timeout = ktime_add_us(ktime_get(), __timeout_us); \
-	might_sleep_if((__sleep_us) != 0); \
-	if (sleep_before_read && __sleep_us) \
-		usleep_range((__sleep_us >> 2) + 1, __sleep_us); \
-	for (;;) { \
-		(val) = op(args); \
-		if (cond) \
-			break; \
-		if (__timeout_us && \
-		    ktime_compare(ktime_get(), __timeout) > 0) { \
-			(val) = op(args); \
-			break; \
-		} \
-		if (__sleep_us) \
-			usleep_range((__sleep_us >> 2) + 1, __sleep_us); \
-	} \
-	(cond) ? 0 : -ETIMEDOUT; \
-})
-
-#define read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, \
-					delay_before_read, args...) \
-({ \
-	u64 __timeout_us = (timeout_us); \
-	unsigned long __delay_us = (delay_us); \
-	ktime_t __timeout = ktime_add_us(ktime_get(), __timeout_us); \
-	if (delay_before_read && __delay_us) \
-		udelay(__delay_us); \
-	for (;;) { \
-		(val) = op(args); \
-		if (cond) \
-			break; \
-		if (__timeout_us && \
-		    ktime_compare(ktime_get(), __timeout) > 0) { \
-			(val) = op(args); \
-			break; \
-		} \
-		if (__delay_us) \
-			udelay(__delay_us); \
-	} \
-	(cond) ? 0 : -ETIMEDOUT; \
-})
 
 #endif
