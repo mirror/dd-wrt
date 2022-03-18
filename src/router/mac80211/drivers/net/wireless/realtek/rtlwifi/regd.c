@@ -33,10 +33,13 @@ static struct country_code_to_enum_rd all_countries[] = {
  *by case basis by regulatory domain
  */
 #define RTL819x_2GHZ_CH12_13	\
-	REG_RULE(2467-10, 2472+10, 40, 0, 20, 0)
+	REG_RULE(2467-10, 2472+10, 40, 0, 20,\
+	NL80211_RRF_PASSIVE_SCAN)
 
 #define RTL819x_2GHZ_CH14	\
-	REG_RULE(2484-10, 2484+10, 40, 0, 20, 0)
+	REG_RULE(2484-10, 2484+10, 40, 0, 20, \
+	NL80211_RRF_PASSIVE_SCAN | \
+	NL80211_RRF_NO_OFDM)
 
 /* 5G chan 36 - chan 64*/
 #define RTL819x_5GHZ_5150_5350	\
@@ -241,16 +244,27 @@ static void _rtl_reg_apply_radar_flags(struct wiphy *wiphy)
 
 	sband = wiphy->bands[NL80211_BAND_5GHZ];
 
-/*	for (i = 0; i < sband->n_channels; i++) {
+	for (i = 0; i < sband->n_channels; i++) {
 		ch = &sband->channels[i];
 		if (!_rtl_is_radar_freq(ch->center_freq))
 			continue;
 
+		/*
+		 *We always enable radar detection/DFS on this
+		 *frequency range. Additionally we also apply on
+		 *this frequency range:
+		 *- If STA mode does not yet have DFS supports disable
+		 * active scanning
+		 *- If adhoc mode does not support DFS yet then disable
+		 * adhoc in the frequency.
+		 *- If AP mode does not yet support radar detection/DFS
+		 *do not allow AP mode
+		 */
 		if (!(ch->flags & IEEE80211_CHAN_DISABLED))
 			ch->flags |= IEEE80211_CHAN_RADAR |
 			    IEEE80211_CHAN_NO_IBSS |
 			    IEEE80211_CHAN_PASSIVE_SCAN;
-	}*/
+	}
 }
 
 static void _rtl_reg_apply_world_flags(struct wiphy *wiphy,
@@ -379,13 +393,13 @@ int rtl_regd_init(struct ieee80211_hw *hw,
 	rtlpriv->regd.country_code =
 		channel_plan_to_country_code(rtlpriv->efuse.channel_plan);
 
-	RT_TRACE(rtlpriv, COMP_REGD, DBG_DMESG,
-		 "rtl: EEPROM regdomain: 0x%0x country code: %d\n",
-		 rtlpriv->efuse.channel_plan, rtlpriv->regd.country_code);
+	rtl_dbg(rtlpriv, COMP_REGD, DBG_DMESG,
+		"rtl: EEPROM regdomain: 0x%0x country code: %d\n",
+		rtlpriv->efuse.channel_plan, rtlpriv->regd.country_code);
 
 	if (rtlpriv->regd.country_code >= COUNTRY_CODE_MAX) {
-		RT_TRACE(rtlpriv, COMP_REGD, DBG_DMESG,
-			 "rtl: EEPROM indicates invalid country code, world wide 13 should be used\n");
+		rtl_dbg(rtlpriv, COMP_REGD, DBG_DMESG,
+			"rtl: EEPROM indicates invalid country code, world wide 13 should be used\n");
 
 		rtlpriv->regd.country_code = COUNTRY_CODE_WORLD_WIDE_13;
 	}
@@ -400,9 +414,9 @@ int rtl_regd_init(struct ieee80211_hw *hw,
 		rtlpriv->regd.alpha2[1] = '0';
 	}
 
-	RT_TRACE(rtlpriv, COMP_REGD, DBG_TRACE,
-		 "rtl: Country alpha2 being used: %c%c\n",
-		  rtlpriv->regd.alpha2[0], rtlpriv->regd.alpha2[1]);
+	rtl_dbg(rtlpriv, COMP_REGD, DBG_TRACE,
+		"rtl: Country alpha2 being used: %c%c\n",
+		rtlpriv->regd.alpha2[0], rtlpriv->regd.alpha2[1]);
 
 	_rtl_regd_init_wiphy(&rtlpriv->regd, wiphy, reg_notifier);
 
@@ -414,7 +428,7 @@ void rtl_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
-	RT_TRACE(rtlpriv, COMP_REGD, DBG_LOUD, "\n");
+	rtl_dbg(rtlpriv, COMP_REGD, DBG_LOUD, "\n");
 
 	_rtl_reg_notifier_apply(wiphy, request, &rtlpriv->regd);
 }
