@@ -81,7 +81,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.start"); %></th>
 										<th><% tran("share.end"); %></th>
-										<th><% tran("share.enable"); %></th>
+										<th style="text-align: center"><% tran("share.enable"); %></th>
 										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_triggering(); %>
