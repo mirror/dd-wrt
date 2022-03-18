@@ -38,7 +38,7 @@
 #include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 #include <stddef.h>
 #include <fcntl.h>
@@ -294,11 +294,13 @@ send_iterate_snap(zfs_handle_t *zhp, void *arg)
 	uint64_t guid = zhp->zfs_dmustats.dds_guid;
 	uint64_t txg = zhp->zfs_dmustats.dds_creation_txg;
 	boolean_t isfromsnap, istosnap, istosnapwithnofrom;
-	char *snapname = strrchr(zhp->zfs_name, '@') + 1;
+	char *snapname;
 	const char *from = sd->fromsnap;
 	const char *to = sd->tosnap;
 
-	assert(snapname != (NULL + 1));
+	snapname = strrchr(zhp->zfs_name, '@');
+	assert(snapname != NULL);
+	++snapname;
 
 	isfromsnap = (from != NULL && strcmp(from, snapname) == 0);
 	istosnap = (to != NULL && strcmp(to, snapname) == 0);
@@ -805,8 +807,9 @@ dump_ioctl(zfs_handle_t *zhp, const char *fromsnap, uint64_t fromsnap_obj,
 		char errbuf[1024];
 		int error = errno;
 
-		(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
-		    "warning: cannot send '%s'"), zhp->zfs_name);
+		(void) snprintf(errbuf, sizeof (errbuf), "%s '%s'",
+		    dgettext(TEXT_DOMAIN, "warning: cannot send"),
+		    zhp->zfs_name);
 
 		if (debugnv != NULL) {
 			fnvlist_add_uint64(thisdbg, "error", error);
@@ -1679,8 +1682,8 @@ lzc_flags_from_resume_nvl(nvlist_t *resume_nvl)
 }
 
 static int
-zfs_send_resume_impl(libzfs_handle_t *hdl, sendflags_t *flags, int outfd,
-    nvlist_t *resume_nvl)
+zfs_send_resume_impl_cb_impl(libzfs_handle_t *hdl, sendflags_t *flags,
+    int outfd, nvlist_t *resume_nvl)
 {
 	char errbuf[1024];
 	char *toname;
@@ -1888,6 +1891,32 @@ zfs_send_resume_impl(libzfs_handle_t *hdl, sendflags_t *flags, int outfd,
 	zfs_close(zhp);
 
 	return (error);
+}
+
+struct zfs_send_resume_impl {
+	libzfs_handle_t *hdl;
+	sendflags_t *flags;
+	nvlist_t *resume_nvl;
+};
+
+static int
+zfs_send_resume_impl_cb(int outfd, void *arg)
+{
+	struct zfs_send_resume_impl *zsri = arg;
+	return (zfs_send_resume_impl_cb_impl(zsri->hdl, zsri->flags, outfd,
+	    zsri->resume_nvl));
+}
+
+static int
+zfs_send_resume_impl(libzfs_handle_t *hdl, sendflags_t *flags, int outfd,
+    nvlist_t *resume_nvl)
+{
+	struct zfs_send_resume_impl zsri = {
+		.hdl = hdl,
+		.flags = flags,
+		.resume_nvl = resume_nvl,
+	};
+	return (lzc_send_wrapper(zfs_send_resume_impl_cb, outfd, &zsri));
 }
 
 int
@@ -2167,9 +2196,11 @@ send_prelim_records(zfs_handle_t *zhp, const char *from, int fd,
  * if "replicate" is set.  If "doall" is set, dump all the intermediate
  * snapshots. The DMU_COMPOUNDSTREAM header is used in the "doall"
  * case too. If "props" is set, send properties.
+ *
+ * Pre-wrapped (cf. lzc_send_wrapper()).
  */
-int
-zfs_send(zfs_handle_t *zhp, const char *fromsnap, const char *tosnap,
+static int
+zfs_send_cb_impl(zfs_handle_t *zhp, const char *fromsnap, const char *tosnap,
     sendflags_t *flags, int outfd, snapfilter_cb_t filter_func,
     void *cb_arg, nvlist_t **debugnvp)
 {
@@ -2371,6 +2402,42 @@ err_out:
 	return (err);
 }
 
+struct zfs_send {
+	zfs_handle_t *zhp;
+	const char *fromsnap;
+	const char *tosnap;
+	sendflags_t *flags;
+	snapfilter_cb_t *filter_func;
+	void *cb_arg;
+	nvlist_t **debugnvp;
+};
+
+static int
+zfs_send_cb(int outfd, void *arg)
+{
+	struct zfs_send *zs = arg;
+	return (zfs_send_cb_impl(zs->zhp, zs->fromsnap, zs->tosnap, zs->flags,
+	    outfd, zs->filter_func, zs->cb_arg, zs->debugnvp));
+}
+
+int
+zfs_send(zfs_handle_t *zhp, const char *fromsnap, const char *tosnap,
+    sendflags_t *flags, int outfd, snapfilter_cb_t filter_func,
+    void *cb_arg, nvlist_t **debugnvp)
+{
+	struct zfs_send arg = {
+		.zhp = zhp,
+		.fromsnap = fromsnap,
+		.tosnap = tosnap,
+		.flags = flags,
+		.filter_func = filter_func,
+		.cb_arg = cb_arg,
+		.debugnvp = debugnvp,
+	};
+	return (lzc_send_wrapper(zfs_send_cb, outfd, &arg));
+}
+
+
 static zfs_handle_t *
 name_to_dir_handle(libzfs_handle_t *hdl, const char *snapname)
 {
@@ -2447,10 +2514,12 @@ snapshot_is_before(zfs_handle_t *earlier, zfs_handle_t *later)
  * The "zhp" argument is the handle of the dataset to send (typically a
  * snapshot).  The "from" argument is the full name of the snapshot or
  * bookmark that is the incremental source.
+ *
+ * Pre-wrapped (cf. lzc_send_wrapper()).
  */
-int
-zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
-    const char *redactbook)
+static int
+zfs_send_one_cb_impl(zfs_handle_t *zhp, const char *from, int fd,
+    sendflags_t *flags, const char *redactbook)
 {
 	int err;
 	libzfs_handle_t *hdl = zhp->zfs_hdl;
@@ -2637,6 +2706,34 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 		}
 	}
 	return (err != 0);
+}
+
+struct zfs_send_one {
+	zfs_handle_t *zhp;
+	const char *from;
+	sendflags_t *flags;
+	const char *redactbook;
+};
+
+static int
+zfs_send_one_cb(int fd, void *arg)
+{
+	struct zfs_send_one *zso = arg;
+	return (zfs_send_one_cb_impl(zso->zhp, zso->from, fd, zso->flags,
+	    zso->redactbook));
+}
+
+int
+zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
+    const char *redactbook)
+{
+	struct zfs_send_one zso = {
+		.zhp = zhp,
+		.from = from,
+		.flags = flags,
+		.redactbook = redactbook,
+	};
+	return (lzc_send_wrapper(zfs_send_one_cb, fd, &zso));
 }
 
 /*
@@ -4168,7 +4265,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
     avl_tree_t *stream_avl, char **top_zfs,
     const char *finalsnap, nvlist_t *cmdprops)
 {
-	time_t begin_time;
+	struct timespec begin_time;
 	int ioctl_err, ioctl_errno, err;
 	char *cp;
 	struct drr_begin *drrb = &drr->drr_u.drr_begin;
@@ -4188,13 +4285,13 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	boolean_t recursive;
 	char *snapname = NULL;
 	char destsnap[MAXPATHLEN * 2];
-	char origin[MAXNAMELEN];
+	char origin[MAXNAMELEN] = {0};
 	char name[MAXPATHLEN];
-	char tmp_keylocation[MAXNAMELEN];
+	char tmp_keylocation[MAXNAMELEN] = {0};
 	nvlist_t *rcvprops = NULL; /* props received from the send stream */
 	nvlist_t *oxprops = NULL; /* override (-o) and exclude (-x) props */
 	nvlist_t *origprops = NULL; /* original props (if destination exists) */
-	zfs_type_t type;
+	zfs_type_t type = ZFS_TYPE_INVALID;
 	boolean_t toplevel = B_FALSE;
 	boolean_t zoned = B_FALSE;
 	boolean_t hastoken = B_FALSE;
@@ -4202,9 +4299,10 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	uint8_t *wkeydata = NULL;
 	uint_t wkeylen = 0;
 
-	begin_time = time(NULL);
-	bzero(origin, MAXNAMELEN);
-	bzero(tmp_keylocation, MAXNAMELEN);
+#ifndef CLOCK_MONOTONIC_RAW
+#define	CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
+#endif
+	clock_gettime(CLOCK_MONOTONIC_RAW, &begin_time);
 
 	(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
 	    "cannot receive"));
@@ -4947,7 +5045,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 				(void) zfs_error(hdl, EZFS_BUSY, errbuf);
 				break;
 			}
-			fallthrough;
+			zfs_fallthrough;
 		default:
 			(void) zfs_standard_error(hdl, ioctl_errno, errbuf);
 		}
@@ -4987,14 +5085,23 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		char buf1[64];
 		char buf2[64];
 		uint64_t bytes = read_bytes;
-		time_t delta = time(NULL) - begin_time;
-		if (delta == 0)
-			delta = 1;
+		struct timespec delta;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &delta);
+		if (begin_time.tv_nsec > delta.tv_nsec) {
+			delta.tv_nsec =
+			    1000000000 + delta.tv_nsec - begin_time.tv_nsec;
+			delta.tv_sec -= 1;
+		} else
+			delta.tv_nsec -= begin_time.tv_nsec;
+		delta.tv_sec -= begin_time.tv_sec;
+		if (delta.tv_sec == 0 && delta.tv_nsec == 0)
+			delta.tv_nsec = 1;
+		double delta_f = delta.tv_sec + (delta.tv_nsec / 1e9);
 		zfs_nicebytes(bytes, buf1, sizeof (buf1));
-		zfs_nicebytes(bytes/delta, buf2, sizeof (buf1));
+		zfs_nicebytes(bytes / delta_f, buf2, sizeof (buf2));
 
-		(void) printf("received %s stream in %lld seconds (%s/sec)\n",
-		    buf1, (longlong_t)delta, buf2);
+		(void) printf("received %s stream in %.2f seconds (%s/sec)\n",
+		    buf1, delta_f, buf2);
 	}
 
 	err = 0;
@@ -5119,7 +5226,7 @@ zfs_receive_impl(libzfs_handle_t *hdl, const char *tosnap,
 		 * We computed the checksum in the wrong byteorder in
 		 * recv_read() above; do it again correctly.
 		 */
-		bzero(&zcksum, sizeof (zio_cksum_t));
+		memset(&zcksum, 0, sizeof (zio_cksum_t));
 		fletcher_4_incremental_byteswap(&drr, sizeof (drr), &zcksum);
 		flags->byteswap = B_TRUE;
 
@@ -5227,13 +5334,6 @@ zfs_receive(libzfs_handle_t *hdl, const char *tosnap, nvlist_t *props,
 		perror("fstat");
 		return (-2);
 	}
-
-	/*
-	 * It is not uncommon for gigabytes to be processed in zfs receive.
-	 * Speculatively increase the buffer size if supported by the platform.
-	 */
-	if (S_ISFIFO(sb.st_mode))
-		libzfs_set_pipe_max(infd);
 
 	if (props) {
 		err = nvlist_lookup_string(props, "origin", &originsnap);
