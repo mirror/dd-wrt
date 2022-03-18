@@ -389,12 +389,15 @@ static void detect_wireless_devices(int mask)
 		insmod("rtw88_pci");
 		insmod("rtw88_8822b");
 		insmod("rtw88_8822c");
+		insmod("rtw88_8821c");
 		insmod("rtw88_8723d");
 		wificnt += detectchange("rtw88_8822be");
 		wificnt += detectchange("rtw88_8822ce");
+		wificnt += detectchange("rtw88_8821ce");
 		wificnt += detectchange("rtw88_8723de");
 		if (!wificnt) {
 			rmmod("rtw88_8723d");
+			rmmod("rtw88_8821c");
 			rmmod("rtw88_8822c");
 			rmmod("rtw88_8822b");
 			rmmod("rtw88_pci");
