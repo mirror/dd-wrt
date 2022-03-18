@@ -4122,7 +4122,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems.mtik->flags & (1<<2));
 		}
 		if (elems.aironet) {
-			memcpy(radioname[0], &elems.aironet->name[0], 16);
+			memcpy(&radioname[0], &elems.aironet->name[0], 16);
 			memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
 			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
 		}
