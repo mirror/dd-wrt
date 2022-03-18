@@ -1,0 +1,24 @@
+ChangeLog:
+	* 0.0  initial release
+	* 0.1  addition of ATUSB_TEST
+	* 0.2  First public release. Compatible with atusb driver in the upcoming 4.2 kernel
+	* 0.3	* ATUSB_EUI64_READ/WRITE for permanent EUI64 handling
+		* Support to run the firmware on Atmel Raven USB dongles (Alexander Aring)
+		* Remove FCS frame check from firmware and leave it to the driver
+		* Use extended operation mode for TX for automatic ACK handling
+
+To flash the firmware you need dfu-util on the host. Issue
+
+    dfu-util -d 20b7:1540 -D atusb-0.3.dfu
+
+right after plugging the device into the USB port while the red led is still
+on.
+
+For the Atmel Raven USB dongle a full JTAG setup is needed to flash the
+firmware as no DFU bootloader is available there.
+
+The firmware is flashed into permanent storage and does not need to be provided
+after power off. A new firmware version can be flashed the same way.
+
+Firmware source code is GPLv2+ and can be found here:
+http://projects.qi-hardware.com/index.php/p/ben-wpan/source/tree/master/atusb/fw

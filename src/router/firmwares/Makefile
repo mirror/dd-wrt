@@ -10,3 +10,5 @@ install:
 	cp -r rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
 	-rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
 	-rm $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
+
+clean:
