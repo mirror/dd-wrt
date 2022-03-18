@@ -100,9 +100,7 @@ $(obj)/regdb.c: $(src)/../wireless/db.txt $(src)/../wireless/genregdb.awk
 
 clean-files := regdb.c
 
-EXTRA_CFLAGS += -g
+EXTRA_CFLAGS += -g3
 #EXTRA_LDFLAGS += -flto -fwhole-program -flto=jobserver -fuse-linker-plugin
 
-ccflags-y += -g
-
-# -flto -fwhole-program -fno-fat-lto-objects -flto=jobserver -fuse-linker-plugin
+#ccflags-y += -flto -fwhole-program -fno-fat-lto-objects -flto=jobserver -fuse-linker-plugin
