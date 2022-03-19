@@ -282,7 +282,7 @@ void create_openvpnrules(FILE * fp)
 				"echo \"iptables -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
 				"done\n" "set=1\n" "fi\n");
 		}
-		fprintf(fp,	"done\n" "else\n" "logger -p user.info \"OpenVPN No VPN DNS servers available\"\n" "fi\n");
+		fprintf(fp,	"done\n" "else\n" "logger -p user.warning \"OpenVPN No VPN DNS servers available\"\n" "fi\n");
 		//escape general killswitch if PBR via WAN  //todo move this to up.sh instead of rout-up.sh so that it runs when the OVPN is not connecting
 		if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 2)) {
 			fprintf(fp, "logger -p user.info \"OpenVPN firewall PBR via WAN escape\"\n");
