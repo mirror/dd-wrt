@@ -614,6 +614,16 @@ table tr[bgcolor='#7CFC00'] {
 table .bulle {
   border-color: var(--bg-5);
 }
+.value_error {
+  border: 1px solid var(--v1-6) !important;
+}
+.value_error:hover {
+  border-color: var(--v1-9) !important;
+}
+.value_error:focus {
+  border-color: var(--v1-9) !important;
+  box-shadow: 0 0 10px 0 var(--v1-9) !important;
+}
 .odd {
   background-color: var(--bg-2);
 }
