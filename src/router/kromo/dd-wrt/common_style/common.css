@@ -556,3 +556,13 @@ td.bulle {
   padding: 2px;
   border-radius: 2px;
 }
+body .value_error {
+  border: 1px solid #ff6666;
+}
+body .value_error:hover {
+  border-color: #f00;
+}
+body .value_error:focus {
+  border-color: #f00;
+  box-shadow: 0 0 10px 0 #f00;
+}
