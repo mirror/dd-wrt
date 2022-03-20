@@ -11,14 +11,19 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
 
 #include <errno.h>
+#ifdef HAVE_ERROR_H
+#include <error.h>
+#else
+#include "portability/error.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +35,7 @@
 
 #include "wait.h"
 
-/*  Drop SUID privileges.  To be used after accquiring raw sockets.  */
+/*  Drop SUID privileges.  To be used after acquiring raw sockets.  */
 static
 int drop_elevated_permissions(
     void)
@@ -77,14 +82,13 @@ int main(
     struct net_state_t net_state;
 
     /*
-       To minimize security risk, the only thing done prior to 
+       To minimize security risk, the only thing done prior to
        dropping SUID should be opening the network state for
        raw sockets.
      */
     init_net_state_privileged(&net_state);
     if (drop_elevated_permissions()) {
-        perror("Unable to drop elevated permissions");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "Unable to drop elevated permissions");
     }
     init_net_state(&net_state);
 

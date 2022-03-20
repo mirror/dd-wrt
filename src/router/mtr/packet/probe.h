@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #ifndef PROBE_H
@@ -68,7 +68,7 @@ struct probe_param_t {
     /*  The packet "mark" used for mark-based routing on Linux  */
     int routing_mark;
 
-    /*  Time to live for the transmited probe  */
+    /*  Time to live for the transmitted probe  */
     int ttl;
 
     /*  The packet size (in bytes) including protocol headers  */
@@ -79,6 +79,9 @@ struct probe_param_t {
 
     /*  The number of seconds to wait before assuming the probe was lost  */
     int timeout;
+
+    /*  true is the probe is to test byte order */
+    bool is_probing_byte_order;
 };
 
 /*  Tracking information for an outstanding probe  */
@@ -101,6 +104,10 @@ struct probe_t {
     /*  The address being probed  */
     struct sockaddr_storage remote_addr;
 
+    /* The local address which was used */
+    struct sockaddr_storage local_addr;
+
+
     /*  Platform specific probe tracking  */
     struct probe_platform_t platform;
 };
@@ -122,7 +129,7 @@ struct net_state_t {
 /*  Multiprotocol Label Switching information  */
 struct mpls_label_t {
     uint32_t label;
-    uint8_t experimental_use;
+    uint8_t traffic_class;
     uint8_t bottom_of_stack;
     uint8_t ttl;
 };
@@ -170,6 +177,7 @@ int decode_address_string(
     struct sockaddr_storage *address);
 
 int resolve_probe_addresses(
+    struct net_state_t *net_state,
     const struct probe_param_t *param,
     struct sockaddr_storage *dest_sockaddr,
     struct sockaddr_storage *src_sockaddr);
@@ -198,5 +206,7 @@ struct probe_t *find_probe(
 int find_source_addr(
     struct sockaddr_storage *srcaddr,
     const struct sockaddr_storage *destaddr);
+
+extern char *probe_err;
 
 #endif

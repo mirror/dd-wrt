@@ -3,7 +3,7 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -157,6 +157,7 @@ int mtr_curses_keyaction(
 
     switch (c) {
     case 'q':
+    case -1:
     case 3:
         return ActionQuit;
     case 12:
@@ -235,7 +236,7 @@ int mtr_curses_keyaction(
 
         if (f <= 0.0)
             return ActionNone;
-        if (getuid() != 0 && f < 1.0)
+        if (!running_as_root() && (f < 1.0))
             return ActionNone;
         ctl->WaitTime = f;
 
@@ -363,6 +364,7 @@ int mtr_curses_keyaction(
             ("  b <c>   set ping bit pattern to c(0..255) or random(c<0)\n");
         printw("  Q <t>   set ping packet's TOS to t\n");
         printw("  u       switch between ICMP ECHO and UDP datagrams\n");
+        printw("  t       switch between ICMP ECHO and TCP\n");
 #ifdef HAVE_IPINFO
         printw("  y       switching IP info\n");
         printw("  z       toggle ASN info on/off\n");
@@ -388,7 +390,7 @@ static void format_field(
         format_number(n, 5, dst);
     } else if (strchr(format, 'f')) {
         /* this is for fields where we measure integer microseconds but
-           display floating point miliseconds. Convert to float here. */
+           display floating point milliseconds. Convert to float here. */
         snprintf(dst, dst_length, format, n / 1000.0);
         /* this was marked as a temporary hack over 10 years ago. -- REW */
     } else {
@@ -404,6 +406,8 @@ static void mtr_curses_hosts(
     int at;
     struct mplslen *mpls, *mplss;
     ip_t *addr, *addrs;
+    int addrcmp_result;
+    int err;
     int y;
     char *name;
 
@@ -416,25 +420,27 @@ static void mtr_curses_hosts(
 
     for (at = net_min(ctl) + ctl->display_offset; at < max; at++) {
         printw("%2d. ", at + 1);
+        err = net_err(at);
         addr = net_addr(at);
         mpls = net_mpls(at);
 
-        if (addrcmp((void *) addr, (void *) &ctl->unspec_addr, ctl->af) !=
-            0) {
+        addrcmp_result = addrcmp(addr, &ctl->unspec_addr, ctl->af);
+
+        if (err == 0 && addrcmp_result != 0) {
             name = dns_lookup(ctl, addr);
             if (!net_up(at))
                 attron(A_BOLD);
 #ifdef HAVE_IPINFO
             if (is_printii(ctl))
-                printw(fmt_ipinfo(ctl, addr));
+                printw("%s", fmt_ipinfo(ctl, addr));
 #endif
             if (name != NULL) {
                 if (ctl->show_ips)
-                    printw("%s (%s)", name, strlongip(ctl, addr));
+                    printw("%s (%s)", name, strlongip(ctl->af, addr));
                 else
                     printw("%s", name);
             } else {
-                printw("%s", strlongip(ctl, addr));
+                printw("%s", strlongip(ctl->af, addr));
             }
             attroff(A_BOLD);
 
@@ -445,7 +451,7 @@ static void mtr_curses_hosts(
             hd_len = 0;
             for (i = 0; i < MAXFLD; i++) {
                 /* Ignore options that don't exist */
-                /* On the other hand, we now check the input side. Shouldn't happen, 
+                /* On the other hand, we now check the input side. Shouldn't happen,
                    can't be careful enough. */
                 j = ctl->fld_index[ctl->fld_active[i]];
                 if (j == -1)
@@ -459,20 +465,18 @@ static void mtr_curses_hosts(
             printw("%s", buf);
 
             for (k = 0; k < mpls->labels && ctl->enablempls; k++) {
-                printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]",
-                       mpls->label[k], mpls->exp[k], mpls->s[k],
+                printw("\n    [MPLS: Lbl %lu TC %u S %u TTL %u]",
+                       mpls->label[k], mpls->tc[k], mpls->s[k],
                        mpls->ttl[k]);
             }
 
             /* Multi path */
-            for (i = 0; i < MAXPATH; i++) {
+            for (i = 0; i < MAX_PATH; i++) {
                 addrs = net_addrs(at, i);
                 mplss = net_mplss(at, i);
-                if (addrcmp((void *) addrs, (void *) addr, ctl->af) == 0)
+                if (addrcmp(addrs, addr, ctl->af) == 0)
                     continue;
-                if (addrcmp
-                    ((void *) addrs, (void *) &ctl->unspec_addr,
-                     ctl->af) == 0)
+                if (addrcmp(addrs, &ctl->unspec_addr,ctl->af) == 0)
                     break;
 
                 name = dns_lookup(ctl, addrs);
@@ -481,26 +485,27 @@ static void mtr_curses_hosts(
                 printw("\n    ");
 #ifdef HAVE_IPINFO
                 if (is_printii(ctl))
-                    printw(fmt_ipinfo(ctl, addrs));
+                    printw("%s", fmt_ipinfo(ctl, addrs));
 #endif
                 if (name != NULL) {
                     if (ctl->show_ips)
-                        printw("%s (%s)", name, strlongip(ctl, addrs));
+                        printw("%s (%s)", name, strlongip(ctl->af, addrs));
                     else
                         printw("%s", name);
                 } else {
-                    printw("%s", strlongip(ctl, addrs));
+                    printw("%s", strlongip(ctl->af, addrs));
                 }
                 for (k = 0; k < mplss->labels && ctl->enablempls; k++) {
-                    printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]",
-                           mplss->label[k], mplss->exp[k], mplss->s[k],
+                    printw("\n    [MPLS: Lbl %lu TC %u S %u TTL %u]",
+                           mplss->label[k], mplss->tc[k], mplss->s[k],
                            mplss->ttl[k]);
                 }
                 attroff(A_BOLD);
             }
-
         } else {
-            printw("???");
+            attron(A_BOLD);
+            printw("(%s)", host_error_to_string(err));
+            attroff(A_BOLD);
         }
 
         printw("\n");
@@ -618,7 +623,7 @@ static void mtr_curses_graph(
     int startstat,
     int cols)
 {
-    int max, at, y;
+    int max, at, y, err;
     ip_t *addr;
     char *name;
     int __unused_int ATTRIBUTE_UNUSED;
@@ -629,22 +634,31 @@ static void mtr_curses_graph(
         printw("%2d. ", at + 1);
 
         addr = net_addr(at);
+        err = net_err(at);
+
         if (!addr) {
-            printw("???\n");
+            printw("(%s)", host_error_to_string(err));
             continue;
         }
 
-        if (!net_up(at))
-            attron(A_BOLD);
-        if (addrcmp((void *) addr, (void *) &ctl->unspec_addr, ctl->af)) {
+        if (err == 0
+            && addrcmp(addr, &ctl->unspec_addr, ctl->af)) {
+
+            if (!net_up(at)) {
+                attron(A_BOLD);
+            }
+
 #ifdef HAVE_IPINFO
             if (is_printii(ctl))
-                printw(fmt_ipinfo(ctl, addr));
+                printw("%s", fmt_ipinfo(ctl, addr));
 #endif
             name = dns_lookup(ctl, addr);
-            printw("%s", name ? name : strlongip(ctl, addr));
-        } else
-            printw("???");
+            printw("%s", name ? name : strlongip(ctl->af, addr));
+        } else {
+            attron(A_BOLD);
+            printw("(%s)", host_error_to_string(err));
+        }
+
         attroff(A_BOLD);
 
         getyx(stdscr, y, __unused_int);
@@ -684,9 +698,11 @@ void mtr_curses_redraw(
     pwcenter(buf);
     attroff(A_BOLD);
 
-    mvprintw(1, 0, "%s (%s)", ctl->LocalHostname, net_localaddr());
+    mvprintw(1, 0, "%s (%s) -> %s (%s)",
+	ctl->LocalHostname, net_localaddr(),
+	ctl->Hostname, net_remoteaddr());
     t = time(NULL);
-    mvprintw(1, maxx - 25, iso_time(&t));
+    mvprintw(1, maxx - 25, "%s", iso_time(&t));
     printw("\n");
 
     printw("Keys:  ");
@@ -746,7 +762,7 @@ void mtr_curses_redraw(
         startstat = padding - 2;
 
         snprintf(msg, sizeof(msg), " Last %3d pings", max_cols);
-        mvprintw(rowstat - 1, startstat, msg);
+        mvprintw(rowstat - 1, startstat, "%s", msg);
 
         attroff(A_BOLD);
         move(rowstat, 0);

@@ -4,6 +4,238 @@ The new release script will do a "git shortlog" to add
 the commit messages here. 
 
 #NEW_STUFF_HERE this is a tag my script looks for. 
+V0.95
+   Aaron Lipinski (27):
+         move net_send_batch call to its caller
+         addr -> hostent for consistency
+         re-init source too
+         additional call from net_reopen
+         refactor - group local, remote inits
+         reset ctl address family at net_reopen
+         accept only value used in structure
+         tell dns process if we want 4 or 6
+         resolve ipv6 only if we have ipv6
+         remove wrapper only function
+         init structures correctly wired up
+         prepare host with h_addr_list
+         remove temporaries
+         extract convert_addrinfo_to_hostent function
+         move conversion call to caller
+         use addrinfo
+         remove conversion function
+         switch gui to addrinfo
+         export DEFAULT_AF
+         reset addr family before searching again
+         freeaddrinfo
+         export get_hostent_from_name
+         make Hostname as const
+         rename function
+         dont show json option if not available
+   
+   Egor Panov (1):
+         Updated Readme
+   
+   R.E. Wolff (2):
+         Slight cleanup, but no fix for code that came up in a bugreport.
+         increased max length suggested by YVS2014
+   
+   Roger Wolff (12):
+   
+   Rogier Wolff (2):
+         Code formatting for Zenithal pull
+         added clarification to readme suggested by Zenithal
+   
+   Sergei Trofimovich (1):
+         ui/curses: always use "%s"-style format for printf()-style functions
+   
+   Vincent Bernat (3):
+         ui: don't cast to void* when calling display_rawhost()
+         net: fix MPLS display for curses and report
+         report: fix display of MPLS labels when using --report
+   
+   Zenithal (1):
+         Add display of destination with resolved addr under curses mode
+   
+   a1346054 (5):
+         fix wrong bash completion flag
+         fix shellcheck warnings
+         unify codestyle
+         fix spelling
+         trim trailing whitespace
+   
+   gaamox@tutanota.com (1):
+         Report secondary servers when CSV + wide report is enabled
+   
+V0.94
+   Aaron Lipinski (10):
+         gtk_menu_append -> gtk_menu_shell_append
+         GTK_OBJECT -> G_OBJECT
+         gtk_button_new_from_stock -> gtk_button_new_with_label
+         gtk3
+         hbox/vbox -> gtk_box_new
+         gtk_menu_popup -> gtk_menu_popup_at_pointer
+         show resolved hostname in raw dnsline
+         rely on final return NULL
+         introduce libasan
+         avoid stack use after scope
+   
+   Alejandro Leal (2):
+         few updates to manual page and README.md
+         Updating some comments
+   
+   Chongyu Zhu (1):
+         probe: fix find_source_addr
+   
+   Konrad Bucheli (1):
+         fix segmentation fault if there is no IP address on an interface (fixes #320)
+   
+   Kulemin Alexander (1):
+         report: json: reworked with libjansson
+   
+   Mark Egan-Fuller (1):
+         Add display of destination.
+   
+   Markus Kötter (6):
+         simplification - remove sockaddrtop
+         simplification - remove addrcpy
+         simplification - remove rsa{4,6}
+         simplification - address addrcmp
+         simplification - improve readability
+         ip6 udp - fix probes with local or remote port
+   
+   R.E. Wolff (29):
+         fix warning on recent compilers.
+         Merge branch 'master' of github.com:traviscross/mtr
+         net find local address fix by meingtsla
+         proposed patch for bsd compile error
+         fix closing brace
+         Added include errno --obouizi
+         Merge branch 'master' of github.com:traviscross/mtr
+         More compilation warning fixes from obouizi
+         Added extra help text to configure --yvs
+         Changed MAXPATH to MAX_PATH for AIX compatibility. -- aixtools
+         make the code for gtk2/3 a bit nicer.
+         Merge branch 'gtk3_with_fallback' of https://github.com/krisl/mtr
+         Merge branch 'master' of github.com:traviscross/mtr
+         in hindsight my previous patch wasn't so nice. And nobody told me.
+   
+   Sean Wei (1):
+         Fix parameter in ui/net.c
+   
+   Siyuan Miao (1):
+         show mpls information in raw output
+   
+   atib (1):
+         Added code to print multiple addresses regitered on the same hop count
+   
+   atibdialpad (2):
+         Change TTL dynamically to adjust for path changes
+         TODO list changes
+   
+   meingtsla (2):
+         asn_{open,close}: Always initialize ipinfo hash table
+         Merge branch 'master' of https://github.com/traviscross/mtr into asn-open-always-hcreate
+   
+V0.93
+    Adam (1):
+          Update README
+    
+    Adrien Gallouët (1):
+          Add a help line for the t command in curses
+    
+    Alexander Blesius (1):
+          convert README to markdown
+    
+    Arkadiusz Miśkiewicz (2):
+          Also try SOCK_RAW/IPPROTO_ICMP when other fail.
+          mtr to a unreachable host is possible again.
+    
+    Ben Williams (2):
+          added UI hotkeys description (from internal help) to NOTES section in mtr man page
+          renamed NOTES to INTERACTIVE CONTROL as per discussion in pull request
+    
+    Chonggang Li (4):
+          mtr-packet: use ICMP and UDP without privilege on linux
+          mtr-packet: fix Windows compilation
+          mtr-packet: fix compilation on OS X
+          mtr-packet: fix a bug causing IPv6 raw socket not working
+    
+    Markus Kötter (7):
+          set udp checksum
+          automake - configure show build options
+          sockaddr - unify access to sockaddr_in/6 port & address
+          probe - use INET6_ADDRSTRLEN
+          probe - extend matching to src/dst host&port
+          sockaddr - save a cast accessing the port
+          construct - fix set port
+    
+    Matt Kimball (7):
+          mtr-packet: report ICMP destination unreachable probes as "no route to host"
+          ui: display "no route to host" error as host entry rather than abort
+          json: Fix malformed json when the "hubs" list is empty
+          commandline: Added --interface for using a named network interface
+          Link portability/error.c with mtr-packet when missing on MacOS
+          Mention Python mtrpacket package in mtr-packet man page
+          Rework Cygwin mtr-packet to respond to signals (such as SIGTERM)
+    
+    R.E. Wolff (15):
+          fixed some outdated text in README.
+          minor changes top help Windows compilation on 32 bit machines
+          fix #204 : added exec of mtr-packet in the place where mtr was started 
+                from. Quick and dirty, There is probably a better place to declare variables.
+          Alternative 'skip uid 0 checks on cygwin' to adpoliak's implmentation
+          fix stupid typo. Thanks adpoliak!
+          possible fix for mac terminal 100% problem
+          Sami Kerola: prevent MTR reporting unknown revision
+          Merge branch 'master' of github.com:traviscross/mtr
+          fixed split like for macos
+          better fix. to dave's problem.
+          -f equals -m fix from yvs2014
+          rewritten weiyixuan's patch
+          fixed typo
+          Netbsd build fixes thanks to yvs2014
+          Merge branch 'master' of github.com:traviscross/mtr
+    
+    Robert Scheck (1):
+          Update incorrect FSF address
+    
+    Rogier Wolff (3):
+          Fixed issue #286
+          Manpage fix for Darwin by Matt. Rewritten by REW
+          Added parentheses
+    
+    SaintBol (9):
+          Update protocols.h
+          Update deconstruct_unix.c
+          Update probe.c
+          Update probe.h
+          Update cmdpipe.c
+          Update curses.c
+          Update mtr.h
+          Update report.c
+          Update mtr-packet.8.in
+    
+    Sami Kerola (1):
+          mtr-packet: make address-not-available errors less likely
+    
+    Samuel Henrique (1):
+          [typo]mtr.8.in: s/allows to/allows one to/
+    
+    Tobias Rittweiler (2):
+          Add a .dir-locals.el file for Emacs.
+          Replace perror(...); exit(...); by error(...);
+    
+    divinity76 (1):
+          use setup.exe's package manager mode, replacing apt-cyg
+    
+    tk (1):
+          Fix typo (resove -> resolve)
+    
+    weiyixuan (3):
+          Option -y can not work properly
+          Option --ipinfo 1 can not work properly
+          for tcp, fix : bind port failed, try next sequence
+    
 V0.92
    added a few arguments to calls added by fmazu. Allows it to compile.
 

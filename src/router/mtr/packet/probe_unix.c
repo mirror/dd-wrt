@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "probe.h"
@@ -21,6 +21,14 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef HAVE_ERROR_H
+#include <error.h>
+#else
+#include "portability/error.h"
+#endif
+#ifdef HAVE_LINUX_ERRQUEUE_H
+#include <linux/errqueue.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +37,7 @@
 
 #include "platform.h"
 #include "protocols.h"
+#include "sockaddr.h"
 #include "construct_unix.h"
 #include "deconstruct_unix.h"
 #include "timeval.h"
@@ -38,25 +47,64 @@ static
 int send_packet(
     const struct net_state_t *net_state,
     const struct probe_param_t *param,
+    int sequence,
     const char *packet,
     int packet_size,
     const struct sockaddr_storage *sockaddr)
 {
+    struct sockaddr_storage dst;
     int send_socket = 0;
     int sockaddr_length;
+
+    memcpy(&dst, sockaddr, sizeof(struct sockaddr_storage));
 
     if (sockaddr->ss_family == AF_INET6) {
         sockaddr_length = sizeof(struct sockaddr_in6);
 
         if (param->protocol == IPPROTO_ICMP) {
-            send_socket = net_state->platform.icmp6_send_socket;
+            if (net_state->platform.ip6_socket_raw) {
+                send_socket = net_state->platform.icmp6_send_socket;
+            } else {
+                send_socket = net_state->platform.ip6_txrx_icmp_socket;
+            }
         } else if (param->protocol == IPPROTO_UDP) {
-            send_socket = net_state->platform.udp6_send_socket;
+            if (net_state->platform.ip6_socket_raw) {
+                send_socket = net_state->platform.udp6_send_socket;
+                /* we got a ipv6 udp raw socket
+                 * the remote port is in the payload
+                 * we do not set in the sockaddr
+                 */
+                *sockaddr_port_offset(&dst) = 0;
+            } else {
+                send_socket = net_state->platform.ip6_txrx_udp_socket;
+                if (param->dest_port) {
+                    *sockaddr_port_offset(&dst) = htons(param->dest_port);
+                } else {
+                    *sockaddr_port_offset(&dst) = sequence;
+                }
+            }
         }
     } else if (sockaddr->ss_family == AF_INET) {
         sockaddr_length = sizeof(struct sockaddr_in);
 
-        send_socket = net_state->platform.ip4_send_socket;
+        if (net_state->platform.ip4_socket_raw) {
+            send_socket = net_state->platform.ip4_send_socket;
+        } else {
+            if (param->protocol == IPPROTO_ICMP) {
+                if (param->is_probing_byte_order) {
+                    send_socket = net_state->platform.ip4_tmp_icmp_socket;;
+                } else {
+                    send_socket = net_state->platform.ip4_txrx_icmp_socket;
+                }
+            } else if (param->protocol == IPPROTO_UDP) {
+                send_socket = net_state->platform.ip4_txrx_udp_socket;
+                if (param->dest_port) {
+                    *sockaddr_port_offset(&dst) = htons(param->dest_port);
+                } else {
+                    *sockaddr_port_offset(&dst) = sequence;
+                }
+            }
+        }
     }
 
     if (send_socket == 0) {
@@ -65,7 +113,7 @@ int send_packet(
     }
 
     return sendto(send_socket, packet, packet_size, 0,
-                  (struct sockaddr *) sockaddr, sockaddr_length);
+                  (struct sockaddr *) &dst, sockaddr_length);
 }
 
 /*
@@ -85,36 +133,44 @@ void check_length_order(
 {
     char packet[PACKET_BUFFER_SIZE];
     struct probe_param_t param;
-    struct sockaddr_storage dest_sockaddr;
-    struct sockaddr_storage src_sockaddr;
+    struct probe_t p0 = {.sequence = MIN_PORT };
     ssize_t bytes_sent;
     int packet_size;
+
+#ifdef __linux__
+    /*  Linux will accept either byte order and check below fails to work
+     *  in some cases due to sendto() returning EPERM. */
+    return;
+#endif
 
     memset(&param, 0, sizeof(struct probe_param_t));
     param.ip_version = 4;
     param.protocol = IPPROTO_ICMP;
     param.ttl = 255;
     param.remote_address = "127.0.0.1";
+    param.is_probing_byte_order = true;
 
-    if (resolve_probe_addresses(&param, &dest_sockaddr, &src_sockaddr)) {
-        fprintf(stderr, "Error decoding localhost address\n");
+
+    if (resolve_probe_addresses(net_state, &param, &p0.remote_addr,
+                &p0.local_addr)) {
+        fprintf(stderr, "Error decoding localhost address (%s/%s)\n",
+                probe_err, strerror (errno));
         exit(EXIT_FAILURE);
     }
 
     /*  First attempt to ping the localhost with network byte order  */
     net_state->platform.ip_length_host_order = false;
 
-    packet_size = construct_packet(net_state, NULL, MIN_PORT,
+    packet_size = construct_packet(net_state, NULL, &p0,
                                    packet, PACKET_BUFFER_SIZE,
-                                   &dest_sockaddr, &src_sockaddr, &param);
+                                   &param);
     if (packet_size < 0) {
-        perror("Unable to send to localhost");
-        exit(EXIT_FAILURE);
+      error(EXIT_FAILURE, errno, "Unable to send to localhost");
     }
 
     bytes_sent =
-        send_packet(net_state, &param, packet, packet_size,
-                    &dest_sockaddr);
+        send_packet(net_state, &param, MIN_PORT, packet, packet_size,
+                    &p0.remote_addr);
     if (bytes_sent > 0) {
         return;
     }
@@ -122,20 +178,18 @@ void check_length_order(
     /*  Since network byte order failed, try host byte order  */
     net_state->platform.ip_length_host_order = true;
 
-    packet_size = construct_packet(net_state, NULL, MIN_PORT,
+    packet_size = construct_packet(net_state, NULL, &p0,
                                    packet, PACKET_BUFFER_SIZE,
-                                   &dest_sockaddr, &src_sockaddr, &param);
+                                   &param);
     if (packet_size < 0) {
-        perror("Unable to send to localhost");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "Unable to send to localhost");
     }
 
     bytes_sent =
-        send_packet(net_state, &param, packet, packet_size,
-                    &dest_sockaddr);
+        send_packet(net_state, &param, MIN_PORT, packet, packet_size,
+                    &p0.remote_addr);
     if (bytes_sent < 0) {
-        perror("Unable to send with swapped length");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "Unable to send with swapped length");
     }
 }
 
@@ -169,19 +223,17 @@ void set_socket_nonblocking(
 
     flags = fcntl(socket, F_GETFL, 0);
     if (flags == -1) {
-        perror("Unexpected socket F_GETFL error");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "Unexpected socket F_GETFL error");
     }
 
     if (fcntl(socket, F_SETFL, flags | O_NONBLOCK)) {
-        perror("Unexpected socket F_SETFL O_NONBLOCK error");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "Unexpected socket F_SETFL O_NONBLOCK error");
     }
 }
 
 /*  Open the raw sockets for sending/receiving IPv4 packets  */
 static
-int open_ip4_sockets(
+int open_ip4_sockets_raw(
     struct net_state_t *net_state)
 {
     int send_socket;
@@ -190,7 +242,10 @@ int open_ip4_sockets(
 
     send_socket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (send_socket == -1) {
-        return -1;
+        send_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+        if (send_socket == -1) {
+            return -1;
+        }
     }
 
     /*
@@ -215,15 +270,68 @@ int open_ip4_sockets(
     }
 
     net_state->platform.ip4_present = true;
+    net_state->platform.ip4_socket_raw = true;
     net_state->platform.ip4_send_socket = send_socket;
     net_state->platform.ip4_recv_socket = recv_socket;
 
     return 0;
 }
 
+#ifdef HAVE_LINUX_ERRQUEUE_H
+/*  Open DGRAM sockets for sending/receiving IPv4 packets  */
+static
+int open_ip4_sockets_dgram(
+    struct net_state_t *net_state)
+{
+    int udp_socket;
+    int icmp_socket, icmp_tmp_socket;
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    int val = 1;
+#endif
+
+    icmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+    if (icmp_socket == -1) {
+        return -1;
+    }
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    if (setsockopt(icmp_socket, SOL_IP, IP_RECVERR, &val, sizeof(val)) < 0) {
+        return -1;
+    }
+#endif
+
+    udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udp_socket == -1) {
+        close(icmp_socket);
+        return -1;
+    }
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    if (setsockopt(udp_socket, SOL_IP, IP_RECVERR, &val, sizeof(val)) < 0) {
+        close(icmp_socket);
+        close(udp_socket);
+        return -1;
+    }
+#endif
+
+    icmp_tmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+    if (icmp_tmp_socket == -1) {
+        close(icmp_socket);
+        close(udp_socket);
+        return -1;
+    }
+
+    net_state->platform.ip4_present = true;
+    net_state->platform.ip4_socket_raw = false;
+    net_state->platform.ip4_txrx_icmp_socket = icmp_socket;
+    net_state->platform.ip4_tmp_icmp_socket = icmp_tmp_socket;
+    net_state->platform.ip4_txrx_udp_socket = udp_socket;
+
+    return 0;
+}
+#endif
+
 /*  Open the raw sockets for sending/receiving IPv6 packets  */
 static
-int open_ip6_sockets(
+int open_ip6_sockets_raw(
     struct net_state_t *net_state)
 {
     int send_socket_icmp;
@@ -251,12 +359,57 @@ int open_ip6_sockets(
     }
 
     net_state->platform.ip6_present = true;
+    net_state->platform.ip6_socket_raw = true;
     net_state->platform.icmp6_send_socket = send_socket_icmp;
     net_state->platform.udp6_send_socket = send_socket_udp;
     net_state->platform.ip6_recv_socket = recv_socket;
 
     return 0;
 }
+
+#ifdef HAVE_LINUX_ERRQUEUE_H
+/*  Open DGRAM sockets for sending/receiving IPv6 packets  */
+static
+int open_ip6_sockets_dgram(
+    struct net_state_t *net_state)
+{
+    int icmp_socket;
+    int udp_socket;
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    int val = 1;
+#endif
+
+    icmp_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
+    if (icmp_socket == -1) {
+        return -1;
+    }
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    if (setsockopt(icmp_socket, SOL_IPV6, IPV6_RECVERR, &val, sizeof(val)) < 0) {
+        return -1;
+    }
+#endif
+
+    udp_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (udp_socket == -1) {
+        close(icmp_socket);
+        return -1;
+    }
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    if (setsockopt(udp_socket, SOL_IPV6, IPV6_RECVERR, &val, sizeof(val)) < 0) {
+        close(icmp_socket);
+        close(udp_socket);
+        return -1;
+    }
+#endif
+
+    net_state->platform.ip6_present = true;
+    net_state->platform.ip6_socket_raw = false;
+    net_state->platform.ip6_txrx_icmp_socket = icmp_socket;
+    net_state->platform.ip6_txrx_udp_socket = udp_socket;
+
+    return 0;
+}
+#endif
 
 /*
     The first half of the net state initialization.  Since this
@@ -273,11 +426,21 @@ void init_net_state_privileged(
 
     net_state->platform.next_sequence = MIN_PORT;
 
-    if (open_ip4_sockets(net_state)) {
-        ip4_err = errno;
+    if (open_ip4_sockets_raw(net_state)) {
+#ifdef HAVE_LINUX_ERRQUEUE_H
+        /* fall back to using unprivileged sockets */
+        if (open_ip4_sockets_dgram(net_state)) {
+            ip4_err = errno;
+        }
+#endif
     }
-    if (open_ip6_sockets(net_state)) {
-        ip6_err = errno;
+    if (open_ip6_sockets_raw(net_state)) {
+#ifdef HAVE_LINUX_ERRQUEUE_H
+        /* fall back to using unprivileged sockets */
+        if (open_ip6_sockets_dgram(net_state)) {
+            ip6_err = errno;
+        }
+#endif
     }
 
     /*
@@ -286,13 +449,8 @@ void init_net_state_privileged(
      */
     if (!net_state->platform.ip4_present
         && !net_state->platform.ip6_present) {
-
-        errno = ip4_err;
-        perror("Failure to open IPv4 sockets");
-
-        errno = ip6_err;
-        perror("Failure to open IPv6 sockets");
-
+        error(0, ip4_err, "Failure to open IPv4 sockets");
+        error(0, ip6_err, "Failure to open IPv6 sockets");
         exit(EXIT_FAILURE);
     }
 }
@@ -304,8 +462,18 @@ void init_net_state_privileged(
 void init_net_state(
     struct net_state_t *net_state)
 {
-    set_socket_nonblocking(net_state->platform.ip4_recv_socket);
-    set_socket_nonblocking(net_state->platform.ip6_recv_socket);
+    if (net_state->platform.ip4_socket_raw) {
+        set_socket_nonblocking(net_state->platform.ip4_recv_socket);
+    } else {
+        set_socket_nonblocking(net_state->platform.ip4_txrx_icmp_socket);
+        set_socket_nonblocking(net_state->platform.ip4_txrx_udp_socket);
+    }
+    if (net_state->platform.ip6_socket_raw) {
+        set_socket_nonblocking(net_state->platform.ip6_recv_socket);
+    } else {
+        set_socket_nonblocking(net_state->platform.ip6_txrx_icmp_socket);
+        set_socket_nonblocking(net_state->platform.ip6_txrx_udp_socket);
+    }
 
     if (net_state->platform.ip4_present) {
         check_length_order(net_state);
@@ -387,8 +555,8 @@ void send_probe(
 {
     char packet[PACKET_BUFFER_SIZE];
     struct probe_t *probe;
+    int trytimes;
     int packet_size;
-    struct sockaddr_storage src_sockaddr;
 
     probe = alloc_probe(net_state, param->command_token);
     if (probe == NULL) {
@@ -396,21 +564,41 @@ void send_probe(
         return;
     }
 
-    if (resolve_probe_addresses(param, &probe->remote_addr, &src_sockaddr)) {
+    if (resolve_probe_addresses(net_state, param, &probe->remote_addr,
+                &probe->local_addr)) {
         printf("%d invalid-argument\n", param->command_token);
         free_probe(net_state, probe);
         return;
     }
 
     if (gettimeofday(&probe->platform.departure_time, NULL)) {
-        perror("gettimeofday failure");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "gettimeofday failure");
     }
 
-    packet_size =
-        construct_packet(net_state, &probe->platform.socket,
-                         probe->sequence, packet, PACKET_BUFFER_SIZE,
-                         &probe->remote_addr, &src_sockaddr, param);
+    // there might be an off-by-one in the number of tries here.
+    // this is intentional.  It is no use exhausting the very last
+    // open port. Max 10 retries would've been acceptable too I think.
+    for (trytimes=MIN_PORT; trytimes < MAX_PORT; trytimes++) {
+
+        packet_size = construct_packet(net_state, &probe->platform.socket,
+                         probe, packet, PACKET_BUFFER_SIZE,
+                         param);
+
+        if (packet_size > 0) break; // no retry if we succeed.
+
+        if ((param->protocol != IPPROTO_TCP) &&
+            (param->protocol != IPPROTO_SCTP)) break; // no retry if not TCP/SCTP
+
+        if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) {
+            break; // no retry
+        }
+
+     	probe->sequence = net_state->platform.next_sequence++;
+
+       	if (net_state->platform.next_sequence > MAX_PORT) {
+            net_state->platform.next_sequence = MIN_PORT;
+        }
+    }
 
     if (packet_size < 0) {
         /*
@@ -431,7 +619,7 @@ void send_probe(
     }
 
     if (packet_size > 0) {
-        if (send_packet(net_state, param,
+        if (send_packet(net_state, param, probe->sequence,
                         packet, packet_size, &probe->remote_addr) == -1) {
 
             report_packet_error(param->command_token);
@@ -488,8 +676,7 @@ void receive_probe(
 
     if (timestamp == NULL) {
         if (gettimeofday(&now, NULL)) {
-            perror("gettimeofday failure");
-            exit(EXIT_FAILURE);
+            error(EXIT_FAILURE, errno, "gettimeofday failure");
         }
 
         timestamp = &now;
@@ -505,10 +692,10 @@ void receive_probe(
 
 /*
     Read all available packets through our receiving raw socket, and
-    handle any responses to probes we have preivously sent.
+    handle any responses to probes we have previously sent.
 */
 static
-void receive_replies_from_icmp_socket(
+void receive_replies_from_recv_socket(
     struct net_state_t *net_state,
     int socket,
     received_packet_func_t handle_received_packet)
@@ -516,23 +703,39 @@ void receive_replies_from_icmp_socket(
     char packet[PACKET_BUFFER_SIZE];
     int packet_length;
     struct sockaddr_storage remote_addr;
-    socklen_t sockaddr_length;
     struct timeval timestamp;
+    int flag = 0;
+#ifdef HAVE_LINUX_ERRQUEUE_H
+    struct cmsghdr *cm;
+    struct sock_extended_err *ee = NULL;
+    bool icmp_connrefused_received = false;
+    bool icmp_hostunreach_received = false;
+#endif
 
     /*  Read until no more packets are available  */
     while (true) {
-        sockaddr_length = sizeof(struct sockaddr_storage);
-        packet_length = recvfrom(socket, packet, PACKET_BUFFER_SIZE, 0,
-                                 (struct sockaddr *) &remote_addr,
-                                 &sockaddr_length);
+        struct iovec iov;
+        struct msghdr msg;
+        char control[1024];
+
+        memset(&msg, 0, sizeof(msg));
+        memset(&iov, 0, sizeof(iov));
+        iov.iov_base = packet;
+        iov.iov_len = sizeof(packet);
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_name = (struct sockaddr*) &remote_addr;
+        msg.msg_namelen = sizeof(remote_addr);
+        msg.msg_control = control;
+        msg.msg_controllen = sizeof(control);
+        packet_length = recvmsg(socket, &msg, flag);
 
         /*
            Get the time immediately after reading the packet to
            keep the timing as precise as we can.
          */
         if (gettimeofday(&timestamp, NULL)) {
-            perror("gettimeofday failure");
-            exit(EXIT_FAILURE);
+            error(EXIT_FAILURE, errno, "gettimeofday failure");
         }
 
         if (packet_length == -1) {
@@ -549,15 +752,86 @@ void receive_replies_from_icmp_socket(
                receive.
              */
             if (errno == EINTR) {
+                /* clear error */
+                int so_err;
+                socklen_t so_err_size = sizeof(so_err);
+                int err;
+
+                do {
+                  err = getsockopt(socket, SOL_SOCKET, SO_ERROR, &so_err, &so_err_size);
+                } while (err < 0 && errno == EINTR);
                 continue;
             }
 
-            perror("Failure receiving replies");
-            exit(EXIT_FAILURE);
+            /* handle error received in error queue */
+            if (errno == EHOSTUNREACH) {
+                /* potential error caused by ttl, read inner icmp hdr from err queue */
+#ifdef HAVE_LINUX_ERRQUEUE_H
+                icmp_hostunreach_received = true;
+                flag |= MSG_ERRQUEUE;
+#endif
+                continue;
+            }
+
+            if (errno == ECONNREFUSED) {
+                /* udp packet reached dst, read inner udp hdr from err queue */
+#ifdef HAVE_LINUX_ERRQUEUE_H
+                icmp_connrefused_received = true;
+                flag |= MSG_ERRQUEUE;
+#endif
+                continue;
+            }
+
+            error(EXIT_FAILURE, errno, "Failure receiving replies");
         }
 
-        handle_received_packet(net_state, &remote_addr, packet,
-                               packet_length, &timestamp);
+#ifdef HAVE_LINUX_ERRQUEUE_H
+        /* get src ip for packets read from err queue */
+        if (flag & MSG_ERRQUEUE) {
+            for (cm = CMSG_FIRSTHDR(&msg); cm; cm = CMSG_NXTHDR(&msg, cm)) {
+                if (cm->cmsg_level == SOL_IP) {
+                    if (cm->cmsg_type == IP_RECVERR) {
+                        ee = (struct sock_extended_err *) CMSG_DATA(cm);
+                    }
+                }
+                else if (cm->cmsg_level == SOL_IPV6) {
+                    if (cm->cmsg_type == IPV6_RECVERR) {
+                        ee = (struct sock_extended_err *) CMSG_DATA(cm);
+                    }
+                }
+            }
+            if (ee) {
+                memcpy(&remote_addr, SO_EE_OFFENDER(ee), sizeof(remote_addr));
+            }
+        }
+
+#ifdef SO_PROTOCOL
+        if (icmp_connrefused_received) {
+            /* using ICMP type ICMP_ECHOREPLY is not a bug, it is an
+               indication of successfully reaching dst host.
+             */
+            handle_error_queue_packet(net_state, &remote_addr, ICMP_ECHOREPLY, IPPROTO_UDP,
+                    packet, packet_length, &timestamp);
+        } else if (icmp_hostunreach_received) {
+            /* handle packet based on send socket protocol */
+            int proto, length = sizeof(int);
+
+            if (getsockopt(socket, SOL_SOCKET, SO_PROTOCOL, &proto, &length) < 0) {
+                error(EXIT_FAILURE, errno, "getsockopt SO_PROTOCOL error");
+            }
+            handle_error_queue_packet(net_state, &remote_addr, ICMP_TIME_EXCEEDED, proto,
+                    packet, packet_length, &timestamp);
+        } else {
+#endif
+#endif
+            /* ICMP packets received from raw socket */
+            handle_received_packet(net_state, &remote_addr, packet,
+                                   packet_length, &timestamp);
+#ifdef HAVE_LINUX_ERRQUEUE_H
+#ifdef SO_PROTOCOL
+        }
+#endif
+#endif
     }
 }
 
@@ -592,8 +866,7 @@ void receive_replies_from_probe_socket(
         if (errno == EAGAIN) {
             return;
         } else {
-            perror("probe socket select error");
-            exit(EXIT_FAILURE);
+            error(EXIT_FAILURE, errno, "probe socket select error");
         }
     }
 
@@ -605,8 +878,7 @@ void receive_replies_from_probe_socket(
     }
 
     if (getsockopt(probe_socket, SOL_SOCKET, SO_ERROR, &err, &err_length)) {
-        perror("probe socket SO_ERROR");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "probe socket SO_ERROR");
     }
 
     /*
@@ -631,17 +903,39 @@ void receive_replies(
     struct probe_t *probe_safe_iter;
 
     if (net_state->platform.ip4_present) {
-        receive_replies_from_icmp_socket(net_state,
-                                         net_state->platform.
-                                         ip4_recv_socket,
-                                         handle_received_ip4_packet);
+        if (net_state->platform.ip4_socket_raw) {
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip4_recv_socket,
+                                             handle_received_ip4_packet);
+        } else {
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip4_txrx_icmp_socket,
+                                             handle_received_ip4_packet);
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip4_txrx_udp_socket,
+                                             handle_received_ip4_packet);
+        }
     }
 
     if (net_state->platform.ip6_present) {
-        receive_replies_from_icmp_socket(net_state,
-                                         net_state->platform.
-                                         ip6_recv_socket,
-                                         handle_received_ip6_packet);
+        if (net_state->platform.ip6_socket_raw) {
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip6_recv_socket,
+                                             handle_received_ip6_packet);
+        } else {
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip6_txrx_icmp_socket,
+                                             handle_received_ip6_packet);
+            receive_replies_from_recv_socket(net_state,
+                                             net_state->platform.
+                                             ip6_txrx_udp_socket,
+                                             handle_received_ip6_packet);
+        }
     }
 
     LIST_FOREACH_SAFE(probe, &net_state->outstanding_probes,
@@ -692,8 +986,7 @@ void check_probe_timeouts(
     struct probe_t *probe_safe_iter;
 
     if (gettimeofday(&now, NULL)) {
-        perror("gettimeofday failure");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "gettimeofday failure");
     }
 
     LIST_FOREACH_SAFE(probe, &net_state->outstanding_probes,
@@ -726,8 +1019,7 @@ bool get_next_probe_timeout(
     struct timeval probe_timeout;
 
     if (gettimeofday(&now, NULL)) {
-        perror("gettimeofday failure");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "gettimeofday failure");
     }
 
     have_timeout = false;

@@ -7,7 +7,7 @@
     Copyright (C) 1998  Bertrand Leconte <B.Leconte@mail.dotcom.fr>
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -15,9 +15,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -77,7 +77,7 @@ void split_redraw(
     fprintf(stderr, "split_redraw()\n");
 #endif
 
-    /* 
+    /*
      * If there is less lines than last time, we delete them
      * TEST THIS PLEASE
      */
@@ -92,13 +92,13 @@ void split_redraw(
      */
     for (at = 0; at < max; at++) {
         addr = net_addr(at);
-        if (addrcmp((void *) addr, (void *) &ctl->unspec_addr, ctl->af)) {
+        if (addrcmp(addr, &ctl->unspec_addr, ctl->af)) {
             char str[256], *name;
             if (!(name = dns_lookup(ctl, addr)))
-                name = strlongip(ctl, addr);
+                name = strlongip(ctl->af, addr);
             if (ctl->show_ips) {
                 snprintf(str, sizeof(str), "%s %s", name,
-                         strlongip(ctl, addr));
+                         strlongip(ctl->af, addr));
                 name = str;
             }
             /* May be we should test name's length */
@@ -166,7 +166,8 @@ int split_keyaction(
     tv.tv_usec = 0;
 
     if (select(1, &readfds, NULL, NULL, &tv) > 0) {
-        read(0, &c, 1);
+        if (read(0, &c, 1) <= 0)
+          return ActionQuit;
     } else
         return 0;
 #endif

@@ -21,16 +21,18 @@ AC_CANONICAL_HOST
 AC_PROG_CC
 
 # Check pkg-config availability.
-m4_ifndef([PKG_PROG_PKG_CONFIG],
-  [m4_fatal(
+m4_ifndef([PKG_CHECK_MODULES], [m4_defun([PKG_CHECK_MODULES], [AC_MSG_ERROR(
 [Could not locate the pkg-config autoconf macros.  These are usually located
 in /usr/share/aclocal/pkg.m4.  If your macros are in a different location,
 try setting the environment variable ACLOCAL_OPTS="-I/other/macro/dir"
-before running ./bootstrap.sh again.])
+before running ./bootstrap.sh again, or configure --without-gtk ----without-jansson ])])
 ])
 PKG_PROG_PKG_CONFIG
 
 AM_CONDITIONAL([CYGWIN], [test "$host_os" = cygwin])
+AM_COND_IF([CYGWIN],
+           [AC_DEFINE([USING_CYGWIN], [1], [Building Under Cygwin.])],
+           [])
 
 # Check bytes in types.
 AC_CHECK_SIZEOF([unsigned char], [1])
@@ -46,6 +48,7 @@ AC_CHECK_HEADERS([ \
   error.h \
   fcntl.h \
   linux/icmp.h \
+  linux/errqueue.h \
   ncurses.h \
   ncurses/curses.h \
   netinet/in.h \
@@ -80,16 +83,34 @@ AM_CONDITIONAL([WITH_GETOPT], [test "x$with_getopt" = "xyes"])
 
 AC_CHECK_LIB([m], [floor], [], [AC_MSG_ERROR([No math library found])])
 
+# libasan
+AC_ARG_WITH([libasan],
+ [AS_HELP_STRING([--with-libasan], [Build with AddressSanitizer])],
+ [with_libasan=yes], [])
+AM_CONDITIONAL([WITH_LIBASAN], [test "x$with_libasan" = "xyes"])
+
 # Find GTK
 AC_ARG_WITH([gtk],
-  [AS_HELP_STRING([--without-gtk], [Build without the GTK+2.0 interface])],
+  [AS_HELP_STRING([--without-gtk], [Build without the GTK+ interface])],
   [], [with_gtk=yes])
 AS_IF([test "x$with_gtk" = "xyes"],
-  [PKG_CHECK_MODULES([GTK], [gtk+-2.0],
-    [AC_DEFINE([HAVE_GTK], [1], [Define if gtk+-2.0 library available])],
-    [with_gtk=no])
+  [PKG_CHECK_MODULES([GTK], [gtk+-3.0],
+    [AC_DEFINE([HAVE_GTK], [1], [Define if gtk+ library available])]
+      [AC_DEFINE([HAVE_GTK3], [1], [Define if gtk+-3.0 library available])],
+    [PKG_CHECK_MODULES([GTK], [gtk+-2.0],
+      [AC_DEFINE([HAVE_GTK], [1], [Define if gtk+ library available])],
+      [with_gtk=no])])
 ])
 AM_CONDITIONAL([WITH_GTK], [test "x$with_gtk" = xyes])
+
+AC_ARG_WITH([jansson],
+  [AS_HELP_STRING([--without-jansson], [Build without JSON output])],
+  [], [with_jansson=yes])
+AS_IF([test "x$with_jansson" = "xyes"],
+  [PKG_CHECK_MODULES([JANSSON], [jansson],
+    [AC_DEFINE([HAVE_JANSSON], [1], [Define if jansson library available])],
+    [with_jansson=no])
+])
 
 # Find ncurses
 AC_ARG_WITH([ncurses],
@@ -106,7 +127,7 @@ AS_IF([test "x$with_ncurses" = "xyes"],
 ])
 AM_CONDITIONAL([WITH_CURSES], [test "x$with_ncurses" = xyes])
 
-AC_CHECK_LIB([cap], [cap_set_proc], [],
+AC_CHECK_LIB([cap], [cap_set_proc], [have_cap="yes"],
   AS_IF([test "$host_os" = linux-gnu],
     AC_MSG_WARN([Capabilities support is strongly recommended for increased security.  See SECURITY for more information.])))
 
@@ -239,7 +260,18 @@ AC_ARG_ENABLE([bash-completion],
   [], [enable_bash_completion=yes]
 )
 AM_CONDITIONAL([BUILD_BASH_COMPLETION], [test "x$enable_bash_completion" = xyes])
-
+echo "build options:"
+echo "--------------"
+echo "libasan :$with_libasan"
+echo "ipv6    :$USES_IPV6"
+echo "ipinfo  :$with_ipinfo"
+echo "ncurses :$with_ncurses"
+echo "gtk     :$with_gtk"
+echo "jansson :$with_jansson"
+echo "cap     :$have_cap"
+echo "libs    :$LIBS"
+echo "cflags  :$CFLAGS"
+echo "--------------"
 # Prepare config.h, Makefile, and output them.
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])

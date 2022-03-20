@@ -12,12 +12,12 @@
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software
-#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#   You should have received a copy of the GNU General Public License along
+#   with this program; if not, write to the Free Software Foundation, Inc.,
+#   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Test sending probes and receiving respones.'''
+'''Test sending probes and receiving responses.'''
 
 import socket
 import sys
@@ -136,7 +136,7 @@ class TestProbeICMPv4(mtrpacket.MtrPacketTest):
         'Test timeouts when sending to a non-existant address'
 
         #
-        #  Probe a non-existant address, and expect no reply
+        #  Probe a non-existent address, and expect no reply
         #
         #  I'm not sure what the best way to find an address that doesn't
         #  exist, but is still route-able.  If we use a reserved IP
@@ -208,7 +208,7 @@ class TestProbeICMPv4(mtrpacket.MtrPacketTest):
     def test_ttl_expired(self):
         'Test sending a probe which will have its time-to-live expire'
 
-        #  Probe Goolge's DNS server, but give the probe only one hop
+        #  Probe Google's DNS server, but give the probe only one hop
         #  to live.
         self.write_command('16 send-probe ip-4 8.8.8.8 ttl 1')
         reply = self.parse_reply()
@@ -220,7 +220,7 @@ class TestProbeICMPv4(mtrpacket.MtrPacketTest):
         '''Test sending multiple probes in parallel
 
         We will expect the probes to complete out-of-order by sending
-        a probe to a distant host immeidately followed by a probe to
+        a probe to a distant host immediately followed by a probe to
         the local host.'''
 
         success_count = 0
@@ -268,9 +268,10 @@ class TestProbeICMPv6(mtrpacket.MtrPacketTest):
     '''Test sending probes using IP version 6'''
 
     def __init__(self, *args):
-        google_addr = resolve_ipv6_address(mtrpacket.IPV6_TEST_HOST)
+        if mtrpacket.HAVE_IPV6:
+            google_addr = resolve_ipv6_address(mtrpacket.IPV6_TEST_HOST)
 
-        self.google_addr = google_addr  # type: str
+            self.google_addr = google_addr  # type: str
 
         super(TestProbeICMPv6, self).__init__(*args)
 
@@ -300,7 +301,7 @@ class TestProbeICMPv6(mtrpacket.MtrPacketTest):
     def test_ttl_expired(self):
         'Test sending a probe which will have its time-to-live expire'
 
-        #  Probe Goolge's DNS server, but give the probe only one hop
+        #  Probe Google's DNS server, but give the probe only one hop
         #  to live.
         cmd = '53 send-probe ip-6 ' + self.google_addr + ' ttl 1'
         self.write_command(cmd)
