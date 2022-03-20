@@ -187,6 +187,10 @@ ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.x64 ntfs3
 	-$(MAKE) -f Makefile.x64 ntfs3-install
 endif
+ifeq ($(CONFIG_RTL8125),y)
+	-$(MAKE) -f Makefile.x64 rtl8125
+	-$(MAKE) -f Makefile.x64 rtl8125-install
+endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.x64 zfs
 	-$(MAKE) -f Makefile.x64 zfs-install
