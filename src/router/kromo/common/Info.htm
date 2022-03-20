@@ -117,21 +117,13 @@ function setDHCPTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 6) {
+	for(var i = 0; i < val.length; i = i + 5) {
 		
 		var row = table.insertRow(-1);
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i + 1];
-
-		var ifn = val[i + 2];
-		var iface = row.insertCell(-1);
-		iface.title = status_band.titl;
-		iface.style.cursor = "pointer";
-		iface.style.textDecoration = "none";
-		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
-		iface.innerHTML = ifn;
 		
-		var mac = val[i + 3];
+		var mac = val[i + 2];
 		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
@@ -143,7 +135,7 @@ function setDHCPTable() {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
 
-		row.insertCell(-1).innerHTML = val[i + 4];
+		row.insertCell(-1).innerHTML = val[i + 3];
 	}
 }
 
@@ -569,9 +561,8 @@ function refresh(F)
 									<table class="table center" cellspacing="5" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
 											<th sortdir="up" width="25%"><% tran("share.hostname"); %></th>
-											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>
-											<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
-											<th sortdir="up" width="20%"><% tran("share.mac"); %></th>
+											<th sortdir="up" width="25%"><% tran("share.ip"); %></th>
+											<th sortdir="up" width="25%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="25%"><% tran("idx.dhcp_lease"); %></th>
 										</tr>
 									</table>
