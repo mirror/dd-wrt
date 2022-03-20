@@ -352,7 +352,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input name=\"raidname%d\" size=\"12\" value=\"%s\" />", i, raidname);
+		websWrite(wp, "<input name=\"raidname%d\" size=\"20\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<select name=\"raidtype%d\" onchange=\"raid_save_submit(this.form)\">\n", i);

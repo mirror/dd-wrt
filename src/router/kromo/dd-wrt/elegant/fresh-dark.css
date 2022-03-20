@@ -85,7 +85,8 @@ body input[name='reset_button']:hover {
   border-color: #d0911d;
   color: #fff;
 }
-body input[name='reboot_button'] {
+body input[name='reboot_button'],
+body input[name='reboot_button']:disabled:hover {
   background: none repeat scroll 0 0 #c11616;
   border-color: #c11616;
   color: #f8f8f8;
