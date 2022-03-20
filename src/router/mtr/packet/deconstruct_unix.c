@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "deconstruct_unix.h"
@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "protocols.h"
+#include "sockaddr.h"
 
 #define MAX_MPLS_LABELS 8
 
@@ -64,6 +65,8 @@ void handle_inner_udp_packet(
     struct net_state_t *net_state,
     const struct sockaddr_storage *remote_addr,
     int icmp_result,
+    int af,
+    const void *ip,
     const struct UDPHeader *udp,
     int udp_length,
     struct timeval *timestamp,
@@ -79,11 +82,67 @@ void handle_inner_udp_packet(
     if (probe == NULL) {
         probe = find_probe(net_state, IPPROTO_UDP, 0, udp->checksum);
     }
+    if (probe == NULL)
+        return;
 
-    if (probe != NULL) {
-        receive_probe(net_state, probe, icmp_result,
-                      remote_addr, timestamp, mpls_count, mpls);
+    if (probe->remote_addr.ss_family != remote_addr->ss_family)
+        return;
+
+    if (udp->dstport != *sockaddr_port_offset(&probe->remote_addr) )
+        return;
+
+    if (udp->srcport != *sockaddr_port_offset(&probe->local_addr) )
+        return;
+
+    void *saddr, *daddr;
+    if (af == AF_INET)
+    {
+        saddr = &((struct IPHeader *)ip)->saddr;
+        daddr = &((struct IPHeader *)ip)->daddr;
+    } else
+    if (af == AF_INET6)
+    {
+        daddr = &((struct IP6Header *)ip)->daddr;
+        saddr = &((struct IP6Header *)ip)->saddr;
+    } else
+    {
+        return;
     }
+
+    if ( memcmp(sockaddr_addr_offset(&probe->remote_addr),
+               daddr,
+               sockaddr_addr_size(&probe->remote_addr)) != 0 )
+            return;
+
+    if ( memcmp(sockaddr_addr_offset(&probe->local_addr),
+           saddr,
+           sockaddr_addr_size(&probe->local_addr)) != 0)
+        return;
+
+    /* probe is not null */
+    receive_probe(net_state, probe, icmp_result,
+                      remote_addr, timestamp, mpls_count, mpls);
+}
+
+void handle_error_queue_packet(
+    struct net_state_t *net_state,
+    const struct sockaddr_storage *remote_addr,
+    int icmp_result,
+    int proto,
+    char *packet,
+    int packet_length,
+    struct timeval *timestamp)
+{
+    if (proto == IPPROTO_UDP) {
+        handle_inner_udp_packet(net_state, remote_addr, ICMP_TIME_EXCEEDED, 0, NULL,
+                (struct UDPHeader *)packet, packet_length, timestamp, 0, NULL);
+    } else if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {
+        const struct ICMPHeader *icmp = (struct ICMPHeader *)packet;
+        find_and_receive_probe(net_state, remote_addr, timestamp,
+                               ICMP_TIME_EXCEEDED, IPPROTO_ICMP, icmp->id,
+                               icmp->sequence, 0, NULL);
+    }
+
 }
 
 /*
@@ -136,7 +195,7 @@ void handle_inner_ip4_packet(
         udp = (struct UDPHeader *) (ip + 1);
         udp_length = packet_length - sizeof(struct IPHeader);
 
-        handle_inner_udp_packet(net_state, remote_addr, icmp_result, udp,
+        handle_inner_udp_packet(net_state, remote_addr, icmp_result, AF_INET, ip, udp,
                                 udp_length, timestamp, mpls_count, mpls);
     } else if (ip->protocol == IPPROTO_TCP) {
         if (packet_length < ip_tcp_size) {
@@ -212,7 +271,7 @@ void handle_inner_ip6_packet(
         udp = (struct UDPHeader *) (ip + 1);
         udp_length = packet_length - sizeof(struct IP6Header);
 
-        handle_inner_udp_packet(net_state, remote_addr, icmp_result, udp,
+        handle_inner_udp_packet(net_state, remote_addr, icmp_result, AF_INET6, ip, udp,
                                 udp_length, timestamp, mpls_count, mpls);
     } else if (ip->protocol == IPPROTO_TCP) {
         if (packet_length < ip_tcp_size) {
@@ -266,7 +325,7 @@ int decode_mpls_object(
         label->label =
             ext_label->label[0] << 12 |
             ext_label->label[1] << 4 | ext_label->label[2] >> 4;
-        label->experimental_use = (ext_label->label[2] & 0x0E) >> 1;
+        label->traffic_class = (ext_label->label[2] & 0x0E) >> 1;
         label->bottom_of_stack = ext_label->label[2] & 0x01;
         label->ttl = ext_label->ttl;
     }
@@ -347,13 +406,16 @@ void handle_received_icmp4_packet(
     int packet_length,
     struct timeval *timestamp)
 {
-    const int icmp_ip_size =
-        sizeof(struct ICMPHeader) + sizeof(struct IPHeader);
+    int icmp_ip_size = 0;
     const struct IPHeader *inner_ip;
     int inner_size = packet_length - sizeof(struct ICMPHeader);
     int mpls_count;
     struct mpls_label_t mpls[MAX_MPLS_LABELS];
 
+    if (net_state->platform.ip4_socket_raw) {
+        icmp_ip_size += sizeof(struct IPHeader);
+    }
+    icmp_ip_size += sizeof(struct ICMPHeader);
     mpls_count =
         decode_mpls_labels(icmp, packet_length, mpls, MAX_MPLS_LABELS);
 
@@ -393,6 +455,15 @@ void handle_received_icmp4_packet(
         if (icmp->code == ICMP_PORT_UNREACH) {
             handle_inner_ip4_packet(net_state, remote_addr,
                                     ICMP_ECHOREPLY, inner_ip, inner_size,
+                                    timestamp, mpls_count, mpls);
+        } else {
+            /*
+                ICMP_DEST_UNREACH subtypes other than port unreachable
+                indicate an exceptional condition, and will be reported
+                as a "no route to host" probe response.
+            */
+            handle_inner_ip4_packet(net_state, remote_addr,
+                                    ICMP_DEST_UNREACH, inner_ip, inner_size,
                                     timestamp, mpls_count, mpls);
         }
     }
@@ -443,6 +514,10 @@ void handle_received_icmp6_packet(
             handle_inner_ip6_packet(net_state, remote_addr,
                                     ICMP_ECHOREPLY, inner_ip, inner_size,
                                     timestamp, mpls_count, mpls);
+        } else {
+            handle_inner_ip6_packet(net_state, remote_addr,
+                                    ICMP_DEST_UNREACH, inner_ip, inner_size,
+                                    timestamp, mpls_count, mpls);
         }
     }
 }
@@ -459,24 +534,33 @@ void handle_received_ip4_packet(
     int packet_length,
     struct timeval *timestamp)
 {
-    const int ip_icmp_size =
-        sizeof(struct IPHeader) + sizeof(struct ICMPHeader);
+    int ip_icmp_size = 0;
     const struct IPHeader *ip;
     const struct ICMPHeader *icmp;
     int icmp_length;
+
+    if (net_state->platform.ip4_socket_raw) {
+        ip_icmp_size += sizeof(struct IPHeader);
+    }
+    ip_icmp_size += sizeof(struct ICMPHeader);
 
     /*  Ensure that we don't access memory beyond the bounds of the packet  */
     if (packet_length < ip_icmp_size) {
         return;
     }
 
-    ip = (struct IPHeader *) packet;
-    if (ip->protocol != IPPROTO_ICMP) {
-        return;
-    }
+    if (net_state->platform.ip4_socket_raw) {
+        ip = (struct IPHeader *) packet;
+        if (ip->protocol != IPPROTO_ICMP) {
+            return;
+        }
 
-    icmp = (struct ICMPHeader *) (ip + 1);
-    icmp_length = packet_length - sizeof(struct IPHeader);
+        icmp = (struct ICMPHeader *) (ip + 1);
+        icmp_length = packet_length - sizeof(struct IPHeader);
+    } else {
+        icmp = (struct ICMPHeader *) packet;
+        icmp_length = packet_length;
+    }
 
     handle_received_icmp4_packet(net_state, remote_addr, icmp, icmp_length,
                                  timestamp);

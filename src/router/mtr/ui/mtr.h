@@ -4,7 +4,7 @@
     Copyright (C) 2005 R.E.Wolff@BitWizard.nl
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -12,9 +12,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #ifndef MTR_MTR_H
@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <stdint.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -32,8 +33,10 @@
 
 /* Typedefs */
 #ifdef ENABLE_IPV6
+#define DEFAULT_AF AF_UNSPEC
 typedef struct in6_addr ip_t;
 #else
+#define DEFAULT_AF AF_INET
 typedef struct in_addr ip_t;
 #endif
 
@@ -61,7 +64,7 @@ typedef int time_t;
 
 /* net related definitions */
 #define SAVED_PINGS 200
-#define MAXPATH 8
+#define MAX_PATH 8
 #define MaxHost 256
 #define MinPort 1024
 #define MaxPort 65535
@@ -82,7 +85,8 @@ struct mtr_ctl {
     int MaxPing;
     float WaitTime;
     float GraceTime;
-    char *Hostname;
+    const char *Hostname;
+    char *InterfaceName;
     char *InterfaceAddress;
     char LocalHostname[128];
     int ipinfo_no;
@@ -132,10 +136,22 @@ extern const struct fields data_fields[MAXFLD];
 /* MPLS label object */
 struct mplslen {
     unsigned long label[MAXLABELS];     /* label value */
-    uint8_t exp[MAXLABELS];     /* experimental bits */
+    uint8_t tc[MAXLABELS];     /* Traffic Class bits */
     uint8_t ttl[MAXLABELS];     /* MPLS TTL */
     char s[MAXLABELS];          /* bottom of stack */
     char labels;                /* how many labels did we get? */
 };
+
+
+#ifdef USING_CYGWIN
+#define running_as_root() 1
+#else
+#define running_as_root() (getuid() == 0)
+#endif
+
+int get_addrinfo_from_name(
+    struct mtr_ctl *ctl,
+    struct addrinfo **res,
+    const char *name);
 
 #endif                          /* MTR_MTR_H */

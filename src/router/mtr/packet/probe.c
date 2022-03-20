@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "probe.h"
@@ -21,6 +21,11 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#ifdef HAVE_ERROR_H
+#include <error.h>
+#else
+#include "portability/error.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,8 +36,9 @@
 #include "platform.h"
 #include "protocols.h"
 #include "timeval.h"
+#include "sockaddr.h"
 
-#define IP_TEXT_LENGTH 64
+char *probe_err;
 
 /*  Convert the destination address from text to sockaddr  */
 int decode_address_string(
@@ -87,24 +93,36 @@ int decode_address_string(
     for the probe.
 */
 int resolve_probe_addresses(
+    struct net_state_t *net_state,
     const struct probe_param_t *param,
     struct sockaddr_storage *dest_sockaddr,
     struct sockaddr_storage *src_sockaddr)
 {
     if (decode_address_string
         (param->ip_version, param->remote_address, dest_sockaddr)) {
+        probe_err = "decode address string remote";
         return -1;
     }
 
     if (param->local_address) {
         if (decode_address_string
             (param->ip_version, param->local_address, src_sockaddr)) {
+            probe_err = "decode address string local";
             return -1;
         }
     } else {
+        probe_err = "find source address";
         if (find_source_addr(src_sockaddr, dest_sockaddr)) {
+            //probe_err = "find source address";
             return -1;
         }
+        probe_err = "";
+    }
+    /* DGRAM ICMP id is taken from src_port not from ICMP header */
+    if (param->protocol == IPPROTO_ICMP) {
+        if ( (src_sockaddr->ss_family == AF_INET && !net_state->platform.ip4_socket_raw) ||
+             (src_sockaddr->ss_family == AF_INET6 && !net_state->platform.ip6_socket_raw) )
+            *sockaddr_port_offset(src_sockaddr) = htons(getpid());
     }
 
     return 0;
@@ -215,7 +233,7 @@ void format_mpls_string(
         }
 
         snprintf(append_pos, buffer_size, "%d,%d,%d,%d",
-                 mpls->label, mpls->experimental_use,
+                 mpls->label, mpls->traffic_class,
                  mpls->bottom_of_stack, mpls->ttl);
 
         buffer_size -= strlen(append_pos);
@@ -236,18 +254,17 @@ void respond_to_probe(
     int mpls_count,
     const struct mpls_label_t *mpls)
 {
-    char ip_text[IP_TEXT_LENGTH];
+    char ip_text[INET6_ADDRSTRLEN];
     char response[COMMAND_BUFFER_SIZE];
     char mpls_str[COMMAND_BUFFER_SIZE];
     int remaining_size;
     const char *result;
     const char *ip_argument;
-    struct sockaddr_in *sockaddr4;
-    struct sockaddr_in6 *sockaddr6;
-    void *addr;
 
     if (icmp_type == ICMP_TIME_EXCEEDED) {
         result = "ttl-expired";
+    } else if (icmp_type == ICMP_DEST_UNREACH) {
+        result = "no-route";
     } else {
         assert(icmp_type == ICMP_ECHOREPLY);
         result = "reply";
@@ -255,19 +272,13 @@ void respond_to_probe(
 
     if (remote_addr->ss_family == AF_INET6) {
         ip_argument = "ip-6";
-        sockaddr6 = (struct sockaddr_in6 *) remote_addr;
-        addr = &sockaddr6->sin6_addr;
     } else {
         ip_argument = "ip-4";
-        sockaddr4 = (struct sockaddr_in *) remote_addr;
-        addr = &sockaddr4->sin_addr;
     }
 
-    if (inet_ntop(remote_addr->ss_family, addr, ip_text, IP_TEXT_LENGTH) ==
+    if (inet_ntop(remote_addr->ss_family, sockaddr_addr_offset(remote_addr), ip_text, INET6_ADDRSTRLEN) ==
         NULL) {
-
-        perror("inet_ntop failure");
-        exit(EXIT_FAILURE);
+        error(EXIT_FAILURE, errno, "inet_ntop failure");
     }
 
     snprintf(response, COMMAND_BUFFER_SIZE,
@@ -306,11 +317,13 @@ int find_source_addr(
 {
     int sock;
     int len;
-    struct sockaddr_in *destaddr4;
-    struct sockaddr_in6 *destaddr6;
     struct sockaddr_storage dest_with_port;
+#ifdef __linux__
+    // The Linux code needs these.
     struct sockaddr_in *srcaddr4;
     struct sockaddr_in6 *srcaddr6;
+#endif
+
 
     dest_with_port = *destaddr;
 
@@ -320,31 +333,44 @@ int find_source_addr(
        the connect will fail.  We aren't actually sending
        anything to the port.
      */
-    if (destaddr->ss_family == AF_INET6) {
-        destaddr6 = (struct sockaddr_in6 *) &dest_with_port;
-        destaddr6->sin6_port = htons(1);
-
-        len = sizeof(struct sockaddr_in6);
-    } else {
-        destaddr4 = (struct sockaddr_in *) &dest_with_port;
-        destaddr4->sin_port = htons(1);
-
-        len = sizeof(struct sockaddr_in);
-    }
+    *sockaddr_port_offset(&dest_with_port) = htons(1);
+    len = sockaddr_size(&dest_with_port);
 
     sock = socket(destaddr->ss_family, SOCK_DGRAM, IPPROTO_UDP);
     if (sock == -1) {
+        probe_err = "open socket";
         return -1;
     }
 
-    if (connect(sock, (struct sockaddr *) &dest_with_port, len)) {
-        close(sock);
-        return -1;
-    }
+    if (connect(sock, (struct sockaddr *) &dest_with_port, len) == 0) {
+        if (getsockname(sock, (struct sockaddr *) srcaddr, &len)) {
+            close(sock);
+            probe_err = "getsockname";
+            return -1;
+        }
+    } else {
+#ifdef __linux__
+        /* Linux doesn't require source address, so we can support
+         * a case when mtr is run against unreachable host (that can become
+         * reachable) */
+        if (errno != EHOSTUNREACH) {
+            probe_err = "not hostunreach";
+            close(sock);
+            return -1;
+        }
 
-    if (getsockname(sock, (struct sockaddr *) srcaddr, &len)) {
+        if (destaddr->ss_family == AF_INET6) {
+            srcaddr6 = (struct sockaddr_in6 *) srcaddr;
+            srcaddr6->sin6_addr = in6addr_any;
+        } else {
+            srcaddr4 = (struct sockaddr_in *) srcaddr;
+            srcaddr4->sin_addr.s_addr = INADDR_ANY;
+        }
+#else
         close(sock);
+        probe_err = "connect failed";
         return -1;
+#endif
     }
 
     close(sock);
@@ -353,15 +379,7 @@ int find_source_addr(
        Zero the port, as we may later use this address to finding, and
        we don't want to use the port from the socket we just created.
      */
-    if (destaddr->ss_family == AF_INET6) {
-        srcaddr6 = (struct sockaddr_in6 *) srcaddr;
-
-        srcaddr6->sin6_port = 0;
-    } else {
-        srcaddr4 = (struct sockaddr_in *) srcaddr;
-
-        srcaddr4->sin_port = 0;
-    }
+    *sockaddr_port_offset(srcaddr) = 0;
 
     return 0;
 }

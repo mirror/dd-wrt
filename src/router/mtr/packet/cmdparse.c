@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "cmdparse.h"
@@ -66,8 +66,8 @@ int tokenize_command(
     structure for later semantic interpretation.  Returns EINVAL if the
     command string is unparseable or zero for success.
 
-    comamnd_string will be modified in-place with NUL characters terminating
-    tokens, and the command_t will use pointers to the conents of
+    command_string will be modified in-place with NUL characters terminating
+    tokens, and the command_t will use pointers to the contents of
     command_string without copying, so any interpretation of the
     command_t structure requires that the command_string memory has not yet
     been freed or otherwise reused.

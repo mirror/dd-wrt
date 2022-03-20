@@ -77,6 +77,9 @@ mtr \- a network diagnostic tool
 .B \-\-mpls\c
 ]
 [\c
+.BI \-I \ NAME\c
+]
+[\c
 .BI \-a \ ADDRESS\c
 ]
 [\c
@@ -111,38 +114,38 @@ mtr \- a network diagnostic tool
 ]
 .I HOSTNAME
 .SH DESCRIPTION
-.B mtr 
-combines the functionality of the 
+.B mtr
+combines the functionality of the
 .B traceroute
-and 
+and
 .B ping
 programs in a single network diagnostic tool.
 .PP
-As 
-.B mtr 
-starts, it investigates the network connection between the host 
+As
 .B mtr
-runs on and 
+starts, it investigates the network connection between the host
+.B mtr
+runs on and
 .BR HOSTNAME
 by sending packets with purposely low TTLs.  It continues to send
 packets with low TTL, noting the response time of the intervening
-routers.  This allows 
-.B mtr 
+routers.  This allows
+.B mtr
 to print the response percentage and response times of the internet
-route to 
-.BR HOSTNAME . 
+route to
+.BR HOSTNAME .
 A sudden increase in packet loss or response time is often an indication
-of a bad (or simply overloaded) link. 
+of a bad (or simply overloaded) link.
 .PP
 The results are usually reported as round-trip-response times in milliseconds
-and the percentage of packetloss. 
+and the percentage of packet loss.
 .SH OPTIONS
 .TP
 .B \-h\fR, \fB\-\-help
 Print the summary of command line argument options.
 .TP
 .B \-v\fR, \fB\-\-version
-Print the installed version of mtr.  
+Print the installed version of mtr.
 .TP
 .B \-4
 Use IPv4 only.
@@ -154,33 +157,33 @@ Use IPv6 only.  (IPV4 may be used for DNS lookups.)
 Reads the list of hostnames from the specified file.
 .TP
 .B \-r\fR, \fB\-\-report
-This option puts 
+This option puts
 .B mtr
-into 
+into
 .B report
 mode.  When in this mode,
 .B mtr
-will run for the number of cycles specified by the 
+will run for the number of cycles specified by the
 .B \-c
-option, and then print statistics and exit.  
+option, and then print statistics and exit.
 .TP
 \c
-This mode is useful for generating statistics about network quality.  
-Note that each running instance of 
+This mode is useful for generating statistics about network quality.
+Note that each running instance of
 .B mtr
-generates a significant amount of network traffic.  Using 
+generates a significant amount of network traffic.  Using
 .B mtr
 to measure the quality of your network may result in decreased
-network performance.  
+network performance.
 .TP
 .B \-w\fR, \fB\-\-report\-wide
-This option puts 
+This option puts
 .B mtr
-into 
+into
 .B wide report
 mode.  When in this mode,
 .B mtr
-will not cut hostnames in the report. 
+will not cut hostnames in the report.
 .TP
 .B \-x\fR, \fB\-\-xml
 Use this option to tell
@@ -189,12 +192,12 @@ to use the xml output format.  This format is better suited for
 automated processing of the measurement results.
 .TP
 .B \-t\fR, \fB\-\-curses
-Use this option to force 
-.B mtr 
+Use this option to force
+.B mtr
 to use the curses based terminal
 interface (if available).
-In case the list of hops exceeds the 
-height of your terminal, you can use the 
+In case the list of hops exceeds the
+height of your terminal, you can use the
 .B +
 and
 .B -
@@ -212,19 +215,19 @@ information.
 .TP
 .B \-g\fR, \fB\-\-gtk
 Use this option to force
-.B mtr 
-to use the GTK+ based X11 window interface (if available).  
-GTK+ must have been available on the system when 
-.B mtr 
-was built for this to work.  See the GTK+ web page at 
+.B mtr
+to use the GTK+ based X11 window interface (if available).
+GTK+ must have been available on the system when
+.B mtr
+was built for this to work.  See the GTK+ web page at
 .UR http://\:www.\:gtk.\:org/
 .UE
 for more information about GTK+.
 .TP
 .B \-l\fR, \fB\-\-raw
 Use the raw output format.  This format is better suited for
-archival of the measurement results.  It could be parsed to 
-be presented into any of the other display methods. 
+archival of the measurement results.  It could be parsed to
+be presented into any of the other display methods.
 .IP
 Example of the raw output format:
 .nf
@@ -264,17 +267,20 @@ Use this option to tell
 .B mtr
 to use the JSON output format.  This format is better suited for
 automated processing of the measurement results.
+Jansson library must have been available on the system when
+.B mtr
+was built for this to work.
 .TP
 .B \-p\fR, \fB\-\-split
 Use this option to set
-.B mtr 
+.B mtr
 to spit out a format that is suitable for a split-user interface.
 .TP
 .B \-n\fR, \fB\-\-no\-dns
-Use this option to force 
-.B mtr 
+Use this option to force
+.B mtr
 to display numeric IP numbers and not try to resolve the
-host names. 
+host names.
 .TP
 .B \-b\fR, \fB\-\-show\-ips
 Use this option to tell
@@ -282,7 +288,7 @@ Use this option to tell
 to display both the host names and numeric IP numbers.  In split mode
 this adds an extra field to the output.  In report mode, there is usually
 too little space to add the IPs, and they will be truncated.  Use the
-wide report (-w) mode to see the IPs in report mode. 
+wide report (-w) mode to see the IPs in report mode.
 .TP
 .B \-o \fIFIELDS\fR, \fB\-\-order \fIFIELDS
 Use this option to specify which fields to display and in which order.
@@ -348,7 +354,7 @@ root user may choose values between zero and one.
 .TP
 .B \-c \fICOUNT\fR, \fB\-\-report\-cycles \fICOUNT
 Use this option to set the number of pings sent to determine
-both the machines on the network and the reliability of 
+both the machines on the network and the reliability of
 those machines.  Each cycle lasts one second.
 .TP
 .B \-s \fIPACKETSIZE\fR, \fB\-\-psize \fIPACKETSIZE
@@ -372,10 +378,16 @@ Specifies value for type of service field in IP header.  Should be within range 
 - 255.
 .TP
 .B \-e\fR, \fB\-\-mpls
-Use this option to tell 
-.B mtr 
+Use this option to tell
+.B mtr
 to display information from ICMP extensions for MPLS (RFC 4950)
 that are encoded in the response packets.
+.TP
+.B \-I \fINAME\fR, \fB\-\-interface \fINAME
+Use the network interface with a specific name for sending network probes.
+This can be useful when you have multiple network interfaces with routes
+to your destination, for example both wired Ethernet and WiFi, and wish
+to test a particular interface.
 .TP
 .B \-a \fIADDRESS\fR, \fB\-\-address \fIADDRESS
 Use this option to bind the outgoing socket to
@@ -429,9 +441,9 @@ for full description of this socket option.
 recognizes a few environment variables.
 .TP
 .B MTR_OPTIONS
-This environment variable allows to specify options, as if they were
-passed on the command line.  It is parsed before reading the actual
-command line options, so that options specified in
+This environment variable allows one to specify options, as if they
+were passed on the command line.  It is parsed before reading the
+actual command line options, so that options specified in
 .B MTR_OPTIONS
 are overridden by command-line options.
 
@@ -466,16 +478,38 @@ executable.
 .TP
 .B DISPLAY
 Specifies an X11 server for the GTK+ frontend.
-.SH BUGS
-Some modern routers give a lower priority to ICMP ECHO packets than 
-to other network traffic.  Consequently, the reliability of these
-routers reported by 
+.SH INTERACTIVE CONTROL
 .B mtr
-will be significantly lower than the actual reliability of 
-these routers.  
+can be controlled while it is running with the following keys:
+  ?|h     help
+  p       pause (SPACE to resume)
+  d       switching display mode
+  e       toggle MPLS information on/off
+  n       toggle DNS on/off
+  r       reset all counters
+  o str   set the columns to display, default str='LRS N BAWV'
+  j       toggle latency(LS NABWV)/jitter(DR AGJMXI) stats
+  c <n>   report cycle n, default n=infinite
+  i <n>   set the ping interval to n seconds, default n=1
+  f <n>   set the initial time-to-live(ttl), default n=1
+  m <n>   set the max time-to-live, default n= # of hops
+  s <n>   set the packet size to n or random(n<0)
+  b <c>   set ping bit pattern to c(0..255) or random(c<0)
+  Q <t>   set ping packet's TOS to t
+  u       switch between ICMP ECHO and UDP datagrams
+  y       switching IP info
+  z       toggle ASN info on/off
+  q       exit
+.SH BUGS
+Some modern routers give a lower priority to ICMP ECHO packets than
+to other network traffic.  Consequently, the reliability of these
+routers reported by
+.B mtr
+will be significantly lower than the actual reliability of
+these routers.
 .SH CONTACT INFORMATION
 .PP
-For the latest version, see the mtr web page at 
+For the latest version, see the mtr web page at
 .UR http://\:www.\:bitwizard.\:nl/\:mtr/
 .UE
 .PP
