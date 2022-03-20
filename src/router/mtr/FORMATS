@@ -6,12 +6,12 @@ gui-library with a setuid program.
 
 The split format is:
 
-<pos> <host> <loss%> <rcvd pckts> <sent pckts> <best> <avg> <worst> 
+<pos> <host> <loss%> <rcvd pckts> <sent pckts> <best> <avg> <worst>
 
 
 The "raw" format is:
 
-hostline|xmitline|pingline|dnsline|timestampline
+hostline|xmitline|pingline|dnsline|timestampline|mplsline
 
 hostline:
 h <pos> <host IP>
@@ -22,12 +22,14 @@ x <pos> <seqnum>
 pingline:
 p <pos> <pingtime (ms)> <seqnum>
 
-dnsline: 
+dnsline:
 d <pos> <hostname>
 
 timestampline:
 t <pos> <pingtime> <timestamp>
 
+mplsline:
+m <pos> <label> <traffic_class> <bottom_stack> <ttl>
 
 Timestampline is not  yet implemented. Need to find out how to do
 ICMP timestamping first. :-)
@@ -35,7 +37,7 @@ ICMP timestamping first. :-)
 
 Someone suggested to put the following text here. As to context: Some
 people are wondering why mtr sometimes reports hosts beyond the
-destination host. 
+destination host.
 
 
 The FINAL host will occasionally be mentioned at position n, n+1, n+2
@@ -100,4 +102,3 @@ h 15 152.63.50.89
 h 16 152.179.99.218
 h 17 152.179.99.218
 h 18 152.179.99.218
-

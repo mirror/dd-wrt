@@ -121,7 +121,7 @@ probes.
 .I IP-ADDRESS
 .HP 14
 .IP
-The local Internet Procol version 4 address to use when sending probes.
+The local Internet Protocol version 4 address to use when sending probes.
 .HP 7
 .IP
 .B local-ip-6
@@ -312,7 +312,7 @@ of four.  The first four values in the list correspond to the
 first MPLS label, the next four values correspond to the second MPLS
 label, and so on.  The values are provided in this order:
 .IR label ,
-.IR experimental-use ,
+.IR traffic-class ,
 .IR bottom-of-stack ,
 .IR ttl .
 .HP 7
@@ -407,7 +407,7 @@ value, are used.
 \&...
 .RE 0
 .LP
-Each interemediate host would respond with a
+Each intermediate host would respond with a
 .B ttl-expired
 message, and the destination host would respond with a
 .BR reply :
@@ -437,6 +437,12 @@ Note that the replies in this example are printed out of order.
 This is the reason that it is important to send commands with unique
 token values, and to use those token values to match replies with
 their originating commands.
+.SH LANGUAGE BINDINGS
+.PP
+A Python 3.x package for sending asynchronous network probes using
+mtr-packet is available.  See
+.UR https://\:pypi.\:org/\:project/\:mtrpacket/
+.UE
 .SH CONTACT INFORMATION
 .PP
 For the latest version, see the mtr web page at

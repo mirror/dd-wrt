@@ -11,45 +11,56 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "wait.h"
 
-#include <io.h>
-#include <stdio.h>
-#include <windows.h>
+#include <error.h>
+#include <errno.h>
+#include <sys/select.h>
 
 #include "command.h"
 
 /*
-    Sleep until we receive a new probe response, a new command on the
-    command stream, or a probe timeout.  On Windows, this means that
-    we will sleep with an alertable wait, as all of these conditions
-    use I/O completion routines as notifications of these events.
+    Wait for either a request from the command stream or
+    for the probe results to be passed from the ICMP service
+    thread.
 */
 void wait_for_activity(
     struct command_buffer_t *command_buffer,
     struct net_state_t *net_state)
 {
-    DWORD wait_result;
+    int nfds;
+    fd_set read_set;
+    int ready_count;
 
-    /*
-       Start the command read overlapped I/O just prior to sleeping.
-       During development of the Cygwin port, there was a bug where the
-       overlapped I/O was started earlier in the mtr-packet loop, and
-       an intermediate alertable wait could leave us in this Sleep
-       without an active command read.  So now we do this here, instead.
-     */
-    start_read_command(command_buffer);
+    FD_ZERO(&read_set);
 
-    /*  Sleep until an I/O completion routine runs  */
-    wait_result = SleepEx(INFINITE, TRUE);
+    FD_SET(command_buffer->command_stream, &read_set);
+    nfds = command_buffer->command_stream + 1;
 
-    if (wait_result == WAIT_FAILED) {
-        fprintf(stderr, "SleepEx failure %d\n", GetLastError());
-        exit(EXIT_FAILURE);
+    FD_SET(net_state->platform.thread_out_pipe_read, &read_set);
+    if (net_state->platform.thread_out_pipe_read >= nfds) {
+        nfds = net_state->platform.thread_out_pipe_read + 1;
+    }
+
+    while (true) {
+        ready_count =
+            select(nfds, &read_set, NULL, NULL, NULL);
+
+        if (ready_count != -1) {
+            return;
+        }
+
+        /*
+            EINTR and EAGAIN simply mean that the select should
+            be retried.
+        */
+        if (errno != EINTR && errno != EAGAIN) {
+            error(EXIT_FAILURE, errno, "unexpected select error");
+        }
     }
 }

@@ -4,7 +4,7 @@
     Changes/additions Copyright (C) 1998 R.E.Wolff@BitWizard.nl
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -12,9 +12,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -94,7 +94,7 @@ int gtk_detect(
 {
     if (getenv("DISPLAY") != NULL) {
         /* If we do this here, gtk_init exits on an error. This happens
-           BEFORE the user has had a chance to tell us not to use the 
+           BEFORE the user has had a chance to tell us not to use the
            display... */
         return TRUE;
     } else {
@@ -198,7 +198,7 @@ static gint About_clicked(
     gtk_show_about_dialog(GTK_WINDOW(main_window)
                           , "version", PACKAGE_VERSION, "copyright",
                           "Copyright \xc2\xa9 1997,1998  Matt Kimball",
-                          "website", "http://www.bitwizard.nl/mtr/",
+                          "website", "https://www.bitwizard.nl/mtr/",
                           "authors", authors, "comments",
                           "The 'traceroute' and 'ping' programs in a single network diagnostic tool.",
                           "license",
@@ -244,11 +244,14 @@ static gint Host_activate(
     gpointer data)
 {
     struct mtr_ctl *ctl = (struct mtr_ctl *) data;
-    struct hostent *addr;
+    struct addrinfo *res = NULL;
 
-    addr = dns_forward(gtk_entry_get_text(GTK_ENTRY(entry)));
-    if (addr) {
-        net_reopen(ctl, addr);
+    ctl->af = DEFAULT_AF;  // should this obey the cmd line option?
+    ctl->Hostname = gtk_entry_get_text(GTK_ENTRY(entry));
+    if (get_addrinfo_from_name(ctl, &res, ctl->Hostname) == 0) {
+        net_reopen(ctl, res);
+        freeaddrinfo(res);
+        net_send_batch(ctl);
         /* If we are "Paused" at this point it is usually because someone
            entered a non-existing host. Therefore do the go-ahead... */
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(Pause_Button), 0);
@@ -272,46 +275,45 @@ static void Toolbar_fill(
     GtkWidget *Label;
     GtkAdjustment *Adjustment;
 
-    Button = gtk_button_new_from_stock(GTK_STOCK_QUIT);
+    Button = gtk_button_new_with_label("Quit");
     gtk_box_pack_end(GTK_BOX(Toolbar), Button, FALSE, FALSE, 0);
-    g_signal_connect(GTK_OBJECT(Button), "clicked",
-                     GTK_SIGNAL_FUNC(Window_destroy), NULL);
+    g_signal_connect(G_OBJECT(Button), "clicked",
+                     G_CALLBACK(Window_destroy), NULL);
 
-    Button = gtk_button_new_from_stock(GTK_STOCK_ABOUT);
+    Button = gtk_button_new_with_label("About");
     gtk_box_pack_end(GTK_BOX(Toolbar), Button, FALSE, FALSE, 0);
-    g_signal_connect(GTK_OBJECT(Button), "clicked",
-                     GTK_SIGNAL_FUNC(About_clicked), NULL);
+    g_signal_connect(G_OBJECT(Button), "clicked",
+                     G_CALLBACK(About_clicked), NULL);
 
     Button = gtk_button_new_with_mnemonic("_Restart");
     gtk_box_pack_end(GTK_BOX(Toolbar), Button, FALSE, FALSE, 0);
-    g_signal_connect(GTK_OBJECT(Button), "clicked",
-                     GTK_SIGNAL_FUNC(Restart_clicked), ctl);
+    g_signal_connect(G_OBJECT(Button), "clicked",
+                     G_CALLBACK(Restart_clicked), ctl);
 
     Pause_Button = gtk_toggle_button_new_with_mnemonic("_Pause");
     gtk_box_pack_end(GTK_BOX(Toolbar), Pause_Button, FALSE, FALSE, 0);
-    g_signal_connect(GTK_OBJECT(Pause_Button), "clicked",
-                     GTK_SIGNAL_FUNC(Pause_clicked), ctl);
+    g_signal_connect(G_OBJECT(Pause_Button), "clicked",
+                     G_CALLBACK(Pause_clicked), ctl);
 
     /* allow root only to set zero delay */
     Adjustment = (GtkAdjustment *) gtk_adjustment_new(ctl->WaitTime,
-                                                      getuid() ==
-                                                      0 ? 0.01 : 1.00,
+                                                      running_as_root() ? 0.01 : 1.00,
                                                       999.99, 1.0, 10.0,
                                                       0.0);
     Button = gtk_spin_button_new(Adjustment, 0.5, 2);
     gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(Button), TRUE);
     gtk_box_pack_end(GTK_BOX(Toolbar), Button, FALSE, FALSE, 0);
     ctl->gtk_data = Button;
-    g_signal_connect(GTK_OBJECT(Adjustment), "value_changed",
-                     GTK_SIGNAL_FUNC(WaitTime_changed), ctl);
+    g_signal_connect(G_OBJECT(Adjustment), "value_changed",
+                     G_CALLBACK(WaitTime_changed), ctl);
 
     Label = gtk_label_new_with_mnemonic("_Hostname:");
     gtk_box_pack_start(GTK_BOX(Toolbar), Label, FALSE, FALSE, 0);
 
     Entry = gtk_entry_new();
     gtk_entry_set_text(GTK_ENTRY(Entry), ctl->Hostname);
-    g_signal_connect(GTK_OBJECT(Entry), "activate",
-                     GTK_SIGNAL_FUNC(Host_activate), ctl);
+    g_signal_connect(G_OBJECT(Entry), "activate",
+                     G_CALLBACK(Host_activate), ctl);
     gtk_box_pack_start(GTK_BOX(Toolbar), Entry, TRUE, TRUE, 0);
 
     gtk_label_set_mnemonic_widget(GTK_LABEL(Label), Entry);
@@ -395,7 +397,7 @@ static void TreeViewCreate(
     ReportTreeView =
         gtk_tree_view_new_with_model(GTK_TREE_MODEL(ReportStore));
 
-    g_signal_connect(GTK_OBJECT(ReportTreeView), "button_press_event",
+    g_signal_connect(G_OBJECT(ReportTreeView), "button_press_event",
                      G_CALLBACK(ReportTreeView_clicked), ctl);
 
 #ifdef HAVE_IPINFO
@@ -508,15 +510,15 @@ static void update_tree_row(
     char str[256] = "???", *name = str;
 
     addr = net_addr(row);
-    if (addrcmp((void *) addr, (void *) &ctl->unspec_addr, ctl->af)) {
+    if (addrcmp(addr, &ctl->unspec_addr, ctl->af)) {
         if ((name = dns_lookup(ctl, addr))) {
             if (ctl->show_ips) {
                 snprintf(str, sizeof(str), "%s (%s)", name,
-                         strlongip(ctl, addr));
+                         strlongip(ctl->af, addr));
                 name = str;
             }
         } else
-            name = strlongip(ctl, addr);
+            name = strlongip(ctl->af, addr);
     }
 
     gtk_list_store_set(ReportStore, iter,
@@ -565,6 +567,15 @@ void gtk_redraw(
     }
 }
 
+// GTK 3 has changed the interface a bit. Here a few defines so that we can
+// work with GTK2 or GTK3 as required.
+#ifdef HAVE_GTK3
+#define gtk_vbox_new_(orientation,sz) gtk_box_new(orientation, sz)
+#define gtk_hbox_new_(orientation,sz) gtk_box_new(orientation, sz)
+#else
+#define gtk_vbox_new_(orientation,sz) gtk_vbox_new(FALSE, sz)
+#define gtk_hbox_new_(orientation,sz) gtk_hbox_new(FALSE, sz)
+#endif
 
 static void Window_fill(
     struct mtr_ctl *ctl,
@@ -577,9 +588,10 @@ static void Window_fill(
     gtk_window_set_title(GTK_WINDOW(Window), "My traceroute");
     gtk_window_set_default_size(GTK_WINDOW(Window), 650, 400);
     gtk_container_set_border_width(GTK_CONTAINER(Window), 10);
-    VBox = gtk_vbox_new(FALSE, 10);
 
-    Toolbar = gtk_hbox_new(FALSE, 10);
+    VBox    = gtk_vbox_new_(GTK_ORIENTATION_VERTICAL,   10);
+    Toolbar = gtk_hbox_new_(GTK_ORIENTATION_HORIZONTAL, 10);
+
     Toolbar_fill(ctl, Toolbar);
     gtk_box_pack_start(GTK_BOX(VBox), Toolbar, FALSE, FALSE, 0);
 
@@ -620,10 +632,10 @@ void gtk_open(
 
     Window_fill(ctl, main_window);
 
-    g_signal_connect(GTK_OBJECT(main_window), "delete_event",
-                     GTK_SIGNAL_FUNC(Window_destroy), NULL);
-    g_signal_connect(GTK_OBJECT(main_window), "destroy",
-                     GTK_SIGNAL_FUNC(Window_destroy), NULL);
+    g_signal_connect(G_OBJECT(main_window), "delete_event",
+                     G_CALLBACK(Window_destroy), NULL);
+    g_signal_connect(G_OBJECT(main_window), "destroy",
+                     G_CALLBACK(Window_destroy), NULL);
 
     gtk_widget_show_all(main_window);
 }
@@ -802,20 +814,24 @@ static gboolean ReportTreeView_clicked(
     newdestination_item =
         gtk_menu_item_new_with_label("Set as new destination");
 
-    gtk_menu_append(GTK_MENU(popup_menu), copy_item);
-    gtk_menu_append(GTK_MENU(popup_menu), newdestination_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu), copy_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu), newdestination_item);
 
-    g_signal_connect(GTK_OBJECT(copy_item), "activate",
-                     GTK_SIGNAL_FUNC(Copy_activate), path);
+    g_signal_connect(G_OBJECT(copy_item), "activate",
+                     G_CALLBACK(Copy_activate), path);
 
     ctl->gtk_data = path;
-    g_signal_connect(GTK_OBJECT(newdestination_item), "activate",
-                     GTK_SIGNAL_FUNC(NewDestination_activate), ctl);
+    g_signal_connect(G_OBJECT(newdestination_item), "activate",
+                     G_CALLBACK(NewDestination_activate), ctl);
 
     gtk_widget_show(copy_item);
     gtk_widget_show(newdestination_item);
 
+#ifdef HAVE_GTK3
+    gtk_menu_popup_at_pointer(GTK_MENU(popup_menu), NULL);
+#else
     gtk_menu_popup(GTK_MENU(popup_menu), NULL, NULL, NULL, NULL,
                    0, event->time);
+#endif
     return TRUE;
 }

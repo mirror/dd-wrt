@@ -11,13 +11,18 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #ifndef PROBE_UNIX_H
 #define PROBE_UNIX_H
+
+#ifndef IPPROTO_SCTP
+// Needed for Netbsd.
+#define IPPROTO_SCTP           132             /* SCTP */
+#endif
 
 /*  The range of local port numbers to use for probes  */
 #define MIN_PORT 33000
@@ -35,7 +40,7 @@ struct probe_platform_t {
     struct timeval departure_time;
 };
 
-/*  We'll use rack sockets to send and recieve probes on Unix systems  */
+/*  We'll use rack sockets to send and receive probes on Unix systems  */
 struct net_state_platform_t {
     /*  true if we were successful at opening IPv4 sockets  */
     bool ip4_present;
@@ -43,11 +48,26 @@ struct net_state_platform_t {
     /*  true if we were successful at opening IPv6 sockets  */
     bool ip6_present;
 
+    /* true if ipv4 socket is raw socket */
+    bool ip4_socket_raw;
+
+    /* true if ipv6 socket is raw socket */
+    bool ip6_socket_raw;
+
     /*  Socket used to send raw IPv4 packets  */
     int ip4_send_socket;
 
     /*  Socket used to receive IPv4 ICMP replies  */
     int ip4_recv_socket;
+
+    /*  Socket used to probe byte order */
+    int ip4_tmp_icmp_socket;
+
+    /*  Socket used to tx & rx non-raw IPv4 icmp packets */
+    int ip4_txrx_icmp_socket;
+
+    /*  Socket used to send IPv4 udp packets and receive icmp err packets */
+    int ip4_txrx_udp_socket;
 
     /*  Send socket for ICMPv6 packets  */
     int icmp6_send_socket;
@@ -57,6 +77,12 @@ struct net_state_platform_t {
 
     /*  Receive socket for IPv6 packets  */
     int ip6_recv_socket;
+
+    /*  Socket used to tx & rx non-raw IPv6 icmp packets */
+    int ip6_txrx_icmp_socket;
+
+    /*  Socket used to send IPv6 udp packets and receive icmp err packets */
+    int ip6_txrx_udp_socket;
 
     /*
        true if we should encode the IP header length in host order.

@@ -12,9 +12,9 @@
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software
-#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#   You should have received a copy of the GNU General Public License along
+#   with this program; if not, write to the Free Software Foundation, Inc.,
+#   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
 '''Test probe customization parameters'''
@@ -62,7 +62,7 @@ class TestParameters(mtrpacket.MtrPacketTest):
 
 @unittest.skipIf(sys.platform == 'cygwin', 'No Cygwin test')
 class TestIPv6Parameters(mtrpacket.MtrPacketTest):
-    'Test packet paramter customization for IPv6'
+    'Test packet parameter customization for IPv6'
 
     @unittest.skipUnless(mtrpacket.HAVE_IPV6, 'No IPv6')
     def test_param(self):

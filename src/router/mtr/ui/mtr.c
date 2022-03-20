@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -38,7 +38,6 @@
 #include <sys/limits.h>
 #endif
 
-#include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <ctype.h>
@@ -63,12 +62,7 @@
 #include "portability/getopt.h"
 #endif
 
-#ifdef ENABLE_IPV6
-#define DEFAULT_AF AF_UNSPEC
-#else
-#define DEFAULT_AF AF_INET
-#endif
-
+char *myname;
 
 const struct fields data_fields[MAXFLD] = {
     /* key, Remark, Header, Format, Width, CallBackFunc */
@@ -110,6 +104,8 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
           out);
     fputs(" -T, --tcp                  use TCP instead of ICMP echo\n",
           out);
+    fputs(" -I, --interface NAME       use named network interface\n",
+         out);
     fputs
         (" -a, --address ADDRESS      bind the outgoing socket to ADDRESS\n",
          out);
@@ -146,7 +142,9 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
     fputs(" -w, --report-wide          output wide report\n", out);
     fputs(" -c, --report-cycles COUNT  set the number of pings sent\n",
           out);
+#ifdef HAVE_JANSSON
     fputs(" -j, --json                 output json\n", out);
+#endif
     fputs(" -x, --xml                  output xml\n", out);
     fputs(" -C, --csv                  output comma separated values\n",
           out);
@@ -161,7 +159,7 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 #ifdef HAVE_GTK
     fputs(" -g, --gtk                  use GTK+ xwindow interface\n", out);
 #endif
-    fputs(" -n, --no-dns               do not resove host names\n", out);
+    fputs(" -n, --no-dns               do not resolve host names\n", out);
     fputs(" -b, --show-ips             show IP numbers and host names\n",
           out);
     fputs(" -o, --order FIELDS         select output fields\n", out);
@@ -295,12 +293,13 @@ static void init_fld_options(
 {
     int i;
 
-    memset(ctl->fld_index, -1, FLD_INDEX_SZ);
+    memset(ctl->fld_index, -1, FLD_INDEX_SZ*sizeof(ctl->fld_index[0]));
 
     for (i = 0; data_fields[i].key != 0; i++) {
         ctl->available_options[i] = data_fields[i].key;
         ctl->fld_index[data_fields[i].key] = i;
     }
+    ctl->available_options[i++] = '_';
     ctl->available_options[i] = 0;
 }
 
@@ -344,7 +343,9 @@ static void parse_arg(
 #endif
         {"raw", 0, NULL, 'l'},
         {"csv", 0, NULL, 'C'},
+#ifdef HAVE_JANSSON
         {"json", 0, NULL, 'j'},
+#endif
         {"displaymode", 1, NULL, OPT_DISPLAYMODE},
         {"split", 0, NULL, 'p'},        /* BL */
         /* maybe above should change to -d 'x' */
@@ -363,6 +364,7 @@ static void parse_arg(
         {"bitpattern", 1, NULL, 'B'},   /* overload B>255, ->rand(0,255) */
         {"tos", 1, NULL, 'Q'},  /* typeof service (0,255) */
         {"mpls", 0, NULL, 'e'},
+        {"interface", 1, NULL, 'I'},
         {"address", 1, NULL, 'a'},
         {"first-ttl", 1, NULL, 'f'},    /* -f & -m are borrowed from traceroute */
         {"max-ttl", 1, NULL, 'm'},
@@ -439,9 +441,11 @@ static void parse_arg(
         case 'C':
             ctl->DisplayMode = DisplayCSV;
             break;
+#ifdef HAVE_JANSSON
         case 'j':
             ctl->DisplayMode = DisplayJSON;
             break;
+#endif
         case 'x':
             ctl->DisplayMode = DisplayXML;
             break;
@@ -462,6 +466,9 @@ static void parse_arg(
             ctl->cpacketsize =
                 strtonum_or_err(optarg, "invalid argument", STRTO_INT);
             break;
+        case 'I':
+            ctl->InterfaceName = optarg;
+            break;
         case 'a':
             ctl->InterfaceAddress = optarg;
             break;
@@ -476,7 +483,7 @@ static void parse_arg(
             if (ctl->WaitTime <= 0.0) {
                 error(EXIT_FAILURE, 0, "wait time must be positive");
             }
-            if (getuid() != 0 && ctl->WaitTime < 1.0) {
+            if (!running_as_root() && ctl->WaitTime < 1.0) {
                 error(EXIT_FAILURE, 0,
                       "non-root users cannot request an interval < 1.0 seconds");
             }
@@ -635,7 +642,9 @@ static void parse_arg(
 
     if (ctl->DisplayMode == DisplayReport ||
         ctl->DisplayMode == DisplayTXT ||
+#ifdef HAVE_JANSSON
         ctl->DisplayMode == DisplayJSON ||
+#endif
         ctl->DisplayMode == DisplayXML ||
         ctl->DisplayMode == DisplayRaw || ctl->DisplayMode == DisplayCSV)
         ctl->Interactive = 0;
@@ -681,22 +690,48 @@ static void init_rand(
     srand((getpid() << 16) ^ getuid() ^ tv.tv_sec ^ tv.tv_usec);
 }
 
+/*
+    For historical reasons, we need a hostent structure to represent
+    our remote target for probing.  The obsolete way of doing this
+    would be to use gethostbyname().  We'll use getaddrinfo() instead
+    to generate the hostent.
+*/
+int get_addrinfo_from_name(
+    struct mtr_ctl *ctl,
+    struct addrinfo **res,
+    const char *name)
+{
+    int gai_error;
+    struct addrinfo hints;
+
+    /* gethostbyname2() is deprecated so we'll use getaddrinfo() instead. */
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = ctl->af;
+    hints.ai_socktype = SOCK_DGRAM;
+    gai_error = getaddrinfo(name, NULL, &hints, res);
+    if (gai_error) {
+        if (gai_error == EAI_SYSTEM)
+            error(0, 0, "Failed to resolve host: %s", name);
+        else
+            error(0, 0, "Failed to resolve host: %s: %s", name,
+                  gai_strerror(gai_error));
+
+        return -1;
+    }
+
+    ctl->af = (*res)->ai_family;
+    return 0;
+}
+
+
 int main(
     int argc,
     char **argv)
 {
-    struct hostent *host = NULL;
-    struct addrinfo hints, *res;
-    int gai_error;
-    struct hostent trhost;
-    char *alptr[2];
-    struct sockaddr_in *sa4;
-#ifdef ENABLE_IPV6
-    struct sockaddr_in6 *sa6;
-#endif
     names_t *names_head = NULL;
     names_t *names_walk;
 
+    myname = argv[0];
     struct mtr_ctl ctl;
     memset(&ctl, 0, sizeof(ctl));
     /* initialize non-null values */
@@ -761,18 +796,8 @@ int main(
                      sizeof(ctl.LocalHostname));
         }
 
-        /* gethostbyname2() is deprecated so we'll use getaddrinfo() instead. */
-        memset(&hints, 0, sizeof hints);
-        hints.ai_family = ctl.af;
-        hints.ai_socktype = SOCK_DGRAM;
-        gai_error = getaddrinfo(ctl.Hostname, NULL, &hints, &res);
-        if (gai_error) {
-            if (gai_error == EAI_SYSTEM)
-                error(0, 0, "Failed to resolve host: %s", ctl.Hostname);
-            else
-                error(0, 0, "Failed to resolve host: %s: %s", ctl.Hostname,
-                      gai_strerror(gai_error));
-
+        struct addrinfo *res = NULL;
+        if (get_addrinfo_from_name(&ctl, &res, ctl.Hostname) != 0) {
             if (ctl.Interactive)
                 exit(EXIT_FAILURE);
             else {
@@ -780,38 +805,8 @@ int main(
                 continue;
             }
         }
-        /* Convert the first addrinfo into a hostent. */
-        host = &trhost;
-        memset(host, 0, sizeof trhost);
-        host->h_name = res->ai_canonname;
-        host->h_aliases = NULL;
-        host->h_addrtype = res->ai_family;
-        ctl.af = res->ai_family;
-        host->h_length = res->ai_addrlen;
-        host->h_addr_list = alptr;
-        switch (ctl.af) {
-        case AF_INET:
-            sa4 = (struct sockaddr_in *) res->ai_addr;
-            alptr[0] = (void *) &(sa4->sin_addr);
-            break;
-#ifdef ENABLE_IPV6
-        case AF_INET6:
-            sa6 = (struct sockaddr_in6 *) res->ai_addr;
-            alptr[0] = (void *) &(sa6->sin6_addr);
-            break;
-#endif
-        default:
-            error(0, 0, "unknown address type");
-            if (ctl.Interactive)
-                exit(EXIT_FAILURE);
-            else {
-                names_walk = names_walk->next;
-                continue;
-            }
-        }
-        alptr[1] = NULL;
 
-        if (net_open(&ctl, host) != 0) {
+        if (net_open(&ctl, res) != 0) {
             error(0, 0, "Unable to start net module");
             if (ctl.Interactive)
                 exit(EXIT_FAILURE);
@@ -821,8 +816,10 @@ int main(
             }
         }
 
+        freeaddrinfo(res);
+
         lock(stdout);
-        dns_open(&ctl);
+        dns_open();
         display_open(&ctl);
 
         display_loop(&ctl);

@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #ifndef PROTOCOLS_H
@@ -50,7 +50,7 @@
 #define HTTP_PORT 80
 
 /*  We can't rely on header files to provide this information, because
-    the fields have different names between, for instance, Linux and 
+    the fields have different names between, for instance, Linux and
     Solaris  */
 struct ICMPHeader {
     uint8_t type;
@@ -78,7 +78,7 @@ struct ICMPExtensionObject {
 /*  An MPLS label included in an ICMP extension  */
 /*  See RFC 4950  */
 struct ICMPExtMPLSLabel {
-    uint8_t label[3];           // Low 4 bits are Experimental Use, Stack
+    uint8_t label[3];           // Low 4 bits are Traffic Class Use, Stack
     uint8_t ttl;
 };
 

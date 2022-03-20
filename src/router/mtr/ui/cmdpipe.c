@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "cmdpipe.h"
@@ -73,9 +73,9 @@ int send_synchronous_command(
     struct mtr_ctl *ctl,
     struct packet_command_pipe_t *cmdpipe,
     const char *cmd,
-    struct command_t *result)
+    struct command_t *result,
+    char *reply)
 {
-    char reply[PACKET_REPLY_BUFFER_SIZE];
     int command_length;
     int write_length;
     int read_length;
@@ -120,11 +120,12 @@ int check_feature(
 {
     char check_command[COMMAND_BUFFER_SIZE];
     struct command_t reply;
+    char reply_buf[PACKET_REPLY_BUFFER_SIZE];
 
     snprintf(check_command, COMMAND_BUFFER_SIZE,
              "1 check-support feature %s\n", feature);
 
-    if (send_synchronous_command(ctl, cmdpipe, check_command, &reply) ==
+    if (send_synchronous_command(ctl, cmdpipe, check_command, &reply, reply_buf) ==
         -1) {
         return -1;
     }
@@ -204,14 +205,16 @@ int check_packet_features(
 }
 
 
+extern char *myname;
 /*
-    Execute mtr-packet, allowing the MTR_PACKET evironment to override
+    Execute mtr-packet, allowing the MTR_PACKET environment to override
     the PATH when locating the executable.
 */
 static
 void execute_packet_child(
     void)
 {
+    char buf[256];
     /*
        Allow the MTR_PACKET environment variable to override
        the path to the mtr-packet executable.  This is necessary
@@ -227,6 +230,14 @@ void execute_packet_child(
        or MTR_PACKET environment variable.
      */
     execlp(mtr_packet_path, "mtr-packet", (char *) NULL);
+
+    /*
+       Then try to find it where WE were executed from.
+     */
+    strncpy (buf, myname, 240);
+    strcat (buf, "-packet");
+    mtr_packet_path = buf;
+    execl(mtr_packet_path, "mtr-packet", (char *) NULL);
 
     /*
        If mtr-packet is not found, try to use mtr-packet from current directory
@@ -344,7 +355,7 @@ void construct_base_command(
     const char *local_ip_type;
     const char *protocol = NULL;
 
-    /*  Conver the remote IP address to a string  */
+    /*  Convert the remote IP address to a string  */
     if (inet_ntop(ctl->af, address, ip_string, INET6_ADDRSTRLEN) == NULL) {
 
         display_close(ctl);
@@ -507,7 +518,7 @@ void parse_mpls_values(
         if (label_field == 0) {
             mpls->label[label_count] = value;
         } else if (label_field == 1) {
-            mpls->exp[label_count] = value;
+            mpls->tc[label_count] = value;
         } else if (label_field == 2) {
             mpls->s[label_count] = value;
         } else if (label_field == 3) {
@@ -611,16 +622,6 @@ void handle_reply_errors(
 
     reply_name = reply->command_name;
 
-    if (!strcmp(reply_name, "no-route")) {
-        display_close(ctl);
-        error(EXIT_FAILURE, 0, "No route to host");
-    }
-
-    if (!strcmp(reply_name, "network-down")) {
-        display_close(ctl);
-        error(EXIT_FAILURE, 0, "Network down");
-    }
-
     if (!strcmp(reply_name, "probes-exhausted")) {
         display_close(ctl);
         error(EXIT_FAILURE, 0, "Probes exhausted");
@@ -667,6 +668,7 @@ void handle_command_reply(
     struct command_t reply;
     ip_t fromaddress;
     int seq_num;
+    int err;
     int round_trip_time;
     char *reply_name;
     struct mplslen mpls;
@@ -688,8 +690,16 @@ void handle_command_reply(
     seq_num = reply.token;
     reply_name = reply.command_name;
 
-    /*  If the reply type is unknown, ignore it for future compatibility  */
-    if (strcmp(reply_name, "reply") && strcmp(reply_name, "ttl-expired")) {
+    /*  Check for known reply types.  */
+    if (!strcmp(reply_name, "reply")
+            || !strcmp(reply_name, "ttl-expired")) {
+        err = 0;
+    } else if (!strcmp(reply_name, "no-route")) {
+        err = ENETUNREACH;
+    } else if (!strcmp(reply_name, "network-down")) {
+        err = ENETDOWN;
+    } else {
+        /*  If the reply type is unknown, ignore it  */
         return;
     }
 
@@ -700,7 +710,7 @@ void handle_command_reply(
     if (parse_reply_arguments
         (ctl, &reply, &fromaddress, &round_trip_time, &mpls)) {
 
-        reply_func(ctl, seq_num, &mpls, (void *) &fromaddress,
+        reply_func(ctl, seq_num, err, &mpls, (void *) &fromaddress,
                    round_trip_time);
     }
 }
@@ -732,7 +742,7 @@ void consume_reply_buffer(
 
     /*
        We may have multiple completed replies.  Loop until we don't
-       have any more newlines termininating replies.
+       have any more newlines terminating replies.
      */
     while (true) {
         /*  If no newline is found, our reply isn't yet complete  */
@@ -745,7 +755,7 @@ void consume_reply_buffer(
         /*
            Terminate the reply string at the newline, which
            is necessary in the case where we are able to read
-           mulitple replies arriving simultaneously.
+           multiple replies arriving simultaneously.
          */
         *end_of_reply = 0;
 
@@ -793,7 +803,7 @@ void handle_command_replies(
     reply_buffer = cmdpipe->reply_buffer;
 
     /*
-       Read the available reply text, up to the the remaining
+       Read the available reply text, up to the remaining
        buffer space.  (Minus one for the terminating NUL.)
      */
     read_buffer = &reply_buffer[cmdpipe->reply_buffer_used];

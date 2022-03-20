@@ -40,7 +40,7 @@ $(PATHFILES): Makefile
 dist_man_MANS = mtr.8 mtr-packet.8
 PATHFILES += man/mtr.8 man/mtr-packet.8
 
-install-exec-hook: 
+install-exec-hook:
 	`setcap cap_net_raw+ep $(DESTDIR)$(sbindir)/mtr-packet` \
 	|| chmod u+s $(DESTDIR)$(sbindir)/mtr-packet
 
@@ -55,6 +55,7 @@ mtr_SOURCES = ui/mtr.c ui/mtr.h \
               ui/select.c ui/select.h \
               ui/utils.c ui/utils.h \
               packet/cmdparse.c packet/cmdparse.h \
+              packet/sockaddr.c packet/sockaddr.h \
               ui/mtr-curses.h \
               img/mtr_icon.xpm \
               ui/mtr-gtk.h
@@ -84,9 +85,15 @@ if WITH_GTK
 mtr_SOURCES += ui/gtk.c
 endif
 
+if WITH_LIBASAN
+ASAN_CFLAGS = -fno-omit-frame-pointer
+ASAN_CFLAGS += -fsanitize=undefined
+ASAN_CFLAGS += -fsanitize=address
+endif
+
 mtr_INCLUDES = $(GLIB_CFLAGS) -I$(top_builddir) -I$(top_srcdir)
-mtr_CFLAGS = $(GTK_CFLAGS) $(NCURSES_CFLAGS)
-mtr_LDADD = $(GTK_LIBS) $(NCURSES_LIBS) $(RESOLV_LIBS)
+mtr_CFLAGS = $(GTK_CFLAGS) $(NCURSES_CFLAGS) $(ASAN_CFLAGS) $(JANSSON_CFLAGS)
+mtr_LDADD = $(GTK_LIBS) $(NCURSES_LIBS) $(RESOLV_LIBS) $(JANSSON_LIBS)
 
 
 mtr_packet_SOURCES = \
@@ -98,15 +105,22 @@ mtr_packet_SOURCES = \
 	packet/probe.c packet/probe.h \
 	packet/protocols.h \
 	packet/timeval.c packet/timeval.h \
-	packet/wait.h
+	packet/wait.h \
+	packet/sockaddr.c packet/sockaddr.h
 
 mtr_packet_LDADD = $(CAP_LIBS)
+
+
+if WITH_ERROR
+mtr_packet_SOURCES += \
+	portability/error.h \
+	portability/error.c
+endif
 
 
 if CYGWIN
 
 mtr_packet_SOURCES += \
-	packet/command_cygwin.c packet/command_cygwin.h \
 	packet/probe_cygwin.c packet/probe_cygwin.h \
 	packet/wait_cygwin.c
 mtr_packet_LDADD += -lcygwin -liphlpapi -lws2_32
@@ -141,7 +155,6 @@ else  # if CYGWIN
 check_PROGRAMS = mtr-packet-listen
 
 mtr_packet_SOURCES += \
-	packet/command_unix.c packet/command_unix.h \
 	packet/construct_unix.c packet/construct_unix.h \
 	packet/deconstruct_unix.c packet/deconstruct_unix.h \
 	packet/probe_unix.c packet/probe_unix.h \
@@ -156,3 +169,6 @@ endif  # if CYGWIN
 if BUILD_BASH_COMPLETION
 dist_bashcompletion_DATA = bash-completion/mtr
 endif
+
+dist-hook:
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version

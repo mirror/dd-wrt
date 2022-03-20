@@ -5,7 +5,7 @@
     raw.c -- raw output (for logging for later analysis)
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -64,12 +64,19 @@ void raw_rawping(
     fflush(stdout);
 }
 
-
 void raw_rawhost(
     struct mtr_ctl *ctl,
     int host,
-    ip_t * ip_addr)
+    ip_t *ip_addr,
+    struct mplslen *mpls)
 {
-    printf("h %d %s\n", host, strlongip(ctl, ip_addr));
+    printf("h %d %s\n", host, strlongip(ctl->af, ip_addr));
+    if (ctl->enablempls) {
+        int k;
+        for (k = 0; k < mpls->labels; k++)
+            printf("m %d %lu %u %u %u\n",
+                   host, mpls->label[k], mpls->tc[k], mpls->s[k], mpls->ttl[k]);
+    }
+
     fflush(stdout);
 }

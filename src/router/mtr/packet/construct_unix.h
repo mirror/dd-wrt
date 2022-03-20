@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #ifndef CONSTRUCT_H
@@ -24,11 +24,9 @@
 int construct_packet(
     const struct net_state_t *net_state,
     int *packet_socket,
-    int sequence,
+    struct probe_t *probe,
     char *packet_buffer,
     int packet_buffer_size,
-    const struct sockaddr_storage *dest_sockaddr,
-    const struct sockaddr_storage *src_sockaddr,
     const struct probe_param_t *param);
 
 #endif

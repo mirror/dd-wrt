@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -176,7 +176,7 @@ void close_stdout(
         _exit(EXIT_FAILURE);
 }
 
-/* ctime() replacement that will reteturn ISO-8601 timestamp string such as:
+/* ctime() replacement that will return ISO-8601 timestamp string such as:
  * 2016-08-29T19:25:02+01:00 */
 const char *iso_time(
     const time_t * t)

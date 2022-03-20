@@ -11,9 +11,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -26,6 +26,14 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#ifdef HAVE_JANSSON
+#include <jansson.h>
+#endif
+#ifdef HAVE_ERROR_H
+#include <error.h>
+#else
+#include "portability/error.h"
+#endif
 
 #include "mtr.h"
 #include "report.h"
@@ -35,7 +43,7 @@
 #include "utils.h"
 
 #define MAXLOADBAL 5
-#define MAX_FORMAT_STR 81
+#define MAX_FORMAT_STR 320
 
 
 void report_open(
@@ -57,10 +65,10 @@ static size_t snprint_addr(
         struct hostent *host =
             ctl->dns ? addr2host((void *) addr, ctl->af) : NULL;
         if (!host)
-            return snprintf(dst, dst_len, "%s", strlongip(ctl, addr));
+            return snprintf(dst, dst_len, "%s", strlongip(ctl->af, addr));
         else if (ctl->dns && ctl->show_ips)
             return snprintf(dst, dst_len, "%s (%s)", host->h_name,
-                            strlongip(ctl, addr));
+                            strlongip(ctl->af, addr));
         else
             return snprintf(dst, dst_len, "%s", host->h_name);
     } else
@@ -74,8 +82,8 @@ static void print_mpls(
 {
     int k;
     for (k = 0; k < mpls->labels; k++)
-        printf("       [MPLS: Lbl %lu Exp %u S %cu TTL %u]\n",
-               mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+        printf("       [MPLS: Lbl %lu TC %u S %cu TTL %u]\n",
+               mpls->label[k], mpls->tc[k], mpls->s[k], mpls->ttl[k]);
 }
 #endif
 
@@ -162,7 +170,7 @@ void report_close(
             if (j < 0)
                 continue;
 
-            /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
+            /* 1000.0 is a temporary hack for stats usec to ms, impacted net_loss. */
             if (strchr(data_fields[j].format, 'f')) {
                 snprintf(buf + len, sizeof(buf), data_fields[j].format,
                          data_fields[j].net_xxx(at) / 1000.0);
@@ -176,15 +184,25 @@ void report_close(
 
         /* This feature shows 'loadbalances' on routes */
 
-        /* z is starting at 1 because addrs[0] is the same that addr */
-        for (z = 1; z < MAXPATH; z++) {
+        /* Print list of all hosts that have responded from ttl = at + 1 away */
+        for (z = 0; z < MAX_PATH; z++) {
             int found = 0;
             addr2 = net_addrs(at, z);
             mplss = net_mplss(at, z);
             if ((addrcmp
                  ((void *) &ctl->unspec_addr, (void *) addr2,
-                  ctl->af)) == 0)
+                  ctl->af)) == 0) {
                 break;
+            } else if ((addrcmp
+                        ((void *) addr, (void *) addr2,
+                          ctl->af)) == 0) {
+                continue; /* Latest Host is already printed */
+            } else {
+                snprint_addr(ctl, name, sizeof(name), addr2);
+                snprintf(fmt, sizeof(fmt), "        %%-%zus", len_hosts);
+                snprintf(buf, sizeof(buf), fmt,  name);
+                printf("%s\n", buf);
+            }
             for (w = 0; w < z; w++)
                 /* Ok... checking if there are ips repeated on same hop */
                 if ((addrcmp
@@ -197,39 +215,39 @@ void report_close(
             if (!found) {
 
 #ifdef HAVE_IPINFO
+                if (mpls->labels && z == 1 && ctl->enablempls)
+                    print_mpls(mpls);
                 if (is_printii(ctl)) {
-                    if (mpls->labels && z == 1 && ctl->enablempls)
-                        print_mpls(mpls);
                     snprint_addr(ctl, name, sizeof(name), addr2);
                     printf("     %s%s\n", fmt_ipinfo(ctl, addr2), name);
-                    if (ctl->enablempls)
-                        print_mpls(mplss);
                 }
+                if (ctl->enablempls)
+                    print_mpls(mplss);
 #else
                 int k;
                 if (mpls->labels && z == 1 && ctl->enablempls) {
                     for (k = 0; k < mpls->labels; k++) {
                         printf
-                            ("    |  |+-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n",
-                             mpls->label[k], mpls->exp[k], mpls->s[k],
+                            ("    |  |+-- [MPLS: Lbl %lu TC %u S %u TTL %u]\n",
+                             mpls->label[k], mpls->tc[k], mpls->s[k],
                              mpls->ttl[k]);
                     }
                 }
 
                 if (z == 1) {
-                    printf("    |  `|-- %s\n", strlongip(ctl, addr2));
+                    printf("    |  `|-- %s\n", strlongip(ctl->af, addr2));
                     for (k = 0; k < mplss->labels && ctl->enablempls; k++) {
                         printf
-                            ("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n",
-                             mplss->label[k], mplss->exp[k], mplss->s[k],
+                            ("    |   +-- [MPLS: Lbl %lu TC %u S %u TTL %u]\n",
+                             mplss->label[k], mplss->tc[k], mplss->s[k],
                              mplss->ttl[k]);
                     }
                 } else {
-                    printf("    |   |-- %s\n", strlongip(ctl, addr2));
+                    printf("    |   |-- %s\n", strlongip(ctl->af, addr2));
                     for (k = 0; k < mplss->labels && ctl->enablempls; k++) {
                         printf
-                            ("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n",
-                             mplss->label[k], mplss->exp[k], mplss->s[k],
+                            ("    |   +-- [MPLS: Lbl %lu TC %u S %u TTL %u]\n",
+                             mplss->label[k], mplss->tc[k], mplss->s[k],
                              mplss->ttl[k]);
                     }
                 }
@@ -247,8 +265,8 @@ void report_close(
         if (mpls->labels && z == 1 && ctl->enablempls) {
             int k;
             for (k = 0; k < mpls->labels; k++) {
-                printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n",
-                       mpls->label[k], mpls->exp[k], mpls->s[k],
+                printf("    |   +-- [MPLS: Lbl %lu TC %u S %u TTL %u]\n",
+                       mpls->label[k], mpls->tc[k], mpls->s[k],
                        mpls->ttl[k]);
             }
         }
@@ -269,110 +287,111 @@ void txt_close(
     report_close(ctl);
 }
 
-
+#ifdef HAVE_JANSSON
 void json_open(
     void)
 {
 }
 
-
-void json_close(
-    struct mtr_ctl *ctl)
+void json_close(struct mtr_ctl *ctl)
 {
-    int i, j, at, first, max;
+    int i, j, at, max;
+    int ret;
+    char buf[128];
+    json_t *jreport, *jmtr, *jhubs, *jh;
     ip_t *addr;
     char name[MAX_FORMAT_STR];
 
-    printf("{\n");
-    printf("  \"report\": {\n");
-    printf("    \"mtr\": {\n");
-    printf("      \"src\": \"%s\",\n", ctl->LocalHostname);
-    printf("      \"dst\": \"%s\",\n", ctl->Hostname);
-    printf("      \"tos\": \"0x%X\",\n", ctl->tos);
-    if (ctl->cpacketsize >= 0) {
-        printf("      \"psize\": \"%d\",\n", ctl->cpacketsize);
-    } else {
-        printf("      \"psize\": \"rand(%d-%d)\",\n", MINPACKET,
-               -ctl->cpacketsize);
-    }
-    if (ctl->bitpattern >= 0) {
-        printf("      \"bitpattern\": \"0x%02X\",\n",
-               (unsigned char) (ctl->bitpattern));
-    } else {
-        printf("      \"bitpattern\": \"rand(0x00-FF)\",\n");
-    }
-    printf("      \"tests\": \"%d\"\n", ctl->MaxPing);
-    printf("    },\n");
+    jmtr = json_pack("{ss ss si si}",
+                     "src", ctl->LocalHostname,
+                     "dst", ctl->Hostname,
+                     "tos", ctl->tos,
+                     "tests", ctl->MaxPing);
+    if (!jmtr)
+        goto on_error;
 
-    printf("    \"hubs\": [");
+    if (ctl->cpacketsize >= 0) {
+        snprintf(buf, sizeof(buf), "%d", ctl->cpacketsize);
+    } else {
+        snprintf(buf, sizeof(buf), "rand(%d-%d)", MINPACKET, -ctl->cpacketsize);
+    }
+    ret = json_object_set_new(jmtr, "psize", json_string(buf));
+    if (ret == -1)
+        goto on_error;
+
+    if (ctl->bitpattern >= 0) {
+        snprintf(buf, sizeof(buf), "0x%02X", (unsigned char)(ctl->bitpattern));
+    } else {
+        snprintf(buf, sizeof(buf), "rand(0x00-FF)");
+    }
+
+    ret = json_object_set_new(jmtr, "bitpattern", json_string(buf));
+    if (ret == -1)
+        goto on_error;
+
+    jhubs = json_array();
+    if (!jhubs)
+        goto on_error;
 
     max = net_max(ctl);
-    at = first = net_min(ctl);
+    at = net_min(ctl);
     for (; at < max; at++) {
         addr = net_addr(at);
         snprint_addr(ctl, name, sizeof(name), addr);
 
-        if (at == first) {
-            printf("{\n");
-        } else {
-            printf("    {\n");
-        }
-        printf("      \"count\": \"%d\",\n", at + 1);
-        printf("      \"host\": \"%s\",\n", name);
+        jh = json_pack("{si ss}", "count", at + 1, "host", name);
+        if (!jh)
+            goto on_error;
+
 #ifdef HAVE_IPINFO
-        if(!ctl->ipinfo_no) {
-          char* fmtinfo = fmt_ipinfo(ctl, addr);
-          if (fmtinfo != NULL) fmtinfo = trim(fmtinfo, '\0');
-          printf("      \"ASN\": \"%s\",\n", fmtinfo);
+        if (!ctl->ipinfo_no) {
+            char* fmtinfo = fmt_ipinfo(ctl, addr);
+            if (fmtinfo != NULL)
+                fmtinfo = trim(fmtinfo, '\0');
+
+            ret = json_object_set_new(jh, "ASN", json_string(fmtinfo));
+            if (ret == -1)
+                goto on_error;
         }
 #endif
-        for (i = 0; i < MAXFLD; i++) {
-            const char *format;
 
+        for (i = 0; i < MAXFLD; i++) {
             j = ctl->fld_index[ctl->fld_active[i]];
 
-            /* Commas */
-            if (i + 1 == MAXFLD) {
-                printf("\n");
-            } else if (j > 0 && i != 0) {
-                printf(",\n");
-            }
-
             if (j <= 0)
-                continue;       /* Field nr 0, " " shouldn't be printed in this method. */
+                continue; /* Field nr 0, " " shouldn't be printed in this method. */
 
-            /* Format value */
-            format = data_fields[j].format;
-            if (strchr(format, 'f')) {
-                format = "%.2f";
-            } else {
-                format = "%d";
-            }
-
-            /* Format json line */
-            snprintf(name, sizeof(name), "%s%s", "      \"%s\": ", format);
-
-            /* Output json line */
             if (strchr(data_fields[j].format, 'f')) {
-                /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
-                printf(name,
-                       data_fields[j].title,
-                       data_fields[j].net_xxx(at) / 1000.0);
+                ret = json_object_set_new(
+                    jh, data_fields[j].title,
+                    json_real(data_fields[j].net_xxx(at) / 1000.0));
             } else {
-                printf(name,
-                       data_fields[j].title, data_fields[j].net_xxx(at));
+                ret = json_object_set_new(
+                    jh, data_fields[j].title,
+                    json_integer(data_fields[j].net_xxx(at)));
             }
+            if (ret == -1)
+                goto on_error;
         }
-        if (at + 1 == max) {
-            printf("    }]\n");
-        } else {
-            printf("    },\n");
-        }
-    }
-    printf("  }\n");
-    printf("}\n");
-}
 
+        ret = json_array_append_new(jhubs, jh);
+        if (ret == -1)
+            goto on_error;
+    }
+
+    jreport = json_pack("{s{so so}}", "report", "mtr", jmtr, "hubs", jhubs);
+
+    ret = json_dumpf(jreport, stdout, JSON_INDENT(4) | JSON_REAL_PRECISION(5));
+    if (ret == -1)
+        goto on_error;
+
+    printf("\n"); // bash prompt should be on new line
+    json_decref(jreport);
+    return;
+on_error:
+    error(EXIT_FAILURE, 0, "json_close failed");
+}
+#endif
 
 
 void xml_open(
@@ -428,7 +447,7 @@ void xml_close(
                 title = "Loss";
             }
 
-            /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
+            /* 1000.0 is a temporary hack for stats usec to ms, impacted net_loss. */
             if (strchr(data_fields[j].format, 'f')) {
                 printf(name,
                        title, data_fields[j].net_xxx(at) / 1000.0, title);
@@ -451,8 +470,9 @@ void csv_close(
     struct mtr_ctl *ctl,
     time_t now)
 {
-    int i, j, at, max;
+    int i, j, at, max, z, w;
     ip_t *addr;
+    ip_t *addr2 = NULL;
     char name[MAX_FORMAT_STR];
 
     for (i = 0; i < MAXFLD; i++) {
@@ -499,7 +519,7 @@ void csv_close(
             if (j < 0)
                 continue;
 
-            /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
+            /* 1000.0 is a temporary hack for stats usec to ms, impacted net_loss. */
             if (strchr(data_fields[j].format, 'f')) {
                 printf(",%.2f",
                        (double) (data_fields[j].net_xxx(at) / 1000.0));
@@ -508,5 +528,61 @@ void csv_close(
             }
         }
         printf("\n");
+        if (ctl->reportwide == 0)
+            continue;
+        
+        for (z = 0; z < MAX_PATH; z++) {
+            int found = 0;
+            addr2 = net_addrs(at, z);
+            snprint_addr(ctl, name, sizeof(name), addr2);
+            if ((addrcmp
+                    ((void *) &ctl->unspec_addr, (void *) addr2,
+                     ctl->af)) == 0) {
+                break;
+            } else if ((addrcmp
+                    ((void *) addr, (void *) addr2,
+                     ctl->af)) == 0) {
+                continue; /* Latest Host is already printed */
+            } else {
+                for (w = 0; w < z; w++)
+                    /* Ok... checking if there are ips repeated on same hop */
+                    if ((addrcmp
+                            ((void *) addr2, (void *) net_addrs(at, w),
+                             ctl->af)) == 0) {
+                        found = 1;
+                        break;
+                    }
+
+                if (!found) {
+#ifdef HAVE_IPINFO
+                    if (!ctl->ipinfo_no) {
+                        char *fmtinfo = fmt_ipinfo(ctl, addr2);
+                        fmtinfo = trim(fmtinfo, '\0');
+                        printf("MTR.%s,%lld,%s,%s,%d,%s,%s", PACKAGE_VERSION,
+                            (long long) now, "OK", ctl->Hostname, at + 1, name,
+                            fmtinfo);
+                    } else
+#endif
+                        printf("MTR.%s,%lld,%s,%s,%d,%s", PACKAGE_VERSION,
+                           (long long) now, "OK", ctl->Hostname, at + 1, name);
+
+                    /* Use values associated with the first ip discovered for this hop */
+                    for (i = 0; i < MAXFLD; i++) {
+                        j = ctl->fld_index[ctl->fld_active[i]];
+                        if (j < 0)
+                            continue;
+
+                        /* 1000.0 is a temporary hack for stats usec to ms, impacted net_loss. */
+                        if (strchr(data_fields[j].format, 'f')) {
+                            printf(",%.2f",
+                                   (double) (data_fields[j].net_xxx(at) / 1000.0));
+                        } else {
+                            printf(",%d", data_fields[j].net_xxx(at));
+                        }
+                    }
+                    printf("\n");
+                }
+            }    
+        }
     }
 }
