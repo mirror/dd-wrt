@@ -75,7 +75,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("pforward.from"); %></th>
 										<th><% tran("share.ip"); %></th>
 										<th><% tran("pforward.to"); %></th>
-										<th><% tran("share.enable"); %></th>
+										<th style="text-align: center"><% tran("share.enable"); %></th>
 										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward_spec(); %>
