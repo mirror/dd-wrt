@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 15) {
+	for(var i = 0; i < val.length; i = i + 16) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -41,13 +41,17 @@ function setWirelessTable() {
 		cellmac.innerHTML = mac;
 		row.insertCell(-1).innerHTML = val[i + 1];
 		var ifn = val[i + 2];
+		var label = val[i + 15];
 		var iface = row.insertCell(-1);
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
-		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
-		iface.innerHTML = ifn;
-		
+			eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
+		if (label.length == 0) {
+			iface.innerHTML = ifn;
+		} else {
+			iface.innerHTML = label;
+		}
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
 		row.insertCell(-1).innerHTML = val[i + 5];
