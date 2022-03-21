@@ -953,6 +953,7 @@ int getIfByIdx(char *ifname, int index)
 		int c = getc(in);
 		if (c == 0 || c == EOF) {
 			fclose(in);
+			ifname[0]=0;
 			return 0;
 		}
 		if (c == 0x20)
