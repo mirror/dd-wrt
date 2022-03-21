@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 16) {
+	for(var i = 0; i < val.length; i = i + 17) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -53,7 +53,7 @@ function setWirelessTable() {
 		iface.style.textDecoration = "none";
 		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
 		if (label.length == 0) {
-			iface.innerHTML = ifn;
+			iface.innerHTML = val[i + 16];
 		} else {
 			iface.innerHTML = label;
 		}
