@@ -51,9 +51,9 @@ function setWirelessTable() {
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
-		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
+		eval("addEvent(iface, 'click', function() { openBW('" + val[i + 16] + "') })");
 		if (label.length == 0) {
-			iface.innerHTML = val[i + 16];
+			iface.innerHTML = ifn;
 		} else {
 			iface.innerHTML = label;
 		}
