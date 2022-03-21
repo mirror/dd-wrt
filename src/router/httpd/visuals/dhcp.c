@@ -168,8 +168,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), i);
 
 				buff = nvram_safe_get(buf);
-				ifidx = -1;
-				if (sscanf(buff, "%lu %17s %15s %255s %255s %d", &expires, mac, ip, hostname, clid, &ifidx) < 4)
+				if (sscanf(buff, "%lu %17s %15s %255s", &expires, mac, ip, hostname) < 4)
 					continue;
 				p = mac;
 				while ((*p = toupper(*p)) != 0)
@@ -186,13 +185,9 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					mac[9] = 'x';
 					mac[10] = 'x';
 				}
-				char ifname[32] = { 0 };
-				if (ifidx != -1) {
-					getIfByIdx(ifname, ifidx);
-				}
-				websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'",
+				websWrite(wp, "%c'%s','%s','%s','%s','%s','N/A',''",
 					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
-					  ((expires == 0) ? live_translate(wp, "share.sttic") : dhcp_reltime(buf, expires, 1)), p + 1, ifname, nvram_nget("%s_label", ifname));
+					  ((expires == 0) ? live_translate(wp, "share.sttic") : dhcp_reltime(buf, expires, 1)), p + 1);
 				++count;
 			}
 		}
