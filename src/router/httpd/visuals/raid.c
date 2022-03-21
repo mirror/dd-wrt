@@ -302,52 +302,46 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp,
 				  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
-					"<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-					"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-				  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" 
-					"<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+				  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
+				  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+				  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n"
+				  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
 				websWrite(wp,
 					  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-						"<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 			else
 				websWrite(wp,
 					  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
-						//which of these two is the action table header?
-						"<th>&nbsp;</th>\n"
-						"<th>&nbsp;</th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
+					  //which of these two is the action table header?
+					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "zfs")) {
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
 				websWrite(wp,
 					  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n" 
-						"<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" 
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-						//which of these two is the action table header?
-						"<th>&nbsp;</th>\n"
-						"<th>&nbsp;</th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  //which of these two is the action table header?
+					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 			else
 				websWrite(wp,
 					  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-						"<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
-						//which of these two is the action table header?
-						"<th>&nbsp;</th>\n"
-						"<th>&nbsp;</th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
+					  //which of these two is the action table header?
+					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
@@ -507,7 +501,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<table class=\"table center\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"
-				  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 		char var[128];
 		char *next;
 		int midx = 0;
@@ -558,9 +552,8 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
 	websWrite(wp,
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
-			"<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n"
-			"<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+		  "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	int idx = 0;
 	if (drives) {
 		foreach(drive, drives, dnext) {
