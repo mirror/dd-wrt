@@ -99,7 +99,7 @@ function setDHCPTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 7) {
 	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
