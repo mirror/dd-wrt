@@ -1142,6 +1142,7 @@ extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
+extern int getIfByIdx(char *ifname, int index);
 extern int getIfList(char *buffer, const char *ifprefix);
 extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort);
 extern void getIfLists(char *eths, int size);
