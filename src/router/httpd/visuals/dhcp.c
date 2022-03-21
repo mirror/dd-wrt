@@ -168,6 +168,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), i);
 
 				buff = nvram_safe_get(buf);
+				ifidx = -1;
 				if (sscanf(buff, "%lu %17s %15s %255s %255s %d", &expires, mac, ip, hostname, clid, &ifidx) < 4)
 					continue;
 				p = mac;
@@ -267,7 +268,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 
 					expires_time[strlen(expires_time) - 1] = '\0';
 				}
-				websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ', !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr, mac, expires_time, get_single_ip(ipaddr, 3));
+				websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",'',''", count ? ',' : ' ', !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr, mac, expires_time, get_single_ip(ipaddr, 3));
 				count++;
 			}
 			fclose(fp);
