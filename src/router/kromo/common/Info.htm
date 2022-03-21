@@ -126,7 +126,6 @@ function setDHCPTable() {
 		
 		var row = table.insertRow(-1);
 		row.insertCell(-1).innerHTML = val[i];
-		row.insertCell(-1).innerHTML = val[i + 1];
 
 		var ifn = val[i + 5];
 		var label = val[i + 6];
@@ -140,8 +139,9 @@ function setDHCPTable() {
 		} else {
 			iface.innerHTML = label;
 		}
+		row.insertCell(-1).innerHTML = val[i + 1];
 		
-		var mac = val[i + 3];
+		var mac = val[i + 2];
 		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
@@ -153,7 +153,7 @@ function setDHCPTable() {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
 
-		row.insertCell(-1).innerHTML = val[i + 4];
+		row.insertCell(-1).innerHTML = val[i + 3];
 	}
 }
 
