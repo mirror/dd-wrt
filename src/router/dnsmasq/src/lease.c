@@ -306,7 +306,7 @@ void lease_update_file(time_t now)
 	  else
 	    ourprintf(&err, "*");
 	    
-	ourprintf(&err, "%d\n",lease->last_interface);
+	ourprintf(&err, " %d\n",lease->last_interface);
 	}
       
 #ifdef HAVE_DHCP6  
