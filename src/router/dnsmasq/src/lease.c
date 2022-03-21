@@ -301,7 +301,7 @@ void lease_update_file(time_t now)
 	    {
 	      for (i = 0; i < lease->clid_len - 1; i++)
 		ourprintf(&err, "%.2x:", lease->clid[i]);
-	      ourprintf(&err, "%.2x\n", lease->clid[i]);
+	      ourprintf(&err, "%.2x", lease->clid[i]);
 	    }
 	  else
 	    ourprintf(&err, "*");
