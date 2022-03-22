@@ -2177,6 +2177,11 @@ static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char 
 			if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
 				continue;
 			if (entry->d_type == DT_DIR) {
+				int a;
+				for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+					if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+						continue;
+				}
 				char dir[1024];
 				sprintf(dir, "%s/%s", path, entry->d_name);
 				internal_sysctl_apply(dir, priv, callback);
