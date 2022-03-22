@@ -91,6 +91,9 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 	int macmask;
 	char ip[32];
 	char hostname[256];
+	char clid[256];
+	int ifidx = -1;
+
 	char buf[512];
 	char *p;
 	char *buff;
@@ -128,7 +131,8 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 
 			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
-					if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
+					ifidx = -1;
+					if (sscanf(buf, "%lu %17s %15s %255s %255s %d", &expires, mac, ip, hostname, clid, &ifidx) < 4)
 						continue;
 					p = mac;
 					while ((*p = toupper(*p)) != 0)
@@ -146,10 +150,14 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 						mac[9] = 'x';
 						mac[10] = 'x';
 					}
+					char ifname[32] = { 0 };
+					if (ifidx != -1) {
+						getIfByIdx(ifname, ifidx);
+					}
 					websWrite(wp,
-						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
+						  "%c'%s','%s','%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
 						  ((expires == 0) ? live_translate(wp, "share.sttic")
-						   : dhcp_reltime(buf, expires, 1)), p + 1, 1);
+						   : dhcp_reltime(buf, expires, 1)), p + 1, ifname, nvram_nget("%s_label", ifname));
 					++count;
 				}
 				fclose(fp);
@@ -160,7 +168,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), i);
 
 				buff = nvram_safe_get(buf);
-				if (sscanf(buff, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
+				if (sscanf(buff, "%lu %17s %15s %255s", &expires, mac, ip, hostname) < 4)
 					continue;
 				p = mac;
 				while ((*p = toupper(*p)) != 0)
@@ -177,7 +185,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					mac[9] = 'x';
 					mac[10] = 'x';
 				}
-				websWrite(wp, "%c'%s','%s','%s','%s','%s'",
+				websWrite(wp, "%c'%s','%s','%s','%s','%s','N/A',''",
 					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
 					  ((expires == 0) ? live_translate(wp, "share.sttic") : dhcp_reltime(buf, expires, 1)), p + 1);
 				++count;
@@ -255,7 +263,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 
 					expires_time[strlen(expires_time) - 1] = '\0';
 				}
-				websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ', !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr, mac, expires_time, get_single_ip(ipaddr, 3));
+				websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",'',''", count ? ',' : ' ', !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr, mac, expires_time, get_single_ip(ipaddr, 3));
 				count++;
 			}
 			fclose(fp);

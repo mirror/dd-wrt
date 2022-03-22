@@ -59,9 +59,9 @@ static int read_leases(time_t now, FILE *leasestream)
 	    continue;
 	  }
 #endif
-	
-	if (fscanf(leasestream, " %64s %255s %764s",
-		   daemon->namebuff, daemon->dhcp_buff, daemon->packet) != 3)
+	int dummy;
+	if (fscanf(leasestream, " %64s %255s %764s %d",
+		   daemon->namebuff, daemon->dhcp_buff, daemon->packet, &dummy) < 3)
 	  {
 	    my_syslog(MS_DHCP | LOG_WARNING, _("ignoring invalid line in lease database: %s %s %s %s ..."),
 		      daemon->dhcp_buff3, daemon->dhcp_buff2,
@@ -301,10 +301,12 @@ void lease_update_file(time_t now)
 	    {
 	      for (i = 0; i < lease->clid_len - 1; i++)
 		ourprintf(&err, "%.2x:", lease->clid[i]);
-	      ourprintf(&err, "%.2x\n", lease->clid[i]);
+	      ourprintf(&err, "%.2x", lease->clid[i]);
 	    }
 	  else
-	    ourprintf(&err, "*\n");	  
+	    ourprintf(&err, "*");
+	    
+	ourprintf(&err, " %d\n",lease->last_interface);
 	}
       
 #ifdef HAVE_DHCP6  

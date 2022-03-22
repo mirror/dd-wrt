@@ -1142,6 +1142,7 @@ extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
+extern int getIfByIdx(char *ifname, int index);
 extern int getIfList(char *buffer, const char *ifprefix);
 extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort);
 extern void getIfLists(char *eths, int size);
@@ -1583,7 +1584,9 @@ int has_igmpsnooping(void);
 	"tcp_vegas_cong_avoid", \
 	"osf", \
 	"tcp_tw_recycle", \
-	"scan_unevictable_pages"
+	"scan_unevictable_pages", \
+	"ctf0", \
+	"teql0"
 
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
 

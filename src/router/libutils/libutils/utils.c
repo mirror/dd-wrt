@@ -939,6 +939,44 @@ static int ifcompare(const void *a, const void *b)
 	return strcmp(*(const char **)a, *(const char **)b);
 }
 
+int getIfByIdx(char *ifname, int index)
+{
+	if (!if_indextoname(index, ifname))
+		return 0;
+	return 1;
+#if 0
+	FILE *in = fopen("/proc/net/dev", "rb");
+	if (!in)
+		return 0;
+	// skip the first 2 lines
+	skipline(in);
+	skipline(in);
+	int idx = 0;
+	int ifcount = 0;
+	while (1) {
+		int c = getc(in);
+		if (c == 0 || c == EOF) {
+			fclose(in);
+			ifname[0] = 0;
+			return 0;
+		}
+		if (c == 0x20)
+			continue;
+		if (c == ':' || ifcount == 30) {
+			ifname[ifcount++] = 0;
+			if (idx == index) {
+				fclose(in);
+				return 1;
+			}
+			skipline(in);
+			ifcount = 0;
+			continue;
+		}
+		ifname[ifcount++] = c;
+	}
+#endif
+}
+
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
 int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
@@ -2139,6 +2177,11 @@ static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char 
 			if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
 				continue;
 			if (entry->d_type == DT_DIR) {
+				int a;
+				for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+					if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+						continue;
+				}
 				char dir[1024];
 				sprintf(dir, "%s/%s", path, entry->d_name);
 				internal_sysctl_apply(dir, priv, callback);

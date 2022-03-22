@@ -51,7 +51,7 @@ function parse_dhcp_hosts() {
 	if (!val.length)
 		return dhcp_hosts;
 	
-	for(var i = 0; i < val.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 7) {
 		dhcp_hosts = dhcp_hosts + val[i+2] + "=" + val[i] + "=" + val[i+1] + " ";
 	}
 	

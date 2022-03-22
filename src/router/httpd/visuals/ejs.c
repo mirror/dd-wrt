@@ -1767,8 +1767,8 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menuname[MENU_ADMIN][0] = "adminman";
 #endif
 #ifdef HAVE_MADWIFI
-	static char *wdsmenu[4] = {"Wireless_WDS-wlan0.asp" , "Wireless_WDS-wlan1.asp", "Wireless_WDS-wlan2.asp", "Wireless_WDS-wlan3.asp"};
-	static char *tran_wdsmenu[4] = {"wirelessWds0" , "wirelessWds1", "wirelessWds2", "wirelessWds3"};
+	static char *wdsmenu[4] = { "Wireless_WDS-wlan0.asp", "Wireless_WDS-wlan1.asp", "Wireless_WDS-wlan2.asp", "Wireless_WDS-wlan3.asp" };
+	static char *tran_wdsmenu[4] = { "wirelessWds0", "wirelessWds1", "wirelessWds2", "wirelessWds3" };
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
 	m->menu[MENU_WIRELESS][8] = NULL;
 	m->menuname[MENU_WIRELESS][9] = NULL;
@@ -1799,11 +1799,11 @@ static struct menucontext *init_menu(webs_t wp)
 
 		int ifcount = get_wl_instances();
 		int a;
-		static char *wdsmenu[4] = {"Wireless_WDS-wl0.asp" , "Wireless_WDS-wl1.asp", "Wireless_WDS-wl2.asp", "Wireless_WDS-wl3.asp"};
-		static char *tran_wdsmenu[4] = {"wirelessWdswl0" , "wirelessWdswl1", "wirelessWdswl2", "wirelessWdswl3"};
+		static char *wdsmenu[4] = { "Wireless_WDS-wl0.asp", "Wireless_WDS-wl1.asp", "Wireless_WDS-wl2.asp", "Wireless_WDS-wl3.asp" };
+		static char *tran_wdsmenu[4] = { "wirelessWdswl0", "wirelessWdswl1", "wirelessWdswl2", "wirelessWdswl3" };
 
-		static char *advmenu[4] = {"Wireless_Advanced-wl0.asp" , "Wireless_Advanced-wl1.asp", "Wireless_Advanced-wl2.asp", "Wireless_Advanced-wl3.asp"};
-		static char *tran_advmenu[4] = {"wirelessAdvancedwl0" , "wirelessAdvancedwl1", "wirelessAdvancedwl2", "wirelessAdvancedwl3"};
+		static char *advmenu[4] = { "Wireless_Advanced-wl0.asp", "Wireless_Advanced-wl1.asp", "Wireless_Advanced-wl2.asp", "Wireless_Advanced-wl3.asp" };
+		static char *tran_advmenu[4] = { "wirelessAdvancedwl0", "wirelessAdvancedwl1", "wirelessAdvancedwl2", "wirelessAdvancedwl3" };
 
 		for (a = 0; a < ifcount; a++) {
 			m->menu[MENU_WIRELESS][a * 2 + 7] = advmenu[a];
