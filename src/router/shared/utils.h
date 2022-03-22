@@ -1584,7 +1584,9 @@ int has_igmpsnooping(void);
 	"tcp_vegas_cong_avoid", \
 	"osf", \
 	"tcp_tw_recycle", \
-	"scan_unevictable_pages"
+	"scan_unevictable_pages" \
+	"ctf0" \
+	"teql0"
 
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
 
