@@ -687,7 +687,7 @@ static int __init mt7915_init(void)
 	if (ret)
 		goto error_pci;
 
-	if (IS_ENABLED(CONFIG_MT7986_WMAC)) {
+	if (IS_ENABLED(CPTCFG_MT7986_WMAC)) {
 		ret = platform_driver_register(&mt7986_wmac_driver);
 		if (ret)
 			goto error_wmac;
@@ -705,7 +705,7 @@ error_pci:
 
 static void __exit mt7915_exit(void)
 {
-	if (IS_ENABLED(CONFIG_MT7986_WMAC))
+	if (IS_ENABLED(CPTCFG_MT7986_WMAC))
 		platform_driver_unregister(&mt7986_wmac_driver);
 
 	pci_unregister_driver(&mt7915_pci_driver);

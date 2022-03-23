@@ -414,7 +414,7 @@ extern struct pci_driver mt7915_pci_driver;
 extern struct pci_driver mt7915_hif_driver;
 extern struct platform_driver mt7986_wmac_driver;
 
-#ifdef CONFIG_MT7986_WMAC
+#ifdef CPTCFG_MT7986_WMAC
 int mt7986_wmac_enable(struct mt7915_dev *dev);
 void mt7986_wmac_disable(struct mt7915_dev *dev);
 #else
