@@ -586,6 +586,7 @@ static int _dns_reply(struct dns_request *request)
 	}
 
 	/* send request */
+	atomic_inc_return(&request->notified);
 	return _dns_reply_inpacket(request, inpacket, encode_len);
 }
 
@@ -809,7 +810,7 @@ static int _dns_server_request_complete_A(struct dns_request *request)
 			request->ttl_v4 = DNS_SERVER_TMOUT_TTL;
 		}
 		dns_cache_set_data_addr(cache_data, request->server_flags, cname, cname_ttl, request->ipv4_addr, DNS_RR_A_LEN);
-	} else {
+	} else if (request->has_soa) {
 		dns_cache_set_data_soa(cache_data, request->server_flags, cname, cname_ttl);
 	}
 
@@ -867,7 +868,7 @@ static int _dns_server_request_complete_AAAA(struct dns_request *request)
 		dns_cache_set_data_addr(cache_data, request->server_flags, cname, cname_ttl, request->ipv6_addr, DNS_T_AAAA);
 
 		request->has_soa = 0;
-	} else {
+	} else if (request->has_soa) {
 		dns_cache_set_data_soa(cache_data, request->server_flags, cname, cname_ttl);
 	}
 
@@ -933,11 +934,6 @@ static int _dns_server_request_complete(struct dns_request *request)
 	int ret = 0;
 
 	if (atomic_inc_return(&request->notified) != 1) {
-		return 0;
-	}
-
-	/* if passthrouth, return */
-	if (request->passthrough) {
 		return 0;
 	}
 
@@ -1062,6 +1058,9 @@ static void _dns_server_select_possible_ipaddress(struct dns_request *request)
 static void _dns_server_delete_request(struct dns_request *request)
 {
 	if (request->conn) {
+		if (atomic_read(&request->notified) == 0) {
+			_dns_server_request_complete(request);
+		}
 		_dns_server_conn_release(request->conn);
 	}
 	pthread_mutex_destroy(&request->ip_map_lock);
@@ -1667,6 +1666,7 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, char 
 	int j = 0;
 	struct dns_rrs *rrs = NULL;
 	int ip_check_result = 0;
+	int is_result_strict = 0;
 
 	if (packet->head.rcode != DNS_RC_NOERROR && packet->head.rcode != DNS_RC_NXDOMAIN) {
 		if (request->rcode == DNS_RC_SERVFAIL) {
@@ -1680,6 +1680,10 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, char 
 	for (j = 1; j < DNS_RRS_END; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
+			if (rrs->type == request->qtype || rrs->type == DNS_T_SOA) {
+				is_result_strict = 1;
+			}
+
 			switch (rrs->type) {
 			case DNS_T_A: {
 				unsigned char addr[4];
@@ -1740,6 +1744,10 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, char 
 		}
 	}
 
+	if (is_result_strict == 0) {
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -1795,7 +1803,7 @@ static int _dns_server_get_answer(struct dns_request *request, struct dns_packet
 				dns_get_CNAME(rrs, name, DNS_MAX_CNAME_LEN, &ttl, cname, DNS_MAX_CNAME_LEN);
 				tlog(TLOG_DEBUG, "name:%s ttl: %d cname: %s\n", name, ttl, cname);
 				safe_strncpy(request->cname, cname, DNS_MAX_CNAME_LEN);
-				request->ttl_cname = ttl;
+				request->ttl_cname = _dns_server_get_conf_ttl(ttl);
 				request->has_cname = 1;
 			} break;
 			case DNS_T_SOA: {
@@ -1929,13 +1937,13 @@ static int _dns_server_reply_passthrouth(struct dns_request *request, struct dns
 		_dns_result_callback(request);
 	}
 
-	if (request->conn == NULL) {
-		return 0;
-	}
+	_dns_server_audit_log(request);
 
-	/* When passthrough, modify the id to be the id of the client request. */
-	dns_server_update_reply_packet_id(request, inpacket, inpacket_len);
-	ret = _dns_reply_inpacket(request, inpacket, inpacket_len);
+	if (request->conn) {
+		/* When passthrough, modify the id to be the id of the client request. */
+		dns_server_update_reply_packet_id(request, inpacket, inpacket_len);
+		ret = _dns_reply_inpacket(request, inpacket, inpacket_len);
+	}
 
 	if (packet->head.rcode != DNS_RC_NOERROR && packet->head.rcode != DNS_RC_NXDOMAIN) {
 		return ret;
@@ -2328,6 +2336,25 @@ errout:
 	return -1;
 }
 
+static int _dns_server_qtype_soa(struct dns_request *request)
+{
+	struct dns_qtype_soa_list *soa_list = NULL;
+
+	uint32_t key = hash_32_generic(request->qtype, 32);
+	hash_for_each_possible(dns_qtype_soa_table.qtype, soa_list, node, key)
+	{
+		if (request->qtype != soa_list->qtypeid) {
+			continue;
+		}
+
+		_dns_server_reply_SOA(DNS_RC_NOERROR, request);
+		tlog(TLOG_DEBUG, "force qtype %d soa", request->qtype);
+		return 0;
+	}
+
+	return -1;
+}
+
 static void _dns_server_process_speed_check_rule(struct dns_request *request)
 {
 	struct dns_domain_check_order *check_order = NULL;
@@ -2349,6 +2376,16 @@ static int _dns_server_get_expired_ttl_reply(struct dns_cache *dns_cache)
 	}
 
 	return dns_conf_serve_expired_reply_ttl;
+}
+
+static int _dns_server_get_expired_cname_ttl_reply(struct dns_cache *dns_cache)
+{
+	int ttl = dns_cache_get_cname_ttl(dns_cache);
+	if (ttl > 0) {
+		return ttl;
+	}
+
+	return _dns_server_get_expired_ttl_reply(dns_cache);
 }
 
 static int _dns_server_process_cache_addr(struct dns_request *request, struct dns_cache *dns_cache)
@@ -2378,7 +2415,7 @@ static int _dns_server_process_cache_addr(struct dns_request *request, struct dn
 	if (cache_addr->addr_data.cname[0] != 0) {
 		safe_strncpy(request->cname, cache_addr->addr_data.cname, DNS_MAX_CNAME_LEN);
 		request->has_cname = 1;
-		request->ttl_cname = cache_addr->addr_data.cname_ttl;
+		request->ttl_cname = _dns_server_get_expired_cname_ttl_reply(dns_cache);
 	}
 
 	request->rcode = DNS_RC_NOERROR;
@@ -2410,15 +2447,17 @@ static int _dns_server_process_cache_packet(struct dns_request *request, struct 
 		return 0;
 	}
 
+	unsigned char packet_buff[DNS_PACKSIZE];
+	struct dns_packet *packet = (struct dns_packet *)packet_buff;
+
+	if (dns_decode(packet, DNS_PACKSIZE, cache_packet->data, cache_packet->head.size) != 0) {
+		goto errout;
+	}
+
+	_dns_server_get_answer(request, packet);
+
+	_dns_server_audit_log(request);
 	if (request->result_callback) {
-		unsigned char packet_buff[DNS_PACKSIZE];
-		struct dns_packet *packet = (struct dns_packet *)packet_buff;
-
-		if (dns_decode(packet, DNS_PACKSIZE, cache_packet->data, cache_packet->head.size) != 0) {
-			goto errout;
-		}
-
-		_dns_server_get_answer(request, packet);
 		_dns_result_callback(request);
 	}
 
@@ -2686,6 +2725,11 @@ static int _dns_server_do_query(struct dns_request *request, const char *domain,
 
 	/* process domain address */
 	if (_dns_server_process_address(request) == 0) {
+		goto clean_exit;
+	}
+
+	/* process qtype soa */
+	if (_dns_server_qtype_soa(request) == 0) {
 		goto clean_exit;
 	}
 
