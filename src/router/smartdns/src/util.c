@@ -609,15 +609,22 @@ int ipset_del(const char *ipsetname, const unsigned char addr[], int addr_len)
 
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 {
-	SHA256_CTX c;
 	static unsigned char m[SHA256_DIGEST_LENGTH];
 
 	if (md == NULL)
 		md = m;
-	SHA256_Init(&c);
-	SHA256_Update(&c, d, n);
-	SHA256_Final(md, &c);
-	OPENSSL_cleanse(&c, sizeof(c));
+
+	EVP_MD_CTX* ctx = EVP_MD_CTX_create();
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	EVP_MD_CTX_init(ctx);
+	EVP_DigestInit_ex(ctx, EVP_sha256(), NULL);
+	EVP_DigestUpdate(ctx, d, n);
+	EVP_DigestFinal_ex(ctx, m, NULL);
+	EVP_MD_CTX_destroy(ctx);
+
 	return (md);
 }
 
@@ -738,7 +745,11 @@ void SSL_CRYPTO_thread_setup(void)
 		pthread_mutex_init(&(lock_cs[i]), NULL);
 	}
 
+#if OPENSSL_API_COMPAT < 0x10000000
 	CRYPTO_set_id_callback(_pthreads_thread_id);
+#else
+	CRYPTO_THREADID_set_callback(_pthreads_thread_id);
+#endif
 	CRYPTO_set_locking_callback(_pthreads_locking_callback);
 }
 
