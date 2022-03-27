@@ -53,7 +53,7 @@ function do_join (F,SSID) {
 					);
 					
 					if (table.length == 0) {
-						document.write("<tr><td colspan=\"12\" align=\"center\">" + share.none + "</td></tr>");
+						document.write("<tr><td colspan=\"15\" align=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
 						for (var i = 0; i < table.length; i = i + 15) {
