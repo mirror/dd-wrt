@@ -2840,6 +2840,7 @@ freeradius.titl="FreeRADIUS";
 freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Certificate";
 freeradius.cert="Gen Cert";
+freeradius.certdown="Download";
 freeradius.clientcert="Client Certificates";
 freeradius.settings="Settings";
 freeradius.users="Users";
@@ -2849,7 +2850,6 @@ freeradius.password="Password";
 freeradius.downstream="Downspeed";
 freeradius.upstream="Upspeed";
 freeradius.sharedkey="Shared key";
-
 
 freeradius.countrycode="Country Code";
 freeradius.state="State or Province";
@@ -2862,6 +2862,9 @@ freeradius.passphrase="Passphrase";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.port="RADIUS Port";
+freeradius.certtbl="Certificate";
+freeradius.gencertime="Generating %d%%, this may take a while to complete...";
+freeradius.gencerdone="Certicate generation completed!";
 
 //help container
 var hfreeradius=new Object();
