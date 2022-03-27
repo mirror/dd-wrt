@@ -10,7 +10,7 @@ function setWirelessTable() {
     	}
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 10;
+		cell.colSpan = 11;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
@@ -113,7 +113,7 @@ function setPacketInfo(val) {
 
 function OpenSiteSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Site_Survey.asp', 980, 700);
+		openWindow('Site_Survey.asp', 1024, 700);
 	}
 	else {
 		alert(errmsg.err59);
