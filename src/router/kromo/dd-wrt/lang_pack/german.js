@@ -2443,6 +2443,7 @@ freeradius.titl="FreeRADIUS";
 freeradius.h2="FreeRADIUS";
 freeradius.certificate="Server Zertifikate";
 freeradius.cert="Erstelle Zertifikat";
+freeradius.certdown="Herunterladen";
 freeradius.clientcert="Client Zertifikate";
 freeradius.settings="Einstellungen";
 freeradius.users="Benutzer";
@@ -2465,6 +2466,9 @@ freeradius.passphrase="Kennwort";
 freeradius.generate="Erzeuge Certificate";
 freeradius.cert_status="Zertifikat Status";
 freeradius.port="RADIUS Port";
+freeradius.certtbl="Zertifikat";
+freeradius.gencertime="Zertifikatserstellung zu %d%% fertig";
+freeradius.gencerdone="Zertifikat fertiggestellt!";
 
 //help container
 
