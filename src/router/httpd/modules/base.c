@@ -673,7 +673,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">%s</div>\n"
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
-		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" style=\\\"float: right\\\" "
+		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" "
 		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 

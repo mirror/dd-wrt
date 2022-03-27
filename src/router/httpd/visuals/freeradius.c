@@ -108,7 +108,9 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(freeradius.downstream)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.upstream)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n"
-		  "<th>Capture(freeradius.certtbl)</th>\n" "<th><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n" "<th style=\"text-align: center\">Capture(share.actiontbl)</th>\n" "</tr>\n");
+		  "<th><script type=\"text/javascript\">Capture(freeradius.certtbl)</script></th>\n"
+			"<th><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n"
+			"<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 
 	unsigned int i;
 	struct radiusdb *db = loadradiusdb();
@@ -140,11 +142,11 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n", vlan_name, expiration);
 
 			websWrite(wp,
-				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.certdown + \"\\\" style=\\\"margin: auto; display: block\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 400, 430,'Certificate');\\\" />\");\n//]]>\n</script></td>\n",
+				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.certdown + \"\\\" style=\\\"margin: auto; display: block;\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 400, 430,'Certificate');\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
 
 			sprintf(vlan_name, "enabled%d", i);
-			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", vlan_name, db->users[i].enabled ? "checked=\"checked\"" : "");
+			websWrite(wp, "<td style=\"text-align: center\"><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", vlan_name, db->users[i].enabled ? "checked=\"checked\"" : "");
 
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
@@ -163,7 +165,8 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 
-	websWrite(wp, "<tr>\n" "<th>IP/NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n" "<th style=\"text-align: center\">Capture(share.actiontbl)</th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n" "<th>IP/NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n"
+			  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	unsigned int i;
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (db != NULL)		// empty
