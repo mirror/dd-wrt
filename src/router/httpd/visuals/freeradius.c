@@ -76,7 +76,7 @@ EJ_VISIBLE void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
 	if (percent == 100) {
 		websWrite(wp, "<script type=\"text/javascript\">Capture(freeradius.gencerdone)</script>\n");
 	} else {
-		websWrite(wp, live_translate(stream, "freeradius.gencertime"), percent);
+		websWrite(wp, live_translate(wp, "freeradius.gencertime"), percent);
 	}
 }
 
