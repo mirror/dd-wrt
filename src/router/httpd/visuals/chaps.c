@@ -90,7 +90,7 @@ EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
 		show_chaps_table(wp, "pass", i);
 		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"", i);
 		show_chaps_table(wp, "ip", i);
-		websWrite(wp, "\" /></td style=\"text-align: center\">\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(wp, "\" /></td>\n<td style=\"text-align: center\">\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		show_chaps_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n</tr>\n");
 	}
