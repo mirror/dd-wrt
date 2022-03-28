@@ -712,7 +712,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 			  "<div id=\"main\">\n" "<div id=\"contentsInfo\" style=\"width: 360px\">\n"
 			  "<h2>%s</h2>\n"
 			  "Error: please specify a username and password.\n"
-			  "<br />\n"
+			  "<br /><br />\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
 			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
