@@ -110,7 +110,7 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.certtbl)</script></th>\n"
 			"<th style=\"text-align: center;\"><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n"
-			"<th style=\"text-align: center;\" width=\"10%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			"<th style=\"text-align: center;\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 
 	unsigned int i;
 	struct radiusdb *db = loadradiusdb();
@@ -166,7 +166,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 
 	websWrite(wp, "<tr>\n" "<th>IP/NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n"
-			  "<th width=\"10%\" style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			  "<th width=\"10%%\" style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	unsigned int i;
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (db != NULL)		// empty
