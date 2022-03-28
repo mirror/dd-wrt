@@ -674,7 +674,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
 		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" style=\\\"float: right\\\" "
-		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");<br />\n//]]>\n</script>\n</div>\n", title, file);
+		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" /><br />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
 static int do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
