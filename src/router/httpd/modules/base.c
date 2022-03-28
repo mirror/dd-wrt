@@ -673,8 +673,8 @@ static void show_certfield(webs_t wp, char *title, char *file)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">%s</div>\n"
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
-		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" "
-		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
+		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" style=\\\"float: right\\\" "
+		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" /></ br>\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
 static int do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
@@ -709,9 +709,10 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
 		websWrite(wp, "</head>\n"
 			  "<body>\n"
-			  "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n"
+			  "<div id=\"main\">\n" "<div id=\"contentsInfo\" style=\"width: 360px\">\n"
 			  "<h2>%s</h2>\n"
-			  "Error: please specify a value username and password\n"
+			  "Error: please specify a username and password.\n"
+				"</br>"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
 			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
