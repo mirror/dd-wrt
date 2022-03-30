@@ -239,8 +239,7 @@ function setWolHostsTable() {
 			cell.title = wol.msg1;
 			cell.align = "center";
 			cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"del_wol_host('" + mac + "')\" />";
-			cell.align = "center";
-			row.insertCell(-1).innerHTML = "\t\t<input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
+			row.insertCell(-1).innerHTML = "\t\t<center><input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" /></center>";
 		}
 	}
 }
