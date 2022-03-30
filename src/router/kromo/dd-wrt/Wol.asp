@@ -217,7 +217,7 @@ function setWolHostsTable() {
 
 	if(!wol_hosts || wol_hosts == "," || wol_hosts == "") {
 		var cell = table.insertRow(1).insertCell(-1);
-		cell.colSpan = 4;
+		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none +" -";
 	}
@@ -239,6 +239,7 @@ function setWolHostsTable() {
 			cell.title = wol.msg1;
 			cell.align = "center";
 			cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"del_wol_host('" + mac + "')\" />";
+			cell.align = "center";
 			row.insertCell(-1).innerHTML = "\t\t<input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
 		}
 	}
@@ -301,7 +302,7 @@ addEvent(window, "unload", function() {
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="35%"><% tran("share.hostname"); %></th>
 										<th width="20%"><% tran("share.ip"); %></th>
-										<th width="30%"><% tran("wol.enable"); %></th>
+										<th width="20%" style="text-align: center"><% tran("wol.enable"); %></th>
 									</tr>
 								</table>
 							</fieldset><br />
@@ -321,7 +322,7 @@ addEvent(window, "unload", function() {
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value="" /></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value="" /></td>
 										<td></td>
-										<td><script type="text/javascript">
+										<td style="text-align: center"><script type="text/javascript">
 										//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
 										//]]>
