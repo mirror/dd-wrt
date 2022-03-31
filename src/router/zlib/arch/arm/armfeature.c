@@ -2,14 +2,28 @@
 
 #if defined(__linux__)
 #  include <sys/auxv.h>
-#  include <asm/hwcap.h>
+#elif defined(__FreeBSD__) && defined(__aarch64__)
+#  include <machine/armreg.h>
+#  ifndef ID_AA64ISAR0_CRC32_VAL
+#    define ID_AA64ISAR0_CRC32_VAL ID_AA64ISAR0_CRC32
+#  endif
+#elif defined(__APPLE__)
+#  include <sys/sysctl.h>
 #elif defined(_WIN32)
 #  include <winapifamily.h>
 #endif
 
 static int arm_has_crc32() {
-#if defined(__linux__) && defined(HWCAP2_CRC32)
+#if defined(__linux__) && defined(ARM_AUXV_HAS_CRC32)
     return (getauxval(AT_HWCAP2) & HWCAP2_CRC32) != 0 ? 1 : 0;
+#elif defined(__FreeBSD__) && defined(__aarch64__)
+    return getenv("QEMU_EMULATING") == NULL
+      && ID_AA64ISAR0_CRC32_VAL(READ_SPECIALREG(id_aa64isar0_el1)) >= ID_AA64ISAR0_CRC32_BASE;
+#elif defined(__APPLE__)
+    int hascrc32;
+    size_t size = sizeof(hascrc32);
+    return sysctlbyname("hw.optional.armv8_crc32", &hascrc32, &size, NULL, 0) == 0
+      && hascrc32 == 1;
 #elif defined(ARM_NOCHECK_ACLE)
     return 1;
 #else
@@ -20,8 +34,13 @@ static int arm_has_crc32() {
 /* AArch64 has neon. */
 #if !defined(__aarch64__) && !defined(_M_ARM64)
 static inline int arm_has_neon() {
-#if defined(__linux__) && defined(HWCAP_NEON)
+#if defined(__linux__) && defined(ARM_AUXV_HAS_NEON)
     return (getauxval(AT_HWCAP) & HWCAP_NEON) != 0 ? 1 : 0;
+#elif defined(__APPLE__)
+    int hasneon;
+    size_t size = sizeof(hasneon);
+    return sysctlbyname("hw.optional.neon", &hasneon, &size, NULL, 0) == 0
+      && hasneon == 1;
 #elif defined(_M_ARM) && defined(WINAPI_FAMILY_PARTITION)
 #  if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_PHONE_APP)
     return 1; /* Always supported */
