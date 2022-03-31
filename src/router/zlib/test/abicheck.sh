@@ -75,7 +75,7 @@ else
   # but until that bright, shining day, use some
   # random recent SHA.  Annoyingly, can't shorten it.
   ABI_GIT_REPO=https://github.com/zlib-ng/zlib-ng.git
-  ABI_GIT_COMMIT=1d2504ddc4894786fdf61d41a9bfa435cd8b1935
+  ABI_GIT_COMMIT=56ce27343bf295ae9457f8e3d38ec96d2f949a1c
 fi
 # FIXME: even when using a tag, check the hash.
 
@@ -91,11 +91,11 @@ then
   *-m32*) M32="-m32";;
   *) M32="";;
   esac
-else
-  # Canonicalize CHOST to work around bug in original
-  # zlib's configure
-  export CHOST=$(sh $TESTDIR/../tools/config.sub $CHOST)
 fi
+
+# Canonicalize CHOST to work around bug in original zlib's configure
+export CHOST=$(sh $TESTDIR/../tools/config.sub $CHOST)
+
 if test "$CHOST" = ""
 then
   echo "abicheck: SKIP, as we don't know CHOST"

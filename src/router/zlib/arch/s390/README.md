@@ -23,7 +23,7 @@ https://www.ibm.com/products/z15) and newer machines under the name [
 https://www.ibm.com/support/z-content-solutions/compression/). The
 programming interface to it is a machine instruction called DEFLATE
 CONVERSION CALL (DFLTCC). It is documented in Chapter 26 of [Principles
-of Operation](http://publibfp.dhe.ibm.com/epubs/pdf/a227832c.pdf). Both
+of Operation](https://publibfp.dhe.ibm.com/epubs/pdf/a227832c.pdf). Both
 the code and the rest of this document refer to this feature simply as
 "DFLTCC".
 
@@ -48,6 +48,7 @@ DFLTCC does not support every single zlib-ng feature, in particular:
 * `inflate(Z_BLOCK)` and `inflate(Z_TREES)`
 * `inflateMark()`
 * `inflatePrime()`
+* `inflateSyncPoint()`
 
 When used, these functions will either switch to software, or, in case
 this is not possible, gracefully fail.
@@ -75,8 +76,9 @@ macros.
 parameter block using `DEFLATE_RESET_KEEP_HOOK()` and
 `INFLATE_RESET_KEEP_HOOK()` macros.
 
-`INFLATE_PRIME_HOOK()` and `INFLATE_MARK_HOOK()` macros make the
-unsupported `inflatePrime()` and `inflateMark()` calls fail gracefully.
+`INFLATE_PRIME_HOOK()`, `INFLATE_MARK_HOOK()` and
+`INFLATE_SYNC_POINT_HOOK()` macros make the respective unsupported
+calls gracefully fail.
 
 `DEFLATE_PARAMS_HOOK()` implements switching between hardware and
 software compression mid-stream using `deflateParams()`. Switching

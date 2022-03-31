@@ -37,16 +37,16 @@ static inline int zng_tr_tally_lit(deflate_state *s, unsigned char c) {
     return (s->sym_next == s->sym_end);
 }
 
-static inline int zng_tr_tally_dist(deflate_state *s, unsigned dist, unsigned char len) {
+static inline int zng_tr_tally_dist(deflate_state *s, uint32_t dist, uint32_t len) {
     /* dist: distance of matched string */
     /* len: match length-MIN_MATCH */
     s->sym_buf[s->sym_next++] = (uint8_t)(dist);
     s->sym_buf[s->sym_next++] = (uint8_t)(dist >> 8);
-    s->sym_buf[s->sym_next++] = len;
+    s->sym_buf[s->sym_next++] = (uint8_t)len;
     s->matches++;
     dist--;
-    Assert((uint16_t)dist < (uint16_t)MAX_DIST(s) &&
-           (uint16_t)d_code(dist) < (uint16_t)D_CODES,  "zng_tr_tally: bad match");
+    Assert(dist < MAX_DIST(s) && (uint16_t)d_code(dist) < (uint16_t)D_CODES, 
+        "zng_tr_tally: bad match");
 
     s->dyn_ltree[zng_length_code[len]+LITERALS+1].Freq++;
     s->dyn_dtree[d_code(dist)].Freq++;

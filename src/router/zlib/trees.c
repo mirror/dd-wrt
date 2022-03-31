@@ -638,7 +638,11 @@ void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_
     int max_blindex = 0;  /* index of last bit length code of non zero freq */
 
     /* Build the Huffman trees unless a stored block is forced */
-    if (s->level > 0) {
+    if (UNLIKELY(s->sym_next == 0)) {
+        /* Emit an empty static tree block with no codes */
+        opt_lenb = static_lenb = 0;
+        s->static_len = 7;
+    } else if (s->level > 0) {
         /* Check if the file is binary or text */
         if (s->strm->data_type == Z_UNKNOWN)
             s->strm->data_type = detect_data_type(s);
@@ -662,7 +666,7 @@ void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_
         opt_lenb = (s->opt_len+3+7) >> 3;
         static_lenb = (s->static_len+3+7) >> 3;
 
-        Tracev((stderr, "\nopt %lu(%lu) stat %lu(%lu) stored %lu lit %u ",
+        Tracev((stderr, "\nopt %lu(%lu) stat %lu(%lu) stored %u lit %u ",
                 opt_lenb, s->opt_len, static_lenb, s->static_len, stored_len,
                 s->sym_next / 3));
 

@@ -124,7 +124,7 @@ static void fizzle_matches(deflate_state *s, struct match *current, struct match
     n = *next;
 
     /* step one: try to move the "next" match to the left as much as possible */
-    limit = next->strstart > MAX_DIST(s) ? next->strstart - MAX_DIST(s) : 0;
+    limit = next->strstart > MAX_DIST(s) ? next->strstart - (Pos)MAX_DIST(s) : 0;
 
     match = s->window + n.match_start - 1;
     orig = s->window + n.strstart - 1;
@@ -171,6 +171,7 @@ Z_INTERNAL block_state deflate_medium(deflate_state *s, int flush) {
     for (;;) {
         Pos hash_head = 0;    /* head of the hash chain */
         int bflush = 0;       /* set if current block must be flushed */
+        int64_t dist;
 
         /* Make sure that we always have enough lookahead, except
          * at the end of the input file. We need MAX_MATCH bytes
@@ -201,20 +202,21 @@ Z_INTERNAL block_state deflate_medium(deflate_state *s, int flush) {
                 hash_head = functable.quick_insert_string(s, s->strstart);
             }
 
-            current_match.strstart = s->strstart;
+            current_match.strstart = (uint16_t)s->strstart;
             current_match.orgstart = current_match.strstart;
 
             /* Find the longest match, discarding those <= prev_length.
              * At this point we have always match_length < MIN_MATCH
              */
 
-            if (hash_head != 0 && s->strstart - hash_head <= MAX_DIST(s)) {
+            dist = (int64_t)s->strstart - hash_head;
+            if (dist <= MAX_DIST(s) && dist > 0 && hash_head != 0) {
                 /* To simplify the code, we prevent matches with the string
                  * of window index 0 (in particular we have to avoid a match
                  * of the string with itself at the start of the input file).
                  */
                 current_match.match_length = (uint16_t)functable.longest_match(s, hash_head);
-                current_match.match_start = s->match_start;
+                current_match.match_start = (uint16_t)s->match_start;
                 if (UNLIKELY(current_match.match_length < MIN_MATCH))
                     current_match.match_length = 1;
                 if (UNLIKELY(current_match.match_start >= current_match.strstart)) {
@@ -235,19 +237,21 @@ Z_INTERNAL block_state deflate_medium(deflate_state *s, int flush) {
             s->strstart = current_match.strstart + current_match.match_length;
             hash_head = functable.quick_insert_string(s, s->strstart);
 
-            next_match.strstart = s->strstart;
+            next_match.strstart = (uint16_t)s->strstart;
             next_match.orgstart = next_match.strstart;
 
             /* Find the longest match, discarding those <= prev_length.
              * At this point we have always match_length < MIN_MATCH
              */
-            if (hash_head != 0 && s->strstart - hash_head <= MAX_DIST(s)) {
+
+            dist = (int64_t)s->strstart - hash_head;
+            if (dist <= MAX_DIST(s) && dist > 0 && hash_head != 0) {
                 /* To simplify the code, we prevent matches with the string
                  * of window index 0 (in particular we have to avoid a match
                  * of the string with itself at the start of the input file).
                  */
                 next_match.match_length = (uint16_t)functable.longest_match(s, hash_head);
-                next_match.match_start = s->match_start;
+                next_match.match_start = (uint16_t)s->match_start;
                 if (UNLIKELY(next_match.match_start >= next_match.strstart)) {
                     /* this can happen due to some restarts */
                     next_match.match_length = 1;

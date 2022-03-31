@@ -37,7 +37,7 @@
  *  REFERENCES
  *
  *      Deutsch, L.P.,"DEFLATE Compressed Data Format Specification".
- *      Available in http://tools.ietf.org/html/rfc1951
+ *      Available in https://tools.ietf.org/html/rfc1951
  *
  *      A description of the Rabin and Karp algorithm is given in the book
  *         "Algorithms" by R. Sedgewick, Addison-Wesley, p252.
@@ -126,9 +126,6 @@ extern void copy_with_crc(PREFIX3(stream) *strm, unsigned char *dst, unsigned lo
  * Local data
  */
 
-#define NIL 0
-/* Tail of hash chains */
-
 /* Values for max_lazy_match, good_match and max_chain_length, depending on
  * the desired pack level (0..9). The values given below have been tuned to
  * exclude worst case performance for pathological files. Better values may be
@@ -202,7 +199,7 @@ Z_INTERNAL void slide_hash_c(deflate_state *s) {
     do {
         unsigned m;
         m = *--p;
-        *p = (Pos)(m >= wsize ? m-wsize : NIL);
+        *p = (Pos)(m >= wsize ? m-wsize : 0);
     } while (--n);
 #else
     /* As of I make this change, gcc (4.8.*) isn't able to vectorize
@@ -218,8 +215,8 @@ Z_INTERNAL void slide_hash_c(deflate_state *s) {
         Pos *q = p - n;
         for (i = 0; i < n; i++) {
             Pos m = *q;
-            Pos t = wsize;
-            *q++ = (Pos)(m >= t ? m-t: NIL);
+            Pos t = (Pos)wsize;
+            *q++ = (Pos)(m >= t ? m-t: 0);
         }
     }
 #endif /* NOT_TWEAK_COMPILER */
@@ -230,7 +227,7 @@ Z_INTERNAL void slide_hash_c(deflate_state *s) {
     do {
         unsigned m;
         m = *--p;
-        *p = (Pos)(m >= wsize ? m-wsize : NIL);
+        *p = (Pos)(m >= wsize ? m-wsize : 0);
         /* If n is not on any hash chain, prev[n] is garbage but
          * its value will never be used.
          */
@@ -241,8 +238,8 @@ Z_INTERNAL void slide_hash_c(deflate_state *s) {
         Pos *q = p - n;
         for (i = 0; i < n; i++) {
             Pos m = *q;
-            Pos t = wsize;
-            *q++ = (Pos)(m >= t ? m-t: NIL);
+            Pos t = (Pos)wsize;
+            *q++ = (Pos)(m >= t ? m-t: 0);
         }
     }
 #endif /* NOT_TWEAK_COMPILER */
@@ -1204,11 +1201,17 @@ void check_match(deflate_state *s, Pos start, Pos match, int length) {
         fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
         z_error("invalid match length");
     }
+    /* check that the match isn't at the same position as the start string */
+    if (match == start) {
+        fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
+        z_error("invalid match position");
+    }
     /* check that the match is indeed a match */
     if (memcmp(s->window + match, s->window + start, length) != EQUAL) {
+        int32_t i = 0;
         fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
         do {
-            fprintf(stderr, "%c%c", s->window[match++], s->window[start++]);
+            fprintf(stderr, "  %03d: match [%02x] start [%02x]\n", i++, s->window[match++], s->window[start++]);
         } while (--length != 0);
         z_error("invalid match");
     }
@@ -1249,7 +1252,12 @@ void Z_INTERNAL fill_window(deflate_state *s) {
          */
         if (s->strstart >= wsize+MAX_DIST(s)) {
             memcpy(s->window, s->window+wsize, (unsigned)wsize);
-            s->match_start = (s->match_start >= wsize) ? s->match_start - wsize : 0;
+            if (s->match_start >= wsize) {
+                s->match_start -= wsize;
+            } else {
+                s->match_start = 0;
+                s->prev_length = 0;
+            }
             s->strstart    -= wsize; /* we now have strstart >= MAX_DIST */
             s->block_start -= (int)wsize;
             if (s->insert > s->strstart)
