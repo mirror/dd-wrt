@@ -199,8 +199,7 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                 dist += BITS(op);
 #ifdef INFLATE_STRICT
                 if (dist > dmax) {
-                    strm->msg = (char *)"invalid distance too far back";
-                    state->mode = BAD;
+                    SET_BAD("invalid distance too far back");
                     break;
                 }
 #endif
@@ -211,8 +210,7 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                     op = dist - op;             /* distance back in window */
                     if (op > whave) {
                         if (state->sane) {
-                            strm->msg = (char *)"invalid distance too far back";
-                            state->mode = BAD;
+                            SET_BAD("invalid distance too far back");
                             break;
                         }
 #ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
@@ -262,11 +260,10 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                         out = functable.chunkcopy_safe(out, from, len, safe);
                     }
                 } else {
-                    /* Whole reference is in range of current output.  No
-                       range checks are necessary because we start with room
-                       for at least 258 bytes of output, so unroll and roundoff
-                       operations can write beyond `out+len` so long as they
-                       stay within 258 bytes of `out`.
+                    /* Whole reference is in range of current output.  No range checks are
+                       necessary because we start with room for at least 258 bytes of output,
+                       so unroll and roundoff operations can write beyond `out+len` so long
+                       as they stay within 258 bytes of `out`.
                     */
                     if (dist >= len || dist >= state->chunksize)
                         out = functable.chunkcopy(out, out - dist, len);
@@ -277,8 +274,7 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                 here = dcode + here->val + BITS(op);
                 goto dodist;
             } else {
-                strm->msg = (char *)"invalid distance code";
-                state->mode = BAD;
+                SET_BAD("invalid distance code");
                 break;
             }
         } else if ((op & 64) == 0) {              /* 2nd level length code */
@@ -289,8 +285,7 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
             state->mode = TYPE;
             break;
         } else {
-            strm->msg = (char *)"invalid literal/length code";
-            state->mode = BAD;
+            SET_BAD("invalid literal/length code");
             break;
         }
     } while (in < last && out < end);
@@ -304,12 +299,10 @@ void Z_INTERNAL zng_inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
     /* update state and return */
     strm->next_in = in;
     strm->next_out = out;
-    strm->avail_in =
-        (unsigned)(in < last ? (INFLATE_FAST_MIN_HAVE - 1) + (last - in)
-                             : (INFLATE_FAST_MIN_HAVE - 1) - (in - last));
-    strm->avail_out =
-        (unsigned)(out < end ? (INFLATE_FAST_MIN_LEFT - 1) + (end - out)
-                             : (INFLATE_FAST_MIN_LEFT - 1) - (out - end));
+    strm->avail_in = (unsigned)(in < last ? (INFLATE_FAST_MIN_HAVE - 1) + (last - in)
+                                          : (INFLATE_FAST_MIN_HAVE - 1) - (in - last));
+    strm->avail_out = (unsigned)(out < end ? (INFLATE_FAST_MIN_LEFT - 1) + (end - out)
+                                           : (INFLATE_FAST_MIN_LEFT - 1) - (out - end));
 
     Assert(bits <= 32, "Remaining bits greater than 32");
     state->hold = (uint32_t)hold;

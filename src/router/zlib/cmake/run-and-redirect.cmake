@@ -1,5 +1,21 @@
+# run-and-redirect.cmake -- Runs a command and validates exit code
+
+# Copyright (C) 2021 Nathan Moinvaziri
+# Licensed under the Zlib license, see LICENSE.md for details
+
+# Normally ctest will always fail with non-zero exit code, but we have tests
+# that need to check specific exit codes.
+
+# Required Variables
+#   COMMAND      - Command to run
+
+# Optional Variables
+#   INPUT        - Standard intput
+#   OUTPUT       - Standard output (default: /dev/null)
+#   SUCCESS_EXIT - List of successful exit codes (default: 0, ie: 0;1)
+
 # If no output is specified, discard output
-if(NOT OUTPUT)
+if(NOT DEFINED OUTPUT)
     if(WIN32)
         set(OUTPUT NUL)
     else()
@@ -8,6 +24,10 @@ if(NOT OUTPUT)
 endif()
 
 if(INPUT)
+    # Check to see that input file exists
+    if(NOT EXISTS ${INPUT})
+        message(FATAL_ERROR "Cannot find input: ${INPUT}")
+    endif()
     # Execute with both stdin and stdout file
     execute_process(COMMAND ${COMMAND}
         RESULT_VARIABLE CMD_RESULT
