@@ -78,7 +78,7 @@ much traffic. */
 /* Note: Both DROPBEAR_CLI_PROXYCMD and DROPBEAR_CLI_NETCAT must be set to
  * allow multihop dbclient connections */
 
-/* Allow using -J <proxycommand> to run the connection through a 
+/* Allow using -J <proxycommand> to run the connection through a
    pipe to a program, rather the normal TCP connection */
 #define DROPBEAR_CLI_PROXYCMD 1
 
@@ -172,6 +172,9 @@ If you test it please contact the Dropbear author */
    binary size - around 7,5kB on x86-64 */
 #define DROPBEAR_ED25519 0
 
+#define DROPBEAR_SK_ECDSA 0
+#define DROPBEAR_SK_ED25519 0
+
 #define DROPBEAR_DEFAULT_RSA_SIZE 2048
 
 /* Generate hostkeys as-needed when the first connection using that key type occurs.
@@ -258,9 +261,10 @@ If you test it please contact the Dropbear author */
 #define DROPBEAR_CLI_PASSWORD_AUTH 1
 #define DROPBEAR_CLI_PUBKEY_AUTH 1
 
-/* A default argument for dbclient -i <privatekey>. 
-Homedir is prepended unless path begins with / */
-#define DROPBEAR_DEFAULT_CLI_AUTHKEY ".ssh/id_dropbear"
+/* A default argument for dbclient -i <privatekey>.
+ * Homedir is prepended if path begins with ~/
+ */
+#define DROPBEAR_DEFAULT_CLI_AUTHKEY "~/.ssh/id_dropbear"
 
 /* This variable can be used to set a password for client
  * authentication on the commandline. Beware of platforms
@@ -303,6 +307,8 @@ Homedir is prepended unless path begins with / */
 #ifndef MAX_AUTH_TRIES
 #define MAX_AUTH_TRIES 3
 #endif
+
+#define UNAUTH_CLOSE_DELAY 0
 
 /* The default file to store the daemon's process ID, for shutdown
    scripts etc. This can be overridden with the -P flag */
@@ -369,6 +375,7 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 
 /* The default path. This will often get replaced by the shell */
 #define DEFAULT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
+#define DEFAULT_ROOT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 
 /* Some other defines (that mostly should be left alone) are defined
  * in sysoptions.h */
