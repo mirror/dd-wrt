@@ -25,9 +25,6 @@
 #ifndef DROPBEAR_INCLUDES_H_
 #define DROPBEAR_INCLUDES_H_
 
-/* uclibc needs _GNU_SOURCE, maybe other things? */
-#define _GNU_SOURCE
-
 #include "options.h"
 #include "debug.h"
 
@@ -128,6 +125,10 @@
 #include <sys/random.h>
 #endif
 
+#ifdef HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
+
 #ifdef BUNDLED_LIBTOM
 #include "libtomcrypt/src/headers/tomcrypt.h"
 #include "libtommath/tommath.h"
@@ -171,6 +172,8 @@ typedef u_int32_t uint32_t;
 #if DROPBEAR_PLUGIN
 #include <dlfcn.h>
 #endif
+
+extern char** environ;
 
 #include "fake-rfc2553.h"
 
