@@ -19,27 +19,33 @@ AM_CFLAGS = -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers \
 
 sbin_PROGRAMS = fsck.fat mkfs.fat fatlabel
 noinst_PROGRAMS = testdevinfo
+EXTRA_DIST = blkdev/README
 
-fscklabel_common_sources = boot.c boot.h check.c check.h common.c common.h \
-			   fat.c fat.h file.c file.h io.c io.h lfn.c lfn.h \
-			   charconv.c charconv.h msdos_fs.h \
+charconv_common_sources = charconv.c charconv.h
+charconv_common_ldadd = $(LIBICONV)
+fscklabel_common_sources = boot.c boot.h common.c common.h \
+			   fat.c fat.h io.c io.h msdos_fs.h \
+			   $(charconv_common_sources) \
 			   fsck.fat.h endian_compat.h
-fsck_fat_SOURCES = fsck.fat.c $(fscklabel_common_sources)
+fsck_fat_SOURCES = check.c check.h file.c file.h fsck.fat.c \
+		   lfn.c lfn.h \
+		   $(fscklabel_common_sources)
+fsck_fat_LDADD = $(charconv_common_ldadd)
 fatlabel_SOURCES = fatlabel.c $(fscklabel_common_sources)
+fatlabel_LDADD = $(charconv_common_ldadd)
 
-mkfs_common_sources = device_info.c device_info.h \
-		      blkdev/blkdev.c blkdev/blkdev.h \
-		      endian_compat.h \
-		      blkdev/linux_version.c blkdev/linux_version.h
-mkfs_fat_SOURCES  = mkfs.fat.c msdos_fs.h $(mkfs_common_sources)
+devinfo_common_sources = device_info.c device_info.h \
+			 blkdev/blkdev.c blkdev/blkdev.h \
+			 blkdev/linux_version.c blkdev/linux_version.h
+mkfs_fat_SOURCES  = mkfs.fat.c msdos_fs.h common.c common.h endian_compat.h \
+		    $(charconv_common_sources) $(devinfo_common_sources)
 mkfs_fat_CPPFLAGS = -I$(srcdir)/blkdev
-mkfs_fat_CFLAGS   = $(AM_CFLAGS) $(UDEV_CFLAGS)
-mkfs_fat_LDADD    = $(UDEV_LIBS)
+mkfs_fat_CFLAGS   = $(AM_CFLAGS)
+mkfs_fat_LDADD    = $(charconv_common_ldadd)
 
-testdevinfo_SOURCES  = testdevinfo.c $(mkfs_common_sources)
+testdevinfo_SOURCES  = testdevinfo.c $(devinfo_common_sources)
 testdevinfo_CPPFLAGS = -I$(srcdir)/blkdev
-testdevinfo_CFLAGS   = $(AM_CFLAGS) $(UDEV_CFLAGS)
-testdevinfo_LDADD    = $(UDEV_LIBS)
+testdevinfo_CFLAGS   = $(AM_CFLAGS)
 
 
 if COMPAT_SYMLINKS

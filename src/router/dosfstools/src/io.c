@@ -56,7 +56,7 @@ static CHANGE *changes, *last;
 static int fd, did_change = 0;
 
 
-void fs_open(char *path, int rw)
+void fs_open(const char *path, int rw)
 {
     if ((fd = open(path, rw ? O_RDWR : O_RDONLY)) < 0) {
 	perror("open");

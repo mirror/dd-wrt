@@ -7,4 +7,7 @@ dist_doc_DATA = doc/ANNOUNCE.mkdosfs \
 		doc/README.dosfsck \
 		doc/README.dosfstools-2.x \
 		doc/README.mkdosfs \
-		doc/TODO.dosfstools-2.x
+		doc/TODO.dosfstools-2.x \
+		COPYING ChangeLog NEWS README
+
+EXTRA_DIST = autogen.sh

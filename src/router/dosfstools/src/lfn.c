@@ -74,14 +74,6 @@ static unsigned char fat_uni2esc[64] = {
 /* for maxlen param */
 #define UNTIL_0		INT_MAX
 
-/* Convert name part in 'lfn' from unicode to ASCII */
-#define CNV_THIS_PART(lfn)				\
-    ({							\
-	unsigned char __part_uni[CHARS_PER_LFN*2];		\
-	copy_lfn_part( __part_uni, lfn );		\
-	cnv_unicode( __part_uni, CHARS_PER_LFN, 0 );	\
-    })
-
 /* Convert name parts collected so far (from previous slots) from unicode to
  * ASCII */
 #define CNV_PARTS_SO_FAR()					\
@@ -155,6 +147,14 @@ static void copy_lfn_part(unsigned char *dst, LFN_ENT * lfn)
     memcpy(dst + 22, lfn->name11_12, 4);
 }
 
+/* Convert name part in 'lfn' from unicode to ASCII */
+static inline char *cnv_this_part(LFN_ENT *lfn)
+{
+	unsigned char part_uni[CHARS_PER_LFN * 2];
+	copy_lfn_part(part_uni, lfn);
+	return cnv_unicode(part_uni, CHARS_PER_LFN, 0);
+}
+
 static void clear_lfn_slots(int start, int end)
 {
     int i;
@@ -222,7 +222,7 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	     * display the name) */
 	    printf("A new long file name starts within an old one.\n");
 	    if (slot == lfn_slot && lfn->alias_checksum == lfn_checksum) {
-		char *part1 = CNV_THIS_PART(lfn);
+		char *part1 = cnv_this_part(lfn);
 		char *part2 = CNV_PARTS_SO_FAR();
 		printf("  It could be that the LFN start bit is wrong here\n"
 		       "  if \"%s\" seems to match \"%s\".\n", part1, part2);
@@ -230,26 +230,22 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 		free(part2);
 		can_clear = 1;
 	    }
-	    if (interactive) {
-		printf("1: Delete previous LFN\n2: Leave it as it is.\n");
-		if (can_clear)
-		    printf("3: Clear start bit and concatenate LFNs\n");
-	    } else
-		printf("  Not auto-correcting this.\n");
-	    if (interactive) {
-		switch (get_key(can_clear ? "123" : "12", "?")) {
-		case '1':
-		    clear_lfn_slots(0, lfn_parts - 1);
-		    lfn_reset();
-		    break;
-		case '2':
-		    break;
-		case '3':
-		    lfn->id &= ~LFN_ID_START;
-		    fs_write(dir_offset + offsetof(LFN_ENT, id),
-			     sizeof(lfn->id), &lfn->id);
-		    break;
-		}
+	    switch (get_choice(2, "  Not auto-correcting this.",
+			       can_clear ? 3 : 2,
+			       1, "Delete previous LFN",
+			       2, "Leave it as it is",
+			       3, "Clear start bit and concatenate LFNs")) {
+	    case 1:
+		clear_lfn_slots(0, lfn_parts - 1);
+		lfn_reset();
+		break;
+	    case 2:
+		break;
+	    case 3:
+		lfn->id &= ~LFN_ID_START;
+		fs_write(dir_offset + offsetof(LFN_ENT, id),
+			 sizeof(lfn->id), &lfn->id);
+		break;
 	    }
 	}
 	lfn_slot = slot;
@@ -262,28 +258,27 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	/* Causes: 1) start bit got lost, 2) Previous slot with start bit got
 	 *         lost */
 	/* Fixes: 1) delete LFN, 2) set start bit */
-	char *part = CNV_THIS_PART(lfn);
+	char *part = cnv_this_part(lfn);
 	printf("Long filename fragment \"%s\" found outside a LFN "
 	       "sequence.\n  (Maybe the start bit is missing on the "
 	       "last fragment)\n", part);
 	free(part);
-	if (interactive) {
-	    printf("1: Delete fragment\n2: Leave it as it is.\n"
-		   "3: Set start bit\n");
-	} else
-	    printf("  Not auto-correcting this.\n");
-	switch (interactive ? get_key("123", "?") : '2') {
-	case '1':
+	switch (get_choice(2, "  Not auto-correcting this.",
+			   3,
+			   1, "Delete fragment",
+			   2, "Leave it as it is",
+			   3, "Set start bit")) {
+	case 1:
 	    if (!lfn_offsets)
 		lfn_offsets = alloc(sizeof(off_t));
 	    lfn_offsets[0] = dir_offset;
 	    clear_lfn_slots(0, 0);
 	    lfn_reset();
 	    return;
-	case '2':
+	case 2:
 	    lfn_reset();
 	    return;
-	case '3':
+	case 3:
 	    lfn->id |= LFN_ID_START;
 	    fs_write(dir_offset + offsetof(LFN_ENT, id),
 		     sizeof(lfn->id), &lfn->id);
@@ -304,7 +299,7 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	printf("Unexpected long filename sequence number "
 	       "(%d vs. expected %d).\n", slot, lfn_slot);
 	if (lfn->alias_checksum == lfn_checksum && lfn_slot > 0) {
-	    char *part1 = CNV_THIS_PART(lfn);
+	    char *part1 = cnv_this_part(lfn);
 	    char *part2 = CNV_PARTS_SO_FAR();
 	    printf("  It could be that just the number is wrong\n"
 		   "  if \"%s\" seems to match \"%s\".\n", part1, part2);
@@ -312,15 +307,12 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	    free(part2);
 	    can_fix = 1;
 	}
-	if (interactive) {
-	    printf
-		("1: Delete LFN\n2: Leave it as it is (and ignore LFN so far)\n");
-	    if (can_fix)
-		printf("3: Correct sequence number\n");
-	} else
-	    printf("  Not auto-correcting this.\n");
-	switch (interactive ? get_key(can_fix ? "123" : "12", "?") : '2') {
-	case '1':
+	switch (get_choice(2, "  Not auto-correcting this.",
+			   can_fix ? 3 : 2,
+			   1, "Delete LFN",
+			   2, "Leave it as it is (and ignore LFN so far)",
+			   3, "Correct sequence number")) {
+	case 1:
 	    if (!lfn_offsets) {
 		lfn_offsets = alloc(sizeof(off_t));
 		lfn_parts = 0;
@@ -329,10 +321,10 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	    clear_lfn_slots(0, lfn_parts - 1);
 	    lfn_reset();
 	    return;
-	case '2':
+	case 2:
 	    lfn_reset();
 	    return;
-	case '3':
+	case 3:
 	    lfn->id = (lfn->id & ~LFN_ID_SLOTMASK) | lfn_slot;
 	    fs_write(dir_offset + offsetof(LFN_ENT, id),
 		     sizeof(lfn->id), &lfn->id);
@@ -347,26 +339,23 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
 	printf("Checksum in long filename part wrong "
 	       "(%02x vs. expected %02x).\n",
 	       lfn->alias_checksum, lfn_checksum);
-	if (interactive) {
-	    printf("1: Delete LFN\n2: Leave it as it is.\n"
-		   "3: Correct checksum\n");
-	} else
-	    printf("  Not auto-correcting this.\n");
-	if (interactive) {
-	    switch (get_key("123", "?")) {
-	    case '1':
-		lfn_offsets[lfn_parts++] = dir_offset;
-		clear_lfn_slots(0, lfn_parts - 1);
-		lfn_reset();
-		return;
-	    case '2':
-		break;
-	    case '3':
-		lfn->alias_checksum = lfn_checksum;
-		fs_write(dir_offset + offsetof(LFN_ENT, alias_checksum),
-			 sizeof(lfn->alias_checksum), &lfn->alias_checksum);
-		break;
-	    }
+	switch (get_choice(2, "  Not auto-correcting this.",
+			   3,
+			   1, "Delete LFN",
+			   2, "Leave it as it is",
+			   3, "Correct checksum")) {
+	case 1:
+	    lfn_offsets[lfn_parts++] = dir_offset;
+	    clear_lfn_slots(0, lfn_parts - 1);
+	    lfn_reset();
+	    return;
+	case 2:
+	    break;
+	case 3:
+	    lfn->alias_checksum = lfn_checksum;
+	    fs_write(dir_offset + offsetof(LFN_ENT, alias_checksum),
+		     sizeof(lfn->alias_checksum), &lfn->alias_checksum);
+	    break;
 	}
     }
 
@@ -382,11 +371,10 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
     if (lfn->reserved != 0) {
 	printf("Reserved field in VFAT long filename slot is not 0 "
 	       "(but 0x%02x).\n", lfn->reserved);
-	if (interactive)
-	    printf("1: Fix.\n2: Leave it.\n");
-	else
-	    printf("Auto-setting to 0.\n");
-	if (!interactive || get_key("12", "?") == '1') {
+	if (get_choice(1, "Auto-setting to 0.",
+		       2,
+		       1, "Fix",
+		       2, "Leave it") == 1) {
 	    lfn->reserved = 0;
 	    fs_write(dir_offset + offsetof(LFN_ENT, reserved),
 		     sizeof(lfn->reserved), &lfn->reserved);
@@ -395,11 +383,10 @@ void lfn_add_slot(DIR_ENT * de, off_t dir_offset)
     if (lfn->start != htole16(0)) {
 	printf("Start cluster field in VFAT long filename slot is not 0 "
 	       "(but 0x%04x).\n", lfn->start);
-	if (interactive)
-	    printf("1: Fix.\n2: Leave it.\n");
-	else
-	    printf("Auto-setting to 0.\n");
-	if (!interactive || get_key("12", "?") == '1') {
+	if (get_choice(1, "Auto-setting to 0.",
+		       2,
+		       1, "Fix",
+		       2, "Leave it") == 1) {
 	    lfn->start = htole16(0);
 	    fs_write(dir_offset + offsetof(LFN_ENT, start),
 		     sizeof(lfn->start), &lfn->start);
@@ -436,25 +423,33 @@ char *lfn_get(DIR_ENT * de, off_t * lfn_offset)
 	 * 3) renumber entries and truncate name */
 	char *long_name = CNV_PARTS_SO_FAR();
 	char *short_name = file_name(de->name);
+	char *fix_num_string;
+	int choice;
+
 	printf("Unfinished long file name \"%s\".\n"
 	       "  (Start may have been overwritten by %s)\n",
 	       long_name, short_name);
 	free(long_name);
-	if (interactive) {
-	    printf("1: Delete LFN\n2: Leave it as it is.\n"
-		   "3: Fix numbering (truncates long name and attaches "
-		   "it to short name %s)\n", short_name);
-	} else
-	    printf("  Not auto-correcting this.\n");
-	switch (interactive ? get_key("123", "?") : '2') {
-	case '1':
+
+	xasprintf(&fix_num_string,
+		   "Fix numbering (truncates long name and attaches "
+		   "it to short name %s)", short_name);
+	choice = get_choice(2, "  Not auto-correcting this.",
+			    3,
+			    1, "Delete LFN",
+			    2, "Leave it as it is",
+			    3, fix_num_string);
+	free(fix_num_string);
+
+	switch (choice) {
+	case 1:
 	    clear_lfn_slots(0, lfn_parts - 1);
 	    lfn_reset();
 	    return NULL;
-	case '2':
+	case 2:
 	    lfn_reset();
 	    return NULL;
-	case '3':
+	case 3:
 	    for (i = 0; i < lfn_parts; ++i) {
 		uint8_t id = (lfn_parts - i) | (i == 0 ? LFN_ID_START : 0);
 		fs_write(lfn_offsets[i] + offsetof(LFN_ENT, id),
@@ -474,31 +469,37 @@ char *lfn_get(DIR_ENT * de, off_t * lfn_offset)
 	/* Fixes: 1) Fix checksum in LFN entries */
 	char *long_name = CNV_PARTS_SO_FAR();
 	char *short_name = file_name(de->name);
+	char *fix_check_string;
+	int choice;
+
 	printf("Wrong checksum for long file name \"%s\".\n"
 	       "  (Short name %s may have changed without updating the long name)\n",
 	       long_name, short_name);
 	free(long_name);
-	if (interactive) {
-	    printf("1: Delete LFN\n2: Leave it as it is.\n"
-		   "3: Fix checksum (attaches to short name %s)\n", short_name);
-	} else
-	    printf("  Not auto-correcting this.\n");
-	if (interactive) {
-	    switch (get_key("123", "?")) {
-	    case '1':
-		clear_lfn_slots(0, lfn_parts - 1);
-		lfn_reset();
-		return NULL;
-	    case '2':
-		lfn_reset();
-		return NULL;
-	    case '3':
-		for (i = 0; i < lfn_parts; ++i) {
-		    fs_write(lfn_offsets[i] + offsetof(LFN_ENT, alias_checksum),
-			     sizeof(sum), &sum);
-		}
-		break;
+
+	xasprintf(&fix_check_string,
+		  "Fix checksum (attaches to short name %s)", short_name);
+	choice = get_choice(9, "  Not auto-correcting this.",
+			    3,
+			    1, "Delete LFN",
+			    2, "Leave it as it is",
+			    3, fix_check_string);
+	free(fix_check_string);
+
+	switch (choice) {
+	case 1:
+	    clear_lfn_slots(0, lfn_parts - 1);
+	    lfn_reset();
+	    return NULL;
+	case 2:
+	    lfn_reset();
+	    return NULL;
+	case 3:
+	    for (i = 0; i < lfn_parts; ++i) {
+		fs_write(lfn_offsets[i] + offsetof(LFN_ENT, alias_checksum),
+			 sizeof(sum), &sum);
 	    }
+	    break;
 	}
     }
 
@@ -518,11 +519,10 @@ void lfn_check_orphaned(void)
     long_name = CNV_PARTS_SO_FAR();
     printf("Orphaned long file name part \"%s\"\n", long_name);
     free(long_name);
-    if (interactive)
-	printf("1: Delete.\n2: Leave it.\n");
-    else
-	printf("  Auto-deleting.\n");
-    if (!interactive || get_key("12", "?") == '1') {
+    if (get_choice(1, "  Auto-deleting.",
+		   2,
+		   1, "Delete",
+		   2, "Leave it") == 1) {
 	clear_lfn_slots(0, lfn_parts - 1);
     }
     lfn_reset();

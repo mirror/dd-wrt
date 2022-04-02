@@ -1,6 +1,7 @@
 .\" fsck.fat.8 - manpage for fsck.fat
 .\"
 .\" Copyright (C) 2006-2014 Daniel Baumann <daniel@debian.org>
+.\" Copyright (C) 2018-2021 Pali Rohár <pali.rohar@gmail.com>
 .\"
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -19,183 +20,241 @@
 .\" can be found in /usr/share/common-licenses/GPL-3 file.
 .\"
 .\"
-.TH FSCK.FAT 8 2015\-04\-16 "dosfstools @PACKAGE_VERSION@"
+.TH FSCK.FAT 8 @RELEASE_DATE@ "dosfstools @PACKAGE_VERSION@"
 .SH NAME
-\fBfsck.fat\fR \- check and repair MS\-DOS filesystems
+fsck.fat \- check and repair MS-DOS FAT filesystems
 .\" ----------------------------------------------------------------------------
 .SH SYNOPSIS
-\fBfsck.fat\fR [\fIOPTIONS\fR] \fIDEVICE\fR
+\fBfsck.fat\fP [\fIOPTIONS\fP] \fIDEVICE\fP
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
-\fBfsck.fat\fR verifies the consistency of MS\-DOS filesystems and optionally
+\fBfsck.fat\fP verifies the consistency of MS-DOS filesystems and optionally
 tries to repair them.
 .PP
 The following filesystem problems can be corrected (in this order):
-.IP "*" 4
+.IP "\(bu" 4
 FAT contains invalid cluster numbers.
 Cluster is changed to EOF.
-.IP "*" 4
+.IP "\(bu" 4
 File's cluster chain contains a loop.
 The loop is broken.
-.IP "*" 4
+.IP "\(bu" 4
 Bad clusters (read errors).
 The clusters are marked bad and they are removed from files owning them.
 This check is optional.
-.IP "*" 4
+.IP "\(bu" 4
 Directories with a large number of bad entries (probably corrupt).
 The directory can be deleted.
-.IP "*" 4
-Files . and .. are non\-directories.
+.IP "\(bu" 4
+Files . and .. are non-directories.
 They can be deleted or renamed.
-.IP "*" 4
+.IP "\(bu" 4
 Directories . and .. in root directory.
 They are deleted.
-.IP "*" 4
+.IP "\(bu" 4
 Bad filenames.
 They can be renamed.
-.IP "*" 4
+.IP "\(bu" 4
 Duplicate directory entries.
 They can be deleted or renamed.
-.IP "*" 4
-Directories with non\-zero size field.
+.IP "\(bu" 4
+Directories with non-zero size field.
 Size is set to zero.
-.IP "*" 4
+.IP "\(bu" 4
 Directory . does not point to parent directory.
 The start pointer is adjusted.
-.IP "*" 4
+.IP "\(bu" 4
 Directory .. does not point to parent of parent directory.
 The start pointer is adjusted.
-.IP "*" 4
+.IP "\(bu" 4
+\&. and .. are not the two first entries in a non-root directory.
+The entries are created, moving occupied slots if necessary.
+.IP "\(bu" 4
 Start cluster number of a file is invalid.
 The file is truncated.
-.IP "*" 4
+.IP "\(bu" 4
 File contains bad or free clusters.
 The file is truncated.
-.IP "*" 4
+.IP "\(bu" 4
 File's cluster chain is longer than indicated by the size fields.
 The file is truncated.
-.IP "*" 4
+.IP "\(bu" 4
 Two or more files share the same cluster(s).
 All but one of the files are truncated.
 If the file being truncated is a directory file that has already been read, the
 filesystem check is restarted after truncation.
-.IP "*" 4
+.IP "\(bu" 4
 File's cluster chain is shorter than indicated by the size fields.
 The file is truncated.
-.IP "*" 4
+.IP "\(bu" 4
+Volume label in root directory or label in boot sector is invalid.
+Invalid labels are removed.
+.IP "\(bu" 4
+Volume label in root directory and label in boot sector are different.
+Volume label from root directory is copied to boot sector.
+.IP "\(bu" 4
 Clusters are marked as used but are not owned by a file.
 They are marked as free.
 .PP
 Additionally, the following problems are detected, but not repaired:
-.IP "*" 4
+.IP "\(bu" 4
 Invalid parameters in boot sector
-.IP "*" 4
-Absence of . and .. entries in non\-root directories
 .PP
-When \fBfsck.fat\fR checks a filesystem, it accumulates all changes in memory
+When \fBfsck.fat\fP checks a filesystem, it accumulates all changes in memory
 and performs them only after all checks are complete.
-This can be disabled with the \fB\-w\fR option.
+This can be disabled with the \fB\-w\fP option.
+.PP
+Two different variants of the FAT filesystem are supported.
+Standard is the FAT12, FAT16 and FAT32 filesystems as defined by Microsoft and
+widely used on hard disks and removable media like USB sticks and SD cards.
+The other is the legacy Atari variant used on Atari ST.
+.PP
+There are some minor differences in Atari format:
+Some boot sector fields are interpreted slightly different, and the special FAT
+entries for end-of-file and bad cluster can be different.
+Under MS-DOS 0xfff8 is used for EOF and Atari employs 0xffff by default, but
+both systems recognize all values from 0xfff8\(en0xffff as end-of-file.
+MS-DOS uses only 0xfff7 for bad clusters, where on Atari values 0xfff0\(en0xfff7
+are for this purpose (but the standard value is still 0xfff7).
 .\" ----------------------------------------------------------------------------
 .SH OPTIONS
-.IP "\fB\-a\fR" 4
+.IP "\fB\-a\fP" 4
 Automatically repair the filesystem.
 No user intervention is necessary.
 Whenever there is more than one method to solve a problem, the least
 destructive approach is used.
-.IP "\fB\-A\fR" 4
-Use Atari variation of the MS\-DOS filesystem.
-This is default if \fBfsck.fat\fR is run on an Atari, then this option turns
-off Atari format.
-There are some minor differences in Atari format:
-Some boot sector fields are interpreted slightly different, and the special FAT
-entries for end\-of\-file and bad cluster can be different.
-Under MS\-DOS 0xfff8 is used for EOF and Atari employs 0xffff by default, but
-both systems recognize all values from 0xfff8...0xffff as end\-of\-file.
-MS\-DOS uses only 0xfff7 for bad clusters, where on Atari values 0xfff0...0xfff7
-are for this purpose (but the standard value is still 0xfff7).
-.IP "\fB-b\fR" 4
+.IP "\fB\-A\fP" 4
+Select using the Atari variation of the FAT filesystem if that isn't active
+already, otherwise select standard FAT filesystem.
+This is selected by default if \fBmkfs.fat\fP is run on 68k Atari Linux.
+.IP "\fB-b\fP" 4
 Make read-only boot sector check.
-.IP "\fB-c\fR \fIPAGE\fR" 4
-Use DOS codepage \fIPAGE\fR to decode short file names.
-By default codepage 437 is used.
-.IP "\fB\-d\fR \fIPATH\fR" 4
+.IP "\fB-c\fP \fIPAGE\fP" 4
+Use DOS codepage \fIPAGE\fP to decode short file names.
+By default codepage 850 is used.
+.IP "\fB\-d\fP \fIPATH\fP" 4
 Delete the specified file.
 If more than one file with that name exist, the first one is deleted.
 This option can be given more than once.
-.IP "\fB\-f\fR" 4
+.IP "\fB\-f\fP" 4
 Salvage unused cluster chains to files.
 By default, unused clusters are added to the free disk space except in auto mode
-(\fB\-a\fR).
-.IP "\fB\-l\fR" 4
+(\fB\-a\fP).
+.IP "\fB\-F\fP \fINUM\fP" 4
+Specify FAT table \fINUM\fP for filesystem access.
+By default value \fI0\fP is assumed and then the first uncorrupted FAT table is
+chosen.
+Uncorrupted means that FAT table has valid first cluster.
+If default value \fI0\fP is used and all FAT tables are corrupted then
+\fBfsck.fat\fP gives up and does not try to repair FAT filesystem.
+If non-zero \fINUM\fP value is specified then \fBfsck.fat\fP uses FAT table
+\fINUM\fP for repairing FAT filesystem.
+If FAT table \fINUM\fP has corrupted first cluster then \fBfsck.fat\fP will
+repair it.
+In any case, if FAT filesystem has more FAT tables then repaired content of
+chosen FAT table is copied to other FAT tables.
+To repair corrupted first cluster it is required to call \fBfsck.fat\fP with
+non-zero \fINUM\fP value.
+.IP "\fB\-l\fP" 4
 List path names of files being processed.
-.IP "\fB\-n\fR" 4
-No\-operation mode: non\-interactively check for errors, but don't write
+.IP "\fB\-n\fP" 4
+No-operation mode: non-interactively check for errors, but don't write
 anything to the filesystem.
-.IP "\fB\-p\fR" 4
-Same as \fB\-a\fR, for compatibility with other *fsck.
-.IP "\fB\-r\fR" 4
+.IP "\fB\-p\fP" 4
+Same as \fB\-a\fP, for compatibility with other *fsck.
+.IP "\fB\-r\fP" 4
 Interactively repair the filesystem.
 The user is asked for advice whenever there is more than one approach to fix an
 inconsistency.
 This is the default mode and the option is only retained for backwards
 compatibility.
-.IP "\fB\-t\fR" 4
+.IP "\fB\-S\fP" 4
+Consider short (8.3) file names with spaces in the middle to be invalid, like
+previous versions of this program did.
+While such file names are not forbidden by the FAT specification, and were never
+treated as errors by Microsoft file system checking tools, many DOS programs are
+unable to handle files with such names.
+Using this option can make them accessible to these programs.
+.IP "" 4
+Short file names which \fIstart\fP with a space are considered invalid
+regardless of this option's setting.
+.IP "" 4
+Previous versions of this program exceptionally treated \fIEA DATA. SF\fP and
+\fIWP ROOT. SF\fP as valid short names; using this option does not preserve
+that exception.
+.IP "\fB\-t\fP" 4
 Mark unreadable clusters as bad.
-.IP "\fB\-u\fR \fIPATH\fR" 4
+.IP "\fB\-u\fP \fIPATH\fP" 4
 Try to undelete the specified file.
-\fBfsck.fat\fR tries to allocate a chain of contiguous unallocated clusters
+\fBfsck.fat\fP tries to allocate a chain of contiguous unallocated clusters
 beginning with the start cluster of the undeleted file.
 This option can be given more than once.
-.IP "\fB\-v\fR" 4
+.IP "\fB\-U\fP" 4
+Consider lowercase volume and boot label as invalid and allow only uppercase
+characters.
+Such labels are forbidden by the FAT specification, but they are widely used
+by Linux tools.
+Moreover MS-DOS and Windows systems do not have problems to read them.
+Therefore volume and boot labels with lowercase characters are by default
+permitted.
+.IP "\fB\-v\fP" 4
 Verbose mode.
 Generates slightly more output.
-.IP "\fB\-V\fR" 4
+.IP "\fB\-V\fP" 4
 Perform a verification pass.
 The filesystem check is repeated after the first run.
 The second pass should never report any fixable errors.
 It may take considerably longer than the first pass, because the first pass may
 have generated long list of modifications that have to be scanned for each disk
 read.
-.IP "\fB\-w\fR" 4
+.IP "\fB\-\-variant\fP \fITYPE\fP" 4
+Create a filesystem of variant \fITYPE\fP.
+Acceptable values are \fIstandard\fP and \fIatari\fP (in any combination of
+upper/lower case).
+See above under DESCRIPTION for the differences.
+.IP "\fB\-w\fP" 4
 Write changes to disk immediately.
-.IP "\fB\-y\fR" 4
-Same as \fB\-a\fR (automatically repair filesystem) for compatibility with other
+.IP "\fB\-y\fP" 4
+Same as \fB\-a\fP (automatically repair filesystem) for compatibility with other
 fsck tools.
+.IP "\fB\-\-help\fP" 4
+Display help message describing usage and options then exit.
 .\" ----------------------------------------------------------------------------
 .SH "EXIT STATUS"
 .IP "0" 4
 No recoverable errors have been detected.
 .IP "1" 4
-Recoverable errors have been detected or \fBfsck.fat\fR has discovered an
+Recoverable errors have been detected or \fBfsck.fat\fP has discovered an
 internal inconsistency.
 .IP "2" 4
 Usage error.
-\fBfsck.fat\fR did not access the filesystem.
+\fBfsck.fat\fP did not access the filesystem.
 .\" ----------------------------------------------------------------------------
 .SH FILES
-.IP "fsck0000.rec, fsck0001.rec, ..." 4
-When recovering from a corrupted filesystem, \fBfsck.fat\fR dumps recovered data
-into files named 'fsckNNNN.rec' in the top level directory of the filesystem.
+.IP "\fIfsck0000.rec\fP, \fIfsck0001.rec\fP, ..." 4
+When recovering from a corrupted filesystem, \fBfsck.fat\fP dumps recovered data
+into files named \fIfsckNNNN.rec\fP in the top level directory of the filesystem.
 .\" ----------------------------------------------------------------------------
 .SH BUGS
-Does not create . and .. files where necessary.
+.IP "\(bu" 4
 Does not remove entirely empty directories.
+.IP "\(bu" 4
 Should give more diagnostic messages.
+.IP "\(bu" 4
 Undeleting files should use a more sophisticated algorithm.
 .\" ----------------------------------------------------------------------------
 .SH SEE ALSO
-\fBfatlabel\fR(8)
-.br
-\fBmkfs.fat\fR(8)
+.BR fatlabel (8),
+.BR mkfs.fat (8)
 .\" ----------------------------------------------------------------------------
 .SH HOMEPAGE
-The home for the \fBdosfstools\fR project is its
+The home for the \fBdosfstools\fP project is its
 .UR https://github.com/dosfstools/dosfstools
 GitHub project page
 .UE .
 .\" ----------------------------------------------------------------------------
 .SH AUTHORS
-\fBdosfstools\fR were written by
+\fBdosfstools\fP were written by
 .MT werner.almesberger@\:lrc.di.epfl.ch
 Werner Almesberger
 .ME ,
@@ -203,7 +262,11 @@ Werner Almesberger
 Roman Hodek
 .ME ,
 and others.
-The current maintainer is
+Current maintainers are
 .MT aeb@\:debian.org
 Andreas Bombe
+.ME
+and
+.MT pali.rohar@\:gmail.com
+Pali Rohár
 .ME .

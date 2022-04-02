@@ -24,7 +24,7 @@
 
 
 run_fsck () {
-	"../src/fsck.fat" "$@"
+	$RUN "../src/fsck.fat" "$@"
 }
 
 
@@ -41,16 +41,22 @@ if [ "$XXD_FOUND" != "yes" ]; then
 fi
 
 
+if [ -f "$testname.args" ]; then
+	ARGS=$(cat "$testname.args")
+else
+	ARGS=
+fi
+
 echo "Test $testname"
 
 # make sure there aren't files remaining from earlier run
-rm -f "${testname}.img"
+rm -f "${testname}.img" "${testname}.refimg"
 
 xxd -r "${srcdir}/${testname}.fsck" "${testname}.img" || exit 99
 
 
 echo "First fsck run to check and fix error..."
-run_fsck -a "${testname}.img"
+run_fsck -a $ARGS "${testname}.img"
 success=$?
 if [ $success -eq 0 ]; then
 	echo "*** Error was not detected by fsck."
@@ -62,9 +68,19 @@ elif [ $success -eq 1 ]; then
 
 	if [ $success -ne 0 ]; then
 		echo "*** Error was not fixed by fsck."
+	else
+		echo "Comparing..."
+		xxd -r "${srcdir}/${testname}.xxd" "${testname}.refimg" || exit 99
+		cmp "${testname}.img" "${testname}.refimg"
+		success=$?
+
+		if [ $success -eq 2 ]; then
+			# cmp reported error
+			exit 99
+		fi
 	fi
 fi
 
 
-rm -f "${testname}.img"
+rm -f "${testname}.img" "${testname}.refimg"
 exit $success
