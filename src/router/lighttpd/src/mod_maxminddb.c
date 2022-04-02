@@ -156,8 +156,8 @@ mod_maxminddb_open_db (server *srv, const buffer *db_name)
         || 0 != memcmp(db_name->ptr+db_name->used-sizeof(".mmdb"),
                        CONST_STR_LEN(".mmdb"))) {
         log_error(srv->errh, __FILE__, __LINE__,
-          "GeoIP database is of unsupported type %.*s)",
-          BUFFER_INTLEN_PTR(db_name));
+          "GeoIP database is of unsupported type %s)",
+          db_name->ptr);
         return NULL;
     }
 
@@ -168,12 +168,12 @@ mod_maxminddb_open_db (server *srv, const buffer *db_name)
 
     if (MMDB_IO_ERROR == rc)
         log_perror(srv->errh, __FILE__, __LINE__,
-          "failed to open GeoIP2 database (%.*s)",
-          BUFFER_INTLEN_PTR(db_name));
+          "failed to open GeoIP2 database (%s)",
+          db_name->ptr);
     else
         log_error(srv->errh, __FILE__, __LINE__,
-          "failed to open GeoIP2 database (%.*s): %s",
-          BUFFER_INTLEN_PTR(db_name), MMDB_strerror(rc));
+          "failed to open GeoIP2 database (%s): %s",
+          db_name->ptr, MMDB_strerror(rc));
     free(mmdb);
     return NULL;
 }
@@ -194,9 +194,9 @@ mod_maxminddb_prep_cenv (server *srv, const array * const env)
             return NULL;
         }
         buffer *value = &data[j]->value;
-        if (buffer_string_is_empty(value)
+        if (buffer_is_blank(value)
             || '/' == value->ptr[0]
-            || '/' == value->ptr[buffer_string_length(value)-1]) {
+            || '/' == value->ptr[buffer_clen(value)-1]) {
             log_error(srv->errh, __FILE__, __LINE__,
               "maxminddb.env must be a list of non-empty "
               "strings and must not begin or end with '/'");
@@ -305,7 +305,7 @@ SETDEFAULTS_FUNC(mod_maxminddb_set_defaults)
               case 0: /* maxminddb.activate */
                 break;
               case 1: /* maxminddb.db */
-                if (!buffer_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     cpv->v.v = mod_maxminddb_open_db(srv, cpv->v.b);
                     if (NULL == cpv->v.v) return HANDLER_ERROR;
                     cpv->vtype = T_CONFIG_LOCAL;
@@ -413,7 +413,7 @@ mod_maxmind_geoip2 (array * const env, const struct sockaddr * const dst_addr,
     for (size_t i = 0, used = pconf->env->used; i < used; ++i) {
         if (MMDB_SUCCESS == MMDB_aget_value(entry, &data, cenv[i])
             && data.has_data) {
-            geoip2_env_set(env, CONST_BUF_LEN(&names[i]->key), &data);
+            geoip2_env_set(env, BUF_PTR_LEN(&names[i]->key), &data);
         }
     }
 }
@@ -443,8 +443,7 @@ REQUEST_FUNC(mod_maxminddb_request_env_handler)
         /* note: replaces values which may have been set by mod_openssl
          * (when mod_extforward is listed after mod_openssl in server.modules)*/
         data_string *ds = (data_string *)env->data[i];
-        http_header_env_set(r,
-                            CONST_BUF_LEN(&ds->key), CONST_BUF_LEN(&ds->value));
+        http_header_env_set(r, BUF_PTR_LEN(&ds->key), BUF_PTR_LEN(&ds->value));
     }
 
     return HANDLER_GO_ON;

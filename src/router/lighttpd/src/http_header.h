@@ -25,6 +25,16 @@
  *       list may be revisitied and reviewed, and less frequent headers removed
  *       or replaced.
  */
+enum http_header_h2_e { /* pseudo-headers */
+  HTTP_HEADER_H2_UNKNOWN         = -1
+ ,HTTP_HEADER_H2_AUTHORITY       = -2
+ ,HTTP_HEADER_H2_METHOD_GET      = -3
+ ,HTTP_HEADER_H2_METHOD_POST     = -4
+ ,HTTP_HEADER_H2_PATH            = -5
+ ,HTTP_HEADER_H2_PATH_INDEX_HTML = -6
+ ,HTTP_HEADER_H2_SCHEME_HTTP     = -7
+ ,HTTP_HEADER_H2_SCHEME_HTTPS    = -8
+};
 enum http_header_e {
   HTTP_HEADER_OTHER = 0
  ,HTTP_HEADER_ACCEPT
@@ -88,9 +98,9 @@ enum http_header_e {
 };
 
 __attribute_pure__
-enum http_header_e http_header_hkey_get(const char *s, uint32_t slen);
+enum http_header_e http_header_hkey_get(const char *s, size_t slen);
 __attribute_pure__
-enum http_header_e http_header_hkey_get_lc(const char *s, uint32_t slen);
+enum http_header_e http_header_hkey_get_lc(const char *s, size_t slen);
 
 __attribute_pure__
 int http_header_str_to_code (const char * const s);
@@ -102,6 +112,8 @@ int http_header_remove_token (buffer * const b, const char * const m, const uint
 
 __attribute_pure__
 buffer * http_header_response_get(const request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+__attribute_returns_nonnull__
+buffer * http_header_response_set_ptr(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
 void http_header_response_unset(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
 void http_header_response_set(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 void http_header_response_append(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
@@ -109,12 +121,16 @@ void http_header_response_insert(request_st *r, enum http_header_e id, const cha
 
 __attribute_pure__
 buffer * http_header_request_get(const request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+__attribute_returns_nonnull__
+buffer * http_header_request_set_ptr(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
 void http_header_request_unset(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
 void http_header_request_set(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 void http_header_request_append(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 
 __attribute_pure__
 buffer * http_header_env_get(const request_st *r, const char *k, uint32_t klen);
+__attribute_returns_nonnull__
+buffer * http_header_env_set_ptr(request_st *r, const char *k, uint32_t klen);
 void http_header_env_set(request_st *r, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 void http_header_env_append(request_st *r, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 

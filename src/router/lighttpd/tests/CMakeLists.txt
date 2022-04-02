@@ -1,27 +1,24 @@
 add_executable(fcgi-responder fcgi-responder.c)
 add_executable(scgi-responder scgi-responder.c)
+if(WIN32)
+  set(SOCKLIBS ws2_32)
+endif()
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  set(SOCKLIBS socket nsl)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Haiku")
+  set(SOCKLIBS network)
+endif()
+if(SOCKLIBS)
+  target_link_libraries(fcgi-responder ${SOCKLIBS})
+  target_link_libraries(scgi-responder ${SOCKLIBS})
+endif()
 
 set(T_FILES
 	prepare.sh
-	cachable.t
-	core-404-handler.t
-	core-condition.t
-	core-keepalive.t
-	core-request.t
-	core-response.t
-	core-var-include.t
-	lowercase.t
-	mod-auth.t
-	mod-cgi.t
-	mod-deflate.t
-	mod-extforward.t
-	mod-fastcgi.t
-	mod-proxy.t
-	mod-secdownload.t
-	mod-setenv.t
-	mod-ssi.t
 	request.t
-	symlink.t
+	core-condition.t
+	mod-fastcgi.t
+	mod-scgi.t
 	cleanup.sh
 )
 

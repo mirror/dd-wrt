@@ -1,19 +1,15 @@
 #include "first.h"
 
-#include "base.h"
-#include "log.h"
-#include "buffer.h"
-#include "http_header.h"
-
-#include "plugin.h"
-
-#include "stat_cache.h"
-
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
-/* plugin config for all request/connections */
+#include "buffer.h"
+#include "http_header.h"
+#include "log.h"
+#include "plugin.h"
+#include "request.h"
+#include "stat_cache.h"
 
 typedef struct {
     const array *indexfiles;
@@ -25,7 +21,6 @@ typedef struct {
     plugin_config conf;
 } plugin_data;
 
-/* init the plugin data */
 INIT_FUNC(mod_indexfile_init) {
     return calloc(1, sizeof(plugin_data));
 }
@@ -83,71 +78,83 @@ SETDEFAULTS_FUNC(mod_indexfile_set_defaults) {
     return HANDLER_GO_ON;
 }
 
-URIHANDLER_FUNC(mod_indexfile_subrequest) {
-	plugin_data *p = p_d;
-
-	if (NULL != r->handler_module) return HANDLER_GO_ON;
-
-	if (buffer_string_is_empty(&r->uri.path)) return HANDLER_GO_ON;
-	if (r->uri.path.ptr[buffer_string_length(&r->uri.path) - 1] != '/') return HANDLER_GO_ON;
-
-	mod_indexfile_patch_config(r, p);
-	if (NULL == p->conf.indexfiles) return HANDLER_GO_ON;
-
-	if (r->conf.log_request_handling) {
-		log_error(r->conf.errh, __FILE__, __LINE__, "-- handling the request as Indexfile");
-		log_error(r->conf.errh, __FILE__, __LINE__, "URI          : %s", r->uri.path.ptr);
-	}
-
-	/* indexfile */
-	buffer * const b = r->tmp_buf;
-	for (uint32_t k = 0; k < p->conf.indexfiles->used; ++k) {
-		const data_string * const ds = (data_string *)p->conf.indexfiles->data[k];
-
-		if (ds->value.ptr[0] == '/') {
+__attribute_nonnull__()
+static handler_t mod_indexfile_tryfiles(request_st * const r, const array * const indexfiles) {
+	for (uint32_t k = 0; k < indexfiles->used; ++k) {
+		const buffer * const v = &((data_string *)indexfiles->data[k])->value;
+		buffer * const b = (v->ptr[0] != '/')
+		  ? &r->physical.path
+		  : &r->physical.doc_root; /* index file relative to doc_root */
 			/* if the index-file starts with a prefix as use this file as
 			 * index-generator */
-			buffer_copy_buffer(b, &r->physical.doc_root);
-		} else {
-			buffer_copy_buffer(b, &r->physical.path);
-		}
-		buffer_append_path_len(b, CONST_BUF_LEN(&ds->value));
 
-		if (NULL == stat_cache_path_stat(b)) {
-			if (errno == EACCES) {
+		/* temporarily append to base-path buffer to check existence */
+		const uint32_t len = buffer_clen(b);
+		buffer_append_path_len(b, BUF_PTR_LEN(v));
+
+		const stat_cache_st * const st = stat_cache_path_stat(b);
+
+		buffer_truncate(b, len);
+
+		if (NULL == st) {
+			switch (errno) {
+			case ENOENT:
+			case ENOTDIR:
+				continue;
+			case EACCES:
 				r->http_status = 403;
-				buffer_reset(&r->physical.path);
 				return HANDLER_FINISHED;
-			}
-
-			if (errno != ENOENT &&
-			    errno != ENOTDIR) {
+			default:
 				/* we have no idea what happened. let's tell the user so. */
 				r->http_status = 500;
 				log_perror(r->conf.errh, __FILE__, __LINE__,
-				  "file not found ... or so: %s -> %s",
+				  "index file error for request: %s -> %s",
 				  r->uri.path.ptr, r->physical.path.ptr);
-				buffer_reset(&r->physical.path);
 				return HANDLER_FINISHED;
 			}
-			continue;
 		}
 
-		if (ds->value.ptr[0] == '/') {
+		/* found */
+		if (v->ptr[0] == '/') {
 			/* replace uri.path */
-			buffer_copy_buffer(&r->uri.path, &ds->value);
-			http_header_env_set(r, CONST_STR_LEN("PATH_TRANSLATED_DIRINDEX"), CONST_BUF_LEN(&r->physical.path));
+			buffer_copy_buffer(&r->uri.path, v);
+			http_header_env_set(r, CONST_STR_LEN("PATH_TRANSLATED_DIRINDEX"),
+			                       BUF_PTR_LEN(&r->physical.path));
+			buffer_copy_path_len2(&r->physical.path,
+			                      BUF_PTR_LEN(&r->physical.doc_root),
+			                      BUF_PTR_LEN(v));
+			/*(XXX: not done historical, but rel_path probably should be updated)*/
+			/*buffer_copy_buffer(&r->physical.rel_path, v);*/
 		} else {
 			/* append to uri.path the relative path to index file (/ -> /index.php) */
-			buffer_append_string_buffer(&r->uri.path, &ds->value);
+			buffer_append_string_buffer(&r->uri.path, v);
+			buffer_append_path_len(&r->physical.path, BUF_PTR_LEN(v));
+			/*(XXX: not done historical, but rel_path probably should be updated)*/
+			/*buffer_append_path_len(&r->physical.rel_path, BUF_PTR_LEN(v));*/
 		}
-
-		buffer_copy_buffer(&r->physical.path, b);
 		return HANDLER_GO_ON;
 	}
 
 	/* not found */
 	return HANDLER_GO_ON;
+}
+
+URIHANDLER_FUNC(mod_indexfile_subrequest) {
+    if (NULL != r->handler_module) return HANDLER_GO_ON;
+    if (!buffer_has_slash_suffix(&r->uri.path)) return HANDLER_GO_ON;
+
+    plugin_data *p = p_d;
+    mod_indexfile_patch_config(r, p);
+    if (NULL == p->conf.indexfiles) return HANDLER_GO_ON;
+
+    if (r->conf.log_request_handling) {
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "-- handling the request as Indexfile");
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "URI          : %s", r->uri.path.ptr);
+    }
+
+    return mod_indexfile_tryfiles(r, p->conf.indexfiles);
 }
 
 

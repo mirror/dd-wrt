@@ -17,26 +17,7 @@ typedef struct {
 } char_array;
 
 typedef struct gw_proc {
-    uint32_t id; /* id will be between 1 and max_procs */
-    unsigned short port;  /* config.port + pno */
-    buffer *unixsocket; /* config.socket + "-" + id */
-    socklen_t saddrlen;
-    struct sockaddr *saddr;
-
-    /* either tcp:<host>:<port> or unix:<socket> for debugging purposes */
-    buffer *connection_name;
-
-    pid_t pid;   /* PID of the spawned process (0 if not spawned locally) */
-
-    uint32_t load; /* number of requests waiting on this process */
-
-    struct gw_proc *prev, *next; /* see first */
-
-    time_t last_used; /* see idle_timeout */
-    time_t disabled_until; /* proc disabled until given time */
-
-    int is_local;
-
+    struct gw_proc *next; /* see first */
     enum {
         PROC_STATE_RUNNING,    /* alive */
         PROC_STATE_OVERLOADED, /* listen-queue is full */
@@ -44,12 +25,28 @@ typedef struct gw_proc {
         PROC_STATE_DIED,       /* marked as dead, should be restarted */
         PROC_STATE_KILLED      /* killed (signal sent to proc) */
     } state;
+    uint32_t load; /* number of requests waiting on this process */
+    unix_time64_t last_used; /* see idle_timeout */
+    int *stats_load;
+    int *stats_connected;
+    pid_t pid;   /* PID of the spawned process (0 if not spawned locally) */
+    int is_local;
+    uint32_t id; /* id will be between 1 and max_procs */
+    socklen_t saddrlen;
+    struct sockaddr *saddr;
+
+    unix_time64_t disabled_until; /* proc disabled until given time */
+    struct gw_proc *prev; /* see first */
+
+    /* either tcp:<host>:<port> or unix:<socket> for debugging purposes */
+    buffer *connection_name;
+    buffer *unixsocket; /* config.socket + "-" + id */
+    unsigned short port;  /* config.port + pno */
 } gw_proc;
 
-typedef struct {
-    /* the key that is used to reference this value */
-    const buffer *id;
+struct gw_handler_ctx;  /* declaration */
 
+typedef struct {
     /* list of processes handling this extension
      * sorted by lowest load
      *
@@ -58,6 +55,30 @@ typedef struct {
      * job is started
      */
     gw_proc *first;
+
+    uint32_t active_procs; /* how many procs in state PROC_STATE_RUNNING */
+    uint32_t gw_hash;
+
+    int32_t load;
+    int *stats_load;
+    int *stats_global_active;
+
+    /*
+     * host:port
+     *
+     * if host is one of the local IP addresses the
+     * whole connection is local
+     *
+     * if port is not 0, and host is not specified,
+     * "localhost" (INADDR_LOOPBACK) is assumed.
+     *
+     */
+    unsigned short port;
+    unsigned short family; /* sa_family_t */
+    const buffer *host;
+
+    /* the key that is used to reference this value */
+    const buffer *id;
     gw_proc *unused_procs;
 
     /*
@@ -73,7 +94,6 @@ typedef struct {
     unsigned short min_procs;
     unsigned short max_procs;
     uint32_t num_procs;    /* how many procs are started */
-    uint32_t active_procs; /* how many procs in state PROC_STATE_RUNNING */
 
     unsigned short max_load_per_proc;
 
@@ -95,30 +115,21 @@ typedef struct {
 
     unsigned short disable_time;
 
+    unsigned short read_timeout;
+    unsigned short write_timeout;
+    unsigned short connect_timeout;
+    struct gw_handler_ctx *hctxs;
+
     /*
      * some gw processes get a little bit larger
      * than wanted. max_requests_per_proc kills a
      * process after a number of handled requests.
      *
      */
-    uint32_t max_requests_per_proc;
+    /*uint32_t max_requests_per_proc;*//* not implemented */
 
 
     /* config */
-
-    /*
-     * host:port
-     *
-     * if host is one of the local IP addresses the
-     * whole connection is local
-     *
-     * if port is not 0, and host is not specified,
-     * "localhost" (INADDR_LOOPBACK) is assumed.
-     *
-     */
-    const buffer *host;
-    unsigned short port;
-    unsigned short family; /* sa_family_t */
 
     /*
      * Unix Domain Socket
@@ -160,15 +171,6 @@ typedef struct {
     const buffer *docroot;
 
     /*
-     * check_local tells you if the phys file is stat()ed
-     * or not. FastCGI doesn't care if the service is
-     * remote. If the web-server side doesn't contain
-     * the FastCGI-files we should not stat() for them
-     * and say '404 not found'.
-     */
-    unsigned short check_local;
-
-    /*
      * append PATH_INFO to SCRIPT_FILENAME
      *
      * php needs this if cgi.fix_pathinfo is provided
@@ -176,6 +178,15 @@ typedef struct {
      */
 
     unsigned short break_scriptfilename_for_php;
+
+    /*
+     * check_local tells you if the phys file is stat()ed
+     * or not. FastCGI doesn't care if the service is
+     * remote. If the web-server side doesn't contain
+     * the FastCGI-files we should not stat() for them
+     * and say '404 not found'.
+     */
+    unsigned short check_local;
 
     /*
      * workaround for program when prefix="/"
@@ -194,8 +205,6 @@ typedef struct {
      */
     unsigned short xsendfile_allow;
     const array *xsendfile_docroot;
-
-    int32_t load;
 
     uint32_t max_id; /* corresponds most of the time to num_procs */
 
@@ -299,7 +308,6 @@ typedef struct gw_handler_ctx {
     unsigned short gw_mode; /* mode: GW_AUTHORIZER or GW_RESPONDER */
 
     gw_connection_state_t state;
-    time_t   state_timestamp;
 
     chunkqueue *rb; /* read queue */
     off_t     wb_reqlen;
@@ -310,6 +318,7 @@ typedef struct gw_handler_ctx {
     struct fdevents *ev;
     fdnode   *fdn;       /* fdevent (fdnode *) object */
     int       fd;        /* fd to the gw process */
+    int       revents;   /* ready events on fd */
 
     pid_t     pid;
     int       reconnects; /* number of reconnect attempts */
@@ -321,15 +330,21 @@ typedef struct gw_handler_ctx {
     gw_plugin_config conf;
 
     request_st *r;               /* dumb pointer */
+    connection *con;             /* dumb pointer */
     gw_plugin_data *plugin_data; /* dumb pointer */
+    unix_time64_t read_ts;
+    unix_time64_t write_ts;
     handler_t(*stdin_append)(struct gw_handler_ctx *hctx);
     handler_t(*create_env)(struct gw_handler_ctx *hctx);
+    struct gw_handler_ctx *prev;
+    struct gw_handler_ctx *next;
     void(*backend_error)(struct gw_handler_ctx *hctx);
     void(*handler_ctx_free)(void *hctx);
 } gw_handler_ctx;
 
 
 __attribute_cold__
+__attribute_malloc__
 void * gw_init(void);
 
 __attribute_cold__

@@ -12,7 +12,7 @@ except NameError:
 	string_types = str
 
 package = 'lighttpd'
-version = '1.4.58'
+version = '1.4.64'
 
 underscorify_reg = re.compile('[^A-Z0-9]')
 def underscorify(id):
@@ -140,6 +140,8 @@ class Autoconf:
 		try:
 			self.conf.env.ParseConfig(*args, **kw)
 			return True
+		except OSError:
+			return False
 		except Exception as e:
 			print(e.message, file=sys.stderr)
 			return False
@@ -242,15 +244,12 @@ vars.AddVariables(
 	BoolVariable('with_brotli', 'enable brotli compression', 'no'),
 	PackageVariable('with_dbi', 'enable dbi support', 'no'),
 	BoolVariable('with_fam', 'enable FAM/gamin support', 'no'),
-	BoolVariable('with_gdbm', 'enable gdbm support', 'no'),
-	BoolVariable('with_geoip', 'enable GeoIP support', 'no'),
 	BoolVariable('with_maxminddb', 'enable MaxMind GeoIP2 support', 'no'),
 	BoolVariable('with_krb5', 'enable krb5 auth support', 'no'),
 	BoolVariable('with_ldap', 'enable ldap auth support', 'no'),
 	# with_libev not supported
 	# with_libunwind not supported
-	BoolVariable('with_lua', 'enable lua support for mod_cml', 'no'),
-	BoolVariable('with_memcached', 'enable memcached support', 'no'),
+	BoolVariable('with_lua', 'enable lua support', 'no'),
 	PackageVariable('with_mysql', 'enable mysql support', 'no'),
 	BoolVariable('with_openssl', 'enable openssl support', 'no'),
 	PackageVariable('with_gnutls', 'enable GnuTLS support', 'no'),
@@ -259,7 +258,8 @@ vars.AddVariables(
 	PackageVariable('with_wolfssl', 'enable wolfSSL support', 'no'),
 	BoolVariable('with_nettle', 'enable Nettle support', 'no'),
 	BoolVariable('with_pam', 'enable PAM auth support', 'no'),
-	PackageVariable('with_pcre', 'enable pcre support', 'yes'),
+	PackageVariable('with_pcre2', 'enable pcre2 support', 'yes'),
+	PackageVariable('with_pcre', 'enable pcre support', 'no'),
 	PackageVariable('with_pgsql', 'enable pgsql support', 'no'),
 	PackageVariable('with_sasl', 'enable SASL support', 'no'),
 	BoolVariable('with_sqlite3', 'enable sqlite3 support (required for webdav props)', 'no'),
@@ -269,6 +269,7 @@ vars.AddVariables(
 	PackageVariable('with_xml', 'enable xml support (required for webdav props)', 'no'),
 	BoolVariable('with_xxhash', 'build with system-provided xxhash', 'no'),
 	BoolVariable('with_zlib', 'enable deflate/gzip compression', 'no'),
+	BoolVariable('with_zstd', 'enable zstd compression', 'no'),
 
 	BoolVariable('with_all', 'enable all with_* features', 'no'),
 )
@@ -288,9 +289,10 @@ env['package'] = package
 env['version'] = version
 if env['CC'] == 'gcc':
 	## we need x-open 6 and bsd 4.3 features
-	env.Append(CCFLAGS = Split('-Wall -O2 -g -W -pedantic -Wunused -Wshadow -std=gnu99'))
+	env.Append(CCFLAGS = Split('-pipe -Wall -O2 -g -W -pedantic -Wunused -Wshadow -std=gnu99'))
 
 env.Append(CPPFLAGS = [
+	'-D_TIME_BITS=64',
 	'-D_FILE_OFFSET_BITS=64',
 	'-D_LARGEFILE_SOURCE',
 	'-D_LARGE_FILES',
@@ -331,7 +333,6 @@ if 1:
 		LIBCRYPTO = '',
 		LIBDBI = '',
 		LIBDL = '',
-		LIBGDBM = '',
 		LIBGNUTLS = '',
 		LIBGSSAPI_KRB5 = '',
 		LIBKRB5 = '',
@@ -341,7 +342,6 @@ if 1:
 		LIBMBEDTLS = '',
 		LIBMBEDX509 = '',
 		LIBMBEDCRYPTO = '',
-		LIBMEMCACHED = '',
 		LIBMYSQL = '',
 		LIBNSS = '',
 		LIBPAM = '',
@@ -357,29 +357,30 @@ if 1:
 		LIBXML2 = '',
 		LIBXXHASH = '',
 		LIBZ = '',
+		LIBZSTD = '',
 	)
 
 	autoconf.haveCHeaders([
 		'arpa/inet.h',
 		'crypt.h',
+		'dlfcn.h',
 		'fcntl.h',
 		'getopt.h',
 		'inttypes.h',
 		'linux/random.h',
+		'malloc.h',
 		'poll.h',
 		'pwd.h',
 		'stdint.h',
 		'stdlib.h',
 		'string.h',
 		'strings.h',
-		'sys/devpoll.h',
 		'sys/epoll.h',
-		'sys/filio.h',
 		'sys/inotify.h',
 		'sys/loadavg.h',
 		'sys/poll.h',
-		'sys/port.h',
 		'sys/prctl.h',
+		'sys/procctl.h',
 		'sys/sendfile.h',
 		'sys/time.h',
 		'sys/wait.h',
@@ -403,19 +404,15 @@ if 1:
 		'chroot',
 		'clock_gettime',
 		'copy_file_range',
-		'dup2',
 		'epoll_ctl',
 		'explicit_bzero',
 		'explicit_memset',
 		'fork',
-		'getcwd',
-		'gethostbyname',
 		'getloadavg',
-		'getopt',
 		'getrlimit',
 		'getuid',
+		'gmtime_r',
 		'inet_aton',
-		'inet_ntop',
 		'inet_pton',
 		'issetugid',
 		'jrand48',
@@ -423,43 +420,47 @@ if 1:
 		'localtime_r',
 		'lstat',
 		'madvise',
+		'malloc_trim',
+		'mallopt',
+		'mempcpy',
 		'memset_s',
-		'memset',
+		'mkostemp',
 		'mmap',
-		'munmap',
-		'pathconf',
 		'pipe2',
 		'poll',
-		'port_create',
-		'posix_fadvise',
-		'prctl',
+		'pread',
+		'preadv',
+		'pwrite',
+		'pwritev',
 		'select',
-		'send_file',
 		'sendfile',
 		'sendfile64',
 		'sigaction',
 		'signal',
-		'socket',
+		'splice',
 		'srandom',
-		'stat',
-		'strchr',
-		'strdup',
-		'strerror',
-		'strftime',
-		'strstr',
-		'strtol',
+		'strerror_r',
 		'timegm',
 		'writev',
 	])
 	autoconf.haveFunc('getentropy', 'sys/random.h')
 	autoconf.haveFunc('getrandom', 'linux/random.h')
+	if re.compile("sunos|solaris").search(env['PLATFORM']):
+		autoconf.haveCHeaders([
+			'port.h',
+			'priv.h',
+			'sys/devpoll.h',
+			'sys/filio.h',
+		])
+		autoconf.haveFunc('port_create', 'port.h')
+		autoconf.haveFunc('sendfilev')
+		autoconf.haveFunc('setpflags', 'priv.h')
 
 	autoconf.haveTypes(Split('pid_t size_t off_t'))
 
 	# have crypt_r/crypt, and is -lcrypt needed?
 	if autoconf.CheckLib('crypt'):
 		autoconf.env.Append(
-			CPPFLAGS = [ '-DHAVE_LIBCRYPT' ],
 			LIBCRYPT = 'crypt',
 		)
 		with autoconf.restoreEnvLibs():
@@ -517,11 +518,11 @@ if 1:
 		if not autoconf.CheckLibWithHeader('dbi', 'dbi/dbi.h', 'C'):
 			fail("Couldn't find dbi")
 		autoconf.env.Append(
-			CPPFLAGS = [ '-DHAVE_DBI_H', '-DHAVE_LIBDBI' ],
+			CPPFLAGS = [ '-DHAVE_DBI' ],
 			LIBDBI = 'dbi',
 		)
 
-	if env['with_fam'] and not self.CheckCHeader('sys/inotify.h'):
+	if env['with_fam'] and not autoconf.CheckCHeader('sys/inotify.h'):
 		if not autoconf.CheckLibWithHeader('fam', 'fam.h', 'C'):
 			fail("Couldn't find fam")
 		autoconf.env.Append(
@@ -529,22 +530,6 @@ if 1:
 			LIBS = [ 'fam' ],
 		)
 		autoconf.haveFunc('FAMNoExists')
-
-	if env['with_gdbm']:
-		if not autoconf.CheckLibWithHeader('gdbm', 'gdbm.h', 'C'):
-			fail("Couldn't find gdbm")
-		autoconf.env.Append(
-			CPPFLAGS = [ '-DHAVE_GDBM_H', '-DHAVE_GDBM' ],
-			LIBGDBM = 'gdbm',
-		)
-
-	if env['with_geoip']:
-		if not autoconf.CheckLibWithHeader('GeoIP', 'GeoIP.h', 'C'):
-			fail("Couldn't find geoip")
-		autoconf.env.Append(
-			CPPFLAGS = [ '-DHAVE_GEOIP' ],
-			LIBGEOIP = 'GeoIP',
-		)
 
 	if env['with_maxminddb']:
 		if not autoconf.CheckLibWithHeader('maxminddb', 'maxminddb.h', 'C'):
@@ -590,19 +575,11 @@ if 1:
 		if not found_lua:
 			fail("Couldn't find any lua implementation")
 
-	if env['with_memcached']:
-		if not autoconf.CheckLibWithHeader('memcached', 'libmemcached/memcached.h', 'C'):
-			fail("Couldn't find memcached")
-		autoconf.env.Append(
-			CPPFLAGS = [ '-DUSE_MEMCACHED' ],
-			LIBMEMCACHED = 'memcached',
-		)
-
 	if env['with_mysql']:
 		mysql_config = autoconf.checkProgram('mysql', 'mysql_config')
 		if not autoconf.CheckParseConfigForLib('LIBMYSQL', mysql_config + ' --cflags --libs'):
 			fail("Couldn't find mysql")
-		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_MYSQL_H', '-DHAVE_LIBMYSQL' ])
+		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_MYSQL' ])
 
 	if env['with_nss']:
 		nss_config = autoconf.checkProgram('nss', 'nss-config')
@@ -674,16 +651,21 @@ if 1:
 			LIBPAM = 'pam',
 		)
 
-	if env['with_pcre']:
+	if env['with_pcre2'] and not env['with_pcre']:
+		pcre2_config = autoconf.checkProgram('pcre2', 'pcre2-config')
+		if not autoconf.CheckParseConfigForLib('LIBPCRE', pcre2_config + ' --cflags --libs8'):
+			fail("Couldn't find pcre2")
+		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_PCRE2_H', '-DHAVE_PCRE' ])
+	elif env['with_pcre']:
 		pcre_config = autoconf.checkProgram('pcre', 'pcre-config')
 		if not autoconf.CheckParseConfigForLib('LIBPCRE', pcre_config + ' --cflags --libs'):
 			fail("Couldn't find pcre")
-		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_PCRE_H', '-DHAVE_LIBPCRE' ])
+		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_PCRE_H', '-DHAVE_PCRE' ])
 
 	if env['with_pgsql']:
 		if not autoconf.CheckParseConfigForLib('LIBPGSQL', 'pkg-config libpq --cflags --libs'):
 			fail("Couldn't find libpq")
-		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_PGSQL_H', '-DHAVE_LIBPGSQL' ])
+		autoconf.env.Append(CPPFLAGS = [ '-DHAVE_PGSQL' ])
 
 	if env['with_sasl']:
 		if not autoconf.CheckLibWithHeader('sasl2', 'sasl/sasl.h', 'C'):
@@ -729,6 +711,14 @@ if 1:
 		autoconf.env.Append(
 			CPPFLAGS = [ '-DHAVE_ZLIB_H', '-DHAVE_LIBZ' ],
 			LIBZ = 'z',
+		)
+
+	if env['with_zstd']:
+		if not autoconf.CheckLibWithHeader('zstd', 'zstd.h', 'C'):
+			fail("Couldn't find zstd")
+		autoconf.env.Append(
+			CPPFLAGS = [ '-DHAVE_ZSTD_H', '-DHAVE_ZSTD' ],
+			LIBZSTD = 'zstd',
 		)
 
 	env = autoconf.Finish()

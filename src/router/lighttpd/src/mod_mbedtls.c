@@ -12,7 +12,6 @@
  * https://tls.mbed.org/api/  (generated from mbedTLS headers and code)
  *
  * mbedTLS limitations:
- * - mbedTLS does not currently support TLSv1.3
  * - mbedTLS does not currently support OCSP
  *   https://tls.mbed.org/discussions/feature-request/ocsp-stapling
  *   TLS/DTLS: OCSP Stapling support #880
@@ -56,18 +55,26 @@
 #include <stdio.h>      /* vsnprintf() */
 #include <string.h>
 
-#include <mbedtls/config.h>
+/*(temporary while waiting for future mbedtls 3.x interfaces)*/
+#ifndef MBEDTLS_ALLOW_PRIVATE_ACCESS
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+#endif
+
+#include <mbedtls/version.h>
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/debug.h>
 #include <mbedtls/dhm.h>
 #include <mbedtls/error.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/oid.h>
 #include <mbedtls/pem.h>
 #include <mbedtls/ssl.h>
+#if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
 #include <mbedtls/ssl_internal.h> /* struct mbedtls_ssl_transform */
+#endif
 #include <mbedtls/x509.h>
 #include <mbedtls/x509_crt.h>
-#include <mbedtls/version.h>
+#include <mbedtls/platform_util.h> /* mbedtls_platform_zeroize() */
 
 #if MBEDTLS_VERSION_NUMBER >= 0x02040000 /* mbedtls 2.04.0 */
 #include <mbedtls/net_sockets.h>
@@ -83,13 +90,17 @@
 #error "lighttpd requires that mbedtls be built with MBEDTLS_X509_CRT_PARSE_C"
 #endif
 
+#ifndef MBEDTLS_PRIVATE
+#define MBEDTLS_PRIVATE(x) x
+#endif
+
 #include "base.h"
+#include "ck.h"
 #include "fdevent.h"
 #include "http_header.h"
 #include "http_kv.h"
 #include "log.h"
 #include "plugin.h"
-#include "safe_memclear.h"
 
 typedef struct {
     /* SNI per host: with COMP_SERVER_SOCKET, COMP_HTTP_SCHEME, COMP_HTTP_HOST */
@@ -103,13 +114,13 @@ typedef struct {
 typedef struct {
     mbedtls_ssl_config *ssl_ctx;        /* context shared between mbedtls_ssl_CONTEXT structures */
     int *ciphersuites;
-    mbedtls_ecp_group_id *curves;
+    void *curves;
 } plugin_ssl_ctx;
 
 typedef struct {
     mbedtls_ssl_config *ssl_ctx;        /* output from network_init_ssl() */
     int *ciphersuites;                  /* output from network_init_ssl() */
-    mbedtls_ecp_group_id *curves;       /* output from network_init_ssl() */
+    void *curves;                       /* output from network_init_ssl() */
 
     /*(used only during startup; not patched)*/
     unsigned char ssl_enabled; /* only interesting for setting up listening sockets. don't use at runtime */
@@ -176,7 +187,11 @@ static int ssl_is_init;
 /* need assigned p->id for deep access of module handler_ctx for connection
  *   i.e. handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id]; */
 static plugin_data *plugin_data_singleton;
+#ifdef MBEDTLS_SSL_OUT_CONTENT_LEN
+#define LOCAL_SEND_BUFSIZE MBEDTLS_SSL_OUT_CONTENT_LEN
+#else
 #define LOCAL_SEND_BUFSIZE MBEDTLS_SSL_MAX_CONTENT_LEN
+#endif
 static char *local_send_buffer;
 
 typedef struct {
@@ -190,6 +205,7 @@ typedef struct {
     plugin_config conf;
     buffer *tmp_buf;
     log_error_st *errh;
+    mbedtls_ssl_config *ssl_ctx;
     mbedtls_pk_context *acme_tls_1_pkey;
     mbedtls_x509_crt *acme_tls_1_x509;
 } handler_ctx;
@@ -261,15 +277,15 @@ static void elogf(log_error_st * const errh,
  * to store keys that are not yet active
  * (mirror from mod_openssl, even though not all bits are used here) */
 typedef struct tlsext_ticket_key_st {
-    time_t active_ts; /* tickets not issued w/ key until activation timestamp */
-    time_t expire_ts; /* key not valid after expiration timestamp */
+    unix_time64_t active_ts; /* tickets not issued w/ key until activation ts*/
+    unix_time64_t expire_ts; /* key not valid after expiration timestamp */
     unsigned char tick_key_name[TLSEXT_KEYNAME_LENGTH];
     unsigned char tick_hmac_key[TLSEXT_TICK_KEY_LENGTH];
     unsigned char tick_aes_key[TLSEXT_TICK_KEY_LENGTH];
 } tlsext_ticket_key_t;
 
 static tlsext_ticket_key_t session_ticket_keys[1]; /* temp store until active */
-static time_t stek_rotate_ts;
+static unix_time64_t stek_rotate_ts;
 
 
 static int
@@ -310,9 +326,18 @@ mod_mbedtls_session_ticket_key_file (const char *fn)
     if (0 != fdevent_load_file_bytes((char *)buf,(off_t)sizeof(buf),0,fn,NULL))
         return rc;
     if (buf[0] == 0) { /*(format version 0)*/
-        session_ticket_keys[0].active_ts = buf[1];
-        session_ticket_keys[0].expire_ts = buf[2];
+        session_ticket_keys[0].active_ts = TIME64_CAST(buf[1]);
+        session_ticket_keys[0].expire_ts = TIME64_CAST(buf[2]);
+      #ifndef __COVERITY__
         memcpy(&session_ticket_keys[0].tick_key_name, buf+3, 80);
+      #else
+        memcpy(&session_ticket_keys[0].tick_key_name,
+               buf+3, TLSEXT_KEYNAME_LENGTH);
+        memcpy(&session_ticket_keys[0].tick_hmac_key,
+               buf+7, TLSEXT_TICK_KEY_LENGTH);
+        memcpy(&session_ticket_keys[0].tick_aes_key,
+               buf+15, TLSEXT_TICK_KEY_LENGTH);
+      #endif
         rc = 1;
     }
 
@@ -322,12 +347,13 @@ mod_mbedtls_session_ticket_key_file (const char *fn)
 
 
 static void
-mod_mbedtls_session_ticket_key_check (plugin_data *p, const time_t cur_ts)
+mod_mbedtls_session_ticket_key_check (plugin_data *p, const unix_time64_t cur_ts)
 {
     if (NULL == p->ssl_stek_file) return;
 
     struct stat st;
-    if (0 == stat(p->ssl_stek_file, &st) && st.st_mtime > stek_rotate_ts
+    if (0 == stat(p->ssl_stek_file, &st)
+        && TIME64_CAST(st.st_mtime) > stek_rotate_ts
         && mod_mbedtls_session_ticket_key_file(p->ssl_stek_file)) {
         stek_rotate_ts = cur_ts;
     }
@@ -351,7 +377,9 @@ mod_mbedtls_session_ticket_key_check (plugin_data *p, const time_t cur_ts)
                                        mbedtls_cipher_get_key_bitlen(&key->ctx),
                                        MBEDTLS_ENCRYPT);
         if (0 != rc) { /* expire key immediately if error occurs */
-            key->generation_time = cur_ts - ctx->ticket_lifetime - 1;
+            key->generation_time = cur_ts > (unix_time64_t)ctx->ticket_lifetime
+              ? cur_ts - ctx->ticket_lifetime - 1
+              : 0;
             ctx->active = 1 - ctx->active;
         }
         mbedtls_platform_zeroize(stek, sizeof(tlsext_ticket_key_t));
@@ -465,7 +493,7 @@ mod_mbedtls_free_config (server *srv, plugin_data * const p)
                     free(cacert);
                 }
                 break;
-              case 4: /* ssl.ca-dn-file */
+              case 4: /* ssl.ca-crl-file */
                 if (cpv->vtype == T_CONFIG_LOCAL) {
                     mbedtls_x509_crl *crl = cpv->v.v;
                     mbedtls_x509_crl_free(crl);
@@ -538,6 +566,12 @@ mod_mbedtls_merge_config_cpv (plugin_config * const pconf, const config_plugin_v
       case 13:/* debug.log-ssl-noise */
         pconf->ssl_log_noise = (unsigned char)cpv->v.shrt;
         break;
+     #if 0    /*(cpk->k_id remapped in mod_mbedtls_set_defaults())*/
+      case 14:/* ssl.verifyclient.ca-file */
+      case 15:/* ssl.verifyclient.ca-dn-file */
+      case 16:/* ssl.verifyclient.ca-crl-file */
+        break;
+     #endif
       default:/* should not happen */
         return;
     }
@@ -661,29 +695,51 @@ mod_mbedtls_verify_cb (void *arg, mbedtls_x509_crt *crt, int depth, uint32_t *fl
 }
 
 
+enum {
+  MOD_MBEDTLS_ALPN_HTTP11      = 1
+ ,MOD_MBEDTLS_ALPN_HTTP10      = 2
+ ,MOD_MBEDTLS_ALPN_H2          = 3
+ ,MOD_MBEDTLS_ALPN_ACME_TLS_1  = 4
+};
+
+#ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
+#ifdef MBEDTLS_SSL_ALPN
+
+static int
+mod_mbedtls_acme_tls_1 (handler_ctx *hctx);
+
+#endif
+#endif
+
+
+#if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+#define MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO
+#define MBEDTLS_ERR_SSL_DECODE_ERROR      MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO
+#endif
+
+
 #ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
 static int
 mod_mbedtls_SNI (void *arg, mbedtls_ssl_context *ssl, const unsigned char *servername, size_t len)
 {
     handler_ctx * const hctx = (handler_ctx *) arg;
-    buffer_copy_string(&hctx->r->uri.scheme, "https");
-
     request_st * const r = hctx->r;
+    buffer_copy_string_len(&r->uri.scheme, CONST_STR_LEN("https"));
+
     if (len >= 1024) { /*(expecting < 256; TLSEXT_MAXLEN_host_name is 255)*/
         log_error(r->conf.errh, __FILE__, __LINE__,
                   "MTLS: SNI name too long %.*s", (int)len, servername);
-        return MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO;
+        return MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
     }
 
     /* use SNI to patch mod_mbedtls config and then reset COMP_HTTP_HOST */
-    buffer_copy_string_len(&r->uri.authority, (const char *)servername, len);
-    buffer_to_lower(&r->uri.authority);
+    buffer_copy_string_len_lc(&r->uri.authority, (const char *)servername, len);
   #if 0
     /*(r->uri.authority used below for configuration before request read;
      * revisit for h2)*/
     if (0 != http_request_host_policy(&r->uri.authority,
                                       r->conf.http_parseopts, 443))
-        return MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO;
+        return MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
   #endif
 
     const buffer * const ssl_pemfile = hctx->conf.pc->ssl_pemfile;
@@ -696,6 +752,12 @@ mod_mbedtls_SNI (void *arg, mbedtls_ssl_context *ssl, const unsigned char *serve
     /*(done in configfile-glue.c:config_cond_cache_reset() after request hdrs read)*/
     /*config_cond_cache_reset_item(r, COMP_HTTP_HOST);*/
     /*buffer_clear(&r->uri.authority);*/
+
+  #ifdef MBEDTLS_SSL_ALPN
+    /* TLS-ALPN-01 (ALPN "acme-tls/1") requires SNI */
+    if (hctx->alpn == MOD_MBEDTLS_ALPN_ACME_TLS_1)
+        return mod_mbedtls_acme_tls_1(hctx);
+  #endif
 
     /*(compare strings as ssl.pemfile might repeat same file in lighttpd.conf
      * and mod_mbedtls does not attempt to de-dup)*/
@@ -717,7 +779,7 @@ mod_mbedtls_SNI (void *arg, mbedtls_ssl_context *ssl, const unsigned char *serve
             elogf(r->conf.errh, __FILE__, __LINE__, rc,
                   "failed to set SNI certificate for TLS server name %s",
                   r->uri.authority.ptr);
-            return MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO;
+            return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
         }
     }
 
@@ -727,11 +789,11 @@ mod_mbedtls_SNI (void *arg, mbedtls_ssl_context *ssl, const unsigned char *serve
 
 
 static int
-mod_mbedtls_conf_verify (handler_ctx *hctx, mbedtls_ssl_config *ssl_ctx)
+mod_mbedtls_conf_verify (handler_ctx *hctx)
 {
     if (NULL == hctx->conf.ssl_ca_file) {
         log_error(hctx->r->conf.errh, __FILE__, __LINE__,
-          "MTLS: can't verify client without ssl.ca-file "
+          "MTLS: can't verify client without ssl.verifyclient.ca-file "
           "for TLS server name %s",
           hctx->r->uri.authority.ptr);
         return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
@@ -746,10 +808,13 @@ mod_mbedtls_conf_verify (handler_ctx *hctx, mbedtls_ssl_config *ssl_ctx)
     mbedtls_ssl_context * const ssl = &hctx->ssl;
     mbedtls_ssl_set_hs_ca_chain(ssl, ca_certs, hctx->conf.ssl_ca_crl_file);
   #if MBEDTLS_VERSION_NUMBER >= 0x02120000 /* mbedtls 2.18.0 */
-    UNUSED(ssl_ctx);
     mbedtls_ssl_set_verify(ssl, mod_mbedtls_verify_cb, hctx);
   #else
-    mbedtls_ssl_conf_verify(ssl_ctx, mod_mbedtls_verify_cb, hctx);
+    /* overwrite callback with hctx each time we enter here, before handshake
+     * (Some callbacks are on mbedtls_ssl_config, not mbedtls_ssl_context)
+     * (Not thread-safe if config (mbedtls_ssl_config *ssl_ctx) is shared)
+     * (XXX: there is probably a better way to do this...) */
+    mbedtls_ssl_conf_verify(hctx->ssl_ctx, mod_mbedtls_verify_cb, hctx);
   #endif
     return 0;
 }
@@ -776,11 +841,86 @@ mod_mbedtls_x509_crl_parse_file (mbedtls_x509_crl *chain, const char *fn)
 
     rc = mbedtls_x509_crl_parse(chain, (unsigned char *)data, (size_t)dlen+1);
 
-    if (dlen) safe_memclear(data, (size_t)dlen);
+    if (dlen) ck_memzero(data, (size_t)dlen);
     free(data);
 
     return rc;
 }
+
+
+#if MBEDTLS_VERSION_NUMBER >= 0x02170000 /* mbedtls 2.23.0 */
+
+static int
+mod_mbedtls_x509_crt_ext_cb (void *p_ctx,
+                             mbedtls_x509_crt const *crt,
+                             mbedtls_x509_buf const *oid,
+                             int critical,
+                             const unsigned char *p,
+                             const unsigned char *end)
+{
+    UNUSED(p_ctx);
+    UNUSED(crt);
+    /* id-pe-acmeIdentifier 1.3.6.1.5.5.7.1.31 */
+    static const unsigned char acmeIdentifier[] = MBEDTLS_OID_PKIX "\x01\x1f";
+    if (0 == MBEDTLS_OID_CMP(acmeIdentifier, oid)) {
+        if (!critical) /* required by RFC 8737 */
+            return MBEDTLS_ERR_X509_INVALID_EXTENSIONS
+                 + MBEDTLS_ERR_ASN1_INVALID_DATA;
+        /*(mbedtls_asn1_get_tag() should take first param as
+         * (const unsigned char **) so safe to cast away const)*/
+        unsigned char *q;
+        *(const unsigned char **)&q = p;
+        size_t len;
+        int rc = mbedtls_asn1_get_tag(&q, end, &len,
+                                      MBEDTLS_ASN1_OCTET_STRING
+                                     |MBEDTLS_ASN1_PRIMITIVE);
+        if (0 != rc)
+            return MBEDTLS_ERR_X509_INVALID_EXTENSIONS + rc;
+        if (q + len != end)
+            return MBEDTLS_ERR_X509_INVALID_EXTENSIONS
+                 + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
+        if (len != 32) /* must be OCTET STRING (SIZE (32)) */
+            return MBEDTLS_ERR_X509_INVALID_EXTENSIONS
+                 + MBEDTLS_ERR_ASN1_INVALID_LENGTH;
+        return 0;
+    }
+    return MBEDTLS_ERR_ASN1_UNEXPECTED_TAG;
+}
+
+static int
+mod_mbedtls_x509_crt_parse_acme (mbedtls_x509_crt *chain, const char *fn)
+{
+    /* similar to mod_mbedtls_x509_crt_parse_file(), but read single cert
+     * and special case to handle id-pe-acmeIdentifier OID */
+    /* https://github.com/ARMmbed/mbedtls/issues/3241 */
+    int rc = MBEDTLS_ERR_X509_FILE_IO_ERROR;
+    off_t dlen = 512*1024*1024;/*(arbitrary limit: 512 MB file; expect < 1 MB)*/
+    char *data = fdevent_load_file(fn, &dlen, NULL, malloc, free);
+    if (NULL == data) return rc;
+
+    mbedtls_pem_context pem;
+    mbedtls_pem_init(&pem);
+
+    size_t use_len;
+    rc = mbedtls_pem_read_buffer(&pem,
+                                 "-----BEGIN CERTIFICATE-----",
+                                 "-----END CERTIFICATE-----",
+                                 (unsigned char *)data, NULL, 0, &use_len);
+    if (0 == rc) {
+        mbedtls_x509_crt_ext_cb_t cb = mod_mbedtls_x509_crt_ext_cb;
+        rc = mbedtls_x509_crt_parse_der_with_ext_cb(chain, pem.buf, pem.buflen,
+                                                    1, cb, NULL);
+    }
+
+    mbedtls_pem_free(&pem);
+
+    if (dlen) ck_memzero(data, (size_t)dlen);
+    free(data);
+
+    return rc;
+}
+
+#endif
 
 
 static int
@@ -793,7 +933,7 @@ mod_mbedtls_x509_crt_parse_file (mbedtls_x509_crt *chain, const char *fn)
 
     rc = mbedtls_x509_crt_parse(chain, (unsigned char *)data, (size_t)dlen+1);
 
-    if (dlen) safe_memclear(data, (size_t)dlen);
+    if (dlen) ck_memzero(data, (size_t)dlen);
     free(data);
 
     return rc;
@@ -808,11 +948,19 @@ mod_mbedtls_pk_parse_keyfile (mbedtls_pk_context *ctx, const char *fn, const cha
     char *data = fdevent_load_file(fn, &dlen, NULL, malloc, free);
     if (NULL == data) return rc;
 
+  #if MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
+    plugin_data * const p = plugin_data_singleton;
+    rc = mbedtls_pk_parse_key(ctx, (unsigned char *)data, (size_t)dlen+1,
+                              (const unsigned char *)pwd,
+                              pwd ? strlen(pwd) : 0,
+                              mbedtls_ctr_drbg_random, &p->ctr_drbg);
+  #else
     rc = mbedtls_pk_parse_key(ctx, (unsigned char *)data, (size_t)dlen+1,
                               (const unsigned char *)pwd,
                               pwd ? strlen(pwd) : 0);
+  #endif
 
-    if (dlen) safe_memclear(data, (size_t)dlen);
+    if (dlen) ck_memzero(data, (size_t)dlen);
     free(data);
 
     return rc;
@@ -843,7 +991,13 @@ network_mbedtls_load_pemfile (server *srv, const buffer *pemfile, const buffer *
         return NULL;
     }
 
+  #if MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
+    plugin_data * const p = plugin_data_singleton;
+    rc = mbedtls_pk_check_pair(&ssl_pemfile_x509.pk, &ssl_pemfile_pkey,
+                               mbedtls_ctr_drbg_random, &p->ctr_drbg);
+  #else
     rc = mbedtls_pk_check_pair(&ssl_pemfile_x509.pk, &ssl_pemfile_pkey);
+  #endif
     if (0 != rc) {
         elogf(srv->errh, __FILE__, __LINE__, rc,
               "PEM cert and private key did not verify (%s) (%s)",
@@ -868,6 +1022,7 @@ network_mbedtls_load_pemfile (server *srv, const buffer *pemfile, const buffer *
 
 #ifdef MBEDTLS_SSL_ALPN
 
+#ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
 static int
 mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
 {
@@ -877,39 +1032,43 @@ mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
     mbedtls_x509_crt *ssl_pemfile_x509 = NULL;
     mbedtls_pk_context *ssl_pemfile_pkey = NULL;
     size_t len;
-    int rc = MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO;
+    int rc = MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
 
     /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
-    if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
+    if (!hctx->conf.ssl_acme_tls_1)
         return 0; /*(should not happen)*/
 
     /* check if SNI set server name (required for acme-tls/1 protocol)
      * and perform simple path checks for no '/'
      * and no leading '.' (e.g. ignore "." or ".." or anything beginning '.') */
-    if (buffer_string_is_empty(name))   return rc;
+    if (buffer_is_blank(name))          return rc;
     if (NULL != strchr(name->ptr, '/')) return rc;
     if (name->ptr[0] == '.')            return rc;
   #if 0
     if (0 != http_request_host_policy(name,hctx->r->conf.http_parseopts,443))
         return rc;
   #endif
-    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
-    buffer_append_path_len(b, CONST_BUF_LEN(name));
-    len = buffer_string_length(b);
+    buffer_copy_path_len2(b, BUF_PTR_LEN(hctx->conf.ssl_acme_tls_1),
+                             BUF_PTR_LEN(name));
+    len = buffer_clen(b);
 
     do {
         buffer_append_string_len(b, CONST_STR_LEN(".crt.pem"));
         ssl_pemfile_x509 = malloc(sizeof(*ssl_pemfile_x509));
         force_assert(ssl_pemfile_x509);
         mbedtls_x509_crt_init(ssl_pemfile_x509); /* init cert structure */
+      #if MBEDTLS_VERSION_NUMBER >= 0x02170000 /* mbedtls 2.23.0 */
+        rc = mod_mbedtls_x509_crt_parse_acme(ssl_pemfile_x509, b->ptr);
+      #else /*(will fail; unable to handle id-pe-acmeIdentifier OID)*/
         rc = mod_mbedtls_x509_crt_parse_file(ssl_pemfile_x509, b->ptr);
+      #endif
         if (0 != rc) {
             elogf(errh, __FILE__, __LINE__, rc,
                   "Failed to load acme-tls/1 pemfile: %s", b->ptr);
             break;
         }
 
-        buffer_string_set_length(b, len); /*(remove ".crt.pem")*/
+        buffer_truncate(b, len); /*(remove ".crt.pem")*/
         buffer_append_string_len(b, CONST_STR_LEN(".key.pem"));
         ssl_pemfile_pkey = malloc(sizeof(*ssl_pemfile_pkey));
         force_assert(ssl_pemfile_pkey);
@@ -947,18 +1106,37 @@ mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
 
     return rc;
 }
-
-
-enum {
-  MOD_MBEDTLS_ALPN_HTTP11      = 1
- ,MOD_MBEDTLS_ALPN_HTTP10      = 2
- ,MOD_MBEDTLS_ALPN_H2          = 3
- ,MOD_MBEDTLS_ALPN_ACME_TLS_1  = 4
-};
+#endif
 
 
 static int
-mod_mbedtls_alpn_select_cb (handler_ctx *hctx, const char *in)
+mod_mbedtls_alpn_h2_policy (handler_ctx * const hctx)
+{
+    /*(currently called after handshake has completed)*/
+  #if 0 /* SNI omitted by client when connecting to IP instead of to name */
+    if (buffer_is_blank(&hctx->r->uri.authority)) {
+        log_error(hctx->errh, __FILE__, __LINE__,
+          "SSL: error ALPN h2 without SNI");
+        return -1;
+    }
+  #endif
+  #if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+    if (hctx->ssl.major_ver == MBEDTLS_SSL_MAJOR_VERSION_3
+        && hctx->ssl.minor_ver < MBEDTLS_SSL_MINOR_VERSION_3) {
+        log_error(hctx->errh, __FILE__, __LINE__,
+          "SSL: error ALPN h2 requires TLSv1.2 or later");
+        return -1;
+    }
+  #else /*(mbedTLS 3.0.0 dropped support for TLSv1.1 and earlier)*/
+    UNUSED(hctx);
+  #endif
+
+    return 0;
+}
+
+
+static int
+mod_mbedtls_alpn_selected (handler_ctx * const hctx, const char * const in)
 {
     const int n = (int)strlen(in);
     const int i = 0;
@@ -986,12 +1164,8 @@ mod_mbedtls_alpn_select_cb (handler_ctx *hctx, const char *in)
         return 0;
       case 10: /* "acme-tls/1" */
         if (0 == memcmp(in+i, "acme-tls/1", 10)) {
-            int rc = mod_mbedtls_acme_tls_1(hctx);
-            if (0 == rc) {
-                proto = MOD_MBEDTLS_ALPN_ACME_TLS_1;
-                break;
-            }
-            return rc;
+            proto = MOD_MBEDTLS_ALPN_ACME_TLS_1;
+            break;
         }
         return 0;
       default:
@@ -1001,6 +1175,53 @@ mod_mbedtls_alpn_select_cb (handler_ctx *hctx, const char *in)
     hctx->alpn = proto;
     return 0;
 }
+
+
+#if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+#ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
+static int
+mod_mbedtls_alpn_select_cb (handler_ctx *hctx, const unsigned char *in, const unsigned int inlen)
+{
+    /*(skip first two bytes which should match inlen-2)*/
+    for (unsigned int i = 2, n; i < inlen; i += n) {
+        n = in[i++];
+        if (i+n > inlen || 0 == n) break;
+        switch (n) {
+          case 2:  /* "h2" */
+            if (in[i] == 'h' && in[i+1] == '2') {
+                if (!hctx->r->conf.h2proto) continue;
+                hctx->alpn = MOD_MBEDTLS_ALPN_H2;
+                hctx->r->http_version = HTTP_VERSION_2;
+                return 0;
+            }
+            continue;
+          case 8:  /* "http/1.1" "http/1.0" */
+            if (0 == memcmp(in+i, "http/1.", 7)) {
+                if (in[i+7] == '1') {
+                    hctx->alpn = MOD_MBEDTLS_ALPN_HTTP11;
+                    return 0;
+                }
+                if (in[i+7] == '0') {
+                    hctx->alpn = MOD_MBEDTLS_ALPN_HTTP10;
+                    return 0;
+                }
+            }
+            continue;
+          case 10: /* "acme-tls/1" */
+            if (0 == memcmp(in+i, "acme-tls/1", 10)) {
+                hctx->alpn = MOD_MBEDTLS_ALPN_ACME_TLS_1;
+                return 0;
+            }
+            continue;
+          default:
+            continue;
+        }
+    }
+
+    return 0;
+}
+#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
+#endif /* MBEDTLS_VERSION_NUMBER < 0x03000000 */ /* mbedtls 3.00.0 */
 
 #endif /* MBEDTLS_SSL_ALPN */
 
@@ -1074,8 +1295,8 @@ mod_mbedtls_ssl_conf_cmd (server *srv, plugin_config_socket *s)
                     break;
                   case 16:
                     if (buffer_eq_icase_ssn(v, "ServerPreference", 16)) {
-                        /* Note: The server uses its own preferences
-                         * over the preference of the client unless
+                        /* Note: before mbedTLS 3.0.0, the server uses its own
+                         * preferences over the preference of the client unless
                          * MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE defined! */
                         s->ssl_honor_cipher_order = flag;
                         continue;
@@ -1141,16 +1362,18 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 
     /* mbedtls defaults minimum accepted SSL/TLS protocol version TLS v1.0
      * use of SSL v3 should be avoided, and SSL v2 is not supported */
+  #ifdef MBEDTLS_SSL_PROTO_SSL3
     if (s->ssl_use_sslv3)
         mbedtls_ssl_conf_min_version(s->ssl_ctx, MBEDTLS_SSL_MAJOR_VERSION_3,
                                                  MBEDTLS_SSL_MINOR_VERSION_0);
+  #endif
 
-    if (!buffer_string_is_empty(s->ssl_cipher_list)) {
+    if (s->ssl_cipher_list) {
         if (!mod_mbedtls_ssl_conf_ciphersuites(srv,s,NULL,s->ssl_cipher_list))
             return -1;
     }
 
-    if (!buffer_string_is_empty(s->ssl_dh_file)) {
+    if (s->ssl_dh_file) {
         mbedtls_dhm_context dhm;
         mbedtls_dhm_init(&dhm);
         rc = mbedtls_dhm_parse_dhmfile(&dhm, s->ssl_dh_file->ptr);
@@ -1168,7 +1391,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
             return -1;
     }
 
-    if (!buffer_string_is_empty(s->ssl_ec_curve)) {
+    if (s->ssl_ec_curve) {
         if (!mod_mbedtls_ssl_conf_curves(srv, s, s->ssl_ec_curve))
             return -1;
     }
@@ -1205,7 +1428,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
      ,"http/1.0"
      ,NULL
     };
-    const char **alpn_protos = (!buffer_string_is_empty(s->ssl_acme_tls_1))
+    const char **alpn_protos = (s->ssl_acme_tls_1)
       ? alpn_protos_http_acme
       : alpn_protos_http;
     if (!srv->srvconf.h2proto) ++alpn_protos;
@@ -1223,6 +1446,12 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
         if (0 != mod_mbedtls_ssl_conf_cmd(srv, s)) return -1;
     }
 
+ #if MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
+    int order = s->ssl_honor_cipher_order
+      ? MBEDTLS_SSL_SRV_CIPHERSUITE_ORDER_SERVER
+      : MBEDTLS_SSL_SRV_CIPHERSUITE_ORDER_CLIENT;
+    mbedtls_ssl_conf_preference_order(s->ssl_ctx, order);
+ #else
     /* server preference is used (default) unless mbedtls is built with
      * MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE defined (not default) */
   #ifndef MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE
@@ -1238,6 +1467,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
           "ignoring ssl.honor-cipher-order; mbedtls uses client preference "
           "since mbedtls built MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE");
   #endif
+ #endif
 
   #if defined(MBEDTLS_SSL_SESSION_TICKETS)
     if (s->ssl_session_ticket && !p->ticket_ctx.ticket_lifetime) { /*init once*/
@@ -1343,8 +1573,8 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
 
         config_plugin_value_t *cpv = ps->cvlist + ps->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
-            /* ignore ssl.pemfile (k_id=10); included to process global scope */
-            if (!is_socket_scope && cpv->k_id != 10) {
+            /* ignore ssl.pemfile (k_id=6); included to process global scope */
+            if (!is_socket_scope && cpv->k_id != 6) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "MTLS: %s is valid only in global scope or "
                   "$SERVER[\"socket\"] condition", cpk[cpv->k_id].k);
@@ -1357,16 +1587,19 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                 --count_not_engine;
                 break;
               case 1: /* ssl.cipher-list */
-                conf.ssl_cipher_list = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_cipher_list = cpv->v.b;
                 break;
               case 2: /* ssl.honor-cipher-order */
                 conf.ssl_honor_cipher_order = (0 != cpv->v.u);
                 break;
               case 3: /* ssl.dh-file */
-                conf.ssl_dh_file = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_dh_file = cpv->v.b;
                 break;
               case 4: /* ssl.ec-curve */
-                conf.ssl_ec_curve = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_ec_curve = cpv->v.b;
                 break;
               case 5: /* ssl.openssl.ssl-conf-cmd */
                 *(const array **)&conf.ssl_conf_cmd = cpv->v.a;
@@ -1399,7 +1632,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                 break;
               case 10:/* ssl.stek-file */
                #ifdef MBEDTLS_SSL_SESSION_TICKETS
-                if (!buffer_is_empty(cpv->v.b))
+                if (!buffer_is_blank(cpv->v.b))
                     p->ssl_stek_file = cpv->v.b->ptr;
                #else
                 log_error(srv->errh, __FILE__, __LINE__, "MTLS: "
@@ -1457,9 +1690,12 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                   case 9: /* ssl.verifyclient.depth */
                     conf.ssl_verifyclient_depth = (unsigned char)cpv->v.shrt;
                     break;
-                  case 13:/* ssl.acme-tls-1 */
+                  case 12:/* ssl.acme-tls-1 */
                     conf.ssl_acme_tls_1 = cpv->v.b;
                     break;
+                 #if 0    /*(cpk->k_id remapped in mod_mbedtls_set_defaults())*/
+                  case 14:/* ssl.verifyclient.ca-file */
+                 #endif
                   default:
                     break;
                 }
@@ -1574,6 +1810,15 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
      ,{ CONST_STR_LEN("debug.log-ssl-noise"),
         T_CONFIG_SHORT,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-dn-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-crl-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -1593,17 +1838,23 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* ssl.pemfile */
-                if (!buffer_string_is_empty(cpv->v.b)) pemfile = cpv;
+                if (!buffer_is_blank(cpv->v.b)) pemfile = cpv;
                 break;
               case 1: /* ssl.privkey */
-                if (!buffer_string_is_empty(cpv->v.b)) privkey = cpv;
+                if (!buffer_is_blank(cpv->v.b)) privkey = cpv;
                 break;
+              case 14:/* ssl.verifyclient.ca-file */
+                if (cpv->k_id == 14) cpv->k_id = 2;
+                __attribute_fallthrough__
+              case 15:/* ssl.verifyclient.ca-dn-file */
+                if (cpv->k_id == 15) cpv->k_id = 3;
+                __attribute_fallthrough__
               case 2: /* ssl.ca-file */
               case 3: /* ssl.ca-dn-file */
                #if 0 /* defer; not necessary for pemfile parsing */
                 if (!mod_mbedtls_init_once_mbedtls(srv)) return HANDLER_ERROR;
                #endif
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     mbedtls_x509_crt *cacert = calloc(1, sizeof(*cacert));
                     force_assert(cacert);
                     mbedtls_x509_crt_init(cacert);
@@ -1622,8 +1873,11 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
                     }
                 }
                 break;
+              case 16:/* ssl.verifyclient.ca-crl-file */
+                cpv->k_id = 4;
+                __attribute_fallthrough__
               case 4: /* ssl.ca-crl-file */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     mbedtls_x509_crl *crl = malloc(sizeof(*crl));
                     force_assert(crl);
                     mbedtls_x509_crl_init(crl);
@@ -1642,7 +1896,12 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
                 }
                 break;
               case 5: /* ssl.read-ahead */
+                break;
               case 6: /* ssl.disable-client-renegotiation */
+                /* (force disabled, the default, if HTTP/2 enabled in server) */
+                if (srv->srvconf.h2proto)
+                    cpv->v.u = 1; /* disable client renegotiation */
+                break;
               case 7: /* ssl.verifyclient.activate */
               case 8: /* ssl.verifyclient.enforce */
                 break;
@@ -1655,9 +1914,21 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
                 }
                 break;
               case 10:/* ssl.verifyclient.username */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 11:/* ssl.verifyclient.exportcert */
+                break;
               case 12:/* ssl.acme-tls-1 */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 13:/* debug.log-ssl-noise */
+             #if 0    /*(handled further above)*/
+              case 14:/* ssl.verifyclient.ca-file */
+              case 15:/* ssl.verifyclient.ca-dn-file */
+              case 16:/* ssl.verifyclient.ca-crl-file */
+             #endif
                 break;
               default:/* should not happen */
                 break;
@@ -1734,7 +2005,9 @@ mod_mbedtls_ssl_write_err(connection *con, handler_ctx *hctx, int wr, size_t wr_
         return -1;
     }
 
+  #if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
     if (0 != hctx->ssl.out_left)  /* partial write; save attempted wr_len */
+  #endif
         hctx->pending_write = wr_len;
 
     return 0; /* try again later */
@@ -1746,14 +2019,17 @@ mod_mbedtls_close_notify(handler_ctx *hctx);
 
 
 static int
-connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
+connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t max_bytes)
 {
-    handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id];
+    handler_ctx * const hctx = con->plugin_ctx[plugin_data_singleton->id];
     mbedtls_ssl_context * const ssl = &hctx->ssl;
 
     if (hctx->pending_write) {
         int wr = (int)hctx->pending_write;
-        if (0 != ssl->out_left) {
+      #if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+        if (0 != ssl->out_left)
+      #endif
+        {
             /*(would prefer mbedtls_ssl_flush_output() from ssl_internal.h)*/
             size_t data_len = hctx->pending_write;
             wr = mbedtls_ssl_write(ssl, NULL, data_len);
@@ -1765,9 +2041,8 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         chunkqueue_mark_written(cq, wr);
     }
 
-    if (0 != hctx->close_notify) return mod_mbedtls_close_notify(hctx);
-
-    chunkqueue_remove_finished_chunks(cq);
+    if (__builtin_expect( (0 != hctx->close_notify), 0))
+        return mod_mbedtls_close_notify(hctx);
 
     const int lim = mbedtls_ssl_get_max_out_record_payload(ssl);
     if (lim < 0) return mod_mbedtls_ssl_write_err(con, hctx, lim, 0);
@@ -1781,6 +2056,10 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         int wr;
 
         if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh)) return -1;
+        if (__builtin_expect( (0 == data_len), 0)) {
+            chunkqueue_remove_finished_chunks(cq);
+            continue;
+        }
 
         /* mbedtls_ssl_write() copies the data, up to max record size, but if
          * (temporarily) unable to write the entire record, it is documented
@@ -1821,6 +2100,20 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
 }
 
 
+#if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.02.0 */
+#define handshake_state(ssl) (ssl)->MBEDTLS_PRIVATE(state)
+#elif MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
+#define handshake_state(ssl) (ssl)->MBEDTLS_PRIVATE(state)
+#else /* MBEDTLS_VERSION_NUMBER < 0x03000000 */ /* mbedtls 3.00.0 */
+#define handshake_state(ssl) (ssl)->state
+#ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
+#ifdef MBEDTLS_SSL_ALPN
+static int ssl_parse_client_hello( mbedtls_ssl_context *ssl, handler_ctx *hctx );
+#endif
+#endif
+#endif /* MBEDTLS_VERSION_NUMBER < 0x03000000 */ /* mbedtls 3.00.0 */
+
+
 static int
 mod_mbedtls_ssl_handshake (handler_ctx *hctx)
 {
@@ -1830,54 +2123,63 @@ mod_mbedtls_ssl_handshake (handler_ctx *hctx)
      * (Some callbacks are on mbedtls_ssl_config, not mbedtls_ssl_context)
      * (Not thread-safe if config (mbedtls_ssl_config *ssl_ctx) is shared)
      * (XXX: there is probably a better way to do this...) */
-    /* (alternative: save ssl_ctx in hctx in mod_mbedtls_handle_con_accept()) */
-    mbedtls_ssl_config *ssl_ctx;
-    *(const mbedtls_ssl_config **)&ssl_ctx = hctx->ssl.conf;
   #ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
-    mbedtls_ssl_conf_sni(ssl_ctx, mod_mbedtls_SNI, hctx);
+    mbedtls_ssl_conf_sni(hctx->ssl_ctx, mod_mbedtls_SNI, hctx);
   #endif
 
-    if (hctx->ssl.state < MBEDTLS_SSL_SERVER_HELLO) {
-        while (hctx->ssl.state != MBEDTLS_SSL_SERVER_HELLO
-            && hctx->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+    if (handshake_state(&hctx->ssl) < MBEDTLS_SSL_SERVER_HELLO) {
+        while (handshake_state(&hctx->ssl) != MBEDTLS_SSL_SERVER_HELLO
+            && handshake_state(&hctx->ssl) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+          /* disable in mbedtls 3.0+ until alternative callbacks are available
+           * https://github.com/ARMmbed/mbedtls/issues/5430 */
+          #if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+          #ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
+          #ifdef MBEDTLS_SSL_ALPN
+            /* parse client_hello for ALPN extension prior to mbedtls handshake
+             * in order to perform certificate selection in mod_mbedtls_SNI() */
+            if (hctx->conf.ssl_acme_tls_1) {
+                rc = ssl_parse_client_hello(&hctx->ssl, hctx);
+                if (0 != rc) break;
+            }
+          #endif
+          #endif
+          #endif /* MBEDTLS_VERSION_NUMBER < 0x03000000 */ /* mbedtls 3.00.0 */
             rc = mbedtls_ssl_handshake_step(&hctx->ssl);
             if (0 != rc) break;
         }
-        if (0 == rc && hctx->ssl.state == MBEDTLS_SSL_SERVER_HELLO) {
+        if (0 == rc
+            && handshake_state(&hctx->ssl) == MBEDTLS_SSL_SERVER_HELLO) {
           #ifdef MBEDTLS_SSL_ALPN
             const char *alpn = mbedtls_ssl_get_alpn_protocol(&hctx->ssl);
             if (NULL != alpn)
-                rc = mod_mbedtls_alpn_select_cb(hctx, alpn);
+                rc = mod_mbedtls_alpn_selected(hctx, alpn);
           #endif
         }
     }
 
-    /* overwrite callback with hctx each time we enter here, before handshake
-     * (Some callbacks are on mbedtls_ssl_config, not mbedtls_ssl_context)
-     * (Not thread-safe if config (mbedtls_ssl_config *ssl_ctx) is shared)
-     * (XXX: there is probably a better way to do this...) */
-    if (0 == rc && hctx->conf.ssl_verifyclient
-        && hctx->ssl.state >= MBEDTLS_SSL_SERVER_HELLO  /*(after SNI and ALPN)*/
-        && hctx->ssl.state <= MBEDTLS_SSL_SERVER_HELLO_DONE
+    if (0 == rc && hctx->conf.ssl_verifyclient  /*(after SNI and ALPN)*/
+        && handshake_state(&hctx->ssl) >= MBEDTLS_SSL_SERVER_HELLO
+        && handshake_state(&hctx->ssl) <= MBEDTLS_SSL_SERVER_HELLO_DONE
         && hctx->alpn != MOD_MBEDTLS_ALPN_ACME_TLS_1) { /*(not "acme-tls/1")*/
         int mode = (hctx->conf.ssl_verifyclient_enforce)
           ? MBEDTLS_SSL_VERIFY_REQUIRED
           : MBEDTLS_SSL_VERIFY_OPTIONAL;
         mbedtls_ssl_set_hs_authmode(&hctx->ssl, mode);
-        while (hctx->ssl.state != MBEDTLS_SSL_CERTIFICATE_REQUEST
-            && hctx->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+        while (handshake_state(&hctx->ssl) != MBEDTLS_SSL_CERTIFICATE_REQUEST
+            && handshake_state(&hctx->ssl) != MBEDTLS_SSL_HANDSHAKE_OVER) {
             rc = mbedtls_ssl_handshake_step(&hctx->ssl);
             if (0 != rc) break;
         }
-        if (0 == rc && hctx->ssl.state == MBEDTLS_SSL_CERTIFICATE_REQUEST) {
-            rc = mod_mbedtls_conf_verify(hctx, ssl_ctx);
+        if (0 == rc
+            && handshake_state(&hctx->ssl) == MBEDTLS_SSL_CERTIFICATE_REQUEST) {
+            rc = mod_mbedtls_conf_verify(hctx);
             if (0 == rc)
                 rc = mbedtls_ssl_handshake_step(&hctx->ssl);
             /* reconfigure CA trust chain after sending client certificate
              * request (if ssl_ca_dn_file is set), before client certificate
              * verification (MBEDTLS_SSL_CERTIFICATE_VERIFY) */
             if (0 == rc && hctx->conf.ssl_ca_dn_file
-                && hctx->ssl.state == MBEDTLS_SSL_SERVER_HELLO_DONE) {
+                && handshake_state(&hctx->ssl)==MBEDTLS_SSL_SERVER_HELLO_DONE) {
                 mbedtls_ssl_context * const ssl = &hctx->ssl;
                 mbedtls_x509_crt *ca_certs = hctx->conf.ssl_ca_file;
                 mbedtls_x509_crl *ca_crl = hctx->conf.ssl_ca_crl_file;
@@ -1886,7 +2188,7 @@ mod_mbedtls_ssl_handshake (handler_ctx *hctx)
         }
     }
 
-    if (0 == rc && hctx->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+    if (0 == rc && handshake_state(&hctx->ssl) != MBEDTLS_SSL_HANDSHAKE_OVER) {
         rc = mbedtls_ssl_handshake(&hctx->ssl);
     }
 
@@ -1894,7 +2196,11 @@ mod_mbedtls_ssl_handshake (handler_ctx *hctx)
       case 0:
         hctx->handshake_done = 1;
        #ifdef MBEDTLS_SSL_ALPN
-        if (hctx->alpn == MOD_MBEDTLS_ALPN_ACME_TLS_1) {
+        if (hctx->alpn == MOD_MBEDTLS_ALPN_H2) {
+            if (0 != mod_mbedtls_alpn_h2_policy(hctx))
+                return -1;
+        }
+        else if (hctx->alpn == MOD_MBEDTLS_ALPN_ACME_TLS_1) {
             /* Once TLS handshake is complete, return -1 to result in
              * CON_STATE_ERROR so that socket connection is quickly closed */
             return -1;
@@ -1925,16 +2231,17 @@ mod_mbedtls_ssl_handshake (handler_ctx *hctx)
 
 
 static int
-connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
+connection_read_cq_ssl (connection * const con, chunkqueue * const cq, off_t max_bytes)
 {
-    handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id];
+    handler_ctx * const hctx = con->plugin_ctx[plugin_data_singleton->id];
     int len;
     char *mem = NULL;
     size_t mem_len = 0;
 
     UNUSED(max_bytes);
 
-    if (0 != hctx->close_notify) return mod_mbedtls_close_notify(hctx);
+    if (__builtin_expect( (0 != hctx->close_notify), 0))
+        return mod_mbedtls_close_notify(hctx);
 
     if (!hctx->handshake_done) {
         int rc = mod_mbedtls_ssl_handshake(hctx);
@@ -2008,7 +2315,7 @@ mod_mbedtls_debug_cb(void *ctx, int level,
 
 CONNECTION_FUNC(mod_mbedtls_handle_con_accept)
 {
-    server_socket *srv_sock = con->srv_socket;
+    const server_socket *srv_sock = con->srv_socket;
     if (!srv_sock->is_ssl) return HANDLER_GO_ON;
 
     plugin_data *p = p_d;
@@ -2019,10 +2326,11 @@ CONNECTION_FUNC(mod_mbedtls_handle_con_accept)
     hctx->tmp_buf = con->srv->tmp_buf;
     hctx->errh = r->conf.errh;
     con->plugin_ctx[p->id] = hctx;
+    buffer_blank(&r->uri.authority);
 
-    plugin_ssl_ctx * const s = p->ssl_ctxs + srv_sock->sidx;
+    hctx->ssl_ctx = p->ssl_ctxs[srv_sock->sidx].ssl_ctx;
     mbedtls_ssl_init(&hctx->ssl);
-    int rc = mbedtls_ssl_setup(&hctx->ssl, s->ssl_ctx);
+    int rc = mbedtls_ssl_setup(&hctx->ssl, hctx->ssl_ctx);
     if (0 == rc) {
         con->network_read = connection_read_cq_ssl;
         con->network_write = connection_write_cq_ssl;
@@ -2040,9 +2348,13 @@ CONNECTION_FUNC(mod_mbedtls_handle_con_accept)
     /* (mbedtls_ssl_config *) is shared across multiple connections, which may
      * overlap, and so this debug setting is not reset upon connection close.
      * Once enabled, debug hook will remain so for this mbedtls_ssl_config */
-    if (hctx->conf.ssl_log_noise)  /* volume level for debug message callback */
-        mbedtls_ssl_conf_dbg(s->ssl_ctx, mod_mbedtls_debug_cb,
+    if (hctx->conf.ssl_log_noise) {/* volume level for debug message callback */
+      #if MBEDTLS_VERSION_NUMBER >= 0x02000000 /* mbedtls 2.0.0 */
+        mbedtls_debug_set_threshold(hctx->conf.ssl_log_noise);
+      #endif
+        mbedtls_ssl_conf_dbg(hctx->ssl_ctx, mod_mbedtls_debug_cb,
                              (void *)(intptr_t)hctx->conf.ssl_log_noise);
+    }
 
     /* (mbedtls_ssl_config *) is shared across multiple connections, which may
      * overlap, and so renegotiation setting is not reset upon connection close.
@@ -2052,7 +2364,7 @@ CONNECTION_FUNC(mod_mbedtls_handle_con_accept)
      * and it is recommended to leave it disabled (lighttpd mbedtls default) */
   #ifdef MBEDTLS_LEGACY_SSL_RENEGOTIATION_ENABLED
     if (!hctx->conf.ssl_disable_client_renegotiation)
-        mbedtls_legacy_ssl_conf_renegotiation(s->ssl_ctx,
+        mbedtls_legacy_ssl_conf_renegotiation(hctx->ssl_ctx,
                                       MBEDTLS_LEGACY_SSL_RENEGOTIATION_ENABLED);
   #endif
 
@@ -2151,6 +2463,79 @@ https_add_ssl_client_cert (request_st * const r, const mbedtls_x509_crt * const 
 
 
 static void
+https_add_ssl_client_subject (request_st * const r, const mbedtls_x509_name *name)
+{
+    /* add components of client Subject DN */
+    /* code block is similar to mbedtls_x509_dn_gets() */
+    /* code block specialized for creating env vars of Subject DN components
+     * and splits multi-valued RDNs into separate env vars for attribute=value*/
+    size_t n = 0;
+    const size_t prelen = sizeof("SSL_CLIENT_S_DN_")-1;
+    char key[64] = "SSL_CLIENT_S_DN_";
+    char buf[512]; /* MBEDTLS_X509_MAX_DN_NAME_SIZE is (256) */
+
+    for (; name != NULL; name = name->next) {
+        if (!name->oid.p)
+            continue;
+        const char *short_name = NULL;
+        if (0 != mbedtls_oid_get_attr_short_name(&name->oid, &short_name))
+            continue;
+        const size_t len = strlen(short_name);
+        if (prelen+len >= sizeof(key)) continue;
+        memcpy(key+prelen, short_name, len); /*(not '\0'-terminated)*/
+
+        if (n+2+len+1+name->val.len > sizeof(buf)) continue;
+        buf[n++] = ','; /*(", " at beginning is skipped outside loop below)*/
+        buf[n++] = ' ';
+        memcpy(buf+n, short_name, len);
+        n += len;
+        buf[n++] = '=';
+
+        for (size_t i = 0; i < name->val.len; ++i) {
+            unsigned char c = name->val.p[i];
+            buf[n+i] = (c >= 32 && c != 127) ? c : '?';
+        }
+
+        http_header_env_set(r, key, prelen+len, buf+n, name->val.len);
+        n += name->val.len;
+    }
+
+    /* mbedtls_x509_dn_gets() is not used to construct DN because that func does
+     * not support non-ASCII UTF-8.  This func allows non-ASCII UTF-8 but does
+     * not check for need to backslash-encode special chars.  This func
+     * *assumes* a trusted and validated cert which does contain any chars which
+     * need to be backslash-encoded in the stringified DN, even if such chars
+     * are allowed in ASN.1 DN.  Above, CTLs are encoded as '?' above, even
+     * though some are allowed if backslash-encoded.  Multi-valued RDNs are not
+     * combined with '+' above, as name->next_merged is private in mbedtls 3.0.0
+     */
+    if (n > 2)
+        http_header_env_set(r, CONST_STR_LEN("SSL_CLIENT_S_DN"), buf+2, n-2);
+}
+
+
+__attribute_cold__
+static void
+https_add_ssl_client_verify_err (buffer * const b, uint32_t status)
+{
+  #ifndef MBEDTLS_X509_REMOVE_INFO
+    /* get failure string and translate newline to ':', removing last one */
+    char buf[512];
+    int n = mbedtls_x509_crt_verify_info(buf, sizeof(buf), "", status);
+    if (n > 0) {
+        for (char *nl = buf; NULL != (nl = strchr(nl, '\n')); ++nl)
+            nl[0] = ('\0' == nl[1] ? (--n, '\0') : ':');
+        buffer_append_string_len(b, buf, n);
+    }
+  #else
+    UNUSED(b);
+    UNUSED(status);
+  #endif
+}
+
+
+__attribute_noinline__
+static void
 https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
 {
     /* Note: starting with mbedtls-2.17.0, peer cert is not available here if
@@ -2159,102 +2544,47 @@ https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
      * versions do keep the cert, but not set this define, attempt to retrieve
      * the peer cert and check for NULL before using it. */
     const mbedtls_x509_crt *crt = mbedtls_ssl_get_peer_cert(&hctx->ssl);
-    buffer * const tb = r->tmp_buf;
-    char buf[512];
-    int n;
+    buffer *vb = http_header_env_set_ptr(r, CONST_STR_LEN("SSL_CLIENT_VERIFY"));
 
     uint32_t rc = (NULL != crt)
       ? mbedtls_ssl_get_verify_result(&hctx->ssl)
       : 0xFFFFFFFF;
     if (0xFFFFFFFF == rc) { /*(e.g. no cert, or verify result not available)*/
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_STR_LEN("NONE"));
+        buffer_copy_string_len(vb, CONST_STR_LEN("NONE"));
         return;
     }
     else if (0 != rc) {
-        /* get failure string and translate newline to ':', removing last one */
-        n = mbedtls_x509_crt_verify_info(buf, sizeof(buf), "", rc);
-        buffer_copy_string_len(tb, CONST_STR_LEN("FAILED:"));
-        if (n > 0) {
-            for (char *nl = buf; NULL != (nl = strchr(nl, '\n')); ++nl)
-                nl[0] = ('\0' == nl[1] ? (--n, '\0') : ':');
-            buffer_append_string_len(tb, buf, n);
-        }
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_BUF_LEN(tb));
+        buffer_copy_string_len(vb, CONST_STR_LEN("FAILED:"));
+        https_add_ssl_client_verify_err(vb, rc);
         return;
     }
     else {
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_STR_LEN("SUCCESS"));
+        buffer_copy_string_len(vb, CONST_STR_LEN("SUCCESS"));
     }
 
-    n = mbedtls_x509_dn_gets(buf, sizeof(buf), &crt->subject);
-    if (n > 0 && n < (int)sizeof(buf)) {
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_S_DN"),
-                            buf, n);
-    }
+    https_add_ssl_client_subject(r, &crt->subject);
 
-    /* add components of client Subject DN */
-    /* code block is similar to mbedtls_x509_dn_gets() */
-    /*(reuse buf; sizeof(buf) > MBEDTLS_X509_MAX_DN_NAME_SIZE, which is 256)*/
-    buffer_copy_string_len(tb, CONST_STR_LEN("SSL_CLIENT_S_DN_"));
-    const mbedtls_x509_name *name = &crt->subject;
-    while (name != NULL) {
-        if (!name->oid.p) {
-            name = name->next;
-            continue;
-        }
+    /* mbedtls_x509_serial_gets() (inefficiently) formats to hex separated by
+     * colons, but would differ from behavior of other lighttpd TLS modules */
+    size_t i = 0; /* skip leading 0's per Distinguished Encoding Rules (DER) */
+    while (i < crt->serial.len && crt->serial.p[i] == 0) ++i;
+    if (i == crt->serial.len) --i;
+    buffer_append_string_encoded_hex_uc(
+      http_header_env_set_ptr(r, CONST_STR_LEN("SSL_CLIENT_M_SERIAL")),
+      (char *)crt->serial.p+i, crt->serial.len-i);
 
-        const char *short_name = NULL;
-        if (0 != mbedtls_oid_get_attr_short_name(&name->oid, &short_name))
-            continue;
-        buffer_string_set_length(tb, sizeof("SSL_CLIENT_S_DN_")-1);
-        buffer_append_string(tb, short_name);
-
-        const mbedtls_x509_name *nm = name;
-        n = 0;
-        do {
-            if (nm != name && n < (int)sizeof(buf)-1)
-                buf[n++] = ',';
-            for (size_t i = 0; i < nm->val.len && n < (int)sizeof(buf)-1; ++n) {
-                unsigned char c = nm->val.p[i];
-                buf[n] = (c < 32 || c == 127 || (c > 128 && c < 160)) ? '?' : c;
-            }
-            buf[n] = '\0';
-        } while (nm->next_merged && nm->next && (nm = nm->next));
-        if (n == sizeof(buf)-1)
-            while (nm->next_merged && nm->next) nm = nm->next;
-        name = nm->next;
-
-        http_header_env_set(r,
-                            CONST_BUF_LEN(tb),
-                            buf, n);
-    }
-
-    n = mbedtls_x509_serial_gets(buf, sizeof(buf), &crt->serial);
-    if (n > 0 && n < (int)sizeof(buf)) {
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_M_SERIAL"),
-                            buf, n);
-    }
-
-    if (!buffer_string_is_empty(hctx->conf.ssl_verifyclient_username)) {
+    if (hctx->conf.ssl_verifyclient_username) {
         /* pick one of the exported values as "REMOTE_USER", for example
          *   ssl.verifyclient.username = "SSL_CLIENT_S_DN_UID"
          * or
          *   ssl.verifyclient.username = "SSL_CLIENT_S_DN_emailAddress"
          */
         const buffer *varname = hctx->conf.ssl_verifyclient_username;
-        const buffer *vb = http_header_env_get(r, CONST_BUF_LEN(varname));
-        if (vb) { /* same as http_auth.c:http_auth_setenv() */
+        vb = http_header_env_get(r, BUF_PTR_LEN(varname));
+        if (vb) { /* same as mod_auth_api.c:http_auth_setenv() */
             http_header_env_set(r,
                                 CONST_STR_LEN("REMOTE_USER"),
-                                CONST_BUF_LEN(vb));
+                                BUF_PTR_LEN(vb));
             http_header_env_set(r,
                                 CONST_STR_LEN("AUTH_TYPE"),
                                 CONST_STR_LEN("SSL_CLIENT_VERIFY"));
@@ -2263,45 +2593,70 @@ https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
 
   #if defined(MBEDTLS_PEM_WRITE_C)
     /* if (NULL != crt) (e.g. not PSK-based ciphersuite) */
-    if (hctx->conf.ssl_verifyclient_export_cert && NULL != crt)
+    if (hctx->conf.ssl_verifyclient_export_cert)
         https_add_ssl_client_cert(r, crt);
   #endif
 }
 
 
+#if MBEDTLS_VERSION_NUMBER < 0x03020000 /* mbedtls 3.02.0 */
+#define mbedtls_ssl_get_ciphersuite_id_from_ssl(ssl) \
+        (ssl)->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(ciphersuite)
+#define mbedtls_ssl_ciphersuite_get_name(info) \
+        (info)->MBEDTLS_PRIVATE(name)
+#endif
+
 static void
 http_cgi_ssl_env (request_st * const r, handler_ctx * const hctx)
 {
-  #if 1
-    /* XXX: reaching into ssl_internal.h here for mbedtls_ssl_transform */
-    const mbedtls_cipher_info_t *cipher_info =
-      hctx->ssl.transform->cipher_ctx_enc.cipher_info;
-  #else
-    const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
-      mbedtls_ssl_ciphersuite_from_id(hctx->ssl.session->ciphersuite);
-    const mbedtls_cipher_info_t *cipher_info =
-      mbedtls_cipher_info_from_type(ciphersuite_info->cipher);
-  #endif
     const char *s;
 
     s = mbedtls_ssl_get_version(&hctx->ssl);
     http_header_env_set(r, CONST_STR_LEN("SSL_PROTOCOL"), s, strlen(s));
 
-    /*s = ciphersuite_info->name;*/ /*mbedtls_ssl_get_ciphersuite(&hctx->ssl);*/
-    s = cipher_info->name;
+    const int ciphersuite_id =
+      mbedtls_ssl_get_ciphersuite_id_from_ssl(&hctx->ssl);
+    const mbedtls_ssl_ciphersuite_t * const ciphersuite_info =
+      mbedtls_ssl_ciphersuite_from_id(ciphersuite_id);
+    if (__builtin_expect( (NULL == ciphersuite_info), 0)) return;
+
+    s = mbedtls_ssl_ciphersuite_get_name(ciphersuite_info);
     http_header_env_set(r, CONST_STR_LEN("SSL_CIPHER"), s, strlen(s));
 
-    if (cipher_info != NULL) {
+    {
         /* SSL_CIPHER_ALGKEYSIZE - Number of cipher bits (possible) */
         /* SSL_CIPHER_USEKEYSIZE - Number of cipher bits (actually used) */
+      #if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.02.0 */
+        size_t algkeysize =
+          mbedtls_ssl_ciphersuite_get_cipher_key_bitlen(ciphersuite_info);
+      #elif MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
+       #ifdef MBEDTLS_CIPHER_C
+        /*(messy transition; ssl->transform is hidden in ssl_internal.h)*/
+        const mbedtls_cipher_info_t * const cipher_info =
+          mbedtls_cipher_info_from_type(
+            ciphersuite_info->MBEDTLS_PRIVATE(cipher));
+        if (__builtin_expect( (NULL == cipher_info), 0)) return;
+        unsigned int algkeysize = cipher_info->MBEDTLS_PRIVATE(key_bitlen);
+       #else
+        if (1) return;
+       #endif
+        unsigned int usekeysize = algkeysize; /*(equivalent in modern ciphers)*/
+      #else
         /* XXX: is usekeysize correct? XXX: reaching into ssl_internal.h here */
-        int usekeysize = hctx->ssl.transform->cipher_ctx_enc.key_bitlen;
-        unsigned int algkeysize = cipher_info->key_bitlen;
+        unsigned int usekeysize =
+          hctx->ssl.transform->cipher_ctx_enc.key_bitlen;
+       #ifdef MBEDTLS_CIPHER_C
+        unsigned int algkeysize =
+          hctx->ssl.transform->cipher_ctx_enc.cipher_info->key_bitlen;
+       #else
+        unsigned int algkeysize = usekeysize;
+       #endif
+      #endif
         char buf[LI_ITOSTRING_LENGTH];
-        http_header_env_set(r, CONST_STR_LEN("SSL_CIPHER_USEKEYSIZE"),
-                            buf, li_itostrn(buf, sizeof(buf), usekeysize));
         http_header_env_set(r, CONST_STR_LEN("SSL_CIPHER_ALGKEYSIZE"),
                             buf, li_utostrn(buf, sizeof(buf), algkeysize));
+        http_header_env_set(r, CONST_STR_LEN("SSL_CIPHER_USEKEYSIZE"),
+                            buf, li_utostrn(buf, sizeof(buf), usekeysize));
     }
 }
 
@@ -2356,7 +2711,7 @@ REQUEST_FUNC(mod_mbedtls_handle_request_reset)
 
 TRIGGER_FUNC(mod_mbedtls_handle_trigger) {
     plugin_data * const p = p_d;
-    const time_t cur_ts = log_epoch_secs;
+    const unix_time64_t cur_ts = log_epoch_secs;
     if (cur_ts & 0x3f) return HANDLER_GO_ON; /*(continue once each 64 sec)*/
     UNUSED(srv);
     UNUSED(p);
@@ -2631,6 +2986,7 @@ static const int suite_PSK[] = {
     MBEDTLS_TLS_PSK_WITH_ARIA_128_CBC_SHA256
 };
 
+#ifdef MBEDTLS_SSL_PROTO_TLS1
 static const int suite_3DES[] = {
     /* 3DES suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,
@@ -2644,7 +3000,9 @@ static const int suite_3DES[] = {
     MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA,
     MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA
 };
+#endif
 
+#ifdef MBEDTLS_SSL_PROTO_TLS1
 static const int suite_RC4[] = {
     /* RC4 suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
@@ -2658,12 +3016,15 @@ static const int suite_RC4[] = {
     MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA,
     MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
 };
+#endif
 
+#ifdef MBEDTLS_SSL_PROTO_SSL3
 static const int suite_weak[] = {
     /* Weak suites */
     MBEDTLS_TLS_DHE_RSA_WITH_DES_CBC_SHA,
     MBEDTLS_TLS_RSA_WITH_DES_CBC_SHA
 };
+#endif
 
 static const int suite_null[] = {
     /* NULL suites */
@@ -2814,6 +3175,7 @@ static const int suite_TLSv12[] = {
     MBEDTLS_TLS_PSK_WITH_ARIA_128_CBC_SHA256
 };
 
+#ifdef MBEDTLS_SSL_PROTO_TLS1
 /* TLSv1.0 cipher list (supported in mbedtls)
  * marked with minimum version MBEDTLS_SSL_MINOR_VERSION_1 in
  *   ciphersuite_definitions[] and then sorted by ciphersuite_preference[]
@@ -2869,7 +3231,9 @@ static const int suite_TLSv10[] = {
     MBEDTLS_TLS_ECDH_ECDSA_WITH_RC4_128_SHA,
     MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
 };
+#endif
 
+#ifdef MBEDTLS_SSL_PROTO_SSL3
 /* SSLv3 cipher list (supported in mbedtls)
  * marked with minimum version MBEDTLS_SSL_MINOR_VERSION_0 in
  *   ciphersuite_definitions[] and then sorted by ciphersuite_preference[]
@@ -2899,6 +3263,7 @@ static const int suite_SSLv3[] = {
     MBEDTLS_TLS_DHE_RSA_WITH_DES_CBC_SHA,
     MBEDTLS_TLS_RSA_WITH_DES_CBC_SHA
 };
+#endif
 
 /* HIGH cipher list (mapped from openssl list to mbedtls) */
 static const int suite_HIGH[] = {
@@ -3018,12 +3383,16 @@ static const int suite_HIGH[] = {
 static int
 mod_mbedtls_ssl_is_weak_ciphersuite (int id)
 {
+  #ifdef MBEDTLS_SSL_PROTO_TLS1
     for (uint32_t i = 0; i < sizeof(suite_RC4)/sizeof(suite_RC4[0]); ++i) {
         if (id == suite_RC4[i]) return 1;
     }
+  #endif
+  #ifdef MBEDTLS_SSL_PROTO_SSL3
     for (uint32_t i = 0; i < sizeof(suite_weak)/sizeof(suite_weak[0]); ++i) {
         if (id == suite_weak[i]) return 1;
     }
+  #endif
     for (uint32_t i = 0; i < sizeof(suite_null)/sizeof(suite_null[0]); ++i) {
         if (id == suite_null[i]) return 1;
     }
@@ -3090,7 +3459,9 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
     if (ciphersuites) {
         buffer *b = ciphersuites;
         buffer_to_upper(b); /*(ciphersuites are all uppercase (currently))*/
-        for (const char *p, *e = b->ptr-1; e && (e = strchr((p = e+1),':')); ) {
+        for (const char *e = b->ptr-1; e; ) {
+            const char * const p = e+1;
+            e = strchr(p, ':');
             size_t len = e ? (size_t)(e - p) : strlen(p);
             if (len >= sizeof(n)) {
                 log_error(srv->errh, __FILE__, __LINE__,
@@ -3141,7 +3512,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
      *
      * XXX: not done: could make a list of ciphers with bitflag of attributes
      *      to make future combining easier */
-    if (!buffer_string_is_empty(cipherstring)) {
+    if (cipherstring && !buffer_is_blank(cipherstring)) {
         const buffer *b = cipherstring;
         const char *e = b->ptr;
 
@@ -3154,32 +3525,35 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
         /* manually handle first token, since one-offs apply */
         /* (openssl syntax NOT fully supported) */
         int default_suite = 0;
-        if (0 == strncmp(e, "!ALL", 4) || 0 == strncmp(e, "-ALL", 4)) {
+        #define strncmp_const(s,cs) strncmp((s),(cs),sizeof(cs)-1)
+        if (0 == strncmp_const(e, "!ALL") || 0 == strncmp_const(e, "-ALL")) {
             /* "!ALL" excluding all ciphers does not make sense; ignore */
             e += sizeof("!ALL")-1; /* same as sizeof("-ALL")-1 */
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("!DEFAULT"))
-              || 0 == strncmp(e, CONST_STR_LEN("-DEFAULT"))) {
+        else if (0 == strncmp_const(e, "!DEFAULT")
+              || 0 == strncmp_const(e, "-DEFAULT")) {
             /* "!DEFAULT" excluding default ciphers is empty list; no effect */
             e += sizeof("!DEFAULT")-1; /* same as sizeof("-DEFAULT")-1 */
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("DEFAULT"))) {
+        else if (0 == strncmp_const(e, "DEFAULT")) {
             e += sizeof("DEFAULT")-1;
             default_suite = 1;
         }
         else if (0 == /* effectively the same as "DEFAULT" */
-                 strncmp(e, CONST_STR_LEN("ALL:!COMPLEMENTOFDEFAULT:!eNULL"))) {
+                 strncmp_const(e, "ALL:!COMPLEMENTOFDEFAULT:!eNULL")) {
             e += sizeof("ALL:!COMPLEMENTOFDEFAULT:!eNULL")-1;
             default_suite = 1;
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("SUITEB128"))
-              || 0 == strncmp(e, CONST_STR_LEN("SUITEB128ONLY"))
-              || 0 == strncmp(e, CONST_STR_LEN("SUITEB192"))) {
+        else if (0 == strncmp_const(e, "SUITEB128")
+              || 0 == strncmp_const(e, "SUITEB128ONLY")
+              || 0 == strncmp_const(e, "SUITEB192")) {
             mbedtls_ssl_conf_cert_profile(s->ssl_ctx,
                                           &mbedtls_x509_crt_profile_suiteb);
             /* re-initialize mbedtls_ssl_config defaults */
-            mbedtls_mpi_free(&s->ssl_ctx->dhm_P);
-            mbedtls_mpi_free(&s->ssl_ctx->dhm_G);
+          #if MBEDTLS_VERSION_NUMBER < 0x03020000 /* mbedtls 3.02.0 */
+            mbedtls_mpi_free(&s->ssl_ctx->MBEDTLS_PRIVATE(dhm_P));
+            mbedtls_mpi_free(&s->ssl_ctx->MBEDTLS_PRIVATE(dhm_G));
+          #endif
             int rc = mbedtls_ssl_config_defaults(s->ssl_ctx,
                                                  MBEDTLS_SSL_IS_SERVER,
                                                  MBEDTLS_SSL_TRANSPORT_STREAM,
@@ -3189,13 +3563,34 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                      "Init of ssl config context SUITEB defaults failed");
                 return 0;
             }
-            e += (0 == strncmp(e, CONST_STR_LEN("SUITEB128ONLY")))
+            e += (0 == strncmp_const(e, "SUITEB128ONLY"))
                  ? sizeof("SUITEB128ONLY")-1
                  : sizeof("SUITEB128")-1;
             if (*e)
                 log_error(srv->errh, __FILE__, __LINE__,
                   "MTLS: ignoring cipher string after SUITEB: %s", e);
             return 1;
+        }
+        else if (0 == strncmp_const(e,
+                  "ECDHE+AESGCM:ECDHE+AES256:CHACHA20:!SHA1:!SHA256:!SHA384")
+              || 0 == strncmp_const(e,
+                  "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")) {
+            e += sizeof(
+                  "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")-1;
+            if (nids + 9 >= idsz) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "MTLS: error: too many ciphersuites during list expand");
+                return 0;
+            }
+            ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256;
+            ids[++nids] = MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256;
+            ids[++nids] = MBEDTLS_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256;
         }
 
         if (e != b->ptr && *e != ':' && *e != '\0') {
@@ -3216,8 +3611,11 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
 
         int rc = 1;
         if (e == b->ptr || *e == '\0') --e; /*initial condition for loop below*/
-        for (const char *p; e && (e = strchr((p = e+1),':')); ) {
+        do {
+            const char * const p = e+1;
+            e = strchr(p, ':');
             size_t len = e ? (size_t)(e - p) : strlen(p);
+            if (0 == len) continue;
             if (len >= sizeof(n)) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "MTLS: skipped ciphersuite; too long: %.*s",
@@ -3252,6 +3650,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 continue;
             }
 
+          #ifdef MBEDTLS_SSL_PROTO_TLS1
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("TLSv1.0"))) {
                 crt_profile_default = 1;
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
@@ -3260,7 +3659,9 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 if (-1 == nids) return 0;
                 continue;
             }
+          #endif
 
+          #ifdef MBEDTLS_SSL_PROTO_SSL3
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("SSLv3"))) {
                 crt_profile_default = 1;
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
@@ -3269,6 +3670,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 if (-1 == nids) return 0;
                 continue;
             }
+          #endif
 
             /* handle a popular recommendations
              *   ssl.cipher-list = "EECDH+AESGCM:EDH+AESGCM"
@@ -3456,6 +3858,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 continue;
             }
 
+          #ifdef MBEDTLS_SSL_PROTO_TLS1
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("3DES"))) {
                 crt_profile_default = 1;
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
@@ -3464,7 +3867,9 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 if (-1 == nids) return 0;
                 continue;
             }
+          #endif
 
+          #ifdef MBEDTLS_SSL_PROTO_TLS1
             /* not recommended, but permitted if explicitly requested */
             /* "RC4" is same as openssl "COMPLEMENTOFALL" */
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("RC4"))) {
@@ -3475,6 +3880,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 if (-1 == nids) return 0;
                 continue;
             }
+          #endif
 
             /* not recommended, but permitted if explicitly requested */
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("NULL"))
@@ -3487,22 +3893,21 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 continue;
             }
 
-            if (*e != ':' && *e != '\0') {
+            {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "MTLS: error: missing support for cipher list: %.*s",
                   (int)len, p);
                 rc = 0;
                 continue;
             }
-        }
+        } while (e);
         if (0 == rc) return 0;
     }
 
     if (-1 == nids) {
         /* Do not set a default if ssl.cipher-list was set (and we are
          * are processing ssl.openssl.ssl-conf-cmd, not ssl.cipher-list) */
-        if (cipherstring != s->ssl_cipher_list
-            && !buffer_string_is_empty(s->ssl_cipher_list))
+        if (cipherstring != s->ssl_cipher_list && s->ssl_cipher_list)
             return 1;
 
         /* obtain default ciphersuite list and filter out RC4, weak, and NULL */
@@ -3512,6 +3917,11 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
         if (-1 == nids) return 0;
     }
 
+    if (nids >= idsz) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "MTLS: error: too many ciphersuites during list expand");
+        return 0;
+    }
     ids[++nids] = 0; /* terminate list */
     ++nids;
 
@@ -3529,6 +3939,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
 }
 
 
+#if MBEDTLS_VERSION_NUMBER < 0x03010000 /* mbedtls 3.01.0 */
 static int
 mod_mbedtls_ssl_append_curve (server *srv, mbedtls_ecp_group_id *ids, int nids, int idsz, const mbedtls_ecp_group_id id)
 {
@@ -3537,9 +3948,7 @@ mod_mbedtls_ssl_append_curve (server *srv, mbedtls_ecp_group_id *ids, int nids, 
           "MTLS: error: too many curves during list expand");
         return -1;
     }
-
     ids[++nids] = id;
-
     return nids;
 }
 
@@ -3553,7 +3962,9 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     const mbedtls_ecp_curve_info * const curve_info = mbedtls_ecp_curve_list();
 
     const buffer * const b = curvelist;
-    for (const char *n, *e = b->ptr-1; e && (e = strchr((n = e+1),':')); ) {
+    for (const char *e = b->ptr-1; e; ) {
+        const char * const n = e+1;
+        e = strchr(n, ':');
         size_t len = e ? (size_t)(e - n) : strlen(n);
         /* similar to mbedtls_ecp_curve_info_from_name() */
         const mbedtls_ecp_curve_info *info;
@@ -3586,6 +3997,65 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     mbedtls_ssl_conf_curves(s->ssl_ctx, s->curves);
     return 1;
 }
+#else
+static int
+mod_mbedtls_ssl_append_curve (server *srv, uint16_t *ids, int nids, int idsz, const uint16_t id)
+{
+    if (1 >= idsz - (nids + 1)) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "MTLS: error: too many curves during list expand");
+        return -1;
+    }
+    ids[++nids] = id;
+    return nids;
+}
+
+
+static int
+mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *curvelist)
+{
+    uint16_t ids[512];
+    int nids = -1;
+    const int idsz = (int)(sizeof(ids)/sizeof(*ids)-1);
+    const mbedtls_ecp_curve_info * const curve_info = mbedtls_ecp_curve_list();
+
+    const buffer * const b = curvelist;
+    for (const char *e = b->ptr-1; e; ) {
+        const char * const n = e+1;
+        e = strchr(n, ':');
+        size_t len = e ? (size_t)(e - n) : strlen(n);
+        /* similar to mbedtls_ecp_curve_info_from_name() */
+        const mbedtls_ecp_curve_info *info;
+        for (info = curve_info; info->tls_id != 0; ++info) {
+            if (0 == strncmp(info->name, n, len) && info->name[len] == '\0')
+                break;
+        }
+        if (info->tls_id == 0) {
+            log_error(srv->errh, __FILE__, __LINE__,
+                      "MTLS: unrecognized curve: %.*s; ignored", (int)len, n);
+            continue;
+        }
+
+        nids = mod_mbedtls_ssl_append_curve(srv, ids, nids, idsz, info->tls_id);
+        if (-1 == nids) return 0;
+    }
+
+    /* XXX: mod_openssl configures "prime256v1" if curve list not specified,
+     * but mbedtls provides a list of supported curves if not explicitly set */
+    if (-1 == nids) return 1; /* empty list; no-op */
+
+    ids[++nids] = 0; /* terminate list */
+    ++nids;
+
+    /* curves list must be persistent for lifetime of mbedtls_ssl_config */
+    s->curves = malloc(nids * sizeof(uint16_t));
+    force_assert(s->curves);
+    memcpy(s->curves, ids, nids * sizeof(uint16_t));
+
+    mbedtls_ssl_conf_groups(s->ssl_ctx, s->curves);
+    return 1;
+}
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03010000 */ /* mbedtls 3.01.0 */
 
 
 static void
@@ -3596,7 +4066,7 @@ mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *
       #ifdef MBEDTLS_SSL_MINOR_VERSION_4
         v = max ? MBEDTLS_SSL_MINOR_VERSION_4 : MBEDTLS_SSL_MINOR_VERSION_3;
       #else
-        v = max ? MBEDTLS_SSL_MINOR_VERSION_3 : MBEDTLS_SSL_MINOR_VERSION_3;
+        v = MBEDTLS_SSL_MINOR_VERSION_3;
       #endif
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("None"))) /*"disable" limit*/
         v = max
@@ -3606,28 +4076,53 @@ mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *
            #else
             MBEDTLS_SSL_MINOR_VERSION_3  /* TLS v1.2 */
            #endif
-          : s->ssl_use_sslv3
-              ? MBEDTLS_SSL_MINOR_VERSION_0  /* SSL v3.0 */
-              : MBEDTLS_SSL_MINOR_VERSION_1; /* TLS v1.0 */
+          :
+           #if defined(MBEDTLS_SSL_MINOR_VERSION_0) \
+            || defined(MBEDTLS_SSL_MINOR_VERSION_1)
+            s->ssl_use_sslv3
+              ?
+               #ifdef MBEDTLS_SSL_MINOR_VERSION_0
+                MBEDTLS_SSL_MINOR_VERSION_0  /* SSL v3.0 */
+               #else
+                MBEDTLS_SSL_MINOR_VERSION_1  /* TLS v1.0 */
+               #endif
+              : MBEDTLS_SSL_MINOR_VERSION_1  /* TLS v1.0 */
+           #elif defined(MBEDTLS_SSL_MINOR_VERSION_2)
+            MBEDTLS_SSL_MINOR_VERSION_2      /* TLS v1.1 */
+           #else
+            MBEDTLS_SSL_MINOR_VERSION_3      /* TLS v1.2 */
+           #endif
+            ;
+  #ifdef MBEDTLS_SSL_MINOR_VERSION_0
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("SSLv3")))
         v = MBEDTLS_SSL_MINOR_VERSION_0; /* SSL v3.0 */
+  #endif
+  #ifdef MBEDTLS_SSL_MINOR_VERSION_1
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.0")))
         v = MBEDTLS_SSL_MINOR_VERSION_1; /* TLS v1.0 */
+  #endif
+  #ifdef MBEDTLS_SSL_MINOR_VERSION_2
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.1")))
         v = MBEDTLS_SSL_MINOR_VERSION_2; /* TLS v1.1 */
+  #endif
+  #ifdef MBEDTLS_SSL_MINOR_VERSION_3
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.2")))
         v = MBEDTLS_SSL_MINOR_VERSION_3; /* TLS v1.2 */
+  #endif
   #ifdef MBEDTLS_SSL_MINOR_VERSION_4
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.3")))
         v = MBEDTLS_SSL_MINOR_VERSION_4; /* TLS v1.3 */
   #endif
     else {
+      #ifndef MBEDTLS_SSL_MINOR_VERSION_4
         if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.3")))
             log_error(srv->errh, __FILE__, __LINE__,
                       "MTLS: ssl.openssl.ssl-conf-cmd %s TLSv1.3 not supported "
                       "by mod_mbedtls; using TLSv1.2",
                       max ? "MaxProtocol" : "MinProtocol");
-        else if (buffer_eq_icase_slen(b, CONST_STR_LEN("DTLSv1"))
+        else
+      #endif
+        if (buffer_eq_icase_slen(b, CONST_STR_LEN("DTLSv1"))
                  || buffer_eq_icase_slen(b, CONST_STR_LEN("DTLSv1.2"))) {
             log_error(srv->errh, __FILE__, __LINE__,
                       "MTLS: ssl.openssl.ssl-conf-cmd %s %s ignored",
@@ -3646,3 +4141,269 @@ mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *
       ? mbedtls_ssl_conf_max_version(s->ssl_ctx,MBEDTLS_SSL_MAJOR_VERSION_3,v)
       : mbedtls_ssl_conf_min_version(s->ssl_ctx,MBEDTLS_SSL_MAJOR_VERSION_3,v);
 }
+
+#if MBEDTLS_VERSION_NUMBER < 0x03000000 /* mbedtls 3.00.0 */
+#ifdef MBEDTLS_SSL_SERVER_NAME_INDICATION
+#ifdef MBEDTLS_SSL_ALPN
+/*
+ * XXX: forked from mbedtls
+ *
+ * ssl_parse_client_hello() is forked and modified from mbedtls
+ *   library/ssl_srv.c:ssl_parse_client_hello()
+ * due to limitations in mbedtls hooks.  Other than fetching input, ssl is not
+ * modified here so that it can be reprocessed during handshake.
+ *
+ * It would be beneficial to have a callback after parsing client hello and all
+ * extensions, and before certificate selection.  (SNI extension might occur
+ * prior to ALPN extension, and a different certificate may be needed by
+ * ALPN "acme-tls/1".)  Alternatively, mbedtls could provide an API to clear
+ * &ssl->handshake->sni_key_cert, rather than forcing ssl_append_key_cert() with
+ * no other option.
+ */
+static int ssl_parse_client_hello( mbedtls_ssl_context *ssl, handler_ctx *hctx )
+{
+    int ret;
+    size_t msg_len;
+    unsigned char *buf;
+
+    /*
+     * If renegotiating, then the input was read with mbedtls_ssl_read_record(),
+     * otherwise read it ourselves manually in order to support SSLv2
+     * ClientHello, which doesn't use the same record layer format.
+     */
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+    if( ssl->renego_status == MBEDTLS_SSL_INITIAL_HANDSHAKE )
+#endif
+    {
+        if( ( ret = mbedtls_ssl_fetch_input( ssl, 5 ) ) != 0 )
+        {
+            /* No alert on a read error. */
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_fetch_input", ret );
+            return( ret );
+        }
+    }
+
+    buf = ssl->in_hdr;
+
+    /*
+     * TLS Client Hello
+     *
+     * Record layer:
+     *     0  .   0   message type
+     *     1  .   2   protocol version
+     *     3  .   11  DTLS: epoch + record sequence number
+     *     3  .   4   message length
+     */
+    if( buf[0] != MBEDTLS_SSL_MSG_HANDSHAKE )
+    {
+        return( MBEDTLS_ERR_SSL_UNEXPECTED_MESSAGE );
+    }
+
+#if defined(MBEDTLS_SSL_PROTO_DTLS)
+    /*(not supported in lighttpd for now)*/
+    /*(mbedtls_ssl_in_hdr_len() and mbedtls_ssl_hs_hdr_len() are in
+     * mbedtls/ssl_internal.h but simple enough to repeat here) */
+    if( ssl->conf->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM )
+        return( MBEDTLS_ERR_SSL_UNEXPECTED_MESSAGE );
+#endif /* MBEDTLS_SSL_PROTO_DTLS */
+
+    msg_len = ( ssl->in_len[0] << 8 ) | ssl->in_len[1];
+
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+    if( ssl->renego_status != MBEDTLS_SSL_INITIAL_HANDSHAKE )
+    {
+        /* Set by mbedtls_ssl_read_record() */
+        msg_len = ssl->in_hslen;
+    }
+    else
+#endif
+    {
+        if( msg_len > MBEDTLS_SSL_IN_CONTENT_LEN )
+        {
+            return( MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER );
+        }
+
+        if( ( ret = mbedtls_ssl_fetch_input( ssl,
+                       5 /*mbedtls_ssl_in_hdr_len( ssl )*/ + msg_len ) ) != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_fetch_input", ret );
+            return( ret );
+        }
+    }
+
+    buf = ssl->in_msg;
+
+    /*
+     * Handshake layer:
+     *     0  .   0   handshake type
+     *     1  .   3   handshake length
+     *     4  .   5   DTLS only: message seqence number
+     *     6  .   8   DTLS only: fragment offset
+     *     9  .  11   DTLS only: fragment length
+     */
+    if( msg_len < 4 /*mbedtls_ssl_hs_hdr_len( ssl )*/ )
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    if( buf[0] != MBEDTLS_SSL_HS_CLIENT_HELLO )
+    {
+        return( MBEDTLS_ERR_SSL_UNEXPECTED_MESSAGE );
+    }
+
+    /* We don't support fragmentation of ClientHello (yet?) */
+    if( buf[1] != 0 ||
+        msg_len != 4u /*mbedtls_ssl_hs_hdr_len( ssl )*/ + ( ( buf[2] << 8 ) | buf[3] ) )
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    buf += 4; /* mbedtls_ssl_hs_hdr_len( ssl ); */
+    msg_len -= 4; /* mbedtls_ssl_hs_hdr_len( ssl ); */
+
+    /*
+     * ClientHello layer:
+     *     0  .   1   protocol version
+     *     2  .  33   random bytes (starting with 4 bytes of Unix time)
+     *    34  .  35   session id length (1 byte)
+     *    35  . 34+x  session id
+     *   35+x . 35+x  DTLS only: cookie length (1 byte)
+     *   36+x .  ..   DTLS only: cookie
+     *    ..  .  ..   ciphersuite list length (2 bytes)
+     *    ..  .  ..   ciphersuite list
+     *    ..  .  ..   compression alg. list length (1 byte)
+     *    ..  .  ..   compression alg. list
+     *    ..  .  ..   extensions length (2 bytes, optional)
+     *    ..  .  ..   extensions (optional)
+     */
+
+    /*
+     * Minimal length (with everything empty and extensions omitted) is
+     * 2 + 32 + 1 + 2 + 1 = 38 bytes. Check that first, so that we can
+     * read at least up to session id length without worrying.
+     */
+    if( msg_len < 38 )
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    /*
+     * Check and save the protocol version
+     */
+    int major_ver, minor_ver;
+    mbedtls_ssl_read_version( &major_ver, &minor_ver,
+                      ssl->conf->transport, buf );
+
+    /*
+     * Check the session ID length and save session ID
+     */
+    const size_t sess_len = buf[34];
+
+    if( sess_len > sizeof( ssl->session_negotiate->id ) ||
+        sess_len + 34 + 2 > msg_len ) /* 2 for cipherlist length field */
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    /*
+     * Check the cookie length and content
+     */
+    const size_t ciph_offset = 35 + sess_len;
+
+    const size_t ciph_len = ( buf[ciph_offset + 0] << 8 )
+                          | ( buf[ciph_offset + 1]      );
+
+    if( ciph_len < 2 ||
+        ciph_len + 2 + ciph_offset + 1 > msg_len || /* 1 for comp. alg. len */
+        ( ciph_len % 2 ) != 0 )
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    /*
+     * Check the compression algorithms length and pick one
+     */
+    const size_t comp_offset = ciph_offset + 2 + ciph_len;
+
+    const size_t comp_len = buf[comp_offset];
+
+    if( comp_len < 1 ||
+        comp_len > 16 ||
+        comp_len + comp_offset + 1 > msg_len )
+    {
+        return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+    }
+
+    /* Do not parse the extensions if the protocol is SSLv3 */
+#if defined(MBEDTLS_SSL_PROTO_SSL3)
+    if( ( major_ver != 3 ) || ( minor_ver != 0 ) )
+    {
+#endif
+        /*
+         * Check the extension length
+         */
+        const size_t ext_offset = comp_offset + 1 + comp_len;
+        size_t ext_len;
+        if( msg_len > ext_offset )
+        {
+            if( msg_len < ext_offset + 2 )
+            {
+                return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+            }
+
+            ext_len = ( buf[ext_offset + 0] << 8 )
+                    | ( buf[ext_offset + 1]      );
+
+            if( msg_len != ext_offset + 2 + ext_len )
+            {
+                return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+            }
+        }
+        else
+            ext_len = 0;
+
+        unsigned char *ext = buf + ext_offset + 2;
+
+        while( ext_len != 0 )
+        {
+            unsigned int ext_id;
+            unsigned int ext_size;
+            if ( ext_len < 4 ) {
+                return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+            }
+            ext_id   = ( ( ext[0] <<  8 ) | ( ext[1] ) );
+            ext_size = ( ( ext[2] <<  8 ) | ( ext[3] ) );
+
+            if( ext_size + 4 > ext_len )
+            {
+                return( MBEDTLS_ERR_SSL_DECODE_ERROR );
+            }
+            switch( ext_id )
+            {
+#if defined(MBEDTLS_SSL_ALPN)
+            case MBEDTLS_TLS_EXT_ALPN:
+                MBEDTLS_SSL_DEBUG_MSG( 3, ( "found alpn extension" ) );
+
+                /*(lighttpd-specific)*/
+                ret = mod_mbedtls_alpn_select_cb(hctx, ext + 4, ext_size);
+                if( ret != 0 )
+                    return( ret );
+                break;
+#endif /* MBEDTLS_SSL_ALPN */
+
+            default:
+                break;
+            }
+
+            ext_len -= 4 + ext_size;
+            ext += 4 + ext_size;
+        }
+#if defined(MBEDTLS_SSL_PROTO_SSL3)
+    }
+#endif
+
+    return( 0 );
+}
+#endif /* MBEDTLS_SSL_ALPN */
+#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
+#endif /* MBEDTLS_VERSION_NUMBER < 0x03000000 */ /* mbedtls 3.00.0 */

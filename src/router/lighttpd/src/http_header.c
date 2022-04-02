@@ -10,9 +10,9 @@
 #include "sys-strings.h"
 
 #include "http_header.h"
-#include "base.h"
 #include "array.h"
 #include "buffer.h"
+#include "request.h"
 
 
 typedef struct keyvlenvalue {
@@ -94,25 +94,41 @@ static const keyvlenvalue http_headers[] = {
  ,{ HTTP_HEADER_OTHER, 0, "" }
 };
 
-enum http_header_e http_header_hkey_get(const char * const s, const uint32_t slen) {
-    const struct keyvlenvalue * const kv = http_headers;
-    int i = slen < sizeof(http_headers_off) ? http_headers_off[slen] : -1;
-    if (i < 0) return HTTP_HEADER_OTHER;
-    do {
-        if (buffer_eq_icase_ssn(s, kv[i].value, slen))
-            return (enum http_header_e)kv[i].key;
-    } while (slen == kv[++i].vlen);
+enum http_header_e http_header_hkey_get(const char * const s, const size_t slen) {
+    if (__builtin_expect( (slen < sizeof(http_headers_off)), 1)) {
+        const int i = http_headers_off[slen];
+        /*(lowercase first char as all recognized headers start w/ alpha char)*/
+        const int c = s[0] | 0x20;
+        const struct keyvlenvalue * restrict kv = http_headers + i;
+        if (__builtin_expect( (i != -1), 1)) {
+            do {
+                if (__builtin_expect( (c != kv->value[0]), 1))
+                    continue;
+                if (buffer_eq_icase_ssn(s+1, kv->value+1, slen-1))
+                    return (enum http_header_e)kv->key;
+            } while (slen == (++kv)->vlen);
+        }
+    }
     return HTTP_HEADER_OTHER;
 }
 
-enum http_header_e http_header_hkey_get_lc(const char * const s, const uint32_t slen) {
-    const struct keyvlenvalue * const kv = http_headers;
-    int i = slen < sizeof(http_headers_off) ? http_headers_off[slen] : -1;
-    if (i < 0) return HTTP_HEADER_OTHER;
-    do {
-        if (0 == memcmp(s, kv[i].value, slen))
-            return (enum http_header_e)kv[i].key;
-    } while (slen == kv[++i].vlen);
+enum http_header_e http_header_hkey_get_lc(const char * const s, const size_t slen) {
+    /* XXX: might not provide much real performance over http_header_hkey_get()
+     *      (since the first-char comparision optimization was added)
+     *      (and since well-known h2 headers are already mapped to hkey) */
+    if (__builtin_expect( (slen < sizeof(http_headers_off)), 1)) {
+        const int i = http_headers_off[slen];
+        const int c = s[0];
+        const struct keyvlenvalue * restrict kv = http_headers + i;
+        if (__builtin_expect( (i != -1), 1)) {
+            do {
+                if (__builtin_expect( (c != kv->value[0]), 1))
+                    continue;
+                if (0 == memcmp(s+1, kv->value+1, slen-1))
+                    return (enum http_header_e)kv->key;
+            } while (slen == (++kv)->vlen);
+        }
+    }
     return HTTP_HEADER_OTHER;
 }
 
@@ -165,7 +181,7 @@ int http_header_remove_token (buffer * const b, const char * const m, const uint
                 }
                 else {
                     for (s -= mlen; *s != ',' && s != b->ptr; --s) ;
-                    buffer_string_set_length(b, (size_t)(s - b->ptr));
+                    buffer_truncate(b, (size_t)(s - b->ptr));
                     break;
                 }
             }
@@ -177,7 +193,7 @@ int http_header_remove_token (buffer * const b, const char * const m, const uint
 
 
 static inline void http_header_token_append(buffer * const vb, const char * const v, const uint32_t vlen) {
-    if (!buffer_string_is_empty(vb))
+    if (!buffer_is_blank(vb))
         buffer_append_string_len(vb, CONST_STR_LEN(", "));
     buffer_append_string_len(vb, v, vlen);
 }
@@ -186,7 +202,7 @@ __attribute_cold__
 static inline void http_header_token_append_cookie(buffer * const vb, const char * const v, const uint32_t vlen) {
     /* Cookie request header must be special-cased to use ';' separator
      * instead of ',' to combine multiple headers (if present) */
-    if (!buffer_string_is_empty(vb))
+    if (!buffer_is_blank(vb))
         buffer_append_string_len(vb, CONST_STR_LEN("; "));
     buffer_append_string_len(vb, v, vlen);
 }
@@ -195,7 +211,7 @@ __attribute_pure__
 static inline buffer * http_header_generic_get_ifnotempty(const array * const a, const enum http_header_e id, const char * const k, const uint32_t klen) {
     data_string * const ds =
       (data_string *)array_get_element_klen_ext(a, id, k, klen);
-    return ds && !buffer_string_is_empty(&ds->value) ? &ds->value : NULL;
+    return ds && !buffer_is_blank(&ds->value) ? &ds->value : NULL;
 }
 
 static inline void http_header_set_key_value(array * const a, enum http_header_e id, const char * const k, const size_t klen, const char * const v, const size_t vlen) {
@@ -207,6 +223,15 @@ buffer * http_header_response_get(const request_st * const r, enum http_header_e
     return light_btst(r->resp_htags, id)
       ? http_header_generic_get_ifnotempty(&r->resp_headers, id, k, klen)
       : NULL;
+}
+
+buffer * http_header_response_set_ptr(request_st * const r, enum http_header_e id, const char *k, uint32_t klen) {
+    /* note: caller must not leave buffer empty
+     * or must call http_header_response_unset() */
+    light_bset(r->resp_htags, id);
+    buffer * const vb = array_get_buf_ptr_ext(&r->resp_headers, id, k, klen);
+    buffer_clear(vb);
+    return vb;
 }
 
 void http_header_response_unset(request_st * const r, enum http_header_e id, const char *k, uint32_t klen) {
@@ -240,24 +265,22 @@ void http_header_response_append(request_st * const r, enum http_header_e id, co
 __attribute_cold__
 static void http_header_response_insert_addtl(request_st * const r, enum http_header_e id, const char *k, uint32_t klen, buffer * const vb, uint32_t vlen) {
     UNUSED(id);
-    buffer_append_string_len(vb, CONST_STR_LEN("\r\n"));
+    char *h = buffer_string_prepare_append(vb, 2 + klen + vlen + 2);
+    buffer_append_str3(vb, CONST_STR_LEN("\r\n"), k, klen, CONST_STR_LEN(": "));
     if (r->http_version >= HTTP_VERSION_2) {
         r->resp_header_repeated = 1;
-        char * const h = buffer_string_prepare_append(vb, klen + vlen + 2);
-        for (uint32_t i = 0; i < klen; ++i)
-            h[i] = !light_isupper(k[i]) ? k[i] : (k[i] | 0x20);
-        buffer_commit(vb, klen);
+        h += 2;
+        for (uint32_t i = 0; i < klen; ++i) {
+            if (light_isupper(h[i])) h[i] |= 0x20;
+        }
     }
-    else
-        buffer_append_string_len(vb, k, klen);
-    buffer_append_string_len(vb, CONST_STR_LEN(": "));
 }
 
 void http_header_response_insert(request_st * const r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen) {
     if (0 == vlen) return;
     light_bset(r->resp_htags, id);
     buffer * const vb = array_get_buf_ptr_ext(&r->resp_headers, id, k, klen);
-    if (!buffer_string_is_empty(vb)) /*append repeated field-name on new line*/
+    if (!buffer_is_blank(vb)) /*append repeated field-name on new line*/
         http_header_response_insert_addtl(r, id, k, klen, vb, vlen);
     buffer_append_string_len(vb, v, vlen);
 }
@@ -267,6 +290,15 @@ buffer * http_header_request_get(const request_st * const r, enum http_header_e 
     return light_btst(r->rqst_htags, id)
       ? http_header_generic_get_ifnotempty(&r->rqst_headers, id, k, klen)
       : NULL;
+}
+
+buffer * http_header_request_set_ptr(request_st * const r, enum http_header_e id, const char *k, uint32_t klen) {
+    /* note: caller must not leave buffer empty
+     * or must call http_header_request_unset() */
+    light_bset(r->rqst_htags, id);
+    buffer * const vb = array_get_buf_ptr_ext(&r->rqst_headers, id, k, klen);
+    buffer_clear(vb);
+    return vb;
 }
 
 void http_header_request_unset(request_st * const r, enum http_header_e id, const char *k, uint32_t klen) {
@@ -305,7 +337,13 @@ buffer * http_header_env_get(const request_st * const r, const char *k, uint32_t
     /* similar to http_header_generic_get_ifnotempty() but without id */
     data_string * const ds =
       (data_string *)array_get_element_klen(&r->env, k, klen);
-    return ds && !buffer_string_is_empty(&ds->value) ? &ds->value : NULL;
+    return ds && !buffer_is_blank(&ds->value) ? &ds->value : NULL;
+}
+
+buffer * http_header_env_set_ptr(request_st *r, const char *k, uint32_t klen) {
+    buffer * const vb = array_get_buf_ptr(&r->env, k, klen);
+    buffer_clear(vb);
+    return vb;
 }
 
 void http_header_env_set(request_st * const r, const char *k, uint32_t klen, const char *v, uint32_t vlen) {

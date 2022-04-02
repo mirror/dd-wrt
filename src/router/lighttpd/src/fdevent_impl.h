@@ -16,6 +16,7 @@ struct epoll_event;     /* declaration */
 struct pollfd;          /* declaration */
 #endif
 
+#ifndef FDEVENT_USE_POLL
 #if defined HAVE_SELECT
 # ifdef __WIN32
 #  include <winsock2.h>
@@ -24,6 +25,7 @@ struct pollfd;          /* declaration */
 # ifdef HAVE_SYS_SELECT_H
 #  include <sys/select.h>
 # endif
+#endif
 #endif
 
 #if defined HAVE_SYS_DEVPOLL_H && defined(__sun)
@@ -129,20 +131,5 @@ struct fdevents {
     const char *event_handler;
     fdevent_handler_t type;
 };
-
-__attribute_cold__
-int fdevent_select_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_poll_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_linux_sysepoll_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_solaris_devpoll_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_solaris_port_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_freebsd_kqueue_init(struct fdevents *ev);
-__attribute_cold__
-int fdevent_libev_init(struct fdevents *ev);
 
 #endif

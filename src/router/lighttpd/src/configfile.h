@@ -13,7 +13,9 @@
  * for compare: comp          cond  string/regex
  */
 
-#ifdef HAVE_PCRE_H
+#ifdef HAVE_PCRE2_H
+struct pcre2_real_match_data_8; /* declaration */
+#elif defined(HAVE_PCRE_H)
 struct pcre_extra;      /* declaration */
 #endif
 
@@ -33,24 +35,29 @@ struct data_config {
 	data_config *next;
 
 	buffer string;
-#ifdef HAVE_PCRE_H
+  #ifdef HAVE_PCRE2_H
+	void *code;
+	struct pcre2_real_match_data_8 *match_data;
+  #elif defined(HAVE_PCRE_H)
 	void *regex;
 	struct pcre_extra *regex_study;
-#endif
+	int ovec_nelts;
+  #endif
+	int capture_idx;
 	int ext;
-	buffer *comp_tag;
-	buffer *comp_key;
-	const char *op;
+	buffer comp_tag;
+	const char *comp_key;
 
 	vector_config_weak children;
 	array *value;
 };
 
 __attribute_cold__
+__attribute_returns_nonnull__
 data_config *data_config_init(void);
 
 __attribute_cold__
-int data_config_pcre_compile(data_config *dc);
+int data_config_pcre_compile(data_config *dc, int pcre_jit, log_error_st *errh);
 /*struct cond_cache_t;*/    /* declaration */ /*(moved to plugin_config.h)*/
 /*int data_config_pcre_exec(const data_config *dc, struct cond_cache_t *cache, buffer *b);*/
 
@@ -77,5 +84,8 @@ int config_parse_file(server *srv, config_t *context, const char *fn);
 
 __attribute_cold__
 int config_parse_cmd(server *srv, config_t *context, const char *cmd);
+
+__attribute_cold__
+int config_remoteip_normalize(buffer *b, buffer *tb);
 
 #endif

@@ -1,8 +1,8 @@
 #include "first.h"
 
-#include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "request.h"
 #include "stat_cache.h"
 
 #include "plugin.h"
@@ -22,7 +22,6 @@ typedef struct {
     plugin_config defaults;
     plugin_config conf;
 
-    buffer tmp_buf;
     buffer last_root;
 } plugin_data;
 
@@ -32,7 +31,6 @@ INIT_FUNC(mod_simple_vhost_init) {
 
 FREE_FUNC(mod_simple_vhost_free) {
     plugin_data *p = p_d;
-    free(p->tmp_buf.ptr);
     free(p->last_root.ptr);
 }
 
@@ -102,13 +100,17 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
             switch (cpv->k_id) {
               case 0: /* simple-vhost.server-root */
               case 2: /* simple-vhost.document-root */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
                     buffer_append_slash(b);
                 }
+                else
+                    cpv->v.b = NULL;
                 break;
               case 1: /* simple-vhost.default-host */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
               case 3: /* simple-vhost.debug */
                 break;
               default:/* should not happen */
@@ -128,10 +130,9 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 }
 
 static void build_doc_root_path(buffer *out, const buffer *sroot, const buffer *host, const buffer *droot) {
-	force_assert(!buffer_string_is_empty(sroot));
 	buffer_copy_buffer(out, sroot);
 
-	if (!buffer_string_is_empty(host)) {
+	if (host) {
 		/* a hostname has to start with a alpha-numerical character
 		 * and must not contain a slash "/"
 		 */
@@ -143,8 +144,8 @@ static void build_doc_root_path(buffer *out, const buffer *sroot, const buffer *
 		}
 	}
 
-	if (!buffer_string_is_empty(droot)) {
-		buffer_append_path_len(out, CONST_BUF_LEN(droot));
+	if (droot) {
+		buffer_append_path_len(out, BUF_PTR_LEN(droot));
 	}
 	else {
 		buffer_append_slash(out);
@@ -172,7 +173,7 @@ static int build_doc_root(request_st * const r, plugin_data *p, buffer *out, con
 static handler_t mod_simple_vhost_docroot(request_st * const r, void *p_data) {
     plugin_data * const p = p_data;
     mod_simple_vhost_patch_config(r, p);
-    if (buffer_string_is_empty(p->conf.server_root)) return HANDLER_GO_ON;
+    if (!p->conf.server_root) return HANDLER_GO_ON;
     /* build_doc_root() requires p->conf.server_root;
      * skip module if simple-vhost.server-root not set or set to empty string */
 
@@ -180,12 +181,14 @@ static handler_t mod_simple_vhost_docroot(request_st * const r, void *p_data) {
      *  are the two differences between mod_simple_vhost and mod_vhostdb) */
 
     /* build document-root */
-    buffer * const b = &p->tmp_buf;
+    buffer * const b = r->tmp_buf;/*(tmp_buf cleared before use in call below)*/
     const buffer *host = &r->uri.authority;
-    if ((!buffer_string_is_empty(host) && build_doc_root(r, p, b, host))
+    if ((!buffer_is_blank(host) && build_doc_root(r, p, b, host))
         || build_doc_root(r, p, b, (host = p->conf.default_host))) {
-        r->server_name = &r->server_name_buf;
-        buffer_copy_buffer(&r->server_name_buf, host);
+        if (host) {
+            r->server_name = &r->server_name_buf;
+            buffer_copy_buffer(&r->server_name_buf, host);
+        }
         buffer_copy_buffer(&r->physical.doc_root, b);
     }
 

@@ -2,7 +2,7 @@
 #define _REQUEST_H_
 #include "first.h"
 
-#include <time.h>       /* (struct timespec) */
+#include "sys-time.h"   /* (struct timespec) */
 
 #include "base_decls.h"
 #include "buffer.h"
@@ -10,12 +10,12 @@
 #include "chunk.h"
 #include "http_kv.h"
 
-struct log_error_st;    /* declaration */
 struct chunkqueue;      /* declaration */
 struct cond_cache_t;    /* declaration */
 struct cond_match_t;    /* declaration */
+struct stat_cache_entry;/* declaration */
 
-typedef struct {
+typedef struct request_config {
     unsigned int http_parseopts;
     uint32_t max_request_field_size;
     const array *mimetypes;
@@ -24,7 +24,7 @@ typedef struct {
     const buffer *document_root;
     const buffer *server_name;
     const buffer *server_tag;
-    struct log_error_st *errh;
+    fdlog_st *errh;
 
     unsigned int max_request_size;
     unsigned short max_keep_alive_requests;
@@ -74,7 +74,7 @@ typedef struct {
     const buffer *error_handler;
     const buffer *error_handler_404;
     const buffer *errorfile_prefix;
-    struct log_error_st *serrh; /* script errh */
+    fdlog_st *serrh; /* script errh */
 } request_config;
 
 typedef struct {
@@ -94,8 +94,6 @@ typedef struct {
 
     buffer doc_root; /* path = doc_root + rel_path */
     buffer rel_path;
-
-    buffer etag;
 } physical;
 
 typedef struct {
@@ -138,7 +136,8 @@ struct request_st {
     /* config conditions (internal) */
     uint32_t conditional_is_valid;
     struct cond_cache_t *cond_cache;
-    struct cond_match_t *cond_match;
+    struct cond_match_t **cond_match;
+    struct cond_match_t *cond_match_data;
 
     request_config conf;
 
@@ -175,7 +174,7 @@ struct request_st {
     char resp_header_repeated;
 
     char loops_per_request;  /* catch endless loops in a single request */
-    char keep_alive; /* only request.c can enable it, all other just disable */
+    int8_t keep_alive; /* only request.c can enable it, all other just disable */
     char async_callback;
 
     buffer *tmp_buf;                    /* shared; same as srv->tmp_buf */
@@ -183,7 +182,7 @@ struct request_st {
 
     off_t bytes_written_ckpt; /* used by mod_accesslog */
     off_t bytes_read_ckpt;    /* used by mod_accesslog */
-    struct timespec start_hp;
+    unix_timespec64_t start_hp;
 
     int error_handler_saved_status; /* error-handler */
     http_method_t error_handler_saved_method; /* error-handler */
@@ -191,6 +190,9 @@ struct request_st {
     struct chunkqueue write_queue;     /* HTTP response queue [ file, mem ] */
     struct chunkqueue read_queue;      /* HTTP request queue  [ mem ] */
     struct chunkqueue reqbody_queue; /*(might use tempfiles)*/
+
+    struct stat_cache_entry *tmp_sce; /*(value valid only in sequential code)*/
+    int cond_captures;
 };
 
 
@@ -203,7 +205,7 @@ typedef struct http_header_parse_ctx {
     uint8_t pseudo;
     uint8_t scheme;
     uint8_t trailers;
-    uint8_t id;
+    int8_t id;
     uint32_t max_request_field_size;
     unsigned int http_parseopts;
 } http_header_parse_ctx;

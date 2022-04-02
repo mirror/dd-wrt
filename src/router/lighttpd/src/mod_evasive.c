@@ -14,13 +14,24 @@
 /**
  * mod_evasive
  *
- * we indent to implement all features the mod_evasive from apache has
+ * A combination of lighttpd modules provides similar features
+ * to those in (old) Apache mod_evasive
  *
  * - limit of connections per IP
+ *     ==> mod_evasive
  * - provide a list of block-listed ip/networks (no access)
+ *     ==> block at firewall
+ *     ==> block using lighttpd.conf conditionals and mod_access
+ *     ==> block using mod_magnet and an external (updatable) constant database
+ *         https://wiki.lighttpd.net/AbsoLUAtion#Fight-DDoS
  * - provide a white-list of ips/network which is not affected by the limit
- *   (hmm, conditionals might be enough)
+ *     ==> allow using lighttpd.conf conditionals
+ *         and configure evasive.max-conns-per-ip = 0 for whitelist
  * - provide a bandwidth limiter per IP
+ *     ==> set using lighttpd.conf conditionals
+ *         and configure connection.kbytes-per-second
+ * - enforce additional policy using mod_magnet and libmodsecurity
+ *     ==> https://wiki.lighttpd.net/AbsoLUAtion#Mod_Security
  *
  * started by:
  * - w1zzard@techpowerup.com
@@ -93,6 +104,25 @@ SETDEFAULTS_FUNC(mod_evasive_set_defaults) {
     if (!config_plugin_values_init(srv, p, cpk, "mod_evasive"))
         return HANDLER_ERROR;
 
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* evasive.max-conns-per-ip */
+              case 1: /* evasive.silent */
+                break;
+              case 2: /* evasive.location */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
+    }
+
     /* initialize p->defaults from global config context */
     if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
         const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
@@ -103,36 +133,21 @@ SETDEFAULTS_FUNC(mod_evasive_set_defaults) {
     return HANDLER_GO_ON;
 }
 
-URIHANDLER_FUNC(mod_evasive_uri_handler) {
-	plugin_data *p = p_d;
-
-	mod_evasive_patch_config(r, p);
-
-	/* no limit set, nothing to block */
-	if (p->conf.max_conns == 0) return HANDLER_GO_ON;
-
-	sock_addr * const dst_addr = &r->con->dst_addr;
-	const connections * const conns = &r->con->srv->conns;
-	for (uint32_t i = 0, conns_by_ip = 0; i < conns->used; ++i) {
-		connection *c = conns->ptr[i];
-
-		/* check if other connections are already actively serving data for the same IP
-		 * we can only ban connections which are already behind the 'read request' state
-		 * */
-		if (c->request.state <= CON_STATE_REQUEST_END) continue;
-
-		if (!sock_addr_is_addr_eq(&c->dst_addr, dst_addr)) continue;
-		conns_by_ip++;
-
-		if (conns_by_ip > p->conf.max_conns) {
+__attribute_cold__
+__attribute_noinline__
+static handler_t
+mod_evasive_reached_per_ip_limit (request_st * const r, const plugin_data * const p)
+{
 			if (!p->conf.silent) {
 				log_error(r->conf.errh, __FILE__, __LINE__,
 				  "%s turned away. Too many connections.",
-				  r->con->dst_addr_buf->ptr);
+				  r->con->dst_addr_buf.ptr);
 			}
 
-			if (!buffer_is_empty(p->conf.location)) {
-				http_header_response_set(r, HTTP_HEADER_LOCATION, CONST_STR_LEN("Location"), CONST_BUF_LEN(p->conf.location));
+			if (p->conf.location) {
+				http_header_response_set(r, HTTP_HEADER_LOCATION,
+				                         CONST_STR_LEN("Location"),
+				                         BUF_PTR_LEN(p->conf.location));
 				r->http_status = 302;
 				r->resp_body_finished = 1;
 			} else {
@@ -140,10 +155,29 @@ URIHANDLER_FUNC(mod_evasive_uri_handler) {
 			}
 			r->handler_module = NULL;
 			return HANDLER_FINISHED;
-		}
-	}
+}
 
-	return HANDLER_GO_ON;
+static handler_t
+mod_evasive_check_per_ip_limit (request_st * const r, const plugin_data * const p, const connection *c)
+{
+    const sock_addr * const dst_addr = &r->con->dst_addr;
+    for (uint_fast32_t conns_by_ip = 0; c; c = c->next) {
+        /* count connections already actively serving data for the same IP
+         * (only count connections already behind the 'read request' state) */
+        if (c->request.state > CON_STATE_REQUEST_END
+            && sock_addr_is_addr_eq(&c->dst_addr, dst_addr)
+            && ++conns_by_ip > p->conf.max_conns)
+            return mod_evasive_reached_per_ip_limit(r, p);/* HANDLER_FINISHED */
+    }
+    return HANDLER_GO_ON;
+}
+
+URIHANDLER_FUNC(mod_evasive_uri_handler) {
+    plugin_data * const p = p_d;
+    mod_evasive_patch_config(r, p);
+    return (p->conf.max_conns == 0) /* no limit set, nothing to block */
+      ? HANDLER_GO_ON
+      : mod_evasive_check_per_ip_limit(r, p, r->con->srv->conns);
 }
 
 

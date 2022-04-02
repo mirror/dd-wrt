@@ -9,8 +9,7 @@ struct data_unset; /* declaration */
 struct data_methods {
 	struct data_unset *(*copy)(const struct data_unset *src); \
 	void (*free)(struct data_unset *p); \
-	int (*insert_dup)(struct data_unset *dst, struct data_unset *src); \
-	void (*print)(const struct data_unset *p, int depth);
+	void (*insert_dup)(struct data_unset *dst, struct data_unset *src);
 };
 
 typedef enum { TYPE_STRING, TYPE_ARRAY, TYPE_INTEGER, TYPE_CONFIG, TYPE_OTHER } data_type_t;
@@ -37,7 +36,8 @@ typedef struct {
 	buffer value;
 } data_string;
 
-data_string *data_string_init(void);
+__attribute_returns_nonnull__
+data_string *array_data_string_init(void);
 
 typedef struct {
 	DATA_UNSET;
@@ -45,7 +45,8 @@ typedef struct {
 	array value;
 } data_array;
 
-data_array *data_array_init(void);
+__attribute_returns_nonnull__
+data_array *array_data_array_init(void);
 
 typedef struct {
 	DATA_UNSET;
@@ -53,7 +54,8 @@ typedef struct {
 	int value;
 } data_integer;
 
-data_integer *data_integer_init(void);
+__attribute_returns_nonnull__
+data_integer *array_data_integer_init(void);
 
 __attribute_returns_nonnull__
 array *array_init(uint32_t n);
@@ -95,7 +97,7 @@ __attribute_pure__
 data_unset *array_get_element_klen_ext(const array *a, int ext, const char *key, uint32_t klen);
 
 __attribute_pure__
-data_unset *array_get_element_klen(const array *a, const char *key, uint32_t klen);
+const data_unset *array_get_element_klen(const array *a, const char *key, uint32_t klen);
 
 __attribute_cold__
 __attribute_pure__
@@ -123,16 +125,6 @@ static inline void array_set_key_value(array * const a, const char * const k, co
 
 __attribute_cold__
 void array_replace(array *a, data_unset *entry);
-
-__attribute_cold__
-int array_print(const array *a, int depth);
-
-__attribute_cold__
-void array_print_indent(int depth);
-
-__attribute_cold__
-__attribute_pure__
-uint32_t array_get_max_key_length(const array *a);
 
 __attribute_pure__
 data_unset * array_match_key_prefix_klen (const array * const a, const char * const s, const uint32_t slen);

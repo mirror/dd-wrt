@@ -1,3 +1,14 @@
+/* fstatat() fdopendir() */
+#if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE-0 < 700
+#undef  _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+/* NetBSD dirent.h improperly hides fdopendir() (POSIX.1-2008) declaration
+ * which should be visible with _XOPEN_SOURCE 700 or _POSIX_C_SOURCE 200809L */
+#ifdef __NetBSD__
+#define _NETBSD_SOURCE
+#endif
+#endif
+
 #include "first.h"
 
 #include "sys-time.h"
@@ -6,7 +17,10 @@
 #include "log.h"
 #include "buffer.h"
 #include "fdevent.h"
+#include "http_chunk.h"
 #include "http_header.h"
+#include "keyvalue.h"
+#include "response.h"
 
 #include "plugin.h"
 
@@ -19,16 +33,48 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifdef HAVE_PCRE_H
-#include <pcre.h>
+#ifdef AT_FDCWD
+#ifndef _ATFILE_SOURCE
+#define _ATFILE_SOURCE
+#endif
+#endif
+
+#ifndef _D_EXACT_NAMLEN
+#ifdef _DIRENT_HAVE_D_NAMLEN
+#define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
+#else
+#define _D_EXACT_NAMLEN(d) (strlen ((d)->d_name))
+#endif
 #endif
 
 /**
  * this is a dirlisting for a lighttpd plugin
+ *
+ * Notes:
+ * - mod_dirlisting is a dir list implementation.  One size does not fit all.
+ *   mod_dirlisting aims to be somewhat flexible, but if special behavior
+ *   is needed, use custom CGI/FastCGI/SCGI to handle dir listing instead.
+ *   - backend daemon could implement custom caching
+ *   - backend daemon could monitor directory for changes (e.g. inotify)
+ *   - backend daemon or scripts could trigger when directory is modified
+ *     and could regenerate index.html (and mod_indexfile could be used
+ *     instead of mod_dirlisting)
+ * - basic alphabetical sorting (in C locale) is done on server side
+ *   in case client does not execute javascript
+ *   (otherwise, response could be streamed, which is not done)
+ *      (possible future dir-listing.* config option)
+ * - reading entire directory into memory for sorting large directory
+ *   can lead to large memory usage if many simultaneous requests occur
  */
+
+struct dirlist_cache {
+	int32_t max_age;
+	buffer *path;
+};
 
 typedef struct {
 	char dir_listing;
+	char json;
 	char hide_dot_files;
 	char hide_readme_file;
 	char encode_readme;
@@ -36,11 +82,7 @@ typedef struct {
 	char encode_header;
 	char auto_layout;
 
-      #ifdef HAVE_PCRE_H
-	pcre **excludes;
-      #else
-	void *excludes;
-      #endif
+	pcre_keyvalue_buffer *excludes;
 
 	const buffer *show_readme;
 	const buffer *show_header;
@@ -48,62 +90,173 @@ typedef struct {
 	const buffer *external_js;
 	const buffer *encoding;
 	const buffer *set_footer;
+	const struct dirlist_cache *cache;
 } plugin_config;
 
 typedef struct {
 	PLUGIN_DATA;
 	plugin_config defaults;
 	plugin_config conf;
-
-	buffer tmp_buf;
+	int processing;
 } plugin_data;
 
-#ifdef HAVE_PCRE_H
+typedef struct {
+	uint32_t namelen;
+	unix_time64_t mtime;
+	off_t    size;
+} dirls_entry_t;
 
-static pcre ** mod_dirlisting_parse_excludes(server *srv, const array *a) {
-    pcre **regexes = calloc(a->used + 1, sizeof(pcre *));
-    force_assert(regexes);
-    for (uint32_t j = 0; j < a->used; ++j) {
-        const data_string *ds = (const data_string *)a->data[j];
-        const char *errptr;
-        int erroff;
-        regexes[j] = pcre_compile(ds->value.ptr, 0, &errptr, &erroff, NULL);
-        if (NULL == regexes[j]) {
+typedef struct {
+	dirls_entry_t **ent;
+	uint32_t used;
+	uint32_t size;
+} dirls_list_t;
+
+#define DIRLIST_ENT_NAME(ent)  ((char*)(ent) + sizeof(dirls_entry_t))
+#define DIRLIST_BLOB_SIZE      16
+
+typedef struct {
+	DIR *dp;
+	dirls_list_t dirs;
+	dirls_list_t files;
+	char *path;
+	char *path_file;
+	int dfd; /*(dirfd() owned by (DIR *))*/
+	uint32_t name_max;
+	buffer *jb;
+	int jcomma;
+	int jfd;
+	char *jfn;
+	uint32_t jfn_len;
+	plugin_config conf;
+} handler_ctx;
+
+#define DIRLIST_BATCH 32
+static int dirlist_max_in_progress;
+
+
+static handler_ctx * mod_dirlisting_handler_ctx_init (plugin_data * const p) {
+    handler_ctx *hctx = calloc(1, sizeof(*hctx));
+    force_assert(hctx);
+    memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
+    return hctx;
+}
+
+static void mod_dirlisting_handler_ctx_free (handler_ctx *hctx) {
+    if (hctx->dp)
+        closedir(hctx->dp);
+    if (hctx->files.ent) {
+        dirls_entry_t ** const ent = hctx->files.ent;
+        for (uint32_t i = 0, used = hctx->files.used; i < used; ++i)
+            free(ent[i]);
+        free(ent);
+    }
+    if (hctx->dirs.ent) {
+        dirls_entry_t ** const ent = hctx->dirs.ent;
+        for (uint32_t i = 0, used = hctx->dirs.used; i < used; ++i)
+            free(ent[i]);
+        free(ent);
+    }
+    if (hctx->jb) {
+        chunk_buffer_release(hctx->jb);
+        if (hctx->jfn) {
+            unlink(hctx->jfn);
+            free(hctx->jfn);
+        }
+        if (-1 != hctx->jfd)
+            close(hctx->jfd);
+    }
+    free(hctx->path);
+    free(hctx);
+}
+
+
+static struct dirlist_cache * mod_dirlisting_parse_cache(server *srv, const array *a) {
+    const data_unset *du;
+
+    du = array_get_element_klen(a, CONST_STR_LEN("max-age"));
+    const int32_t max_age = config_plugin_value_to_int32(du, 15);
+
+    buffer *path = NULL;
+    du = array_get_element_klen(a, CONST_STR_LEN("path"));
+    if (NULL == du) {
+        if (0 != max_age) {
             log_error(srv->errh, __FILE__, __LINE__,
-              "pcre_compile failed for: %s", ds->value.ptr);
-            for (pcre **regex = regexes; *regex; ++regex) pcre_free(*regex);
-            free(regexes);
+              "dir-listing.cache must include \"path\"");
             return NULL;
         }
     }
-    return regexes;
-}
-
-static int mod_dirlisting_exclude(log_error_st *errh, pcre **regex, const char *name, size_t len) {
-    for(; *regex; ++regex) {
-        #define N 10
-        int ovec[N * 3];
-        int n;
-        if ((n = pcre_exec(*regex, NULL, name, len, 0, 0, ovec, 3 * N)) < 0) {
-            if (n == PCRE_ERROR_NOMATCH) continue;
-
-            log_error(errh, __FILE__, __LINE__,
-              "execution error while matching: %d", n);
-            /* aborting would require a lot of manual cleanup here.
-             * skip instead (to not leak names that break pcre matching)
-             */
+    else {
+        if (du->type != TYPE_STRING) {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "dir-listing.cache \"path\" must have string value");
+            return NULL;
         }
-        return 1;
-        #undef N
+        path = &((data_string *)du)->value;
+        if (!stat_cache_path_isdir(path)) {
+            if (errno == ENOTDIR) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "dir-listing.cache \"path\" => \"%s\" is not a dir",
+                  path->ptr);
+                return NULL;
+            }
+            if (errno == ENOENT) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "dir-listing.cache \"path\" => \"%s\" does not exist",
+                  path->ptr);
+                /*(warning; not returning NULL)*/
+            }
+        }
     }
-    return 0; /* no match */
+
+    struct dirlist_cache * const cache = calloc(1, sizeof(struct dirlist_cache));
+    force_assert(cache);
+    cache->max_age = max_age;
+    cache->path = path;
+    return cache;
 }
 
-#else
 
-#define mod_dirlisting_exclude(a, b, c, d) 0
+static pcre_keyvalue_buffer * mod_dirlisting_parse_excludes(server *srv, const array *a) {
+    const int pcre_jit = config_feature_bool(srv, "server.pcre_jit", 1);
+    pcre_keyvalue_buffer * const kvb = pcre_keyvalue_buffer_init();
+    buffer empty = { NULL, 0, 0 };
+    for (uint32_t j = 0; j < a->used; ++j) {
+        const data_string *ds = (data_string *)a->data[j];
+        if (!pcre_keyvalue_buffer_append(srv->errh, kvb, &ds->value, &empty,
+                                         pcre_jit)) {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "pcre_compile failed for %s", ds->key.ptr);
+            pcre_keyvalue_buffer_free(kvb);
+            return NULL;
+        }
+    }
+    return kvb;
+}
 
+#ifdef __COVERITY__
+#include "burl.h"
 #endif
+
+static int mod_dirlisting_exclude(pcre_keyvalue_buffer * const kvb, const char * const name, const uint32_t len) {
+    /*(re-use keyvalue.[ch] for match-only;
+     *  must have been configured with empty kvb 'value' during init)*/
+    buffer input = { NULL, len+1, 0 };
+    *(const char **)&input.ptr = name;
+    pcre_keyvalue_ctx ctx = { NULL, NULL, -1, 0, NULL, NULL };
+  #ifdef __COVERITY__
+    /*(again, must have been configured w/ empty kvb 'value' during init)*/
+    struct cond_match_t cache;
+    memset(&cache, 0, sizeof(cache));
+    struct burl_parts_t bp;
+    memset(&bp, 0, sizeof(bp));
+    ctx.cache = &cache;
+    ctx.burl = &bp;
+  #endif
+    /*(fail closed (simulate match to exclude) if there is an error)*/
+    return HANDLER_ERROR == pcre_keyvalue_buffer_process(kvb,&ctx,&input,NULL)
+        || -1 != ctx.m;
+}
 
 
 INIT_FUNC(mod_dirlisting_init) {
@@ -112,21 +265,20 @@ INIT_FUNC(mod_dirlisting_init) {
 
 FREE_FUNC(mod_dirlisting_free) {
     plugin_data * const p = p_d;
-    free(p->tmp_buf.ptr);
     if (NULL == p->cvlist) return;
     /* (init i to 0 if global context; to 1 to skip empty global context) */
     for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
         config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
-             #ifdef HAVE_PCRE_H
               case 2: /* dir-listing.exclude */
                 if (cpv->vtype != T_CONFIG_LOCAL) continue;
-                for (pcre **regex = cpv->v.v; *regex; ++regex)
-                    pcre_free(*regex);
+                pcre_keyvalue_buffer_free(cpv->v.v);
+                break;
+              case 15: /* dir-listing.cache */
+                if (cpv->vtype != T_CONFIG_LOCAL) continue;
                 free(cpv->v.v);
                 break;
-             #endif
               default:
                 break;
             }
@@ -179,6 +331,10 @@ static void mod_dirlisting_merge_config_cpv(plugin_config * const pconf, const c
         break;
       case 14:/* dir-listing.auto-layout */
         pconf->auto_layout = (char)cpv->v.u;
+        break;
+      case 15:/* dir-listing.cache */
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->cache = cpv->v.v;
         break;
       default:/* should not happen */
         return;
@@ -246,6 +402,9 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
      ,{ CONST_STR_LEN("dir-listing.auto-layout"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("dir-listing.cache"),
+        T_CONFIG_ARRAY_KVANY,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -265,31 +424,20 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
               case 1: /* server.dir-listing *//*(historical)*/
                 break;
               case 2: /* dir-listing.exclude */
-               #ifndef HAVE_PCRE_H
-                if (cpv->v.a->used > 0) {
-                    log_error(srv->errh, __FILE__, __LINE__,
-                      "pcre support is missing for: %s, "
-                      "please install libpcre and the headers",
-                      cpk[cpv->k_id].k);
-                    return HANDLER_ERROR;
-                }
-               #else
                 cpv->v.v = mod_dirlisting_parse_excludes(srv, cpv->v.a);
-                if (NULL == cpv->v.v) {
-                    log_error(srv->errh, __FILE__, __LINE__,
-                      "unexpected value for %s", cpk[cpv->k_id].k);
-                    return HANDLER_ERROR;
-                }
+                if (NULL == cpv->v.v) return HANDLER_ERROR;
                 cpv->vtype = T_CONFIG_LOCAL;
-               #endif
                 break;
               case 3: /* dir-listing.hide-dotfiles */
+                break;
               case 4: /* dir-listing.external-css */
               case 5: /* dir-listing.external-js */
               case 6: /* dir-listing.encoding */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
                 break;
               case 7: /* dir-listing.show-readme */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
                     if (buffer_is_equal_string(b, CONST_STR_LEN("enable")))
@@ -297,11 +445,13 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
                     else if (buffer_is_equal_string(b,CONST_STR_LEN("disable")))
                         buffer_clear(b);
                 }
+                else
+                    cpv->v.b = NULL;
                 break;
               case 8: /* dir-listing.hide-readme-file */
                 break;
               case 9: /* dir-listing.show-header */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
                     if (buffer_is_equal_string(b, CONST_STR_LEN("enable")))
@@ -309,12 +459,27 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
                     else if (buffer_is_equal_string(b,CONST_STR_LEN("disable")))
                         buffer_clear(b);
                 }
+                else
+                    cpv->v.b = NULL;
                 break;
               case 10:/* dir-listing.hide-header-file */
+                break;
               case 11:/* dir-listing.set-footer */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 12:/* dir-listing.encode-readme */
               case 13:/* dir-listing.encode-header */
               case 14:/* dir-listing.auto-layout */
+                break;
+              case 15:/* dir-listing.cache */
+                cpv->v.v = mod_dirlisting_parse_cache(srv, cpv->v.a);
+                if (NULL == cpv->v.v) return HANDLER_ERROR;
+                if (0 == ((struct dirlist_cache *)cpv->v.v)->max_age) {
+                    free(cpv->v.v);
+                    cpv->v.v = NULL; /*(to disable after having been enabled)*/
+                }
+                cpv->vtype = T_CONFIG_LOCAL;
                 break;
               default:/* should not happen */
                 break;
@@ -322,7 +487,11 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
         }
     }
 
+    dirlist_max_in_progress = srv->srvconf.max_conns >> 4;
+    if (0 == dirlist_max_in_progress) dirlist_max_in_progress = 1;
+
     p->defaults.dir_listing = 0;
+    p->defaults.json = 0;
     p->defaults.hide_dot_files = 1;
     p->defaults.hide_readme_file = 0;
     p->defaults.hide_header_file = 0;
@@ -339,21 +508,6 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 
     return HANDLER_GO_ON;
 }
-
-typedef struct {
-	uint32_t namelen;
-	time_t  mtime;
-	off_t   size;
-} dirls_entry_t;
-
-typedef struct {
-	dirls_entry_t **ent;
-	uint32_t used;
-	uint32_t size;
-} dirls_list_t;
-
-#define DIRLIST_ENT_NAME(ent)	((char*)(ent) + sizeof(dirls_entry_t))
-#define DIRLIST_BLOB_SIZE		16
 
 /* simple combsort algorithm */
 static void http_dirls_sort(dirls_entry_t **ent, int num) {
@@ -386,24 +540,19 @@ static void http_dirls_sort(dirls_entry_t **ent, int num) {
 /* buffer must be able to hold "999.9K"
  * conversion is simple but not perfect
  */
-static int http_list_directory_sizefmt(char *buf, size_t bufsz, off_t size) {
-	const char unit[] = " KMGTPE";	/* Kilo, Mega, Giga, Tera, Peta, Exa */
-	const char *u = unit;		/* u will always increment at least once */
+static size_t http_list_directory_sizefmt(char *buf, size_t bufsz, off_t size) {
 	int remain;
+	int u = -1;  /* u will always increment at least once */
 	size_t buflen;
 
-	if (size < 100)
+	if (0 < size && size < 100)
 		size += 99;
-	if (size < 100)
-		size = 0;
 
-	while (1) {
-		remain = (int) size & 1023;
+	do {
+		remain = (int)(size & 1023);
 		size >>= 10;
-		u++;
-		if ((size & (~0 ^ 1023)) == 0)
-			break;
-	}
+		++u;
+	} while (size & ~1023);
 
 	remain /= 100;
 	if (remain > 9)
@@ -418,37 +567,77 @@ static int http_list_directory_sizefmt(char *buf, size_t bufsz, off_t size) {
 	if (buflen + 3 >= bufsz) return buflen;
 	buf[buflen+0] = '.';
 	buf[buflen+1] = remain + '0';
-	buf[buflen+2] = *u;
+	buf[buflen+2] = "KMGTPE"[u];  /* Kilo, Mega, Giga, Tera, Peta, Exa */
 	buf[buflen+3] = '\0';
 
 	return buflen + 3;
 }
 
-static void http_list_directory_include_file(buffer *out, int symlinks, const buffer *path, const char *classname, int encode) {
-	int fd = fdevent_open_cloexec(path->ptr, symlinks, O_RDONLY, 0);
-	ssize_t rd;
-	char buf[8192];
+static void http_list_directory_include_file(request_st * const r, const handler_ctx * const p, int is_header) {
+    const buffer *path;
+    int encode = 0;
+    if (is_header) {
+        path = p->conf.show_header;
+        encode = p->conf.encode_header;
+    }
+    else {
+        path = p->conf.show_readme;
+        encode = p->conf.encode_readme;
+    }
+    if (NULL == path) return;
 
-	if (-1 == fd) return;
+    uint32_t len = 0;
+    if (path->ptr[0] != '/') { /* temporarily extend r->physical.path */
+        len = buffer_clen(&r->physical.path);
+        buffer_append_path_len(&r->physical.path, BUF_PTR_LEN(path));
+        path = &r->physical.path;
+    }
+    stat_cache_entry * const sce =
+      stat_cache_get_entry_open(path, r->conf.follow_symlink);
+    if (len)
+        buffer_truncate(&r->physical.path, len);
+    if (NULL == sce || sce->fd < 0 || 0 == sce->st.st_size)
+        return;
 
-	if (encode) {
-		buffer_append_string_len(out, CONST_STR_LEN("<pre class=\""));
-		buffer_append_string(out, classname);
-		buffer_append_string_len(out, CONST_STR_LEN("\">"));
-	}
+    chunkqueue * const cq = &r->write_queue;
+    if (encode) {
+        if (is_header)
+            chunkqueue_append_mem(cq, CONST_STR_LEN("<pre class=\"header\">"));
+        else
+            chunkqueue_append_mem(cq, CONST_STR_LEN("<pre class=\"readme\">"));
 
-	while ((rd = read(fd, buf, sizeof(buf))) > 0) {
-		if (encode) {
-			buffer_append_string_encoded(out, buf, (size_t)rd, ENCODING_MINIMAL_XML);
-		} else {
-			buffer_append_string_len(out, buf, (size_t)rd);
-		}
-	}
-	close(fd);
+        /* Note: encoding a very large file may cause lighttpd to pause handling
+         * other requests while lighttpd encodes the file, especially if file is
+         * on a remote filesystem */
 
-	if (encode) {
-		buffer_append_string_len(out, CONST_STR_LEN("</pre>"));
-	}
+        /* encoding can consume 6x file size in worst case scenario,
+         * so send encoded contents of files > 32k to tempfiles) */
+        buffer * const tb = r->tmp_buf;
+        buffer * const out = sce->st.st_size <= 32768
+          ? chunkqueue_append_buffer_open(cq)
+          : tb;
+        buffer_clear(out);
+        const int fd = sce->fd;
+        ssize_t rd;
+        char buf[8192];
+        while ((rd = read(fd, buf, sizeof(buf))) > 0) {
+            buffer_append_string_encoded(out, buf, (size_t)rd, ENCODING_MINIMAL_XML);
+            if (out == tb) {
+                if (0 != chunkqueue_append_mem_to_tempfile(cq,
+                                                           BUF_PTR_LEN(out),
+                                                           r->conf.errh))
+                    break;
+                buffer_clear(out);
+            }
+        }
+        if (out != tb)
+            chunkqueue_append_buffer_commit(cq);
+
+        chunkqueue_append_mem(cq, CONST_STR_LEN("</pre>"));
+    }
+    else {
+        (void)http_chunk_append_file_ref(r, sce);
+    }
 }
 
 /* portions copied from mod_status
@@ -482,7 +671,7 @@ static const char js_simple_table_resort[] = \
 "  var str = \"\";\n" \
 "  var cs = el.childNodes;\n" \
 "  var l = cs.length;\n" \
-"  for (i=0;i<l;i++) {\n" \
+"  for (var i=0;i<l;i++) {\n" \
 "   if (cs[i].nodeType==1) str += get_inner_text(cs[i]);\n" \
 "   else if (cs[i].nodeType==3) str += cs[i].nodeValue;\n" \
 "  }\n" \
@@ -534,8 +723,8 @@ static const char js_simple_table_resort[] = \
 " var bt = get_inner_text(b.cells[sort_column]);\n" \
 " var cmp;\n" \
 " if (sort_column == name_column) {\n" \
-"  if (at == '..') return -1;\n" \
-"  if (bt == '..') return  1;\n" \
+"  if (at == '../') return -1;\n" \
+"  if (bt == '../') return  1;\n" \
 " }\n" \
 " if (a.cells[sort_column].className == 'int') {\n" \
 "  cmp = parseInt(at)-parseInt(bt);\n" \
@@ -567,7 +756,7 @@ static const char js_simple_table_resort[] = \
 " var span = lnk.childNodes[1];\n" \
 " var table = lnk.parentNode.parentNode.parentNode.parentNode;\n" \
 " var rows = new Array();\n" \
-" for (j=1;j<table.rows.length;j++)\n" \
+" for (var j=1;j<table.rows.length;j++)\n" \
 "  rows[j-1] = table.rows[j];\n" \
 " click_column = lnk.parentNode.cellIndex;\n" \
 " rows.sort(sortfn);\n" \
@@ -581,7 +770,7 @@ static const char js_simple_table_resort[] = \
 "  span.innerHTML = '&darr;';\n" \
 "  span.setAttribute('sortdir','down');\n" \
 " }\n" \
-" for (i=0;i<rows.length;i++)\n" \
+" for (var i=0;i<rows.length;i++)\n" \
 "  table.tBodies[0].appendChild(rows[i]);\n" \
 " prev_span = span;\n" \
 "}\n";
@@ -620,66 +809,64 @@ static const char js_simple_table_init_sort[] = \
 "   resort(lnk);\n" \
 "  //}\n" \
 " }\n" \
-"}\n";
+"}\n" \
+"\n" \
+"function init_sort_from_query() {\n" \
+"  var urlParams = new URLSearchParams(location.search);\n" \
+"  var c = 0;\n" \
+"  var o = 0;\n" \
+"  switch (urlParams.get('C')) {\n" \
+"    case \"N\": c=0; break;\n" \
+"    case \"M\": c=1; break;\n" \
+"    case \"S\": c=2; break;\n" \
+"    case \"T\":\n" \
+"    case \"D\": c=3; break;\n" \
+"  }\n" \
+"  switch (urlParams.get('O')) {\n" \
+"    case \"A\": o=1; break;\n" \
+"    case \"D\": o=0; break;\n" \
+"  }\n" \
+"  init_sort(c,o);\n" \
+"}\n" \
+"init_sort_from_query();\n";
 
-static void http_dirlist_append_js_table_resort (buffer * const b, const request_st * const r) {
-	char col = '0';
-	char ascending = '0';
-	if (!buffer_string_is_empty(&r->uri.query)) {
-		const char *qs = r->uri.query.ptr;
-		do {
-			if (qs[0] == 'C' && qs[1] == '=') {
-				switch (qs[2]) {
-				case 'N': col = '0'; break;
-				case 'M': col = '1'; break;
-				case 'S': col = '2'; break;
-				case 'T':
-				case 'D': col = '3'; break;
-				default:  break;
-				}
-			}
-			else if (qs[0] == 'O' && qs[1] == '=') {
-				switch (qs[2]) {
-				case 'A': ascending = '1'; break;
-				case 'D': ascending = '0'; break;
-				default:  break;
-				}
-			}
-		} while ((qs = strchr(qs, '&')) && *++qs);
-	}
 
-	buffer_append_string_len(b, CONST_STR_LEN("\n<script type=\"text/javascript\">\n// <!--\n\n"));
-	buffer_append_string_len(b, js_simple_table_resort, sizeof(js_simple_table_resort)-1);
-	buffer_append_string_len(b, js_simple_table_init_sort, sizeof(js_simple_table_init_sort)-1);
-	buffer_append_string_len(b, CONST_STR_LEN("\ninit_sort("));
-	buffer_append_string_len(b, &col, 1);
-	buffer_append_string_len(b, CONST_STR_LEN(", "));
-	buffer_append_string_len(b, &ascending, 1);
-	buffer_append_string_len(b, CONST_STR_LEN(");\n\n// -->\n</script>\n\n"));
+static void http_dirlist_append_js_table_resort (buffer * const b) {
+	struct const_iovec iov[] = {
+	  { CONST_STR_LEN("\n<script type=\"text/javascript\">\n// <!--\n\n") }
+	 ,{ CONST_STR_LEN(js_simple_table_resort) }
+	 ,{ CONST_STR_LEN(js_simple_table_init_sort) }
+	 ,{ CONST_STR_LEN("\n// -->\n</script>\n\n") }
+	};
+	buffer_append_iovec(b, iov, sizeof(iov)/sizeof(*iov));
 }
 
-static void http_list_directory_header(const request_st * const r, plugin_data * const p, buffer * const out) {
+static void http_list_directory_header(request_st * const r, const handler_ctx * const p) {
 
+	chunkqueue * const cq = &r->write_queue;
 	if (p->conf.auto_layout) {
+		buffer * const out = chunkqueue_append_buffer_open(cq);
 		buffer_append_string_len(out, CONST_STR_LEN(
 			"<!DOCTYPE html>\n"
 			"<html>\n"
 			"<head>\n"
 		));
-		if (!buffer_string_is_empty(p->conf.encoding)) {
-			buffer_append_string_len(out, CONST_STR_LEN("<meta charset=\""));
-			buffer_append_string_buffer(out, p->conf.encoding);
-			buffer_append_string_len(out, CONST_STR_LEN("\">\n"));
+		if (p->conf.encoding) {
+			buffer_append_str3(out,
+			  CONST_STR_LEN("<meta charset=\""),
+			  BUF_PTR_LEN(p->conf.encoding),
+			  CONST_STR_LEN("\">\n"));
 		}
 		buffer_append_string_len(out, CONST_STR_LEN("<title>Index of "));
-		buffer_append_string_encoded(out, CONST_BUF_LEN(&r->uri.path), ENCODING_MINIMAL_XML);
+		buffer_append_string_encoded(out, BUF_PTR_LEN(&r->uri.path), ENCODING_MINIMAL_XML);
 		buffer_append_string_len(out, CONST_STR_LEN("</title>\n"));
 
-		if (!buffer_string_is_empty(p->conf.external_css)) {
-			buffer_append_string_len(out, CONST_STR_LEN("<meta name=\"viewport\" content=\"initial-scale=1\">"));
-			buffer_append_string_len(out, CONST_STR_LEN("<link rel=\"stylesheet\" type=\"text/css\" href=\""));
-			buffer_append_string_buffer(out, p->conf.external_css);
-			buffer_append_string_len(out, CONST_STR_LEN("\">\n"));
+		if (p->conf.external_css) {
+			buffer_append_str3(out,
+			  CONST_STR_LEN("<meta name=\"viewport\" content=\"initial-scale=1\">"
+			                "<link rel=\"stylesheet\" type=\"text/css\" href=\""),
+			  BUF_PTR_LEN(p->conf.external_css),
+			  CONST_STR_LEN("\">\n"));
 		} else {
 			buffer_append_string_len(out, CONST_STR_LEN(
 				"<style type=\"text/css\">\n"
@@ -717,23 +904,16 @@ static void http_list_directory_header(const request_st * const r, plugin_data *
 		}
 
 		buffer_append_string_len(out, CONST_STR_LEN("</head>\n<body>\n"));
+		chunkqueue_append_buffer_commit(cq);
 	}
 
-	if (!buffer_string_is_empty(p->conf.show_header)) {
-		/* if we have a HEADER file, display it in <pre class="header"></pre> */
-
-		const buffer *hb = p->conf.show_header;
-		if (hb->ptr[0] != '/') {
-			hb = &p->tmp_buf;
-			buffer_copy_buffer(&p->tmp_buf, &r->physical.path);
-			buffer_append_path_len(&p->tmp_buf, CONST_BUF_LEN(p->conf.show_header));
-		}
-
-		http_list_directory_include_file(out, r->conf.follow_symlink, hb, "header", p->conf.encode_header);
+	if (p->conf.show_header) {
+		http_list_directory_include_file(r, p, 1);/*0 for readme; 1 for header*/
 	}
 
+	buffer * const out = chunkqueue_append_buffer_open(cq);
 	buffer_append_string_len(out, CONST_STR_LEN("<h2>Index of "));
-	buffer_append_string_encoded(out, CONST_BUF_LEN(&r->uri.path), ENCODING_MINIMAL_XML);
+	buffer_append_string_encoded(out, BUF_PTR_LEN(&r->uri.path), ENCODING_MINIMAL_XML);
 	buffer_append_string_len(out, CONST_STR_LEN(
 		"</h2>\n"
 		"<div class=\"list\">\n"
@@ -758,206 +938,268 @@ static void http_list_directory_header(const request_st * const r, plugin_data *
 		"</tr>\n"
 		));
 	}
+	chunkqueue_append_buffer_commit(cq);
 }
 
-static void http_list_directory_footer(const request_st * const r, plugin_data * const p, buffer * const out) {
+static void http_list_directory_footer(request_st * const r, const handler_ctx * const p) {
 
-	buffer_append_string_len(out, CONST_STR_LEN(
+	chunkqueue * const cq = &r->write_queue;
+	chunkqueue_append_mem(cq, CONST_STR_LEN(
 		"</tbody>\n"
 		"</table>\n"
 		"</div>\n"
 	));
 
-	if (!buffer_string_is_empty(p->conf.show_readme)) {
-		/* if we have a README file, display it in <pre class="readme"></pre> */
-
-		const buffer *rb = p->conf.show_readme;
-		if (rb->ptr[0] != '/') {
-			rb = &p->tmp_buf;
-			buffer_copy_buffer(&p->tmp_buf, &r->physical.path);
-			buffer_append_path_len(&p->tmp_buf, CONST_BUF_LEN(p->conf.show_readme));
-		}
-
-		http_list_directory_include_file(out, r->conf.follow_symlink, rb, "readme", p->conf.encode_readme);
+	if (p->conf.show_readme) {
+		http_list_directory_include_file(r, p, 0);/*0 for readme; 1 for header*/
 	}
 
-	if(p->conf.auto_layout) {
+	if (p->conf.auto_layout) {
+		buffer * const out = chunkqueue_append_buffer_open(cq);
+		const buffer * const footer =
+		  p->conf.set_footer
+		    ? p->conf.set_footer
+		    : r->conf.server_tag
+		        ? r->conf.server_tag
+		        : NULL;
+		if (footer)
+			buffer_append_str3(out,
+			  CONST_STR_LEN("<div class=\"foot\">"),
+			  BUF_PTR_LEN(footer),
+			  CONST_STR_LEN("</div>\n"));
 
-		buffer_append_string_len(out, CONST_STR_LEN(
-			"<div class=\"foot\">"
-		));
-
-		if (!buffer_string_is_empty(p->conf.set_footer)) {
-			buffer_append_string_buffer(out, p->conf.set_footer);
-		} else {
-			buffer_append_string_buffer(out, r->conf.server_tag);
-		}
-
-		buffer_append_string_len(out, CONST_STR_LEN(
-			"</div>\n"
-		));
-
-		if (!buffer_string_is_empty(p->conf.external_js)) {
-			buffer_append_string_len(out, CONST_STR_LEN("<script type=\"text/javascript\" src=\""));
-			buffer_append_string_buffer(out, p->conf.external_js);
-			buffer_append_string_len(out, CONST_STR_LEN("\"></script>\n"));
-		} else if (buffer_is_empty(p->conf.external_js)) {
-			http_dirlist_append_js_table_resort(out, r);
-		}
+		if (p->conf.external_js)
+			buffer_append_str3(out,
+			  CONST_STR_LEN("<script type=\"text/javascript\" src=\""),
+			  BUF_PTR_LEN(p->conf.external_js),
+			  CONST_STR_LEN("\"></script>\n"));
+		else
+			http_dirlist_append_js_table_resort(out);
 
 		buffer_append_string_len(out, CONST_STR_LEN(
 			"</body>\n"
 			"</html>\n"
 		));
+		chunkqueue_append_buffer_commit(cq);
 	}
 }
 
-static int http_list_directory(request_st * const r, plugin_data * const p, buffer * const dir) {
-	DIR *dp;
-	buffer *out;
+static int http_open_directory(request_st * const r, handler_ctx * const hctx) {
+    const uint32_t dlen = buffer_clen(&r->physical.path);
+#if defined __WIN32
+    hctx->name_max = FILENAME_MAX;
+#else
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+    /* allocate based on PATH_MAX rather than pathconf() to get _PC_NAME_MAX */
+    hctx->name_max = PATH_MAX - dlen - 1;
+#endif
+    hctx->path = malloc(dlen + hctx->name_max + 1);
+    force_assert(NULL != hctx->path);
+    memcpy(hctx->path, r->physical.path.ptr, dlen+1);
+  #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR) || !defined(_ATFILE_SOURCE)
+    hctx->path_file = hctx->path + dlen;
+  #endif
+
+  #ifndef _ATFILE_SOURCE /*(not using fdopendir unless _ATFILE_SOURCE)*/
+    hctx->dfd = -1;
+    hctx->dp = opendir(hctx->path);
+  #else
+    hctx->dfd = fdevent_open_dirname(hctx->path, r->conf.follow_symlink);
+    hctx->dp = (hctx->dfd >= 0) ? fdopendir(hctx->dfd) : NULL;
+  #endif
+    if (NULL == hctx->dp) {
+        log_perror(r->conf.errh, __FILE__, __LINE__, "opendir %s", hctx->path);
+        if (hctx->dfd >= 0) {
+            close(hctx->dfd);
+            hctx->dfd = -1;
+        }
+        return -1;
+    }
+
+    if (hctx->conf.json) return 0;
+
+    dirls_list_t * const dirs = &hctx->dirs;
+    dirls_list_t * const files = &hctx->files;
+    dirs->ent   =
+      (dirls_entry_t**) malloc(sizeof(dirls_entry_t*) * DIRLIST_BLOB_SIZE);
+    force_assert(dirs->ent);
+    dirs->size  = DIRLIST_BLOB_SIZE;
+    dirs->used  = 0;
+    files->ent  =
+      (dirls_entry_t**) malloc(sizeof(dirls_entry_t*) * DIRLIST_BLOB_SIZE);
+    force_assert(files->ent);
+    files->size = DIRLIST_BLOB_SIZE;
+    files->used = 0;
+
+    return 0;
+}
+
+static int http_read_directory(handler_ctx * const p) {
 	struct dirent *dent;
+	const int hide_dotfiles = p->conf.hide_dot_files;
+	const uint32_t name_max = p->name_max;
 	struct stat st;
-	char *path, *path_file;
-	size_t i;
-	int hide_dotfiles = p->conf.hide_dot_files;
-	dirls_list_t dirs, files, *list;
-	dirls_entry_t *tmp;
-	char sizebuf[sizeof("999.9K")];
-	const buffer *content_type;
-	long name_max;
-	log_error_st * const errh = r->conf.errh;
-	struct tm tm;
-
-	if (buffer_string_is_empty(dir)) return -1;
-
-	i = buffer_string_length(dir);
-
-#ifdef HAVE_PATHCONF
-	if (0 >= (name_max = pathconf(dir->ptr, _PC_NAME_MAX))) {
-		/* some broken fs (fuse) return 0 instead of -1 */
-#ifdef NAME_MAX
-		name_max = NAME_MAX;
-#else
-		name_max = 255; /* stupid default */
-#endif
-	}
-#elif defined __WIN32
-	name_max = FILENAME_MAX;
-#else
-	name_max = NAME_MAX;
-#endif
-
-	path = malloc(i + name_max + 1);
-	force_assert(NULL != path);
-	memcpy(path, dir->ptr, i+1);
-	path_file = path + i;
-
-	if (NULL == (dp = opendir(path))) {
-		log_error(errh, __FILE__, __LINE__,
-		  "opendir failed: %s", dir->ptr);
-
-		free(path);
-		return -1;
-	}
-
-	dirs.ent   = (dirls_entry_t**) malloc(sizeof(dirls_entry_t*) * DIRLIST_BLOB_SIZE);
-	force_assert(dirs.ent);
-	dirs.size  = DIRLIST_BLOB_SIZE;
-	dirs.used  = 0;
-	files.ent  = (dirls_entry_t**) malloc(sizeof(dirls_entry_t*) * DIRLIST_BLOB_SIZE);
-	force_assert(files.ent);
-	files.size = DIRLIST_BLOB_SIZE;
-	files.used = 0;
-
-	while ((dent = readdir(dp)) != NULL) {
-		if (dent->d_name[0] == '.') {
+	int count = -1;
+	while (++count < DIRLIST_BATCH && (dent = readdir(p->dp)) != NULL) {
+		const char * const d_name = dent->d_name;
+		const uint32_t dsz = (uint32_t) _D_EXACT_NAMLEN(dent);
+		if (d_name[0] == '.') {
 			if (hide_dotfiles)
 				continue;
-			if (dent->d_name[1] == '\0')
+			if (d_name[1] == '\0')
 				continue;
-			if (dent->d_name[1] == '.' && dent->d_name[2] == '\0')
-				continue;
-		}
-
-		if (p->conf.hide_readme_file && !buffer_string_is_empty(p->conf.show_readme)) {
-			if (strcmp(dent->d_name, p->conf.show_readme->ptr) == 0)
-				continue;
-		}
-		if (p->conf.hide_header_file && !buffer_string_is_empty(p->conf.show_header)) {
-			if (strcmp(dent->d_name, p->conf.show_header->ptr) == 0)
+			if (d_name[1] == '.' && d_name[2] == '\0')
 				continue;
 		}
 
-		i = strlen(dent->d_name);
+		if (p->conf.hide_readme_file
+		    && p->conf.show_readme
+		    && buffer_eq_slen(p->conf.show_readme, d_name, dsz))
+			continue;
+		if (p->conf.hide_header_file
+		    && p->conf.show_header
+		    && buffer_eq_slen(p->conf.show_header, d_name, dsz))
+			continue;
 
 		/* compare d_name against excludes array
 		 * elements, skipping any that match.
 		 */
 		if (p->conf.excludes
-		    && mod_dirlisting_exclude(errh, p->conf.excludes, dent->d_name, i))
+		    && mod_dirlisting_exclude(p->conf.excludes, d_name, dsz))
 			continue;
 
 		/* NOTE: the manual says, d_name is never more than NAME_MAX
 		 *       so this should actually not be a buffer-overflow-risk
 		 */
-		if (i > (size_t)name_max) continue;
+		if (dsz > name_max) continue;
+	  #ifdef __COVERITY__
+		/* For some reason, Coverity overlooks the strlen() performed
+		 * a few lines above and thinks memcpy() below might access
+		 * bytes beyond end of d_name[] with dsz+1 */
+		force_assert(dsz < sizeof(dent->d_name));
+	  #endif
 
-		memcpy(path_file, dent->d_name, i + 1);
-		if (stat(path, &st) != 0)
+	  #ifndef _ATFILE_SOURCE
+		memcpy(p->path_file, d_name, dsz + 1);
+		if (stat(p->path, &st) != 0)
 			continue;
+	  #else
+		/*(XXX: follow symlinks, like stat(); not using AT_SYMLINK_NOFOLLOW) */
+		if (0 != fstatat(p->dfd, d_name, &st, 0))
+			continue; /* file *just* disappeared? */
+	  #endif
 
-		list = &files;
-		if (S_ISDIR(st.st_mode))
-			list = &dirs;
+		if (p->jb) { /* json output */
+			if (__builtin_expect( (p->jcomma), 1))/*(to avoid excess comma)*/
+				buffer_append_string_len(p->jb, CONST_STR_LEN(",{\"name\":\""));
+			else {
+				p->jcomma = 1;
+				buffer_append_string_len(p->jb, CONST_STR_LEN( "{\"name\":\""));
+			}
+			buffer_append_string_encoded_json(p->jb, d_name, dsz);
 
+			const char *t;
+			size_t tlen;
+			if (!S_ISDIR(st.st_mode)) {
+				t =           "\",\"type\":\"file\",\"size\":";
+				tlen = sizeof("\",\"type\":\"file\",\"size\":")-1;
+			}
+			else {
+				t =           "\",\"type\":\"dir\",\"size\":";
+				tlen = sizeof("\",\"type\":\"dir\",\"size\":")-1;
+			}
+			char sstr[LI_ITOSTRING_LENGTH];
+			char mstr[LI_ITOSTRING_LENGTH];
+			struct const_iovec iov[] = {
+			  { t, tlen }
+			 ,{ sstr, li_itostrn(sstr, sizeof(sstr), st.st_size) }
+			 ,{ CONST_STR_LEN(",\"mtime\":") }
+			 ,{ mstr, li_itostrn(mstr, sizeof(mstr), TIME64_CAST(st.st_mtime)) }
+			 ,{ CONST_STR_LEN("}") }
+			};
+			buffer_append_iovec(p->jb, iov, sizeof(iov)/sizeof(*iov));
+			continue;
+		}
+
+		dirls_list_t * const list = !S_ISDIR(st.st_mode) ? &p->files : &p->dirs;
 		if (list->used == list->size) {
 			list->size += DIRLIST_BLOB_SIZE;
 			list->ent   = (dirls_entry_t**) realloc(list->ent, sizeof(dirls_entry_t*) * list->size);
 			force_assert(list->ent);
 		}
-
-		tmp = (dirls_entry_t*) malloc(sizeof(dirls_entry_t) + 1 + i);
+		dirls_entry_t * const tmp = list->ent[list->used++] =
+		  (dirls_entry_t*) malloc(sizeof(dirls_entry_t) + 1 + dsz);
+		force_assert(tmp);
 		tmp->mtime = st.st_mtime;
 		tmp->size  = st.st_size;
-		tmp->namelen = (uint32_t)i;
-		memcpy(DIRLIST_ENT_NAME(tmp), dent->d_name, i + 1);
-
-		list->ent[list->used++] = tmp;
+		tmp->namelen = dsz;
+		memcpy(DIRLIST_ENT_NAME(tmp), d_name, dsz + 1);
 	}
-	closedir(dp);
+	if (count == DIRLIST_BATCH)
+		return HANDLER_WAIT_FOR_EVENT;
+	closedir(p->dp);
+	p->dp = NULL;
 
-	if (dirs.used) http_dirls_sort(dirs.ent, dirs.used);
+	return HANDLER_FINISHED;
+}
 
-	if (files.used) http_dirls_sort(files.ent, files.used);
+static void http_list_directory(request_st * const r, handler_ctx * const hctx) {
+	dirls_list_t * const dirs = &hctx->dirs;
+	dirls_list_t * const files = &hctx->files;
+	/*(note: sorting can be time consuming on large dirs (O(n log n))*/
+	if (dirs->used) http_dirls_sort(dirs->ent, dirs->used);
+	if (files->used) http_dirls_sort(files->ent, files->used);
 
-	out = chunkqueue_append_buffer_open(&r->write_queue);
-	http_list_directory_header(r, p, out);
+	char sizebuf[sizeof("999.9K")];
+	struct tm tm;
+
+	/* generate large directory listings into tempfiles
+	 * (estimate approx 200-256 bytes of HTML per item; could be up to ~512) */
+	chunkqueue * const cq = &r->write_queue;
+	buffer * const tb = r->tmp_buf;
+	buffer_clear(tb);
+	buffer * const out = (dirs->used + files->used <= 256)
+	  ? chunkqueue_append_buffer_open(cq)
+	  : tb;
+	buffer_clear(out);
 
 	/* directories */
-	for (i = 0; i < dirs.used; i++) {
-		tmp = dirs.ent[i];
+	dirls_entry_t ** const dirs_ent = dirs->ent;
+	for (uint32_t i = 0, used = dirs->used; i < used; ++i) {
+		dirls_entry_t * const tmp = dirs_ent[i];
 
 		buffer_append_string_len(out, CONST_STR_LEN("<tr class=\"d\"><td class=\"n\"><a href=\""));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_REL_URI_PART);
 		buffer_append_string_len(out, CONST_STR_LEN("/\">"));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_MINIMAL_XML);
 		buffer_append_string_len(out, CONST_STR_LEN("</a>/</td><td class=\"m\">"));
-		buffer_append_strftime(out, "%Y-%b-%d %H:%M:%S", localtime_r(&tmp->mtime, &tm));
+		buffer_append_strftime(out, "%Y-%b-%d %T", localtime64_r(&tmp->mtime, &tm));
 		buffer_append_string_len(out, CONST_STR_LEN("</td><td class=\"s\">- &nbsp;</td><td class=\"t\">Directory</td></tr>\n"));
 
-		free(tmp);
+		if (buffer_string_space(out) < 256) {
+			if (out == tb) {
+				if (0 != chunkqueue_append_mem_to_tempfile(cq,
+				                                           BUF_PTR_LEN(out),
+				                                           r->conf.errh))
+					break;
+				buffer_clear(out);
+			}
+		}
 	}
 
 	/* files */
 	const array * const mimetypes = r->conf.mimetypes;
-	for (i = 0; i < files.used; i++) {
-		tmp = files.ent[i];
-
+	dirls_entry_t ** const files_ent = files->ent;
+	for (uint32_t i = 0, used = files->used; i < used; ++i) {
+		dirls_entry_t * const tmp = files_ent[i];
+		const buffer *content_type;
 	  #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR) /*(pass full path)*/
 		content_type = NULL;
 		if (r->conf.use_xattr) {
-			memcpy(path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
-			content_type = stat_cache_mimetype_by_xattr(path);
+			memcpy(hctx->path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
+			content_type = stat_cache_mimetype_by_xattr(hctx->path);
 		}
 		if (NULL == content_type)
 	  #endif
@@ -969,54 +1211,120 @@ static int http_list_directory(request_st * const r, plugin_data * const p, buff
 			content_type = &octet_stream;
 		}
 
-		http_list_directory_sizefmt(sizebuf, sizeof(sizebuf), tmp->size);
-
 		buffer_append_string_len(out, CONST_STR_LEN("<tr><td class=\"n\"><a href=\""));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_REL_URI_PART);
 		buffer_append_string_len(out, CONST_STR_LEN("\">"));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_MINIMAL_XML);
 		buffer_append_string_len(out, CONST_STR_LEN("</a></td><td class=\"m\">"));
-		buffer_append_strftime(out, "%Y-%b-%d %H:%M:%S", localtime_r(&tmp->mtime, &tm));
-		buffer_append_string_len(out, CONST_STR_LEN("</td><td class=\"s\">"));
-		buffer_append_string(out, sizebuf);
-		buffer_append_string_len(out, CONST_STR_LEN("</td><td class=\"t\">"));
-		buffer_append_string_buffer(out, content_type);
-		buffer_append_string_len(out, CONST_STR_LEN("</td></tr>\n"));
+		buffer_append_strftime(out, "%Y-%b-%d %T", localtime64_r(&tmp->mtime, &tm));
+		size_t buflen =
+		  http_list_directory_sizefmt(sizebuf, sizeof(sizebuf), tmp->size);
+		struct const_iovec iov[] = {
+		  { CONST_STR_LEN("</td><td class=\"s\">") }
+		 ,{ sizebuf, buflen }
+		 ,{ CONST_STR_LEN("</td><td class=\"t\">") }
+		 ,{ BUF_PTR_LEN(content_type) }
+		 ,{ CONST_STR_LEN("</td></tr>\n") }
+		};
+		buffer_append_iovec(out, iov, sizeof(iov)/sizeof(*iov));
 
-		free(tmp);
+		if (buffer_string_space(out) < 256) {
+			if (out == tb) {
+				if (0 != chunkqueue_append_mem_to_tempfile(cq,
+				                                           BUF_PTR_LEN(out),
+				                                           r->conf.errh))
+					break;
+				buffer_clear(out);
+			}
+		}
 	}
 
-	free(files.ent);
-	free(dirs.ent);
-	free(path);
-
-	http_list_directory_footer(r, p, out);
-
-	/* Insert possible charset to Content-Type */
-	if (buffer_string_is_empty(p->conf.encoding)) {
-		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
-	} else {
-		buffer_copy_string_len(&p->tmp_buf, CONST_STR_LEN("text/html; charset="));
-		buffer_append_string_buffer(&p->tmp_buf, p->conf.encoding);
-		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(&p->tmp_buf));
+	if (out == tb) {
+		if (!buffer_is_blank(out)
+		    && 0 != chunkqueue_append_mem_to_tempfile(cq,
+		                                              BUF_PTR_LEN(out),
+		                                              r->conf.errh)) {
+			/* ignore */
+		}
 	}
-
-	chunkqueue_append_buffer_commit(&r->write_queue);
-	r->resp_body_finished = 1;
-
-	return 0;
+	else {
+		chunkqueue_append_buffer_commit(cq);
+	}
 }
 
 
+static void mod_dirlisting_content_type (request_st * const r, const buffer * const encoding) {
+    buffer * const vb =
+      http_header_response_set_ptr(r, HTTP_HEADER_CONTENT_TYPE,
+                                   CONST_STR_LEN("Content-Type"));
+    if (NULL == encoding)
+        buffer_copy_string_len(vb, CONST_STR_LEN("text/html"));
+    else
+        buffer_append_str2(vb, CONST_STR_LEN("text/html; charset="),
+                               BUF_PTR_LEN(encoding));
+}
 
-URIHANDLER_FUNC(mod_dirlisting_subrequest) {
+
+static void mod_dirlisting_response (request_st * const r, handler_ctx * const hctx) {
+    http_list_directory_header(r, hctx);
+    http_list_directory(r, hctx);
+    http_list_directory_footer(r, hctx);
+    mod_dirlisting_content_type(r, hctx->conf.encoding);
+
+    r->resp_body_finished = 1;
+}
+
+
+static void mod_dirlisting_json_append (request_st * const r, handler_ctx * const hctx, const int fin) {
+    buffer * const jb = hctx->jb;
+    if (fin)
+        buffer_append_string_len(jb, CONST_STR_LEN("]}"));
+    else if (buffer_clen(jb) < 16384-1024)
+        return; /* aggregate bunches of entries, even if streaming response */
+
+    if (hctx->jfn) {
+        if (__builtin_expect( (write_all(hctx->jfd, BUF_PTR_LEN(jb)) < 0), 0)) {
+            /*(cleanup, cease caching if error occurs writing to cache file)*/
+            unlink(hctx->jfn);
+            free(hctx->jfn);
+            hctx->jfn = NULL;
+            close(hctx->jfd);
+            hctx->jfd = -1;
+        }
+        /* Note: writing cache file is separate from the response so that if an
+         * error occurs with cache, the response still proceeds.  While this is
+         * duplicative if the response is large enough to spill to temporary
+         * files, it is expected that only very large directories will spill to
+         * temporary files, and even then most responses will be less than 1 MB.
+         * The cache path can be different from server.upload-dirs.
+         * Note: since responses are not expected to be large, no effort is
+         * currently made here to handle FDEVENT_STREAM_RESPONSE_BUFMIN and to
+         * defer reading more from directory while data is sent to client */
+    }
+
+    http_chunk_append_buffer(r, jb); /* clears jb */
+}
+
+
+SUBREQUEST_FUNC(mod_dirlisting_subrequest);
+REQUEST_FUNC(mod_dirlisting_reset);
+static handler_t mod_dirlisting_cache_check (request_st * const r, plugin_data * const p);
+__attribute_noinline__
+static void mod_dirlisting_cache_add (request_st * const r, handler_ctx * const hctx);
+__attribute_noinline__
+static void mod_dirlisting_cache_json_init (request_st * const r, handler_ctx * const hctx);
+__attribute_noinline__
+static void mod_dirlisting_cache_json (request_st * const r, handler_ctx * const hctx);
+
+
+URIHANDLER_FUNC(mod_dirlisting_subrequest_start) {
 	plugin_data *p = p_d;
 
 	if (NULL != r->handler_module) return HANDLER_GO_ON;
-	if (buffer_string_is_empty(&r->uri.path)) return HANDLER_GO_ON;
-	if (r->uri.path.ptr[buffer_string_length(&r->uri.path) - 1] != '/') return HANDLER_GO_ON;
+	if (!buffer_has_slash_suffix(&r->uri.path)) return HANDLER_GO_ON;
 	if (!http_method_get_or_head(r->http_method)) return HANDLER_GO_ON;
-	if (buffer_is_empty(&r->physical.path)) return HANDLER_GO_ON;
+	/* r->physical.path is non-empty for handle_subrequest_start */
+	/*if (buffer_is_blank(&r->physical.path)) return HANDLER_GO_ON;*/
 
 	mod_dirlisting_patch_config(r, p);
 
@@ -1029,6 +1337,10 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest) {
 		  "URI          : %s", r->uri.path.ptr);
 	}
 
+  #if 0 /* redundant check; not necessary */
+	/* r->physical.path is a dir since it ends in slash, or else
+	 * http_response_physical_path_check() would have redirected
+	 * before calling handle_subrequest_start */
 	if (!stat_cache_path_isdir(&r->physical.path)) {
 		if (errno == ENOTDIR)
 			return HANDLER_GO_ON;
@@ -1036,16 +1348,285 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest) {
 		r->http_status = 500;
 		return HANDLER_FINISHED;
 	}
+  #endif
 
-	if (http_list_directory(r, p, &r->physical.path)) {
-		/* dirlisting failed */
-		r->http_status = 403;
+	/* TODO: add option/mechanism to enable json output */
+  #if 0 /* XXX: ??? might this be enabled accidentally by clients ??? */
+	const buffer * const vb =
+	  http_header_request_get(r, HTTP_HEADER_ACCEPT, CONST_STR_LEN("Accept"));
+	p->conf.json = (vb && strstr(vb->ptr, "application/json")); /*(coarse)*/
+  #endif
+
+	if (p->conf.cache) {
+		handler_t rc = mod_dirlisting_cache_check(r, p);
+		if (rc != HANDLER_GO_ON)
+			return rc;
 	}
 
-	buffer_reset(&r->physical.path);
+	/* upper limit for dirlisting requests in progress (per lighttpd worker)
+	 * (attempt to avoid "livelock" scenarios or starvation of other requests)
+	 * (100 is still a high arbitrary limit;
+	 *  and limit applies only to directories larger than DIRLIST_BATCH-2) */
+	if (p->processing == dirlist_max_in_progress) {
+		r->http_status = 503;
+		http_header_response_set(r, HTTP_HEADER_OTHER,
+		                         CONST_STR_LEN("Retry-After"),
+		                         CONST_STR_LEN("2"));
+		return HANDLER_FINISHED;
+	}
 
-	/* not found */
-	return HANDLER_FINISHED;
+	handler_ctx * const hctx = mod_dirlisting_handler_ctx_init(p);
+
+	/* future: might implement a queue to limit max number of dirlisting
+	 * requests being serviced in parallel (increasing disk I/O), and if
+	 * caching is enabled, to avoid repeating the work on the same directory
+	 * in parallel.  Could continue serving (expired) cached entry while
+	 * updating, but burst of requests on first access to dir would still
+	 * need to be handled.
+	 *
+	 * If queueing (not implemented), defer opening dir until pulled off
+	 * queue.  Since joblist is per-connection, would need to handle single
+	 * request from queue even if multiple streams are queued on same
+	 * HTTP/2 connection.  If queueing, must check for and remove from
+	 * queue in mod_dirlisting_reset() if request is still queued. */
+
+	if (0 != http_open_directory(r, hctx)) {
+		/* dirlisting failed */
+		r->http_status = 403;
+	        mod_dirlisting_handler_ctx_free(hctx);
+		return HANDLER_FINISHED;
+	}
+	++p->processing;
+
+	if (p->conf.json) {
+		hctx->jfd = -1;
+		hctx->jb = chunk_buffer_acquire();
+		buffer_append_string_len(hctx->jb, CONST_STR_LEN("{["));
+		if (p->conf.cache)
+			mod_dirlisting_cache_json_init(r, hctx);
+		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE,
+		                         CONST_STR_LEN("Content-Type"),
+		                         CONST_STR_LEN("application/json"));
+		r->http_status = 200;
+		r->resp_body_started = 1;
+	}
+
+	r->plugin_ctx[p->id] = hctx;
+	r->handler_module = p->self;
+	return mod_dirlisting_subrequest(r, p);
+}
+
+
+SUBREQUEST_FUNC(mod_dirlisting_subrequest) {
+    plugin_data * const p = p_d;
+    handler_ctx * const hctx = r->plugin_ctx[p->id];
+    if (NULL == hctx) return HANDLER_GO_ON; /*(should not happen)*/
+
+    handler_t rc = http_read_directory(hctx);
+    switch (rc) {
+      case HANDLER_FINISHED:
+        if (hctx->jb) { /* (hctx->conf.json) */
+            mod_dirlisting_json_append(r, hctx, 1);
+            r->resp_body_finished = 1;
+            if (hctx->jfn) /* (also (hctx->conf.cache) */
+                mod_dirlisting_cache_json(r, hctx);
+        }
+        else {
+            mod_dirlisting_response(r, hctx);
+            if (hctx->conf.cache)
+                mod_dirlisting_cache_add(r, hctx);
+        }
+        mod_dirlisting_reset(r, p); /*(release resources, including hctx)*/
+        break;
+      case HANDLER_WAIT_FOR_EVENT: /*(used here to mean 'yield')*/
+        if (hctx->jb)   /* (hctx->conf.json) */
+            mod_dirlisting_json_append(r, hctx, 0);
+        joblist_append(r->con);
+        break;
+      default:
+        break;
+    }
+
+    return rc;
+}
+
+
+REQUEST_FUNC(mod_dirlisting_reset) {
+    void ** const restrict dptr = &r->plugin_ctx[((plugin_data *)p_d)->id];
+    if (*dptr) {
+        --((plugin_data *)p_d)->processing;
+        mod_dirlisting_handler_ctx_free(*dptr);
+        *dptr = NULL;
+    }
+    return HANDLER_GO_ON;
+}
+
+
+static handler_t mod_dirlisting_cache_check (request_st * const r, plugin_data * const p) {
+    /* optional: an external process can trigger a refresh by deleting the cache
+     * entry when the external process detects (or initiaties) changes to dir */
+    buffer * const tb = r->tmp_buf;
+    buffer_copy_path_len2(tb, BUF_PTR_LEN(p->conf.cache->path),
+                              BUF_PTR_LEN(&r->physical.path));
+    buffer_append_string_len(tb, p->conf.json ? "dirlist.json" : "dirlist.html",
+                             sizeof("dirlist.html")-1);
+    stat_cache_entry * const sce = stat_cache_get_entry_open(tb, 1);
+    if (NULL == sce || sce->fd == -1)
+        return HANDLER_GO_ON;
+    if (TIME64_CAST(sce->st.st_mtime) + p->conf.cache->max_age < log_epoch_secs)
+        return HANDLER_GO_ON;
+
+    !p->conf.json
+      ? mod_dirlisting_content_type(r, p->conf.encoding)
+      : http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE,
+                                 CONST_STR_LEN("Content-Type"),
+                                 CONST_STR_LEN("application/json"));
+
+  #if 0
+    /*(XXX: ETag needs to be set for mod_deflate to potentially handle)*/
+    /*(XXX: should ETag be created from cache file mtime or directory mtime?)*/
+    const int follow_symlink = r->conf.follow_symlink;
+    r->conf.follow_symlink = 1; /*(skip symlink checks into cache)*/
+    http_response_send_file(r, sce->name, sce);
+    r->conf.follow_symlink = follow_symlink;
+    if (r->http_status < 400)
+        return HANDLER_FINISHED;
+    r->http_status = 0;
+  #endif
+
+    /* Note: dirlist < 350 or so entries will generally trigger file
+     * read into memory for dirlist < 32k, which will not be able to use
+     * mod_deflate cache.  Still, this is much more efficient than lots of
+     * stat() calls to generate the dirlisting for each and every request */
+    if (0 != http_chunk_append_file_ref(r, sce)) {
+        http_header_response_unset(r, HTTP_HEADER_CONTENT_TYPE,
+                                   CONST_STR_LEN("Content-Type"));
+        http_response_body_clear(r, 0);
+        return HANDLER_GO_ON;
+    }
+
+    r->resp_body_finished = 1;
+    return HANDLER_FINISHED;
+}
+
+
+static int mod_dirlisting_write_cq (const int fd, chunkqueue * const cq, log_error_st * const errh)
+{
+    chunkqueue in;
+    memset(&in, 0, sizeof(in));
+    chunkqueue_append_chunkqueue(&in, cq);
+    cq->bytes_in  -= in.bytes_in;
+    cq->bytes_out -= in.bytes_in;
+
+    /*(similar to mod_webdav.c:mod_webdav_write_cq(), but operates on two cqs)*/
+    chunkqueue_remove_finished_chunks(&in);
+    while (!chunkqueue_is_empty(&in)) {
+        ssize_t wr = chunkqueue_write_chunk(fd, &in, errh);
+        if (wr > 0)
+            chunkqueue_steal(cq, &in, wr);
+        else if (wr < 0) {
+            /*(writing to tempfile failed; transfer remaining data back to cq)*/
+            chunkqueue_append_chunkqueue(cq, &in);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+#include <sys/stat.h>   /* mkdir() */
+#include <sys/types.h>
+/*(similar to mod_deflate.c:mkdir_recursive(), but starts mid-path)*/
+static int mkdir_recursive (char *dir, size_t off) {
+    char *p = dir+off;
+    if (*p != '/') {
+        if (off && p[-1] == '/')
+            --p;
+        else {
+            errno = ENOTDIR;
+            return -1;
+        }
+    }
+    do {
+        *p = '\0';
+        int rc = mkdir(dir, 0700);
+        *p = '/';
+        if (0 != rc && errno != EEXIST) return -1;
+    } while ((p = strchr(p+1, '/')) != NULL);
+    return 0;
+}
+
+
+#include <stdio.h>      /* rename() */
+__attribute_noinline__
+static void mod_dirlisting_cache_add (request_st * const r, handler_ctx * const hctx) {
+  #ifndef PATH_MAX
+  #define PATH_MAX 4096
+  #endif
+    char oldpath[PATH_MAX];
+    char newpath[PATH_MAX];
+    buffer * const tb = r->tmp_buf;
+    buffer_copy_path_len2(tb, BUF_PTR_LEN(hctx->conf.cache->path),
+                              BUF_PTR_LEN(&r->physical.path));
+    if (!stat_cache_path_isdir(tb)
+        && 0 != mkdir_recursive(tb->ptr, buffer_clen(hctx->conf.cache->path)))
+        return;
+    buffer_append_string_len(tb, CONST_STR_LEN("dirlist.html"));
+    const size_t len = buffer_clen(tb);
+    if (len + 7 >= PATH_MAX) return;
+    memcpy(newpath, tb->ptr, len+1);   /*(include '\0')*/
+    buffer_append_string_len(tb, CONST_STR_LEN(".XXXXXX"));
+    memcpy(oldpath, tb->ptr, len+7+1); /*(include '\0')*/
+    const int fd = fdevent_mkostemp(oldpath, 0);
+    if (fd < 0) return;
+    if (mod_dirlisting_write_cq(fd, &r->write_queue, r->conf.errh)
+        && 0 == rename(oldpath, newpath))
+        stat_cache_invalidate_entry(newpath, len);
+    else
+        unlink(oldpath);
+    close(fd);
+}
+
+
+__attribute_noinline__
+static void mod_dirlisting_cache_json_init (request_st * const r, handler_ctx * const hctx) {
+  #ifndef PATH_MAX
+  #define PATH_MAX 4096
+  #endif
+    buffer * const tb = r->tmp_buf;
+    buffer_copy_path_len2(tb, BUF_PTR_LEN(hctx->conf.cache->path),
+                              BUF_PTR_LEN(&r->physical.path));
+    if (!stat_cache_path_isdir(tb)
+        && 0 != mkdir_recursive(tb->ptr, buffer_clen(hctx->conf.cache->path)))
+        return;
+    buffer_append_string_len(tb, CONST_STR_LEN("dirlist.json.XXXXXX"));
+    const int fd = fdevent_mkostemp(tb->ptr, 0);
+    if (fd < 0) return;
+    hctx->jfn_len = buffer_clen(tb);
+    hctx->jfd = fd;
+    hctx->jfn = malloc(hctx->jfn_len+1);
+    force_assert(hctx->jfn);
+    memcpy(hctx->jfn, tb->ptr, hctx->jfn_len+1); /*(include '\0')*/
+}
+
+
+__attribute_noinline__
+static void mod_dirlisting_cache_json (request_st * const r, handler_ctx * const hctx) {
+  #ifndef PATH_MAX
+  #define PATH_MAX 4096
+  #endif
+    UNUSED(r);
+    char newpath[PATH_MAX];
+    const size_t len = hctx->jfn_len - 7; /*(-7 for .XXXXXX)*/
+    force_assert(len < PATH_MAX);
+    memcpy(newpath, hctx->jfn, len);
+    newpath[len] = '\0';
+    if (0 == rename(hctx->jfn, newpath))
+        stat_cache_invalidate_entry(newpath, len);
+    else
+        unlink(hctx->jfn);
+    free(hctx->jfn);
+    hctx->jfn = NULL;
 }
 
 
@@ -1055,7 +1636,9 @@ int mod_dirlisting_plugin_init(plugin *p) {
 	p->name        = "dirlisting";
 
 	p->init        = mod_dirlisting_init;
-	p->handle_subrequest_start  = mod_dirlisting_subrequest;
+	p->handle_subrequest_start = mod_dirlisting_subrequest_start;
+	p->handle_subrequest       = mod_dirlisting_subrequest;
+	p->handle_request_reset    = mod_dirlisting_reset;
 	p->set_defaults  = mod_dirlisting_set_defaults;
 	p->cleanup     = mod_dirlisting_free;
 

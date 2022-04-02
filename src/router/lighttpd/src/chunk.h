@@ -8,12 +8,11 @@
 
 #include "buffer.h"
 #include "array.h"
+#include "fdlog.h"
 
 /* both should be way smaller than SSIZE_MAX :) */
 #define MAX_READ_LIMIT  (256*1024)
 #define MAX_WRITE_LIMIT (256*1024)
-
-struct log_error_st;    /*(declaration)*/
 
 typedef struct chunk {
 	struct chunk *next;
@@ -59,6 +58,9 @@ buffer * chunk_buffer_acquire(void);
 
 void chunk_buffer_release(buffer *b);
 
+__attribute_nonnull__()
+void chunk_buffer_yield(buffer *b);
+
 size_t chunk_buffer_prepare_append (buffer *b, size_t sz);
 
 void chunkqueue_chunk_pool_clear(void);
@@ -67,15 +69,26 @@ void chunkqueue_chunk_pool_free(void);
 __attribute_returns_nonnull__
 chunkqueue *chunkqueue_init(chunkqueue *cq);
 
+__attribute_cold__
 void chunkqueue_set_chunk_size (size_t sz);
+
+__attribute_cold__
 void chunkqueue_set_tempdirs_default_reset (void);
+
+__attribute_cold__
 void chunkqueue_set_tempdirs_default (const array *tempdirs, off_t upload_temp_file_size);
+
 void chunkqueue_set_tempdirs(chunkqueue * restrict cq, const array * restrict tempdirs, off_t upload_temp_file_size);
+
 void chunkqueue_append_file(chunkqueue * restrict cq, const buffer * restrict fn, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_file_fd(chunkqueue * restrict cq, const buffer * restrict fn, int fd, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_mem(chunkqueue * restrict cq, const char * restrict mem, size_t len); /* copies memory */
 void chunkqueue_append_mem_min(chunkqueue * restrict cq, const char * restrict mem, size_t len); /* copies memory */
+
+__attribute_nonnull__()
 void chunkqueue_append_buffer(chunkqueue * restrict cq, buffer * restrict mem); /* may reset "mem" */
+
+__attribute_nonnull__()
 void chunkqueue_append_chunkqueue(chunkqueue * restrict cq, chunkqueue * restrict src);
 
 __attribute_returns_nonnull__
@@ -94,7 +107,16 @@ buffer * chunkqueue_append_buffer_open(chunkqueue *cq);
 
 void chunkqueue_append_buffer_commit(chunkqueue *cq);
 
-int chunkqueue_append_mem_to_tempfile(chunkqueue * restrict cq, const char * restrict mem, size_t len, struct log_error_st * const restrict errh);
+int chunkqueue_append_mem_to_tempfile(chunkqueue * restrict cq, const char * restrict mem, size_t len, log_error_st * const restrict errh);
+
+#ifdef HAVE_SPLICE
+ssize_t chunkqueue_append_splice_pipe_tempfile(chunkqueue * restrict cq, int fd, unsigned int len, log_error_st * restrict errh);
+ssize_t chunkqueue_append_splice_sock_tempfile(chunkqueue * restrict cq, int fd, unsigned int len, log_error_st * restrict errh);
+__attribute_cold__
+void chunkqueue_internal_pipes(int init);
+#else
+#define chunkqueue_internal_pipes(init) do { } while (0)
+#endif
 
 /* functions to handle buffers to read into: */
 /* obtain/reserve memory in chunkqueue at least len (input) size,
@@ -117,23 +139,27 @@ void chunkqueue_mark_written(chunkqueue *cq, off_t len);
 
 void chunkqueue_remove_finished_chunks(chunkqueue *cq);
 
-void chunkqueue_steal(chunkqueue * restrict dest, chunkqueue * restrict src, off_t len);
-int chunkqueue_steal_with_tempfiles(chunkqueue * restrict dest, chunkqueue * restrict src, off_t len, struct log_error_st * const restrict errh);
+__attribute_cold__
+void chunkqueue_remove_empty_chunks(chunkqueue *cq);
 
-int chunkqueue_open_file_chunk(chunkqueue * restrict cq, struct log_error_st * const restrict errh);
+void chunkqueue_steal(chunkqueue * restrict dest, chunkqueue * restrict src, off_t len);
+int chunkqueue_steal_with_tempfiles(chunkqueue * restrict dest, chunkqueue * restrict src, off_t len, log_error_st * const restrict errh);
+void chunkqueue_append_cq_range (chunkqueue *dst, const chunkqueue *src, off_t offset, off_t len);
+
+int chunkqueue_open_file_chunk(chunkqueue * restrict cq, log_error_st * const restrict errh);
 
 void chunkqueue_compact_mem_offset(chunkqueue *cq);
 void chunkqueue_compact_mem(chunkqueue *cq, size_t clen);
 
 void chunkqueue_small_resp_optim (chunkqueue * restrict cq);
 
-ssize_t chunkqueue_write_chunk (int fd, chunkqueue * restrict cq, struct log_error_st * restrict errh);
-ssize_t chunkqueue_write_chunk_to_pipe (int fd, chunkqueue * restrict cq, struct log_error_st * restrict errh);
+ssize_t chunkqueue_write_chunk (int fd, chunkqueue * restrict cq, log_error_st * restrict errh);
+ssize_t chunkqueue_write_chunk_to_pipe (int fd, chunkqueue * restrict cq, log_error_st * restrict errh);
 
-int chunkqueue_peek_data (chunkqueue *cq, char **data, uint32_t *dlen, struct log_error_st * restrict errh);
-int chunkqueue_read_data (chunkqueue *cq, char *data, uint32_t dlen, struct log_error_st * restrict errh);
+int chunkqueue_peek_data (chunkqueue *cq, char **data, uint32_t *dlen, log_error_st * restrict errh);
+int chunkqueue_read_data (chunkqueue *cq, char *data, uint32_t dlen, log_error_st * restrict errh);
 
-buffer * chunkqueue_read_squash (chunkqueue * restrict cq, struct log_error_st * restrict errh);
+buffer * chunkqueue_read_squash (chunkqueue * restrict cq, log_error_st * restrict errh);
 
 __attribute_pure__
 static inline off_t chunkqueue_length(const chunkqueue *cq);

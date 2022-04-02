@@ -4,7 +4,6 @@
 
 #include "base_decls.h" /* handler_t */
 
-struct log_error_st;    /* declaration */
 struct fdevents;        /* declaration */
 typedef struct fdevents fdevents;
 
@@ -47,19 +46,24 @@ struct fdnode_st {
 #define FDEVENT_STREAM_RESPONSE_POLLRDHUP BV(15)
 
 __attribute_cold__
-int fdevent_config(const char **event_handler_name, struct log_error_st *errh);
+int fdevent_config(const char **event_handler_name, log_error_st *errh);
 
 __attribute_cold__
+__attribute_const__
+__attribute_returns_nonnull__
 const char * fdevent_show_event_handlers(void);
 
 __attribute_cold__
-fdevents * fdevent_init(const char *event_handler, int *max_fds, int *cur_fds, struct log_error_st *errh);
+fdevents * fdevent_init(const char *event_handler, int *max_fds, int *cur_fds, log_error_st *errh);
 
 __attribute_cold__
 int fdevent_reset(fdevents *ev); /* "init" after fork() */
 
 __attribute_cold__
 void fdevent_free(fdevents *ev);
+
+__attribute_cold__
+void fdevent_socket_nb_cloexec_init(void);
 
 #define fdevent_fdnode_interest(fdn) (NULL != (fdn) ? (fdn)->events : 0)
 void fdevent_fdnode_event_del(fdevents *ev, fdnode *fdn);
@@ -69,7 +73,9 @@ void fdevent_fdnode_event_clr(fdevents *ev, fdnode *fdn, int event);
 
 int fdevent_poll(fdevents *ev, int timeout_ms);
 
+__attribute_returns_nonnull__
 fdnode * fdevent_register(fdevents *ev, int fd, fdevent_handler handler, void *ctx);
+
 void fdevent_unregister(fdevents *ev, int fd);
 void fdevent_sched_close(fdevents *ev, int fd, int issock);
 
@@ -82,26 +88,22 @@ int fdevent_socket_cloexec(int domain, int type, int protocol);
 int fdevent_socket_nb_cloexec(int domain, int type, int protocol);
 int fdevent_dup_cloexec(int fd);
 int fdevent_open_cloexec(const char *pathname, int symlinks, int flags, mode_t mode);
-int fdevent_mkstemp_append(char *path);
+int fdevent_pipe_cloexec (int *fds, unsigned int bufsz_hint);
+int fdevent_mkostemp(char *path, int flags);
 int fdevent_rename(const char *oldpath, const char *newpath);
 
 struct sockaddr;
 int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen);
 
+__attribute_pure__
 char ** fdevent_environ(void);
+
 int fdevent_open_devnull(void);
 int fdevent_open_dirname(char *path, int symlinks);
 int fdevent_set_stdin_stdout_stderr(int fdin, int fdout, int fderr);
 pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin, int fdout, int fderr, int dfd);
 int fdevent_waitpid(pid_t pid, int *status, int nb);
-int fdevent_open_logger(const char *logger);
-int fdevent_cycle_logger(const char *logger, int *curfd);
-int fdevent_reaped_logger_pipe(pid_t pid);
-int fdevent_waitpid_logger_pipe_pid(pid_t pid, time_t ts);
-void fdevent_restart_logger_pipes(time_t ts);
-void fdevent_close_logger_pipes(void);
-void fdevent_breakagelog_logger_pipe(int fd);
-void fdevent_clr_logger_pipe_pids(void);
+int fdevent_waitpid_intr(pid_t pid, int *status);
 
 ssize_t fdevent_socket_read_discard (int fd, char *buf, size_t sz, int family, int so_type);
 

@@ -43,28 +43,13 @@
  *       config. However "all" has effect only on connecting IP, as the
  *       X-Forwarded-For header can not be trusted.
  *
- * Note: The effect of this module is variable on $HTTP["remotip"] directives and
+ * Note: The effect of this module is variable on $HTTP["remoteip"] directives and
  *       other module's remote ip dependent actions.
  *  Things done by modules before we change the remoteip or after we reset it will match on the proxy's IP.
  *  Things done in between these two moments will match on the real client's IP.
  *  The moment things are done by a module depends on in which hook it does things and within the same hook
  *  on whether they are before/after us in the module loading order
  *  (order in the server.modules directive in the config file).
- *
- * Tested behaviours:
- *
- *  mod_access: Will match on the real client.
- *
- *  mod_accesslog:
- *   In order to see the "real" ip address in access log ,
- *   you'll have to load mod_extforward after mod_accesslog.
- *   like this:
- *
- *    server.modules  = (
- *       .....
- *       mod_accesslog,
- *       mod_extforward
- *    )
  */
 
 
@@ -109,6 +94,7 @@ typedef struct {
     plugin_config defaults;
     plugin_config conf;
     array *default_headers;
+    array tokens;
 } plugin_data;
 
 static plugin_data *mod_extforward_plugin_data_singleton;
@@ -120,7 +106,7 @@ static int extforward_check_proxy;
 typedef struct {
 	/* per-request state */
 	sock_addr saved_remote_addr;
-	buffer *saved_remote_addr_buf;
+	buffer saved_remote_addr_buf;
 
 	/* hap-PROXY protocol prior to receiving first request */
 	int(*saved_network_read)(connection *, chunkqueue *, off_t);
@@ -140,6 +126,7 @@ static handler_ctx * handler_ctx_init(void) {
 }
 
 static void handler_ctx_free(handler_ctx *hctx) {
+	free(hctx->saved_remote_addr_buf.ptr);
 	free(hctx);
 }
 
@@ -150,6 +137,7 @@ INIT_FUNC(mod_extforward_init) {
 FREE_FUNC(mod_extforward_free) {
     plugin_data * const p = p_d;
     array_free(p->default_headers);
+    array_free_data(&p->tokens);
     if (NULL == p->cvlist) return;
     /* (init i to 0 if global context; to 1 to skip empty global context) */
     for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
@@ -250,7 +238,7 @@ static void * mod_extforward_parse_forwarder(server *srv, const array *forwarder
         data_string * const ds = (data_string *)forwarder->data[j];
         char * const nm_slash = strchr(ds->key.ptr, '/');
         if (NULL == nm_slash) continue;
-        if (buffer_string_is_empty(&ds->value)) continue; /* ignored */
+        if (buffer_is_blank(&ds->value)) continue; /* ignored */
 
         char *err;
         const int nm_bits = strtol(nm_slash + 1, &err, 10);
@@ -368,7 +356,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
                     for (uint32_t j = 0; j < a->used; ++j) {
                         data_string * const ds = (data_string *)a->data[j];
                         ds->ext =
-                          http_header_hkey_get(CONST_BUF_LEN(&ds->value));
+                          http_header_hkey_get(BUF_PTR_LEN(&ds->value));
                     }
                 }
                 break;
@@ -405,6 +393,10 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
         p->defaults.headers = p->default_headers = array_init(2);
         array_insert_value(p->default_headers,CONST_STR_LEN("X-Forwarded-For"));
         array_insert_value(p->default_headers,CONST_STR_LEN("Forwarded-For"));
+        for (uint32_t i = 0; i < p->default_headers->used; ++i) {
+            data_string * const ds = (data_string *)p->default_headers->data[i];
+            ds->ext = http_header_hkey_get(BUF_PTR_LEN(&ds->value));
+        }
     }
 
     /* attempt to warn if mod_extforward is not last module loaded to hook
@@ -425,6 +417,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
             data_string *ds = (data_string *)srv->srvconf.modules->data[i];
             if (buffer_eq_slen(&ds->value, CONST_STR_LEN("mod_openssl"))
                 || buffer_eq_slen(&ds->value, CONST_STR_LEN("mod_mbedtls"))
+                || buffer_eq_slen(&ds->value, CONST_STR_LEN("mod_wolfssl"))
                 || buffer_eq_slen(&ds->value, CONST_STR_LEN("mod_nss"))
                 || buffer_eq_slen(&ds->value, CONST_STR_LEN("mod_gnutls"))) {
                 log_error(srv->errh, __FILE__, __LINE__,
@@ -451,10 +444,9 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
 /*
    extract a forward array from the environment
 */
-static array *extract_forward_array(const buffer *pbuffer)
+static void extract_forward_array(array * const result, const buffer *pbuffer)
 {
-	array *result = array_init(8);
-	if (!buffer_string_is_empty(pbuffer)) {
+		/*force_assert(!buffer_is_blank(pbuffer));*/
 		const char *base, *curr;
 		/* state variable, 0 means not in string, 1 means in string */
 		int in_str = 0;
@@ -479,8 +471,6 @@ static array *extract_forward_array(const buffer *pbuffer)
 		if (in_str) {
 			array_insert_value(result, base, curr - base);
 		}
-	}
-	return result;
 }
 
 /*
@@ -490,7 +480,7 @@ static int is_proxy_trusted(plugin_data *p, const char * const ip, size_t iplen)
 {
     const data_string *ds =
       (const data_string *)array_get_element_klen(p->conf.forwarder, ip, iplen);
-    if (NULL != ds) return !buffer_string_is_empty(&ds->value);
+    if (NULL != ds) return !buffer_is_blank(&ds->value);
 
     if (p->conf.forward_masks_used) {
         const struct sock_addr_mask * const addrs = p->conf.forward_masks;
@@ -517,38 +507,38 @@ static int is_proxy_trusted(plugin_data *p, const char * const ip, size_t iplen)
 static int is_connection_trusted(connection * const con, plugin_data *p)
 {
     if (p->conf.forward_all) return (1 == p->conf.forward_all);
-    return is_proxy_trusted(p, CONST_BUF_LEN(con->dst_addr_buf));
+    return is_proxy_trusted(p, BUF_PTR_LEN(&con->dst_addr_buf));
 }
 
 /*
  * Return last address of proxy that is not trusted.
  * Do not accept "all" keyword here.
  */
-static const char *last_not_in_array(array *a, plugin_data *p)
+static const buffer *last_not_in_array(array *a, plugin_data *p)
 {
 	int i;
 
 	for (i = a->used - 1; i >= 0; i--) {
 		data_string *ds = (data_string *)a->data[i];
-		if (!is_proxy_trusted(p, CONST_BUF_LEN(&ds->value))) {
-			return ds->value.ptr;
+		if (!is_proxy_trusted(p, BUF_PTR_LEN(&ds->value))) {
+			return &ds->value;
 		}
 	}
 	return NULL;
 }
 
-static int mod_extforward_set_addr(request_st * const r, plugin_data *p, const char *addr) {
+static int mod_extforward_set_addr(request_st * const r, plugin_data *p, const char *addr, size_t addrlen) {
 	connection * const con = r->con;
 	sock_addr sock;
 	handler_ctx *hctx = con->plugin_ctx[p->id];
 
 	/* Preserve changed addr for lifetime of h2 connection; upstream proxy
 	 * should not reuse same h2 connection for requests from different clients*/
-	if (hctx && NULL != hctx->saved_remote_addr_buf
+	if (hctx && !buffer_is_unset(&hctx->saved_remote_addr_buf)
 	    && r->http_version > HTTP_VERSION_1_1) { /*(e.g. HTTP_VERSION_2)*/
 		if (extforward_check_proxy) /* save old address */
 			http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"),
-			                    CONST_BUF_LEN(hctx->saved_remote_addr_buf));
+			                    BUF_PTR_LEN(&hctx->saved_remote_addr_buf));
 		return 1;
 	}
 
@@ -562,34 +552,28 @@ static int mod_extforward_set_addr(request_st * const r, plugin_data *p, const c
 
 	/* we found the remote address, modify current connection and save the old address */
 	if (hctx) {
-		if (hctx->saved_remote_addr_buf) {
+		if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
 			if (r->conf.log_request_handling) {
 				log_error(r->conf.errh, __FILE__, __LINE__,
 				  "-- mod_extforward_uri_handler already patched this connection, resetting state");
 			}
 			con->dst_addr = hctx->saved_remote_addr;
-			buffer_free(con->dst_addr_buf);
-			con->dst_addr_buf = hctx->saved_remote_addr_buf;
-			hctx->saved_remote_addr_buf = NULL;
+			buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
 		}
 	} else {
 		con->plugin_ctx[p->id] = hctx = handler_ctx_init();
 	}
 	/* save old address */
 	if (extforward_check_proxy) {
-		http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"), CONST_BUF_LEN(con->dst_addr_buf));
+		http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"),
+		                    BUF_PTR_LEN(&con->dst_addr_buf));
 	}
 	hctx->request_count = con->request_count;
 	hctx->saved_remote_addr = con->dst_addr;
-	hctx->saved_remote_addr_buf = con->dst_addr_buf;
+	buffer_move(&hctx->saved_remote_addr_buf, &con->dst_addr_buf);
 	/* patch connection address */
 	con->dst_addr = sock;
-	con->dst_addr_buf = buffer_init_string(addr);
-
-	if (r->conf.log_request_handling) {
-		log_error(r->conf.errh, __FILE__, __LINE__,
-		  "patching con->dst_addr_buf for the accesslog: %s", addr);
-	}
+	buffer_copy_string_len(&con->dst_addr_buf, addr, addrlen);
 
 	/* Now, clean the conf_cond cache, because we may have changed the results of tests */
 	config_cond_cache_reset_item(r, COMP_HTTP_REMOTE_IP);
@@ -598,7 +582,7 @@ static int mod_extforward_set_addr(request_st * const r, plugin_data *p, const c
 }
 
 static void mod_extforward_set_proto(request_st * const r, const char * const proto, size_t protolen) {
-	if (0 != protolen && !buffer_is_equal_caseless_string(&r->uri.scheme, proto, protolen)) {
+	if (0 != protolen && !buffer_eq_icase_slen(&r->uri.scheme, proto, protolen)) {
 		/* update scheme if X-Forwarded-Proto is set
 		 * Limitations:
 		 * - Only "http" or "https" are currently accepted since the request to lighttpd currently has to
@@ -611,7 +595,7 @@ static void mod_extforward_set_proto(request_st * const r, const char * const pr
 		 *   (probably) or the original value.
 		 */
 		if (extforward_check_proxy) {
-			http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_PROTO"), CONST_BUF_LEN(&r->uri.scheme));
+			http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_PROTO"), BUF_PTR_LEN(&r->uri.scheme));
 		}
 		if (buffer_eq_icase_ss(proto, protolen, CONST_STR_LEN("https"))) {
 	                r->con->proto_default_port = 443; /* "https" */
@@ -627,8 +611,9 @@ static void mod_extforward_set_proto(request_st * const r, const char * const pr
 
 static handler_t mod_extforward_X_Forwarded_For(request_st * const r, plugin_data * const p, const buffer * const x_forwarded_for) {
 	/* build forward_array from forwarded data_string */
-	array *forward_array = extract_forward_array(x_forwarded_for);
-	const char *real_remote_addr = last_not_in_array(forward_array, p);
+	array * const forward_array = &p->tokens;
+	extract_forward_array(forward_array, x_forwarded_for);
+	const buffer *real_remote_addr = last_not_in_array(forward_array, p);
 	if (real_remote_addr != NULL) { /* parsed */
 		/* get scheme if X-Forwarded-Proto is set
 		 * Limitations:
@@ -639,14 +624,15 @@ static handler_t mod_extforward_X_Forwarded_For(request_st * const r, plugin_dat
 		 *    as in X-Forwarded-For to find proto set by last trusted proxy)
 		 */
 		const buffer *x_forwarded_proto = http_header_request_get(r, HTTP_HEADER_X_FORWARDED_PROTO, CONST_STR_LEN("X-Forwarded-Proto"));
-		if (mod_extforward_set_addr(r, p, real_remote_addr) && NULL != x_forwarded_proto) {
-			mod_extforward_set_proto(r, CONST_BUF_LEN(x_forwarded_proto));
+		if (mod_extforward_set_addr(r, p, BUF_PTR_LEN(real_remote_addr)) && NULL != x_forwarded_proto) {
+			mod_extforward_set_proto(r, BUF_PTR_LEN(x_forwarded_proto));
 		}
 	}
-	array_free(forward_array);
+	array_reset_data_strings(forward_array);
 	return HANDLER_GO_ON;
 }
 
+__attribute_pure__
 static int find_end_quoted_string (const char * const s, int i) {
     do {
         ++i;
@@ -654,6 +640,7 @@ static int find_end_quoted_string (const char * const s, int i) {
     return i;
 }
 
+__attribute_pure__
 static int find_next_semicolon_or_comma_or_eq (const char * const s, int i) {
     for (; s[i] != '=' && s[i] != ';' && s[i] != ',' && s[i] != '\0'; ++i) {
         if (s[i] == '"') {
@@ -664,6 +651,7 @@ static int find_next_semicolon_or_comma_or_eq (const char * const s, int i) {
     return i;
 }
 
+__attribute_pure__
 static int find_next_semicolon_or_comma (const char * const s, int i) {
     for (; s[i] != ';' && s[i] != ',' && s[i] != '\0'; ++i) {
         if (s[i] == '"') {
@@ -677,7 +665,7 @@ static int find_next_semicolon_or_comma (const char * const s, int i) {
 static int buffer_backslash_unescape (buffer * const b) {
     /* (future: might move to buffer.c) */
     size_t j = 0;
-    size_t len = buffer_string_length(b);
+    size_t len = buffer_clen(b);
     char *p = memchr(b->ptr, '\\', len);
 
     if (NULL == p) return 1; /*(nothing to do)*/
@@ -689,8 +677,17 @@ static int buffer_backslash_unescape (buffer * const b) {
         }
         p[j++] = p[i];
     }
-    buffer_string_set_length(b, (size_t)(p+j - b->ptr));
+    buffer_truncate(b, (size_t)(p+j - b->ptr));
     return 1;
+}
+
+__attribute_cold__
+static handler_t mod_extforward_bad_request (request_st * const r, const unsigned int line, const char * const msg)
+{
+    r->http_status = 400; /* Bad Request */
+    r->handler_module = NULL;
+    log_error(r->conf.errh, __FILE__, line, "%s", msg);
+    return HANDLER_FINISHED;
 }
 
 static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * const p, const buffer * const forwarded) {
@@ -711,14 +708,14 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
      */
     char * const s = forwarded->ptr;
     int i = 0, j = -1, v, vlen, k, klen;
-    int used = (int)buffer_string_length(forwarded);
+    int used = (int)buffer_clen(forwarded);
     int ofor = -1, oproto, ohost, oby, oremote_user;
     int offsets[256];/*(~50 params is more than reasonably expected to handle)*/
     while (i < used) {
         while (s[i] == ' ' || s[i] == '\t') ++i;
         if (s[i] == ';') { ++i; continue; }
         if (s[i] == ',') {
-            if (j >= (int)(sizeof(offsets)/sizeof(int))) break;
+            if (j >= (int)(sizeof(offsets)/sizeof(int))-1) break;
             offsets[++j] = -1; /*("offset" separating params from next proxy)*/
             ++i;
             continue;
@@ -729,11 +726,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
         i = find_next_semicolon_or_comma_or_eq(s, i);
         if (i < 0) {
             /*(reject IP spoofing if attacker sets improper quoted-string)*/
-            log_error(r->conf.errh, __FILE__, __LINE__,
+            return mod_extforward_bad_request(r, __LINE__,
               "invalid quoted-string in Forwarded header");
-            r->http_status = 400; /* Bad Request */
-            r->handler_module = NULL;
-            return HANDLER_FINISHED;
         }
         if (s[i] != '=') continue;
         klen = i - k;
@@ -741,11 +735,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
         i = find_next_semicolon_or_comma(s, i);
         if (i < 0) {
             /*(reject IP spoofing if attacker sets improper quoted-string)*/
-            log_error(r->conf.errh, __FILE__, __LINE__,
+            return mod_extforward_bad_request(r, __LINE__,
               "invalid quoted-string in Forwarded header");
-            r->http_status = 400; /* Bad Request */
-            r->handler_module = NULL;
-            return HANDLER_FINISHED;
         }
         vlen = i - v;              /* might be 0 */
 
@@ -764,11 +755,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
 
     if (j >= (int)(sizeof(offsets)/sizeof(int))-4) {
         /* error processing Forwarded; too many params; fail closed */
-        log_error(r->conf.errh, __FILE__, __LINE__,
+        return mod_extforward_bad_request(r, __LINE__,
           "Too many params in Forwarded header");
-        r->http_status = 400; /* Bad Request */
-        r->handler_module = NULL;
-        return HANDLER_FINISHED;
     }
 
     if (-1 == j) return HANDLER_GO_ON;  /* make no changes */
@@ -799,11 +787,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
                 ++v;
                 do { --vlen; } while (vlen > v && s[vlen] != ']');
                 if (v == vlen) {
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                    return mod_extforward_bad_request(r, __LINE__,
                       "Invalid IPv6 addr in Forwarded header");
-                    r->http_status = 400; /* Bad Request */
-                    r->handler_module = NULL;
-                    return HANDLER_FINISHED;
                 }
             }
             else if (s[v] != '_' && s[v] != '/' && s[v] != 'u') {
@@ -843,7 +828,7 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
         char c = *ipend;
         int rc;
         *ipend = '\0';
-        rc = mod_extforward_set_addr(r, p, s+offsets[ofor+2]);
+        rc = mod_extforward_set_addr(r, p, s+offsets[ofor+2], offsets[ofor+3]);
         *ipend = c;
         if (!rc) return HANDLER_GO_ON; /* invalid addr; make no changes */
     }
@@ -889,7 +874,7 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
             break;
         }
     }
-    i = ++j;
+    i = j+1;
 
     if (-1 != oproto) {
         /* remove trailing spaces/tabs, and double-quotes from proto
@@ -927,11 +912,16 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
             j += 4; /*(k, klen, v, vlen come in sets of 4)*/
         }
         if (-1 != ohost) {
-            if (extforward_check_proxy
-                && !buffer_string_is_empty(r->http_host)) {
-                http_header_env_set(r,
-                                    CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_HOST"),
-                                    CONST_BUF_LEN(r->http_host));
+            if (r->http_host && !buffer_is_blank(r->http_host)) {
+                if (extforward_check_proxy)
+                    http_header_env_set(r,
+                      CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_HOST"),
+                      BUF_PTR_LEN(r->http_host));
+            }
+            else {
+                r->http_host =
+                  http_header_request_set_ptr(r, HTTP_HEADER_HOST,
+                                              CONST_STR_LEN("Host"));
             }
             /* remove trailing spaces/tabs, and double-quotes from host */
             v = offsets[ohost+2];
@@ -939,28 +929,22 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
             while (vlen > v && (s[vlen-1] == ' ' || s[vlen-1] == '\t')) --vlen;
             if (vlen > v+1 && s[v] == '"' && s[vlen-1] == '"') {
                 ++v; --vlen;
-                buffer_copy_string_len(r->http_host, s+v, vlen-v);
+                buffer_copy_string_len_lc(r->http_host, s+v, vlen-v);
                 if (!buffer_backslash_unescape(r->http_host)) {
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                    return mod_extforward_bad_request(r, __LINE__,
                       "invalid host= value in Forwarded header");
-                    r->http_status = 400; /* Bad Request */
-                    r->handler_module = NULL;
-                    return HANDLER_FINISHED;
                 }
             }
             else {
-                buffer_copy_string_len(r->http_host, s+v, vlen-v);
+                buffer_copy_string_len_lc(r->http_host, s+v, vlen-v);
             }
 
             if (0 != http_request_host_policy(r->http_host,
                                               r->conf.http_parseopts,
                                               r->con->proto_default_port)) {
                 /*(reject invalid chars in Host)*/
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                return mod_extforward_bad_request(r, __LINE__,
                   "invalid host= value in Forwarded header");
-                r->http_status = 400; /* Bad Request */
-                r->handler_module = NULL;
-                return HANDLER_FINISHED;
             }
 
             config_cond_cache_reset_item(r, COMP_HTTP_HOST);
@@ -991,11 +975,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
                 euser = http_header_env_get(r, CONST_STR_LEN("REMOTE_USER"));
                 force_assert(NULL != euser);
                 if (!buffer_backslash_unescape(euser)) {
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                    return mod_extforward_bad_request(r, __LINE__,
                       "invalid remote_user= value in Forwarded header");
-                    r->http_status = 400; /* Bad Request */
-                    r->handler_module = NULL;
-                    return HANDLER_FINISHED;
                 }
             }
             else {
@@ -1010,13 +991,14 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
         && !light_btst(r->rqst_htags, HTTP_HEADER_X_FORWARDED_FOR)) {
         /* create X-Forwarded-For if not present
          * (and at least original connecting IP is a trusted proxy) */
-        buffer *xff = r->tmp_buf;
-        buffer_clear(xff);
+        buffer * const xff =
+          http_header_request_set_ptr(r, HTTP_HEADER_X_FORWARDED_FOR,
+                                      CONST_STR_LEN("X-Forwarded-For"));
         for (j = 0; j < used; ) {
             if (-1 == offsets[j]) { ++j; continue; }
             if (3 == offsets[j+1]
                 && buffer_eq_icase_ssn(s+offsets[j], "for", 3)) {
-                if (!buffer_string_is_empty(xff))
+                if (!buffer_is_blank(xff))
                     buffer_append_string_len(xff, CONST_STR_LEN(", "));
                 /* quoted-string, IPv6 brackets, and :port already removed */
                 v = offsets[j+2];
@@ -1024,14 +1006,14 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
                 buffer_append_string_len(xff, s+v, vlen);
                 if (s[v-1] != '=') { /*(must have been quoted-string)*/
                     char *x =
-                      memchr(xff->ptr+buffer_string_length(xff)-vlen,'\\',vlen);
+                      memchr(xff->ptr + buffer_clen(xff) - vlen, '\\', vlen);
                     if (NULL != x) { /* backslash unescape in-place */
                         for (v = 0; x[v]; ++x) {
                             if (x[v] == '\\' && x[++v] == '\0')
                                 break; /*(invalid trailing backslash)*/
                             *x = x[v];
                         }
-                        buffer_string_set_length(xff, x - xff->ptr);
+                        buffer_truncate(xff, x - xff->ptr);
                     }
                 }
                 /* skip to next group; take first "for=..." in group
@@ -1042,7 +1024,6 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
             }
             j += 4; /*(k, klen, v, vlen come in sets of 4)*/
         }
-        http_header_request_set(r, HTTP_HEADER_X_FORWARDED_FOR, CONST_STR_LEN("X-Forwarded-For"), CONST_BUF_LEN(xff));
     }
   #endif
 
@@ -1051,16 +1032,8 @@ static handler_t mod_extforward_Forwarded (request_st * const r, plugin_data * c
 
 URIHANDLER_FUNC(mod_extforward_uri_handler) {
 	plugin_data *p = p_d;
-	const buffer *forwarded = NULL;
-	int is_forwarded_header = 0;
-
 	mod_extforward_patch_config(r, p);
 	if (NULL == p->conf.forwarder) return HANDLER_GO_ON;
-
-	if (r->conf.log_request_handling) {
-		log_error(r->conf.errh, __FILE__, __LINE__,
-		  "-- mod_extforward_uri_handler called");
-	}
 
 	if (p->conf.hap_PROXY_ssl_client_verify) {
 		const data_string *ds;
@@ -1072,7 +1045,7 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 					    CONST_STR_LEN("SUCCESS"));
 			http_header_env_set(r,
 					    CONST_STR_LEN("REMOTE_USER"),
-					    CONST_BUF_LEN(&ds->value));
+					    BUF_PTR_LEN(&ds->value));
 			http_header_env_set(r,
 					    CONST_STR_LEN("AUTH_TYPE"),
 					    CONST_STR_LEN("SSL_CLIENT_VERIFY"));
@@ -1096,44 +1069,36 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 	 * that mod_magnet and mod_cgi with local-redir should not modify
 	 * Forwarded or related headers and expect effects here. */
 	handler_ctx *hctx = r->con->plugin_ctx[p->id];
-	if (NULL != hctx && NULL != hctx->saved_remote_addr_buf
+	if (NULL != hctx && !buffer_is_unset(&hctx->saved_remote_addr_buf)
 	    && hctx->request_count == r->con->request_count)
 		return HANDLER_GO_ON;
 
+	const buffer *forwarded = NULL;
+	int is_forwarded_header = 0;
 	for (uint32_t k = 0; k < p->conf.headers->used; ++k) {
 		const data_string * const ds = (data_string *)p->conf.headers->data[k];
 		const buffer * const hdr = &ds->value;
-		forwarded = http_header_request_get(r, ds->ext, CONST_BUF_LEN(hdr));
+		forwarded = http_header_request_get(r, ds->ext, BUF_PTR_LEN(hdr));
 		if (forwarded) {
-			is_forwarded_header = buffer_is_equal_caseless_string(hdr, CONST_STR_LEN("Forwarded"));
+			is_forwarded_header = (ds->ext == HTTP_HEADER_FORWARDED);
 			break;
 		}
 	}
-	if (NULL == forwarded) {
-		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "no forward header found, skipping");
-		}
 
-		return HANDLER_GO_ON;
+	if (forwarded && is_connection_trusted(r->con, p)) {
+		return (is_forwarded_header)
+		  ? mod_extforward_Forwarded(r, p, forwarded)
+		  : mod_extforward_X_Forwarded_For(r, p, forwarded);
 	}
-
-	/* if the remote ip itself is not trusted, then do nothing */
-	if (!is_connection_trusted(r->con, p)) {
+	else {
 		if (r->conf.log_request_handling) {
 			log_error(r->conf.errh, __FILE__, __LINE__,
+			  "no forward header found or "
 			  "remote address %s is NOT a trusted proxy, skipping",
-			  r->con->dst_addr_buf->ptr);
+			  r->con->dst_addr_buf.ptr);
 		}
-
 		return HANDLER_GO_ON;
 	}
-
-	if (is_forwarded_header) {
-		return mod_extforward_Forwarded(r, p, forwarded);
-	}
-
-	return mod_extforward_X_Forwarded_For(r, p, forwarded);
 }
 
 
@@ -1145,8 +1110,7 @@ REQUEST_FUNC(mod_extforward_handle_request_env) {
         /* note: replaces values which may have been set by mod_openssl
          * (when mod_extforward is listed after mod_openssl in server.modules)*/
         data_string *ds = (data_string *)hctx->env->data[i];
-        http_header_env_set(r,
-                            CONST_BUF_LEN(&ds->key), CONST_BUF_LEN(&ds->value));
+        http_header_env_set(r, BUF_PTR_LEN(&ds->key), BUF_PTR_LEN(&ds->value));
     }
     return HANDLER_GO_ON;
 }
@@ -1165,11 +1129,9 @@ REQUEST_FUNC(mod_extforward_restore) {
 
 	if (!hctx) return HANDLER_GO_ON;
 
-	if (NULL != hctx->saved_remote_addr_buf) {
+	if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
 		con->dst_addr = hctx->saved_remote_addr;
-		buffer_free(con->dst_addr_buf);
-		con->dst_addr_buf = hctx->saved_remote_addr_buf;
-		hctx->saved_remote_addr_buf = NULL;
+		buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
 		/* Now, clean the conf_cond cache, because we may have changed the results of tests */
 		config_cond_cache_reset_item(r, COMP_HTTP_REMOTE_IP);
 	}
@@ -1191,10 +1153,9 @@ CONNECTION_FUNC(mod_extforward_handle_con_close)
         if (NULL != hctx->saved_network_read) {
             con->network_read = hctx->saved_network_read;
         }
-        if (NULL != hctx->saved_remote_addr_buf) {
+        if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
             con->dst_addr = hctx->saved_remote_addr;
-            buffer_free(con->dst_addr_buf);
-            con->dst_addr_buf = hctx->saved_remote_addr_buf;
+            buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
         }
         if (NULL != hctx->env) {
             array_free(hctx->env);
@@ -1226,7 +1187,7 @@ CONNECTION_FUNC(mod_extforward_handle_con_accept)
         if (r->conf.log_request_handling) {
             log_error(r->conf.errh, __FILE__, __LINE__,
               "remote address %s is NOT a trusted proxy, skipping",
-              con->dst_addr_buf->ptr);
+              con->dst_addr_buf.ptr);
         }
     }
     return HANDLER_GO_ON;
@@ -1242,7 +1203,6 @@ int mod_extforward_plugin_init(plugin *p) {
 	p->handle_connection_accept = mod_extforward_handle_con_accept;
 	p->handle_uri_raw = mod_extforward_uri_handler;
 	p->handle_request_env = mod_extforward_handle_request_env;
-	p->handle_request_done = mod_extforward_restore;
 	p->handle_request_reset = mod_extforward_restore;
 	p->handle_connection_close = mod_extforward_handle_con_close;
 	p->set_defaults  = mod_extforward_set_defaults;
@@ -1295,6 +1255,7 @@ union hap_PROXY_hdr {
             } unx;
         } addr;
     } v2;
+    uint64_t ext[32]; /* 2k (- hdr) for v2 TLV extensions (at least 1536 MTU) */
 };
 
 /*
@@ -1324,6 +1285,7 @@ The following types have already been registered for the <type> field :
 #define PP2_TYPE_AUTHORITY        0x02
 #define PP2_TYPE_CRC32C           0x03
 #define PP2_TYPE_NOOP             0x04
+#define PP2_TYPE_UNIQUE_ID        0x05
 #define PP2_TYPE_SSL              0x20
 #define PP2_SUBTYPE_SSL_VERSION   0x21
 #define PP2_SUBTYPE_SSL_CN        0x22
@@ -1510,7 +1472,7 @@ static int mod_extforward_hap_PROXY_v1 (connection * const con,
     /* re-parse addr to string to normalize
      * (instead of trusting PROXY to provide canonicalized src_addr string)
      * (should prefer PROXY v2 protocol if concerned about performance) */
-    sock_addr_inet_ntop_copy_buffer(con->dst_addr_buf, &con->dst_addr);
+    sock_addr_inet_ntop_copy_buffer(&con->dst_addr_buf, &con->dst_addr);
 
     return 0;
 }
@@ -1570,7 +1532,7 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
       case 0x11:  /* TCPv4 */
         sock_addr_assign(&con->dst_addr, AF_INET, hdr->v2.addr.ip4.src_port,
                                                  &hdr->v2.addr.ip4.src_addr);
-        sock_addr_inet_ntop_copy_buffer(con->dst_addr_buf, &con->dst_addr);
+        sock_addr_inet_ntop_copy_buffer(&con->dst_addr_buf, &con->dst_addr);
        #if 0
         ((struct sockaddr_in *)&by)->sin_family = AF_INET;
         ((struct sockaddr_in *)&by)->sin_addr.s_addr =
@@ -1584,7 +1546,7 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
       case 0x21:  /* TCPv6 */
         sock_addr_assign(&con->dst_addr, AF_INET6, hdr->v2.addr.ip6.src_port,
                                                   &hdr->v2.addr.ip6.src_addr);
-        sock_addr_inet_ntop_copy_buffer(con->dst_addr_buf, &con->dst_addr);
+        sock_addr_inet_ntop_copy_buffer(&con->dst_addr_buf, &con->dst_addr);
        #if 0
         ((struct sockaddr_in6 *)&by)->sin6_family = AF_INET6;
         memcpy(&((struct sockaddr_in6 *)&by)->sin6_addr,
@@ -1603,7 +1565,7 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
             if (NULL == z) return -1; /* invalid addr; too long */
             len = (uint32_t)(z - src_addr + 1); /*(+1 for '\0')*/
             sock_addr_assign(&con->dst_addr, AF_UNIX, 0, src_addr);
-            buffer_copy_string_len(con->dst_addr_buf, src_addr, len);
+            buffer_copy_string_len(&con->dst_addr_buf, src_addr, len);
         }
        #if 0 /*(dst_addr should be identical to src_addr for AF_UNIX)*/
         ((struct sockaddr_un *)&by)->sun_family = AF_UNIX;
@@ -1619,11 +1581,17 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
 
     /* (optional) Type-Length-Value (TLV vectors) follow addresses */
 
+    if (3 + len > sz) return 0;
+
+    handler_ctx * const hctx =
+      con->plugin_ctx[mod_extforward_plugin_data_singleton->id];
     tlv = (struct pp2_tlv *)((char *)hdr + 16);
     for (sz -= len, len -= 3; sz >= 3; sz -= 3 + len) {
         tlv = (struct pp2_tlv *)((char *)tlv + 3 + len);
         len = ((uint32_t)tlv->length_hi << 8) | tlv->length_lo;
         if (3 + len > sz) break; /*(invalid TLV)*/
+        const char *k;
+        uint32_t klen;
         switch (tlv->type) {
          #if 0 /*(not implemented here)*/
           case PP2_TYPE_ALPN:
@@ -1631,9 +1599,8 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
           case PP2_TYPE_CRC32C:
          #endif
           case PP2_TYPE_SSL: {
+            if (len < 5) continue;
             static const uint32_t zero = 0;
-            handler_ctx *hctx =
-              con->plugin_ctx[mod_extforward_plugin_data_singleton->id];
             struct pp2_tlv_ssl *tlv_ssl =
               (struct pp2_tlv_ssl *)(void *)((char *)tlv+3);
             struct pp2_tlv *subtlv = tlv;
@@ -1644,53 +1611,56 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
                 && 0 == memcmp(&tlv_ssl->verify, &zero, 4)) { /* misaligned */
                 hctx->ssl_client_verify = 1;
             }
+            if (len < 5 + 3) continue;
+            if (NULL == hctx->env) hctx->env = array_init(8);
             for (uint32_t subsz = len-5, n = 5; subsz >= 3; subsz -= 3 + n) {
                 subtlv = (struct pp2_tlv *)((char *)subtlv + 3 + n);
                 n = ((uint32_t)subtlv->length_hi << 8) | subtlv->length_lo;
                 if (3 + n > subsz) break; /*(invalid TLV)*/
-                if (NULL == hctx->env) hctx->env = array_init(8);
                 switch (subtlv->type) {
                   case PP2_SUBTYPE_SSL_VERSION:
-                    array_set_key_value(hctx->env,
-                                        CONST_STR_LEN("SSL_PROTOCOL"),
-                                        (char *)subtlv+3, n);
+                    k = "SSL_PROTOCOL";
+                    klen = sizeof("SSL_PROTOCOL")-1;
                     break;
                   case PP2_SUBTYPE_SSL_CN:
                     /* (tlv_ssl->client & PP2_CLIENT_CERT_CONN)
                      *   or
                      * (tlv_ssl->client & PP2_CLIENT_CERT_SESS) */
-                    array_set_key_value(hctx->env,
-                                        CONST_STR_LEN("SSL_CLIENT_S_DN_CN"),
-                                        (char *)subtlv+3, n);
+                    k = "SSL_CLIENT_S_DN_CN";
+                    klen = sizeof("SSL_CLIENT_S_DN_CN")-1;
                     break;
                   case PP2_SUBTYPE_SSL_CIPHER:
-                    array_set_key_value(hctx->env,
-                                        CONST_STR_LEN("SSL_CIPHER"),
-                                        (char *)subtlv+3, n);
+                    k = "SSL_CIPHER";
+                    klen = sizeof("SSL_CIPHER")-1;
                     break;
                   case PP2_SUBTYPE_SSL_SIG_ALG:
-                    array_set_key_value(hctx->env,
-                                        CONST_STR_LEN("SSL_SERVER_A_SIG"),
-                                        (char *)subtlv+3, n);
+                    k = "SSL_SERVER_A_SIG";
+                    klen = sizeof("SSL_SERVER_A_SIG")-1;
                     break;
                   case PP2_SUBTYPE_SSL_KEY_ALG:
-                    array_set_key_value(hctx->env,
-                                        CONST_STR_LEN("SSL_SERVER_A_KEY"),
-                                        (char *)subtlv+3, n);
+                    k = "SSL_SERVER_A_KEY";
+                    klen = sizeof("SSL_SERVER_A_KEY")-1;
                     break;
                   default:
-                    break;
+                    continue;
                 }
+                array_set_key_value(hctx->env, k, klen, (char *)subtlv+3, n);
             }
-            break;
+            continue;
           }
+          case PP2_TYPE_UNIQUE_ID:
+            k = "PP2_UNIQUE_ID";
+            klen = sizeof("PP2_UNIQUE_ID")-1;
+            break;
          #if 0 /*(not implemented here)*/
           case PP2_TYPE_NETNS:
          #endif
           /*case PP2_TYPE_NOOP:*//* no-op */
           default:
-            break;
+            continue;
         }
+        if (NULL == hctx->env) hctx->env = array_init(8);
+        array_set_key_value(hctx->env, k, klen, (char *)tlv+3, len);
     }
 
     return 0;

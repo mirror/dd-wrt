@@ -76,24 +76,36 @@ static void mod_redirect_patch_config(request_st * const r, plugin_data * const 
 }
 
 static pcre_keyvalue_buffer * mod_redirect_parse_list(server *srv, const array *a, const int condidx) {
-    pcre_keyvalue_buffer * const redirect = pcre_keyvalue_buffer_init();
-    redirect->x0 = (unsigned short)condidx;
-    log_error_st * const errh = srv->errh;
+    const int pcre_jit = config_feature_bool(srv, "server.pcre_jit", 1);
+    pcre_keyvalue_buffer * const kvb = pcre_keyvalue_buffer_init();
+    kvb->cfgidx = condidx;
     buffer * const tb = srv->tmp_buf;
+    int percent = 0;
     for (uint32_t j = 0; j < a->used; ++j) {
         data_string *ds = (data_string *)a->data[j];
         if (srv->srvconf.http_url_normalize) {
             pcre_keyvalue_burl_normalize_key(&ds->key, tb);
             pcre_keyvalue_burl_normalize_value(&ds->value, tb);
         }
-        if (!pcre_keyvalue_buffer_append(errh, redirect, &ds->key, &ds->value)){
-            log_error(errh, __FILE__, __LINE__,
+        for (const char *s = ds->value.ptr; (s = strchr(s, '%')); ++s) {
+            if (s[1] == '%')
+                ++s;
+            else if (light_isdigit(s[1]) || s[1] == '{') {
+                percent |= 1;
+                break;
+            }
+        }
+        if (!pcre_keyvalue_buffer_append(srv->errh, kvb, &ds->key, &ds->value,
+                                         pcre_jit)) {
+            log_error(srv->errh, __FILE__, __LINE__,
               "pcre-compile failed for %s", ds->key.ptr);
-            pcre_keyvalue_buffer_free(redirect);
+            pcre_keyvalue_buffer_free(kvb);
             return NULL;
         }
     }
-    return redirect;
+    if (percent)
+        kvb->x0 = config_capture(srv, condidx);
+    return kvb;
 }
 
 SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
@@ -156,10 +168,8 @@ URIHANDLER_FUNC(mod_redirect_uri_handler) {
     if (!p->conf.redirect || !p->conf.redirect->used) return HANDLER_GO_ON;
 
     ctx.cache = NULL;
-    if (p->conf.redirect->x0) { /*(p->conf.redirect->x0 is context_idx)*/
-        ctx.cond_match_count =
-          r->cond_cache[p->conf.redirect->x0].patterncount;
-        ctx.cache = r->cond_match + p->conf.redirect->x0;
+    if (p->conf.redirect->x0) { /*(p->conf.redirect->x0 is capture_idx)*/
+        ctx.cache = r->cond_match[p->conf.redirect->x0 - 1];
     }
     ctx.burl = &burl;
     burl.scheme    = &r->uri.scheme;
@@ -167,7 +177,7 @@ URIHANDLER_FUNC(mod_redirect_uri_handler) {
     burl.port      = sock_addr_get_port(&r->con->srv_socket->addr);
     burl.path      = &r->target; /*(uri-encoded and includes query-part)*/
     burl.query     = &r->uri.query;
-    if (buffer_string_is_empty(burl.authority))
+    if (buffer_is_blank(burl.authority))
         burl.authority = r->server_name;
 
     /* redirect URL on match
@@ -179,7 +189,7 @@ URIHANDLER_FUNC(mod_redirect_uri_handler) {
     if (HANDLER_FINISHED == rc) {
         http_header_response_set(r, HTTP_HEADER_LOCATION,
                                  CONST_STR_LEN("Location"),
-                                 CONST_BUF_LEN(tb));
+                                 BUF_PTR_LEN(tb));
         r->http_status = p->conf.redirect_code;
         r->handler_module = NULL;
         r->resp_body_finished = 1;

@@ -5,6 +5,10 @@
 
 use strict;
 
+# future: might use Getopt::Std, but this is simple enough for now
+my $verbose = 0;
+foreach (@ARGV) { $verbose = 1 if ($_ eq "-v"); }
+
 # text/* subtypes to serve as "text/...; charset=utf-8"
 # text/html IS NOT INCLUDED: html has its own method for defining charset
 #   (<meta>), but the standards specify that content-type in HTTP wins over
@@ -71,12 +75,21 @@ my %manual_conflicts_resolve = (
 open MIMETYPES, "/etc/mime.types" or die "Can't open /etc/mime.types: $!";
 
 my %extensions;
+my %lcext;
 sub set {
 	my ($extension, $mimetype) = @_;
 	$extensions{$extension} = $mimetype;
+	$lcext{lc($extension)} = $extension;
 }
 sub add {
 	my ($extension, $mimetype) = @_;
+	# lighttpd uses case-insensitive extension mapping to mime type.  Still,
+	# preserve case of first ext seen if case-insensitive duplicates exist.
+	my $seen = $lcext{lc($extension)};
+	if (defined($seen) && $seen ne $extension) {
+		# update @_ too for calls to set
+		$_[0] = $extension = $seen;
+	}
 	my $have = $extensions{$extension};
 
 	my $r = $manual_conflicts_resolve{$extension};
@@ -110,7 +123,21 @@ sub add {
 			}
 		}
 
-		print STDERR "Duplicate mimetype: '${extension}' => '${mimetype}' (already have '${have}'), merging to 'application/octet-stream'\n";
+		# non-vnd.* subtype wins over vnd.* subtype
+		my $have_vnd = ($have_subtype =~ /^vnd\./);
+		my $vnd = ($subtype =~ /^vnd\./);
+		if ($vnd ^ $have_vnd) {
+			if ($have_vnd) {
+				return set @_; # overwrite
+			}
+			else {
+				return; # ignore
+			}
+		}
+
+		if ($verbose && !$vnd) {
+			print STDERR "Duplicate mimetype: '${extension}' => '${mimetype}' (already have '${have}'), merging to 'application/octet-stream'\n"
+		}
 		set ($extension, 'application/octet-stream');
 	} else {
 		set @_;

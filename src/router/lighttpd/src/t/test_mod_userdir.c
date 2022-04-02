@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "mod_userdir.c"
+#include "fdlog.h"
 
 static void test_mod_userdir_reset(request_st * const r)
 {
@@ -150,22 +151,35 @@ test_mod_userdir_docroot_handler(request_st * const r, plugin_data * const p)
     array_free(exclude_user);
 }
 
-int main (void)
+#include "base.h"
+
+void test_mod_userdir (void);
+void test_mod_userdir (void)
 {
     plugin_data * const p = mod_userdir_init();
     assert(NULL != p);
 
-    buffer *basepath = buffer_init_string("/web/u/"); /*(skip getpwnam())*/
-    buffer *path     = buffer_init_string("public_html");
+    buffer *basepath = buffer_init();
+    buffer *path     = buffer_init();
+    buffer_copy_string(basepath, "/web/u/"); /*(skip getpwnam())*/
+    buffer_copy_string(path, "public_html");
     p->defaults.basepath = basepath;
     p->defaults.path = path;
 
     request_st r;
+    connection con;
+    server srv;
 
     memset(&r, 0, sizeof(request_st));
+    memset(&con, 0, sizeof(connection));
+    memset(&srv, 0, sizeof(server));
     r.tmp_buf                = buffer_init();
-    r.conf.errh              = log_error_st_init();
-    r.conf.errh->errorlog_fd = -1; /* (disable) */
+    r.conf.errh              = fdlog_init(NULL, -1, FDLOG_FD);
+    r.conf.errh->fd          = -1; /* (disable) */
+    /* r->con->srv->srvconf.absolute_dir_redirect
+     * in http_response_redirect_to_directory() */
+    r.con = &con;
+    con.srv = &srv;
 
     test_mod_userdir_docroot_handler(&r, p);
 
@@ -173,35 +187,12 @@ int main (void)
     free(r.physical.basedir.ptr);
     free(r.physical.path.ptr);
     free(r.physical.rel_path.ptr);
+    array_free_data(&r.resp_headers);
 
-    log_error_st_free(r.conf.errh);
+    fdlog_free(r.conf.errh);
     buffer_free(r.tmp_buf);
 
     buffer_free(basepath);
     buffer_free(path);
     free(p);
-    return 0;
-}
-
-/*
- * stub functions
- */
-
-int http_response_redirect_to_directory(request_st *r, int status) {
-    r->http_status = status;
-    return 0;
-}
-
-int config_plugin_values_init(server *srv, void *p_d, const config_plugin_keys_t *cpk, const char *mname) {
-    UNUSED(srv);
-    UNUSED(p_d);
-    UNUSED(cpk);
-    UNUSED(mname);
-    return 0;
-}
-
-int config_check_cond(request_st *r, int context_ndx) {
-    UNUSED(r);
-    UNUSED(context_ndx);
-    return 0;
 }

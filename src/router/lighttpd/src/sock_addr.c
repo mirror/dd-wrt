@@ -191,6 +191,26 @@ int sock_addr_is_addr_eq_bits(const sock_addr *a, const sock_addr *b, int bits) 
 }
 
 
+void sock_addr_set_port (sock_addr * const restrict saddr, const unsigned short port)
+{
+    switch (saddr->plain.sa_family) {
+      case AF_INET:
+        saddr->ipv4.sin_port = htons(port);
+        break;
+     #ifdef HAVE_IPV6
+      case AF_INET6:
+        saddr->ipv6.sin6_port = htons(port);
+        break;
+     #endif
+     #ifdef HAVE_SYS_UN_H
+     /*case AF_UNIX:*/
+     #endif
+      default:
+        break;
+    }
+}
+
+
 int sock_addr_assign (sock_addr * const restrict saddr, int family, unsigned short nport, const void * const restrict naddr)
 {
     switch (family) {
@@ -319,14 +339,13 @@ int sock_addr_stringify_append_buffer(buffer * const restrict b, const sock_addr
         buffer_append_string_len(b, CONST_STR_LEN("["));
         if (0 != sock_addr_inet_ntop_append_buffer(b, saddr)) {
           #ifdef __COVERITY__
-            force_assert(buffer_string_length(b) > 0); /*(appended "[")*/
+            force_assert(buffer_clen(b) > 0); /*(appended "[")*/
           #endif
             /* coverity[overflow_sink : FALSE] */
-            buffer_string_set_length(b, buffer_string_length(b)-1);
+            buffer_truncate(b, buffer_clen(b)-1);
             return -1;
         }
-        buffer_append_string_len(b, CONST_STR_LEN("]"));
-        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_string_len(b, CONST_STR_LEN("]:"));
         buffer_append_int(b, ntohs(saddr->ipv6.sin6_port));
         return 0;
      #endif
@@ -653,10 +672,11 @@ int sock_addr_from_str_numeric(sock_addr * const restrict saddr, const char * co
 }
 
 
+#if 0 /* unused */
 int sock_addr_from_buffer_hints_numeric(sock_addr * const restrict saddr, socklen_t * const restrict len, const buffer * const restrict b, int family, unsigned short port, log_error_st * const restrict errh)
 {
     /*(this routine originates from mod_fastcgi.c and mod_scgi.c)*/
-    if (buffer_string_is_empty(b)) {
+    if (!b || buffer_is_blank(b)) {
         /*(preserve existing behavior (for now))*/
         /*(would be better if initialized default when reading config)*/
         memset(&saddr->ipv4, 0, sizeof(struct sockaddr_in));
@@ -712,3 +732,4 @@ int sock_addr_from_buffer_hints_numeric(sock_addr * const restrict saddr, sockle
 
     return 0;
 }
+#endif
