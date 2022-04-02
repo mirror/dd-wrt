@@ -2,7 +2,7 @@
 
    This file is part of the LZO real-time data compression library.
 
-   Copyright (C) 1996-2015 Markus Franz Xaver Johannes Oberhumer
+   Copyright (C) 1996-2017 Markus Franz Xaver Johannes Oberhumer
    All Rights Reserved.
 
    The LZO library is free software; you can redistribute it and/or
@@ -223,11 +223,11 @@ __lzo_init_v2(unsigned v, int s1, int s2, int s3, int s4, int s5,
     if (!r)
         return LZO_E_ERROR;
 
-//    r = _lzo_config_check();
-//    if (r != LZO_E_OK)
-//        return r;
+    r = _lzo_config_check();
+    if (r != LZO_E_OK)
+        return r;
 
-    return LZO_E_OK;
+    return r;
 }
 
 
