@@ -68,8 +68,8 @@ typedef struct {
     gnutls_datum_t *ssl_pemfile_x509;
     gnutls_privkey_t ssl_pemfile_pkey;
     const buffer *ssl_stapling_file;
-    time_t ssl_stapling_loadts;
-    time_t ssl_stapling_nextts;
+    unix_time64_t ssl_stapling_loadts;
+    unix_time64_t ssl_stapling_nextts;
 } plugin_cert;
 
 typedef struct {
@@ -273,15 +273,15 @@ mod_gnutls_datum_wipe (gnutls_datum_t * const d)
  * to store keys that are not yet active
  * (mirror from mod_openssl, even though not all bits are used here) */
 typedef struct tlsext_ticket_key_st {
-    time_t active_ts; /* tickets not issued w/ key until activation timestamp */
-    time_t expire_ts; /* key not valid after expiration timestamp */
+    unix_time64_t active_ts; /* tickets not issued w/ key until activation ts*/
+    unix_time64_t expire_ts; /* key not valid after expiration timestamp */
     unsigned char tick_key_name[TLSEXT_KEYNAME_LENGTH];
     unsigned char tick_hmac_key[TLSEXT_TICK_KEY_LENGTH];
     unsigned char tick_aes_key[TLSEXT_TICK_KEY_LENGTH];
 } tlsext_ticket_key_t;
 
 static tlsext_ticket_key_t session_ticket_keys[1]; /* temp store until active */
-static time_t stek_rotate_ts;
+static unix_time64_t stek_rotate_ts;
 
 static gnutls_datum_t session_ticket_key;
 
@@ -348,9 +348,18 @@ mod_gnutls_session_ticket_key_file (const char *fn)
     if (0 != fdevent_load_file_bytes((char *)buf,(off_t)sizeof(buf),0,fn,NULL))
         return rc;
     if (buf[0] == 0) { /*(format version 0)*/
-        session_ticket_keys[0].active_ts = buf[1];
-        session_ticket_keys[0].expire_ts = buf[2];
+        session_ticket_keys[0].active_ts = TIME64_CAST(buf[1]);
+        session_ticket_keys[0].expire_ts = TIME64_CAST(buf[2]);
+      #ifndef __COVERITY__
         memcpy(&session_ticket_keys[0].tick_key_name, buf+3, 80);
+      #else
+        memcpy(&session_ticket_keys[0].tick_key_name,
+               buf+3, TLSEXT_KEYNAME_LENGTH);
+        memcpy(&session_ticket_keys[0].tick_hmac_key,
+               buf+7, TLSEXT_TICK_KEY_LENGTH);
+        memcpy(&session_ticket_keys[0].tick_aes_key,
+               buf+15, TLSEXT_TICK_KEY_LENGTH);
+      #endif
         rc = 1;
     }
 
@@ -360,11 +369,17 @@ mod_gnutls_session_ticket_key_file (const char *fn)
 
 
 static void
-mod_gnutls_session_ticket_key_check (server *srv, const plugin_data *p, const time_t cur_ts)
+mod_gnutls_session_ticket_key_check (server *srv, const plugin_data *p, const unix_time64_t cur_ts)
 {
+    static unix_time64_t detect_retrograde_ts;
+    if (detect_retrograde_ts > cur_ts && detect_retrograde_ts - cur_ts > 28800)
+        stek_rotate_ts = 0;
+    detect_retrograde_ts = cur_ts;
+
     if (p->ssl_stek_file) {
         struct stat st;
-        if (0 == stat(p->ssl_stek_file, &st) && st.st_mtime > stek_rotate_ts
+        if (0 == stat(p->ssl_stek_file, &st)
+            && TIME64_CAST(st.st_mtime) > stek_rotate_ts
             && mod_gnutls_session_ticket_key_file(p->ssl_stek_file)) {
             stek_rotate_ts = cur_ts;
         }
@@ -376,14 +391,30 @@ mod_gnutls_session_ticket_key_check (server *srv, const plugin_data *p, const ti
                 if (NULL == session_ticket_key.data) return;
                 session_ticket_key.size = TICKET_MASTER_KEY_SIZE;
             }
+          #ifndef __COVERITY__
             memcpy(session_ticket_key.data,
                    stek->tick_key_name, TICKET_MASTER_KEY_SIZE);
             gnutls_memset(stek->tick_key_name, 0, TICKET_MASTER_KEY_SIZE);
+          #else
+            char * const data = (char *)session_ticket_key.data;
+            memcpy(data,
+                   stek->tick_key_name, TLSEXT_KEYNAME_LENGTH);
+            memcpy(data+TLSEXT_KEYNAME_LENGTH,
+                   stek->tick_hmac_key, TLSEXT_TICK_KEY_LENGTH);
+            memcpy(data+TLSEXT_KEYNAME_LENGTH+TLSEXT_TICK_KEY_LENGTH,
+                   stek->tick_aes_key,
+                   TICKET_MASTER_KEY_SIZE
+                    - (TLSEXT_KEYNAME_LENGTH + TLSEXT_TICK_KEY_LENGTH));
+            gnutls_memset(stek->tick_key_name, 0, TLSEXT_KEYNAME_LENGTH);
+            gnutls_memset(stek->tick_hmac_key, 0, TLSEXT_TICK_KEY_LENGTH);
+            gnutls_memset(stek->tick_aes_key, 0, TLSEXT_TICK_KEY_LENGTH);
+          #endif
         }
         if (stek->expire_ts < cur_ts)
             mod_gnutls_session_ticket_key_free();
     }
-    else if (cur_ts - 86400 >= stek_rotate_ts) {  /*(24 hours)*/
+    else if (cur_ts - 86400 >= stek_rotate_ts     /*(24 hours)*/
+             || 0 == stek_rotate_ts) {
         mod_gnutls_session_ticket_key_rotate(srv);
         stek_rotate_ts = cur_ts;
     }
@@ -669,6 +700,12 @@ mod_gnutls_merge_config_cpv (plugin_config * const pconf, const config_plugin_va
       case 14:/* debug.log-ssl-noise */
         pconf->ssl_log_noise = (unsigned char)cpv->v.shrt;
         break;
+     #if 0    /*(cpk->k_id remapped in mod_gnutls_set_defaults())*/
+      case 15:/* ssl.verifyclient.ca-file */
+      case 16:/* ssl.verifyclient.ca-dn-file */
+      case 17:/* ssl.verifyclient.ca-crl-file */
+        break;
+     #endif
       default:/* should not happen */
         return;
     }
@@ -724,7 +761,7 @@ mod_gnutls_verify_set_tlist (handler_ctx *hctx, int req)
       : hctx->conf.ssl_ca_file;
     if (NULL == d) {
         log_error(hctx->r->conf.errh, __FILE__, __LINE__,
-          "GnuTLS: can't verify client without ssl.ca-file "
+          "GnuTLS: can't verify client without ssl.verifyclient.ca-file "
           "for TLS server name %s",
           hctx->r->uri.authority.ptr); /*(might not be set yet if no SNI)*/
         return GNUTLS_E_INTERNAL_ERROR;
@@ -813,7 +850,7 @@ mod_gnutls_verify_cb (gnutls_session_t ssl)
         /* verify that client cert is issued by CA in ssl.ca-dn-file
          * if both ssl.ca-dn-file and ssl.ca-file were configured */
         gnutls_x509_crt_t *CA_list =
-          (gnutls_x509_crt_t *)&hctx->conf.ssl_ca_dn_file->data;
+          (gnutls_x509_crt_t *)(void *)hctx->conf.ssl_ca_dn_file->data;
         unsigned int len = hctx->conf.ssl_ca_dn_file->size;
         unsigned int i;
         gnutls_x509_dn_t issuer, subject;
@@ -869,8 +906,25 @@ mod_gnutls_ocsp_next_update (plugin_cert *pc, log_error_st *errh)
 #endif
 
 
+__attribute_cold__
+static void
+mod_gnutls_expire_stapling_file (server *srv, plugin_cert *pc)
+{
+  #if 0
+    /* discard expired OCSP stapling response */
+    /* Does GnuTLS detect expired OCSP response? */
+    /* or must we rebuild gnutls_certificate_credentials_t ? */
+  #endif
+    if (pc->must_staple)
+        log_error(srv->errh, __FILE__, __LINE__,
+                  "certificate marked OCSP Must-Staple, "
+                  "but OCSP response expired from ssl.stapling-file %s",
+                  pc->ssl_stapling_file->ptr);
+}
+
+
 static int
-mod_gnutls_reload_stapling_file (server *srv, plugin_cert *pc, const time_t cur_ts)
+mod_gnutls_reload_stapling_file (server *srv, plugin_cert *pc, const unix_time64_t cur_ts)
 {
   #if GNUTLS_VERSION_NUMBER < 0x030603
     /* load file into gnutls_ocsp_resp_t before loading into
@@ -917,40 +971,30 @@ mod_gnutls_reload_stapling_file (server *srv, plugin_cert *pc, const time_t cur_
 
     pc->ssl_stapling_loadts = cur_ts;
     pc->ssl_stapling_nextts = nextupd;
-    if (pc->ssl_stapling_nextts == (time_t)-1) {
+    if (pc->ssl_stapling_nextts == -1) {
         /* "Next Update" might not be provided by OCSP responder
          * Use 3600 sec (1 hour) in that case. */
         /* retry in 1 hour if unable to determine Next Update */
         pc->ssl_stapling_nextts = cur_ts + 3600;
         pc->ssl_stapling_loadts = 0;
     }
+    else if (pc->ssl_stapling_nextts < cur_ts)
+        mod_gnutls_expire_stapling_file(srv, pc);
 
     return 0;
 }
 
 
 static int
-mod_gnutls_refresh_stapling_file (server *srv, plugin_cert *pc, const time_t cur_ts)
+mod_gnutls_refresh_stapling_file (server *srv, plugin_cert *pc, const unix_time64_t cur_ts)
 {
-    if (pc->ssl_stapling_nextts >= 256
-        && pc->ssl_stapling_nextts - 256 > cur_ts)
+    if (pc->ssl_stapling_nextts > cur_ts + 256)
         return 0; /* skip check for refresh unless close to expire */
     struct stat st;
     if (0 != stat(pc->ssl_stapling_file->ptr, &st)
-        || st.st_mtime <= pc->ssl_stapling_loadts) {
-        if (pc->ssl_stapling_nextts < cur_ts) {
-          #if 0
-            /* discard expired OCSP stapling response */
-            /* Does GnuTLS detect expired OCSP response? */
-            /* or must we rebuild gnutls_certificate_credentials_t ? */
-          #endif
-            if (pc->must_staple) {
-                log_error(srv->errh, __FILE__, __LINE__,
-                          "certificate marked OCSP Must-Staple, "
-                          "but OCSP response expired from ssl.stapling-file %s",
-                          pc->ssl_stapling_file->ptr);
-            }
-        }
+        || TIME64_CAST(st.st_mtime) <= pc->ssl_stapling_loadts) {
+        if (pc->ssl_stapling_nextts < cur_ts)
+            mod_gnutls_expire_stapling_file(srv, pc);
         return 0;
     }
     return mod_gnutls_reload_stapling_file(srv, pc, cur_ts);
@@ -958,17 +1002,19 @@ mod_gnutls_refresh_stapling_file (server *srv, plugin_cert *pc, const time_t cur
 
 
 static void
-mod_gnutls_refresh_stapling_files (server *srv, const plugin_data *p, const time_t cur_ts)
+mod_gnutls_refresh_stapling_files (server *srv, const plugin_data *p, const unix_time64_t cur_ts)
 {
     /* future: might construct array of (plugin_cert *) at startup
      *         to avoid the need to search for them here */
-    for (int i = 0, used = p->nconfig; i < used; ++i) {
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    if (NULL == p->cvlist) return;
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
         const config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
         for (; cpv->k_id != -1; ++cpv) {
             if (cpv->k_id != 0) continue; /* k_id == 0 for ssl.pemfile */
             if (cpv->vtype != T_CONFIG_LOCAL) continue;
             plugin_cert *pc = cpv->v.v;
-            if (!buffer_string_is_empty(pc->ssl_stapling_file))
+            if (pc->ssl_stapling_file)
                 mod_gnutls_refresh_stapling_file(srv, pc, cur_ts);
         }
     }
@@ -1168,7 +1214,7 @@ network_gnutls_load_pemfile (server *srv, const buffer *pemfile, const buffer *p
         }
     }
 
-    if (!buffer_string_is_empty(pc->ssl_stapling_file)) {
+    if (pc->ssl_stapling_file) {
         if (mod_gnutls_reload_stapling_file(srv, pc, log_epoch_secs) < 0) {
             /* continue without OCSP response if there is an error */
         }
@@ -1196,26 +1242,26 @@ mod_gnutls_acme_tls_1 (handler_ctx *hctx)
     int rc = GNUTLS_E_INVALID_REQUEST;
 
     /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
-    if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
-        return 0; /*(should not happen)*/
+    if (!hctx->conf.ssl_acme_tls_1)
+        return 0;
 
     /* check if SNI set server name (required for acme-tls/1 protocol)
      * and perform simple path checks for no '/'
      * and no leading '.' (e.g. ignore "." or ".." or anything beginning '.') */
-    if (buffer_string_is_empty(name))   return rc;
+    if (buffer_is_blank(name))          return rc;
     if (NULL != strchr(name->ptr, '/')) return rc;
     if (name->ptr[0] == '.')            return rc;
   #if 0
     if (0 != http_request_host_policy(name, hctx->r->conf.http_parseopts, 443))
         return rc;
   #endif
-    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
-    buffer_append_path_len(b, CONST_BUF_LEN(name));
+    buffer_copy_path_len2(b, BUF_PTR_LEN(hctx->conf.ssl_acme_tls_1),
+                             BUF_PTR_LEN(name));
 
   #if 0
 
-    buffer *privkey = buffer_init_buffer(b);
-    buffer_append_string_len(b, CONST_STR_LEN(".crt.pem"));
+    buffer * const privkey = buffer_init();
+    buffer_append_str2(b, BUF_PTR_LEN(b), CONST_STR_LEN(".crt.pem"));
     buffer_append_string_len(privkey, CONST_STR_LEN(".key.pem"));
 
     /*(similar to network_gnutls_load_pemfile() but propagates rc)*/
@@ -1242,7 +1288,7 @@ mod_gnutls_acme_tls_1 (handler_ctx *hctx)
 
     /* similar to network_gnutls_load_pemfile() */
 
-    uint32_t len = buffer_string_length(b);
+    uint32_t len = buffer_clen(b);
     buffer_append_string_len(b, CONST_STR_LEN(".crt.pem"));
 
     gnutls_datum_t *d = mod_gnutls_load_config_crts(b->ptr, errh);
@@ -1252,7 +1298,7 @@ mod_gnutls_acme_tls_1 (handler_ctx *hctx)
         return GNUTLS_E_FILE_ERROR;
     }
 
-    buffer_string_set_length(b, len);
+    buffer_truncate(b, len);
     buffer_append_string_len(b, CONST_STR_LEN(".key.pem"));
 
     gnutls_privkey_t pkey = mod_gnutls_load_config_pkey(b->ptr, errh);
@@ -1280,6 +1326,7 @@ mod_gnutls_acme_tls_1 (handler_ctx *hctx)
 
     hctx->acme_tls_1_cred = ssl_cred; /*(save ptr and free later)*/
 
+    gnutls_credentials_clear(hctx->ssl);
     rc = gnutls_credentials_set(hctx->ssl, GNUTLS_CRD_CERTIFICATE, ssl_cred);
     if (rc < 0) {
         elogf(hctx->r->conf.errh, __FILE__, __LINE__, rc,
@@ -1288,7 +1335,32 @@ mod_gnutls_acme_tls_1 (handler_ctx *hctx)
         return rc;
     }
 
+    /*(acme-tls/1 is separate from certificate auth access to website)*/
+    gnutls_certificate_server_set_request(hctx->ssl, GNUTLS_CERT_IGNORE);
+
     return GNUTLS_E_SUCCESS; /* 0 */
+}
+
+
+static int
+mod_gnutls_alpn_h2_policy (handler_ctx * const hctx)
+{
+    /*(currently called after handshake has completed)*/
+  #if 0 /* SNI omitted by client when connecting to IP instead of to name */
+    if (buffer_is_blank(&hctx->r->uri.authority)) {
+        log_error(hctx->errh, __FILE__, __LINE__,
+          "SSL: error ALPN h2 without SNI");
+        return -1;
+    }
+  #endif
+    if (gnutls_protocol_get_version(hctx->ssl) < GNUTLS_TLS1_2) {
+        /*(future: if DTLS supported by lighttpd, add DTLS condition)*/
+        log_error(hctx->errh, __FILE__, __LINE__,
+          "SSL: error ALPN h2 requires TLSv1.2 or later");
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -1300,67 +1372,61 @@ enum {
 };
 
 
+/* https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids */
 static int
-mod_gnutls_alpn_select_cb (gnutls_session_t ssl, handler_ctx *hctx)
+mod_gnutls_ALPN (handler_ctx * const hctx, const unsigned char * const in, const unsigned int inlen)
 {
-    const int i = 0;
-    uint8_t proto;
+    /*(skip first two bytes which should match inlen-2)*/
+    for (unsigned int i = 2, n; i < inlen; i += n) {
+        n = in[i++];
+        if (i+n > inlen || 0 == n) break;
 
-    gnutls_datum_t d = { NULL, 0 };
-    if (gnutls_alpn_get_selected_protocol(ssl, &d) < 0)
-        return 0; /* ignore GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE */
-    const char *in = (const char *)d.data;
-    const int n = (int)d.size;
-
-    switch (n) {
-      case 2:  /* "h2" */
-        if (in[i] == 'h' && in[i+1] == '2') {
-            proto = MOD_GNUTLS_ALPN_H2;
-            hctx->r->http_version = HTTP_VERSION_2;
-            break;
-        }
-        return 0;
-      case 8:  /* "http/1.1" "http/1.0" */
-        if (0 == memcmp(in+i, "http/1.", 7)) {
-            if (in[i+7] == '1') {
-                proto = MOD_GNUTLS_ALPN_HTTP11;
-                break;
+        switch (n) {
+          case 2:  /* "h2" */
+            if (in[i] == 'h' && in[i+1] == '2') {
+                if (!hctx->r->conf.h2proto) continue;
+                hctx->alpn = MOD_GNUTLS_ALPN_H2;
+                hctx->r->http_version = HTTP_VERSION_2;
+                return GNUTLS_E_SUCCESS;
             }
-            if (in[i+7] == '0') {
-                proto = MOD_GNUTLS_ALPN_HTTP10;
-                break;
+            continue;
+          case 8:  /* "http/1.1" "http/1.0" */
+            if (0 == memcmp(in+i, "http/1.", 7)) {
+                if (in[i+7] == '1') {
+                    hctx->alpn = MOD_GNUTLS_ALPN_HTTP11;
+                    return GNUTLS_E_SUCCESS;
+                }
+                if (in[i+7] == '0') {
+                    hctx->alpn = MOD_GNUTLS_ALPN_HTTP10;
+                    return GNUTLS_E_SUCCESS;
+                }
             }
-        }
-        return 0;
-      case 10: /* "acme-tls/1" */
-        if (0 == memcmp(in+i, "acme-tls/1", 10)) {
-            int rc = mod_gnutls_acme_tls_1(hctx);
-            if (0 == rc) {
-                proto = MOD_GNUTLS_ALPN_ACME_TLS_1;
-                break;
+            continue;
+          case 10: /* "acme-tls/1" */
+            if (0 == memcmp(in+i, "acme-tls/1", 10)) {
+                int rc = mod_gnutls_acme_tls_1(hctx);
+                if (0 == rc) {
+                    hctx->alpn = MOD_GNUTLS_ALPN_ACME_TLS_1;
+                    return GNUTLS_E_SUCCESS;
+                }
+                return rc;
             }
-            return rc;
+            continue;
+          default:
+            continue;
         }
-        return 0;
-      default:
-        return 0;
     }
 
-    hctx->alpn = proto;
-    return 0;
+    return GNUTLS_E_SUCCESS;
 }
 
 #endif /* GNUTLS_VERSION_NUMBER >= 0x030200 */
 
 
 static int
-mod_gnutls_SNI(void *ctx, unsigned int tls_id,
+mod_gnutls_SNI(handler_ctx * const hctx,
                const unsigned char *servername, unsigned int len)
 {
-    if (tls_id != 0) return 0;
-
-    /* server name */
-
     /* https://www.gnutls.org/manual/gnutls.html#Virtual-hosts-and-credentials
      * figure the advertized name - the following hack relies on the fact that
      * this extension only supports DNS names, and due to a protocol bug cannot
@@ -1368,9 +1434,8 @@ mod_gnutls_SNI(void *ctx, unsigned int tls_id,
     if (len < 5) return 0;
     len -= 5;
     servername += 5;
-    handler_ctx * const hctx = (handler_ctx *) ctx;
     request_st * const r = hctx->r;
-    buffer_copy_string(&r->uri.scheme, "https");
+    buffer_copy_string_len(&r->uri.scheme, CONST_STR_LEN("https"));
 
     if (len >= 1024) { /*(expecting < 256; TLSEXT_MAXLEN_host_name is 255)*/
         log_error(r->conf.errh, __FILE__, __LINE__,
@@ -1379,8 +1444,7 @@ mod_gnutls_SNI(void *ctx, unsigned int tls_id,
     }
 
     /* use SNI to patch mod_gnutls config and then reset COMP_HTTP_HOST */
-    buffer_copy_string_len(&r->uri.authority, (const char *)servername, len);
-    buffer_to_lower(&r->uri.authority);
+    buffer_copy_string_len_lc(&r->uri.authority, (const char *)servername, len);
   #if 0
     /*(r->uri.authority used below for configuration before request read;
      * revisit for h2)*/
@@ -1403,21 +1467,20 @@ mod_gnutls_SNI(void *ctx, unsigned int tls_id,
 
 
 static int
-mod_gnutls_client_hello_hook_post(gnutls_session_t ssl)
+mod_gnutls_client_hello_ext_cb(void *ctx, unsigned int tls_id,
+                               const unsigned char *data, unsigned int dlen)
 {
-  #if GNUTLS_VERSION_NUMBER >= 0x030200
-    handler_ctx * const hctx = gnutls_session_get_ptr(ssl);
-    int rc = mod_gnutls_alpn_select_cb(ssl, hctx);
-    if (rc < 0)
-        return rc;
-
-    /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
-    if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1) {
-        /*(acme-tls/1 is separate from certificate auth access to website)*/
-        gnutls_certificate_server_set_request(ssl, GNUTLS_CERT_IGNORE);
-        return GNUTLS_E_SUCCESS; /* 0 */ /*(skip further session config below)*/
+    switch (tls_id) {
+      case 0:  /* Server Name */
+        return mod_gnutls_SNI((handler_ctx *)ctx, data, dlen);
+     #if GNUTLS_VERSION_NUMBER >= 0x030200
+      case 16: /* ALPN */
+        return mod_gnutls_ALPN((handler_ctx *)ctx, data, dlen);
+     #endif
+      /*case 35:*/ /* Session Ticket */
+      default:
+        break;
     }
-  #endif
 
     return GNUTLS_E_SUCCESS; /* 0 */
 }
@@ -1429,17 +1492,25 @@ mod_gnutls_client_hello_hook(gnutls_session_t ssl, unsigned int htype,
                              const gnutls_datum_t *msg)
 {
     /*assert(htype == GNUTLS_HANDSHAKE_CLIENT_HELLO);*/
+    /*assert(when == GNUTLS_HOOK_PRE);*/
     UNUSED(htype);
+    UNUSED(when);
     UNUSED(incoming);
 
-    if (when == GNUTLS_HOOK_POST)
-        return mod_gnutls_client_hello_hook_post(ssl);
-
     handler_ctx * const hctx = gnutls_session_get_ptr(ssl);
-  #if GNUTLS_VERSION_NUMBER < 0x030600
-    gnutls_dh_params_t dh_params = hctx->conf.dh_params;
+  #if GNUTLS_VERSION_NUMBER >= 0x030200
+    /*(do not repeat if acme-tls/1 creds have been set
+     * and still in handshake (hctx->alpn not unset yet))*/
+    if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1)
+        return GNUTLS_E_SUCCESS; /* 0 */
   #endif
-    int rc = gnutls_ext_raw_parse(hctx, mod_gnutls_SNI, msg,
+    /* ??? why might this be called more than once ??? renegotiation? */
+    void *existing_cred = NULL;
+    if (0 == gnutls_credentials_get(ssl, GNUTLS_CRD_CERTIFICATE, &existing_cred)
+        && existing_cred)
+        return GNUTLS_E_SUCCESS; /* 0 */
+
+    int rc = gnutls_ext_raw_parse(hctx, mod_gnutls_client_hello_ext_cb, msg,
                                   GNUTLS_EXT_RAW_FLAG_TLS_CLIENT_HELLO);
     if (rc < 0) {
         log_error_st *errh = hctx->r->conf.errh;
@@ -1455,7 +1526,7 @@ mod_gnutls_client_hello_hook(gnutls_session_t ssl, unsigned int htype,
      ,{ (unsigned char *)CONST_STR_LEN("http/1.0") }
      ,{ (unsigned char *)CONST_STR_LEN("acme-tls/1") }
     };
-    unsigned int n = !buffer_string_is_empty(hctx->conf.ssl_acme_tls_1) ? 4 : 3;
+    unsigned int n = hctx->conf.ssl_acme_tls_1 ? 4 : 3;
     const gnutls_datum_t *alpn_protos = alpn_protos_http_acme;
     if (!hctx->r->conf.h2proto) {
         ++alpn_protos;
@@ -1468,17 +1539,16 @@ mod_gnutls_client_hello_hook(gnutls_session_t ssl, unsigned int htype,
         elog(errh, __FILE__, __LINE__, rc, "gnutls_alpn_set_protocols()");
         return rc;
     }
-   #if 0
-    /* XXX: might have to manually process client hello for ALPN "acme-tls/1"
-     *      and handle here (GNUTLS_HOOK_PRE) before setting certificate */
-    if (!buffer_string_is_empty(hctx->conf.ssl_acme_tls_1)) {
-    }
-   #endif
+    /*(skip below if creds already set for acme-tls/1
+     * via mod_gnutls_client_hello_ext_cb())*/
+    if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1)
+        return GNUTLS_E_SUCCESS; /* 0 */
   #endif
 
   #if 0 /* must enable before GnuTLS client hello hook */
     /* GnuTLS returns an error here if TLSv1.3 (? key already set ?) */
     /* see mod_gnutls_handle_con_accept() */
+    /* future: ? handle in mod_gnutls_client_hello_ext_cb() */
     if (hctx->ssl_session_ticket && session_ticket_key.size) {
         /* XXX: NOT done: parse client hello for session ticket extension
          *      and choose from among multiple keys */
@@ -1517,8 +1587,8 @@ mod_gnutls_client_hello_hook(gnutls_session_t ssl, unsigned int htype,
     gnutls_certificate_server_set_request(ssl, req);
 
   #if GNUTLS_VERSION_NUMBER < 0x030600
-    if (dh_params)
-        gnutls_certificate_set_dh_params(ssl_cred, dh_params);
+    if (hctx->conf.dh_params)
+        gnutls_certificate_set_dh_params(ssl_cred, hctx->conf.dh_params);
    #if GNUTLS_VERSION_NUMBER >= 0x030506
     else
         gnutls_certificate_set_known_dh_params(ssl_cred, GNUTLS_SEC_PARAM_HIGH);
@@ -1645,7 +1715,7 @@ mod_gnutls_ssl_conf_cmd (server *srv, plugin_config_socket *s)
         rc = -1;
 
     if (curves) {
-        if (buffer_string_is_empty(s->ssl_ec_curve))
+        if (!s->ssl_ec_curve)
             buffer_append_string_len(&s->priority_str,
                                      CONST_STR_LEN("-CURVE-ALL:"));
         if (!mod_gnutls_ssl_conf_curves(srv, s, curves))
@@ -1681,13 +1751,13 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
                              CONST_STR_LEN("-COMP_ALL:+COMP-NULL:"));
   #endif
 
-    if (!buffer_string_is_empty(s->ssl_cipher_list)) {
+    if (s->ssl_cipher_list) {
         if (!mod_gnutls_ssl_conf_ciphersuites(srv,s,NULL,s->ssl_cipher_list))
             return -1;
     }
 
   #if GNUTLS_VERSION_NUMBER < 0x030600
-    if (!buffer_string_is_empty(s->ssl_dh_file)) {
+    if (s->ssl_dh_file) {
         /* "Prior to GnuTLS 3.6.0 for the ephemeral or anonymous Diffie-Hellman
          * (DH) TLS ciphersuites the application was required to generate or
          * provide DH parameters. That is no longer necessary as GnuTLS utilizes
@@ -1722,14 +1792,14 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
         rc = gnutls_dh_params_generate2(s->dh_params, bits);
         if (rc < 0) {
             elogf(srv->errh, __FILE__, __LINE__, rc,
-                  "gnutls_dh_params_generate2() %s", s->ssl_dh_file->ptr);
+                  "gnutls_dh_params_generate2()");
             return -1;
         }
       #endif
     }
   #endif /* GNUTLS_VERSION_NUMBER < 0x030600 */
 
-    if (!buffer_string_is_empty(s->ssl_ec_curve)) {
+    if (s->ssl_ec_curve) {
         buffer_append_string_len(&s->priority_str,
                                  CONST_STR_LEN("-CURVE-ALL:"));
         if (!mod_gnutls_ssl_conf_curves(srv, s, s->ssl_ec_curve))
@@ -1766,15 +1836,15 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
     buffer *b = srv->tmp_buf;
     if (NULL == s->priority_base) s->priority_base = "NORMAL";
     buffer_copy_string_len(b, s->priority_base, strlen(s->priority_base));
-    if (!buffer_string_is_empty(&s->priority_str)) {
+    if (!buffer_is_blank(&s->priority_str)) {
         buffer_append_string_len(b, CONST_STR_LEN(":"));
-        uint32_t len = buffer_string_length(&s->priority_str);
+        uint32_t len = buffer_clen(&s->priority_str);
         if (s->priority_str.ptr[len-1] == ':')
             --len; /* remove trailing ':' */
         buffer_append_string_len(b, s->priority_str.ptr, len);
     }
 
-    if (!buffer_string_is_empty(s->priority_override)) {
+    if (s->priority_override && !buffer_is_blank(s->priority_override)) {
         b = s->priority_override;
         s->ssl_session_ticket = (NULL == strstr(b->ptr, "%NO_TICKET"));
     }
@@ -1872,8 +1942,8 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
 
         config_plugin_value_t *cpv = ps->cvlist + ps->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
-            /* ignore ssl.pemfile (k_id=10); included to process global scope */
-            if (!is_socket_scope && cpv->k_id != 10) {
+            /* ignore ssl.pemfile (k_id=6); included to process global scope */
+            if (!is_socket_scope && cpv->k_id != 6) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: %s is valid only in global scope or "
                   "$SERVER[\"socket\"] condition", cpk[cpv->k_id].k);
@@ -1886,14 +1956,16 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
                 --count_not_engine;
                 break;
               case 1: /* ssl.cipher-list */
-                conf.ssl_cipher_list = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_cipher_list = cpv->v.b;
                 break;
               case 2: /* ssl.honor-cipher-order */
                 conf.ssl_honor_cipher_order = (0 != cpv->v.u);
                 break;
               case 3: /* ssl.dh-file */
                #if GNUTLS_VERSION_NUMBER < 0x030600
-                conf.ssl_dh_file = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_dh_file = cpv->v.b;
                #else
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: ignoring ssl.dh-file; "
@@ -1901,7 +1973,8 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
                #endif
                 break;
               case 4: /* ssl.ec-curve */
-                conf.ssl_ec_curve = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    conf.ssl_ec_curve = cpv->v.b;
                 break;
               case 5: /* ssl.openssl.ssl-conf-cmd */
                 *(const array **)&conf.ssl_conf_cmd = cpv->v.a;
@@ -1933,7 +2006,7 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
                   "ssl.openssl.ssl-conf-cmd = (\"MinProtocol\" => \"SSLv3\")");
                 break;
               case 10:/* ssl.stek-file */
-                if (!buffer_is_empty(cpv->v.b))
+                if (!buffer_is_blank(cpv->v.b))
                     p->ssl_stek_file = cpv->v.b->ptr;
                 break;
               default:/* should not happen */
@@ -2094,6 +2167,15 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
      ,{ CONST_STR_LEN("debug.log-ssl-noise"),
         T_CONFIG_SHORT,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-dn-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("ssl.verifyclient.ca-crl-file"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -2114,14 +2196,20 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* ssl.pemfile */
-                if (!buffer_string_is_empty(cpv->v.b)) pemfile = cpv;
+                if (!buffer_is_blank(cpv->v.b)) pemfile = cpv;
                 break;
               case 1: /* ssl.privkey */
-                if (!buffer_string_is_empty(cpv->v.b)) privkey = cpv;
+                if (!buffer_is_blank(cpv->v.b)) privkey = cpv;
                 break;
+              case 15:/* ssl.verifyclient.ca-file */
+                if (cpv->k_id == 15) cpv->k_id = 2;
+                __attribute_fallthrough__
+              case 16:/* ssl.verifyclient.ca-dn-file */
+                if (cpv->k_id == 16) cpv->k_id = 3;
+                __attribute_fallthrough__
               case 2: /* ssl.ca-file */
               case 3: /* ssl.ca-dn-file */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     gnutls_datum_t *d =
                       mod_gnutls_load_config_crts(cpv->v.b->ptr, srv->errh);
                     if (d != NULL) {
@@ -2135,8 +2223,11 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
                     }
                 }
                 break;
+              case 17:/* ssl.verifyclient.ca-crl-file */
+                cpv->k_id = 4;
+                __attribute_fallthrough__
               case 4: /* ssl.ca-crl-file */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     gnutls_datum_t *d =
                       mod_gnutls_load_config_crls(cpv->v.b->ptr, srv->errh);
                     if (d != NULL) {
@@ -2151,7 +2242,12 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
                 }
                 break;
               case 5: /* ssl.read-ahead */
+                break;
               case 6: /* ssl.disable-client-renegotiation */
+                /* (force disabled, the default, if HTTP/2 enabled in server) */
+                if (srv->srvconf.h2proto)
+                    cpv->v.u = 1; /* disable client renegotiation */
+                break;
               case 7: /* ssl.verifyclient.activate */
               case 8: /* ssl.verifyclient.enforce */
                 break;
@@ -2164,13 +2260,25 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
                 }
                 break;
               case 10:/* ssl.verifyclient.username */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 11:/* ssl.verifyclient.exportcert */
+                break;
               case 12:/* ssl.acme-tls-1 */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
                 break;
               case 13:/* ssl.stapling-file */
-                ssl_stapling_file = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    ssl_stapling_file = cpv->v.b;
                 break;
               case 14:/* debug.log-ssl-noise */
+             #if 0    /*(handled further above)*/
+              case 15:/* ssl.verifyclient.ca-file */
+              case 16:/* ssl.verifyclient.ca-dn-file */
+              case 17:/* ssl.verifyclient.ca-crl-file */
+             #endif
                 break;
               default:/* should not happen */
                 break;
@@ -2320,10 +2428,10 @@ mod_gnutls_close_notify(handler_ctx *hctx);
 
 
 static int
-connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
+connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t max_bytes)
 {
-    handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id];
-    gnutls_session_t ssl = hctx->ssl;
+    handler_ctx * const hctx = con->plugin_ctx[plugin_data_singleton->id];
+    gnutls_session_t const ssl = hctx->ssl;
     if (!hctx->handshake) return 0;
 
     if (hctx->pending_write) {
@@ -2335,9 +2443,8 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         chunkqueue_mark_written(cq, wr);
     }
 
-    if (0 != hctx->close_notify) return mod_gnutls_close_notify(hctx);
-
-    chunkqueue_remove_finished_chunks(cq);
+    if (__builtin_expect( (0 != hctx->close_notify), 0))
+        return mod_gnutls_close_notify(hctx);
 
     const size_t lim = gnutls_record_get_max_size(ssl);
 
@@ -2360,6 +2467,10 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         int wr;
 
         if (0 != chunkqueue_peek_data(cq, &data, &data_len, errh)) return -1;
+        if (__builtin_expect( (0 == data_len), 0)) {
+            chunkqueue_remove_finished_chunks(cq);
+            continue;
+        }
 
         /* gnutls_record_send() copies the data, up to max record size, but if
          * (temporarily) unable to write the entire record, it is documented
@@ -2405,7 +2516,11 @@ mod_gnutls_ssl_handshake (handler_ctx *hctx)
 
     hctx->handshake = 1;
   #if GNUTLS_VERSION_NUMBER >= 0x030200
-    if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1) {
+    if (hctx->alpn == MOD_GNUTLS_ALPN_H2) {
+        if (0 != mod_gnutls_alpn_h2_policy(hctx))
+            return -1;
+    }
+    else if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1) {
         /* Once TLS handshake is complete, return -1 to result in
          * CON_STATE_ERROR so that socket connection is quickly closed */
         return -1;
@@ -2417,13 +2532,14 @@ mod_gnutls_ssl_handshake (handler_ctx *hctx)
 
 
 static int
-connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
+connection_read_cq_ssl (connection * const con, chunkqueue * const cq, off_t max_bytes)
 {
-    handler_ctx *hctx = con->plugin_ctx[plugin_data_singleton->id];
+    handler_ctx * const hctx = con->plugin_ctx[plugin_data_singleton->id];
 
     UNUSED(max_bytes);
 
-    if (0 != hctx->close_notify) return mod_gnutls_close_notify(hctx);
+    if (__builtin_expect( (0 != hctx->close_notify), 0))
+        return mod_gnutls_close_notify(hctx);
 
     if (!hctx->handshake) {
         int rc = mod_gnutls_ssl_handshake(hctx);
@@ -2473,7 +2589,7 @@ mod_gnutls_debug_cb(int level, const char *str)
 
 CONNECTION_FUNC(mod_gnutls_handle_con_accept)
 {
-    server_socket *srv_sock = con->srv_socket;
+    const server_socket *srv_sock = con->srv_socket;
     if (!srv_sock->is_ssl) return HANDLER_GO_ON;
 
     plugin_data *p = p_d;
@@ -2484,6 +2600,7 @@ CONNECTION_FUNC(mod_gnutls_handle_con_accept)
     hctx->tmp_buf = con->srv->tmp_buf;
     hctx->errh = r->conf.errh;
     con->plugin_ctx[p->id] = hctx;
+    buffer_blank(&r->uri.authority);
 
     plugin_ssl_ctx * const s = p->ssl_ctxs + srv_sock->sidx;
     hctx->ssl_session_ticket = s->ssl_session_ticket;
@@ -2503,7 +2620,7 @@ CONNECTION_FUNC(mod_gnutls_handle_con_accept)
 
     /* generic func replaces gnutls_handshake_set_post_client_hello_function()*/
     gnutls_handshake_set_hook_function(hctx->ssl, GNUTLS_HANDSHAKE_CLIENT_HELLO,
-                                       GNUTLS_HOOK_BOTH,
+                                       GNUTLS_HOOK_PRE,
                                        mod_gnutls_client_hello_hook);
 
     gnutls_session_set_ptr(hctx->ssl, hctx);
@@ -2629,13 +2746,13 @@ https_add_ssl_client_cert (request_st * const r, const gnutls_x509_crt_t peer)
 static void
 https_add_ssl_client_subject (request_st * const r, gnutls_x509_dn_t dn)
 {
-    buffer * const tb = r->tmp_buf;
     int irdn = 0, i, rc;
     gnutls_x509_ava_st ava;
+    const size_t prelen = sizeof("SSL_CLIENT_S_DN_")-1;
+    char key[64] = "SSL_CLIENT_S_DN_";
     char buf[512]; /*(expecting element value len <= 256)*/
 
     /* add components of client Subject DN */
-    buffer_copy_string_len(tb, CONST_STR_LEN("SSL_CLIENT_S_DN_"));
 
     /* man gnutls_x509_dn_get_rdn_ava()
      *   The X.509 distinguished name is a sequence of sequences of strings and
@@ -2650,16 +2767,19 @@ https_add_ssl_client_subject (request_st * const r, gnutls_x509_dn_t dn)
             const char *name =
               gnutls_x509_dn_oid_name((char *)ava.oid.data,
                                       GNUTLS_X509_DN_OID_RETURN_OID);
-            buffer_string_set_length(tb, sizeof("SSL_CLIENT_S_DN_")-1);
-            buffer_append_string_len(tb, name, strlen(name));
+            const size_t len = strlen(name);
+            if (prelen+len >= sizeof(key)) continue;
+            memcpy(key+prelen, name, len); /*(not '\0'-terminated)*/
 
-            unsigned int v, n = 0;
-            for (v = 0; v < ava.value.size && n < sizeof(buf)-1; ++n) {
-                unsigned char c = ava.value.data[v];
-                buf[n] = (c < 32 || c == 127 || (c > 128 && c < 160)) ? '?' : c;
+            unsigned int n, vlen = ava.value.size;
+            if (vlen > sizeof(buf)-1)
+                vlen = sizeof(buf)-1;
+            for (n = 0; n < vlen; ++n) {
+                unsigned char c = ava.value.data[n];
+                buf[n] = (c >= 32 && c != 127) ? c : '?';
             }
 
-            http_header_env_set(r, CONST_BUF_LEN(tb), buf, n);
+            http_header_env_set(r, key, prelen+len, buf, n);
         }
         ++irdn;
     } while (rc == GNUTLS_E_ASN1_ELEMENT_NOT_FOUND && i > 0);
@@ -2669,62 +2789,66 @@ https_add_ssl_client_subject (request_st * const r, gnutls_x509_dn_t dn)
              "gnutls_x509_dn_get_rdn_ava()");
 }
 
+
+__attribute_cold__
+static void
+https_add_ssl_client_verify_err (buffer * const b, unsigned int status)
+{
+  #if GNUTLS_VERSION_NUMBER >= 0x030104
+    /* get failure string and translate newline to ':', removing last one */
+    /* (preserving behavior from mod_openssl) */
+    gnutls_datum_t msg = { NULL, 0 };
+    if (gnutls_certificate_verification_status_print(status, GNUTLS_CRT_X509,
+                                                     &msg, 0) >= 0) {
+        size_t sz = msg.size-1; /* '\0'-terminated string */
+        for (char *nl=(char *)msg.data; NULL != (nl=strchr(nl, '\n')); ++nl)
+            nl[0] = ('\0' == nl[1] ? (--sz, '\0') : ':');
+        buffer_append_string_len(b, (char *)msg.data, sz);
+    }
+    if (msg.data) gnutls_free(msg.data);
+  #else
+    UNUSED(b);
+    UNUSED(status);
+  #endif
+}
+
+
+__attribute_noinline__
 static void
 https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
 {
     gnutls_session_t ssl = hctx->ssl;
     unsigned int crt_size = 0;
-    const gnutls_datum_t *crts;
-    gnutls_x509_crt_t crt;
-    buffer * const tb = r->tmp_buf;
-    char buf[513]; /*(512+1 for li_tohex_uc())*/
-    size_t sz;
+    const gnutls_datum_t *crts = NULL;
+    buffer *vb = http_header_env_set_ptr(r, CONST_STR_LEN("SSL_CLIENT_VERIFY"));
 
     if (hctx->verify_status != ~0u)
         crts = gnutls_certificate_get_peers(ssl, &crt_size);
     if (0 == crt_size) { /* || hctx->verify_status == ~0u) */
         /*(e.g. no cert, or verify result not available)*/
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_STR_LEN("NONE"));
+        buffer_copy_string_len(vb, CONST_STR_LEN("NONE"));
         return;
     }
     else if (0 != hctx->verify_status) {
-        buffer_copy_string_len(tb, CONST_STR_LEN("FAILED:"));
-      #if GNUTLS_VERSION_NUMBER >= 0x030104
-        /* get failure string and translate newline to ':', removing last one */
-        /* (preserving behavior from mod_openssl) */
-        gnutls_datum_t msg = { NULL, 0 };
-        if (gnutls_certificate_verification_status_print(hctx->verify_status,
-                                                         GNUTLS_CRT_X509,
-                                                         &msg, 0) >= 0) {
-            sz = msg.size-1; /* '\0'-terminated string */
-            for (char *nl=(char *)msg.data; NULL != (nl=strchr(nl, '\n')); ++nl)
-                nl[0] = ('\0' == nl[1] ? (--sz, '\0') : ':');
-            buffer_append_string_len(tb, (char *)msg.data, sz);
-        }
-        if (msg.data) gnutls_free(msg.data);
-      #endif
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_BUF_LEN(tb));
+        buffer_copy_string_len(vb, CONST_STR_LEN("FAILED:"));
+        https_add_ssl_client_verify_err(vb, hctx->verify_status);
         return;
     }
     else {
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-                            CONST_STR_LEN("SUCCESS"));
+        buffer_copy_string_len(vb, CONST_STR_LEN("SUCCESS"));
     }
 
+    gnutls_x509_crt_t crt;
     if (gnutls_x509_crt_init(&crt) < 0)
         return;
-    if (gnutls_x509_crt_import(crt, &crts[0], GNUTLS_X509_FMT_DER) < 0) {
+    if (crts && gnutls_x509_crt_import(crt, &crts[0], GNUTLS_X509_FMT_DER) < 0){
         gnutls_x509_crt_deinit(crt);
         return;
     }
 
     int rc;
     gnutls_datum_t d = { NULL, 0 };
+    char buf[512];
     /*rc = gnutls_x509_crt_print(cert, GNUTLS_CRT_PRINT_ONELINE, &d);*//* ??? */
   #if GNUTLS_VERSION_NUMBER < 0x030507
     d.data = buf;
@@ -2744,26 +2868,24 @@ https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
     if (rc >= 0)
         https_add_ssl_client_subject(r, dn);
 
-    sz = sizeof(buf)/2;
-    if (gnutls_x509_crt_get_serial(crt, buf+sz, &sz) >= 0) {
-        li_tohex_uc(buf, sizeof(buf), buf+(sizeof(buf)/2), sz);
-        http_header_env_set(r,
-                            CONST_STR_LEN("SSL_CLIENT_M_SERIAL"),
-                            buf, sz*2);
-    }
+    size_t sz = sizeof(buf);
+    if (gnutls_x509_crt_get_serial(crt, buf, &sz) >= 0)
+        buffer_append_string_encoded_hex_uc(
+          http_header_env_set_ptr(r, CONST_STR_LEN("SSL_CLIENT_M_SERIAL")),
+          buf, sz);
 
-    if (!buffer_string_is_empty(hctx->conf.ssl_verifyclient_username)) {
+    if (hctx->conf.ssl_verifyclient_username) {
         /* pick one of the exported values as "REMOTE_USER", for example
          *   ssl.verifyclient.username = "SSL_CLIENT_S_DN_UID"
          * or
          *   ssl.verifyclient.username = "SSL_CLIENT_S_DN_emailAddress"
          */
         const buffer *varname = hctx->conf.ssl_verifyclient_username;
-        const buffer *vb = http_header_env_get(r, CONST_BUF_LEN(varname));
-        if (vb) { /* same as http_auth.c:http_auth_setenv() */
+        vb = http_header_env_get(r, BUF_PTR_LEN(varname));
+        if (vb) { /* same as mod_auth_api.c:http_auth_setenv() */
             http_header_env_set(r,
                                 CONST_STR_LEN("REMOTE_USER"),
-                                CONST_BUF_LEN(vb));
+                                BUF_PTR_LEN(vb));
             http_header_env_set(r,
                                 CONST_STR_LEN("AUTH_TYPE"),
                                 CONST_STR_LEN("SSL_CLIENT_VERIFY"));
@@ -2860,7 +2982,7 @@ REQUEST_FUNC(mod_gnutls_handle_request_reset)
 
 TRIGGER_FUNC(mod_gnutls_handle_trigger) {
     const plugin_data * const p = p_d;
-    const time_t cur_ts = log_epoch_secs;
+    const unix_time64_t cur_ts = log_epoch_secs;
     if (cur_ts & 0x3f) return HANDLER_GO_ON; /*(continue once each 64 sec)*/
 
     mod_gnutls_session_ticket_key_check(srv, p, cur_ts);
@@ -2976,7 +3098,9 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
     if (ciphersuites) {
         buffer *b = ciphersuites;
         buffer_to_upper(b); /*(ciphersuites are all uppercase (currently))*/
-        for (const char *p, *e = b->ptr-1; e && (e = strchr((p = e+1),':')); ) {
+        for (const char *e = b->ptr-1; e; ) {
+            const char * const p = e+1;
+            e = strchr(p, ':');
             size_t len = e ? (size_t)(e - p) : strlen(p);
 
             if (buffer_eq_icase_ss(p, len,
@@ -3015,7 +3139,7 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
      *
      * XXX: not done: could make a list of ciphers with bitflag of attributes
      *      to make future combining easier */
-    if (!buffer_string_is_empty(cipherstring)) {
+    if (cipherstring && !buffer_is_blank(cipherstring)) {
         const buffer *b = cipherstring;
         const char *e = b->ptr;
 
@@ -3027,39 +3151,49 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
 
         /* manually handle first token, since one-offs apply */
         /* (openssl syntax NOT fully supported) */
-        if (0 == strncmp(e, "!ALL", 4) || 0 == strncmp(e, "-ALL", 4)) {
+        #define strncmp_const(s,cs) strncmp((s),(cs),sizeof(cs)-1)
+        if (0 == strncmp_const(e, "!ALL") || 0 == strncmp_const(e, "-ALL")) {
             /* "!ALL" excluding all ciphers is empty list */
             e += sizeof("!ALL")-1; /* same as sizeof("-ALL")-1 */
             buffer_append_string_len(plist, CONST_STR_LEN("-CIPHER-ALL:"));
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("!DEFAULT"))
-              || 0 == strncmp(e, CONST_STR_LEN("-DEFAULT"))) {
+        else if (0 == strncmp_const(e, "!DEFAULT")
+              || 0 == strncmp_const(e, "-DEFAULT")) {
             /* "!DEFAULT" excluding default ciphers is empty list */
             e += sizeof("!DEFAULT")-1; /* same as sizeof("-DEFAULT")-1 */
             buffer_append_string_len(plist, CONST_STR_LEN("-CIPHER-ALL:"));
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("DEFAULT"))) {
+        else if (0 == strncmp_const(e, "DEFAULT")) {
             e += sizeof("DEFAULT")-1;
             s->priority_base = "NORMAL";
         }
         else if (0 == /* effectively the same as "DEFAULT" */
-                 strncmp(e, CONST_STR_LEN("ALL:!COMPLEMENTOFDEFAULT:!eNULL"))) {
+                 strncmp_const(e, "ALL:!COMPLEMENTOFDEFAULT:!eNULL")) {
             e += sizeof("ALL:!COMPLEMENTOFDEFAULT:!eNULL")-1;
             s->priority_base = "NORMAL";
         }
-        else if (0 == strncmp(e, CONST_STR_LEN("SUITEB128"))
-              || 0 == strncmp(e, CONST_STR_LEN("SUITEB128ONLY"))
-              || 0 == strncmp(e, CONST_STR_LEN("SUITEB192"))) {
-            s->priority_base = (0 == strncmp(e, CONST_STR_LEN("SUITEB192")))
+        else if (0 == strncmp_const(e, "SUITEB128")
+              || 0 == strncmp_const(e, "SUITEB128ONLY")
+              || 0 == strncmp_const(e, "SUITEB192")) {
+            s->priority_base = (0 == strncmp_const(e, "SUITEB192"))
               ? "SUITEB192"
               : "SUITEB128";
-            e += (0 == strncmp(e, CONST_STR_LEN("SUITEB128ONLY")))
+            e += (0 == strncmp_const(e, "SUITEB128ONLY"))
                  ? sizeof("SUITEB128ONLY")-1
                  : sizeof("SUITEB128")-1;
             if (*e)
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: ignoring cipher string after SUITEB: %s", e);
             return 1;
+        }
+        else if (0 == strncmp_const(e,
+                  "ECDHE+AESGCM:ECDHE+AES256:CHACHA20:!SHA1:!SHA256:!SHA384")
+              || 0 == strncmp_const(e,
+                  "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")) {
+            e += sizeof(
+                  "EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384")-1;
+            buffer_append_string_len(plist,
+              CONST_STR_LEN("+AES-256-GCM:+AES-128-GCM:+AES-256-CCM:+AES-256-CCM-8:+CHACHA20-POLY1305:"));
         }
 
         if (e != b->ptr && *e != ':' && *e != '\0') {
@@ -3073,8 +3207,11 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
 
         int rc = 1;
         if (e == b->ptr || *e == '\0') --e; /*initial condition for loop below*/
-        for (const char *p; e && (e = strchr((p = e+1),':')); ) {
+        do {
+            const char * const p = e+1;
+            e = strchr(p, ':');
             size_t len = e ? (size_t)(e - p) : strlen(p);
+            if (0 == len) continue;
             if (len >= sizeof(n)) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: skipped ciphersuite; too long: %.*s",
@@ -3206,14 +3343,14 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
                 continue;
             }
 
-            if (*e != ':' && *e != '\0') {
+            {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: error: missing support for cipher list: %.*s",
                   (int)len, p);
                 rc = 0;
                 continue;
             }
-        }
+        } while (e);
         if (0 == rc) return 0;
     }
 
@@ -3248,7 +3385,9 @@ mod_gnutls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *c
 
     buffer * const plist = &s->priority_str;
     const buffer * const b = curvelist;
-    for (const char *n, *e = b->ptr-1; e && (e = strchr((n = e+1),':')); ) {
+    for (const char *e = b->ptr-1; e; ) {
+        const char * const n = e+1;
+        e = strchr(n, ':');
         size_t len = e ? (size_t)(e - n) : strlen(n);
         uint32_t i;
         for (i = 0; i < sizeof(names)/sizeof(*names)/2; i += 2) {

@@ -2,15 +2,19 @@
 
 #include "base.h"
 #include "burl.h"
+#include "chunk.h"
+#include "ck.h"
 #include "fdevent.h"
+#include "fdlog.h"
 #include "http_etag.h"
 #include "keyvalue.h"
 #include "log.h"
-#include "stream.h"
 
 #include "configparser.h"
 #include "configfile.h"
 #include "plugin.h"
+#include "reqpool.h"
+#include "sock_addr.h"
 #include "stat_cache.h"
 #include "sys-crypto.h"
 
@@ -30,6 +34,11 @@
 
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
+#endif
+
+#ifdef HAVE_PCRE2_H
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #endif
 
 #ifndef PATH_MAX
@@ -182,10 +191,13 @@ static void config_merge_config_cpv(request_config * const pconf, const config_p
       case 30:/* debug.log-timeouts */
         pconf->log_timeouts = (0 != cpv->v.u);
         break;
-      case 31: /* server.errorlog */
+      case 31:/* debug.log-state-handling */
+        pconf->log_state_handling = (0 != cpv->v.u);
+        break;
+      case 32:/* server.errorlog */
         if (cpv->vtype == T_CONFIG_LOCAL) pconf->errh = cpv->v.v;
         break;
-      case 32:/* server.breakagelog */
+      case 33:/* server.breakagelog */
         if (cpv->vtype == T_CONFIG_LOCAL) pconf->serrh = cpv->v.v;
         break;
       default:/* should not happen */
@@ -202,7 +214,7 @@ static void config_merge_config(request_config * const pconf, const config_plugi
 void config_patch_config(request_st * const r) {
     config_data_base * const p = r->con->config_data_base;
 
-    /* performed by config_reset_config() */
+    /* performed by request_config_reset() */
     /*memcpy(&r->conf, &p->defaults, sizeof(request_config));*/
 
     for (int i = 1, used = p->nconfig; i < used; ++i) {
@@ -211,14 +223,15 @@ void config_patch_config(request_st * const r) {
     }
 }
 
+#if 0 /*(moved to reqpool.c:request_config_reset())*/
 void config_reset_config(request_st * const r) {
     /* initialize request_config (r->conf) from top-level request_config */
     config_data_base * const p = r->con->config_data_base;
-    r->server_name = p->defaults.server_name;
     memcpy(&r->conf, &p->defaults, sizeof(request_config));
 }
+#endif
 
-static int config_burl_normalize_cond (server *srv) {
+static void config_burl_normalize_cond (server * const srv) {
     buffer * const tb = srv->tmp_buf;
     for (uint32_t i = 0; i < srv->config_context->used; ++i) {
         data_config * const config =(data_config *)srv->config_context->data[i];
@@ -233,11 +246,21 @@ static int config_burl_normalize_cond (server *srv) {
         case CONFIG_COND_NOMATCH:
         case CONFIG_COND_MATCH:
             pcre_keyvalue_burl_normalize_key(&config->string, tb);
-            if (!data_config_pcre_compile(config)) return 0;
             break;
         default:
             break;
         }
+    }
+}
+
+static int config_pcre_keyvalue (server * const srv) {
+    const int pcre_jit = config_feature_bool(srv, "server.pcre_jit", 1);
+    for (uint32_t i = 0; i < srv->config_context->used; ++i) {
+        data_config * const dc = (data_config *)srv->config_context->data[i];
+        if (dc->cond != CONFIG_COND_NOMATCH && dc->cond != CONFIG_COND_MATCH)
+            continue;
+        if (!data_config_pcre_compile(dc, pcre_jit, srv->errh))
+            return 0;
     }
 
     return 1;
@@ -266,21 +289,21 @@ static void config_warn_openssl_module (server *srv) {
 #endif
 
 static void config_check_module_duplicates (server *srv) {
-    int dup = 0;
+    int dups = 0;
     data_string ** const data = (data_string **)srv->srvconf.modules->data;
     const uint32_t used = srv->srvconf.modules->used;
     for (uint32_t i = 0; i < used; ++i) {
         const buffer * const m = &data[i]->value;
         for (uint32_t j = i+1; j < used; ++j) {
             if (buffer_is_equal(m, &data[j]->value)) {
-                ++dup;
+                ++dups;
                 break;
             }
         }
     }
-    if (!dup) return;
+    if (!dups) return;
 
-    array * const modules = array_init(used - dup);
+    array * const modules = array_init(used - dups);
     for (uint32_t i = 0; i < used; ++i) {
         const buffer * const m = &data[i]->value;
         uint32_t j;
@@ -289,13 +312,14 @@ static void config_check_module_duplicates (server *srv) {
             if (buffer_is_equal(m, n)) break; /* duplicate */
         }
         if (j == modules->used)
-            array_insert_value(modules, CONST_BUF_LEN(m));
+            array_insert_value(modules, BUF_PTR_LEN(m));
     }
     array_free(srv->srvconf.modules);
     srv->srvconf.modules = modules;
 }
 
-static const char * config_has_opt_and_value (server * const srv, const char * const opt, const uint32_t olen, const char * const v, const uint32_t vlen) {
+__attribute_pure__
+static const char * config_has_opt_and_value (const server * const srv, const char * const opt, const uint32_t olen, const char * const v, const uint32_t vlen) {
     for (uint32_t i = 0; i < srv->config_context->used; ++i) {
         const data_config * const config =
             (data_config const *)srv->config_context->data[i];
@@ -308,11 +332,24 @@ static const char * config_has_opt_and_value (server * const srv, const char * c
     return NULL;
 }
 
+static void config_compat_module_prepend (server *srv, const char *module, uint32_t len) {
+    array *modules = array_init(srv->srvconf.modules->used+4);
+    array_insert_value(modules, module, len);
+
+    for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
+        data_string *ds = (data_string *)srv->srvconf.modules->data[i];
+        array_insert_value(modules, BUF_PTR_LEN(&ds->value));
+    }
+
+    array_free(srv->srvconf.modules);
+    srv->srvconf.modules = modules;
+}
+
 static void config_warn_authn_module (server *srv, const char *module, uint32_t len, const char *v) {
     buffer * const tb = srv->tmp_buf;
     buffer_copy_string_len(tb, CONST_STR_LEN("mod_authn_"));
     buffer_append_string_len(tb, module, len);
-    array_insert_value(srv->srvconf.modules, CONST_BUF_LEN(tb));
+    array_insert_value(srv->srvconf.modules, BUF_PTR_LEN(tb));
     log_error(srv->errh, __FILE__, __LINE__,
       "Warning: please add \"mod_authn_%s\" to server.modules list "
       "in lighttpd.conf.  A future release of lighttpd 1.4.x will "
@@ -327,9 +364,11 @@ static void config_compat_module_load (server *srv) {
     int append_mod_staticfile  = 1;
     int append_mod_authn_file  = 1;
     int append_mod_authn_ldap  = 1;
-    int append_mod_authn_mysql = 1;
     int append_mod_openssl     = 1;
     int contains_mod_auth      = 0;
+    int prepend_mod_auth       = 0;
+    int prepend_mod_vhostdb    = 0;
+    const char *dyn_name = NULL;
 
     for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
         buffer *m = &((data_string *)srv->srvconf.modules->data[i])->value;
@@ -350,24 +389,46 @@ static void config_compat_module_load (server *srv) {
             append_mod_openssl = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_wolfssl")))
             append_mod_openssl = 0;
-        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_file")))
-            append_mod_authn_file = 0;
-        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_ldap")))
-            append_mod_authn_ldap = 0;
-        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_mysql")))
-            append_mod_authn_mysql = 0;
-        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_auth")))
-            contains_mod_auth = 1;
+        else if (0 == strncmp(m->ptr, "mod_auth", sizeof("mod_auth")-1)) {
+            if (buffer_eq_slen(m, CONST_STR_LEN("mod_auth"))) {
+                if (!contains_mod_auth) {
+                    contains_mod_auth = 1;
+                    if (dyn_name)
+                        log_error(srv->errh, __FILE__, __LINE__,
+                          "Warning: mod_auth should be listed in server.modules"
+                          " before dynamic backends such as %s", dyn_name);
+                }
+            }
+            else if (!contains_mod_auth)
+                prepend_mod_auth = 1;
 
-        if (0 == prepend_mod_indexfile &&
-            0 == append_mod_dirlisting &&
-            0 == append_mod_staticfile &&
-            0 == append_mod_openssl &&
-            0 == append_mod_authn_file &&
-            0 == append_mod_authn_ldap &&
-            0 == append_mod_authn_mysql &&
-            1 == contains_mod_auth) {
-            break;
+            if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_file")))
+                append_mod_authn_file = 0;
+            else if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_ldap")))
+                append_mod_authn_ldap = 0;
+        }
+        else if (0 == strncmp(m->ptr, "mod_vhostdb", sizeof("mod_vhostdb")-1)) {
+            if (buffer_eq_slen(m, CONST_STR_LEN("mod_vhostdb")))
+                prepend_mod_vhostdb |= 2;
+            else if (!(prepend_mod_vhostdb & 2))
+                prepend_mod_vhostdb |= 1;
+        }
+        else if (   0 == strncmp(m->ptr, "mod_ajp13",
+                                         sizeof("mod_ajp13")-1)
+                 || 0 == strncmp(m->ptr, "mod_cgi",
+                                         sizeof("mod_cgi")-1)
+                 || 0 == strncmp(m->ptr, "mod_fastcgi",
+                                         sizeof("mod_fastcgi")-1)
+                 || 0 == strncmp(m->ptr, "mod_proxy",
+                                         sizeof("mod_proxy")-1)
+                 || 0 == strncmp(m->ptr, "mod_scgi",
+                                         sizeof("mod_scgi")-1)
+                 || 0 == strncmp(m->ptr, "mod_sockproxy",
+                                         sizeof("mod_sockproxy")-1)
+                 || 0 == strncmp(m->ptr, "mod_wstunnel",
+                                         sizeof("mod_wstunnel")-1)) {
+            if (NULL == dyn_name)
+                dyn_name = m->ptr;
         }
     }
 
@@ -375,16 +436,7 @@ static void config_compat_module_load (server *srv) {
 
     if (prepend_mod_indexfile) {
         /* mod_indexfile has to be loaded before mod_fastcgi and friends */
-        array *modules = array_init(srv->srvconf.modules->used+4);
-        array_insert_value(modules, CONST_STR_LEN("mod_indexfile"));
-
-        for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
-            data_string *ds = (data_string *)srv->srvconf.modules->data[i];
-            array_insert_value(modules, CONST_BUF_LEN(&ds->value));
-        }
-
-        array_free(srv->srvconf.modules);
-        srv->srvconf.modules = modules;
+        config_compat_module_prepend(srv, CONST_STR_LEN("mod_indexfile"));
     }
 
     /* append default modules */
@@ -403,7 +455,7 @@ static void config_compat_module_load (server *srv) {
       #endif
     }
 
-    /* mod_auth.c,http_auth.c auth backends were split into separate modules
+    /* mod_auth.c,mod_auth_api.c auth backends were split into separate modules
      * Automatically load auth backend modules for compatibility with
      * existing lighttpd 1.4.x configs */
     if (contains_mod_auth) {
@@ -424,13 +476,14 @@ static void config_compat_module_load (server *srv) {
                 config_warn_authn_module(srv, CONST_STR_LEN("ldap"), "ldap");
           #endif
         }
-        if (append_mod_authn_mysql) {
-          #if defined(HAVE_MYSQL)
-            if (config_has_opt_and_value(srv, CONST_STR_LEN("auth.backend"),
-                                              CONST_STR_LEN("mysql")))
-                config_warn_authn_module(srv, CONST_STR_LEN("mysql"), "mysql");
-          #endif
-        }
+    }
+
+    if (prepend_mod_auth) {
+        config_compat_module_prepend(srv, CONST_STR_LEN("mod_auth"));
+    }
+
+    if (prepend_mod_vhostdb & 1) {
+        config_compat_module_prepend(srv, CONST_STR_LEN("mod_vhostdb"));
     }
 }
 
@@ -473,7 +526,7 @@ static void config_deprecate_module_compress (server *srv) {
             buffer *m = &((data_string *)srv->srvconf.modules->data[i])->value;
             if (buffer_eq_slen(m, CONST_STR_LEN("mod_compress")))
                 continue;
-            array_insert_value(a, CONST_BUF_LEN(m));
+            array_insert_value(a, BUF_PTR_LEN(m));
         }
         array_free(srv->srvconf.modules);
         srv->srvconf.modules = a;
@@ -685,9 +738,6 @@ static int config_insert_srvconf(server *srv) {
      ,{ CONST_STR_LEN("debug.log-request-header-on-error"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_SERVER }
-     ,{ CONST_STR_LEN("debug.log-state-handling"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_SERVER }
      ,{ CONST_STR_LEN("server.feature-flags"),
         T_CONFIG_ARRAY_KVANY,
         T_CONFIG_SCOPE_SERVER }
@@ -695,6 +745,8 @@ static int config_insert_srvconf(server *srv) {
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
     };
+
+    srv->srvconf.h2proto = 2; /* enable HTTP/2 and h2c by default */
 
     int rc = 0;
     plugin_data_base srvplug;
@@ -723,19 +775,24 @@ static int config_insert_srvconf(server *srv) {
                 srv->srvconf.port = cpv->v.shrt;
                 break;
               case 4: /* server.bind */
-                srv->srvconf.bindhost = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.bindhost = cpv->v.b;
                 break;
               case 5: /* server.network-backend */
-                srv->srvconf.network_backend = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.network_backend = cpv->v.b;
                 break;
               case 6: /* server.chroot */
-                srv->srvconf.changeroot = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.changeroot = cpv->v.b;
                 break;
               case 7: /* server.username */
-                srv->srvconf.username = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.username = cpv->v.b;
                 break;
               case 8: /* server.groupname */
-                srv->srvconf.groupname = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.groupname = cpv->v.b;
                 break;
               case 9: /* server.errorlog */    /* moved to config_insert() */
                 /*srv->srvconf.errorlog_file = cpv->v.b;*/
@@ -747,7 +804,8 @@ static int config_insert_srvconf(server *srv) {
                 srv->srvconf.errorlog_use_syslog = (unsigned short)cpv->v.u;
                 break;
               case 12:/* server.syslog-facility */
-                srv->srvconf.syslog_facility = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    srv->srvconf.syslog_facility = cpv->v.b;
                 break;
               case 13:/* server.core-files */
                 srv->srvconf.enable_cores = (unsigned short)cpv->v.u;
@@ -756,7 +814,8 @@ static int config_insert_srvconf(server *srv) {
                 srv->srvconf.event_handler = cpv->v.b->ptr;
                 break;
               case 15:/* server.pid-file */
-                *(const buffer **)&srv->srvconf.pid_file = cpv->v.b;
+                if (!buffer_is_blank(cpv->v.b))
+                    *(const buffer **)&srv->srvconf.pid_file = cpv->v.b;
                 break;
               case 16:/* server.max-worker */
                 srv->srvconf.max_worker = (unsigned short)cpv->v.u;
@@ -820,20 +879,17 @@ static int config_insert_srvconf(server *srv) {
               case 31:/* debug.log-request-header-on-error */
                 srv->srvconf.log_request_header_on_error = (0 != cpv->v.u);
                 break;
-              case 32:/* debug.log-state-handling */
-                srv->srvconf.log_state_handling = (0 != cpv->v.u);
-                break;
-              case 33:/* server.feature-flags */
+              case 32:/* server.feature-flags */
                 srv->srvconf.feature_flags = cpv->v.a;
                 srv->srvconf.h2proto =
                   config_plugin_value_tobool(
                     array_get_element_klen(cpv->v.a,
-                                           CONST_STR_LEN("server.h2proto")), 0);
+                                           CONST_STR_LEN("server.h2proto")), 1);
                 if (srv->srvconf.h2proto)
                     srv->srvconf.h2proto +=
                       config_plugin_value_tobool(
                         array_get_element_klen(cpv->v.a,
-                                               CONST_STR_LEN("server.h2c")), 0);
+                                               CONST_STR_LEN("server.h2c")), 1);
                 srv->srvconf.absolute_dir_redirect =
                   config_plugin_value_tobool(
                     array_get_element_klen(cpv->v.a,
@@ -855,7 +911,10 @@ static int config_insert_srvconf(server *srv) {
 
     config_deprecate_module_compress(srv);
 
-    if (srv->srvconf.http_url_normalize && !config_burl_normalize_cond(srv))
+    if (srv->srvconf.http_url_normalize)
+        config_burl_normalize_cond(srv);
+
+    if (!config_pcre_keyvalue(srv))
         rc = HANDLER_ERROR;
 
     free(srvplug.cvlist);
@@ -957,6 +1016,9 @@ static int config_insert(server *srv) {
      ,{ CONST_STR_LEN("debug.log-timeouts"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("debug.log-state-handling"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("server.errorlog"),
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
@@ -983,10 +1045,13 @@ static int config_insert(server *srv) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* server.document-root */
+                break;
               case 1: /* server.name */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
                 break;
               case 2: /* server.tag */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
                     for (char *t=strchr(b->ptr,'\n'); t; t=strchr(t+2,'\n')) {
@@ -995,7 +1060,7 @@ static int config_insert(server *srv) {
                          * if needed */
                         if (t[1] == ' ' || t[1] == '\t') continue;
                         off_t off = t - b->ptr;
-                        size_t len = buffer_string_length(b);
+                        size_t len = buffer_clen(b);
                         buffer_string_prepare_append(b, 1);
                         t = b->ptr+off;
                         memmove(t+2, t+1, len - off - 1);
@@ -1004,17 +1069,23 @@ static int config_insert(server *srv) {
                     }
                     char *t = b->ptr; /*(make empty if tag is whitespace-only)*/
                     while (*t==' ' || *t=='\t' || *t=='\r' || *t=='\n') ++t;
-                    if (*t == '\0') buffer_string_set_length(b, 0);
+                    if (*t == '\0') buffer_truncate(b, 0);
                 }
+                else if (0 != i)
+                    cpv->v.b = NULL;
                 break;
               case 3: /* server.max-request-size */
               case 4: /* server.max-keep-alive-requests */
               case 5: /* server.max-keep-alive-idle */
               case 6: /* server.max-read-idle */
               case 7: /* server.max-write-idle */
+                break;
               case 8: /* server.errorfile-prefix */
               case 9: /* server.error-handler */
               case 10:/* server.error-handler-404 */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 11:/* server.error-intercept */
               case 12:/* server.force-lowercase-filenames */
                 break;
@@ -1059,8 +1130,9 @@ static int config_insert(server *srv) {
               case 28:/* debug.log-request-header */
               case 29:/* debug.log-response-header */
               case 30:/* debug.log-timeouts */
-              case 31:/* server.errorlog */   /*(idx in server.c must match)*/
-              case 32:/* server.breakagelog *//*(idx in server.c must match)*/
+              case 31:/* debug.log-state-handling */
+              case 32:/* server.errorlog *//*must match config_log_error_open*/
+              case 33:/* server.breakagelog */ /* match config_log_error_open*/
                 break;
               default:/* should not happen */
                 break;
@@ -1100,11 +1172,12 @@ static int config_insert(server *srv) {
 
     /* (after processing config defaults) */
     p->defaults.max_request_field_size = srv->srvconf.max_request_field_size;
-    p->defaults.log_state_handling = srv->srvconf.log_state_handling;
     p->defaults.log_request_header_on_error =
       srv->srvconf.log_request_header_on_error;
     if (p->defaults.log_request_handling || p->defaults.log_request_header)
         p->defaults.log_request_header_on_error = 1;
+
+    request_config_set_defaults(&p->defaults);
 
     return rc;
 }
@@ -1120,9 +1193,9 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
 
     /* configure default server_tag if not set
      * (if configured to blank, unset server_tag)*/
-    if (buffer_is_empty(p->defaults.server_tag))
+    if (!p->defaults.server_tag)
         p->defaults.server_tag = default_server_tag;
-    else if (buffer_string_is_empty(p->defaults.server_tag))
+    else if (buffer_is_blank(p->defaults.server_tag))
         p->defaults.server_tag = NULL;
 
     /* dump unused config keys */
@@ -1136,7 +1209,7 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
                 continue;
 
             if (!array_get_element_klen(srv->srvconf.config_touched,
-                                        CONST_BUF_LEN(k)))
+                                        BUF_PTR_LEN(k)))
                 log_error(srv->errh, __FILE__, __LINE__,
                   "WARNING: unknown config-key: %s (ignored)", k->ptr);
         }
@@ -1155,22 +1228,230 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
         return 0;
     }
 
+  #ifdef HAVE_PCRE2_H
+    for (uint32_t i = 1; i < srv->config_context->used; ++i) {
+        data_config * const dc =
+          (data_config *)srv->config_context->data[i];
+        if ((dc->cond == CONFIG_COND_MATCH || dc->cond == CONFIG_COND_NOMATCH)
+            && 0 == dc->capture_idx) {
+            if (__builtin_expect( (NULL == srv->match_data), 0)) {
+              #if 0
+                /* calculate max output vector size to save a few bytes;
+                 * currently using hard-coded ovec_max = 10 below
+                 * (increase in code size is probably more than bytes saved) */
+                uint32_t ovec_max = 0;
+                for (uint32_t j = i; j < srv->config_context->used; ++j) {
+                    const data_config * const dc =
+                      (data_config *)srv->config_context->data[j];
+                    if ((dc->cond == CONFIG_COND_MATCH
+                         || dc->cond == CONFIG_COND_NOMATCH)
+                        && 0 == dc->capture_idx) {
+                        uint32_t v;
+                        if (0==pcre2_pattern_info(dc->code,
+                                                  PCRE2_INFO_CAPTURECOUNT,&v)) {
+                            if (ovec_max < v)
+                                ovec_max = v;
+                        }
+                    }
+                }
+              #else
+                uint32_t ovec_max = 10;
+              #endif
+                srv->match_data = pcre2_match_data_create(ovec_max, NULL);
+                force_assert(srv->match_data);
+            }
+            dc->match_data = srv->match_data;
+        }
+    }
+  #endif
+
     return 1;
 }
 
+
+/* Save some bytes using buffer_append_string() in cold funcs to print config
+ * (instead of buffer_append_string_len() w/ CONST_STR_LEN() on constant strs)*/
+
+static void config_print_by_type(const data_unset *du, buffer *b, int depth);
+
+static void config_print_indent(buffer *b, int depth) {
+    depth <<= 2;
+    memset(buffer_extend(b, depth), ' ', depth);
+}
+
+__attribute_pure__
+static uint32_t config_print_array_max_klen(const array * const a) {
+    uint32_t maxlen = 0;
+    for (uint32_t i = 0; i < a->used; ++i) {
+        uint32_t len = buffer_clen(&a->data[i]->key);
+        if (maxlen < len)
+            maxlen = len;
+    }
+    return maxlen;
+}
+
+static void config_print_array(const array * const a, buffer * const b, int depth) {
+    if (a->used <= 5 && (!a->used || buffer_is_unset(&a->data[0]->key))) {
+        int oneline = 1;
+        for (uint32_t i = 0; i < a->used; ++i) {
+            data_unset *du = a->data[i];
+            if (du->type != TYPE_STRING && du->type != TYPE_INTEGER) {
+                oneline = 0;
+                break;
+            }
+        }
+        if (oneline) {
+            buffer_append_string(b, "(");
+            for (uint32_t i = 0; i < a->used; ++i) {
+                if (i != 0)
+                    buffer_append_string(b, ", ");
+                config_print_by_type(a->data[i], b, depth + 1);
+            }
+            buffer_append_string(b, ")");
+            return;
+        }
+    }
+
+    const uint32_t maxlen = config_print_array_max_klen(a);
+    buffer_append_string(b, "(\n");
+    for (uint32_t i = 0; i < a->used; ++i) {
+        config_print_indent(b, depth + 1);
+        data_unset *du = a->data[i];
+        if (!buffer_is_unset(&du->key)) {
+            buffer_append_str3(b, CONST_STR_LEN("\""),
+                                  BUF_PTR_LEN(&du->key),
+                                  CONST_STR_LEN("\""));
+            int indent = (int)(maxlen - buffer_clen(&du->key));
+            if (indent > 0)
+                memset(buffer_extend(b, indent), ' ', indent);
+            buffer_append_string(b, " => ");
+        }
+        config_print_by_type(du, b, depth + 1);
+        buffer_append_string(b, ",\n");
+    }
+    config_print_indent(b, depth);
+    buffer_append_string(b, ")");
+}
+
+static void config_print_config(const data_unset *d, buffer * const b, int depth) {
+    data_config *dc = (data_config *)d;
+    array *a = (array *)dc->value;
+
+    if (0 == dc->context_ndx) {
+        buffer_append_string(b, "config {\n");
+    }
+    else {
+        if (dc->cond != CONFIG_COND_ELSE) {
+            buffer_append_string(b, dc->comp_key);
+            buffer_append_string(b, " ");
+        }
+        buffer_append_string(b, "{\n");
+        config_print_indent(b, depth + 1);
+        buffer_append_string(b, "# block ");
+        buffer_append_int(b, dc->context_ndx);
+        buffer_append_string(b, "\n");
+    }
+    ++depth;
+
+    const uint32_t maxlen = config_print_array_max_klen(a);
+    for (uint32_t i = 0; i < a->used; ++i) {
+        config_print_indent(b, depth);
+        data_unset *du = a->data[i];
+        buffer_append_string_buffer(b, &du->key);
+        int indent = (int)(maxlen - buffer_clen(&du->key));
+        if (indent > 0)
+            memset(buffer_extend(b, indent), ' ', indent);
+        buffer_append_string(b, " = ");
+        config_print_by_type(du, b, depth);
+        buffer_append_string(b, "\n");
+    }
+
+    buffer_append_string(b, "\n");
+    for (uint32_t i = 0; i < dc->children.used; ++i) {
+        data_config *dcc = dc->children.data[i];
+
+        /* only the 1st block of chaining */
+        if (NULL == dcc->prev) {
+            buffer_append_string(b, "\n");
+            config_print_indent(b, depth);
+            config_print_by_type((data_unset *) dcc, b, depth);
+            buffer_append_string(b, "\n");
+        }
+    }
+
+    --depth;
+    config_print_indent(b, depth);
+    buffer_append_string(b, "}");
+    if (0 != dc->context_ndx) {
+        buffer_append_string(b, " # end of ");
+        buffer_append_string(b, (dc->cond != CONFIG_COND_ELSE)
+                                ? dc->comp_key
+                                : "else");
+    }
+
+    if (dc->next) {
+        buffer_append_string(b, "\n");
+        config_print_indent(b, depth);
+        buffer_append_string(b, "else ");
+        config_print_by_type((data_unset *)dc->next, b, depth);
+    }
+}
+
+static void config_print_string(const data_unset *du, buffer * const b) {
+    /* print out the string as is, except prepend '"' with backslash */
+    const buffer * const vb = &((data_string *)du)->value;
+    char *dst = buffer_string_prepare_append(b, buffer_clen(vb)*2);
+    uint32_t n = 0;
+    dst[n++] = '"';
+    if (vb->ptr) {
+        for (const char *p = vb->ptr; *p; ++p) {
+            if (*p == '"')
+                dst[n++] = '\\';
+            dst[n++] = *p;
+        }
+    }
+    dst[n++] = '"';
+    buffer_commit(b, n);
+}
+
+__attribute_cold__
+static void config_print_by_type(const data_unset * const du, buffer * const b, int depth) {
+    switch (du->type) {
+      case TYPE_STRING:
+        config_print_string(du, b);
+        break;
+      case TYPE_INTEGER:
+        buffer_append_int(b, ((data_integer *)du)->value);
+        break;
+      case TYPE_ARRAY:
+        config_print_array(&((data_array *)du)->value, b, depth);
+        break;
+      case TYPE_CONFIG:
+        config_print_config(du, b, depth);
+        break;
+      default:
+        /*if (du->fn->print) du->fn->print(du, b, depth);*/
+        break;
+    }
+}
+
 void config_print(server *srv) {
+    buffer_clear(srv->tmp_buf);
     data_unset *dc = srv->config_context->data[0];
-    dc->fn->print(dc, 0);
+    config_print_by_type(dc, srv->tmp_buf, 0);
 }
 
 void config_free(server *srv) {
+    /*request_config_set_defaults(NULL);*//*(not necessary)*/
     config_free_config(srv->config_data_base);
 
     array_free(srv->config_context);
     array_free(srv->srvconf.config_touched);
     array_free(srv->srvconf.modules);
-    buffer_free(srv->srvconf.modules_dir);
     array_free(srv->srvconf.upload_tempdirs);
+  #ifdef HAVE_PCRE2_H
+    if (NULL == srv->match_data) pcre2_match_data_free(srv->match_data);
+  #endif
 }
 
 void config_init(server *srv) {
@@ -1197,7 +1478,7 @@ void config_init(server *srv) {
       | HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE;
 
     srv->srvconf.modules = array_init(16);
-    srv->srvconf.modules_dir = buffer_init_string(LIBRARY_DIR);
+    srv->srvconf.modules_dir = LIBRARY_DIR;
     srv->srvconf.upload_tempdirs = array_init(2);
 }
 
@@ -1214,10 +1495,13 @@ void config_init(server *srv) {
 
 static void config_log_error_open_syslog(server *srv, log_error_st *errh, const buffer *syslog_facility) {
   #ifdef HAVE_SYSLOG_H
-    errh->errorlog_mode = ERRORLOG_SYSLOG;
+    /*assert(errh->mode == FDLOG_FD);*/
+    /*assert(errh->fd == STDERR_FILENO);*/
+    errh->mode = FDLOG_SYSLOG;
+    errh->fd = -1;
     /* perhaps someone wants to use syslog() */
     int facility = -1;
-    if (!buffer_string_is_empty(syslog_facility)) {
+    if (syslog_facility) {
         static const struct facility_name_st {
           const char *name;
           int val;
@@ -1282,20 +1566,6 @@ static void config_log_error_open_syslog(server *srv, log_error_st *errh, const 
   #endif
 }
 
-static int config_log_error_open_fn(server *srv, log_error_st *errh, const char *fn) {
-    int fd = fdevent_open_logger(fn);
-    if (-1 == fd) {
-        log_perror(srv->errh, __FILE__, __LINE__,
-          "opening errorlog '%s' failed", fn);
-        return -1;
-    }
-    errh->errorlog_fd = fd;
-    errh->errorlog_mode = fn[0] == '|' ? ERRORLOG_PIPE : ERRORLOG_FILE;
-    errh->fn = fn;
-
-    return 0;
-}
-
 int config_log_error_open(server *srv) {
     /* logs are opened after preflight check (srv->srvconf.preflight_check)
      * and after dropping privileges instead of being opened during config
@@ -1303,8 +1573,6 @@ int config_log_error_open(server *srv) {
   #ifdef __clang_analyzer__
     force_assert(srv->errh);
   #endif
-
-    /* Note: implementation does not de-dup repeated files or pipe commands */
 
     config_data_base * const p = srv->config_data_base;
     log_error_st *serrh = NULL;
@@ -1320,14 +1588,14 @@ int config_log_error_open(server *srv) {
             switch (cpv->k_id) {
               /* NB: these indexes are repeated below switch() block
                *     and all must stay in sync with configfile.c */
-              case 31:/* server.errorlog */
+              case 32:/* server.errorlog */
                 if (0 == i) {
                     if (srv->srvconf.errorlog_use_syslog) continue;
                     errh = srv->errh;
                 }
                 __attribute_fallthrough__
-              case 32:/* server.breakagelog */
-                if (!buffer_string_is_empty(cpv->v.b)) fn = cpv->v.b->ptr;
+              case 33:/* server.breakagelog */
+                if (!buffer_is_blank(cpv->v.b)) fn = cpv->v.b->ptr;
                 break;
               default:
                 break;
@@ -1335,23 +1603,36 @@ int config_log_error_open(server *srv) {
 
             if (NULL == fn) continue;
 
-            if (NULL == errh) errh = log_error_st_init();
-            cpv->v.v = errh;
-            cpv->vtype = T_CONFIG_LOCAL;
+            fdlog_st * const fdlog = fdlog_open(fn);
+            if (NULL == fdlog) {
+                log_perror(srv->errh, __FILE__, __LINE__,
+                  "opening errorlog '%s' failed", fn);
+                return -1;
+            }
 
-            if (0 != config_log_error_open_fn(srv, errh, fn)) return -1;
+            if (errh) {
+                /*(logfiles are opened early in setup; this function is called
+                 * prior to set_defaults hook, and modules should not save a
+                 * pointer to srv->errh until set_defaults hook or later)*/
+                p->defaults.errh = srv->errh = fdlog;
+                log_set_global_errh(srv->errh, 0);
+            }
+            cpv->v.v = errh = fdlog;
+            cpv->vtype = T_CONFIG_LOCAL;
 
             if (0 == i && errh != srv->errh) /*(top-level server.breakagelog)*/
                 serrh = errh;
         }
     }
 
+    if (config_feature_bool(srv, "server.errorlog-high-precision", 0))
+        log_set_global_errh(srv->errh, 1);
+
     if (srv->srvconf.errorlog_use_syslog) /*(restricted to global scope)*/
         config_log_error_open_syslog(srv, srv->errh,
                                      srv->srvconf.syslog_facility);
-    else if (srv->errh->errorlog_mode == ERRORLOG_FD
-             && !srv->srvconf.dont_daemonize)
-        srv->errh->errorlog_fd = -1;
+    else if (srv->errh->mode == FDLOG_FD && !srv->srvconf.dont_daemonize)
+        srv->errh->fd = -1;
         /* We can only log to stderr in dont-daemonize mode;
          * if we do daemonize and no errorlog file is specified,
          * we log into /dev/null
@@ -1364,13 +1645,13 @@ int config_log_error_open(server *srv) {
 
     int errfd;
     if (NULL != serrh) {
-        if (srv->errh->errorlog_mode == ERRORLOG_FD) {
-            srv->errh->errorlog_fd = dup(STDERR_FILENO);
-            fdevent_setfd_cloexec(srv->errh->errorlog_fd);
+        if (srv->errh->mode == FDLOG_FD) {
+            srv->errh->fd = dup(STDERR_FILENO);
+            fdevent_setfd_cloexec(srv->errh->fd);
         }
 
-        errfd = serrh->errorlog_fd;
-        if (*serrh->fn == '|') fdevent_breakagelog_logger_pipe(errfd);
+        errfd = serrh->fd;
+        if (*serrh->fn == '|') fdlog_pipe_serrh(errfd); /* breakagelog */
     }
     else if (!srv->srvconf.dont_daemonize) {
         /* move STDERR_FILENO to /dev/null */
@@ -1396,122 +1677,25 @@ int config_log_error_open(server *srv) {
   #endif
 
     if (NULL != serrh) {
-        close(errfd); /* serrh->errorlog_fd */
-        serrh->errorlog_fd = STDERR_FILENO;
+        close(errfd); /* serrh->fd */
+        serrh->fd = STDERR_FILENO;
     }
 
     return 0;
-}
-
-/**
- * cycle the errorlog
- *
- */
-
-void config_log_error_cycle(server *srv) {
-    /* All logs are rotated in parent and children workers so that all have
-     * valid filehandles.  The parent might reap a child and respawn, so the
-     * parent needs valid handles for more than top-level srv->errh */
-
-    /*(no need to flush error log before cycling; error logs are not buffered)*/
-
-    config_data_base * const p = srv->config_data_base;
-
-    /* future: might be slightly faster to have allocated array of open files
-     * rather than walking config, but only might matter with many directives */
-    /* (init i to 0 if global context; to 1 to skip empty global context) */
-    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
-        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
-        for (; -1 != cpv->k_id; ++cpv) {
-            if (cpv->vtype != T_CONFIG_LOCAL || NULL == cpv->v.v) continue;
-            log_error_st *errh;
-            switch (cpv->k_id) {
-              case 31:/* server.errorlog */
-              case 32:/* server.breakagelog */
-                errh = cpv->v.v; /* cycle only if the error log is a file */
-                if (errh->errorlog_mode != ERRORLOG_FILE) continue;
-                if (-1 == fdevent_cycle_logger(errh->fn, &errh->errorlog_fd)) {
-                    /* write to top-level error log
-                     * (the prior log if srv->errh is the one being cycled) */
-                    log_perror(srv->errh, __FILE__, __LINE__,
-                      "cycling errorlog '%s' failed", errh->fn);
-                }
-                else if (0 == i && errh != srv->errh) { /*(server.breakagelog)*/
-                    int fd = errh->errorlog_fd;
-                    if (STDERR_FILENO != dup2(fd, STDERR_FILENO)) {
-                        errh->errorlog_fd = STDERR_FILENO;
-                        close(fd);
-                    }
-                    else {
-                        log_perror(srv->errh, __FILE__, __LINE__,
-                          "dup2() %s to STDERR failed", errh->fn);
-                    }
-                }
-                break;
-              default:
-                break;
-            }
-        }
-    }
 }
 
 void config_log_error_close(server *srv) {
     config_data_base * const p = srv->config_data_base;
     if (NULL == p) return;
 
-    /* future: might be slightly faster to have allocated array of open files
-     * rather than walking config, but only might matter with many directives */
-    /* (init i to 0 if global context; to 1 to skip empty global context) */
-    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
-        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
-        for (; -1 != cpv->k_id; ++cpv) {
-            if (cpv->vtype != T_CONFIG_LOCAL || NULL == cpv->v.v) continue;
-            log_error_st *errh = NULL;
-            switch (cpv->k_id) {
-              /* NB: these indexes are repeated below switch() block
-               *     and all must stay in sync with configfile.c */
-              case 31:/* server.errorlog */
-                if (0 == i) continue; /*(srv->errh is free'd later)*/
-                __attribute_fallthrough__
-              case 32:/* server.breakagelog */
-                errh = cpv->v.v; /* cycle only if the error log is a file */
-                break;
-              default:
-                break;
-            }
+    /*(reset serrh just in case; should not be used after this func returns)*/
+    p->defaults.serrh = NULL;
 
-            if (NULL == errh) continue;
+    fdlog_closeall(srv->errh); /*(close all except srv->errh)*/
 
-            switch(errh->errorlog_mode) {
-              case ERRORLOG_PIPE:
-              case ERRORLOG_FILE:
-              case ERRORLOG_FD:
-                if (-1 != errh->errorlog_fd) {
-                    /* don't close STDERR */
-                    /* fdevent_close_logger_pipes() closes ERRORLOG_PIPE */
-                    if (STDERR_FILENO != errh->errorlog_fd
-                        && ERRORLOG_PIPE != errh->errorlog_mode) {
-                        close(errh->errorlog_fd);
-                    }
-                    errh->errorlog_fd = -1;
-                }
-                break;
-              case ERRORLOG_SYSLOG: /*(restricted to global scope)*/
-               #ifdef HAVE_SYSLOG_H
-                closelog();
-               #endif
-                break;
-            }
-
-            log_error_st_free(errh);
-        }
-    }
-
-    fdevent_close_logger_pipes();
-
-    if (srv->errh->errorlog_mode == ERRORLOG_SYSLOG) {
-        srv->errh->errorlog_mode = ERRORLOG_FD;
-        srv->errh->errorlog_fd = STDERR_FILENO;
+    if (srv->errh->mode == FDLOG_SYSLOG) {
+        srv->errh->mode = FDLOG_FD;
+        srv->errh->fd = STDERR_FILENO;
       #ifdef HAVE_SYSLOG_H
         closelog();
       #endif
@@ -1954,7 +2138,8 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 
 	if (ret != -1 && context->ok) {
 		/* add an EOL at EOF, better than say sorry */
-		configparser(pParser, TK_EOL, buffer_init_string("(EOL)"), context);
+		buffer_copy_string((token = buffer_init()), "(EOL)");
+		configparser(pParser, TK_EOL, token, context);
 		if (context->ok) {
 			configparser(pParser, 0, NULL, context);
 		}
@@ -1975,22 +2160,60 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 	return ret == -1 ? -1 : 0;
 }
 
+__attribute_cold__
+static int config_parse_stdin(server *srv, config_t *context) {
+    buffer * const b = chunk_buffer_acquire();
+    size_t dlen;
+    ssize_t n = -1;
+    do {
+        if (n > 0)
+            buffer_commit(b, n);
+        size_t avail = buffer_string_space(b);
+        dlen = buffer_clen(b);
+        if (__builtin_expect( (avail < 1024), 0)) {
+            /*(arbitrary limit: 32 MB file; expect < 1 MB)*/
+            if (dlen >= 32*1024*1024) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "config read from stdin is way too large");
+                break;
+            }
+            avail = chunk_buffer_prepare_append(b, b->size+avail);
+        }
+        n = read(STDIN_FILENO, b->ptr+dlen, avail);
+    } while (n > 0 || (n == -1 && errno == EINTR));
+    int rc = -1;
+    if (0 == n)
+        rc = dlen ? config_parse(srv, context, "-", b->ptr, dlen) : 0;
+    else
+        log_perror(srv->errh, __FILE__, __LINE__, "config read from stdin");
+
+    if (dlen)
+        ck_memzero(b->ptr, dlen);
+    chunk_buffer_release(b);
+    return rc;
+}
+
 static int config_parse_file_stream(server *srv, config_t *context, const char *fn) {
-	stream s;
+    off_t dlen = 32*1024*1024;/*(arbitrary limit: 32 MB file; expect < 1 MB)*/
+    char *data = fdevent_load_file(fn, &dlen, NULL, malloc, free);
+    if (NULL == data) {
+        log_perror(srv->errh, __FILE__, __LINE__,
+          "opening configfile %s failed", fn);
+        return -1;
+    }
 
-	if (0 != stream_open(&s, fn)) {
-		log_perror(srv->errh, __FILE__, __LINE__,
-		  "opening configfile %s failed", fn);
-		return -1;
-	}
-
-	int ret = config_parse(srv, context, fn, s.start, (size_t)s.size);
-	stream_close(&s);
-	return ret;
+    int rc = 0;
+    if (dlen) {
+        rc = config_parse(srv, context, fn, data, (size_t)dlen);
+        ck_memzero(data, (size_t)dlen);
+    }
+    free(data);
+    return rc;
 }
 
 int config_parse_file(server *srv, config_t *context, const char *fn) {
-	buffer *filename;
+	buffer * const filename = buffer_init();
+	const size_t fnlen = strlen(fn);
 	int ret = -1;
       #ifdef GLOB_BRACE
 	int flags = GLOB_BRACE;
@@ -2002,10 +2225,10 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 	if ((fn[0] == '/' || fn[0] == '\\') ||
 	    (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\')) ||
 	    (fn[0] == '.' && fn[1] == '.' && (fn[2] == '/' || fn[2] == '\\'))) {
-		filename = buffer_init_string(fn);
+		buffer_copy_string_len(filename, fn, fnlen);
 	} else {
-		filename = buffer_init_buffer(context->basedir);
-		buffer_append_path_len(filename, fn, strlen(fn));
+		buffer_copy_path_len2(filename, BUF_PTR_LEN(context->basedir),
+		                                fn, fnlen);
 	}
 
 	switch (glob(filename->ptr, flags, NULL, &gl)) {
@@ -2060,7 +2283,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		return -1;
 	}
 
-	if (!buffer_string_is_empty(context->basedir)) {
+	if (!buffer_is_blank(context->basedir)) {
 		if (0 != chdir(context->basedir->ptr)) {
 			log_perror(srv->errh, __FILE__, __LINE__,
 			  "cannot change directory to %s", context->basedir->ptr);
@@ -2068,7 +2291,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		}
 	}
 
-	if (pipe(fds)) {
+	if (fdevent_pipe_cloexec(fds, 65536)) {
 		log_perror(srv->errh, __FILE__, __LINE__, "pipe()");
 		ret = -1;
 	}
@@ -2081,7 +2304,6 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		*(const char **)&args[2] = cmd;
 		args[3] = NULL;
 
-		fdevent_setfd_cloexec(fds[0]);
 		pid = fdevent_fork_execve(args[0], args, NULL, -1, fds[1], -1, -1);
 		if (-1 == pid) {
 			log_perror(srv->errh, __FILE__, __LINE__, "fork/exec(%s)", cmd);
@@ -2115,7 +2337,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 			}
 
 			if (-1 != ret) {
-				ret = config_parse(srv, context, cmd, CONST_BUF_LEN(out));
+				ret = config_parse(srv, context, cmd, BUF_PTR_LEN(out));
 			}
 			buffer_free(out);
 		}
@@ -2131,6 +2353,74 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 	return ret;
 }
 
+static int config_remoteip_normalize_ipv6(buffer * const b, buffer * const tb) {
+    /* $HTTP["remote-ip"] IPv6 accepted with or without '[]' for config compat
+     * http_request_host_normalize() expects IPv6 with '[]',
+     * and config processing at runtime expects COMP_HTTP_REMOTE_IP
+     * compared without '[]', so strip '[]' after normalization */
+    buffer_clear(tb);
+    if (b->ptr[0] != '[')
+        buffer_append_str3(tb,
+                           CONST_STR_LEN("["),
+                           BUF_PTR_LEN(b),
+                           CONST_STR_LEN("]"));
+    else
+        buffer_append_string_buffer(tb, b);
+
+    int rc = http_request_host_normalize(tb, 0);
+    if (0 == rc) {
+        /* remove surrounding '[]' */
+        size_t blen = buffer_clen(tb);
+        if (blen > 1) buffer_copy_string_len(b, tb->ptr+1, blen-2);
+    }
+    return rc;
+}
+
+int config_remoteip_normalize(buffer * const b, buffer * const tb) {
+    if (b->ptr[0] == '/') return 1; /*(skip AF_UNIX /path/file)*/
+
+    const char * const slash = strchr(b->ptr, '/'); /* CIDR mask */
+    const char * const colon = strchr(b->ptr, ':'); /* IPv6 */
+    unsigned long nm_bits = 0;
+
+    if (NULL != slash) {
+        char *nptr;
+        nm_bits = strtoul(slash + 1, &nptr, 10);
+        if (*nptr || 0 == nm_bits || nm_bits > (NULL != colon ? 128 : 32)) {
+            /*(also rejects (slash+1 == nptr) which results in nm_bits = 0)*/
+            return -1;
+        }
+        buffer_truncate(b, (size_t)(slash - b->ptr));
+    }
+
+    int family = colon ? AF_INET6 : AF_INET;
+    int rc = (family == AF_INET)
+        ? http_request_host_normalize(b, 0)
+        : config_remoteip_normalize_ipv6(b, tb);
+
+    uint32_t len = buffer_clen(b); /*(save len before adding CIDR mask)*/
+    if (nm_bits) {
+        buffer_append_string_len(b, CONST_STR_LEN("/"));
+        buffer_append_int(b, (int)nm_bits);
+    }
+
+    if (0 != rc) {
+        return -1;
+    }
+
+    /* extend b to hold structured data after end of string:
+     * nm_bits and memory-aligned sock_addr for AF_INET or AF_INET6 (28 bytes)*/
+    char *after = buffer_string_prepare_append(b, 1 + 7 + 28);
+    ++after; /*(increment to pos after string end '\0')*/
+    *(unsigned char *)after = (unsigned char)nm_bits;
+    sock_addr * const addr = (sock_addr *)(((uintptr_t)after+1+7) & ~7);
+    if (nm_bits) b->ptr[len] = '\0'; /*(sock_addr_inet_pton() w/o CIDR mask)*/
+    rc = sock_addr_inet_pton(addr, b->ptr, family, 0);
+    if (nm_bits) b->ptr[len] = '/';
+    return (1 == rc);
+}
+
+
 static void context_init(server *srv, config_t *context) {
 	context->srv = srv;
 	context->ok = 1;
@@ -2143,10 +2433,18 @@ static void context_free(config_t *context) {
 	buffer_free(context->basedir);
 }
 
+__attribute_noinline__
+static void config_vars_init (array *a) {
+    char dcwd[PATH_MAX];
+    if (NULL != getcwd(dcwd, sizeof(dcwd)))
+        array_set_key_value(a, CONST_STR_LEN("var.CWD"), dcwd, strlen(dcwd));
+
+    *array_get_int_ptr(a, CONST_STR_LEN("var.PID")) = getpid();
+}
+
 int config_read(server *srv, const char *fn) {
 	config_t context;
 	data_config *dc;
-	buffer *dcwd;
 	int ret;
 	char *pos;
 
@@ -2164,23 +2462,16 @@ int config_read(server *srv, const char *fn) {
 
 	dc = data_config_init();
 	buffer_copy_string_len(&dc->key, CONST_STR_LEN("global"));
+	config_vars_init(dc->value); /* default context */
 
 	force_assert(context.all_configs->used == 0);
 	dc->context_ndx = context.all_configs->used;
 	array_insert_unique(context.all_configs, (data_unset *)dc);
 	context.current = dc;
 
-	/* default context */
-	*array_get_int_ptr(dc->value, CONST_STR_LEN("var.PID")) = getpid();
-
-	dcwd = srv->tmp_buf;
-	buffer_string_prepare_copy(dcwd, PATH_MAX-1);
-	if (NULL != getcwd(dcwd->ptr, buffer_string_space(dcwd)+1)) {
-		buffer_commit(dcwd, strlen(dcwd->ptr));
-		array_set_key_value(dc->value, CONST_STR_LEN("var.CWD"), CONST_BUF_LEN(dcwd));
-	}
-
-	ret = config_parse_file_stream(srv, &context, fn);
+	ret = (0 != strcmp(fn, "-")) /*(incompatible with one-shot mode)*/
+	  ? config_parse_file_stream(srv, &context, fn)
+	  : config_parse_stdin(srv, &context);
 
 	/* remains nothing if parser is ok */
 	force_assert(!(0 == ret && context.ok && 0 != context.configs_stack.used));
@@ -2230,7 +2521,7 @@ int config_set_defaults(server *srv) {
 	if (fdevent_config(&srv->srvconf.event_handler, srv->errh) <= 0)
 		return -1;
 
-	if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
+	if (srv->srvconf.changeroot) {
 		if (-1 == stat(srv->srvconf.changeroot->ptr, &st1)) {
 			log_error(srv->errh, __FILE__, __LINE__,
 			  "server.chroot doesn't exist: %s",
@@ -2252,28 +2543,27 @@ int config_set_defaults(server *srv) {
 	}
 
 	if (srv->srvconf.upload_tempdirs->used) {
-		buffer * const b = srv->tmp_buf;
-		size_t len;
-		buffer_clear(b);
-		if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
-			buffer_copy_buffer(b, srv->srvconf.changeroot);
+		buffer * const tb = srv->tmp_buf;
+		buffer_clear(tb);
+		if (srv->srvconf.changeroot) {
+			buffer_copy_buffer(tb, srv->srvconf.changeroot);
 		}
-		len = buffer_string_length(b);
+		const size_t len = buffer_clen(tb);
 
 		for (i = 0; i < srv->srvconf.upload_tempdirs->used; ++i) {
 			const data_string * const ds = (data_string *)srv->srvconf.upload_tempdirs->data[i];
 			if (len) {
-				buffer_string_set_length(b, len); /*(truncate)*/
-				buffer_append_path_len(b, CONST_BUF_LEN(&ds->value));
+				buffer_truncate(tb, len);
+				buffer_append_path_len(tb, BUF_PTR_LEN(&ds->value));
 			} else {
-				buffer_copy_buffer(b, &ds->value);
+				buffer_copy_buffer(tb, &ds->value);
 			}
-			if (-1 == stat(b->ptr, &st1)) {
+			if (-1 == stat(tb->ptr, &st1)) {
 				log_error(srv->errh, __FILE__, __LINE__,
-				  "server.upload-dirs doesn't exist: %s", b->ptr);
+				  "server.upload-dirs doesn't exist: %s", tb->ptr);
 			} else if (!S_ISDIR(st1.st_mode)) {
 				log_error(srv->errh, __FILE__, __LINE__,
-				  "server.upload-dirs isn't a directory: %s", b->ptr);
+				  "server.upload-dirs isn't a directory: %s", tb->ptr);
 			}
 		}
 	}
@@ -2282,8 +2572,8 @@ int config_set_defaults(server *srv) {
 		srv->srvconf.upload_tempdirs,
 		srv->srvconf.upload_temp_file_size);
 
-	if (buffer_string_is_empty(s->document_root)) {
-		log_error(srv->errh, __FILE__, __LINE__, "document-root is not set");
+	if (!s->document_root || buffer_is_blank(s->document_root)) {
+		log_error(srv->errh, __FILE__, __LINE__, "server.document-root is not set");
 		return -1;
 	}
 
@@ -2291,9 +2581,7 @@ int config_set_defaults(server *srv) {
 		s->force_lowercase_filenames = 0; /* default to 0 */
 
 		buffer * const tb = srv->tmp_buf;
-		buffer_copy_buffer(tb, s->document_root);
-
-		buffer_to_lower(tb);
+		buffer_copy_string_len_lc(tb, BUF_PTR_LEN(s->document_root));
 
 		if (0 == stat(tb->ptr, &st1)) {
 			int is_lower = 0;

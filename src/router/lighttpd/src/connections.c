@@ -27,10 +27,6 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef HAVE_SYS_FILIO_H
-# include <sys/filio.h>
-#endif
-
 #include "sys-socket.h"
 
 #define HTTP_LINGER_TIMEOUT 5
@@ -47,51 +43,34 @@ static connection *connection_init(server *srv);
 
 static void connection_reset(connection *con);
 
-
 static connection *connections_get_new_connection(server *srv) {
-	connections * const conns = &srv->conns;
-	size_t i;
-
-	if (conns->size == conns->used) {
-		conns->size += srv->max_conns >= 128 ? 128 : srv->max_conns > 16 ? 16 : srv->max_conns;
-		conns->ptr = realloc(conns->ptr, sizeof(*conns->ptr) * conns->size);
-		force_assert(NULL != conns->ptr);
-
-		for (i = conns->used; i < conns->size; i++) {
-			conns->ptr[i] = connection_init(srv);
-			connection_reset(conns->ptr[i]);
-		}
-	}
-
-	conns->ptr[conns->used]->ndx = conns->used;
-	return conns->ptr[conns->used++];
+    connection *con;
+    --srv->lim_conns;
+    if (srv->conns_pool) {
+        con = srv->conns_pool;
+        srv->conns_pool = con->next;
+    }
+    else {
+        con = connection_init(srv);
+        connection_reset(con);
+    }
+    /*con->prev = NULL;*//*(already set)*/
+    if ((con->next = srv->conns))
+        con->next->prev = con;
+    return (srv->conns = con);
 }
 
 static void connection_del(server *srv, connection *con) {
-	connections * const conns = &srv->conns;
-
-	if (-1 == con->ndx) return;
-	uint32_t i = (uint32_t)con->ndx;
-
-	/* not last element */
-
-	if (i != --conns->used) {
-		connection * const temp = conns->ptr[i];
-		conns->ptr[i] = conns->ptr[conns->used];
-		conns->ptr[conns->used] = temp;
-
-		conns->ptr[i]->ndx = i;
-		conns->ptr[conns->used]->ndx = -1;
-	}
-
-	con->ndx = -1;
-#if 0
-	fprintf(stderr, "%s.%d: del: (%d)", __FILE__, __LINE__, conns->used);
-	for (i = 0; i < conns->used; i++) {
-		fprintf(stderr, "%d ", conns->ptr[i]->fd);
-	}
-	fprintf(stderr, "\n");
-#endif
+    if (con->next)
+        con->next->prev = con->prev;
+    if (con->prev)
+        con->prev->next = con->next;
+    else
+        srv->conns = con->next;
+    con->prev = NULL;
+    con->next = srv->conns_pool;
+    srv->conns_pool = con;
+    ++srv->lim_conns;
 }
 
 static void connection_close(connection *con) {
@@ -151,12 +130,12 @@ static void connection_read_for_eos_plain(connection * const con) {
       #endif
 
 	/* 0 == len || (len < 0 && (errno is a non-recoverable error)) */
-		con->close_timeout_ts = log_epoch_secs - (HTTP_LINGER_TIMEOUT+1);
+		con->close_timeout_ts = log_monotonic_secs - (HTTP_LINGER_TIMEOUT+1);
 }
 
 static void connection_read_for_eos_ssl(connection * const con) {
 	if (con->network_read(con, con->read_queue, MAX_READ_LIMIT) < 0)
-		con->close_timeout_ts = log_epoch_secs - (HTTP_LINGER_TIMEOUT+1);
+		con->close_timeout_ts = log_monotonic_secs - (HTTP_LINGER_TIMEOUT+1);
 	chunkqueue_reset(con->read_queue);
 }
 
@@ -169,7 +148,7 @@ static void connection_read_for_eos(connection * const con) {
 static void connection_handle_close_state(connection *con) {
 	connection_read_for_eos(con);
 
-	if (log_epoch_secs - con->close_timeout_ts > HTTP_LINGER_TIMEOUT) {
+	if (log_monotonic_secs - con->close_timeout_ts > HTTP_LINGER_TIMEOUT) {
 		connection_close(con);
 	}
 }
@@ -183,7 +162,7 @@ static void connection_handle_shutdown(connection *con) {
 	/* close the connection */
 	if (con->fd >= 0
 	    && (con->is_ssl_sock || 0 == shutdown(con->fd, SHUT_WR))) {
-		con->close_timeout_ts = log_epoch_secs;
+		con->close_timeout_ts = log_monotonic_secs;
 
 		request_st * const r = &con->request;
 		connection_set_state(r, CON_STATE_CLOSE);
@@ -194,11 +173,6 @@ static void connection_handle_shutdown(connection *con) {
 	} else {
 		connection_close(con);
 	}
-}
-
-__attribute_cold__
-static void connection_fdwaitqueue_append(connection *con) {
-    connection_list_append(&con->srv->fdwaitqueue, con);
 }
 
 
@@ -228,15 +202,15 @@ static void connection_handle_response_end_state(request_st * const r, connectio
 		}
 	}
 
-        if (r->keep_alive) {
+        if (r->keep_alive > 0) {
 		request_reset(r);
-		config_reset_config(r);
 		con->is_readable = 1; /* potentially trigger optimistic read */
 		/*(accounting used by mod_accesslog for HTTP/1.0 and HTTP/1.1)*/
 		r->bytes_read_ckpt = con->bytes_read;
 		r->bytes_written_ckpt = con->bytes_written;
 #if 0
-		r->start_hp.tv_sec = con->read_idle_ts = log_epoch_secs;
+		r->start_hp.tv_sec = log_epoch_secs;
+		con->read_idle_ts = log_monotonic_secs;
 #endif
 		connection_set_state(r, CON_STATE_REQUEST_START);
 	} else {
@@ -286,7 +260,7 @@ connection_write_chunkqueue (connection * const con, chunkqueue * const restrict
 {
     /*assert(!chunkqueue_is_empty(cq));*//* checked by callers */
 
-    con->write_request_ts = log_epoch_secs;
+    con->write_request_ts = log_monotonic_secs;
 
     max_bytes = connection_write_throttle(con, max_bytes);
     if (0 == max_bytes) return 1;
@@ -305,14 +279,14 @@ connection_write_chunkqueue (connection * const con, chunkqueue * const restrict
      * walked the entire chunkqueue (on each and every call).  The loads here
      * make a measurable difference in performance in underlying call to
      * con->network_write() */
-    if (cq->first->next) {
+    if (cq->first->next && cq->first->type == MEM_CHUNK) {
         const chunk *c = cq->first;
-        while (c->type == MEM_CHUNK && NULL != (c = c->next)) ;
+        do { c = c->next; } while (c && c->type == MEM_CHUNK);
       #ifdef TCP_CORK
         /* Linux: put a cork into socket as we want to combine write() calls
          * but only if we really have multiple chunks including non-MEM_CHUNK
          * (or if multiple chunks and TLS), and only if TCP socket */
-        if (NULL != c || con->is_ssl_sock) {
+        if (NULL != c || (max_bytes > 16384 && con->is_ssl_sock)) {
             const int sa_family = sock_addr_get_family(&con->srv_socket->addr);
             if (sa_family == AF_INET || sa_family == AF_INET6) {
                 corked = 1;
@@ -416,14 +390,11 @@ connection_send_1xx (request_st * const r, connection * const con)
     http_status_append(b, r->http_status);
     for (uint32_t i = 0; i < r->resp_headers.used; ++i) {
         const data_string * const ds = (data_string *)r->resp_headers.data[i];
-
-        if (buffer_string_is_empty(&ds->value)) continue;
-        if (buffer_string_is_empty(&ds->key)) continue;
-
-        buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
-        buffer_append_string_buffer(b, &ds->key);
-        buffer_append_string_len(b, CONST_STR_LEN(": "));
-        buffer_append_string_buffer(b, &ds->value);
+        const uint32_t klen = buffer_clen(&ds->key);
+        const uint32_t vlen = buffer_clen(&ds->value);
+        if (0 == klen || 0 == vlen) continue;
+        buffer_append_str2(b, CONST_STR_LEN("\r\n"), ds->key.ptr, klen);
+        buffer_append_str2(b, CONST_STR_LEN(": "), ds->value.ptr, vlen);
     }
     buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
     chunkqueue_append_buffer_commit(cq);
@@ -453,7 +424,7 @@ connection_write_100_continue (request_st * const r, connection * const con)
 static int connection_handle_write(request_st * const r, connection * const con) {
 	/*assert(!chunkqueue_is_empty(cq));*//* checked by callers */
 
-	if (!con->is_writable) return CON_STATE_WRITE;
+	if (con->is_writable <= 0) return CON_STATE_WRITE;
 	int rc = connection_write_chunkqueue(con, con->write_queue, MAX_WRITE_LIMIT);
 	switch (rc) {
 	case 0:
@@ -465,8 +436,7 @@ static int connection_handle_write(request_st * const r, connection * const con)
 	case -1: /* error on our side */
 		log_error(r->conf.errh, __FILE__, __LINE__,
 		  "connection closed: write failed on fd %d", con->fd);
-		connection_set_state_error(r, CON_STATE_ERROR);
-		return CON_STATE_ERROR;
+		__attribute_fallthrough__
 	case -2: /* remote close */
 		connection_set_state_error(r, CON_STATE_ERROR);
 		return CON_STATE_ERROR;
@@ -504,12 +474,6 @@ static int connection_handle_write_state(request_st * const r, connection * cons
             case HANDLER_FINISHED:
             case HANDLER_GO_ON:
                 break;
-            case HANDLER_WAIT_FOR_FD:
-                /* (In addition to waiting for dispatch from fdwaitqueue,
-                 *  HTTP/2 connections may retry more frequently after any
-                 *  activity occurs on connection or on other streams) */
-                connection_fdwaitqueue_append(con);
-                break;
             case HANDLER_COMEBACK:
             default:
                 log_error(r->conf.errh, __FILE__, __LINE__,
@@ -523,7 +487,7 @@ static int connection_handle_write_state(request_st * const r, connection * cons
         }
     } while (r->http_version <= HTTP_VERSION_1_1
              && (!chunkqueue_is_empty(&r->write_queue)
-                 ? con->is_writable
+                 ? con->is_writable > 0 && 0 == con->traffic_limit_reached
                  : r->resp_body_finished));
 
     return CON_STATE_WRITE;
@@ -535,19 +499,12 @@ static connection *connection_init(server *srv) {
 	connection * const con = calloc(1, sizeof(*con));
 	force_assert(NULL != con);
 
-	con->fd = 0;
-	con->ndx = -1;
-	con->bytes_written = 0;
-	con->bytes_read = 0;
-
-	con->dst_addr_buf = buffer_init();
-	con->srv  = srv;
+	con->srv = srv;
 	con->plugin_slots = srv->plugin_slots;
 	con->config_data_base = srv->config_data_base;
 
 	request_st * const r = &con->request;
 	request_init_data(r, con, srv);
-	config_reset_config(r);
 	con->write_queue = &r->write_queue;
 	con->read_queue = &r->read_queue;
 
@@ -559,34 +516,43 @@ static connection *connection_init(server *srv) {
 }
 
 
+static void connection_free(connection * const con) {
+    request_st * const r = &con->request;
+
+    connection_reset(con);
+    if (con->write_queue != &r->write_queue)
+        chunkqueue_free(con->write_queue);
+    if (con->read_queue != &r->read_queue)
+        chunkqueue_free(con->read_queue);
+    request_free_data(r);
+
+    free(con->plugin_ctx);
+    free(con->dst_addr_buf.ptr);
+    free(con);
+}
+
+void connections_pool_clear(server * const srv) {
+    connection *con;
+    while ((con = srv->conns_pool)) {
+        srv->conns_pool = con->next;
+        connection_free(con);
+    }
+}
+
 void connections_free(server *srv) {
-	connections * const conns = &srv->conns;
-	for (uint32_t i = 0; i < conns->size; ++i) {
-		connection *con = conns->ptr[i];
-		request_st * const r = &con->request;
+    connections_pool_clear(srv);
 
-		connection_reset(con);
-		if (con->write_queue != &r->write_queue)
-			chunkqueue_free(con->write_queue);
-		if (con->read_queue != &r->read_queue)
-			chunkqueue_free(con->read_queue);
-		request_free_data(r);
-
-		free(con->plugin_ctx);
-		buffer_free(con->dst_addr_buf);
-
-		free(con);
-	}
-
-	free(conns->ptr);
-	conns->ptr = NULL;
+    connection *con;
+    while ((con = srv->conns)) {
+        srv->conns = con->next;
+        connection_free(con);
+    }
 }
 
 
 static void connection_reset(connection *con) {
 	request_st * const r = &con->request;
 	request_reset(r);
-	config_reset_config(r);
 	r->bytes_read_ckpt = 0;
 	r->bytes_written_ckpt = 0;
 	con->is_readable = 1;
@@ -613,8 +579,8 @@ static chunk * connection_read_header_more(connection *con, chunkqueue *cq, chun
     /*(However, new connections over TLS may become HTTP/2 connections via ALPN
      * and return from this routine with r->http_version == HTTP_VERSION_2) */
 
-    if ((NULL == c || NULL == c->next) && con->is_readable) {
-        con->read_idle_ts = log_epoch_secs;
+    if ((NULL == c || NULL == c->next) && con->is_readable > 0) {
+        con->read_idle_ts = log_monotonic_secs;
         if (0 != con->network_read(con, cq, MAX_READ_LIMIT)) {
             request_st * const r = &con->request;
             connection_set_state_error(r, CON_STATE_ERROR);
@@ -626,19 +592,20 @@ static chunk * connection_read_header_more(connection *con, chunkqueue *cq, chun
 
     if (cq->first != cq->last && 0 != olen) {
         const size_t clen = chunkqueue_length(cq);
-        size_t block = (olen + (16384-1)) & (16384-1);
+        size_t block = (olen + (16384-1)) & ~(16384-1);
         block += (block - olen > 1024 ? 0 : 16384);
         chunkqueue_compact_mem(cq, block > clen ? clen : block);
     }
 
     /* detect if data is added to chunk */
     c = cq->first;
-    return (c && (size_t)c->offset + olen < buffer_string_length(c->mem))
+    return (c && (size_t)c->offset + olen < buffer_clen(c->mem))
       ? c
       : NULL;
 }
 
 
+__attribute_cold__
 static void
 connection_transition_h2 (request_st * const h2r, connection * const con)
 {
@@ -652,7 +619,7 @@ connection_transition_h2 (request_st * const h2r, connection * const con)
     /* (h2r->state == CON_STATE_READ) for transition by ALPN
      *   or starting cleartext HTTP/2 with Prior Knowledge
      *   (e.g. via HTTP Alternative Services)
-     * (h2r->state == CON_STATE_RESPONSE_END) for Upgrade: h2c */
+     * (h2r->state == CON_STATE_REQUEST_END) for Upgrade: h2c */
 
     if (h2r->state != CON_STATE_ERROR)
         connection_set_state(h2r, CON_STATE_WRITE);
@@ -702,9 +669,9 @@ static int connection_handle_read_state(connection * const con)  {
 
     do {
         if (NULL == c) continue;
-        clen = buffer_string_length(c->mem) - c->offset;
+        clen = buffer_clen(c->mem) - c->offset;
         if (0 == clen) continue;
-        if (c->offset > USHRT_MAX) /*(highly unlikely)*/
+        if (__builtin_expect( (c->offset > USHRT_MAX), 0)) /*(highly unlikely)*/
             chunkqueue_compact_mem_offset(cq);
 
         hoff[0] = 1;                         /* number of lines */
@@ -716,19 +683,19 @@ static int connection_handle_read_state(connection * const con)  {
         /* casting to (unsigned short) might truncate, and the hoff[]
          * addition might overflow, but max_request_field_size is USHRT_MAX,
          * so failure will be detected below */
-        const uint32_t max_request_field_size=r->conf.max_request_field_size;
+        const uint32_t max_request_field_size = r->conf.max_request_field_size;
         if ((header_len ? header_len : clen) > max_request_field_size
             || hoff[0] >= sizeof(hoff)/sizeof(hoff[0])-1) {
             log_error(r->conf.errh, __FILE__, __LINE__, "%s",
                       "oversized request-header -> sending Status 431");
             r->http_status = 431; /* Request Header Fields Too Large */
             r->keep_alive = 0;
-            connection_set_state(r, CON_STATE_REQUEST_END);
             return 1;
         }
 
-        if (0 != header_len) {
-            if (hoff[0] > 1) break; /* common case; request headers complete */
+        if (__builtin_expect( (0 != header_len), 1)) {
+            if (__builtin_expect( (hoff[0] > 1), 1))
+                break; /* common case; request headers complete */
 
             if (discard_blank) { /* skip one blank line e.g. following POST */
                 if (header_len == clen) continue;
@@ -747,11 +714,13 @@ static int connection_handle_read_state(connection * const con)  {
             /* expecting ASCII method beginning with alpha char
              * or HTTP/2 pseudo-header beginning with ':' */
             /*(TLS handshake begins with SYN 0x16 (decimal 22))*/
-            log_error(r->conf.errh, __FILE__, __LINE__, "%s",
-                      "invalid request-line -> sending Status 400");
+            log_error(r->conf.errh, __FILE__, __LINE__, "%s (%s)",
+                      c->mem->ptr[c->offset] == 0x16
+                      ? "unexpected TLS ClientHello on clear port"
+                      : "invalid request-line -> sending Status 400",
+                      con->dst_addr_buf.ptr);
             r->http_status = 400; /* Bad Request */
             r->keep_alive = 0;
-            connection_set_state(r, CON_STATE_REQUEST_END);
             return 1;
         }
     } while ((c = connection_read_header_more(con, cq, c, clen)));
@@ -764,13 +733,14 @@ static int connection_handle_read_state(connection * const con)  {
             if (r->conf.high_precision_timestamps)
                 log_clock_gettime_realtime(&r->start_hp);
         }
-        if (pipelined_request_start && c) con->read_idle_ts = log_epoch_secs;
+        if (pipelined_request_start && c)
+            con->read_idle_ts = log_monotonic_secs;
     }
 
     if (NULL == c) return 0; /* incomplete request headers */
 
   #ifdef __COVERITY__
-    if (buffer_string_length(c->mem) < hoff[1]) {
+    if (buffer_clen(c->mem) < hoff[1]) {
         return 1;
     }
   #endif
@@ -797,14 +767,13 @@ static int connection_handle_read_state(connection * const con)  {
 
     r->rqst_header_len = header_len;
     if (r->conf.log_request_header)
-        log_error(r->conf.errh, __FILE__, __LINE__,
-          "fd: %d request-len: %d\n%.*s", con->fd,
-          (int)header_len, (int)header_len, hdrs);
+        log_error_multiline(r->conf.errh, __FILE__, __LINE__,
+                            hdrs, header_len, "fd:%d rqst: ", con->fd);
     http_request_headers_process(r, hdrs, hoff, con->proto_default_port);
     chunkqueue_mark_written(cq, r->rqst_header_len);
-    connection_set_state(r, CON_STATE_REQUEST_END);
 
-    if (!con->is_ssl_sock && r->conf.h2proto && 0 == r->http_status
+    if (light_btst(r->rqst_htags, HTTP_HEADER_UPGRADE)
+        && 0 == r->http_status
         && h2_check_con_upgrade_h2c(r)) {
         /*(Upgrade: h2c over cleartext does not have SNI; no COMP_HTTP_HOST)*/
         r->conditional_is_valid = (1 << COMP_SERVER_SOCKET)
@@ -838,49 +807,6 @@ static handler_t connection_handle_fdevent(void * const context, const int reven
     }
 
     return HANDLER_FINISHED;
-}
-
-
-connection *connection_accept(server *srv, server_socket *srv_socket) {
-	int cnt;
-	sock_addr cnt_addr;
-	size_t cnt_len = sizeof(cnt_addr); /*(size_t intentional; not socklen_t)*/
-
-	/**
-	 * check if we can still open a new connections
-	 *
-	 * see #1216
-	 */
-
-	if (srv->conns.used >= srv->max_conns) {
-		return NULL;
-	}
-
-	cnt = fdevent_accept_listenfd(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len);
-	if (-1 == cnt) {
-		switch (errno) {
-		case EAGAIN:
-#if EWOULDBLOCK != EAGAIN
-		case EWOULDBLOCK:
-#endif
-		case EINTR:
-			/* we were stopped _before_ we had a connection */
-		case ECONNABORTED: /* this is a FreeBSD thingy */
-			/* we were stopped _after_ we had a connection */
-			break;
-		case EMFILE:
-			/* out of fds */
-			break;
-		default:
-			log_perror(srv->errh, __FILE__, __LINE__, "accept failed");
-		}
-		return NULL;
-	} else {
-		if (sock_addr_get_family(&cnt_addr) != AF_UNIX) {
-			network_accept_tcp_nagle_disable(cnt);
-		}
-		return connection_accepted(srv, srv_socket, &cnt_addr, cnt);
-	}
 }
 
 
@@ -983,7 +909,7 @@ static int connection_write_cq(connection *con, chunkqueue *cq, off_t max_bytes)
 
 static handler_t connection_handle_read_post_state(request_st * const r);
 
-connection *connection_accepted(server *srv, server_socket *srv_socket, sock_addr *cnt_addr, int cnt) {
+connection *connection_accepted(server *srv, const server_socket *srv_socket, sock_addr *cnt_addr, int cnt) {
 		connection *con;
 
 		srv->cur_fds++;
@@ -1005,9 +931,10 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 		request_st * const r = &con->request;
 		connection_set_state(r, CON_STATE_REQUEST_START);
 
-		con->connection_start = log_epoch_secs;
+		con->connection_start = log_monotonic_secs;
 		con->dst_addr = *cnt_addr;
-		sock_addr_cache_inet_ntop_copy_buffer(con->dst_addr_buf,&con->dst_addr);
+		sock_addr_cache_inet_ntop_copy_buffer(&con->dst_addr_buf,
+		                                      &con->dst_addr);
 		con->srv_socket = srv_socket;
 		con->is_ssl_sock = srv_socket->is_ssl;
 		con->proto_default_port = 80; /* "http" */
@@ -1065,7 +992,8 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 		switch ((ostate = r->state)) {
 		case CON_STATE_REQUEST_START: /* transient */
 			/*(should not be reached by HTTP/2 streams)*/
-			r->start_hp.tv_sec = con->read_idle_ts = log_epoch_secs;
+			r->start_hp.tv_sec = log_epoch_secs;
+			con->read_idle_ts = log_monotonic_secs;
 			if (r->conf.high_precision_timestamps)
 				log_clock_gettime_realtime(&r->start_hp);
 
@@ -1084,13 +1012,13 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 				}
 				break;
 			}
-			/*if (r->state != CON_STATE_REQUEST_END) break;*/
+			/*connection_set_state(r, CON_STATE_REQUEST_END);*/
 			__attribute_fallthrough__
 		case CON_STATE_REQUEST_END: /* transient */
-			ostate = (0 == r->reqbody_length)
+			connection_set_state(r,
+			  (0 == r->reqbody_length)
 			  ? CON_STATE_HANDLE_REQUEST
-			  : CON_STATE_READ_POST;
-			connection_set_state(r, ostate);
+			  : CON_STATE_READ_POST);
 			__attribute_fallthrough__
 		case CON_STATE_READ_POST:
 		case CON_STATE_HANDLE_REQUEST:
@@ -1100,13 +1028,7 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 				break;
 			  case HANDLER_WAIT_FOR_EVENT:
 				return;
-			  case HANDLER_COMEBACK:
-				/* redo loop; will not match r->state */
-				ostate = CON_STATE_CONNECT;
-				continue;
-			  case HANDLER_WAIT_FOR_FD:
-		                connection_fdwaitqueue_append(con);
-				return;
+			  /*case HANDLER_COMEBACK:*//*(not expected)*/
 			  /*case HANDLER_ERROR:*/
 			  default:
 				connection_set_state_error(r, CON_STATE_ERROR);
@@ -1121,15 +1043,16 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 			connection_set_state(r, CON_STATE_WRITE);
 			__attribute_fallthrough__
 		case CON_STATE_WRITE:
-			if (connection_handle_write_state(r, con)
-			    != CON_STATE_RESPONSE_END)
-				break;
+			if (connection_handle_write_state(r, con) == CON_STATE_WRITE)
+				return;
 			__attribute_fallthrough__
 		case CON_STATE_RESPONSE_END: /* transient */
 		case CON_STATE_ERROR:        /* transient */
 			if (r->http_version > HTTP_VERSION_1_1 && r != &con->request)
 				return;
 			connection_handle_response_end_state(r, con);
+			/*(make sure ostate will not match r->state)*/
+			ostate = CON_STATE_RESPONSE_END;/* != r->state */
 			break;
 		case CON_STATE_CLOSE:
 			/*(should not be reached by HTTP/2 streams)*/
@@ -1157,7 +1080,7 @@ connection_revents_err (request_st * const r, connection * const con)
     con->revents_err = 0;
 
     if (r->state == CON_STATE_CLOSE)
-        con->close_timeout_ts = log_epoch_secs - (HTTP_LINGER_TIMEOUT+1);
+        con->close_timeout_ts = log_monotonic_secs - (HTTP_LINGER_TIMEOUT+1);
     else if (revents & FDEVENT_HUP)
         connection_set_state_error(r, CON_STATE_ERROR);
     else if (revents & FDEVENT_RDHUP) {
@@ -1218,7 +1141,9 @@ connection_set_fdevent_interest (request_st * const r, connection * const con)
     int n = 0;
     switch(r->state) {
       case CON_STATE_READ:
-        n = FDEVENT_IN | FDEVENT_RDHUP;
+        n = FDEVENT_IN;
+        if (!(r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_POLLRDHUP))
+            n |= FDEVENT_RDHUP;
         break;
       case CON_STATE_WRITE:
         if (!chunkqueue_is_empty(con->write_queue)
@@ -1256,10 +1181,23 @@ connection_set_fdevent_interest (request_st * const r, connection * const con)
 
     /* update timestamps when enabling interest in events */
     if ((n & FDEVENT_IN) && !(events & FDEVENT_IN))
-        con->read_idle_ts = log_epoch_secs;
+        con->read_idle_ts = log_monotonic_secs;
     if ((n & FDEVENT_OUT) && !(events & FDEVENT_OUT))
-        con->write_request_ts = log_epoch_secs;
+        con->write_request_ts = log_monotonic_secs;
     fdevent_fdnode_event_set(con->srv->ev, con->fdn, n);
+}
+
+
+__attribute_cold__
+static void
+connection_request_end_h2 (request_st * const h2r, connection * const con)
+{
+    if (h2r->keep_alive >= 0) {
+        h2r->keep_alive = -1;
+        h2_send_goaway(con, H2_E_NO_ERROR);
+    }
+    else /*(abort connection upon second request to close h2 connection)*/
+        h2_send_goaway(con, H2_E_ENHANCE_YOUR_CALM);
 }
 
 
@@ -1270,7 +1208,7 @@ connection_state_machine_h2 (request_st * const h2r, connection * const con)
 
     if (h2c->sent_goaway <= 0
         && (chunkqueue_is_empty(con->read_queue) || h2_parse_frames(con))
-        && con->is_readable) {
+        && con->is_readable > 0) {
         chunkqueue * const cq = con->read_queue;
         const off_t mark = cq->bytes_in;
         if (0 == con->network_read(con, cq, MAX_READ_LIMIT)) {
@@ -1292,10 +1230,13 @@ connection_state_machine_h2 (request_st * const h2r, connection * const con)
          * obtain an approximate limit, not refreshed per request_st,
          * even though we are not calculating response HEADERS frames
          * or frame overhead here */
-        off_t max_bytes = con->is_writable
+        off_t max_bytes = con->is_writable > 0
           ? connection_write_throttle(con, MAX_WRITE_LIMIT)
           : 0;
-        const off_t fsize = (off_t)h2c->s_max_frame_size;
+        const off_t cqlen = chunkqueue_length(con->write_queue);
+        if (cqlen > 8192 && max_bytes > 65536) max_bytes = 65536;
+        max_bytes -= cqlen;
+        if (max_bytes < 0) max_bytes = 0;
 
         /* XXX: to avoid buffer bloat due to staging too much data in
          * con->write_queue, consider setting limit on how much is staged
@@ -1317,33 +1258,6 @@ connection_state_machine_h2 (request_st * const h2r, connection * const con)
 
             connection_state_machine_loop(r, con);
 
-            if (r->resp_header_len && !chunkqueue_is_empty(&r->write_queue)
-                && (r->resp_body_finished
-                    || (r->conf.stream_response_body
-                        & (FDEVENT_STREAM_RESPONSE
-                          |FDEVENT_STREAM_RESPONSE_BUFMIN)))) {
-
-                chunkqueue * const cq = &r->write_queue;
-                off_t avail = chunkqueue_length(cq);
-                if (avail > max_bytes)    avail = max_bytes;
-                if (avail > fsize)        avail = fsize;
-                if (avail > r->h2_swin)   avail = r->h2_swin;
-                if (avail > h2r->h2_swin) avail = h2r->h2_swin;
-
-                if (avail > 0) {
-                    max_bytes -= avail;
-                    h2_send_cqdata(r, con, cq, (uint32_t)avail);
-                }
-
-                if (r->resp_body_finished && chunkqueue_is_empty(cq)) {
-                    connection_set_state(r, CON_STATE_RESPONSE_END);
-                    if (r->conf.log_state_handling)
-                        connection_state_machine_loop(r, con);
-                }
-                else if (avail) /*(do not spin if swin empty window)*/
-                    resched |= (!chunkqueue_is_empty(cq));
-            }
-
           #if 0
             if (log_state_handling)
                 log_error(r->conf.errh, __FILE__, __LINE__,
@@ -1351,16 +1265,53 @@ connection_state_machine_h2 (request_st * const h2r, connection * const con)
                   connection_get_state(r->state));
           #endif
 
-            if (r->state==CON_STATE_RESPONSE_END || r->state==CON_STATE_ERROR) {
+            if (r->state < CON_STATE_WRITE)
+                continue;
+            /* else CON_STATE_WRITE, CON_STATE_RESPONSE_END, CON_STATE_ERROR */
+            else if (r->state == CON_STATE_WRITE) {
+                if (__builtin_expect((!chunkqueue_is_empty(&r->write_queue)), 1)
+                    && max_bytes
+                    && (r->resp_body_finished
+                        || (r->conf.stream_response_body
+                            & (FDEVENT_STREAM_RESPONSE
+                              |FDEVENT_STREAM_RESPONSE_BUFMIN)))) {
+                    uint32_t dlen =
+                      max_bytes > 32768 ? 32768 : (uint32_t)max_bytes;
+                    dlen = h2_send_cqdata(r, con, &r->write_queue, dlen);
+                    if (dlen) { /*(do not resched (spin) if swin empty window)*/
+                        max_bytes -= (off_t)dlen;
+                        if (!chunkqueue_is_empty(&r->write_queue))
+                            resched |= 1;
+                    }
+                }
+                if (!chunkqueue_is_empty(&r->write_queue)
+                    || !r->resp_body_finished)
+                    continue;
+
+                connection_set_state(r, CON_STATE_RESPONSE_END);
+                if (__builtin_expect( (r->conf.log_state_handling), 0))
+                    connection_state_machine_loop(r, con);
+            }
+
+            {/*(r->state==CON_STATE_RESPONSE_END || r->state==CON_STATE_ERROR)*/
                 /*(trigger reschedule of con if frames pending)*/
                 if (h2c->rused == sizeof(h2c->r)/sizeof(*h2c->r)
                     && !chunkqueue_is_empty(con->read_queue))
-                    resched |= 1;
+                    resched |= 2;
                 h2_send_end_stream(r, con);
+                const int alive = r->keep_alive;
                 h2_retire_stream(r, con);/*r invalidated;removed from h2c->r[]*/
                 --i;/* adjust loop i; h2c->rused was modified to retire r */
+                /*(special-case: allow *stream* to set r->keep_alive = -1 to
+                 * trigger goaway on h2 connection, e.g. after mod_auth failure
+                 * in attempt to mitigate brute force attacks by forcing a
+                 * reconnect and (somewhat) slowing down retries)*/
+                if (alive < 0)
+                    connection_request_end_h2(h2r, con);
             }
         }
+
+        if (0 == max_bytes) resched |= 1;
     }
 
     if (h2c->sent_goaway > 0 && h2c->rused) {
@@ -1389,7 +1340,12 @@ connection_state_machine_h2 (request_st * const h2r, connection * const con)
     }
 
     if (h2r->state == CON_STATE_WRITE) {
-        if (resched && !con->traffic_limit_reached)
+        /* (resched & 1) more data is available to write, if still able to write
+         * (resched & 2) resched to read deferred frames from con->read_queue */
+        /*(con->is_writable set to 0 if !chunkqueue_is_empty(con->write_queue)
+         * after trying to write in connection_handle_write() above)*/
+        if (((resched & 1) && con->is_writable>0 && !con->traffic_limit_reached)
+            || (resched & 2))
             joblist_append(con);
 
         if (h2_want_read(con))
@@ -1435,7 +1391,7 @@ connection_state_machine (connection * const con)
 }
 
 
-static void connection_check_timeout (connection * const con, const time_t cur_ts) {
+static void connection_check_timeout (connection * const con, const unix_time64_t cur_ts) {
     const int waitevents = fdevent_fdnode_interest(con->fdn);
     int changed = 0;
     int t_diff;
@@ -1483,11 +1439,11 @@ static void connection_check_timeout (connection * const con, const time_t cur_t
                         /* time - out */
                         if (r->conf.log_timeouts) {
                             log_error(r->conf.errh, __FILE__, __LINE__,
-                              "NOTE: a request from %.*s for %.*s timed out "
+                              "NOTE: a request from %s for %.*s timed out "
                               "after writing %lld bytes. We waited %d seconds. "
                               "If this is a problem, increase "
                               "server.max-write-idle",
-                              BUFFER_INTLEN_PTR(con->dst_addr_buf),
+                              con->dst_addr_buf.ptr,
                               BUFFER_INTLEN_PTR(&r->target),
                               (long long)r->write_queue.bytes_out,
                               (int)r->conf.max_write_idle);
@@ -1510,6 +1466,9 @@ static void connection_check_timeout (connection * const con, const time_t cur_t
                 changed = 1;
             }
         }
+        /* process changes before optimistic read of additional HTTP/2 frames */
+        if (changed)
+            con->is_readable = 0;
     }
     else if (waitevents & FDEVENT_IN) {
         if (con->request_count == 1 || r->state != CON_STATE_READ) {
@@ -1541,8 +1500,15 @@ static void connection_check_timeout (connection * const con, const time_t cur_t
 
     /* max_write_idle timeout currently functions as backend timeout,
      * too, after response has been started.
-     * future: have separate backend timeout, and then change this
-     * to check for write interest before checking for timeout */
+     * Although backend timeouts now exist, there is no default for timeouts
+     * to backends, so were this client timeout now to be changed to check
+     * for write interest to the client, then timeout would not occur if the
+     * backend hung and there was no backend read timeout set.  Therefore,
+     * max_write_idle timeout remains timeout for both reading from backend
+     * and writing to client, though this check here is only for HTTP/1.1.
+     * In the future, if there were a quick way to detect that a backend
+     * read timeout was in effect, then this timeout could check for write
+     * interest to client.  (not a priority) */
     /*if (waitevents & FDEVENT_OUT)*/
     if (r->http_version <= HTTP_VERSION_1_1
         && r->state == CON_STATE_WRITE && con->write_request_ts != 0) {
@@ -1558,10 +1524,10 @@ static void connection_check_timeout (connection * const con, const time_t cur_t
             /* time - out */
             if (r->conf.log_timeouts) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
-                  "NOTE: a request from %.*s for %.*s timed out after writing "
-                  "%lld bytes. We waited %d seconds.  If this is a problem, "
+                  "NOTE: a request from %s for %.*s timed out after writing "
+                  "%lld bytes. We waited %d seconds. If this is a problem, "
                   "increase server.max-write-idle",
-                  BUFFER_INTLEN_PTR(con->dst_addr_buf),
+                  con->dst_addr_buf.ptr,
                   BUFFER_INTLEN_PTR(&r->target),
                   (long long)con->bytes_written, (int)r->conf.max_write_idle);
             }
@@ -1592,20 +1558,19 @@ static void connection_check_timeout (connection * const con, const time_t cur_t
     }
 }
 
-void connection_periodic_maint (server * const srv, const time_t cur_ts) {
+void connection_periodic_maint (server * const srv, const unix_time64_t cur_ts) {
     /* check all connections for timeouts */
-    connections * const conns = &srv->conns;
-    for (size_t ndx = 0; ndx < conns->used; ++ndx) {
-        connection_check_timeout(conns->ptr[ndx], cur_ts);
+    for (connection *con = srv->conns, *tc; con; con = tc) {
+        tc = con->next;
+        connection_check_timeout(con, cur_ts);
     }
 }
 
 void connection_graceful_shutdown_maint (server *srv) {
-    connections * const conns = &srv->conns;
     const int graceful_expire =
-      (srv->graceful_expire_ts && srv->graceful_expire_ts < log_epoch_secs);
-    for (uint32_t ndx = 0; ndx < conns->used; ++ndx) {
-        connection * const con = conns->ptr[ndx];
+      (srv->graceful_expire_ts && srv->graceful_expire_ts < log_monotonic_secs);
+    for (connection *con = srv->conns, *tc; con; con = tc) {
+        tc = con->next;
         int changed = 0;
 
         request_st * const r = &con->request;
@@ -1614,7 +1579,7 @@ void connection_graceful_shutdown_maint (server *srv) {
              * (from zero) *up to* one more second, but no more */
             if (HTTP_LINGER_TIMEOUT > 1)
                 con->close_timeout_ts -= (HTTP_LINGER_TIMEOUT - 1);
-            if (log_epoch_secs - con->close_timeout_ts > HTTP_LINGER_TIMEOUT)
+            if (log_monotonic_secs - con->close_timeout_ts > HTTP_LINGER_TIMEOUT)
                 changed = 1;
         }
         else if (con->h2 && r->state == CON_STATE_WRITE) {
@@ -1659,9 +1624,9 @@ connection_handle_read_post_cq_compact (chunkqueue * const cq)
      * (loop if next chunk is empty) */
     chunk *c = cq->first;
     if (NULL == c) return 0;
-    const uint32_t mlen = buffer_string_length(c->mem) - (size_t)c->offset;
+    const uint32_t mlen = buffer_clen(c->mem) - (size_t)c->offset;
     while ((c = c->next)) {
-        const uint32_t blen = buffer_string_length(c->mem) - (size_t)c->offset;
+        const uint32_t blen = buffer_clen(c->mem) - (size_t)c->offset;
         if (0 == blen) continue;
         chunkqueue_compact_mem(cq, mlen + blen);
         return 1;
@@ -1670,6 +1635,7 @@ connection_handle_read_post_cq_compact (chunkqueue * const cq)
 }
 
 
+__attribute_pure__
 static int
 connection_handle_read_post_chunked_crlf (chunkqueue * const cq)
 {
@@ -1689,12 +1655,12 @@ connection_handle_read_post_chunked_crlf (chunkqueue * const cq)
     p = b->ptr+c->offset;
     if (p[0] != '\r') return -1; /* error */
     if (p[1] == '\n') return 1;
-    len = buffer_string_length(b) - (size_t)c->offset;
+    len = buffer_clen(b) - (size_t)c->offset;
     if (1 != len) return -1; /* error */
 
     while (NULL != (c = c->next)) {
         b = c->mem;
-        len = buffer_string_length(b) - (size_t)c->offset;
+        len = buffer_clen(b) - (size_t)c->offset;
         if (0 == len) continue;
         p = b->ptr+c->offset;
         return (p[0] == '\n') ? 1 : -1; /* error if not '\n' */
@@ -1774,7 +1740,7 @@ connection_handle_read_post_chunked (request_st * const r, chunkqueue * const cq
                             /*(effectively doubles max request field size
                              * potentially received by backend, if in the future
                              * these trailers are added to request headers)*/
-                            if ((off_t)buffer_string_length(c->mem) - c->offset
+                            if ((off_t)buffer_clen(c->mem) - c->offset
                                 < (off_t)r->conf.max_request_field_size) {
                                 break;
                             }
@@ -1782,7 +1748,7 @@ connection_handle_read_post_chunked (request_st * const r, chunkqueue * const cq
                                 /* ignore excessively long trailers;
                                  * disable keep-alive on connection */
                                 r->keep_alive = 0;
-                                p = c->mem->ptr + buffer_string_length(c->mem)
+                                p = c->mem->ptr + buffer_clen(c->mem)
                                   - 4;
                             }
                         }
@@ -1820,7 +1786,7 @@ connection_handle_read_post_chunked (request_st * const r, chunkqueue * const cq
 
             /*(likely better ways to handle chunked header crossing chunkqueue
              * chunks, but this situation is not expected to occur frequently)*/
-            if ((off_t)buffer_string_length(c->mem) - c->offset >= 1024) {
+            if ((off_t)buffer_clen(c->mem) - c->offset >= 1024) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
                   "chunked header line too long -> 400");
                 /* 400 Bad Request */
@@ -1887,7 +1853,7 @@ __attribute_cold__
 static int
 connection_check_expect_100 (request_st * const r, connection * const con)
 {
-    if (!con->is_writable)
+    if (con->is_writable <= 0)
         return 1;
 
     const buffer * const vb =
@@ -1931,10 +1897,16 @@ connection_handle_read_post_state (request_st * const r)
         if (r->h2state >= H2_STATE_HALF_CLOSED_REMOTE)
             is_closed = 1;
     }
-    else if (con->is_readable) {
-        con->read_idle_ts = log_epoch_secs;
-
-        switch(con->network_read(con, cq, MAX_READ_LIMIT)) {
+    else if (con->is_readable > 0) {
+        con->read_idle_ts = log_monotonic_secs;
+        const off_t max_per_read =
+          !(r->conf.stream_request_body /*(if not streaming request body)*/
+            & (FDEVENT_STREAM_REQUEST|FDEVENT_STREAM_REQUEST_BUFMIN))
+            ? MAX_READ_LIMIT
+            : (r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_BUFMIN)
+              ? 16384  /* FDEVENT_STREAM_REQUEST_BUFMIN */
+              : 65536; /* FDEVENT_STREAM_REQUEST */
+        switch(con->network_read(con, cq, max_per_read)) {
         case -1:
             connection_set_state_error(r, CON_STATE_ERROR);
             return HANDLER_ERROR;

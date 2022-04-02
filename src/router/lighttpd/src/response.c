@@ -2,6 +2,7 @@
 
 #include "response.h"
 #include "request.h"
+#include "reqpool.h"
 #include "base.h"
 #include "fdevent.h"
 #include "http_header.h"
@@ -11,23 +12,24 @@
 #include "chunk.h"
 #include "http_chunk.h"
 #include "http_date.h"
+#include "http_range.h"
 
 #include "plugin.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "sys-time.h"
 
 #include <limits.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 
 int
 http_response_omit_header (request_st * const r, const data_string * const ds)
 {
-    const size_t klen = buffer_string_length(&ds->key);
+    const size_t klen = buffer_clen(&ds->key);
     if (klen == sizeof("X-Sendfile")-1
         && buffer_eq_icase_ssn(ds->key.ptr, CONST_STR_LEN("X-Sendfile")))
         return 1;
@@ -61,13 +63,13 @@ http_response_write_header_partial_1xx (request_st * const r, buffer * const b)
     chunkqueue * const cq = con->write_queue;
     con->write_queue = &r->write_queue;
 
-    /*assert(0 == buffer_string_length(b));*//*expect empty buffer from caller*/
+    /*assert(0 == buffer_clen(b));*//*expect empty buffer from caller*/
     uint32_t len = (uint32_t)chunkqueue_length(cq);
     /*(expecting MEM_CHUNK(s), so not expecting error reading files)*/
     if (chunkqueue_read_data(cq, buffer_string_prepare_append(b, len),
                              len, r->conf.errh) < 0)
         len = 0;
-    buffer_string_set_length(b, len);/*expect initial empty buffer from caller*/
+    buffer_truncate(b, len);/*expect initial empty buffer from caller*/
     chunkqueue_free(cq);
 }
 
@@ -75,19 +77,11 @@ http_response_write_header_partial_1xx (request_st * const r, buffer * const b)
 void
 http_response_write_header (request_st * const r)
 {
-	chunkqueue * const cq = &r->write_queue;
-	buffer * const b = chunkqueue_prepend_buffer_open(cq);
-
-        if (cq != r->con->write_queue)
-            http_response_write_header_partial_1xx(r, b);
-
-	const char * const httpv = (r->http_version == HTTP_VERSION_1_1) ? "HTTP/1.1 " : "HTTP/1.0 ";
-	buffer_append_string_len(b, httpv, sizeof("HTTP/1.1 ")-1);
-	http_status_append(b, r->http_status);
-
 	/* disable keep-alive if requested */
 
-	if (r->con->request_count > r->conf.max_keep_alive_requests || 0 == r->conf.max_keep_alive_idle) {
+	r->con->keep_alive_idle = r->conf.max_keep_alive_idle;
+	if (__builtin_expect( (0 == r->conf.max_keep_alive_idle), 0)
+	    || r->con->request_count > r->conf.max_keep_alive_requests) {
 		r->keep_alive = 0;
 	} else if (0 != r->reqbody_length
 		   && r->reqbody_length != r->reqbody_queue.bytes_in
@@ -96,16 +90,14 @@ http_response_write_header (request_st * const r)
 		                & (FDEVENT_STREAM_REQUEST
 		                   | FDEVENT_STREAM_REQUEST_BUFMIN)))) {
 		r->keep_alive = 0;
-	} else {
-		r->con->keep_alive_idle = r->conf.max_keep_alive_idle;
 	}
 
 	if (light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)
 	    && r->http_version == HTTP_VERSION_1_1) {
 		http_header_response_set(r, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("upgrade"));
-	} else if (0 == r->keep_alive) {
+	} else if (r->keep_alive <= 0) {
 		http_header_response_set(r, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("close"));
-	} else if (r->http_version == HTTP_VERSION_1_0) {/*(&& r->keep_alive != 0)*/
+	} else if (r->http_version == HTTP_VERSION_1_0) {/*(&& r->keep_alive > 0)*/
 		http_header_response_set(r, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("keep-alive"));
 	}
 
@@ -114,48 +106,63 @@ http_response_write_header (request_st * const r)
 		http_header_response_unset(r, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"));
 	}
 
-	/* add all headers */
-	for (size_t i = 0; i < r->resp_headers.used; ++i) {
-		const data_string * const ds = (data_string *)r->resp_headers.data[i];
+	chunkqueue * const cq = &r->write_queue;
+	buffer * const b = chunkqueue_prepend_buffer_open(cq);
 
-		if (buffer_string_is_empty(&ds->value)) continue;
-		if (buffer_string_is_empty(&ds->key)) continue;
+	if (cq != r->con->write_queue)
+		http_response_write_header_partial_1xx(r, b);
+
+	buffer_append_string_len(b,
+	                         (r->http_version == HTTP_VERSION_1_1)
+	                           ? "HTTP/1.1 "
+	                           : "HTTP/1.0 ",
+	                         sizeof("HTTP/1.1 ")-1);
+	http_status_append(b, r->http_status);
+
+	/* add all headers */
+	for (size_t i = 0, used = r->resp_headers.used; i < used; ++i) {
+		const data_string * const ds = (data_string *)r->resp_headers.data[i];
+		const uint32_t klen = buffer_clen(&ds->key);
+		const uint32_t vlen = buffer_clen(&ds->value);
+		if (__builtin_expect( (0 == klen), 0)) continue;
+		if (__builtin_expect( (0 == vlen), 0)) continue;
 		if ((ds->key.ptr[0] & 0xdf) == 'X' && http_response_omit_header(r, ds))
 			continue;
-
-		buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
-		buffer_append_string_buffer(b, &ds->key);
-		buffer_append_string_len(b, CONST_STR_LEN(": "));
-		buffer_append_string_buffer(b, &ds->value);
+		char * restrict s = buffer_extend(b, klen+vlen+4);
+		s[0] = '\r';
+		s[1] = '\n';
+		memcpy(s+2, ds->key.ptr, klen);
+		s += 2+klen;
+		s[0] = ':';
+		s[1] = ' ';
+		memcpy(s+2, ds->value.ptr, vlen);
 	}
 
 	if (!light_btst(r->resp_htags, HTTP_HEADER_DATE)) {
 		/* HTTP/1.1 and later requires a Date: header */
-		/* "\r\nDate: " 8-chars + 30-chars "%a, %d %b %Y %H:%M:%S GMT" + '\0' */
-		static time_t tlast = 0;
+		/* "\r\nDate: " 8-chars + 30-chars "%a, %d %b %Y %T GMT" + '\0' */
+		static unix_time64_t tlast = 0;
 		static char tstr[40] = "\r\nDate: ";
 
 		/* cache the generated timestamp */
-		const time_t cur_ts = log_epoch_secs;
+		const unix_time64_t cur_ts = log_epoch_secs;
 		if (__builtin_expect ( (tlast != cur_ts), 0))
 			http_date_time_to_str(tstr+8, sizeof(tstr)-8, (tlast = cur_ts));
 
 		buffer_append_string_len(b, tstr, 37);
 	}
 
-	if (!light_btst(r->resp_htags, HTTP_HEADER_SERVER)) {
-		if (!buffer_string_is_empty(r->conf.server_tag)) {
-			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: "));
-			buffer_append_string_len(b, CONST_BUF_LEN(r->conf.server_tag));
-		}
-	}
+	if (!light_btst(r->resp_htags, HTTP_HEADER_SERVER) && r->conf.server_tag)
+		buffer_append_str2(b, CONST_STR_LEN("\r\nServer: "),
+		                      BUF_PTR_LEN(r->conf.server_tag));
 
 	buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
 
-	r->resp_header_len = buffer_string_length(b);
+	r->resp_header_len = buffer_clen(b);
 
 	if (r->conf.log_response_header) {
-		log_error(r->conf.errh,__FILE__,__LINE__,"Response-Header:\n%s",b->ptr);
+		log_error_multiline(r->conf.errh, __FILE__, __LINE__,
+		                    BUF_PTR_LEN(b), "fd:%d resp: ", r->con->fd);
 	}
 
 	chunkqueue_prepend_buffer_commit(cq);
@@ -165,31 +172,43 @@ http_response_write_header (request_st * const r)
 	if (r->resp_body_finished
 	    && light_btst(r->resp_htags, HTTP_HEADER_CONTENT_LENGTH)
 	    && (cqlen = chunkqueue_length(cq) - r->resp_header_len) > 0
-	    && cqlen <= 32768)
+	    && cqlen < 16384)
 		chunkqueue_small_resp_optim(cq);
 }
 
 
-static handler_t http_response_physical_path_check(request_st * const r) {
-	const stat_cache_st *st = stat_cache_path_stat(&r->physical.path);
+__attribute_cold__
+static handler_t
+http_response_physical_path_error (request_st * const r, const int code, const char * const msg)
+{
+    r->http_status = code;
+    if ((code == 404 && r->conf.log_file_not_found)
+        || r->conf.log_request_handling) {
+        if (NULL == msg)
+            log_perror(r->conf.errh, __FILE__, __LINE__, "-- ");
+        else
+            log_error(r->conf.errh, __FILE__, __LINE__, "%s", msg);
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "Path         : %s", r->physical.path.ptr);
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "URI          : %s", r->uri.path.ptr);
+    }
+    return HANDLER_FINISHED;
+}
 
-	if (st) {
+
+static handler_t http_response_physical_path_check(request_st * const r) {
+	stat_cache_entry *sce = stat_cache_get_entry(&r->physical.path);
+
+	if (__builtin_expect( (sce != NULL), 1)) {
 		/* file exists */
 	} else {
-		char *pathinfo = NULL;
 		switch (errno) {
+		case ENOTDIR:
+			/* PATH_INFO ! :) */
+			break;
 		case EACCES:
-			r->http_status = 403;
-
-			if (r->conf.log_request_handling) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "-- access denied");
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "Path         : %s", r->physical.path.ptr);
-			}
-
-			buffer_reset(&r->physical.path);
-			return HANDLER_FINISHED;
+			return http_response_physical_path_error(r, 403, NULL);
 		case ENAMETOOLONG:
 			/* file name to be read was too long. return 404 */
 		case ENOENT:
@@ -198,39 +217,19 @@ static handler_t http_response_physical_path_check(request_st * const r) {
 				r->http_status = 200;
 				return HANDLER_FINISHED;
 			}
-
-			r->http_status = 404;
-
-			if (r->conf.log_request_handling) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "-- file not found");
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "Path         : %s", r->physical.path.ptr);
-			}
-
-			buffer_reset(&r->physical.path);
-			return HANDLER_FINISHED;
-		case ENOTDIR:
-			/* PATH_INFO ! :) */
-			break;
+			return http_response_physical_path_error(r, 404, NULL);
 		default:
 			/* we have no idea what happened. let's tell the user so. */
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "file not found ... or so: %s -> %s",
-			  r->uri.path.ptr, r->physical.path.ptr);
-
-			r->http_status = 500;
-			buffer_reset(&r->physical.path);
-
-			return HANDLER_FINISHED;
+			return http_response_physical_path_error(r, 500, NULL);
 		}
 
 		/* not found, perhaps PATHINFO */
 
+		char *pathinfo;
 		{
 			/*(might check at startup that s->document_root does not end in '/')*/
-			size_t len = buffer_string_length(&r->physical.basedir);
-			if (len > 0 && '/' == r->physical.basedir.ptr[len-1]) --len;
+			size_t len = buffer_clen(&r->physical.basedir)
+			           - (buffer_has_pathsep_suffix(&r->physical.basedir));
 			pathinfo = r->physical.path.ptr + len;
 			if ('/' != *pathinfo) {
 				pathinfo = NULL;
@@ -240,38 +239,34 @@ static handler_t http_response_physical_path_check(request_st * const r) {
 			}
 		}
 
-		buffer * const tb = r->tmp_buf;
+		const uint32_t pathused = r->physical.path.used;
 		for (char *pprev = pathinfo; pathinfo; pprev = pathinfo, pathinfo = strchr(pathinfo+1, '/')) {
-			buffer_copy_string_len(tb, r->physical.path.ptr, pathinfo - r->physical.path.ptr);
-			const stat_cache_st * const nst = stat_cache_path_stat(tb);
-			if (NULL == nst) {
+			/*(temporarily modify r->physical.path in-place)*/
+			r->physical.path.used = pathinfo - r->physical.path.ptr + 1;
+			*pathinfo = '\0';
+			stat_cache_entry * const nsce = stat_cache_get_entry(&r->physical.path);
+			*pathinfo = '/';
+			r->physical.path.used = pathused;
+			if (NULL == nsce) {
 				pathinfo = pathinfo != pprev ? pprev : NULL;
 				break;
 			}
-			st = nst;
-			if (!S_ISDIR(st->st_mode)) break;
+			sce = nsce;
+			if (!S_ISDIR(sce->st.st_mode)) break;
 		}
 
-		if (NULL == pathinfo || !S_ISREG(st->st_mode)) {
+		if (NULL == pathinfo || !S_ISREG(sce->st.st_mode)) {
 			/* no it really doesn't exists */
-			r->http_status = 404;
-
-			if (r->conf.log_file_not_found) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "file not found: %s -> %s",
-				  r->uri.path.ptr, r->physical.path.ptr);
-			}
-
-			buffer_reset(&r->physical.path);
-
-			return HANDLER_FINISHED;
+			return http_response_physical_path_error(r, 404, "-- file not found");
 		}
+		/* note: historical behavior checks S_ISREG() above, permitting
+		 * path-info only on regular files, not dirs or special files */
 
 		/* we have a PATHINFO */
 		if (pathinfo) {
-			size_t len = strlen(pathinfo), reqlen;
+			size_t len = r->physical.path.ptr+pathused-1-pathinfo, reqlen;
 			if (r->conf.force_lowercase_filenames
-			    && len <= (reqlen = buffer_string_length(&r->target))
+			    && len <= (reqlen = buffer_clen(&r->target))
 			    && buffer_eq_icase_ssn(r->target.ptr + reqlen - len, pathinfo, len)) {
 				/* attempt to preserve case-insensitive PATH_INFO
 				 * (works in common case where mod_alias, mod_magnet, and other modules
@@ -286,35 +281,28 @@ static handler_t http_response_physical_path_check(request_st * const r) {
 			 * shorten uri.path
 			 */
 
-			buffer_string_set_length(&r->uri.path, buffer_string_length(&r->uri.path) - len);
-			buffer_string_set_length(&r->physical.path, (size_t)(pathinfo - r->physical.path.ptr));
+			buffer_truncate(&r->uri.path, buffer_clen(&r->uri.path) - len);
+			buffer_truncate(&r->physical.path, (size_t)(pathinfo - r->physical.path.ptr));
 		}
 	}
 
 	if (!r->conf.follow_symlink
 	    && 0 != stat_cache_path_contains_symlink(&r->physical.path, r->conf.errh)) {
-		r->http_status = 403;
-
-		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "-- access denied due symlink restriction");
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Path         : %s", r->physical.path.ptr);
-		}
-
-		buffer_reset(&r->physical.path);
-		return HANDLER_FINISHED;
+		return http_response_physical_path_error(r, 403, "-- access denied due to symlink restriction");
 	}
 
-	if (S_ISREG(st->st_mode)) /*(common case)*/
+	/* r->tmp_sce is valid in handle_subrequest_start callback --
+	 * handle_subrquest_start callbacks should not change r->physical.path
+	 * (or should invalidate r->tmp_sce).  r->tmp_sce is not reset between
+	 * requests and is valid only for sequential code after this func succeeds*/
+	r->tmp_sce = sce;
+
+	if (S_ISREG(sce->st.st_mode)) /*(common case)*/
 		return HANDLER_GO_ON;
 
-	if (S_ISDIR(st->st_mode)) {
-		if (r->uri.path.ptr[buffer_string_length(&r->uri.path) - 1] != '/') {
-			/* redirect to .../ */
-
+	if (S_ISDIR(sce->st.st_mode)) {
+		if (!buffer_has_slash_suffix(&r->uri.path)) {
 			http_response_redirect_to_directory(r, 301);
-
 			return HANDLER_FINISHED;
 		}
 	} else {
@@ -334,20 +322,40 @@ static handler_t http_status_set_error_close (request_st * const r, int status) 
     return HANDLER_FINISHED;
 }
 
-static handler_t http_response_config (request_st * const r) {
-    if (r->conf.log_condition_handling)
-        log_error(r->conf.errh, __FILE__, __LINE__, "run condition");
+__attribute_cold__
+static handler_t http_response_prepare_options_star (request_st * const r) {
+    r->http_status = 200;
+    r->resp_body_finished = 1;
+    http_header_response_append(r, HTTP_HEADER_ALLOW, CONST_STR_LEN("Allow"),
+                                CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
+    return HANDLER_FINISHED;
+}
 
+
+__attribute_cold__
+static handler_t http_response_prepare_connect (request_st * const r) {
+    return (r->handler_module)
+      ? HANDLER_GO_ON
+      : http_status_set_error_close(r, 405);/* 405 Method Not Allowed */
+}
+
+
+static handler_t http_response_config (request_st * const r) {
     config_cond_cache_reset(r);
     config_patch_config(r);
 
+    r->server_name = r->conf.server_name
+                   ? r->conf.server_name
+                   : &r->uri.authority;
+
     /* do we have to downgrade from 1.1 to 1.0 ? (ignore for HTTP/2) */
-    if (!r->conf.allow_http11 && r->http_version == HTTP_VERSION_1_1)
+    if (__builtin_expect( (!r->conf.allow_http11), 0)
+        && r->http_version == HTTP_VERSION_1_1)
         r->http_version = HTTP_VERSION_1_0;
 
-    /* r->conf.max_request_size is in kBytes */
-    if (0 != r->conf.max_request_size &&
-        (off_t)r->reqbody_length > ((off_t)r->conf.max_request_size << 10)) {
+    if (__builtin_expect( (r->reqbody_length > 0), 0)
+        && 0 != r->conf.max_request_size   /* r->conf.max_request_size in kB */
+        && (off_t)r->reqbody_length > ((off_t)r->conf.max_request_size << 10)) {
         log_error(r->conf.errh, __FILE__, __LINE__,
           "request-size too long: %lld -> 413", (long long) r->reqbody_length);
         return /* 413 Payload Too Large */
@@ -358,32 +366,28 @@ static handler_t http_response_config (request_st * const r) {
 }
 
 
-__attribute_cold__
-static handler_t http_response_comeback (request_st * const r);
-
-
+__attribute_noinline__
 static handler_t
 http_response_prepare (request_st * const r)
 {
     handler_t rc;
 
-    do {
-
 	/* looks like someone has already made a decision */
-	if (r->http_status != 0 && r->http_status != 200) {
+	if (__builtin_expect( (r->http_status > 200), 0)) { /* yes, > 200 */
 		if (0 == r->resp_body_finished)
 			http_response_body_clear(r, 0);
 		return HANDLER_FINISHED;
 	}
 
 	/* no decision yet, build conf->filename */
-	if (buffer_is_empty(&r->physical.path)) {
+	if (buffer_is_unset(&r->physical.path)) {
 
-		if (!r->async_callback) {
+		if (__builtin_expect( (!r->async_callback), 1)) {
 			rc = http_response_config(r);
-			if (HANDLER_GO_ON != rc) continue;
+			if (HANDLER_GO_ON != rc) return rc;
 		}
-		r->async_callback = 0; /* reset */
+		else
+			r->async_callback = 0; /* reset */
 
 		/* we only come here when we have the parse the full request again
 		 *
@@ -411,80 +415,32 @@ http_response_prepare (request_st * const r)
 		}
 
 
-		/**
-		 *
-		 * call plugins
-		 *
-		 * - based on the raw URL
-		 *
-		 */
-
-		rc = plugins_call_handle_uri_raw(r);
-		if (HANDLER_GO_ON != rc) continue;
-
-		/**
-		 *
-		 * call plugins
-		 *
-		 * - based on the clean URL
-		 *
-		 */
-
 		rc = plugins_call_handle_uri_clean(r);
-		if (HANDLER_GO_ON != rc) continue;
+		if (HANDLER_GO_ON != rc) return rc;
 
-		if (r->http_method == HTTP_METHOD_OPTIONS &&
-		    r->uri.path.ptr[0] == '*' && r->uri.path.ptr[1] == '\0') {
-			/* option requests are handled directly without checking of the path */
+		if (__builtin_expect( (r->http_method == HTTP_METHOD_OPTIONS), 0)
+		    && r->uri.path.ptr[0] == '*' && r->uri.path.ptr[1] == '\0')
+			return http_response_prepare_options_star(r);
 
-			http_header_response_append(r, HTTP_HEADER_ALLOW,
-			  CONST_STR_LEN("Allow"),
-			  CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
+		if (__builtin_expect( (r->http_method == HTTP_METHOD_CONNECT), 0))
+			return http_response_prepare_connect(r);
 
-			r->http_status = 200;
-			r->resp_body_finished = 1;
-
-			return HANDLER_FINISHED;
-		}
-
-		if (r->http_method == HTTP_METHOD_CONNECT && NULL == r->handler_module) {
-			return /* 405 Method Not Allowed */
-			  http_status_set_error_close(r, 405);
-		}
-
-		/***
-		 *
-		 * border
-		 *
-		 * logical filename (URI) becomes a physical filename here
-		 *
-		 *
-		 *
-		 */
-
-
-
-
-		/* 1. stat()
-		 * ... ISREG() -> ok, go on
-		 * ... ISDIR() -> index-file -> redirect
-		 *
-		 * 2. pathinfo()
-		 * ... ISREG()
-		 *
-		 * 3. -> 404
-		 *
-		 */
 
 		/*
-		 * SEARCH DOCUMENT ROOT
+		 * border between logical and physical
+		 * logical path (URI) becomes a physical filename
 		 */
 
-		/* set a default */
 
-		buffer_copy_buffer(&r->physical.doc_root, r->conf.document_root);
+		/* docroot: set r->physical.doc_root and might set r->server_name */
+		buffer_clear(&r->physical.doc_root);
+
+		rc = plugins_call_handle_docroot(r);
+		if (HANDLER_GO_ON != rc) return rc;
+
+
+		/* transform r->uri.path to r->physical.rel_path (relative file path) */
 		buffer_copy_buffer(&r->physical.rel_path, &r->uri.path);
-
 #if defined(__WIN32) || defined(__CYGWIN__)
 		/* strip dots from the end and spaces
 		 *
@@ -498,10 +454,9 @@ http_response_prepare (request_st * const r)
 		 * this behaviour. I have no idea how to push this through cygwin
 		 *
 		 * */
-
-		if (!buffer_string_is_empty(&r->physical.rel_path)) {
+		{
 			buffer *b = &r->physical.rel_path;
-			size_t len = buffer_string_length(b);
+			size_t len = buffer_clen(b);
 
 			/* strip trailing " /" or "./" once */
 			if (len > 1 &&
@@ -511,69 +466,25 @@ http_response_prepare (request_st * const r)
 			}
 			/* strip all trailing " " and "." */
 			while (len > 0 &&  ( ' ' == b->ptr[len-1] || '.' == b->ptr[len-1] ) ) --len;
-			buffer_string_set_length(b, len);
+			buffer_truncate(b, len);
 		}
 #endif
-
-		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "-- before doc_root");
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Doc-Root     : %s", r->physical.doc_root.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Rel-Path     : %s", r->physical.rel_path.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Path         : %s", r->physical.path.ptr);
-		}
-		/* the docroot plugin should set the doc_root and might also set the physical.path
-		 * for us (all vhost-plugins are supposed to set the doc_root)
-		 * */
-		rc = plugins_call_handle_docroot(r);
-		if (HANDLER_GO_ON != rc) continue;
-
-		/* MacOS X and Windows can't distinguish between upper and lower-case
-		 *
-		 * convert to lower-case
-		 */
+		/* MacOS X and Windows (typically) case-insensitive filesystems */
 		if (r->conf.force_lowercase_filenames) {
 			buffer_to_lower(&r->physical.rel_path);
 		}
 
-		/* the docroot plugins might set the servername, if they don't we take http-host */
-		if (buffer_string_is_empty(r->server_name)) {
-			r->server_name = &r->uri.authority;
-		}
 
-		/**
-		 * create physical filename
-		 * -> physical.path = docroot + rel_path
-		 *
-		 */
-
+		/* compose physical filename: physical.path = doc_root + rel_path */
+		if (buffer_is_unset(&r->physical.doc_root))
+			buffer_copy_buffer(&r->physical.doc_root, r->conf.document_root);
 		buffer_copy_buffer(&r->physical.basedir, &r->physical.doc_root);
-		buffer_copy_buffer(&r->physical.path, &r->physical.doc_root);
-		buffer_append_path_len(&r->physical.path, CONST_BUF_LEN(&r->physical.rel_path));
+		buffer_copy_path_len2(&r->physical.path,
+		                      BUF_PTR_LEN(&r->physical.doc_root),
+		                      BUF_PTR_LEN(&r->physical.rel_path));
 
-		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "-- after doc_root");
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Doc-Root     : %s", r->physical.doc_root.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Rel-Path     : %s", r->physical.rel_path.ptr);
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Path         : %s", r->physical.path.ptr);
-		}
-
-		if (r->http_method == HTTP_METHOD_CONNECT) {
-			/* do not permit CONNECT requests to hit filesystem hooks
-			 * since the CONNECT URI bypassed path normalization */
-			/* (This check is located here so that r->physical.path
-			 *  is filled in above to avoid repeating work next time
-			 *  http_response_prepare() is called while processing request) */
-		} else {
 			rc = plugins_call_handle_physical(r);
-			if (HANDLER_GO_ON != rc) continue;
+			if (HANDLER_GO_ON != rc) return rc;
 
 			if (r->conf.log_request_handling) {
 				log_error(r->conf.errh, __FILE__, __LINE__,
@@ -587,7 +498,6 @@ http_response_prepare (request_st * const r)
 				log_error(r->conf.errh, __FILE__, __LINE__,
 				  "Path         : %s", r->physical.path.ptr);
 			}
-		}
 	}
 
 	if (NULL != r->handler_module) return HANDLER_GO_ON;
@@ -595,18 +505,13 @@ http_response_prepare (request_st * const r)
 	/*
 	 * No module grabbed the request yet (like mod_access)
 	 *
-	 * Go on and check of the file exists at all
+	 * Go on and check if the file exists at all
 	 */
 
-		if (r->conf.log_request_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "-- handling physical path");
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Path         : %s", r->physical.path.ptr);
-		}
-
 		rc = http_response_physical_path_check(r);
-		if (HANDLER_GO_ON != rc) continue;
+		if (HANDLER_GO_ON != rc) return rc;
+
+		/* r->physical.path is non-empty and exists in the filesystem */
 
 		if (r->conf.log_request_handling) {
 			log_error(r->conf.errh, __FILE__, __LINE__,
@@ -616,44 +521,47 @@ http_response_prepare (request_st * const r)
 			log_error(r->conf.errh, __FILE__, __LINE__,
 			  "URI          : %s", r->uri.path.ptr);
 			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "Pathinfo     : %s", r->pathinfo.ptr);
+			  "Pathinfo     : %s", r->pathinfo.ptr
+			                     ? r->pathinfo.ptr
+			                     : "");
 		}
 
 		/* call the handlers */
 		rc = plugins_call_handle_subrequest_start(r);
-		if (HANDLER_GO_ON != rc) {
-			if (r->conf.log_request_handling) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "-- subrequest finished");
-			}
-			continue;
-		}
+		if (HANDLER_GO_ON != rc) return rc;
 
-		/* if we are still here, no one wanted the file, status 403 is ok I think */
-		if (NULL == r->handler_module && 0 == r->http_status) {
-			r->http_status = (r->http_method != HTTP_METHOD_OPTIONS) ? 403 : 200;
+		if (__builtin_expect( (NULL == r->handler_module), 0)) {
+			/* no handler; finish request */
+			if (__builtin_expect( (0 == r->http_status), 0)) {
+				if (r->http_method == HTTP_METHOD_OPTIONS) {
+					http_response_body_clear(r, 0);
+					http_response_prepare_options_star(r); /*(treat like "*")*/
+				}
+				else if (!http_method_get_head_post(r->http_method))
+					r->http_status = 501;
+				else
+					r->http_status = 403;
+			}
 			return HANDLER_FINISHED;
 		}
 
 		return HANDLER_GO_ON;
-
-    } while (HANDLER_COMEBACK == rc
-             && HANDLER_GO_ON ==(rc = http_response_comeback(r)));
-
-    return rc;
 }
 
 
 __attribute_cold__
+__attribute_noinline__
 static handler_t http_response_comeback (request_st * const r)
 {
-    if (NULL != r->handler_module || !buffer_is_empty(&r->physical.path))
+    if (NULL != r->handler_module || !buffer_is_unset(&r->physical.path))
         return HANDLER_GO_ON;
 
-    config_reset_config(r);
+    request_config_reset(r);
 
-    buffer_copy_buffer(&r->uri.authority,r->http_host);/*copy even if NULL*/
-    buffer_to_lower(&r->uri.authority);
+    if (__builtin_expect( (r->http_host != NULL), 1))
+        buffer_copy_string_len_lc(&r->uri.authority, BUF_PTR_LEN(r->http_host));
+    else /*(buffer_blank(&r->uri.authority) w/o code inline)*/
+        buffer_copy_string_len(&r->uri.authority, CONST_STR_LEN(""));
 
     int status = http_request_parse_target(r, r->con->proto_default_port);
     if (0 == status) {
@@ -688,7 +596,7 @@ http_response_errdoc_init (request_st * const r)
         const buffer * const vb =
           http_header_response_get(r, HTTP_HEADER_WWW_AUTHENTICATE,
                                    CONST_STR_LEN("WWW-Authenticate"));
-        if (NULL != vb) www_auth = buffer_init_buffer(vb);
+        if (NULL != vb) buffer_copy_buffer((www_auth = buffer_init()), vb);
     }
 
     buffer_reset(&r->physical.path);
@@ -699,7 +607,7 @@ http_response_errdoc_init (request_st * const r)
     if (NULL != www_auth) {
         http_header_response_set(r, HTTP_HEADER_WWW_AUTHENTICATE,
                                  CONST_STR_LEN("WWW-Authenticate"),
-                                 CONST_BUF_LEN(www_auth));
+                                 BUF_PTR_LEN(www_auth));
         buffer_free(www_auth);
     }
 }
@@ -718,7 +626,7 @@ http_response_static_errdoc (request_st * const r)
     r->resp_body_finished = 1;
 
     /* try to send static errorfile */
-    if (!buffer_string_is_empty(r->conf.errorfile_prefix)) {
+    if (r->conf.errorfile_prefix) {
         buffer_copy_buffer(&r->physical.path, r->conf.errorfile_prefix);
         buffer_append_int(&r->physical.path, r->http_status);
         buffer_append_string_len(&r->physical.path, CONST_STR_LEN(".html"));
@@ -729,14 +637,14 @@ http_response_static_errdoc (request_st * const r)
             if (content_type)
                 http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE,
                                          CONST_STR_LEN("Content-Type"),
-                                         CONST_BUF_LEN(content_type));
+                                         BUF_PTR_LEN(content_type));
             return;
         }
+        buffer_clear(&r->physical.path);
     }
 
     /* build default error-page */
-    buffer_reset(&r->physical.path);
-    buffer * const b = r->tmp_buf;
+    buffer * const b = chunkqueue_append_buffer_open(&r->write_queue);
     buffer_copy_string_len(b, CONST_STR_LEN(
       "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
@@ -755,7 +663,7 @@ http_response_static_errdoc (request_st * const r)
       "</h1>\n"
       " </body>\n"
       "</html>\n"));
-    (void)http_chunk_append_mem(r, CONST_BUF_LEN(b));
+    chunkqueue_append_buffer_commit(&r->write_queue);
 
     http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE,
                              CONST_STR_LEN("Content-Type"),
@@ -768,7 +676,7 @@ static void
 http_response_merge_trailers (request_st * const r)
 {
     /* attempt to merge trailers into headers; header not yet sent by caller */
-    if (buffer_string_is_empty(&r->gw_dechunk->b)) return;
+    if (buffer_is_blank(&r->gw_dechunk->b)) return;
     const int done = r->gw_dechunk->done;
     if (!done) return; /* XXX: !done; could scan for '\n' and send only those */
 
@@ -802,35 +710,10 @@ http_response_merge_trailers (request_st * const r)
 }
 
 
+__attribute_noinline__
 static handler_t
 http_response_write_prepare(request_st * const r)
 {
-    if (NULL == r->handler_module) {
-        /* static files */
-        switch(r->http_method) {
-          case HTTP_METHOD_GET:
-          case HTTP_METHOD_POST:
-          case HTTP_METHOD_HEAD:
-            break;
-          case HTTP_METHOD_OPTIONS:
-            if ((!r->http_status || r->http_status == 200)
-                && !buffer_string_is_empty(&r->uri.path)
-                && r->uri.path.ptr[0] != '*') {
-                http_response_body_clear(r, 0);
-                http_header_response_append(r, HTTP_HEADER_ALLOW,
-                  CONST_STR_LEN("Allow"),
-                  CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
-                r->http_status = 200;
-                r->resp_body_finished = 1;
-            }
-            break;
-          default:
-            if (r->http_status == 0)
-                r->http_status = 501;
-            break;
-        }
-    }
-
     switch (r->http_status) {
       case 200: /* common case */
         break;
@@ -845,8 +728,6 @@ http_response_write_prepare(request_st * const r)
         r->resp_body_finished = 1;
         break;
       default: /* class: header + body */
-        if (r->http_status == 0)
-            r->http_status = 403;
         /* only custom body for 4xx and 5xx */
         if (r->http_status >= 400 && r->http_status < 600)
             http_response_static_errdoc(r);
@@ -868,6 +749,10 @@ http_response_write_prepare(request_st * const r)
     }
 
     if (r->resp_body_finished) {
+        /* check for Range request (current impl requires resp_body_finished) */
+        if (r->conf.range_requests && http_range_rfc7233(r) >= 400)
+            http_response_static_errdoc(r); /* 416 Range Not Satisfiable */
+
         /* set content-length if length is known and not already set */
         if (!(r->resp_htags
               & (light_bshift(HTTP_HEADER_CONTENT_LENGTH)
@@ -885,12 +770,10 @@ http_response_write_prepare(request_st * const r)
              * (should not reach here if 1xx (r->http_status < 200))
              */
             if (qlen > 0) {
-                buffer * const tb = r->tmp_buf;
-                buffer_clear(tb);
-                buffer_append_int(tb, qlen);
-                http_header_response_set(r, HTTP_HEADER_CONTENT_LENGTH,
-                                         CONST_STR_LEN("Content-Length"),
-                                         CONST_BUF_LEN(tb));
+                buffer_append_int(
+                  http_header_response_set_ptr(r, HTTP_HEADER_CONTENT_LENGTH,
+                                               CONST_STR_LEN("Content-Length")),
+                  qlen);
             }
             else if (r->http_method != HTTP_METHOD_HEAD
                      && r->http_status != 204 && r->http_status != 304) {
@@ -925,24 +808,32 @@ http_response_write_prepare(request_st * const r)
             else if (r->http_version == HTTP_VERSION_1_1) {
                 off_t qlen = chunkqueue_length(&r->write_queue);
                 r->resp_send_chunked = 1;
+                if (r->resp_decode_chunked) {
+                    /*(reconstitute initial partially-decoded chunk)*/
+                    off_t gw_chunked = r->gw_dechunk->gw_chunked;
+                    if (gw_chunked >= 2)
+                        qlen += gw_chunked - 2;
+                    else if (1 == gw_chunked)
+                        chunkqueue_append_mem(&r->write_queue,
+                                              CONST_STR_LEN("\r"));
+                    else {
+                        if (qlen)
+                            chunkqueue_append_mem(&r->write_queue,
+                                                  CONST_STR_LEN("\r\n"));
+                        const buffer * const hdr = &r->gw_dechunk->b;
+                        if (!buffer_is_blank(hdr)) /*(partial chunked header)*/
+                            chunkqueue_append_mem(&r->write_queue,
+                                                  BUF_PTR_LEN(hdr));
+                    }
+                }
+                else if (qlen) {
+                        chunkqueue_append_mem(&r->write_queue,
+                                              CONST_STR_LEN("\r\n"));
+                }
                 if (qlen) {
                     /* create initial Transfer-Encoding: chunked segment */
                     buffer * const b =
                       chunkqueue_prepend_buffer_open(&r->write_queue);
-                    if (r->resp_decode_chunked
-                        && 0 != r->gw_dechunk->gw_chunked) {
-                        /*(reconstitute initial partially-decoded chunk)*/
-                        off_t gw_chunked = r->gw_dechunk->gw_chunked;
-                        if (gw_chunked > 2)
-                            qlen += gw_chunked - 2;
-                        else if (1 == gw_chunked)
-                            chunkqueue_append_mem(&r->write_queue,
-                                                  CONST_STR_LEN("\r"));
-                    }
-                    else {
-                        chunkqueue_append_mem(&r->write_queue,
-                                              CONST_STR_LEN("\r\n"));
-                    }
                     buffer_append_uint_hex(b, (uintmax_t)qlen);
                     buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
                     chunkqueue_prepend_buffer_commit(&r->write_queue);
@@ -968,7 +859,7 @@ http_response_write_prepare(request_st * const r)
 
 
 __attribute_cold__
-static handler_t
+static int
 http_response_call_error_handler (request_st * const r, const buffer * const error_handler)
 {
     /* call error-handler */
@@ -976,10 +867,9 @@ http_response_call_error_handler (request_st * const r, const buffer * const err
     /* set REDIRECT_STATUS to save current HTTP status code
      * for access by dynamic handlers
      * https://redmine.lighttpd.net/issues/1828 */
-    buffer * const tb = r->tmp_buf;
-    buffer_clear(tb);
-    buffer_append_int(tb, r->http_status);
-    http_header_env_set(r, CONST_STR_LEN("REDIRECT_STATUS"), CONST_BUF_LEN(tb));
+    buffer_append_int(
+      http_header_env_set_ptr(r, CONST_STR_LEN("REDIRECT_STATUS")),
+      r->http_status);
 
     if (error_handler == r->conf.error_handler) {
         plugins_call_handle_request_reset(r);
@@ -1011,16 +901,57 @@ http_response_call_error_handler (request_st * const r, const buffer * const err
     buffer_copy_buffer(&r->target, error_handler);
     http_response_errdoc_init(r);
     r->http_status = 0; /*(after http_response_errdoc_init())*/
-    http_response_comeback(r);
-    return HANDLER_COMEBACK;
+    return 1;
+}
+
+
+__attribute_cold__
+__attribute_noinline__
+static int
+http_response_has_error_handler (request_st * const r)
+{
+    if (r->error_handler_saved_status > 0)
+        r->http_method = r->error_handler_saved_method;
+    if (NULL == r->handler_module || r->conf.error_intercept) {
+        if (__builtin_expect( (r->error_handler_saved_status), 0)) {
+            const int subreq_status = r->http_status;
+            if (r->error_handler_saved_status > 0)
+                r->http_status = r->error_handler_saved_status;
+            else if (r->http_status == 404 || r->http_status == 403)
+                /* error-handler-404 is a 404 */
+                r->http_status = -r->error_handler_saved_status;
+            else {
+                /* error-handler-404 is back and has generated content */
+                /* if Status: was set, take it otherwise use 200 */
+            }
+            if (200 <= subreq_status && subreq_status <= 299) {
+                /*(flag value to indicate that error handler succeeded)
+                 *(for (NULL == r->handler_module))*/
+                r->error_handler_saved_status = 65535; /* >= 1000 */
+            }
+        }
+        else if (__builtin_expect( (r->http_status >= 400), 0)) {
+            const buffer *error_handler = NULL;
+            if (r->conf.error_handler)
+                error_handler = r->conf.error_handler;
+            else if ((r->http_status == 404 || r->http_status == 403)
+                   && r->conf.error_handler_404)
+                error_handler = r->conf.error_handler_404;
+
+            if (error_handler)
+                return http_response_call_error_handler(r, error_handler);
+        }
+    }
+    return 0;
 }
 
 
 handler_t
 http_response_handler (request_st * const r)
 {
+  int rc;
+  do {
     const plugin *p = r->handler_module;
-    int rc;
     if (NULL != p
         || ((rc = http_response_prepare(r)) == HANDLER_GO_ON
             && NULL != (p = r->handler_module)))
@@ -1037,51 +968,25 @@ http_response_handler (request_st * const r)
         /* response headers received from backend; start response */
         __attribute_fallthrough__
       case HANDLER_GO_ON:
-      case HANDLER_FINISHED: /*(HANDLER_FINISHED if request not handled)*/
+      case HANDLER_FINISHED:
         if (r->http_status == 0) r->http_status = 200;
-        if (r->error_handler_saved_status > 0)
-            r->http_method = r->error_handler_saved_method;
-        if (NULL == r->handler_module || r->conf.error_intercept) {
-            if (r->error_handler_saved_status) {
-                const int subreq_status = r->http_status;
-                if (r->error_handler_saved_status > 0)
-                    r->http_status = r->error_handler_saved_status;
-                else if (r->http_status == 404 || r->http_status == 403)
-                    /* error-handler-404 is a 404 */
-                    r->http_status = -r->error_handler_saved_status;
-                else {
-                    /* error-handler-404 is back and has generated content */
-                    /* if Status: was set, take it otherwise use 200 */
-                }
-                if (200 <= subreq_status && subreq_status <= 299) {
-                    /*(flag value to indicate that error handler succeeded)
-                     *(for (NULL == r->handler_module))*/
-                    r->error_handler_saved_status = 65535; /* >= 1000 */
-                }
-            }
-            else if (r->http_status >= 400) {
-                const buffer *error_handler = NULL;
-                if (!buffer_string_is_empty(r->conf.error_handler))
-                    error_handler = r->conf.error_handler;
-                else if ((r->http_status == 404 || r->http_status == 403)
-                       && !buffer_string_is_empty(r->conf.error_handler_404))
-                    error_handler = r->conf.error_handler_404;
-
-                if (error_handler)
-                    return http_response_call_error_handler(r, error_handler);
-            }
-        }
-
-        /* we have something to send; go on */
-        /*(CON_STATE_RESPONSE_START; transient state)*/
-        return http_response_write_prepare(r);
-      case HANDLER_WAIT_FOR_FD:
-        return HANDLER_WAIT_FOR_FD;
+        if ((__builtin_expect( (r->http_status < 400), 1)
+             && __builtin_expect( (0 == r->error_handler_saved_status), 1))
+            || __builtin_expect( (!http_response_has_error_handler(r)), 1))
+            /* we have something to send; go on */
+            /*(CON_STATE_RESPONSE_START; transient state)*/
+            return http_response_write_prepare(r);
+        __attribute_fallthrough__
       case HANDLER_COMEBACK:
         http_response_comeback(r);
-        return HANDLER_COMEBACK;
+        rc = HANDLER_COMEBACK;
+        continue;
       /*case HANDLER_ERROR:*/
       default:
         return HANDLER_ERROR; /* something went wrong */
     }
+  } while (rc == HANDLER_COMEBACK);
+ #ifndef __COVERITY__
+  return HANDLER_ERROR; /* should not happen */ /*(not reached)*/
+ #endif
 }

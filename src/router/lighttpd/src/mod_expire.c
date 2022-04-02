@@ -4,6 +4,7 @@
 #include "array.h"
 #include "buffer.h"
 #include "log.h"
+#include "http_date.h"
 #include "http_header.h"
 
 #include "plugin.h"
@@ -41,7 +42,7 @@ FREE_FUNC(mod_expire_free) {
 
 static time_t mod_expire_get_offset(log_error_st *errh, const buffer *expire, time_t *offset) {
 	char *ts;
-	time_t type = -1;
+	time_t type;
 	time_t retts = 0;
 
 	/*
@@ -52,7 +53,7 @@ static time_t mod_expire_get_offset(log_error_st *errh, const buffer *expire, ti
 	 * e.g. 'access 1 years'
 	 */
 
-	if (buffer_string_is_empty(expire)) {
+	if (buffer_is_blank(expire)) {
 		log_error(errh, __FILE__, __LINE__, "mod_expire empty string");
 		return -1;
 	}
@@ -80,7 +81,7 @@ static time_t mod_expire_get_offset(log_error_st *errh, const buffer *expire, ti
 	}
 
 	/* the rest is just <number> (years|months|weeks|days|hours|minutes|seconds) */
-	while (1) {
+	do {
 		char *space, *err;
 		int num;
 
@@ -99,66 +100,41 @@ static time_t mod_expire_get_offset(log_error_st *errh, const buffer *expire, ti
 
 		ts = space + 1;
 
-		if (NULL != (space = strchr(ts, ' '))) {
+		if (NULL == (space = strchr(ts, ' ')))
+			space = expire->ptr + buffer_clen(expire);
+
+		{
 			int slen;
 			/* */
 
 			slen = space - ts;
+			if (ts[slen-1] == 's') --slen; /* strip plural */
 
-			if (slen == 5 &&
-			    0 == strncmp(ts, "years", slen)) {
+			if (slen == 4 && 0 == strncmp(ts, "year", slen))
 				num *= 60 * 60 * 24 * 30 * 12;
-			} else if (slen == 6 &&
-				   0 == strncmp(ts, "months", slen)) {
+			else if (slen == 5 && 0 == strncmp(ts, "month", slen))
 				num *= 60 * 60 * 24 * 30;
-			} else if (slen == 5 &&
-				   0 == strncmp(ts, "weeks", slen)) {
+			else if (slen == 4 && 0 == strncmp(ts, "week", slen))
 				num *= 60 * 60 * 24 * 7;
-			} else if (slen == 4 &&
-				   0 == strncmp(ts, "days", slen)) {
+			else if (slen == 3 && 0 == strncmp(ts, "day", slen))
 				num *= 60 * 60 * 24;
-			} else if (slen == 5 &&
-				   0 == strncmp(ts, "hours", slen)) {
+			else if (slen == 4 && 0 == strncmp(ts, "hour", slen))
 				num *= 60 * 60;
-			} else if (slen == 7 &&
-				   0 == strncmp(ts, "minutes", slen)) {
+			else if (slen == 6 && 0 == strncmp(ts, "minute", slen))
 				num *= 60;
-			} else if (slen == 7 &&
-				   0 == strncmp(ts, "seconds", slen)) {
+			else if (slen == 6 && 0 == strncmp(ts, "second", slen))
 				num *= 1;
-			} else {
+			else {
 				log_error(errh, __FILE__, __LINE__, "unknown type: %s", ts);
 				return -1;
 			}
 
 			retts += num;
 
+			if (*space == '\0') break;
 			ts = space + 1;
-		} else {
-			if (0 == strcmp(ts, "years")) {
-				num *= 60 * 60 * 24 * 30 * 12;
-			} else if (0 == strcmp(ts, "months")) {
-				num *= 60 * 60 * 24 * 30;
-			} else if (0 == strcmp(ts, "weeks")) {
-				num *= 60 * 60 * 24 * 7;
-			} else if (0 == strcmp(ts, "days")) {
-				num *= 60 * 60 * 24;
-			} else if (0 == strcmp(ts, "hours")) {
-				num *= 60 * 60;
-			} else if (0 == strcmp(ts, "minutes")) {
-				num *= 60;
-			} else if (0 == strcmp(ts, "seconds")) {
-				num *= 1;
-			} else {
-				log_error(errh, __FILE__, __LINE__, "unknown type: %s", ts);
-				return -1;
-			}
-
-			retts += num;
-
-			break;
 		}
-	}
+	} while (*ts);
 
 	*offset = retts;
 
@@ -227,9 +203,9 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
                     /*(not usually a good idea to modify array keys
                      * since doing so might break array_get_element_klen()
                      * search; config should be consistent in using * or not)*/
-                    size_t klen = buffer_string_length(&ds->key);
+                    size_t klen = buffer_clen(&ds->key);
                     if (klen && ds->key.ptr[klen-1] == '*')
-                        buffer_string_set_length(&ds->key, klen-1);
+                        buffer_truncate(&ds->key, klen-1);
                 }
                 a = cpv->v.a;
                 break;
@@ -268,9 +244,53 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
     return HANDLER_GO_ON;
 }
 
+static handler_t
+mod_expire_set_header (request_st * const r, const time_t * const off)
+{
+    const unix_time64_t cur_ts = log_epoch_secs;
+    unix_time64_t expires = off[1];
+    if (0 == off[0]) { /* access */
+        expires += cur_ts;
+    }
+    else {             /* modification */
+        const stat_cache_st * const st = stat_cache_path_stat(&r->physical.path);
+        /* can't set modification-based expire if mtime is not available */
+        if (NULL == st) return HANDLER_GO_ON;
+        expires += TIME64_CAST(st->st_mtime);
+    }
+
+    /* expires should be at least cur_ts */
+    if (expires < cur_ts) expires = cur_ts;
+
+    /* HTTP/1.1 dictates that Cache-Control overrides Expires if both present.
+     * Therefore, send only Cache-Control to HTTP/1.1 requests.  This means
+     * that if an intermediary upgraded the request to HTTP/1.1, and the actual
+     * client sent HTTP/1.0, then the actual client might not understand
+     * Cache-Control when it may have understood Expires.  RFC 2616 HTTP/1.1
+     * was released June 1999, almost 22 years ago (as this comment is written).
+     * If a client today is sending HTTP/1.0, chances are the client does not
+     * cache.  Avoid the overhead of formatting time for Expires to send both
+     * Cache-Control and Expires when the majority of clients are HTTP/1.1 or
+     * HTTP/2 (or later). */
+    buffer *vb;
+    if (r->http_version > HTTP_VERSION_1_0) {
+        vb = http_header_response_set_ptr(r, HTTP_HEADER_CACHE_CONTROL,
+                                          CONST_STR_LEN("Cache-Control"));
+        buffer_append_string_len(vb, CONST_STR_LEN("max-age="));
+        buffer_append_int(vb, expires - cur_ts);
+    }
+    else { /* HTTP/1.0 */
+        vb = http_header_response_set_ptr(r, HTTP_HEADER_EXPIRES,
+                                          CONST_STR_LEN("Expires"));
+        http_date_time_append(vb, expires);
+    }
+
+    return HANDLER_GO_ON;
+}
+
 REQUEST_FUNC(mod_expire_handler) {
 	plugin_data *p = p_d;
-	const buffer *vb;
+	buffer *vb;
 	const data_string *ds;
 
 	/* Add caching headers only to http_status 200 OK or 206 Partial Content */
@@ -291,44 +311,18 @@ REQUEST_FUNC(mod_expire_handler) {
 	if (NULL == ds) {
 		if (NULL == p->conf.expire_mimetypes) return HANDLER_GO_ON;
 		vb = http_header_response_get(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"));
-		ds = (NULL != vb)
-		   ? (const data_string *)array_match_key_prefix(p->conf.expire_mimetypes, vb)
-		   : (const data_string *)array_get_element_klen(p->conf.expire_mimetypes, CONST_STR_LEN(""));
-		if (NULL == ds) return HANDLER_GO_ON;
+		if (NULL != vb)
+			ds = (const data_string *)
+			     array_match_key_prefix(p->conf.expire_mimetypes, vb);
+		if (NULL == ds) {
+			ds = (const data_string *)
+			     array_get_element_klen(p->conf.expire_mimetypes,
+			                            CONST_STR_LEN(""));
+			if (NULL == ds) return HANDLER_GO_ON;
+		}
 	}
 
-	const time_t * const off = p->toffsets + ds->value.used;
-	const time_t cur_ts = log_epoch_secs;
-	time_t expires = off[1];
-	if (0 == off[0]) { /* access */
-		expires += cur_ts;
-	}
-	else {             /* modification */
-		const stat_cache_st * const st = stat_cache_path_stat(&r->physical.path);
-		/* can't set modification-based expire if mtime is not available */
-		if (NULL == st) return HANDLER_GO_ON;
-		expires += st->st_mtime;
-	}
-
-			/* expires should be at least cur_ts */
-			if (expires < cur_ts) expires = cur_ts;
-
-			buffer * const tb = r->tmp_buf;
-			struct tm tm;
-
-			/* HTTP/1.0 */
-			buffer_clear(tb);
-			buffer_append_strftime(tb, "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&expires, &tm));
-			http_header_response_set(r, HTTP_HEADER_EXPIRES,
-			                         CONST_STR_LEN("Expires"),
-			                         CONST_BUF_LEN(tb));
-
-			/* HTTP/1.1 */
-			buffer_copy_string_len(tb, CONST_STR_LEN("max-age="));
-			buffer_append_int(tb, expires - cur_ts); /* as expires >= cur_ts the difference is >= 0 */
-			http_header_response_set(r, HTTP_HEADER_CACHE_CONTROL, CONST_STR_LEN("Cache-Control"), CONST_BUF_LEN(tb));
-
-	return HANDLER_GO_ON;
+	return mod_expire_set_header(r, p->toffsets + ds->value.used);
 }
 
 

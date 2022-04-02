@@ -17,15 +17,15 @@
  * - database query is synchronous and blocks waiting for response
  */
 
-#include <security/pam_appl.h>
-
-#include "base.h"
-#include "http_auth.h"
-#include "log.h"
-#include "plugin.h"
-
 #include <stdlib.h>
 #include <string.h>
+
+#include <security/pam_appl.h>
+
+#include "mod_auth_api.h"
+#include "base.h"
+#include "log.h"
+#include "plugin.h"
 
 typedef struct {
     const char *service;
@@ -102,7 +102,8 @@ SETDEFAULTS_FUNC(mod_authn_pam_set_defaults) {
                 if (cpv->v.a->used) {
                     const data_string *ds = (const data_string *)
                       array_get_element_klen(cpv->v.a,CONST_STR_LEN("service"));
-                    cpv->v.v = (NULL != ds) ? ds->value.ptr : "http";
+                    *(const void **)&cpv->v.v =
+                      (NULL != ds) ? ds->value.ptr : "http";
                     cpv->vtype = T_CONFIG_LOCAL;
                 }
                 break;
@@ -149,7 +150,7 @@ static handler_t mod_authn_pam_query(request_st * const r, void *p_d, const buff
 
     mod_authn_pam_patch_config(r, p);
 
-    const char * const addrstr = r->con->dst_addr_buf->ptr;
+    const char * const addrstr = r->con->dst_addr_buf.ptr;
     rc = pam_start(p->conf.service, username->ptr, &conv, &pamh);
     if (PAM_SUCCESS != rc
      || PAM_SUCCESS !=(rc = pam_set_item(pamh, PAM_RHOST, addrstr))

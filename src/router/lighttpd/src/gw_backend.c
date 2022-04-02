@@ -51,10 +51,12 @@ static int * gw_status_get_counter(gw_host *host, gw_proc *proc, const char *tag
     size_t llen = sizeof("gw.backend.")-1, len;
     memcpy(label, "gw.backend.", llen);
 
-    len = buffer_string_length(host->id);
-    force_assert(len < sizeof(label) - llen);
-    memcpy(label+llen, host->id->ptr, len);
-    llen += len;
+    len = buffer_clen(host->id);
+    if (len) {
+        force_assert(len < sizeof(label) - llen);
+        memcpy(label+llen, host->id->ptr, len);
+        llen += len;
+    }
 
     if (proc) {
         force_assert(llen < sizeof(label) - (LI_ITOSTRING_LENGTH + 1));
@@ -75,41 +77,53 @@ static void gw_proc_tag_inc(gw_host *host, gw_proc *proc, const char *tag, size_
     ++(*gw_status_get_counter(host, proc, tag, len));
 }
 
-static void gw_proc_load_inc(gw_host *host, gw_proc *proc) {
-    *gw_status_get_counter(host, proc, CONST_STR_LEN(".load")) = ++proc->load;
+static void gw_proc_connected_inc(gw_host *host, gw_proc *proc) {
+    UNUSED(host);
+    ++(*proc->stats_connected); /* "gw.backend...connected" */
+}
 
-    status_counter_inc(CONST_STR_LEN("gw.active-requests"));
+static void gw_proc_load_inc(gw_host *host, gw_proc *proc) {
+    *proc->stats_load = ++proc->load; /* "gw.backend...load" */
+    ++(*host->stats_global_active); /* "gw.active-requests" */
 }
 
 static void gw_proc_load_dec(gw_host *host, gw_proc *proc) {
-    *gw_status_get_counter(host, proc, CONST_STR_LEN(".load")) = --proc->load;
-
-    status_counter_dec(CONST_STR_LEN("gw.active-requests"));
+    *proc->stats_load = --proc->load; /* "gw.backend...load" */
+    --(*host->stats_global_active); /* "gw.active-requests" */
 }
 
 static void gw_host_assign(gw_host *host) {
-    *gw_status_get_counter(host, NULL, CONST_STR_LEN(".load")) = ++host->load;
+    *host->stats_load = ++host->load; /* "gw.backend...load" */
 }
 
 static void gw_host_reset(gw_host *host) {
-    *gw_status_get_counter(host, NULL, CONST_STR_LEN(".load")) = --host->load;
+    *host->stats_load = --host->load; /* "gw.backend...load" */
 }
 
-static int gw_status_init(gw_host *host, gw_proc *proc) {
+static void gw_status_init_proc(gw_host *host, gw_proc *proc) {
     *gw_status_get_counter(host, proc, CONST_STR_LEN(".disabled")) = 0;
     *gw_status_get_counter(host, proc, CONST_STR_LEN(".died")) = 0;
     *gw_status_get_counter(host, proc, CONST_STR_LEN(".overloaded")) = 0;
-    *gw_status_get_counter(host, proc, CONST_STR_LEN(".connected")) = 0;
-    *gw_status_get_counter(host, proc, CONST_STR_LEN(".load")) = 0;
+    proc->stats_connected =
+      gw_status_get_counter(host, proc, CONST_STR_LEN(".connected"));
+    *proc->stats_connected = 0;
+    proc->stats_load =
+      gw_status_get_counter(host, proc, CONST_STR_LEN(".load"));
+    *proc->stats_load = 0;
+}
 
-    *gw_status_get_counter(host, NULL, CONST_STR_LEN(".load")) = 0;
-
-    return 0;
+static void gw_status_init_host(gw_host *host) {
+    host->stats_load =
+      gw_status_get_counter(host, NULL, CONST_STR_LEN(".load"));
+    *host->stats_load = 0;
+    host->stats_global_active =
+      status_counter_get_counter(CONST_STR_LEN("gw.active-requests"));
 }
 
 
 
 
+__attribute_cold__
 static void gw_proc_set_state(gw_host *host, gw_proc *proc, int state) {
     if ((int)proc->state == state) return;
     if (proc->state == PROC_STATE_RUNNING) {
@@ -121,32 +135,62 @@ static void gw_proc_set_state(gw_host *host, gw_proc *proc, int state) {
 }
 
 
-static gw_proc *gw_proc_init(void) {
-    gw_proc *f = calloc(1, sizeof(*f));
-    force_assert(f);
+__attribute_cold__
+__attribute_noinline__
+static void gw_proc_init_portpath(gw_host *host, gw_proc *proc) {
+    if (!host->unixsocket) {
+        proc->port = host->port + proc->id;
+        return;
+    }
 
-    f->unixsocket = buffer_init();
-    f->connection_name = buffer_init();
+    if (!proc->unixsocket)
+        proc->unixsocket = buffer_init();
 
-    f->prev = NULL;
-    f->next = NULL;
-    f->state = PROC_STATE_DIED;
-
-    return f;
+    if (!host->bin_path)
+        buffer_copy_buffer(proc->unixsocket, host->unixsocket);
+    else {
+        buffer_clear(proc->unixsocket);
+        buffer_append_str2(proc->unixsocket, BUF_PTR_LEN(host->unixsocket),
+                                             CONST_STR_LEN("-"));
+        buffer_append_int(proc->unixsocket, proc->id);
+    }
 }
 
-static void gw_proc_free(gw_proc *f) {
-    if (!f) return;
+__attribute_cold__
+__attribute_noinline__
+__attribute_returns_nonnull__
+static gw_proc *gw_proc_init(gw_host *host) {
+    gw_proc *proc = calloc(1, sizeof(*proc));
+    force_assert(proc);
 
-    gw_proc_free(f->next);
+    /*proc->unixsocket = buffer_init();*//*(init on demand)*/
+    proc->connection_name = buffer_init();
 
-    buffer_free(f->unixsocket);
-    buffer_free(f->connection_name);
-    free(f->saddr);
+    proc->prev = NULL;
+    proc->next = NULL;
+    proc->state = PROC_STATE_DIED;
 
-    free(f);
+    proc->id = host->max_id++;
+    gw_status_init_proc(host, proc); /*(proc->id must be set)*/
+    gw_proc_init_portpath(host, proc);
+
+    return proc;
 }
 
+static void gw_proc_free(gw_proc *proc) {
+    if (!proc) return;
+
+    gw_proc_free(proc->next);
+
+    buffer_free(proc->unixsocket);
+    buffer_free(proc->connection_name);
+    free(proc->saddr);
+
+    free(proc);
+}
+
+__attribute_malloc__
+__attribute_returns_nonnull__
 static gw_host *gw_host_init(void) {
     gw_host *f = calloc(1, sizeof(*f));
     force_assert(f);
@@ -168,6 +212,8 @@ static void gw_host_free(gw_host *h) {
     free(h);
 }
 
+__attribute_malloc__
+__attribute_returns_nonnull__
 static gw_exts *gw_extensions_init(void) {
     gw_exts *f = calloc(1, sizeof(*f));
     force_assert(f);
@@ -221,8 +267,8 @@ static int gw_extension_insert(gw_exts *ext, const buffer *key, gw_host *fh) {
 }
 
 static void gw_proc_connect_success(gw_host *host, gw_proc *proc, int debug, request_st * const r) {
-    gw_proc_tag_inc(host, proc, CONST_STR_LEN(".connected"));
-    proc->last_used = log_epoch_secs;
+    gw_proc_connected_inc(host, proc); /*(".connected")*/
+    proc->last_used = log_monotonic_secs;
 
     if (debug) {
         log_error(r->conf.errh, __FILE__, __LINE__,
@@ -233,11 +279,11 @@ static void gw_proc_connect_success(gw_host *host, gw_proc *proc, int debug, req
 
 __attribute_cold__
 static void gw_proc_connect_error(request_st * const r, gw_host *host, gw_proc *proc, pid_t pid, int errnum, int debug) {
-    const time_t cur_ts = log_epoch_secs;
+    const unix_time64_t cur_ts = log_monotonic_secs;
     log_error_st * const errh = r->conf.errh;
-    log_error(errh, __FILE__, __LINE__,
-      "establishing connection failed: socket: %s: %s",
-      proc->connection_name->ptr, strerror(errnum));
+    errno = errnum; /*(for log_perror())*/
+    log_perror(errh, __FILE__, __LINE__,
+      "establishing connection failed: socket: %s", proc->connection_name->ptr);
 
     if (!proc->is_local) {
         proc->disabled_until = cur_ts + host->disable_time;
@@ -306,18 +352,21 @@ static void gw_proc_release(gw_host *host, gw_proc *proc, int debug, log_error_s
     }
 }
 
+__attribute_cold__
 static void gw_proc_check_enable(gw_host * const host, gw_proc * const proc, log_error_st * const errh) {
-    if (log_epoch_secs <= proc->disabled_until) return;
+    if (log_monotonic_secs <= proc->disabled_until) return;
     if (proc->state != PROC_STATE_OVERLOADED) return;
 
     gw_proc_set_state(host, proc, PROC_STATE_RUNNING);
 
     log_error(errh, __FILE__, __LINE__,
       "gw-server re-enabled: %s %s %hu %s",
-      proc->connection_name->ptr, host->host->ptr, host->port,
-      host->unixsocket && host->unixsocket->ptr ? host->unixsocket->ptr : "");
+      proc->connection_name->ptr,
+      host->host ? host->host->ptr : "", host->port,
+      host->unixsocket ? host->unixsocket->ptr : "");
 }
 
+__attribute_cold__
 static void gw_proc_waitpid_log(const gw_host * const host, const gw_proc * const proc, log_error_st * const errh, const int status) {
     if (WIFEXITED(status)) {
         if (proc->state != PROC_STATE_KILLED) {
@@ -359,25 +408,31 @@ static int gw_proc_waitpid(gw_host *host, gw_proc *proc, log_error_st *errh) {
 
     proc->pid = 0;
     if (proc->state != PROC_STATE_KILLED)
-        proc->disabled_until = log_epoch_secs;
+        proc->disabled_until = log_monotonic_secs;
     gw_proc_set_state(host, proc, PROC_STATE_DIED);
     return 1;
 }
 
+__attribute_cold__
 static int gw_proc_sockaddr_init(gw_host * const host, gw_proc * const proc, log_error_st * const errh) {
     sock_addr addr;
     socklen_t addrlen;
 
-    if (!buffer_string_is_empty(proc->unixsocket)) {
+    if (proc->unixsocket) {
         if (1 != sock_addr_from_str_hints(&addr,&addrlen,proc->unixsocket->ptr,
                                           AF_UNIX, 0, errh)) {
             errno = EINVAL;
             return -1;
         }
-        buffer_copy_string_len(proc->connection_name, CONST_STR_LEN("unix:"));
-        buffer_append_string_buffer(proc->connection_name, proc->unixsocket);
+        buffer_clear(proc->connection_name);
+        buffer_append_str2(proc->connection_name,
+                           CONST_STR_LEN("unix:"),
+                           BUF_PTR_LEN(proc->unixsocket));
     }
     else {
+      #ifdef __COVERITY__
+        force_assert(host->host); /*(not NULL if !host->unixsocket)*/
+      #endif
         /*(note: name resolution here is *blocking* if IP string not supplied)*/
         if (1 != sock_addr_from_str_hints(&addr, &addrlen, host->host->ptr,
                                           0, proc->port, errh)) {
@@ -393,9 +448,11 @@ static int gw_proc_sockaddr_init(gw_host * const host, gw_proc * const proc, log
             sock_addr_inet_ntop_copy_buffer(h, &addr);
             host->family = sock_addr_get_family(&addr);
         }
-        buffer_copy_string_len(proc->connection_name, CONST_STR_LEN("tcp:"));
-        buffer_append_string_buffer(proc->connection_name, host->host);
-        buffer_append_string_len(proc->connection_name, CONST_STR_LEN(":"));
+        buffer_clear(proc->connection_name);
+        buffer_append_str3(proc->connection_name,
+                           CONST_STR_LEN("tcp:"),
+                           BUF_PTR_LEN(host->host),
+                           CONST_STR_LEN(":"));
         buffer_append_int(proc->connection_name, proc->port);
     }
 
@@ -448,15 +505,15 @@ static int env_add(char_array *env, const char *key, size_t key_len, const char 
     return 0;
 }
 
+__attribute_cold__
 static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_error_st * const errh, int debug) {
     int gw_fd;
     int status;
-    struct timeval tv = { 0, 10 * 1000 };
 
     if (debug) {
         log_error(errh, __FILE__, __LINE__,
           "new proc, socket: %hu %s",
-          proc->port, proc->unixsocket->ptr ? proc->unixsocket->ptr : "");
+          proc->port, proc->unixsocket ? proc->unixsocket->ptr : "");
     }
 
     gw_fd = fdevent_socket_cloexec(proc->saddr->sa_family, SOCK_STREAM, 0);
@@ -469,10 +526,9 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
         status = connect(gw_fd, proc->saddr, proc->saddrlen);
     } while (-1 == status && errno == EINTR);
 
-    if (-1 == status && errno != ENOENT
-        && !buffer_string_is_empty(proc->unixsocket)) {
+    if (-1 == status && errno != ENOENT && proc->unixsocket) {
         log_perror(errh, __FILE__, __LINE__,
-          "unlink %s after connect failed", proc->unixsocket->ptr);
+          "connect %s", proc->unixsocket->ptr);
         unlink(proc->unixsocket->ptr);
     }
 
@@ -482,7 +538,6 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
         /* server is not up, spawn it  */
         char_array env;
         uint32_t i;
-        int dfd = -1;
 
         /* reopen socket */
         gw_fd = fdevent_socket_cloexec(proc->saddr->sa_family, SOCK_STREAM, 0);
@@ -524,7 +579,7 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
                     char *ge;
 
                     if (NULL != (ge = getenv(ds->value.ptr))) {
-                        env_add(&env,CONST_BUF_LEN(&ds->value),ge,strlen(ge));
+                        env_add(&env, BUF_PTR_LEN(&ds->value), ge, strlen(ge));
                     }
                 }
             } else {
@@ -542,8 +597,8 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
             if (host->bin_env) {
                 for (i = 0; i < host->bin_env->used; ++i) {
                     data_string *ds = (data_string *)host->bin_env->data[i];
-                    env_add(&env, CONST_BUF_LEN(&ds->key),
-                                  CONST_BUF_LEN(&ds->value));
+                    env_add(&env, BUF_PTR_LEN(&ds->key),
+                                  BUF_PTR_LEN(&ds->value));
                 }
             }
 
@@ -564,7 +619,7 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
             env.ptr[env.used] = NULL;
         }
 
-        dfd = fdevent_open_dirname(host->args.ptr[0], 1); /* permit symlinks */
+        int dfd = fdevent_open_dirname(host->args.ptr[0], 1);/*permit symlinks*/
         if (-1 == dfd) {
             log_perror(errh, __FILE__, __LINE__,
               "open dirname failed: %s", host->args.ptr[0]);
@@ -585,15 +640,16 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
             log_error(errh, __FILE__, __LINE__,
               "gw-backend failed to start: %s", host->bin_path->ptr);
             proc->pid = 0;
-            proc->disabled_until = log_epoch_secs;
+            proc->disabled_until = log_monotonic_secs;
             return -1;
         }
 
         /* register process */
-        proc->last_used = log_epoch_secs;
+        proc->last_used = log_monotonic_secs;
         proc->is_local = 1;
 
         /* wait */
+        struct timeval tv = { 0, 1000 };
         select(0, NULL, NULL, NULL, &tv);
 
         if (0 != gw_proc_waitpid(host, proc, errh)) {
@@ -621,13 +677,14 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
     return 0;
 }
 
+__attribute_cold__
 static void gw_proc_spawn(gw_host * const host, log_error_st * const errh, const int debug) {
     gw_proc *proc;
     for (proc = host->unused_procs; proc; proc = proc->next) {
         /* (proc->pid <= 0 indicates PROC_STATE_DIED, not PROC_STATE_KILLED) */
         if (proc->pid > 0) continue;
         /* (do not attempt to spawn another proc if a proc just exited) */
-        if (proc->disabled_until >= log_epoch_secs) return;
+        if (proc->disabled_until >= log_monotonic_secs) return;
         break;
     }
     if (proc) {
@@ -642,19 +699,9 @@ static void gw_proc_spawn(gw_host * const host, log_error_st * const errh, const
         }
 
         proc->prev = NULL;
+        gw_proc_init_portpath(host, proc);
     } else {
-        proc = gw_proc_init();
-        proc->id = host->max_id++;
-    }
-
-    ++host->num_procs;
-
-    if (buffer_string_is_empty(host->unixsocket)) {
-        proc->port = host->port + proc->id;
-    } else {
-        buffer_copy_buffer(proc->unixsocket, host->unixsocket);
-        buffer_append_string_len(proc->unixsocket, CONST_STR_LEN("-"));
-        buffer_append_int(proc->unixsocket, proc->id);
+        proc = gw_proc_init(host);
     }
 
     if (0 != gw_proc_sockaddr_init(host, proc, errh)) {
@@ -662,7 +709,6 @@ static void gw_proc_spawn(gw_host * const host, log_error_st * const errh, const
          * and translated from name to IP address at startup)*/
         log_error(errh, __FILE__, __LINE__,
           "ERROR: spawning backend failed.");
-        --host->num_procs;
         if (proc->id == host->max_id-1) --host->max_id;
         gw_proc_free(proc);
     } else if (gw_spawn_connection(host, proc, errh, debug)) {
@@ -677,14 +723,16 @@ static void gw_proc_spawn(gw_host * const host, log_error_st * const errh, const
         if (host->first)
             host->first->prev = proc;
         host->first = proc;
+        ++host->num_procs;
     }
 }
 
+__attribute_cold__
 static void gw_proc_kill(gw_host *host, gw_proc *proc) {
     if (proc->next) proc->next->prev = proc->prev;
     if (proc->prev) proc->prev->next = proc->next;
-
-    if (proc->prev == NULL) host->first = proc->next;
+    else host->first = proc->next;
+    --host->num_procs;
 
     proc->prev = NULL;
     proc->next = host->unused_procs;
@@ -697,10 +745,9 @@ static void gw_proc_kill(gw_host *host, gw_proc *proc) {
     kill(proc->pid, host->kill_signal);
 
     gw_proc_set_state(host, proc, PROC_STATE_KILLED);
-
-    --host->num_procs;
 }
 
+__attribute_pure__
 static gw_host * unixsocket_is_dup(gw_plugin_data *p, const buffer *unixsocket) {
     if (NULL == p->cvlist) return NULL;
     /* (init i to 0 if global context; to 1 to skip empty global context) */
@@ -724,9 +771,9 @@ static gw_host * unixsocket_is_dup(gw_plugin_data *p, const buffer *unixsocket) 
             gw_extension *ex = exts->exts+j;
             for (uint32_t n = 0; n < ex->used; ++n) {
                 gw_host *host = ex->hosts[n];
-                if (!buffer_string_is_empty(host->unixsocket)
+                if (host->unixsocket
                     && buffer_is_equal(host->unixsocket, unixsocket)
-                    && !buffer_string_is_empty(host->bin_path))
+                    && host->bin_path)
                     return host;
             }
         }
@@ -739,7 +786,7 @@ static int parse_binpath(char_array *env, const buffer *b) {
     char *start = b->ptr;
     char c;
     /* search for spaces */
-    for (size_t i = 0; i < buffer_string_length(b); ++i) {
+    for (size_t i = 0, used = buffer_clen(b); i < used; ++i) {
         switch(b->ptr[i]) {
         case ' ':
         case '\t':
@@ -748,6 +795,7 @@ static int parse_binpath(char_array *env, const buffer *b) {
             if (env->size == env->used) {
                 env->size += 16;
                 env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
+                force_assert(env->ptr);
             }
 
             c = b->ptr[i];
@@ -789,6 +837,7 @@ enum {
 };
 
 __attribute_noinline__
+__attribute_pure__
 static uint32_t
 gw_hash(const char *str, const uint32_t len, uint32_t hash)
 {
@@ -796,91 +845,69 @@ gw_hash(const char *str, const uint32_t len, uint32_t hash)
 }
 
 static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int balance, int debug) {
-    gw_host *host;
-    buffer *dst_addr_buf;
-    uint32_t last_max = UINT32_MAX;
-    uint32_t base_hash = DJBHASH_INIT;
-    int max_usage = INT_MAX;
     int ndx = -1;
-    uint32_t k;
+    const int ext_used = (int)extension->used;
 
-    if (extension->used <= 1) {
-        if (1 == extension->used && extension->hosts[0]->active_procs > 0) {
+    if (ext_used <= 1) {
+        if (1 == ext_used && extension->hosts[0]->active_procs > 0)
             ndx = 0;
-        }
-    } else switch(balance) {
-    case GW_BALANCE_HASH:
-        /* hash balancing */
-
-        if (debug) {
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "proxy - used hash balancing, hosts: %u", extension->used);
-        }
-
-        base_hash = gw_hash(CONST_BUF_LEN(&r->uri.path), base_hash);
-        base_hash = gw_hash(CONST_BUF_LEN(&r->uri.authority), base_hash);
-
-        for (k = 0, ndx = -1, last_max = UINT32_MAX; k < extension->used; ++k) {
-            uint32_t cur_max;
-            host = extension->hosts[k];
+    }
+    else {
+     /*const char *balancing = "";*/
+     switch(balance) {
+      case GW_BALANCE_HASH:
+       { /* hash balancing */
+        const uint32_t base_hash =
+          gw_hash(BUF_PTR_LEN(&r->uri.authority),
+                  gw_hash(BUF_PTR_LEN(&r->uri.path), DJBHASH_INIT));
+        uint32_t last_max = UINT32_MAX;
+        for (int k = 0; k < ext_used; ++k) {
+            const gw_host * const host = extension->hosts[k];
             if (0 == host->active_procs) continue;
-
-            /* future: hash of host->host could be cached separately, mixed in*/
-            cur_max = gw_hash(CONST_BUF_LEN(host->host), base_hash);
-
+            const uint32_t cur_max = base_hash ^ host->gw_hash;
+          #if 0
             if (debug) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
                   "proxy - election: %s %s %s %u", r->uri.path.ptr,
-                  host->host->ptr, r->uri.authority.ptr, cur_max);
+                  host->host ? host->host->ptr : "",
+                  r->uri.authority.ptr, cur_max);
             }
-
+          #endif
             if (last_max < cur_max || last_max == UINT32_MAX) {
                 last_max = cur_max;
                 ndx = k;
             }
         }
-
+        /*balancing = "hash";*/
         break;
-    case GW_BALANCE_LEAST_CONNECTION:
-        /* fair balancing */
-        if (debug) {
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "proxy - used least connection");
-        }
-
-        for (k = 0, ndx = -1, max_usage = INT_MAX; k < extension->used; ++k) {
-            host = extension->hosts[k];
+       }
+      case GW_BALANCE_LEAST_CONNECTION:
+       { /* fair balancing */
+        for (int k = 0, max_usage = INT_MAX; k < ext_used; ++k) {
+            const gw_host * const host = extension->hosts[k];
             if (0 == host->active_procs) continue;
-
             if (host->load < max_usage) {
                 max_usage = host->load;
                 ndx = k;
             }
         }
-
+        /*balancing = "least connection";*/
         break;
-    case GW_BALANCE_RR:
-        /* round robin */
-        if (debug) {
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "proxy - used round-robin balancing");
-        }
-
-        /* just to be sure */
-        force_assert(extension->used < INT_MAX);
-
-        host = extension->hosts[0];
+       }
+      case GW_BALANCE_RR:
+       { /* round robin */
+        const gw_host *host = extension->hosts[0];
 
         /* Use last_used_ndx from first host in list */
-        k = extension->last_used_ndx;
+        int k = extension->last_used_ndx;
         ndx = k + 1; /* use next host after the last one */
         if (ndx < 0) ndx = 0;
 
         /* Search first active host after last_used_ndx */
-        while (ndx < (int) extension->used
+        while (ndx < ext_used
                && 0 == (host = extension->hosts[ndx])->active_procs) ++ndx;
 
-        if (ndx >= (int) extension->used) {
+        if (ndx >= ext_used) {
             /* didn't find a higher id, wrap to the start */
             for (ndx = 0; ndx <= (int) k; ++ndx) {
                 host = extension->hosts[ndx];
@@ -894,61 +921,63 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
         /* Save new index for next round */
         extension->last_used_ndx = ndx;
 
+        /*balancing = "round-robin";*/
         break;
-    case GW_BALANCE_STICKY:
-        /* source sticky balancing */
-        dst_addr_buf = r->con->dst_addr_buf;
-
-        if (debug) {
-            log_error(r->conf.errh, __FILE__, __LINE__,
-              "proxy - used sticky balancing, hosts: %u", extension->used);
-        }
-
-        base_hash = gw_hash(CONST_BUF_LEN(dst_addr_buf), base_hash);
-
-        for (k = 0, ndx = -1, last_max = UINT32_MAX; k < extension->used; ++k) {
-            unsigned long cur_max;
-            host = extension->hosts[k];
-
+       }
+      case GW_BALANCE_STICKY:
+       { /* source sticky balancing */
+        const buffer * const dst_addr_buf = &r->con->dst_addr_buf;
+        const uint32_t base_hash =
+          gw_hash(BUF_PTR_LEN(dst_addr_buf), DJBHASH_INIT);
+        uint32_t last_max = UINT32_MAX;
+        for (int k = 0; k < ext_used; ++k) {
+            const gw_host * const host = extension->hosts[k];
             if (0 == host->active_procs) continue;
-
-            /* future: hash of host->host could be cached separately, mixed in*/
-            cur_max = gw_hash(CONST_BUF_LEN(host->host), base_hash)
-                    + host->port;
-
+            const uint32_t cur_max = base_hash ^ host->gw_hash ^ host->port;
+          #if 0
             if (debug) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
-                  "proxy - election: %s %s %hu %ld", dst_addr_buf->ptr,
-                  host->host->ptr, host->port, cur_max);
+                  "proxy - election: %s %s %hu %u", dst_addr_buf->ptr,
+                  host->host ? host->host->ptr : "",
+                  host->port, cur_max);
             }
-
+          #endif
             if (last_max < cur_max || last_max == UINT32_MAX) {
                 last_max = cur_max;
                 ndx = k;
             }
         }
-
+        /*balancing = "sticky";*/
         break;
-    default:
+       }
+      default:
         break;
+     }
+     #if 0
+     if (debug) {
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "gw - balancing: %s, hosts: %d", balancing, ext_used);
+     }
+     #endif
     }
 
-    if (-1 != ndx) {
+    if (__builtin_expect( (-1 != ndx), 1)) {
         /* found a server */
-        host = extension->hosts[ndx];
 
         if (debug) {
+            gw_host * const host = extension->hosts[ndx];
             log_error(r->conf.errh, __FILE__, __LINE__,
-              "gw - found a host %s %hu", host->host->ptr, host->port);
+              "gw - found a host %s %hu",
+              host->host ? host->host->ptr : "", host->port);
+            return host;
         }
 
-        return host;
+        return extension->hosts[ndx];
     } else if (0 == r->con->srv->srvconf.max_worker) {
         /* special-case adaptive spawning and 0 == host->min_procs */
-        for (k = 0; k < extension->used; ++k) {
-            host = extension->hosts[k];
-            if (0 == host->min_procs && 0 == host->num_procs
-                && !buffer_string_is_empty(host->bin_path)) {
+        for (int k = 0; k < ext_used; ++k) {
+            gw_host * const host = extension->hosts[k];
+            if (0 == host->min_procs && 0 == host->num_procs && host->bin_path){
                 gw_proc_spawn(host, r->con->srv->errh, debug);
                 if (host->num_procs) return host;
             }
@@ -974,7 +1003,9 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
 
 static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc *proc, pid_t pid, int gw_fd, int debug) {
     if (-1 == connect(gw_fd, proc->saddr, proc->saddrlen)) {
-        if (errno == EINPROGRESS || errno == EALREADY || errno == EINTR) {
+        int errnum = errno;
+        if (errnum == EINPROGRESS || errnum == EALREADY || errnum == EINTR
+            || (errnum == EAGAIN && host->unixsocket)) {
             if (debug > 2) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
                   "connect delayed; will continue later: %s",
@@ -983,7 +1014,7 @@ static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc 
 
             return 1;
         } else {
-            gw_proc_connect_error(r, host, proc, pid, errno, debug);
+            gw_proc_connect_error(r, host, proc, pid, errnum, debug);
             return -1;
         }
     }
@@ -996,14 +1027,9 @@ static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc 
     return 0;
 }
 
-static void gw_restart_dead_procs(gw_host * const host, log_error_st * const errh, const int debug, const int trigger) {
-    for (gw_proc *proc = host->first; proc; proc = proc->next) {
-        if (debug > 2) {
-            log_error(errh, __FILE__, __LINE__,
-              "proc: %s %d %d %d %d", proc->connection_name->ptr,
-              proc->state, proc->is_local, proc->load, proc->pid);
-        }
-
+__attribute_cold__
+__attribute_noinline__
+static void gw_restart_dead_proc(gw_host * const host, log_error_st * const errh, const int debug, const int trigger, gw_proc * const proc) {
         switch (proc->state) {
         case PROC_STATE_RUNNING:
             break;
@@ -1022,7 +1048,7 @@ static void gw_restart_dead_procs(gw_host * const host, log_error_st * const err
             /*(state should not happen in workers if server.max-worker > 0)*/
             /*(if PROC_STATE_DIED_WAIT_FOR_PID is used in future, might want
              * to save proc->disabled_until before gw_proc_waitpid() since
-             * gw_proc_waitpid will set proc->disabled_until to log_epoch_secs,
+             * gw_proc_waitpid will set proc->disabled_until=log_monotonic_secs,
              * and so process will not be restarted below until one sec later)*/
             if (0 == gw_proc_waitpid(host, proc, errh)) {
                 gw_proc_check_enable(host, proc, errh);
@@ -1035,13 +1061,13 @@ static void gw_restart_dead_procs(gw_host * const host, log_error_st * const err
             /* local procs get restarted by us,
              * remote ones hopefully by the admin */
 
-            if (!buffer_string_is_empty(host->bin_path)) {
+            if (host->bin_path) {
                 /* we still have connections bound to this proc,
                  * let them terminate first */
                 if (proc->load != 0) break;
 
                 /* avoid spinning if child exits too quickly */
-                if (proc->disabled_until >= log_epoch_secs) break;
+                if (proc->disabled_until >= log_monotonic_secs) break;
 
                 /* restart the child */
 
@@ -1062,6 +1088,17 @@ static void gw_restart_dead_procs(gw_host * const host, log_error_st * const err
             }
             break;
         }
+}
+
+static void gw_restart_dead_procs(gw_host * const host, log_error_st * const errh, const int debug, const int trigger) {
+    for (gw_proc *proc = host->first; proc; proc = proc->next) {
+        if (debug > 2) {
+            log_error(errh, __FILE__, __LINE__,
+              "proc: %s %d %d %d %d", proc->connection_name->ptr,
+              proc->state, proc->is_local, proc->load, proc->pid);
+        }
+        if (proc->state != PROC_STATE_RUNNING)
+            gw_restart_dead_proc(host, errh, debug, trigger, proc);
     }
 }
 
@@ -1069,14 +1106,15 @@ static void gw_restart_dead_procs(gw_host * const host, log_error_st * const err
 
 
 #include "base.h"
-#include "connections.h"
 #include "response.h"
 
 
 /* ok, we need a prototype */
 static handler_t gw_handle_fdevent(void *ctx, int revents);
+static handler_t gw_process_fdevent(gw_handler_ctx *hctx, request_st *r, int revents);
 
 
+__attribute_returns_nonnull__
 static gw_handler_ctx * handler_ctx_init(size_t sz) {
     gw_handler_ctx *hctx = calloc(1, 0 == sz ? sizeof(*hctx) : sz);
     force_assert(hctx);
@@ -1160,8 +1198,7 @@ void gw_plugin_config_free(gw_plugin_config *s) {
                         kill(proc->pid, host->kill_signal);
                     }
 
-                    if (proc->is_local &&
-                        !buffer_string_is_empty(proc->unixsocket)) {
+                    if (proc->is_local && proc->unixsocket) {
                         unlink(proc->unixsocket->ptr);
                     }
                 }
@@ -1170,8 +1207,7 @@ void gw_plugin_config_free(gw_plugin_config *s) {
                     if (proc->pid > 0) {
                         kill(proc->pid, host->kill_signal);
                     }
-                    if (proc->is_local &&
-                        !buffer_string_is_empty(proc->unixsocket)) {
+                    if (proc->is_local && proc->unixsocket) {
                         unlink(proc->unixsocket->ptr);
                     }
                 }
@@ -1288,12 +1324,24 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
      ,{ CONST_STR_LEN("tcp-fin-propagate"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("connect-timeout"),
+        T_CONFIG_INT,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("write-timeout"),
+        T_CONFIG_INT,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("read-timeout"),
+        T_CONFIG_INT,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
     };
 
     gw_host *host = NULL;
+
+    int graceful_restart_bg =
+      config_feature_bool(srv, "server.graceful-restart-bg", 0);
 
     p->srv_pid = srv->pid;
 
@@ -1351,6 +1399,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             host->max_procs    = 4;
             host->max_load_per_proc = 1;
             host->idle_timeout = 60;
+            host->connect_timeout = 8;
             host->disable_time = 1;
             host->break_scriptfilename_for_php = 0;
             host->kill_signal = SIGTERM;
@@ -1363,19 +1412,22 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             for (; -1 != cpv->k_id; ++cpv) {
                 switch (cpv->k_id) {
                   case 0: /* host */
-                    host->host = cpv->v.b;
+                    if (!buffer_is_blank(cpv->v.b))
+                        host->host = cpv->v.b;
                     break;
                   case 1: /* port */
                     host->port = cpv->v.shrt;
                     break;
                   case 2: /* socket */
-                    host->unixsocket = cpv->v.b;
+                    if (!buffer_is_blank(cpv->v.b))
+                        host->unixsocket = cpv->v.b;
                     break;
                   case 3: /* listen-backlog */
                     host->listen_backlog = cpv->v.u;
                     break;
                   case 4: /* bin-path */
-                    host->bin_path = cpv->v.b;
+                    if (!buffer_is_blank(cpv->v.b))
+                        host->bin_path = cpv->v.b;
                     break;
                   case 5: /* kill-signal */
                     host->kill_signal = cpv->v.shrt;
@@ -1384,7 +1436,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     host->check_local = (0 != cpv->v.u);
                     break;
                   case 7: /* mode */
-                    if (!buffer_string_is_empty(cpv->v.b)) {
+                    if (!buffer_is_blank(cpv->v.b)) {
                         const buffer *b = cpv->v.b;
                         if (buffer_eq_slen(b, CONST_STR_LEN("responder")))
                             host_mode = GW_RESPONDER;
@@ -1397,7 +1449,8 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     }
                     break;
                   case 8: /* docroot */
-                    host->docroot = cpv->v.b;
+                    if (!buffer_is_blank(cpv->v.b))
+                        host->docroot = cpv->v.b;
                     break;
                   case 9: /* min-procs */
                     host->min_procs = cpv->v.shrt;
@@ -1425,6 +1478,11 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     break;
                   case 17:/* strip-request-uri */
                     host->strip_request_uri = cpv->v.b;
+                    if (buffer_has_slash_suffix(host->strip_request_uri)) {
+                        buffer *b; /*(remove trailing slash; see http_cgi.c)*/
+                        *(const buffer **)&b = host->strip_request_uri;
+                        buffer_truncate(b, buffer_clen(b)-1);
+                    }
                     break;
                   case 18:/* fix-root-scriptname */
                     host->fix_root_path_name = (0 != cpv->v.u);
@@ -1453,13 +1511,22 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                                   "'/'; invalid: \"%s\"", ds->value.ptr);
                                 goto error;
                             }
-                            buffer_path_simplify(&ds->value, &ds->value);
+                            buffer_path_simplify(&ds->value);
                             buffer_append_slash(&ds->value);
                         }
                     }
                     break;
                   case 22:/* tcp-fin-propagate */
                     host->tcp_fin_propagate = (0 != cpv->v.u);
+                    break;
+                  case 23:/* connect-timeout */
+                    host->connect_timeout = cpv->v.u;
+                    break;
+                  case 24:/* write-timeout */
+                    host->write_timeout = cpv->v.u;
+                    break;
+                  case 25:/* read-timeout */
+                    host->read_timeout = cpv->v.u;
                     break;
                   default:
                     break;
@@ -1474,8 +1541,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                 }
             }
 
-            if ((!buffer_string_is_empty(host->host) || host->port)
-                && !buffer_string_is_empty(host->unixsocket)) {
+            if ((host->host || host->port) && host->unixsocket) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "either host/port or socket have to be set in: "
                   "%s = (%s => (%s ( ...", cpkkey, da_ext->key.ptr,
@@ -1484,16 +1550,15 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                 goto error;
             }
 
-            if (!buffer_string_is_empty(host->host) && *host->host->ptr == '/'
-                && buffer_string_is_empty(host->unixsocket)) {
+            if (host->host && *host->host->ptr == '/' && !host->unixsocket) {
                 host->unixsocket = host->host;
             }
 
-            if (!buffer_string_is_empty(host->unixsocket)) {
+            if (host->unixsocket) {
                 /* unix domain socket */
                 struct sockaddr_un un;
 
-                if (buffer_string_length(host->unixsocket) + 1 > sizeof(un.sun_path) - 2) {
+                if (buffer_clen(host->unixsocket) + 1 > sizeof(un.sun_path) - 2) {
                     log_error(srv->errh, __FILE__, __LINE__,
                       "unixsocket is too long in: %s = (%s => (%s ( ...",
                       cpkkey, da_ext->key.ptr, da_host->key.ptr);
@@ -1501,7 +1566,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     goto error;
                 }
 
-                if (!buffer_string_is_empty(host->bin_path)) {
+                if (host->bin_path) {
                     gw_host *duplicate = unixsocket_is_dup(p, host->unixsocket);
                     if (NULL != duplicate) {
                         if (!buffer_is_equal(host->bin_path, duplicate->bin_path)) {
@@ -1520,8 +1585,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             } else {
                 /* tcp/ip */
 
-                if (buffer_string_is_empty(host->host) &&
-                    buffer_string_is_empty(host->bin_path)) {
+                if (!host->host && !host->bin_path) {
                     log_error(srv->errh, __FILE__, __LINE__,
                       "host or bin-path have to be set in: "
                       "%s = (%s => (%s ( ...", cpkkey, da_ext->key.ptr,
@@ -1532,7 +1596,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     host->port = 80;
                 }
 
-                if (buffer_string_is_empty(host->host)) {
+                if (!host->host) {
                     static const buffer lhost ={CONST_STR_LEN("127.0.0.1")+1,0};
                     host->host = &lhost;
                 }
@@ -1541,10 +1605,12 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                   ? AF_INET6
                   : AF_INET;
             }
+            if (!host->refcount)
+                gw_status_init_host(host);
 
             if (host->refcount) {
                 /* already init'd; skip spawning */
-            } else if (!buffer_string_is_empty(host->bin_path)) {
+            } else if (host->bin_path) {
                 /* a local socket + self spawning */
                 struct stat st;
                 parse_binpath(&host->args, host->bin_path);
@@ -1575,13 +1641,11 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     force_assert(host->args.ptr[1]);
                     memcpy(host->args.ptr[1], "-c", sizeof("-c"));
                     host->args.ptr[2] =
-                      malloc(sizeof("exec ")-1
-                             + buffer_string_length(host->bin_path) + 1);
+                      malloc(sizeof("exec ")-1+buffer_clen(host->bin_path)+1);
                     force_assert(host->args.ptr[2]);
                     memcpy(host->args.ptr[2], "exec ", sizeof("exec ")-1);
                     memcpy(host->args.ptr[2]+sizeof("exec ")-1,
-                           host->bin_path->ptr,
-                           buffer_string_length(host->bin_path)+1);
+                           host->bin_path->ptr, buffer_clen(host->bin_path)+1);
                     host->args.ptr[3] = NULL;
                 }
 
@@ -1607,26 +1671,13 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                       "\n\tmax-procs: %d",
                       host->bin_path->ptr,
                       host->port,
-                      host->unixsocket && host->unixsocket->ptr
-                        ? host->unixsocket->ptr
-                        : "",
+                      host->unixsocket ? host->unixsocket->ptr : "",
                       host->min_procs,
                       host->max_procs);
                 }
 
                 for (uint32_t pno = 0; pno < host->min_procs; ++pno) {
-                    gw_proc *proc = gw_proc_init();
-                    proc->id = host->num_procs++;
-                    host->max_id++;
-
-                    if (buffer_string_is_empty(host->unixsocket)) {
-                        proc->port = host->port + pno;
-                    } else {
-                        buffer_copy_buffer(proc->unixsocket, host->unixsocket);
-                        buffer_append_string_len(proc->unixsocket,
-                                                 CONST_STR_LEN("-"));
-                        buffer_append_int(proc->unixsocket, pno);
-                    }
+                    gw_proc * const proc = gw_proc_init(host);
 
                     if (s->debug) {
                         log_error(srv->errh, __FILE__, __LINE__,
@@ -1635,9 +1686,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                           "\n\tsocket %s"
                           "\n\tcurrent: %u / %u",
                           host->port,
-                          host->unixsocket && host->unixsocket->ptr
-                            ? host->unixsocket->ptr
-                            : "",
+                          host->unixsocket ? host->unixsocket->ptr : "",
                           pno, host->max_procs);
                     }
 
@@ -1654,36 +1703,40 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                         goto error;
                     }
 
-                    gw_status_init(host, proc);
-
                     proc->next = host->first;
                     if (host->first) host->first->prev = proc;
-
                     host->first = proc;
+                    ++host->num_procs;
+                }
+
+                if (graceful_restart_bg) {
+                    /*(set flag to false to avoid repeating)*/
+                    graceful_restart_bg = 0;
+                    log_error(srv->errh, __FILE__, __LINE__,
+                      "server.graceful-restart-bg disabled "
+                      "(incompatible with %s.server \"bin-path\")",
+                      p->self->name);
+                    data_unset * const du =
+                      array_get_data_unset(srv->srvconf.feature_flags,
+                        CONST_STR_LEN("server.graceful-restart-bg"));
+                    if (du->type == TYPE_STRING)
+                        buffer_copy_string_len(&((data_string *)du)->value,
+                                               CONST_STR_LEN("false"));
+                    else /* (du->type == TYPE_INTEGER) */
+                        ((data_integer *)du)->value = 0;
                 }
             } else {
-                gw_proc *proc;
-
-                proc = gw_proc_init();
-                proc->id = host->num_procs++;
-                host->max_id++;
-                gw_proc_set_state(host, proc, PROC_STATE_RUNNING);
-
-                if (buffer_string_is_empty(host->unixsocket)) {
-                    proc->port = host->port;
-                } else {
-                    buffer_copy_buffer(proc->unixsocket, host->unixsocket);
-                }
-
-                gw_status_init(host, proc);
-
+                gw_proc * const proc = gw_proc_init(host);
                 host->first = proc;
-
+                ++host->num_procs;
                 host->min_procs = 1;
                 host->max_procs = 1;
-
                 if (0 != gw_proc_sockaddr_init(host, proc, srv->errh)) goto error;
+                gw_proc_set_state(host, proc, PROC_STATE_RUNNING);
             }
+
+            const buffer * const h = host->host ? host->host : host->unixsocket;
+            host->gw_hash = gw_hash(BUF_PTR_LEN(h), DJBHASH_INIT);
 
             /* s->exts is list of exts -> hosts
              * s->exts now used as combined list
@@ -1720,7 +1773,7 @@ error:
 }
 
 int gw_get_defaults_balance(server *srv, const buffer *b) {
-    if (buffer_string_is_empty(b))
+    if (!b || buffer_is_blank(b))
         return GW_BALANCE_LEAST_CONNECTION;
     if (buffer_eq_slen(b, CONST_STR_LEN("fair")))
         return GW_BALANCE_LEAST_CONNECTION;
@@ -1742,7 +1795,7 @@ int gw_get_defaults_balance(server *srv, const buffer *b) {
 
 static void gw_set_state(gw_handler_ctx *hctx, gw_connection_state_t state) {
     hctx->state = state;
-    /*hctx->state_timestamp = log_epoch_secs;*/
+    /*hctx->state_timestamp = log_monotonic_secs;*/
 }
 
 
@@ -1757,6 +1810,34 @@ void gw_set_transparent(gw_handler_ctx *hctx) {
 }
 
 
+static void gw_host_hctx_enq(gw_handler_ctx * const hctx) {
+    gw_host * const host = hctx->host;
+    /*if (__builtin_expect( (host == NULL), 0)) return;*/
+
+    hctx->prev = NULL;
+    hctx->next = host->hctxs;
+    if (hctx->next)
+        hctx->next->prev = hctx;
+    host->hctxs = hctx;
+}
+
+
+static void gw_host_hctx_deq(gw_handler_ctx * const hctx) {
+    /*if (__builtin_expect( (hctx->host == NULL), 0)) return;*/
+
+    if (hctx->prev)
+        hctx->prev->next = hctx->next;
+    else
+        hctx->host->hctxs= hctx->next;
+
+    if (hctx->next)
+        hctx->next->prev = hctx->prev;
+
+    hctx->next = NULL;
+    hctx->prev = NULL;
+}
+
+
 static void gw_backend_close(gw_handler_ctx * const hctx, request_st * const r) {
     if (hctx->fd >= 0) {
         fdevent_fdnode_event_del(hctx->ev, hctx->fdn);
@@ -1764,6 +1845,7 @@ static void gw_backend_close(gw_handler_ctx * const hctx, request_st * const r) 
         fdevent_sched_close(hctx->ev, hctx->fd, 1);
         hctx->fdn = NULL;
         hctx->fd = -1;
+        gw_host_hctx_deq(hctx);
     }
 
     if (hctx->host) {
@@ -1814,6 +1896,7 @@ handler_t gw_handle_request_reset(request_st * const r, void *p_d) {
 }
 
 
+__attribute_cold__
 static void gw_conditional_tcp_fin(gw_handler_ctx * const hctx, request_st * const r) {
     /*assert(r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_TCP_FIN);*/
     if (!chunkqueue_is_empty(&hctx->wb))return;
@@ -1858,15 +1941,9 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
 
         hctx->fd = fdevent_socket_nb_cloexec(hctx->host->family,SOCK_STREAM,0);
         if (-1 == hctx->fd) {
-            log_error_st * const errh = r->conf.errh;
-            if (errno == EMFILE || errno == EINTR) {
-                log_error(errh, __FILE__, __LINE__,
-                  "wait for fd at connection: %d", r->con->fd);
-                return HANDLER_WAIT_FOR_FD;
-            }
-
-            log_perror(errh, __FILE__, __LINE__,
-              "socket failed %d %d",r->con->srv->cur_fds,r->con->srv->max_fds);
+            log_perror(r->conf.errh, __FILE__, __LINE__,
+              "socket() failed (cur_fds:%d) (max_fds:%d)",
+              r->con->srv->cur_fds, r->con->srv->max_fds);
             return HANDLER_ERROR;
         }
 
@@ -1878,6 +1955,8 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             hctx->pid = hctx->proc->pid;
         }
 
+        hctx->write_ts = log_monotonic_secs;
+        gw_host_hctx_enq(hctx);
         switch (gw_establish_connection(r, hctx->host, hctx->proc, hctx->pid,
                                         hctx->fd, hctx->conf.debug)) {
         case 1: /* connection is in progress */
@@ -1900,6 +1979,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
                 return HANDLER_ERROR;
             }
             /* go on with preparing the request */
+            hctx->write_ts = log_monotonic_secs;
         }
 
         gw_proc_connect_success(hctx->host, hctx->proc, hctx->conf.debug, r);
@@ -1927,6 +2007,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             }
         }
 
+        hctx->read_ts = log_monotonic_secs;
         fdevent_fdnode_event_add(hctx->ev, hctx->fdn, FDEVENT_IN|FDEVENT_RDHUP);
         gw_set_state(hctx, GW_STATE_WRITE);
         __attribute_fallthrough__
@@ -1964,7 +2045,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
                 }
             }
             else if (hctx->wb.bytes_out > bytes_out) {
-                hctx->proc->last_used = log_epoch_secs;
+                hctx->write_ts = hctx->proc->last_used = log_monotonic_secs;
                 if (hctx->stdin_append
                     && chunkqueue_length(&hctx->wb) < 65536 - 16384
                     && !chunkqueue_is_empty(&r->reqbody_queue)) {
@@ -1991,7 +2072,9 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             }
             if (0 == wblen) {
                 fdevent_fdnode_event_clr(hctx->ev, hctx->fdn, FDEVENT_OUT);
-            } else {
+            }
+            else if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_OUT)) {
+                hctx->write_ts = log_monotonic_secs;
                 fdevent_fdnode_event_add(hctx->ev, hctx->fdn, FDEVENT_OUT);
             }
         }
@@ -2011,27 +2094,60 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
     }
 }
 
+
+__attribute_cold__
+__attribute_noinline__
+static handler_t gw_backend_error(gw_handler_ctx * const hctx, request_st * const r)
+{
+    if (hctx->backend_error) hctx->backend_error(hctx);
+    http_response_backend_error(r);
+    gw_connection_close(hctx, r);
+    return HANDLER_FINISHED;
+}
+
+
+static handler_t gw_recv_response(gw_handler_ctx *hctx, request_st *r);
+
+
 __attribute_cold__
 static handler_t gw_write_error(gw_handler_ctx * const hctx, request_st * const r) {
-    int status = r->http_status;
 
     if (hctx->state == GW_STATE_INIT ||
         hctx->state == GW_STATE_CONNECT_DELAYED) {
 
         /* (optimization to detect backend process exit while processing a
          *  large number of ready events; (this block could be removed)) */
-        server * const srv = r->con->srv;
-        if (0 == srv->srvconf.max_worker)
-            gw_restart_dead_procs(hctx->host, srv->errh, hctx->conf.debug, 0);
+        if (hctx->proc && hctx->proc->is_local) {
+            server * const srv = r->con->srv;
+            if (0 == srv->srvconf.max_worker)
+                gw_restart_dead_procs(hctx->host,srv->errh,hctx->conf.debug,0);
+        }
 
         /* cleanup this request and let request handler start request again */
         if (hctx->reconnects++ < 5) return gw_reconnect(hctx, r);
     }
+    else {
+        /* backend might not read request body (even though backend should)
+         * before sending response, so it is possible to get EPIPE trying to
+         * write request body to the backend when backend has already sent a
+         * response.  If called from gw_handle_fdevent(), response should have
+         * been read prior to getting here.  However, if reqbody arrived on
+         * client side, and called gw_handle_subrequest() and we tried to write
+         * in gw_send_request() in state GW_STATE_WRITE, then it is possible to
+         * get EPIPE and error out here when response is waiting to be read from
+         * kernel socket buffers.  Since we did not actually receive FDEVENT_HUP
+         * or FDEVENT_RDHUP, calling gw_handle_fdevent() and fabricating
+         * FDEVENT_RDHUP would cause an infinite loop trying to read().
+         * Instead, try once to read (small) response in this theoretical race*/
+        handler_t rc = gw_recv_response(hctx, r);   /*(might invalidate hctx)*/
+        if (rc != HANDLER_GO_ON) return rc;         /*(unless HANDLER_GO_ON)*/
+    }
 
-    if (hctx->backend_error) hctx->backend_error(hctx);
-    gw_connection_close(hctx, r);
-    r->http_status = (status == 400) ? 400 : 503;
-    return HANDLER_FINISHED;
+    /*(r->status == 400 if hctx->create_env() failed)*/
+    if (!r->resp_body_started && r->http_status < 500 && r->http_status != 400)
+        r->http_status = 503; /* Service Unavailable */
+
+    return gw_backend_error(hctx, r); /* HANDLER_FINISHED */
 }
 
 static handler_t gw_send_request(gw_handler_ctx * const hctx, request_st * const r) {
@@ -2040,13 +2156,18 @@ static handler_t gw_send_request(gw_handler_ctx * const hctx, request_st * const
 }
 
 
-static handler_t gw_recv_response(gw_handler_ctx *hctx, request_st *r);
-
-
 handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
     gw_plugin_data *p = p_d;
     gw_handler_ctx *hctx = r->plugin_ctx[p->id];
     if (NULL == hctx) return HANDLER_GO_ON;
+
+    const int revents = hctx->revents;
+    if (revents) {
+        hctx->revents = 0;
+        handler_t rc = gw_process_fdevent(hctx, r, revents);
+        if (rc != HANDLER_GO_ON && rc != HANDLER_WAIT_FOR_EVENT)
+            return rc;             /*(might invalidate hctx)*/
+    }
 
     if ((r->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_BUFMIN)
         && r->resp_body_started) {
@@ -2063,6 +2184,7 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
             handler_t rc;
             rc = gw_recv_response(hctx, r);          /*(might invalidate hctx)*/
             if (rc != HANDLER_GO_ON) return rc;      /*(unless HANDLER_GO_ON)*/
+            hctx->read_ts = log_monotonic_secs;
             fdevent_fdnode_event_add(hctx->ev, hctx->fdn, FDEVENT_IN);
         }
     }
@@ -2141,13 +2263,63 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
 }
 
 
+static handler_t gw_authorizer_ok(gw_handler_ctx * const hctx, request_st * const r) {
+    /*
+     * If we are here in AUTHORIZER mode then a request for authorizer
+     * was processed already, and status 200 has been returned. We need
+     * now to handle authorized request.
+     */
+    char *physpath = NULL;
+
+    gw_host * const host = hctx->host;
+    if (host->docroot) {
+        buffer_copy_buffer(&r->physical.doc_root, host->docroot);
+        buffer_copy_buffer(&r->physical.basedir, host->docroot);
+        buffer_copy_path_len2(&r->physical.path,
+                              BUF_PTR_LEN(host->docroot),
+                              BUF_PTR_LEN(&r->uri.path));
+        physpath = r->physical.path.ptr;
+    }
+
+    /*(restore streaming flags removed during authorizer processing)*/
+    r->conf.stream_response_body |= (hctx->opts.authorizer >> 1);
+
+    gw_backend_close(hctx, r);
+    handler_ctx_clear(hctx);
+
+    /* don't do more than 6 loops here; normally shouldn't happen */
+    if (++r->loops_per_request > 5) {
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "too many loops while processing request: %s",
+          r->target_orig.ptr);
+        r->http_status = 500; /* Internal Server Error */
+        r->handler_module = NULL;
+        return HANDLER_FINISHED;
+    }
+
+    /* restart the request so other handlers can process it */
+
+    if (physpath) r->physical.path.ptr = NULL;
+    http_response_reset(r); /*(includes r->http_status=0)*/
+    /* preserve r->physical.path.ptr with modified docroot */
+    if (physpath) r->physical.path.ptr = physpath;
+
+    /*(FYI: if multiple FastCGI authorizers were to be supported,
+     * next one could be started here instead of restarting request)*/
+
+    r->handler_module = NULL;
+    return HANDLER_COMEBACK;
+}
+
+
 __attribute_cold__
 static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st * const r, gw_proc * const proc);
 
 
 static handler_t gw_recv_response(gw_handler_ctx * const hctx, request_st * const r) {
     /*(XXX: make this a configurable flag for other protocols)*/
-    buffer *b = hctx->opts.backend == BACKEND_FASTCGI
+    buffer *b = (hctx->opts.backend == BACKEND_FASTCGI
+                 || hctx->opts.backend == BACKEND_AJP13)
       ? chunk_buffer_acquire()
       : hctx->response;
     const off_t bytes_in = r->write_queue.bytes_in;
@@ -2166,60 +2338,16 @@ static handler_t gw_recv_response(gw_handler_ctx * const hctx, request_st * cons
          * may not be triggered for partial collection of HTTP response headers
          * or partial packets for backend protocol (e.g. FastCGI) */
         if (r->write_queue.bytes_in > bytes_in)
-            proc->last_used = log_epoch_secs;
+            hctx->read_ts = proc->last_used = log_monotonic_secs;
         return HANDLER_GO_ON;
     case HANDLER_FINISHED:
-        proc->last_used = log_epoch_secs;
+        /*hctx->read_ts =*/ proc->last_used = log_monotonic_secs;
+
         if (hctx->gw_mode == GW_AUTHORIZER
-            && (200 == r->http_status || 0 == r->http_status)) {
-            /*
-             * If we are here in AUTHORIZER mode then a request for authorizer
-             * was processed already, and status 200 has been returned. We need
-             * now to handle authorized request.
-             */
-            char *physpath = NULL;
+            && (200 == r->http_status || 0 == r->http_status))
+            return gw_authorizer_ok(hctx, r);
 
-            gw_host * const host = hctx->host;
-            if (!buffer_string_is_empty(host->docroot)) {
-                buffer_copy_buffer(&r->physical.doc_root, host->docroot);
-                buffer_copy_buffer(&r->physical.basedir, host->docroot);
-
-                buffer_copy_buffer(&r->physical.path, host->docroot);
-                buffer_append_path_len(&r->physical.path,
-                                       CONST_BUF_LEN(&r->uri.path));
-                physpath = r->physical.path.ptr;
-            }
-
-            gw_backend_close(hctx, r);
-            handler_ctx_clear(hctx);
-
-            /* don't do more than 6 loops here; normally shouldn't happen */
-            if (++r->loops_per_request > 5) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
-                  "too many loops while processing request: %s",
-                  r->target_orig.ptr);
-                r->http_status = 500; /* Internal Server Error */
-                r->handler_module = NULL;
-                return HANDLER_FINISHED;
-            }
-
-            /* restart the request so other handlers can process it */
-
-            if (physpath) r->physical.path.ptr = NULL;
-            http_response_reset(r); /*(includes r->http_status=0)*/
-            /* preserve r->physical.path.ptr with modified docroot */
-            if (physpath) r->physical.path.ptr = physpath;
-
-            /*(FYI: if multiple FastCGI authorizers were to be supported,
-             * next one could be started here instead of restarting request)*/
-
-            r->handler_module = NULL;
-            return HANDLER_COMEBACK;
-        } else {
-            /* we are done */
-            gw_connection_close(hctx, r);
-        }
-
+        gw_connection_close(hctx, r);
         return HANDLER_FINISHED;
     case HANDLER_COMEBACK: /*(not expected; treat as error)*/
     case HANDLER_ERROR:
@@ -2239,7 +2367,7 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
             /* intentionally check proc->disabed_until before gw_proc_waitpid */
             gw_host * const host = hctx->host;
             log_error_st * const errh = r->con->srv->errh;
-            if (proc->disabled_until < log_epoch_secs
+            if (proc->disabled_until < log_monotonic_secs
                 && 0 != gw_proc_waitpid(host, proc, errh)) {
                 if (hctx->conf.debug) {
                     log_error(errh, __FILE__, __LINE__,
@@ -2280,19 +2408,18 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
               r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
         }
 
-        if (hctx->backend_error) hctx->backend_error(hctx);
-        http_response_backend_error(r);
-        gw_connection_close(hctx, r);
-        return HANDLER_FINISHED;
+        return gw_backend_error(hctx, r); /* HANDLER_FINISHED */
 }
 
 
 static handler_t gw_handle_fdevent(void *ctx, int revents) {
     gw_handler_ctx *hctx = ctx;
-    request_st * const r = hctx->r;
+    hctx->revents |= revents;
+    joblist_append(hctx->con);
+    return HANDLER_FINISHED;
+}
 
-    joblist_append(r->con);
-
+static handler_t gw_process_fdevent(gw_handler_ctx * const hctx, request_st * const r, int revents) {
     if (revents & FDEVENT_IN) {
         handler_t rc = gw_recv_response(hctx, r);   /*(might invalidate hctx)*/
         if (rc != HANDLER_GO_ON) return rc;         /*(unless HANDLER_GO_ON)*/
@@ -2305,16 +2432,7 @@ static handler_t gw_handle_fdevent(void *ctx, int revents) {
     /* perhaps this issue is already handled */
     if (revents & (FDEVENT_HUP|FDEVENT_RDHUP)) {
         if (hctx->state == GW_STATE_CONNECT_DELAYED) {
-            /* getoptsock will catch this one (right ?)
-             *
-             * if we are in connect we might get an EINPROGRESS
-             * in the first call and an FDEVENT_HUP in the
-             * second round
-             *
-             * FIXME: as it is a bit ugly.
-             *
-             */
-            gw_send_request(hctx, r);
+            return gw_send_request(hctx, r); /*(might invalidate hctx)*/
         } else if (r->resp_body_started) {
             /* drain any remaining data from kernel pipe buffers
              * even if (r->conf.stream_response_body
@@ -2339,17 +2457,15 @@ static handler_t gw_handle_fdevent(void *ctx, int revents) {
               proc->connection_name->ptr, hctx->state);
 
             gw_connection_close(hctx, r);
+            return HANDLER_FINISHED;
         }
     } else if (revents & FDEVENT_ERR) {
         log_error(r->conf.errh, __FILE__, __LINE__,
           "gw: got a FDEVENT_ERR. Don't know why.");
-
-        if (hctx->backend_error) hctx->backend_error(hctx);
-        http_response_backend_error(r);
-        gw_connection_close(hctx, r);
+        return gw_backend_error(hctx, r); /* HANDLER_FINISHED */
     }
 
-    return HANDLER_FINISHED;
+    return HANDLER_GO_ON;
 }
 
 handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int uri_path_handler, size_t hctx_sz) {
@@ -2360,7 +2476,7 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
   #endif
 
     buffer *fn = uri_path_handler ? &r->uri.path : &r->physical.path;
-    size_t s_len = buffer_string_length(fn);
+    const size_t s_len = buffer_clen(fn);
     gw_extension *extension = NULL;
     gw_host *host = NULL;
     gw_handler_ctx *hctx;
@@ -2422,7 +2538,7 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
         }
 
         if (extension == NULL) {
-            size_t uri_path_len = buffer_string_length(&r->uri.path);
+            size_t uri_path_len = buffer_clen(&r->uri.path);
 
             /* check if extension matches */
             for (uint32_t k = 0; k < exts->used; ++k) {
@@ -2430,7 +2546,7 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
               #ifdef __clang_analyzer__
                 force_assert(ext); /*(unnecessary; quiet clang analyzer)*/
               #endif
-                size_t ct_len = buffer_string_length(&ext->key);
+                size_t ct_len = buffer_clen(&ext->key);
 
                 /* check _url_ in the form "/gw_pattern" */
                 if (ext->key.ptr[0] == '/') {
@@ -2472,11 +2588,12 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
 
     /* init handler-context */
     if (uri_path_handler) {
-        if (host->check_local != 0) {
+        if (host->check_local)
             return HANDLER_GO_ON;
-        } else {
-            /* do not split path info for authorizer */
-            if (gw_mode != GW_AUTHORIZER) {
+
+        /* path info rewrite is done only for /prefix/? matches */
+        /* do not split path info for authorizer */
+        if (extension->key.ptr[0] == '/' && gw_mode != GW_AUTHORIZER) {
                 /* the prefix is the SCRIPT_NAME,
                 * everything from start to the next slash
                 * this is important for check-local = "disable"
@@ -2503,28 +2620,19 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
                 * PATH_INFO   = /bar
                 *
                 */
-                char *pathinfo;
-
-                /* the rewrite is only done for /prefix/? matches */
-                if (host->fix_root_path_name && extension->key.ptr[0] == '/'
-                                             && extension->key.ptr[1] == '\0') {
-                    buffer_copy_buffer(&r->pathinfo, &r->uri.path);
-                    buffer_string_set_length(&r->uri.path, 0);
-                } else if (extension->key.ptr[0] == '/'
-                           && buffer_string_length(&r->uri.path)
-                              > buffer_string_length(&extension->key)
-                           && (pathinfo =
-                                 strchr(r->uri.path.ptr
-                                        + buffer_string_length(&extension->key),
-                                        '/')) != NULL) {
-                    /* rewrite uri.path and pathinfo */
-
-                    buffer_copy_string(&r->pathinfo, pathinfo);
-                    buffer_string_set_length(
-                      &r->uri.path,
-                      buffer_string_length(&r->uri.path)
-                      - buffer_string_length(&r->pathinfo));
-                }
+            /* (s_len is buffer_clen(&r->uri.path) if (uri_path_handler) */
+            uint32_t elen = buffer_clen(&extension->key);
+            const char *pathinfo;
+            if (1 == elen && host->fix_root_path_name) {
+                buffer_copy_buffer(&r->pathinfo, &r->uri.path);
+                buffer_truncate(&r->uri.path, 0);
+            }
+            else if (s_len > elen
+                     && (pathinfo = strchr(r->uri.path.ptr+elen, '/'))) {
+                /* rewrite uri.path and pathinfo */
+                const uint32_t plen = r->uri.path.ptr + s_len - pathinfo;
+                buffer_copy_string_len(&r->pathinfo, pathinfo, plen);
+                buffer_truncate(&r->uri.path, s_len - plen);
             }
         }
     }
@@ -2533,6 +2641,7 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
 
     hctx->ev               = r->con->srv->ev;
     hctx->r                = r;
+    hctx->con              = r->con;
     hctx->plugin_data      = p;
     hctx->host             = host;
     hctx->proc             = NULL;
@@ -2552,6 +2661,13 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
     hctx->conf.proto       = p->conf.proto;
     hctx->conf.debug       = p->conf.debug;
 
+    hctx->opts.max_per_read =
+      !(r->conf.stream_response_body /*(if not streaming response body)*/
+        & (FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN))
+        ? 262144
+        : (r->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_BUFMIN)
+          ? 16384  /* FDEVENT_STREAM_RESPONSE_BUFMIN */
+          : 65536; /* FDEVENT_STREAM_RESPONSE */
     hctx->opts.fdfmt = S_IFSOCK;
     hctx->opts.authorizer = (gw_mode == GW_AUTHORIZER);
     hctx->opts.local_redir = 0;
@@ -2563,39 +2679,111 @@ handler_t gw_check_extension(request_st * const r, gw_plugin_data * const p, int
     r->handler_module = p->self;
 
     if (r->conf.log_request_handling) {
-        log_error(r->conf.errh, __FILE__, __LINE__, "handling it in mod_gw");
+        log_error(r->conf.errh, __FILE__, __LINE__,
+                  "handling the request using %s", p->self->name);
     }
 
     return HANDLER_GO_ON;
 }
 
+__attribute_cold__
+__attribute_noinline__
+static void gw_handle_trigger_hctx_timeout(gw_handler_ctx * const hctx, const char * const msg) {
+
+    request_st * const r = hctx->r;
+    joblist_append(r->con);
+
+    if (*msg == 'c') { /* "connect" */
+        /* temporarily disable backend proc */
+        gw_proc_connect_error(r, hctx->host, hctx->proc, hctx->pid,
+                              ETIMEDOUT, hctx->conf.debug);
+        /* cleanup this request and let request handler start request again */
+        /* retry only once since request already waited write_timeout secs */
+        if (hctx->reconnects++ < 1) {
+            gw_reconnect(hctx, r);
+            return;
+        }
+        r->http_status = 503; /* Service Unavailable */
+    }
+    else { /* "read" or "write" */
+        /* blocked waiting to send (more) data to or to receive response
+         * (neither are a definite indication that the proc is no longer
+         *  responsive on other socket connections; not marking proc overloaded)
+         * (If connect() to backend succeeded, then we began sending
+         *  request and filled kernel socket buffers, so request is
+         *  in progress and it is not safe or possible to retry) */
+        /*if (hctx->conf.debug)*/
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "%s timeout on socket: %s (fd: %d)",
+              msg, hctx->proc->connection_name->ptr, hctx->fd);
+
+        if (*msg == 'w') { /* "write" */
+            gw_write_error(hctx, r); /*(calls gw_backend_error())*/
+            if (r->http_status == 503) r->http_status = 504; /*Gateway Timeout*/
+            return;
+        } /* else "read" */
+    }
+    gw_backend_error(hctx, r);
+    if (r->http_status == 500 && !r->resp_body_started && !r->handler_module)
+        r->http_status = 504; /*Gateway Timeout*/
+}
+
+__attribute_noinline__
+static void gw_handle_trigger_host_timeouts(gw_host * const host) {
+
+    if (NULL == host->hctxs) return;
+    const unix_time64_t rsecs = (unix_time64_t)host->read_timeout;
+    const unix_time64_t wsecs = (unix_time64_t)host->write_timeout;
+    const unix_time64_t csecs = (unix_time64_t)host->connect_timeout;
+    if (!rsecs && !wsecs && !csecs)
+        return; /*(no timeout policy (default))*/
+
+    const unix_time64_t mono = log_monotonic_secs; /*(could have callers pass)*/
+    for (gw_handler_ctx *hctx = host->hctxs, *next; hctx; hctx = next) {
+        /* if timeout occurs, hctx might be invalidated and removed from list,
+         * so next element must be store before checking for timeout */
+        next = hctx->next;
+
+        if (hctx->state == GW_STATE_CONNECT_DELAYED) {
+            if (mono - hctx->write_ts > csecs && csecs) /*(waiting for write)*/
+                gw_handle_trigger_hctx_timeout(hctx, "connect");
+            continue; /*(do not apply wsecs below to GW_STATE_CONNECT_DELAYED)*/
+        }
+
+        const int events = fdevent_fdnode_interest(hctx->fdn);
+        if ((events & FDEVENT_IN) && mono - hctx->read_ts > rsecs && rsecs) {
+            gw_handle_trigger_hctx_timeout(hctx, "read");
+            continue;
+        }
+        if ((events & FDEVENT_OUT) && mono - hctx->write_ts > wsecs && wsecs) {
+            gw_handle_trigger_hctx_timeout(hctx, "write");
+            continue;
+        }
+    }
+}
+
 static void gw_handle_trigger_host(gw_host * const host, log_error_st * const errh, const int debug) {
-    /*
-     * TODO:
-     *
-     * - add timeout for a connect to a non-gw process
-     *   (use state_timestamp + state)
-     *
-     * perhaps we should kill a connect attempt after 10-15 seconds
-     *
-     * currently we wait for the TCP timeout which is 180 seconds on Linux
-     */
+
+    /* check for socket timeouts on active requests to backend host */
+    gw_handle_trigger_host_timeouts(host);
 
     /* check each child proc to detect if proc exited */
 
     gw_proc *proc;
-    time_t idle_timestamp;
+    unix_time64_t idle_timestamp;
     int overload = 1;
 
+  #if 0 /* redundant w/ handle_waitpid hook since lighttpd 1.4.46 */
     for (proc = host->first; proc; proc = proc->next) {
         gw_proc_waitpid(host, proc, errh);
     }
+  #endif
 
     gw_restart_dead_procs(host, errh, debug, 1);
 
     /* check if adaptive spawning enabled */
     if (host->min_procs == host->max_procs) return;
-    if (buffer_string_is_empty(host->bin_path)) return;
+    if (!host->bin_path) return;
 
     for (proc = host->first; proc; proc = proc->next) {
         if (proc->load <= host->max_load_per_proc) {
@@ -2614,7 +2802,7 @@ static void gw_handle_trigger_host(gw_host * const host, log_error_st * const er
         gw_proc_spawn(host, errh, debug);
     }
 
-    idle_timestamp = log_epoch_secs - host->idle_timeout;
+    idle_timestamp = log_monotonic_secs - host->idle_timeout;
     for (proc = host->first; proc; proc = proc->next) {
         if (host->num_procs <= host->min_procs) break;
         if (0 != proc->load) continue;
@@ -2625,7 +2813,7 @@ static void gw_handle_trigger_host(gw_host * const host, log_error_st * const er
         if (debug) {
             log_error(errh, __FILE__, __LINE__,
               "idle-timeout reached, terminating child: socket: %s pid %d",
-              proc->unixsocket->ptr, proc->pid);
+              proc->unixsocket ? proc->unixsocket->ptr : "", proc->pid);
         }
 
         gw_proc_kill(host, proc);
@@ -2634,9 +2822,11 @@ static void gw_handle_trigger_host(gw_host * const host, log_error_st * const er
         break;
     }
 
+  #if 0 /* redundant w/ handle_waitpid hook since lighttpd 1.4.46 */
     for (proc = host->unused_procs; proc; proc = proc->next) {
         gw_proc_waitpid(host, proc, errh);
     }
+  #endif
 }
 
 static void gw_handle_trigger_exts(gw_exts * const exts, log_error_st * const errh, const int debug) {
@@ -2653,6 +2843,7 @@ static void gw_handle_trigger_exts_wkr(gw_exts *exts, log_error_st *errh) {
         gw_extension * const ex = exts->exts+j;
         for (uint32_t n = 0; n < ex->used; ++n) {
             gw_host * const host = ex->hosts[n];
+            gw_handle_trigger_host_timeouts(host);
             for (gw_proc *proc = host->first; proc; proc = proc->next) {
                 if (proc->state == PROC_STATE_OVERLOADED)
                     gw_proc_check_enable(host, proc, errh);
@@ -2732,7 +2923,7 @@ handler_t gw_handle_waitpid_cb(server *srv, void *p_d, pid_t pid, int status) {
          *  or global scope (for convenience))
          * (unable to use p->defaults.debug since gw_plugin_config
          *  might be part of a larger plugin_config) */
-        const time_t cur_ts = log_epoch_secs;
+        const unix_time64_t cur_ts = log_monotonic_secs;
         gw_exts *exts = conf->exts;
         for (uint32_t j = 0; j < exts->used; ++j) {
             gw_extension *ex = exts->exts+j;
@@ -2748,6 +2939,8 @@ handler_t gw_handle_waitpid_cb(server *srv, void *p_d, pid_t pid, int status) {
 
                     /* restart, but avoid spinning if child exits too quickly */
                     if (proc->disabled_until < cur_ts) {
+                        /*(set state PROC_STATE_DIED above, so != KILLED here)*/
+                        /*(PROC_STATE_KILLED belongs in unused_procs, anyway)*/
                         if (proc->state != PROC_STATE_KILLED)
                             proc->disabled_until = cur_ts;
                         if (gw_spawn_connection(host, proc, errh, debug)) {

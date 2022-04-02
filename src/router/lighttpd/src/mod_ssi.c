@@ -1,18 +1,21 @@
 #include "first.h"
 
-#include "base.h"
 #include "fdevent.h"
+#include "fdlog.h"
 #include "log.h"
+#include "array.h"
 #include "buffer.h"
+#include "chunk.h"
+#include "http_cgi.h"
+#include "http_chunk.h"
 #include "http_etag.h"
 #include "http_header.h"
+#include "request.h"
 #include "stat_cache.h"
 
 #include "plugin.h"
 
 #include "response.h"
-
-#include "mod_ssi.h"
 
 #include "sys-socket.h"
 #include "sys-time.h"
@@ -34,16 +37,45 @@
 # include <pwd.h>
 #endif
 
-#ifdef HAVE_SYS_FILIO_H
-# include <sys/filio.h>
-#endif
+typedef struct {
+	const array *ssi_extension;
+	const buffer *content_type;
+	unsigned short conditional_requests;
+	unsigned short ssi_exec;
+	unsigned short ssi_recursion_max;
+} plugin_config;
+
+typedef struct {
+	PLUGIN_DATA;
+	plugin_config defaults;
+	plugin_config conf;
+	array *ssi_vars;
+	array *ssi_cgi_env;
+	buffer stat_fn;
+	buffer timefmt;
+} plugin_data;
+
+typedef struct {
+	array *ssi_vars;
+	array *ssi_cgi_env;
+	buffer *stat_fn;
+	buffer *timefmt;
+	int sizefmt;
+
+	int if_level, if_is_false_level, if_is_false, if_is_false_endif;
+	unsigned short ssi_recursion_depth;
+
+	chunkqueue wq;
+	log_error_st *errh;
+	plugin_config conf;
+} handler_ctx;
 
 static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
 	handler_ctx *hctx = calloc(1, sizeof(*hctx));
 	force_assert(hctx);
 	hctx->errh = errh;
-	hctx->timefmt = p->timefmt;
-	hctx->stat_fn = p->stat_fn;
+	hctx->timefmt = &p->timefmt;
+	hctx->stat_fn = &p->stat_fn;
 	hctx->ssi_vars = p->ssi_vars;
 	hctx->ssi_cgi_env = p->ssi_cgi_env;
 	memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
@@ -51,20 +83,18 @@ static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
 }
 
 static void handler_ctx_free(handler_ctx *hctx) {
+	chunkqueue_reset(&hctx->wq);
 	free(hctx);
 }
 
 /* The newest modified time of included files for include statement */
-static volatile time_t include_file_last_mtime = 0;
+static volatile unix_time64_t include_file_last_mtime = 0;
 
 INIT_FUNC(mod_ssi_init) {
 	plugin_data *p;
 
 	p = calloc(1, sizeof(*p));
 	force_assert(p);
-
-	p->timefmt = buffer_init();
-	p->stat_fn = buffer_init();
 
 	p->ssi_vars = array_init(8);
 	p->ssi_cgi_env = array_init(32);
@@ -76,8 +106,8 @@ FREE_FUNC(mod_ssi_free) {
 	plugin_data *p = p_d;
 	array_free(p->ssi_vars);
 	array_free(p->ssi_cgi_env);
-	buffer_free(p->timefmt);
-	buffer_free(p->stat_fn);
+	free(p->timefmt.ptr);
+	free(p->stat_fn.ptr);
 }
 
 static void mod_ssi_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -142,6 +172,28 @@ SETDEFAULTS_FUNC(mod_ssi_set_defaults) {
     if (!config_plugin_values_init(srv, p, cpk, "mod_ssi"))
         return HANDLER_ERROR;
 
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* ssi.extension */
+                break;
+              case 1: /* ssi.content-type */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
+              case 2: /* ssi.conditional-requests */
+              case 3: /* ssi.exec */
+              case 4: /* ssi.recursion-max */
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
+    }
+
     p->defaults.ssi_exec = 1;
 
     /* initialize p->defaults from global config context */
@@ -153,6 +205,343 @@ SETDEFAULTS_FUNC(mod_ssi_set_defaults) {
 
     return HANDLER_GO_ON;
 }
+
+
+
+
+#define TK_AND                             1
+#define TK_OR                              2
+#define TK_EQ                              3
+#define TK_NE                              4
+#define TK_GT                              5
+#define TK_GE                              6
+#define TK_LT                              7
+#define TK_LE                              8
+#define TK_NOT                             9
+#define TK_LPARAN                         10
+#define TK_RPARAN                         11
+#define TK_VALUE                          12
+
+typedef struct {
+    const char *input;
+    size_t offset;
+    size_t size;
+    int in_brace;
+    int depth;
+    handler_ctx *p;
+} ssi_tokenizer_t;
+
+typedef struct {
+    buffer  str;
+    enum { SSI_TYPE_UNSET, SSI_TYPE_BOOL, SSI_TYPE_STRING } type;
+    int     bo;
+} ssi_val_t;
+
+__attribute_pure__
+static int ssi_val_tobool(const ssi_val_t *B) {
+    return B->type == SSI_TYPE_BOOL ? B->bo : !buffer_is_blank(&B->str);
+}
+
+__attribute_pure__
+static int ssi_eval_expr_cmp(const ssi_val_t * const v1, const ssi_val_t * const v2, const int cond) {
+    int cmp = (v1->type != SSI_TYPE_BOOL && v2->type != SSI_TYPE_BOOL)
+      ? strcmp(v1->str.ptr ? v1->str.ptr : "",
+               v2->str.ptr ? v2->str.ptr : "")
+      : ssi_val_tobool(v1) - ssi_val_tobool(v2);
+    switch (cond) {
+      case TK_EQ: return (cmp == 0);
+      case TK_NE: return (cmp != 0);
+      case TK_GE: return (cmp >= 0);
+      case TK_GT: return (cmp >  0);
+      case TK_LE: return (cmp <= 0);
+      case TK_LT: return (cmp <  0);
+      default:    return 0;/*(should not happen)*/
+    }
+}
+
+__attribute_pure__
+static int ssi_eval_expr_cmp_bool(const ssi_val_t * const v1, const ssi_val_t * const v2, const int cond) {
+    return (cond == TK_OR)
+      ? ssi_val_tobool(v1) || ssi_val_tobool(v2)  /* TK_OR */
+      : ssi_val_tobool(v1) && ssi_val_tobool(v2); /* TK_AND */
+}
+
+static void ssi_eval_expr_append_val(buffer * const b, const char *s, const size_t slen) {
+    if (buffer_is_blank(b))
+        buffer_append_string_len(b, s, slen);
+    else if (slen)
+        buffer_append_str2(b, CONST_STR_LEN(" "), s, slen);
+}
+
+static int ssi_expr_tokenizer(ssi_tokenizer_t * const t, buffer * const token) {
+    size_t i;
+
+    while (t->offset < t->size
+           && (t->input[t->offset] == ' ' || t->input[t->offset] == '\t')) {
+        ++t->offset;
+    }
+    if (t->offset >= t->size)
+        return 0;
+    if (t->input[t->offset] == '\0') {
+        log_error(t->p->errh, __FILE__, __LINE__,
+          "pos: %zu foobar", t->offset+1);
+        return -1;
+    }
+
+    switch (t->input[t->offset]) {
+      case '=':
+       #if 0 /*(maybe accept "==", too)*/
+        if (t->input[t->offset + 1] == '=')
+            ++t->offset;
+       #endif
+        t->offset++;
+        return TK_EQ;
+      case '>':
+        if (t->input[t->offset + 1] == '=') {
+            t->offset += 2;
+            return TK_GE;
+        }
+        else {
+            t->offset += 1;
+            return TK_GT;
+        }
+      case '<':
+        if (t->input[t->offset + 1] == '=') {
+            t->offset += 2;
+            return TK_LE;
+        }
+        else {
+            t->offset += 1;
+            return TK_LT;
+        }
+      case '!':
+        if (t->input[t->offset + 1] == '=') {
+            t->offset += 2;
+            return TK_NE;
+        }
+        else {
+            t->offset += 1;
+            return TK_NOT;
+        }
+      case '&':
+        if (t->input[t->offset + 1] == '&') {
+            t->offset += 2;
+            return TK_AND;
+        }
+        else {
+            log_error(t->p->errh, __FILE__, __LINE__,
+              "pos: %zu missing second &", t->offset+1);
+            return -1;
+        }
+      case '|':
+        if (t->input[t->offset + 1] == '|') {
+            t->offset += 2;
+            return TK_OR;
+        }
+        else {
+            log_error(t->p->errh, __FILE__, __LINE__,
+              "pos: %zu missing second |", t->offset+1);
+            return -1;
+        }
+      case '(':
+        t->offset++;
+        t->in_brace++;
+        return TK_LPARAN;
+      case ')':
+        t->offset++;
+        t->in_brace--;
+        return TK_RPARAN;
+      case '\'':
+        /* search for the terminating "'" */
+        i = 1;
+        while (t->input[t->offset + i] && t->input[t->offset + i] != '\'')
+            ++i;
+        if (t->input[t->offset + i]) {
+            ssi_eval_expr_append_val(token, t->input + t->offset + 1, i-1);
+            t->offset += i + 1;
+            return TK_VALUE;
+        }
+        else {
+            log_error(t->p->errh, __FILE__, __LINE__,
+              "pos: %zu missing closing quote", t->offset+1);
+            return -1;
+        }
+      case '$': {
+        const char *var;
+        size_t varlen;
+        if (t->input[t->offset + 1] == '{') {
+            i = 2;
+            while (t->input[t->offset + i] && t->input[t->offset + i] != '}')
+                ++i;
+            if (t->input[t->offset + i] != '}') {
+                log_error(t->p->errh, __FILE__, __LINE__,
+                  "pos: %zu missing closing curly-brace", t->offset+1);
+                return -1;
+            }
+            ++i; /* step past '}' */
+            var = t->input + t->offset + 2;
+            varlen = i-3;
+        }
+        else {
+            for (i = 1; light_isalpha(t->input[t->offset + i]) ||
+                    t->input[t->offset + i] == '_' ||
+                    ((i > 1) && light_isdigit(t->input[t->offset + i])); ++i) ;
+            var = t->input + t->offset + 1;
+            varlen = i-1;
+        }
+
+        const data_string *ds;
+        if ((ds = (const data_string *)
+                  array_get_element_klen(t->p->ssi_cgi_env, var, varlen))
+            || (ds = (const data_string *)
+                     array_get_element_klen(t->p->ssi_vars, var, varlen)))
+            ssi_eval_expr_append_val(token, BUF_PTR_LEN(&ds->value));
+        t->offset += i;
+        return TK_VALUE;
+      }
+      default:
+        for (i = 0; isgraph(((unsigned char *)t->input)[t->offset + i]); ++i) {
+            char d = t->input[t->offset + i];
+            switch(d) {
+            default: continue;
+            case ' ':
+            case '\t':
+            case ')':
+            case '(':
+            case '\'':
+            case '=':
+            case '!':
+            case '<':
+            case '>':
+            case '&':
+            case '|':
+                break;
+            }
+            break;
+        }
+        ssi_eval_expr_append_val(token, t->input + t->offset, i);
+        t->offset += i;
+        return TK_VALUE;
+    }
+}
+
+static int ssi_eval_expr_loop(ssi_tokenizer_t * const t, ssi_val_t * const v);
+
+static int ssi_eval_expr_step(ssi_tokenizer_t * const t, ssi_val_t * const v) {
+    buffer_clear(&v->str);
+    v->type = SSI_TYPE_UNSET; /*(not SSI_TYPE_BOOL)*/
+    int next;
+    const int level = t->in_brace;
+    switch ((next = ssi_expr_tokenizer(t, &v->str))) {
+      case TK_VALUE:
+        do { next = ssi_expr_tokenizer(t, &v->str); } while (next == TK_VALUE);
+        return next;
+      case TK_LPARAN:
+        if (t->in_brace > 16) return -1; /*(arbitrary limit)*/
+        next = ssi_eval_expr_loop(t, v);
+        if (next == TK_RPARAN && level == t->in_brace) {
+            int result = ssi_val_tobool(v);
+            next = ssi_eval_expr_step(t, v); /*(resets v)*/
+            v->bo = result;
+            v->type = SSI_TYPE_BOOL;
+            return (next==TK_AND || next==TK_OR || next==TK_RPARAN || 0==next)
+              ? next
+              : -1;
+        }
+        else
+            return -1;
+      case TK_RPARAN:
+        return t->in_brace >= 0 ? TK_RPARAN : -1;
+      case TK_NOT:
+        if (++t->depth > 16) return -1; /*(arbitrary limit)*/
+        next = ssi_eval_expr_step(t, v);
+        --t->depth;
+        if (-1 == next) return next;
+        v->bo = !ssi_val_tobool(v);
+        v->type = SSI_TYPE_BOOL;
+        return next;
+      default:
+        return next;
+    }
+}
+
+static int ssi_eval_expr_loop_cmp(ssi_tokenizer_t * const t, ssi_val_t * const v1, int cond) {
+    ssi_val_t v2 = { { NULL, 0, 0 }, SSI_TYPE_UNSET, 0 };
+    int next = ssi_eval_expr_step(t, &v2);
+    if (-1 != next) {
+        v1->bo = ssi_eval_expr_cmp(v1, &v2, cond);
+        v1->type = SSI_TYPE_BOOL;
+    }
+    buffer_free_ptr(&v2.str);
+    return next;
+}
+
+static int ssi_eval_expr_loop(ssi_tokenizer_t * const t, ssi_val_t * const v1) {
+    int next = ssi_eval_expr_step(t, v1);
+    switch (next) {
+      case TK_AND: case TK_OR:
+        break;
+      case TK_EQ:  case TK_NE:
+      case TK_GT:  case TK_GE:
+      case TK_LT:  case TK_LE:
+        next = ssi_eval_expr_loop_cmp(t, v1, next);
+        if (next == TK_RPARAN || 0 == next) return next;
+        if (next != TK_AND && next != TK_OR) {
+            log_error(t->p->errh, __FILE__, __LINE__,
+              "pos: %zu parser failed somehow near here", t->offset+1);
+            return -1;
+        }
+        break;
+      default:
+        return next;
+    }
+
+    /*(Note: '&&' and '||' evaluations are not short-circuited)*/
+    ssi_val_t v2 = { { NULL, 0, 0 }, SSI_TYPE_UNSET, 0 };
+    do {
+        int cond = next;
+        next = ssi_eval_expr_step(t, &v2);
+        switch (next) {
+          case TK_AND: case TK_OR: case 0:
+            break;
+          case TK_EQ:  case TK_NE:
+          case TK_GT:  case TK_GE:
+          case TK_LT:  case TK_LE:
+            next = ssi_eval_expr_loop_cmp(t, &v2, next);
+            if (-1 == next) continue;
+            break;
+          case TK_RPARAN:
+            break;
+          default:
+            continue;
+        }
+        v1->bo = ssi_eval_expr_cmp_bool(v1, &v2, cond);
+        v1->type = SSI_TYPE_BOOL;
+    } while (next == TK_AND || next == TK_OR);
+    buffer_free_ptr(&v2.str);
+    return next;
+}
+
+static int ssi_eval_expr(handler_ctx *p, const char *expr) {
+    ssi_tokenizer_t t;
+    t.input = expr;
+    t.offset = 0;
+    t.size = strlen(expr);
+    t.in_brace = 0;
+    t.depth = 0;
+    t.p = p;
+
+    ssi_val_t v = { { NULL, 0, 0 }, SSI_TYPE_UNSET, 0 };
+    int rc = ssi_eval_expr_loop(&t, &v);
+    rc = (0 == rc && 0 == t.in_brace && 0 == t.depth)
+      ? ssi_val_tobool(&v)
+      : -1;
+    buffer_free_ptr(&v.str);
+
+    return rc;
+}
+
+
 
 
 static int ssi_env_add(void *venv, const char *key, size_t klen, const char *val, size_t vlen) {
@@ -183,6 +572,18 @@ static int build_ssi_cgi_vars(request_st * const r, handler_ctx * const p) {
 	}
 
 	return 0;
+}
+
+static void mod_ssi_timefmt (buffer * const b, buffer *timefmtb, unix_time64_t t, int localtm) {
+    struct tm tm;
+    const char * const timefmt = buffer_is_blank(timefmtb)
+      ? "%a, %d %b %Y %T %Z"
+      : timefmtb->ptr;
+    buffer_append_strftime(b, timefmt, localtm
+                                       ? localtime64_r(&t, &tm)
+                                       : gmtime64_r(&t, &tm));
+    if (buffer_is_blank(b))
+        buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
 }
 
 static int mod_ssi_process_file(request_st *r, handler_ctx *p, struct stat *st);
@@ -249,7 +650,6 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 	 */
 
 	size_t i, ssicmd = 0;
-	char buf[255];
 	buffer *tb = NULL;
 
 	static const struct {
@@ -282,7 +682,7 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 		}
 	}
 
-	chunkqueue * const cq = &r->write_queue;
+	chunkqueue * const cq = &p->wq;
 
 	switch(ssicmd) {
 	case SSI_ECHO: {
@@ -381,59 +781,53 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 #else
 			buffer_append_int(tb, st->st_uid);
 #endif
-			chunkqueue_append_mem(cq, CONST_BUF_LEN(tb));
+			chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 			break;
 		}
 		case SSI_ECHO_LAST_MODIFIED:
 		case SSI_ECHO_DATE_LOCAL:
-		case SSI_ECHO_DATE_GMT: {
-			struct tm tm;
-			time_t t = (var == SSI_ECHO_LAST_MODIFIED)
-			  ? st->st_mtime
-			  : time(NULL);
-			uint32_t len = strftime(buf, sizeof(buf), p->timefmt->ptr,
-			                        (var != SSI_ECHO_DATE_GMT)
-			                        ? localtime_r(&t, &tm)
-			                        : gmtime_r(&t, &tm));
-
-			if (len)
-				chunkqueue_append_mem(cq, buf, len);
-			else
-				chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
+		case SSI_ECHO_DATE_GMT:
+			tb = r->tmp_buf;
+			buffer_clear(tb);
+			mod_ssi_timefmt(tb, p->timefmt,
+			                (var == SSI_ECHO_LAST_MODIFIED)
+			                  ? st->st_mtime
+			                  : log_epoch_secs,
+			                (var != SSI_ECHO_DATE_GMT));
+			chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 			break;
-		}
 		case SSI_ECHO_DOCUMENT_NAME: {
 			char *sl;
 
 			if (NULL == (sl = strrchr(r->physical.path.ptr, '/'))) {
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->physical.path));
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->physical.path));
 			} else {
 				chunkqueue_append_mem(cq, sl + 1, strlen(sl + 1));
 			}
 			break;
 		}
 		case SSI_ECHO_DOCUMENT_URI: {
-			chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->uri.path));
+			chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->uri.path));
 			break;
 		}
 		case SSI_ECHO_SCRIPT_URI: {
-			if (!buffer_string_is_empty(&r->uri.scheme) && !buffer_string_is_empty(&r->uri.authority)) {
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->uri.scheme));
+			if (!buffer_is_blank(&r->uri.scheme) && !buffer_is_blank(&r->uri.authority)) {
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->uri.scheme));
 				chunkqueue_append_mem(cq, CONST_STR_LEN("://"));
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->uri.authority));
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->target));
-				if (!buffer_string_is_empty(&r->uri.query)) {
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->uri.authority));
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->target));
+				if (!buffer_is_blank(&r->uri.query)) {
 					chunkqueue_append_mem(cq, CONST_STR_LEN("?"));
-					chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->uri.query));
+					chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->uri.query));
 				}
 			}
 			break;
 		}
 		case SSI_ECHO_SCRIPT_URL: {
-			chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->target));
-			if (!buffer_string_is_empty(&r->uri.query)) {
+			chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->target));
+			if (!buffer_is_blank(&r->uri.query)) {
 				chunkqueue_append_mem(cq, CONST_STR_LEN("?"));
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&r->uri.query));
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&r->uri.query));
 			}
 			break;
 		}
@@ -443,7 +837,7 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 			if (NULL != (ds = (const data_string *)array_get_element_klen(p->ssi_cgi_env, var_val, strlen(var_val))) ||
 			    NULL != (ds = (const data_string *)array_get_element_klen(p->ssi_vars, var_val, strlen(var_val)))) {
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(&ds->value));
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(&ds->value));
 			} else {
 				chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
 			}
@@ -489,10 +883,6 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 		if (file_path) {
 			/* current doc-root */
-			char *sl = strrchr(r->physical.path.ptr, '/');
-			if (NULL == sl) break; /*(not expected)*/
-			buffer_copy_string_len(p->stat_fn, r->physical.path.ptr, sl - r->physical.path.ptr + 1);
-
 			buffer_copy_string(tb, file_path);
 			buffer_urldecode_path(tb);
 			if (!buffer_is_valid_UTF8(tb)) {
@@ -500,19 +890,23 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 				  "SSI invalid UTF-8 after url-decode: %s", tb->ptr);
 				break;
 			}
-			buffer_path_simplify(tb, tb);
-			buffer_append_path_len(p->stat_fn, CONST_BUF_LEN(tb));
+			buffer_path_simplify(tb);
+			char *sl = strrchr(r->physical.path.ptr, '/');
+			if (NULL == sl) break; /*(not expected)*/
+			buffer_copy_path_len2(p->stat_fn,
+			                      r->physical.path.ptr,
+			                      sl - r->physical.path.ptr + 1,
+			                      BUF_PTR_LEN(tb));
 		} else {
 			/* virtual */
 
-			if (virt_path[0] == '/') {
-				buffer_copy_string(tb, virt_path);
-			} else {
+			buffer_clear(tb);
+			if (virt_path[0] != '/') {
 				/* there is always a / */
 				const char * const sl = strrchr(r->uri.path.ptr, '/');
 				buffer_copy_string_len(tb, r->uri.path.ptr, sl - r->uri.path.ptr + 1);
-				buffer_append_string(tb, virt_path);
 			}
+			buffer_append_string(tb, virt_path);
 
 			buffer_urldecode_path(tb);
 			if (!buffer_is_valid_UTF8(tb)) {
@@ -520,7 +914,7 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 				  "SSI invalid UTF-8 after url-decode: %s", tb->ptr);
 				break;
 			}
-			buffer_path_simplify(tb, tb);
+			buffer_path_simplify(tb);
 
 			/* we have an uri */
 
@@ -551,18 +945,23 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 			if (r->conf.force_lowercase_filenames) {
 				buffer_to_lower(tb);
 			}
-			uint32_t remain = buffer_string_length(&r->uri.path) - i;
-			if (!r->conf.force_lowercase_filenames
-			    ? buffer_is_equal_right_len(&r->physical.path, &r->physical.rel_path, remain)
-			    :(buffer_string_length(&r->physical.path) >= remain
-			      && buffer_eq_icase_ssn(r->physical.path.ptr+buffer_string_length(&r->physical.path)-remain, r->physical.rel_path.ptr+i, remain))) {
-				buffer_copy_string_len(p->stat_fn, r->physical.path.ptr, buffer_string_length(&r->physical.path)-remain);
-				buffer_append_path_len(p->stat_fn, tb->ptr+i, buffer_string_length(tb)-i);
+			uint32_t remain = buffer_clen(&r->uri.path) - i;
+			uint32_t plen = buffer_clen(&r->physical.path);
+			if (plen >= remain
+			    && (!r->conf.force_lowercase_filenames
+			        ?         0 == memcmp(r->physical.path.ptr+plen-remain, r->physical.rel_path.ptr+i, remain)
+			        : buffer_eq_icase_ssn(r->physical.path.ptr+plen-remain, r->physical.rel_path.ptr+i, remain))) {
+				buffer_copy_path_len2(p->stat_fn,
+				                      r->physical.path.ptr,
+				                      plen-remain,
+				                      tb->ptr+i,
+				                      buffer_clen(tb)-i);
 			} else {
 				/* unable to perform physical path remap here;
 				 * assume doc_root/rel_path and no remapping */
-				buffer_copy_buffer(p->stat_fn, &r->physical.doc_root);
-				buffer_append_path_len(p->stat_fn, CONST_BUF_LEN(tb));
+				buffer_copy_path_len2(p->stat_fn,
+				                      BUF_PTR_LEN(&r->physical.doc_root),
+				                      BUF_PTR_LEN(tb));
 			}
 		}
 
@@ -573,8 +972,6 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 		int fd = stat_cache_open_rdonly_fstat(p->stat_fn, &stb, r->conf.follow_symlink);
 		if (fd >= 0) {
-			time_t t = stb.st_mtime;
-
 			switch (ssicmd) {
 			case SSI_FSIZE:
 				buffer_clear(tb);
@@ -587,25 +984,21 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 					for (j = 0; s > 1024 && abr[j+1]; s /= 1024, j++);
 
 					buffer_append_int(tb, s);
-					buffer_append_string(tb, abr[j]);
+					buffer_append_string_len(tb, abr[j], j ? 3 : 2);
 				} else {
 					buffer_append_int(tb, stb.st_size);
 				}
-				chunkqueue_append_mem(cq, CONST_BUF_LEN(tb));
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 				break;
-			case SSI_FLASTMOD: {
-				struct tm tm;
-				uint32_t len = (uint32_t)strftime(buf, sizeof(buf), p->timefmt->ptr, localtime_r(&t, &tm));
-				if (len)
-					chunkqueue_append_mem(cq, buf, len);
-				else
-					chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
+			case SSI_FLASTMOD:
+				buffer_clear(tb);
+				mod_ssi_timefmt(tb, p->timefmt, stb.st_mtime, 1);
+				chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 				break;
-			}
 			case SSI_INCLUDE:
 				/* Keep the newest mtime of included files */
-				if (stb.st_mtime > include_file_last_mtime)
-					include_file_last_mtime = stb.st_mtime;
+				if (include_file_last_mtime < TIME64_CAST(stb.st_mtime))
+					include_file_last_mtime = TIME64_CAST(stb.st_mtime);
 
 				if (file_path || 0 == p->conf.ssi_recursion_max) {
 					/* don't process if #include file="..." is used */
@@ -725,20 +1118,18 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 		for (i = 0; i < p->ssi_vars->used; i++) {
 			data_string *ds = (data_string *)p->ssi_vars->sorted[i];
 
-			buffer_append_string_buffer(tb, &ds->key);
-			buffer_append_string_len(tb, CONST_STR_LEN("="));
-			buffer_append_string_encoded(tb, CONST_BUF_LEN(&ds->value), ENCODING_MINIMAL_XML);
+			buffer_append_str2(tb, BUF_PTR_LEN(&ds->key), CONST_STR_LEN("="));
+			buffer_append_string_encoded(tb, BUF_PTR_LEN(&ds->value), ENCODING_MINIMAL_XML);
 			buffer_append_string_len(tb, CONST_STR_LEN("\n"));
 		}
 		for (i = 0; i < p->ssi_cgi_env->used; i++) {
 			data_string *ds = (data_string *)p->ssi_cgi_env->sorted[i];
 
-			buffer_append_string_buffer(tb, &ds->key);
-			buffer_append_string_len(tb, CONST_STR_LEN("="));
-			buffer_append_string_encoded(tb, CONST_BUF_LEN(&ds->value), ENCODING_MINIMAL_XML);
+			buffer_append_str2(tb, BUF_PTR_LEN(&ds->key), CONST_STR_LEN("="));
+			buffer_append_string_encoded(tb, BUF_PTR_LEN(&ds->value), ENCODING_MINIMAL_XML);
 			buffer_append_string_len(tb, CONST_STR_LEN("\n"));
 		}
-		chunkqueue_append_mem(cq, CONST_BUF_LEN(tb));
+		chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 		break;
 	case SSI_EXEC: {
 		const char *cmd = NULL;
@@ -777,33 +1168,30 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 		*(const char **)&args[2] = cmd;
 		args[3] = NULL;
 
+		int status = 0;
+		struct stat stb;
+		stb.st_size = 0;
 		/*(expects STDIN_FILENO open to /dev/null)*/
-		int serrh_fd = r->conf.serrh ? r->conf.serrh->errorlog_fd : -1;
+		int serrh_fd = r->conf.serrh ? r->conf.serrh->fd : -1;
 		pid = fdevent_fork_execve(args[0], args, NULL, -1, c->file.fd, serrh_fd, -1);
 		if (-1 == pid) {
 			log_perror(errh, __FILE__, __LINE__, "spawning exec failed: %s", cmd);
+		} else if (fdevent_waitpid(pid, &status, 0) < 0) {
+			log_perror(errh, __FILE__, __LINE__, "waitpid failed");
 		} else {
-			struct stat stb;
-			int status = 0;
-
 			/* wait for the client to end */
 			/* NOTE: synchronous; blocks entire lighttpd server */
 
 			/*
 			 * OpenBSD and Solaris send a EINTR on SIGCHILD even if we ignore it
 			 */
-			if (fdevent_waitpid(pid, &status, 0) < 0) {
-				log_perror(errh, __FILE__, __LINE__, "waitpid failed");
-				break;
-			}
 			if (!WIFEXITED(status)) {
 				log_error(errh, __FILE__, __LINE__, "process exited abnormally: %s", cmd);
 			}
 			if (0 == fstat(c->file.fd, &stb)) {
-				chunkqueue_update_file(cq, c, stb.st_size);
 			}
 		}
-
+		chunkqueue_update_file(cq, c, stb.st_size);
 		break;
 	}
 	case SSI_IF: {
@@ -923,6 +1311,7 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 }
 
+__attribute_pure__
 static int mod_ssi_parse_ssi_stmt_value(const unsigned char * const s, const int len) {
 	int n;
 	const int c = (s[0] == '"' ? '"' : s[0] == '\'' ? '\'' : 0);
@@ -1014,7 +1403,7 @@ static void mod_ssi_parse_ssi_stmt(request_st * const r, handler_ctx * const p, 
 		    && (s[12] == ' ' || s[12] == '\t'))
 			return;
 		/* XXX: perhaps emit error comment instead of invalid <!--#...--> code to client */
-		chunkqueue_append_mem(&r->write_queue, s, len); /* append stmt as-is */
+		chunkqueue_append_mem(&p->wq, s, len); /* append stmt as-is */
 		return;
 	}
 
@@ -1076,10 +1465,12 @@ static int mod_ssi_stmt_len(const char *s, const int len) {
 static void mod_ssi_read_fd(request_st * const r, handler_ctx * const p, struct stat * const st, int fd) {
 	ssize_t rd;
 	size_t offset, pretag;
+	/* allocate to reduce chance of stack exhaustion upon deep recursion */
+	buffer * const b = chunk_buffer_acquire();
+	chunkqueue * const cq = &p->wq;
 	const size_t bufsz = 8192;
-	char * const buf = malloc(bufsz); /* allocate to reduce chance of stack exhaustion upon deep recursion */
-	chunkqueue * const cq = &r->write_queue;
-	force_assert(buf);
+	chunk_buffer_prepare_append(b, bufsz-1);
+	char * const buf = b->ptr;
 
 	offset = 0;
 	pretag = 0;
@@ -1139,6 +1530,12 @@ static void mod_ssi_read_fd(request_st * const r, handler_ctx * const p, struct 
 			}
 			offset = pretag = 0;
 		}
+		/* flush intermediate cq to r->write_queue (and possibly to
+		 * temporary file) if last MEM_CHUNK has less than 1k-1 avail
+		 * (reduce occurrence of copying to reallocate larger chunk) */
+		if (cq->last && cq->last->type == MEM_CHUNK
+		    && buffer_string_space(cq->last->mem) < 1023)
+			http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq));
 	}
 
 	if (0 != rd) {
@@ -1153,7 +1550,8 @@ static void mod_ssi_read_fd(request_st * const r, handler_ctx * const p, struct 
 		}
 	}
 
-	free(buf);
+	chunk_buffer_release(b);
+	http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq));
 }
 
 
@@ -1177,9 +1575,9 @@ static int mod_ssi_handle_request(request_st * const r, handler_ctx * const p) {
 
 	/* get a stream to the file */
 
+	buffer_clear(p->timefmt);
 	array_reset_data_strings(p->ssi_vars);
 	array_reset_data_strings(p->ssi_cgi_env);
-	buffer_copy_string_len(p->timefmt, CONST_STR_LEN("%a, %d %b %Y %H:%M:%S %Z"));
 	build_ssi_cgi_vars(r, p);
 
 	/* Reset the modified time of included files */
@@ -1190,21 +1588,21 @@ static int mod_ssi_handle_request(request_st * const r, handler_ctx * const p) {
 	r->resp_body_started  = 1;
 	r->resp_body_finished = 1;
 
-	if (buffer_string_is_empty(p->conf.content_type)) {
+	if (!p->conf.content_type) {
 		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 	} else {
-		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(p->conf.content_type));
+		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), BUF_PTR_LEN(p->conf.content_type));
 	}
 
 	if (p->conf.conditional_requests) {
 		/* Generate "ETag" & "Last-Modified" headers */
 
 		/* use most recently modified include file for ETag and Last-Modified */
-		if (st.st_mtime < include_file_last_mtime)
+		if (TIME64_CAST(st.st_mtime) < include_file_last_mtime)
 			st.st_mtime = include_file_last_mtime;
 
-		http_etag_create(&r->physical.etag, &st, r->conf.etag_flags);
-		http_header_response_set(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(&r->physical.etag));
+		http_etag_create(r->tmp_buf, &st, r->conf.etag_flags);
+		http_header_response_set(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), BUF_PTR_LEN(r->tmp_buf));
 
 		const buffer * const mtime = http_response_set_last_modified(r, st.st_mtime);
 		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime, st.st_mtime)) {
@@ -1218,9 +1616,6 @@ static int mod_ssi_handle_request(request_st * const r, handler_ctx * const p) {
 	/* Reset the modified time of included files */
 	include_file_last_mtime = 0;
 
-	/* reset physical.path */
-	buffer_reset(&r->physical.path);
-
 	return 0;
 }
 
@@ -1228,7 +1623,8 @@ URIHANDLER_FUNC(mod_ssi_physical_path) {
 	plugin_data *p = p_d;
 
 	if (NULL != r->handler_module) return HANDLER_GO_ON;
-	if (buffer_is_empty(&r->physical.path)) return HANDLER_GO_ON;
+	/* r->physical.path is non-empty for handle_subrequest_start */
+	/*if (buffer_is_blank(&r->physical.path)) return HANDLER_GO_ON;*/
 
 	mod_ssi_patch_config(r, p);
 	if (NULL == p->conf.ssi_extension) return HANDLER_GO_ON;

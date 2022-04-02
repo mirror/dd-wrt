@@ -5,10 +5,10 @@
 
 #include "plugin.h"
 
-#include "base.h"
 #include "log.h"
 #include "buffer.h"
 #include "array.h"
+#include "request.h"
 
 /**
  * this is a skeleton for a lighttpd plugin
@@ -116,7 +116,7 @@ URIHANDLER_FUNC(mod_skeleton_uri_handler) {
     /* determine whether or not module participates in request */
 
     if (NULL != r->handler_module) return HANDLER_GO_ON;
-    if (buffer_string_is_empty(&r->uri.path)) return HANDLER_GO_ON;
+    if (buffer_is_blank(&r->uri.path)) return HANDLER_GO_ON;
 
     /* get module config for request */
     mod_skeleton_patch_config(r, p);

@@ -11,6 +11,9 @@
  * Copyright(c) 2020 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
  * License: BSD 3-clause (same as lighttpd)
  */
+#if defined(__sun)
+#define __EXTENSIONS__
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -24,6 +27,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef HAVE_SIGNAL      /* XXX: must be defined; config.h not included here */
+#include <signal.h>
+#endif
 
 #ifndef MSG_DONTWAIT
 #define MSG_DONTWAIT 0
@@ -351,6 +358,11 @@ main (void)
     int fd;
     fcntl(FCGI_LISTENSOCK_FILENO, F_SETFL,
           fcntl(FCGI_LISTENSOCK_FILENO, F_GETFL) & ~O_NONBLOCK);
+
+  #ifdef HAVE_SIGNAL
+    signal(SIGINT,  SIG_IGN);
+    signal(SIGUSR1, SIG_IGN);
+  #endif
 
     do {
         fd = accept(FCGI_LISTENSOCK_FILENO, NULL, NULL);

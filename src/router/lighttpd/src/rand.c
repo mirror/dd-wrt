@@ -7,17 +7,16 @@
 #include "first.h"
 
 #include "rand.h"
-#include "buffer.h"
+#include "ck.h"
 #include "fdevent.h"
-#include "safe_memclear.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "sys-time.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "sys-crypto-md.h" /* USE_LIB_CRYPTO and additional crypto lib config */
@@ -81,6 +80,13 @@
 #endif
 #ifdef RNDGETENTCNT
 #include <sys/ioctl.h>
+#endif
+#if defined(__APPLE__) && defined(__MACH__)
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 101000 /* OS X 10.10+ */
+#undef HAVE_ARC4RANDOM_BUF
+#define HAVE_CCRANDOMGENERATEBYTES
+#include <CommonCrypto/CommonRandom.h>
+#endif
 #endif
 
 /* Take some reasonable steps to attempt to *seed* random number generators with
@@ -206,8 +212,8 @@ li_arcfour_init_random_key_hashed(struct arcfour_ctx *ctx)
     uint8_t key[ARCFOUR_KEY_SIZE];
     const size_t length = sizeof(key);
     if (1 != li_rand_device_bytes(key, (int)sizeof(key))) {
-        log_failed_assert(__FILE__, __LINE__,
-                          "gathering entropy for arcfour seed failed");
+        ck_bt_abort(__FILE__, __LINE__,
+                    "gathering entropy for arcfour seed failed");
     }
     memset(ctx, 0, sizeof(*ctx));
 
@@ -240,6 +246,11 @@ static void li_rand_init (void)
     if (1 == li_rand_device_bytes((unsigned char *)xsubi, (int)sizeof(xsubi))) {
         u = ((unsigned int)xsubi[0] << 16) | xsubi[1];
     }
+  #ifdef HAVE_CCRANDOMGENERATEBYTES
+    else if (CCRandomGenerateBytes(xsubi, sizeof(xsubi)) == kCCSuccess
+             && CCRandomGenerateBytes(&u, sizeof(u)) == kCCSuccess) {
+    }
+  #endif
     else {
       #ifdef HAVE_ARC4RANDOM_BUF
         u = arc4random();
@@ -270,8 +281,7 @@ static void li_rand_init (void)
     /* xsubi[] is small, so use wc_InitRng() instead of wc_InitRngNonce()
      * to get default behavior of a larger internally-generated nonce */
     if (0 != wolfCrypt_Init() || 0 != wc_InitRng(&wolf_globalRNG))
-        log_failed_assert(__FILE__, __LINE__,
-                          "wolfCrypt_Init or wc_InitRng() failed");
+        ck_bt_abort(__FILE__,__LINE__,"wolfCrypt_Init or wc_InitRng() failed");
   #endif
   #ifdef USE_OPENSSL_CRYPTO
     RAND_poll();
@@ -286,13 +296,13 @@ static void li_rand_init (void)
       mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
                             (unsigned char *)xsubi, sizeof(xsubi));
     if (0 != rc) /*(not expecting built-in entropy function to fail)*/
-        log_failed_assert(__FILE__, __LINE__, "mbedtls_ctr_drbg_seed() failed");
+        ck_bt_abort(__FILE__, __LINE__, "mbedtls_ctr_drbg_seed() failed");
   #endif
   #endif
   #endif
   #ifdef USE_NSS_CRYPTO
     if (!NSS_IsInitialized() && NSS_NoDB_Init(NULL) < 0)
-        SEGFAULT();
+        ck_bt_abort(__FILE__, __LINE__, "aborted");
     PK11_RandomUpdate(xsubi, sizeof(xsubi));
   #endif
 }
@@ -314,13 +324,12 @@ void li_rand_reseed (void)
                                         (const byte *)xsubi,
                                         (word32)sizeof(xsubi)))
                 /*(not expecting this to fail)*/
-                log_failed_assert(__FILE__, __LINE__,
-                                  "wc_RNG_DRBG_Reseed() failed");
+                ck_bt_abort(__FILE__, __LINE__, "wc_RNG_DRBG_Reseed() failed");
         }
       #else
         wc_FreeRng(&wolf_globalRNG);
         if (0 != wc_InitRng(&wolf_globalRNG))
-            log_failed_assert(__FILE__, __LINE__, "wc_InitRng() failed");
+            ck_bt_abort(__FILE__, __LINE__, "wc_InitRng() failed");
       #endif
         return;
     }
@@ -374,6 +383,11 @@ int li_rand_pseudo (void)
   #ifdef USE_NSS_CRYPTO
     int i;
     if (SECSuccess == PK11_GenerateRandom((unsigned char *)&i, sizeof(i)))
+        return i;
+  #endif
+  #ifdef HAVE_CCRANDOMGENERATEBYTES
+    int i;
+    if (CCRandomGenerateBytes(&i, sizeof(i)) == kCCSuccess)
         return i;
   #endif
   #ifdef HAVE_ARC4RANDOM_BUF
@@ -496,5 +510,5 @@ void li_rand_cleanup (void)
     mbedtls_entropy_free(&entropy);
   #endif
   #endif
-    safe_memclear(xsubi, sizeof(xsubi));
+    ck_memzero(xsubi, sizeof(xsubi));
 }

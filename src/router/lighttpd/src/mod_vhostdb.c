@@ -6,16 +6,16 @@
  */
 #include "first.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "mod_vhostdb_api.h"
 #include "base.h"
 #include "plugin.h"
 #include "plugin_config.h"
-#include "http_vhostdb.h"
 #include "log.h"
 #include "stat_cache.h"
 #include "algo_splaytree.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 /**
  * vhostdb framework
@@ -35,8 +35,6 @@ typedef struct {
     PLUGIN_DATA;
     plugin_config defaults;
     plugin_config conf;
-
-    buffer tmp_buf;
 } plugin_data;
 
 typedef struct {
@@ -44,17 +42,18 @@ typedef struct {
     char *document_root;
     uint32_t slen;
     uint32_t dlen;
-    time_t ctime;
+    unix_time64_t ctime;
 } vhostdb_cache_entry;
 
 static vhostdb_cache_entry *
 vhostdb_cache_entry_init (const buffer * const server_name, const buffer * const docroot)
 {
-    const uint32_t slen = buffer_string_length(server_name);
-    const uint32_t dlen = buffer_string_length(docroot);
+    const uint32_t slen = buffer_clen(server_name);
+    const uint32_t dlen = buffer_clen(docroot);
     vhostdb_cache_entry * const ve =
       malloc(sizeof(vhostdb_cache_entry) + slen + dlen);
-    ve->ctime = log_epoch_secs;
+    force_assert(ve);
+    ve->ctime = log_monotonic_secs;
     ve->slen = slen;
     ve->dlen = dlen;
     ve->server_name   = (char *)(ve + 1);
@@ -99,7 +98,7 @@ vhostdb_cache_init (const array *opts)
 static vhostdb_cache_entry *
 mod_vhostdb_cache_query (request_st * const r, plugin_data * const p)
 {
-    const int ndx = splaytree_djbhash(CONST_BUF_LEN(&r->uri.authority));
+    const int ndx = splaytree_djbhash(BUF_PTR_LEN(&r->uri.authority));
     splay_tree ** const sptree = &p->conf.vhostdb_cache->sptree;
     *sptree = splaytree_splay(*sptree, ndx);
     vhostdb_cache_entry * const ve =
@@ -114,7 +113,7 @@ mod_vhostdb_cache_query (request_st * const r, plugin_data * const p)
 static void
 mod_vhostdb_cache_insert (request_st * const r, plugin_data * const p, vhostdb_cache_entry * const ve)
 {
-    const int ndx = splaytree_djbhash(CONST_BUF_LEN(&r->uri.authority));
+    const int ndx = splaytree_djbhash(BUF_PTR_LEN(&r->uri.authority));
     splay_tree ** const sptree = &p->conf.vhostdb_cache->sptree;
     /*(not necessary to re-splay (with current usage) since single-threaded
      * and splaytree has not been modified since mod_vhostdb_cache_query())*/
@@ -133,7 +132,6 @@ INIT_FUNC(mod_vhostdb_init) {
 
 FREE_FUNC(mod_vhostdb_free) {
     plugin_data *p = p_d;
-    free(p->tmp_buf.ptr);
 
     if (NULL == p->cvlist) return;
     /* (init i to 0 if global context; to 1 to skip empty global context) */
@@ -150,6 +148,8 @@ FREE_FUNC(mod_vhostdb_free) {
             }
         }
     }
+
+    http_vhostdb_dumbdata_reset();
 }
 
 static void mod_vhostdb_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -205,7 +205,7 @@ SETDEFAULTS_FUNC(mod_vhostdb_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* vhostdb.backend */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     const buffer * const b = cpv->v.b;
                     *(const void **)&cpv->v.v = http_vhostdb_backend_get(b);
                     if (NULL == cpv->v.v) {
@@ -259,8 +259,10 @@ static handler_t mod_vhostdb_error_500 (request_st * const r)
 static handler_t mod_vhostdb_found (request_st * const r, vhostdb_cache_entry * const ve)
 {
     /* fix virtual server and docroot */
-    r->server_name = &r->server_name_buf;
-    buffer_copy_string_len(&r->server_name_buf, ve->server_name, ve->slen);
+    if (ve->slen) {
+        r->server_name = &r->server_name_buf;
+        buffer_copy_string_len(&r->server_name_buf, ve->server_name, ve->slen);
+    }
     buffer_copy_string_len(&r->physical.doc_root, ve->document_root, ve->dlen);
     return HANDLER_GO_ON;
 }
@@ -268,11 +270,9 @@ static handler_t mod_vhostdb_found (request_st * const r, vhostdb_cache_entry * 
 REQUEST_FUNC(mod_vhostdb_handle_docroot) {
     plugin_data *p = p_d;
     vhostdb_cache_entry *ve;
-    const http_vhostdb_backend_t *backend;
-    buffer *b;
 
     /* no host specified? */
-    if (buffer_string_is_empty(&r->uri.authority)) return HANDLER_GO_ON;
+    if (buffer_is_blank(&r->uri.authority)) return HANDLER_GO_ON;
 
     /* check if cached this connection */
     ve = r->plugin_ctx[p->id];
@@ -286,13 +286,13 @@ REQUEST_FUNC(mod_vhostdb_handle_docroot) {
     if (p->conf.vhostdb_cache && (ve = mod_vhostdb_cache_query(r, p)))
         return mod_vhostdb_found(r, ve); /* HANDLER_GO_ON */
 
-    b = &p->tmp_buf;
-    backend = p->conf.vhostdb_backend;
+    buffer * const b = r->tmp_buf; /*(cleared before use in backend->query())*/
+    const http_vhostdb_backend_t * const backend = p->conf.vhostdb_backend;
     if (0 != backend->query(r, backend->p_d, b)) {
         return mod_vhostdb_error_500(r); /* HANDLER_FINISHED */
     }
 
-    if (buffer_string_is_empty(b)) {
+    if (buffer_is_blank(b)) {
         /* no such virtual host */
         return HANDLER_GO_ON;
     }
@@ -319,7 +319,7 @@ REQUEST_FUNC(mod_vhostdb_handle_docroot) {
 
 /* walk though cache, collect expired ids, and remove them in a second loop */
 static void
-mod_vhostdb_tag_old_entries (splay_tree * const t, int * const keys, int * const ndx, const time_t max_age, const time_t cur_ts)
+mod_vhostdb_tag_old_entries (splay_tree * const t, int * const keys, int * const ndx, const time_t max_age, const unix_time64_t cur_ts)
 {
     if (*ndx == 8192) return; /*(must match num array entries in keys[])*/
     if (t->left)
@@ -335,7 +335,7 @@ mod_vhostdb_tag_old_entries (splay_tree * const t, int * const keys, int * const
 
 __attribute_noinline__
 static void
-mod_vhostdb_periodic_cleanup(splay_tree **sptree_ptr, const time_t max_age, const time_t cur_ts)
+mod_vhostdb_periodic_cleanup(splay_tree **sptree_ptr, const time_t max_age, const unix_time64_t cur_ts)
 {
     splay_tree *sptree = *sptree_ptr;
     int max_ndx, i;
@@ -359,13 +359,15 @@ mod_vhostdb_periodic_cleanup(splay_tree **sptree_ptr, const time_t max_age, cons
 TRIGGER_FUNC(mod_vhostdb_periodic)
 {
     const plugin_data * const p = p_d;
-    const time_t cur_ts = log_epoch_secs;
+    const unix_time64_t cur_ts = log_monotonic_secs;
     if (cur_ts & 0x7) return HANDLER_GO_ON; /*(continue once each 8 sec)*/
     UNUSED(srv);
 
     /* future: might construct array of (vhostdb_cache *) at startup
      *         to avoid the need to search for them here */
-    for (int i = 0, used = p->nconfig; i < used; ++i) {
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    if (NULL == p->cvlist) return HANDLER_GO_ON;
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
         const config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
         for (; cpv->k_id != -1; ++cpv) {
             if (cpv->k_id != 1) continue; /* k_id == 1 for vhostdb.cache */

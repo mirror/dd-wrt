@@ -2,19 +2,18 @@
 #define _FILE_CACHE_H_
 #include "first.h"
 
+#include <sys/stat.h>
+#include "sys-time.h"
+
 #include "base_decls.h"
 #include "buffer.h"
 #include "array.h"
-
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 
 typedef struct stat stat_cache_st;
 
 typedef struct stat_cache_entry {
     buffer name;
-    time_t stat_ts;
+    unix_time64_t stat_ts;
     int fd;
     int refcnt;
   #if defined(HAVE_FAM_H) || defined(HAVE_SYS_INOTIFY_H) || defined(HAVE_SYS_EVENT_H)
@@ -41,7 +40,9 @@ void stat_cache_entry_refchg(void *data, int mod);
 __attribute_cold__
 void stat_cache_xattrname (const char *name);
 
+__attribute_pure__
 const buffer * stat_cache_mimetype_by_ext(const array *mimetypes, const char *name, uint32_t nlen);
+
 #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
 const buffer * stat_cache_mimetype_by_xattr(const char *name);
 const buffer * stat_cache_content_type_get_by_xattr(stat_cache_entry *sce, const array *mimetypes, int use_xattr);
@@ -51,7 +52,7 @@ const buffer * stat_cache_content_type_get_by_ext(stat_cache_entry *sce, const a
 #define stat_cache_content_type_get(con, r) stat_cache_content_type_get_by_ext((sce), (r)->conf.mimetypes)
 #endif
 const buffer * stat_cache_etag_get(stat_cache_entry *sce, int flags);
-void stat_cache_update_entry(const char *name, uint32_t len, struct stat *st, buffer *etagb);
+void stat_cache_update_entry(const char *name, uint32_t len, const struct stat *st, const buffer *etagb);
 void stat_cache_delete_entry(const char *name, uint32_t len);
 void stat_cache_delete_dir(const char *name, uint32_t len);
 void stat_cache_invalidate_entry(const char *name, uint32_t len);

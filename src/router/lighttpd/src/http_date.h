@@ -18,18 +18,17 @@ extern "C" {
 
 #define HTTP_DATE_SZ 30  /* (IMF-fixdate is 29 chars + '\0') */
 
-uint32_t http_date_time_to_str (char *s, size_t sz, time_t t);
+uint32_t http_date_time_to_str (char *s, size_t sz, unix_time64_t t);
 
-int http_date_if_modified_since (const char *ifmod, uint32_t ifmodlen, time_t lmtime);
+int http_date_if_modified_since (const char *ifmod, uint32_t ifmodlen, unix_time64_t lmtime);
 
-#ifdef HAVE_TIMEGM
-#define http_date_timegm(tm) timegm(tm)
-#elif defined(_WIN32)
-#define http_date_timegm(tm) _mkgmtime(tm)
-#else
-time_t http_date_timegm (const struct tm *tm);
-#endif
-
+/*(convenience macro to append IMF-fixdate to (buffer *))*/
+#define http_date_time_append(b, t)                                           \
+  do {                                                                        \
+    if (!http_date_time_to_str(buffer_extend((b), HTTP_DATE_SZ-1),            \
+                               HTTP_DATE_SZ, (t)))                            \
+        buffer_truncate((b), (b)->used - HTTP_DATE_SZ); /*(truncate if err)*/ \
+  } while (0)
 
 #ifdef __cplusplus
 }

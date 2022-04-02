@@ -13,7 +13,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+#include "sys-time.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -44,28 +44,58 @@ network_accept_tcp_nagle_disable (const int fd)
 }
 
 static handler_t network_server_handle_fdevent(void *context, int revents) {
-	server_socket * const srv_socket = (server_socket *)context;
-	server * const srv = srv_socket->srv;
-	connection *con;
-	int loops;
+    const server_socket * const srv_socket = (server_socket *)context;
+    server * const srv = srv_socket->srv;
 
-	if (0 == (revents & FDEVENT_IN)) {
-		log_error(srv->errh, __FILE__, __LINE__,
-		  "strange event for server socket %d %d", srv_socket->fd, revents);
-		return HANDLER_ERROR;
-	}
+    if (0 == (revents & FDEVENT_IN)) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "strange event for server socket %d %d", srv_socket->fd, revents);
+        return HANDLER_ERROR;
+    }
 
-	/* accept()s at most 100 connections directly
-	 *
-	 * we jump out after 100 to give the waiting connections a chance */
-	if (srv->conns.used >= srv->max_conns) return HANDLER_GO_ON;
-	loops = (int)(srv->max_conns - srv->conns.used + 1);
-	if (loops > 100) loops = 101;
+    /* accept()s at most 100 new connections before
+     * jumping out to process events on other connections */
+    int loops = (int)srv->lim_conns;
+    if (loops > 100)
+        loops = 100;
+    else if (loops <= 0)
+        return HANDLER_GO_ON;
 
-	while (--loops && NULL != (con = connection_accept(srv, srv_socket)))
-		connection_state_machine(con);
+    const int nagle_disable =
+      (sock_addr_get_family(&srv_socket->addr) != AF_UNIX);
 
-	return HANDLER_GO_ON;
+    sock_addr addr;
+    size_t addrlen; /*(size_t intentional; not socklen_t)*/
+    do {
+        addrlen = sizeof(addr);
+        int fd = fdevent_accept_listenfd(srv_socket->fd,
+                                         (struct sockaddr *)&addr, &addrlen);
+        if (-1 == fd) break;
+
+        if (nagle_disable)
+            network_accept_tcp_nagle_disable(fd);
+
+        connection *con = connection_accepted(srv, srv_socket, &addr, fd);
+        if (__builtin_expect( (!con), 0)) return HANDLER_GO_ON;
+        connection_state_machine(con);
+    } while (--loops);
+
+    if (loops) {
+        switch (errno) {
+          case EAGAIN:
+         #if EWOULDBLOCK != EAGAIN
+          case EWOULDBLOCK:
+         #endif
+          case EINTR:
+          case ECONNABORTED:
+          case EMFILE:
+            break;
+          default:
+            log_perror(srv->errh, __FILE__, __LINE__, "accept()");
+        }
+    }
+
+    return HANDLER_GO_ON;
 }
 
 static void network_host_normalize_addr_str(buffer *host, sock_addr *addr) {
@@ -79,7 +109,7 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
     const char *chost;
     sa_family_t family = use_ipv6 ? AF_INET6 : AF_INET;
     unsigned int port = srv->srvconf.port;
-    if (buffer_string_is_empty(host)) {
+    if (buffer_is_blank(host)) {
         log_error(srv->errh, __FILE__, __LINE__,
           "value of $SERVER[\"socket\"] must not be empty");
         return -1;
@@ -119,6 +149,10 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
               "port not set or out of range: %u", port);
             return -1;
         }
+    }
+    if (h[0] == '*' && h[1] == '\0') {
+        family = AF_INET;
+        ++h;
     }
     chost = *h ? h : family == AF_INET ? "0.0.0.0" : "::";
     if (1 !=
@@ -193,6 +227,20 @@ static void network_merge_config(network_socket_config * const pconf, const conf
     } while ((++cpv)->k_id != -1);
 }
 
+__attribute_pure__
+static uint8_t network_srv_token_colon (const buffer * const b) {
+    const char *colon = NULL;
+    const char * const p = b->ptr;
+    if (*p == '[') {
+        colon = strstr(p, "]:");
+        if (colon) ++colon;
+    }
+    else if (*p != '/') {
+        colon = strchr(p, ':');
+    }
+    return colon ? (uint8_t)(colon - p) : (uint8_t)buffer_clen(b);
+}
+
 static int network_server_init(server *srv, network_socket_config *s, buffer *host_token, size_t sidx, int stdin_fd) {
 	server_socket *srv_socket;
 	const char *host;
@@ -201,7 +249,7 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	int family = 0;
 	int set_v6only = 0;
 
-	if (buffer_string_is_empty(host_token)) {
+	if (buffer_is_blank(host_token)) {
 		log_error(srv->errh, __FILE__, __LINE__,
 		  "value of $SERVER[\"socket\"] must not be empty");
 		return -1;
@@ -273,7 +321,9 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	srv_socket->sidx = sidx;
 	srv_socket->is_ssl = s->ssl_enabled;
 	srv_socket->srv = srv;
-	srv_socket->srv_token = buffer_init_buffer(host_token);
+	buffer_copy_buffer((srv_socket->srv_token = buffer_init()), host_token);
+	srv_socket->srv_token_colon =
+	  network_srv_token_colon(srv_socket->srv_token);
 
 	network_srv_sockets_append(srv, srv_socket);
 
@@ -372,7 +422,7 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	}
 
 	if (-1 != stdin_fd) { } else
-	if (AF_UNIX == family && !buffer_string_is_empty(s->socket_perms)) {
+	if (AF_UNIX == family && s->socket_perms) {
 		mode_t m = 0;
 		for (char *str = s->socket_perms->ptr; *str; ++str) {
 			m <<= 3;
@@ -392,19 +442,21 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	}
 
 	if (s->ssl_enabled) {
+	}
 #ifdef TCP_DEFER_ACCEPT
-	} else if (s->defer_accept) {
+	else if (s->defer_accept) {
 		int v = s->defer_accept;
 		if (-1 == setsockopt(srv_socket->fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &v, sizeof(v))) {
 			log_perror(srv->errh, __FILE__, __LINE__, "can't set TCP_DEFER_ACCEPT");
 		}
+	}
 #endif
 #if defined(__FreeBSD__) || defined(__NetBSD__) \
  || defined(__OpenBSD__) || defined(__DragonFly__)
-	} else if (!buffer_is_empty(s->bsd_accept_filter)
+#ifdef SO_ACCEPTFILTER
+	else if (s->bsd_accept_filter
 		   && (buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("httpready"))
 			|| buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("dataready")))) {
-#ifdef SO_ACCEPTFILTER
 		/* FreeBSD accf_http filter */
 		struct accept_filter_arg afa;
 		memset(&afa, 0, sizeof(afa));
@@ -415,9 +467,9 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 				  "can't set accept-filter '%s'", s->bsd_accept_filter->ptr);
 			}
 		}
-#endif
-#endif
 	}
+#endif
+#endif
 
 	return 0;
 }
@@ -529,7 +581,13 @@ static int network_socket_activation_from_env(server *srv, network_socket_config
     char *listen_fds = getenv("LISTEN_FDS");
     pid_t lpid = listen_pid ? (pid_t)strtoul(listen_pid,NULL,10) : 0;
     int nfds = listen_fds ? atoi(listen_fds) : 0;
-    int rc = (lpid == getpid() && nfds > 0)
+    int rc = (nfds > 0 && nfds < 5000
+              && (lpid == getpid()
+                 #ifndef _WIN32
+                  || (0 == strncmp(listen_pid, "parent:", 7)
+                      && getppid() == (pid_t)strtoul(listen_pid+7,NULL,10))
+                 #endif
+                 ))
       ? network_socket_activation_nfds(srv, s, nfds)
       : 0;
     unsetenv("LISTEN_PID");
@@ -621,19 +679,12 @@ int network_init(server *srv, int stdin_fd) {
             }
         }
 
-        /* process srv->srvconf.bindhost
-         * (skip if systemd socket activation is enabled and bindhost is empty;
-         *  do not additionally listen on "*") */
-        if (!srv->srvconf.systemd_socket_activation
-            || !buffer_string_is_empty(srv->srvconf.bindhost)) {
+        /* special-case srv->srvconf.bindhost = "/dev/stdin" (see server.c) */
+        if (-1 != stdin_fd) {
             buffer *b = buffer_init();
             buffer_copy_buffer(b, srv->srvconf.bindhost);
-            if (b->ptr[0] != '/') { /*(skip adding port if unix socket path)*/
-                buffer_append_string_len(b, CONST_STR_LEN(":"));
-                buffer_append_int(b, srv->srvconf.port);
-            }
-
-            rc = (-1 == stdin_fd || 0 == srv->srv_sockets.used)
+            /*assert(buffer_eq_slen(b, CONST_STR_LEN("/dev/stdin")));*/
+            rc = (0 == srv->srv_sockets.used)
               ? network_server_init(srv, &p->defaults, b, 0, stdin_fd)
               : close(stdin_fd);/*(graceful restart listening to "/dev/stdin")*/
             buffer_free(b);
@@ -674,6 +725,33 @@ int network_init(server *srv, int stdin_fd) {
         }
         if (0 != rc) break;
 
+        /* process srv->srvconf.bindhost
+         * init global config for server.bindhost and server.port after
+         * initializing $SERVER["socket"] so that if bindhost and port match
+         * another $SERVER["socket"], the $SERVER["socket"] config is used,
+         * as the $SERVER["socket"] config inherits from the global scope and
+         * can then be overridden.  (bindhost = "/dev/stdin" is handled above)
+         * (skip if systemd socket activation is enabled and bindhost is empty;
+         *  do not additionally listen on "*") */
+        if ((!srv->srvconf.systemd_socket_activation || srv->srvconf.bindhost)
+            && -1 == stdin_fd) {
+            buffer *b = buffer_init();
+            if (srv->srvconf.bindhost)
+                buffer_copy_buffer(b, srv->srvconf.bindhost);
+            /*(skip adding port if unix socket path)*/
+            if (!b->ptr || b->ptr[0] != '/') {
+                buffer_append_string_len(b, CONST_STR_LEN(":"));
+                buffer_append_int(b, srv->srvconf.port);
+            }
+          #ifdef __COVERITY__
+            force_assert(b->ptr);
+          #endif
+
+            rc = network_server_init(srv, &p->defaults, b, 0, -1);
+            buffer_free(b);
+            if (0 != rc) break;
+        }
+
         if (srv->srvconf.systemd_socket_activation) {
             /* activate any inherited sockets not explicitly listed in config */
             server_socket *srv_socket;
@@ -686,6 +764,11 @@ int network_init(server *srv, int stdin_fd) {
                 force_assert(NULL != srv_socket);
                 memcpy(srv_socket, srv->srv_sockets_inherited.ptr[i],
                        sizeof(server_socket));
+                const buffer * const srv_token = srv_socket->srv_token;
+                buffer_copy_buffer((srv_socket->srv_token = buffer_init()),
+                                   srv_token);
+                srv_socket->srv_token_colon =
+                  network_srv_token_colon(srv_socket->srv_token);
                 network_srv_sockets_append(srv, srv_socket);
             }
         }

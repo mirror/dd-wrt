@@ -2,14 +2,7 @@
 #define _BASE_H_
 #include "first.h"
 
-#include <sys/types.h>
-#include <sys/time.h>
-
-#if defined(__APPLE__) && defined(__MACH__)
-#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-#include <time.h>
-#endif
-#endif
+#include "sys-time.h"
 
 #include "base_decls.h"
 #include "buffer.h"
@@ -20,6 +13,7 @@
 #include "sock_addr.h"
 
 struct fdevents;        /* declaration */
+struct server_socket;   /* declaration */
 
 
 struct connection {
@@ -28,8 +22,8 @@ struct connection {
 	h2con *h2;
 
 	int fd;                      /* the FD for this connection */
-	int ndx;                     /* reverse mapping to server->connection[ndx] */
 	fdnode *fdn;                 /* fdevent (fdnode *) object */
+	connection *jqnext;
 
 	/* fd states */
 	signed char is_readable;
@@ -56,36 +50,38 @@ struct connection {
 	void *config_data_base;
 
 	sock_addr dst_addr;
-	buffer *dst_addr_buf;
-	struct server_socket *srv_socket;   /* reference to the server-socket */
+	buffer dst_addr_buf;
+	const struct server_socket *srv_socket;   /* reference to the server-socket */
 
 	/* timestamps */
-	time_t read_idle_ts;
-	time_t close_timeout_ts;
-	time_t write_request_ts;
+	unix_time64_t read_idle_ts;
+	unix_time64_t close_timeout_ts;
+	unix_time64_t write_request_ts;
+	unix_time64_t connection_start;
 
-	time_t connection_start;
 	uint32_t request_count;      /* number of requests handled in this connection */
 	int keep_alive_idle;         /* remember max_keep_alive_idle from config */
+
+	connection *next;
+	connection *prev;
 };
 
-typedef struct {
-	connection **ptr;
-	uint32_t size;
-	uint32_t used;
-} connections;
-
-typedef struct {
-	void *ptr;
-	uint32_t used;
-	uint32_t size;
-} buffer_plugin;
+/* log_con_jqueue is in log.c to be defined in shared object */
+#define joblist_append(con) connection_jq_append(con)
+extern connection *log_con_jqueue;
+static inline void connection_jq_append(connection * const restrict con);
+static inline void connection_jq_append(connection * const restrict con)
+{
+    if (!con->jqnext) {
+        con->jqnext = log_con_jqueue;
+        log_con_jqueue = con;
+    }
+}
 
 typedef struct {
 	/*(used sparsely, if at all, after config at startup)*/
 
 	uint32_t max_request_field_size;
-	unsigned char log_state_handling;
 	unsigned char log_request_header_on_error;
 	unsigned char http_header_strict;
 	unsigned char http_host_strict;
@@ -93,8 +89,8 @@ typedef struct {
 	unsigned char http_method_get_body;
 	unsigned char high_precision_timestamps;
 	unsigned char h2proto;
-	unsigned short http_url_normalize;
 	unsigned char absolute_dir_redirect;
+	unsigned short http_url_normalize;
 
 	unsigned short max_worker;
 	unsigned short max_fds;
@@ -120,8 +116,8 @@ typedef struct {
 	const buffer *network_backend;
 	const array *feature_flags;
 	const char *event_handler;
+	const char *modules_dir;
 	buffer *pid_file;
-	buffer *modules_dir;
 	array *modules;
 	array *config_touched;
 	array empty_array;
@@ -131,7 +127,8 @@ typedef struct server_socket {
 	sock_addr addr;
 	int       fd;
 
-	unsigned short is_ssl;
+	uint8_t is_ssl;
+	uint8_t srv_token_colon;
 	unsigned short sidx;
 
 	fdnode *fdn;
@@ -149,6 +146,7 @@ typedef struct {
 struct server {
 	void *plugin_slots;
 	array *config_context;
+	int config_captures;
 
 	struct fdevents *ev;
 	int (* network_backend_write)(int fd, chunkqueue *cq, off_t max_bytes, log_error_st *errh);
@@ -156,11 +154,6 @@ struct server {
 
 	/* buffers */
 	buffer *tmp_buf;
-
-	connections conns;
-	connections joblist_A;
-	connections joblist_B;
-	connections fdwaitqueue;
 
 	/* counters */
 	int con_opened;
@@ -174,11 +167,13 @@ struct server {
 	int cur_fds;    /* currently used fds */
 	int sockets_disabled;
 
-	uint32_t max_conns;
+	uint32_t lim_conns;
+	connection *conns;
+	connection *conns_pool;
 
 	log_error_st *errh;
 
-	time_t loadts;
+	unix_time64_t loadts;
 	double loadavg[3];
 
 	/* members used at start-up or rarely used */
@@ -188,10 +183,10 @@ struct server {
 
 	server_socket_array srv_sockets;
 	server_socket_array srv_sockets_inherited;
-	buffer_plugin plugins;
+	struct { void *ptr; uint32_t used; uint32_t size; } plugins;
 
-	time_t startup_ts;
-	time_t graceful_expire_ts;
+	unix_time64_t startup_ts;
+	unix_time64_t graceful_expire_ts;
 
 	uid_t uid;
 	gid_t gid;
@@ -199,6 +194,9 @@ struct server {
 	int stdin_fd;
 
 	char **argv;
+  #ifdef HAVE_PCRE2_H
+	void *match_data; /*(shared and reused)*/
+  #endif
 };
 
 

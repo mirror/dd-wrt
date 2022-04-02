@@ -101,15 +101,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "sys-mmap.h"
+#include "sys-time.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <time.h>
 #include <unistd.h>     /* getpid() read() unlink() write() */
 
 #include "base.h"
+#include "ck.h"
 #include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
@@ -144,6 +145,11 @@
 # include <brotli/encode.h>
 #endif
 
+#if defined HAVE_ZSTD_H && defined HAVE_ZSTD
+# define USE_ZSTD
+# include <zstd.h>
+#endif
+
 #if defined HAVE_SYS_MMAN_H && defined HAVE_MMAP && defined ENABLE_MMAP
 #define USE_MMAP
 
@@ -157,7 +163,7 @@ static sigjmp_buf sigbus_jmp;
 static void sigbus_handler(int sig) {
 	UNUSED(sig);
 	if (sigbus_jmp_valid) siglongjmp(sigbus_jmp, 1);
-	log_failed_assert(__FILE__, __LINE__, "SIGBUS");
+	ck_bt_abort(__FILE__, __LINE__, "SIGBUS");
 }
 #endif
 
@@ -170,6 +176,29 @@ static void sigbus_handler(int sig) {
 #define HTTP_ACCEPT_ENCODING_X_GZIP   BV(5)
 #define HTTP_ACCEPT_ENCODING_X_BZIP2  BV(6)
 #define HTTP_ACCEPT_ENCODING_BR       BV(7)
+#define HTTP_ACCEPT_ENCODING_ZSTD     BV(8)
+
+typedef struct {
+	struct {
+		int clevel;       /*(compression level)*/
+		int windowBits;
+		int memLevel;
+		int strategy;
+	} gzip;
+	struct {
+		uint32_t quality; /*(compression level)*/
+		uint32_t window;
+		uint32_t mode;
+	} brotli;
+	struct {
+		int clevel;       /*(compression level)*/
+		int strategy;
+		int windowLog;
+	} zstd;
+	struct {
+		int clevel;       /*(compression level)*/
+	} bzip2;
+} encparms;
 
 typedef struct {
 	const array	*mimetypes;
@@ -180,8 +209,9 @@ typedef struct {
 	unsigned short	work_block_size;
 	unsigned short	sync_flush;
 	short		compression_level;
-	short		allowed_encodings;
+	uint16_t *	allowed_encodings;
 	double		max_loadavg;
+	const encparms *params;
 } plugin_config;
 
 typedef struct {
@@ -202,6 +232,9 @@ typedef struct {
 	      #endif
 	      #ifdef USE_BROTLI
 		BrotliEncoderState *br;
+	      #endif
+	      #ifdef USE_ZSTD
+		ZSTD_CStream *cctx;
 	      #endif
 		int dummy;
 	} u;
@@ -244,13 +277,33 @@ static void handler_ctx_free(handler_ctx *hctx) {
 
 INIT_FUNC(mod_deflate_init) {
     plugin_data * const p = calloc(1, sizeof(plugin_data));
+  #ifdef USE_ZSTD
+    buffer_string_prepare_copy(&p->tmp_buf, ZSTD_CStreamOutSize());
+  #else
     buffer_string_prepare_copy(&p->tmp_buf, 65536);
+  #endif
     return p;
 }
 
 FREE_FUNC(mod_deflate_free) {
     plugin_data *p = p_d;
     free(p->tmp_buf.ptr);
+    if (NULL == p->cvlist) return;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            if (cpv->vtype != T_CONFIG_LOCAL || NULL == cpv->v.v) continue;
+            switch (cpv->k_id) {
+              case 1: /* deflate.allowed-encodings */
+              case 14:/* deflate.params */
+                free(cpv->v.v);
+                break;
+              default:
+                break;
+            }
+        }
+    }
 }
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -278,12 +331,13 @@ static buffer * mod_deflate_cache_file_name(request_st * const r, const buffer *
     /* XXX: future: for shorter paths into the cache, we could checksum path,
      *      and then shard it to avoid a huge single directory.
      *      Alternatively, could use &r->uri.path, minus any
-     *      (matching) &r->pathinfo suffix, with result url-encoded */
+     *      (matching) &r->pathinfo suffix, with result url-encoded
+     *      Alternative, we could shard etag which is already our "checksum" */
     buffer * const tb = r->tmp_buf;
-    buffer_copy_buffer(tb, cache_dir);
-    buffer_append_string_len(tb, CONST_BUF_LEN(&r->physical.path));
-    buffer_append_string_len(tb, CONST_STR_LEN("-"));
-    buffer_append_string_len(tb, etag->ptr+1, buffer_string_length(etag)-2);
+    buffer_copy_path_len2(tb, BUF_PTR_LEN(cache_dir),
+                              BUF_PTR_LEN(&r->physical.path));
+    buffer_append_str2(tb, CONST_STR_LEN("-"), /*(strip surrounding '"')*/
+                           etag->ptr+1, buffer_clen(etag)-2);
     return tb;
 }
 
@@ -291,7 +345,7 @@ static void mod_deflate_cache_file_open (handler_ctx * const hctx, const buffer 
     /* race exists whereby up to # workers might attempt to compress same
      * file at same time if requested at same time, but this is unlikely
      * and resolves itself by atomic rename into place when done */
-    const uint32_t fnlen = buffer_string_length(fn);
+    const uint32_t fnlen = buffer_clen(fn);
     hctx->cache_fn = malloc(fnlen+1+LI_ITOSTRING_LENGTH+1);
     force_assert(hctx->cache_fn);
     memcpy(hctx->cache_fn, fn->ptr, fnlen);
@@ -323,7 +377,8 @@ static void mod_deflate_merge_config_cpv(plugin_config * const pconf, const conf
         pconf->mimetypes = cpv->v.a;
         break;
       case 1: /* deflate.allowed-encodings */
-        pconf->allowed_encodings = (short)cpv->v.shrt;
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->allowed_encodings = cpv->v.v;
         break;
       case 2: /* deflate.max-compress-size */
         pconf->max_compress_size = cpv->v.u;
@@ -346,11 +401,13 @@ static void mod_deflate_merge_config_cpv(plugin_config * const pconf, const conf
       case 8: /* deflate.cache-dir */
         pconf->cache_dir = cpv->v.b;
         break;
+    #if 0 /*(cpv->k_id remapped in mod_deflate_set_defaults())*/
       case 9: /* compress.filetype */
         pconf->mimetypes = cpv->v.a;
         break;
       case 10:/* compress.allowed-encodings */
-        pconf->allowed_encodings = (short)cpv->v.shrt;
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->allowed_encodings = cpv->v.v;
         break;
       case 11:/* compress.cache-dir */
         pconf->cache_dir = cpv->v.b;
@@ -360,6 +417,11 @@ static void mod_deflate_merge_config_cpv(plugin_config * const pconf, const conf
         break;
       case 13:/* compress.max-loadavg */
         pconf->max_loadavg = cpv->v.d;
+        break;
+    #endif
+      case 14:/* deflate.params */
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->params = cpv->v.v;
         break;
       default:/* should not happen */
         return;
@@ -380,55 +442,246 @@ static void mod_deflate_patch_config(request_st * const r, plugin_data * const p
     }
 }
 
-static short mod_deflate_encodings_to_flags(const array *encodings) {
-    short allowed_encodings = 0;
+static encparms * mod_deflate_parse_params(const array * const a, log_error_st * const errh) {
+    encparms * params = calloc(1, sizeof(encparms));
+    force_assert(params);
+
+    /* set defaults */
+  #ifdef USE_ZLIB
+    params->gzip.clevel = 0; /*(unset)*/
+    params->gzip.windowBits = MAX_WBITS;
+    params->gzip.memLevel = 8;
+    params->gzip.strategy = Z_DEFAULT_STRATEGY;
+  #endif
+  #ifdef USE_BROTLI
+    /* BROTLI_DEFAULT_QUALITY is 11 and can be *very* time-consuming */
+    params->brotli.quality = 5;
+    params->brotli.window = BROTLI_DEFAULT_WINDOW;
+    params->brotli.mode = BROTLI_MODE_GENERIC;
+  #endif
+  #ifdef USE_ZSTD
+    params->zstd.clevel = ZSTD_CLEVEL_DEFAULT;
+    params->zstd.strategy = 0; /*(use default strategy)*/
+    params->zstd.windowLog = 0;/*(use default windowLog)*/
+  #endif
+  #ifdef USE_BZ2LIB
+    params->bzip2.clevel = 0; /*(unset)*/
+  #endif
+
+    for (uint32_t i = 0; i < a->used; ++i) {
+        const data_unset * const du = a->data[i];
+      #if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI) \
+       || defined(USE_ZSTD)
+        int32_t v = config_plugin_value_to_int32(du, -1);
+      #endif
+      #ifdef USE_BROTLI
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("BROTLI_PARAM_QUALITY"))) {
+            /*(future: could check for string and then look for and translate
+             * BROTLI_DEFAULT_QUALITY BROTLI_MIN_QUALITY BROTLI_MAX_QUALITY)*/
+            if (BROTLI_MIN_QUALITY <= v && v <= BROTLI_MAX_QUALITY)
+                params->brotli.quality = (uint32_t)v; /* 0 .. 11 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for BROTLI_PARAM_QUALITY");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("BROTLI_PARAM_LGWIN"))) {
+            /*(future: could check for string and then look for and translate
+             * BROTLI_DEFAULT_WINDOW
+             * BROTLI_MIN_WINDOW_BITS BROTLI_MAX_WINDOW_BITS)*/
+            if (BROTLI_MIN_WINDOW_BITS <= v && v <= BROTLI_MAX_WINDOW_BITS)
+                params->brotli.window = (uint32_t)v; /* 10 .. 24 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for BROTLI_PARAM_LGWIN");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("BROTLI_PARAM_MODE"))) {
+            /*(future: could check for string and then look for and translate
+             * BROTLI_MODE_GENERIC BROTLI_MODE_TEXT BROTLI_MODE_FONT)*/
+            if (0 <= v && v <= 2)
+                params->brotli.mode = (uint32_t)v; /* 0 .. 2 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for BROTLI_PARAM_MODE");
+            continue;
+        }
+      #endif
+      #ifdef USE_ZSTD
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("ZSTD_c_compressionLevel"))) {
+            params->zstd.clevel = v;
+            /*(not warning if number parse error.  future: to detect, could
+             * use absurd default to config_plugin_value_to_int32 to detect)*/
+            continue;
+        }
+       #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+        /*(XXX: (selected) experimental API params in zstd v1.4.0)*/
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("ZSTD_c_strategy"))) {
+            /*(future: could check for string and then look for and translate
+             * enum ZSTD_strategy ZSTD_STRATEGY_MIN ZSTD_STRATEGY_MAX)*/
+            #ifndef ZSTD_STRATEGY_MIN
+            #define ZSTD_STRATEGY_MIN 1
+            #endif
+            #ifndef ZSTD_STRATEGY_MAX
+            #define ZSTD_STRATEGY_MAX 9
+            #endif
+            if (ZSTD_STRATEGY_MIN <= v && v <= ZSTD_STRATEGY_MAX)
+                params->zstd.strategy = v; /* 1 .. 9 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for ZSTD_c_strategy");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("ZSTD_c_windowLog"))) {
+            /*(future: could check for string and then look for and translate
+             * ZSTD_WINDOWLOG_MIN ZSTD_WINDOWLOG_MAX)*/
+            #ifndef ZSTD_WINDOWLOG_MIN
+            #define ZSTD_WINDOWLOG_MIN 10
+            #endif
+            #ifndef ZSTD_WINDOWLOG_MAX_32
+            #define ZSTD_WINDOWLOG_MAX_32 30
+            #endif
+            #ifndef ZSTD_WINDOWLOG_MAX_64
+            #define ZSTD_WINDOWLOG_MAX_64 31
+            #endif
+            #ifndef ZSTD_WINDOWLOG_MAX
+            #define ZSTD_WINDOWLOG_MAX \
+             (sizeof(size_t)==4 ? ZSTD_WINDOWLOG_MAX_32 : ZSTD_WINDOWLOG_MAX_64)
+            #endif
+            if (ZSTD_WINDOWLOG_MIN <= v && v <= ZSTD_WINDOWLOG_MAX)
+                params->zstd.windowLog = v;/* 10 .. 31 *//*(30 max for 32-bit)*/
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for ZSTD_c_windowLog");
+            continue;
+        }
+       #endif
+      #endif
+      #ifdef USE_ZLIB
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("gzip.level"))) {
+            if (1 <= v && v <= 9)
+                params->gzip.clevel = v; /* 1 .. 9 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for gzip.level");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("gzip.windowBits"))) {
+            if (9 <= v && v <= 15)
+                params->gzip.windowBits = v; /* 9 .. 15 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for gzip.windowBits");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("gzip.memLevel"))) {
+            if (1 <= v && v <= 9)
+                params->gzip.memLevel = v; /* 1 .. 9 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for gzip.memLevel");
+            continue;
+        }
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("gzip.strategy"))) {
+            /*(future: could check for string and then look for and translate
+             * Z_DEFAULT_STRATEGY Z_FILTERED Z_HUFFMAN_ONLY Z_RLE Z_FIXED)*/
+            if (0 <= v && v <= 4)
+                params->gzip.strategy = v; /* 0 .. 4 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for gzip.strategy");
+            continue;
+        }
+      #endif
+      #ifdef USE_BZ2LIB
+        if (buffer_eq_icase_slen(&du->key,
+                                 CONST_STR_LEN("bzip2.blockSize100k"))) {
+            if (1 <= v && v <= 9) /*(bzip2 blockSize100k param)*/
+                params->bzip2.clevel = v; /* 1 .. 9 */
+            else
+                log_error(errh, __FILE__, __LINE__,
+                          "invalid value for bzip2.blockSize100k");
+            continue;
+        }
+      #endif
+        log_error(errh, __FILE__, __LINE__,
+                  "unrecognized param: %s", du->key.ptr);
+    }
+
+    return params;
+}
+
+static uint16_t * mod_deflate_encodings_to_flags(const array *encodings) {
     if (encodings->used) {
+        uint16_t * const x = calloc(encodings->used+1, sizeof(short));
+        force_assert(x);
+        int i = 0;
         for (uint32_t j = 0; j < encodings->used; ++j) {
-          #if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI)
+          #if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI) \
+           || defined(USE_ZSTD)
             data_string *ds = (data_string *)encodings->data[j];
           #endif
-          #ifdef USE_ZLIB
+          #ifdef USE_ZLIB /* "gzip", "x-gzip" */
             if (NULL != strstr(ds->value.ptr, "gzip"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_GZIP
-                                  |  HTTP_ACCEPT_ENCODING_X_GZIP;
-            if (NULL != strstr(ds->value.ptr, "x-gzip"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_X_GZIP;
+                x[i++] = HTTP_ACCEPT_ENCODING_GZIP
+                       | HTTP_ACCEPT_ENCODING_X_GZIP;
             if (NULL != strstr(ds->value.ptr, "deflate"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_DEFLATE;
+                x[i++] = HTTP_ACCEPT_ENCODING_DEFLATE;
             /*
             if (NULL != strstr(ds->value.ptr, "compress"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_COMPRESS;
+                x[i++] = HTTP_ACCEPT_ENCODING_COMPRESS;
             */
           #endif
-          #ifdef USE_BZ2LIB
+          #ifdef USE_BZ2LIB /* "bzip2", "x-bzip2" */
             if (NULL != strstr(ds->value.ptr, "bzip2"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_BZIP2
-                                  |  HTTP_ACCEPT_ENCODING_X_BZIP2;
-            if (NULL != strstr(ds->value.ptr, "x-bzip2"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_X_BZIP2;
+                x[i++] = HTTP_ACCEPT_ENCODING_BZIP2
+                       | HTTP_ACCEPT_ENCODING_X_BZIP2;
           #endif
-          #ifdef USE_BROTLI
+          #ifdef USE_BROTLI /* "br" (also accepts "brotli") */
             if (NULL != strstr(ds->value.ptr, "br"))
-                allowed_encodings |= HTTP_ACCEPT_ENCODING_BR;
+                x[i++] = HTTP_ACCEPT_ENCODING_BR;
+          #endif
+          #ifdef USE_ZSTD
+            if (NULL != strstr(ds->value.ptr, "zstd"))
+                x[i++] = HTTP_ACCEPT_ENCODING_ZSTD;
           #endif
         }
+        x[i] = 0; /* end of list */
+        return x;
     }
     else {
         /* default encodings */
-      #ifdef USE_ZLIB
-        allowed_encodings |= HTTP_ACCEPT_ENCODING_GZIP
-                          |  HTTP_ACCEPT_ENCODING_X_GZIP
-                          |  HTTP_ACCEPT_ENCODING_DEFLATE;
-      #endif
-      #ifdef USE_BZ2LIB
-        allowed_encodings |= HTTP_ACCEPT_ENCODING_BZIP2
-                          |  HTTP_ACCEPT_ENCODING_X_BZIP2;
+        uint16_t * const x = calloc(4+1, sizeof(short));
+        force_assert(x);
+        int i = 0;
+      #ifdef USE_ZSTD
+        x[i++] = HTTP_ACCEPT_ENCODING_ZSTD;
       #endif
       #ifdef USE_BROTLI
-        allowed_encodings |= HTTP_ACCEPT_ENCODING_BR;
+        x[i++] = HTTP_ACCEPT_ENCODING_BR;
       #endif
+      #ifdef USE_BZ2LIB
+        x[i++] = HTTP_ACCEPT_ENCODING_BZIP2
+               | HTTP_ACCEPT_ENCODING_X_BZIP2;
+      #endif
+      #ifdef USE_ZLIB
+        x[i++] = HTTP_ACCEPT_ENCODING_GZIP
+               | HTTP_ACCEPT_ENCODING_X_GZIP
+               | HTTP_ACCEPT_ENCODING_DEFLATE;
+      #endif
+        x[i] = 0; /* end of list */
+        return x;
     }
-    return allowed_encodings;
 }
 
 SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
@@ -475,6 +728,9 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
      ,{ CONST_STR_LEN("compress.max-loadavg"),
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("deflate.params"),
+        T_CONFIG_ARRAY_KVANY,
+        T_CONFIG_SCOPE_CONNECTION }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -490,23 +746,40 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
         config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
+              case 9: /* compress.filetype */
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "DEPRECATED: %s replaced with deflate.mimetypes",
+                  cpk[cpv->k_id].k);
+                cpv->k_id = 0; /* deflate.mimetypes */
+                __attribute_fallthrough__
               case 0: /* deflate.mimetypes */
                 /* mod_deflate matches mimetype as prefix of Content-Type
                  * so ignore '*' at end of mimetype for end-user flexibility
                  * in specifying trailing wildcard to grouping of mimetypes */
                 for (uint32_t m = 0; m < cpv->v.a->used; ++m) {
                     buffer *mimetype=&((data_string *)cpv->v.a->data[m])->value;
-                    size_t len = buffer_string_length(mimetype);
+                    size_t len = buffer_clen(mimetype);
                     if (len > 2 && mimetype->ptr[len-1] == '*')
-                        buffer_string_set_length(mimetype, len-1);
+                        buffer_truncate(mimetype, len-1);
                 }
                 if (0 == cpv->v.a->used) cpv->v.a = NULL;
                 break;
+              case 10:/* compress.allowed-encodings */
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "DEPRECATED: %s replaced with deflate.allowed-encodings",
+                  cpk[cpv->k_id].k);
+                cpv->k_id = 1; /* deflate.allowed-encodings */
+                __attribute_fallthrough__
               case 1: /* deflate.allowed-encodings */
-                cpv->v.shrt = (unsigned short)
-                  mod_deflate_encodings_to_flags(cpv->v.a);
-                cpv->vtype = T_CONFIG_SHORT;
+                cpv->v.v = mod_deflate_encodings_to_flags(cpv->v.a);
+                cpv->vtype = T_CONFIG_LOCAL;
                 break;
+              case 12:/* compress.max-filesize */
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "DEPRECATED: %s replaced with deflate.max-compress-size",
+                  cpk[cpv->k_id].k);
+                cpv->k_id = 2; /* deflate.max-compress-size */
+                __attribute_fallthrough__
               case 2: /* deflate.max-compress-size */
               case 3: /* deflate.min-compress-size */
                 break;
@@ -522,49 +795,30 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
               case 5: /* deflate.output-buffer-size */
               case 6: /* deflate.work-block-size */
                 break;
+              case 13:/* compress.max-loadavg */
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "DEPRECATED: %s replaced with deflate.max-loadavg",
+                  cpk[cpv->k_id].k);
+                cpv->k_id = 7; /* deflate.max-loadavg */
+                __attribute_fallthrough__
               case 7: /* deflate.max-loadavg */
-                cpv->v.d = (!buffer_string_is_empty(cpv->v.b))
+                cpv->v.d = (!buffer_is_blank(cpv->v.b))
                   ? strtod(cpv->v.b->ptr, NULL)
                   : 0.0;
-                break;
-              case 8: /* deflate.cache-dir */
-                if (!buffer_string_is_empty(cpv->v.b)) {
-                    buffer *b;
-                    *(const buffer **)&b = cpv->v.b;
-                    const uint32_t len = buffer_string_length(b);
-                    if (len > 0 && '/' == b->ptr[len-1])
-                        buffer_string_set_length(b, len-1); /*remove end slash*/
-                    struct stat st;
-                    if (0 != stat(b->ptr,&st) && 0 != mkdir_recursive(b->ptr)) {
-                        log_perror(srv->errh, __FILE__, __LINE__,
-                          "can't stat %s %s", cpk[cpv->k_id].k, b->ptr);
-                        return HANDLER_ERROR;
-                    }
-                }
-                break;
-              case 9: /* compress.filetype */
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "DEPRECATED: %s replaced with deflate.mimetypes",
-                  cpk[cpv->k_id].k);
-                break;
-              case 10:/* compress.allowed-encodings */
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "DEPRECATED: %s replaced with deflate.allowed-encodings",
-                  cpk[cpv->k_id].k);
-                cpv->v.shrt = (unsigned short)
-                  mod_deflate_encodings_to_flags(cpv->v.a);
-                cpv->vtype = T_CONFIG_SHORT;
                 break;
               case 11:/* compress.cache-dir */
                 log_error(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: %s replaced with deflate.cache-dir",
                   cpk[cpv->k_id].k);
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                cpv->k_id = 8; /* deflate.cache-dir */
+                __attribute_fallthrough__
+              case 8: /* deflate.cache-dir */
+                if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
-                    const uint32_t len = buffer_string_length(b);
+                    const uint32_t len = buffer_clen(b);
                     if (len > 0 && '/' == b->ptr[len-1])
-                        buffer_string_set_length(b, len-1); /*remove end slash*/
+                        buffer_truncate(b, len-1); /*remove end slash*/
                     struct stat st;
                     if (0 != stat(b->ptr,&st) && 0 != mkdir_recursive(b->ptr)) {
                         log_perror(srv->errh, __FILE__, __LINE__,
@@ -572,19 +826,20 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                         return HANDLER_ERROR;
                     }
                 }
+                else
+                    cpv->v.b = NULL;
                 break;
+             #if 0    /*(handled further above)*/
+              case 9: /* compress.filetype */
+              case 10:/* compress.allowed-encodings */
+              case 11:/* compress.cache-dir */
               case 12:/* compress.max-filesize */
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "DEPRECATED: %s replaced with deflate.max-compress-size",
-                  cpk[cpv->k_id].k);
-                break;
               case 13:/* compress.max-loadavg */
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "DEPRECATED: %s replaced with deflate.max-loadavg",
-                  cpk[cpv->k_id].k);
-                cpv->v.d = (!buffer_string_is_empty(cpv->v.b))
-                  ? strtod(cpv->v.b->ptr, NULL)
-                  : 0.0;
+                break;
+             #endif
+              case 14:/* deflate.params */
+                cpv->v.v = mod_deflate_parse_params(cpv->v.a, srv->errh);
+                cpv->vtype = T_CONFIG_LOCAL;
                 break;
               default:/* should not happen */
                 break;
@@ -592,7 +847,6 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
         }
     }
 
-    p->defaults.allowed_encodings = 0;
     p->defaults.max_compress_size = 128*1024; /*(128 MB measured as num KB)*/
     p->defaults.min_compress_size = 256;
     p->defaults.compression_level = -1;
@@ -612,7 +866,8 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
 }
 
 
-#if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI)
+#if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI) \
+ || defined(USE_ZSTD)
 static int mod_deflate_cache_file_append (handler_ctx * const hctx, const char *out, size_t len) {
     ssize_t wr;
     do {
@@ -634,7 +889,6 @@ static int stream_http_chunk_append_mem(handler_ctx * const hctx, const char * c
 
 static int stream_deflate_init(handler_ctx *hctx) {
 	z_stream * const z = &hctx->u.z;
-	const plugin_data * const p = hctx->plugin_data;
 	z->zalloc = Z_NULL;
 	z->zfree = Z_NULL;
 	z->opaque = Z_NULL;
@@ -643,16 +897,23 @@ static int stream_deflate_init(handler_ctx *hctx) {
 	z->next_out = (unsigned char *)hctx->output->ptr;
 	z->avail_out = hctx->output->size;
 
+	const plugin_data * const p = hctx->plugin_data;
+	const encparms * const params = p->conf.params;
+	const int clevel = (NULL != params)
+	  ? params->gzip.clevel
+	  : p->conf.compression_level;
+	const int wbits = (NULL != params)
+	  ? params->gzip.windowBits
+	  : MAX_WBITS;
+
 	if (Z_OK != deflateInit2(z,
-				 p->conf.compression_level > 0
-				  ? p->conf.compression_level
-				  : Z_DEFAULT_COMPRESSION,
+				 clevel > 0 ? clevel : Z_DEFAULT_COMPRESSION,
 				 Z_DEFLATED,
 				 (hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP)
-				  ? (MAX_WBITS | 16) /*(0x10 flags gzip header, trailer)*/
-				  : -MAX_WBITS,      /*(negate to suppress zlib header)*/
-				 8, /* default memLevel */
-				 Z_DEFAULT_STRATEGY)) {
+				  ? (wbits | 16) /*(0x10 flags gzip header, trailer)*/
+				  : -wbits,      /*(negate to suppress zlib header)*/
+				 params ? params->gzip.memLevel : 8,/*default memLevel*/
+				 params ? params->gzip.strategy : Z_DEFAULT_STRATEGY)) {
 		return -1;
 	}
 
@@ -746,7 +1007,6 @@ static int stream_deflate_end(handler_ctx *hctx) {
 
 static int stream_bzip2_init(handler_ctx *hctx) {
 	bz_stream * const bz = &hctx->u.bz;
-	const plugin_data * const p = hctx->plugin_data;
 	bz->bzalloc = NULL;
 	bz->bzfree = NULL;
 	bz->opaque = NULL;
@@ -757,8 +1017,14 @@ static int stream_bzip2_init(handler_ctx *hctx) {
 	bz->next_out = hctx->output->ptr;
 	bz->avail_out = hctx->output->size;
 
+	const plugin_data * const p = hctx->plugin_data;
+	const encparms * const params = p->conf.params;
+	const int clevel = (NULL != params)
+	  ? params->bzip2.clevel
+	  : p->conf.compression_level;
+
 	if (BZ_OK != BZ2_bzCompressInit(bz,
-					p->conf.compression_level > 0
+					clevel > 0
 					 ? p->conf.compression_level
 					 : 9, /* blocksize = 900k */
 					0,    /* verbosity */
@@ -854,28 +1120,36 @@ static int stream_br_init(handler_ctx *hctx) {
       BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (NULL == br) return -1;
 
-    /* future: consider allowing tunables by encoder algorithm,
-     * (i.e. not generic "compression_level") */
     /*(note: we ignore any errors while tuning parameters here)*/
     const plugin_data * const p = hctx->plugin_data;
-    if (p->conf.compression_level >= 0) /* 0 .. 11 are valid values */
-        BrotliEncoderSetParameter(br, BROTLI_PARAM_QUALITY,
-                                  p->conf.compression_level);
+    const encparms * const params = p->conf.params;
+    const uint32_t quality = (NULL != params)
+      ? params->brotli.quality
+      : (p->conf.compression_level >= 0) /* 0 .. 11 are valid values */
+        ? (uint32_t)p->conf.compression_level
+        : 5;
+        /* BROTLI_DEFAULT_QUALITY is 11 and can be *very* time-consuming */
+    if (quality != BROTLI_DEFAULT_QUALITY)
+        BrotliEncoderSetParameter(br, BROTLI_PARAM_QUALITY, quality);
 
-    /* XXX: is this worth checking?
-     * BROTLI_MODE_GENERIC vs BROTLI_MODE_TEXT or BROTLI_MODE_FONT */
-    const buffer *vb =
-      http_header_response_get(hctx->r, HTTP_HEADER_CONTENT_TYPE,
-                               CONST_STR_LEN("Content-Type"));
-    if (NULL != vb) {
+    if (params && params->brotli.window != BROTLI_DEFAULT_WINDOW)
+        BrotliEncoderSetParameter(br, BROTLI_PARAM_LGWIN,params->brotli.window);
+
+    const buffer *vb;
+    if (params && params->brotli.mode != BROTLI_MODE_GENERIC)
+        BrotliEncoderSetParameter(br, BROTLI_PARAM_MODE, params->brotli.mode);
+    else if ((vb = http_header_response_get(hctx->r, HTTP_HEADER_CONTENT_TYPE,
+                                            CONST_STR_LEN("Content-Type")))) {
+        /* BROTLI_MODE_GENERIC vs BROTLI_MODE_TEXT or BROTLI_MODE_FONT */
+        const uint32_t len = buffer_clen(vb);
         if (0 == strncmp(vb->ptr, "text/", sizeof("text/")-1)
             || (0 == strncmp(vb->ptr, "application/", sizeof("application/")-1)
                 && (0 == strncmp(vb->ptr+12,"javascript",sizeof("javascript")-1)
-                 || 0 == strncmp(vb->ptr+12,"ld+json",   sizeof("ld+json")-1)
                  || 0 == strncmp(vb->ptr+12,"json",      sizeof("json")-1)
-                 || 0 == strncmp(vb->ptr+12,"xhtml+xml", sizeof("xhtml+xml")-1)
                  || 0 == strncmp(vb->ptr+12,"xml",       sizeof("xml")-1)))
-            || 0 == strncmp(vb->ptr, "image/svg+xml", sizeof("image/svg+xml")-1))
+            || (len > 4
+                && (0 == strncmp(vb->ptr+len-5, "+json", sizeof("+json")-1)
+                 || 0 == strncmp(vb->ptr+len-4, "+xml",  sizeof("+xml")-1))))
             BrotliEncoderSetParameter(br, BROTLI_PARAM_MODE, BROTLI_MODE_TEXT);
         else if (0 == strncmp(vb->ptr, "font/", sizeof("font/")-1))
             BrotliEncoderSetParameter(br, BROTLI_PARAM_MODE, BROTLI_MODE_FONT);
@@ -933,6 +1207,106 @@ static int stream_br_end(handler_ctx *hctx) {
 #endif
 
 
+#ifdef USE_ZSTD
+
+static int stream_zstd_init(handler_ctx *hctx) {
+    ZSTD_CStream * const cctx = hctx->u.cctx = ZSTD_createCStream();
+    if (NULL == cctx) return -1;
+    hctx->output->used = 0;
+
+    /*(note: we ignore any errors while tuning parameters here)*/
+    const plugin_data * const p = hctx->plugin_data;
+    const encparms * const params = p->conf.params;
+    if (params) {
+        if (params->zstd.clevel && params->zstd.clevel != ZSTD_CLEVEL_DEFAULT) {
+            const int level = params->zstd.clevel;
+          #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+            ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, level);
+          #else
+            ZSTD_initCStream(cctx, level);
+          #endif
+        }
+      #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+        if (params->zstd.strategy)
+            ZSTD_CCtx_setParameter(cctx, ZSTD_c_strategy,
+                                   params->zstd.strategy);
+        if (params->zstd.windowLog)
+            ZSTD_CCtx_setParameter(cctx, ZSTD_c_windowLog,
+                                   params->zstd.windowLog);
+      #endif
+    }
+    else if (p->conf.compression_level >= 0) { /* -1 here is "unset" */
+        int level = p->conf.compression_level;
+      #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+        ZSTD_CCtx_setParameter(cctx, ZSTD_c_strategy, level);
+      #else
+        ZSTD_initCStream(cctx, level);
+      #endif
+    }
+    return 0;
+}
+
+static int stream_zstd_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+    ZSTD_CStream * const cctx = hctx->u.cctx;
+    ZSTD_inBuffer zib = { start, (size_t)st_size, 0 };
+    ZSTD_outBuffer zob = { hctx->output->ptr,
+                           hctx->output->size,
+                           hctx->output->used };
+    hctx->output->used = 0;
+    hctx->bytes_in += st_size;
+    while (zib.pos < zib.size) {
+      #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+        const size_t rv = ZSTD_compressStream2(cctx,&zob,&zib,ZSTD_e_continue);
+      #else
+        const size_t rv = ZSTD_compressStream(cctx, &zob, &zib);
+      #endif
+        if (ZSTD_isError(rv)) return -1;
+        if (zib.pos == zib.size) break; /* defer flush */
+        hctx->bytes_out += (off_t)zob.pos;
+        if (0 != stream_http_chunk_append_mem(hctx, zob.dst, zob.pos))
+            return -1;
+        zob.pos = 0;
+    }
+    hctx->output->used = (uint32_t)zob.pos;
+    return 0;
+}
+
+static int stream_zstd_flush(handler_ctx * const hctx, int end) {
+    ZSTD_CStream * const cctx = hctx->u.cctx;
+  #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+    const ZSTD_EndDirective endOp = end ? ZSTD_e_end : ZSTD_e_flush;
+    ZSTD_inBuffer zib = { NULL, 0, 0 };
+  #endif
+    ZSTD_outBuffer zob = { hctx->output->ptr,
+                           hctx->output->size,
+                           hctx->output->used };
+    size_t rv;
+    do {
+      #if ZSTD_VERSION_NUMBER >= 10000+400+0 /* v1.4.0 */
+        rv = ZSTD_compressStream2(cctx, &zob, &zib, endOp);
+      #else
+        rv = end
+           ? ZSTD_endStream(cctx, &zob)
+           : ZSTD_flushStream(cctx, &zob);
+      #endif
+        if (ZSTD_isError(rv)) return -1;
+        hctx->bytes_out += (off_t)zob.pos;
+        if (0 != stream_http_chunk_append_mem(hctx, zob.dst, zob.pos))
+            return -1;
+        zob.pos = 0;
+    } while (0 != rv);
+    return 0;
+}
+
+static int stream_zstd_end(handler_ctx *hctx) {
+    ZSTD_CStream * const cctx = hctx->u.cctx;
+    ZSTD_freeCStream(cctx);
+    return 0;
+}
+
+#endif
+
+
 static int mod_deflate_stream_init(handler_ctx *hctx) {
 	switch(hctx->compression_type) {
 #ifdef USE_ZLIB
@@ -947,6 +1321,10 @@ static int mod_deflate_stream_init(handler_ctx *hctx) {
 #ifdef USE_BROTLI
 	case HTTP_ACCEPT_ENCODING_BR:
 		return stream_br_init(hctx);
+#endif
+#ifdef USE_ZSTD
+	case HTTP_ACCEPT_ENCODING_ZSTD:
+		return stream_zstd_init(hctx);
 #endif
 	default:
 		return -1;
@@ -968,6 +1346,10 @@ static int mod_deflate_compress(handler_ctx * const hctx, unsigned char * const 
 #ifdef USE_BROTLI
 	case HTTP_ACCEPT_ENCODING_BR:
 		return stream_br_compress(hctx, start, st_size);
+#endif
+#ifdef USE_ZSTD
+	case HTTP_ACCEPT_ENCODING_ZSTD:
+		return stream_zstd_compress(hctx, start, st_size);
 #endif
 	default:
 		UNUSED(start);
@@ -991,6 +1373,10 @@ static int mod_deflate_stream_flush(handler_ctx * const hctx, int end) {
 	case HTTP_ACCEPT_ENCODING_BR:
 		return stream_br_flush(hctx, end);
 #endif
+#ifdef USE_ZSTD
+	case HTTP_ACCEPT_ENCODING_ZSTD:
+		return stream_zstd_flush(hctx, end);
+#endif
 	default:
 		UNUSED(end);
 		return -1;
@@ -1002,11 +1388,10 @@ static void mod_deflate_note_ratio(request_st * const r, const off_t bytes_out, 
      * for possible logging by mod_accesslog
      * (late in response handling, so not seen by most other modules) */
     /*(should be called only at end of successful response compression)*/
-    char ratio[LI_ITOSTRING_LENGTH];
     if (0 == bytes_in) return;
-    size_t len =
-      li_itostrn(ratio, sizeof(ratio), bytes_out * 100 / bytes_in);
-    http_header_env_set(r, CONST_STR_LEN("ratio"), ratio, len);
+    buffer_append_int(
+      http_header_env_set_ptr(r, CONST_STR_LEN("ratio")),
+      bytes_out * 100 / bytes_in);
 }
 
 static int mod_deflate_stream_end(handler_ctx *hctx) {
@@ -1023,6 +1408,10 @@ static int mod_deflate_stream_end(handler_ctx *hctx) {
 #ifdef USE_BROTLI
 	case HTTP_ACCEPT_ENCODING_BR:
 		return stream_br_end(hctx);
+#endif
+#ifdef USE_ZSTD
+	case HTTP_ACCEPT_ENCODING_ZSTD:
+		return stream_zstd_end(hctx);
 #endif
 	default:
 		return -1;
@@ -1223,7 +1612,7 @@ static handler_t deflate_compress_response(request_st * const r, handler_ctx * c
 
 		switch(c->type) {
 		case MEM_CHUNK:
-			len = buffer_string_length(c->mem) - c->offset;
+			len = buffer_clen(c->mem) - c->offset;
 			if (len > max) len = max;
 			if (mod_deflate_compress(hctx, (unsigned char *)c->mem->ptr+c->offset, len) < 0) {
 				log_error(r->conf.errh, __FILE__, __LINE__, "compress failed.");
@@ -1263,7 +1652,8 @@ static handler_t deflate_compress_response(request_st * const r, handler_ctx * c
 static int mod_deflate_choose_encoding (const char *value, plugin_data *p, const char **label) {
 	/* get client side support encodings */
 	int accept_encoding = 0;
-      #if !defined(USE_ZLIB) && !defined(USE_BZ2LIB) && !defined(USE_BROTLI)
+      #if !defined(USE_ZLIB) && !defined(USE_BZ2LIB) && !defined(USE_BROTLI) \
+       && !defined(USE_ZSTD)
 	UNUSED(value);
 	UNUSED(label);
       #else
@@ -1284,6 +1674,13 @@ static int mod_deflate_choose_encoding (const char *value, plugin_data *p, const
                #ifdef USE_ZLIB
                 if (0 == memcmp(v, "gzip", 4))
                     accept_encoding |= HTTP_ACCEPT_ENCODING_GZIP;
+               #endif
+               #ifdef USE_ZSTD
+                #ifdef USE_ZLIB
+                else
+                #endif
+                if (0 == memcmp(v, "zstd", 4))
+                    accept_encoding |= HTTP_ACCEPT_ENCODING_ZSTD;
                #endif
                 break;
               case 5:
@@ -1326,10 +1723,17 @@ static int mod_deflate_choose_encoding (const char *value, plugin_data *p, const
         }
       #endif
 
-	/* mask to limit to allowed_encodings */
-	accept_encoding &= p->conf.allowed_encodings;
-
 	/* select best matching encoding */
+	const uint16_t *x = p->conf.allowed_encodings;
+	if (NULL == x) return 0;
+	while (*x && !(*x & accept_encoding)) ++x;
+	accept_encoding &= *x;
+#ifdef USE_ZSTD
+	if (accept_encoding & HTTP_ACCEPT_ENCODING_ZSTD) {
+		*label = "zstd";
+		return HTTP_ACCEPT_ENCODING_ZSTD;
+	} else
+#endif
 #ifdef USE_BROTLI
 	if (accept_encoding & HTTP_ACCEPT_ENCODING_BR) {
 		*label = "br";
@@ -1425,15 +1829,15 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	} else {
 		/* If no Content-Type set, compress only if first p->conf.mimetypes value is "" */
 		data_string *mimetype = (data_string *)p->conf.mimetypes->data[0];
-		if (!buffer_string_is_empty(&mimetype->value)) return HANDLER_GO_ON;
+		if (!buffer_is_blank(&mimetype->value)) return HANDLER_GO_ON;
 	}
 
 	/* Vary: Accept-Encoding (response might change according to request Accept-Encoding) */
 	if (NULL != (vb = http_header_response_get(r, HTTP_HEADER_VARY, CONST_STR_LEN("Vary")))) {
 		had_vary = 1;
-		if (NULL == strstr(vb->ptr, "Accept-Encoding")) {
+		if (!http_header_str_contains_token(BUF_PTR_LEN(vb),
+		                                    CONST_STR_LEN("Accept-Encoding")))
 			buffer_append_string_len(vb, CONST_STR_LEN(",Accept-Encoding"));
-		}
 	} else {
 		http_header_response_append(r, HTTP_HEADER_VARY,
 					    CONST_STR_LEN("Vary"),
@@ -1443,11 +1847,10 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	/* check ETag as is done in http_response_handle_cachable()
 	 * (slightly imperfect (close enough?) match of ETag "000000" to "000000-gzip") */
 	vb = http_header_response_get(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"));
-	etaglen = (NULL != vb) ? buffer_string_length(vb) : 0;
-	if (NULL != vb && light_btst(r->rqst_htags, HTTP_HEADER_IF_NONE_MATCH)) {
+	etaglen = vb ? buffer_clen(vb) : 0;
+	if (etaglen && light_btst(r->rqst_htags, HTTP_HEADER_IF_NONE_MATCH)) {
 		const buffer *if_none_match = http_header_response_get(r, HTTP_HEADER_IF_NONE_MATCH, CONST_STR_LEN("If-None-Match"));
-		if (etaglen
-		    && r->http_status < 300 /*(want 2xx only)*/
+		if (   r->http_status < 300 /*(want 2xx only)*/
 		    && NULL != if_none_match
 		    && 0 == strncmp(if_none_match->ptr, vb->ptr, etaglen-1)
 		    && if_none_match->ptr[etaglen-1] == '-'
@@ -1458,7 +1861,6 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 				vb->ptr[etaglen-1] = '-'; /*(overwrite end '"')*/
 				buffer_append_string(vb, label);
 				buffer_append_string_len(vb, CONST_STR_LEN("\""));
-				/*buffer_copy_buffer(&r->physical.etag, vb);*//*(keep in sync?)*/
 				r->http_status = 304;
 			} else {
 				r->http_status = 412;
@@ -1488,7 +1890,6 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 		vb->ptr[etaglen-1] = '-'; /*(overwrite end '"')*/
 		buffer_append_string(vb, label);
 		buffer_append_string_len(vb, CONST_STR_LEN("\""));
-		/*buffer_copy_buffer(&r->physical.etag, vb);*//*(keep in sync?)*/
 	}
 
 	/* set Content-Encoding to show selected compression type */
@@ -1496,7 +1897,8 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 
 	/* clear Content-Length and r->write_queue if HTTP HEAD request
 	 * (alternatively, could return original Content-Length with HEAD
-	 *  request if ETag not modified and Content-Encoding not added) */
+	 *  request if ETag not modified and Content-Encoding not added)
+	 * (see top of this func where short-circuit is done on HTTP HEAD) */
 	if (HTTP_METHOD_HEAD == r->http_method) {
 		/* ensure that uncompressed Content-Length is not sent in HEAD response */
 		http_response_body_clear(r, 0);
@@ -1507,19 +1909,19 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	 * (This module does not aim to be a full caching proxy)
 	 * response must be complete (not streaming response)
 	 * must not have prior Vary response header (before Accept-Encoding added)
-	 * must not have Range response header
 	 * must have ETag
 	 * must be file
 	 * must be single FILE_CHUNK in chunkqueue
 	 * must not be chunkqueue temporary file
 	 * must be whole file, not partial content
+	 * must not be HTTP status 206 Partial Content
 	 * Note: small files (< 32k (see http_chunk.c)) will have been read into
 	 *       memory (if streaming HTTP/1.1 chunked response) and will end up
 	 *       getting stream-compressed rather than cached on disk as compressed
 	 *       file
 	 */
 	buffer *tb = NULL;
-	if (!buffer_is_empty(p->conf.cache_dir)
+	if (p->conf.cache_dir
 	    && !had_vary
 	    && etaglen > 2
 	    && r->resp_body_finished
@@ -1527,7 +1929,7 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	    && r->write_queue.first->type == FILE_CHUNK
 	    && r->write_queue.first->offset == 0
 	    && !r->write_queue.first->file.is_temp
-	    && !light_btst(r->resp_htags, HTTP_HEADER_RANGE)) {
+	    && r->http_status != 206) {
 		tb = mod_deflate_cache_file_name(r, p->conf.cache_dir, vb);
 		/*(checked earlier and skipped if Transfer-Encoding had been set)*/
 		stat_cache_entry *sce = stat_cache_get_entry_open(tb, 1);
@@ -1572,7 +1974,7 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 		/* restore prior Etag and unset Content-Encoding */
 		if (etaglen) {
 			vb->ptr[etaglen-1] = '"'; /*(overwrite '-')*/
-			buffer_string_set_length(vb, etaglen);
+			buffer_truncate(vb, etaglen);
 		}
 		http_header_response_unset(r, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"));
 		return HANDLER_GO_ON;

@@ -8,6 +8,7 @@
 #include "reqpool.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "base.h"
 #include "buffer.h"
@@ -16,6 +17,29 @@
 #include "plugin_config.h"
 #include "request.h"
 #include "response.h"
+
+#ifdef HAVE_PCRE2_H
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+#endif
+
+
+static const request_config *request_config_defaults;
+
+
+void
+request_config_set_defaults (const request_config *config_defaults)
+{
+    request_config_defaults = config_defaults;
+}
+
+
+__attribute_noinline__
+void
+request_config_reset (request_st * const r)
+{
+    memcpy(&r->conf, request_config_defaults, sizeof(request_config));
+}
 
 
 void
@@ -32,6 +56,7 @@ request_init_data (request_st * const r, connection * const con, server * const 
     r->con = con;
     r->tmp_buf = srv->tmp_buf;
     r->resp_body_scratchpad = -1;
+    r->server_name = &r->uri.authority;
 
     /* init plugin-specific per-request structures */
     r->plugin_ctx = calloc(1, (srv->plugins.used + 1) * sizeof(void *));
@@ -40,13 +65,17 @@ request_init_data (request_st * const r, connection * const con, server * const 
     r->cond_cache = calloc(srv->config_context->used, sizeof(cond_cache_t));
     force_assert(NULL != r->cond_cache);
 
-  #ifdef HAVE_PCRE_H
-    if (srv->config_context->used > 1) {/*(save 128b per con if no conditions)*/
-        r->cond_match =
-          calloc(srv->config_context->used, sizeof(cond_match_t));
+  #ifdef HAVE_PCRE
+    if (srv->config_captures) {
+        r->cond_captures = srv->config_captures;
+        r->cond_match = calloc(srv->config_captures, sizeof(cond_match_t *));
         force_assert(NULL != r->cond_match);
+        r->cond_match_data = calloc(srv->config_captures, sizeof(cond_match_t));
+        force_assert(NULL != r->cond_match_data);
     }
   #endif
+
+    request_config_reset(r);
 }
 
 
@@ -58,6 +87,7 @@ request_reset (request_st * const r)
     http_response_reset(r);
 
     r->loops_per_request = 0;
+    r->keep_alive = 0;
 
     r->h2state = 0; /* H2_STATE_IDLE */
     r->h2id = 0;
@@ -118,6 +148,8 @@ request_reset (request_st * const r)
 
     /* The cond_cache gets reset in response.c */
     /* config_cond_cache_reset(r); */
+
+    request_config_reset(r);
 }
 
 
@@ -155,9 +187,12 @@ request_reset_ex (request_st * const r)
     }
   #endif
 
+    r->server_name = &r->uri.authority;
     buffer_clear(&r->uri.authority);
     buffer_reset(&r->uri.path);
     buffer_reset(&r->uri.query);
+    buffer_reset(&r->physical.path);
+    buffer_reset(&r->physical.rel_path);
     buffer_reset(&r->target_orig);
     buffer_reset(&r->target);       /*(see comments in request_reset())*/
     buffer_reset(&r->pathinfo);     /*(see comments in request_reset())*/
@@ -188,7 +223,6 @@ request_free_data (request_st * const r)
     free(r->physical.doc_root.ptr);
     free(r->physical.path.ptr);
     free(r->physical.basedir.ptr);
-    free(r->physical.etag.ptr);
     free(r->physical.rel_path.ptr);
 
     free(r->pathinfo.ptr);
@@ -196,7 +230,21 @@ request_free_data (request_st * const r)
 
     free(r->plugin_ctx);
     free(r->cond_cache);
-    free(r->cond_match);
+  #ifdef HAVE_PCRE
+    if (r->cond_match_data) {
+        for (int i = 0, used = r->cond_captures; i < used; ++i) {
+          #ifdef HAVE_PCRE2_H
+            if (r->cond_match_data[i].match_data)
+                pcre2_match_data_free(r->cond_match_data[i].match_data);
+          #else /* HAVE_PCRE_H */
+            if (r->cond_match_data[i].matches)
+                free(r->cond_match_data[i].matches);
+          #endif
+        }
+        free(r->cond_match_data);
+        free(r->cond_match);
+    }
+  #endif
 
     /* note: r is not zeroed here and r is not freed here */
 }
@@ -204,15 +252,6 @@ request_free_data (request_st * const r)
 
 /* linked list of (request_st *) cached for reuse */
 static request_st *reqpool;
-/* max num of (request_st *) to cache */
-static uint32_t reqspace;
-
-
-void
-request_pool_init (uint32_t sz)
-{
-    reqspace = sz;
-}
 
 
 void
@@ -223,7 +262,6 @@ request_pool_free (void)
         reqpool = (request_st *)r->con; /*(reuse r->con as next ptr)*/
         request_free_data(r);
         free(r);
-        ++reqspace;
     }
 }
 
@@ -245,15 +283,8 @@ request_release (request_st * const r)
     request_reset_ex(r);
     r->state = CON_STATE_CONNECT;
 
-    if (reqspace) {
-        --reqspace;
-        r->con = (connection *)reqpool; /*(reuse r->con as next ptr)*/
-        reqpool = r;
-    }
-    else {
-        request_free_data(r);
-        free(r);
-    }
+    r->con = (connection *)reqpool; /*(reuse r->con as next ptr)*/
+    reqpool = r;
 }
 
 
@@ -263,7 +294,6 @@ request_acquire (connection * const con)
     request_st *r = reqpool;
     if (r) {
         reqpool = (request_st *)r->con; /*(reuse r->con as next ptr)*/
-        ++reqspace;
     }
     else {
         r = calloc(1, sizeof(request_st));
