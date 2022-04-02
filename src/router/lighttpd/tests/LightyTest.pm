@@ -1,12 +1,10 @@
 package LightyTest;
 
 use strict;
-use IO::Socket;
-use Test::More;
+use IO::Socket ();
+use Test::More; # diag()
 use Socket;
 use Cwd 'abs_path';
-use POSIX qw(:sys_wait_h dup2);
-use Errno qw(EADDRINUSE);
 
 sub find_program {
 	my @DEFAULT_PATHS = ('/usr/bin/', '/usr/local/bin/');
@@ -80,7 +78,6 @@ sub new {
 	if (exists $ENV{LIGHTTPD_EXE_PATH}) {
 		$self->{LIGHTTPD_PATH} = $ENV{LIGHTTPD_EXE_PATH};
 	}
-	$self->{PORT} = 2048;
 
 	my ($name, $aliases, $addrtype, $net) = gethostbyaddr(inet_aton("127.0.0.1"), AF_INET);
 
@@ -95,14 +92,22 @@ sub listening_on {
 	my $self = shift;
 	my $port = shift;
 
+	local $@;
+	local $SIG{ALRM} = sub { };
+    eval {
+	local $SIG{ALRM} = sub { die 'alarm()'; };
+	alarm(1);
 	my $remote = IO::Socket::INET->new(
+		Timeout  => 1,
 		Proto    => "tcp",
 		PeerAddr => "127.0.0.1",
-		PeerPort => $port) or return 0;
+		PeerPort => $port) || do { alarm(0); die 'socket()'; };
 
 	close $remote;
-
-	return 1;
+	alarm(0);
+    };
+	alarm(0);
+	return (defined($@) && $@ eq "");
 }
 
 sub stop_proc {
@@ -110,6 +115,7 @@ sub stop_proc {
 
 	my $pid = $self->{LIGHTTPD_PID};
 	if (defined $pid && $pid != -1) {
+		kill('USR1', $pid) if (($ENV{"TRACEME"}||'') eq 'strace');
 		kill('TERM', $pid) or return -1;
 		return -1 if ($pid != waitpid($pid, 0));
 	} else {
@@ -131,7 +137,8 @@ sub wait_for_port_with_proc {
 		$timeout--;
 
 		# the process is gone, we failed
-		if (0 != waitpid($child, WNOHANG)) {
+		require POSIX;
+		if (0 != waitpid($child, POSIX::WNOHANG())) {
 			return -1;
 		}
 		if (0 >= $timeout) {
@@ -144,15 +151,32 @@ sub wait_for_port_with_proc {
 	return 0;
 }
 
+sub bind_ephemeral_tcp_socket {
+	my $SOCK;
+	socket($SOCK, PF_INET, SOCK_STREAM, 0) || die "socket: $!";
+	setsockopt($SOCK, SOL_SOCKET, SO_REUSEADDR, pack("l", 1)) || die "setsockopt: $!";
+	bind($SOCK, sockaddr_in(0, INADDR_LOOPBACK)) || die "bind: $!";
+	my($port) = sockaddr_in(getsockname($SOCK));
+	return ($SOCK, $port);
+}
+
+sub get_ephemeral_tcp_port {
+	# bind to an ephemeral port, close() it, and return port that was used
+	# (While there is a race condition before caller may reuse the port,
+	#  the port is likely to remain available for the serialized tests)
+	my $port;
+	(undef, $port) = bind_ephemeral_tcp_socket();
+	return $port;
+}
+
 sub start_proc {
 	my $self = shift;
 	# kill old proc if necessary
 	#$self->stop_proc;
 
-	if ($self->listening_on($self->{PORT})) {
-		diag("\nPort ".$self->{PORT}." already in use");
-		return -1;
-	}
+	# listen on localhost and kernel-assigned ephemeral port
+	my $SOCK;
+	($SOCK, $self->{PORT}) = bind_ephemeral_tcp_socket();
 
 	# pre-process configfile if necessary
 	#
@@ -171,15 +195,50 @@ sub start_proc {
 	} elsif (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'valgrind') {
 		@cmdline = (qw(valgrind --tool=memcheck --track-origins=yes --show-reachable=yes --leak-check=yes --log-file=valgrind.%p), @cmdline);
 	}
-	# diag("\nstarting lighttpd at :".$self->{PORT}.", cmdline: ".@cmdline );
+	# diag("\nstarting lighttpd at :".$self->{PORT}.", cmdline: @cmdline");
 	my $child = fork();
 	if (not defined $child) {
 		diag("\nFork failed");
+		close($SOCK);
 		return -1;
 	}
 	if ($child == 0) {
+		if ($^O eq "MSWin32") {
+			# On platforms where systemd socket activation is not supported
+			# or inconvenient for testing (i.e. cygwin <-> native Windows exe),
+			# there is a race condition with close() before server start,
+			# but port specific port is unlikely to be reused so quickly,
+			# and the point is to avoid a port which is already in use.
+			close($SOCK);
+			my $CONF;
+			open($CONF,'>',"$ENV{'SRCDIR'}/tmp/bind.conf") || die "open: $!";
+			print $CONF <<BIND_OVERRIDE;
+server.systemd-socket-activation := "disable"
+server.bind = "127.0.0.1"
+server.port = $ENV{'PORT'}
+BIND_OVERRIDE
+		}
+		else {
+			# set up systemd socket activation env vars
+			$ENV{LISTEN_FDS} = "1";
+			$ENV{LISTEN_PID} = $$;
+			if (defined($ENV{"TRACEME"}) && $ENV{"TRACEME"} ne "valgrind") {
+				$ENV{LISTEN_PID} = "parent:$$"; # lighttpd extension
+			}
+			listen($SOCK, 1024) || die "listen: $!";
+			if (fileno($SOCK) != 3) { # SD_LISTEN_FDS_START 3
+				require POSIX;
+				POSIX::dup2(fileno($SOCK), 3) || die "dup2: $!";
+				close($SOCK);
+			}
+			else {
+				require Fcntl;
+				fcntl($SOCK, Fcntl::F_SETFD(), 0); # clr FD_CLOEXEC
+			}
+		}
 		exec @cmdline or die($?);
 	}
+	close($SOCK);
 
 	if (0 != $self->wait_for_port_with_proc($self->{PORT}, $child)) {
 		diag(sprintf('\nThe process %i is not up', $child));
@@ -237,15 +296,15 @@ sub handle_http {
 
 			print $remote $_;
 			diag("<< ".$_."\n") if $is_debug;
-			select(undef, undef, undef, 0.001);
+			select(undef, undef, undef, 0.0001);
 			print $remote "\015";
-			select(undef, undef, undef, 0.001);
+			select(undef, undef, undef, 0.0001);
 			print $remote "\012";
-			select(undef, undef, undef, 0.001);
+			select(undef, undef, undef, 0.0001);
 			print $remote "\015";
-			select(undef, undef, undef, 0.001);
+			select(undef, undef, undef, 0.0001);
 			print $remote "\012";
-			select(undef, undef, undef, 0.001);
+			select(undef, undef, undef, 0.0001);
 		}
 
 	}
@@ -428,7 +487,8 @@ sub spawnfcgi {
 		setsockopt(SOCK, SOL_SOCKET, SO_REUSEADDR, pack("l", 1)) || die "setsockopt: $!";
 		bind(SOCK, sockaddr_in($port, $iaddr)) || die "bind: $!";
 		listen(SOCK, 1024) || die "listen: $!";
-		dup2(fileno(SOCK), 0) || die "dup2: $!";
+		require POSIX;
+		POSIX::dup2(fileno(SOCK), 0) || die "dup2: $!";
 		exec { $binary } ($binary) or die($?);
 	} else {
 		if (0 != $self->wait_for_port_with_proc($port, $child)) {
@@ -467,6 +527,7 @@ sub has_crypto {
 	my $FH;
 	open($FH, "-|",$self->{LIGHTTPD_PATH}, "-V") || return 0;
 	while (<$FH>) {
+		#return 1 if (/[+] (?i:OpenSSL|mbedTLS|GnuTLS|WolfSSL|Nettle|NSS crypto) support/);
 		return 1 if (/[+] (?i:OpenSSL|mbedTLS|GnuTLS|WolfSSL|Nettle) support/);
 	}
 	close $FH;

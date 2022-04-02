@@ -72,18 +72,6 @@
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
-/* libgdbm */
-#undef HAVE_GDBM
-
-/* Define to 1 if you have the <gdbm.h> header file. */
-#undef HAVE_GDBM_H
-
-/* libGeoIP */
-#undef HAVE_GEOIP
-
-/* Define to 1 if you have the <GeoIP.h> header file. */
-#undef HAVE_GEOIP_H
-
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
@@ -174,12 +162,6 @@
 /* Have libmbedx509 library */
 #undef HAVE_LIBMBEDX509
 
-/* Define to 1 if you have the <libmemcached/memcached.h> header file. */
-#undef HAVE_LIBMEMCACHED_MEMCACHED_H
-
-/* libpcre */
-#undef HAVE_LIBPCRE
-
 /* Have libssl */
 #undef HAVE_LIBSSL
 
@@ -207,14 +189,20 @@
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
 
-/* liblua */
-#undef HAVE_LUA
-
 /* lua.h */
 #undef HAVE_LUA_H
 
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the `malloc_trim' function. */
+#undef HAVE_MALLOC_TRIM
+
+/* Define to 1 if you have the `mallopt' function. */
+#undef HAVE_MALLOPT
 
 /* libmaxminddb */
 #undef HAVE_MAXMINDDB
@@ -228,11 +216,14 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define to 1 if you have the `memset' function. */
-#undef HAVE_MEMSET
+/* Define to 1 if you have the `mempcpy' function. */
+#undef HAVE_MEMPCPY
 
 /* Define to 1 if you have the `memset_s' function. */
 #undef HAVE_MEMSET_S
+
+/* Define to 1 if you have the `mkostemp' function. */
+#undef HAVE_MKOSTEMP
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
@@ -255,8 +246,11 @@
 /* libpam */
 #undef HAVE_PAM
 
-/* Define to 1 if you have the `pathconf' function. */
-#undef HAVE_PATHCONF
+/* libpcre */
+#undef HAVE_PCRE
+
+/* pcre.h */
+#undef HAVE_PCRE2_H
 
 /* pcre.h */
 #undef HAVE_PCRE_H
@@ -279,8 +273,23 @@
 /* Define to 1 if you have the <port.h> header file. */
 #undef HAVE_PORT_H
 
+/* Define to 1 if you have the `pread' function. */
+#undef HAVE_PREAD
+
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the <priv.h> header file. */
+#undef HAVE_PRIV_H
+
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
+
+/* Define to 1 if you have the `pwrite' function. */
+#undef HAVE_PWRITE
+
+/* Define to 1 if you have the `pwritev' function. */
+#undef HAVE_PWRITEV
 
 /* LibSASL support */
 #undef HAVE_SASL
@@ -306,8 +315,8 @@
 /* broken sendfile */
 #undef HAVE_SENDFILE_BROKEN
 
-/* Define to 1 if you have the `send_file' function. */
-#undef HAVE_SEND_FILE
+/* Define to 1 if you have the `setpflags' function. */
+#undef HAVE_SETPFLAGS
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
@@ -315,8 +324,14 @@
 /* Define to 1 if you have the `signal' function. */
 #undef HAVE_SIGNAL
 
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
+
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
+
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
 
 /* libsqlite3 */
 #undef HAVE_SQLITE3
@@ -332,6 +347,9 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -374,6 +392,9 @@
 
 /* Define to 1 if you have the <sys/prctl.h> header file. */
 #undef HAVE_SYS_PRCTL_H
+
+/* Define to 1 if you have the <sys/procctl.h> header file. */
+#undef HAVE_SYS_PROCCTL_H
 
 /* Define to 1 if you have the <sys/random.h> header file. */
 #undef HAVE_SYS_RANDOM_H
@@ -429,7 +450,7 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
-/* Linux extended attributes */
+/* libattr */
 #undef HAVE_XATTR
 
 /* xxhash */
@@ -440,6 +461,12 @@
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* libzstd */
+#undef HAVE_ZSTD
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* lighttpd-version-id */
 #undef LIGHTTPD_VERSION_ID
@@ -471,9 +498,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* libmemcached */
-#undef USE_MEMCACHED
-
 /* with kerberos */
 #undef USE_OPENSSL_KERBEROS
 
@@ -502,6 +526,17 @@
 /* Version number of package */
 #undef VERSION
 
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
 /* Define to 1 if on MINIX. */
 #undef _MINIX
 
@@ -526,6 +561,20 @@
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
+
+/* Define to the equivalent of the C99 'restrict' keyword, or to
+   nothing if this is not supported.  Do not define if restrict is
+   supported directly.  */
+#undef restrict
+/* Work around a bug in Sun C++: it does not support _Restrict or
+   __restrict__, even though the corresponding Sun C compiler ends up with
+   "#define restrict _Restrict" or "#define restrict __restrict__" in the
+   previous line.  Perhaps some future version of Sun C++ will work with
+   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT
+# define _Restrict
+# define __restrict__
+#endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t

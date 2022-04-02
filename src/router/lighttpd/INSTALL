@@ -18,11 +18,10 @@ unpack it by ::
 compile and install it with ::
 
   $ cd lighttpd-1.4.xx
+  $ ./autogen.sh
   $ ./configure -C
-  $ make
-  $ su -
-  # make install
-  # exit
+  $ make check
+  $ /usr/bin/sudo make install
 
 take look at the configfile in ./doc/lighttpd.conf,
 make your own copy of that file and modify it for your needs.
@@ -44,9 +43,16 @@ required packages ::
   automake
   libtool
   m4
-  pcre
-  pcre-devel
   pkg-config
+
+recommended additional packages ::
+
+  pcre2
+  pcre2-devel
+  lua
+  lua-devel
+  nettle
+  nettle-devel
 
 optional packages for optional features ::
 
@@ -54,10 +60,6 @@ optional packages for optional features ::
   bzip2-libs
   cyrus-sasl          # SASL       ./configure --with-sasl
   cyrus-sasl-devel
-  gdbm                # GDBM       ./configure --with-gdbm
-  gdbm-devel
-  GeoIP-devel         # GeoIP      ./configure --with-geoip
-  GeoIP
   gnutls              # GnuTLS     ./configure --with-gnutls
   gnutls-devel
   krb5-devel          # Kerberos5  ./configure --with-krb5
@@ -71,11 +73,9 @@ optional packages for optional features ::
   libdbi-dbd-sqlite
   libmaxminddb        # MaxMindDB  ./configure --with-maxminddb
   libmaxminddb-devel
-  libmemcached-devel  # Memcached  ./configure --with-memcache
-  libmemcached-libs
   libpq               # Postgresql ./configure --with-pgsql
   libpq-devel
-  libunwind           # libunwind  ./configure --with-libunwind
+  libunwind-devel     # libunwind  ./configure --with-libunwind
   libuuid             # libuuid    ./configure --with-webdav-locks
   libuuid-devel
   libxml2             # libxml2    ./configure --with-webdav-props
@@ -97,16 +97,20 @@ optional packages for optional features ::
   openssl-libs
   pam                 # PAM        ./configure --with-pam
   pam-devel
-  pcre                # PCRE       ./configure --with-pcre      # (default)
+  pcre                # PCRE       ./configure --with-pcre
   pcre-devel
+  pcre2               # PCRE       ./configure --with-pcre2     # (default)
+  pcre2-devel
   sqlite              # SQLite     ./configure --with-webdav-props
   sqlite-devel
   valgrind            # valgrind   ./configure --with-valgrind
   valgrind-devel
   wolfssl             # wolfSSL    ./configure --with-wolfssl
   wolfssl-devel
-  zlib                # zlib       ./configure --with-zlib
+  zlib                # zlib       ./configure --with-zlib      # (default)
   zlib-devel
+  libzstd             # zstd       ./configure --with-zstd
+  libzstd-devel
 
 more options: ./configure --help
 
@@ -129,7 +133,6 @@ required packages to run test harness ::
   (e.g. on Fedora 22, sudo dnf install ...)
   (e.g. on Arch Linux, sudo pacman ... (with lowercased package names))
 
-  perl-CGI
   perl-Digest
   perl-Digest-MD5
   perl-Encode-Locale
@@ -140,6 +143,8 @@ required packages to run test harness ::
   perl-HTTP-Message
   perl-IO-HTML
   perl-LWP-MediaTypes
+  perl-Test-Harness
+  perl-Test-Simple
   perl-Tie-Function
   perl-TimeDate
 
@@ -181,12 +186,12 @@ build using CMake and Xcode on Mac OS X with MacPorts
   $ xcodebuild --license
   $ xcode-select --install
   $ sudo port selfupdate
-  $ sudo port install autoconf automake cmake libtool m4 pcre pkgconfig zlib brotli openssl libxml sqlite3 openldap libunwind libunwind-headers mysql57 libev gdbm openldap ossp-uuid
+  $ sudo port install autoconf automake cmake libtool m4 pcre2 pkgconfig zlib zstd brotli openssl libxml sqlite3 openldap libunwind libunwind-headers mysql57 openldap ossp-uuid
   # Note: some of the above require more fiddling to configure with CMake...
 
   # cmake and build
   # (all -DWITH_... flags below are optional)
-  $ cmake -Wno-dev -DWITH_OPENSSL=1 -DWITH_LUA=1 -DWITH_ZLIB=1 -DWITH_BROTLI=1 -DWITH_WEBDAV_PROPS=1 .
+  $ cmake -Wno-dev -DWITH_PCRE2=1 -DWITH_OPENSSL=1 -DWITH_LUA=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DWITH_BROTLI=1 -DWITH_WEBDAV_PROPS=1 .
   $ make -j 4
   $ make test
 

@@ -7,13 +7,13 @@
 #include "plugin.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "sys-time.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <time.h>
 
 typedef struct {
     const buffer *path_rrd;
@@ -86,18 +86,16 @@ static int mod_rrd_create_pipe(server *srv, plugin_data *p) {
 	 * If pipes were to be shared, then existing pipes would need to be
 	 * reused here, if they already exist (not -1), and after flushing
 	 * existing contents (read and discard from read-end of pipes). */
-	if (pipe(to_rrdtool_fds)) {
+	if (fdevent_pipe_cloexec(to_rrdtool_fds, 4096)) {
 		log_perror(srv->errh, __FILE__, __LINE__, "pipe()");
 		return 0;
 	}
-	if (pipe(from_rrdtool_fds)) {
+	if (fdevent_pipe_cloexec(from_rrdtool_fds, 4096)) {
 		log_perror(srv->errh, __FILE__, __LINE__, "pipe()");
 		close(to_rrdtool_fds[0]);
 		close(to_rrdtool_fds[1]);
 		return 0;
 	}
-	fdevent_setfd_cloexec(to_rrdtool_fds[1]);
-	fdevent_setfd_cloexec(from_rrdtool_fds[0]);
 	const char * const path_rrdtool_bin = p->path_rrdtool_bin
 	  ? p->path_rrdtool_bin->ptr
 	  : "/usr/bin/rrdtool";
@@ -186,7 +184,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* rrdtool.db-name */
-                if (!buffer_string_is_empty(cpv->v.b)) {
+                if (!buffer_is_blank(cpv->v.b)) {
                     rrd_config *rrd = calloc(1, sizeof(rrd_config));
                     force_assert(rrd);
                     rrd->path_rrd = cpv->v.b;
@@ -196,7 +194,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
                 }
                 break;
               case 1: /* rrdtool.binary */ /* T_CONFIG_SCOPE_SERVER */
-                if (!buffer_string_is_empty(cpv->v.b))
+                if (!buffer_is_blank(cpv->v.b))
                     p->path_rrdtool_bin = cpv->v.b; /*(store directly in p)*/
                 break;
               default:/* should not happen */
@@ -276,9 +274,11 @@ static int mod_rrdtool_create_rrd(server *srv, plugin_data *p, rrd_config *s, ch
 
 	/* create a new one */
 	buffer * const cmd = srv->tmp_buf;
-	buffer_copy_string_len(cmd, CONST_STR_LEN("create "));
-	buffer_append_string_buffer(cmd, s->path_rrd);
-	buffer_append_string_len(cmd, CONST_STR_LEN(
+	buffer_clear(cmd);
+	buffer_append_str3(cmd,
+	  CONST_STR_LEN("create "),
+	  BUF_PTR_LEN(s->path_rrd),
+	  CONST_STR_LEN(
 		" --step 60 "
 		"DS:InOctets:ABSOLUTE:600:U:U "
 		"DS:OutOctets:ABSOLUTE:600:U:U "
@@ -296,7 +296,7 @@ static int mod_rrdtool_create_rrd(server *srv, plugin_data *p, rrd_config *s, ch
 		"RRA:MIN:0.5:24:775 "
 		"RRA:MIN:0.5:288:797\n"));
 
-	if (-1 == (safe_write(p->write_fd, CONST_BUF_LEN(cmd)))) {
+	if (-1 == (safe_write(p->write_fd, BUF_PTR_LEN(cmd)))) {
 		log_perror(srv->errh, __FILE__, __LINE__, "rrdtool-write: failed");
 		return HANDLER_ERROR;
 	}
@@ -330,9 +330,10 @@ static int mod_rrd_write_data(server *srv, plugin_data *p, rrd_config *s) {
         return 0;
 
     buffer * const cmd = srv->tmp_buf;
-    buffer_copy_string_len(cmd, CONST_STR_LEN("update "));
-    buffer_append_string_buffer(cmd, s->path_rrd);
-    buffer_append_string_len(cmd, CONST_STR_LEN(" N:"));
+    buffer_clear(cmd);
+    buffer_append_str3(cmd, CONST_STR_LEN("update "),
+                            BUF_PTR_LEN(s->path_rrd),
+                            CONST_STR_LEN(" N:"));
     buffer_append_int(cmd, s->bytes_read);
     buffer_append_string_len(cmd, CONST_STR_LEN(":"));
     buffer_append_int(cmd, s->bytes_written);
@@ -340,7 +341,7 @@ static int mod_rrd_write_data(server *srv, plugin_data *p, rrd_config *s) {
     buffer_append_int(cmd, s->requests);
     buffer_append_string_len(cmd, CONST_STR_LEN("\n"));
 
-    if (-1 == safe_write(p->write_fd, CONST_BUF_LEN(cmd))) {
+    if (-1 == safe_write(p->write_fd, BUF_PTR_LEN(cmd))) {
         log_error(srv->errh, __FILE__, __LINE__, "rrdtool-write: failed");
         return mod_rrd_fatal_error(p);
     }

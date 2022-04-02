@@ -11,7 +11,7 @@ include(FindPkgConfig)
 
 include(LighttpdMacros)
 
-add_definitions(-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES)
+add_definitions(-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES -D_DEFAULT_SOURCE)
 
 # default to ON
 set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Default value for ``POSITION_INDEPENDENT_CODE`` of targets.")
@@ -26,34 +26,55 @@ option(WITH_NSS "with NSS-crypto-support [default: off]")
 option(WITH_OPENSSL "with openssl-support [default: off]")
 option(WITH_WOLFSSL "with wolfSSL-support [default: off]")
 option(WITH_NETTLE "with Nettle-support [default: off]")
-option(WITH_PCRE "with regex support [default: on]" ON)
+option(WITH_PCRE2 "with regex support [default: on]" ON)
+option(WITH_PCRE "with regex support [default: off]")
 option(WITH_WEBDAV_PROPS "with property-support for mod_webdav [default: off]")
 option(WITH_WEBDAV_LOCKS "locks in webdav [default: off]")
 option(WITH_BROTLI "with brotli-support for mod_deflate [default: off]")
 option(WITH_BZIP "with bzip2-support for mod_deflate [default: off]")
 option(WITH_ZLIB "with deflate-support for mod_deflate [default: on]" ON)
+option(WITH_ZSTD "with zstd-support for mod_deflate [default: off]")
 option(WITH_KRB5 "with Kerberos5-support for mod_auth [default: off]")
 option(WITH_LDAP "with LDAP-support for mod_auth mod_vhostdb_ldap [default: off]")
 option(WITH_PAM "with PAM-support for mod_auth [default: off]")
 option(WITH_LUA "with lua 5.1 for mod_magnet [default: off]")
 # option(WITH_VALGRIND "with internal support for valgrind [default: off]")
 option(WITH_FAM "fam/gamin for reducing number of stat() calls [default: off]")
-option(WITH_GDBM "gdbm storage for mod_trigger_b4_dl [default: off]")
-option(WITH_MEMCACHED "memcached storage for mod_trigger_b4_dl [default: off]")
 option(WITH_LIBEV "libev support for fdevent handlers [default: off]")
 option(WITH_LIBUNWIND "with libunwind to print backtraces in asserts [default: off]")
-option(WITH_GEOIP "with GeoIP-support mod_geoip [default: off]")
 option(WITH_MAXMINDDB "with MaxMind GeoIP2-support mod_maxminddb [default: off]")
 option(WITH_SASL "with SASL-support for mod_authn_sasl [default: off]")
 option(WITH_XXHASH "with system-provided xxhash [default: off]")
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	option(BUILD_EXTRA_WARNINGS "extra warnings")
+	option(BUILD_SANITIZE_ADDRESS "Enable address sanitizer" OFF)
+	option(BUILD_SANITIZE_UNDEFINED "Enable undefined sanitizer" OFF)
 
 	if(BUILD_EXTRA_WARNINGS)
-		set(WARN_CFLAGS "-g -g2 -Wall -Wmissing-declarations -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security")
-		set(WARN_LDFLAGS "-Wl,--as-needed")
+		set(WARN_CFLAGS "-g -g2 -Wall -Wmissing-declarations -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector-strong --param=ssp-buffer-size=4 -Wformat -Werror=format-security")
+		set(WARN_LDFLAGS "")
 		# -Werror -Wbad-function-cast -Wmissing-prototypes
+		if(NOT BUILD_SANITIZE_ADDRESS)
+			# with asan we need to link all libraries we might need later
+			# so asan can initialize intercepts properly
+			# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103930
+			set(WARN_LDFLAGS "${WARN_LDFLAGS} -Wl,--as-needed")
+		endif()
+	endif()
+
+	set(SANITIZE_FLAGS "")
+
+	if(BUILD_SANITIZE_ADDRESS)
+		set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fsanitize=address")
+	endif()
+
+	if(BUILD_SANITIZE_UNDEFINED)
+		set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fsanitize=undefined")
+	endif()
+
+	if(SANITIZE_FLAGS)
+		set(WARN_CFLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer ${WARN_CFLAGS}")
 	endif()
 endif()
 
@@ -86,22 +107,14 @@ if(WITH_WEBDAV_LOCKS)
 	set(WITH_UUID 1)
 endif()
 
-check_include_files(sys/devpoll.h HAVE_SYS_DEVPOLL_H)
-check_include_files(sys/epoll.h HAVE_SYS_EPOLL_H)
-set(CMAKE_REQUIRED_FLAGS "-include sys/types.h")
-check_include_files(sys/event.h HAVE_SYS_EVENT_H)
-set(CMAKE_REQUIRED_FLAGS)
 check_include_files(sys/inotify.h HAVE_SYS_INOTIFY_H)
-check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
+set(CMAKE_REQUIRED_FLAGS "-include sys/time.h")
 check_include_files(sys/loadavg.h HAVE_SYS_LOADAVG_H)
+set(CMAKE_REQUIRED_FLAGS)
 check_include_files(sys/poll.h HAVE_SYS_POLL_H)
-check_include_files(sys/port.h HAVE_SYS_PORT_H)
 check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
-check_include_files(sys/resource.h HAVE_SYS_RESOURCE_H)
+check_include_files(sys/procctl.h HAVE_SYS_PROCCTL_H)
 check_include_files(sys/sendfile.h HAVE_SYS_SENDFILE_H)
-check_include_files(sys/select.h HAVE_SYS_SELECT_H)
-check_include_files(sys/types.h HAVE_SYS_TYPES_H)
-check_include_files(sys/uio.h HAVE_SYS_UIO_H)
 check_include_files(sys/un.h HAVE_SYS_UN_H)
 check_include_files(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
@@ -111,8 +124,8 @@ check_include_files(getopt.h HAVE_GETOPT_H)
 check_include_files(inttypes.h HAVE_INTTYPES_H)
 check_include_files(poll.h HAVE_POLL_H)
 check_include_files(pwd.h HAVE_PWD_H)
-check_include_files(stddef.h HAVE_STDDEF_H)
 check_include_files(stdint.h HAVE_STDINT_H)
+check_include_files(stdlib.h HAVE_STDLIB_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(syslog.h HAVE_SYSLOG_H)
 
@@ -124,29 +137,93 @@ if(HAVE_LIBCRYPT_CRYPT_R)
 	set(HAVE_CRYPT_R 1)
 	set(HAVE_LIBCRYPT 1)
 else()
-	check_library_exists(crypt crypt "" HAVE_LIBCRYPT)
+	check_library_exists(crypt crypt "" HAVE_LIBCRYPT_CRYPT)
+	if(HAVE_LIBCRYPT_CRYPT)
+		set(HAVE_CRYPT 1)
+		set(HAVE_LIBCRYPT 1)
+	endif()
 endif()
 check_function_exists(crypt_r HAVE_CRYPT_R)
 check_function_exists(crypt HAVE_CRYPT)
-
-check_include_files(sys/inotify.h HAVE_SYS_INOTIFY_H)
-if(HAVE_SYS_INOTIFY_H)
-	check_function_exists(inotify_init HAVE_INOTIFY_INIT)
-endif()
 
 set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 check_type_size(socklen_t HAVE_SOCKLEN_T)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
+check_include_files(malloc.h HAVE_MALLOC_H)
+if(HAVE_MALLOC_H)
+check_function_exists(malloc_trim HAVE_MALLOC_TRIM)
+check_function_exists(mallopt HAVE_MALLOPT)
+endif()
+
+check_include_files(signal.h HAVE_SIGNAL_H)
+if(HAVE_SIGNAL_H)
+check_function_exists(sigaction HAVE_SIGACTION)
+check_function_exists(signal HAVE_SIGNAL)
+endif()
+
+check_include_files(sys/epoll.h HAVE_SYS_EPOLL_H)
+if(HAVE_SYS_EPOLL_H)
+check_function_exists(epoll_ctl HAVE_EPOLL_CTL)
+endif()
+
+set(CMAKE_REQUIRED_FLAGS "-include sys/types.h")
+check_include_files(sys/event.h HAVE_SYS_EVENT_H)
+set(CMAKE_REQUIRED_FLAGS)
+if(HAVE_SYS_EVENT_H)
+check_function_exists(kqueue HAVE_KQUEUE)
+endif()
+
+check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
+if(HAVE_SYS_MMAN_H)
+check_function_exists(mmap HAVE_MMAP)
+endif()
+
 check_include_files(sys/random.h HAVE_SYS_RANDOM_H)
+if(HAVE_SYS_RANDOM_H)
 set(CMAKE_EXTRA_INCLUDE_FILES sys/random.h)
 check_function_exists(getentropy HAVE_GETENTROPY)
 set(CMAKE_EXTRA_INCLUDE_FILES)
+endif()
 
 check_include_files(linux/random.h HAVE_LINUX_RANDOM_H)
+if(HAVE_LINUX_RANDOM_H)
 set(CMAKE_EXTRA_INCLUDE_FILES linux/random.h)
 check_function_exists(getrandom HAVE_GETRANDOM)
 set(CMAKE_EXTRA_INCLUDE_FILES)
+endif()
+
+check_include_files(sys/resource.h HAVE_SYS_RESOURCE_H)
+if(HAVE_SYS_RESOURCE_H)
+check_function_exists(getrlimit HAVE_GETRLIMIT)
+endif()
+
+check_include_files(sys/uio.h HAVE_SYS_UIO_H)
+if(HAVE_SYS_UIO_H)
+check_function_exists(preadv HAVE_PREADV)
+check_function_exists(pwritev HAVE_PWRITEV)
+check_function_exists(writev HAVE_WRITEV)
+endif()
+
+check_function_exists(poll HAVE_POLL)
+if(NOT HAVE_POLL)
+check_include_files(sys/select.h HAVE_SYS_SELECT_H)
+check_function_exists(select HAVE_SELECT)
+endif()
+
+set(CMAKE_EXTRA_INCLUDE_FILES time.h)
+check_function_exists(timegm HAVE_TIMEGM)
+set(CMAKE_EXTRA_INCLUDE_FILES)
+
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+check_include_files(port.h HAVE_PORT_H)
+check_include_files(priv.h HAVE_PRIV_H)
+check_include_files(sys/devpoll.h HAVE_SYS_DEVPOLL_H)
+check_include_files(sys/filio.h HAVE_SYS_FILIO_H)
+check_function_exists(port_create HAVE_PORT_CREATE)
+check_function_exists(sendfilev HAVE_SENDFILEV)
+check_function_exists(setpflags HAVE_SETPFLAGS)
+endif()
 
 check_type_size(long SIZEOF_LONG)
 check_type_size(off_t SIZEOF_OFF_T)
@@ -154,45 +231,25 @@ check_type_size(off_t SIZEOF_OFF_T)
 check_function_exists(arc4random_buf HAVE_ARC4RANDOM_BUF)
 check_function_exists(chroot HAVE_CHROOT)
 check_function_exists(copy_file_range HAVE_COPY_FILE_RANGE)
-check_function_exists(epoll_ctl HAVE_EPOLL_CTL)
 check_function_exists(fork HAVE_FORK)
 check_function_exists(getloadavg HAVE_GETLOADAVG)
-check_function_exists(getrlimit HAVE_GETRLIMIT)
 check_function_exists(getuid HAVE_GETUID)
 check_function_exists(gmtime_r HAVE_GMTIME_R)
-check_function_exists(inet_aton HAVE_INET_ATON)
-check_function_exists(inet_ntop HAVE_INET_NTOP)
 check_function_exists(jrand48 HAVE_JRAND48)
-check_function_exists(kqueue HAVE_KQUEUE)
 check_function_exists(localtime_r HAVE_LOCALTIME_R)
 check_function_exists(lstat HAVE_LSTAT)
 check_function_exists(madvise HAVE_MADVISE)
-check_function_exists(memcpy HAVE_MEMCPY)
-check_function_exists(memset HAVE_MEMSET)
-check_function_exists(mmap HAVE_MMAP)
-check_function_exists(pathconf HAVE_PATHCONF)
+check_function_exists(mempcpy HAVE_MEMPCPY)
+check_function_exists(mkostemp HAVE_MKOSTEMP)
 check_function_exists(pipe2 HAVE_PIPE2)
-check_function_exists(poll HAVE_POLL)
-check_function_exists(port_create HAVE_PORT_CREATE)
-check_function_exists(prctl HAVE_PRCTL)
 check_function_exists(pread HAVE_PREAD)
-check_function_exists(posix_fadvise HAVE_POSIX_FADVISE)
-check_function_exists(select HAVE_SELECT)
+check_function_exists(pwrite HAVE_PWRITE)
 check_function_exists(sendfile HAVE_SENDFILE)
-check_function_exists(send_file HAVE_SEND_FILE)
 check_function_exists(sendfile64 HAVE_SENDFILE64)
-check_function_exists(sendfilev HAVE_SENDFILEV)
-check_function_exists(sigaction HAVE_SIGACTION)
-check_function_exists(signal HAVE_SIGNAL)
-check_function_exists(sigtimedwait HAVE_SIGTIMEDWAIT)
+check_function_exists(splice HAVE_SPLICE)
 check_function_exists(srandom HAVE_SRANDOM)
-check_function_exists(strptime HAVE_STRPTIME)
-check_function_exists(syslog HAVE_SYSLOG)
-check_function_exists(timegm HAVE_TIMEGM)
-check_function_exists(writev HAVE_WRITEV)
-check_function_exists(inet_aton HAVE_INET_ATON)
+check_function_exists(strerror_r HAVE_STRERROR_R)
 check_function_exists(issetugid HAVE_ISSETUGID)
-check_function_exists(inet_pton HAVE_INET_PTON)
 check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
 check_function_exists(explicit_memset HAVE_EXPLICIT_MEMSET)
@@ -201,6 +258,15 @@ if (NOT HAVE_CLOCK_GETTIME)
 	check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
 endif()
 check_library_exists(elftc elftc_copyfile "libelftc.h" HAVE_ELFTC_COPYFILE)
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+set(CMAKE_REQUIRED_LIBRARIES "socket;nsl")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Haiku")
+set(CMAKE_REQUIRED_LIBRARIES "network")
+elseif(WIN32)
+set(CMAKE_REQUIRED_LIBRARIES "ws2_32")
+endif()
+check_function_exists(inet_aton HAVE_INET_ATON)
+check_function_exists(inet_pton HAVE_INET_PTON)
 check_c_source_compiles("
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -210,6 +276,9 @@ check_c_source_compiles("
 		struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;
 		return 0;
 	}" HAVE_IPV6)
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+set(CMAKE_REQUIRED_LIBRARIES)
+endif()
 check_c_source_compiles("
 	__attribute__((weak)) void __dummy(void *x) { }
 	int main() {
@@ -241,7 +310,11 @@ macro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
 		set(XCONFIG_EXECUTABLE "${${_package}CONFIG_EXECUTABLE}")
 		message(STATUS "found ${_package}: ${XCONFIG_EXECUTABLE}")
 
-		exec_program(${XCONFIG_EXECUTABLE} ARGS --libs OUTPUT_VARIABLE __link_FLAGS)
+		if(${_package} STREQUAL "pcre2-config")
+			exec_program(${XCONFIG_EXECUTABLE} ARGS --libs8 OUTPUT_VARIABLE __link_FLAGS)
+		else()
+			exec_program(${XCONFIG_EXECUTABLE} ARGS --libs OUTPUT_VARIABLE __link_FLAGS)
+		endif()
 		string(REPLACE "\n" "" ${_link_FLAGS} ${__link_FLAGS})
 		exec_program(${XCONFIG_EXECUTABLE} ARGS --cflags OUTPUT_VARIABLE __cflags)
 		string(REPLACE "\n" "" ${_cflags} ${__cflags})
@@ -253,9 +326,13 @@ endmacro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
 if(WITH_XATTR)
 	check_include_files("sys/types.h;sys/xattr.h" HAVE_SYS_XATTR_H)
 	check_function_exists(getxattr HAVE_XATTR)
-	check_include_files("sys/types.h;attr/attributes.h" HAVE_ATTR_ATTRIBUTES_H)
-	if(HAVE_ATTR_ATTRIBUTES_H)
-		check_library_exists(attr attr_get "" HAVE_XATTR)
+	check_include_files("sys/types.h;sys/extattr.h" HAVE_SYS_EXTATTR_H)
+	check_function_exists(extattr_get_file HAVE_EXTATTR)
+	if(NOT HAVE_XATTR AND NOT HAVE_EXTATTR)
+		check_include_files("sys/types.h;attr/attributes.h" HAVE_ATTR_ATTRIBUTES_H)
+		if(HAVE_ATTR_ATTRIBUTES_H)
+			check_library_exists(attr attr_get "" HAVE_XATTR)
+		endif()
 	endif()
 else()
 	unset(HAVE_ATTR_ATTRIBUTES_H)
@@ -309,7 +386,7 @@ if(WITH_OPENSSL)
 		set(CMAKE_REQUIRED_INCLUDES)
 	endif()
 	if(HAVE_OPENSSL_SSL_H)
-		check_library_exists(crypto BIO_f_base64 "" HAVE_LIBCRYPTO)
+		check_library_exists(crypto RAND_bytes "" HAVE_LIBCRYPTO)
 		if(HAVE_LIBCRYPTO)
 			set(CRYPTO_LIBRARY crypto)
 			check_library_exists(ssl SSL_new "" HAVE_LIBSSL)
@@ -364,10 +441,9 @@ if(WITH_WOLFSSL)
 		unset(CHECK_HAVE_LIGHTY)
 
 		set(CMAKE_REQUIRED_LIBRARIES ${WOLFSSL_LIBRARY})
-		check_library_exists(${WOLFSSL_LIBRARY} wolfSSL_Init "" HAVE_LIBCRYPTO)
-		if(HAVE_LIBCRYPTO)
+		check_library_exists(${WOLFSSL_LIBRARY} wolfSSL_Init "" HAVE_LIBWOLFSSL)
+		if(HAVE_LIBWOLFSSL)
 			set(CRYPTO_LIBRARY ${WOLFSSL_LIBRARY})
-			add_definitions(-DHAVE_WOLFSSL_SSL_H)
 			set(HAVE_WOLFSSL 1)
 		endif()
 		set(CMAKE_REQUIRED_INCLUDES)
@@ -384,8 +460,9 @@ if(WITH_MBEDTLS)
 	check_include_files(mbedtls/ssl.h HAVE_MBEDTLS_SSL_H)
 	if(HAVE_MBEDTLS_SSL_H)
 		check_library_exists(mbedcrypto mbedtls_base64_encode "" HAVE_LIBMBEDCRYPTO)
-		if(HAVE_LIBMEDTLSCRYPTO)
-		    check_library_exists(mbedtls mbedtls_cipher_info_from_type "" HAVE_LIBMBEDTLS)
+		if(HAVE_LIBMBEDCRYPTO)
+			set(CRYPTO_LIBRARY mbedcrypto)
+			check_library_exists(mbedtls mbedtls_ssl_init "" HAVE_LIBMBEDTLS)
 			if(HAVE_LIBMBEDTLS)
 			    check_library_exists(mbedx509 mbedtls_x509_get_name "" HAVE_LIBMBEDX509)
 			endif()
@@ -431,8 +508,8 @@ if(WITH_NETTLE)
 		set(CMAKE_REQUIRED_INCLUDES)
 	endif()
 	if(HAVE_NETTLE_NETTLE_TYPES_H)
-		check_library_exists(nettle nettle_md5_init "" HAVE_LIBCRYPTO)
-		if(HAVE_LIBCRYPTO)
+		check_library_exists(nettle nettle_md5_init "" HAVE_LIBNETTLE)
+		if(HAVE_LIBNETTLE)
 			set(CRYPTO_LIBRARY nettle)
 		endif()
 	endif()
@@ -441,15 +518,69 @@ else()
 endif()
 
 if(WITH_GNUTLS)
-	pkg_check_modules(LIBGNUTLS REQUIRED gnutls)
-	set(HAVE_LIBGNUTLS 1)
-	add_definitions(-DHAVE_GNUTLS_CRYPTO_H)
+	pkg_check_modules(GNUTLS REQUIRED gnutls)
+	set(HAVE_GNUTLS_CRYPTO_H 1)
+	set(HAVE_GNUTLS 1)
 	if(NOT WITH_OPENSSL AND NOT WITH_WOLFSSL AND NOT WITH_MBEDTLS AND NOT WITH_NETTLE)
 		set(CRYPTO_LIBRARY gnutls)
 	endif()
 endif()
 
-if(WITH_PCRE)
+if(WITH_PCRE2)
+	pkg_check_modules(PCRE2 libpcre2-8)
+	if(PCRE2_FOUND)
+		set(PCRE_LDFLAGS "${PCRE2_LDFLAGS}")
+		set(PCRE_CFLAGS "${PCRE2_CFLAGS}")
+	else()
+		## if we have pcre2-config, use it
+		xconfig(pcre2-config PCRE_INCDIR PCRE_LIBDIR PCRE_LDFLAGS PCRE_CFLAGS)
+	endif()
+	if(PCRE_LDFLAGS OR PCRE_CFLAGS)
+		message(STATUS "found pcre2 at: LDFLAGS: ${PCRE_LDFLAGS} CFLAGS: ${PCRE_CFLAGS}")
+
+		if(NOT PCRE_CFLAGS STREQUAL "\n")
+			## if it is empty we'll get newline returned
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PCRE_CFLAGS}")
+		endif()
+
+		set(HAVE_PCRE2_H 1)
+		set(HAVE_PCRE 1)
+	else()
+		if(NOT WIN32)
+			check_include_files(pcre2.h HAVE_PCRE_H)
+			check_library_exists(pcre2-8 pcre_match "" HAVE_PCRE)
+			set(PCRE_LDFLAGS -lpcre2-8)
+		else()
+			find_path(PCRE_INCLUDE_DIR pcre2.h
+			/usr/local/include
+			/usr/include
+			)
+
+			set(PCRE_NAMES pcre2-8)
+			find_library(PCRE_LIBRARY
+			NAMES ${PCRE_NAMES}
+			PATHS /usr/lib /usr/local/lib
+			)
+
+			if(PCRE_INCLUDE_DIR AND PCRE_LIBRARY)
+				set(CMAKE_REQUIRED_INCLUDES ${PCRE_INCLUDE_DIR})
+				set(CMAKE_REQUIRED_LIBRARIES ${PCRE_LIBRARY})
+				check_include_files(pcre2.h HAVE_PCRE2_H)
+				check_library_exists(pcre2-8 pcre_match "" HAVE_PCRE)
+				set(CMAKE_REQUIRED_INCLUDES)
+				set(CMAKE_REQUIRED_LIBRARIES)
+				include_directories(${PCRE_INCLUDE_DIR})
+			endif()
+		endif()
+	endif()
+
+	if(NOT HAVE_PCRE2_H)
+		message(FATAL_ERROR "pcre2.h couldn't be found")
+	endif()
+	if(NOT HAVE_PCRE)
+		message(FATAL_ERROR "libpcre2-8 couldn't be found")
+	endif()
+elseif(WITH_PCRE)
 	## if we have pcre-config, use it
 	xconfig(pcre-config PCRE_INCDIR PCRE_LIBDIR PCRE_LDFLAGS PCRE_CFLAGS)
 	if(PCRE_LDFLAGS OR PCRE_CFLAGS)
@@ -461,11 +592,11 @@ if(WITH_PCRE)
 		endif()
 
 		set(HAVE_PCRE_H 1)
-		set(HAVE_LIBPCRE 1)
+		set(HAVE_PCRE 1)
 	else()
 		if(NOT WIN32)
 			check_include_files(pcre.h HAVE_PCRE_H)
-			check_library_exists(pcre pcre_exec "" HAVE_LIBPCRE)
+			check_library_exists(pcre pcre_exec "" HAVE_PCRE)
 			set(PCRE_LDFLAGS -lpcre)
 		else()
 			find_path(PCRE_INCLUDE_DIR pcre.h
@@ -483,7 +614,7 @@ if(WITH_PCRE)
 				set(CMAKE_REQUIRED_INCLUDES ${PCRE_INCLUDE_DIR})
 				set(CMAKE_REQUIRED_LIBRARIES ${PCRE_LIBRARY})
 				check_include_files(pcre.h HAVE_PCRE_H)
-				check_library_exists(pcre pcre_exec "" HAVE_LIBPCRE)
+				check_library_exists(pcre pcre_exec "" HAVE_PCRE)
 				set(CMAKE_REQUIRED_INCLUDES)
 				set(CMAKE_REQUIRED_LIBRARIES)
 				include_directories(${PCRE_INCLUDE_DIR})
@@ -494,12 +625,12 @@ if(WITH_PCRE)
 	if(NOT HAVE_PCRE_H)
 		message(FATAL_ERROR "pcre.h couldn't be found")
 	endif()
-	if(NOT HAVE_LIBPCRE)
+	if(NOT HAVE_PCRE)
 		message(FATAL_ERROR "libpcre couldn't be found")
 	endif()
 else()
 	unset(HAVE_PCRE_H)
-	unset(HAVE_LIBPCRE)
+	unset(HAVE_PCRE)
 endif()
 
 if(WITH_SASL)
@@ -524,22 +655,22 @@ if(WITH_XML)
 		check_include_files(libxml/tree.h HAVE_LIBXML_H)
 
 		set(CMAKE_REQUIRED_FLAGS ${XML2_LDFLAGS})
-		check_library_exists(xml2 xmlParseChunk "" HAVE_LIBXML)
+		check_library_exists(xml2 xmlParseChunk "" HAVE_LIBXML2)
 		set(CMAKE_REQUIRED_FLAGS)
 	else()
 		check_include_files(libxml.h HAVE_LIBXML_H)
-		check_library_exists(xml2 xmlParseChunk "" HAVE_LIBXML)
+		check_library_exists(xml2 xmlParseChunk "" HAVE_LIBXML2)
 	endif()
 
 	if(NOT HAVE_LIBXML_H)
 		message(FATAL_ERROR "libxml/tree.h couldn't be found")
 	endif()
-	if(NOT HAVE_LIBXML)
+	if(NOT HAVE_LIBXML2)
 		message(FATAL_ERROR "libxml2 couldn't be found")
 	endif()
 else()
 	unset(HAVE_LIBXML_H)
-	unset(HAVE_LIBXML)
+	unset(HAVE_LIBXML2)
 endif()
 
 if(WITH_SQLITE3)
@@ -607,6 +738,14 @@ else()
 	unset(ZLIB_LIBRARY)
 endif()
 
+if(WITH_ZSTD)
+	check_include_files(zstd.h HAVE_ZSTD_H)
+	check_library_exists(zstd ZSTD_versionNumber "" HAVE_ZSTD)
+else()
+	unset(HAVE_ZSTD_H)
+	unset(HAVE_ZSTD)
+endif()
+
 if(WITH_BZIP)
 	check_include_files(bzlib.h HAVE_BZLIB_H)
 	check_library_exists(bz2 BZ2_bzCompress "" HAVE_LIBBZ2)
@@ -617,8 +756,8 @@ endif()
 
 if(WITH_BROTLI)
 	pkg_check_modules(LIBBROTLI REQUIRED libbrotlienc)
+	set(HAVE_BROTLI_ENCODE_H 1)
 	set(HAVE_BROTLI 1)
-	add_definitions(-DHAVE_BROTLI_ENCODE_H -DHAVE_BROTLI)
 else()
 	unset(HAVE_BROTLI)
 endif()
@@ -646,10 +785,8 @@ endif()
 if(WITH_LUA)
 	pkg_search_module(LUA REQUIRED lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
-	set(HAVE_LIBLUA 1 "Have liblua")
 	set(HAVE_LUA_H  1 "Have liblua header")
 else()
-	unset(HAVE_LIBLUA)
 	unset(HAVE_LUA_H)
 endif()
 
@@ -659,33 +796,12 @@ if(WITH_FAM AND NOT HAVE_SYS_INOTIFY_H)
 	if(HAVE_LIBFAM)
 		set(CMAKE_REQUIRED_LIBRARIES fam)
 		check_function_exists(FAMNoExists HAVE_FAMNOEXISTS)
+		set(CMAKE_REQUIRED_LIBRARIES)
 	endif()
 else()
 	unset(HAVE_FAM_H)
 	unset(HAVE_LIBFAM)
 	unset(HAVE_FAMNOEXISTS)
-endif()
-
-if(WITH_GDBM)
-	check_include_files(gdbm.h HAVE_GDBM_H)
-	check_library_exists(gdbm gdbm_open "" HAVE_GDBM)
-else()
-	unset(HAVE_GDBM_H)
-	unset(HAVE_GDBM)
-endif()
-
-if(WITH_MEMCACHED)
-	check_include_files(libmemcached/memcached.h HAVE_LIBMEMCACHED_MEMCACHED_H)
-	check_library_exists(memcached memcached "" HAVE_LIBMEMCACHED)
-	if(HAVE_LIBMEMCACHED_MEMCACHED_H AND HAVE_LIBMEMCACHED)
-		set(USE_MEMCACHED 1)
-	else()
-		message(FATAL_ERROR "didn't find libmemcached")
-	endif()
-endif()
-
-if(WITH_GEOIP)
-	check_library_exists(geoip GeoIP_country_name_by_addr "" HAVE_GEOIP)
 endif()
 
 if(WITH_MAXMINDDB)
@@ -733,25 +849,19 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 set(COMMON_SRC
 	base64.c buffer.c burl.c log.c
 	http_header.c http_kv.c keyvalue.c chunk.c
-	http_chunk.c stream.c fdevent.c gw_backend.c
+	http_chunk.c fdevent.c fdevent_fdnode.c gw_backend.c
 	stat_cache.c plugin.c http_etag.c array.c
-	data_string.c data_array.c
-	data_integer.c
 	algo_md5.c algo_sha1.c algo_splaytree.c
-	fdevent_select.c fdevent_libev.c
-	fdevent_poll.c fdevent_linux_sysepoll.c
-	fdevent_solaris_devpoll.c fdevent_solaris_port.c
-	fdevent_freebsd_kqueue.c
-	connections-glue.c
 	configfile-glue.c
 	http-header-glue.c
-	http_auth.c
+	http_cgi.c
 	http_date.c
-	http_vhostdb.c
 	request.c
 	sock_addr.c
 	rand.c
-	safe_memclear.c
+	fdlog_maint.c
+	fdlog.c
+	ck.c
 )
 
 if(WIN32)
@@ -763,7 +873,6 @@ add_executable(lemon lemon.c)
 
 ## Build parsers by using lemon...
 lemon_parser(configparser.y)
-lemon_parser(mod_ssi_exprparser.y)
 
 set(L_INSTALL_TARGETS)
 
@@ -780,6 +889,8 @@ add_executable(lighttpd
 	sock_addr_cache.c
 	ls-hpack/lshpack.c
 	algo_xxhash.c
+	fdevent_impl.c
+	http_range.c
 	network.c
 	network_write.c
 	data_config.c
@@ -792,8 +903,9 @@ set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd)
 
 add_and_install_library(mod_access mod_access.c)
 add_and_install_library(mod_accesslog mod_accesslog.c)
+add_and_install_library(mod_ajp13 mod_ajp13.c)
 add_and_install_library(mod_alias mod_alias.c)
-add_and_install_library(mod_auth "mod_auth.c")
+add_and_install_library(mod_auth "mod_auth.c;mod_auth_api.c")
 add_and_install_library(mod_authn_file "mod_authn_file.c")
 if(NOT WIN32)
 	add_and_install_library(mod_cgi mod_cgi.c)
@@ -805,177 +917,88 @@ add_and_install_library(mod_evhost mod_evhost.c)
 add_and_install_library(mod_expire mod_expire.c)
 add_and_install_library(mod_extforward mod_extforward.c)
 add_and_install_library(mod_fastcgi mod_fastcgi.c)
-add_and_install_library(mod_flv_streaming mod_flv_streaming.c)
 add_and_install_library(mod_indexfile mod_indexfile.c)
 add_and_install_library(mod_proxy mod_proxy.c)
 add_and_install_library(mod_redirect mod_redirect.c)
 add_and_install_library(mod_rewrite mod_rewrite.c)
 add_and_install_library(mod_rrdtool mod_rrdtool.c)
 add_and_install_library(mod_scgi mod_scgi.c)
-add_and_install_library(mod_secdownload mod_secdownload.c)
+add_and_install_library(mod_secdownload "mod_secdownload.c;algo_hmac.c")
 add_and_install_library(mod_setenv mod_setenv.c)
 add_and_install_library(mod_simple_vhost mod_simple_vhost.c)
 add_and_install_library(mod_sockproxy mod_sockproxy.c)
-add_and_install_library(mod_ssi "mod_ssi_exprparser.c;mod_ssi_expr.c;mod_ssi.c")
+add_and_install_library(mod_ssi mod_ssi.c)
 add_and_install_library(mod_staticfile mod_staticfile.c)
 add_and_install_library(mod_status mod_status.c)
 add_and_install_library(mod_uploadprogress mod_uploadprogress.c)
 add_and_install_library(mod_userdir mod_userdir.c)
 add_and_install_library(mod_usertrack mod_usertrack.c)
-add_and_install_library(mod_vhostdb mod_vhostdb.c)
+add_and_install_library(mod_vhostdb "mod_vhostdb.c;mod_vhostdb_api.c")
 add_and_install_library(mod_webdav mod_webdav.c)
 add_and_install_library(mod_wstunnel mod_wstunnel.c)
-
-add_executable(test_array
-	t/test_array.c
-	array.c
-	data_array.c
-	data_integer.c
-	data_string.c
-	buffer.c
-)
-add_test(NAME test_array COMMAND test_array)
-
-add_executable(test_buffer
-	t/test_buffer.c
-	buffer.c
-)
-add_test(NAME test_buffer COMMAND test_buffer)
-
-add_executable(test_burl
-	t/test_burl.c
-	burl.c
-	buffer.c
-	base64.c
-)
-add_test(NAME test_burl COMMAND test_burl)
-
-add_executable(test_base64
-	t/test_base64.c
-	buffer.c
-	base64.c
-)
-add_test(NAME test_base64 COMMAND test_base64)
 
 add_executable(test_configfile
 	t/test_configfile.c
 	buffer.c
 	array.c
 	data_config.c
-	data_integer.c
-	data_string.c
 	http_header.c
 	http_kv.c
 	vector.c
 	log.c
+	fdlog.c
 	sock_addr.c
+	ck.c
 )
 add_test(NAME test_configfile COMMAND test_configfile)
 
-add_executable(test_keyvalue
-	t/test_keyvalue.c
-	burl.c
-	buffer.c
-	base64.c
-	array.c
-	data_integer.c
-	data_string.c
-	log.c
-)
-add_test(NAME test_keyvalue COMMAND test_keyvalue)
-
-add_executable(test_mod_access
+add_executable(test_mod
+	${COMMON_SRC}
+	t/test_mod.c
 	t/test_mod_access.c
-	buffer.c
-	array.c
-	data_integer.c
-	data_string.c
-	log.c
-)
-add_test(NAME test_mod_access COMMAND test_mod_access)
-
-add_executable(test_mod_evhost
+	t/test_mod_alias.c
+	t/test_mod_evasive.c
 	t/test_mod_evhost.c
-	buffer.c
-	array.c
-	data_integer.c
-	data_string.c
-	log.c
-)
-add_test(NAME test_mod_evhost COMMAND test_mod_evhost)
-
-add_executable(test_mod_simple_vhost
+	t/test_mod_indexfile.c
 	t/test_mod_simple_vhost.c
-	buffer.c
-	array.c
-	data_integer.c
-	data_string.c
-	log.c
-)
-add_test(NAME test_mod_simple_vhost COMMAND test_mod_simple_vhost)
-
-add_executable(test_mod_userdir
+	t/test_mod_ssi.c
+	t/test_mod_staticfile.c
 	t/test_mod_userdir.c
-	buffer.c
-	array.c
-	data_integer.c
-	data_string.c
-	log.c
 )
-add_test(NAME test_mod_userdir COMMAND test_mod_userdir)
+add_test(NAME test_mod COMMAND test_mod)
 
-add_executable(test_request
+add_executable(test_common
+	t/test_common.c
+	t/test_array.c
+	t/test_base64.c
+	t/test_buffer.c
+	t/test_burl.c
+	t/test_keyvalue.c
 	t/test_request.c
-	base64.c
-	buffer.c
-	burl.c
-	array.c
-	data_integer.c
-	data_string.c
 	http_header.c
 	http_kv.c
 	log.c
+	fdlog.c
 	sock_addr.c
+	ck.c
 )
-add_test(NAME test_request COMMAND test_request)
+add_test(NAME test_common COMMAND test_common)
 
-if(HAVE_PCRE_H)
+if(HAVE_PCRE)
 	target_link_libraries(lighttpd ${PCRE_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(mod_rewrite ${PCRE_LDFLAGS})
-	add_target_properties(mod_rewrite COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(mod_dirlisting ${PCRE_LDFLAGS})
-	add_target_properties(mod_dirlisting COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(mod_redirect ${PCRE_LDFLAGS})
-	add_target_properties(mod_redirect COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_common ${PCRE_LDFLAGS})
+	add_target_properties(test_common COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(test_configfile ${PCRE_LDFLAGS})
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS})
-	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS})
-endif()
-
-if(WITH_PCRE AND (WITH_MEMCACHED OR WITH_GDBM))
-	add_and_install_library(mod_trigger_b4_dl mod_trigger_b4_dl.c)
-	target_link_libraries(mod_trigger_b4_dl ${PCRE_LDFLAGS})
-	add_target_properties(mod_trigger_b4_dl COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_mod ${PCRE_LDFLAGS})
+	add_target_properties(test_mod COMPILE_FLAGS ${PCRE_CFLAGS})
 endif()
 
 if(WITH_LUA)
-	add_and_install_library(mod_magnet "mod_magnet.c;mod_magnet_cache.c")
-	target_link_libraries(mod_magnet ${LUA_LDFLAGS})
+	add_and_install_library(mod_magnet "mod_magnet.c;mod_magnet_cache.c;algo_hmac.c")
+	target_link_libraries(mod_magnet ${LUA_LDFLAGS} ${CRYPTO_LIBRARY})
 	add_target_properties(mod_magnet COMPILE_FLAGS ${LUA_CFLAGS})
-
-	add_and_install_library(mod_cml "mod_cml.c;mod_cml_lua.c;mod_cml_funcs.c")
-	target_link_libraries(mod_cml ${LUA_LDFLAGS} ${CRYPTO_LIBRARY})
-	add_target_properties(mod_cml COMPILE_FLAGS ${LUA_CFLAGS})
-	if(WITH_MEMCACHED)
-		target_link_libraries(mod_cml memcached)
-	endif()
-endif()
-
-if(WITH_GEOIP)
-	add_and_install_library(mod_geoip mod_geoip.c)
-	target_link_libraries(mod_geoip GeoIP)
 endif()
 
 if(WITH_MAXMINDDB)
@@ -984,18 +1007,9 @@ if(WITH_MAXMINDDB)
 endif()
 
 if(HAVE_MYSQL_H AND HAVE_MYSQL)
-	add_and_install_library(mod_mysql_vhost "mod_mysql_vhost.c")
-	target_link_libraries(mod_mysql_vhost mysqlclient)
 	add_and_install_library(mod_vhostdb_mysql "mod_vhostdb_mysql.c")
 	target_link_libraries(mod_vhostdb_mysql mysqlclient)
 	include_directories(/usr/include/mysql)
-
-	add_and_install_library(mod_authn_mysql "mod_authn_mysql.c")
-	set(L_MOD_AUTHN_MYSQL ${CRYPTO_LIBRARY})
-	if(HAVE_LIBCRYPT)
-		set(L_MOD_AUTHN_MYSQL ${L_MOD_AUTHN_MYSQL} crypt)
-	endif()
-	target_link_libraries(mod_authn_mysql ${L_MOD_AUTHN_MYSQL} mysqlclient)
 endif()
 
 if(HAVE_PGSQL_H AND HAVE_PGSQL)
@@ -1036,6 +1050,14 @@ if(HAVE_LIBCRYPT)
 endif()
 target_link_libraries(mod_authn_file ${L_MOD_AUTHN_FILE})
 
+if(BUILD_SANITIZE_ADDRESS AND HAVE_LIBCRYPT)
+	# libasan initializes intercepts early (before lighty loads plugins);
+	# if libcrypt isn't loaded at that time calling crypt later ends up
+	# calling a nullptr.
+	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103930
+	target_link_libraries(lighttpd crypt)
+endif()
+
 if(WITH_KRB5)
 	check_library_exists(krb5 krb5_init_context "" HAVE_KRB5)
 	add_and_install_library(mod_authn_gssapi "mod_authn_gssapi.c")
@@ -1063,9 +1085,12 @@ if(WITH_SASL)
 	target_link_libraries(mod_authn_sasl ${L_MOD_AUTHN_SASL})
 endif()
 
-if(HAVE_ZLIB_H OR HAVE_BZLIB_H OR HAVE_BROTLI)
+if(HAVE_ZLIB_H OR HAVE_ZSTD_H OR HAVE_BZLIB_H OR HAVE_BROTLI)
 	if(HAVE_ZLIB_H)
 		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} ${ZLIB_LIBRARY})
+	endif()
+	if(HAVE_ZSTD_H)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} zstd)
 	endif()
 	if(HAVE_BZLIB_H)
 		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} bz2)
@@ -1078,35 +1103,29 @@ endif()
 
 if(HAVE_LIBFAM)
 	target_link_libraries(lighttpd fam)
-endif()
-
-if(HAVE_GDBM_H)
-	target_link_libraries(mod_trigger_b4_dl gdbm)
-endif()
-
-if(WITH_MEMCACHED)
-	target_link_libraries(mod_trigger_b4_dl memcached)
+	target_link_libraries(test_mod fam)
 endif()
 
 if(HAVE_XATTR)
 	target_link_libraries(lighttpd attr)
+	target_link_libraries(test_mod attr)
 endif()
 
 if(HAVE_XXHASH)
 	target_link_libraries(lighttpd xxhash)
+	target_link_libraries(test_mod xxhash)
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -g -Wshadow -W -pedantic ${WARN_CFLAGS}")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -Wall -g -Wshadow -W -pedantic ${WARN_CFLAGS}")
 	set(CMAKE_C_FLAGS_RELEASE        "${CMAKE_C_FLAGS_RELEASE}     -O2")
 	set(CMAKE_C_FLAGS_DEBUG          "${CMAKE_C_FLAGS_DEBUG}       -O0")
 	set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_WITHDEBINFO} -O2")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
-endif()
-
-if((NOT APPLE) OR CMAKE_C_COMPILER_ID MATCHES "GNU")
-	add_target_properties(lighttpd LINK_FLAGS "-Wl,-export-dynamic")
+	if((NOT APPLE) AND (NOT CMAKE_SYSTEM_NAME MATCHES "SunOS"))
+		add_target_properties(lighttpd LINK_FLAGS "-Wl,-export-dynamic")
+	endif()
 endif()
 
 set_target_properties(lighttpd PROPERTIES CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
@@ -1114,9 +1133,8 @@ set_target_properties(lighttpd PROPERTIES CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_P
 if(WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNVALGRIND")
 	add_target_properties(lighttpd COMPILE_FLAGS "-DLI_DECLARE_EXPORTS")
-	target_link_libraries(lighttpd ws2_32)
 	target_link_libraries(mod_proxy ws2_32)
-	target_link_libraries(mod_fcgi ws2_32)
+	target_link_libraries(mod_fastcgi ws2_32)
 	target_link_libraries(mod_scgi ws2_32)
 	target_link_libraries(mod_ssi ws2_32)
 
@@ -1129,6 +1147,7 @@ endif()
 if(NOT BUILD_STATIC)
 	if(HAVE_LIBDL)
 		target_link_libraries(lighttpd dl)
+		target_link_libraries(test_mod dl)
 	endif()
 endif()
 
@@ -1140,6 +1159,7 @@ if(NOT ${CRYPTO_LIBRARY} EQUAL "")
 	target_link_libraries(mod_secdownload ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_usertrack ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_wstunnel ${CRYPTO_LIBRARY})
+	target_link_libraries(test_mod ${CRYPTO_LIBRARY})
 endif()
 
 if(HAVE_OPENSSL)
@@ -1153,7 +1173,7 @@ if(HAVE_WOLFSSL)
 	target_link_libraries(mod_wolfssl wolfssl)
 endif()
 
-if(HAVE_LIBGNUTLS)
+if(HAVE_GNUTLS)
 	add_and_install_library(mod_gnutls "mod_gnutls.c")
 	target_link_libraries(mod_gnutls gnutls)
 endif()
@@ -1174,34 +1194,35 @@ endif()
 if(WITH_LIBEV)
 	target_link_libraries(lighttpd ${LIBEV_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${LIBEV_CFLAGS})
+	target_link_libraries(test_mod ${LIBEV_LDFLAGS})
+	add_target_properties(test_mod COMPILE_FLAGS ${LIBEV_CFLAGS})
 endif()
 
 if(WITH_LIBUNWIND)
 	target_link_libraries(lighttpd ${LIBUNWIND_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 
-	target_link_libraries(test_array ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_array COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_buffer ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_buffer COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_burl ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_burl COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_base64 ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_base64 COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_common ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_common COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_configfile ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_access ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_access COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_evhost ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_evhost COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_simple_vhost ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_userdir ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_userdir COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_request ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_request COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+endif()
+
+if(WIN32)
+	set(SOCKLIBS ws2_32)
+endif()
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+	set(SOCKLIBS socket nsl)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Haiku")
+	set(SOCKLIBS network)
+endif()
+if(SOCKLIBS)
+	target_link_libraries(lighttpd ${SOCKLIBS})
+	target_link_libraries(test_common ${SOCKLIBS})
+	target_link_libraries(test_configfile ${SOCKLIBS})
+	target_link_libraries(test_mod ${SOCKLIBS})
 endif()
 
 if(NOT WIN32)

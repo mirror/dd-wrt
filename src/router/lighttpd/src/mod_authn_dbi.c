@@ -12,7 +12,7 @@
  *     "sql" => "SELECT passwd FROM users WHERE user='?' AND realm='?'"
  *     "dbtype" => "sqlite3",
  *     "dbname" => "mydb.sqlite",
- *     "sqlite_dbdir" => "/path/to/sqlite/dbs/"
+ *     "sqlite3_dbdir" => "/path/to/sqlite/dbs/"
  *   )
  *
  *   SQL samples (change table and column names for your database schema):
@@ -24,6 +24,9 @@
 #include "first.h"
 
 #if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
 #ifndef _XOPEN_CRYPT
 #define _XOPEN_CRYPT 1
 #endif
@@ -33,15 +36,15 @@
 #include <crypt.h>
 #endif
 
-#include <dbi/dbi.h>
-
 #include <string.h>
 #include <stdlib.h>
 
+#include <dbi/dbi.h>
+
+#include "mod_auth_api.h"
 #include "sys-crypto-md.h"
-#include "safe_memclear.h"
 #include "base.h"
-#include "http_auth.h"
+#include "ck.h"
 #include "fdevent.h"
 #include "log.h"
 #include "plugin.h"
@@ -50,6 +53,7 @@ typedef struct {
     dbi_conn dbconn;
     dbi_inst dbinst;
     const buffer *sqlquery;
+    const buffer *sqluserhash;
     log_error_st *errh;
     short reconnect_count;
 } dbi_config;
@@ -100,6 +104,7 @@ static int
 mod_authn_dbi_dbconf_setup (server *srv, const array *opts, void **vdata)
 {
     const buffer *sqlquery = NULL;
+    const buffer *sqluserhash = NULL;
     const buffer *dbtype=NULL, *dbname=NULL;
 
     for (size_t i = 0; i < opts->used; ++i) {
@@ -111,6 +116,9 @@ mod_authn_dbi_dbconf_setup (server *srv, const array *opts, void **vdata)
                 dbname = &ds->value;
             else if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("dbtype")))
                 dbtype = &ds->value;
+            else if (buffer_eq_icase_slen(&ds->key,
+                                          CONST_STR_LEN("sql-userhash")))
+                sqluserhash = &ds->value;
         }
     }
 
@@ -128,8 +136,7 @@ mod_authn_dbi_dbconf_setup (server *srv, const array *opts, void **vdata)
      * - encoding, default: database default
      */
 
-    if (!buffer_string_is_empty(sqlquery)
-        && !buffer_is_empty(dbname) && !buffer_is_empty(dbtype)) {
+    if (sqlquery && !buffer_is_blank(sqlquery) && dbname && dbtype) {
         /* create/initialise database */
         dbi_config *dbconf;
         dbi_inst dbinst = NULL;
@@ -153,14 +160,15 @@ mod_authn_dbi_dbconf_setup (server *srv, const array *opts, void **vdata)
         for (size_t j = 0; j < opts->used; ++j) {
             data_unset *du = opts->data[j];
             const buffer *opt = &du->key;
-            if (!buffer_string_is_empty(opt)) {
+            if (!buffer_is_blank(opt)) {
                 if (du->type == TYPE_INTEGER) {
                     data_integer *di = (data_integer *)du;
                     dbi_conn_set_option_numeric(dbconn, opt->ptr, di->value);
                 }
                 else if (du->type == TYPE_STRING) {
                     data_string *ds = (data_string *)du;
-                    if (&ds->value != sqlquery && &ds->value != dbtype) {
+                    if (&ds->value != sqlquery && &ds->value != dbtype
+                        && &ds->value != sqluserhash) {
                         dbi_conn_set_option(dbconn, opt->ptr, ds->value.ptr);
                     }
                 }
@@ -171,6 +179,7 @@ mod_authn_dbi_dbconf_setup (server *srv, const array *opts, void **vdata)
         dbconf->dbinst = dbinst;
         dbconf->dbconn = dbconn;
         dbconf->sqlquery = sqlquery;
+        dbconf->sqluserhash = sqluserhash;
         dbconf->errh = srv->errh;
         dbconf->reconnect_count = 0;
         *vdata = dbconf;
@@ -336,7 +345,7 @@ mod_authn_crypt_cmp (const char *reqpw, const char *userpw, unsigned long userpw
     char *crypted = crypt(reqpw, userpw);
     size_t crypwlen = (NULL != crypted) ? strlen(crypted) : 0;
     int rc = (crypwlen == userpwlen) ? memcmp(crypted, userpw, crypwlen) : -1;
-    if (crypwlen) safe_memclear(crypted, crypwlen);
+    if (crypwlen >= 13) ck_memzero(crypted, crypwlen);
     return rc;
 
  #else
@@ -364,7 +373,7 @@ mod_authn_crypt_cmp (const char *reqpw, const char *userpw, unsigned long userpw
     size_t crypwlen = (NULL != crypted) ? strlen(crypted) : 0;
     int rc = (crypwlen == userpwlen) ? memcmp(crypted, userpw, crypwlen) : -1;
 
-    safe_memclear(crypted, crypwlen);
+    if (crypwlen >= 13) ck_memzero(crypted, crypwlen);
   #if defined(HAVE_CRYPT_R)
    #if 1 /* (must free() if allocated above) */
     free(crypt_tmp_data);
@@ -384,60 +393,48 @@ mod_authn_dbi_password_cmp (const char *userpw, unsigned long userpwlen, http_au
   #if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
     if (userpwlen >= 3 && userpw[0] == '$')
         return mod_authn_crypt_cmp(reqpw, userpw, userpwlen);
-    else
   #endif
-    if (32 == userpwlen) {
-        /* plain md5 */
-        MD5_CTX ctx;
-        unsigned char HA1[16];
-        unsigned char md5pw[16];
 
-        MD5_Init(&ctx);
-        MD5_Update(&ctx, (unsigned char *)ai->username, ai->ulen);
-        MD5_Update(&ctx, CONST_STR_LEN(":"));
-        MD5_Update(&ctx, (unsigned char *)ai->realm, ai->rlen);
-        MD5_Update(&ctx, CONST_STR_LEN(":"));
-        MD5_Update(&ctx, (unsigned char *)reqpw, strlen(reqpw));
-        MD5_Final(HA1, &ctx);
+    const struct const_iovec iov[] = {
+      { ai->username, ai->ulen }
+     ,{ ":", 1 }
+     ,{ ai->realm, ai->rlen }
+     ,{ ":", 1 }
+     ,{ reqpw, strlen(reqpw) }
+    };
 
-        /*(compare 16-byte MD5 binary instead of converting to hex strings
-         * in order to then have to do case-insensitive hex str comparison)*/
-        return (0 == http_auth_digest_hex2bin(userpw, 32, md5pw, sizeof(md5pw)))
-          ? http_auth_const_time_memeq(HA1, md5pw, sizeof(md5pw)) ? 0 : 1
-          : -1;
-    }
+    unsigned char HA1[MD_DIGEST_LENGTH_MAX];
+    unsigned char pwbin[MD_DIGEST_LENGTH_MAX];
+
+    if (32 == userpwlen)
+        MD5_iov(HA1, iov, sizeof(iov)/sizeof(*iov));
   #ifdef USE_LIB_CRYPTO
-    else if (64 == userpwlen) {
-        SHA256_CTX ctx;
-        unsigned char HA1[32];
-        unsigned char shapw[32];
-
-        SHA256_Init(&ctx);
-        SHA256_Update(&ctx, (unsigned char *)ai->username, ai->ulen);
-        SHA256_Update(&ctx, CONST_STR_LEN(":"));
-        SHA256_Update(&ctx, (unsigned char *)ai->realm, ai->rlen);
-        SHA256_Update(&ctx, CONST_STR_LEN(":"));
-        SHA256_Update(&ctx, (unsigned char *)reqpw, strlen(reqpw));
-        SHA256_Final(HA1, &ctx);
-
-        /*(compare 32-byte binary digest instead of converting to hex strings
-         * in order to then have to do case-insensitive hex str comparison)*/
-        return (0 == http_auth_digest_hex2bin(userpw, 64, shapw, sizeof(shapw)))
-          ? http_auth_const_time_memeq(HA1, shapw, sizeof(shapw)) ? 0 : 1
-          : -1;
-    }
+    else if (64 == userpwlen)
+        SHA256_iov(HA1, iov, sizeof(iov)/sizeof(*iov));
   #endif
+    else
+        return -1;
 
-    return -1;
+    /*(compare 32-byte binary digest instead of converting to hex strings
+     * in order to then have to do case-insensitive hex str comparison)*/
+    return (0 == li_hex2bin(pwbin, sizeof(pwbin), userpw, userpwlen))
+      ? ck_memeq_const_time_fixed_len(HA1, pwbin, userpwlen>>1) ? 0 : 1
+      : -1;
 }
 
 
 static buffer *
 mod_authn_dbi_query_build (buffer * const sqlquery, dbi_config * const dbconf, http_auth_info_t * const ai)
 {
+    char buf[1024];
     buffer_clear(sqlquery);
     int qcount = 0;
-    for (char *b = dbconf->sqlquery->ptr, *d; *b; b = d+1) {
+    const buffer * const sqlb = (ai->userhash)
+      ? dbconf->sqluserhash
+      : dbconf->sqlquery;
+    if (NULL == sqlb)
+        return NULL;
+    for (char *b = sqlb->ptr, *d; *b; b = d+1) {
         if (NULL != (d = strchr(b, '?'))) {
             /* Substitute for up to three question marks (?)
              *   substitute username for first question mark
@@ -446,10 +443,22 @@ mod_authn_dbi_query_build (buffer * const sqlquery, dbi_config * const dbconf, h
             const char *v;
             switch (++qcount) {
               case 1:
-                v = ai->username;
+                if (ai->ulen < sizeof(buf)) {
+                    memcpy(buf, ai->username, ai->ulen);
+                    buf[ai->ulen] = '\0';
+                    v = buf;
+                }
+                else
+                    return NULL;
                 break;
               case 2:
-                v = ai->realm;
+                if (ai->rlen < sizeof(buf)) {
+                    memcpy(buf, ai->realm, ai->rlen);
+                    buf[ai->rlen] = '\0';
+                    v = buf;
+                }
+                else
+                    return NULL;
                 break;
               case 3:
                 if (ai->dalgo & HTTP_AUTH_DIGEST_SHA256)
@@ -474,7 +483,7 @@ mod_authn_dbi_query_build (buffer * const sqlquery, dbi_config * const dbconf, h
             free(esc);
         }
         else {
-            d = dbconf->sqlquery->ptr + buffer_string_length(dbconf->sqlquery);
+            d = sqlb->ptr + buffer_clen(sqlb);
             buffer_append_string_len(sqlquery, b, (size_t)(d - b));
             break;
         }
@@ -517,19 +526,31 @@ mod_authn_dbi_query (request_st * const r, void *p_d, http_auth_info_t * const a
     if (nrows && nrows != DBI_ROW_ERROR && dbi_result_next_row(result)) {
         size_t len = dbi_result_get_field_length_idx(result, 1);
         const char *rpw = dbi_result_get_string_idx(result, 1);
-        /*("ERROR" indicates an error and should not be permitted as passwd)*/
-        if (len != DBI_LENGTH_ERROR
-            && rpw && (len != 5 || 0 != memcmp(rpw, "ERROR", 5))) {
+        if (len != DBI_LENGTH_ERROR && rpw
+            && (len != 5  /*(rpw might be "ERROR" if len == 5)*/
+                || dbi_conn_error(dbconf->dbconn, NULL) == DBI_ERROR_NONE)) {
             if (pw) {  /* used with HTTP Basic auth */
                 if (0 == mod_authn_dbi_password_cmp(rpw, len, ai, pw))
                     rc = HANDLER_GO_ON;
             }
             else {     /* used with HTTP Digest auth */
-                /*(currently supports only single row, single digest algorithm)*/
+                /*(currently supports only single row, single digest algo)*/
                 if (len == (ai->dlen << 1)
-                    && 0 == http_auth_digest_hex2bin(rpw, len, ai->digest,
-                                                     sizeof(ai->digest)))
+                    && 0 == li_hex2bin(ai->digest,sizeof(ai->digest),rpw,len))
                     rc = HANDLER_GO_ON;
+            }
+        }
+        if (ai->userhash) {
+            len = dbi_result_get_field_length_idx(result, 2);
+            rpw = dbi_result_get_string_idx(result, 2);
+            ai->username = ai->userbuf;
+            if (len != DBI_LENGTH_ERROR && rpw && len <= sizeof(ai->userbuf)
+                && (len != 5  /*(rpw might be "ERROR" if len == 5)*/
+                    || dbi_conn_error(dbconf->dbconn, NULL) == DBI_ERROR_NONE))
+                memcpy(ai->userbuf, rpw, (ai->ulen = len));
+            else {
+                ai->ulen = 1;
+                ai->userbuf[0] = '\0'; /* invalid username "\0" */
             }
         }
     } /* else not found */
@@ -547,9 +568,10 @@ mod_authn_dbi_basic (request_st * const r, void *p_d, const http_auth_require_t 
     ai.dalgo    = HTTP_AUTH_DIGEST_NONE;
     ai.dlen     = 0;
     ai.username = username->ptr;
-    ai.ulen     = buffer_string_length(username);
+    ai.ulen     = buffer_clen(username);
     ai.realm    = require->realm->ptr;
-    ai.rlen     = buffer_string_length(require->realm);
+    ai.rlen     = buffer_clen(require->realm);
+    ai.userhash = 0;
     rc = mod_authn_dbi_query(r, p_d, &ai, pw);
     if (HANDLER_GO_ON != rc) return rc;
     return http_auth_match_rules(require, username->ptr, NULL, NULL)

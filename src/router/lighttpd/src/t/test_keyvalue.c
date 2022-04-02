@@ -4,18 +4,18 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> /* STDERR_FILENO */
 
 #include "keyvalue.c"
 
 #include "base.h"   /* struct server */
 #include "plugin_config.h" /* struct cond_match_t */
+#include "fdlog.h"  /* struct fdlog_st */
 
 #ifdef HAVE_PCRE_H
 static pcre_keyvalue_buffer * test_keyvalue_test_kvb_init (void) {
     pcre_keyvalue_buffer *kvb = pcre_keyvalue_buffer_init();
 
-    log_error_st * const errh = log_error_st_init();
+    fdlog_st * const errh = fdlog_init(NULL, -1, FDLOG_FD);
 
     /* strings must be persistent for pcre_keyvalue_buffer_append() */
     static const buffer kvstr[] = {
@@ -29,12 +29,12 @@ static pcre_keyvalue_buffer * test_keyvalue_test_kvb_init (void) {
       { "/?file=$1&$2",            sizeof("/?file=$1&$2"), 0 }
     };
 
-    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+0, kvstr+1));
-    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+2, kvstr+3));
-    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+4, kvstr+5));
-    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+6, kvstr+7));
+    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+0, kvstr+1, 1));
+    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+2, kvstr+3, 1));
+    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+4, kvstr+5, 1));
+    assert(pcre_keyvalue_buffer_append(errh, kvb, kvstr+6, kvstr+7, 1));
 
-    log_error_st_free(errh);
+    fdlog_free(errh);
 
     return kvb;
 }
@@ -61,14 +61,20 @@ static void test_keyvalue_pcre_keyvalue_buffer_process (void) {
     buffer_copy_string_len(scheme, CONST_STR_LEN("http"));
     buffer_copy_string_len(authority, CONST_STR_LEN("www.example.com"));
     /* model outer conditional match of $HTTP["host"] =~ "^(www).example.com$" */
-    ctx.cond_match_count = 2;
     ctx.cache = &cache;
     memset(&cache, 0, sizeof(cache));
     cache.comp_value = authority;
-    cache.matches[0] = 0;
-    cache.matches[1] = 15;
-    cache.matches[2] = 0;
-    cache.matches[3] = 3;
+    cache.captures = 2;
+  #ifdef HAVE_PCRE2_H
+    PCRE2_SIZE matches[4];
+  #else /* HAVE_PCRE_H */
+    int matches[4];
+  #endif
+    matches[0] = 0;
+    matches[1] = 15;
+    matches[2] = 0;
+    matches[3] = 3;
+    cache.matches = matches;
 
     /* converted from prior sparse tests/mod-redirect.t and tests/mod-rewrite.t
      * (real-world use should prefer ${url.path} and ${qsa} in substitutions)
@@ -119,9 +125,10 @@ static void test_keyvalue_pcre_keyvalue_buffer_process (void) {
 }
 #endif
 
-int main (void) {
+void test_keyvalue (void);
+void test_keyvalue (void)
+{
   #ifdef HAVE_PCRE_H
     test_keyvalue_pcre_keyvalue_buffer_process();
   #endif
-    return 0;
 }

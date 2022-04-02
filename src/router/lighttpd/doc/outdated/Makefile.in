@@ -166,8 +166,6 @@ EXEEXT = @EXEEXT@
 FAM_CFLAGS = @FAM_CFLAGS@
 FAM_LIBS = @FAM_LIBS@
 FGREP = @FGREP@
-GDBM_LIB = @GDBM_LIB@
-GEOIP_LIB = @GEOIP_LIB@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GREP = @GREP@
@@ -198,7 +196,6 @@ LUA_LIBS = @LUA_LIBS@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MAXMINDDB_LIB = @MAXMINDDB_LIB@
-MEMCACHED_LIB = @MEMCACHED_LIB@
 MKDIR_P = @MKDIR_P@
 MTLS_LIBS = @MTLS_LIBS@
 MYSQL_CFLAGS = @MYSQL_CFLAGS@
@@ -206,6 +203,8 @@ MYSQL_CONFIG = @MYSQL_CONFIG@
 MYSQL_LIBS = @MYSQL_LIBS@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NSPR_CFLAGS = @NSPR_CFLAGS@
+NSPR_LIBS = @NSPR_LIBS@
 NSS_CFLAGS = @NSS_CFLAGS@
 NSS_LIBS = @NSS_LIBS@
 OBJDUMP = @OBJDUMP@
@@ -223,6 +222,9 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAM_LIB = @PAM_LIB@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PCRE2CONFIG = @PCRE2CONFIG@
+PCRE2_CFLAGS = @PCRE2_CFLAGS@
+PCRE2_LIBS = @PCRE2_LIBS@
 PCRECONFIG = @PCRECONFIG@
 PCRE_LIB = @PCRE_LIB@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
@@ -249,6 +251,7 @@ XML_CFLAGS = @XML_CFLAGS@
 XML_LIBS = @XML_LIBS@
 XXHASH_CFLAGS = @XXHASH_CFLAGS@
 XXHASH_LIBS = @XXHASH_LIBS@
+ZSTD_LIB = @ZSTD_LIB@
 Z_LIB = @Z_LIB@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -295,6 +298,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -327,14 +331,11 @@ state.txt \
 rrdtool.txt \
 alias.txt \
 userdir.txt \
-mysqlvhost.txt \
 access.txt \
 traffic-shaping.txt \
 setenv.txt \
 status.txt \
 scgi.txt \
-cml.txt \
-trigger_b4_dl.txt \
 webdav.txt \
 expire.txt \
 dirlisting.txt \
@@ -365,14 +366,11 @@ HTMLDOCS = accesslog.html \
 	 rrdtool.html \
 	 alias.html \
 	 userdir.html \
-	 mysqlvhost.html \
 	 access.html \
 	 traffic-shaping.html \
 	 setenv.html \
 	 status.html \
 	 scgi.html \
-	 cml.html \
-	 trigger_b4_dl.html \
 	 webdav.html \
 	 expire.html \
 	 dirlisting.html \

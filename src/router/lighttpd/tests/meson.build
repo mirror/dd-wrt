@@ -1,11 +1,24 @@
+compiler = meson.get_compiler('c')
+socket_libs = []
+if target_machine.system() == 'windows'
+	socket_libs = [ compiler.find_library('ws2_32') ]
+endif
+if target_machine.system() == 'sunos'
+	socket_libs = [ compiler.find_library('socket')
+	              , compiler.find_library('nsl')
+	              ]
+elif target_machine.system() == 'haiku'
+	socket_libs = [ compiler.find_library('network') ]
+endif
+
 executable('fcgi-responder',
 	sources: 'fcgi-responder.c',
-	dependencies: common_flags,
+	dependencies: [ common_flags, socket_libs ]
 )
 
 executable('scgi-responder',
 	sources: 'scgi-responder.c',
-	dependencies: common_flags,
+	dependencies: [ common_flags, socket_libs ]
 )
 
 env = environment()
@@ -13,25 +26,10 @@ env.set('srcdir', meson.current_source_dir())
 env.set('top_builddir', meson.build_root())
 
 tests = [
-	'cachable.t',
-	'core-404-handler.t',
-	'core-condition.t',
-	'core-keepalive.t',
-	'core-request.t',
-	'core-response.t',
-	'core-var-include.t',
-	'lowercase.t',
-	'mod-auth.t',
-	'mod-cgi.t',
-	'mod-deflate.t',
-	'mod-extforward.t',
-	'mod-fastcgi.t',
-	'mod-proxy.t',
-	'mod-secdownload.t',
-	'mod-setenv.t',
-	'mod-ssi.t',
 	'request.t',
-	'symlink.t',
+	'core-condition.t',
+	'mod-fastcgi.t',
+	'mod-scgi.t',
 ]
 
 # just hope it will run the tests in the given order

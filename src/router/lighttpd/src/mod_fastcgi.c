@@ -9,11 +9,12 @@ typedef gw_plugin_config plugin_config;
 typedef gw_plugin_data   plugin_data;
 typedef gw_handler_ctx   handler_ctx;
 
-#include "base.h"
 #include "buffer.h"
 #include "fdevent.h"
+#include "http_cgi.h"
 #include "http_chunk.h"
 #include "log.h"
+#include "request.h"
 #include "status_counter.h"
 
 #include "compat/fastcgi.h"
@@ -136,24 +137,10 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 static int fcgi_env_add(void *venv, const char *key, size_t key_len, const char *val, size_t val_len) {
 	buffer *env = venv;
-	size_t len;
 	char len_enc[8];
 	size_t len_enc_len = 0;
-	char *dst;
 
 	if (!key || (!val && val_len)) return -1;
-
-	len = key_len + val_len;
-
-	len += key_len > 127 ? 4 : 1;
-	len += val_len > 127 ? 4 : 1;
-
-	if (buffer_string_length(env) + len >= FCGI_MAX_LENGTH + sizeof(FCGI_BeginRequestRecord) + sizeof(FCGI_Header)) {
-		/**
-		 * we can't append more headers, ignore it
-		 */
-		return -1;
-	}
 
 	/**
 	 * field length can be 31bit max
@@ -163,36 +150,28 @@ static int fcgi_env_add(void *venv, const char *key, size_t key_len, const char 
 	force_assert(key_len < 0x7fffffffu);
 	force_assert(val_len < 0x7fffffffu);
 
-	if (buffer_string_space(env) < len) {
-		size_t extend = env->size * 2 - buffer_string_length(env);
-		extend = extend > len ? extend : len + 4095;
-		buffer_string_prepare_append(env, extend);
-	}
-
 	if (key_len > 127) {
-		len_enc[len_enc_len++] = ((key_len >> 24) & 0xff) | 0x80;
-		len_enc[len_enc_len++] = (key_len >> 16) & 0xff;
-		len_enc[len_enc_len++] = (key_len >> 8) & 0xff;
-		len_enc[len_enc_len++] = (key_len >> 0) & 0xff;
-	} else {
-		len_enc[len_enc_len++] = (key_len >> 0) & 0xff;
+		len_enc[0] = ((key_len >> 24) & 0xff) | 0x80;
+		len_enc[1] =  (key_len >> 16) & 0xff;
+		len_enc[2] =  (key_len >>  8) & 0xff;
+		len_enc_len += 3;
 	}
+	len_enc[len_enc_len++] = key_len & 0xff;
 
 	if (val_len > 127) {
 		len_enc[len_enc_len++] = ((val_len >> 24) & 0xff) | 0x80;
 		len_enc[len_enc_len++] = (val_len >> 16) & 0xff;
 		len_enc[len_enc_len++] = (val_len >> 8) & 0xff;
-		len_enc[len_enc_len++] = (val_len >> 0) & 0xff;
-	} else {
-		len_enc[len_enc_len++] = (val_len >> 0) & 0xff;
 	}
+	len_enc[len_enc_len++] = val_len & 0xff;
 
-	dst = buffer_string_prepare_append(env, len);
-	memcpy(dst, len_enc, len_enc_len);
-	memcpy(dst + len_enc_len, key, key_len);
-	memcpy(dst + len_enc_len + key_len, val, val_len);
-	buffer_commit(env, len);
+	const size_t len = len_enc_len + key_len + val_len;
+	const size_t fmax =
+	  FCGI_MAX_LENGTH + sizeof(FCGI_BeginRequestRecord) + sizeof(FCGI_Header);
+	if (len > fmax - buffer_clen(env))
+		return -1; /* we can't append more headers, ignore it */
 
+	buffer_append_str3(env, len_enc, len_enc_len, key, key_len, val, val_len);
 	return 0;
 }
 
@@ -284,10 +263,9 @@ static handler_t fcgi_create_env(handler_ctx *hctx) {
 	beginRecord.body.roleB1 = 0;
 	beginRecord.body.flags = 0;
 	memset(beginRecord.body.reserved, 0, sizeof(beginRecord.body.reserved));
-
-	buffer_copy_string_len(b, (const char *)&beginRecord, sizeof(beginRecord));
 	fcgi_header(&header, FCGI_PARAMS, request_id, 0, 0); /*(set aside space to fill in later)*/
-	buffer_append_string_len(b, (const char *)&header, sizeof(header));
+	buffer_append_str2(b, (const char *)&beginRecord, sizeof(beginRecord),
+	                      (const char *)&header,      sizeof(header));
 
 	/* send FCGI_PARAMS */
 
@@ -299,13 +277,13 @@ static handler_t fcgi_create_env(handler_ctx *hctx) {
 		return HANDLER_FINISHED;
 	} else {
 		fcgi_header(&(header), FCGI_PARAMS, request_id,
-			    buffer_string_length(b) - sizeof(FCGI_BeginRequestRecord) - sizeof(FCGI_Header), 0);
+			    buffer_clen(b) - sizeof(FCGI_BeginRequestRecord) - sizeof(FCGI_Header), 0);
 		memcpy(b->ptr+sizeof(FCGI_BeginRequestRecord), (const char *)&header, sizeof(header));
 
 		fcgi_header(&(header), FCGI_PARAMS, request_id, 0, 0);
 		buffer_append_string_len(b, (const char *)&header, sizeof(header));
 
-		hctx->wb_reqlen = buffer_string_length(b);
+		hctx->wb_reqlen = buffer_clen(b);
 		chunkqueue_prepend_buffer_commit(&hctx->wb);
 	}
 
@@ -367,51 +345,16 @@ static int fastcgi_get_packet(handler_ctx *hctx, fastcgi_response_packet *packet
 static void fastcgi_get_packet_body(buffer * const b, handler_ctx * const hctx, const fastcgi_response_packet * const packet) {
     /* copy content; hctx->rb must contain at least packet->len content */
     /* (read entire packet and then truncate padding, if present) */
-    const uint32_t blen = buffer_string_length(b);
+    const uint32_t blen = buffer_clen(b);
     if (chunkqueue_read_data(hctx->rb,
                              buffer_string_prepare_append(b, packet->len),
                              packet->len, hctx->r->conf.errh) < 0)
         return; /*(should not happen; should all be in memory)*/
-    buffer_string_set_length(b, blen + packet->len - packet->padding);
+    buffer_truncate(b, blen + packet->len - packet->padding);
 }
 
 __attribute_cold__
-__attribute_noinline__
-static int
-mod_fastcgi_chunk_decode_transfer_cqlen (request_st * const r, chunkqueue * const src, const unsigned int len)
-{
-    if (0 == len) return 0;
-
-    /* specialized for mod_fastcgi to decode chunked encoding;
-     * FastCGI packet data is all type MEM_CHUNK
-     * entire src cq is processed, minus packet.padding at end
-     * (This extra work can be avoided if FastCGI backend does not send
-     *  Transfer-Encoding: chunked, which FastCGI is not supposed to do) */
-    uint32_t remain = len, wr;
-    for (const chunk *c = src->first; c && remain; c = c->next, remain -= wr) {
-        /*assert(c->type == MEM_CHUNK);*/
-        wr = buffer_string_length(c->mem) - c->offset;
-        if (wr > remain) wr = remain;
-        if (0 != http_chunk_decode_append_mem(r, c->mem->ptr+c->offset, wr))
-            return -1;
-    }
-    chunkqueue_mark_written(src, len);
-    return 0;
-}
-
-static int
-mod_fastcgi_transfer_cqlen (request_st * const r, chunkqueue * const src, const unsigned int len)
-{
-    return (!r->resp_decode_chunked)
-      ? http_chunk_transfer_cqlen(r, src, len)
-      : mod_fastcgi_chunk_decode_transfer_cqlen(r, src, len);
-}
-
-static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts_t *opts, buffer *b, size_t n) {
-	handler_ctx *hctx = (handler_ctx *)opts->pdata;
-	int fin = 0;
-
-	if (0 == n) {
+static handler_t fcgi_recv_0(const request_st * const r, const handler_ctx * const hctx) {
 		if (-1 == hctx->request_id) return HANDLER_FINISHED; /*(flag request ended)*/
 		if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_IN)
 		    && !(r->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_POLLRDHUP))
@@ -422,17 +365,16 @@ static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts
 		  hctx->proc->pid, hctx->proc->connection_name->ptr);
 
 		return HANDLER_ERROR;
-	}
+}
 
-	chunkqueue_append_buffer(hctx->rb, b);
-
+static handler_t fcgi_recv_parse_loop(request_st * const r, handler_ctx * const hctx) {
 	/*
 	 * parse the fastcgi packets and forward the content to the write-queue
 	 *
 	 */
-	while (fin == 0) {
-		fastcgi_response_packet packet;
-
+	fastcgi_response_packet packet;
+	int fin = 0;
+	do {
 		/* check if we have at least one packet */
 		if (0 != fastcgi_get_packet(hctx, &packet)) {
 			/* no full packet */
@@ -467,11 +409,33 @@ static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts
 					 (r->http_status == 0 || r->http_status == 200)) {
 					/* authorizer approved request; ignore the content here */
 					hctx->send_content_body = 0;
+					hctx->opts.authorizer |= /*(save response streaming flags)*/
+					  (r->conf.stream_response_body
+					   & (FDEVENT_STREAM_RESPONSE
+					     |FDEVENT_STREAM_RESPONSE_BUFMIN)) << 1;
+					r->conf.stream_response_body &=
+					  ~(FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN);
 				}
+			  #if 0
+				else if ((r->conf.stream_response_body &
+				           (FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN))
+				         && (   r->http_status == 204
+				             || r->http_status == 205
+				             || r->http_status == 304
+				             || r->http_method == HTTP_METHOD_HEAD)) {
+					/* disable streaming to wait for backend protocol to signal
+					 * end of response (prevent http_response_write_prepare()
+					 * from short-circuiting and finishing responses without
+					 * response body) */
+					r->conf.stream_response_body &=
+					  ~(FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN);
+				}
+			  #endif
 			} else if (hctx->send_content_body) {
-				if (0 != mod_fastcgi_transfer_cqlen(r, hctx->rb, packet.len - packet.padding)) {
+				if (0 != http_response_transfer_cqlen(r, hctx->rb, (size_t)(packet.len - packet.padding))) {
 					/* error writing to tempfile;
 					 * truncate response or send 500 if nothing sent yet */
+					hctx->send_content_body = 0;
 					fin = 1;
 				}
 				if (packet.padding) chunkqueue_mark_written(hctx->rb, packet.padding);
@@ -484,8 +448,8 @@ static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts
 				buffer * const tb = r->tmp_buf;
 				buffer_clear(tb);
 				fastcgi_get_packet_body(tb, hctx, &packet);
-				log_error_multiline_buffer(r->conf.errh, __FILE__, __LINE__, tb,
-				  "FastCGI-stderr:");
+				log_error_multiline(r->conf.errh, __FILE__, __LINE__,
+				  BUF_PTR_LEN(tb), "FastCGI-stderr:");
 			}
 			break;
 		case FCGI_END_REQUEST:
@@ -498,9 +462,16 @@ static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts
 			chunkqueue_mark_written(hctx->rb, packet.len);
 			break;
 		}
-	}
+	} while (0 == fin);
 
 	return 0 == fin ? HANDLER_GO_ON : HANDLER_FINISHED;
+}
+
+static handler_t fcgi_recv_parse(request_st * const r, struct http_response_opts_t *opts, buffer *b, size_t n) {
+    handler_ctx * const hctx = (handler_ctx *)opts->pdata;
+    if (0 == n) return fcgi_recv_0(r, hctx);
+    chunkqueue_append_buffer(hctx->rb, b);
+    return fcgi_recv_parse_loop(r, hctx);
 }
 
 static handler_t fcgi_check_extension(request_st * const r, void *p_d, int uri_path_handler) {
@@ -519,7 +490,8 @@ static handler_t fcgi_check_extension(request_st * const r, void *p_d, int uri_p
 		handler_ctx *hctx = r->plugin_ctx[p->id];
 		hctx->opts.backend = BACKEND_FASTCGI;
 		hctx->opts.parse = fcgi_recv_parse;
-		hctx->opts.pdata = hctx;
+		hctx->opts.pdata = hctx;   /*(skip +255 for potential padding)*/
+		hctx->opts.max_per_read = sizeof(FCGI_Header)+FCGI_MAX_LENGTH+1;
 		hctx->stdin_append = fcgi_stdin_append;
 		hctx->create_env = fcgi_create_env;
 		if (!hctx->rb) {

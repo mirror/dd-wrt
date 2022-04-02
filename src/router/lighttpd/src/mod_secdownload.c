@@ -4,7 +4,7 @@
 #include "log.h"
 #include "buffer.h"
 #include "base64.h"
-#include "http_auth.h"
+#include "ck.h"
 
 #include "plugin.h"
 
@@ -12,54 +12,7 @@
 #include <string.h>
 
 #include "sys-crypto-md.h"
-#ifdef USE_LIB_CRYPTO
-#if defined(USE_NETTLE_CRYPTO)
-#include <nettle/hmac.h>
-#elif defined(USE_MBEDTLS_CRYPTO)
-#include <mbedtls/md.h>
-#elif defined(USE_WOLFSSL_CRYPTO)
-#include <wolfssl/wolfcrypt/hmac.h>
-#elif defined(USE_OPENSSL_CRYPTO)
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
-#elif defined(USE_GNUTLS_CRYPTO)
-#include <gnutls/crypto.h>
-#elif defined(USE_NSS_CRYPTO)
-#if 0 /*(nss/alghmac.h might not be present)*/
-#ifdef NSS_VER_INCLUDE
-#include <nss3/alghmac.h>
-#else
-#include <nss/alghmac.h>
-#endif
-#endif
-#endif
-#endif
-
-#if defined(USE_OPENSSL_CRYPTO) && OPENSSL_VERSION_NUMBER >= 0x30000000L
-#define HMAC EVP_HMAC
-static unsigned char *
-EVP_HMAC (const EVP_MD *evp_md, const void *key,
-          int key_len, const unsigned char *d, int n,
-          unsigned char *md, size_t *md_len)
-{
-    EVP_PKEY * const pkey =
-      EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, key, key_len);
-    if (NULL == pkey) return NULL;
-
-    EVP_MD_CTX * const ctx = EVP_MD_CTX_new();
-    if (NULL == ctx) {
-        EVP_PKEY_free(pkey);
-        return NULL;
-    }
-
-    int rc = (1 == EVP_DigestSignInit(ctx, NULL, evp_md, NULL, pkey))
-          && (1 == EVP_DigestSignUpdate(ctx, d, n))
-          && (1 == EVP_DigestSignFinal(ctx, md, md_len));
-    EVP_MD_CTX_free(ctx);
-    EVP_PKEY_free(pkey);
-    return (1 == rc) ? md : NULL;
-}
-#endif
+#include "algo_hmac.h"
 
 /*
  * mod_secdownload verifies a checksum associated with a timestamp
@@ -70,7 +23,7 @@ EVP_HMAC (const EVP_MD *evp_md, const void *key,
  *   uri-prefix := '/' any*         # whatever was configured: must start with a '/')
  *   mac := [a-zA-Z0-9_-]{mac_len}  # mac length depends on selected algorithm
  *   protected-path := '/' <timestamp> <rel-path>
- *   timestamp := [a-f0-9]{8}       # timestamp when the checksum was calculated
+ *   timestamp := [a-f0-9]{1,16}    # timestamp when the checksum was calculated
  *                                  # to prevent access after timeout (active requests
  *                                  # will finish successfully even after the timeout)
  *   rel-path := '/' any*           # the protected path; changing the path breaks the
@@ -88,7 +41,7 @@ EVP_HMAC (const EVP_MD *evp_md, const void *key,
     use Digest::MD5 qw(md5_hex);
     my $secret = "verysecret";
     my $rel_path = "/index.html"
-    my $xtime = sprintf("%08x", time);
+    my $xtime = sprintf("%x", time);
     my $url = '/'. md5_hex($secret . $rel_path . $xtime) . '/' . $xtime . $rel_path;
  *
  * # hmac-sha1
@@ -99,7 +52,7 @@ EVP_HMAC (const EVP_MD *evp_md, const void *key,
     use MIME::Base64 qw(encode_base64url);
     my $secret = "verysecret";
     my $rel_path = "/index.html"
-    my $protected_path = '/' . sprintf("%08x", time) . $rel_path;
+    my $protected_path = '/' . sprintf("%x", time) . $rel_path;
     my $url = '/'. encode_base64url(hmac_sha1($protected_path, $secret)) . $protected_path;
  *
  * # hmac-sha256
@@ -109,7 +62,7 @@ EVP_HMAC (const EVP_MD *evp_md, const void *key,
     use MIME::Base64 qw(encode_base64url);
     my $secret = "verysecret";
     my $rel_path = "/index.html"
-    my $protected_path = '/' . sprintf("%08x", time) . $rel_path;
+    my $protected_path = '/' . sprintf("%x", time) . $rel_path;
     my $url = '/'. encode_base64url(hmac_sha256($protected_path, $secret)) . $protected_path;
  *
  */
@@ -140,16 +93,6 @@ typedef struct {
     plugin_config conf;
 } plugin_data;
 
-static int const_time_memeq(const char *a, const char *b, size_t len) {
-	/* constant time memory compare, unless the compiler figures it out */
-	char diff = 0;
-	size_t i;
-	for (i = 0; i < len; ++i) {
-		diff |= (a[i] ^ b[i]);
-	}
-	return 0 == diff;
-}
-
 static const char* secdl_algorithm_names[] = {
 	"invalid",
 	"md5",
@@ -160,7 +103,7 @@ static const char* secdl_algorithm_names[] = {
 static secdl_algorithm algorithm_from_string(const buffer *name) {
 	size_t ndx;
 
-	if (buffer_string_is_empty(name)) return SECDL_INVALID;
+	if (buffer_is_blank(name)) return SECDL_INVALID;
 
 	for (ndx = 1; ndx < sizeof(secdl_algorithm_names)/sizeof(secdl_algorithm_names[0]); ++ndx) {
 		if (0 == strcmp(secdl_algorithm_names[ndx], name->ptr)) return (secdl_algorithm)ndx;
@@ -192,211 +135,71 @@ static int secdl_verify_mac(plugin_config *config, const char* protected_path, c
 		break;
 	case SECDL_MD5:
 		{
-			li_MD5_CTX Md5Ctx;
 			const char *ts_str;
 			const char *rel_uri;
-			unsigned char HA1[16];
-			unsigned char md5bin[16];
+			unsigned char HA1[MD5_DIGEST_LENGTH];
+			unsigned char md5bin[MD5_DIGEST_LENGTH];
 
-			if (0 != http_auth_digest_hex2bin(mac, maclen, md5bin, sizeof(md5bin))) return 0;
+			if (0 != li_hex2bin(md5bin, sizeof(md5bin), mac, maclen)) return 0;
 
 			/* legacy message:
 			 *   protected_path := '/' <timestamp-hex> <rel-path>
-			 *   timestamp-hex := [0-9a-f]{8}
+			 *   timestamp-hex := [0-9a-f]{1,16}
 			 *   rel-path := '/' any*
 			 *   (the protected path was already verified)
 			 * message = <secret><rel-path><timestamp-hex>
 			 */
 			ts_str = protected_path + 1;
-			rel_uri = ts_str + 8;
+			rel_uri = ts_str;
+			do { ++rel_uri; } while (*rel_uri != '/');
 
-			li_MD5_Init(&Md5Ctx);
-			li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(config->secret));
-			li_MD5_Update(&Md5Ctx, rel_uri, strlen(rel_uri));
-			li_MD5_Update(&Md5Ctx, ts_str, 8);
-			li_MD5_Final(HA1, &Md5Ctx);
+			struct const_iovec iov[] = {
+			  { BUF_PTR_LEN(config->secret) }
+			 ,{ rel_uri, strlen(rel_uri) }
+			 ,{ ts_str, (size_t)(rel_uri - ts_str) }
+			};
+			MD5_iov(HA1, iov, sizeof(iov)/sizeof(*iov));
 
-			return const_time_memeq((char *)HA1, (char *)md5bin, sizeof(md5bin));
+			return ck_memeq_const_time_fixed_len((char *)HA1,
+							     (char *)md5bin,sizeof(md5bin));
 		}
      #ifdef USE_LIB_CRYPTO
 	case SECDL_HMAC_SHA1:
 		{
 			unsigned char digest[20];
-			char base64_digest[27];
+			char base64_digest[28];
 
-		  #if defined(USE_NETTLE_CRYPTO)
-			struct hmac_sha1_ctx ctx;
-			hmac_sha1_set_key(&ctx, buffer_string_length(config->secret), (const uint8_t *)config->secret->ptr);
-			hmac_sha1_update(&ctx, strlen(protected_path), (const uint8_t *)protected_path);
-			hmac_sha1_digest(&ctx, sizeof(digest), (uint8_t *)digest);
-		  #elif defined(USE_MBEDTLS_CRYPTO) && defined(MBEDTLS_MD_C) && defined(MBEDTLS_SHA1_C)
-			int rc =
-			  mbedtls_md_hmac(mbedtls_md_info_from_type(MBEDTLS_MD_SHA1),
-			                  (const unsigned char *)config->secret->ptr,
-			                  buffer_string_length(config->secret),
+                        if (!li_hmac_sha1(digest, BUF_PTR_LEN(config->secret),
 			                  (const unsigned char *)protected_path,
-			                  strlen(protected_path), digest);
-			if (0 != rc) {
+			                  strlen(protected_path))) {
 				log_error(errh, __FILE__, __LINE__,
 				  "hmac-sha1: HMAC() failed");
 				return 0;
 			}
-		  #elif defined(USE_WOLFSSL_CRYPTO)
-			Hmac hmac;
-			if (0 != wc_HmacInit(&hmac, NULL, INVALID_DEVID)
-			    || wc_HmacSetKey(&hmac, WC_SHA, (const byte *)config->secret->ptr,
-			                     (word32)buffer_string_length(config->secret)) < 0
-			    || wc_HmacUpdate(&hmac, (const byte *)protected_path,
-			                     (word32)strlen(protected_path)) < 0
-			    || wc_HmacFinal(&hmac, (byte *)digest) < 0) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha1: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_OPENSSL_CRYPTO)
-			if (NULL == HMAC(
-					EVP_sha1(),
-					(unsigned char const*) config->secret->ptr, buffer_string_length(config->secret),
-					(unsigned char const*) protected_path, strlen(protected_path),
-					digest, NULL)) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha1: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_GNUTLS_CRYPTO)
-			int rc =
-                          gnutls_hmac_fast(GNUTLS_MAC_SHA1,
-			                  (const unsigned char *)config->secret->ptr,
-			                  buffer_string_length(config->secret),
-			                  (const unsigned char *)protected_path,
-			                  strlen(protected_path), digest);
-			if (0 != rc) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha1: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_NSS_CRYPTO)
-			/*(HMAC* funcs not public export of libfreebl3.so,
-			 * even though nss3/alghmac.h is public (WTH?!))*/
-		      #if 0
-			HMACContext *hmac =
-			  HMAC_Create(HASH_GetHashObject(HASH_AlgSHA1),
-			              (const unsigned char *)config->secret->ptr,
-			              buffer_string_length(config->secret), PR_FALSE);
-			int rc;
-			if ((rc = (NULL != hmac) ? SECSuccess : SECFailure)) {
-				HMAC_Begin(hmac);
-				HMAC_Update(hmac, (const unsigned char *)protected_path,
-                                            strlen(protected_path));
-				unsigned int len;
-				rc = HMAC_Finish(hmac, digest, &len, sizeof(digest));
-				HMAC_Destroy(hmac, PR_TRUE);
-			}
-			if (SECSuccess != rc) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha1: HMAC() failed");
-				return 0;
-			}
-		      #else
-			return 0;
-		      #endif
-		  #else
-		  #error "unexpected; crypto lib not configured for use by mod_secdownload"
-		  #endif
 
-			li_to_base64_no_padding(base64_digest, 27, digest, 20, BASE64_URL);
+			li_to_base64_no_padding(base64_digest, 28, digest, 20, BASE64_URL);
 
-			return (27 == maclen) && const_time_memeq(mac, base64_digest, 27);
+			return (27 == maclen)
+			    && ck_memeq_const_time_fixed_len(mac, base64_digest, 27);
 		}
 		break;
 	case SECDL_HMAC_SHA256:
 		{
 			unsigned char digest[32];
-			char base64_digest[43];
+			char base64_digest[44];
 
-		  #if defined(USE_NETTLE_CRYPTO)
-			struct hmac_sha256_ctx ctx;
-			hmac_sha256_set_key(&ctx, buffer_string_length(config->secret), (const uint8_t *)config->secret->ptr);
-			hmac_sha256_update(&ctx, strlen(protected_path), (const uint8_t *)protected_path);
-			hmac_sha256_digest(&ctx, sizeof(digest), (uint8_t *)digest);
-		  #elif defined(USE_MBEDTLS_CRYPTO) && defined(MBEDTLS_MD_C) && defined(MBEDTLS_SHA256_C)
-			int rc =
-			  mbedtls_md_hmac(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
-			                  (const unsigned char *)config->secret->ptr,
-			                  buffer_string_length(config->secret),
-			                  (const unsigned char *)protected_path,
-			                  strlen(protected_path), digest);
-			if (0 != rc) {
+                        if (!li_hmac_sha256(digest, BUF_PTR_LEN(config->secret),
+			                    (const unsigned char *)protected_path,
+			                    strlen(protected_path))) {
 				log_error(errh, __FILE__, __LINE__,
 				  "hmac-sha256: HMAC() failed");
 				return 0;
 			}
-		  #elif defined(USE_WOLFSSL_CRYPTO)
-			Hmac hmac;
-			if (0 != wc_HmacInit(&hmac, NULL, INVALID_DEVID)
-			    || wc_HmacSetKey(&hmac, WC_SHA256, (const byte *)config->secret->ptr,
-			                     (word32)buffer_string_length(config->secret)) < 0
-			    || wc_HmacUpdate(&hmac, (const byte *)protected_path,
-			                     (word32)strlen(protected_path)) < 0
-			    || wc_HmacFinal(&hmac, (byte *)digest) < 0) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha256: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_OPENSSL_CRYPTO)
-			if (NULL == HMAC(
-					EVP_sha256(),
-					(unsigned char const*) config->secret->ptr, buffer_string_length(config->secret),
-					(unsigned char const*) protected_path, strlen(protected_path),
-					digest, NULL)) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha256: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_GNUTLS_CRYPTO)
-			int rc =
-                          gnutls_hmac_fast(GNUTLS_MAC_SHA256,
-			                  (const unsigned char *)config->secret->ptr,
-			                  buffer_string_length(config->secret),
-			                  (const unsigned char *)protected_path,
-			                  strlen(protected_path), digest);
-			if (0 != rc) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha256: HMAC() failed");
-				return 0;
-			}
-		  #elif defined(USE_NSS_CRYPTO)
-			/*(HMAC* funcs not public export of libfreebl3.so,
-			 * even though nss3/alghmac.h is public (WTH?!))*/
-		      #if 0
-			HMACContext *hmac =
-			  HMAC_Create(HASH_GetHashObject(HASH_AlgSHA256),
-			              (const unsigned char *)config->secret->ptr,
-			              buffer_string_length(config->secret), PR_FALSE);
-			int rc;
-			if ((rc = (NULL != hmac) ? SECSuccess : SECFailure)) {
-				HMAC_Begin(hmac);
-				HMAC_Update(hmac, (const unsigned char *)protected_path,
-                                            strlen(protected_path));
-				unsigned int len;
-				rc = HMAC_Finish(hmac, digest, &len, sizeof(digest));
-				HMAC_Destroy(hmac, PR_TRUE);
-			}
-			if (SECSuccess != rc) {
-				log_error(errh, __FILE__, __LINE__,
-				  "hmac-sha256: HMAC() failed");
-				return 0;
-			}
-		      #else
-			return 0;
-		      #endif
-		  #else
-		  #error "unexpected; crypto lib not configured for use by mod_secdownload"
-		  #endif
 
-			li_to_base64_no_padding(base64_digest, 43, digest, 32, BASE64_URL);
+			li_to_base64_no_padding(base64_digest, 44, digest, 32, BASE64_URL);
 
-			return (43 == maclen) && const_time_memeq(mac, base64_digest, 43);
+			return (43 == maclen)
+			    && ck_memeq_const_time_fixed_len(mac, base64_digest, 43);
 		}
 		break;
      #endif
@@ -520,6 +323,9 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
               case 0: /* secdownload.secret */
               case 1: /* secdownload.document-root */
               case 2: /* secdownload.uri-prefix */
+                if (buffer_is_blank(cpv->v.b))
+                    cpv->v.b = NULL;
+                break;
               case 3: /* secdownload.timeout */
                 break;
               case 4: /* secdownload.algorithm */
@@ -548,27 +354,6 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 }
 
 /**
- * checks if the supplied string is a hex string
- *
- * @param str a possible hex string
- * @return if the supplied string is a valid hex string 1 is returned otherwise 0
- */
-
-static int is_hex_len(const char *str, size_t len) {
-	size_t i;
-
-	if (NULL == str) return 0;
-
-	for (i = 0; i < len && *str; i++, str++) {
-		/* illegal characters */
-		if (!light_isxdigit(*str))
-			return 0;
-	}
-
-	return i == len;
-}
-
-/**
  * checks if the supplied string is a base64 (modified URL) string
  *
  * @param str a possible base64 (modified URL) string
@@ -592,27 +377,26 @@ static int is_base64_len(const char *str, size_t len) {
 URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 	plugin_data *p = p_d;
 	const char *rel_uri, *ts_str, *mac_str, *protected_path;
-	time_t ts = 0;
 	size_t i, mac_len;
 
 	if (NULL != r->handler_module) return HANDLER_GO_ON;
 
   #ifdef __COVERITY__
-	if (buffer_is_empty(&r->uri.path)) return HANDLER_GO_ON;
+	if (buffer_is_blank(&r->uri.path)) return HANDLER_GO_ON;
   #endif
 
 	mod_secdownload_patch_config(r, p);
 
-	if (buffer_string_is_empty(p->conf.uri_prefix)) return HANDLER_GO_ON;
+	if (!p->conf.uri_prefix) return HANDLER_GO_ON;
 
-	if (buffer_string_is_empty(p->conf.secret)) {
+	if (!p->conf.secret) {
 		log_error(r->conf.errh, __FILE__, __LINE__,
 		  "secdownload.secret has to be set");
 		r->http_status = 500;
 		return HANDLER_FINISHED;
 	}
 
-	if (buffer_string_is_empty(p->conf.doc_root)) {
+	if (!p->conf.doc_root) {
 		log_error(r->conf.errh, __FILE__, __LINE__,
 		  "secdownload.document-root has to be set");
 		r->http_status = 500;
@@ -628,9 +412,9 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 
 	mac_len = secdl_algorithm_mac_length(p->conf.algorithm);
 
-	if (0 != strncmp(r->uri.path.ptr, p->conf.uri_prefix->ptr, buffer_string_length(p->conf.uri_prefix))) return HANDLER_GO_ON;
+	if (0 != strncmp(r->uri.path.ptr, p->conf.uri_prefix->ptr, buffer_clen(p->conf.uri_prefix))) return HANDLER_GO_ON;
 
-	mac_str = r->uri.path.ptr + buffer_string_length(p->conf.uri_prefix);
+	mac_str = r->uri.path.ptr + buffer_clen(p->conf.uri_prefix);
 
 	if (!is_base64_len(mac_str, mac_len)) return HANDLER_GO_ON;
 
@@ -638,25 +422,21 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 	if (*protected_path != '/') return HANDLER_GO_ON;
 
 	ts_str = protected_path + 1;
-	if (!is_hex_len(ts_str, 8)) return HANDLER_GO_ON;
-	if (*(ts_str + 8) != '/') return HANDLER_GO_ON;
-
-	for (i = 0; i < 8; i++) {
-		ts = (ts << 4) + hex2int(ts_str[i]);
+	uint64_t ts = 0;
+	for (i = 0; i < 16 && light_isxdigit(ts_str[i]); ++i) {
+		ts = (ts << 4) | hex2int(ts_str[i]);
 	}
-
-	const time_t cur_ts = log_epoch_secs;
+	rel_uri = ts_str + i;
+	if (i == 0 || *rel_uri != '/') return HANDLER_GO_ON;
 
 	/* timed-out */
-	if ( (cur_ts > ts && (unsigned int) (cur_ts - ts) > p->conf.timeout) ||
-	     (cur_ts < ts && (unsigned int) (ts - cur_ts) > p->conf.timeout) ) {
+	const uint64_t cur_ts = (uint64_t)log_epoch_secs;
+	if ((cur_ts > ts ? cur_ts - ts : ts - cur_ts) > p->conf.timeout) {
 		/* "Gone" as the url will never be valid again instead of "408 - Timeout" where the request may be repeated */
 		r->http_status = 410;
 
 		return HANDLER_FINISHED;
 	}
-
-	rel_uri = ts_str + 8;
 
 	buffer * const tb = r->tmp_buf;
 
@@ -673,12 +453,12 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 		}
 	}
 
-	if (p->conf.hash_querystr && !buffer_is_empty(&r->uri.query)) {
+	if (p->conf.hash_querystr && !buffer_is_blank(&r->uri.query)) {
 		if (protected_path != tb->ptr) {
 			buffer_copy_string(tb, protected_path);
 		}
-		buffer_append_string_len(tb, CONST_STR_LEN("?"));
-		buffer_append_string_buffer(tb, &r->uri.query);
+		buffer_append_str2(tb, CONST_STR_LEN("?"),
+		                       BUF_PTR_LEN(&r->uri.query));
 		/* assign last in case tb->ptr is reallocated */
 		protected_path = tb->ptr;
 	}
@@ -701,9 +481,9 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 	buffer_copy_buffer(&r->physical.doc_root, p->conf.doc_root);
 	buffer_copy_buffer(&r->physical.basedir, p->conf.doc_root);
 	buffer_copy_string(&r->physical.rel_path, rel_uri);
-	buffer_copy_buffer(&r->physical.path, &r->physical.doc_root);
-	buffer_append_path_len(&r->physical.path,
-			       CONST_BUF_LEN(&r->physical.rel_path));
+	buffer_copy_path_len2(&r->physical.path,
+	                      BUF_PTR_LEN(&r->physical.doc_root),
+	                      BUF_PTR_LEN(&r->physical.rel_path));
 
 	return HANDLER_GO_ON;
 }

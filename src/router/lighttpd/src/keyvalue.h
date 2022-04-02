@@ -12,22 +12,28 @@ struct pcre_keyvalue;   /* declaration */
 typedef struct pcre_keyvalue_ctx {
   struct cond_match_t *cache;
   struct burl_parts_t *burl;
-  int cond_match_count;
   int m;
+  /*(internal use)*/
+  int n;
+  void *ovec;
+  const char *subject;
 } pcre_keyvalue_ctx;
 
 typedef struct {
 	struct pcre_keyvalue *kv;
 	uint32_t used;
-	uint16_t x0;
-	uint16_t x1;
+	int x0;
+	int x1;
+	int cfgidx;
 } pcre_keyvalue_buffer;
 
 __attribute_cold__
+__attribute_malloc__
+__attribute_returns_nonnull__
 pcre_keyvalue_buffer *pcre_keyvalue_buffer_init(void);
 
 __attribute_cold__
-int pcre_keyvalue_buffer_append(log_error_st *errh, pcre_keyvalue_buffer *kvb, const buffer *key, const buffer *value);
+int pcre_keyvalue_buffer_append(log_error_st *errh, pcre_keyvalue_buffer *kvb, const buffer *key, const buffer *value, int pcre_jit);
 
 __attribute_cold__
 void pcre_keyvalue_buffer_free(pcre_keyvalue_buffer *kvb);

@@ -8,11 +8,13 @@ BEGIN {
 
 use strict;
 use IO::Socket;
-use Test::More tests => 21;
+use Test::More tests => 25;
 use LightyTest;
 
 my $tf = LightyTest->new();
 my $t;
+
+$ENV{"env_test"} = "good_env";
 
 $tf->{CONFIGFILE} = 'condition.conf';
 ok($tf->start_proc == 0, "Starting lighttpd") or die();
@@ -69,7 +71,7 @@ $t->{REQUEST}  = ( <<EOF
 GET / HTTP/1.0
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Server' => 'Apache 1.3.29' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Server' => 'lighttpd-1.4.x' } ];
 ok($tf->handle_http($t) == 0, 'condition: handle if before else branches');
 
 $t->{REQUEST}  = ( <<EOF
@@ -79,90 +81,45 @@ EOF
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Server' => 'special tag' } ];
 ok($tf->handle_http($t) == 0, 'condition: handle if before else branches #2');
 
-ok($tf->stop_proc == 0, "Stopping lighttpd");
 
-$tf->{CONFIGFILE} = 'lighttpd.conf';
-ok($tf->start_proc == 0, "Starting lighttpd") or die();
+## config includes
 
-$t->{REQUEST}  = ( <<EOF
-GET /nofile.png HTTP/1.0
-Host: referer.example.org
+$t->{REQUEST}  = ( "GET /index.html HTTP/1.0\r\nHost: www.example.org\r\n" );
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => "/match_1" } ];
+ok($tf->handle_http($t) == 0, 'basic test');
+
+my $myvar = "good";
+my $server_name = "test.example.org";
+my $mystr = "string";
+$mystr .= "_append";
+my $tests = {
+    "include"        => "/good_include",
+      "concat"         => "/good_" . "concat",
+      "servername1"    => "/good_" . $server_name,
+      "servername2"    => $server_name . "/good_",
+      "servername3"    => "/good_" . $server_name . "/",
+      "var.myvar"      => "/good_var_myvar" . $myvar,
+      "myvar"          => "/good_myvar" . $myvar,
+      "env"            => "/" . $ENV{"env_test"},
+
+    "number1"        => "/good_number" . "1",
+      "number2"        => "1" . "/good_number",
+      "array_append"   => "/good_array_append",
+      "string_append"  => "/good_" . $mystr,
+      "number_append"  => "/good_" . "2",
+
+    "include_shell"  => "/good_include_shell_" . "456"
+};
+
+foreach my $test (keys %{ $tests }) {
+	my $expect = $tests->{$test};
+	$t->{REQUEST}  = ( <<EOF
+GET /$test HTTP/1.0
+Host: $server_name
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-ok($tf->handle_http($t) == 0, 'condition: Referer - no referer');
-
-$t->{REQUEST}  = ( <<EOF
-GET /nofile.png HTTP/1.0
-Host: referer.example.org
-Referer: http://referer.example.org/
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-ok($tf->handle_http($t) == 0, 'condition: Referer - referer matches regex');
-
-$t->{REQUEST}  = ( <<EOF
-GET /image.jpg HTTP/1.0
-Host: www.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-ok($tf->handle_http($t) == 0, 'condition: Referer - no referer');
-
-$t->{REQUEST}  = ( <<EOF
-GET /image.jpg HTTP/1.0
-Host: www.example.org
-Referer: http://referer.example.org/
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-ok($tf->handle_http($t) == 0, 'condition: Referer - referer matches regex');
-
-$t->{REQUEST}  = ( <<EOF
-GET /image.jpg HTTP/1.0
-Host: www.example.org
-Referer: http://evil-referer.example.org/
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 403 } ];
-ok($tf->handle_http($t) == 0, 'condition: Referer - referer doesn\'t match');
-
-$t->{REQUEST} = ( <<EOF
-GET /nofile HTTP/1.1
-Host: bug255.example.org
-
-GET /nofile HTTP/1.1
-Host: bug255.example.org
-Connection: close
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 403 },  { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 403 } ];
-ok($tf->handle_http($t) == 0, 'remote ip cache (#255)');
-
-$t->{REQUEST}  = ( <<EOF
-GET /empty-ref.noref HTTP/1.0
-Cookie: empty-ref
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 403 } ];
-ok($tf->handle_http($t) == 0, 'condition: $HTTP["referer"] == "" and Referer is no set');
-
-$t->{REQUEST}  = ( <<EOF
-GET /empty-ref.noref HTTP/1.0
-Cookie: empty-ref
-Referer:
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 403 } ];
-ok($tf->handle_http($t) == 0, 'condition: $HTTP["referer"] == "" and Referer is empty');
-
-$t->{REQUEST}  = ( <<EOF
-GET /empty-ref.noref HTTP/1.0
-Cookie: empty-ref
-Referer: foobar
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-ok($tf->handle_http($t) == 0, 'condition: $HTTP["referer"] == "" and Referer: foobar');
+	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 301, 'Location' => $expect } ];
+	ok($tf->handle_http($t) == 0, $test);
+}
 
 ok($tf->stop_proc == 0, "Stopping lighttpd");

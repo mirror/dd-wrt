@@ -43,13 +43,14 @@ typedef struct {
 	comp_key_t comp;
 	config_cond_t cond;
 	const buffer *string;
-	const buffer *comp_tag;
-	const buffer *comp_key;
-	const char *op;
+	const char *comp_key;
 } config_cond_info;
 
 __attribute_cold__
 void config_get_config_cond_info(config_cond_info *cfginfo, uint32_t idx);
+
+__attribute_cold__
+int config_capture(server *srv, int idx);
 
 __attribute_cold__
 void config_init(server *srv);
@@ -73,14 +74,11 @@ __attribute_cold__
 int config_log_error_open(server *srv);
 
 __attribute_cold__
-void config_log_error_cycle(server *srv);
-
-__attribute_cold__
 void config_log_error_close(server *srv);
 
 void config_reset_config_bytes_sec(void *p);
 
-void config_reset_config(request_st *r);
+/*void config_reset_config(request_st *r);*//* moved to request_config_reset()*/
 void config_patch_config(request_st *r);
 
 void config_cond_cache_reset(request_st *r);
@@ -131,10 +129,12 @@ typedef struct {
 } config_plugin_keys_t;
 
 __attribute_cold__
-int config_plugin_value_tobool(data_unset *du, int default_value);
+__attribute_pure__
+int config_plugin_value_tobool(const data_unset *du, int default_value);
 
 __attribute_cold__
-int32_t config_plugin_value_to_int32 (data_unset *du, int32_t default_value);
+__attribute_pure__
+int32_t config_plugin_value_to_int32 (const data_unset *du, int32_t default_value);
 
 __attribute_cold__
 int config_plugin_values_init_block(server * const srv, const array * const ca, const config_plugin_keys_t * const cpk, const char * const mname, config_plugin_value_t *cpv);
@@ -163,17 +163,29 @@ typedef struct cond_cache_t {
     int8_t result;        /*(cond_result_t)*/
     /* result without preconditions (must never be "skip") */
     int8_t local_result;  /*(cond_result_t)*/
-    int16_t patterncount;
-} cond_cache_t; /* 8 bytes (2^3) */
+} cond_cache_t; /* 2 bytes (2^1) */
+
+#ifdef HAVE_PCRE2_H
+struct pcre2_real_match_data_8; /* declaration */
+#endif
 
 typedef struct cond_match_t {
     const buffer *comp_value; /* just a pointer */
-  #if !(defined(_LP64) || defined(__LP64__) || defined(_WIN64)) /*(not 64-bit)*/
-    int dummy_alignment; /*(for alignment in 32-bit)*/
-  #endif
-    int matches[3 * 10];
-} cond_match_t; /* 128 bytes (2^7) */
+ #ifdef HAVE_PCRE2_H
+    struct pcre2_real_match_data_8 *match_data;
+ #endif
+    int captures;
+    void *matches; /* pcre2:(PCRE2_SIZE *), pcre:(int *) */
+} cond_match_t;
 
 int config_check_cond(request_st *r, int context_ndx);
+
+__attribute_cold__
+__attribute_pure__
+int config_feature_bool (const server *srv, const char *feature, int default_value);
+
+__attribute_cold__
+__attribute_pure__
+int32_t config_feature_int (const server *srv, const char *feature, int32_t default_value);
 
 #endif

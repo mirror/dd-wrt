@@ -1,3 +1,4 @@
+compiler = meson.get_compiler('c')
 sbinddir = join_paths(get_option('prefix'), get_option('sbindir'))
 moduledir = join_paths(get_option('prefix'), get_option('moduledir'))
 
@@ -8,49 +9,49 @@ include_base_paths = [
 ]
 
 defs = [
+	'-D_TIME_BITS=64',
 	'-D_FILE_OFFSET_BITS=64',
 	'-D_LARGEFILE_SOURCE',
 	'-D_LARGE_FILES',
 	'-D_GNU_SOURCE',
 ]
 
-libws2_32 = []
+socket_libs = []
 if target_machine.system() == 'windows'
-	libws2_32 = [ compiler.find_library('ws2_32') ]
+	socket_libs = [ compiler.find_library('ws2_32') ]
 	defs += [
 		'-DNVALGRIND',
 	]
 endif
+if target_machine.system() == 'sunos'
+	socket_libs = [ compiler.find_library('socket')
+	              , compiler.find_library('nsl')
+	              ]
+elif target_machine.system() == 'haiku'
+	socket_libs = [ compiler.find_library('network') ]
+endif
 
 
-compiler = meson.get_compiler('c')
 conf_data = configuration_data()
 
-conf_data.set('HAVE_SYS_DEVPOLL_H', compiler.has_header('sys/devpoll.h'))
-conf_data.set('HAVE_SYS_EPOLL_H', compiler.has_header('sys/epoll.h'))
-conf_data.set('HAVE_SYS_EVENT_H', compiler.has_header('sys/event.h'))
 conf_data.set('HAVE_SYS_INOTIFY_H', compiler.has_header('sys/inotify.h'))
 conf_data.set('HAVE_SYS_LOADAVG_H', compiler.has_header('sys/loadavg.h'))
-conf_data.set('HAVE_SYS_MMAN_H', compiler.has_header('sys/mman.h'))
 conf_data.set('HAVE_SYS_POLL_H', compiler.has_header('sys/poll.h'))
-conf_data.set('HAVE_SYS_PORT_H', compiler.has_header('sys/port.h'))
 conf_data.set('HAVE_SYS_PRCTL_H', compiler.has_header('sys/prctl.h'))
-conf_data.set('HAVE_SYS_RESOURCE_H', compiler.has_header('sys/resource.h'))
+conf_data.set('HAVE_SYS_PROCCTL_H', compiler.has_header('sys/procctl.h'))
 conf_data.set('HAVE_SYS_SENDFILE_H', compiler.has_header('sys/sendfile.h'))
-conf_data.set('HAVE_SYS_SELECT_H', compiler.has_header('sys/select.h'))
-conf_data.set('HAVE_SYS_TYPES_H', compiler.has_header('sys/types.h'))
-conf_data.set('HAVE_SYS_UIO_H', compiler.has_header('sys/uio.h'))
 conf_data.set('HAVE_SYS_UN_H', compiler.has_header('sys/un.h'))
 conf_data.set('HAVE_SYS_WAIT_H', compiler.has_header('sys/wait.h'))
 conf_data.set('HAVE_SYS_TIME_H', compiler.has_header('sys/time.h'))
 conf_data.set('HAVE_UNISTD_H', compiler.has_header('unistd.h'))
 conf_data.set('HAVE_PTHREAD_H', compiler.has_header('pthread.h'))
+conf_data.set('HAVE_DLFCN_H', compiler.has_header('dlfcn.h'))
 conf_data.set('HAVE_GETOPT_H', compiler.has_header('getopt.h'))
 conf_data.set('HAVE_INTTYPES_H', compiler.has_header('inttypes.h'))
 conf_data.set('HAVE_POLL_H', compiler.has_header('poll.h'))
 conf_data.set('HAVE_PWD_H', compiler.has_header('pwd.h'))
-conf_data.set('HAVE_STDDEF_H', compiler.has_header('stddef.h'))
 conf_data.set('HAVE_STDINT_H', compiler.has_header('stdint.h'))
+conf_data.set('HAVE_STDLIB_H', compiler.has_header('stdlib.h'))
 conf_data.set('HAVE_STRINGS_H', compiler.has_header('strings.h'))
 conf_data.set('HAVE_SYSLOG_H', compiler.has_header('syslog.h'))
 
@@ -76,14 +77,45 @@ if conf_data.get('HAVE_CRYPT_H')
 		libcrypt = [ compiler.find_library('crypt') ]
 		conf_data.set('HAVE_CRYPT', 1)
 	endif
-endif
-
-conf_data.set('HAVE_SYS_INOTIFY_H', compiler.has_header('sys/inotify.h'))
-if conf_data.get('HAVE_SYS_INOTIFY_H')
-	conf_data.set('HAVE_INOTIFY_INIT', compiler.has_function('inotify_init', args: defs))
+elif conf_data.get('HAVE_UNISTD_H')
+	# crypt in default libs?
+	if compiler.has_function('crypt', args: defs, prefix: '#include <unistd.h>')
+		libcrypt = []
+		conf_data.set('HAVE_CRYPT', 1)
+	# crypt in -lcrypt ?
+	elif compiler.has_function('crypt', args: defs + ['-lcrypt'], prefix: '#include <unistd.h>')
+		libcrypt = [ compiler.find_library('crypt') ]
+		conf_data.set('HAVE_CRYPT', 1)
+	endif
 endif
 
 conf_data.set('HAVE_SOCKLEN_T', compiler.has_type('socklen_t', args: defs, prefix: '#include <sys/socket.h>'))
+
+conf_data.set('HAVE_MALLOC_H', compiler.has_header('malloc.h'))
+if conf_data.get('HAVE_MALLOC_H')
+conf_data.set('HAVE_MALLOC_TRIM', compiler.has_function('malloc_trim', args: defs))
+conf_data.set('HAVE_MALLOPT', compiler.has_function('mallopt', args: defs))
+endif
+
+if compiler.has_header('signal.h')
+conf_data.set('HAVE_SIGACTION', compiler.has_function('sigaction', args: defs))
+conf_data.set('HAVE_SIGNAL', compiler.has_function('signal', args: defs))
+endif
+
+conf_data.set('HAVE_SYS_EPOLL_H', compiler.has_header('sys/epoll.h'))
+if conf_data.get('HAVE_SYS_EPOLL_H')
+conf_data.set('HAVE_EPOLL_CTL', compiler.has_function('epoll_ctl', args: defs))
+endif
+
+conf_data.set('HAVE_SYS_EVENT_H', compiler.has_header('sys/event.h'))
+if conf_data.get('HAVE_SYS_EVENT_H')
+conf_data.set('HAVE_KQUEUE', compiler.has_function('kqueue', args: defs))
+endif
+
+conf_data.set('HAVE_SYS_MMAN_H', compiler.has_header('sys/mman.h'))
+if conf_data.get('HAVE_SYS_MMAN_H')
+conf_data.set('HAVE_MMAP', compiler.has_function('mmap', args: defs))
+endif
 
 conf_data.set('HAVE_SYS_RANDOM_H', compiler.has_header('sys/random.h'))
 if conf_data.get('HAVE_SYS_RANDOM_H')
@@ -103,51 +135,62 @@ if conf_data.get('HAVE_LINUX_RANDOM_H')
 	))
 endif
 
+conf_data.set('HAVE_SYS_RESOURCE_H', compiler.has_header('sys/resource.h'))
+if conf_data.get('HAVE_SYS_RESOURCE_H')
+conf_data.set('HAVE_GETRLIMIT', compiler.has_function('getrlimit', args: defs))
+endif
+
+conf_data.set('HAVE_SYS_UIO_H', compiler.has_header('sys/uio.h'))
+if conf_data.get('HAVE_SYS_UIO_H')
+conf_data.set('HAVE_PREADV', compiler.has_function('preadv', args: defs))
+conf_data.set('HAVE_PWRITEV', compiler.has_function('pwritev', args: defs))
+conf_data.set('HAVE_WRITEV', compiler.has_function('writev', args: defs))
+endif
+
+conf_data.set('HAVE_POLL', compiler.has_function('poll', args: defs))
+if not(conf_data.get('HAVE_POLL'))
+conf_data.set('HAVE_SYS_SELECT_H', compiler.has_header('sys/select.h'))
+conf_data.set('HAVE_SELECT', compiler.has_function('select', args: defs))
+endif
+
+if target_machine.system() == 'sunos'
+conf_data.set('HAVE_PORT_H', compiler.has_header('port.h'))
+conf_data.set('HAVE_PRIV_H', compiler.has_header('priv.h'))
+conf_data.set('HAVE_SYS_DEVPOLL_H', compiler.has_header('sys/devpoll.h'))
+conf_data.set('HAVE_SYS_FILIO_H', compiler.has_header('sys/filio.h'))
+conf_data.set('HAVE_PORT_CREATE', compiler.has_function('port_create', args: defs))
+conf_data.set('HAVE_SENDFILEV', compiler.has_function('sendfilev', args: defs))
+conf_data.set('HAVE_SETPFLAGS', compiler.has_function('setpflags', args: defs))
+endif
+
 conf_data.set('SIZEOF_LONG', compiler.sizeof('long', args: defs))
 conf_data.set('SIZEOF_OFF_T', compiler.sizeof('off_t', args: defs))
 
 conf_data.set('HAVE_ARC4RANDOM_BUF', compiler.has_function('arc4random_buf', args: defs))
 conf_data.set('HAVE_CHROOT', compiler.has_function('chroot', args: defs))
 conf_data.set('HAVE_COPY_FILE_RANGE', compiler.has_function('copy_file_range', args: defs))
-conf_data.set('HAVE_EPOLL_CTL', compiler.has_function('epoll_ctl', args: defs))
 conf_data.set('HAVE_FORK', compiler.has_function('fork', args: defs))
 conf_data.set('HAVE_GETLOADAVG', compiler.has_function('getloadavg', args: defs))
-conf_data.set('HAVE_GETRLIMIT', compiler.has_function('getrlimit', args: defs))
 conf_data.set('HAVE_GETUID', compiler.has_function('getuid', args: defs))
 conf_data.set('HAVE_GMTIME_R', compiler.has_function('gmtime_r', args: defs))
 conf_data.set('HAVE_INET_ATON', compiler.has_function('inet_aton', args: defs))
-conf_data.set('HAVE_INET_NTOP', compiler.has_function('inet_ntop', args: defs))
+conf_data.set('HAVE_INET_PTON', compiler.has_function('inet_pton', args: defs))
 conf_data.set('HAVE_JRAND48', compiler.has_function('jrand48', args: defs))
-conf_data.set('HAVE_KQUEUE', compiler.has_function('kqueue', args: defs))
 conf_data.set('HAVE_LOCALTIME_R', compiler.has_function('localtime_r', args: defs))
 conf_data.set('HAVE_LSTAT', compiler.has_function('lstat', args: defs))
 conf_data.set('HAVE_MADVISE', compiler.has_function('madvise', args: defs))
-conf_data.set('HAVE_MEMCPY', compiler.has_function('memcpy', args: defs))
-conf_data.set('HAVE_MEMSET', compiler.has_function('memset', args: defs))
-conf_data.set('HAVE_MMAP', compiler.has_function('mmap', args: defs))
-conf_data.set('HAVE_PATHCONF', compiler.has_function('pathconf', args: defs))
+conf_data.set('HAVE_MEMPCPY', compiler.has_function('mempcpy', args: defs, prefix: '#include <string.h>'))
+conf_data.set('HAVE_MKOSTEMP', compiler.has_function('mkostemp', args: defs))
 conf_data.set('HAVE_PIPE2', compiler.has_function('pipe2', args: defs))
-conf_data.set('HAVE_POLL', compiler.has_function('poll', args: defs))
-conf_data.set('HAVE_PORT_CREATE', compiler.has_function('port_create', args: defs))
-conf_data.set('HAVE_PRCTL', compiler.has_function('prctl', args: defs))
 conf_data.set('HAVE_PREAD', compiler.has_function('pread', args: defs))
-conf_data.set('HAVE_POSIX_FADVISE', compiler.has_function('posix_fadvise', args: defs))
-conf_data.set('HAVE_SELECT', compiler.has_function('select', args: defs))
+conf_data.set('HAVE_PWRITE', compiler.has_function('pwrite', args: defs))
 conf_data.set('HAVE_SENDFILE', compiler.has_function('sendfile', args: defs))
-conf_data.set('HAVE_SEND_FILE', compiler.has_function('send_file', args: defs))
 conf_data.set('HAVE_SENDFILE64', compiler.has_function('sendfile64', args: defs))
-conf_data.set('HAVE_SENDFILEV', compiler.has_function('sendfilev', args: defs))
-conf_data.set('HAVE_SIGACTION', compiler.has_function('sigaction', args: defs))
-conf_data.set('HAVE_SIGNAL', compiler.has_function('signal', args: defs))
-conf_data.set('HAVE_SIGTIMEDWAIT', compiler.has_function('sigtimedwait', args: defs))
+conf_data.set('HAVE_SPLICE', compiler.has_function('splice', args: defs))
 conf_data.set('HAVE_SRANDOM', compiler.has_function('srandom', args: defs))
-conf_data.set('HAVE_STRPTIME', compiler.has_function('strptime', args: defs))
-conf_data.set('HAVE_SYSLOG', compiler.has_function('syslog', args: defs))
+conf_data.set('HAVE_STRERROR_R', compiler.has_function('strerror_r', args: defs))
 conf_data.set('HAVE_TIMEGM', compiler.has_function('timegm', args: defs))
-conf_data.set('HAVE_WRITEV', compiler.has_function('writev', args: defs))
-conf_data.set('HAVE_INET_ATON', compiler.has_function('inet_aton', args: defs))
 conf_data.set('HAVE_ISSETUGID', compiler.has_function('issetugid', args: defs))
-conf_data.set('HAVE_INET_PTON', compiler.has_function('inet_pton', args: defs))
 conf_data.set('HAVE_MEMSET_S', compiler.has_function('memset_s', args: defs))
 conf_data.set('HAVE_EXPLICIT_BZERO', compiler.has_function('explicit_bzero', args: defs))
 conf_data.set('HAVE_EXPLICIT_MEMSET', compiler.has_function('explicit_memset', args: defs))
@@ -213,7 +256,7 @@ conf_data.set('LIGHTTPD_STATIC', get_option('build_static'))
 libdl = []
 if not(get_option('build_static'))
 	if target_machine.system() != 'windows'
-		libdl = [ compiler.find_library('dl') ]
+		libdl = [ compiler.find_library('dl', required: false) ]
 		if not(compiler.has_function('dlopen', args: defs, dependencies: libdl, prefix: '#include <dlfcn.h>'))
 			error('Couldn\'t find dlfcn.h or dlopen in lib dl')
 		endif
@@ -270,29 +313,6 @@ if get_option('with_maxminddb')
 	if not(compiler.has_function('MMDB_open', args: defs, dependencies: libmaxminddb, prefix: '#include <maxminddb.h>'))
 		error('Couldn\'t find maxminddb.h or MMDB_open in lib maxminddb')
 	endif
-endif
-
-libgeoip = []
-if get_option('with_geoip')
-	libgeoip = dependency('geoip', required: false)
-	if libgeoip.found()
-		libgeoip = [ libgeoip ]
-	else
-		libgeoip = [ compiler.find_library('GeoIP') ]
-		if not(compiler.has_function('GeoIP_country_name_by_addr', args: defs, dependencies: libgeoip))
-			error('Couldn\'t find GeoIP_country_name_by_addr in lib GeoIP')
-		endif
-	endif
-endif
-
-libgdbm = []
-if get_option('with_gdbm')
-	libgdbm = [ compiler.find_library('gdbm') ]
-	if not(compiler.has_function('gdbm_open', args: defs, dependencies: libgdbm, prefix: '#include <gdbm.h>'))
-		error('Couldn\'t find gdbm.h or gdbm_open in lib gdbm')
-	endif
-	conf_data.set('HAVE_GDBM_H', true)
-	conf_data.set('HAVE_GDBM', true)
 endif
 
 libkrb5 = []
@@ -407,15 +427,6 @@ if get_option('with_lua')
 	conf_data.set('HAVE_LUA_H', true)
 endif
 
-libmemcached = []
-if get_option('with_memcached')
-	# manual search:
-	# header: libmemcached/memcached.h
-	# function: memcached (-lmemcached)
-	libmemcached = [ dependency('libmemcached') ]
-	conf_data.set('USE_MEMCACHED', true)
-endif
-
 libmysqlclient = []
 if get_option('with_mysql')
 	# manual search: extend include path with 'mysql/'
@@ -439,7 +450,7 @@ if get_option('with_openssl')
 	# manual search:
 	# header: openssl/ssl.h
 	# function: SSL_new (-lssl)
-	# function: BIO_f_base64 (-lcrypto)
+	# function: RAND_bytes (-lcrypto)
 	libssl = [ dependency('libssl') ]
 	libsslcrypto = [ dependency('libcrypto') ]
 	libcrypto = [ dependency('libcrypto') ]
@@ -457,7 +468,7 @@ endif
 if get_option('with_mbedtls')
 	# manual search:
 	# header: mbedtls/ssl.h
-	# function: mbedtls_cipher_info_from_type (-lmbedtls)
+	# function: mbedtls_ssl_init (-lmbedtls)
 	# function: mbedtls_x509_get_name (-lmbedx509)
 	# function: mbedtls_base64_encode (-lmbedcrypto)
 	libmbedtls = [ compiler.find_library('mbedtls') ]
@@ -495,10 +506,10 @@ if get_option('with_nss')
 	# function: NSS_GetVersion (-lnss3)
 	# function: NSSUTIL_GetVersion (-lnssutil3)
 	libnss3 = [ dependency('nss') ]
-	#libssl3 = [ compiler.find_library('libssl3') ]
-	#libsmime3 = [ compiler.find_library('libsmime3') ]
-	#libnss3 = [ compiler.find_library('libnss3') ]
-	#libnssutil3 = [ compiler.find_library('libnssutil3') ]
+	#libssl3 = [ compiler.find_library('ssl3') ]
+	#libsmime3 = [ compiler.find_library('smime3') ]
+	#libnss3 = [ compiler.find_library('nss3') ]
+	#libnssutil3 = [ compiler.find_library('nssutil3') ]
 	conf_data.set('HAVE_NSS3_NSS_H', true)
 	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(getoption('with_nettle')) and not(getoption('with_gnutls'))
 	  libcrypto = [ dependency('nss') ]
@@ -511,13 +522,30 @@ if get_option('with_nss')
 endif
 
 libpcre = []
-if get_option('with_pcre')
+if get_option('with_pcre2') and not(get_option('with_pcre'))
+	# manual search:
+	# header: pcre2.h
+	# function: pcre_match (-lpcre2-8)
+	libpcre = dependency('libpcre2-8', required: false)
+	if libpcre.found()
+		libpcre = [ libpcre ]
+	else
+		libpcre = [ compiler.find_library('pcre2-8', required: true) ]
+	endif
+	conf_data.set('HAVE_PCRE2_H', true)
+	conf_data.set('HAVE_PCRE', true)
+elif get_option('with_pcre')
 	# manual search:
 	# header: pcre.h
 	# function: pcre_exec (-lpcre)
-	libpcre = [ dependency('libpcre') ]
+	libpcre = dependency('libpcre', required: false)
+	if libpcre.found()
+		libpcre = [ libpcre ]
+	else
+		libpcre = [ compiler.find_library('pcre', required: true) ]
+	endif
 	conf_data.set('HAVE_PCRE_H', true)
-	conf_data.set('HAVE_LIBPCRE', true)
+	conf_data.set('HAVE_PCRE', true)
 endif
 
 libpq = []
@@ -532,7 +560,7 @@ endif
 if get_option('with_sasl')
 	libsasl = dependency('sasl2', required: false)
 	if libsasl.found()
-		libsasl = [ libsasl2 ]
+		libsasl = [ libsasl ]
 	else
 		libsasl = [ compiler.find_library('sasl2') ]
 		if not(compiler.has_function('sasl_server_init', args: defs, dependencies: libsasl, prefix: '#include <sasl/sasl.h>'))
@@ -605,6 +633,7 @@ if get_option('with_webdav_props')
 		# has_function doesn't like "internal dependencies"
 		libxml2 += libxml2_includes_dep
 	endif
+	conf_data.set('HAVE_LIBXML2', true)
 	conf_data.set('HAVE_LIBXML_H', true)
 
 	libsqlite3 = dependency('sqlite31', required: false)
@@ -636,6 +665,15 @@ if get_option('with_xattr')
     )
 	conf_data.set('HAVE_SYS_XATTR_H', true)
 	conf_data.set('HAVE_XATTR', true)
+    elif compiler.has_function('extattr_get_file',
+		args: defs,
+		prefix: '''
+			#include <sys/types.h>
+			#include <sys/extattr.h>
+		'''
+    )
+	conf_data.set('HAVE_SYS_EXTATTR_H', true)
+	conf_data.set('HAVE_EXTATTR', true)
     else
 	libattr = [ compiler.find_library('attr') ]
 	if not(compiler.has_function('attr_get',
@@ -683,6 +721,21 @@ if get_option('with_zlib')
 	conf_data.set('HAVE_LIBZ', true)
 endif
 
+libzstd = []
+if get_option('with_zstd')
+	libzstd = dependency('zstd', required: false)
+	if libzstd.found()
+		libzstd = [ libzstd ]
+	else
+		libzstd = [ compiler.find_library('zstd') ]
+		if not(compiler.has_function('ZSTD_versionNumber', args: defs, dependencies: libzstd, prefix: '#include <zstd.h>'))
+			error('Couldn\'t find zstd header / library')
+		endif
+	endif
+	conf_data.set('HAVE_ZSTD_H', true)
+	conf_data.set('HAVE_ZSTD', true)
+endif
+
 configure_file(
 	output : 'config.h',
 	configuration : conf_data,
@@ -698,36 +751,26 @@ common_src = [
 	'burl.c',
 	'chunk.c',
 	'configfile-glue.c',
-	'connections-glue.c',
-	'data_array.c',
-	'data_integer.c',
-	'data_string.c',
 	'http_etag.c',
-	'fdevent_freebsd_kqueue.c',
-	'fdevent_libev.c',
-	'fdevent_linux_sysepoll.c',
-	'fdevent_poll.c',
-	'fdevent_select.c',
-	'fdevent_solaris_devpoll.c',
-	'fdevent_solaris_port.c',
 	'fdevent.c',
+	'fdevent_fdnode.c',
+	'fdlog_maint.c',
+	'fdlog.c',
 	'gw_backend.c',
-	'http_auth.c',
+	'http_cgi.c',
 	'http_chunk.c',
 	'http_date.c',
 	'http_header.c',
 	'http_kv.c',
-	'http_vhostdb.c',
 	'http-header-glue.c',
 	'keyvalue.c',
 	'log.c',
 	'plugin.c',
 	'rand.c',
 	'request.c',
-	'safe_memclear.c',
+	'ck.c',
 	'sock_addr.c',
 	'stat_cache.c',
-	'stream.c',
 	'vector.c',
 ]
 if target_machine.system() == 'windows'
@@ -741,6 +784,8 @@ main_src = [
 	'sock_addr_cache.c',
 	'ls-hpack/lshpack.c',
 	'algo_xxhash.c',
+	'fdevent_impl.c',
+	'http_range.c',
 	'network_write.c',
 	'network.c',
 	'reqpool.c',
@@ -759,11 +804,6 @@ configparser = custom_target('configparser',
 	output: ['configparser.c', 'configparser.h'],
 	command: [lemon, '-q', 'o=@OUTDIR@', '@INPUT0@', '@INPUT1@'],
 )
-ssi_exprparser = custom_target('mod_ssi_exprparser',
-	input:  ['mod_ssi_exprparser.y', 'lempar.c'],
-	output: ['mod_ssi_exprparser.c', 'mod_ssi_exprparser.h'],
-	command: [lemon, '-q', 'o=@OUTDIR@', '@INPUT0@', '@INPUT1@'],
-)
 
 common_cflags = defs + [
 	'-DHAVE_CONFIG_H',
@@ -771,6 +811,7 @@ common_cflags = defs + [
 
 if compiler.get_id() == 'gcc' or compiler.get_id() == 'clang'
 	common_cflags += [
+		'-pipe',
 		'-Wall',
 		'-g',
 		'-Wshadow',
@@ -811,7 +852,7 @@ if target_machine.system() == 'windows'
 	endif
 endif
 
-if compiler.get_id() == 'gcc' or target_machine.system() != 'darwin'
+if (compiler.get_id() == 'gcc' or compiler.get_id() == 'clang') and target_machine.system() != 'darwin' and target_machine.system() != 'sunos'
 	lighttpd_flags += [ declare_dependency(
 		link_args: [
 			'-Wl,-export-dynamic',
@@ -838,33 +879,35 @@ executable('lighttpd', configparser,
 		, libpcre
 		, libunwind
 		, libxxhash
-		, libws2_32
+		, socket_libs
+		, clock_lib
 	],
 	install: true,
 	install_dir: sbinddir,
 )
 
-test('test_array', executable('test_array',
-	sources: ['t/test_array.c', 'array.c', 'data_array.c', 'data_integer.c', 'data_string.c', 'buffer.c'],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_buffer', executable('test_buffer',
-	sources: ['t/test_buffer.c', 'buffer.c'],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_burl', executable('test_burl',
-	sources: ['t/test_burl.c', 'burl.c', 'buffer.c', 'base64.c'],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_base64', executable('test_base64',
-	sources: ['t/test_base64.c', 'buffer.c', 'base64.c'],
-	dependencies: common_flags + libunwind,
+test('test_common', executable('test_common',
+	sources: [
+		't/test_common.c',
+		't/test_array.c',
+		't/test_base64.c',
+		't/test_buffer.c',
+		't/test_burl.c',
+		't/test_keyvalue.c',
+		't/test_request.c',
+		'http_header.c',
+		'http_kv.c',
+		'log.c',
+		'fdlog.c',
+		'sock_addr.c',
+		'ck.c',
+	],
+	dependencies: [ common_flags
+		, libpcre
+		, libunwind
+		, socket_libs
+		, clock_lib
+	],
 	build_by_default: false,
 ))
 
@@ -874,134 +917,83 @@ test('test_configfile', executable('test_configfile',
 		'buffer.c',
 		'array.c',
 		'data_config.c',
-		'data_integer.c',
-		'data_string.c',
 		'http_header.c',
 		'http_kv.c',
 		'vector.c',
 		'log.c',
+		'fdlog.c',
 		'sock_addr.c',
+		'ck.c',
 	],
-	dependencies: common_flags + libpcre + libunwind,
+	dependencies: [ common_flags
+		, libpcre
+		, libunwind
+		, socket_libs
+		, clock_lib
+	],
 	build_by_default: false,
 ))
 
-test('test_keyvalue', executable('test_keyvalue',
+test('test_mod', executable('test_mod',
 	sources: [
-		't/test_keyvalue.c',
-		'burl.c',
-		'buffer.c',
-		'base64.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'log.c',
-	],
-	dependencies: common_flags + libpcre + libunwind,
-	build_by_default: false,
-))
-
-test('test_mod_access', executable('test_mod_access',
-	sources: [
+		common_src,
+		't/test_mod.c',
 		't/test_mod_access.c',
-		'buffer.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'log.c',
-	],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_mod_evhost', executable('test_mod_evhost',
-	sources: [
+		't/test_mod_alias.c',
+		't/test_mod_evasive.c',
 		't/test_mod_evhost.c',
-		'buffer.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'log.c',
-	],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_mod_simple_vhost', executable('test_mod_simple_vhost',
-	sources: [
+		't/test_mod_indexfile.c',
 		't/test_mod_simple_vhost.c',
-		'buffer.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'log.c',
-	],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_mod_userdir', executable('test_mod_userdir',
-	sources: [
+		't/test_mod_ssi.c',
+		't/test_mod_staticfile.c',
 		't/test_mod_userdir.c',
-		'buffer.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'log.c',
 	],
-	dependencies: common_flags + libunwind,
-	build_by_default: false,
-))
-
-test('test_request', executable('test_request',
-	sources: [
-		't/test_request.c',
-		'base64.c',
-		'buffer.c',
-		'burl.c',
-		'array.c',
-		'data_integer.c',
-		'data_string.c',
-		'http_header.c',
-		'http_kv.c',
-		'log.c',
-		'sock_addr.c',
+	dependencies: [ common_flags, lighttpd_flags
+		, libattr
+		, libcrypto
+		, libdl
+		, libev
+		, libfam
+		, libpcre
+		, libunwind
+		, libxxhash
+		, socket_libs
+		, clock_lib
 	],
-	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 modules = [
 	[ 'mod_access', [ 'mod_access.c' ] ],
 	[ 'mod_accesslog', [ 'mod_accesslog.c' ] ],
+	[ 'mod_ajp13', [ 'mod_ajp13.c' ] ],
 	[ 'mod_alias', [ 'mod_alias.c' ] ],
-	[ 'mod_auth', [ 'mod_auth.c' ], [ libcrypto ] ],
+	[ 'mod_auth', [ 'mod_auth.c', 'mod_auth_api.c' ], [ libcrypto ] ],
 	[ 'mod_authn_file', [ 'mod_authn_file.c' ], [ libcrypt, libcrypto ] ],
-	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz + libbrotli ],
-	[ 'mod_dirlisting', [ 'mod_dirlisting.c' ], libpcre ],
+	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz + libzstd + libbrotli ],
+	[ 'mod_dirlisting', [ 'mod_dirlisting.c' ] ],
 	[ 'mod_evasive', [ 'mod_evasive.c' ] ],
 	[ 'mod_evhost', [ 'mod_evhost.c' ] ],
 	[ 'mod_expire', [ 'mod_expire.c' ] ],
 	[ 'mod_extforward', [ 'mod_extforward.c' ] ],
-	[ 'mod_fastcgi', [ 'mod_fastcgi.c' ], libws2_32 ],
-	[ 'mod_flv_streaming', [ 'mod_flv_streaming.c' ] ],
+	[ 'mod_fastcgi', [ 'mod_fastcgi.c' ], socket_libs ],
 	[ 'mod_indexfile', [ 'mod_indexfile.c' ] ],
-	[ 'mod_proxy', [ 'mod_proxy.c' ], libws2_32 ],
-	[ 'mod_redirect', [ 'mod_redirect.c' ], libpcre ],
-	[ 'mod_rewrite', [ 'mod_rewrite.c' ], libpcre ],
+	[ 'mod_proxy', [ 'mod_proxy.c' ], socket_libs ],
+	[ 'mod_redirect', [ 'mod_redirect.c' ] ],
+	[ 'mod_rewrite', [ 'mod_rewrite.c' ] ],
 	[ 'mod_rrdtool', [ 'mod_rrdtool.c' ] ],
-	[ 'mod_scgi', [ 'mod_scgi.c' ], libws2_32 ],
-	[ 'mod_secdownload', [ 'mod_secdownload.c' ], libcrypto ],
+	[ 'mod_scgi', [ 'mod_scgi.c' ], socket_libs ],
+	[ 'mod_secdownload', [ 'mod_secdownload.c', 'algo_hmac.c' ], libcrypto ],
 	[ 'mod_setenv', [ 'mod_setenv.c' ] ],
 	[ 'mod_simple_vhost', [ 'mod_simple_vhost.c' ] ],
 	[ 'mod_sockproxy', [ 'mod_sockproxy.c' ] ],
-	[ 'mod_ssi', [ ssi_exprparser, 'mod_ssi_expr.c', 'mod_ssi.c' ], libws2_32 ],
+	[ 'mod_ssi', [ 'mod_ssi.c' ], socket_libs ],
 	[ 'mod_staticfile', [ 'mod_staticfile.c' ] ],
 	[ 'mod_status', [ 'mod_status.c' ] ],
 	[ 'mod_uploadprogress', [ 'mod_uploadprogress.c' ] ],
 	[ 'mod_userdir', [ 'mod_userdir.c' ] ],
 	[ 'mod_usertrack', [ 'mod_usertrack.c' ], libcrypto ],
-	[ 'mod_vhostdb', [ 'mod_vhostdb.c' ] ],
+	[ 'mod_vhostdb', [ 'mod_vhostdb.c', 'mod_vhostdb_api.c' ] ],
 	[ 'mod_webdav', [ 'mod_webdav.c' ], libsqlite3 + libuuid + libxml2 + libelftc ],
 	[ 'mod_wstunnel', [ 'mod_wstunnel.c' ], libcrypto ],
 ]
@@ -1012,16 +1004,9 @@ if target_machine.system() != 'windows'
 	]
 endif
 
-if get_option('with_pcre') and (get_option('with_memcached') or get_option('with_gdbm'))
-	modules += [
-		[ 'mod_trigger_b4_dl', [ 'mod_trigger_b4_dl.c' ], libpcre + libmemcached + libgdbm ],
-	]
-endif
-
 if get_option('with_lua')
 	modules += [
-		[ 'mod_cml', [ 'mod_cml.c', 'mod_cml_lua.c', 'mod_cml_funcs.c' ], liblua + libmemcached + libcrypto ],
-		[ 'mod_magnet', [ 'mod_magnet.c', 'mod_magnet_cache.c' ], liblua ],
+		[ 'mod_magnet', [ 'mod_magnet.c', 'mod_magnet_cache.c', 'algo_hmac.c' ], liblua + libcrypto ],
 	]
 endif
 
@@ -1031,16 +1016,8 @@ if get_option('with_maxminddb')
 	]
 endif
 
-if get_option('with_geoip')
-	modules += [
-		[ 'mod_geoip', [ 'mod_geoip.c' ], libgeoip ],
-	]
-endif
-
 if get_option('with_mysql')
 	modules += [
-		[ 'mod_authn_mysql', [ 'mod_authn_mysql.c' ], libcrypt + libmysqlclient + libcrypto ],
-		[ 'mod_mysql_vhost', [ 'mod_mysql_vhost.c' ], libmysqlclient ],
 		[ 'mod_vhostdb_mysql', [ 'mod_vhostdb_mysql.c' ], libmysqlclient ],
 	]
 endif

@@ -104,7 +104,10 @@ SHA256_Update(SHA256_CTX *ctx, const void *data, size_t length)
 }
 
 #define USE_LIB_CRYPTO_SHA512_256
-typedef struct sha512_256_ctx SHA512_CTX;    /*(yes, SHA512_CTX)*/
+#define SHA512_256_CTX SHA512_CTX
+/*(nettle/sha2.h: #define sha512_256_ctx sha512_ctx)*/
+/*typedef struct sha512_256_ctx SHA512_CTX;*/    /*(yes, SHA512_CTX)*/
+typedef struct sha512_ctx SHA512_CTX;
 static inline int
 SHA512_256_Init(SHA512_CTX *ctx)
 {
@@ -125,7 +128,7 @@ SHA512_256_Update(SHA512_CTX *ctx, const void *data, size_t length)
 }
 
 #define USE_LIB_CRYPTO_SHA512
-typedef struct sha512_ctx SHA512_CTX;
+/*typedef struct sha512_ctx SHA512_CTX;*//*(defined above)*/
 static inline int
 SHA512_Init(SHA512_CTX *ctx)
 {
@@ -147,7 +150,8 @@ SHA512_Update(SHA512_CTX *ctx, const void *data, size_t length)
 
 #elif defined(USE_MBEDTLS_CRYPTO)
 
-#include <mbedtls/config.h>
+#include <mbedtls/version.h>
+/*#include <mbedtls/compat-2.x.h>*//*(func renames ifdef'd below)*/
 
 #ifdef MBEDTLS_MD4_C
 #define USE_LIB_CRYPTO_MD4
@@ -181,19 +185,31 @@ static inline int
 MD5_Init(MD5_CTX *ctx)
 {
     mbedtls_md5_init(ctx);
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_md5_starts(ctx));
+  #else
     return (0 == mbedtls_md5_starts_ret(ctx));
+  #endif
 }
 static inline int
 MD5_Final(unsigned char *digest, MD5_CTX *ctx)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    int rc = mbedtls_md5_finish(ctx, digest);
+  #else
     int rc = mbedtls_md5_finish_ret(ctx, digest);
+  #endif
     mbedtls_md5_free(ctx);
     return (0 == rc);
 }
 static inline int
 MD5_Update(MD5_CTX *ctx, const void *data, size_t length)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_md5_update(ctx, data, length));
+  #else
     return (0 == mbedtls_md5_update_ret(ctx, data, length));
+  #endif
 }
 #endif
 
@@ -205,19 +221,31 @@ static inline int
 SHA1_Init(SHA_CTX *ctx)
 {
     mbedtls_sha1_init(ctx);
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha1_starts(ctx));
+  #else
     return (0 == mbedtls_sha1_starts_ret(ctx));
+  #endif
 }
 static inline int
 SHA1_Final(unsigned char *digest, SHA_CTX *ctx)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    int rc = mbedtls_sha1_finish(ctx, digest);
+  #else
     int rc = mbedtls_sha1_finish_ret(ctx, digest);
+  #endif
     mbedtls_sha1_free(ctx);
     return (0 == rc);
 }
 static inline int
 SHA1_Update(SHA_CTX *ctx, const void *data, size_t length)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha1_update(ctx, data, length));
+  #else
     return (0 == mbedtls_sha1_update_ret(ctx, data, length));
+  #endif
 }
 #endif
 
@@ -229,19 +257,31 @@ static inline int
 SHA256_Init(SHA256_CTX *ctx)
 {
     mbedtls_sha256_init(ctx);
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha256_starts(ctx, 0));
+  #else
     return (0 == mbedtls_sha256_starts_ret(ctx, 0));
+  #endif
 }
 static inline int
 SHA256_Final(unsigned char *digest, SHA256_CTX *ctx)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    int rc = mbedtls_sha256_finish(ctx, digest);
+  #else
     int rc = mbedtls_sha256_finish_ret(ctx, digest);
+  #endif
     mbedtls_sha256_free(ctx);
     return (0 == rc);
 }
 static inline int
 SHA256_Update(SHA256_CTX *ctx, const void *data, size_t length)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha256_update(ctx, data, length));
+  #else
     return (0 == mbedtls_sha256_update_ret(ctx, data, length));
+  #endif
 }
 #endif
 
@@ -253,19 +293,31 @@ static inline int
 SHA512_Init(SHA512_CTX *ctx)
 {
     mbedtls_sha512_init(ctx);
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha512_starts(ctx, 0));
+  #else
     return (0 == mbedtls_sha512_starts_ret(ctx, 0));
+  #endif
 }
 static inline int
 SHA512_Final(unsigned char *digest, SHA512_CTX *ctx)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    int rc = mbedtls_sha512_finish(ctx, digest);
+  #else
     int rc = mbedtls_sha512_finish_ret(ctx, digest);
+  #endif
     mbedtls_sha512_free(ctx);
     return (0 == rc);
 }
 static inline int
 SHA512_Update(SHA512_CTX *ctx, const void *data, size_t length)
 {
+  #if MBEDTLS_VERSION_MAJOR >= 3
+    return (0 == mbedtls_sha512_update(ctx, data, length));
+  #else
     return (0 == mbedtls_sha512_update_ret(ctx, data, length));
+  #endif
 }
 #endif
 
@@ -283,6 +335,8 @@ SHA512_Update(SHA512_CTX *ctx, const void *data, size_t length)
 #undef SIZEOF_LONG
 #undef SIZEOF_LONG_LONG
 #endif
+
+#include <wolfssl/options.h> /* wolfssl NO_* macros */
 
 #ifndef NO_MD4
 #include <wolfssl/wolfcrypt/md4.h>
@@ -391,6 +445,7 @@ SHA256_Update(SHA256_CTX *ctx, const void *data, size_t length)
 #endif
 
 #ifndef NO_SHA512
+#ifdef WOLFSSL_SHA512
 #include <wolfssl/wolfcrypt/sha512.h>
 #include <wolfssl/openssl/sha.h>
 #undef SHA512_Init
@@ -415,6 +470,7 @@ SHA512_Update(SHA512_CTX *ctx, const void *data, size_t length)
     return 1;
 }
 #endif
+#endif
 
 #elif defined(USE_OPENSSL_CRYPTO)
 
@@ -437,6 +493,9 @@ SHA512_Update(SHA512_CTX *ctx, const void *data, size_t length)
 #endif
 
 #include <openssl/opensslv.h>
+#ifdef BORINGSSL_API_VERSION
+typedef SHA512_CTX SHA512_256_CTX;
+#endif
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/evp.h>
 
@@ -607,7 +666,7 @@ EVP_SHA512_Update(EVP_SHA512_CTX *ctx, const void *data, size_t length)
 #elif defined(USE_GNUTLS_CRYPTO)
 
 #include <gnutls/crypto.h>
-#include "buffer.h"     /* SEGFAULT() */
+#include "ck.h"
 
 #define USE_LIB_CRYPTO_MD5
 typedef gnutls_hash_hd_t MD5_CTX;
@@ -615,7 +674,7 @@ static inline int
 MD5_Init(MD5_CTX *ctx)
 {
     if (gnutls_hash_init(ctx, GNUTLS_DIG_MD5) < 0)
-        SEGFAULT();
+        ck_bt_abort(__FILE__, __LINE__, "aborted");
     return 1;
 }
 static inline int
@@ -637,7 +696,7 @@ static inline int
 SHA1_Init(SHA_CTX *ctx)
 {
     if (gnutls_hash_init(ctx, GNUTLS_DIG_SHA1) < 0)
-        SEGFAULT();
+        ck_bt_abort(__FILE__, __LINE__, "aborted");
     return 1;
 }
 static inline int
@@ -659,7 +718,7 @@ static inline int
 SHA256_Init(SHA256_CTX *ctx)
 {
     if (gnutls_hash_init(ctx, GNUTLS_DIG_SHA256) < 0)
-        SEGFAULT();
+        ck_bt_abort(__FILE__, __LINE__, "aborted");
     return 1;
 }
 static inline int
@@ -681,7 +740,7 @@ static inline int
 SHA512_Init(SHA512_CTX *ctx)
 {
     if (gnutls_hash_init(ctx, GNUTLS_DIG_SHA512) < 0)
-        SEGFAULT();
+        ck_bt_abort(__FILE__, __LINE__, "aborted");
     return 1;
 }
 static inline int
@@ -786,29 +845,49 @@ NSS_gen_hashfuncs(SHA512, HASH_AlgSHA512);
 #endif /* USE_LIB_CRYPTO */
 
 
+#ifdef USE_LIB_CRYPTO_MD4
+#ifndef MD4_DIGEST_LENGTH
+#define MD4_DIGEST_LENGTH 16
+#endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX MD4_DIGEST_LENGTH
+#endif
+
+
 #ifdef USE_LIB_CRYPTO_MD5
 #ifndef MD5_DIGEST_LENGTH
 #define MD5_DIGEST_LENGTH 16
 #endif
 #include "algo_md5.h" /*(for legacy li_MD5_*() name mangling)*/
 #else
-#include "algo_md5.h"
+#include "algo_md5.h" /* MD5 implementation included with lighttpd */
 #endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX MD5_DIGEST_LENGTH
 
 
 #ifdef USE_LIB_CRYPTO_SHA1
+typedef SHA_CTX SHA1_CTX;  /*(naming consistency with other algos)*/
 #ifndef SHA_DIGEST_LENGTH
 #define SHA_DIGEST_LENGTH 20
 #endif
-#else
-#include "algo_sha1.h"
+#ifndef SHA1_DIGEST_LENGTH /*(naming consistency with other algos)*/
+#define SHA1_DIGEST_LENGTH SHA_DIGEST_LENGTH
 #endif
+#else
+#include "algo_sha1.h"  /* SHA1 implementation included with lighttpd */
+typedef SHA_CTX SHA1_CTX;  /*(naming consistency with other algos)*/
+#endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX SHA_DIGEST_LENGTH
 
 
 #ifdef USE_LIB_CRYPTO_SHA256
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH 32
 #endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX SHA256_DIGEST_LENGTH
 #endif
 
 
@@ -816,6 +895,8 @@ NSS_gen_hashfuncs(SHA512, HASH_AlgSHA512);
 #ifndef SHA512_256_DIGEST_LENGTH
 #define SHA512_256_DIGEST_LENGTH 32
 #endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX SHA512_256_DIGEST_LENGTH
 #endif
 
 
@@ -823,7 +904,81 @@ NSS_gen_hashfuncs(SHA512, HASH_AlgSHA512);
 #ifndef SHA512_DIGEST_LENGTH
 #define SHA512_DIGEST_LENGTH 64
 #endif
+#undef  MD_DIGEST_LENGTH_MAX
+#define MD_DIGEST_LENGTH_MAX SHA512_DIGEST_LENGTH
 #endif
+
+
+/* message digest wrappers operating on single ptr, and on const_iovec */
+
+
+typedef void(*li_md_once_fn)(unsigned char *digest, const void *data, size_t n);
+
+#define li_md_once(algo)                                            \
+  static inline void                                                \
+  algo##_once (unsigned char * const digest,                        \
+               const void * const data, const size_t n)             \
+  {                                                                 \
+      algo##_CTX ctx;                                               \
+      algo##_Init(&ctx);                                            \
+      algo##_Update(&ctx, data, n);                                 \
+      algo##_Final(digest, &ctx);                                   \
+  }
+
+#ifndef LI_CONST_IOVEC
+#define LI_CONST_IOVEC
+struct const_iovec {
+  const void *iov_base;
+  size_t iov_len;
+};
+#endif
+
+typedef void(*li_md_iov_fn)(unsigned char *digest,
+                            const struct const_iovec *iov, size_t n);
+
+#define li_md_iov(algo)                                             \
+  static inline void                                                \
+  algo##_iov (unsigned char * const digest,                         \
+              const struct const_iovec * const iov, const size_t n) \
+  {                                                                 \
+      algo##_CTX ctx;                                               \
+      algo##_Init(&ctx);                                            \
+      for (size_t i = 0; i < n; ++i) {                              \
+          if (iov[i].iov_len)                                       \
+              algo##_Update(&ctx, iov[i].iov_base, iov[i].iov_len); \
+      }                                                             \
+      algo##_Final(digest, &ctx);                                   \
+  }
+
+#ifdef USE_LIB_CRYPTO_MD4
+li_md_once(MD4)
+li_md_iov(MD4)
+#endif /* MD4_once() MD4_iov() */
+
+/*#ifdef USE_LIB_CRYPTO_MD5*/
+li_md_once(MD5)
+li_md_iov(MD5)
+/*#endif*/ /* MD5_once() MD5_iov() */
+
+/*#ifdef USE_LIB_CRYPTO_SHA1*/
+li_md_once(SHA1)
+li_md_iov(SHA1)
+/*#endif*/ /* SHA1_once() SHA1_iov() */
+
+#ifdef USE_LIB_CRYPTO_SHA256
+li_md_once(SHA256)
+li_md_iov(SHA256)
+#endif /* SHA256_once() SHA256_iov() */
+
+#ifdef USE_LIB_CRYPTO_SHA512_256
+li_md_once(SHA512_256)
+li_md_iov(SHA512_256)
+#endif /* SHA512_256_once() SHA512_256_iov() */
+
+#ifdef USE_LIB_CRYPTO_SHA512
+li_md_once(SHA512)
+li_md_iov(SHA512)
+#endif /* SHA512_once() SHA512_iov() */
 
 
 #endif /* LI_SYS_CRYPTO_MD_H */
