@@ -39,6 +39,13 @@
 #define VFAT_LN_ATTR (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
 
 #define FAT_STATE_DIRTY 0x01
+#define FAT_NEED_SURFACE_TEST 0x02
+
+#define FAT16_FLAG_HARDDISK_ERROR 0x4000
+#define FAT16_FLAG_CLEAN_SHUTDOWN 0x8000
+
+#define FAT32_FLAG_HARDDISK_ERROR 0x4000000
+#define FAT32_FLAG_CLEAN_SHUTDOWN 0x8000000
 
 /* ++roman: Use own definition of boot sector structure -- the kernel headers'
  * name for it is msdos_boot_sector in 2.0 and fat_boot_sector in 2.1 ... */
@@ -69,7 +76,7 @@ struct boot_sector {
     uint8_t reserved2[12];	/* Unused */
 
     uint8_t drive_number;	/* Logical Drive Number */
-    uint8_t reserved3;		/* Unused */
+    uint8_t boot_flags;		/* bit 0: dirty, bit 1: need surface test */
 
     uint8_t extended_sig;	/* Extended Signature (0x29) */
     uint32_t serial;		/* Serial number */
@@ -98,7 +105,7 @@ struct boot_sector_16 {
     uint32_t total_sect;	/* number of sectors (if sectors == 0) */
 
     uint8_t drive_number;	/* Logical Drive Number */
-    uint8_t reserved2;		/* Unused */
+    uint8_t boot_flags;		/* bit 0: dirty, bit 1: need surface test */
 
     uint8_t extended_sig;	/* Extended Signature (0x29) */
     uint32_t serial;		/* Serial number */
@@ -150,7 +157,7 @@ typedef struct {
 typedef struct {
     int nfats;
     off_t fat_start;
-    off_t fat_size;		/* unit is bytes */
+    unsigned int fat_size;	/* unit is bytes */
     unsigned int fat_bits;	/* size of a FAT entry */
     unsigned int eff_fat_bits;	/* # of used bits in a FAT entry */
     uint32_t root_cluster;	/* 0 for old-style root dir */
@@ -164,11 +171,13 @@ typedef struct {
     off_t backupboot_start;	/* 0 if not present */
     unsigned char *fat;
     DOS_FILE **cluster_owner;
-    char *label;
+    uint32_t serial;
+    char label[11];
 } DOS_FS;
 
-extern int interactive, rw, list, verbose, test, write_immed;
-extern int atari_format;
+extern int rw, list, verbose, test, no_spaces_in_sfns;
+extern long fat_table;
+extern int only_uppercase_label;
 extern unsigned n_files;
 extern void *mem_queue;
 

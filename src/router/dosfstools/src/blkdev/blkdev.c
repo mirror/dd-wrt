@@ -7,8 +7,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <limits.h>
 
 #ifdef HAVE_LINUX_HDREG_H
 #include <linux/hdreg.h>
@@ -317,17 +320,37 @@ int blkdev_get_geometry(int fd, unsigned int *h, unsigned int *s)
 /*
  * Get start offset of partition
  */
-int blkdev_get_start(int fd, unsigned int *s)
+int blkdev_get_start(int fd, dev_t rdev, unsigned long long *s)
 {
+#ifdef __linux__
+	{
+		char path[PATH_MAX];
+		FILE *file;
+		int ret;
+
+		snprintf(path, sizeof(path), "/sys/dev/block/%d:%d/start", major(rdev), minor(rdev));
+		file = fopen(path, "r");
+		if (file) {
+			ret = fscanf(file, "%llu", s);
+			fclose(file);
+			if (ret == 1)
+				return 0;
+		}
+	}
+#endif
+
 #ifdef HDIO_GETGEO
+	{
 	struct hd_geometry geometry;
 
 	if (ioctl(fd, HDIO_GETGEO, &geometry) == 0) {
 		*s = geometry.start;
 		return 0;
 	}
+	}
 #endif
 
+	(void)rdev; /* prevent unused parameter warning */
 	(void)fd; /* prevent unused parameter warning */
 	*s = 0;
 	return -1;

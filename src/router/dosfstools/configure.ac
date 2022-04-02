@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_INIT([dosfstools], [4.1])
-AC_SUBST([RELEASE_DATE], [2017-01-24])
+AC_INIT([dosfstools], [4.2])
+AC_SUBST([RELEASE_DATE], [2021-01-31])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects parallel-tests])
 
 AC_ARG_ENABLE([compat-symlinks],
@@ -29,6 +29,20 @@ AC_ARG_ENABLE([compat-symlinks],
 	[symlinks=false])
 AM_CONDITIONAL([COMPAT_SYMLINKS], [test x$symlinks = xtrue])
 
+AC_ARG_ENABLE([atari-check],
+	[AS_HELP_STRING([--enable-atari-check],
+		      [enable legacy check to let tools switch to Atari mode
+		       when they detect they are running on 68k Atari
+		       hardware (Linux only)])],
+	[case "${enableval}" in
+	yes) AC_SUBST(CHECKATARI, [1])
+	     AC_DEFINE(CONF_CHECK_ATARI) ;;
+	no)  AC_SUBST(CHECKATARI, [0]) ;;
+	*)   AC_MSG_ERROR([bad value ${enableval} for --enable-atari-check]) ;;
+	esac],
+	[AC_SUBST(CHECKATARI, [0])])
+
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_PROG_CC
 AC_PROG_LN_S
@@ -40,6 +54,7 @@ AC_CHECK_HEADERS([\
 		  linux/fd.h \
 		  linux/hdreg.h \
 		  linux/version.h \
+		  linux/loop.h \
 		  sys/disk.h \
 		  sys/disklabel.h \
 		  sys/ioccom.h \
@@ -49,17 +64,16 @@ AC_CHECK_HEADERS([\
 
 AC_CHECK_HEADERS([endian.h sys/endian.h libkern/OSByteOrder.h])
 
+AC_CHECK_FUNCS([vasprintf])
+
 AC_CHECK_DECLS([getmntent], [], [], [[#include <mntent.h>]])
 AC_CHECK_DECLS([getmntinfo], [], [], [[#include <sys/mount.h>]])
 
-AC_ARG_WITH([udev], AS_HELP_STRING([--without-udev], [build without libudev support]))
-if test "x$with_udev" != "xno"; then
-  PKG_CHECK_MODULES([UDEV], [libudev],
-		  [AC_DEFINE([HAVE_UDEV], [1])],
-		  [true])
+# optional iconv support
+AC_ARG_WITH([iconv], AS_HELP_STRING([--without-iconv], [build without iconv support]))
+if test "x$with_iconv" != "xno"; then
+	AM_ICONV
 fi
-
-AC_SEARCH_LIBS(iconv_open, iconv)
 
 # xxd (distributed with vim) is used in the testsuite
 AC_CHECK_PROG([XXD_FOUND], [xxd], [yes])

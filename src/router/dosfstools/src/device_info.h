@@ -34,7 +34,8 @@ struct device_info {
      */
     int geom_heads;
     int geom_sectors;
-    long geom_start;
+    long long geom_start;
+    long long geom_size;
 
     /*
      * detected sector size or -1 if unknown
