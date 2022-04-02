@@ -1,6 +1,8 @@
 .\" fatlabel.8 - manpage for fatlabel
 .\"
 .\" Copyright (C) 2006-2014 Daniel Baumann <daniel@debian.org>
+.\" Copyright (C) 2017 Andreas Bombe <aeb@debian.org>
+.\" Copyright (C) 2017-2021 Pali Rohár <pali.rohar@gmail.com>
 .\"
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -19,39 +21,140 @@
 .\" can be found in /usr/share/common-licenses/GPL-3 file.
 .\"
 .\"
-.TH FATLABEL 8 2015\-04\-16 "dosfstools @PACKAGE_VERSION@"
+.TH FATLABEL 8 @RELEASE_DATE@ "dosfstools @PACKAGE_VERSION@"
 .SH NAME
-\fBfatlabel\fR \- set or get MS\-DOS filesystem label
+fatlabel \- set or get MS-DOS filesystem label or volume ID
 .\" ----------------------------------------------------------------------------
 .SH SYNOPSIS
-\fBfatlabel\fR \fIDEVICE\fR [\fILABEL\fR]
+\fBfatlabel\fP [\fIOPTIONS\fP] \fIDEVICE\fP [\fINEW\fP]
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
-\fBfatlabel\fR set or gets a MS\-DOS filesystem label from a given device.
+\fBfatlabel\fP will display or change the volume label or volume ID on the
+MS-DOS filesystem located on \fIDEVICE\fP.
+By default it works in label mode.
+It can be switched to volume ID mode with the option \fB\-i\fP or
+\fB\-\-volume\-id\fP.
 .PP
-If \fILABEL\fR is omitted, then the label name of the specified device is
-written on the standard output.
-A label can't be longer than 11 bytes.
+If \fINEW\fP is omitted, then the existing label or volume ID is written to the
+standard output.
+A label can't be longer than 11 bytes and should be in all upper case for best
+compatibility.
+An empty string or a label consisting only of white space is not allowed.
+A volume ID must be given as a hexadecimal number (no leading "0x" or
+similar) and must fit into 32 bits.
 .\" ----------------------------------------------------------------------------
 .SH OPTIONS
-.IP "\fB\-h\fR, \fB\-\-help\fR" 4
-Displays a help message.
-.IP "\fB\-V\fR, \fB\-\-version\fR" 4
-Shows version.
+.IP "\fB\-i\fP, \fB\-\-volume\-id\fP" 4
+Switch to volume ID mode.
+.IP "\fB\-r\fP, \fB\-\-reset\fP" 4
+Remove label in label mode or generate new ID in volume ID mode.
+.IP "\fB-c\fP \fIPAGE\fP, \fB\-\-codepage\fP=\fIPAGE\fP" 4
+Use DOS codepage \fIPAGE\fP to encode/decode label.
+By default codepage 850 is used.
+.IP "\fB\-h\fP, \fB\-\-help\fP" 4
+Display a help message and terminate.
+.IP "\fB\-V\fP, \fB\-\-version\fP" 4
+Show version number and terminate.
+.\" ----------------------------------------------------------------------------
+.SH COMPATIBILITY and BUGS
+For historic reasons FAT label is stored in two different locations: in the boot
+sector and as a special volume label entry in the root directory.
+MS-DOS 5.00, MS-DOS 6.22, MS-DOS 7.10, Windows 98, Windows XP and also
+Windows 10 read FAT label only from the root directory.
+Absence of the volume label in the root directory is interpreted as empty or
+none label, even if boot sector contains some valid label.
+
+When Windows XP or Windows 10 system changes a FAT label it stores it only in
+the root directory \(em letting boot sector unchanged.
+Which leads to problems when a label is removed on Windows.
+Old label is still stored in the boot sector but is removed from the root
+directory.
+
+\fBdosfslabel\fP prior to the version 3.0.7 operated only with FAT labels stored
+in the boot sector, completely ignoring a volume label in the root directory.
+
+\fBdosfslabel\fP in versions 3.0.7\(en3.0.15 reads FAT labels from the root
+directory and in case of absence, it fallbacks to a label stored in the boot
+sector.
+Change operation resulted in updating a label in the boot sector and
+\fIsometimes\fP also in the root directory due to the bug.
+That bug was fixed in \fBdosfslabel\fP version 3.0.16 and since this version
+\fBdosfslabel\fP updates label in both location.
+
+Since version 4.2, \fBfatlabel\fP reads a FAT label only from the root directory
+(like MS-DOS and Windows systems), but changes a FAT label in both locations.
+In version 4.2 was fixed handling of empty labels and labels which starts with a
+byte 0xE5.
+Also in this version was added support for non-ASCII labels according to the
+specified DOS codepage and were added checks if a new label is valid.
+
+It is strongly suggested to not use \fBdosfslabel\fP prior to version 3.0.16.
+.\" ----------------------------------------------------------------------------
+.SH DOS CODEPAGES
+MS-DOS and Windows systems use DOS (OEM) codepage for encoding and decoding FAT
+label.
+In Windows systems DOS codepage is global for all running applications and
+cannot be configured explicitly.
+It is set implicitly by option \fILanguage for non-Unicode programs\fP available
+in \fIRegional and Language Options\fP via \fIControl Panel\fP.
+Default DOS codepage for fatlabel is 850.
+See following mapping table between DOS codepage and Language for non-Unicode
+programs:
+.TS
+tab(:);
+c lx.
+\fBCodepage\fP:\fBLanguage\fP
+437:T{
+English (India), English (Malaysia), English (Republic of the Philippines),
+English (Singapore), English (South Africa), English (United States),
+English (Zimbabwe), Filipino, Hausa, Igbo, Inuktitut, Kinyarwanda, Kiswahili,
+Yoruba
+T}
+720:Arabic, Dari, Persian, Urdu, Uyghur
+737:Greek
+775:Estonian, Latvian, Lithuanian
+850:T{
+Afrikaans, Alsatian, Basque, Breton, Catalan, Corsican, Danish, Dutch,
+English (Australia), English (Belize), English (Canada), English (Caribbean),
+English (Ireland), English (Jamaica), English (New Zealand),
+English (Trinidad and Tobago), English (United Kingdom), Faroese, Finnish,
+French, Frisian, Galician, German, Greenlandic, Icelandic, Indonesian, Irish,
+isiXhosa, isiZulu, Italian, K'iche, Lower Sorbian, Luxembourgish, Malay,
+Mapudungun, Mohawk, Norwegian, Occitan, Portuguese, Quechua, Romansh, Sami,
+Scottish Gaelic, Sesotho sa Leboa, Setswana, Spanish, Swedish, Tamazight,
+Upper Sorbian, Welsh, Wolof
+T}
+852:T{
+Albanian, Bosnian (Latin), Croatian, Czech, Hungarian, Polish, Romanian,
+Serbian (Latin), Slovak, Slovenian, Turkmen
+T}
+855:Bosnian (Cyrillic), Serbian (Cyrillic)
+857:Azeri (Latin), Turkish, Uzbek (Latin)
+862:Hebrew
+866:T{
+Azeri (Cyrillic), Bashkir, Belarusian, Bulgarian, Kyrgyz, Macedonian, Mongolian,
+Russian, Tajik, Tatar, Ukrainian, Uzbek (Cyrillic), Yakut
+T}
+874:Thai
+932:Japanese
+936:Chinese (Simplified)
+949:Korean
+950:Chinese (Traditional)
+1258:Vietnamese
+.TE
 .\" ----------------------------------------------------------------------------
 .SH SEE ALSO
-\fBfsck.fat\fR(8)
-.br
-\fBmkfs.fat\fR(8)
+.BR fsck.fat (8),
+.BR mkfs.fat (8)
 .\" ----------------------------------------------------------------------------
 .SH HOMEPAGE
-The home for the \fBdosfstools\fR project is its
+The home for the \fBdosfstools\fP project is its
 .UR https://github.com/dosfstools/dosfstools
 GitHub project page
 .UE .
 .\" ----------------------------------------------------------------------------
 .SH AUTHORS
-\fBdosfstools\fR were written by
+\fBdosfstools\fP were written by
 .MT werner.almesberger@\:lrc.di.epfl.ch
 Werner Almesberger
 .ME ,
@@ -59,7 +162,11 @@ Werner Almesberger
 Roman Hodek
 .ME ,
 and others.
-The current maintainer is
+Current maintainers are
 .MT aeb@\:debian.org
 Andreas Bombe
+.ME
+and
+.MT pali.rohar@\:gmail.com
+Pali Rohár
 .ME .

@@ -3,6 +3,7 @@
    Copyright (C) 1993 Werner Almesberger <werner.almesberger@lrc.di.epfl.ch>
    Copyright (C) 1998 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
    Copyright (C) 2008-2014 Daniel Baumann <mail@daniel-baumann.ch>
+   Copyright (C) 2020 Pali Rohár <pali.rohar@gmail.com>
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,13 +38,13 @@
 
 FDSC *fp_root = NULL;
 
-static void put_char(char **p, unsigned char c)
+static void put_char(char **p, unsigned char c, unsigned int out_size)
 {
-    if (dos_char_to_printable(p, c))
+    if (dos_char_to_printable(p, c, out_size))
 	return;
-    if ((c >= ' ' && c < 0x7f) || c >= 0xa0)
+    if (out_size >= 1 && c >= ' ' && c < 0x7f)
 	*(*p)++ = c;
-    else {
+    else if (out_size >= 4) {
 	*(*p)++ = '\\';
 	*(*p)++ = '0' + (c >> 6);
 	*(*p)++ = '0' + ((c >> 3) & 7);
@@ -61,16 +62,22 @@ static void put_char(char **p, unsigned char c)
  */
 char *file_name(unsigned char *fixed)
 {
-    static char path[MSDOS_NAME * 4 + 2];
+    static char path[256];
     char *p;
     int i, j;
 
     p = path;
-    for (i = j = 0; i < 8; i++)
+    i = j = 0;
+    if (fixed[0] == 0x05) {
+        put_char(&p, 0xe5, path + sizeof(path) - 1 - p);
+        ++i;
+        ++j;
+    }
+    for (; i < 8; i++)
 	if (fixed[i] != ' ') {
 	    while (j++ < i)
 		*p++ = ' ';
-	    put_char(&p, fixed[i]);
+	    put_char(&p, fixed[i], path + sizeof(path) - 1 - p);
 	}
     if (strncmp((const char *)(fixed + 8), "   ", 3)) {
 	*p++ = '.';
@@ -78,7 +85,7 @@ char *file_name(unsigned char *fixed)
 	    if (fixed[i + 8] != ' ') {
 		while (j++ < i)
 		    *p++ = ' ';
-		put_char(&p, fixed[i + 8]);
+		put_char(&p, fixed[i + 8], path + sizeof(path) - 1 - p);
 	    }
     }
     *p = 0;
@@ -126,7 +133,10 @@ int file_cvt(unsigned char *name, unsigned char *fixed)
 	if (islower(c))
 	    c = toupper(c);
 	if (size) {
-	    *fixed++ = c;
+	    if (size == 8 && c == 0xE5)
+		*fixed++ = 0x05;
+	    else
+		*fixed++ = c;
 	    size--;
 	}
 	name++;

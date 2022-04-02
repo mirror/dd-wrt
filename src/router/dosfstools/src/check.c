@@ -4,6 +4,7 @@
    Copyright (C) 1998 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
    Copyright (C) 2008-2014 Daniel Baumann <mail@daniel-baumann.ch>
    Copyright (C) 2015 Andreas Bombe <aeb@debian.org>
+   Copyright (C) 2017-2021 Pali Rohár <pali.rohar@gmail.com>
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +30,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
+#include <ctype.h>
+#include <wctype.h>
 
 #include "common.h"
 #include "fsck.fat.h"
@@ -37,6 +41,8 @@
 #include "file.h"
 #include "lfn.h"
 #include "check.h"
+#include "boot.h"
+#include "charconv.h"
 
 
 /* the longest path on the filesystem that can be handled by path_name() */
@@ -47,7 +53,7 @@ static DOS_FILE *root;
 /* get start field of a dir entry */
 #define FSTART(p,fs) \
   ((uint32_t)le16toh(p->dir_ent.start) | \
-   (fs->fat_bits == 32 ? le16toh(p->dir_ent.starthi) << 16 : 0))
+   (fs->fat_bits == 32 ? (uint32_t)le16toh(p->dir_ent.starthi) << 16 : 0))
 
 #define MODIFY(p,i,v)					\
   do {							\
@@ -79,132 +85,6 @@ static DOS_FILE *root;
     }									\
   } while(0)
 
-off_t alloc_rootdir_entry(DOS_FS * fs, DIR_ENT * de, const char *pattern, int gen_name)
-{
-    static int curr_num = 0;
-    off_t offset;
-
-    if (fs->root_cluster) {
-	DIR_ENT d2;
-	int i = 0, got = 0;
-	uint32_t clu_num, prev = 0;
-	off_t offset2;
-
-	clu_num = fs->root_cluster;
-	offset = cluster_start(fs, clu_num);
-	while (clu_num > 0 && clu_num != -1) {
-	    fs_read(offset, sizeof(DIR_ENT), &d2);
-	    if (IS_FREE(d2.name) && d2.attr != VFAT_LN_ATTR) {
-		got = 1;
-		break;
-	    }
-	    i += sizeof(DIR_ENT);
-	    offset += sizeof(DIR_ENT);
-	    if ((i % fs->cluster_size) == 0) {
-		prev = clu_num;
-		if ((clu_num = next_cluster(fs, clu_num)) == 0 || clu_num == -1)
-		    break;
-		offset = cluster_start(fs, clu_num);
-	    }
-	}
-	if (!got) {
-	    /* no free slot, need to extend root dir: alloc next free cluster
-	     * after previous one */
-	    if (!prev)
-		die("Root directory has no cluster allocated!");
-	    for (clu_num = prev + 1; clu_num != prev; clu_num++) {
-		FAT_ENTRY entry;
-
-		if (clu_num >= fs->data_clusters + 2)
-		    clu_num = 2;
-		get_fat(&entry, fs->fat, clu_num, fs);
-		if (!entry.value)
-		    break;
-	    }
-	    if (clu_num == prev)
-		die("Root directory full and no free cluster");
-	    set_fat(fs, prev, clu_num);
-	    set_fat(fs, clu_num, -1);
-	    set_owner(fs, clu_num, get_owner(fs, fs->root_cluster));
-	    /* clear new cluster */
-	    memset(&d2, 0, sizeof(d2));
-	    offset = cluster_start(fs, clu_num);
-	    for (i = 0; i < fs->cluster_size; i += sizeof(DIR_ENT))
-		fs_write(offset + i, sizeof(d2), &d2);
-	}
-	memset(de, 0, sizeof(DIR_ENT));
-	if (gen_name) {
-	    while (1) {
-		char expanded[12];
-		sprintf(expanded, pattern, curr_num);
-		memcpy(de->name, expanded, MSDOS_NAME);
-		clu_num = fs->root_cluster;
-		i = 0;
-		offset2 = cluster_start(fs, clu_num);
-		while (clu_num > 0 && clu_num != -1) {
-		    fs_read(offset2, sizeof(DIR_ENT), &d2);
-		    if (offset2 != offset &&
-			!strncmp((const char *)d2.name, (const char *)de->name,
-				 MSDOS_NAME))
-			break;
-		    i += sizeof(DIR_ENT);
-		    offset2 += sizeof(DIR_ENT);
-		    if ((i % fs->cluster_size) == 0) {
-			if ((clu_num = next_cluster(fs, clu_num)) == 0 ||
-			    clu_num == -1)
-			    break;
-			offset2 = cluster_start(fs, clu_num);
-		    }
-		}
-		if (clu_num == 0 || clu_num == -1)
-		    break;
-		if (++curr_num >= 10000)
-		    die("Unable to create unique name");
-	    }
-	} else {
-	    memcpy(de->name, pattern, MSDOS_NAME);
-	}
-    } else {
-	DIR_ENT *root;
-	int next_free = 0, scan;
-
-	root = alloc(fs->root_entries * sizeof(DIR_ENT));
-	fs_read(fs->root_start, fs->root_entries * sizeof(DIR_ENT), root);
-
-	while (next_free < fs->root_entries)
-	    if (IS_FREE(root[next_free].name) &&
-		root[next_free].attr != VFAT_LN_ATTR)
-		break;
-	    else
-		next_free++;
-	if (next_free == fs->root_entries)
-	    die("Root directory is full.");
-	offset = fs->root_start + next_free * sizeof(DIR_ENT);
-	memset(de, 0, sizeof(DIR_ENT));
-	if (gen_name) {
-	    while (1) {
-		char expanded[12];
-		sprintf(expanded, pattern, curr_num);
-		memcpy(de->name, expanded, MSDOS_NAME);
-		for (scan = 0; scan < fs->root_entries; scan++)
-		    if (scan != next_free &&
-			!strncmp((const char *)root[scan].name,
-				 (const char *)de->name, MSDOS_NAME))
-			break;
-		if (scan == fs->root_entries)
-		    break;
-		if (++curr_num >= 10000)
-		    die("Unable to create unique name");
-	    }
-	} else {
-	    memcpy(de->name, pattern, MSDOS_NAME);
-	}
-	free(root);
-    }
-    ++n_files;
-    return offset;
-}
-
 /**
  * Construct a full path (starting with '/') for the specified dentry,
  * relative to the partition. All components are "long" names where possible.
@@ -234,57 +114,43 @@ static char *path_name(DOS_FILE * file)
     return path;
 }
 
-static const int day_n[] =
-    {   0,  31,  59,  90, 120, 151, 181, 212, 243, 273, 304, 334, 0, 0, 0, 0 };
-/*    Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec              */
-
-/* Convert a MS-DOS time/date pair to a UNIX date (seconds since 1 1 70). */
-
-static time_t date_dos2unix(unsigned short time, unsigned short date)
-{
-    int month, year;
-    time_t secs;
-
-    month = ((date >> 5) & 15) - 1;
-    if (month < 0) {
-	/* make sure that nothing bad happens if the month bits were zero */
-	month = 0;
-    }
-    year = date >> 9;
-    secs =
-	(time & 31) * 2 + 60 * ((time >> 5) & 63) + (time >> 11) * 3600 +
-	86400 * ((date & 31) - 1 + day_n[month] + (year / 4) + year * 365 -
-		 ((year & 3) == 0 && month < 2 ? 1 : 0) + 3653);
-    /* days since 1.1.70 plus 80's leap day */
-    return secs;
-}
+static const char *month_str[] =
+    { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
 static char *file_stat(DOS_FILE * file)
 {
     static char temp[100];
-    struct tm *tm;
-    char tmp[100];
-    time_t date;
+    unsigned int hours, minutes, secs, day, month, year;
+    unsigned short time, date;
 
-    date =
-	date_dos2unix(le16toh(file->dir_ent.time), le16toh(file->dir_ent.date));
-    tm = localtime(&date);
-    strftime(tmp, 99, "%H:%M:%S %b %d %Y", tm);
-    sprintf(temp, "  Size %u bytes, date %s", le32toh(file->dir_ent.size), tmp);
+    time = le16toh(file->dir_ent.time);
+    date = le16toh(file->dir_ent.date);
+    year = 1980 + (date >> 9);
+    month = ((date >> 5) & 15);
+    if (month < 1) month = 1;
+    else if (month > 12) month = 12;
+    day = (date & 31);
+    if (day < 1) day = 1;
+    hours = (time >> 11);
+    if (hours > 23) hours = 23;
+    minutes = ((time >> 5) & 63);
+    if (minutes > 59) minutes = 59;
+    secs = (time & 31) * 2;
+    if (secs > 59) secs = 59;
+    sprintf(temp, "  Size %u bytes, date %02u:%02u:%02u %s %02u %4u",
+        le32toh(file->dir_ent.size), hours, minutes, secs, month_str[month-1], day, year);
     return temp;
 }
 
 static int bad_name(DOS_FILE * file)
 {
     int i, spc, suspicious = 0;
-    const char *bad_chars = atari_format ? "*?\\/:" : "*?<>|\"\\/:";
+    const char *bad_chars = atari_format ? "*?\\/:" : "*?<>|\"\\/:.";
     const unsigned char *name = file->dir_ent.name;
     const unsigned char *ext = name + 8;
 
-    /* Do not complain about (and auto-correct) the extended attribute files
-     * of OS/2. */
-    if (strncmp((const char *)name, "EA DATA  SF", 11) == 0 ||
-	strncmp((const char *)name, "WP ROOT  SF", 11) == 0)
+    /* do not check synthetic FAT32 root entry */
+    if (!file->offset)
 	return 0;
 
     /* check if we have neither a long filename nor a short name */
@@ -298,7 +164,7 @@ static int bad_name(DOS_FILE * file)
 	return 0;
 
     for (i = 0; i < MSDOS_NAME; i++) {
-	if (name[i] < ' ' || name[i] == 0x7f)
+	if ((name[i] < ' ' && !(i == 0 && name[0] == 0x05)) || name[i] == 0x7f)
 	    return 1;
 	if (name[i] > 0x7f)
 	    ++suspicious;
@@ -306,24 +172,29 @@ static int bad_name(DOS_FILE * file)
 	    return 1;
     }
 
-    spc = 0;
-    for (i = 0; i < 8; i++) {
-	if (name[i] == ' ')
-	    spc = 1;
-	else if (spc)
-	    /* non-space after a space not allowed, space terminates the name
-	     * part */
-	    return 1;
-    }
+    if (name[0] == ' ')
+	return 1;
 
-    spc = 0;
-    for (i = 0; i < 3; i++) {
-	if (ext[i] == ' ')
-	    spc = 1;
-	else if (spc)
-	    /* non-space after a space not allowed, space terminates the ext
-	     * part */
-	    return 1;
+    if (no_spaces_in_sfns) {
+	spc = 0;
+	for (i = 0; i < 8; i++) {
+	    if (name[i] == ' ')
+		spc = 1;
+	    else if (spc)
+		/* non-space after a space not allowed, space terminates the name
+		 * part */
+		return 1;
+	}
+
+	spc = 0;
+	for (i = 0; i < 3; i++) {
+	    if (ext[i] == ' ')
+		spc = 1;
+	    else if (spc)
+		/* non-space after a space not allowed, space terminates the ext
+		 * part */
+		return 1;
+	}
     }
 
     /* Under GEMDOS, chars >= 128 are never allowed. */
@@ -355,14 +226,11 @@ static void lfn_remove(off_t from, off_t to)
 
 static void drop_file(DOS_FS * fs, DOS_FILE * file)
 {
-    uint32_t cluster;
+    (void) fs;
 
     MODIFY(file, name[0], DELETED_FLAG);
     if (file->lfn)
 	lfn_remove(file->lfn_offset, file->offset);
-    for (cluster = FSTART(file, fs); cluster > 0 && cluster <
-	 fs->data_clusters + 2; cluster = next_cluster(fs, cluster))
-	set_owner(fs, cluster, NULL);
     --n_files;
 }
 
@@ -389,8 +257,10 @@ static void auto_rename(DOS_FILE * file)
     DOS_FILE *first, *walk;
     uint32_t number;
 
-    if (!file->offset)
+    if (!file->offset) {
+	printf("Cannot rename FAT32 root dir\n");
 	return;			/* cannot rename FAT32 root dir */
+    }
     first = file->parent ? file->parent->first : root;
     number = 0;
     while (1) {
@@ -414,9 +284,10 @@ static void auto_rename(DOS_FILE * file)
 	    } else {
 		fs_write(file->offset, MSDOS_NAME, file->dir_ent.name);
 	    }
-	    if (file->lfn)
-		lfn_fix_checksum(file->lfn_offset, file->offset,
-				 (const char *)file->dir_ent.name);
+	    if (file->lfn) {
+		lfn_remove(file->lfn_offset, file->offset);
+		file->lfn = NULL;
+	    }
 	    return;
 	}
 	number++;
@@ -437,9 +308,7 @@ static void rename_file(DOS_FILE * file)
 	return;			/* cannot rename FAT32 root dir */
     }
     while (1) {
-	printf("New name: ");
-	fflush(stdout);
-	if (fgets((char *)name, 45, stdin)) {
+	if (get_line("New name", (char *)name, 45)) {
 	    if ((here = (unsigned char *)strchr((const char *)name, '\n')))
 		*here = 0;
 	    for (walk = (unsigned char *)strrchr((const char *)name, 0);
@@ -457,51 +326,124 @@ static void rename_file(DOS_FILE * file)
 		} else {
 		    fs_write(file->offset, MSDOS_NAME, file->dir_ent.name);
 		}
-		if (file->lfn)
-		    lfn_fix_checksum(file->lfn_offset, file->offset,
-				     (const char *)file->dir_ent.name);
+		if (file->lfn) {
+		    lfn_remove(file->lfn_offset, file->offset);
+		    file->lfn = NULL;
+		}
 		return;
 	    }
 	}
     }
 }
 
-static int handle_dot(DOS_FS * fs, DOS_FILE * file, int dots)
+static uint32_t scan_free_entry(DOS_FS * fs, DOS_FILE * this)
 {
-    const char *name;
+    uint32_t clu_num, offset;
+    int i;
+    DIR_ENT de;
 
-    name =
-	strncmp((const char *)file->dir_ent.name, MSDOS_DOT,
-		MSDOS_NAME) ? ".." : ".";
-    if (!(file->dir_ent.attr & ATTR_DIR)) {
-	printf("%s\n  Is a non-directory.\n", path_name(file));
-	if (interactive)
-	    printf("1) Drop it\n2) Auto-rename\n3) Rename\n"
-		   "4) Convert to directory\n");
-	else
-	    printf("  Auto-renaming it.\n");
-	switch (interactive ? get_key("1234", "?") : '2') {
-	case '1':
-	    drop_file(fs, file);
-	    return 1;
-	case '2':
-	    auto_rename(file);
-	    printf("  Renamed to %s\n", file_name(file->dir_ent.name));
-	    return 0;
-	case '3':
-	    rename_file(file);
-	    return 0;
-	case '4':
-	    MODIFY(file, size, htole32(0));
-	    MODIFY(file, attr, file->dir_ent.attr | ATTR_DIR);
-	    break;
+    i = 2 * sizeof(DIR_ENT); /* Skip '.' and '..' slots */
+    clu_num = FSTART(this, fs);
+    while (clu_num > 0 && clu_num != -1) {
+	offset = cluster_start(fs, clu_num) + (i % fs->cluster_size);
+	fs_read(offset, sizeof(DIR_ENT), &de);
+	if (IS_FREE(de.name))
+	    return offset;
+	i += sizeof(DIR_ENT);
+	if (!(i % fs->cluster_size))
+	    if ((clu_num = next_cluster(fs, clu_num)) == 0 || clu_num == -1)
+		break;
+    }
+
+    return 0;
+}
+
+static int handle_dot(DOS_FS * fs, DOS_FILE * file, int dotdot)
+{
+    const char *name, *ent;
+    uint32_t new_offset, start;
+
+    if (dotdot) {
+	name = "..";
+	ent = MSDOS_DOTDOT;
+	if (!file->parent->parent) {
+	    start = 0;
+	} else {
+	    start = FSTART(file->parent->parent, fs);
+	    if (start == fs->root_cluster)
+		start = 0;
+	}
+    } else {
+	name = ".";
+	ent = MSDOS_DOT;
+	start = FSTART(file->parent, fs);
+    }
+
+    if (!(file->dir_ent.attr & ATTR_DIR) || (FSTART(file, fs) != start) ||
+	strncmp((const char *)(file->dir_ent.name), ent, MSDOS_NAME)) {
+
+	if (IS_FREE(file->dir_ent.name)) {
+	    printf("%s\n  Expected a valid '%s' entry in the %s slot, found free entry.\n",
+		path_name(file->parent), name, dotdot ? "second" : "first");
+	    switch (get_choice(1, "  Creating.",
+			       2,
+			       1, "Create entry",
+			       2, "Drop parent")) {
+	    case 1:
+		goto conjure;
+	    case 2:
+		drop_file(fs, file->parent);
+		return 1;
+	    }
+	}
+
+	if (!strncmp((const char *)(file->dir_ent.name), ent, MSDOS_NAME)) {
+	    printf("%s\n  Invalid '%s' entry in the %s slot. Fixing.\n",
+		path_name(file->parent), name, dotdot ? "second" : "first");
+	    MODIFY_START(file, start, fs);
+	    MODIFY(file, attr, ATTR_DIR);
+	} else {
+	    printf("%s\n  Expected a valid '%s' entry in this slot.\n",
+		   path_name(file), name);
+	    switch (get_choice(3, "  Moving entry down.",
+			       3,
+			       1, "Drop entry",
+			       2, "Drop parent",
+			       3, "Move entry down")) {
+	    case 1:
+		drop_file(fs, file);
+		goto conjure;
+	    case 2:
+		drop_file(fs, file->parent);
+		return 1;
+	    case 3:
+		new_offset = scan_free_entry(fs, file->parent);
+		if (!new_offset) {
+		    printf("No free entry found.\n");
+		    return 0;
+		}
+
+		fs_write(new_offset, sizeof(file->dir_ent), &file->dir_ent);
+		goto conjure;
+	    }
 	}
     }
-    if (!dots) {
-	printf("Root contains directory \"%s\". Dropping it.\n", name);
-	drop_file(fs, file);
-	return 1;
+    if (file->dir_ent.lcase & FAT_NO_83NAME) {
+	/* Some versions of mtools write these directory entries with random data in
+	   this field. */
+	printf("%s\n  Is a dot with no 8.3 name flag set, clearing.\n", path_name(file));
+	file->dir_ent.lcase &= ~FAT_NO_83NAME;
+	MODIFY(file, lcase, file->dir_ent.lcase);
     }
+
+    return 0;
+
+conjure:
+    memset(&file->dir_ent, 0, sizeof(DIR_ENT));
+    memcpy(file->dir_ent.name, ent, MSDOS_NAME);
+    fs_write(file->offset, sizeof(file->dir_ent), &file->dir_ent);
+    MODIFY_START(file, start, fs);
+    MODIFY(file, attr, ATTR_DIR);
     return 0;
 }
 
@@ -509,7 +451,10 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 {
     DOS_FILE *owner;
     int restart;
-    uint32_t expect, curr, this, clusters, prev, walk, clusters2;
+    uint32_t parent, grandp, curr, this, clusters, prev, walk, clusters2;
+
+    if (IS_FREE(file->dir_ent.name))
+	return 0;
 
     if (file->dir_ent.attr & ATTR_DIR) {
 	if (le32toh(file->dir_ent.size)) {
@@ -517,36 +462,32 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 		   path_name(file));
 	    MODIFY(file, size, htole32(0));
 	}
-	if (file->parent
-	    && !strncmp((const char *)file->dir_ent.name, MSDOS_DOT,
-			MSDOS_NAME)) {
-	    expect = FSTART(file->parent, fs);
-	    if (FSTART(file, fs) != expect) {
-		printf("%s\n  Start (%lu) does not point to parent (%lu)\n",
-		       path_name(file), (unsigned long)FSTART(file, fs), (long)expect);
-		MODIFY_START(file, expect, fs);
-	    }
-	    return 0;
-	}
-	if (file->parent
-	    && !strncmp((const char *)file->dir_ent.name, MSDOS_DOTDOT,
-			MSDOS_NAME)) {
-	    expect =
-		file->parent->parent ? FSTART(file->parent->parent, fs) : 0;
-	    if (fs->root_cluster && expect == fs->root_cluster)
-		expect = 0;
-	    if (FSTART(file, fs) != expect) {
-		printf("%s\n  Start (%lu) does not point to .. (%lu)\n",
-		       path_name(file), (unsigned long)FSTART(file, fs), (unsigned long)expect);
-		MODIFY_START(file, expect, fs);
-	    }
-	    return 0;
-	}
 	if (FSTART(file, fs) == 0) {
 	    printf("%s\n Start does point to root directory. Deleting dir. \n",
 		   path_name(file));
 	    MODIFY(file, name[0], DELETED_FLAG);
 	    return 0;
+	}
+	if (file->parent) {
+	    parent = FSTART(file->parent, fs);
+	    grandp = file->parent->parent ? FSTART(file->parent->parent, fs) : 0;
+	    if (fs->root_cluster && grandp == fs->root_cluster)
+		grandp = 0;
+
+	    if (FSTART(file, fs) == parent) {
+		printf("%s\n Start does point to containing directory. Deleting entry.\n",
+		       path_name(file));
+		MODIFY(file, name[0], DELETED_FLAG);
+		MODIFY_START(file, 0, fs);
+		return 0;
+	    }
+	    if (FSTART(file, fs) == grandp) {
+		printf("%s\n Start does point to containing directory's parent. Deleting entry.\n",
+		       path_name(file));
+		MODIFY(file, name[0], DELETED_FLAG);
+		MODIFY_START(file, 0, fs);
+		return 0;
+	    }
 	}
     }
     if (FSTART(file, fs) == 1) {
@@ -585,12 +526,12 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 	    break;
 	}
 	if (!(file->dir_ent.attr & ATTR_DIR) && le32toh(file->dir_ent.size) <=
-	    (uint64_t)clusters * fs->cluster_size) {
+	    clusters * fs->cluster_size) {
 	    printf
-		("%s\n  File size is %u bytes, cluster chain length is > %llu "
+		("%s\n  File size is %u bytes, cluster chain length is > %u "
 		 "bytes.\n  Truncating file to %u bytes.\n", path_name(file),
 		 le32toh(file->dir_ent.size),
-		 (unsigned long long)clusters * fs->cluster_size,
+		 (unsigned)clusters * fs->cluster_size,
 		 le32toh(file->dir_ent.size));
 	    truncate_file(fs, file, clusters);
 	    break;
@@ -604,31 +545,49 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 		 next_cluster(fs, walk))
 		if (walk == curr)
 		    break;
-		else
+		else {
+		    if ((unsigned long long)clusters2 * fs->cluster_size >= UINT32_MAX)
+		        die("Internal error: File size is larger than 2^32-1");
 		    clusters2++;
+		}
 	    restart = file->dir_ent.attr & ATTR_DIR;
 	    if (!owner->offset) {
-		printf("  Truncating second to %llu bytes because first "
+		printf("  Truncating second to %u bytes because first "
 		       "is FAT32 root dir.\n",
-		       (unsigned long long)clusters * fs->cluster_size);
+		       (unsigned)clusters * fs->cluster_size);
 		do_trunc = 2;
 	    } else if (!file->offset) {
-		printf("  Truncating first to %llu bytes because second "
+		printf("  Truncating first to %u bytes because second "
 		       "is FAT32 root dir.\n",
-		       (unsigned long long)clusters2 * fs->cluster_size);
+		       (unsigned)clusters2 * fs->cluster_size);
 		do_trunc = 1;
-	    } else if (interactive)
-		printf("1) Truncate first to %llu bytes%s\n"
-		       "2) Truncate second to %llu bytes\n",
-		       (unsigned long long)clusters2 * fs->cluster_size,
-		       restart ? " and restart" : "",
-		       (unsigned long long)clusters * fs->cluster_size);
-	    else
-		printf("  Truncating second to %llu bytes.\n",
-		       (unsigned long long)clusters * fs->cluster_size);
-	    if (do_trunc != 2
-		&& (do_trunc == 1
-		    || (interactive && get_key("12", "?") == '1'))) {
+	    } else {
+		char *trunc_first_string;
+		char *trunc_second_string;
+		char *noninteractive_string;
+
+		xasprintf(&trunc_first_string,
+			 "Truncate first to %u bytes%s",
+			 (unsigned)clusters2 * fs->cluster_size,
+			 restart ? " and restart" : "");
+		xasprintf(&trunc_second_string,
+			  "Truncate second to %u bytes",
+			  (unsigned)clusters * fs->cluster_size);
+		xasprintf(&noninteractive_string,
+			  "  Truncating second to %u bytes.",
+			  (unsigned)clusters * fs->cluster_size);
+
+		do_trunc = get_choice(2, noninteractive_string,
+				      2,
+				      1, trunc_first_string,
+				      2, trunc_second_string);
+
+		free(trunc_first_string);
+		free(trunc_second_string);
+		free(noninteractive_string);
+	    }
+
+	    if (do_trunc == 1) {
 		prev = 0;
 		clusters = 0;
 		for (this = FSTART(owner, fs); this > 0 && this != -1; this =
@@ -638,9 +597,7 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 			    set_fat(fs, prev, -1);
 			else
 			    MODIFY_START(owner, 0, fs);
-			MODIFY(owner, size,
-			       htole32((uint64_t)clusters *
-				       fs->cluster_size));
+			MODIFY(owner, size, htole32(clusters * fs->cluster_size));
 			if (restart)
 			    return 1;
 			while (this > 0 && this != -1) {
@@ -650,6 +607,8 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 			this = curr;
 			break;
 		    }
+		    if ((unsigned long long)clusters * fs->cluster_size >= UINT32_MAX)
+		        die("Internal error: File size is larger than 2^32-1");
 		    clusters++;
 		    prev = this;
 		}
@@ -665,19 +624,21 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
 	    }
 	}
 	set_owner(fs, curr, file);
+	if ((unsigned long long)clusters * fs->cluster_size >= UINT32_MAX)
+	    die("Internal error: File size is larger than 2^32-1");
 	clusters++;
 	prev = curr;
     }
     if (!(file->dir_ent.attr & ATTR_DIR) && le32toh(file->dir_ent.size) >
-	(uint64_t)clusters * fs->cluster_size) {
+	clusters * fs->cluster_size) {
 	printf
-	    ("%s\n  File size is %u bytes, cluster chain length is %llu bytes."
-	     "\n  Truncating file to %llu bytes.\n", path_name(file),
+	    ("%s\n  File size is %u bytes, cluster chain length is %u bytes."
+	     "\n  Truncating file to %u bytes.\n", path_name(file),
 	     le32toh(file->dir_ent.size),
-	     (unsigned long long)clusters * fs->cluster_size,
-	     (unsigned long long)clusters * fs->cluster_size);
+	     (unsigned)clusters * fs->cluster_size,
+	     (unsigned)clusters * fs->cluster_size);
 	MODIFY(file, size,
-	       htole32((uint64_t)clusters * fs->cluster_size));
+	       htole32(clusters * fs->cluster_size));
     }
     return 0;
 }
@@ -695,7 +656,7 @@ static int check_files(DOS_FS * fs, DOS_FILE * start)
 static int check_dir(DOS_FS * fs, DOS_FILE ** root, int dots)
 {
     DOS_FILE *parent, **walk, **scan;
-    int dot, dotdot, skip, redo;
+    int skip, redo;
     int good, bad;
 
     if (!*root)
@@ -712,55 +673,42 @@ static int check_dir(DOS_FS * fs, DOS_FILE ** root, int dots)
 	       path_name(parent), bad, good + bad);
 	if (!dots)
 	    printf("  Not dropping root directory.\n");
-	else if (!interactive)
-	    printf("  Not dropping it in auto-mode.\n");
-	else if (get_key("yn", "Drop directory ? (y/n)") == 'y') {
+	else if (get_choice(2, "  Not dropping it in auto-mode.",
+			    2,
+			    1, "Drop directory",
+			    2, "Keep directory") == 1) {
 	    truncate_file(fs, parent, 0);
 	    MODIFY(parent, name[0], DELETED_FLAG);
 	    /* buglet: deleted directory stays in the list. */
 	    return 1;
 	}
     }
-    dot = dotdot = redo = 0;
+    redo = 0;
     walk = root;
     while (*walk) {
-	if (!strncmp
-	    ((const char *)((*walk)->dir_ent.name), MSDOS_DOT, MSDOS_NAME)
-	    || !strncmp((const char *)((*walk)->dir_ent.name), MSDOS_DOTDOT,
-			MSDOS_NAME)) {
-	    if (handle_dot(fs, *walk, dots)) {
-		*walk = (*walk)->next;
-		continue;
-	    }
-	    if (!strncmp
-		((const char *)((*walk)->dir_ent.name), MSDOS_DOT, MSDOS_NAME))
-		dot++;
-	    else
-		dotdot++;
-	}
 	if (!((*walk)->dir_ent.attr & ATTR_VOLUME) && bad_name(*walk)) {
 	    puts(path_name(*walk));
 	    printf("  Bad short file name (%s).\n",
 		   file_name((*walk)->dir_ent.name));
-	    if (interactive)
-		printf("1) Drop file\n2) Rename file\n3) Auto-rename\n"
-		       "4) Keep it\n");
-	    else
-		printf("  Auto-renaming it.\n");
-	    switch (interactive ? get_key("1234", "?") : '3') {
-	    case '1':
+	    switch (get_choice(3, "  Auto-renaming it.",
+			       4,
+			       1, "Drop file",
+			       2, "Rename file",
+			       3, "Auto-rename",
+			       4, "Keep it")) {
+	    case 1:
 		drop_file(fs, *walk);
 		walk = &(*walk)->next;
 		continue;
-	    case '2':
+	    case 2:
 		rename_file(*walk);
 		redo = 1;
 		break;
-	    case '3':
+	    case 3:
 		auto_rename(*walk);
 		printf("  Renamed to %s\n", file_name((*walk)->dir_ent.name));
 		break;
-	    case '4':
+	    case 4:
 		break;
 	    }
 	}
@@ -775,39 +723,39 @@ static int check_dir(DOS_FS * fs, DOS_FILE ** root, int dots)
 		    printf("%s\n  Duplicate directory entry.\n  First  %s\n",
 			   path_name(*walk), file_stat(*walk));
 		    printf("  Second %s\n", file_stat(*scan));
-		    if (interactive)
-			printf
-			    ("1) Drop first\n2) Drop second\n3) Rename first\n"
-			     "4) Rename second\n5) Auto-rename first\n"
-			     "6) Auto-rename second\n");
-		    else
-			printf("  Auto-renaming second.\n");
-		    switch (interactive ? get_key("123456", "?") : '6') {
-		    case '1':
+		    switch (get_choice(6, "  Auto-renaming second.",
+				       6,
+				       1, "Drop first",
+				       2, "Drop second",
+				       3, "Rename first",
+				       4, "Rename second",
+				       5, "Auto-rename first",
+				       6, "Auto-rename second")) {
+		    case 1:
 			drop_file(fs, *walk);
 			*walk = (*walk)->next;
 			skip = 1;
 			break;
-		    case '2':
+		    case 2:
 			drop_file(fs, *scan);
 			*scan = (*scan)->next;
 			continue;
-		    case '3':
+		    case 3:
 			rename_file(*walk);
 			printf("  Renamed to %s\n", path_name(*walk));
 			redo = 1;
 			break;
-		    case '4':
+		    case 4:
 			rename_file(*scan);
 			printf("  Renamed to %s\n", path_name(*walk));
 			redo = 1;
 			break;
-		    case '5':
+		    case 5:
 			auto_rename(*walk);
 			printf("  Renamed to %s\n",
 			       file_name((*walk)->dir_ent.name));
 			break;
-		    case '6':
+		    case 6:
 			auto_rename(*scan);
 			printf("  Renamed to %s\n",
 			       file_name((*scan)->dir_ent.name));
@@ -823,15 +771,9 @@ static int check_dir(DOS_FS * fs, DOS_FILE ** root, int dots)
 	    walk = &(*walk)->next;
 	else {
 	    walk = root;
-	    dot = dotdot = redo = 0;
+	    redo = 0;
 	}
     }
-    if (dots && !dot)
-	printf("%s\n  \".\" is missing. Can't fix this yet.\n",
-	       path_name(parent));
-    if (dots && !dotdot)
-	printf("%s\n  \"..\" is missing. Can't fix this yet.\n",
-	       path_name(parent));
     return 0;
 }
 
@@ -1003,10 +945,8 @@ static void add_file(DOS_FS * fs, DOS_FILE *** chain, DOS_FILE * parent,
 	    printf(" (%s)", file_name(new->dir_ent.name));	/* (8.3) */
 	printf("\n");
     }
-    /* Don't include root directory, '.', or '..' in the total file count */
-    if (offset &&
-	strncmp((const char *)de.name, MSDOS_DOT, MSDOS_NAME) != 0 &&
-	strncmp((const char *)de.name, MSDOS_DOTDOT, MSDOS_NAME) != 0)
+    /* Don't include root directory in the total file count */
+    if (offset)
 	++n_files;
     test_file(fs, new, test);	/* Bad cluster check */
 }
@@ -1023,6 +963,27 @@ static int scan_dir(DOS_FS * fs, DOS_FILE * this, FDSC ** cp)
     i = 0;
     clu_num = FSTART(this, fs);
     new_dir();
+    if (clu_num != 0 && clu_num != -1 && this->offset) {
+	DOS_FILE file;
+
+	file.lfn = NULL;
+	file.lfn_offset = 0;
+	file.next = NULL;
+	file.parent = this;
+	file.first = NULL;
+
+	file.offset = cluster_start(fs, clu_num) + (i % fs->cluster_size);
+	fs_read(file.offset, sizeof(DIR_ENT), &file.dir_ent);
+	if (handle_dot(fs, &file, 0))
+	    return 1;
+	i += sizeof(DIR_ENT);
+
+	file.offset = cluster_start(fs, clu_num) + (i % fs->cluster_size);
+	fs_read(file.offset, sizeof(DIR_ENT), &file.dir_ent);
+	if (handle_dot(fs, &file, 1))
+	    return 1;
+	i += sizeof(DIR_ENT);
+    }
     while (clu_num > 0 && clu_num != -1) {
 	add_file(fs, &chain, this,
 		 cluster_start(fs, clu_num) + (i % fs->cluster_size), cp);
@@ -1054,12 +1015,9 @@ static int subdirs(DOS_FS * fs, DOS_FILE * parent, FDSC ** cp)
     DOS_FILE *walk;
 
     for (walk = parent ? parent->first : root; walk; walk = walk->next)
-	if (walk->dir_ent.attr & ATTR_DIR)
-	    if (strncmp((const char *)walk->dir_ent.name, MSDOS_DOT, MSDOS_NAME)
-		&& strncmp((const char *)walk->dir_ent.name, MSDOS_DOTDOT,
-			   MSDOS_NAME))
-		if (scan_dir(fs, walk, file_cd(cp, (char *)walk->dir_ent.name)))
-		    return 1;
+	if (!IS_FREE(walk->dir_ent.name) && (walk->dir_ent.attr & ATTR_DIR))
+	    if (scan_dir(fs, walk, file_cd(cp, (char *)walk->dir_ent.name)))
+		return 1;
     return 0;
 }
 
@@ -1091,4 +1049,294 @@ int scan_root(DOS_FS * fs)
     if (check_files(fs, root))
 	return 1;
     return subdirs(fs, NULL, &fp_root);
+}
+
+static char print_fat_dirty_state(void)
+{
+    printf("Dirty bit is set. Fs was not properly unmounted and"
+	   " some data may be corrupt.\n");
+
+    return get_choice(1, " Automatically removing dirty bit.",
+		      2,
+		      1, "Remove dirty bit",
+		      2, "No action");
+}
+
+void check_dirty_bits(DOS_FS * fs)
+{
+    if (fs->fat_bits == 32) {
+	struct boot_sector b32;
+	FAT_ENTRY fat32_flags;
+
+	get_fat(&fat32_flags, fs->fat, 1, fs);
+	fs_read(0, sizeof(b32), &b32);
+
+	if ((b32.boot_flags & FAT_STATE_DIRTY) || !(fat32_flags.value & FAT32_FLAG_CLEAN_SHUTDOWN)) {
+	    if (print_fat_dirty_state() == 1) {
+		if (b32.boot_flags & FAT_STATE_DIRTY) {
+		    b32.boot_flags &= ~FAT_STATE_DIRTY;
+		    fs_write(0, sizeof(b32), &b32);
+		}
+		if (!(fat32_flags.value & FAT32_FLAG_CLEAN_SHUTDOWN)) {
+		    uint32_t *new_flags_ptr = (uint32_t *)(fs->fat + 4);
+		    *new_flags_ptr = htole32(fat32_flags.value | FAT32_FLAG_CLEAN_SHUTDOWN | (fat32_flags.reserved << 28));
+		    fs_write(fs->fat_start + 4, 4, new_flags_ptr);
+		    if (fs->nfats > 1)
+			fs_write(fs->fat_start + 4 + fs->fat_size, 4, new_flags_ptr);
+		}
+	    }
+	}
+    } else {
+	struct boot_sector_16 b16;
+	FAT_ENTRY fat16_flags;
+	int fat16_is_dirty = 0;
+
+	fs_read(0, sizeof(b16), &b16);
+
+	if (fs->fat_bits == 16) {
+	    get_fat(&fat16_flags, fs->fat, 1, fs);
+	    fat16_is_dirty = !(fat16_flags.value & FAT16_FLAG_CLEAN_SHUTDOWN);
+	}
+
+	if ((b16.boot_flags & FAT_STATE_DIRTY) || fat16_is_dirty) {
+	    if (print_fat_dirty_state() == 1) {
+		if (b16.boot_flags & FAT_STATE_DIRTY) {
+		    b16.boot_flags &= ~FAT_STATE_DIRTY;
+		    fs_write(0, sizeof(b16), &b16);
+		}
+		if (fat16_is_dirty) {
+		    uint16_t *new_flags_ptr = (uint16_t *)(fs->fat + 2);
+		    *new_flags_ptr = htole16(fat16_flags.value | FAT16_FLAG_CLEAN_SHUTDOWN);
+		    fs_write(fs->fat_start + 2, 2, new_flags_ptr);
+		    if (fs->nfats > 1)
+			fs_write(fs->fat_start + 2 + fs->fat_size, 2, new_flags_ptr);
+		}
+	    }
+	}
+    }
+}
+
+static void get_new_label(char doslabel[12])
+{
+    char newlabel[256];
+    size_t len;
+    char *p;
+    int ret;
+    int i;
+
+    while (1) {
+        if (get_line("New label", newlabel, sizeof(newlabel))) {
+            if ((p = strchr(newlabel, '\n')))
+                *p = 0;
+
+            len = mbstowcs(NULL, newlabel, 0);
+            if (len != (size_t)-1 && len > 11) {
+                printf("Label can be no longer than 11 characters\n");
+                continue;
+            }
+
+            if (!local_string_to_dos_string(doslabel, newlabel, 12)) {
+                printf("Error when processing label\n");
+                continue;
+            }
+
+            for (i = strlen(doslabel); i < 11; ++i)
+                doslabel[i] = ' ';
+            doslabel[11] = 0;
+
+            ret = validate_volume_label(doslabel);
+            if ((ret && only_uppercase_label) || (ret & ~0x1)) {
+                printf("New label is invalid\n");
+                continue;
+            } else if (ret & 0x1) {
+                printf("Warning: lowercase labels might not work properly on some systems\n");
+            }
+
+            break;
+        }
+    }
+}
+
+static int check_boot_label(DOS_FS *fs)
+{
+    char doslabel[12];
+    wchar_t wlabel[12];
+    int ret;
+    int i;
+
+    ret = validate_volume_label(fs->label);
+    if (ret & ~0x1) {
+        printf("Label '%s' stored in boot sector is not valid.\n", pretty_label(fs->label));
+        switch (get_choice(1, "  Auto-removing label from boot sector.",
+                           2,
+                           1, "Remove invalid label from boot sector",
+                           2, "Enter new label")) {
+        case 1:
+            write_boot_label(fs, "NO NAME    ");
+            memcpy(fs->label, "NO NAME    ", 11);
+            return 1;
+        case 2:
+            get_new_label(doslabel);
+            write_boot_label(fs, doslabel);
+            memcpy(fs->label, doslabel, 11);
+            return 1;
+        }
+    } else if ((ret & 0x1) && only_uppercase_label) {
+        printf("Label '%s' stored in boot sector contains lowercase characters.\n", pretty_label(fs->label));
+        switch (get_choice(1, "  Auto-changing lowercase characters to uppercase",
+                           3,
+                           1, "Change lowercase characters to uppercase",
+                           2, "Remove invalid label",
+                           2, "Set new label")) {
+        case 1:
+            if (!dos_string_to_wchar_string(wlabel, fs->label, sizeof(wlabel)))
+                die("Cannot change lowercase characters to uppercase.");
+            for (i = 0; i < 11; ++i)
+                wlabel[i] = towupper(wlabel[i]);
+            if (!wchar_string_to_dos_string(doslabel, wlabel, sizeof(doslabel)))
+                die("Cannot change lowercase characters to uppercase.");
+            write_boot_label(fs, doslabel);
+            memcpy(fs->label, doslabel, 11);
+            return 1;
+        case 2:
+            write_boot_label(fs, "NO NAME    ");
+            memcpy(fs->label, "NO NAME    ", 11);
+            return 1;
+        case 3:
+            get_new_label(doslabel);
+            write_boot_label(fs, doslabel);
+            memcpy(fs->label, doslabel, 11);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+void check_label(DOS_FS *fs)
+{
+    DIR_ENT de;
+    off_t offset;
+    char buffer[256];
+    char doslabel[12];
+    wchar_t wlabel[12];
+    int ret;
+    int i;
+
+    offset = find_volume_de(fs, &de);
+
+    if (offset == 0 && memcmp(fs->label, "NO NAME    ", 11) != 0)
+        check_boot_label(fs);
+
+    if (offset == 0 && memcmp(fs->label, "NO NAME    ", 11) != 0) {
+        printf("Label in boot sector is '%s', but there is no volume label in root directory.\n", pretty_label(fs->label));
+        switch (get_choice(1, "  Auto-removing label from boot sector.",
+                           2,
+                           1, "Remove label from boot sector",
+                           2, "Copy label from boot sector to root directory")) {
+        case 1:
+            write_boot_label(fs, "NO NAME    ");
+            memcpy(fs->label, "NO NAME    ", 11);
+            break;
+        case 2:
+            write_volume_label(fs, fs->label);
+            offset = find_volume_de(fs, &de);
+            break;
+        }
+    }
+
+    if (offset != 0) {
+        memcpy(doslabel, de.name, 11);
+        if (doslabel[0] == 0x05)
+            doslabel[0] = 0xe5;
+        ret = validate_volume_label(doslabel);
+        if (ret & ~0x1) {
+            printf("Volume label '%s' stored in root directory is not valid.\n", pretty_label(doslabel));
+            switch (get_choice(1, "  Auto-removing label.",
+                               2,
+                               1, "Remove invalid label",
+                               2, "Set new label")) {
+            case 1:
+                remove_label(fs);
+                memcpy(fs->label, "NO NAME    ", 11);
+                offset = 0;
+                break;
+            case 2:
+                get_new_label(doslabel);
+                write_label(fs, doslabel);
+                memcpy(fs->label, doslabel, 11);
+                break;
+            }
+        } else if ((ret & 0x1) && only_uppercase_label) {
+            printf("Volume label '%s' stored in root directory contains lowercase characters.\n", pretty_label(doslabel));
+            switch (get_choice(1, "  Auto-changing lowercase characters to uppercase",
+                               3,
+                               1, "Change lowercase characters to uppercase",
+                               2, "Remove invalid label",
+                               2, "Set new label")) {
+            case 1:
+                if (!dos_string_to_wchar_string(wlabel, doslabel, sizeof(wlabel)))
+                    die("Cannot change lowercase characters to uppercase.");
+                for (i = 0; i < 11; ++i)
+                    wlabel[i] = towupper(wlabel[i]);
+                if (!wchar_string_to_dos_string(doslabel, wlabel, sizeof(doslabel)))
+                    die("Cannot change lowercase characters to uppercase.");
+                write_label(fs, doslabel);
+                memcpy(fs->label, doslabel, 11);
+                break;
+            case 2:
+                remove_label(fs);
+                memcpy(fs->label, "NO NAME    ", 11);
+                offset = 0;
+                break;
+            case 3:
+                get_new_label(doslabel);
+                write_label(fs, doslabel);
+                memcpy(fs->label, doslabel, 11);
+                break;
+            }
+        }
+    }
+
+again:
+
+    if (offset != 0 && memcmp(fs->label, "NO NAME    ", 11) == 0 && memcmp(doslabel, "NO NAME    ", 11) != 0) {
+        printf("There is no label in boot sector, but there is volume label '%s' stored in root directory\n", pretty_label(doslabel));
+        switch (get_choice(1, "  Auto-copying volume label from root directory to boot sector.",
+                           2,
+                           1, "Copy volume label from root directory to boot sector",
+                           2, "Remove volume label from root directory")) {
+        case 1:
+            write_boot_label(fs, doslabel);
+            memcpy(fs->label, doslabel, 11);
+            break;
+        case 2:
+            remove_label(fs);
+            offset = 0;
+            break;
+        }
+    }
+
+    if (offset != 0 && memcmp(fs->label, "NO NAME    ", 11) != 0 && memcmp(fs->label, doslabel, 11) != 0) {
+        strncpy(buffer, pretty_label(doslabel), sizeof(buffer)-1);
+        buffer[sizeof(buffer)-1] = 0;
+        printf("Volume label '%s' stored in root directory and label '%s' stored in boot sector and different.\n", buffer, pretty_label(fs->label));
+        switch (get_choice(1, "  Auto-copying volume label from root directory to boot sector.",
+                           2,
+                           1, "Copy volume label from root directory to boot sector",
+                           2, "Copy label from boot sector to root directory")) {
+        case 1:
+            write_boot_label(fs, doslabel);
+            memcpy(fs->label, doslabel, 11);
+            break;
+        case 2:
+            ret = check_boot_label(fs);
+            if (ret)
+                goto again;
+            write_volume_label(fs, fs->label);
+            offset = find_volume_de(fs, &de);
+            /* NOTE: doslabel is not updated */
+            break;
+        }
+    }
 }

@@ -1,3 +1,160 @@
+dosfstools 4.2 - released 2021-01-31
+====================================
+
+fatlabel now accepts two new options. When given the -i or --volume-id option,
+fatlabel changes to an alternate mode where it displays or changes the volume
+serial number instead of the volume label. With the -r or --reset option, it
+will remove the label or (in the alternate mode) generate a new volume serial
+number.
+
+The user prompting for interactive fsck has been overhauled. Now it will
+directly react to a pressed key without the user having to additionally press
+enter. The changed prompting is also consistently repeating the prompt when
+invalid input is given.
+
+The legacy check whether it is running on Atari hardware when compiled for 68k
+in order to automatically switch to Atari mode is now disabled by default. It
+can be compiled in with the new configure switch --enable-atari-check.
+
+Both mkfs and fsck now have a new option --variant=TYPE where TYPE can be
+'standard' or 'atari' to explicitly select one of those variants rather than
+having to toggle between them with -A.
+
+fsck, mkfs and fatlabel were fixed to process volume label correctly. Previously
+there were many issues during processing labels. Fixes issues are: leading byte
+0xE5 of root label needs to be handled in special way, label cannot contain some
+special characters, label itself is stored according to the current DOS codepage
+which may be specified by a new --codepage option. fatlabel now reads volume
+label only from the root directory to be compatible with existing systems like
+MS-DOS 5.00, MS-DOS 6.22, MS-DOS 7.10, Windows 98, Windows XP, Windows 7, 8, 10
+and also with the Linux mlabel from mtools project. fsck was extended to fix
+incorrect volume labels and ensure that volume label from the root directory is
+same as the volume label stored in boot sector. Old versions of dosfslabel read
+label only from the boot sector. So with all these changes fsck now ensures
+compatibility with both MS-DOS/Windows and old Linux/dosfslabel world.
+
+fsck now allows spaces in the middle of SFNs. Previous behavior (when spaces
+are disallowed) can be achieved by a new option -S.
+
+Both mkfs and fsck now have fixed Year 2038 Bug. mkfs may still set filesystem
+timestamp to 1980-01-01 00:00:00 (beginning of the FAT era) in case operating
+system has Year 2038 Bug and cannot provide current time in time_t variable.
+
+Some memory leaks were fixed in fatlabel and fsck to make valgrind happy.
+
+Processing of command line arguments in all tools were fixed to ensure that
+invalid options are not accepted anymore and proper error message is thrown
+instead of trying to continue with uninitialized or undefined value.
+
+In fsck and fatlabel were fixed issues that faulty filesystems were able to
+trigger integer overflows during reading them.
+
+mkfs now has a new option --offset for specifying offset at which filesystem
+would start. This is useful when formatting FAT filesystem on disk image with
+MBR table without need to use loopback kernel driver with partx to access only
+specific partition.
+
+All tools now can be compiled without iconv library and in this case they
+support only CP850 codepage which is integrated into tools. This internal
+CP850 codepage can be used also when tools were compiled with iconv library
+which do not support CP850 (e.g. iconv from GNU libc without installed gconv
+shared libraries).
+
+Manual pages were updated to clarify some ambiguous options and descriptions.
+fatlabel has a new section with details about volume label and codepage issues.
+
+mkfs now has a new option --mbr which fills (fake) MBR table with one partition
+which spans whole disk device. This (fake) MBR table is needed only for
+non-removable disks used on Microsoft Windows systems and only when formatting
+whole unpartitioned disk.
+
+mkfs now calculates CHS geometry according to the SD Card Part 2 File System
+Specification. For SD cards with more than 256MB capacity is this new CHS
+calculation same as CHS calculation defined for hard disks via LBA-Assist
+Translation. So CHS geometry calculation in mkfs is now compatible with both
+SD Card specification and also LBA-Assist Translation. Moreover mkfs now has
+also a new option -g for specifying CHS geometry manually if it is needed for
+compatibility with some SD card readers. CHS geometry is part of FAT boot
+sector which mkfs.fat must fill.
+
+fsck now checks for DOS Clean Shutdown bit and marks filesystem as clean after
+successful run. This is for compatibility with Microsft Windows 98 and also with
+Windows NT-based variants.
+
+Dependency on systemd/udev was completely removed from mkfs tool. But there is
+no lost or removed functionality. Existing systemd/udev code was rewritten to
+directly access sysfs and new implementation has less lines of code as previous
+implementation which used systemd/udev libraries.
+
+mkfs was fixed to setup FAT32 backup boot sector correctly.
+
+mkfs's -D option (BIOS drive number) was relaxed to support also higher level
+hard disk and floppy devices (second, third, ...).
+
+fsck now preserve reserved fields in info sector. They are used by other systems
+(e.g. FSIBOOT stage of lDOS boot32.asm), hence why are reserved.
+
+fsck was extended to check and fix that first two entires in directory
+structures are . and ..
+
+mkfs now aligns total number of sectors to be multiple of the value of sectors
+per track which is stored in FAT boot sector. This requirement is needed by DOS
+systems and also by Linux FAT tools from mtools project. Alignment can be turned
+off by -a option.
+
+mkfs is now able to calculate FAT32 cluster size also for disks which have
+sector size different than 512 bytes. Note that this calculation is not optimal.
+It is just first step which ensures that mkfs does not fail during formatting
+Native 4K disks.
+
+mkfs cluster calculation was fixed to correctly handle differences between
+FAT12 and FAT16 variants. mkfs now explicitly disallow to create FAT filesystem
+with 4085 or 4086 clusters because Windows fastfat.sys detects such filesystem
+as FAT12 but Linux msdos.ko/vfat.ko detects it as FAT16. mkfs now avoids this
+situation to happen by fully automatic increasing or decreasing cluster size.
+
+fsck now has a new option -F which can be used to specify FAT table used for
+reading whole FAT filesystem. It can be useful in situation when user wants
+to do recovery and filesystem repairing from second FAT table independently
+of what fsck thinks that is the best.
+
+fsck was extended to try fixing first FAT cluster but only when -F option is
+specified. Previously when first FAT cluster was broken, fsck just printed
+error: "Both FATs appear to be corrupt. Giving up." and failed.
+
+fatlabel was fixed to not call parts of fsck procedure and to not print
+warning or log messages on stdout as it conflicts with expected label
+output on stdout.
+
+A test suite was heavily extended and now it also checks that fsck repairs
+broken filesystem into the expected state.
+
+List of fixed issues:
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=803391
+https://github.com/dosfstools/dosfstools/issues/13
+https://github.com/dosfstools/dosfstools/issues/18
+https://github.com/dosfstools/dosfstools/issues/22
+https://github.com/dosfstools/dosfstools/issues/29
+https://github.com/dosfstools/dosfstools/issues/32
+https://github.com/dosfstools/dosfstools/issues/38
+https://github.com/dosfstools/dosfstools/issues/39
+https://github.com/dosfstools/dosfstools/issues/43
+https://github.com/dosfstools/dosfstools/issues/45
+https://github.com/dosfstools/dosfstools/issues/52
+https://github.com/dosfstools/dosfstools/issues/53
+https://github.com/dosfstools/dosfstools/issues/54
+https://github.com/dosfstools/dosfstools/issues/64
+https://github.com/dosfstools/dosfstools/issues/66
+https://github.com/dosfstools/dosfstools/issues/69
+https://github.com/dosfstools/dosfstools/issues/70
+https://github.com/dosfstools/dosfstools/issues/74
+https://github.com/dosfstools/dosfstools/issues/88
+https://github.com/dosfstools/dosfstools/issues/99
+https://github.com/dosfstools/dosfstools/issues/111
+https://github.com/dosfstools/dosfstools/issues/139
+https://github.com/dosfstools/dosfstools/issues/151
+
+
 dosfstools 4.1 - released 2017-01-24
 ====================================
 

@@ -29,7 +29,7 @@
 
 #include <fcntl.h>		/* for off_t */
 
-void fs_open(char *path, int rw);
+void fs_open(const char *path, int rw);
 
 /* Opens the filesystem PATH. If RW is zero, the filesystem is opened
    read-only, otherwise, it is opened read-write. */

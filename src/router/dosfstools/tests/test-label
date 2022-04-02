@@ -1,0 +1,63 @@
+#!/bin/sh
+# Copyright (C) 2018  Pali Rohár <pali.rohar@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# This script expects a testname.label file as its sole argument. It must
+# be a label of the corresponding hex dump file testname.xxd that can be
+# converted to a file system image with xxd.
+
+
+run_label () {
+	$RUN "../src/fatlabel" "$@"
+}
+
+
+if [ $# -ne 1 ]; then
+	echo "$0 called with wrong number of arguments"
+	exit 99
+fi
+testname=$(basename "$1" .label)
+
+
+if [ "$XXD_FOUND" != "yes" ]; then
+	echo "xxd not available, required by test"
+	exit 77  # report test skipped
+fi
+
+
+echo "Test $testname"
+
+# make sure there aren't files remaining from earlier run
+rm -f "${testname}.img" "${testname}.out"
+
+xxd -r "${srcdir}/${testname}.xxd" "${testname}.img" || exit 99
+run_label "${testname}.img" 1> "${testname}.out" 2> "${testname}.err" || exit 99
+
+
+echo "Comparing..."
+diff "${testname}.out" "${srcdir}/${testname}.label"
+success=$?
+
+
+echo "Error output:"
+cat "${testname}.err"
+if [ "$CHECK_ERRORS" = "1" ] && [ -s "${testname}.err" ]; then
+	success=2
+fi
+
+
+rm -f "${testname}.img" "${testname}.out" "${testname}.err"
+exit $success
