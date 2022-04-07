@@ -204,6 +204,11 @@ struct ksmbd_kstat {
 	__le32			file_attributes;
 };
 
+struct ksmbd_fs_sector_size {
+	unsigned short	logical_sector_size;
+	unsigned int	physical_sector_size;
+};
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 static inline struct user_namespace *mnt_user_ns(const struct vfsmount *mnt)
 {
@@ -330,4 +335,6 @@ static int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 static int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
 				struct inode *inode,
 		struct inode *parent_inode);
+static void ksmbd_vfs_sector_size(struct inode *inode,
+			   struct ksmbd_fs_sector_size *fs_ss);
 #endif /* __KSMBD_VFS_H__ */
