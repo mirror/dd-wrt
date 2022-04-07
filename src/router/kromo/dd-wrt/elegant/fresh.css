@@ -38,20 +38,6 @@ table tr:not([bgcolor]):hover {
   border-color: #999;
   color: #000;
 }
-#menuSub {
-  border-radius: 4px 4px 0 0;
-  border-width: 0;
-  border-style: none;
-}
-#menuMainList li span, #menuSubList li span,
-#menuMainList li a, #menuSubList li a {
-  border-radius: 4px 4px 0 0;
-  border-style: solid solid none;
-  border-width: 1px;
-  display: block;
-  margin-left: .362em;
-  text-decoration: none;
-}
 textarea {
   color: #555;
   background-color: #fff;
