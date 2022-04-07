@@ -19,6 +19,7 @@
 #include <linux/vmalloc.h>
 #include <linux/crc32c.h>
 #include <linux/pagemap.h>
+#include <linux/blkdev.h>	/* For bdev_logical_block_size(). */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/xacct.h>
@@ -2814,4 +2815,24 @@ int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
 	}
 	posix_acl_release(acls);
 	return rc;
+}
+
+/*
+ * ksmbd_vfs_get_sector_size() - get fs sector sizes
+ * @inode: inode
+ * @fs_ss: fs sector size struct
+ */
+void ksmbd_vfs_sector_size(struct inode *inode,
+			   struct ksmbd_fs_sector_size *fs_ss)
+{
+	struct block_device *bdev = inode->i_sb->s_bdev;
+
+	fs_ss->logical_sector_size = 512;
+	fs_ss->physical_sector_size = 512;
+
+	if (!bdev)
+		return;
+
+	fs_ss->logical_sector_size = bdev_logical_block_size(bdev);
+	fs_ss->physical_sector_size = bdev_physical_block_size(bdev);
 }
