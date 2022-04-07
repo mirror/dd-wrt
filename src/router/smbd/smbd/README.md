@@ -36,7 +36,6 @@ The development git tree is available at
 ## Maintainers
 
 * Namjae Jeon <linkinjeon@kernel.org>
-* Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
 
 
 ## Bug reports or contribution
@@ -45,7 +44,6 @@ For reporting bugs and sending patches, please send the patches to the following
 
 * linux-cifsd-devel@lists.sourceforge.net
 * linkinjeon@kernel.org
-* sergey.senozhatsky@gmail.com
 
 or open issues/send PRs to [CIFSD](https://github.com/cifsd-team/cifsd).
 
