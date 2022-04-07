@@ -217,7 +217,7 @@ static ssize_t duplex_show(struct device *dev,
 	if (!rtnl_trylock())
 		return restart_syscall();
 
-	if (netif_running(netdev) && netif_device_present(netdev)) {
+	if (netif_running(netdev)) {
 		struct ethtool_cmd cmd;
 		if (!__ethtool_get_settings(netdev, &cmd)) {
 			const char *duplex;
