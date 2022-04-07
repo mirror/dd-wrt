@@ -271,8 +271,7 @@ EXPORT_SYMBOL_GPL(vsock_insert_connected);
 void vsock_remove_bound(struct vsock_sock *vsk)
 {
 	spin_lock_bh(&vsock_table_lock);
-	if (__vsock_in_bound_table(vsk))
-		__vsock_remove_bound(vsk);
+	__vsock_remove_bound(vsk);
 	spin_unlock_bh(&vsock_table_lock);
 }
 EXPORT_SYMBOL_GPL(vsock_remove_bound);
@@ -280,8 +279,7 @@ EXPORT_SYMBOL_GPL(vsock_remove_bound);
 void vsock_remove_connected(struct vsock_sock *vsk)
 {
 	spin_lock_bh(&vsock_table_lock);
-	if (__vsock_in_connected_table(vsk))
-		__vsock_remove_connected(vsk);
+	__vsock_remove_connected(vsk);
 	spin_unlock_bh(&vsock_table_lock);
 }
 EXPORT_SYMBOL_GPL(vsock_remove_connected);
@@ -316,6 +314,28 @@ struct sock *vsock_find_connected_socket(struct sockaddr_vm *src,
 	return sk;
 }
 EXPORT_SYMBOL_GPL(vsock_find_connected_socket);
+
+static bool vsock_in_bound_table(struct vsock_sock *vsk)
+{
+	bool ret;
+
+	spin_lock_bh(&vsock_table_lock);
+	ret = __vsock_in_bound_table(vsk);
+	spin_unlock_bh(&vsock_table_lock);
+
+	return ret;
+}
+
+static bool vsock_in_connected_table(struct vsock_sock *vsk)
+{
+	bool ret;
+
+	spin_lock_bh(&vsock_table_lock);
+	ret = __vsock_in_connected_table(vsk);
+	spin_unlock_bh(&vsock_table_lock);
+
+	return ret;
+}
 
 void vsock_for_each_connected_socket(void (*fn)(struct sock *sk))
 {
@@ -444,7 +464,8 @@ static void vsock_pending_work(struct work_struct *work)
 	 * incoming packets can't find this socket, and to reduce the reference
 	 * count.
 	 */
-	vsock_remove_connected(vsk);
+	if (vsock_in_connected_table(vsk))
+		vsock_remove_connected(vsk);
 
 	sk->sk_state = SS_FREE;
 
@@ -640,8 +661,11 @@ static void __vsock_release(struct sock *sk)
 		vsk = vsock_sk(sk);
 		pending = NULL;	/* Compiler warning. */
 
-		vsock_remove_bound(vsk);
-		vsock_remove_connected(vsk);
+		if (vsock_in_bound_table(vsk))
+			vsock_remove_bound(vsk);
+
+		if (vsock_in_connected_table(vsk))
+			vsock_remove_connected(vsk);
 
 		transport->release(vsk);
 
@@ -1198,7 +1222,6 @@ static int vsock_stream_connect(struct socket *sock, struct sockaddr *addr,
 			err = sock_intr_errno(timeout);
 			sk->sk_state = SS_UNCONNECTED;
 			sock->state = SS_UNCONNECTED;
-			vsock_remove_connected(vsk);
 			goto out_wait;
 		} else if (timeout == 0) {
 			err = -ETIMEDOUT;
