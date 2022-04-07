@@ -162,8 +162,9 @@ select[onchange='ServiceTable'] {
   left: 0;
   width: 89.35em;
   padding-top: .362em;
-  border-style: solid solid none solid;
-  border-width: 1px;
+  border-width: 0;
+  border-style: none;
+  border-radius: 4px 4px 0 0;
 }
 #menuMainList, #menuSubList {
   margin: 0;
@@ -178,10 +179,11 @@ select[onchange='ServiceTable'] {
 #menuMainList li a, #menuSubList li a {
   display: block;
   margin-left: .362em;
-  border-style: solid solid none solid;
+  border-radius: 4px 4px 0 0;
+  border-style: solid solid none;
   border-width: 1px;
-  padding: .453em .906em;
   text-decoration: none;
+  padding: .453em .906em;
 }
 #menuMainList li span {
   font-weight: bold;
@@ -200,7 +202,7 @@ select[onchange='ServiceTable'] {
 }
 #menuMainList li a {
   background: #333;
-  color: #999;
+  color: #ccc;
   border-color: #555;
   font-weight: bold;
 }
@@ -213,7 +215,7 @@ select[onchange='ServiceTable'] {
 }
 #menuMainList li a:hover {
   background: #666;
-  color: #ccc;
+  color: #eee;
   border-color: #888;
 }
 li.current {
