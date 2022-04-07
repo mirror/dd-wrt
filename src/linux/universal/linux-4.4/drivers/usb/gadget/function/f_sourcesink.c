@@ -594,6 +594,7 @@ static int source_sink_start_ep(struct f_sourcesink *ss, bool is_in,
 	for (i = 0; i < 8; i++) {
 		if (is_iso) {
 			switch (speed) {
+			case USB_SPEED_SUPER_PLUS:
 			case USB_SPEED_SUPER:
 				size = ss->isoc_maxpacket *
 						(ss->isoc_mult + 1) *
