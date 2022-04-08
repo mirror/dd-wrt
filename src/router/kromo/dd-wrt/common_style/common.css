@@ -74,7 +74,7 @@ select {
 select[onchange*='blockedServices'] {
   margin-right: .362em;
 }
-select[onchange='ServiceTable'] {
+select[onchange*='ServiceTable'] {
   width: inherit;
   height: inherit;
 }
