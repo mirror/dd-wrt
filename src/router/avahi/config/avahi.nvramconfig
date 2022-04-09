@@ -1,0 +1,5 @@
+ "mdns_enable"  "avahi/mdns daemon"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "mdns_domain"  "mdns local domain"  "NULL"  "FALSE" "0"
+ "mdns_reflector"  "mdns allow reflector"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "mdns_interfaces"  "mdns set interfaces"  "NULL"  "FALSE" "0"
+ 
