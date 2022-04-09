@@ -1,0 +1,37 @@
+
+<fieldset>
+	<legend><% tran("service.mdns_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.mdns_legend"); %></div>
+		<input class="spaceradio" type="radio" onclick="show_layer_ext(this, 'idmdns', true)" value="1" name="mdns_enable" <% nvc("mdns_enable","1"); %>  /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" onclick="show_layer_ext(this, 'idmdns', false)" value="0" name="mdns_enable" <% nvc("mdns_enable","0"); %>  /><% tran("share.disable"); %>
+	</div>
+	<div id="idmdns">
+		<div class="setting">
+			<div class="label"><% tran("service.mdns_domain"); %></div>
+			<input size="15" maxlength="24" class="text" name="mdns_domain" value="<% nvg("mdns_domain"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.mdns_reflector"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="mdns_reflector" <% nvc("mdns_reflector","1"); %>  /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="mdns_reflector" <% nvc("mdns_reflector","0"); %>  /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.mdns_interfaces"); %></div>
+			<input size="15" maxlength="32" class="text" name="mdns_interfaces" value="<% nvg("mdns_interfaces"); %>" />
+		</div>
+		
+		<!--
+		<div class="setting">
+			  <div class="label"><% tran("service.avahi_usrpara"); %></div>
+			  <textarea cols="60" rows="4" id="avahi_usrpara" name="avahi_usrpara"></textarea>
+			  <script type="text/javascript">
+			  //<![CDATA[
+			  var avahi_usrpara = fix_cr( '<% nvg("avahi_usrpara"); %>' );
+			  document.getElementById("avahi_usrpara").value = avahi_usrpara;
+			  //]]>
+			  </script>
+		</div>
+		-->
+	</div>
+</fieldset><br/>

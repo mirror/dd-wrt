@@ -2174,6 +2174,12 @@ service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
 service.zabbix_usrpara="User Parameters";
 
+// mdns
+service.mdns_legend="mDNS/Avahi";
+service.mdns_domain="Domain name [local]";
+service.mdns_reflector="Reflector";
+service.mdns_interfaces="Interfaces (CSV)";
+
 //TRansmission
 service.transmission_legend="BitTorrent";
 service.transmission_srv="Transmission Daemon";

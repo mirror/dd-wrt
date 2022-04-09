@@ -1862,6 +1862,12 @@ service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
 service.zabbix_usrpara="User Parameter";
 
+// mdns
+service.mdns_legend="mDNS/Avahi";
+service.mdns_domain="Domain name [local]";
+service.mdns_reflector="Reflector";
+service.mdns_interfaces="Interfaces (CSV)";
+
 service.transmission_dir="Transmission Konfigurationsverzeichniss";
 service.transmission_download="Transmission Download Verzeichniss";
 service.transmission_style="Webinterface Stil";
