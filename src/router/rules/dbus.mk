@@ -5,7 +5,7 @@ dbus-configure:
 	--disable-Werror --disable-selinux --disable-tests \
 	--sysconfdir=/tmp \
 	--localstatedir=/tmp/var \
-	--runstatedir=/tmp/var/run \
+	--disable-xml-docs \
 	--with-dbus-user="nobody" \
 	--with-dbus-session-bus-connect-address="/tmp/var/run/dbus/dbussocket" \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \

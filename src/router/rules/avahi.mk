@@ -16,7 +16,6 @@ avahi-configure: expat dbus libdaemon
 	cd avahi && ./autogen.sh --prefix=/usr --host=$(ARCH)-linux \
 		--sysconfdir=/tmp \
 		--localstatedir=/tmp/var \
-		--runstatedir=/tmp/var/run \
 		--with-distro=none \
 		--enable-introspection=no \
 		$(AVAHI_BDBUS) \
@@ -79,4 +78,4 @@ endif
 	-install -D avahi/config/avahi.nvramconfig $(INSTALLDIR)/avahi/etc/config/zavahi.nvramconfig
 	-install -D avahi/config/avahi.webservices $(INSTALLDIR)/avahi/etc/config/zavahi.webservices
 
-.PHONY: avahi avahi-configure avahi-install avhi-clean
+.PHONY: avahi avahi-configure avahi-install avahi-clean
