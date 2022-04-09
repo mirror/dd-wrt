@@ -377,6 +377,13 @@ obj-$(CONFIG_X86) += yukon bootconfig lmsensors
 obj-$(CONFIG_MRP) += mrp
 obj-$(CONFIG_CFM) += cfm
 obj-$(CONFIG_HTOP) += ncurses libnl htop
+#obj-$(CONFIG_MDNS) += libevent glib20 expat libdaemon avahi
+#when dbus is build it will also build avahi-utils like avahi-browse
+ifeq ($(CONFIG_MDNS_UTILS),y)
+obj-$(CONFIG_MDNS) += expat dbus libdaemon avahi
+else
+obj-$(CONFIG_MDNS) += expat libdaemon avahi
+endif
 obj-$(CONFIG_IPSET) += libmnl ipset
 obj-$(CONFIG_OCTEON) += lmsensors
 obj-$(CONFIG_P7ZIP) += p7zip
