@@ -343,6 +343,12 @@ include rules/cfm.mk
 include rules/htop.mk
 include rules/ipset.mk
 include rules/sdparm.mk
+#ifeq ($(CONFIG_MDNS_UTILS),y)
+include rules/dbus.mk
+#endif
+include rules/expat.mk
+include rules/libdaemon.mk
+include rules/avahi.mk
 include rules/prepare.mk
 include rules/libcares.mk
 
