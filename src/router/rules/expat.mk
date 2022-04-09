@@ -10,8 +10,8 @@ expat: expat-configure
 	$(MAKE) -C expat
 
 expat-install:
-	install -D expat/lib/.libs/libexpat.so.1.8.7 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.8.7
-	cd $(INSTALLDIR)/expat/usr/lib && ln -sf libexpat.so.1.8.7 libexpat.so.1
+	install -D expat/lib/.libs/libexpat.so.1.8.8 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.8.8
+	cd $(INSTALLDIR)/expat/usr/lib && ln -sf libexpat.so.1.8.8 libexpat.so.1
 
 expat-clean:
 	-$(MAKE) -C expat clean
