@@ -324,10 +324,10 @@ addEvent(window, "unload", function() {
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
 									<tr>
-										<th><% tran("share.del"); %></th>
+										<th style="text-align: center; width: 12%"><% tran("share.del"); %></th>
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
-										<th><% tran("share.packets"); %></th>
+										<th width="12%"><% tran("share.packets"); %></th>
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
