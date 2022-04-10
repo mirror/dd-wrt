@@ -17,7 +17,7 @@ dbus-configure:
 	#cd dbus && ./configure --prefix=/usr --host=$(ARCH)-linux
 	# probabaly need --enable-systemd to add systemd support to start dbus, need: sudo apt install
 
-dbus: dbus-configure
+dbus:
 	$(MAKE) -C dbus
 	#$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 

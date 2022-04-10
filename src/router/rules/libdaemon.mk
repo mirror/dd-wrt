@@ -4,7 +4,7 @@ libdaemon-configure:
 	LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	cd libdaemon && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-dependency-tracking --disable-examples ac_cv_func_setpgrp_void=yes
 
-libdaemon: libdaemon-configure
+libdaemon:
 	$(MAKE) -C libdaemon
 	#$(MAKE) -C libdaemon DESTDIR=$(TOP)/libdaemon/staged install
 
