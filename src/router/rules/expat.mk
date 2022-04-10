@@ -6,7 +6,7 @@ expat-configure:
 	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux \
 		--without-docbook --without-examples --without-tests --without-getrandom
 	
-expat: expat-configure
+expat:
 	$(MAKE) -C expat
 
 expat-install:
