@@ -249,7 +249,9 @@ static int start_services_main(int argc, char **argv)
 		system("/usr/sbin/dns_responder 192.168.11.1 55300 &");
 	}
 #endif
-
+#ifdef HAVE_MDNS
+	start_service_f("mdns");
+#endif
 	cprintf("done\n");
 	return 0;
 }
@@ -395,6 +397,10 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_CONNTRACK
 	stop_service_f("notifier");
 #endif
+#ifdef HAVE_MDNS
+	stop_service_f("mdns");
+#endif
+
 	stop_running_main(0, NULL);
 
 	cprintf("done\n");
@@ -764,6 +770,9 @@ static void handle_services(void)
 #ifdef HAVE_ZABBIX
 	restart_f("zabbix");
 #endif
+#ifdef HAVE_MDNS
+	restart_f("mdns");
+#endif
 #ifdef HAVE_CHRONY
 	stop_service("chronyd");
 	start_service_f("chronyd");
@@ -798,6 +807,9 @@ static void handle_nassrv(void)
 #ifdef HAVE_RAID
 	stop_service_f("raid");
 #endif
+#ifdef HAVE_MDNS
+	stop_service_f("mdns");
+#endif
 
 	stop_running_main(0, NULL);
 
@@ -824,6 +836,9 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_PLEX
 	start_service_f("plex");
+#endif
+#ifdef HAVE_MDNS
+	start_service_f("mdns");
 #endif
 	restart("firewall");
 
