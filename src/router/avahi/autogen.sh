@@ -77,8 +77,8 @@ else
     run_versioned automake "$AM_VERSION" -a -c --foreign
 
     cd "$olddir"
-    if test "x$NOCONFIGURE" = "x"; then
-        $srcdir/configure "$@"
-        make clean
-    fi
+#    if test "x$NOCONFIGURE" = "x"; then
+#        $srcdir/configure "$@"
+#        make clean
+#    fi
 fi
