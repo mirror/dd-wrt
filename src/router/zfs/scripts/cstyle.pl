@@ -58,13 +58,11 @@ use Getopt::Std;
 use strict;
 
 my $usage =
-"usage: cstyle [-cghpvCP] file...
+"usage: cstyle [-cgpvP] file...
 	-c	check continuation indentation inside functions
 	-g	print github actions' workflow commands
-	-h	perform heuristic checks that are sometimes wrong
 	-p	perform some of the more picky checks
 	-v	verbose
-	-C	don't check anything in header block comments
 	-P	check for use of non-POSIX types
 ";
 
@@ -77,10 +75,8 @@ if (!getopts("cghpvCP", \%opts)) {
 
 my $check_continuation = $opts{'c'};
 my $github_workflow = $opts{'g'} || $ENV{'CI'};
-my $heuristic = $opts{'h'};
 my $picky = $opts{'p'};
 my $verbose = $opts{'v'};
-my $ignore_hdr_comment = $opts{'C'};
 my $check_posix_types = $opts{'P'};
 
 my ($filename, $line, $prev);		# shared globals
@@ -213,7 +209,6 @@ my $in_cpp = 0;
 my $next_in_cpp = 0;
 
 my $in_comment = 0;
-my $in_header_comment = 0;
 my $comment_done = 0;
 my $in_warlock_comment = 0;
 my $in_function = 0;
@@ -444,7 +439,6 @@ line: while (<$filehandle>) {
 
 	if ($comment_done) {
 		$in_comment = 0;
-		$in_header_comment = 0;
 		$comment_done = 0;
 	}
 	# does this looks like the start of a block comment?
@@ -455,9 +449,6 @@ line: while (<$filehandle>) {
 		$in_comment = 1;
 		/^(\s*)\//;
 		$comment_prefix = $1;
-		if ($comment_prefix eq "") {
-			$in_header_comment = 1;
-		}
 		$prev = $line;
 		next line;
 	}
@@ -467,18 +458,11 @@ line: while (<$filehandle>) {
 			$comment_done = 1;
 		} elsif (/\*\//) {
 			$comment_done = 1;
-			err("improper block comment close")
-			    unless ($ignore_hdr_comment && $in_header_comment);
+			err("improper block comment close");
 		} elsif (!/^$comment_prefix \*[ \t]/ &&
 		    !/^$comment_prefix \*$/) {
-			err("improper block comment")
-			    unless ($ignore_hdr_comment && $in_header_comment);
+			err("improper block comment");
 		}
-	}
-
-	if ($in_header_comment && $ignore_hdr_comment) {
-		$prev = $line;
-		next line;
 	}
 
 	# check for errors that might occur in comments and in code.
@@ -703,19 +687,6 @@ line: while (<$filehandle>) {
 		# but historically these have been used.
 		if (/\b(unchar|ushort|uint|ulong|u_int|u_short|u_long|u_char|quad)\b/) {
 			err("non-POSIX typedef $1 used: use $old2posix{$1} instead");
-		}
-	}
-	if ($heuristic) {
-		# cannot check this everywhere due to "struct {\n...\n} foo;"
-		if ($in_function && !$in_declaration &&
-		    /\}./ && !/\}\s+=/ && !/\{.*\}[;,]$/ && !/\}(\s|)*$/ &&
-		    !/\} (else|while)/ && !/\}\}/) {
-			err("possible bad text following right brace");
-		}
-		# cannot check this because sub-blocks in
-		# the middle of code are ok
-		if ($in_function && /^\s+\{/) {
-			err("possible left brace starting a line");
 		}
 	}
 	if (/^\s*else\W/) {
