@@ -41,6 +41,8 @@ avahi-configure: expat dbus libdaemon
 		--with-distro=none \
 		--enable-introspection=no \
 		--disable-dbus \
+		--disable-shared \
+		--enable-static \
 		--disable-nls --disable-glib --disable-libevent --disable-gobject \
 		--disable-qt3 --disable-qt4 --disable-qt5 --disable-gtk --disable-gtk3 \
 		--disable-gdbm --disable-python --disable-python-dbus \
@@ -88,11 +90,7 @@ ifeq ($(CONFIG_MDNS_UTILS),y)
 	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-client.so.3.2.9 libavahi-client.so.3
 	#copy as *z*avahi so that is wiil not show as first on the webpage 9shoe.webservices in alphabetically order
 else
-	install -D avahi/build_normal/avahi-daemon/.libs/avahi-daemon $(INSTALLDIR)/avahi/usr/sbin/avahi-daemon
-	install -D avahi/build_normal/avahi-common/.libs/libavahi-common.so.3.5.4 $(INSTALLDIR)/avahi/usr/lib/libavahi-common.so.3.5.4
-	install -D avahi/build_normal/avahi-core/.libs/libavahi-core.so.7.1.0 $(INSTALLDIR)/avahi/usr/lib/libavahi-core.so.7.1.0
-	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-common.so.3.5.4 libavahi-common.so.3
-	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-core.so.7.1.0 libavahi-core.so.7
+	install -D avahi/build_normal/avahi-daemon/avahi-daemon $(INSTALLDIR)/avahi/usr/sbin/avahi-daemon
 	-install -D avahi/config/avahi.nvramconfig $(INSTALLDIR)/avahi/etc/config/zavahi.nvramconfig
 	-install -D avahi/config/avahi.webservices $(INSTALLDIR)/avahi/etc/config/zavahi.webservices
 
