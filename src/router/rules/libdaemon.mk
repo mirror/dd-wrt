@@ -15,7 +15,6 @@ libdaemon-install:
 		ln -sf libdaemon.so.0.5.0 libdaemon.so.0
 
 libdaemon-clean:
-	-$(MAKE) -C libdaemon distclean
-	rm -f libdaemon/stamp-h1
+	-$(MAKE) -C libdaemon clean
 
 .PHONY: libdaemon-configure libdaemon libdaemon-install libdaemon-clean
