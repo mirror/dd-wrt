@@ -233,6 +233,8 @@ test_threads (Fixture *f,
       f->client_caller_threads[i] = g_thread_new (name,
                                                   client_caller_thread_cb,
                                                   f);
+
+      g_free (name);
     }
 
   /* Wait for all caller threads to exit */

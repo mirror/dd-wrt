@@ -80,3 +80,10 @@ tool_write_all (int fd,
 
   return TRUE;
 }
+
+void
+tool_stderr_error (const char    *context,
+                   DBusError     *error)
+{
+  fprintf (stderr, "%s: %s: %s\n", context, error->name, error->message);
+}

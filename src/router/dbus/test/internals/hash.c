@@ -94,7 +94,7 @@ count_entries (DBusHashTable *table)
   while (_dbus_hash_iter_next (&iter))
     ++count;
 
-  _dbus_assert (count == _dbus_hash_table_get_n_entries (table));
+  _dbus_test_check (count == _dbus_hash_table_get_n_entries (table));
 
   return count;
 }
@@ -150,7 +150,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       int len;
 
       len = sprintf (keys[i], "Hash key %d", i);
-      _dbus_assert (*(keys[i] + len) == '\0');
+      _dbus_test_check (*(keys[i] + len) == '\0');
       ++i;
     }
   _dbus_test_diag ("... done.");
@@ -206,21 +206,21 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
                                             i, steal (&str_value)))
         goto out;
 
-      _dbus_assert (count_entries (table1) == i + 1);
-      _dbus_assert (count_entries (table2) == i + 1);
-      _dbus_assert (count_entries (table3) == i + 1);
+      _dbus_test_check (count_entries (table1) == i + 1);
+      _dbus_test_check (count_entries (table2) == i + 1);
+      _dbus_test_check (count_entries (table3) == i + 1);
 
       out_value = _dbus_hash_table_lookup_string (table1, keys[i]);
-      _dbus_assert (out_value != NULL);
-      _dbus_assert (strcmp (out_value, "Value!") == 0);
+      _dbus_test_check (out_value != NULL);
+      _dbus_test_check (strcmp (out_value, "Value!") == 0);
 
       out_value = _dbus_hash_table_lookup_int (table2, i);
-      _dbus_assert (out_value != NULL);
-      _dbus_assert (strcmp (out_value, keys[i]) == 0);
+      _dbus_test_check (out_value != NULL);
+      _dbus_test_check (strcmp (out_value, keys[i]) == 0);
 
       out_value = _dbus_hash_table_lookup_uintptr (table3, i);
-      _dbus_assert (out_value != NULL);
-      _dbus_assert (strcmp (out_value, keys[i]) == 0);
+      _dbus_test_check (out_value != NULL);
+      _dbus_test_check (strcmp (out_value, keys[i]) == 0);
 
       ++i;
     }
@@ -235,9 +235,9 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 
       _dbus_hash_table_remove_uintptr (table3, i);
 
-      _dbus_assert (count_entries (table1) == i);
-      _dbus_assert (count_entries (table2) == i);
-      _dbus_assert (count_entries (table3) == i);
+      _dbus_test_check (count_entries (table1) == i);
+      _dbus_test_check (count_entries (table2) == i);
+      _dbus_test_check (count_entries (table3) == i);
 
       --i;
     }
@@ -290,8 +290,8 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
                                         i, steal (&str_value)))
         goto out;
 
-      _dbus_assert (count_entries (table1) == i + 1);
-      _dbus_assert (count_entries (table2) == i + 1);
+      _dbus_test_check (count_entries (table1) == i + 1);
+      _dbus_test_check (count_entries (table2) == i + 1);
 
       ++i;
     }
@@ -305,7 +305,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       key = _dbus_hash_iter_get_string_key (&iter);
       value = _dbus_hash_iter_get_value (&iter);
 
-      _dbus_assert (_dbus_hash_table_lookup_string (table1, key) == value);
+      _dbus_test_check (_dbus_hash_table_lookup_string (table1, key) == value);
 
       str_value = _dbus_strdup ("Different value!");
       if (str_value == NULL)
@@ -313,14 +313,14 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 
       value = str_value;
       _dbus_hash_iter_set_value (&iter, steal (&str_value));
-      _dbus_assert (_dbus_hash_table_lookup_string (table1, key) == value);
+      _dbus_test_check (_dbus_hash_table_lookup_string (table1, key) == value);
     }
 
   _dbus_hash_iter_init (table1, &iter);
   while (_dbus_hash_iter_next (&iter))
     {
       _dbus_hash_iter_remove_entry (&iter);
-      _dbus_assert (count_entries (table1) == i - 1);
+      _dbus_test_check (count_entries (table1) == i - 1);
       --i;
     }
 
@@ -333,7 +333,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       key = _dbus_hash_iter_get_int_key (&iter);
       value = _dbus_hash_iter_get_value (&iter);
 
-      _dbus_assert (_dbus_hash_table_lookup_int (table2, key) == value);
+      _dbus_test_check (_dbus_hash_table_lookup_int (table2, key) == value);
 
       str_value = _dbus_strdup ("Different value!");
       if (str_value == NULL)
@@ -341,7 +341,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 
       value = str_value;
       _dbus_hash_iter_set_value (&iter, steal (&str_value));
-      _dbus_assert (_dbus_hash_table_lookup_int (table2, key) == value);
+      _dbus_test_check (_dbus_hash_table_lookup_int (table2, key) == value);
     }
 
   i = count_entries (table2);
@@ -349,7 +349,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   while (_dbus_hash_iter_next (&iter))
     {
       _dbus_hash_iter_remove_entry (&iter);
-      _dbus_assert (count_entries (table2) + 1 == i);
+      _dbus_test_check (count_entries (table2) + 1 == i);
       --i;
     }
 
@@ -396,7 +396,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       if (!_dbus_hash_table_remove_string (table1, keys[i]))
         goto out;
 
-      _dbus_assert (_dbus_hash_table_get_n_entries (table1) == i);
+      _dbus_test_check (_dbus_hash_table_get_n_entries (table1) == i);
 
       --i;
     }
@@ -434,7 +434,7 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       if (!_dbus_hash_iter_lookup (table1,
                                    steal (&str_key), TRUE, &iter))
         goto out;
-      _dbus_assert (_dbus_hash_iter_get_value (&iter) == NULL);
+      _dbus_test_check (_dbus_hash_iter_get_value (&iter) == NULL);
       _dbus_hash_iter_set_value (&iter, steal (&str_value));
 
       str_value = _dbus_strdup (keys[i]);
@@ -444,18 +444,18 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       if (!_dbus_hash_iter_lookup (table2,
                                    _DBUS_INT_TO_POINTER (i), TRUE, &iter))
         goto out;
-      _dbus_assert (_dbus_hash_iter_get_value (&iter) == NULL);
+      _dbus_test_check (_dbus_hash_iter_get_value (&iter) == NULL);
       _dbus_hash_iter_set_value (&iter, steal (&str_value));
 
-      _dbus_assert (count_entries (table1) == i + 1);
-      _dbus_assert (count_entries (table2) == i + 1);
+      _dbus_test_check (count_entries (table1) == i + 1);
+      _dbus_test_check (count_entries (table2) == i + 1);
 
       if (!_dbus_hash_iter_lookup (table1, keys[i], FALSE, &iter))
         goto out;
 
       out_value = _dbus_hash_iter_get_value (&iter);
-      _dbus_assert (out_value != NULL);
-      _dbus_assert (strcmp (out_value, "Value!") == 0);
+      _dbus_test_check (out_value != NULL);
+      _dbus_test_check (strcmp (out_value, "Value!") == 0);
 
       /* Iterate just to be sure it works, though
        * it's a stupid thing to do
@@ -467,8 +467,8 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
         goto out;
 
       out_value = _dbus_hash_iter_get_value (&iter);
-      _dbus_assert (out_value != NULL);
-      _dbus_assert (strcmp (out_value, keys[i]) == 0);
+      _dbus_test_check (out_value != NULL);
+      _dbus_test_check (strcmp (out_value, keys[i]) == 0);
 
       /* Iterate just to be sure it works, though
        * it's a stupid thing to do
@@ -490,8 +490,8 @@ _dbus_hash_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
         _dbus_test_fatal ("hash entry should have existed");
       _dbus_hash_iter_remove_entry (&iter);
 
-      _dbus_assert (count_entries (table1) == i);
-      _dbus_assert (count_entries (table2) == i);
+      _dbus_test_check (count_entries (table1) == i);
+      _dbus_test_check (count_entries (table2) == i);
 
       --i;
     }

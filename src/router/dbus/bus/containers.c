@@ -27,6 +27,8 @@
 
 #ifdef DBUS_ENABLE_CONTAINERS
 
+#error This feature is not ready for production use
+
 #ifndef DBUS_UNIX
 # error DBUS_ENABLE_CONTAINERS requires DBUS_UNIX
 #endif

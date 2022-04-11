@@ -61,6 +61,7 @@ set(DBUS_LIB_SOURCES
 
 if(UNIX)
     set(DBUS_LIB_SOURCES ${DBUS_LIB_SOURCES}
+        dbus-uuidgen.c
         dbus-transport-unix.c
         dbus-server-unix.c
     )
@@ -95,6 +96,7 @@ set(DBUS_LIB_HEADERS
     dbus-threads-internal.h
     dbus-transport.h
     dbus-transport-protected.h
+    dbus-uuidgen.h
     dbus-watch.h
     ${CMAKE_BINARY_DIR}/config.h
 )
@@ -125,7 +127,6 @@ set(DBUS_SHARED_SOURCES
     dbus-string.c
     dbus-sysdeps.c
     dbus-pipe.c
-    dbus-test-tap.c
 )
 
 set(DBUS_SHARED_HEADERS
@@ -140,8 +141,13 @@ set(DBUS_SHARED_HEADERS
     dbus-string-private.h
     dbus-pipe.h
     dbus-sysdeps.h
-    dbus-test-tap.h
 )
+
+if(DBUS_ENABLE_EMBEDDED_TESTS)
+    set(DBUS_SHARED_SOURCES ${DBUS_SHARED_SOURCES} dbus-test-tap.c)
+    set(DBUS_SHARED_HEADERS ${DBUS_SHARED_HEADERS} dbus-test-tap.h)
+    # ... else they are in the test library instead
+endif()
 
 ### source code that is generic utility functionality used
 ### by the bus daemon or test apps, but is NOT included
@@ -208,10 +214,14 @@ else(WIN32)
         dbus-userdb.h
     )
     set(DBUS_UTIL_SOURCES ${DBUS_UTIL_SOURCES}
-        dbus-spawn-unix.c
         dbus-userdb-util.c
         dbus-sysdeps-util-unix.c
     )
+    if(ENABLE_TRADITIONAL_ACTIVATION)
+        set(DBUS_UTIL_SOURCES ${DBUS_UTIL_SOURCES}
+            dbus-spawn-unix.c
+        )
+    endif()
 endif()
 
 if(DBUS_HAVE_LINUX_EPOLL)
@@ -275,7 +285,7 @@ else(WIN32)
     if(DEFINED DBUS_LIBRARY_REVISION)
         set_target_properties(dbus-1 PROPERTIES VERSION ${DBUS_LIBRARY_MAJOR}.${DBUS_LIBRARY_AGE}.${DBUS_LIBRARY_REVISION} SOVERSION ${DBUS_LIBRARY_MAJOR})
     endif()
-    target_link_libraries(dbus-1 ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(dbus-1 ${CMAKE_THREAD_LIBS_INIT} ${SYSTEMD_LIBRARIES})
     if(LIBRT)
         target_link_libraries(dbus-1 ${LIBRT})
     endif()
@@ -283,6 +293,8 @@ else(WIN32)
         target_link_libraries(dbus-1 ${LIBSOCKET})
     endif()
 endif()
+
+target_include_directories(dbus-1 INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/dbus-1.0>;$<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/dbus-1.0/include>)
 
 # Assume that Linux has -Wl,--version-script and other platforms do not
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

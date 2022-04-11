@@ -105,6 +105,7 @@ typedef struct DBusGroupInfo DBusGroupInfo;
  */
 struct DBusUserInfo
 {
+  size_t      refcount;       /**< Reference count */
   dbus_uid_t  uid;            /**< UID */
   dbus_gid_t  primary_gid;    /**< GID */
   dbus_gid_t *group_ids;      /**< Groups IDs, *including* above primary group */
@@ -118,6 +119,7 @@ struct DBusUserInfo
  */
 struct DBusGroupInfo
 {
+  size_t      refcount;       /**< Reference count */
   dbus_gid_t  gid;            /**< GID */
   char       *groupname;      /**< Group name */
 };
@@ -171,6 +173,8 @@ typedef void (* DBusSignalHandler) (int sig);
 
 void _dbus_set_signal_handler (int               sig,
                                DBusSignalHandler handler);
+
+dbus_bool_t _dbus_reset_oom_score_adj (const char **error_str_p);
 
 /** @} */
 

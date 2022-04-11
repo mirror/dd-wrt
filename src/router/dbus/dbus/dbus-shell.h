@@ -37,5 +37,3 @@ dbus_bool_t _dbus_shell_parse_argv (const char *command_line,
 DBUS_END_DECLS
 
 #endif /* DBUS_SHELL_H */
-
-

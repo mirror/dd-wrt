@@ -9,6 +9,7 @@
 #include "dbus/dbus-list.h"
 #include "dbus/dbus-internals.h"
 #include "dbus/dbus-sysdeps.h"
+#include "test-utils.h"
 
 #include <stdio.h>
 
@@ -19,13 +20,13 @@ print_install_root (void)
 
   if (!_dbus_string_init (&runtime_prefix))
     {
-      _dbus_assert_not_reached ("out of memory");
+      _dbus_test_fatal ("out of memory");
       return FALSE;
     }
 
   if (!_dbus_get_install_root (&runtime_prefix))
     {
-      _dbus_assert_not_reached ("out of memory");
+      _dbus_test_fatal ("out of memory");
       _dbus_string_free (&runtime_prefix);
       return FALSE;
     }
@@ -51,7 +52,7 @@ print_service_dirs (void)
   dirs = NULL;
 
   if (!_dbus_get_standard_session_servicedirs (&dirs))
-    _dbus_assert_not_reached ("couldn't get standard dirs");
+    _dbus_test_fatal ("couldn't get standard dirs");
 
   while ((link = _dbus_list_pop_first_link (&dirs)))
     {
@@ -69,14 +70,14 @@ static dbus_bool_t print_replace_install_prefix(const char *s)
 
   if (!_dbus_string_init (&str))
     {
-      _dbus_assert_not_reached ("out of memory");
+      _dbus_test_fatal ("out of memory");
       return FALSE;
     }
 
   if (!_dbus_string_append (&str, s) ||
       !_dbus_replace_install_prefix (&str))
     {
-      _dbus_assert_not_reached ("out of memory");
+      _dbus_test_fatal ("out of memory");
       _dbus_string_free (&str);
       return FALSE;
     }

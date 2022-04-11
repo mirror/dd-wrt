@@ -142,10 +142,15 @@ get_session_file (void)
 
   /* replace the : in the display with _ if the : is still there.
    * use _ instead of - since it can't be in hostnames.
+   *
+   * similarly, on recent versions of macOS, X11 is provided by the XQuartz
+   * package which uses a path for the hostname, such as
+   *   /private/tmp/com.apple.launchd.mBSMLJ3yQU/org.macosforge.xquartz
+   * we therefore also replace any / with _
    */
   for (p = display; *p; ++p)
     {
-      if (*p == ':')
+      if (*p == ':' || *p == '/')
         *p = '_';
     }
   

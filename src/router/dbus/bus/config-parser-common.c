@@ -192,4 +192,3 @@ bus_config_parser_element_type_to_name (ElementType type)
       return NULL;
     }
 }
-

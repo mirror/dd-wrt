@@ -91,9 +91,6 @@ void           bus_matchmaker_unref (BusMatchmaker *matchmaker);
 
 dbus_bool_t bus_matchmaker_add_rule             (BusMatchmaker   *matchmaker,
                                                  BusMatchRule    *rule);
-dbus_bool_t bus_matchmaker_remove_rule_by_value (BusMatchmaker   *matchmaker,
-                                                 BusMatchRule    *value,
-                                                 DBusError       *error);
 void        bus_matchmaker_remove_rule          (BusMatchmaker   *matchmaker,
                                                  BusMatchRule    *rule);
 void        bus_matchmaker_disconnected         (BusMatchmaker   *matchmaker,
@@ -104,5 +101,12 @@ dbus_bool_t bus_matchmaker_get_recipients       (BusMatchmaker   *matchmaker,
                                                  DBusConnection  *addressed_recipient,
                                                  DBusMessage     *message,
                                                  DBusList       **recipients_p);
+
+DBusList *bus_matchmaker_prepare_remove_rule_by_value (BusMatchmaker   *matchmaker,
+                                                       BusMatchRule    *value,
+                                                       DBusError       *error);
+void      bus_matchmaker_commit_remove_rule_by_value  (BusMatchmaker   *matchmaker,
+                                                       BusMatchRule    *value,
+                                                       DBusList        *link);
 
 #endif /* BUS_SIGNALS_H */

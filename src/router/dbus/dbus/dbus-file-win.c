@@ -404,4 +404,3 @@ _dbus_create_file_exclusively (const DBusString *filename,
 
   return TRUE;
 }
-

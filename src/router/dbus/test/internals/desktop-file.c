@@ -221,8 +221,8 @@ test_content (const Test *test,
           test_assert_no_error (&error);
           g_assert_true (ok);
           g_assert_cmpstr (val, ==, test->value);
-          dbus_free (val);
         }
+      dbus_free (val);
     }
 }
 

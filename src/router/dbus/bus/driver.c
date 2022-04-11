@@ -1409,6 +1409,7 @@ bus_driver_handle_remove_match (DBusConnection *connection,
   const char *text;
   DBusString str;
   BusMatchmaker *matchmaker;
+  DBusList *link;
 
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
 
@@ -1429,17 +1430,21 @@ bus_driver_handle_remove_match (DBusConnection *connection,
   if (rule == NULL)
     goto failed;
 
-  /* Send the ack before we remove the rule, since the ack is undone
-   * on transaction cancel, but rule removal isn't.
-   */
+  matchmaker = bus_connection_get_matchmaker (connection);
+
+  /* Check whether the rule exists and prepare to remove it, but don't
+   * actually do it yet. */
+  link = bus_matchmaker_prepare_remove_rule_by_value (matchmaker, rule, error);
+  if (link == NULL)
+    goto failed;
+
+  /* We do this before actually removing the rule, because removing the
+   * rule cannot be undone if we run out of memory here. */
   if (!bus_driver_send_ack_reply (connection, transaction, message, error))
     goto failed;
 
-  matchmaker = bus_connection_get_matchmaker (connection);
-
-  if (!bus_matchmaker_remove_rule_by_value (matchmaker, rule, error))
-    goto failed;
-
+  /* The rule exists, so now we can do things we can't undo. */
+  bus_matchmaker_commit_remove_rule_by_value (matchmaker, rule, link);
   bus_match_rule_unref (rule);
 
   return TRUE;
@@ -1970,7 +1975,9 @@ bus_driver_fill_connection_credentials (DBusCredentials *credentials,
   dbus_pid_t pid = DBUS_PID_UNSET;
   const char *windows_sid = NULL;
   const char *linux_security_label = NULL;
+#ifdef DBUS_ENABLE_CONTAINERS
   const char *path;
+#endif
 
   if (credentials == NULL && conn != NULL)
     credentials = _dbus_connection_get_credentials (conn);
@@ -2025,6 +2032,7 @@ bus_driver_fill_connection_credentials (DBusCredentials *credentials,
         return FALSE;
     }
 
+#ifdef DBUS_ENABLE_CONTAINERS
   /* This has to come from the connection, not the credentials */
   if (conn != NULL &&
       bus_containers_connection_is_contained (conn, &path, NULL, NULL))
@@ -2034,6 +2042,7 @@ bus_driver_fill_connection_credentials (DBusCredentials *credentials,
                                       path))
         return FALSE;
     }
+#endif
 
   return TRUE;
 }
@@ -2728,6 +2737,8 @@ static InterfaceHandler interface_handlers[] = {
     "    </signal>\n"
     "    <signal name=\"NameAcquired\">\n"
     "      <arg type=\"s\"/>\n"
+    "    </signal>\n"
+    "    <signal name=\"ActivatableServicesChanged\">\n"
     "    </signal>\n",
     /* Not in the Interfaces property because if you can get the properties
      * of the o.fd.DBus interface, then you certainly have the o.fd.DBus
@@ -3148,6 +3159,12 @@ features_getter (BusContext      *context,
                                          DBUS_TYPE_STRING_AS_STRING,
                                          &arr_iter))
     return FALSE;
+
+  s = "ActivatableServicesChanged";
+
+  if (!dbus_message_iter_append_basic (&arr_iter, DBUS_TYPE_STRING, &s))
+    goto abandon;
+
 
   if (bus_apparmor_enabled ())
     {

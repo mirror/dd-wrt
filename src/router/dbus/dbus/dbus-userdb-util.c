@@ -45,6 +45,15 @@
  * @{
  */
 
+static DBusGroupInfo *
+_dbus_group_info_ref (DBusGroupInfo *info)
+{
+  _dbus_assert (info->refcount > 0);
+  _dbus_assert (info->refcount < SIZE_MAX);
+  info->refcount++;
+  return info;
+}
+
 /**
  * Checks to see if the UID sent in is the console user
  *
@@ -249,9 +258,9 @@ _dbus_get_user_id_and_primary_group (const DBusString  *username,
  * @param gid the group ID or #DBUS_GID_UNSET
  * @param groupname group name or #NULL 
  * @param error error to fill in
- * @returns the entry in the database
+ * @returns the entry in the database (borrowed, do not free)
  */
-DBusGroupInfo*
+const DBusGroupInfo *
 _dbus_user_database_lookup_group (DBusUserDatabase *db,
                                   dbus_gid_t        gid,
                                   const DBusString *groupname,
@@ -296,13 +305,14 @@ _dbus_user_database_lookup_group (DBusUserDatabase *db,
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
           return NULL;
         }
+      info->refcount = 1;
 
       if (gid != DBUS_GID_UNSET)
         {
           if (!_dbus_group_info_fill_gid (info, gid, error))
             {
               _DBUS_ASSERT_ERROR_IS_SET (error);
-              _dbus_group_info_free_allocated (info);
+              _dbus_group_info_unref (info);
               return NULL;
             }
         }
@@ -311,7 +321,7 @@ _dbus_user_database_lookup_group (DBusUserDatabase *db,
           if (!_dbus_group_info_fill (info, groupname, error))
             {
               _DBUS_ASSERT_ERROR_IS_SET (error);
-              _dbus_group_info_free_allocated (info);
+              _dbus_group_info_unref (info);
               return NULL;
             }
         }
@@ -320,23 +330,37 @@ _dbus_user_database_lookup_group (DBusUserDatabase *db,
       gid = DBUS_GID_UNSET;
       groupname = NULL;
 
-      if (!_dbus_hash_table_insert_uintptr (db->groups, info->gid, info))
+      if (_dbus_hash_table_insert_uintptr (db->groups, info->gid, info))
+        {
+          _dbus_group_info_ref (info);
+        }
+      else
         {
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
-          _dbus_group_info_free_allocated (info);
+          _dbus_group_info_unref (info);
           return NULL;
         }
 
 
-      if (!_dbus_hash_table_insert_string (db->groups_by_name,
-                                           info->groupname,
-                                           info))
+      if (_dbus_hash_table_insert_string (db->groups_by_name,
+                                          info->groupname,
+                                          info))
+        {
+          _dbus_group_info_ref (info);
+        }
+      else
         {
           _dbus_hash_table_remove_uintptr (db->groups, info->gid);
+          _dbus_group_info_unref (info);
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
           return NULL;
         }
-      
+
+      /* Release the original reference */
+      _dbus_group_info_unref (info);
+
+      /* Return a borrowed reference to the DBusGroupInfo owned by the
+       * two hash tables */
       return info;
     }
 }
@@ -399,56 +423,3 @@ _dbus_groups_from_uid (dbus_uid_t         uid,
   return TRUE;
 }
 /** @} */
-
-#ifdef DBUS_ENABLE_EMBEDDED_TESTS
-#include <stdio.h>
-
-/**
- * Unit test for dbus-userdb.c.
- * 
- * @returns #TRUE on success.
- */
-dbus_bool_t
-_dbus_userdb_test (const char *test_data_dir)
-{
-  const DBusString *username;
-  const DBusString *homedir;
-  dbus_uid_t uid;
-  unsigned long *group_ids;
-  int n_group_ids, i;
-  DBusError error;
-
-  if (!_dbus_username_from_current_process (&username))
-    _dbus_test_fatal ("didn't get username");
-
-  if (!_dbus_homedir_from_current_process (&homedir))
-    _dbus_test_fatal ("didn't get homedir");
-
-  if (!_dbus_get_user_id (username, &uid))
-    _dbus_test_fatal ("didn't get uid");
-
-  if (!_dbus_groups_from_uid (uid, &group_ids, &n_group_ids))
-    _dbus_test_fatal ("didn't get groups");
-
-  _dbus_test_diag ("    Current user: %s homedir: %s gids:",
-          _dbus_string_get_const_data (username),
-          _dbus_string_get_const_data (homedir));
-
-  for (i=0; i<n_group_ids; i++)
-      _dbus_test_diag ("- %ld", group_ids[i]);
-
-  dbus_error_init (&error);
-  _dbus_test_diag ("Is Console user: %i",
-          _dbus_is_console_user (uid, &error));
-  _dbus_test_diag ("Invocation was OK: %s", error.message ? error.message : "yes");
-  dbus_error_free (&error);
-  _dbus_test_diag ("Is Console user 4711: %i",
-          _dbus_is_console_user (4711, &error));
-  _dbus_test_diag ("Invocation was OK: %s", error.message ? error.message : "yes");
-  dbus_error_free (&error);
-
-  dbus_free (group_ids);
-
-  return TRUE;
-}
-#endif /* DBUS_ENABLE_EMBEDDED_TESTS */

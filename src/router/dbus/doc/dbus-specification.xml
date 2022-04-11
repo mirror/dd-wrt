@@ -6,8 +6,8 @@
 <article id="index">
   <articleinfo>
     <title>D-Bus Specification</title>
-    <releaseinfo>Version 0.35</releaseinfo>
-    <date>2019-05-13</date>
+    <releaseinfo>Version 0.38</releaseinfo>
+    <date>2022-02-23</date>
     <authorgroup>
       <author>
         <firstname>Havoc</firstname>
@@ -77,6 +77,40 @@
        <revremark>
          See <ulink url='http://cgit.freedesktop.org/dbus/dbus/log/doc/dbus-specification.xml'>commit log</ulink>
        </revremark>
+     </revision>
+     <revision>
+       <revnumber>0.38</revnumber>
+       <date>2022-02-23</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Add ActivatableServicesChanged signal and feature flag</simpara></listitem>
+           <listitem><simpara><literal>*</literal> is optionally-escaped in addresses</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
+     </revision>
+     <revision>
+       <revnumber>0.37</revnumber>
+       <date>2021-12-17</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Update recommendations for interoperable DBUS_COOKIE_SHA1 timeouts</simpara></listitem>
+           <listitem><simpara>Clarify padding requirements for arrays and variants</simpara></listitem>
+           <listitem><simpara>Describe where the interoperable machine ID comes from</simpara></listitem>
+           <listitem><simpara>Clarify use of dictionary (array of dict-entry) types</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
+     </revision>
+     <revision>
+       <revnumber>0.36</revnumber>
+       <date>2020-04-21</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Fix a typo in an annotated hexdump of part of a message</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
      </revision>
      <revision>
        <revnumber>0.35</revnumber>
@@ -1179,7 +1213,7 @@
                          0x00             <lineannotation>trailing nul</lineannotation>
 
                                0x00 0x00  <lineannotation>2 bytes of padding to reach next multiple of 4</lineannotation>
-0x03 0x00 0x00 0x00                       <lineannotation>length of ‘bar’ = 1</lineannotation>
+0x03 0x00 0x00 0x00                       <lineannotation>length of ‘bar’ = 3</lineannotation>
                     0x62 0x61 0x72        <lineannotation>‘bar’</lineannotation>
                                     0x00  <lineannotation>trailing nul</lineannotation>
         </screen>
@@ -1197,7 +1231,9 @@
         array elements marshalled in sequence. <varname>n</varname> does not
         include the padding after the length, or any padding after the
         last element. i.e. <varname>n</varname> should be divisible by the
-        number of elements in the array.
+        number of elements in the array. Note that the alignment padding for the
+        first element is required even if there is no first element (an
+        empty array, where <varname>n</varname> is zero).
       </para>
 
       <para>
@@ -1234,6 +1270,24 @@
         than 64, including other container types such as structures.
         (See <link linkend="message-protocol-marshaling-signature">Valid
         Signatures</link>.)
+      </para>
+
+      <para>
+        It should be noted that while a variant itself does not require any
+        alignment padding, the contained value does need to be padded
+        according to the alignment rules of its type.
+      </para>
+
+      <para>
+        For instance, if the current position in the message is at a multiple of
+        8 bytes and the byte-order is big-endian, a variant containing a 64-bit
+        integer 5 would be marshalled as:
+
+        <screen>
+0x01 0x74 0x00                          <lineannotation>signature bytes (length = 1, signature = 't' and trailing nul)</lineannotation>
+               0x00 0x00 0x00 0x00 0x00 <lineannotation>padding to 8-byte boundary</lineannotation>
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x05 <lineannotation>8 bytes of contained value</lineannotation>
+        </screen>
       </para>
     </sect2>
 
@@ -3393,8 +3447,27 @@
                 timeout can be fairly short), or more than a reasonable
                 time in the future (so that cookies never accidentally
                 become permanent, if the clock was set far into the future
-                at some point). If no recent keys remain, the
-                server may generate a new key.
+                at some point). The reference implementation deletes cookies
+                that are more than 5 minutes into the future, or more than
+                7 minutes in the past. For interoperability, using the
+                same arbitrary times in other implementations is suggested.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If no sufficiently recent cookies remain, the server
+                generates a new cookie. To avoid spurious authentication
+                failures, cookies that are close to their deletion time
+                should not be used for new authentication operations.
+                For example, this avoids a client starting to use a cookie
+                whose age is 6m59s, and having authentication subsequently
+                fail because it takes 2 seconds, during which time the
+                cookie's age became 7m01s, greater than 7 minutes, causing
+                the server to delete it. The reference implementation
+                generates a new cookie whenever the most recent cookie is
+                older than 5 minutes, giving clients at least 2 minutes
+                to finish authentication. For interoperability, using the
+                same arbitrary time in other implementations is suggested.
               </para>
             </listitem>
             <listitem>
@@ -3448,7 +3521,7 @@
         <listitem>
           <para>
             The set of optionally-escaped bytes is:
-            <literal>[-0-9A-Za-z_/.\]</literal>. To escape, each
+            <literal>[-0-9A-Za-z_/.\*]</literal>. To escape, each
             <emphasis>byte</emphasis> (note, not character) which is not in the
             set of optionally-escaped bytes must be replaced with an ASCII
             percent (<literal>%</literal>) and the value of the byte in hex.
@@ -4197,6 +4270,24 @@
         reference implementation handles this method automatically.
       </para>
       <para>
+        On Unix, implementations should try to read the machine ID from
+        <literal>/var/lib/dbus/machine-id</literal> and
+        <literal>/etc/machine-id</literal>. The latter is
+        <ulink url='https://www.freedesktop.org/software/systemd/man/machine-id.html'>
+        defined by systemd</ulink>, but systems not using systemd may provide
+        an equivalent file.
+        If both exist, they are expected to have the same contents, and if they
+        differ, the spec does not define which takes precedence (the reference
+        implementation prefers <literal>/var/lib/dbus/machine-id</literal>,
+        but sd-bus does not).
+      </para>
+      <para>
+        On Windows, the hardware profile GUID is used as the machine ID,
+        with the punctuation removed. This can be obtained with the
+        <ulink url='https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcurrenthwprofilea'>
+        <function>GetCurrentHwProfile</function></ulink> function.
+      </para>
+      <para>
         The UUID is intended to be per-instance-of-the-operating-system, so may represent
         a virtual machine running on a hypervisor, rather than a physical machine.
         Basically if two processes see the same UUID, they should also see the same
@@ -4247,7 +4338,7 @@
                                                    in STRING property_name,
                                                    in VARIANT value);
               org.freedesktop.DBus.Properties.GetAll (in STRING interface_name,
-                                                      out DICT&lt;STRING,VARIANT&gt; props);
+                                                      out ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt; props);
         </programlisting>
       </para>
       <para>
@@ -4297,7 +4388,7 @@
       <para>
         <programlisting>
               org.freedesktop.DBus.Properties.PropertiesChanged (STRING interface_name,
-                                                                 DICT&lt;STRING,VARIANT&gt; changed_properties,
+                                                                 ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt; changed_properties,
                                                                  ARRAY&lt;STRING&gt; invalidated_properties);
         </programlisting>
       </para>
@@ -4344,7 +4435,7 @@
       </para>
       <para>
         <programlisting>
-          org.freedesktop.DBus.ObjectManager.GetManagedObjects (out DICT&lt;OBJPATH,DICT&lt;STRING,DICT&lt;STRING,VARIANT&gt;&gt;&gt; objpath_interfaces_and_properties);
+          org.freedesktop.DBus.ObjectManager.GetManagedObjects (out ARRAY of DICT_ENTRY&lt;OBJPATH,ARRAY of DICT_ENTRY&lt;STRING,ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt;&gt;&gt; objpath_interfaces_and_properties);
         </programlisting>
       </para>
       <para>
@@ -4367,7 +4458,7 @@
       <para>
         <programlisting>
           org.freedesktop.DBus.ObjectManager.InterfacesAdded (OBJPATH object_path,
-                                                              DICT&lt;STRING,DICT&lt;STRING,VARIANT&gt;&gt; interfaces_and_properties);
+                                                              ARRAY of DICT_ENTRY&lt;STRING,ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt;&gt; interfaces_and_properties);
           org.freedesktop.DBus.ObjectManager.InterfacesRemoved (OBJPATH object_path,
                                                                 ARRAY&lt;STRING&gt; interfaces);
         </programlisting>
@@ -6361,6 +6452,32 @@
         </para>
       </sect3>
 
+      <sect3 id="bus-messages-activatable-services-changed">
+        <title><literal>org.freedesktop.DBus.ActivatableServicesChanged</literal></title>
+        <para>
+          This is a signal:
+          <programlisting>
+            ActivatableServicesChanged ()
+          </programlisting>
+        </para>
+        <para>
+          This signal is sent when the list of activatable services,
+          as returned by ListActivatableNames(), might have changed
+          (see <xref linkend="bus-messages-list-activatable-names"/>).
+          Clients that have cached information about the activatable
+          services should call ListActivatableNames() again to update
+          their cache.
+        </para>
+        <para>
+          The presence of this signal is indicated by a
+          bus feature property (for details see
+          <xref linkend="message-bus-properties-features"/>).
+          In older implementations that do not have this feature,
+          there is no way to be informed when the list of activatable
+          names has changed.
+        </para>
+      </sect3>
+
       <sect3 id="bus-messages-start-service-by-name">
         <title><literal>org.freedesktop.DBus.StartServiceByName</literal></title>
         <para>
@@ -6467,7 +6584,7 @@
         <para>
           As a method:
           <programlisting>
-            UpdateActivationEnvironment (in ARRAY of DICT&lt;STRING,STRING&gt; environment)
+            UpdateActivationEnvironment (in ARRAY of DICT_ENTRY&lt;STRING,STRING&gt; environment)
           </programlisting>
           Message arguments:
           <informaltable>
@@ -6482,7 +6599,7 @@
               <tbody>
                 <row>
                   <entry>0</entry>
-                  <entry>ARRAY of DICT&lt;STRING,STRING&gt;</entry>
+                  <entry>ARRAY of DICT_ENTRY&lt;STRING,STRING&gt;</entry>
                   <entry>Environment to add or update</entry>
                 </row>
               </tbody>
@@ -6661,7 +6778,7 @@
         <para>
           As a method:
           <programlisting>
-            DICT&lt;STRING,VARIANT&gt; GetConnectionCredentials (in STRING bus_name)
+            ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt; GetConnectionCredentials (in STRING bus_name)
           </programlisting>
           Message arguments:
           <informaltable>
@@ -6697,7 +6814,7 @@
             <tbody>
               <row>
                 <entry>0</entry>
-                <entry>DICT&lt;STRING,VARIANT&gt;</entry>
+                <entry>ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt;</entry>
                 <entry>Credentials</entry>
               </row>
             </tbody>
@@ -7172,6 +7289,17 @@
         <para>
           The features currently defined in this specification are as follows:
           <variablelist>
+
+            <varlistentry>
+              <term><literal>ActivatableServicesChanged</literal></term>
+              <listitem>
+                <para>
+                  This message bus emits the <literal>ActivatableServicesChanged</literal>
+                  signal whenever its list of activatable services might have changed
+                  (for details see <xref linkend="bus-messages-activatable-services-changed"/>).
+                </para>
+              </listitem>
+            </varlistentry>
 
             <varlistentry>
               <term><literal>AppArmor</literal></term>

@@ -1784,10 +1784,16 @@ dbus_message_get_type (DBusMessage *message)
  * To append an array of fixed-length basic types (except Unix file
  * descriptors), pass in the DBUS_TYPE_ARRAY typecode, the element
  * typecode, the address of the array pointer, and a 32-bit integer
- * giving the number of elements in the array. So for example: @code
- * const dbus_int32_t array[] = { 1, 2, 3 }; const dbus_int32_t
- * *v_ARRAY = array; dbus_message_append_args (message,
- * DBUS_TYPE_ARRAY, DBUS_TYPE_INT32, &v_ARRAY, 3, DBUS_TYPE_INVALID);
+ * giving the number of elements in the array. So for example:
+ *
+ * @code
+ *
+ * const dbus_int32_t array[] = { 1, 2, 3 };
+ * const dbus_int32_t *v_ARRAY = array;
+ * dbus_message_append_args (message,
+ *                           DBUS_TYPE_ARRAY, DBUS_TYPE_INT32, &v_ARRAY, 3,
+ *                           DBUS_TYPE_INVALID);
+ *
  * @endcode
  *
  * This function does not support arrays of Unix file descriptors. If

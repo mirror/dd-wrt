@@ -296,7 +296,7 @@ bus_context_new_test (const DBusString *test_data_dir,
     }
 
   dbus_error_init (&error);
-  context = bus_context_new (&config_file, BUS_CONTEXT_FLAG_NONE, NULL, NULL, NULL, &error);
+  context = bus_context_new (&config_file, BUS_CONTEXT_FLAG_NONE, NULL, NULL, NULL, NULL, &error);
   if (context == NULL)
     {
       _DBUS_ASSERT_ERROR_IS_SET (&error);

@@ -57,4 +57,3 @@ ElementType bus_config_parser_element_name_to_type (const char *element_name);
 const char* bus_config_parser_element_type_to_name (ElementType type);
 
 #endif /* BUS_CONFIG_PARSER_COMMON_H */
-

@@ -88,10 +88,8 @@ uninstallable_test_programs += \
 	test-bus \
 	test-bus-dispatch \
 	test-bus-dispatch-sha1 \
-	test-hash \
 	test-marshal-recursive \
 	test-message-internals \
-	test-misc-internals \
 	$(NULL)
 
 if DBUS_UNIX
@@ -111,6 +109,9 @@ else !DBUS_ENABLE_EMBEDDED_TESTS
 TEST_BINARIES=
 
 endif !DBUS_ENABLE_EMBEDDED_TESTS
+
+test_atomic_SOURCES = internals/atomic.c
+test_atomic_LDADD = libdbus-testutils.la
 
 noinst_PROGRAMS += $(TEST_BINARIES)
 
@@ -174,7 +175,7 @@ manual_dir_iter_SOURCES = manual-dir-iter.c
 manual_dir_iter_LDADD = $(top_builddir)/dbus/libdbus-internal.la
 
 manual_paths_SOURCES = manual-paths.c
-manual_paths_LDADD = $(top_builddir)/dbus/libdbus-internal.la
+manual_paths_LDADD = libdbus-testutils.la
 
 manual_tcp_SOURCES = manual-tcp.c
 manual_tcp_LDADD = $(top_builddir)/dbus/libdbus-internal.la
@@ -237,6 +238,7 @@ test_message_internals_SOURCES = \
 test_message_internals_LDADD = libdbus-testutils.la
 
 test_misc_internals_SOURCES = \
+	internals/address.c \
 	internals/dbus-auth-script.c \
 	internals/dbus-auth-script.h \
 	internals/dbus-auth-util.c \
@@ -247,8 +249,10 @@ test_misc_internals_SOURCES = \
 	internals/dbus-marshal-validate-util.c \
 	internals/dbus-string-util.c \
 	internals/dbus-sysdeps-util.c \
+	internals/mempool.c \
 	internals/misc-internals.c \
 	internals/misc-internals.h \
+	internals/sha.c \
 	$(NULL)
 test_misc_internals_LDADD = libdbus-testutils.la
 
@@ -266,7 +270,10 @@ installable_helpers = \
 	test-sleep-forever \
 	$(NULL)
 installable_tests = \
+	test-atomic \
+	test-hash \
 	test-shell \
+	test-misc-internals \
 	test-printf \
 	$(NULL)
 installable_manual_tests = \

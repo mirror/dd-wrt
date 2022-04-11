@@ -93,4 +93,3 @@ _dbus_server_listen_platform_specific (DBusAddressEntry *entry,
 }
 
 /** @} */
-

@@ -70,4 +70,3 @@ _dbus_clear_loop (DBusLoop **pointer_to_loop)
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS */
 
 #endif /* DBUS_MAINLOOP_H */
-

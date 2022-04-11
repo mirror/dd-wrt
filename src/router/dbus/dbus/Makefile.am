@@ -240,9 +240,15 @@ DBUS_SHARED_SOURCES=				\
 	$(DBUS_SHARED_arch_sources)		\
 	dbus-sysdeps.c				\
 	dbus-sysdeps.h				\
-	dbus-test-tap.c				\
-	dbus-test-tap.h				\
 	dbus-valgrind-internal.h
+
+if DBUS_ENABLE_EMBEDDED_TESTS
+DBUS_SHARED_SOURCES += \
+	dbus-test-tap.c \
+	dbus-test-tap.h \
+	$(NULL)
+# else they are included in the test library instead
+endif
 
 ### source code that is generic utility functionality used
 ### by the bus daemon or test apps, but is NOT included

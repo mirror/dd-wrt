@@ -42,16 +42,32 @@
  * @{
  */
 
+static DBusUserInfo *
+_dbus_user_info_ref (DBusUserInfo *info)
+{
+  _dbus_assert (info->refcount > 0);
+  _dbus_assert (info->refcount < SIZE_MAX);
+  info->refcount++;
+  return info;
+}
+
 /**
- * Frees the given #DBusUserInfo's members with _dbus_user_info_free()
+ * Decrements the reference count. If it reaches 0,
+ * frees the given #DBusUserInfo's members with _dbus_user_info_free()
  * and also calls dbus_free() on the block itself
  *
  * @param info the info
  */
 void
-_dbus_user_info_free_allocated (DBusUserInfo *info)
+_dbus_user_info_unref (DBusUserInfo *info)
 {
   if (info == NULL) /* hash table will pass NULL */
+    return;
+
+  _dbus_assert (info->refcount > 0);
+  _dbus_assert (info->refcount < SIZE_MAX);
+
+  if (--info->refcount > 0)
     return;
 
   _dbus_user_info_free (info);
@@ -59,15 +75,22 @@ _dbus_user_info_free_allocated (DBusUserInfo *info)
 }
 
 /**
- * Frees the given #DBusGroupInfo's members with _dbus_group_info_free()
+ * Decrements the reference count. If it reaches 0,
+ * frees the given #DBusGroupInfo's members with _dbus_group_info_free()
  * and also calls dbus_free() on the block itself
  *
  * @param info the info
  */
 void
-_dbus_group_info_free_allocated (DBusGroupInfo *info)
+_dbus_group_info_unref (DBusGroupInfo *info)
 {
   if (info == NULL) /* hash table will pass NULL */
+    return;
+
+  _dbus_assert (info->refcount > 0);
+  _dbus_assert (info->refcount < SIZE_MAX);
+
+  if (--info->refcount > 0)
     return;
 
   _dbus_group_info_free (info);
@@ -129,9 +152,9 @@ _dbus_is_a_number (const DBusString *str,
  * @param uid the user ID or #DBUS_UID_UNSET
  * @param username username or #NULL 
  * @param error error to fill in
- * @returns the entry in the database
+ * @returns the entry in the database (borrowed, do not free)
  */
-DBusUserInfo*
+const DBusUserInfo *
 _dbus_user_database_lookup (DBusUserDatabase *db,
                             dbus_uid_t        uid,
                             const DBusString *username,
@@ -177,13 +200,14 @@ _dbus_user_database_lookup (DBusUserDatabase *db,
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
           return NULL;
         }
+      info->refcount = 1;
 
       if (uid != DBUS_UID_UNSET)
         {
           if (!_dbus_user_info_fill_uid (info, uid, error))
             {
               _DBUS_ASSERT_ERROR_IS_SET (error);
-              _dbus_user_info_free_allocated (info);
+              _dbus_user_info_unref (info);
               return NULL;
             }
         }
@@ -192,7 +216,7 @@ _dbus_user_database_lookup (DBusUserDatabase *db,
           if (!_dbus_user_info_fill (info, username, error))
             {
               _DBUS_ASSERT_ERROR_IS_SET (error);
-              _dbus_user_info_free_allocated (info);
+              _dbus_user_info_unref (info);
               return NULL;
             }
         }
@@ -202,26 +226,40 @@ _dbus_user_database_lookup (DBusUserDatabase *db,
       username = NULL;
 
       /* insert into hash */
-      if (!_dbus_hash_table_insert_uintptr (db->users, info->uid, info))
+      if (_dbus_hash_table_insert_uintptr (db->users, info->uid, info))
+        {
+          _dbus_user_info_ref (info);
+        }
+      else
         {
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
-          _dbus_user_info_free_allocated (info);
+          _dbus_user_info_unref (info);
           return NULL;
         }
 
-      if (!_dbus_hash_table_insert_string (db->users_by_name,
-                                           info->username,
-                                           info))
+      if (_dbus_hash_table_insert_string (db->users_by_name,
+                                          info->username,
+                                          info))
+        {
+          _dbus_user_info_ref (info);
+        }
+      else
         {
           _dbus_hash_table_remove_uintptr (db->users, info->uid);
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
+          _dbus_user_info_unref (info);
           return NULL;
         }
-      
+
+      _dbus_user_info_unref (info);
+
+      /* Return a borrowed pointer to the DBusUserInfo owned by the
+       * hash tables */
       return info;
     }
 }
 
+/* Protected by _DBUS_LOCK_system_users */
 static dbus_bool_t database_locked = FALSE;
 static DBusUserDatabase *system_db = NULL;
 static DBusString process_username;
@@ -566,24 +604,24 @@ _dbus_user_database_new (void)
   db->refcount = 1;
 
   db->users = _dbus_hash_table_new (DBUS_HASH_UINTPTR,
-                                    NULL, (DBusFreeFunction) _dbus_user_info_free_allocated);
+                                    NULL, (DBusFreeFunction) _dbus_user_info_unref);
   
   if (db->users == NULL)
     goto failed;
 
   db->groups = _dbus_hash_table_new (DBUS_HASH_UINTPTR,
-                                     NULL, (DBusFreeFunction) _dbus_group_info_free_allocated);
+                                     NULL, (DBusFreeFunction) _dbus_group_info_unref);
   
   if (db->groups == NULL)
     goto failed;
 
   db->users_by_name = _dbus_hash_table_new (DBUS_HASH_STRING,
-                                            NULL, NULL);
+                                            NULL, (DBusFreeFunction) _dbus_user_info_unref);
   if (db->users_by_name == NULL)
     goto failed;
   
   db->groups_by_name = _dbus_hash_table_new (DBUS_HASH_STRING,
-                                             NULL, NULL);
+                                             NULL, (DBusFreeFunction) _dbus_group_info_unref);
   if (db->groups_by_name == NULL)
     goto failed;
   

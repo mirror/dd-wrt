@@ -47,6 +47,7 @@ void        _dbus_sha_update  (DBusSHAContext   *context,
                                const DBusString *data);
 dbus_bool_t _dbus_sha_final   (DBusSHAContext   *context,
                                DBusString       *results);
+DBUS_EMBEDDED_TESTS_EXPORT
 dbus_bool_t _dbus_sha_compute (const DBusString *data,
                                DBusString       *ascii_output);
 

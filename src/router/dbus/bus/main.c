@@ -48,6 +48,10 @@
 
 static BusContext *context;
 
+#ifdef DBUS_WIN
+#include <dbus/dbus-sysdeps-win.h>
+#endif
+
 #ifdef DBUS_UNIX
 
 /* Despite its name and its unidirectional nature, this is actually
@@ -163,6 +167,9 @@ usage (void)
       " [--syslog]"
       " [--syslog-only]"
       " [--nofork]"
+#ifdef DBUS_WIN
+      " [--ready-event-handle=value]"
+#endif
 #ifdef DBUS_UNIX
       " [--fork]"
       " [--systemd-activation]"
@@ -403,6 +410,8 @@ main (int argc, char **argv)
   dbus_bool_t print_address;
   dbus_bool_t print_pid;
   BusContextFlags flags;
+  void *ready_event_handle;
+
 #ifdef DBUS_UNIX
   const char *error_str;
 
@@ -428,6 +437,7 @@ main (int argc, char **argv)
    * to inherit fds we might have inherited from our caller. */
   _dbus_fd_set_all_close_on_exec ();
 #endif
+  ready_event_handle = NULL;
 
   if (!_dbus_string_init (&config_file))
     return 1;
@@ -619,6 +629,20 @@ main (int argc, char **argv)
         {
           print_pid = TRUE; /* and we'll get the next arg if appropriate */
         }
+#ifdef DBUS_WIN
+      else if (strstr (arg, "--ready-event-handle=") == arg)
+        {
+          const char *desc;
+          desc = strchr (arg, '=');
+          _dbus_assert (desc != NULL);
+          ++desc;
+          if (sscanf (desc, "%p", &ready_event_handle) != 1)
+            {
+              fprintf (stderr, "%s specified, but invalid handle provided\n", arg);
+              exit (1);
+            }
+        }
+#endif
       else
         {
           usage ();
@@ -693,7 +717,7 @@ main (int argc, char **argv)
 
   dbus_error_init (&error);
   context = bus_context_new (&config_file, flags,
-                             &print_addr_pipe, &print_pid_pipe,
+                             &print_addr_pipe, &print_pid_pipe, ready_event_handle,
                              _dbus_string_get_length(&address) > 0 ? &address : NULL,
                              &error);
   _dbus_string_free (&config_file);

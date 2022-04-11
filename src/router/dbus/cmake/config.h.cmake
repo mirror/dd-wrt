@@ -6,6 +6,14 @@
 /* indicate that we are building with cmake */
 #define DBUS_CMAKE 1
 
+/* On Windows, we expect to be using msvcrt.dll-compatible printf
+ * (%I64u instead of %llu) unless otherwise specified. This must be
+ * done near the beginning of config.h, before we have included any
+ * system headers that might check the value of this macro. */
+#ifndef __USE_MINGW_ANSI_STDIO
+#   define __USE_MINGW_ANSI_STDIO 0
+#endif
+
 @AUTOPACKAGE_CONFIG_H_TEMPLATE@
 
 /*
@@ -13,12 +21,23 @@
  * should be placed in this file
 */
 
+/* Opt-in to modern APIs and thread-safety for Solaris. In the Autotools
+ * build system we do the equivalent of this by appending to CFLAGS
+ * in configure.ac */
+#ifdef __sun
+# define __EXTENSIONS__
+# define _POSIX_PTHREAD_SEMANTICS
+# define _REENTRANT
+# define _XOPEN_SOURCE 500
+#endif
+
 #cmakedefine DBUS_CONSOLE_AUTH_DIR "@DBUS_CONSOLE_AUTH_DIR@"
 #cmakedefine DBUS_DATADIR  "@DBUS_DATADIR@"
 #cmakedefine DBUS_BINDIR   "@DBUS_BINDIR@"
 #cmakedefine DBUS_PREFIX "@DBUS_PREFIX@"
 #cmakedefine DBUS_SYSTEM_CONFIG_FILE  "@DBUS_SYSTEM_CONFIG_FILE@"
 #cmakedefine DBUS_SESSION_CONFIG_FILE "@DBUS_SESSION_CONFIG_FILE@"
+#cmakedefine DBUS_SESSION_SOCKET_DIR "@DBUS_SESSION_SOCKET_DIR@"
 #cmakedefine DBUS_DAEMON_NAME "@DBUS_DAEMON_NAME@"
 #cmakedefine DBUS_SYSTEM_BUS_DEFAULT_ADDRESS  "@DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@"
 #cmakedefine DBUS_SESSION_BUS_CONNECT_ADDRESS  "@DBUS_SESSION_BUS_CONNECT_ADDRESS@"
@@ -27,7 +46,7 @@
 #cmakedefine DBUS_RUNSTATEDIR "@DBUS_RUNSTATEDIR@"
 
 #cmakedefine DBUS_ENABLE_STATS
-#cmakedefine DBUS_ENABLE_CONTAINERS
+#cmakedefine ENABLE_TRADITIONAL_ACTIVATION
 
 #define TEST_LISTEN       "@TEST_LISTEN@"
 
@@ -105,7 +124,7 @@
 
 #cmakedefine HAVE_MEMORY_H 1
 
-/* Define to 1 if you have sys/poll.h */
+/* Define to 1 if you have poll */
 #cmakedefine    HAVE_POLL 1
 
 /* Define to 1 if you have signal.h */
@@ -125,6 +144,7 @@
 #cmakedefine HAVE_SYS_EVENTS_H 1
 #cmakedefine HAVE_SYS_INOTIFY_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
+#cmakedefine HAVE_SYS_RANDOM_H 1
 #cmakedefine HAVE_SYS_RESOURCE_H 1
 #cmakedefine HAVE_SYS_STAT_H 1
 
@@ -164,7 +184,7 @@
 #cmakedefine   HAVE_NANOSLEEP 1
 
 /* Define to 1 if you have getpwnam_r */
-#cmakedefine   HAVE_POSIX_GETPWNAM_R 1
+#cmakedefine   HAVE_GETPWNAM_R 1
 
 /* Define to 1 if you have socketpair */
 #cmakedefine   HAVE_SOCKETPAIR 1
@@ -208,18 +228,32 @@
 #cmakedefine HAVE_DDFD 1
 
 #cmakedefine HAVE_INOTIFY_INIT1 1
+#cmakedefine HAVE_GETRANDOM 1
 #cmakedefine HAVE_GETRLIMIT 1
 #cmakedefine HAVE_PRCTL 1
 #cmakedefine HAVE_PRLIMIT 1
 #cmakedefine HAVE_RAISE 1
 #cmakedefine HAVE_SETRLIMIT 1
 #cmakedefine HAVE_UNIX_FD_PASSING 1
+#cmakedefine HAVE_SYSTEMD
+#cmakedefine HAVE_VASPRINTF 1
+#cmakedefine HAVE_VSNPRINTF 1
 
 /* Define to use epoll(4) on Linux */
 #cmakedefine DBUS_HAVE_LINUX_EPOLL 1
 
 /* Use the gcc __sync extension */
 #cmakedefine DBUS_USE_SYNC 1
+#cmakedefine HAVE_VASPRINTF 1
+#cmakedefine HAVE_VSNPRINTF 1
+
+/* whether -export-dynamic was passed to libtool */
+#cmakedefine DBUS_BUILT_R_DYNAMIC 1
+
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+#cmakedefine _GNU_SOURCE 1
+#endif
 
 // structs
 /* Define to 1 if you have struct cmsgred */
@@ -287,5 +321,9 @@
 #ifdef DBUS_WIN
 #define FD_SETSIZE @FD_SETSIZE@
 #endif
+
+#cmakedefine01 HAVE_DECL_ENVIRON
+#cmakedefine01 HAVE_DECL_LOG_PERROR
+#cmakedefine01 HAVE_DECL_MSG_NOSIGNAL
 
 #endif  // _DBUS_CONFIG_H

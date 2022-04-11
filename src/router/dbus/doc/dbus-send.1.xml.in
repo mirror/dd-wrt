@@ -21,7 +21,8 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>dbus-send</command>
-    <group choice='opt'><arg choice='plain'>--system </arg><arg choice='plain'>--session </arg><arg choice='plain'>--address=<replaceable>ADDRESS</replaceable></arg></group>
+  <group choice='opt'><arg choice='plain'>--system </arg><arg choice='plain'>--session </arg><arg choice='plain'>--bus=<replaceable>ADDRESS</replaceable></arg><arg choice='plain'>--peer=<replaceable>ADDRESS</replaceable></arg></group>
+    <arg choice='opt'>--sender=<replaceable>NAME</replaceable></arg>
     <arg choice='opt'>--dest=<replaceable>NAME</replaceable></arg>
     <arg choice='opt'><arg choice='plain'>--print-reply </arg><arg choice='opt'><replaceable>=literal</replaceable></arg></arg>
     <arg choice='opt'>--reply-timeout=<replaceable>MSEC</replaceable></arg>
@@ -137,9 +138,21 @@ The default is implementation&hyphen;defined, typically 25 seconds.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><option>--address=</option><replaceable>ADDRESS</replaceable></term>
+  <term><option>--bus=</option><replaceable>ADDRESS</replaceable></term>
   <listitem>
-<para>Send to <replaceable>ADDRESS</replaceable>.</para>
+<para>Register on a message bus at <replaceable>ADDRESS</replaceable>, typically a <command>dbus-daemon</command>.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><option>--peer=</option><replaceable>ADDRESS</replaceable></term>
+  <listitem>
+<para>Send to a non-message-bus D-Bus server at <replaceable>ADDRESS</replaceable>. In this case <command>dbus-send</command> will not call the <literal>Hello</literal> method.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><option>--sender=</option><replaceable>NAME</replaceable></term>
+  <listitem>
+<para>Request ownership of name <replaceable>NAME</replaceable> before sending the message. The name will be released when <command>dbus-send</command> exits.</para>
   </listitem>
   </varlistentry>
   <varlistentry>

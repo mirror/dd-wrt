@@ -17,6 +17,8 @@ please report it privately to dbus-security@lists.freedesktop.org
 or by reporting a Gitlab issue at
 https://gitlab.freedesktop.org/dbus/dbus/issues/new and marking it
 as "confidential".
+For appropriate patches, please create a "confidential" merge request,
+see [Sending a merge request](#sending-a-merge-request] for details.
 
 ## Mailing list
 
@@ -122,6 +124,9 @@ When you consider your changes to be ready for merging to mainline:
 * push your changes to your personal fork as a branch
 * create a merge request at
   <https://gitlab.freedesktop.org/dbus/dbus/merge_requests>
+* Merge requests for "confidential" issues must also be created as
+  "confidential", see <https://docs.gitlab.com/ee/user/project/merge_requests/confidential.html>
+  for details.
 
 ### Security guidelines
 

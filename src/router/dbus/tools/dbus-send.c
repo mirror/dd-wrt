@@ -54,7 +54,7 @@ static void usage (int ecode) _DBUS_GNUC_NORETURN;
 static void
 usage (int ecode)
 {
-  fprintf (stderr, "Usage: %s [--help] [--system | --session | --bus=ADDRESS | --peer=ADDRESS] [--dest=NAME] [--type=TYPE] [--print-reply[=literal]] [--reply-timeout=MSEC] <destination object path> <message name> [contents ...]\n", appname);
+  fprintf (stderr, "Usage: %s [--help] [--system | --session | --bus=ADDRESS | --peer=ADDRESS] [--sender=NAME] [--dest=NAME] [--type=TYPE] [--print-reply[=literal]] [--reply-timeout=MSEC] <destination object path> <message name> [contents ...]\n", appname);
   exit (ecode);
 }
 
@@ -261,6 +261,7 @@ main (int argc, char *argv[])
   int message_type = DBUS_MESSAGE_TYPE_SIGNAL;
   const char *type_str = NULL;
   const char *address = NULL;
+  const char *sender = NULL;
   int is_bus = FALSE;
   int session_or_system = FALSE;
 
@@ -310,6 +311,16 @@ main (int argc, char *argv[])
           if (address[0] == '\0')
             {
               fprintf (stderr, "\"--peer=\" and \"--bus=\" require an ADDRESS\n");
+              usage (1);
+            }
+        }
+      else if (strstr (arg, "--sender=") == arg)
+        {
+          sender = strchr (arg, '=') + 1;
+
+          if (sender[0] == '\0')
+            {
+              fprintf (stderr, "\"--sender=\" requires a NAME\n");
               usage (1);
             }
         }
@@ -372,6 +383,12 @@ main (int argc, char *argv[])
       usage (1);
     }
 
+  if (sender != NULL && address != NULL && !is_bus)
+    {
+      fprintf (stderr, "\"--peer\" may not be used with \"--sender\"\n");
+      exit (1);
+    }
+
   if (type_str != NULL)
     {
       message_type = dbus_message_type_from_string (type_str);
@@ -383,13 +400,28 @@ main (int argc, char *argv[])
           exit (1);
         }
     }
-  
+
   dbus_error_init (&error);
 
   if (dest && !dbus_validate_bus_name (dest, &error))
     {
       fprintf (stderr, "invalid value (%s) of \"--dest\"\n", dest);
+      dbus_error_free (&error);
       usage (1);
+    }
+
+  if (sender && !dbus_validate_bus_name (sender, &error))
+    {
+      fprintf (stderr, "invalid value (%s) of \"--sender\"\n", sender);
+      dbus_error_free (&error);
+      usage (1);
+    }
+
+  if (!dbus_validate_path (path, &error))
+    {
+      fprintf (stderr, "%s\n", error.message);
+      dbus_error_free (&error);
+      exit (1);
     }
 
   if (address != NULL)
@@ -421,6 +453,29 @@ main (int argc, char *argv[])
         }
     }
 
+  if (sender != NULL)
+    {
+      int ret = dbus_bus_request_name (connection, sender, DBUS_NAME_FLAG_DO_NOT_QUEUE, &error);
+      switch (ret)
+        {
+        case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+          /* success */
+          break;
+        case DBUS_REQUEST_NAME_REPLY_EXISTS:
+          fprintf (stderr, "Requested name \"%s\" already has owner\n", sender);
+          exit (1);
+        case -1:
+          fprintf (stderr, "Failed to request sender name \"%s\": %s\n", sender, error.message);
+          dbus_error_free (&error);
+          exit (1);
+        default:
+          /* This should be unreachable if the bus is compliant */
+          fprintf (stderr, "Failed to request sender name \"%s\": unexpected result code %d\n",
+                   sender, ret);
+          exit (1);
+        }
+    }
+
   if (message_type == DBUS_MESSAGE_TYPE_METHOD_CALL)
     {
       char *last_dot;
@@ -433,7 +488,23 @@ main (int argc, char *argv[])
           exit (1);
         }
       *last_dot = '\0';
-      
+
+      if (!dbus_validate_interface (name, &error))
+        {
+          /* Typically this is "Interface name was not valid: \"xxx\""
+           * so we don't need to prefix anything special */
+          fprintf (stderr, "%s\n", error.message);
+          dbus_error_free (&error);
+          exit (1);
+        }
+
+      if (!dbus_validate_member (last_dot + 1, &error))
+        {
+          fprintf (stderr, "Invalid method name: %s\n", error.message);
+          dbus_error_free (&error);
+          exit (1);
+        }
+
       message = dbus_message_new_method_call (NULL,
                                               path,
                                               name,
@@ -453,7 +524,21 @@ main (int argc, char *argv[])
           exit (1);
         }
       *last_dot = '\0';
-      
+
+      if (!dbus_validate_interface (name, &error))
+        {
+          fprintf (stderr, "%s\n", error.message);
+          dbus_error_free (&error);
+          exit (1);
+        }
+
+      if (!dbus_validate_member (last_dot + 1, &error))
+        {
+          fprintf (stderr, "Invalid signal name: %s\n", error.message);
+          dbus_error_free (&error);
+          exit (1);
+        }
+
       message = dbus_message_new_signal (path, name, last_dot + 1);
       handle_oom (message != NULL);
     }

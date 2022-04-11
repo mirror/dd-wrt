@@ -62,15 +62,15 @@ test_command_line_internal (dbus_bool_t should_work,
           return FALSE;
         }
     }
-  
+
   _dbus_list_clear (&list);
   command_line = _dbus_string_get_data (&str);
-  printf ("# Testing command line '%s'\n", command_line);
+  fprintf (stderr, "# Testing command line '%s'\n", command_line);
 
   dbus_error_init (&error);
   if (!_dbus_shell_parse_argv (command_line, &shell_argc, &shell_argv, &error))
     {
-      printf ("# Error%s parsing command line: %s\n",
+      fprintf (stderr, "# Error%s parsing command line: %s\n",
           should_work ? "" : " (as expected)",
           error.message ? error.message : "");
       dbus_free (original_argv);
@@ -81,22 +81,22 @@ test_command_line_internal (dbus_bool_t should_work,
     {
       if (shell_argc != original_argc)
         {
-          printf ("# Number of arguments returned (%d) don't match original (%d)\n",
+          fprintf (stderr, "# Number of arguments returned (%d) don't match original (%d)\n",
                   shell_argc, original_argc);
           dbus_free (original_argv);
           dbus_free_string_array (shell_argv);
           return FALSE;
-        } 
-      printf ("# Number of arguments: %d\n", shell_argc);
+        }
+      fprintf (stderr, "# Number of arguments: %d\n", shell_argc);
       for (i = 0; i < shell_argc; i++)
         {
           char *unquoted;
-          
+
           unquoted = _dbus_shell_unquote (original_argv[i]);
           if (strcmp (unquoted ? unquoted : "",
                       shell_argv[i] ? shell_argv[i] : ""))
             {
-              printf ("Position %d, returned argument (%s) does not match original (%s)\n",
+              fprintf (stderr, "Position %d, returned argument (%s) does not match original (%s)\n",
                       i, shell_argv[i], unquoted);
               dbus_free (unquoted);
               dbus_free (original_argv);
@@ -105,9 +105,9 @@ test_command_line_internal (dbus_bool_t should_work,
             }
           dbus_free (unquoted);
           if (shell_argv[i])
-            printf ("Argument %d = %s\n", i, shell_argv[i]);
+            fprintf (stderr, "# Argument %d = %s\n", i, shell_argv[i]);
         }
-      
+
       dbus_free_string_array (shell_argv);
     }
 
@@ -116,7 +116,7 @@ test_command_line_internal (dbus_bool_t should_work,
 
   if (!should_work)
     {
-      printf ("# Expected an error\n");
+      fprintf (stderr, "# Expected an error\n");
       return FALSE;
     }
 

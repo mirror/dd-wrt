@@ -241,8 +241,10 @@ _dbus_string_init_const_len (DBusString *str,
 }
 
 /**
- * Initializes a string from another string. The
- * string must eventually be freed with _dbus_string_free().
+ * Initializes a string from another string
+ *
+ * The string must be freed with _dbus_string_free() in case of success.
+ * In case of error the string is freed by this function itself.
  *
  * @param str memory to hold the string
  * @param from instance from which the string is initialized
@@ -252,9 +254,14 @@ dbus_bool_t
 _dbus_string_init_from_string(DBusString       *str,
                               const DBusString *from)
 {
- if (!_dbus_string_init (str))
-     return FALSE;
- return _dbus_string_append (str, _dbus_string_get_const_data (from));
+  if (!_dbus_string_init (str))
+    return FALSE;
+  if (!_dbus_string_append (str, _dbus_string_get_const_data (from)))
+    {
+      _dbus_string_free (str);
+      return FALSE;
+    }
+  return TRUE;
 }
 
 /**
@@ -1187,6 +1194,35 @@ _dbus_string_append_byte (DBusString    *str,
     return FALSE;
 
   real->str[real->len-1] = byte;
+
+  return TRUE;
+}
+
+/**
+ * Append vector with \p strings connected by \p separator
+ *
+ * @param str the string
+ * @param strings vector with char* pointer for merging
+ * @param separator separator to merge the vector
+ * @return #FALSE if not enough memory
+ * @return #TRUE success or empty string vector
+ */
+dbus_bool_t
+_dbus_string_append_strings (DBusString *str, char **strings, char separator)
+{
+  int i;
+
+  if (strings == NULL)
+    return TRUE;
+
+  for (i = 0; strings[i]; i++)
+    {
+      if (i > 0 && !_dbus_string_append_byte (str, (unsigned char) separator))
+        return FALSE;
+
+      if (!_dbus_string_append (str, strings[i]))
+        return FALSE;
+    }
 
   return TRUE;
 }
