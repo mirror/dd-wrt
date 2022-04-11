@@ -6,6 +6,7 @@ dbus-configure:
 	--sysconfdir=/tmp \
 	--localstatedir=/tmp/var \
 	--disable-xml-docs \
+	--without-x \
 	--with-dbus-user="nobody" \
 	--with-dbus-session-bus-connect-address="/tmp/var/run/dbus/dbussocket" \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
@@ -39,10 +40,10 @@ dbus-install:
 	#install -c dbus/dbuslaunch $(INSTALLDIR)/dbus/usr/sbin
 	#install -c dbus/dbus-avahi-launch $(INSTALLDIR)/dbus/usr/sbin
 	
-	install -D dbus/dbus/.libs/libdbus-1.so.3.26.1 $(INSTALLDIR)/dbus/usr/lib/libdbus-1.so.3.26.1
+	install -D dbus/dbus/.libs/libdbus-1.so.3.32.0 $(INSTALLDIR)/dbus/usr/lib/libdbus-1.so.3.32.0
 	cd $(INSTALLDIR)/dbus/usr/lib && \
-		ln -sf libdbus-1.so.3.26.1 libdbus-1.so && \
-		ln -sf libdbus-1.so.3.26.1 libdbus-1.so.3
+		ln -sf libdbus-1.so.3.32.0 libdbus-1.so && \
+		ln -sf libdbus-1.so.3.32.0 libdbus-1.so.3
 
 
 dbus-clean:
