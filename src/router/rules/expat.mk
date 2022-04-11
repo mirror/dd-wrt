@@ -1,17 +1,18 @@
 expat-configure:
-	#cd expat && autoreconf -fsi
 	cd expat && ./buildconf.sh
-	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
-	LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
-	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux \
-		--without-docbook --without-examples --without-tests --without-getrandom
+	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static \
+		--without-docbook --without-examples --without-tests --without-getrandom \
+		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
+		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+
 	
 expat:
 	$(MAKE) -C expat
 
 expat-install:
-	install -D expat/lib/.libs/libexpat.so.1.8.8 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.8.8
-	cd $(INSTALLDIR)/expat/usr/lib && ln -sf libexpat.so.1.8.8 libexpat.so.1
+	@true
 
 expat-clean:
 	-$(MAKE) -C expat clean
