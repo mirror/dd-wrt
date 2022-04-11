@@ -4056,4 +4056,3 @@ bus_config_parser_test (const char *test_data_dir_cstr)
 }
 
 #endif /* DBUS_ENABLE_EMBEDDED_TESTS */
-

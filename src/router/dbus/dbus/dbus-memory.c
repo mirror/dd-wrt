@@ -99,6 +99,7 @@
  */
 
 #ifdef DBUS_ENABLE_EMBEDDED_TESTS
+/* Test-only, does not need to be thread-safe */
 static dbus_bool_t debug_initialized = FALSE;
 static int fail_nth = -1;
 static size_t fail_size = 0;
@@ -254,18 +255,6 @@ dbus_bool_t
 _dbus_decrement_fail_alloc_counter (void)
 {
   _dbus_initialize_malloc_debug ();
-#ifdef DBUS_WIN
-  {
-    static dbus_bool_t called = 0;
-
-    if (!called)
-      {
-        _dbus_verbose("TODO: memory allocation testing errors disabled for now\n");
-        called = 1;
-      }
-    return FALSE;
-  }
-#endif
 
   if (fail_alloc_counter <= 0)
     {

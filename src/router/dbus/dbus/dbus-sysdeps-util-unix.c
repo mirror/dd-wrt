@@ -458,7 +458,14 @@ _dbus_rlimit_raise_fd_limit (DBusError *error)
    * and older and non-systemd Linux systems would typically set rlim_cur
    * to 1024 and rlim_max to 4096. */
   if (lim.rlim_max == RLIM_INFINITY || lim.rlim_cur < lim.rlim_max)
-    lim.rlim_cur = lim.rlim_max;
+    {
+#if defined(__APPLE__) && defined(__MACH__)
+      /* macOS 10.5 and above no longer allows RLIM_INFINITY for rlim_cur */
+      lim.rlim_cur = MIN (OPEN_MAX, lim.rlim_max);
+#else
+      lim.rlim_cur = lim.rlim_max;
+#endif
+    }
 
   /* Early-return if there is nothing to do. */
   if (lim.rlim_max == old.rlim_max &&
@@ -824,7 +831,7 @@ fill_group_info (DBusGroupInfo    *info,
    * to add more configure checks.
    */
   
-#if defined (HAVE_POSIX_GETPWNAM_R) || defined (HAVE_NONPOSIX_GETPWNAM_R)
+#ifdef HAVE_GETPWNAM_R
   {
     struct group *g;
     int result;
@@ -854,17 +861,12 @@ fill_group_info (DBusGroupInfo    *info,
           }
 
         g = NULL;
-#ifdef HAVE_POSIX_GETPWNAM_R
         if (group_c_str)
           result = getgrnam_r (group_c_str, &g_str, buf, buflen,
                                &g);
         else
           result = getgrgid_r (gid, &g_str, buf, buflen,
                                &g);
-#else
-        g = getgrnam_r (group_c_str, &g_str, buf, buflen);
-        result = 0;
-#endif /* !HAVE_POSIX_GETPWNAM_R */
         /* Try a bigger buffer if ERANGE was returned:
            https://bugs.freedesktop.org/show_bug.cgi?id=16727
         */
@@ -898,6 +900,8 @@ fill_group_info (DBusGroupInfo    *info,
   {
     /* I guess we're screwed on thread safety here */
     struct group *g;
+
+#warning getpwnam_r() not available, please report this to the dbus maintainers with details of your OS
 
     g = getgrnam (group_c_str);
 
@@ -1597,5 +1601,120 @@ _dbus_daemon_report_stopping (void)
 {
 #ifdef HAVE_SYSTEMD
   sd_notify (0, "STOPPING=1");
+#endif
+}
+
+/**
+ * If the current process has been protected from the Linux OOM killer
+ * (the oom_score_adj process parameter is negative), reset it to the
+ * default level of protection from the OOM killer (set oom_score_adj
+ * to zero).
+ *
+ * This function does not use DBusError, to avoid calling malloc(), so
+ * that it can be used in contexts where an async-signal-safe function
+ * is required (for example after fork()). Instead, on failure it sets
+ * errno and returns something like "Failed to open /dev/null" in
+ * *error_str_p. Callers are expected to combine *error_str_p
+ * with _dbus_strerror (errno) to get a full error report.
+ */
+dbus_bool_t
+_dbus_reset_oom_score_adj (const char **error_str_p)
+{
+#ifdef __linux__
+  int fd = -1;
+  dbus_bool_t ret = FALSE;
+  int saved_errno = 0;
+  const char *error_str = NULL;
+
+#ifdef O_CLOEXEC
+  fd = open ("/proc/self/oom_score_adj", O_RDWR | O_CLOEXEC);
+#endif
+
+  if (fd < 0)
+    {
+      fd = open ("/proc/self/oom_score_adj", O_RDWR);
+      _dbus_fd_set_close_on_exec (fd);
+    }
+
+  if (fd >= 0)
+    {
+      ssize_t read_result = -1;
+      /* It doesn't actually matter whether we read the whole file,
+       * as long as we get the presence or absence of the minus sign */
+      char first_char = '\0';
+
+      read_result = read (fd, &first_char, 1);
+
+      if (read_result < 0)
+        {
+          /* This probably can't actually happen in practice: if we can
+           * open it, then we can hopefully read from it */
+          ret = FALSE;
+          error_str = "failed to read from /proc/self/oom_score_adj";
+          saved_errno = errno;
+          goto out;
+        }
+
+      /* If we are running with protection from the OOM killer
+       * (typical for the system dbus-daemon under systemd), then
+       * oom_score_adj will be negative. Drop that protection,
+       * returning to oom_score_adj = 0.
+       *
+       * Conversely, if we are running with increased susceptibility
+       * to the OOM killer (as user sessions typically do in
+       * systemd >= 250), oom_score_adj will be strictly positive,
+       * and we are not allowed to decrease it to 0 without privileges.
+       *
+       * If it's exactly 0 (typical for non-systemd systems, and
+       * user processes on older systemd) then there's no need to
+       * alter it.
+       *
+       * We shouldn't get an empty result, but if we do, assume it
+       * means zero and don't try to change it. */
+      if (read_result == 0 || first_char != '-')
+        {
+          /* Nothing needs to be done: the OOM score adjustment is
+           * non-negative */
+          ret = TRUE;
+          goto out;
+        }
+
+      if (pwrite (fd, "0", sizeof (char), 0) < 0)
+        {
+          ret = FALSE;
+          error_str = "writing oom_score_adj error";
+          saved_errno = errno;
+          goto out;
+        }
+
+      /* Success */
+      ret = TRUE;
+    }
+  else if (errno == ENOENT)
+    {
+      /* If /proc/self/oom_score_adj doesn't exist, assume the kernel
+       * doesn't support this feature and ignore it. */
+      ret = TRUE;
+    }
+  else
+    {
+      ret = FALSE;
+      error_str = "open(/proc/self/oom_score_adj)";
+      saved_errno = errno;
+      goto out;
+    }
+
+out:
+  if (fd >= 0)
+    _dbus_close (fd, NULL);
+
+  if (error_str_p != NULL)
+    *error_str_p = error_str;
+
+  errno = saved_errno;
+  return ret;
+#else
+  /* nothing to do on this platform */
+  return TRUE;
 #endif
 }

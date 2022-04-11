@@ -86,8 +86,6 @@ typedef enum
  */
 /** The interface exported by the object with #DBUS_SERVICE_DBUS and #DBUS_PATH_DBUS */
 #define DBUS_INTERFACE_DBUS           "org.freedesktop.DBus"
-/** The restricted container interface exported by the dbus-daemon */
-#define DBUS_INTERFACE_CONTAINERS1    "org.freedesktop.DBus.Containers1"
 /** The monitoring interface exported by the dbus-daemon */
 #define DBUS_INTERFACE_MONITORING     "org.freedesktop.DBus.Monitoring"
 

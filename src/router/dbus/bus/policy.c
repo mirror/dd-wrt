@@ -1406,4 +1406,3 @@ bus_policy_check_can_own (BusPolicy  *policy,
   return bus_rules_check_can_own (policy->default_rules, service_name);
 }
 #endif /* DBUS_ENABLE_EMBEDDED_TESTS */
-

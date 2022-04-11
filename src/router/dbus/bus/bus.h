@@ -88,6 +88,7 @@ BusContext*       bus_context_new                                (const DBusStri
                                                                   BusContextFlags   flags,
                                                                   DBusPipe         *print_addr_pipe,
                                                                   DBusPipe         *print_pid_pipe,
+                                                                  void             *ready_event_handle,
                                                                   const DBusString *address,
                                                                   DBusError        *error);
 dbus_bool_t       bus_context_reload_config                      (BusContext       *context,

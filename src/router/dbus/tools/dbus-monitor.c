@@ -600,4 +600,3 @@ main (int argc, char *argv[])
   fprintf (stderr, "Error: %s\n", error.message);
   exit (1);
 }
-

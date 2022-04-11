@@ -54,6 +54,9 @@ bus_audit_init (BusContext *context)
 #ifdef HAVE_LIBAUDIT
   int i;
 
+  if (audit_fd >= 0)
+    return;
+
   capng_get_caps_process ();
 
   /* Work around a bug in libcap-ng < 0.7.7: it leaks a fd, which isn't
@@ -105,7 +108,11 @@ void
 bus_audit_shutdown (void)
 {
 #ifdef HAVE_LIBAUDIT
-  audit_close (audit_fd);
+  if (audit_fd >= 0)
+    {
+      audit_close (audit_fd);
+      audit_fd = -1;
+    }
 #endif /* HAVE_LIBAUDIT */
 }
 

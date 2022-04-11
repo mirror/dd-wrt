@@ -215,6 +215,10 @@ DBUS_PRIVATE_EXPORT
 dbus_bool_t   _dbus_string_append_byte           (DBusString        *str,
                                                   unsigned char      byte);
 DBUS_PRIVATE_EXPORT
+dbus_bool_t _dbus_string_append_strings          (DBusString        *str,
+                                                  char             **strings,
+                                                  char               separator);
+DBUS_PRIVATE_EXPORT
 dbus_bool_t   _dbus_string_append_printf         (DBusString        *str,
                                                   const char        *format,
                                                   ...) _DBUS_GNUC_PRINTF (2, 3);

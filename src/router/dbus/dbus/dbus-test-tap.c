@@ -35,12 +35,11 @@
  * will not be explained here.
  */
 
-#ifdef DBUS_ENABLE_EMBEDDED_TESTS
-
 #include <stdio.h>
 #include <stdlib.h>
 
 static unsigned int failures = 0;
+static unsigned int skipped = 0;
 static unsigned int tap_test_counter = 0;
 
 /*
@@ -150,6 +149,7 @@ _dbus_test_skip (const char *format,
   va_list ap;
 
   printf ("ok %u # SKIP ", ++tap_test_counter);
+  ++skipped;
   va_start (ap, format);
   vprintf (format, ap);
   va_end (ap);
@@ -166,6 +166,7 @@ _dbus_test_skip (const char *format,
 void
 _dbus_test_check_memleaks (const char *test_name)
 {
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
   dbus_shutdown ();
 
   if (_dbus_get_malloc_blocks_outstanding () == 0)
@@ -180,6 +181,12 @@ _dbus_test_check_memleaks (const char *test_name)
           _dbus_get_malloc_blocks_outstanding ());
       failures++;
     }
+#else
+  _dbus_test_skip (
+      "unable to determine whether %s leaked memory (not compiled "
+      "with memory instrumentation)",
+      test_name);
+#endif
 }
 
 /*
@@ -189,10 +196,14 @@ _dbus_test_check_memleaks (const char *test_name)
 int
 _dbus_test_done_testing (void)
 {
+  _dbus_assert (skipped <= tap_test_counter);
+
   if (failures == 0)
-    _dbus_test_diag ("%u tests passed", tap_test_counter);
+    _dbus_test_diag ("%u tests passed (%d skipped)",
+                     tap_test_counter - skipped, skipped);
   else
-    _dbus_test_diag ("%u/%u tests failed", failures, tap_test_counter);
+    _dbus_test_diag ("%u/%u tests failed (%d skipped)",
+                     failures, tap_test_counter - skipped, skipped);
 
   printf ("1..%u\n", tap_test_counter);
   fflush (stdout);
@@ -202,5 +213,3 @@ _dbus_test_done_testing (void)
 
   return 1;
 }
-
-#endif

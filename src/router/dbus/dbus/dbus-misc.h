@@ -56,4 +56,3 @@ char *dbus_try_get_local_machine_id (DBusError *error);
 DBUS_END_DECLS
 
 #endif /* DBUS_MISC_H */
-

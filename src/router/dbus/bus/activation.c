@@ -898,6 +898,7 @@ bus_activation_reload (BusActivation     *activation,
 {
   DBusList      *link;
   char          *dir;
+  DBusError local_error = DBUS_ERROR_INIT;
 
   if (activation->server_address != NULL)
     dbus_free (activation->server_address);
@@ -965,13 +966,18 @@ bus_activation_reload (BusActivation     *activation,
         }
 
       /* only fail on OOM, it is ok if we can't read the directory */
-      if (!update_directory (activation, s_dir, error))
-        {
-          if (dbus_error_has_name (error, DBUS_ERROR_NO_MEMORY))
-            goto failed;
-          else
-            dbus_error_free (error);
-        }
+      if (!update_directory (activation, s_dir, &local_error))
+       {
+         if (dbus_error_has_name (&local_error, DBUS_ERROR_NO_MEMORY))
+           {
+             dbus_move_error (&local_error, error);
+             goto failed;
+           }
+         else
+           {
+             dbus_error_free (&local_error);
+           }
+       }
 
       link = _dbus_list_get_next_link (directories, link);
     }

@@ -74,12 +74,15 @@
 # define BROKEN_POLL
 #endif
 
-/* AIX sys/poll.h does #define events reqevents, and other
- * wonderousness, so must include sys/poll before declaring
- * DBusPollFD
- */ 
+/* Normally we'd only include this in dbus-sysdeps-unix.c.
+ * However, the member names in DBusPollFD are (deliberately) the same as
+ * in POSIX struct pollfd, and AIX's poll() implementation is known to
+ * do things like "#define events reqevents", which would break that approach.
+ * Defend against that by ensuring that if it's renamed anywhere, it's renamed
+ * everywhere.
+ */
 #ifdef HAVE_POLL
-#include <sys/poll.h>
+#include <poll.h>
 #endif
 
 #ifdef DBUS_WINCE
@@ -304,10 +307,6 @@ dbus_bool_t _dbus_windows_user_is_process_owner (const char        *windows_sid)
 dbus_bool_t _dbus_append_keyring_directory_for_credentials (DBusString      *directory,
                                                             DBusCredentials *credentials);
 
-dbus_bool_t _dbus_daemon_is_session_bus_address_published (const char *scope);
-
-dbus_bool_t _dbus_daemon_publish_session_bus_address (const char* address, const char* shm_name);
-
 void _dbus_daemon_unpublish_session_bus_address (void);
 
 dbus_bool_t _dbus_socket_can_pass_unix_fd(DBusSocket fd);
@@ -335,6 +334,10 @@ DBUS_PRIVATE_EXPORT
 dbus_int32_t _dbus_atomic_dec (DBusAtomic *atomic);
 DBUS_PRIVATE_EXPORT
 dbus_int32_t _dbus_atomic_get (DBusAtomic *atomic);
+DBUS_PRIVATE_EXPORT
+void         _dbus_atomic_set_zero    (DBusAtomic *atomic);
+DBUS_PRIVATE_EXPORT
+void         _dbus_atomic_set_nonzero (DBusAtomic *atomic);
 
 #ifdef DBUS_WIN
 

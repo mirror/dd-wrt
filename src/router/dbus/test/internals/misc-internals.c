@@ -3,7 +3,8 @@
  * Copyright 2002-2011 Red Hat, Inc.
  * Copyright 2006 Julio M. Merino Vidal
  * Copyright 2006 Ralf Habacker
- * Copyright 2011-2018 Collabora Ltd.
+ * Copyright 2011-2019 Collabora Ltd.
+ * Copyright 2012 Lennart Poettering
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -32,6 +33,10 @@
 #include "dbus/dbus-test-tap.h"
 #include "test/test-utils.h"
 
+#ifdef DBUS_UNIX
+#include "dbus/dbus-userdb.h"
+#endif
+
 #include "misc-internals.h"
 
 static void
@@ -47,8 +52,8 @@ verify_list (DBusList **list)
 
   if (link->next == link)
     {
-      _dbus_assert (link->prev == link);
-      _dbus_assert (*list == link);
+      _dbus_test_check (link->prev == link);
+      _dbus_test_check (*list == link);
       return;
     }
 
@@ -56,18 +61,18 @@ verify_list (DBusList **list)
   do
     {
       length += 1;
-      _dbus_assert (link->prev->next == link);
-      _dbus_assert (link->next->prev == link);
+      _dbus_test_check (link->prev->next == link);
+      _dbus_test_check (link->next->prev == link);
       link = link->next;
     }
   while (link != *list);
 
-  _dbus_assert (length == _dbus_list_get_length (list));
+  _dbus_test_check (length == _dbus_list_get_length (list));
 
   if (length == 1)
-    _dbus_assert (_dbus_list_length_is_one (list));
+    _dbus_test_check (_dbus_list_length_is_one (list));
   else
-    _dbus_assert (!_dbus_list_length_is_one (list));
+    _dbus_test_check (!_dbus_list_length_is_one (list));
 }
 
 static dbus_bool_t
@@ -214,12 +219,12 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       verify_list (&list1);
       verify_list (&list2);
 
-      _dbus_assert (_dbus_list_get_length (&list1) == i);
-      _dbus_assert (_dbus_list_get_length (&list2) == i);
+      _dbus_test_check (_dbus_list_get_length (&list1) == i);
+      _dbus_test_check (_dbus_list_get_length (&list2) == i);
     }
 
-  _dbus_assert (is_ascending_sequence (&list1));
-  _dbus_assert (is_descending_sequence (&list2));
+  _dbus_test_check (is_ascending_sequence (&list1));
+  _dbus_test_check (is_descending_sequence (&list2));
 
   /* Test list clear */
   _dbus_list_clear (&list1);
@@ -255,23 +260,23 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       data1 = _dbus_list_pop_last (&list1);
       data2 = _dbus_list_pop_first (&list2);
 
-      _dbus_assert (got_data1 == data1);
-      _dbus_assert (got_data2 == data2);
+      _dbus_test_check (got_data1 == data1);
+      _dbus_test_check (got_data2 == data2);
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (data1) == i);
-      _dbus_assert (_DBUS_POINTER_TO_INT (data2) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (data1) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (data2) == i);
 
       verify_list (&list1);
       verify_list (&list2);
 
-      _dbus_assert (is_ascending_sequence (&list1));
-      _dbus_assert (is_descending_sequence (&list2));
+      _dbus_test_check (is_ascending_sequence (&list1));
+      _dbus_test_check (is_descending_sequence (&list2));
 
       --i;
     }
 
-  _dbus_assert (list1 == NULL);
-  _dbus_assert (list2 == NULL);
+  _dbus_test_check (list1 == NULL);
+  _dbus_test_check (list2 == NULL);
 
   /* Test get_first_link, get_last_link, pop_first_link, pop_last_link */
 
@@ -300,30 +305,30 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 
       link2 = _dbus_list_pop_first_link (&list2);
 
-      _dbus_assert (got_link2 == link2);
+      _dbus_test_check (got_link2 == link2);
 
       data1_indirect = got_link1->data;
       /* this call makes got_link1 invalid */
       data1 = _dbus_list_pop_last (&list1);
-      _dbus_assert (data1 == data1_indirect);
+      _dbus_test_check (data1 == data1_indirect);
       data2 = link2->data;
 
       _dbus_list_free_link (link2);
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (data1) == i);
-      _dbus_assert (_DBUS_POINTER_TO_INT (data2) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (data1) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (data2) == i);
 
       verify_list (&list1);
       verify_list (&list2);
 
-      _dbus_assert (is_ascending_sequence (&list1));
-      _dbus_assert (is_descending_sequence (&list2));
+      _dbus_test_check (is_ascending_sequence (&list1));
+      _dbus_test_check (is_descending_sequence (&list2));
 
       --i;
     }
 
-  _dbus_assert (list1 == NULL);
-  _dbus_assert (list2 == NULL);
+  _dbus_test_check (list1 == NULL);
+  _dbus_test_check (list2 == NULL);
 
   /* Test iteration */
 
@@ -339,12 +344,12 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       verify_list (&list1);
       verify_list (&list2);
 
-      _dbus_assert (_dbus_list_get_length (&list1) == i);
-      _dbus_assert (_dbus_list_get_length (&list2) == i);
+      _dbus_test_check (_dbus_list_get_length (&list1) == i);
+      _dbus_test_check (_dbus_list_get_length (&list2) == i);
     }
 
-  _dbus_assert (is_ascending_sequence (&list1));
-  _dbus_assert (is_descending_sequence (&list2));
+  _dbus_test_check (is_ascending_sequence (&list1));
+  _dbus_test_check (is_descending_sequence (&list2));
 
   --i;
   link2 = _dbus_list_get_first_link (&list2);
@@ -352,7 +357,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     {
       verify_list (&link2); /* pretend this link is the head */
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (link2->data) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (link2->data) == i);
 
       link2 = _dbus_list_get_next_link (&list2, link2);
       --i;
@@ -364,7 +369,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     {
       verify_list (&link1); /* pretend this link is the head */
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (link1->data) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (link1->data) == i);
 
       link1 = _dbus_list_get_next_link (&list1, link1);
       ++i;
@@ -376,7 +381,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     {
       verify_list (&link1); /* pretend this link is the head */
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (link1->data) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (link1->data) == i);
 
       link1 = _dbus_list_get_prev_link (&list1, link1);
       --i;
@@ -413,8 +418,8 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       --i;
     }
 
-  _dbus_assert (all_odd_values (&list1));
-  _dbus_assert (all_odd_values (&list2));
+  _dbus_test_check (all_odd_values (&list1));
+  _dbus_test_check (all_odd_values (&list2));
 
   _dbus_list_clear (&list1);
   _dbus_list_clear (&list2);
@@ -447,8 +452,8 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       --i;
     }
 
-  _dbus_assert (all_even_values (&list1));
-  _dbus_assert (all_even_values (&list2));
+  _dbus_test_check (all_even_values (&list1));
+  _dbus_test_check (all_even_values (&list2));
 
   /* clear list using remove_link */
   while (list1 != NULL)
@@ -479,7 +484,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     {
       DBusList *next = _dbus_list_get_next_link (&list2, link2);
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (link2->data) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (link2->data) == i);
 
       if ((i % 2) == 0)
         _dbus_list_remove_link (&list2, link2);
@@ -490,7 +495,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       --i;
     }
 
-  _dbus_assert (all_odd_values (&list2));
+  _dbus_test_check (all_odd_values (&list2));
   _dbus_list_clear (&list2);
 
   i = 0;
@@ -499,7 +504,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     {
       DBusList *next = _dbus_list_get_next_link (&list1, link1);
 
-      _dbus_assert (_DBUS_POINTER_TO_INT (link1->data) == i);
+      _dbus_test_check (_DBUS_POINTER_TO_INT (link1->data) == i);
 
       if ((i % 2) != 0)
         _dbus_list_remove_link (&list1, link1);
@@ -510,7 +515,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       ++i;
     }
 
-  _dbus_assert (all_even_values (&list1));
+  _dbus_test_check (all_even_values (&list1));
   _dbus_list_clear (&list1);
 
   /* Test copying a list */
@@ -531,12 +536,12 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   _dbus_list_copy (&list1, &copy1);
   verify_list (&list1);
   verify_list (&copy1);
-  _dbus_assert (lists_equal (&list1, &copy1));
+  _dbus_test_check (lists_equal (&list1, &copy1));
 
   _dbus_list_copy (&list2, &copy2);
   verify_list (&list2);
   verify_list (&copy2);
-  _dbus_assert (lists_equal (&list2, &copy2));
+  _dbus_test_check (lists_equal (&list2, &copy2));
 
   /* Now test copying empty lists */
   _dbus_list_clear (&list1);
@@ -551,12 +556,12 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   _dbus_list_copy (&list1, &copy1);
   verify_list (&list1);
   verify_list (&copy1);
-  _dbus_assert (lists_equal (&list1, &copy1));
+  _dbus_test_check (lists_equal (&list1, &copy1));
 
   _dbus_list_copy (&list2, &copy2);
   verify_list (&list2);
   verify_list (&copy2);
-  _dbus_assert (lists_equal (&list2, &copy2));
+  _dbus_test_check (lists_equal (&list2, &copy2));
 
   _dbus_list_clear (&list1);
   _dbus_list_clear (&list2);
@@ -570,19 +575,19 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   _dbus_list_insert_after (&list1, list1,
                            _DBUS_INT_TO_POINTER (1));
   verify_list (&list1);
-  _dbus_assert (is_ascending_sequence (&list1));
+  _dbus_test_check (is_ascending_sequence (&list1));
 
   /* inserting at the end */
   _dbus_list_insert_after (&list1, list1->next,
                            _DBUS_INT_TO_POINTER (2));
   verify_list (&list1);
-  _dbus_assert (is_ascending_sequence (&list1));
+  _dbus_test_check (is_ascending_sequence (&list1));
 
   /* using insert_after to prepend */
   _dbus_list_insert_after (&list1, NULL,
                            _DBUS_INT_TO_POINTER (-1));
   verify_list (&list1);
-  _dbus_assert (is_ascending_sequence (&list1));
+  _dbus_test_check (is_ascending_sequence (&list1));
 
   _dbus_list_clear (&list1);
 
@@ -597,7 +602,7 @@ _dbus_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   _dbus_list_remove_last (&list1, _DBUS_INT_TO_POINTER (2));
 
   verify_list (&list1);
-  _dbus_assert (is_ascending_sequence (&list1));
+  _dbus_test_check (is_ascending_sequence (&list1));
 
   _dbus_list_clear (&list1);
 
@@ -620,32 +625,32 @@ _dbus_misc_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
    */
   dbus_get_version (&major, &minor, &micro);
 
-  _dbus_assert (major == DBUS_MAJOR_VERSION);
-  _dbus_assert (minor == DBUS_MINOR_VERSION);
-  _dbus_assert (micro == DBUS_MICRO_VERSION);
+  _dbus_test_check (major == DBUS_MAJOR_VERSION);
+  _dbus_test_check (minor == DBUS_MINOR_VERSION);
+  _dbus_test_check (micro == DBUS_MICRO_VERSION);
 
 #define MAKE_VERSION(x, y, z) (((x) << 16) | ((y) << 8) | (z))
 
   /* check that MAKE_VERSION works and produces the intended ordering */
-  _dbus_assert (MAKE_VERSION (1, 0, 0) > MAKE_VERSION (0, 0, 0));
-  _dbus_assert (MAKE_VERSION (1, 1, 0) > MAKE_VERSION (1, 0, 0));
-  _dbus_assert (MAKE_VERSION (1, 1, 1) > MAKE_VERSION (1, 1, 0));
+  _dbus_test_check (MAKE_VERSION (1, 0, 0) > MAKE_VERSION (0, 0, 0));
+  _dbus_test_check (MAKE_VERSION (1, 1, 0) > MAKE_VERSION (1, 0, 0));
+  _dbus_test_check (MAKE_VERSION (1, 1, 1) > MAKE_VERSION (1, 1, 0));
 
-  _dbus_assert (MAKE_VERSION (2, 0, 0) > MAKE_VERSION (1, 1, 1));
-  _dbus_assert (MAKE_VERSION (2, 1, 0) > MAKE_VERSION (1, 1, 1));
-  _dbus_assert (MAKE_VERSION (2, 1, 1) > MAKE_VERSION (1, 1, 1));
+  _dbus_test_check (MAKE_VERSION (2, 0, 0) > MAKE_VERSION (1, 1, 1));
+  _dbus_test_check (MAKE_VERSION (2, 1, 0) > MAKE_VERSION (1, 1, 1));
+  _dbus_test_check (MAKE_VERSION (2, 1, 1) > MAKE_VERSION (1, 1, 1));
 
   /* check DBUS_VERSION */
-  _dbus_assert (MAKE_VERSION (major, minor, micro) == DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major, minor, micro) == DBUS_VERSION);
 
   /* check that ordering works with DBUS_VERSION */
-  _dbus_assert (MAKE_VERSION (major - 1, minor, micro) < DBUS_VERSION);
-  _dbus_assert (MAKE_VERSION (major, minor - 1, micro) < DBUS_VERSION);
-  _dbus_assert (MAKE_VERSION (major, minor, micro - 1) < DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major - 1, minor, micro) < DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major, minor - 1, micro) < DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major, minor, micro - 1) < DBUS_VERSION);
 
-  _dbus_assert (MAKE_VERSION (major + 1, minor, micro) > DBUS_VERSION);
-  _dbus_assert (MAKE_VERSION (major, minor + 1, micro) > DBUS_VERSION);
-  _dbus_assert (MAKE_VERSION (major, minor, micro + 1) > DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major + 1, minor, micro) > DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major, minor + 1, micro) > DBUS_VERSION);
+  _dbus_test_check (MAKE_VERSION (major, minor, micro + 1) > DBUS_VERSION);
 
   /* Check DBUS_VERSION_STRING */
 
@@ -659,7 +664,7 @@ _dbus_misc_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
         _dbus_string_append_int (&str, micro)))
     _dbus_test_fatal ("no memory");
 
-  _dbus_assert (_dbus_string_equal_c_str (&str, DBUS_VERSION_STRING));
+  _dbus_test_check (_dbus_string_equal_c_str (&str, DBUS_VERSION_STRING));
 
   _dbus_string_free (&str);
 
@@ -693,19 +698,19 @@ _dbus_server_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
         {
           _dbus_warn ("server listen error: %s: %s", error.name, error.message);
           dbus_error_free (&error);
-          _dbus_assert_not_reached ("Failed to listen for valid address.");
+          _dbus_test_fatal ("Failed to listen for valid address.");
         }
 
       id = dbus_server_get_id (server);
-      _dbus_assert (id != NULL);
+      _dbus_test_check (id != NULL);
       address = dbus_server_get_address (server);
-      _dbus_assert (address != NULL);
+      _dbus_test_check (address != NULL);
 
       if (strstr (address, id) == NULL)
         {
           _dbus_warn ("server id '%s' is not in the server address '%s'",
                       id, address);
-          _dbus_assert_not_reached ("bad server id or address");
+          _dbus_test_fatal ("bad server id or address");
         }
 
       dbus_free (id);
@@ -735,24 +740,24 @@ _dbus_signature_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   dbus_bool_t boolres;
 
   sig = "";
-  _dbus_assert (dbus_signature_validate (sig, NULL));
-  _dbus_assert (!dbus_signature_validate_single (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate_single (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_INVALID);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_INVALID);
 
   sig = DBUS_TYPE_STRING_AS_STRING;
-  _dbus_assert (dbus_signature_validate (sig, NULL));
-  _dbus_assert (dbus_signature_validate_single (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (dbus_signature_validate_single (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRING);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRING);
 
   sig = DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_BYTE_AS_STRING;
-  _dbus_assert (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRING);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRING);
   boolres = dbus_signature_iter_next (&iter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_BYTE);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_BYTE);
 
   sig = DBUS_TYPE_UINT16_AS_STRING
     DBUS_STRUCT_BEGIN_CHAR_AS_STRING
@@ -761,23 +766,23 @@ _dbus_signature_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     DBUS_TYPE_VARIANT_AS_STRING
     DBUS_TYPE_DOUBLE_AS_STRING
     DBUS_STRUCT_END_CHAR_AS_STRING;
-  _dbus_assert (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_UINT16);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_UINT16);
   boolres = dbus_signature_iter_next (&iter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRUCT);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRUCT);
   dbus_signature_iter_recurse (&iter, &subiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_STRING);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_STRING);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_UINT32);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_UINT32);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_VARIANT);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_VARIANT);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_DOUBLE);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_DOUBLE);
 
   sig = DBUS_TYPE_UINT16_AS_STRING
     DBUS_STRUCT_BEGIN_CHAR_AS_STRING
@@ -790,33 +795,33 @@ _dbus_signature_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     DBUS_TYPE_BYTE_AS_STRING
     DBUS_STRUCT_END_CHAR_AS_STRING
     DBUS_STRUCT_END_CHAR_AS_STRING;
-  _dbus_assert (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_UINT16);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_UINT16);
   boolres = dbus_signature_iter_next (&iter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRUCT);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_STRUCT);
   dbus_signature_iter_recurse (&iter, &subiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_UINT32);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_UINT32);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_BYTE);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_BYTE);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_ARRAY);
-  _dbus_assert (dbus_signature_iter_get_element_type (&subiter) == DBUS_TYPE_ARRAY);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_ARRAY);
+  _dbus_test_check (dbus_signature_iter_get_element_type (&subiter) == DBUS_TYPE_ARRAY);
 
   dbus_signature_iter_recurse (&subiter, &subsubiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_ARRAY);
-  _dbus_assert (dbus_signature_iter_get_element_type (&subsubiter) == DBUS_TYPE_DOUBLE);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_ARRAY);
+  _dbus_test_check (dbus_signature_iter_get_element_type (&subsubiter) == DBUS_TYPE_DOUBLE);
 
   dbus_signature_iter_recurse (&subsubiter, &subsubsubiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subsubsubiter) == DBUS_TYPE_DOUBLE);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subsubsubiter) == DBUS_TYPE_DOUBLE);
   boolres = dbus_signature_iter_next (&subiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_STRUCT);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subiter) == DBUS_TYPE_STRUCT);
   dbus_signature_iter_recurse (&subiter, &subsubiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_BYTE);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_BYTE);
 
   sig = DBUS_TYPE_ARRAY_AS_STRING
     DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
@@ -824,63 +829,63 @@ _dbus_signature_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
     DBUS_TYPE_STRING_AS_STRING
     DBUS_DICT_ENTRY_END_CHAR_AS_STRING
     DBUS_TYPE_VARIANT_AS_STRING;
-  _dbus_assert (dbus_signature_validate (sig, NULL));
-  _dbus_assert (!dbus_signature_validate_single (sig, NULL));
+  _dbus_test_check (dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate_single (sig, NULL));
   dbus_signature_iter_init (&iter, sig);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_ARRAY);
-  _dbus_assert (dbus_signature_iter_get_element_type (&iter) == DBUS_TYPE_DICT_ENTRY);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_ARRAY);
+  _dbus_test_check (dbus_signature_iter_get_element_type (&iter) == DBUS_TYPE_DICT_ENTRY);
 
   dbus_signature_iter_recurse (&iter, &subiter);
   dbus_signature_iter_recurse (&subiter, &subsubiter);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_INT16);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_INT16);
   boolres = dbus_signature_iter_next (&subsubiter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_STRING);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&subsubiter) == DBUS_TYPE_STRING);
   boolres = dbus_signature_iter_next (&subsubiter);
-  _dbus_assert (!boolres);
+  _dbus_test_check (!boolres);
 
   boolres = dbus_signature_iter_next (&iter);
-  _dbus_assert (boolres);
-  _dbus_assert (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_VARIANT);
+  _dbus_test_check (boolres);
+  _dbus_test_check (dbus_signature_iter_get_current_type (&iter) == DBUS_TYPE_VARIANT);
   boolres = dbus_signature_iter_next (&iter);
-  _dbus_assert (!boolres);
+  _dbus_test_check (!boolres);
 
   sig = DBUS_TYPE_DICT_ENTRY_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_TYPE_ARRAY_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_TYPE_UINT32_AS_STRING
     DBUS_TYPE_ARRAY_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_TYPE_ARRAY_AS_STRING
     DBUS_TYPE_DICT_ENTRY_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_DICT_ENTRY_END_CHAR_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
     DBUS_TYPE_INT32_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
     DBUS_TYPE_INT32_AS_STRING
     DBUS_TYPE_STRING_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_STRUCT_END_CHAR_AS_STRING
     DBUS_STRUCT_BEGIN_CHAR_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
 
   sig = DBUS_STRUCT_BEGIN_CHAR_AS_STRING
     DBUS_TYPE_BOOLEAN_AS_STRING;
-  _dbus_assert (!dbus_signature_validate (sig, NULL));
+  _dbus_test_check (!dbus_signature_validate (sig, NULL));
   return TRUE;
 #if 0
  oom:
@@ -890,6 +895,7 @@ _dbus_signature_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 }
 
 #ifdef DBUS_UNIX
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
 static dbus_bool_t
 _dbus_transport_unix_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 {
@@ -901,11 +907,11 @@ _dbus_transport_unix_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   dbus_error_init (&error);
 
   c = dbus_connection_open ("unixexec:argv0=false,argv1=foobar,path=/bin/false", &error);
-  _dbus_assert (c != NULL);
-  _dbus_assert (!dbus_error_is_set (&error));
+  _dbus_test_check (c != NULL);
+  _dbus_test_check (!dbus_error_is_set (&error));
 
   address = _dbus_connection_get_address (c);
-  _dbus_assert (address != NULL);
+  _dbus_test_check (address != NULL);
 
   /* Let's see if the address got parsed, reordered and formatted correctly */
   ret = strcmp (address, "unixexec:path=/bin/false,argv0=false,argv1=foobar") == 0;
@@ -916,30 +922,85 @@ _dbus_transport_unix_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 }
 #endif
 
+/**
+ * Unit test for dbus-userdb.c.
+ *
+ * @returns #TRUE on success.
+ */
+static dbus_bool_t
+_dbus_userdb_test (const char *test_data_dir)
+{
+  const DBusString *username;
+  const DBusString *homedir;
+  dbus_uid_t uid;
+  unsigned long *group_ids;
+  int n_group_ids, i;
+  DBusError error;
+
+  if (!_dbus_username_from_current_process (&username))
+    _dbus_test_fatal ("didn't get username");
+
+  if (!_dbus_homedir_from_current_process (&homedir))
+    _dbus_test_fatal ("didn't get homedir");
+
+  if (!_dbus_get_user_id (username, &uid))
+    _dbus_test_fatal ("didn't get uid");
+
+  if (!_dbus_groups_from_uid (uid, &group_ids, &n_group_ids))
+    _dbus_test_fatal ("didn't get groups");
+
+  _dbus_test_diag ("    Current user: %s homedir: %s gids:",
+          _dbus_string_get_const_data (username),
+          _dbus_string_get_const_data (homedir));
+
+  for (i=0; i<n_group_ids; i++)
+      _dbus_test_diag ("- %ld", group_ids[i]);
+
+  dbus_error_init (&error);
+  _dbus_test_diag ("Is Console user: %i",
+          _dbus_is_console_user (uid, &error));
+  _dbus_test_diag ("Invocation was OK: %s", error.message ? error.message : "yes");
+  dbus_error_free (&error);
+  _dbus_test_diag ("Is Console user 4711: %i",
+          _dbus_is_console_user (4711, &error));
+  _dbus_test_diag ("Invocation was OK: %s", error.message ? error.message : "yes");
+  dbus_error_free (&error);
+
+  dbus_free (group_ids);
+
+  return TRUE;
+}
+#endif
+
 static DBusTestCase tests[] =
 {
-  { "string", _dbus_string_test },
-  { "sysdeps", _dbus_sysdeps_test },
-  { "data-slot", _dbus_data_slot_test },
   { "misc", _dbus_misc_test },
   { "address", _dbus_address_test },
   { "server", _dbus_server_test },
-  { "object-tree", _dbus_object_tree_test },
   { "signature", _dbus_signature_test },
-  { "marshalling", _dbus_marshal_test },
-  { "byteswap", _dbus_marshal_byteswap_test },
-  { "memory", _dbus_memory_test },
   { "mem-pool", _dbus_mem_pool_test },
   { "list", _dbus_list_test },
-  { "marshal-validate", _dbus_marshal_validate_test },
-  { "credentials", _dbus_credentials_test },
-  { "keyring", _dbus_keyring_test },
-  { "sha", _dbus_sha_test },
+
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
   { "auth", _dbus_auth_test },
+  { "byteswap", _dbus_marshal_byteswap_test },
+  { "credentials", _dbus_credentials_test },
+  { "data-slot", _dbus_data_slot_test },
+  { "keyring", _dbus_keyring_test },
+  { "marshal-validate", _dbus_marshal_validate_test },
+  { "marshalling", _dbus_marshal_test },
+  { "memory", _dbus_memory_test },
+  { "object-tree", _dbus_object_tree_test },
+  { "sha", _dbus_sha_test },
+  { "string", _dbus_string_test },
+  { "sysdeps", _dbus_sysdeps_test },
+#endif
 
 #if defined(DBUS_UNIX)
   { "userdb", _dbus_userdb_test },
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
   { "transport-unix", _dbus_transport_unix_test },
+#endif
 #endif
 
   { NULL }

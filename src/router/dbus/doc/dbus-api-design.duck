@@ -21,13 +21,13 @@
   have been refined over several years of use of D-Bus in many projects.
   Pointers will be given for implementing APIs using common D-Bus
   libraries like
-  $link[>>https://developer.gnome.org/gio/stable/gdbus-convenience.html](GDBus),
+  $link[>>https://developer-old.gnome.org/gio/stable/gdbus-convenience.html](GDBus),
   but detailed implementation instructions are left to the libraries’
   documentation. Note that you should $em(not) use dbus-glib to implement D-Bus
   services as it is deprecated and unmaintained. Most services should also avoid
   libdbus (dbus-1), which is a low-level library and is awkward to use
   correctly: it is designed to be used via a language binding such as
-  $link[>>http://qt-project.org/doc/qt-4.8/qtdbus.html](QtDBus).
+  $link[>>https://doc.qt.io/qt/qtdbus-index.html](QtDBus).
 
   For documentation on D-Bus itself, see the
   $link[>>http://dbus.freedesktop.org/doc/dbus-specification.html](D-Bus
@@ -591,14 +591,14 @@ See also: $link[>#api-versioning].
 Rather than manually implementing both the server and client sides of a D-Bus
 interface, it is often easier to write the interface XML description and use a
 tool such as
-$link[>>https://developer.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen))
+$link[>>https://developer-old.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen))
 to generate type-safe C APIs, then build the implementation using those. This
 avoids the tedious and error-prone process of writing code to build and read
 D-Bus parameter variants for each method call.
 
 Use of code generators is beyond the scope of this guide; for more information,
 see the
-$link[>>https://developer.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen)
+$link[>>https://developer-old.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen)
 manual).
 
 == Annotations
@@ -644,9 +644,9 @@ choose the method which best matches the tooling and workflow you are using.
 === XML Comments
 
 XML comments containing documentation in the
-$link[>>https://developer.gnome.org/gtk-doc-manual/stable/documenting_syntax.html.en](gtk-doc
+$link[>>https://developer-old.gnome.org/gtk-doc-manual/stable/documenting_syntax.html.en](gtk-doc
 format) is the recommended format for use with
-$link[>>https://developer.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen)).
+$link[>>https://developer-old.gnome.org/gio/stable/gdbus-codegen.html]($cmd(gdbus-codegen)).
 Using $cmd(gdbus-codegen), these comments can be extracted, converted to DocBook
 format and included in the project’s API manual. For example:
 
@@ -878,7 +878,7 @@ system bus without modifying its security policy.
 === Bustle
     [id="bustle"]
 
-$link[>>http://willthompson.co.uk/bustle/](Bustle) is a graphical version of
+$link[>>https://gitlab.freedesktop.org/bustle/bustle](Bustle) is a graphical version of
 $cmd(dbus-monitor), with a UI focused on profiling D-Bus performance by plotting
 messages on a timeline. It is ideal for finding bottlenecks in IPC performance
 between a service and client.

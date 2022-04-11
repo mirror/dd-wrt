@@ -426,6 +426,7 @@ _dbus_directory_open (const DBusString *filename,
     {
       if (!_dbus_string_append (&filespec, "*"))
         {
+          _dbus_string_free (&filespec);
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
                           "Could not append filename wildcard");
           return NULL;
@@ -435,6 +436,7 @@ _dbus_directory_open (const DBusString *filename,
     {
       if (!_dbus_string_append (&filespec, "\\*"))
         {
+          _dbus_string_free (&filespec);
           dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
                           "Could not append filename wildcard 2");
           return NULL;
@@ -464,7 +466,7 @@ _dbus_directory_open (const DBusString *filename,
                           "Failed to read directory \"%s\": %s",
                           _dbus_string_get_const_data (filename), emsg);
           _dbus_win_free_error_string (emsg);
-          dbus_free ( iter );
+          dbus_free (iter);
           _dbus_string_free (&filespec);
           return NULL;
         }
@@ -1673,17 +1675,4 @@ _dbus_daemon_report_reloaded (void)
 void
 _dbus_daemon_report_stopping (void)
 {
-}
-
-void
-_dbus_win_stderr_win_error (const char    *app,
-                            const char    *message,
-                            unsigned long  code)
-{
-  DBusError error;
-
-  dbus_error_init (&error);
-  _dbus_win_set_error_from_win_error (&error, code);
-  fprintf (stderr, "%s: %s: %s\n", app, message, error.message);
-  dbus_error_free (&error);
 }

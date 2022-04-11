@@ -353,6 +353,7 @@ _dbus_data_slot_list_free (DBusDataSlotList *list)
 #include "dbus-test.h"
 #include <stdio.h>
 
+/* Test-only, does not need to be thread-safe */
 static int free_counter;
 
 static void

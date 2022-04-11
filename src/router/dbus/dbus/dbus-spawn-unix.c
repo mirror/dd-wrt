@@ -1153,6 +1153,8 @@ check_babysit_events (pid_t grandchild_pid,
     }
 }
 
+/* Only used in a single-threaded child process, does not need to be
+ * thread-safe */
 static int babysit_sigchld_pipe = -1;
 
 static void
@@ -1441,27 +1443,13 @@ _dbus_spawn_async_with_babysitter (DBusBabysitter          **sitter_p,
           _dbus_assert_not_reached ("Got to code after write_err_and_exit()");
 	}
       else if (grandchild_pid == 0)
-      {
-#ifdef __linux__
-          int fd = -1;
+        {
+          /* This might not succeed in a dbus-daemon that started as root
+           * and dropped privileges, so don't log an error on failure.
+           * (Also, we can't safely log errors here anyway, because logging
+           * is not async-signal safe). */
+          _dbus_reset_oom_score_adj (NULL);
 
-#ifdef O_CLOEXEC
-          fd = open ("/proc/self/oom_score_adj", O_WRONLY | O_CLOEXEC);
-#endif
-
-          if (fd < 0)
-            {
-              fd = open ("/proc/self/oom_score_adj", O_WRONLY);
-              _dbus_fd_set_close_on_exec (fd);
-            }
-
-          if (fd >= 0)
-            {
-              if (write (fd, "0", sizeof (char)) < 0)
-                _dbus_warn ("writing oom_score_adj error: %s", strerror (errno));
-              _dbus_close (fd, NULL);
-            }
-#endif
           /* Go back to ignoring SIGPIPE, since it's evil
            */
           signal (SIGPIPE, SIG_IGN);

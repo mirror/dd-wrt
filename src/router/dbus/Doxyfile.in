@@ -30,7 +30,7 @@ INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = YES
 DISTRIBUTE_GROUP_DOC   = NO
 TAB_SIZE               = 8
-GENERATE_TODOLIST      = YES
+GENERATE_TODOLIST      = NO
 GENERATE_TESTLIST      = YES
 GENERATE_BUGLIST       = YES
 ALIASES                = 
@@ -179,3 +179,11 @@ DOT_CLEANUP            = YES
 # Configuration::addtions related to the search engine   
 #---------------------------------------------------------------------------
 SEARCHENGINE           = NO
+
+#---------------------------------------------------------------------------
+# Configuration::qt creator help support
+#---------------------------------------------------------------------------
+GENERATE_QHP           = @DOXYGEN_GENERATE_QHP@
+QHP_NAMESPACE          = org.freedesktop.dbus
+QHG_LOCATION           = @DOXYGEN_QHG_LOCATION@
+QCH_FILE               = @DOXYGEN_QCH_FILE@

@@ -13,7 +13,9 @@ add_library(dbus-testutils STATIC
 )
 target_link_libraries(dbus-testutils ${DBUS_INTERNAL_LIBRARIES})
 
-add_subdirectory( name-test )
+if(DBUS_ENABLE_EMBEDDED_TESTS)
+    add_subdirectory( name-test )
+endif()
 
 set(manual-dir-iter_SOURCES
     manual-dir-iter.c
@@ -37,6 +39,10 @@ set(test-shell-service_SOURCES
 
 set(test-shell_SOURCES
     shell-test.c
+)
+
+set(test-atomic_SOURCES
+    internals/atomic.c
 )
 
 set(test-spawn_SOURCES
@@ -75,9 +81,11 @@ add_test_executable(test-shell ${test-shell_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
 add_test_executable(test-printf internals/printf.c dbus-testutils)
 add_helper_executable(test-privserver test-privserver.c dbus-testutils)
 add_helper_executable(test-shell-service ${test-shell-service_SOURCES} dbus-testutils)
-add_helper_executable(test-spawn ${test-spawn_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
-if(NOT WINCE)
+if(NOT WINCE AND ENABLE_TRADITIONAL_ACTIVATION)
     add_test_executable(test-spawn-oom internals/spawn-oom.c dbus-testutils)
+endif()
+if(ENABLE_TRADITIONAL_ACTIVATION)
+    add_helper_executable(test-spawn ${test-spawn_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
 endif()
 add_helper_executable(test-exit ${test-exit_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
 # the second argument of add_helper_executable() is a whitespace-separated
@@ -88,10 +96,11 @@ add_helper_executable(test-sleep-forever ${test-sleep-forever_SOURCES} ${DBUS_IN
 add_helper_executable(manual-tcp ${manual-tcp_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
 add_helper_executable(manual-backtrace manual-backtrace.c dbus-1)
 if(WIN32)
-    add_helper_executable(manual-paths ${manual-paths_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
+    add_helper_executable(manual-paths ${manual-paths_SOURCES} dbus-testutils)
 endif()
 
 if(DBUS_ENABLE_EMBEDDED_TESTS)
+    add_test_executable(test-atomic ${test-atomic_SOURCES} dbus-testutils)
     add_test_executable(test-hash internals/hash.c dbus-testutils)
     set_target_properties(test-hash PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
@@ -116,6 +125,7 @@ if(DBUS_ENABLE_EMBEDDED_TESTS)
     set_target_properties(test-message-internals PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
     set(SOURCES
+        internals/address.c
         internals/dbus-auth-script.c
         internals/dbus-auth-script.h
         internals/dbus-auth-util.c
@@ -126,8 +136,10 @@ if(DBUS_ENABLE_EMBEDDED_TESTS)
         internals/dbus-marshal-validate-util.c
         internals/dbus-string-util.c
         internals/dbus-sysdeps-util.c
+        internals/mempool.c
         internals/misc-internals.c
         internals/misc-internals.h
+        internals/sha.c
     )
     add_test_executable(test-misc-internals "${SOURCES}" dbus-testutils)
     set_target_properties(test-misc-internals PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
@@ -146,8 +158,10 @@ if(DBUS_ENABLE_EMBEDDED_TESTS)
 
     if(NOT WIN32)
         add_test_executable(test-bus-system bus/system.c launch-helper-internal dbus-testutils)
-        add_test_executable(test-bus-launch-helper-oom bus/launch-helper-oom.c launch-helper-internal dbus-testutils)
-        add_helper_executable(dbus-daemon-launch-helper-for-tests bus/launch-helper-for-tests.c launch-helper-internal)
+        if(ENABLE_TRADITIONAL_ACTIVATION)
+            add_test_executable(test-bus-launch-helper-oom bus/launch-helper-oom.c launch-helper-internal dbus-testutils)
+            add_helper_executable(dbus-daemon-launch-helper-for-tests bus/launch-helper-for-tests.c launch-helper-internal)
+        endif()
     endif()
 endif()
 
@@ -213,7 +227,6 @@ set(TESTDIRS
     data/equiv-config-files/entities
     data/equiv-config-files/entities/basic.d
 )
-set(CONFIG_VERBOSE 1)
 
 foreach(DIR ${TESTDIRS})
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${DIR})
@@ -221,23 +234,32 @@ endforeach()
 
 ### copy tests to builddir so that generated tests and static tests 
 ### are all in one place.
-message(STATUS "Copying test files to test directory")
+if(NOT ENABLE_VERBOSE_CONFIG)
+    set(HINT " (use -DENABLE_VERBOSE_CONFIG=ON to see the list of files)")
+endif()
+
+message(STATUS "Copying test files to test directory${HINT}")
+
+macro(dbus_configure_file _src _dest)
+    configure_file(${_src} ${_dest} ${ARGN})
+    if(ENABLE_VERBOSE_CONFIG)
+        message("   generating ${_dest}")
+    endif()
+endmacro()
+
 foreach(FILE_TYPE *.message-raw *.auth-script *.sha1 *.txt *.conf *.service)
     foreach(DIR ${TESTDIRS})
         file(GLOB FILES "${DIR}/${FILE_TYPE}" )
         foreach(FILE ${FILES})
             get_filename_component(FILENAME ${FILE} NAME)
             set(TARGET ${CMAKE_CURRENT_BINARY_DIR}/${DIR}/${FILENAME})
-            configure_file(${FILE} ${TARGET} COPYONLY)
-            if(CONFIG_VERBOSE)
-                message("${FILE}")
-            endif()
+            dbus_configure_file(${FILE} ${TARGET} COPYONLY)
         endforeach()
     endforeach()
 endforeach()
 
 ### generate test files
-message(STATUS "Generating test files from templates into test directory")
+message(STATUS "Generating test files from templates into test directory${HINT}")
 
 foreach(FILE_TYPE *.conf.in *.service.in)
     foreach(DIR ${TESTDIRS})
@@ -246,14 +268,11 @@ foreach(FILE_TYPE *.conf.in *.service.in)
         get_filename_component(FILENAME ${FILE} NAME)
         string(REGEX REPLACE "\\.in$" "" FILENAME ${FILENAME})
         set(TARGET ${CMAKE_CURRENT_BINARY_DIR}/${DIR}/${FILENAME})
-        configure_file(${FILE} ${TARGET} @ONLY IMMEDIATE)
-        if(CONFIG_VERBOSE)
-        message("${FILE}")
-        endif()
+        dbus_configure_file(${FILE} ${TARGET} @ONLY IMMEDIATE)
     endforeach()
     endforeach()
 endforeach()
 
-message(STATUS "Copying generated bus config files to test directory")
-configure_file(../bus/session.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files/session.conf @ONLY)
-configure_file(../bus/system.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files-system/system.conf @ONLY)
+message(STATUS "Copying generated bus config files to test directory${HINT}")
+dbus_configure_file(../bus/session.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files/session.conf @ONLY)
+dbus_configure_file(../bus/system.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files-system/system.conf @ONLY)

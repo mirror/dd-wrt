@@ -164,4 +164,3 @@ noconv:
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return (acc);
 }
-

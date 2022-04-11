@@ -438,7 +438,7 @@ extern "C" {
 #define DBUS_ERROR_SPAWN_PERMISSIONS_INVALID  "org.freedesktop.DBus.Error.Spawn.PermissionsInvalid"
 /** Service file invalid (Name, User or Exec missing). */
 #define DBUS_ERROR_SPAWN_FILE_INVALID         "org.freedesktop.DBus.Error.Spawn.FileInvalid"
-/** Tried to get a UNIX process ID and it wasn't available. */
+/** There was not enough memory to complete the operation. */
 #define DBUS_ERROR_SPAWN_NO_MEMORY            "org.freedesktop.DBus.Error.Spawn.NoMemory"
 /** Tried to get a UNIX process ID and it wasn't available. */
 #define DBUS_ERROR_UNIX_PROCESS_ID_UNKNOWN    "org.freedesktop.DBus.Error.UnixProcessIdUnknown"

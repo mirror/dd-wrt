@@ -83,17 +83,18 @@ typedef struct
 } BusData;
 
 /** The slot we have reserved to store BusData.
+ * Protected by _DBUS_LOCK_connection_slots.
  */
 static dbus_int32_t bus_data_slot = -1;
 
 /** Number of bus types */
 #define N_BUS_TYPES 3
 
+/* Protected by _DBUS_LOCK_bus, except during shutdown, which can't safely
+ * be done in a threaded application anyway. */
 static DBusConnection *bus_connections[N_BUS_TYPES];
 static char *bus_connection_addresses[N_BUS_TYPES] = { NULL, NULL, NULL };
-
 static DBusBusType activation_bus_type = DBUS_BUS_STARTER;
-
 static dbus_bool_t initialized = FALSE;
 
 static void

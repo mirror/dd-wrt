@@ -126,10 +126,6 @@
   <!-- <limit name="max_names_per_connection">512</limit> -->
   <!-- <limit name="max_match_rules_per_connection">512</limit> -->
   <!-- <limit name="max_replies_per_connection">128</limit> -->
-  <!-- <limit name="max_containers">512</limit> -->
-  <!-- <limit name="max_containers_per_user">16</limit> -->
-  <!-- <limit name="max_container_metadata_bytes">4096</limit> -->
-  <!-- <limit name="max_connections_per_container">8</limit> -->
 
   <!-- Config files are placed here that among other things, punch 
        holes in the above policy for specific services. -->

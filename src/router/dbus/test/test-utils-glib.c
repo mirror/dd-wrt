@@ -35,6 +35,7 @@
 # include <windows.h>
 #else
 # include <netdb.h>
+# include <netinet/in.h>
 # include <signal.h>
 # include <unistd.h>
 # include <sys/socket.h>
@@ -126,6 +127,7 @@ spawn_dbus_daemon (const gchar *binary,
           case TEST_USER_ROOT:
             break;
 
+          case TEST_USER_ROOT_DROP_TO_MESSAGEBUS:
           case TEST_USER_MESSAGEBUS:
             pwd = getpwnam (DBUS_USER);
 
@@ -137,6 +139,13 @@ spawn_dbus_daemon (const gchar *binary,
                 g_test_skip (message);
                 g_free (message);
                 return NULL;
+              }
+
+            if (user == TEST_USER_ROOT_DROP_TO_MESSAGEBUS)
+              {
+                /* Let the dbus-daemon start as root and drop privileges
+                 * itself */
+                pwd = NULL;
               }
 
             break;
@@ -201,6 +210,24 @@ spawn_dbus_daemon (const gchar *binary,
       &address_fd,
       NULL, /* child's stderr = our stderr */
       &error);
+
+  /* The other uid might not have access to our build directory if we
+   * are building in /root or something */
+  if (user != TEST_USER_ME &&
+      g_getenv ("DBUS_TEST_UNINSTALLED") != NULL &&
+      error != NULL &&
+      error->domain == G_SPAWN_ERROR &&
+      (error->code == G_SPAWN_ERROR_CHDIR ||
+       error->code == G_SPAWN_ERROR_ACCES ||
+       error->code == G_SPAWN_ERROR_PERM))
+    {
+      g_prefix_error (&error, "Unable to launch %s as other user: ",
+          binary);
+      g_test_skip (error->message);
+      g_clear_error (&error);
+      return NULL;
+    }
+
   g_assert_no_error (error);
 
   g_ptr_array_free (argv, TRUE);
@@ -399,6 +426,11 @@ become_other_user (TestUser user,
         username = DBUS_TEST_USER;
         break;
 
+      /* TEST_USER_ROOT_DROP_TO_MESSAGEBUS is only meaningful for
+       * test_get_dbus_daemon(), not as a client */
+      case TEST_USER_ROOT_DROP_TO_MESSAGEBUS:
+        g_return_val_if_reached (FALSE);
+
       case TEST_USER_ME:
       default:
         g_return_val_if_reached (FALSE);
@@ -444,6 +476,11 @@ become_other_user (TestUser user,
             "setresuid() not available, or unsure about "
             "credentials-passing semantics on this platform");
         return FALSE;
+
+      /* TEST_USER_ROOT_DROP_TO_MESSAGEBUS is only meaningful for
+       * test_get_dbus_daemon(), not as a client */
+      case TEST_USER_ROOT_DROP_TO_MESSAGEBUS:
+        g_return_val_if_reached (FALSE);
 
       case TEST_USER_ME:
       default:

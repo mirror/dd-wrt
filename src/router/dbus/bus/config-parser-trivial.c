@@ -750,4 +750,3 @@ finish:
 }
 
 #endif /* DBUS_ENABLE_EMBEDDED_TESTS */
-

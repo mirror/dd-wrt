@@ -245,9 +245,9 @@ struct DBusPreallocatedSend
 };
 
 #if HAVE_DECL_MSG_NOSIGNAL
-static dbus_bool_t _dbus_modify_sigpipe = FALSE;
+static DBusAtomic _dbus_modify_sigpipe = { FALSE };
 #else
-static dbus_bool_t _dbus_modify_sigpipe = TRUE;
+static DBusAtomic _dbus_modify_sigpipe = { TRUE };
 #endif
 
 /**
@@ -1328,7 +1328,7 @@ _dbus_connection_new_for_transport (DBusTransport *transport)
   if (objects == NULL)
     goto error;
   
-  if (_dbus_modify_sigpipe)
+  if (_dbus_atomic_get (&_dbus_modify_sigpipe) != 0)
     _dbus_disable_sigpipe ();
 
   /* initialized to 0: use atomic op to avoid mixing atomic and non-atomic */
@@ -6115,8 +6115,11 @@ dbus_connection_get_data (DBusConnection   *connection,
  */
 void
 dbus_connection_set_change_sigpipe (dbus_bool_t will_modify_sigpipe)
-{  
-  _dbus_modify_sigpipe = will_modify_sigpipe != FALSE;
+{
+  if (will_modify_sigpipe)
+    _dbus_atomic_set_nonzero (&_dbus_modify_sigpipe);
+  else
+    _dbus_atomic_set_zero (&_dbus_modify_sigpipe);
 }
 
 /**
