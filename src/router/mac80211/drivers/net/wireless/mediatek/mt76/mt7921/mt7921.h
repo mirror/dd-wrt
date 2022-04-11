@@ -155,7 +155,6 @@ struct mt7921_phy {
 
 	struct ieee80211_sband_iftype_data iftype[NUM_NL80211_BANDS][NUM_NL80211_IFTYPES];
 
-	u32 rxfilter;
 	u64 omac_mask;
 
 	u16 noise;
@@ -467,7 +466,11 @@ bool mt7921_usb_sdio_tx_status_data(struct mt76_dev *mdev, u8 *update);
 
 int mt7921u_mcu_power_on(struct mt7921_dev *dev);
 int mt7921u_wfsys_reset(struct mt7921_dev *dev);
-int mt7921u_dma_init(struct mt7921_dev *dev);
+int mt7921u_dma_init(struct mt7921_dev *dev, bool resume);
 int mt7921u_init_reset(struct mt7921_dev *dev);
 int mt7921u_mac_reset(struct mt7921_dev *dev);
+int mt7921_mcu_uni_add_beacon_offload(struct mt7921_dev *dev,
+				      struct ieee80211_hw *hw,
+				      struct ieee80211_vif *vif,
+				      bool enable);
 #endif
