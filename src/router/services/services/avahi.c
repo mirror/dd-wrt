@@ -38,6 +38,7 @@
 
 void start_mdns(void)
 {
+	char conffile[64];
 	if (!nvram_matchi("mdns_enable", 1))
 		return;
 
@@ -211,7 +212,6 @@ void start_mdns(void)
 // */
 
 
-	char conffile[64];
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
