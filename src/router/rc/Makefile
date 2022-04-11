@@ -390,6 +390,9 @@ endif
 ifeq ($(CONFIG_ZABBIX),y)
 CFLAGS += -DHAVE_ZABBIX
 endif
+ifeq ($(CONFIG_MDNS),y)
+CFLAGS += -DHAVE_MDNS
+endif
 ifeq ($(CONFIG_WEBSERVER),y)
 	CFLAGS += -DHAVE_WEBSERVER
 endif
