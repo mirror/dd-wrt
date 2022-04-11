@@ -1,11 +1,11 @@
 
-ifeq ($(CONFIG_MDNS_UTILS),y)
+#ifeq ($(CONFIG_MDNS_UTILS),y)
 	AVAHI_BDBUS:=--enable-dbus
 	CFLAGS_DBUS:=-I$(TOP)/dbus/dbus
 	LDFLAGS_DBUS:=-L$(TOP)/dbus/dbus/.libs -ldbus-1
-else
-	AVAHI_BDBUS:=--disable-dbus
-endif
+#else
+#	AVAHI_BDBUS:=--disable-dbus
+#endif
 
 
 avahi-configure: expat dbus libdaemon
