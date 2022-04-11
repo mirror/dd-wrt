@@ -52,7 +52,6 @@ else
 avahi-clean: expat-clean libdaemon-clean
 endif
 	$(MAKE) -C avahi clean
-	rm -f avahi/stamp-h1
 
 ifeq ($(CONFIG_MDNS_UTILS),y)
 avahi-install: expat-install dbus-install libdaemon-install
