@@ -15,7 +15,6 @@ expat-install:
 
 expat-clean:
 	-$(MAKE) -C expat clean
-	rm -f expat/stamp-h1
 
 .PHONY: expat expat-configure expat-install expat-clean
 

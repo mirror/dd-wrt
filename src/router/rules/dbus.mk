@@ -46,7 +46,6 @@ dbus-install:
 
 
 dbus-clean:
-	-$(MAKE) -C dbus distclean
-	-rm -f dbus/stamp-h1
+	-$(MAKE) -C dbus clean
 
 .PHONY: dbus-configure dbus dbus-install dbus-clean
