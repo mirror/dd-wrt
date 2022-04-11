@@ -32,6 +32,7 @@
     <arg choice='opt'>--nosyslog </arg>
     <arg choice='opt'>--syslog </arg>
     <arg choice='opt'>--syslog-only </arg>
+    <arg choice='opt'>--ready-event-handle=value</arg>
     <sbr/>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -199,6 +200,29 @@ files.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry>
+    <term><option>--ready-event-handle=value</option></term>
+    <listitem>
+      <para>With this option, the dbus daemon raises an event when it is ready to process
+        connections. The <replaceable>handle</replaceable> must be the Windows handle
+        for an event object, in the format printed by the <function>printf</function>
+        format string <literal>%p</literal>. The parent process must create this event
+        object (for example with the <function>CreateEvent</function> function) in a
+        nonsignaled state, then configure it to be inherited by the dbus-daemon process.
+        The dbus-daemon will signal the event as if via <function>SetEvent</function>
+        when it is ready to receive connections from clients. The parent process can
+        wait for this to occur by using functions such as
+        <function>WaitForSingleObject</function>.
+        This option is only supported under Windows. On Unix platforms,
+        a similar result can be achieved by waiting for the address and/or
+        process ID to be printed to the inherited file descriptors used
+        for <option>--print-address</option> and/or <option>--print-pid</option>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+
+
 </variablelist>
 </refsect1>
 
@@ -282,7 +306,7 @@ DBUS_STARTER_BUS_TYPE environment variable will be set to "session"
 and the DBUS_SESSION_BUS_ADDRESS environment variable will be set
 to the address of the session bus.  Likewise, if the type of the
 message bus is "system", then the DBUS_STARTER_BUS_TYPE environment
-variable will be set to "system" and the DBUS_SESSION_BUS_ADDRESS
+variable will be set to "system" and the DBUS_SYSTEM_BUS_ADDRESS
 environment variable will be set to the address of the system bus
 (which is normally well known anyway).</para>
 
@@ -699,7 +723,7 @@ configuration file would probably be nonsense.</para>
   precedence.</para>
 
 <para>
-  On Unix, the standard session service directories are:
+  On Unix, the standard system service directories are:
   <itemizedlist>
     <listitem>
       <para>
@@ -816,14 +840,6 @@ Available limit names are:</para>
                                      (number of calls-in-progress)
       "reply_timeout"              : milliseconds (thousandths)
                                      until a method call times out
-      "max_containers"             : max number of restricted servers for use
-                                     in app-containers, in total
-      "max_containers_per_user"    : max number of app-containers per Unix uid
-      "max_container_metadata_bytes": max number of bytes of metadata to store
-                                      for each app-container
-      "max_connections_per_container": max number of (authenticated or
-                                       unauthenticated) connections to each
-                                       app-container
 </literallayout> <!-- .fi -->
 
 

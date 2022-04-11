@@ -100,6 +100,7 @@ typedef struct {
     gchar *address;
 
     DBusConnection *left_conn;
+    gboolean left_conn_shouted_signal_filter;
 
     DBusConnection *right_conn;
     GQueue held_messages;
@@ -107,6 +108,7 @@ typedef struct {
     gboolean right_conn_hold;
     gboolean wait_forever_called;
     guint activation_forking_counter;
+    guint signal_counter;
 
     gchar *tmp_runtime_dir;
     gchar *saved_runtime_dir;
@@ -156,6 +158,19 @@ hold_filter (DBusConnection *connection,
   g_queue_push_tail (&f->held_messages, dbus_message_ref (message));
 
   return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static DBusHandlerResult
+shouted_signal_filter (DBusConnection *connection,
+                       DBusMessage *message,
+                       void *user_data)
+{
+  Fixture *f = user_data;
+
+  if (dbus_message_is_signal (message, "com.example", "Shouted"))
+    f->signal_counter++;
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 typedef struct {
@@ -237,6 +252,31 @@ add_hold_filter (Fixture *f)
 }
 
 static void
+add_shouted_signal_filter (Fixture *f)
+{
+  if (!dbus_connection_add_filter (f->left_conn, shouted_signal_filter, f, NULL))
+    g_error ("OOM");
+
+  f->left_conn_shouted_signal_filter = TRUE;
+}
+
+static void
+right_conn_emit_shouted (Fixture *f)
+{
+  DBusMessage *m;
+
+  m = dbus_message_new_signal ("/", "com.example", "Shouted");
+
+  if (m == NULL)
+    g_error ("OOM");
+
+  if (!dbus_connection_send (f->right_conn, m, NULL))
+    g_error ("OOM");
+
+  dbus_clear_message (&m);
+}
+
+static void
 pc_count (DBusPendingCall *pc,
     void *data)
 {
@@ -257,30 +297,11 @@ pc_enqueue (DBusPendingCall *pc,
 }
 
 static void
-test_echo (Fixture *f,
-    gconstpointer context)
+echo_left_to_right (Fixture *f,
+                    guint count)
 {
-  const Config *config = context;
-  guint count = 2000;
   guint sent;
   guint received = 0;
-  double elapsed;
-
-  if (f->skip)
-    return;
-
-  if (config != NULL && config->bug_ref != NULL)
-    g_test_bug (config->bug_ref);
-
-  if (g_test_perf ())
-    count = 100000;
-
-  if (config != NULL)
-    count = MAX (config->min_messages, count);
-
-  add_echo_filter (f);
-
-  g_test_timer_start ();
 
   for (sent = 0; sent < count; sent++)
     {
@@ -309,6 +330,33 @@ test_echo (Fixture *f,
 
   while (received < count)
     test_main_context_iterate (f->ctx, TRUE);
+}
+
+static void
+test_echo (Fixture *f,
+    gconstpointer context)
+{
+  const Config *config = context;
+  guint count = 2000;
+  double elapsed;
+
+  if (f->skip)
+    return;
+
+  if (config != NULL && config->bug_ref != NULL)
+    g_test_bug (config->bug_ref);
+
+  if (g_test_perf ())
+    count = 100000;
+
+  if (config != NULL)
+    count = MAX (config->min_messages, count);
+
+  add_echo_filter (f);
+
+  g_test_timer_start ();
+
+  echo_left_to_right (f, count);
 
   elapsed = g_test_timer_elapsed ();
 
@@ -587,10 +635,6 @@ test_creds (Fixture *f,
 #else
           g_assert_not_reached ();
 #endif
-        }
-      else if (g_str_has_prefix (name, DBUS_INTERFACE_CONTAINERS1 "."))
-        {
-          g_assert_not_reached ();
         }
 
       dbus_message_iter_next (&arr_iter);
@@ -2535,6 +2579,12 @@ teardown (Fixture *f,
 
   if (f->left_conn != NULL)
     {
+      if (f->left_conn_shouted_signal_filter)
+        {
+          dbus_connection_remove_filter (f->left_conn, shouted_signal_filter, f);
+          f->left_conn_shouted_signal_filter = FALSE;
+        }
+
       test_connection_shutdown (f->ctx, f->left_conn);
       dbus_connection_close (f->left_conn);
     }
@@ -2653,7 +2703,7 @@ static Config as_another_user_config = {
     NULL, 1, "valid-config-files/as-another-user.conf",
     /* We start the dbus-daemon as root and drop privileges, like the
      * real system bus does */
-    TEST_USER_ROOT, SPECIFY_ADDRESS
+    TEST_USER_ROOT_DROP_TO_MESSAGEBUS, SPECIFY_ADDRESS
 };
 
 #ifdef ENABLE_TRADITIONAL_ACTIVATION
@@ -2673,6 +2723,71 @@ static Config send_destination_prefix_config = {
     NULL, 1, "valid-config-files/send-destination-prefix-rules.conf",
     TEST_USER_ME, SPECIFY_ADDRESS
 };
+
+static void
+test_match_remove_fails (Fixture *f,
+                         gconstpointer context G_GNUC_UNUSED)
+{
+  const char *match_rule = "type='signal'";
+
+  if (f->skip)
+    return;
+
+  /* Unlike in test_match_remove_succeeds(), we never added this */
+  dbus_bus_remove_match (f->left_conn, match_rule, &f->e);
+  g_assert_cmpstr (f->e.name, ==, DBUS_ERROR_MATCH_RULE_NOT_FOUND);
+}
+
+static void
+test_match_remove_succeeds (Fixture *f,
+                            gconstpointer context G_GNUC_UNUSED)
+{
+  const char *match_rule = "type='signal'";
+
+  if (f->skip)
+    return;
+
+  add_shouted_signal_filter (f);
+
+  /* We use this to make sure that a method call from the "left" connection
+   * will get a reply from the "right", to sync up */
+  add_echo_filter (f);
+
+  /* Emit a signal from the "right" connection, and assert that the "left"
+   * does not receive it yet */
+  f->signal_counter = 0;
+  right_conn_emit_shouted (f);
+  /* Because messages are totally-ordered, if the "left" connection was
+   * going to receive the signal, it would receive it before it got
+   * the reply from this async call to the "right" connection */
+  echo_left_to_right (f, 1);
+  g_assert_cmpuint (f->signal_counter, ==, 0);
+
+  dbus_bus_add_match (f->left_conn, match_rule, &f->e);
+  test_assert_no_error (&f->e);
+
+  f->signal_counter = 0;
+
+  /* Emit a signal from the "right" connection, and assert that the "left"
+   * receives it */
+  right_conn_emit_shouted (f);
+
+  while (f->signal_counter < 1)
+    test_main_context_iterate (f->ctx, TRUE);
+
+  dbus_bus_remove_match (f->left_conn, match_rule, &f->e);
+  test_assert_no_error (&f->e);
+
+  /* Emit a signal from the "right" connection, and assert that the "left"
+   * does not receive it this time */
+  f->signal_counter = 0;
+  right_conn_emit_shouted (f);
+  /* Because messages are totally-ordered, if the "left" connection was
+   * going to receive the signal, it would receive it before it got
+   * the reply from this async call to the "right" connection */
+  echo_left_to_right (f, 1);
+  g_assert_cmpuint (f->signal_counter, ==, 0);
+}
 
 int
 main (int argc,
@@ -2708,6 +2823,10 @@ main (int argc,
   g_test_add ("/limits/max-names-per-connection", Fixture,
       &max_names_per_connection_config,
       setup, test_max_names_per_connection, teardown);
+  g_test_add ("/match/remove/fails", Fixture, NULL,
+      setup, test_match_remove_fails, teardown);
+  g_test_add ("/match/remove/succeeds", Fixture, NULL,
+      setup, test_match_remove_succeeds, teardown);
   g_test_add ("/peer/ping", Fixture, NULL, setup, test_peer_ping, teardown);
   g_test_add ("/peer/get-machine-id", Fixture, NULL,
       setup, test_peer_get_machine_id, teardown);

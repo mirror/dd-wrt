@@ -71,7 +71,10 @@ dbus_launch_LDADD = \
 	$(NULL)
 
 dbus_run_session_SOURCES =			\
-	dbus-run-session.c
+	dbus-run-session.c \
+	tool-common.c \
+	tool-common.h
+	$(NULL)
 
 dbus_run_session_LDADD = \
 	$(CODE_COVERAGE_LIBS) \

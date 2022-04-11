@@ -68,9 +68,6 @@
 #ifdef HAVE_WRITEV
 #include <sys/uio.h>
 #endif
-#ifdef HAVE_POLL
-#include <sys/poll.h>
-#endif
 #ifdef HAVE_BACKTRACE
 #include <execinfo.h>
 #endif
@@ -79,6 +76,9 @@
 #endif
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
+#ifdef HAVE_SYS_RANDOM_H
+#include <sys/random.h>
 #endif
 
 #ifdef HAVE_ADT
@@ -435,30 +435,37 @@ _dbus_read_socket_with_unix_fds (DBusSocket        fd,
       struct cmsghdr *cm;
       dbus_bool_t found = FALSE;
 
-      if (m.msg_flags & MSG_CTRUNC)
-        {
-          /* Hmm, apparently the control data was truncated. The bad
-             thing is that we might have completely lost a couple of fds
-             without chance to recover them. Hence let's treat this as a
-             serious error. */
-
-          errno = ENOSPC;
-          _dbus_string_set_length (buffer, start);
-          return -1;
-        }
-
       for (cm = CMSG_FIRSTHDR(&m); cm; cm = CMSG_NXTHDR(&m, cm))
         if (cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SCM_RIGHTS)
           {
             size_t i;
             int *payload = (int *) CMSG_DATA (cm);
             size_t payload_len_bytes = (cm->cmsg_len - CMSG_LEN (0));
-            size_t payload_len_fds = payload_len_bytes / sizeof (int);
+            size_t payload_len_fds;
             size_t fds_to_use;
 
             /* Every unsigned int fits in a size_t without truncation, so
              * casting (size_t) *n_fds is OK */
             _DBUS_STATIC_ASSERT (sizeof (size_t) >= sizeof (unsigned int));
+
+            if ((m.msg_flags & MSG_CTRUNC) && CMSG_NXTHDR(&m, cm) == NULL &&
+              (char *) payload + payload_len_bytes >
+              (char *) m.msg_control + m.msg_controllen)
+              {
+                /* This is the last cmsg in a truncated message and using
+                 * cmsg_len would apparently overrun the allocated buffer.
+                 * Some operating systems (illumos and Solaris are known) do
+                 * not adjust cmsg_len in the last cmsg when truncation occurs.
+                 * Adjust the payload length here. The calculation for
+                 * payload_len_fds below will discard any trailing bytes that
+                 * belong to an incomplete file descriptor - the kernel will
+                 * have already closed that (at least for illumos and Solaris)
+                 */
+                 payload_len_bytes = m.msg_controllen -
+                   ((char *) payload - (char *) m.msg_control);
+              }
+
+            payload_len_fds = payload_len_bytes / sizeof (int);
 
             if (_DBUS_LIKELY (payload_len_fds <= (size_t) *n_fds))
               {
@@ -500,6 +507,26 @@ _dbus_read_socket_with_unix_fds (DBusSocket        fd,
 
       if (!found)
         *n_fds = 0;
+
+      if (m.msg_flags & MSG_CTRUNC)
+        {
+          unsigned int i;
+
+          /* Hmm, apparently the control data was truncated. The bad
+             thing is that we might have completely lost a couple of fds
+             without chance to recover them. Hence let's treat this as a
+             serious error. */
+
+          /* We still need to close whatever fds we *did* receive,
+           * otherwise they'll never get closed. (CVE-2020-12049) */
+          for (i = 0; i < *n_fds; i++)
+            close (fds[i]);
+
+          *n_fds = 0;
+          errno = ENOSPC;
+          _dbus_string_set_length (buffer, start);
+          return -1;
+        }
 
       /* put length back (doesn't actually realloc) */
       _dbus_string_set_length (buffer, start + bytes_read);
@@ -1411,7 +1438,8 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
   DBusSocket fd = DBUS_SOCKET_INIT;
   int res;
   struct addrinfo hints;
-  struct addrinfo *ai, *tmp;
+  struct addrinfo *ai = NULL;
+  const struct addrinfo *tmp;
   DBusError *connect_error;
 
   _DBUS_ASSERT_ERROR_IS_CLEAR(error);
@@ -1450,7 +1478,6 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
     {
       if (!_dbus_open_socket (&fd.fd, tmp->ai_family, SOCK_STREAM, 0, error))
         {
-          freeaddrinfo(ai);
           _DBUS_ASSERT_ERROR_IS_SET(error);
           _dbus_socket_invalidate (&fd);
           goto out;
@@ -1491,7 +1518,6 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
 
       break;
     }
-  freeaddrinfo(ai);
 
   if (!_dbus_socket_is_valid (fd))
     {
@@ -1523,6 +1549,9 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
     }
 
 out:
+  if (ai != NULL)
+    freeaddrinfo (ai);
+
   while ((connect_error = _dbus_list_pop_first (&connect_errors)))
     {
       dbus_error_free (connect_error);
@@ -2654,7 +2683,7 @@ fill_user_info (DBusUserInfo       *info,
    * checks
    */
 
-#if defined (HAVE_POSIX_GETPWNAM_R) || defined (HAVE_NONPOSIX_GETPWNAM_R)
+#ifdef HAVE_GETPWNAM_R
   {
     struct passwd *p;
     int result;
@@ -2683,20 +2712,12 @@ fill_user_info (DBusUserInfo       *info,
           }
 
         p = NULL;
-#ifdef HAVE_POSIX_GETPWNAM_R
         if (uid != DBUS_UID_UNSET)
           result = getpwuid_r (uid, &p_str, buf, buflen,
                                &p);
         else
           result = getpwnam_r (username_c, &p_str, buf, buflen,
                                &p);
-#else
-        if (uid != DBUS_UID_UNSET)
-          p = getpwuid_r (uid, &p_str, buf, buflen);
-        else
-          p = getpwnam_r (username_c, &p_str, buf, buflen);
-        result = 0;
-#endif /* !HAVE_POSIX_GETPWNAM_R */
         //Try a bigger buffer if ERANGE was returned
         if (result == ERANGE && buflen < 512 * 1024)
           {
@@ -2731,6 +2752,8 @@ fill_user_info (DBusUserInfo       *info,
   {
     /* I guess we're screwed on thread safety here */
     struct passwd *p;
+
+#warning getpwnam_r() not available, please report this to the dbus maintainers with details of your OS
 
     if (uid != DBUS_UID_UNSET)
       p = getpwuid (uid);
@@ -3072,6 +3095,42 @@ _dbus_atomic_get (DBusAtomic *atomic)
 }
 
 /**
+ * Atomically set the value of an integer to 0.
+ *
+ * @param atomic pointer to the integer to set
+ */
+void
+_dbus_atomic_set_zero (DBusAtomic *atomic)
+{
+#if DBUS_USE_SYNC
+  /* Atomic version of "*atomic &= 0; return *atomic" */
+  __sync_and_and_fetch (&atomic->value, 0);
+#else
+  pthread_mutex_lock (&atomic_mutex);
+  atomic->value = 0;
+  pthread_mutex_unlock (&atomic_mutex);
+#endif
+}
+
+/**
+ * Atomically set the value of an integer to something nonzero.
+ *
+ * @param atomic pointer to the integer to set
+ */
+void
+_dbus_atomic_set_nonzero (DBusAtomic *atomic)
+{
+#if DBUS_USE_SYNC
+  /* Atomic version of "*atomic |= 1; return *atomic" */
+  __sync_or_and_fetch (&atomic->value, 1);
+#else
+  pthread_mutex_lock (&atomic_mutex);
+  atomic->value = 1;
+  pthread_mutex_unlock (&atomic_mutex);
+#endif
+}
+
+/**
  * Wrapper for poll().
  *
  * @param fds the file descriptors to poll
@@ -3353,12 +3412,26 @@ _dbus_generate_random_bytes (DBusString *str,
                              int         n_bytes,
                              DBusError  *error)
 {
-  int old_len;
+  int old_len = _dbus_string_get_length (str);
   int fd;
   int result;
+#ifdef HAVE_GETRANDOM
+  char *buffer;
 
-  old_len = _dbus_string_get_length (str);
-  fd = -1;
+  if (!_dbus_string_lengthen (str, n_bytes))
+    {
+      _DBUS_SET_OOM (error);
+      return FALSE;
+    }
+
+  buffer = _dbus_string_get_data_len (str, old_len, n_bytes);
+  result = getrandom (buffer, n_bytes, GRND_NONBLOCK);
+
+  if (result == n_bytes)
+    return TRUE;
+
+  _dbus_string_set_length (str, old_len);
+#endif
 
   /* note, urandom on linux will fall back to pseudorandom */
   fd = open ("/dev/urandom", O_RDONLY);
@@ -4559,19 +4632,10 @@ _dbus_append_keyring_directory_for_credentials (DBusString      *directory,
   return FALSE;
 }
 
-//PENDING(kdab) docs
-dbus_bool_t
-_dbus_daemon_publish_session_bus_address (const char* addr,
-                                          const char *scope)
-{
-  return TRUE;
-}
-
-//PENDING(kdab) docs
+/* Documented in dbus-sysdeps-win.c, does nothing on Unix */
 void
 _dbus_daemon_unpublish_session_bus_address (void)
 {
-
 }
 
 /**
@@ -4669,7 +4733,7 @@ act_on_fds_3_and_up (void (*func) (int fd))
 {
   int maxfds, i;
 
-#ifdef __linux__
+#if defined(__linux__) && defined(__GLIBC__)
   DIR *d;
 
   /* On Linux we can optimize this a bit if /proc is available. If it

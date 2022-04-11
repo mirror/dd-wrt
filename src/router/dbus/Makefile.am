@@ -33,7 +33,7 @@ EXTRA_DIST =			\
 all-local: Doxyfile
 
 update-authors:
-	git shortlog -s -e | cut -c 8- | sort > AUTHORS
+	( cd $(srcdir) && git shortlog -s -e ) | cut -c 8- | sort > $(srcdir)/AUTHORS
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-xml-docs \

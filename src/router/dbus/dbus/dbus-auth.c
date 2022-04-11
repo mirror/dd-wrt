@@ -525,8 +525,8 @@ sha1_handle_first_client_response (DBusAuth         *auth,
   /* We haven't sent a challenge yet, we're expecting a desired
    * username from the client.
    */
-  DBusString tmp;
-  DBusString tmp2;
+  DBusString tmp = _DBUS_STRING_INIT_INVALID;
+  DBusString tmp2 = _DBUS_STRING_INIT_INVALID;
   dbus_bool_t retval = FALSE;
   DBusError error = DBUS_ERROR_INIT;
   DBusCredentials *myself = NULL;
@@ -557,7 +557,7 @@ sha1_handle_first_client_response (DBusAuth         *auth,
       if (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY))
         {
           dbus_error_free (&error);
-          goto out;
+          return FALSE;
         }
 
       _dbus_verbose ("%s: Did not get a valid username from client: %s\n",
@@ -1664,10 +1664,25 @@ process_ok(DBusAuth *auth,
                  _dbus_string_get_const_data (& DBUS_AUTH_CLIENT (auth)->guid_from_server));
 
   if (auth->unix_fd_possible)
-    return send_negotiate_unix_fd(auth);
+    {
+      if (!send_negotiate_unix_fd (auth))
+        {
+          _dbus_string_set_length (& DBUS_AUTH_CLIENT (auth)->guid_from_server, 0);
+          return FALSE;
+        }
+
+      return TRUE;
+    }
 
   _dbus_verbose("Not negotiating unix fd passing, since not possible\n");
-  return send_begin (auth);
+
+  if (!send_begin (auth))
+    {
+      _dbus_string_set_length (& DBUS_AUTH_CLIENT (auth)->guid_from_server, 0);
+      return FALSE;
+    }
+
+  return TRUE;
 }
 
 static dbus_bool_t

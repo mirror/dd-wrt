@@ -28,11 +28,11 @@ check_include_file(strings.h     HAVE_STRINGS_H)
 check_include_file(syslog.h     HAVE_SYSLOG_H)
 check_include_files("stdint.h;sys/types.h;sys/event.h" HAVE_SYS_EVENT_H)
 check_include_file(sys/inotify.h     HAVE_SYS_INOTIFY_H)
+check_include_file(sys/random.h     HAVE_SYS_RANDOM_H)
 check_include_file(sys/resource.h     HAVE_SYS_RESOURCE_H)
 check_include_file(sys/stat.h     HAVE_SYS_STAT_H)
 check_include_file(sys/types.h     HAVE_SYS_TYPES_H)
 check_include_file(sys/uio.h     HAVE_SYS_UIO_H)
-check_include_file(sys/poll.h   HAVE_POLL)      # dbus-sysdeps.c, dbus-sysdeps-win.c
 check_include_file(sys/prctl.h  HAVE_SYS_PRCTL_H)
 check_include_file(sys/syslimits.h    HAVE_SYS_SYSLIMITS_H)   # dbus-sysdeps-unix.c
 check_include_file(sys/time.h   HAVE_SYS_TIME_H)# dbus-sysdeps-win.c
@@ -46,7 +46,7 @@ check_symbol_exists(backtrace    "execinfo.h"       HAVE_BACKTRACE)          #  
 check_symbol_exists(getgrouplist "grp.h"            HAVE_GETGROUPLIST)       #  dbus-sysdeps.c
 check_symbol_exists(getpeerucred "ucred.h"          HAVE_GETPEERUCRED)       #  dbus-sysdeps.c, dbus-sysdeps-win.c
 check_symbol_exists(nanosleep    "time.h"           HAVE_NANOSLEEP)          #  dbus-sysdeps.c
-check_symbol_exists(getpwnam_r   "errno.h;pwd.h"    HAVE_POSIX_GETPWNAM_R)   #  dbus-sysdeps-util-unix.c
+check_symbol_exists(getpwnam_r   "errno.h;pwd.h"    HAVE_GETPWNAM_R)         #  dbus-sysdeps-util-unix.c
 check_symbol_exists(setenv       "stdlib.h"         HAVE_SETENV)             #  dbus-sysdeps.c
 check_symbol_exists(unsetenv     "stdlib.h"         HAVE_UNSETENV)           #  dbus-sysdeps.c
 check_symbol_exists(clearenv     "stdlib.h"         HAVE_CLEARENV)           #  dbus-sysdeps.c
@@ -55,6 +55,7 @@ check_symbol_exists(setrlimit    "sys/resource.h"   HAVE_SETRLIMIT)          #  
 check_symbol_exists(socketpair   "sys/socket.h"     HAVE_SOCKETPAIR)         #  dbus-sysdeps.c
 check_symbol_exists(setlocale    "locale.h"         HAVE_SETLOCALE)          #  dbus-test-main.c
 check_symbol_exists(localeconv   "locale.h"         HAVE_LOCALECONV)         #  dbus-sysdeps.c
+check_symbol_exists(poll         "poll.h"           HAVE_POLL)               #  dbus-sysdeps-unix.c
 check_symbol_exists(strtoll      "stdlib.h"         HAVE_STRTOLL)            #  dbus-send.c
 check_symbol_exists(strtoull     "stdlib.h"         HAVE_STRTOULL)           #  dbus-send.c
 set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
@@ -64,9 +65,15 @@ check_symbol_exists(inotify_init1 "sys/inotify.h"           HAVE_INOTIFY_INIT1)
 check_symbol_exists(SCM_RIGHTS    "sys/types.h;sys/socket.h;sys/un.h" HAVE_UNIX_FD_PASSING)
 check_symbol_exists(prctl        "sys/prctl.h"              HAVE_PRCTL)
 check_symbol_exists(raise        "signal.h"                 HAVE_RAISE)
+check_symbol_exists(getrandom    "sys/random.h"             HAVE_GETRANDOM)
 check_symbol_exists(getrlimit    "sys/resource.h;sys/time.h" HAVE_GETRLIMIT)
 check_symbol_exists(prlimit      "sys/resource.h;sys/time.h" HAVE_PRLIMIT)
 check_symbol_exists(setrlimit    "sys/resource.h;sys/time.h" HAVE_SETRLIMIT)
+check_symbol_exists(vasprintf    "stdio.h"                   HAVE_VASPRINTF)
+check_symbol_exists(vsnprintf    "stdio.h"                   HAVE_VSNPRINTF)
+check_symbol_exists(MSG_NOSIGNAL "sys/socket.h"              HAVE_DECL_MSG_NOSIGNAL)
+check_symbol_exists(environ      "unistd.h"                  HAVE_DECL_ENVIRON)
+check_symbol_exists(LOG_PERROR   "syslog.h"                  HAVE_DECL_LOG_PERROR)
 
 check_struct_member(cmsgcred cmcred_pid "sys/types.h;sys/socket.h" HAVE_CMSGCRED)   #  dbus-sysdeps.c
 
@@ -164,7 +171,7 @@ check_type_size("long"      SIZEOF_LONG)
 check_type_size("long long" SIZEOF_LONG_LONG)
 check_type_size("__int64"   SIZEOF___INT64)
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-check_type_size("socklen_t" SOCKLEN_T) # define HAVE_SOCKLEN_T and SOCKLEN_T for size
+check_type_size("socklen_t" HAVE_SOCKLEN_T)          #  dbus-sysdeps-unix.c
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
 # DBUS_INT64_TYPE

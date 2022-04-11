@@ -1503,4 +1503,3 @@ _dbus_transport_open_socket(DBusAddressEntry  *entry,
 }
 
 /** @} */
-

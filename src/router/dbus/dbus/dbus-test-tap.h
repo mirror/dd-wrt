@@ -29,36 +29,37 @@
 
 #include <dbus/dbus-internals.h>
 
-#ifdef DBUS_ENABLE_EMBEDDED_TESTS
-
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_fatal (const char *format,
     ...) _DBUS_GNUC_NORETURN _DBUS_GNUC_PRINTF (1, 2);
 
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_diag (const char *format,
     ...) _DBUS_GNUC_PRINTF (1, 2);
 
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_skip_all (const char *format,
     ...) _DBUS_GNUC_NORETURN _DBUS_GNUC_PRINTF (1, 2);
 
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_ok (const char *format,
     ...) _DBUS_GNUC_PRINTF (1, 2);
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_not_ok (const char *format,
     ...) _DBUS_GNUC_PRINTF (1, 2);
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_skip (const char *format,
     ...) _DBUS_GNUC_PRINTF (1, 2);
 
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 void _dbus_test_check_memleaks (const char *test_name);
 
-DBUS_PRIVATE_EXPORT
+DBUS_EMBEDDED_TESTS_EXPORT
 int _dbus_test_done_testing (void);
 
-#endif
+#define _dbus_test_check(a) do { \
+    if (!(a)) \
+      _dbus_test_not_ok ("%s:%d - '%s' failed\n", __FILE__, __LINE__, #a); \
+  } while (0)
 
 #endif

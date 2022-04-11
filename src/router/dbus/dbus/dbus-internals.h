@@ -35,6 +35,12 @@
 
 DBUS_BEGIN_DECLS
 
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
+#define DBUS_EMBEDDED_TESTS_EXPORT DBUS_PRIVATE_EXPORT
+#else
+#define DBUS_EMBEDDED_TESTS_EXPORT /* nothing */
+#endif
+
 DBUS_PRIVATE_EXPORT
 void _dbus_warn               (const char *format,
                                ...) _DBUS_GNUC_PRINTF (1, 2);
@@ -113,6 +119,7 @@ DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_get_verbose (void);
 DBUS_PRIVATE_EXPORT
 void _dbus_set_verbose (dbus_bool_t state);
+void _dbus_verbose_raw (const char *s);
 
 #  define _dbus_verbose_reset _dbus_verbose_reset_real
 #  define _dbus_is_verbose _dbus_is_verbose_real
@@ -186,8 +193,13 @@ void _dbus_real_assert_not_reached (const char *explanation,
 
 #define _DBUS_ZERO(object) (memset (&(object), '\0', sizeof ((object))))
 
+#ifdef offsetof
+#define _DBUS_STRUCT_OFFSET(struct_type, member) \
+    (offsetof (struct_type, member))
+#else
 #define _DBUS_STRUCT_OFFSET(struct_type, member)	\
     ((intptr_t) ((unsigned char*) &((struct_type*) 0)->member))
+#endif
 
 #define _DBUS_ALIGNOF(type) \
     (_DBUS_STRUCT_OFFSET (struct { char _1; type _2; }, _2))
@@ -452,6 +464,9 @@ dbus_bool_t _dbus_get_local_machine_uuid_encoded (DBusString *uuid_str,
 #define _DBUS_STATIC_ASSERT(expr) \
   typedef struct { char _assertion[(expr) ? 1 : -1]; } \
   _DBUS_PASTE (_DBUS_STATIC_ASSERT_, __LINE__) _DBUS_GNUC_UNUSED
+
+#define _DBUS_STRINGIFY(x) #x
+#define _DBUS_FILE_LINE __FILE__ ":" _DBUS_STRINGIFY(__LINE__)
 
 DBUS_END_DECLS
 

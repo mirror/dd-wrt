@@ -122,7 +122,7 @@ bus_match_rule_unref (BusMatchRule *rule)
     }
 }
 
-#if defined(DBUS_ENABLE_VERBOSE_MODE) || defined(DBUS_ENABLE_STATS)
+#if defined(DBUS_ENABLE_VERBOSE_MODE) || defined(DBUS_ENABLE_STATS) || defined(DBUS_ENABLE_EMBEDDED_TESTS)
 static dbus_bool_t
 append_key_and_escaped_value (DBusString *str, const char *token, const char *value)
 {
@@ -312,7 +312,7 @@ match_rule_to_string (BusMatchRule *rule)
   _dbus_string_free (&str);
   return NULL;
 }
-#endif /* defined(DBUS_ENABLE_VERBOSE_MODE) || defined(DBUS_ENABLE_STATS) */
+#endif /* defined(DBUS_ENABLE_VERBOSE_MODE) || defined(DBUS_ENABLE_STATS) || defined(DBUS_ENABLE_EMBEDDED_TESTS) */
 
 dbus_bool_t
 bus_match_rule_set_message_type (BusMatchRule *rule,
@@ -1608,21 +1608,32 @@ bus_matchmaker_remove_rule (BusMatchmaker   *matchmaker,
   bus_match_rule_unref (rule);
 }
 
-/* Remove a single rule which is equal to the given rule by value */
-dbus_bool_t
-bus_matchmaker_remove_rule_by_value (BusMatchmaker   *matchmaker,
-                                     BusMatchRule    *value,
-                                     DBusError       *error)
+/*
+ * Prepare to remove the the most-recently-added rule which is equal to
+ * the given rule by value, but do not actually do it yet.
+ *
+ * Return a linked-list link which must be treated as opaque by the caller:
+ * the only valid thing to do with it is to pass it to
+ * bus_matchmaker_commit_remove_rule_by_value().
+ *
+ * The returned linked-list link becomes invalid when control returns to
+ * the main loop. If the caller decides not to remove the rule after all,
+ * there is currently no need to cancel explicitly.
+ */
+DBusList *
+bus_matchmaker_prepare_remove_rule_by_value (BusMatchmaker   *matchmaker,
+                                             BusMatchRule    *value,
+                                             DBusError       *error)
 {
   DBusList **rules;
   DBusList *link = NULL;
 
-  _dbus_verbose ("Removing rule by value with message_type %d, interface %s\n",
+  _dbus_verbose ("Finding rule by value with message_type %d, interface %s\n",
                  value->message_type,
                  value->interface != NULL ? value->interface : "<null>");
 
   rules = bus_matchmaker_get_rules (matchmaker, value->message_type,
-      value->interface, FALSE);
+                                    value->interface, FALSE);
 
   if (rules != NULL)
     {
@@ -1639,26 +1650,37 @@ bus_matchmaker_remove_rule_by_value (BusMatchmaker   *matchmaker,
           prev = _dbus_list_get_prev_link (rules, link);
 
           if (match_rule_equal (rule, value))
-            {
-              bus_matchmaker_remove_rule_link (rules, link);
-              break;
-            }
+            return link;
 
           link = prev;
         }
     }
 
-  if (link == NULL)
-    {
-      dbus_set_error (error, DBUS_ERROR_MATCH_RULE_NOT_FOUND,
-                      "The given match rule wasn't found and can't be removed");
-      return FALSE;
-    }
+  dbus_set_error (error, DBUS_ERROR_MATCH_RULE_NOT_FOUND,
+                  "The given match rule wasn't found and can't be removed");
+  return NULL;
+}
 
+/*
+ * Commit a previous call to bus_matchmaker_prepare_remove_rule_by_value(),
+ * which must have been done during the same main-loop iteration.
+ */
+void
+bus_matchmaker_commit_remove_rule_by_value (BusMatchmaker *matchmaker,
+                                            BusMatchRule  *value,
+                                            DBusList      *link)
+{
+  DBusList **rules;
+
+  _dbus_assert (match_rule_equal (link->data, value));
+  rules = bus_matchmaker_get_rules (matchmaker, value->message_type,
+                                    value->interface, FALSE);
+  /* Should only be called if a rule matching value was successfully
+   * added, which means rules must contain at least link */
+  _dbus_assert (rules != NULL);
+  bus_matchmaker_remove_rule_link (rules, link);
   bus_matchmaker_gc_rules (matchmaker, value->message_type, value->interface,
       rules);
-
-  return TRUE;
 }
 
 static void
@@ -2984,4 +3006,3 @@ bus_signals_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 }
 
 #endif /* DBUS_ENABLE_EMBEDDED_TESTS */
-

@@ -1,3 +1,465 @@
+dbus 1.14.0 (2022-02-28)
+========================
+
+1.14.x is a new stable branch, superseding 1.12.x.
+
+Summary of major changes between 1.12.x and 1.14.0
+--------------------------------------------------
+
+Dependencies:
+
+• dbus now requires at least a basic level of support for C99 variadic
+  macros, as implemented in gcc >= 3, all versions of Clang, and
+  MSVC >= 2005. In practice this requirement has existed since version
+  1.9.2, but it is now official.
+
+• dbus now requires a C99-compatible va_copy() macro (or a __va_copy()
+  macro with the same behaviour), except when building for Windows using
+  MSVC and CMake.
+
+• On Unix platforms, if getpwnam_r() and getgrnam_r() are implemented,
+  they must be POSIX-conformant. The non-POSIX signature seen in ancient
+  Solaris versions will no longer work.
+
+• All Windows builds now require Windows Vista or later.
+  (Note that we do not recommend or support use of dbus on operating
+  systems outside their vendor's security support lifetime, such as Vista.)
+
+• GLib >= 2.38 is required if full test coverage is enabled
+  (reduced from 2.40 in dbus 1.12.x.)
+
+• Building using CMake now requires CMake 3.4.
+
+• Building documentation using CMake now requires xsltproc, Docbook DTDs
+  (for example docbook-xml on Debian derivatives), and Docbook XSLT
+  stylesheets (for example docbook-xsl on Debian derivatives). Using
+  KDE's meinproc4 documentation processor is no longer supported.
+
+Build-time configuration changes:
+
+• Move CMake build system to top level, matching normal practice for
+  CMake projects
+
+Deprecations:
+
+• Third-party software should install default dbus policies for the system
+  bus into ${datadir}/dbus-1/system.d (this has been supported since dbus
+  1.10, released in August 2015). Installing default dbus policies in
+  ${sysconfdir}/dbus-1/system.d is now considered to be deprecated. Policy
+  files in ${sysconfdir}/dbus-1/system.d continue to be read, but this
+  directory should only be used by system administrators wishing to
+  override the default policies.
+
+  The ${datadir} applicable to dbus is usually /usr/share and the
+  ${sysconfdir} is usually /etc.
+
+• A similar pattern applies to the session bus policies in session.d.
+
+• The dbus-send(1) man page now documents --bus and --peer instead of
+  the old --address synonym for --peer, which has been deprecated since
+  the introduction of --bus and --peer in 1.7.6
+
+• The dbus-daemon man page now has scarier warnings about
+  <allow_anonymous/> and non-local TCP, which are insecure and should
+  not be used, particularly for the standard system and session buses
+
+• DBusServer (and hence the dbus-daemon) no longer accepts usernames
+  (login names) for the recommended EXTERNAL authentication mechanism,
+  only numeric user IDs or the empty string. See 1.13.0 release notes
+  for full details.
+
+New features:
+
+• On Linux 4.13 or later when built against a suitable glibc version,
+  GetConnectionCredentials() now includes UnixGroupIDs, the effective
+  group IDs of the initiator of the connection, taken from
+  SO_PEERGROUPS.
+
+• On Linux 4.13 or later, <policy group="…"> now uses the SO_PEERGROUPS
+  credentials-passing socket option to get the effective group IDs
+  of the initiator of the connection. See 1.13.4 release notes for details.
+
+• Add a --sender option to dbus-send, which requests a name and holds it
+  until the signal has been sent
+
+• dbus-daemon <allow> and <deny> rules can now specify a
+  send_destination_prefix attribute, which is like a combination of
+  send_destination and the arg0namespace keyword in match rules.
+  See 1.13.12 release notes for more details
+
+• The dbus-daemon now filters the messages that it relays, removing
+  header fields that it does not understand. Clients must not rely on
+  this behaviour unless they have confirmed that they are connected to
+  a suitable message bus implementation, for example by querying its
+  Features property.
+
+• The dbus-daemon now emits a signal, ActivatableServicesChanged, when
+  the list of activatable services may have changed. Support for this
+  signal can be discovered by querying the Features property.
+
+• It is now possible to disable traditional (non-systemd) service
+  activation at build-time (Autotools: --disable-traditional-activation,
+  CMake: -DENABLE_TRADITIONAL_ACTIVATION=OFF). See 1.13.10 release notes
+  for details.
+
+• The API reference manual can be built as a Qt compiled help file if
+  qhelpgenerator(-qt5) is available. See 1.13.16 release notes for details.
+
+Miscellaneous behaviour changes:
+
+• When using the "user bus" (--enable-user-session), put the dbus-daemon
+  in the session slice
+
+• Several environment variables set by systemd are no longer passed
+  on to activated services
+
+• If the dbus-daemon is compiled for Linux with systemd support, it
+  now informs systemd that it is ready for use via the sd_notify()
+  mechanism
+
+• Tarball releases no longer contain pre-2007 changelogs and are now
+  compressed with xz, making them around 35% smaller.
+
+Changes since 1.13.22
+---------------------
+
+• On Windows, consistently use msvcrt.dll-style printf formats, fixing
+  builds with mingw-w64 8.0.0 (dbus#380, Simon McVittie)
+
+• Fix some broken links in the API design document
+  (dbus!257, Michael Nosthoff)
+
+• CI updates
+  · Enable -Werror for the CMake builds
+  · Use https to download MSYS packages
+  · Use Debian 11 for most builds
+  · Stop testing on Debian 9, which is EOL
+  · Stop testing on Ubuntu 16.04, which is EOL
+  · Remove workarounds for missing/outdated packages in Debian 8, Debian 9
+    and Ubuntu 16.04
+  (dbus#380, dbus!260; Simon McVittie)
+
+dbus 1.13.22 (2022-02-23)
+=========================
+
+This is a release candidate for a new dbus 1.14.x stable branch.
+
+Enhancements:
+
+• D-Bus Specification 0.38:
+  · Add ActivatableServicesChanged signal and feature flag
+    (dbus#376, Ralf Habacker)
+  · Document * as optionally-escaped in D-Bus addresses, matching
+    the implementation (dbus!248, Kir Kolyshkin)
+
+• Emit the new ActivatableServicesChanged signal when configuration
+  and/or activatable services are reloaded (dbus#376, Ralf Habacker)
+
+• Add an XML catalog file for the DTDs we install
+  (dbus!202, Jan Tojnar)
+
+Bug fixes:
+
+• On Linux, when using traditional (non-systemd) service activation,
+  don't log warnings about failing to reset OOM score adjustment if the
+  process is already more susceptible to the OOM killer, as user processes
+  usually are with systemd ≥ 250. (dbus#374, Simon McVittie)
+
+• On Linux, when using traditional (non-systemd) system bus activation,
+  reset the OOM score adjustment to 0 as intended.
+  If the system dbus-daemon is protected from the OOM killer, this
+  avoids that protection unintentionally being inherited by every
+  system service. (dbus#378, Simon McVittie)
+
+• Fix a code path that could result in a crash on out-of-memory
+  (dbus#246, Marc-André Lureau)
+
+• Fix compilation if embedded tests are enabled but verbose mode and
+  stats are both disabled (Marc-André Lureau)
+
+• CMake: Improve support for Windows with MSVC and add CI coverage
+  (dbus!218, Marc-André Lureau)
+
+• CMake: Improve Docbook documentation-generation
+  (dbus#377, Ralf Habacker)
+
+• On Linux, fix a race condition in the integration test for transient
+  services (Debian#1005889, dbus!256; Simon McVittie)
+
+dbus 1.13.20 (2021-12-17)
+=========================
+
+The “not how anyone wanted to learn the Greek alphabet” release.
+
+Dependencies:
+
+• Building using CMake now requires CMake 3.4.
+
+Enhancements:
+
+• D-Bus Specification 0.37:
+  · Update recommendations for DBUS_COOKIE_SHA1 timeouts
+    (dbus!171, Simon McVittie)
+  · Clarify padding requirements for arrays and variants
+    (dbus!203, Zeeshan Ali)
+  · Describe where the interoperable machine ID comes from
+    (dbus!198, Thomas Kluyver)
+  · Clarify use of dictionary (array of dict-entry) types
+    (dbus#347, Ralf Habacker)
+
+• When using the "user bus" (--enable-user-session), put the dbus-daemon
+  in the session slice (dbus!219, David Redondo)
+
+Feature removal:
+
+• Disable the experimental Containers1 interface that was added in 1.13.0.
+  It is incomplete and not ready for production use, so we're disabling it
+  in preparation for a new 1.14.x stable branch; the code remains present
+  and will be re-enabled later, but there is no longer a build-time
+  configuration option to enable it. (dbus!236, Simon McVittie)
+
+Bug fixes:
+
+• Avoid malloc() after fork on non-GNU libc (dbus!181, Jean-Louis Fuchs)
+
+• Don't return successfully from RemoveMatch if the match rule didn't
+  exist (dbus#351, Simon McVittie)
+
+• On Windows, fix a race condition where dbus-run-session could start the
+  wrapped application before the dbus-daemon was ready
+  (dbus#297, Ralf Habacker)
+
+• Fix build with clang 13 by using Standard C offsetof where available
+  (dbus!237, Simon McVittie)
+
+• Fix build of tests on FreeBSD (dbus!167, Simon McVittie)
+
+• Various CMake build improvements
+  (dbus#310, dbus!213, dbus#319, dbus!217, dbus#346, dbus#356;
+  Ralf Habacker)
+
+• Set IMPORTED_IMPLIB property in CMake metadata installed via Autotools
+  with mingw toolchain
+  (dbus!172, Julien Schueller)
+
+• Make documentation build more reproducible
+  (dbus!189, dbus!238; Arnout Engelen, Simon McVittie)
+
+• On Unix, make X11 autolaunch cope with slashes in DISPLAY
+  (dbus#8, dbus#311; William Earley)
+
+• Don't try to raise RLIMIT_NOFILE beyond OPEN_MAX on macOS
+  (dbus#309, William Earley)
+
+• Improve SELinux audit messages (dbus!173, Chris PeBenito)
+
+• Validate various strings in dbus-send to avoid client-side assertion
+  failures on invalid input (dbus#338, Simon McVittie)
+
+• Fix a memory leak in a unit test (dbus!208, David King)
+
+• In Autotools builds, use pkg-config in preference to AC_PATH_XTRA
+  (dbus!212, Scott Hamilton)
+
+• On Windows, prevent (theoretical?) stack buffer overflow with very
+  long paths (dbus!221, Ralf Habacker)
+
+• Fix build with newer mingw compilers (dbus#355, Ralf Habacker)
+
+• Various Windows error-handling fixes
+  (dbus!229, dbus#357, dbus#279, dbus#360, dbus#365;
+  Ralf Habacker, Simon McVittie)
+
+• Clearer diagnostics when tests are skipped (dbus#363, Simon McVittie)
+
+• CI improvements
+  (dbus#318, dbus!197, dbus!187, dbus!196, dbus!201, dbus#359;
+  Simon McVittie, Ralf Habacker, Arnout Engelen, Marc-André Lureau)
+
+• Typo fixes, etc.
+  (dbus!183, dbus!182; Chigozirim Chukwu, Samy Mahmoudi)
+
+dbus 1.13.18 (2020-07-02)
+=========================
+
+The “carnivorous border” release.
+
+Maybe security fixes:
+
+• On Unix, avoid a use-after-free if two usernames have the same
+  numeric uid. In older versions this could lead to a crash (denial of
+  service) or other undefined behaviour, possibly including incorrect
+  authorization decisions if <policy group=...> is used.
+  Like Unix filesystems, D-Bus' model of identity cannot distinguish
+  between users of different names with the same numeric uid, so this
+  configuration is not advisable on systems where D-Bus will be used.
+  Thanks to Daniel Onaca.
+  (dbus#305, dbus!166, CVE-2020-35512; Simon McVittie)
+
+Other fixes:
+
+• On Solaris and its derivatives, if a cmsg header is truncated, ensure
+  that we do not overrun the buffer used for fd-passing, even if the
+  kernel tells us to.
+  (dbus#304, dbus!165; Andy Fiddaman)
+
+• When built with CMake, use GNUInstallDirs' special-cases for prefixes
+  /, /usr and /opt/*
+  (dbus!155, Ralf Habacker)
+
+• When built with CMake on Linux, allow systemd-specific features to be
+  enabled, for feature parity with Autotools
+  (dbus!155, Ralf Habacker)
+
+• When built with CMake, install the same example files as with Autotools
+  (dbus!155, Ralf Habacker)
+
+• Correct the doc-comment for DBUS_ERROR_SPAWN_NO_MEMORY
+  (dbus!163, Marc-André Lureau)
+
+dbus 1.13.16 (2020-06-02)
+=========================
+
+The “ominous mushroom hat” release.
+
+Denial of service fixes:
+
+• CVE-2020-12049: If a message contains more file descriptors than can
+  be sent, close those that did get through before reporting error.
+  Previously, a local attacker could cause the system dbus-daemon (or
+  another system service with its own DBusServer) to run out of file
+  descriptors, by repeatedly connecting to the server and sending fds that
+  would get leaked.
+  Thanks to Kevin Backhouse of GitHub Security Lab.
+  (dbus#294, GHSL-2020-057; Simon McVittie)
+
+Enhancements:
+
+• The API reference manual can be built as a Qt compiled help file if
+  qhelpgenerator(-qt5) is available. This is controlled by
+  --enable-qt-help and --with-qchdir in the Autotools build, or
+  -DENABLE_QT_HELP and -DINSTALL_QCH_DIR in CMake.
+  (dbus!150, Ralf Habacker)
+
+Fixes:
+
+• When built for Windows, return all autolaunch error information in
+  the DBusError rather than printing some of it to stderr
+  (dbus#191, dbus!131; Ralf Habacker)
+
+• When built for Windows, don't truncate long log messages
+  (dbus!134, Ralf Habacker)
+
+• When built using CMake for a Unix platform, dbus-cleanup-sockets and
+  dbus-uuidgen are now included (dbus!154, Ralf Habacker)
+
+• When built for Windows with verbose mode enabled, don't print debugging
+  messages related to poll() emulation into a fixed-size buffer that
+  could overflow (dbus!125, Ralf Habacker)
+
+• Adjust .desktop file parser to avoid a Coverity false positive
+  (dbus!146, Coverity CID 354884; Ralf Habacker)
+
+• Print shell-test diagnostics to stderr, avoiding warnings or errors
+  from strict TAP parsers (dbus!157, Félix Piédallu)
+
+Tests and CI enhancements:
+
+• When the CI cross-builds Windows binaries on Linux, run unit tests
+  using Wine (dbus#296, dbus!158; Ralf Habacker)
+
+• Really build x86_64 Windows binaries in Gitlab-CI, instead of building
+  i686 binaries a second time (Ralf Habacker)
+
+• When tests will be run using Wine, use STABS debug symbol format so
+  that Wine can display backtraces (dbus#133, dbus!104; Ralf Habacker)
+
+dbus 1.13.14 (2020-04-21)
+=========================
+
+The “mystery allium” release.
+
+Dependencies:
+
+• On Unix platforms, if getpwnam_r() and getgrnam_r() are implemented,
+  they must be POSIX-conformant. The non-POSIX signature seen in ancient
+  Solaris versions will no longer work. (dbus!11, Simon McVittie)
+
+Enhancements:
+
+• D-Bus Specification 0.36:
+  · Fix a typo in an annotated hexdump of part of a message
+    (dbus!152, Zygmunt Krynicki)
+
+• On Linux, use getrandom(2) in preference to /dev/urandom
+  (dbus!147, Natanael Copa)
+
+• Add a --sender option to dbus-send, which requests a name and holds it
+  until the signal has been sent. (dbus!116, Christopher Morin)
+
+Fixes:
+
+• Fix a crash when the dbus-daemon is terminated while one or more
+  monitors are active (dbus#291, dbus!140; Simon McVittie)
+
+• Fix several test failures if the build-time tests were run as uid 0.
+  Note that running the tests with elevated privileges is likely to be
+  insecure, and should only be attempted in an expendable container or
+  virtual machine. (dbus!117, Simon McVittie)
+
+• Fix an assertion failure if a client encounters an out-of-memory
+  condition while sending its response to the "OK" authentication
+  message, and processing of the "OK" message is subsequently retried
+  when more memory is available (dbus!119, Simon McVittie)
+
+• Don't leak struct addrinfo if we run out of memory during a TCP
+  connect()
+  (dbus!143, dbus!144, Coverity CID 354880; Ralf Habacker, Simon McVittie)
+
+• On Linux with SELinux, don't assume that the system policy has the
+  "dbus" security class or the associated AV
+  (dbus#198, dbus!128; Laurent Bigonville)
+
+• Handle dbus_connection_set_change_sigpipe() in a thread-safe way
+  (dbus!132; Simon McVittie, Ralf Habacker)
+
+• On Unix, use POSIX <poll.h> in preference to <sys/poll.h>
+  (dbus!148, Natanael Copa)
+
+• When building with CMake, cope with libX11 in a non-standard location
+  (dbus!129, Tuomo Rinne)
+
+• On Windows with verbose mode enabled and outputting to the debug port,
+  use a dynamically-allocated buffer to avoid potential stack buffer
+  overflows in long messages (dbus#45, dbus!133; Ralf Habacker)
+
+• The dbus-send(1) man page now documents --bus and --peer instead of
+  the old --address synonym for --peer, which has been deprecated since
+  the introduction of --bus and --peer in 1.7.6
+  (fd.o #48816, dbus!115; Chris Morin)
+
+• Fix a wrong environment variable name in dbus-daemon(1)
+  (dbus#275, dbus!122; Mubin, Philip Withnall)
+
+• Fix formatting of dbus_message_append_args example
+  (dbus!126, Felipe Franciosi)
+
+Internal changes:
+
+• Move more test-only code from dbus/ to tests/
+  (dbus!120, dbus!121, dbus!153; Simon McVittie)
+
+• Improve diagnostics if memory or fd leaks are detected
+  (dbus!118, dbus!120; Simon McVittie)
+
+• Move from Debian 9 to Debian 10 for most continuous integration jobs
+  (dbus!151, Simon McVittie)
+
+• On Windows, improve embedded version information
+  (dbus!136, dbus!138, dbus!139; Ralf Habacker)
+
+• Indentation fixes (dbus!149, Taras Zaporozhets)
+
 dbus 1.13.12 (2019-06-11)
 =========================
 
@@ -558,8 +1020,8 @@ Fixes:
 • Expand ${bindir} correctly when pkg-config is asked for dbus_daemondir
   (fd.o #104265, Benedikt Heine)
 
-• On Linux systems with systemd < 237, if ${localstatedir}/dbus doesn't
-  exist, create it before trying to create ${localstatedir}/dbus/machine-id
+• On Linux systems with systemd < 237, if ${localstatedir}/lib/dbus doesn't
+  exist, create it before trying to create ${localstatedir}/lib/dbus/machine-id
   (fd.o #104577, Chris Lesiak)
 
 • Fix escaping in dbus-api-design document (fd.o #104925, Philip Withnall)
@@ -1037,7 +1499,7 @@ Enhancements:
   g_test_trap_subprocess(), for Windows support and better robustness
   on Unix (fd.o #101362, Simon McVittie)
 
-• On systemd systems, if ${localstatedir}/dbus/machine-id doesn't exist,
+• On systemd systems, if ${localstatedir}/lib/dbus/machine-id doesn't exist,
   instruct systemd-tmpfiles to make it a symbolic link to /etc/machine-id.
   This prevents the two files from going out of sync on stateless or live
   images without needing to run dbus-uuidgen, and supports older D-Bus

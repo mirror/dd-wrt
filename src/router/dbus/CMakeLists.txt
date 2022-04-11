@@ -8,7 +8,7 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 project(dbus)
 
 # we need to be up to date
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 if(COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)
 endif()
@@ -20,6 +20,8 @@ if(CMAKE_MAJOR_VERSION GREATER 2)
         cmake_policy(SET CMP0054 NEW)
     endif()
 endif()
+
+option(DBUS_BUILD_TESTS "enable unit test code" ON)
 
 # detect version
 include(MacrosAutotools)
@@ -49,6 +51,10 @@ set(BUILD_FILEVERSION ${DBUS_MAJOR_VERSION},${DBUS_MINOR_VERSION},${DBUS_MICRO_V
 set(BUILD_TIMESTAMP ${DBUS_BUILD_TIMESTAMP})
 
 ########### basic vars ###############
+
+if(UNIX AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(DBUS_LINUX 1)
+endif()
 
 include(GNUInstallDirs)
 
@@ -90,6 +96,7 @@ endif()
 
 option(DBUS_RELOCATABLE "Attempt to make metadata relocatable" ON)
 option(DBUS_ENABLE_PKGCONFIG "Enable pkgconfig support" ON)
+option(ENABLE_VERBOSE_CONFIG "Be verbose on generating config files" OFF)
 
 # For simplicity, we're not relocatable if CMAKE_INSTALL_LIBDIR
 # is something more complicated (e.g. Debian multiarch);
@@ -131,7 +138,52 @@ endif()
 option(DBUS_DISABLE_ASSERT "Disable assertion checking" OFF)
 
 option(DBUS_ENABLE_STATS "enable bus daemon usage statistics" OFF)
-option(DBUS_ENABLE_CONTAINERS "enable restricted servers for app-containers" OFF)
+option(ENABLE_TRADITIONAL_ACTIVATION "Enable traditional activation (without using systemd)" ON)
+
+if(DBUS_LINUX)
+    add_auto_option(ENABLE_SYSTEMD "build with systemd at_console support" AUTO)
+    include(FindPkgConfig)
+    pkg_check_modules(SYSTEMD libsystemd>=209)
+    if(NOT SYSTEMD_FOUND)
+        pkg_check_modules(SYSTEMD libsystemd-login>=32 libsystemd-daemon>=32 libsystemd-journal>=32)
+    endif()
+    check_auto_option(ENABLE_SYSTEMD "systemd support" SYSTEMD_FOUND "systemd")
+    if(ENABLE_SYSTEMD AND SYSTEMD_FOUND)
+        set(DBUS_BUS_ENABLE_SYSTEMD ON)
+        set(HAVE_SYSTEMD ${SYSTEMD_FOUND})
+    endif()
+    option(ENABLE_USER_SESSION "enable user-session semantics for session bus under systemd" OFF)
+    set(DBUS_ENABLE_USER_SESSION ${ENABLE_USER_SESSION})
+
+    add_path_option(WITH_SYSTEMD_SYSTEMUNITDIR "Directory for systemd service files" "")
+    add_path_option(WITH_SYSTEMD_USERUNITDIR "Directory for systemd user service files" "")
+    # get defaults
+    pkg_check_modules(_SYSTEMD systemd)
+    if(_SYSTEMD_FOUND)
+        pkg_get_variable(_SYSTEMD_PREFIX systemd prefix)
+        pkg_get_variable(_SYSTEMD_SYSTEMUNITDIR systemd systemdsystemunitdir)
+        pkg_get_variable(_SYSTEMD_USERUNITDIR systemd systemduserunitdir)
+        # remove install prefix, which may not match the current prefix
+        string(REPLACE "${_SYSTEMD_PREFIX}/" "" DBUS_SYSTEMD_SYSTEMUNITDIR ${_SYSTEMD_SYSTEMUNITDIR})
+        string(REPLACE "${_SYSTEMD_PREFIX}/" "" DBUS_SYSTEMD_USERUNITDIR ${_SYSTEMD_USERUNITDIR})
+    else()
+        set(DBUS_SYSTEMD_SYSTEMUNITDIR lib/systemd/system)
+        set(DBUS_SYSTEMD_USERUNITDIR lib/systemd/user)
+    endif()
+    if(WITH_SYSTEMD_SYSTEMUNITDIR)
+        set(DBUS_SYSTEMD_SYSTEMUNITDIR ${WITH_SYSTEMD_SYSTEMUNITDIR})
+    endif()
+    if(WITH_SYSTEMD_USERUNITDIR)
+        set(DBUS_SYSTEMD_USERUNITDIR ${WITH_SYSTEMD_USERUNITDIR})
+    endif()
+endif()
+
+if(NOT ENABLE_TRADITIONAL_ACTIVATION AND NOT (DBUS_LINUX AND DBUS_BUS_ENABLE_SYSTEMD))
+    message(WARNING "\
+Traditional activation and systemd activation are both disabled, so service \
+activation (automatically starting services that receive messages) will not work. \
+    ")
+endif()
 
 if(WIN32)
     set(FD_SETSIZE "8192" CACHE STRING "The maximum number of connections that can be handled at once")
@@ -139,19 +191,16 @@ endif()
 
 find_package(EXPAT)
 find_package(X11)
-find_package(GLib2)
+find_package(GLIB2)
 if(GLIB2_FOUND)
     option(DBUS_WITH_GLIB "build with glib" ON)
 endif()
 
 # analogous to AC_USE_SYSTEM_EXTENSIONS in configure.ac
-add_definitions(-D_GNU_SOURCE)
+set(_GNU_SOURCE 1)
 
 # do config checks
 include(ConfigureChecks)
-
-# @TODO: how to remove last dir from ${CMAKE_SOURCE_DIR} ?
-set(DBUS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/..)
 
 # make some more macros available
 include(MacroLibrary)
@@ -168,14 +217,23 @@ if(MSVC)
         set(GROUP_CODE flat)
     endif()
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
-    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   /FIconfig.h")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /FIconfig.h")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /FIconfig.h")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /FIconfig.h")
     option(DBUS_MSVC_ANALYZE "Enable code analyzing for MSVC compiler: /analyze" OFF)
 endif()
 
 #
 # setup warnings
 #
+if(NOT MSVC)
+    # We're treating -fno-common like a warning: it makes the linker more
+    # strict, because on some systems the linker is *always* this strict
+    string(APPEND CMAKE_C_FLAGS " -fno-common")
+    string(APPEND CMAKE_CXX_FLAGS " -fno-common")
+endif()
+
+option(ENABLE_WERROR "Unconditionally make all compiler warnings fatal" OFF)
+
 if(MSVC)
     # Use the highest warning level
     if(WALL)
@@ -184,13 +242,13 @@ if(MSVC)
         if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
             string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
         else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+            string(APPEND CMAKE_CXX_FLAGS " /W4")
         endif()
 
         if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
             string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
         else()
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+            string(APPEND CMAKE_C_FLAGS " /W4")
         endif()
     else()
         set(CMAKE_CXX_WARNING_LEVEL 3 CACHE STRING "warning level" FORCE)
@@ -198,12 +256,12 @@ if(MSVC)
 
     # see https://msdn.microsoft.com/en-us/library/z78503e6.aspx
     # 4018 'expression' : signed/unsigned mismatch
-    set(WARNINGS "4018")
+    set(WARNINGS 4018)
     # 4090 'operation' : different 'modifier' qualifiers
     # 4101 'identifier' : unreferenced local variable
     # 4127 conditional expression is constant
     # 4244 'argument' : conversion from 'type1' to 'type2', possible loss of data
-    set(WARNINGS_DISABLED "4090 4101 4127 4244")
+    set(WARNINGS_DISABLED 4090 4101 4127 4244)
     # 4002 too many actual parameters for macro 'identifier'
     # 4003 not enough actual parameters for macro 'identifier'
     # 4013 'function' undefined; assuming extern returning int
@@ -212,25 +270,112 @@ if(MSVC)
     # 4047 operator' : 'identifier1' differs in levels of indirection from 'identifier2'
     # 4114 same type qualifier used more than once
     # 4133 'type' : incompatible types - from 'type1' to 'type2'
-    set(WARNINGS_ERRORS "4002 4003 4013 4028 4031 4047 4114 4133")
+    set(WARNINGS_ERRORS 4002 4003 4013 4028 4031 4047 4114 4133)
     if(DBUS_MSVC_ANALYZE AND MSVC_VERSION GREATER 1600)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /analyze")
+        string(APPEND CMAKE_C_FLAGS " /analyze")
     endif()
 else()
-    set(WARNINGS "sign-compare")
-    set(WARNINGS_DISABLED "")
-    set(WARNINGS_ERRORS "")
+    set(WARNINGS
+        all
+        array-bounds
+        cast-align
+        char-subscripts
+        declaration-after-statement
+        double-promotion
+        duplicated-branches
+        duplicated-cond
+        extra
+        float-equal
+        format-nonliteral
+        format-security
+        format=2
+        implicit-function-declaration
+        init-self
+        inline
+        jump-misses-init
+        logical-op
+        missing-declarations
+        missing-format-attribute
+        missing-include-dirs
+        missing-noreturn
+        missing-prototypes
+        nested-externs
+        no-error=missing-field-initializers
+        no-error=unused-label
+        no-error=unused-parameter
+        no-missing-field-initializers
+        no-unused-label
+        no-unused-parameter
+        null-dereference
+        old-style-definition
+        packed
+        pointer-arith
+        pointer-sign
+        redundant-decls
+        restrict
+        return-type
+        shadow
+        sign-compare
+        strict-aliasing
+        strict-prototypes
+        switch-default
+        switch-enum
+        undef
+        unused-but-set-variable
+        write-strings
+    )
+    set(WARNINGS_C
+        pointer-sign
+    )
+    set(WARNINGS_DISABLED
+        error=overloaded-virtual
+        error=missing-field-initializers
+        error=unused-parameter
+        unused-parameter
+    )
+    set(WARNINGS_ERRORS
+    )
+    if(ENABLE_WERROR)
+        list(APPEND WARNINGS error)
+    endif()
 endif()
-generate_warning_cflags(WARNINGS_CFLAGS "${WARNINGS}" "${WARNINGS_DISABLED}" "${WARNINGS_ERRORS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNINGS_CFLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNINGS_CFLAGS}")
 
+generate_compiler_warning_flags(
+    RESULTVAR
+        WARNINGS_CFLAGS
+    WARNINGS
+        ${WARNINGS}
+        ${WARNINGS_C}
+    DISABLED
+        ${WARNINGS_DISABLED}
+    ERRORS
+        ${WARNINGS_ERRORS}
+)
+generate_compiler_warning_flags(
+    RESULTVAR
+        WARNINGS_CXXFLAGS
+    WARNINGS
+        ${WARNINGS}
+    DISABLED
+        ${WARNINGS_DISABLED}
+    ERRORS
+        ${WARNINGS_ERRORS}
+)
+
+string(APPEND CMAKE_C_FLAGS " ${WARNINGS_CFLAGS}")
+string(APPEND CMAKE_CXX_FLAGS " ${WARNINGS_CFLAGS}")
+
+# let wine be able to show file and lines in backtrace
+if(DBUS_USE_WINE)
+    string(APPEND CMAKE_C_FLAGS " -gstabs")
+    string(APPEND CMAKE_CXX_FLAGS " -gstabs")
+endif()
 
 if(UNIX AND NOT DBUS_DISABLE_ASSERT)
     # required for backtrace
-    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -Wl,--export-dynamic")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wl,--export-dynamic")
-    add_definitions(-DDBUS_BUILT_R_DYNAMIC)
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -Wl,--export-dynamic")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -Wl,--export-dynamic")
+    set(DBUS_BUILT_R_DYNAMIC 1)
 endif()
 
 if(DBUS_WITH_GLIB)
@@ -238,7 +383,7 @@ if(DBUS_WITH_GLIB)
     autodefine(GLIB_VERSION_MAX_ALLOWED)
 endif()
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}  -D_DEBUG")
+string(APPEND CMAKE_C_FLAGS_DEBUG " -D_DEBUG")
 
 #########################################################################
 # Windows CE (>= 5.0.0)
@@ -273,7 +418,7 @@ enable_testing()
 #macro_ensure_out_of_source_build("dbus requires an out of source build. Please create a separate build directory and run 'cmake path_to_dbus [options]' there.")
 
 # ... and warn in case of an earlier in-source build
-#set(generatedFileInSourceDir EXISTS ${dbus_SOURCE_DIR}/config.h)
+#set(generatedFileInSourceDir EXISTS ${CMAKE_SOURCE_DIR}/config.h)
 #if(${generatedFileInSourceDir})
 #   message(STATUS "config.h exists in your source directory.")
 #endif(${generatedFileInSourceDir})
@@ -300,8 +445,6 @@ set(DBUS_INCLUDES)
 enable_testing()
 
 ########### command line options ###############
-option(DBUS_BUILD_TESTS "enable unit test code" ON)
-
 if(DBUS_BUILD_TESTS)
     set(DBUS_ENABLE_EMBEDDED_TESTS ON)
     set(DBUS_ENABLE_MODULAR_TESTS ON)
@@ -480,6 +623,11 @@ set(DBUS_DAEMON_NAME "dbus-daemon" CACHE STRING "The name of the dbus daemon exe
 
 #include(ConfigureChecks.cmake)
 
+# only defined but expected as boolean
+if(DEFINED HAVE_DECL_ENVIRON)
+    set(HAVE_DECL_ENVIRON 1)
+endif()
+
 # compiler definitions
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(${DBUS_BUS_CFLAGS})
@@ -535,11 +683,11 @@ configure_file(cmake/DBus1ConfigVersion.cmake.in "${CMAKE_BINARY_DIR}/DBus1Confi
 install(FILES
     "${CMAKE_BINARY_DIR}/DBus1Config.cmake"
     "${CMAKE_BINARY_DIR}/DBus1ConfigVersion.cmake"
-    DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev
+    DESTINATION "${INSTALL_CMAKE_DIR}"
 )
 
 if(WIN32)
-    install(EXPORT DBus1Targets DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+    install(EXPORT DBus1Targets DESTINATION "${INSTALL_CMAKE_DIR}")
 endif()
 
 ########### subdirs ###############
@@ -571,10 +719,11 @@ message("                                                                      "
 message("        install prefix:           ${prefix}                           ")
 message("        install exec_prefix:      ${exec_prefix}                      ")
 message("        install libdir:           ${CMAKE_INSTALL_FULL_LIBDIR}        ")
+message("        install libexecdir:       ${CMAKE_INSTALL_FULL_LIBEXECDIR}    ")
 message("        install bindir:           ${CMAKE_INSTALL_FULL_BINDIR}        ")
 message("        install sysconfdir:       ${CMAKE_INSTALL_FULL_SYSCONFDIR}    ")
 message("        install datadir:          ${CMAKE_INSTALL_FULL_DATADIR}       ")
-message("        source code location:     ${DBUS_SOURCE_DIR}                  ")
+message("        source code location:     ${CMAKE_SOURCE_DIR}                 ")
 message("        build dir:                ${CMAKE_BINARY_DIR}                 ")
 message("        c compiler:               ${C_COMPILER}                       ")
 message("        cflags:                   ${CMAKE_C_FLAGS}                    ")
@@ -604,7 +753,12 @@ message("        Building bus stats API:   ${DBUS_ENABLE_STATS}                "
 message("        installing system libs:   ${DBUS_INSTALL_SYSTEM_LIBS}         ")
 message("        Building inotify support: ${DBUS_BUS_ENABLE_INOTIFY}          ")
 message("        Building kqueue support:  ${DBUS_BUS_ENABLE_KQUEUE}           ")
+message("        Building systemd support: ${DBUS_BUS_ENABLE_SYSTEMD}          ")
+message("        systemd system install dir:${DBUS_SYSTEMD_SYSTEMUNITDIR}      ")
+message("        systemd user install dir: ${DBUS_SYSTEMD_USERUNITDIR}         ")
+message("        Traditional activation:   ${ENABLE_TRADITIONAL_ACTIVATION}    ")
 message("        Building Doxygen docs:    ${DBUS_ENABLE_DOXYGEN_DOCS}         ")
+message("        Building Qt help docs:    ${DBUS_ENABLE_QTHELP_DOCS}          ")
 message("        Building XML docs:        ${DBUS_ENABLE_XML_DOCS}             ")
 message("        Daemon executable name:   ${DBUS_DAEMON_NAME}")
 if(WIN32)
@@ -673,7 +827,6 @@ add_custom_target(help-options
 #
 if(DBUS_ENABLE_PKGCONFIG)
     set(PLATFORM_LIBS pthread ${LIBRT})
-    include(FindPkgConfig QUIET)
     if(PKG_CONFIG_FOUND)
         # convert lists of link libraries into -lstdc++ -lm etc..
         foreach(LIB ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})

@@ -4,7 +4,7 @@
  * Copyright © 2003-2006 Red Hat, Inc.
  * Copyright © 2006 Thiago Macieira <thiago@kde.org>
  * Copyright © 2011-2012 Nokia Corporation
- * Copyright © 2018 Ralf Habacker
+ * Copyright © 2018, 2021 Ralf Habacker
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -46,6 +46,8 @@
 #endif
 #include "dbus/dbus.h"
 #include "dbus/dbus-internals.h"
+
+#include "tool-common.h"
 
 #define MAX_ADDR_LEN 512
 #define PIPE_READ_END  0
@@ -101,7 +103,7 @@ version (void)
           "Copyright (C) 2003-2006 Red Hat, Inc.\n"
           "Copyright (C) 2006 Thiago Macieira\n"
           "Copyright © 2011-2012 Nokia Corporation\n"
-          "Copyright © 2018 Ralf Habacker\n"
+          "Copyright © 2018, 2021 Ralf Habacker\n"
           "\n"
           "This is free software; see the source for copying conditions.\n"
           "There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
@@ -381,10 +383,11 @@ run_session (const char *dbus_daemon,
              char      **argv,
              int         prog_arg)
 {
-  char *dbus_daemon_argv[4];
+  char *dbus_daemon_argv[5];
   int ret = 127;
   HANDLE server_handle = NULL;
   HANDLE app_handle = NULL;
+  HANDLE ready_event_handle = NULL;
   DWORD exit_code;
   DBusString argv_strings[4];
   DBusString address;
@@ -394,6 +397,7 @@ run_session (const char *dbus_daemon,
   dbus_bool_t result = TRUE;
   char *key = NULL;
   char *value = NULL;
+  DBusError error;
 
   if (!_dbus_string_init (&argv_strings[0]))
     result = FALSE;
@@ -401,9 +405,18 @@ run_session (const char *dbus_daemon,
     result = FALSE;
   if (!_dbus_string_init (&argv_strings[2]))
     result = FALSE;
+  if (!_dbus_string_init (&argv_strings[3]))
+    result = FALSE;
   if (!_dbus_string_init (&address))
     result = FALSE;
   if (!result)
+    goto out;
+
+  /* The handle of this event is used by the dbus daemon
+   * to signal that connections are ready. */
+  dbus_error_init (&error);
+  ready_event_handle = _dbus_win_event_create_inheritable (&error);
+  if (ready_event_handle == NULL)
     goto out;
 
   /* run dbus daemon */
@@ -421,16 +434,55 @@ run_session (const char *dbus_daemon,
   else
     _dbus_string_append_printf (&argv_strings[1], "--session");
   _dbus_string_append_printf (&argv_strings[2], "--address=%s", _dbus_string_get_const_data (&address));
+  _dbus_string_append_printf (&argv_strings[3], "--ready-event-handle=%p", ready_event_handle);
   dbus_daemon_argv[0] = _dbus_string_get_data (&argv_strings[0]);
   dbus_daemon_argv[1] = _dbus_string_get_data (&argv_strings[1]);
   dbus_daemon_argv[2] = _dbus_string_get_data (&argv_strings[2]);
-  dbus_daemon_argv[3] = NULL;
+  dbus_daemon_argv[3] = _dbus_string_get_data (&argv_strings[3]);
+  dbus_daemon_argv[4] = NULL;
 
-  server_handle = _dbus_spawn_program (dbus_daemon, dbus_daemon_argv, NULL);
-  if (!server_handle)
+  server_handle = _dbus_spawn_program (dbus_daemon, dbus_daemon_argv, NULL, TRUE, &error);
+  if (server_handle == NULL)
+    goto out;
+
+  /* wait until dbus-daemon is ready for connections */
+  if (ready_event_handle != NULL)
     {
-      _dbus_win_stderr_win_error (me, "Could not start dbus daemon", GetLastError ());
-      goto out;
+      DWORD status;
+      HANDLE events[2];
+
+      _dbus_verbose ("Wait until dbus-daemon is ready for connections (event handle %p)\n", ready_event_handle);
+
+      events[0] = ready_event_handle;
+      events[1] = server_handle;
+      status = WaitForMultipleObjects (2, events, FALSE, 30000);
+
+      switch (status)
+        {
+          case WAIT_OBJECT_0:
+            /* ready event signalled, everything is okay */
+            break;
+
+          case WAIT_OBJECT_0 + 1:
+            /* dbus-daemon process has exited */
+            dbus_set_error (&error, DBUS_ERROR_SPAWN_CHILD_EXITED, "dbus-daemon exited before signalling ready");
+            goto out;
+
+          case WAIT_FAILED:
+            _dbus_win_set_error_from_last_error (&error, "Unable to wait for server readiness (handle %p)", ready_event_handle);
+            goto out;
+
+          case WAIT_TIMEOUT:
+            /* GetLastError() is not set */
+            dbus_set_error (&error, DBUS_ERROR_TIMEOUT, "Timed out waiting for server readiness or exit (handle %p)", ready_event_handle);
+            goto out;
+
+          default:
+            /* GetLastError() is probably not set? */
+            dbus_set_error (&error, DBUS_ERROR_FAILED, "Unknown result '%lu' while waiting for server readiness (handle %p)", status, ready_event_handle);
+            goto out;
+        }
+      _dbus_verbose ("Got signal that dbus-daemon is ready for connections\n");
     }
 
   /* run app */
@@ -474,30 +526,33 @@ run_session (const char *dbus_daemon,
   if (!env)
     goto out;
 
-  app_handle = _dbus_spawn_program (argv[prog_arg], argv + prog_arg, env);
-  if (!app_handle)
-    {
-      _dbus_win_stderr_win_error (me, "unable to start child process", GetLastError ());
-      goto out;
-    }
+  app_handle = _dbus_spawn_program (argv[prog_arg], argv + prog_arg, env, FALSE, &error);
+  if (app_handle == NULL)
+    goto out;
 
   WaitForSingleObject (app_handle, INFINITE);
   if (!GetExitCodeProcess (app_handle, &exit_code))
     {
-      _dbus_win_stderr_win_error (me, "could not fetch exit code", GetLastError ());
+      _dbus_win_set_error_from_last_error (&error, "Could not fetch exit code");
       goto out;
     }
   ret = exit_code;
 
 out:
+  if (dbus_error_is_set (&error))
+    tool_stderr_error (me, &error);
+  dbus_error_free (&error);
   TerminateProcess (server_handle, 0);
   if (server_handle != NULL)
     CloseHandle (server_handle);
   if (app_handle != NULL)
     CloseHandle (app_handle);
+  if (ready_event_handle != NULL)
+    _dbus_win_event_free (ready_event_handle, NULL);
   _dbus_string_free (&argv_strings[0]);
   _dbus_string_free (&argv_strings[1]);
   _dbus_string_free (&argv_strings[2]);
+  _dbus_string_free (&argv_strings[3]);
   _dbus_string_free (&address);
   dbus_free_string_array (env);
   if (env_table != NULL)

@@ -600,4 +600,3 @@ print_message (DBusMessage *message, dbus_bool_t literal, long sec, long usec)
   fflush (stdout);
   
 }
-

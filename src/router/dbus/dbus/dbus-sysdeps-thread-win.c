@@ -32,6 +32,7 @@
 
 #include <windows.h>
 
+/* Protected by DllMain lock, effectively */
 static dbus_bool_t global_init_done = FALSE;
 static CRITICAL_SECTION init_lock;
 
@@ -54,7 +55,7 @@ struct DBusCondVar {
 
 static DWORD dbus_cond_event_tls = TLS_OUT_OF_INDEXES;
 
-
+/* Protected by DllMain lock, effectively */
 static HMODULE dbus_dll_hmodule;
 
 void *

@@ -89,30 +89,34 @@ include_directories(
     ${EXPAT_INCLUDE_DIR}
 )
 
+set(DBUS_DAEMON_SOURCES
+    main.c
+)
+
 if(WIN32)
-    add_executable_version_info(BUS_SOURCES "dbus-daemon")
+    add_executable_version_info(DBUS_DAEMON_SOURCES "dbus-daemon")
 endif()
 
 add_library(dbus-daemon-internal STATIC ${BUS_SOURCES})
 target_link_libraries(dbus-daemon-internal ${DBUS_INTERNAL_LIBRARIES} ${EXPAT_LIBRARIES})
 
-add_executable(dbus-daemon main.c)
+add_executable(dbus-daemon ${DBUS_DAEMON_SOURCES})
 target_link_libraries(dbus-daemon dbus-daemon-internal)
 set_target_properties(dbus-daemon PROPERTIES OUTPUT_NAME ${DBUS_DAEMON_NAME})
 set_target_properties(dbus-daemon PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
 install(TARGETS dbus-daemon ${INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/session.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/legacy-config/session.conf DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/legacy-config/session.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1)
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/session.d)
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/services)
 
 if(NOT WIN32)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/system.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/legacy-config/system.conf DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/legacy-config/system.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1)
     install(DIRECTORY DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/system.d)
     install(DIRECTORY DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/system-services)
-    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/run/dbus)
+    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run/dbus)
 endif()
 
 if(DBUS_SERVICE)
@@ -139,29 +143,52 @@ set(LAUNCH_HELPER_SOURCES
 )
 
 if(NOT WIN32)
+    # test-bus-system depends on this library
     add_library(launch-helper-internal STATIC ${LAUNCH_HELPER_SOURCES})
     target_link_libraries(launch-helper-internal ${DBUS_INTERNAL_LIBRARIES} ${EXPAT_LIBRARIES})
 
-    add_executable(dbus-daemon-launch-helper activation-helper.c activation-helper-bin.c )
-    target_link_libraries(dbus-daemon-launch-helper launch-helper-internal)
+    if(ENABLE_TRADITIONAL_ACTIVATION)
+        add_executable(dbus-daemon-launch-helper activation-helper.c activation-helper-bin.c )
+        target_link_libraries(dbus-daemon-launch-helper launch-helper-internal)
+        install(TARGETS dbus-daemon-launch-helper RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
+        # It is intended not to check here that uid is 0 - see https://gitlab.freedesktop.org/dbus/dbus/-/merge_requests/154#note_478876
+        install(CODE "message(\"-- Note: Not installing \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBEXECDIR}/dbus-daemon-launch-helper binary setuid!\")")
+        install(CODE "message(\"-- Note: You'll need to manually set permissions to 'root:${DBUS_USER}' and permissions '4750'\")")
+    endif()
 endif()
 
 if(MSVC)
     project_source_group(${GROUP_CODE} bus_test_SOURCES dummy)
 endif()
 
-configure_file(example-session-disable-stats.conf.in ${CMAKE_CURRENT_BINARY_DIR}/example-session-disable-stats.conf)
-set(EXAMPLES_DATA
-    ${CMAKE_CURRENT_BINARY_DIR}/example-session-disable-stats.conf
-)
+macro(install_example_in_file a)
+    configure_file(${a}.in ${CMAKE_CURRENT_BINARY_DIR}/${a})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${a} DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus/examples)
+endmacro()
+
+macro(install_example_file a)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${a} DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus/examples)
+endmacro()
+
+install_example_in_file(example-session-disable-stats.conf)
 if(NOT WIN32)
-    configure_file(example-system-enable-stats.conf.in ${CMAKE_CURRENT_BINARY_DIR}/example-system-enable-stats.conf)
-    list(APPEND EXAMPLES_DATA
-        ${CMAKE_CURRENT_BINARY_DIR}/example-system-enable-stats.conf
-    )
+    install_example_in_file(example-system-enable-stats.conf)
+    install_example_file(example-system-hardening-without-traditional-activation.conf)
 endif()
 
-install(FILES ${EXAMPLES_DATA} DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus/examples)
+if(DBUS_BUS_ENABLE_SYSTEMD)
+    configure_file(dbus.socket.in ${CMAKE_CURRENT_BINARY_DIR}/dbus.socket)
+    configure_file(dbus.service.in ${CMAKE_CURRENT_BINARY_DIR}/dbus.service)
+    add_systemd_service(${CMAKE_CURRENT_BINARY_DIR}/dbus.socket PATH ${DBUS_SYSTEMD_SYSTEMUNITDIR} LINKS sockets.target.wants)
+    add_systemd_service(${CMAKE_CURRENT_BINARY_DIR}/dbus.service PATH ${DBUS_SYSTEMD_SYSTEMUNITDIR} LINKS multi-user.target.wants)
+endif()
+
+if(DBUS_ENABLE_USER_SESSION)
+    configure_file(systemd-user/dbus.socket.in ${CMAKE_CURRENT_BINARY_DIR}/systemd-user/dbus.socket)
+    configure_file(systemd-user/dbus.service.in ${CMAKE_CURRENT_BINARY_DIR}/systemd-user/dbus.service)
+    add_systemd_service(${CMAKE_CURRENT_BINARY_DIR}/systemd-user/dbus.socket PATH ${DBUS_SYSTEMD_USERUNITDIR} LINKS sockets.target.wants)
+    add_systemd_service(${CMAKE_CURRENT_BINARY_DIR}/systemd-user/dbus.service PATH ${DBUS_SYSTEMD_USERUNITDIR})
+endif()
 
 ## mop up the gcov files
 #clean-local:

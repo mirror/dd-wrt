@@ -429,4 +429,3 @@ _dbus_transport_open_debug_pipe (DBusAddressEntry  *entry,
 /** @} */
 
 #endif /* DBUS_ENABLE_EMBEDDED_TESTS */
-

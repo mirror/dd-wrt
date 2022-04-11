@@ -92,6 +92,7 @@ typedef struct {
     GQueue messages;
 
     int fd_before;
+    DBusInitialFDs *initial_fds;
 } Fixture;
 
 static void oom (const gchar *doing) G_GNUC_NORETURN;
@@ -175,6 +176,8 @@ test_connect (Fixture *f,
 
   if (f->skip)
     return;
+
+  f->initial_fds = _dbus_check_fdleaks_enter ();
 
   g_assert (f->left_server_conn == NULL);
   g_assert (f->right_server_conn == NULL);
@@ -875,6 +878,11 @@ teardown (Fixture *f,
   if (f->fd_before >= 0 && close (f->fd_before) < 0)
     g_error ("%s", g_strerror (errno));
 #endif
+
+  /* TODO: It would be nice if we could ask GLib which test-case
+   * we're currently in */
+  if (f->initial_fds != NULL)
+    _dbus_check_fdleaks_leave (f->initial_fds, "next test-case");
 }
 
 int

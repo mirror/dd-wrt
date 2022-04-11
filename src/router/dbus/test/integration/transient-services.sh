@@ -74,8 +74,19 @@ trap cleanup EXIT
 
 echo "1..2"
 
-# This is an integration test, so we expect the dbus-daemon to already be
-# running
+# If the dbus-daemon is launched on-demand by a systemd socket unit, it
+# might not be there yet, even if the socket is
+(
+dbus-send --session --dest="org.freedesktop.DBus" \
+    --type=method_call --print-reply /org/freedesktop/DBus \
+    org.freedesktop.DBus.Peer.Ping || touch "$workdir/failed" \
+) 2>&1 | sed -e 's/^/# /'
+
+if [ -e "$workdir/failed" ]; then
+    echo "Bail out! Unable to ensure dbus-daemon has started"
+    exit 1
+fi
+
 if ! test -d "$XDG_RUNTIME_DIR/dbus-1/services"; then
     echo "Bail out! $XDG_RUNTIME_DIR/dbus-1/services is not a directory"
     exit 1

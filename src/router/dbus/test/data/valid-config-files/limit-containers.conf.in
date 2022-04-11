@@ -13,9 +13,4 @@
     <!-- Allow anyone to own anything -->
     <allow own="*"/>
   </policy>
-
-  <limit name="max_containers">5</limit>
-  <limit name="max_containers_per_user">3</limit>
-  <limit name="max_container_metadata_bytes">4096</limit>
-  <limit name="max_connections_per_container">3</limit>
 </busconfig>

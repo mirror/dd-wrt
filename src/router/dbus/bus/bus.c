@@ -30,6 +30,7 @@
 #include "activation.h"
 #include "connection.h"
 #include "containers.h"
+#include "dispatch.h"
 #include "services.h"
 #include "utils.h"
 #include "policy.h"
@@ -764,11 +765,13 @@ process_config_postinit (BusContext      *context,
   return TRUE;
 }
 
+/* Takes ownership of print_addr_pipe fds, print_pid_pipe fds and ready_event_handle */
 BusContext*
 bus_context_new (const DBusString *config_file,
                  BusContextFlags   flags,
                  DBusPipe         *print_addr_pipe,
                  DBusPipe         *print_pid_pipe,
+                 void             *ready_event_handle,
                  const DBusString *address,
                  DBusError        *error)
 {
@@ -890,6 +893,17 @@ bus_context_new (const DBusString *config_file,
 
       _dbus_string_free (&addr);
     }
+
+#ifdef DBUS_WIN
+  if (ready_event_handle != NULL)
+    {
+      _dbus_verbose ("Notifying that we are ready to receive connections (event handle=%p)\n", ready_event_handle);
+      if (!_dbus_win_event_set (ready_event_handle, error))
+        goto failed;
+      if (!_dbus_win_event_free (ready_event_handle, error))
+        goto failed;
+    }
+#endif
 
   context->connections = bus_connections_new (context);
   if (context->connections == NULL)
@@ -1062,6 +1076,66 @@ bus_context_get_id (BusContext       *context,
   return _dbus_uuid_encode (&context->uuid, uuid);
 }
 
+/**
+ * Send signal to the buses that the activatable services may be changed
+ *
+ * @param context bus context to use
+ * @param error the error to set, if NULL no error will be set
+ * @return #FALSE if an error occurred, the reason is returned in \p error
+ */
+static dbus_bool_t
+bus_context_send_activatable_services_changed (BusContext *context,
+                                               DBusError  *error)
+{
+  DBusMessage *message;
+  BusTransaction *transaction;
+  dbus_bool_t retval = FALSE;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  transaction = bus_transaction_new (context);
+  if (transaction == NULL)
+    {
+      BUS_SET_OOM (error);
+      return FALSE;
+    }
+
+  message = dbus_message_new_signal (DBUS_PATH_DBUS,
+                                     DBUS_INTERFACE_DBUS,
+                                     "ActivatableServicesChanged");
+
+  if (message == NULL)
+    {
+      BUS_SET_OOM (error);
+      goto out;
+    }
+
+  if (!dbus_message_set_sender (message, DBUS_SERVICE_DBUS))
+    {
+      BUS_SET_OOM (error);
+      goto out;
+    }
+
+  if (!bus_transaction_capture (transaction, NULL, NULL, message))
+    {
+      BUS_SET_OOM (error);
+      goto out;
+    }
+
+  retval = bus_dispatch_matches (transaction, NULL, NULL, message, error);
+
+out:
+  if (transaction != NULL)
+    {
+      if (retval)
+        bus_transaction_execute_and_free (transaction);
+      else
+        bus_transaction_cancel_and_free (transaction);
+    }
+  dbus_clear_message (&message);
+  return retval;
+}
+
 dbus_bool_t
 bus_context_reload_config (BusContext *context,
 			   DBusError  *error)
@@ -1102,6 +1176,15 @@ bus_context_reload_config (BusContext *context,
     bus_context_log (context, DBUS_SYSTEM_LOG_INFO, "Unable to reload configuration: %s", error->message);
   if (parser != NULL)
     bus_config_parser_unref (parser);
+
+  {
+    DBusError local_error = DBUS_ERROR_INIT;
+
+    if (!bus_context_send_activatable_services_changed (context, &local_error))
+      bus_context_log (context, DBUS_SYSTEM_LOG_INFO, "Unable to send signal that configuration has been reloaded: %s", local_error.message);
+
+    dbus_error_free (&local_error);
+  }
 
   _dbus_daemon_report_reloaded ();
   return ret;
@@ -1677,13 +1760,13 @@ bus_context_check_security_policy (BusContext     *context,
        * go on with the standard checks.
        */
       if (!bus_selinux_allows_send (sender, proposed_recipient,
-				    dbus_message_type_to_string (dbus_message_get_type (message)),
-				    dbus_message_get_interface (message),
-				    dbus_message_get_member (message),
-				    dbus_message_get_error_name (message),
-				    dest ? dest : DBUS_SERVICE_DBUS,
-				    activation_entry,
-				    error))
+                                    dbus_message_type_to_string (dbus_message_get_type (message)),
+                                    dbus_message_get_interface (message),
+                                    dbus_message_get_member (message),
+                                    dbus_message_get_error_name (message),
+                                    dest ? dest : DBUS_SERVICE_DBUS,
+                                    activation_entry,
+                                    error))
         {
           if (error != NULL && !dbus_error_is_set (error))
             {

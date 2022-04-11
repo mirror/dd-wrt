@@ -46,9 +46,6 @@ const char* _dbus_win_error_from_last_error (void);
 dbus_bool_t _dbus_win_startup_winsock (void);
 void _dbus_win_warn_win_error  (const char *message,
                                 unsigned long code);
-void _dbus_win_stderr_win_error (const char *app,
-                                 const char *message,
-                                  unsigned long code);
 DBUS_PRIVATE_EXPORT
 char * _dbus_win_error_string (int error_number);
 DBUS_PRIVATE_EXPORT
@@ -93,7 +90,29 @@ void        _dbus_threads_windows_ensure_ctor_linked (void);
 DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_getsid(char **sid, dbus_pid_t process_id);
 
-HANDLE      _dbus_spawn_program (const char *name, char **argv, char **envp);
+HANDLE      _dbus_spawn_program (const char *name,
+                                 char **argv,
+                                 char **envp,
+                                 dbus_bool_t inherit_handles,
+                                 DBusError *error);
+
+DBUS_PRIVATE_EXPORT
+void _dbus_win_set_error_from_last_error (DBusError  *error,
+                                          const char *format,
+                                          ...) _DBUS_GNUC_PRINTF (2, 3);
+
+DBUS_PRIVATE_EXPORT
+HANDLE _dbus_win_event_create_inheritable (DBusError *error);
+DBUS_PRIVATE_EXPORT
+dbus_bool_t _dbus_win_event_set (HANDLE handle, DBusError *error);
+DBUS_PRIVATE_EXPORT
+dbus_bool_t _dbus_win_event_wait (HANDLE handle, int timeout, DBusError *error);
+DBUS_PRIVATE_EXPORT
+dbus_bool_t _dbus_win_event_free (HANDLE handle, DBusError *error);
+
+dbus_bool_t _dbus_daemon_is_session_bus_address_published (const char *scope);
+dbus_bool_t _dbus_daemon_publish_session_bus_address (const char *address,
+                                                      const char *shm_name);
 
 #endif
 

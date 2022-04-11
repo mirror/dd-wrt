@@ -2,8 +2,8 @@ dnl -*- mode: m4 -*-
 AC_PREREQ([2.63])
 
 m4_define([dbus_major_version], [1])
-m4_define([dbus_minor_version], [13])
-m4_define([dbus_micro_version], [12])
+m4_define([dbus_minor_version], [14])
+m4_define([dbus_micro_version], [0])
 m4_define([dbus_version],
           [dbus_major_version.dbus_minor_version.dbus_micro_version])
 AC_INIT([dbus], [dbus_version], [https://gitlab.freedesktop.org/dbus/dbus/issues], [dbus])
@@ -38,16 +38,16 @@ AC_DEFINE_UNQUOTED(DBUS_DAEMON_NAME,"dbus-daemon",[Name of executable])
 #
 
 ## increment if the interface has additions, changes, removals.
-LT_CURRENT=29
+LT_CURRENT=35
 
 ## increment any time the source changes; set to
 ##  0 if you increment CURRENT
-LT_REVISION=1
+LT_REVISION=0
 
 ## increment if any interfaces have been added; set to 0
 ## if any interfaces have been changed or removed. removal has
 ## precedence over adding, so set to 0 if both happened.
-LT_AGE=26
+LT_AGE=32
 
 AC_SUBST(LT_CURRENT)
 AC_SUBST(LT_REVISION)
@@ -386,6 +386,7 @@ fpathconf
 getgrouplist
 getpeereid
 getpeerucred
+getrandom
 getresuid
 getrlimit
 inotify_init1
@@ -421,6 +422,7 @@ locale.h
 signal.h
 stdint.h
 sys/prctl.h
+sys/random.h
 sys/resource.h
 sys/syslimits.h
 sys/time.h
@@ -680,52 +682,7 @@ case $host_os in
        CFLAGS="$CFLAGS -D_POSIX_PTHREAD_SEMANTICS" ;;
 esac
 
-# checking for a posix version of getpwnam_r
-# if we are cross compiling and can not run the test
-# assume getpwnam_r is the posix version
-# it is up to the person cross compiling to change
-# this behavior if desired
-AC_LANG_PUSH(C)
-AC_CACHE_CHECK([for posix getpwnam_r],
-		ac_cv_func_posix_getpwnam_r,
-		[AC_RUN_IFELSE([AC_LANG_PROGRAM(
-[[
-#include <errno.h>
-#include <pwd.h>
-]],
-[[
-    char buffer[10000];
-    struct passwd pwd, *pwptr = &pwd;
-    int error;
-    errno = 0;
-    error = getpwnam_r ("", &pwd, buffer,
-                        sizeof (buffer), &pwptr);
-   return (error < 0 && errno == ENOSYS)
-	   || error == ENOSYS;
-]])],
-	[ac_cv_func_posix_getpwnam_r=yes],
-	[ac_cv_func_posix_getpwnam_r=no],
-        [ac_cv_func_posix_getpwnam_r=yes]
-)])
-AC_LANG_POP(C)
-
-if test "$ac_cv_func_posix_getpwnam_r" = yes; then
-        AC_DEFINE(HAVE_POSIX_GETPWNAM_R,1,
-                [Have POSIX function getpwnam_r])
-else
-        AC_CACHE_CHECK([for nonposix getpwnam_r],
-                ac_cv_func_nonposix_getpwnam_r,
-                [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pwd.h>]], [[char buffer[10000];
-                        struct passwd pwd;
-                        getpwnam_r ("", &pwd, buffer,
-                                        sizeof (buffer));]])],
-                        [ac_cv_func_nonposix_getpwnam_r=yes],
-                        [ac_cv_func_nonposix_getpwnam_r=no])])
-                if test "$ac_cv_func_nonposix_getpwnam_r" = yes; then
-                AC_DEFINE(HAVE_NONPOSIX_GETPWNAM_R,1,
-                        [Have non-POSIX function getpwnam_r])
-        fi
-fi
+AC_CHECK_FUNCS_ONCE([getpwnam_r])
 
 dnl check for socklen_t
 AC_MSG_CHECKING(whether socklen_t is defined)
@@ -1143,6 +1100,10 @@ AC_SUBST([LIBDBUS_LIBS])
 DBUS_X_LIBS=
 DBUS_X_CFLAGS=
 
+AC_ARG_WITH([x],
+  [AS_HELP_STRING([--without-x], [build without X11 support])],
+  [], [with_x=auto])
+
 AC_ARG_ENABLE([x11-autolaunch],
   AS_HELP_STRING([--enable-x11-autolaunch], [build with X11 auto-launch support]),
   [], [enable_x11_autolaunch=auto])
@@ -1154,16 +1115,23 @@ if test "x$dbus_win" = xyes; then
 
     enable_x11_autolaunch=no
     have_x11=no
-else
-    AC_PATH_XTRA
+else if test "x$with_x" = xauto; then
+    PKG_CHECK_MODULES([X], [x11],
+            [AC_DEFINE([HAVE_X11], [1], [Define to 1 if you have X11 library])],
+            [ have_x11=no ])
 
-    if test "x$no_x" = xyes; then
-        have_x11=no
+    if test "x$have_x11" = xno; then
+        AC_MSG_WARN([Couldn't found X11, tried with pkg-config.])
     else
         have_x11=yes
-        DBUS_X_LIBS="$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+        DBUS_X_LIBS="$X_LIBS"
         DBUS_X_CFLAGS="$X_CFLAGS"
     fi
+else
+    AS_IF([test "x$enable_x11_autolaunch" = "xyes"], [
+      AC_MSG_ERROR([--enable-x11-autolaunch and --without-x are not compatible])
+    ])
+fi
 fi
 
 if test "x$enable_x11_autolaunch,$have_x11" = xyes,no; then
@@ -1286,6 +1254,39 @@ AC_SUBST([DBUS_GENERATE_MAN])
 
 AM_CONDITIONAL(DBUS_DOXYGEN_DOCS_ENABLED, test x$enable_doxygen_docs = xyes)
 AC_MSG_RESULT($enable_doxygen_docs)
+
+AC_ARG_WITH([qchdir],
+            AS_HELP_STRING([--with-qchdir=DIR], [Directory for installing Qt help file]),
+            [qchdir=$withval],
+            [qchdir="$docdir"])
+AC_SUBST([qchdir])
+
+AC_ARG_ENABLE([qt-help],
+              [AS_HELP_STRING([--enable-qt-help=auto|yes|no], [Build Qt help documentation])],
+              [],
+              [enable_qt_help=auto])
+AS_IF([test "x$enable_qt_help" != xno],
+      [AC_CHECK_PROGS([QHELPGENERATOR], [qhelpgenerator qhelpgenerator-qt5])],
+      [QHELPGENERATOR=])
+AS_IF([test "x$QHELPGENERATOR" = x && test "x$enable_qt_help" != xno && test "x$enable_qt_help" != xauto],
+      [AC_MSG_ERROR([Building of Qt help requested, but qhelpgenerator not found])])
+
+AC_MSG_CHECKING([whether to build Qt help documentation])
+AS_IF([test "x$enable_doxygen_docs" = xyes && test "x$QHELPGENERATOR" != x], [
+    enable_qthelp_docs=yes
+    DOXYGEN_GENERATE_QHP=YES
+    DOXYGEN_QHG_LOCATION="$QHELPGENERATOR"
+    DOXYGEN_QCH_FILE="$(pwd)/doc/api/qch/dbus-$VERSION.qch"
+  ], [
+    DOXYGEN_GENERATE_QHP=NO
+    enable_qthelp_docs=no
+  ])
+AC_SUBST([DOXYGEN_GENERATE_QHP])
+AC_SUBST([DOXYGEN_QHG_LOCATION])
+AC_SUBST([DOXYGEN_QCH_FILE])
+
+AM_CONDITIONAL([DBUS_QTHELP_DOCS_ENABLED], [test "x$enable_qthelp_docs" = xyes])
+AC_MSG_RESULT($enable_qthelp_docs)
 
 AC_CHECK_PROGS([XSLTPROC], [xsltproc])
 AM_CONDITIONAL([DBUS_HAVE_XSLTPROC], [test "x$XSLTPROC" != "x"])
@@ -1693,6 +1694,15 @@ AH_VERBATIM(_DARWIN_ENVIRON,
 #endif
 ])
 
+AH_VERBATIM([USE_MINGW_ANSI_STDIO],
+[
+/* On Windows, we expect to be using msvcrt.dll-compatible printf
+ * (%I64u instead of %llu) unless otherwise specified */
+#ifndef __USE_MINGW_ANSI_STDIO
+#   define __USE_MINGW_ANSI_STDIO 0
+#endif
+])
+
 AC_ARG_ENABLE([stats],
   [AS_HELP_STRING([--disable-stats],
     [disable bus daemon usage statistics])],
@@ -1708,16 +1718,6 @@ AC_ARG_ENABLE([user-session],
   [], [enable_user_session=no])
 AM_CONDITIONAL([DBUS_ENABLE_USER_SESSION],
   [test "x$enable_user_session" = xyes])
-
-AC_ARG_ENABLE([containers],
-  [AS_HELP_STRING([--enable-containers],
-    [enable restricted servers for app containers])],
-  [], [enable_containers=no])
-AS_IF([test "x$enable_containers" = xyes && test "x$dbus_unix" != xyes],
-  [AC_MSG_ERROR([Restricted servers for app containers require Unix])])
-AS_IF([test "x$enable_containers" = xyes],
-  [AC_DEFINE([DBUS_ENABLE_CONTAINERS], [1],
-    [Define to enable restricted servers for app containers])])
 
 AC_CONFIG_FILES([
 Doxyfile
@@ -1800,7 +1800,6 @@ echo "
         Building assertions:      ${enable_asserts}
         Building checks:          ${enable_checks}
         Building bus stats API:   ${enable_stats}
-        Building container API:   ${enable_containers}
         Building SELinux support: ${have_selinux}
         Building AppArmor support: ${have_apparmor}
         Building inotify support: ${have_inotify}
@@ -1809,6 +1808,7 @@ echo "
         Traditional activation:   ${enable_traditional_activation}
         Building X11 code:        ${have_x11}
         Building Doxygen docs:    ${enable_doxygen_docs}
+        Building Qt help file:    ${enable_qthelp_docs}
         Building Ducktype docs:   ${enable_ducktype_docs}
         Building XML docs:        ${enable_xml_docs}
         Building launchd support: ${have_launchd}

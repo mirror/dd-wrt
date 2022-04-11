@@ -101,6 +101,7 @@ _dbus_pending_call_trace_ref (DBusPendingCall *pending_call,
 #endif
 }
 
+/* protected by _DBUS_LOCK_pending_call_slots */
 static dbus_int32_t notify_user_data_slot = -1;
 
 /**

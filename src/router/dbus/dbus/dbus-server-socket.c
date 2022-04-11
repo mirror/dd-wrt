@@ -598,4 +598,3 @@ _dbus_server_socket_own_filename (DBusServer *server,
 
 
 /** @} */
-

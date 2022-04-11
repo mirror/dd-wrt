@@ -46,6 +46,8 @@
 
 #include "test-utils-glib.h"
 
+#define DBUS_INTERFACE_CONTAINERS1    "org.freedesktop.DBus.Containers1"
+
 typedef struct {
     TestMainContext *ctx;
     gboolean skip;

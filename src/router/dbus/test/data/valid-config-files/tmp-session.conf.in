@@ -57,11 +57,4 @@
   <limit name="max_names_per_connection">50000</limit>
   <limit name="max_match_rules_per_connection">50000</limit>
   <limit name="max_replies_per_connection">50000</limit>
-  <limit name="max_containers">10000</limit>
-  <limit name="max_containers_per_user">10000</limit>
-  <limit name="max_container_metadata_bytes">1000000000</limit>
-  <!-- This is relatively low so that app-containers (which we do not fully
-       trust) do not cause DoS. -->
-  <limit name="max_connections_per_container">16</limit>
-
 </busconfig>

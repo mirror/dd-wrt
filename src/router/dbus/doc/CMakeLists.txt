@@ -8,6 +8,7 @@ add_custom_target(doc ALL)
 
 if(DOXYGEN_EXECUTABLE)
     option(DBUS_ENABLE_DOXYGEN_DOCS "build DOXYGEN documentation (requires Doxygen)" ON)
+    add_auto_option(ENABLE_QT_HELP "build qt help documentation (requires qhelpgenerator(-qt5)); set INSTALL_QCH_DIR for custom qch installation path" AUTO)
 endif()
 
 if(DBUS_ENABLE_DOXYGEN_DOCS)
@@ -17,6 +18,22 @@ if(DBUS_ENABLE_DOXYGEN_DOCS)
         set(DBUS_GENERATE_MAN NO)
     else()
         set(DBUS_GENERATE_MAN YES)
+    endif()
+    if(NOT DEFINED INSTALL_QCH_DIR)
+        set(INSTALL_QCH_DIR ${CMAKE_INSTALL_DATADIR}/doc/dbus)
+    endif()
+    find_program(QHELPGENERATOR_EXECUTABLE NAMES qhelpgenerator qhelpgenerator-qt5)
+    check_auto_option(ENABLE_QT_HELP "Qt help" QHELPGENERATOR_EXECUTABLE "qhelpgenerator")
+    if(ENABLE_QT_HELP AND QHELPGENERATOR_EXECUTABLE)
+        message(STATUS "${QHELPGENERATOR_EXECUTABLE} found")
+        set(DOXYGEN_GENERATE_QHP YES)
+        set(DOXYGEN_QHG_LOCATION ${QHELPGENERATOR_EXECUTABLE})
+        set(DOXYGEN_QCH_FILE ${CMAKE_CURRENT_BINARY_DIR}/api/qch/dbus-${VERSION}.qch)
+        set(DBUS_ENABLE_QTHELP_DOCS ON PARENT_SCOPE)
+        install(FILES ${DOXYGEN_QCH_FILE} DESTINATION ${INSTALL_QCH_DIR})
+    else()
+        set(DOXYGEN_GENERATE_QHP NO)
+        set(DBUS_ENABLE_QTHELP_DOCS OFF PARENT_SCOPE)
     endif()
     configure_file(../Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile )
     file(GLOB dbus_files "${CMAKE_SOURCE_DIR}/dbus/*.[ch]*")
@@ -44,7 +61,7 @@ if(XSLTPROC_EXECUTABLE)
     set(DBUS_HAVE_XSLTPROC 1)
 endif()
 
-if(DBUS_HAVE_XSLTPROC)
+if(DBUS_HAVE_XSLTPROC AND DBUS_ENABLE_DOXYGEN_DOCS)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dbus.devhelp2
         COMMAND ${XSLTPROC_EXECUTABLE}
@@ -79,50 +96,63 @@ if(DBUS_ENABLE_XML_DOCS)
 #
 # generate docbook file from template
 #
-macro(generate_docbook_file a b)
-    get_filename_component(outname ${b} NAME)
-    set(srcfile ${CMAKE_CURRENT_SOURCE_DIR}/${a})
+# @param _infile docbook source template file
+# @param _outfile generated docbook source file
+#
+macro(generate_docbook_file _infile _outfile)
+    get_filename_component(outname ${_outfile} NAME)
+    set(srcfile ${CMAKE_CURRENT_SOURCE_DIR}/${_infile})
     set(tmpfile ${CMAKE_CURRENT_BINARY_DIR}/${outname}.tmp.cmake)
     file(WRITE ${tmpfile} "
 set(EXPANDED_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR})
 set(EXPANDED_DATADIR ${CMAKE_INSTALL_FULL_DATADIR})
 set(DBUS_VERSION ${DBUS_VERSION})
-configure_file(${srcfile} ${b})
+configure_file(${srcfile} ${_outfile})
     ")
-    add_custom_command(OUTPUT ${b}
-        COMMAND ${CMAKE_COMMAND} -E remove ${b}
+    add_custom_command(OUTPUT ${_outfile}
+        COMMAND ${CMAKE_COMMAND} -E remove ${_outfile}
         COMMAND ${CMAKE_COMMAND} -P ${tmpfile}
         DEPENDS ${srcfile} ${CMAKE_BINARY_DIR}/CMakeCache.txt
         COMMENT "Generating ${outname}"
     )
-    add_custom_target(${outname} DEPENDS ${b})
-    add_dependencies(doc ${outname})
+    add_custom_target(xmldoc-${outname} DEPENDS ${_outfile})
 endmacro()
 
-macro(DOCBOOK _sources _format)
-    get_filename_component(_infile ${_sources} ABSOLUTE)
+#
+# generate docbook file from source
+#
+# @param _source           docbook xml source file
+# @param FORMATS <formats> list with output formats to generate ('html' and/or 'man')
+#
+macro(DOCBOOK _source)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs FORMATS)
+    cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    get_filename_component(_infile ${_source} ABSOLUTE)
     get_filename_component(_name ${_infile} NAME)
-    if(${_format} STREQUAL "man")
-        string(REPLACE ".xml" "" _outname ${_name})
-        set(STYLESHEET "${DOCBOOKXSL_DIR}/manpages/docbook.xsl")
-    else()
-        string(REPLACE ".xml" ".html" _outname ${_name})
-        set(STYLESHEET "${DOCBOOKXSL_DIR}/html/docbook.xsl")
-    endif()
-    set(_outfile ${CMAKE_CURRENT_BINARY_DIR}/${_outname})
-    add_custom_command(
-        OUTPUT ${_outfile}
-        COMMAND ${XSLTPROC_EXECUTABLE} --output ${_outfile} --nonet --xinclude  --param passivetex.extensions '1' ${STYLESHEET} ${_infile}
-        DEPENDS ${XSLTPROC_EXECUTABLE} ${_infile}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-    add_custom_target(${_outname} DEPENDS ${_outfile})
-    add_dependencies(xmldoc ${_outname})
-    if(${_format} STREQUAL "man")
-        install(FILES ${_outfile} DESTINATION ${CMAKE_INSTALL_DATADIR}/man/man1)
-    else()
-        install(FILES ${_outfile} DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus)
-    endif()
+    foreach(_format ${ARGS_FORMATS})
+        if(${_format} STREQUAL "man")
+            string(REPLACE ".xml" "" _outname ${_name})
+            set(STYLESHEET "${DOCBOOKXSL_DIR}/manpages/docbook.xsl")
+            set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/man/man1)
+        else()
+            string(REPLACE ".xml" ".html" _outname ${_name})
+            set(STYLESHEET "${DOCBOOKXSL_DIR}/html/docbook.xsl")
+            set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/doc/dbus)
+        endif()
+        set(_outfile ${CMAKE_CURRENT_BINARY_DIR}/${_outname})
+        add_custom_command(
+            OUTPUT ${_outfile}
+            COMMAND ${XSLTPROC_EXECUTABLE} --output ${_outfile} --nonet --xinclude  --param passivetex.extensions '1' --param generate.consistent.ids '1' ${STYLESHEET} ${_infile}
+            DEPENDS ${XSLTPROC_EXECUTABLE} ${_infile}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+        add_custom_target(xmldoc-${_outname} DEPENDS ${_outfile})
+        add_dependencies(xmldoc xmldoc-${_outname})
+        install(FILES ${_outfile} DESTINATION ${INSTALL_DIR})
+    endforeach()
 endmacro()
 
 ### copy tests to builddir so that generated tests and static tests 
@@ -158,31 +188,19 @@ generate_docbook_file(dbus-test-tool.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-t
 generate_docbook_file(dbus-update-activation-environment.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml)
 generate_docbook_file(dbus-uuidgen.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml)
 
-docbook(${CMAKE_CURRENT_SOURCE_DIR}/dbus-test-plan.xml html)
-docbook(${CMAKE_CURRENT_SOURCE_DIR}/dbus-tutorial.xml html)
-docbook(${CMAKE_CURRENT_SOURCE_DIR}/dbus-specification.xml html)
-docbook(${CMAKE_CURRENT_SOURCE_DIR}/dbus-faq.xml html)
-
+set(formats html)
 if(UNIX)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-daemon.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-monitor.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-run-session.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-send.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-test-tool.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-launch.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-cleanup-sockets.1.xml man)
-    docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml man)
+    list(APPEND formats man)
 endif()
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-daemon.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-monitor.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-run-session.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-send.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-test-tool.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-launch.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-cleanup-sockets.1.xml html)
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml html)
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-cleanup-sockets.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-daemon.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-launch.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-monitor.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-run-session.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-send.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-test-tool.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml FORMATS ${formats})
+docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml FORMATS ${formats})
 
 #
 # handle html index file
@@ -206,12 +224,22 @@ set(DOC_DATA
 
 install(FILES ${DOC_DATA} DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus)
 
+set(DBUS_DTD_DIR "${CMAKE_INSTALL_DATADIR}/xml/dbus-1" CACHE STRING  "Directory for installing DTD files")
+set(DBUS_XML_CATALOG_DIR "${DBUS_DTD_DIR}" CACHE STRING  "Directory for installing XML catalog file")
+
 set(EXTRA_DIST
     busconfig.dtd
     introspect.dtd
     introspect.xsl
 )
 
-install(FILES ${EXTRA_DIST} DESTINATION ${CMAKE_INSTALL_DATADIR}/xml/dbus-1)
+install(FILES ${EXTRA_DIST} DESTINATION ${DBUS_DTD_DIR})
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/catalog.xml.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/catalog.xml"
+  @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/catalog.xml" DESTINATION ${DBUS_XML_CATALOG_DIR})
 
 endif()
