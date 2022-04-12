@@ -1,9 +1,9 @@
 expat-configure:
 	cd expat && ./buildconf.sh
-	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static \
+	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux --enable-shared --disable-static --libdir=/usr/lib \
 		--without-docbook --without-examples --without-tests --without-getrandom \
-		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
@@ -12,7 +12,14 @@ expat:
 	$(MAKE) -C expat
 
 expat-install:
-	@true
+	$(MAKE) -C expat install DESTDIR=$(INSTALLDIR)/expat
+	rm -rf $(INSTALLDIR)/expat/usr/include
+	rm -rf $(INSTALLDIR)/expat/usr/bin
+	rm -rf $(INSTALLDIR)/expat/usr/share
+	rm -rf $(INSTALLDIR)/expat/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/expat/usr/lib/cmake
+	rm -f $(INSTALLDIR)/expat/usr/lib/*.la
+	rm -f $(INSTALLDIR)/expat/usr/lib/*.a
 
 expat-clean:
 	-$(MAKE) -C expat clean
