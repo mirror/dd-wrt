@@ -1,6 +1,16 @@
 expat-configure:
 	cd expat && ./buildconf.sh
-	cd expat && ./configure --prefix=/usr --host=$(ARCH)-linux --enable-shared --disable-static --libdir=/usr/lib \
+	mkdir -p expat/static
+	mkdir -p expat/dynamic
+	-$(MAKE) -C expat distclean
+	cd expat/static && ../configure --prefix=/usr --host=$(ARCH)-linux --disable-shared --enable-static --libdir=/usr/lib \
+		--without-docbook --without-examples --without-tests --without-getrandom \
+		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
+		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+
+	cd expat/dynamic && ../configure --prefix=/usr --host=$(ARCH)-linux --enable-shared --disable-static --libdir=/usr/lib \
 		--without-docbook --without-examples --without-tests --without-getrandom \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -9,10 +19,12 @@ expat-configure:
 
 	
 expat:
-	$(MAKE) -C expat
+	$(MAKE) -C expat/dynamic
+	$(MAKE) -C expat/static
 
 expat-install:
-	$(MAKE) -C expat install DESTDIR=$(INSTALLDIR)/expat
+ifeq ($(CONFIG_MDNS_UTILS),y)
+	$(MAKE) -C expat/dynamic install DESTDIR=$(INSTALLDIR)/expat
 	rm -rf $(INSTALLDIR)/expat/usr/include
 	rm -rf $(INSTALLDIR)/expat/usr/bin
 	rm -rf $(INSTALLDIR)/expat/usr/share
@@ -20,9 +32,13 @@ expat-install:
 	rm -rf $(INSTALLDIR)/expat/usr/lib/cmake
 	rm -f $(INSTALLDIR)/expat/usr/lib/*.la
 	rm -f $(INSTALLDIR)/expat/usr/lib/*.a
+else
+	@true
+endif
 
 expat-clean:
-	-$(MAKE) -C expat clean
+	-$(MAKE) -C expat/dynamic clean
+	-$(MAKE) -C expat/static clean
 
 .PHONY: expat expat-configure expat-install expat-clean
 
