@@ -31,7 +31,7 @@ avahi-configure: expat dbus libdaemon
 		GLIB20_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -I$(TOP)/expat/lib $(UCFLAGS_DBUS) -Wl,--gc-sections -Drpl_malloc=malloc" \
 		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-		LDFLAGS="$(LDLTO) -L$(TOP)/expat/lib/.libs $(ULDFLAGS_DBUS) -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/expat/dynamic/lib/.libs $(ULDFLAGS_DBUS) -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
@@ -59,9 +59,9 @@ avahi-configure: expat dbus libdaemon
 		LIBEVENT_LIBS="-L$(TOP)/libevent/.libs" \
 		GLIB20_LIBS="-L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib" \
 		GLIB20_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
-		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -I$(TOP)/expat/lib -Wl,--gc-sections -Drpl_malloc=malloc" \
-		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-		LDFLAGS="$(LDLTO) -L$(TOP)/expat/lib/.libs -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -I$(TOP)/expat/lib -Wl,--gc-sections -Drpl_malloc=malloc" \
+		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/expat/static/lib/.libs -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
