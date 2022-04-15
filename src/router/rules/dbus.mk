@@ -13,7 +13,7 @@ dbus-configure:
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
 	GLIB_LIBS="-L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/expat/lib -UHAVE_SELINUX -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-	LDFLAGS="$(LDLTO) -ffunction-sections -L$(TOP)/expat/lib/.libs -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) -ffunction-sections -L$(TOP)/expat/dynamic/lib/.libs -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	#cd dbus && ./configure --prefix=/usr --host=$(ARCH)-linux
