@@ -49,6 +49,9 @@ version 2.87
 
 	Add --conf-script configuration option.
 
+	Fix write-after-free error in DHCPv6 server code.
+	CVE-2022-0934 refers.
+	
 	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
