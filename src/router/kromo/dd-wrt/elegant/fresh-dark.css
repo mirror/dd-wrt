@@ -15,8 +15,8 @@ body a:link {
 body a:hover,
 body a:link:hover,
 #ip_count:hover,
-[title*="Search"]:hover,
-[title*="Monitoring"]:hover {
+[title*='Search']:hover,
+[title*='Monitoring']:hover {
   color: #5cb3ff;
 }
 body div.message {
@@ -78,12 +78,15 @@ body input[name='apply_button']:hover {
 body input[name='reset_button'] {
   background: none repeat scroll 0 0 #595959;
   border-color: #656565;
-  color: #ccc;
+  color: #eee;
 }
 body input[name='reset_button']:hover {
   background: none repeat scroll 0 0 #d6951e;
   border-color: #d0911d;
   color: #fff;
+}
+body input[name='reset_button']:focus-visible {
+  outline: 2px solid #888;
 }
 body input[name='reboot_button'],
 body input[name='reboot_button']:disabled:hover {
