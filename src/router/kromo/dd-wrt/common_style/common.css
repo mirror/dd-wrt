@@ -433,7 +433,7 @@ td .meter {
   text-decoration: blink;
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
-.center a[href="http://www.dd-wrt.com/"] {
+.center a[href='http://www.dd-wrt.com/'] {
   line-height: 2.2;
 }
 /*! Find out where this is called from, if at all; extracted from of fresh.css */
