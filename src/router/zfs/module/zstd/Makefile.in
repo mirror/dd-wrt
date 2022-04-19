@@ -23,7 +23,7 @@ common_flags := -fno-tree-vectorize
 # SSE register return with SSE disabled if -march=znverX is passed
 common_flags += -U__BMI__
 
-#common_flags += -DZSTD_FALLTHROUGH=fallthrough
+common_flags += -DZSTD_FALLTHROUGH=fallthrough
 # Quiet warnings about frame size due to unused code in unmodified zstd lib
 common_flags += -Wframe-larger-than=20480
 
