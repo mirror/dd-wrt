@@ -885,6 +885,10 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 CFLAGS += -DHAVE_EOP_TUNNEL
 VISOBJS += eoptunnel.o
 endif
+ifeq ($(CONFIG_MDNS),y)
+CFLAGS += -DHAVE_MDNS
+VISOBJS += mdnsif.o
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 CFLAGS += -DHAVE_WIREGUARD
 endif

@@ -122,6 +122,7 @@ EJ_VISIBLE void chap_user_remove(webs_t wp);
 EJ_VISIBLE void user_add(webs_t wp);
 EJ_VISIBLE void user_remove(webs_t wp);
 EJ_VISIBLE void raduser_add(webs_t wp);
+EJ_VISIBLE void mdnsif_save(webs_t wp);
 EJ_VISIBLE void gen_wg_key(webs_t wp);
 EJ_VISIBLE void gen_wg_psk(webs_t wp);
 EJ_VISIBLE void gen_wg_client(webs_t wp);

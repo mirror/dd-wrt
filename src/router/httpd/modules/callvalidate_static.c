@@ -438,6 +438,9 @@ static struct callmap ej_map[] = {
 #ifdef HAVE_MMC
 	{ "show_mmc_cardinfo", &ej_show_mmc_cardinfo },
 #endif
+#ifdef HAVE_MDNS
+	{ "show_mdnsif", &ej_show_mdndsif },
+#endif
 };
 #endif
 
@@ -632,6 +635,9 @@ static struct callmap gozila_map[] = {
 #endif
 #ifdef HAVE_RADLOCAL
 	{ "raduser_add", &raduser_add },
+#endif
+#ifdef HAVE_MDNS
+	{ "mdnsif_save", &mdnsif_save },
 #endif
 #ifdef HAVE_EOP_TUNNEL
 #ifdef HAVE_WIREGUARD
