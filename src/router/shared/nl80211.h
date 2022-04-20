@@ -6347,7 +6347,7 @@ enum nl80211_sched_scan_plan {
  */
 struct nl80211_bss_select_rssi_adjust {
 	__u8 band;
-	__s8 delta;
+	unsigned char delta;
 } __attribute__((packed));
 
 /**
