@@ -225,7 +225,7 @@ input.spaceradio {
   font-weight: bold;
 }
 #scorebar {
-  background-image: url(/style/gradient.svg);
+  background-image: url(/images/gradient.svg);
   background-repeat: no-repeat;
   background-position: 0 0;
   position: absolute;
