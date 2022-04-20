@@ -913,8 +913,8 @@ zvol_alloc(dev_t dev, const char *name)
 	 */
 	if (volmode == ZFS_VOLMODE_DEV) {
 		zso->zvo_disk->minors = 1;
-		zso->zvo_disk->flags &= ~ZFS_GENHD_FL_EXT_DEVT;
-		zso->zvo_disk->flags |= ZFS_GENHD_FL_NO_PART;
+		zso->zvo_disk->flags &= ~GENHD_FL_EXT_DEVT;
+		zso->zvo_disk->flags |= GENHD_FL_NO_PART;
 	}
 
 	zso->zvo_disk->first_minor = (dev & MINORMASK);
