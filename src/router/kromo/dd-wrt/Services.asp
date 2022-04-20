@@ -2,24 +2,24 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function verify_unique_static_ip(F){                                              
+function verify_unique_static_ip(F){
 	static_leasenum = <% nvg("static_leasenum"); %>;
 	
 	//Check all static leases
-	var static_leases=' ';                                                   
-    for(i=0;i < static_leasenum;i++){
-    	var elem = F.elements["lease"+i+"_ip"];
-    	if (static_leases.indexOf(" " + elem.value + " ") == -1){
-    		static_leases += elem.value + " ";
-    	} else {
-    		alert(elem.value + errmsg.err62);
-    		elem.focus();
-    		
-    		return false;
-    	}
-    }
-    
-    return true;                                                            
+	var static_leases=' ';
+	for(i=0;i < static_leasenum;i++){
+		var elem = F.elements["lease"+i+"_ip"];
+		if (static_leases.indexOf(" " + elem.value + " ") == -1){
+			static_leases += elem.value + " ";
+		} else {
+			alert(elem.value + errmsg.err62);
+			elem.focus();
+			
+			return false;
+		}
+	}
+
+	return true;
 }
 
 function checked(F) {
@@ -60,6 +60,16 @@ function to_reboot(F) {
 	apply(F);
 }
 
+function mdnsif_save(F)
+{
+	alert("mdnsif_save.F:" + F.name);
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "mdnsif_save";
+	//F.submit();
+	apply(F);
+}
+
+
 function to_submit(F) {
 	if(!verify_unique_static_ip(F)) {
 		return false;
@@ -68,7 +78,7 @@ function to_submit(F) {
 	if(F.rstats_enable) {
 		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
 	}
-	
+	//mdnsif_save(F);
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
@@ -84,7 +94,7 @@ function to_apply(F) {
 	if(F.rstats_enable) {
 		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
 	}
-	
+	//mdnsif_save(F);
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
@@ -184,6 +194,8 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
+							//experimental by egc
+							<% show_mdnsif(); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

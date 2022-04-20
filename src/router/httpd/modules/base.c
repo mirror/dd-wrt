@@ -1235,8 +1235,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "Networking", "del_vlan", "", REFRESH, "del_vlan" },
 	{ "Networking", "del_bridge", "", REFRESH, "del_bridge" },
 	{ "Networking", "del_bridgeif", "", REFRESH, "del_bridgeif" },
-	{ "Networking", "save_networking", "index", REFRESH,
-	 "save_networking" },
+	{ "Networking", "save_networking", "index", REFRESH, "save_networking" },
 	{ "Networking", "add_mdhcp", "", REFRESH, "add_mdhcp" },
 	{ "Networking", "del_mdhcp", "", REFRESH, "del_mdhcp" },
 #endif
@@ -1259,10 +1258,12 @@ static struct gozila_action gozila_actions[] = {
 #endif
 	{ "Services", "add_lease", "", REFRESH, "lease_add" },
 	{ "Services", "del_lease", "", REFRESH, "lease_del" },
+#ifdef HAVE_MDNS
+	{ "Services", "mdnsif_save", "", REFRESH, "mdnsif_save" },
+#endif
 #ifdef HAVE_PPPOESERVER
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
-	{ "PPPoE_Server", "remove_chap_user", "", REFRESH,
-	 "chap_user_remove" },
+	{ "PPPoE_Server", "remove_chap_user", "", REFRESH, "chap_user_remove" },
 #endif
 #ifdef HAVE_CHILLILOCAL
 	{ "Hotspot", "add_user", "", REFRESH, "user_add" },
