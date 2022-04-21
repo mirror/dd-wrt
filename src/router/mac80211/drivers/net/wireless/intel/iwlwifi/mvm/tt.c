@@ -751,12 +751,12 @@ static void iwl_mvm_thermal_zone_register(struct iwl_mvm *mvm)
 		return;
 	}
 
-/*	ret = thermal_zone_device_enable(mvm->tz_device.tzone);
+	ret = thermal_zone_device_enable(mvm->tz_device.tzone);
 	if (ret) {
 		IWL_DEBUG_TEMP(mvm, "Failed to enable thermal zone\n");
 		thermal_zone_device_unregister(mvm->tz_device.tzone);
 		return;
-	}*/
+	}
 
 	/* 0 is a valid temperature,
 	 * so initialize the array with S16_MIN which invalid temperature

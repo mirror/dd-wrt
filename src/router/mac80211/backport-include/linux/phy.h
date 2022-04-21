@@ -4,11 +4,6 @@
 #include <linux/compiler.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_IS_LESS(3,9,0)
-#define phy_connect(dev, bus_id, handler, interface) \
-	phy_connect(dev, bus_id, handler, 0, interface)
-#endif
-
 #if LINUX_VERSION_IS_LESS(4,5,0)
 #define phydev_name LINUX_BACKPORT(phydev_name)
 static inline const char *phydev_name(const struct phy_device *phydev)
@@ -38,7 +33,6 @@ static inline int backport_mdiobus_register(struct mii_bus *bus)
 
 	memset(bus->irq, PHY_POLL, sizeof(int) * PHY_MAX_ADDR);
 
-/* in kernel 4.3 a #define for mdiobus_register is added to the kernel. */
 #ifndef mdiobus_register
 	return mdiobus_register(bus);
 #else

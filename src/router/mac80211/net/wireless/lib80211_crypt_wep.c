@@ -70,7 +70,7 @@ static int lib80211_wep_build_iv(struct sk_buff *skb, int hdr_len,
 	if (skb_headroom(skb) < 4 || skb->len < hdr_len)
 		return -1;
 
-	pos = (void *)skb_push(skb, 4);
+	pos = skb_push(skb, 4);
 	memmove(pos, pos + 4, hdr_len);
 	pos += hdr_len;
 
@@ -129,7 +129,7 @@ static int lib80211_wep_encrypt(struct sk_buff *skb, int hdr_len, void *priv)
 
 	/* Append little-endian CRC32 over only the data and encrypt it to produce ICV */
 	crc = ~crc32_le(~0, pos, len);
-	icv = (void *)skb_put(skb, 4);
+	icv = skb_put(skb, 4);
 	icv[0] = crc;
 	icv[1] = crc >> 8;
 	icv[2] = crc >> 16;
@@ -251,3 +251,4 @@ void __exit lib80211_crypto_wep_exit(void)
 {
 	lib80211_unregister_crypto_ops(&lib80211_crypt_wep);
 }
+

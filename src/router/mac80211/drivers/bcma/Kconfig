@@ -30,7 +30,6 @@ config BCMA_HOST_PCI
 	default y
 
 config BCMA_HOST_SOC
-	depends on !KERNEL_3_7
 	bool "Support for BCMA in a SoC"
 	depends on HAS_IOMEM
 	help
@@ -63,7 +62,6 @@ config BCMA_DRIVER_PCI_HOSTMODE
 	  PCI core hostmode operation (external PCI bus).
 
 config BCMA_DRIVER_MIPS
-	depends on !KERNEL_3_3
 	bool "BCMA Broadcom MIPS core driver"
 	depends on MIPS || COMPILE_TEST
 	help

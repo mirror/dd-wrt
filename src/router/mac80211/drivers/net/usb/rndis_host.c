@@ -201,7 +201,7 @@ int rndis_command(struct usbnet *dev, struct rndis_msg_hdr *buf, int buflen)
 			dev_dbg(&info->control->dev,
 				"rndis response error, code %d\n", retval);
 		}
-		msleep(20);
+		msleep(40);
 	}
 	dev_dbg(&info->control->dev, "rndis response timeout\n");
 	return -ETIMEDOUT;
@@ -278,11 +278,16 @@ static const struct net_device_ops rndis_netdev_ops = {
 	.ndo_open		= usbnet_open,
 	.ndo_stop		= usbnet_stop,
 	.ndo_start_xmit		= usbnet_start_xmit,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout		= usbnet_tx_timeout,
-#if LINUX_VERSION_IS_GEQ(4,11,0)
-	.ndo_get_stats64	= usbnet_get_stats64,
 #else
-	.ndo_get_stats64 = bp_usbnet_get_stats64,
+	.ndo_tx_timeout = bp_usbnet_tx_timeout,
+#endif
+
+#if LINUX_VERSION_IS_GEQ(4,11,0)
+	.ndo_get_stats64	= dev_get_tstats64,
+#else
+	.ndo_get_stats64 = bp_dev_get_tstats64,
 #endif
 
 	.ndo_set_mac_address 	= eth_mac_addr,
@@ -329,7 +334,7 @@ generic_rndis_bind(struct usbnet *dev, struct usb_interface *intf, int flags)
 	 * For RX we handle drivers that zero-pad to end-of-packet.
 	 * Don't let userspace change these settings.
 	 *
-	 * NOTE: there still seems to be wierdness here, as if we need
+	 * NOTE: there still seems to be weirdness here, as if we need
 	 * to do some more things to make sure WinCE targets accept this.
 	 * They default to jumbograms of 8KB or 16KB, which is absurd
 	 * for such low data rates and which is also more than Linux
@@ -392,7 +397,7 @@ generic_rndis_bind(struct usbnet *dev, struct usb_interface *intf, int flags)
 	reply_len = sizeof *phym;
 	retval = rndis_query(dev, intf, u.buf,
 			     RNDIS_OID_GEN_PHYSICAL_MEDIUM,
-			     0, (void **) &phym, &reply_len);
+			     reply_len, (void **)&phym, &reply_len);
 	if (retval != 0 || !phym) {
 		/* OID is optional so don't fail here. */
 		phym_unspec = cpu_to_le32(RNDIS_PHYSICAL_MEDIUM_UNSPECIFIED);
@@ -614,6 +619,11 @@ static const struct usb_device_id	products [] = {
 				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
 	.driver_info = (unsigned long) &rndis_poll_status_info,
 }, {
+	/* Hytera Communications DMR radios' "Radio to PC Network" */
+	USB_VENDOR_AND_INTERFACE_INFO(0x238b,
+				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
+	.driver_info = (unsigned long)&rndis_info,
+}, {
 	/* RNDIS is MSFT's un-official variant of CDC ACM */
 	USB_INTERFACE_INFO(USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
 	.driver_info = (unsigned long) &rndis_info,
@@ -641,9 +651,7 @@ static struct usb_driver rndis_driver = {
 	.disconnect =	usbnet_disconnect,
 	.suspend =	usbnet_suspend,
 	.resume =	usbnet_resume,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 
 module_usb_driver(rndis_driver);

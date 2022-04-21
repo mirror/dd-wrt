@@ -13,7 +13,7 @@
 #include <linux/leds.h>
 #include <linux/usb.h>
 #include <linux/average.h>
-#include <linux/overflow.h>
+//#include <linux/soc/mediatek/mtk_wed.h>
 #include <net/mac80211.h>
 #include "util.h"
 #include "testmode.h"
@@ -26,6 +26,16 @@
 #define MT_TXQ_FREE_THR		32
 
 #define MT76_TOKEN_FREE_THR	64
+
+#define MT_QFLAG_WED_RING	GENMASK(1, 0)
+#define MT_QFLAG_WED_TYPE	GENMASK(3, 2)
+#define MT_QFLAG_WED		BIT(4)
+
+#define __MT_WED_Q(_type, _n)	(MT_QFLAG_WED | \
+				 FIELD_PREP(MT_QFLAG_WED_TYPE, _type) | \
+				 FIELD_PREP(MT_QFLAG_WED_RING, _n))
+#define MT_WED_Q_TX(_n)		__MT_WED_Q(MT76_WED_Q_TX, _n)
+#define MT_WED_Q_TXFREE		__MT_WED_Q(MT76_WED_Q_TXFREE, 0)
 
 struct mt76_dev;
 struct mt76_phy;
@@ -41,6 +51,11 @@ enum mt76_bus_type {
 	MT76_BUS_MMIO,
 	MT76_BUS_USB,
 	MT76_BUS_SDIO,
+};
+
+enum mt76_wed_type {
+	MT76_WED_Q_TX,
+	MT76_WED_Q_TXFREE,
 };
 
 struct mt76_bus_ops {
@@ -171,6 +186,9 @@ struct mt76_queue {
 	u8 buf_offset;
 	u8 hw_idx;
 	u8 qid;
+	u8 flags;
+
+	u32 wed_regs;
 
 	dma_addr_t desc_dma;
 	struct sk_buff *rx_head;
@@ -540,6 +558,8 @@ struct mt76_mmio {
 	void __iomem *regs;
 	spinlock_t irq_lock;
 	u32 irqmask;
+
+//	struct mtk_wed_device wed;
 };
 
 struct mt76_rx_status {
@@ -572,6 +592,11 @@ struct mt76_rx_status {
 	s8 signal;
 	u8 chains;
 	s8 chain_signal[IEEE80211_MAX_CHAINS];
+};
+
+struct mt76_freq_range_power {
+	const struct cfg80211_sar_freq_ranges *range;
+	s8 power;
 };
 
 struct mt76_testmode_ops {
@@ -671,23 +696,26 @@ struct mt76_phy {
 		struct sk_buff **tail;
 		u16 seqno;
 	} rx_amsdu[__MT_RXQ_MAX];
+
+	struct mt76_freq_range_power *frp;
 };
 
 struct mt76_dev {
 	struct mt76_phy phy; /* must be first */
 
 	struct mt76_phy *phy2;
+
+	struct ieee80211_hw *hw;
 	bool disable_2ghz;
 	bool disable_5ghz;
 	
 	bool turboqam;
-	struct ieee80211_hw *hw;
 	const u32 *cipher_suites;
 	u32 n_cipher_suites;
 
 	spinlock_t lock;
 	spinlock_t cc_lock;
-	
+
 	u32 cur_cc_bss_rx;
 
 	struct mt76_rx_status rx_ampdu_status;
@@ -721,6 +749,7 @@ struct mt76_dev {
 
 	spinlock_t token_lock;
 	struct idr token;
+	u16 wed_token_count;
 	u16 token_count;
 	u16 token_size;
 
@@ -946,14 +975,14 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *data, int offset, int len);
 
 struct mt76_queue *
 mt76_init_queue(struct mt76_dev *dev, int qid, int idx, int n_desc,
-		int ring_base);
+		int ring_base, u32 flags);
 u16 mt76_calculate_default_rate(struct mt76_phy *phy, int rateidx);
 static inline int mt76_init_tx_queue(struct mt76_phy *phy, int qid, int idx,
-				     int n_desc, int ring_base)
+				     int n_desc, int ring_base, u32 flags)
 {
 	struct mt76_queue *q;
 
-	q = mt76_init_queue(phy->dev, qid, idx, n_desc, ring_base);
+	q = mt76_init_queue(phy->dev, qid, idx, n_desc, ring_base, flags);
 	if (IS_ERR(q))
 		return PTR_ERR(q);
 
@@ -968,7 +997,7 @@ static inline int mt76_init_mcu_queue(struct mt76_dev *dev, int qid, int idx,
 {
 	struct mt76_queue *q;
 
-	q = mt76_init_queue(dev, qid, idx, n_desc, ring_base);
+	q = mt76_init_queue(dev, qid, idx, n_desc, ring_base, 0);
 	if (IS_ERR(q))
 		return PTR_ERR(q);
 
@@ -1089,7 +1118,7 @@ static inline u8 mt76_tx_power_nss_delta(u8 nss)
 static inline bool mt76_testmode_enabled(struct mt76_phy *phy)
 {
 #ifdef CPTCFG_NL80211_TESTMODE
-	return dev->test.state != MT76_TM_STATE_OFF;
+	return phy->test.state != MT76_TM_STATE_OFF;
 #else
 	return false;
 #endif
@@ -1177,6 +1206,11 @@ int mt76_get_min_avg_rssi(struct mt76_dev *dev, bool ext_phy);
 
 int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		     int *dbm);
+int mt76_init_sar_power(struct ieee80211_hw *hw,
+			const struct cfg80211_sar_specs *sar);
+int mt76_get_sar_power(struct mt76_phy *phy,
+		       struct ieee80211_channel *chan,
+		       int power);
 
 void mt76_csa_check(struct mt76_dev *dev);
 void mt76_csa_finish(struct mt76_dev *dev);

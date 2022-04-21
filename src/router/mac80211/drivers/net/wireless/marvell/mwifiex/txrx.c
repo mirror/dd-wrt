@@ -1,10 +1,10 @@
 /*
- * Marvell Wireless LAN device driver: generic TX/RX data handling
+ * NXP Wireless LAN device driver: generic TX/RX data handling
  *
- * Copyright (C) 2011-2014, Marvell International Ltd.
+ * Copyright 2011-2020 NXP
  *
- * This software file (the "File") is distributed by Marvell International
- * Ltd. under the terms of the GNU General Public License Version 2, June 1991
+ * This software file (the "File") is distributed by NXP
+ * under the terms of the GNU General Public License Version 2, June 1991
  * (the "License").  You may use, redistribute and/or modify this File in
  * accordance with the terms and conditions of the License, a copy of which
  * is available by writing to the Free Software Foundation, Inc.,
@@ -91,7 +91,7 @@ int mwifiex_process_tx(struct mwifiex_private *priv, struct sk_buff *skb,
 	struct mwifiex_sta_node *dest_node;
 	struct ethhdr *hdr = (void *)skb->data;
 
-	hroom = (adapter->iface_type == MWIFIEX_USB) ? 0 : INTF_HEADER_LEN;
+	hroom = adapter->intf_hdr_len;
 
 	if (priv->bss_role == MWIFIEX_BSS_ROLE_UAP) {
 		dest_node = mwifiex_get_sta_entry(priv, hdr->h_dest);
@@ -117,7 +117,7 @@ int mwifiex_process_tx(struct mwifiex_private *priv, struct sk_buff *skb,
 		if (adapter->iface_type == MWIFIEX_USB) {
 			ret = adapter->if_ops.host_to_card(adapter,
 							   priv->usb_port,
-							   skb, NULL);
+							   skb, tx_param);
 		} else {
 			ret = adapter->if_ops.host_to_card(adapter,
 							   MWIFIEX_TYPE_DATA,
@@ -179,18 +179,13 @@ static int mwifiex_host_to_card(struct mwifiex_adapter *adapter,
 		mwifiex_write_data_complete(adapter, skb, 0, 0);
 		return ret;
 	}
-	if (GET_BSS_ROLE(priv) == MWIFIEX_BSS_ROLE_STA) {
-		if (adapter->iface_type == MWIFIEX_USB)
-			local_tx_pd = (struct txpd *)head_ptr;
-		else
-			local_tx_pd = (struct txpd *) (head_ptr +
-				INTF_HEADER_LEN);
-	}
+	if (GET_BSS_ROLE(priv) == MWIFIEX_BSS_ROLE_STA)
+		local_tx_pd = (struct txpd *)(head_ptr + adapter->intf_hdr_len);
 
 	if (adapter->iface_type == MWIFIEX_USB) {
 		ret = adapter->if_ops.host_to_card(adapter,
 						   priv->usb_port,
-						   skb, NULL);
+						   skb, tx_param);
 	} else {
 		ret = adapter->if_ops.host_to_card(adapter,
 						   MWIFIEX_TYPE_DATA,
@@ -339,17 +334,14 @@ void mwifiex_parse_tx_status_event(struct mwifiex_private *priv,
 {
 	struct tx_status_event *tx_status = (void *)priv->adapter->event_body;
 	struct sk_buff *ack_skb;
-	unsigned long flags;
 	struct mwifiex_txinfo *tx_info;
 
 	if (!tx_status->tx_token_id)
 		return;
 
-	spin_lock_irqsave(&priv->ack_status_lock, flags);
-	ack_skb = idr_find(&priv->ack_status_frames, tx_status->tx_token_id);
-	if (ack_skb)
-		idr_remove(&priv->ack_status_frames, tx_status->tx_token_id);
-	spin_unlock_irqrestore(&priv->ack_status_lock, flags);
+	spin_lock_bh(&priv->ack_status_lock);
+	ack_skb = idr_remove(&priv->ack_status_frames, tx_status->tx_token_id);
+	spin_unlock_bh(&priv->ack_status_lock);
 
 	if (ack_skb) {
 		tx_info = MWIFIEX_SKB_TXCB(ack_skb);

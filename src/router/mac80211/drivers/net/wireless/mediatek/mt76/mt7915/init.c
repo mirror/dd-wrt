@@ -87,11 +87,11 @@ static ssize_t mt7915_thermal_temp_store(struct device *dev,
 
 	return count;
 }
+
 #define SENSOR_DEVICE_ATTR_RW(_name, _func, _index)		\
 	SENSOR_DEVICE_ATTR(_name, 0644, _func##_show, _func##_store, _index)
 #define SENSOR_DEVICE_ATTR_RO(_name, _func, _index)		\
 	SENSOR_DEVICE_ATTR(_name, 0444, _func##_show, NULL, _index)
-
 static SENSOR_DEVICE_ATTR_RO(temp1_input, mt7915_thermal_temp, 0);
 static SENSOR_DEVICE_ATTR_RW(temp1_crit, mt7915_thermal_temp, 1);
 static SENSOR_DEVICE_ATTR_RW(temp1_max, mt7915_thermal_temp, 2);
@@ -327,8 +327,8 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 {
 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
 	struct mt76_dev *mdev = &phy->dev->mt76;
-	struct mt7915_dev *dev = mt7915_hw_dev(hw);
 	struct wiphy *wiphy = hw->wiphy;
+	struct mt7915_dev *dev = phy->dev;
 
 	hw->queues = 4;
 	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
@@ -347,21 +347,25 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 	wiphy->n_iface_combinations = ARRAY_SIZE(if_comb);
 	wiphy->reg_notifier = mt7915_regd_notifier;
 	wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+	wiphy->mbssid_max_interfaces = 16;
 
+	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BSS_COLOR);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_VHT_IBSS);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BEACON_RATE_LEGACY);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BEACON_RATE_HT);
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BEACON_RATE_VHT);
+	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_BEACON_RATE_HE);
 
-/*	if (!mdev->dev->of_node ||
+	if (!mdev->dev->of_node ||
 	    !of_property_read_bool(mdev->dev->of_node,
 				   "mediatek,disable-radar-background"))
 		wiphy_ext_feature_set(wiphy,
 				      NL80211_EXT_FEATURE_RADAR_BACKGROUND);
-*/
+
 	ieee80211_hw_set(hw, HAS_RATE_CONTROL);
 	ieee80211_hw_set(hw, SUPPORTS_TX_ENCAP_OFFLOAD);
 	ieee80211_hw_set(hw, SUPPORTS_RX_DECAP_OFFLOAD);
+	ieee80211_hw_set(hw, SUPPORTS_MULTI_BSSID);
 	ieee80211_hw_set(hw, WANT_MONITOR_VIF);
 
 	hw->max_tx_fragments = 4;
@@ -456,6 +460,9 @@ static void mt7915_mac_init(struct mt7915_dev *dev)
 
 	mt76_rmw_field(dev, MT_MDP_DCR1, MT_MDP_DCR1_MAX_RX_LEN, rx_len);
 
+	if (!is_mt7915(&dev->mt76))
+		mt76_clear(dev, MT_MDP_DCR2, MT_MDP_DCR2_RX_TRANS_SHORT);
+
 	/* enable hardware de-agg */
 	mt76_set(dev, MT_MDP_DCR0, MT_MDP_DCR0_DAMSDU_EN);
 
@@ -465,7 +472,7 @@ static void mt7915_mac_init(struct mt7915_dev *dev)
 	for (i = 0; i < 2; i++)
 		mt7915_mac_init_band(dev, i);
 
-	if (IS_ENABLED(CPTCFG_MT76_LEDS)) {
+	if (IS_ENABLED(CONFIG_MT76_LEDS)) {
 		i = dev->mt76.led_pin ? MT_LED_GPIO_MUX3 : MT_LED_GPIO_MUX2;
 		mt76_rmw_field(dev, i, MT_LED_GPIO_SEL_MASK, 4);
 	}
@@ -807,7 +814,7 @@ static void
 mt7915_gen_ppe_thresh(u8 *he_ppet, int nss)
 {
 	u8 i, ppet_bits, ppet_size, ru_bit_mask = 0x7; /* HE80 */
-	u8 ppet16_ppet8_ru3_ru0[] = {0x1c, 0xc7, 0x71};
+	static const u8 ppet16_ppet8_ru3_ru0[] = {0x1c, 0xc7, 0x71};
 
 	he_ppet[0] = FIELD_PREP(IEEE80211_PPE_THRES_NSS_MASK, nss - 1) |
 		     FIELD_PREP(IEEE80211_PPE_THRES_RU_INDEX_BITMASK_MASK,

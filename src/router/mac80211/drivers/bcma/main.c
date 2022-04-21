@@ -27,7 +27,8 @@ static DEFINE_MUTEX(bcma_buses_mutex);
 
 static int bcma_bus_match(struct device *dev, struct device_driver *drv);
 static int bcma_device_probe(struct device *dev);
-static int bcma_device_remove(struct device *dev);
+static void bcma_device_remove(struct device *dev);
+static int bcma_device_remove_bp(struct device *dev);
 static int bcma_device_uevent(struct device *dev, struct kobj_uevent_env *env);
 
 static ssize_t manuf_show(struct device *dev, struct device_attribute *attr, char *buf)
@@ -65,25 +66,19 @@ static struct attribute *bcma_device_attrs[] = {
 	&dev_attr_class.attr,
 	NULL,
 };
-#if LINUX_VERSION_IS_GEQ(3,12,0)
 ATTRIBUTE_GROUPS(bcma_device);
-#else
-#define BP_ATTR_GRP_STRUCT device_attribute
-ATTRIBUTE_GROUPS_BACKPORT(bcma_device);
-#endif
 
 static struct bus_type bcma_bus_type = {
 	.name		= "bcma",
 	.match		= bcma_bus_match,
 	.probe		= bcma_device_probe,
+#if LINUX_VERSION_IS_GEQ(5,15,0)
 	.remove		= bcma_device_remove,
-	.uevent		= bcma_device_uevent,
-#if LINUX_VERSION_IS_GEQ(3,12,0)
-	.dev_groups	= bcma_device_groups,
 #else
-	.dev_attrs = bcma_device_dev_attrs,
+	.remove		= bcma_device_remove_bp,
 #endif
-
+	.uevent		= bcma_device_uevent,
+	.dev_groups	= bcma_device_groups,
 };
 
 static u16 bcma_cc_core_id(struct bcma_bus *bus)
@@ -166,7 +161,6 @@ static struct device_node *bcma_of_find_child_device(struct device *parent,
 	return NULL;
 }
 
-#if LINUX_VERSION_IS_GEQ(3,13,0)
 static int bcma_of_irq_parse(struct device *parent,
 			     struct bcma_device *core,
 			     struct of_phandle_args *out_irq, int num)
@@ -206,13 +200,6 @@ static unsigned int bcma_of_get_irq(struct device *parent,
 
 	return irq_create_of_mapping(&out_irq);
 }
-#else
-static unsigned int bcma_of_get_irq(struct device *parent,
-				    struct bcma_device *core, int num)
-{
-	return 0;
-}
-#endif
 
 static void bcma_of_fill_device(struct device *parent,
 				struct bcma_device *core)
@@ -254,6 +241,7 @@ EXPORT_SYMBOL(bcma_core_irq);
 
 void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
 {
+	device_initialize(&core->dev);
 	core->dev.release = bcma_release_core_dev;
 	core->dev.bus = &bcma_bus_type;
 	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
@@ -295,11 +283,10 @@ static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
 {
 	int err;
 
-	err = device_register(&core->dev);
+	err = device_add(&core->dev);
 	if (err) {
 		bcma_err(bus, "Could not register dev for core 0x%03X\n",
 			 core->id.id);
-		put_device(&core->dev);
 		return;
 	}
 	core->dev_registered = true;
@@ -390,7 +377,7 @@ void bcma_unregister_cores(struct bcma_bus *bus)
 	/* Now noone uses internally-handled cores, we can free them */
 	list_for_each_entry_safe(core, tmp, &bus->cores, list) {
 		list_del(&core->list);
-		kfree(core);
+		put_device(&core->dev);
 	}
 }
 
@@ -632,7 +619,7 @@ static int bcma_device_probe(struct device *dev)
 	return err;
 }
 
-static int bcma_device_remove(struct device *dev)
+static void bcma_device_remove(struct device *dev)
 {
 	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
 	struct bcma_driver *adrv = container_of(dev->driver, struct bcma_driver,
@@ -641,7 +628,11 @@ static int bcma_device_remove(struct device *dev)
 	if (adrv->remove)
 		adrv->remove(core);
 	put_device(dev);
+}
 
+static int bcma_device_remove_bp(struct device *dev)
+{
+	bcma_device_remove(dev);
 	return 0;
 }
 
@@ -669,7 +660,6 @@ static int __init bcma_init_bus_register(void)
 	if (bcma_bus_registered)
 		return 0;
 
-	init_bcma_device_attrs();
 	err = bus_register(&bcma_bus_type);
 	if (!err)
 		bcma_bus_registered = 1;

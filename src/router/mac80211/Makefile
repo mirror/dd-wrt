@@ -91,8 +91,8 @@ Kconfig.kernel: $(STAMP_KERNEL_CONFIG) local-symbols
 	@echo " done."
 
 Kconfig.versions: Kconfig.kernel
-	@kver=$$($(MAKE) --no-print-directory -C $(KLIB_BUILD) kernelversion |	\
-		sed 's/^\(\([3-5]\|2\.6\)\.[0-9]\+\).*/\1/;t;d')		;\
+	@kver=$$($(MAKE) --no-print-directory -C $(KLIB_BUILD) M=$(BACKPORT_DIR) \
+		kernelversion |	sed 's/^\(\([3-5]\|2\.6\)\.[0-9]\+\).*/\1/;t;d');\
 	test "$$kver" != "" || echo "Kernel version parse failed!"		;\
 	test "$$kver" != ""							;\
 	kvers="$$(seq 14 39 | sed 's/^/2.6./')"					;\

@@ -1,10 +1,10 @@
 /*
- * Marvell Wireless LAN device driver: HW/FW Initialization
+ * NXP Wireless LAN device driver: HW/FW Initialization
  *
- * Copyright (C) 2011-2014, Marvell International Ltd.
+ * Copyright 2011-2020 NXP
  *
- * This software file (the "File") is distributed by Marvell International
- * Ltd. under the terms of the GNU General Public License Version 2, June 1991
+ * This software file (the "File") is distributed by NXP
+ * under the terms of the GNU General Public License Version 2, June 1991
  * (the "License").  You may use, redistribute and/or modify this File in
  * accordance with the terms and conditions of the License, a copy of which
  * is available by writing to the Free Software Foundation, Inc.,
@@ -36,7 +36,6 @@ static int mwifiex_add_bss_prio_tbl(struct mwifiex_private *priv)
 	struct mwifiex_adapter *adapter = priv->adapter;
 	struct mwifiex_bss_prio_node *bss_prio;
 	struct mwifiex_bss_prio_tbl *tbl = adapter->bss_prio_tbl;
-	unsigned long flags;
 
 	bss_prio = kzalloc(sizeof(struct mwifiex_bss_prio_node), GFP_KERNEL);
 	if (!bss_prio)
@@ -45,23 +44,30 @@ static int mwifiex_add_bss_prio_tbl(struct mwifiex_private *priv)
 	bss_prio->priv = priv;
 	INIT_LIST_HEAD(&bss_prio->list);
 
-	spin_lock_irqsave(&tbl[priv->bss_priority].bss_prio_lock, flags);
+	spin_lock_bh(&tbl[priv->bss_priority].bss_prio_lock);
 	list_add_tail(&bss_prio->list, &tbl[priv->bss_priority].bss_prio_head);
-	spin_unlock_irqrestore(&tbl[priv->bss_priority].bss_prio_lock, flags);
+	spin_unlock_bh(&tbl[priv->bss_priority].bss_prio_lock);
 
 	return 0;
 }
 
-static void wakeup_timer_fn(unsigned long data)
+static void wakeup_timer_fn(struct timer_list *t)
 {
-	struct mwifiex_adapter *adapter = (struct mwifiex_adapter *)data;
+	struct mwifiex_adapter *adapter = from_timer(adapter, t, wakeup_timer);
 
 	mwifiex_dbg(adapter, ERROR, "Firmware wakeup failed\n");
 	adapter->hw_status = MWIFIEX_HW_STATUS_RESET;
 	mwifiex_cancel_all_pending_cmd(adapter);
 
-	if (adapter->if_ops.card_reset && !adapter->hs_activated)
+	if (adapter->if_ops.card_reset)
 		adapter->if_ops.card_reset(adapter);
+}
+
+static void fw_dump_timer_fn(struct timer_list *t)
+{
+	struct mwifiex_adapter *adapter = from_timer(adapter, t, devdump_timer);
+
+	mwifiex_upload_device_dump(adapter);
 }
 
 /*
@@ -217,11 +223,16 @@ static void mwifiex_init_adapter(struct mwifiex_adapter *adapter)
 	else
 		adapter->data_sent = false;
 
+	if (adapter->iface_type == MWIFIEX_USB)
+		adapter->intf_hdr_len = 0;
+	else
+		adapter->intf_hdr_len = INTF_HEADER_LEN;
+
 	adapter->cmd_resp_received = false;
 	adapter->event_received = false;
 	adapter->data_received = false;
 
-	adapter->surprise_removed = false;
+	clear_bit(MWIFIEX_SURPRISE_REMOVED, &adapter->work_flags);
 
 	adapter->hw_status = MWIFIEX_HW_STATUS_INITIALIZING;
 
@@ -258,7 +269,7 @@ static void mwifiex_init_adapter(struct mwifiex_adapter *adapter)
 
 	adapter->curr_tx_buf_size = MWIFIEX_TX_DATA_BUF_SIZE_2K;
 
-	adapter->is_hs_configured = false;
+	clear_bit(MWIFIEX_IS_HS_CONFIGURED, &adapter->work_flags);
 	adapter->hs_cfg.conditions = cpu_to_le32(HS_CFG_COND_DEF);
 	adapter->hs_cfg.gpio = HS_CFG_GPIO_DEF;
 	adapter->hs_cfg.gap = HS_CFG_GAP_DEF;
@@ -308,8 +319,9 @@ static void mwifiex_init_adapter(struct mwifiex_adapter *adapter)
 	adapter->iface_limit.uap_intf = MWIFIEX_MAX_UAP_NUM;
 	adapter->iface_limit.p2p_intf = MWIFIEX_MAX_P2P_NUM;
 	adapter->active_scan_triggered = false;
-	setup_timer(&adapter->wakeup_timer, wakeup_timer_fn,
-		    (unsigned long)adapter);
+	timer_setup(&adapter->wakeup_timer, wakeup_timer_fn, 0);
+	adapter->devdump_len = 0;
+	timer_setup(&adapter->devdump_timer, fw_dump_timer_fn, 0);
 }
 
 /*
@@ -331,19 +343,9 @@ void mwifiex_set_trans_start(struct net_device *dev)
 void mwifiex_wake_up_net_dev_queue(struct net_device *netdev,
 					struct mwifiex_adapter *adapter)
 {
-	unsigned long dev_queue_flags;
-	unsigned int i;
-
-	spin_lock_irqsave(&adapter->queue_lock, dev_queue_flags);
-
-	for (i = 0; i < netdev->num_tx_queues; i++) {
-		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
-
-		if (netif_tx_queue_stopped(txq))
-			netif_tx_wake_queue(txq);
-	}
-
-	spin_unlock_irqrestore(&adapter->queue_lock, dev_queue_flags);
+	spin_lock_bh(&adapter->queue_lock);
+	netif_tx_wake_all_queues(netdev);
+	spin_unlock_bh(&adapter->queue_lock);
 }
 
 /*
@@ -352,31 +354,19 @@ void mwifiex_wake_up_net_dev_queue(struct net_device *netdev,
 void mwifiex_stop_net_dev_queue(struct net_device *netdev,
 					struct mwifiex_adapter *adapter)
 {
-	unsigned long dev_queue_flags;
-	unsigned int i;
-
-	spin_lock_irqsave(&adapter->queue_lock, dev_queue_flags);
-
-	for (i = 0; i < netdev->num_tx_queues; i++) {
-		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
-
-		if (!netif_tx_queue_stopped(txq))
-			netif_tx_stop_queue(txq);
-	}
-
-	spin_unlock_irqrestore(&adapter->queue_lock, dev_queue_flags);
+	spin_lock_bh(&adapter->queue_lock);
+	netif_tx_stop_all_queues(netdev);
+	spin_unlock_bh(&adapter->queue_lock);
 }
 
 /*
- *  This function releases the lock variables and frees the locks and
- *  associated locks.
+ * This function invalidates the list heads.
  */
-static void mwifiex_free_lock_list(struct mwifiex_adapter *adapter)
+static void mwifiex_invalidate_lists(struct mwifiex_adapter *adapter)
 {
 	struct mwifiex_private *priv;
 	s32 i, j;
 
-	/* Free lists */
 	list_del(&adapter->cmd_free_q);
 	list_del(&adapter->cmd_pending_q);
 	list_del(&adapter->scan_pending_q);
@@ -409,18 +399,16 @@ static void mwifiex_free_lock_list(struct mwifiex_adapter *adapter)
 static void
 mwifiex_adapter_cleanup(struct mwifiex_adapter *adapter)
 {
-	if (!adapter) {
-		pr_err("%s: adapter is NULL\n", __func__);
-		return;
-	}
-
 	del_timer(&adapter->wakeup_timer);
+	del_timer_sync(&adapter->devdump_timer);
 	mwifiex_cancel_all_pending_cmd(adapter);
 	wake_up_interruptible(&adapter->cmd_wait_q.wait);
 	wake_up_interruptible(&adapter->hs_activate_wait_q);
+}
 
-	/* Free lock variables */
-	mwifiex_free_lock_list(adapter);
+void mwifiex_free_cmd_buffers(struct mwifiex_adapter *adapter)
+{
+	mwifiex_invalidate_lists(adapter);
 
 	/* Free command buffer */
 	mwifiex_dbg(adapter, INFO, "info: free cmd buffer\n");
@@ -439,7 +427,6 @@ int mwifiex_init_lock_list(struct mwifiex_adapter *adapter)
 	struct mwifiex_private *priv;
 	s32 i, j;
 
-	spin_lock_init(&adapter->mwifiex_lock);
 	spin_lock_init(&adapter->int_lock);
 	spin_lock_init(&adapter->main_proc_lock);
 	spin_lock_init(&adapter->mwifiex_cmd_lock);
@@ -447,7 +434,6 @@ int mwifiex_init_lock_list(struct mwifiex_adapter *adapter)
 	for (i = 0; i < adapter->priv_num; i++) {
 		if (adapter->priv[i]) {
 			priv = adapter->priv[i];
-			spin_lock_init(&priv->rx_pkt_lock);
 			spin_lock_init(&priv->wmm.ra_list_spinlock);
 			spin_lock_init(&priv->curr_bcn_buf_lock);
 			spin_lock_init(&priv->sta_list_spinlock);
@@ -515,7 +501,6 @@ int mwifiex_init_fw(struct mwifiex_adapter *adapter)
 	struct mwifiex_private *priv;
 	u8 i, first_sta = true;
 	int is_cmd_pend_q_empty;
-	unsigned long flags;
 
 	adapter->hw_status = MWIFIEX_HW_STATUS_INITIALIZING;
 
@@ -556,9 +541,9 @@ int mwifiex_init_fw(struct mwifiex_adapter *adapter)
 		}
 	}
 
-	spin_lock_irqsave(&adapter->cmd_pending_q_lock, flags);
+	spin_lock_bh(&adapter->cmd_pending_q_lock);
 	is_cmd_pend_q_empty = list_empty(&adapter->cmd_pending_q);
-	spin_unlock_irqrestore(&adapter->cmd_pending_q_lock, flags);
+	spin_unlock_bh(&adapter->cmd_pending_q_lock);
 	if (!is_cmd_pend_q_empty) {
 		/* Send the first command in queue and return */
 		if (mwifiex_main_process(adapter) != -1)
@@ -583,7 +568,6 @@ static void mwifiex_delete_bss_prio_tbl(struct mwifiex_private *priv)
 	struct mwifiex_bss_prio_node *bssprio_node, *tmp_node;
 	struct list_head *head;
 	spinlock_t *lock; /* bss priority lock */
-	unsigned long flags;
 
 	for (i = 0; i < adapter->priv_num; ++i) {
 		head = &adapter->bss_prio_tbl[i].bss_prio_head;
@@ -595,11 +579,7 @@ static void mwifiex_delete_bss_prio_tbl(struct mwifiex_private *priv)
 			    priv->bss_type, priv->bss_num, i, head);
 
 		{
-			spin_lock_irqsave(lock, flags);
-			if (list_empty(head)) {
-				spin_unlock_irqrestore(lock, flags);
-				continue;
-			}
+			spin_lock_bh(lock);
 			list_for_each_entry_safe(bssprio_node, tmp_node, head,
 						 list) {
 				if (bssprio_node->priv == priv) {
@@ -611,7 +591,7 @@ static void mwifiex_delete_bss_prio_tbl(struct mwifiex_private *priv)
 					kfree(bssprio_node);
 				}
 			}
-			spin_unlock_irqrestore(lock, flags);
+			spin_unlock_bh(lock);
 		}
 	}
 }
@@ -643,7 +623,6 @@ mwifiex_shutdown_drv(struct mwifiex_adapter *adapter)
 {
 	struct mwifiex_private *priv;
 	s32 i;
-	unsigned long flags;
 	struct sk_buff *skb;
 
 	/* mwifiex already shutdown */
@@ -670,8 +649,7 @@ mwifiex_shutdown_drv(struct mwifiex_adapter *adapter)
 
 			mwifiex_clean_auto_tdls(priv);
 			mwifiex_abort_cac(priv);
-			mwifiex_clean_txrx(priv);
-			mwifiex_delete_bss_prio_tbl(priv);
+			mwifiex_free_priv(priv);
 		}
 	}
 
@@ -679,7 +657,7 @@ mwifiex_shutdown_drv(struct mwifiex_adapter *adapter)
 	while ((skb = skb_dequeue(&adapter->tx_data_q)))
 		mwifiex_write_data_complete(adapter, skb, 0, 0);
 
-	spin_lock_irqsave(&adapter->rx_proc_lock, flags);
+	spin_lock_bh(&adapter->rx_proc_lock);
 
 	while ((skb = skb_dequeue(&adapter->rx_data_q))) {
 		struct mwifiex_rxinfo *rx_info = MWIFIEX_SKB_RXCB(skb);
@@ -692,13 +670,10 @@ mwifiex_shutdown_drv(struct mwifiex_adapter *adapter)
 		dev_kfree_skb_any(skb);
 	}
 
-	spin_unlock_irqrestore(&adapter->rx_proc_lock, flags);
-
-	spin_lock(&adapter->mwifiex_lock);
+	spin_unlock_bh(&adapter->rx_proc_lock);
 
 	mwifiex_adapter_cleanup(adapter);
 
-	spin_unlock(&adapter->mwifiex_lock);
 	adapter->hw_status = MWIFIEX_HW_STATUS_NOT_READY;
 }
 
@@ -720,14 +695,12 @@ int mwifiex_dnld_fw(struct mwifiex_adapter *adapter,
 	int ret;
 	u32 poll_num = 1;
 
-	if (adapter->if_ops.check_fw_status) {
-		/* check if firmware is already running */
-		ret = adapter->if_ops.check_fw_status(adapter, poll_num);
-		if (!ret) {
-			mwifiex_dbg(adapter, MSG,
-				    "WLAN FW already running! Skip FW dnld\n");
-			return 0;
-		}
+	/* check if firmware is already running */
+	ret = adapter->if_ops.check_fw_status(adapter, poll_num);
+	if (!ret) {
+		mwifiex_dbg(adapter, MSG,
+			    "WLAN FW already running! Skip FW dnld\n");
+		return 0;
 	}
 
 	/* check if we are the winner for downloading FW */

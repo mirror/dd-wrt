@@ -132,7 +132,7 @@ int mt7615_register_device(struct mt7615_dev *dev)
 	INIT_WORK(&dev->reset_work, mt7615_mac_reset_work);
 
 	/* init led callbacks */
-	if (IS_ENABLED(CPTCFG_MT76_LEDS)) {
+	if (IS_ENABLED(CONFIG_MT76_LEDS)) {
 		dev->mt76.led_cdev.brightness_set = mt7615_led_set_brightness;
 		dev->mt76.led_cdev.blink_set = mt7615_led_set_blink;
 	}

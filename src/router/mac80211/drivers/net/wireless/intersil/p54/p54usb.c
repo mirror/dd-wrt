@@ -36,7 +36,7 @@ static struct usb_driver p54u_driver;
  * Note:
  *
  * Always update our wiki's device list (located at:
- * http://wireless.kernel.org/en/users/Drivers/p54/devices ),
+ * http://wireless.wiki.kernel.org/en/users/Drivers/p54/devices ),
  * whenever you add a new device.
  */
 
@@ -1134,9 +1134,7 @@ static struct usb_driver p54u_driver = {
 	.reset_resume = p54u_resume,
 #endif /* CONFIG_PM */
 	.soft_unbind = 1,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 
 module_usb_driver(p54u_driver);

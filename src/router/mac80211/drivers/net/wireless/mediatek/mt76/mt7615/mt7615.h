@@ -174,6 +174,7 @@ struct mt7615_phy {
 
 	s16 coverage_class;
 	u8 slottime;
+
 	u8 chfreq;
 	u8 rdd_state;
 	int dfs_state;
@@ -352,6 +353,7 @@ mt7615_ext_phy(struct mt7615_dev *dev)
 	return phy->priv;
 }
 
+extern struct ieee80211_rate mt7615_rates[12];
 extern const struct ieee80211_ops mt7615_ops;
 extern const u32 mt7615e_reg_map[__MT_BASE_MAX];
 extern const u32 mt7663e_reg_map[__MT_BASE_MAX];

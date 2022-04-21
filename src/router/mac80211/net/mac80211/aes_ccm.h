@@ -9,6 +9,8 @@
 
 #include <linux/crypto.h>
 
+#define CCM_AAD_LEN 32
+
 struct crypto_cipher *ieee80211_aes_key_setup_encrypt(const u8 key[],
 						      size_t key_len,
 						      size_t mic_len);

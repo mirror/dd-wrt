@@ -11,6 +11,7 @@ Kconfig.versions
 *.cmd
 *.tmp
 *.ver
+*.mod
 modules.order
 backport-include/backport/autoconf.h
 modules

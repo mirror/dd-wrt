@@ -1,3 +1,7 @@
+EXTRA_CFLAGS += -g3
+ccflags-y := -g3
+ccflags-m := -g3 
+
 obj-$(CPTCFG_MAC80211) += mac80211.o
 obj-$(CPTCFG_MAC80211_COMPRESS) += mac80211_compress.o
 
@@ -66,7 +70,8 @@ mac80211-$(CONFIG_PM) += pm.o
 CFLAGS_trace.o := -I$(src)
 
 rc80211_minstrel-y := \
-	rc80211_minstrel_ht.o
+	rc80211_minstrel_ht.o \
+	rc80211_minstrel_ht_debugfs.o
 
 #rc80211_minstrel-$(CPTCFG_MAC80211_DEBUGFS) += \
 #	rc80211_minstrel_debugfs.o \
@@ -100,7 +105,6 @@ $(obj)/regdb.c: $(src)/../wireless/db.txt $(src)/../wireless/genregdb.awk
 
 clean-files := regdb.c
 
-EXTRA_CFLAGS += -g3
 #EXTRA_LDFLAGS += -flto -fwhole-program -flto=jobserver -fuse-linker-plugin
 
 #ccflags-y += -flto -fwhole-program -fno-fat-lto-objects -flto=jobserver -fuse-linker-plugin

@@ -431,7 +431,6 @@ out:
 	return err;
 }
 
-#if 0
 static int mt7615_set_sar_specs(struct ieee80211_hw *hw,
 				const struct cfg80211_sar_specs *sar)
 {
@@ -454,7 +453,6 @@ static int mt7615_set_sar_specs(struct ieee80211_hw *hw,
 
 	return err;
 }
-#endif 
 
 static int mt7615_config(struct ieee80211_hw *hw, u32 changed)
 {
@@ -466,7 +464,7 @@ static int mt7615_config(struct ieee80211_hw *hw, u32 changed)
 	if (changed & (IEEE80211_CONF_CHANGE_CHANNEL |
 		       IEEE80211_CONF_CHANGE_POWER)) {
 #ifdef CPTCFG_NL80211_TESTMODE
-		if (phy->mt76.test.state != MT76_TM_STATE_OFF) {
+		if (phy->mt76->test.state != MT76_TM_STATE_OFF) {
 			mt7615_mutex_acquire(dev);
 			mt76_testmode_reset(phy->mt76, false);
 			mt7615_mutex_release(dev);
@@ -1358,7 +1356,7 @@ const struct ieee80211_ops mt7615_ops = {
 	.set_wakeup = mt7615_set_wakeup,
 	.set_rekey_data = mt7615_set_rekey_data,
 #endif /* CONFIG_PM */
-//	.set_sar_specs = mt7615_set_sar_specs,
+	.set_sar_specs = mt7615_set_sar_specs,
 };
 EXPORT_SYMBOL_GPL(mt7615_ops);
 

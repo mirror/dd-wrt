@@ -40,3 +40,4 @@ obj-$(CPTCFG_USB_NET_QMI_WWAN)	+= qmi_wwan.o
 obj-$(CPTCFG_USB_NET_CDC_MBIM)	+= cdc_mbim.o
 #obj-$(CPTCFG_USB_NET_CH9200)	+= ch9200.o
 #obj-$(CPTCFG_USB_NET_AQC111)	+= aqc111.o
+#obj-$(CPTCFG_USB_RTL8153_ECM)	+= r8153_ecm.o

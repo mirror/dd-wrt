@@ -1,0 +1,2836 @@
+config PPC_BOOK3S_32
+    bool
+    default y
+
+config PPC_BOOK3S
+    bool
+    default y
+
+config 6xx
+    bool
+    default y
+
+config PPC_FPU
+    bool
+    default y
+
+config PPC_STD_MMU
+    bool
+    default y
+
+config PPC_STD_MMU_32
+    bool
+    default y
+
+config PPC_HAVE_PMU_SUPPORT
+    bool
+    default y
+
+config PPC32
+    bool
+    default y
+
+config 32BIT
+    bool
+    default y
+
+config MMU
+    bool
+    default y
+
+config STACKTRACE_SUPPORT
+    bool
+    default y
+
+config HAVE_LATENCYTOP_SUPPORT
+    bool
+    default y
+
+config TRACE_IRQFLAGS_SUPPORT
+    bool
+    default y
+
+config LOCKDEP_SUPPORT
+    bool
+    default y
+
+config RWSEM_XCHGADD_ALGORITHM
+    bool
+    default y
+
+config ARCH_HAS_ILOG2_U32
+    bool
+    default y
+
+config GENERIC_HWEIGHT
+    bool
+    default y
+
+config PPC
+    bool
+    default y
+
+config EARLY_PRINTK
+    bool
+    default y
+
+config GENERIC_NVRAM
+    bool
+    default y
+
+config SCHED_OMIT_FRAME_POINTER
+    bool
+    default y
+
+config ARCH_MAY_HAVE_PC_FDC
+    bool
+    default y
+
+config PPC_OF
+    bool
+    default y
+
+config PPC_UDBG_16550
+    bool
+    default y
+
+config AUDIT_ARCH
+    bool
+    default y
+
+config DEFAULT_UIMAGE
+    bool
+    default y
+
+config ARCH_HIBERNATION_POSSIBLE
+    bool
+    default y
+
+config ARCH_SUSPEND_POSSIBLE
+    bool
+    default y
+
+config ARCH_SUPPORTS_DEBUG_PAGEALLOC
+    bool
+    default y
+
+config ARCH_SUPPORTS_UPROBES
+    bool
+    default y
+
+config IRQ_WORK
+    bool
+    default y
+
+config BROKEN_ON_SMP
+    bool
+    default y
+
+config SYSVIPC
+    bool
+    default y
+
+config SYSVIPC_SYSCTL
+    bool
+    default y
+
+config HAVE_GENERIC_HARDIRQS
+    bool
+    default y
+
+config GENERIC_HARDIRQS
+    bool
+    default y
+
+config GENERIC_IRQ_SHOW
+    bool
+    default y
+
+config GENERIC_IRQ_SHOW_LEVEL
+    bool
+    default y
+
+config IRQ_DOMAIN
+    bool
+    default y
+
+config IRQ_FORCED_THREADING
+    bool
+    default y
+
+config SPARSE_IRQ
+    bool
+    default y
+
+config GENERIC_TIME_VSYSCALL_OLD
+    bool
+    default y
+
+config GENERIC_CLOCKEVENTS
+    bool
+    default y
+
+config GENERIC_CLOCKEVENTS_BUILD
+    bool
+    default y
+
+config GENERIC_CMOS_UPDATE
+    bool
+    default y
+
+config TICK_ONESHOT
+    bool
+    default y
+
+config NO_HZ_COMMON
+    bool
+    default y
+
+config NO_HZ_IDLE
+    bool
+    default y
+
+config HIGH_RES_TIMERS
+    bool
+    default y
+
+config TICK_CPU_ACCOUNTING
+    bool
+    default y
+
+config TINY_RCU
+    bool
+    default y
+
+config NAMESPACES
+    bool
+    default y
+
+config NET_NS
+    bool
+    default y
+
+config UIDGID_CONVERTED
+    bool
+    default y
+
+config RELAY
+    bool
+    default y
+
+config CC_OPTIMIZE_FOR_SIZE
+    bool
+    default y
+
+config SYSCTL
+    bool
+    default y
+
+config ANON_INODES
+    bool
+    default y
+
+config SYSCTL_EXCEPTION_TRACE
+    bool
+    default y
+
+config HOTPLUG
+    bool
+    default y
+
+config KALLSYMS
+    bool
+    default y
+
+config PRINTK
+    bool
+    default y
+
+config BASE_FULL
+    bool
+    default y
+
+config FUTEX
+    bool
+    default y
+
+config EPOLL
+    bool
+    default y
+
+config SIGNALFD
+    bool
+    default y
+
+config TIMERFD
+    bool
+    default y
+
+config EVENTFD
+    bool
+    default y
+
+config SHMEM
+    bool
+    default y
+
+config PCI_QUIRKS
+    bool
+    default y
+
+config EMBEDDED
+    bool
+    default y
+
+config HAVE_PERF_EVENTS
+    bool
+    default y
+
+config COMPAT_BRK
+    bool
+    default y
+
+config SLAB
+    bool
+    default y
+
+config HAVE_OPROFILE
+    bool
+    default y
+
+config JUMP_LABEL
+    bool
+    default y
+
+config HAVE_EFFICIENT_UNALIGNED_ACCESS
+    bool
+    default y
+
+config ARCH_USE_BUILTIN_BSWAP
+    bool
+    default y
+
+config HAVE_IOREMAP_PROT
+    bool
+    default y
+
+config HAVE_KPROBES
+    bool
+    default y
+
+config HAVE_KRETPROBES
+    bool
+    default y
+
+config HAVE_ARCH_TRACEHOOK
+    bool
+    default y
+
+config HAVE_DMA_ATTRS
+    bool
+    default y
+
+config GENERIC_SMP_IDLE_THREAD
+    bool
+    default y
+
+config HAVE_REGS_AND_STACK_ACCESS_API
+    bool
+    default y
+
+config HAVE_DMA_API_DEBUG
+    bool
+    default y
+
+config HAVE_ARCH_JUMP_LABEL
+    bool
+    default y
+
+config ARCH_HAVE_NMI_SAFE_CMPXCHG
+    bool
+    default y
+
+config ARCH_WANT_IPC_PARSE_VERSION
+    bool
+    default y
+
+config THIN_ARCHIVES
+    bool
+    default y
+
+config HAVE_MOD_ARCH_SPECIFIC
+    bool
+    default y
+
+config MODULES_USE_ELF_RELA
+    bool
+    default y
+
+config CLONE_BACKWARDS
+    bool
+    default y
+
+config OLD_SIGSUSPEND
+    bool
+    default y
+
+config OLD_SIGACTION
+    bool
+    default y
+
+config SLABINFO
+    bool
+    default y
+
+config RT_MUTEXES
+    bool
+    default y
+
+config MODULES
+    bool
+    default y
+
+config MODULE_UNLOAD
+    bool
+    default y
+
+config MODULE_STRIPPED
+    bool
+    default y
+
+config BLOCK
+    bool
+    default y
+
+config LBDAF
+    bool
+    default y
+
+config PARTITION_ADVANCED
+    bool
+    default y
+
+config MSDOS_PARTITION
+    bool
+    default y
+
+config IOSCHED_NOOP
+    bool
+    default y
+
+config IOSCHED_DEADLINE
+    bool
+    default y
+
+config DEFAULT_DEADLINE
+    bool
+    default y
+
+config INLINE_SPIN_UNLOCK_IRQ
+    bool
+    default y
+
+config INLINE_READ_UNLOCK
+    bool
+    default y
+
+config INLINE_READ_UNLOCK_IRQ
+    bool
+    default y
+
+config INLINE_WRITE_UNLOCK
+    bool
+    default y
+
+config INLINE_WRITE_UNLOCK_IRQ
+    bool
+    default y
+
+config ARCH_SUPPORTS_ATOMIC_RMW
+    bool
+    default y
+
+config PPC_83xx
+    bool
+    default y
+
+config MPC831x_RDB
+    bool
+    default y
+
+config PPC_MPC831x
+    bool
+    default y
+
+config PPC_OF_BOOT_TRAMPOLINE
+    bool
+    default y
+
+config IPIC
+    bool
+    default y
+
+config QUICC_ENGINE
+    bool
+    default y
+
+config QE_GPIO
+    bool
+    default y
+
+config SIMPLE_GPIO
+    bool
+    default y
+
+config HZ_250
+    bool
+    default y
+
+config SCHED_HRTICK
+    bool
+    default y
+
+config PREEMPT_NONE
+    bool
+    default y
+
+config BINFMT_ELF
+    bool
+    default y
+
+config BINFMT_SCRIPT
+    bool
+    default y
+
+config ARCH_ENABLE_MEMORY_HOTPLUG
+    bool
+    default y
+
+config ARCH_HAS_WALK_MEMORY
+    bool
+    default y
+
+config ARCH_ENABLE_MEMORY_HOTREMOVE
+    bool
+    default y
+
+config ARCH_FLATMEM_ENABLE
+    bool
+    default y
+
+config FLATMEM
+    bool
+    default y
+
+config FLAT_NODE_MEM_MAP
+    bool
+    default y
+
+config HAVE_MEMBLOCK
+    bool
+    default y
+
+config HAVE_MEMBLOCK_NODE_MAP
+    bool
+    default y
+
+config PAGEFLAGS_EXTENDED
+    bool
+    default y
+
+config MIGRATION
+    bool
+    default y
+
+config BOUNCE
+    bool
+    default y
+
+config VIRT_TO_BUS
+    bool
+    default y
+
+config NEED_PER_CPU_KM
+    bool
+    default y
+
+config PPC_4K_PAGES
+    bool
+    default y
+
+config CMDLINE_BOOL
+    bool
+    default y
+
+config ISA_DMA_API
+    bool
+    default y
+
+config ZONE_DMA
+    bool
+    default y
+
+config NEED_SG_DMA_LENGTH
+    bool
+    default y
+
+config GENERIC_ISA_DMA
+    bool
+    default y
+
+config PPC_INDIRECT_PCI
+    bool
+    default y
+
+config FSL_SOC
+    bool
+    default y
+
+config FSL_PCI
+    bool
+    default y
+
+config FSL_LBC
+    bool
+    default y
+
+config FSL_IFC
+    bool
+    default y
+
+config PPC_PCI_CHOICE
+    bool
+    default y
+
+config PCI
+    bool
+    default y
+
+config PCI_DOMAINS
+    bool
+    default y
+
+config PCI_SYSCALL
+    bool
+    default y
+
+config PCIEPORTBUS
+    bool
+    default y
+
+config PCIEAER
+    bool
+    default y
+
+config ARCH_SUPPORTS_MSI
+    bool
+    default y
+
+config NET
+    bool
+    default y
+
+config PACKET
+    bool
+    default y
+
+config UNIX
+    bool
+    default y
+
+config XFRM
+    bool
+    default y
+
+config INET
+    bool
+    default y
+
+config IP_MULTICAST
+    bool
+    default y
+
+config IP_ADVANCED_ROUTER
+    bool
+    default y
+
+config IP_MULTIPLE_TABLES
+    bool
+    default y
+
+config IP_ROUTE_MULTIPATH
+    bool
+    default y
+
+config IP_ROUTE_VERBOSE
+    bool
+    default y
+
+config IP_ROUTE_CLASSID
+    bool
+    default y
+
+config NET_IPGRE_DEMUX
+    tristate
+    default m
+
+config NET_IP_TUNNEL
+    tristate
+    default m
+
+config NET_ETHERIP
+    tristate
+    default m
+
+config NET_EOIP
+    tristate
+    default m
+
+config IP_MROUTE
+    bool
+    default y
+
+config SYN_COOKIES
+    bool
+    default y
+
+config INET_TUNNEL
+    tristate
+    default m
+
+config TCP_CONG_ADVANCED
+    bool
+    default y
+
+config TCP_CONG_BIC
+    bool
+    default y
+
+config TCP_CONG_CUBIC
+    bool
+    default y
+
+config TCP_CONG_WESTWOOD
+    bool
+    default y
+
+config TCP_CONG_HTCP
+    bool
+    default y
+
+config TCP_CONG_HSTCP
+    bool
+    default y
+
+config TCP_CONG_HYBLA
+    bool
+    default y
+
+config TCP_CONG_VEGAS
+    bool
+    default y
+
+config TCP_CONG_SCALABLE
+    bool
+    default y
+
+config TCP_CONG_LP
+    bool
+    default y
+
+config TCP_CONG_VENO
+    bool
+    default y
+
+config TCP_CONG_YEAH
+    bool
+    default y
+
+config TCP_CONG_ILLINOIS
+    bool
+    default y
+
+config DEFAULT_WESTWOOD
+    bool
+    default y
+
+config IPV6
+    tristate
+    default m
+
+config IPV6_PRIVACY
+    bool
+    default y
+
+config IPV6_ROUTER_PREF
+    bool
+    default y
+
+config IPV6_ROUTE_INFO
+    bool
+    default y
+
+config IPV6_OPTIMISTIC_DAD
+    bool
+    default y
+
+config INET6_TUNNEL
+    tristate
+    default m
+
+config INET6_XFRM_MODE_TRANSPORT
+    tristate
+    default m
+
+config INET6_XFRM_MODE_TUNNEL
+    tristate
+    default m
+
+config INET6_XFRM_MODE_BEET
+    tristate
+    default m
+
+config IPV6_SIT
+    tristate
+    default m
+
+config IPV6_NDISC_NODETYPE
+    bool
+    default y
+
+config IPV6_TUNNEL
+    tristate
+    default m
+
+config IPV6_MULTIPLE_TABLES
+    bool
+    default y
+
+config IPV6_SUBTREES
+    bool
+    default y
+
+config IPV6_MROUTE
+    bool
+    default y
+
+config IPV6_PIMSM_V2
+    bool
+    default y
+
+config NETFILTER
+    bool
+    default y
+
+config NETFILTER_ADVANCED
+    bool
+    default y
+
+config BRIDGE_NETFILTER
+    bool
+    default y
+
+config NETFILTER_NETLINK
+    bool
+    default y
+
+config NETFILTER_NETLINK_LOG
+    bool
+    default y
+
+config NF_CONNTRACK
+    bool
+    default y
+
+config NF_CONNTRACK_MARK
+    bool
+    default y
+
+config NF_CONNTRACK_PROCFS
+    bool
+    default y
+
+config NF_CONNTRACK_EVENTS
+    bool
+    default y
+
+config NF_CONNTRACK_RTCACHE
+    bool
+    default y
+
+config NF_CONNTRACK_DSCPREMARK_EXT
+    bool
+    default y
+
+config NF_CT_PROTO_GRE
+    tristate
+    default m
+
+config NF_CONNTRACK_FTP
+    bool
+    default y
+
+config NF_CONNTRACK_H323
+    tristate
+    default m
+
+config NF_CONNTRACK_IRC
+    bool
+    default y
+
+config NF_CONNTRACK_BROADCAST
+    bool
+    default y
+
+config NF_CONNTRACK_NETBIOS_NS
+    bool
+    default y
+
+config NF_CONNTRACK_SNMP
+    bool
+    default y
+
+config NF_CONNTRACK_PPTP
+    tristate
+    default m
+
+config NF_CONNTRACK_SIP
+    bool
+    default y
+
+config NF_CONNTRACK_TFTP
+    bool
+    default y
+
+config NF_CONNTRACK_RTSP
+    bool
+    default y
+
+config NF_NAT
+    bool
+    default y
+
+config NF_NAT_NEEDED
+    bool
+    default y
+
+config NF_NAT_FTP
+    bool
+    default y
+
+config NF_NAT_IRC
+    bool
+    default y
+
+config NF_NAT_SIP
+    bool
+    default y
+
+config NF_NAT_TFTP
+    bool
+    default y
+
+config NETFILTER_XTABLES
+    bool
+    default y
+
+config NETFILTER_XT_MARK
+    bool
+    default y
+
+config NETFILTER_XT_CONNMARK
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_CLASSIFY
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_CONNMARK
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_CT
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_DSCP
+    tristate
+    default m
+
+config NETFILTER_XT_TARGET_HL
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_IMQ
+    tristate
+    default m
+
+config NETFILTER_XT_TARGET_LOG
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_MARK
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_NETMAP
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_NFLOG
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_NOTRACK
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_REDIRECT
+    bool
+    default y
+
+config NETFILTER_XT_TARGET_TCPMSS
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_COMMENT
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_CONNBYTES
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_CONNLIMIT
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_CONNMARK
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_CONNTRACK
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_ECN
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_ESP
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_HL
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_IPRANGE
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_LAYER7
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_LENGTH
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_LIMIT
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_MAC
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_MARK
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_MULTIPORT
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_PHYSDEV
+    tristate
+    default m
+
+config NETFILTER_XT_MATCH_PKTTYPE
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_RECENT
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_STATE
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_STRING
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_TCPMSS
+    bool
+    default y
+
+config NETFILTER_XT_MATCH_U32
+    bool
+    default y
+
+config NF_DEFRAG_IPV4
+    bool
+    default y
+
+config NF_CONNTRACK_IPV4
+    bool
+    default y
+
+config NF_CONNTRACK_PROC_COMPAT
+    bool
+    default y
+
+config IP_NF_IPTABLES
+    bool
+    default y
+
+config IP_NF_MATCH_WEBSTR
+    bool
+    default y
+
+config IP_NF_MATCH_IPP2P
+    bool
+    default y
+
+config IP_NF_MATCH_AH
+    bool
+    default y
+
+config IP_NF_MATCH_ECN
+    bool
+    default y
+
+config IP_NF_MATCH_TTL
+    bool
+    default y
+
+config IP_NF_FILTER
+    bool
+    default y
+
+config IP_NF_AUTOFW
+    bool
+    default y
+
+config IP_NF_TARGET_TRIGGER
+    bool
+    default y
+
+config IP_NF_TARGET_REJECT
+    bool
+    default y
+
+config NF_NAT_IPV4
+    bool
+    default y
+
+config IP_NF_TARGET_MASQUERADE
+    bool
+    default y
+
+config IP_NF_TARGET_NETMAP
+    bool
+    default y
+
+config IP_NF_TARGET_REDIRECT
+    bool
+    default y
+
+config NF_NAT_PROTO_GRE
+    tristate
+    default m
+
+config NF_NAT_PPTP
+    tristate
+    default m
+
+config NF_NAT_H323
+    tristate
+    default m
+
+config NF_NAT_RTSP
+    bool
+    default y
+
+config IP_NF_MANGLE
+    bool
+    default y
+
+config IP_NF_TARGET_ECN
+    bool
+    default y
+
+config IP_NF_TARGET_TTL
+    bool
+    default y
+
+config IP_NF_RAW
+    bool
+    default y
+
+config NF_DEFRAG_IPV6
+    tristate
+    default m
+
+config NF_CONNTRACK_IPV6
+    tristate
+    default m
+
+config IP6_NF_IPTABLES
+    tristate
+    default m
+
+config IP6_NF_MATCH_AH
+    tristate
+    default m
+
+config IP6_NF_MATCH_FRAG
+    tristate
+    default m
+
+config IP6_NF_MATCH_IPV6HEADER
+    tristate
+    default m
+
+config IP6_NF_MATCH_RPFILTER
+    tristate
+    default m
+
+config IP6_NF_MATCH_RT
+    tristate
+    default m
+
+config IP6_NF_FILTER
+    tristate
+    default m
+
+config IP6_NF_TARGET_REJECT
+    tristate
+    default m
+
+config IP6_NF_MANGLE
+    tristate
+    default m
+
+config NF_NAT_IPV6
+    tristate
+    default m
+
+config IP6_NF_TARGET_MASQUERADE
+    tristate
+    default m
+
+config IP6_NF_TARGET_NPT
+    tristate
+    default m
+
+config BRIDGE_NF_EBTABLES
+    tristate
+    default m
+
+config BRIDGE_EBT_BROUTE
+    tristate
+    default m
+
+config BRIDGE_EBT_T_FILTER
+    tristate
+    default m
+
+config BRIDGE_EBT_T_NAT
+    tristate
+    default m
+
+config BRIDGE_EBT_802_3
+    tristate
+    default m
+
+config BRIDGE_EBT_AMONG
+    tristate
+    default m
+
+config BRIDGE_EBT_ARP
+    tristate
+    default m
+
+config BRIDGE_EBT_IP
+    tristate
+    default m
+
+config BRIDGE_EBT_LIMIT
+    tristate
+    default m
+
+config BRIDGE_EBT_MARK
+    tristate
+    default m
+
+config BRIDGE_EBT_PKTTYPE
+    tristate
+    default m
+
+config BRIDGE_EBT_STP
+    tristate
+    default m
+
+config BRIDGE_EBT_VLAN
+    tristate
+    default m
+
+config BRIDGE_EBT_ARPREPLY
+    tristate
+    default m
+
+config BRIDGE_EBT_DNAT
+    tristate
+    default m
+
+config BRIDGE_EBT_MARK_T
+    tristate
+    default m
+
+config BRIDGE_EBT_REDIRECT
+    tristate
+    default m
+
+config BRIDGE_EBT_SNAT
+    tristate
+    default m
+
+config BRIDGE_EBT_LOG
+    tristate
+    default m
+
+config BRIDGE_EBT_ULOG
+    tristate
+    default m
+
+config BRIDGE_EBT_NFLOG
+    tristate
+    default m
+
+config SHORTCUT_FE
+    tristate
+    default m
+
+config L2TP
+    tristate
+    default m
+
+config L2TP_V3
+    bool
+    default y
+
+config L2TP_IP
+    tristate
+    default m
+
+config L2TP_ETH
+    tristate
+    default m
+
+config STP
+    bool
+    default y
+
+config BRIDGE
+    bool
+    default y
+
+config BRIDGE_IGMP_SNOOPING
+    bool
+    default y
+
+config KERNEL_ARP_SPOOFING_PROTECT
+    bool
+    default y
+
+config HAVE_NET_DSA
+    bool
+    default y
+
+config VLAN_8021Q
+    bool
+    default y
+
+config LLC
+    bool
+    default y
+
+config NET_SCHED
+    bool
+    default y
+
+config NET_SCH_CBQ
+    bool
+    default y
+
+config NET_SCH_HTB
+    bool
+    default y
+
+config NET_SCH_HFSC
+    bool
+    default y
+
+config NET_SCH_PRIO
+    bool
+    default y
+
+config NET_SCH_MULTIQ
+    bool
+    default y
+
+config NET_SCH_RED
+    bool
+    default y
+
+config NET_SCH_SFB
+    bool
+    default y
+
+config NET_SCH_SFQ
+    bool
+    default y
+
+config NET_SCH_TEQL
+    bool
+    default y
+
+config NET_SCH_TBF
+    bool
+    default y
+
+config NET_SCH_GRED
+    bool
+    default y
+
+config NET_SCH_DSMARK
+    bool
+    default y
+
+config NET_SCH_NETEM
+    bool
+    default y
+
+config NET_SCH_DRR
+    bool
+    default y
+
+config NET_SCH_MQPRIO
+    bool
+    default y
+
+config NET_SCH_CHOKE
+    bool
+    default y
+
+config NET_SCH_QFQ
+    bool
+    default y
+
+config NET_SCH_CODEL
+    tristate
+    default m
+
+config NET_SCH_FQ_CODEL
+    bool
+    default y
+
+config NET_SCH_PIE
+    tristate
+    default m
+
+config NET_SCH_INGRESS
+    bool
+    default y
+
+config NET_CLS
+    bool
+    default y
+
+config NET_CLS_BASIC
+    bool
+    default y
+
+config NET_CLS_TCINDEX
+    bool
+    default y
+
+config NET_CLS_ROUTE4
+    bool
+    default y
+
+config NET_CLS_FW
+    bool
+    default y
+
+config NET_CLS_U32
+    bool
+    default y
+
+config CLS_U32_PERF
+    bool
+    default y
+
+config CLS_U32_MARK
+    bool
+    default y
+
+config NET_CLS_FLOW
+    bool
+    default y
+
+config NET_CLS_ACT
+    bool
+    default y
+
+config NET_ACT_POLICE
+    bool
+    default y
+
+config NET_ACT_CONNMARK
+    bool
+    default y
+
+config NET_CLS_IND
+    bool
+    default y
+
+config NET_SCH_FIFO
+    bool
+    default y
+
+config DNS_RESOLVER
+    tristate
+    default m
+
+config NETLINK_MMAP
+    bool
+    default y
+
+config BQL
+    bool
+    default y
+
+config FIB_RULES
+    bool
+    default y
+
+config WIRELESS_EXT
+    bool
+    default y
+
+config WEXT_CORE
+    bool
+    default y
+
+config WEXT_PROC
+    bool
+    default y
+
+config WEXT_SPY
+    bool
+    default y
+
+config WEXT_PRIV
+    bool
+    default y
+
+config STANDALONE
+    bool
+    default y
+
+config PREVENT_FIRMWARE_BUILD
+    bool
+    default y
+
+config FW_LOADER
+    bool
+    default y
+
+config MTD
+    bool
+    default y
+
+config MTD_ROOTFS_SPLIT
+    bool
+    default y
+
+config MTD_ROOTFS_GEN
+    bool
+    default y
+
+config MTD_OF_PARTS
+    bool
+    default y
+
+config MTD_BLKDEVS
+    bool
+    default y
+
+config MTD_BLOCK
+    bool
+    default y
+
+config NFTL
+    bool
+    default y
+
+config NFTL_RW
+    bool
+    default y
+
+config MTD_CFI
+    bool
+    default y
+
+config MTD_GEN_PROBE
+    bool
+    default y
+
+config MTD_MAP_BANK_WIDTH_1
+    bool
+    default y
+
+config MTD_MAP_BANK_WIDTH_2
+    bool
+    default y
+
+config MTD_MAP_BANK_WIDTH_4
+    bool
+    default y
+
+config MTD_CFI_I1
+    bool
+    default y
+
+config MTD_CFI_I2
+    bool
+    default y
+
+config MTD_CFI_INTELEXT
+    bool
+    default y
+
+config MTD_CFI_AMDSTD
+    bool
+    default y
+
+config MTD_CFI_STAA
+    bool
+    default y
+
+config MTD_CFI_UTIL
+    bool
+    default y
+
+config MTD_PHYSMAP_OF
+    bool
+    default y
+
+config MTD_NAND_ECC
+    bool
+    default y
+
+config MTD_NAND_ECC_SMC
+    bool
+    default y
+
+config MTD_NAND
+    bool
+    default y
+
+config MTD_NAND_IDS
+    bool
+    default y
+
+config MTD_NAND_FSL_ELBC
+    bool
+    default y
+
+config MTD_NAND_FSL_IFC
+    bool
+    default y
+
+config DTC
+    bool
+    default y
+
+config OF
+    bool
+    default y
+
+config PROC_DEVICETREE
+    bool
+    default y
+
+config OF_FLATTREE
+    bool
+    default y
+
+config OF_EARLY_FLATTREE
+    bool
+    default y
+
+config OF_ADDRESS
+    bool
+    default y
+
+config OF_IRQ
+    bool
+    default y
+
+config OF_DEVICE
+    bool
+    default y
+
+config OF_I2C
+    bool
+    default y
+
+config OF_NET
+    bool
+    default y
+
+config OF_MDIO
+    bool
+    default y
+
+config OF_PCI
+    bool
+    default y
+
+config OF_PCI_IRQ
+    bool
+    default y
+
+config OF_MTD
+    bool
+    default y
+
+config BLK_DEV
+    bool
+    default y
+
+config HAVE_IDE
+    bool
+    default y
+
+config SCSI_MOD
+    tristate
+    default m
+
+config SCSI
+    tristate
+    default m
+
+config SCSI_DMA
+    bool
+    default y
+
+config SCSI_PROC_FS
+    bool
+    default y
+
+config BLK_DEV_SD
+    tristate
+    default m
+
+config BLK_DEV_SR
+    tristate
+    default m
+
+config CHR_DEV_SG
+    tristate
+    default m
+
+config SCSI_MULTI_LUN
+    bool
+    default y
+
+config NETDEVICES
+    bool
+    default y
+
+config MII
+    bool
+    default y
+
+config IMQ
+    tristate
+    default m
+
+config IMQ_BEHAVIOR_BA
+    bool
+    default y
+
+config TUN
+    tristate
+    default m
+
+config ETHERNET
+    bool
+    default y
+
+config NET_VENDOR_FREESCALE
+    bool
+    default y
+
+config FSL_PQ_MDIO
+    bool
+    default y
+
+config UCC_GETH
+    bool
+    default y
+
+config GIANFAR
+    bool
+    default y
+
+config PHYLIB
+    bool
+    default y
+
+config MDIO_BOARDINFO
+    bool
+    default y
+
+config SWCONFIG
+    bool
+    default y
+
+config MARVELL_PHY
+    bool
+    default y
+
+config PPP
+    bool
+    default y
+
+config PPP_BSDCOMP
+    bool
+    default y
+
+config PPP_DEFLATE
+    bool
+    default y
+
+config PPP_FILTER
+    bool
+    default y
+
+config PPP_MPPE
+    bool
+    default y
+
+config PPP_MULTILINK
+    bool
+    default y
+
+config PPPOE
+    bool
+    default y
+
+config PPTP
+    tristate
+    default m
+
+config PPPOL2TP
+    tristate
+    default m
+
+config PPP_ASYNC
+    bool
+    default y
+
+config PPP_SYNC_TTY
+    bool
+    default y
+
+config SLHC
+    bool
+    default y
+
+config SERIO
+    bool
+    default y
+
+config SERIO_I8042
+    bool
+    default y
+
+config SERIO_SERPORT
+    bool
+    default y
+
+config TTY
+    bool
+    default y
+
+config UNIX98_PTYS
+    bool
+    default y
+
+config LEGACY_PTYS
+    bool
+    default y
+
+config SERIAL_NONSTANDARD
+    bool
+    default y
+
+config N_HDLC
+    tristate
+    default m
+
+config DEVKMEM
+    bool
+    default y
+
+config SERIAL_8250
+    bool
+    default y
+
+config SERIAL_8250_CONSOLE
+    bool
+    default y
+
+config SERIAL_8250_EXTENDED
+    bool
+    default y
+
+config SERIAL_8250_SHARE_IRQ
+    bool
+    default y
+
+config SERIAL_8250_FSL
+    bool
+    default y
+
+config SERIAL_CORE
+    bool
+    default y
+
+config SERIAL_CORE_CONSOLE
+    bool
+    default y
+
+config SERIAL_OF_PLATFORM
+    bool
+    default y
+
+config HW_RANDOM
+    bool
+    default y
+
+config HW_RANDOM_TIMERIOMEM
+    bool
+    default y
+
+config GEN_RTC
+    bool
+    default y
+
+config DEVPORT
+    bool
+    default y
+
+config I2C
+    bool
+    default y
+
+config I2C_BOARDINFO
+    bool
+    default y
+
+config I2C_COMPAT
+    bool
+    default y
+
+config I2C_CHARDEV
+    bool
+    default y
+
+config I2C_HELPER_AUTO
+    bool
+    default y
+
+config I2C_MPC
+    bool
+    default y
+
+config SPI
+    bool
+    default y
+
+config SPI_MASTER
+    bool
+    default y
+
+config SPI_BITBANG
+    bool
+    default y
+
+config ARCH_WANT_OPTIONAL_GPIOLIB
+    bool
+    default y
+
+config ARCH_REQUIRE_GPIOLIB
+    bool
+    default y
+
+config GPIO_DEVRES
+    bool
+    default y
+
+config GPIOLIB
+    bool
+    default y
+
+config OF_GPIO
+    bool
+    default y
+
+config GPIO_SYSFS
+    bool
+    default y
+
+config GPIO_MPC8XXX
+    bool
+    default y
+
+config HWMON
+    bool
+    default y
+
+config SENSORS_LM75
+    bool
+    default y
+
+config THERMAL
+    bool
+    default y
+
+config THERMAL_HWMON
+    bool
+    default y
+
+config THERMAL_DEFAULT_GOV_STEP_WISE
+    bool
+    default y
+
+config THERMAL_GOV_FAIR_SHARE
+    bool
+    default y
+
+config THERMAL_GOV_STEP_WISE
+    bool
+    default y
+
+config THERMAL_GOV_USER_SPACE
+    bool
+    default y
+
+config WATCHDOG
+    bool
+    default y
+
+config WATCHDOG_CORE
+    bool
+    default y
+
+config WATCHDOG_NOWAYOUT
+    bool
+    default y
+
+config 8xxx_WDT
+    tristate
+    default m
+
+config SSB_POSSIBLE
+    bool
+    default y
+
+config BCMA_POSSIBLE
+    bool
+    default y
+
+config USB_ARCH_HAS_OHCI
+    bool
+    default y
+
+config USB_ARCH_HAS_EHCI
+    bool
+    default y
+
+config USB_ARCH_HAS_XHCI
+    bool
+    default y
+
+config USB_SUPPORT
+    bool
+    default y
+
+config USB_COMMON
+    tristate
+    default m
+
+config USB_ARCH_HAS_HCD
+    bool
+    default y
+
+config USB
+    tristate
+    default m
+
+config USB_ANNOUNCE_NEW_DEVICES
+    bool
+    default y
+
+config USB_DEFAULT_PERSIST
+    bool
+    default y
+
+config USB_DEVICEFS
+    bool
+    default y
+
+config USB_DEVICE_CLASS
+    bool
+    default y
+
+config USB_EHCI_HCD
+    tristate
+    default m
+
+config USB_EHCI_ROOT_HUB_TT
+    bool
+    default y
+
+config USB_EHCI_TT_NEWSCHED
+    bool
+    default y
+
+config USB_FSL_MPH_DR_OF
+    tristate
+    default m
+
+config USB_EHCI_PCI
+    tristate
+    default m
+
+config USB_EHCI_FSL
+    bool
+    default y
+
+config USB_EHCI_HCD_PPC_OF
+    bool
+    default y
+
+config USB_EHCI_HCD_PLATFORM
+    tristate
+    default m
+
+config USB_OHCI_HCD
+    tristate
+    default m
+
+config USB_OHCI_HCD_PPC_OF_BE
+    bool
+    default y
+
+config USB_OHCI_HCD_PPC_OF
+    bool
+    default y
+
+config USB_OHCI_HCD_PCI
+    bool
+    default y
+
+config USB_OHCI_BIG_ENDIAN_DESC
+    bool
+    default y
+
+config USB_OHCI_BIG_ENDIAN_MMIO
+    bool
+    default y
+
+config USB_OHCI_LITTLE_ENDIAN
+    bool
+    default y
+
+config USB_STORAGE
+    tristate
+    default m
+
+config USB_SERIAL
+    tristate
+    default m
+
+config USB_SERIAL_GENERIC
+    bool
+    default y
+
+config USB_SERIAL_PL2303
+    tristate
+    default m
+
+config USB_SERIAL_QUALCOMM
+    tristate
+    default m
+
+config USB_SERIAL_WWAN
+    tristate
+    default m
+
+config USB_SERIAL_OPTION
+    tristate
+    default m
+
+config NEW_LEDS
+    bool
+    default y
+
+config LEDS_CLASS
+    bool
+    default y
+
+config LEDS_GPIO
+    bool
+    default y
+
+config LEDS_TRIGGERS
+    bool
+    default y
+
+config LEDS_TRIGGER_GPIO
+    bool
+    default y
+
+config LEDS_TRIGGER_NETDEV
+    bool
+    default y
+
+config DMADEVICES
+    bool
+    default y
+
+config ASYNC_TX_ENABLE_CHANNEL_SWITCH
+    bool
+    default y
+
+config FSL_DMA
+    bool
+    default y
+
+config DMA_ENGINE
+    bool
+    default y
+
+config DMA_OF
+    bool
+    default y
+
+config IOMMU_SUPPORT
+    bool
+    default y
+
+config OF_IOMMU
+    bool
+    default y
+
+config IRQCHIP
+    bool
+    default y
+
+config EXT2_FS
+    tristate
+    default m
+
+config EXT2_FS_XATTR
+    bool
+    default y
+
+config EXT2_FS_XIP
+    bool
+    default y
+
+config FS_XIP
+    bool
+    default y
+
+config FS_MBCACHE
+    tristate
+    default m
+
+config FILE_LOCKING
+    bool
+    default y
+
+config DIRECT_IO
+    bool
+    default y
+
+config FSNOTIFY
+    bool
+    default y
+
+config INOTIFY_USER
+    bool
+    default y
+
+config FANOTIFY
+    bool
+    default y
+
+config FSCACHE
+    tristate
+    default m
+
+config ISO9660_FS
+    tristate
+    default m
+
+config JOLIET
+    bool
+    default y
+
+config ZISOFS
+    bool
+    default y
+
+config UDF_FS
+    tristate
+    default m
+
+config UDF_NLS
+    bool
+    default y
+
+config FAT_FS
+    tristate
+    default m
+
+config MSDOS_FS
+    tristate
+    default m
+
+config VFAT_FS
+    tristate
+    default m
+
+config PROC_FS
+    bool
+    default y
+
+config PROC_SYSCTL
+    bool
+    default y
+
+config PROC_PAGE_MONITOR
+    bool
+    default y
+
+config PROC_STRIPPED
+    bool
+    default y
+
+config SYSFS
+    bool
+    default y
+
+config TMPFS
+    bool
+    default y
+
+config MISC_FILESYSTEMS
+    bool
+    default y
+
+config HFSPLUS_FS
+    tristate
+    default m
+
+config JFFS2_FS
+    tristate
+    default m
+
+config JFFS2_FS_WRITEBUFFER
+    bool
+    default y
+
+config JFFS2_COMPRESSION_OPTIONS
+    bool
+    default y
+
+config JFFS2_LZMA
+    bool
+    default y
+
+config JFFS2_CMODE_SIZE
+    bool
+    default y
+
+config SQUASHFS
+    bool
+    default y
+
+config SQUASHFS_XZ
+    bool
+    default y
+
+config SQUASHFS_EMBEDDED
+    bool
+    default y
+
+config NETWORK_FILESYSTEMS
+    bool
+    default y
+
+config CIFS
+    tristate
+    default m
+
+config CIFS_WEAK_PW_HASH
+    bool
+    default y
+
+config CIFS_SMB2
+    bool
+    default y
+
+config NLS
+    bool
+    default y
+
+config NLS_CODEPAGE_437
+    bool
+    default y
+
+config NLS_ISO8859_1
+    bool
+    default y
+
+config NLS_ISO8859_2
+    bool
+    default y
+
+config NLS_UTF8
+    bool
+    default y
+
+config UCC_FAST
+    bool
+    default y
+
+config UCC
+    bool
+    default y
+
+config BITREVERSE
+    bool
+    default y
+
+config GENERIC_STRNCPY_FROM_USER
+    bool
+    default y
+
+config GENERIC_STRNLEN_USER
+    bool
+    default y
+
+config GENERIC_PCI_IOMAP
+    bool
+    default y
+
+config GENERIC_IO
+    bool
+    default y
+
+config CRC_CCITT
+    bool
+    default y
+
+config CRC16
+    tristate
+    default m
+
+config CRC_ITU_T
+    tristate
+    default m
+
+config CRC32
+    bool
+    default y
+
+config CRC32_SLICEBY8
+    bool
+    default y
+
+config LIBCRC32C
+    bool
+    default y
+
+config ZLIB_INFLATE
+    bool
+    default y
+
+config ZLIB_DEFLATE
+    bool
+    default y
+
+config XZ_DEC
+    bool
+    default y
+
+config XZ_DEC_X86
+    bool
+    default y
+
+config XZ_DEC_POWERPC
+    bool
+    default y
+
+config XZ_DEC_IA64
+    bool
+    default y
+
+config XZ_DEC_ARM
+    bool
+    default y
+
+config XZ_DEC_ARMTHUMB
+    bool
+    default y
+
+config XZ_DEC_SPARC
+    bool
+    default y
+
+config XZ_DEC_BCJ
+    bool
+    default y
+
+config LZMA_COMPRESS
+    tristate
+    default m
+
+config LZMA_DECOMPRESS
+    tristate
+    default m
+
+config TEXTSEARCH
+    bool
+    default y
+
+config TEXTSEARCH_KMP
+    bool
+    default y
+
+config TEXTSEARCH_BM
+    bool
+    default y
+
+config TEXTSEARCH_FSM
+    bool
+    default y
+
+config HAS_IOMEM
+    bool
+    default y
+
+config HAS_IOPORT
+    bool
+    default y
+
+config HAS_DMA
+    bool
+    default y
+
+config DQL
+    bool
+    default y
+
+config NLATTR
+    bool
+    default y
+
+config GENERIC_ATOMIC64
+    bool
+    default y
+
+config ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
+    bool
+    default y
+
+config AVERAGE
+    bool
+    default y
+
+config PRINTK_TIME
+    bool
+    default y
+
+config MAGIC_SYSRQ
+    bool
+    default y
+
+config DEBUG_FS
+    bool
+    default y
+
+config PANIC_ON_OOPS
+    bool
+    default y
+
+config HAVE_DEBUG_KMEMLEAK
+    bool
+    default y
+
+config HAVE_FUNCTION_TRACER
+    bool
+    default y
+
+config HAVE_FUNCTION_GRAPH_TRACER
+    bool
+    default y
+
+config HAVE_DYNAMIC_FTRACE
+    bool
+    default y
+
+config HAVE_FTRACE_MCOUNT_RECORD
+    bool
+    default y
+
+config HAVE_SYSCALL_TRACEPOINTS
+    bool
+    default y
+
+config TRACING_SUPPORT
+    bool
+    default y
+
+config HAVE_ARCH_KGDB
+    bool
+    default y
+
+config PPC_WERROR
+    bool
+    default y
+
+config KEYS
+    bool
+    default y
+
+config DEFAULT_SECURITY_DAC
+    bool
+    default y
+
+config CRYPTO
+    bool
+    default y
+
+config CRYPTO_ALGAPI
+    bool
+    default y
+
+config CRYPTO_ALGAPI2
+    bool
+    default y
+
+config CRYPTO_AEAD
+    bool
+    default y
+
+config CRYPTO_AEAD2
+    bool
+    default y
+
+config CRYPTO_BLKCIPHER
+    bool
+    default y
+
+config CRYPTO_BLKCIPHER2
+    bool
+    default y
+
+config CRYPTO_HASH
+    bool
+    default y
+
+config CRYPTO_HASH2
+    bool
+    default y
+
+config CRYPTO_RNG
+    bool
+    default y
+
+config CRYPTO_RNG2
+    bool
+    default y
+
+config CRYPTO_PCOMP2
+    bool
+    default y
+
+config CRYPTO_MANAGER
+    bool
+    default y
+
+config CRYPTO_MANAGER2
+    bool
+    default y
+
+config CRYPTO_MANAGER_DISABLE_TESTS
+    bool
+    default y
+
+config CRYPTO_GF128MUL
+    tristate
+    default m
+
+config CRYPTO_NULL
+    tristate
+    default m
+
+config CRYPTO_WORKQUEUE
+    bool
+    default y
+
+config CRYPTO_AUTHENC
+    bool
+    default y
+
+config CRYPTO_GCM
+    tristate
+    default m
+
+config CRYPTO_SEQIV
+    tristate
+    default m
+
+config CRYPTO_CBC
+    bool
+    default y
+
+config CRYPTO_CTR
+    tristate
+    default m
+
+config CRYPTO_ECB
+    bool
+    default y
+
+config CRYPTO_HMAC
+    bool
+    default y
+
+config CRYPTO_CRC32C
+    bool
+    default y
+
+config CRYPTO_GHASH
+    tristate
+    default m
+
+config CRYPTO_MD4
+    bool
+    default y
+
+config CRYPTO_MD5
+    bool
+    default y
+
+config CRYPTO_MICHAEL_MIC
+    bool
+    default y
+
+config CRYPTO_SHA1
+    bool
+    default y
+
+config CRYPTO_SHA1_PPC
+    bool
+    default y
+
+config CRYPTO_SHA256
+    bool
+    default y
+
+config CRYPTO_AES
+    bool
+    default y
+
+config CRYPTO_ARC4
+    bool
+    default y
+
+config CRYPTO_DES
+    bool
+    default y
+
+config CRYPTO_DEFLATE
+    tristate
+    default m
+
+config CRYPTO_USER_API
+    bool
+    default y
+
+config CRYPTO_USER_API_HASH
+    bool
+    default y
+
+config CRYPTO_USER_API_SKCIPHER
+    bool
+    default y
+
+config CRYPTO_HW
+    bool
+    default y
+
+config CRYPTO_DEV_TALITOS
+    tristate
+    default m
+
+config OCF_OCF
+    tristate
+    default m
+
+config OCF_RANDOMHARVEST
+    bool
+    default y
+
+config OCF_CRYPTODEV
+    tristate
+    default m
+
+config OCF_CRYPTOSOFT
+    tristate
+    default m
+
+config OCF_BENCH
+    tristate
+    default m
+
+config PPC_LIB_RHEAP
+    bool
+    default y
+

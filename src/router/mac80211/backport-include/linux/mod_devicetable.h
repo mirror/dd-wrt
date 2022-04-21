@@ -14,4 +14,19 @@
 #define HID_ANY_ID                             (~0)
 #endif
 
+#if LINUX_VERSION_IS_LESS(5,7,0)
+#define MHI_DEVICE_MODALIAS_FMT "mhi:%s"
+#define MHI_NAME_SIZE 32
+
+/**
+ * struct mhi_device_id - MHI device identification
+ * @chan: MHI channel name
+ * @driver_data: driver data;
+ */
+struct mhi_device_id {
+	const char chan[MHI_NAME_SIZE];
+	kernel_ulong_t driver_data;
+};
+#endif
+
 #endif /* __BACKPORT_MOD_DEVICETABLE_H */

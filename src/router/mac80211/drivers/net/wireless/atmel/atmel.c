@@ -75,7 +75,6 @@
 MODULE_AUTHOR("Simon Kelley");
 MODULE_DESCRIPTION("Support for Atmel at76c50x 802.11 wireless ethernet cards.");
 MODULE_LICENSE("GPL");
-MODULE_SUPPORTED_DEVICE("Atmel at76c50x wireless cards");
 
 /* The name of the firmware file to be loaded
    over-rides any automatic selection */
@@ -1227,7 +1226,7 @@ static irqreturn_t service_interrupt(int irq, void *dev_id)
 
 		case ISR_RxFRAMELOST:
 			priv->wstats.discard.misc++;
-			/* fall through */
+			fallthrough;
 		case ISR_RxCOMPLETE:
 			rx_done_irq(priv);
 			break;
@@ -4232,7 +4231,7 @@ static void atmel_wmem32(struct atmel_private *priv, u16 pos, u32 data)
 /* Copyright 2003 Matthew T. Russotto                                      */
 /* But derived from the Atmel 76C502 firmware written by Atmel and         */
 /* included in "atmel wireless lan drivers" package                        */
-/**
+/*
     This file is part of net.russotto.AtmelMACFW, hereto referred to
     as AtmelMACFW
 

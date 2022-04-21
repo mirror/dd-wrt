@@ -4,5 +4,5 @@ config MT7601U
 	depends on m
 	depends on MAC80211
 	depends on USB
-	---help---
+	help
 	  This adds support for MT7601U-based wireless USB dongles.

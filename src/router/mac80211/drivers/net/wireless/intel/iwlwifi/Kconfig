@@ -32,7 +32,7 @@ config IWLWIFI
 	  In order to use this driver, you will need a firmware
 	  image for it. You can obtain the microcode from:
 
-	          <http://wireless.kernel.org/en/users/Drivers/iwlwifi>.
+	          <https://wireless.wiki.kernel.org/en/users/Drivers/iwlwifi>.
 
 	  The firmware is typically installed in /lib/firmware. You can
 	  look in the hotplug script /etc/hotplug/firmware.agent to
@@ -50,7 +50,7 @@ config IWLWIFI_LEDS
 	bool
 	depends on LEDS_CLASS=y || LEDS_CLASS=IWLWIFI
 	depends on IWLMVM || IWLDVM
-	select BPAUTO_LEDS_TRIGGERS
+	depends on LEDS_TRIGGERS
 	select MAC80211_LEDS
 	default y
 

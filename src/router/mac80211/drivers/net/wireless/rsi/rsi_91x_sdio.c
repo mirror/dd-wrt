@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014 Redpine Signals Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -24,10 +24,7 @@
 /* Default operating mode is wlan STA + BT */
 static u16 dev_oper_mode = DEV_OPMODE_STA_BT_DUAL;
 module_param(dev_oper_mode, ushort, 0444);
-MODULE_PARM_DESC(dev_oper_mode,
-		 "1[Wi-Fi], 4[BT], 8[BT LE], 5[Wi-Fi STA + BT classic]\n"
-		 "9[Wi-Fi STA + BT LE], 13[Wi-Fi STA + BT classic + BT LE]\n"
-		 "6[AP + BT classic], 14[AP + BT classic + BT LE]");
+MODULE_PARM_DESC(dev_oper_mode, DEV_OPMODE_PARAM_DESC);
 
 /**
  * rsi_sdio_set_cmd52_arg() - This function prepares cmd 52 read/write arg.
@@ -153,9 +150,7 @@ static void rsi_handle_interrupt(struct sdio_func *function)
 	if (adapter->priv->fsm_state == FSM_FW_NOT_LOADED)
 		return;
 
-	dev->sdio_irq_task = current;
-	rsi_interrupt_handler(adapter);
-	dev->sdio_irq_task = NULL;
+	rsi_set_event(&dev->rx_thread.event);
 }
 
 /**
@@ -799,7 +794,7 @@ static int rsi_sdio_host_intf_write_pkt(struct rsi_hw *adapter,
 
 /**
  * rsi_sdio_host_intf_read_pkt() - This function reads the packet
-				   from the device.
+ *				   from the device.
  * @adapter: Pointer to the adapter data structure.
  * @pkt: Pointer to the packet data to be read from the the device.
  * @length: Length of the data to be read from the device.
@@ -832,11 +827,10 @@ int rsi_sdio_host_intf_read_pkt(struct rsi_hw *adapter,
  * rsi_init_sdio_interface() - This function does init specific to SDIO.
  *
  * @adapter: Pointer to the adapter data structure.
- * @pkt: Pointer to the packet data to be read from the the device.
+ * @pfunction: Pointer to the sdio_func structure.
  *
  * Return: 0 on success, -1 on failure.
  */
-
 static int rsi_init_sdio_interface(struct rsi_hw *adapter,
 				   struct sdio_func *pfunction)
 {
@@ -1038,10 +1032,10 @@ static int rsi_probe(struct sdio_func *pfunction,
 		goto fail_free_adapter;
 	}
 
-	if (pfunction->device == RSI_SDIO_PID_9113) {
+	if (pfunction->device == SDIO_DEVICE_ID_RSI_9113) {
 		rsi_dbg(ERR_ZONE, "%s: 9113 module detected\n", __func__);
 		adapter->device_model = RSI_DEV_9113;
-	} else  if (pfunction->device == RSI_SDIO_PID_9116) {
+	} else  if (pfunction->device == SDIO_DEVICE_ID_RSI_9116) {
 		rsi_dbg(ERR_ZONE, "%s: 9116 module detected\n", __func__);
 		adapter->device_model = RSI_DEV_9116;
 	} else {
@@ -1059,8 +1053,6 @@ static int rsi_probe(struct sdio_func *pfunction,
 		rsi_dbg(ERR_ZONE, "%s: Unable to init rx thrd\n", __func__);
 		goto fail_kill_thread;
 	}
-	skb_queue_head_init(&sdev->rx_q.head);
-	sdev->rx_q.num_rx_pkts = 0;
 
 	sdio_claim_host(pfunction);
 	if (sdio_claim_irq(pfunction, rsi_handle_interrupt)) {
@@ -1518,7 +1510,7 @@ static int rsi_restore(struct device *dev)
 }
 static const struct dev_pm_ops rsi_pm_ops = {
 	.suspend = rsi_suspend,
-	.resume = rsi_resume,
+	.resume_noirq = rsi_resume,
 	.freeze = rsi_freeze,
 	.thaw = rsi_thaw,
 	.restore = rsi_restore,
@@ -1526,8 +1518,8 @@ static const struct dev_pm_ops rsi_pm_ops = {
 #endif
 
 static const struct sdio_device_id rsi_dev_table[] =  {
-	{ SDIO_DEVICE(RSI_SDIO_VENDOR_ID, RSI_SDIO_PID_9113) },
-	{ SDIO_DEVICE(RSI_SDIO_VENDOR_ID, RSI_SDIO_PID_9116) },
+	{ SDIO_DEVICE(SDIO_VENDOR_ID_RSI, SDIO_DEVICE_ID_RSI_9113) },
+	{ SDIO_DEVICE(SDIO_VENDOR_ID_RSI, SDIO_DEVICE_ID_RSI_9116) },
 	{ /* Blank */},
 };
 
@@ -1576,7 +1568,6 @@ module_exit(rsi_module_exit);
 
 MODULE_AUTHOR("Redpine Signals Inc");
 MODULE_DESCRIPTION("Common SDIO layer for RSI drivers");
-MODULE_SUPPORTED_DEVICE("RSI-91x");
 MODULE_DEVICE_TABLE(sdio, rsi_dev_table);
 MODULE_FIRMWARE(FIRMWARE_RSI9113);
 MODULE_VERSION("0.1");

@@ -74,7 +74,7 @@ ieee80211_tx_h_michael_mic_add(struct ieee80211_tx_data *tx)
 		 skb_tailroom(skb), tail))
 		return TX_DROP;
 
-	mic = (void *)skb_put(skb, MICHAEL_MIC_LEN);
+	mic = skb_put(skb, MICHAEL_MIC_LEN);
 
 	if (tx->key->conf.flags & IEEE80211_KEY_FLAG_PUT_MIC_SPACE) {
 		/* Zeroed MIC can help with debug */
@@ -220,7 +220,7 @@ static int tkip_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 		    skb_headroom(skb) < IEEE80211_TKIP_IV_LEN))
 		return -1;
 
-	pos = (void *)skb_push(skb, IEEE80211_TKIP_IV_LEN);
+	pos = skb_push(skb, IEEE80211_TKIP_IV_LEN);
 	memmove(pos, pos + IEEE80211_TKIP_IV_LEN, hdrlen);
 	pos += hdrlen;
 
@@ -312,8 +312,7 @@ ieee80211_crypto_tkip_decrypt(struct ieee80211_rx_data *rx)
 }
 
 
-static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad,
-				u16 data_len)
+static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad)
 {
 	__le16 mask_fc;
 	int a4_included, mgmt;
@@ -343,8 +342,14 @@ static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad,
 	else
 		qos_tid = 0;
 
-	/* First block, b_0 */
-	b_0[0] = 0x59; /* flags: Adata: 1, M: 011, L: 001 */
+	/* In CCM, the initial vectors (IV) used for CTR mode encryption and CBC
+	 * mode authentication are not allowed to collide, yet both are derived
+	 * from this vector b_0. We only set L := 1 here to indicate that the
+	 * data size can be represented in (L+1) bytes. The CCM layer will take
+	 * care of storing the data length in the top (L+1) bytes and setting
+	 * and clearing the other bits as is required to derive the two IVs.
+	 */
+	b_0[0] = 0x1;
 
 	/* Nonce: Nonce Flags | A2 | PN
 	 * Nonce Flags: Priority (b0..b3) | Management (b4) | Reserved (b5..b7)
@@ -352,8 +357,6 @@ static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad,
 	b_0[1] = qos_tid | (mgmt << 4);
 	memcpy(&b_0[2], hdr->addr2, ETH_ALEN);
 	memcpy(&b_0[8], pn, IEEE80211_CCMP_PN_LEN);
-	/* l(m) */
-	put_unaligned_be16(data_len, &b_0[14]);
 
 	/* AAD (extra authenticate-only data) / masked 802.11 header
 	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
@@ -410,7 +413,7 @@ static int ccmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb,
 	u8 *pos;
 	u8 pn[6];
 	u64 pn64;
-	u8 aad[2 * AES_BLOCK_SIZE];
+	u8 aad[CCM_AAD_LEN];
 	u8 b_0[AES_BLOCK_SIZE];
 
 	if (info->control.hw_key &&
@@ -438,7 +441,7 @@ static int ccmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb,
 		    skb_headroom(skb) < IEEE80211_CCMP_HDR_LEN))
 		return -1;
 
-	pos = (void *)skb_push(skb, IEEE80211_CCMP_HDR_LEN);
+	pos = skb_push(skb, IEEE80211_CCMP_HDR_LEN);
 	memmove(pos, pos + IEEE80211_CCMP_HDR_LEN, hdrlen);
 
 	/* the HW only needs room for the IV, but not the actual IV */
@@ -465,10 +468,9 @@ static int ccmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb,
 		return 0;
 
 	pos += IEEE80211_CCMP_HDR_LEN;
-	ccmp_special_blocks(skb, pn, b_0, aad, len);
+	ccmp_special_blocks(skb, pn, b_0, aad);
 	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, b_0, aad, pos, len,
-				  skb_put(skb, mic_len), mic_len);
-
+					 skb_put(skb, mic_len), mic_len);
 	return 0;
 }
 
@@ -545,7 +547,7 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx,
 			u8 aad[2 * AES_BLOCK_SIZE];
 			u8 b_0[AES_BLOCK_SIZE];
 			/* hardware didn't decrypt/verify MIC */
-			ccmp_special_blocks(skb, pn, b_0, aad, data_len);
+			ccmp_special_blocks(skb, pn, b_0, aad);
 
 			if (ieee80211_aes_ccm_decrypt(
 				    key->u.ccmp.tfm, b_0, aad,
@@ -648,7 +650,7 @@ static int gcmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 	u8 *pos;
 	u8 pn[6];
 	u64 pn64;
-	u8 aad[2 * AES_BLOCK_SIZE];
+	u8 aad[GCM_AAD_LEN];
 	u8 j_0[AES_BLOCK_SIZE];
 
 	if (info->control.hw_key &&
@@ -675,7 +677,7 @@ static int gcmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 		    skb_headroom(skb) < IEEE80211_GCMP_HDR_LEN))
 		return -1;
 
-	pos = (void *)skb_push(skb, IEEE80211_GCMP_HDR_LEN);
+	pos = skb_push(skb, IEEE80211_GCMP_HDR_LEN);
 	memmove(pos, pos + IEEE80211_GCMP_HDR_LEN, hdrlen);
 	skb_set_network_header(skb, skb_network_offset(skb) +
 				    IEEE80211_GCMP_HDR_LEN);
@@ -705,10 +707,8 @@ static int gcmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 
 	pos += IEEE80211_GCMP_HDR_LEN;
 	gcmp_special_blocks(skb, pn, j_0, aad);
-	ieee80211_aes_gcm_encrypt(key->u.gcmp.tfm, j_0, aad, pos, len,
-				  skb_put(skb, IEEE80211_GCMP_MIC_LEN));
-
-	return 0;
+	return ieee80211_aes_gcm_encrypt(key->u.gcmp.tfm, j_0, aad, pos, len,
+					 skb_put(skb, IEEE80211_GCMP_MIC_LEN));
 }
 
 ieee80211_tx_result
@@ -826,7 +826,7 @@ ieee80211_crypto_cs_encrypt(struct ieee80211_tx_data *tx,
 
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
 
-	pos = (void *)skb_push(skb, iv_len);
+	pos = skb_push(skb, iv_len);
 	memmove(pos, pos + iv_len, hdrlen);
 
 	return TX_CONTINUE;
@@ -965,7 +965,7 @@ ieee80211_crypto_aes_cmac_encrypt(struct ieee80211_tx_data *tx)
 	if (WARN_ON(skb_tailroom(skb) < sizeof(*mmie)))
 		return TX_DROP;
 
-	mmie = (void *)skb_put(skb, sizeof(*mmie));
+	mmie = skb_put(skb, sizeof(*mmie));
 	mmie->element_id = WLAN_EID_MMIE;
 	mmie->length = sizeof(*mmie) - 2;
 	mmie->key_id = cpu_to_le16(key->conf.keyidx);
@@ -1012,7 +1012,7 @@ ieee80211_crypto_aes_cmac_256_encrypt(struct ieee80211_tx_data *tx)
 	if (WARN_ON(skb_tailroom(skb) < sizeof(*mmie)))
 		return TX_DROP;
 
-	mmie = (void *)skb_put(skb, sizeof(*mmie));
+	mmie = skb_put(skb, sizeof(*mmie));
 	mmie->element_id = WLAN_EID_MMIE;
 	mmie->length = sizeof(*mmie) - 2;
 	mmie->key_id = cpu_to_le16(key->conf.keyidx);
@@ -1140,9 +1140,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct ieee80211_tx_data *tx)
 	struct ieee80211_key *key = tx->key;
 	struct ieee80211_mmie_16 *mmie;
 	struct ieee80211_hdr *hdr;
-	u8 aad[20];
+	u8 aad[GMAC_AAD_LEN];
 	u64 pn64;
-	u8 nonce[12];
+	u8 nonce[GMAC_NONCE_LEN];
 
 	if (WARN_ON(skb_queue_len(&tx->skbs) != 1))
 		return TX_DROP;
@@ -1157,7 +1157,7 @@ ieee80211_crypto_aes_gmac_encrypt(struct ieee80211_tx_data *tx)
 	if (WARN_ON(skb_tailroom(skb) < sizeof(*mmie)))
 		return TX_DROP;
 
-	mmie = (void *)skb_put(skb, sizeof(*mmie));
+	mmie = skb_put(skb, sizeof(*mmie));
 	mmie->element_id = WLAN_EID_MMIE;
 	mmie->length = sizeof(*mmie) - 2;
 	mmie->key_id = cpu_to_le16(key->conf.keyidx);
@@ -1188,7 +1188,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct ieee80211_key *key = rx->key;
 	struct ieee80211_mmie_16 *mmie;
-	u8 aad[20], *mic, ipn[6], nonce[12];
+	u8 aad[GMAC_AAD_LEN], *mic, ipn[6], nonce[GMAC_NONCE_LEN];
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 
 	if (!ieee80211_is_mgmt(hdr->frame_control))

@@ -1,0 +1,1750 @@
+wmmrule ETSI:
+	vo_c: cw_min=3, cw_max=7, aifsn=2, cot=2
+	vi_c: cw_min=7, cw_max=15, aifsn=2, cot=4
+	be_c: cw_min=15, cw_max=1023, aifsn=3, cot=6
+	bk_c: cw_min=15, cw_max=1023, aifsn=7, cot=6
+	vo_ap: cw_min=3, cw_max=7, aifsn=1, cot=2
+	vi_ap: cw_min=7, cw_max=15, aifsn=1, cot=4
+	be_ap: cw_min=15, cw_max=63, aifsn=3, cot=6
+	bk_ap: cw_min=15, cw_max=1023, aifsn=7, cot=6
+
+# This is the world regulatory domain
+country 00:
+	# There is no global intersection for 802.11ah, so just mark the entire
+	# possible band as NO-IR
+	(755 - 928 @ 2), (20), NO-IR
+	(2402 - 2472 @ 40), (20)
+	# Channel 12 - 13.
+	(2457 - 2482 @ 20), (20), NO-IR
+	# Channel 14. Only JP enables this and for 802.11b only
+	(2474 - 2494 @ 20), (20), NO-IR, NO-OFDM
+	# Channel 36 - 48
+	(5170 - 5250 @ 80), (20), NO-IR
+	# Channel 52 - 64
+	(5250 - 5330 @ 80), (20), NO-IR
+	# Channel 100 - 144
+	(5490 - 5730 @ 160), (20), NO-IR
+	# Channel 149 - 165
+	(5735 - 5835 @ 80), (20), NO-IR
+	# IEEE 802.11ad (60GHz), channels 1..3
+	(57240 - 63720 @ 2160), (0)
+
+# AD as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries: https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country AD:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country AE:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country AF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# Source:
+# http://pucanguilla.org/Downloads/January2005-Anguilla%20Table%20of%20Allocations.pdf
+country AI:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+# AL as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country AL:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+
+country AM:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 20), (18)
+	(5250 - 5330 @ 20), (18)
+
+country AN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country AR:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country AS:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# AT as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# AT: https://www.rtr.at/en/tk/Spektrum5GHz/1997_bmvit-info-052010en.pdf
+# AT: acceptance https://www.ris.bka.gv.at/Dokumente/BgblAuth/BGBLA_2014_II_63/BGBLA_2014_II_63.pdfsig
+country AT:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# Source:
+# https://www.legislation.gov.au/Details/F2016C00432
+# Both and are acceptable per AS/NZS 4268 Appendix B.
+# The EIRP for DFS bands can be increased by 3dB if TPC is implemented.
+# In order to allow 80MHz operation between 5650-5730MHz the upper boundary
+# of this more restrictive band has been shifted up by 5MHz from 5725MHz.
+country AU:
+	(2400 - 2483.5 @ 40), (36)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR
+	(5250 - 5350 @ 80), (20), NO-OUTDOOR
+	(5470 - 5600 @ 80), (27)
+	(5650 - 5730 @ 80), (27)
+	(5730 - 5850 @ 80), (36)
+	(57000 - 66000 @ 2160), (43), NO-OUTDOOR
+
+country AW:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country AZ:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (18)
+	(5250 - 5330 @ 80), (18)
+
+# BA as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country BA:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country BB:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (23)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+country BD: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5735 - 5835 @ 80), (30)
+
+# BE as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# BE: https://www.ibpt.be/public/files/en/21760/B03-01_2.1_EN.pdf
+# BE: https://www.ibpt.be/public/files/en/21761/B03-02_2.1_EN.pdf
+# BE: https://www.ibpt.be/public/files/en/21762/B03-03_2.1_EN.pdf
+# BE: https://www.ibpt.be/public/files/en/22165/B01-28_3.1_EN.pdf
+country BE:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country BF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Bulgarian rules as defined by the Communications Regulation Commission in the
+# following documents:
+#
+# Rules for carrying out electronic communications through radio equipment using
+# radio spectrum, which does not need to be individually assigned (the Rules):
+# http://www.crc.bg/files/_bg/Pravila_09_06_2015.pdf
+#
+# List of radio equipment that uses harmonized within the European Union bands
+# and electronic communications terminal equipment (the List):
+# http://www.crc.bg/files/_bg/Spisak_2015.pdf
+#
+# Note: The transmit power limits in the 5250-5350 MHz and 5470-5725 MHz bands
+# can be raised by 3 dBm if TPC is enabled. Refer to BDS EN 301 893 for details.
+#
+# BG as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# BG: https://crc.bg/files/_en/Electronic_Communications_Revised_EN1.pdf
+# BG: acceptance of 2006/771/EC https://crc.bg/files/Pravila_06_12_2018.pdf
+country BG:
+	# Wideband data transmission systems (WDTS) in the 2.4GHz ISM band, ref:
+	# I.22 of the List, BDS EN 300 328
+	(2400 - 2483.5 @ 40), (100 mW)
+	# 5 GHz Radio Local Area Networks (RLANs), ref:
+	# II.H01 of the List, BDS EN 301 893
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	# II.H01 of the List, I.54 from the List, BDS EN 301 893
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	# I.43 of the List, BDS EN 300 440-2, BDS EN 300 440-1
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	# II.H03 of the List, BDS EN 302 567-2
+	(57000 - 66000 @ 2160), (40)
+
+country BH: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 20), (20)
+	(5250 - 5330 @ 20), (20)
+	(5735 - 5835 @ 20), (20)
+
+country BL:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country BM:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country BN: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5735 - 5835 @ 80), (20)
+
+country BO: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5250 - 5330 @ 80), (30)
+	(5735 - 5835 @ 80), (30)
+
+country BR:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country BS:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.bicma.gov.bt/paper/publication/nrrpart4.pdf
+country BT:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country BY:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country BZ: DFS-JP
+	(2402 - 2482 @ 40), (30)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# https://www.ic.gc.ca/eic/site/smt-gst.nsf/vwapj/rss-247-i2-e.pdf/$file/rss-247-i2-e.pdf
+country CA:
+	(2402 - 2472 @ 40), (30)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR
+	(5250 - 5350 @ 80), (24)
+	(5470 - 5600 @ 80), (24)
+	(5650 - 5730 @ 80), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.art-rca.org
+country CF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 40), (17)
+	(5250 - 5330 @ 40), (24)
+	(5490 - 5730 @ 40), (24)
+	(5735 - 5835 @ 40), (30)
+
+
+# CH as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# CH: https://www.ofcomnet.ch/api/rir/1010/05
+# CH: https://www.ofcomnet.ch/api/rir/1010/04
+# CH: https://www.ofcomnet.ch/api/rir/1008/12
+# CH: https://www.ofcomnet.ch/#/fatTable
+country CH:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country CI:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country CL: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5735 - 5835 @ 80), (20)
+
+# Source:
+# https://wap.miit.gov.cn/cms_files/filemanager/1226211233/attach/20219/d125301b13454551b698ff5afa49ca28.pdf
+# Note: The transmit power for 5150-5350MHz bands can be raised by 3dBm when TPC is implemented
+country CN:
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5350 @ 80), (20)
+	(5725 - 5850 @ 80), (33)
+	# 60 GHz band channels 1,4: 28dBm, channels 2,3: 44dBm
+	# ref: http://www.miit.gov.cn/n11293472/n11505629/n11506593/n11960250/n11960606/n11960700/n12330791.files/n12330790.pdf
+	(57240 - 59400 @ 2160), (28)
+	(59400 - 63720 @ 2160), (44)
+	(63720 - 65880 @ 2160), (28)
+
+country CO:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country CR:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24)
+	(5490 - 5730 @ 20), (24)
+	(5735 - 5835 @ 20), (30)
+
+# Source:
+# https://www.mincom.gob.cu/es/marco-legal
+# - Redes Informáticas
+#    Resolución 98- 2019 Reglamento de Redes Inalámbricas:
+# https://www.mincom.gob.cu/sites/default/files/marcoregulatorio/r_98-19_reglamento_redes_inalambricas.pdf
+country CU:
+	(2400 - 2483.5 @ 40), (200 mW)
+	(5150 - 5350 @ 80), (200 mW), NO-IR, NO-OUTDOOR
+	(5470 - 5725 @ 80), (250 mW), NO-IR
+	(5725 - 5850 @ 80), (200 mW)
+
+country CX:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+
+# CY as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# CY: http://www.mcw.gov.cy/mcw/dec/dec.nsf/all/292484CFC7013DD4C2256EBA0023D447/$file/Sxedio%20Radiosyxnothtwn%20ths%20Dhmokratias-3-8-2018-E2.2(English%20Unified%20Unofficial).pdf?openelement
+country CY:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# CZ as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# CZ: https://www.ctu.cz/cs/download/vseobecna-opravneni/archiv/vo-r_12-06_2010-09.pdf
+# CZ: https://www.ctu.cz/sites/default/files/obsah/ctu/vseobecne-opravneni-c.vo-r/10/12.2017-10/obrazky/vo-r10-122017-10.pdf
+country CZ:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# DE as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+#
+# Allocation for the 2.4 GHz band (Vfg 10 / 2013, Allgemeinzuteilung von
+# Frequenzen für die Nutzung in lokalen Netzwerken; Wireless Local Area
+# Networks (WLAN-Funkanwendungen).
+# https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/2013_10_WLAN_2,4GHz_pdf.pdf
+#
+# Allocation for the 5 GHz band (Vfg. 7 / 2010, Allgemeinzuteilung von
+# Frequenzen in den Bereichen 5150 MHz - 5350 MHz und 5470 MHz - 5725 MHz für
+# Funkanwendungen zur breitbandigen Datenübertragung, WAS/WLAN („Wireless
+# Access Systems including Wireless Local Area Networks“).
+# https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/2010_07_WLAN_5GHz_pdf.pdf
+#
+# The ETSI EN 300 440-1 standard for short range devices in the 5 GHz band has
+# been implemented in Germany:
+# https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/2014_69_SRD_pdf.pdf
+#
+# Allocation for the 60 GHz band (Allgemeinzuteilung von Frequenzen im
+# Bereich 57 GHz - 66 GHz für Funkanwendungen für weitbandige
+# Datenübertragungssysteme; „Multiple Gigabit WAS/RLAN Systems (MGWS)“).
+# https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/2011_08_MGWS_pdf.pdf
+#
+# Allocation for the WiFi 6E Band (Allgemeinzuteilung von Frequenzen im
+# Bereich 5945 MHz - 6425 MHz für drahtlose Zugangssysteme,
+# einschließlich lokaler Funknetze WAS/WLAN („Wireless Access Systems
+# including Wireless Local Area Networks“))
+# https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/MobilfunkDectWlanCBFunk/vfg552021WLAN6GHz.pdf
+country DE:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# DK as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# DK: https://ens.dk/sites/ens.dk/files/Tele/frekvensplan_0.pdf
+# 5GHz: https://erhvervsstyrelsen.dk/sites/default/files/007_interface-datanet_5-6_ghz.pdf.pdf
+# 60GHz: https://erhvervsstyrelsen.dk/sites/default/files/radiograenseflader-63.pdf
+country DK:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# Source:
+# http://www.ntrcdom.org/index.php?option=com_content&view=category&layout=blog&id=10&Itemid=55
+country DM:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+country DO:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+country DZ: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170.000 - 5250.000 @ 80.000), (23.00)
+	(5250.000 - 5330.000 @ 80.000), (23.00)
+	(5490.000 - 5670.000 @ 160.000), (23.00)
+
+# Source:
+# https://www.arcotel.gob.ec/wp-content/uploads/2018/04/NORMA-ESPECTRO-DE-USO-LIBRE-Y-ESPECTRO-PARA-USO-DETERMINADO-EN-BANDAS-LIBRES.pdf
+country EC:
+	(2400 - 2483.5 @ 40), (1000 mW)
+	(5150 - 5250 @ 80), (50 mW)
+	(5250 - 5350 @ 80), (125 mW)
+	(5470 - 5725 @ 160), (125 mW)
+	(5725 - 5850 @ 80), (1000 mW)
+
+# EE as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# EE: https://www.ttja.ee/et/ettevottele-organisatsioonile/sideteenused/raadioseadmed/wifi-seade
+# EE: https://www.itu.int/ITU-D/study_groups/SGP_1998-2002/JGRES09/pdf/estonia.pdf
+country EE:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# https://www.tra.gov.eg/en/industry/importing-of-equipment/Pages/Regulations-for-use-of-Wireless-Networks-Devices.aspx
+country EG:
+	(2402 - 2483.5 @ 40), (20)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), NO-OUTDOOR, wmmrule=ETSI
+
+# ES as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# ES: https://avancedigital.mineco.gob.es/espectro/Paginas/cnaf.aspx
+country ES:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country ET:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# FI as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country FI:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country FM:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# FR as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# FR: https://www.anfr.fr/fileadmin/mediatheque/documents/tnrbf/TNRBF_2021-12-14.pdf
+country FR:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E low power indoor
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-6 (ETSI EN 302 567 v2.2.1)
+	(57000 - 71000 @ 2160), (40)
+
+# GB as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# GB: https://www.ofcom.org.uk/__data/assets/pdf_file/0019/136009/Ofcom-Information-Sheet-5-GHz-RLANs.pdf
+# GB: https://www.ofcom.org.uk/__data/assets/pdf_file/0028/84970/ir-2030.pdf
+# GB: https://www.ofcom.org.uk/__data/assets/pdf_file/0013/126121/Statement_Implementing-Ofcoms-decision-on-the-57-71GHz-band.pdf
+country GB:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5730 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5850 @ 80), (200 mW), NO-OUTDOOR
+	# 60 GHz band channels 1-6
+	(57000 - 71000 @ 2160), (40)
+
+country GD:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country GE:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (18)
+	(5250 - 5330 @ 80), (18)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country GF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country GH:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country GL:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country GP:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+# GR as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# GR: https://www.eett.gr/opencms/export/sites/default/EETT_EN/Electronic_Communications/Radio_Communications/TelecommunicationEquipment/Radio_equipment_interface_requirement_2012.pdf
+# GR: https://www.eett.gr/opencms/export/sites/default/EETT_EN/Electronic_Communications/Radio_Communications/TelecommunicationEquipment/Radio_equipment_interface_requirement_107.pdf
+country GR:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country GT:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+country GU:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24)
+	(5490 - 5730 @ 20), (24)
+	(5735 - 5835 @ 20), (30)
+
+country GY:
+	(2402 - 2482 @ 40), (30)
+	(5735 - 5835 @ 80), (30)
+
+country HK:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5710 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country HN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country HR:
+# HR as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# HR: http://tablice.hakom.hr:8080/vis?lang=en
+# 6E: https://www.hakom.hr/UserDocsImages/op%C4%87e%20dozvole%20prosinac%202009.g/Opca_dozvola_236.pdf
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), wmmrule=ETSI
+	(5250 - 5350 @ 80), (200 mW), wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country HT:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# HU as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# HU: http://stir.nmhh.hu/?oldal=dokumentumGeneralo&root_rendeletelem_id=3&hatalyos=1
+# HU: http://english.nmhh.hu/cikk/297/Eljarasi_tajekoztato_a_24_GHzes_es_az_5_GHzes_savban_mukodo_berendezesek_engedelyezeserol
+# HU: http://nmhh.hu/dokumentum/319/kis_hatotavolsagu_eszkozok_srdk.pdf
+country HU:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country ID: DFS-JP
+	# ref: https://jdih.kominfo.go.id/produk_hukum/view/id/676/t/peraturan+menteri+komunikasi+dan+informatika+nomor+1+tahun+2019+tanggal+24+april+2019
+	(2400 - 2483.5 @ 40), (500 mW), NO-OUTDOOR
+	(5150 - 5350 @ 80), (200 mW), NO-OUTDOOR
+	(5725 - 5825 @ 80), (200 mW), NO-OUTDOOR
+
+# IE as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# IE: https://www.comreg.ie/publication-download/interface-requirements-for-radio-services-in-ireland
+# IE: https://www.comreg.ie/publication-download/permitted-short-range-devices-ireland
+country IE:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country IL:
+	(2402 - 2482 @ 40), (20)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR
+	(5250 - 5350 @ 80), (200 mW), NO-OUTDOOR
+
+country IN:
+	(2402 - 2482 @ 40), (20)
+	(5150 - 5250 @ 80), (30)
+	(5250 - 5350 @ 80), (24)
+	(5470 - 5725 @ 160), (24)
+	(5725 - 5875 @ 80), (30)
+
+country IR: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5735 - 5835 @ 80), (30)
+
+# IS as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# IS: https://www.pfs.is/library/Skrar/Tidnir-og-taekni/MHZ_21022019.pdf
+country IS:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# IT as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country IT:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country JM:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country JO: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (23)
+	(5735 - 5835 @ 80), (23)
+
+country JP: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(2474 - 2494 @ 20), (20), NO-OFDM
+	(4910 - 4990 @ 40), (23)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (23)
+	# 60 GHz band channels 2-4 at 10mW,
+	# ref: http://www.arib.or.jp/english/html/overview/doc/1-STD-T74v1_1.pdf
+	(57000 - 66000 @ 2160), (10 mW)
+
+country KE: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (23)
+	(5490 - 5570 @ 80), (30)
+	(5735 - 5775 @ 40), (23)
+
+country KH:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# Source
+# http://ntrc.kn/?page_id=7
+country KN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (30)
+	(5735 - 5815 @ 80), (30)
+
+country KP: DFS-JP
+	(2402 - 2482 @ 20), (20)
+	(5170 - 5250 @ 20), (20)
+	(5250 - 5330 @ 20), (20)
+	(5490 - 5630 @ 20), (30)
+	(5735 - 5815 @ 20), (30)
+
+# Source:
+# https://www.law.go.kr/LSW//admRulLsInfoP.do?chrClsCd=&admRulSeq=2100000205195
+# https://www.law.go.kr/LSW//admRulLsInfoP.do?chrClsCd=&admRulSeq=2100000205187
+# https://www.law.go.kr/LSW//admRulLsInfoP.do?chrClsCd=&admRulSeq=2100000206568
+country KR: DFS-JP
+	(2400 - 2483.5 @ 40), (23)
+	(5150 - 5230 @ 40), (23)
+	# max. PSD 2.5 mW/MHz in 5230-5250 MHz frequency range
+	(5230 - 5250 @ 20), (17)
+	(5250 - 5350 @ 80), (20)
+	(5470 - 5725 @ 160), (20)
+	(5725 - 5850 @ 80), (23)
+	# 6 GHz band
+	(5925 - 7125 @ 160), (15), NO-OUTDOOR
+	# 60 GHz band channels 1-4
+	(57000 - 66000 @ 2160), (43)
+
+country KW:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+
+country KY:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://adilet.zan.kz/rus/docs/V1500010730
+# http://adilet.zan.kz/rus/docs/V1500010375
+country KZ:
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR
+	(5250 - 5350 @ 80), (20), NO-OUTDOOR
+	(5470 - 5725 @ 160), (20), NO-OUTDOOR
+	(5725 - 5850 @ 80), (20), NO-OUTDOOR
+	(57000 - 66000 @ 2160), (40)
+
+country LB:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.ntrc.org.lc/operational_structures.htm
+country LC:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (30)
+	(5735 - 5815 @ 80), (30)
+
+# LI as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# LI: https://www.ofcomnet.ch/api/rir/1010/05
+# LI: https://www.ofcomnet.ch/api/rir/1010/04
+# LI: https://www.ofcomnet.ch/api/rir/1008/12
+# LI: https://www.ofcomnet.ch/#/fatTable
+country LI:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country LK:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24)
+	(5490 - 5730 @ 20), (24)
+	(5735 - 5835 @ 20), (30)
+
+# Source:
+# http://lca.org.ls/images/documents/lesotho_national_frequency_allocation_plan.pdf
+country LS:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# LT as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# LT: https://www.rrt.lt/en/radio-spectrum/frequency-management/ or direct link:
+# LT: https://www.e-tar.lt/portal/lt/legalAct/6e718fd037a011e69101aaab2992cbcd/dGRioCBBHb
+country LT:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# LU as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# LU: https://assets.ilr.lu/frequences/Documents/ILRLU-1723895916-183.pdf#search=en%20300%20440
+country LU:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# LV as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# LV: http://likumi.lv/doc.php?id=198903
+country LV:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country MA:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+
+# MC as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country MC:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+
+# Source:
+# http://www.cnfr.md/index.php?pag=sec&id=117&l=en
+# MD as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country MD:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+
+# Source:
+# http://www.cept.org/files/1050/Tools%20and%20Services/EFIS%20-%20ECO%20Frequency%20Information%20System/National%20frequency%20tables/Montenegro%20NAFT%20-%202010.pdf
+# ME as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country ME:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+
+country MF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country MH:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# MK as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country MK:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country MN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country MO:
+	(2402 - 2482 @ 40), (23)
+	(5170 - 5250 @ 80), (23)
+	(5250 - 5330 @ 80), (23)
+	(5490 - 5730 @ 160), (30)
+	(5735 - 5835 @ 80), (30)
+
+country MP:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country MQ:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+# Source:
+# http://www.are.mr/pdfs/telec_freq_TNAbf_2010.pdf
+country MR:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# MT as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# MT: https://www.mca.org.mt/sites/default/files/NFP_edition%206-1.pdf
+country MT:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country MU:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.cam.gov.mv/docs/tech_standards/TAM-TS-100-2004-WLAN.pdf
+country MV:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW)
+	(5250 - 5350 @ 80), (100 mW)
+	(5725 - 5850 @ 80), (100 mW)
+
+country MW:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country MX:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country MY:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5650 @ 160), (24)
+	(5735 - 5835 @ 80), (24)
+
+country NG:
+	(2402 - 2482 @ 40), (20)
+	(5250 - 5330 @ 80), (30)
+	(5735 - 5835 @ 80), (30)
+
+country NI:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# NL as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# NL: http://wetten.overheid.nl/BWBR0036378/2015-03-05
+# Updated 14 december 2021 to allow the lower part of the 6GHz spectrum for WiFi 6E
+# mobile short distance equipment, broadband transmission equipment, license free, from day after publication
+# NL announcement: https://zoek.officielebekendmakingen.nl/stcrt-2021-49492.pdf
+# NL law: https://wetten.overheid.nl/BWBR0036378/2021-12-15
+country NL:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# NO as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# NO: https://eng.nkom.no/technical/temporary-licenses/mobile-videolink/wireless-cameras-mobile-video-links/_attachment/9947
+# NO: http://www.lovdata.no/dokument/SF/forskrift/2012-01-19-77
+# In addition to EU NO can use 5725–5795 MHz and 5815–5850 bands with limit of 4 W EIRP (with DFS and TPC)
+country NO:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# WiFi 6E
+	(5945 - 6425 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 71000 @ 2160), (40)
+
+country NP: DFS-JP
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5735 - 5835 @ 80), (20)
+
+country NZ:
+	(2402 - 2482 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country OM:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# Source:
+# http://www.asep.gob.pa/images/telecomunicaciones/Anexos/PNAF-dic2015.pdf
+country PA:
+	(2400 - 2483.5 @ 40), (36)
+	(5150 - 5250 @ 80), (36)
+	(5250 - 5350 @ 80), (30)
+	(5470 - 5725 @ 160), (30)
+	(5725 - 5850 @ 80), (36)
+	(57000 - 64000 @ 2160), (43)
+
+country PE:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country PF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country PG:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country PH:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country PK: DFS-JP
+	# https://fab.gov.pk/type-approval/
+	# https://pta.gov.pk/media/Pakistan_Table_of_Frequency_Allocations.pdf
+	(2402 - 2482 @ 40), (20)
+	(5725 - 5875 @ 80), (30)
+
+# PL as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country PL:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country PM:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country PR:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# PT as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# PT: https://www.anacom.pt/render.jsp?categoryId=336334
+country PT:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+country PW:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country PY:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country QA:
+	(2400 - 2483.5 @ 40), (100 mW), NO-OUTDOOR
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR
+	(5250 - 5350 @ 80), (200 mW), NO-OUTDOOR
+	(5470 - 5725 @ 160), (100 mW), NO-OUTDOOR
+	(5725 - 5875 @ 80), (100 mW), NO-OUTDOOR
+	(57000 - 66000 @ 2160), (40), NO-OUTDOOR
+
+country RE:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+# RO as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# RO: http://www.ancom.org.ro/en/uploads/links_files/ordin_262_2006.pdf
+country RO:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# Source:
+# http://www.ratel.rs/upload/documents/Plan_namene/Plan_namene-sl_glasnik.pdf
+# RS as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+country RS:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country RU:
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5350 @ 160), (20), NO-OUTDOOR
+	(5650 - 5850 @ 160), (20), NO-OUTDOOR
+	# 60 GHz band channels 1-4, ref: Changes to NLA 124_Order №129_22042015.pdf
+	(57000 - 66000 @ 2160), (40), NO-OUTDOOR
+
+country RW:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country SA:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# SE as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# SE: https://pts.se/globalassets/startpage/dokument/legala-dokument/foreskrifter/radio/beslutade_ptsfs-2018-3-undantagsforeskrifter.pdf
+country SE:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# https://www.imda.gov.sg/-/media/Imda/Files/Regulation-Licensing-and-Consultations/ICT-Standards/Telecommunication-Standards/Radio-Comms/IMDATSSRD.pdf
+# IMDA TS SRD, Issue 1 Revision 1, April 2019, subsequently "IMDA TS SRD"
+# 2400 - 2483.5 MHz: IMDA TS SRD, Table 1 (25); ANSI C63.10-2013 and FCC Part 15 Section 15.247 or EN 300 328
+# 5150 - 5350 MHz: IMDA TS SRD, Table 1 (29); FCC Part 15 Section 15.407 (1) 5.15-5.25 GHz (2) 5.25-5.35 GHz; EN 301 893
+# 5470 - 5725 MHz: IMDA TS SRD, Table 1 (30); FCC Part 15 Section 15.407 (2) 5.47-5.725 GHz; EN 301 893
+# 5725 - 5850 MHz: IMDA TS SRD, Table 1 (27); FCC Part 15 Section 15.247; FCC Part 15 Section 15.407 (3) 5.725-5.85 GHz
+# 57000 - 66000 MHz: IMDA TS SRD, Table 1 (31); ETSI EN 302 567
+# Note: 27dBm for 5470-5725MHz bands is 3dBm reduction per FCC Part 15 Section 15.407 (2) 5.47-5.725 GHz; EN 301 893 as referenced by IMDA TS SRD
+#  AU and BG regulatory domains use the same interpretation of cited FCC and ETSI standards
+# Note: The transmit power for 5250-5350MHz bands can be raised by 3dBm when TPC is implemented: IMDA TS SRD Table 1 (29)
+# Note: The transmit power for 5470-5725MHz bands can be raised by 3dBm when TPC is implemented: IMDA TS SRD Table 1 (30)
+
+country SG:
+	(2400 - 2483.5 @ 40), (23)
+	(5150 - 5250 @ 80), (23)
+	(5250 - 5350 @ 80), (20)
+	(5470 - 5725 @ 160), (27)
+	(5725 - 5850 @ 80), (30)
+	(57000 - 66000 @ 2160), (40)
+
+# SI as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# SI: https://www.akos-rs.si/bwa
+country SI:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# SK as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+# and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+#  EU decision 2005/513/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005D0513-20070213
+#  EU decision 2006/771/EC: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008D0432-20080611
+# Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+# SK: https://www.teleoff.gov.sk/data/files/25911.pdf
+# SK: https://www.teleoff.gov.sk/data/files/41072.pdf
+# SK: https://www.teleoff.gov.sk/data/files/49125_vpr-01_2018-rusi-vpr-10_2014a21_2012-nespecifik-srd_021018.pdf
+country SK:
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
+	# short range devices (ETSI EN 300 440-1)
+	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	(57000 - 66000 @ 2160), (40)
+
+# Source:
+# Regulation N° 2004-005 ART/DG/DRC/D.Rég
+country SN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country SR:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country SV:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (23)
+	(5735 - 5835 @ 20), (30)
+
+country SY:
+	(2402 - 2482 @ 40), (20)
+
+# Source:
+# http://www.telecommission.tc/Spectrum-plan20110324-101210.html
+country TC:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24), wmmrule=ETSI
+	(5250 - 5330 @ 80), (24), wmmrule=ETSI
+	(5490 - 5730 @ 160), (24), wmmrule=ETSI
+	(5735 - 5835 @ 80), (30)
+
+country TD:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+country TG:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 40), (20)
+	(5250 - 5330 @ 40), (20)
+	(5490 - 5710 @ 40), (27)
+
+country TH:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country TN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+
+# Source:
+# By-Law on Short Range Radio Devices (SRD) Oct 2015
+# https://www.btk.gov.tr/File/?path=ROOT%2f1%2fDocuments%2fOrdinance%2fBY%2DLAW%20ON%20SHORT%20RANGE%20DEVICES.pdf
+# Article 8
+country TR:
+	(2400 - 2483.5 @ 40), (20)
+	(5170 - 5250 @ 80), (23), NO-OUTDOOR
+	(5250 - 5330 @ 80), (20), NO-OUTDOOR
+	(5470 - 5725 @ 160), (27)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40)
+
+country TT:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# Table of Frequency Allocations of Republic of China (Taiwan) / Feb 2017:
+#   https://www.motc.gov.tw/websitedowndoc?file=post/201702221012200.doc& \
+#	filedisplay=Table%2Bof%2Bradio%2Bfrequency%2Ballocation.doc
+# LP0002 Low-power Radio-frequency Devices Technical Regulations / 23 Aug 2016:
+#   http://www.ncc.gov.tw/english/show_file.aspx?table_name=news&file_sn=681
+country TW:
+	# 2.4g band, LP0002 section 3.10.1
+	(2400 - 2483.5 @ 40), (30)
+	# 5g U-NII band, LP0002 section 4.7
+	# 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
+	(5150 - 5250 @ 80), (23)
+	(5250 - 5350 @ 80), (23)
+	# This range ends at 5725 MHz, but channel 144 extends to 5730 MHz.
+	# Since 5725 ~ 5730 MHz belongs to the next range which has looser
+	# requirements, we can extend the range by 5 MHz to make the kernel
+	# happy and be able to use channel 144.
+	(5470 - 5730 @ 160), (23)
+	(5725 - 5850 @ 80), (30)
+	# 60g band, LP0002 section 3.13.1.1 (3)(C), EIRP=40dBm(43dBm peak)
+	(57000 - 66000 @ 2160), (40)
+ 
+country TZ:
+	(2402 - 2482 @ 40), (20)
+	(5735 - 5835 @ 80), (30)
+
+# Source: https://zakon.rada.gov.ua/laws/show/z0201-15#n48
+# Although it is allowed to use up to 250 mW for some 5 GHz frequency ranges,
+# all of them are limited to 100 mW for IEEE 802.11n and IEEE 802.11ac.
+# 2.4 GHz band channels can be used outdoors when some requirements are met.
+# 5 GHz band channels must be used only indoors in some cases. They are neither
+# permitted nor denied outdoors in others.
+country UA:
+	(2400 - 2483.5 @ 40), (100 mW), NO-OUTDOOR
+	(5150 - 5250 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5470 - 5725 @ 160), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5725 - 5850 @ 80), (100 mW), NO-OUTDOOR
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
+	(57000 - 66000 @ 2160), (40 mW), NO-OUTDOOR
+
+country UG:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+# https://www.ecfr.gov/cgi-bin/text-idx?SID=eed706a2c49fd9271106c3228b0615f3&mc=true&node=pt47.1.15&rgn=div5
+# Title 47 Part 15 - Radio Frequency Devices, April 2, 2020
+# Channels 12 and 13 are not forbidden, but are not normally used with full
+# power in order to avoid any potential interference in the adjacent restricted
+# frequency band, 2,483.5–2,500 MHz which is subject to strict emission limits
+# set out in 47 CFR § 15.205. TODO: reenable and specify a safe TX power here.
+country US:
+	# S1G Channel 1-3
+	(902-904 @ 2), (30)
+	# S1G Channel 5-35
+	(904-920 @ 16), (30)
+	# S1G Channel 37-51
+	(920-928 @ 8), (30)
+	(2400 - 2472 @ 40), (30)
+	# 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
+	(5150 - 5250 @ 80), (23)
+	(5250 - 5350 @ 80), (24)
+	# This range ends at 5725 MHz, but channel 144 extends to 5730 MHz.
+	# Since 5725 ~ 5730 MHz belongs to the next range which has looser
+	# requirements, we can extend the range by 5 MHz to make the kernel
+	# happy and be able to use channel 144.
+	(5470 - 5730 @ 160), (24)
+	(5730 - 5850 @ 80), (30)
+	# https://www.federalregister.gov/documents/2021/05/03/2021-08802/use-of-the-5850-5925-ghz-band
+	# max. 33 dBm AP @ 20MHz, 36 dBm AP @ 40Mhz+, 6 dB less for clients
+	(5850 - 5895 @ 40), (27), NO-OUTDOOR, NO-IR
+	# 60g band
+	# reference: section IV-D https://docs.fcc.gov/public/attachments/FCC-16-89A1.pdf
+	# channels 1-6 EIRP=40dBm(43dBm peak)
+	(57240 - 71000 @ 2160), (40)
+
+country UY:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (23)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://cemc.uz/article/1976/
+country UZ:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+
+# Source:
+# http://www.ntrc.vc/regulations/Jun_2006_Spectrum_Managment_Regulations.pdf
+country VC:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+# Source:
+# Official Gazette (Gaceta Oficial) concerning Unlicensed transmitter use
+# (10 June 2013)
+# http://www.conatel.gob.ve/
+country VE:
+	(2402 - 2482 @ 40), (30)
+	(5170 - 5250 @ 80), (23)
+	(5250 - 5330 @ 80), (23)
+	(5735 - 5835 @ 80), (30)
+
+country VI:
+	(2402 - 2472 @ 40), (30)
+	(5170 - 5250 @ 80), (24)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country VN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 80), (24)
+	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.trr.vu/attachments/category/130/GURL_for_Short-range_Radiocommunication_Devices2.pdf
+country VU:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (17)
+	(5250 - 5330 @ 80), (24)
+	(5490 - 5730 @ 160), (24)
+	(5735 - 5835 @ 80), (30)
+
+country WF:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country WS:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 40), (20)
+	(5250 - 5330 @ 40), (20)
+	(5490 - 5710 @ 40), (27)
+
+country YE:
+	(2402 - 2482 @ 40), (20)
+
+country YT:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20), wmmrule=ETSI
+	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5490 - 5710 @ 160), (27), wmmrule=ETSI
+
+country ZA:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (30)
+
+country ZW:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 80), (20)
+	(5250 - 5330 @ 80), (20)
+	(5490 - 5710 @ 160), (27)
+
+#Germany BFWA
+country ZD:
+	(2400 - 2483.500 @ 40), (20)
+	(5170 - 5350 @ 160), (20)
+	(5470 - 5885 @ 160), (30)
+
+#United Kingdom BFWA
+country ZG:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 160), (20)
+	(5490 - 5710 @ 160), (27)
+	(5725 - 5855 @ 80), (33)
+
+#Norway BFWA
+country ZN:
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5330 @ 160), (20)
+	(5490 - 5710 @ 160), (27)
+	(5725 - 5855 @ 80), (36.02)

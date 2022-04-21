@@ -652,6 +652,9 @@ static int iwl_mvm_mac_ctxt_cmd_sta(struct iwl_mvm *mvm,
 		if (vif->bss_conf.twt_protected)
 			ctxt_sta->data_policy |=
 				cpu_to_le32(PROTECTED_TWT_SUPPORTED);
+		if (vif->bss_conf.twt_broadcast)
+			ctxt_sta->data_policy |=
+				cpu_to_le32(BROADCAST_TWT_SUPPORTED);
 	}
 
 

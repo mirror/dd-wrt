@@ -26,6 +26,7 @@ static const struct usb_device_id mt7601u_device_table[] = {
 	{ USB_DEVICE(0x2717, 0x4106) },
 	{ USB_DEVICE(0x2955, 0x0001) },
 	{ USB_DEVICE(0x2955, 0x1001) },
+	{ USB_DEVICE(0x2955, 0x1003) },
 	{ USB_DEVICE(0x2a5f, 0x1000) },
 	{ USB_DEVICE(0x7392, 0x7710) },
 	{ 0, }
@@ -375,8 +376,6 @@ static struct usb_driver mt7601u_driver = {
 	.resume		= mt7601u_resume,
 	.reset_resume	= mt7601u_resume,
 	.soft_unbind	= 1,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 module_usb_driver(mt7601u_driver);

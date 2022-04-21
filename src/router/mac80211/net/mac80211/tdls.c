@@ -52,7 +52,7 @@ static void ieee80211_tdls_add_ext_capab(struct ieee80211_sub_if_data *sdata,
 					     SUPPORTS_TDLS_BUFFER_STA);
 	struct ieee80211_supported_band *sband = ieee80211_get_sband(sdata);
 	bool vht = sband && sband->vht_cap.vht_supported;
-	u8 *pos = (void *)skb_put(skb, 10);
+	u8 *pos = skb_put(skb, 10);
 
 	*pos++ = WLAN_EID_EXT_CAPABILITY;
 	*pos++ = 8; /* len */
@@ -103,7 +103,7 @@ ieee80211_tdls_add_subband(struct ieee80211_sub_if_data *sdata,
 		 * found
 		 */
 		if (ch_cnt) {
-			u8 *pos = (void *)skb_put(skb, 2);
+			u8 *pos = skb_put(skb, 2);
 			*pos++ = ieee80211_frequency_to_channel(subband_start);
 			*pos++ = ch_cnt;
 
@@ -114,7 +114,7 @@ ieee80211_tdls_add_subband(struct ieee80211_sub_if_data *sdata,
 
 	/* all channels in the requested range are allowed - add them here */
 	if (ch_cnt) {
-		u8 *pos = (void *)skb_put(skb, 2);
+		u8 *pos = skb_put(skb, 2);
 		*pos++ = ieee80211_frequency_to_channel(subband_start);
 		*pos++ = ch_cnt;
 
@@ -133,7 +133,7 @@ ieee80211_tdls_add_supp_channels(struct ieee80211_sub_if_data *sdata,
 	 * to be active.
 	 */
 	u8 subband_cnt;
-	u8 *pos = (void *)skb_put(skb, 2);
+	u8 *pos = skb_put(skb, 2);
 
 	*pos++ = WLAN_EID_SUPPORTED_CHANNELS;
 
@@ -162,7 +162,7 @@ static void ieee80211_tdls_add_oper_classes(struct ieee80211_sub_if_data *sdata,
 						  &op_class))
 		return;
 
-	pos = (void *)skb_put(skb, 4);
+	pos = skb_put(skb, 4);
 	*pos++ = WLAN_EID_SUPPORTED_REGULATORY_CLASSES;
 	*pos++ = 2; /* len */
 
@@ -172,7 +172,7 @@ static void ieee80211_tdls_add_oper_classes(struct ieee80211_sub_if_data *sdata,
 
 static void ieee80211_tdls_add_bss_coex_ie(struct sk_buff *skb)
 {
-	u8 *pos = (void *)skb_put(skb, 3);
+	u8 *pos = skb_put(skb, 3);
 
 	*pos++ = WLAN_EID_BSS_COEX_2040;
 	*pos++ = 1; /* len */
@@ -213,7 +213,7 @@ static void ieee80211_tdls_add_link_ie(struct ieee80211_sub_if_data *sdata,
 		rsp_addr = sdata->vif.addr;
 	}
 
-	lnkid = (void *)skb_put(skb, sizeof(struct ieee80211_tdls_lnkie));
+	lnkid = skb_put(skb, sizeof(struct ieee80211_tdls_lnkie));
 
 	lnkid->ie_type = WLAN_EID_LINK_ID;
 	lnkid->ie_len = sizeof(struct ieee80211_tdls_lnkie) - 2;
@@ -226,7 +226,7 @@ static void ieee80211_tdls_add_link_ie(struct ieee80211_sub_if_data *sdata,
 static void
 ieee80211_tdls_add_aid(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 {
-	u8 *pos = (void *)skb_put(skb, 4);
+	u8 *pos = skb_put(skb, 4);
 
 	*pos++ = WLAN_EID_AID;
 	*pos++ = 2; /* len */
@@ -457,14 +457,14 @@ ieee80211_tdls_add_setup_start_ies(struct ieee80211_sub_if_data *sdata,
 		ht_cap.cap |= WLAN_HT_CAP_SM_PS_DISABLED
 				<< IEEE80211_HT_CAP_SM_PS_SHIFT;
 
-		pos = (void *)skb_put(skb, sizeof(struct ieee80211_ht_cap) + 2);
+		pos = skb_put(skb, sizeof(struct ieee80211_ht_cap) + 2);
 		ieee80211_ie_build_ht_cap(pos, &ht_cap, ht_cap.cap);
 	} else if (action_code == WLAN_TDLS_SETUP_RESPONSE &&
 		   ht_cap.ht_supported && sta->sta.ht_cap.ht_supported) {
 		/* the peer caps are already intersected with our own */
 		memcpy(&ht_cap, &sta->sta.ht_cap, sizeof(ht_cap));
 
-		pos = (void *)skb_put(skb, sizeof(struct ieee80211_ht_cap) + 2);
+		pos = skb_put(skb, sizeof(struct ieee80211_ht_cap) + 2);
 		ieee80211_ie_build_ht_cap(pos, &ht_cap, ht_cap.cap);
 	}
 
@@ -523,7 +523,7 @@ ieee80211_tdls_add_setup_start_ies(struct ieee80211_sub_if_data *sdata,
 		/* the AID is present only when VHT is implemented */
 		ieee80211_tdls_add_aid(sdata, skb);
 
-		pos = (void *)skb_put(skb, sizeof(struct ieee80211_vht_cap) + 2);
+		pos = skb_put(skb, sizeof(struct ieee80211_vht_cap) + 2);
 		ieee80211_ie_build_vht_cap(pos, &vht_cap, vht_cap.cap);
 
 		/*
@@ -614,7 +614,7 @@ ieee80211_tdls_add_setup_cfm_ies(struct ieee80211_sub_if_data *sdata,
 			   IEEE80211_HT_OP_MODE_NON_GF_STA_PRSNT |
 			   IEEE80211_HT_OP_MODE_NON_HT_STA_PRSNT;
 
-		pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_ht_operation));
+		pos = skb_put(skb, 2 + sizeof(struct ieee80211_ht_operation));
 		ieee80211_ie_build_ht_oper(pos, &sta->sta.ht_cap,
 					   &sdata->vif.bss_conf.chandef, prot,
 					   true);
@@ -632,7 +632,7 @@ ieee80211_tdls_add_setup_cfm_ies(struct ieee80211_sub_if_data *sdata,
 		if (test_sta_flag(sta, WLAN_STA_TDLS_WIDER_BW))
 			ieee80211_tdls_chandef_vht_upgrade(sdata, sta);
 
-		pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_vht_operation));
+		pos = skb_put(skb, 2 + sizeof(struct ieee80211_vht_operation));
 		ieee80211_ie_build_vht_oper(pos, &sta->sta.vht_cap,
 					    &sta->tdls_chandef);
 	}
@@ -754,7 +754,7 @@ ieee80211_prep_tdls_encap_data(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_tdls_data *tf;
 
-	tf = (void *)skb_put(skb, offsetof(struct ieee80211_tdls_data, u));
+	tf = skb_put(skb, offsetof(struct ieee80211_tdls_data, u));
 
 	memcpy(tf->da, peer, ETH_ALEN);
 	memcpy(tf->sa, sdata->vif.addr, ETH_ALEN);
@@ -1936,14 +1936,14 @@ out:
 	return ret;
 }
 
-static void
+void
 ieee80211_process_tdls_channel_switch(struct ieee80211_sub_if_data *sdata,
 				      struct sk_buff *skb)
 {
 	struct ieee80211_tdls_data *tf = (void *)skb->data;
 	struct wiphy *wiphy = sdata->local->hw.wiphy;
 
-	ASSERT_RTNL();
+	lockdep_assert_wiphy(wiphy);
 
 	/* make sure the driver supports it */
 	if (!(wiphy->features & NL80211_FEATURE_TDLS_CHANNEL_SWITCH))
@@ -1985,32 +1985,6 @@ void ieee80211_teardown_tdls_peers(struct ieee80211_sub_if_data *sdata)
 					    GFP_ATOMIC);
 	}
 	rcu_read_unlock();
-}
-
-void ieee80211_tdls_chsw_work(struct work_struct *wk)
-{
-	struct ieee80211_local *local =
-		container_of(wk, struct ieee80211_local, tdls_chsw_work);
-	struct ieee80211_sub_if_data *sdata;
-	struct sk_buff *skb;
-	struct ieee80211_tdls_data *tf;
-
-	rtnl_lock();
-	while ((skb = skb_dequeue(&local->skb_queue_tdls_chsw))) {
-		tf = (struct ieee80211_tdls_data *)skb->data;
-		list_for_each_entry(sdata, &local->interfaces, list) {
-			if (!ieee80211_sdata_running(sdata) ||
-			    sdata->vif.type != NL80211_IFTYPE_STATION ||
-			    !ether_addr_equal(tf->da, sdata->vif.addr))
-				continue;
-
-			ieee80211_process_tdls_channel_switch(sdata, skb);
-			break;
-		}
-
-		kfree_skb(skb);
-	}
-	rtnl_unlock();
 }
 
 void ieee80211_tdls_handle_disconnect(struct ieee80211_sub_if_data *sdata,

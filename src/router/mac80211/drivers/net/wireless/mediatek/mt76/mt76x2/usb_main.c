@@ -81,6 +81,9 @@ mt76x2u_config(struct ieee80211_hw *hw, u32 changed)
 		struct mt76_phy *mphy = &dev->mphy;
 
 		dev->txpower_conf = hw->conf.power_level * 2;
+		dev->txpower_conf = mt76_get_sar_power(mphy,
+						       mphy->chandef.chan,
+						       dev->txpower_conf);
 		/* convert to per-chain power for 2x2 devices */
 		dev->txpower_conf -= 6;
 
@@ -122,4 +125,5 @@ const struct ieee80211_ops mt76x2u_ops = {
 	.set_tim = mt76_set_tim,
 	.release_buffered_frames = mt76_release_buffered_frames,
 	.get_antenna = mt76_get_antenna,
+	.set_sar_specs = mt76x2_set_sar_specs,
 };

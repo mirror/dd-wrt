@@ -134,19 +134,19 @@ static int mesh_path_sel_frame_tx(enum mpath_frame_type action, u8 flags,
 	case MPATH_PREQ:
 		mhwmp_dbg(sdata, "sending PREQ to %pM\n", target);
 		ie_len = 37;
-		pos = (void *)skb_put(skb, 2 + ie_len);
+		pos = skb_put(skb, 2 + ie_len);
 		*pos++ = WLAN_EID_PREQ;
 		break;
 	case MPATH_PREP:
 		mhwmp_dbg(sdata, "sending PREP to %pM\n", orig_addr);
 		ie_len = 31;
-		pos = (void *)skb_put(skb, 2 + ie_len);
+		pos = skb_put(skb, 2 + ie_len);
 		*pos++ = WLAN_EID_PREP;
 		break;
 	case MPATH_RANN:
 		mhwmp_dbg(sdata, "sending RANN from %pM\n", orig_addr);
 		ie_len = sizeof(struct ieee80211_rann_ie);
-		pos = (void *)skb_put(skb, 2 + ie_len);
+		pos = skb_put(skb, 2 + ie_len);
 		*pos++ = WLAN_EID_RANN;
 		break;
 	default:
@@ -266,7 +266,7 @@ int mesh_path_error_tx(struct ieee80211_sub_if_data *sdata,
 	mgmt->u.action.u.mesh_action.action_code =
 					WLAN_MESH_ACTION_HWMP_PATH_SELECTION;
 	ie_len = 15;
-	pos = (void *)skb_put(skb, 2 + ie_len);
+	pos = skb_put(skb, 2 + ie_len);
 	*pos++ = WLAN_EID_PERR;
 	*pos++ = ie_len;
 	/* ttl */
@@ -1134,7 +1134,7 @@ enddiscovery:
  * forwarding information is found.
  *
  * Returns: 0 if the next hop was found and -ENOENT if the frame was queued.
- * skb is freeed here if no mpath could be allocated.
+ * skb is freed here if no mpath could be allocated.
  */
 int mesh_nexthop_resolve(struct ieee80211_sub_if_data *sdata,
 			 struct sk_buff *skb)

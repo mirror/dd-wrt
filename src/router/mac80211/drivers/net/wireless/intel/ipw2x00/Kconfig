@@ -4,7 +4,6 @@
 #
 
 config IPW2100
-	depends on !KERNEL_3_11
 	tristate "Intel PRO/Wireless 2100 Network Connection"
 	depends on m
 	depends on PCI && CFG80211
@@ -18,7 +17,7 @@ config IPW2100
 	  A driver for the Intel PRO/Wireless 2100 Network
 	  Connection 802.11b wireless network adapter.
 
-	  See <file:Documentation/networking/device_drivers/intel/ipw2100.rst>
+	  See <file:Documentation/networking/device_drivers/wifi/intel/ipw2100.rst>
 	  for information on the capabilities currently enabled in this driver
 	  and for tips for debugging issues and problems.
 
@@ -30,7 +29,7 @@ config IPW2100
 	  You will also very likely need the Wireless Tools in order to
 	  configure your card:
 
-	  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
+	  <https://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
 
 	  It is recommended that you compile this driver as a module (M)
 	  rather than built-in (Y). This driver requires firmware at device
@@ -67,7 +66,6 @@ config IPW2100_DEBUG
 	  most likely want to say N here.
 
 config IPW2200
-	depends on !KERNEL_3_11
 	tristate "Intel PRO/Wireless 2200BG and 2915ABG Network Connection"
 	depends on m
 	depends on PCI && CFG80211
@@ -82,7 +80,7 @@ config IPW2200
 	  A driver for the Intel PRO/Wireless 2200BG and 2915ABG Network
 	  Connection adapters.
 
-	  See <file:Documentation/networking/device_drivers/intel/ipw2200.rst>
+	  See <file:Documentation/networking/device_drivers/wifi/intel/ipw2200.rst>
 	  for information on the capabilities currently enabled in this
 	  driver and for tips for debugging issues and problems.
 
@@ -94,7 +92,7 @@ config IPW2200
 	  You will also very likely need the Wireless Tools in order to
 	  configure your card:
 
-	  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
+	  <https://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
 
 	  It is recommended that you compile this driver as a module (M)
 	  rather than built-in (Y). This driver requires firmware at device
@@ -165,11 +163,7 @@ config LIBIPW
 	depends on WIRELESS_EXT
 	depends on WEXT_SPY
 	depends on CRYPTO
-	depends on CRYPTO_ARC4
-	depends on CRYPTO_ECB
-	depends on CRYPTO_AES
 	depends on CRYPTO_MICHAEL_MIC
-	depends on CRYPTO_ECB
 	depends on CRC32
 	select LIB80211
 	select LIB80211_CRYPT_WEP

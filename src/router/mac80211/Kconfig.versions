@@ -1,0 +1,260 @@
+config KERNEL_3_11
+    def_bool y
+config KERNEL_3_12
+    def_bool y
+config KERNEL_3_13
+    def_bool y
+config KERNEL_3_14
+    def_bool y
+config KERNEL_3_15
+    def_bool y
+config KERNEL_3_16
+    def_bool y
+config KERNEL_3_17
+    def_bool y
+config KERNEL_3_18
+    def_bool y
+config KERNEL_3_19
+    def_bool y
+config KERNEL_4_0
+    def_bool y
+config KERNEL_4_1
+    def_bool y
+config KERNEL_4_2
+    def_bool y
+config KERNEL_4_3
+    def_bool y
+config KERNEL_4_4
+    def_bool y
+config KERNEL_4_5
+    def_bool y
+config KERNEL_4_6
+    def_bool y
+config KERNEL_4_7
+    def_bool y
+config KERNEL_4_8
+    def_bool y
+config KERNEL_4_9
+    def_bool y
+config KERNEL_4_10
+    def_bool y
+config KERNEL_4_11
+    def_bool y
+config KERNEL_4_12
+    def_bool y
+config KERNEL_4_13
+    def_bool y
+config KERNEL_4_14
+    def_bool y
+config KERNEL_4_15
+    def_bool y
+config KERNEL_4_16
+    def_bool y
+config KERNEL_4_17
+    def_bool y
+config KERNEL_4_18
+    def_bool y
+config KERNEL_4_19
+    def_bool y
+config KERNEL_4_20
+    def_bool y
+config KERNEL_5_0
+    def_bool y
+config KERNEL_5_1
+    def_bool y
+config KERNEL_5_2
+    def_bool y
+config KERNEL_5_3
+    def_bool y
+config KERNEL_5_4
+    def_bool y
+config KERNEL_5_5
+    def_bool y
+config KERNEL_5_6
+    def_bool y
+config KERNEL_5_7
+    def_bool y
+config KERNEL_5_8
+    def_bool y
+config KERNEL_5_9
+    def_bool y
+config KERNEL_5_10
+    def_bool y
+config KERNEL_5_11
+    def_bool y
+config KERNEL_5_12
+    def_bool y
+config KERNEL_5_13
+    def_bool y
+config KERNEL_5_14
+    def_bool y
+config KERNEL_5_15
+    def_bool y
+config KERNEL_5_16
+    def_bool y
+config KERNEL_5_17
+    def_bool y
+config KERNEL_5_18
+    def_bool y
+config KERNEL_5_19
+    def_bool y
+config KERNEL_5_20
+    def_bool y
+config KERNEL_5_21
+    def_bool y
+config KERNEL_5_22
+    def_bool y
+config KERNEL_5_23
+    def_bool y
+config KERNEL_5_24
+    def_bool y
+config KERNEL_5_25
+    def_bool y
+config KERNEL_5_26
+    def_bool y
+config KERNEL_5_27
+    def_bool y
+config KERNEL_5_28
+    def_bool y
+config KERNEL_5_29
+    def_bool y
+config KERNEL_5_30
+    def_bool y
+config KERNEL_5_31
+    def_bool y
+config KERNEL_5_32
+    def_bool y
+config KERNEL_5_33
+    def_bool y
+config KERNEL_5_34
+    def_bool y
+config KERNEL_5_35
+    def_bool y
+config KERNEL_5_36
+    def_bool y
+config KERNEL_5_37
+    def_bool y
+config KERNEL_5_38
+    def_bool y
+config KERNEL_5_39
+    def_bool y
+config KERNEL_5_40
+    def_bool y
+config KERNEL_5_41
+    def_bool y
+config KERNEL_5_42
+    def_bool y
+config KERNEL_5_43
+    def_bool y
+config KERNEL_5_44
+    def_bool y
+config KERNEL_5_45
+    def_bool y
+config KERNEL_5_46
+    def_bool y
+config KERNEL_5_47
+    def_bool y
+config KERNEL_5_48
+    def_bool y
+config KERNEL_5_49
+    def_bool y
+config KERNEL_5_50
+    def_bool y
+config KERNEL_5_51
+    def_bool y
+config KERNEL_5_52
+    def_bool y
+config KERNEL_5_53
+    def_bool y
+config KERNEL_5_54
+    def_bool y
+config KERNEL_5_55
+    def_bool y
+config KERNEL_5_56
+    def_bool y
+config KERNEL_5_57
+    def_bool y
+config KERNEL_5_58
+    def_bool y
+config KERNEL_5_59
+    def_bool y
+config KERNEL_5_60
+    def_bool y
+config KERNEL_5_61
+    def_bool y
+config KERNEL_5_62
+    def_bool y
+config KERNEL_5_63
+    def_bool y
+config KERNEL_5_64
+    def_bool y
+config KERNEL_5_65
+    def_bool y
+config KERNEL_5_66
+    def_bool y
+config KERNEL_5_67
+    def_bool y
+config KERNEL_5_68
+    def_bool y
+config KERNEL_5_69
+    def_bool y
+config KERNEL_5_70
+    def_bool y
+config KERNEL_5_71
+    def_bool y
+config KERNEL_5_72
+    def_bool y
+config KERNEL_5_73
+    def_bool y
+config KERNEL_5_74
+    def_bool y
+config KERNEL_5_75
+    def_bool y
+config KERNEL_5_76
+    def_bool y
+config KERNEL_5_77
+    def_bool y
+config KERNEL_5_78
+    def_bool y
+config KERNEL_5_79
+    def_bool y
+config KERNEL_5_80
+    def_bool y
+config KERNEL_5_81
+    def_bool y
+config KERNEL_5_82
+    def_bool y
+config KERNEL_5_83
+    def_bool y
+config KERNEL_5_84
+    def_bool y
+config KERNEL_5_85
+    def_bool y
+config KERNEL_5_86
+    def_bool y
+config KERNEL_5_87
+    def_bool y
+config KERNEL_5_88
+    def_bool y
+config KERNEL_5_89
+    def_bool y
+config KERNEL_5_90
+    def_bool y
+config KERNEL_5_91
+    def_bool y
+config KERNEL_5_92
+    def_bool y
+config KERNEL_5_93
+    def_bool y
+config KERNEL_5_94
+    def_bool y
+config KERNEL_5_95
+    def_bool y
+config KERNEL_5_96
+    def_bool y
+config KERNEL_5_97
+    def_bool y
+config KERNEL_5_98
+    def_bool y
+config KERNEL_5_99
+    def_bool y

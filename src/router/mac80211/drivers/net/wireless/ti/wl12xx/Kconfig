@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config WL12XX
-	depends on !KERNEL_4_2
 	tristate "TI wl12xx support"
 	depends on m
 	depends on MAC80211

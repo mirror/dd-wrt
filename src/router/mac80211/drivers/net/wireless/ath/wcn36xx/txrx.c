@@ -23,9 +23,218 @@ static inline int get_rssi0(struct wcn36xx_rx_bd *bd)
 	return 100 - ((bd->phy_stat0 >> 24) & 0xff);
 }
 
+struct wcn36xx_rate {
+	u16 bitrate;
+	u16 mcs_or_legacy_index;
+	enum mac80211_rx_encoding encoding;
+	enum mac80211_rx_encoding_flags encoding_flags;
+	enum rate_info_bw bw;
+};
+
+/* Buffer descriptor rx_ch field is limited to 5-bit (4+1), a mapping is used
+ * for 11A Channels.
+ */
+static const u8 ab_rx_ch_map[] = { 36, 40, 44, 48, 52, 56, 60, 64, 100, 104,
+				   108, 112, 116, 120, 124, 128, 132, 136, 140,
+				   149, 153, 157, 161, 165, 144 };
+
+static const struct wcn36xx_rate wcn36xx_rate_table[] = {
+	/* 11b rates */
+	{  10, 0, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{  20, 1, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{  55, 2, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 110, 3, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+
+	/* 11b SP (short preamble) */
+	{  10, 0, RX_ENC_LEGACY, RX_ENC_FLAG_SHORTPRE, RATE_INFO_BW_20 },
+	{  20, 1, RX_ENC_LEGACY, RX_ENC_FLAG_SHORTPRE, RATE_INFO_BW_20 },
+	{  55, 2, RX_ENC_LEGACY, RX_ENC_FLAG_SHORTPRE, RATE_INFO_BW_20 },
+	{ 110, 3, RX_ENC_LEGACY, RX_ENC_FLAG_SHORTPRE, RATE_INFO_BW_20 },
+
+	/* 11ag */
+	{  60, 4, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{  90, 5, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 120, 6, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 180, 7, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 240, 8, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 360, 9, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 480, 10, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+	{ 540, 11, RX_ENC_LEGACY, 0, RATE_INFO_BW_20 },
+
+	/* 11n */
+	{  65, 0, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 130, 1, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 195, 2, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 260, 3, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 390, 4, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 520, 5, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 585, 6, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{ 650, 7, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+
+	/* 11n SGI */
+	{  72, 0, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 144, 1, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 217, 2, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 289, 3, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 434, 4, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 578, 5, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 650, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{ 722, 7, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+
+	/* 11n GF (greenfield) */
+	{  65, 0, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 130, 1, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 195, 2, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 260, 3, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 390, 4, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 520, 5, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 585, 6, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+	{ 650, 7, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_20 },
+
+	/* 11n CB (channel bonding) */
+	{ 135, 0, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 270, 1, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 405, 2, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 540, 3, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 810, 4, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1080, 5, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1215, 6, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1350, 7, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+
+	/* 11n CB + SGI */
+	{ 150, 0, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 300, 1, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 450, 2, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 600, 3, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 900, 4, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1200, 5, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1500, 7, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11n GF + CB */
+	{ 135, 0, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 270, 1, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 405, 2, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 540, 3, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 810, 4, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 1080, 5, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 1215, 6, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+	{ 1350, 7, RX_ENC_HT, RX_ENC_FLAG_HT_GF, RATE_INFO_BW_40 },
+
+	/* 11ac reserved indices */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 20 MHz 800ns GI MCS 0-8 */
+	{   65, 0, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  130, 1, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  195, 2, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  260, 3, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  390, 4, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  520, 5, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  585, 6, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  650, 7, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+	{  780, 8, RX_ENC_HT, 0, RATE_INFO_BW_20 },
+
+	/* 11ac reserved indices */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 20 MHz 400ns SGI MCS 6-8 */
+	{  655, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{  722, 7, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+	{  866, 8, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_20 },
+
+	/* 11ac reserved indices */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 40 MHz 800ns GI MCS 0-9 */
+	{  135, 0, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{  270, 1, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{  405, 2, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{  540, 3, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{  810, 4, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1080, 5, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1215, 6, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1350, 7, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1350, 7, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1620, 8, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+	{ 1800, 9, RX_ENC_HT, 0, RATE_INFO_BW_40 },
+
+	/* 11ac reserved indices */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 40 MHz 400ns SGI MCS 5-7 */
+	{ 1200, 5, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1500, 7, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac reserved index */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 40 MHz 400ns SGI MCS 5-7 */
+	{ 1800, 8, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 2000, 9, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac reserved index */
+	{ 1350, 6, RX_ENC_HT,  RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 80 MHz 800ns GI MCS 0-7 */
+	{  292, 0, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{  585, 1, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{  877, 2, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 1170, 3, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 1755, 4, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 2340, 5, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 2632, 6, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 2925, 7, RX_ENC_HT, 0, RATE_INFO_BW_80},
+
+	/* 11 ac reserved index */
+	{ 1350, 6, RX_ENC_HT,  RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 80 MHz 800 ns GI MCS 8-9 */
+	{ 3510, 8, RX_ENC_HT, 0, RATE_INFO_BW_80},
+	{ 3900, 9, RX_ENC_HT, 0, RATE_INFO_BW_80},
+
+	/* 11 ac reserved indices */
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+	{ 1350, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 80 MHz 400 ns SGI MCS 6-7 */
+	{ 2925, 6, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_80 },
+	{ 3250, 7, RX_ENC_HT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_80 },
+
+	/* 11ac reserved index */
+	{ 1350, 6, RX_ENC_HT,  RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_40 },
+
+	/* 11ac 80 MHz 400ns SGI MCS 8-9 */
+	{ 3900, 8, RX_ENC_VHT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_80 },
+	{ 4333, 9, RX_ENC_VHT, RX_ENC_FLAG_SHORT_GI, RATE_INFO_BW_80 },
+};
+
 int wcn36xx_rx_skb(struct wcn36xx *wcn, struct sk_buff *skb)
 {
 	struct ieee80211_rx_status status;
+	const struct wcn36xx_rate *rate;
 	struct ieee80211_hdr *hdr;
 	struct wcn36xx_rx_bd *bd;
 	u16 fc, sn;
@@ -49,19 +258,9 @@ int wcn36xx_rx_skb(struct wcn36xx *wcn, struct sk_buff *skb)
 	fc = __le16_to_cpu(hdr->frame_control);
 	sn = IEEE80211_SEQ_TO_SN(__le16_to_cpu(hdr->seq_ctrl));
 
-	/* When scanning associate beacons to this */
-	if (ieee80211_is_beacon(hdr->frame_control) && wcn->scan_freq) {
-		status.freq = wcn->scan_freq;
-		status.band = wcn->scan_band;
-	} else {
-		status.freq = WCN36XX_CENTER_FREQ(wcn);
-		status.band = WCN36XX_BAND(wcn);
-	}
-
 	status.mactime = 10;
 	status.signal = -get_rssi0(bd);
 	status.antenna = 1;
-	status.rate_idx = 1;
 	status.flag = 0;
 	status.rx_flags = 0;
 	status.flag |= RX_FLAG_IV_STRIPPED |
@@ -69,6 +268,50 @@ int wcn36xx_rx_skb(struct wcn36xx *wcn, struct sk_buff *skb)
 		       RX_FLAG_DECRYPTED;
 
 	wcn36xx_dbg(WCN36XX_DBG_RX, "status.flags=%x\n", status.flag);
+
+	if (bd->scan_learn) {
+		/* If packet originate from hardware scanning, extract the
+		 * band/channel from bd descriptor.
+		 */
+		u8 hwch = (bd->reserved0 << 4) + bd->rx_ch;
+
+		if (bd->rf_band != 1 && hwch <= sizeof(ab_rx_ch_map) && hwch >= 1) {
+			status.band = NL80211_BAND_5GHZ;
+			status.freq = ieee80211_channel_to_frequency(ab_rx_ch_map[hwch - 1],
+								     status.band);
+		} else {
+			status.band = NL80211_BAND_2GHZ;
+			status.freq = ieee80211_channel_to_frequency(hwch, status.band);
+		}
+	} else {
+		status.band = WCN36XX_BAND(wcn);
+		status.freq = WCN36XX_CENTER_FREQ(wcn);
+	}
+
+	if (bd->rate_id < ARRAY_SIZE(wcn36xx_rate_table)) {
+		rate = &wcn36xx_rate_table[bd->rate_id];
+		status.encoding = rate->encoding;
+		status.enc_flags = rate->encoding_flags;
+		status.bw = rate->bw;
+		status.rate_idx = rate->mcs_or_legacy_index;
+		status.nss = 1;
+
+		if (status.band == NL80211_BAND_5GHZ &&
+		    status.encoding == RX_ENC_LEGACY &&
+		    status.rate_idx >= 4) {
+			/* no dsss rates in 5Ghz rates table */
+			status.rate_idx -= 4;
+		}
+	} else {
+		status.encoding = 0;
+		status.bw = 0;
+		status.enc_flags = 0;
+		status.rate_idx = 0;
+	}
+
+	if (ieee80211_is_beacon(hdr->frame_control) ||
+	    ieee80211_is_probe_resp(hdr->frame_control))
+		status.boottime_ns = ktime_get_boottime_ns();
 
 	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
 
@@ -100,7 +343,6 @@ static void wcn36xx_set_tx_pdu(struct wcn36xx_tx_bd *bd,
 		bd->pdu.mpdu_header_off;
 	bd->pdu.mpdu_len = len;
 	bd->pdu.tid = tid;
-	bd->pdu.bd_ssn = WCN36XX_TXBD_SSN_FILL_DPU_QOS;
 }
 
 static inline struct wcn36xx_vif *get_vif_by_addr(struct wcn36xx *wcn,
@@ -160,9 +402,11 @@ static void wcn36xx_set_tx_data(struct wcn36xx_tx_bd *bd,
 				bool bcast)
 {
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_vif *vif = NULL;
 	struct wcn36xx_vif *__vif_priv = NULL;
-	bool is_data_qos;
+	bool is_data_qos = ieee80211_is_data_qos(hdr->frame_control);
+	u16 tid = 0;
 
 	bd->bd_rate = WCN36XX_BD_RATE_DATA;
 
@@ -191,9 +435,27 @@ static void wcn36xx_set_tx_data(struct wcn36xx_tx_bd *bd,
 		bd->dpu_sign = __vif_priv->self_ucast_dpu_sign;
 	}
 
-	if (ieee80211_is_nullfunc(hdr->frame_control) ||
-	   (sta_priv && !sta_priv->is_data_encrypted))
+	if (is_data_qos) {
+		tid = ieee80211_get_tid(hdr);
+		/* TID->QID is one-to-one mapping */
+		bd->queue_id = tid;
+		bd->pdu.bd_ssn = WCN36XX_TXBD_SSN_FILL_DPU_QOS;
+	} else {
+		bd->pdu.bd_ssn = WCN36XX_TXBD_SSN_FILL_DPU_NON_QOS;
+	}
+
+	if (info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT ||
+	    (sta_priv && !sta_priv->is_data_encrypted)) {
 		bd->dpu_ne = 1;
+	}
+
+	if (ieee80211_is_any_nullfunc(hdr->frame_control)) {
+		/* Don't use a regular queue for null packet (no ampdu) */
+		bd->queue_id = WCN36XX_TX_U_WQ_ID;
+		bd->bd_rate = WCN36XX_BD_RATE_CTRL;
+		if (ieee80211_is_qos_nullfunc(hdr->frame_control))
+			bd->pdu.bd_ssn = WCN36XX_TXBD_SSN_FILL_HOST;
+	}
 
 	if (bcast) {
 		bd->ub = 1;
@@ -201,13 +463,11 @@ static void wcn36xx_set_tx_data(struct wcn36xx_tx_bd *bd,
 	}
 	*vif_priv = __vif_priv;
 
-	is_data_qos = ieee80211_is_data_qos(hdr->frame_control);
-
 	wcn36xx_set_tx_pdu(bd,
 			   is_data_qos ?
 			   sizeof(struct ieee80211_qos_hdr) :
 			   sizeof(struct ieee80211_hdr_3addr),
-			   skb->len, sta_priv ? sta_priv->tid : 0);
+			   skb->len, tid);
 
 	if (sta_priv && is_data_qos)
 		wcn36xx_tx_start_ampdu(wcn, sta_priv, skb);
@@ -254,6 +514,8 @@ static void wcn36xx_set_tx_mgmt(struct wcn36xx_tx_bd *bd,
 		bd->queue_id = WCN36XX_TX_U_WQ_ID;
 	*vif_priv = __vif_priv;
 
+	bd->pdu.bd_ssn = WCN36XX_TXBD_SSN_FILL_DPU_NON_QOS;
+
 	wcn36xx_set_tx_pdu(bd,
 			   ieee80211_is_data_qos(hdr->frame_control) ?
 			   sizeof(struct ieee80211_qos_hdr) :
@@ -268,10 +530,11 @@ int wcn36xx_start_tx(struct wcn36xx *wcn,
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 	struct wcn36xx_vif *vif_priv = NULL;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-	unsigned long flags;
 	bool is_low = ieee80211_is_data(hdr->frame_control);
 	bool bcast = is_broadcast_ether_addr(hdr->addr1) ||
 		is_multicast_ether_addr(hdr->addr1);
+	bool ack_ind = (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) &&
+					!(info->flags & IEEE80211_TX_CTL_NO_ACK);
 	struct wcn36xx_tx_bd bd;
 	int ret;
 
@@ -287,25 +550,16 @@ int wcn36xx_start_tx(struct wcn36xx *wcn,
 
 	bd.dpu_rf = WCN36XX_BMU_WQ_TX;
 
-	bd.tx_comp = !!(info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS);
-	if (bd.tx_comp) {
+	if (unlikely(ack_ind)) {
 		wcn36xx_dbg(WCN36XX_DBG_DXE, "TX_ACK status requested\n");
-		spin_lock_irqsave(&wcn->dxe_lock, flags);
-		if (wcn->tx_ack_skb) {
-			spin_unlock_irqrestore(&wcn->dxe_lock, flags);
-			wcn36xx_warn("tx_ack_skb already set\n");
-			return -EINVAL;
-		}
-
-		wcn->tx_ack_skb = skb;
-		spin_unlock_irqrestore(&wcn->dxe_lock, flags);
 
 		/* Only one at a time is supported by fw. Stop the TX queues
 		 * until the ack status gets back.
-		 *
-		 * TODO: Add watchdog in case FW does not answer
 		 */
 		ieee80211_stop_queues(wcn->hw);
+
+		/* Request ack indication from the firmware */
+		bd.tx_comp = 1;
 	}
 
 	/* Data frames served first*/
@@ -319,14 +573,8 @@ int wcn36xx_start_tx(struct wcn36xx *wcn,
 	bd.tx_bd_sign = 0xbdbdbdbd;
 
 	ret = wcn36xx_dxe_tx_frame(wcn, vif_priv, &bd, skb, is_low);
-	if (ret && bd.tx_comp) {
-		/* If the skb has not been transmitted,
-		 * don't keep a reference to it.
-		 */
-		spin_lock_irqsave(&wcn->dxe_lock, flags);
-		wcn->tx_ack_skb = NULL;
-		spin_unlock_irqrestore(&wcn->dxe_lock, flags);
-
+	if (unlikely(ret && ack_ind)) {
+		/* If the skb has not been transmitted, resume TX queue */
 		ieee80211_wake_queues(wcn->hw);
 	}
 

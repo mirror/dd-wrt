@@ -7,7 +7,7 @@
  *         Lorenzo Bianconi <lorenzo@kernel.org>
  */
 
-//#include <linux/devcoredump.h>
+#include <linux/devcoredump.h>
 #include <linux/etherdevice.h>
 #include <linux/timekeeping.h>
 #include "mt7615.h"
@@ -2381,8 +2381,46 @@ int mt7615_mac_set_beacon_filter(struct mt7615_phy *phy,
 
 	return 0;
 }
-#if 0
+
 void mt7615_coredump_work(struct work_struct *work)
 {
+	struct mt7615_dev *dev;
+	char *dump, *data;
+
+	dev = (struct mt7615_dev *)container_of(work, struct mt7615_dev,
+						coredump.work.work);
+
+	if (time_is_after_jiffies(dev->coredump.last_activity +
+				  4 * MT76_CONNAC_COREDUMP_TIMEOUT)) {
+		queue_delayed_work(dev->mt76.wq, &dev->coredump.work,
+				   MT76_CONNAC_COREDUMP_TIMEOUT);
+		return;
+	}
+
+	dump = vzalloc(MT76_CONNAC_COREDUMP_SZ);
+	data = dump;
+
+	while (true) {
+		struct sk_buff *skb;
+
+		spin_lock_bh(&dev->mt76.lock);
+		skb = __skb_dequeue(&dev->coredump.msg_list);
+		spin_unlock_bh(&dev->mt76.lock);
+
+		if (!skb)
+			break;
+
+		skb_pull(skb, sizeof(struct mt7615_mcu_rxd));
+		if (data + skb->len - dump > MT76_CONNAC_COREDUMP_SZ) {
+			dev_kfree_skb(skb);
+			continue;
+		}
+
+		memcpy(data, skb->data, skb->len);
+		data += skb->len;
+
+		dev_kfree_skb(skb);
+	}
+	dev_coredumpv(dev->mt76.dev, dump, MT76_CONNAC_COREDUMP_SZ,
+		      GFP_KERNEL);
 }
-#endif

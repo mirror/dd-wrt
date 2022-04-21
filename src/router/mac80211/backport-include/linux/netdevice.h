@@ -387,7 +387,34 @@ static inline bool netif_is_bridge_port(const struct net_device *dev)
 {
 	return dev->priv_flags & IFF_BRIDGE_PORT;
 }
+
+
 #endif
+
+#define dev_sw_netstats_rx_add LINUX_BACKPORT(dev_sw_netstats_rx_add)
+static inline void dev_sw_netstats_rx_add(struct net_device *dev, unsigned int len)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
+
+	u64_stats_update_begin(&tstats->syncp);
+	tstats->rx_bytes += len;
+	tstats->rx_packets++;
+	u64_stats_update_end(&tstats->syncp);
+}
+
+#define dev_sw_netstats_tx_add LINUX_BACKPORT(dev_sw_netstats_tx_add)
+static inline void dev_sw_netstats_tx_add(struct net_device *dev,
+					  unsigned int packets,
+					  unsigned int len)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
+
+	u64_stats_update_begin(&tstats->syncp);
+	tstats->tx_bytes += len;
+	tstats->tx_packets += packets;
+	u64_stats_update_end(&tstats->syncp);
+}
+
 
 #if LINUX_VERSION_IS_LESS(5,10,0)
 #define dev_fetch_sw_netstats LINUX_BACKPORT(dev_fetch_sw_netstats)
@@ -397,5 +424,21 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
 #define netif_rx_any_context LINUX_BACKPORT(netif_rx_any_context)
 int netif_rx_any_context(struct sk_buff *skb);
 #endif /* < 5.10 */
+
+#if LINUX_VERSION_IS_LESS(5,15,0)
+static inline void backport_dev_put(struct net_device *dev)
+{
+	if (dev)
+		dev_put(dev);
+}
+#define dev_put LINUX_BACKPORT(dev_put)
+
+static inline void backport_dev_hold(struct net_device *dev)
+{
+	if (dev)
+		dev_hold(dev);
+}
+#define dev_hold LINUX_BACKPORT(dev_hold)
+#endif /* < 5.15 */
 
 #endif /* __BACKPORT_NETDEVICE_H */
