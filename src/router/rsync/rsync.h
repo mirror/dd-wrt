@@ -2,7 +2,7 @@
  * Copyright (C) 1996, 2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2020 Wayne Davison
+ * Copyright (C) 2003-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,12 +108,22 @@
 #define BITS_EQUAL(b1,b2,mask) (((unsigned)(b1) & (unsigned)(mask)) \
 			     == ((unsigned)(b2) & (unsigned)(mask)))
 
-/* update this if you make incompatible changes */
+/* Update this if you make incompatible changes and ALSO update the
+ * SUBPROTOCOL_VERSION if it is not a final (official) release. */
 #define PROTOCOL_VERSION 31
 
-/* This is used when working on a new protocol version in CVS, and should
- * be a new non-zero value for each CVS change that affects the protocol.
- * It must ALWAYS be 0 when the protocol goes final (and NEVER before)! */
+/* This is used when working on a new protocol version or for any unofficial
+ * protocol tweaks.  It should be a non-zero value for each pre-release repo
+ * change that affects the protocol. The official pre-release versions should
+ * start with 1 (after incrementing the PROTOCOL_VERSION) and go up by 1 for
+ * each new protocol change.  For unofficial changes, pick a fairly large
+ * random number that will hopefully not collide with anyone else's unofficial
+ * protocol.  It must ALWAYS be 0 when the protocol goes final (and official)
+ * and NEVER before!  When rsync negotiates a protocol match, it will only
+ * allow the newest protocol to be used if the SUBPROTOCOL_VERSION matches.
+ * All older protocol versions MUST be compatible with the final, official
+ * release of the protocol, so don't tweak the code to change the protocol
+ * behavior for an older protocol version. */
 #define SUBPROTOCOL_VERSION 0
 
 /* We refuse to interoperate with versions that are not in this range.
@@ -267,6 +277,10 @@ enum msgcode {
 	MSG_NO_SEND=102,/* sender failed to open a file we wanted */
 };
 
+enum filetype {
+	FT_UNSUPPORTED, FT_REG, FT_DIR, FT_SYMLINK, FT_SPECIAL, FT_DEVICE
+};
+
 #define NDX_DONE -1
 #define NDX_FLIST_EOF -2
 #define NDX_DEL_STATS -3
@@ -300,7 +314,6 @@ enum delret {
 #include "errcode.h"
 
 #include "config.h"
-#include "version.h"
 
 /* The default RSYNC_RSH is always set in config.h. */
 
@@ -478,7 +491,6 @@ enum delret {
 #ifndef __TANDEM
 #define MAKEDEV(devmajor,devminor) makedev(devmajor,devminor)
 #else
-# include <sys/stat.h>
 # define major DEV_TO_MAJOR
 # define minor DEV_TO_MINOR
 # define MAKEDEV MAJORMINOR_TO_DEV
@@ -570,11 +582,11 @@ typedef unsigned int size_t;
 #endif
 #endif
 
-#ifndef __APPLE__ /* Do we need a configure check for this? */
+#if !defined __APPLE__ || defined HAVE_GETATTRLIST
 #define SUPPORT_ATIMES 1
 #endif
 
-#ifdef HAVE_GETATTRLIST
+#if defined HAVE_GETATTRLIST || defined __CYGWIN__
 #define SUPPORT_CRTIMES 1
 #endif
 
@@ -766,6 +778,11 @@ struct ht_int64_node {
 
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
 #define USE_FLEXIBLE_ARRAY 1
+#define SIZE_T_FMT_MOD "z" /* printf supports %zd */
+#define SIZE_T_FMT_CAST size_t
+#else
+#define SIZE_T_FMT_MOD "l" /* printf supports %ld */
+#define SIZE_T_FMT_CAST long
 #endif
 
 union file_extras {
@@ -904,8 +921,9 @@ extern int xattrs_ndx;
  * Start the flist array at FLIST_START entries and grow it
  * by doubling until FLIST_LINEAR then grow by FLIST_LINEAR
  */
-#define FLIST_START	(32 * 1024)
-#define FLIST_LINEAR	(FLIST_START * 512)
+#define FLIST_START		(32)
+#define FLIST_START_LARGE	(32 * 1024)
+#define FLIST_LINEAR		(FLIST_START_LARGE * 512)
 
 /*
  * Extent size for allocation pools: A minimum size of 128KB
@@ -1151,8 +1169,12 @@ struct name_num_obj {
 	uchar *saw;
 	int saw_len;
 	int negotiated_num;
-	struct name_num_item list[8]; /* A big-enough len (we'll get a compile error if it is ever too small) */
+	struct name_num_item list[10]; /* we'll get a compile error/warning if this is ever too small */
 };
+
+#ifdef EXTERNAL_ZLIB
+#define read_buf read_buf_
+#endif
 
 #ifndef __cplusplus
 #include "proto.h"
@@ -1312,10 +1334,6 @@ extern int errno;
 #define IS_SPECIAL(mode) (S_ISSOCK(mode) || S_ISFIFO(mode))
 #define IS_DEVICE(mode) (S_ISCHR(mode) || S_ISBLK(mode))
 
-#define PRESERVE_FILE_TIMES	(1<<0)
-#define PRESERVE_DIR_TIMES	(1<<1)
-#define PRESERVE_LINK_TIMES	(1<<2)
-
 /* Initial mask on permissions given to temporary files.  Mask off setuid
      bits and group access because of potential race-condition security
      holes, and mask other access because mode 707 is bizarre */
@@ -1411,7 +1429,8 @@ extern short info_levels[], debug_levels[];
 #define INFO_MISC (INFO_FLIST+1)
 #define INFO_MOUNT (INFO_MISC+1)
 #define INFO_NAME (INFO_MOUNT+1)
-#define INFO_PROGRESS (INFO_NAME+1)
+#define INFO_NONREG (INFO_NAME+1)
+#define INFO_PROGRESS (INFO_NONREG+1)
 #define INFO_REMOVE (INFO_PROGRESS+1)
 #define INFO_SKIP (INFO_REMOVE+1)
 #define INFO_STATS (INFO_SKIP+1)
@@ -1466,3 +1485,9 @@ const char *get_panic_action(void);
     fprintf(stderr, "%s in %s at line %d\n", msg, __FILE__, __LINE__); \
     exit_cleanup(RERR_UNSUPPORTED); \
 } while (0)
+
+#ifdef HAVE_MALLINFO2
+#define MEM_ALLOC_INFO mallinfo2
+#elif defined HAVE_MALLINFO
+#define MEM_ALLOC_INFO mallinfo
+#endif

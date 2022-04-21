@@ -1,6 +1,6 @@
 /* Inline functions for rsync.
  *
- * Copyright (C) 2007-2020 Wayne Davison
+ * Copyright (C) 2007-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,12 @@ static inline int
 isSpace(const char *ptr)
 {
 	return isspace(*(unsigned char *)ptr);
+}
+
+static inline int
+isAlNum(const char *ptr)
+{
+	return isalnum(*(unsigned char *)ptr);
 }
 
 static inline int

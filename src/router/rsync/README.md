@@ -23,8 +23,9 @@ options.  To get a complete list of supported options type:
 
     rsync --help
 
-See the manpage for more detailed information.
+See the [manpage][0] for more detailed information.
 
+[0]: https://download.samba.org/pub/rsync/rsync.1
 
 BUILDING AND INSTALLING
 -----------------------
@@ -64,8 +65,8 @@ RSYNC DAEMONS
 -------------
 
 Rsync can also talk to "rsync daemons" which can provide anonymous or
-authenticated rsync.  See the rsyncd.conf(5) man page for details on how
-to setup an rsync daemon.  See the rsync(1) man page for info on how to
+authenticated rsync.  See the rsyncd.conf(5) manpage for details on how
+to setup an rsync daemon.  See the rsync(1) manpage for info on how to
 connect to an rsync daemon.
 
 

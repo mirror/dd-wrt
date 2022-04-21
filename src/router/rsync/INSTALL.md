@@ -13,22 +13,22 @@ You need to have a C compiler installed and optionally a C++ compiler in order
 to try to build some hardware-accelerated checksum routines.  Rsync also needs
 a modern awk, which might be provided via gawk or nawk on some OSes.
 
-## Autoconf & man pages
+## Autoconf & manpages
 
 If you're installing from the git repo (instead of a release tar file) you'll
 also need the GNU autotools (autoconf & automake) and your choice of 2 python3
-markdown libraries: cmarkgfm or commonmark (needed to generate the man pages).
+markdown libraries: cmarkgfm or commonmark (needed to generate the manpages).
 If your OS doesn't provide a python3-cmarkgfm or python3-commonmark package,
 you can run the following to install the commonmark python library for your
 build user (after installing python3's pip package):
 
->     pip3 install --user commonmark
+>     python3 -mpip install --user commonmark
 
-You can test if you've got it fixed by running (from the src dir):
+You can test if you've got it fixed by running (from the rsync checkout):
 
 >     ./md2man --test rsync-ssl.1.md
 
-Alternately, you can avoid generating the man pages by fetching the very latest
+Alternately, you can avoid generating the manpages by fetching the very latest
 versions (that match the latest git source) from the [generated-files][6] dir.
 One way to do that is to run:
 
@@ -53,7 +53,8 @@ installed to manipulate xattrs and to run the rsync testsuite.
 The [xxHash library][1] provides extremely fast checksum functions that can
 make the "rsync algorithm" run much more quickly, especially when matching
 blocks in large files.  Installing this development library adds xxhash
-checksums as the default checksum algorithm.
+checksums as the default checksum algorithm.  You'll need at least v0.8.0
+if you want rsync to include the full range of its checksum algorithms.
 
 [1]: https://cyan4973.github.io/xxHash/
 
@@ -100,7 +101,7 @@ like.
     >     sudo apt install -y attr libattr1-dev
     >     sudo apt install -y libxxhash-dev
     >     sudo apt install -y libzstd-dev
-    >     sudo apt install -y libzlz4-dev
+    >     sudo apt install -y liblz4-dev
     >     sudo apt install -y libssl-dev
 
  -  For CentOS (use EPEL for python3-pip):
@@ -113,7 +114,7 @@ like.
     >     sudo yum -y install libzstd-devel
     >     sudo yum -y install lz4-devel
     >     sudo yum -y install openssl-devel
-    >     pip3 install --user commonmark
+    >     python3 -mpip install --user commonmark
 
  -  For Fedora 33:
 
@@ -141,11 +142,17 @@ like.
 
  -  For Cygwin (with all cygwin programs stopped, run the appropriate setup program from a cmd shell):
 
-    >     setup-x86_64 --quiet-mode -P make,gawk,autoconf,automake,gcc-core,python3,python36-commonmark
+    >     setup-x86_64 --quiet-mode -P make,gawk,autoconf,automake,gcc-core,python38,python38-pip
     >     setup-x86_64 --quiet-mode -P attr,libattr-devel
     >     setup-x86_64 --quiet-mode -P libzstd-devel
     >     setup-x86_64 --quiet-mode -P liblz4-devel
     >     setup-x86_64 --quiet-mode -P libssl-devel
+
+    Sometimes cygwin has commonmark packaged and sometimes it doesn't. Now that
+    its python38 has stabilized, you could install python38-commonmark. Or just
+    avoid the issue by running this from a bash shell as your build user:
+
+    >     python3 -mpip install --user commonmark
 
 ## Build and install
 
@@ -171,9 +178,9 @@ config.h, or just override them in your /etc/rsyncd.conf file.
 As of 2.4.7, rsync uses Eric Troan's popt option-parsing library.  A
 cut-down copy of a recent release is included in the rsync distribution,
 and will be used if there is no popt library on your build host, or if
-the --with-included-popt option is passed to ./configure.
+the `--with-included-popt` option is passed to ./configure.
 
-If you configure using --enable-maintainer-mode, then rsync will try
+If you configure using `--enable-maintainer-mode`, then rsync will try
 to pop up an xterm on DISPLAY=:0 if it crashes.  You might find this
 useful, but it should be turned off for production builds.
 
@@ -187,7 +194,7 @@ This is helpful when using the branch-from-patch and patch-update scripts
 to maintain the official rsync patches.  If you ever need to build from
 a "detached head" git position then you'll need to manually chdir into
 the build dir to run make.  I also like to create 2 more symlinks in the
-source dir:  ln -s build/rsync . ; ln -s build/testtmp .
+source dir:  `ln -s build/rsync . ; ln -s build/testtmp .`
 
 ## Make compatibility
 
@@ -221,7 +228,7 @@ Some versions of Mac OS X (Darwin) seem to have an IPv6 stack, but do
 not completely implement the "New Sockets" API.
 
 [This site][5] says that Apple started to support IPv6 in 10.2 (Jaguar).  If
-your build fails, try again after running configure with --disable-ipv6.
+your build fails, try again after running configure with `--disable-ipv6`.
 
 [5]: http://www.ipv6.org/impl/mac.html
 

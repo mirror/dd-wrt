@@ -1,5 +1,6 @@
 <html><head>
-<title>rsync-ssl(1) man page</title>
+<title>rsync-ssl(1) manpage</title>
+<meta charset="UTF-8"/>
 <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono&display=swap" rel="stylesheet">
 <style>
 body {
@@ -9,6 +10,10 @@ body {
 body, b, strong, u {
   font-family: 'Roboto', sans-serif;
 }
+a.tgt { font-face: symbol; font-weight: 400; font-size: 70%; visibility: hidden; text-decoration: none; color: #ddd; padding: 0 4px; border: 0; }
+a.tgt:after { content: '🔗'; }
+a.tgt:hover { color: #444; background-color: #eaeaea; }
+h1:hover > a.tgt, h2:hover > a.tgt, h3:hover > a.tgt, dt:hover > a.tgt { visibility: visible; }
 code {
   font-family: 'Roboto Mono', monospace;
   font-weight: bold;
@@ -26,12 +31,14 @@ dd p:first-of-type {
 }
 </style>
 </head><body>
-<h1>NAME</h1>
+<h2 id="NAME">NAME<a href="#NAME" class="tgt"></a></h2>
 <p>rsync-ssl -&#8288; a helper script for connecting to an ssl rsync daemon</p>
-<h1>SYNOPSIS</h1>
+<h2 id="SYNOPSIS">SYNOPSIS<a href="#SYNOPSIS" class="tgt"></a></h2>
 <pre><code>rsync-ssl [--type=SSL_TYPE] RSYNC_ARGS
 </code></pre>
-<h1>DESCRIPTION</h1>
+<p>The online version of this manpage (that includes cross-linking of topics)
+is available at <a href="https://download.samba.org/pub/rsync/rsync-ssl.1">https://download.samba.org/pub/rsync/rsync-ssl.1</a>.</p>
+<h2 id="DESCRIPTION">DESCRIPTION<a href="#DESCRIPTION" class="tgt"></a></h2>
 <p>The rsync-ssl script helps you to run an rsync copy to/from an rsync daemon
 that requires ssl connections.</p>
 <p>The script requires that you specify an rsync-daemon arg in the style of either
@@ -40,7 +47,7 @@ connecting is 874 (one higher than the normal 873) unless overridden in the
 environment.  You can specify an overriding port via <code>--port</code> or by including
 it in the normal spot in the URL format, though both of those require your
 rsync version to be at least 3.2.0.</p>
-<h1>OPTIONS</h1>
+<h2 id="OPTIONS">OPTIONS<a href="#OPTIONS" class="tgt"></a></h2>
 <p>If the <strong>first</strong> arg is a <code>--type=SSL_TYPE</code> option, the script will only use
 that particular program to open an ssl connection instead of trying to find an
 openssl or stunnel executable via a simple heuristic (assuming that the
@@ -49,32 +56,56 @@ option must specify one of <code>openssl</code> or <code>stunnel</code>.  The eq
 required for this particular option.</p>
 <p>All the other options are passed through to the rsync command, so consult the
 <strong>rsync</strong>(1) manpage for more information on how it works.</p>
-<h1>ENVIRONMENT VARIABLES</h1>
+<h2 id="ENVIRONMENT_VARIABLES">ENVIRONMENT VARIABLES<a href="#ENVIRONMENT_VARIABLES" class="tgt"></a></h2>
 <p>The ssl helper scripts are affected by the following environment variables:</p>
 <dl>
-<dt><code>RSYNC_SSL_TYPE</code></dt><dd> Specifies the program type that should be used to open the
-ssl connection.  It must be one of <code>openssl</code> or <code>stunnel</code>.  The
-<code>--type=SSL_TYPE</code> option overrides this, when specified.</dd>
-<dt><code>RSYNC_SSL_PORT</code></dt><dd> If specified, the value is the port number that is used as
-the default when the user does not specify a port in their rsync command.
-When not specified, the default port number is 874.  (Note that older rsync
-versions (prior to 3.2.0) did not communicate an overriding port number
-value to the helper script.)</dd>
-<dt><code>RSYNC_SSL_CERT</code></dt><dd> If specified, the value is a filename that contains a
-certificate to use for the connection.</dd>
-<dt><code>RSYNC_SSL_CA_CERT</code></dt><dd> If specified, the value is a filename that contains a
-certificate authority certificate that is used to validate the connection.</dd>
-<dt><code>RSYNC_SSL_OPENSSL</code></dt><dd> Specifies the openssl executable to run when the
-connection type is set to openssl.  If unspecified, the $PATH is searched
-for &quot;openssl&quot;.</dd>
-<dt><code>RSYNC_SSL_GNUTLS</code></dt><dd> Specifies the gnutls-cli executable to run when the
-connection type is set to gnutls.  If unspecified, the $PATH is searched
-for &quot;gnutls-cli&quot;.</dd>
-<dt><code>RSYNC_SSL_STUNNEL</code></dt><dd> Specifies the stunnel executable to run when the
-connection type is set to stunnel.  If unspecified, the $PATH is searched
-first for &quot;stunnel4&quot; and then for &quot;stunnel&quot;.</dd>
+
+<dt id="RSYNC_SSL_TYPE"><code>RSYNC_SSL_TYPE</code><a href="#RSYNC_SSL_TYPE" class="tgt"></a></dt><dd>
+<p>Specifies the program type that should be used to open the ssl connection.
+It must be one of <code>openssl</code> or <code>stunnel</code>.  The <code>--type=SSL_TYPE</code> option
+overrides this, when specified.</p>
+</dd>
+
+<dt id="RSYNC_SSL_PORT"><code>RSYNC_SSL_PORT</code><a href="#RSYNC_SSL_PORT" class="tgt"></a></dt><dd>
+<p>If specified, the value is the port number that is used as the default when
+the user does not specify a port in their rsync command.  When not
+specified, the default port number is 874.  (Note that older rsync versions
+(prior to 3.2.0) did not communicate an overriding port number value to the
+helper script.)</p>
+</dd>
+
+<dt id="RSYNC_SSL_CERT"><code>RSYNC_SSL_CERT</code><a href="#RSYNC_SSL_CERT" class="tgt"></a></dt><dd>
+<p>If specified, the value is a filename that contains a certificate to use
+for the connection.</p>
+</dd>
+
+<dt id="RSYNC_SSL_KEY"><code>RSYNC_SSL_KEY</code><a href="#RSYNC_SSL_KEY" class="tgt"></a></dt><dd>
+<p>If specified, the value is a filename that contains a key for the provided
+certificate to use for the connection.</p>
+</dd>
+
+<dt id="RSYNC_SSL_CA_CERT"><code>RSYNC_SSL_CA_CERT</code><a href="#RSYNC_SSL_CA_CERT" class="tgt"></a></dt><dd>
+<p>If specified, the value is a filename that contains a certificate authority
+certificate that is used to validate the connection.</p>
+</dd>
+
+<dt id="RSYNC_SSL_OPENSSL"><code>RSYNC_SSL_OPENSSL</code><a href="#RSYNC_SSL_OPENSSL" class="tgt"></a></dt><dd>
+<p>Specifies the openssl executable to run when the connection type is set to
+openssl.  If unspecified, the $PATH is searched for &quot;openssl&quot;.</p>
+</dd>
+
+<dt id="RSYNC_SSL_GNUTLS"><code>RSYNC_SSL_GNUTLS</code><a href="#RSYNC_SSL_GNUTLS" class="tgt"></a></dt><dd>
+<p>Specifies the gnutls-cli executable to run when the connection type is set
+to gnutls.  If unspecified, the $PATH is searched for &quot;gnutls-cli&quot;.</p>
+</dd>
+
+<dt id="RSYNC_SSL_STUNNEL"><code>RSYNC_SSL_STUNNEL</code><a href="#RSYNC_SSL_STUNNEL" class="tgt"></a></dt><dd>
+<p>Specifies the stunnel executable to run when the connection type is set to
+stunnel.  If unspecified, the $PATH is searched first for &quot;stunnel4&quot; and
+then for &quot;stunnel&quot;.</p>
+</dd>
 </dl>
-<h1>EXAMPLES</h1>
+<h2 id="EXAMPLES">EXAMPLES<a href="#EXAMPLES" class="tgt"></a></h2>
 <blockquote>
 <pre><code>rsync-ssl -aiv example.com::mod/ dest
 </code></pre>
@@ -91,9 +122,9 @@ first for &quot;stunnel4&quot; and then for &quot;stunnel&quot;.</dd>
 <pre><code>rsync-ssl -aiv rsync://example.com:9874/mod/ dest
 </code></pre>
 </blockquote>
-<h1>SEE ALSO</h1>
-<p><strong>rsync</strong>(1), <strong>rsyncd.conf</strong>(5)</p>
-<h1>CAVEATS</h1>
+<h2 id="SEE_ALSO">SEE ALSO<a href="#SEE_ALSO" class="tgt"></a></h2>
+<p><a href="rsync.1"><strong>rsync</strong>(1)</a>, <a href="rsyncd.conf.5"><strong>rsyncd.conf</strong>(5)</a></p>
+<h2 id="CAVEATS">CAVEATS<a href="#CAVEATS" class="tgt"></a></h2>
 <p>Note that using an stunnel connection requires at least version 4 of stunnel,
 which should be the case on modern systems.  Also, it does not verify a
 connection against the CA certificate collection, so it only encrypts the
@@ -103,18 +134,18 @@ certificate environment options.</p>
 release the gnutls-cli command was dropping output, making it unusable.  If
 that bug has been fixed in your version, feel free to put gnutls into an
 exported RSYNC_SSL_TYPE environment variable to make its use the default.</p>
-<h1>BUGS</h1>
+<h2 id="BUGS">BUGS<a href="#BUGS" class="tgt"></a></h2>
 <p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
-<h1>VERSION</h1>
-<p>This man page is current for version 3.2.3 of rsync.</p>
-<h1>CREDITS</h1>
-<p>rsync is distributed under the GNU General Public License.  See the file
-COPYING for details.</p>
+<h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
+<p>This manpage is current for version 3.2.4 of rsync.</p>
+<h2 id="CREDITS">CREDITS<a href="#CREDITS" class="tgt"></a></h2>
+<p>Rsync is distributed under the GNU General Public License.  See the file
+<a href="COPYING">COPYING</a> for details.</p>
 <p>A web site is available at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.  The site includes an
 FAQ-O-Matic which may cover questions unanswered by this manual page.</p>
-<h1>AUTHOR</h1>
+<h2 id="AUTHOR">AUTHOR<a href="#AUTHOR" class="tgt"></a></h2>
 <p>This manpage was written by Wayne Davison.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>06 Aug 2020</i></p></div>
+<div style="float: right"><p><i>15 Apr 2022</i></p></div>
 </body></html>

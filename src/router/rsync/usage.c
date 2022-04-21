@@ -1,7 +1,7 @@
 /*
  * Some usage & version related functions.
  *
- * Copyright (C) 2002-2020 Wayne Davison
+ * Copyright (C) 2002-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
  */
 
 #include "rsync.h"
+#include "version.h"
 #include "latest-year.h"
 #include "git-version.h"
 #include "default-cvsignore.h"
@@ -52,6 +53,16 @@ static void print_info_flags(enum logcode f)
 #endif
 			"socketpairs",
 
+#ifndef SUPPORT_LINKS
+		"no "
+#endif
+			"symlinks",
+
+#ifndef CAN_SET_SYMLINK_TIMES
+		"no "
+#endif
+			"symtimes",
+
 #ifndef SUPPORT_HARD_LINKS
 		"no "
 #endif
@@ -62,10 +73,10 @@ static void print_info_flags(enum logcode f)
 #endif
 			"hardlink-specials",
 
-#ifndef SUPPORT_LINKS
+#ifndef CAN_HARDLINK_SYMLINK
 		"no "
 #endif
-			"symlinks",
+			"hardlink-symlinks",
 
 #ifndef INET6
 		"no "
@@ -111,11 +122,6 @@ static void print_info_flags(enum logcode f)
 #endif
 			"iconv",
 
-#ifndef CAN_SET_SYMLINK_TIMES
-		"no "
-#endif
-			"symtimes",
-
 #ifndef SUPPORT_PREALLOCATION
 		"no "
 #endif
@@ -133,20 +139,25 @@ static void print_info_flags(enum logcode f)
 
 	"*Optimizations",
 
-#ifndef HAVE_SIMD
+#ifndef USE_ROLL_SIMD
 		"no "
 #endif
-			"SIMD",
+			"SIMD-roll",
 
-#ifndef HAVE_ASM
+#ifndef USE_ROLL_ASM
 		"no "
 #endif
-			"asm",
+			"asm-roll",
 
 #ifndef USE_OPENSSL
 		"no "
 #endif
 			"openssl-crypto",
+
+#ifndef USE_MD5_ASM
+		"no "
+#endif
+			"asm-MD5",
 
 		NULL
 	};
@@ -234,7 +245,7 @@ void usage(enum logcode F)
 #include "help-rsync.h"
   rprintf(F,"\n");
   rprintf(F,"Use \"rsync --daemon --help\" to see the daemon-mode command-line options.\n");
-  rprintf(F,"Please see the rsync(1) and rsyncd.conf(5) man pages for full documentation.\n");
+  rprintf(F,"Please see the rsync(1) and rsyncd.conf(5) manpages for full documentation.\n");
   rprintf(F,"See https://rsync.samba.org/ for updates, bug reports, and answers\n");
 }
 
@@ -247,12 +258,16 @@ void daemon_usage(enum logcode F)
 #include "help-rsyncd.h"
   rprintf(F,"\n");
   rprintf(F,"If you were not trying to invoke rsync as a daemon, avoid using any of the\n");
-  rprintf(F,"daemon-specific rsync options.  See also the rsyncd.conf(5) man page.\n");
+  rprintf(F,"daemon-specific rsync options.  See also the rsyncd.conf(5) manpage.\n");
 }
 
 const char *rsync_version(void)
 {
+#ifdef RSYNC_GITVER
 	return RSYNC_GITVER;
+#else
+	return RSYNC_VERSION;
+#endif
 }
 
 const char *default_cvsignore(void)

@@ -61,9 +61,6 @@
 /* Define to 1 if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
 
-/* Define to 1 to enable ASM optimizations */
-#undef HAVE_ASM
-
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
@@ -290,6 +287,9 @@
 /* Define to 1 if you have the `mallinfo' function. */
 #undef HAVE_MALLINFO
 
+/* Define to 1 if you have the `mallinfo2' function. */
+#undef HAVE_MALLINFO2
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -328,6 +328,9 @@
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <netgroup.h> header file. */
+#undef HAVE_NETGROUP_H
 
 /* Define to 1 if you have the <netinet/in_systm.h> header file. */
 #undef HAVE_NETINET_IN_SYSTM_H
@@ -386,6 +389,9 @@
 /* Define to 1 if you have the `setattrlist' function. */
 #undef HAVE_SETATTRLIST
 
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
 /* Define to 1 if you have the `seteuid' function. */
 #undef HAVE_SETEUID
 
@@ -409,9 +415,6 @@
 
 /* Define to 1 if you have the `sigprocmask' function. */
 #undef HAVE_SIGPROCMASK
-
-/* Define to 1 to enable SIMD optimizations */
-#undef HAVE_SIMD
 
 /* Define to 1 if the system has the type `size_t'. */
 #undef HAVE_SIZE_T
@@ -576,6 +579,9 @@
 
 /* true if you have UnixWare ACLs */
 #undef HAVE_UNIXWARE_ACLS
+
+/* Define to 1 if you have the `unsetenv' function. */
+#undef HAVE_UNSETENV
 
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
@@ -788,9 +794,19 @@
 /* Define to 1 if you want rsync to make use of iconv_open() */
 #undef USE_ICONV_OPEN
 
+/* Define to 1 to enable MD5 ASM optimizations */
+#undef USE_MD5_ASM
+
 /* Undefine if you do not want to use openssl crypto library. By default this
    is defined. */
 #undef USE_OPENSSL
+
+/* Define to 1 to enable rolling-checksum ASM optimizations (requires
+   --enable-roll-simd) */
+#undef USE_ROLL_ASM
+
+/* Define to 1 to enable rolling-checksum SIMD optimizations */
+#undef USE_ROLL_SIMD
 
 /* String to pass to iconv() for the UTF-8 charset. */
 #undef UTF8_CHARSET

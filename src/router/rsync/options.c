@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2000, 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2002-2020 Wayne Davison
+ * Copyright (C) 2002-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ int append_mode = 0;
 int keep_dirlinks = 0;
 int copy_dirlinks = 0;
 int copy_links = 0;
+int copy_devices = 0;
 int write_devices = 0;
 int preserve_links = 0;
 int preserve_hard_links = 0;
@@ -58,14 +59,17 @@ int preserve_devices = 0;
 int preserve_specials = 0;
 int preserve_uid = 0;
 int preserve_gid = 0;
-int preserve_times = 0;
+int preserve_mtimes = 0;
 int preserve_atimes = 0;
 int preserve_crtimes = 0;
+int omit_dir_times = 0;
+int omit_link_times = 0;
 int update_only = 0;
 int open_noatime = 0;
 int cvs_exclude = 0;
 int dry_run = 0;
 int do_xfers = 1;
+int do_fsync = 0;
 int ignore_times = 0;
 int delete_mode = 0;
 int delete_during = 0;
@@ -88,6 +92,7 @@ int implied_dirs = 1;
 int missing_args = 0; /* 0 = FERROR_XFER, 1 = ignore, 2 = delete */
 int numeric_ids = 0;
 int msgs2stderr = 2; /* Default: send errors to stderr for local & remote-shell transfers */
+int saw_stderr_opt = 0;
 int allow_8bit_chars = 0;
 int force_delete = 0;
 int io_timeout = 0;
@@ -98,6 +103,7 @@ int filesfrom_fd = -1;
 char *filesfrom_host = NULL;
 int eol_nulls = 0;
 int protect_args = -1;
+int old_style_args = -1;
 int human_readable = 1;
 int recurse = 0;
 int mkpath_dest_arg = 0;
@@ -227,7 +233,7 @@ static const char *debug_verbosity[] = {
 #define MAX_VERBOSITY ((int)(sizeof debug_verbosity / sizeof debug_verbosity[0]) - 1)
 
 static const char *info_verbosity[1+MAX_VERBOSITY] = {
-	/*0*/ NULL,
+	/*0*/ "NONREG",
 	/*1*/ "COPY,DEL,FLIST,MISC,NAME,STATS,SYMSAFE",
 	/*2*/ "BACKUP,MISC2,MOUNT,NAME2,REMOVE,SKIP",
 };
@@ -265,9 +271,10 @@ static struct output_struct info_words[COUNT_INFO+1] = {
 	INFO_WORD(MISC, W_SND|W_REC, "Mention miscellaneous information (levels 1-2)"),
 	INFO_WORD(MOUNT, W_SND|W_REC, "Mention mounts that were found or skipped"),
 	INFO_WORD(NAME, W_SND|W_REC, "Mention 1) updated file/dir names, 2) unchanged names"),
+	INFO_WORD(NONREG, W_REC, "Mention skipped non-regular files (default 1, 0 disables)"),
 	INFO_WORD(PROGRESS, W_CLI, "Mention 1) per-file progress or 2) total transfer progress"),
 	INFO_WORD(REMOVE, W_SND, "Mention files removed on the sending side"),
-	INFO_WORD(SKIP, W_REC, "Mention files that are skipped due to options used"),
+	INFO_WORD(SKIP, W_REC, "Mention files skipped due to transfer overrides (levels 1-2)"),
 	INFO_WORD(STATS, W_CLI|W_SRV, "Mention statistics at end of run (levels 1-3)"),
 	INFO_WORD(SYMSAFE, W_SND|W_REC, "Mention symlinks that are unsafe"),
 	{ NULL, "--info", 0, 0, 0, 0 }
@@ -307,8 +314,6 @@ static int verbose = 0;
 static int do_stats = 0;
 static int do_progress = 0;
 static int daemon_opt;   /* sets am_daemon after option error-reporting */
-static int omit_dir_times = 0;
-static int omit_link_times = 0;
 static int F_option_cnt = 0;
 static int modify_window_set;
 static int itemize_changes = 0;
@@ -487,9 +492,9 @@ static void output_item_help(struct output_struct *words)
 
 	rprintf(FINFO, fmt, "HELP", "Output this help message");
 	rprintf(FINFO, "\n");
-	rprintf(FINFO, "Options added for each increase in verbose level:\n");
+	rprintf(FINFO, "Options added at each level of verbosity:\n");
 
-	for (j = 1; j <= MAX_VERBOSITY; j++) {
+	for (j = 0; j <= MAX_VERBOSITY; j++) {
 		parse_output_words(words, levels, verbosity[j], HELP_PRIORITY);
 		opt = make_output_option(words, levels, W_CLI|W_SRV|W_SND|W_REC);
 		if (opt) {
@@ -508,7 +513,7 @@ static void set_output_verbosity(int level, uchar priority)
 	if (level > MAX_VERBOSITY)
 		level = MAX_VERBOSITY;
 
-	for (j = 1; j <= level; j++) {
+	for (j = 0; j <= level; j++) {
 		parse_output_words(info_words, info_levels, info_verbosity[j], priority);
 		parse_output_words(debug_words, debug_levels, debug_verbosity[j], priority);
 	}
@@ -527,7 +532,7 @@ void limit_output_verbosity(int level)
 	memset(debug_limits, 0, sizeof debug_limits);
 
 	/* Compute the level limits in the above arrays. */
-	for (j = 1; j <= level; j++) {
+	for (j = 0; j <= level; j++) {
 		parse_output_words(info_words, info_limits, info_verbosity[j], LIMIT_PRIORITY);
 		parse_output_words(debug_words, debug_limits, debug_verbosity[j], LIMIT_PRIORITY);
 	}
@@ -574,7 +579,7 @@ enum {OPT_SERVER = 1000, OPT_DAEMON, OPT_SENDER, OPT_EXCLUDE, OPT_EXCLUDE_FROM,
       OPT_READ_BATCH, OPT_WRITE_BATCH, OPT_ONLY_WRITE_BATCH, OPT_MAX_SIZE,
       OPT_NO_D, OPT_APPEND, OPT_NO_ICONV, OPT_INFO, OPT_DEBUG, OPT_BLOCK_SIZE,
       OPT_USERMAP, OPT_GROUPMAP, OPT_CHOWN, OPT_BWLIMIT, OPT_STDERR,
-      OPT_OLD_COMPRESS, OPT_NEW_COMPRESS, OPT_NO_COMPRESS,
+      OPT_OLD_COMPRESS, OPT_NEW_COMPRESS, OPT_NO_COMPRESS, OPT_OLD_ARGS,
       OPT_STOP_AFTER, OPT_STOP_AT,
       OPT_REFUSED_BASE = 9000};
 
@@ -621,9 +626,9 @@ static struct poptOption long_options[] = {
   {"xattrs",          'X', POPT_ARG_NONE,   0, 'X', 0, 0 },
   {"no-xattrs",        0,  POPT_ARG_VAL,    &preserve_xattrs, 0, 0, 0 },
   {"no-X",             0,  POPT_ARG_VAL,    &preserve_xattrs, 0, 0, 0 },
-  {"times",           't', POPT_ARG_VAL,    &preserve_times, 1, 0, 0 },
-  {"no-times",         0,  POPT_ARG_VAL,    &preserve_times, 0, 0, 0 },
-  {"no-t",             0,  POPT_ARG_VAL,    &preserve_times, 0, 0, 0 },
+  {"times",           't', POPT_ARG_VAL,    &preserve_mtimes, 1, 0, 0 },
+  {"no-times",         0,  POPT_ARG_VAL,    &preserve_mtimes, 0, 0, 0 },
+  {"no-t",             0,  POPT_ARG_VAL,    &preserve_mtimes, 0, 0, 0 },
   {"atimes",          'U', POPT_ARG_NONE,   0, 'U', 0, 0 },
   {"no-atimes",        0,  POPT_ARG_VAL,    &preserve_atimes, 0, 0, 0 },
   {"no-U",             0,  POPT_ARG_VAL,    &preserve_atimes, 0, 0, 0 },
@@ -652,6 +657,7 @@ static struct poptOption long_options[] = {
   {"no-D",             0,  POPT_ARG_NONE,   0, OPT_NO_D, 0, 0 },
   {"devices",          0,  POPT_ARG_VAL,    &preserve_devices, 1, 0, 0 },
   {"no-devices",       0,  POPT_ARG_VAL,    &preserve_devices, 0, 0, 0 },
+  {"copy-devices",     0,  POPT_ARG_NONE,   &copy_devices, 0, 0, 0 },
   {"write-devices",    0,  POPT_ARG_VAL,    &write_devices, 1, 0, 0 },
   {"no-write-devices", 0,  POPT_ARG_VAL,    &write_devices, 0, 0, 0 },
   {"specials",         0,  POPT_ARG_VAL,    &preserve_specials, 1, 0, 0 },
@@ -777,6 +783,8 @@ static struct poptOption long_options[] = {
   {"files-from",       0,  POPT_ARG_STRING, &files_from, 0, 0, 0 },
   {"from0",           '0', POPT_ARG_VAL,    &eol_nulls, 1, 0, 0},
   {"no-from0",         0,  POPT_ARG_VAL,    &eol_nulls, 0, 0, 0},
+  {"old-args",         0,  POPT_ARG_NONE,   0, OPT_OLD_ARGS, 0, 0},
+  {"no-old-args",      0,  POPT_ARG_VAL,    &old_style_args, 0, 0, 0},
   {"protect-args",    's', POPT_ARG_VAL,    &protect_args, 1, 0, 0},
   {"no-protect-args",  0,  POPT_ARG_VAL,    &protect_args, 0, 0, 0},
   {"no-s",             0,  POPT_ARG_VAL,    &protect_args, 0, 0, 0},
@@ -789,6 +797,7 @@ static struct poptOption long_options[] = {
   {"no-timeout",       0,  POPT_ARG_VAL,    &io_timeout, 0, 0, 0 },
   {"contimeout",       0,  POPT_ARG_INT,    &connect_timeout, 0, 0, 0 },
   {"no-contimeout",    0,  POPT_ARG_VAL,    &connect_timeout, 0, 0, 0 },
+  {"fsync",            0,  POPT_ARG_NONE,   &do_fsync, 0, 0, 0 },
   {"stop-after",       0,  POPT_ARG_STRING, 0, OPT_STOP_AFTER, 0, 0 },
   {"time-limit",       0,  POPT_ARG_STRING, 0, OPT_STOP_AFTER, 0, 0 }, /* earlier stop-after name */
   {"stop-at",          0,  POPT_ARG_STRING, 0, OPT_STOP_AT, 0, 0 },
@@ -942,6 +951,7 @@ static void set_refuse_options(void)
 		 || strcmp("iconv", longName) == 0
 		 || strcmp("no-iconv", longName) == 0
 		 || strcmp("checksum-seed", longName) == 0
+		 || strcmp("copy-devices", longName) == 0 /* disable wild-match (it gets refused below) */
 		 || strcmp("write-devices", longName) == 0 /* disable wild-match (it gets refused below) */
 		 || strcmp("log-format", longName) == 0 /* aka out-format (NOT log-file-format) */
 		 || strcmp("sender", longName) == 0
@@ -953,6 +963,7 @@ static void set_refuse_options(void)
 	assert(list_end != NULL);
 
 	if (am_daemon) { /* Refused by default, but can be accepted via a negated exact match. */
+		parse_one_refuse_match(0, "copy-devices", list_end);
 		parse_one_refuse_match(0, "write-devices", list_end);
 	}
 
@@ -1516,7 +1527,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			preserve_links = 1;
 #endif
 			preserve_perms = 1;
-			preserve_times = 1;
+			preserve_mtimes = 1;
 			preserve_gid = 1;
 			preserve_uid = 1;
 			preserve_devices = 1;
@@ -1599,6 +1610,13 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		case OPT_NO_COMPRESS:
 			do_compression = 0;
 			compress_choice = NULL;
+			break;
+
+		case OPT_OLD_ARGS:
+			if (old_style_args <= 0)
+				old_style_args = 1;
+			else
+				old_style_args++;
 			break;
 
 		case 'M':
@@ -1745,6 +1763,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			}
 			usermap = (char *)poptGetOptArg(pc);
 			usermap_via_chown = False;
+			preserve_uid = 1;
 			break;
 
 		case OPT_GROUPMAP:
@@ -1760,6 +1779,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			}
 			groupmap = (char *)poptGetOptArg(pc);
 			groupmap_via_chown = False;
+			preserve_gid = 1;
 			break;
 
 		case OPT_CHOWN: {
@@ -1783,6 +1803,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				if (asprintf(&usermap, "*:%.*s", len, chown) < 0)
 					out_of_memory("parse_arguments");
 				usermap_via_chown = True;
+				preserve_uid = 1;
 			}
 			if (arg && *arg) {
 				if (groupmap) {
@@ -1798,6 +1819,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				if (asprintf(&groupmap, "*:%s", arg) < 0)
 					out_of_memory("parse_arguments");
 				groupmap_via_chown = True;
+				preserve_gid = 1;
 			}
 			break;
 		}
@@ -1875,6 +1897,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 					"--stderr mode \"%s\" is not one of errors, all, or client\n", arg);
 				return 0;
 			}
+			saw_stderr_opt = 1;
 			break;
 		}
 
@@ -1893,6 +1916,9 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		}
 	}
 
+	if (msgs2stderr != 2)
+		saw_stderr_opt = 1;
+
 	if (version_opt_cnt) {
 		print_rsync_version(FINFO);
 		exit_cleanup(0);
@@ -1908,6 +1934,21 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		if (size < 0)
 			return 0;
 		max_alloc = size;
+	}
+
+	if (old_style_args < 0) {
+		if (!am_server && protect_args <= 0 && (arg = getenv("RSYNC_OLD_ARGS")) != NULL && *arg) {
+			protect_args = 0;
+			old_style_args = atoi(arg);
+		} else
+			old_style_args = 0;
+	} else if (old_style_args) {
+		if (protect_args > 0) {
+			snprintf(err_buf, sizeof err_buf,
+				 "--protect-args conflicts with --old-args.\n");
+			return 0;
+		}
+		protect_args = 0;
 	}
 
 	if (protect_args < 0) {
@@ -2255,20 +2296,8 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		parse_filter_str(&filter_list, backup_dir_buf, rule_template(0), 0);
 	}
 
-	if (preserve_times) {
-		preserve_times = PRESERVE_FILE_TIMES;
-		if (!omit_dir_times)
-			preserve_times |= PRESERVE_DIR_TIMES;
-#ifdef CAN_SET_SYMLINK_TIMES
-		if (!omit_link_times)
-			preserve_times |= PRESERVE_LINK_TIMES;
-#endif
-	}
-
-	if (make_backups && !backup_dir) {
-		omit_dir_times = 0; /* Implied, so avoid -O to sender. */
-		preserve_times &= ~PRESERVE_DIR_TIMES;
-	}
+	if (make_backups && !backup_dir)
+		omit_dir_times = -1; /* Implied, so avoid -O to sender. */
 
 	if (stdout_format) {
 		if (am_server && log_format_has(stdout_format, 'I'))
@@ -2447,6 +2476,61 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 }
 
 
+static char SPLIT_ARG_WHEN_OLD[1];
+
+/**
+ * Do backslash quoting of any weird chars in "arg", append the resulting
+ * string to the end of the "opt" (which gets a "=" appended if it is not
+ * an empty or NULL string), and return the (perhaps malloced) result.
+ * If opt is NULL, arg is considered a filename arg that allows wildcards.
+ * If it is "" or any other value, it is considered an option.
+ **/
+char *safe_arg(const char *opt, const char *arg)
+{
+#define SHELL_CHARS "!#$&;|<>(){}\"' \t\\"
+#define WILD_CHARS  "*?[]" /* We don't allow remote brace expansion */
+	BOOL is_filename_arg = !opt;
+	char *escapes = is_filename_arg ? SHELL_CHARS : WILD_CHARS SHELL_CHARS;
+	BOOL escape_leading_dash = is_filename_arg && *arg == '-';
+	int len1 = opt && *opt ? strlen(opt) + 1 : 0;
+	int len2 = strlen(arg);
+	int extras = escape_leading_dash ? 2 : 0;
+	char *ret;
+	if (!protect_args && old_style_args < 2 && (!old_style_args || (!is_filename_arg && opt != SPLIT_ARG_WHEN_OLD))) {
+		const char *f;
+		for (f = arg; *f; f++) {
+			if (strchr(escapes, *f))
+				extras++;
+		}
+	}
+	if (!len1 && !extras)
+		return (char*)arg;
+	ret = new_array(char, len1 + len2 + extras + 1);
+	if (len1) {
+		memcpy(ret, opt, len1-1);
+		ret[len1-1] = '=';
+	}
+	if (escape_leading_dash) {
+		ret[len1++] = '.';
+		ret[len1++] = '/';
+		extras -= 2;
+	}
+	if (!extras)
+		memcpy(ret + len1, arg, len2);
+	else {
+		const char *f = arg;
+		char *t = ret + len1;
+		while (*f) {
+			if (strchr(escapes, *f))
+				*t++ = '\\';
+			*t++ = *f++;
+		}
+	}
+	ret[len1+len2+extras] = '\0';
+	return ret;
+}
+
+
 /**
  * Construct a filtered list of options to pass through from the
  * client to the server.
@@ -2496,7 +2580,7 @@ void server_options(char **args, int *argc_p)
 			argstr[x++] = 'K';
 		if (prune_empty_dirs)
 			argstr[x++] = 'm';
-		if (omit_dir_times)
+		if (omit_dir_times > 0)
 			argstr[x++] = 'O';
 		if (omit_link_times)
 			argstr[x++] = 'J';
@@ -2529,7 +2613,7 @@ void server_options(char **args, int *argc_p)
 		argstr[x++] = 'g';
 	if (preserve_devices) /* ignore preserve_specials here */
 		argstr[x++] = 'D';
-	if (preserve_times)
+	if (preserve_mtimes)
 		argstr[x++] = 't';
 	if (preserve_atimes) {
 		argstr[x++] = 'U';
@@ -2577,47 +2661,8 @@ void server_options(char **args, int *argc_p)
 
 	set_allow_inc_recurse();
 
-	/* We don't really know the actual protocol_version at this point,
-	 * but checking the pre-negotiated value allows the user to use a
-	 * --protocol=29 override to avoid the use of this -eFLAGS opt. */
-	if (protocol_version >= 30) {
-		/* Use "eFlags" alias so that cull_options doesn't think that these are no-arg option letters. */
-#define eFlags argstr
-		/* We make use of the -e option to let the server know about
-		 * any pre-release protocol version && some behavior flags. */
-		eFlags[x++] = 'e';
-#if SUBPROTOCOL_VERSION != 0
-		if (protocol_version == PROTOCOL_VERSION) {
-			x += snprintf(argstr+x, sizeof argstr - x,
-				      "%d.%d",
-				      PROTOCOL_VERSION, SUBPROTOCOL_VERSION);
-		} else
-#endif
-			eFlags[x++] = '.';
-		if (allow_inc_recurse)
-			eFlags[x++] = 'i';
-#ifdef CAN_SET_SYMLINK_TIMES
-		eFlags[x++] = 'L'; /* symlink time-setting support */
-#endif
-#ifdef ICONV_OPTION
-		eFlags[x++] = 's'; /* symlink iconv translation support */
-#endif
-		eFlags[x++] = 'f'; /* flist I/O-error safety support */
-		eFlags[x++] = 'x'; /* xattr hardlink optimization not desired */
-		eFlags[x++] = 'C'; /* support checksum seed order fix */
-		eFlags[x++] = 'I'; /* support inplace_partial behavior */
-		eFlags[x++] = 'v'; /* use varint for flist & compat flags; negotiate checksum */
-		eFlags[x++] = 'u'; /* include name of uid 0 & gid 0 in the id map */
-		/* NOTE: Avoid using 'V' -- it was the high bit of a write_byte() that became write_varint(). */
-#undef eFlags
-	}
-
-	if (x >= (int)sizeof argstr) { /* Not possible... */
-		rprintf(FERROR, "argstr overflow in server_options().\n");
-		exit_cleanup(RERR_MALLOC);
-	}
-
-	argstr[x] = '\0';
+	/* This '\0'-terminates argstr and makes sure it didn't overflow. */
+	x += maybe_add_e_option(argstr + x, (int)sizeof argstr - x);
 
 	if (x > 1)
 		args[ac++] = argstr;
@@ -2629,9 +2674,7 @@ void server_options(char **args, int *argc_p)
 			set++;
 		else
 			set = iconv_opt;
-		if (asprintf(&arg, "--iconv=%s", set) < 0)
-			goto oom;
-		args[ac++] = arg;
+		args[ac++] = safe_arg("--iconv", set);
 	}
 #endif
 
@@ -2697,33 +2740,24 @@ void server_options(char **args, int *argc_p)
 	}
 
 	if (backup_dir) {
+		/* This split idiom allows for ~/path expansion via the shell. */
 		args[ac++] = "--backup-dir";
-		args[ac++] = backup_dir;
+		args[ac++] = safe_arg("", backup_dir);
 	}
 
 	/* Only send --suffix if it specifies a non-default value. */
-	if (strcmp(backup_suffix, backup_dir ? "" : BACKUP_SUFFIX) != 0) {
-		/* We use the following syntax to avoid weirdness with '~'. */
-		if (asprintf(&arg, "--suffix=%s", backup_suffix) < 0)
-			goto oom;
-		args[ac++] = arg;
-	}
+	if (strcmp(backup_suffix, backup_dir ? "" : BACKUP_SUFFIX) != 0)
+		args[ac++] = safe_arg("--suffix", backup_suffix);
 
-	if (checksum_choice) {
-		if (asprintf(&arg, "--checksum-choice=%s", checksum_choice) < 0)
-			goto oom;
-		args[ac++] = arg;
-	}
+	if (checksum_choice)
+		args[ac++] = safe_arg("--checksum-choice", checksum_choice);
 
 	if (do_compression == CPRES_ZLIBX)
 		args[ac++] = "--new-compress";
 	else if (compress_choice && do_compression == CPRES_ZLIB)
 		args[ac++] = "--old-compress";
-	else if (compress_choice) {
-		if (asprintf(&arg, "--compress-choice=%s", compress_choice) < 0)
-			goto oom;
-		args[ac++] = arg;
-	}
+	else if (compress_choice)
+		args[ac++] = safe_arg("--compress-choice", compress_choice);
 
 	if (am_sender) {
 		if (max_delete > 0) {
@@ -2732,14 +2766,10 @@ void server_options(char **args, int *argc_p)
 			args[ac++] = arg;
 		} else if (max_delete == 0)
 			args[ac++] = "--max-delete=-1";
-		if (min_size >= 0) {
-			args[ac++] = "--min-size";
-			args[ac++] = min_size_arg;
-		}
-		if (max_size >= 0) {
-			args[ac++] = "--max-size";
-			args[ac++] = max_size_arg;
-		}
+		if (min_size >= 0)
+			args[ac++] = safe_arg("--min-size", min_size_arg);
+		if (max_size >= 0)
+			args[ac++] = safe_arg("--max-size", max_size_arg);
 		if (delete_before)
 			args[ac++] = "--delete-before";
 		else if (delete_during == 2)
@@ -2763,17 +2793,12 @@ void server_options(char **args, int *argc_p)
 		if (do_stats)
 			args[ac++] = "--stats";
 	} else {
-		if (skip_compress) {
-			if (asprintf(&arg, "--skip-compress=%s", skip_compress) < 0)
-				goto oom;
-			args[ac++] = arg;
-		}
+		if (skip_compress)
+			args[ac++] = safe_arg("--skip-compress", skip_compress);
 	}
 
-	if (max_alloc_arg && max_alloc != DEFAULT_MAX_ALLOC) {
-		args[ac++] = "--max-alloc";
-		args[ac++] = max_alloc_arg;
-	}
+	if (max_alloc_arg && max_alloc != DEFAULT_MAX_ALLOC)
+		args[ac++] = safe_arg("--max-alloc", max_alloc_arg);
 
 	/* --delete-missing-args needs the cooperation of both sides, but
 	 * the sender can handle --ignore-missing-args by itself. */
@@ -2798,7 +2823,7 @@ void server_options(char **args, int *argc_p)
 	if (partial_dir && am_sender) {
 		if (partial_dir != tmp_partialdir) {
 			args[ac++] = "--partial-dir";
-			args[ac++] = partial_dir;
+			args[ac++] = safe_arg("", partial_dir);
 		}
 		if (delay_updates)
 			args[ac++] = "--delay-updates";
@@ -2821,17 +2846,11 @@ void server_options(char **args, int *argc_p)
 		args[ac++] = "--use-qsort";
 
 	if (am_sender) {
-		if (usermap) {
-			if (asprintf(&arg, "--usermap=%s", usermap) < 0)
-				goto oom;
-			args[ac++] = arg;
-		}
+		if (usermap)
+			args[ac++] = safe_arg("--usermap", usermap);
 
-		if (groupmap) {
-			if (asprintf(&arg, "--groupmap=%s", groupmap) < 0)
-				goto oom;
-			args[ac++] = arg;
-		}
+		if (groupmap)
+			args[ac++] = safe_arg("--groupmap", groupmap);
 
 		if (ignore_existing)
 			args[ac++] = "--ignore-existing";
@@ -2842,8 +2861,11 @@ void server_options(char **args, int *argc_p)
 
 		if (tmpdir) {
 			args[ac++] = "--temp-dir";
-			args[ac++] = tmpdir;
+			args[ac++] = safe_arg("", tmpdir);
 		}
+
+		if (do_fsync)
+			args[ac++] = "--fsync";
 
 		if (basis_dir[0]) {
 			/* the server only needs this option if it is not the sender,
@@ -2852,7 +2874,7 @@ void server_options(char **args, int *argc_p)
 			 */
 			for (i = 0; i < basis_dir_cnt; i++) {
 				args[ac++] = alt_dest_opt(0);
-				args[ac++] = basis_dir[i];
+				args[ac++] = safe_arg("", basis_dir[i]);
 			}
 		}
 	}
@@ -2867,13 +2889,17 @@ void server_options(char **args, int *argc_p)
 		if (append_mode > 1)
 			args[ac++] = "--append";
 		args[ac++] = "--append";
-	} else if (inplace)
+	} else if (inplace) {
 		args[ac++] = "--inplace";
+		/* Work around a bug in older rsync versions (on the remote side) for --inplace --sparse */
+		if (sparse_files && !whole_file && am_sender)
+			args[ac++] = "--no-W";
+	}
 
 	if (files_from && (!am_sender || filesfrom_host)) {
 		if (filesfrom_host) {
 			args[ac++] = "--files-from";
-			args[ac++] = files_from;
+			args[ac++] = safe_arg("", files_from);
 			if (eol_nulls)
 				args[ac++] = "--from0";
 		} else {
@@ -2894,6 +2920,9 @@ void server_options(char **args, int *argc_p)
 		args[ac++] = "--remove-source-files";
 	else if (remove_source_files)
 		args[ac++] = "--remove-sent-files";
+
+	if (copy_devices && !am_sender)
+		args[ac++] = "--copy-devices";
 
 	if (preallocate_files && am_sender)
 		args[ac++] = "--preallocate";
@@ -2916,7 +2945,7 @@ void server_options(char **args, int *argc_p)
 			exit_cleanup(RERR_SYNTAX);
 		}
 		for (j = 1; j <= remote_option_cnt; j++)
-			args[ac++] = (char*)remote_options[j];
+			args[ac++] = safe_arg(SPLIT_ARG_WHEN_OLD, remote_options[j]);
 	}
 
 	*argc_p = ac;
@@ -2924,6 +2953,52 @@ void server_options(char **args, int *argc_p)
 
     oom:
 	out_of_memory("server_options");
+}
+
+int maybe_add_e_option(char *buf, int buf_len)
+{
+	int x = 0;
+
+	/* We don't really know the actual protocol_version at this point,
+	 * but checking the pre-negotiated value allows the user to use a
+	 * --protocol=29 override to avoid the use of this -eFLAGS opt. */
+	if (protocol_version >= 30 && buf_len > 0) {
+		/* We make use of the -e option to let the server know about
+		 * any pre-release protocol version && some behavior flags. */
+		buf[x++] = 'e';
+
+#if SUBPROTOCOL_VERSION != 0
+		if (protocol_version == PROTOCOL_VERSION)
+			x += snprintf(buf + x, buf_len - x, "%d.%d", PROTOCOL_VERSION, SUBPROTOCOL_VERSION);
+		else
+#endif
+			buf[x++] = '.';
+		if (allow_inc_recurse)
+			buf[x++] = 'i';
+#ifdef CAN_SET_SYMLINK_TIMES
+		buf[x++] = 'L'; /* symlink time-setting support */
+#endif
+#ifdef ICONV_OPTION
+		buf[x++] = 's'; /* symlink iconv translation support */
+#endif
+		buf[x++] = 'f'; /* flist I/O-error safety support */
+		buf[x++] = 'x'; /* xattr hardlink optimization not desired */
+		buf[x++] = 'C'; /* support checksum seed order fix */
+		buf[x++] = 'I'; /* support inplace_partial behavior */
+		buf[x++] = 'v'; /* use varint for flist & compat flags; negotiate checksum */
+		buf[x++] = 'u'; /* include name of uid 0 & gid 0 in the id map */
+
+		/* NOTE: Avoid using 'V' -- it was represented with the high bit of a write_byte() that became a write_varint(). */
+	}
+
+	if (x >= buf_len) { /* Not possible... */
+		rprintf(FERROR, "overflow in add_e_flags().\n");
+		exit_cleanup(RERR_MALLOC);
+	}
+
+	buf[x] = '\0';
+
+	return x;
 }
 
 /* If str points to a valid hostspec, return allocated memory containing the

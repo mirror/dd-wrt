@@ -3,7 +3,7 @@
  * Written by Jay Fenlason, vaguely based on the ACLs patch.
  *
  * Copyright (C) 2004 Red Hat, Inc.
- * Copyright (C) 2006-2020 Wayne Davison
+ * Copyright (C) 2006-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1055,7 +1055,7 @@ int set_xattr(const char *fname, const struct file_struct *file, const char *fna
 {
 	rsync_xa_list *glst = rsync_xal_l.items;
 	item_list *lst;
-	int ndx;
+	int ndx, added_write_perm = 0;
 
 	if (dry_run)
 		return 1; /* FIXME: --dry-run needs to compute this value */
@@ -1084,10 +1084,23 @@ int set_xattr(const char *fname, const struct file_struct *file, const char *fna
 	}
 #endif
 
+	/* If the target file lacks write permission, we try to add it
+	 * temporarily so we can change the extended attributes. */
+	if (!am_root
+#ifdef SUPPORT_LINKS
+	 && !S_ISLNK(sxp->st.st_mode)
+#endif
+	 && access(fname, W_OK) < 0
+	 && do_chmod(fname, (sxp->st.st_mode & CHMOD_BITS) | S_IWUSR) == 0)
+		added_write_perm = 1;
+
 	ndx = F_XATTR(file);
 	glst += ndx;
 	lst = &glst->xa_items;
-	return rsync_xal_set(fname, lst, fnamecmp, sxp);
+	int return_value = rsync_xal_set(fname, lst, fnamecmp, sxp);
+	if (added_write_perm) /* remove the temporary write permission */
+		do_chmod(fname, sxp->st.st_mode);
+	return return_value;
 }
 
 #ifdef SUPPORT_ACLS
@@ -1118,7 +1131,8 @@ int del_def_xattr_acl(const char *fname)
 
 int get_stat_xattr(const char *fname, int fd, STRUCT_STAT *fst, STRUCT_STAT *xst)
 {
-	int mode, rdev_major, rdev_minor, uid, gid, len;
+	unsigned int mode;
+	int rdev_major, rdev_minor, uid, gid, len;
 	char buf[256];
 
 	if (am_root >= 0 || IS_DEVICE(fst->st_mode) || IS_SPECIAL(fst->st_mode))
