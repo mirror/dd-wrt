@@ -1,10 +1,10 @@
 /*
  * This file contains definitions for mwifiex USB interface driver.
  *
- * Copyright (C) 2012-2014, Marvell International Ltd.
+ * Copyright 2011-2020 NXP
  *
- * This software file (the "File") is distributed by Marvell International
- * Ltd. under the terms of the GNU General Public License Version 2, June 1991
+ * This software file (the "File") is distributed by NXP
+ * under the terms of the GNU General Public License Version 2, June 1991
  * (the "License").  You may use, redistribute and/or modify this File in
  * accordance with the terms and conditions of the License, a copy of which
  * is available by writing to the Free Software Foundation, Inc.,
@@ -64,12 +64,35 @@ struct urb_context {
 	u8 ep;
 };
 
+#define MWIFIEX_USB_TX_AGGR_TMO_MIN	1
+#define MWIFIEX_USB_TX_AGGR_TMO_MAX	4
+
+struct tx_aggr_tmr_cnxt {
+	struct mwifiex_adapter *adapter;
+	struct usb_tx_data_port *port;
+	struct timer_list hold_timer;
+	bool is_hold_timer_set;
+	u32 hold_tmo_msecs;
+};
+
+struct usb_tx_aggr {
+	struct sk_buff_head aggr_list;
+	int aggr_len;
+	int aggr_num;
+	struct tx_aggr_tmr_cnxt timer_cnxt;
+};
+
 struct usb_tx_data_port {
 	u8 tx_data_ep;
 	u8 block_status;
 	atomic_t tx_data_urb_pending;
 	int tx_data_ix;
 	struct urb_context tx_data_list[MWIFIEX_TX_DATA_URB];
+	/* usb tx aggregation*/
+	struct usb_tx_aggr tx_aggr;
+	struct sk_buff *skb_aggr[MWIFIEX_TX_DATA_URB];
+	/* lock for protect tx aggregation data path*/
+	spinlock_t tx_aggr_lock;
 };
 
 struct usb_card_rec {
@@ -111,7 +134,7 @@ struct fw_sync_header {
 struct fw_data {
 	struct fw_header fw_hdr;
 	__le32 seq_num;
-	u8 data[1];
+	u8 data[];
 } __packed;
 
 #endif /*_MWIFIEX_USB_H */

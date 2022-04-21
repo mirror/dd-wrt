@@ -32,11 +32,6 @@
  *	This function should be called while the host is claimed.
  */
 #define sdio_retune_hold_now LINUX_BACKPORT(sdio_retune_hold_now)
-#if LINUX_VERSION_IS_LESS(4,3,0)
-static inline void sdio_retune_hold_now(struct sdio_func *func)
-{
-}
-#else
 static inline void sdio_retune_hold_now(struct sdio_func *func)
 {
 	struct mmc_host *host = func->card->host;
@@ -44,7 +39,6 @@ static inline void sdio_retune_hold_now(struct sdio_func *func)
 	host->retune_now = 0;
 	host->hold_retune += 1;
 }
-#endif /* < 4.3 */
 
 /**
  *	sdio_retune_release - signal that it's OK to retune now
@@ -57,11 +51,6 @@ static inline void sdio_retune_hold_now(struct sdio_func *func)
  *	This function should be called while the host is claimed.
  */
 #define sdio_retune_release LINUX_BACKPORT(sdio_retune_release)
-#if LINUX_VERSION_IS_LESS(4,3,0)
-static inline void sdio_retune_release(struct sdio_func *func)
-{
-}
-#else
 static inline void sdio_retune_release(struct sdio_func *func)
 {
 	struct mmc_host *host = func->card->host;
@@ -71,7 +60,6 @@ static inline void sdio_retune_release(struct sdio_func *func)
 	else
 		WARN_ON(1);
 }
-#endif
 
 #define sdio_retune_crc_disable LINUX_BACKPORT(sdio_retune_crc_disable)
 static inline void sdio_retune_crc_disable(struct sdio_func *func)
@@ -82,5 +70,19 @@ static inline void sdio_retune_crc_enable(struct sdio_func *func)
 {
 }
 #endif /* < 5.2 */
+
+#ifndef module_sdio_driver
+/**
+ * module_sdio_driver() - Helper macro for registering a SDIO driver
+ * @__sdio_driver: sdio_driver struct
+ *
+ * Helper macro for SDIO drivers which do not do anything special in module
+ * init/exit. This eliminates a lot of boilerplate. Each module may only
+ * use this macro once, and calling it replaces module_init() and module_exit()
+ */
+#define module_sdio_driver(__sdio_driver) \
+	module_driver(__sdio_driver, sdio_register_driver, \
+		      sdio_unregister_driver)
+#endif
 
 #endif /* __BACKPORT_MMC_SDIO_FUNC_H */

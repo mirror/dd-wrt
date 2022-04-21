@@ -1,10 +1,10 @@
 /*
- * Marvell Wireless LAN device driver: 802.11h
+ * NXP Wireless LAN device driver: 802.11h
  *
- * Copyright (C) 2013-2014, Marvell International Ltd.
+ * Copyright 2011-2020 NXP
  *
- * This software file (the "File") is distributed by Marvell International
- * Ltd. under the terms of the GNU General Public License Version 2, June 1991
+ * This software file (the "File") is distributed by NXP
+ * under the terms of the GNU General Public License Version 2, June 1991
  * (the "License").  You may use, redistribute and/or modify this File in
  * accordance with the terms and conditions of the License, a copy of which
  * is available by writing to the Free Software Foundation, Inc.,
@@ -127,9 +127,6 @@ void mwifiex_dfs_cac_work_queue(struct work_struct *work)
 	struct mwifiex_private *priv =
 			container_of(delayed_work, struct mwifiex_private,
 				     dfs_cac_work);
-
-	if (WARN_ON(!priv))
-		return;
 
 	chandef = priv->dfs_chandef;
 	if (priv->wdev.cac_started) {
@@ -288,9 +285,6 @@ void mwifiex_dfs_chan_sw_work_queue(struct work_struct *work)
 	struct mwifiex_private *priv =
 			container_of(delayed_work, struct mwifiex_private,
 				     dfs_chan_sw_work);
-
-	if (WARN_ON(!priv))
-		return;
 
 	bss_cfg = &priv->bss_cfg;
 	if (!bss_cfg->beacon_period) {

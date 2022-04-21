@@ -67,22 +67,14 @@ config BPAUTO_BUILD_NLATTR
 	depends on KERNEL_5_2
 	#c-file lib/nlattr.c
 
-config BPAUTO_BUILD_CORDIC
-	tristate
-	depends on m
-	depends on !CORDIC
-	depends on KERNEL_3_1
-	default m if BPAUTO_CORDIC
-	default m if BPAUTO_USERSEL_BUILD_ALL
-	#module-name cordic
-	#c-file lib/math/cordic.c
+config BPAUTO_USERSEL_BUILD_ALL
+	bool "Build all compat code"
+	help
+	  This option selects all the compat code options
+	  that would otherwise only be selected by drivers.
 
-config BPAUTO_CORDIC
-	bool
-
-config BPAUTO_MII
-	bool
-
+	  It's only really useful for compat testing, so
+	  you probably shouldn't enable it.
 config BPAUTO_BUILD_LEDS
 	bool
 	depends on !NEW_LEDS || LEDS_CLASS=n || !LEDS_TRIGGERS
@@ -98,15 +90,6 @@ config BPAUTO_LEDS_CLASS
 
 config BPAUTO_LEDS_TRIGGERS
 	bool
-
-config BPAUTO_USERSEL_BUILD_ALL
-	bool "Build all compat code"
-	help
-	  This option selects all the compat code options
-	  that would otherwise only be selected by drivers.
-
-	  It's only really useful for compat testing, so
-	  you probably shouldn't enable it.
 
 config BPAUTO_WANT_DEV_COREDUMP
 	bool
@@ -143,6 +126,19 @@ config BPAUTO_REFCOUNT
 	depends on KERNEL_4_11
 	#h-file linux/refcount.h
 	#c-file lib/refcount.c
+
+config BPAUTO_SYSTEM_DATA_VERIFICATION
+	bool
+
+config BPAUTO_BUILD_SYSTEM_DATA_VERIFICATION
+	bool
+	default y if BPAUTO_SYSTEM_DATA_VERIFICATION
+	depends on (KERNEL_4_7 || !SYSTEM_DATA_VERIFICATION) && CRYPTO_HASH_INFO
+	select BPAUTO_ASN1_DECODER
+	select BPAUTO_PUBLIC_KEY
+	select BPAUTO_PKCS7
+	#h-file linux/oid_registry.h
+	#c-file lib/oid_registry.c
 
 config BPAUTO_PUBLIC_KEY
 	bool

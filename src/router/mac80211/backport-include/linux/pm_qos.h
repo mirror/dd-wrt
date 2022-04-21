@@ -2,16 +2,7 @@
 #define _COMPAT_LINUX_PM_QOS_H 1
 
 #include <linux/version.h>
-
-#if LINUX_VERSION_IS_GEQ(3,2,0)
 #include_next <linux/pm_qos.h>
-#else
-#include <linux/pm_qos_params.h>
-#endif /* LINUX_VERSION_IS_GEQ(3,2,0) */
-
-#ifndef PM_QOS_DEFAULT_VALUE
-#define PM_QOS_DEFAULT_VALUE -1
-#endif
 
 #if LINUX_VERSION_IS_LESS(5,7,0)
 static inline void cpu_latency_qos_add_request(struct pm_qos_request *req,

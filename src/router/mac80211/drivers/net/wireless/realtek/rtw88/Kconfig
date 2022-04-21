@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 menuconfig RTW88
 	tristate "Realtek 802.11ac wireless chips support"
+	depends on m
 	depends on MAC80211
 	help
 	  This module adds support for mac80211-based wireless drivers that
@@ -12,24 +13,31 @@ if RTW88
 
 config RTW88_CORE
 	tristate
+	depends on m
 
 config RTW88_PCI
 	tristate
+	depends on m
 
 config RTW88_8822B
 	tristate
+	depends on m
 
 config RTW88_8822C
 	tristate
+	depends on m
 
 config RTW88_8723D
 	tristate
+	depends on m
 
 config RTW88_8821C
 	tristate
+	depends on m
 
 config RTW88_8822BE
 	tristate "Realtek 8822BE PCI wireless network adapter"
+	depends on m
 	depends on PCI
 	select RTW88_CORE
 	select RTW88_PCI
@@ -41,6 +49,7 @@ config RTW88_8822BE
 
 config RTW88_8822CE
 	tristate "Realtek 8822CE PCI wireless network adapter"
+	depends on m
 	depends on PCI
 	select RTW88_CORE
 	select RTW88_PCI
@@ -52,6 +61,7 @@ config RTW88_8822CE
 
 config RTW88_8723DE
 	tristate "Realtek 8723DE PCI wireless network adapter"
+	depends on m
 	depends on PCI
 	select RTW88_CORE
 	select RTW88_PCI
@@ -63,6 +73,7 @@ config RTW88_8723DE
 
 config RTW88_8821CE
 	tristate "Realtek 8821CE PCI wireless network adapter"
+	depends on m
 	depends on PCI
 	select RTW88_CORE
 	select RTW88_PCI

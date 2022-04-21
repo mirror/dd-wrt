@@ -76,7 +76,7 @@ static u8 *ieee80211_wep_add_iv(struct ieee80211_local *local,
 		return NULL;
 
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
-	newhdr = (void *)skb_push(skb, IEEE80211_WEP_IV_LEN);
+	newhdr = skb_push(skb, IEEE80211_WEP_IV_LEN);
 	memmove(newhdr, newhdr + IEEE80211_WEP_IV_LEN, hdrlen);
 
 	/* the HW only needs room for the IV, but not the actual IV */

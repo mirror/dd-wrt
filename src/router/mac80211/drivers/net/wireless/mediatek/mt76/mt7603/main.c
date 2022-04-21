@@ -212,6 +212,22 @@ out:
 	return ret;
 }
 
+static int mt7603_set_sar_specs(struct ieee80211_hw *hw,
+				const struct cfg80211_sar_specs *sar)
+{
+	struct mt7603_dev *dev = hw->priv;
+	struct mt76_phy *mphy = &dev->mphy;
+	int err;
+
+	if (!cfg80211_chandef_valid(&mphy->chandef))
+		return -EINVAL;
+
+	err = mt76_init_sar_power(hw, sar);
+	if (err)
+		return err;
+
+	return mt7603_set_channel(hw, &mphy->chandef);
+}
 
 static int
 mt7603_config(struct ieee80211_hw *hw, u32 changed)
@@ -705,6 +721,7 @@ const struct ieee80211_ops mt7603_ops = {
 	.set_tim = mt76_set_tim,
 	.get_survey = mt76_get_survey,
 	.get_antenna = mt76_get_antenna,
+	.set_sar_specs = mt7603_set_sar_specs,
 };
 
 MODULE_LICENSE("Dual BSD/GPL");

@@ -195,12 +195,17 @@ static const struct net_device_ops sierra_net_device_ops = {
 	.ndo_open               = usbnet_open,
 	.ndo_stop               = usbnet_stop,
 	.ndo_start_xmit         = usbnet_start_xmit,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout         = usbnet_tx_timeout,
+#else
+	.ndo_tx_timeout = bp_usbnet_tx_timeout,
+#endif
+
 	.ndo_change_mtu         = usbnet_change_mtu,
 #if LINUX_VERSION_IS_GEQ(4,11,0)
-	.ndo_get_stats64        = usbnet_get_stats64,
+	.ndo_get_stats64        = dev_get_tstats64,
 #else
-	.ndo_get_stats64 = bp_usbnet_get_stats64,
+	.ndo_get_stats64 = bp_dev_get_tstats64,
 #endif
 
 	.ndo_set_mac_address    = eth_mac_addr,
@@ -370,11 +375,6 @@ static void sierra_net_set_ctx_index(struct sierra_net_data *priv, u8 ctx_ix)
 	priv->tx_hdr_template[1] = ctx_ix;
 	*((__be16 *)&priv->tx_hdr_template[2]) =
 		cpu_to_be16(SIERRA_NET_HIP_EXT_IP_OUT_ID);
-}
-
-static inline int sierra_net_is_valid_addrlen(u8 len)
-{
-	return len == sizeof(struct in_addr);
 }
 
 static int sierra_net_parse_lsi(struct usbnet *dev, char *data, int datalen)
@@ -652,8 +652,8 @@ static const struct ethtool_ops sierra_net_ethtool_ops = {
 	.get_msglevel = usbnet_get_msglevel,
 	.set_msglevel = usbnet_set_msglevel,
 	.nway_reset = usbnet_nway_reset,
-	.get_link_ksettings = usbnet_get_link_ksettings,
-	.set_link_ksettings = usbnet_set_link_ksettings,
+	.get_link_ksettings = usbnet_get_link_ksettings_mii,
+	.set_link_ksettings = usbnet_set_link_ksettings_mii,
 };
 
 static int sierra_net_get_fw_attr(struct usbnet *dev, u16 *datap)
@@ -888,7 +888,7 @@ static struct sk_buff *sierra_net_tx_fixup(struct usbnet *dev,
 	u16 len;
 	bool need_tail;
 
-	BUILD_BUG_ON(FIELD_SIZEOF(struct usbnet, data)
+	BUILD_BUG_ON(sizeof_field(struct usbnet, data)
 				< sizeof(struct cdc_state));
 
 	dev_dbg(&dev->udev->dev, "%s", __func__);
@@ -988,9 +988,7 @@ static struct usb_driver sierra_net_driver = {
 	.suspend = usbnet_suspend,
 	.resume = usbnet_resume,
 	.no_dynamic_id = 1,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 
 module_usb_driver(sierra_net_driver);

@@ -117,7 +117,6 @@ mt7615_eeprom_parse_hw_band_cap(struct mt7615_dev *dev)
 		return;
 	}
 
-
 	val = FIELD_GET(MT_EE_NIC_WIFI_CONF_BAND_SEL,
 			eeprom[MT_EE_WIFI_CONF]);
 	switch (val) {
@@ -135,11 +134,6 @@ mt7615_eeprom_parse_hw_band_cap(struct mt7615_dev *dev)
 		dev->mphy.cap.has_5ghz = true;
 		break;
 	}
-
-	if (dev->mt76.disable_2ghz)
-	    dev->mphy.cap.has_2ghz = false;
-	if (dev->mt76.disable_5ghz)
-	    dev->mphy.cap.has_5ghz = false;
 }
 
 static void mt7615_eeprom_parse_hw_cap(struct mt7615_dev *dev)

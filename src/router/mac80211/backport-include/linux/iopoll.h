@@ -1,9 +1,7 @@
 #ifndef _BACKPORTS_LINUX_IOPOLL_H
 #define _BACKPORTS_LINUX_IOPOLL_H 1
 
-#if LINUX_VERSION_IS_GEQ(4,0,0)
 #include_next <linux/iopoll.h>
-#endif
 
 #ifndef read_poll_timeout
 /**

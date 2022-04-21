@@ -688,7 +688,7 @@ u32 ieee80211_calc_expected_tx_airtime(struct ieee80211_hw *hw,
 		duration /= AVG_PKT_SIZE;
 		duration /= 1024;
 		duration += (overhead >> agg_shift);
- 
+
 		return max_t(u32, duration, 4);
 	}
 

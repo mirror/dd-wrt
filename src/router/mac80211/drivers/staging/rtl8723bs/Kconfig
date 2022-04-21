@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0
 config RTL8723BS
-	depends on !KERNEL_3_14
+	depends on !KERNEL_5_4
 	tristate "Realtek RTL8723BS SDIO Wireless LAN NIC driver"
 	depends on m
 	depends on WLAN && MMC && CFG80211
 	depends on m
-	depends on WIRELESS_EXT
-	depends on WEXT_PRIV
+	select CFG80211_WEXT
+	select BPAUTO_CRYPTO_LIB_ARC4
 	help
 	This option enables support for RTL8723BS SDIO drivers, such as
 	the wifi found on the 1st gen Intel Compute Stick, the CHIP

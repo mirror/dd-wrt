@@ -270,7 +270,6 @@ struct tid_ampdu_rx {
  * @mtx: mutex to protect all TX data (except non-NULL assignments
  *	to tid_tx[idx], which are protected by the sta spinlock)
  *	tid_start_tx is also protected by sta->lock.
- * @rx_offl_lock: protects transfer from tid_rx_manage_offl to agg_session_valid
  * @tid_rx: aggregation info for Rx per TID -- RCU protected
  * @tid_rx_token: dialog tokens for valid aggregation sessions
  * @tid_rx_timer_expired: bitmap indicating on which TIDs the
@@ -292,7 +291,6 @@ struct tid_ampdu_rx {
 struct sta_ampdu_mlme {
 	struct mutex mtx;
 	/* rx */
-	spinlock_t rx_offl_lock;
 	struct tid_ampdu_rx __rcu *tid_rx[IEEE80211_NUM_TIDS];
 	u8 tid_rx_token[IEEE80211_NUM_TIDS];
 	unsigned long tid_rx_timer_expired[BITS_TO_LONGS(IEEE80211_NUM_TIDS)];
@@ -436,7 +434,6 @@ struct mesh_sta {
 
 DECLARE_EWMA(signal, 10, 8)
 
-/* Update sta_accum_rx_stats if you change this structure. */
 struct ieee80211_sta_rx_stats {
 	unsigned long packets;
 	unsigned long last_rx;
@@ -450,24 +447,6 @@ struct ieee80211_sta_rx_stats {
 	struct u64_stats_sync syncp;
 	u64 bytes;
 	u64 msdu[IEEE80211_NUM_TIDS + 1];
-
-#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
-	/* these take liberty with how things are defined, and are
-	 * designed to give a rough idea of how things are going.
-	 */
-	u32 msdu_20;
-	u32 msdu_40;
-	u32 msdu_80;
-	u32 msdu_160;
-	u32 msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_LAST];
-	u32 msdu_he_tot;
-	u32 msdu_he_mu;
-	u32 msdu_vht;
-	u32 msdu_ht;
-	u32 msdu_legacy;
-	u32 msdu_nss[8];
-	u32 msdu_rate_idx[32];
-#endif
 };
 
 /*
@@ -854,7 +833,7 @@ int sta_info_init(struct ieee80211_local *local);
 void sta_info_stop(struct ieee80211_local *local);
 
 /**
- * sta_info_flush - flush matching STA entries from the STA table
+ * __sta_info_flush - flush matching STA entries from the STA table
  *
  * Returns the number of removed STA entries.
  *
@@ -863,6 +842,13 @@ void sta_info_stop(struct ieee80211_local *local);
  */
 int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans);
 
+/**
+ * sta_info_flush - flush matching STA entries from the STA table
+ *
+ * Returns the number of removed STA entries.
+ *
+ * @sdata: sdata to remove all stations from
+ */
 static inline int sta_info_flush(struct ieee80211_sub_if_data *sdata)
 {
 	return __sta_info_flush(sdata, false);
@@ -953,8 +939,5 @@ static inline u32 sta_stats_encode_rate(struct ieee80211_rx_status *s)
 
 	return r;
 }
-
-void sta_accum_rx_stats(struct sta_info *sta,
-			struct ieee80211_sta_rx_stats *rx_stats);
 
 #endif /* STA_INFO_H */

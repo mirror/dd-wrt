@@ -94,4 +94,76 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define OPTIMIZER_HIDE_VAR(var) barrier()
 #endif
 
+#ifndef data_race
+#define data_race(expr)	(expr)
+#endif
+
+#if defined(CONFIG_TRACE_BRANCH_PROFILING) \
+    && !defined(DISABLE_BRANCH_PROFILING) && !defined(__CHECKER__)
+void ftrace_likely_update(struct ftrace_likely_data *f, int val,
+			  int expect, int is_constant);
+
+#define likely_notrace(x)	__builtin_expect(!!(x), 1)
+#define unlikely_notrace(x)	__builtin_expect(!!(x), 0)
+
+#define __branch_check__(x, expect, is_constant) ({			\
+			long ______r;					\
+			static struct ftrace_likely_data		\
+				__aligned(4)				\
+				__section("_ftrace_annotated_branch")	\
+				______f = {				\
+				.data.func = __func__,			\
+				.data.file = __FILE__,			\
+				.data.line = __LINE__,			\
+			};						\
+			______r = __builtin_expect(!!(x), expect);	\
+			ftrace_likely_update(&______f, ______r,		\
+					     expect, is_constant);	\
+			______r;					\
+		})
+
+/*
+ * Using __builtin_constant_p(x) to ignore cases where the return
+ * value is always the same.  This idea is taken from a similar patch
+ * written by Daniel Walker.
+ */
+# ifndef likely
+#  define likely(x)	(__branch_check__(x, 1, __builtin_constant_p(x)))
+# endif
+# ifndef unlikely
+#  define unlikely(x)	(__branch_check__(x, 0, __builtin_constant_p(x)))
+# endif
+
+#ifdef CONFIG_PROFILE_ALL_BRANCHES
+/*
+ * "Define 'is'", Bill Clinton
+ * "Define 'if'", Steven Rostedt
+ */
+#define if(cond, ...) if ( __trace_if_var( !!(cond , ## __VA_ARGS__) ) )
+
+#define __trace_if_var(cond) (__builtin_constant_p(cond) ? (cond) : __trace_if_value(cond))
+
+#define __trace_if_value(cond) ({			\
+	static struct ftrace_branch_data		\
+		__aligned(4)				\
+		__section("_ftrace_branch")		\
+		__if_trace = {				\
+			.func = __func__,		\
+			.file = __FILE__,		\
+			.line = __LINE__,		\
+		};					\
+	(cond) ?					\
+		(__if_trace.miss_hit[1]++,1) :		\
+		(__if_trace.miss_hit[0]++,0);		\
+})
+
+#endif /* CONFIG_PROFILE_ALL_BRANCHES */
+
+#else
+# define likely(x)	__builtin_expect(!!(x), 1)
+# define unlikely(x)	__builtin_expect(!!(x), 0)
+# define likely_notrace(x)	likely(x)
+# define unlikely_notrace(x)	unlikely(x)
+#endif
+
 #endif /* __BACKPORT_LINUX_COMPILER_H */

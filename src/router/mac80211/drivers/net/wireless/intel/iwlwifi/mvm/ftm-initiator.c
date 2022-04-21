@@ -431,6 +431,9 @@ iwl_mvm_ftm_put_target_common(struct iwl_mvm *mvm,
 	else if (peer->ftm.non_trigger_based)
 		FTM_PUT_FLAG(NON_TB);
 
+	if ((peer->ftm.trigger_based || peer->ftm.non_trigger_based) &&
+	    peer->ftm.lmr_feedback)
+		FTM_PUT_FLAG(LMR_FEEDBACK);
 }
 
 static int
@@ -496,7 +499,7 @@ iwl_mvm_ftm_put_target(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		rcu_read_lock();
 
 		sta = rcu_dereference(mvm->fw_id_to_mac_id[mvmvif->ap_sta_id]);
-		if (sta->mfp)
+		if (sta->mfp && (peer->ftm.trigger_based || peer->ftm.non_trigger_based))
 			FTM_PUT_FLAG(PMF);
 
 		rcu_read_unlock();
@@ -830,6 +833,9 @@ static int iwl_mvm_ftm_start_v13(struct iwl_mvm *mvm,
 		if (err)
 			return err;
 
+		if (peer->ftm.trigger_based || peer->ftm.non_trigger_based)
+			target->bss_color = peer->ftm.bss_color;
+
 		if (peer->ftm.non_trigger_based) {
 			target->min_time_between_msr =
 				cpu_to_le16(IWL_MVM_FTM_NON_TB_MIN_TIME_BETWEEN_MSR);
@@ -1048,7 +1054,7 @@ static void iwl_mvm_ftm_rtt_smoothing(struct iwl_mvm *mvm,
 	overshoot = IWL_MVM_FTM_INITIATOR_SMOOTH_OVERSHOOT;
 	alpha = IWL_MVM_FTM_INITIATOR_SMOOTH_ALPHA;
 
-	rtt_avg = (alpha * rtt + (100 - alpha) * resp->rtt_avg) / 100;
+	rtt_avg = div_s64(alpha * rtt + (100 - alpha) * resp->rtt_avg, 100);
 
 	IWL_DEBUG_INFO(mvm,
 		       "%pM: prev rtt_avg=%lld, new rtt_avg=%lld, rtt=%lld\n",

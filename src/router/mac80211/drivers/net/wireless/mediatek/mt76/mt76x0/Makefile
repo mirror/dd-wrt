@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 obj-$(CPTCFG_MT76x0U) += mt76x0u.o
 obj-$(CPTCFG_MT76x0E) += mt76x0e.o
 obj-$(CPTCFG_MT76x0_COMMON) += mt76x0-common.o

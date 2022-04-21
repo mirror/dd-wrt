@@ -1,5 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
 EXTRA_CFLAGS += -Werror -DCONFIG_MT76_LEDS
-
 obj-m := mt76.o
 obj-$(CPTCFG_MT76_USB) += mt76-usb.o
 obj-$(CPTCFG_MT76_SDIO) += mt76-sdio.o
@@ -7,15 +7,11 @@ obj-$(CPTCFG_MT76x02_LIB) += mt76x02-lib.o
 obj-$(CPTCFG_MT76x02_USB) += mt76x02-usb.o
 obj-$(CPTCFG_MT76_CONNAC_LIB) += mt76-connac-lib.o
 
-CFLAGS_trace.o := -I$(src)
-CFLAGS_usb_trace.o := -I$(src)
-CFLAGS_mt76x02_trace.o := -I$(src)
-
 mt76-y := \
 	mmio.o util.o trace.o dma.o mac80211.o debugfs.o eeprom.o \
 	tx.o agg-rx.o mcu.o
 
-mt76-$(CONFIG_PCI) += pci.o
+mt76-$(CPTCFG_PCI) += pci.o
 mt76-$(CPTCFG_NL80211_TESTMODE) += testmode.o
 
 mt76-usb-y := usb.o usb_trace.o
@@ -31,8 +27,8 @@ mt76x02-lib-y := mt76x02_util.o mt76x02_mac.o mt76x02_mcu.o \
 		 mt76x02_dfs.o mt76x02_beacon.o
 
 mt76x02-usb-y := mt76x02_usb_mcu.o mt76x02_usb_core.o
-mt76-connac-lib-y := mt76_connac_mcu.o mt76_connac_mac.o
 
+mt76-connac-lib-y := mt76_connac_mcu.o mt76_connac_mac.o
 
 obj-$(CPTCFG_MT76x0_COMMON) += mt76x0/
 obj-$(CPTCFG_MT76x2_COMMON) += mt76x2/

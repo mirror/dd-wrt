@@ -127,7 +127,7 @@ int drv_sta_state(struct ieee80211_local *local,
 		ret = drv_sta_add(local, sdata, &sta->sta);
 		if (ret == 0) {
 			sta->uploaded = true;
-			if (rcu_dereference(sta->sta.rates))
+			if (rcu_access_pointer(sta->sta.rates))
 				drv_sta_rate_tbl_update(local, sdata, &sta->sta);
 		}
 	} else if (old_state == IEEE80211_STA_ASSOC &&

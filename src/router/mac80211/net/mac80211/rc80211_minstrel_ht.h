@@ -14,7 +14,7 @@
 
 /* scaled fraction values */
 #define MINSTREL_SCALE  12
-#define MINSTREL_FRAC(val, div) (((val) << MINSTREL_SCALE) / div)
+#define MINSTREL_FRAC(val, div) (((val) << MINSTREL_SCALE) / (div))
 #define MINSTREL_TRUNC(val) ((val) >> MINSTREL_SCALE)
 
 #define EWMA_LEVEL	96	/* ewma weighting factor [/EWMA_DIV] */

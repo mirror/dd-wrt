@@ -4,7 +4,7 @@
  *
  * Copyright 2007	Johannes Berg <johannes@sipsolutions.net>
  * Copyright 2013-2014  Intel Mobile Communications GmbH
- * Copyright (C) 2018 - 2019 Intel Corporation
+ * Copyright (C) 2018 - 2019, 2021 Intel Corporation
  */
 
 #include <linux/debugfs.h>
@@ -53,7 +53,7 @@ static const struct file_operations name## _ops = {			\
 	DEBUGFS_READONLY_FILE_OPS(name)
 
 #define DEBUGFS_ADD(name)						\
-	debugfs_create_file(#name, 0400, phyd, local, &name## _ops);
+	debugfs_create_file(#name, 0400, phyd, local, &name## _ops)
 
 #define DEBUGFS_ADD_MODE(name, mode)					\
 	debugfs_create_file(#name, mode, phyd, local, &name## _ops);
@@ -322,6 +322,71 @@ static const struct file_operations aql_txq_limit_ops = {
 	.llseek = default_llseek,
 };
 
+static ssize_t aql_enable_read(struct file *file, char __user *user_buf,
+			       size_t count, loff_t *ppos)
+{
+	char buf[3];
+	int len;
+
+#ifdef static_branch_unlikely
+	len = scnprintf(buf, sizeof(buf), "%d\n",
+			!static_key_false(&aql_disable.key));
+#else
+	len = scnprintf(buf, sizeof(buf), "%d\n",!aql_disable);
+#endif
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+static ssize_t aql_enable_write(struct file *file, const char __user *user_buf,
+				size_t count, loff_t *ppos)
+{
+#ifdef static_branch_unlikely
+	bool aql_disabled = static_key_false(&aql_disable.key);
+#else
+	bool aql_disabled = aql_disable;
+#endif
+	char buf[3];
+	size_t len;
+
+	if (count > sizeof(buf))
+		return -EINVAL;
+
+	if (copy_from_user(buf, user_buf, count))
+		return -EFAULT;
+
+	buf[sizeof(buf) - 1] = '\0';
+	len = strlen(buf);
+	if (len > 0 && buf[len - 1] == '\n')
+		buf[len - 1] = 0;
+
+	if (buf[0] == '0' && buf[1] == '\0') {
+#ifdef static_branch_unlikely
+		if (!aql_disabled)
+			static_branch_inc(&aql_disable);
+#else
+		aql_disable = true;
+#endif
+	} else if (buf[0] == '1' && buf[1] == '\0') {
+#ifdef static_branch_unlikely
+		if (aql_disabled)
+			static_branch_dec(&aql_disable);
+#else
+		aql_disable = false;
+#endif
+	} else {
+		return -EINVAL;
+	}
+
+	return count;
+}
+
+static const struct file_operations aql_enable_ops = {
+	.write = aql_enable_write,
+	.read = aql_enable_read,
+	.open = simple_open,
+	.llseek = default_llseek,
+};
+
 static ssize_t force_tx_status_read(struct file *file,
 				    char __user *user_buf,
 				    size_t count,
@@ -418,10 +483,17 @@ static ssize_t reset_write(struct file *file, const char __user *user_buf,
 			   size_t count, loff_t *ppos)
 {
 	struct ieee80211_local *local = file->private_data;
+	int ret;
 
 	rtnl_lock();
+	wiphy_lock(local->hw.wiphy);
 	__ieee80211_suspend(&local->hw, NULL);
-	__ieee80211_resume(&local->hw);
+	ret = __ieee80211_resume(&local->hw);
+	wiphy_unlock(local->hw.wiphy);
+
+	if (ret)
+		cfg80211_shutdown_all_interfaces(local->hw.wiphy);
+
 	rtnl_unlock();
 
 	return count;
@@ -487,6 +559,7 @@ static const char *hw_flag_names[] = {
 	FLAG(AMPDU_KEYBORDER_SUPPORT),
 	FLAG(SUPPORTS_TX_ENCAP_OFFLOAD),
 	FLAG(SUPPORTS_RX_DECAP_OFFLOAD),
+	FLAG(SUPPORTS_CONC_MON_RX_DECAP),
 #undef FLAG
 };
 
@@ -650,6 +723,7 @@ void debugfs_hw_add(struct ieee80211_local *local)
 	DEBUGFS_ADD(power);
 	DEBUGFS_ADD(hw_conf);
 	DEBUGFS_ADD_MODE(force_tx_status, 0600);
+	DEBUGFS_ADD_MODE(aql_enable, 0600);
 
 	if (local->ops->wake_tx_queue)
 		DEBUGFS_ADD_MODE(aqm, 0600);

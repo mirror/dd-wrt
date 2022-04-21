@@ -74,7 +74,12 @@ bad_frame:
 }
 
 static void mt7601u_rx_process_seg(struct mt7601u_dev *dev, u8 *data,
-				   u32 seg_len, struct page *p)
+				   u32 seg_len, struct page *p,
+#if LINUX_VERSION_IS_GEQ(4,19,0)
+				   struct list_head *list)
+#else
+				   struct sk_buff_head *list)
+#endif
 {
 	struct sk_buff *skb;
 	struct mt7601u_rxwi *rxwi;
@@ -104,9 +109,13 @@ static void mt7601u_rx_process_seg(struct mt7601u_dev *dev, u8 *data,
 	if (!skb)
 		return;
 
-	spin_lock(&dev->mac_lock);
-	ieee80211_rx(dev->hw, skb);
-	spin_unlock(&dev->mac_lock);
+	local_bh_disable();
+	rcu_read_lock();
+
+	ieee80211_rx_list(dev->hw, NULL, skb, list);
+
+	rcu_read_unlock();
+	local_bh_enable();
 }
 
 static u16 mt7601u_rx_next_seg_len(u8 *data, u32 data_len)
@@ -131,6 +140,13 @@ mt7601u_rx_process_entry(struct mt7601u_dev *dev, struct mt7601u_dma_buf_rx *e)
 	u8 *data = page_address(e->p);
 	struct page *new_p = NULL;
 	int cnt = 0;
+#if LINUX_VERSION_IS_GEQ(4,19,0)
+	LIST_HEAD(list);
+#else
+	struct sk_buff_head list;
+
+	__skb_queue_head_init(&list);
+#endif
 
 	if (!test_bit(MT7601U_STATE_INITIALIZED, &dev->state))
 		return;
@@ -140,7 +156,8 @@ mt7601u_rx_process_entry(struct mt7601u_dev *dev, struct mt7601u_dma_buf_rx *e)
 		new_p = dev_alloc_pages(MT_RX_ORDER);
 
 	while ((seg_len = mt7601u_rx_next_seg_len(data, data_len))) {
-		mt7601u_rx_process_seg(dev, data, seg_len, new_p ? e->p : NULL);
+		mt7601u_rx_process_seg(dev, data, seg_len,
+				       new_p ? e->p : NULL, &list);
 
 		data_len -= seg_len;
 		data += seg_len;
@@ -150,10 +167,11 @@ mt7601u_rx_process_entry(struct mt7601u_dev *dev, struct mt7601u_dma_buf_rx *e)
 	if (cnt > 1)
 		trace_mt_rx_dma_aggr(dev, cnt, !!new_p);
 
+	netif_receive_skb_list(&list);
+
 	if (new_p) {
 		/* we have one extra ref from the allocator */
-		__free_pages(e->p, MT_RX_ORDER);
-
+		put_page(e->p);
 		e->p = new_p;
 	}
 }
@@ -192,11 +210,12 @@ static void mt7601u_complete_rx(struct urb *urb)
 	case -ECONNRESET:
 	case -ESHUTDOWN:
 	case -ENOENT:
+	case -EPROTO:
 		return;
 	default:
 		dev_err_ratelimited(dev->dev, "rx urb failed: %d\n",
 				    urb->status);
-		/* fall through */
+		fallthrough;
 	case 0:
 		break;
 	}
@@ -212,9 +231,9 @@ out:
 	spin_unlock_irqrestore(&dev->rx_lock, flags);
 }
 
-static void mt7601u_rx_tasklet(unsigned long data)
+static void mt7601u_rx_tasklet(struct tasklet_struct *t)
 {
-	struct mt7601u_dev *dev = (struct mt7601u_dev *) data;
+	struct mt7601u_dev *dev = from_tasklet(dev, t, rx_tasklet);
 	struct mt7601u_dma_buf_rx *e;
 
 	while ((e = mt7601u_rx_get_pending_entry(dev))) {
@@ -237,11 +256,12 @@ static void mt7601u_complete_tx(struct urb *urb)
 	case -ECONNRESET:
 	case -ESHUTDOWN:
 	case -ENOENT:
+	case -EPROTO:
 		return;
 	default:
 		dev_err_ratelimited(dev->dev, "tx urb failed: %d\n",
 				    urb->status);
-		/* fall through */
+		fallthrough;
 	case 0:
 		break;
 	}
@@ -266,9 +286,9 @@ out:
 	spin_unlock_irqrestore(&dev->tx_lock, flags);
 }
 
-static void mt7601u_tx_tasklet(unsigned long data)
+static void mt7601u_tx_tasklet(struct tasklet_struct *t)
 {
-	struct mt7601u_dev *dev = (struct mt7601u_dev *) data;
+	struct mt7601u_dev *dev = from_tasklet(dev, t, tx_tasklet);
 	struct sk_buff_head skbs;
 	unsigned long flags;
 
@@ -310,7 +330,6 @@ static int mt7601u_dma_submit_tx(struct mt7601u_dev *dev,
 	}
 
 	e = &q->e[q->end];
-	e->skb = skb;
 	usb_fill_bulk_urb(e->urb, usb_dev, snd_pipe, skb->data, skb->len,
 			  mt7601u_complete_tx, q);
 	ret = usb_submit_urb(e->urb, GFP_ATOMIC);
@@ -328,6 +347,7 @@ static int mt7601u_dma_submit_tx(struct mt7601u_dev *dev,
 
 	q->end = (q->end + 1) % q->entries;
 	q->used++;
+	e->skb = skb;
 
 	if (q->used >= q->entries)
 		ieee80211_stop_queue(dev->hw, skb_get_queue_mapping(skb));
@@ -507,8 +527,8 @@ int mt7601u_dma_init(struct mt7601u_dev *dev)
 {
 	int ret = -ENOMEM;
 
-	tasklet_init(&dev->tx_tasklet, mt7601u_tx_tasklet, (unsigned long) dev);
-	tasklet_init(&dev->rx_tasklet, mt7601u_rx_tasklet, (unsigned long) dev);
+	tasklet_setup(&dev->tx_tasklet, mt7601u_tx_tasklet);
+	tasklet_setup(&dev->rx_tasklet, mt7601u_rx_tasklet);
 
 	ret = mt7601u_alloc_tx(dev);
 	if (ret)

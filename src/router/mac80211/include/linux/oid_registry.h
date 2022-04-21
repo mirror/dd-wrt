@@ -4,6 +4,8 @@
 #else
 #undef look_up_OID
 #define look_up_OID LINUX_BACKPORT(look_up_OID)
+#undef parse_OID
+#define parse_OID LINUX_BACKPORT(parse_OID)
 #undef sprint_oid
 #define sprint_oid LINUX_BACKPORT(sprint_oid)
 #undef sprint_OID

@@ -332,6 +332,8 @@ static void tpt_trig_timer(struct timer_list *t)
 	list_for_each_entry(led_cdev, &local->tpt_led.led_cdevs, trig_list)
 		led_blink_set(led_cdev, &on, &off);
 	read_unlock(&local->tpt_led.leddev_list_lock);
+
+///	led_trigger_blink(&local->tpt_led, &on, &off);
 }
 
 const char *

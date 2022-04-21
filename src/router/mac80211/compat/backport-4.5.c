@@ -124,11 +124,11 @@ void phy_attached_print(struct phy_device *phydev, const char *fmt, ...)
 }
 EXPORT_SYMBOL_GPL(phy_attached_print);
 
+#ifdef CONFIG_LEDS_TRIGGERS
 static void devm_led_trigger_release(struct device *dev, void *res)
 {
 	led_trigger_unregister(*(struct led_trigger **)res);
 }
-
 int devm_led_trigger_register(struct device *dev,
 			      struct led_trigger *trig)
 {
@@ -151,7 +151,7 @@ int devm_led_trigger_register(struct device *dev,
 	return rc;
 }
 EXPORT_SYMBOL_GPL(devm_led_trigger_register);
-
+#endif
 /**
  * __ioread32_copy - copy data from MMIO space, in 32-bit units
  * @to: destination (must be 32-bit aligned)
