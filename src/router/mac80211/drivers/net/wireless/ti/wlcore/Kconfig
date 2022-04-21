@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config WLCORE
-	depends on !KERNEL_4_2
 	tristate "TI wlcore support"
 	depends on m
 	depends on MAC80211
@@ -28,7 +27,6 @@ config WLCORE_SPI
 	  Say N if unsure.
 
 config WLCORE_SDIO
-	depends on !KERNEL_3_15
 	tristate "TI wlcore SDIO support"
 	depends on m
 	depends on WLCORE && MMC

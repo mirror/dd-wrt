@@ -121,9 +121,11 @@ u16 ieee80211_select_queue_80211(struct ieee80211_sub_if_data *sdata,
 				 struct ieee80211_hdr *hdr)
 {
 	struct ieee80211_local *local = sdata->local;
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	u8 *p;
 
-	if (local->hw.queues < IEEE80211_NUM_ACS)
+	if ((info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER) ||
+	    local->hw.queues < IEEE80211_NUM_ACS)
 		return 0;
 
 	if (!ieee80211_is_data(hdr->frame_control)) {
@@ -185,8 +187,7 @@ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
 	struct sta_info *sta = NULL;
 	const u8 *ra = NULL;
 	u16 ret;
-	u8 ver = 0;
-
+	u8 ver;
 	/* when using iTXQ, we can do this later */
 	if (local->ops->wake_tx_queue)
 		return 0;
@@ -265,6 +266,14 @@ void ieee80211_set_qos_hdr(struct ieee80211_sub_if_data *sdata,
 		return;
 
 	p = ieee80211_get_qos_ctl(hdr);
+
+	/* don't overwrite the QoS field of injected frames */
+	if (info->flags & IEEE80211_TX_CTL_INJECTED) {
+		/* do take into account Ack policy of injected frames */
+		if (*p & IEEE80211_QOS_CTL_ACK_POLICY_NOACK)
+			info->flags |= IEEE80211_TX_CTL_NO_ACK;
+		return;
+	}
 
 	/* set up the first byte */
 

@@ -17,14 +17,14 @@ static inline const void *of_get_mac_address(struct device_node *np)
  * returns an error code and not NULL in case of an error.
  */
 #if LINUX_VERSION_IS_LESS(5,2,0)
-static inline const void *backport_of_get_mac_address(struct device_node *np)
+static inline int backport_of_get_mac_address(struct device_node *np, u8 *mac)
 {
-	const void *mac = of_get_mac_address(np);
+	const void *mactarget = of_get_mac_address(np);
 
-	if (!mac)
-		return ERR_PTR(-ENODEV);
-
-	return mac;
+	if (!mactarget)
+		return -ENODEV;
+	memcpy(mac, mactarget, 6);
+	return 0;
 }
 #define of_get_mac_address LINUX_BACKPORT(of_get_mac_address)
 #endif /* < 5.2 */

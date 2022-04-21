@@ -41,14 +41,6 @@
 #define rcu_dereference_raw(p)	rcu_dereference(p)
 #endif
 
-#ifndef rcu_swap_protected
-#define rcu_swap_protected(rcu_ptr, ptr, c) do {			\
-	typeof(ptr) __tmp = rcu_dereference_protected((rcu_ptr), (c));	\
-	rcu_assign_pointer((rcu_ptr), (ptr));				\
-	(ptr) = __tmp;							\
-} while (0)
-#endif
-
 #if LINUX_VERSION_IS_LESS(4,20,0)
 typedef void (*rcu_callback_t)(struct rcu_head *head);
 

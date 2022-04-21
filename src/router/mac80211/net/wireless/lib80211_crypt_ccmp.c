@@ -163,7 +163,7 @@ static int lib80211_ccmp_hdr(struct sk_buff *skb, int hdr_len,
 	if (aeskey != NULL && keylen >= CCMP_TK_LEN)
 		memcpy(aeskey, key->key, CCMP_TK_LEN);
 
-	pos = (void *)skb_push(skb, CCMP_HDR_LEN);
+	pos = skb_push(skb, CCMP_HDR_LEN);
 	memmove(pos, pos + CCMP_HDR_LEN, hdr_len);
 	pos += hdr_len;
 
@@ -443,4 +443,3 @@ void __exit lib80211_crypto_ccmp_exit(void)
 {
 	lib80211_unregister_crypto_ops(&lib80211_crypt_ccmp);
 }
-

@@ -68,13 +68,7 @@ static int cdc_mbim_wdm_manage_power(struct usb_interface *intf, int status)
 	return cdc_mbim_manage_power(dev, status);
 }
 
-#if LINUX_VERSION_IS_GEQ(3,10,0)
 static int cdc_mbim_rx_add_vid(struct net_device *netdev, __be16 proto, u16 vid)
-#elif LINUX_VERSION_IS_GEQ(3,3,0)
-static int cdc_mbim_rx_add_vid(struct net_device *netdev, u16 vid)
-#else
-static void cdc_mbim_rx_add_vid(struct net_device *netdev, u16 vid)
-#endif /* LINUX_VERSION_IS_GEQ(3,10,0) */
 {
 	struct usbnet *dev = netdev_priv(netdev);
 	struct cdc_mbim_state *info = (void *)&dev->data;
@@ -82,21 +76,13 @@ static void cdc_mbim_rx_add_vid(struct net_device *netdev, u16 vid)
 	/* creation of this VLAN is a request to tag IP session 0 */
 	if (vid == MBIM_IPS0_VID)
 		info->flags |= FLAG_IPS0_VLAN;
-#if LINUX_VERSION_IS_GEQ(3,3,0)
 	else
 		if (vid >= 512)	/* we don't map these to MBIM session */
 			return -EINVAL;
 	return 0;
-#endif /* LINUX_VERSION_IS_GEQ(3,3,0) */
 }
 
-#if LINUX_VERSION_IS_GEQ(3,10,0)
 static int cdc_mbim_rx_kill_vid(struct net_device *netdev, __be16 proto, u16 vid)
-#elif LINUX_VERSION_IS_GEQ(3,3,0)
-static int cdc_mbim_rx_kill_vid(struct net_device *netdev, u16 vid)
-#else
-static void cdc_mbim_rx_kill_vid(struct net_device *netdev, u16 vid)
-#endif /* LINUX_VERSION_IS_GEQ(3,10,0) */
 {
 	struct usbnet *dev = netdev_priv(netdev);
 	struct cdc_mbim_state *info = (void *)&dev->data;
@@ -104,20 +90,23 @@ static void cdc_mbim_rx_kill_vid(struct net_device *netdev, u16 vid)
 	/* this is a request for an untagged IP session 0 */
 	if (vid == MBIM_IPS0_VID)
 		info->flags &= ~FLAG_IPS0_VLAN;
-#if LINUX_VERSION_IS_GEQ(3,3,0)
 	return 0;
-#endif /* LINUX_VERSION_IS_GEQ(3,3,0) */
 }
 
 static const struct net_device_ops cdc_mbim_netdev_ops = {
 	.ndo_open             = usbnet_open,
 	.ndo_stop             = usbnet_stop,
 	.ndo_start_xmit       = usbnet_start_xmit,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout       = usbnet_tx_timeout,
-#if LINUX_VERSION_IS_GEQ(4,11,0)
-	.ndo_get_stats64      = usbnet_get_stats64,
 #else
-	.ndo_get_stats64 = bp_usbnet_get_stats64,
+	.ndo_tx_timeout = bp_usbnet_tx_timeout,
+#endif
+
+#if LINUX_VERSION_IS_GEQ(4,11,0)
+	.ndo_get_stats64      = dev_get_tstats64,
+#else
+	.ndo_get_stats64 = bp_dev_get_tstats64,
 #endif
 
 	.ndo_change_mtu       = cdc_ncm_change_mtu,
@@ -189,6 +178,7 @@ static int cdc_mbim_bind(struct usbnet *dev, struct usb_interface *intf)
 		subdriver = usb_cdc_wdm_register(ctx->control,
 						 &dev->status->desc,
 						 le16_to_cpu(ctx->mbim_desc->wMaxControlMessage),
+						 WWAN_PORT_MBIM,
 						 cdc_mbim_wdm_manage_power);
 	if (IS_ERR(subdriver)) {
 		ret = PTR_ERR(subdriver);
@@ -321,9 +311,8 @@ error:
 	return NULL;
 }
 
-#if LINUX_VERSION_IS_GEQ(3,12,0)
-/* Some devices are known to send Neigbor Solicitation messages and
- * require Neigbor Advertisement replies.  The IPv6 core will not
+/* Some devices are known to send Neighbor Solicitation messages and
+ * require Neighbor Advertisement replies.  The IPv6 core will not
  * respond since IFF_NOARP is set, so we must handle them ourselves.
  */
 static void do_neigh_solicit(struct usbnet *dev, u8 *buf, u16 tci)
@@ -363,16 +352,11 @@ static void do_neigh_solicit(struct usbnet *dev, u8 *buf, u16 tci)
 	in6_dev_put(in6_dev);
 
 	/* ipv6_stub != NULL if in6_dev_get returned an inet6_dev */
-#if LINUX_VERSION_IS_GEQ(4,4,0)
 	ipv6_stub->ndisc_send_na(netdev, &iph->saddr, &msg->target,
 				 is_router /* router */,
 				 true /* solicited */,
 				 false /* override */,
 				 true /* inc_opt */);
-#else
-	ipv6_stub->ndisc_send_na(netdev, NULL, &iph->saddr, &msg->target,
-				 is_router, true, false, true);
-#endif
 out:
 	dev_put(netdev);
 }
@@ -387,7 +371,6 @@ static bool is_neigh_solicit(u8 *buf, size_t len)
 		msg->icmph.icmp6_code == 0 &&
 		msg->icmph.icmp6_type == NDISC_NEIGHBOUR_SOLICITATION);
 }
-#endif /* LINUX_VERSION_IS_GEQ(3,12,0) */
 
 
 static struct sk_buff *cdc_mbim_process_dgram(struct usbnet *dev, u8 *buf, size_t len, u16 tci)
@@ -404,10 +387,8 @@ static struct sk_buff *cdc_mbim_process_dgram(struct usbnet *dev, u8 *buf, size_
 			proto = htons(ETH_P_IP);
 			break;
 		case 0x60:
-#if LINUX_VERSION_IS_GEQ(3,12,0)
 			if (is_neigh_solicit(buf, len))
 				do_neigh_solicit(dev, buf, tci);
-#endif /* LINUX_VERSION_IS_GEQ(3,12,0) */
 			proto = htons(ETH_P_IPV6);
 			break;
 		default:
@@ -618,7 +599,7 @@ static const struct driver_info cdc_mbim_info_zlp = {
  *
  * Note: The current implementation of this feature restricts each NTB
  * to a single NDP, implying that multiplexed sessions cannot share an
- * NTB. This might affect performace for multiplexed sessions.
+ * NTB. This might affect performance for multiplexed sessions.
  */
 static const struct driver_info cdc_mbim_info_ndp_to_end = {
 	.description = "CDC MBIM",
@@ -683,6 +664,16 @@ static const struct usb_device_id mbim_devs[] = {
 	  .driver_info = (unsigned long)&cdc_mbim_info_avoid_altsetting_toggle,
 	},
 
+	/* Telit LN920 */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x1bc7, 0x1061, USB_CLASS_COMM, USB_CDC_SUBCLASS_MBIM, USB_CDC_PROTO_NONE),
+	  .driver_info = (unsigned long)&cdc_mbim_info_avoid_altsetting_toggle,
+	},
+
+	/* Telit FN990 */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x1bc7, 0x1071, USB_CLASS_COMM, USB_CDC_SUBCLASS_MBIM, USB_CDC_PROTO_NONE),
+	  .driver_info = (unsigned long)&cdc_mbim_info_avoid_altsetting_toggle,
+	},
+
 	/* default entry */
 	{ USB_INTERFACE_INFO(USB_CLASS_COMM, USB_CDC_SUBCLASS_MBIM, USB_CDC_PROTO_NONE),
 	  .driver_info = (unsigned long)&cdc_mbim_info_zlp,
@@ -701,9 +692,7 @@ static struct usb_driver cdc_mbim_driver = {
 	.resume = cdc_mbim_resume,
 	.reset_resume =	cdc_mbim_resume,
 	.supports_autosuspend = 1,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 module_usb_driver(cdc_mbim_driver);
 

@@ -13,10 +13,8 @@ static inline int backport_of_dma_configure(struct device *dev,
 	return of_dma_configure(dev, np);
 #elif LINUX_VERSION_IS_GEQ(4,12,0)
 	return of_dma_configure(dev, np);
-#elif LINUX_VERSION_IS_GEQ(4,1,0)
-	of_dma_configure(dev, np);
-	return 0;
 #else
+	of_dma_configure(dev, np);
 	return 0;
 #endif
 }

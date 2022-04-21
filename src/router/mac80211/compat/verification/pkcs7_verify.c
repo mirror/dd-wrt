@@ -141,11 +141,10 @@ int pkcs7_get_digest(struct pkcs7_message *pkcs7, const u8 **buf, u32 *len,
 	*buf = sinfo->sig->digest;
 	*len = sinfo->sig->digest_size;
 
-	for (i = 0; i < HASH_ALGO__LAST; i++)
-		if (!strcmp(hash_algo_name[i], sinfo->sig->hash_algo)) {
-			*hash_algo = i;
-			break;
-		}
+	i = match_string(hash_algo_name, HASH_ALGO__LAST,
+			 sinfo->sig->hash_algo);
+	if (i >= 0)
+		*hash_algo = i;
 
 	return 0;
 }
@@ -174,12 +173,6 @@ static int pkcs7_find_key(struct pkcs7_message *pkcs7,
 			continue;
 		pr_devel("Sig %u: Found cert serial match X.509[%u]\n",
 			 sinfo->index, certix);
-
-		if (strcmp(x509->pub->pkey_algo, sinfo->sig->pkey_algo) != 0) {
-			pr_warn("Sig %u: X.509 algo and PKCS#7 sig algo don't match\n",
-				sinfo->index);
-			continue;
-		}
 
 		sinfo->signer = x509;
 		return 0;

@@ -244,7 +244,6 @@ TRACE_EVENT(freq_cal_offset,
 		  DEV_PR_ARG, __entry->phy_mode, __entry->freq_off)
 );
 
-#if LINUX_VERSION_IS_GEQ(3,16,0)
 TRACE_EVENT(mt_rx,
 	TP_PROTO(struct mt7601u_dev *dev, struct mt7601u_rxwi *rxwi, u32 f),
 	TP_ARGS(dev, rxwi, f),
@@ -299,20 +298,6 @@ TRACE_EVENT(mt_tx,
 		  __entry->h.ack_ctl, __entry->h.wcid,
 		  le16_to_cpu(__entry->h.len_ctl))
 );
-#else
-#ifndef __BACKPORT_MT7601U_TRACE_H_EXTRA
-#define __BACKPORT_MT7601U_TRACE_H_EXTRA
-static inline void trace_mt_rx(struct mt7601u_dev *dev,
-			       struct mt7601u_rxwi *rxwi,
-			       u32 f)
-{
-}
-static inline void trace_mt_tx(struct mt7601u_dev *dev, struct sk_buff *skb,
-			       struct mt76_sta *sta, struct mt76_txwi *h)
-{
-}
-#endif /* __BACKPORT_MT7601U_TRACE_H_EXTRA */
-#endif /* LINUX_VERSION_IS_GEQ(3,16,0) */
 
 TRACE_EVENT(mt_tx_dma_done,
 	TP_PROTO(struct mt7601u_dev *dev, struct sk_buff *skb),

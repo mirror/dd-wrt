@@ -12,7 +12,7 @@ static void
 mt7921_gen_ppe_thresh(u8 *he_ppet, int nss)
 {
 	u8 i, ppet_bits, ppet_size, ru_bit_mask = 0x7; /* HE80 */
-	u8 ppet16_ppet8_ru3_ru0[] = {0x1c, 0xc7, 0x71};
+	static const u8 ppet16_ppet8_ru3_ru0[] = {0x1c, 0xc7, 0x71};
 
 	he_ppet[0] = FIELD_PREP(IEEE80211_PPE_THRES_NSS_MASK, nss - 1) |
 		     FIELD_PREP(IEEE80211_PPE_THRES_RU_INDEX_BITMASK_MASK,
@@ -1406,6 +1406,25 @@ static void mt7921_sta_set_decap_offload(struct ieee80211_hw *hw,
 					     MCU_UNI_CMD(STA_REC_UPDATE));
 }
 
+static int mt7921_set_sar_specs(struct ieee80211_hw *hw,
+				const struct cfg80211_sar_specs *sar)
+{
+	struct mt7921_dev *dev = mt7921_hw_dev(hw);
+	struct mt76_phy *mphy = hw->priv;
+	int err;
+
+	mt7921_mutex_acquire(dev);
+	err = mt76_init_sar_power(hw, sar);
+	if (err)
+		goto out;
+
+	err = mt76_connac_mcu_set_rate_txpower(mphy);
+out:
+	mt7921_mutex_release(dev);
+
+	return err;
+}
+
 static void
 mt7921_channel_switch_beacon(struct ieee80211_hw *hw,
 			     struct ieee80211_vif *vif,
@@ -1462,6 +1481,7 @@ const struct ieee80211_ops mt7921_ops = {
 	.set_rekey_data = mt7921_set_rekey_data,
 #endif /* CONFIG_PM */
 	.flush = mt7921_flush,
+	.set_sar_specs = mt7921_set_sar_specs,
 };
 EXPORT_SYMBOL_GPL(mt7921_ops);
 

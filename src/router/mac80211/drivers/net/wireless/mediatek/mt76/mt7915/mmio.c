@@ -544,18 +544,29 @@ static void mt7915_rx_poll_complete(struct mt76_dev *mdev,
 }
 
 /* TODO: support 2/4/6/8 MSI-X vectors */
-static void mt7915_irq_tasklet(unsigned long data)
+static void mt7915_irq_tasklet(struct tasklet_struct *t)
 {
-	struct mt7915_dev *dev = (struct mt7915_dev *)data;
+	struct mt7915_dev *dev = from_tasklet(dev, t, irq_tasklet);
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
+#endif
 	u32 intr, intr1, mask;
 
-	mt76_wr(dev, MT_INT_MASK_CSR, 0);
-	if (dev->hif2)
-		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	if (mtk_wed_device_active(wed)) {
+		mtk_wed_device_irq_set_mask(wed, 0);
+		intr = mtk_wed_device_irq_get(wed, dev->mt76.mmio.irqmask);
+	} else
+#endif
+	{
+		mt76_wr(dev, MT_INT_MASK_CSR, 0);
+		if (dev->hif2)
+			mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 
-	intr = mt76_rr(dev, MT_INT_SOURCE_CSR);
-	intr &= dev->mt76.mmio.irqmask;
-	mt76_wr(dev, MT_INT_SOURCE_CSR, intr);
+		intr = mt76_rr(dev, MT_INT_SOURCE_CSR);
+		intr &= dev->mt76.mmio.irqmask;
+		mt76_wr(dev, MT_INT_SOURCE_CSR, intr);
+	}
 
 	if (dev->hif2) {
 		intr1 = mt76_rr(dev, MT_INT1_SOURCE_CSR);
@@ -610,10 +621,18 @@ static void mt7915_irq_tasklet(unsigned long data)
 irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
 {
 	struct mt7915_dev *dev = dev_instance;
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
 
-	mt76_wr(dev, MT_INT_MASK_CSR, 0);
-	if (dev->hif2)
-		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
+	if (mtk_wed_device_active(wed)) {
+		mtk_wed_device_irq_set_mask(wed, 0);
+	} else 
+#endif
+	{
+		mt76_wr(dev, MT_INT_MASK_CSR, 0);
+		if (dev->hif2)
+			mt76_wr(dev, MT_INT1_MASK_CSR, 0);
+	}
 
 	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
 		return IRQ_NONE;
@@ -663,7 +682,7 @@ struct mt7915_dev *mt7915_mmio_probe(struct device *pdev,
 	if (ret)
 		goto error;
 
-	tasklet_init(&dev->irq_tasklet, mt7915_irq_tasklet, (unsigned long)dev);
+	tasklet_setup(&dev->irq_tasklet, mt7915_irq_tasklet);
 
 	mt76_wr(dev, MT_INT_MASK_CSR, 0);
 

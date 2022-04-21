@@ -381,7 +381,6 @@ struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 
 	spin_lock_init(&sta->lock);
 	spin_lock_init(&sta->ps_lock);
-	spin_lock_init(&sta->ampdu_mlme.rx_offl_lock);
 	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
 	INIT_WORK(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
 	mutex_init(&sta->ampdu_mlme.mtx);
@@ -577,7 +576,7 @@ static int sta_info_insert_check(struct sta_info *sta)
 		return -ENETDOWN;
 
 	if (WARN_ON(ether_addr_equal(sta->sta.addr, sdata->vif.addr) ||
-		    is_multicast_ether_addr(sta->sta.addr)))
+		    !is_valid_ether_addr(sta->sta.addr)))
 		return -EINVAL;
 
 	/* The RCU read lock is required by rhashtable due to
@@ -674,14 +673,12 @@ static int sta_info_insert_finish(struct sta_info *sta) __acquires(RCU)
 
 	/* check if STA exists already */
 	if (sta_info_get_bss(sdata, sta->sta.addr)) {
-		sta_info_free(local, sta);
 		err = -EEXIST;
 		goto out_err;
 	}
 
 	sinfo = kzalloc(sizeof(struct station_info), GFP_KERNEL);
 	if (!sinfo) {
-		sta_info_free(local, sta);
 		err = -ENOMEM;
 		goto out_err;
 	}
@@ -1438,11 +1435,6 @@ static void ieee80211_send_null_response(struct sta_info *sta, int tid,
 	struct ieee80211_tx_info *info;
 	struct ieee80211_chanctx_conf *chanctx_conf;
 
-	/* Don't send NDPs when STA is connected HE */
-	if (sdata->vif.type == NL80211_IFTYPE_STATION &&
-	    !(sdata->u.mgd.flags & IEEE80211_STA_DISABLE_HE))
-		return;
-
 	if (qos) {
 		fc = cpu_to_le16(IEEE80211_FTYPE_DATA |
 				 IEEE80211_STYPE_QOS_NULLFUNC |
@@ -1460,7 +1452,7 @@ static void ieee80211_send_null_response(struct sta_info *sta, int tid,
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
-	nullfunc = (void *)skb_put(skb, size);
+	nullfunc = skb_put(skb, size);
 	nullfunc->frame_control = fc;
 	nullfunc->duration_id = 0;
 	memcpy(nullfunc->addr1, sta->sta.addr, ETH_ALEN);
@@ -2168,10 +2160,9 @@ static struct ieee80211_sta_rx_stats *
 sta_get_last_rx_stats(struct sta_info *sta)
 {
 	struct ieee80211_sta_rx_stats *stats = &sta->rx_stats;
-	struct ieee80211_local *local = sta->local;
 	int cpu;
 
-	if (!ieee80211_hw_check(&local->hw, USES_RSS))
+	if (!sta->pcpu_rx_stats)
 		return stats;
 
 	for_each_possible_cpu(cpu) {
@@ -2186,7 +2177,7 @@ sta_get_last_rx_stats(struct sta_info *sta)
 	return stats;
 }
 
-void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
+static void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
 				  struct rate_info *rinfo)
 {
 	rinfo->bw = STA_STATS_GET(BW, rate);
@@ -2214,7 +2205,7 @@ void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
 
 		sband = local->hw.wiphy->bands[band];
 
-		if (!sband || WARN_ON_ONCE(!sband->bitrates))
+		if (WARN_ON_ONCE(!sband->bitrates))
 			break;
 
 		brate = sband->bitrates[rate_idx].bitrate;
@@ -2271,9 +2262,7 @@ static void sta_set_tidstats(struct sta_info *sta,
 	int cpu;
 
 	if (!(tidstats->filled & BIT(NL80211_TID_STATS_RX_MSDU))) {
-		if (!ieee80211_hw_check(&local->hw, USES_RSS))
-			tidstats->rx_msdu +=
-				sta_get_tidstats_msdu(&sta->rx_stats, tid);
+		tidstats->rx_msdu += sta_get_tidstats_msdu(&sta->rx_stats, tid);
 
 		if (sta->pcpu_rx_stats) {
 			for_each_possible_cpu(cpu) {
@@ -2354,7 +2343,6 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 		sinfo->rx_beacon = sdata->u.mgd.count_beacon_signal;
 
 	drv_sta_statistics(local, sdata, &sta->sta, sinfo);
-
 	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_INACTIVE_TIME) |
 			 BIT_ULL(NL80211_STA_INFO_STA_FLAGS) |
 			 BIT_ULL(NL80211_STA_INFO_BSS_PARAM) |
@@ -2416,8 +2404,7 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 
 	if (!(sinfo->filled & (BIT_ULL(NL80211_STA_INFO_RX_BYTES64) |
 			       BIT_ULL(NL80211_STA_INFO_RX_BYTES)))) {
-		if (!ieee80211_hw_check(&local->hw, USES_RSS))
-			sinfo->rx_bytes += sta_get_stats_bytes(&sta->rx_stats);
+		sinfo->rx_bytes += sta_get_stats_bytes(&sta->rx_stats);
 
 		if (sta->pcpu_rx_stats) {
 			for_each_possible_cpu(cpu) {
@@ -2605,6 +2592,7 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_PM);
 	if (test_sta_flag(sta, WLAN_STA_PS_DELIVER))
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_PM);
+
 	ht_capa = &sdata->u.mgd.ht_capa;
 	ht_capa_mask = &sdata->u.mgd.ht_capa_mask;
 
@@ -2683,56 +2671,6 @@ static void sta_update_codel_params(struct sta_info *sta, u32 thr)
 		sta->cparams.target = MS2TIME(20);
 		sta->cparams.interval = MS2TIME(100);
 		sta->cparams.ecn = true;
-	}
-}
-
-void sta_accum_rx_stats(struct sta_info *sta,
-			struct ieee80211_sta_rx_stats *rx_stats)
-{
-	int cpu;
-	int i;
-
-	memcpy(rx_stats, &sta->rx_stats, sizeof(*rx_stats));
-
-	if (!sta->pcpu_rx_stats)
-		return;
-
-	for_each_possible_cpu(cpu) {
-		struct ieee80211_sta_rx_stats *cpurxs;
-
-		cpurxs = per_cpu_ptr(sta->pcpu_rx_stats, cpu);
-		rx_stats->packets += cpurxs->packets;
-		if (time_after(cpurxs->last_rx, rx_stats->last_rx)) {
-			rx_stats->last_rx = cpurxs->last_rx;
-			rx_stats->last_signal = cpurxs->last_signal;
-			for (i = 0; i<IEEE80211_MAX_CHAINS; i++)
-				rx_stats->chain_signal_last[i] = cpurxs->chain_signal_last[i];
-			rx_stats->last_rate = cpurxs->last_rate;
-		}
-		rx_stats->num_duplicates += cpurxs->num_duplicates;
-		rx_stats->fragments += cpurxs->fragments;
-		rx_stats->dropped += cpurxs->dropped;
-		rx_stats->bytes += sta_get_stats_bytes(cpurxs);
-		for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
-			rx_stats->msdu[i] += sta_get_tidstats_msdu(cpurxs, i);
-		}
-#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
-		rx_stats->msdu_20 += cpurxs->msdu_20;
-		rx_stats->msdu_40 += cpurxs->msdu_40;
-		rx_stats->msdu_80 += cpurxs->msdu_80;
-		rx_stats->msdu_160 += cpurxs->msdu_160;
-		for (i = 0; i<NL80211_RATE_INFO_HE_RU_ALLOC_LAST; i++)
-			rx_stats->msdu_he_ru_alloc[i] += cpurxs->msdu_he_ru_alloc[i];
-		rx_stats->msdu_he_tot += cpurxs->msdu_he_tot;
-		rx_stats->msdu_he_mu += cpurxs->msdu_he_mu;
-		rx_stats->msdu_vht += cpurxs->msdu_vht;
-		rx_stats->msdu_ht += cpurxs->msdu_ht;
-		rx_stats->msdu_legacy += cpurxs->msdu_legacy;
-		for (i = 0; i<8; i++)
-			rx_stats->msdu_nss[i] += cpurxs->msdu_nss[i];
-		for (i = 0; i<32; i++)
-			rx_stats->msdu_rate_idx[i] += cpurxs->msdu_rate_idx[i];
-#endif
 	}
 }
 

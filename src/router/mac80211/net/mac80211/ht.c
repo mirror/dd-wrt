@@ -9,7 +9,7 @@
  * Copyright 2007, Michael Wu <flamingice@sourmilk.net>
  * Copyright 2007-2010, Intel Corporation
  * Copyright 2017	Intel Deutschland GmbH
- * Copyright(c) 2020 Intel Corporation
+ * Copyright(c) 2020-2021 Intel Corporation
  */
 
 #include <linux/ieee80211.h>
@@ -360,14 +360,12 @@ void ieee80211_ba_session_work(struct work_struct *work)
 				sta, tid, WLAN_BACK_RECIPIENT,
 				WLAN_REASON_UNSPECIFIED, true);
 
-		spin_lock_bh(&sta->ampdu_mlme.rx_offl_lock);
 		if (!blocked &&
 		    test_and_clear_bit(tid,
 				       sta->ampdu_mlme.tid_rx_manage_offl))
 			___ieee80211_start_rx_ba_session(sta, 0, 0, 0, 1, tid,
 							 IEEE80211_MAX_AMPDU_BUF_HT,
 							 false, true, NULL);
-		spin_unlock_bh(&sta->ampdu_mlme.rx_offl_lock);
 
 		if (test_and_clear_bit(tid + IEEE80211_NUM_TIDS,
 				       sta->ampdu_mlme.tid_rx_manage_offl))
@@ -507,7 +505,7 @@ int ieee80211_send_smps_action(struct ieee80211_sub_if_data *sdata,
 		return -ENOMEM;
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
-	action_frame = (void *)skb_put(skb, 27);
+	action_frame = skb_put(skb, 27);
 	memcpy(action_frame->da, da, ETH_ALEN);
 	memcpy(action_frame->sa, sdata->dev->dev_addr, ETH_ALEN);
 	memcpy(action_frame->bssid, bssid, ETH_ALEN);
@@ -557,17 +555,15 @@ void ieee80211_request_smps(struct ieee80211_vif *vif,
 {
 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
 
-	if (WARN_ON_ONCE(vif->type != NL80211_IFTYPE_STATION &&
-			 vif->type != NL80211_IFTYPE_AP))
+	if (WARN_ON_ONCE(vif->type != NL80211_IFTYPE_STATION))
 		return;
 
-	if (vif->type == NL80211_IFTYPE_STATION) {
-		if (sdata->u.mgd.driver_smps_mode == smps_mode)
-			return;
-		sdata->u.mgd.driver_smps_mode = smps_mode;
-		ieee80211_queue_work(&sdata->local->hw,
-				     &sdata->u.mgd.request_smps_work);
-	}
+	if (sdata->u.mgd.driver_smps_mode == smps_mode)
+		return;
+
+	sdata->u.mgd.driver_smps_mode = smps_mode;
+	ieee80211_queue_work(&sdata->local->hw,
+			     &sdata->u.mgd.request_smps_work);
 }
 /* this might change ... don't want non-open drivers using it */
 EXPORT_SYMBOL_GPL(ieee80211_request_smps);

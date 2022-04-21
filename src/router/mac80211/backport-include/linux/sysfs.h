@@ -22,4 +22,13 @@ static inline int sysfs_emit(char *buf, const char *fmt, ...)
 #endif /* CONFIG_SYSFS */
 #endif /* < 5.10 */
 
+#ifndef __ATTR_RW_MODE
+#define __ATTR_RW_MODE(_name, _mode) {					\
+	.attr	= { .name = __stringify(_name),				\
+		    .mode = VERIFY_OCTAL_PERMISSIONS(_mode) },		\
+	.show	= _name##_show,						\
+	.store	= _name##_store,					\
+}
+#endif
+
 #endif /* __BACKPORT_LINUX_SYSFS_H */

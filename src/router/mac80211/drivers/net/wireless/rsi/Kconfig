@@ -30,7 +30,6 @@ config RSI_DEBUGFS
 	 creates debugfs entries
 
 config RSI_SDIO
-	depends on !KERNEL_3_13
 	tristate "Redpine Signals SDIO bus support"
 	depends on m
 	depends on MMC && RSI_91X

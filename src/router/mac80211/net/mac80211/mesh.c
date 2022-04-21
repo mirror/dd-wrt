@@ -265,7 +265,7 @@ int mesh_add_meshconf_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 2 + meshconf_len)
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + meshconf_len);
+	pos = skb_put(skb, 2 + meshconf_len);
 	*pos++ = WLAN_EID_MESH_CONFIG;
 	*pos++ = meshconf_len;
 
@@ -308,7 +308,7 @@ int mesh_add_meshid_ie(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 	if (skb_tailroom(skb) < 2 + ifmsh->mesh_id_len)
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + ifmsh->mesh_id_len);
+	pos = skb_put(skb, 2 + ifmsh->mesh_id_len);
 	*pos++ = WLAN_EID_MESH_ID;
 	*pos++ = ifmsh->mesh_id_len;
 	if (ifmsh->mesh_id_len)
@@ -332,7 +332,7 @@ static int mesh_add_awake_window_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 4)
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + 2);
+	pos = skb_put(skb, 2 + 2);
 	*pos++ = WLAN_EID_MESH_AWAKE_WINDOW;
 	*pos++ = 2;
 	put_unaligned_le16(ifmsh->mshcfg.dot11MeshAwakeWindowDuration, pos);
@@ -406,7 +406,7 @@ static int mesh_add_ds_params_ie(struct ieee80211_sub_if_data *sdata,
 	chan = chanctx_conf->def.chan;
 	rcu_read_unlock();
 
-	pos = (void *)skb_put(skb, 2 + 1);
+	pos = skb_put(skb, 2 + 1);
 	*pos++ = WLAN_EID_DS_PARAMS;
 	*pos++ = 1;
 	*pos++ = ieee80211_frequency_to_channel(chan->center_freq);
@@ -437,7 +437,7 @@ int mesh_add_ht_cap_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 2 + sizeof(struct ieee80211_ht_cap))
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_ht_cap));
+	pos = skb_put(skb, 2 + sizeof(struct ieee80211_ht_cap));
 	ieee80211_ie_build_ht_cap(pos, &sband->ht_cap, sband->ht_cap.cap);
 
 	return 0;
@@ -478,7 +478,7 @@ int mesh_add_ht_oper_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 2 + sizeof(struct ieee80211_ht_operation))
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_ht_operation));
+	pos = skb_put(skb, 2 + sizeof(struct ieee80211_ht_operation));
 	ieee80211_ie_build_ht_oper(pos, ht_cap, &sdata->vif.bss_conf.chandef,
 				   sdata->vif.bss_conf.ht_operation_mode,
 				   false);
@@ -515,7 +515,7 @@ int mesh_add_vht_cap_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 2 + sizeof(struct ieee80211_vht_cap))
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_vht_cap));
+	pos = skb_put(skb, 2 + sizeof(struct ieee80211_vht_cap));
 	ieee80211_ie_build_vht_cap(pos, &sband->vht_cap, sband->vht_cap.cap);
 
 	return 0;
@@ -561,7 +561,7 @@ int mesh_add_vht_oper_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < 2 + sizeof(struct ieee80211_vht_operation))
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, 2 + sizeof(struct ieee80211_vht_operation));
+	pos = skb_put(skb, 2 + sizeof(struct ieee80211_vht_operation));
 	ieee80211_ie_build_vht_oper(pos, vht_cap,
 				    &sdata->vif.bss_conf.chandef);
 
@@ -590,8 +590,8 @@ int mesh_add_he_cap_ie(struct ieee80211_sub_if_data *sdata,
 	if (skb_tailroom(skb) < ie_len)
 		return -ENOMEM;
 
-	pos = (void *)skb_put(skb, ie_len);
-	ieee80211_ie_build_he_cap(pos, he_cap, pos + ie_len);
+	pos = skb_put(skb, ie_len);
+	ieee80211_ie_build_he_cap(0, pos, he_cap, pos + ie_len);
 
 	return 0;
 }
@@ -676,6 +676,36 @@ void ieee80211_mesh_root_setup(struct ieee80211_if_mesh *ifmsh)
 		/* stop running timer */
 		del_timer_sync(&ifmsh->mesh_path_root_timer);
 	}
+}
+
+static void
+ieee80211_mesh_update_bss_params(struct ieee80211_sub_if_data *sdata,
+				 u8 *ie, u8 ie_len)
+{
+	struct ieee80211_supported_band *sband;
+	const struct element *cap;
+	const struct ieee80211_he_operation *he_oper = NULL;
+
+	sband = ieee80211_get_sband(sdata);
+	if (!sband)
+		return;
+
+	if (!ieee80211_get_he_iftype_cap(sband, NL80211_IFTYPE_MESH_POINT) ||
+	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_20_NOHT ||
+	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_5 ||
+	    sdata->vif.bss_conf.chandef.width == NL80211_CHAN_WIDTH_10)
+		return;
+
+	sdata->vif.bss_conf.he_support = true;
+
+	cap = cfg80211_find_ext_elem(WLAN_EID_EXT_HE_OPERATION, ie, ie_len);
+	if (cap && cap->datalen >= 1 + sizeof(*he_oper) &&
+	    cap->datalen >= 1 + ieee80211_he_oper_size(cap->data + 1))
+		he_oper = (void *)(cap->data + 1);
+
+	if (he_oper)
+		sdata->vif.bss_conf.he_oper.params =
+			__le32_to_cpu(he_oper->he_oper_params);
 }
 
 /**
@@ -857,7 +887,7 @@ ieee80211_mesh_build_beacon(struct ieee80211_if_mesh *ifmsh)
 	mgmt->u.beacon.capab_info |= cpu_to_le16(
 		sdata->u.mesh.security ? WLAN_CAPABILITY_PRIVACY : 0);
 
-	pos = (void *)skb_put(skb, 2);
+	pos = skb_put(skb, 2);
 	*pos++ = WLAN_EID_SSID;
 	*pos++ = 0x0;
 
@@ -954,6 +984,7 @@ ieee80211_mesh_build_beacon(struct ieee80211_if_mesh *ifmsh)
 
 	bcn->tail_len = skb->len;
 	memcpy(bcn->tail, skb->data, bcn->tail_len);
+	ieee80211_mesh_update_bss_params(sdata, bcn->tail, bcn->tail_len);
 	bcn->meshconf = (struct ieee80211_meshconf_ie *)
 					(bcn->tail + ifmsh->meshconf_offset);
 
@@ -1431,7 +1462,7 @@ static int mesh_fwd_csa_frame(struct ieee80211_sub_if_data *sdata,
 	if (!skb)
 		return -ENOMEM;
 	skb_reserve(skb, local->tx_headroom);
-	mgmt_fwd = (void *)skb_put(skb, len);
+	mgmt_fwd = skb_put(skb, len);
 
 	elems->mesh_chansw_params_ie->mesh_ttl--;
 	elems->mesh_chansw_params_ie->mesh_flags &=

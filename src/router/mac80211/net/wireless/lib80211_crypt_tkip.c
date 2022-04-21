@@ -302,7 +302,7 @@ static int lib80211_tkip_hdr(struct sk_buff *skb, int hdr_len,
 	}
 	tkip_mixing_phase2(rc4key, tkey->key, tkey->tx_ttak, tkey->tx_iv16);
 
-	pos = (void *)skb_push(skb, TKIP_HDR_LEN);
+	pos = skb_push(skb, TKIP_HDR_LEN);
 	memmove(pos, pos + TKIP_HDR_LEN, hdr_len);
 	pos += hdr_len;
 
@@ -348,7 +348,7 @@ static int lib80211_tkip_encrypt(struct sk_buff *skb, int hdr_len, void *priv)
 		return -1;
 
 	crc = ~crc32_le(~0, pos, len);
-	icv = (void *)skb_put(skb, 4);
+	icv = skb_put(skb, 4);
 	icv[0] = crc;
 	icv[1] = crc >> 8;
 	icv[2] = crc >> 16;
@@ -552,7 +552,7 @@ static int lib80211_michael_mic_add(struct sk_buff *skb, int hdr_len,
 	}
 
 	michael_mic_hdr(skb, tkey->tx_hdr);
-	pos = (void *)skb_put(skb, 8);
+	pos = skb_put(skb, 8);
 	if (michael_mic(tkey->tx_tfm_michael, &tkey->key[16], tkey->tx_hdr,
 			skb->data + hdr_len, skb->len - 8 - hdr_len, pos))
 		return -1;
@@ -733,3 +733,4 @@ void __exit lib80211_crypto_tkip_exit(void)
 {
 	lib80211_unregister_crypto_ops(&lib80211_crypt_tkip);
 }
+

@@ -991,15 +991,14 @@ static void rt2x00lib_rate(struct ieee80211_rate *entry,
 void rt2x00lib_set_mac_address(struct rt2x00_dev *rt2x00dev, u8 *eeprom_mac_addr)
 {
 	struct rt2x00_platform_data *pdata;
-	const char *mac_addr;
+	char mac_addr[6];
 
 	pdata = rt2x00dev->dev->platform_data;
 	if (pdata && pdata->mac_address)
 		ether_addr_copy(eeprom_mac_addr, pdata->mac_address);
 
-	mac_addr = of_get_mac_address(rt2x00dev->dev->of_node);
-	if (!IS_ERR(mac_addr))
-		ether_addr_copy(eeprom_mac_addr, mac_addr);
+	of_get_mac_address(rt2x00dev->dev->of_node, mac_addr);
+	ether_addr_copy(eeprom_mac_addr, mac_addr);
 
 	if (!is_valid_ether_addr(eeprom_mac_addr)) {
 		eth_random_addr(eeprom_mac_addr);

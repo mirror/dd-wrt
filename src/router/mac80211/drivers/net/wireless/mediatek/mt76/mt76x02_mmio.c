@@ -11,9 +11,9 @@
 #include "mt76x02_mcu.h"
 #include "trace.h"
 
-static void mt76x02_pre_tbtt_tasklet(unsigned long arg)
+static void mt76x02_pre_tbtt_tasklet(struct tasklet_struct *t)
 {
-	struct mt76x02_dev *dev = (struct mt76x02_dev *)arg;
+	struct mt76x02_dev *dev = from_tasklet(dev, t, mt76.pre_tbtt_tasklet);
 	struct mt76_dev *mdev = &dev->mt76;
 	struct mt76_queue *q = dev->mphy.q_tx[MT_TXQ_PSD];
 	struct beacon_bc_data data = {};
@@ -179,8 +179,7 @@ int mt76x02_dma_init(struct mt76x02_dev *dev)
 		return -ENOMEM;
 
 	dev->mt76.tx_worker.fn = mt76x02_tx_worker;
-	tasklet_init(&dev->mt76.pre_tbtt_tasklet, mt76x02_pre_tbtt_tasklet,
-		     (unsigned long)dev);
+	tasklet_setup(&dev->mt76.pre_tbtt_tasklet, mt76x02_pre_tbtt_tasklet);
 
 	spin_lock_init(&dev->txstatus_fifo_lock);
 	kfifo_init(&dev->txstatus_fifo, status_fifo, fifo_size);
@@ -192,13 +191,13 @@ int mt76x02_dma_init(struct mt76x02_dev *dev)
 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
 		ret = mt76_init_tx_queue(&dev->mphy, i, mt76_ac_to_hwq(i),
 					 MT76x02_TX_RING_SIZE,
-					 MT_TX_RING_BASE);
+					 MT_TX_RING_BASE, 0);
 		if (ret)
 			return ret;
 	}
 
 	ret = mt76_init_tx_queue(&dev->mphy, MT_TXQ_PSD, MT_TX_HW_QUEUE_MGMT,
-				 MT76x02_PSD_RING_SIZE, MT_TX_RING_BASE);
+				 MT76x02_PSD_RING_SIZE, MT_TX_RING_BASE, 0);
 	if (ret)
 		return ret;
 

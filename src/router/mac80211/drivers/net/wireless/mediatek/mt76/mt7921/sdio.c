@@ -317,10 +317,6 @@ static struct sdio_driver mt7921s_driver = {
 	}
 #endif
 };
-#define module_sdio_driver(__sdio_driver) \
-	module_driver(__sdio_driver, sdio_register_driver, \
-		      sdio_unregister_driver)
-
 module_sdio_driver(mt7921s_driver);
 MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
 MODULE_LICENSE("Dual BSD/GPL");

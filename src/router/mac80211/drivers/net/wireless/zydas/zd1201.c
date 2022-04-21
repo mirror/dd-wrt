@@ -846,7 +846,8 @@ static void zd1201_tx_timeout(struct net_device *dev, unsigned int txqueue)
 #if LINUX_VERSION_IS_LESS(5,6,0)
 /* Just declare it here to keep sparse happy */
 void bp_zd1201_tx_timeout(struct net_device *dev);
-void bp_zd1201_tx_timeout(struct net_device *dev) {
+void bp_zd1201_tx_timeout(struct net_device *dev)
+{
 	zd1201_tx_timeout(dev, 0);
 }
 EXPORT_SYMBOL_GPL(bp_zd1201_tx_timeout);
@@ -974,7 +975,7 @@ static int zd1201_set_mode(struct net_device *dev,
 			 */
 			zd1201_join(zd, "\0-*#\0", 5);
 			/* Put port in pIBSS */
-			/* Fall through */
+			fallthrough;
 		case 8: /* No pseudo-IBSS in wireless extensions (yet) */
 			porttype = ZD1201_PORTTYPE_PSEUDOIBSS;
 			break;
@@ -1660,15 +1661,11 @@ static int zd1201_set_maxassoc(struct net_device *dev,
     struct iw_request_info *info, struct iw_param *rrq, char *extra)
 {
 	struct zd1201 *zd = netdev_priv(dev);
-	int err;
 
 	if (!zd->ap)
 		return -EOPNOTSUPP;
 
-	err = zd1201_setconfig16(zd, ZD1201_RID_CNFMAXASSOCSTATIONS, rrq->value);
-	if (err)
-		return err;
-	return 0;
+	return zd1201_setconfig16(zd, ZD1201_RID_CNFMAXASSOCSTATIONS, rrq->value);
 }
 
 static int zd1201_get_maxassoc(struct net_device *dev,
@@ -1916,9 +1913,7 @@ static struct usb_driver zd1201_usb = {
 	.id_table = zd1201_table,
 	.suspend = zd1201_suspend,
 	.resume = zd1201_resume,
-#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
-#endif
 };
 
 module_usb_driver(zd1201_usb);

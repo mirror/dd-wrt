@@ -1,9 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 config MT7615_COMMON
 	tristate
 	select MT76_CORE
 
 config MT7615E
 	tristate "MediaTek MT7615E and MT7663E (PCIe) support"
+	depends on m
 	select MT7615_COMMON
 	select MT76_CONNAC_LIB
 	depends on MAC80211
@@ -19,7 +22,7 @@ config MT7622_WMAC
 	bool "MT7622 (SoC) WMAC support"
 	depends on MT7615E
 	depends on ARCH_MEDIATEK || COMPILE_TEST
-	select REGMAP
+	depends on REGMAP
 	default y
 	help
 	  This adds support for the built-in WMAC on MT7622 SoC devices
@@ -28,10 +31,12 @@ config MT7622_WMAC
 
 config MT7663_USB_SDIO_COMMON
 	tristate
+	depends on m
 	select MT7615_COMMON
 
 config MT7663U
 	tristate "MediaTek MT7663U (USB) support"
+	depends on m
 	select MT76_USB
 	select MT7663_USB_SDIO_COMMON
 	depends on MAC80211
@@ -43,6 +48,7 @@ config MT7663U
 
 config MT7663S
 	tristate "MediaTek MT7663S (SDIO) support"
+	depends on m
 	select MT76_SDIO
 	select MT7663_USB_SDIO_COMMON
 	depends on MAC80211

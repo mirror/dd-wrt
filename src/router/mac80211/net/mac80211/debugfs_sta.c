@@ -5,7 +5,7 @@
  * Copyright 2007	Johannes Berg <johannes@sipsolutions.net>
  * Copyright 2013-2014  Intel Mobile Communications GmbH
  * Copyright(c) 2016 Intel Deutschland GmbH
- * Copyright (C) 2018 - 2019 Intel Corporation
+ * Copyright (C) 2018 - 2020 Intel Corporation
  */
 
 #include <linux/debugfs.h>
@@ -126,124 +126,6 @@ static ssize_t sta_flags_read(struct file *file, char __user *userbuf,
 	return simple_read_from_buffer(userbuf, count, ppos, buf, strlen(buf));
 }
 STA_OPS(flags);
-
-static ssize_t sta_stats_read(struct file *file, char __user *userbuf,
-			      size_t count, loff_t *ppos)
-{
-	struct sta_info *sta = file->private_data;
-	unsigned int len = 0;
-	const int buf_len = 8000;
-	char *buf = kzalloc(buf_len, GFP_KERNEL);
-	unsigned long sum;
-	char tmp[60];
-	int i;
-	struct ieee80211_sta_rx_stats rx_stats = {0};
-
-	if (!buf)
-		return -ENOMEM;
-
-	sta_accum_rx_stats(sta, &rx_stats);
-
-#define PRINT_MY_STATS(a, b) do {					\
-		len += scnprintf(buf + len, buf_len - len, "%30s %18lu\n", a, (unsigned long)(b)); \
-		if (len >= buf_len) {					\
-			goto done;					\
-		}							\
-	} while (0)
-
-#define PRINT_MY_STATS_S(a, b) do {					\
-		len += scnprintf(buf + len, buf_len - len, "%30s %18ld\n", a, (long)(b)); \
-		if (len >= buf_len) {					\
-			goto done;					\
-		}							\
-	} while (0)
-
-	PRINT_MY_STATS("rx-packets", rx_stats.packets);
-	PRINT_MY_STATS("rx-bytes", rx_stats.bytes);
-	PRINT_MY_STATS("rx-dup", rx_stats.num_duplicates);
-	PRINT_MY_STATS("rx-fragments", rx_stats.fragments);
-	PRINT_MY_STATS("rx-dropped", rx_stats.dropped);
-	PRINT_MY_STATS_S("rx-last-signal", rx_stats.last_signal);
-
-	for (i = 0; i<IEEE80211_MAX_CHAINS; i++) {
-		if (rx_stats.chains & (1<<i)) {
-			sprintf(tmp, "rx-last-signal-chain[%i]", i);
-			PRINT_MY_STATS_S(tmp, rx_stats.chain_signal_last[i]);
-		}
-	}
-	PRINT_MY_STATS("rx-last-rate-encoded", rx_stats.last_rate);
-
-	len += scnprintf(buf + len, buf_len - len, "\n");
-
-	sum = sta->tx_stats.packets[0] + sta->tx_stats.packets[1]
-		+ sta->tx_stats.packets[2] + sta->tx_stats.packets[3];
-	PRINT_MY_STATS("tx-packets", sum);
-
-		sum = sta->tx_stats.bytes[0] + sta->tx_stats.bytes[1]
-		+ sta->tx_stats.bytes[2] + sta->tx_stats.bytes[3];
-	PRINT_MY_STATS("tx-bytes", sum);
-
-	/* per txq stats */
-	PRINT_MY_STATS("tx-packets-acs[VO]", sta->tx_stats.packets[IEEE80211_AC_VO]);
-	PRINT_MY_STATS("tx-packets-acs[VI]", sta->tx_stats.packets[IEEE80211_AC_VI]);
-	PRINT_MY_STATS("tx-packets-acs[BE]", sta->tx_stats.packets[IEEE80211_AC_BE]);
-	PRINT_MY_STATS("tx-packets-acs[BK]", sta->tx_stats.packets[IEEE80211_AC_BK]);
-
-	PRINT_MY_STATS("tx-bytes-acs[VO]", sta->tx_stats.bytes[IEEE80211_AC_VO]);
-	PRINT_MY_STATS("tx-bytes-acs[VI]", sta->tx_stats.bytes[IEEE80211_AC_VI]);
-	PRINT_MY_STATS("tx-bytes-acs[BE]", sta->tx_stats.bytes[IEEE80211_AC_BE]);
-	PRINT_MY_STATS("tx-bytes-acs[BK]", sta->tx_stats.bytes[IEEE80211_AC_BK]);
-
-	len += scnprintf(buf + len, buf_len - len, "\n");
-	for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
-		sprintf(tmp, "tx-msdu-tid[%2i]", i);
-		PRINT_MY_STATS(tmp, sta->tx_stats.msdu[i]);
-	}
-
-	len += scnprintf(buf + len, buf_len - len, "\n");
-	for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
-		sprintf(tmp, "rx-msdu-tid[%2i]", i);
-		PRINT_MY_STATS(tmp, rx_stats.msdu[i]);
-	}
-
-#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
-	PRINT_MY_STATS("rx-bw-20", rx_stats.msdu_20);
-	PRINT_MY_STATS("rx-bw-40", rx_stats.msdu_40);
-	PRINT_MY_STATS("rx-bw-80", rx_stats.msdu_80);
-	PRINT_MY_STATS("rx-bw-160", rx_stats.msdu_160);
-
-	PRINT_MY_STATS("rx-he-total", rx_stats.msdu_he_tot);
-	PRINT_MY_STATS("rx-he-mu", rx_stats.msdu_he_mu);
-	PRINT_MY_STATS("rx-vht", rx_stats.msdu_vht);
-	PRINT_MY_STATS("rx-ht", rx_stats.msdu_ht);
-	PRINT_MY_STATS("rx-legacy", rx_stats.msdu_legacy);
-
-	PRINT_MY_STATS("rx-he-ru-alloc[   26]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_26]);
-	PRINT_MY_STATS("rx-he-ru-alloc[   52]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_52]);
-	PRINT_MY_STATS("rx-he-ru-alloc[  106]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_106]);
-	PRINT_MY_STATS("rx-he-ru-alloc[  242]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_242]);
-	PRINT_MY_STATS("rx-he-ru-alloc[  484]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_484]);
-	PRINT_MY_STATS("rx-he-ru-alloc[  996]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_996]);
-	PRINT_MY_STATS("rx-he-ru-alloc[2x996]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_2x996]);
-
-	for (i = 0; i<8; i++) {
-		sprintf(tmp, "rx-msdu-nss[%i]", i);
-		PRINT_MY_STATS(tmp, rx_stats.msdu_nss[i]);
-	}
-
-	for (i = 0; i<32; i++) {
-		sprintf(tmp, "rx-rate-idx[%3i]", i);
-		PRINT_MY_STATS(tmp, rx_stats.msdu_rate_idx[i]);
-	}
-#endif
-
-#undef PRINT_MY_STATS
-done:
-	i = simple_read_from_buffer(userbuf, count, ppos, buf, strlen(buf));
-	kfree(buf);
-	return i;
-}
-STA_OPS(stats);
 
 static ssize_t sta_num_ps_buf_frames_read(struct file *file,
 					  char __user *userbuf,
@@ -417,7 +299,7 @@ static ssize_t sta_aql_read(struct file *file, char __user *userbuf,
 		"Q limit[low/high]: VO: %u/%u VI: %u/%u BE: %u/%u BK: %u/%u\n",
 		q_depth[0], q_depth[1], q_depth[2], q_depth[3],
 		q_limit_l[0], q_limit_h[0], q_limit_l[1], q_limit_h[1],
-		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3]),
+		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3]);
 
 	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
 	kfree(buf);
@@ -853,17 +735,17 @@ static ssize_t sta_he_capa_read(struct file *file, char __user *userbuf,
 	PFLAG(MAC, 3, OFDMA_RA, "OFDMA-RA");
 
 	switch (cap[3] & IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK) {
-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_USE_VHT:
-		PRINT("MAX-AMPDU-LEN-EXP-USE-VHT");
+	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_0:
+		PRINT("MAX-AMPDU-LEN-EXP-USE-EXT-0");
 		break;
-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_1:
-		PRINT("MAX-AMPDU-LEN-EXP-VHT-1");
+	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_1:
+		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-1");
 		break;
-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2:
-		PRINT("MAX-AMPDU-LEN-EXP-VHT-2");
+	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_2:
+		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-2");
 		break;
-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_RESERVED:
-		PRINT("MAX-AMPDU-LEN-EXP-RESERVED");
+	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3:
+		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-3");
 		break;
 	}
 
@@ -874,7 +756,7 @@ static ssize_t sta_he_capa_read(struct file *file, char __user *userbuf,
 	PFLAG(MAC, 4, BSRP_BQRP_A_MPDU_AGG, "BSRP-BQRP-A-MPDU-AGG");
 	PFLAG(MAC, 4, QTP, "QTP");
 	PFLAG(MAC, 4, BQR, "BQR");
-	PFLAG(MAC, 4, SRP_RESP, "SRP-RESP");
+	PFLAG(MAC, 4, PSR_RESP, "PSR-RESP");
 	PFLAG(MAC, 4, NDP_FB_REP, "NDP-FB-REP");
 	PFLAG(MAC, 4, OPS, "OPS");
 	PFLAG(MAC, 4, AMSDU_IN_AMPDU, "AMSDU-IN-AMPDU");
@@ -974,8 +856,8 @@ static ssize_t sta_he_capa_read(struct file *file, char __user *userbuf,
 
 	PFLAG(PHY, 3, DCM_MAX_RX_NSS_1, "DCM-MAX-RX-NSS-1");
 	PFLAG(PHY, 3, DCM_MAX_RX_NSS_2, "DCM-MAX-RX-NSS-2");
-	PFLAG(PHY, 3, RX_HE_MU_PPDU_FROM_NON_AP_STA,
-	      "RX-HE-MU-PPDU-FROM-NON-AP-STA");
+	PFLAG(PHY, 3, RX_PARTIAL_BW_SU_IN_20MHZ_MU,
+	      "RX-PARTIAL-BW-SU-IN-20MHZ-MU");
 	PFLAG(PHY, 3, SU_BEAMFORMER, "SU-BEAMFORMER");
 
 	PFLAG(PHY, 4, SU_BEAMFORMEE, "SU-BEAMFORMEE");
@@ -995,16 +877,17 @@ static ssize_t sta_he_capa_read(struct file *file, char __user *userbuf,
 
 	PFLAG(PHY, 6, CODEBOOK_SIZE_42_SU, "CODEBOOK-SIZE-42-SU");
 	PFLAG(PHY, 6, CODEBOOK_SIZE_75_MU, "CODEBOOK-SIZE-75-MU");
-	PFLAG(PHY, 6, TRIG_SU_BEAMFORMER_FB, "TRIG-SU-BEAMFORMER-FB");
-	PFLAG(PHY, 6, TRIG_MU_BEAMFORMER_FB, "TRIG-MU-BEAMFORMER-FB");
+	PFLAG(PHY, 6, TRIG_SU_BEAMFORMING_FB, "TRIG-SU-BEAMFORMING-FB");
+	PFLAG(PHY, 6, TRIG_MU_BEAMFORMING_PARTIAL_BW_FB,
+	      "MU-BEAMFORMING-PARTIAL-BW-FB");
 	PFLAG(PHY, 6, TRIG_CQI_FB, "TRIG-CQI-FB");
 	PFLAG(PHY, 6, PARTIAL_BW_EXT_RANGE, "PARTIAL-BW-EXT-RANGE");
 	PFLAG(PHY, 6, PARTIAL_BANDWIDTH_DL_MUMIMO,
 	      "PARTIAL-BANDWIDTH-DL-MUMIMO");
 	PFLAG(PHY, 6, PPE_THRESHOLD_PRESENT, "PPE-THRESHOLD-PRESENT");
 
-	PFLAG(PHY, 7, SRP_BASED_SR, "SRP-BASED-SR");
-	PFLAG(PHY, 7, POWER_BOOST_FACTOR_AR, "POWER-BOOST-FACTOR-AR");
+	PFLAG(PHY, 7, PSR_BASED_SR, "PSR-BASED-SR");
+	PFLAG(PHY, 7, POWER_BOOST_FACTOR_SUPP, "POWER-BOOST-FACTOR-SUPP");
 	PFLAG(PHY, 7, HE_SU_MU_PPDU_4XLTF_AND_08_US_GI,
 	      "HE-SU-MU-PPDU-4XLTF-AND-08-US-GI");
 	PFLAG_RANGE(PHY, 7, MAX_NC, 0, 1, 1, "MAX-NC-%d");
@@ -1128,7 +1011,7 @@ STA_OPS(he_capa);
 
 #define DEBUGFS_ADD(name) \
 	debugfs_create_file(#name, 0400, \
-		sta->debugfs_dir, sta, &sta_ ##name## _ops);
+		sta->debugfs_dir, sta, &sta_ ##name## _ops)
 
 #define DEBUGFS_ADD_COUNTER(name, field)				\
 	debugfs_create_ulong(#name, 0400, sta->debugfs_dir, &sta->field);
@@ -1166,7 +1049,6 @@ void ieee80211_sta_debugfs_add(struct sta_info *sta)
 	DEBUGFS_ADD(tdma_queues);
 #endif
 	DEBUGFS_ADD(flags);
-	DEBUGFS_ADD(stats);
 	DEBUGFS_ADD(aid);
 	DEBUGFS_ADD(num_ps_buf_frames);
 	DEBUGFS_ADD(last_seq_ctrl);

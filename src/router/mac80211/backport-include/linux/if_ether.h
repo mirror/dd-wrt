@@ -2,6 +2,10 @@
 #define __BACKPORT_IF_ETHER_H
 #include_next <linux/if_ether.h>
 
+#ifndef ETH_TLEN
+#define ETH_TLEN	2		/* Octets in ethernet type field */
+#endif
+
 /* See commit b62faf3c in next-20140311 */
 #ifndef ETH_P_80221
 #define ETH_P_80221	0x8917	/* IEEE 802.21 Media Independent Handover Protocol */
@@ -41,6 +45,12 @@
 
 #ifndef ETH_P_PREAUTH
 #define ETH_P_PREAUTH   0x88C7          /* 802.11 Preauthentication */
+#endif
+
+#ifndef ETH_P_MAP
+#define ETH_P_MAP	0x00F9		/* Qualcomm multiplexing and
+					 * aggregation protocol
+					 */
 #endif
 
 #ifndef ETH_MIN_MTU

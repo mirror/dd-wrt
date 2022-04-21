@@ -42,10 +42,6 @@ static int mt7915_start(struct ieee80211_hw *hw)
 		if (ret)
 			goto out;
 
-		ret = mt7915_mcu_set_scs(dev, 0, true);
-		if (ret)
-			goto out;
-
 		mt7915_mac_enable_nf(dev, 0);
 	}
 
@@ -55,10 +51,6 @@ static int mt7915_start(struct ieee80211_hw *hw)
 			goto out;
 
 		ret = mt7915_mcu_set_mac(dev, 1, true, true);
-		if (ret)
-			goto out;
-
-		ret = mt7915_mcu_set_scs(dev, 1, true);
 		if (ret)
 			goto out;
 
@@ -408,6 +400,28 @@ static int mt7915_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 	err = mt76_connac_mcu_add_key(&dev->mt76, vif, &msta->bip,
 				      key, MCU_EXT_CMD(STA_REC_UPDATE),
 				      &msta->wcid, cmd);
+out:
+	mutex_unlock(&dev->mt76.mutex);
+
+	return err;
+}
+
+static int mt7915_set_sar_specs(struct ieee80211_hw *hw,
+				const struct cfg80211_sar_specs *sar)
+{
+	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+	int err = -EINVAL;
+
+	mutex_lock(&dev->mt76.mutex);
+	if (!cfg80211_chandef_valid(&phy->mt76->chandef))
+		goto out;
+
+	err = mt76_init_sar_power(hw, sar);
+	if (err)
+		goto out;
+
+	err = mt7915_mcu_set_txpower_sku(phy);
 out:
 	mutex_unlock(&dev->mt76.mutex);
 
@@ -1359,6 +1373,39 @@ out:
 	return ret;
 }
 
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+static int
+mt7915_net_fill_forward_path(struct ieee80211_hw *hw,
+			     struct ieee80211_vif *vif,
+			     struct ieee80211_sta *sta,
+			     struct net_device_path_ctx *ctx,
+			     struct net_device_path *path)
+{
+	struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
+	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
+
+	if (!mtk_wed_device_active(wed))
+		return -ENODEV;
+
+	if (msta->wcid.idx > 0xff)
+		return -EIO;
+
+	path->type = DEV_PATH_MTK_WDMA;
+	path->dev = ctx->dev;
+	path->mtk_wdma.wdma_idx = wed->wdma_idx;
+	path->mtk_wdma.bss = mvif->mt76.idx;
+	path->mtk_wdma.wcid = msta->wcid.idx;
+	path->mtk_wdma.queue = phy != &dev->phy;
+
+	ctx->dev = NULL;
+
+	return 0;
+}
+#endif
+
 const struct ieee80211_ops mt7915_ops = {
 	.tx = mt7915_tx,
 	.start = mt7915_start,
@@ -1381,6 +1428,7 @@ const struct ieee80211_ops mt7915_ops = {
 	.sw_scan_complete = mt76_sw_scan_complete,
 	.release_buffered_frames = mt76_release_buffered_frames,
 	.get_txpower = mt76_get_txpower,
+	.set_sar_specs = mt7915_set_sar_specs,
 	.channel_switch_beacon = mt7915_channel_switch_beacon,
 	.get_stats = mt7915_get_stats,
 	.get_et_sset_count = mt7915_get_et_sset_count,
@@ -1397,11 +1445,15 @@ const struct ieee80211_ops mt7915_ops = {
 	.sta_statistics = mt7915_sta_statistics,
 	.sta_set_4addr = mt7915_sta_set_4addr,
 	.sta_set_decap_offload = mt7915_sta_set_decap_offload,
-//	.add_twt_setup = mt7915_mac_add_twt_setup,
-//	.twt_teardown_request = mt7915_twt_teardown_request,
+	.add_twt_setup = mt7915_mac_add_twt_setup,
+	.twt_teardown_request = mt7915_twt_teardown_request,
 	CFG80211_TESTMODE_CMD(mt76_testmode_cmd)
 	CFG80211_TESTMODE_DUMP(mt76_testmode_dump)
 #ifdef CPTCFG_MAC80211_DEBUGFS
 	.sta_add_debugfs = mt7915_sta_add_debugfs,
+#endif
+	.set_radar_background = mt7915_set_radar_background,
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	.net_fill_forward_path = mt7915_net_fill_forward_path,
 #endif
 };

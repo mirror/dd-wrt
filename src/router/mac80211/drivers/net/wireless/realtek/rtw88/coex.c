@@ -3271,7 +3271,7 @@ void rtw_coex_wl_ccklock_work(struct work_struct *work)
 	mutex_unlock(&rtwdev->mutex);
 }
 
-#ifdef CONFIG_RTW88_DEBUGFS
+#ifdef CPTCFG_RTW88_DEBUGFS
 #define INFO_SIZE	80
 
 #define case_BTINFO(src) \
@@ -3919,4 +3919,4 @@ void rtw_coex_display_coex_info(struct rtw_dev *rtwdev, struct seq_file *m)
 		   dm_info->ht_err_cnt, dm_info->vht_err_cnt);
 
 }
-#endif /* CONFIG_RTW88_DEBUGFS */
+#endif /* CPTCFG_RTW88_DEBUGFS */

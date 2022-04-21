@@ -768,7 +768,7 @@ void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
 	int extraie = 0;
 
-	if (sdata && ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
+	if (sdata && (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control))) {
 		extraie = sizeof(struct ieee80211_brcm_ie) + sizeof(struct ieee80211_mtik_ie);
 	}
 	if (sdata && extraie) {
@@ -785,7 +785,7 @@ void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev 
 
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	const struct ieee80211_mgmt *mgmt = (void *)params->buf;
-	if (sdata && ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control)) {
+	if (sdata && (ieee80211_is_probe_resp(mgmt->frame_control) || ieee80211_is_reassoc_resp(mgmt->frame_control) || ieee80211_is_assoc_resp(mgmt->frame_control) || ieee80211_is_assoc_req(mgmt->frame_control) || ieee80211_is_reassoc_req(mgmt->frame_control))) {
 		kfree(params->buf);
 	}
 }
@@ -893,7 +893,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		ret = -EBUSY;
 		goto out_unlock;
 	}
-	
+
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + params->len);
 	if (!skb) {
 		ret = -ENOMEM;
@@ -902,6 +902,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
 	data = skb_put_data(skb, params->buf, params->len);
+
 	/* Update CSA counters */
 	if (sdata->vif.csa_active &&
 	    (sdata->vif.type == NL80211_IFTYPE_AP ||

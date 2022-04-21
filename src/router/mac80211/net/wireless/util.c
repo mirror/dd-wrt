@@ -27,7 +27,7 @@
 #endif
 
 
-struct ieee80211_rate *
+const struct ieee80211_rate *
 ieee80211_get_response_rate(struct ieee80211_supported_band *sband,
 			    u32 basic_rates, int bitrate)
 {
@@ -418,6 +418,7 @@ int cfg80211_validate_key_settings(struct cfg80211_registered_device *rdev,
 	case WLAN_CIPHER_SUITE_WEP104:
 		if (key_idx > 3)
 			return -EINVAL;
+		break;
 	default:
 		break;
 	}
@@ -707,7 +708,7 @@ int ieee80211_data_to_8023_exthdr(struct sk_buff *skb, struct ethhdr *ehdr,
 	pskb_pull(skb, hdrlen);
 
 	if (!ehdr)
-		ehdr = (void *)skb_push(skb, sizeof(struct ethhdr));
+		ehdr = skb_push(skb, sizeof(struct ethhdr));
 	memcpy(ehdr, &tmp, sizeof(tmp));
 
 	return 0;
@@ -1069,7 +1070,7 @@ void cfg80211_process_rdev_events(struct cfg80211_registered_device *rdev)
 {
 	struct wireless_dev *wdev;
 
-	ASSERT_RTNL();
+	lockdep_assert_held(&rdev->wiphy.mtx);
 
 	list_for_each_entry(wdev, &rdev->wiphy.wdev_list, list)
 		cfg80211_process_wdev_events(wdev);
@@ -1082,7 +1083,7 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 	int err;
 	enum nl80211_iftype otype = dev->ieee80211_ptr->iftype;
 
-	ASSERT_RTNL();
+	lockdep_assert_held(&rdev->wiphy.mtx);
 
 	/* don't support changing VLANs, you just re-create them */
 	if (otype == NL80211_IFTYPE_AP_VLAN)
@@ -1097,14 +1098,14 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 	    !(rdev->wiphy.interface_modes & (1 << ntype)))
 		return -EOPNOTSUPP;
 
-	/* if it's part of a bridge, reject changing type to station/ibss */
-	if (netif_is_bridge_port(dev) &&
-	    (ntype == NL80211_IFTYPE_ADHOC ||
-	     ntype == NL80211_IFTYPE_STATION ||
-	     ntype == NL80211_IFTYPE_P2P_CLIENT))
-		return -EBUSY;
-
 	if (ntype != otype) {
+		/* if it's part of a bridge, reject changing type to station/ibss */
+		if (netif_is_bridge_port(dev) &&
+		    (ntype == NL80211_IFTYPE_ADHOC ||
+		     ntype == NL80211_IFTYPE_STATION ||
+		     ntype == NL80211_IFTYPE_P2P_CLIENT))
+			return -EBUSY;
+
 		dev->ieee80211_ptr->use_4addr = false;
 		dev->ieee80211_ptr->use_mtikwds = false;
 		dev->ieee80211_ptr->mesh_id_up_len = 0;
@@ -1114,6 +1115,7 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 
 		switch (otype) {
 		case NL80211_IFTYPE_AP:
+		case NL80211_IFTYPE_P2P_GO:
 			cfg80211_stop_ap(rdev, dev, true);
 			break;
 		case NL80211_IFTYPE_ADHOC:
@@ -1129,6 +1131,9 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 		case NL80211_IFTYPE_TDMA:
 		case NL80211_IFTYPE_MESH_POINT:
 			/* mesh should be handled? */
+			break;
+		case NL80211_IFTYPE_OCB:
+			cfg80211_leave_ocb(rdev, dev);
 			break;
 		default:
 			break;
@@ -1169,9 +1174,9 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 		case NL80211_IFTYPE_P2P_GO:
 		case NL80211_IFTYPE_AP:
 		case NL80211_IFTYPE_AP_VLAN:
-		case NL80211_IFTYPE_WDS:
 		case NL80211_IFTYPE_MESH_POINT:
 		case NL80211_IFTYPE_TDMA:
+		case NL80211_IFTYPE_WDS:
 			/* bridging OK */
 			break;
 		case NL80211_IFTYPE_MONITOR:
@@ -1272,6 +1277,25 @@ static u32 cfg80211_calculate_bitrate_dmg(struct rate_info *rate)
 	return __mcs2bitrate[rate->mcs];
 }
 
+static u32 cfg80211_calculate_bitrate_extended_sc_dmg(struct rate_info *rate)
+{
+	static const u32 __mcs2bitrate[] = {
+		[6 - 6] = 26950, /* MCS 9.1 : 2695.0 mbps */
+		[7 - 6] = 50050, /* MCS 12.1 */
+		[8 - 6] = 53900,
+		[9 - 6] = 57750,
+		[10 - 6] = 63900,
+		[11 - 6] = 75075,
+		[12 - 6] = 80850,
+	};
+
+	/* Extended SC MCS not defined for base MCS below 6 or above 12 */
+	if (WARN_ON_ONCE(rate->mcs < 6 || rate->mcs > 12))
+		return 0;
+
+	return __mcs2bitrate[rate->mcs - 6];
+}
+
 static u32 cfg80211_calculate_bitrate_edmg(struct rate_info *rate)
 {
 	static const u32 __mcs2bitrate[] = {
@@ -1308,7 +1332,7 @@ static u32 cfg80211_calculate_bitrate_edmg(struct rate_info *rate)
 
 static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 {
-	static const u32 base[4][10] = {
+	static const u32 base[4][12] = {
 		{   6500000,
 		   13000000,
 		   19500000,
@@ -1319,7 +1343,9 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 		   65000000,
 		   78000000,
 		/* not in the spec, but some devices use this: */
-		   86500000,
+		   86700000,
+		   97500000,
+		  108300000,
 		},
 		{  13500000,
 		   27000000,
@@ -1331,6 +1357,8 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 		  135000000,
 		  162000000,
 		  180000000,
+		  202500000,
+		  225000000,
 		},
 		{  29300000,
 		   58500000,
@@ -1342,6 +1370,8 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 		  292500000,
 		  351000000,
 		  390000000,
+		  438800000,
+		  487500000,
 		},
 		{  58500000,
 		  117000000,
@@ -1353,12 +1383,14 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 		  585000000,
 		  702000000,
 		  780000000,
+		  877500000,
+		  975000000,
 		},
 	};
 	u32 bitrate;
 	int idx;
 
-	if (rate->mcs > 9)
+	if (rate->mcs > 11)
 		goto warn;
 
 	switch (rate->bw) {
@@ -1395,20 +1427,22 @@ static u32 cfg80211_calculate_bitrate_vht(struct rate_info *rate)
 
 static u32 cfg80211_calculate_bitrate_he(struct rate_info *rate)
 {
-#define SCALE 2048
-	u16 mcs_divisors[12] = {
-		34133, /* 16.666666... */
-		17067, /*  8.333333... */
-		11378, /*  5.555555... */
-		 8533, /*  4.166666... */
-		 5689, /*  2.777777... */
-		 4267, /*  2.083333... */
-		 3923, /*  1.851851... */
-		 3413, /*  1.666666... */
-		 2844, /*  1.388888... */
-		 2560, /*  1.250000... */
-		 2276, /*  1.111111... */
-		 2048, /*  1.000000... */
+#define SCALE 6144
+	u32 mcs_divisors[14] = {
+		102399, /* 16.666666... */
+		 51201, /*  8.333333... */
+		 34134, /*  5.555555... */
+		 25599, /*  4.166666... */
+		 17067, /*  2.777777... */
+		 12801, /*  2.083333... */
+		 11769, /*  1.851851... */
+		 10239, /*  1.666666... */
+		  8532, /*  1.388888... */
+		  7680, /*  1.250000... */
+		  6828, /*  1.111111... */
+		  6144, /*  1.000000... */
+		  5690, /*  0.926106... */
+		  5120, /*  0.833333... */
 	};
 	u32 rates_160M[3] = { 960777777, 907400000, 816666666 };
 	u32 rates_969[3] =  { 480388888, 453700000, 408333333 };
@@ -1420,7 +1454,7 @@ static u32 cfg80211_calculate_bitrate_he(struct rate_info *rate)
 	u64 tmp;
 	u32 result;
 
-	if (WARN_ON_ONCE(rate->mcs > 11))
+	if (WARN_ON_ONCE(rate->mcs > 13))
 		return 0;
 
 	if (WARN_ON_ONCE(rate->he_gi > NL80211_RATE_INFO_HE_GI_3_2))
@@ -1480,6 +1514,8 @@ u32 cfg80211_calculate_bitrate(struct rate_info *rate)
 		return cfg80211_calculate_bitrate_ht(rate);
 	if (rate->flags & RATE_INFO_FLAGS_DMG)
 		return cfg80211_calculate_bitrate_dmg(rate);
+	if (rate->flags & RATE_INFO_FLAGS_EXTENDED_SC_DMG)
+		return cfg80211_calculate_bitrate_extended_sc_dmg(rate);
 	if (rate->flags & RATE_INFO_FLAGS_EDMG)
 		return cfg80211_calculate_bitrate_edmg(rate);
 	if (rate->flags & RATE_INFO_FLAGS_VHT_MCS)
@@ -2176,7 +2212,7 @@ void cfg80211_send_layer2_update(struct net_device *dev, const u8 *addr)
 	skb = dev_alloc_skb(sizeof(*msg));
 	if (!skb)
 		return;
-	msg = (void *)skb_put(skb, sizeof(*msg));
+	msg = skb_put(skb, sizeof(*msg));
 
 	/* 802.2 Type 1 Logical Link Control (LLC) Exchange Identifier (XID)
 	 * Update response frame; IEEE Std 802.2-1998, 5.4.1.2.1 */

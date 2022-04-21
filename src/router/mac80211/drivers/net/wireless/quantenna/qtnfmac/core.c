@@ -15,7 +15,6 @@
 #include "util.h"
 #include "switchdev.h"
 
-#define QTNF_DMP_MAX_LEN 48
 #define QTNF_PRIMARY_VIF_IDX	0
 
 static bool slave_radar = true;
@@ -127,59 +126,12 @@ qtnf_netdev_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	if (unlikely(skb->protocol == htons(ETH_P_PAE))) {
 		qtnf_packet_send_hi_pri(skb);
-		qtnf_update_tx_stats(ndev, skb);
+		dev_sw_netstats_tx_add(ndev, 1, skb->len);
 		return NETDEV_TX_OK;
 	}
 
 	return qtnf_bus_data_tx(mac->bus, skb, mac->macid, vif->vifid);
 }
-
-/* Netdev handler for getting stats.
- */
-static void qtnf_netdev_get_stats64(struct net_device *ndev,
-				    struct rtnl_link_stats64 *stats)
-{
-	struct qtnf_vif *vif = qtnf_netdev_get_priv(ndev);
-	unsigned int start;
-	int cpu;
-
-	netdev_stats_to_stats64(stats, &ndev->stats);
-
-	if (!vif->stats64)
-		return;
-
-	for_each_possible_cpu(cpu) {
-		struct pcpu_sw_netstats *stats64;
-		u64 rx_packets, rx_bytes;
-		u64 tx_packets, tx_bytes;
-
-		stats64 = per_cpu_ptr(vif->stats64, cpu);
-
-		do {
-			start = u64_stats_fetch_begin_irq(&stats64->syncp);
-			rx_packets = stats64->rx_packets;
-			rx_bytes = stats64->rx_bytes;
-			tx_packets = stats64->tx_packets;
-			tx_bytes = stats64->tx_bytes;
-		} while (u64_stats_fetch_retry_irq(&stats64->syncp, start));
-
-		stats->rx_packets += rx_packets;
-		stats->rx_bytes += rx_bytes;
-		stats->tx_packets += tx_packets;
-		stats->tx_bytes += tx_bytes;
-	}
-}
-#if LINUX_VERSION_IS_LESS(4,11,0)
-/* Just declare it here to keep sparse happy */
-struct rtnl_link_stats64 *bp_qtnf_netdev_get_stats64(struct net_device *dev,
-						     struct rtnl_link_stats64 *stats);
-struct rtnl_link_stats64 *
-bp_qtnf_netdev_get_stats64(struct net_device *dev,
-			   struct rtnl_link_stats64 *stats){
-	qtnf_netdev_get_stats64(dev, stats);
-	return stats;
-}
-#endif
 
 /* Netdev handler for transmission timeout.
  */
@@ -209,7 +161,8 @@ static void qtnf_netdev_tx_timeout(struct net_device *ndev, unsigned int txqueue
 #if LINUX_VERSION_IS_LESS(5,6,0)
 /* Just declare it here to keep sparse happy */
 void bp_qtnf_netdev_tx_timeout(struct net_device *dev);
-void bp_qtnf_netdev_tx_timeout(struct net_device *dev) {
+void bp_qtnf_netdev_tx_timeout(struct net_device *dev)
+{
 	qtnf_netdev_tx_timeout(dev, 0);
 }
 EXPORT_SYMBOL_GPL(bp_qtnf_netdev_tx_timeout);
@@ -252,8 +205,22 @@ static int qtnf_netdev_port_parent_id(struct net_device *ndev,
 	return 0;
 }
 
+static int qtnf_netdev_alloc_pcpu_stats(struct net_device *dev)
+{
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_sw_netstats);
+
+	return dev->tstats ? 0 : -ENOMEM;
+}
+
+static void qtnf_netdev_free_pcpu_stats(struct net_device *dev)
+{
+	free_percpu(dev->tstats);
+}
+
 /* Network device ops handlers */
 const struct net_device_ops qtnf_netdev_ops = {
+	.ndo_init = qtnf_netdev_alloc_pcpu_stats,
+	.ndo_uninit = qtnf_netdev_free_pcpu_stats,
 	.ndo_open = qtnf_netdev_open,
 	.ndo_stop = qtnf_netdev_close,
 	.ndo_start_xmit = qtnf_netdev_hard_start_xmit,
@@ -264,9 +231,9 @@ const struct net_device_ops qtnf_netdev_ops = {
 #endif
 
 #if LINUX_VERSION_IS_GEQ(4,11,0)
-	.ndo_get_stats64 = qtnf_netdev_get_stats64,
+	.ndo_get_stats64 = dev_get_tstats64,
 #else
-	.ndo_get_stats64 = bp_qtnf_netdev_get_stats64,
+	.ndo_get_stats64 = bp_dev_get_tstats64,
 #endif
 
 	.ndo_set_mac_address = qtnf_netdev_set_mac_address,
@@ -475,8 +442,11 @@ static struct qtnf_wmac *qtnf_core_mac_alloc(struct qtnf_bus *bus,
 	}
 
 	wiphy = qtnf_wiphy_allocate(bus, pdev);
-	if (!wiphy)
+	if (!wiphy) {
+		if (pdev)
+			platform_device_unregister(pdev);
 		return ERR_PTR(-ENOMEM);
+	}
 
 	mac = wiphy_priv(wiphy);
 
@@ -496,10 +466,6 @@ static struct qtnf_wmac *qtnf_core_mac_alloc(struct qtnf_bus *bus,
 		qtnf_sta_list_init(&vif->sta_list);
 		INIT_WORK(&vif->high_pri_tx_work, qtnf_vif_send_data_high_pri);
 		skb_queue_head_init(&vif->high_pri_tx_queue);
-		vif->stats64 = netdev_alloc_pcpu_stats(struct pcpu_sw_netstats);
-		if (!vif->stats64)
-			pr_warn("VIF%u.%u: per cpu stats allocation failed\n",
-				macid, i);
 	}
 
 	qtnf_mac_init_primary_intf(mac);
@@ -545,7 +511,7 @@ int qtnf_core_net_attach(struct qtnf_wmac *mac, struct qtnf_vif *vif,
 
 	SET_NETDEV_DEV(dev, wiphy_dev(wiphy));
 
-	ret = register_netdevice(dev);
+	ret = cfg80211_register_netdevice(dev);
 	if (ret) {
 		free_netdev(dev);
 		vif->netdev = NULL;
@@ -579,7 +545,6 @@ static void qtnf_core_mac_detach(struct qtnf_bus *bus, unsigned int macid)
 		}
 		rtnl_unlock();
 		qtnf_sta_list_free(&vif->sta_list);
-		free_percpu(vif->stats64);
 	}
 
 	if (mac->wiphy_registered)
@@ -665,8 +630,9 @@ static int qtnf_core_mac_attach(struct qtnf_bus *bus, unsigned int macid)
 	mac->wiphy_registered = 1;
 
 	rtnl_lock();
-
+	wiphy_lock(priv_to_wiphy(mac));
 	ret = qtnf_core_net_attach(mac, vif, "wlan%d", NET_NAME_ENUM);
+	wiphy_unlock(priv_to_wiphy(mac));
 	rtnl_unlock();
 
 	if (ret) {
@@ -697,9 +663,16 @@ bool qtnf_netdev_is_qtn(const struct net_device *ndev)
 	return ndev->netdev_ops == &qtnf_netdev_ops;
 }
 
+#if LINUX_VERSION_IS_GEQ(5,9,0)
+static int qtnf_check_br_ports(struct net_device *dev,
+			       struct netdev_nested_priv *priv)
+{
+	struct net_device *ndev = (struct net_device *)priv->data;
+#else
 static int qtnf_check_br_ports(struct net_device *dev, void *data)
 {
 	struct net_device *ndev = data;
+#endif
 
 	if (dev != ndev && netdev_port_same_parent_id(dev, ndev))
 		return -ENOTSUPP;
@@ -712,6 +685,11 @@ static int qtnf_core_netdevice_event(struct notifier_block *nb,
 {
 	struct net_device *ndev = netdev_notifier_info_to_dev(ptr);
 	const struct netdev_notifier_changeupper_info *info;
+#if LINUX_VERSION_IS_GEQ(5,9,0)
+	struct netdev_nested_priv priv = {
+		.data = (void *)ndev,
+	};
+#endif
 	struct net_device *brdev;
 	struct qtnf_vif *vif;
 	struct qtnf_bus *bus;
@@ -751,7 +729,11 @@ static int qtnf_core_netdevice_event(struct notifier_block *nb,
 		} else {
 			ret = netdev_walk_all_lower_dev(brdev,
 							qtnf_check_br_ports,
+#if LINUX_VERSION_IS_GEQ(5,9,0)
+							&priv);
+#else
 							ndev);
+#endif
 		}
 
 		break;
@@ -967,46 +949,6 @@ void qtnf_wake_all_queues(struct net_device *ndev)
 	}
 }
 EXPORT_SYMBOL_GPL(qtnf_wake_all_queues);
-
-void qtnf_update_rx_stats(struct net_device *ndev, const struct sk_buff *skb)
-{
-	struct qtnf_vif *vif = qtnf_netdev_get_priv(ndev);
-	struct pcpu_sw_netstats *stats64;
-
-	if (unlikely(!vif || !vif->stats64)) {
-		ndev->stats.rx_packets++;
-		ndev->stats.rx_bytes += skb->len;
-		return;
-	}
-
-	stats64 = this_cpu_ptr(vif->stats64);
-
-	u64_stats_update_begin(&stats64->syncp);
-	stats64->rx_packets++;
-	stats64->rx_bytes += skb->len;
-	u64_stats_update_end(&stats64->syncp);
-}
-EXPORT_SYMBOL_GPL(qtnf_update_rx_stats);
-
-void qtnf_update_tx_stats(struct net_device *ndev, const struct sk_buff *skb)
-{
-	struct qtnf_vif *vif = qtnf_netdev_get_priv(ndev);
-	struct pcpu_sw_netstats *stats64;
-
-	if (unlikely(!vif || !vif->stats64)) {
-		ndev->stats.tx_packets++;
-		ndev->stats.tx_bytes += skb->len;
-		return;
-	}
-
-	stats64 = this_cpu_ptr(vif->stats64);
-
-	u64_stats_update_begin(&stats64->syncp);
-	stats64->tx_packets++;
-	stats64->tx_bytes += skb->len;
-	u64_stats_update_end(&stats64->syncp);
-}
-EXPORT_SYMBOL_GPL(qtnf_update_tx_stats);
 
 struct dentry *qtnf_get_debugfs_dir(void)
 {

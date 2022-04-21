@@ -371,7 +371,12 @@ mt7915_mcu_rx_radar_detected(struct mt7915_dev *dev, struct sk_buff *skb)
 	if ((r->band_idx && !dev->phy.band_idx) && dev->mt76.phy2)
 		mphy = dev->mt76.phy2;
 
-	ieee80211_radar_detected(mphy->hw);
+	if (r->band_idx == MT_RX_SEL2)
+		cfg80211_background_radar_event(mphy->hw->wiphy,
+						&dev->rdd2_chandef,
+						GFP_ATOMIC);
+	else
+		ieee80211_radar_detected(mphy->hw);
 	dev->hw_pattern++;
 }
 
@@ -404,10 +409,10 @@ mt7915_mcu_rx_log_message(struct mt7915_dev *dev, struct sk_buff *skb)
 static void
 mt7915_mcu_cca_finish(void *priv, u8 *mac, struct ieee80211_vif *vif)
 {
-//	if (!vif->color_change_active)
-//		return;
+	if (!vif->color_change_active)
+		return;
 
-//	ieee80211_color_change_finish(vif);
+	ieee80211_color_change_finish(vif);
 }
 
 static void
@@ -491,7 +496,7 @@ mt7915_mcu_add_nested_subtlv(struct sk_buff *skb, int sub_tag, int sub_len,
 		.len = cpu_to_le16(sub_len),
 	};
 
-	ptlv = (void *)skb_put(skb, sub_len);
+	ptlv = skb_put(skb, sub_len);
 	memcpy(ptlv, &tlv, sizeof(tlv));
 
 	le16_add_cpu(sub_ntlv, 1);
@@ -1821,6 +1826,61 @@ mt7915_mcu_beacon_cntdwn(struct ieee80211_vif *vif, struct sk_buff *rskb,
 }
 
 static void
+mt7915_mcu_beacon_mbss(struct sk_buff *rskb, struct sk_buff *skb,
+		       struct ieee80211_vif *vif, struct bss_info_bcn *bcn,
+		       struct ieee80211_mutable_offsets *offs)
+{
+	struct bss_info_bcn_mbss *mbss;
+	const struct element *elem;
+	struct tlv *tlv;
+
+	if (!vif->bss_conf.bssid_indicator)
+		return;
+
+	tlv = mt7915_mcu_add_nested_subtlv(rskb, BSS_INFO_BCN_MBSSID,
+					   sizeof(*mbss), &bcn->sub_ntlv,
+					   &bcn->len);
+
+	mbss = (struct bss_info_bcn_mbss *)tlv;
+	mbss->offset[0] = cpu_to_le16(offs->tim_offset);
+	mbss->bitmap = cpu_to_le32(1);
+
+	for_each_element_id(elem, WLAN_EID_MULTIPLE_BSSID,
+			    &skb->data[offs->mbssid_off],
+			    skb->len - offs->mbssid_off) {
+		const struct element *sub_elem;
+
+		if (elem->datalen < 2)
+			continue;
+
+		for_each_element(sub_elem, elem->data + 1, elem->datalen - 1) {
+			const struct ieee80211_bssid_index *idx;
+			const u8 *idx_ie;
+
+			if (sub_elem->id || sub_elem->datalen < 4)
+				continue; /* not a valid BSS profile */
+
+			/* Find WLAN_EID_MULTI_BSSID_IDX
+			 * in the merged nontransmitted profile
+			 */
+			idx_ie = cfg80211_find_ie(WLAN_EID_MULTI_BSSID_IDX,
+						  sub_elem->data,
+						  sub_elem->datalen);
+			if (!idx_ie || idx_ie[1] < sizeof(*idx))
+				continue;
+
+			idx = (void *)(idx_ie + 2);
+			if (!idx->bssid_index || idx->bssid_index > 31)
+				continue;
+
+			mbss->offset[idx->bssid_index] =
+				cpu_to_le16(idx_ie - skb->data);
+			mbss->bitmap |= cpu_to_le32(BIT(idx->bssid_index));
+		}
+	}
+}
+
+static void
 mt7915_mcu_beacon_cont(struct mt7915_dev *dev, struct ieee80211_vif *vif,
 		       struct sk_buff *rskb, struct sk_buff *skb,
 		       struct bss_info_bcn *bcn,
@@ -1844,8 +1904,8 @@ mt7915_mcu_beacon_cont(struct mt7915_dev *dev, struct ieee80211_vif *vif,
 
 		if (vif->csa_active)
 			cont->csa_ofs = cpu_to_le16(offset - 4);
-//		if (vif->color_change_active)
-//			cont->bcc_ofs = cpu_to_le16(offset - 3);
+		if (vif->color_change_active)
+			cont->bcc_ofs = cpu_to_le16(offset - 3);
 	}
 
 	buf = (u8 *)tlv + sizeof(*cont);
@@ -1947,6 +2007,9 @@ int mt7915_mcu_add_beacon(struct ieee80211_hw *hw,
 	int len = MT7915_BEACON_UPDATE_SIZE + MAX_BEACON_SIZE;
 	bool ext_phy = phy != &dev->phy;
 
+	if (vif->bss_conf.nontransmitted)
+		return 0;
+
 	rskb = __mt76_connac_mcu_alloc_sta_req(&dev->mt76, &mvif->mt76,
 					       NULL, len);
 	if (IS_ERR(rskb))
@@ -1976,8 +2039,8 @@ int mt7915_mcu_add_beacon(struct ieee80211_hw *hw,
 
 	mt7915_mcu_beacon_check_caps(phy, vif, skb);
 
-	/* TODO: subtag - 11v MBSSID */
 	mt7915_mcu_beacon_cntdwn(vif, rskb, skb, bcn, &offs);
+	mt7915_mcu_beacon_mbss(rskb, skb, vif, bcn, &offs);
 	mt7915_mcu_beacon_cont(dev, vif, rskb, skb, bcn, &offs);
 	dev_kfree_skb(skb);
 
@@ -2436,6 +2499,11 @@ int mt7915_mcu_init(struct mt7915_dev *dev)
 	if (ret)
 		return ret;
 
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	if (mtk_wed_device_active(&dev->mt76.mmio.wed))
+		mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(CAPABILITY), 0, 0, 0);
+#endif
+
 	ret = mt7915_mcu_set_mwds(dev, 1);
 	if (ret)
 		return ret;
@@ -2524,22 +2592,6 @@ int mt7915_mcu_set_mac(struct mt7915_dev *dev, int band,
 
 	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(MAC_INIT_CTRL),
 				 &req_mac, sizeof(req_mac), true);
-}
-
-int mt7915_mcu_set_scs(struct mt7915_dev *dev, u8 band, bool enable)
-{
-	struct {
-		__le32 cmd;
-		u8 band;
-		u8 enable;
-	} __packed req = {
-		.cmd = cpu_to_le32(SCS_ENABLE),
-		.band = band,
-		.enable = enable + 1,
-	};
-
-	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(SCS_CTRL), &req,
-				 sizeof(req), false);
 }
 
 int mt7915_mcu_update_edca(struct mt7915_dev *dev, void *param)
@@ -3239,6 +3291,8 @@ int mt7915_mcu_set_txpower_sku(struct mt7915_phy *phy)
 	int i, idx, n_chains = hweight8(mphy->antenna_mask);
 	int tx_power = hw->conf.power_level * 2;
 
+	tx_power = mt76_get_sar_power(mphy, mphy->chandef.chan,
+				      tx_power);
 	tx_power -= mt76_tx_power_nss_delta(n_chains);
 	tx_power = mt76_get_rate_power_limits(mphy, mphy->chandef.chan,
 					      &limits_array, tx_power);
@@ -3611,4 +3665,33 @@ int mt7915_mcu_twt_agrt_update(struct mt7915_dev *dev,
 
 	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(TWT_AGRT_UPDATE),
 				 &req, sizeof(req), true);
+}
+
+int mt7915_mcu_rf_regval(struct mt7915_dev *dev, u32 regidx, u32 *val, bool set)
+{
+	struct {
+		__le32 idx;
+		__le32 ofs;
+		__le32 data;
+	} __packed req = {
+		.idx = cpu_to_le32(u32_get_bits(regidx, GENMASK(31, 28))),
+		.ofs = cpu_to_le32(u32_get_bits(regidx, GENMASK(27, 0))),
+		.data = set ? cpu_to_le32(*val) : 0,
+	};
+	struct sk_buff *skb;
+	int ret;
+
+	if (set)
+		return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(RF_REG_ACCESS),
+					 &req, sizeof(req), false);
+
+	ret = mt76_mcu_send_and_get_msg(&dev->mt76, MCU_EXT_QUERY(RF_REG_ACCESS),
+					&req, sizeof(req), true, &skb);
+	if (ret)
+		return ret;
+
+	*val = le32_to_cpu(*(__le32 *)(skb->data + 8));
+	dev_kfree_skb(skb);
+
+	return 0;
 }

@@ -5,7 +5,7 @@
  * Copyright 2006-2007	Jiri Benc <jbenc@suse.cz>
  * Copyright 2013-2014  Intel Mobile Communications GmbH
  * Copyright (C) 2017     Intel Deutschland GmbH
- * Copyright (C) 2018 - 2019 Intel Corporation
+ * Copyright (C) 2018-2021 Intel Corporation
  */
 
 #include <net/mac80211.h>
@@ -226,9 +226,9 @@ u32 ieee80211_reset_erp_info(struct ieee80211_sub_if_data *sdata)
 	       BSS_CHANGED_ERP_SLOT;
 }
 
-static void ieee80211_tasklet_handler(unsigned long data)
+static void ieee80211_tasklet_handler(struct tasklet_struct *t)
 {
-	struct ieee80211_local *local = (struct ieee80211_local *) data;
+	struct ieee80211_local *local = from_tasklet(local, t, tasklet);
 	struct sk_buff *skb;
 
 	while ((skb = skb_dequeue(&local->skb_queue)) ||
@@ -258,16 +258,20 @@ static void ieee80211_restart_work(struct work_struct *work)
 	struct ieee80211_local *local =
 		container_of(work, struct ieee80211_local, restart_work);
 	struct ieee80211_sub_if_data *sdata;
+	int ret;
 
 	/* wait for scan work complete */
 	flush_workqueue(local->workqueue);
 	flush_work(&local->sched_scan_stopped_work);
+	flush_work(&local->radar_detected_work);
+
+	rtnl_lock();
+	/* we might do interface manipulations, so need both */
+	wiphy_lock(local->hw.wiphy);
 
 	WARN(test_bit(SCAN_HW_SCANNING, &local->scanning),
 	     "%s called with hardware scan in progress\n", __func__);
 
-	flush_work(&local->radar_detected_work);
-	rtnl_lock();
 	list_for_each_entry(sdata, &local->interfaces, list) {
 		/*
 		 * XXX: there may be more work for other vif types and even
@@ -286,6 +290,13 @@ static void ieee80211_restart_work(struct work_struct *work)
 			 * Then we can have a race...
 			 */
 			cancel_work_sync(&sdata->u.mgd.csa_connection_drop_work);
+			if (sdata->vif.csa_active) {
+				sdata_lock(sdata);
+				ieee80211_sta_connection_lost(sdata,
+							      sdata->u.mgd.associated->bssid,
+							      WLAN_REASON_UNSPECIFIED, false);
+				sdata_unlock(sdata);
+			}
 		}
 		flush_delayed_work(&sdata->dec_tailroom_needed_wk);
 	}
@@ -298,7 +309,12 @@ static void ieee80211_restart_work(struct work_struct *work)
 	/* wait for all packet processing to be done */
 	synchronize_net();
 
-	ieee80211_reconfig(local);
+	ret = ieee80211_reconfig(local);
+	wiphy_unlock(local->hw.wiphy);
+
+	if (ret)
+		cfg80211_shutdown_all_interfaces(local->hw.wiphy);
+
 	rtnl_unlock();
 }
 
@@ -603,10 +619,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 			   NL80211_FEATURE_MAC_ON_CREATE |
 			   NL80211_FEATURE_USERSPACE_MPM |
 			   NL80211_FEATURE_FULL_AP_CLIENT_STATE;
-#if LINUX_VERSION_IS_GEQ(4,3,0)
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_FILS_STA);
-#endif
-
 	wiphy_ext_feature_set(wiphy,
 			      NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211);
 	wiphy_ext_feature_set(wiphy,
@@ -743,8 +756,6 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 	INIT_WORK(&local->sched_scan_stopped_work,
 		  ieee80211_sched_scan_stopped_work);
 
-	INIT_WORK(&local->tdls_chsw_work, ieee80211_tdls_chsw_work);
-
 	spin_lock_init(&local->ack_status_lock);
 	idr_init(&local->ack_status_frames);
 
@@ -752,20 +763,15 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 		skb_queue_head_init(&local->pending[i]);
 		atomic_set(&local->agg_queue_stop[i], 0);
 	}
-	tasklet_init(&local->tx_pending_tasklet, ieee80211_tx_pending,
-		     (unsigned long)local);
+	tasklet_setup(&local->tx_pending_tasklet, ieee80211_tx_pending);
 
 	if (ops->wake_tx_queue)
-		tasklet_init(&local->wake_txqs_tasklet, ieee80211_wake_txqs,
-			     (unsigned long)local);
+		tasklet_setup(&local->wake_txqs_tasklet, ieee80211_wake_txqs);
 
-	tasklet_init(&local->tasklet,
-		     ieee80211_tasklet_handler,
-		     (unsigned long) local);
+	tasklet_setup(&local->tasklet, ieee80211_tasklet_handler);
 
 	skb_queue_head_init(&local->skb_queue);
 	skb_queue_head_init(&local->skb_queue_unreliable);
-	skb_queue_head_init(&local->skb_queue_tdls_chsw);
 
 	ieee80211_alloc_led_names(local);
 
@@ -1030,8 +1036,13 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		supp_ht = supp_ht || sband->ht_cap.ht_supported;
 		supp_vht = supp_vht || sband->vht_cap.vht_supported;
 
-		if (!supp_he)
-			supp_he = !!ieee80211_get_he_sta_cap(sband);
+		for (i = 0; i < sband->n_iftype_data; i++) {
+			const struct ieee80211_sband_iftype_data *iftd;
+
+			iftd = &sband->iftype_data[i];
+
+			supp_he = supp_he || iftd->he_cap.has_he;
+		}
 
 		/* HT, VHT, HE require QoS, thus >= 4 queues */
 		if (WARN_ON(local->hw.queues < IEEE80211_NUM_ACS &&
@@ -1144,17 +1155,14 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		local->scan_ies_len +=
 			2 + sizeof(struct ieee80211_vht_cap);
 
-	/* HE cap element is variable in size - set len to allow max size */
 	/*
-	 * TODO: 1 is added at the end of the calculation to accommodate for
-	 *	the temporary placing of the HE capabilities IE under EXT.
-	 *	Remove it once it is placed in the final place.
-	 */
-	if (supp_he)
+	 * HE cap element is variable in size - set len to allow max size */
+	if (supp_he) {
 		local->scan_ies_len +=
-			2 + sizeof(struct ieee80211_he_cap_elem) +
+			3 + sizeof(struct ieee80211_he_cap_elem) +
 			sizeof(struct ieee80211_he_mcs_nss_supp) +
-			IEEE80211_HE_PPE_THRES_MAX_LEN + 1;
+			IEEE80211_HE_PPE_THRES_MAX_LEN;
+	}
 
 	if (!local->ops->hw_scan) {
 		/* For hw_scan, driver needs to set these up. */
@@ -1172,8 +1180,11 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 	if (local->hw.wiphy->max_scan_ie_len)
 		local->hw.wiphy->max_scan_ie_len -= local->scan_ies_len;
 
-	WARN_ON(!ieee80211_cs_list_valid(local->hw.cipher_schemes,
-					 local->hw.n_cipher_schemes));
+	if (WARN_ON(!ieee80211_cs_list_valid(local->hw.cipher_schemes,
+					     local->hw.n_cipher_schemes))) {
+		result = -EINVAL;
+		goto fail_workqueue;
+	}
 
 	result = ieee80211_init_cipher_suites(local);
 	if (result < 0)
@@ -1317,6 +1328,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 	rate_control_add_debugfs(local);
 
 	rtnl_lock();
+	wiphy_lock(hw->wiphy);
 
 	/* add one default STA interface if supported */
 	if (local->hw.wiphy->interface_modes & BIT(NL80211_IFTYPE_STATION) &&
@@ -1330,6 +1342,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 				   "Failed to add default virtual iface\n");
 	}
 
+	wiphy_unlock(hw->wiphy);
 	rtnl_unlock();
 
 #ifdef __disabled__CONFIG_INET
@@ -1403,7 +1416,6 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 	cancel_delayed_work_sync(&local->roc_work);
 	cancel_work_sync(&local->restart_work);
 	cancel_work_sync(&local->reconfig_filter);
-	cancel_work_sync(&local->tdls_chsw_work);
 	flush_work(&local->sched_scan_stopped_work);
 	flush_work(&local->radar_detected_work);
 
@@ -1415,7 +1427,6 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 		wiphy_warn(local->hw.wiphy, "skb_queue not empty\n");
 	skb_queue_purge(&local->skb_queue);
 	skb_queue_purge(&local->skb_queue_unreliable);
-	skb_queue_purge(&local->skb_queue_tdls_chsw);
 
 	wiphy_unregister(local->hw.wiphy);
 	destroy_workqueue(local->workqueue);
@@ -1486,6 +1497,7 @@ static int __init ieee80211_init(void)
 	lib80211_crypto_wep_init();
 #endif
 	cfg80211_init();
+
 
 	BUILD_BUG_ON(sizeof(struct ieee80211_tx_info) > sizeof(skb->cb));
 	BUILD_BUG_ON(offsetof(struct ieee80211_tx_info, driver_data) +
