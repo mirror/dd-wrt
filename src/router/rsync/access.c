@@ -2,7 +2,7 @@
  * Routines to authenticate access to a daemon (hosts allow/deny).
  *
  * Copyright (C) 1998 Andrew Tridgell
- * Copyright (C) 2004-2020 Wayne Davison
+ * Copyright (C) 2004-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@
 
 #include "rsync.h"
 #include "ifuncs.h"
+#ifdef HAVE_NETGROUP_H
+#include <netgroup.h>
+#endif
 
 static int allow_forward_dns;
 

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1996 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
- * Copyright (C) 2003-2020 Wayne Davison
+ * Copyright (C) 2003-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,9 @@ extern int preserve_acls;
 extern int preserve_xattrs;
 extern int preserve_perms;
 extern int preserve_executability;
-extern int preserve_times;
+extern int preserve_mtimes;
+extern int omit_dir_times;
+extern int omit_link_times;
 extern int am_root;
 extern int am_server;
 extern int am_daemon;
@@ -63,8 +65,7 @@ extern char *iconv_opt;
 #define UPDATED_ATIME (1<<3)
 #define UPDATED_ACLS  (1<<4)
 #define UPDATED_MODE  (1<<5)
-
-#define UPDATED_TIMES (UPDATED_MTIME|UPDATED_ATIME)
+#define UPDATED_CRTIME (1<<6)
 
 #ifdef ICONV_CONST
 iconv_t ic_chck = (iconv_t)-1;
@@ -576,17 +577,20 @@ int set_file_attrs(const char *fname, struct file_struct *file, stat_x *sxp,
 		set_xattr(fname, file, fnamecmp, sxp);
 #endif
 
-	if (!preserve_times
-	 || (!(preserve_times & PRESERVE_DIR_TIMES) && S_ISDIR(sxp->st.st_mode))
-	 || (!(preserve_times & PRESERVE_LINK_TIMES) && S_ISLNK(sxp->st.st_mode)))
-		flags |= ATTRS_SKIP_MTIME | ATTRS_SKIP_ATIME;
-	else if (sxp != &sx2)
-		memcpy(&sx2.st, &sxp->st, sizeof (sx2.st));
-	if (!atimes_ndx || S_ISDIR(sxp->st.st_mode))
-		flags |= ATTRS_SKIP_ATIME;
-	/* Don't set the creation date on the root folder of an HFS+ volume. */
-	if (sxp->st.st_ino == 2 && S_ISDIR(sxp->st.st_mode))
-		flags |= ATTRS_SKIP_CRTIME;
+	if ((omit_dir_times && S_ISDIR(sxp->st.st_mode))
+	 || (omit_link_times && S_ISLNK(sxp->st.st_mode)))
+		flags |= ATTRS_SKIP_MTIME | ATTRS_SKIP_ATIME | ATTRS_SKIP_CRTIME;
+	else {
+		if (!preserve_mtimes)
+			flags |= ATTRS_SKIP_MTIME;
+		if (!atimes_ndx || S_ISDIR(sxp->st.st_mode))
+			flags |= ATTRS_SKIP_ATIME;
+		/* Don't set the creation date on the root folder of an HFS+ volume. */
+		if (sxp->st.st_ino == 2 && S_ISDIR(sxp->st.st_mode))
+			flags |= ATTRS_SKIP_CRTIME;
+	}
+	if (sxp != &sx2)
+		memcpy(&sx2.st, &sxp->st, sizeof sx2.st);
 	if (!(flags & ATTRS_SKIP_MTIME) && !same_mtime(file, &sxp->st, flags & ATTRS_ACCURATE_TIME)) {
 		sx2.st.st_mtime = file->modtime;
 #ifdef ST_MTIME_NSEC
@@ -604,28 +608,36 @@ int set_file_attrs(const char *fname, struct file_struct *file, stat_x *sxp,
 			updated |= UPDATED_ATIME;
 		}
 	}
-	if (updated & UPDATED_TIMES) {
-		int ret = set_times(fname, &sx2.st);
-		if (ret < 0) {
-			rsyserr(FERROR_XFER, errno, "failed to set times on %s",
-				full_fname(fname));
-			goto cleanup;
-		}
-		if (ret > 0) { /* ret == 1 if symlink could not be set */
-			updated &= ~UPDATED_TIMES;
-			file->flags |= FLAG_TIME_FAILED;
-		}
-	}
 #ifdef SUPPORT_CRTIMES
 	if (crtimes_ndx && !(flags & ATTRS_SKIP_CRTIME)) {
 		time_t file_crtime = F_CRTIME(file);
 		if (sxp->crtime == 0)
-			sxp->crtime = get_create_time(fname);
-		if (!same_time(sxp->crtime, 0L, file_crtime, 0L)
-		 && set_create_time(fname, file_crtime) == 0)
-			updated = 1;
+			sxp->crtime = get_create_time(fname, &sxp->st);
+		if (!same_time(sxp->crtime, 0L, file_crtime, 0L)) {
+			if (
+#ifdef HAVE_GETATTRLIST
+			     do_setattrlist_crtime(fname, file_crtime) == 0
+#elif defined __CYGWIN__
+			     do_SetFileTime(fname, file_crtime) == 0
+#else
+#error Unknown crtimes implementation
+#endif
+			)
+				updated |= UPDATED_CRTIME;
+		}
 	}
 #endif
+	if (updated & (UPDATED_MTIME|UPDATED_ATIME)) {
+		int ret = set_times(fname, &sx2.st);
+		if (ret < 0) {
+			rsyserr(FERROR_XFER, errno, "failed to set times on %s", full_fname(fname));
+			goto cleanup;
+		}
+		if (ret > 0) { /* ret == 1 if symlink could not be set */
+			updated &= ~(UPDATED_MTIME|UPDATED_ATIME);
+			file->flags |= FLAG_TIME_FAILED;
+		}
+	}
 
 #ifdef SUPPORT_ACLS
 	/* It's OK to call set_acl() now, even for a dir, as the generator

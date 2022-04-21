@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # Copyright (C) 2001, 2002 by Martin Pool <mbp@samba.org>
-# Copyright (C) 2003-2020 Wayne Davison
+# Copyright (C) 2003-2022 Wayne Davison
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version
@@ -155,7 +155,7 @@ if test x"$TOOLDIR" = x; then
     TOOLDIR=`pwd`
 fi
 srcdir=`dirname $0`
-if test x"$srcdir" = x -o x"$srcdir" = x.; then
+if test x"$srcdir" = x || test x"$srcdir" = x.; then
     srcdir="$TOOLDIR"
 fi
 if test x"$rsync_bin" = x; then
@@ -167,10 +167,10 @@ RSYNC="$rsync_bin $*"
 #RSYNC="valgrind $rsync_bin $*"
 
 TLS_ARGS=''
-if egrep '^#define HAVE_LUTIMES 1' config.h >/dev/null; then
+if grep -E '^#define HAVE_LUTIMES 1' config.h >/dev/null; then
     TLS_ARGS="$TLS_ARGS -l"
 fi
-if egrep '#undef CHOWN_MODIFIES_SYMLINK' config.h >/dev/null; then
+if grep -E '#undef CHOWN_MODIFIES_SYMLINK' config.h >/dev/null; then
     TLS_ARGS="$TLS_ARGS -L"
 fi
 
@@ -226,6 +226,8 @@ if [ ! -d "$srcdir" ]; then
     exit 2
 fi
 
+expect_skipped="${RSYNC_EXPECT_SKIPPED-IGNORE}"
+skipped_list=''
 skipped=0
 missing=0
 passed=0
@@ -236,7 +238,7 @@ failed=0
 # failure to aid investigation.  We don't remove the testtmp subdir at
 # the end so that it can be configured as a symlink to a filesystem that
 # has ACLs and xattr support enabled (if desired).
-scratchbase="$TOOLDIR"/testtmp
+scratchbase="${scratchbase:-$TOOLDIR}"/testtmp
 echo "    scratchbase=$scratchbase"
 [ -d "$scratchbase" ] || mkdir "$scratchbase"
 
@@ -265,10 +267,12 @@ maybe_discard_scratch() {
 
 if [ "x$whichtests" = x ]; then
     whichtests="*.test"
+    full_run=yes
+else
+    full_run=no
 fi
 
-for testscript in $suitedir/$whichtests
-do
+for testscript in $suitedir/$whichtests; do
     testbase=`echo $testscript | sed -e 's!.*/!!' -e 's/.test\$//'`
     scratchdir="$scratchbase/$testbase"
 
@@ -284,7 +288,7 @@ do
     result=$?
     set -e
 
-    if [ "x$always_log" = xyes -o \( $result != 0 -a $result != 77 -a $result != 78 \) ]
+    if [ "x$always_log" = xyes ] || ( [ $result != 0 ] && [ $result != 77 ] && [ $result != 78 ] )
     then
 	echo "----- $testbase log follows"
 	cat "$scratchdir/test.log"
@@ -306,6 +310,7 @@ do
 	# backticks will fill the whole file onto one line, which is a feature
 	whyskipped=`cat "$scratchdir/whyskipped"`
 	echo "SKIP    $testbase ($whyskipped)"
+	skipped_list="$skipped_list,$testbase"
 	skipped=`expr $skipped + 1`
 	maybe_discard_scratch
 	;;
@@ -331,6 +336,15 @@ echo "      $passed passed"
 [ "$failed" -gt 0 ]  && echo "      $failed failed"
 [ "$skipped" -gt 0 ] && echo "      $skipped skipped"
 [ "$missing" -gt 0 ] && echo "      $missing missing"
+if [ "$full_run" = yes ] && [ "$expect_skipped" != IGNORE ]; then
+    skipped_list=`echo "$skipped_list" | sed 's/^,//'`
+    echo "----- skipped results:"
+    echo "      expected: $expect_skipped"
+    echo "      got:      $skipped_list"
+else
+    skipped_list=''
+    expect_skipped=''
+fi
 echo '------------------------------------------------------------'
 
 # OK, so expr exits with 0 if the result is neither null nor zero; and
@@ -339,7 +353,7 @@ echo '------------------------------------------------------------'
 # because -e is set.
 
 result=`expr $failed + $missing || true`
-if [ "$result" = 0 -a "$skipped" -gt "${RSYNC_MAX_SKIPPED:-9999}" ]; then
+if [ "$result" = 0 ] && [ "$skipped_list" != "$expect_skipped" ]; then
     result=1
 fi
 echo "overall result is $result"

@@ -1,4 +1,5 @@
-.TH "rsync-ssl" "1" "06 Aug 2020" "rsync-ssl 3.2.3" "User Commands"
+.TH "rsync-ssl" "1" "15 Apr 2022" "rsync-ssl from rsync 3.2.4" "User Commands"
+.\" prefix=/usr
 .P
 .SH "NAME"
 .P
@@ -9,6 +10,9 @@ rsync-ssl \- a helper script for connecting to an ssl rsync daemon
 .nf
 rsync-ssl [--type=SSL_TYPE] RSYNC_ARGS
 .fi
+.P
+The online version of this manpage (that includes cross-linking of topics)
+is available at https://download.samba.org/pub/rsync/rsync-ssl.1.
 .P
 .SH "DESCRIPTION"
 .P
@@ -39,33 +43,34 @@ All the other options are passed through to the rsync command, so consult the
 The ssl helper scripts are affected by the following environment variables:
 .P
 .IP "\fBRSYNC_SSL_TYPE\fP"
-Specifies the program type that should be used to open the
-ssl connection.  It must be one of \fBopenssl\fP or \fBstunnel\fP.  The
-\fB\-\-type=SSL_TYPE\fP option overrides this, when specified.
+Specifies the program type that should be used to open the ssl connection.
+It must be one of \fBopenssl\fP or \fBstunnel\fP.  The \fB\-\-type=SSL_TYPE\fP option
+overrides this, when specified.
 .IP "\fBRSYNC_SSL_PORT\fP"
-If specified, the value is the port number that is used as
-the default when the user does not specify a port in their rsync command.
-When not specified, the default port number is 874.  (Note that older rsync
-versions (prior to 3.2.0) did not communicate an overriding port number
-value to the helper script.)
+If specified, the value is the port number that is used as the default when
+the user does not specify a port in their rsync command.  When not
+specified, the default port number is 874.  (Note that older rsync versions
+(prior to 3.2.0) did not communicate an overriding port number value to the
+helper script.)
 .IP "\fBRSYNC_SSL_CERT\fP"
-If specified, the value is a filename that contains a
+If specified, the value is a filename that contains a certificate to use
+for the connection.
+.IP "\fBRSYNC_SSL_KEY\fP"
+If specified, the value is a filename that contains a key for the provided
 certificate to use for the connection.
 .IP "\fBRSYNC_SSL_CA_CERT\fP"
-If specified, the value is a filename that contains a
-certificate authority certificate that is used to validate the connection.
+If specified, the value is a filename that contains a certificate authority
+certificate that is used to validate the connection.
 .IP "\fBRSYNC_SSL_OPENSSL\fP"
-Specifies the openssl executable to run when the
-connection type is set to openssl.  If unspecified, the $PATH is searched
-for "openssl".
+Specifies the openssl executable to run when the connection type is set to
+openssl.  If unspecified, the $PATH is searched for "openssl".
 .IP "\fBRSYNC_SSL_GNUTLS\fP"
-Specifies the gnutls-cli executable to run when the
-connection type is set to gnutls.  If unspecified, the $PATH is searched
-for "gnutls-cli".
+Specifies the gnutls-cli executable to run when the connection type is set
+to gnutls.  If unspecified, the $PATH is searched for "gnutls-cli".
 .IP "\fBRSYNC_SSL_STUNNEL\fP"
-Specifies the stunnel executable to run when the
-connection type is set to stunnel.  If unspecified, the $PATH is searched
-first for "stunnel4" and then for "stunnel".
+Specifies the stunnel executable to run when the connection type is set to
+stunnel.  If unspecified, the $PATH is searched first for "stunnel4" and
+then for "stunnel".
 .P
 .SH "EXAMPLES"
 .RS 4
@@ -116,11 +121,11 @@ Please report bugs! See the web site at https://rsync.samba.org/.
 .P
 .SH "VERSION"
 .P
-This man page is current for version 3.2.3 of rsync.
+This manpage is current for version 3.2.4 of rsync.
 .P
 .SH "CREDITS"
 .P
-rsync is distributed under the GNU General Public License.  See the file
+Rsync is distributed under the GNU General Public License.  See the file
 COPYING for details.
 .P
 A web site is available at https://rsync.samba.org/.  The site includes an

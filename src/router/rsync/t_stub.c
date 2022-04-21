@@ -3,7 +3,7 @@
  * functions, so that module test harnesses can run standalone.
  *
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2020 Wayne Davison
+ * Copyright (C) 2003-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include "rsync.h"
 
+int do_fsync = 0;
 int inplace = 0;
 int modify_window = 0;
 int preallocate_files = 0;
@@ -28,10 +29,11 @@ int protect_args = 0;
 int module_id = -1;
 int relative_paths = 0;
 int module_dirlen = 0;
-int preserve_times = 0;
+int preserve_mtimes = 0;
 int preserve_xattrs = 0;
 int preserve_perms = 0;
 int preserve_executability = 0;
+int omit_link_times = 0;
 int open_noatime = 0;
 size_t max_alloc = 0; /* max_alloc is needed when combined with util2.o */
 char *partial_dir;
