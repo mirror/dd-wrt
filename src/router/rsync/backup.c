@@ -2,7 +2,7 @@
  * Backup handling code.
  *
  * Copyright (C) 1999 Andrew Tridgell
- * Copyright (C) 2003-2020 Wayne Davison
+ * Copyright (C) 2003-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -304,7 +304,8 @@ int make_backup(const char *fname, BOOL prefer_rename)
 #endif
 
 	if (!ret && !S_ISREG(file->mode)) {
-		rprintf(FINFO, "make_bak: skipping non-regular file %s\n", fname);
+		if (INFO_GTE(NONREG, 1))
+			rprintf(FINFO, "make_bak: skipping non-regular file %s\n", fname);
 		unmake_file(file);
 #ifdef SUPPORT_ACLS
 		uncache_tmp_acls();

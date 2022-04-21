@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2020 Wayne Davison
+ * Copyright (C) 2003-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,13 +115,13 @@ static void rprint_progress(OFF_T ofs, OFF_T size, struct timeval *now, int is_l
 		units = "kB/s";
 	}
 
-	if (remain < 0)
+	if (remain < 0 || remain > 9999.0 * 3600.0)
 		strlcpy(rembuf, "  ??:??:??", sizeof rembuf);
 	else {
-		snprintf(rembuf, sizeof rembuf, "%4d:%02d:%02d",
-			 (int) (remain / 3600.0),
-			 (int) (remain / 60.0) % 60,
-			 (int) remain % 60);
+		snprintf(rembuf, sizeof rembuf, "%4u:%02u:%02u",
+			 (unsigned int) (remain / 3600.0),
+			 (unsigned int) (remain / 60.0) % 60,
+			 (unsigned int) remain % 60);
 	}
 
 	output_needs_newline = 0;

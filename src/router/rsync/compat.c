@@ -3,7 +3,7 @@
  *
  * Copyright (C) Andrew Tridgell 1996
  * Copyright (C) Paul Mackerras 1996
- * Copyright (C) 2004-2020 Wayne Davison
+ * Copyright (C) 2004-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include "rsync.h"
 #include "itypes.h"
+#include "ifuncs.h"
 
 extern int am_server;
 extern int am_sender;
@@ -51,6 +52,8 @@ extern int need_messages_from_generator;
 extern int delete_mode, delete_before, delete_during, delete_after;
 extern int do_compression;
 extern int do_compression_level;
+extern int saw_stderr_opt;
+extern int msgs2stderr;
 extern char *shell_cmd;
 extern char *partial_dir;
 extern char *files_from;
@@ -153,7 +156,13 @@ static void check_sub_protocol(void)
 
 void set_allow_inc_recurse(void)
 {
-	client_info = shell_cmd ? shell_cmd : "";
+	if (!local_server)
+		client_info = shell_cmd ? shell_cmd : "";
+	else if (am_server) {
+		char buf[64];
+		maybe_add_e_option(buf, sizeof buf);
+		client_info = *buf ? strdup(buf+1) : ""; /* The +1 skips the leading "e". */
+	}
 
 	if (!recurse || use_qsort)
 		allow_inc_recurse = 0;
@@ -161,8 +170,7 @@ void set_allow_inc_recurse(void)
 	 && (delete_before || delete_after
 	  || delay_updates || prune_empty_dirs))
 		allow_inc_recurse = 0;
-	else if (am_server && !local_server
-	 && (strchr(client_info, 'i') == NULL))
+	else if (am_server && strchr(client_info, 'i') == NULL)
 		allow_inc_recurse = 0;
 }
 
@@ -558,7 +566,7 @@ void setup_protocol(int f_out,int f_in)
 		atimes_ndx = (file_extra_cnt += EXTRA64_CNT);
 	if (preserve_crtimes)
 		crtimes_ndx = (file_extra_cnt += EXTRA64_CNT);
-	if (am_sender) /* This is most likely in the in64 union as well. */
+	if (am_sender) /* This is most likely in the file_extras64 union as well. */
 		pathname_ndx = (file_extra_cnt += PTR_EXTRA_CNT);
 	else
 		depth_ndx = ++file_extra_cnt;
@@ -596,7 +604,7 @@ void setup_protocol(int f_out,int f_in)
 	if (remote_protocol < MIN_PROTOCOL_VERSION
 	 || remote_protocol > MAX_PROTOCOL_VERSION) {
 		rprintf(FERROR,"protocol version mismatch -- is your shell clean?\n");
-		rprintf(FERROR,"(see the rsync man page for an explanation)\n");
+		rprintf(FERROR,"(see the rsync manpage for an explanation)\n");
 		exit_cleanup(RERR_PROTOCOL);
 	}
 	if (remote_protocol < OLD_PROTOCOL_VERSION) {
@@ -615,6 +623,9 @@ void setup_protocol(int f_out,int f_in)
 	}
 	if (read_batch)
 		check_batch_flags();
+
+	if (!saw_stderr_opt && protocol_version <= 28 && am_server)
+		msgs2stderr = 0; /* The client side may not have stderr setup for us. */
 
 #ifndef SUPPORT_PREALLOCATION
 	if (preallocate_files && !am_sender) {
@@ -691,17 +702,17 @@ void setup_protocol(int f_out,int f_in)
 #ifdef ICONV_OPTION
 			compat_flags |= CF_SYMLINK_ICONV;
 #endif
-			if (local_server || strchr(client_info, 'f') != NULL)
+			if (strchr(client_info, 'f') != NULL)
 				compat_flags |= CF_SAFE_FLIST;
-			if (local_server || strchr(client_info, 'x') != NULL)
+			if (strchr(client_info, 'x') != NULL)
 				compat_flags |= CF_AVOID_XATTR_OPTIM;
-			if (local_server || strchr(client_info, 'C') != NULL)
+			if (strchr(client_info, 'C') != NULL)
 				compat_flags |= CF_CHKSUM_SEED_FIX;
-			if (local_server || strchr(client_info, 'I') != NULL)
+			if (strchr(client_info, 'I') != NULL)
 				compat_flags |= CF_INPLACE_PARTIAL_DIR;
-			if (local_server || strchr(client_info, 'u') != NULL)
+			if (strchr(client_info, 'u') != NULL)
 				compat_flags |= CF_ID0_NAMES;
-			if (local_server || strchr(client_info, 'v') != NULL) {
+			if (strchr(client_info, 'v') != NULL) {
 				do_negotiated_strings = 1;
 				compat_flags |= CF_VARINT_FLIST_FLAGS;
 			}
@@ -737,7 +748,7 @@ void setup_protocol(int f_out,int f_in)
 #endif
 #ifdef ICONV_OPTION
 		sender_symlink_iconv = iconv_opt && (am_server
-		    ? local_server || strchr(client_info, 's') != NULL
+		    ? strchr(client_info, 's') != NULL
 		    : !!(compat_flags & CF_SYMLINK_ICONV));
 #endif
 		if (inc_recurse && !allow_inc_recurse) {

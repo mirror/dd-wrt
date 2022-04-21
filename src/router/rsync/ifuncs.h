@@ -1,6 +1,6 @@
 /* Inline functions for rsync.
  *
- * Copyright (C) 2007-2020 Wayne Davison
+ * Copyright (C) 2007-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,7 @@ d_name(struct dirent *di)
 static inline void
 init_stat_x(stat_x *sx_p)
 {
+	sx_p->crtime = 0;
 #ifdef SUPPORT_ACLS
 	sx_p->acc_acl = sx_p->def_acl = NULL;
 #endif

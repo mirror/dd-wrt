@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2001-2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2002-2020 Wayne Davison
+ * Copyright (C) 2002-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ extern int protocol_version;
 extern int io_timeout;
 extern int no_detach;
 extern int write_batch;
+extern int old_style_args;
 extern int default_af_hint;
 extern int logfile_format_has_i;
 extern int logfile_format_has_o_or_i;
@@ -288,20 +289,45 @@ int start_inband_exchange(int f_in, int f_out, const char *user, int argc, char 
 
 	sargs[sargc++] = ".";
 
+	if (!old_style_args)
+		snprintf(line, sizeof line, " %.*s/", modlen, modname);
+
 	while (argc > 0) {
 		if (sargc >= MAX_ARGS - 1) {
 		  arg_overflow:
 			rprintf(FERROR, "internal: args[] overflowed in do_cmd()\n");
 			exit_cleanup(RERR_SYNTAX);
 		}
-		if (strncmp(*argv, modname, modlen) == 0
-		 && argv[0][modlen] == '\0')
+		if (strncmp(*argv, modname, modlen) == 0 && argv[0][modlen] == '\0')
 			sargs[sargc++] = modname; /* we send "modname/" */
-		else if (**argv == '-') {
-			if (asprintf(sargs + sargc++, "./%s", *argv) < 0)
-				out_of_memory("start_inband_exchange");
-		} else
-			sargs[sargc++] = *argv;
+		else {
+			char *arg = *argv;
+			int extra_chars = *arg == '-' ? 2 : 0; /* a leading dash needs a "./" prefix. */
+			/* If --old-args was not specified, make sure that the arg won't split at a mod name! */
+			if (!old_style_args && (p = strstr(arg, line)) != NULL) {
+				do {
+					extra_chars += 2;
+				} while ((p = strstr(p+1, line)) != NULL);
+			}
+			if (extra_chars) {
+				char *f = arg;
+				char *t = arg = new_array(char, strlen(arg) + extra_chars + 1);
+				if (*f == '-') {
+					*t++ = '.';
+					*t++ = '/';
+				}
+				while (*f) {
+					if (*f == ' ' && strncmp(f, line, modlen+2) == 0) {
+						*t++ = '[';
+						*t++ = *f++;
+						*t++ = ']';
+					} else
+						*t++ = *f++;
+				}
+				*t = '\0';
+			}
+			sargs[sargc++] = arg;
+		}
 		argv++;
 		argc--;
 	}
@@ -380,7 +406,7 @@ int start_inband_exchange(int f_in, int f_out, const char *user, int argc, char 
 	return 0;
 }
 
-#ifdef HAVE_PUTENV
+#if defined HAVE_SETENV || defined HAVE_PUTENV
 static int read_arg_from_pipe(int fd, char *buf, int limit)
 {
 	char *bp = buf, *eob = buf + limit - 1;
@@ -405,23 +431,57 @@ static int read_arg_from_pipe(int fd, char *buf, int limit)
 
 static void set_env_str(const char *var, const char *str)
 {
+#ifdef HAVE_SETENV
+	if (setenv(var, str, 1) < 0)
+		out_of_memory("set_env_str");
+#else
 #ifdef HAVE_PUTENV
 	char *mem;
 	if (asprintf(&mem, "%s=%s", var, str) < 0)
 		out_of_memory("set_env_str");
 	putenv(mem);
+#else
+	(void)var;
+	(void)str;
+#endif
 #endif
 }
 
+#if defined HAVE_SETENV || defined HAVE_PUTENV
+
+static void set_envN_str(const char *var, int num, const char *str)
+{
+#ifdef HAVE_SETENV
+	char buf[128];
+	(void)snprintf(buf, sizeof buf, "%s%d", var, num);
+	if (setenv(buf, str, 1) < 0)
+		out_of_memory("set_env_str");
+#else
 #ifdef HAVE_PUTENV
+	char *mem;
+	if (asprintf(&mem, "%s%d=%s", var, num, str) < 0)
+		out_of_memory("set_envN_str");
+	putenv(mem);
+#endif
+#endif
+}
+
 void set_env_num(const char *var, long num)
 {
+#ifdef HAVE_SETENV
+	char val[64];
+	(void)snprintf(val, sizeof val, "%ld", num);
+	if (setenv(var, val, 1) < 0)
+		out_of_memory("set_env_str");
+#else
+#ifdef HAVE_PUTENV
 	char *mem;
 	if (asprintf(&mem, "%s=%ld", var, num) < 0)
 		out_of_memory("set_env_num");
 	putenv(mem);
-}
 #endif
+#endif
+}
 
 /* Used for "early exec", "pre-xfer exec", and the "name converter" script. */
 static pid_t start_pre_exec(const char *cmd, int *arg_fd_ptr, int *error_fd_ptr)
@@ -451,15 +511,13 @@ static pid_t start_pre_exec(const char *cmd, int *arg_fd_ptr, int *error_fd_ptr)
 		set_env_str("RSYNC_REQUEST", buf);
 
 		for (j = 0; ; j++) {
-			char *p;
 			len = read_arg_from_pipe(arg_fd, buf, BIGPATHBUFLEN);
 			if (len <= 0) {
 				if (!len)
 					break;
 				_exit(1);
 			}
-			if (asprintf(&p, "RSYNC_ARG%d=%s", j, buf) >= 0)
-				putenv(p);
+			set_envN_str("RSYNC_ARG", j, buf);
 		}
 
 		dup2(arg_fd, STDIN_FILENO);
@@ -489,6 +547,8 @@ static pid_t start_pre_exec(const char *cmd, int *arg_fd_ptr, int *error_fd_ptr)
 
 	return pid;
 }
+
+#endif
 
 static void write_pre_exec_args(int write_fd, char *request, char **early_argv, char **argv, int exec_type)
 {
@@ -809,7 +869,7 @@ static int rsync_module(int f_in, int f_out, int i, const char *addr, const char
 
 	log_init(1);
 
-#ifdef HAVE_PUTENV
+#if defined HAVE_SETENV || defined HAVE_PUTENV
 	if ((*lp_early_exec(module_id) || *lp_prexfer_exec(module_id)
 	  || *lp_postxfer_exec(module_id) || *lp_name_converter(module_id))
 	 && !getenv("RSYNC_NO_XFER_EXEC")) {

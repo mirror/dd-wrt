@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # Copyright (C) 2002 by Martin Pool <mbp@samba.org>
 
@@ -12,8 +12,6 @@
 . "$suitedir/rsync.fns"
 
 SSH="$scratchdir/src/support/lsh.sh"
-
-outfile="$scratchdir/rsync.out"
 
 # Build some hardlinks
 
@@ -70,7 +68,7 @@ echo "This is another file" >"$fromdir/solo"
 ln "$fromdir/solo" "$chkdir/solo" || test_fail "Can't create hardlink"
 
 # Make sure that the checksum data doesn't slide due to an HLINK_BUMP() change.
-$RSYNC -aHivc --debug=HLINK5 "$fromdir/" "$chkdir/" | tee "$outfile"
+checktee "$RSYNC -aHivc --debug=HLINK5 '$fromdir/' '$chkdir/'"
 grep solo "$outfile" && test_fail "Erroneous copy of solo file occurred!"
 
 # Make sure there's nothing wrong with sending a single file with -H
