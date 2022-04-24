@@ -60,15 +60,6 @@ function to_reboot(F) {
 	apply(F);
 }
 
-function mdnsif_save(F)
-{
-	alert("mdnsif_save.F:" + F.name);
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "mdnsif_save";
-	//F.submit();
-	apply(F);
-}
-
 
 function to_submit(F) {
 	if(!verify_unique_static_ip(F)) {
@@ -78,7 +69,6 @@ function to_submit(F) {
 	if(F.rstats_enable) {
 		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
 	}
-	//mdnsif_save(F);
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
@@ -94,7 +84,6 @@ function to_apply(F) {
 	if(F.rstats_enable) {
 		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
 	}
-	//mdnsif_save(F);
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
