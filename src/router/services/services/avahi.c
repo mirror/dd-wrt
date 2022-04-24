@@ -66,11 +66,23 @@ void start_mdns(void)
 		"host-name=%s\n"
 		"domain-name=%s\n"
 		"use-ipv4=yes\n"
-		"use-ipv6=%s\n"
-		"check-response-ttl=no\n"
-		"use-iff-running=no\n"
-		"#deny-interfaces=\n"
-		"\n"
+		"use-ipv6=%s\n" "check-response-ttl=no\n" "use-iff-running=no\n" "#deny-interfaces=\n", nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
+	char ifname[32];
+	char *next;
+	char *wordlist = nvram_safe_get("mdns_interfaces");
+	int idx = 0;
+	foreach(ifname, wordlist, next) {
+		if (!idx)
+			fprintf(fp, "allow-interfaces=");
+		else
+			fprintf(fp, ",");
+		fprintf(fp, "%s", ifname);
+		idx++;
+	}
+	if (idx)
+		fprintf(fp, "\n");
+
+	fprintf(fp, "\n"
 		"[wide-area]\n"
 		"enable-wide-area=yes\n"
 		"\n"
@@ -89,27 +101,7 @@ void start_mdns(void)
 		"[rlimits]\n"
 		"#rlimit-as=\n"
 		"rlimit-core=0\n"
-		"rlimit-data=4194304\n"
-		"rlimit-fsize=0\n"
-		"rlimit-nofile=30\n"
-		"rlimit-stack=4194304\n"
-		"rlimit-nproc=3\n", nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no", nvram_safe_get("lan_ipaddr"),
-		nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
-	char ifname[32];
-	char *next;
-	char *wordlist = nvram_safe_get("mdns_interfaces");
-	int idx = 0;
-	foreach(ifname, wordlist, next) {
-		if (!idx)
-			fprintf(fp, "allow-interfaces=");
-		else
-			fprintf(fp, ",");
-		fprintf(fp, "%s", ifname);
-		idx++;
-	}
-	if (idx)
-		fprintf(fp, "\n");
-
+		"rlimit-data=4194304\n" "rlimit-fsize=0\n" "rlimit-nofile=30\n" "rlimit-stack=4194304\n" "rlimit-nproc=3\n", nvram_safe_get("lan_ipaddr"), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
 	fclose(fp);
 
 #ifdef HAVE_SMBD		//might need SAMBA
