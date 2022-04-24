@@ -47,7 +47,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 {
 	char bufferif[256];
 	int count = 1;
-	int maxcount = 3;
+	int maxcount = 4;
 	char temp[64];
 	char word[32];
 	char *next;
@@ -103,11 +103,10 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table>\n");
 	websWrite(wp, "<tr>\n");
 	foreach(word, bufferif, next) {
-		if (strncmp(word, "aux", 3) && strcmp(word, "lo") && strcmp(word, "ctf0") && !strchr(word, ':')) {
+		if (!strchr(word, ':')) {
 			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
 			{
-				websWrite(wp, "<td>&nbsp;&nbsp;\n");
-				websWrite(wp, "&nbsp;&nbsp;\n");
+				websWrite(wp, "<td align=\"right\">\n");
 				websWrite(wp, "<label for=\"%s\">%s</label>", temp, word);
 				websWrite(wp, "</td>\n");
 				websWrite(wp, "<td>\n");
@@ -115,16 +114,16 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 				char ifname[32];
 				char *next2;
 				int found = 0;
-				foreach(ifname, wordlist, next2) {
+				foreach_delim(ifname, wordlist, next2, ",") {
 					if (!strcmp(ifname, word))
-					    found = 1;
+						found = 1;
 				}
 				websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, found ? "checked=\"checked\"" : "");
 				websWrite(wp, "</td>\n");
 				if (count++ > maxcount) {
 					websWrite(wp, "</tr>\n");
 					websWrite(wp, "<tr>\n");
-					maxcount += 4;
+					maxcount += 5;
 				}
 			}
 		}
