@@ -1834,15 +1834,18 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 	bzero(bufferif, 512);
 	getIfList(bufferif, NULL);
 	foreach(word, bufferif, next) {
-		if (strcmp(word, "aux") && strcmp(word, "lo") && strcmp(word, "ctf0") && !strchr(word, ':')) {
+		if (!strchr(word, ':')) {
 			char temp[32];
 			sprintf(temp,"mdnsif_%s", word);
 			char *val = websGetVar(wp, temp, "0");
 			if (!strcmp(val, "1")) {
-				if (idx)
-				    strcat (mdnsif, " ");
+				if (idx == 0) {
+					strcat (mdnsif, word);
+				} else {
+					strcat (mdnsif, ",");
+					strcat (mdnsif, word);
+				}
 				idx++;
-				strcat (mdnsif, word);
 			}
 		}
 	}
