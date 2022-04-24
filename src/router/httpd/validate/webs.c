@@ -1824,7 +1824,7 @@ void qos_add_mac(webs_t wp)
 }
 
 #ifdef HAVE_MDNS
-void mdnsif_save(webs_t wp)
+void validate_avahi(webs_t wp, char *value, struct variable *v)
 {
 	char bufferif[512];
 	char mdnsif[128] = { 0 };

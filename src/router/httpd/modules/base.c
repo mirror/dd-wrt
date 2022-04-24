@@ -223,6 +223,9 @@ void Initnvramtab()
 #ifdef HAVE_PORTSETUP
 		{ "PORTSETUP", "validate_portsetup", 0 },
 #endif
+#ifdef HAVE_MDNS
+		{ "AVAHI", "validate_avahi", 0 },
+#endif
 		{ "REBOOT", "validate_reboot", 0 },
 		{ "IPADDR", "validate_ipaddr", 0 },
 		{ "STATICLEASES", "validate_staticleases", 0 },

@@ -91,6 +91,7 @@ void validate_noack(webs_t wp, char *value, struct variable *v);
 void validate_password(webs_t wp, char *value, struct variable *v);
 void validate_password2(webs_t wp, char *value, struct variable *v);
 void validate_portsetup(webs_t wp, char *value, struct variable *v);
+void validate_avahi(webs_t wp, char *value, struct variable *v);
 void validate_port_trigger(webs_t wp, char *value, struct variable *v);
 void validate_range(webs_t wp, char *value, struct variable *v);
 void validate_reboot(webs_t wp, char *value, struct variable *v);
@@ -487,6 +488,9 @@ static struct callmap validate_map[] = {
 	{ "validate_password2", &validate_password2 },
 #ifdef HAVE_PORTSETUP
 	{ "validate_portsetup", &validate_portsetup },
+#endif
+#ifdef HAVE_MDNS
+	{ "validate_avahi", &validate_avahi },
 #endif
 	{ "validate_port_trigger", &validate_port_trigger },
 	{ "validate_range", &validate_range },
