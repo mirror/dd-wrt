@@ -1261,9 +1261,6 @@ static struct gozila_action gozila_actions[] = {
 #endif
 	{ "Services", "add_lease", "", REFRESH, "lease_add" },
 	{ "Services", "del_lease", "", REFRESH, "lease_del" },
-#ifdef HAVE_MDNS
-	{ "Services", "mdnsif_save", "", REFRESH, "mdnsif_save" },
-#endif
 #ifdef HAVE_PPPOESERVER
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
 	{ "PPPoE_Server", "remove_chap_user", "", REFRESH, "chap_user_remove" },
