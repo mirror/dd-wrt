@@ -70,7 +70,6 @@ void start_mdns(void)
 		"check-response-ttl=no\n"
 		"use-iff-running=no\n"
 		"#deny-interfaces=\n"
-		"allow-interfaces=%s\n"
 		"\n"
 		"[wide-area]\n"
 		"enable-wide-area=yes\n"
@@ -94,8 +93,23 @@ void start_mdns(void)
 		"rlimit-fsize=0\n"
 		"rlimit-nofile=30\n"
 		"rlimit-stack=4194304\n"
-		"rlimit-nproc=3\n", nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no", nvram_safe_get("mdns_interfaces"), nvram_safe_get("lan_ipaddr"),
+		"rlimit-nproc=3\n", nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no", nvram_safe_get("lan_ipaddr"),
 		nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
+	char ifname[32];
+	char *next;
+	char *wordlist = nvram_safe_get("mdns_interfaces");
+	int idx = 0;
+	foreach(ifname, wordlist, next) {
+		if (!idx)
+			fprintf(fp, "allow-interfaces=");
+		else
+			fprintf(fp, ",");
+		fprintf(fp, "%s", ifname);
+		idx++;
+	}
+	if (idx)
+		fprintf(fp, "\n");
+
 	fclose(fp);
 
 #ifdef HAVE_SMBD		//might need SAMBA
