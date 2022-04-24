@@ -1840,7 +1840,7 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 			char *val = websGetVar(wp, temp, "0");
 			if (!strcmp(val, "1")) {
 				if (idx)
-					strcat (mdnsif, ",");
+					strcat (mdnsif, " ");
 				strcat (mdnsif, word);
 				idx++;
 			}
