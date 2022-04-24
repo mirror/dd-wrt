@@ -67,7 +67,7 @@ avahi-configure: expat dbus libdaemon
 
 
 avahi:
-	install -D avahi/config/avahi.webservices httpd/ej_temp/avahi.webservices
+#	install -D avahi/config/avahi.webservices httpd/ej_temp/avahi.webservices
 	-$(MAKE) -C avahi/build_utils
 	$(MAKE) -C avahi/build_normal
 
@@ -85,14 +85,14 @@ ifeq ($(CONFIG_MDNS_UTILS),y)
 	-install -D avahi/config/avahi.nvramconfig $(INSTALLDIR)/avahi/etc/config/zavahi.nvramconfig
 	-install -D avahi/config/avahi.webservices $(INSTALLDIR)/avahi/etc/config/zavahi.webservices
 
-	install -D avahi/build_utils/avahi-utils/.libs/avahi* $(INSTALLDIR)/avahi/usr/sbin/
-	install -D avahi/build_utils/avahi-client/.libs/libavahi-client.so.3.2.9 $(INSTALLDIR)/avahi/usr/lib/libavahi-client.so.3.2.9
+#	install -D avahi/build_utils/avahi-utils/.libs/avahi* $(INSTALLDIR)/avahi/usr/sbin/
+#	install -D avahi/build_utils/avahi-client/.libs/libavahi-client.so.3.2.9 $(INSTALLDIR)/avahi/usr/lib/libavahi-client.so.3.2.9
 	cd $(INSTALLDIR)/avahi/usr/lib && ln -sf libavahi-client.so.3.2.9 libavahi-client.so.3
 	#copy as *z*avahi so that is wiil not show as first on the webpage 9shoe.webservices in alphabetically order
 else
 	install -D avahi/build_normal/avahi-daemon/avahi-daemon $(INSTALLDIR)/avahi/usr/sbin/avahi-daemon
-	-install -D avahi/config/avahi.nvramconfig $(INSTALLDIR)/avahi/etc/config/zavahi.nvramconfig
-	-install -D avahi/config/avahi.webservices $(INSTALLDIR)/avahi/etc/config/zavahi.webservices
+#	-install -D avahi/config/avahi.nvramconfig $(INSTALLDIR)/avahi/etc/config/zavahi.nvramconfig
+#	-install -D avahi/config/avahi.webservices $(INSTALLDIR)/avahi/etc/config/zavahi.webservices
 
 endif
 
