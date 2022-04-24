@@ -17,7 +17,9 @@ static int ksmbd_validate_filename(char *filename);
 
 static int parse_stream_name(char *filename, char **stream_name, int *s_type);
 
-static char *convert_to_nt_pathname(char *filename);
+static char *convert_to_nt_pathname(struct ksmbd_share_config *share,
+			     struct path *path);
+static char *smb1_convert_to_nt_pathname(char *filename);
 
 static int get_nlink(struct kstat *st);
 
