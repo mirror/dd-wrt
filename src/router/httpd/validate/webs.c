@@ -1837,8 +1837,8 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 		if (strcmp(word, "aux") && strcmp(word, "lo") && strcmp(word, "ctf0") && !strchr(word, ':')) {
 			char temp[32];
 			sprintf(temp,"mdnsif_%s", word);
-			char *val = websGetVar(wp, temp, NULL);
-			if (val && !strcmp(val, "1")) {
+			char *val = websGetVar(wp, temp, "0");
+			if (!strcmp(val, "1")) {
 				if (idx)
 				    strcat (mdnsif, " ");
 				idx++;

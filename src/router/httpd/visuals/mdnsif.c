@@ -119,7 +119,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 					if (!strcmp(ifname, word))
 					    found = 1;
 				}
-				websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, found ? "checked=\"checked\"" : ""));
+				websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, found ? "checked=\"checked\"" : "");
 				websWrite(wp, "</td>\n");
 				if (count++ > maxcount) {
 					websWrite(wp, "</tr>\n");
