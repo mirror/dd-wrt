@@ -1839,12 +1839,9 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 			sprintf(temp,"mdnsif_%s", word);
 			char *val = websGetVar(wp, temp, "0");
 			if (!strcmp(val, "1")) {
-				if (idx == 0) {
-					strcat (mdnsif, word);
-				} else {
+				if (idx)
 					strcat (mdnsif, ",");
-					strcat (mdnsif, word);
-				}
+				strcat (mdnsif, word);
 				idx++;
 			}
 		}
