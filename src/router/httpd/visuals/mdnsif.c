@@ -126,17 +126,6 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</fieldset>\n");
 			//end interfaces
 		websWrite(wp, "</div>\n"); //end hide show
-	websWrite(wp, "</fieldset>\n");
-
-
-	websWrite(wp, "<div class=\"center\">\n");
-	{
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp,
-			  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mdnsif_save_button\\\" value=\\\"\" + share.add + \"\\\" onclick=\\\"mdnsif_save(this.form)\\\" />\");\n");
-		websWrite(wp, "//]]>\n</script>\n");
-	}
-	websWrite(wp, "</div>\n");
-	
+	websWrite(wp, "</fieldset>\n");	
 	return;
 }
