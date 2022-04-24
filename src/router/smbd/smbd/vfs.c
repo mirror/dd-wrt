@@ -12,7 +12,9 @@
 #include <linux/version.h>
 #include <linux/xattr.h>
 #include <linux/falloc.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 #include <linux/genhd.h>
+#endif
 #include <linux/fsnotify.h>
 #include <linux/dcache.h>
 #include <linux/slab.h>
@@ -507,8 +509,7 @@ int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp, size_t count,
 		name = d_path(&filp->f_path, namebuf, sizeof(namebuf));
 		if (IS_ERR(name))
 			name = "(error)";
-		pr_err("smb read failed for (%s), err = %zd\n",
-				name, nbytes);
+		pr_err("smb read failed, err = %zd\n", nbytes);
 		return nbytes;
 	}
 
@@ -1363,8 +1364,7 @@ int ksmbd_vfs_truncate(struct ksmbd_work *work,
 
 	err = vfs_truncate(&filp->f_path, size);
 	if (err)
-		pr_err("truncate failed for filename : %s err %d\n",
-		       fp->filename, err);
+		pr_err("truncate failed, err %d\n", err);
 
 	return err;
 }
