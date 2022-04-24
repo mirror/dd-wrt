@@ -114,7 +114,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 				char ifname[32];
 				char *next2;
 				int found = 0;
-				foreach_delim(ifname, wordlist, next2, ",") {
+				foreach(ifname, wordlist, next2) {
 					if (!strcmp(ifname, word))
 						found = 1;
 				}
