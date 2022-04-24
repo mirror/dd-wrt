@@ -1827,19 +1827,22 @@ void qos_add_mac(webs_t wp)
 void mdnsif_save(webs_t wp)
 {
 	char bufferif[512];
-	char mdnsif[128];
+	char mdnsif[128] = { 0 };
 	char word[32] = { 0 };
 	char *next;
+	int idx=0;
 	bzero(bufferif, 512);
-
 	getIfList(bufferif, NULL);
 	foreach(word, bufferif, next) {
 		if (strcmp(word, "aux") && strcmp(word, "lo") && strcmp(word, "ctf0") && !strchr(word, ':')) {
-			copytonv(wp, "mdnsif_%s", word);
-			//syslog(LOG_INFO, "mdnsif : Adding mdnsif_%s\n", word);
-			if (nvram_nmatchi(1, "mdnsif_%s", word)) {
+			char temp[32];
+			sprintf(temp,"mdnsif_%s", word);
+			char *val = websGetVar(wp, temp, NULL);
+			if (val && !strcmp(val, "1")) {
+				if (idx)
+				    strcat (mdnsif, " ");
+				idx++;
 				strcat (mdnsif, word);
-				strcat (mdnsif, " ");
 			}
 		}
 	}
