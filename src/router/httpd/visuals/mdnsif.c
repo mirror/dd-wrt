@@ -111,7 +111,6 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "<label for=\"%s\">%s</label>", temp, word);
 							websWrite(wp, "</td>\n");
 							websWrite(wp, "<td>\n");
-							websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
 							websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
 							websWrite(wp, "</td>\n");
 							if (count++ > maxcount) {
