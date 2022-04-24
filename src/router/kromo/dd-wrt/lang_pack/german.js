@@ -1866,7 +1866,7 @@ service.zabbix_usrpara="User Parameter";
 service.mdns_legend="mDNS/Avahi";
 service.mdns_domain="Domainname [lockal]";
 service.mdns_reflector="Reflektor";
-service.mdns_interfaces="Schnittstellen (CSV)";
+service.mdns_interfaces="Schnittstellen";
 
 service.transmission_dir="Transmission Konfigurationsverzeichniss";
 service.transmission_download="Transmission Download Verzeichniss";
