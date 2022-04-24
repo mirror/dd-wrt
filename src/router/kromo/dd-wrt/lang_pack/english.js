@@ -2178,7 +2178,7 @@ service.zabbix_usrpara="User Parameters";
 service.mdns_legend="mDNS/Avahi";
 service.mdns_domain="Domain name [local]";
 service.mdns_reflector="Reflector";
-service.mdns_interfaces="Interfaces (CSV)";
+service.mdns_interfaces="Interfaces";
 
 //TRansmission
 service.transmission_legend="BitTorrent";
