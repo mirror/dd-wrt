@@ -52,7 +52,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</select></div>\n");
 	}
 	bzero(bufferif, sizeof(bufferif));
-	getIfListB(bufferif, NULL, 1, 1);
+	getIfListB(bufferif, NULL, 1, 1, 0);
 	foreach(var, eths, next) {
 		int isb = 0;
 		if (!strcmp("etherip0", var))
