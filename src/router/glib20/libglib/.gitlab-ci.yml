@@ -10,11 +10,11 @@ cache:
     - _ccache/
 
 variables:
-  FEDORA_IMAGE: "registry.gitlab.gnome.org/gnome/glib/fedora:v12"
-  COVERITY_IMAGE: "registry.gitlab.gnome.org/gnome/glib/coverity:v2"
+  FEDORA_IMAGE: "registry.gitlab.gnome.org/gnome/glib/fedora:v13"
+  COVERITY_IMAGE: "registry.gitlab.gnome.org/gnome/glib/coverity:v3"
   DEBIAN_IMAGE: "registry.gitlab.gnome.org/gnome/glib/debian-stable:v9"
-  ANDROID_IMAGE: "registry.gitlab.gnome.org/gnome/glib/android-ndk:v5"
-  MINGW_IMAGE: "registry.gitlab.gnome.org/gnome/glib/mingw:v4"
+  ANDROID_IMAGE: "registry.gitlab.gnome.org/gnome/glib/android-ndk:v6"
+  MINGW_IMAGE: "registry.gitlab.gnome.org/gnome/glib/mingw:v5"
   MESON_TEST_TIMEOUT_MULTIPLIER: 2
   G_MESSAGES_DEBUG: all
   MESON_COMMON_OPTIONS_NO_WARNING: "--buildtype debug --wrap-mode=nodownload"
@@ -26,19 +26,29 @@ variables:
   except:
     - tags
 
-.build:
-  extends: .only-default
-  before_script:
-    - bash .gitlab-ci/show-execution-environment.sh
-    - cp -r $HOME/subprojects/* subprojects/
+# Some jobs run on CI runners which don’t have good isolation between CI jobs,
+# and don’t have much available resource. Limit those jobs to only ones on the
+# origin repository (GNOME/glib), rather than people’s forks. Code in the origin
+# repository can be trusted.
+.only-origin:
+  only:
+    - branches@GNOME/glib
+  except:
+    - tags
 
 # Some jobs take a long time and are unlikely to find failures (or will find
 # failures which are not merge-blockers to fix), so they’re executed on a weekly
 # schedule in order to save CI resources and speed up branch pipelines.
-.build-only-schedules:
-  extends: .build
+.only-schedules:
   only:
     - schedules
+  except:
+    - tags
+
+.build-linux:
+  before_script:
+    - bash .gitlab-ci/show-execution-environment.sh
+    - cp -r $HOME/subprojects/* subprojects/
 
 style-check-diff:
   extends: .only-default
@@ -60,7 +70,9 @@ check-todos:
     - .gitlab-ci/run-check-todos.sh
 
 fedora-x86_64:
-  extends: .build
+  extends:
+    - .build-linux
+    - .only-default
   image: $FEDORA_IMAGE
   stage: build
   needs: []
@@ -78,7 +90,6 @@ fedora-x86_64:
             --libdir=lib
             -Dsystemtap=true
             -Ddtrace=true
-            -Dfam=true
             -Dinstalled_tests=true
             -Dgtk_doc=true
             _build
@@ -109,7 +120,9 @@ fedora-x86_64:
       - "_coverage"
 
 debian-stable-x86_64:
-  extends: .build
+  extends:
+    - .build-linux
+    - .only-default
   image: $DEBIAN_IMAGE
   stage: build
   needs: []
@@ -139,7 +152,9 @@ debian-stable-x86_64:
       - "_build/${CI_JOB_NAME}-report.xml"
 
 installed-tests:
-  extends: .build-only-schedules
+  extends:
+    - .build-linux
+    - .only-schedules
   image: $FEDORA_IMAGE
   stage: build
   needs: []
@@ -148,7 +163,6 @@ installed-tests:
     - meson ${MESON_COMMON_OPTIONS}
             --werror
             --prefix=/usr --libdir=/usr/lib64
-            -Dfam=true
             -Dinstalled_tests=true
             -Ddefault_library=both
             -Ddtrace=false
@@ -158,24 +172,6 @@ installed-tests:
     # Remove old headers, possibly present in current installation
     - sudo rm -f /usr/include/glib-2.0/glib/gurifuncs.h
     - sudo chown -R `id -un`:`id -gn` _build/
-    # FIXME Install newer xdg-desktop-portal with
-    # GMemoryMonitor support, see:
-    # https://github.com/flatpak/xdg-desktop-portal/pull/365
-    - git clone --branch 1.6.0 --depth 1 --no-tags https://github.com/flatpak/xdg-desktop-portal.git
-    - cd xdg-desktop-portal
-    - ./autogen.sh --prefix=/usr --libdir=/usr/lib64 --disable-libportal --disable-dependency-tracking
-    - make
-    - sudo make install
-    - cd ..
-    # FIXME install newer gobject-introspection
-    # with GMemoryMonitor support, see:
-    # https://gitlab.gnome.org/GNOME/gobject-introspection/merge_requests/193
-    - git clone --single-branch --depth 1 --no-tags https://gitlab.gnome.org/GNOME/gobject-introspection.git
-    - cd gobject-introspection
-    - /usr/bin/meson _build --prefix=/usr --libdir=/usr/lib64
-    - ninja -C _build
-    - sudo ninja -C _build install
-    - cd ..
     # Work-around https://gitlab.gnome.org/GNOME/gnome-desktop-testing/merge_requests/2
     - mkdir -p _build/installed-tests-report/logs/
     - GLIB_TEST_COMPILATION=1 gnome-desktop-testing-runner
@@ -193,7 +189,9 @@ installed-tests:
       - "_build/installed-tests-report/"
 
 G_DISABLE_ASSERT:
-  extends: .build-only-schedules
+  extends:
+    - .build-linux
+    - .only-schedules
   image: $FEDORA_IMAGE
   stage: build
   needs: []
@@ -202,7 +200,6 @@ G_DISABLE_ASSERT:
             --werror
             -Dsystemtap=true
             -Ddtrace=true
-            -Dfam=true
             -Dinstalled_tests=true
             -Dglib_assert=false
             _build
@@ -220,7 +217,9 @@ G_DISABLE_ASSERT:
       - "_build/${CI_JOB_NAME}-report.xml"
 
 valgrind:
-  extends: .build-only-schedules
+  extends:
+    - .build-linux
+    - .only-schedules
   image: $FEDORA_IMAGE
   stage: analysis
   needs: []
@@ -231,7 +230,6 @@ valgrind:
             --werror
             -Dsystemtap=true
             -Ddtrace=true
-            -Dfam=true
             -Dinstalled_tests=true
             _build
     - ninja -C _build
@@ -253,8 +251,8 @@ valgrind:
       - "_build/glib/glibconfig.h"
       - "_build/meson-logs"
 
-.cross-template: &cross-template
-  extends: .build
+.cross-build-linux:
+  extends: .build-linux
   stage: build
   needs: []
   artifacts:
@@ -263,18 +261,10 @@ valgrind:
     paths:
       - "_build/meson-logs"
 
-cross-android_api21_arm64:
-  <<: *cross-template
-  image: $ANDROID_IMAGE
-  script:
-    # FIXME: add --werror
-    # We use -Diconv=auto to test that we successfully detect that iconv is not
-    # provided by android api 21, and detect the external iconv instead.
-    - meson ${MESON_COMMON_OPTIONS} --cross-file=/opt/cross_file_android_arm64_21.txt -Diconv=auto _build
-    - ninja -C _build
-
 cross-android_api28_arm64:
-  <<: *cross-template
+  extends:
+    - .cross-build-linux
+    - .only-default
   image: $ANDROID_IMAGE
   script:
     # FIXME: add --werror
@@ -282,7 +272,9 @@ cross-android_api28_arm64:
     - ninja -C _build
 
 cross-mingw64:
-  <<: *cross-template
+  extends:
+    - .cross-build-linux
+    - .only-default
   image: $MINGW_IMAGE
   script:
     # FIXME: Add --werror
@@ -332,7 +324,9 @@ vs2017-x64:
     - win32-ps
   needs: []
   script:
-    - .gitlab-ci/test-msvc.bat
+    # FIXME: These should use --wrap-mode=nodownload but the Windows CI machines
+    # aren’t currently set up for that.
+    - .gitlab-ci/test-msvc.bat ${MESON_COMMON_OPTIONS} --wrap-mode=default
   artifacts:
     reports:
       junit: "_build/${env:CI_JOB_NAME}-report.xml"
@@ -347,10 +341,31 @@ vs2017-x64:
       - _build/gthread/libgthread-2.0-0.dll
       - _build/gobject/libgobject-2.0-0.dll
 
-freebsd-12-x86_64:
+vs2017-x64-static:
+  extends: .only-default
   stage: build
-  only:
-    - branches@GNOME/glib
+  tags:
+    - win32-ps
+  needs: []
+  script:
+    # FIXME: These should use --wrap-mode=nodownload but the Windows CI machines
+    # aren’t currently set up for that.
+    - .gitlab-ci/test-msvc.bat ${MESON_COMMON_OPTIONS} --wrap-mode=default --default-library=static
+  artifacts:
+    reports:
+      junit: "_build/${env:CI_JOB_NAME}-report.xml"
+    name: "glib-${env:CI_JOB_NAME}-${env:CI_COMMIT_REF_NAME}"
+    when: always
+    paths:
+      - _build/meson-logs
+      - "_build/${env:CI_JOB_NAME}-report.xml"
+
+freebsd-12-x86_64:
+  # The FreeBSD 13 build is run on each commit, so the FreeBSD 12 build can be
+  # run less regularly to save CI resources. The chance of a regression on
+  # FreeBSD 12 and not FreeBSD 13 is tiny.
+  extends: .only-schedules
+  stage: build
   tags:
     # To run a FreeBSD builder, install gitlab-runner package and start both
     # gitlab-runner and dbus service because we need /var/lib/dbus/machine-id.
@@ -379,8 +394,6 @@ freebsd-12-x86_64:
     - meson ${MESON_COMMON_OPTIONS} --localstatedir=/var -Db_lundef=false -Diconv=external -Dxattr=false _build
     - ninja -C _build
     - bash -x ./.gitlab-ci/run-tests.sh
-  except:
-    - tags
   artifacts:
     reports:
       junit: "_build/${CI_JOB_NAME}-report.xml"
@@ -393,9 +406,8 @@ freebsd-12-x86_64:
       - "_build/${CI_JOB_NAME}-report.xml"
 
 freebsd-13-x86_64:
+  extends: .only-origin
   stage: build
-  only:
-    - branches@GNOME/glib
   tags:
     - freebsd-13
   needs: []
@@ -409,8 +421,6 @@ freebsd-13-x86_64:
     - meson ${MESON_COMMON_OPTIONS} --localstatedir=/var -Db_lundef=false -Diconv=external -Dxattr=false _build
     - ninja -C _build
     - bash -x ./.gitlab-ci/run-tests.sh
-  except:
-    - tags
   artifacts:
     reports:
       junit: "_build/${CI_JOB_NAME}-report.xml"
@@ -423,10 +433,8 @@ freebsd-13-x86_64:
       - "_build/${CI_JOB_NAME}-report.xml"
 
 macos:
-  extends: .only-default
+  extends: .only-origin
   stage: build
-  only:
-    - branches@GNOME/glib
   tags:
     - macos
   needs: []
@@ -446,8 +454,7 @@ macos:
             --werror
             _build
     - ninja -C _build
-    # FIXME: Multiple unit tests currently fails
-    - .gitlab-ci/run-tests.sh || true
+    - .gitlab-ci/run-tests.sh
   artifacts:
     reports:
       junit: "_build/${CI_JOB_NAME}-report.xml"
@@ -475,7 +482,9 @@ coverage:
   coverage: '/^\s+lines\.+:\s+([\d.]+\%)\s+/'
 
 scan-build:
-  extends: .build-only-schedules
+  extends:
+    - .build-linux
+    - .only-schedules
   image: $FEDORA_IMAGE
   stage: analysis
   needs: []
@@ -488,7 +497,6 @@ scan-build:
             --libdir=lib
             -Dsystemtap=true
             -Ddtrace=true
-            -Dfam=true
             -Dinstalled_tests=true
             _scan_build
     - ninja -C _scan_build scan-build
@@ -499,7 +507,9 @@ scan-build:
       - "_scan_build/meson-logs/scanbuild"
 
 coverity:
-  extends: .build-only-schedules
+  extends:
+    - .build-linux
+    - .only-schedules
   image: $COVERITY_IMAGE
   stage: analysis
   needs: []
@@ -515,7 +525,6 @@ coverity:
             --libdir=lib
             -Dsystemtap=true
             -Ddtrace=true
-            -Dfam=true
             -Dinstalled_tests=true
             _coverity_build
     - $HOME/cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja -C _coverity_build

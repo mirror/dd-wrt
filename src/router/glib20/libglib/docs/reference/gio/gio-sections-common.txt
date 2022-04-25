@@ -149,6 +149,8 @@ g_file_copy
 g_file_copy_async
 g_file_copy_finish
 g_file_move
+g_file_move_async
+g_file_move_finish
 g_file_make_directory
 g_file_make_directory_async
 g_file_make_directory_finish
@@ -3715,7 +3717,9 @@ g_tls_backend_get_type
 <TITLE>GTlsCertificate</TITLE>
 GTlsCertificate
 g_tls_certificate_new_from_pem
+g_tls_certificate_new_from_pkcs12
 g_tls_certificate_new_from_file
+g_tls_certificate_new_from_file_with_password
 g_tls_certificate_new_from_files
 g_tls_certificate_new_from_pkcs11_uris
 g_tls_certificate_list_new_from_file
@@ -4203,6 +4207,36 @@ G_IS_DBUS_OBJECT_MANAGER_SERVER_CLASS
 G_DBUS_OBJECT_MANAGER_SERVER_GET_CLASS
 <SUBSECTION Private>
 GDBusObjectManagerServerPrivate
+</SECTION>
+
+<SECTION>
+<FILE>gdebugcontroller</FILE>
+<TITLE>GDebugController</TITLE>
+GDebugController
+GDebugControllerInterface
+G_DEBUG_CONTROLLER_EXTENSION_POINT_NAME
+g_debug_controller_get_debug_enabled
+g_debug_controller_set_debug_enabled
+<SUBSECTION Standard>
+g_debug_controller_get_type
+G_TYPE_DEBUG_CONTROLLER
+G_DEBUG_CONTROLLER
+G_IS_DEBUG_CONTROLLER
+G_DEBUG_CONTROLLER_GET_INTERFACE
+</SECTION>
+
+<SECTION>
+<FILE>gdebugcontrollerdbus</FILE>
+<TITLE>GDebugControllerDBus</TITLE>
+GDebugControllerDBus
+g_debug_controller_dbus_new
+g_debug_controller_dbus_stop
+<SUBSECTION Standard>
+g_debug_controller_dbus_get_type
+G_TYPE_DEBUG_CONTROLLER_DBUS
+G_DEBUG_CONTROLLER_DBUS
+G_IS_DEBUG_CONTROLLER_DBUS
+G_DEBUG_CONTROLLER_DBUS_GET_CLASS
 </SECTION>
 
 <SECTION>

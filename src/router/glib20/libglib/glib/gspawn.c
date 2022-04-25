@@ -319,7 +319,7 @@ read_data (GString *str,
  * @working_directory: (type filename) (nullable): child's current working
  *     directory, or %NULL to inherit parent's
  * @argv: (array zero-terminated=1) (element-type filename):
- *     child's argument vector
+ *     child's argument vector, which must be non-empty and %NULL-terminated
  * @envp: (array zero-terminated=1) (element-type filename) (nullable):
  *     child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
@@ -378,6 +378,7 @@ g_spawn_sync (const gchar          *working_directory,
   gint status;
   
   g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv[0] != NULL, FALSE);
   g_return_val_if_fail (!(flags & G_SPAWN_DO_NOT_REAP_CHILD), FALSE);
   g_return_val_if_fail (standard_output == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
@@ -578,7 +579,7 @@ g_spawn_sync (const gchar          *working_directory,
  * @working_directory: (type filename) (nullable): child's current working
  *     directory, or %NULL to inherit parent's, in the GLib file name encoding
  * @argv: (array zero-terminated=1) (element-type filename): child's argument
- *     vector, in the GLib file name encoding
+ *     vector, in the GLib file name encoding; it must be non-empty and %NULL-terminated
  * @envp: (array zero-terminated=1) (element-type filename) (nullable):
  *     child's environment, or %NULL to inherit parent's, in the GLib file
  *     name encoding
@@ -610,6 +611,7 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
                           GError              **error)
 {
   g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv[0] != NULL, FALSE);
   g_return_val_if_fail (standard_output == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (standard_error == NULL ||
@@ -646,7 +648,7 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
  * @working_directory: (type filename) (nullable): child's current working
  *     directory, or %NULL to inherit parent's, in the GLib file name encoding
  * @argv: (array zero-terminated=1) (element-type filename): child's argument
- *     vector, in the GLib file name encoding
+ *     vector, in the GLib file name encoding; it must be non-empty and %NULL-terminated
  * @envp: (array zero-terminated=1) (element-type filename) (nullable):
  *     child's environment, or %NULL to inherit parent's, in the GLib file
  *     name encoding
@@ -772,6 +774,8 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
  * any target FDs which equal @stdin_fd, @stdout_fd or @stderr_fd will overwrite
  * them in the spawned process.
  *
+ * @source_fds is supported on Windows since 2.72.
+ *
  * %G_SPAWN_FILE_AND_ARGV_ZERO means that the first element of @argv is
  * the file to execute, while the remaining elements are the actual
  * argument vector to pass to the file. Normally g_spawn_async_with_pipes()
@@ -824,7 +828,7 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
  * even if they occur in the child (for example if the executable in
  * `@argv[0]` is not found). Typically the `message` field of returned
  * errors should be displayed to users. Possible errors are those from
- * the #G_SPAWN_ERROR domain.
+ * the %G_SPAWN_ERROR domain.
  *
  * If an error occurs, @child_pid, @stdin_pipe_out, @stdout_pipe_out,
  * and @stderr_pipe_out will not be filled with valid values.
@@ -878,6 +882,7 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
                                   GError               **error)
 {
   g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv[0] != NULL, FALSE);
   g_return_val_if_fail (stdout_pipe_out == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (stderr_pipe_out == NULL ||
@@ -920,7 +925,8 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
 /**
  * g_spawn_async_with_fds:
  * @working_directory: (type filename) (nullable): child's current working directory, or %NULL to inherit parent's, in the GLib file name encoding
- * @argv: (array zero-terminated=1): child's argument vector, in the GLib file name encoding
+ * @argv: (array zero-terminated=1): child's argument vector, in the GLib file name encoding;
+ *   it must be non-empty and %NULL-terminated
  * @envp: (array zero-terminated=1) (nullable): child's environment, or %NULL to inherit parent's, in the GLib file name encoding
  * @flags: flags from #GSpawnFlags
  * @child_setup: (scope async) (nullable): function to run in the child just before exec()
@@ -954,6 +960,7 @@ g_spawn_async_with_fds (const gchar          *working_directory,
                         GError              **error)
 {
   g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv[0] != NULL, FALSE);
   g_return_val_if_fail (stdout_fd < 0 ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (stderr_fd < 0 ||
@@ -1037,6 +1044,7 @@ g_spawn_command_line_sync (const gchar  *command_line,
 
   g_return_val_if_fail (command_line != NULL, FALSE);
   
+  /* This will return a runtime error if @command_line is the empty string. */
   if (!g_shell_parse_argv (command_line,
                            NULL, &argv,
                            error))
@@ -1084,6 +1092,7 @@ g_spawn_command_line_async (const gchar *command_line,
 
   g_return_val_if_fail (command_line != NULL, FALSE);
 
+  /* This will return a runtime error if @command_line is the empty string. */
   if (!g_shell_parse_argv (command_line,
                            NULL, &argv,
                            error))
@@ -1520,7 +1529,7 @@ safe_fdwalk (int (*cb)(void *data, int fd), void *data)
 
 /* This function is called between fork() and exec() and hence must be
  * async-signal-safe (see signal-safety(7)). */
-static void
+static int
 safe_fdwalk_set_cloexec (int lowfd)
 {
 #if defined(HAVE_CLOSE_RANGE) && defined(CLOSE_RANGE_CLOEXEC)
@@ -1534,15 +1543,18 @@ safe_fdwalk_set_cloexec (int lowfd)
    * Handle ENOSYS in case it’s supported in libc but not the kernel; if so,
    * fall back to safe_fdwalk(). Handle EINVAL in case `CLOSE_RANGE_CLOEXEC`
    * is not supported. */
-  if (close_range (lowfd, G_MAXUINT, CLOSE_RANGE_CLOEXEC) != 0 &&
-      (errno == ENOSYS || errno == EINVAL))
+  int ret = close_range (lowfd, G_MAXUINT, CLOSE_RANGE_CLOEXEC);
+  if (ret == 0 || !(errno == ENOSYS || errno == EINVAL))
+    return ret;
 #endif  /* HAVE_CLOSE_RANGE */
-  (void) safe_fdwalk (set_cloexec, GINT_TO_POINTER (lowfd));
+  return safe_fdwalk (set_cloexec, GINT_TO_POINTER (lowfd));
 }
 
 /* This function is called between fork() and exec() and hence must be
- * async-signal-safe (see signal-safety(7)). */
-static void
+ * async-signal-safe (see signal-safety(7)).
+ *
+ * On failure, `-1` will be returned and errno will be set. */
+static int
 safe_closefrom (int lowfd)
 {
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || \
@@ -1560,6 +1572,7 @@ safe_closefrom (int lowfd)
    * On such systems, F_CLOSEFROM is defined.
    */
   (void) closefrom (lowfd);
+  return 0;
 #elif defined(__DragonFly__)
   /* It is unclear whether closefrom function included in DragonFlyBSD libc_r
    * is safe to use because it calls a lot of library functions. It is also
@@ -1567,12 +1580,13 @@ safe_closefrom (int lowfd)
    * direct system call here ourselves to avoid possible issues.
    */
   (void) syscall (SYS_closefrom, lowfd);
+  return 0;
 #elif defined(F_CLOSEM)
   /* NetBSD and AIX have a special fcntl command which does the same thing as
    * closefrom. NetBSD also includes closefrom function, which seems to be a
    * simple wrapper of the fcntl command.
    */
-  (void) fcntl (lowfd, F_CLOSEM);
+  return fcntl (lowfd, F_CLOSEM);
 #else
 
 #if defined(HAVE_CLOSE_RANGE)
@@ -1582,9 +1596,11 @@ safe_closefrom (int lowfd)
    *
    * Handle ENOSYS in case it’s supported in libc but not the kernel; if so,
    * fall back to safe_fdwalk(). */
-  if (close_range (lowfd, G_MAXUINT, 0) != 0 && errno == ENOSYS)
+  int ret = close_range (lowfd, G_MAXUINT, 0);
+  if (ret == 0 || errno != ENOSYS)
+    return ret;
 #endif  /* HAVE_CLOSE_RANGE */
-  (void) safe_fdwalk (close_func, GINT_TO_POINTER (lowfd));
+  return safe_fdwalk (close_func, GINT_TO_POINTER (lowfd));
 #endif
 }
 
@@ -1622,11 +1638,14 @@ enum
   CHILD_EXEC_FAILED,
   CHILD_OPEN_FAILED,
   CHILD_DUP2_FAILED,
-  CHILD_FORK_FAILED
+  CHILD_FORK_FAILED,
+  CHILD_CLOSE_FAILED,
 };
 
 /* This function is called between fork() and exec() and hence must be
- * async-signal-safe (see signal-safety(7)) until it calls exec(). */
+ * async-signal-safe (see signal-safety(7)) until it calls exec().
+ *
+ * All callers must guarantee that @argv and @argv[0] are non-NULL. */
 static void
 do_exec (gint                  child_err_report_fd,
          gint                  stdin_fd,
@@ -1738,12 +1757,14 @@ do_exec (gint                  child_err_report_fd,
           if (safe_dup2 (child_err_report_fd, 3) < 0)
             write_err_and_exit (child_err_report_fd, CHILD_DUP2_FAILED);
           set_cloexec (GINT_TO_POINTER (0), 3);
-          safe_closefrom (4);
+          if (safe_closefrom (4) < 0)
+            write_err_and_exit (child_err_report_fd, CHILD_CLOSE_FAILED);
           child_err_report_fd = 3;
         }
       else
         {
-          safe_fdwalk_set_cloexec (3);
+          if (safe_fdwalk_set_cloexec (3) < 0)
+            write_err_and_exit (child_err_report_fd, CHILD_CLOSE_FAILED);
         }
     }
   else
@@ -1913,6 +1934,8 @@ do_posix_spawn (const gchar * const *argv,
   sigset_t mask;
   gsize i;
   int r;
+
+  g_assert (argv != NULL && argv[0] != NULL);
 
   if (*argv[0] == '\0')
     {
@@ -2164,6 +2187,7 @@ fork_exec (gboolean              intermediate_child,
   gint n_child_close_fds = 0;
   gint *source_fds_copy = NULL;
 
+  g_assert (argv != NULL && argv[0] != NULL);
   g_assert (stdin_pipe_out == NULL || stdin_fd < 0);
   g_assert (stdout_pipe_out == NULL || stdout_fd < 0);
   g_assert (stderr_pipe_out == NULL || stderr_fd < 0);
@@ -2543,7 +2567,15 @@ fork_exec (gboolean              intermediate_child,
                            _("Failed to fork child process (%s)"),
                            g_strerror (buf[1]));
               break;
-              
+
+            case CHILD_CLOSE_FAILED:
+              g_set_error (error,
+                           G_SPAWN_ERROR,
+                           G_SPAWN_ERROR_FAILED,
+                           _("Failed to close file descriptor for child process (%s)"),
+                           g_strerror (buf[1]));
+              break;
+
             default:
               g_set_error (error,
                            G_SPAWN_ERROR,
@@ -2714,7 +2746,7 @@ g_execute (const gchar  *file,
            gchar        *search_path_buffer,
            gsize         search_path_buffer_len)
 {
-  if (*file == '\0')
+  if (file == NULL || *file == '\0')
     {
       /* We check the simple case first. */
       errno = ENOENT;

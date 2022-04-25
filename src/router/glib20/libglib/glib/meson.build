@@ -1,4 +1,4 @@
-configure_file(input : 'glibconfig.h.in', output : 'glibconfig.h',
+glibconfig_h = configure_file(input : 'glibconfig.h.in', output : 'glibconfig.h',
   install_dir : join_paths(get_option('libdir'), 'glib-2.0/include'),
   configuration : glibconfig_conf)
 
@@ -119,6 +119,10 @@ glib_headers = files(
   'glib-object.h',
 )
 install_headers(glib_headers, subdir : 'glib-2.0')
+
+# Expose as variable to be used by gobject-introspection
+# when it includes GLib as a subproject
+glib_unix_h = files('glib-unix.h')
 
 glib_deprecated_headers = files(
   'deprecated/gallocator.h',
@@ -310,14 +314,18 @@ glib_sources = files(
   'gprintf.c',
 )
 
+platform_deps = []
+
 if host_system == 'windows'
-  glib_win_rc = configure_file(
-    input: 'glib.rc.in',
-    output: 'glib.rc',
-    configuration: glibconfig_conf,
-  )
-  glib_win_res = windows.compile_resources(glib_win_rc)
-  glib_sources += [glib_win_res]
+  if get_option('default_library') == 'shared'
+    glib_win_rc = configure_file(
+      input: 'glib.rc.in',
+      output: 'glib.rc',
+      configuration: glibconfig_conf,
+    )
+    glib_win_res = windows.compile_resources(glib_win_rc)
+    glib_sources += [glib_win_res]
+  endif
   glib_sources += files('gwin32.c', 'gspawn-win32.c', 'giowin32.c')
   platform_deps = [winsock2, cc.find_library('winmm')]
   if cc.get_id() == 'msvc' or cc.get_id() == 'clang-cl'
@@ -330,6 +338,13 @@ endif
 
 if glib_have_cocoa
   glib_sources += files('gosxutils.m')
+  framework_dep = dependency('appleframeworks', modules : ['Foundation', 'CoreFoundation', 'AppKit'])
+  platform_deps += [framework_dep]
+endif
+
+if glib_have_carbon
+  framework_dep = dependency('appleframeworks', modules : 'Carbon')
+  platform_deps += [framework_dep]
 endif
 
 glib_sources += files('gthread-@0@.c'.format(threads_implementation))
@@ -373,7 +388,7 @@ libglib_dep = declare_dependency(
 
 pkg.generate(libglib,
   libraries : [libintl_deps],
-  libraries_private : [osx_ldflags, win32_ldflags],
+  libraries_private : [win32_ldflags],
   subdirs : ['glib-2.0'],
   extra_cflags : ['-I${libdir}/glib-2.0/include'] + win32_cflags,
   variables : ['bindir=' + join_paths('${prefix}', get_option('bindir')),
@@ -436,6 +451,13 @@ configure_file(
 )
 
 install_data('glib_gdb.py', install_dir : join_paths(glib_pkgdatadir, 'gdb'))
+
+# This is needed to make gdb find glib_gdb.py
+if meson.version().version_compare('>=0.58')
+  env = environment()
+  env.prepend('PYTHONPATH', meson.current_source_dir())
+  meson.add_devenv(env)
+endif
 
 gdb_conf = configuration_data()
 gdb_conf.set('datadir', glib_datadir)

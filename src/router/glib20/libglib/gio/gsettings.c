@@ -248,7 +248,7 @@
  * looks for a boolean property with the name "sensitivity" and
  * automatically binds it to the writability of the bound setting.
  * If this 'magic' gets in the way, it can be suppressed with the
- * #G_SETTINGS_BIND_NO_SENSITIVITY flag.
+ * %G_SETTINGS_BIND_NO_SENSITIVITY flag.
  *
  * ## Relocatable schemas # {#gsettings-relocatable}
  *
@@ -406,12 +406,12 @@ g_settings_real_writable_change_event (GSettings *settings,
 
   for (i = 0; i < n_keys; i++)
     {
-      const gchar *key = g_quark_to_string (keys[i]);
+      const gchar *key_name = g_quark_to_string (keys[i]);
 
-      if (g_str_has_suffix (key, "/"))
+      if (g_str_has_suffix (key_name, "/"))
         continue;
 
-      g_signal_emit (settings, g_settings_signals[SIGNAL_WRITABLE_CHANGED], keys[i], key);
+      g_signal_emit (settings, g_settings_signals[SIGNAL_WRITABLE_CHANGED], keys[i], key_name);
     }
 
   return FALSE;

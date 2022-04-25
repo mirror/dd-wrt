@@ -45,6 +45,8 @@
 #include "gnotificationbackend.h"
 #include "ginitable.h"
 #include "gnetworkmonitor.h"
+#include "gdebugcontroller.h"
+#include "gdebugcontrollerdbus.h"
 #include "gmemorymonitor.h"
 #include "gmemorymonitorportal.h"
 #include "gmemorymonitordbus.h"
@@ -67,6 +69,10 @@
 #ifdef HAVE_COCOA
 #include <AvailabilityMacros.h>
 #endif
+
+#define __GLIB_H_INSIDE__
+#include "gconstructor.h"
+#undef __GLIB_H_INSIDE__
 
 /**
  * SECTION:giomodule
@@ -1078,8 +1084,10 @@ extern GType _g_network_monitor_netlink_get_type (void);
 extern GType _g_network_monitor_nm_get_type (void);
 #endif
 
+extern GType g_debug_controller_dbus_get_type (void);
 extern GType g_memory_monitor_dbus_get_type (void);
 extern GType g_memory_monitor_portal_get_type (void);
+extern GType g_memory_monitor_win32_get_type (void);
 extern GType g_power_profile_monitor_dbus_get_type (void);
 
 #ifdef G_OS_UNIX
@@ -1102,7 +1110,7 @@ extern GType _g_win32_network_monitor_get_type (void);
 
 static HMODULE gio_dll = NULL;
 
-#ifdef DLL_EXPORT
+#ifndef GLIB_STATIC_COMPILATION
 
 BOOL WINAPI DllMain (HINSTANCE hinstDLL,
                      DWORD     fdwReason,
@@ -1122,7 +1130,39 @@ DllMain (HINSTANCE hinstDLL,
   return TRUE;
 }
 
+#elif defined(G_HAS_CONSTRUCTORS) /* && G_PLATFORM_WIN32 && GLIB_STATIC_COMPILATION */
+extern void glib_win32_init (void);
+extern void gobject_win32_init (void);
+
+#ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(giomodule_init_ctor)
 #endif
+
+G_DEFINE_CONSTRUCTOR (giomodule_init_ctor)
+
+static void
+giomodule_init_ctor (void)
+{
+  /* When built dynamically, module initialization is done through DllMain
+   * function which is called when the dynamic library is loaded by the glib
+   * module AFTER loading gobject. So, in dynamic configuration glib and
+   * gobject are always initialized BEFORE gio.
+   *
+   * When built statically, initialization mechanism relies on hooking
+   * functions to the CRT section directly at compilation time. As we don't
+   * control how each compilation unit will be built and in which order, we
+   * obtain the same kind of issue as the "static initialization order fiasco".
+   * In this case, we must ensure explicitly that glib and gobject are always
+   * well initialized BEFORE gio.
+   */
+  glib_win32_init ();
+  gobject_win32_init ();
+  gio_win32_appinfo_init (FALSE);
+}
+
+#else /* G_PLATFORM_WIN32 && GLIB_STATIC_COMPILATION && !G_HAS_CONSTRUCTORS */
+#error Your platform/compiler is missing constructor support
+#endif /* GLIB_STATIC_COMPILATION */
 
 void *
 _g_io_win32_get_module (void)
@@ -1135,7 +1175,7 @@ _g_io_win32_get_module (void)
   return gio_dll;
 }
 
-#endif
+#endif /* G_PLATFORM_WIN32 */
 
 void
 _g_io_modules_ensure_extension_points_registered (void)
@@ -1188,6 +1228,9 @@ _g_io_modules_ensure_extension_points_registered (void)
 
       ep = g_io_extension_point_register (G_NOTIFICATION_BACKEND_EXTENSION_POINT_NAME);
       g_io_extension_point_set_required_type (ep, G_TYPE_NOTIFICATION_BACKEND);
+
+      ep = g_io_extension_point_register (G_DEBUG_CONTROLLER_EXTENSION_POINT_NAME);
+      g_io_extension_point_set_required_type (ep, G_TYPE_DEBUG_CONTROLLER);
 
       ep = g_io_extension_point_register (G_MEMORY_MONITOR_EXTENSION_POINT_NAME);
       g_io_extension_point_set_required_type (ep, G_TYPE_MEMORY_MONITOR);
@@ -1300,6 +1343,7 @@ _g_io_modules_ensure_loaded (void)
 #endif
 #ifdef G_OS_UNIX
       g_type_ensure (_g_unix_volume_monitor_get_type ());
+      g_type_ensure (g_debug_controller_dbus_get_type ());
       g_type_ensure (g_fdo_notification_backend_get_type ());
       g_type_ensure (g_gtk_notification_backend_get_type ());
       g_type_ensure (g_portal_notification_backend_get_type ());
@@ -1315,6 +1359,7 @@ _g_io_modules_ensure_loaded (void)
 #ifdef G_OS_WIN32
       g_type_ensure (g_win32_notification_backend_get_type ());
       g_type_ensure (_g_winhttp_vfs_get_type ());
+      g_type_ensure (g_memory_monitor_win32_get_type ());
 #endif
       g_type_ensure (_g_local_vfs_get_type ());
       g_type_ensure (_g_dummy_proxy_resolver_get_type ());
@@ -1429,7 +1474,7 @@ g_io_extension_point_set_required_type (GIOExtensionPoint *extension_point,
  * Gets the required type for @extension_point.
  *
  * Returns: the #GType that all implementations must have, 
- *     or #G_TYPE_INVALID if the extension point has no required type
+ *   or %G_TYPE_INVALID if the extension point has no required type
  */
 GType
 g_io_extension_point_get_required_type (GIOExtensionPoint *extension_point)

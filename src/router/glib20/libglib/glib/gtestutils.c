@@ -35,6 +35,7 @@
 #include <sys/resource.h>
 #endif
 #ifdef G_OS_WIN32
+#include <crtdbg.h>
 #include <io.h>
 #include <windows.h>
 #endif
@@ -889,10 +890,10 @@ static gboolean    test_debug_log = FALSE;
 static gboolean    test_tap_log = TRUE;  /* default to TAP as of GLib 2.62; see #1619; the non-TAP output mode is deprecated */
 static gboolean    test_nonfatal_assertions = FALSE;
 static DestroyEntry *test_destroy_queue = NULL;
-static char       *test_argv0 = NULL;
-static char       *test_argv0_dirname;
-static const char *test_disted_files_dir;
-static const char *test_built_files_dir;
+static const char *test_argv0 = NULL;           /* (nullable), points into global argv */
+static char       *test_argv0_dirname = NULL;   /* owned by GLib */
+static const char *test_disted_files_dir;       /* points into test_argv0_dirname or an environment variable */
+static const char *test_built_files_dir;        /* points into test_argv0_dirname or an environment variable */
 static char       *test_initial_cwd = NULL;
 static gboolean    test_in_forked_child = FALSE;
 static gboolean    test_in_subprocess = FALSE;
@@ -1137,7 +1138,7 @@ parse_args (gint    *argc_p,
   gchar **argv = *argv_p;
   guint i, e;
 
-  test_argv0 = argv[0];
+  test_argv0 = argv[0];  /* will be NULL iff argc == 0 */
   test_initial_cwd = g_get_current_dir ();
 
   /* parse known args */
@@ -1381,8 +1382,8 @@ parse_args (gint    *argc_p,
   test_paths = g_slist_reverse (test_paths);
 
   /* collapse argv */
-  e = 1;
-  for (i = 1; i < argc; i++)
+  e = 0;
+  for (i = 0; i < argc; i++)
     if (argv[i])
       {
         argv[e++] = argv[i];
@@ -1433,7 +1434,7 @@ test_do_isolate_dirs (GError **error)
 {
   gchar *subdir = NULL;
   gchar *home_dir = NULL, *cache_dir = NULL, *config_dir = NULL;
-  gchar *data_dir = NULL, *runtime_dir = NULL;
+  gchar *state_dir = NULL, *data_dir = NULL, *runtime_dir = NULL;
   gchar *config_dirs[3];
   gchar *data_dirs[3];
 
@@ -1470,6 +1471,7 @@ test_do_isolate_dirs (GError **error)
   cache_dir = g_build_filename (subdir, "cache", NULL);
   config_dir = g_build_filename (subdir, "config", NULL);
   data_dir = g_build_filename (subdir, "data", NULL);
+  state_dir = g_build_filename (subdir, "state", NULL);
 
   config_dirs[0] = g_build_filename (subdir, "system-config1", NULL);
   config_dirs[1] = g_build_filename (subdir, "system-config2", NULL);
@@ -1487,10 +1489,12 @@ test_do_isolate_dirs (GError **error)
                    "XDG_CONFIG_HOME", config_dir,
                    "XDG_DATA_DIRS", data_dirs,
                    "XDG_DATA_HOME", data_dir,
+                   "XDG_STATE_HOME", state_dir,
                    "XDG_RUNTIME_DIR", runtime_dir,
                    NULL);
 
   g_free (runtime_dir);
+  g_free (state_dir);
   g_free (data_dir);
   g_free (config_dir);
   g_free (cache_dir);
@@ -1595,6 +1599,25 @@ void
 
 #ifdef _GLIB_ADDRESS_SANITIZER
   mutable_test_config_vars.test_undefined = FALSE;
+#endif
+
+#ifdef G_OS_WIN32
+  // don't open a window for errors (like the "abort() was called one")
+  _CrtSetReportMode (_CRT_ERROR, _CRTDBG_MODE_FILE);
+  _CrtSetReportFile (_CRT_ERROR, _CRTDBG_FILE_STDERR);
+  // while gtest tests tend to use g_assert and friends
+  // if they do use the C standard assert macro we want to
+  // output a message to stderr, not open a popup window
+  _CrtSetReportMode (_CRT_ASSERT, _CRTDBG_MODE_FILE);
+  _CrtSetReportFile (_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+  // in release mode abort() will pop up a windows error
+  // reporting dialog, let's prevent that. Only msvcrxx and
+  // the UCRT have this function, but there's no great way to
+  // detect msvcrxx (that I know of) so only call this when using
+  // the UCRT
+#ifdef _UCRT
+  _set_abort_behavior (0, _CALL_REPORTFAULT);
+#endif
 #endif
 
   va_start (args, argv);
@@ -1709,7 +1732,7 @@ void
   g_log_set_default_handler (gtest_default_log_handler, NULL);
   g_test_log (G_TEST_LOG_START_BINARY, g_get_prgname(), test_run_seedstr, 0, NULL);
 
-  test_argv0_dirname = g_path_get_dirname (test_argv0);
+  test_argv0_dirname = (test_argv0 != NULL) ? g_path_get_dirname (test_argv0) : g_strdup (".");
 
   /* Make sure we get the real dirname that the test was run from */
   if (g_str_has_suffix (test_argv0_dirname, "/.libs"))
@@ -1900,9 +1923,10 @@ g_test_timer_start (void)
 /**
  * g_test_timer_elapsed:
  *
- * Get the time since the last start of the timer with g_test_timer_start().
+ * Get the number of seconds since the last start of the timer with
+ * g_test_timer_start().
  *
- * Returns: the time since the last start of the timer, as a double
+ * Returns: the time since the last start of the timer in seconds, as a double
  *
  * Since: 2.16
  */
@@ -2196,6 +2220,13 @@ g_test_run (void)
   int ret;
   GTestSuite *suite;
 
+  if (atexit (test_cleanup) != 0)
+    {
+      int errsv = errno;
+      g_error ("Unable to register test cleanup to be run at exit: %s",
+               g_strerror (errsv));
+    }
+
   suite = g_test_get_root ();
   if (g_test_run_suite (suite) != 0)
     {
@@ -2232,7 +2263,6 @@ g_test_run (void)
 
 out:
   g_test_suite_free (suite);
-  test_cleanup ();
   return ret;
 }
 
@@ -3798,8 +3828,11 @@ g_test_trap_subprocess (const char           *test_path,
   test_trap_clear ();
   test_trap_last_subprocess = g_strdup (test_path);
 
+  if (test_argv0 == NULL)
+    g_error ("g_test_trap_subprocess() requires argv0 to be passed to g_test_init()");
+
   argv = g_ptr_array_new ();
-  g_ptr_array_add (argv, test_argv0);
+  g_ptr_array_add (argv, (char *) test_argv0);
   g_ptr_array_add (argv, "-q");
   g_ptr_array_add (argv, "-p");
   g_ptr_array_add (argv, (char *)test_path);
@@ -4371,9 +4404,9 @@ g_test_get_dir (GTestFileType file_type)
  * Gets the pathname to a data file that is required for a test.
  *
  * This is the same as g_test_build_filename() with two differences.
- * The first difference is that must only use this function from within
+ * The first difference is that you must only use this function from within
  * a testcase function.  The second difference is that you need not free
- * the return value -- it will be automatically freed when the testcase
+ * the return value — it will be automatically freed when the testcase
  * finishes running.
  *
  * It is safe to use this function from a thread inside of a testcase

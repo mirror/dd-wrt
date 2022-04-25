@@ -354,7 +354,7 @@ close_converter (GIConv cd)
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
  *                 stored will be the byte offset after the last valid
  *                 input sequence.
  * @bytes_written: (out) (optional): the number of bytes stored in
@@ -525,7 +525,7 @@ g_convert_with_iconv (const gchar *str,
  *                 Even if the conversion was successful, this may be 
  *                 less than @len if there were partial characters
  *                 at the end of the input. If the error
- *                 #G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
+ *                 %G_CONVERT_ERROR_ILLEGAL_SEQUENCE occurs, the value
  *                 stored will be the byte offset after the last valid
  *                 input sequence.
  * @bytes_written: (out) (optional): the number of bytes stored in
@@ -1420,7 +1420,7 @@ static const guchar acceptable[96] = {
   0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x20,0x20,0x20,0x3F,0x20
 };
 
-static const gchar hex[16] = "0123456789ABCDEF";
+static const gchar hex[] = "0123456789ABCDEF";
 
 /* Note: This escape function works on file: URIs, but if you want to
  * escape something else, please read RFC-2396 */

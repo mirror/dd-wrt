@@ -42,14 +42,20 @@ giotypefuncs_inc = custom_target(
 
 #  Test programs buildable on all platforms
 gio_tests = {
-  'appmonitor' : {},
+  'appmonitor' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'async-close-output-stream' : {},
   'async-splice-output-stream' : {},
   'buffered-input-stream' : {},
   'buffered-output-stream' : {},
   'cancellable' : {},
   'contexts' : {},
-  'contenttype' : {},
+  'contenttype' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392 / https://gitlab.gnome.org/GNOME/glib/-/issues/1251
+    'should_fail' : host_system == 'darwin',
+  },
   'converter-stream' : {},
   'credentials' : {},
   'cxx' : {
@@ -57,13 +63,21 @@ gio_tests = {
   },
   'data-input-stream' : {},
   'data-output-stream' : {},
-  'defaultvalue' : {'extra_sources' : [giotypefuncs_inc]},
   'fileattributematcher' : {},
   'filter-streams' : {},
-  'giomodule' : {},
-  'gsubprocess' : {},
+  'giomodule' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
+  'gsubprocess' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'g-file' : {},
-  'g-file-info' : {},
+  'g-file-info' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'g-icon' : {},
   'gdbus-addresses' : {},
   'gdbus-message' : {},
@@ -84,7 +98,10 @@ gio_tests = {
   'simple-async-result' : {},
   'simple-proxy' : {},
   'sleepy-stream' : {},
-  'socket' : {},
+  'socket' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'socket-listener' : {},
   'socket-service' : {},
   'srvtarget' : {},
@@ -98,7 +115,10 @@ gio_tests = {
   'tls-interaction' : {'extra_sources' : ['gtesttlsbackend.c']},
   'tls-database' : {'extra_sources' : ['gtesttlsbackend.c']},
   'tls-bindings' : {'extra_sources' : ['gtesttlsbackend.c']},
-  'gdbus-address-get-session' : {},
+  'gdbus-address-get-session' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'win32-appinfo' : {},
 }
 
@@ -151,16 +171,27 @@ else
   }
 endif
 
+have_dbus_daemon = find_program('dbus-daemon', required : false).found()
+if have_dbus_daemon
+  gio_tests += {
+    'debugcontroller' : {},
+    'defaultvalue' : {'extra_sources' : [giotypefuncs_inc]},
+  }
+endif
+
 #  Test programs buildable on UNIX only
 if host_machine.system() != 'windows'
   gio_tests += {
     'file' : {},
     'gdbus-peer' : {
       'dependencies' : [libgdbus_example_objectmanager_dep],
-      'install_rpath' : installed_tests_execdir
+      'install_rpath' : installed_tests_execdir,
+      # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+      'should_fail' : host_system == 'darwin',
     },
     'gdbus-peer-object-manager' : {},
     'live-g-file' : {},
+    'resolver-parsing' : {'dependencies' : [network_libs]},
     'socket-address' : {},
     'stream-rw_all' : {},
     'unix-fd' : {},
@@ -222,8 +253,6 @@ if host_machine.system() != 'windows'
     }
   endif
 
-  #  Test programs that need to bring up a session bus (requires dbus-daemon)
-  have_dbus_daemon = find_program('dbus-daemon', required : false).found()
   if have_dbus_daemon
     annotate_args = [
       '--annotate', 'org.project.Bar', 'Key1', 'Value1',
@@ -309,6 +338,7 @@ if host_machine.system() != 'windows'
         'suite' : ['slow'],
       },
       'gdbus-introspection' : {'extra_sources' : extra_sources},
+      'gdbus-method-invocation' : {'extra_sources' : extra_sources},
       'gdbus-names' : {'extra_sources' : extra_sources},
       'gdbus-proxy' : {'extra_sources' : extra_sources},
       'gdbus-proxy-threads' : {
@@ -575,12 +605,16 @@ endif
 
 if not meson.is_cross_build() or meson.has_exe_wrapper()
 
+  compiler_type = '--compiler=@0@'.format(cc.get_id())
+
   plugin_resources_c = custom_target('plugin-resources.c',
     input : 'test4.gresource.xml',
     output : 'plugin-resources.c',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
+               '--internal',
                '--generate-source',
                '--c-name', '_g_plugin',
                '@INPUT@'])
@@ -603,9 +637,11 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     input : 'test.gresource.xml',
     output : 'test.gresource',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
                '--sourcedir=' + meson.current_build_dir(),
+               '--internal',
                '@INPUT@'],
     install_dir : installed_tests_execdir,
     install : installed_tests_enabled)
@@ -614,8 +650,10 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     input : 'test3.gresource.xml',
     output : 'test_resources2.c',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
+               '--internal',
                '--generate',
                '--c-name', '_g_test2',
                '--manual-register',
@@ -625,8 +663,10 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     input : 'test3.gresource.xml',
     output : 'test_resources2.h',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
+               '--internal',
                '--generate',
                '--c-name', '_g_test2',
                '--manual-register',
@@ -637,9 +677,11 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     depends : big_test_resource,
     output : 'test_resources.c',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
                '--sourcedir=' + meson.current_build_dir(),
+               '--internal',
                '--generate-source',
                '--c-name', '_g_test1',
                '@INPUT@'])
@@ -648,9 +690,11 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     input : '111_digit_test.gresource.xml',
     output : 'digit_test_resources.c',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
                '--sourcedir=' + meson.current_build_dir(),
+               '--internal',
                '--generate-source',
                '--manual-register',
                '@INPUT@'])
@@ -659,8 +703,10 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     input : '111_digit_test.gresource.xml',
     output : 'digit_test_resources.h',
     command : [glib_compile_resources,
+               compiler_type,
                '--target=@OUTPUT@',
                '--sourcedir=' + meson.current_source_dir(),
+               '--internal',
                '--generate',
                '--manual-register',
                '@INPUT@'])
@@ -703,9 +749,11 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
       input : 'test5.gresource.xml',
       output : 'test5.gresource',
       command : [glib_compile_resources,
+                 compiler_type,
                  '--target=@OUTPUT@',
                  '--sourcedir=' + meson.current_source_dir(),
                  '--sourcedir=' + meson.current_build_dir(),
+                 '--internal',
                  '@INPUT@'],
       install_dir : installed_tests_execdir,
       install : installed_tests_enabled)
@@ -715,9 +763,11 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
       input : 'test5.gresource.xml',
       output : 'test_resources_binary.c',
       command : [glib_compile_resources,
+                 compiler_type,
                  '--target=@OUTPUT@',
                  '--sourcedir=' + meson.current_source_dir(),
                  '--sourcedir=' + meson.current_build_dir(),
+                 '--internal',
                  '--generate-source',
                  '--external-data',
                  '--c-name', '_g_binary_test1',
@@ -728,17 +778,24 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
       input : test_gresource_binary,
       output : 'test_resources.o',
       command : [ld,
+                 '-z', 'noexecstack',
                  '-r',
                  '-b','binary',
                  '@INPUT@',
                  '-o','@OUTPUT@'])
 
     # Rename symbol to match the one in the C file
+    if cc.get_id() == 'gcc' and host_system == 'windows'
+      underscore = '_'
+    else
+      underscore = ''
+    endif
     test_resources_binary2 = custom_target('test_resources2.o',
       input : test_resources_binary,
       output : 'test_resources2.o',
       command : [objcopy,
-                 '--add-symbol','_g_binary_test1_resource_data=.data:0',
+                 '--strip-all',
+                 '--add-symbol', underscore + '_g_binary_test1_resource_data=.data:0',
                  '@INPUT@',
                  '@OUTPUT@'])
 
@@ -751,6 +808,8 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
   gio_tests += {
     'resources' : {
       'extra_sources' : resources_extra_sources,
+      # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+      'should_fail' : host_system == 'darwin',
     },
   }
 endif
@@ -804,6 +863,7 @@ foreach test_name, extra_args : gio_tests
     suite : suite,
     is_parallel : extra_args.get('is_parallel', true),
     depends : extra_args.get('depends', []),
+    should_fail : extra_args.get('should_fail', false),
   )
 endforeach
 

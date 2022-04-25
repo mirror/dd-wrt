@@ -1041,7 +1041,7 @@ signal_finalize_hook (GHookList *hook_list,
  *
  * Adds an emission hook for a signal, which will get called for any emission
  * of that signal, independent of the instance. This is possible only
- * for signals which don't have #G_SIGNAL_NO_HOOKS flag set.
+ * for signals which don't have %G_SIGNAL_NO_HOOKS flag set.
  *
  * Returns: the hook id, for later use with g_signal_remove_emission_hook().
  */
@@ -1458,7 +1458,7 @@ g_signal_query (guint         signal_id,
  * @accu_data: (nullable) (closure accumulator): user data for the @accumulator.
  * @c_marshaller: (nullable): the function to translate arrays of parameter
  *  values to signal emissions into C language callback invocations or %NULL.
- * @return_type: the type of return value, or #G_TYPE_NONE for a signal
+ * @return_type: the type of return value, or %G_TYPE_NONE for a signal
  *  without a return value.
  * @n_params: the number of parameter types to follow.
  * @...: a list of types, one for each parameter.
@@ -1534,7 +1534,7 @@ g_signal_new (const gchar	 *signal_name,
  * @accu_data: (nullable) (closure accumulator): user data for the @accumulator.
  * @c_marshaller: (nullable): the function to translate arrays of parameter
  *  values to signal emissions into C language callback invocations or %NULL.
- * @return_type: the type of return value, or #G_TYPE_NONE for a signal
+ * @return_type: the type of return value, or %G_TYPE_NONE for a signal
  *  without a return value.
  * @n_params: the number of parameter types to follow.
  * @...: a list of types, one for each parameter.
@@ -1672,7 +1672,7 @@ signal_add_class_closure (SignalNode *node,
  * @c_marshaller: (nullable): the function to translate arrays of
  *     parameter values to signal emissions into C language callback
  *     invocations or %NULL
- * @return_type: the type of return value, or #G_TYPE_NONE for a signal
+ * @return_type: the type of return value, or %G_TYPE_NONE for a signal
  *     without a return value
  * @n_params: the length of @param_types
  * @param_types: (array length=n_params) (nullable): an array of types, one for
@@ -1932,7 +1932,7 @@ g_signal_set_va_marshaller (guint              signal_id,
  * @accu_data: (nullable) (closure accumulator): user data for the @accumulator.
  * @c_marshaller: (nullable): the function to translate arrays of parameter
  *  values to signal emissions into C language callback invocations or %NULL.
- * @return_type: the type of return value, or #G_TYPE_NONE for a signal
+ * @return_type: the type of return value, or %G_TYPE_NONE for a signal
  *  without a return value.
  * @n_params: the number of parameter types in @args.
  * @args: va_list of #GType, one for each parameter.
@@ -2203,7 +2203,7 @@ g_signal_chain_from_overridden (const GValue *instance_and_params,
  *    emitted on.
  * @...: parameters to be passed to the parent class closure, followed by a
  *  location for the return value. If the return type of the signal
- *  is #G_TYPE_NONE, the return value location can be omitted.
+ *  is %G_TYPE_NONE, the return value location can be omitted.
  *
  * Calls the original class closure of a signal. This function should
  * only be called from an overridden class closure; see
@@ -2219,7 +2219,7 @@ g_signal_chain_from_overridden_handler (gpointer instance,
   GType chain_type = 0, restore_type = 0;
   Emission *emission = NULL;
   GClosure *closure = NULL;
-  SignalNode *node;
+  SignalNode *node = NULL;
   guint n_params = 0;
 
   g_return_if_fail (G_TYPE_CHECK_INSTANCE (instance));
@@ -3117,7 +3117,8 @@ g_signal_has_handler_pending (gpointer instance,
  * store the return value of the signal emission. This must be provided if the
  * specified signal returns a value, but may be ignored otherwise.
  *
- * Emits a signal.
+ * Emits a signal. Signal emission is done synchronously.
+ * The method will only return control after all handlers are called or signal emission was stopped.
  *
  * Note that g_signal_emitv() doesn't change @return_value if no handlers are
  * connected, in contrast to g_signal_emit() and g_signal_emit_valist().
@@ -3253,9 +3254,10 @@ accumulate (GSignalInvocationHint *ihint,
  * @detail: the detail
  * @var_args: a list of parameters to be passed to the signal, followed by a
  *  location for the return value. If the return type of the signal
- *  is #G_TYPE_NONE, the return value location can be omitted.
+ *  is %G_TYPE_NONE, the return value location can be omitted.
  *
- * Emits a signal.
+ * Emits a signal. Signal emission is done synchronously.
+ * The method will only return control after all handlers are called or signal emission was stopped.
  *
  * Note that g_signal_emit_valist() resets the return value to the default
  * if no handlers are connected, in contrast to g_signal_emitv().
@@ -3363,7 +3365,6 @@ g_signal_emit_valist (gpointer instance,
 	  SignalAccumulator *accumulator;
 	  Emission emission;
 	  GValue *return_accu, accu = G_VALUE_INIT;
-	  guint signal_id;
 	  GType instance_type = G_TYPE_FROM_INSTANCE (instance);
 	  GValue emission_return = G_VALUE_INIT;
           GType rtype = node->return_type & ~G_SIGNAL_TYPE_STATIC_SCOPE;
@@ -3532,9 +3533,10 @@ g_signal_emit_valist (gpointer instance,
  * @detail: the detail
  * @...: parameters to be passed to the signal, followed by a
  *  location for the return value. If the return type of the signal
- *  is #G_TYPE_NONE, the return value location can be omitted.
+ *  is %G_TYPE_NONE, the return value location can be omitted.
  *
- * Emits a signal.
+ * Emits a signal. Signal emission is done synchronously.
+ * The method will only return control after all handlers are called or signal emission was stopped.
  *
  * Note that g_signal_emit() resets the return value to the default
  * if no handlers are connected, in contrast to g_signal_emitv().
@@ -3561,7 +3563,8 @@ g_signal_emit (gpointer instance,
  *  is %G_TYPE_NONE, the return value location can be omitted. The
  *  number of parameters to pass to this function is defined when creating the signal.
  *
- * Emits a signal.
+ * Emits a signal. Signal emission is done synchronously.
+ * The method will only return control after all handlers are called or signal emission was stopped.
  *
  * Note that g_signal_emit_by_name() resets the return value to the default
  * if no handlers are connected, in contrast to g_signal_emitv().
@@ -3621,14 +3624,14 @@ signal_emit_unlocked_R (SignalNode   *node,
 
   if (node->flags & G_SIGNAL_NO_RECURSE)
     {
-      Emission *node = emission_find (signal_id, detail, instance);
-      
-      if (node)
-	{
-	  node->state = EMISSION_RESTART;
-	  SIGNAL_UNLOCK ();
-	  return return_value_altered;
-	}
+      Emission *emission_node = emission_find (signal_id, detail, instance);
+
+      if (emission_node)
+        {
+          emission_node->state = EMISSION_RESTART;
+          SIGNAL_UNLOCK ();
+          return return_value_altered;
+        }
     }
   accumulator = node->accumulator;
   if (accumulator)
