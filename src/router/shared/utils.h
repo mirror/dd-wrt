@@ -1132,6 +1132,7 @@ int sv_valid_range(char *value, int low, int high);
 int sv_valid_statics(char *value);
 void get_network(char *ipaddr, char *netmask);
 int isbridge(char *name);
+int isbridged(char *name);
 int has_multicast_to_unicast(char *name);
 int isvlan(char *name);
 void get_broadcast(char *ipaddr, char *netmask);
