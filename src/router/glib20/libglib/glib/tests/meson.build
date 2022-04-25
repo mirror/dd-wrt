@@ -19,9 +19,15 @@ glib_tests = {
     'source' : ['cxx.cpp'],
   },
   'dataset' : {},
-  'date' : {},
+  'date' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'dir' : {},
-  'environment' : {},
+  'environment' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
+    'should_fail' : host_system == 'darwin',
+  },
   'error' : {},
   'fileutils' : {},
   'gdatetime' : {
@@ -51,6 +57,7 @@ glib_tests = {
   'markup-collect' : {},
   'markup-escape' : {},
   'markup-subparser' : {},
+  'memchunk' : {},
   'mem-overflow' : {
     'link_args' : cc.get_id() == 'gcc' and cc.version().version_compare('> 6')
       ? ['-Wno-alloc-size-larger-than'] : [],
@@ -82,6 +89,7 @@ glib_tests = {
     'dependencies' : [pcre],
     'c_args' : use_pcre_static_flag ? ['-DPCRE_STATIC'] : [],
   },
+  'relation' : {},
   'rwlock' : {},
   'scannerapi' : {},
   'search-utils' : {},
@@ -90,6 +98,10 @@ glib_tests = {
   },
   'shell' : {},
   'slice' : {},
+  'slice-color' : {
+    'extra_sources' : ['memchunks.c'],
+  },
+  'slice-concurrent' : {},
   'slist' : {},
   'sort' : {},
   'spawn-multithreaded' : {},
@@ -105,6 +117,7 @@ glib_tests = {
   'timeout' : {},
   'timer' : {},
   'tree' : {},
+  'types' : {},
   'utf8-performance' : {},
   'utf8-pointer' : {},
   'utf8-validate' : {},
@@ -184,13 +197,16 @@ endif
 
 if installed_tests_enabled
   install_data(
-    'keyfiletest.ini',
-    'pages.ini',
-    'keyfile.c',
-    'empty',
     '4096-random-bytes',
+    'casefold.txt',
+    'casemap.txt',
     'echo-script',
     'echo-script.bat',
+    'empty',
+    'iochannel-test-infile',
+    'keyfile.c',
+    'keyfiletest.ini',
+    'pages.ini',
     install_dir : installed_tests_execdir,
   )
   install_subdir('bookmarks', install_dir : installed_tests_execdir)
@@ -238,7 +254,12 @@ foreach test_name, extra_args : glib_tests
 
   suite = ['glib'] + extra_args.get('suite', [])
   timeout = suite.contains('slow') ? test_timeout_slow : test_timeout
-  test(test_name, exe, env : test_env, timeout : timeout, suite : suite)
+  test(test_name, exe,
+    env : test_env,
+    timeout : timeout,
+    suite : suite,
+    should_fail : extra_args.get('should_fail', false),
+  )
 endforeach
 
 executable('spawn-path-search-helper', 'spawn-path-search-helper.c',
@@ -262,6 +283,16 @@ executable('test-spawn-echo', 'test-spawn-echo.c',
   install_dir: installed_tests_execdir,
   install: installed_tests_enabled,
 )
+
+if host_machine.system() == 'windows'
+  # test-spawn-sleep helper binary required by the spawn tests above
+  executable('test-spawn-sleep', 'test-spawn-sleep.c',
+    c_args : test_cargs,
+    dependencies : test_deps,
+    install_dir: installed_tests_execdir,
+    install: installed_tests_enabled,
+  )
+endif
 
 executable('testing-helper', 'testing-helper.c',
   c_args : test_cargs,

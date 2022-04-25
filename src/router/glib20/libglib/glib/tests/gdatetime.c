@@ -49,6 +49,23 @@
   g_assert_cmpint ((U), ==, g_date_time_get_microsecond ((dt))); \
 } G_STMT_END
 
+static gboolean
+skip_if_running_uninstalled (void)
+{
+  /* If running uninstalled (G_TEST_BUILDDIR is set), skip this test, since we
+   * need the translations to be installed. We can’t mess around with
+   * bindtextdomain() here, as the compiled .gmo files in po/ are not in the
+   * right installed directory hierarchy to be successfully loaded by gettext. */
+  if (g_getenv ("G_TEST_BUILDDIR") != NULL)
+    {
+      g_test_skip ("Skipping due to running uninstalled. "
+                   "This test can only be run when the translations are installed.");
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
 static void
 get_localtime_tm (time_t     time_,
                   struct tm *retval)
@@ -1650,16 +1667,8 @@ test_non_utf8_printf (void)
 {
   gchar *oldlocale;
 
-  /* If running uninstalled (G_TEST_BUILDDIR is set), skip this test, since we
-   * need the translations to be installed. We can’t mess around with
-   * bindtextdomain() here, as the compiled .gmo files in po/ are not in the
-   * right installed directory hierarchy to be successfully loaded by gettext. */
-  if (g_getenv ("G_TEST_BUILDDIR") != NULL)
-    {
-      g_test_skip ("Skipping due to running uninstalled. "
-                   "This test can only be run when the translations are installed.");
-      return;
-    }
+  if (skip_if_running_uninstalled())
+    return;
 
   oldlocale = g_strdup (setlocale (LC_ALL, NULL));
   setlocale (LC_ALL, "ja_JP.eucjp");
@@ -1805,6 +1814,7 @@ test_modifiers (void)
 
   oldlocale = g_strdup (setlocale (LC_ALL, NULL));
   setlocale (LC_ALL, "fa_IR.utf-8");
+#ifdef HAVE_LANGINFO_OUTDIGIT
   if (strstr (setlocale (LC_ALL, NULL), "fa_IR") != NULL)
     {
       TEST_PRINTF_TIME (23, 0, 0, "%OH", "\333\262\333\263");    /* '23' */
@@ -1818,6 +1828,9 @@ test_modifiers (void)
     }
   else
     g_test_skip ("locale fa_IR not available, skipping O modifier tests");
+#else
+    g_test_skip ("langinfo not available, skipping O modifier tests");
+#endif
   setlocale (LC_ALL, oldlocale);
   g_free (oldlocale);
 }
@@ -1831,16 +1844,8 @@ test_month_names (void)
 
   g_test_bug ("http://bugzilla.gnome.org/749206");
 
-  /* If running uninstalled (G_TEST_BUILDDIR is set), skip this test, since we
-   * need the translations to be installed. We can’t mess around with
-   * bindtextdomain() here, as the compiled .gmo files in po/ are not in the
-   * right installed directory hierarchy to be successfully loaded by gettext. */
-  if (g_getenv ("G_TEST_BUILDDIR") != NULL)
-    {
-      g_test_skip ("Skipping due to running uninstalled. "
-                   "This test can only be run when the translations are installed.");
-      return;
-    }
+  if (skip_if_running_uninstalled())
+    return;
 
   oldlocale = g_strdup (setlocale (LC_ALL, NULL));
 
@@ -2316,6 +2321,22 @@ test_format_iso8601 (void)
   g_free (p);
   g_date_time_unref (dt);
   g_time_zone_unref (tz);
+
+  tz = g_time_zone_new_utc ();
+  dt = g_date_time_new (tz, 9, 1, 2, 3, 4, 55);
+  p = g_date_time_format_iso8601 (dt);
+  g_assert_cmpstr (p, ==, "0009-01-02T03:04:55Z");
+  g_free (p);
+  g_date_time_unref (dt);
+  g_time_zone_unref (tz);
+
+  tz = g_time_zone_new_utc ();
+  dt = g_date_time_new (tz, 9990, 1, 2, 3, 4, 55.000001);
+  p = g_date_time_format_iso8601 (dt);
+  g_assert_cmpstr (p, ==, "9990-01-02T03:04:55.000001Z");
+  g_free (p);
+  g_date_time_unref (dt);
+  g_time_zone_unref (tz);
 }
 
 typedef struct
@@ -2361,6 +2382,9 @@ check_and_set_locale (int          category,
 static void
 test_format_time_mixed_utf8 (gconstpointer data)
 {
+#ifdef _MSC_VER
+  g_test_skip ("setlocale (LC_MESSAGES) asserts on ucrt");
+#else
   const MixedUtf8TestData *test_data;
   gchar *old_time_locale;
   gchar *old_messages_locale;
@@ -2426,6 +2450,7 @@ test_format_time_mixed_utf8 (gconstpointer data)
   setlocale (LC_MESSAGES, old_messages_locale);
   g_free (old_time_locale);
   g_free (old_messages_locale);
+#endif
 }
 
 #pragma GCC diagnostic push
@@ -2463,6 +2488,17 @@ static void
 test_GDateTime_strftime_error_handling (void)
 {
   gchar *oldlocale;
+#ifdef G_OS_WIN32
+  LCID old_lcid;
+#endif
+
+  if (skip_if_running_uninstalled())
+    return;
+
+#ifdef G_OS_WIN32
+  old_lcid = GetThreadLocale ();
+  SetThreadLocale (MAKELCID (MAKELANGID (LANG_GERMAN, SUBLANG_GERMAN), SORT_DEFAULT));
+#endif
 
   oldlocale = g_strdup (setlocale (LC_ALL, NULL));
   setlocale (LC_ALL, "de_DE.utf-8");
@@ -2476,6 +2512,10 @@ test_GDateTime_strftime_error_handling (void)
     g_test_skip ("locale de_DE not available, skipping error handling tests");
   setlocale (LC_ALL, oldlocale);
   g_free (oldlocale);
+
+#ifdef G_OS_WIN32
+  SetThreadLocale (old_lcid);
+#endif
 }
 
 static void
@@ -2916,19 +2956,26 @@ test_identifier (void)
 static void
 test_new_offset (void)
 {
-  const gint32 vectors[] =
+  const struct
     {
-      -10000,
-      -3600,
-      -61,
-      -60,
-      -59,
-      0,
-      59,
-      60,
-      61,
-      3600,
-      10000,
+      gint32 offset;
+      gboolean expected_success;
+    }
+  vectors[] =
+    {
+      { -158400, FALSE },
+      { -10000, TRUE },
+      { -3600, TRUE },
+      { -61, TRUE },
+      { -60, TRUE },
+      { -59, TRUE },
+      { 0, TRUE },
+      { 59, TRUE },
+      { 60, TRUE },
+      { 61, TRUE },
+      { 3600, TRUE },
+      { 10000, TRUE },
+      { 158400, FALSE },
     };
   gsize i;
 
@@ -2936,12 +2983,21 @@ test_new_offset (void)
     {
       GTimeZone *tz = NULL;
 
-      g_test_message ("Vector %" G_GSIZE_FORMAT ": %d", i, vectors[i]);
+      g_test_message ("Vector %" G_GSIZE_FORMAT ": %d", i, vectors[i].offset);
 
-      tz = g_time_zone_new_offset (vectors[i]);
+      tz = g_time_zone_new_offset (vectors[i].offset);
       g_assert_nonnull (tz);
-      g_assert_cmpstr (g_time_zone_get_identifier (tz), !=, "UTC");
-      g_assert_cmpint (g_time_zone_get_offset (tz, 0), ==, vectors[i]);
+
+      if (vectors[i].expected_success)
+        {
+          g_assert_cmpstr (g_time_zone_get_identifier (tz), !=, "UTC");
+          g_assert_cmpint (g_time_zone_get_offset (tz, 0), ==, vectors[i].offset);
+        }
+      else
+        {
+          g_assert_cmpstr (g_time_zone_get_identifier (tz), ==, "UTC");
+        }
+
       g_time_zone_unref (tz);
     }
 }
@@ -2949,6 +3005,7 @@ test_new_offset (void)
 static void
 test_time_zone_parse_rfc8536 (void)
 {
+#ifndef G_OS_WIN32
   const gchar *test_files[] =
     {
       /* Generated with `zic -b slim`; see
@@ -2974,6 +3031,9 @@ test_time_zone_parse_rfc8536 (void)
       g_time_zone_unref (tz);
       g_free (path);
     }
+#else
+  g_test_skip ("RFC 8536 format time zone files are not available on Windows");
+#endif
 }
 
 /* Check GTimeZone instances are cached. */

@@ -815,7 +815,7 @@ g_io_win32_check (GSource *source)
   GIOWin32Watch *watch = (GIOWin32Watch *)source;
   GIOWin32Channel *channel = (GIOWin32Channel *)watch->channel;
   GIOCondition buffer_condition = g_io_channel_get_buffer_condition (watch->channel);
-  WSANETWORKEVENTS events;
+  WSANETWORKEVENTS events = { 0 };
 
   if (channel->debug)
     g_print ("g_io_win32_check: source=%p channel=%p", source, channel);
@@ -1291,8 +1291,7 @@ g_io_win32_fd_seek (GIOChannel *channel,
 {
   GIOWin32Channel *win32_channel = (GIOWin32Channel *)channel;
   int whence, errsv;
-  off_t tmp_offset;
-  off_t result;
+  gint64 result;
   
   switch (type)
     {
@@ -1311,16 +1310,7 @@ g_io_win32_fd_seek (GIOChannel *channel,
       g_abort ();
     }
 
-  tmp_offset = offset;
-  if (tmp_offset != offset)
-    {
-      g_set_error_literal (err, G_IO_CHANNEL_ERROR,
-                           g_io_channel_error_from_errno (EINVAL),
-                           g_strerror (EINVAL));
-      return G_IO_STATUS_ERROR;
-    }
-
-  result = lseek (win32_channel->fd, tmp_offset, whence);
+  result = _lseeki64 (win32_channel->fd, offset, whence);
   errsv = errno;
   
   if (result < 0)
@@ -1462,7 +1452,7 @@ g_io_win32_sock_read (GIOChannel *channel,
   GIOWin32Channel *win32_channel = (GIOWin32Channel *)channel;
   gint result;
   GIOChannelError error;
-  int winsock_error;
+  int winsock_error = 0;
 
   if (win32_channel->debug)
     g_print ("g_io_win32_sock_read: channel=%p sock=%d count=%" G_GSIZE_FORMAT,
@@ -1523,8 +1513,8 @@ g_io_win32_sock_write (GIOChannel  *channel,
   GIOWin32Channel *win32_channel = (GIOWin32Channel *)channel;
   gint result;
   GIOChannelError error;
-  int winsock_error;
-  
+  int winsock_error = 0;
+
   if (win32_channel->debug)
     g_print ("g_io_win32_sock_write: channel=%p sock=%d count=%" G_GSIZE_FORMAT,
 	     channel, win32_channel->fd, count);

@@ -1880,6 +1880,10 @@ g_desktop_app_info_load_from_keyfile (GDesktopAppInfo *info,
       else
         {
           char *t;
+
+          /* Since @exec is not an empty string, there must be at least one
+           * argument, so dereferencing argv[0] should return non-NULL. */
+          g_assert (argc > 0);
           t = g_find_program_in_path (argv[0]);
           g_strfreev (argv);
 
@@ -2301,7 +2305,7 @@ g_desktop_app_info_get_generic_name (GDesktopAppInfo *info)
  *
  * Gets the value of the NoDisplay key, which helps determine if the
  * application info should be shown in menus. See
- * #G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY and g_app_info_should_show().
+ * %G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY and g_app_info_should_show().
  *
  * Returns: The value of the NoDisplay key
  *
@@ -3155,6 +3159,8 @@ launch_uris_with_dbus (GDesktopAppInfo    *info,
                           NULL, G_DBUS_CALL_FLAGS_NONE, -1,
                           cancellable, launch_uris_with_dbus_signal_cb, g_steal_pointer (&data));
   g_free (object_path);
+
+  g_variant_dict_clear (&dict);
 }
 
 static gboolean

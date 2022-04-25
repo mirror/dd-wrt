@@ -1185,6 +1185,7 @@ g_object_real_dispose (GObject *object)
   g_datalist_id_set_data (&object->qdata, quark_weak_locations, NULL);
 }
 
+#ifdef G_ENABLE_DEBUG
 static gboolean
 floating_check (GObject *object)
 {
@@ -1202,6 +1203,7 @@ floating_check (GObject *object)
 
   return FALSE;
 }
+#endif
 
 static void
 g_object_finalize (GObject *object)
@@ -1778,7 +1780,7 @@ g_object_get_type (void)
  *
  * Creates a new instance of a #GObject subtype and sets its properties.
  *
- * Construction parameters (see #G_PARAM_CONSTRUCT, #G_PARAM_CONSTRUCT_ONLY)
+ * Construction parameters (see %G_PARAM_CONSTRUCT, %G_PARAM_CONSTRUCT_ONLY)
  * which are not explicitly specified are set to their default values. Any
  * private data for the object is guaranteed to be initialized with zeros, as
  * per g_type_create_instance().
@@ -2192,7 +2194,7 @@ g_object_new_with_properties (GType          object_type,
  *
  * Creates a new instance of a #GObject subtype and sets its properties.
  *
- * Construction parameters (see #G_PARAM_CONSTRUCT, #G_PARAM_CONSTRUCT_ONLY)
+ * Construction parameters (see %G_PARAM_CONSTRUCT, %G_PARAM_CONSTRUCT_ONLY)
  * which are not explicitly specified are set to their default values.
  *
  * Returns: (type GObject.Object) (transfer full): a new instance of
@@ -2264,7 +2266,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  *
  * Creates a new instance of a #GObject subtype and sets its properties.
  *
- * Construction parameters (see #G_PARAM_CONSTRUCT, #G_PARAM_CONSTRUCT_ONLY)
+ * Construction parameters (see %G_PARAM_CONSTRUCT, %G_PARAM_CONSTRUCT_ONLY)
  * which are not explicitly specified are set to their default values.
  *
  * Returns: a new instance of @object_type

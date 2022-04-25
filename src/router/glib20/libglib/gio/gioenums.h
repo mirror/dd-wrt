@@ -392,7 +392,7 @@ typedef enum {
  *
  * Indicates a hint from the file system whether files should be
  * previewed in a file manager. Returned as the value of the key
- * #G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW.
+ * %G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW.
  **/
 typedef enum {
   G_FILESYSTEM_PREVIEW_TYPE_IF_ALWAYS = 0,
@@ -522,7 +522,7 @@ typedef enum {
  *   }
  * ]|
  * but should instead treat all unrecognized error codes the same as
- * #G_IO_ERROR_FAILED.
+ * %G_IO_ERROR_FAILED.
  *
  * See also #GPollableReturn for a cheaper way of returning
  * %G_IO_ERROR_WOULD_BLOCK to callers without allocating a #GError.
@@ -973,7 +973,7 @@ typedef enum
  * @G_BUS_NAME_OWNER_FLAGS_NONE: No flags set.
  * @G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT: Allow another message bus connection to claim the name.
  * @G_BUS_NAME_OWNER_FLAGS_REPLACE: If another message bus connection owns the name and have
- * specified #G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT, then take the name from the other connection.
+ * specified %G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT, then take the name from the other connection.
  * @G_BUS_NAME_OWNER_FLAGS_DO_NOT_QUEUE: If another message bus connection owns the name, immediately
  * return an error from g_bus_own_name() rather than entering the waiting queue for that name. (Since 2.54)
  *
@@ -1441,6 +1441,7 @@ typedef enum
  * @G_CREDENTIALS_TYPE_SOLARIS_UCRED: The native credentials type is a `ucred_t`. Added in 2.40.
  * @G_CREDENTIALS_TYPE_NETBSD_UNPCBID: The native credentials type is a `struct unpcbid`. Added in 2.42.
  * @G_CREDENTIALS_TYPE_APPLE_XUCRED: The native credentials type is a `struct xucred`. Added in 2.66.
+ * @G_CREDENTIALS_TYPE_WIN32_PID: The native credentials type is a PID `DWORD`. Added in 2.72.
  *
  * Enumeration describing different kinds of native credential types.
  *
@@ -1455,6 +1456,7 @@ typedef enum
   G_CREDENTIALS_TYPE_SOLARIS_UCRED,
   G_CREDENTIALS_TYPE_NETBSD_UNPCBID,
   G_CREDENTIALS_TYPE_APPLE_XUCRED,
+  G_CREDENTIALS_TYPE_WIN32_PID,
 } GCredentialsType;
 
 /**
@@ -1552,6 +1554,8 @@ typedef enum
  * @G_TLS_ERROR_INAPPROPRIATE_FALLBACK: The TLS handshake failed
  *   because the client sent the fallback SCSV, indicating a protocol
  *   downgrade attack. Since: 2.60
+ * @G_TLS_ERROR_BAD_CERTIFICATE_PASSWORD: The certificate failed
+ *   to load because a password was incorrect. Since: 2.72
  *
  * An error code used with %G_TLS_ERROR in a #GError returned from a
  * TLS-related routine.
@@ -1566,7 +1570,8 @@ typedef enum {
   G_TLS_ERROR_HANDSHAKE,
   G_TLS_ERROR_CERTIFICATE_REQUIRED,
   G_TLS_ERROR_EOF,
-  G_TLS_ERROR_INAPPROPRIATE_FALLBACK
+  G_TLS_ERROR_INAPPROPRIATE_FALLBACK,
+  G_TLS_ERROR_BAD_CERTIFICATE_PASSWORD
 } GTlsError;
 
 /**

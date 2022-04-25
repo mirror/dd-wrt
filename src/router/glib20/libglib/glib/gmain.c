@@ -124,10 +124,14 @@
  * Each event source is assigned a priority. The default priority,
  * %G_PRIORITY_DEFAULT, is 0. Values less than 0 denote higher priorities.
  * Values greater than 0 denote lower priorities. Events from high priority
- * sources are always processed before events from lower priority sources.
+ * sources are always processed before events from lower priority sources: if
+ * several sources are ready to dispatch, the ones with equal-highest priority
+ * will be dispatched on the current #GMainContext iteration, and the rest wait
+ * until a subsequent #GMainContext iteration when they have the highest
+ * priority of the sources which are ready for dispatch.
  *
  * Idle functions can also be added, and assigned a priority. These will
- * be run whenever no events with a higher priority are ready to be processed.
+ * be run whenever no events with a higher priority are ready to be dispatched.
  *
  * The #GMainLoop data type represents a main event loop. A GMainLoop is
  * created with g_main_loop_new(). After adding the initial event sources,
@@ -4363,6 +4367,9 @@ g_main_loop_run (GMainLoop *loop)
   g_return_if_fail (loop != NULL);
   g_return_if_fail (g_atomic_int_get (&loop->ref_count) > 0);
 
+  /* Hold a reference in case the loop is unreffed from a callback function */
+  g_atomic_int_inc (&loop->ref_count);
+
   if (!g_main_context_acquire (loop->context))
     {
       gboolean got_ownership = FALSE;
@@ -4370,7 +4377,6 @@ g_main_loop_run (GMainLoop *loop)
       /* Another thread owns this context */
       LOCK_CONTEXT (loop->context);
 
-      g_atomic_int_inc (&loop->ref_count);
       g_atomic_int_set (&loop->is_running, TRUE);
 
       while (g_atomic_int_get (&loop->is_running) && !got_ownership)
@@ -4396,10 +4402,10 @@ g_main_loop_run (GMainLoop *loop)
     {
       g_warning ("g_main_loop_run(): called recursively from within a source's "
 		 "check() or prepare() member, iteration not possible.");
+      g_main_loop_unref (loop);
       return;
     }
 
-  g_atomic_int_inc (&loop->ref_count);
   g_atomic_int_set (&loop->is_running, TRUE);
   while (g_atomic_int_get (&loop->is_running))
     g_main_context_iterate (loop->context, TRUE, TRUE, self);

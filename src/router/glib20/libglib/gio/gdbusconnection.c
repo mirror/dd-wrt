@@ -282,22 +282,6 @@ call_destroy_notify (GMainContext  *context,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-static gboolean
-_g_strv_has_string (const gchar* const *haystack,
-                    const gchar        *needle)
-{
-  guint n;
-
-  for (n = 0; haystack != NULL && haystack[n] != NULL; n++)
-    {
-      if (g_strcmp0 (haystack[n], needle) == 0)
-        return TRUE;
-    }
-  return FALSE;
-}
-
-/* ---------------------------------------------------------------------------------------------------- */
-
 #ifdef G_OS_WIN32
 #define CONNECTION_ENSURE_LOCK(obj) do { ; } while (FALSE)
 #else
@@ -5268,7 +5252,7 @@ obj_message_func (GDBusConnection *connection,
  * #GVariant of incorrect type.
  *
  * If an existing callback is already registered at @object_path and
- * @interface_name, then @error is set to #G_IO_ERROR_EXISTS.
+ * @interface_name, then @error is set to %G_IO_ERROR_EXISTS.
  *
  * GDBus automatically implements the standard D-Bus interfaces
  * org.freedesktop.DBus.Properties, org.freedesktop.DBus.Introspectable
@@ -6544,7 +6528,7 @@ handle_subtree_introspect (GDBusConnection *connection,
 
       /* Assert existence of object if we are not dynamic */
       if (!(es->flags & G_DBUS_SUBTREE_FLAGS_DISPATCH_TO_UNENUMERATED_NODES) &&
-          !_g_strv_has_string ((const gchar * const *) children, requested_node))
+          !g_strv_contains ((const gchar * const *) children, requested_node))
         goto out;
     }
   else
@@ -6675,7 +6659,7 @@ handle_subtree_method_invocation (GDBusConnection *connection,
                                             es->object_path,
                                             es->user_data);
 
-          exists = _g_strv_has_string ((const gchar * const *) children, requested_node);
+          exists = g_strv_contains ((const gchar * const *) children, requested_node);
           g_strfreev (children);
 
           if (!exists)
@@ -6930,7 +6914,7 @@ subtree_message_func (GDBusConnection *connection,
  *
  * When handling remote calls into any node in the subtree, first the
  * @enumerate function is used to check if the node exists. If the node exists
- * or the #G_DBUS_SUBTREE_FLAGS_DISPATCH_TO_UNENUMERATED_NODES flag is set
+ * or the %G_DBUS_SUBTREE_FLAGS_DISPATCH_TO_UNENUMERATED_NODES flag is set
  * the @introspection function is used to check if the node supports the
  * requested method. If so, the @dispatch function is used to determine
  * where to dispatch the call. The collected #GDBusInterfaceVTable and
@@ -6942,7 +6926,7 @@ subtree_message_func (GDBusConnection *connection,
  * of the thread you are calling this method from.
  *
  * If an existing subtree is already registered at @object_path or
- * then @error is set to #G_IO_ERROR_EXISTS.
+ * then @error is set to %G_IO_ERROR_EXISTS.
  *
  * Note that it is valid to register regular objects (using
  * g_dbus_connection_register_object()) in a subtree registered with
@@ -7450,7 +7434,9 @@ _g_bus_forget_singleton (GBusType bus_type)
  * callers of g_bus_get() and g_bus_get_sync() for @bus_type. In the
  * event that you need a private message bus connection, use
  * g_dbus_address_get_for_bus_sync() and
- * g_dbus_connection_new_for_address().
+ * g_dbus_connection_new_for_address() with
+ * G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT and
+ * G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION flags.
  *
  * Note that the returned #GDBusConnection object will (usually) have
  * the #GDBusConnection:exit-on-close property set to %TRUE.
@@ -7569,7 +7555,9 @@ g_bus_get (GBusType             bus_type,
  * callers of g_bus_get() and g_bus_get_sync() for @bus_type. In the
  * event that you need a private message bus connection, use
  * g_dbus_address_get_for_bus_sync() and
- * g_dbus_connection_new_for_address().
+ * g_dbus_connection_new_for_address() with
+ * G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT and
+ * G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION flags.
  *
  * Note that the returned #GDBusConnection object will (usually) have
  * the #GDBusConnection:exit-on-close property set to %TRUE.

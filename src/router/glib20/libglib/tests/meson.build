@@ -16,24 +16,16 @@ subdir('gobject')
 subdir('refcount')
 
 tests = {
-  'testglib' : {'tap' : true},
-  'testgdate' : {},
-  'file-test' : {},
-  'env-test' : {},
   'gio-test' : {},
   'mainloop-test' : {},
   'mapping-test' : {},
   'onceinit' : {},
-  'relation-test' : {},
-  'slice-concurrent' : {},
   'slice-threadinit' : {
     'dependencies' : [libgthread_dep],
   },
   'spawn-test' : {},
   'thread-test' : {},
   'threadpool-test' : {'suite' : ['slow']},
-  'type-test' : {},
-  'unicode-caseconv' : {},
   'unicode-encoding' : {},
   'module-test-library' : {
     'dependencies' : [libgmodule_dep],
@@ -53,17 +45,12 @@ test_extra_programs = {
   'slice-test' : {
     'extra_sources' : ['memchunks.c'],
   },
-  'slice-color' : {
-    'extra_sources' : ['memchunks.c'],
-  },
   'assert-msg-test' : {},
-  'unicode-collate' : {},
 }
 
 if host_machine.system() != 'windows'
   tests += {
     'timeloop' : {},
-    'iochannel-test' : {},
   }
 else
   test_extra_programs += {
@@ -73,9 +60,6 @@ endif
 
 if installed_tests_enabled
   install_data(
-    'iochannel-test-infile',
-    'casemap.txt',
-    'casefold.txt',
     'utf8.txt',
     install_dir : installed_tests_execdir,
   )

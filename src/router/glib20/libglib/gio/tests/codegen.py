@@ -27,15 +27,19 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
 import taptestrunner
-
 
 # Disable line length warnings as wrapping the C code templates would be hard
 # flake8: noqa: E501
 
 
 Result = collections.namedtuple("Result", ("info", "out", "err", "subs"))
+
+
+def on_win32():
+    return sys.platform.find('win') != -1
 
 
 class TestCodegen(unittest.TestCase):
@@ -281,6 +285,7 @@ class TestCodegen(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             self.runCodegen()
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_empty_interface_header(self):
         """Test generating a header with an empty interface file."""
         result = self.runCodegenWithInterface("", "--output", "/dev/stdout", "--header")
@@ -304,6 +309,7 @@ G_END_DECLS
             result.out.strip(),
         )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_empty_interface_body(self):
         """Test generating a body with an empty interface file."""
         result = self.runCodegenWithInterface("", "--output", "/dev/stdout", "--body")
@@ -323,6 +329,7 @@ G_END_DECLS
             result.out.strip(),
         )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_reproducible(self):
         """Test builds are reproducible regardless of file ordering."""
         xml_contents1 = """
@@ -382,6 +389,47 @@ G_END_DECLS
                 # The output should be the same.
                 self.assertEqual(result1.out, result2.out)
 
+    def test_generate_docbook(self):
+        """Test the basic functionality of the docbook generator."""
+        xml_contents = """
+        <node>
+          <interface name="org.project.Bar.Frobnicator">
+            <method name="RandomMethod"/>
+          </interface>
+        </node>
+        """
+        res = self.runCodegenWithInterface(
+            xml_contents,
+            "--generate-docbook",
+            "test",
+        )
+        self.assertEqual("", res.err)
+        self.assertEqual("", res.out)
+        with open("test-org.project.Bar.Frobnicator.xml", "r") as f:
+            xml_data = f.readlines()
+            self.assertTrue(len(xml_data) != 0)
+
+    def test_generate_rst(self):
+        """Test the basic functionality of the rst generator."""
+        xml_contents = """
+        <node>
+          <interface name="org.project.Bar.Frobnicator">
+            <method name="RandomMethod"/>
+          </interface>
+        </node>
+        """
+        res = self.runCodegenWithInterface(
+            xml_contents,
+            "--generate-rst",
+            "test",
+        )
+        self.assertEqual("", res.err)
+        self.assertEqual("", res.out)
+        with open("test-org.project.Bar.Frobnicator.rst", "r") as f:
+            rst = f.readlines()
+            self.assertTrue(len(rst) != 0)
+
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_min_required_invalid(self):
         """Test running with an invalid --glib-min-required."""
         with self.assertRaises(subprocess.CalledProcessError):
@@ -394,6 +442,7 @@ G_END_DECLS
                 "hello mum",
             )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_min_required_too_low(self):
         """Test running with a --glib-min-required which is too low (and hence
         probably a typo)."""
@@ -402,6 +451,7 @@ G_END_DECLS
                 "", "--output", "/dev/stdout", "--body", "--glib-min-required", "2.6"
             )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_min_required_major_only(self):
         """Test running with a --glib-min-required which contains only a major version."""
         result = self.runCodegenWithInterface(
@@ -417,6 +467,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertNotEqual("", result.out.strip())
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_min_required_with_micro(self):
         """Test running with a --glib-min-required which contains a micro version."""
         result = self.runCodegenWithInterface(
@@ -425,6 +476,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertNotEqual("", result.out.strip())
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_max_allowed_too_low(self):
         """Test running with a --glib-max-allowed which is too low (and hence
         probably a typo)."""
@@ -433,6 +485,7 @@ G_END_DECLS
                 "", "--output", "/dev/stdout", "--body", "--glib-max-allowed", "2.6"
             )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_max_allowed_major_only(self):
         """Test running with a --glib-max-allowed which contains only a major version."""
         result = self.runCodegenWithInterface(
@@ -441,6 +494,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertNotEqual("", result.out.strip())
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_max_allowed_with_micro(self):
         """Test running with a --glib-max-allowed which contains a micro version."""
         result = self.runCodegenWithInterface(
@@ -449,6 +503,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertNotEqual("", result.out.strip())
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_max_allowed_unstable(self):
         """Test running with a --glib-max-allowed which is unstable. It should
         be rounded up to the next stable version number, and hence should not
@@ -466,6 +521,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertNotEqual("", result.out.strip())
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_glib_max_allowed_less_than_min_required(self):
         """Test running with a --glib-max-allowed which is less than
         --glib-min-required."""
@@ -481,6 +537,7 @@ G_END_DECLS
                 "2.64",
             )
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_unix_fd_types_and_annotations(self):
         """Test an interface with `h` arguments, no annotation, and GLib < 2.64.
 
@@ -539,6 +596,7 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertEqual(result.out.strip().count("GUnixFDList"), 18)
 
+    @unittest.skipIf(on_win32(), "requires /dev/stdout")
     def test_call_flags_and_timeout_method_args(self):
         """Test that generated method call functions have @call_flags and
         @timeout_msec args if and only if GLib >= 2.64.
@@ -584,6 +642,40 @@ G_END_DECLS
         self.assertEqual("", result.err)
         self.assertEqual(result.out.strip().count("GDBusCallFlags call_flags,"), 2)
         self.assertEqual(result.out.strip().count("gint timeout_msec,"), 2)
+
+    def test_generate_valid_docbook(self):
+        """Test the basic functionality of the docbook generator."""
+        xml_contents = """
+        <node>
+          <interface name="org.project.Bar.Frobnicator">
+            <!-- Resize:
+                 @size: New partition size in bytes, 0 for maximal size.
+                 @options: Options.
+                 @since 2.7.2
+
+                 Resizes the partition.
+
+                 The partition will not change its position but might be slightly bigger
+                 than requested due to sector counts and alignment (e.g. 1MiB).
+                 If the requested size can't be allocated it results in an error.
+                 The maximal size can automatically be set by using 0 as size.
+            -->
+            <method name="Resize">
+              <arg name="size" direction="in" type="t"/>
+              <arg name="options" direction="in" type="a{sv}"/>
+            </method>
+          </interface>
+        </node>
+        """
+        res = self.runCodegenWithInterface(
+            xml_contents,
+            "--generate-docbook",
+            "test",
+        )
+        self.assertEqual("", res.err)
+        self.assertEqual("", res.out)
+        with open("test-org.project.Bar.Frobnicator.xml", "r") as f:
+            self.assertTrue(ET.parse(f) is not None)
 
 
 if __name__ == "__main__":

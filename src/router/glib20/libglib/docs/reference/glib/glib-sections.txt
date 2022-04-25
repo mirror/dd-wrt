@@ -1394,6 +1394,11 @@ g_newa
 g_newa0
 
 <SUBSECTION>
+g_aligned_alloc
+g_aligned_alloc0
+g_aligned_free
+
+<SUBSECTION>
 g_memmove
 g_memdup
 g_memdup2
@@ -1537,6 +1542,8 @@ g_log_set_always_fatal
 g_log_set_fatal_mask
 g_log_default_handler
 g_log_set_default_handler
+g_log_get_debug_enabled
+g_log_set_debug_enabled
 
 <SUBSECTION>
 g_log_structured
@@ -2209,6 +2216,7 @@ g_get_real_name
 g_get_user_cache_dir
 g_get_user_data_dir
 g_get_user_config_dir
+g_get_user_state_dir
 g_get_user_runtime_dir
 GUserDirectory
 g_get_user_special_dir
@@ -2850,6 +2858,7 @@ g_trash_stack_height
 GHashTable
 g_hash_table_new
 g_hash_table_new_full
+g_hash_table_new_similar
 GHashFunc
 GEqualFunc
 g_hash_table_insert

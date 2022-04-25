@@ -1585,15 +1585,56 @@ test_tap_summary (void)
   g_ptr_array_unref (argv);
 }
 
+static void
+test_init_no_argv0 (void)
+{
+  const char *testing_helper;
+  GPtrArray *argv;
+  GError *error = NULL;
+  int status;
+  gchar *output;
+
+  g_test_summary ("Test that g_test_init() can be called safely with argc == 0.");
+
+  testing_helper = g_test_get_filename (G_TEST_BUILT, "testing-helper" EXEEXT, NULL);
+
+  argv = g_ptr_array_new ();
+  g_ptr_array_add (argv, (char *) testing_helper);
+  g_ptr_array_add (argv, "init-null-argv0");
+  g_ptr_array_add (argv, NULL);
+
+  /* This has to be spawned manually and can’t be run with g_test_subprocess()
+   * because the test helper can’t be run after `g_test_init()` has been called
+   * in the process. */
+  g_spawn_sync (NULL, (char **) argv->pdata, NULL,
+                G_SPAWN_STDERR_TO_DEV_NULL,
+                NULL, NULL, &output, NULL, &status,
+                &error);
+  g_assert_no_error (error);
+
+  g_spawn_check_wait_status (status, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (strstr (output, "# random seed:"));
+  g_free (output);
+  g_ptr_array_unref (argv);
+}
+
 int
 main (int   argc,
       char *argv[])
 {
+  int ret;
+  char *filename, *filename2;
+
   argv0 = argv[0];
 
   setlocale (LC_ALL, "");
 
   g_test_init (&argc, &argv, NULL);
+
+  /* Part of a test for
+   * https://gitlab.gnome.org/GNOME/glib/-/issues/2563, see below */
+  filename = g_test_build_filename (G_TEST_BUILT, "nonexistent", NULL);
 
   g_test_add_func ("/random-generator/rand-1", test_rand1);
   g_test_add_func ("/random-generator/rand-2", test_rand2);
@@ -1675,5 +1716,18 @@ main (int   argc,
   g_test_add_func ("/tap", test_tap);
   g_test_add_func ("/tap/summary", test_tap_summary);
 
-  return g_test_run();
+  g_test_add_func ("/init/no_argv0", test_init_no_argv0);
+
+  ret = g_test_run ();
+
+  /* We can't test for https://gitlab.gnome.org/GNOME/glib/-/issues/2563
+   * from a test-case, because the whole point of that issue is that it's
+   * about whether certain patterns are valid after g_test_run() has
+   * returned... so put an ad-hoc test here, and just crash if it fails. */
+  filename2 = g_test_build_filename (G_TEST_BUILT, "nonexistent", NULL);
+  g_assert_cmpstr (filename, ==, filename2);
+
+  g_free (filename);
+  g_free (filename2);
+  return ret;
 }

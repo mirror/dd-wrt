@@ -297,7 +297,7 @@ inline static guint32   _g_stat_nlink     (const GLocalFileStat *buf) { return b
 #endif
 inline static dev_t     _g_stat_dev       (const GLocalFileStat *buf) { return buf->st_dev; }
 inline static ino_t     _g_stat_ino       (const GLocalFileStat *buf) { return buf->st_ino; }
-inline static off_t     _g_stat_size      (const GLocalFileStat *buf) { return buf->st_size; }
+inline static goffset   _g_stat_size      (const GLocalFileStat *buf) { return buf->st_size; }
 
 #ifndef G_OS_WIN32
 inline static uid_t     _g_stat_uid       (const GLocalFileStat *buf) { return buf->st_uid; }
@@ -317,11 +317,19 @@ inline static blkcnt_t  _g_stat_blocks    (const GLocalFileStat *buf) { return b
 inline static time_t    _g_stat_atime     (const GLocalFileStat *buf) { return buf->st_atime; }
 inline static time_t    _g_stat_ctime     (const GLocalFileStat *buf) { return buf->st_ctime; }
 inline static time_t    _g_stat_mtime     (const GLocalFileStat *buf) { return buf->st_mtime; }
+#else
+inline static time_t    _g_stat_atime     (const GLocalFileStat *buf) { return buf->st_atim.tv_sec; }
+inline static time_t    _g_stat_ctime     (const GLocalFileStat *buf) { return buf->st_ctim.tv_sec; }
+inline static time_t    _g_stat_mtime     (const GLocalFileStat *buf) { return buf->st_mtim.tv_sec; }
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+#if defined(HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC) || defined(G_OS_WIN32)
 inline static guint32   _g_stat_atim_nsec (const GLocalFileStat *buf) { return buf->st_atim.tv_nsec; }
 inline static guint32   _g_stat_ctim_nsec (const GLocalFileStat *buf) { return buf->st_ctim.tv_nsec; }
 inline static guint32   _g_stat_mtim_nsec (const GLocalFileStat *buf) { return buf->st_mtim.tv_nsec; }
+#else
+inline static guint32   _g_stat_atim_nsec (const GLocalFileStat *buf) { return 0; }
+inline static guint32   _g_stat_ctim_nsec (const GLocalFileStat *buf) { return 0; }
+inline static guint32   _g_stat_mtim_nsec (const GLocalFileStat *buf) { return 0; }
 #endif
 
 #endif  /* !HAVE_STATX */
