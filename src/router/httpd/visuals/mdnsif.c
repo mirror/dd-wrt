@@ -53,7 +53,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	char *next;
 	bzero(bufferif, 256);
 
-	getIfList(bufferif, NULL);
+	getIfListNoPorts(bufferif, NULL);
 
 	websWrite(wp, "<fieldset>\n");
 	show_caption_legend(wp, "service.mdns_legend");
@@ -103,7 +103,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table>\n");
 	websWrite(wp, "<tr>\n");
 	foreach(word, bufferif, next) {
-		if (!strchr(word, ':') && !isbridged(word)) {
+		if (!strchr(word, ':')) {
 			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
 			{
 				websWrite(wp, "<td align=\"right\">\n");
