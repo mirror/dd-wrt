@@ -887,7 +887,7 @@ int getifcount(const char *ifprefix)
 	 */
 	char *iflist = calloc(256, 1);
 
-	int c = getIfListB(iflist, ifprefix, 0, 1);
+	int c = getIfListB(iflist, ifprefix, 0, 1, 0);
 
 	free(iflist);
 	return c;
@@ -931,7 +931,11 @@ void strtrim_right(char *p, int c)
 
 int getIfList(char *buffer, const char *ifprefix)
 {
-	return getIfListB(buffer, ifprefix, 0, 0);
+	return getIfListB(buffer, ifprefix, 0, 0, 0);
+}
+int getIfListNoPorts(char *buffer, const char *ifprefix)
+{
+	return getIfListB(buffer, ifprefix, 0, 0, 1);
 }
 
 static int ifcompare(const void *a, const void *b)
@@ -979,7 +983,7 @@ int getIfByIdx(char *ifname, int index)
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
+int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
@@ -1020,6 +1024,8 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 					}
 				}
 			}
+			if (noports && isbridged(ifname))
+				skip = 1;
 			if (!skip) {
 				if (!sort) {
 					sort = malloc(sizeof(char *));
