@@ -261,7 +261,7 @@ static int zebra_ospf_init(void)
 		strcat(eths, " ");
 		strcat(eths, eths2);
 		bzero(bufferif, 256);
-		getIfListB(bufferif, NULL, 1, 1);
+		getIfListB(bufferif, NULL, 1, 1, 1);
 		foreach(var, eths, next) {
 			if (!strcmp("etherip0", var))
 				continue;
