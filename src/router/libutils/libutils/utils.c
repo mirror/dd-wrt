@@ -1761,6 +1761,18 @@ int isbridge(char *name)
 
 }
 
+int isbridged(char *name)
+{
+	char path[32];
+	sprintf(path, "/sys/class/net/%s/brport/learning", name);
+	FILE *fp = fopen(path, "rb");
+	if (fp) {
+		fclose(fp);
+		return 1;
+	}
+	return 0;
+}
+
 int has_multicast_to_unicast(char *name)
 {
 	char fname[64];
