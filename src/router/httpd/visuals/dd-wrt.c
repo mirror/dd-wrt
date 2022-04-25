@@ -6728,7 +6728,7 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 	char *prefix = NULL;
 	if (argc > 0)
 		prefix = argv[0];
-	getIfList(buffer, prefix);
+	getIfListNoPorts(buffer, prefix);
 	foreach(var, buffer, next) {
 		char *wanface = get_wan_face();
 		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {

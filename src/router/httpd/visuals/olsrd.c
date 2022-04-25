@@ -116,7 +116,7 @@ EJ_VISIBLE void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 		char buffer[256];
 
 		bzero(buffer, 256);
-		getIfList(buffer, NULL);
+		getIfListNoPorts(buffer, NULL);
 		showIfOptions(wp, "olsrd_ifname", buffer, "");
 		websWrite(wp, "&nbsp;&nbsp;");
 		websWrite(wp,
