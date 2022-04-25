@@ -41,12 +41,12 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<input class=\"num\" name=\"bonding_number\" size=\"5\" value=\"%s\" />\n", nvram_default_get("bonding_number", "1"));
 	websWrite(wp, "</div>\n");
 
-	getIfList(bufferif, "eth");
+	getIfListNoPorts(bufferif, "eth");
 	int i;
 
 #ifdef HAVE_XSCALE
 	bzero(buffer, 256);
-	getIfList(buffer, "ixp");
+	getIfListNoPorts(buffer, "ixp");
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 #endif
@@ -56,7 +56,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	strcat(bufferif, buffer);
 
 	bzero(buffer, 256);
-	getIfList(buffer, "vlan");
+	getIfListNoPorts(buffer, "vlan");
 
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
