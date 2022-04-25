@@ -66,6 +66,8 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 			continue;
 		if (nvram_match("wan_ifname", word))
 			continue;
+		if (isbridged(word))
+			continue;
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
 	}
 }
