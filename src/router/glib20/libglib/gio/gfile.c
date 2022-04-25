@@ -247,6 +247,18 @@ static void               g_file_real_trash_async                 (GFile        
 static gboolean           g_file_real_trash_finish                (GFile                  *file,
                                                                    GAsyncResult           *res,
                                                                    GError                **error);
+static void               g_file_real_move_async                  (GFile                  *source,
+                                                                   GFile                  *destination,
+                                                                   GFileCopyFlags          flags,
+                                                                   int                     io_priority,
+                                                                   GCancellable           *cancellable,
+                                                                   GFileProgressCallback   progress_callback,
+                                                                   gpointer                progress_callback_data,
+                                                                   GAsyncReadyCallback     callback,
+                                                                   gpointer                user_data);
+static gboolean           g_file_real_move_finish                 (GFile                  *file,
+                                                                   GAsyncResult           *result,
+                                                                   GError                **error);
 static void               g_file_real_make_directory_async        (GFile                  *file,
                                                                    int                     io_priority,
                                                                    GCancellable           *cancellable,
@@ -381,6 +393,8 @@ g_file_default_init (GFileIface *iface)
   iface->delete_file_finish = g_file_real_delete_finish;
   iface->trash_async = g_file_real_trash_async;
   iface->trash_finish = g_file_real_trash_finish;
+  iface->move_async = g_file_real_move_async;
+  iface->move_finish = g_file_real_move_finish;
   iface->make_directory_async = g_file_real_make_directory_async;
   iface->make_directory_finish = g_file_real_make_directory_finish;
   iface->open_readwrite_async = g_file_real_open_readwrite_async;
@@ -989,9 +1003,7 @@ g_file_get_relative_path (GFile *parent,
  * If the @relative_path is an absolute path name, the resolution
  * is done absolutely (without taking @file path as base).
  *
- * Returns: (transfer full) (nullable): #GFile to the resolved path.
- *   %NULL if @relative_path is %NULL or if @file is invalid.
- *   Free the returned object with g_object_unref().
+ * Returns: (transfer full): a #GFile for the resolved path.
  */
 GFile *
 g_file_resolve_relative_path (GFile      *file,
@@ -1029,7 +1041,7 @@ g_file_resolve_relative_path (GFile      *file,
  * "standard::*" means all attributes in the standard namespace.
  * An example attribute query be "standard::*,owner::user".
  * The standard attributes are available as defines, like
- * #G_FILE_ATTRIBUTE_STANDARD_NAME. #G_FILE_ATTRIBUTE_STANDARD_NAME should
+ * %G_FILE_ATTRIBUTE_STANDARD_NAME. %G_FILE_ATTRIBUTE_STANDARD_NAME should
  * always be specified if you plan to call g_file_enumerator_get_child() or
  * g_file_enumerator_iterate() on the returned enumerator.
  *
@@ -1213,7 +1225,7 @@ g_file_query_exists (GFile        *file,
  * The primary use case of this method is to check if a file is
  * a regular file, directory, or symlink.
  *
- * Returns: The #GFileType of the file and #G_FILE_TYPE_UNKNOWN
+ * Returns: The #GFileType of the file and %G_FILE_TYPE_UNKNOWN
  *   if the file does not exist
  *
  * Since: 2.18
@@ -1262,7 +1274,7 @@ g_file_query_file_type (GFile               *file,
  * "standard::*" means all attributes in the standard namespace.
  * An example attribute query be "standard::*,owner::user".
  * The standard attributes are available as defines, like
- * #G_FILE_ATTRIBUTE_STANDARD_NAME.
+ * %G_FILE_ATTRIBUTE_STANDARD_NAME.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled
  * by triggering the cancellable object from another thread. If the
@@ -1271,7 +1283,7 @@ g_file_query_file_type (GFile               *file,
  *
  * For symlinks, normally the information about the target of the
  * symlink is returned, rather than information about the symlink
- * itself. However if you pass #G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS
+ * itself. However if you pass %G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS
  * in @flags the information about the symlink itself will be returned.
  * Also, for symlinks that point to non-existing files the information
  * about the symlink itself will be returned.
@@ -1406,9 +1418,9 @@ g_file_query_info_finish (GFile         *file,
  * attributes, and a wildcard like "filesystem::*" means all attributes
  * in the filesystem namespace. The standard namespace for filesystem
  * attributes is "filesystem". Common attributes of interest are
- * #G_FILE_ATTRIBUTE_FILESYSTEM_SIZE (the total size of the filesystem
- * in bytes), #G_FILE_ATTRIBUTE_FILESYSTEM_FREE (number of bytes available),
- * and #G_FILE_ATTRIBUTE_FILESYSTEM_TYPE (type of the filesystem).
+ * %G_FILE_ATTRIBUTE_FILESYSTEM_SIZE (the total size of the filesystem
+ * in bytes), %G_FILE_ATTRIBUTE_FILESYSTEM_FREE (number of bytes available),
+ * and %G_FILE_ATTRIBUTE_FILESYSTEM_TYPE (type of the filesystem).
  *
  * If @cancellable is not %NULL, then the operation can be cancelled
  * by triggering the cancellable object from another thread. If the
@@ -1698,7 +1710,7 @@ g_file_read (GFile         *file,
  * If the file doesn't already exist it is created.
  *
  * By default files created are generally readable by everyone,
- * but if you pass #G_FILE_CREATE_PRIVATE in @flags the file
+ * but if you pass %G_FILE_CREATE_PRIVATE in @flags the file
  * will be made readable only to the current user, to the level that
  * is supported on the target filesystem.
  *
@@ -1753,7 +1765,7 @@ g_file_append_to (GFile             *file,
  * The file must not already exist.
  *
  * By default files created are generally readable by everyone,
- * but if you pass #G_FILE_CREATE_PRIVATE in @flags the file
+ * but if you pass %G_FILE_CREATE_PRIVATE in @flags the file
  * will be made readable only to the current user, to the level
  * that is supported on the target filesystem.
  *
@@ -1821,7 +1833,7 @@ g_file_create (GFile             *file,
  * the destination when the stream is closed.
  *
  * By default files created are generally readable by everyone,
- * but if you pass #G_FILE_CREATE_PRIVATE in @flags the file
+ * but if you pass %G_FILE_CREATE_PRIVATE in @flags the file
  * will be made readable only to the current user, to the level that
  * is supported on the target filesystem.
  *
@@ -1952,7 +1964,7 @@ g_file_open_readwrite (GFile         *file,
  * writing to it. The file must not already exist.
  *
  * By default files created are generally readable by everyone,
- * but if you pass #G_FILE_CREATE_PRIVATE in @flags the file
+ * but if you pass %G_FILE_CREATE_PRIVATE in @flags the file
  * will be made readable only to the current user, to the level
  * that is supported on the target filesystem.
  *
@@ -2840,7 +2852,7 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
  * Normally only a subset of the file attributes are copied,
  * those that are copies in a normal file copy operation
  * (which for instance does not include e.g. owner). However
- * if #G_FILE_COPY_ALL_METADATA is specified in @flags, then
+ * if %G_FILE_COPY_ALL_METADATA is specified in @flags, then
  * all the metadata that is possible to copy is copied. This
  * is useful when implementing move by copy + delete source.
  *
@@ -3443,14 +3455,14 @@ file_copy_fallback (GFile                  *source,
  * Copies the file @source to the location specified by @destination.
  * Can not handle recursive copies of directories.
  *
- * If the flag #G_FILE_COPY_OVERWRITE is specified an already
+ * If the flag %G_FILE_COPY_OVERWRITE is specified an already
  * existing @destination file is overwritten.
  *
- * If the flag #G_FILE_COPY_NOFOLLOW_SYMLINKS is specified then symlinks
+ * If the flag %G_FILE_COPY_NOFOLLOW_SYMLINKS is specified then symlinks
  * will be copied as symlinks, otherwise the target of the
  * @source symlink will be copied.
  *
- * If the flag #G_FILE_COPY_ALL_METADATA is specified then all the metadata
+ * If the flag %G_FILE_COPY_ALL_METADATA is specified then all the metadata
  * that is possible to copy is copied, not just the default subset (which,
  * for instance, does not include the owner, see #GFileInfo).
  *
@@ -3467,7 +3479,7 @@ file_copy_fallback (GFile                  *source,
  * If the @source file does not exist, then the %G_IO_ERROR_NOT_FOUND error
  * is returned, independent on the status of the @destination.
  *
- * If #G_FILE_COPY_OVERWRITE is not specified and the target exists, then
+ * If %G_FILE_COPY_OVERWRITE is not specified and the target exists, then
  * the error %G_IO_ERROR_EXISTS is returned.
  *
  * If trying to overwrite a file over a directory, the %G_IO_ERROR_IS_DIRECTORY
@@ -3475,7 +3487,7 @@ file_copy_fallback (GFile                  *source,
  * %G_IO_ERROR_WOULD_MERGE error is returned.
  *
  * If the source is a directory and the target does not exist, or
- * #G_FILE_COPY_OVERWRITE is specified and the target is a file, then the
+ * %G_FILE_COPY_OVERWRITE is specified and the target is a file, then the
  * %G_IO_ERROR_WOULD_RECURSE error is returned.
  *
  * If you are interested in copying the #GFile object itself (not the on-disk
@@ -3655,7 +3667,7 @@ g_file_copy_finish (GFile         *file,
  * implementation may support moving directories (for instance on moves
  * inside the same filesystem), but the fallback code does not.
  *
- * If the flag #G_FILE_COPY_OVERWRITE is specified an already
+ * If the flag %G_FILE_COPY_OVERWRITE is specified an already
  * existing @destination file is overwritten.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
@@ -3671,7 +3683,7 @@ g_file_copy_finish (GFile         *file,
  * If the @source file does not exist, then the %G_IO_ERROR_NOT_FOUND
  * error is returned, independent on the status of the @destination.
  *
- * If #G_FILE_COPY_OVERWRITE is not specified and the target exists,
+ * If %G_FILE_COPY_OVERWRITE is not specified and the target exists,
  * then the error %G_IO_ERROR_EXISTS is returned.
  *
  * If trying to overwrite a file over a directory, the %G_IO_ERROR_IS_DIRECTORY
@@ -3679,7 +3691,7 @@ g_file_copy_finish (GFile         *file,
  * %G_IO_ERROR_WOULD_MERGE error is returned.
  *
  * If the source is a directory and the target does not exist, or
- * #G_FILE_COPY_OVERWRITE is specified and the target is a file, then
+ * %G_FILE_COPY_OVERWRITE is specified and the target is a file, then
  * the %G_IO_ERROR_WOULD_RECURSE error may be returned (if the native
  * move operation isn't available).
  *
@@ -3768,6 +3780,91 @@ g_file_move (GFile                  *source,
     return FALSE;
 
   return g_file_delete (source, cancellable, error);
+}
+
+/**
+ * g_file_move_async:
+ * @source: #GFile pointing to the source location
+ * @destination: #GFile pointing to the destination location
+ * @flags: set of #GFileCopyFlags
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (nullable): optional #GCancellable object,
+ *   %NULL to ignore
+ * @progress_callback: (nullable) (scope call): #GFileProgressCallback
+ *   function for updates
+ * @progress_callback_data: (closure): gpointer to user data for
+ *   the callback function
+ * @callback: a #GAsyncReadyCallback to call
+ *   when the request is satisfied
+ * @user_data: the data to pass to callback function
+ *
+ * Asynchronously moves a file @source to the location of @destination. For details of the behaviour, see g_file_move().
+ *
+ * If @progress_callback is not %NULL, then that function that will be called
+ * just like in g_file_move(). The callback will run in the default main context
+ * of the thread calling g_file_move_async() — the same context as @callback is
+ * run in.
+ *
+ * When the operation is finished, @callback will be called. You can then call
+ * g_file_move_finish() to get the result of the operation.
+ *
+ * Since: 2.72
+ */
+void
+g_file_move_async (GFile                *source,
+                   GFile                *destination,
+                   GFileCopyFlags        flags,
+                   int                   io_priority,
+                   GCancellable         *cancellable,
+                   GFileProgressCallback progress_callback,
+                   gpointer              progress_callback_data,
+                   GAsyncReadyCallback   callback,
+                   gpointer              user_data)
+{
+  GFileIface *iface;
+
+  g_return_if_fail (G_IS_FILE (source));
+  g_return_if_fail (G_IS_FILE (destination));
+  g_return_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable));
+
+  iface = G_FILE_GET_IFACE (source);
+  (* iface->move_async) (source,
+                         destination,
+                         flags,
+                         io_priority,
+                         cancellable,
+                         progress_callback,
+                         progress_callback_data,
+                         callback,
+                         user_data);
+}
+
+/**
+ * g_file_move_finish:
+ * @file: input source #GFile
+ * @result: a #GAsyncResult
+ * @error: a #GError, or %NULL
+ *
+ * Finishes an asynchronous file movement, started with
+ * g_file_move_async().
+ *
+ * Returns: %TRUE on successful file move, %FALSE otherwise.
+ *
+ * Since: 2.72
+ */
+gboolean
+g_file_move_finish (GFile         *file,
+                    GAsyncResult  *result,
+                    GError       **error)
+{
+  GFileIface *iface;
+
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  iface = G_FILE_GET_IFACE (file);
+  return (* iface->move_finish) (file, result, error);
 }
 
 /**
@@ -4298,7 +4395,7 @@ g_file_trash_finish (GFile         *file,
  * for the target filesystem if possible and the @file is renamed to this.
  *
  * If you want to implement a rename operation in the user interface the
- * edit name (#G_FILE_ATTRIBUTE_STANDARD_EDIT_NAME) should be used as the
+ * edit name (%G_FILE_ATTRIBUTE_STANDARD_EDIT_NAME) should be used as the
  * initial value in the rename widget, and then the result after editing
  * should be passed to g_file_set_display_name().
  *
@@ -5130,7 +5227,7 @@ g_file_unmount_mountable_finish (GFile         *file,
  *   when the request is satisfied, or %NULL
  * @user_data: (closure): the data to pass to callback function
  *
- * Unmounts a file of type #G_FILE_TYPE_MOUNTABLE.
+ * Unmounts a file of type %G_FILE_TYPE_MOUNTABLE.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
@@ -6004,6 +6101,125 @@ g_file_real_trash_finish (GFile         *file,
   return g_task_propagate_boolean (G_TASK (res), error);
 }
 
+
+typedef struct {
+  GFile *source;  /* (owned) */
+  GFile *destination;  /* (owned) */
+  GFileCopyFlags flags;
+  GFileProgressCallback progress_cb;
+  gpointer progress_cb_data;
+} MoveAsyncData;
+
+static void
+move_async_data_free (MoveAsyncData *data)
+{
+  g_object_unref (data->source);
+  g_object_unref (data->destination);
+  g_slice_free (MoveAsyncData, data);
+}
+
+typedef struct {
+  MoveAsyncData *data;  /* (unowned) */
+  goffset current_num_bytes;
+  goffset total_num_bytes;
+} MoveProgressData;
+
+static gboolean
+move_async_progress_in_main (gpointer user_data)
+{
+  MoveProgressData *progress = user_data;
+  MoveAsyncData *data = progress->data;
+
+  data->progress_cb (progress->current_num_bytes,
+                     progress->total_num_bytes,
+                     data->progress_cb_data);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+move_async_progress_callback (goffset  current_num_bytes,
+                              goffset  total_num_bytes,
+                              gpointer user_data)
+{
+  GTask *task = user_data;
+  MoveAsyncData *data = g_task_get_task_data (task);
+  MoveProgressData *progress;
+
+  progress = g_new0 (MoveProgressData, 1);
+  progress->data = data;
+  progress->current_num_bytes = current_num_bytes;
+  progress->total_num_bytes = total_num_bytes;
+
+  g_main_context_invoke_full (g_task_get_context (task),
+                              g_task_get_priority (task),
+                              move_async_progress_in_main,
+                              g_steal_pointer (&progress),
+                              g_free);
+}
+
+static void
+move_async_thread (GTask        *task,
+                   gpointer      source,
+                   gpointer      task_data,
+                   GCancellable *cancellable)
+{
+  MoveAsyncData *data = task_data;
+  gboolean result;
+  GError *error = NULL;
+
+  result = g_file_move (data->source,
+                        data->destination,
+                        data->flags,
+                        cancellable,
+                        (data->progress_cb != NULL) ? move_async_progress_callback : NULL,
+                        task,
+                        &error);
+  if (result)
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, g_steal_pointer (&error));
+}
+
+static void
+g_file_real_move_async (GFile                  *source,
+                        GFile                  *destination,
+                        GFileCopyFlags          flags,
+                        int                     io_priority,
+                        GCancellable           *cancellable,
+                        GFileProgressCallback   progress_callback,
+                        gpointer                progress_callback_data,
+                        GAsyncReadyCallback     callback,
+                        gpointer                user_data)
+{
+  GTask *task;
+  MoveAsyncData *data;
+
+  data = g_slice_new0 (MoveAsyncData);
+  data->source = g_object_ref (source);
+  data->destination = g_object_ref (destination);
+  data->flags = flags;
+  data->progress_cb = progress_callback;
+  data->progress_cb_data = progress_callback_data;
+
+  task = g_task_new (source, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_move_async);
+  g_task_set_task_data (task, g_steal_pointer (&data), (GDestroyNotify) move_async_data_free);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, move_async_thread);
+  g_object_unref (task);
+}
+
+static gboolean
+g_file_real_move_finish (GFile        *file,
+                         GAsyncResult *result,
+                         GError      **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, file), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
 static void
 make_directory_async_thread (GTask        *task,
                              gpointer      object,
@@ -6403,12 +6619,12 @@ typedef struct {
   CopyAsyncData *data;
   goffset current_num_bytes;
   goffset total_num_bytes;
-} ProgressData;
+} CopyProgressData;
 
 static gboolean
 copy_async_progress_in_main (gpointer user_data)
 {
-  ProgressData *progress = user_data;
+  CopyProgressData *progress = user_data;
   CopyAsyncData *data = progress->data;
 
   data->progress_cb (progress->current_num_bytes,
@@ -6425,9 +6641,9 @@ copy_async_progress_callback (goffset  current_num_bytes,
 {
   GTask *task = user_data;
   CopyAsyncData *data = g_task_get_task_data (task);
-  ProgressData *progress;
+  CopyProgressData *progress;
 
-  progress = g_new (ProgressData, 1);
+  progress = g_new (CopyProgressData, 1);
   progress->data = data;
   progress->current_num_bytes = current_num_bytes;
   progress->total_num_bytes = total_num_bytes;
@@ -8123,7 +8339,7 @@ g_file_measure_disk_usage_finish (GFile         *file,
  * @callback: (nullable): a #GAsyncReadyCallback to call when the request is satisfied, or %NULL
  * @user_data: the data to pass to callback function
  *
- * Starts a file of type #G_FILE_TYPE_MOUNTABLE.
+ * Starts a file of type %G_FILE_TYPE_MOUNTABLE.
  * Using @start_operation, you can request callbacks when, for instance,
  * passwords are needed during authentication.
  *
@@ -8215,7 +8431,7 @@ g_file_start_mountable_finish (GFile         *file,
  *   when the request is satisfied, or %NULL
  * @user_data: the data to pass to callback function
  *
- * Stops a file of type #G_FILE_TYPE_MOUNTABLE.
+ * Stops a file of type %G_FILE_TYPE_MOUNTABLE.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
@@ -8301,7 +8517,7 @@ g_file_stop_mountable_finish (GFile         *file,
  *   when the request is satisfied, or %NULL
  * @user_data: the data to pass to callback function
  *
- * Polls a file of type #G_FILE_TYPE_MOUNTABLE.
+ * Polls a file of type %G_FILE_TYPE_MOUNTABLE.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation

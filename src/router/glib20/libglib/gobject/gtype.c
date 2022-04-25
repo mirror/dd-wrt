@@ -2199,8 +2199,8 @@ type_class_init_Wm (TypeNode   *node,
   
   if (pclass)
     {
-      TypeNode *pnode = lookup_type_node_I (pclass->g_type);
-      
+      pnode = lookup_type_node_I (pclass->g_type);
+
       memcpy (class, pclass, pnode->data->class.class_size);
       memcpy (G_STRUCT_MEMBER_P (class, ALIGN_STRUCT (node->data->class.class_size)), G_STRUCT_MEMBER_P (pclass, ALIGN_STRUCT (pnode->data->class.class_size)), pnode->data->class.class_private_size);
 
@@ -2849,7 +2849,7 @@ g_type_register_static (GType            parent_type,
  * instances (if not abstract).  The value of @flags determines the nature
  * (e.g. abstract or not) of the type.
  *
- * Returns: the new type identifier or #G_TYPE_INVALID if registration failed
+ * Returns: the new type identifier or %G_TYPE_INVALID if registration failed
  */
 GType
 g_type_register_dynamic (GType        parent_type,
@@ -4521,7 +4521,23 @@ gobject_init (void)
   _g_signal_init ();
 }
 
-#if defined (G_OS_WIN32)
+#ifdef G_PLATFORM_WIN32
+
+void gobject_win32_init (void);
+
+void
+gobject_win32_init (void)
+{
+  /* May be called more than once in static compilation mode */
+  static gboolean win32_already_init = FALSE;
+  if (!win32_already_init)
+    {
+      win32_already_init = TRUE;
+      gobject_init ();
+    }
+}
+
+#ifndef GLIB_STATIC_COMPILATION
 
 BOOL WINAPI DllMain (HINSTANCE hinstDLL,
                      DWORD     fdwReason,
@@ -4535,7 +4551,7 @@ DllMain (HINSTANCE hinstDLL,
   switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
-      gobject_init ();
+      gobject_win32_init ();
       break;
 
     default:
@@ -4546,11 +4562,45 @@ DllMain (HINSTANCE hinstDLL,
   return TRUE;
 }
 
-#elif defined (G_HAS_CONSTRUCTORS)
+#elif defined(G_HAS_CONSTRUCTORS) /* && G_PLATFORM_WIN32 && GLIB_STATIC_COMPILATION */
+extern void glib_win32_init (void);
+
 #ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
 #pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(gobject_init_ctor)
 #endif
+
 G_DEFINE_CONSTRUCTOR(gobject_init_ctor)
+
+static void
+gobject_init_ctor (void)
+{
+  /* When built dynamically, module initialization is done through DllMain
+   * function which is called when the dynamic library is loaded by the glib
+   * module. So, in dynamic configuration glib is always initialized BEFORE
+   * gobject.
+   *
+   * When built statically, initialization mechanism relies on hooking
+   * functions to the CRT section directly at compilation time. As we don't
+   * control how each compilation unit will be built and in which order, we
+   * obtain the same kind of issue as the "static initialization order fiasco".
+   * In this case, we must ensure explicitly that glib is always well
+   * initialized BEFORE gobject.
+   */
+  glib_win32_init ();
+  gobject_win32_init ();
+}
+
+#else /* G_PLATFORM_WIN32 && GLIB_STATIC_COMPILATION && !G_HAS_CONSTRUCTORS */
+# error Your platform/compiler is missing constructor support
+#endif /* GLIB_STATIC_COMPILATION */
+
+#elif defined(G_HAS_CONSTRUCTORS) /* && !G_PLATFORM_WIN32 */
+
+#ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(gobject_init_ctor)
+#endif
+
+G_DEFINE_CONSTRUCTOR (gobject_init_ctor)
 
 static void
 gobject_init_ctor (void)
@@ -4558,9 +4608,9 @@ gobject_init_ctor (void)
   gobject_init ();
 }
 
-#else
-# error Your platform/compiler is missing constructor support
-#endif
+#else /* !G_PLATFORM_WIN32 && !G_HAS_CONSTRUCTORS */
+#error Your platform/compiler is missing constructor support
+#endif /* G_PLATFORM_WIN32 */
 
 /**
  * g_type_class_add_private:
@@ -4709,7 +4759,7 @@ g_type_add_instance_private (GType class_gtype,
    * register the private data size in the get_type() implementation and we
    * hide it behind a macro. the function will return the private size, instead
    * of the offset, which will be stored inside a static variable defined by
-   * the G_DEFINE_TYPE_EXTENDED macro. the G_DEFINE_TYPE_EXTENDED macro will
+   * the G_DEFINE_TYPE_EXTENDED() macro. the G_DEFINE_TYPE_EXTENDED() macro will
    * check the variable and call g_type_class_add_instance_private(), which
    * will use the data size and actually register the private data, then
    * return the computed offset of the private data, which will be stored

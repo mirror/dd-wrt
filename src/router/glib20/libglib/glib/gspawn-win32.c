@@ -42,10 +42,11 @@
 
 #include "config.h"
 
-#include "glib.h"
+#include "glib-init.h"
 #include "glib-private.h"
-#include "gprintfint.h"
+#include "glib.h"
 #include "glibintl.h"
+#include "gprintfint.h"
 #include "gspawn-private.h"
 #include "gthread.h"
 
@@ -88,6 +89,7 @@ enum
   CHILD_CHDIR_FAILED,
   CHILD_SPAWN_FAILED,
   CHILD_SPAWN_NOENT,
+  CHILD_DUP_FAILED,
 };
 
 enum {
@@ -100,6 +102,7 @@ enum {
   ARG_CLOSE_DESCRIPTORS,
   ARG_USE_PATH,
   ARG_WAIT,
+  ARG_FDS,
   ARG_PROGRAM,
   ARG_COUNT = ARG_PROGRAM
 };
@@ -233,7 +236,7 @@ g_spawn_async (const gchar          *working_directory,
                GPid                 *child_pid,
                GError              **error)
 {
-  g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv != NULL && argv[0] != NULL, FALSE);
   
   return g_spawn_async_with_pipes (working_directory,
                                    argv, envp,
@@ -392,6 +395,11 @@ set_child_error (gintptr      report[2],
                    _("Failed to execute child process (%s)"),
                    g_strerror (report[1]));
       break;
+    case CHILD_DUP_FAILED:
+      g_set_error (error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
+                   _("Failed to dup() in child process (%s)"),
+                   g_strerror (report[1]));
+      break;
     default:
       g_assert_not_reached ();
     }
@@ -451,6 +459,8 @@ do_spawn_directly (gint                 *exit_status,
   GError *conv_error = NULL;
   gint conv_error_index;
   wchar_t *wargv0, **wargv, **wenvp;
+
+  g_assert (argv != NULL && argv[0] != NULL);
 
   new_argv = (flags & G_SPAWN_FILE_AND_ARGV_ZERO) ? protected_argv + 1 : protected_argv;
       
@@ -568,6 +578,9 @@ fork_exec (gint                  *exit_status,
            gint                   stdin_fd,
            gint                   stdout_fd,
            gint                   stderr_fd,
+           const gint            *source_fds,
+           const gint            *target_fds,
+           gsize                  n_fds,
            gint                  *err_report,
            GError               **error)
 {
@@ -586,11 +599,11 @@ fork_exec (gint                  *exit_status,
   gint conv_error_index;
   gchar *helper_process;
   wchar_t *whelper, **wargv, **wenvp;
-  gchar *glib_dll_directory;
   int stdin_pipe[2] = { -1, -1 };
   int stdout_pipe[2] = { -1, -1 };
   int stderr_pipe[2] = { -1, -1 };
 
+  g_assert (argv != NULL && argv[0] != NULL);
   g_assert (stdin_pipe_out == NULL || stdin_fd < 0);
   g_assert (stdout_pipe_out == NULL || stdout_fd < 0);
   g_assert (stderr_pipe_out == NULL || stderr_fd < 0);
@@ -624,12 +637,20 @@ fork_exec (gint                  *exit_status,
 
   argc = protect_argv (argv, &protected_argv);
 
+  /*
+   * FIXME: Workaround broken spawnvpe functions that SEGV when "=X:="
+   * environment variables are missing. Calling chdir() will set the magic
+   * environment variable again.
+   */
+  _chdir (".");
+
   if (stdin_fd == -1 && stdout_fd == -1 && stderr_fd == -1 &&
       (flags & G_SPAWN_CHILD_INHERITS_STDIN) &&
       !(flags & G_SPAWN_STDOUT_TO_DEV_NULL) &&
       !(flags & G_SPAWN_STDERR_TO_DEV_NULL) &&
       (working_directory == NULL || !*working_directory) &&
-      (flags & G_SPAWN_LEAVE_DESCRIPTORS_OPEN))
+      (flags & G_SPAWN_LEAVE_DESCRIPTORS_OPEN) &&
+      n_fds == 0)
     {
       /* We can do without the helper process */
       gboolean retval =
@@ -651,16 +672,8 @@ fork_exec (gint                  *exit_status,
     helper_process = HELPER_PROCESS "-console.exe";
   else
     helper_process = HELPER_PROCESS ".exe";
-  
-  glib_dll_directory = _glib_get_dll_directory ();
-  if (glib_dll_directory != NULL)
-    {
-      helper_process = g_build_filename (glib_dll_directory, helper_process, NULL);
-      g_free (glib_dll_directory);
-    }
-  else
-    helper_process = g_strdup (helper_process);
 
+  helper_process = g_win32_find_helper_executable_path (helper_process, glib_dll);
   new_argv[0] = protect_argv_string (helper_process);
 
   _g_sprintf (args[ARG_CHILD_ERR_REPORT], "%d", child_err_report_pipe[1]);
@@ -756,6 +769,21 @@ fork_exec (gint                  *exit_status,
   else
     new_argv[ARG_WAIT] = "w";
 
+  if (n_fds == 0)
+    new_argv[ARG_FDS] = g_strdup ("-");
+  else
+    {
+      GString *fds = g_string_new ("");
+      gsize n;
+
+      for (n = 0; n < n_fds; n++)
+        g_string_append_printf (fds, "%d:%d,", source_fds[n], target_fds[n]);
+
+      /* remove the trailing , */
+      g_string_truncate (fds, fds->len - 1);
+      new_argv[ARG_FDS] = g_string_free (fds, FALSE);
+    }
+
   for (i = 0; i <= argc; i++)
     new_argv[ARG_PROGRAM + i] = protected_argv[i];
 
@@ -782,6 +810,7 @@ fork_exec (gint                  *exit_status,
       g_strfreev (protected_argv);
       g_free (new_argv[0]);
       g_free (new_argv[ARG_WORKING_DIRECTORY]);
+      g_free (new_argv[ARG_FDS]);
       g_free (new_argv);
       g_free (helper_process);
 
@@ -797,6 +826,7 @@ fork_exec (gint                  *exit_status,
       g_strfreev (protected_argv);
       g_free (new_argv[0]);
       g_free (new_argv[ARG_WORKING_DIRECTORY]);
+      g_free (new_argv[ARG_FDS]);
       g_free (new_argv);
       g_free (helper_process);
       g_strfreev ((gchar **) wargv);
@@ -828,6 +858,7 @@ fork_exec (gint                  *exit_status,
 
   g_free (new_argv[0]);
   g_free (new_argv[ARG_WORKING_DIRECTORY]);
+  g_free (new_argv[ARG_FDS]);
   g_free (new_argv);
 
   /* Check if gspawn-win32-helper couldn't be run */
@@ -957,7 +988,7 @@ g_spawn_sync (const gchar          *working_directory,
   gint reportpipe = -1;
   GIOChannel *outchannel = NULL;
   GIOChannel *errchannel = NULL;
-  GPollFD outfd, errfd;
+  GPollFD outfd = { -1, 0, 0 }, errfd = { -1, 0, 0 };
   GPollFD fds[2];
   gint nfds;
   gint outindex = -1;
@@ -968,7 +999,7 @@ g_spawn_sync (const gchar          *working_directory,
   gboolean failed;
   gint status;
   
-  g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv != NULL && argv[0] != NULL, FALSE);
   g_return_val_if_fail (!(flags & G_SPAWN_DO_NOT_REAP_CHILD), FALSE);
   g_return_val_if_fail (standard_output == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
@@ -999,6 +1030,7 @@ g_spawn_sync (const gchar          *working_directory,
                   -1,
                   -1,
                   -1,
+                  NULL, NULL, 0,
                   &reportpipe,
                   error))
     return FALSE;
@@ -1199,7 +1231,7 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
                           gint                 *standard_error,
                           GError              **error)
 {
-  g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv != NULL && argv[0] != NULL, FALSE);
   g_return_val_if_fail (standard_output == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (standard_error == NULL ||
@@ -1223,6 +1255,7 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
                     -1,
                     -1,
                     -1,
+                    NULL, NULL, 0,
                     NULL,
                     error);
 }
@@ -1240,7 +1273,7 @@ g_spawn_async_with_fds (const gchar          *working_directory,
                         gint                  stderr_fd,
                         GError              **error)
 {
-  g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv != NULL && argv[0] != NULL, FALSE);
   g_return_val_if_fail (stdin_fd == -1 ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (stderr_fd == -1 ||
@@ -1264,6 +1297,7 @@ g_spawn_async_with_fds (const gchar          *working_directory,
                     stdin_fd,
                     stdout_fd,
                     stderr_fd,
+                    NULL, NULL, 0,
                     NULL,
                     error);
 
@@ -1288,7 +1322,7 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
                                   gint                  *stderr_pipe_out,
                                   GError               **error)
 {
-  g_return_val_if_fail (argv != NULL, FALSE);
+  g_return_val_if_fail (argv != NULL && argv[0] != NULL, FALSE);
   g_return_val_if_fail (stdout_pipe_out == NULL ||
                         !(flags & G_SPAWN_STDOUT_TO_DEV_NULL), FALSE);
   g_return_val_if_fail (stderr_pipe_out == NULL ||
@@ -1300,14 +1334,6 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
   g_return_val_if_fail (stdin_pipe_out == NULL || stdin_fd < 0, FALSE);
   g_return_val_if_fail (stdout_pipe_out == NULL || stdout_fd < 0, FALSE);
   g_return_val_if_fail (stderr_pipe_out == NULL || stderr_fd < 0, FALSE);
-
-  /* source_fds/target_fds isn’t supported on Windows at the moment. */
-  if (n_fds != 0)
-    {
-      g_set_error_literal (error, G_SPAWN_ERROR, G_SPAWN_ERROR_INVAL,
-                           "FD redirection is not supported on Windows at the moment");
-      return FALSE;
-    }
 
   return fork_exec (NULL,
                     (flags & G_SPAWN_DO_NOT_REAP_CHILD),
@@ -1324,6 +1350,9 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
                     stdin_fd,
                     stdout_fd,
                     stderr_fd,
+                    source_fds,
+                    target_fds,
+                    n_fds,
                     NULL,
                     error);
 }
@@ -1340,6 +1369,7 @@ g_spawn_command_line_sync (const gchar  *command_line,
 
   g_return_val_if_fail (command_line != NULL, FALSE);
   
+  /* This will return a runtime error if @command_line is the empty string. */
   if (!g_shell_parse_argv (command_line,
                            NULL, &argv,
                            error))
@@ -1369,6 +1399,7 @@ g_spawn_command_line_async (const gchar *command_line,
 
   g_return_val_if_fail (command_line != NULL, FALSE);
 
+  /* This will return a runtime error if @command_line is the empty string. */
   if (!g_shell_parse_argv (command_line,
                            NULL, &argv,
                            error))

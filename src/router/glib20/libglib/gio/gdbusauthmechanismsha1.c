@@ -32,11 +32,13 @@
 #endif
 #ifdef G_OS_WIN32
 #include <io.h>
+#include "gwin32sid.h"
 #endif
 
 #include "gdbusauthmechanismsha1.h"
 #include "gcredentials.h"
 #include "gdbuserror.h"
+#include "glocalfileinfo.h"
 #include "gioenumtypes.h"
 #include "gioerror.h"
 #include "gdbusprivate.h"
@@ -508,6 +510,7 @@ _log (const gchar *message,
  * and was created successfully) */
 static gint
 create_lock_exclusive (const gchar  *lock_path,
+                       gint64       *mtime_nsec,
                        GError      **error)
 {
   int errsv;
@@ -517,6 +520,16 @@ create_lock_exclusive (const gchar  *lock_path,
   errsv = errno;
   if (ret < 0)
     {
+      GLocalFileStat stat_buf;
+
+      /* Get the modification time to distinguish between the lock being stale
+       * or highly contested. */
+      if (mtime_nsec != NULL &&
+          g_local_file_stat (lock_path, G_LOCAL_FILE_STAT_FIELD_MTIME, G_LOCAL_FILE_STAT_FIELD_ALL, &stat_buf) == 0)
+        *mtime_nsec = _g_stat_mtime (&stat_buf) * G_USEC_PER_SEC * 1000 + _g_stat_mtim_nsec (&stat_buf);
+      else if (mtime_nsec != NULL)
+        *mtime_nsec = 0;
+
       g_set_error (error,
                    G_IO_ERROR,
                    g_io_error_from_errno (errsv),
@@ -537,6 +550,7 @@ keyring_acquire_lock (const gchar  *path,
   gint ret;
   guint num_tries;
   int errsv;
+  gint64 lock_mtime_nsec = 0, lock_mtime_nsec_prev = 0;
 
   /* Total possible sleep period = max_tries * timeout_usec = 0.5s */
   const guint max_tries = 50;
@@ -564,13 +578,21 @@ keyring_acquire_lock (const gchar  *path,
 
   for (num_tries = 0; num_tries < max_tries; num_tries++)
     {
+      lock_mtime_nsec_prev = lock_mtime_nsec;
+
       /* Ignore the error until the final call. */
-      ret = create_lock_exclusive (lock, NULL);
+      ret = create_lock_exclusive (lock, &lock_mtime_nsec, NULL);
       if (ret >= 0)
         break;
 
       /* sleep 10ms, then try again */
       g_usleep (timeout_usec);
+
+      /* If the mtime of the lock file changed, don’t count the retry, as it
+       * seems like there’s contention between processes for the lock file,
+       * rather than a stale lock file from a crashed process. */
+      if (num_tries > 0 && lock_mtime_nsec != lock_mtime_nsec_prev)
+        num_tries--;
     }
 
   if (num_tries == max_tries)
@@ -593,7 +615,7 @@ keyring_acquire_lock (const gchar  *path,
       _log ("Deleted stale lock file '%s'", lock);
 
       /* Try one last time to create it, now that we've deleted the stale one */
-      ret = create_lock_exclusive (lock, error);
+      ret = create_lock_exclusive (lock, NULL, error);
       if (ret < 0)
         goto out;
     }
@@ -908,6 +930,7 @@ keyring_generate_entry (const gchar  *cookie_context,
                                   _("(Additionally, releasing the lock for “%s” also failed: %s) "),
                                   path,
                                   local_error->message);
+                  g_error_free (local_error);
                 }
             }
           else
@@ -990,9 +1013,12 @@ mechanism_server_initiate (GDBusAuthMechanism   *mechanism,
         }
 #elif defined(G_OS_WIN32)
       gchar *sid;
-      sid = _g_dbus_win32_get_user_sid ();
+
+      sid = _g_win32_current_process_sid_string (NULL);
+
       if (g_strcmp0 (initial_response, sid) == 0)
         m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_HAVE_DATA_TO_SEND;
+
       g_free (sid);
 #else
 #error Please implement for your OS
@@ -1142,20 +1168,25 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   g_return_val_if_fail (!m->priv->is_server && !m->priv->is_client, NULL);
 
   m->priv->is_client = TRUE;
-  m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
 
   *out_initial_response_len = 0;
 
 #ifdef G_OS_UNIX
   initial_response = g_strdup_printf ("%" G_GINT64_FORMAT, (gint64) getuid ());
-  *out_initial_response_len = strlen (initial_response);
 #elif defined (G_OS_WIN32)
-  initial_response = _g_dbus_win32_get_user_sid ();
-  *out_initial_response_len = strlen (initial_response);
+  initial_response = _g_win32_current_process_sid_string (NULL);
 #else
 #error Please implement for your OS
 #endif
-  g_assert (initial_response != NULL);
+  if (initial_response)
+    {
+      m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
+      *out_initial_response_len = strlen (initial_response);
+    }
+  else
+    {
+      m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
+    }
 
   return initial_response;
 }

@@ -74,6 +74,14 @@ if host_system != 'windows'
     endif
   endif
 
+  # dn_comp()
+  if cc.links('''#include <resolv.h>
+                 int main (int argc, char ** argv) {
+                   return dn_comp(NULL, NULL, 0, NULL, NULL) == -1;
+                 } ''', args : network_args, name : 'dn_comp()')
+    glib_conf.set('HAVE_DN_COMP', 1)
+  endif
+
   # res_nclose()
   if cc.links('''#include <sys/types.h>
                  #include <netinet/in.h>
@@ -346,13 +354,10 @@ if host_system != 'windows'
   unix_sources = files(
     'gfiledescriptorbased.c',
     'giounix-private.c',
-    'gunixconnection.c',
-    'gunixcredentialsmessage.c',
     'gunixfdlist.c',
     'gunixfdmessage.c',
     'gunixmount.c',
     'gunixmounts.c',
-    'gunixsocketaddress.c',
     'gunixvolume.c',
     'gunixvolumemonitor.c',
     'gunixinputstream.c',
@@ -376,20 +381,19 @@ if host_system != 'windows'
 
   gio_unix_include_headers = files(
     'gfiledescriptorbased.h',
-    'gunixconnection.h',
-    'gunixcredentialsmessage.h',
     'gunixmounts.h',
     'gunixfdlist.h',
     'gunixfdmessage.h',
     'gunixinputstream.h',
     'gunixoutputstream.h',
-    'gunixsocketaddress.h',
   )
 
   if glib_have_cocoa
     settings_sources += files('gnextstepsettingsbackend.m')
     contenttype_sources += files('gosxcontenttype.m')
     appinfo_sources += files('gosxappinfo.m')
+    framework_dep = dependency('appleframeworks', modules : ['Foundation', 'CoreFoundation', 'AppKit'])
+    platform_deps += [framework_dep]
     if glib_have_os_x_9_or_later
       unix_sources += files('gcocoanotificationbackend.m')
     endif
@@ -421,6 +425,7 @@ else
   platform_deps += uwp_gio_deps
 
   win32_sources += files(
+    'gmemorymonitorwin32.c',
     'gwin32registrykey.c',
     'gwin32mount.c',
     'gwin32volumemonitor.c',
@@ -431,6 +436,8 @@ else
     'gwin32networkmonitor.c',
     'gwin32networkmonitor.h',
     'gwin32notificationbackend.c',
+    'gwin32sid.c',
+    'gwin32sid.h',
   )
 
   gio_win_rc = configure_file(
@@ -466,6 +473,8 @@ gio_sources = files(
   'gdatagrambased.c',
   'gdatainputstream.c',
   'gdataoutputstream.c',
+  'gdebugcontroller.c',
+  'gdebugcontrollerdbus.c',
   'gdrive.c',
   'gdummyfile.c',
   'gdummyproxyresolver.c',
@@ -564,6 +573,9 @@ gio_sources = files(
   'gdtlsclientconnection.c',
   'gdtlsserverconnection.c',
   'gunionvolumemonitor.c',
+  'gunixconnection.c',
+  'gunixcredentialsmessage.c',
+  'gunixsocketaddress.c',
   'gvfs.c',
   'gvolume.c',
   'gvolumemonitor.c',
@@ -613,6 +625,8 @@ gio_headers = files(
   'gdatagrambased.h',
   'gdatainputstream.h',
   'gdataoutputstream.h',
+  'gdebugcontroller.h',
+  'gdebugcontrollerdbus.h',
   'gdrive.h',
   'gemblem.h',
   'gemblemedicon.h',
@@ -699,6 +713,9 @@ gio_headers = files(
   'gdtlsconnection.h',
   'gdtlsclientconnection.h',
   'gdtlsserverconnection.h',
+  'gunixconnection.h',
+  'gunixcredentialsmessage.h',
+  'gunixsocketaddress.h',
   'gvfs.h',
   'gvolume.h',
   'gvolumemonitor.h',
@@ -814,8 +831,17 @@ libgio_dep = declare_dependency(link_with : libgio,
   dependencies : [libgmodule_dep, libgobject_dep, gioenumtypes_dep],
   include_directories : [gioinc])
 
+# Work around variables kwarg requiring Meson 0.56
+if meson.version().version_compare('>=0.56.0')
+  libgio_dep = declare_dependency(dependencies: libgio_dep,
+    variables: [
+      'schemasdir=' + join_paths(glib_datadir, schemas_subdir),
+      'giomoduledir=' + glib_giomodulesdir,
+    ]
+  )
+endif
+
 pkg.generate(libgio,
-  libraries_private : [osx_ldflags],
   requires : ['glib-2.0', 'gobject-2.0'],
   variables : ['datadir=' + join_paths('${prefix}', get_option('datadir')),
                'schemasdir=' + join_paths('${datadir}', schemas_subdir),
