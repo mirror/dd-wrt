@@ -103,7 +103,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table>\n");
 	websWrite(wp, "<tr>\n");
 	foreach(word, bufferif, next) {
-		if (!strchr(word, ':')) {
+		if (!strchr(word, ':') && !isbridged(word)) {
 			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
 			{
 				websWrite(wp, "<td align=\"right\">\n");
