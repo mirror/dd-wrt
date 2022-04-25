@@ -1769,7 +1769,7 @@ int isbridge(char *name)
 
 int isbridged(char *name)
 {
-	char path[32];
+	char path[128];
 	sprintf(path, "/sys/class/net/%s/brport/learning", name);
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
