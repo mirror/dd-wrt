@@ -330,7 +330,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	bzero(finalbuffer, 512);
-	getIfListB(finalbuffer, NULL, 1, 1);
+	getIfListB(finalbuffer, NULL, 1, 1, 0);
 	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
 	strcpy(checkbuffer, "none ");
 	strcat(checkbuffer, finalbuffer);
