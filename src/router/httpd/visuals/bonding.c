@@ -51,7 +51,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	strcat(bufferif, buffer);
 #endif
 	bzero(buffer, 256);
-	getIfListB(buffer, NULL, 1, 1);
+	getIfListB(buffer, NULL, 1, 1, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 
