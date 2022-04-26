@@ -196,7 +196,9 @@ void start_mdns(void)
 		"</policy>\n"	//
 		"<policy user=\"root\">\n"	//
 		"<allow own=\"*\"/>\n"	//
-		"</policy>\n" "\n" "<!-- Allow anyone to invoke methods on Avahi server, except SetHostName -->\n"	//
+		"</policy>\n"	//
+		"\n"		//
+		"<!-- Allow anyone to invoke methods on Avahi server, except SetHostName -->\n"	//
 		"<policy context=\"default\">\n"	//
 		"<allow send_destination=\"*\"/>\n"	//
 		"<allow receive_sender=\"*\"/>\n"	//
