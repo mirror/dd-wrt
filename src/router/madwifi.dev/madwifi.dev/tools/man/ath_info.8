@@ -1,0 +1,169 @@
+.TH "ATH_INFO" "8" "September 2007" "" ""
+.SH "NAME"
+\fbath_info\fP \- print module version info, write some eeprom fields
+.SH "SYNOPSIS"
+.B ath_info
+[-w [-g N:M]] [-v] [-f] <pci_address> [<field1> <val1> [<field2> <val2> ...]]
+
+.SH "DESCRIPTION"
+\fBath_info\fP prints some version information of Atheros WLAN modules. It furthermore
+allows to change regulatory domain and PCI ID fields in the EEPROM.
+.PP
+You must first retrieve the PCI memory address of the module by
+.B lspci -v
+and maybe activate the module by
+.B setpci
+(see example below).
+
+\fBDISCLAIMER:\fP Use the write function only if you know what you are doing! There is the chance to
+brick your module.The authors aren't responsible for any damage caused by using this program.
+.PP
+\fB Transmitting on illegal frequencies may violate state laws. Obey the local regulations!\fP
+
+.SH "OPTIONS"
+.TP
+.B \-w
+Write to the EEPROM. You need to specify at least one \fBfield value\fP pair (see below).
+.TP
+.B \-g N:M
+Set the GPIO pin N to level M (N=0..5, M=0,1). Only useful with \fB-w\fP.
+\fBath_info\fP sets GPIO 4 to 0 (low) for chipsets newer or equal to 5213 to enable writing to the EEPROM.
+If your module has a different layout, you may need to overwrite this.
+.TP
+.B \-v
+verbose printouts
+.TP
+.B \-f
+force, don't ask before writing to EEPROM (with \fB-w).
+.TP
+.B <pci_address>
+The PCI address of the module. You must retrieve it with \fBlspci\fP.
+.TP
+.B <field> <value>
+Field and value names for EEPROM writing. Possible fields are:
+.B pci_dev_id, pci_vendor_id, pci_class, pci_rev_id, pci_subsys_dev_id, pci_subsys_vendor_id, regdomain
+
+.SH "EXAMPLE"
+
+Execute the commands below from a root account.
+
+Retrieve the module's PCI memory address with \fBlspci\fP:
+.LP
+.NF
+# lspci -v
+0b:00.0 Ethernet controller: Atheros Communications, Inc. AR5211 802.11ab NIC
+(rev 01)
+        Subsystem: Standard Microsystems Corp [SMC] Unknown device 2335
+        Flags: medium devsel, IRQ 20
+        Memory at 6c000000 (32-bit, non-prefetchable) [size=64K]
+        Capabilities: [44] Power Management version 2
+
+.FI
+
+The above card has its memory mapped at 0x6c000000.
+.PP
+If no madwifi driver is running or the module isn't recognized by the
+driver anymore, e.g. due to wrong PCI id values (check your syslog),
+you must manually enable the PCI device with \fBsetpci\fP. The argument to "-s" comes
+from the output above:
+.LP
+.NF
+setpci -s 0b:00.0 command=0x41f cache_line_size=0x10
+
+
+.PP
+Retrieve some information of the module:
+.LP
+.NF
+# ./ath_info 0x6c000000
+ \-==Device Information==\-
+.br
+MAC Version:  5211  (0x40) 
+.br
+MAC Revision: 5211  (0x42) 
+.br
+5Ghz PHY Revision: 5111  (0x17) 
+.br
+2Ghz PHY Revision: 2111  (0x23) 
+.br
+ -==EEPROM Information==-
+.br
+EEPROM Version:     3.2 
+.br
+EEPROM Size:        16K
+.br
+Regulatory Domain:  0x20
+.br
+ -==== Capabilities ====-
+.br
+|  802.11a Support: yes  |
+.br
+|  802.11b Support: yes  |
+.br
+|  802.11g Support: no   |
+.br
+|  RFKill  Support: no   |
+.br
+ ========================
+.FI
+.PP
+Set the regulatory domain to 0. You need to confirm to write with 'y' (-f turns this off).
+Check \fBhttp://madwifi.org/wiki/UserDocs/CountryCode\fP for more information on
+regdomains and country codes:
+.LP
+.NF
+# ./ath_info -w 0x6c000000 regdomain 0   
+.br
+ -==Device Information==-
+.br
+MAC Version:  5211  (0x40) 
+.br
+MAC Revision: 5211  (0x42) 
+.br
+5Ghz PHY Revision: 5111  (0x17) 
+.br
+2Ghz PHY Revision: 2111  (0x23) 
+.br
+ -==EEPROM Information==-
+.br
+EEPROM Version:     3.2 
+.br
+EEPROM Size:        16K
+.br
+Regulatory Domain:  0x20 
+.br
+ -==== Capabilities ====-
+.br
+|  802.11a Support: yes  |
+.br
+|  802.11b Support: yes  |
+.br
+|  802.11g Support: no   |
+.br
+|  RFKill  Support: no   |
+.br
+ ========================
+.br
+GPIO registers: CR 00000000 DO 00000000 DI 00000000
+.br
+           regdomain (0x00bf) := 0x0000
+.br
+WARNING: The write function may easy brick your device or
+.br
+violate state regulation on frequency usage.
+.br
+Proceed on your own risk!
+.br
+Shall I write the above value(s)? (y/n)
+.br
+y
+.FI
+
+.SH "BUGS"
+
+The write function is currently not tested with 5210 devices.
+.PP
+Use at your own risk, entering a false device address will have really 
+nasty results!
+.PP
+An invalid magic in the EEPROM will cause \fBath_info\fP to fail.

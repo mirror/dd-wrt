@@ -1,0 +1,25 @@
+This directory contains the bits needed to integrate the Madwifi source
+distribution into a Linux kernel source tree.  This is only recommended
+on embedded systems with no kernel module support.  For standard
+installation, please refer to the files in the top level directory.
+
+To integrate MadWifi into the Linux kernel, unpack the kernel sources if
+needed, then run the install.sh script from this directory.
+
+If you want to patch the currently running system you can run install.sh
+without arguments, otherwise specify the source tree location on the
+command line:
+
+./install.sh /usr/src/linux
+
+The driver sources will be copied into drivers/net/wireless/madwifi in
+the kernel sources.  Some kernel files will be patched to know about
+this directory.  Files called Makefile.kernel will be renamed to
+Makefile.
+
+Now you can run "make menuconfig" or similar command and configure the
+driver as you would normally do.  If the kernel is already configured,
+run "make oldconfig", and you'll be asked only about Atheros driver.
+
+It's possible to build Madwifi modules when the driver is integrated
+into Linux 2.6.x, but most users should not need that.

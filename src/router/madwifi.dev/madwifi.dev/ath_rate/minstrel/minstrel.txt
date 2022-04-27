@@ -1,0 +1,356 @@
+
+Minstrel
+
+Introduction
+==================================================================
+This code is called minstrel, because we have taken a wandering minstrel
+approach. Wander around the different rates, singing wherever you
+can. And then, look at the performance, and make a choice. Note that the
+wandering minstrel will always wander in directions where he/she feels he/she
+will get paid the best for his/her work.
+
+The Minstrel autorate selection algorithm is an EWMA based algorithm and is
+derived from 
+ 1)An initial rate module we released in 2005,
+  http://sourceforge.net/mailarchive/forum.php?forum_id=33966&max_rows=25&style=flat&viewmonth=200501&viewday=5
+
+ 2)the "sample" module in the madwifi-ng source tree. 
+
+The code released in 2005 had some algorithmic and implementation
+flaws (one of which was that it was based on the old madwifi codebase)
+and was shown to be unstable. Performance of the sample module is poor
+(http://www.madwifi.org/ticket/989), and we have observed similar
+issues.
+
+We noted:
+ 1)The rate chosen by sample did not alter to match changes in the radio
+    environment.
+ 2)Higher throughput (between two nodes) could often be achieved by fixing the
+    bitrate of both nodes to some value.
+ 3)After a long period of operation, "sample" appeared to be stuck in a low
+    data rate, and would not move to a higher data rate.
+
+We examined the code in sample, and decided the best approach was a
+rewrite based on sample and the module we released in January 2005.
+
+Theory of operation
+==================================================================
+
+We defined the measure of successfulness (of packet transmission)  as
+
+                                  mega-bits-transmitted
+    Prob_success_transmission *  ----------------------
+	     		             elapsed time
+
+This measure of successfulness will therefore adjust the transmission speed to 
+get the maximum number of data bits through the radio interface. Further, it
+means that the 1mb/sec rate (which has a very high probability of successful
+transmission) will not be used in preference to the 11mb/sec rate.
+
+We decided that the module should record the successfulness of all packets
+that are transmitted. From this data, the module has sufficient information to
+decide which packets are more successful than others. However, a variability
+element was required. We had to force the module to examine bit rates other
+than optimal. Consequently, some percent of the packets have to be sent at
+rates regarded as non optimal.
+
+10 times a second (this frequency is alterable by changing the driver code)
+a timer fires, which evaluates the statistics table. EWMA calculations
+(described below) are used to process the success history of each rate. On
+completion of the calculation, a decision is made as to the rate which has the
+best throughput, second best throughput, and  highest probability of success.
+This data is used for populating the retry chain during the next 100 ms.
+
+As stated above, the minstrel algorithm collects statistics from all packet
+attempts.  Minstrel spends a particular percentage of frames, doing "look
+around" i.e. randomly trying other rates, to gather statistics. The
+percentage of "look around" frames, is set at boot time via the module
+parameter "ath_lookaround_rate" and defaults to 10%. The distribution of
+lookaround frames is also randomised somewhat to avoid any potential
+"strobing" of lookaround between similar nodes. 
+
+TCP theory tells us that each packet sent must be delivered in under 26ms. Any
+longer duration, and the TCP network layers will start to back off. A delay of
+26ms implies that there is congestion in the network, and that fewer packets
+should be injected to the device. Our conclusion was to adjust the retry chain
+of each packet so the retry chain was guaranteed to be finished in under 26ms.
+
+
+Retry Chain
+==================================================================
+The HAL provides a multirate retry chain - which consists of four
+segments. Each segment is an advisement to the HAL to try to send the current
+packet at some rate, with a fixed number of retry attempts. Once the packet is
+successfully transmitted, the remainder of the retry chain is
+ignored. Selection of the number of retry attempts was based on the desire to
+get the packet out in under 26ms, or fail. We provided a module parameter,
+ath_segment_size, which has units of microseconds, and specifies the maximum
+duration one segment in the retry chain can last. This module parameter has a
+default of 6000. Our view is that a segment size of between 4000 and 6000
+seems to fit most situations.
+
+There is some room for movement here - if the traffic is UDP then the limit of
+26ms for the retry chain length is "meaningless".  However, one may argue that
+if the packet was not transmitted after some time period, it should
+fail. Further, one does expect UDP packets to fail in transmission. We leave
+it as an area for future improvement.
+
+
+The (re)try segment chain is calculated in two possible manners. If this
+packet is a normal tranmission packet (90% of packets are this) then the retry
+count is best throughput, next best throughput, best probability, lowest
+baserate. If it is a sample packet (10% of packets are this), then the retry
+chain is random lookaround, best throughput, best probability, lowest base
+rate. In tabular format:
+
+        Try | Lookaround rate    | Normal rate         
+        ------------------------------------------------
+         1  | Random lookaround  | Best throughput     
+         2  | Best throughput    | Next best throughput
+         3  | Best probability   | Best probability    
+         4  | Lowest Baserate    | Lowest Baserate     
+
+The retry count is adjusted so that the transmission time for that section of
+the retry chain is less than 26 ms.
+
+After some discussion, we have adjusted the code so that the lowest rate is
+never used for the lookaround packet. Our view is that since this rate is used
+for management packets, this rate must be working. - Alternatively, the link
+is set up with management packets, data packets are acknowledged with
+management packets. Should the lowest rate stop working, the link is going to
+die reasonably soon.
+
+Analysis of information in the /proc/net/madwifi/athX/rate_info file
+showed that the system was sampling too hard at some rates. For those
+rates that never work (54mb, 500m range) there is no point in sending
+10 sample packets (<6ms time). Consequently, for the very very low
+probability rates, we sample at most twice.
+
+The retry chain above does "work", but performance is suboptimal. The
+key problem being that when the link is good, too much time is spent
+sampling the slower rates. Thus, for two nodes adjacent to each other,
+the throughput between them was several megabits/sec below using a
+fixed rate. The view was that minstrel should not sample at the slower
+rates if the link is doing well. However, if the link deteriorates,
+minstrel should immediately sample at the lower rates.
+
+Some time later, we realised that the only way to code this reliably
+was to use the retry chain as the method of determining if the slower
+rates are sampled. The retry chain was modified as:
+
+Try |         Lookaround rate              | Normal rate         
+    | random < best    | random > best     |
+--------------------------------------------------------------
+ 1  | Best throughput  | Random rate       | Best throughput     
+ 2  | Random rate      | Best throughput   | Next best throughput
+ 3  | Best probability | Best probability  | Best probability    
+ 4  | Lowest Baserate  | Lowest baserate   | Lowest baserate     
+
+With this retry chain, if the randomly selected rate is slower than the
+current best throughput, the randomly selected rate is placed second in the
+chain. If the link is not good, then there will be data collected at the
+randomly selected rate.  Thus, if the best throughput rate is currently 54mbs,
+the only time slower rates are sampled is when a packet fails in
+transmission. Consequently, if the link is ideal, all packets will be sent at
+the full rate of 54mbs. Which is good.
+
+EWMA
+==================================================================
+
+The EWMA calculation is carried out 10 times a second, and is run for each
+rate. This calculation has a smoothing effect, so that new results have
+a reasonable (but not large) influence on the selected rate. However, with
+time, a series of new results in some particular direction will predominate. 
+Given this smoothing, we can use words like inertia to describe the EWMA.
+
+By "new results", we mean the results collected in the just completed 100ms
+interval. Old results are the EWMA scaling values from before the just
+completed 100ms interval.
+
+EWMA scaling is set by the module parameter ath_ewma_level, and defaults to
+75%. A value of 0% means use only the new results, ignore the old results.
+A value of 99% means use the old results, with a tiny influence from the new
+results. 
+
+
+
+The calculation (performed for each rate, at each timer interrupt) of the
+         probability of success is:
+
+         Psucces_this_time_interval * (100 - ath_ewma_level) + (Pold * ath_ewma_level)
+Pnew =  ------------------------------------------------------------------------------
+                  100
+
+                            number_packets_sent_successfully_this_rate_time_interval
+Psuccess_this_time_interval=--------------------------------------------------------
+                             number_packets_sent_this_rate_time_interval
+
+
+If no packets have been sent for a particular rate in a time interval, no
+calculation is carried out. The Psuccess value for this rate is not changed.
+
+If the new time interval is the first time interval (the module has just been
+inserted), then Pnew is calculated from above with Pold set to 0.
+
+The appropriate update interval was selected on the basis of choosing a compromise
+between
+ *collecting enough success/failure information to be meaningful
+ *minimising the amount of cpu time spent do the updates
+ *providing a means to recover quickly enough from a bad rate selection.
+The first two points are self explanatory. When there is a sudden change in the radio
+environment, an update interval of 100ms will mean that the rates marked as optimal are
+very quickly marked as poor. Consequently, the sudden change in radio environment will
+mean that minstrel will very quickly switch to a better rate. 
+
+A sudden change in the transmission probabilities will happen when the
+node has not transmitted any data for a while, and during that time
+the environment has changed. On starting to transmit, the probability
+of success at each rate will be quite different. The driver must adapt
+as quickly as possible, so as to not upset the higher TCP network
+layers.
+
+
+
+Module Parameters
+====================================================
+The module has three parameters:
+
+name              default value    purpose
+ath_ewma_level      75%            rate of response to new data. A value of 100 is VERY responsive.
+ath_lookaround_rate 10%            percent of packets sent at non optimal speed.
+ath_segment_size   6000            maximum duration of a retry segment (microseconds)
+
+
+
+
+
+Test Network
+====================================================
+We used three computers in our test network.  The first two, equipped with
+atheros cards running in adhoc mode. We used a program that sends a fixed
+number of TCP packets between computers, and reports on the data rate. The
+application reports on the data rate - at an application layer level, which is
+considerably lower than the level used in transmitting the packets.
+
+The third computer had an atheros card also, but was running network monitor
+mode with ethereal. The monitor computer was used to see what data rates were
+used on the air. This computer was a form of "logging of the connection"
+without introducing any additional load on the first two computers.
+
+It was from monitoring the results on the third computer that we started to
+get some confidence in the correctness of the code. We observed TCP
+backoffs (described above) on this box. There was much celebration when the
+throughput increased simply because the retry chain was finished in under 26
+ms.
+
+Our view was that throughput between the two computers should be as
+close as possible (or better than) what can be achieved by setting
+both ends to fixed rates. Thus, if setting the both ends to fixed
+rates significantly increases the throughput, a reasonable conclusion
+is that a fault exists in the adaptive rate rate.
+
+We recorded throughputs (with minstrel) that are within 10% of what is
+achieved with the experimentally determined optimum fixed rate. 
+
+
+Notes on Timing
+====================================================
+
+As noted above, Minstrel calculates the throughput for each rate. This
+calculation (using a packet of size 1200 bytes) determines the
+transmission time on the radio medium. In these calculations, we assume a
+contention window min and max value of 4 and 10 microseconds respectively.
+
+Further, calculation of the transmission time is required so that we can
+guarantee a packet is transmitted (or dropped) in a minimum time period.
+The transmission  time is used in determining how many times a packet
+is transmitted in each segment of the retry chain.
+
+Indeed, the card will supply the cwmin/cwmax values directly
+ iwpriv if_name get_cwmin <0|1|2|3> <0|1>
+
+We have not made direct calls to determine cwmin/cwmax - this is an area
+for future work. Indeed, the cwmin/cwmax determination code could check to
+see if the user has altered these values with the appropriate iwpriv.
+
+The contention window size does vary with traffic class. For example,
+video and voice have a contention window min of 3 and 2 microseconds
+respectively. Currently, minstrel does not check traffic class.
+
+Calculating the throughputs based on traffic class and bit rate and
+variable packet size will significantly complicate the code and require
+many more sample packets. More sample packets will lower the throughput
+achieved. Thus, our view is that for this release, we should take a simple
+(but reasonable) approach that works stably and gives good throughputs.
+
+
+Values of cwin/cwmax of 4 and 10 microseconds are from 
+IEEE Part 11: Wireless LAN Medium Access Control (MAC) and Physical Layer
+(PHY) specifications, Amendment : Medium Access Control (MAC) Enhancements for
+Quality of Service (QoS) P802.11e/D12.0, November 2004.
+
+
+Internal variable reporting
+====================================================
+The minstrel algorithm reports to the proc file system its internal
+statistics, which can be viewed as text. A sample output is below:
+
+cat /proc/net/madwifi/ath0/rate_info
+
+
+rate data for node:: 00:02:6f:43:8c:7a
+rate     throughput  ewma prob   this prob  this succ/attempt   success    attempts
+     1         0.0        0.0        0.0          0(  0)          0           0
+     2         1.6       92.4      100.0          0(  0)         11          11
+     5.5       3.9       89.9      100.0          0(  0)         11          11
+    11         6.5       86.6      100.0          0(  0)         10          11
+     6         4.8       92.4      100.0          0(  0)         11          11
+     9         6.9       92.4      100.0          0(  0)         11          11
+    12         9.0       92.4      100.0          0(  0)         11          11
+    18        12.1       89.9      100.0          0(  0)         11          11
+    24        15.5       92.4      100.0          0(  0)         11          11
+    36        20.6       92.4      100.0          0(  0)         11          11
+ t  48        23.6       89.9      100.0          0(  0)         12          12
+T P 54        27.1       96.2       96.2          0(  0)        996        1029
+
+
+Total packet count::    ideal 2344      lookaround 261
+
+There is a separate table for each node in the neighbor table, which will
+appear similar to above.
+
+The possible datarates for this node are listed in the column at the left. The
+calculated throughput and "ewma prob" are listed next, from which the rates
+used in retry chain are selected. The rates with the maximum throughput,
+second maximum throughput and maximum probability are indicated by the letters
+T, t, and P respectively.
+
+The statistics gathered in the last 100ms time period are displayed in the
+"this prob" and "this succ/attempt" columns.
+
+Finally, the number of packets transmitted at each rate, since module loading
+are listed in the last two columns. When interpreting the last four columns,
+note that we use the words "succ" or "success" to mean packets successfully
+sent from this node to the remote node. The driver determines success by
+analysing reports from the hal. The word "attempt" or "attempts" means the
+count of packets that we transmitted. Thus, the number in the success column
+will always be lower than the number in the attempts column. 
+
+
+When the two nodes are brought closer together, the statistics start changing,
+and you see more successful attempts at the higher rates. The ewma prob at the
+higher rates increases and then most packets are conveyed at the higher rates.
+
+When the rate is not on auto, but fixed, this table is still
+available, and will report the throughput etc for the current bit
+rate. Changing the rate from auto to fixed to auto will completely
+reset this table, and the operation of the minstrel module.
+
+
+
+
+
+
+
+
+

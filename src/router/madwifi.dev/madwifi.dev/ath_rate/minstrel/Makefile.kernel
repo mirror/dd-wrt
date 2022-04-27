@@ -1,0 +1,37 @@
+#
+# Makefile for the Minstrel rate control algorithm.
+#
+# $Id: //depot/sw/linuxsrc/src/802_11/madwifi/madwifi/ath_rate/minstrel/Makefile.kernel#1 $
+#
+
+src ?= .
+srctree ?= .
+
+TOP = $(srctree)/$(src)/../..
+
+include $(TOP)/BuildCaps.inc
+include $(TOP)/ath_hal/ah_target.inc
+
+ATH=	$(TOP)/ath
+ATH_HAL=$(TOP)/ath_hal
+COMPAT=	$(TOP)/include
+HAL=	$(TOP)/hal
+
+INCS = -include $(COMPAT)/compat.h -I$(COMPAT)
+INCS += -I$(TOP) -I$(ATH) -I$(ATH_HAL) -I$(HAL)
+EXTRA_CFLAGS += $(INCS) $(COPTS) -DOPT_AH_H=\"public/$(TARGET).opt_ah.h\"
+
+ifneq ($(VERSION).$(PATCHLEVEL),2.4)
+obj-$(CONFIG_ATHEROS) += ath_rate_minstrel.o
+ath_rate_minstrel-objs	:= minstrel.o
+endif
+
+ifeq ($(VERSION).$(PATCHLEVEL),2.4)
+obj-$(CONFIG_ATHEROS) := minstrel.o
+
+export-objs	:= minstrel.o
+list-multi	:= ath_rate_minstrel.o
+
+O_TARGET	:= ath_rate.o
+include $(TOPDIR)/Rules.make
+endif

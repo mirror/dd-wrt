@@ -1,0 +1,55 @@
+#!/bin/sh
+
+: ${PATTERN='\(ath_.*\|wlan_.*\|wlan\)$'}
+: ${MAX_TRIES=10}
+
+test "`id -u`" = 0 || {
+	echo "ERROR: You must be root to run this script" >&2
+	exit 1
+}
+
+test -r /proc/modules || {
+	echo "ERROR: Cannot read /proc/modules" >&2
+	exit 1
+}
+
+tries="$MAX_TRIES"
+while test "$tries" != "0"; do
+	skipped=0
+	IFS='
+'
+	for line in `cat /proc/modules`; do
+		IFS=' 	'
+		set x $line
+		name="$2"
+		size="$3"
+		use_count="$4"
+		use_name="$5"
+		state="$6"
+		expr "$name" : "$PATTERN" >/dev/null || continue
+
+		# Compatibility for Linux 2.4.x
+		test -z "$state" && { use_name="-"; state="Live"; }
+
+		if test "$state" != "Live" || test "$use_count" != "0" || \
+		   test "$use_name" != "-"; then
+			# Don't skip unload in the last run
+			if test "$tries" != "1"; then
+				skipped=1
+				continue
+			fi
+		fi
+
+		echo "Unloading \"$name\""
+		sync	# to be safe
+		/sbin/rmmod "$name" || {
+			echo "ERROR: cannot unload module \"$name\"" >&2
+			exit 1
+		}
+		sync    # to be even safer
+	done
+	test "$skipped" = "0" && break
+	tries=$(($tries - 1))
+done
+
+exit 0

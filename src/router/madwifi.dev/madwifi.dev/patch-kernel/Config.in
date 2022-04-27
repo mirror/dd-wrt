@@ -1,0 +1,42 @@
+dep_bool '   Atheros 802.11(a/b/g) PCI/Cardbus support' CONFIG_ATHEROS $CONFIG_PCI $CONFIG_NET_RADIO
+if [ "$CONFIG_ATHEROS" = "y" ]; then
+
+   choice '    Atheros: Default Transmission Rate Control Algorithm'    \
+        "Minstrel       CONFIG_ATHEROS_RATE_DEFAULT_MINSTREL \
+         Sample         CONFIG_ATHEROS_RATE_DEFAULT_SAMPLE \
+         Onoe           CONFIG_ATHEROS_RATE_DEFAULT_ONOE   \
+         AMRR           CONFIG_ATHEROS_RATE_DEFAULT_AMRR" Sample
+
+  if [ "$CONFIG_ATHEROS_RATE_DEFAULT_AMRR" = "y" ]; then
+    define_bool CONFIG_ATHEROS_RATE_AMRR y
+    define_string CONFIG_ATHEROS_RATE_DEFAULT "amrr"
+  else
+    dep_bool '    Adaptive Multi-Rate Retry control algorithm' \
+	CONFIG_ATHEROS_RATE_AMRR $CONFIG_ATHEROS
+  fi
+
+  if [ "$CONFIG_ATHEROS_RATE_DEFAULT_ONOE" = "y" ]; then
+    define_bool CONFIG_ATHEROS_RATE_ONOE y
+    define_string CONFIG_ATHEROS_RATE_DEFAULT "onoe"
+  else
+    dep_bool '    Atsushi Onoe rate control algorithm' \
+	CONFIG_ATHEROS_RATE_ONOE $CONFIG_ATHEROS
+  fi
+
+  if [ "$CONFIG_ATHEROS_RATE_DEFAULT_SAMPLE" = "y" ]; then
+    define_bool CONFIG_ATHEROS_RATE_SAMPLE y
+    define_string CONFIG_ATHEROS_RATE_DEFAULT "sample"
+  else
+    dep_bool '    Sample Rate control algorithm' \
+	CONFIG_ATHEROS_RATE_SAMPLE $CONFIG_ATHEROS
+  fi
+
+  if [ "$CONFIG_ATHEROS_RATE_DEFAULT_MINSTREL" = "y" ]; then
+    define_bool CONFIG_ATHEROS_RATE_MINSTREL y
+    define_string CONFIG_ATHEROS_RATE_DEFAULT "minstrel"
+  else
+    dep_bool '    Minstrel Rate control algorithm' \
+        CONFIG_ATHEROS_RATE_MINSTREL $CONFIG_ATHEROS
+  fi
+
+fi

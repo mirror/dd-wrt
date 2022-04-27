@@ -1,0 +1,131 @@
+#! /bin/sh
+sed \
+	-e 's/^#ifdef BUILD_AR5312/#include "opt_ah.h"\
+#ifdef AH_SUPPORT_AR5312/' \
+	-e '/^#ident/d' \
+	-e 's/MAC_/AR_/g' \
+	-e 's/PHY_/AR_PHY_/g' \
+	-e 's/EEPROM_/AR_EEPROM_/g' \
+	-e 's/AR_EEPROM_POWER_EXPN_5112/EEPROM_POWER_EXPN_5112/g' \
+	-e s'/A_UINT32/u_int32_t/g' \
+	-e s'/A_INT32/int32_t/g' \
+	-e 's/A_UINT16/u_int16_t/g' \
+	-e 's/A_UINT8/u_int8_t/g' \
+	-e 's/A_INT8/int8_t/g' \
+	-e 's/A_INT16/int16_t/g' \
+	-e 's/A_UCHAR/u_char/g' \
+	-e 's/A_BOOL/HAL_BOOL/g' \
+	-e 's/REG_DOMAIN/HAL_&/g' \
+	-e 's/CTRY_CODE/HAL_&/g' \
+	-e 's/WLAN_CFLAGS/u_int16_t/g' \
+	-e 's/WLAN_CHANNEL/ROAMING_CHANNEL/g' \
+	-e 's/CHAN_VALUES/HAL_CHANNEL/g' \
+	-e 's/WLAN_SERVICE/HAL_OPMODE/g' \
+	-e 's/RFGAIN_/HAL_RFGAIN_/g' \
+	-e 's/readPlatformReg/OS_REG_READ/g' \
+	-e 's/writePlatformReg/OS_REG_WRITE/g' \
+	-e 's/WLAN_DEV_INFO/struct ath_hal/g' \
+	-e 's/reverseBits/ath_hal_reverseBits/g' \
+	-e 's/udelay/OS_DELAY/g' \
+	-e 's/TRUE/AH_TRUE/g' \
+	-e 's/FALSE/AH_FALSE/g' \
+	-e 's/NULL[^a-zA-Z0-9]/AH_&/g' \
+	-e 's/\([^_]\)NULL$/\1AH_NULL/' \
+	-e 's;//\(.*\);/* \1 */;' \
+	-e 's/A_REG_WR/OS_REG_WRITE/' \
+	-e 's/A_REG_RD/OS_REG_READ/' \
+	-e 's/A_REG_RMW_FIELD(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_RMW_FIELD(\1, \2, \2_\3, \4)/g' \
+	-e 's/A_REG_RMW_FIELD(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*$/OS_REG_RMW_FIELD(\1, \2, \2_\3,/g' \
+	-e 's/A_REG_SET_BIT(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_SET_BIT(\1, \2, \2_\3)/g' \
+	-e 's/A_REG_CLR_BIT(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_CLR_BIT(\1, \2, \2_\3)/g' \
+	-e 's/A_REG_CLR_BIT2(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_CLR_BIT(\1, \2, (\2_\3 | \2_\4))/g' \
+	-e 's/A_FIELD_VALUE(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/SM(\3, \1_\2)/g' \
+	-e 's/A_REG_IS_BIT_SET(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/(OS_REG_READ(\1, \2) \& \2_\3)/g' \
+	-e 's/A_REG_SET_BIT2(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_WRITE(\1, \2, OS_REG_READ(\1, \2) | \2_\3 | \2_\4)/g' \
+	-e 's/A_REG_SET_BIT3(\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*\([^,]*\),[ ]*\([^)]*\))/OS_REG_WRITE(\1, \2, OS_REG_READ(\1, \2) | \2_\3 | \2_\4 | \2_\5)/g' \
+	-e 's/STA_ID1_AD_HOC/STA_ID1_ADHOC/' \
+	-e 's/pChval/chan/g' \
+	-e 's/ASSERT/HALASSERT/g' \
+	-e 's/A_STATUS/HAL_BOOL/g' \
+	-e 's/A_MEM_ZERO/OS_MEMZERO/g' \
+	-e 's/A_DRIVER_BCOPY/OS_MEMCPY/g' \
+	-e 's/A_MIN/AH_MIN/g' \
+	-e 's/A_MAX/AH_MAX/g' \
+	-e 's/A_ABS/abs/g' \
+	-e 's/BUILD_AR5312/AH_SUPPORT_AR5312/g' \
+	-e 's/uiPrintf(/ath_hal_printf(ah, /g' \
+	-e 's/EEP_HEADER_INFO/HAL_EEPROM/g' \
+	-e '/#include "wlantype.h"/d' \
+	-e '/#include "wlandrv.h"/d' \
+	-e '/#include "wlanchannel.h"/d' \
+	-e 's/"halApi.h"/"ah.h"/' \
+	-e 's/"hal.h"/"ah_xr.h"/' \
+	-e '/#include "ui.h"/d' \
+	-e 's/halUtil.h/ah_internal.h/' \
+	-e 's/halDevId.h/ah_devid.h/' \
+	-e 's;ar5312Reg.h;ar5312/ar5312reg.h;' \
+	-e 's;ar5212Misc.h;ar5312/ar5312phy.h;' \
+	-e '/#include "ar5212Reset.h"/d' \
+	-e '/#include "ar5212Power.h"/d' \
+	-e '/#include "ar5212Receive.h"/d' \
+	-e '/#include "ar5212Transmit.h"/d' \
+	-e 's;ar5312[.]h;ar5312/ar5312.h;' \
+	-e 's/RATE_TABLE/HAL_RATE_TABLE/g' \
+	-e 's/AR_PHY_COMPUTE_TX_TIME(/ath_hal_computetxtime(ah, /g' \
+	-e 's/AR_PHY_RX_DELAY_M/AR_PHY_RX_DELAY/g' \
+	-e 's/AR_PHY_PAPD_PROBE_POWERTX_M/AR_PHY_PAPD_PROBE_POWERTX/g' \
+	-e '/^ar5212Reset(/s/)/, HAL_STATUS *status)/g' \
+    	-e '/HAL_BOOL[ ]*status;/d' \
+    	-e '/WLAN_STA_CONFIG[ ]*.pCfg =.*;$/d' \
+    	-e 's/pCfg->bssType/serviceType/' \
+    	-e 's/INDEPENDENT_BSS/HAL_M_IBSS/' \
+    	-e 's/INFRASTRUCTURE_BSS/HAL_M_STA/' \
+    	-e 's/WLAN_AP_SERVICE/HAL_M_HOSTAP/' \
+    	-e 's/AWAKE/HAL_PM_&/' \
+    	-e 's/HEADER_WMODE/u_int/' \
+    	-e 's/MODE_SELECT_/HAL_MODE_/g' \
+    	-e 's/wlanCFlagsToWirelessMode(\([^,]*\),[ ]\([^-]*\)->[^)]*)/ath_hal_chan2wmode(\1, \2)/' \
+    	-e 's/wlanConvertGHztoCh(\([^,]*\),[ ]\([^,]*\))/ath_hal_mhz2ieee(\1, \2)/' \
+    	-e 's/wlanGetChannelPower(\([^,]*\),[ ]\([^,]*\))/ath_hal_getchannelpower(\1, \2)/' \
+    	-e 's/wlanGetCtl(\([^,]*\),[ ]\([^,]*\))/ath_hal_getctl(\1, \2)/' \
+    	-e 's/wlanGetAntennaReduction(\([^,]*\),[ ]*\([^,]*\),[ ]\([^,]*\))/ath_hal_getantennareduction(\1, \2, \3)/' \
+    	-e 's/\(IS_CHAN_[^)]*\)(\([^-]*\)->[^)]*)/\1(\2)/g' \
+	-e '/\(IS_CHAN_[^)]*\)(chan[^)][^)]*)/s//\1(chan)/g' \
+	-e 's/pDev->pHalInfo->pEepData->pEepHeader->/ahp->ah_/g' \
+	-e 's/pDev->pHalInfo->pEepData->version/ahp->ah_eeversion/g' \
+	-e 's/pDev->staConfig.pChannel/ahp->ah_curchan/g' \
+	-e 's/pDev->staConfig[.]/ahp->ah_/g' \
+	-e 's/pDev->/ahp->ah_/g' \
+	-e 's/pEepData->/ahp->ah_/g' \
+	-e 's/pDev/ah/g' \
+	-e 's/pHeaderInfo->/pe->ee_/g' \
+	-e 's/pHeaderInfo/pe/g' \
+	-e 's/pData->pPcdacInfo->/ahp->ah_/g' \
+	-e 's/pData->pEepHeader->/ahp->ah_/g' \
+	-e 's/pData->pRdEdgesPower/ahp->ah_rdEdgesPower/g' \
+	-e 's/pData->version/ahp->ah_eeversion/g' \
+	-e 's/pCfg->/ahp->ah_/g' \
+	-e 's/pMap->pEepHeader->/ahp->ah_/g' \
+	-e 's/ah_Channels/ah_channels/g' \
+	-e 's/ah_DataPerChannel/ah_dataPerChannel/g' \
+	-e 's/ahp->ah_pEepHeader/\&ahp->ah_eeprom/' \
+	-e 's/ahp->ah_pHalInfo->pGainValues/\&ahp->ah_gainValues/' \
+	-e 's/ahp->ah_pciInfo.SubVendorDeviceID/ah->ah_subvendorid/' \
+	-e 's/ah_phwChannel/ah_curchan/' \
+	-e 's/ah_MaskReg/ah_maskReg/' \
+	-e 's/,[ ]*struct eepMap[ ]*[*]pData,/,/g' \
+    	-e '/^[ ]*struct[ ]*eepMap[ ]*[*]pData/d' \
+	-e '/^ar5312InvalidGainReadback/s/u_int16_t channelFlags/HAL_CHANNEL *chan/' \
+	-e '/ar5312InvalidGainReadback(\([^,]*\),[ ]*\(.*\)->channelFlags)/s//ar5312InvalidGainReadback(\1, \2)/' \
+	$1 | awk '
+BEGIN		{ addlocal = 0; }
+/^[a-zA-Z0-9]*[(]struct[ ]*ath_hal[ ]*[*]ah[,)]/	{ addlocal = 1; }
+/^{$/		{
+	if (addlocal) {
+		print "{\n    struct ath_hal_5212 *ahp = AH5212(ah);";
+		addlocal = 0;
+		next;
+	} 
+}
+	{ print }
+	'
