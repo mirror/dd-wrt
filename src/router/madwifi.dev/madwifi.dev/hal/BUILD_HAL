@@ -1,0 +1,208 @@
+$Id: //depot/sw/branches/sam_hal/BUILD_HAL#1 $
+
+BUILDING THE HAL FROM SOURCE:
+-----------------------------
+Instructions for building the HAL from source code under Linux.  Note that
+unlike previous versions the HAL build procedure is now decoupled from
+the madwifi software.  Also, the build procedure is now better setup for
+cross-platform and multi-platform compilation.  Support for building
+the HAL source code on non-Linux platforms is straightforward but not
+yet included in this distribution.
+
+1.  Unpack the hal source code distribution; e.g.
+
+	tar zxf atheros/hal/hal-0.9.5.11.tgz
+
+    You should now have a directory that looks like:
+
+    acker% cd hal-0.9.5.11/
+    acker% ls
+    ah.c         ah_eeprom.c    ah_regdomain.c  ar5212     freebsd   regdomain
+    ah_decode.h  ah_eeprom.h    ah_xr.h         ardecode   linux     version.h
+    ah_desc.h    ah.h           ar5210          BUILD_HAL  Makefile
+    ah_devid.h   ah_internal.h  ar5211          COPYRIGHT  README
+
+2.  Change to the directory appropriate for your system; e.g.
+    acker% cd linux
+3.  Edit Makefile and set the ALL macro to the set of target platforms
+    you want to build for.  Each target platform <TARGET> must have a
+    <TARGET>.inc make include file that specifies the parameters for
+    building that target.  For example, the i386-elf target has:
+
+	CC=	gcc
+	LD=	ld
+	STRIP=	strip
+	OBJCOPY=objcopy
+	NM=	nm
+
+	COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+	ifndef CONFIG_FRAME_POINTER
+	COPTS+=	-fomit-frame-pointer
+	endif
+
+    You must specify the location of the toolchain components used to build
+    the code.  You must also specify the target system byte order with the
+    AH_BYTE_ORDER C pre-processor symbol.  This can be either AH_LITTLE_ENDIAN
+    or AH_BIG_ENDIAN.
+4.  Once you setup the build environment as described in step 3, just type
+    make and you should see something like:
+
+acker% make 
+make -f Makefile.inc OS=linux TARGET=i386-elf
+make[1]: Entering directory `/home/sam/hal-0.9.5.11/linux'
+gcc -c -o obj/i386-elf/ah.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ah.c
+gcc -c -o obj/i386-elf/ah_eeprom.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ah_eeprom.c
+gcc -c -o obj/i386-elf/ah_regdomain.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ah_regdomain.c
+../ah_regdomain.c: In function `ath_hal_init_channels':
+../ah_regdomain.c:1649: warning: implicit declaration of function `memcpy'
+gcc -c -o obj/i386-elf/ar5210_attach.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_attach.c
+gcc -c -o obj/i386-elf/ar5210_beacon.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_beacon.c
+gcc -c -o obj/i386-elf/ar5210_interrupts.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_interrupts.c
+gcc -c -o obj/i386-elf/ar5210_keycache.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_keycache.c
+gcc -c -o obj/i386-elf/ar5210_misc.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_misc.c
+../ar5210/ar5210_misc.c: In function `ar5210GetMacAddress':
+../ar5210/ar5210_misc.c:27: warning: implicit declaration of function `memcpy'
+gcc -c -o obj/i386-elf/ar5210_power.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_power.c
+gcc -c -o obj/i386-elf/ar5210_phy.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_phy.c
+gcc -c -o obj/i386-elf/ar5210_recv.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_recv.c
+gcc -c -o obj/i386-elf/ar5210_reset.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_reset.c
+../ar5210/ar5210_reset.c: In function `ar5210SetTransmitPower':
+../ar5210/ar5210_reset.c:767: warning: implicit declaration of function `memcpy'
+gcc -c -o obj/i386-elf/ar5210_xmit.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5210/ar5210_xmit.c
+gcc -c -o obj/i386-elf/ar5211_attach.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_attach.c
+gcc -c -o obj/i386-elf/ar5211_beacon.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_beacon.c
+gcc -c -o obj/i386-elf/ar5211_interrupts.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_interrupts.c
+gcc -c -o obj/i386-elf/ar5211_keycache.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_keycache.c
+gcc -c -o obj/i386-elf/ar5211_misc.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_misc.c
+../ar5211/ar5211_misc.c: In function `ar5211GetMacAddress':
+../ar5211/ar5211_misc.c:30: warning: implicit declaration of function `memcpy'
+gcc -c -o obj/i386-elf/ar5211_power.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_power.c
+gcc -c -o obj/i386-elf/ar5211_phy.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_phy.c
+gcc -c -o obj/i386-elf/ar5211_recv.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_recv.c
+gcc -c -o obj/i386-elf/ar5211_reset.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_reset.c
+../ar5211/ar5211_reset.c: In function `ar5211SetPowerTable':
+../ar5211/ar5211_reset.c:1227: warning: implicit declaration of function `memset'
+../ar5211/ar5211_reset.c: In function `ar5211GetLowerUpperValues':
+../ar5211/ar5211_reset.c:1657: warning: implicit declaration of function `abs'
+gcc -c -o obj/i386-elf/ar5211_xmit.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5211/ar5211_xmit.c
+gcc -c -o obj/i386-elf/ar5212_attach.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_attach.c
+gcc -c -o obj/i386-elf/ar5212_beacon.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_beacon.c
+gcc -c -o obj/i386-elf/ar5212_interrupts.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_interrupts.c
+gcc -c -o obj/i386-elf/ar5212_keycache.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_keycache.c
+gcc -c -o obj/i386-elf/ar5212_misc.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_misc.c
+../ar5212/ar5212_misc.c: In function `ar5212GetMacAddress':
+../ar5212/ar5212_misc.c:34: warning: implicit declaration of function `memcpy'
+gcc -c -o obj/i386-elf/ar5212_power.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_power.c
+gcc -c -o obj/i386-elf/ar5212_phy.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_phy.c
+gcc -c -o obj/i386-elf/ar5212_recv.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_recv.c
+gcc -c -o obj/i386-elf/ar5212_reset.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_reset.c
+../ar5212/ar5212_reset.c: In function `ar5212SetTransmitPower':
+../ar5212/ar5212_reset.c:1375: warning: implicit declaration of function `memset'
+../ar5212/ar5212_reset.c: In function `ar5212CorrectGainDelta':
+../ar5212/ar5212_reset.c:1766: warning: implicit declaration of function `memcpy'
+../ar5212/ar5212_reset.c: In function `ar5212GetLowerUpperValues':
+../ar5212/ar5212_reset.c:2042: warning: implicit declaration of function `abs'
+gcc -c -o obj/i386-elf/ar5212_xmit.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_xmit.c
+gcc -c -o obj/i386-elf/ar5212_ani.o -Iobj/i386-elf -I. -I.. -Wall -g -O -DAH_BYTE_ORDER=AH_LITTLE_ENDIAN -fomit-frame-pointer ../ar5212/ar5212_ani.c
+../ar5212/ar5212_ani.c: In function `ar5212PhyErrReset':
+../ar5212/ar5212_ani.c:234: warning: implicit declaration of function `memset'
+ld -o obj/i386-elf/hal.o -r  obj/i386-elf/ah.o obj/i386-elf/ah_eeprom.o obj/i386-elf/ah_regdomain.o obj/i386-elf/ar5210_attach.o obj/i386-elf/ar5210_beacon.o obj/i386-elf/ar5210_interrupts.o obj/i386-elf/ar5210_keycache.o obj/i386-elf/ar5210_misc.o obj/i386-elf/ar5210_power.o obj/i386-elf/ar5210_phy.o obj/i386-elf/ar5210_recv.o obj/i386-elf/ar5210_reset.o obj/i386-elf/ar5210_xmit.o obj/i386-elf/ar5211_attach.o obj/i386-elf/ar5211_beacon.o obj/i386-elf/ar5211_interrupts.o obj/i386-elf/ar5211_keycache.o obj/i386-elf/ar5211_misc.o obj/i386-elf/ar5211_power.o obj/i386-elf/ar5211_phy.o obj/i386-elf/ar5211_recv.o obj/i386-elf/ar5211_reset.o obj/i386-elf/ar5211_xmit.o obj/i386-elf/ar5212_attach.o obj/i386-elf/ar5212_beacon.o obj/i386-elf/ar5212_interrupts.o obj/i386-elf/ar5212_keycache.o obj/i386-elf/ar5212_misc.o obj/i386-elf/ar5212_power.o obj/i386-elf/ar5212_phy.o obj/i386-elf/ar5212_recv.o obj/i386-elf/ar5212_reset.o obj/i386-elf/ar5212_xmit.o obj/i386-elf/ar5212_ani.o
+make[1]: Leaving directory `/home/sam/hal-0.9.5.11/linux'
+
+    Note that the results are written to the directory obj/<TARGET>; e.g.
+    obj/i386-elf.
+
+    acker% ls obj/i386-elf/
+    ah_eeprom.o          ar5210_recv.o        ar5211_recv.o        ar5212_power.o
+    ah.o                 ar5210_reset.o       ar5211_reset.o       ar5212_recv.o
+    ah_regdomain.o       ar5210_xmit.o        ar5211_xmit.o        ar5212_reset.o
+    ar5210_attach.o      ar5211_attach.o      ar5212_ani.o         ar5212_xmit.o
+    ar5210_beacon.o      ar5211_beacon.o      ar5212_attach.o      hal.mangle
+    ar5210_interrupts.o  ar5211_interrupts.o  ar5212_beacon.o      hal.o
+    ar5210_keycache.o    ar5211_keycache.o    ar5212_interrupts.o  hal-release.o
+    ar5210_misc.o        ar5211_misc.o        ar5212_keycache.o    opt_ah.h
+    ar5210_phy.o         ar5211_phy.o         ar5212_misc.o        t.o
+    ar5210_power.o       ar5211_power.o       ar5212_phy.o
+
+5.  To create a "released copy" of the HAL, e.g. for use with the madwifi
+    driver,  you must type make release:
+
+    acker% make release
+    for i in i386-elf; do \
+	    make $i-release; \
+    done
+    make[1]: Entering directory `/home/sam/hal-0.9.5.11/linux'
+    make -f Makefile.inc OS=linux TARGET=i386-elf release
+    make[2]: Entering directory `/home/sam/hal-0.9.5.11/linux'
+    strip --strip-unneeded -o obj/i386-elf/t.o obj/i386-elf/hal.o
+    nm -a obj/i386-elf/t.o | grep -v ' U' | sed \
+	    -e '/ath_hal_probe/d' \
+	    -e '/ath_hal_attach/d' \
+	    -e '/_ath_hal_attach/d' \
+	    -e '/ath_hal_detach/d' \
+	    -e '/ath_hal_init_channels/d' \
+	    -e '/ath_hal_getwirelessmodes/d' \
+	    -e '/ath_hal_computetxtime/d' \
+	    -e '/ath_hal_mhz2ieee/d' \
+	    -e '/ath_hal_ieee2mhz/d' \
+	    | awk -f ../linux/syms.awk > obj/i386-elf/hal.mangle
+    rm -f t.o
+    strip --strip-unneeded -o obj/i386-elf/hal-release.o obj/i386-elf/hal.o
+    objcopy `cat obj/i386-elf/hal.mangle` obj/i386-elf/hal-release.o
+    rm -f ../linux/i386-elf.hal.o.uu
+    (sed -e '1,/^$/d' ../COPYRIGHT; \
+     uuencode obj/i386-elf/hal-release.o hal.o) > ../linux/i386-elf.hal.o.uu
+    cp obj/i386-elf/opt_ah.h ../linux/i386-elf.opt_ah.h
+    make[2]: Leaving directory `/home/sam/hal-0.9.5.11/linux'
+    make[1]: Leaving directory `/home/sam/hal-0.9.5.11/linux'
+
+    This step strips symbols from the hal.o object file and encodes the
+    result in a file that includes the necesary COPYRIGHT.  Note that while
+    you can easily create "public distributions" doing so is not recommended
+    (and probably prohibited by your license).
+
+    It is more likely you will want to link the driver to the original hal.o
+    file that was generated in step 4 so you have debugging symbols.
+
+
+
+INTEGRATION WITH THE MADWIFI DRIVER:
+------------------------------------
+These instructions explain how to integrate the HAL source code with
+the madiwif driver distribution.
+
+1.  Get a Madwifi distribution from http://sourceforge.net/projects/madwifi.html
+    and unpack it.  You should see a directory of the form:
+       4 drwxr-xr-x    8 sam      sam         4096 Jul  2 16:47 madwifi-20030702
+2.  Cd to the madwifi directory.
+	cd madwifi-20030702
+3.  Edit Makefile.inc to set HAL to the directory where the HAL source code
+    has been unpacked.  For example, if the HAL source code is in a directory
+    parallel to the top-level madwifi distribution, then use
+    	HAL=${DEPTH}/../hal-<version>
+    where <version> is the HAL version; e.g.  HAL=${DEPTH}/hal-0.9.5.11.
+
+    NOTE: At this point you can remove the hal subdirectory that contains the
+	  binary released HAL.  However you should be able to leave it in
+	  place; the Makefile's should arrange to use the include files from
+	  ${HAL}.  This is important if there are differences between the HAL
+	  sources and the binary distribution (e.g. the binary distribution is
+	  built from an older version of the HAL source code).
+4.  Build a release of the HAL as described above; e.g.
+
+    acker% cd hal-0.9.5.11/linux
+    acker% make release
+
+5.  Build the madwifi distribution as described in the madwifi README file.
+    Note that the madwifi build system only supports one target platform
+    and expect a pre-built release version of the HAL to exist for that
+    target.
+
+An alternative, if you maintain the HAL source code under CVS is to build
+a release of the HAL and then do
+
+    make release
+
+in the HAL source area.  This will generate a tag'd tar file containing a
+"public release" of the HAL that you can then import into your driver
+development area.  This is how things are managed for public distributions.

@@ -1,0 +1,36 @@
+Since 0.9.16.16:
+
+o define HAL_SOFTC, HAL_BUS_TAG, and HAL_BUS_HANDLE to be machine
+  independent; this fixes portability issues with bsd systems on
+  sparc64 machines where HAL_BUS_TAG is a pointer but was defined as
+  a smaller type for linux (where the definitions were being drawn
+  for public builds)
+o reduce minimum allowable slot time to 6us for turbo mode operation
+o add ah_disable api for turning off operation of both MAC and PHY
+o add ah_getAntennaSwitch and ah_setAntennaSwitch api's for better control
+  of antenna usage and diversity
+o add ah_setAckCTSRate and ah_setAckCTSRate for controlling tx rate of
+  h/w generated frames
+o add ah_setBeaconTimers api for direct setting of the beacon timer registers
+o remove ah_waitForBeaconDone api
+o add HAL_TXDESC_DURENA flag to explicitly enable h/w duration setting
+  in tx descriptor
+o automatically enable h/w duration setting when multi-rate retry is used
+o correct setting of rssi threshold used by h/w beacon miss facility
+o 2315/2316 fix for calibration handling
+o WAR 16990 to discard invalid h/w rssi data for 5212 parts
+o move SoC board data handling out of the hal so devices with non-standard
+  memory mappings can be supported (e.g. Meraki Networks 2315 board)
+o correct documentation of min/max tx power units (.5 dBm)
+o correct check for which 5212 parts properly support AES-CCM
+o apply regulatory caps to calculation of TPC settings for
+  self-generated frames
+o regdomain updates
+o switch arm, mips, and powerpc builds to use functions for register
+  read/write operations
+o fix sparc builds to not reference %g2 and %g3 registers
+o add public builds and SoC's
+
+o HAL_CAP_INTMIT for controlling interference mitigation (aka ani) support 
+o HAL_DIAG_11NCOMPAT for configurable OFDM spoofing possibly needed for
+  11n compatibility

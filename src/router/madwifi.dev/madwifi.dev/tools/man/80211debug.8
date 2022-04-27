@@ -1,0 +1,121 @@
+.TH "80211DEBUG" "8" "February 2006" "" ""
+.SH "NAME"
+\fB80211debug\fP \- control the debug output from the madwifi 802.11 stack
+.SH "SYNOPSIS"
+.B 80211debug
+[-i interface] +/\- bitmap
+.SH "DESCRIPTION"
+Set and clear debug bitmaps for the madwifi 802.11 stack. Each argument is a 
+bitmap or its alias. If a bitmap alias is used then it must be prefixed by 
+either "-" to clear or "+" to set the corresponding bitmap.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-?
+Display usage and list all debug bitmaps.
+.TP
+.B \-i interface
+The madwifi interface to debug. If no interface is specified, \fB80211debug\fP
+defaults to ath0.
+.TP
+.B +/\- bitmap
+Set (+) or clear (-) a bitmap. It's quite tedious to remember the bitmaps,
+fortunately there is a user friendly interface which can be used to enable or
+disable debugging output by giving the name of the component or subsystem.
+.PP
+All debugging output can be enabled with 0xffffffff bitmap, while 0x0
+disables all debug output.
+.PP
+.SH "BITMAP ALIASES"
+.BI debug
+\- IFF_DEBUG equivalent
+.br
+.BI dumppkts
+\- IFF_LINK2 equivalent, dump packets
+.br
+.BI crypto
+\- crypto modules
+.br
+.BI input
+\- packet input handling
+.br
+.BI xrate
+\- rate set handling
+.br
+.BI elemid
+\- element id parsing
+.br
+.BI node
+\- node management
+.br
+.BI assoc
+\- association handling
+.br
+.BI auth
+\- authentication handling
+.br
+.BI scan
+\- scanning
+.br
+.BI output
+\- packet output handling
+.br
+.BI state
+\- 802.11 state machine
+.br
+.BI power
+\- power save functions
+.br
+.BI dot1x
+\- 802.1x authenticator
+.br
+.BI dot1xsm
+\- 802.1x state machine
+.br
+.BI radius
+\- 802.1x radius client
+.br
+.BI raddump
+\- 802.1x radius packet dump
+.br
+.BI radkeys
+\- 802.1x key dump
+.br
+.BI wpa
+\- WPA/RSN protocol
+.br
+.BI ac1
+\- ACL handling
+.br
+.BI wme
+\- WME protocol
+.br
+.BI superg
+\- super G turbo mode
+.br
+.BI doth
+\- 802.11h (DFS/TPC) handling
+.br
+.BI inact
+\- timeout of inactive nodes
+.br
+.BI roam
+\- station mode roaming
+.br
+.PP
+.SH "EXAMPLES"
+.TP
+.B 80211debug \-i ath1 0xffffffff
+Enable all debug bitmaps on ath1.
+.TP
+.B 80211debug +state +assoc
+Set state and assoc bitmaps to  on for ath0.
+.TP
+.B 80211debug \-state
+Disable state bitmap for ath0.
+.PP
+.SH "SEE ALSO"
+\fBathdebug\fP(8), \fBhttp://madwifi.org/wiki/DevDocs/AthDebug\fP
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond.

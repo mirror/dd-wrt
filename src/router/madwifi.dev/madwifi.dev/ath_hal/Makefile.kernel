@@ -1,0 +1,51 @@
+#
+# Makefile for the Atheros WLAN driver.
+#
+
+obj ?= .
+src ?= .
+srctree ?= .
+
+TOP = $(srctree)/$(src)/..
+
+include $(TOP)/BuildCaps.inc
+include $(TOP)/ath_hal/ah_target.inc
+
+ATH_HAL=$(TOP)/ath_hal
+COMPAT=	$(TOP)/include
+HAL=	$(TOP)/hal
+
+INCS = -include $(COMPAT)/compat.h -I$(COMPAT)
+INCS += -I$(ATH_HAL) -I$(HAL)
+
+EXTRA_CFLAGS += $(INCS) $(COPTS) -DOPT_AH_H=\"public/$(TARGET).opt_ah.h\" \
+			-DTARGET=\"$(TARGET)\"
+
+ifneq (,$(filter xscale% arm%,$(TARGET)))
+LDFLAGS := --no-warn-mismatch
+endif
+
+ifneq ($(VERSION).$(PATCHLEVEL),2.4)
+obj-$(CONFIG_ATHEROS) += ath_hal.o
+ath_hal-objs	:= ah_os.o $(TARGET).hal.o
+
+hostprogs-y := uudecode
+host-progs := $(hostprogs-y)
+endif
+
+ifeq ($(VERSION).$(PATCHLEVEL),2.4)
+obj-$(CONFIG_ATHEROS) += ah_os.o $(TARGET).hal.o
+
+O_TARGET := ath_hal.o
+include $(TOPDIR)/Rules.make
+
+export-objs	:= ah_os.o
+list-multi	:= ath_hal.o
+
+uudecode: uudecode.c
+	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
+endif
+
+$(obj)/$(TARGET).hal.o: $(HAL)/public/$(TARGET).hal.o.uu $(obj)/uudecode
+	$(Q)echo "deps_$@ :=" >$(@D)/.$(@F).cmd
+	$(Q)$(obj)/uudecode -o $@ $<
