@@ -186,8 +186,8 @@ void start_mdns(void)
 	mkdir("/tmp/var/run/dbus", 0744);
 	fp = fopen("/tmp/avahi-dbus.conf", "wb");
 	fprintf(fp, "<!DOCTYPE busconfig PUBLIC\n"	//
-		"\"-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN\"\n" "//
-		\"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"	//
+		"\"-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN\"\n"	//
+		"\"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"	//
 		"<busconfig>\n"	//
 		"\n"		//
 		"<!-- Only root or user nobody can own the Avahi service this needs some work -->\n"	//
