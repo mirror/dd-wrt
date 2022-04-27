@@ -1836,7 +1836,7 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 	foreach(word, bufferif, next) {
 		if (!strchr(word, ':')) {
 			char temp[32];
-			sprintf(temp,"mdnsif_%s", word);
+			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
 			char *val = websGetVar(wp, temp, "0");
 			if (!strcmp(val, "1")) {
 				if (idx)
