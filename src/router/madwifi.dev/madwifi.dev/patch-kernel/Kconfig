@@ -1,0 +1,98 @@
+
+comment "Atheros 802.11(a/b/g) PCI/Cardbus support"
+
+config ATHEROS
+	tristate "Atheros PCI/Cardbus cards"
+	depends on PCI && (NET_RADIO || WIRELESS_EXT) && CRYPTO
+       ---help---
+	  Say Y here if you intend to attach an Atheros Cardbus or PCI
+	  wireless Ethernet networking card to your computer.  This
+	  driver support the standard Linux Wireless Extensions.
+
+	  You will also very likely also need the Wireless Tools in order to
+	  configure your card and that /etc/pcmcia/wireless.opts works:
+	  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called ath_pci.  If unsure, say N.
+
+choice
+	prompt "Atheros: Default Transmission Rate Control Algorithm"
+	depends on ATHEROS
+	default ATHEROS_RATE_DEFAULT_SAMPLE
+	help
+	  Select the rate control algorithm to be used by default.  You
+	  can select additional algorithms below.
+
+	config ATHEROS_RATE_DEFAULT_AMRR
+		bool "AMRR"
+		select ATHEROS_RATE_AMRR
+
+	config ATHEROS_RATE_DEFAULT_ONOE
+		bool "Onoe"
+		select ATHEROS_RATE_ONOE
+
+	config ATHEROS_RATE_DEFAULT_SAMPLE
+		bool "Sample"
+		select ATHEROS_RATE_SAMPLE
+
+        config ATHEROS_RATE_DEFAULT_MINSTREL
+                bool "Minstrel"
+                select ATHEROS_RATE_MINSTREL
+
+endchoice
+
+config ATHEROS_RATE_DEFAULT
+	string
+	default "amrr" if ATHEROS_RATE_DEFAULT_AMRR
+	default "onoe" if ATHEROS_RATE_DEFAULT_ONOE
+	default "sample" if ATHEROS_RATE_DEFAULT_SAMPLE
+        default "minstrel" if ATHEROS_RATE_DEFAULT_MINSTREL
+
+config ATHEROS_RATE_AMRR
+	bool "Adaptive Multi-Rate Retry control algorithm"
+	depends on ATHEROS
+	default y
+	help
+	  Enable Adaptive Multi-Rate Retry control algorithm.
+
+config ATHEROS_RATE_ONOE
+	bool "Atsushi Onoe's rate control algorithm"
+	depends on ATHEROS
+	default y
+	help
+	  Enable Atsushi Onoe's rate control algorithm.
+
+config ATHEROS_RATE_SAMPLE
+	bool "Sample Rate control algorithm"
+	depends on ATHEROS
+	default y
+	help
+	  SampleRate chooses the bitrate it predicts will provide the
+	  most throughput based on estimates of the expected per-packet
+	  transmission time for each bitrate. SampleRate periodically
+	  sends packets at bitrates other than the current one to
+	  estimate when another bitrate will provide better performance.
+	  SampleRate switches to another bitrate when its estimated
+	  per-packet transmission time becomes smaller than the current
+	  bitrate's. SampleRate reduces the number of bitrates it must
+	  sample by eliminating those that could not perform better than
+	  the one currently being used. SampleRate also stops probing at
+	  a bitrate if it experiences several successive losses.
+
+
+config ATHEROS_RATE_MINSTREL
+        bool "A wandering minstrel rate control algorithm"
+        depends on ATHEROS
+        default y
+        help
+          Similar to the SampleRate code base, except that it is
+          a)more carefully written
+          b)shown to give a throughput similar to what can be obtained by
+            manually fixing either end to fixed rates
+          c)verified by monitoring the network traffic with an ieee80211
+             enabled ethereal
+          d)responds to network changes and does modify the rate accordingly. 
+            Thus, on moving the two nodes together/apart, the ideal rate will 
+            be changed as appropriate.
+

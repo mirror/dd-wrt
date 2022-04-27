@@ -1,0 +1,11 @@
+#
+# Makefile for Jeff Roberson's ALQ event collection module.
+#
+
+COMPAT=	net/net80211/compat
+
+EXTRA_CFLAGS+=	-include ${COMPAT}/compat.h -I${COMPAT}
+
+obj-$(CONFIG_ALQ) += alq.o
+
+alq-objs	:= kern_alq.o

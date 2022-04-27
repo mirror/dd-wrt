@@ -1,0 +1,210 @@
+MADWIFI: Multimode Atheros Driver for WiFi on Linux (VAP branch)
+================================================================
+
+* Copyright (c) 2002-2005 Sam Leffler.  All rights reserved.
+
+Read the file COPYRIGHT for the complete copyright.
+
+
+Requirements
+------------
+
+- Configured kernel sources of the target kernel.  Some Linux
+  distributions provide headers, makefiles and configuration data - it
+  should suffice.
+
+- Wireless Extensions support (14 or later, 17 preferred) - option
+  CONFIG_NET_RADIO in kernel .config file.
+
+- Sysctl support - option CONFIG_SYSCTL in kernel .config file.
+
+- Crypto API support - option CONFIG_CRYPTO in kernel .config file (AES
+  support is used if present, otherwise the AES-CCMP cipher module falls
+  back to a private implementation).
+
+- gcc of same version that was used to compile the kernel.  At least
+  make sure that the first two version numbers or the compiler are the
+  same (e.g. it's OK to use gcc 3.4.6 to compile MadWifi if the kernel
+  was compiled by gcc 3.4.2).  Ignoring this rule will cause "Invalid
+  module format" errors during module load.
+
+Linux 2.4.x kernels starting with 2.4.22 and 2.6 kernels should work
+without problems.  Due to quick pace of Linux development, there is no
+way compatibility with the future 2.6 kernels can be ensured.  However,
+the latest 2.6 kernel at the time of the release should be expected to
+work.
+
+Automatic module loading support (CONFIG_KMOD) is recommended; otherwise, 
+care will have to be taken to manually load needed modules.
+
+Building the driver
+-------------------
+
+The driver is built using the Linux kernel build mechanism.  This means
+you must have some part of the kernel source distribution installed on
+the machine where you want to build the driver.  In particular, the
+kernel include files, makefiles, build scripts and configuration must be
+available.
+
+This will be present if you built your kernel from source.  Otherwise
+you may need to install an additional kernel development package from
+your distribution that would match your kernel.  For example, the
+development package for the default kernel is called linux-headers on
+Debian and kernel-devel on Fedora Core.  Installing a package with full
+kernel sources should not be generally necessary.
+
+Note: in the following examples "$" stands for your system prompt;
+you're not expected to type that as part of the actual command.  "#"
+stands for the command prompt when the commands must be executed by
+root.
+
+Most people can just type:
+
+  $ make
+
+in the top-level MadWifi source directory to build all the modules for
+the currently running system.
+
+You MUST do a "make clean" before compiling for a different version of
+Linux, e.g. building for 2.6 after building for 2.4.
+
+If you want to compile MadWifi for a different kernel, you need to
+specify the location of the kernel build tree, e.g.:
+
+  $ make KERNELPATH=/usr/src/linux-2.6.3
+
+Note that you can also specify this path by setting an environment
+variable; e.g.
+
+  $ export KERNELPATH=/usr/src/linux-2.6.3
+  $ make
+
+If the kernel was built outside the source directory, KERNELPATH should
+point to the output directory where .config is located, not to the
+sources.
+
+This distribution includes support for a variety of target platforms.
+Because of the binary nature of the HAL not all platforms are supported
+(the list grows as time permits).  The supported target platforms can be
+found with:
+
+  $ ls hal/public/*.inc
+
+A target specifies the CPU architecture, byte order (unless implied by
+the CPU), and the ABI/file format.  For most popular platforms, the
+build system will find the appropriate files.  When cross-compiling or
+compiling for less common platforms, the target platform may need to be
+specified using the TARGET variable, e.g:
+
+  $ make TARGET=armv4-le-elf
+
+Consult the contents of the .inc file to find out what the target
+platform is and what toolchain was used to build the HAL object module. 
+Beware of mixing toolchains; some target platforms require that the HAL
+and driver be built with the same toolchain (i.e. compiler, assembler,
+and linker) and the same compiler flags.  If you get warnings about
+incompatible compiler flags, chances are that you are compiling for a
+wrong target or using an incompatible compiler.
+
+
+Cross-compiling
+---------------
+
+The build system is designed to support cross-compiling without any
+modification to the distribution files.  It should be sufficient to
+specify any parameters on the make command line.
+
+In most cases, only KERNELPATH and CROSS_COMPILE need to be defined. 
+CROSS_COMPILE is the prefix for cross-compiling tools.  For instance, if
+the cross compiler is called arm-linux-gcc, set CROSS_COMPILE to
+"arm-linux-":
+
+  $ make KERNELPATH=/usr/src/linux-arm CROSS_COMPILE=arm-linux-
+
+The build system determines ARCH and TARGET based on the .config file in
+the Linux build tree.  TARGET still may need to be provided on the
+command line some uncommon systems.  If ARCH is determined incorrectly,
+please report it.
+
+If the compiler needs additional flags to compile userspace binaries,
+you can redefine CC to include those flags.
+
+When installing MadWifi, set DESTDIR to the root of the target
+filesystem, so that the cross-compiled binaries don't overwrite the
+native ones.
+
+
+Loading the modules
+-------------------
+
+Building the software will generate numerous loadable modules:
+
+  ath_pci		Atheros driver for PCI/Cardbus devices
+  ath_hal		Atheros HAL
+  wlan			802.11 support layer
+  wlan_wep		WEP cipher support
+  wlan_tkip		TKIP cipher support
+  wlan_ccmp		AES-CCMP cipher support
+  wlan_xauth		external authenticator
+  wlan_acl		MAC ACL support for AP operation
+  wlan_scan_ap		AP scanning support
+  wlan_scan_sta		station scanning support
+  ath_rate_onoe		ONOE rate control
+  ath_rate_amrr		AMRR rate control
+  ath_rate_sample	SAMPLE rate control
+
+The ath_pci module must be loaded either manually or by the system, e.g.
+through the hotplug or card manager support.  The remaining modules are
+loaded automatically as needed, so after doing a "make install" you only
+need to run following:
+
+  # modprobe ath_pci
+
+For automatic module loading you may need to modify your system's
+configuration files so the necessary modules are loaded when an Atheros
+device is recognized.  The exact procedure varies from system to system.
+
+There are module parameters available to fit your needs, e.g. you can
+set the countrycode manually if your card's EEPROM does not contain the
+correct one for your location.  See
+http://www.unicode.org/onlinedat/countries.html to find your code.
+
+To activate German frequencies you would specify:
+
+  # modprobe ath_pci countrycode=276
+
+MadWifi currently provides four different rate control algorithms,
+ONOE, AMRR, SAMPLE and MINSTREL.  SAMPLE and MINSTREL are both very
+advanced, but MINSTREL is quite new.  Consequently, SAMPLE is used by
+default.  In order to make MadWifi use e.g. AMRR instead, you have to
+specify that as the module parameter e.g.
+
+  # modprobe ath_pci ratectl=amrr
+
+NOTE: Changing the rate control is only required (and recommended) for
+      users who want to setup an access point using MadWifi in difficult
+      (e.g. lossy) environments and who know what they are doing.
+
+To see all available module parameters type:
+
+  $ modinfo ath_pci
+
+
+Integrating into the kernel sources
+-----------------------------------
+
+It is also possible to patch Linux kernel sources to integrate MadWifi
+directly into the kernel tree.  This allows building MadWifi as part of
+the kernel.  This could be useful for embedded systems that don't
+support loadable modules.  Please refer to patch-kernel/README for
+details.
+
+
+Further information
+-------------------
+
+Further information on how to work with the driver can be found in the
+file README.  In addition, the project's wiki has a lot of valuable
+information:
+
+http://madwifi.org/

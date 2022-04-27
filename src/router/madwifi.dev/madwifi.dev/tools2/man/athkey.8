@@ -1,0 +1,54 @@
+.TH "ATHKEY" "8" "February 2006" "" ""
+.SH "NAME"
+\fBathkey\fP \- manage encryption type and keys of madwifi devices
+.SH "SYNOPSIS"
+.B athkey
+[-i device] [-d] keyix cipher keyval [mac]
+.SH "DESCRIPTION"
+Each device may have up to four keys; the first argument required is the key
+index. The "-d" option may be specified to delete the key associated with the
+selected key index. Otherwise, the other arguments required are a cipher type
+and a key value encoded as a hexadecimal literal. A MAC address may be given as
+a final argument; if given, the key will be considered valid only for the
+specified MAC address.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-i device
+The madwifi device to apply the settings to. If no device is specified, 
+\fBathkey\fP defaults to wifi0.
+.TP
+.B \-d keyix
+Delete a specified key index.
+.TP 
+.B keyix
+A key index of 1, 2, 3 or 4.
+.TP
+.B cipher
+Cipher type values: [wep|tkip|ocb|ccm|aes|ckip|none]
+.TP
+.B keyval
+A key value encoded as a hexadecimal literal with an optional leading 0x or 0X.
+Embedded periods, colons and dashes are ignored.
+.TP
+.B mac
+MAC address encoded as an hexadecimal literal. If a MAC address is specified when
+adding a key value, the key will be valid only for the specified MAC.
+.PP
+.SH "EXAMPLES"
+.TP
+.B athkey \-i wifi1 \-d 1
+Remove key value of index 1 for wifi1.
+.TP
+.B athkey 1 wep 0123456789
+Set a wep key of "0123456789" on index 1 on wifi0.
+.TP
+.B athkey \-i wifi2 2 tkip 0123456789 00:9b:5c:63:e6:b4
+Set a key of 0123456789 using the tkip cipher for a MAC of 00:9b:5c:63:e6:b4 
+on index 2 on wifi2.
+.PP
+.SH "SEE ALSO"
+\fBathchans\fP(8), \fBathctrl\fP(8), \fBathstats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond and Thorsten von Eicken.

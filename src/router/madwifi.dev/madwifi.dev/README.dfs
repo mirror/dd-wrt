@@ -1,0 +1,20 @@
+2007-10-11 Benoit PAPILLAULT <benoit.papillault@free.fr>
+
+Conformance testing to the following standards:
+* ETSI 301 893 v1.3.1
+* 802.11h
+
+Frequencies & channels where DFS is applicable:
+* ETSI : 5250-5350MHz , 5470-5725MHz
+* IEEE 802.11 center frequencies : 
+  5260, 5280, 5300, 5320
+  5500, 5520, 5540, 5560, 5580, 5600, 5620, 5640, 5660, 5680, 5700
+* IEEE 802.11 channels :
+    52,   56,   60,   64
+   100,  104,  108,  112,  116,  120,  124,  128,  132,  136,  140
+
+Simulating a radar pulse:
+echo "<tsf> <rssi> <width>" > /proc/sys/dev/wifi0/radar_pulse
+
+Simulating a radar detected event:
+iwpriv wlan0 doth_radar

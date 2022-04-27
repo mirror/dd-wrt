@@ -1,0 +1,15 @@
+This directory has tools that use the diagnostic interface to fetch data.  Note that most of these can only be used (currently) when the
+HAL is buil with AH_PRIVATE_DIAG enabled.
+
+dumpregs	extract registers and print their contents
+eeprom		pretty print the parsed contents of the EEPROM (5211, 5212)
+rfgain		print the current RFGAIN settings (5211, 5212)
+ani		print the current ANI settings and the ANI statistics (5212)
+txpow		print the calculated rate and pcdac tables (5212)
+key		get/set entries in the key cache (the 5212 key cache
+		    is read/write, for 5211 you need to enable reading
+		    by writing the eeprom, and noone has answered how to
+		    enable reading the 5210 key cache)
+
+Note that these tools do very little error checking so if they are
+out of sync wrt the HAL they can easily do the wrong thing.

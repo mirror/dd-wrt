@@ -1,0 +1,37 @@
+ifeq ($(VERSION).$(PATCHLEVEL),2.4)
+# Linux 2.4 support
+
+O_TARGET := madwifi.o
+
+subdir-$(CONFIG_ATHEROS)		+= ath ath_hal net80211
+subdir-$(CONFIG_ATHEROS_RATE_AMRR)	+= ath_rate/amrr
+subdir-$(CONFIG_ATHEROS_RATE_MINSTREL)	+= ath_rate/minstrel
+subdir-$(CONFIG_ATHEROS_RATE_ONOE)	+= ath_rate/onoe
+subdir-$(CONFIG_ATHEROS_RATE_SAMPLE)	+= ath_rate/sample
+
+ifeq ($(CONFIG_ATHEROS),y)
+	obj-$(CONFIG_ATHEROS_RATE_AMRR) += ath_rate/amrr/ath_rate.o
+	obj-$(CONFIG_ATHEROS_RATE_MINSTREL) += ath_rate/minstrel/ath_rate.o
+	obj-$(CONFIG_ATHEROS_RATE_ONOE) += ath_rate/onoe/ath_rate.o
+	obj-$(CONFIG_ATHEROS_RATE_SAMPLE) += ath_rate/sample/ath_rate.o
+ifeq ($(strip $(BUS)),AHB)
+	obj-y += ath/ath_ahb.o
+else
+	obj-y += ath/ath_pci.o
+endif
+	obj-y += ath_hal/ath_hal.o
+	obj-y += net80211/net80211.o
+endif
+
+include $(TOPDIR)/Rules.make
+
+else
+# Linux 2.6 support
+
+obj-$(CONFIG_ATHEROS_RATE_AMRR)		+= ath_rate/amrr/
+obj-$(CONFIG_ATHEROS_RATE_MINSTREL)	+= ath_rate/minstrel/
+obj-$(CONFIG_ATHEROS_RATE_ONOE)		+= ath_rate/onoe/
+obj-$(CONFIG_ATHEROS_RATE_SAMPLE)	+= ath_rate/sample/
+obj-$(CONFIG_ATHEROS)			+= ath/ ath_hal/ net80211/
+
+endif

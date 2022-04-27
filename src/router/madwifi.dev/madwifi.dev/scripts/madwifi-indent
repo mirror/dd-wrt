@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Based on Lindent script from Linux with extra types.
+# GNU indent doesn't seen to be able to identify types from their
+# position in the code.
+
+indent -npro -kr -i8 -ts8 -sob -l80 -ss -ncs \
+ -T s8 -T s16 -T s32 -T s64 \
+ -T __s8 -T __s16 -T __s32 -T __s64 \
+ -T u8 -T u16 -T u32 -T u64 \
+ -T __u8 -T __u16 -T __u32 -T __u64 \
+ -T __be16 -T __be32 -T __be64 \
+ -T __le16 -T __le32 -T __le64 \
+ -T size_t -T u_int8_t -T u_int16_t -T u_int32_t -T u_int64_t \
+ -T HAL_BEACON_STATE -T HAL_BEACON_TIMERS -T HAL_BOOL -T HAL_CHANNEL \
+ -T HAL_TXQ_INFO -T HAL_INT -T HAL_KEYVAL -T HAL_MIB_STATS \
+ -T HAL_NODE_STATS -T HAL_RATE_TABLE -T HAL_STATUS \
+ "$@"
+
+for i in "$@"; do
+	sed -i -e 's/^ *\([^ :]\+:\)$/\1/;s/\(__attribute__\) ((/\1((/g' $i
+done
