@@ -145,6 +145,8 @@ for i in $(seq 1 $tunnels); do
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
 			#end inbound firewall
+			# todo make escape rules for destination based routing on by default
+			# use wgdpbrip_oetx but wait till file is made
 		fi
 		echo enable > /tmp/oet/pid/f${i}.pid
 	fi

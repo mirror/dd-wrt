@@ -60,11 +60,19 @@ for i in $(seq 1 $tunnels); do
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
 		ps | grep "[w]ireguard-fwatchdog" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 #use [w] to exclude the ps line
 		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
+
+		# # remove destination routes
+		# WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
+		# if [[ -f "$WGDELDPBR" ]]; then
+			# (while read route; do $route >/dev/null 2>&1; done < $WGDELDPBR)
+			# rm $WGDELDPBR
+		# fi
+
 		# remove destination routes
-		WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
-		if [[ -f "$WGDELDPBR" ]]; then
-			(while read route; do $route >/dev/null 2>&1; done < $WGDELDPBR)
-			rm $WGDELDPBR
+		WGDPBRIP="/tmp/wgdpbrip_oet${i}"
+		if [[ -f "$WGDPBRIP" ]]; then
+			(while read dpbrip; do ip route del $dpbrip >/dev/null 2>&1; done < $WGDPBRIP)
+			rm $WGDPBRIP >/dev/null 2>&1
 		fi
 		#todo remove route to endpoint
 		ip route flush cache
@@ -163,7 +171,6 @@ for i in $(seq 1 $tunnels); do
 				logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
 				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
-			/usr/bin/eop-tunnel-raip.sh $i $fset &
 		fi
 		if [ $($nv get oet${i}_proto) -eq 1 ]; then
 			insmod gre
@@ -207,3 +214,6 @@ for i in $(seq 1 $tunnels); do
 		fi
 	fi
 done
+# start route setting
+/usr/bin/eop-tunnel-raip.sh $fset & 
+
