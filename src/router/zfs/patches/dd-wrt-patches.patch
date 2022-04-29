@@ -1,7 +1,7 @@
-diff --git a/cmd/zed/agents/fmd_api.c b/cmd/zed/agents/fmd_api.c
-index e7eff16fd..843f140ee 100644
---- a/cmd/zed/agents/fmd_api.c
-+++ b/cmd/zed/agents/fmd_api.c
+Index: cmd/zed/agents/fmd_api.c
+===================================================================
+--- cmd/zed/agents/fmd_api.c	(revision 48748)
++++ cmd/zed/agents/fmd_api.c	(working copy)
 @@ -36,7 +36,7 @@
  
  #include <sys/types.h>
@@ -11,10 +11,10 @@ index e7eff16fd..843f140ee 100644
  #include <signal.h>
  #include <string.h>
  #include <time.h>
-diff --git a/cmd/zpool/os/linux/zpool_vdev_os.c b/cmd/zpool/os/linux/zpool_vdev_os.c
-index ed157c627..7559076cd 100644
---- a/cmd/zpool/os/linux/zpool_vdev_os.c
-+++ b/cmd/zpool/os/linux/zpool_vdev_os.c
+Index: cmd/zpool/os/linux/zpool_vdev_os.c
+===================================================================
+--- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 48748)
++++ cmd/zpool/os/linux/zpool_vdev_os.c	(working copy)
 @@ -82,8 +82,8 @@
  #include <sys/efi_partition.h>
  #include <sys/stat.h>
@@ -26,10 +26,10 @@ index ed157c627..7559076cd 100644
  
  typedef struct vdev_disk_db_entry
  {
-diff --git a/config/kernel-kuidgid.m4 b/config/kernel-kuidgid.m4
-index b7e441408..82685d263 100644
---- a/config/kernel-kuidgid.m4
-+++ b/config/kernel-kuidgid.m4
+Index: config/kernel-kuidgid.m4
+===================================================================
+--- config/kernel-kuidgid.m4	(revision 48748)
++++ config/kernel-kuidgid.m4	(working copy)
 @@ -1,21 +1,28 @@
  dnl #
 -dnl # 3.8 API change,
@@ -71,11 +71,11 @@ index b7e441408..82685d263 100644
 +		AC_MSG_RESULT(no)
  	])
  ])
-diff --git a/config/kernel.m4 b/config/kernel.m4
-index d1d3dede1..397073182 100644
---- a/config/kernel.m4
-+++ b/config/kernel.m4
-@@ -112,7 +112,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+Index: config/kernel.m4
+===================================================================
+--- config/kernel.m4	(revision 48748)
++++ config/kernel.m4	(working copy)
+@@ -115,7 +115,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
  	ZFS_AC_KERNEL_SRC_GENERIC_IO_ACCT
  	ZFS_AC_KERNEL_SRC_FPU
  	ZFS_AC_KERNEL_SRC_FMODE_T
@@ -83,11 +83,11 @@ index d1d3dede1..397073182 100644
  	ZFS_AC_KERNEL_SRC_KUID_HELPERS
  	ZFS_AC_KERNEL_SRC_MODULE_PARAM_CALL_CONST
  	ZFS_AC_KERNEL_SRC_RENAME
-diff --git a/config/user-libblkid.m4 b/config/user-libblkid.m4
-index f2016dcb1..729f5ec60 100644
---- a/config/user-libblkid.m4
-+++ b/config/user-libblkid.m4
-@@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detecting ZFS pools
+Index: config/user-libblkid.m4
+===================================================================
+--- config/user-libblkid.m4	(revision 48748)
++++ config/user-libblkid.m4	(working copy)
+@@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detec
  dnl # has existing in blkid since 2008.
  dnl #
  AC_DEFUN([ZFS_AC_CONFIG_USER_LIBBLKID], [
@@ -102,10 +102,10 @@ index f2016dcb1..729f5ec60 100644
 +	AC_SUBST([LIBBLKID_LIBS], ["-lblkid"])
 +	AC_DEFINE([HAVE_LIBBLKID], 1, [Define if you have libblkid])
  ])
-diff --git a/config/user-libuuid.m4 b/config/user-libuuid.m4
-index 0cfa83c99..71838e5db 100644
---- a/config/user-libuuid.m4
-+++ b/config/user-libuuid.m4
+Index: config/user-libuuid.m4
+===================================================================
+--- config/user-libuuid.m4	(revision 48748)
++++ config/user-libuuid.m4	(working copy)
 @@ -2,7 +2,17 @@ dnl #
  dnl # Check for libuuid
  dnl #
@@ -127,11 +127,11 @@ index 0cfa83c99..71838e5db 100644
 +	AC_SUBST([LIBUUID], ["-luuid"])
 +	AC_DEFINE([HAVE_LIBUUID], 1, [Define if you have libuuid])
  ])
-diff --git a/etc/systemd/system-generators/zfs-mount-generator.c b/etc/systemd/system-generators/zfs-mount-generator.c
-index f4c6c26a0..3c2368e25 100644
---- a/etc/systemd/system-generators/zfs-mount-generator.c
-+++ b/etc/systemd/system-generators/zfs-mount-generator.c
-@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags,
+Index: etc/systemd/system-generators/zfs-mount-generator.c
+===================================================================
+--- etc/systemd/system-generators/zfs-mount-generator.c	(revision 48748)
++++ etc/systemd/system-generators/zfs-mount-generator.c	(working copy)
+@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags
  	return (fdopen(fd, stream_mode));
  }
  
@@ -149,11 +149,11 @@ index f4c6c26a0..3c2368e25 100644
  
  	if (p_nbmand == NULL) {
  		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
-diff --git a/include/os/linux/spl/sys/cred.h b/include/os/linux/spl/sys/cred.h
-index 9cc85deb5..d15d700a8 100644
---- a/include/os/linux/spl/sys/cred.h
-+++ b/include/os/linux/spl/sys/cred.h
-@@ -39,12 +39,24 @@ typedef struct cred cred_t;
+Index: include/os/linux/spl/sys/cred.h
+===================================================================
+--- include/os/linux/spl/sys/cred.h	(revision 48748)
++++ include/os/linux/spl/sys/cred.h	(working copy)
+@@ -39,6 +39,8 @@ typedef struct cred cred_t;
  #define	GROUP_AT(gi, i)	((gi)->gid[i])
  #endif
  
@@ -162,6 +162,7 @@ index 9cc85deb5..d15d700a8 100644
  #define	KUID_TO_SUID(x)		(__kuid_val(x))
  #define	KGID_TO_SGID(x)		(__kgid_val(x))
  #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
+@@ -45,6 +47,16 @@ typedef struct cred cred_t;
  #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
  #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
  
@@ -178,10 +179,10 @@ index 9cc85deb5..d15d700a8 100644
  extern void crhold(cred_t *cr);
  extern void crfree(cred_t *cr);
  extern uid_t crgetuid(const cred_t *cr);
-diff --git a/include/os/linux/spl/sys/mutex.h b/include/os/linux/spl/sys/mutex.h
-index 677076a0f..fa44a722d 100644
---- a/include/os/linux/spl/sys/mutex.h
-+++ b/include/os/linux/spl/sys/mutex.h
+Index: include/os/linux/spl/sys/mutex.h
+===================================================================
+--- include/os/linux/spl/sys/mutex.h	(revision 48748)
++++ include/os/linux/spl/sys/mutex.h	(working copy)
 @@ -27,6 +27,7 @@
  #include <sys/types.h>
  #include <linux/sched.h>
@@ -190,10 +191,10 @@ index 677076a0f..fa44a722d 100644
  #include <linux/lockdep.h>
  #include <linux/compiler_compat.h>
  
-diff --git a/lib/libefi/rdwr_efi.c b/lib/libefi/rdwr_efi.c
-index 30fddc3db..e6f310628 100644
---- a/lib/libefi/rdwr_efi.c
-+++ b/lib/libefi/rdwr_efi.c
+Index: lib/libefi/rdwr_efi.c
+===================================================================
+--- lib/libefi/rdwr_efi.c	(revision 48748)
++++ lib/libefi/rdwr_efi.c	(working copy)
 @@ -30,7 +30,7 @@
  #include <errno.h>
  #include <string.h>
@@ -203,10 +204,10 @@ index 30fddc3db..e6f310628 100644
  #include <zlib.h>
  #include <libintl.h>
  #include <sys/types.h>
-diff --git a/lib/libshare/os/linux/nfs.c b/lib/libshare/os/linux/nfs.c
-index 5acfa3fb8..5e68c6c4d 100644
---- a/lib/libshare/os/linux/nfs.c
-+++ b/lib/libshare/os/linux/nfs.c
+Index: lib/libshare/os/linux/nfs.c
+===================================================================
+--- lib/libshare/os/linux/nfs.c	(revision 48748)
++++ lib/libshare/os/linux/nfs.c	(working copy)
 @@ -29,6 +29,7 @@
  #include <dirent.h>
  #include <stdio.h>
@@ -215,11 +216,11 @@ index 5acfa3fb8..5e68c6c4d 100644
  #include <errno.h>
  #include <fcntl.h>
  #include <sys/file.h>
-diff --git a/lib/libuutil/Makefile.am b/lib/libuutil/Makefile.am
-index 5a911f85f..25eca09ac 100644
---- a/lib/libuutil/Makefile.am
-+++ b/lib/libuutil/Makefile.am
-@@ -21,7 +21,7 @@ libuutil_la_LIBADD = \
+Index: lib/libuutil/Makefile.am
+===================================================================
+--- lib/libuutil/Makefile.am	(revision 48748)
++++ lib/libuutil/Makefile.am	(working copy)
+@@ -24,7 +24,7 @@ libuutil_la_LIBADD = \
  
  libuutil_la_LIBADD += $(LTLIBINTL)
  
@@ -228,11 +229,11 @@ index 5a911f85f..25eca09ac 100644
  
  if !ASAN_ENABLED
  libuutil_la_LDFLAGS += -Wl,-z,defs
-diff --git a/lib/libzfs_core/Makefile.am b/lib/libzfs_core/Makefile.am
-index 64cb76f19..61d32d977 100644
---- a/lib/libzfs_core/Makefile.am
-+++ b/lib/libzfs_core/Makefile.am
-@@ -35,7 +35,7 @@ libzfs_core_la_LIBADD = \
+Index: lib/libzfs_core/Makefile.am
+===================================================================
+--- lib/libzfs_core/Makefile.am	(revision 48748)
++++ lib/libzfs_core/Makefile.am	(working copy)
+@@ -37,7 +37,7 @@ libzfs_core_la_LIBADD = \
  
  libzfs_core_la_LIBADD += $(LTLIBINTL)
  
@@ -241,11 +242,11 @@ index 64cb76f19..61d32d977 100644
  
  if !ASAN_ENABLED
  libzfs_core_la_LDFLAGS += -Wl,-z,defs
-diff --git a/lib/libzpool/Makefile.am b/lib/libzpool/Makefile.am
-index e60a906a5..308623aea 100644
---- a/lib/libzpool/Makefile.am
-+++ b/lib/libzpool/Makefile.am
-@@ -218,7 +218,7 @@ libzpool_la_LIBADD = \
+Index: lib/libzpool/Makefile.am
+===================================================================
+--- lib/libzpool/Makefile.am	(revision 48748)
++++ lib/libzpool/Makefile.am	(working copy)
+@@ -221,7 +221,7 @@ libzpool_la_LIBADD = \
  
  libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
  
@@ -254,10 +255,10 @@ index e60a906a5..308623aea 100644
  
  if !ASAN_ENABLED
  libzpool_la_LDFLAGS += -Wl,-z,defs
-diff --git a/lib/libzutil/os/linux/zutil_import_os.c b/lib/libzutil/os/linux/zutil_import_os.c
-index 0493e897b..a44cd2643 100644
---- a/lib/libzutil/os/linux/zutil_import_os.c
-+++ b/lib/libzutil/os/linux/zutil_import_os.c
+Index: lib/libzutil/os/linux/zutil_import_os.c
+===================================================================
+--- lib/libzutil/os/linux/zutil_import_os.c	(revision 48748)
++++ lib/libzutil/os/linux/zutil_import_os.c	(working copy)
 @@ -73,7 +73,7 @@
  #include <libudev.h>
  #include <sched.h>
@@ -267,7 +268,7 @@ index 0493e897b..a44cd2643 100644
  
  #define	DEV_BYID_PATH	"/dev/disk/by-id/"
  
-@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
+@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, c
  int
  zpool_label_disk_wait(const char *path, int timeout_ms)
  {
@@ -276,67 +277,379 @@ index 0493e897b..a44cd2643 100644
  	struct udev *udev;
  	struct udev_device *dev = NULL;
  	char nodepath[MAXPATHLEN];
-diff --git a/module/icp/Makefile.in b/module/icp/Makefile.in
-index 72c9ab12a..7b44ce706 100644
---- a/module/icp/Makefile.in
-+++ b/module/icp/Makefile.in
-@@ -55,6 +55,22 @@ $(MODULE)-$(CONFIG_X86) += algs/modes/gcm_pclmulqdq.o
- $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_aesni.o
- $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_x86-64.o
- 
-+$(obj)/algs/modes/gcm_pclmulqdq.o: c_flags += -fno-lto
-+$(obj)/algs/modes/gcm.o: c_flags += -fno-lto
-+$(obj)/algs/modes/gcm_generic.o: c_flags += -fno-lto
-+$(obj)/algs/modes/ccm.o: c_flags += -fno-lto
-+$(obj)/algs/modes/ctr.o: c_flags += -fno-lto
-+$(obj)/algs/modes/cbc.o: c_flags += -fno-lto
-+$(obj)/algs/modes/ecb.o: c_flags += -fno-lto
-+$(obj)/algs/modes/modes.o: c_flags += -fno-lto
-+$(obj)/algs/aes/aes_modes.o: c_flags += -fno-lto
-+$(obj)/algs/aes/aes_impl.o: c_flags += -fno-lto
-+$(obj)/algs/aes/aes_impl_aesni.o: c_flags += -fno-lto
-+$(obj)/algs/aes/aes_impl_x86-64.o: c_flags += -fno-lto
-+$(obj)/algs/aes/aes_impl_generic.o: c_flags += -fno-lto
-+$(obj)/core/kcf_prov_lib.o: c_flags += -fno-lto
-+$(obj)/asm-x86_64/aes/aeskey.o: c_flags += -fno-lto
-+
- # Suppress objtool "can't find jump dest instruction at" warnings.  They
- # are caused by the constants which are defined in the text section of the
- # assembly file using .byte instructions (e.g. bswap_mask).  The objtool
-diff --git a/module/lua/Makefile.in b/module/lua/Makefile.in
-index 0a74c17e6..002312286 100644
---- a/module/lua/Makefile.in
-+++ b/module/lua/Makefile.in
-@@ -7,7 +7,7 @@ MODULE := zlua
- 
- obj-$(CONFIG_ZFS) := $(MODULE).o
- 
--ccflags-y := -DLUA_USE_LONGLONG
-+ccflags-y := -DLUA_USE_LONGLONG -fno-lto
- 
- $(MODULE)-objs += lapi.o
- $(MODULE)-objs += lauxlib.o
-diff --git a/module/zfs/Makefile.in b/module/zfs/Makefile.in
-index 30dc91a7e..c0457409f 100644
---- a/module/zfs/Makefile.in
-+++ b/module/zfs/Makefile.in
-@@ -148,10 +148,10 @@ $(MODULE)-$(CONFIG_X86) += vdev_raidz_math_avx512bw.o
- $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neon.o
- $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neonx2.o
- 
+Index: module/Kbuild.in
+===================================================================
+--- module/Kbuild.in	(revision 48748)
++++ module/Kbuild.in	(working copy)
+@@ -427,8 +427,10 @@ ZFS_OBJS_PPC_PPC64 := \
+ zfs-objs            += $(addprefix zfs/,$(ZFS_OBJS)) $(addprefix os/linux/zfs/,$(ZFS_OBJS_OS))
+ zfs-$(CONFIG_X86)   += $(addprefix zfs/,$(ZFS_OBJS_X86))
+ zfs-$(CONFIG_ARM64) += $(addprefix zfs/,$(ZFS_OBJS_ARM64))
 +ifeq ($(CONFIG_ALTIVEC),y)
- $(MODULE)-$(CONFIG_PPC) += vdev_raidz_math_powerpc_altivec.o
- $(MODULE)-$(CONFIG_PPC64) += vdev_raidz_math_powerpc_altivec.o
+ zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
+ zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
++endif
  
--ifeq ($(CONFIG_ALTIVEC),y)
- $(obj)/vdev_raidz_math_powerpc_altivec.o: c_flags += -maltivec
- endif
- 
-diff --git a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
-index bb36527aa..95504b3bf 100644
---- a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
-+++ b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
-@@ -35,6 +35,18 @@
+ # Suppress incorrect warnings from versions of objtool which are not
+ # aware of x86 EVEX prefix instructions used for AVX512.
+Index: patches/dd-wrt-patches.patch
+===================================================================
+--- patches/dd-wrt-patches.patch	(revision 48747)
++++ patches/dd-wrt-patches.patch	(working copy)
+@@ -1,7 +1,7 @@
+-diff --git a/cmd/zed/agents/fmd_api.c b/cmd/zed/agents/fmd_api.c
+-index e7eff16fd..843f140ee 100644
+---- a/cmd/zed/agents/fmd_api.c
+-+++ b/cmd/zed/agents/fmd_api.c
++Index: cmd/zed/agents/fmd_api.c
++===================================================================
++--- cmd/zed/agents/fmd_api.c	(revision 48748)
+++++ cmd/zed/agents/fmd_api.c	(working copy)
+ @@ -36,7 +36,7 @@
+  
+  #include <sys/types.h>
+@@ -11,10 +11,10 @@
+  #include <signal.h>
+  #include <string.h>
+  #include <time.h>
+-diff --git a/cmd/zpool/os/linux/zpool_vdev_os.c b/cmd/zpool/os/linux/zpool_vdev_os.c
+-index ed157c627..7559076cd 100644
+---- a/cmd/zpool/os/linux/zpool_vdev_os.c
+-+++ b/cmd/zpool/os/linux/zpool_vdev_os.c
++Index: cmd/zpool/os/linux/zpool_vdev_os.c
++===================================================================
++--- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 48748)
+++++ cmd/zpool/os/linux/zpool_vdev_os.c	(working copy)
+ @@ -82,8 +82,8 @@
+  #include <sys/efi_partition.h>
+  #include <sys/stat.h>
+@@ -26,10 +26,10 @@
+  
+  typedef struct vdev_disk_db_entry
+  {
+-diff --git a/config/kernel-kuidgid.m4 b/config/kernel-kuidgid.m4
+-index b7e441408..82685d263 100644
+---- a/config/kernel-kuidgid.m4
+-+++ b/config/kernel-kuidgid.m4
++Index: config/kernel-kuidgid.m4
++===================================================================
++--- config/kernel-kuidgid.m4	(revision 48748)
+++++ config/kernel-kuidgid.m4	(working copy)
+ @@ -1,21 +1,28 @@
+  dnl #
+ -dnl # 3.8 API change,
+@@ -71,11 +71,11 @@
+ +		AC_MSG_RESULT(no)
+  	])
+  ])
+-diff --git a/config/kernel.m4 b/config/kernel.m4
+-index d1d3dede1..397073182 100644
+---- a/config/kernel.m4
+-+++ b/config/kernel.m4
+-@@ -112,7 +112,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
++Index: config/kernel.m4
++===================================================================
++--- config/kernel.m4	(revision 48748)
+++++ config/kernel.m4	(working copy)
++@@ -115,7 +115,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+  	ZFS_AC_KERNEL_SRC_GENERIC_IO_ACCT
+  	ZFS_AC_KERNEL_SRC_FPU
+  	ZFS_AC_KERNEL_SRC_FMODE_T
+@@ -83,11 +83,11 @@
+  	ZFS_AC_KERNEL_SRC_KUID_HELPERS
+  	ZFS_AC_KERNEL_SRC_MODULE_PARAM_CALL_CONST
+  	ZFS_AC_KERNEL_SRC_RENAME
+-diff --git a/config/user-libblkid.m4 b/config/user-libblkid.m4
+-index f2016dcb1..729f5ec60 100644
+---- a/config/user-libblkid.m4
+-+++ b/config/user-libblkid.m4
+-@@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detecting ZFS pools
++Index: config/user-libblkid.m4
++===================================================================
++--- config/user-libblkid.m4	(revision 48748)
+++++ config/user-libblkid.m4	(working copy)
++@@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detec
+  dnl # has existing in blkid since 2008.
+  dnl #
+  AC_DEFUN([ZFS_AC_CONFIG_USER_LIBBLKID], [
+@@ -102,10 +102,10 @@
+ +	AC_SUBST([LIBBLKID_LIBS], ["-lblkid"])
+ +	AC_DEFINE([HAVE_LIBBLKID], 1, [Define if you have libblkid])
+  ])
+-diff --git a/config/user-libuuid.m4 b/config/user-libuuid.m4
+-index 0cfa83c99..71838e5db 100644
+---- a/config/user-libuuid.m4
+-+++ b/config/user-libuuid.m4
++Index: config/user-libuuid.m4
++===================================================================
++--- config/user-libuuid.m4	(revision 48748)
+++++ config/user-libuuid.m4	(working copy)
+ @@ -2,7 +2,17 @@ dnl #
+  dnl # Check for libuuid
+  dnl #
+@@ -127,11 +127,11 @@
+ +	AC_SUBST([LIBUUID], ["-luuid"])
+ +	AC_DEFINE([HAVE_LIBUUID], 1, [Define if you have libuuid])
+  ])
+-diff --git a/etc/systemd/system-generators/zfs-mount-generator.c b/etc/systemd/system-generators/zfs-mount-generator.c
+-index f4c6c26a0..3c2368e25 100644
+---- a/etc/systemd/system-generators/zfs-mount-generator.c
+-+++ b/etc/systemd/system-generators/zfs-mount-generator.c
+-@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags,
++Index: etc/systemd/system-generators/zfs-mount-generator.c
++===================================================================
++--- etc/systemd/system-generators/zfs-mount-generator.c	(revision 48748)
+++++ etc/systemd/system-generators/zfs-mount-generator.c	(working copy)
++@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags
+  	return (fdopen(fd, stream_mode));
+  }
+  
+@@ -149,11 +149,11 @@
+  
+  	if (p_nbmand == NULL) {
+  		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
+-diff --git a/include/os/linux/spl/sys/cred.h b/include/os/linux/spl/sys/cred.h
+-index 9cc85deb5..d15d700a8 100644
+---- a/include/os/linux/spl/sys/cred.h
+-+++ b/include/os/linux/spl/sys/cred.h
+-@@ -39,12 +39,24 @@ typedef struct cred cred_t;
++Index: include/os/linux/spl/sys/cred.h
++===================================================================
++--- include/os/linux/spl/sys/cred.h	(revision 48748)
+++++ include/os/linux/spl/sys/cred.h	(working copy)
++@@ -39,6 +39,8 @@ typedef struct cred cred_t;
+  #define	GROUP_AT(gi, i)	((gi)->gid[i])
+  #endif
+  
+@@ -162,6 +162,7 @@
+  #define	KUID_TO_SUID(x)		(__kuid_val(x))
+  #define	KGID_TO_SGID(x)		(__kgid_val(x))
+  #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
++@@ -45,6 +47,16 @@ typedef struct cred cred_t;
+  #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
+  #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
+  
+@@ -178,10 +179,10 @@
+  extern void crhold(cred_t *cr);
+  extern void crfree(cred_t *cr);
+  extern uid_t crgetuid(const cred_t *cr);
+-diff --git a/include/os/linux/spl/sys/mutex.h b/include/os/linux/spl/sys/mutex.h
+-index 677076a0f..fa44a722d 100644
+---- a/include/os/linux/spl/sys/mutex.h
+-+++ b/include/os/linux/spl/sys/mutex.h
++Index: include/os/linux/spl/sys/mutex.h
++===================================================================
++--- include/os/linux/spl/sys/mutex.h	(revision 48748)
+++++ include/os/linux/spl/sys/mutex.h	(working copy)
+ @@ -27,6 +27,7 @@
+  #include <sys/types.h>
+  #include <linux/sched.h>
+@@ -190,10 +191,10 @@
+  #include <linux/lockdep.h>
+  #include <linux/compiler_compat.h>
+  
+-diff --git a/lib/libefi/rdwr_efi.c b/lib/libefi/rdwr_efi.c
+-index 30fddc3db..e6f310628 100644
+---- a/lib/libefi/rdwr_efi.c
+-+++ b/lib/libefi/rdwr_efi.c
++Index: lib/libefi/rdwr_efi.c
++===================================================================
++--- lib/libefi/rdwr_efi.c	(revision 48748)
+++++ lib/libefi/rdwr_efi.c	(working copy)
+ @@ -30,7 +30,7 @@
+  #include <errno.h>
+  #include <string.h>
+@@ -203,10 +204,10 @@
+  #include <zlib.h>
+  #include <libintl.h>
+  #include <sys/types.h>
+-diff --git a/lib/libshare/os/linux/nfs.c b/lib/libshare/os/linux/nfs.c
+-index 5acfa3fb8..5e68c6c4d 100644
+---- a/lib/libshare/os/linux/nfs.c
+-+++ b/lib/libshare/os/linux/nfs.c
++Index: lib/libshare/os/linux/nfs.c
++===================================================================
++--- lib/libshare/os/linux/nfs.c	(revision 48748)
+++++ lib/libshare/os/linux/nfs.c	(working copy)
+ @@ -29,6 +29,7 @@
+  #include <dirent.h>
+  #include <stdio.h>
+@@ -215,11 +216,11 @@
+  #include <errno.h>
+  #include <fcntl.h>
+  #include <sys/file.h>
+-diff --git a/lib/libuutil/Makefile.am b/lib/libuutil/Makefile.am
+-index 5a911f85f..25eca09ac 100644
+---- a/lib/libuutil/Makefile.am
+-+++ b/lib/libuutil/Makefile.am
+-@@ -21,7 +21,7 @@ libuutil_la_LIBADD = \
++Index: lib/libuutil/Makefile.am
++===================================================================
++--- lib/libuutil/Makefile.am	(revision 48748)
+++++ lib/libuutil/Makefile.am	(working copy)
++@@ -24,7 +24,7 @@ libuutil_la_LIBADD = \
+  
+  libuutil_la_LIBADD += $(LTLIBINTL)
+  
+@@ -228,11 +229,11 @@
+  
+  if !ASAN_ENABLED
+  libuutil_la_LDFLAGS += -Wl,-z,defs
+-diff --git a/lib/libzfs_core/Makefile.am b/lib/libzfs_core/Makefile.am
+-index 64cb76f19..61d32d977 100644
+---- a/lib/libzfs_core/Makefile.am
+-+++ b/lib/libzfs_core/Makefile.am
+-@@ -35,7 +35,7 @@ libzfs_core_la_LIBADD = \
++Index: lib/libzfs_core/Makefile.am
++===================================================================
++--- lib/libzfs_core/Makefile.am	(revision 48748)
+++++ lib/libzfs_core/Makefile.am	(working copy)
++@@ -37,7 +37,7 @@ libzfs_core_la_LIBADD = \
+  
+  libzfs_core_la_LIBADD += $(LTLIBINTL)
+  
+@@ -241,11 +242,11 @@
+  
+  if !ASAN_ENABLED
+  libzfs_core_la_LDFLAGS += -Wl,-z,defs
+-diff --git a/lib/libzpool/Makefile.am b/lib/libzpool/Makefile.am
+-index e60a906a5..308623aea 100644
+---- a/lib/libzpool/Makefile.am
+-+++ b/lib/libzpool/Makefile.am
+-@@ -218,7 +218,7 @@ libzpool_la_LIBADD = \
++Index: lib/libzpool/Makefile.am
++===================================================================
++--- lib/libzpool/Makefile.am	(revision 48748)
+++++ lib/libzpool/Makefile.am	(working copy)
++@@ -221,7 +221,7 @@ libzpool_la_LIBADD = \
+  
+  libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+  
+@@ -254,10 +255,10 @@
+  
+  if !ASAN_ENABLED
+  libzpool_la_LDFLAGS += -Wl,-z,defs
+-diff --git a/lib/libzutil/os/linux/zutil_import_os.c b/lib/libzutil/os/linux/zutil_import_os.c
+-index 0493e897b..a44cd2643 100644
+---- a/lib/libzutil/os/linux/zutil_import_os.c
+-+++ b/lib/libzutil/os/linux/zutil_import_os.c
++Index: lib/libzutil/os/linux/zutil_import_os.c
++===================================================================
++--- lib/libzutil/os/linux/zutil_import_os.c	(revision 48748)
+++++ lib/libzutil/os/linux/zutil_import_os.c	(working copy)
+ @@ -73,7 +73,7 @@
+  #include <libudev.h>
+  #include <sched.h>
+@@ -267,7 +268,7 @@
+  
+  #define	DEV_BYID_PATH	"/dev/disk/by-id/"
+  
+-@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, char *bufptr, size_t buflen)
++@@ -587,7 +587,7 @@ zfs_device_get_physical(struct udev_device *dev, c
+  int
+  zpool_label_disk_wait(const char *path, int timeout_ms)
+  {
+@@ -276,82 +277,18 @@
+  	struct udev *udev;
+  	struct udev_device *dev = NULL;
+  	char nodepath[MAXPATHLEN];
+-diff --git a/module/icp/Makefile.in b/module/icp/Makefile.in
+-index 72c9ab12a..7b44ce706 100644
+---- a/module/icp/Makefile.in
+-+++ b/module/icp/Makefile.in
+-@@ -55,6 +55,22 @@ $(MODULE)-$(CONFIG_X86) += algs/modes/gcm_pclmulqdq.o
+- $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_aesni.o
+- $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_x86-64.o
+- 
+-+$(obj)/algs/modes/gcm_pclmulqdq.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/gcm.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/gcm_generic.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/ccm.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/ctr.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/cbc.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/ecb.o: c_flags += -fno-lto
+-+$(obj)/algs/modes/modes.o: c_flags += -fno-lto
+-+$(obj)/algs/aes/aes_modes.o: c_flags += -fno-lto
+-+$(obj)/algs/aes/aes_impl.o: c_flags += -fno-lto
+-+$(obj)/algs/aes/aes_impl_aesni.o: c_flags += -fno-lto
+-+$(obj)/algs/aes/aes_impl_x86-64.o: c_flags += -fno-lto
+-+$(obj)/algs/aes/aes_impl_generic.o: c_flags += -fno-lto
+-+$(obj)/core/kcf_prov_lib.o: c_flags += -fno-lto
+-+$(obj)/asm-x86_64/aes/aeskey.o: c_flags += -fno-lto
+-+
+- # Suppress objtool "can't find jump dest instruction at" warnings.  They
+- # are caused by the constants which are defined in the text section of the
+- # assembly file using .byte instructions (e.g. bswap_mask).  The objtool
+-diff --git a/module/lua/Makefile.in b/module/lua/Makefile.in
+-index 0a74c17e6..002312286 100644
+---- a/module/lua/Makefile.in
+-+++ b/module/lua/Makefile.in
+-@@ -7,7 +7,7 @@ MODULE := zlua
+- 
+- obj-$(CONFIG_ZFS) := $(MODULE).o
+- 
+--ccflags-y := -DLUA_USE_LONGLONG
+-+ccflags-y := -DLUA_USE_LONGLONG -fno-lto
+- 
+- $(MODULE)-objs += lapi.o
+- $(MODULE)-objs += lauxlib.o
+-diff --git a/module/zfs/Makefile.in b/module/zfs/Makefile.in
+-index 30dc91a7e..c0457409f 100644
+---- a/module/zfs/Makefile.in
+-+++ b/module/zfs/Makefile.in
+-@@ -148,10 +148,10 @@ $(MODULE)-$(CONFIG_X86) += vdev_raidz_math_avx512bw.o
+- $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neon.o
+- $(MODULE)-$(CONFIG_ARM64) += vdev_raidz_math_aarch64_neonx2.o
+- 
++Index: module/Kbuild.in
++===================================================================
++--- module/Kbuild.in	(revision 48748)
+++++ module/Kbuild.in	(working copy)
++@@ -427,8 +427,10 @@ ZFS_OBJS_PPC_PPC64 := \
++ zfs-objs            += $(addprefix zfs/,$(ZFS_OBJS)) $(addprefix os/linux/zfs/,$(ZFS_OBJS_OS))
++ zfs-$(CONFIG_X86)   += $(addprefix zfs/,$(ZFS_OBJS_X86))
++ zfs-$(CONFIG_ARM64) += $(addprefix zfs/,$(ZFS_OBJS_ARM64))
+ +ifeq ($(CONFIG_ALTIVEC),y)
+- $(MODULE)-$(CONFIG_PPC) += vdev_raidz_math_powerpc_altivec.o
+- $(MODULE)-$(CONFIG_PPC64) += vdev_raidz_math_powerpc_altivec.o
++ zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
++ zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
+++endif
+  
+--ifeq ($(CONFIG_ALTIVEC),y)
+- $(obj)/vdev_raidz_math_powerpc_altivec.o: c_flags += -maltivec
+- endif
+- 
+-diff --git a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
+-index bb36527aa..95504b3bf 100644
+---- a/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
+-+++ b/tests/zfs-tests/cmd/mmap_seek/mmap_seek.c
+-@@ -35,6 +35,18 @@
+- #include <linux/fs.h>
+- #endif
+- 
+-+#ifndef SEEK_DATA
+-+#define SEEK_DATA 3
+-+#endif
+-+
+-+#ifndef SEEK_HOLE
+-+#define SEEK_HOLE 4
+-+#endif
+-+
+-+#ifndef P2ROUNDUP
+-+#define	P2ROUNDUP(x, align)	((((x) - 1) | ((align) - 1)) + 1)
+-+#endif
+-+
+- static void
+- seek_data(int fd, off_t offset, off_t expected)
+- {
++ # Suppress incorrect warnings from versions of objtool which are not
++ # aware of x86 EVEX prefix instructions used for AVX512.
+Index: tests/zfs-tests/cmd/mmap_seek.c
+===================================================================
+--- tests/zfs-tests/cmd/mmap_seek.c	(revision 48748)
++++ tests/zfs-tests/cmd/mmap_seek.c	(working copy)
+@@ -35,6 +35,19 @@
  #include <linux/fs.h>
  #endif
  
@@ -351,6 +664,7 @@ index bb36527aa..95504b3bf 100644
 +#ifndef P2ROUNDUP
 +#define	P2ROUNDUP(x, align)	((((x) - 1) | ((align) - 1)) + 1)
 +#endif
++
 +
  static void
  seek_data(int fd, off_t offset, off_t expected)
