@@ -159,13 +159,6 @@ void start_raid(void)
 	}
 	if (zfs) {
 		insmod("spl");
-		insmod("icp");
-		insmod("zlua");
-		insmod("zzstd");
-		insmod("znvpair");
-		insmod("zcommon");
-		insmod("zunicode");
-		insmod("zavl");
 		char zfs_threads[32];
 		sprintf(zfs_threads, "zvol_threads=%d", cpucount);
 		eval("insmod", "zfs", zfs_threads);
