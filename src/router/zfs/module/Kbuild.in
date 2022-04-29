@@ -210,7 +210,7 @@ ZFS_ZSTD_FLAGS := -O3
 ZFS_ZSTD_FLAGS += -fno-tree-vectorize
 
 # SSE register return with SSE disabled if -march=znverX is passed
-ZFS_ZSTD_FLAGS += -U__BMI__
+ZFS_ZSTD_FLAGS += -U__BMI__ -DZSTD_NO_TRACE
 
 # Quiet warnings about frame size due to unused code in unmodified zstd lib
 ZFS_ZSTD_FLAGS += -Wframe-larger-than=20480
