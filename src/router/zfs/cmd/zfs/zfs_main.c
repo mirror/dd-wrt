@@ -315,9 +315,9 @@ get_usage(zfs_help_t idx)
 	case HELP_ROLLBACK:
 		return (gettext("\trollback [-rRf] <snapshot>\n"));
 	case HELP_SEND:
-		return (gettext("\tsend [-DnPpRvLecwhb] "
-		    "[-X dataset[,dataset]...] "
-		    "[-[i|I] snapshot] <snapshot>\n"
+		return (gettext("\tsend [-DLPbcehnpsvw] "
+		    "[-i|-I snapshot]\n"
+		    "\t     [-R [-X dataset[,dataset]...]]     <snapshot>\n"
 		    "\tsend [-DnvPLecw] [-i snapshot|bookmark] "
 		    "<filesystem|volume|snapshot>\n"
 		    "\tsend [-DnPpvLec] [-i bookmark|snapshot] "
@@ -4315,73 +4315,27 @@ usage:
 	return (-1);
 }
 
+/*
+ * Array of prefixes to exclude –
+ * a linear search, even if executed for each dataset,
+ * is plenty good enough.
+ */
 typedef struct zfs_send_exclude_arg {
 	size_t count;
-	char **list;
+	const char **list;
 } zfs_send_exclude_arg_t;
 
-/*
- * This function creates the zfs_send_exclude_arg_t
- * object described above; it can be called multiple
- * times, and the input can be comma-separated.
- * This is NOT the most efficient data layout; however,
- * I couldn't think of a non-pathological case where
- * it should have more than a couple dozen instances
- * of excludes. If that turns out to be used in
- * practice, we might want to instead use a tree.
- */
-static void
-add_dataset_excludes(char *exclude, zfs_send_exclude_arg_t *context)
-{
-	char *tok;
-	while ((tok = strsep(&exclude, ",")) != NULL) {
-		if (!zfs_name_valid(tok, ZFS_TYPE_DATASET) ||
-		    strchr(tok, '/') == NULL) {
-			(void) fprintf(stderr, gettext("-X %s: "
-			    "not a valid non-root dataset name.\n"), tok);
-			usage(B_FALSE);
-		}
-		context->list = safe_realloc(context->list,
-		    (sizeof (char *)) * (context->count + 1));
-		context->list[context->count++] = tok;
-	}
-}
-
-static void
-free_dataset_excludes(zfs_send_exclude_arg_t *exclude_list)
-{
-	free(exclude_list->list);
-}
-
-/*
- * This is the call back used by zfs_send to
- * determine if a dataset should be skipped.
- * As stated above, this is not the most efficient
- * data structure to use, but as long as the
- * number of excluded datasets is relatively
- * small (a couple of dozen or so), it won't
- * have a big impact on performance on modern
- * processors. Since it's excluding hierarchies,
- * we'd probably want to move to a more complex
- * tree structure in that case.
- */
 static boolean_t
 zfs_do_send_exclude(zfs_handle_t *zhp, void *context)
 {
-	zfs_send_exclude_arg_t *exclude = context;
+	zfs_send_exclude_arg_t *excludes = context;
 	const char *name = zfs_get_name(zhp);
 
-	for (size_t indx = 0; indx < exclude->count; indx++) {
-		char *exclude_name = exclude->list[indx];
-		size_t len = strlen(exclude_name);
-		/* If it's shorter, it can't possibly match */
-		if (strlen(name) < len)
-			continue;
-		if (strncmp(name, exclude_name, len) == 0 &&
-		    (name[len] == '/' || name[len] == '\0' ||
-		    name[len] == '@')) {
+	for (size_t i = 0; i < excludes->count; ++i) {
+		size_t len = strlen(excludes->list[i]);
+		if (strncmp(name, excludes->list[i], len) == 0 &&
+		    memchr("/@", name[len], sizeof ("/@")))
 			return (B_FALSE);
-		}
 	}
 
 	return (B_TRUE);
@@ -4402,11 +4356,11 @@ zfs_do_send(int argc, char **argv)
 	int c, err;
 	nvlist_t *dbgnv = NULL;
 	char *redactbook = NULL;
-	zfs_send_exclude_arg_t exclude_context = { 0 };
+	zfs_send_exclude_arg_t excludes = { 0 };
 
 	struct option long_options[] = {
 		{"replicate",	no_argument,		NULL, 'R'},
-		{"skip-missing",	no_argument,		NULL, 's'},
+		{"skip-missing",	no_argument,	NULL, 's'},
 		{"redact",	required_argument,	NULL, 'd'},
 		{"props",	no_argument,		NULL, 'p'},
 		{"parsable",	no_argument,		NULL, 'P'},
@@ -4430,7 +4384,18 @@ zfs_do_send(int argc, char **argv)
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'X':
-			add_dataset_excludes(optarg, &exclude_context);
+			for (char *ds; (ds = strsep(&optarg, ",")) != NULL; ) {
+				if (!zfs_name_valid(ds, ZFS_TYPE_DATASET) ||
+				    strchr(ds, '/') == NULL) {
+					(void) fprintf(stderr, gettext("-X %s: "
+					    "not a valid non-root dataset name"
+					    ".\n"), ds);
+					usage(B_FALSE);
+				}
+				excludes.list = safe_realloc(excludes.list,
+				    sizeof (char *) * (excludes.count + 1));
+				excludes.list[excludes.count++] = ds;
+			}
 			break;
 		case 'i':
 			if (fromname)
@@ -4541,7 +4506,7 @@ zfs_do_send(int argc, char **argv)
 	if (flags.parsable && flags.verbosity == 0)
 		flags.verbosity = 1;
 
-	if (exclude_context.count > 0 && !flags.replicate) {
+	if (excludes.count > 0 && !flags.replicate) {
 		(void) fprintf(stderr, gettext("Cannot specify "
 		    "dataset exclusion (-X) on a non-recursive "
 		    "send.\n"));
@@ -4730,10 +4695,8 @@ zfs_do_send(int argc, char **argv)
 		flags.doall = B_TRUE;
 
 	err = zfs_send(zhp, fromname, toname, &flags, STDOUT_FILENO,
-	    exclude_context.count > 0 ? zfs_do_send_exclude : NULL,
-	    &exclude_context, flags.verbosity >= 3 ? &dbgnv : NULL);
-
-	free_dataset_excludes(&exclude_context);
+	    excludes.count > 0 ? zfs_do_send_exclude : NULL,
+	    &excludes, flags.verbosity >= 3 ? &dbgnv : NULL);
 
 	if (flags.verbosity >= 3 && dbgnv != NULL) {
 		/*
@@ -4745,8 +4708,9 @@ zfs_do_send(int argc, char **argv)
 		dump_nvlist(dbgnv, 0);
 		nvlist_free(dbgnv);
 	}
-	zfs_close(zhp);
 
+	zfs_close(zhp);
+	free(excludes.list);
 	return (err != 0);
 }
 
@@ -6531,13 +6495,10 @@ holds_callback(zfs_handle_t *zhp, void *data)
 static int
 zfs_do_holds(int argc, char **argv)
 {
-	int errors = 0;
 	int c;
-	int i;
+	boolean_t errors = B_FALSE;
 	boolean_t scripted = B_FALSE;
 	boolean_t recursive = B_FALSE;
-	const char *opts = "rH";
-	nvlist_t *nvl;
 
 	int types = ZFS_TYPE_SNAPSHOT;
 	holds_cbdata_t cb = { 0 };
@@ -6547,7 +6508,7 @@ zfs_do_holds(int argc, char **argv)
 	int flags = 0;
 
 	/* check options */
-	while ((c = getopt(argc, argv, opts)) != -1) {
+	while ((c = getopt(argc, argv, "rH")) != -1) {
 		switch (c) {
 		case 'r':
 			recursive = B_TRUE;
@@ -6574,10 +6535,9 @@ zfs_do_holds(int argc, char **argv)
 	if (argc < 1)
 		usage(B_FALSE);
 
-	if (nvlist_alloc(&nvl, NV_UNIQUE_NAME, 0) != 0)
-		nomem();
+	nvlist_t *nvl = fnvlist_alloc();
 
-	for (i = 0; i < argc; ++i) {
+	for (int i = 0; i < argc; ++i) {
 		char *snapshot = argv[i];
 		const char *delim;
 		const char *snapname;
@@ -6586,7 +6546,7 @@ zfs_do_holds(int argc, char **argv)
 		if (delim == NULL) {
 			(void) fprintf(stderr,
 			    gettext("'%s' is not a snapshot\n"), snapshot);
-			++errors;
+			errors = B_TRUE;
 			continue;
 		}
 		snapname = delim + 1;
@@ -6600,10 +6560,10 @@ zfs_do_holds(int argc, char **argv)
 		/*
 		 *  1. collect holds data, set format options
 		 */
-		ret = zfs_for_each(argc, argv, flags, types, NULL, NULL, limit,
+		ret = zfs_for_each(1, argv + i, flags, types, NULL, NULL, limit,
 		    holds_callback, &cb);
 		if (ret != 0)
-			++errors;
+			errors = B_TRUE;
 	}
 
 	/*
@@ -6616,7 +6576,7 @@ zfs_do_holds(int argc, char **argv)
 
 	nvlist_free(nvl);
 
-	return (0 != errors);
+	return (errors);
 }
 
 #define	CHECK_SPINNER 30
