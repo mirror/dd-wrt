@@ -6,7 +6,7 @@ VPATH = $(top_srcdir)/module/zstd
 # Set it for other compilers, too.
 AM_CFLAGS += -fno-tree-vectorize
 # See https://debbugs.gnu.org/cgi/bugreport.cgi?bug=54020
-AM_CFLAGS += -no-suppress
+AM_CFLAGS += -no-suppress -DZSTD_NO_TRACE
 
 noinst_LTLIBRARIES = libzstd.la
 
