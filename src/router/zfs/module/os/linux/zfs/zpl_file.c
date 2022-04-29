@@ -33,8 +33,12 @@
 #include <sys/zfs_vfsops.h>
 #include <sys/zfs_vnops.h>
 #include <sys/zfs_project.h>
-#ifdef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
+#if defined(HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS) || \
+    defined(HAVE_VFS_FILEMAP_DIRTY_FOLIO)
 #include <linux/pagemap.h>
+#endif
+#ifdef HAVE_VFS_FILEMAP_DIRTY_FOLIO
+#include <linux/writeback.h>
 #endif
 
 /*
@@ -413,6 +417,8 @@ zpl_aio_write(struct kiocb *kiocb, const struct iovec *iov,
 	if (ret)
 		return (ret);
 
+	kiocb->ki_pos = pos;
+
 	zfs_uio_t uio;
 	zfs_uio_iovec_init(&uio, iov, nr_segs, kiocb->ki_pos, UIO_USERSPACE,
 	    count, 0);
@@ -781,11 +787,13 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 	if (mode & (test_mode)) {
 		flock64_t bf;
 
-		if (offset > olen)
-			goto out_unmark;
+		if (mode & FALLOC_FL_KEEP_SIZE) {
+			if (offset > olen)
+				goto out_unmark;
 
-		if (offset + len > olen)
-			len = olen - offset;
+			if (offset + len > olen)
+				len = olen - offset;
+		}
 		bf.l_type = F_WRLCK;
 		bf.l_whence = SEEK_SET;
 		bf.l_start = offset;
@@ -1163,6 +1171,9 @@ const struct address_space_operations zpl_address_space_operations = {
 	.direct_IO	= zpl_direct_IO,
 #ifdef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
 	.set_page_dirty = __set_page_dirty_nobuffers,
+#endif
+#ifdef HAVE_VFS_FILEMAP_DIRTY_FOLIO
+	.dirty_folio	= filemap_dirty_folio,
 #endif
 };
 
