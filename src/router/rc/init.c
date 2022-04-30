@@ -491,9 +491,13 @@ static void check_bootfails(void)
 			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
 		if (failcnt == 5) {
 			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
-			char *ip = nvram_safe_get("lan_ipaddr");
-			char *nm = nvram_safe_get("lan_netmask");
-			char *gw = nvram_safe_get("lan_gateway");
+			char *s_ip = nvram_safe_get("lan_ipaddr");
+			char *s_nm = nvram_safe_get("lan_netmask");
+			char *s_gw = nvram_safe_get("lan_gateway");
+			char ip[32], nm[32], gw[32];
+			strcpy(ip, s_ip);
+			strcpy(nm,, s_nm);
+			strcpy(gw, s_gw);
 			nvram_clear();
 			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
