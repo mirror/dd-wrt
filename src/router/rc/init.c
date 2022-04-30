@@ -495,6 +495,7 @@ static void check_bootfails(void)
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
 			int open = nvram_geti("boot_fail_open");
+			int keepip = nvram_get("boot_fail_keepip");
 			char ip[32], nm[32], gw[32];
 			int ifcount = 0;
 			int wlifcount = 0;
@@ -525,7 +526,7 @@ static void check_bootfails(void)
 				}
 
 			}
-			if (nvram_match("boot_fail_keepip", "1")) {
+			if (keepip) {
 				nvram_set("lan_ipaddr", ip);
 				nvram_set("lan_netmask", nm);
 				nvram_set("lan_gateway", gw);
