@@ -495,14 +495,14 @@ static void check_bootfails(void)
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
 			int open = nvram_geti("boot_fail_open");
-			int keepip = nvram_get("boot_fail_keepip");
+			int keepip = nvram_geti("boot_fail_keepip");
 			char ip[32], nm[32], gw[32];
 			int ifcount = 0;
 			int wlifcount = 0;
-			while (*nvram_nget("wlan%d_net_mode", i)) {
+			while (*nvram_nget("wlan%d_net_mode", ifcount)) {
 				ifcount++;
 			}
-			while (*nvram_nget("wl%d_net_mode", i)) {
+			while (*nvram_nget("wl%d_net_mode", wlifcount)) {
 				wlifcount++;
 			}
 
