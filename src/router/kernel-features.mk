@@ -1,5 +1,5 @@
 define kernelfeatures
-	sed -i 's/\# CONFIG_PRINTK_TIME is not set/CONFIG_PRINTK_TIME=y/g' $(LINUXDIR)/.config; \
+	sed -i 's/\# CONFIG_PRINTK_TIME is not set/CONFIG_PRINTK_TIME=y/g' $(LINUXDIR)/.config
 	echo "CONFIG_INOTIFY_USER=y" >> $(LINUXDIR)/.config
 	if [ "$(CONFIG_IPSET)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NETFILTER_XT_SET is not set/CONFIG_NETFILTER_XT_SET=y/g' $(LINUXDIR)/.config; \
