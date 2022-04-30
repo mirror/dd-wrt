@@ -494,22 +494,32 @@ static void check_bootfails(void)
 			char *s_ip = nvram_safe_get("lan_ipaddr");
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
+			int open = nvram_geti("boot_fail_open");
 			char ip[32], nm[32], gw[32];
+			int ifcount = 0;
+			int wlifcount = 0;
+			while (*nvram_nget("wlan%d_net_mode", i)) {
+				ifcount++;
+			}
+			while (*nvram_nget("wl%d_net_mode", i)) {
+				wlifcount++;
+			}
+
 			strcpy(ip, s_ip);
 			strcpy(nm,, s_nm);
 			strcpy(gw, s_gw);
 			nvram_clear();
 			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
-			if (!nvram_match("boot_fail_open", "1")) {
+			if (!open) {
 				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
 				int i;
-				while (*nvram_nget("wlan%d_net_mode", i)) {
+				while (ifcount--) {
 					nvram_nset("disabled", "wlan%d_net_mode", i);
 					i++;
 				}
 				i = 0;
-				while (*nvram_nget("wl%d_net_mode", i)) {
+				while (wlifcount--) {
 					nvram_nset("disabled", "wl%d_net_mode", i);
 					i++;
 				}
