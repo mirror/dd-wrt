@@ -507,7 +507,7 @@ static void check_bootfails(void)
 			}
 
 			strcpy(ip, s_ip);
-			strcpy(nm,, s_nm);
+			strcpy(nm, s_nm);
 			strcpy(gw, s_gw);
 			nvram_clear();
 			nvram_seti("boot_last_fail", failcnt);
