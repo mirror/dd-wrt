@@ -159,13 +159,12 @@ void mt76_eeprom_override(struct mt76_phy *phy)
 
 #ifdef CONFIG_OF
 	struct device_node *np = dev->dev->of_node;
-	u8 mac[6];
+	u8 mac[6] = {0,0,0,0,0,0};
 
 	if (!np)
 		goto out;
 
-	of_get_mac_address(np, mac);
-	if (!IS_ERR_OR_NULL(mac))
+	if (of_get_mac_address(np, mac) == 0 && is_valid_ether_addr(mac))
 		ether_addr_copy(phy->macaddr, mac);
 #endif
 
