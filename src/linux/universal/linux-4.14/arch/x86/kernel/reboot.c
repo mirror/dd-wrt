@@ -494,7 +494,57 @@ static const struct dmi_system_id reboot_dmi_table[] __initconst = {
 		.ident = "PC Engines apu2",
 		.matches = {
 			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
-			DMI_MATCH(DMI_BOARD_NAME, "apu2"),
+			DMI_MATCH(DMI_BOARD_NAME, "APU2"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu3",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "apu3"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu3",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "APU3"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu4",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "apu4"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu4",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "PC Engines apu4"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu4",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "APU4"),
 		},
 	},
 
