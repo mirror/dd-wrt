@@ -67,7 +67,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<th style=\"text-align: center\" width=\"10%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -207,7 +207,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "			<th>Samba</th>\n");
 	websWrite(wp, "			<th>FTP</th>\n");
 
-	websWrite(wp, "			<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "			<th style=\"text-align: center\" width=\"10%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
