@@ -2,6 +2,7 @@
 #define __UTILS_H__ 1
 
 #include <asm/types.h>
+#include <stdint.h>
 #ifdef __UCLIBC__
 #include <resolv.h>
 #endif
