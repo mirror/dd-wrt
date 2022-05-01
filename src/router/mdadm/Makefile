@@ -47,7 +47,7 @@ COVERITY_FLAGS=-include coverity-gcc-hack.h
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
-CXFLAGS ?= -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections
+CXFLAGS ?= -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libudev/src/libudev -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections
 CWFLAGS = -Wall -Wstrict-prototypes -Wextra -Wno-unused-parameter
 ifdef WARN_UNUSED
 CWFLAGS += -Wp,-D_FORTIFY_SOURCE=2
@@ -115,7 +115,7 @@ MON_LDFLAGS += -pthread
 endif
 
 # If you want a static binary, you might uncomment these
-LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS +=  -L$(TOP)/libudev/src/libudev/.libs -ludev -ffunction-sections -fdata-sections -Wl,--gc-sections
 STRIP =
 LDLIBS=-ldl
 
