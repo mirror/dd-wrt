@@ -2183,6 +2183,9 @@
 /* */
 #undef _XOPEN_SOURCE
 
+/* Define when using musl libc */
+#undef __MUSL__
+
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
