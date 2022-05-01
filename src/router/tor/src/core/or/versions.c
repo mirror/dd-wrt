@@ -482,6 +482,12 @@ memoize_protover_summary(protover_summary_flags_t *out,
     protocol_list_supports_protocol(protocols, PRT_PADDING,
                                     PROTOVER_HS_SETUP_PADDING);
 
+  out->supports_congestion_control =
+    protocol_list_supports_protocol(protocols, PRT_FLOWCTRL,
+                                    PROTOVER_FLOWCTRL_CC) &&
+    protocol_list_supports_protocol(protocols, PRT_RELAY,
+                                    PROTOVER_RELAY_NTOR_V3);
+
   protover_summary_flags_t *new_cached = tor_memdup(out, sizeof(*out));
   cached = strmap_set(protover_summary_map, protocols, new_cached);
   tor_assert(!cached);

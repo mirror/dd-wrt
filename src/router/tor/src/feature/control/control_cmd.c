@@ -817,11 +817,16 @@ handle_control_extendcircuit(control_connection_t *conn,
     circ->first_hop_from_controller = 1;
   }
 
+  circ->any_hop_from_controller = 1;
+
   /* now circ refers to something that is ready to be extended */
   first_node = zero_circ;
   SMARTLIST_FOREACH(nodes, const node_t *, node,
   {
-    extend_info_t *info = extend_info_from_node(node, first_node);
+    /* We treat every hop as an exit to try to negotiate congestion
+     * control, because we have no idea which hop the controller wil
+     * try to use for streams and when */
+    extend_info_t *info = extend_info_from_node(node, first_node, true);
     if (!info) {
       tor_assert_nonfatal(first_node);
       log_warn(LD_CONTROL,
@@ -1075,7 +1080,7 @@ static const control_cmd_syntax_t redirectstream_syntax = {
   .max_args = UINT_MAX, // XXX should be 3.
 };
 
-/** Called when we receive a REDIRECTSTERAM command.  Try to change the target
+/** Called when we receive a REDIRECTSTREAM command.  Try to change the target
  * address of the named AP stream, and report success or failure. */
 static int
 handle_control_redirectstream(control_connection_t *conn,

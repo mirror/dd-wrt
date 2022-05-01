@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 02/04/2022
+.\"      Date: 04/27/2022
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "02/04/2022" "Tor" "Tor Manual"
+.TH "TOR" "1" "04/27/2022" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -89,7 +89,7 @@ Specify a new configuration file to contain further Tor configuration options, o
 to make Tor read its configuration from standard input\&. (Default:
 \fB@CONFDIR@/torrc\fR, or
 \fB$HOME/\&.torrc\fR
-if that file is not found)
+if that file is not found\&.)
 .RE
 .PP
 \fB\-\-allow\-missing\-torrc\fR
@@ -132,7 +132,7 @@ Verify whether the configuration file is valid\&.
 .RS 4
 Write a list of Tor\(cqs configured options to standard output\&. When the
 short
-flag is selected, only write the options that are different from their default values When
+flag is selected, only write the options that are different from their default values\&. When
 full
 is selected, write every option\&.
 .RE
@@ -1776,6 +1776,12 @@ If UseEntryGuards is set to 1, we will try to pick a total of NUM routers as lon
 If UseEntryGuards is set to 1, we will try to pick NUM routers for our primary guard list, which is the set of routers we strongly prefer when connecting to the Tor network\&. If NUM is 0, we try to learn the number from the guard\-n\-primary\-guards consensus parameter, and default to 3 if the consensus parameter isn\(cqt set\&. (Default: 0)
 .RE
 .PP
+\fBVanguardsLiteEnabled\fR \fB0\fR|\fB1\fR|\fBauto\fR
+.RS 4
+This option specifies whether clients should use the vanguards\-lite subsystem to protect against guard discovery attacks\&. If it\(cqs set to
+\fIauto\fR, clients will do what the vanguards\-lite\-enabled consensus parameter tells them to do, and will default to enable the subsystem if the consensus parameter isn\(cqt set\&. (Default: auto)
+.RE
+.PP
 \fBUseMicrodescriptors\fR \fB0\fR|\fB1\fR|\fBauto\fR
 .RS 4
 Microdescriptors are a smaller version of the information that Tor needs in order to build its circuits\&. Using microdescriptors makes Tor clients download less directory information, thus saving bandwidth\&. Directory caches need to fetch regular descriptors and microdescriptors, so this option doesn\(cqt save any bandwidth for them\&. For legacy reasons, auto is accepted, but it has the same effect as 1\&. (Default: auto)
@@ -2754,7 +2760,11 @@ When this option is nonzero, Tor caches will not try to generate consensus diffs
 .RE
 .SH "DENIAL OF SERVICE MITIGATION OPTIONS"
 .sp
-Tor has three built\-in mitigation options that can be individually enabled/disabled and fine\-tuned, but by default Tor directory authorities will define reasonable values for relays and no explicit configuration is required to make use of these protections\&. The mitigations take place at relays, and are as follows:
+Tor has a series of built\-in denial of service mitigation options that can be individually enabled/disabled and fine\-tuned, but by default Tor directory authorities will define reasonable values for the network and no explicit configuration is required to make use of these protections\&.
+.sp
+The following is a series of configuration options for relays and then options for onion services and how they work\&.
+.sp
+The mitigations take place at relays, and are as follows:
 .sp
 .RS 4
 .ie n \{\
@@ -2890,6 +2900,43 @@ The base time period in seconds that the client connection defense is activated 
 .RS 4
 Refuse establishment of rendezvous points for single hop clients\&. In other words, if a client directly connects to the relay and sends an ESTABLISH_RENDEZVOUS cell, it is silently dropped\&. "auto" means use the consensus parameter\&. If not defined in the consensus, the value is 0\&. (Default: auto)
 .RE
+.sp
+As for onion services, only one possible mitigation exists\&. It was intended to protect the network first and thus do not help the service availability or reachability\&.
+.sp
+The mitigation we put in place is a rate limit of the amount of introduction that happens at the introduction point for a service\&. In other words, it rates limit the number of clients that are attempting to reach the service at the introduction point instead of at the service itself\&.
+.sp
+The following options are per onion service:
+.PP
+\fBHiddenServiceEnableIntroDoSDefense\fR \fB0\fR|\fB1\fR
+.RS 4
+Enable DoS defense at the intropoint level\&. When this is enabled, the rate and burst parameter (see below) will be sent to the intro point which will then use them to apply rate limiting for introduction request to this service\&.
+
+The introduction point honors the consensus parameters except if this is specifically set by the service operator using this option\&. The service never looks at the consensus parameters in order to enable or disable this defense\&. (Default: 0)
+.RE
+.PP
+\fBHiddenServiceEnableIntroDoSBurstPerSec\fR \fINUM\fR
+.RS 4
+The allowed client introduction burst per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
+\fBHiddenServiceEnableIntroDoSDefense\fR
+is set, it then effectively disables the defenses\&. (Default: 200)
+.RE
+.PP
+\fBHiddenServiceEnableIntroDoSRatePerSec\fR \fINUM\fR
+.RS 4
+The allowed client introduction rate per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
+\fBHiddenServiceEnableIntroDoSDefense\fR
+is set, it then effectively disables the defenses\&. (Default: 25)
+.RE
+.sp
+The rate is the maximum number of clients a service will ask its introduction points to allow every seconds\&. And the burst is a parameter that allows that many within one second\&.
+.sp
+For example, the default values of 25 and 200 respectively means that for every introduction points a service has (default 3 but can be configured with \fBHiddenServiceNumIntroductionPoints\fR), 25 clients per seconds will be allowed to reach the service and 200 at most within 1 second as a burst\&. This means that if 200 clients are seen within 1 second, it will take 8 seconds (200/25) for another client to be able to be allowed to introduce due to the rate of 25 per second\&.
+.sp
+This might be too much for your use case or not, fine tuning these values is hard and are likely different for each service operator\&.
+.sp
+Why is this not helping reachability of the service? Because the defenses are at the introduction point, an attacker can easily flood all introduction point rendering the service unavailable due to no client being able to pass through\&. But, the service itself is not overwhelmed with connetions allowing it to function properly for the few clients that were able to go through or other any services running on the same tor instance\&.
+.sp
+The bottom line is that this protects the network by preventing an onion service to flood the network with new rendezvous circuits that is reducing load on the network\&.
 .SH "DIRECTORY AUTHORITY SERVER OPTIONS"
 .sp
 The following options enable operation as a directory authority, and control how Tor behaves as a directory authority\&. You should not need to adjust any of them if you\(cqre running a regular relay or exit server on the public Tor network\&.
@@ -2921,6 +2968,13 @@ is set\&.
 
 
 (The address pattern syntax here and in the options below is the same as for exit policies, except that you don\(cqt need to say "accept" or "reject", and ports are not needed\&.)
+.RE
+.PP
+\fBAuthMiddleOnly\fR \fIAddressPattern\&...\fR
+.RS 4
+Authoritative directories only\&. A set of address patterns for servers that will be listed as middle\-only in any network status document this authority publishes, if
+\fBAuthDirListMiddleOnly\fR
+is set\&.
 .RE
 .PP
 \fBAuthDirFastGuarantee\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR|\fBTBytes\fR|\fBKBits\fR|\fBMBits\fR|\fBGBits\fR|\fBTBits\fR
@@ -2999,6 +3053,13 @@ Authoritative directories only\&. A set of address patterns for servers that wil
 Authoritative directories only\&. If set to 1, this directory has some opinion about which nodes are unsuitable as exit nodes\&. (Do not set this to 1 unless you plan to list non\-functioning exits as bad; otherwise, you are effectively voting in favor of every declared exit as an exit\&.)
 .RE
 .PP
+\fBAuthDirListMiddleOnly\fR \fB0\fR|\fB1\fR
+.RS 4
+Authoritative directories only\&. If set to 1, this directory has some opinion about which nodes should only be used in the middle position\&. (Do not set this to 1 unless you plan to list questionable relays as "middle only"; otherwise, you are effectively voting
+\fIagainst\fR
+middle\-only status for every relay\&.)
+.RE
+.PP
 \fBAuthDirMaxServersPerAddr\fR \fINUM\fR
 .RS 4
 Authoritative directories only\&. The maximum number of servers that we will list as acceptable on a single IP address\&. Set this to "0" for "no limit"\&. (Default: 2)
@@ -3013,15 +3074,17 @@ Authoritative directories only\&. If non\-zero, do not allow any relay to publis
 .RS 4
 Authoritative directories only\&. A set of address patterns for servers that will never be listed at all in any network status document that this authority publishes, or accepted as an OR address in any descriptor submitted for publication by this authority\&.
 .RE
-.sp
-\fBAuthDirBadExitCCs\fR \fICC\fR,\&...
-.sp
-\fBAuthDirInvalidCCs\fR \fICC\fR,\&...
 .PP
 \fBAuthDirRejectRequestsUnderLoad\fR \fB0\fR|\fB1\fR
 .RS 4
 If set, the directory authority will start rejecting directory requests from non relay connections by sending a 503 error code if it is under bandwidth pressure (reaching the configured limit if any)\&. Relays will always tried to be answered even if this is on\&. (Default: 1)
 .RE
+.sp
+\fBAuthDirBadExitCCs\fR \fICC\fR,\&...
+.sp
+\fBAuthDirInvalidCCs\fR \fICC\fR,\&...
+.sp
+\fBAuthDirMiddleOnlyCCs\fR \fICC\fR,\&...
 .PP
 \fBAuthDirRejectCCs\fR \fICC\fR,\&...
 .RS 4
@@ -3160,27 +3223,6 @@ is enabled\&. (Note: in current versions of Tor, if DIRECTORY is a relative path
 \fBHiddenServiceDirGroupReadable\fR \fB0\fR|\fB1\fR
 .RS 4
 If this option is set to 1, allow the filesystem group to read the hidden service directory and hostname file\&. If the option is set to 0, only owner is able to read the hidden service directory\&. (Default: 0) Has no effect on Windows\&.
-.RE
-.PP
-\fBHiddenServiceEnableIntroDoSDefense\fR \fB0\fR|\fB1\fR
-.RS 4
-Enable DoS defense at the intropoint level\&. When this is enabled, the rate and burst parameter (see below) will be sent to the intro point which will then use them to apply rate limiting for introduction request to this service\&.
-
-The introduction point honors the consensus parameters except if this is specifically set by the service operator using this option\&. The service never looks at the consensus parameters in order to enable or disable this defense\&. (Default: 0)
-.RE
-.PP
-\fBHiddenServiceEnableIntroDoSBurstPerSec\fR \fINUM\fR
-.RS 4
-The allowed client introduction burst per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
-\fBHiddenServiceEnableIntroDoSDefense\fR
-is set, it then effectively disables the defenses\&. (Default: 200)
-.RE
-.PP
-\fBHiddenServiceEnableIntroDoSRatePerSec\fR \fINUM\fR
-.RS 4
-The allowed client introduction rate per second at the introduction point\&. If this option is 0, it is considered infinite and thus if
-\fBHiddenServiceEnableIntroDoSDefense\fR
-is set, it then effectively disables the defenses\&. (Default: 25)
 .RE
 .PP
 \fBHiddenServiceExportCircuitID\fR \fIprotocol\fR
@@ -3440,14 +3482,14 @@ Overrides the default lifetime for a signing Ed25519 TLS Link authentication key
 .PP
 \fBTestingBridgeBootstrapDownloadInitialDelay\fR \fIN\fR
 .RS 4
-Initial delay in seconds for when clients should download each bridge descriptor when they have just started, or when they can not contact any of their bridges\&. Changing this requires that
+Initial delay in seconds for how long clients should wait before downloading a bridge descriptor for a new bridge\&. Changing this requires that
 \fBTestingTorNetwork\fR
 is set\&. (Default: 0)
 .RE
 .PP
 \fBTestingBridgeDownloadInitialDelay\fR \fIN\fR
 .RS 4
-Initial delay in seconds for when clients should download each bridge descriptor when they know that one or more of their configured bridges are running\&. Changing this requires that
+How long to wait (in seconds) once clients have successfully downloaded a bridge descriptor, before trying another download for that same bridge\&. Changing this requires that
 \fBTestingTorNetwork\fR
 is set\&. (Default: 10800)
 .RE
@@ -3910,7 +3952,12 @@ file holds the previously generated key, which the relay uses to handle any requ
 .PP
 \fIDataDirectory\fR/\fBfingerprint\fR
 .RS 4
-Only used by servers\&. Contains the fingerprint of the server\(cqs identity key\&.
+Only used by servers\&. Contains the fingerprint of the server\(cqs RSA identity key\&.
+.RE
+.PP
+\fIDataDirectory\fR/\fBfingerprint\-ed25519\fR
+.RS 4
+Only used by servers\&. Contains the fingerprint of the server\(cqs ed25519 identity key\&.
 .RE
 .PP
 \fIDataDirectory\fR/\fBhashed\-fingerprint\fR
@@ -3928,7 +3975,8 @@ for an example fingerprint line\&. If the status is
 \fB!reject\fR, then descriptors from the given identity are rejected by this server\&. If it is
 \fB!invalid\fR
 then descriptors are accepted, but marked in the vote as not valid\&. If it is
-\fB!badexit\fR, then the authority will vote for it to receive a BadExit flag, indicating that it shouldn\(cqt be used for traffic leaving the Tor network\&. (Neither rejected nor invalid relays are included in the consensus\&.)
+\fB!badexit\fR, then the authority will vote for it to receive a BadExit flag, indicating that it shouldn\(cqt be used for traffic leaving the Tor network\&. If it is
+\fB!middleonly\fR, then the authority will vote for it to only be used in the middle of circuits\&. (Neither rejected nor invalid relays are included in the consensus\&.)
 .RE
 .PP
 \fIDataDirectory\fR/\fBv3\-status\-votes\fR
