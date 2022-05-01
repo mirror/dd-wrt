@@ -45,6 +45,8 @@
 #include "core/or/channel.h"
 #include "core/or/channelpadding.h"
 #include "core/or/circuitpadding.h"
+#include "core/or/congestion_control_common.h"
+#include "core/or/congestion_control_flow.h"
 #include "core/or/circuitmux.h"
 #include "core/or/circuitmux_ewma.h"
 #include "core/or/circuitstats.h"
@@ -80,6 +82,7 @@
 #include "feature/nodelist/routerinfo.h"
 #include "feature/nodelist/routerlist.h"
 #include "feature/nodelist/torcert.h"
+#include "feature/relay/dns.h"
 #include "feature/relay/routermode.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_util.h"
@@ -1701,6 +1704,13 @@ notify_after_networkstatus_changes(void)
   channelpadding_new_consensus_params(c);
   circpad_new_consensus_params(c);
   router_new_consensus_params(c);
+  congestion_control_new_consensus_params(c);
+  flow_control_new_consensus_params(c);
+  hs_service_new_consensus_params(c);
+  dns_new_consensus_params(c);
+
+  /* Maintenance of our L2 guard list */
+  maintain_layer2_guards();
 }
 
 /** Copy all the ancillary information (like router download status and so on)

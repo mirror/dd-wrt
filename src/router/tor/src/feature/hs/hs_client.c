@@ -11,12 +11,15 @@
 #include "core/or/or.h"
 #include "app/config/config.h"
 #include "core/crypto/hs_ntor.h"
+#include "core/crypto/onion_crypto.h"
 #include "core/mainloop/connection.h"
 #include "core/or/circuitbuild.h"
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
 #include "core/or/connection_edge.h"
+#include "core/or/congestion_control_common.h"
 #include "core/or/extendinfo.h"
+#include "core/or/protover.h"
 #include "core/or/reasons.h"
 #include "feature/client/circpathbias.h"
 #include "feature/dirclient/dirclient.h"
@@ -37,6 +40,7 @@
 #include "lib/crypt_ops/crypto_format.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_util.h"
+#include "lib/evloop/compat_libevent.h"
 
 #include "core/or/cpath_build_state_st.h"
 #include "feature/dircommon/dir_connection_st.h"
@@ -45,11 +49,30 @@
 #include "core/or/origin_circuit_st.h"
 #include "core/or/socks_request_st.h"
 
+#include "trunnel/hs/cell_introduce1.h"
+
+/** This event is activated when we are notified that directory information has
+ * changed. It must be done asynchronous from the call due to possible
+ * recursion from the caller of that notification. See #40579. */
+static struct mainloop_event_t *dir_info_changed_ev = NULL;
+
 /** Client-side authorizations for hidden services; map of service identity
  * public key to hs_client_service_authorization_t *. */
 static digest256map_t *client_auths = NULL;
 
-#include "trunnel/hs/cell_introduce1.h"
+/** Mainloop callback. Scheduled to run when we are notified of a directory
+ * info change. See hs_client_dir_info_changed(). */
+static void
+dir_info_changed_callback(mainloop_event_t *event, void *arg)
+{
+  (void) event;
+  (void) arg;
+
+  /* We have possibly reached the minimum directory information or new
+   * consensus so retry all pending SOCKS connection in
+   * AP_CONN_STATE_RENDDESC_WAIT state in order to fetch the descriptor. */
+  retry_all_socks_conn_waiting_for_desc();
+}
 
 /** Return a human-readable string for the client fetch status code. */
 static const char *
@@ -621,6 +644,16 @@ send_introduce1(origin_circuit_t *intro_circ,
     goto tran_err;
   }
 
+  /* Check if the rendevous circuit was setup WITHOUT congestion control but if
+   * it is enabled and the service supports it. This can happen, see
+   * setup_rendezvous_circ_congestion_control() and so close rendezvous circuit
+   * so another one can be created. */
+  if (TO_CIRCUIT(rend_circ)->ccontrol == NULL && congestion_control_enabled()
+      && hs_desc_supports_congestion_control(desc)) {
+    circuit_mark_for_close(TO_CIRCUIT(rend_circ), END_CIRC_REASON_INTERNAL);
+    goto tran_err;
+  }
+
   /* We need to find which intro point in the descriptor we are connected to
    * on intro_circ. */
   ip = find_desc_intro_point_by_ident(intro_circ->hs_ident, desc);
@@ -756,6 +789,45 @@ client_intro_circ_has_opened(origin_circuit_t *circ)
   connection_ap_attach_pending(1);
 }
 
+/** Setup the congestion control parameters on the given rendezvous circuit.
+ * This looks at the service descriptor flow control line (if any).
+ *
+ * It is possible that we are unable to set congestion control on the circuit
+ * if the descriptor can't be found. In that case, the introduction circuit
+ * can't be opened without it so a fetch will be triggered.
+ *
+ * However, if the descriptor asks for congestion control but the RP circuit
+ * doesn't have it, it will be closed and a new circuit will be opened. */
+static void
+setup_rendezvous_circ_congestion_control(origin_circuit_t *circ)
+{
+  tor_assert(circ);
+
+  /* Setup congestion control parameters on the circuit. */
+  const hs_descriptor_t *desc =
+    hs_cache_lookup_as_client(&circ->hs_ident->identity_pk);
+  if (desc == NULL) {
+    /* This is possible because between launching the circuit and the circuit
+     * ending in opened state, the descriptor could have been removed from the
+     * cache. In this case, we just can't setup congestion control. */
+    return;
+  }
+
+  /* Check if the service lists support for congestion control in its
+   * descriptor. If not, we don't setup congestion control. */
+  if (!hs_desc_supports_congestion_control(desc)) {
+    return;
+  }
+
+  /* If network doesn't enable it, do not setup. */
+  if (!congestion_control_enabled()) {
+    return;
+  }
+
+  hs_circ_setup_congestion_control(circ, desc->encrypted_data.sendme_inc,
+                                   desc->encrypted_data.single_onion_service);
+}
+
 /** Called when a rendezvous circuit has opened. */
 static void
 client_rendezvous_circ_has_opened(origin_circuit_t *circ)
@@ -784,6 +856,9 @@ client_rendezvous_circ_has_opened(origin_circuit_t *circ)
 
   log_info(LD_REND, "Rendezvous circuit has opened to %s.",
            safe_str_client(extend_info_describe(rp_ei)));
+
+  /* Setup congestion control parameters on the circuit. */
+  setup_rendezvous_circ_congestion_control(circ);
 
   /* Ignore returned value, nothing we can really do. On failure, the circuit
    * will be marked for close. */
@@ -2550,6 +2625,9 @@ hs_client_free_all(void)
   /* Purge the hidden service request cache. */
   hs_purge_last_hid_serv_requests();
   client_service_authorization_free_all();
+
+  /* This is NULL safe. */
+  mainloop_event_free(dir_info_changed_ev);
 }
 
 /** Purge all potentially remotely-detectable state held in the hidden
@@ -2572,14 +2650,27 @@ hs_client_purge_state(void)
   log_info(LD_REND, "Hidden service client state has been purged.");
 }
 
-/** Called when our directory information has changed. */
+/** Called when our directory information has changed.
+ *
+ * The work done in that function has to either be kept within the HS subsystem
+ * or else scheduled as a mainloop event. In other words, this function can't
+ * call outside to another subsystem to avoid risking recursion problems. */
 void
 hs_client_dir_info_changed(void)
 {
-  /* We have possibly reached the minimum directory information or new
-   * consensus so retry all pending SOCKS connection in
-   * AP_CONN_STATE_RENDDESC_WAIT state in order to fetch the descriptor. */
-  retry_all_socks_conn_waiting_for_desc();
+  /* Make sure the mainloop has been initialized. Code path exist that reaches
+   * this before it is. */
+  if (!tor_libevent_is_initialized()) {
+    return;
+  }
+
+  /* Lazily create the event. HS Client subsystem doesn't have an init function
+   * and so we do it here before activating it. */
+  if (!dir_info_changed_ev) {
+    dir_info_changed_ev = mainloop_event_new(dir_info_changed_callback, NULL);
+  }
+  /* Activate it to run immediately. */
+  mainloop_event_activate(dir_info_changed_ev);
 }
 
 #ifdef TOR_UNIT_TESTS

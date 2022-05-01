@@ -69,6 +69,8 @@
 #include "core/or/circuituse.h"
 #include "core/or/circuitpadding.h"
 #include "core/or/connection_edge.h"
+#include "core/or/congestion_control_flow.h"
+#include "core/or/circuitstats.h"
 #include "core/or/connection_or.h"
 #include "core/or/extendinfo.h"
 #include "core/or/policies.h"
@@ -614,20 +616,39 @@ connection_half_edge_add(const edge_connection_t *conn,
 
   half_conn->stream_id = conn->stream_id;
 
-  // How many sendme's should I expect?
-  half_conn->sendmes_pending =
-   (STREAMWINDOW_START-conn->package_window)/STREAMWINDOW_INCREMENT;
-
    // Is there a connected cell pending?
   half_conn->connected_pending = conn->base_.state ==
       AP_CONN_STATE_CONNECT_WAIT;
 
-  /* Data should only arrive if we're not waiting on a resolved cell.
-   * It can arrive after waiting on connected, because of optimistic
-   * data. */
-  if (conn->base_.state != AP_CONN_STATE_RESOLVE_WAIT) {
-    // How many more data cells can arrive on this id?
-    half_conn->data_pending = conn->deliver_window;
+  if (edge_uses_flow_control(conn)) {
+    /* If the edge uses the new congestion control flow control, we must use
+     * time-based limits on half-edge activity. */
+    uint64_t timeout_usec = (uint64_t)(get_circuit_build_timeout_ms()*1000);
+    half_conn->used_ccontrol = 1;
+
+    /* If this is an onion service circuit, double the CBT as an approximate
+     * value for the other half of the circuit */
+    if (conn->hs_ident) {
+      timeout_usec *= 2;
+    }
+
+    /* The stream should stop seeing any use after the larger of the circuit
+     * RTT and the overall circuit build timeout */
+    half_conn->end_ack_expected_usec = MAX(timeout_usec,
+                                           edge_get_max_rtt(conn)) +
+                                        monotime_absolute_usec();
+  } else {
+    // How many sendme's should I expect?
+    half_conn->sendmes_pending =
+     (STREAMWINDOW_START-conn->package_window)/STREAMWINDOW_INCREMENT;
+
+    /* Data should only arrive if we're not waiting on a resolved cell.
+     * It can arrive after waiting on connected, because of optimistic
+     * data. */
+    if (conn->base_.state != AP_CONN_STATE_RESOLVE_WAIT) {
+      // How many more data cells can arrive on this id?
+      half_conn->data_pending = conn->deliver_window;
+    }
   }
 
   insert_at = smartlist_bsearch_idx(circ->half_streams, &half_conn->stream_id,
@@ -688,6 +709,12 @@ connection_half_edge_is_valid_data(const smartlist_t *half_conns,
   if (!half)
     return 0;
 
+  if (half->used_ccontrol) {
+    if (monotime_absolute_usec() > half->end_ack_expected_usec)
+      return 0;
+    return 1;
+  }
+
   if (half->data_pending > 0) {
     half->data_pending--;
     return 1;
@@ -738,6 +765,10 @@ connection_half_edge_is_valid_sendme(const smartlist_t *half_conns,
                                                           stream_id);
 
   if (!half)
+    return 0;
+
+  /* congestion control edges don't use sendmes */
+  if (half->used_ccontrol)
     return 0;
 
   if (half->sendmes_pending > 0) {
@@ -1269,15 +1300,6 @@ connection_ap_rescan_and_attach_pending(void)
   connection_ap_attach_pending(1);
 }
 
-#ifdef DEBUGGING_17659
-#define UNMARK() do {                           \
-    entry_conn->marked_pending_circ_line = 0;   \
-    entry_conn->marked_pending_circ_file = 0;   \
-  } while (0)
-#else /* !defined(DEBUGGING_17659) */
-#define UNMARK() do { } while (0)
-#endif /* defined(DEBUGGING_17659) */
-
 /** Tell any AP streams that are listed as waiting for a new circuit to try
  * again.  If there is an available circuit for a stream, attach it. Otherwise,
  * launch a new circuit.
@@ -1306,21 +1328,18 @@ connection_ap_attach_pending(int retry)
     connection_t *conn = ENTRY_TO_CONN(entry_conn);
     tor_assert(conn && entry_conn);
     if (conn->marked_for_close) {
-      UNMARK();
       continue;
     }
     if (conn->magic != ENTRY_CONNECTION_MAGIC) {
       log_warn(LD_BUG, "%p has impossible magic value %u.",
                entry_conn, (unsigned)conn->magic);
-      UNMARK();
       continue;
     }
     if (conn->state != AP_CONN_STATE_CIRCUIT_WAIT) {
-      log_warn(LD_BUG, "%p is no longer in circuit_wait. Its current state "
-               "is %s. Why is it on pending_entry_connections?",
-               entry_conn,
-               conn_state_to_string(conn->type, conn->state));
-      UNMARK();
+      /* The connection_ap_handshake_attach_circuit() call, for onion service,
+       * can lead to more than one connections in the "pending" list to change
+       * state and so it is OK to get here. Ignore it because this connection
+       * won't be in pending_entry_connections list after this point. */
       continue;
     }
 
@@ -1345,7 +1364,6 @@ connection_ap_attach_pending(int retry)
 
     /* If we got here, then we either closed the connection, or
      * we attached it. */
-    UNMARK();
   } SMARTLIST_FOREACH_END(entry_conn);
 
   smartlist_free(pending);
@@ -1416,7 +1434,6 @@ connection_ap_mark_as_non_pending_circuit(entry_connection_t *entry_conn)
 {
   if (PREDICT_UNLIKELY(NULL == pending_entry_connections))
     return;
-  UNMARK();
   smartlist_remove(pending_entry_connections, entry_conn);
 }
 
@@ -1612,23 +1629,6 @@ consider_plaintext_ports(entry_connection_t *conn, uint16_t port)
   return 0;
 }
 
-/** Return true iff <b>query</b> is a syntactically valid service ID (as
- * generated by rend_get_service_id).  */
-static int
-rend_valid_v2_service_id(const char *query)
-{
-  /** Length of 'y' portion of 'y.onion' URL. */
-#define REND_SERVICE_ID_LEN_BASE32 16
-
-  if (strlen(query) != REND_SERVICE_ID_LEN_BASE32)
-    return 0;
-
-  if (strspn(query, BASE32_CHARS) != REND_SERVICE_ID_LEN_BASE32)
-    return 0;
-
-  return 1;
-}
-
 /** Parse the given hostname in address. Returns true if the parsing was
  * successful and type_out contains the type of the hostname. Else, false is
  * returned which means it was not recognized and type_out is set to
@@ -1692,14 +1692,6 @@ parse_extended_hostname(char *address, hostname_type_t *type_out)
   if (q != address) {
     memmove(address, q, strlen(q) + 1 /* also get \0 */);
   }
-  /* v2 onion address check. */
-  if (strlen(query) == REND_SERVICE_ID_LEN_BASE32) {
-    *type_out = ONION_V2_HOSTNAME;
-    if (rend_valid_v2_service_id(query)) {
-      goto success;
-    }
-    goto failed;
-  }
 
   /* v3 onion address check. */
   if (strlen(query) == HS_SERVICE_ADDR_LEN_BASE32) {
@@ -1719,8 +1711,7 @@ parse_extended_hostname(char *address, hostname_type_t *type_out)
  failed:
   /* otherwise, return to previous state and return 0 */
   *s = '.';
-  const bool is_onion = (*type_out == ONION_V2_HOSTNAME) ||
-    (*type_out == ONION_V3_HOSTNAME);
+  const bool is_onion = (*type_out == ONION_V3_HOSTNAME);
   log_warn(LD_APP, "Invalid %shostname %s; rejecting",
            is_onion ? "onion " : "",
            safe_str_client(address));
@@ -2242,7 +2233,7 @@ connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
   }
 
   /* Now, we handle everything that isn't a .onion address. */
-  if (addresstype != ONION_V3_HOSTNAME && addresstype != ONION_V2_HOSTNAME) {
+  if (addresstype != ONION_V3_HOSTNAME) {
     /* Not a hidden-service request.  It's either a hostname or an IP,
      * possibly with a .exit that we stripped off.  We're going to check
      * if we're allowed to connect/resolve there, and then launch the
@@ -2527,28 +2518,6 @@ connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
     return 0;
   } else {
     /* If we get here, it's a request for a .onion address! */
-
-    /* We don't support v2 onions anymore. Log a warning and bail. */
-    if (addresstype == ONION_V2_HOSTNAME) {
-      static bool log_once = false;
-      if (!log_once) {
-        log_warn(LD_PROTOCOL, "Tried to connect to a v2 onion address, but "
-                 "this version of Tor no longer supports them. Please "
-                 "encourage the site operator to upgrade. For more "
-                 "information see "
-                 "https://blog.torproject.org/v2-deprecation-timeline.");
-        log_once = true;
-      }
-      control_event_client_status(LOG_WARN, "SOCKS_BAD_HOSTNAME HOSTNAME=%s",
-                                  escaped(socks->address));
-      /* Send back the 0xF6 extended code indicating a bad hostname. This is
-       * mostly so Tor Browser can make a proper UX with regards to v2
-       * addresses. */
-      conn->socks_request->socks_extended_error_code = SOCKS5_HS_BAD_ADDRESS;
-      connection_mark_unattached_ap(conn, END_STREAM_REASON_TORPROTOCOL);
-      return -1;
-    }
-
     tor_assert(addresstype == ONION_V3_HOSTNAME);
     tor_assert(!automap);
     return connection_ap_handle_onion(conn, socks, circ);
