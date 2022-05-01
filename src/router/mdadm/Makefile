@@ -103,7 +103,8 @@ VERSION = $(shell [ -d .git ] && git describe HEAD | sed 's/mdadm-//')
 VERS_DATE = $(shell [ -d .git ] && date --iso-8601 --date="`git log -n1 --format=format:%cd --date=iso --date=short`")
 DVERS = $(if $(VERSION),-DVERSION=\"$(VERSION)\",)
 DDATE = $(if $(VERS_DATE),-DVERS_DATE="\"$(VERS_DATE)\"",)
-CFLAGS += $(DVERS) $(DDATE)
+DEXTRAVERSION = $(if $(EXTRAVERSION),-DEXTRAVERSION="\" - $(EXTRAVERSION)\"",)
+CFLAGS += $(DVERS) $(DDATE) $(DEXTRAVERSION)
 
 # The glibc TLS ABI requires applications that call clone(2) to set up
 # TLS data structures, use pthreads until mdmon implements this support
@@ -143,7 +144,7 @@ SHARE_OBJS = util.o maps.o sysfs.o sha1.o crc32.o msg.o xmalloc.o \
 	restripe.o lib.o sg_io.o mdstat.o policy.o
 
 
-OBJS =  mdadm.o config.o ReadMe.o \
+OBJS =  mdadm.o config.o ReadMe.o uuid.o \
 	Manage.o Assemble.o Build.o \
 	Create.o Detail.o Examine.o Grow.o Monitor.o Kill.o Query.o \
 	Incremental.o Dump.o \
@@ -157,7 +158,7 @@ SRCS =  $(patsubst %.o,%.c,$(OBJS))
 
 INCL = mdadm.h part.h bitmap.h
 
-MON_OBJS = mdmon.o monitor.o managemon.o \
+MON_OBJS = mdmon.o monitor.o uuid.o managemon.o \
 	Kill.o ReadMe.o
 
 MON_SRCS = $(patsubst %.o,%.c,$(MON_OBJS))
@@ -249,11 +250,7 @@ $(SHARE_OBJS) : $(INCL) mdmon.h
 sha1.o : sha1.c sha1.h md5.h
 	$(CC) $(CFLAGS) -DHAVE_STDINT_H -o sha1.o -c sha1.c
 
-install : mdadm mdmon
-	$(INSTALL) -D $(STRIP) -m 755 mdadm $(DESTDIR)$(BINDIR)/mdadm
-	$(INSTALL) -D $(STRIP) -m 755 mdmon $(DESTDIR)$(BINDIR)/mdmon
-	$(INSTALL) -D $(STRIP) -m 755 misc/mdcheck $(DESTDIR)$(BINDIR)/mdcheck
-	$(INSTALL) -D $(STRIP) -m 755 libmdadm.so $(DESTDIR)$(LIBDIR)/libmdadm.so
+install : install-bin install-man install-udev
 
 install-static : mdadm.static install-man
 	$(INSTALL) -D $(STRIP) -m 755 mdadm.static $(DESTDIR)$(BINDIR)/mdadm
@@ -285,7 +282,11 @@ install-udev: udev-md-raid-arrays.rules udev-md-raid-assembly.rules udev-md-raid
 
 install-systemd: systemd/mdmon@.service
 	@for file in mdmon@.service mdmonitor.service mdadm-last-resort@.timer \
-		mdadm-last-resort@.service mdadm-grow-continue@.service; \
+		mdadm-last-resort@.service mdadm-grow-continue@.service \
+		mdcheck_start.timer mdcheck_start.service \
+		mdcheck_continue.timer mdcheck_continue.service \
+		mdmonitor-oneshot.timer mdmonitor-oneshot.service \
+		; \
 	do sed -e 's,BINDIR,$(BINDIR),g' systemd/$$file > .install.tmp.2 && \
 	   $(ECHO) $(INSTALL) -D -m 644 systemd/$$file $(DESTDIR)$(SYSTEMD_DIR)/$$file ; \
 	   $(INSTALL) -D -m 644 .install.tmp.2 $(DESTDIR)$(SYSTEMD_DIR)/$$file ; \
@@ -298,6 +299,10 @@ install-systemd: systemd/mdmon@.service
 	   rm -f .install.tmp.3; \
 	done
 	if [ -f /etc/SuSE-release -o -n "$(SUSE)" ] ;then $(INSTALL) -D -m 755 systemd/SUSE-mdadm_env.sh $(DESTDIR)$(LIB_DIR)/mdadm_env.sh ;fi
+
+install-bin: mdadm mdmon
+	$(INSTALL) -D $(STRIP) -m 755 mdadm $(DESTDIR)$(BINDIR)/mdadm
+	$(INSTALL) -D $(STRIP) -m 755 mdmon $(DESTDIR)$(BINDIR)/mdmon
 
 uninstall:
 	rm -f $(DESTDIR)$(MAN8DIR)/mdadm.8 $(DESTDIR)$(MAN8DIR)/mdmon.8 $(DESTDIR)$(MAN4DIR)/md.4 $(DESTDIR)$(MAN5DIR)/mdadm.conf.5 $(DESTDIR)$(BINDIR)/mdadm

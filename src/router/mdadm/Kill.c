@@ -119,7 +119,7 @@ int Kill_subarray(char *dev, char *subarray, int verbose)
 		st->update_tail = &st->updates;
 
 	/* ok we've found our victim, drop the axe */
-	rv = st->ss->kill_subarray(st);
+	rv = st->ss->kill_subarray(st, subarray);
 	if (rv) {
 		if (verbose >= 0)
 			pr_err("Failed to delete subarray-%s from %s\n",

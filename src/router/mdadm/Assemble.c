@@ -25,6 +25,63 @@
 #include	"mdadm.h"
 #include	<ctype.h>
 
+mapping_t assemble_statuses[] = {
+	{ "but cannot be started", INCR_NO },
+	{ "but not safe to start", INCR_UNSAFE },
+	{ "and started", INCR_YES },
+	{ NULL, INCR_ALREADY }
+};
+
+
+/**
+ * struct assembly_array_info - General, meaningful information for assembly.
+ * @name: Array name.
+ * @new_cnt: Count of drives known to be members, recently added.
+ * @preexist_cnt: Count of member drives in pre-assembled array.
+ * @exp_cnt: Count of known expansion targets.
+ *
+ * FIXME: @exp_new_cnt for recently added expansion targets.
+ */
+struct assembly_array_info {
+	char *name;
+	int new_cnt;
+	int preexist_cnt;
+	int exp_cnt;
+};
+
+/**
+ * set_array_assembly_status() - generate status of assembly for an array.
+ * @c: Global settings.
+ * @result: Pointer to status mask.
+ * @status: Status to be set/printed.
+ * @arr: Array information.
+ *
+ *  Print status message to user or set it in @result if it is not NULL.
+ */
+static void set_array_assembly_status(struct context *c,
+				   int *result, int status,
+				   struct assembly_array_info *arr)
+{
+	int raid_disks = arr->preexist_cnt + arr->new_cnt;
+	char *status_msg = map_num(assemble_statuses, status);
+
+	if (c->export && result)
+		*result |= status;
+
+	if (c->export || c->verbose < 0)
+		return;
+
+	pr_err("%s has been assembled with %d device%s", arr->name,
+	       raid_disks, raid_disks == 1 ? "":"s");
+	if (arr->preexist_cnt > 0)
+		fprintf(stderr, " (%d new)", arr->new_cnt);
+	if (arr->exp_cnt)
+		fprintf(stderr, " ( + %d for expansion)", arr->exp_cnt);
+	if (status_msg)
+		fprintf(stderr, " %s", status_msg);
+	fprintf(stderr, ".\n");
+}
+
 static int name_matches(char *found, char *required, char *homehost, int require_homehost)
 {
 	/* See if the name found matches the required name, possibly
@@ -269,10 +326,15 @@ static int select_devices(struct mddev_dev *devlist,
 			if (auto_assem || !inargv)
 				/* Ignore unrecognised devices during auto-assembly */
 				goto loop;
-			if (ident->uuid_set || ident->name[0] ||
+			if (ident->name[0] ||
 			    ident->super_minor != UnSet)
 				/* Ignore unrecognised device if looking for
 				 * specific array */
+				goto loop;
+			if (ident->uuid_set)
+				/* ignore unrecognized device if looking for
+				 * specific uuid
+				 */
 				goto loop;
 
 			pr_err("%s has no superblock - assembly aborted\n",
@@ -435,7 +497,7 @@ static int select_devices(struct mddev_dev *devlist,
 
 			if (st->ss != tst->ss ||
 			    st->minor_version != tst->minor_version ||
-			    st->ss->compare_super(st, tst) != 0) {
+			    st->ss->compare_super(st, tst, 1) != 0) {
 				/* Some mismatch. If exactly one array matches this host,
 				 * we can resolve on that one.
 				 * Or, if we are auto assembling, we just ignore the second
@@ -507,8 +569,7 @@ static int select_devices(struct mddev_dev *devlist,
 				if (dfd < 0 ||
 				    st->ss->load_super(st, dfd, NULL))
 					tmpdev->used = 2;
-				if (dfd > 0)
-					close(dfd);
+				close_fd(&dfd);
 			}
 		}
 
@@ -578,6 +639,7 @@ static int load_devices(struct devs *devices, char *devmap,
 		struct supertype *tst;
 		int i;
 		int dfd;
+		int disk_state;
 
 		if (tmpdev->used != 1)
 			continue;
@@ -711,7 +773,9 @@ static int load_devices(struct devs *devices, char *devmap,
 		devices[devcnt].i.disk.major = major(stb.st_rdev);
 		devices[devcnt].i.disk.minor = minor(stb.st_rdev);
 
-		if (devices[devcnt].i.disk.state == 6) {
+		disk_state = devices[devcnt].i.disk.state & ~((1<<MD_DISK_FAILFAST) |
+							      (1<<MD_DISK_WRITEMOSTLY));
+		if (disk_state == ((1<<MD_DISK_ACTIVE) | (1<<MD_DISK_SYNC))) {
 			if (most_recent < 0 ||
 			    devices[devcnt].i.events
 			    > devices[most_recent].i.events) {
@@ -876,7 +940,7 @@ static int force_array(struct mdinfo *content,
 		current_events = devices[chosen_drive].i.events;
 	add_another:
 		if (c->verbose >= 0)
-			pr_err("forcing event count in %s(%d) from %d upto %d\n",
+			pr_err("forcing event count in %s(%d) from %d up to %d\n",
 			       devices[chosen_drive].devname,
 			       devices[chosen_drive].i.disk.raid_disk,
 			       (int)(devices[chosen_drive].i.events),
@@ -1028,6 +1092,11 @@ static int start_array(int mdfd,
 				pr_err("failed to add %s to %s: %s\n",
 				       devices[j].devname, mddev,
 				       strerror(errno));
+				if (errno == EINVAL && content->array.level == 0 &&
+				    content->array.layout != 0) {
+					cont_err("Possibly your kernel doesn't support RAID0 layouts.\n");
+					cont_err("Please upgrade.\n");
+				}
 				if (i < content->array.raid_disks * 2 ||
 				    i == bestcnt)
 					okcnt--;
@@ -1055,14 +1124,16 @@ static int start_array(int mdfd,
 	}
 
 	if (content->array.level == LEVEL_CONTAINER) {
+		sysfs_rules_apply(mddev, content);
 		if (c->verbose >= 0) {
 			pr_err("Container %s has been assembled with %d drive%s",
 			       mddev, okcnt + sparecnt + journalcnt,
 			       okcnt + sparecnt + journalcnt == 1 ? "" : "s");
 			if (okcnt < (unsigned)content->array.raid_disks)
-				fprintf(stderr, " (out of %d)",
+				fprintf(stderr, " (out of %d)\n",
 					content->array.raid_disks);
-			fprintf(stderr, "\n");
+			else
+				fprintf(stderr, "\n");
 		}
 
 		if (st->ss->validate_container) {
@@ -1136,6 +1207,7 @@ static int start_array(int mdfd,
 			rv = ioctl(mdfd, RUN_ARRAY, NULL);
 		reopen_mddev(mdfd); /* drop O_EXCL */
 		if (rv == 0) {
+			sysfs_rules_apply(mddev, content);
 			if (c->verbose >= 0) {
 				pr_err("%s has been started with %d drive%s",
 				       mddev, okcnt, okcnt==1?"":"s");
@@ -1213,6 +1285,9 @@ static int start_array(int mdfd,
 			return 0;
 		}
 		pr_err("failed to RUN_ARRAY %s: %s\n", mddev, strerror(errno));
+		if (errno == 524 /* ENOTSUP */ &&
+		    content->array.level == 0 && content->array.layout == 0)
+			cont_err("Please use --update=layout-original or --update=layout-alternate\n");
 
 		if (!enough(content->array.level, content->array.raid_disks,
 			    content->array.layout, 1, avail))
@@ -1467,6 +1542,10 @@ try_again:
 				name = content->name;
 			break;
 		}
+		if (mddev && map_by_name(&map, mddev) != NULL) {
+			pr_err("Cannot create device with %s because is in use\n", mddev);
+			goto out;
+		}
 		if (!auto_assem)
 			/* If the array is listed in mdadm.conf or on
 			 * command line, then we trust the name
@@ -1704,6 +1783,9 @@ try_again:
 		else
 			desired_state = (1<<MD_DISK_ACTIVE) | (1<<MD_DISK_SYNC);
 
+		desired_state |= devices[j].i.disk.state & ((1<<MD_DISK_FAILFAST) |
+							    (1<<MD_DISK_WRITEMOSTLY));
+
 		if (!devices[j].uptodate)
 			continue;
 
@@ -1889,12 +1971,12 @@ int assemble_container_content(struct supertype *st, int mdfd,
 			       char *chosen_name, int *result)
 {
 	struct mdinfo *dev, *sra, *dev2;
-	int working = 0, preexist = 0;
-	int expansion = 0;
+	struct assembly_array_info array = {chosen_name, 0, 0, 0};
 	int old_raid_disks;
 	int start_reshape;
 	char *avail;
 	int err;
+	int is_raid456, is_clean, all_disks;
 
 	if (sysfs_init(content, mdfd, NULL)) {
 		pr_err("Unable to initialize sysfs\n");
@@ -1951,17 +2033,16 @@ int assemble_container_content(struct supertype *st, int mdfd,
 		if (sysfs_add_disk(content, dev, 1) == 0) {
 			if (dev->disk.raid_disk >= old_raid_disks &&
 			    content->reshape_active)
-				expansion++;
+				array.exp_cnt++;
 			else
-				working++;
+				array.new_cnt++;
 		} else if (errno == EEXIST)
-			preexist++;
+			array.preexist_cnt++;
 	}
 	sysfs_free(sra);
-	if (working + expansion == 0 && c->runstop <= 0) {
-		free(avail);
-		return 1;/* Nothing new, don't try to start */
-	}
+
+	all_disks = array.new_cnt + array.exp_cnt + array.preexist_cnt;
+
 	map_update(NULL, fd2devnm(mdfd), content->text_version,
 		   content->uuid, chosen_name);
 
@@ -2012,51 +2093,84 @@ int assemble_container_content(struct supertype *st, int mdfd,
 			free(avail);
 			return err;
 		}
+	} else if (c->force) {
+		/* Set the array as 'clean' so that we can proceed with starting
+		 * it even if we don't have all devices. Mdmon doesn't care
+		 * if the dirty flag is set in metadata, it will start managing
+		 * it anyway.
+		 * This is really important for raid456 (RWH case), other levels
+		 * are started anyway.
+		 */
+		content->array.state |= 1;
 	}
 
+	is_raid456 = (content->array.level >= 4 && content->array.level <= 6);
+	is_clean = content->array.state & 1;
+
 	if (enough(content->array.level, content->array.raid_disks,
-		   content->array.layout, content->array.state & 1, avail) == 0) {
-		if (c->export && result)
-			*result |= INCR_NO;
-		else if (c->verbose >= 0) {
-			pr_err("%s assembled with %d device%s",
-			       chosen_name, preexist + working,
-			       preexist + working == 1 ? "":"s");
-			if (preexist)
-				fprintf(stderr, " (%d new)", working);
-			fprintf(stderr, " but not started\n");
-		}
+		   content->array.layout, is_clean, avail) == 0) {
+		set_array_assembly_status(c, result, INCR_NO, &array);
+
+		if (c->verbose >= 0 && is_raid456 && !is_clean)
+			pr_err("Consider --force to start dirty degraded array\n");
+
 		free(avail);
 		return 1;
 	}
 	free(avail);
 
-	if (c->runstop <= 0 &&
-	    (working + preexist + expansion) <
-	    content->array.working_disks) {
-		if (c->export && result)
-			*result |= INCR_UNSAFE;
-		else if (c->verbose >= 0) {
-			pr_err("%s assembled with %d device%s",
-			       chosen_name, preexist + working,
-			       preexist + working == 1 ? "":"s");
-			if (preexist)
-				fprintf(stderr, " (%d new)", working);
-			fprintf(stderr, " but not safe to start\n");
-		}
+	if (c->runstop <= 0 && all_disks < content->array.working_disks) {
+
+		set_array_assembly_status(c, result, INCR_UNSAFE, &array);
+
+		if (c->verbose >= 0 && c->force)
+			pr_err("Consider --run to start array as degraded.\n");
 		return 1;
 	}
 
+	if (is_raid456 && content->resync_start != MaxSector && c->force &&
+	    all_disks < content->array.raid_disks) {
+
+		content->resync_start = MaxSector;
+		err = sysfs_set_num(content, NULL, "resync_start", MaxSector);
+		if (err)
+			return 1;
+
+		pr_err("%s array state forced to clean. It may cause data corruption.\n",
+		       chosen_name);
+	}
+
+	/*
+	 * Before activating the array, perform extra steps required
+	 * to configure the internal write-intent bitmap.
+	 */
+	if (content->consistency_policy == CONSISTENCY_POLICY_BITMAP &&
+	    st->ss->set_bitmap)
+		st->ss->set_bitmap(st, content);
 
 	if (start_reshape) {
-		int spare = content->array.raid_disks + expansion;
+		int spare = content->array.raid_disks + array.exp_cnt;
 		if (restore_backup(st, content,
-				   working,
+				   array.new_cnt,
 				   spare, &c->backup_file, c->verbose) == 1)
 			return 1;
 
-		err = sysfs_set_str(content, NULL,
-				    "array_state", "readonly");
+		if (content->reshape_progress == 0) {
+			/* If reshape progress is 0 - we are assembling the
+			 * array that was stopped, before reshape has started.
+			 * Array needs to be started as active, Grow_continue()
+			 * will start the reshape.
+			 */
+			sysfs_set_num(content, NULL, "reshape_position",
+				      MaxSector);
+			err = sysfs_set_str(content, NULL,
+					    "array_state", "active");
+			sysfs_set_num(content, NULL, "reshape_position", 0);
+		} else {
+			err = sysfs_set_str(content, NULL,
+					    "array_state", "readonly");
+		}
+
 		if (err)
 			return 1;
 
@@ -2100,29 +2214,14 @@ int assemble_container_content(struct supertype *st, int mdfd,
 	    !start_reshape)
 		block_subarray(content);
 
-	if (c->export && result) {
-		if (err)
-			*result |= INCR_NO;
-		else
-			*result |= INCR_YES;
-	} else if (c->verbose >= 0) {
-		if (err)
-			pr_err("array %s now has %d device%s",
-			       chosen_name, working + preexist,
-			       working + preexist == 1 ? "":"s");
-		else
-			pr_err("Started %s with %d device%s",
-			       chosen_name, working + preexist,
-			       working + preexist == 1 ? "":"s");
-		if (preexist)
-			fprintf(stderr, " (%d new)", working);
-		if (expansion)
-			fprintf(stderr, " ( + %d for expansion)",
-				expansion);
-		fprintf(stderr, "\n");
-	}
-	if (!err)
+	if (err)
+		set_array_assembly_status(c, result, INCR_NO, &array);
+	else {
+		set_array_assembly_status(c, result, INCR_YES, &array);
 		wait_for(chosen_name, mdfd);
+		sysfs_rules_apply(chosen_name, content);
+	}
+
 	return err;
 	/* FIXME should have an O_EXCL and wait for read-auto */
 }

@@ -169,7 +169,6 @@ static inline int fls(int x)
 		r -= 2;
 	}
 	if (!(x & 0x80000000u)) {
-		x <<= 1;
 		r -= 1;
 	}
 	return r;
@@ -237,7 +236,10 @@ static inline char *guid_str(char *buf, struct efi_guid guid)
 	return buf;
 }
 
-char *diskfd_to_devpath(int fd);
+char *get_nvme_multipath_dev_hw_path(const char *dev_path);
+char *diskfd_to_devpath(int fd, int dev_level, char *buf);
+int devpath_to_char(const char *dev_path, const char *entry, char *buf,
+		    int len, int verbose);
 __u16 devpath_to_vendor(const char *dev_path);
 struct sys_dev *find_driver_devices(const char *bus, const char *driver);
 struct sys_dev *find_intel_devices(void);
@@ -245,11 +247,13 @@ const struct imsm_orom *find_imsm_capability(struct sys_dev *hba);
 const struct imsm_orom *find_imsm_orom(void);
 int disk_attached_to_hba(int fd, const char *hba_path);
 int devt_attached_to_hba(dev_t dev, const char *hba_path);
-char *devt_to_devpath(dev_t dev);
+char *devt_to_devpath(dev_t dev, int dev_level, char *buf);
 int path_attached_to_hba(const char *disk_path, const char *hba_path);
 const char *get_sys_dev_type(enum sys_dev_type);
 const struct orom_entry *get_orom_entry_by_device_id(__u16 dev_id);
 const struct imsm_orom *get_orom_by_device_id(__u16 device_id);
 struct sys_dev *device_by_id(__u16 device_id);
 struct sys_dev *device_by_id_and_path(__u16 device_id, const char *path);
+int is_multipath_nvme(int disk_fd);
+int imsm_is_nvme_namespace_supported(int disk_fd, int verbose);
 char *vmd_domain_to_controller(struct sys_dev *hba, char *buf);

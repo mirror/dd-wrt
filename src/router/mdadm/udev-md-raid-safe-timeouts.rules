@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with mdraid-safe-timeouts.  If not, see
-# <http://www.gnu.org/licenses/>.
+# <https://www.gnu.org/licenses/>.
 
 # This file causes block devices with Linux RAID (mdadm) signatures to
 # attempt to set safe timeouts for the drives involved

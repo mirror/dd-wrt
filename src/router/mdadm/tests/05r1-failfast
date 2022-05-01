@@ -1,0 +1,74 @@
+
+# create a simple mirror and check failfast flag works
+mdadm -CR $md0 -e1.2 --level=raid1 --failfast -n2 $dev0 $dev1
+check raid1
+if grep -v failfast /sys/block/md0/md/rd*/state > /dev/null
+then
+   die "failfast missing"
+fi
+
+# Removing works with the failfast flag
+mdadm $md0 -f $dev0
+mdadm $md0 -r $dev0
+if grep -v failfast /sys/block/md0/md/rd1/state > /dev/null
+then
+   die "failfast missing"
+fi
+
+# Adding works with the failfast flag
+mdadm $md0 -a --failfast $dev0
+check wait
+if grep -v failfast /sys/block/md0/md/rd0/state > /dev/null
+then
+   die "failfast missing"
+fi
+
+mdadm -S $md0
+
+# Assembling works with the failfast flag
+mdadm -A $md0 $dev0 $dev1
+check raid1
+if grep -v failfast /sys/block/md0/md/rd*/state > /dev/null
+then
+   die "failfast missing"
+fi
+
+# Adding works with the nofailfast flag
+mdadm $md0 -f $dev0
+mdadm $md0 -r $dev0
+mdadm $md0 -a --nofailfast $dev0
+check wait
+if grep failfast /sys/block/md0/md/rd0/state > /dev/null
+then
+   die "failfast should be missing"
+fi
+
+# Assembling with one faulty slave works with the failfast flag
+mdadm $md0 -f $dev0
+mdadm $md0 -r $dev0
+mdadm -S $md0
+mdadm -A $md0 $dev0 $dev1
+check raid1
+mdadm -S $md0
+
+# Spare works with the failfast flag
+mdadm -CR $md0 -e1.2 --level=raid1 --failfast -n2 $dev0 $dev1
+check raid1
+mdadm $md0 -a --failfast $dev2
+check wait
+check spares 1
+if grep -v failfast /sys/block/md0/md/rd*/state > /dev/null
+then
+   die "failfast missing"
+fi
+
+# Grow works with the failfast flag
+mdadm -G $md0 --raid-devices=3
+check wait
+if grep -v failfast /sys/block/md0/md/rd*/state > /dev/null
+then
+   die "failfast missing"
+fi
+mdadm -S $md0
+
+exit 0

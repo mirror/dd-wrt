@@ -63,7 +63,7 @@ char *dl_strndup(char *s, int l)
     if (s == NULL)
 	return NULL;
     n = dl_newv(char, l+1);
-    strncpy(n, s, l);
+    strncpy(n, s, l+1);
     n[l] = 0;
     return n;
 }

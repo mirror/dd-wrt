@@ -39,6 +39,9 @@ fetch_devlist()
 		devlist=($(ls /dev/disk/by-path/*$ISCSI_ID*))
 	fi
 	# sbd disk cannot use in testing
+	# Init devlist as an array
+	i=''
+	devlist=(${devlist[@]#$i})
 	for i in ${devlist[@]}
 	do
 		sbd -d $i dump &> /dev/null

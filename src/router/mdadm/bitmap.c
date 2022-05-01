@@ -180,13 +180,14 @@ out:
 }
 
 static int
-bitmap_file_open(char *filename, struct supertype **stp, int node_num)
+bitmap_file_open(char *filename, struct supertype **stp, int node_num, int fd)
 {
-	int fd;
 	struct stat stb;
 	struct supertype *st = *stp;
 
-	fd = open(filename, O_RDONLY|O_DIRECT);
+	/* won't re-open filename when (fd >= 0) */
+	if (fd < 0)
+		fd = open(filename, O_RDONLY|O_DIRECT);
 	if (fd < 0) {
 		pr_err("failed to open bitmap file %s: %s\n",
 		       filename, strerror(errno));
@@ -249,7 +250,7 @@ int ExamineBitmap(char *filename, int brief, struct supertype *st)
 	int fd, i;
 	__u32 uuid32[4];
 
-	fd = bitmap_file_open(filename, &st, 0);
+	fd = bitmap_file_open(filename, &st, 0, -1);
 	if (fd < 0)
 		return rv;
 
@@ -263,7 +264,6 @@ int ExamineBitmap(char *filename, int brief, struct supertype *st)
 		pr_err("Reporting bitmap that would be used if this array were used\n");
 		pr_err("as a member of some other array\n");
 	}
-	close(fd);
 	printf("        Filename : %s\n", filename);
 	printf("           Magic : %08x\n", sb->magic);
 	if (sb->magic != BITMAP_MAGIC) {
@@ -332,15 +332,13 @@ int ExamineBitmap(char *filename, int brief, struct supertype *st)
 		for (i = 0; i < (int)sb->nodes; i++) {
 			st = NULL;
 			free(info);
-			fd = bitmap_file_open(filename, &st, i);
+			fd = bitmap_file_open(filename, &st, i, fd);
 			if (fd < 0) {
 				printf("   Unable to open bitmap file on node: %i\n", i);
-
 				continue;
 			}
 			info = bitmap_fd_read(fd, brief);
 			if (!info) {
-				close(fd);
 				printf("   Unable to read bitmap on node: %i\n", i);
 				continue;
 			}
@@ -359,13 +357,72 @@ int ExamineBitmap(char *filename, int brief, struct supertype *st)
 			printf("          Bitmap : %llu bits (chunks), %llu dirty (%2.1f%%)\n",
 			       info->total_bits, info->dirty_bits,
 			       100.0 * info->dirty_bits / (info->total_bits?:1));
-			 close(fd);
 		}
 	}
 
 free_info:
+	close(fd);
 	free(info);
 	return rv;
+}
+
+int IsBitmapDirty(char *filename)
+{
+	/*
+	 * Read the bitmap file
+	 * It will break reading bitmap action immediately when meeting any error.
+	 *
+	 * Return: 1(dirty), 0 (clean), -1(error)
+	 */
+
+	int fd = -1, rv = 0, i;
+	struct supertype *st = NULL;
+	bitmap_info_t *info = NULL;
+	bitmap_super_t *sb = NULL;
+
+	fd = bitmap_file_open(filename, &st, 0, fd);
+	free(st);
+	if (fd < 0)
+		goto out;
+
+	info = bitmap_fd_read(fd, 0);
+	if (!info) {
+		close(fd);
+		goto out;
+	}
+
+	sb = &info->sb;
+	for (i = 0; i < (int)sb->nodes; i++) {
+		st = NULL;
+		free(info);
+		info = NULL;
+
+		fd = bitmap_file_open(filename, &st, i, fd);
+		free(st);
+		if (fd < 0)
+			goto out;
+
+		info = bitmap_fd_read(fd, 0);
+		if (!info) {
+			close(fd);
+			goto out;
+		}
+
+		sb = &info->sb;
+		if (sb->magic != BITMAP_MAGIC) { /* invalid bitmap magic */
+			free(info);
+			close(fd);
+			goto out;
+		}
+
+		if (info->dirty_bits)
+			rv = 1;
+	}
+	close(fd);
+	free(info);
+	return rv;
+out:
+	return -1;
 }
 
 int CreateBitmap(char *filename, int force, char uuid[16],

@@ -27,6 +27,18 @@
 #include	"md_p.h"
 #include	<ctype.h>
 
+static int round_size_and_verify(unsigned long long *size, int chunk)
+{
+	if (*size == 0)
+		return 0;
+	*size &= ~(unsigned long long)(chunk - 1);
+	if (*size == 0) {
+		pr_err("Size cannot be smaller than chunk.\n");
+		return 1;
+	}
+	return 0;
+}
+
 static int default_layout(struct supertype *st, int level, int verbose)
 {
 	int layout = UnSet;
@@ -38,6 +50,9 @@ static int default_layout(struct supertype *st, int level, int verbose)
 		switch(level) {
 		default: /* no layout */
 			layout = 0;
+			break;
+		case 0:
+			layout = RAID0_ORIG_LAYOUT;
 			break;
 		case 10:
 			layout = 0x102; /* near=2, far=1 */
@@ -138,7 +153,7 @@ int Create(struct supertype *st, char *mddev,
 		return 1;
 	}
 	if (s->raiddisks < 2 && s->level >= 4) {
-		pr_err("at least 2 raid-devices needed for level 4 or 5\n");
+		pr_err("at least 2 raid-devices needed for level %d\n", s->level);
 		return 1;
 	}
 	if (s->level <= 0 && s->sparedisks) {
@@ -239,20 +254,22 @@ int Create(struct supertype *st, char *mddev,
 	case LEVEL_MULTIPATH:
 	case LEVEL_CONTAINER:
 		if (s->chunk) {
-			s->chunk = 0;
-			if (c->verbose > 0)
-				pr_err("chunk size ignored for this level\n");
+			pr_err("specifying chunk size is forbidden for this level\n");
+			return 1;
 		}
 		break;
 	default:
 		pr_err("unknown level %d\n", s->level);
 		return 1;
 	}
+
 	if (s->size == MAX_SIZE)
 		/* use '0' to mean 'max' now... */
 		s->size = 0;
 	if (s->size && s->chunk && s->chunk != UnSet)
-		s->size &= ~(unsigned long long)(s->chunk - 1);
+		if (round_size_and_verify(&s->size, s->chunk))
+			return 1;
+
 	newsize = s->size * 2;
 	if (st && ! st->ss->validate_geometry(st, s->level, s->layout, s->raiddisks,
 					      &s->chunk, s->size*2,
@@ -267,7 +284,8 @@ int Create(struct supertype *st, char *mddev,
 			/* default chunk was just set */
 			if (c->verbose > 0)
 				pr_err("chunk size defaults to %dK\n", s->chunk);
-			s->size &= ~(unsigned long long)(s->chunk - 1);
+			if (round_size_and_verify(&s->size, s->chunk))
+				return 1;
 			do_default_chunk = 0;
 		}
 	}
@@ -413,7 +431,8 @@ int Create(struct supertype *st, char *mddev,
 				/* default chunk was just set */
 				if (c->verbose > 0)
 					pr_err("chunk size defaults to %dK\n", s->chunk);
-				s->size &= ~(unsigned long long)(s->chunk - 1);
+				if (round_size_and_verify(&s->size, s->chunk))
+					return 1;
 				do_default_chunk = 0;
 			}
 		}
@@ -520,8 +539,10 @@ int Create(struct supertype *st, char *mddev,
 	}
 
 	if (!s->bitmap_file &&
+	    !st->ss->external &&
 	    s->level >= 1 &&
 	    st->ss->add_internal_bitmap &&
+	    s->journaldisks == 0 &&
 	    (s->consistency_policy != CONSISTENCY_POLICY_RESYNC &&
 	     s->consistency_policy != CONSISTENCY_POLICY_PPL) &&
 	    (s->write_behind || s->size > 100*1024*1024ULL)) {
@@ -823,7 +844,7 @@ int Create(struct supertype *st, char *mddev,
 		}
 		bitmap_fd = open(s->bitmap_file, O_RDWR);
 		if (bitmap_fd < 0) {
-			pr_err("weird: %s cannot be openned\n",
+			pr_err("weird: %s cannot be opened\n",
 				s->bitmap_file);
 			goto abort_locked;
 		}
@@ -878,8 +899,13 @@ int Create(struct supertype *st, char *mddev,
 				else
 					inf->disk.state = 0;
 
-				if (dv->writemostly == FlagSet)
-					inf->disk.state |= (1<<MD_DISK_WRITEMOSTLY);
+				if (dv->writemostly == FlagSet) {
+					if (major_num == BITMAP_MAJOR_CLUSTERED) {
+						pr_err("Can not set %s --write-mostly with a clustered bitmap\n",dv->devname);
+						goto abort_locked;
+					} else
+						inf->disk.state |= (1<<MD_DISK_WRITEMOSTLY);
+				}
 				if (dv->failfast == FlagSet)
 					inf->disk.state |= (1<<MD_DISK_FAILFAST);
 
@@ -933,6 +959,11 @@ int Create(struct supertype *st, char *mddev,
 				if (rv) {
 					pr_err("ADD_NEW_DISK for %s failed: %s\n",
 					       dv->devname, strerror(errno));
+					if (errno == EINVAL &&
+					    info.array.level == 0) {
+						pr_err("Possibly your kernel doesn't support RAID0 layouts.\n");
+						pr_err("Either upgrade, or use --layout=dangerous\n");
+					}
 					goto abort_locked;
 				}
 				break;
@@ -960,6 +991,18 @@ int Create(struct supertype *st, char *mddev,
 			}
 
 			if (st->ss->write_init_super(st)) {
+				st->ss->free_super(st);
+				goto abort_locked;
+			}
+			/*
+			 * Before activating the array, perform extra steps
+			 * required to configure the internal write-intent
+			 * bitmap.
+			 */
+			if (info_new.consistency_policy ==
+				    CONSISTENCY_POLICY_BITMAP &&
+			    st->ss->set_bitmap &&
+			    st->ss->set_bitmap(st, &info)) {
 				st->ss->free_super(st);
 				goto abort_locked;
 			}
@@ -1029,6 +1072,9 @@ int Create(struct supertype *st, char *mddev,
 			if (ioctl(mdfd, RUN_ARRAY, &param)) {
 				pr_err("RUN_ARRAY failed: %s\n",
 				       strerror(errno));
+				if (errno == 524 /* ENOTSUP */ &&
+				    info.array.level == 0)
+					cont_err("Please use --layout=original or --layout=alternate\n");
 				if (info.array.chunk_size & (info.array.chunk_size-1)) {
 					cont_err("Problem may be that chunk size is not a power of 2\n");
 				}
@@ -1054,12 +1100,9 @@ int Create(struct supertype *st, char *mddev,
 	} else {
 		pr_err("not starting array - not enough devices.\n");
 	}
-	close(mdfd);
-	/* Give udev a moment to process the Change event caused
-	 * by the close.
-	 */
-	usleep(100*1000);
 	udev_unblock();
+	close(mdfd);
+	sysfs_uevent(&info, "change");
 	return 0;
 
  abort:

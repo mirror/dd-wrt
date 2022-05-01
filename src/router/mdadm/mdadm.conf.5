@@ -501,11 +501,11 @@ To update hot plug configuration it is necessary to execute
 .B mdadm \-\-udev\-rules
 command after changing the config file
 
-Key words used in the
+Keywords used in the
 .I POLICY
 line and supported values are:
 
-.RS 7
+.RS 4
 .TP
 .B domain=
 any arbitrary string
@@ -564,6 +564,64 @@ be automatically added to that array (or it's container)
 .B force\-spare
 as above and the disk will become a spare in remaining cases
 .RE
+
+.TP
+.B PART-POLICY
+This is similar to
+.B POLICY
+and accepts the same keyword assignments.  It allows a consistent set
+of policies to applied to each of the partitions of a device.
+
+A
+.B PART-POLICY
+line should set
+.I type=disk
+and identify the path to one or more disk devices.  Each partition on
+these disks will be treated according to the
+.I action=
+setting  from this line.  If a
+.I domain
+is set in the line, then the domain associated with each patition will
+be based on the domain, but with
+.RB \(dq -part N\(dq
+appended, when N is the partition number for the partition that was
+found.
+
+.TP
+.B SYSFS
+The
+.B SYSFS
+line lists custom values of MD device's sysfs attributes which will be
+stored in sysfs after the array is assembled. Multiple lines are allowed and each
+line has to contain the uuid or the name of the device to which it relates.
+.RS 4
+.TP
+.B uuid=
+hexadecimal identifier of MD device. This has to match the uuid stored in the
+superblock.
+.TP
+.B name=
+name of the MD device as was given to
+.I mdadm
+when the array was created. It will be ignored if
+.B uuid
+is not empty.
+.RE
+
+.TP
+.B MONITORDELAY
+The
+.B monitordelay
+line gives a delay in seconds
+.I mdadm
+shall wait before pooling md arrays
+when
+.I mdadm
+is running in
+.B \-\-monitor
+mode.
+.B \-d/\-\-delay
+command line argument takes precedence over the config file
 
 .SH EXAMPLE
 DEVICE /dev/sd[bcdjkl]1
@@ -635,6 +693,13 @@ CREATE group=system mode=0640 auto=part\-8
 HOMEHOST <system>
 .br
 AUTO +1.x homehost \-all
+.br
+SYSFS name=/dev/md/raid5 group_thread_cnt=4 sync_speed_max=1000000
+.br
+SYSFS uuid=bead5eb6:31c17a27:da120ba2:7dfda40d group_thread_cnt=4
+sync_speed_max=1000000
+.br
+MONITORDELAY 60
 
 .SH SEE ALSO
 .BR mdadm (8),

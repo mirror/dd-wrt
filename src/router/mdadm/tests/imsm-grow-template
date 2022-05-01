@@ -42,13 +42,21 @@ check wait
 imsm_check container $num_disks
 
 # Create first volume inside the container
-mdadm --create --run $member0 --auto=md --level=$vol0_level --size=$vol0_comp_size --chunk=$vol0_chunk --raid-disks=$num_disks $device_list
+if [[ ! -z $vol0_chunk ]]; then
+	mdadm --create --run $member0 --auto=md --level=$vol0_level --size=$vol0_comp_size --chunk=$vol0_chunk --raid-disks=$num_disks $device_list
+else
+	mdadm --create --run $member0 --auto=md --level=$vol0_level --size=$vol0_comp_size --raid-disks=$num_disks $device_list
+fi
 check wait
 
 # Create second volume inside the container (if defined)
-if [ ! -z $vol1_chunk ]; then
-    mdadm --create --run $member1 --auto=md --level=$vol1_level --size=$vol1_comp_size --chunk=$vol1_chunk --raid-disks=$num_disks $device_list
-    check wait
+if [ ! -z $vol1_level ]; then
+	if [ ! -z $vol1_chunk ]; then
+		mdadm --create --run $member1 --auto=md --level=$vol1_level --size=$vol1_comp_size --chunk=$vol1_chunk --raid-disks=$num_disks $device_list
+	else
+		mdadm --create --run $member1 --auto=md --level=$vol1_level --size=$vol1_comp_size --raid-disks=$num_disks $device_list
+	fi
+	check wait
 fi
 
 # Wait for any RESYNC to complete
@@ -59,7 +67,7 @@ imsm_check member $member0 $num_disks $vol0_level $vol0_comp_size $((vol0_comp_s
 testdev $member0 $vol0_num_comps $vol0_comp_size $vol0_chunk
 
 # Test second volume (if defined)
-if [ ! -z $vol1_chunk ]; then
+if [ ! -z $vol1_level ]; then
     imsm_check member $member1 $num_disks $vol1_level $vol1_comp_size $((vol1_comp_size * vol1_num_comps)) $vol1_offset $vol1_chunk
     testdev $member1 $vol1_num_comps $vol1_comp_size $vol1_chunk
 fi

@@ -26,8 +26,21 @@
 #include	"mdadm.h"
 #include	<dirent.h>
 #include	<ctype.h>
+#include	"dlink.h"
 
 #define MAX_SYSFS_PATH_LEN	120
+
+struct dev_sysfs_rule {
+	struct dev_sysfs_rule *next;
+	char *devname;
+	int uuid[4];
+	int uuid_set;
+	struct sysfs_entry {
+		struct sysfs_entry *next;
+		char *name;
+		char *value;
+	} *entry;
+};
 
 int load_sys(char *path, char *buf, int len)
 {
@@ -313,17 +326,22 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 			/* assume this is a stale reference to a hot
 			 * removed device
 			 */
-			free(dev);
-			continue;
+			if (!(options & GET_DEVS_ALL)) {
+				free(dev);
+				continue;
+			}
+		} else {
+			sscanf(buf, "%d:%d", &dev->disk.major, &dev->disk.minor);
 		}
-		sscanf(buf, "%d:%d", &dev->disk.major, &dev->disk.minor);
 
-		/* special case check for block devices that can go 'offline' */
-		strcpy(dbase, "block/device/state");
-		if (load_sys(fname, buf, sizeof(buf)) == 0 &&
-		    strncmp(buf, "offline", 7) == 0) {
-			free(dev);
-			continue;
+		if (!(options & GET_DEVS_ALL)) {
+			/* special case check for block devices that can go 'offline' */
+			strcpy(dbase, "block/device/state");
+			if (load_sys(fname, buf, sizeof(buf)) == 0 &&
+			    strncmp(buf, "offline", 7) == 0) {
+				free(dev);
+				continue;
+			}
 		}
 
 		/* finally add this disk to the array */
@@ -993,4 +1011,157 @@ int sysfs_wait(int fd, int *msec)
 			  - start.tv_usec/1000) + 1;
 	}
 	return n;
+}
+
+int sysfs_rules_apply_check(const struct mdinfo *sra,
+			    const struct sysfs_entry *ent)
+{
+	/* Check whether parameter is regular file,
+	 * exists and is under specified directory.
+	 */
+	char fname[MAX_SYSFS_PATH_LEN];
+	char dname[MAX_SYSFS_PATH_LEN];
+	char resolved_path[PATH_MAX];
+	char resolved_dir[PATH_MAX];
+	int result;
+
+	if (sra == NULL || ent == NULL)
+		return -1;
+
+	result = snprintf(dname, MAX_SYSFS_PATH_LEN,
+			  "/sys/block/%s/md/", sra->sys_name);
+	if (result < 0 || result >= MAX_SYSFS_PATH_LEN)
+		return -1;
+
+	result = snprintf(fname, MAX_SYSFS_PATH_LEN,
+			  "%s/%s", dname, ent->name);
+	if (result < 0 || result >= MAX_SYSFS_PATH_LEN)
+		return -1;
+
+	if (realpath(fname, resolved_path) == NULL ||
+	    realpath(dname, resolved_dir) == NULL)
+		return -1;
+
+	if (strncmp(resolved_dir, resolved_path,
+		    strnlen(resolved_dir, PATH_MAX)) != 0)
+		return -1;
+
+	return 0;
+}
+
+static struct dev_sysfs_rule *sysfs_rules;
+
+void sysfs_rules_apply(char *devnm, struct mdinfo *dev)
+{
+	struct dev_sysfs_rule *rules = sysfs_rules;
+
+	while (rules) {
+		struct sysfs_entry *ent = rules->entry;
+		int match  = 0;
+
+		if (!rules->uuid_set) {
+			if (rules->devname)
+				match = strcmp(devnm, rules->devname) == 0;
+		} else {
+			match = memcmp(dev->uuid, rules->uuid,
+				       sizeof(int[4])) == 0;
+		}
+
+		while (match && ent) {
+			if (sysfs_rules_apply_check(dev, ent) < 0)
+				pr_err("SYSFS: failed to write '%s' to '%s'\n",
+					ent->value, ent->name);
+			else
+				sysfs_set_str(dev, NULL, ent->name, ent->value);
+			ent = ent->next;
+		}
+		rules = rules->next;
+	}
+}
+
+static void sysfs_rule_free(struct dev_sysfs_rule *rule)
+{
+	struct sysfs_entry *entry;
+
+	while (rule) {
+		struct dev_sysfs_rule *tmp = rule->next;
+
+		entry = rule->entry;
+		while (entry) {
+			struct sysfs_entry *tmp = entry->next;
+
+			free(entry->name);
+			free(entry->value);
+			free(entry);
+			entry = tmp;
+		}
+
+		if (rule->devname)
+			free(rule->devname);
+		free(rule);
+		rule = tmp;
+	}
+}
+
+void sysfsline(char *line)
+{
+	struct dev_sysfs_rule *sr;
+	char *w;
+
+	sr = xcalloc(1, sizeof(*sr));
+	for (w = dl_next(line); w != line ; w = dl_next(w)) {
+		if (strncasecmp(w, "name=", 5) == 0) {
+			char *devname = w + 5;
+
+			if (strncmp(devname, "/dev/md/", 8) == 0) {
+				if (sr->devname)
+					pr_err("Only give one device per SYSFS line: %s\n",
+						devname);
+				else
+					sr->devname = xstrdup(devname);
+			} else {
+				pr_err("%s is an invalid name for an md device - ignored.\n",
+				       devname);
+			}
+		} else if (strncasecmp(w, "uuid=", 5) == 0) {
+			char *uuid = w + 5;
+
+			if (sr->uuid_set) {
+				pr_err("Only give one uuid per SYSFS line: %s\n",
+					uuid);
+			} else {
+				if (parse_uuid(w + 5, sr->uuid) &&
+				    memcmp(sr->uuid, uuid_zero,
+					   sizeof(int[4])) != 0)
+					sr->uuid_set = 1;
+				else
+					pr_err("Invalid uuid: %s\n", uuid);
+			}
+		} else {
+			struct sysfs_entry *prop;
+
+			char *sep = strchr(w, '=');
+
+			if (sep == NULL || *(sep + 1) == 0) {
+				pr_err("Cannot parse \"%s\" - ignoring.\n", w);
+				continue;
+			}
+
+			prop = xmalloc(sizeof(*prop));
+			prop->value = xstrdup(sep + 1);
+			*sep = 0;
+			prop->name = xstrdup(w);
+			prop->next = sr->entry;
+			sr->entry = prop;
+		}
+	}
+
+	if (!sr->devname && !sr->uuid_set) {
+		pr_err("Device name not found in sysfs config entry - ignoring.\n");
+		sysfs_rule_free(sr);
+		return;
+	}
+
+	sr->next = sysfs_rules;
+	sysfs_rules = sr;
 }

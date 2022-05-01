@@ -135,7 +135,6 @@ struct mdstat_ent *mdstat_read(int hold, int start)
 	if (hold && mdstat_fd != -1) {
 		off_t offset = lseek(mdstat_fd, 0L, 0);
 		if (offset == (off_t)-1) {
-			mdstat_close();
 			return NULL;
 		}
 		fd = dup(mdstat_fd);
@@ -192,6 +191,12 @@ struct mdstat_ent *mdstat_read(int hold, int start)
 			else if (strcmp(w, "inactive") == 0) {
 				ent->active = 0;
 				in_devs = 1;
+			} else if (strcmp(w, "bitmap:") == 0) {
+				/* We need to stop parsing here;
+				 * otherwise, ent->raid_disks will be
+				 * overwritten by the wrong value.
+				 */
+				break;
 			} else if (ent->active > 0 &&
 				 ent->level == NULL &&
 				 w[0] != '(' /*readonly*/) {
@@ -257,6 +262,8 @@ struct mdstat_ent *mdstat_read(int hold, int start)
 					ent->percent = RESYNC_DELAYED;
 				if (l > 8 && strcmp(w+l-8, "=PENDING") == 0)
 					ent->percent = RESYNC_PENDING;
+				if (l > 7 && strcmp(w+l-7, "=REMOTE") == 0)
+					ent->percent = RESYNC_REMOTE;
 			} else if (ent->percent == RESYNC_NONE &&
 				   w[0] >= '0' &&
 				   w[0] <= '9' &&
@@ -301,7 +308,17 @@ void mdstat_close(void)
 	mdstat_fd = -1;
 }
 
-void mdstat_wait(int seconds)
+/*
+ * function: mdstat_wait
+ * Description: Function waits for event on mdstat.
+ * Parameters:
+ *		seconds - timeout for waiting
+ * Returns:
+ *		> 0 - detected event
+ *		0 - timeout
+ *		< 0 - detected error
+ */
+int mdstat_wait(int seconds)
 {
 	fd_set fds;
 	struct timeval tm;
@@ -310,10 +327,13 @@ void mdstat_wait(int seconds)
 	if (mdstat_fd >= 0) {
 		FD_SET(mdstat_fd, &fds);
 		maxfd = mdstat_fd;
-	}
+	} else
+		return -1;
+
 	tm.tv_sec = seconds;
 	tm.tv_usec = 0;
-	select(maxfd + 1, NULL, NULL, &fds, &tm);
+
+	return select(maxfd + 1, NULL, NULL, &fds, &tm);
 }
 
 void mdstat_wait_fd(int fd, const sigset_t *sigmask)

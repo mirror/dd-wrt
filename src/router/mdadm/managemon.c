@@ -661,24 +661,23 @@ static void manage_new(struct mdstat_ent *mdstat,
 	 * the monitor.
 	 */
 
-	struct active_array *new;
-	struct mdinfo *mdi, *di;
-	char *inst;
-	int i;
+	struct active_array *new = NULL;
+	struct mdinfo *mdi = NULL, *di;
+	int i, inst;
 	int failed = 0;
 	char buf[40];
 
 	/* check if array is ready to be monitored */
 	if (!mdstat->active || !mdstat->level)
 		return;
-	if (strcmp(mdstat->level, "raid0") == 0 ||
-	    strcmp(mdstat->level, "linear") == 0)
+	if (strncmp(mdstat->level, "raid0", strlen("raid0")) == 0 ||
+	    strncmp(mdstat->level, "linear", strlen("linear")) == 0)
 		return;
 
 	mdi = sysfs_read(-1, mdstat->devnm,
 			 GET_LEVEL|GET_CHUNK|GET_DISKS|GET_COMPONENT|
 			 GET_SAFEMODE|GET_DEVS|GET_OFFSET|GET_SIZE|GET_STATE|
-			 GET_LAYOUT);
+			 GET_LAYOUT|GET_DEVS_ALL);
 
 	if (!mdi)
 		return;
@@ -691,7 +690,8 @@ static void manage_new(struct mdstat_ent *mdstat,
 
 	new->container = container;
 
-	inst = to_subarray(mdstat, container->devnm);
+	if (parse_num(&inst, to_subarray(mdstat, container->devnm)) != 0)
+		goto error;
 
 	new->info.array = mdi->array;
 	new->info.component_size = mdi->component_size;
@@ -724,12 +724,10 @@ static void manage_new(struct mdstat_ent *mdstat,
 	new->safe_mode_delay_fd = sysfs_open2(new->info.sys_name, NULL,
 					      "safe_mode_delay");
 
-	dprintf("inst: %s action: %d state: %d\n", inst,
+	dprintf("inst: %d action: %d state: %d\n", inst,
 		new->action_fd, new->info.state_fd);
 
-	if (sigterm)
-		new->info.safe_mode_delay = 1;
-	else if (mdi->safe_mode_delay >= 50)
+	if (mdi->safe_mode_delay >= 50)
 		/* Normal start, mdadm set this. */
 		new->info.safe_mode_delay = mdi->safe_mode_delay;
 	else
@@ -761,15 +759,13 @@ static void manage_new(struct mdstat_ent *mdstat,
 	}
 
 	sysfs_free(mdi);
+	mdi = NULL;
 
 	/* if everything checks out tell the metadata handler we want to
 	 * manage this instance
 	 */
 	if (!aa_ready(new) || container->ss->open_new(container, new, inst) < 0) {
-		pr_err("failed to monitor %s\n",
-			mdstat->metadata_version);
-		new->container = NULL;
-		free_aa(new);
+		goto error;
 	} else {
 		replace_array(container, victim, new);
 		if (failed) {
@@ -777,6 +773,16 @@ static void manage_new(struct mdstat_ent *mdstat,
 			manage_member(mdstat, new);
 		}
 	}
+	return;
+
+error:
+	pr_err("failed to monitor %s\n", mdstat->metadata_version);
+	if (new) {
+		new->container = NULL;
+		free_aa(new);
+	}
+	if (mdi)
+		sysfs_free(mdi);
 }
 
 void manage(struct mdstat_ent *mdstat, struct supertype *container)
@@ -803,7 +809,7 @@ void manage(struct mdstat_ent *mdstat, struct supertype *container)
 				break;
 			}
 		}
-		if (a == NULL || !a->container)
+		if ((a == NULL || !a->container) && !sigterm)
 			manage_new(mdstat, container, a);
 	}
 }

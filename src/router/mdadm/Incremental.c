@@ -400,7 +400,7 @@ int Incremental(struct mddev_dev *devlist, struct context *c,
 			}
 			st2 = dup_super(st);
 			if (st2->ss->load_super(st2, dfd2, NULL) ||
-			    st->ss->compare_super(st, st2) != 0) {
+			    st->ss->compare_super(st, st2, 1) != 0) {
 				pr_err("metadata mismatch between %s and chosen array %s\n",
 				       devname, chosen_name);
 				close(dfd2);
@@ -480,6 +480,7 @@ int Incremental(struct mddev_dev *devlist, struct context *c,
 			pr_err("container %s now has %d device%s\n",
 			       chosen_name, info.array.working_disks,
 			       info.array.working_disks == 1?"":"s");
+		sysfs_rules_apply(chosen_name, &info);
 		wait_for(chosen_name, mdfd);
 		if (st->ss->external)
 			strcpy(devnm, fd2devnm(mdfd));
@@ -1080,6 +1081,7 @@ static int partition_try_spare(char *devname, int *dfdp, struct dev_policy *pol,
 		struct supertype *st2 = NULL;
 		char *devname = NULL;
 		unsigned long long devsectors;
+		char *pathlist[2];
 
 		if (de->d_ino == 0 || de->d_name[0] == '.' ||
 		    (de->d_type != DT_LNK && de->d_type != DT_UNKNOWN))
@@ -1094,7 +1096,9 @@ static int partition_try_spare(char *devname, int *dfdp, struct dev_policy *pol,
 			/* This is a partition - skip it */
 			goto next;
 
-		pol2 = path_policy(de->d_name, type_disk);
+		pathlist[0] = de->d_name;
+		pathlist[1] = NULL;
+		pol2 = path_policy(pathlist, type_disk);
 
 		domain_merge(&domlist, pol2, st ? st->ss->name : NULL);
 		if (domain_test(domlist, pol, st ? st->ss->name : NULL) != 1)
@@ -1342,7 +1346,7 @@ restart:
 		}
 		mdfd = open_dev(me->devnm);
 
-		if (mdfd < 0)
+		if (!is_fd_valid(mdfd))
 			continue;
 		if (!isdigit(me->metadata[0])) {
 			/* must be a container */
@@ -1352,7 +1356,7 @@ restart:
 
 			if (st && st->ss->load_container)
 				ret = st->ss->load_container(st, mdfd, NULL);
-			close(mdfd);
+			close_fd(&mdfd);
 			if (!ret && st && st->ss->container_content) {
 				if (map_lock(&map))
 					pr_err("failed to get exclusive lock on mapfile\n");
@@ -1364,7 +1368,7 @@ restart:
 			continue;
 		}
 		if (md_array_active(mdfd)) {
-			close(mdfd);
+			close_fd(&mdfd);
 			continue;
 		}
 		/* Ok, we can try this one.   Maybe it needs a bitmap */
@@ -1381,9 +1385,9 @@ restart:
 			int bmfd;
 
 			bmfd = open(mddev->bitmap_file, O_RDWR);
-			if (bmfd >= 0) {
+			if (is_fd_valid(bmfd)) {
 				added = ioctl(mdfd, SET_BITMAP_FILE, bmfd);
-				close(bmfd);
+				close_fd(&bmfd);
 			}
 			if (c->verbose >= 0) {
 				if (added == 0)
@@ -1412,6 +1416,7 @@ restart:
 			}
 			sysfs_free(sra);
 		}
+		close_fd(&mdfd);
 	}
 	map_free(mapl);
 	return rv;
@@ -1456,12 +1461,6 @@ static int Incremental_container(struct supertype *st, char *devname,
 	int trustworthy;
 	struct mddev_ident *match;
 	int rv = 0;
-	struct domainlist *domains;
-	struct map_ent *smp;
-	int suuid[4];
-	int sfd;
-	int ra_blocked = 0;
-	int ra_all = 0;
 	int result = 0;
 
 	st->ss->getinfo_super(st, &info, NULL);
@@ -1505,12 +1504,10 @@ static int Incremental_container(struct supertype *st, char *devname,
 		struct map_ent *mp;
 		struct mddev_ident *match = NULL;
 
-		ra_all++;
 		/* do not activate arrays blocked by metadata handler */
 		if (ra->array.state & (1 << MD_SB_BLOCK_VOLUME)) {
 			pr_err("Cannot activate array %s in %s.\n",
 				ra->text_version, devname);
-			ra_blocked++;
 			continue;
 		}
 		mp = map_by_uuid(&map, ra->uuid);
@@ -1613,60 +1610,6 @@ static int Incremental_container(struct supertype *st, char *devname,
 		}
 		printf("\n");
 	}
-
-	/* don't move spares to container with volume being activated
-	   when all volumes are blocked */
-	if (ra_all == ra_blocked)
-		return 0;
-
-	/* Now move all suitable spares from spare container */
-	domains = domain_from_array(list, st->ss->name);
-	memcpy(suuid, uuid_zero, sizeof(int[4]));
-	if (domains &&
-	    (smp = map_by_uuid(&map, suuid)) != NULL &&
-	    (sfd = open(smp->path, O_RDONLY)) >= 0) {
-		/* spare container found */
-		struct supertype *sst =
-			super_imsm.match_metadata_desc("imsm");
-		struct mdinfo *sinfo;
-
-		if (!sst->ss->load_container(sst, sfd, NULL)) {
-			struct spare_criteria sc = {0, 0};
-
-			if (st->ss->get_spare_criteria)
-				st->ss->get_spare_criteria(st, &sc);
-
-			close(sfd);
-			sinfo = container_choose_spares(sst, &sc,
-							domains, NULL,
-							st->ss->name, 0);
-			sst->ss->free_super(sst);
-			if (sinfo){
-				int count = 0;
-				struct mdinfo *disks = sinfo->devs;
-				while (disks) {
-					/* move spare from spare
-					 * container to currently
-					 * assembled one
-					 */
-					if (move_spare(
-						    smp->path,
-						    devname,
-						    makedev(disks->disk.major,
-							    disks->disk.minor)))
-						count++;
-					disks = disks->next;
-				}
-				if (count)
-					pr_err("Added %d spare%s to %s\n",
-					       count, count>1?"s":"", devname);
-			}
-			sysfs_free(sinfo);
-		} else
-			close(sfd);
-	}
-	domain_free(domains);
-	map_free(map);
 	return 0;
 }
 
@@ -1675,6 +1618,7 @@ static void run_udisks(char *arg1, char *arg2)
 	int pid = fork();
 	int status;
 	if (pid == 0) {
+		manage_fork_fds(1);
 		execl("/usr/bin/udisks", "udisks", arg1, arg2, NULL);
 		execl("/bin/udisks", "udisks", arg1, arg2, NULL);
 		exit(1);
@@ -1758,8 +1702,8 @@ int IncrementalRemove(char *devname, char *id_path, int verbose)
 		return 1;
 	}
 	mdfd = open_dev_excl(ent->devnm);
-	if (mdfd > 0) {
-		close(mdfd);
+	if (is_fd_valid(mdfd)) {
+		close_fd(&mdfd);
 		if (sysfs_get_str(&mdi, NULL, "array_state",
 				  buf, sizeof(buf)) > 0) {
 			if (strncmp(buf, "active", 6) == 0 ||
