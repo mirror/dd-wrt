@@ -64,6 +64,7 @@
 #include "core/or/circuitpadding.h"
 #include "core/or/crypt_path.h"
 #include "core/or/extendinfo.h"
+#include "core/or/status.h"
 #include "core/or/trace_probes_circuit.h"
 #include "core/mainloop/connection.h"
 #include "app/config/config.h"
@@ -100,6 +101,7 @@
 #include "lib/compress/compress_zlib.h"
 #include "lib/compress/compress_zstd.h"
 #include "lib/buf/buffers.h"
+#include "core/or/congestion_control_common.h"
 
 #include "core/or/ocirc_event.h"
 
@@ -1142,6 +1144,8 @@ circuit_free_(circuit_t *circ)
    * circuits without closing them before. This needs to be done before the
    * hs identifier is freed. */
   hs_circ_cleanup_on_free(circ);
+
+  congestion_control_free(circ->ccontrol);
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
@@ -2343,6 +2347,12 @@ circuit_about_to_free(circuit_t *circ)
       circuitmux_detach_circuit(or_circ->p_chan->cmux, circ);
       circuit_set_p_circid_chan(or_circ, 0, NULL);
     }
+
+    if (or_circ->n_cells_discarded_at_end) {
+      time_t age = approx_time() - circ->timestamp_created.tv_sec;
+      note_circ_closed_for_unrecognized_cells(
+                      age, or_circ->n_cells_discarded_at_end);
+    }
   } else {
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
     edge_connection_t *conn;
@@ -2586,8 +2596,10 @@ conns_compare_by_buffer_age_(const void **a_, const void **b_)
 
 /** We're out of memory for cells, having allocated <b>current_allocation</b>
  * bytes' worth.  Kill the 'worst' circuits until we're under
- * FRACTION_OF_DATA_TO_RETAIN_ON_OOM of our maximum usage. */
-void
+ * FRACTION_OF_DATA_TO_RETAIN_ON_OOM of our maximum usage.
+ *
+ * Return the number of bytes removed. */
+size_t
 circuits_handle_oom(size_t current_allocation)
 {
   smartlist_t *circlist;
@@ -2597,6 +2609,7 @@ circuits_handle_oom(size_t current_allocation)
   size_t mem_recovered=0;
   int n_circuits_killed=0;
   int n_dirconns_killed=0;
+  int n_edgeconns_killed = 0;
   uint32_t now_ts;
   log_notice(LD_GENERAL, "We're low on memory (cell queues total alloc:"
              " %"TOR_PRIuSZ" buffer total alloc: %" TOR_PRIuSZ ","
@@ -2613,12 +2626,11 @@ circuits_handle_oom(size_t current_allocation)
              tor_zstd_get_total_allocation(),
              tor_lzma_get_total_allocation(),
              hs_cache_get_total_allocation());
-
   {
     size_t mem_target = (size_t)(get_options()->MaxMemInQueues *
                                  FRACTION_OF_DATA_TO_RETAIN_ON_OOM);
     if (current_allocation <= mem_target)
-      return;
+      return 0;
     mem_to_recover = current_allocation - mem_target;
   }
 
@@ -2664,12 +2676,19 @@ circuits_handle_oom(size_t current_allocation)
       if (conn_age < circ->age_tmp) {
         break;
       }
-      if (conn->type == CONN_TYPE_DIR && conn->linked_conn == NULL) {
+      /* Also consider edge connections so we don't accumulate bytes on the
+       * outbuf due to a malicious destination holding off the read on us. */
+      if ((conn->type == CONN_TYPE_DIR && conn->linked_conn == NULL) ||
+          CONN_IS_EDGE(conn)) {
         if (!conn->marked_for_close)
           connection_mark_for_close(conn);
         mem_recovered += single_conn_free_bytes(conn);
 
-        ++n_dirconns_killed;
+        if (conn->type == CONN_TYPE_DIR) {
+          ++n_dirconns_killed;
+        } else {
+          ++n_edgeconns_killed;
+        }
 
         if (mem_recovered >= mem_to_recover)
           goto done_recovering_mem;
@@ -2697,14 +2716,16 @@ circuits_handle_oom(size_t current_allocation)
   } SMARTLIST_FOREACH_END(circ);
 
  done_recovering_mem:
-
   log_notice(LD_GENERAL, "Removed %"TOR_PRIuSZ" bytes by killing %d circuits; "
              "%d circuits remain alive. Also killed %d non-linked directory "
-             "connections.",
+             "connections. Killed %d edge connections",
              mem_recovered,
              n_circuits_killed,
              smartlist_len(circlist) - n_circuits_killed,
-             n_dirconns_killed);
+             n_dirconns_killed,
+             n_edgeconns_killed);
+
+  return mem_recovered;
 }
 
 /** Verify that circuit <b>c</b> has all of its invariants

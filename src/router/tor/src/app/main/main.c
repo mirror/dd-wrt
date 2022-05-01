@@ -27,6 +27,8 @@
 #include "core/or/channel.h"
 #include "core/or/channelpadding.h"
 #include "core/or/circuitpadding.h"
+#include "core/or/congestion_control_common.h"
+#include "core/or/congestion_control_flow.h"
 #include "core/or/circuitlist.h"
 #include "core/or/command.h"
 #include "core/or/connection_or.h"
@@ -99,12 +101,6 @@
 #endif /* defined(__COVERITY__) && !defined(__INCLUDE_LEVEL__) */
 #include <systemd/sd-daemon.h>
 #endif /* defined(HAVE_SYSTEMD) */
-
-#ifdef HAVE_RUST
-// helper function defined in Rust to output a log message indicating if tor is
-// running with Rust enabled. See src/rust/tor_util
-void rust_log_welcome_string(void);
-#endif
 
 /********* PROTOTYPES **********/
 
@@ -609,10 +605,6 @@ tor_init(int argc, char *argv[])
     tor_compress_log_init_warnings();
   }
 
-#ifdef HAVE_RUST
-  rust_log_welcome_string();
-#endif /* defined(HAVE_RUST) */
-
   /* Warn _if_ the tracing subsystem is built in. */
   tracing_log_warning();
 
@@ -630,6 +622,8 @@ tor_init(int argc, char *argv[])
    * until we get a consensus */
   channelpadding_new_consensus_params(NULL);
   circpad_new_consensus_params(NULL);
+  congestion_control_new_consensus_params(NULL);
+  flow_control_new_consensus_params(NULL);
 
   /* Initialize circuit padding to defaults+torrc until we get a consensus */
   circpad_machines_init();
@@ -1343,6 +1337,13 @@ tor_run_main(const tor_main_configuration_t *tor_cfg)
   pubsub_connect();
 
   if (get_options()->Sandbox && get_options()->command == CMD_RUN_TOR) {
+#ifdef ENABLE_FRAGILE_HARDENING
+    log_warn(LD_CONFIG, "Sandbox is enabled but this Tor was built using "
+             "fragile compiler hardening. The sandbox may be unable to filter "
+             "requests to open files and directories and its overall "
+             "effectiveness will be reduced.");
+#endif
+
     sandbox_cfg_t* cfg = sandbox_init_filter();
 
     if (sandbox_init(cfg)) {

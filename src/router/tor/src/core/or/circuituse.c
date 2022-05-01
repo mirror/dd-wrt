@@ -1204,25 +1204,6 @@ needs_circuits_for_build(int num)
   return 0;
 }
 
-/**
- * Launch the appropriate type of predicted circuit for hidden
- * services, depending on our options.
- */
-static void
-circuit_launch_predicted_hs_circ(int flags)
-{
-  /* K.I.S.S. implementation of bug #23101: If we are using
-   * vanguards or pinned middles, pre-build a specific purpose
-   * for HS circs. */
-  if (circuit_should_use_vanguards(CIRCUIT_PURPOSE_HS_VANGUARDS)) {
-    circuit_launch(CIRCUIT_PURPOSE_HS_VANGUARDS, flags);
-  } else {
-    /* If no vanguards, then no HS-specific prebuilt circuits are needed.
-     * Normal GENERAL circs are fine */
-    circuit_launch(CIRCUIT_PURPOSE_C_GENERAL, flags);
-  }
-}
-
 /** Determine how many circuits we have open that are clean,
  * Make sure it's enough for all the upcoming behaviors we predict we'll have.
  * But put an upper bound on the total number of circuits.
@@ -1276,7 +1257,7 @@ circuit_predict_and_launch_new(void)
              "Have %d clean circs (%d internal), need another internal "
              "circ for my hidden service.",
              num, num_internal);
-    circuit_launch_predicted_hs_circ(flags);
+    circuit_launch(CIRCUIT_PURPOSE_HS_VANGUARDS, flags);
     return;
   }
 
@@ -1295,7 +1276,10 @@ circuit_predict_and_launch_new(void)
              " another hidden service circ.",
              num, num_uptime_internal, num_internal);
 
-    circuit_launch_predicted_hs_circ(flags);
+    /* Always launch vanguards purpose circuits for HS clients,
+     * for vanguards-lite. This prevents us from cannibalizing
+     * to build these circuits (and thus not use vanguards). */
+    circuit_launch(CIRCUIT_PURPOSE_HS_VANGUARDS, flags);
     return;
   }
 
@@ -2022,16 +2006,12 @@ circuit_is_hs_v3(const circuit_t *circ)
 int
 circuit_should_use_vanguards(uint8_t purpose)
 {
-  const or_options_t *options = get_options();
-
-  /* Only hidden service circuits use vanguards */
-  if (!circuit_purpose_is_hidden_service(purpose))
-    return 0;
-
-  /* Pinned middles are effectively vanguards */
-  if (options->HSLayer2Nodes || options->HSLayer3Nodes)
+  /* All hidden service circuits use either vanguards or
+   * vanguards-lite. */
+  if (circuit_purpose_is_hidden_service(purpose))
     return 1;
 
+  /* Everything else is a normal circuit */
   return 0;
 }
 
@@ -2069,13 +2049,11 @@ circuit_should_cannibalize_to_build(uint8_t purpose_to_build,
     return 0;
   }
 
-  /* For vanguards, the server-side intro circ is not cannibalized
-   * because we pre-build 4 hop HS circuits, and it only needs a 3 hop
-   * circuit. It is also long-lived, so it is more important that
-   * it have lower latency than get built fast.
+  /* The server-side intro circ is not cannibalized because it only
+   * needs a 3 hop circuit. It is also long-lived, so it is more
+   * important that it have lower latency than get built fast.
    */
-  if (circuit_should_use_vanguards(purpose_to_build) &&
-      purpose_to_build == CIRCUIT_PURPOSE_S_ESTABLISH_INTRO) {
+  if (purpose_to_build == CIRCUIT_PURPOSE_S_ESTABLISH_INTRO) {
     return 0;
   }
 
@@ -2449,7 +2427,8 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
           /* We might want to connect to an IPv6 bridge for loading
              descriptors so we use the preferred address rather than
              the primary. */
-          extend_info = extend_info_from_node(r, conn->want_onehop ? 1 : 0);
+          extend_info = extend_info_from_node(r, conn->want_onehop ? 1 : 0,
+                         desired_circuit_purpose == CIRCUIT_PURPOSE_C_GENERAL);
           if (!extend_info) {
             log_warn(LD_CIRC,"Could not make a one-hop connection to %s. "
                      "Discarding this circuit.", conn->chosen_exit_name);
@@ -2484,7 +2463,9 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
                                           digest,
                                           NULL, /* Ed25519 ID */
                                           NULL, NULL, /* onion keys */
-                                          &addr, conn->socks_request->port);
+                                          &addr, conn->socks_request->port,
+                                          NULL,
+                                          false);
           } else { /* ! (want_onehop && conn->chosen_exit_name[0] == '$') */
             /* We will need an onion key for the router, and we
              * don't have one. Refuse or relax requirements. */

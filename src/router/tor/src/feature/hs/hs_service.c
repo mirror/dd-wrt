@@ -16,6 +16,7 @@
 #include "core/or/circuitbuild.h"
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
+#include "core/or/congestion_control_common.h"
 #include "core/or/extendinfo.h"
 #include "core/or/relay.h"
 #include "feature/client/circpathbias.h"
@@ -59,7 +60,6 @@
 
 /* Trunnel */
 #include "trunnel/ed25519_cert.h"
-#include "trunnel/hs/cell_common.h"
 #include "trunnel/hs/cell_establish_intro.h"
 
 #ifdef HAVE_SYS_STAT_H
@@ -714,7 +714,7 @@ get_extend_info_from_intro_point(const hs_service_intro_point_t *ip,
 
   /* In the case of a direct connection (single onion service), it is possible
    * our firewall policy won't allow it so this can return a NULL value. */
-  info = extend_info_from_node(node, direct_conn);
+  info = extend_info_from_node(node, direct_conn, false);
 
  end:
   return info;
@@ -3689,6 +3689,34 @@ hs_service_map_has_changed(void)
    * the HS service main loop event. If we changed to having no services, we
    * need to disable the event. */
   rescan_periodic_events(get_options());
+}
+
+/** Called when a new consensus has arrived and has been set globally. The new
+ * consensus is pointed by ns. */
+void
+hs_service_new_consensus_params(const networkstatus_t *ns)
+{
+  tor_assert(ns);
+
+  /* This value is the new value from the consensus. */
+  uint8_t current_sendme_inc = congestion_control_sendme_inc();
+
+  if (!hs_service_map)
+    return;
+
+  /* Check each service and look if their descriptor contains a different
+   * sendme increment. If so, nuke all intro points by forcing an expiration
+   * which will lead to rebuild and reupload with the new value. */
+  FOR_EACH_SERVICE_BEGIN(service) {
+    FOR_EACH_DESCRIPTOR_BEGIN(service, desc) {
+      if (desc->desc &&
+          desc->desc->encrypted_data.sendme_inc != current_sendme_inc) {
+        /* Passing the maximum time_t will force expiration of all intro points
+         * and thus will lead to a rebuild of the descriptor. */
+        cleanup_intro_points(service, LONG_MAX);
+      }
+    } FOR_EACH_DESCRIPTOR_END;
+  } FOR_EACH_SERVICE_END;
 }
 
 /** Upload an encoded descriptor in encoded_desc of the given version. This

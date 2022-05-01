@@ -360,15 +360,19 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
     uint8_t rend_circ_nonce[DIGEST_LEN];
     int len;
     created_cell_t created_cell;
+    circuit_params_t params;
 
     memset(&created_cell, 0, sizeof(created_cell));
     len = onion_skin_server_handshake(ONION_HANDSHAKE_TYPE_FAST,
                                        create_cell->onionskin,
                                        create_cell->handshake_len,
                                        NULL,
+                                       NULL,
                                        created_cell.reply,
+                                       sizeof(created_cell.reply),
                                        keys, CPATH_KEY_MATERIAL_LEN,
-                                       rend_circ_nonce);
+                                       rend_circ_nonce,
+                                       &params);
     tor_free(create_cell);
     if (len < 0) {
       log_warn(LD_OR,"Failed to generate key material. Closing.");
@@ -563,7 +567,7 @@ command_process_relay_cell(cell_t *cell, channel_t *chan)
   }
 
   if ((reason = circuit_receive_relay_cell(cell, circ, direction)) < 0) {
-    log_fn(LOG_PROTOCOL_WARN,LD_PROTOCOL,"circuit_receive_relay_cell "
+    log_fn(LOG_DEBUG,LD_PROTOCOL,"circuit_receive_relay_cell "
            "(%s) failed. Closing.",
            direction==CELL_DIRECTION_OUT?"forward":"backward");
     /* Always emit a bandwidth event for closed circs */
