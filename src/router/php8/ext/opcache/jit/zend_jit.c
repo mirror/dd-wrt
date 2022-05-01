@@ -170,8 +170,8 @@ static bool zend_ssa_is_last_use(const zend_op_array *op_array, const zend_ssa *
 		} while (phi);
 	}
 
-	next_use = zend_ssa_next_use(ssa->ops, var, use);
-	if (next_use < 0) {
+	if (ssa->cfg.blocks[ssa->cfg.map[use]].loop_header > 0
+	 || (ssa->cfg.blocks[ssa->cfg.map[use]].flags & ZEND_BB_LOOP_HEADER)) {
 		int b = ssa->cfg.map[use];
 		int prev_use = ssa->vars[var].use_chain;
 
@@ -183,6 +183,10 @@ static bool zend_ssa_is_last_use(const zend_op_array *op_array, const zend_ssa *
 			}
 			prev_use = zend_ssa_next_use(ssa->ops, var, prev_use);
 		}
+	}
+
+	next_use = zend_ssa_next_use(ssa->ops, var, use);
+	if (next_use < 0) {
 		return 1;
 	} else if (zend_ssa_is_no_val_use(op_array->opcodes + next_use, ssa->ops + next_use, var)) {
 		return 1;
@@ -3306,6 +3310,9 @@ static int zend_jit(const zend_op_array *op_array, zend_ssa *ssa, const zend_op 
 							op2_def_addr = op2_addr;
 						}
 						op1_info = OP1_INFO();
+						if (ra && ssa->vars[ssa_op->op1_use].no_val) {
+							op1_info |= MAY_BE_UNDEF; // requres type assignment
+						}
 						if (opline->result_type == IS_UNUSED) {
 							res_addr = 0;
 							res_info = -1;
