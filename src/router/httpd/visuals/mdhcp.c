@@ -31,14 +31,14 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, sizeof(buf), "networking.h5"));
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.legend5"));
 
-	websWrite(wp, "<table cellspacing=\"7\" summary=\"mdhcp\" id=\"mdhcp_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table id=\"mdhcp_table\" class=\"table center\" summary=\"mdhcp\" cellspacing=\"7\"><tr>\n");
 	show_caption_pp(wp, NULL, "share.ip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.enable", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.start", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\" width=\"10%\">", "</th>\n");
 	bzero(buffer, 256);
 	getIfListNoPorts(buffer, NULL);
 	int totalcount = 0;
