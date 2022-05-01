@@ -43,3 +43,6 @@ fi
 
 mkdir -p /run/sysconfig
 echo "MDADM_MONITOR_ARGS=$MDADM_RAIDDEVICES $MDADM_DELAY $MDADM_MAIL $MDADM_PROGRAM $MDADM_SCAN $MDADM_SEND_MAIL $MDADM_CONFIG" > /run/sysconfig/mdadm
+if [ -n "$MDADM_CHECK_DURATION" ]; then
+ echo "MDADM_CHECK_DURATION=$MDADM_CHECK_DURATION" >> /run/sysconfig/mdadm
+fi

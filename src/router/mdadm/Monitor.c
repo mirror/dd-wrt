@@ -29,6 +29,9 @@
 #include	<signal.h>
 #include	<limits.h>
 #include	<syslog.h>
+#ifndef NO_LIBUDEV
+#include	<libudev.h>
+#endif
 
 struct state {
 	char *devname;
@@ -63,6 +66,7 @@ struct alert_info {
 };
 static int make_daemon(char *pidfile);
 static int check_one_sharer(int scan);
+static void write_autorebuild_pid(void);
 static void alert(char *event, char *dev, char *disc, struct alert_info *info);
 static int check_array(struct state *st, struct mdstat_ent *mdstat,
 		       int test, struct alert_info *info,
@@ -71,6 +75,9 @@ static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
 			  int test, struct alert_info *info);
 static void try_spare_migration(struct state *statelist, struct alert_info *info);
 static void link_containers_with_subarrays(struct state *list);
+#ifndef NO_LIBUDEV
+static int check_udev_activity(void);
+#endif
 
 int Monitor(struct mddev_dev *devlist,
 	    char *mailaddr, char *alert_cmd,
@@ -128,6 +135,7 @@ int Monitor(struct mddev_dev *devlist,
 	char *mailfrom;
 	struct alert_info info;
 	struct mddev_ident *mdlist;
+	int delay_for_event = c->delay;
 
 	if (!mailaddr) {
 		mailaddr = conf_get_mailaddr();
@@ -152,6 +160,11 @@ int Monitor(struct mddev_dev *devlist,
 	info.mailfrom = mailfrom;
 	info.dosyslog = dosyslog;
 
+	if (share){
+		if (check_one_sharer(c->scan))
+			return 1;
+	}
+
 	if (daemonise) {
 		int rv = make_daemon(pidfile);
 		if (rv >= 0)
@@ -159,8 +172,7 @@ int Monitor(struct mddev_dev *devlist,
 	}
 
 	if (share)
-		if (check_one_sharer(c->scan))
-			return 1;
+		write_autorebuild_pid();
 
 	if (devlist == NULL) {
 		mdlist = conf_get_ident(NULL);
@@ -212,17 +224,24 @@ int Monitor(struct mddev_dev *devlist,
 		int new_found = 0;
 		struct state *st, **stp;
 		int anydegraded = 0;
+		int anyredundant = 0;
 
 		if (mdstat)
 			free_mdstat(mdstat);
 		mdstat = mdstat_read(oneshot ? 0 : 1, 0);
-		if (!mdstat)
-			mdstat_close();
 
-		for (st = statelist; st; st = st->next)
+		for (st = statelist; st; st = st->next) {
 			if (check_array(st, mdstat, c->test, &info,
 					increments, c->prefer))
 				anydegraded = 1;
+			/* for external arrays, metadata is filled for
+			 * containers only
+			 */
+			if (st->metadata && st->metadata->ss->external)
+				continue;
+			if (st->err == 0 && !anyredundant)
+				anyredundant = 1;
+		}
 
 		/* now check if there are any new devices found in mdstat */
 		if (c->scan)
@@ -231,15 +250,39 @@ int Monitor(struct mddev_dev *devlist,
 
 		/* If an array has active < raid && spare == 0 && spare_group != NULL
 		 * Look for another array with spare > 0 and active == raid and same spare_group
-		 *  if found, choose a device and hotremove/hotadd
+		 * if found, choose a device and hotremove/hotadd
 		 */
 		if (share && anydegraded)
 			try_spare_migration(statelist, &info);
 		if (!new_found) {
 			if (oneshot)
 				break;
-			else
-				mdstat_wait(c->delay);
+			else if (!anyredundant) {
+				pr_err("No array with redundancy detected, stopping\n");
+				break;
+			}
+			else {
+#ifndef NO_LIBUDEV
+				/*
+				 * Wait for udevd to finish new devices
+				 * processing.
+				 */
+				if (mdstat_wait(delay_for_event) &&
+				    check_udev_activity())
+					pr_err("Error while waiting for UDEV to complete new devices processing\n");
+#else
+				int wait_result = mdstat_wait(delay_for_event);
+				/*
+				 * Give chance to process new device
+				 */
+				if (wait_result != 0) {
+					if (c->delay > 5)
+						delay_for_event = 5;
+				} else
+					delay_for_event = c->delay;
+#endif
+				mdstat_close();
+			}
 		}
 		c->test = 0;
 
@@ -276,8 +319,11 @@ static int make_daemon(char *pidfile)
 		if (!pidfile)
 			printf("%d\n", pid);
 		else {
-			FILE *pid_file;
-			pid_file=fopen(pidfile, "w");
+			FILE *pid_file = NULL;
+			int fd = open(pidfile, O_WRONLY | O_CREAT | O_TRUNC,
+				      0644);
+			if (fd >= 0)
+				pid_file = fdopen(fd, "w");
 			if (!pid_file)
 				perror("cannot create pid file");
 			else {
@@ -291,54 +337,70 @@ static int make_daemon(char *pidfile)
 		perror("daemonise");
 		return 1;
 	}
-	close(0);
-	open("/dev/null", O_RDWR);
-	dup2(0, 1);
-	dup2(0, 2);
+	manage_fork_fds(0);
 	setsid();
 	return -1;
 }
 
 static int check_one_sharer(int scan)
 {
-	int pid, rv;
+	int pid;
+	FILE *comm_fp;
 	FILE *fp;
-	char dir[20];
-	char path[100];
-	struct stat buf;
+	char comm_path[PATH_MAX];
+	char path[PATH_MAX];
+	char comm[20];
+
 	sprintf(path, "%s/autorebuild.pid", MDMON_DIR);
 	fp = fopen(path, "r");
 	if (fp) {
 		if (fscanf(fp, "%d", &pid) != 1)
 			pid = -1;
-		sprintf(dir, "/proc/%d", pid);
-		rv = stat(dir, &buf);
-		if (rv != -1) {
-			if (scan) {
-				pr_err("Only one autorebuild process allowed in scan mode, aborting\n");
-				fclose(fp);
-				return 1;
-			} else {
-				pr_err("Warning: One autorebuild process already running.\n");
+		snprintf(comm_path, sizeof(comm_path),
+			 "/proc/%d/comm", pid);
+		comm_fp = fopen(comm_path, "r");
+		if (comm_fp) {
+			if (fscanf(comm_fp, "%19s", comm) &&
+			    strncmp(basename(comm), Name, strlen(Name)) == 0) {
+				if (scan) {
+					pr_err("Only one autorebuild process allowed in scan mode, aborting\n");
+					fclose(comm_fp);
+					fclose(fp);
+					return 1;
+				} else {
+					pr_err("Warning: One autorebuild process already running.\n");
+				}
 			}
+			fclose(comm_fp);
 		}
 		fclose(fp);
 	}
-	if (scan) {
-		if (mkdir(MDMON_DIR, S_IRWXU) < 0 && errno != EEXIST) {
+	return 0;
+}
+
+static void write_autorebuild_pid()
+{
+	char path[PATH_MAX];
+	int pid;
+	FILE *fp = NULL;
+	sprintf(path, "%s/autorebuild.pid", MDMON_DIR);
+
+	if (mkdir(MDMON_DIR, 0700) < 0 && errno != EEXIST) {
+		pr_err("Can't create autorebuild.pid file\n");
+	} else {
+		int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
+
+		if (fd >= 0)
+			fp = fdopen(fd, "w");
+
+		if (!fp)
 			pr_err("Can't create autorebuild.pid file\n");
-		} else {
-			fp = fopen(path, "w");
-			if (!fp)
-				pr_err("Cannot create autorebuild.pidfile\n");
-			else {
-				pid = getpid();
-				fprintf(fp, "%d\n", pid);
-				fclose(fp);
-			}
+		else {
+			pid = getpid();
+			fprintf(fp, "%d\n", pid);
+			fclose(fp);
 		}
 	}
-	return 0;
 }
 
 static void alert(char *event, char *dev, char *disc, struct alert_info *info)
@@ -534,7 +596,8 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 		st->err = 0;
 		st->percent = RESYNC_NONE;
 		new_array = 1;
-		alert("NewArray", st->devname, NULL, ainfo);
+		if (!is_container)
+			alert("NewArray", st->devname, NULL, ainfo);
 	}
 
 	if (st->utime == array.utime && st->failed == sra->array.failed_disks &&
@@ -668,7 +731,7 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 	return retval;
 
  disappeared:
-	if (!st->err)
+	if (!st->err && !is_container)
 		alert("DeviceDisappeared", dev, NULL, ainfo);
 	st->err++;
 	goto out;
@@ -988,6 +1051,64 @@ static void link_containers_with_subarrays(struct state *list)
 				}
 }
 
+#ifndef NO_LIBUDEV
+/* function: check_udev_activity
+ * Description: Function waits for udev to finish
+ * events processing.
+ * Returns:
+ *		1 - detected error while opening udev
+ *		2 - timeout
+ *		0 - successfull completion
+ */
+static int check_udev_activity(void)
+{
+	struct udev *udev = NULL;
+	struct udev_queue *udev_queue = NULL;
+	int timeout_cnt = 30;
+	int rc = 0;
+
+	/*
+	 * In rare cases systemd may not have udevm,
+	 * in such cases just exit with rc 0
+	 */
+	if (!use_udev())
+		goto out;
+
+	udev = udev_new();
+	if (!udev) {
+		rc = 1;
+		goto out;
+	}
+
+	udev_queue = udev_queue_new(udev);
+	if (!udev_queue) {
+		rc = 1;
+		goto out;
+	}
+
+	if (udev_queue_get_queue_is_empty(udev_queue))
+		goto out;
+
+	while (!udev_queue_get_queue_is_empty(udev_queue)) {
+		sleep(1);
+
+		if (timeout_cnt)
+			timeout_cnt--;
+		else {
+			rc = 2;
+			goto out;
+		}
+	}
+
+out:
+	if (udev_queue)
+		udev_queue_unref(udev_queue);
+	if (udev)
+		udev_unref(udev);
+	return rc;
+}
+#endif
+
 /* Not really Monitor but ... */
 int Wait(char *dev)
 {
@@ -1055,8 +1176,11 @@ int Wait(char *dev)
 	}
 }
 
+/* The state "broken" is used only for RAID0/LINEAR - it's the same as
+ * "clean", but used in case the array has one or more members missing.
+ */
 static char *clean_states[] = {
-	"clear", "inactive", "readonly", "read-auto", "clean", NULL };
+	"clear", "inactive", "readonly", "read-auto", "clean", "broken", NULL };
 
 int WaitClean(char *dev, int verbose)
 {
@@ -1116,7 +1240,8 @@ int WaitClean(char *dev, int verbose)
 			rv = read(state_fd, buf, sizeof(buf));
 			if (rv < 0)
 				break;
-			if (sysfs_match_word(buf, clean_states) <= 4)
+			if (sysfs_match_word(buf, clean_states) <
+			    (int)ARRAY_SIZE(clean_states) - 1)
 				break;
 			rv = sysfs_wait(state_fd, &delay);
 			if (rv < 0 && errno != EINTR)

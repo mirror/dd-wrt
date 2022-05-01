@@ -25,6 +25,7 @@ ANNOUNCE-3.3.4
 ANNOUNCE-3.4
 ANNOUNCE-4.0
 ANNOUNCE-4.1
+ANNOUNCE-4.2
 Assemble.c
 Build.c
 COPYING
@@ -131,7 +132,13 @@ systemd/mdadm-grow-continue@.service
 systemd/mdadm-last-resort@.service
 systemd/mdadm-last-resort@.timer
 systemd/mdadm.shutdown
+systemd/mdcheck_continue.service
+systemd/mdcheck_continue.timer
+systemd/mdcheck_start.service
+systemd/mdcheck_start.timer
 systemd/mdmon@.service
+systemd/mdmonitor-oneshot.service
+systemd/mdmonitor-oneshot.timer
 systemd/mdmonitor.service
 test
 tests/
@@ -170,6 +177,7 @@ tests/05r1-add-internalbitmap-v1a
 tests/05r1-add-internalbitmap-v1b
 tests/05r1-add-internalbitmap-v1c
 tests/05r1-bitmapfile
+tests/05r1-failfast
 tests/05r1-grow-external
 tests/05r1-grow-internal
 tests/05r1-grow-internal-1
@@ -272,4 +280,5 @@ udev-md-raid-assembly.rules
 udev-md-raid-creating.rules
 udev-md-raid-safe-timeouts.rules
 util.c
+uuid.c
 xmalloc.c

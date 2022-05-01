@@ -1,0 +1,16 @@
+#  This file is part of mdadm.
+#
+#  mdadm is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=MD array scrubbing
+
+[Timer]
+OnCalendar=Sun *-*-1..7 1:00:00
+
+[Install]
+WantedBy= mdmonitor.service
+Also= mdcheck_continue.timer

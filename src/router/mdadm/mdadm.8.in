@@ -5,7 +5,7 @@
 .\"   the Free Software Foundation; either version 2 of the License, or
 .\"   (at your option) any later version.
 .\" See file COPYING in distribution for details.
-.TH MDADM 8 "" v4.1-rc2
+.TH MDADM 8 "" v4.2
 .SH NAME
 mdadm \- manage MD devices
 .I aka
@@ -367,7 +367,7 @@ Use the Intel(R) Matrix Storage Manager metadata format.  This creates a
 which is managed in a similar manner to DDF, and is supported by an
 option-rom on some platforms:
 .IP
-.B http://www.intel.com/design/chipsets/matrixstorage_sb.htm
+.B https://www.intel.com/content/www/us/en/support/products/122484/memory-and-storage/ssd-software/intel-virtual-raid-on-cpu-intel-vroc.html
 .PP
 .RE
 
@@ -467,8 +467,8 @@ If this is not specified
 size, though if there is a variance among the drives of greater than 1%, a warning is
 issued.
 
-A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
-Gigabytes respectively.
+A suffix of 'K', 'M', 'G' or 'T' can be given to indicate Kilobytes,
+Megabytes, Gigabytes or Terabytes respectively.
 
 Sometimes a replacement drive can be a little smaller than the
 original drives though this should be minimised by IDEMA standards.
@@ -481,9 +481,7 @@ still be larger than any replacement.
 This value can be set with
 .B \-\-grow
 for RAID level 1/4/5/6 though
-.B CONTAINER
-based arrays such as those with IMSM metadata may not be able to
-support this.
+DDF arrays may not be able to support this.
 If the array was created with a size smaller than the currently
 active drives, the extra space can be accessed using
 .BR \-\-grow .
@@ -534,8 +532,8 @@ problems the array can be made bigger again with no loss with another
 .B "\-\-grow \-\-array\-size="
 command.
 
-A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
-Gigabytes respectively.
+A suffix of 'K', 'M', 'G' or 'T' can be given to indicate Kilobytes,
+Megabytes, Gigabytes or Terabytes respectively.
 A value of
 .B max
 restores the apparent size of the array to be whatever the real
@@ -553,8 +551,8 @@ This is only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10.
 RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power
 of 2.  In any case it must be a multiple of 4KB.
 
-A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
-Gigabytes respectively.
+A suffix of 'K', 'M', 'G' or 'T' can be given to indicate Kilobytes,
+Megabytes, Gigabytes or Terabytes respectively.
 
 .TP
 .BR \-\-rounding=
@@ -593,6 +591,8 @@ to change the RAID level in some cases.  See LEVEL CHANGES below.
 This option configures the fine details of data layout for RAID5, RAID6,
 and RAID10 arrays, and controls the failure modes for
 .IR faulty .
+It can also be used for working around a kernel bug with RAID0, but generally
+doesn't need to be used explicitly.
 
 The layout of the RAID5 parity block can be one of
 .BR left\-asymmetric ,
@@ -652,7 +652,7 @@ option to set subsequent failure modes.
 "clear" or "none" will remove any pending or periodic failure modes,
 and "flush" will clear any persistent faults.
 
-Finally, the layout options for RAID10 are one of 'n', 'o' or 'f' followed
+The layout options for RAID10 are one of 'n', 'o' or 'f' followed
 by a small number.  The default is 'n2'.  The supported options are:
 
 .I 'n'
@@ -676,6 +676,32 @@ can be useful.  This number can be at most equal to the number of
 devices in the array.  It does not need to divide evenly into that
 number (e.g. it is perfectly legal to have an 'n2' layout for an array
 with an odd number of devices).
+
+A bug introduced in Linux 3.14 means that RAID0 arrays
+.B "with devices of differing sizes"
+started using a different layout.  This could lead to
+data corruption.  Since Linux 5.4 (and various stable releases that received
+backports), the kernel will not accept such an array unless
+a layout is explictly set.  It can be set to
+.RB ' original '
+or
+.RB ' alternate '.
+When creating a new array,
+.I mdadm
+will select
+.RB ' original '
+by default, so the layout does not normally need to be set.
+An array created for either
+.RB ' original '
+or
+.RB ' alternate '
+will not be recognized by an (unpatched) kernel prior to 5.4.  To create
+a RAID0 array with devices of differing sizes that can be used on an
+older kernel, you can set the layout to
+.RB ' dangerous '.
+This will use whichever layout the running kernel supports, so the data
+on the array may become corrupt when changing kernel from pre-3.14 to a
+later kernel.
 
 When an array is converted between RAID5 and RAID6 an intermediate
 RAID6 layout is used in which the second parity block (Q) is always on
@@ -741,8 +767,8 @@ When using an
 bitmap, the chunksize defaults to 64Meg, or larger if necessary to
 fit the bitmap into the available space.
 
-A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
-Gigabytes respectively.
+A suffix of 'K', 'M', 'G' or 'T' can be given to indicate Kilobytes,
+Megabytes, Gigabytes or Terabytes respectively.
 
 .TP
 .BR \-W ", " \-\-write\-mostly
@@ -831,8 +857,8 @@ an array which was originally created using a different version of
 which computed a different offset.
 
 Setting the offset explicitly over-rides the default.  The value given
-is in Kilobytes unless a suffix of 'K', 'M' or 'G' is used to explicitly
-indicate Kilobytes, Megabytes or Gigabytes respectively.
+is in Kilobytes unless a suffix of 'K', 'M', 'G' or 'T' is used to explicitly
+indicate Kilobytes, Megabytes, Gigabytes or Terabytes respectively.
 
 Since Linux 3.4,
 .B \-\-data\-offset
@@ -1106,7 +1132,8 @@ out-of-date.  If
 .I mdadm
 cannot find enough working devices to start the array, but can find
 some devices that are recorded as having failed, then it will mark
-those devices as working so that the array can be started.
+those devices as working so that the array can be started. This works only for
+native. For external metadata it allows to start dirty degraded RAID 4, 5, 6.
 An array which requires
 .B \-\-force
 to be started may contain data corruption.  Use it carefully.
@@ -1185,6 +1212,9 @@ argument given to this flag can be one of
 .BR no\-bbl ,
 .BR ppl ,
 .BR no\-ppl ,
+.BR layout\-original ,
+.BR layout\-alternate ,
+.BR layout\-unspecified ,
 .BR metadata ,
 or
 .BR super\-minor .
@@ -1335,6 +1365,31 @@ write-intent bitmap or journal must not be used.
 The
 .B no\-ppl
 option will disable PPL in the superblock.
+
+The
+.B layout\-original
+and
+.B layout\-alternate
+options are for RAID0 arrays with non-uniform devices size that were in
+use before Linux 5.4.  If the array was being used with Linux 3.13 or
+earlier, then to assemble the array on a new kernel, 
+.B \-\-update=layout\-original
+must be given.  If the array was created and used with a kernel from Linux 3.14 to
+Linux 5.3, then
+.B \-\-update=layout\-alternate
+must be given.  This only needs to be given once.  Subsequent assembly of the array
+will happen normally.
+For more information, see
+.IR md (4).
+
+The
+.B layout\-unspecified
+option reverts the effect of
+.B layout\-orignal
+or
+.B layout\-alternate
+and allows the array to be again used on a kernel prior to Linux 5.3.
+This option should be used with great caution.
 
 .TP
 .BR \-\-freeze\-reshape
@@ -1652,9 +1707,11 @@ does not report the bitmap for that array.
 .TP
 .B \-\-examine\-badblocks
 List the bad-blocks recorded for the device, if a bad-blocks list has
-been configured.  Currently only
+been configured. Currently only
 .B 1.x
-metadata supports bad-blocks lists.
+and
+.B IMSM
+metadata support bad-blocks lists.
 
 .TP
 .BI \-\-dump= directory
@@ -2129,6 +2186,11 @@ is run, but will be created by
 .I udev
 once the array becomes active.
 
+The max length md-device name is limited to 32 characters.
+Different metadata types have more strict limitation
+(like IMSM where only 16 characters are allowed).
+For that reason, long name could be truncated or rejected, it depends on metadata policy.
+
 As devices are added, they are checked to see if they contain RAID
 superblocks or filesystems.  They are also checked to see if the variance in
 device size exceeds 1%.
@@ -2352,9 +2414,11 @@ or
 .B \-\-update=
 option. The supported options are
 .BR name ,
-.B ppl
+.BR ppl ,
+.BR no\-ppl ,
+.BR bitmap
 and
-.BR no\-ppl .
+.BR no\-bitmap .
 
 The
 .B name
@@ -2370,6 +2434,13 @@ The
 and
 .B no\-ppl
 options enable and disable PPL in the metadata. Currently supported only for
+IMSM subarrays.
+
+The
+.B bitmap
+and
+.B no\-bitmap
+options enable and disable write-intent bitmap in the metadata. Currently supported only for
 IMSM subarrays.
 
 .TP
@@ -2714,9 +2785,7 @@ container format.  The number of devices in a container can be
 increased - which affects all arrays in the container - or an array
 in a container can be converted between levels where those levels are
 supported by the container, and the conversion is on of those listed
-above.  Resizing arrays in an IMSM container with
-.B "--grow --size"
-is not yet supported.
+above.
 
 .PP
 Notes:
@@ -2727,6 +2796,12 @@ option and it is transparent for assembly feature.
 .IP \(bu 4
 Roaming between Windows(R) and Linux systems for IMSM metadata is not
 supported during grow process.
+.IP \(bu 4
+When growing a raid0 device, the new component disk size (or external
+backup size) should be larger than LCM(old, new) * chunk-size * 2,
+where LCM() is the least common multiple of the old and new count of
+component disks, and "* 2" comes from the fact that mdadm refuses to
+use more than half of a spare device for backup space.
 
 .SS SIZE CHANGES
 Normally when an array is built the "size" is taken from the smallest
@@ -2831,7 +2906,7 @@ operation, as described below under LAYOUT CHANGES.
 
 .SS CHUNK-SIZE AND LAYOUT CHANGES
 
-Changing the chunk-size of layout without also changing the number of
+Changing the chunk-size or layout without also changing the number of
 devices as the same time will involve re-writing all blocks in-place.
 To ensure against data loss in the case of a crash, a
 .B --backup-file
@@ -3360,7 +3435,7 @@ was previously known as
 For further information on mdadm usage, MD and the various levels of
 RAID, see:
 .IP
-.B http://raid.wiki.kernel.org/
+.B https://raid.wiki.kernel.org/
 .PP
 (based upon Jakob \(/Ostergaard's Software\-RAID.HOWTO)
 .PP
@@ -3368,7 +3443,7 @@ The latest version of
 .I mdadm
 should always be available from
 .IP
-.B http://www.kernel.org/pub/linux/utils/raid/mdadm/
+.B https://www.kernel.org/pub/linux/utils/raid/mdadm/
 .PP
 Related man pages:
 .PP

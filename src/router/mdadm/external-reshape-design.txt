@@ -277,4 +277,4 @@ sync_action
 
 ...
 
-[1]: Linux kernel design patterns - part 3, Neil Brown http://lwn.net/Articles/336262/
+[1]: Linux kernel design patterns - part 3, Neil Brown https://lwn.net/Articles/336262/
