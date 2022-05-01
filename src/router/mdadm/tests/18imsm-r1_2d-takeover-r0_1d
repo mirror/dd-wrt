@@ -9,7 +9,6 @@ device_list="$dev0 $dev1"
 # Before: RAID 1 volume, 2 disks
 vol0_level=1
 vol0_comp_size=$((5 * 1024))
-vol0_chunk=64
 vol0_num_comps=$(( $num_disks - 1 ))
 vol0_offset=0
 

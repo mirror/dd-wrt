@@ -25,6 +25,18 @@
 #include	"mdadm.h"
 #include	"dlink.h"
 #include	<ctype.h>
+#include	<limits.h>
+
+bool is_dev_alive(char *path)
+{
+	if (!path)
+		return false;
+
+	if (access(path, R_OK) == 0)
+		return true;
+
+	return false;
+}
 
 /* This fill contains various 'library' style function.  They
  * have no dependency on anything outside this file.
@@ -533,4 +545,31 @@ void free_line(char *line)
 		dl_free(w);
 	}
 	dl_free(line);
+}
+
+/**
+ * parse_num() - Parse int from string.
+ * @dest: Pointer to destination.
+ * @num: Pointer to string that is going to be parsed.
+ *
+ * If string contains anything after a number, error code is returned.
+ * The same happens when number is bigger than INT_MAX or smaller than 0.
+ * Writes to destination only if successfully read the number.
+ *
+ * Return: 0 on success, 1 otherwise.
+ */
+int parse_num(int *dest, char *num)
+{
+	char *c = NULL;
+	long temp;
+
+	if (!num)
+		return 1;
+
+	errno = 0;
+	temp = strtol(num, &c, 10);
+	if (temp < 0 || temp > INT_MAX || *c || errno != 0 || num == c)
+		return 1;
+	*dest = temp;
+	return 0;
 }

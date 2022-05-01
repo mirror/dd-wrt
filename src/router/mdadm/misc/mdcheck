@@ -125,11 +125,13 @@ do
 	do
 		eval fl=\$MD_${i}_fl
 		eval sys=\$MD_${i}_sys
+		eval dev=\$MD_${i}_dev
 
 		if [ -z "$fl" ]; then continue; fi
 
 		if [ "`cat $sys/md/sync_action`" != 'check' ]
 		then
+			logger -p daemon.info mdcheck finished checking $dev
 			eval MD_${i}_fl=
 			rm -f $fl
 			continue;

@@ -193,6 +193,40 @@ smallest device has been exhausted, the RAID0 driver starts
 collecting chunks into smaller stripes that only span the drives which
 still have remaining space.
 
+A bug was introduced in linux 3.14 which changed the layout of blocks in
+a RAID0 beyond the region that is striped over all devices.  This bug
+does not affect an array with all devices the same size, but can affect
+other RAID0 arrays.
+
+Linux 5.4 (and some stable kernels to which the change was backported)
+will not normally assemble such an array as it cannot know which layout
+to use.  There is a module parameter "raid0.default_layout" which can be
+set to "1" to force the kernel to use the pre-3.14 layout or to "2" to
+force it to use the 3.14-and-later layout.  when creating a new RAID0
+array,
+.I mdadm
+will record the chosen layout in the metadata in a way that allows newer
+kernels to assemble the array without needing a module parameter.
+
+To assemble an old array on a new kernel without using the module parameter,
+use either the
+.B "--update=layout-original"
+option or the
+.B "--update=layout-alternate"
+option.
+
+Once you have updated the layout you will not be able to mount the array
+on an older kernel.  If you need to revert to an older kernel, the
+layout information can be erased with the
+.B "--update=layout-unspecificed"
+option.  If you use this option to
+.B --assemble
+while running a newer kernel, the array will NOT assemble, but the
+metadata will be update so that it can be assembled on an older kernel.
+
+No that setting the layout to "unspecified" removes protections against
+this bug, and you must be sure that the kernel you use matches the
+layout of the array.
 
 .SS RAID1
 
@@ -875,25 +909,39 @@ The list is particularly useful when recovering to a spare.  If a few blocks
 cannot be read from the other devices, the bulk of the recovery can
 complete and those few bad blocks will be recorded in the bad block list.
 
-.SS RAID456 WRITE JOURNAL
+.SS RAID WRITE HOLE
 
-Due to non-atomicity nature of RAID write operations, interruption of
-write operations (system crash, etc.) to RAID456 array can lead to
-inconsistent parity and data loss (so called RAID-5 write hole).
+Due to non-atomicity nature of RAID write operations,
+interruption of write operations (system crash, etc.) to RAID456
+array can lead to inconsistent parity and data loss (so called
+RAID-5 write hole).
+To plug the write hole md supports two mechanisms described below.
 
-To plug the write hole, from Linux 4.4 (to be confirmed),
-.I md
-supports write ahead journal for RAID456. When the array is created,
-an additional journal device can be added to the array through
-.IR write-journal
-option. The RAID write journal works similar to file system journals.
-Before writing to the data disks, md persists data AND parity of the
-stripe to the journal device. After crashes, md searches the journal
-device for incomplete write operations, and replay them to the data
-disks.
+.TP
+DIRTY STRIPE JOURNAL
+From Linux 4.4, md supports write ahead journal for RAID456.
+When the array is created, an additional journal device can be added to
+the array through write-journal option. The RAID write journal works
+similar to file system journals. Before writing to the data
+disks, md persists data AND parity of the stripe to the journal
+device. After crashes, md searches the journal device for
+incomplete write operations, and replay them to the data disks.
 
 When the journal device fails, the RAID array is forced to run in
 read-only mode.
+
+.TP
+PARTIAL PARITY LOG
+From Linux 4.12 md supports Partial Parity Log (PPL) for RAID5 arrays only.
+Partial parity for a write operation is the XOR of stripe data chunks not
+modified by the write. PPL is stored in the metadata region of RAID member drives,
+no additional journal drive is needed.
+After crashes, if one of the not modified data disks of
+the stripe is missing, this updated parity can be used to recover its
+data.
+
+This mechanism is documented more fully in the file
+Documentation/md/raid5-ppl.rst
 
 .SS WRITE-BEHIND
 
@@ -1040,7 +1088,7 @@ which contains various files for providing access to information about
 the array.
 
 This interface is documented more fully in the file
-.B Documentation/md.txt
+.B Documentation/admin-guide/md.rst
 which is distributed with the kernel sources.  That file should be
 consulted for full documentation.  The following are just a selection
 of attribute files that are available.
@@ -1100,6 +1148,75 @@ stripe that requires some "prereading".  For fairness this defaults to
 1.  Valid values are 0 to stripe_cache_size.  Setting this to 0
 maximizes sequential-write throughput at the cost of fairness to threads
 doing small or random writes.
+
+.TP
+.B md/bitmap/backlog
+The value stored in the file only has any effect on RAID1 when write-mostly
+devices are active, and write requests to those devices are proceed in the
+background.
+
+This variable sets a limit on the number of concurrent background writes,
+the valid values are 0 to 16383, 0 means that write-behind is not allowed,
+while any other number means it can happen.  If there are more write requests
+than the number, new writes will by synchronous.
+
+.TP
+.B md/bitmap/can_clear
+This is for externally managed bitmaps, where the kernel writes the bitmap
+itself, but metadata describing the bitmap is managed by mdmon or similar.
+
+When the array is degraded, bits mustn't be cleared. When the array becomes
+optimal again, bit can be cleared, but first the metadata needs to record
+the current event count. So md sets this to 'false' and notifies mdmon,
+then mdmon updates the metadata and writes 'true'.
+
+There is no code in mdmon to actually do this, so maybe it doesn't even
+work.
+
+.TP
+.B md/bitmap/chunksize
+The bitmap chunksize can only be changed when no bitmap is active, and
+the value should be power of 2 and at least 512.
+
+.TP
+.B md/bitmap/location
+This indicates where the write-intent bitmap for the array is stored.
+It can be "none" or "file" or a signed offset from the array metadata
+- measured in sectors. You cannot set a file by writing here - that can
+only be done with the SET_BITMAP_FILE ioctl.
+
+Write 'none' to 'bitmap/location' will clear bitmap, and the previous
+location value must be write to it to restore bitmap.
+
+.TP
+.B md/bitmap/max_backlog_used
+This keeps track of the maximum number of concurrent write-behind requests
+for an md array, writing any value to this file will clear it.
+
+.TP
+.B md/bitmap/metadata
+This can be 'internal' or 'clustered' or 'external'. 'internal' is set
+by default, which means the metadata for bitmap is stored in the first 256
+bytes of the bitmap space. 'clustered' means separate bitmap metadata are
+used for each cluster node. 'external' means that bitmap metadata is managed
+externally to the kernel.
+
+.TP
+.B md/bitmap/space
+This shows the space (in sectors) which is available at md/bitmap/location,
+and allows the kernel to know when it is safe to resize the bitmap to match
+a resized array. It should big enough to contain the total bytes in the bitmap.
+
+For 1.0 metadata, assume we can use up to the superblock if before, else
+to 4K beyond superblock. For other metadata versions, assume no change is
+possible.
+
+.TP
+.B md/bitmap/time_base
+This shows the time (in seconds) between disk flushes, and is used to looking
+for bits in the bitmap to be cleared.
+
+The default value is 5 seconds, and it should be an unsigned long value.
 
 .SS KERNEL PARAMETERS
 

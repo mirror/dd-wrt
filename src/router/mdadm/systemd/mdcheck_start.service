@@ -1,0 +1,17 @@
+#  This file is part of mdadm.
+#
+#  mdadm is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=MD array scrubbing
+Wants=mdcheck_continue.timer
+
+[Service]
+Type=oneshot
+Environment="MDADM_CHECK_DURATION=6 hours"
+EnvironmentFile=-/run/sysconfig/mdadm
+ExecStartPre=-/usr/lib/mdadm/mdadm_env.sh
+ExecStart=/usr/share/mdadm/mdcheck --duration ${MDADM_CHECK_DURATION}

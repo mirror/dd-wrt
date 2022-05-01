@@ -120,7 +120,8 @@ int create_named_array(char *devnm)
 		close(fd);
 	}
 	if (fd < 0 || n != (int)strlen(devnm)) {
-		pr_err("Fail create %s when using %s\n", devnm, new_array_file);
+		pr_err("Fail to create %s when using %s, fallback to creation via node\n",
+			devnm, new_array_file);
 		return 0;
 	}
 

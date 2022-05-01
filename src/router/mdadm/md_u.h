@@ -28,7 +28,6 @@
 #define ADD_NEW_DISK		_IOW (MD_MAJOR, 0x21, mdu_disk_info_t)
 #define HOT_REMOVE_DISK		_IO (MD_MAJOR, 0x22)
 #define SET_ARRAY_INFO		_IOW (MD_MAJOR, 0x23, mdu_array_info_t)
-#define HOT_ADD_DISK		_IO (MD_MAJOR, 0x28)
 #define SET_DISK_FAULTY		_IO (MD_MAJOR, 0x29)
 #define SET_BITMAP_FILE		_IOW (MD_MAJOR, 0x2b, int)
 

@@ -1730,7 +1730,8 @@ err:
 	return 1;
 }
 
-static void detail_super_ddf(struct supertype *st, char *homehost)
+static void detail_super_ddf(struct supertype *st, char *homehost,
+			     char *subarray)
 {
 	struct ddf_super *sb = st->sb;
 	int cnt = be16_to_cpu(sb->virt->populated_vdes);
@@ -1787,7 +1788,7 @@ static void uuid_of_ddf_subarray(const struct ddf_super *ddf,
 	memcpy(uuid, sha, 4*4);
 }
 
-static void brief_detail_super_ddf(struct supertype *st)
+static void brief_detail_super_ddf(struct supertype *st, char *subarray)
 {
 	struct mdinfo info;
 	char nbuf[64];
@@ -1900,7 +1901,7 @@ static struct vd_config *find_vdcr(struct ddf_super *ddf, unsigned int inst,
 		return conf;
 	}
 bad:
-	pr_err("Could't find disk %d in array %u\n", n, inst);
+	pr_err("Couldn't find disk %d in array %u\n", n, inst);
 	return NULL;
 }
 
@@ -2636,9 +2637,11 @@ static int init_super_ddf_bvd(struct supertype *st,
 		ve->init_state = DDF_init_not;
 
 	memset(ve->pad1, 0xff, 14);
-	memset(ve->name, ' ', 16);
-	if (name)
-		strncpy(ve->name, name, 16);
+	memset(ve->name, '\0', sizeof(ve->name));
+	if (name) {
+		int l = strnlen(name, sizeof(ve->name));
+		memcpy(ve->name, name, l);
+	}
 	ddf->virt->populated_vdes =
 		cpu_to_be16(be16_to_cpu(ddf->virt->populated_vdes)+1);
 
@@ -3462,7 +3465,7 @@ validate_geometry_ddf_container(struct supertype *st,
 	if (!dev)
 		return 1;
 
-	fd = open(dev, O_RDONLY|O_EXCL, 0);
+	fd = dev_open(dev, O_RDONLY|O_EXCL);
 	if (fd < 0) {
 		if (verbose)
 			pr_err("ddf: Cannot open %s: %s\n",
@@ -3474,10 +3477,11 @@ validate_geometry_ddf_container(struct supertype *st,
 		return 0;
 	}
 	close(fd);
-
-	*freesize = avail_size_ddf(st, ldsize >> 9, INVALID_SECTORS);
-	if (*freesize == 0)
-		return 0;
+	if (freesize) {
+		*freesize = avail_size_ddf(st, ldsize >> 9, INVALID_SECTORS);
+		if (*freesize == 0)
+			return 0;
+	}
 
 	return 1;
 }
@@ -3913,7 +3917,8 @@ static int store_super_ddf(struct supertype *st, int fd)
 	return 0;
 }
 
-static int compare_super_ddf(struct supertype *st, struct supertype *tst)
+static int compare_super_ddf(struct supertype *st, struct supertype *tst,
+			     int verbose)
 {
 	/*
 	 * return:
@@ -4054,20 +4059,19 @@ static int compare_super_ddf(struct supertype *st, struct supertype *tst)
  * We need to confirm that the array matches the metadata in 'c' so
  * that we don't corrupt any metadata.
  */
-static int ddf_open_new(struct supertype *c, struct active_array *a, char *inst)
+static int ddf_open_new(struct supertype *c, struct active_array *a, int inst)
 {
 	struct ddf_super *ddf = c->sb;
-	int n = atoi(inst);
 	struct mdinfo *dev;
 	struct dl *dl;
 	static const char faulty[] = "faulty";
 
-	if (all_ff(ddf->virt->entries[n].guid)) {
-		pr_err("subarray %d doesn't exist\n", n);
+	if (all_ff(ddf->virt->entries[inst].guid)) {
+		pr_err("subarray %d doesn't exist\n", inst);
 		return -ENODEV;
 	}
-	dprintf("new subarray %d, GUID: %s\n", n,
-		guid_str(ddf->virt->entries[n].guid));
+	dprintf("new subarray %d, GUID: %s\n", inst,
+		guid_str(ddf->virt->entries[inst].guid));
 	for (dev = a->info.devs; dev; dev = dev->next) {
 		for (dl = ddf->dlist; dl; dl = dl->next)
 			if (dl->major == dev->disk.major &&
@@ -4075,13 +4079,13 @@ static int ddf_open_new(struct supertype *c, struct active_array *a, char *inst)
 				break;
 		if (!dl || dl->pdnum < 0) {
 			pr_err("device %d/%d of subarray %d not found in meta data\n",
-				dev->disk.major, dev->disk.minor, n);
+				dev->disk.major, dev->disk.minor, inst);
 			return -1;
 		}
 		if ((be16_to_cpu(ddf->phys->entries[dl->pdnum].state) &
 			(DDF_Online|DDF_Missing|DDF_Failed)) != DDF_Online) {
 			pr_err("new subarray %d contains broken device %d/%d (%02x)\n",
-			       n, dl->major, dl->minor,
+			       inst, dl->major, dl->minor,
 			       be16_to_cpu(ddf->phys->entries[dl->pdnum].state));
 			if (write(dev->state_fd, faulty, sizeof(faulty)-1) !=
 			    sizeof(faulty) - 1)
@@ -4089,7 +4093,7 @@ static int ddf_open_new(struct supertype *c, struct active_array *a, char *inst)
 			dev->curr_state = DS_FAULTY;
 		}
 	}
-	a->info.container_member = n;
+	a->info.container_member = inst;
 	return 0;
 }
 
@@ -4445,7 +4449,7 @@ static int _kill_subarray_ddf(struct ddf_super *ddf, const char *guid)
 	return 0;
 }
 
-static int kill_subarray_ddf(struct supertype *st)
+static int kill_subarray_ddf(struct supertype *st, char *subarray_id)
 {
 	struct ddf_super *ddf = st->sb;
 	/*
@@ -4910,7 +4914,7 @@ static int raid10_degraded(struct mdinfo *info)
 			pr_err("BUG: invalid raid disk\n");
 			goto out;
 		}
-		if (d->state_fd > 0)
+		if (is_fd_valid(d->state_fd))
 			found[i]++;
 	}
 	ret = 2;

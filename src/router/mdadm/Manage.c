@@ -741,18 +741,6 @@ int Manage_add(int fd, int tfd, struct mddev_dev *dv,
 		       "       Adding anyway as --force was given.\n",
 		       dv->devname, devname);
 	}
-	if (!tst->ss->external && array->major_version == 0) {
-		if (ioctl(fd, HOT_ADD_DISK, rdev)==0) {
-			if (verbose >= 0)
-				pr_err("hot added %s\n",
-				       dv->devname);
-			return 1;
-		}
-
-		pr_err("hot add failed for %s: %s\n",
-		       dv->devname, strerror(errno));
-		return -1;
-	}
 
 	if (array->not_persistent == 0 || tst->ss->external) {
 
@@ -1004,19 +992,22 @@ int Manage_add(int fd, int tfd, struct mddev_dev *dv,
 			return -1;
 		}
 
+		/* Check if metadata handler is able to accept the drive */
+		if (!tst->ss->validate_geometry(tst, LEVEL_CONTAINER, 0, 1, NULL,
+		    0, 0, dv->devname, NULL, 0, 1)) {
+			close(container_fd);
+			return -1;
+		}
+
 		Kill(dv->devname, NULL, 0, -1, 0);
 		dfd = dev_open(dv->devname, O_RDWR | O_EXCL|O_DIRECT);
-		if (mdmon_running(tst->container_devnm))
-			tst->update_tail = &tst->updates;
 		if (tst->ss->add_to_super(tst, &disc, dfd,
 					  dv->devname, INVALID_SECTORS)) {
 			close(dfd);
 			close(container_fd);
 			return -1;
 		}
-		if (tst->update_tail)
-			flush_metadata_updates(tst);
-		else
+		if (!mdmon_running(tst->container_devnm))
 			tst->ss->sync_metadata(tst);
 
 		sra = sysfs_read(container_fd, NULL, 0);
@@ -1301,8 +1292,6 @@ int Manage_subdevs(char *devname, int fd,
 	/* Do something to each dev.
 	 * devmode can be
 	 *  'a' - add the device
-	 *	   try HOT_ADD_DISK
-	 *         If that fails EINVAL, try ADD_NEW_DISK
 	 *  'S' - add the device as a spare - don't try re-add
 	 *  'j' - add the device as a journal device
 	 *  'A' - re-add the device
@@ -1742,8 +1731,10 @@ int move_spare(char *from_devname, char *to_devname, dev_t devid)
 	int fd2 = open(from_devname, O_RDONLY);
 
 	if (fd1 < 0 || fd2 < 0) {
-		if (fd1>=0) close(fd1);
-		if (fd2>=0) close(fd2);
+		if (fd1 >= 0)
+			close(fd1);
+		if (fd2 >= 0)
+			close(fd2);
 		return 0;
 	}
 
@@ -1757,7 +1748,8 @@ int move_spare(char *from_devname, char *to_devname, dev_t devid)
 	devlist.disposition = 'r';
 	if (Manage_subdevs(from_devname, fd2, &devlist, -1, 0, NULL, 0) == 0) {
 		devlist.disposition = 'a';
-		if (Manage_subdevs(to_devname, fd1, &devlist, -1, 0, NULL, 0) == 0) {
+		if (Manage_subdevs(to_devname, fd1, &devlist, -1, 0,
+				   NULL, 0) == 0) {
 			/* make sure manager is aware of changes */
 			ping_manager(to_devname);
 			ping_manager(from_devname);
@@ -1765,7 +1757,9 @@ int move_spare(char *from_devname, char *to_devname, dev_t devid)
 			close(fd2);
 			return 1;
 		}
-		else Manage_subdevs(from_devname, fd2, &devlist, -1, 0, NULL, 0);
+		else
+			Manage_subdevs(from_devname, fd2, &devlist,
+				       -1, 0, NULL, 0);
 	}
 	close(fd1);
 	close(fd2);

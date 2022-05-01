@@ -30,6 +30,8 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#define NVME_SUBSYS_PATH "/sys/devices/virtual/nvme-subsystem/"
+
 static int devpath_to_ll(const char *dev_path, const char *entry,
 			 unsigned long long *val);
 
@@ -235,6 +237,29 @@ __u16 devpath_to_vendor(const char *dev_path)
 	close(fd);
 
 	return id;
+}
+
+/* Description: Read text value of dev_path/entry field
+ * Parameters:
+ *	dev_path - sysfs path to the device
+ *	entry - entry to be read
+ *	buf - buffer for read value
+ *	len - size of buf
+ *	verbose - error logging level
+ */
+int devpath_to_char(const char *dev_path, const char *entry, char *buf, int len,
+		    int verbose)
+{
+	char path[PATH_MAX];
+
+	snprintf(path, sizeof(path), "%s/%s", dev_path, entry);
+	if (load_sys(path, buf, len)) {
+		if (verbose)
+			pr_err("Cannot read %s, aborting\n", path);
+		return 1;
+	}
+
+	return 0;
 }
 
 struct sys_dev *find_intel_devices(void)
@@ -486,7 +511,7 @@ static const struct imsm_orom *find_imsm_hba_orom(struct sys_dev *hba)
 #define SCU_PROP "RstScuV"
 #define AHCI_PROP "RstSataV"
 #define AHCI_SSATA_PROP "RstsSatV"
-#define AHCI_CSATA_PROP "RstCSatV"
+#define AHCI_TSATA_PROP "RsttSatV"
 #define VMD_PROP "RstUefiV"
 
 #define VENDOR_GUID \
@@ -494,7 +519,8 @@ static const struct imsm_orom *find_imsm_hba_orom(struct sys_dev *hba)
 
 #define PCI_CLASS_RAID_CNTRL 0x010400
 
-static int read_efi_var(void *buffer, ssize_t buf_size, char *variable_name, struct efi_guid guid)
+static int read_efi_var(void *buffer, ssize_t buf_size,
+			const char *variable_name, struct efi_guid guid)
 {
 	char path[PATH_MAX];
 	char buf[GUID_STR_MAX];
@@ -523,7 +549,8 @@ static int read_efi_var(void *buffer, ssize_t buf_size, char *variable_name, str
 	return 0;
 }
 
-static int read_efi_variable(void *buffer, ssize_t buf_size, char *variable_name, struct efi_guid guid)
+static int read_efi_variable(void *buffer, ssize_t buf_size,
+			     const char *variable_name, struct efi_guid guid)
 {
 	char path[PATH_MAX];
 	char buf[GUID_STR_MAX];
@@ -576,7 +603,9 @@ const struct imsm_orom *find_imsm_efi(struct sys_dev *hba)
 {
 	struct imsm_orom orom;
 	struct orom_entry *ret;
-	int err;
+	static const char * const sata_efivars[] = {AHCI_PROP, AHCI_SSATA_PROP,
+						    AHCI_TSATA_PROP};
+	unsigned long i;
 
 	if (check_env("IMSM_TEST_AHCI_EFI") || check_env("IMSM_TEST_SCU_EFI"))
 		return imsm_platform_test(hba);
@@ -585,35 +614,35 @@ const struct imsm_orom *find_imsm_efi(struct sys_dev *hba)
 	if (check_env("IMSM_TEST_OROM"))
 		return NULL;
 
-	if (hba->type == SYS_DEV_SATA && hba->class != PCI_CLASS_RAID_CNTRL)
+	switch (hba->type) {
+	case SYS_DEV_SAS:
+		if (!read_efi_variable(&orom, sizeof(orom), SCU_PROP,
+				       VENDOR_GUID))
+			break;
+
 		return NULL;
+	case SYS_DEV_SATA:
+		if (hba->class != PCI_CLASS_RAID_CNTRL)
+			return NULL;
 
-	err = read_efi_variable(&orom, sizeof(orom), hba->type == SYS_DEV_SAS ? SCU_PROP : AHCI_PROP, VENDOR_GUID);
+		for (i = 0; i < ARRAY_SIZE(sata_efivars); i++) {
+			if (!read_efi_variable(&orom, sizeof(orom),
+						sata_efivars[i], VENDOR_GUID))
+				break;
 
-	/* try to read variable for second AHCI controller */
-	if (err && hba->type == SYS_DEV_SATA)
-		err = read_efi_variable(&orom, sizeof(orom), AHCI_SSATA_PROP, VENDOR_GUID);
-
-	/* try to read variable for combined AHCI controllers */
-	if (err && hba->type == SYS_DEV_SATA) {
-		static struct orom_entry *csata;
-
-		err = read_efi_variable(&orom, sizeof(orom), AHCI_CSATA_PROP, VENDOR_GUID);
-		if (!err) {
-			if (!csata)
-				csata = add_orom(&orom);
-			add_orom_device_id(csata, hba->dev_id);
-			csata->type = hba->type;
-			return &csata->orom;
 		}
-	}
+		if (i == ARRAY_SIZE(sata_efivars))
+			return NULL;
 
-	if (hba->type == SYS_DEV_VMD) {
-		err = read_efi_variable(&orom, sizeof(orom), VMD_PROP, VENDOR_GUID);
-	}
-
-	if (err)
+		break;
+	case SYS_DEV_VMD:
+		if (!read_efi_variable(&orom, sizeof(orom), VMD_PROP,
+				       VENDOR_GUID))
+			break;
 		return NULL;
+	default:
+		return NULL;
+	}
 
 	ret = add_orom(&orom);
 	add_orom_device_id(ret, hba->dev_id);
@@ -668,15 +697,99 @@ const struct imsm_orom *find_imsm_capability(struct sys_dev *hba)
 	return NULL;
 }
 
-char *devt_to_devpath(dev_t dev)
+/* Check whether the nvme device is represented by nvme subsytem,
+ * if yes virtual path should be changed to hardware device path,
+ * to allow IMSM capabilities detection.
+ * Returns:
+ *	hardware path to device - if the device is represented via
+ *		nvme virtual subsytem
+ *	NULL - if the device is not represented via nvme virtual subsytem
+ */
+char *get_nvme_multipath_dev_hw_path(const char *dev_path)
 {
-	char device[46];
+	DIR *dir;
+	struct dirent *ent;
+	char *rp = NULL;
 
-	sprintf(device, "/sys/dev/block/%d:%d/device", major(dev), minor(dev));
-	return realpath(device, NULL);
+	if (strncmp(dev_path, NVME_SUBSYS_PATH, strlen(NVME_SUBSYS_PATH)) != 0)
+		return NULL;
+
+	dir = opendir(dev_path);
+	if (!dir)
+		return NULL;
+
+	for (ent = readdir(dir); ent; ent = readdir(dir)) {
+		char buf[strlen(dev_path) + strlen(ent->d_name) + 1];
+
+		/* Check if dir is a controller, ignore namespaces*/
+		if (!(strncmp(ent->d_name, "nvme", 4) == 0) ||
+		    (strrchr(ent->d_name, 'n') != &ent->d_name[0]))
+			continue;
+
+		sprintf(buf, "%s/%s", dev_path, ent->d_name);
+		rp = realpath(buf, NULL);
+		break;
+	}
+
+	closedir(dir);
+	return rp;
 }
 
-char *diskfd_to_devpath(int fd)
+/* Description: Return part or whole realpath for the dev
+ * Parameters:
+ *	dev - the device to be quered
+ *	dev_level - level of "/device" entries. It allows to caller to access
+ *		    virtual or physical devices which are on "path" to quered
+ *		    one.
+ *	buf - optional, must be PATH_MAX size. If set, then will be used.
+ */
+char *devt_to_devpath(dev_t dev, int dev_level, char *buf)
+{
+	char device[PATH_MAX];
+	char *hw_path;
+	int i;
+	unsigned long device_free_len = sizeof(device) - 1;
+	char dev_str[] = "/device";
+	unsigned long dev_str_len = strlen(dev_str);
+
+	snprintf(device, sizeof(device), "/sys/dev/block/%d:%d", major(dev),
+		 minor(dev));
+
+	/* If caller wants block device, return path to it even if it is exposed
+	 * via virtual layer.
+	 */
+	if (dev_level == 0)
+		return realpath(device, buf);
+
+	device_free_len -= strlen(device);
+	for (i = 0; i < dev_level; i++) {
+		if (device_free_len < dev_str_len)
+			return NULL;
+
+		strncat(device, dev_str, device_free_len);
+
+		/* Resolve nvme-subsystem abstraction if needed
+		 */
+		device_free_len -= dev_str_len;
+		if (i == 0) {
+			char rp[PATH_MAX];
+
+			if (!realpath(device, rp))
+				return NULL;
+			hw_path = get_nvme_multipath_dev_hw_path(rp);
+			if (hw_path) {
+				strcpy(device, hw_path);
+				device_free_len = sizeof(device) -
+						  strlen(device) - 1;
+				free(hw_path);
+			}
+		}
+	}
+
+	return realpath(device, buf);
+}
+
+char *diskfd_to_devpath(int fd, int dev_level, char *buf)
 {
 	/* return the device path for a disk, return NULL on error or fd
 	 * refers to a partition
@@ -688,7 +801,7 @@ char *diskfd_to_devpath(int fd)
 	if (!S_ISBLK(st.st_mode))
 		return NULL;
 
-	return devt_to_devpath(st.st_rdev);
+	return devt_to_devpath(st.st_rdev, dev_level, buf);
 }
 
 int path_attached_to_hba(const char *disk_path, const char *hba_path)
@@ -713,7 +826,7 @@ int path_attached_to_hba(const char *disk_path, const char *hba_path)
 
 int devt_attached_to_hba(dev_t dev, const char *hba_path)
 {
-	char *disk_path = devt_to_devpath(dev);
+	char *disk_path = devt_to_devpath(dev, 1, NULL);
 	int rc = path_attached_to_hba(disk_path, hba_path);
 
 	if (disk_path)
@@ -724,7 +837,7 @@ int devt_attached_to_hba(dev_t dev, const char *hba_path)
 
 int disk_attached_to_hba(int fd, const char *hba_path)
 {
-	char *disk_path = diskfd_to_devpath(fd);
+	char *disk_path = diskfd_to_devpath(fd, 1, NULL);
 	int rc = path_attached_to_hba(disk_path, hba_path);
 
 	if (disk_path)
@@ -765,4 +878,92 @@ char *vmd_domain_to_controller(struct sys_dev *hba, char *buf)
 
 	closedir(dir);
 	return NULL;
+}
+
+/* Scan over all controller's namespaces and compare nsid value to verify if
+ * current one is supported. The routine doesn't check IMSM capabilities for
+ * namespace. Only one nvme namespace is supported by IMSM.
+ * Paramteres:
+ *	fd - open descriptor to the nvme namespace
+ *	verbose - error logging level
+ * Returns:
+ *	1 - if namespace is supported
+ *	0 - otherwise
+ */
+int imsm_is_nvme_namespace_supported(int fd, int verbose)
+{
+	DIR *dir = NULL;
+	struct dirent *ent;
+	char cntrl_path[PATH_MAX];
+	char ns_path[PATH_MAX];
+	unsigned long long lowest_nsid = ULLONG_MAX;
+	unsigned long long this_nsid;
+	int rv = 0;
+
+
+	if (!diskfd_to_devpath(fd, 1, cntrl_path) ||
+	    !diskfd_to_devpath(fd, 0, ns_path)) {
+		if (verbose)
+			pr_err("Cannot get device paths\n");
+		goto abort;
+	}
+
+
+	if (devpath_to_ll(ns_path, "nsid", &this_nsid)) {
+		if (verbose)
+			pr_err("Cannot read nsid value for %s",
+			       basename(ns_path));
+		goto abort;
+	}
+
+	dir = opendir(cntrl_path);
+	if (!dir)
+		goto abort;
+
+	/* The lowest nvme namespace is supported */
+	for (ent = readdir(dir); ent; ent = readdir(dir)) {
+		unsigned long long curr_nsid;
+		char curr_ns_path[PATH_MAX + 256];
+
+		if (!strstr(ent->d_name, "nvme"))
+			continue;
+
+		snprintf(curr_ns_path, sizeof(curr_ns_path), "%s/%s",
+			 cntrl_path, ent->d_name);
+
+		if (devpath_to_ll(curr_ns_path, "nsid", &curr_nsid))
+			goto abort;
+
+		if (lowest_nsid > curr_nsid)
+			lowest_nsid = curr_nsid;
+	}
+
+	if (this_nsid == lowest_nsid)
+		rv = 1;
+	else if (verbose)
+		pr_err("IMSM is supported on the lowest NVMe namespace\n");
+
+abort:
+	if (dir)
+		closedir(dir);
+
+	return rv;
+}
+
+/* Verify if multipath is supported by NVMe controller
+ * Returns:
+ *	0 - not supported
+ *	1 - supported
+ */
+int is_multipath_nvme(int disk_fd)
+{
+	char ns_path[PATH_MAX];
+
+	if (!diskfd_to_devpath(disk_fd, 0, ns_path))
+		return 0;
+
+	if (strncmp(ns_path, NVME_SUBSYS_PATH, strlen(NVME_SUBSYS_PATH)) == 0)
+		return 1;
+
+	return 0;
 }

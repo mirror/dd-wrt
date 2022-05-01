@@ -215,7 +215,7 @@ void map_free(struct map_ent *map)
 }
 
 int map_update(struct map_ent **mpp, char *devnm, char *metadata,
-	       int *uuid, char *path)
+	       int uuid[4], char *path)
 {
 	struct map_ent *map, *mp;
 	int rv;

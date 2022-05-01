@@ -56,7 +56,7 @@ int Detail(char *dev, struct context *c)
 	 */
 	int fd = open(dev, O_RDONLY);
 	mdu_array_info_t array;
-	mdu_disk_info_t *disks;
+	mdu_disk_info_t *disks = NULL;
 	int next;
 	int d;
 	time_t atime;
@@ -66,11 +66,11 @@ int Detail(char *dev, struct context *c)
 	int spares = 0;
 	struct stat stb;
 	int failed = 0;
-	struct supertype *st;
+	struct supertype *st = NULL;
 	char *subarray = NULL;
 	int max_disks = MD_SB_DISKS; /* just a default */
 	struct mdinfo *info = NULL;
-	struct mdinfo *sra;
+	struct mdinfo *sra = NULL;
 	struct mdinfo *subdev;
 	char *member = NULL;
 	char *container = NULL;
@@ -81,6 +81,7 @@ int Detail(char *dev, struct context *c)
 	int external;
 	int inactive;
 	int is_container = 0;
+	char *arrayst;
 
 	if (fd < 0) {
 		pr_err("cannot open %s: %s\n",
@@ -92,8 +93,7 @@ int Detail(char *dev, struct context *c)
 	if (!sra) {
 		if (md_get_array_info(fd, &array)) {
 			pr_err("%s does not appear to be an md device\n", dev);
-			close(fd);
-			return rv;
+			goto out;
 		}
 	}
 	external = (sra != NULL && sra->array.major_version == -1 &&
@@ -107,16 +107,13 @@ int Detail(char *dev, struct context *c)
 			    sra->devs == NULL) {
 				pr_err("Array associated with md device %s does not exist.\n",
 				       dev);
-				close(fd);
-				sysfs_free(sra);
-				return rv;
+				goto out;
 			}
 			array = sra->array;
 		} else {
 			pr_err("cannot get array detail for %s: %s\n",
 			       dev, strerror(errno));
-			close(fd);
-			return rv;
+			goto out;
 		}
 	}
 
@@ -223,7 +220,10 @@ int Detail(char *dev, struct context *c)
 	}
 
 	/* Ok, we have some info to print... */
-	str = map_num(pers, array.level);
+	if (inactive && info)
+		str = map_num(pers, info->array.level);
+	else
+		str = map_num(pers, array.level);
 
 	if (c->export) {
 		if (array.raid_disks) {
@@ -280,11 +280,11 @@ int Detail(char *dev, struct context *c)
 			}
 			map_free(map);
 		}
-		if (sra) {
+		if (!c->no_devices && sra) {
 			struct mdinfo *mdi;
 			for (mdi  = sra->devs; mdi; mdi = mdi->next) {
 				char *path;
-				char *sysdev = xstrdup(mdi->sys_name + 1);
+				char *sysdev = xstrdup(mdi->sys_name);
 				char *cp;
 
 				path = map_dev(mdi->disk.major,
@@ -351,9 +351,14 @@ int Detail(char *dev, struct context *c)
 	avail = xcalloc(array.raid_disks, 1);
 
 	for (d = 0; d < array.raid_disks; d++) {
+		char dv[PATH_MAX], dv_rep[PATH_MAX];
+		snprintf(dv, PATH_MAX, "/sys/dev/block/%d:%d",
+			disks[d*2].major, disks[d*2].minor);
+		snprintf(dv_rep, PATH_MAX, "/sys/dev/block/%d:%d",
+			disks[d*2+1].major, disks[d*2+1].minor);
 
-		if ((disks[d*2].state & (1<<MD_DISK_SYNC)) ||
-		    (disks[d*2+1].state & (1<<MD_DISK_SYNC))) {
+		if ((is_dev_alive(dv) && (disks[d*2].state & (1<<MD_DISK_SYNC))) ||
+		    (is_dev_alive(dv_rep) && (disks[d*2+1].state & (1<<MD_DISK_SYNC)))) {
 			avail_disks ++;
 			avail[d] = 1;
 		} else
@@ -467,7 +472,9 @@ int Detail(char *dev, struct context *c)
 		if (ioctl(fd, GET_BITMAP_FILE, &bmf) == 0 && bmf.pathname[0]) {
 			printf("     Intent Bitmap : %s\n", bmf.pathname);
 			printf("\n");
-		} else if (array.state & (1<<MD_SB_BITMAP_PRESENT))
+		} else if (array.state & (1<<MD_SB_CLUSTERED))
+			printf("     Intent Bitmap : Internal(Clustered)\n\n");
+		else if (array.state & (1<<MD_SB_BITMAP_PRESENT))
 			printf("     Intent Bitmap : Internal\n\n");
 		atime = array.utime;
 		if (atime)
@@ -485,18 +492,48 @@ int Detail(char *dev, struct context *c)
 			else
 				st = ", degraded";
 
-			printf("             State : %s%s%s%s%s%s \n",
-			       (array.state & (1 << MD_SB_CLEAN)) ?
-			       "clean" : "active", st,
+			if (array.state & (1 << MD_SB_CLEAN)) {
+				if ((array.level == 0) ||
+				    (array.level == LEVEL_LINEAR))
+					arrayst = map_num(sysfs_array_states,
+							  sra->array_state);
+				else
+					arrayst = "clean";
+			} else {
+				arrayst = "active";
+				if (array.state & (1<<MD_SB_CLUSTERED)) {
+					for (d = 0; d < max_disks * 2; d++) {
+						char *dv;
+						mdu_disk_info_t disk = disks[d];
+
+						/* only check first valid disk in cluster env */
+						if ((disk.state & (MD_DISK_SYNC | MD_DISK_ACTIVE))
+							&& (disk.major | disk.minor)) {
+							dv = map_dev_preferred(disk.major, disk.minor, 0,
+									c->prefer);
+							if (!dv)
+								continue;
+							arrayst = IsBitmapDirty(dv) ? "active" : "clean";
+							break;
+						}
+					}
+				}
+			}
+
+			printf("             State : %s%s%s%s%s%s%s \n",
+			       arrayst, st,
 			       (!e || (e->percent < 0 &&
 				       e->percent != RESYNC_PENDING &&
-				       e->percent != RESYNC_DELAYED)) ?
+				       e->percent != RESYNC_DELAYED &&
+				       e->percent != RESYNC_REMOTE)) ?
 			       "" : sync_action[e->resync],
 			       larray_size ? "": ", Not Started",
 			       (e && e->percent == RESYNC_DELAYED) ?
 			       " (DELAYED)": "",
 			       (e && e->percent == RESYNC_PENDING) ?
-			       " (PENDING)": "");
+			       " (PENDING)": "",
+			       (e && e->percent == RESYNC_REMOTE) ?
+			       " (REMOTE)": "");
 		} else if (inactive && !is_container) {
 			printf("             State : inactive\n");
 		}
@@ -507,11 +544,17 @@ int Detail(char *dev, struct context *c)
 			       array.working_disks);
 		if (array.raid_disks) {
 			printf("    Failed Devices : %d\n", array.failed_disks);
-			printf("     Spare Devices : %d\n", array.spare_disks);
+			if (!external)
+				printf("     Spare Devices : %d\n", array.spare_disks);
 		}
 		printf("\n");
 		if (array.level == 5) {
 			str = map_num(r5layout, array.layout);
+			printf("            Layout : %s\n",
+			       str ? str : "-unknown-");
+		}
+		if (array.level == 0 && array.layout) {
+			str = map_num(r0layout, array.layout);
 			printf("            Layout : %s\n",
 			       str ? str : "-unknown-");
 		}
@@ -613,7 +656,7 @@ This is pretty boring
 		free_mdstat(ms);
 
 		if (st && st->sb)
-			st->ss->detail_super(st, c->homehost);
+			st->ss->detail_super(st, c->homehost, subarray);
 
 		if (array.raid_disks == 0 && sra &&
 		    sra->array.major_version == -1 &&
@@ -655,12 +698,17 @@ This is pretty boring
 			printf("\n\n");
 		}
 
-		if (array.raid_disks)
-			printf("    Number   Major   Minor   RaidDevice State\n");
-		else
-			printf("    Number   Major   Minor   RaidDevice\n");
+		if (!c->no_devices) {
+			if (array.raid_disks)
+				printf("    Number   Major   Minor   RaidDevice State\n");
+			else
+				printf("    Number   Major   Minor   RaidDevice\n");
+		}
 	}
-	free(info);
+
+	/* if --no_devices specified, not print component devices info */
+	if (c->no_devices)
+		goto skip_devices_state;
 
 	for (d = 0; d < max_disks * 2; d++) {
 		char *dv;
@@ -743,14 +791,17 @@ This is pretty boring
 						       &max_devices, n_devices);
 			else
 				printf("   %s", dv);
-		}
+		} else if (disk.major | disk.minor)
+			printf("   missing");
 		if (!c->brief)
 			printf("\n");
 	}
+
+skip_devices_state:
 	if (spares && c->brief && array.raid_disks)
 		printf(" spares=%d", spares);
 	if (c->brief && st && st->sb)
-		st->ss->brief_detail_super(st);
+		st->ss->brief_detail_super(st, subarray);
 	if (st)
 		st->ss->free_super(st);
 
@@ -766,15 +817,18 @@ This is pretty boring
 	    !enough(array.level, array.raid_disks, array.layout, 1, avail))
 		rv = 2;
 
-	free(disks);
 out:
+	free(info);
+	free(disks);
 	close(fd);
 	free(subarray);
 	free(avail);
-	for (d = 0; d < n_devices; d++)
-		free(devices[d]);
+	if (devices)
+		for (d = 0; d < n_devices; d++)
+			free(devices[d]);
 	free(devices);
 	sysfs_free(sra);
+	free(st);
 	return rv;
 }
 

@@ -306,43 +306,6 @@ int md_get_disk_info(int fd, struct mdu_disk_info_s *disk)
 	return ioctl(fd, GET_DISK_INFO, disk);
 }
 
-/*
- * Parse a 128 bit uuid in 4 integers
- * format is 32 hexx nibbles with options :.<space> separator
- * If not exactly 32 hex digits are found, return 0
- * else return 1
- */
-int parse_uuid(char *str, int uuid[4])
-{
-	int hit = 0; /* number of Hex digIT */
-	int i;
-	char c;
-	for (i = 0; i < 4; i++)
-		uuid[i] = 0;
-
-	while ((c = *str++) != 0) {
-		int n;
-		if (c >= '0' && c <= '9')
-			n = c-'0';
-		else if (c >= 'a' && c <= 'f')
-			n = 10 + c - 'a';
-		else if (c >= 'A' && c <= 'F')
-			n = 10 + c - 'A';
-		else if (strchr(":. -", c))
-			continue;
-		else return 0;
-
-		if (hit<32) {
-			uuid[hit/8] <<= 4;
-			uuid[hit/8] += n;
-		}
-		hit++;
-	}
-	if (hit == 32)
-		return 1;
-	return 0;
-}
-
 int get_linux_version()
 {
 	struct utsname name;
@@ -389,7 +352,7 @@ int mdadm_version(char *version)
 unsigned long long parse_size(char *size)
 {
 	/* parse 'size' which should be a number optionally
-	 * followed by 'K', 'M', or 'G'.
+	 * followed by 'K', 'M'. 'G' or 'T'.
 	 * Without a suffix, K is assumed.
 	 * Number returned is in sectors (half-K)
 	 * INVALID_SECTORS returned on error.
@@ -410,6 +373,10 @@ unsigned long long parse_size(char *size)
 		case 'G':
 			c++;
 			s *= 1024 * 1024 * 2;
+			break;
+		case 'T':
+			c++;
+			s *= 1024 * 1024 * 1024 * 2LL;
 			break;
 		case 's': /* sectors */
 			c++;
@@ -455,6 +422,8 @@ int parse_layout_10(char *layout)
 
 int parse_layout_faulty(char *layout)
 {
+	if (!layout)
+		return -1;
 	/* Parse the layout string for 'faulty' */
 	int ln = strcspn(layout, "0123456789");
 	char *m = xstrdup(layout);
@@ -465,17 +434,6 @@ int parse_layout_faulty(char *layout)
 		return -1;
 
 	return mode | (atoi(layout+ln)<< ModeShift);
-}
-
-long parse_num(char *num)
-{
-	/* Either return a valid number, or -1 */
-	char *c;
-	long rv = strtol(num, &c, 10);
-	if (rv < 0 || *c || !num[0])
-		return -1;
-	else
-		return rv;
 }
 
 int parse_cluster_confirm_arg(char *input, char **devname, int *slot)
@@ -607,56 +565,6 @@ int enough(int level, int raid_disks, int layout, int clean, char *avail)
 	}
 }
 
-const int uuid_zero[4] = { 0, 0, 0, 0 };
-
-int same_uuid(int a[4], int b[4], int swapuuid)
-{
-	if (swapuuid) {
-		/* parse uuids are hostendian.
-		 * uuid's from some superblocks are big-ending
-		 * if there is a difference, we need to swap..
-		 */
-		unsigned char *ac = (unsigned char *)a;
-		unsigned char *bc = (unsigned char *)b;
-		int i;
-		for (i = 0; i < 16; i += 4) {
-			if (ac[i+0] != bc[i+3] ||
-			    ac[i+1] != bc[i+2] ||
-			    ac[i+2] != bc[i+1] ||
-			    ac[i+3] != bc[i+0])
-				return 0;
-		}
-		return 1;
-	} else {
-		if (a[0]==b[0] &&
-		    a[1]==b[1] &&
-		    a[2]==b[2] &&
-		    a[3]==b[3])
-			return 1;
-		return 0;
-	}
-}
-
-void copy_uuid(void *a, int b[4], int swapuuid)
-{
-	if (swapuuid) {
-		/* parse uuids are hostendian.
-		 * uuid's from some superblocks are big-ending
-		 * if there is a difference, we need to swap..
-		 */
-		unsigned char *ac = (unsigned char *)a;
-		unsigned char *bc = (unsigned char *)b;
-		int i;
-		for (i = 0; i < 16; i += 4) {
-			ac[i+0] = bc[i+3];
-			ac[i+1] = bc[i+2];
-			ac[i+2] = bc[i+1];
-			ac[i+3] = bc[i+0];
-		}
-	} else
-		memcpy(a, b, 16);
-}
-
 char *__fname_from_uuid(int id[4], int swap, char *buf, char sep)
 {
 	int i, j;
@@ -685,8 +593,12 @@ char *fname_from_uuid(struct supertype *st, struct mdinfo *info,
 	// work, but can't have it set if we want this printout to match
 	// all the other uuid printouts in super1.c, so we force swapuuid
 	// to 1 to make our printout match the rest of super1
+#if __BYTE_ORDER == BIG_ENDIAN
+	return __fname_from_uuid(info->uuid, 1, buf, sep);
+#else
 	return __fname_from_uuid(info->uuid, (st->ss == &super1) ? 1 :
 				 st->ss->swapuuid, buf, sep);
+#endif
 }
 
 int check_ext2(int fd, char *name)
@@ -889,13 +801,14 @@ char *human_size(long long bytes)
 {
 	static char buf[47];
 
-	/* We convert bytes to either centi-M{ega,ibi}bytes or
-	 * centi-G{igi,ibi}bytes, with appropriate rounding,
-	 * and then print 1/100th of those as a decimal.
+	/* We convert bytes to either centi-M{ega,ibi}bytes,
+	 * centi-G{igi,ibi}bytes or centi-T{era,ebi}bytes
+	 * with appropriate rounding, and then print
+	 * 1/100th of those as a decimal.
 	 * We allow upto 2048Megabytes before converting to
-	 * gigabytes, as that shows more precision and isn't
+	 * gigabytes and 2048Gigabytes before converting to
+	 * terabytes, as that shows more precision and isn't
 	 * too large a number.
-	 * Terabytes are not yet handled.
 	 */
 
 	if (bytes < 5000*1024)
@@ -905,11 +818,16 @@ char *human_size(long long bytes)
 		long cMB  = (bytes / ( 1000000LL / 200LL ) +1) /2;
 		snprintf(buf, sizeof(buf), " (%ld.%02ld MiB %ld.%02ld MB)",
 			cMiB/100, cMiB % 100, cMB/100, cMB % 100);
-	} else {
+	} else if (bytes < 2*1024LL*1024LL*1024LL*1024LL) {
 		long cGiB = (bytes * 200LL / (1LL<<30) +1) / 2;
 		long cGB  = (bytes / (1000000000LL/200LL ) +1) /2;
 		snprintf(buf, sizeof(buf), " (%ld.%02ld GiB %ld.%02ld GB)",
 			cGiB/100, cGiB % 100, cGB/100, cGB % 100);
+	} else {
+		long cTiB = (bytes * 200LL / (1LL<<40) + 1) / 2;
+		long cTB  = (bytes / (1000000000000LL / 200LL) + 1) / 2;
+		snprintf(buf, sizeof(buf), " (%ld.%02ld TiB %ld.%02ld TB)",
+			cTiB/100, cTiB % 100, cTB/100, cTB % 100);
 	}
 	return buf;
 }
@@ -918,13 +836,14 @@ char *human_size_brief(long long bytes, int prefix)
 {
 	static char buf[30];
 
-	/* We convert bytes to either centi-M{ega,ibi}bytes or
-	 * centi-G{igi,ibi}bytes, with appropriate rounding,
-	 * and then print 1/100th of those as a decimal.
+	/* We convert bytes to either centi-M{ega,ibi}bytes,
+	 * centi-G{igi,ibi}bytes or centi-T{era,ebi}bytes
+	 * with appropriate rounding, and then print
+	 * 1/100th of those as a decimal.
 	 * We allow upto 2048Megabytes before converting to
-	 * gigabytes, as that shows more precision and isn't
+	 * gigabytes and 2048Gigabytes before converting to
+	 * terabytes, as that shows more precision and isn't
 	 * too large a number.
-	 * Terabytes are not yet handled.
 	 *
 	 * If prefix == IEC, we mean prefixes like kibi,mebi,gibi etc.
 	 * If prefix == JEDEC, we mean prefixes like kilo,mega,giga etc.
@@ -937,10 +856,14 @@ char *human_size_brief(long long bytes, int prefix)
 			long cMiB = (bytes * 200LL / (1LL<<20) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldMiB",
 				 cMiB/100, cMiB % 100);
-		} else {
+		} else if (bytes < 2*1024LL*1024LL*1024LL*1024LL) {
 			long cGiB = (bytes * 200LL / (1LL<<30) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldGiB",
 				 cGiB/100, cGiB % 100);
+		} else {
+			long cTiB = (bytes * 200LL / (1LL<<40) + 1) / 2;
+			snprintf(buf, sizeof(buf), "%ld.%02ldTiB",
+				 cTiB/100, cTiB % 100);
 		}
 	}
 	else if (prefix == JEDEC) {
@@ -948,10 +871,14 @@ char *human_size_brief(long long bytes, int prefix)
 			long cMB  = (bytes / ( 1000000LL / 200LL ) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldMB",
 				 cMB/100, cMB % 100);
-		} else {
+		} else if (bytes < 2*1024LL*1024LL*1024LL*1024LL) {
 			long cGB  = (bytes / (1000000000LL/200LL ) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldGB",
 				 cGB/100, cGB % 100);
+		} else {
+			long cTB  = (bytes / (1000000000000LL / 200LL) + 1) / 2;
+			snprintf(buf, sizeof(buf), "%ld.%02ldTB",
+				 cTB/100, cTB % 100);
 		}
 	}
 	else
@@ -1011,12 +938,12 @@ dev_t devnm2devid(char *devnm)
 	/* First look in /sys/block/$DEVNM/dev for %d:%d
 	 * If that fails, try parsing out a number
 	 */
-	char path[100];
+	char path[PATH_MAX];
 	char *ep;
 	int fd;
 	int mjr,mnr;
 
-	sprintf(path, "/sys/block/%s/dev", devnm);
+	snprintf(path, sizeof(path), "/sys/block/%s/dev", devnm);
 	fd = open(path, O_RDONLY);
 	if (fd >= 0) {
 		char buf[20];
@@ -1607,7 +1534,7 @@ int open_container(int fd)
 	/* 'fd' is a block device.  Find out if it is in use
 	 * by a container, and return an open fd on that container.
 	 */
-	char path[256];
+	char path[288];
 	char *e;
 	DIR *dir;
 	struct dirent *de;
@@ -1979,7 +1906,7 @@ int mdmon_running(char *devnm)
 
 int start_mdmon(char *devnm)
 {
-	int i, skipped;
+	int i;
 	int len;
 	pid_t pid;
 	int status;
@@ -1993,7 +1920,10 @@ int start_mdmon(char *devnm)
 
 	if (check_env("MDADM_NO_MDMON"))
 		return 0;
+	if (continue_via_systemd(devnm, MDMON_SERVICE))
+		return 0;
 
+	/* That failed, try running mdmon directly */
 	len = readlink("/proc/self/exe", pathbuf, sizeof(pathbuf)-1);
 	if (len > 0) {
 		char *sl;
@@ -2007,51 +1937,9 @@ int start_mdmon(char *devnm)
 	} else
 		pathbuf[0] = '\0';
 
-	/* First try to run systemctl */
-	if (!check_env("MDADM_NO_SYSTEMCTL"))
-		switch(fork()) {
-		case 0:
-			/* FIXME yuk. CLOSE_EXEC?? */
-			skipped = 0;
-			for (i = 3; skipped < 20; i++)
-				if (close(i) < 0)
-					skipped++;
-				else
-					skipped = 0;
-
-			/* Don't want to see error messages from
-			 * systemctl.  If the service doesn't exist,
-			 * we start mdmon ourselves.
-			 */
-			close(2);
-			open("/dev/null", O_WRONLY);
-			snprintf(pathbuf, sizeof(pathbuf), "mdmon@%s.service",
-				 devnm);
-			status = execl("/usr/bin/systemctl", "systemctl",
-				       "start",
-				       pathbuf, NULL);
-			status = execl("/bin/systemctl", "systemctl", "start",
-				       pathbuf, NULL);
-			exit(1);
-		case -1: pr_err("cannot run mdmon. Array remains readonly\n");
-			return -1;
-		default: /* parent - good */
-			pid = wait(&status);
-			if (pid >= 0 && status == 0)
-				return 0;
-		}
-
-	/* That failed, try running mdmon directly */
 	switch(fork()) {
 	case 0:
-		/* FIXME yuk. CLOSE_EXEC?? */
-		skipped = 0;
-		for (i = 3; skipped < 20; i++)
-			if (close(i) < 0)
-				skipped++;
-			else
-				skipped = 0;
-
+		manage_fork_fds(1);
 		for (i = 0; paths[i]; i++)
 			if (paths[i][0]) {
 				execl(paths[i], paths[i],
@@ -2254,6 +2142,81 @@ void enable_fds(int devices)
 		lim.rlim_max = fds;
 	lim.rlim_cur = fds;
 	setrlimit(RLIMIT_NOFILE, &lim);
+}
+
+/* Close all opened descriptors if needed and redirect
+ * streams to /dev/null.
+ * For debug purposed, leave STDOUT and STDERR untouched
+ * Returns:
+ *	1- if any error occurred
+ *	0- otherwise
+ */
+void manage_fork_fds(int close_all)
+{
+	DIR *dir;
+	struct dirent *dirent;
+
+	close(0);
+	open("/dev/null", O_RDWR);
+
+#ifndef DEBUG
+	dup2(0, 1);
+	dup2(0, 2);
+#endif
+
+	if (close_all == 0)
+		return;
+
+	dir = opendir("/proc/self/fd");
+	if (!dir) {
+		pr_err("Cannot open /proc/self/fd directory.\n");
+		return;
+	}
+	for (dirent = readdir(dir); dirent; dirent = readdir(dir)) {
+		int fd = -1;
+
+		if ((strcmp(dirent->d_name, ".") == 0) ||
+		    (strcmp(dirent->d_name, "..")) == 0)
+			continue;
+
+		fd = strtol(dirent->d_name, NULL, 10);
+		if (fd > 2)
+			close(fd);
+	}
+}
+
+/* In a systemd/udev world, it is best to get systemd to
+ * run daemon rather than running in the background.
+ * Returns:
+ *	1- if systemd service has been started
+ *	0- otherwise
+ */
+int continue_via_systemd(char *devnm, char *service_name)
+{
+	int pid, status;
+	char pathbuf[1024];
+
+	/* Simply return that service cannot be started */
+	if (check_env("MDADM_NO_SYSTEMCTL"))
+		return 0;
+	switch (fork()) {
+	case  0:
+		manage_fork_fds(1);
+		snprintf(pathbuf, sizeof(pathbuf),
+			 "%s@%s.service", service_name, devnm);
+		status = execl("/usr/bin/systemctl", "systemctl", "restart",
+			       pathbuf, NULL);
+		status = execl("/bin/systemctl", "systemctl", "restart",
+			       pathbuf, NULL);
+		exit(1);
+	case -1: /* Just do it ourselves. */
+		break;
+	default: /* parent - good */
+		pid = wait(&status);
+		if (pid >= 0 && status == 0)
+			return 1;
+	}
+	return 0;
 }
 
 int in_initrd(void)

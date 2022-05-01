@@ -23,7 +23,7 @@ IMPORT{cmdline}="nodmraid"
 ENV{nodmraid}=="?*", GOTO="md_inc_end"
 ENV{ID_FS_TYPE}=="ddf_raid_member", GOTO="md_inc"
 ENV{noiswmd}=="?*", GOTO="md_inc_end"
-ENV{ID_FS_TYPE}=="isw_raid_member", GOTO="md_inc"
+ENV{ID_FS_TYPE}=="isw_raid_member", ACTION!="change", GOTO="md_inc"
 GOTO="md_inc_end"
 
 LABEL="md_inc"

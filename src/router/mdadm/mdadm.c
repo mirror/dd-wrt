@@ -159,6 +159,10 @@ int main(int argc, char *argv[])
 			c.brief = 1;
 			continue;
 
+		case NoDevices:
+			c.no_devices = 1;
+			continue;
+
 		case 'Y': c.export++;
 			continue;
 
@@ -546,6 +550,14 @@ int main(int argc, char *argv[])
 				pr_err("raid level must be given before layout.\n");
 				exit(2);
 
+			case 0:
+				s.layout = map_name(r0layout, optarg);
+				if (s.layout == UnSet) {
+					pr_err("layout %s not understood for raid0.\n",
+						optarg);
+					exit(2);
+				}
+				break;
 			case 5:
 				s.layout = map_name(r5layout, optarg);
 				if (s.layout == UnSet) {
@@ -598,8 +610,7 @@ int main(int argc, char *argv[])
 					s.raiddisks, optarg);
 				exit(2);
 			}
-			s.raiddisks = parse_num(optarg);
-			if (s.raiddisks <= 0) {
+			if (parse_num(&s.raiddisks, optarg) != 0 || s.raiddisks <= 0) {
 				pr_err("invalid number of raid devices: %s\n",
 					optarg);
 				exit(2);
@@ -609,8 +620,7 @@ int main(int argc, char *argv[])
 		case O(ASSEMBLE, Nodes):
 		case O(GROW, Nodes):
 		case O(CREATE, Nodes):
-			c.nodes = parse_num(optarg);
-			if (c.nodes < 2) {
+			if (parse_num(&c.nodes, optarg) != 0 || c.nodes < 2) {
 				pr_err("clustered array needs two nodes at least: %s\n",
 					optarg);
 				exit(2);
@@ -635,8 +645,7 @@ int main(int argc, char *argv[])
 					s.level);
 				exit(2);
 			}
-			s.sparedisks = parse_num(optarg);
-			if (s.sparedisks < 0) {
+			if (parse_num(&s.sparedisks, optarg) != 0 || s.sparedisks < 0) {
 				pr_err("invalid number of spare-devices: %s\n",
 					optarg);
 				exit(2);
@@ -720,12 +729,9 @@ int main(int argc, char *argv[])
 			}
 			if (strcmp(optarg, "dev") == 0)
 				ident.super_minor = -2;
-			else {
-				ident.super_minor = parse_num(optarg);
-				if (ident.super_minor < 0) {
-					pr_err("Bad super-minor number: %s.\n", optarg);
-					exit(2);
-				}
+			else if (parse_num(&ident.super_minor, optarg) != 0 || ident.super_minor < 0) {
+				pr_err("Bad super-minor number: %s.\n", optarg);
+				exit(2);
 			}
 			continue;
 
@@ -767,6 +773,8 @@ int main(int argc, char *argv[])
 				continue;
 			if (strcmp(c.update, "devicesize") == 0)
 				continue;
+			if (strcmp(c.update, "bitmap") == 0)
+				continue;
 			if (strcmp(c.update, "no-bitmap") == 0)
 				continue;
 			if (strcmp(c.update, "bbl") == 0)
@@ -782,6 +790,10 @@ int main(int argc, char *argv[])
 			if (strcmp(c.update, "metadata") == 0)
 				continue;
 			if (strcmp(c.update, "revert-reshape") == 0)
+				continue;
+			if (strcmp(c.update, "layout-original") == 0 ||
+			    strcmp(c.update, "layout-alternate") == 0 ||
+			    strcmp(c.update, "layout-unspecified") == 0)
 				continue;
 			if (strcmp(c.update, "byteorder") == 0) {
 				if (ss) {
@@ -811,8 +823,9 @@ int main(int argc, char *argv[])
 			fprintf(outf, "Valid --update options are:\n"
 		"     'sparc2.2', 'super-minor', 'uuid', 'name', 'nodes', 'resync',\n"
 		"     'summaries', 'homehost', 'home-cluster', 'byteorder', 'devicesize',\n"
-		"     'no-bitmap', 'metadata', 'revert-reshape'\n"
+		"     'bitmap', 'no-bitmap', 'metadata', 'revert-reshape'\n"
 		"     'bbl', 'no-bbl', 'force-no-bbl', 'ppl', 'no-ppl'\n"
+		"     'layout-original', 'layout-alternate', 'layout-unspecified'\n"
 				);
 			exit(outf == stdout ? 0 : 2);
 
@@ -888,8 +901,8 @@ int main(int argc, char *argv[])
 
 		case O(MONITOR,'r'): /* rebuild increments */
 		case O(MONITOR,Increment):
-			increments = atoi(optarg);
-			if (increments > 99 || increments < 1) {
+			if (parse_num(&increments, optarg) != 0
+				|| increments > 99 || increments < 1) {
 				pr_err("please specify positive integer between 1 and 99 as rebuild increments.\n");
 				exit(2);
 			}
@@ -900,15 +913,10 @@ int main(int argc, char *argv[])
 		case O(BUILD,'d'): /* delay for bitmap updates */
 		case O(CREATE,'d'):
 			if (c.delay)
-				pr_err("only specify delay once. %s ignored.\n",
-					optarg);
-			else {
-				c.delay = parse_num(optarg);
-				if (c.delay < 1) {
-					pr_err("invalid delay: %s\n",
-						optarg);
-					exit(2);
-				}
+				pr_err("only specify delay once. %s ignored.\n", optarg);
+			else if (parse_num(&c.delay, optarg) != 0 || c.delay < 1) {
+				pr_err("invalid delay: %s\n", optarg);
+				exit(2);
 			}
 			continue;
 		case O(MONITOR,'f'): /* daemonise */
@@ -1190,18 +1198,15 @@ int main(int argc, char *argv[])
 
 		case O(GROW, WriteBehind):
 		case O(BUILD, WriteBehind):
-		case O(CREATE, WriteBehind): /* write-behind mode */
+		case O(CREATE, WriteBehind):
 			s.write_behind = DEFAULT_MAX_WRITE_BEHIND;
-			if (optarg) {
-				s.write_behind = parse_num(optarg);
-				if (s.write_behind < 0 ||
-				    s.write_behind > 16383) {
-					pr_err("Invalid value for maximum outstanding write-behind writes: %s.\n\tMust be between 0 and 16383.\n", optarg);
-					exit(2);
-				}
+			if (parse_num(&s.write_behind, optarg) != 0 ||
+			s.write_behind < 0 || s.write_behind > 16383) {
+				pr_err("Invalid value for maximum outstanding write-behind writes: %s.\n\tMust be between 0 and 16383.\n",
+						optarg);
+				exit(2);
 			}
 			continue;
-
 		case O(INCREMENTAL, 'r'):
 		case O(INCREMENTAL, RebuildMapOpt):
 			rebuild_map = 1;
@@ -1354,9 +1359,16 @@ int main(int argc, char *argv[])
 			mdfd = open_mddev(devlist->devname, 1);
 			if (mdfd < 0)
 				exit(1);
-		} else
+		} else {
+			char *bname = basename(devlist->devname);
+
+			if (strlen(bname) > MD_NAME_MAX) {
+				pr_err("Name %s is too long.\n", devlist->devname);
+				exit(1);
+			}
 			/* non-existent device is OK */
 			mdfd = open_mddev(devlist->devname, 0);
+		}
 		if (mdfd == -2) {
 			pr_err("device %s exists but is not an md array.\n", devlist->devname);
 			exit(1);
@@ -1417,6 +1429,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (c.update && strcmp(c.update, "nodes") == 0 && c.nodes == 0) {
+		pr_err("Please specify nodes number with --nodes\n");
+		exit(1);
+	}
+
 	if (c.backup_file && data_offset != INVALID_SECTORS) {
 		pr_err("--backup-file and --data-offset are incompatible\n");
 		exit(2);
@@ -1469,9 +1486,12 @@ int main(int argc, char *argv[])
 			rv = Manage_stop(devlist->devname, mdfd, c.verbose, 0);
 		break;
 	case ASSEMBLE:
-		if (devs_found == 1 && ident.uuid_set == 0 &&
-		    ident.super_minor == UnSet && ident.name[0] == 0 &&
-		    !c.scan ) {
+		if (!c.scan && c.runstop == -1) {
+			pr_err("--no-degraded not meaningful without a --scan assembly.\n");
+			exit(1);
+		} else if (devs_found == 1 && ident.uuid_set == 0 &&
+			   ident.super_minor == UnSet && ident.name[0] == 0 &&
+			   !c.scan) {
 			/* Only a device has been given, so get details from config file */
 			struct mddev_ident *array_ident = conf_get_ident(devlist->devname);
 			if (array_ident == NULL) {
@@ -1632,10 +1652,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 		if (c.delay == 0) {
-			if (get_linux_version() > 2006016)
-				/* mdstat responds to poll */
-				c.delay = 1000;
-			else
+			c.delay = conf_get_monitor_delay();
+			if (!c.delay)
 				c.delay = 60;
 		}
 		rv = Monitor(devlist, mailaddr, program,
@@ -1759,8 +1777,7 @@ int main(int argc, char *argv[])
 	}
 	if (locked)
 		cluster_release_dlmlock();
-	if (mdfd > 0)
-		close(mdfd);
+	close_fd(&mdfd);
 	exit(rv);
 }
 
@@ -2014,6 +2031,11 @@ static int misc_list(struct mddev_dev *devlist,
 				rv |= Manage_run(dv->devname, mdfd, c);
 				break;
 			case 'S':
+				if (c->scan) {
+					pr_err("--stop not meaningful with both a --scan assembly and a device name.\n");
+					rv |= 1;
+					break;
+				}
 				rv |= Manage_stop(dv->devname, mdfd, c->verbose, 0);
 				break;
 			case 'o':
