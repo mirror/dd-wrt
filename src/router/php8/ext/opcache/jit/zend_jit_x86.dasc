@@ -2956,7 +2956,7 @@ static int zend_jit_setup(void)
 # elif defined(__GNUC__) && defined(__x86_64__)
 	tsrm_ls_cache_tcb_offset = tsrm_get_ls_cache_tcb_offset();
 	if (tsrm_ls_cache_tcb_offset == 0) {
-#if defined(__has_attribute) && __has_attribute(tls_model) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#if defined(__has_attribute) && __has_attribute(tls_model) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__MUSL__)
 		size_t ret;
 
 		asm ("movq _tsrm_ls_cache@gottpoff(%%rip),%0"
@@ -2975,7 +2975,7 @@ static int zend_jit_setup(void)
 # elif defined(__GNUC__) && defined(__i386__)
 	tsrm_ls_cache_tcb_offset = tsrm_get_ls_cache_tcb_offset();
 	if (tsrm_ls_cache_tcb_offset == 0) {
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__MUSL__)
 		size_t ret;
 
 		asm ("leal _tsrm_ls_cache@ntpoff,%0\n"
@@ -3900,6 +3900,14 @@ static int zend_jit_store_var(dasm_State **Dst, uint32_t info, int var, zend_reg
 	return zend_jit_spill_store(Dst, src, dst, info, set_type);
 }
 
+static int zend_jit_store_var_type(dasm_State **Dst, int var, uint32_t type)
+{
+	zend_jit_addr dst = ZEND_ADDR_MEM_ZVAL(ZREG_FP, EX_NUM_TO_VAR(var));
+
+	|	SET_ZVAL_TYPE_INFO dst, type
+	return 1;
+}
+
 static int zend_jit_store_var_if_necessary(dasm_State **Dst, int var, zend_jit_addr src, uint32_t info)
 {
 	if (Z_MODE(src) == IS_REG && Z_STORE(src)) {
@@ -4490,11 +4498,11 @@ static int zend_jit_math_long_long(dasm_State    **Dst,
 			     (Z_MODE(op2_addr) == IS_CONST_ZVAL && Z_LVAL_P(Z_ZV(op2_addr)) == 1))) {
 				if (opcode == ZEND_ADD) {
 					|.if X64
-						|	mov64 rax, 0x43e0000000000000
+						|	mov64 Ra(tmp_reg), 0x43e0000000000000
 						if (Z_MODE(res_addr) == IS_REG) {
-							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), rax
+							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), Ra(tmp_reg)
 						} else {
-							|	SET_ZVAL_LVAL res_addr, rax
+							|	SET_ZVAL_LVAL res_addr, Ra(tmp_reg)
 						}
 					|.else
 						|	SET_ZVAL_LVAL res_addr, 0
@@ -4503,11 +4511,11 @@ static int zend_jit_math_long_long(dasm_State    **Dst,
 					break;
 				} else if (opcode == ZEND_SUB) {
 					|.if X64
-						|	mov64 rax, 0xc3e0000000000000
+						|	mov64 Ra(tmp_reg), 0xc3e0000000000000
 						if (Z_MODE(res_addr) == IS_REG) {
-							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), rax
+							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), Ra(tmp_reg)
 						} else {
-							|	SET_ZVAL_LVAL res_addr, rax
+							|	SET_ZVAL_LVAL res_addr, Ra(tmp_reg)
 						}
 					|.else
 						|	SET_ZVAL_LVAL res_addr, 0x00200000
@@ -6855,7 +6863,12 @@ static int zend_jit_assign_dim_op(dasm_State **Dst, const zend_op *opline, uint3
 					|	PUSH_ADDR binary_op, r0
 				|.endif
 				|	SET_EX_OPLINE opline, r0
-				|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+				if (((opline+1)->op1_type & (IS_TMP_VAR|IS_VAR))
+				 && (op1_data_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE))) {
+					|	EXT_CALL zend_jit_assign_op_to_typed_ref_tmp, r0
+				} else {
+					|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+				}
 				|.if not(X64)
 				|	add r4, 12
 				|.endif
@@ -6993,7 +7006,12 @@ static int zend_jit_assign_op(dasm_State **Dst, const zend_op *opline, uint32_t 
 			|	PUSH_ADDR binary_op, r0
 		|.endif
 		|	SET_EX_OPLINE opline, r0
-		|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+		if ((opline->op2_type & (IS_TMP_VAR|IS_VAR))
+		 && (op2_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE))) {
+			|	EXT_CALL zend_jit_assign_op_to_typed_ref_tmp, r0
+		} else {
+			|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+		}
 		|.if not(X64)
 		|	add r4, 12
 		|.endif
@@ -13998,7 +14016,12 @@ static int zend_jit_assign_obj_op(dasm_State          **Dst,
 				|	sub r4, 12
 				|	PUSH_ADDR binary_op, r0
 			|.endif
-			|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+			if (((opline+1)->op1_type & (IS_TMP_VAR|IS_VAR))
+			 && (val_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE))) {
+				|	EXT_CALL zend_jit_assign_op_to_typed_ref_tmp, r0
+			} else {
+				|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+			}
 			|.if not(X64)
 				|	add r4, 12
 			|.endif
@@ -14077,7 +14100,12 @@ static int zend_jit_assign_obj_op(dasm_State          **Dst,
 				|	sub r4, 12
 				|	PUSH_ADDR binary_op, r0
 			|.endif
-			|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+			if (((opline+1)->op1_type & (IS_TMP_VAR|IS_VAR))
+			 && (val_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE))) {
+				|	EXT_CALL zend_jit_assign_op_to_typed_ref_tmp, r0
+			} else {
+				|	EXT_CALL zend_jit_assign_op_to_typed_ref, r0
+			}
 			|.if not(X64)
 				|	add r4, 12
 			|.endif
@@ -16046,6 +16074,9 @@ static zend_regset zend_jit_get_scratch_regset(const zend_op *opline, const zend
 				if (op1_info & MAY_BE_DOUBLE) {
 					regset = ZEND_REGSET(ZREG_XMM0);
 				}
+				if (opline->result_type != IS_UNUSED && (op1_info & MAY_BE_LONG)) {
+					ZEND_REGSET_INCL(regset, ZREG_R1);
+				}
 			}
 			break;
 		case ZEND_ADD:
@@ -16151,6 +16182,7 @@ bw_op:
 			if (!(op1_info & ((MAY_BE_ANY|MAY_BE_REF|MAY_BE_UNDEF)-MAY_BE_LONG)) &&
 			    !(op2_info & ((MAY_BE_ANY|MAY_BE_REF|MAY_BE_UNDEF)-MAY_BE_LONG))) {
 				if (opline->op2_type == IS_CONST &&
+				    opline->op1_type != IS_CONST &&
 				    Z_TYPE_P(RT_CONSTANT(opline, opline->op2)) == IS_LONG &&
 				    zend_long_is_power_of_two(Z_LVAL_P(RT_CONSTANT(opline, opline->op2))) &&
 				    OP1_HAS_RANGE() &&
