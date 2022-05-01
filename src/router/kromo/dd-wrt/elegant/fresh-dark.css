@@ -45,6 +45,9 @@ body #content.infopage #main {
   filter: invert(.95) hue-rotate(180deg);
   mix-blend-mode: lighten;
 }
+.dark_fs_bg {
+  background: #111;
+}
 body fieldset {
   background-color: #222;
   border: 1px solid #333;
