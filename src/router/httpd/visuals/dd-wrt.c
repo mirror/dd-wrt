@@ -1223,6 +1223,11 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		show_caption(wp, "label", "idx.force_dnsmasq", NULL);
 		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirect\" value=\"1\" %s />\n", nvram_matchi("dns_redirect", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "idx.force_dnsmasqdot", NULL);
+		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirectdot\" value=\"1\" %s />\n", nvram_matchi("dns_redirectdot", 1) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 	}
 
 	websWrite(wp, "</fieldset><br />\n");

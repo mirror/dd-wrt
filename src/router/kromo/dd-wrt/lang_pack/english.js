@@ -1240,6 +1240,7 @@ idx.dns_dnsmasq="Use DNSMasq for DNS";
 idx.wan_priority="Use VLAN Priority";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Forced DNS Redirection";
+idx.force_dnsmasqdot="Forced DNS Redirection DoT";
 idx.recursive_dns="Recursive DNS Resolving (Unbound)";
 idx.dns_redirect="Optional DNS Target";
 idx.summt_opt1="none";
