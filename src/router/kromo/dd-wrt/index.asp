@@ -238,6 +238,10 @@ function submitcheck(F) {
 			F.dns_redirect.value = F._dns_redirect.checked ? 1 : 0;
 		}
 
+		if(F._dns_redirectdot) {
+			F.dns_redirectdot.value = F._dns_redirectdot.checked ? 1 : 0;
+		}
+
 		if(F._recursive_dns) {
 			F.recursive_dns.value = F._recursive_dns.checked ? 1 : 0;
 		}
@@ -337,6 +341,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="wan_priority" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="dns_redirect" value="0" />
+							<input type="hidden" name="dns_redirectdot" value="0" />
 							<input type="hidden" name="recursive_dns" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="ignore_wan_dns" value="0" />
