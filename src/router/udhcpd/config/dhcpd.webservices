@@ -95,6 +95,16 @@
 				<input class="spaceradio" type="radio" name="smartdns_serve_expired" value="1" <% nvc("smartdns_serve_expired", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="smartdns_serve_expired" value="0" <% nvc("smartdns_serve_expired", "0"); %> /><% tran("share.disable"); %>
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.dns_smartdns_option"); %></div>
+				<textarea cols="60" rows="4" id="smartdns_options" name="smartdns_options"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var smartdns_options = fix_cr( '<% nvg("smartdns_options"); %>' );
+					document.getElementById("smartdns_options").value = smartdns_options;
+				//]]>
+				</script>
+			</div>
 		</div>
 </fieldset><br/>
 <% ifndef("SMARTDNS", "-->"); %>

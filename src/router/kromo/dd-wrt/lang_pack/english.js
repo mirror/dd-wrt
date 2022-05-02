@@ -1797,6 +1797,7 @@ service.dns_smartdns="SmartDNS Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";
 service.dns_smartdns_serve_expired="Serve Expired";
+service.dns_smartdns_option="Additional SmartDNS Options";
 service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
 service.dnsmasq_dnssec_proxy="Cache DNSSEC data";
