@@ -1082,6 +1082,7 @@ idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 idx.dns_dnsmasq="Nutze DNSMasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
+idx.force_dnsmasqdot="Erzwungene DNS Umleitung DoT";
 idx.recursive_dns="Rekursive DNS Auflösung (Unbound)";
 idx.dns_redirect="Optionales DNS Ziel";
 idx.summt_opt1="keine";

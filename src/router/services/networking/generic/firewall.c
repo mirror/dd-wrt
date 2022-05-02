@@ -707,9 +707,15 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 		}
 	}
 #endif
-	if (nvram_matchi("dns_redirect", 1) && nvram_matchi("dnsmasq_enable", 1)) {
-		save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
-		save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+	if (nvram_matchi("dnsmasq_enable", 1)) {
+		if (nvram_matchi("dns_redirectdot", 1)) {
+			save2file_A_prerouting("-i %s -p udp --dport 853 -j DNAT --to %s:53", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+			save2file_A_prerouting("-i %s -p tcp --dport 853 -j DNAT --to %s:53", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+		}
+		if (nvram_matchi("dns_redirect", 1)) {
+			save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+			save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+		}
 	}
 	foreach(var, vifs, next) {
 		if ((!wanface || strcmp(wanface, var))
