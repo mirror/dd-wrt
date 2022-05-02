@@ -133,6 +133,6 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset>\n");
 	//end interfaces
 	websWrite(wp, "</div>\n");	//end hide show
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 	return;
 }
