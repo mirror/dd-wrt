@@ -86,6 +86,7 @@ void start_smartdns(void)
 		if (dns_list)
 			free_dns_list(dns_list);
 	}
+	fwritenvram("smartdns_options", fp);
 	fclose(fp);
 
 	eval("smartdns", "-c", getdefaultconfig("smartdns.conf"));
