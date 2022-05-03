@@ -30,7 +30,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.0.25
+Version: 3.2.0
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -301,7 +301,7 @@ This plugin provides Redis support for the FreeRADIUS server project.
 %endif
 
 %package rest
-Summary: REST support for FreeRADIUS
+Summary: REST and JSON support for FreeRADIUS
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires: json-c >= 0.10
@@ -420,6 +420,7 @@ perl -i -pe 's/^#group =.*$/group = radiusd/' $RADDB/radiusd.conf
 # logs
 mkdir -p $RPM_BUILD_ROOT/var/log/radius/radacct
 touch $RPM_BUILD_ROOT/var/log/radius/{radutmp,radius.log}
+install -m 755 scripts/raduat $RPM_BUILD_ROOT/%{_bindir}/raduat
 
 # For systemd based systems, that define _unitdir, install the radiusd unit
 %if %{?_unitdir:1}%{!?_unitdir:0}
@@ -608,7 +609,6 @@ fi
 %{_libdir}/freeradius/rlm_cache_rbtree.so
 %{_libdir}/freeradius/rlm_chap.so
 %{_libdir}/freeradius/rlm_counter.so
-%{_libdir}/freeradius/rlm_cram.so
 %{_libdir}/freeradius/rlm_date.so
 %{_libdir}/freeradius/rlm_detail.so
 %{_libdir}/freeradius/rlm_dhcp.so
@@ -631,7 +631,6 @@ fi
 %{_libdir}/freeradius/rlm_linelog.so
 %{_libdir}/freeradius/rlm_logintime.so
 %{_libdir}/freeradius/rlm_mschap.so
-%{_libdir}/freeradius/rlm_otp.so
 %{_libdir}/freeradius/rlm_pam.so
 %{_libdir}/freeradius/rlm_pap.so
 %{_libdir}/freeradius/rlm_passwd.so
@@ -806,6 +805,7 @@ fi
 /usr/bin/radtest
 /usr/bin/radsniff
 /usr/bin/radsqlrelay
+/usr/bin/raduat
 /usr/bin/radwho
 /usr/bin/radzap
 /usr/bin/rlm_ippool_tool
@@ -880,6 +880,7 @@ fi
 %files rest
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_rest.so
+%{_libdir}/freeradius/rlm_json.so
 
 %if %{?_with_rlm_ruby:1}%{!?_with_rlm_ruby:0}
 %files ruby

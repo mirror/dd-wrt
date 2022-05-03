@@ -8,11 +8,12 @@
 ** Function: hmac_sha1
 */
 
-RCSID("$Id: 211470ea359305766829079ed598c8281ce7fdb0 $")
+RCSID("$Id: 8711f983b760648007cca17011de8d3eb4315510 $")
 
 #ifdef HAVE_OPENSSL_EVP_H
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
+#include <freeradius-devel/openssl3.h>
 #endif
 
 #include <freeradius-devel/libradius.h>
@@ -35,9 +36,11 @@ void fr_hmac_sha1(uint8_t digest[SHA1_DIGEST_LENGTH], uint8_t const *text, size_
 		  uint8_t const *key, size_t key_len)
 {
 	HMAC_CTX *ctx  = HMAC_CTX_new();
+	unsigned int len = SHA1_DIGEST_LENGTH;
+
 	HMAC_Init_ex(ctx, key, key_len, EVP_sha1(), NULL);
 	HMAC_Update(ctx, text, text_len);
-	HMAC_Final(ctx, digest, NULL);
+	HMAC_Final(ctx, digest, &len);
 	HMAC_CTX_free(ctx);
 }
 

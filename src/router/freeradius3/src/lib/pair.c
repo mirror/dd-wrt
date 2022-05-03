@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: 146c82f95b551ed0f704ed5ba0814014fbc778b7 $
+ * Version:	$Id: 898e1e85296bfa0a8a89976f2329f123054eac12 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 146c82f95b551ed0f704ed5ba0814014fbc778b7 $")
+RCSID("$Id: 898e1e85296bfa0a8a89976f2329f123054eac12 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -227,6 +227,30 @@ void fr_pair_delete_by_num(VALUE_PAIR **first, unsigned int attr, unsigned int v
 		next = i->next;
 		if ((i->da->attr == attr) && (i->da->vendor == vendor) &&
 		    (!i->da->flags.has_tag || TAG_EQ(tag, i->tag))) {
+			*last = next;
+			talloc_free(i);
+		} else {
+			last = &i->next;
+		}
+	}
+}
+
+/** Delete matching pairs by da
+ *
+ * Delete matching pairs from the attribute list.
+ *
+ * @param[in,out] first VP in list.
+ * @param[in] da to match.
+ */
+void fr_pair_delete_by_da(VALUE_PAIR **first, DICT_ATTR const *da)
+{
+	VALUE_PAIR *i, *next;
+	VALUE_PAIR **last = first;
+
+	for(i = *first; i; i = next) {
+		VERIFY_VP(i);
+		next = i->next;
+		if (i->da == da) {
 			*last = next;
 			talloc_free(i);
 		} else {

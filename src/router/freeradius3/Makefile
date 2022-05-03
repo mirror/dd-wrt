@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-#  Version:	$Id: 5ec0ab4fde9910cc5783505c598cfa9d678362df $
+#  Version:	$Id: 5975ab747bfabcf19690d6fef86880b6cedfdb5b $
 #
 
 #
@@ -97,7 +97,7 @@ $(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.r
 	@echo "ok"
 	@touch $@
 
-test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.auth test.sql_nas_table $(BUILD_DIR)/tests/radiusd-c | build.raddb
+test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.modules tests.auth test.sql_nas_table $(BUILD_DIR)/tests/radiusd-c | build.raddb
 	@$(MAKE) -C src/tests tests
 
 #
@@ -291,10 +291,10 @@ certs:
 ######################################################################
 BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
 
-freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz: .git
+freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz: .git/HEAD
 	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ $(BRANCH) | gzip > $@
 
-freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: .git
+freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: .git/HEAD
 	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ $(BRANCH) | bzip2 > $@
 
 %.sig: %

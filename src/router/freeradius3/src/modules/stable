@@ -13,12 +13,12 @@ rlm_expiration
 rlm_expr
 rlm_files
 rlm_ippool
+rlm_json
 rlm_krb5
 rlm_ldap
 rlm_linelog
 rlm_logintime
 rlm_mschap
-rlm_otp
 rlm_pam
 rlm_pap
 rlm_passwd

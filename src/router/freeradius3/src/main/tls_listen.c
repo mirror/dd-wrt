@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 66040e6980bdcf2f933471190a47841ab657d819 $
+ * Version:     $Id: 2db3511461f8db07548383a06dd7cd82222f7899 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 66040e6980bdcf2f933471190a47841ab657d819 $")
+RCSID("$Id: 2db3511461f8db07548383a06dd7cd82222f7899 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -496,8 +496,14 @@ check_for_setup:
 		}
 
 		/*
-		 *	Else we MUST be finished the SSL setup.
+		 *      If SSL handshake still isn't finished, then there
+		 *      is more data to read.  Release the mutex and
+		 *      return so this function will be called again
 		 */
+		if (!SSL_is_init_finished(sock->ssn->ssl)) {
+			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
+			return 0;
+		}
 	}
 
 	/*

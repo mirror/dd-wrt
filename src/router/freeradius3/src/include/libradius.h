@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 2f15b7aaf1fae0a8636443aae1ac606fab50dc90 $
+ * $Id: e5f2251949b5f9d2525da8303b0cbbfd16a2872a $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 2f15b7aaf1fae0a8636443aae1ac606fab50dc90 $")
+RCSIDH(libradius_h, "$Id: e5f2251949b5f9d2525da8303b0cbbfd16a2872a $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -167,11 +167,6 @@ typedef void (*sig_t)(int);
 #define NUM_LAST		(INT_MIN + 3)
 
 #define PAD(_x, _y)		(_y - ((_x) % _y))
-
-#define PRINTF_LIKE(n)		CC_HINT(format(printf, n, n+1))
-#define NEVER_RETURNS		CC_HINT(noreturn)
-#define UNUSED			CC_HINT(unused)
-#define BLANK_FORMAT		" "	/* GCC_LINT whines about empty formats */
 
 typedef struct attr_flags {
 	unsigned int 	is_unknown : 1;				//!< Attribute number or vendor is unknown.
@@ -623,6 +618,7 @@ void		fr_cursor_merge(vp_cursor_t *cursor, VALUE_PAIR *vp);
 VALUE_PAIR	*fr_cursor_remove(vp_cursor_t *cursor);
 VALUE_PAIR	*fr_cursor_replace(vp_cursor_t *cursor, VALUE_PAIR *new);
 void		fr_pair_delete_by_num(VALUE_PAIR **, unsigned int attr, unsigned int vendor, int8_t tag);
+void		fr_pair_delete_by_da(VALUE_PAIR **first, DICT_ATTR const *da);
 void		fr_pair_add(VALUE_PAIR **, VALUE_PAIR *);
 void		fr_pair_prepend(VALUE_PAIR **, VALUE_PAIR *);
 void		fr_pair_replace(VALUE_PAIR **first, VALUE_PAIR *add);

@@ -1,5 +1,5 @@
 /**
- * $Id: a44584564f15ffe4073334a090c33334798fe901 $
+ * $Id: 64025f4a4dca1c11b47215f2e2b6bb29d8d04938 $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -10,7 +10,7 @@
 #ifndef _FR_MD5_H
 #define _FR_MD5_H
 
-RCSIDH(md5_h, "$Id: a44584564f15ffe4073334a090c33334798fe901 $")
+RCSIDH(md5_h, "$Id: 64025f4a4dca1c11b47215f2e2b6bb29d8d04938 $")
 
 #ifdef HAVE_INTTYPES_H
 #  include <inttypes.h>
@@ -68,14 +68,41 @@ void	fr_md5_final(uint8_t out[MD5_DIGEST_LENGTH], FR_MD5_CTX *ctx)
 void	fr_md5_transform(uint32_t state[4], uint8_t const block[MD5_BLOCK_LENGTH])
 	CC_BOUNDED(__size__, 1, 4, 4)
 	CC_BOUNDED(__minbytes__, 2, MD5_BLOCK_LENGTH);
+#  define fr_md5_destroy(_x)
+#  define fr_md5_copy(_dst, _src) _dst = _src
 #else  /* HAVE_OPENSSL_MD5_H */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 USES_APPLE_DEPRECATED_API
 #  define FR_MD5_CTX		MD5_CTX
 #  define fr_md5_init		MD5_Init
 #  define fr_md5_update		MD5_Update
 #  define fr_md5_final		MD5_Final
 #  define fr_md5_transform	MD5_Transform
-#endif
+#  define fr_md5_copy(_dst, _src) _dst = _src
+#  define fr_md5_destroy(_x)
+#else
+#include <openssl/evp.h>
+
+/*
+ *	Wrappers for OpenSSL3, so we don't have to butcher the rest of
+ *	the code too much.
+ */
+typedef EVP_MD_CTX* FR_MD5_CTX;
+
+#  define fr_md5_init(_ctx) \
+	do { \
+		*_ctx = EVP_MD_CTX_new(); \
+		EVP_MD_CTX_set_flags(*_ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW); \
+		EVP_DigestInit_ex(*_ctx, EVP_md5(), NULL); \
+	} while (0)
+#  define fr_md5_update(_ctx, _str, _len) \
+        EVP_DigestUpdate(*_ctx, _str, _len)
+#  define fr_md5_final(_out, _ctx) \
+	EVP_DigestFinal_ex(*_ctx, _out, NULL)
+#  define fr_md5_destroy(_ctx)	EVP_MD_CTX_destroy(*_ctx)
+#  define fr_md5_copy(_dst, _src) EVP_MD_CTX_copy_ex(_dst, _src)
+#endif	/* OPENSSL3 */
+#endif	/* HAVE_OPENSSL_MD5_H */
 
 /* hmac.c */
 void	fr_hmac_md5(uint8_t digest[MD5_DIGEST_LENGTH], uint8_t const *text, size_t text_len,

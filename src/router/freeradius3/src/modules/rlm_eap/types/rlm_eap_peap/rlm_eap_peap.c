@@ -1,7 +1,7 @@
 /*
  * rlm_eap_peap.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 4bbf57330fb1d802f26d7637715f70ec19e2d7a6 $
+ * Version:     $Id: d9f850cef27441dabc04c99040466741e2f7fe19 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 4bbf57330fb1d802f26d7637715f70ec19e2d7a6 $")
+RCSID("$Id: d9f850cef27441dabc04c99040466741e2f7fe19 $")
 
 #include "eap_peap.h"
 
@@ -135,25 +135,6 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		inst->auth_type_eap = dv->value;
 	}
 
-#ifdef TLS1_3_VERSION
-	if ((inst->tls_conf->min_version == TLS1_3_VERSION) && !inst->tls_conf->tls13_enable_magic) {
-		ERROR("There are no standards for using TLS 1.3 with PEAP.");
-		ERROR("You MUST enable TLS 1.2 for PEAP to work.");
-		return -1;
-	}
-
-	if ((inst->tls_conf->max_version == TLS1_3_VERSION) ||
-	    (inst->tls_conf->min_version == TLS1_3_VERSION)) {
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		WARN("!! There is no standard for using PEAP with TLS 1.3");
-		WARN("!! Please set tls_max_version = \"1.2\"");
-		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
-		WARN("!! This limitation is likely to change in late 2021.");
-		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-}
-#endif
-
 	return 0;
 }
 
@@ -212,10 +193,9 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	}
 
 	/*
-	 *	Don't allow TLS 1.3 for us, even if it's allowed
-	 *	elsewhere.
+	 *	Allow TLS 1.3, it works.
 	 */
-	ssn = eaptls_session(handler, inst->tls_conf, client_cert, inst->tls_conf->tls13_enable_magic);
+	ssn = eaptls_session(handler, inst->tls_conf, client_cert, true);
 	if (!ssn) {
 		return 0;
 	}

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5e3b1d83a7656a131c74a1551d24d2cf925593e7 $
+ * $Id: aaa43ab73d7d47b87cb1cad7b969fae90a0d32bc $
  * @file rlm_python3.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 5e3b1d83a7656a131c74a1551d24d2cf925593e7 $")
+RCSID("$Id: aaa43ab73d7d47b87cb1cad7b969fae90a0d32bc $")
 
 #define LOG_PREFIX "rlm_python3 - "
 
@@ -679,10 +679,12 @@ finish:
 
 static void python_interpreter_free(PyThreadState *interp)
 {
+DIAG_OFF(deprecated-declarations)
 	PyEval_AcquireLock();
 	PyThreadState_Swap(interp);
 	Py_EndInterpreter(interp);
 	PyEval_ReleaseLock();
+DIAG_ON(deprecated-declarations)
 }
 
 /** Destroy a thread state

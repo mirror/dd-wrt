@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 237c671d97846e9143962de8ec830935f7a4b974 $
+ * Version:     $Id: 4f5b6a8e716251453141d49747ea25768c402ee6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,12 +22,13 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 237c671d97846e9143962de8ec830935f7a4b974 $")
+RCSID("$Id: 4f5b6a8e716251453141d49747ea25768c402ee6 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
 #include <openssl/ssl.h>
 #include <openssl/hmac.h>
+#include <freeradius-devel/openssl3.h>
 
 /*
  *	TLS P_hash from RFC 2246/5246 section 5
@@ -39,7 +40,8 @@ static void P_hash(EVP_MD const *evp_md,
 {
 	HMAC_CTX *ctx_a, *ctx_out;
 	unsigned char a[EVP_MAX_MD_SIZE];
-	unsigned int size;
+	unsigned int size = EVP_MAX_MD_SIZE;
+	unsigned int digest_len;
 
 	ctx_a = HMAC_CTX_new();
 	ctx_out = HMAC_CTX_new();
@@ -50,11 +52,9 @@ static void P_hash(EVP_MD const *evp_md,
 	HMAC_Init_ex(ctx_a, secret, secret_len, evp_md, NULL);
 	HMAC_Init_ex(ctx_out, secret, secret_len, evp_md, NULL);
 
-	size = HMAC_size(ctx_out);
-
 	/* Calculate A(1) */
 	HMAC_Update(ctx_a, seed, seed_len);
-	HMAC_Final(ctx_a, a, NULL);
+	HMAC_Final(ctx_a, a, &size);
 
 	while (1) {
 		/* Calculate next part of output */
@@ -63,13 +63,15 @@ static void P_hash(EVP_MD const *evp_md,
 
 		/* Check if last part */
 		if (out_len < size) {
-			HMAC_Final(ctx_out, a, NULL);
+			digest_len = EVP_MAX_MD_SIZE;
+			HMAC_Final(ctx_out, a, &digest_len);
 			memcpy(out, a, out_len);
 			break;
 		}
 
 		/* Place digest in output buffer */
-		HMAC_Final(ctx_out, out, NULL);
+		digest_len = EVP_MAX_MD_SIZE;
+		HMAC_Final(ctx_out, out, &digest_len);
 		HMAC_Init_ex(ctx_out, NULL, 0, NULL, NULL);
 		out += size;
 		out_len -= size;
@@ -77,7 +79,8 @@ static void P_hash(EVP_MD const *evp_md,
 		/* Calculate next A(i) */
 		HMAC_Init_ex(ctx_a, NULL, 0, NULL, NULL);
 		HMAC_Update(ctx_a, a, size);
-		HMAC_Final(ctx_a, a, NULL);
+		digest_len = EVP_MAX_MD_SIZE;
+		HMAC_Final(ctx_a, a, &digest_len);
 	}
 
 	HMAC_CTX_free(ctx_a);
@@ -178,35 +181,6 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 		ERROR("Failed generating keying material");
 		return;
 	}
-
-	if (RDEBUG_ENABLED4) {
-		size_t i, client_len, master_len;
-		uint8_t client_random[SSL3_RANDOM_SIZE];
-		uint8_t master_key[SSL_MAX_MASTER_KEY_LENGTH];
-		char *q, buffer[64 + 2*SSL3_RANDOM_SIZE + 2*SSL_MAX_MASTER_KEY_LENGTH];
-
-		client_len = SSL_get_client_random(s, client_random, sizeof(client_random));
-		master_len = SSL_SESSION_get_master_key(SSL_get_session(s), master_key, sizeof(master_key));
-
-		strcpy(buffer, "CLIENT_RANDOM ");
-		q = buffer + 14;
-
-		for (i = 0; i < client_len; i++) {
-			sprintf(q, "%02X", client_random[i]);
-			q += 2;
-		}
-		*(q++) = ' ';
-
-		for (i = 0; i < master_len; i++) {
-			sprintf(q, "%02X", master_key[i]);
-			q += 2;
-		}
-		*q = '\0';
-
-		RDEBUG("(TLS) KEYLOG: %s", buffer);
-
-	}
-
 #else
 	{
 		uint8_t seed[64 + (2 * SSL3_RANDOM_SIZE) + (context ? 2 + context_size : 0)];
@@ -238,33 +212,6 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 
 		PRF(s->session->master_key, s->session->master_key_length,
 		    seed, len, out, buf, sizeof(out));
-	}
-
-	if (RDEBUG_ENABLED4) {
-		size_t i, master_len;
-		char *q, buffer[64 + 2*SSL3_RANDOM_SIZE + 2*SSL_MAX_MASTER_KEY_LENGTH];
-
-		client_len = SSL_get_client_random(s, client_random, sizeof(client_random));
-		master_len = s->session->master_key_length;
-		if (master_len > SSL_MAX_MASTER_KEY_LENGTH) master_len = SSL_MAX_MASTER_KEY_LENGTH;
-
-		strcpy(buffer, "CLIENT_RANDOM ");
-		q = buffer + 14;
-
-		for (i = 0; i < SSL3_RANDOM_SIZE; i++) {
-			sprintf(q, "%02X", s->s3->client_random[i]);
-			q += 2;
-		}
-		*(q++) = ' ';
-
-		for (i = 0; i < master_len; i++) {
-			sprintf(q, "%02X", s->session->master_key[i]);
-			q += 2;
-		}
-		*q = '\0';
-
-		RDEBUG("(TLS) KEYLOG: %s", buffer);
-
 	}
 #endif
 
@@ -333,7 +280,7 @@ void eaptls_gen_eap_key(eap_handler_t *handler)
 
 	*p++ = type;
 
-	switch (tls_session->info.version) {
+	switch (SSL_version(tls_session->ssl)) {
 	case TLS1_VERSION:
 	case TLS1_1_VERSION:
 	case TLS1_2_VERSION:

@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: bddb923af54ade4b4bf18b8e8f6f64af6382391c $
+ * Version:	$Id: 7fe658711ffcc665bcc777d860c3e66d21d3856f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: bddb923af54ade4b4bf18b8e8f6f64af6382391c $")
+RCSID("$Id: 7fe658711ffcc665bcc777d860c3e66d21d3856f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -127,7 +127,7 @@ typedef struct cf_file_t {
 } cf_file_t;
 
 CONF_SECTION *root_config = NULL;
-bool cf_new_escape = false;
+bool cf_new_escape = true;
 
 
 static int		cf_data_add_internal(CONF_SECTION *cs, char const *name, void *data,
@@ -2894,17 +2894,6 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 			cpn->item.lineno = *lineno;
 			cpn->pass2 = pass2;
 			cf_item_add(this, &(cpn->item));
-
-			/*
-			 *	Hacks for escaping
-			 */
-			if (!cf_new_escape && !this->item.parent && value &&
-			    (strcmp(buf1, "correct_escapes") == 0) &&
-			    ((strcmp(value, "true") == 0) ||
-			     (strcmp(value, "yes") == 0) ||
-			     (strcmp(value, "1") == 0))) {
-				cf_new_escape = true;
-			}
 
 			/*
 			 *	Require a comma, unless there's a comment.

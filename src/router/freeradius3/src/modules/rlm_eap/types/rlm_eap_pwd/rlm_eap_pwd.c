@@ -31,7 +31,7 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id: f53a544d94421caa68d840a1b77b76478cf0fdba $")
+RCSID("$Id: 4992a2aeefcede35282a8549a0f148ffa3c2159b $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "rlm_eap_pwd.h"
@@ -829,7 +829,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		/*
 		 * element is a point, get both coordinates: x and y
 		 */
-		if (!EC_POINT_get_affine_coordinates_GFp(session->group, session->my_element, x, y,
+		if (!EC_POINT_get_affine_coordinates(session->group, session->my_element, x, y,
 							 session->bnctx)) {
 			DEBUG2("server point assignment failed");
 			BN_clear_free(x);

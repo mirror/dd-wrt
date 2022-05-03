@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: fa04cdabb71767050aaa0664da792fd6086adb19 $
+#  $Id: 99215b8e9cb6e8103b3cf15e74d50618c7047b3b $
 
 #  Persistent, embedded Perl interpreter.
 #
@@ -18,9 +18,9 @@ perl {
 	#  These are (mostly) the same options as are passed
 	#  to the "perl" command line.
 	#
-	#  The most useful flag is "-T".  This sets tainting on.  And
-	#  as of 3.0.18, makes it impossible to leverage bad
-	#  User-Names into local command execution.
+	#  The most useful flag is "-T".  This sets tainting on, which
+	#  makes it impossible to leverage bad User-Names into local
+	#  command execution.
 	#
 	perl_flags = "-T"
 

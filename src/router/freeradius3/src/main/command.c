@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 6d02e98075e1d2730bce79aaf96d5a9c09ac8011 $
+ * Version:	$Id: ea1b40e200981b2eac568406cb16f82f52ab361e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -1151,7 +1151,11 @@ static int command_show_home_servers(rad_listen_t *listener, int argc, char *arg
 
 	char buffer[256];
 
-	for (i = 0; (home = home_server_bynumber(i)) != NULL; i++) {
+	for (i = 0; i < home_server_max_number; i++) {
+
+		if ((home = home_server_bynumber(i)) == NULL)
+			continue;
+
 		/*
 		 *	Internal "virtual" home server.
 		 */

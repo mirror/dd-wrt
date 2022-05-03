@@ -1,5 +1,5 @@
 /**
- * $Id: 0515fca1ae02746a54d8c2aec9e9f19101cba68b $
+ * $Id: 7169000381c823596a271d2a8aaace9c8aa5af4b $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -7,7 +7,7 @@
  * @brief md4 digest functions.
  */
 
-RCSID("$Id: 0515fca1ae02746a54d8c2aec9e9f19101cba68b $")
+RCSID("$Id: 7169000381c823596a271d2a8aaace9c8aa5af4b $")
 
 /*
  *  FORCE MD4 TO USE OUR MD4 HEADER FILE!
@@ -28,6 +28,7 @@ void fr_md4_calc(uint8_t out[MD4_DIGEST_LENGTH], uint8_t const *in, size_t inlen
 	fr_md4_init(&ctx);
 	fr_md4_update(&ctx, in, inlen);
 	fr_md4_final(out, &ctx);
+	fr_md4_destroy(&ctx);
 }
 
 #ifndef HAVE_OPENSSL_MD4_H
