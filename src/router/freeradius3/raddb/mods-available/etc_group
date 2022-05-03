@@ -1,12 +1,16 @@
 # -*- text -*-
 #
-#  $Id: f58b72f560ba067991d67295b546691bcd992d44 $
+#  $Id: 114f24a946247c58dd1a44e02fe28e32635b648a $
 
 #  "passwd" configuration, for the /etc/group file. Adds a Etc-Group-Name
 #  attribute for every group that the user is member of.
 #
 #  You will have to define the Etc-Group-Name in the 'dictionary' file
 #  as a 'string' type.
+#
+#  The module name "etc_group" should also be listed in the "authorize"
+#  section.  Make sure it's listed before any other part of the server
+#  tries to use the Etc-Group-Name attribute.
 #
 #  The Group and Group-Name attributes are automatically created by
 #  the Unix module, and do checking against /etc/group automatically.

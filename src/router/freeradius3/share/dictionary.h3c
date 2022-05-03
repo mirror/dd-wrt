@@ -8,7 +8,7 @@
 #
 #	http://www.h3c.com
 #
-#	$Id: 180f5dc427c9b27a4ef5601b2fbe1e0256580eb4 $
+#	$Id: be9eeee0919af69942c7048075e081c96b65a8d5 $
 #
 ##############################################################################
 
@@ -58,6 +58,8 @@ ATTRIBUTE	H3C-L2TP-Local-Name			102	string
 ATTRIBUTE	H3C-IGMP-Access-Limit			103	integer
 ATTRIBUTE	H3C-VPN-Instance			104	string
 ATTRIBUTE	H3C-ANCP-Profile			105	string
+ATTRIBUTE	H3C-Up-Priority				106	integer
+ATTRIBUTE	H3C-Down-Priority			107	integer
 ATTRIBUTE	H3C-Longitude-Latitude			111	string
 ATTRIBUTE	H3C-Client-Primary-DNS			135	ipaddr
 ATTRIBUTE	H3C-Client-Secondary-DNS		136	ipaddr

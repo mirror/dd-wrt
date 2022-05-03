@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+USES_APPLE_DEPRECATED_API
+
 #if defined(HAVE_MALLOPT) && defined(HAVE_MALLOC_H)
 #  include <malloc.h>
 #endif
@@ -1177,7 +1179,7 @@ void NEVER_RETURNS _fr_exit(char const *file, int line, int status)
 #ifndef NDEBUG
 	char const *error = fr_strerror();
 
-	if (error && (status != 0)) {
+	if (error && *error && (status != 0)) {
 		FR_FAULT_LOG("EXIT(%i) CALLED %s[%u].  Last error was: %s", status, file, line, error);
 	} else {
 		FR_FAULT_LOG("EXIT(%i) CALLED %s[%u]", status, file, line);

@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 2a6683d471f2e6d4f425003a8487ec447c5a305e $
+ * $Id: 206f55db79802619dcdd3098f4ec8c3fa58a6cce $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 2a6683d471f2e6d4f425003a8487ec447c5a305e $")
+RCSIDH(tls_h, "$Id: 206f55db79802619dcdd3098f4ec8c3fa58a6cce $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -94,7 +94,7 @@ typedef struct _record_t {
 } record_t;
 
 typedef struct _tls_info_t {
-	int		origin;
+	int		origin;		// 0 - received (from peer), 1 - sending (to peer)
 	int		content_type;
 	uint8_t		handshake_type;
 	uint8_t		alert_level;
@@ -103,7 +103,6 @@ typedef struct _tls_info_t {
 
 	char 		info_description[256];
 	size_t		record_len;
-	int		version;
 } tls_info_t;
 
 #if OPENSSL_VERSION_NUMBER < 0x10001000L
@@ -367,7 +366,6 @@ struct fr_tls_server_conf_t {
 	bool		disable_tlsv1;
 	bool		disable_tlsv1_1;
 	bool		disable_tlsv1_2;
-	bool		tls13_enable_magic;
 	bool		disallow_untrusted;		//!< allow untrusted CAs to issue client certificates
 
 	int		min_version;

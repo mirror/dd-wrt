@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 43dbea35e41698f8ced22c1cf4ad128b08dee7ca $
+#  $Id: ca0b3bfee0f7f724cff1cfd5ddc5b6f739f953b8 $
 
 #
 #  This module performs mathematical calculations:
@@ -23,10 +23,6 @@
 #
 #  Operator precedence follows the normal rules.
 #  Division by zero means that the entire expression is invalid.
-#
-#  Note that in versions before 3.0.5, the expression
-#  was parsed strictly left to right, and ignored operator
-#  precedence.
 #
 #  It also allows unary negation:	-1
 #  And twos complement:			~1
@@ -130,11 +126,17 @@
 #  nexttime	calculate number of seconds until next n hour(s), day(s), week(s), year(s)
 #		if it were 16:18, %{nexttime:1h} would expand to 2520
 #
+#  lasttime	calculate number of seconds until last n hour(s), day(s), week(s), year(s)
+#		if it were 16:18, %{lasttime:1h} would expand to 4680
+#
 #  lpad		left-pad a string
 #		if User-Name is "foo": "%{lpad:&User-Name 6 x}" == "xxxfoo"
 #
 #  rpad		right-pad a string
 #		if User-Name is "foo": "%{rpad:&User-Name 5 -}" == "foo--"
+#
+#  concat 	concatenate a set of attributes, separated by a character.
+#		"%{concat:foo[*] ;}"
 #
 
 expr {

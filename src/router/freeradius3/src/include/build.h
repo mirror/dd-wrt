@@ -1,5 +1,5 @@
 /**
- * $Id: c25431b414ae49947dd6bb256edd982e60702c11 $
+ * $Id: e1c2a1c79bfc6e552814e8088b1cfa726c5b48fc $
  *
  * @brief Source control functions
  *
@@ -46,11 +46,11 @@ extern "C" {
  *	compiler.
  */
 #ifdef __GNUC__
-#  define CC_HINT(_x) __attribute__ ((_x))
+#  define CC_HINT(...)  __attribute__ ((__VA_ARGS__))
 #  define likely(_x)	__builtin_expect((_x), 1)
 #  define unlikely(_x)	__builtin_expect((_x), 0)
 #else
-#  define CC_HINT(_x)
+#  define CC_HINT(...)
 #  define likely(_x)	_x
 #  define unlikely(_x)	_x
 #endif
@@ -152,6 +152,11 @@ extern "C" {
 #    error Failed determining endianness of system
 #  endif
 #endif
+
+#define PRINTF_LIKE(n)		CC_HINT(format(printf, n, n+1))
+#define NEVER_RETURNS		CC_HINT(noreturn)
+#define UNUSED			CC_HINT(unused)
+#define BLANK_FORMAT		" "	/* GCC_LINT whines about empty formats */
 
 #ifdef __cplusplus
 }

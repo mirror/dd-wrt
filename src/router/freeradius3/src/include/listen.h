@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: 986cf0e1320068feca77e7bfdf524d3f5945a418 $
+ * $Id: 6752e0dbd6cf974e15b04ce1c4fc52a79959e139 $
  *
  * @file listen.h
  * @brief The listener API.
@@ -70,8 +70,8 @@ struct rad_listen {
 	int		fd;
 	char const	*server;
 	int		status;
-#ifdef WITH_TCP
 	int		count;
+#ifdef WITH_TCP
 	rbtree_t	*children;
 	rad_listen_t	*parent;
 

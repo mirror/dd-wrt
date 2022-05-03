@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: a26491098ee9dce464766922687f04458451b742 $
+ * Version:	$Id: ff57a6c469c144208cd86b0ea8be59d8ad01f1e6 $
  *
  */
 
-RCSIDH(realms_h, "$Id: a26491098ee9dce464766922687f04458451b742 $")
+RCSIDH(realms_h, "$Id: ff57a6c469c144208cd86b0ea8be59d8ad01f1e6 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -215,6 +215,7 @@ CONF_SECTION	*home_server_cs_afrom_client(CONF_SECTION *client);
 home_server_t	*home_server_byname(char const *name, int type);
 #endif
 #ifdef WITH_STATS
+extern int home_server_max_number;
 home_server_t	*home_server_bynumber(int number);
 #endif
 home_pool_t	*home_pool_byname(char const *name, int type);

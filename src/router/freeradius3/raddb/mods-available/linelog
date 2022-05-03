@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: dc2a8195b3c1c2251fc37651ea4a598898c33d12 $
+#  $Id: 4357b747d6be5d4fab2df4ec3b935dcac172f85b $
 
 #
 #  The "linelog" module will log one line of text to a file.
@@ -15,6 +15,9 @@ linelog {
 	#
 	#  If the filename is "syslog", then the log messages will
 	#  go to syslog.
+	#
+	#  The output can be directed to stdout by using /dev/stdout
+	#
 	filename = ${logdir}/linelog
 
 	#

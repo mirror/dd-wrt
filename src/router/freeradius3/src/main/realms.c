@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: ad5f546639487f356573f50fbf9a74ff9443b6fb $
+ * Version:     $Id: 0a3b8f94b86b0590951fa693198c9b702d5d8d29 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: ad5f546639487f356573f50fbf9a74ff9443b6fb $")
+RCSID("$Id: 0a3b8f94b86b0590951fa693198c9b702d5d8d29 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -100,7 +100,7 @@ static realm_config_t *realm_config = NULL;
 static rbtree_t	*home_servers_byaddr = NULL;
 static rbtree_t	*home_servers_byname = NULL;
 #ifdef WITH_STATS
-static int home_server_max_number = 0;
+int home_server_max_number = 0;
 static rbtree_t	*home_servers_bynumber = NULL;
 #endif
 

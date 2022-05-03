@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 015ae6907b8113771691ae3a3c1d53b05756d143 $
+#  $Id: 8fadd9c39349f1ff8d40c1a7bc94af8870c61cf0 $
 
 #
 #  Lightweight Directory Access Protocol (LDAP)
@@ -508,6 +508,11 @@ ldap {
 		#  If you set these to 'no', then searches will likely return
 		#  'operations error', instead of a useful result.
 		#
+		#  'rebind' causes any connections being established to follow
+		#  referrals to be bound using the admin credentials defined
+		#  for this module.  If it is set to 'no' libldap will bind
+		#  to those connections anonymously.
+		#
 		chase_referrals = yes
 		rebind = yes
 
@@ -559,6 +564,23 @@ ldap {
 	#  configuration entries can still be used, but we recommend
 	#  using these.
 	#
+	#  Note that some distributions use NSS for libldap instead
+	#  of OpenSSL.
+	#
+	#  If you see something like this in the debug output:
+	#
+	#	TLSMC: MozNSS compatibility interception begins.
+	#
+	#  Then there is a problem.
+	#
+	#	THIS LDAP INSTALLATION WILL NOT WORK WITH FREERADIUS.
+	#
+	#  You MUST install fixed LDAP libraries which use OpenSSL.
+	#
+	#  For more details, see:
+	#
+	#	http://packages.networkradius.com
+	#
 	tls {
 		# Set this to 'yes' to use TLS encrypted connections
 		# to the LDAP database by using the StartTLS extended
@@ -596,13 +618,13 @@ ldap {
 #		tls_min_version = "1.2"
 	}
 
-	#  As of version 3.0, the 'pool' section has replaced the
-	#  following configuration items:
+	#  As of v3, the 'pool' section has replaced the
+	#  following v2 configuration items:
 	#
 	#  ldap_connections_number
 
-	#  The connection pool is new for 3.0, and will be used in many
-	#  modules, for all kinds of connection-related activity.
+	#
+	#  The connection pool is used to pool outgoing connections.
 	#
 	#  When the server is not threaded, the connection pool
 	#  limits are ignored, and only one connection is used.

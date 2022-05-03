@@ -1,5 +1,5 @@
 /**
- * $Id: 9858175bd41a9369e8e6041c144fe8e8dfaced36 $
+ * $Id: b5c17291485545ba6fad2680e578621fade685c0 $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -7,7 +7,7 @@
  * @brief md5 digest functions.
  */
 
-RCSID("$Id: 9858175bd41a9369e8e6041c144fe8e8dfaced36 $")
+RCSID("$Id: b5c17291485545ba6fad2680e578621fade685c0 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -30,6 +30,7 @@ void fr_md5_calc(uint8_t *out, uint8_t const *in, size_t inlen)
 	fr_md5_init(&ctx);
 	fr_md5_update(&ctx, in, inlen);
 	fr_md5_final(out, &ctx);
+	fr_md5_destroy(&ctx);
 }
 
 #ifndef HAVE_OPENSSL_MD5_H

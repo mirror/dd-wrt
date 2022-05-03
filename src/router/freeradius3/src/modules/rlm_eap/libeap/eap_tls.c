@@ -1,7 +1,8 @@
+
 /*
  * eap_tls.c
  *
- * Version:     $Id: 17e4cadca894fabe71ebb72c741dad844fe85bc9 $
+ * Version:     $Id: 2f37663df142a3e22867a51330d8d05eddb0df00 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +39,7 @@
  *
  */
 
-RCSID("$Id: 17e4cadca894fabe71ebb72c741dad844fe85bc9 $")
+RCSID("$Id: 2f37663df142a3e22867a51330d8d05eddb0df00 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -167,7 +168,7 @@ int eaptls_success(eap_handler_t *handler, int peap_flag)
 		uint8_t const context_tls13[] = { handler->type };
 #endif
 
-		switch (tls_session->info.version) {
+		switch (SSL_version(tls_session->ssl)) {
 #ifdef TLS1_3_VERSION
 		case TLS1_3_VERSION:
 			context = context_tls13;
@@ -764,7 +765,7 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	 *	data to be sent. So this is done always for EAP-TLS but
 	 *	notibly not for PEAP even on resumption.
 	 */
-	if ((tls_session->info.version == TLS1_3_VERSION) &&
+	if ((SSL_version(tls_session->ssl) == TLS1_3_VERSION) &&
 	    (tls_session->client_cert_ok || tls_session->authentication_success || SSL_session_reused(tls_session->ssl))) {
 		if ((handler->type == PW_EAP_TLS) || SSL_session_reused(tls_session->ssl)) {
 			tls_session->authentication_success = true;
@@ -793,6 +794,20 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	 *	handshake is finished.
 	 */
 	if (tls_session->is_init_finished) return FR_TLS_SUCCESS;
+
+	/*
+	 *	If session is established, skip round-trip and
+	 *	try to process any inner tunnel data if present.
+	 *
+	 *	This occurs for EAP-TTLS/PAP with TLSv1.3.
+	 */
+	if (!tls_session->is_init_finished && SSL_is_init_finished(tls_session->ssl)) {
+		/*
+		 *	Don't set is_init_finished, as that causes the
+		 *	rest of the code to make too many assumptions.
+		 */
+		return FR_TLS_OK;
+	}
 
 	/*
 	 *	Who knows what happened...
