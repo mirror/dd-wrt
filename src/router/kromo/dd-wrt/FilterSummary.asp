@@ -20,11 +20,11 @@ function filter_del(F) {
 			<table>
 				<tbody>
 					<tr>
-						<th><% tran("filterSum.polnum"); %></th>
+						<th class="center"><% tran("filterSum.polnum"); %></th>
 						<th><% tran("filter.polname"); %></th>
 						<th><% tran("filter.legend2"); %></th>
 						<th><% tran("filterSum.polday"); %></th>
-						<th><% tran("share.del"); %></th>
+						<th class="center"><% tran("share.del"); %></th>
 					</tr>
 					<% filter_summary_show(); %>
 				</tbody>
