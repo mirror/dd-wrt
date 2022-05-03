@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 8c63498586bedb276661beb80cf6575a3827a332 $
+ * Version:     $Id: bbb5a03c9582ebdc878d4f7339359841ceb3f765 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 8c63498586bedb276661beb80cf6575a3827a332 $")
+RCSID("$Id: bbb5a03c9582ebdc878d4f7339359841ceb3f765 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -128,7 +128,7 @@ static void eap_fast_init_keys(REQUEST *request, tls_session_t *tls_session)
 
 	t->keyblock = talloc(t, eap_fast_keyblock_t);
 
-	eap_fast_tls_gen_challenge(tls_session->ssl, tls_session->info.version, buf, ksize + sizeof(*t->keyblock), "key expansion");
+	eap_fast_tls_gen_challenge(tls_session->ssl, SSL_version(tls_session->ssl), buf, ksize + sizeof(*t->keyblock), "key expansion");
 	memcpy(t->keyblock, &buf[ksize], sizeof(*t->keyblock));
 	memset(buf, 0, ksize + sizeof(*t->keyblock));
 

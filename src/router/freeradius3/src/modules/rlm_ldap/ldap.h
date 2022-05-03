@@ -1,5 +1,5 @@
 /**
- * $Id: c86b097f7428bbf4a9d2767c9be21202e355daa5 $
+ * $Id: f3e066783f56dc56e6d16c6ed7562e506599b64b $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -20,6 +20,7 @@
  *	always need to support that.
  */
 #define LDAP_DEPRECATED 1
+USES_APPLE_DEPRECATED_API	/* Apple wants us to use OpenDirectory Framework, we don't want that */
 #include <lber.h>
 #include <ldap.h>
 #include "config.h"
@@ -311,8 +312,6 @@ typedef struct ldap_handle {
 	LDAP		*handle;			//!< libldap handle.
 	bool		rebound;			//!< Whether the connection has been rebound to something
 							//!< other than the admin user.
-	bool		referred;			//!< Whether the connection is now established a server
-							//!< other than the configured one.
 	rlm_ldap_t	*inst;				//!< rlm_ldap configuration.
 } ldap_handle_t;
 

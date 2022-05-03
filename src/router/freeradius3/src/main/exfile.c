@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 12be01b557d9f83d7ed0992a1c36706c36419225 $
+ * $Id: 74a6dd8ad3286e87ecb089ac26fc05368ccf13df $
  *
  * @file exfile.c
  * @brief Allow multiple threads to write to the same set of files.
@@ -151,6 +151,22 @@ static void exfile_cleanup_entry(exfile_entry_t *entry)
 static int exfile_open_mkdir(exfile_t *ef, char const *filename, mode_t permissions)
 {
 	int fd;
+
+	/*
+	 *	Files in /dev/ are special.  We don't try to create
+	 *	their parent directories, and we don't try to create
+	 *	the files.
+	 */
+	if (strncmp(filename, "/dev/", 5) == 0) {
+		fd = open(filename, O_RDWR, permissions);
+		if (fd < 0) {
+			fr_strerror_printf("Failed to open file %s: %s",
+					   filename, strerror(errno));
+			return -1;
+		}
+
+		return fd;
+	}
 
 	fd = open(filename, O_RDWR | O_CREAT, permissions);
 	if (fd < 0) {

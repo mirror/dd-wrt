@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: 372b8fa82286475cea9e79857aadfafc1e741d63 $
+ * Version:     $Id: f8b2edbecc7079e2d73ce20c726785e7fbaf001c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 372b8fa82286475cea9e79857aadfafc1e741d63 $")
+RCSID("$Id: f8b2edbecc7079e2d73ce20c726785e7fbaf001c $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -136,7 +136,17 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 	 *	content types.  Which breaks our tracking of
 	 *	the SSL Session state.
 	 */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 	if ((msg_version == 0) && (content_type > UINT8_MAX)) {
+#else
+	/*
+         *      "...we do not see the need to resolve application breakage
+         *      just because the documentation now is incorrect."
+         *
+         *      https://github.com/openssl/openssl/issues/17262
+	 */
+	if ((content_type > UINT8_MAX) && (content_type != SSL3_RT_INNER_CONTENT_TYPE)) {
+#endif
 		DEBUG4("(TLS) Ignoring cbtls_msg call with pseudo content type %i, version %i",
 		       content_type, msg_version);
 		return;
@@ -179,7 +189,6 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 	state->info.origin = write_p;
 	state->info.content_type = content_type;
 	state->info.record_len = len;
-	state->info.version = msg_version;
 	state->info.initialized = true;
 
 	if (content_type == SSL3_RT_ALERT) {

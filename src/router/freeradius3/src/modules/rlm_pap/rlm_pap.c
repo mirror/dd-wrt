@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: cc151f7299065c611d8639094ddd8d7d0408aec5 $
+ * $Id: 318e9a806eeee15f7cd7c06d539d4d4da6f1daee $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: cc151f7299065c611d8639094ddd8d7d0408aec5 $")
+RCSID("$Id: 318e9a806eeee15f7cd7c06d539d4d4da6f1daee $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -1001,6 +1001,15 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_parse(REQUEST *reques
 		iterations = ntohl(iterations);
 
 		p = q + 1;
+	}
+
+	/*
+	 *	Sanitise iterations. Seems OpenSSL 1.0 did this, but at least
+	 *	version 1.1 in RH8 does not, so safest to check ourselves.
+	 */
+	if (iterations == 0) {
+		RWDEBUG("PBKDF2 can not have zero iterations; increasing to 1");
+		iterations = 1;
 	}
 
 	if (((end - p) < 1) || !(q = memchr(p, salt_sep, end - p))) {

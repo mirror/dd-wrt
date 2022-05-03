@@ -1,5 +1,5 @@
 /**
- * $Id: b7bdd6a15ee28497d05d8ac8991e0feaac63a3a8 $
+ * $Id: 21317f2c7277af9dcaf20ef3722e2f7e8b10ef91 $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -10,7 +10,7 @@
 #ifndef _FR_MD4_H
 #define _FR_MD4_H
 
-RCSIDH(md4_h, "$Id: b7bdd6a15ee28497d05d8ac8991e0feaac63a3a8 $")
+RCSIDH(md4_h, "$Id: 21317f2c7277af9dcaf20ef3722e2f7e8b10ef91 $")
 
 #ifdef HAVE_INTTYPES_H
 #  include <inttypes.h>
@@ -71,14 +71,58 @@ void	fr_md4_final(uint8_t out[MD4_DIGEST_LENGTH], FR_MD4_CTX *ctx)
 void	fr_md4_transform(uint32_t buf[4], uint8_t const inc[MD4_BLOCK_LENGTH])
 	CC_BOUNDED(__size__, 1, 4, 4)
 	CC_BOUNDED(__minbytes__, 2, MD4_BLOCK_LENGTH);
+#  define fr_md4_destroy(_x)
 #else  /* HAVE_OPENSSL_MD4_H */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 USES_APPLE_DEPRECATED_API
 #  define FR_MD4_CTX		MD4_CTX
 #  define fr_md4_init		MD4_Init
 #  define fr_md4_update		MD4_Update
 #  define fr_md4_final		MD4_Final
 #  define fr_md4_transform	MD4_Transform
-#endif
+#  define fr_md4_destroy(_x)
+#else
+#include <openssl/evp.h>
+
+/*
+ *	Wrappers for OpenSSL3, so we don't have to butcher the rest of
+ *	the code too much.
+ */
+typedef struct FR_MD4_CTX {
+	EVP_MD_CTX	*ctx;
+	EVP_MD const   	*md;
+	unsigned int	len;
+} FR_MD4_CTX;
+
+static inline void fr_md4_init(FR_MD4_CTX *ctx)
+{
+	ctx->ctx = EVP_MD_CTX_new();
+//	ctx->md = EVP_MD_fetch(NULL, "MD4", "provider=legacy");
+	ctx->md = EVP_md4();
+	ctx->len = MD4_DIGEST_LENGTH;
+
+	EVP_MD_CTX_set_flags(ctx->ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+	EVP_DigestInit_ex(ctx->ctx, ctx->md, NULL);
+}
+
+static inline void fr_md4_update(FR_MD4_CTX *ctx, uint8_t const *in, size_t inlen)
+{
+        EVP_DigestUpdate(ctx->ctx, in, inlen);
+}
+
+static inline void fr_md4_final(uint8_t out[MD4_DIGEST_LENGTH], FR_MD4_CTX *ctx)
+{
+	EVP_DigestFinal_ex(ctx->ctx, out, &(ctx->len));
+}
+
+static inline void fr_md4_destroy(FR_MD4_CTX *ctx)
+{
+	EVP_MD_CTX_destroy(ctx->ctx);
+//	EVP_MD_free(ctx->md);
+}
+
+#endif	/* OPENSSL3 */
+#endif	/* HAVE_OPENSSL_MD4_H */
 
 /* md4.c */
 void fr_md4_calc(uint8_t out[MD4_DIGEST_LENGTH], uint8_t const *in, size_t inlen);

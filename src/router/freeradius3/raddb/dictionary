@@ -3,8 +3,8 @@
 #	edited by local administrators.  It will be loaded
 #	AFTER the main dictionary files are loaded.
 #
-#	As of version 3.0.2, FreeRADIUS will automatically
-#	load the main dictionary files from
+#	FreeRADIUS will automatically load the main dictionary files
+#	from:
 #
 #		${prefix}/share/freeradius/dictionary
 #
@@ -17,7 +17,7 @@
 #
 #	See "man dictionary" for documentation on its format.
 #
-#	$Id: eed5d70f41b314f9ed3f006a22d9f9a2be2c9516 $
+#	$Id: ad56be71fdfcbc8b577a93ce55a32e5c7865811d $
 #
 
 #

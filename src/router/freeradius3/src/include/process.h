@@ -4,7 +4,7 @@
 /*
  * process.h	State machine for a server to process packets.
  *
- * Version:	$Id: e7a8e392640f85f5106b2c572859924bdb86189a $
+ * Version:	$Id: fc14ed16cc358eba39bfed94d68ae76461e6b330 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2012 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(process_h, "$Id: e7a8e392640f85f5106b2c572859924bdb86189a $")
+RCSIDH(process_h, "$Id: fc14ed16cc358eba39bfed94d68ae76461e6b330 $")
 
 #include <freeradius-devel/clients.h>
 #include <freeradius-devel/listen.h>
@@ -47,6 +47,11 @@ typedef enum fr_state_action_t {	/* server action */
 	FR_ACTION_PROXY_REPLY,
 #endif
 	FR_ACTION_CANCELLED,
+	FR_ACTION_CONFLICT,
+	FR_ACTION_MAX_TIME,
+	FR_ACTION_INTERNAL_FAILURE,
+	FR_ACTION_CLEANUP_DELAY,
+	FR_ACTION_COA_CANCELLED,
 } fr_state_action_t;
 
 /*

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f25ee9e2e0c86cb27294522bdcd6fabe9e058f4c $
+ * $Id: adabe3300e2c4470e28434f05528a3994699cf0b $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1316,8 +1316,6 @@ static int rlm_ldap_rebind(LDAP *handle, LDAP_CONST char *url, UNUSED ber_tag_t 
 
 	int ldap_errno;
 
-	conn->referred = true;
-	conn->rebound = true;	/* not really, but oh well... */
 	rad_assert(handle == conn->handle);
 
 	DEBUG("rlm_ldap (%s): Rebinding to URL %s", conn->inst->name, url);
@@ -1413,7 +1411,6 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 
 	conn->inst = inst;
 	conn->rebound = false;
-	conn->referred = false;
 
 	DEBUG("rlm_ldap (%s): Connecting to %s", inst->name, inst->server);
 #ifdef HAVE_LDAP_INITIALIZE
@@ -1602,21 +1599,6 @@ void mod_conn_release(rlm_ldap_t const *inst, ldap_handle_t *conn)
 	 *	Could have already been free'd due to a previous error.
 	 */
 	if (!conn) return;
-
-	/*
-	 *	We chased a referral to another server.
-	 *
-	 *	This connection is no longer part of the pool which is
-	 *	connected to and bound to the configured server.
-	 *	Close it.
-	 *
-	 *	Note that we do NOT close it if it was bound to another user.
-	 *	Instead, we let the next caller do the rebind.
-	 */
-	if (conn->referred) {
-		fr_connection_close(inst->pool, conn, "Was referred to a different LDAP server");
-		return;
-	}
 
 	fr_connection_release(inst->pool, conn);
 	return;

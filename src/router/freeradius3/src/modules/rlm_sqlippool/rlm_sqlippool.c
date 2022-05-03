@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 0e3679d60ed6fc96cb7022987572dba6792fc5e6 $
+ * $Id: 5a0a6f15096a8ed2f1a1c9f4e9a48d955c87dff9 $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: 0e3679d60ed6fc96cb7022987572dba6792fc5e6 $")
+RCSID("$Id: 5a0a6f15096a8ed2f1a1c9f4e9a48d955c87dff9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -576,7 +576,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	rlm_sqlippool_t *inst = (rlm_sqlippool_t *) instance;
 	char allocation[MAX_STRING_LEN];
 	int allocation_len;
-	VALUE_PAIR *vp;
+	VALUE_PAIR *vp = NULL;
 	rlm_sql_handle_t *handle;
 	time_t now;
 	uint32_t diff_time;
@@ -697,7 +697,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 				 *	that case, we should return
 				 *	NOTFOUND
 				 */
-				RDEBUG("pool appears to be full");
+				REDEBUG("pool appears to be full");
 				return do_logging(request, inst->log_failed, RLM_MODULE_NOTFOUND);
 
 			}
@@ -708,14 +708,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 			 *	sqlippool, so we should just ignore this
 			 *	allocation failure and return NOOP
 			 */
-			RDEBUG("IP address could not be allocated as no pool exists with that name");
+			REDEBUG("IP address could not be allocated as no pool exists with that name");
 			return RLM_MODULE_NOOP;
 
 		}
 
 		fr_connection_release(inst->sql_inst->pool, handle);
 
-		RDEBUG("IP address could not be allocated");
+		REDEBUG("IP address could not be allocated");
 		return do_logging(request, inst->log_failed, RLM_MODULE_NOOP);
 	}
 
@@ -727,13 +727,11 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	if (fr_pair_value_from_str(vp, allocation, allocation_len) < 0) {
 		DO_PART(allocate_commit);
 
-		RDEBUG("Invalid IP number [%s] returned from instbase query.", allocation);
+		talloc_free(vp);
+		REDEBUG("Invalid IP address [%s] returned from database query.", allocation);
 		fr_connection_release(inst->sql_inst->pool, handle);
 		return do_logging(request, inst->log_failed, RLM_MODULE_NOOP);
 	}
-
-	RDEBUG("Allocated IP %s", allocation);
-	fr_pair_add(&request->reply->vps, vp);
 
 	/*
 	 *	UPDATE
@@ -741,11 +739,15 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	if (sqlippool_command(inst->allocate_update, &handle, inst, request,
 			      allocation, allocation_len) < 0) {
 	error:
+		talloc_free(vp);
 		if (handle) fr_connection_release(inst->sql_inst->pool, handle);
 		return RLM_MODULE_FAIL;
 	}
 
 	DO_PART(allocate_commit);
+
+	RDEBUG("Allocated IP %s", allocation);
+	fr_pair_add(&request->reply->vps, vp);
 
 	if (handle) fr_connection_release(inst->sql_inst->pool, handle);
 

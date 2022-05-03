@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 98e36339065893caa4be4168f4355a40aa9421f4 $
+ * $Id: 2c3a1bf5ca9f7957e2f9a62c6ff507a609f56b25 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 98e36339065893caa4be4168f4355a40aa9421f4 $")
+RCSID("$Id: 2c3a1bf5ca9f7957e2f9a62c6ff507a609f56b25 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -74,8 +74,14 @@ static char const *action_codes[] = {
 	"dup",
 	"timer",
 #ifdef WITH_PROXY
-	"proxy-reply"
+	"proxy-reply",
 #endif
+	"request was cancelled",
+	"conflicting packet was received",
+	"max_time was reached",
+	"internal failure",
+	"cleanup_delay was reached",
+	"CoA packet was cancelled, and not sent",
 };
 
 #ifdef DEBUG_STATE_MACHINE
@@ -632,9 +638,10 @@ static void proxy_reply_too_late(REQUEST *request)
  *	}
  *  \enddot
  */
-static void request_done(REQUEST *request, int action)
+static void request_done(REQUEST *request, int original)
 {
 	struct timeval now, when;
+	int action = original;
 
 	VERIFY_REQUEST(request);
 
@@ -700,7 +707,7 @@ static void request_done(REQUEST *request, int action)
 	/*
 	 *	If it was administratively canceled, then it's done.
 	 */
-	if (action == FR_ACTION_CANCELLED) {
+	if (action >= FR_ACTION_CANCELLED) {
 		action = FR_ACTION_DONE;
 
 #ifdef WITH_COA
@@ -887,9 +894,10 @@ static void request_done(REQUEST *request, int action)
 #endif
 
 	if (request->packet) {
-		RDEBUG2("Cleaning up request packet ID %u with timestamp +%d",
+		RDEBUG2("Cleaning up request packet ID %u with timestamp +%d due to %s",
 			request->packet->id,
-			(unsigned int) (request->timestamp - fr_start_time));
+			(unsigned int) (request->timestamp - fr_start_time),
+			action_codes[original]);
 	} /* else don't print anything */
 
 	ASSERT_MASTER;
@@ -994,8 +1002,7 @@ static bool request_max_time(REQUEST *request)
 	 *	stop" macro already took care of it.
 	 */
 	if (request->child_state == REQUEST_DONE) {
-	done:
-		request_done(request, FR_ACTION_CANCELLED);
+		request_done(request, FR_ACTION_DONE);
 		return true;
 	}
 
@@ -1027,7 +1034,8 @@ static bool request_max_time(REQUEST *request)
 		/*
 		 *	Tell the request that it's done.
 		 */
-		goto done;
+		request_done(request, FR_ACTION_MAX_TIME);
+		return true;
 	}
 
 	/*
@@ -1096,7 +1104,7 @@ static void request_queue_or_run(REQUEST *request,
 			 *	Otherwise we're not going to do anything with
 			 *	it...
 			 */
-			request_done(request, FR_ACTION_CANCELLED);
+			request_done(request, FR_ACTION_INTERNAL_FAILURE);
 			return;
 		}
 #endif
@@ -1212,7 +1220,7 @@ static void request_cleanup_delay(REQUEST *request, int action)
 			return;
 		} /* else it's time to clean up */
 
-		request_done(request, FR_ACTION_DONE);
+		request_done(request, FR_ACTION_CLEANUP_DELAY);
 		break;
 
 	default:
@@ -1346,7 +1354,7 @@ static int request_pre_handler(REQUEST *request, UNUSED int action)
 	}
 
 	if (rcode < 0) {
-		RATE_LIMIT(INFO("Dropping packet without response because of error: %s", fr_strerror()));
+		RATE_LIMIT(INFO("Dropping packet without response because of error: %s (from client %s)", fr_strerror(), request->client->shortname));
 		request->reply->offset = -2; /* bad authenticator */
 		return 0;
 	}
@@ -1802,7 +1810,7 @@ int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *pack
 		 *	the request just as we're logging the
 		 *	complaint.
 		 */
-		request_done(request, FR_ACTION_CANCELLED);
+		request_done(request, FR_ACTION_CONFLICT);
 		request = NULL;
 
 		/*
@@ -1891,7 +1899,7 @@ skip_dup:
 	if (!listener->nodup) {
 		if (!rbtree_insert(pl, &request->packet)) {
 			RERROR("Failed to insert request in the list of live requests: discarding it");
-			request_done(request, FR_ACTION_CANCELLED);
+			request_done(request, FR_ACTION_INTERNAL_FAILURE);
 			return 1;
 		}
 
@@ -2276,11 +2284,9 @@ static void remove_from_proxy_hash_nl(REQUEST *request, bool yank)
 		}
 	}
 
-#ifdef WITH_TCP
 	if (request->proxy_listener) {
 		request->proxy_listener->count--;
 	}
-#endif
 	request->proxy_listener = NULL;
 
 	/*
@@ -2469,9 +2475,7 @@ static int insert_into_proxy_hash(REQUEST *request)
 	 */
 	request->home_server->currently_outstanding++;
 
-#ifdef WITH_TCP
 	request->proxy_listener->count++;
-#endif
 
 	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 
@@ -3303,13 +3307,15 @@ do_home:
 	 *	Once we've decided to proxy a request, we cannot send
 	 *	a CoA packet.  So we free up any CoA packet here.
 	 */
-	if (request->coa) request_done(request->coa, FR_ACTION_CANCELLED);
+	if (request->coa) request_done(request->coa, FR_ACTION_COA_CANCELLED);
 #endif
 
 	/*
 	 *	Remember that we sent the request to a Realm.
 	 */
-	if (realmname) pair_make_request("Realm", realmname, T_OP_EQ);
+	if (realmname && !fr_pair_find_by_num(request->packet->vps, PW_REALM, 0, TAG_ANY)) {
+		pair_make_request("Realm", realmname, T_OP_EQ);
+	}
 
 	/*
 	 *	Strip the name, if told to.
@@ -3532,7 +3538,7 @@ static int request_proxy(REQUEST *request)
 #ifdef WITH_COA
 	if (request->coa) {
 		RWDEBUG("Cannot proxy and originate CoA packets at the same time.  Cancelling CoA request");
-		request_done(request->coa, FR_ACTION_CANCELLED);
+		request_done(request->coa, FR_ACTION_COA_CANCELLED);
 	}
 #endif
 
@@ -4698,7 +4704,7 @@ static void coa_retransmit(REQUEST *request)
 	    request->proxy_reply ||
 	    !request->proxy_listener ||
 	    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
-		request_done(request, FR_ACTION_CANCELLED);
+		request_done(request, FR_ACTION_COA_CANCELLED);
 		return;
 	}
 
@@ -4853,7 +4859,7 @@ static bool coa_max_time(REQUEST *request)
 	 */
 	if (request->child_state == REQUEST_DONE) {
 	done:
-		request_done(request, FR_ACTION_CANCELLED);
+		request_done(request, FR_ACTION_MAX_TIME);
 		return true;
 	}
 
@@ -5311,23 +5317,20 @@ static void event_new_fd(rad_listen_t *this)
 		rad_assert(sock != NULL);
 		if (just_started) {
 			DEBUG("Listening on %s", buffer);
-		} else {
-			INFO(" ... adding new socket %s", buffer);
-		}
 
 #ifdef WITH_PROXY
-		if (!just_started && (this->type == RAD_LISTEN_PROXY)) {
-			home_server_t *home;
-			
-			home = sock->home;
-			if (!home || !home->limit.max_connections) {
-				INFO(" ... adding new socket %s", buffer);
-			} else {
+		} else if (this->type == RAD_LISTEN_PROXY) {
+			home_server_t *home = sock->home;
+
+			if (home && home->limit.max_connections) {
 				INFO(" ... adding new socket %s (%u of %u)", buffer,
 				     home->limit.num_connections, home->limit.max_connections);
+			} else {
+				INFO(" ... adding new socket %s", buffer);
 			}
-
 #endif
+		} else {
+			INFO(" ... adding new socket %s", buffer);
 		}
 
 		switch (this->type) {
@@ -5455,8 +5458,18 @@ static void event_new_fd(rad_listen_t *this)
 			return;
 		}
 
-		ERROR("Failed adding event handler for socket: %s", fr_strerror());
-		this->status = RAD_LISTEN_STATUS_REMOVE_NOW;
+		/*
+		 *	Print out which socket failed.
+		 *
+		 *	If we're trying to add the socket, then
+		 *	forcibly remove it immediately, without any
+		 *	additional cleanups.  There cannot, and MUST
+		 *	NOT be any packets associated with the socket.
+		 */
+		this->print(this, buffer, sizeof(buffer));
+		ERROR("Failed adding event handler for socket %s: %s", buffer, fr_strerror());
+		this->status = RAD_LISTEN_STATUS_EOL;
+		goto listener_is_eol;
 	} /* end of INIT */
 
 	if (this->status == RAD_LISTEN_STATUS_PAUSE) {
@@ -5509,6 +5522,7 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		fr_event_fd_delete(el, 0, this->fd);
 
+	listener_is_eol:
 #ifdef WITH_PROXY
 		/*
 		 *	Tell all requests using this socket that the socket is dead.

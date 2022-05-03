@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: 9919482c8605d89c907ab37f6479f7c651b0f1a6 $
+ * Version:	$Id: e18977d34f7d4dfe8a9f51e51bcba418b64a9910 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: 9919482c8605d89c907ab37f6479f7c651b0f1a6 $")
+RCSID("$Id: e18977d34f7d4dfe8a9f51e51bcba418b64a9910 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1357,7 +1357,7 @@ static int load_byserver(CONF_SECTION *cs)
 	 *	This is a bit of a hack...
 	 */
 	if (!found) do {
-#if defined(WITH_VMPS) || defined(WITH_DHCP)
+#if defined(WITH_VMPS) || defined(WITH_DHCP) || defined(WITH_TLS)
 		CONF_SECTION *subcs;
 #endif
 #if defined(WITH_DHCP) || defined(WITH_TLS)

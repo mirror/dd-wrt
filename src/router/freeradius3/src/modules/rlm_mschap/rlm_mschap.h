@@ -3,12 +3,18 @@
 #ifndef _RLM_MSCHAP_H
 #define _RLM_MSCHAP_H
 
-RCSIDH(rlm_mschap_h, "$Id: 4109715dd2fff2ebd692b83c71d2be31f413dfc2 $")
+RCSIDH(rlm_mschap_h, "$Id: 73099194fa5709d5d509af1e80576b76fec0c23c $")
 
 #include "config.h"
 
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
 #ifdef WITH_AUTH_WINBIND
 #  include <wbclient.h>
+#endif
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
 #endif
 
 /* Method of authentication we are going to use */

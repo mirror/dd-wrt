@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 7c91d340507993cd1f68216b37d6640fb460e143 $
+ * Version:     $Id: 093dc868cd0c32e487d442da21f5ba84f7ab2d09 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 7c91d340507993cd1f68216b37d6640fb460e143 $")
+RCSID("$Id: 093dc868cd0c32e487d442da21f5ba84f7ab2d09 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -575,7 +575,8 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 
 	/*
 	 *	Don't allow TLS 1.3 for us, even if it's allowed
-	 *	elsewhere.
+	 *	elsewhere.  We haven't implemented the necessary
+	 *	changes, so we don't allow it.
 	 */
 	handler->opaque = tls_session = eaptls_session(handler, inst->tls_conf, client_cert, false);
 
@@ -627,6 +628,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	rcode = eap_fast_tls_start(handler->eap_ds, tls_session);
 
 	if (rcode < 0) {
+	error:
 		talloc_free(tls_session);
 		return 0;
 	}
@@ -635,7 +637,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 
 	if (!SSL_set_session_ticket_ext_cb(tls_session->ssl, _session_ticket, tls_session)) {
 		RERROR("Failed setting SSL session ticket callback");
-		return 0;
+		goto error;
 	}
 
 	handler->stage = PROCESS;

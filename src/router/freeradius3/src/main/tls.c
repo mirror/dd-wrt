@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 4149a473a9ace8cddc67d4280d630f0098ef8a96 $
+ * Version:     $Id: 2b6736ac1fbc9b1ed528ad07d66d67bcf87902b8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 4149a473a9ace8cddc67d4280d630f0098ef8a96 $")
+RCSID("$Id: 2b6736ac1fbc9b1ed528ad07d66d67bcf87902b8 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -61,7 +61,24 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #  endif
 #  include <openssl/ssl.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#  include <openssl/provider.h>
+
+static OSSL_PROVIDER *openssl_default_provider = NULL;
+static OSSL_PROVIDER *openssl_legacy_provider = NULL;
+#endif
+
 #define LOG_PREFIX "tls"
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#define ERR_get_error_line(_file, _line) ERR_get_error_all(_file, _line, NULL, NULL, NULL)
+
+#define FIPS_mode(_x) EVP_default_properties_is_fips_enabled(NULL)
+#define PEM_read_bio_DHparams(_bio, _x, _y, _z) PEM_read_bio_Parameters(_bio, &dh)
+#define SSL_CTX_set0_tmp_dh_pkey(_ctx, _dh) SSL_CTX_set_tmp_dh(_ctx, _dh)
+#define DH EVP_PKEY
+#define DH_free(_dh)
+#endif
 
 #ifdef ENABLE_OPENSSL_VERSION_CHECK
 typedef struct libssl_defect {
@@ -485,8 +502,6 @@ void tls_session_id(SSL_SESSION *ssn, char *buffer, size_t bufsize)
 #endif
 }
 
-
-
 static int _tls_session_free(tls_session_t *ssn)
 {
 	/*
@@ -501,6 +516,52 @@ static int _tls_session_free(tls_session_t *ssn)
 
 	return 0;
 }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+/*
+ *  By setting the environment variable SSLKEYLOGFILE to a filename keying
+ *  material will be exported that you may use with Wireshark to decode any
+ *  TLS flows. Please see the following for more details:
+ *
+ *	https://gitlab.com/wireshark/wireshark/-/wikis/TLS#tls-decryption
+ *
+ *  An example logging session is (you should delete the file on each run):
+ *
+ *	rm -f /tmp/sslkey.log; env SSLKEYLOGFILE=/tmp/sslkey.log freeradius -X | tee /tmp/debug
+ */
+static void tls_keylog_cb(UNUSED const SSL *ssl, const char *line)
+{
+	int fd;
+	size_t len;
+	const char *filename;
+	// less than _POSIX_PIPE_BUF (512) guarantees writes are atomic for O_APPEND
+	char buffer[64 + 2*SSL3_RANDOM_SIZE + 2*SSL_MAX_MASTER_KEY_LENGTH];
+
+	filename = getenv("SSLKEYLOGFILE");
+	if (!filename) return;
+
+	len = strlen(line);
+	if ((len + 1) > sizeof(buffer)) {
+		DEBUG("SSLKEYLOGFILE buffer not large enough, max %lu, required %lu", sizeof(buffer), len + 1);
+		return;
+	}
+
+	memcpy(buffer, line, len);
+	buffer[len] = '\n';
+
+	fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	if (fd < 0) {
+		fr_strerror_printf("Failed to open file %s: %s", filename, strerror(errno));
+		return;
+	}
+
+	if (write(fd, buffer, len + 1) == -1) {
+		DEBUG("Failed to write to file %s: %s", filename, strerror(errno));
+	}
+
+	close(fd);
+}
+#endif
 
 tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd, VALUE_PAIR **certs)
 {
@@ -527,6 +588,9 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	}
 
 	request = request_alloc(ssn);
+	request->packet = rad_alloc(request, false);
+	request->reply = rad_alloc(request, false);
+
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_REQUEST, (void *)request);
 
 	/*
@@ -554,10 +618,8 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	ret = SSL_connect(ssn->ssl);
 	if (ret < 0) {
 		switch (SSL_get_error(ssn->ssl, ret)) {
-			default:
-				break;
-
-
+		default:
+			break;
 
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
@@ -687,6 +749,13 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	state->ctx = conf->ctx;
 	state->ssl = new_tls;
 	state->conf = conf;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+	/*
+	 *	Set the keylog file if the admin requested it.
+	 */
+	if (getenv("SSLKEYLOGFILE") != NULL) SSL_CTX_set_keylog_callback(state->ctx, tls_keylog_cb);
+#endif
 
 	/*
 	 *	Initialize callbacks
@@ -929,7 +998,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 			REXDENT();
 		}
 
-		switch (ssn->info.version) {
+		switch (SSL_version(ssn->ssl)) {
 		case SSL2_VERSION:
 			str_version = "SSL 2.0";
 			break;
@@ -966,7 +1035,6 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 			RINDENT();
 			rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
 			REXDENT();
-
 		}
 	}
 	else if (SSL_in_init(ssn->ssl)) { RDEBUG2("(TLS) In Handshake Phase"); }
@@ -1018,10 +1086,11 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 			return 0;
 		}
 	} else {
-
 		RDEBUG2("(TLS) Application data.");
-		/* Its clean application data, do whatever we want */
+		/* Its clean application data, leave whatever is in the buffer */
+#if 0
 		record_init(&ssn->clean_out);
+#endif
 	}
 
 	/* We are done with dirty_in, reinitialize it */
@@ -1160,6 +1229,7 @@ void tls_session_information(tls_session_t *tls_session)
 {
 	char const *str_write_p, *str_version, *str_content_type = "";
 	char const *str_details1 = "", *str_details2= "";
+	char const *details = NULL;
 	REQUEST *request;
 	VALUE_PAIR *vp;
 	char content_type[16], alert_buf[16];
@@ -1182,7 +1252,9 @@ void tls_session_information(tls_session_t *tls_session)
 
 	str_write_p = tls_session->info.origin ? "(TLS) send" : "(TLS) recv";
 
-	switch (tls_session->info.version) {
+#define FROM_CLIENT (tls_session->info.origin == 0)
+
+	switch (SSL_version(tls_session->ssl)) {
 	case SSL2_VERSION:
 		str_version = "SSL 2.0 ";
 		break;
@@ -1209,7 +1281,7 @@ void tls_session_information(tls_session_t *tls_session)
 #endif
 
 	default:
-		sprintf(buffer, "UNKNOWN TLS VERSION '%04X'", tls_session->info.version);
+		sprintf(buffer, "UNKNOWN TLS VERSION '%04X'", SSL_version(tls_session->ssl));
 		str_version = buffer;
 		break;
 	}
@@ -1253,9 +1325,12 @@ void tls_session_information(tls_session_t *tls_session)
 				}
 
 				str_details2 = " ???";
+				details = "there is a failure inside the TLS protocol exchange";
+
 				switch (tls_session->info.alert_description) {
 				case SSL3_AD_CLOSE_NOTIFY:
 					str_details2 = " close_notify";
+					details = "the connection has been closed, and no further TLS exchanges will take place";
 					break;
 
 				case SSL3_AD_UNEXPECTED_MESSAGE:
@@ -1284,26 +1359,32 @@ void tls_session_information(tls_session_t *tls_session)
 
 				case SSL3_AD_NO_CERTIFICATE:
 					str_details2 = " no_certificate";
+					details = "the server did not present a certificate to the client";
 					break;
 
 				case SSL3_AD_BAD_CERTIFICATE:
 					str_details2 = " bad_certificate";
+					details = "it believes the server certificate is invalid or malformed";
 					break;
 
 				case SSL3_AD_UNSUPPORTED_CERTIFICATE:
 					str_details2 = " unsupported_certificate";
+					details = "it does not understand the certificate presented by the server";
 					break;
 
 				case SSL3_AD_CERTIFICATE_REVOKED:
 					str_details2 = " certificate_revoked";
+					details = "it believes that the server certificate has been revoked";
 					break;
 
 				case SSL3_AD_CERTIFICATE_EXPIRED:
 					str_details2 = " certificate_expired";
+					details = "it believes that the server certificate has expired.  Either renew the server certificate, or check the time on the client";
 					break;
 
 				case SSL3_AD_CERTIFICATE_UNKNOWN:
 					str_details2 = " certificate_unknown";
+					details = "it does not recognize the server certificate";
 					break;
 
 				case SSL3_AD_ILLEGAL_PARAMETER:
@@ -1312,6 +1393,7 @@ void tls_session_information(tls_session_t *tls_session)
 
 				case TLS1_AD_UNKNOWN_CA:
 					str_details2 = " unknown_ca";
+					details = "it does not recognize the CA used to issue the server certificate.  Please update the client so that it knows about the CA";
 					break;
 
 				case TLS1_AD_ACCESS_DENIED:
@@ -1332,12 +1414,13 @@ void tls_session_information(tls_session_t *tls_session)
 
 				case TLS1_AD_PROTOCOL_VERSION:
 					str_details2 = " protocol_version";
+					details = "the client does not accept the version of TLS negotiated by the server";
 
 #ifdef TLS1_3_VERSION
 					/*
 					 *	Complain about OpenSSL bugs.
 					 */
-					if ((tls_session->info.version > tls_session->conf->max_version) &&
+					if ((SSL_version(tls_session->ssl) > tls_session->conf->max_version) &&
 					    (rad_debug_lvl > 0)) {
 						WARN("TLS 1.3 has been negotiated even though it was disabled.  This is an OpenSSL Bug.");
 						WARN("Please set: cipher_list = \"DEFAULT@SECLEVEL=1\" in the tls {...} section.");
@@ -1364,18 +1447,21 @@ void tls_session_information(tls_session_t *tls_session)
 #ifdef TLS13_AD_MISSING_EXTENSIONS
 				case TLS13_AD_MISSING_EXTENSIONS:
 					str_details2 = " missing_extensions";
+					details = "the server did not present a TLS extension which the client expected to be present.  Please check the TLS libraries on the client and server for compatibility";
 					break;
 #endif
 
 #ifdef TLS13_AD_CERTIFICATE_REQUIRED
 				case TLS13_AD_CERTIFICATE_REQUIRED:
 					str_details2 = " certificate_required";
+					details = "the server did not present a certificate";
 					break;
 #endif
 
 #ifdef TLS1_AD_UNSUPPORTED_EXTENSION
 				case TLS1_AD_UNSUPPORTED_EXTENSION:
 					str_details2 = " unsupported_extension";
+					details = "the server has sent a TLS message which the client does not recognize.  Please check the TLS libraries on the client and server for compatibility";
 					break;
 #endif
 
@@ -1506,6 +1592,8 @@ void tls_session_information(tls_session_t *tls_session)
 	}
 
 	RDEBUG2("%s", tls_session->info.info_description);
+
+	if (FROM_CLIENT && details) RDEBUG2("(TLS) The client is informing us that %s.", details);
 }
 
 static CONF_PARSER cache_config[] = {
@@ -1606,10 +1694,6 @@ static CONF_PARSER tls_server_config[] = {
 #endif
 	},
 
-#ifdef TLS1_3_VERSION
-	{ "tls13_enable", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, tls13_enable_magic), NULL },
-#endif
-
 	{ "realm_dir", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, realm_dir), NULL },
 
 	{ "cache", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) cache_config },
@@ -1685,8 +1769,6 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 	DH *dh = NULL;
 	BIO *bio;
 
-	if (!file) return 0;
-
 	/*
 	 * Prior to trying to load the file, check what OpenSSL will do with it.
 	 *
@@ -1700,8 +1782,29 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 /*	if (FIPS_mode() > 0) {
 		WARN(LOG_PREFIX ": Ignoring user-selected DH parameters in FIPS mode. Using defaults.");
-		return 0;
+		file = NULL;
 	}*/
+
+	/*
+	 *	No dh file, set auto context.
+	 */
+	if (!file) {
+		if (!SSL_CTX_set_dh_auto(ctx, 1)) {
+			ERROR(LOG_PREFIX ": Unable to set DH parameters");
+			return -1;
+		}
+
+		return 0;
+	}
+
+	WARN(LOG_PREFIX ": Setting DH parameters from %s - this is no longer necessary.", file);
+	WARN(LOG_PREFIX ": You should comment out the 'dh_file' configuration item.");
+
+#else
+	if (!file) {
+		WARN(LOG_PREFIX ": Cannot set DH parameters.  DH cipher suites may not work.");
+		return 0;
+	}
 #endif
 
 	if ((bio = BIO_new_file(file, "r")) == NULL) {
@@ -3429,53 +3532,53 @@ X509_STORE *fr_init_x509_store(fr_tls_server_conf_t *conf)
 #ifndef OPENSSL_NO_ECDH
 static int set_ecdh_curve(SSL_CTX *ctx, char const *ecdh_curve, bool disable_single_dh_use)
 {
-	int      nid;
-	EC_KEY  *ecdh;
-
 	if (!disable_single_dh_use) {
 		SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
 	}
 
-	if (!ecdh_curve || !*ecdh_curve) return 0;
+	if (!ecdh_curve) return 0;
 
 #if OPENSSL_VERSION_NUMBER >= 0x1000200fL
-	if (strchr(ecdh_curve, ':') != 0) {
-		char *list = strdup(ecdh_curve);
+	/*
+	 *	A colon-separated list of curves.
+	 */
+	if (*ecdh_curve) {
+		char *list;
+
+		memcpy(&list, &ecdh_curve, sizeof(list)); /* const issues */
 
 		if (SSL_CTX_set1_curves_list(ctx, list) == 0) {
-			free(list);
 			ERROR(LOG_PREFIX ": Unknown ecdh_curve \"%s\"", ecdh_curve);
 			return -1;
 		}
-		free(list);
-
-		(void) SSL_CTX_set_ecdh_auto(ctx, 1);
-		return 0;
 	}
 
+	(void) SSL_CTX_set_ecdh_auto(ctx, 1);
+#else
 	/*
-	 *	Just pick the right curve.
+	 *	Use APIs for older versions of OpenSSL.
 	 */
-	if (ecdh_curve && !*ecdh_curve) {
-		(void) SSL_CTX_set_ecdh_auto(ctx, 1);
+	{
+		int      nid;
+		EC_KEY  *ecdh;
+
+		nid = OBJ_sn2nid(ecdh_curve);
+		if (!nid) {
+			ERROR(LOG_PREFIX ": Unknown ecdh_curve \"%s\"", ecdh_curve);
+			return -1;
+		}
+
+		ecdh = EC_KEY_new_by_curve_name(nid);
+		if (!ecdh) {
+			ERROR(LOG_PREFIX ": Unable to create new curve \"%s\"", ecdh_curve);
+			return -1;
+		}
+
+		SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+
+		EC_KEY_free(ecdh);
 	}
 #endif
-
-	nid = OBJ_sn2nid(ecdh_curve);
-	if (!nid) {
-		ERROR(LOG_PREFIX ": Unknown ecdh_curve \"%s\"", ecdh_curve);
-		return -1;
-	}
-
-	ecdh = EC_KEY_new_by_curve_name(nid);
-	if (!ecdh) {
-		ERROR(LOG_PREFIX ": Unable to create new curve \"%s\"", ecdh_curve);
-		return -1;
-	}
-
-	SSL_CTX_set_tmp_ecdh(ctx, ecdh);
-
-	EC_KEY_free(ecdh);
 
 	return 0;
 }
@@ -3510,6 +3613,28 @@ int tls_global_init(bool spawn_flag, bool check)
 		ERROR("(TLS) FATAL: Failed to set up SSL mutexes");
 		return -1;
 	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	/*
+	 *	Load the default provider for most algorithms
+	 */
+	openssl_default_provider = OSSL_PROVIDER_load(NULL, "default");
+	if (!openssl_default_provider) {
+		ERROR("(TLS) Failed loading default provider");
+		return -1;
+	}
+
+	/*
+	 *	Needed for MD4
+	 *
+	 *	https://www.openssl.org/docs/man3.0/man7/migration_guide.html#Legacy-Algorithms
+	 */
+	openssl_legacy_provider = OSSL_PROVIDER_load(NULL, "legacy");
+	if (!openssl_legacy_provider) {
+		ERROR("(TLS) Failed loading legacy provider");
+		return -1;
+	}
+#endif
 
 	return 0;
 }
@@ -3576,6 +3701,19 @@ void tls_global_cleanup(void)
 #ifndef OPENSSL_NO_ENGINE
 	ENGINE_cleanup();
 #endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (openssl_default_provider && !OSSL_PROVIDER_unload(openssl_default_provider)) {
+		ERROR("Failed unloading default provider");
+	}
+	openssl_default_provider = NULL;
+
+	if (openssl_legacy_provider && !OSSL_PROVIDER_unload(openssl_legacy_provider)) {
+		ERROR("Failed unloading legacy provider");
+	}
+	openssl_legacy_provider = NULL;
+#endif
+
 	CONF_modules_unload(1);
 	ERR_free_strings();
 	EVP_cleanup();
@@ -4079,14 +4217,51 @@ post_ca:
 #endif
 
 	/*
+	 *	Set the cipher list if we were told to do so.  We do
+	 *	this before setting min/max TLS version.  In a sane
+	 *	world, OpenSSL would error out if we set the max TLS
+	 *	version to something which was unsupported by the
+	 *	current security level.  However, this is OpenSSL.  If
+	 *	you set conflicting options, it doesn't give an error.
+	 *	Instead, it just picks something to do.
+	 */
+	if (conf->cipher_list) {
+		if (!SSL_CTX_set_cipher_list(ctx, conf->cipher_list)) {
+			tls_error_log(NULL, "Failed setting cipher list");
+			return NULL;
+		}
+	}
+
+	/*
 	 *	Tell OpenSSL PRETTY PLEASE MAY WE USE TLS 1.1.
 	 *
 	 *	Because saying "use TLS 1.1" isn't enough.  We have to
 	 *	send it flowers and cake.
 	 */
-	if ((min_version <= TLS1_1_VERSION) &&
-	    !strstr(conf->cipher_list, "DEFAULT@SECLEVEL=1")) {
-		WARN(LOG_PREFIX ": In order to use TLS 1.0 and/or TLS 1.1, you likely need to set: cipher_list = \"DEFAULT@SECLEVEL=1\"");
+	if (min_version <= TLS1_1_VERSION) {
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+		int seclevel = SSL_CTX_get_security_level(ctx);
+		int required;;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+		required = 0;
+#else
+		required = 1;
+#endif
+
+		if (seclevel != required) {
+			WARN(LOG_PREFIX ": In order to use TLS 1.0 and/or TLS 1.1, you likely need to set: cipher_list = \"DEFAULT@SECLEVEL=%d\"", required);
+		}
+
+#else
+		/*
+		 *	No API to get the security level.  Just guess based on the string in the cipher_list.
+		 */
+		if (conf->cipher_list &&
+		    !strstr(conf->cipher_list, "DEFAULT@SECLEVEL=1")) {
+			WARN(LOG_PREFIX ": In order to use TLS 1.0 and/or TLS 1.1, you likely need to set: cipher_list = \"DEFAULT@SECLEVEL=1\"");
+		}
+#endif
 	}
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -4292,16 +4467,6 @@ post_ca:
 #endif
 
 	/*
-	 * Set the cipher list if we were told to
-	 */
-	if (conf->cipher_list) {
-		if (!SSL_CTX_set_cipher_list(ctx, conf->cipher_list)) {
-			tls_error_log(NULL, "Failed setting cipher list");
-			return NULL;
-		}
-	}
-
-	/*
 	 *	Setup session caching
 	 */
 	if (/*conf->session_cache_enable*/0) {
@@ -4451,6 +4616,7 @@ static int tls_realms_load(fr_tls_server_conf_t *conf)
 	if (!dir) {
 		ERROR("Error reading directory %s: %s", conf->realm_dir, fr_syserror(errno));
 	error:
+		if (dir) closedir(dir);
 		fr_hash_table_free(ht);
 		return -1;
 	}
@@ -4505,6 +4671,9 @@ static int tls_realms_load(fr_tls_server_conf_t *conf)
 			goto error;
 		}
 	}
+
+	conf->realms = ht;
+	closedir(dir);
 
 	return 0;
 }
@@ -4654,6 +4823,7 @@ skip_list:
 		if (conf->ocsp_store == NULL) goto error;
 	}
 #endif /*HAVE_OPENSSL_OCSP_H*/
+
 	{
 		char *dh_file;
 
@@ -4672,7 +4842,7 @@ skip_list:
 	}
 
 	if (conf->verify_client_cert_cmd && !conf->verify_tmp_dir) {
-		ERROR(LOG_PREFIX ": You MUST set the verify directory in order to use verify_client_cmd");
+		ERROR(LOG_PREFIX ": You MUST set the 'tmpdir' directory in order to use '%s' cmd", conf->verify_client_cert_cmd);
 		goto error;
 	}
 
@@ -4947,7 +5117,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 			 *	OpenSSL frees the underlying session out from
 			 *	under us in TLS 1.3.
 			 */
-			if (ssn->info.version == TLS1_3_VERSION) ssn->ssl_session = SSL_get_session(ssn->ssl);
+			if (SSL_version(ssn->ssl) == TLS1_3_VERSION) ssn->ssl_session = SSL_get_session(ssn->ssl);
 #endif
 #endif
 
@@ -5000,38 +5170,55 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 		err = BIO_write(ssn->into_ssl, ssn->dirty_in.data,
 				ssn->dirty_in.used);
 		if (err != (int) ssn->dirty_in.used) {
+			REDEBUG("(TLS) Failed writing %zd bytes to SSL BIO: %d", ssn->dirty_in.used, err);
 			record_init(&ssn->dirty_in);
-			RDEBUG("Failed writing %zd bytes to SSL BIO: %d", ssn->dirty_in.used, err);
 			return FR_TLS_FAIL;
 		}
+
+		record_init(&ssn->dirty_in);
 	}
 
 	/*
-	 *      Clear the dirty buffer now that we are done with it
-	 *      and init the clean_out buffer to store decrypted data
+	 *	tls_handshake_recv() may read application data.  So
+	 *	don't touch clean_out.  But only if the BIO_write()
+	 *	above didn't do anything.
 	 */
-	record_init(&ssn->dirty_in);
-	record_init(&ssn->clean_out);
+	else if (ssn->clean_out.used > 0) {
+		RDEBUG("(TLS) We already have %zd bytes of application data, processing it.",
+		       (ssn->clean_out.used));
+		goto add_certs;
+	}
 
 	/*
 	 *      Read (and decrypt) the tunneled data from the
 	 *      SSL session, and put it into the decrypted
 	 *      data buffer.
 	 */
-	err = SSL_read(ssn->ssl, ssn->clean_out.data, sizeof(ssn->clean_out.data));
+	err = SSL_read(ssn->ssl, ssn->clean_out.data + ssn->clean_out.used,
+		       sizeof(ssn->clean_out.data) - ssn->clean_out.used);
 	if (err <= 0) {
 		int code;
 
-		RDEBUG3("SSL_read Error");
+		RDEBUG3("(TLS) SSL_read Error");
 
 		code = SSL_get_error(ssn->ssl, err);
 		switch (code) {
 		case SSL_ERROR_WANT_READ:
+			if (ssn->clean_out.used > 0) { /* just process what application data we have */
+				err = 0;
+				break;
+			}
+
 			RDEBUG("(TLS) OpenSSL says that it needs to read more data.");
 			return FR_TLS_MORE_FRAGMENTS;
 
 		case SSL_ERROR_WANT_WRITE:
-			RDEBUG("(TLS) Error in fragmentation logic: SSL_WANT_WRITE");
+			if (ssn->clean_out.used > 0) { /* just process what application data we have */
+				err = 0;
+				break;
+			}
+
+			REDEBUG("(TLS) Error in fragmentation logic: SSL_WANT_WRITE");
 			return FR_TLS_FAIL;
 
 		case SSL_ERROR_NONE:
@@ -5053,8 +5240,9 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 	/*
 	 *	Passed all checks, successfully decrypted data
 	 */
-	ssn->clean_out.used = err;
+	ssn->clean_out.used += err;
 
+add_certs:
 	/*
 	 *	Add the certificates to intermediate packets, so that
 	 *	the inner tunnel policies can use them.
