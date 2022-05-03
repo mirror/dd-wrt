@@ -5229,7 +5229,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	alen = cnt;
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
+	websWrite(wp, "<table class=\"table\" summary=\"WPA Algorithms\">\n");
 	if (show80211x) {
 		websWrite(wp,
 			  "<tr><th><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></th><th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>"

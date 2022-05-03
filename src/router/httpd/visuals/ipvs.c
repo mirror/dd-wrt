@@ -36,7 +36,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");
 
-		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table center\"><tr>\n");
+		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><tr>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetip", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
@@ -152,7 +152,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table\"><tr>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");

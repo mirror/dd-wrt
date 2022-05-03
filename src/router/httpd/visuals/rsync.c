@@ -57,7 +57,7 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"rsync_shares\" class=\"table center\" summary=\"rsync share table\">\n");
+	websWrite(wp, "	<table id=\"rsync_shares\" class=\"table\" summary=\"rsync share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");

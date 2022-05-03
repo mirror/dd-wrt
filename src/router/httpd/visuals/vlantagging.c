@@ -30,7 +30,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("vlan_tagcount", 0);
-	websWrite(wp, "<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table\"><tr>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");

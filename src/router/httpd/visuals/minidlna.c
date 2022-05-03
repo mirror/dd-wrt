@@ -57,7 +57,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table center\" summary=\"dlna share table\">\n");
+	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table\" summary=\"dlna share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");

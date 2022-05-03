@@ -60,7 +60,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
+	websWrite(wp, "	<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
@@ -197,7 +197,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
+	websWrite(wp, "	<table id=\"samba_users\" class=\"table\" summary=\"samba user table\">\n");
 
 	show_caption_pp(wp, NULL, "service.samba3_users", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");

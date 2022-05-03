@@ -298,7 +298,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		if (!*(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
+		websWrite(wp, "<table class=\"table\" summary=\"Raid\">\n");
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp,
 				  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
@@ -499,7 +499,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		websWrite(wp, "</table>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<table class=\"table center\" summary=\"Raid Members\">\n");
+		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"
 			  "<th style=\"text-align: center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 		char var[128];
@@ -549,7 +549,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
+	websWrite(wp, "<table id=\"drives\" class=\"table\" summary=\"Drive List\">\n");
 	websWrite(wp,
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"

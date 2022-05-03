@@ -44,7 +44,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table\"><tr>\n");
 	websWrite(wp, "<th>Name</th>\n");
 	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
@@ -337,7 +337,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	strcpy(finalbuffer, checkbuffer);
 	debug_free(checkbuffer);
 	int realcount = nvram_default_geti("bridgesif_count", 0);
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table\"><tr>\n");
 	show_caption_pp(wp, NULL, "networking.assign", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
