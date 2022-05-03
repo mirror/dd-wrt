@@ -260,7 +260,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
 								<legend><% getwirelessstatus(); %></legend>
-								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
+								<table class="table" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
 										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 										<th sortdir="up" width="10%"><% tran("share.radioname"); %></th>
@@ -285,7 +285,7 @@ addEvent(window, "unload", function() {
 							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
-									<table class="table center" cellspacing="5" id="wds_table" summary="wds clients table">
+									<table class="table" cellspacing="5" id="wds_table" summary="wds clients table">
 										<tr>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>

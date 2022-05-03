@@ -175,7 +175,7 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<fieldset>
 							   <legend><% tran("networking.legend4"); %></legend>
-							   	<table class="table center" cellspacing="5" id="Bridging_table" summary="current bridging table">
+							   	<table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
 								<tr>
 								<th width="15%"><% tran("networking.brname"); %></th>
 								<th width="15%"><% tran("networking.stp"); %></th>

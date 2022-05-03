@@ -68,7 +68,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("prforward.legend"); %></legend>
-								<table class="table center" cellspacing="5" summary="port forwarding table">
+								<table class="table" cellspacing="5" summary="port forwarding table">
 									<tr>
 										<th><% tran("prforward.app"); %></th>
 										<th><% tran("share.start"); %></th>

@@ -583,7 +583,7 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script></span>
 									</div>
-									<table class="table center" cellspacing="5" summary="edca ap parameters">
+									<table class="table" cellspacing="5" summary="edca ap parameters">
 										<tr>
 											<th colspan="7"><%% tran("wl_adv.table1"); %%></th>
 										</tr>
@@ -683,7 +683,7 @@ addEvent(window, "unload", function() {
 											<td align="center"><input type="hidden" name="%s_wme_sta_vo5" value="<%% nvram_list("%s_wme_sta_vo", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_vo5" <%% wme_match_op("%s_wme_sta_vo", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 									</table>
-									<table class="table center" cellspacing="5" summary="WMM Tx retry limits">
+									<table class="table" cellspacing="5" summary="WMM Tx retry limits">
 										<tr>
 											<th colspan="7"><%% tran("wl_adv.table3"); %%></th>
 										</tr>

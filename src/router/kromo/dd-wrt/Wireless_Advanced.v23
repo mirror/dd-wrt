@@ -525,7 +525,7 @@ addEvent(window, "unload", function() {
 											</script>
 										</span>
 									</div>
-									<table class="table center" cellspacing="5" summary="edca ap parameters">
+									<table class="table" cellspacing="5" summary="edca ap parameters">
 										<tr>
 											<th colspan="7"><% tran("wl_adv.table1"); %></th>
 										</tr>

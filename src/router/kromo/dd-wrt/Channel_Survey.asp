@@ -8,7 +8,7 @@
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="commit" value="1" />
 			<h2><% tran("survey.h3"); %></h2>
-			<table class="table center" cellspacing="5" id="survey_table">
+			<table class="table" cellspacing="5" id="survey_table">
 				<tr>
 				   <th sortdir="up" width="4%"><% tran("share.frequency"); %></th>
 				   <th sortdir="up" width="3%"><% tran("share.channel"); %></th>

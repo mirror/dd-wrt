@@ -296,7 +296,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("wol.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend"); %></legend>
-								<table class="table center" cellspacing="5" id="available_hosts_table" summary="available hosts table">
+								<table class="table" cellspacing="5" id="available_hosts_table" summary="available hosts table">
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="35%"><% tran("share.hostname"); %></th>
@@ -308,7 +308,7 @@ addEvent(window, "unload", function() {
 
 							<fieldset>
 								<legend><% tran("wol.legend2"); %></legend>
-								<table class="table center" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
+								<table class="table" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="25%"><% tran("share.hostname"); %></th>
