@@ -27,19 +27,19 @@
 					);
 					
 					if (table.length == 0) {
-						document.write("<tr><td colspan=\"12\" align=\"center\">" + share.none + "</td></tr>");
+						document.write("<tr><td colspan=\"12\" class=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
 						for (var i = 0; i < table.length; i = i + 8) {
 							document.write("<tr>");
-							document.write("<td align=\"center\">"+table[i]+"</td>");
-							document.write("<td align=\"center\">"+table[i+1]+"</td>");
-							document.write("<td align=\"center\">"+table[i+2]+"</td>");
-							document.write("<td align=\"center\">"+table[i+3]+"</td>");
-							document.write("<td align=\"center\">"+table[i+4]+"</td>");
-							document.write("<td align=\"center\">"+table[i+5]+"</td>");
-							document.write("<td align=\"center\">"+table[i+6]+"</td>");
-							document.write("<td align=\"center\">"+table[i+7]+"</td>");
+							document.write("<td class=\"center\">"+table[i]+"</td>");
+							document.write("<td class=\"center\">"+table[i+1]+"</td>");
+							document.write("<td class=\"center\">"+table[i+2]+"</td>");
+							document.write("<td class=\"center\">"+table[i+3]+"</td>");
+							document.write("<td class=\"center\">"+table[i+4]+"</td>");
+							document.write("<td class=\"center\">"+table[i+5]+"</td>");
+							document.write("<td class=\"center\">"+table[i+6]+"</td>");
+							document.write("<td class=\"center\">"+table[i+7]+"</td>");
 							document.write("<\/tr>");
 						}
 					}

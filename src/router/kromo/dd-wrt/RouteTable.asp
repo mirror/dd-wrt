@@ -20,7 +20,7 @@
 					var table = new Array(<% dump_route_table(); %>);
 					
 					if(table.length == 0) {
-						document.write("<tr><td align=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");
+						document.write("<tr><td class=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");
 					} else {
 						for(var i = 0; i < table.length; i = i+7) {
 							if(table[i+5] == "LAN")

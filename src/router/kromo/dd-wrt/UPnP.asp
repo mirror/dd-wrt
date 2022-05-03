@@ -75,7 +75,7 @@ function setUPnPTable(forwards) {
 		//proto
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].proto;
-		cell.align="center";
+		cell.align = "center";
 
 		
 		cell = row.insertCell(-1);

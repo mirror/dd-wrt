@@ -206,7 +206,7 @@ var table = new Array(
 );
 
 if (table.length == 0) {
-document.write("<tr><td colspan=\"11\" align=\"center\">" + share.none + "</td></tr>");
+document.write("<tr><td colspan=\"11\" class=\"center\">" + share.none + "</td></tr>");
 }
 else {
 for (var i = 0; i < table.length; i = i + 4) {

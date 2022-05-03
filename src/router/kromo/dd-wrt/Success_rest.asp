@@ -49,7 +49,7 @@ addEvent(window, "unload", function() {
 			<div>
 				<form name="success">
 					<% tran("success.restore"); %><br /><br />
-					<div align="center">
+					<div class="center">
 						<script type="text/javascript">
 						//<![CDATA[
 
