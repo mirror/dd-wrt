@@ -155,7 +155,8 @@ freeradius3-configure: libtalloc openssl libpcap
 	--without-rlm_sqlhpwippool \
 	--without-rlm_sqlippool \
 	--without-rlm_unbound \
-	--without-rlm_yubikey
+	--without-rlm_yubikey \
+	--without-rlm_json
 	sed -i 's/-isystem \/usr\/include/ /g' $(TOP)/freeradius3/Make.inc
 
 
