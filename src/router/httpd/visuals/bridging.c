@@ -88,7 +88,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"1500\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
@@ -145,7 +145,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 		} else {
 			char macbuf[32];
 			char *hwmac = get_hwaddr(bridge, macbuf);
@@ -154,9 +154,9 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 				nvram_nset(hwmac, "%s_hwaddr", bridge);
 			mac = nvram_nget("%s_hwaddr", bridge);
 			if (!strcmp(mac, "")) {
-				websWrite(wp, "<td align=\"center\">...</td>\n");
+				websWrite(wp, "<td class=\"center\">...</td>\n");
 			} else {
-				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s_hwaddr\" size=\"16\" value=\"%s\" /></td>\n", bridge, mac);
+				websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s_hwaddr\" size=\"16\" value=\"%s\" /></td>\n", bridge, mac);
 			}
 		}
 
@@ -165,7 +165,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  count);
 			// don't show that here, since that is under Basic Setup
-/*			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
+/*			websWrite(wp, "<tr><td colspan=\"7\" class=\"center\">");
 			show_ipnetmask(wp, bridge);
 			websWrite(wp, "</td></tr>");*/
 		} else {

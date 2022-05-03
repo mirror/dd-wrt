@@ -75,11 +75,11 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>");
 
 			sprintf(ipvs_name, "target_ipvsip%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
 			sprintf(ipvs_name, "target_ipvsport%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
 			sprintf(ipvs_name, "target_ipvsweight%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
 			sprintf(ipvs_name, "target_ipvsmasquerade%d", count);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", ipvs_name, !strcmp(targetnat, "1") ? "checked=\"checked\"" : "");
 			websWrite(wp,
@@ -107,11 +107,11 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>");
 
 			sprintf(ipvs_name, "target_ipvsip%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsport%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsweight%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"5\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsmasquerade%d", i);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" checked=\"checked\"/></td>\n", ipvs_name);
 
@@ -176,9 +176,9 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
 		sprintf(ipvs_name, "ipvsport%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsproto%d", count);
 		showOptions(wp, ipvs_name, "tcp udp sip", sourceproto);
@@ -213,9 +213,9 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", i);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\"/></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsip%d", i);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"\" /></td>\n", ipvs_name);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"\" /></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsport%d", i);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"\" /></td>\n", ipvs_name);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"\" /></td>\n", ipvs_name);
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsproto%d", count);
 		showOptions(wp, ipvs_name, "tcp udp sip", "tcp");

@@ -224,7 +224,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "		<tr %s>\n", buffer);
 
-		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" align=\"center\">\n");
+		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" class=\"center\">\n");
 		websWrite(wp, "				<input type=\"text\" name=\"smbuser_username%s\" autocomplete=\"new-password\" value=\"%s\" size=\"20\">\n", number, cu->username);
 		websWrite(wp, "			</td>\n");
 

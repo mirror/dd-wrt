@@ -147,7 +147,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 					strlcpy(proto_old, proto, sizeof(proto_old) - 1);
 				}
 
-				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, proto, servp ? servp->s_name : dpt,
+				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td class=\"center\">%s</td>\n<td class=\"center\">%s</td>\n<td class=\"center\">%s</td>\n</tr>\n", src, proto, servp ? servp->s_name : dpt,
 					  verdict);
 			}
 		} else if (!strcmp(type, "outgoing")) {
@@ -170,7 +170,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 					strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
 				}
 
-				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, dst, proto, servp ? servp->s_name : dpt,
+				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td class=\"center\">%s</td>\n<td>%s</td>\n<td class=\"center\">%s</td>\n</tr>\n", src, dst, proto, servp ? servp->s_name : dpt,
 					  verdict);
 			}
 		} else if (!strcmp(type, "all")) {

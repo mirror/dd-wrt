@@ -311,7 +311,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (flag == 22000)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "networking.snooping"));
 			}
-			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
+			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
 			if (flag < 17000 || flag > 22000) {
 				if (vlans[j][i] == 1)

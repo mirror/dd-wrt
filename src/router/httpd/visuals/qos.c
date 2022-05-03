@@ -116,7 +116,7 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		websWrite(wp, "<tr>\n"
-			  "<td align=\"center\">\n"
+			  "<td class=\"center\">\n"
 			  "<input type=\"checkbox\" name=\"svqos_svcdel%d\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td >\n", i, i, name, i, type, name);
@@ -215,7 +215,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 				strcpy(proto, "none");
 		}
 
-		websWrite(wp, "<tr>\n" "<td align=\"center\">\n"	//
+		websWrite(wp, "<tr>\n" "<td class=\"center\">\n"	//
 			  "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"	//
 			  "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n"	//
 			  "</td>\n", i, i, ip);
@@ -311,7 +311,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 				strcpy(prio, "0");
 		}
 
-		websWrite(wp, "<tr>\n" "<td align=\"center\">\n" "<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n" "</td>\n", i, i, ip);
+		websWrite(wp, "<tr>\n" "<td class=\"center\">\n" "<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n" "<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n" "</td>\n", i, i, ip);
 		websWrite(wp, "	<td><em>%s</em></td>\n", ip);
 
 		websWrite(wp, "	<td nowrap>\n"
@@ -390,7 +390,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		}
 
 		websWrite(wp, "<tr>\n"
-			  "<td align=\"center\">\n"
+			  "<td class=\"center\">\n"
 			  "<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n"
 			  "</td>\n"

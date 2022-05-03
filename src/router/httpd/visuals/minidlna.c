@@ -137,7 +137,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
-		websWrite(wp, "				<td align=\"center\">\n");
+		websWrite(wp, "				<td class=\"center\">\n");
 		websWrite(wp,
 			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
 			  number);

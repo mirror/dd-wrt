@@ -877,7 +877,7 @@ EJ_VISIBLE void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	count = nvram_safe_get("forward_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
-		websWrite(wp, "<tr>\n<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"7\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
@@ -914,7 +914,7 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		// websWrite (wp, "<tr></tr><tr></tr>\n");
-		websWrite(wp, "<tr>\n<td colspan=\"8\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"8\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		//name
@@ -952,7 +952,7 @@ EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("forwardip_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"5\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"5\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
@@ -978,7 +978,7 @@ EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("trigger_entries");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"8\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"8\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr>\n<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
