@@ -373,7 +373,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   height: 1px;
   font-size: 1px;
 }
-div.center {
+.center {
   text-align: center;
 }
 .message {

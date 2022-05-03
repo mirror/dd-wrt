@@ -71,8 +71,8 @@ addEvent(window, "unload", function() {
 										<th><% tran("pforwardip.name"); %></th>
 										<th><% tran("pforwardip.src"); %></th>
 										<th><% tran("pforwardip.dest"); %></th>
-										<th style="text-align: center"><% tran("share.enable"); %></th>
-										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
+										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward_ip(); %>
 								</table><br />

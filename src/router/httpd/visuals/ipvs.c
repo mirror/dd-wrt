@@ -42,7 +42,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\">", "</th>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\">", "</th>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
 
@@ -158,7 +158,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
 
 	wordlist = nvram_safe_get("ipvs");
 

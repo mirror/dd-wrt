@@ -75,8 +75,8 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.end"); %></th>
 										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.ip"); %></th>
-										<th style="text-align: center"><% tran("share.enable"); %></th>
-										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
+										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward(); %>
 								</table><br />

@@ -179,7 +179,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		qos_ips++;
 	}
 	websWrite(wp, "<tr>\n"	//
-		  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.iftbl)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
@@ -279,7 +279,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		qos_ips++;
 	}
 	websWrite(wp, "<tr>\n"	//
-		  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
@@ -362,7 +362,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		qos_macs++;
 	}
 	websWrite(wp, "<tr>\n"	//
-		  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//

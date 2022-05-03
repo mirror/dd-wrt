@@ -58,7 +58,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.max_age", "<th>", "</th>\n");
 	websWrite(wp, "<th>MTU</th>\n");
 	websWrite(wp, "<th>Root MAC</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\">", "</th>\n");
 
 	if (!br0found) {
 
@@ -346,7 +346,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.pathcost", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.hairpin", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {

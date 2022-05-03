@@ -65,7 +65,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.dlna_type_audio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_video", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_images", "<th>", "</th>\n");
-	websWrite(wp, "			<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "			<th class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cs = dlnashares; cs; cs = csnext) {
