@@ -50,7 +50,7 @@
 		//]]>
 		</script>
 	</div>
-	<table class="table center" summary="static lease table">
+	<table class="table" summary="static lease table">
 		<tr>
 			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>

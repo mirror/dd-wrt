@@ -2,7 +2,7 @@
 <fieldset>
 	<legend>MAC Userlist</legend>
 	<input type="hidden" name="iradius" value="13" />
-	<table class="table center">
+	<table class="table">
 		<tr>
 			<th colspan="2">MACS</th>
 		</tr>

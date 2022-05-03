@@ -171,7 +171,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
 							   <legend><% tran("vlan.legend"); %></legend>
-							   <table class="table center vlan" summary="virtual lan table">
+							   <table class="table vlan" summary="virtual lan table">
 								<tbody>
 									<% port_vlan_table(); %>
 								</tbody>
