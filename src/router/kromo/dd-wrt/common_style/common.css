@@ -444,8 +444,7 @@ input.button {
   vertical-align: middle;
   cursor: pointer;
 }
-input.button:hover, input.button:focus,
-button:hover, button:focus {
+input.button:hover, input.button:focus {
   text-decoration: none;
 }
 input.button[disabled],
