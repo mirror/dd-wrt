@@ -50,7 +50,7 @@
 		//]]>
 		</script>
 	</div>
-	<table class="table center" summary="static lease table">
+	<table class="table" summary="static lease table">
 		<tr>
 			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>
@@ -59,7 +59,7 @@
 			<th width="22%"><% tran("share.hostname"); %></th>
 			<th width="22%"><% tran("share.ip"); %></th>
 			<th width="22%"><% tran("idx.dhcp_lease"); %></th>
-			<th width="12%" style="text-align: center"><% tran("share.actiontbl"); %></th>
+			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
 			<% show_staticleases(); %>
 	</table><br />
