@@ -639,10 +639,10 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 #if LANGUAGE == JAPANESE
-	char w[7][10] = { "“ú", "ŒŽ", "‰Î", "?…", "–Ø", "‹à", "“y" };
-	char am[] = "Œß‘O";
-	char pm[] = "ŒßŒã";
-	char _24h[] = "24 ŽžŠÔ";
+	char w[7][10] = { "ï¿½ï¿½", "ï¿½ï¿½", "ï¿½ï¿½", "?ï¿½", "ï¿½ï¿½", "ï¿½ï¿½", "ï¿½y" };
+	char am[] = "ï¿½ß‘O";
+	char pm[] = "ï¿½ßŒï¿½";
+	char _24h[] = "24 ï¿½ï¿½ï¿½ï¿½";
 #else
 	char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1",
 		"share.thu_s1", "share.fri_s1", "share.sat_s1"
@@ -671,15 +671,15 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 		filter_tod_init(wp, i + 1);
 
-		websWrite(wp, "<tr align=\"center\" bgcolor=\"#CCCCCC\" >\n"
+		websWrite(wp, "<tr class=\"center\" bgcolor=\"#CCCCCC\" >\n"
 			  "<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n"
 			  "<td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n"
 			  "<td height=\"30\" width=\"150\" >\n"
 			  "<table width=\"150\" height=\"30\" border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\" style=\"border-collapse:collapse\" >\n" "<tr>\n", i + 1, name);
-		websWrite(wp, "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+		websWrite(wp, "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
 																								       || wp->p->week0 ==
 																								       1) ? "#C0C0C0" :
 			  "#FFFFFF", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
@@ -687,9 +687,9 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 																						1) ? "#C0C0C0" : "#FFFFFF", w[2],
 			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
 		websWrite(wp,
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
 			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
 																			       || wp->p->week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5],
 			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
