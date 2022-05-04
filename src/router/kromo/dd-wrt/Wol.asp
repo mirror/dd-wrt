@@ -296,32 +296,32 @@ addEvent(window, "unload", function() {
 							<h2><% tran("wol.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend"); %></legend>
-								<table class="table center" cellspacing="5" id="available_hosts_table" summary="available hosts table">
+								<table class="table" cellspacing="5" id="available_hosts_table" summary="available hosts table">
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="35%"><% tran("share.hostname"); %></th>
 										<th width="20%"><% tran("share.ip"); %></th>
-										<th width="20%" style="text-align: center"><% tran("wol.enable"); %></th>
+										<th width="20%" class="center"><% tran("wol.enable"); %></th>
 									</tr>
 								</table>
 							</fieldset><br />
 
 							<fieldset>
 								<legend><% tran("wol.legend2"); %></legend>
-								<table class="table center" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
+								<table class="table" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="25%"><% tran("wol.broadcast"); %></th>
-										<th width="10%" style="text-align: center"><% tran("share.remove"); %></th>
-										<th width="10%" style="text-align: center"><% tran("share.actiontbl"); %></th>
+										<th width="10%" class="center"><% tran("share.remove"); %></th>
+										<th width="10%" class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<tr>
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" onchange="this.value=this.value.toUpperCase()" /></td>
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value="" /></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value="" /></td>
 										<td></td>
-										<td style="text-align: center"><script type="text/javascript">
+										<td class="center"><script type="text/javascript">
 										//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
 										//]]>

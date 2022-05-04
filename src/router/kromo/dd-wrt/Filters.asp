@@ -364,24 +364,24 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<table summary="week days table">
 										<tr>
-											<td align="center"><% tran("share.everyday"); %></td>
-											<td align="center"><% tran("share.sun_s"); %></td>
-											<td align="center"><% tran("share.mon_s"); %></td>
-											<td align="center"><% tran("share.tue_s"); %></td>
-											<td align="center"><% tran("share.wed_s"); %></td>
-											<td align="center"><% tran("share.thu_s"); %></td>
-											<td align="center"><% tran("share.fri_s"); %></td>
-											<td align="center"><% tran("share.sat_s"); %></td>
+											<td class="center"><% tran("share.everyday"); %></td>
+											<td class="center"><% tran("share.sun_s"); %></td>
+											<td class="center"><% tran("share.mon_s"); %></td>
+											<td class="center"><% tran("share.tue_s"); %></td>
+											<td class="center"><% tran("share.wed_s"); %></td>
+											<td class="center"><% tran("share.thu_s"); %></td>
+											<td class="center"><% tran("share.fri_s"); %></td>
+											<td class="center"><% tran("share.sat_s"); %></td>
 										</tr>
 										<tr>
-											<td align="center"><input type="checkbox" value="1" name="day_all" onclick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week3" <% filter_tod_get("week3"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week4" <% filter_tod_get("week4"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
-											<td align="center"><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="day_all" onclick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week3" <% filter_tod_get("week3"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week4" <% filter_tod_get("week4"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
+											<td class="center"><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
 										</tr>
 									</table>
 								</div>
@@ -409,7 +409,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("filter.catchall"); %></div>
 									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvc("filter_p2p", "1"); %> />
 								</div>
-								<table><tr align="center">
+								<table><tr class="center">
 									<td><% show_filters(); %></td>
 								</tr></table>
 								<div class="center">

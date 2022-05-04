@@ -43,7 +43,7 @@ function do_join (F,SSID) {
 				   <th sortdir="up" width="5%"><%% tran("share.openn"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.dtim"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
-				   <th sortdir="up" width="7%" style="text-align: center"><%% tran("share.actiontbl"); %%></th>
+				   <th sortdir="up" width="7%" class="center"><%% tran("share.actiontbl"); %%></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[
@@ -53,7 +53,7 @@ function do_join (F,SSID) {
 					);
 					
 					if (table.length == 0) {
-						document.write("<tr><td colspan=\"15\" align=\"center\">" + share.none + "</td></tr>");
+						document.write("<tr><td colspan=\"15\" class=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
 						for (var i = 0; i < table.length; i = i + 15) {

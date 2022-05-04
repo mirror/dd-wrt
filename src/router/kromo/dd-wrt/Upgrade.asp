@@ -117,7 +117,7 @@ addEvent(window, "unload", function() {
 							<div class="warning">
 								<div id="warning_text"><p><b><% tran("upgrad.warning"); %></b></p></div>
 								<p><% tran("upgrad.mess1"); %></p><br/>
-								<div align="center"><script type="text/javascript">
+								<div class="center"><script type="text/javascript">
 								//<![CDATA[
 								var bar1 = createBar(500,15,100,15,200,"process_aborted(this.form)");
 								bar1.togglePause();

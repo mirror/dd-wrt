@@ -41,7 +41,6 @@ table tr:not([bgcolor]):hover {
 textarea {
   color: #555;
   background-color: #fff;
-  background-image: none;
   border: 1px solid #ccc;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
@@ -51,10 +50,9 @@ textarea:focus, textarea.focus {
   box-shadow: 0 0 5px 1px #969696;
 }
 input {
-  color: #555;
   background-color: #fff;
-  background-image: none;
   border: 1px solid #ccc;
+  color: #000;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
@@ -120,17 +118,9 @@ input.button[disabled]:hover {
 select {
   color: #555;
   background-color: #fff;
-  background-image: none;
   border: 1px solid #ccc;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
-}
-button:hover, button:focus {
-  color: #333;
-}
-button {
-  background-image: none;
-  border: 1px solid transparent;
 }
 .progressbar {
   background-color: #fff;

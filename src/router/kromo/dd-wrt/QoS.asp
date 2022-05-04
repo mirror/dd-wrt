@@ -324,7 +324,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
 									<tr>
-										<th style="text-align: center; width: 12%"><% tran("share.del"); %></th>
+										<th class="center; width: 12%"><% tran("share.del"); %></th>
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
 										<th width="12%"><% tran("share.packets"); %></th>

@@ -59,7 +59,7 @@ function init()
 			<div>
 				<form>
 					<script type="text/javascript">Capture(success.success_noreboot)</script><br /><br />
-						<div align="center">
+						<div class="center">
 	            			<script type="text/javascript">
 	            				var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
 	            				bar1.togglePause();

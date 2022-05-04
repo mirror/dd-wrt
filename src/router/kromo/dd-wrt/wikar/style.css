@@ -21,9 +21,12 @@ hr {
 input.num {
   width: auto;
 }
-input.ipnum {
-  text-transform: uppercase;
-  text-align: center;
+input.num[name*="lease"][size="10"] {
+	margin-right: 4px;
+  width: 52%
+}
+th {
+  background-color: #e9e9ed;
 }
 th, td {
   padding: 0 10px 0 0;
@@ -198,32 +201,42 @@ td .meter {
 .textblink {
   text-decoration: blink;
 }
-input.spaceradio, .submitFooter input.button {
-  margin-right: .4em;
-  #score {
-    color: #000;
-    font-size: 85%;
-    position: absolute;
-    text-align: center;
-    width: 100px;
-    z-index: 10;
-  }
-  #score, #rating, #standards {
-    font-weight: bold;
-  }
-  #scorebar {
-    background-image: url(/images/gradient.svg);
-    background-repeat: no-repeat;
-    background-position: 0 0;
-    position: absolute;
-    width: 100px;
-    z-index: 0;
-  }
-  #scorebarBorder {
-    background: #333;
-    border: 1px #000 solid;
-    height: 16px;
-    margin-bottom: 2px;
-    width: 100px;
-  }
+input.button {
+  padding: .05em .5em;
+  margin: 0 .4em 0 0;
+  cursor: pointer;
+}
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  color: #000;
+  text-align: left;
+  vertical-align: middle;
+}
+#score {
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
+}
+#score, #rating, #standards {
+  font-weight: bold;
+}
+#scorebar {
+  background-image: url(/images/gradient.svg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
+}
+#scorebarBorder {
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  height: 15px;
+  margin-bottom: 2px;
+  width: 100px;
 }

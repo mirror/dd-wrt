@@ -70,7 +70,7 @@ function milkfish_user_remove_submit(F) {
 					<br />
         <fieldset>
                 <legend><% tran("service.milkfish_subscribers"); %></legend>
-                        <table class="table center" summary="chap secrets table">
+                        <table class="table" summary="chap secrets table">
                         <tr>
                                 <th width="30%"><% tran("share.user"); %></th>
                                 <th width="30%"><% tran("share.passwd"); %></th>

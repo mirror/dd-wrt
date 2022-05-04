@@ -75,7 +75,7 @@ function setUPnPTable(forwards) {
 		//proto
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].proto;
-		cell.align="center";
+		cell.align = "center";
 
 		
 		cell = row.insertCell(-1);
@@ -159,7 +159,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
-								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
+								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
 										<th><% tran("share.enabled"); %></th>

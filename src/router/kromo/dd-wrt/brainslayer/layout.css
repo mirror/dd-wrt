@@ -15,15 +15,20 @@ form {
   margin: 0;
   display: inline;
 }
-input, select, option, button {
+input, select, option, .button {
   font-weight: bold;
+}
+input.button {
+  padding: .05em .5em;
+  margin: 0 .4em 0 0;
+  cursor: pointer;
 }
 input.num {
   width: auto;
 }
-input.ipnum {
-  text-transform: uppercase;
-  text-align: center;
+input.num[name*="lease"][size="10"] {
+	margin-right: 4px;
+  width: 52%
 }
 h1, h2, h3, h4, h5, h6, legend, label {
   margin: 1em 0 .5em 0;
@@ -47,13 +52,10 @@ hr {
   margin: 2em 0;
 }
 table {
-  width: 600px;
   border: 0;
 }
-#buttons {
-  padding-bottom: 20px;
-  margin-bottom: 20px;
-  border-bottom: solid 3px;
+th {
+  background-color: #e9e9ed;
 }
 #wrapper {
   position: absolute;
@@ -213,6 +215,13 @@ td .meter {
 input.spaceradio {
   margin-right: .4em;
 }
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  color: #000;
+  text-align: left;
+  vertical-align: middle;
+}
 #score {
   color: #000;
   font-size: 85%;
@@ -233,9 +242,10 @@ input.spaceradio {
   z-index: 0;
 }
 #scorebarBorder {
-  background: #333;
-  border: 1px #000 solid;
-  height: 16px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  height: 12px;
   margin-bottom: 2px;
   width: 100px;
 }

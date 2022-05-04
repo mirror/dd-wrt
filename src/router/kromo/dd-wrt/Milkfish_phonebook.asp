@@ -58,7 +58,7 @@ function to_apply(F) {
         <% exec_milkfish_service("milkfish_services ddactive"); %>
         <fieldset>
                 <legend><% tran("service.milkfish_registrations"); %></legend>
-                        <table class="table center" summary="chap secrets table">
+                        <table class="table" summary="chap secrets table">
                         <tr>
                                 <th width="30%"><% tran("share.user"); %></th>
                                 <th width="30%"><% tran("service.milkfish_contact"); %></th>
