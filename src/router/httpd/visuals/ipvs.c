@@ -36,13 +36,13 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");
 
-		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table center\"><tr>\n");
+		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><tr>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetip", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\">", "</th>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\">", "</th>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
 
@@ -75,15 +75,15 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>");
 
 			sprintf(ipvs_name, "target_ipvsip%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
 			sprintf(ipvs_name, "target_ipvsport%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
 			sprintf(ipvs_name, "target_ipvsweight%d", count);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
 			sprintf(ipvs_name, "target_ipvsmasquerade%d", count);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", ipvs_name, !strcmp(targetnat, "1") ? "checked=\"checked\"" : "");
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  count);
 			count++;
 		}
@@ -107,16 +107,16 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>");
 
 			sprintf(ipvs_name, "target_ipvsip%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsport%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsweight%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"5\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsmasquerade%d", i);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" checked=\"checked\"/></td>\n", ipvs_name);
 
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  i);
 			totalcount++;
 		}
@@ -152,13 +152,13 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table\"><tr>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th style=\"text-align: center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
 
 	wordlist = nvram_safe_get("ipvs");
 
@@ -176,9 +176,9 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
 		sprintf(ipvs_name, "ipvsport%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsproto%d", count);
 		showOptions(wp, ipvs_name, "tcp udp sip", sourceproto);
@@ -201,7 +201,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 			  count);
 		count++;
 	}
@@ -213,9 +213,9 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", i);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\"/></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsip%d", i);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"\" /></td>\n", ipvs_name);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"\" /></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsport%d", i);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"\" /></td>\n", ipvs_name);
+		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"\" /></td>\n", ipvs_name);
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsproto%d", count);
 		showOptions(wp, ipvs_name, "tcp udp sip", "tcp");
@@ -236,7 +236,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"ipvs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 			  i);
 		totalcount++;
 	}

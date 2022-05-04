@@ -60,14 +60,14 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
+	websWrite(wp, "	<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th style=\"text-align: center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -151,7 +151,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbshare_del%s\\\" onclick=\\\"removeSambaShare(this);\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbshare_del%s\\\" onclick=\\\"removeSambaShare(this);\\\" />\");\n//]]>\n</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
@@ -197,7 +197,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
+	websWrite(wp, "	<table id=\"samba_users\" class=\"table\" summary=\"samba user table\">\n");
 
 	show_caption_pp(wp, NULL, "service.samba3_users", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
@@ -207,7 +207,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "			<th>Samba</th>\n");
 	websWrite(wp, "			<th>FTP</th>\n");
 
-	websWrite(wp, "			<th style=\"text-align: center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "			<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
@@ -224,7 +224,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "		<tr %s>\n", buffer);
 
-		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" align=\"center\">\n");
+		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" class=\"center\">\n");
 		websWrite(wp, "				<input type=\"text\" name=\"smbuser_username%s\" autocomplete=\"new-password\" value=\"%s\" size=\"20\">\n", number, cu->username);
 		websWrite(wp, "			</td>\n");
 
@@ -279,7 +279,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		}
 
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbuser_del%s\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" name=\\\"smbuser_del%s\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");\n//]]>\n</script>\n",
 			  number);
 
 		websWrite(wp, "			</td>\n");

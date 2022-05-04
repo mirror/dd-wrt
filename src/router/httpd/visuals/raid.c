@@ -298,14 +298,14 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		if (!*(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
+		websWrite(wp, "<table class=\"table\" summary=\"Raid\">\n");
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp,
 				  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
 				  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
 				  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
 				  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n"
-				  "<th style=\"text-align: center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+				  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
@@ -315,7 +315,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-					  "<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+					  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 			else
 				websWrite(wp,
 					  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
@@ -493,15 +493,15 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		}
 #endif
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 		websWrite(wp, "</table>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<table class=\"table center\" summary=\"Raid Members\">\n");
+		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"
-			  "<th style=\"text-align: center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			  "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 		char var[128];
 		char *next;
 		int midx = 0;
@@ -527,7 +527,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 
 			websWrite(wp, "</td>\n");
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"member_del_submit(this.form,%d, %d)\\\" />\");\n//]]>\n</script>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"member_del_submit(this.form,%d, %d)\\\" />\");\n//]]>\n</script>\n",
 				  i, midx);
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
@@ -549,11 +549,11 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
+	websWrite(wp, "<table id=\"drives\" class=\"table\" summary=\"Drive List\">\n");
 	websWrite(wp,
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th style=\"text-align: center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	int idx = 0;
 	if (drives) {
 		foreach(drive, drives, dnext) {
