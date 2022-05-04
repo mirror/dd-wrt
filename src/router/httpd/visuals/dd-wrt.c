@@ -801,7 +801,7 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /><script type=\"text/javascript\">Capture(share.minutes)</script></td>\n",
 			  i, sep != NULL ? sep : "");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
 			  i);
 	}
 	debug_free(originalpointer);
@@ -5229,7 +5229,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	alen = cnt;
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
+	websWrite(wp, "<table class=\"table\" summary=\"WPA Algorithms\">\n");
 	if (show80211x) {
 		websWrite(wp,
 			  "<tr><th><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></th><th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>"

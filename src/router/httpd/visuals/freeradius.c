@@ -109,8 +109,8 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(freeradius.upstream)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.certtbl)</script></th>\n"
-			"<th style=\"text-align: center;\"><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n"
-			"<th style=\"text-align: center;\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			"<th class=\"center;\"><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n"
+			"<th class=\"center;\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 
 	unsigned int i;
 	struct radiusdb *db = loadradiusdb();
@@ -128,10 +128,10 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].passwd != NULL && db->users[i].passwordsize) ? db->users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
-			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" style=\"text-align: center;\" /></td>\n", vlan_name, db->users[i].downstream);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" class=\"center;\" /></td>\n", vlan_name, db->users[i].downstream);
 
 			sprintf(vlan_name, "upstream%d", i);
-			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" style=\"text-align: center;\" /></td>\n", vlan_name, db->users[i].upstream);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" class=\"center;\" /></td>\n", vlan_name, db->users[i].upstream);
 
 			sprintf(vlan_name, "expiration%d", i);
 			long expiration = 0;	//never
@@ -139,17 +139,17 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				long curtime = ((tm / 60) / 60) / 24;	//in days
 				expiration = db->users[i].expiration - curtime;
 			}
-			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" style=\"text-align: center;\" /></td>\n", vlan_name, expiration);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" class=\"center;\" /></td>\n", vlan_name, expiration);
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.certdown + \"\\\" style=\\\"margin: auto; display: block;\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 400, 430,'Certificate');\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
 
 			sprintf(vlan_name, "enabled%d", i);
-			websWrite(wp, "<td style=\"text-align: center\"><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", vlan_name, db->users[i].enabled ? "checked=\"checked\"" : "");
+			websWrite(wp, "<td class=\"center\"><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", vlan_name, db->users[i].enabled ? "checked=\"checked\"" : "");
 
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
 				  i);
 
 			websWrite(wp, "</tr>\n");
@@ -166,7 +166,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 
 	websWrite(wp, "<tr>\n" "<th>IP/NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n"
-			  "<th width=\"10%%\" style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+			  "<th width=\"10%%\" class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	unsigned int i;
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (db != NULL)		// empty
@@ -181,7 +181,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].passwd != NULL && db->users[i].passwordsize) ? db->users[i].passwd : "");
 
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td align=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
 			websWrite(wp, "</tr>\n");
 		}

@@ -57,7 +57,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table center\" summary=\"dlna share table\">\n");
+	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table\" summary=\"dlna share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
@@ -65,7 +65,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.dlna_type_audio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_video", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_images", "<th>", "</th>\n");
-	websWrite(wp, "			<th style=\"text-align: center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "			<th class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cs = dlnashares; cs; cs = csnext) {
@@ -137,7 +137,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
-		websWrite(wp, "				<td align=\"center\">\n");
+		websWrite(wp, "				<td class=\"center\">\n");
 		websWrite(wp,
 			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
 			  number);
