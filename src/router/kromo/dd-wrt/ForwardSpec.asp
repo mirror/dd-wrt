@@ -67,7 +67,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("pforward.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("pforward.legend"); %></legend>
-								<table class="table center" cellspacing="5" summary="ports forwarding table">
+								<table class="table" cellspacing="5" summary="ports forwarding table">
 									<tr>
 										<th><% tran("pforward.app"); %></th>
 										<th><% tran("share.proto"); %></th>
@@ -75,8 +75,8 @@ addEvent(window, "unload", function() {
 										<th><% tran("pforward.from"); %></th>
 										<th><% tran("share.ip"); %></th>
 										<th><% tran("pforward.to"); %></th>
-										<th style="text-align: center"><% tran("share.enable"); %></th>
-										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
+										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward_spec(); %>
 								</table><br />

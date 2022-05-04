@@ -295,7 +295,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_lan.legend4"); %></legend>
-								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
+								<table class="table" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
 										<th sortdir="up" width="15%"><% tran("share.hostname"); %></th>
 										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
@@ -341,7 +341,7 @@ addEvent(window, "unload", function() {
 							<div id="dhcp_2" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
-									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
+									<table class="table" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
 											<th sortdir="up" width="20%"><% tran("share.hostname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
@@ -363,7 +363,7 @@ addEvent(window, "unload", function() {
 							<div id="pptp" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend5"); %></legend>
-									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
+									<table class="table" cellspacing="6" id="pptp_table" summary="pptp table">
 										<tr>
 											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="51%"><% tran("share.usrname"); %></th>
@@ -384,7 +384,7 @@ addEvent(window, "unload", function() {
 							<div id="pppoe" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend6"); %></legend>
-									<table class="table center" cellspacing="6" id="pppoe_table" summary="pppoe table">
+									<table class="table" cellspacing="6" id="pppoe_table" summary="pppoe table">
 										<tr>
 											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="68%"><% tran("share.usrname"); %></th>

@@ -67,7 +67,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("trforward.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("trforward.legend"); %></legend>
-								<table class="table center" cellspacing="5" summary="ports triggering table">
+								<table class="table" cellspacing="5" summary="ports triggering table">
 									<tr>
 										<td></td>
 										<th colspan="2"><% tran("trforward.trrange"); %></th>
@@ -81,8 +81,8 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.start"); %></th>
 										<th><% tran("share.end"); %></th>
-										<th style="text-align: center"><% tran("share.enable"); %></th>
-										<th style="text-align: center"><% tran("share.actiontbl"); %></th>
+										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_triggering(); %>
 								</table><br />
