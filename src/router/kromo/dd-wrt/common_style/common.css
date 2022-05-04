@@ -373,7 +373,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   height: 1px;
   font-size: 1px;
 }
-div.center {
+.center {
   text-align: center;
 }
 .message {
@@ -436,22 +436,6 @@ td .meter {
 .center a[href='http://www.dd-wrt.com/'] {
   line-height: 2.2;
 }
-/*! Find out where this is called from, if at all; extracted from of fresh.css */
-button {
-  display: inline-block;
-  margin-bottom: 0;
-  font-weight: normal;
-  font-size: 12px;
-  text-align: center;
-  padding: 6px 12px;
-  line-height: 1.42857;
-  cursor: pointer;
-  border-radius: 4px;
-  -moz-user-select: none;
-  user-select: none;
-  vertical-align: middle;
-  white-space: nowrap;
-}
 input.button {
   border: 1px solid;
   padding: .2em .6em;
@@ -460,8 +444,7 @@ input.button {
   vertical-align: middle;
   cursor: pointer;
 }
-input.button:hover, input.button:focus,
-button:hover, button:focus {
+input.button:hover, input.button:focus {
   text-decoration: none;
 }
 input.button[disabled],

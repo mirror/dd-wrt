@@ -45,7 +45,7 @@ addEvent(window, "unload", function() {
 			<div>
 				<form name="success">
 					<% tran("success.upgrade"); %><br /><br />
-					<div align="center">
+					<div class="center">
 						<script type="text/javascript">
 						//<![CDATA[
 							var bar1 = createBar(500,15,100,15,<% getboottime(); %> / 5 - 3,"to_submit()");

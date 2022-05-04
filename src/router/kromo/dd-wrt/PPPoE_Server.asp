@@ -282,12 +282,12 @@ addEvent(window, "unload", function() {
 <div id="idpppoelocal">
 	<fieldset>
 		<legend><% tran("service.pppoesrv_chaps"); %></legend>
-			<table class="table center" summary="chap secrets table">
+			<table class="table" summary="chap secrets table">
 			<tr>
 				<th width="30%"><% tran("share.user"); %></th>
 				<th width="30%"><% tran("share.passwd"); %></th>
 				<th width="30%"><% tran("share.ip"); %></th>
-				<th width="10%" style="text-align: center"><% tran("share.enable"); %></th>
+				<th width="10%" class="center"><% tran("share.enable"); %></th>
 			</tr>
 			<% show_chaps(); %>
 			</table><br />
