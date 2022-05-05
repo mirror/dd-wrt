@@ -6692,6 +6692,8 @@ int smb2_write(struct ksmbd_work *work)
 		/* read data from the client using rdma channel, and
 		 * write the data.
 		 */
+		pr_err("filename %pd, offset %lld, len %zu\n",
+			    fp->filp->f_path.dentry, offset, length);
 		nbytes = smb2_write_rdma_channel(work, req, fp, offset,
 						 le32_to_cpu(req->RemainingBytes),
 						 writethrough);
