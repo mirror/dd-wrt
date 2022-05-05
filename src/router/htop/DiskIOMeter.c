@@ -1,7 +1,7 @@
 /*
 htop - DiskIOMeter.c
 (C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -9,12 +9,13 @@ in the source distribution for its full text.
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/time.h>
 
 #include "CRT.h"
 #include "Macros.h"
+#include "Meter.h"
 #include "Object.h"
 #include "Platform.h"
+#include "ProcessList.h"
 #include "RichString.h"
 #include "XUtils.h"
 
@@ -25,56 +26,76 @@ static const int DiskIOMeter_attributes[] = {
    METER_VALUE_IOWRITE,
 };
 
-static bool hasData = false;
-static unsigned long int cached_read_diff = 0;
-static unsigned long int cached_write_diff = 0;
-static double cached_utilisation_diff = 0.0;
+static MeterRateStatus status = RATESTATUS_INIT;
+static uint32_t cached_read_diff;
+static uint32_t cached_write_diff;
+static double cached_utilisation_diff;
 
-static void DiskIOMeter_updateValues(Meter* this, char* buffer, size_t len) {
-   static unsigned long long int cached_last_update = 0;
+static void DiskIOMeter_updateValues(Meter* this) {
+   const ProcessList* pl = this->pl;
 
-   struct timeval tv;
-   gettimeofday(&tv, NULL);
-   unsigned long long int timeInMilliSeconds = (unsigned long long int)tv.tv_sec * 1000 + (unsigned long long int)tv.tv_usec / 1000;
-   unsigned long long int passedTimeInMs = timeInMilliSeconds - cached_last_update;
+   static uint64_t cached_last_update;
+   uint64_t passedTimeInMs = pl->realtimeMs - cached_last_update;
 
-   /* update only every 500ms */
+   /* update only every 500ms to have a sane span for rate calculation */
    if (passedTimeInMs > 500) {
-      static unsigned long int cached_read_total = 0;
-      static unsigned long int cached_write_total = 0;
-      static unsigned long int cached_msTimeSpend_total = 0;
-
-      cached_last_update = timeInMilliSeconds;
+      static uint64_t cached_read_total;
+      static uint64_t cached_write_total;
+      static uint64_t cached_msTimeSpend_total;
+      uint64_t diff;
 
       DiskIOData data;
+      if (!Platform_getDiskIO(&data)) {
+         status = RATESTATUS_NODATA;
+      } else if (cached_last_update == 0) {
+         status = RATESTATUS_INIT;
+      } else if (passedTimeInMs > 30000) {
+         status = RATESTATUS_STALE;
+      } else {
+         status = RATESTATUS_DATA;
+      }
 
-      hasData = Platform_getDiskIO(&data);
-      if (!hasData) {
-         this->values[0] = 0;
-         xSnprintf(buffer, len, "no data");
+      cached_last_update = pl->realtimeMs;
+
+      if (status == RATESTATUS_NODATA) {
+         xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "no data");
          return;
       }
 
       if (data.totalBytesRead > cached_read_total) {
-         cached_read_diff = (data.totalBytesRead - cached_read_total) / 1024; /* Meter_humanUnit() expects unit in kilo */
+         diff = data.totalBytesRead - cached_read_total;
+         diff /= 1024; /* Meter_humanUnit() expects unit in kilo */
+         cached_read_diff = (uint32_t)diff;
       } else {
          cached_read_diff = 0;
       }
       cached_read_total = data.totalBytesRead;
 
       if (data.totalBytesWritten > cached_write_total) {
-         cached_write_diff = (data.totalBytesWritten - cached_write_total) / 1024; /* Meter_humanUnit() expects unit in kilo */
+         diff = data.totalBytesWritten - cached_write_total;
+         diff /= 1024; /* Meter_humanUnit() expects unit in kilo */
+         cached_write_diff = (uint32_t)diff;
       } else {
          cached_write_diff = 0;
       }
       cached_write_total = data.totalBytesWritten;
 
       if (data.totalMsTimeSpend > cached_msTimeSpend_total) {
-         cached_utilisation_diff = 100 * (double)(data.totalMsTimeSpend - cached_msTimeSpend_total) / passedTimeInMs;
+         diff = data.totalMsTimeSpend - cached_msTimeSpend_total;
+         cached_utilisation_diff = 100.0 * (double)diff / passedTimeInMs;
       } else {
          cached_utilisation_diff = 0.0;
       }
       cached_msTimeSpend_total = data.totalMsTimeSpend;
+   }
+
+   if (status == RATESTATUS_INIT) {
+      xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "init");
+      return;
+   }
+   if (status == RATESTATUS_STALE) {
+      xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "stale");
+      return;
    }
 
    this->values[0] = cached_utilisation_diff;
@@ -83,20 +104,30 @@ static void DiskIOMeter_updateValues(Meter* this, char* buffer, size_t len) {
    char bufferRead[12], bufferWrite[12];
    Meter_humanUnit(bufferRead, cached_read_diff, sizeof(bufferRead));
    Meter_humanUnit(bufferWrite, cached_write_diff, sizeof(bufferWrite));
-   snprintf(buffer, len, "%sB %sB %.1f%%", bufferRead, bufferWrite, cached_utilisation_diff);
+   snprintf(this->txtBuffer, sizeof(this->txtBuffer), "%sB %sB %.1f%%", bufferRead, bufferWrite, cached_utilisation_diff);
 }
 
-static void DIskIOMeter_display(ATTR_UNUSED const Object* cast, RichString* out) {
-   if (!hasData) {
+static void DiskIOMeter_display(ATTR_UNUSED const Object* cast, RichString* out) {
+   switch (status) {
+   case RATESTATUS_NODATA:
       RichString_writeAscii(out, CRT_colors[METER_VALUE_ERROR], "no data");
       return;
+   case RATESTATUS_INIT:
+      RichString_writeAscii(out, CRT_colors[METER_VALUE], "initializing...");
+      return;
+   case RATESTATUS_STALE:
+      RichString_writeAscii(out, CRT_colors[METER_VALUE_WARN], "stale data");
+      return;
+   case RATESTATUS_DATA:
+      break;
    }
 
    char buffer[16];
+   int len;
 
    int color = cached_utilisation_diff > 40.0 ? METER_VALUE_NOTICE : METER_VALUE;
-   xSnprintf(buffer, sizeof(buffer), "%.1f%%", cached_utilisation_diff);
-   RichString_writeAscii(out, CRT_colors[color], buffer);
+   len = xSnprintf(buffer, sizeof(buffer), "%.1f%%", cached_utilisation_diff);
+   RichString_appendnAscii(out, CRT_colors[color], buffer, len);
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], " read: ");
    Meter_humanUnit(buffer, cached_read_diff, sizeof(buffer));
@@ -111,7 +142,7 @@ const MeterClass DiskIOMeter_class = {
    .super = {
       .extends = Class(Meter),
       .delete = Meter_delete,
-      .display = DIskIOMeter_display
+      .display = DiskIOMeter_display
    },
    .updateValues = DiskIOMeter_updateValues,
    .defaultMode = TEXT_METERMODE,

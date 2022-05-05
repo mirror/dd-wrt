@@ -2,11 +2,11 @@
 htop - PressureStallMeter.c
 (C) 2004-2011 Hisham H. Muhammad
 (C) 2019 Ran Benita
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "PressureStallMeter.h"
+#include "linux/PressureStallMeter.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -25,7 +25,7 @@ static const int PressureStallMeter_attributes[] = {
    PRESSURE_STALL_THREEHUNDRED
 };
 
-static void PressureStallMeter_updateValues(Meter* this, char* buffer, size_t len) {
+static void PressureStallMeter_updateValues(Meter* this) {
    const char* file;
    if (strstr(Meter_name(this), "CPU")) {
       file = "cpu";
@@ -47,18 +47,20 @@ static void PressureStallMeter_updateValues(Meter* this, char* buffer, size_t le
    /* only print bar for ten (not sixty and threehundred), cause the sum is meaningless */
    this->curItems = 1;
 
-   xSnprintf(buffer, len, "%s %s %5.2lf%% %5.2lf%% %5.2lf%%", some ? "some" : "full", file, this->values[0], this->values[1], this->values[2]);
+   xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "%s %s %5.2lf%% %5.2lf%% %5.2lf%%", some ? "some" : "full", file, this->values[0], this->values[1], this->values[2]);
 }
 
 static void PressureStallMeter_display(const Object* cast, RichString* out) {
    const Meter* this = (const Meter*)cast;
    char buffer[20];
-   xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[0]);
-   RichString_writeAscii(out, CRT_colors[PRESSURE_STALL_TEN], buffer);
-   xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[1]);
-   RichString_appendAscii(out, CRT_colors[PRESSURE_STALL_SIXTY], buffer);
-   xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[2]);
-   RichString_appendAscii(out, CRT_colors[PRESSURE_STALL_THREEHUNDRED], buffer);
+   int len;
+
+   len = xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[0]);
+   RichString_appendnAscii(out, CRT_colors[PRESSURE_STALL_TEN], buffer, len);
+   len = xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[1]);
+   RichString_appendnAscii(out, CRT_colors[PRESSURE_STALL_SIXTY], buffer, len);
+   len = xSnprintf(buffer, sizeof(buffer), "%5.2lf%% ", this->values[2]);
+   RichString_appendnAscii(out, CRT_colors[PRESSURE_STALL_THREEHUNDRED], buffer, len);
 }
 
 const MeterClass PressureStallCPUSomeMeter_class = {

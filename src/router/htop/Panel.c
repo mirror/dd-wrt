@@ -1,7 +1,7 @@
 /*
 htop - Panel.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -49,6 +49,8 @@ void Panel_init(Panel* this, int x, int y, int w, int h, const ObjectClass* type
    this->y = y;
    this->w = w;
    this->h = h;
+   this->cursorX = 0;
+   this->cursorY = 0;
    this->eventHandlerState = NULL;
    this->items = Vector_new(type, owner, DEFAULT_SIZE);
    this->scrollV = 0;
@@ -57,6 +59,7 @@ void Panel_init(Panel* this, int x, int y, int w, int h, const ObjectClass* type
    this->oldSelected = 0;
    this->selectedLen = 0;
    this->needsRedraw = true;
+   this->cursorOn = false;
    this->wasFocus = false;
    RichString_beginAllocated(this->header);
    this->defaultBar = fuBar;
@@ -69,7 +72,12 @@ void Panel_done(Panel* this) {
    free(this->eventHandlerState);
    Vector_delete(this->items);
    FunctionBar_delete(this->defaultBar);
-   RichString_end(this->header);
+   RichString_delete(&this->header);
+}
+
+void Panel_setCursorToSelection(Panel* this) {
+   this->cursorY = this->y + this->selected - this->scrollV + 1;
+   this->cursorX = this->x + this->selectedLen - this->scrollH;
 }
 
 void Panel_setSelectionColor(Panel* this, ColorElements colorId) {
@@ -172,13 +180,13 @@ void Panel_moveSelectedDown(Panel* this) {
    }
 }
 
-int Panel_getSelectedIndex(Panel* this) {
+int Panel_getSelectedIndex(const Panel* this) {
    assert (this != NULL);
 
    return this->selected;
 }
 
-int Panel_size(Panel* this) {
+int Panel_size(const Panel* this) {
    assert (this != NULL);
 
    return Vector_size(this->items);
@@ -246,8 +254,8 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
    if (this->scrollV < 0) {
       this->scrollV = 0;
       this->needsRedraw = true;
-   } else if (this->scrollV >= size) {
-      this->scrollV = MAXIMUM(size - 1, 0);
+   } else if (this->scrollV > size - h) {
+      this->scrollV = MAXIMUM(size - h, 0);
       this->needsRedraw = true;
    }
    // ensure selection is on screen
@@ -269,7 +277,7 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
    if (this->needsRedraw || force_redraw) {
       int line = 0;
       for (int i = first; line < h && i < upTo; i++) {
-         Object* itemObj = Vector_get(this->items, i);
+         const Object* itemObj = Vector_get(this->items, i);
          RichString_begin(item);
          Object_display(itemObj, &item);
          int itemLen = RichString_sizeVal(item);
@@ -287,7 +295,7 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
             RichString_printoffnVal(item, y + line, x, scrollH, amt);
          if (item.highlightAttr)
             attrset(CRT_colors[RESET_COLOR]);
-         RichString_end(item);
+         RichString_delete(&item);
          line++;
       }
       while (line < h) {
@@ -296,11 +304,11 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
       }
 
    } else {
-      Object* oldObj = Vector_get(this->items, this->oldSelected);
+      const Object* oldObj = Vector_get(this->items, this->oldSelected);
       RichString_begin(old);
       Object_display(oldObj, &old);
       int oldLen = RichString_sizeVal(old);
-      Object* newObj = Vector_get(this->items, this->selected);
+      const Object* newObj = Vector_get(this->items, this->selected);
       RichString_begin(new);
       Object_display(newObj, &new);
       int newLen = RichString_sizeVal(new);
@@ -316,8 +324,8 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
          RichString_printoffnVal(new, y + this->selected - first, x,
             scrollH, MINIMUM(newLen - scrollH, this->w));
       attrset(CRT_colors[RESET_COLOR]);
-      RichString_end(new);
-      RichString_end(old);
+      RichString_delete(&new);
+      RichString_delete(&old);
    }
 
    if (focus && (this->needsRedraw || force_redraw || !this->wasFocus)) {
@@ -330,7 +338,6 @@ void Panel_draw(Panel* this, bool force_redraw, bool focus, bool highlightSelect
    this->oldSelected = this->selected;
    this->wasFocus = focus;
    this->needsRedraw = false;
-   move(0, 0);
 }
 
 static int Panel_headerHeight(const Panel* this) {
@@ -453,8 +460,8 @@ HandlerResult Panel_selectByTyping(Panel* this, int ch) {
       }
 
       if (len < 99) {
-         buffer[len] = ch;
-         buffer[len+1] = '\0';
+         buffer[len] = (char) ch;
+         buffer[len + 1] = '\0';
       }
 
       for (int try = 0; try < 2; try++) {
@@ -470,7 +477,7 @@ HandlerResult Panel_selectByTyping(Panel* this, int ch) {
 
          // if current word did not match,
          // retry considering the character the start of a new word.
-         buffer[0] = ch;
+         buffer[0] = (char) ch;
          buffer[1] = '\0';
       }
 
@@ -484,4 +491,17 @@ HandlerResult Panel_selectByTyping(Panel* this, int ch) {
    }
 
    return IGNORED;
+}
+
+int Panel_getCh(Panel* this) {
+   if (this->cursorOn) {
+      move(this->cursorY, this->cursorX);
+      curs_set(1);
+   } else {
+      curs_set(0);
+   }
+#ifdef HAVE_SET_ESCDELAY
+   set_escdelay(25);
+#endif
+   return getch();
 }

@@ -3,7 +3,7 @@
 /*
 htop - LinuxProcessList.h
 (C) 2014 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -18,6 +18,8 @@ in the source distribution for its full text.
 #include "ZramStats.h"
 #include "zfs/ZfsArcStats.h"
 
+#define HTOP_HUGEPAGE_BASE_SHIFT 16
+#define HTOP_HUGEPAGE_COUNT 24
 
 typedef struct CPUData_ {
    unsigned long long int totalTime;
@@ -51,6 +53,8 @@ typedef struct CPUData_ {
    #ifdef HAVE_SENSORS_SENSORS_H
    double temperature;
    #endif
+
+   bool online;
 } CPUData;
 
 typedef struct TtyDriver_ {
@@ -63,14 +67,21 @@ typedef struct TtyDriver_ {
 typedef struct LinuxProcessList_ {
    ProcessList super;
 
-   CPUData* cpus;
+   CPUData* cpuData;
+
    TtyDriver* ttyDrivers;
    bool haveSmapsRollup;
+   bool haveAutogroup;
 
    #ifdef HAVE_DELAYACCT
    struct nl_sock* netlink_socket;
    int netlink_family;
    #endif
+
+   memory_t totalHugePageMem;
+   memory_t usedHugePageMem[HTOP_HUGEPAGE_COUNT];
+
+   memory_t availableMem;
 
    ZfsArcStats zfs;
    ZramStats zram;
@@ -104,10 +115,12 @@ typedef struct LinuxProcessList_ {
 #define PROC_LINE_LENGTH 4096
 #endif
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId);
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* dynamicMeters, Hashtable* dynamicColumns, Hashtable* pidMatchList, uid_t userId);
 
 void ProcessList_delete(ProcessList* pl);
 
 void ProcessList_goThroughEntries(ProcessList* super, bool pauseProcessUpdate);
+
+bool ProcessList_isCPUonline(const ProcessList* super, unsigned int id);
 
 #endif

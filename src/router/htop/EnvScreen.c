@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "CRT.h"
 #include "Macros.h"
 #include "Panel.h"
 #include "Platform.h"
@@ -34,11 +33,9 @@ static void EnvScreen_scan(InfoScreen* this) {
 
    Panel_prune(panel);
 
-   CRT_dropPrivileges();
    char* env = Platform_getProcessEnv(this->process->pid);
-   CRT_restorePrivileges();
    if (env) {
-      for (char* p = env; *p; p = strrchr(p, 0) + 1)
+      for (const char* p = env; *p; p = strrchr(p, 0) + 1)
          InfoScreen_addLine(this, p);
       free(env);
    }

@@ -4,7 +4,7 @@
 htop - darwin/Platform.h
 (C) 2014 Hisham H. Muhammad
 (C) 2015 David C. Hunt
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -14,17 +14,21 @@ in the source distribution for its full text.
 #include "Action.h"
 #include "BatteryMeter.h"
 #include "CPUMeter.h"
-#include "DarwinProcess.h"
 #include "DiskIOMeter.h"
+#include "Hashtable.h"
+#include "NetworkIOMeter.h"
 #include "ProcessLocksScreen.h"
 #include "SignalsPanel.h"
+#include "CommandLine.h"
+#include "darwin/DarwinProcess.h"
+#include "generic/gettime.h"
+#include "generic/hostname.h"
+#include "generic/uname.h"
 
 
-extern const ProcessField Platform_defaultFields[];
+extern const ScreenDefaults Platform_defaultScreens[];
 
-extern double Platform_timebaseToNS;
-
-extern long Platform_clockTicksPerSec;
+extern const unsigned int Platform_numberOfDefaultScreens;
 
 extern const SignalItem Platform_signals[];
 
@@ -32,7 +36,15 @@ extern const unsigned int Platform_numberOfSignals;
 
 extern const MeterClass* const Platform_meterTypes[];
 
-void Platform_init(void);
+bool Platform_init(void);
+
+// Converts ticks in the Mach "timebase" to nanoseconds.
+// See `mach_timebase_info`, as used to define the `Platform_nanosecondsPerMachTick` constant.
+uint64_t Platform_machTicksToNanoseconds(uint64_t mach_ticks);
+
+// Converts "scheduler ticks" to nanoseconds.
+// See `sysconf(_SC_CLK_TCK)`, as used to define the `Platform_nanosecondsPerSchedulerTick` constant.
+double Platform_schedulerTicksToNanoseconds(const double scheduler_ticks);
 
 void Platform_done(void);
 
@@ -44,7 +56,7 @@ void Platform_getLoadAverage(double* one, double* five, double* fifteen);
 
 int Platform_getMaxPid(void);
 
-double Platform_setCPUValues(Meter* mtr, int cpu);
+double Platform_setCPUValues(Meter* mtr, unsigned int cpu);
 
 void Platform_setMemoryValues(Meter* mtr);
 
@@ -62,11 +74,48 @@ FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid);
 
 bool Platform_getDiskIO(DiskIOData* data);
 
-bool Platform_getNetworkIO(unsigned long int* bytesReceived,
-                           unsigned long int* packetsReceived,
-                           unsigned long int* bytesTransmitted,
-                           unsigned long int* packetsTransmitted);
+bool Platform_getNetworkIO(NetworkIOData* data);
 
-void Platform_getBattery(double *percent, ACPresence *isOnAC);
+void Platform_getBattery(double* percent, ACPresence* isOnAC);
+
+static inline void Platform_getHostname(char* buffer, size_t size) {
+   Generic_hostname(buffer, size);
+}
+
+static inline void Platform_getRelease(char** string) {
+   *string = Generic_uname();
+}
+
+#define PLATFORM_LONG_OPTIONS
+
+static inline void Platform_longOptionsUsage(ATTR_UNUSED const char* name) { }
+
+static inline CommandLineStatus Platform_getLongOption(ATTR_UNUSED int opt, ATTR_UNUSED int argc, ATTR_UNUSED char** argv) {
+   return STATUS_ERROR_EXIT;
+}
+
+static inline void Platform_gettime_realtime(struct timeval* tv, uint64_t* msec) {
+   Generic_gettime_realtime(tv, msec);
+}
+
+void Platform_gettime_monotonic(uint64_t* msec);
+
+static inline Hashtable* Platform_dynamicMeters(void) { return NULL; }
+
+static inline void Platform_dynamicMetersDone(ATTR_UNUSED Hashtable* table) { }
+
+static inline void Platform_dynamicMeterInit(ATTR_UNUSED Meter* meter) { }
+
+static inline void Platform_dynamicMeterUpdateValues(ATTR_UNUSED Meter* meter) { }
+
+static inline void Platform_dynamicMeterDisplay(ATTR_UNUSED const Meter* meter, ATTR_UNUSED RichString* out) { }
+
+static inline Hashtable* Platform_dynamicColumns(void) { return NULL; }
+
+static inline void Platform_dynamicColumnsDone(ATTR_UNUSED Hashtable* table) { }
+
+static inline const char* Platform_dynamicColumnInit(ATTR_UNUSED unsigned int key) { return NULL; }
+
+static inline bool Platform_dynamicColumnWriteField(ATTR_UNUSED const Process* proc, ATTR_UNUSED RichString* str, ATTR_UNUSED unsigned int key) { return false; }
 
 #endif

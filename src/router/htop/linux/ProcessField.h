@@ -3,7 +3,7 @@
 /*
 htop - linux/ProcessField.h
 (C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -19,7 +19,6 @@ in the source distribution for its full text.
    M_TRS = 42,                   \
    M_DRS = 43,                   \
    M_LRS = 44,                   \
-   M_DT = 45,                    \
    CTID = 100,                   \
    VPID = 101,                   \
    VXID = 102,                   \
@@ -44,9 +43,9 @@ in the source distribution for its full text.
    M_PSSWP = 121,                \
    CTXT = 122,                   \
    SECATTR = 123,                \
-   PROC_COMM = 124,              \
-   PROC_EXE = 125,               \
-   CWD = 126,                    \
+   AUTOGROUP_ID = 127,           \
+   AUTOGROUP_NICE = 128,         \
+   CCGROUP = 129,                \
    // End of list
 
 

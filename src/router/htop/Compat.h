@@ -3,7 +3,7 @@
 /*
 htop - Compat.h
 (C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -55,7 +55,5 @@ ssize_t Compat_readlinkat(int dirfd,
                           const char* pathname,
                           char* buf,
                           size_t bufsize);
-
-int Compat_clock_monotonic_gettime(struct timespec *tp);
 
 #endif /* HEADER_Compat */

@@ -1,7 +1,7 @@
 /*
 htop - MetersPanel.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -185,8 +185,7 @@ static HandlerResult MetersPanel_eventHandler(Panel* super, int ch) {
       Header* header = this->scr->header;
       this->settings->changed = true;
       Header_calculateHeight(header);
-      Header_draw(header);
-      ScreenManager_resize(this->scr, this->scr->x1, header->height, this->scr->x2, this->scr->y2);
+      ScreenManager_resize(this->scr);
    }
    return result;
 }
@@ -216,7 +215,7 @@ MetersPanel* MetersPanel_new(Settings* settings, const char* header, Vector* met
    this->leftNeighbor = NULL;
    Panel_setHeader(super, header);
    for (int i = 0; i < Vector_size(meters); i++) {
-      Meter* meter = (Meter*) Vector_get(meters, i);
+      const Meter* meter = (const Meter*) Vector_get(meters, i);
       Panel_add(super, (Object*) Meter_toListItem(meter, false));
    }
    return this;

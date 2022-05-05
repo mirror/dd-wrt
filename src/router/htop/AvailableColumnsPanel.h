@@ -3,11 +3,13 @@
 /*
 htop - AvailableColumnsPanel.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "Hashtable.h"
 #include "Panel.h"
+
 
 typedef struct AvailableColumnsPanel_ {
    Panel super;
@@ -16,6 +18,6 @@ typedef struct AvailableColumnsPanel_ {
 
 extern const PanelClass AvailableColumnsPanel_class;
 
-AvailableColumnsPanel* AvailableColumnsPanel_new(Panel* columns);
+AvailableColumnsPanel* AvailableColumnsPanel_new(Panel* columns, Hashtable* dynamicColumns);
 
 #endif

@@ -1,4 +1,6 @@
-#include "ZramMeter.h"
+#include "linux/ZramMeter.h"
+
+#include <stddef.h>
 
 #include "CRT.h"
 #include "Meter.h"
@@ -11,7 +13,9 @@ static const int ZramMeter_attributes[] = {
    ZRAM
 };
 
-static void ZramMeter_updateValues(Meter* this, char* buffer, size_t size) {
+static void ZramMeter_updateValues(Meter* this) {
+   char* buffer = this->txtBuffer;
+   size_t size = sizeof(this->txtBuffer);
    int written;
 
    Platform_setZramValues(this);
