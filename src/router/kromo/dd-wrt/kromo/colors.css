@@ -1,51 +1,47 @@
 body {
-  background-color: #CCC;
+  background-color: #ccc;
+  color: #115b80;
+}
+body.gui {
+  background-color: #888;
 }
 table.table {
-  border-color: #333;
+  border-color: #999;
 }
 table.table th {
   border-color: #999;
-  background-color: #DDD;
+  background-color: #ddd;
 }
 #left {
-  background-color: #888888;
-}
-body.gui {
-  background-color: #888888;
+  background-color: #888;
 }
 #help {
-  background-color: #FFFEC1;
+  background-color: #fffec1;
   border-color: #111;
 }
 #statusInfo {
-  background: #CCCCDD URL(../../images/dd-wrt.png) bottom right no-repeat;
+  background: #ccccdd URL(../../images/dd-wrt.png) bottom right no-repeat;
   border-color: #000;
 }
 input[type!="radio"] {
-  background-color: #EEEEF3;
+  background-color: #eeeef3;
   border-color: #003399;
 }
 input[type="radio"] {
-  background-color: #EEEEF3;
+  background-color: #eeeef3;
   border-color: #003399;
 }
 select {
-  background-color: #EEEEF3;
+  background-color: #eeeef3;
   border-color: #003399;
 }
 div.message div {
-  background-color: #DDDDEE;
-  border-color: #EAEAEA;
-}
-div.message div {
+  background-color: #ddddee;
   background: url(images/message_bg.png);
+  border-color: #eaeaea;
 }
 #footer {
   background-image: url(images/footer.png);
-}
-body {
-  color: #115B80;
 }
 td, th {
   color: #115B80;
@@ -54,20 +50,20 @@ input, select {
   color: #115B80;
 }
 a:link {
-  color: #167DAF;
+  color: #167daf;
 }
 a:visited {
-  color: #167DAF;
+  color: #167daf;
 }
 a:hover {
-  color: #167DAF;
+  color: #167daf;
 }
 a:active {
-  color: #167DAF;
+  color: #167daf;
 }
 .section {
-  color: #9CCCFF;
-  border-color: #EAEAEA;
+  color: #9cccff;
+  border-color: #eaeaea;
 }
 .info {
   color: #669;
@@ -77,27 +73,27 @@ div.warning {
 }
 #main {
   border-color: #666;
-  background: #FFF3B3;
+  background: #fff3b3;
 }
 #contents {
-  background: #DDD;
+  background: #ddd;
 }
 #menuMain ul#menuMainList a, #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current {
   color: #333;
 }
 #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
-  background: #FFF3B3;
+  background: #fff3b3;
   border-color: #666;
 }
 #menuMain ul#menuMainList a {
-  background: #FFFAE1;
-  border-color: #AAA;
+  background: #fffae1;
+  border-color: #aaa;
 }
 #menuMain ul#menuMainList a:hover {
-  background-color: #FFF7CD;
+  background-color: #fff7cd;
 }
 #menuMain ul#menuSubList li a, #menuMain ul#menuSubList li span {
-  border-right-color: #AAA;
+  border-right-color: #aaa;
   background: none;
 }
 #menuMain ul#menuSubList li a {
@@ -112,7 +108,7 @@ div.warning {
   background: transparent;
 }
 .meter .bar {
-  background-color: #FFF7CD;
+  background-color: #fff7cd;
 }
 .meter .text {
   color: #115B80;
@@ -124,7 +120,7 @@ div.warning {
   border-width: .09em;
 }
 .progressbarblock {
-  background-color: #FFF7CD;
+  background-color: #fff7cd;
   font-size: .09em;
 }
 .textblink {

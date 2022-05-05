@@ -1,0 +1,63 @@
+/*! common styling for legacy old themes;
+ * Brainslayer
+ * Kromo
+ * Vikar
+ * Xirian 
+ */
+.status_red {
+ background: #ff6666;
+ color: #000;
+ text-align: center;
+ padding: 2px;
+ border-radius: 2px;
+}
+.status_green {
+ background: #35ee00;
+ color: #000;
+ text-align: center;
+ padding: 2px;
+ border-radius: 2px;
+}
+.status_yellow {
+ background: #eec900;
+ color: #000;
+ text-align: center;
+ padding: 2px;
+ border-radius: 2px;
+}
+.status_orange {
+ background: #fea543;
+ color: #000;
+ text-align: center;
+ padding: 2px;
+ border-radius: 2px;
+}
+.value_error {
+ border: 1px solid #ff6666;
+}
+.value_error:hover {
+ border-color: #f00;
+}
+.value_error:focus {
+ border-color: #f00;
+ box-shadow: 0 0 10px 0 #f00;
+}
+input.button {
+  cursor: pointer;
+}
+input.button[disabled],
+input[disabled], select[disabled] {
+  cursor: default;
+  opacity: .6
+}
+.off {
+  opacity: .6;
+}
+#scorebar {
+  background-image: url(/images/gradient.svg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
+}

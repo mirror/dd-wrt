@@ -1,4 +1,5 @@
 @import url(/style/buttons.css);
+@import url(/style/common_legacy.css);
 * {
   padding: 0;
   margin: 0;
@@ -223,14 +224,6 @@ input.button {
 }
 #score, #rating, #standards {
   font-weight: bold;
-}
-#scorebar {
-  background-image: url(/images/gradient.svg);
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  position: absolute;
-  width: 100px;
-  z-index: 0;
 }
 #scorebarBorder {
   background: #fff;
