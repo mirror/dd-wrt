@@ -1,11 +1,11 @@
 /*
 htop - SystemdMeter.c
 (C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "SystemdMeter.h"
+#include "linux/SystemdMeter.h"
 
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -19,10 +19,22 @@ in the source distribution for its full text.
 #include "Macros.h"
 #include "Object.h"
 #include "RichString.h"
+#include "Settings.h"
 #include "XUtils.h"
 
+#if defined(BUILD_STATIC) && defined(HAVE_LIBSYSTEMD)
+#include <systemd/sd-bus.h>
+#endif
 
-#define INVALID_VALUE ((unsigned int)-1)
+
+#ifdef BUILD_STATIC
+
+#define sym_sd_bus_open_system sd_bus_open_system
+#define sym_sd_bus_get_property_string sd_bus_get_property_string
+#define sym_sd_bus_get_property_trivial sd_bus_get_property_trivial
+#define sym_sd_bus_unref sd_bus_unref
+
+#else
 
 typedef void sd_bus;
 typedef void sd_bus_error;
@@ -30,19 +42,35 @@ static int (*sym_sd_bus_open_system)(sd_bus**);
 static int (*sym_sd_bus_get_property_string)(sd_bus*, const char*, const char*, const char*, const char*, sd_bus_error*, char**);
 static int (*sym_sd_bus_get_property_trivial)(sd_bus*, const char*, const char*, const char*, const char*, sd_bus_error*, char, void*);
 static sd_bus* (*sym_sd_bus_unref)(sd_bus*);
+static void* dlopenHandle = NULL;
+
+#endif /* BUILD_STATIC */
+
+#if !defined(BUILD_STATIC) || defined(HAVE_LIBSYSTEMD)
+static sd_bus* bus = NULL;
+#endif /* !BUILD_STATIC || HAVE_LIBSYSTEMD */
+
+
+#define INVALID_VALUE ((unsigned int)-1)
 
 static char* systemState = NULL;
 static unsigned int nFailedUnits = INVALID_VALUE;
 static unsigned int nInstalledJobs = INVALID_VALUE;
 static unsigned int nNames = INVALID_VALUE;
 static unsigned int nJobs = INVALID_VALUE;
-static void* dlopenHandle = NULL;
-static sd_bus* bus = NULL;
 
 static void SystemdMeter_done(ATTR_UNUSED Meter* this) {
    free(systemState);
    systemState = NULL;
 
+#ifdef BUILD_STATIC
+# ifdef HAVE_LIBSYSTEMD
+   if (bus) {
+      sym_sd_bus_unref(bus);
+   }
+   bus = NULL;
+# endif /* HAVE_LIBSYSTEMD */
+#else /* BUILD_STATIC */
    if (bus && dlopenHandle) {
       sym_sd_bus_unref(bus);
    }
@@ -52,9 +80,12 @@ static void SystemdMeter_done(ATTR_UNUSED Meter* this) {
       dlclose(dlopenHandle);
       dlopenHandle = NULL;
    }
+#endif /* BUILD_STATIC */
 }
 
+#if !defined(BUILD_STATIC) || defined(HAVE_LIBSYSTEMD)
 static int updateViaLib(void) {
+#ifndef BUILD_STATIC
    if (!dlopenHandle) {
       dlopenHandle = dlopen("libsystemd.so.0", RTLD_LAZY);
       if (!dlopenHandle)
@@ -76,6 +107,7 @@ static int updateViaLib(void) {
 
       #undef resolve
    }
+#endif /* !BUILD_STATIC */
 
    int r;
 
@@ -152,15 +184,21 @@ busfailure:
    bus = NULL;
    return -2;
 
+#ifndef BUILD_STATIC
 dlfailure:
    if (dlopenHandle) {
       dlclose(dlopenHandle);
       dlopenHandle = NULL;
    }
    return -1;
+#endif /* !BUILD_STATIC */
 }
+#endif /* !BUILD_STATIC || HAVE_LIBSYSTEMD */
 
 static void updateViaExec(void) {
+   if (Settings_isReadonly())
+      return;
+
    int fdpair[2];
    if (pipe(fdpair) < 0)
       return;
@@ -181,15 +219,15 @@ static void updateViaExec(void) {
          exit(1);
       dup2(fdnull, STDERR_FILENO);
       close(fdnull);
-      execl("/bin/systemctl",
-            "/bin/systemctl",
-            "show",
-            "--property=SystemState",
-            "--property=NFailedUnits",
-            "--property=NNames",
-            "--property=NJobs",
-            "--property=NInstalledJobs",
-            NULL);
+      execlp("systemctl",
+             "systemctl",
+             "show",
+             "--property=SystemState",
+             "--property=NFailedUnits",
+             "--property=NNames",
+             "--property=NJobs",
+             "--property=NInstalledJobs",
+             NULL);
       exit(127);
    }
    close(fdpair[1]);
@@ -213,8 +251,7 @@ static void updateViaExec(void) {
          if (newline) {
             *newline = '\0';
          }
-         free(systemState);
-         systemState = xStrdup(lineBuffer + strlen("SystemState="));
+         free_and_xStrdup(&systemState, lineBuffer + strlen("SystemState="));
       } else if (String_startsWith(lineBuffer, "NFailedUnits=")) {
          nFailedUnits = strtoul(lineBuffer + strlen("NFailedUnits="), NULL, 10);
       } else if (String_startsWith(lineBuffer, "NNames=")) {
@@ -229,15 +266,19 @@ static void updateViaExec(void) {
    fclose(commandOutput);
 }
 
-static void SystemdMeter_updateValues(ATTR_UNUSED Meter* this, char* buffer, size_t size) {
+static void SystemdMeter_updateValues(Meter* this) {
    free(systemState);
    systemState = NULL;
    nFailedUnits = nInstalledJobs = nNames = nJobs = INVALID_VALUE;
 
+#if !defined(BUILD_STATIC) || defined(HAVE_LIBSYSTEMD)
    if (updateViaLib() < 0)
       updateViaExec();
+#else
+   updateViaExec();
+#endif /* !BUILD_STATIC || HAVE_LIBSYSTEMD */
 
-   xSnprintf(buffer, size, "%s", systemState ? systemState : "???");
+   xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "%s", systemState ? systemState : "???");
 }
 
 static int zeroDigitColor(unsigned int value) {
@@ -265,8 +306,9 @@ static int valueDigitColor(unsigned int value) {
 
 static void SystemdMeter_display(ATTR_UNUSED const Object* cast, RichString* out) {
    char buffer[16];
+   int len;
 
-   int color = (systemState && 0 == strcmp(systemState, "running")) ? METER_VALUE_OK : METER_VALUE_ERROR;
+   int color = (systemState && String_eq(systemState, "running")) ? METER_VALUE_OK : METER_VALUE_ERROR;
    RichString_writeAscii(out, CRT_colors[color], systemState ? systemState : "N/A");
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], " (");
@@ -274,40 +316,44 @@ static void SystemdMeter_display(ATTR_UNUSED const Object* cast, RichString* out
    if (nFailedUnits == INVALID_VALUE) {
       buffer[0] = '?';
       buffer[1] = '\0';
+      len = 1;
    } else {
-      xSnprintf(buffer, sizeof(buffer), "%u", nFailedUnits);
+      len = xSnprintf(buffer, sizeof(buffer), "%u", nFailedUnits);
    }
-   RichString_appendAscii(out, zeroDigitColor(nFailedUnits), buffer);
+   RichString_appendnAscii(out, zeroDigitColor(nFailedUnits), buffer, len);
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], "/");
 
    if (nNames == INVALID_VALUE) {
       buffer[0] = '?';
       buffer[1] = '\0';
+      len = 1;
    } else {
-      xSnprintf(buffer, sizeof(buffer), "%u", nNames);
+      len = xSnprintf(buffer, sizeof(buffer), "%u", nNames);
    }
-   RichString_appendAscii(out, valueDigitColor(nNames), buffer);
+   RichString_appendnAscii(out, valueDigitColor(nNames), buffer, len);
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], " failed) (");
 
    if (nJobs == INVALID_VALUE) {
       buffer[0] = '?';
       buffer[1] = '\0';
+      len = 1;
    } else {
-      xSnprintf(buffer, sizeof(buffer), "%u", nJobs);
+      len = xSnprintf(buffer, sizeof(buffer), "%u", nJobs);
    }
-   RichString_appendAscii(out, zeroDigitColor(nJobs), buffer);
+   RichString_appendnAscii(out, zeroDigitColor(nJobs), buffer, len);
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], "/");
 
    if (nInstalledJobs == INVALID_VALUE) {
       buffer[0] = '?';
       buffer[1] = '\0';
+      len = 1;
    } else {
-      xSnprintf(buffer, sizeof(buffer), "%u", nInstalledJobs);
+      len = xSnprintf(buffer, sizeof(buffer), "%u", nInstalledJobs);
    }
-   RichString_appendAscii(out, valueDigitColor(nInstalledJobs), buffer);
+   RichString_appendnAscii(out, valueDigitColor(nInstalledJobs), buffer, len);
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], " jobs)");
 }

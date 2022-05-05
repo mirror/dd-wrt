@@ -1,22 +1,21 @@
 /*
 htop - SELinuxMeter.c
 (C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "SELinuxMeter.h"
+#include "linux/SELinuxMeter.h"
 
 #include "CRT.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <linux/magic.h>
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
 
-#include "Macros.h"
 #include "Object.h"
 #include "XUtils.h"
 
@@ -35,7 +34,7 @@ static bool hasSELinuxMount(void) {
       return false;
    }
 
-   if ((uint32_t)sfbuf.f_type != (uint32_t)SELINUX_MAGIC) {
+   if ((uint32_t)sfbuf.f_type != /* SELINUX_MAGIC */ 0xf97cff8cU) {
       return false;
    }
 
@@ -70,11 +69,11 @@ static bool isSelinuxEnforcing(void) {
    return !!enforce;
 }
 
-static void SELinuxMeter_updateValues(ATTR_UNUSED Meter* this, char* buffer, size_t len) {
+static void SELinuxMeter_updateValues(Meter* this) {
    enabled = isSelinuxEnabled();
    enforcing = isSelinuxEnforcing();
 
-   xSnprintf(buffer, len, "%s%s", enabled ? "enabled" : "disabled", enabled ? (enforcing ? "; mode: enforcing" : "; mode: permissive") : "");
+   xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "%s%s", enabled ? "enabled" : "disabled", enabled ? (enforcing ? "; mode: enforcing" : "; mode: permissive") : "");
 }
 
 const MeterClass SELinuxMeter_class = {

@@ -2,11 +2,11 @@
 htop - openbsd/Platform.c
 (C) 2014 Hisham H. Muhammad
 (C) 2015 Michael McConville
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "Platform.h"
+#include "openbsd/Platform.h"
 
 #include <errno.h>
 #include <kvm.h>
@@ -15,6 +15,8 @@ in the source distribution for its full text.
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/signal.h>  // needs to be included before <sys/proc.h> for 'struct sigaltstack'
+#include <sys/proc.h>
 #include <sys/resource.h>
 #include <sys/sensors.h>
 #include <sys/sysctl.h>
@@ -30,19 +32,29 @@ in the source distribution for its full text.
 #include "LoadAverageMeter.h"
 #include "Macros.h"
 #include "MemoryMeter.h"
+#include "MemorySwapMeter.h"
 #include "Meter.h"
-#include "OpenBSDProcess.h"
-#include "OpenBSDProcessList.h"
 #include "ProcessList.h"
 #include "Settings.h"
 #include "SignalsPanel.h"
 #include "SwapMeter.h"
+#include "SysArchMeter.h"
 #include "TasksMeter.h"
 #include "UptimeMeter.h"
 #include "XUtils.h"
+#include "openbsd/OpenBSDProcess.h"
+#include "openbsd/OpenBSDProcessList.h"
 
 
-const ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_VIRT, M_RESIDENT, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
+const ScreenDefaults Platform_defaultScreens[] = {
+   {
+      .name = "Main",
+      .columns = "PID USER PRIORITY NICE M_VIRT M_RESIDENT STATE PERCENT_CPU PERCENT_MEM TIME Command",
+      .sortKey = "PERCENT_CPU",
+   },
+};
+
+const unsigned int Platform_numberOfDefaultScreens = ARRAYSIZE(Platform_defaultScreens);
 
 /*
  * See /usr/include/sys/signal.h
@@ -95,10 +107,12 @@ const MeterClass* const Platform_meterTypes[] = {
    &LoadMeter_class,
    &MemoryMeter_class,
    &SwapMeter_class,
+   &MemorySwapMeter_class,
    &TasksMeter_class,
    &UptimeMeter_class,
    &BatteryMeter_class,
    &HostnameMeter_class,
+   &SysArchMeter_class,
    &AllCPUsMeter_class,
    &AllCPUs2Meter_class,
    &AllCPUs4Meter_class,
@@ -115,8 +129,9 @@ const MeterClass* const Platform_meterTypes[] = {
    NULL
 };
 
-void Platform_init(void) {
+bool Platform_init(void) {
    /* no platform-specific setup needed */
+   return true;
 }
 
 void Platform_done(void) {
@@ -160,16 +175,22 @@ void Platform_getLoadAverage(double* one, double* five, double* fifteen) {
 }
 
 int Platform_getMaxPid() {
-   // this is hard-coded in sys/proc.h - no sysctl exists
-   return 99999;
+   return 2 * THREAD_PID_OFFSET;
 }
 
-double Platform_setCPUValues(Meter* this, int cpu) {
+double Platform_setCPUValues(Meter* this, unsigned int cpu) {
    const OpenBSDProcessList* pl = (const OpenBSDProcessList*) this->pl;
-   const CPUData* cpuData = &(pl->cpus[cpu]);
-   double total = cpuData->totalPeriod == 0 ? 1 : cpuData->totalPeriod;
+   const CPUData* cpuData = &(pl->cpuData[cpu]);
+   double total;
    double totalPercent;
    double* v = this->values;
+
+   if (!cpuData->online) {
+      this->curItems = 0;
+      return NAN;
+   }
+
+   total = cpuData->totalPeriod == 0 ? 1 : cpuData->totalPeriod;
 
    v[CPU_METER_NICE] = cpuData->nicePeriod / total * 100.0;
    v[CPU_METER_NORMAL] = cpuData->userPeriod / total * 100.0;
@@ -194,6 +215,8 @@ double Platform_setCPUValues(Meter* this, int cpu) {
 
    v[CPU_METER_TEMPERATURE] = NAN;
 
+   v[CPU_METER_FREQUENCY] = (pl->cpuSpeed != -1) ? pl->cpuSpeed : NAN;
+
    return totalPercent;
 }
 
@@ -206,13 +229,16 @@ void Platform_setMemoryValues(Meter* this) {
    this->total = pl->totalMem;
    this->values[0] = usedMem;
    this->values[1] = buffersMem;
-   this->values[2] = cachedMem;
+   // this->values[2] = "shared memory, like tmpfs and shm"
+   this->values[3] = cachedMem;
+   // this->values[4] = "available memory"
 }
 
 void Platform_setSwapValues(Meter* this) {
    const ProcessList* pl = this->pl;
    this->total = pl->totalSwap;
    this->values[0] = pl->usedSwap;
+   this->values[1] = NAN;
 }
 
 char* Platform_getProcessEnv(pid_t pid) {
@@ -264,14 +290,14 @@ char* Platform_getProcessEnv(pid_t pid) {
 }
 
 char* Platform_getInodeFilename(pid_t pid, ino_t inode) {
-    (void)pid;
-    (void)inode;
-    return NULL;
+   (void)pid;
+   (void)inode;
+   return NULL;
 }
 
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
-    (void)pid;
-    return NULL;
+   (void)pid;
+   return NULL;
 }
 
 bool Platform_getDiskIO(DiskIOData* data) {
@@ -280,15 +306,9 @@ bool Platform_getDiskIO(DiskIOData* data) {
    return false;
 }
 
-bool Platform_getNetworkIO(unsigned long int* bytesReceived,
-                           unsigned long int* packetsReceived,
-                           unsigned long int* bytesTransmitted,
-                           unsigned long int* packetsTransmitted) {
+bool Platform_getNetworkIO(NetworkIOData* data) {
    // TODO
-   *bytesReceived = 0;
-   *packetsReceived = 0;
-   *bytesTransmitted = 0;
-   *packetsTransmitted = 0;
+   (void)data;
    return false;
 }
 
@@ -301,7 +321,7 @@ static bool findDevice(const char* name, int* mib, struct sensordev* snsrdev, si
          if (errno == ENOENT)
             return false;
       }
-      if (strcmp(name, snsrdev->xname) == 0) {
+      if (String_eq(name, snsrdev->xname)) {
          return true;
       }
    }

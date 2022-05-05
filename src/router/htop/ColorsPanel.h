@@ -3,23 +3,22 @@
 /*
 htop - ColorsPanel.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "Panel.h"
-#include "ScreenManager.h"
 #include "Settings.h"
+
 
 typedef struct ColorsPanel_ {
    Panel super;
 
    Settings* settings;
-   ScreenManager* scr;
 } ColorsPanel;
 
 extern const PanelClass ColorsPanel_class;
 
-ColorsPanel* ColorsPanel_new(Settings* settings, ScreenManager* scr);
+ColorsPanel* ColorsPanel_new(Settings* settings);
 
 #endif

@@ -1,17 +1,20 @@
 /*
 htop - ColumnsPanel.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "ColumnsPanel.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 
 #include "CRT.h"
+#include "DynamicColumn.h"
 #include "FunctionBar.h"
+#include "Hashtable.h"
 #include "ListItem.h"
 #include "Object.h"
 #include "Process.h"
@@ -115,35 +118,61 @@ const PanelClass ColumnsPanel_class = {
    .eventHandler = ColumnsPanel_eventHandler
 };
 
-ColumnsPanel* ColumnsPanel_new(Settings* settings) {
+static void ColumnsPanel_add(Panel* super, unsigned int key, Hashtable* columns) {
+   const char* name;
+   if (key < LAST_PROCESSFIELD) {
+      name = Process_fields[key].name;
+   } else {
+      const DynamicColumn* column = Hashtable_get(columns, key);
+      assert(column);
+      if (!column) {
+         name = NULL;
+      } else {
+         name = column->caption ? column->caption : column->heading;
+         if (!name)
+            name = column->name; /* name is a mandatory field */
+      }
+   }
+   if (name == NULL)
+      name = "- ";
+   Panel_add(super, (Object*) ListItem_new(name, key));
+}
+
+void ColumnsPanel_fill(ColumnsPanel* this, ScreenSettings* ss, Hashtable* columns) {
+   Panel* super = (Panel*) this;
+   Panel_prune(super);
+   for (const ProcessField* fields = ss->fields; *fields; fields++)
+      ColumnsPanel_add(super, *fields, columns);
+   this->ss = ss;
+}
+
+ColumnsPanel* ColumnsPanel_new(ScreenSettings* ss, Hashtable* columns, bool* changed) {
    ColumnsPanel* this = AllocThis(ColumnsPanel);
    Panel* super = (Panel*) this;
    FunctionBar* fuBar = FunctionBar_new(ColumnsFunctions, NULL, NULL);
    Panel_init(super, 1, 1, 1, 1, Class(ListItem), true, fuBar);
 
-   this->settings = settings;
+   this->ss = ss;
+   this->changed = changed;
    this->moving = false;
    Panel_setHeader(super, "Active Columns");
 
-   ProcessField* fields = this->settings->fields;
-   for (; *fields; fields++) {
-      if (Process_fields[*fields].name) {
-         Panel_add(super, (Object*) ListItem_new(Process_fields[*fields].name, *fields));
-      }
-   }
+   ColumnsPanel_fill(this, ss, columns);
+
    return this;
 }
 
 void ColumnsPanel_update(Panel* super) {
    ColumnsPanel* this = (ColumnsPanel*) super;
    int size = Panel_size(super);
-   this->settings->changed = true;
-   this->settings->fields = xRealloc(this->settings->fields, sizeof(ProcessField) * (size + 1));
-   this->settings->flags = 0;
+   *(this->changed) = true;
+   this->ss->fields = xRealloc(this->ss->fields, sizeof(ProcessField) * (size + 1));
+   this->ss->flags = 0;
    for (int i = 0; i < size; i++) {
       int key = ((ListItem*) Panel_get(super, i))->key;
-      this->settings->fields[i] = key;
-      this->settings->flags |= Process_fields[key].flags;
+      this->ss->fields[i] = key;
+      if (key < LAST_PROCESSFIELD)
+         this->ss->flags |= Process_fields[key].flags;
    }
-   this->settings->fields[size] = 0;
+   this->ss->fields[size] = 0;
 }

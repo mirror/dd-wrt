@@ -3,10 +3,13 @@
 /*
 htop - Panel.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
+#include <assert.h>
 #include <stdbool.h>
 
 #include "CRT.h"
@@ -26,7 +29,8 @@ typedef enum HandlerResult_ {
    REFRESH     = 0x08,
    REDRAW      = 0x10,
    RESCAN      = 0x20,
-   SYNTH_KEY   = 0x40,
+   RESIZE      = 0x40,
+   SYNTH_KEY   = 0x80,
 } HandlerResult;
 
 #define EVENT_SET_SELECTED (-1)
@@ -34,6 +38,10 @@ typedef enum HandlerResult_ {
 #define EVENT_HEADER_CLICK(x_) (-10000 + (x_))
 #define EVENT_IS_HEADER_CLICK(ev_) ((ev_) >= -10000 && (ev_) <= -9000)
 #define EVENT_HEADER_CLICK_GET_X(ev_) ((ev_) + 10000)
+
+#define EVENT_SCREEN_TAB_CLICK(x_) (-20000 + (x_))
+#define EVENT_IS_SCREEN_TAB_CLICK(ev_) ((ev_) >= -20000 && (ev_) < -10000)
+#define EVENT_SCREEN_TAB_GET_X(ev_) ((ev_) + 20000)
 
 typedef HandlerResult (*Panel_EventHandler)(Panel*, int);
 typedef void (*Panel_DrawFunctionBar)(Panel*, bool);
@@ -57,14 +65,16 @@ typedef struct PanelClass_ {
 struct Panel_ {
    Object super;
    int x, y, w, h;
+   int cursorX, cursorY;
    Vector* items;
    int selected;
    int oldSelected;
    int selectedLen;
    void* eventHandlerState;
    int scrollV;
-   short scrollH;
+   int scrollH;
    bool needsRedraw;
+   bool cursorOn;
    bool wasFocus;
    FunctionBar* currentBar;
    FunctionBar* defaultBar;
@@ -85,6 +95,8 @@ void Panel_delete(Object* cast);
 void Panel_init(Panel* this, int x, int y, int w, int h, const ObjectClass* type, bool owner, FunctionBar* fuBar);
 
 void Panel_done(Panel* this);
+
+void Panel_setCursorToSelection(Panel* this);
 
 void Panel_setSelectionColor(Panel* this, ColorElements colorId);
 
@@ -112,9 +124,9 @@ void Panel_moveSelectedUp(Panel* this);
 
 void Panel_moveSelectedDown(Panel* this);
 
-int Panel_getSelectedIndex(Panel* this);
+int Panel_getSelectedIndex(const Panel* this);
 
-int Panel_size(Panel* this);
+int Panel_size(const Panel* this);
 
 void Panel_setSelected(Panel* this, int selected);
 
@@ -125,5 +137,7 @@ void Panel_splice(Panel* this, Vector* from);
 bool Panel_onKey(Panel* this, int key);
 
 HandlerResult Panel_selectByTyping(Panel* this, int ch);
+
+int Panel_getCh(Panel* this);
 
 #endif

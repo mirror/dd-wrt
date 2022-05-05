@@ -1,7 +1,7 @@
 /*
 htop - LoadAverageMeter.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -10,6 +10,7 @@ in the source distribution for its full text.
 #include "CRT.h"
 #include "Object.h"
 #include "Platform.h"
+#include "ProcessList.h"
 #include "RichString.h"
 #include "XUtils.h"
 
@@ -36,7 +37,7 @@ static const int High_attributes[] = {
    METER_VALUE_ERROR
 };
 
-static void LoadAverageMeter_updateValues(Meter* this, char* buffer, size_t size) {
+static void LoadAverageMeter_updateValues(Meter* this) {
    Platform_getLoadAverage(&this->values[0], &this->values[1], &this->values[2]);
 
    // only show bar for 1min value
@@ -46,29 +47,31 @@ static void LoadAverageMeter_updateValues(Meter* this, char* buffer, size_t size
    if (this->values[0] < 1.0) {
       this->curAttributes = OK_attributes;
       this->total = 1.0;
-   } else if (this->values[0] < this->pl->cpuCount) {
+   } else if (this->values[0] < this->pl->activeCPUs) {
       this->curAttributes = Medium_attributes;
-      this->total = this->pl->cpuCount;
+      this->total = this->pl->activeCPUs;
    } else {
       this->curAttributes = High_attributes;
-      this->total = 2 * this->pl->cpuCount;
+      this->total = 2 * this->pl->activeCPUs;
    }
 
-   xSnprintf(buffer, size, "%.2f/%.2f/%.2f", this->values[0], this->values[1], this->values[2]);
+   xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "%.2f/%.2f/%.2f", this->values[0], this->values[1], this->values[2]);
 }
 
 static void LoadAverageMeter_display(const Object* cast, RichString* out) {
    const Meter* this = (const Meter*)cast;
    char buffer[20];
-   xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[0]);
-   RichString_writeAscii(out, CRT_colors[LOAD_AVERAGE_ONE], buffer);
-   xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[1]);
-   RichString_appendAscii(out, CRT_colors[LOAD_AVERAGE_FIVE], buffer);
-   xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[2]);
-   RichString_appendAscii(out, CRT_colors[LOAD_AVERAGE_FIFTEEN], buffer);
+   int len;
+
+   len = xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[0]);
+   RichString_appendnAscii(out, CRT_colors[LOAD_AVERAGE_ONE], buffer, len);
+   len = xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[1]);
+   RichString_appendnAscii(out, CRT_colors[LOAD_AVERAGE_FIVE], buffer, len);
+   len = xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[2]);
+   RichString_appendnAscii(out, CRT_colors[LOAD_AVERAGE_FIFTEEN], buffer, len);
 }
 
-static void LoadMeter_updateValues(Meter* this, char* buffer, size_t size) {
+static void LoadMeter_updateValues(Meter* this) {
    double five, fifteen;
    Platform_getLoadAverage(&this->values[0], &five, &fifteen);
 
@@ -76,22 +79,24 @@ static void LoadMeter_updateValues(Meter* this, char* buffer, size_t size) {
    if (this->values[0] < 1.0) {
       this->curAttributes = OK_attributes;
       this->total = 1.0;
-   } else if (this->values[0] < this->pl->cpuCount) {
+   } else if (this->values[0] < this->pl->activeCPUs) {
       this->curAttributes = Medium_attributes;
-      this->total = this->pl->cpuCount;
+      this->total = this->pl->activeCPUs;
    } else {
       this->curAttributes = High_attributes;
-      this->total = 2 * this->pl->cpuCount;
+      this->total = 2 * this->pl->activeCPUs;
    }
 
-   xSnprintf(buffer, size, "%.2f", this->values[0]);
+   xSnprintf(this->txtBuffer, sizeof(this->txtBuffer), "%.2f", this->values[0]);
 }
 
 static void LoadMeter_display(const Object* cast, RichString* out) {
    const Meter* this = (const Meter*)cast;
    char buffer[20];
-   xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[0]);
-   RichString_writeAscii(out, CRT_colors[LOAD], buffer);
+   int len;
+
+   len = xSnprintf(buffer, sizeof(buffer), "%.2f ", this->values[0]);
+   RichString_appendnAscii(out, CRT_colors[LOAD], buffer, len);
 }
 
 const MeterClass LoadAverageMeter_class = {

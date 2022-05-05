@@ -3,7 +3,7 @@
 /*
 htop - RichString.h
 (C) 2004,2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -12,7 +12,7 @@ in the source distribution for its full text.
 
 // IWYU pragma: begin_exports
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#if defined(HAVE_NCURSESW_CURSES_H)
 #include <ncursesw/curses.h>
 #elif defined(HAVE_NCURSES_NCURSES_H)
 #include <ncurses/ncurses.h>

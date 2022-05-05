@@ -1,7 +1,7 @@
 /*
 htop - FunctionBar.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -88,11 +88,12 @@ void FunctionBar_setLabel(FunctionBar* this, int event, const char* text) {
    }
 }
 
-void FunctionBar_draw(const FunctionBar* this) {
-   FunctionBar_drawExtra(this, NULL, -1, false);
+int FunctionBar_draw(const FunctionBar* this) {
+   return FunctionBar_drawExtra(this, NULL, -1, false);
 }
 
-void FunctionBar_drawExtra(const FunctionBar* this, const char* buffer, int attr, bool setCursor) {
+int FunctionBar_drawExtra(const FunctionBar* this, const char* buffer, int attr, bool setCursor) {
+   int cursorX = 0;
    attrset(CRT_colors[FUNCTION_BAR]);
    mvhline(LINES - 1, 0, ' ', COLS);
    int x = 0;
@@ -113,18 +114,20 @@ void FunctionBar_drawExtra(const FunctionBar* this, const char* buffer, int attr
       }
       mvaddstr(LINES - 1, x, buffer);
       x += strlen(buffer);
+      cursorX = x;
    }
 
    attrset(CRT_colors[RESET_COLOR]);
 
    if (setCursor) {
-      CRT_cursorX = x;
       curs_set(1);
    } else {
       curs_set(0);
    }
 
    currentLen = x;
+
+   return cursorX;
 }
 
 void FunctionBar_append(const char* buffer, int attr) {

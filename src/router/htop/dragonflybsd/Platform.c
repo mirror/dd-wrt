@@ -2,36 +2,45 @@
 htop - dragonflybsd/Platform.c
 (C) 2014 Hisham H. Muhammad
 (C) 2017 Diederik de Groot
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "Platform.h"
-#include "Macros.h"
-#include "Meter.h"
-#include "CPUMeter.h"
-#include "MemoryMeter.h"
-#include "SwapMeter.h"
-#include "TasksMeter.h"
-#include "LoadAverageMeter.h"
-#include "UptimeMeter.h"
+#include "dragonflybsd/Platform.h"
+
+#include <math.h>
+#include <time.h>
+#include <sys/resource.h>
+#include <sys/sysctl.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <vm/vm_param.h>
+
 #include "ClockMeter.h"
+#include "CPUMeter.h"
 #include "DateMeter.h"
 #include "DateTimeMeter.h"
 #include "HostnameMeter.h"
-#include "DragonFlyBSDProcess.h"
-#include "DragonFlyBSDProcessList.h"
+#include "LoadAverageMeter.h"
+#include "MemoryMeter.h"
+#include "MemorySwapMeter.h"
+#include "ProcessList.h"
+#include "SwapMeter.h"
+#include "SysArchMeter.h"
+#include "TasksMeter.h"
+#include "UptimeMeter.h"
+#include "dragonflybsd/DragonFlyBSDProcess.h"
+#include "dragonflybsd/DragonFlyBSDProcessList.h"
 
-#include <sys/types.h>
-#include <sys/sysctl.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <vm/vm_param.h>
-#include <time.h>
-#include <math.h>
+const ScreenDefaults Platform_defaultScreens[] = {
+   {
+      .name = "Main",
+      .columns = "PID USER PRIORITY NICE M_VIRT M_RESIDENT STATE PERCENT_CPU PERCENT_MEM TIME Command",
+      .sortKey = "PERCENT_CPU",
+   },
+};
 
-
-const ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_VIRT, M_RESIDENT, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
+const unsigned int Platform_numberOfDefaultScreens = ARRAYSIZE(Platform_defaultScreens);
 
 const SignalItem Platform_signals[] = {
    { .name = " 0 Cancel",    .number =  0 },
@@ -80,11 +89,13 @@ const MeterClass* const Platform_meterTypes[] = {
    &LoadAverageMeter_class,
    &LoadMeter_class,
    &MemoryMeter_class,
+   &MemorySwapMeter_class,
    &SwapMeter_class,
    &TasksMeter_class,
    &UptimeMeter_class,
    &BatteryMeter_class,
    &HostnameMeter_class,
+   &SysArchMeter_class,
    &AllCPUsMeter_class,
    &AllCPUs2Meter_class,
    &AllCPUs4Meter_class,
@@ -101,8 +112,9 @@ const MeterClass* const Platform_meterTypes[] = {
    NULL
 };
 
-void Platform_init(void) {
+bool Platform_init(void) {
    /* no platform-specific setup needed */
+   return true;
 }
 
 void Platform_done(void) {
@@ -155,9 +167,9 @@ int Platform_getMaxPid() {
    return maxPid;
 }
 
-double Platform_setCPUValues(Meter* this, int cpu) {
+double Platform_setCPUValues(Meter* this, unsigned int cpu) {
    const DragonFlyBSDProcessList* fpl = (const DragonFlyBSDProcessList*) this->pl;
-   int cpus = this->pl->cpuCount;
+   unsigned int cpus = this->pl->activeCPUs;
    const CPUData* cpuData;
 
    if (cpus == 1) {
@@ -198,13 +210,16 @@ void Platform_setMemoryValues(Meter* this) {
    this->total = pl->totalMem;
    this->values[0] = pl->usedMem;
    this->values[1] = pl->buffersMem;
-   this->values[2] = pl->cachedMem;
+   // this->values[2] = "shared memory, like tmpfs and shm"
+   this->values[3] = pl->cachedMem;
+   // this->values[4] = "available memory"
 }
 
 void Platform_setSwapValues(Meter* this) {
    const ProcessList* pl = this->pl;
    this->total = pl->totalSwap;
    this->values[0] = pl->usedSwap;
+   this->values[1] = NAN;
 }
 
 char* Platform_getProcessEnv(pid_t pid) {
@@ -214,14 +229,14 @@ char* Platform_getProcessEnv(pid_t pid) {
 }
 
 char* Platform_getInodeFilename(pid_t pid, ino_t inode) {
-    (void)pid;
-    (void)inode;
-    return NULL;
+   (void)pid;
+   (void)inode;
+   return NULL;
 }
 
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
-    (void)pid;
-    return NULL;
+   (void)pid;
+   return NULL;
 }
 
 bool Platform_getDiskIO(DiskIOData* data) {
@@ -230,15 +245,9 @@ bool Platform_getDiskIO(DiskIOData* data) {
    return false;
 }
 
-bool Platform_getNetworkIO(unsigned long int* bytesReceived,
-                           unsigned long int* packetsReceived,
-                           unsigned long int* bytesTransmitted,
-                           unsigned long int* packetsTransmitted) {
+bool Platform_getNetworkIO(NetworkIOData* data) {
    // TODO
-   *bytesReceived = 0;
-   *packetsReceived = 0;
-   *bytesTransmitted = 0;
-   *packetsTransmitted = 0;
+   (void)data;
    return false;
 }
 

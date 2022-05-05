@@ -4,20 +4,17 @@
 htop - Object.h
 (C) 2004-2012 Hisham H. Muhammad
 (C) 2020 Red Hat, Inc.  All Rights Reserved.
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "config.h" // IWYU pragma: keep
 
 #include <assert.h>
+#include <stdbool.h>
 
 #include "RichString.h"
 #include "XUtils.h" // IWYU pragma: keep
-
-#ifndef NDEBUG
-#include <stdbool.h>
-#endif
 
 
 struct Object_;
@@ -57,10 +54,6 @@ typedef union {
 
 extern const ObjectClass Object_class;
 
-#ifndef NDEBUG
-
 bool Object_isA(const Object* o, const ObjectClass* klass);
-
-#endif /* NDEBUG */
 
 #endif

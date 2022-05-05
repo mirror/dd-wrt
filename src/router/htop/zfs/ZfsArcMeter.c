@@ -1,17 +1,20 @@
 /*
 htop - ZfsArcMeter.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "ZfsArcMeter.h"
-#include "ZfsArcStats.h"
+#include "zfs/ZfsArcMeter.h"
+
+#include <stddef.h>
 
 #include "CRT.h"
 #include "Object.h"
 #include "Platform.h"
 #include "RichString.h"
+
+#include "zfs/ZfsArcStats.h"
 
 
 static const int ZfsArcMeter_attributes[] = {
@@ -33,7 +36,9 @@ void ZfsArcMeter_readStats(Meter* this, const ZfsArcStats* stats) {
    this->values[5] = stats->size;
 }
 
-static void ZfsArcMeter_updateValues(Meter* this, char* buffer, size_t size) {
+static void ZfsArcMeter_updateValues(Meter* this) {
+   char* buffer = this->txtBuffer;
+   size_t size = sizeof(this->txtBuffer);
    int written;
    Platform_setZfsArcValues(this);
 
@@ -72,7 +77,7 @@ static void ZfsArcMeter_display(const Object* cast, RichString* out) {
       RichString_appendAscii(out, CRT_colors[ZFS_OTHER], buffer);
    } else {
       RichString_writeAscii(out, CRT_colors[METER_TEXT], " ");
-      RichString_appendAscii(out, CRT_colors[FAILED_SEARCH], "Unavailable");
+      RichString_appendAscii(out, CRT_colors[FAILED_READ], "Unavailable");
    }
 }
 
