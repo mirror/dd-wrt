@@ -1,4 +1,5 @@
 @import url(/style/buttons.css);
+@import url(/style/common_legacy.css);
 body {
   background: #dde;
   margin: 12px;
@@ -141,7 +142,7 @@ table th {
   background: #bbc;
   padding: 1px 4px;
 }
-div.center {
+.center {
   text-align: center;
 }
 #helpContainer {
@@ -287,14 +288,6 @@ input.spaceradio {
 }
 #score, #rating, #standards {
   font-weight: bold;
-}
-#scorebar {
-  background-image: url(/images/gradient.svg);
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  position: absolute;
-  width: 100px;
-  z-index: 0;
 }
 #scorebarBorder {
   background: #333;

@@ -90,7 +90,7 @@ addEvent(window, "unload", function() {
 					<div class="label"><%% tran("wds.wl_mac"); %%></div><%% nvg("%s_hwaddr"); %%>&nbsp;
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds1_enable" size="1" onchange="SelWDS(1,this.form.%s_wds1_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 					//<![CDATA[
@@ -115,7 +115,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds1_enable", "3", "selected");
 					<%% get_wdsp2p("1","%s"); %%>
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds2_enable" size="1" onchange="SelWDS(2,this.form.%s_wds2_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -140,7 +140,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds2_enable", "3", "selected");
 					<%% get_wdsp2p("2","%s"); %%>
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds3_enable" size="1" onchange="SelWDS(3,this.form.%s_wds3_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -164,7 +164,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds3_enable", "3", "selected");
 					<input name="%s_wds3_desc" size="25" maxlength="30" value="<%% nvg("%s_wds3_desc"); %%>" />
 					<%% get_wdsp2p("3","%s"); %%>
 				</div>
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds4_enable" size="1" onchange="SelWDS(4,this.form.%s_wds4_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -189,7 +189,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds4_enable", "3", "selected");
 					<%% get_wdsp2p("4","%s"); %%>
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds5_enable" size="1" onchange="SelWDS(5,this.form.%s_wds5_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -213,7 +213,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds5_enable", "3", "selected");
 					<input name="%s_wds5_desc" size="25" maxlength="30" value="<%% nvg("%s_wds5_desc"); %%>" />
 					<%% get_wdsp2p("5","%s"); %%>
 				</div>
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds6_enable" size="1" onchange="SelWDS(6,this.form.%s_wds6_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -238,7 +238,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds6_enable", "3", "selected");
 					<%% get_wdsp2p("6","%s"); %%>
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds7_enable" size="1" onchange="SelWDS(7,this.form.%s_wds7_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -268,7 +268,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds7_enable", "3", "selected");
 						<input name="%s_wds7_desc" size="25" maxlength="30" value="<%% nvg("%s_wds7_desc"); %%>" />
 						<%% get_wdsp2p("7","%s"); %%>
 						</div>
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds8_enable" size="1" onchange="SelWDS(8,this.form.%s_wds8_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -298,7 +298,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds8_enable", "3", "selected");
 					<input name="%s_wds8_desc" size="25" maxlength="30" value="<%% nvg("%s_wds8_desc"); %%>" />
 					<%% get_wdsp2p("8","%s"); %%>
 				</div>
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds9_enable" size="1" onchange="SelWDS(9,this.form.%s_wds9_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
@@ -329,7 +329,7 @@ document.write("<option value=\"3\" <%% nvsm("%s_wds9_enable", "3", "selected");
 					<%% get_wdsp2p("9","%s"); %%>
 				</div>
 
-				<div class="setting" class="center">
+				<div class="setting center">
 					<select name="%s_wds10_enable" size="1" onchange="SelWDS(10,this.form.%s_wds10_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 //<![CDATA[
