@@ -91,7 +91,7 @@ endif
 
 ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
-  cp common_style/common_legacy.css $(INSTALLDIR)/www/style
+	cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 endif
 
 
