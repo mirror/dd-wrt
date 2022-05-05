@@ -1287,6 +1287,7 @@ int smb_check_perm_dacl(struct ksmbd_conn *conn, struct path *path,
 					mode_to_access_flags(pa_entry->e_perm, 0777, &access_bits);
 					if (!access_bits)
 						access_bits = SET_MINIMUM_RIGHTS;
+					posix_acl_release(posix_acls);
 					goto check_access_bits;
 				}
 			}
