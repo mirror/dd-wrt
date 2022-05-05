@@ -1,7 +1,7 @@
 
 htop-configure: ncurses libnl
 	cd htop && ./autogen.sh
-	cd htop && ./configure --host=$(ARCH)-linux \
+	cd htop && sh ./configure --host=$(ARCH)-linux \
 	    --prefix=/usr \
 	    --enable-taskstats \
 	    --enable-delayacct \
