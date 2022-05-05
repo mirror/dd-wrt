@@ -2,33 +2,46 @@
 htop - unsupported/Platform.c
 (C) 2014 Hisham H. Muhammad
 (C) 2015 David C. Hunt
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
+#include "unsupported/Platform.h"
+
 #include <math.h>
 
-#include "Platform.h"
-#include "Macros.h"
 #include "CPUMeter.h"
-#include "MemoryMeter.h"
-#include "SwapMeter.h"
-#include "TasksMeter.h"
-#include "LoadAverageMeter.h"
 #include "ClockMeter.h"
 #include "DateMeter.h"
 #include "DateTimeMeter.h"
 #include "HostnameMeter.h"
+#include "LoadAverageMeter.h"
+#include "Macros.h"
+#include "MemoryMeter.h"
+#include "MemorySwapMeter.h"
+#include "SwapMeter.h"
+#include "SysArchMeter.h"
+#include "TasksMeter.h"
 #include "UptimeMeter.h"
 
+
+const ScreenDefaults Platform_defaultScreens[] = {
+   {
+      .name = "Main",
+      .columns = "PID USER PRIORITY NICE M_VIRT M_RESIDENT STATE PERCENT_CPU PERCENT_MEM TIME Command",
+      .sortKey = "PERCENT_CPU",
+   },
+};
+
+const unsigned int Platform_numberOfDefaultScreens = ARRAYSIZE(Platform_defaultScreens);
 
 const SignalItem Platform_signals[] = {
    { .name = " 0 Cancel",    .number =  0 },
 };
 
 const unsigned int Platform_numberOfSignals = ARRAYSIZE(Platform_signals);
-
-const ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_VIRT, M_RESIDENT, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
 
 const MeterClass* const Platform_meterTypes[] = {
    &CPUMeter_class,
@@ -39,9 +52,11 @@ const MeterClass* const Platform_meterTypes[] = {
    &LoadMeter_class,
    &MemoryMeter_class,
    &SwapMeter_class,
+   &MemorySwapMeter_class,
    &TasksMeter_class,
    &BatteryMeter_class,
    &HostnameMeter_class,
+   &SysArchMeter_class,
    &UptimeMeter_class,
    &AllCPUsMeter_class,
    &AllCPUs2Meter_class,
@@ -59,8 +74,11 @@ const MeterClass* const Platform_meterTypes[] = {
    NULL
 };
 
-void Platform_init(void) {
+static const char Platform_unsupported[] = "unsupported";
+
+bool Platform_init(void) {
    /* no platform-specific setup needed */
+   return true;
 }
 
 void Platform_done(void) {
@@ -86,12 +104,14 @@ int Platform_getMaxPid() {
    return 1;
 }
 
-double Platform_setCPUValues(Meter* this, int cpu) {
+double Platform_setCPUValues(Meter* this, unsigned int cpu) {
    (void) cpu;
 
    double* v = this->values;
    v[CPU_METER_FREQUENCY] = NAN;
    v[CPU_METER_TEMPERATURE] = NAN;
+
+   this->curItems = 1;
 
    return 0.0;
 }
@@ -104,25 +124,20 @@ void Platform_setSwapValues(Meter* this) {
    (void) this;
 }
 
-bool Process_isThread(const Process* this) {
-   (void) this;
-   return false;
-}
-
 char* Platform_getProcessEnv(pid_t pid) {
    (void) pid;
    return NULL;
 }
 
 char* Platform_getInodeFilename(pid_t pid, ino_t inode) {
-    (void)pid;
-    (void)inode;
-    return NULL;
+   (void)pid;
+   (void)inode;
+   return NULL;
 }
 
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
-    (void)pid;
-    return NULL;
+   (void)pid;
+   return NULL;
 }
 
 bool Platform_getDiskIO(DiskIOData* data) {
@@ -130,18 +145,20 @@ bool Platform_getDiskIO(DiskIOData* data) {
    return false;
 }
 
-bool Platform_getNetworkIO(unsigned long int* bytesReceived,
-                           unsigned long int* packetsReceived,
-                           unsigned long int* bytesTransmitted,
-                           unsigned long int* packetsTransmitted) {
-   *bytesReceived = 0;
-   *packetsReceived = 0;
-   *bytesTransmitted = 0;
-   *packetsTransmitted = 0;
+bool Platform_getNetworkIO(NetworkIOData* data) {
+   (void)data;
    return false;
 }
 
 void Platform_getBattery(double* percent, ACPresence* isOnAC) {
    *percent = NAN;
    *isOnAC = AC_ERROR;
+}
+
+void Platform_getHostname(char* buffer, size_t size) {
+   String_safeStrncpy(buffer, Platform_unsupported, size);
+}
+
+void Platform_getRelease(char** string) {
+   *string = xStrdup(Platform_unsupported);
 }

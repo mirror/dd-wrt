@@ -4,7 +4,7 @@
 htop - ColumnsPanel.h
 (C) 2004-2015 Hisham H. Muhammad
 (C) 2020 Red Hat, Inc.  All Rights Reserved.
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -32,9 +32,8 @@ typedef bool(*MainPanel_ForeachProcessFn)(Process*, Arg);
 
 #define MainPanel_getFunctionBar(this_) (((Panel*)(this_))->defaultBar)
 
-void MainPanel_updateTreeFunctions(MainPanel* this, bool mode);
-
-void MainPanel_pidSearch(MainPanel* this, int ch);
+// update the Label Keys in the MainPanel bar, list: list / tree mode, filter: filter (inc) active / inactive
+void MainPanel_updateLabels(MainPanel* this, bool list, bool filter);
 
 int MainPanel_selectedPid(MainPanel* this);
 

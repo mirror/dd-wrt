@@ -3,7 +3,7 @@
 /*
 htop - ScreenManager.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -22,11 +22,11 @@ typedef struct ScreenManager_ {
    int x2;
    int y2;
    Vector* panels;
+   const char* name;
    int panelCount;
    Header* header;
    const Settings* settings;
    const State* state;
-   bool owner;
    bool allowFocusChange;
 } ScreenManager;
 
@@ -34,14 +34,16 @@ ScreenManager* ScreenManager_new(Header* header, const Settings* settings, const
 
 void ScreenManager_delete(ScreenManager* this);
 
-int ScreenManager_size(ScreenManager* this);
+int ScreenManager_size(const ScreenManager* this);
 
 void ScreenManager_add(ScreenManager* this, Panel* item, int size);
 
+void ScreenManager_insert(ScreenManager* this, Panel* item, int size, int idx);
+
 Panel* ScreenManager_remove(ScreenManager* this, int idx);
 
-void ScreenManager_resize(ScreenManager* this, int x1, int y1, int x2, int y2);
+void ScreenManager_resize(ScreenManager* this);
 
-void ScreenManager_run(ScreenManager* this, Panel** lastFocus, int* lastKey);
+void ScreenManager_run(ScreenManager* this, Panel** lastFocus, int* lastKey, const char* name);
 
 #endif

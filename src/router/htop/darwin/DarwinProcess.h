@@ -3,15 +3,17 @@
 /*
 htop - DarwinProcess.h
 (C) 2015 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include <sys/sysctl.h>
 
-#include "DarwinProcessList.h"
 #include "Settings.h"
+#include "darwin/DarwinProcessList.h"
 
+
+#define PROCESS_FLAG_TTY 0x00000100
 
 typedef struct DarwinProcess_ {
    Process super;
@@ -30,11 +32,9 @@ Process* DarwinProcess_new(const Settings* settings);
 
 void Process_delete(Object* cast);
 
-bool Process_isThread(const Process* this);
-
 void DarwinProcess_setFromKInfoProc(Process* proc, const struct kinfo_proc* ps, bool exists);
 
-void DarwinProcess_setFromLibprocPidinfo(DarwinProcess* proc, DarwinProcessList* dpl, double time_interval);
+void DarwinProcess_setFromLibprocPidinfo(DarwinProcess* proc, DarwinProcessList* dpl, double timeIntervalNS);
 
 /*
  * Scan threads for process state information.

@@ -3,11 +3,12 @@
 /*
 htop - FunctionBar.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include <stdbool.h>
+
 
 typedef struct FunctionBar_ {
    int size;
@@ -28,9 +29,9 @@ void FunctionBar_delete(FunctionBar* this);
 
 void FunctionBar_setLabel(FunctionBar* this, int event, const char* text);
 
-void FunctionBar_draw(const FunctionBar* this);
+int FunctionBar_draw(const FunctionBar* this);
 
-void FunctionBar_drawExtra(const FunctionBar* this, const char* buffer, int attr, bool setCursor);
+int FunctionBar_drawExtra(const FunctionBar* this, const char* buffer, int attr, bool setCursor);
 
 void FunctionBar_append(const char* buffer, int attr);
 

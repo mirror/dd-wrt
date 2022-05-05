@@ -3,7 +3,7 @@
 /*
 htop - Vector.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -67,6 +67,10 @@ static inline int Vector_size(const Vector* this) {
 }
 
 #endif /* NDEBUG */
+
+static inline const ObjectClass* Vector_type(const Vector* this) {
+   return this->type;
+}
 
 void Vector_add(Vector* this, void* data_);
 

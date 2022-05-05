@@ -1,21 +1,22 @@
 /*
 htop - DarwinProcess.c
 (C) 2015 Hisham H. Muhammad
-Released under the GNU GPLv2, see the COPYING file
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "DarwinProcess.h"
+#include "darwin/DarwinProcess.h"
 
 #include <libproc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <mach/mach.h>
+#include <sys/dirent.h>
 
 #include "CRT.h"
-#include "Platform.h"
 #include "Process.h"
+#include "darwin/Platform.h"
 
 
 const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
@@ -26,24 +27,27 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [PPID] = { .name = "PPID", .title = "PPID", .description = "Parent process ID", .flags = 0, .pidColumn = true, },
    [PGRP] = { .name = "PGRP", .title = "PGRP", .description = "Process group ID", .flags = 0, .pidColumn = true, },
    [SESSION] = { .name = "SESSION", .title = "SID", .description = "Process's session ID", .flags = 0, .pidColumn = true, },
-   [TTY_NR] = { .name = "TTY_NR", .title = "    TTY ", .description = "Controlling terminal", .flags = 0, },
+   [TTY] = { .name = "TTY", .title = "TTY      ", .description = "Controlling terminal", .flags = PROCESS_FLAG_TTY, },
    [TPGID] = { .name = "TPGID", .title = "TPGID", .description = "Process ID of the fg process group of the controlling terminal", .flags = 0, .pidColumn = true, },
-   [MINFLT] = { .name = "MINFLT", .title = "     MINFLT ", .description = "Number of minor faults which have not required loading a memory page from disk", .flags = 0, },
-   [MAJFLT] = { .name = "MAJFLT", .title = "     MAJFLT ", .description = "Number of major faults which have required loading a memory page from disk", .flags = 0, },
+   [MINFLT] = { .name = "MINFLT", .title = "     MINFLT ", .description = "Number of minor faults which have not required loading a memory page from disk", .flags = 0, .defaultSortDesc = true, },
+   [MAJFLT] = { .name = "MAJFLT", .title = "     MAJFLT ", .description = "Number of major faults which have required loading a memory page from disk", .flags = 0, .defaultSortDesc = true, },
    [PRIORITY] = { .name = "PRIORITY", .title = "PRI ", .description = "Kernel's internal priority for the process", .flags = 0, },
    [NICE] = { .name = "NICE", .title = " NI ", .description = "Nice value (the higher the value, the more it lets other processes take priority)", .flags = 0, },
    [STARTTIME] = { .name = "STARTTIME", .title = "START ", .description = "Time the process was started", .flags = 0, },
-
+   [ELAPSED] = { .name = "ELAPSED", .title = "ELAPSED  ", .description = "Time since the process was started", .flags = 0, },
    [PROCESSOR] = { .name = "PROCESSOR", .title = "CPU ", .description = "Id of the CPU the process last executed on", .flags = 0, },
-   [M_VIRT] = { .name = "M_VIRT", .title = " VIRT ", .description = "Total program size in virtual memory", .flags = 0, },
-   [M_RESIDENT] = { .name = "M_RESIDENT", .title = "  RES ", .description = "Resident set size, size of the text and data sections, plus stack usage", .flags = 0, },
-   [ST_UID] = { .name = "ST_UID", .title = "  UID ", .description = "User ID of the process owner", .flags = 0, },
-   [PERCENT_CPU] = { .name = "PERCENT_CPU", .title = "CPU% ", .description = "Percentage of the CPU time the process used in the last sampling", .flags = 0, },
-   [PERCENT_MEM] = { .name = "PERCENT_MEM", .title = "MEM% ", .description = "Percentage of the memory the process is using, based on resident memory size", .flags = 0, },
-   [USER] = { .name = "USER", .title = "USER      ", .description = "Username of the process owner (or user ID if name cannot be determined)", .flags = 0, },
-   [TIME] = { .name = "TIME", .title = "  TIME+  ", .description = "Total time the process has spent in user and system time", .flags = 0, },
+   [M_VIRT] = { .name = "M_VIRT", .title = " VIRT ", .description = "Total program size in virtual memory", .flags = 0, .defaultSortDesc = true, },
+   [M_RESIDENT] = { .name = "M_RESIDENT", .title = "  RES ", .description = "Resident set size, size of the text and data sections, plus stack usage", .flags = 0, .defaultSortDesc = true, },
+   [ST_UID] = { .name = "ST_UID", .title = "UID", .description = "User ID of the process owner", .flags = 0, },
+   [PERCENT_CPU] = { .name = "PERCENT_CPU", .title = "CPU% ", .description = "Percentage of the CPU time the process used in the last sampling", .flags = 0, .defaultSortDesc = true, .autoWidth = true, },
+   [PERCENT_NORM_CPU] = { .name = "PERCENT_NORM_CPU", .title = "NCPU%", .description = "Normalized percentage of the CPU time the process used in the last sampling (normalized by cpu count)", .flags = 0, .defaultSortDesc = true, .autoWidth = true, },
+   [PERCENT_MEM] = { .name = "PERCENT_MEM", .title = "MEM% ", .description = "Percentage of the memory the process is using, based on resident memory size", .flags = 0, .defaultSortDesc = true, },
+   [USER] = { .name = "USER", .title = "USER       ", .description = "Username of the process owner (or user ID if name cannot be determined)", .flags = 0, },
+   [TIME] = { .name = "TIME", .title = "  TIME+  ", .description = "Total time the process has spent in user and system time", .flags = 0, .defaultSortDesc = true, },
    [NLWP] = { .name = "NLWP", .title = "NLWP ", .description = "Number of threads in the process", .flags = 0, },
    [TGID] = { .name = "TGID", .title = "TGID", .description = "Thread group ID (i.e. process ID)", .flags = 0, .pidColumn = true, },
+   [PROC_EXE] = { .name = "EXE", .title = "EXE             ", .description = "Basename of exe of the process from /proc/[pid]/exe", .flags = 0, },
+   [CWD] = { .name = "CWD", .title = "CWD                       ", .description = "The current working directory of the process", .flags = PROCESS_FLAG_CWD, },
    [TRANSLATED] = { .name = "TRANSLATED", .title = "T ", .description = "Translation info (T translated, N native)", .flags = 0, },
 };
 
@@ -95,16 +99,42 @@ static int DarwinProcess_compareByKey(const Process* v1, const Process* v2, Proc
    }
 }
 
-bool Process_isThread(const Process* this) {
-   (void) this;
-   return false;
+static void DarwinProcess_updateExe(pid_t pid, Process* proc) {
+   char path[PROC_PIDPATHINFO_MAXSIZE];
+
+   int r = proc_pidpath(pid, path, sizeof(path));
+   if (r <= 0)
+      return;
+
+   Process_updateExe(proc, path);
 }
 
-static char* DarwinProcess_getCmdLine(const struct kinfo_proc* k, int* basenameOffset) {
+static void DarwinProcess_updateCwd(pid_t pid, Process* proc) {
+   struct proc_vnodepathinfo vpi;
+
+   int r = proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &vpi, sizeof(vpi));
+   if (r <= 0) {
+      free(proc->procCwd);
+      proc->procCwd = NULL;
+      return;
+   }
+
+   if (!vpi.pvi_cdir.vip_path[0]) {
+      free(proc->procCwd);
+      proc->procCwd = NULL;
+      return;
+   }
+
+   free_and_xStrdup(&proc->procCwd, vpi.pvi_cdir.vip_path);
+}
+
+static void DarwinProcess_updateCmdLine(const struct kinfo_proc* k, Process* proc) {
+   Process_updateComm(proc, k->kp_proc.p_comm);
+
    /* This function is from the old Mac version of htop. Originally from ps? */
    int mib[3], argmax, nargs, c = 0;
    size_t size;
-   char *procargs, *sp, *np, *cp, *retval;
+   char *procargs, *sp, *np, *cp;
 
    /* Get the maximum process arguments size. */
    mib[0] = CTL_KERN;
@@ -116,7 +146,7 @@ static char* DarwinProcess_getCmdLine(const struct kinfo_proc* k, int* basenameO
    }
 
    /* Allocate space for the arguments. */
-   procargs = (char*)xMalloc(argmax);
+   procargs = (char*)malloc(argmax);
    if ( procargs == NULL ) {
       goto ERROR_A;
    }
@@ -198,7 +228,7 @@ static char* DarwinProcess_getCmdLine(const struct kinfo_proc* k, int* basenameO
    /* Save where the argv[0] string starts. */
    sp = cp;
 
-   *basenameOffset = 0;
+   int end = 0;
    for ( np = NULL; c < nargs && cp < &procargs[size]; cp++ ) {
       if ( *cp == '\0' ) {
          c++;
@@ -208,8 +238,8 @@ static char* DarwinProcess_getCmdLine(const struct kinfo_proc* k, int* basenameO
          }
          /* Note location of current '\0'. */
          np = cp;
-         if (*basenameOffset == 0) {
-            *basenameOffset = cp - sp;
+         if (end == 0) {
+            end = cp - sp;
          }
       }
    }
@@ -222,25 +252,41 @@ static char* DarwinProcess_getCmdLine(const struct kinfo_proc* k, int* basenameO
       /* Empty or unterminated string. */
       goto ERROR_B;
    }
-   if (*basenameOffset == 0) {
-      *basenameOffset = np - sp;
+   if (end == 0) {
+      end = np - sp;
    }
 
-   /* Make a copy of the string. */
-   retval = xStrdup(sp);
+   Process_updateCmdline(proc, sp, 0, end);
 
    /* Clean up. */
    free( procargs );
 
-   return retval;
+   return;
 
 ERROR_B:
    free( procargs );
-ERROR_A:
-   retval = xStrdup(k->kp_proc.p_comm);
-   *basenameOffset = strlen(retval);
 
-   return retval;
+ERROR_A:
+   Process_updateCmdline(proc, k->kp_proc.p_comm, 0, strlen(k->kp_proc.p_comm));
+}
+
+// Converts nanoseconds to hundredths of a second (centiseconds) as needed by the "time" field of the Process struct.
+static long long int nanosecondsToCentiseconds(uint64_t nanoseconds) {
+   const uint64_t centiseconds_per_second = 100;
+   const uint64_t nanoseconds_per_second = 1e9;
+   return nanoseconds / nanoseconds_per_second * centiseconds_per_second;
+}
+
+static char* DarwinProcess_getDevname(dev_t dev) {
+   if (dev == NODEV) {
+      return NULL;
+   }
+   char buf[sizeof("/dev/") + MAXNAMLEN];
+   char *name = devname_r(dev, S_IFCHR, buf, MAXNAMLEN);
+   if (name) {
+      return xStrdup(name);
+   }
+   return NULL;
 }
 
 void DarwinProcess_setFromKInfoProc(Process* proc, const struct kinfo_proc* ps, bool exists) {
@@ -270,43 +316,70 @@ void DarwinProcess_setFromKInfoProc(Process* proc, const struct kinfo_proc* ps, 
       proc->session = 0; /* TODO Get the session id */
       proc->tpgid = ps->kp_eproc.e_tpgid;
       proc->tgid = proc->pid;
-      proc->st_uid = ps->kp_eproc.e_ucred.cr_uid;
-      /* e_tdev = (major << 24) | (minor & 0xffffff) */
-      /* e_tdev == -1 for "no device" */
-      proc->tty_nr = ps->kp_eproc.e_tdev & 0xff; /* TODO tty_nr is unsigned */
+      proc->isKernelThread = false;
+      proc->isUserlandThread = false;
       dp->translated = ps->kp_proc.p_flag & P_TRANSLATED;
+      proc->tty_nr = ps->kp_eproc.e_tdev;
+      proc->tty_name = NULL;
 
       proc->starttime_ctime = ep->p_starttime.tv_sec;
       Process_fillStarttimeBuffer(proc);
 
-      proc->comm = DarwinProcess_getCmdLine(ps, &(proc->basenameOffset));
+      DarwinProcess_updateExe(ep->p_pid, proc);
+      DarwinProcess_updateCmdLine(ps, proc);
+
+      if (proc->settings->ss->flags & PROCESS_FLAG_CWD) {
+         DarwinProcess_updateCwd(ep->p_pid, proc);
+      }
+   }
+
+   if (proc->tty_name == NULL && (dev_t)proc->tty_nr != NODEV) {
+      /* The call to devname() is extremely expensive (due to lstat)
+       * and represents ~95% of htop's CPU usage when there is high
+       * process turnover.
+       *
+       * To mitigate this we only fetch TTY information if the TTY
+       * field is enabled in the settings.
+       */
+      if (proc->settings->ss->flags & PROCESS_FLAG_TTY) {
+         proc->tty_name = DarwinProcess_getDevname(proc->tty_nr);
+         if (!proc->tty_name) {
+            /* devname failed: prevent us from calling it again */
+            proc->tty_nr = NODEV;
+         }
+      }
    }
 
    /* Mutable information */
    proc->nice = ep->p_nice;
    proc->priority = ep->p_priority;
 
-   proc->state = (ep->p_stat == SZOMB) ? 'Z' : '?';
+   proc->state = (ep->p_stat == SZOMB) ? ZOMBIE : UNKNOWN;
 
    /* Make sure the updated flag is set */
    proc->updated = true;
 }
 
-void DarwinProcess_setFromLibprocPidinfo(DarwinProcess* proc, DarwinProcessList* dpl, double time_interval) {
+void DarwinProcess_setFromLibprocPidinfo(DarwinProcess* proc, DarwinProcessList* dpl, double timeIntervalNS) {
    struct proc_taskinfo pti;
 
    if (sizeof(pti) == proc_pidinfo(proc->super.pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti))) {
-      uint64_t total_existing_time = proc->stime + proc->utime;
-      uint64_t total_current_time = pti.pti_total_system + pti.pti_total_user;
+      uint64_t total_existing_time_ns = proc->stime + proc->utime;
 
-      if (total_existing_time && 1E-6 < time_interval) {
-         uint64_t total_time_diff = total_current_time - total_existing_time;
-         proc->super.percent_cpu = ((double)total_time_diff / time_interval) * 100.0;
+      uint64_t user_time_ns = Platform_machTicksToNanoseconds(pti.pti_total_user);
+      uint64_t system_time_ns = Platform_machTicksToNanoseconds(pti.pti_total_system);
+
+      uint64_t total_current_time_ns = user_time_ns + system_time_ns;
+
+      if (total_existing_time_ns && 1E-6 < timeIntervalNS) {
+         uint64_t total_time_diff_ns = total_current_time_ns - total_existing_time_ns;
+         proc->super.percent_cpu = ((double)total_time_diff_ns / timeIntervalNS) * 100.0;
       } else {
          proc->super.percent_cpu = 0.0;
       }
+      Process_updateCPUFieldWidths(proc->super.percent_cpu);
 
-      proc->super.time = total_current_time / 10000000;
+      proc->super.time = nanosecondsToCentiseconds(total_current_time_ns);
       proc->super.nlwp = pti.pti_threadnum;
       proc->super.m_virt = pti.pti_virtual_size / ONE_K;
       proc->super.m_resident = pti.pti_resident_size / ONE_K;
@@ -314,8 +387,8 @@ void DarwinProcess_setFromLibprocPidinfo(DarwinProcess* proc, DarwinProcessList*
       proc->super.percent_mem = (double)pti.pti_resident_size * 100.0
                               / (double)dpl->host_info.max_mem;
 
-      proc->stime = pti.pti_total_system;
-      proc->utime = pti.pti_total_user;
+      proc->stime = system_time_ns;
+      proc->utime = user_time_ns;
 
       dpl->super.kernelThreads += 0; /*pti.pti_threads_system;*/
       dpl->super.userlandThreads += pti.pti_threadnum; /*pti.pti_threads_user;*/
@@ -337,7 +410,7 @@ void DarwinProcess_scanThreads(DarwinProcess* dp) {
       return;
    }
 
-   if (proc->state == 'Z') {
+   if (proc->state == ZOMBIE) {
       return;
    }
 
@@ -381,15 +454,15 @@ void DarwinProcess_scanThreads(DarwinProcess* dp) {
    vm_deallocate(mach_task_self(), (vm_address_t) thread_list, sizeof(thread_port_array_t) * thread_count);
    mach_port_deallocate(mach_task_self(), port);
 
-   char state = '?';
+   /* Taken from: https://github.com/apple/darwin-xnu/blob/2ff845c2e033bd0ff64b5b6aa6063a1f8f65aa32/osfmk/mach/thread_info.h#L129 */
    switch (run_state) {
-      case TH_STATE_RUNNING: state = 'R'; break;
-      case TH_STATE_STOPPED: state = 'S'; break;
-      case TH_STATE_WAITING: state = 'W'; break;
-      case TH_STATE_UNINTERRUPTIBLE: state = 'U'; break;
-      case TH_STATE_HALTED: state = 'H'; break;
+      case TH_STATE_RUNNING: proc->state = RUNNING; break;
+      case TH_STATE_STOPPED: proc->state = STOPPED; break;
+      case TH_STATE_WAITING: proc->state = WAITING; break;
+      case TH_STATE_UNINTERRUPTIBLE: proc->state = UNINTERRUPTIBLE_WAIT; break;
+      case TH_STATE_HALTED: proc->state = BLOCKED; break;
+      default: proc->state = UNKNOWN;
    }
-   proc->state = state;
 }
 
 

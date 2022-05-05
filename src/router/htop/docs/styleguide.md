@@ -45,14 +45,16 @@ Example:
 #define HEADER_FILENAME
 /*
 htop - Filename.h
-(C) 2020 htop dev team
-Released under the GNU GPLv2, see the COPYING file
+(C) 2021 htop dev team
+Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
 ```
 
 Import and use of headers
 -------------------------
+
+We use the GPLv2+ as a shorthand indication that we release `htop` under the GNU Public license version 2 but are totally fine with users opting to apply the "any later version" clause.
 
 Every file should import headers for all symbols it's using.
 Thus when using a symbol from a header, even if that symbol is already imported by something else you use, you should declare an import for that header.
@@ -194,7 +196,7 @@ They can be a great asset to structure the flow of a method.
 If you want to automate formatting your code, the following command gives you a good baseline of how it should look:
 
 ```bash
-astyle -r -xb -s3 -p -xg -c -k1 -W1 \*.c \*.h
+astyle -r -xb -s3 -p -xg -c -k1 -W1 -H \*.c \*.h
 ```
 
 Working with System APIs
@@ -222,3 +224,20 @@ It does only insert a paragraph if you insert a blank line into the source file.
 This way git can better diff and present the changes when documentation is altered.
 
 Documentation files reside in the `docs/` directory and have a `.md` extension.
+
+Writing pull-requests (PRs)
+---------------------------
+
+When writing your PR or patch, the set of patches should contain the minimal changes required.
+Each patch in itself should ideally be self-contained and runable.
+
+A PR should not contain any merge commits.
+To follow the upstream branch of your PR rebase your work instead.
+
+Avoid small commits that just fix typos that another of your commits introduced.
+Instead squash those changes in the appropriate commit that introduced that mistake.
+Git offers `git commit --fixup=<commit>` and `git rebase -i --autosquash` to help you with this.
+
+Your final PR should contain a minimal set of reasonably sized commits that by themselves are easy to review.
+
+Rebase early. Rebase often.
