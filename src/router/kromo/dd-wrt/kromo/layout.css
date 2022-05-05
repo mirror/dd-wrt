@@ -1,8 +1,7 @@
-@import url(/style/buttons.css);
 html, body, #wrapper {
   height: 100%;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
 }
 th {
   padding-left: 3px;
@@ -22,8 +21,8 @@ input, select {
   padding-bottom: 0em;
 }
 div.message {
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   height: 100%;
   width: 100%;
 }
@@ -32,8 +31,8 @@ div.popup {
 }
 div.message form {
   display: inline;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
 }
 div.message div {
   text-align: center;
@@ -58,30 +57,31 @@ div.message div form {
   margin-top: -40px;
 }
 div.setting {
-  margin: 0px;
+  margin: 0;
   padding: 3px;
-  padding-left: 0px;
+  padding-left: 0;
   clear: both;
 }
 fieldset {
   padding-left: 10px;
 }
 #main {
-  margin: 0px;
-  margin-right: 190px;
+  clear: both;
+  margin-right: 13rem;
   margin-bottom: 1em;
+  padding-top: 1.7em;
 }
 #header {
-  top: 0px;
-  margin: 0px;
-  padding: 0px;
+  top: 0;
+  margin: 0;
+  padding: 0;
 }
 #header div#logo {
   z-index: 30;
 }
 #helpContainer {
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 10px;
   width: 190px;
   min-height: 100%;
@@ -101,8 +101,8 @@ fieldset {
   right: 5px;
   height: 5em;
   width: 25em;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   z-index: 30;
 }
 .submitFooter, .submitFooterCmd {
@@ -224,18 +224,13 @@ input.spaceradio {
 #score, #rating, #standards {
   font-weight: bold;
 }
-#scorebar {
-  background-image: url(/images/gradient.svg);
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  position: absolute;
-  width: 100px;
-  z-index: 0;
-}
 #scorebarBorder {
   background: #333;
   border: 1px #000 solid;
   height: 16px;
   margin-bottom: 2px;
   width: 100px;
+}
+iframe[src*='/graph_if.svg'] {
+  max-width: 700px;
 }

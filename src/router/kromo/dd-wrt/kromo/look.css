@@ -1,3 +1,10 @@
+body, td, th, input, select {
+  font-family: AvantGarde, Verdana, Arial, Helvetica, sans-serif;
+  font-size: .9em;
+}
+a {
+  text-decoration: none;
+}
 table {
   margin-left: auto;
   margin-right: auto;
@@ -22,7 +29,6 @@ dd {
   max-height: 1.2em;
   overflow: hidden;
 }
-input {}
 select {
   border: 1px solid;
 }
@@ -40,13 +46,6 @@ input.num {
 div.message div {
   border-width: 1px;
   border-style: solid;
-}
-body, td, th, input, select {
-  font-family: AvantGarde, Verdana, Arial, Helvetica, sans-serif;
-  font-size: .9em;
-}
-a {
-  text-decoration: none;
 }
 .section {
   font-size: 2em;

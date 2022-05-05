@@ -91,6 +91,7 @@ endif
 
 ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
+  cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 endif
 
 
@@ -816,6 +817,7 @@ endif
 
 ifeq ($(CONFIG_KROMO),y)
 	cp -a kromo $(INSTALLDIR)/www/style
+  cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 else
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.png
 endif
@@ -823,10 +825,12 @@ endif
 
 ifeq ($(CONFIG_BRAINSLAYER),y)
 	cp -a brainslayer $(INSTALLDIR)/www/style
+  cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_XIRIAN),y)
 	cp -a xirian $(INSTALLDIR)/www/style
+  cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_ALFA_BRANDING1),y)
