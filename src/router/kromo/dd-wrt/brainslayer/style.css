@@ -1,2 +1,4 @@
 @import url(layout.css);
+@import url(/style/common_legacy.css);
+@import url(/style/buttons.css);
 @import url(colors.css);
