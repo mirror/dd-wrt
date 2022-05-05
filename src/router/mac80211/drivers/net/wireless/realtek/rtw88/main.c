@@ -17,13 +17,21 @@
 #include "tx.h"
 #include "debug.h"
 #include "bf.h"
-#include <linux/module.h>
+#include "sar.h"
 
 bool rtw_disable_lps_deep_mode;
 EXPORT_SYMBOL(rtw_disable_lps_deep_mode);
 bool rtw_bf_support = true;
 unsigned int rtw_debug_mask;
 EXPORT_SYMBOL(rtw_debug_mask);
+/* EDCCA is enabled during normal behavior. For debugging purpose in
+ * a noisy environment, it can be disabled via edcca debugfs. Because
+ * all rtw88 devices will probably be affected if environment is noisy,
+ * rtw_edcca_enabled is just declared by driver instead of by device.
+ * So, turning it off will take effect for all rtw88 devices before
+ * there is a tough reason to maintain rtw_edcca_enabled by device.
+ */
+bool rtw_edcca_enabled = true;
 
 module_param_named(disable_lps_deep, rtw_disable_lps_deep_mode, bool, 0644);
 module_param_named(support_bf, rtw_bf_support, bool, 0644);
@@ -199,6 +207,9 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	else
 		clear_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
 
+	rtw_coex_wl_status_check(rtwdev);
+	rtw_coex_query_bt_hid_list(rtwdev);
+
 	if (busy_traffic != test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags))
 		rtw_coex_wl_status_change_notify(rtwdev, 0);
 
@@ -264,6 +275,16 @@ static void rtw_c2h_work(struct work_struct *work)
 	}
 }
 
+static void rtw_ips_work(struct work_struct *work)
+{
+	struct rtw_dev *rtwdev = container_of(work, struct rtw_dev, ips_work);
+
+	mutex_lock(&rtwdev->mutex);
+	if (rtwdev->hw->conf.flags & IEEE80211_CONF_IDLE)
+		rtw_enter_ips(rtwdev);
+	mutex_unlock(&rtwdev->mutex);
+}
+
 static u8 rtw_acquire_macid(struct rtw_dev *rtwdev)
 {
 	unsigned long mac_id;
@@ -292,7 +313,7 @@ int rtw_sta_add(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 	for (i = 0; i < ARRAY_SIZE(sta->txq); i++)
 		rtw_txq_init(rtwdev, sta->txq[i]);
 
-	rtw_update_sta_info(rtwdev, si);
+	rtw_update_sta_info(rtwdev, si, true);
 	rtw_fw_media_status_report(rtwdev, si->mac_id, true);
 
 	rtwdev->sta_cnt++;
@@ -557,6 +578,7 @@ static void __fw_recovery_work(struct rtw_dev *rtwdev)
 	int ret = 0;
 
 	set_bit(RTW_FLAG_RESTARTING, rtwdev->flags);
+	clear_bit(RTW_FLAG_RESTART_TRIGGERING, rtwdev->flags);
 
 	ret = rtw_fwcd_prep(rtwdev);
 	if (ret)
@@ -627,6 +649,25 @@ static void rtw_txq_ba_work(struct work_struct *work)
 	struct rtw_txq_ba_iter_data data;
 
 	rtw_iterate_stas_atomic(rtwdev, rtw_txq_ba_iter, &data);
+}
+
+void rtw_set_rx_freq_band(struct rtw_rx_pkt_stat *pkt_stat, u8 channel)
+{
+	if (IS_CH_2G_BAND(channel))
+		pkt_stat->band = NL80211_BAND_2GHZ;
+	else if (IS_CH_5G_BAND(channel))
+		pkt_stat->band = NL80211_BAND_5GHZ;
+	else
+		return;
+
+	pkt_stat->freq = ieee80211_channel_to_frequency(channel, pkt_stat->band);
+}
+EXPORT_SYMBOL(rtw_set_rx_freq_band);
+
+void rtw_set_dtim_period(struct rtw_dev *rtwdev, int dtim_period)
+{
+	rtw_write32_set(rtwdev, REG_TCR, BIT_TCR_UPDATE_TIMIE);
+	rtw_write8(rtwdev, REG_DTIM_COUNTER_ROOT, dtim_period - 1);
 }
 
 void rtw_get_channel_params(struct cfg80211_chan_def *chandef,
@@ -727,7 +768,27 @@ void rtw_set_channel(struct rtw_dev *rtwdev)
 
 	hal->current_band_width = bandwidth;
 	hal->current_channel = center_chan;
+	hal->current_primary_channel_index = primary_chan_idx;
 	hal->current_band_type = center_chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
+
+	switch (center_chan) {
+	case 1 ... 14:
+		hal->sar_band = RTW_SAR_BAND_0;
+		break;
+	case 36 ... 64:
+		hal->sar_band = RTW_SAR_BAND_1;
+		break;
+	case 100 ... 144:
+		hal->sar_band = RTW_SAR_BAND_3;
+		break;
+	case 149 ... 177:
+		hal->sar_band = RTW_SAR_BAND_4;
+		break;
+	default:
+		WARN(1, "unknown ch(%u) to SAR band\n", center_chan);
+		hal->sar_band = RTW_SAR_BAND_0;
+		break;
+	}
 
 	for (i = RTW_CHANNEL_WIDTH_20; i <= RTW_MAX_CHANNEL_WIDTH; i++)
 		hal->cch_by_bw[i] = ch_param.cch_by_bw[i];
@@ -969,37 +1030,52 @@ static u8 get_rate_id(u8 wireless_set, enum rtw_bandwidth bw_mode, u8 tx_num)
 #define RA_MASK_VHT_RATES	(RA_MASK_VHT_RATES_1SS | \
 				 RA_MASK_VHT_RATES_2SS | \
 				 RA_MASK_VHT_RATES_3SS)
+#define RA_MASK_CCK_IN_BG	0x00005
 #define RA_MASK_CCK_IN_HT	0x00005
 #define RA_MASK_CCK_IN_VHT	0x00005
 #define RA_MASK_OFDM_IN_VHT	0x00010
 #define RA_MASK_OFDM_IN_HT_2G	0x00010
 #define RA_MASK_OFDM_IN_HT_5G	0x00030
 
-static u64 rtw_update_rate_mask(struct rtw_dev *rtwdev,
-				struct rtw_sta_info *si,
-				u64 ra_mask, bool is_vht_enable,
-				u8 wireless_set)
+static u64 rtw_rate_mask_rssi(struct rtw_sta_info *si, u8 wireless_set)
+{
+	u8 rssi_level = si->rssi_level;
+
+	if (wireless_set == WIRELESS_CCK)
+		return 0xffffffffffffffffULL;
+
+	if (rssi_level == 0)
+		return 0xffffffffffffffffULL;
+	else if (rssi_level == 1)
+		return 0xfffffffffffffff0ULL;
+	else if (rssi_level == 2)
+		return 0xffffffffffffefe0ULL;
+	else if (rssi_level == 3)
+		return 0xffffffffffffcfc0ULL;
+	else if (rssi_level == 4)
+		return 0xffffffffffff8f80ULL;
+	else
+		return 0xffffffffffff0f00ULL;
+}
+
+static u64 rtw_rate_mask_recover(u64 ra_mask, u64 ra_mask_bak)
+{
+	if ((ra_mask & ~(RA_MASK_CCK_RATES | RA_MASK_OFDM_RATES)) == 0)
+		ra_mask |= (ra_mask_bak & ~(RA_MASK_CCK_RATES | RA_MASK_OFDM_RATES));
+
+	if (ra_mask == 0)
+		ra_mask |= (ra_mask_bak & (RA_MASK_CCK_RATES | RA_MASK_OFDM_RATES));
+
+	return ra_mask;
+}
+
+static u64 rtw_rate_mask_cfg(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
+			     u64 ra_mask, bool is_vht_enable)
 {
 	struct rtw_hal *hal = &rtwdev->hal;
 	const struct cfg80211_bitrate_mask *mask = si->mask;
 	u64 cfg_mask = GENMASK_ULL(63, 0);
-	u8 rssi_level, band;
-
-	if (wireless_set != WIRELESS_CCK) {
-		rssi_level = si->rssi_level;
-		if (rssi_level == 0)
-			ra_mask &= 0xffffffffffffffffULL;
-		else if (rssi_level == 1)
-			ra_mask &= 0xfffffffffffffff0ULL;
-		else if (rssi_level == 2)
-			ra_mask &= 0xffffffffffffefe0ULL;
-		else if (rssi_level == 3)
-			ra_mask &= 0xffffffffffffcfc0ULL;
-		else if (rssi_level == 4)
-			ra_mask &= 0xffffffffffff8f80ULL;
-		else if (rssi_level >= 5)
-			ra_mask &= 0xffffffffffff0f00ULL;
-	}
+	u8 band;
 
 	if (!si->use_cfg_mask)
 		return ra_mask;
@@ -1035,7 +1111,8 @@ static u64 rtw_update_rate_mask(struct rtw_dev *rtwdev,
 	return ra_mask;
 }
 
-void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
+void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
+			 bool reset_ra_mask)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
 	struct ieee80211_sta *sta = si->sta;
@@ -1049,6 +1126,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 	u8 ldpc_en = 0;
 	u8 tx_num = 1;
 	u64 ra_mask = 0;
+	u64 ra_mask_bak = 0;
 	bool is_vht_enable = false;
 	bool is_support_sgi = false;
 
@@ -1068,11 +1146,12 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 			ldpc_en = HT_LDPC_EN;
 	}
 
-	if (efuse->hw_cap.nss == 1)
+	if (efuse->hw_cap.nss == 1 || rtwdev->hal.txrx_1ss)
 		ra_mask &= RA_MASK_VHT_RATES_1SS | RA_MASK_HT_RATES_1SS;
 
 	if (hal->current_band_type == RTW_BAND_5G) {
 		ra_mask |= (u64)sta->supp_rates[NL80211_BAND_5GHZ] << 4;
+		ra_mask_bak = ra_mask;
 		if (sta->vht_cap.vht_supported) {
 			ra_mask &= RA_MASK_VHT_RATES | RA_MASK_OFDM_IN_VHT;
 			wireless_set = WIRELESS_OFDM | WIRELESS_VHT;
@@ -1085,6 +1164,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 		dm_info->rrsr_val_init = RRSR_INIT_5G;
 	} else if (hal->current_band_type == RTW_BAND_2G) {
 		ra_mask |= sta->supp_rates[NL80211_BAND_2GHZ];
+		ra_mask_bak = ra_mask;
 		if (sta->vht_cap.vht_supported) {
 			ra_mask &= RA_MASK_VHT_RATES | RA_MASK_CCK_IN_VHT |
 				   RA_MASK_OFDM_IN_VHT;
@@ -1098,11 +1178,13 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 		} else if (sta->supp_rates[0] <= 0xf) {
 			wireless_set = WIRELESS_CCK;
 		} else {
+			ra_mask &= RA_MASK_OFDM_RATES | RA_MASK_CCK_IN_BG;
 			wireless_set = WIRELESS_CCK | WIRELESS_OFDM;
 		}
 		dm_info->rrsr_val_init = RRSR_INIT_2G;
 	} else {
 		rtw_err(rtwdev, "Unknown band type\n");
+		ra_mask_bak = ra_mask;
 		wireless_set = 0;
 	}
 
@@ -1134,8 +1216,9 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 
 	rate_id = get_rate_id(wireless_set, bw_mode, tx_num);
 
-	ra_mask = rtw_update_rate_mask(rtwdev, si, ra_mask, is_vht_enable,
-				       wireless_set);
+	ra_mask &= rtw_rate_mask_rssi(si, wireless_set);
+	ra_mask = rtw_rate_mask_recover(ra_mask, ra_mask_bak);
+	ra_mask = rtw_rate_mask_cfg(rtwdev, si, ra_mask, is_vht_enable);
 
 	si->bw_mode = bw_mode;
 	si->stbc_en = stbc_en;
@@ -1147,7 +1230,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 	si->ra_mask = ra_mask;
 	si->rate_id = rate_id;
 
-	rtw_fw_send_ra_info(rtwdev, si);
+	rtw_fw_send_ra_info(rtwdev, si, reset_ra_mask);
 }
 
 static int rtw_wait_firmware_completion(struct rtw_dev *rtwdev)
@@ -1270,6 +1353,54 @@ void rtw_core_fw_scan_notify(struct rtw_dev *rtwdev, bool start)
 	}
 }
 
+void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
+			 const u8 *mac_addr, bool hw_scan)
+{
+	u32 config = 0;
+	int ret = 0;
+
+	rtw_leave_lps(rtwdev);
+
+	if (hw_scan && (rtwdev->hw->conf.flags & IEEE80211_CONF_IDLE)) {
+		ret = rtw_leave_ips(rtwdev);
+		if (ret) {
+			rtw_err(rtwdev, "failed to leave idle state\n");
+			return;
+		}
+	}
+
+	ether_addr_copy(rtwvif->mac_addr, mac_addr);
+	config |= PORT_SET_MAC_ADDR;
+	rtw_vif_port_config(rtwdev, rtwvif, config);
+
+	rtw_coex_scan_notify(rtwdev, COEX_SCAN_START);
+	rtw_core_fw_scan_notify(rtwdev, true);
+
+	set_bit(RTW_FLAG_DIG_DISABLE, rtwdev->flags);
+	set_bit(RTW_FLAG_SCANNING, rtwdev->flags);
+}
+
+void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+			    bool hw_scan)
+{
+	struct rtw_vif *rtwvif = (struct rtw_vif *)vif->drv_priv;
+	u32 config = 0;
+
+	clear_bit(RTW_FLAG_SCANNING, rtwdev->flags);
+	clear_bit(RTW_FLAG_DIG_DISABLE, rtwdev->flags);
+
+	rtw_core_fw_scan_notify(rtwdev, false);
+
+	ether_addr_copy(rtwvif->mac_addr, vif->addr);
+	config |= PORT_SET_MAC_ADDR;
+	rtw_vif_port_config(rtwdev, rtwvif, config);
+
+	rtw_coex_scan_notify(rtwdev, COEX_SCAN_FINISH);
+
+	if (hw_scan && (rtwdev->hw->conf.flags & IEEE80211_CONF_IDLE))
+		ieee80211_queue_work(rtwdev->hw, &rtwdev->ips_work);
+}
+
 int rtw_core_start(struct rtw_dev *rtwdev)
 {
 	int ret;
@@ -1330,6 +1461,7 @@ static void rtw_init_ht_cap(struct rtw_dev *rtwdev,
 			    struct ieee80211_sta_ht_cap *ht_cap)
 {
 	struct rtw_efuse *efuse = &rtwdev->efuse;
+	struct rtw_chip_info *chip = rtwdev->chip;
 
 	ht_cap->ht_supported = true;
 	ht_cap->cap = 0;
@@ -1347,7 +1479,7 @@ static void rtw_init_ht_cap(struct rtw_dev *rtwdev,
 				IEEE80211_HT_CAP_DSSSCCK40 |
 				IEEE80211_HT_CAP_SGI_40;
 	ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
-	ht_cap->ampdu_density = IEEE80211_HT_MPDU_DENSITY_16;
+	ht_cap->ampdu_density = chip->ampdu_density;
 	ht_cap->mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 	if (efuse->hw_cap.nss > 1) {
 		ht_cap->mcs.rx_mask[0] = 0xFF;
@@ -1448,6 +1580,37 @@ static void rtw_unset_supported_band(struct ieee80211_hw *hw,
 {
 	kfree(hw->wiphy->bands[NL80211_BAND_2GHZ]);
 	kfree(hw->wiphy->bands[NL80211_BAND_5GHZ]);
+}
+
+static void rtw_vif_smps_iter(void *data, u8 *mac,
+			      struct ieee80211_vif *vif)
+{
+	struct rtw_dev *rtwdev = (struct rtw_dev *)data;
+
+	if (vif->type != NL80211_IFTYPE_STATION || !vif->bss_conf.assoc)
+		return;
+
+	if (rtwdev->hal.txrx_1ss)
+		ieee80211_request_smps(vif, IEEE80211_SMPS_STATIC);
+	else
+		ieee80211_request_smps(vif, IEEE80211_SMPS_OFF);
+}
+
+void rtw_set_txrx_1ss(struct rtw_dev *rtwdev, bool txrx_1ss)
+{
+	struct rtw_chip_info *chip = rtwdev->chip;
+	struct rtw_hal *hal = &rtwdev->hal;
+
+	if (!chip->ops->config_txrx_mode || rtwdev->hal.txrx_1ss == txrx_1ss)
+		return;
+
+	rtwdev->hal.txrx_1ss = txrx_1ss;
+	if (txrx_1ss)
+		chip->ops->config_txrx_mode(rtwdev, BB_PATH_A, BB_PATH_A, false);
+	else
+		chip->ops->config_txrx_mode(rtwdev, hal->antenna_tx,
+					    hal->antenna_rx, false);
+	rtw_iterate_vifs_atomic(rtwdev, rtw_vif_smps_iter, rtwdev);
 }
 
 static void __update_firmware_feature(struct rtw_dev *rtwdev,
@@ -1833,6 +1996,7 @@ int rtw_core_init(struct rtw_dev *rtwdev)
 	INIT_DELAYED_WORK(&coex->wl_ccklock_work, rtw_coex_wl_ccklock_work);
 	INIT_WORK(&rtwdev->tx_work, rtw_tx_work);
 	INIT_WORK(&rtwdev->c2h_work, rtw_c2h_work);
+	INIT_WORK(&rtwdev->ips_work, rtw_ips_work);
 	INIT_WORK(&rtwdev->fw_recovery_work, rtw_fw_recovery_work);
 	INIT_WORK(&rtwdev->ba_work, rtw_txq_ba_work);
 	skb_queue_head_init(&rtwdev->c2h_queue);
@@ -1854,6 +2018,7 @@ int rtw_core_init(struct rtw_dev *rtwdev)
 
 	rtwdev->sec.total_cam_num = 32;
 	rtwdev->hal.current_channel = 1;
+	rtwdev->dm_info.fix_rate = U8_MAX;
 	set_bit(RTW_BC_MC_MACID, rtwdev->mac_id_map);
 
 	rtw_stats_init(rtwdev);
@@ -1943,6 +2108,7 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	ieee80211_hw_set(hw, SUPPORTS_AMSDU_IN_AMPDU);
 	ieee80211_hw_set(hw, HAS_RATE_CONTROL);
 	ieee80211_hw_set(hw, TX_AMSDU);
+	ieee80211_hw_set(hw, SINGLE_SCAN_ON_ALL_BANDS);
 
 	hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 				     BIT(NL80211_IFTYPE_AP) |
@@ -1955,8 +2121,12 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 			    WIPHY_FLAG_TDLS_EXTERNAL_SETUP;
 
 	hw->wiphy->features |= NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR;
+	hw->wiphy->max_scan_ssids = RTW_SCAN_MAX_SSIDS;
+	hw->wiphy->max_scan_ie_len = RTW_SCAN_MAX_IE_LEN;
 
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CAN_REPLACE_PTK0);
+	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_SCAN_RANDOM_SN);
+	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_SET_SCAN_DWELL);
 
 #ifdef CONFIG_PM
 	hw->wiphy->wowlan = rtwdev->chip->wowlan_stub;
@@ -1965,7 +2135,11 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	rtw_set_supported_band(hw, rtwdev->chip);
 	SET_IEEE80211_PERM_ADDR(hw, rtwdev->efuse.addr);
 
-	rtw_regd_init(rtwdev, rtw_regd_notifier);
+	ret = rtw_regd_init(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to init regd\n");
+		return ret;
+	}
 
 	ret = ieee80211_register_hw(hw);
 	if (ret) {
@@ -1973,8 +2147,11 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 		return ret;
 	}
 
-	if (regulatory_hint(hw->wiphy, rtwdev->regd.alpha2))
-		rtw_err(rtwdev, "regulatory_hint fail\n");
+	ret = rtw_regd_hint(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to hint regd\n");
+		return ret;
+	}
 
 	rtw_debugfs_init(rtwdev);
 
