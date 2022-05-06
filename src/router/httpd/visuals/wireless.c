@@ -433,7 +433,7 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		for (i = 0; i < wp->p->nv_count; i++) {
 			if (wp->p->wl_client_macs[i].status != 1)
 				continue;
-			websWrite(wp, "<tr align=\"middle\"> \n"
+			websWrite(wp, "<tr class=\"center\"> \n"
 				  "<td height=\"20\" width=\"167\">%s</td> \n"
 				  "<td height=\"20\" width=\"140\">%s</td> \n"
 				  "<td height=\"20\" width=\"156\">%s</td> \n"
@@ -444,13 +444,12 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		for (i = 0; i < wp->p->nv_count; i++) {
 			if (wp->p->wl_client_macs[i].status != 0)
 				continue;
-			websWrite(wp, "<tr align=\"middle\"> \n"
+			websWrite(wp, "<tr class=\"center\"> \n"
 				  "<td height=\"20\" width=\"167\">%s</td> \n"
 				  "<td height=\"20\" width=\"140\">%s</td> \n"
 				  "<td height=\"20\" width=\"156\">%s</td> \n"
 				  "<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n"
 				  "</tr>\n", wp->p->wl_client_macs[i].hostname, wp->p->wl_client_macs[i].ipaddr, wp->p->wl_client_macs[i].hwaddr, flag++, i, wp->p->wl_client_macs[i].check ? "checked=\"checked\"" : "");
-
 		}
 	}
 	return;

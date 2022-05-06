@@ -16,16 +16,63 @@ body, th, td, a, input, select, textarea {
   font-size: 11px;
   color: #115b80;
 }
+textarea {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+/* remove so syslog looks half decent
 #content {
   background: url(/style/xirian/help_bg.png) top right repeat-y;
 }
 #content.infopage {
   background-image: none;
 }
+*/
 input {
   margin: 0;
   margin-left: 1px;
   margin-right: 1px;
+}
+input.num[name*='lease'][size='10'] {
+  margin-right: 4px;
+  width: 65%
+}
+input[name*='hostname'] {
+  width: 80%;
+}
+input.three_column {
+	width: 150px;
+	margin-left: 0;
+	margin-right: 10px;
+}
+input.three_column_last {
+  margin-right: 0;
+}
+input.four_column {
+  width: 115px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+input.four_column_last {
+  margin-right: 0;
+}
+input.spaceradio {
+  margin-right: .4em;
+}
+#mainno #contents[style*="padding: .906em"] {
+  padding: 0 !important;
+  width: 97.5%;
+  background-color: #ccccdd;
+}
+[summary="week days table"] {
+	margin-left: -1.3rem;
 }
 div.message {
   margin: 0;
@@ -132,6 +179,12 @@ h2, h3 {
   margin: 0 0 12px 0;
   font-size: 12px;
 }
+h2 {
+  background: #bbc;
+  border: 1px solid #bbc;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
 fieldset legend {
   font-weight: bold;
 }
@@ -147,13 +200,23 @@ table th {
 }
 #helpContainer {
   position: absolute;
-  top: 116px;
+  top: 120px;
   right: 0;
   width: 180px;
+  /* remove so syslog looks half decent  
   background: url(/style/xirian/help_bg.png);
+  */
 }
 #help {
   padding: 7px;
+}
+#help a {
+  display: block;
+  position: absolute;
+  top: .8em;
+  right: 1.2em;
+  text-align: right;
+  text-transform: lowercase;
 }
 #help div#logo {
   height: 54px;
@@ -200,12 +263,17 @@ table th {
   text-decoration: underline;
 }
 .submitFooter {
+  margin: 0;
   text-align: center;
-}
-.gui .submitFooter {
-  margin: 0 -12px;
+  border-radius: 4px;
   padding: 6px 0;
   background: url(/style/xirian/footer.png) top left;
+  background-size: cover;
+  margin-bottom: 1rem
+}
+.submitFooter .button {
+  padding: 0 .5rem;
+  margin: .362em;
 }
 div.setting {
   clear: both;
@@ -213,12 +281,23 @@ div.setting {
   padding: 4px 0;
   line-height: 20px;
 }
+.setting {
+  position: relative;
+  margin-bottom: .453em;
+  line-height: 1.993;
+  width: 100%;
+}
 .setting .label {
   float: left;
-  width: 180px;
+  width: 18.116em;
 }
 .setting .default {
-  color: #889;
+  color: #333;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20em;
 }
 fieldset {
   padding-left: 10px;
@@ -274,9 +353,6 @@ td .meter {
 }
 .textblink {
   text-decoration: blink;
-}
-input.spaceradio {
-  margin-right: .4em;
 }
 #score {
   color: #000;

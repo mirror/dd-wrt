@@ -63,12 +63,10 @@ refreshParent = function() {
 			<input type="hidden" name="commit" value="1" />
 			
 			<h2><%% tran("wl_active.h2"); %%></h2>
+			<fieldset>
+				<legend><%% tran("wl_active.active"); %%></legend>
 			<table>
 				<tbody>
-					<tr>
-						<td><strong><%% tran("wl_active.active"); %%></strong></td>
-						<td colspan="3">&nbsp;</td>
-					</tr>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
@@ -76,13 +74,13 @@ refreshParent = function() {
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
 					<%% wireless_active_table("online", "%s"); %%>
-					<tr>
-						<td colspan="4">&nbsp;</td>
-					</tr>
-					<tr>
-						<td><strong><%% tran("wl_active.inactive"); %%></strong></td>
-						<td colspan="3">&nbsp;</td>
-					</tr>
+				</tbody>
+			</table>
+		  </fieldset><br />
+			<fieldset>
+				<legend><%% tran("wl_active.inactive"); %%></legend>
+			<table>
+				<tbody>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
@@ -90,11 +88,9 @@ refreshParent = function() {
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
 					<%% wireless_active_table("offline", "%s"); %%>
-					<tr>
-						<td colspan="4">&nbsp;</td>
-					</tr>
 				</tbody>
-			</table><br />
+			</table>
+		  </fieldset><br />
 			<div id="submit_footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
