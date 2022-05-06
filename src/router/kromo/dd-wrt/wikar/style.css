@@ -233,3 +233,6 @@ input.button {
   margin-bottom: 2px;
   width: 100px;
 }
+iframe[src*='/graph_if.svg'] {
+  max-width: 700px;
+}
