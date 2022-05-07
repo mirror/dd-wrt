@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 PROJECT(uqmi C)
-ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations  -Wno-enum-conversion)
+ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Werror=dangling-pointer=0 -Wno-enum-conversion)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
