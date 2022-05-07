@@ -39,7 +39,7 @@ table tr:not([bgcolor]):hover {
   color: #000;
 }
 textarea {
-  color: #555;
+  color: #000;
   background-color: #fff;
   border: 1px solid #ccc;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
@@ -116,7 +116,7 @@ input.button[disabled]:hover {
 	color: #00f;
 }
 select {
-  color: #555;
+  color: #000;
   background-color: #fff;
   border: 1px solid #ccc;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
