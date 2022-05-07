@@ -27,14 +27,6 @@ textarea {
   width: 100%;
   resize: vertical;
 }
-/* remove so syslog looks half decent
-#content {
-  background: url(/style/xirian/help_bg.png) top right repeat-y;
-}
-#content.infopage {
-  background-image: none;
-}
-*/
 input {
   margin: 0;
   margin-left: 1px;
@@ -48,9 +40,9 @@ input[name*='hostname'] {
   width: 80%;
 }
 input.three_column {
-	width: 150px;
-	margin-left: 0;
-	margin-right: 10px;
+  width: 150px;
+  margin-left: 0;
+  margin-right: 10px;
 }
 input.three_column_last {
   margin-right: 0;
@@ -72,7 +64,7 @@ input.spaceradio {
   background-color: #ccccdd;
 }
 [summary="week days table"] {
-	margin-left: -1.3rem;
+  margin-left: -1.3rem;
 }
 div.message {
   margin: 0;
@@ -203,9 +195,6 @@ table th {
   top: 120px;
   right: 0;
   width: 180px;
-  /* remove so syslog looks half decent  
-  background: url(/style/xirian/help_bg.png);
-  */
 }
 #help {
   padding: 7px;
