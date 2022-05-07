@@ -25,7 +25,7 @@ input.num {
   width: auto;
 }
 input.num[name*="lease"][size="10"] {
-	margin-right: 4px;
+  margin-right: 4px;
   width: 52%
 }
 h1, h2, h3, h4, h5, h6, legend, label {
