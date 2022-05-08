@@ -1,6 +1,6 @@
 rsync-configure:
 	cd rsync && autoconf
-	cd rsync && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-locate --disable-roll-simd --disable-simd --disable-iconv --disable-xxhash --disable-lz4 \
+	cd rsync && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-locate --disable-md2man --disable-roll-simd --disable-simd --disable-iconv --disable-xxhash --disable-lz4 \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -L$(TOP)/openssl -L$(TOP)/zstd/lib -I$(TOP)/zstd/lib"
 
 	$(MAKE) -C rsync reconfigure
