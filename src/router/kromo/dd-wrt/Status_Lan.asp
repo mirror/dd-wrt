@@ -151,7 +151,7 @@ function setARPTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 8) {
 		var row = table.insertRow(-1);
-		row.style.height = "15px";
+		row.style.height = "20px";
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i+1];
 		var cellmac = row.insertCell(-1);

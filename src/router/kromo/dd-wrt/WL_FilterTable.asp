@@ -14,7 +14,7 @@ function to_apply(F) {
 		</script>
 	</head>
 	
-	<body>
+	<body class="popup_bg">
 		<form name="macfilter" action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="WL_FilterTable-%s" />
 			<input type="hidden" name="action" value="Apply" />
