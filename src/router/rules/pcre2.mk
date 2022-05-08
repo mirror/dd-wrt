@@ -1,4 +1,5 @@
 pcre2-configure:
+	cd pcre2 && autoreconf -fi
 	cd pcre2 && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre2/.libs
 	touch $(TOP)/pcre2/*   
 
