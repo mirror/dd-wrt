@@ -303,7 +303,8 @@ install-systemd: systemd/mdmon@.service
 install-bin: mdadm mdmon
 	$(INSTALL) -D $(STRIP) -m 755 mdadm $(DESTDIR)$(BINDIR)/mdadm
 	$(INSTALL) -D $(STRIP) -m 755 mdmon $(DESTDIR)$(BINDIR)/mdmon
-	$(INSTALL) -D $(STRIP) -m 755 libmdadm.so $(DESTDIR)$(BINDIR)/usr/lib
+	$(INSTALL) -D $(STRIP) -m 755 misc/mdcheck $(DESTDIR)$(BINDIR)/mdcheck
+	$(INSTALL) -D $(STRIP) -m 755 libmdadm.so $(DESTDIR)$(LIBDIR)/libmdadm.so
 
 uninstall:
 	rm -f $(DESTDIR)$(MAN8DIR)/mdadm.8 $(DESTDIR)$(MAN8DIR)/mdmon.8 $(DESTDIR)$(MAN4DIR)/md.4 $(DESTDIR)$(MAN5DIR)/mdadm.conf.5 $(DESTDIR)$(BINDIR)/mdadm
