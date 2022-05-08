@@ -172,7 +172,7 @@ flush_nfsd_cache(char *path, time_t now)
 	int fd;
 	char stime[32];
 
-	sprintf(stime, "%ld\n", now);
+	sprintf(stime, "%lld\n", (long long)now);
 	fd = open(path, O_RDWR);
 	if (fd == -1)
 		return -1;
@@ -625,8 +625,8 @@ nfsdcb(int UNUSED(fd), short which, void *data)
 		/* Name */
 		addfield(&bp, &bsiz, im.im_name);
 		/* expiry */
-		snprintf(buf1, sizeof(buf1), "%lu",
-			 time(NULL) + cache_entry_expiration);
+		snprintf(buf1, sizeof(buf1), "%llu",
+			 (long long )(time(NULL) + cache_entry_expiration));
 		addfield(&bp, &bsiz, buf1);
 		/* Note that we don't want to write the id if the mapping
 		 * failed; instead, by leaving it off, we write a negative
@@ -653,8 +653,8 @@ nfsdcb(int UNUSED(fd), short which, void *data)
 		snprintf(buf1, sizeof(buf1), "%u", im.im_id);
 		addfield(&bp, &bsiz, buf1);
 		/* expiry */
-		snprintf(buf1, sizeof(buf1), "%lu",
-			 time(NULL) + cache_entry_expiration);
+		snprintf(buf1, sizeof(buf1), "%llu",
+			 (long long)(time(NULL) + cache_entry_expiration));
 		addfield(&bp, &bsiz, buf1);
 		/* Note we're ignoring the status field in this case; we'll
 		 * just map to nobody instead. */
