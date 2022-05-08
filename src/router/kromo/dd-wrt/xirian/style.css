@@ -1,20 +1,21 @@
 @import url(/style/buttons.css);
 @import url(/style/common_legacy.css);
+* {
+  font-family: Verdana,  Arial,  Helvetica,  sans-serif;
+  font-size: 1em;
+  color: #115b80;
+}
 body {
   background: #dde;
   margin: 12px;
+  font-size: 75%;
 }
 #wrapper {
   position: relative;
   margin: 0 auto;
   width: 900px;
-  border: solid 1px #99b;
+  border: 1px solid #99b;
   background: #ccd;
-}
-body, th, td, a, input, select, textarea {
-  font-family: Verdana, Arial, Helvetica, sans-serif;
-  font-size: 11px;
-  color: #115b80;
 }
 textarea {
   padding: 4px;
@@ -27,10 +28,20 @@ textarea {
   width: 100%;
   resize: vertical;
 }
+select[onchange*="SelFilter"] {
+  margin-right: .2rem
+}
 input {
+  background: #e9e9ed;
+  border: 1px solid #9292a0;
+  border-radius: 3px;
   margin: 0;
   margin-left: 1px;
   margin-right: 1px;
+}
+input.button {
+  padding: .12rem .5rem;
+  margin-right: .2rem
 }
 input.num[name*='lease'][size='10'] {
   margin-right: 4px;
@@ -61,7 +72,6 @@ input.spaceradio {
 #mainno #contents[style*="padding: .906em"] {
   padding: 0 !important;
   width: 97.5%;
-  background-color: #ccccdd;
 }
 [summary="week days table"] {
   margin-left: -1.3rem;
@@ -100,7 +110,7 @@ div.message div form {
 #header {
   height: 115px;
   background: url(/style/xirian/header_bg.png) top left repeat-x;
-  border-bottom: solid 1px #ccc;
+  border-bottom: 1px solid #ccc;
 }
 div.infopage #header {
   height: 92px;
@@ -114,17 +124,16 @@ div.infopage #header {
   display: none;
 }
 #menu {
-  border-top: solid 1px #ccc;
+  border-top: 1px solid #ccc;
   position: relative;
   width: 100%;
 }
-#menuMain, #menuSub {}
 #menuSub {
   position: absolute;
   top: 23px;
   left: 0;
   width: 100%;
-  border-top: solid 1px #ccc;
+  border-top: 1px solid #ccc;
 }
 #menuMainList, #menuSubList {
   width: 100%;
@@ -143,7 +152,7 @@ div.infopage #header {
   line-height: 23px;
   margin: 0;
   padding: 0 8px;
-  border-right: solid 1px #ccc;
+  border-right: 1px solid #ccc;
   text-decoration: none;
 }
 #menu li span {
@@ -177,8 +186,15 @@ h2 {
   padding: 1px 4px;
   border-radius: 4px;
 }
-fieldset legend {
+fieldset {
+  background-color: #ccd;
+  padding-left: 10px;
+  border-radius: 3px;
+  filter: brightness(1.02);
+}
+fieldset legend, fieldset .syslog_legend {
   font-weight: bold;
+  color: #115b80;
 }
 table {
   width: 100%;
@@ -187,14 +203,18 @@ table th {
   background: #bbc;
   padding: 1px 4px;
 }
+#tablePwdCheck th {
+  background: transparent;
+  text-align: right;
+}
 .center {
   text-align: center;
 }
 #helpContainer {
   position: absolute;
-  top: 120px;
+  top: 121px;
   right: 0;
-  width: 180px;
+  width: 16em;
 }
 #help {
   padding: 7px;
@@ -235,8 +255,8 @@ table th {
 }
 #statusInfo {
   position: absolute;
-  top: 7px;
-  left: 228px;
+  top: 12px;
+  left: 540px;
   height: 65px;
   width: 400px;
 }
@@ -252,16 +272,18 @@ table th {
   text-decoration: underline;
 }
 .submitFooter {
-  margin: 0;
+  background: #ccd;
+  border: 1px ridge #a3a3a3;
+  box-shadow: 1px 1px 0 1px #dde;
   text-align: center;
   border-radius: 4px;
   padding: 6px 0;
-  background: url(/style/xirian/footer.png) top left;
-  background-size: cover;
-  margin-bottom: 1rem
+  margin: 0 3px;
+  margin-bottom: 1rem;
+  filter: brightness(1.03);
 }
 .submitFooter .button {
-  padding: 0 .5rem;
+  padding: .2rem .5rem;
   margin: .362em;
 }
 div.setting {
@@ -288,15 +310,14 @@ div.setting {
   right: 0;
   width: 20em;
 }
-fieldset {
-  padding-left: 10px;
-}
-div.warning {
+.warning {
   padding: 10px;
   text-align: center;
+  border: 2px  dashed  #e40101;
+  border-radius: 2px;
 }
-div.warning * {
-  color: #f33;
+.warning * {
+  color: #e40101;    
 }
 .meter {
   float: right;
@@ -334,6 +355,7 @@ td .meter {
   border-color: #999;
   font-size: 1px;
   border-width: 1px;
+  margin: 0 auto;
 }
 .progressbarblock {
   position: absolute;
@@ -355,9 +377,9 @@ td .meter {
   font-weight: bold;
 }
 #scorebarBorder {
-  background: #333;
-  border: 1px #000 solid;
-  height: 16px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  height: 14px;
   margin-bottom: 2px;
   width: 100px;
 }
