@@ -4060,7 +4060,7 @@ const struct exception_table_entry *search_module_extables(unsigned long addr)
 			continue;
 
 		e = search_extable(mod->extable,
-				   mod->extable + mod->num_exentries - 1,
+				   mod->num_exentries,
 				   addr);
 		if (e)
 			break;
