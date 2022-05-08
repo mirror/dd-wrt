@@ -20,6 +20,7 @@
 
 #include <linux/percpu.h>
 #include <asm/module.h>
+#include <linux/types.h>
 
 #include <trace/events/module.h>
 
@@ -73,8 +74,8 @@ extern void cleanup_module(void);
 struct exception_table_entry;
 
 const struct exception_table_entry *
-search_extable(const struct exception_table_entry *first,
-	       const struct exception_table_entry *last,
+search_extable(const struct exception_table_entry *base,
+	       const size_t num,
 	       unsigned long value);
 void sort_extable(struct exception_table_entry *start,
 		  struct exception_table_entry *finish);
