@@ -48,7 +48,6 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("wl_mac.h2"); %></h2>
 							<% show_macfilter(); %>
-							<br />
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
