@@ -38,6 +38,7 @@ endif
 strace-configure: libunwind
 	cd strace && ./configure \
 		--prefix=/usr \
+		--disable-gcc-Werror \
 		--libdir=/usr/lib \
 		--sysconfdir=/etc \
 		--enable-mpers=no \
