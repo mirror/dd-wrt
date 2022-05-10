@@ -1883,7 +1883,13 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 		return 1;
 	return do_auth(wp, auth_check);
 }
+static int do_auth_changepass(webs_t wp, int (*auth_check)(webs_t conn_fp))
+{
+	if ((nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS)))
+		return 1;
+	return do_auth(wp, auth_check);
 
+}
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
@@ -2793,7 +2799,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #endif
 
-	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, do_auth_changepass, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
 	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, NO_HEADER, IGNORE_OPTIONS },
 #endif
