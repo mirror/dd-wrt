@@ -214,6 +214,11 @@ for i in $(seq 1 $tunnels); do
 		fi
 	fi
 done
-# start route setting
-/usr/bin/eop-tunnel-raip.sh $fset & 
+# start route setting only if active tunnels
+for i in $(seq 1 $tunnels); do
+	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
+		/usr/bin/eop-tunnel-raip.sh $fset &
+		break
+	fi
+done
 
