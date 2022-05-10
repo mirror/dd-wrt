@@ -579,9 +579,9 @@ hfactdef.right1="Esto resetear&aacute; todos los datos de la configuraci&oacute;
 
 filterIP.titl="Lista de clientes";
 filterIP.h2="Lista de clientes";
-filterIP.h3="Introduce la direcci&oacute;n MAC de los PCs en el formato: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Introducir la direcci&oacute;n IP de los clientes";
-filterIP.h33="Introducir el rango IP de los clientes";
+filterIP.legend1="Introduce la direcci&oacute;n MAC de los PCs en el formato: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Introducir la direcci&oacute;n IP de los clientes";
+filterIP.legend3="Introducir el rango IP de los clientes";
 filterIP.ip_range="Rango IP";
 
 

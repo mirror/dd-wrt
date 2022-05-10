@@ -27,7 +27,8 @@ function do_join (F,SSID) {
 			
 			<input type="hidden" name="wl_ssid" />
 			<h2><%% tran("survey.h2"); %%></h2>
-			<table class="center table" cellspacing="5" id="survey_table">
+			<fieldset>
+			<table class="table" cellspacing="5" id="survey_table">
 				<tr>
 				   <th sortdir="up" width="25%"><%% tran("share.ssid"); %%></th>
 				   <th sortdir="up" width="7%"><%% tran("share.mode"); %%></th>
@@ -80,12 +81,12 @@ function do_join (F,SSID) {
 					//]]>
 					</script>
 			</table>
+			</fieldset><br />
 			<script type="text/javascript">
 			//<![CDATA[
 			var t = new SortableTable(document.getElementById('survey_table'), 1000);
 			//]]>
 			</script>
-			<br />
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[

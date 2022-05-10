@@ -656,9 +656,9 @@ hfactdef.page2="<dd>Klepnutím na tlačítko <i>Ano</i> obnovíte výchozí nast
 //
 filterIP.titl="Seznam klientů";
 filterIP.h2="Seznam klientů";
-filterIP.h3="Zadejte MAC Adresu klienta v tomto formátu: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Zadejte IP Adresu klientů";
-filterIP.h33="Zadejte rozsah IP Adres klientů";
+filterIP.legend1="Zadejte MAC Adresu klienta v tomto formátu: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Zadejte IP Adresu klientů";
+filterIP.legend3="Zadejte rozsah IP Adres klientů";
 filterIP.ip_range="IP Rozsah";
 
 
