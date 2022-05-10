@@ -610,9 +610,9 @@ hfactdef.page2="<dd>Click the <i>Yes</i> button to reset all configuration setti
 // ** FilterIPMAC.asp **//
 filterIP.titl="클라이언트 리스트";
 filterIP.h2="클라이언트 리스트";
-filterIP.h3="다음과 같은 형식으로 클라이언트의 MAC주소를 기입해 주세요. (xx:xx:xx:xx:xx:xx)";
-filterIP.h32="클라이언트의 IP 주소를 기입해 주세요";
-filterIP.h33="클라이언트의 IP 범위를 기입해 주세요";
+filterIP.legend1="다음과 같은 형식으로 클라이언트의 MAC주소를 기입해 주세요. (xx:xx:xx:xx:xx:xx)";
+filterIP.legend2="클라이언트의 IP 주소를 기입해 주세요";
+filterIP.legend3="클라이언트의 IP 범위를 기입해 주세요";
 filterIP.ip_range="IP 범위";
 
 // ** Filter.asp **//

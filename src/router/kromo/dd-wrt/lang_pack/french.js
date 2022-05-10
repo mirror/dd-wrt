@@ -519,9 +519,9 @@ hfactdef.right1="Cliquez sur <em>Oui</em> pour r&eacute;tablir les valeurs par d
 // ** FilterIPMAC.asp **//
 filterIP.titl="Liste des ordinateurs";
 filterIP.h2="Liste des ordinateurs";
-filterIP.h3="Saisissez l&apos;adresse MAC des ordinateurs au format : xx:xx:xx:xx:xx:xx";
-filterIP.h32="Saisissez l&apos;adresse IP des ordinateurs";
-filterIP.h33="Saisissez l&apos;intervalle d&apos;adresses IP des ordinateurs";
+filterIP.legend1="Saisissez l&apos;adresse MAC des ordinateurs au format : xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Saisissez l&apos;adresse IP des ordinateurs";
+filterIP.legend3="Saisissez l&apos;intervalle d&apos;adresses IP des ordinateurs";
 filterIP.ip_range="Intervalle IP";
 
 // ** Filter.asp **//

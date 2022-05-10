@@ -167,7 +167,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.to2"); %>&nbsp;(LAN)</th>
 										<th><% tran("share.ip"); %></th>
 										<th><% tran("share.proto"); %></th>
-										<th><% tran("share.del"); %></th>
+										<th class="center"><% tran("share.del"); %></th>
 									</tr>
 								</table><br />
 								<div class="center">

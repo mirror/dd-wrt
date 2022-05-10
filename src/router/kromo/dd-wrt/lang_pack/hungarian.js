@@ -475,9 +475,9 @@ hfactdef.right1="Ez a funkció minden beállítást visszaállít a gyári beállításokr
 
 filterIP.titl="PC-k listája";
 filterIP.h2="PC-k listája";
-filterIP.h3="Adja meg a klienesk MAC címét az alábbi formátumban: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Adja meg a kliensek IP címét";
-filterIP.h33="Adja meg a kliensek IP tartományát";
+filterIP.legend1="Adja meg a klienesk MAC címét az alábbi formátumban: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Adja meg a kliensek IP címét";
+filterIP.legend3="Adja meg a kliensek IP tartományát";
 filterIP.ip_range="IP tartomány";
 
 

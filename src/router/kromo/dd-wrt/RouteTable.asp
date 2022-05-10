@@ -5,6 +5,7 @@
 	<body>
 		<form>
 			<h2><% tran("routetbl.h2"); %></h2>
+			<fieldset>
 			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
 				<tr>
 					<th sortdir="up"> <% tran("routetbl.th1"); %></th>
@@ -32,7 +33,8 @@
 					}
 				//]]>
 				</script>
-			</table><br />
+			</table>
+			</fieldset><br />
 			<script type="text/javascript">
 			//<![CDATA[
 			var t = new SortableTable(document.getElementById('routing_table'), 4000);

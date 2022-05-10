@@ -5,6 +5,7 @@
 	<body>
 		<form>
 			<h2><% tran("routetbl.h3"); %></h2>
+			<fieldset>
 			<table class="table" cellspacing="4" id="pbr_table" summary="pbr table">
 				<tr>
 					<th sortdir="up"><% tran("routetbl.priority"); %></th>
@@ -42,7 +43,8 @@
 					}
 				//]]>
 				</script>
-			</table><br />
+			</table>
+			</fieldset><br />
 			<script type="text/javascript">
 			//<![CDATA[
 			var t = new SortableTable(document.getElementById('pbr_table'), 4000);

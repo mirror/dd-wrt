@@ -626,9 +626,9 @@ hfactdef.page2="<dd>点击 <i>是</i> 按钮来恢复所有配置为默认值. �
 // ** FilterIPMAC.asp **//
 filterIP.titl="客户端列表";
 filterIP.h2="客户端列表";
-filterIP.h3="输入客户端MAC地址，格式为：xx:xx:xx:xx:xx:xx";
-filterIP.h32="输入客户端的IP地址";
-filterIP.h33="输入客户端的IP范围";
+filterIP.legend1="输入客户端MAC地址，格式为：xx:xx:xx:xx:xx:xx";
+filterIP.legend2="输入客户端的IP地址";
+filterIP.legend3="输入客户端的IP范围";
 filterIP.ip_range="IP范围";
 
 
