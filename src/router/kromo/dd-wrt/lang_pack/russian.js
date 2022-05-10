@@ -574,9 +574,9 @@ hfactdef.right1="Значения всех параметров устройст
 // ** FilterIPMAC.asp **//
 filterIP.titl="Список клиентов";
 filterIP.h2="Список клиентов";
-filterIP.h3="Введите MAC-адреса клиентов в следующем формате: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Введите IP-адреса клиентов";
-filterIP.h33="Введите диапазон IP-адресов клиентов";
+filterIP.legend1="Введите MAC-адреса клиентов в следующем формате: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Введите IP-адреса клиентов";
+filterIP.legend3="Введите диапазон IP-адресов клиентов";
 filterIP.ip_range="Диапазон IP";
 
 // ** Filter.asp **//

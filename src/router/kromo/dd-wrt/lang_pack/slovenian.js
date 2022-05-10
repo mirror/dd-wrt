@@ -598,9 +598,9 @@ hfactdef.right1="To bo ponastavilo privzete nastavitve. Vse vaše nastavitve bod
 
 filterIP.titl="Seznam odjemalcev";
 filterIP.h2="Seznam odjemalcev";
-filterIP.h3="Vnesi MAC naslov odjamalca tem formatu: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Vnesi IP naslov odjemalcev";
-filterIP.h33="Vnesi obseg IP naslovov odjemalcev";
+filterIP.legend1="Vnesi MAC naslov odjamalca tem formatu: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Vnesi IP naslov odjemalcev";
+filterIP.legend3="Vnesi obseg IP naslovov odjemalcev";
 filterIP.ip_range="IP obseg";
 
 

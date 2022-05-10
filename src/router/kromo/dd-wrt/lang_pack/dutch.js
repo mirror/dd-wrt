@@ -570,9 +570,9 @@ hfactdef.right1="Dit zal alle instellingen terug zetten naar de fabrieksinstelli
 
 filterIP.titl="Cli&euml;nten lijst";
 filterIP.h2="Cli&euml;nten lijst";
-filterIP.h3="Vul het MAC-Adres van cli&euml;nten in, formaat: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Vul het IP-Adres van de cli&euml;nten in";
-filterIP.h33="Vul het IP-Bereik van de cli&euml;nten in";
+filterIP.legend1="Vul het MAC-Adres van cli&euml;nten in, formaat: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Vul het IP-Adres van de cli&euml;nten in";
+filterIP.legend3="Vul het IP-Bereik van de cli&euml;nten in";
 filterIP.ip_range="IP-Bereik"; 
 
 

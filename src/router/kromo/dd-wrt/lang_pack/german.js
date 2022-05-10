@@ -651,9 +651,9 @@ hfactdef.right1="Diese Funktion setzt die Konfiguration auf den Auslieferungszus
 
 filterIP.titl="Liste der PCs";
 filterIP.h2="Liste der PCs";
-filterIP.h3="Geben Sie die MAC-Adresse der PCs in folgendem Format an: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Geben Sie die IP-Adresse des PCs ein";
-filterIP.h33="Geben Sie den IP-Bereich der PCs an";
+filterIP.legend1="Geben Sie die MAC-Adresse der PCs in folgendem Format an: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Geben Sie die IP-Adresse des PCs ein";
+filterIP.legend3="Geben Sie den IP-Bereich der PCs an";
 filterIP.ip_range="IP Bereich";
 
 

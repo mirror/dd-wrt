@@ -555,9 +555,9 @@ hfactdef.right1="Detta kommer nollst&auml;lla systemet till Fabriksinst&auml;lln
 // ** FilterIPMAC.asp **//
 filterIP.titl="Klientlista";
 filterIP.h2="Klientlista";
-filterIP.h3="Ange MAC Adressen p&aring; klienten i detta format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Ange IP Adressen p&aring; klienten";
-filterIP.h33="Ange IP intervallen p&aring; klienterna";
+filterIP.legend1="Ange MAC Adressen p&aring; klienten i detta format: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Ange IP Adressen p&aring; klienten";
+filterIP.legend3="Ange IP intervallen p&aring; klienterna";
 filterIP.ip_range="IP intervall";
 
 

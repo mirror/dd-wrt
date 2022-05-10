@@ -580,9 +580,9 @@ hfactdef.right1="Aceasta va reseta toate setările înapoi la setările implicit
 // ** FilterIPMAC.asp **//
 filterIP.titl="Listă de clienți";
 filterIP.h2="Listă de clienți";
-filterIP.h3="Introduceți adresele MAC ale clienților în acest format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Introduceți adresele IP ale clienților";
-filterIP.h33="Introduceți intervalul adreselor IP ale clienților";
+filterIP.legend1="Introduceți adresele MAC ale clienților în acest format: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Introduceți adresele IP ale clienților";
+filterIP.legend3="Introduceți intervalul adreselor IP ale clienților";
 filterIP.ip_range="Interval IP";
 
 

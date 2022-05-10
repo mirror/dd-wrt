@@ -1,29 +1,11 @@
-.remove {
-  background: url(/images/remove-black.svg) center no-repeat;
-  cursor: pointer;
-  height: 16px;
-  width: 16px;
-  border: 0;
-}
-.remove:hover, .remove:focus, .remove:focus-within, .remove:focus-visible {
-  background: url(/images/remove-hover.svg) center no-repeat;
-  height: 16px;
-  width: 16px;
-  border: 0;
-  box-shadow: none;
-  outline: 0;
-}
-.remove[disabled], .remove[disabled]:hover {
-  background: url(/images/remove-black.svg) center no-repeat;
-  background-color: transparent !important;
-  opacity: .6;
-}
 .add {
   background: url(/images/add-black.svg) center no-repeat;
   cursor: pointer;
   height: 16px;
   width: 16px;
   border: 0;
+  margin: .1rem;
+  vertical-align: middle;
 }
 .add:hover, .add:focus, .add:focus-within, .add:focus-visible {
   background: url(/images/add-hover.svg) center no-repeat;
@@ -33,8 +15,26 @@
   box-shadow: none;
   outline: 0
 }
-.add[disabled], .add[disabled]:hover {
-  background: url(/images/add-black.svg) center no-repeat;
+.remove {
+  background: url(/images/remove-black.svg) center no-repeat;
+  cursor: pointer;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  margin: .1rem;
+  vertical-align: middle;
+}
+.remove:hover, .remove:focus, .remove:focus-within, .remove:focus-visible {
+  background: url(/images/remove-hover.svg) center no-repeat;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  box-shadow: none;
+  outline: 0;
+}
+.add[disabled], .add[disabled]:hover,
+.remove[disabled], .remove[disabled]:hover {
+  background: url(/images/remove-black.svg) center no-repeat;
   background-color: transparent !important;
   opacity: .6;
 }

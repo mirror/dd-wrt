@@ -611,9 +611,9 @@ hfactdef.right1="Esta opção restaurará todas as opções para o padrão de f�
 // ** FilterIPMAC.asp **//
 filterIP.titl="Lista de clientes";
 filterIP.h2="Lista de clientes";
-filterIP.h3="Insira o Endereço MAC dos clientes neste formato: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Insira o Endereço IP dos clientes";
-filterIP.h33="Insira a Faixa de IPs dos clientes";
+filterIP.legend1="Insira o Endereço MAC dos clientes neste formato: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Insira o Endereço IP dos clientes";
+filterIP.legend3="Insira a Faixa de IPs dos clientes";
 filterIP.ip_range="Faixa de IPs";
 
 

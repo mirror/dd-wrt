@@ -652,9 +652,9 @@ hfactdef.page2="<dd>Kliknij przycisk <i>Tak</i>, aby zresetować wszystkie ustaw
 
 filterIP.titl="Lista klientów";
 filterIP.h2="Lista klientów";
-filterIP.h3="Podaj adresy MAC klientów w tym formacie: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Podaj adresy IP klientów";
-filterIP.h33="Podaj zakres IP klientow";
+filterIP.legend1="Podaj adresy MAC klientów w tym formacie: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Podaj adresy IP klientów";
+filterIP.legend3="Podaj zakres IP klientow";
 filterIP.ip_range="Zakres adresów IP";
 
 
