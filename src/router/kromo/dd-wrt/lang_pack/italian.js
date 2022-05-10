@@ -632,9 +632,9 @@ hfactdef.page2="<dd>Cliccare sul bottone <i>Si</i> per resettare tutte le impost
 //var filterIP=new Object();
 filterIP.titl="Lista dei PC";
 filterIP.h2="Lista dei PC";
-filterIP.h3="Inserisci l&apos;indirizzo MAC dei PC in questo formato: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Inserisci l&apos;indirizzo IP dei PC";
-filterIP.h33="Inserisci l&apos;intervallo IP dei PC";
+filterIP.legend1="Inserisci l&apos;indirizzo MAC dei PC in questo formato: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Inserisci l&apos;indirizzo IP dei PC";
+filterIP.legend3="Inserisci l&apos;intervallo IP dei PC";
 filterIP.ip_range="Intervallo IP";
 
 

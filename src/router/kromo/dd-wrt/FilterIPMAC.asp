@@ -25,8 +25,8 @@ function to_apply(F) {
 			<input type="hidden" name="filter_ip_value" />
 			<input type="hidden" name="filter_mac_value" />
 			<h2><% tran("filterIP.h2"); %></h2>
-			<div>
-				<h3><% tran("filterIP.h3"); %></h3>
+			<fieldset>
+				<legend><% tran("filterIP.legend1"); %></legend>
 				<div class="setting">
 					<div class="label">MAC 01</div>
 					<input class="num" size="20" maxlength="17" name="mac0" onblur="valid_macs_all(this)" value="<% filter_mac_get(0); %>" />
@@ -59,10 +59,10 @@ function to_apply(F) {
 					<div class="label">MAC 08</div>
 					<input class="num" size="20" maxlength="17" name="mac7" onblur="valid_macs_all(this)" value="<% filter_mac_get(7); %>" />
 				</div>
-			</div>
+			</fieldset>
 			<br />
-			<div>
-				<h3><% tran("filterIP.h32"); %></h3>
+			<fieldset>
+				<legend><% tran("filterIP.legend2"); %></legend>
 				<div class="setting">
 					<div class="label">IP 01</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip",0); %>" />
@@ -87,10 +87,10 @@ function to_apply(F) {
 					<div class="label">IP 06</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip5" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip",5); %>" />
 				</div>
-			</div>
+			</fieldset>
 			<br />
-			<div>
-				<h3><% tran("filterIP.h33"); %></h3>
+			<fieldset>
+				<legend><% tran("filterIP.legend3"); %></legend>
 				<div class="setting">
 					<div class="label" style="width:8em;"><% tran("filterIP.ip_range"); %> 01</div>
 					<input class="num" size="3" maxlength="3" name="ip_range0_0" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range0_0",6); %>" />.
@@ -113,7 +113,7 @@ function to_apply(F) {
 					<input class="num" size="3" maxlength="3" name="ip_range1_6" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_6",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_7" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_7",7); %>" />
 				</div>
-			</div>
+			</fieldset>
 			<br />
 			<div class="submitFooter">
 				<script type="text/javascript">

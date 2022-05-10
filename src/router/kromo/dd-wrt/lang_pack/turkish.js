@@ -568,9 +568,9 @@ hfactdef.right1="Bu, tüm ayarları fabrika varsayılanlarına sıfırlar. Ayarl
 // ** FilterIPMAC.asp **//
 filterIP.titl="İstemciler listesi";
 filterIP.h2="İstemciler listesi";
-filterIP.h3="İstemcilerin MAC Adresini bu formatta girin: xx:xx:xx:xx:xx:xx";
-filterIP.h32="İstemcilerin MAC Adresini gir";
-filterIP.h33="İstemcilerin IP Aralığını gir";
+filterIP.legend1="İstemcilerin MAC Adresini bu formatta girin: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="İstemcilerin MAC Adresini gir";
+filterIP.legend3="İstemcilerin IP Aralığını gir";
 filterIP.ip_range="IP Aralığı";
 
 

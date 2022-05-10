@@ -571,9 +571,9 @@ hfactdef.right1="「はい」を選択して「設定」をクリックすると
 
 filterIP.titl="クライアントリスト";
 filterIP.h2="クライアントリスト";
-filterIP.h3="クライアントのMACアドレス(次の形式で入力してください：xx:xx:xx:xx:xx:xx)";
-filterIP.h32="クライアントのIPアドレス";
-filterIP.h33="クライアントのIPアドレス範囲";
+filterIP.legend1="クライアントのMACアドレス(次の形式で入力してください：xx:xx:xx:xx:xx:xx)";
+filterIP.legend2="クライアントのIPアドレス";
+filterIP.legend3="クライアントのIPアドレス範囲";
 filterIP.ip_range="IPアドレス範囲";
 
 

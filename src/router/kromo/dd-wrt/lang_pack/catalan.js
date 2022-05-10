@@ -580,9 +580,9 @@ hfactdef.right1="Aixó reestablirà tots els paràmetres als defectes de fàbric
 // ** FilterIPMAC.asp **//
 filterIP.titl="Llista de clients";
 filterIP.h2="Llista de clients";
-filterIP.h3="Introduïu les Adreçes MAC dels clients en aquest format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Introduïu les Adreçes IP dels clients";
-filterIP.h33="Introduïu el Rang IP dels clients";
+filterIP.legend1="Introduïu les Adreçes MAC dels clients en aquest format: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Introduïu les Adreçes IP dels clients";
+filterIP.legend3="Introduïu el Rang IP dels clients";
 filterIP.ip_range="Rang IP";
 
 

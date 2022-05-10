@@ -582,9 +582,9 @@ hfactdef.right1="Ово ће ресетовати сва подешавања н
 // ** FilterIPMAC.asp **//
 filterIP.titl="Листа клијената";
 filterIP.h2="Листа клијената";
-filterIP.h3="Унесите MAC адресу клијенaтa у следећем формату: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Унесите IP адресу клијенaтa";
-filterIP.h33="Унесите IP опсег клијенaтa";
+filterIP.legend1="Унесите MAC адресу клијенaтa у следећем формату: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Унесите IP адресу клијенaтa";
+filterIP.legend3="Унесите IP опсег клијенaтa";
 filterIP.ip_range="IP опсег";
 
 

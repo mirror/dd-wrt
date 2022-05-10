@@ -597,9 +597,9 @@ hfactdef.right1="Ovo će vratiti konfiguraciju na tvorničke zadane vrijednosti.
 
 filterIP.titl="Lista klijenata";
 filterIP.h2="Lista klijenata";
-filterIP.h3="Unesi MAC Adresu klijenata u ovom formatu: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Unesi MAC Adresu klijenata";
-filterIP.h33="Unesi IP Raspon klijenata";
+filterIP.legend1="Unesi MAC Adresu klijenata u ovom formatu: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Unesi MAC Adresu klijenata";
+filterIP.legend3="Unesi IP Raspon klijenata";
 filterIP.ip_range="IP Raspon";
 
 

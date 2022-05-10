@@ -549,9 +549,9 @@ hfactdef.right1="此操作將使目前所有設定回復至出廠預設值,您�
 //
 filterIP.titl="用戶端清單";
 filterIP.h2="用戶清單";
-filterIP.h3="請輸入用戶端MAC位址,格式為: xx:xx:xx:xx:xx:xx";
-filterIP.h32="請輸入用戶端IP位址";
-filterIP.h33="請輸入用戶端IP範圍";
+filterIP.legend1="請輸入用戶端MAC位址,格式為: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="請輸入用戶端IP位址";
+filterIP.legend3="請輸入用戶端IP範圍";
 filterIP.ip_range="IP範圍";
 
 

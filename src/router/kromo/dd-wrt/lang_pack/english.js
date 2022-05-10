@@ -697,9 +697,9 @@ hfactdef.page2="<dd>Click the <i>Yes</i> button to reset all configuration setti
 var filterIP=new Object();
 filterIP.titl="List of clients";
 filterIP.h2="List of clients";
-filterIP.h3="Enter MAC Address of the clients in this format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Enter the IP Address of the clients";
-filterIP.h33="Enter the IP Range of the clients";
+filterIP.legend1="Enter MAC Address of the clients in this format: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Enter the IP Address of the clients";
+filterIP.legend3="Enter the IP Range of the clients";
 filterIP.ip_range="IP Range";
 
 
