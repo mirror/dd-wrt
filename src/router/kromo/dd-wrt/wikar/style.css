@@ -236,3 +236,19 @@ input.button {
 iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
+iframe#syslog {
+ left: 1rem;
+ top: 3rem;
+ max-width: 90%;
+ position: relative;
+}
+input.button[onclick*="do_show"] {
+ left: 18%;
+ top: 2.3rem;
+ position: relative;
+}
+input.button[name="refresh_button"] {
+  left: 18.5%;
+  top: 1rem;
+  position: relative;
+}
