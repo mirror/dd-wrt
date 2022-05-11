@@ -250,17 +250,20 @@ iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
 iframe#syslog {
-  margin-left: 11.5rem;
-  margin-top: 5rem;
-  margin-right: 0;
-  padding-bottom: -30rem;
-  width: 92.5%;
+ left: 14rem;
+ top: 7rem;
+ max-width: 72em;
+ position: fixed;
 }
 input.button[onclick*="do_show"] {
-  margin-top: -4rem;
-  margin-left: 1.5rem;
-  margin-right: -.8rem;
+ top: 12.5em;
+ left: 2rem;
+ right: 8rem;
+ position: relative;
 }
 input.button[name="refresh_button"] {
-  margin-left: 1rem
+ top: 11.5em;
+ left: 3.5rem;
+ right: 8rem;
+ position: relative;
 }

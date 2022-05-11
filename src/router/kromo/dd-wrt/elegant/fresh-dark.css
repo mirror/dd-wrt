@@ -1,5 +1,5 @@
 @import url(/style/buttons_dark.css);
-body, .popup {
+body, .popup, .popup_bg {
   background: #111;
   color: #ccc;
 }
