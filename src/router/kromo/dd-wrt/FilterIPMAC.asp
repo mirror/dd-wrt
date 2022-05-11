@@ -15,7 +15,7 @@ function to_apply(F) {
 		</script>
 	</head>
 
-	<body>
+	<body class"popup_bg">
 		<form name="ipfilter" action="apply.cgi" method="post" >
 			<input type="hidden" name="submit_button" value="FilterIPMAC" />
 			<input type="hidden" name="action" value="Apply" />
