@@ -2226,6 +2226,8 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
+			if (nvram_match("router_style", "kromo") || nvram_match("router_style", "brainslayer") || nvram_match("router_style", "wikar") || nvram_match("router_style", "xirian"))
+				return;
 			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	}
