@@ -161,7 +161,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "		</table>\n");
+	websWrite(wp, "		</table><br />\n");
 
 	// add button
 	websWrite(wp,
@@ -299,7 +299,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "		</table>\n");
+	websWrite(wp, "		</table><br />\n");
 
 	// add button
 	websWrite(wp,

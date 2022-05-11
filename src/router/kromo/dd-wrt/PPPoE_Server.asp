@@ -108,9 +108,9 @@ addEvent(window, "unload", function() {
 				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvc("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvc("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
 			</div>
-	</fieldset><br />
+	</fieldset>
 	
-<div id="idpppoesrv">
+<div id="idpppoesrv"><br />
 
 	<fieldset>
 		<legend><% tran("service.pppoesrv_srvopt"); %></legend>
