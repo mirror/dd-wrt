@@ -15,3 +15,4 @@
  "chilli_macpasswd" "MAC PW send to radius" "NULL" "TRUE" "0"
  "chilli_additional" "Chillispot Ad Options" "NULL" "FALSE" "0"
  "chilli_802.1Xauth" "Radius 802.1X Auth" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "fon_userlist" "Fon userlist" "USERLIST" "TRUE" "0"  
