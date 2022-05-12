@@ -1,4 +1,6 @@
 @import url(../commonfon.css);
+@import url(/style/common_legacy.css);
+@import url(/style/buttons.css);
 #menuSub, #menuMainList li span, #help h2 {
   background: #099;
   color: #fff;
@@ -34,6 +36,7 @@ fieldset legend, .syslog_legend {
   border-color: #999;
   font-size: .09em;
   border-width: .09em;
+  margin: 0 auto;
 }
 .progressbarblock {
   background-color: #3bb;

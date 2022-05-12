@@ -147,7 +147,7 @@ addEvent(window, "unload", function() {
 							<div class="label"><% tran("freeradius.passphrase"); %></div>
 							<input size="32" name="radius_passphrase" value="<% nvg("radius_passphrase"); %>" />
 							</div>
-							<div class="center">
+							<div class="center"><br />
 							<script type="text/javascript">
 							//<![CDATA[
 							document.write("<input class=\"button\" type=\"button\" name=\"generate_button\" value=\"" + freeradius.cert + "\" onclick=\"generate_submit(this.form);\" />");

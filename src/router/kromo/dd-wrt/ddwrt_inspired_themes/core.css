@@ -245,7 +245,7 @@ body div.message {
   border-radius: 4px;
 }
 form[name='wds'] .label {
-  margin-right: 24px;
+  width: 19.444em;
 }
 form[name='wds'] select {
   margin-right: 0.562em;
