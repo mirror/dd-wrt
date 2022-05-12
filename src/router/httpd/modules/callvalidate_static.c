@@ -183,8 +183,10 @@ static struct callmap validate_map[] = {
 	{ "validate_pbr_rule", &validate_pbr_rule },
 #endif
 	{ "validate_statics", &validate_statics },
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 	{ "validate_userlist", &validate_userlist },
+#endif
 #endif
 	{ "validate_wan_ipaddr", &validate_wan_ipaddr },
 	{ "validate_wds", &validate_wds },
@@ -314,9 +316,11 @@ static struct callmap gozila_map[] = {
 	{ "chap_user_add", &chap_user_add },
 	{ "chap_user_remove", &chap_user_remove },
 #endif
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 	{ "user_add", &user_add },
 	{ "user_remove", &user_remove },
+#endif
 #endif
 #ifdef HAVE_RADLOCAL
 	{ "raduser_add", &raduser_add },

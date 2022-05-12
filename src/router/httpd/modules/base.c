@@ -229,8 +229,10 @@ void Initnvramtab()
 		{ "REBOOT", "validate_reboot", 0 },
 		{ "IPADDR", "validate_ipaddr", 0 },
 		{ "STATICLEASES", "validate_staticleases", 0 },
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 		{ "USERLIST", "validate_userlist", 0 },
+#endif
 #endif
 #ifdef HAVE_RADLOCAL
 		{ "IRADIUSUSERLIST", "validate_iradius", 0 },
@@ -1265,9 +1267,11 @@ static struct gozila_action gozila_actions[] = {
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
 	{ "PPPoE_Server", "remove_chap_user", "", REFRESH, "chap_user_remove" },
 #endif
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 	{ "Hotspot", "add_user", "", REFRESH, "user_add" },
 	{ "Hotspot", "remove_user", "", REFRESH, "user_remove" },
+#endif
 #endif
 #ifdef HAVE_RADLOCAL
 	{ "Hotspot", "add_iradius", "", REFRESH, "raduser_add" },

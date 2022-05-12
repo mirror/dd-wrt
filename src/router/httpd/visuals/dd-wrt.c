@@ -725,6 +725,7 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 
 EJ_VISIBLE void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
@@ -762,6 +763,7 @@ EJ_VISIBLE void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+#endif
 #endif
 
 EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)

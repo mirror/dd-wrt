@@ -2284,6 +2284,7 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 }
 #endif
 
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 {
@@ -2316,6 +2317,7 @@ EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 	debug_free(leases);
 }
 
+#endif
 #endif
 
 void filterstring(char *str, char character)
