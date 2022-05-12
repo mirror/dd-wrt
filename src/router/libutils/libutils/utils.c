@@ -1888,7 +1888,7 @@ int buf_to_file(char *path, char *buf)
 char *safe_get_wan_face(char *localwanface)
 {
 	if (nvram_match("wan_proto", "disabled")) {
-		strcpy(localwanface, "br0");
+		strlcpy(localwanface, "br0", IFNAMSIZ);
 		return localwanface;
 	}
 
@@ -1908,46 +1908,46 @@ char *safe_get_wan_face(char *localwanface)
 #endif
 	    || nvram_match("wan_proto", "pppoe")) {
 		if (nvram_match("pppd_pppifname", ""))
-			strncpy(localwanface, "ppp0", IFNAMSIZ);
+			strlcpy(localwanface, "ppp0", IFNAMSIZ);
 		else
-			strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+			strlcpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 	}
 #ifdef HAVE_3G
 	else if (nvram_match("wan_proto", "3g")) {
 		if (nvram_match("3gdata", "mbim")) {
-			strncpy(localwanface, "wwan0", IFNAMSIZ);
+			strlcpy(localwanface, "wwan0", IFNAMSIZ);
 		} else if (nvram_match("3gdata", "qmi")) {
-			strncpy(localwanface, "wwan0", IFNAMSIZ);
+			strlcpy(localwanface, "wwan0", IFNAMSIZ);
 		} else if (nvram_match("3gdata", "sierradirectip")) {
-			strncpy(localwanface, "wwan0", IFNAMSIZ);
+			strlcpy(localwanface, "wwan0", IFNAMSIZ);
 		} else {
 			if (nvram_match("pppd_pppifname", ""))
-				strncpy(localwanface, "ppp0", IFNAMSIZ);
+				strlcpy(localwanface, "ppp0", IFNAMSIZ);
 			else
-				strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+				strlcpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 		}
 
 	}
 #endif
 #ifndef HAVE_MADWIFI
 	else if (nvram_invmatch("sta_ifname", "")) {
-		strcpy(localwanface, nvram_safe_get("sta_ifname"));
+		strlcpy(localwanface, nvram_safe_get("sta_ifname"), IFNAMSIZ);
 	}
 #else
 	else if (nvram_invmatch("sta_ifname", "")) {
 		if (nvram_matchi("wifi_bonding", 1))
-			strcpy(localwanface, "bond0");
+			strlcpy(localwanface, "bond0", IFNAMSIZ);
 		else
-			strcpy(localwanface, nvram_safe_get("sta_ifname"));
+			strlcpy(localwanface, nvram_safe_get("sta_ifname"),IFNAMSIZ);
 	}
 #endif
 #ifdef HAVE_IPETH
 	else if (nvram_match("wan_proto", "iphone")) {
-		strncpy(localwanface, "iph0", IFNAMSIZ);
+		strlcpy(localwanface, "iph0", IFNAMSIZ);
 	}
 #endif
 	else
-		strncpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
+		strlcpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 
 	return localwanface;
 }
