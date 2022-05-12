@@ -552,6 +552,7 @@ static void aqos_tables(void)
 
 static int svqos_iptables(void)
 {
+	char wan_if_buffer[33];
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 	char name[32], type[32], data[32], pkt_filter[5];
@@ -771,7 +772,7 @@ static int svqos_iptables(void)
 
 	if (wan_dev && strcmp(wan_dev, "wwan0")) {
 		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
-			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", get_wan_face(), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", safe_get_wan_face(wan_if_buffer), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
 			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 		}
 	}
@@ -1027,10 +1028,12 @@ void start_qos(void)
 
 void stop_qos(void)
 {
+	char wan_if_buffer[33];
+
 	//if imq is not available we don't have to run 
 	int ret = 0;
 
-	char *wan_dev = get_wan_face();
+	char *wan_dev = safe_get_wan_face(wan_if_buffer);
 	if (!wan_dev)
 		wan_dev = "xx";
 

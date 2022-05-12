@@ -215,6 +215,7 @@ static int zebra_ospf_init(void)
 {
 	FILE *fp;
 	int s = 0;
+	char wan_if_buffer[33];
 
 	/*
 	 * Write configuration file based on current information 
@@ -269,7 +270,7 @@ static int zebra_ospf_init(void)
 			if (nvram_nmatch("0", "%s_bridged", var) && *ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
 			} else {
-				if (!strcmp(get_wan_face(), var)) {
+				if (!strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 					char *ipaddr = nvram_safe_get("wan_ipaddr");
 					if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 						fprintf(fp, "interface %s\n", var);
@@ -291,7 +292,7 @@ static int zebra_ospf_init(void)
 			if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
 			} else {
-				if (!strcmp(get_wan_face(), var)) {
+				if (!strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 					char *ipaddr = nvram_safe_get("wan_ipaddr");
 					if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 						fprintf(fp, "interface %s\n", var);
@@ -308,7 +309,7 @@ static int zebra_ospf_init(void)
 		fprintf(fp, " redistribute connected metric-type 1\n");
 		fprintf(fp, " redistribute static metric-type 1\n");
 		foreach(var, eths, next) {
-			if (!strcmp(get_wan_face(), var)) {
+			if (!strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
@@ -326,7 +327,7 @@ static int zebra_ospf_init(void)
 		}
 
 		foreach(var, bufferif, next) {
-			if (strcmp(get_wan_face(), "br0") && !strcmp(get_wan_face(), var)) {
+			if (strcmp(safe_get_wan_face(wan_if_buffer), "br0") && !strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
@@ -371,7 +372,8 @@ static int zebra_ospf_init(void)
 static int zebra_ospf6_init(void)
 {
 	char *lf = nvram_safe_get("lan_ifname");
-	char *wf = get_wan_face();
+	char wan_if_buffer[33];
+	char *wf = safe_get_wan_face(wan_if_buffer);
 
 	FILE *fp;
 	int s = 0;
@@ -473,12 +475,13 @@ static int zebra_ospf6_init(void)
 static int zebra_ripd_init(void)
 {
 
+	char wan_if_buffer[33];
 	char *lt = nvram_safe_get("dr_lan_tx");
 	char *lr = nvram_safe_get("dr_lan_rx");
 	char *wt = nvram_safe_get("dr_wan_tx");
 	char *wr = nvram_safe_get("dr_wan_rx");
 	char *lf = nvram_safe_get("lan_ifname");
-	char *wf = get_wan_face();
+	char *wf = safe_get_wan_face(wan_if_buffer);
 
 	FILE *fp;
 
@@ -561,12 +564,13 @@ static int zebra_ripd_init(void)
 static int zebra_bgp_init(void)
 {
 
+	char wan_if_buffer[33];
 	char *lt = nvram_safe_get("dr_lan_tx");
 	char *lr = nvram_safe_get("dr_lan_rx");
 	char *wt = nvram_safe_get("dr_wan_tx");
 	char *wr = nvram_safe_get("dr_wan_rx");
 	char *lf = nvram_safe_get("lan_ifname");
-	char *wf = get_wan_face();
+	char *wf = safe_get_wan_face(wan_if_buffer);
 
 	FILE *fp;
 

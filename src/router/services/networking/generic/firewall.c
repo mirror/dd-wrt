@@ -2239,6 +2239,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 #endif
 static void filter_input(char *wanface, char *lanface, char *wanaddr, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
+	char wan_if_buffer[33];
 
 	char *next, *iflist, buff[16];
 	/*
@@ -2499,7 +2500,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	// char *vifs = nvram_safe_get ("lan_ifnames");
 	// if (vifs != NULL)
 	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
@@ -2544,6 +2545,8 @@ static void filter_output(char *wanface)
 
 static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter, char *vifs)
 {
+	char wan_if_buffer[33];
+
 	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
 	char var[80];
@@ -2576,7 +2579,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 #endif
 
 	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
@@ -2599,7 +2602,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (!has_gateway())
 		save2file_A_forward("-m state --state INVALID -j %s", log_drop);
 	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
 				save2file_A_forward("-i %s -j lan2wan", var);
@@ -2680,7 +2683,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		 */
 		else
 			save2file_A_forward("-i br1 -o br0 -j %s", log_accept);
-		char *wan = get_wan_face();
+		char *wan = safe_get_wan_face(wan_if_buffer);
 		if (wan && *wan)
 			save2file_A_forward("-i br1 -o %s -j %s", wan, log_accept);
 	}
@@ -2761,7 +2764,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (dmzenable)
 		save2file_A_forward("-o %s -d %s%s -j %s", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
 	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
@@ -2882,6 +2885,8 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
  */
 static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
+	char wan_if_buffer[33];
+
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
 		  ":limaccept - [0:0]"
@@ -2949,7 +2954,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		char vifs[256];
 		char *next;
 		foreach(var, vifs, next) {
-			if (strcmp(get_wan_face(), var)
+			if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
 					save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
@@ -3055,10 +3060,12 @@ int isregistered_real(void);
 #ifdef HAVE_IPV6
 void start_firewall6(void)
 {
+	char wan_if_buffer[33];
+
 	int remotessh = 0;
 	int remotetelnet = 0;
 	int remotemanage = 0;
-	char *wanface = get_wan_face();
+	char *wanface = safe_get_wan_face(wan_if_buffer);
 	if (nvram_matchi("ipv6_enable", 0))
 		return;
 
@@ -3203,6 +3210,7 @@ int main(void)
 void start_firewall(void)
 #endif
 {
+	char wan_if_buffer[33];
 	DIR *dir;
 	struct dirent *file;
 	FILE *fp;
@@ -3331,7 +3339,7 @@ void start_firewall(void)
 	 */
 	DEBUG("start firewall()........2\n");
 	strncpy(lanface, nvram_safe_get("lan_ifname"), IFNAMSIZ);
-	strncpy(wanface, get_wan_face(), IFNAMSIZ);
+	strncpy(wanface, safe_get_wan_face(wan_if_buffer), IFNAMSIZ);
 	strncpy(wanaddr, get_wan_ipaddr(), sizeof(wanaddr));
 	if (nvram_match("wan_proto", "pptp")) {
 		if (!*(nvram_safe_get("pptp_get_ip")))	// for initial dhcp ip
@@ -3550,6 +3558,8 @@ void stop_firewall6(void)
 
 void stop_firewall(void)
 {
+	char wan_if_buffer[33];
+
 	lock();
 	stop_qos();
 	eval("iptables", "-t", "raw", "-F");
@@ -3582,7 +3592,7 @@ void stop_firewall(void)
 		rmmod("ipt_mac");
 		rmmod("xt_mac");
 	}
-	destroy_ip_forward(get_wan_face());
+	destroy_ip_forward(safe_get_wan_face(wan_if_buffer));
 	cprintf("done\n");
 #ifdef HAVE_IPV6
 	stop_firewall6();

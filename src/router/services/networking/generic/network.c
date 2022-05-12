@@ -2798,7 +2798,8 @@ static void vdsl_fuckup(char *ifname)
 void run_wan(int status)
 {
 	FILE *fp;
-	char *wan_ifname = get_wan_face();
+	char wan_if_buffer[33];
+	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 	char *wan_proto = nvram_safe_get("wan_proto");
 	int s;
 	struct ifreq ifr;
@@ -4358,7 +4359,7 @@ void run_wan(int status)
 		/*
 		 * Delete all default routes 
 		 */
-		while (route_del(get_wan_face(), 0, NULL, NULL, NULL) == 0) ;
+		while (route_del(safe_get_wan_face(wan_if_buffer), 0, NULL, NULL, NULL) == 0) ;
 	}
 	cprintf("wep handling\n");
 	cprintf("disable stp if needed\n");
@@ -4868,7 +4869,9 @@ void wan_done(char *wan_ifname)
 
 void stop_wan(void)
 {
-	char *wan_ifname = get_wan_face();
+	char wan_if_buffer[33];
+
+	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 
 	nvram_seti("wanup", 0);
 

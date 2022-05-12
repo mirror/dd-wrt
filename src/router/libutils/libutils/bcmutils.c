@@ -1542,6 +1542,7 @@ int getmask(char *nmask)
 
 int doMultiCast(void)
 {
+	char wan_if_buffer[33];
 	char name[80], *next;
 	int ifcount = 0;
 
@@ -1555,7 +1556,7 @@ int doMultiCast(void)
 
 	getIfLists(ifnames, 256);
 	foreach(name, ifnames, next) {
-		if (strcmp(get_wan_face(), name)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), name)
 		    && strcmp(nvram_safe_get("lan_ifname"), name)
 		    && strcmp(nvram_safe_get("tvnicfrom"), name)) {
 			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name))

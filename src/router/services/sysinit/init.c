@@ -538,7 +538,8 @@ int ipfmt_main(int argc, char *argv[])
 
 int get_wanface_main(int argc, char **argv)
 {
-	fprintf(stdout, "%s", get_wan_face());
+	char wan_if_buffer[33];
+	fprintf(stdout, "%s", safe_get_wan_face(wan_if_buffer));
 	return 0;
 }
 

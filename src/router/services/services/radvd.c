@@ -58,6 +58,7 @@
 
 void start_radvd(void)
 {
+	char wan_if_buffer[33];
 	int c = 0, manual = 0;
 	int mtu = 1500;;
 	char *buf, *prefix;
@@ -135,7 +136,7 @@ void start_radvd(void)
 			"  AdvValidLifetime 30;\n"
 			"  AdvPreferredLifetime 20;\n"
 			"%s%s%s"
-			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? get_wan_face() : "", do_6to4 ? ";\n" : "");
+			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? safe_get_wan_face(wan_if_buffer) : "", do_6to4 ? ";\n" : "");
 
 		int i;
 
