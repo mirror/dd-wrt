@@ -6681,6 +6681,7 @@ EJ_VISIBLE void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	if (argc < 1)
 		return;
 	char *ifname = argv[0];
@@ -6693,7 +6694,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	for (i = 2; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
-	char *wanface = get_wan_face();
+	char *wanface = safe_get_wan_face(wan_if_buffer);
 	if (showwan & 1) {
 		if (strcmp(wanface, "br0")) {
 			websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
@@ -6726,6 +6727,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	char *next;
 	char var[80];
 	char buffer[256];
@@ -6737,7 +6739,7 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 		prefix = NULL;
 	getIfListNoPorts(buffer, prefix);
 	foreach(var, buffer, next) {
-		char *wanface = get_wan_face();
+		char *wanface = safe_get_wan_face(wan_if_buffer);
 		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;

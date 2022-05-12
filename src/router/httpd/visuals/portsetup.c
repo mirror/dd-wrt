@@ -22,6 +22,7 @@
 extern char *getTXQ(char *ifname);
 EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	char ssid[64];
 	char *next, *bnext;
 	char var[64];
@@ -58,7 +59,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp("etherip0", var))
 			continue;
 		if (strchr(var, '.') == NULL) {
-			if (!strcmp(get_wan_face(), var))
+			if (!strcmp(safe_get_wan_face(wan_if_buffer), var))
 				continue;
 			if (!strcmp(nvram_safe_get("lan_ifname"), var))
 				continue;

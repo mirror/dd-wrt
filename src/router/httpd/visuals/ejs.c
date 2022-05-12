@@ -1421,6 +1421,7 @@ EJ_VISIBLE void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	char *type;
 	char wanface[32];
 	char line[256];
@@ -1434,7 +1435,7 @@ EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 		return;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface"))
-		strlcpy(wanface, get_wan_face(), sizeof(wanface) - 1);
+		strlcpy(wanface, safe_get_wan_face(wan_if_buffer), sizeof(wanface) - 1);
 	else
 		strlcpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface) - 1);
 	strcat(wanface, ":");
@@ -1492,6 +1493,8 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
+
 	char name[180];
 	char *next, *bnext;
 	char var[80];
@@ -1520,7 +1523,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 #endif
 	foreach(var, eths, next) {
 		if (!nvram_match("wan_proto", "disabled")) {
-			if (!strcmp(get_wan_face(), var))
+			if (!strcmp(safe_get_wan_face(wan_if_buffer), var))
 				continue;
 			if (!strcmp(nvram_safe_get("wan_ifname2"), var))
 				continue;
@@ -1548,11 +1551,11 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, get_wan_face()));
+			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"), getNetworkLabel(wp, safe_get_wan_face(wan_if_buffer)));
 		} else
-			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, get_wan_face()));
+			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, safe_get_wan_face(wan_if_buffer)));
 
-		show_bwif(wp, get_wan_face(), name);
+		show_bwif(wp, safe_get_wan_face(wan_if_buffer), name);
 
 		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
 			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
@@ -2364,6 +2367,8 @@ EJ_VISIBLE void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 #endif
 EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 {
+	char wan_if_buffer[33];
+
 #ifdef HAVE_IPV6
 	char buf[INET6_ADDRSTRLEN];
 #endif
@@ -2414,14 +2419,14 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_IPV6
 	const char *ipv6addr = NULL;
 	if (nvram_match("ipv6_typ", "ipv6native"))
-		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") || nvram_match("ipv6_typ", "ipv6native")) {
 		if (!ipv6addr)
-			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);	// try wan if all other fails
 		if (ipv6addr)
 			websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 	}
