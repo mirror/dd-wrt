@@ -37,6 +37,7 @@
  */
 EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	char *buf, *line, *next, *s;
 	int len;
 	char *type;
@@ -51,7 +52,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 
 	// struct servent *d_servp;
 
-	char *wan_if = get_wan_face();
+	char *wan_if = safe_get_wan_face(wan_if_buffer);
 	char *lan_if = nvram_safe_get("lan_ifname");
 
 	int count = 0;
