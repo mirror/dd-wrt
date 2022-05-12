@@ -66,6 +66,7 @@ wan_primary_ifunit(void)
 int
 main(int argc, char *argv[])
 {
+	char wan_if_buffer[33];
 	char **argp = &argv[1];
 	char *wanif = NULL;
 	char var[100], prefix[] = "wanXXXXXXXXXX_";
@@ -97,7 +98,7 @@ main(int argc, char *argv[])
 	/*
 	 * Process arguments
 	 */
-	wanif = get_wan_face(); // uses dd-wrt api
+	wanif = safe_get_wan_face(wan_if_buffer); // uses dd-wrt api
 
 	while (argp < &argv[argc]) {
 		if (strcasecmp(*argp, "-W") == 0) {
