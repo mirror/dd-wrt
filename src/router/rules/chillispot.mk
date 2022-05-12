@@ -45,9 +45,9 @@ endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 	install -D private/telkom/mchillispot.webhotspot httpd/ej_temp/chillispotm.webhotspot
 endif
-ifeq ($(CONFIG_CHILLILOCAL),y)
-	install -D $(CHILLIDIR)/config/fon.webhotspot httpd/ej_temp/fon.webhotspot
-endif
+#ifeq ($(CONFIG_CHILLILOCAL),y)
+#	install -D $(CHILLIDIR)/config/fon.webhotspot httpd/ej_temp/fon.webhotspot
+#endif
 ifeq ($(CONFIG_HOTSPOT),y)
 	install -D $(CHILLIDIR)/config/3hotss.webhotspot httpd/ej_temp/3hotss.webhotspot
 endif
@@ -62,10 +62,6 @@ ifneq ($(CONFIG_FON),y)
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 	install -D private/telkom/mchillispot.webhotspot $(INSTALLDIR)/chillispot/etc/config/chillispotm.webhotspot
-endif
-ifeq ($(CONFIG_CHILLILOCAL),y)
-	install -D $(CHILLIDIR)/config/fon.nvramconfig $(INSTALLDIR)/chillispot/etc/config/fon.nvramconfig
-	install -D $(CHILLIDIR)/config/fon.webhotspot $(INSTALLDIR)/chillispot/etc/config/fon.webhotspot
 endif
 ifeq ($(CONFIG_HOTSPOT),y)
 	install -D $(CHILLIDIR)/config/hotss.nvramconfig $(INSTALLDIR)/chillispot/etc/config/hotss.nvramconfig
