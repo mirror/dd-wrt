@@ -29,6 +29,7 @@ function openGeotool(IP) {
 					<div class="label"><% tran("status_router.net_conntrack"); %></div>
 					<% dumpip_conntrack(); %>
 				</div><br />
+				<fieldset>
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
 					<tr>
 						<th sortdir="up">  <% tran("filterSum.polnum"); %></th>
@@ -41,12 +42,12 @@ function openGeotool(IP) {
 					</tr>
 					<% ip_conntrack_table(); %>
 				</table>
+				</fieldset><br />
 				<script type="text/javascript">
 				//<![CDATA[
 				var t = new SortableTable(document.getElementById('conntrack_table'), 4000);
 				//]]>
 				</script>
-				<br />
 				<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[

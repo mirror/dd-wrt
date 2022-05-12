@@ -29,7 +29,8 @@ function filter_del(F) {
 					<% filter_summary_show(); %>
 				</tbody>
 			</table>
-			<div align="right">
+			<br />
+			<div class="submitFooter">
 				<script type="text/javascript">
 					//<![CDATA[
 					document.write("<input class=\"button\" type=\"button\" value=\"" + share.del + "\" onclick=\"filter_del(this.form);\" />");
