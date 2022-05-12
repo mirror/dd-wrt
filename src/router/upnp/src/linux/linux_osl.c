@@ -573,8 +573,9 @@ upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 int
 upnp_osl_wan_ip(struct in_addr *inaddr)
 {
+	char wan_if_buffer[33];
 	inaddr->s_addr = 0;
-	char *wanface = get_wan_face();
+	char *wanface = safe_get_wan_face(wan_if_buffer);
 	int status = 0;
 	if (upnp_osl_ifaddr(wanface, inaddr) == 0) {
 		if (inaddr->s_addr != 0) {
