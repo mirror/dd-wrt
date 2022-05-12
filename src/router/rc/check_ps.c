@@ -52,7 +52,8 @@ static int search_process(char *name, int count)
 
 static int check_igmprt(void)
 {
-	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
+	char wan_if_buffer[33];
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return 0;
 	return !search_process("igmprt", 1);
 }
@@ -73,7 +74,9 @@ static int check_plex(void)
 
 static int check_ddns(void)
 {
-	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
+	char wan_if_buffer[33];
+
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return 0;
 	return !search_process("inadyn", 1);
 }
