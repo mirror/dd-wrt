@@ -63,6 +63,7 @@ void start_speedchecker_init(void)
 
 void start_speedchecker(void)
 {
+	char wan_if_buffer[33];
 	start_speedchecker_init();
 	if (nvram_matchi("speedchecker_enable", 1)) {
 		sysprintf("SCC_JID=\"%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s|\" SCC_SRV=\"xmpp.speedcheckerapi.com\" SCC_STATS_IF=%s SCC_RNAME=\"%s\" scc &\n",	//
@@ -70,7 +71,7 @@ void start_speedchecker(void)
 			  SCVERSION,	//
 			  PSVN_REVISION,	//
 			  nvram_safe_get("os_version"),	//
-			  get_wan_face(),	//
+			  safe_get_wan_face(wan_if_buffer),	//
 			  nvram_safe_get("DD_BOARD"));
 		dd_loginfo("speedchecker", "client started\n");
 	}

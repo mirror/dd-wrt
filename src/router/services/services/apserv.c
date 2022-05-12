@@ -32,7 +32,8 @@ void stop_apserv(void);
 
 void start_apserv(void)
 {
-	char *wan_ifname = get_wan_face();
+	char wan_if_buffer[33];
+	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 	int ret;
 
 	if (nvram_matchi("apserv_enable", 0)) {

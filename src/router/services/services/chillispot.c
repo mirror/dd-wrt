@@ -161,6 +161,7 @@ void stop_chilli(void)
 void main_config(void)
 {
 	int log_level = 0;
+	char wan_if_buffer[33];
 
 	FILE *fp;
 	log_level = nvram_geti("log_level");
@@ -212,8 +213,8 @@ void main_config(void)
 //              fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");    // clamp when fw clamping is off   
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
 	} else {
-		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", get_wan_face(), get_wan_ipaddr());
-		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", get_wan_face(), get_wan_ipaddr());
+		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
+		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
 	}
 	// enable Reverse Path Filtering to prevent double outgoing packages
 	if (chilli_enable && !hss_enable) {
@@ -245,7 +246,7 @@ void main_config(void)
 //              fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
 	} else
-		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", get_wan_face(), get_wan_ipaddr());
+		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n", safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
 	fclose(fp);
 
 	chmod("/tmp/chilli/ip-up.sh", 0700);

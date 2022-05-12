@@ -32,11 +32,12 @@ void stop_igmprt(void);
 void start_igmprt(void)
 {
 	int ret = 0;
+	char wan_if_buffer[33];
 	char name[80], *next, *svbuf;
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
-	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
@@ -54,10 +55,10 @@ void start_igmprt(void)
 	fromvlan |= (nvram_match("wan_proto", "dhcp_auth") && nvram_exists("tvnicfrom"));
 
 	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) && nvram_match("wan_proto", "pppoe")) || !fromvlan) {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", safe_get_wan_face(wan_if_buffer));
 	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1 altnet 0.0.0.0/0\n", nvram_safe_get("tvnicfrom"));
-		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+		fprintf(fp, "phyint %s disabled\n", safe_get_wan_face(wan_if_buffer));
 	}
 	if (nvram_matchi("block_multicast", 0)) {
 		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
@@ -69,7 +70,7 @@ void start_igmprt(void)
 
 	getIfLists(ifnames, 256);
 	foreach(name, ifnames, next) {
-		if (strcmp(get_wan_face(), name)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), name)
 		    && strcmp(nvram_safe_get("lan_ifname"), name)
 		    && strcmp(nvram_safe_get("tvnicfrom"), name)) {
 			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name))

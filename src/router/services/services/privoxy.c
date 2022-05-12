@@ -38,6 +38,7 @@
 
 void start_privoxy(void)
 {
+	char wan_if_buffer[33];
 	if (!nvram_matchi("privoxy_enable", 1))
 		return;
 
@@ -71,7 +72,7 @@ void start_privoxy(void)
 		getIfLists(vifs, 256);
 		char vif_ip[32];
 		foreach(var, vifs, next) {
-			if (strcmp(get_wan_face(), var)
+			if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
 					sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
@@ -126,6 +127,7 @@ void start_privoxy(void)
 
 void stop_privoxy(void)
 {
+	char wan_if_buffer[33];
 	char *ip = nvram_safe_get("lan_ipaddr");
 	char *wan = get_wan_ipaddr();
 	char *mask = nvram_safe_get("lan_netmask");
@@ -144,7 +146,7 @@ void stop_privoxy(void)
 	getIfLists(vifs, 256);
 	char vif_ip[32];
 	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
+		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);

@@ -378,6 +378,7 @@ void create_openvpnserverrules(FILE * fp)
 
 void start_openvpnserver(void)
 {
+	char wan_if_buffer[33];
 	int jffs = 0;
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
@@ -698,6 +699,7 @@ void stop_openvpnserversys(void)
 
 void start_openvpn(void)
 {
+	char wan_if_buffer[33];
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	insmod("tun");
@@ -724,13 +726,13 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_killswitch", 1) && nvram_invmatch("openvpncl_spbr", "1")) {	//if no VPN PBR and killswitch active, activate general killswitch
 		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN ");
 		//eval("restart" , "firewall");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
-		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
-		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
 		//todo set IN_IF to deal with WAP
-		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
-		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval("iptables", "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
 #ifdef HAVE_SFE
 		if (nvram_match("sfe", "1")) {
@@ -984,6 +986,7 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
+	char wan_if_buffer[33];
 	nvram_unset("openvpn_get_dns");
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
 		//remove ebtables rules on shutdown. done with route-down script
@@ -1002,10 +1005,10 @@ void stop_openvpn(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
-		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", get_wan_face());
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
 		eval("/usr/bin/controlovpnwdog.sh", "0");
 	}
@@ -1013,6 +1016,8 @@ void stop_openvpn(void)
 
 void stop_openvpn_wandone(void)
 {
+	char wan_if_buffer[33];
+
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
@@ -1043,10 +1048,10 @@ void stop_openvpn_wandone(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
-		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", get_wan_face());
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
 		eval("/usr/bin/controlovpnwdog.sh", "0");
 	}

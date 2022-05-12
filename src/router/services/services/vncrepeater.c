@@ -48,11 +48,12 @@ char *vncrepeater_proc(void)
 void stop_vncrepeater(void);
 void start_vncrepeater(void)
 {
+	char wan_if_buffer[33];
 	stop_vncrepeater();
 	if (!nvram_matchi("vncr_enable", 1))
 		return;
-	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
-	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
+	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "5900", "-j", "ACCEPT");
+	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "5500", "-j", "ACCEPT");
 
 	FILE *fp = fopen("/tmp/vncrepeater.ini", "wb");
 	fprintf(fp, "[general]\n");
@@ -81,8 +82,9 @@ void start_vncrepeater(void)
 
 void stop_vncrepeater(void)
 {
-	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
-	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
+	char wan_if_buffer[33];
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "5900", "-j", "ACCEPT");
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "5500", "-j", "ACCEPT");
 	stop_process("vncrepeater", "daemon");
 	nvram_delstates(vncrepeater_deps());
 }
