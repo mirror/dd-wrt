@@ -250,7 +250,8 @@ addEvent(window, "unload", function() {
 		<input type="hidden" name="services_length6" />
 		<input type="hidden" name="services_length7" />
 		<div>
-		    <h2><% tran("portserv.h2"); %></h2>
+			<h2><% tran("portserv.h2"); %></h2>
+			<fieldset>
 			<div class="setting">
 				<div class="label"><% tran("share.srv"); %></div>
 				<input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,share.srv)" />
@@ -292,7 +293,8 @@ addEvent(window, "unload", function() {
 							</script>
 					</select>
 				</div>
-			</div><br />
+			</fieldset>
+		</div><br />
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[
