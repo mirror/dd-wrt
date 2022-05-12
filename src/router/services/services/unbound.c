@@ -33,6 +33,7 @@ extern void genHosts(void);
 
 static void unbound_config(void)
 {
+	char wan_if_buffer[33];
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
@@ -104,7 +105,7 @@ static void unbound_config(void)
 		getIfLists(vifs, 256);
 		char var[256], *wordlist, *next;
 		foreach(var, vifs, next) {
-			if (strcmp(get_wan_face(), var)
+			if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);

@@ -165,6 +165,7 @@ void start_heartbeat_redial(void)
  */
 int hb_connect_main(int argc, char **argv)
 {
+	char wan_if_buffer[33];
 	FILE *fp;
 
 	openlog("heartbeat", LOG_PID, LOG_DAEMON);
@@ -180,9 +181,9 @@ int hb_connect_main(int argc, char **argv)
 	fprintf(fp, "%s", argv[2]);
 	fclose(fp);
 
-	wan_done(get_wan_face());
+	wan_done(safe_get_wan_face(wan_if_buffer));
 
-	sysprintf("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", get_wan_face(), argv[3], nvram_safe_get("wan_ipaddr"), argv[1]);
+	sysprintf("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", safe_get_wan_face(wan_if_buffer), argv[3], nvram_safe_get("wan_ipaddr"), argv[1]);
 
 	return TRUE;
 }

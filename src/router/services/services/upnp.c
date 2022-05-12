@@ -32,9 +32,10 @@ void stop_upnp(void);
 
 void start_upnp(void)
 {
+	char wan_if_buffer[33];
 	if (nvram_match("wan_proto", "disabled"))
 		return;
-	char *wan_ifname = get_wan_face();
+	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 	int ret;
 
 	if (nvram_matchi("upnp_enable", 0)) {

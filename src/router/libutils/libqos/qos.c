@@ -532,7 +532,8 @@ static void add_hfsc_class(const char *dev, int parent, int class, long long rat
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
 {
-	char *wan_dev = get_wan_face();
+	char wan_if_buffer[33];
+	char *wan_dev = safe_get_wan_face(wan_if_buffer);
 
 	unsigned int uplimit = nvram_geti("wshaper_uplink");
 	unsigned int downlimit = nvram_geti("wshaper_downlink");

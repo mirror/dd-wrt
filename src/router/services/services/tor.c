@@ -55,6 +55,7 @@ void stop_tor(void)
 
 void start_tor(void)
 {
+	char wan_if_buffer[33];
 	int ret;
 	char *tor_argv[] = { "tor", "--defaults-torrc", "/tmp/torrc",
 		NULL
@@ -72,7 +73,7 @@ void start_tor(void)
 	const char *ipv6addr = NULL;
 	char buf[INET6_ADDRSTRLEN];
 	if (nvram_match("ipv6_typ", "ipv6native"))
-		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
@@ -96,7 +97,7 @@ void start_tor(void)
 
 //      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_matchi("tor_relay", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "9001", "-j", "ACCEPT");
+		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9001", "-j", "ACCEPT");
 		fprintf(fp, "ORPort 9001\n");
 		fprintf(fp, "ExitRelay 1\n");
 #ifdef HAVE_IPV6
@@ -108,7 +109,7 @@ void start_tor(void)
 
 	}
 	if (nvram_matchi("tor_dir", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "9030", "-j", "ACCEPT");
+		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j", "ACCEPT");
 		fprintf(fp, "DirPort 9030\n");
 	}
 	if (nvram_matchi("tor_bridge", 1))

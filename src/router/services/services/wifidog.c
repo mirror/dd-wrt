@@ -31,6 +31,7 @@
 // unfinished. do not use
 void start_wifidog(void)
 {
+	char wan_if_buffer[33];
 	if (nvram_matchi("wd_enable", 1)) {
 		insmod("ipt_mark ipt_mac xt_mark xt_mac");
 		mkdir("/tmp/wifidog/", 0744);
@@ -41,7 +42,7 @@ void start_wifidog(void)
 		else
 			fprintf(fp, "GatewayID %s\n", nvram_safe_get("wd_gwid"));
 		if (nvram_invmatch("wan_proto", "disabled"))	//WIP
-			fprintf(fp, "ExternalInterface %s\n", get_wan_face());
+			fprintf(fp, "ExternalInterface %s\n", safe_get_wan_face(wan_if_buffer));
 		else
 			fprintf(fp, "ExternalInterface %s\n", nvram_safe_get("wd_extiface"));
 		fprintf(fp, "GatewayInterface %s\n", nvram_safe_get("wd_iface"));

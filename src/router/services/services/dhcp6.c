@@ -57,6 +57,7 @@
 
 void start_dhcp6c(void)
 {
+	char wan_if_buffer[33];
 	FILE *fp, *fpc;
 	char *buf;
 	int prefix_len;
@@ -113,7 +114,7 @@ void start_dhcp6c(void)
 				" send ia-pd 0;\n"	//
 				" send rapid-commit;\n"	//
 				" request domain-name-servers;\n"	//
-				" script \"/sbin/dhcp6c-state\";\n", get_wan_face());
+				" script \"/sbin/dhcp6c-state\";\n", safe_get_wan_face(wan_if_buffer));
 
 /*#define DH6OPT_USER_CLASS 15
 #define DH6OPT_VENDOR_CLASS 16
@@ -175,7 +176,7 @@ void start_dhcp6c(void)
 			fclose(fpc);
 		}
 	}
-	char *wan_ifname = get_wan_face();
+	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 #ifndef HAVE_MICRO
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
