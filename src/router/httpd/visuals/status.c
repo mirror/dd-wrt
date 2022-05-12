@@ -88,6 +88,7 @@ EJ_VISIBLE void ej_localtime(webs_t wp, int argc, char_t ** argv)
 
 void nvram_status_get(webs_t wp, char *type, int trans)
 {
+	char wan_if_buffer[33];
 	char *wan_ipaddr, *wan_netmask, *wan_gateway;
 	char *status1 = "", *status2 = "", *hidden1, *hidden2, *button1 = "";
 	char *wan_proto = nvram_safe_get("wan_proto");
@@ -196,13 +197,13 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		char buf[INET6_ADDRSTRLEN];
 		char strbuf[128];
 		if (nvram_match("ipv6_typ", "ipv6native"))
-			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4"))
 			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd"))
 			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 		if (!ipv6addr)
-			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);	// try wan if all other fails
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s", trans == 2 ? tran_string(strbuf, sizeof(strbuf), "share.disabled") : live_translate(wp, "share.disabled"));
 		} else {

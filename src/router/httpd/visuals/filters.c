@@ -321,6 +321,7 @@ EJ_VISIBLE void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
 {
+	char wan_if_buffer[33];
 	if (argc < 1)
 		return;
 	char *ifname = argv[0];
@@ -337,7 +338,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
 	for (i = 1; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
-	char *wanface = get_wan_face();
+	char *wanface = safe_get_wan_face(wan_if_buffer);
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"), !strcmp(ifs, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *next;
 	char var[80];
