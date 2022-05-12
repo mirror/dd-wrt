@@ -3274,7 +3274,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wd_extiface", "" },
 #endif
 
-#ifdef HAVE_CHILLISPOT
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 	{ "fon_usernames", "0" },
 	{ "fon_userlist", "" },
