@@ -185,6 +185,7 @@ int containsMAC(char *ip)
 
 static void do_aqos_check(void)
 {
+	char wan_if_buffer[33];
 	if (!nvram_invmatchi("wshaper_enable", 0))
 		return;
 	if (nvram_matchi("qos_done", 0))
@@ -227,7 +228,7 @@ static void do_aqos_check(void)
 	while (fgetc(arp) != '\n') ;
 
 	while (!feof(arp) && fscanf(arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf, dev_buf) == 6) {
-		char *wan = get_wan_face();
+		char *wan = safe_get_wan_face(wan_if_buffer);
 
 		if (wan && *wan && !strcmp(dev_buf, wan))
 			continue;
