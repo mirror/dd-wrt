@@ -1,3 +1,4 @@
+<div id="idchilli">
 <fieldset>
 	<legend><% tran("hotspot.fon_chilli"); %></legend>
 	<input type="hidden" name="fon_userlist" value="13" />
@@ -20,3 +21,4 @@
 		</script>
 	</div>
 </fieldset><br />
+</div>
