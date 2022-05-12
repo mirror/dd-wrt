@@ -18,6 +18,7 @@ body {
   background: #ccd;
 }
 textarea {
+  background: #f0f0f4;
   padding: 4px;
   font-size: 12px;
   line-height: 1.42857;
@@ -184,6 +185,15 @@ h2 {
   background: #bbc;
   border: 1px solid #bbc;
   padding: 1px 4px;
+  border-radius: 4px;
+}
+pre {
+  background: #bbc;
+  overflow: auto;
+  padding: 1em;
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-wrap;
   border-radius: 4px;
 }
 fieldset {
@@ -382,4 +392,14 @@ td .meter {
   height: 14px;
   margin-bottom: 2px;
   width: 100px;
+}
+form[name='wds'] .label {
+  width: 14.111em;
+}
+form[name='wds'] select {
+  margin-right: .562em;
+  margin-top: .1rem;
+}
+form[name='wds'] input[size='25'] {
+  vertical-align: middle;
 }

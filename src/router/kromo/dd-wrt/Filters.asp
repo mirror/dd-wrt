@@ -425,7 +425,7 @@ addEvent(window, "unload", function() {
 									</script>
 									<script type="text/javascript">
 										//<![CDATA[
-										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 430);\" />");
+										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 480);\" />");
 										//]]>
 									</script>
 								</div>
