@@ -268,8 +268,8 @@ addEvent(window, "unload", function() {
 							</fieldset><br/>
 							<% has_routing("bgp","-->"); %>
 							<% has_routing("router","<!--"); %>
-							<legend><% tran("route.rip2_legend"); %></legend>
 							<fieldset>
+							<legend><% tran("route.rip2_legend"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("route.rip2_copt"); %></div>
 								<input class="spaceradio" type="radio" value="1" name="ripd_copt" <% nvc("ripd_copt","1"); %> onclick="show_layer_ext(this, 'idripd', true)" /><% tran("route.copt_gui"); %>&nbsp;
@@ -416,7 +416,7 @@ addEvent(window, "unload", function() {
 									<input name="route_advmss" size="5" maxlength="5" onblur="valid_range(this,28,8960,routetbl.advmss)" class="num" value="<% static_route_setting("advmss"); %>" />
 								</div>
 								<% ifndef("HAVE_PBR", "-->"); %>
-								<div class="center">
+								<div class="center"><br />
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 790, 600);\" />");
@@ -575,7 +575,7 @@ addEvent(window, "unload", function() {
 									<input name="rule_dport_from" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","0"); %>" /> ~ <input name="rule_dport_to" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","1"); %>" />
 								</div>
 							<% ifndef("HAVE_EXT_IPROUTE", "-->"); %>
-								<div class="center">
+								<div class="center"><br />
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.policytab + "\" onclick=\"openWindow('RuleTable.asp', 1090, 600);\" />");

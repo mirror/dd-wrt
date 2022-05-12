@@ -26,7 +26,7 @@
   text-align: right;
   vertical-align: middle;
 }
-body, .popup_bg {
+body, .popup_bg, .iplookup {
   background: var(--bg-1);
   color: var(--v9-7);
   text-rendering: optimizeLegibility;

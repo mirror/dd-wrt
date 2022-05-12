@@ -100,7 +100,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
-	websWrite(wp, "</table>\n");
+	websWrite(wp, "</table><br />\n");
 	char var[32];
 
 	sprintf(var, "%d", totalcount);
