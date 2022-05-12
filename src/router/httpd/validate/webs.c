@@ -5295,6 +5295,7 @@ void changepass(webs_t wp)
 	nvram_async_commit();
 }
 
+#ifdef HAVE_CHILLI
 #ifdef HAVE_CHILLILOCAL
 
 void user_remove(webs_t wp)
@@ -5307,6 +5308,7 @@ void user_add(webs_t wp)
 	macro_add("fon_usernames");
 	// validate_userlist(wp);
 }
+#endif
 #endif
 
 #ifdef HAVE_RADLOCAL
