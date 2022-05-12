@@ -2516,6 +2516,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
 			websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
+	} else {
+	    style_dark = NULL;
 	}
 #endif
 	websWrite(stream,	//
