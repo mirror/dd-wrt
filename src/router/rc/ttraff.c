@@ -136,6 +136,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 static int ttraff_main(int argc, char **argv)
 {
 
+	char wan_if_buffer[33];
 	switch (fork()) {
 	case -1:
 		// can't fork
@@ -191,7 +192,7 @@ static int ttraff_main(int argc, char **argv)
 	FILE *in;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface"))
-		strncpy(wanface, get_wan_face(), sizeof(wanface));
+		strncpy(wanface, safe_get_wan_face(wan_if_buffer), sizeof(wanface));
 	else
 		strncpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface));
 	strcat(wanface, ":");
