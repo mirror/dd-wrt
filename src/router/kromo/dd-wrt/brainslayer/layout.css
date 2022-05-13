@@ -263,7 +263,7 @@ input.button[onclick*="do_show"] {
 }
 input.button[name="refresh_button"] {
   top: 11.5em;
-  left: 3.5rem;
+  left: 1.5rem;
   right: 8rem;
   position: relative;
 }
