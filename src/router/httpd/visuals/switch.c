@@ -125,9 +125,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
-		websWrite(wp, "<th>WAN</th>\n");
+		websWrite(wp, "<th class=\"center\">WAN</th>\n");
 	for (a = 1; a < lanports + 1; a++) {
-		websWrite(wp, "<th>%d</th>\n", a);
+		websWrite(wp, "<th class=\"center\">%d</th>\n", a);
 	}
 	websWrite(wp, "</tr>\n");
 
@@ -167,11 +167,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<th class=\"center\" rowspan=\"2\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<th>WAN</th>\n");
-	websWrite(wp, "<th>1</th>\n");
-	websWrite(wp, "<th>2</th>\n");
-	websWrite(wp, "<th>3</th>\n");
-	websWrite(wp, "<th>4</th>\n");
+	websWrite(wp, "<th class=\"center\">WAN</th>\n");
+	websWrite(wp, "<th class=\"center\">1</th>\n");
+	websWrite(wp, "<th class=\"center\">2</th>\n");
+	websWrite(wp, "<th class=\"center\">3</th>\n");
+	websWrite(wp, "<th class=\"center\">4</th>\n");
 	websWrite(wp, "</tr>\n");
 
 	// Status header
