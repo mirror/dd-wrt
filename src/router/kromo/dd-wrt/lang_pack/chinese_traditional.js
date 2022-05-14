@@ -1244,7 +1244,7 @@ service.rstats_usrdir="用戶指南";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS 通道";
-service.nstx_srv="IP over DNS";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="打開除錯訊息";
 

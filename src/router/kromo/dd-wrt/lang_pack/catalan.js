@@ -1425,7 +1425,7 @@ service.rstats_usrdir="Directori d'Usuari";
 
 //nstx.webservices
 service.nstx_legend="Tunelització de IP sobre DNS";
-service.nstx_srv="Dimoni nstx";
+service.nstx_srv="Dimoni NSTX";
 service.nstx_ipenable="Ligar a aquet IP només";
 service.nstx_log="Activa els missatges de depuració";
 
