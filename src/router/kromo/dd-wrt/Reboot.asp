@@ -52,7 +52,6 @@ addEvent(window, "unload", function() {
 	
 	<body>
 		<div class="message">
-			<div>
 			<form>
 				<% tran("success.success_reboot"); %><br /><br />
 				<!-- centering progressbar via CSS margin: 0 auto -->
@@ -82,7 +81,6 @@ addEvent(window, "unload", function() {
 			</script>
 			</div>
 			</form>
-			</div>
 		</div>
 	</body>
 </html>
