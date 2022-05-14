@@ -1421,17 +1421,7 @@ int nvram_backup(char *filename);
 
 int nvram_restore(char *filename, int force);
 
-const char *_getdefaultconfig(char *path, char *configname);
-
-#define getdefaultconfig(configname) \
-	({ \
-	const char *__ret = NULL; \
-	do { \
-		char def_path[64]; \
-		__ret = _getdefaultconfig(def_path, configname); \
-	} while(0); \
-	__ret; \
-	})
+const char *getdefaultconfig(char *path, char *configname);
 
 void nvram_clear(void);
 int nvram_critical(char *name);

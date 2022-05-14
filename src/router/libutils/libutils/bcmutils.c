@@ -384,7 +384,7 @@ int weekday(int month, int day, int year)
 
 }
 
-const char *_getdefaultconfig(char *path, char *configname)
+const char *getdefaultconfig(char *path, char *configname)
 {
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r");	//test if custom config is available
