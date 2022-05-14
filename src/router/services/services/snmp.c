@@ -34,7 +34,6 @@
 #include <services.h>
 #include "snmp.h"
 
-#define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
 char *snmp_deps(void)
 {
 	return "snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity";
