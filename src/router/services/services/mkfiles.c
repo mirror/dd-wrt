@@ -154,10 +154,6 @@ void start_mkfiles(void)
 	mkdir("/var/log", 0700);
 	eval("touch", "/var/log/messages");
 	cprintf("%s:%d", __func__, __LINE__);
-
-#ifdef HAVE_SNMP
-	mkdir("/var/snmp", 0700);
-#endif
 	chmod("/tmp", 0777);
 	cprintf("%s:%d", __func__, __LINE__);
 
