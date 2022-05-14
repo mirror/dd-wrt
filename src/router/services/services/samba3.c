@@ -287,7 +287,7 @@ void start_samba3(void)
 	}
 	char c1[64];
 	char c2[64];
-	eval("ksmbd.mountd", "-c", _getdefaultconfig(c1, "smb.conf"), "-u", _getdefaultconfig(c2, "smb.db"));
+	eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
