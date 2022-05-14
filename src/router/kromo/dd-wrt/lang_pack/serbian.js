@@ -1488,7 +1488,7 @@ service.rstats_usrdir="Кориснички Директоријум";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Вежи за ову IP искључиво";
 service.nstx_log="Укључи debug поруке";
 

@@ -1432,7 +1432,7 @@ service.rstats_usrdir="Director utilizator";
 
 //nstx.webservices
 service.nstx_legend="Creare tunel IP peste DNS";
-service.nstx_srv="Daemon nstx";
+service.nstx_srv="Daemon NSTX";
 service.nstx_ipenable="Unește doar cu acest IP";
 service.nstx_log="Pornește mesajele de depanare";
 

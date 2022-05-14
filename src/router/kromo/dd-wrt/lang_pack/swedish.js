@@ -1292,7 +1292,7 @@ service.rstats_usrdir="Anv&auml;ndarmapp";
 
 //nstx.webservices
 service.nstx_legend="IP &ouml;ver DNS Tunnel";
-service.nstx_srv="nstx Tj&auml;nst";
+service.nstx_srv="NSTX Tj&auml;nst";
 service.nstx_ipenable="Bind till denna IP endast";
 service.nstx_log="Sl&aring; p&aring; Fels&ouml;kning";
 //ttraff.webservices

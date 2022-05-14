@@ -2045,7 +2045,7 @@ service.rstats_usrdir="User Directory";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
