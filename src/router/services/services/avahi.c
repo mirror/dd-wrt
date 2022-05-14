@@ -38,6 +38,7 @@
 
 void start_mdns(void)
 {
+	char path[64];
 	char conffile[64];
 	if (!nvram_matchi("mdns_enable", 1))
 		return;
@@ -225,7 +226,7 @@ void start_mdns(void)
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
-		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig("avahi-dbus.conf"));
+		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig(path, "avahi-dbus.conf"));
 		sysprintf("/usr/sbin/dbus-launch %s", conffile);
 		//sysprintf("/usr/sbin/dbus-daemon --syslog --fork --print-pid --print-address %s", conffile);
 		//eval("/usr/sbin/dbus-daemon", "--syslog", "--fork", "--print-pid", "print-address", conffile);  //does not work
@@ -235,7 +236,7 @@ void start_mdns(void)
 		char command[128];
 		char buffer[256]= { 0 };
 		//syslog(LOG_INFO, "dbus-launch : popen\n");
-		snprintf(command, sizeof(command), "/usr/sbin/dbus-launch --config-file=%s 2>&1", getdefaultconfig("avahi-dbus.conf"));
+		snprintf(command, sizeof(command), "/usr/sbin/dbus-launch --config-file=%s 2>&1", getdefaultconfig(path, "avahi-dbus.conf"));
 		dd_loginfo("dbus-launch", "dbus popen with command: %s \n", command);
 		pf = popen(command, "r");
 			if(!pf){
@@ -252,7 +253,7 @@ void start_mdns(void)
 	if (pidof("avahi-daemon") > 0) {
 		dd_loginfo("avahi-daemon", "avahi-daemon already running\n");	//syslog(LOG_INFO, "Avahi-daemon : Avahi-daemon already running\n");
 	} else {
-		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns.conf"));
+		snprintf(conffile, sizeof(conffile), getdefaultconfig(path, "mdns.conf"));
 		eval("/usr/sbin/avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
 		dd_loginfo("avahi-daemon", "providing mdns services conf-file: %s\n", conffile);
 	}

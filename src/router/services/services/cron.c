@@ -150,9 +150,9 @@ void start_cron(void)
 	}
 #endif
 #ifdef HAVE_RAID
-		fp = fopen("/tmp/cron.d/fscheck", "w");
-		fprintf(fp, "* * * * 1 root /sbin/service fscheck\n");
-		fclose(fp);
+	fp = fopen("/tmp/cron.d/fscheck", "w");
+	fprintf(fp, "* * * * 1 root /sbin/service fscheck\n");
+	fclose(fp);
 
 #endif
 

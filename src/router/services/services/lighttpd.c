@@ -38,6 +38,7 @@
 
 void start_lighttpd(void)
 {
+	char path[64];
 	if (!nvram_matchi("lighttpd_enable", 1))
 		return;
 
@@ -131,7 +132,7 @@ void start_lighttpd(void)
 		fclose(fp);
 	}
 
-	eval("lighttpd", "-f", getdefaultconfig("lighttpd.conf"));
+	eval("lighttpd", "-f", getdefaultconfig(path, "lighttpd.conf"));
 
 	dd_loginfo("lighttpd", "lighttpd started\n");
 	return;

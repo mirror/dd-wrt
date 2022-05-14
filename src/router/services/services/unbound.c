@@ -159,12 +159,13 @@ static void unbound_config(void)
 
 void start_unbound(void)
 {
+	char path[64];
 	FILE *fp = NULL;
 
 	if (nvram_matchi("recursive_dns", 1)) {
 		update_timezone();
 		unbound_config();
-		eval("unbound", "-c", getdefaultconfig("unbound.conf"));
+		eval("unbound", "-c", getdefaultconfig(path, "unbound.conf"));
 
 		dd_loginfo("unbound", "recursive dns resolver daemon successfully started\n");
 	}
