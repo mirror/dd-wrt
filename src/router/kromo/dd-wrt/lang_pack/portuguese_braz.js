@@ -1495,7 +1495,7 @@ service.rstats_usrdir="Diretório de Usuário";
 
 //nstx.webservices
 service.nstx_legend="Tunelamento de IP sobre DNS";
-service.nstx_srv="Daemon nstx";
+service.nstx_srv="Daemon NSTX";
 service.nstx_ipenable="Atribuir só a este IP";
 service.nstx_log="Ativar mensagens de depuração";
 

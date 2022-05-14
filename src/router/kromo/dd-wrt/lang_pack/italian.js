@@ -1721,7 +1721,7 @@ service.rstats_usrdir="Directory Utente";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Associa solo a questo IP";
 service.nstx_log="Abilita i messaggi di debug";
 

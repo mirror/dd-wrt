@@ -1440,7 +1440,7 @@ service.rstats_usrdir="каталог пользователя";
 
 //nstx.webservices
 service.nstx_legend="Туннель IP через DNS";
-service.nstx_srv="Демон nstx";
+service.nstx_srv="Демон NSTX";
 service.nstx_ipenable="Связать только с данным IP";
 service.nstx_log="Включить отладочные сообщения";
 

@@ -1720,7 +1720,7 @@ service.rstats_usrdir="사용자 디렉터리";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS 터널링";
-service.nstx_srv="nstx 데몬";
+service.nstx_srv="NSTX 데몬";
 service.nstx_ipenable="이 IP에만 바인드";
 service.nstx_log="디버그 메시지 교환";
 

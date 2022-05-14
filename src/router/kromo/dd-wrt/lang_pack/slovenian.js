@@ -1478,7 +1478,7 @@ service.rstats_usrdir="Uporabnikov imenik";
 
 //nstx.webservices
 service.nstx_legend="IP preko DNS tuneliranje";
-service.nstx_srv="nstx demon";
+service.nstx_srv="NSTX demon";
 service.nstx_ipenable="Veži samo na ta IP";
 service.nstx_log="Sporočila za razhroščevanje";
 
