@@ -1,4 +1,4 @@
-<div>
+
 	<fieldset>
 		<legend><% tran("management.psswd_legend"); %></legend>
 		<div class="setting">
@@ -200,4 +200,3 @@
 			<input class="spaceradio" type="radio" name="zebra_enable" value="0" <% nvram_checked("zebra_enable", "0"); %> /><% tran("share.disable"); %>
 		</div>
 	</fieldset><br />
-</div>
