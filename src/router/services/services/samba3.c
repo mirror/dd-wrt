@@ -61,10 +61,12 @@ static void free_users(struct samba3_share *cs)
 	}
 
 }
+
 void stop_samba3(void);
 
 void start_samba3(void)
 {
+	char path[64];
 	struct samba3_share *cs, *csnext;
 	struct samba3_shareuser *csu, *csunext;
 	struct samba3_user *samba3users, *cu, *cunext;
@@ -172,7 +174,8 @@ void start_samba3(void)
 			"printing = none\n"
 #endif
 			"load printers = No\n"	//
-			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_guest"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
+			"usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"), nvram_safe_get("samba3_guest"),
+			nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
 #ifdef HAVE_SMBD
 		if (!strncmp(smbmaxproto, "SMB3", 4))
@@ -243,21 +246,21 @@ void start_samba3(void)
 	char conffile[64];
 
 #ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf")))
+	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
-		eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf"));
-	eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig("smb.conf"));
+		eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+	eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 	if (pidof("nmbd") <= 0) {
-		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig("smb.conf"));
+		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 	}
 	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf")))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
-			eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf"));
+			eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 	}
 #ifdef HAVE_SAMBA4
-	eval("/usr/sbin/winbindd", "-D", "-s", getdefaultconfig("smb.conf"));
+	eval("/usr/sbin/winbindd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 #endif
 #else
 	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//

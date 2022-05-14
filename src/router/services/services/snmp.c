@@ -47,50 +47,35 @@ char *snmp_proc(void)
 
 void start_snmp(void)
 {
-
-	char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
+	char path[64];
+	char *snmpd_argv[] = { "snmpd", "-c", getdefaultconfig(path, "snmpd.conf"), NULL };
 	FILE *fp = NULL;
 	stop_snmp();
 
 	if (!nvram_invmatchi("snmpd_enable", 0))
 		return;
-#ifdef HAVE_NEXTMEDIA
-	if (f_exists("/jffs/etc/snmpd.conf")) {
-		sysprintf("ln -s /jffs/etc/snmpd.conf " SNMP_CONF_FILE);
-	} else {
-#endif
 
-		fp = fopen(SNMP_CONF_FILE, "w");
-		if (NULL == fp)
-			return;
+	fp = fopen(getdefaultconfig(path, "snmpd.conf"), "w");
+	if (NULL == fp)
+		return;
 
-		if (*(nvram_safe_get("snmpd_syslocation")))
-			fprintf(fp, "syslocation %s\n", nvram_safe_get("snmpd_syslocation"));
-		if (*(nvram_safe_get("snmpd_syscontact")))
-			fprintf(fp, "syscontact %s\n", nvram_safe_get("snmpd_syscontact"));
-		if (*(nvram_safe_get("snmpd_sysname")))
-			fprintf(fp, "sysname %s\n", nvram_safe_get("snmpd_sysname"));
-		if (*(nvram_safe_get("snmpd_rocommunity")))
-			fprintf(fp, "rocommunity %s\n", nvram_safe_get("snmpd_rocommunity"));
-		if (*(nvram_safe_get("snmpd_rwcommunity")))
-			fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
-		fprintf(fp, "sysservices 9\n");
-#ifdef HAVE_NEXTMEDIA
-		if (!f_exists("/jffs/custom_snmp/snmpd.tail")) {
-#endif
+	if (*(nvram_safe_get("snmpd_syslocation")))
+		fprintf(fp, "syslocation %s\n", nvram_safe_get("snmpd_syslocation"));
+	if (*(nvram_safe_get("snmpd_syscontact")))
+		fprintf(fp, "syscontact %s\n", nvram_safe_get("snmpd_syscontact"));
+	if (*(nvram_safe_get("snmpd_sysname")))
+		fprintf(fp, "sysname %s\n", nvram_safe_get("snmpd_sysname"));
+	if (*(nvram_safe_get("snmpd_rocommunity")))
+		fprintf(fp, "rocommunity %s\n", nvram_safe_get("snmpd_rocommunity"));
+	if (*(nvram_safe_get("snmpd_rwcommunity")))
+		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
+	fprintf(fp, "sysservices 9\n");
 #ifdef HAVE_RAYTRONIK
-			fprintf(fp, "pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
+	fprintf(fp, "pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
 #else
-			fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
+	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 #endif
-			fclose(fp);
-#ifdef HAVE_NEXTMEDIA
-		} else {
-			fclose(fp);
-			sysprintf("cat /jffs/custom_snmp/snmpd.tail >> " SNMP_CONF_FILE);
-		}
-	}
-#endif
+	fclose(fp);
 	_evalpid(snmpd_argv, NULL, 0, NULL);
 
 	cprintf("done\n");

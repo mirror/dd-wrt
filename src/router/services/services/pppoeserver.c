@@ -212,7 +212,6 @@ static void do_pppoeconfig(FILE * fp)
 		free_dns_list(dns_list);
 	}
 
-
 }
 
 void start_pppoeserver(void)

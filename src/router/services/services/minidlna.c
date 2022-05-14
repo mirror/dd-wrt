@@ -50,6 +50,7 @@ void stop_dlna(void);
 
 void start_dlna(void)
 {
+	char path[64];
 	struct dlna_share *dlna_shares, *cs, *csnext;
 	stop_dlna();
 	if (!nvram_matchi("dlna_enable", 1))
@@ -118,7 +119,7 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	eval("minidlna", "-f", getdefaultconfig("minidlna.conf"));
+	eval("minidlna", "-f", getdefaultconfig(path, "minidlna.conf"));
 	dd_loginfo("minidlna", "DLNA Media Server successfully started\n");
 
 	return;
