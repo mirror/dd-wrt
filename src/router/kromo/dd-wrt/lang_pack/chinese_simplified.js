@@ -1849,7 +1849,7 @@ service.rstats_usrdir="用户指南";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx 守护进程";
+service.nstx_srv="NSTX 守护进程";
 service.nstx_ipenable="只绑定到此IP";
 service.nstx_log="开启debug信息";
 

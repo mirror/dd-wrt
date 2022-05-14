@@ -1962,7 +1962,7 @@ service.rstats_usrdir="Katalog użytkownika";
 
 //nstx.webservices
 service.nstx_legend="Tunelowanie IP over DNS";
-service.nstx_srv="Demon nstx";
+service.nstx_srv="Demon NSTX";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 

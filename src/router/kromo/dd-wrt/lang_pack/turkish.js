@@ -1358,7 +1358,7 @@ service.rstats_usrdir="Kullanıcı Dizini";
 
 //nstx.webservices
 service.nstx_legend="DNS / IP Tüneli Oluşturma";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Yalnızca bu IP'ye bağla";
 service.nstx_log="Hata ayıklama mesajlarını aç";
 

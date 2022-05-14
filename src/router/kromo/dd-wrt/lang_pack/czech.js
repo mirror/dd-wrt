@@ -1975,7 +1975,7 @@ service.rstats_usrdir="Uživatelská složka";
 
 //nstx.webservices
 service.nstx_legend="IP přes DNS tunelování";
-service.nstx_srv="nstx Démon";
+service.nstx_srv="NSTX Démon";
 service.nstx_ipenable="Svázat pouze na tuto IP";
 service.nstx_log="Zapnutí ladících zpráv";
 
