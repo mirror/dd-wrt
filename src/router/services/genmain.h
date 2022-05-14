@@ -41,7 +41,7 @@ static void handle_procdeps(void)
 		state = nvram_states(deps);
 	}
 
-	if (proc_func) {
+	if (proc_func && state == 0) {
 		dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[function]);
 		char *proc = proc_func();
 		int pid = pidof(proc);
