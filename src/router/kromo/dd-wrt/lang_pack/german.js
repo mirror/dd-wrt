@@ -1754,7 +1754,7 @@ service.rstats_usrdir="Benutzer Verzeichnis";
 
 //nstx.webservices
 service.nstx_legend="IP über DNS tunneln";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Nur für diese IP verfügbar machen";
 service.nstx_log="Debug-Ausgabe aktivieren";
 

@@ -1334,7 +1334,7 @@ service.rstats_usrdir="Carpeta";
 
 //nstx.webservices
 service.nstx_legend="Tunel IP sobre DNS";
-service.nstx_srv="Demonio nstx";
+service.nstx_srv="Demonio NSTX";
 service.nstx_ipenable="Cegar a esta IP tan solo";
 service.nstx_log="Activar los mensajes de depuraci&oacute;n";
 

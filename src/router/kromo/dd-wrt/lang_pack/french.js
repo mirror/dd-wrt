@@ -1155,7 +1155,7 @@ service.rstats_usrdir="R&eacute;pertoire utilisateur";
 
 //nstx.webservices
 service.nstx_legend="Tunnel DNS";
-service.nstx_srv="D&eacute;mon nstx";
+service.nstx_srv="D&eacute;mon NSTX";
 service.nstx_ipenable="Limiter &agrave; une seule IP";
 service.nstx_log="Activer Debug";
 

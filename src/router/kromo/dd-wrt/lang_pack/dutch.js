@@ -1335,7 +1335,7 @@ service.rstats_usrdir="Gebruikers Directory";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="NSTX Daemon";
 service.nstx_ipenable="Alleen aan deze IP binden";
 service.nstx_log="Activeer Debug Berichten";
 
