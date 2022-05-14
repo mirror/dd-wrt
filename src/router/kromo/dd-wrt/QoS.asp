@@ -362,7 +362,7 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 640, 480);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 640, 500);\" />");
 									//]]>
 									</script>&nbsp;&nbsp;&nbsp;
 								</div>

@@ -64,13 +64,15 @@ addEvent(window, "unload", function() {
 			  		//]]>
 			  	</script>
 			</div>
-			<div id="mess" style="display:none"><br /><br />
+			<div id="mess" style="display: none"><br /><br />
 			<div style="text-align: left"><% tran("success.alert1"); %>
 				<ul>
 					<li><% tran("success.alert2"); %></li>
 					<li><% tran("success.alert3"); %></li>
 				</ul>
 			</div>
+			</div><br />
+			<div class="submitFooter">
 			<script type="text/javascript">
 			//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
@@ -78,8 +80,8 @@ addEvent(window, "unload", function() {
 					document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
 			//]]>
 			</script>
-		</div>
-				</form>
+			</div>
+			</form>
 			</div>
 		</div>
 	</body>
