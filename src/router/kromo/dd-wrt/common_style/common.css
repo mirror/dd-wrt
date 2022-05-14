@@ -242,9 +242,8 @@ li.current {
   width: 43em;
 }
 #main #contentsInfo div.col2r {
-  float: left;
+  float: right;
   width: 43em;
-  margin-left: .906em;
 }
 h2, h3 {
   padding: 4px 12px;
