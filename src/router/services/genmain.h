@@ -41,16 +41,16 @@ static void handle_procdeps(void)
 		state = nvram_states(deps);
 	}
 
-	if (!state) {
-		if (proc_func) {
-			dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[function]);
-			char *proc = proc_func();
-			int pid = pidof(proc);
-			dd_debug(DEBUG_SERVICE, "process name is %s, pid is %d\n", proc, pidof(proc));
-			if (pid == -1)
-				state = 1;
+	if (proc_func) {
+		dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[function]);
+		char *proc = proc_func();
+		int pid = pidof(proc);
+		if (pid == -1) {
+			dd_debug(DEBUG_SERVICE, "process died or is not existing, trigger restart\n");
+			state = 1;
 		}
 	}
+
 	if (force || state) {
 		start();
 		if (deps)
