@@ -562,6 +562,7 @@ static void makeentry_full(FILE * fp, char *ifname, int dhcpnum, char *ip, char 
 
 void start_dnsmasq(void)
 {
+	char path[64];
 	FILE *fp;
 	char wan_if_buffer[33];
 	struct dns_lists *dns_list = NULL;
@@ -728,7 +729,7 @@ void start_dnsmasq(void)
 	}
 #endif
 #ifdef HAVE_TOR
-	if (nvram_match("tor_enable","1") && !nvram_matchi("smartdns", 1))
+	if (nvram_match("tor_enable", "1") && !nvram_matchi("smartdns", 1))
 		fprintf(fp, "server=%s#5353\n", nvram_safe_get("lan_ipaddr"));
 #endif
 
@@ -953,7 +954,7 @@ void start_dnsmasq(void)
 
 	chmod("/etc/lease_update.sh", 0700);
 
-	eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig("dnsmasq.conf"));
+	eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf"));
 
 	dd_loginfo("dnsmasq", "daemon successfully started\n");
 

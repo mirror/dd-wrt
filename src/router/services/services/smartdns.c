@@ -37,6 +37,7 @@
 
 void start_smartdns(void)
 {
+	char path[64];
 	if (!nvram_matchi("smartdns", 1))
 		return;
 	FILE *fp = fopen("/tmp/smartdns.conf", "wb");
@@ -70,7 +71,7 @@ void start_smartdns(void)
 	fprintf(fp, "log-level error\n");
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
 #ifdef HAVE_TOR
-	if (nvram_match("tor_enable","1"))
+	if (nvram_match("tor_enable", "1"))
 		fprintf(fp, "server %s:5353\n", nvram_safe_get("lan_ipaddr"));
 #endif
 	struct dns_lists *dns_list = NULL;
@@ -89,7 +90,7 @@ void start_smartdns(void)
 	fwritenvram("smartdns_options", fp);
 	fclose(fp);
 
-	eval("smartdns", "-c", getdefaultconfig("smartdns.conf"));
+	eval("smartdns", "-c", getdefaultconfig(path, "smartdns.conf"));
 	dd_loginfo("smartdns", "daemon successfully started\n");
 }
 

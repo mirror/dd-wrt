@@ -136,7 +136,8 @@ void start_radvd(void)
 			"  AdvValidLifetime 30;\n"
 			"  AdvPreferredLifetime 20;\n"
 			"%s%s%s"
-			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? safe_get_wan_face(wan_if_buffer) : "", do_6to4 ? ";\n" : "");
+			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? safe_get_wan_face(wan_if_buffer) : "",
+			do_6to4 ? ";\n" : "");
 
 		int i;
 
@@ -151,7 +152,6 @@ void start_radvd(void)
 		}
 		if (dns_list)
 			free_dns_list(dns_list);
-
 
 		fprintf(fp, "};\n");
 		fclose(fp);
