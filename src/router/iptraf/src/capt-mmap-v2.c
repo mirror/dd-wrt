@@ -6,6 +6,7 @@
 #include "packet.h"
 #include "capt.h"
 
+#ifdef TPACKET2_HDRLEN
 struct capt_data_mmap_v2 {
 	void			*mmap;
 	size_t			mmap_size;
@@ -158,3 +159,9 @@ err:
 	capt_put_socket(capt);
 	return -1;
 }
+#else
+int capt_setup_mmap_v2(struct capt *capt)
+{
+	return -1;
+}
+#endif

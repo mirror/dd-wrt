@@ -7,6 +7,7 @@
 #include "capt.h"
 
 #define FRAMES 128
+#ifndef __UCLIBC__
 
 struct capt_data_recvmmsg {
 	char			*buf;
@@ -144,3 +145,9 @@ int capt_setup_recvmmsg(struct capt *capt)
 
 	return 0;
 }
+#else
+int capt_setup_recvmmsg(struct capt *capt)
+{
+return -1;
+}
+#endif
