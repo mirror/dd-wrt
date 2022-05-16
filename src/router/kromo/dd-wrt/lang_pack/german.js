@@ -608,6 +608,7 @@ diag.titl="Diagnose";
 diag.h2="Diagnose";
 diag.legend="Kommandozeile";
 diag.cmd="Kommandos";
+diag.output="Ausgabe";
 diag.startup="Hochfahren";
 diag.shutdown="Runterfahren";
 diag.firewall="Firewall";
