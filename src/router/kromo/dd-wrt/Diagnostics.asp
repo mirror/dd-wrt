@@ -84,7 +84,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("diag.cmd"); %></div>
-									<textarea id="ping_ip" name="ping_ip" rows="6" cols="80" style="font-family:Courier, Courier New" wrap="off"><% nvg("ping_ip"); %></textarea>
+									<textarea id="ping_ip" name="ping_ip" rows="6" cols="80" style="font-family: Courier, 'Courier New', monospace" wrap="off"><% nvg("ping_ip"); %></textarea>
 								</div>
 									<script type="text/javascript">
 									//<![CDATA[
@@ -92,7 +92,8 @@ addEvent(window, "unload", function() {
 									var h = Math.floor(windo.getWindoSize().height * 0.4);
 
 									if(table.length > 0) {
-										document.write("<br /><br /><pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
+										document.write("<div class=\"pre_label\"> value=\"" + diag.output + "\" </div>");
+										document.write("<pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
 									}
 									//]]>
 									</script>
