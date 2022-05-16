@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6564 | brainslayer | 2022-05-17 04:05:20 +0700 (Tue, 17 May 2022) | 1 line
+
+simplify some code
+------------------------------------------------------------------------
 r6563 | brainslayer | 2022-05-17 00:35:49 +0700 (Tue, 17 May 2022) | 1 line
 
 fix VHT 160Mhz bandwidth when using extended NSS on PHY with NSS ratio
