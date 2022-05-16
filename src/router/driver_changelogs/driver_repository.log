@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6563 | brainslayer | 2022-05-17 00:35:49 +0700 (Tue, 17 May 2022) | 1 line
+
+fix VHT 160Mhz bandwidth when using extended NSS on PHY with NSS ratio
+------------------------------------------------------------------------
+r6562 | brainslayer | 2022-05-17 00:32:11 +0700 (Tue, 17 May 2022) | 1 line
+
+fix 160mhz rx rate reporting
+------------------------------------------------------------------------
 r6561 | brainslayer | 2022-05-14 17:47:09 +0700 (Sat, 14 May 2022) | 1 line
 
 update toolchains
