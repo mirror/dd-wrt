@@ -92,7 +92,7 @@ addEvent(window, "unload", function() {
 									var h = Math.floor(windo.getWindoSize().height * 0.4);
 
 									if(table.length > 0) {
-										document.write("<div class=\"pre_label\"> + diag.output + </div>");
+										document.write("<div class=\"pre_label\">" + diag.output + "</div>");
 										document.write("<pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
 									}
 									//]]>
