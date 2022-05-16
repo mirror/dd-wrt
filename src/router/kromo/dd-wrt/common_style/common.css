@@ -28,11 +28,15 @@ textarea {
   width: 100%;
   resize: vertical;
 }
+.pre_label {
+  margin-bottom: .453em;
+}
 pre {
   overflow: auto;
   padding: 1em;
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
   white-space: pre-wrap;
   border-radius: 4px;
 }
