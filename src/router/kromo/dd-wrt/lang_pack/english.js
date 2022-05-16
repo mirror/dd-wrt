@@ -642,6 +642,7 @@ diag.titl="Diagnostics";
 diag.h2="Diagnostics";
 diag.legend="Command Shell";
 diag.cmd="Commands";
+diag.output="Output";
 diag.startup="Startup";
 diag.shutdown="Shutdown";
 diag.firewall="Firewall";
