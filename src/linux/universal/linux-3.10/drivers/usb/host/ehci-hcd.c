@@ -289,7 +289,7 @@ static int ehci_reset (struct ehci_hcd *ehci)
 		usbmode |= USBMODE_CM_HC | (1 << 4);
 		ehci_writel(ehci, usbmode, &ehci->regs->usbmode);
 
-		printk(KERN_EMERG "forced host mode, usbmode: %08x\n",
+		printk(KERN_INFO "forced host mode, usbmode: %08x\n",
 			 ehci_readl(ehci, &ehci->regs->usbmode));
 	}
 
@@ -303,7 +303,7 @@ static int ehci_reset (struct ehci_hcd *ehci)
 		port_status |= BIT(28);
 		ehci_writel(ehci, port_status, &ehci->regs->port_status[0]);
 
-		printk(KERN_EMERG "16-bit UTMI interface enabled, status: %08x\n",
+		printk(KERN_INFO "16-bit UTMI interface enabled, status: %08x\n",
 			 ehci_readl(ehci, &ehci->regs->port_status[0]));
 	}
 
