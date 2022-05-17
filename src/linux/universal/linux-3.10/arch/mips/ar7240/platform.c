@@ -151,7 +151,7 @@ static void qca955x_usb_reset_notifier(struct platform_device *pdev)
 {
 	u32 base;
 
-	printk(KERN_EMERG "Reset Notifier for %d\n",pdev->id);
+	printk(KERN_INFO "Reset Notifier for %d\n",pdev->id);
 	switch (pdev->id) {
 	case 0:
 		base = 0x18116c94;
@@ -166,7 +166,7 @@ static void qca955x_usb_reset_notifier(struct platform_device *pdev)
 	}
 
 	enable_tx_tx_idp_violation_fix(base);
-	printk(KERN_EMERG "TX-TX IDP fix enabled\n");
+	printk(KERN_INFO "TX-TX IDP fix enabled\n");
 }
 
 static u64 ath79_usb_dmamask = DMA_BIT_MASK(32);
