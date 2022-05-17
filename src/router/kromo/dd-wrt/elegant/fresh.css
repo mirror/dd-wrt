@@ -161,3 +161,10 @@ pre {
 .setting .default {
   color: #666;
 }
+#scorebarBorder {
+  background: #f6f6f6;
+  border: 1px solid #f6f6f6;
+}
+#tablePwdCheck tr th {
+  color: #000;
+}

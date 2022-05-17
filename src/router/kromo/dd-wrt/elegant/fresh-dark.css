@@ -187,3 +187,10 @@ td[bgcolor='#C0C0C0']:hover {
   background: #222 !important;
   color: #fff !important;
 }
+#scorebarBorder {
+  background: #222;
+  border: 1px solid #222;
+}
+#tablePwdCheck tr th {
+  color: #fff;
+}
