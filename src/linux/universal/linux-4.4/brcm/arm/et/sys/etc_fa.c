@@ -1345,7 +1345,7 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 	printk(KERN_INFO "CHIPID %d, rev %d\n", CHIPID(sih->chip), fa_chip_rev(sih));
 	if (!fa_capable) {
 		printk(KERN_INFO "not FA capable\n");
-		return;
+		return NULL;
 	}
 	/* Create the FA proc for user application */
 	if (FA_FA_CORE(coreunit)) {
