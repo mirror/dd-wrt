@@ -102,8 +102,6 @@ select[onchange*='ServiceTable'] {
   z-index: 0;
 }
 #scorebarBorder {
-  background: #f6f6f6;
-  border: 1px solid #f6f6f6;
   border-radius: 2px;
   height: 16px;
   margin-bottom: 2px;
@@ -112,7 +110,6 @@ select[onchange*='ServiceTable'] {
 #tablePwdCheck tr th {
   background-color: transparent;
   border: 0;
-  color: #000;
   text-align: right;
   vertical-align: middle;
 }
