@@ -573,7 +573,7 @@ halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<
 
 //help page
 halive.page1="<dd>You can schedule regular reboots for the router :<ul><li>Regularly after xxx seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
-halive.page2="<dd></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>" + sbutton.cancel + "</em> to cancel your unsaved changes. Click <em>" + sbutton.reboot +"</em> to reboot your router immediately.</dd>";
+halive.page2="<dd></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>" + sbutton.cancel + "</em> to cancel your unsaved changes. Click <em>" + sbutton.reboot +"</em> to reboot the router immediately.</dd>";
 
 
 // ** config.asp **//
@@ -581,22 +581,22 @@ var config=new Object();
 config.titl="Backup & Restore";
 config.h2="Backup Configuration";
 config.legend="Backup Settings";
-config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
+config.mess1="Click the \"" + sbutton.backup + "\" button to download the backup file with your current configuration settings to disk.";
 config.h22="Restore Configuration";
 config.legend2="Restore Settings";
 config.mess2="Please select a file to restore";
 config.mess3="W A R N I N G";
-config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
+config.mess4="Only upload backup configuration files made with DD-WRT's firmware and from the same model of router.<br />Do not upload any backup configuration files that were not created by this interface!";
 
 //help container
 var hconfig=new Object();
-hconfig.right2="You may back up your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to back up your current configuration.";
-hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
+hconfig.right2="You may backup your current configuration in case you need to reset the router back to it's factory default settings.<br /><br />Click the <em>" + sbutton.backup + "</em> button to backup your current configuration to a file saved to your disk.";
+hconfig.right4="Click the <em>Browse...</em> button to search for a backup configuration file that you have previously saved to your disk.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite <b>all current configuration settings</b> with the values in the backup file.";
 
 // help page
-hconfig.page1="<dd>You may backup your current configuration in case you need to reset the router back to its factory default settings.</dd><dt>";
-hconfig.page2="</dt><dd>Click the <i>Backup</i> button to download your current router configuration to your PC.</dd>";
-hconfig.page3="<dd>Click the <i>Browse</i> button to browse for the configuration file that is currently saved on your PC. Click <i>Restore</i> to overwrite all current configurations with the ones in the configuration file<br /><br /><div class=\"note\"><h4>Note</h4><div>Only restore configurations with files backed up using the same firmware and the same model of router.</dd></div></dd>";
+hconfig.page1="<dd>You may backup your current configuration in case you need to reset the router back to it's factory default settings.</dd><dt>";
+hconfig.page2="</dt><dd>Click the <i>" + sbutton.backup + "</i> button to backup your current configuration to a file saved to your disk.</dd>";
+hconfig.page3="<dd>Click the <i>Browse...</i> button to search for a backup configuration file that you have previously saved to your disk. Click <i>" + sbutton.restore + "</i> to overwrite <b>all current configuration settings</b> with the values in the backup file<br /><br /><div class=\"note\"><h4>Note</h4><div>Only restore configurations with files backed up using the same firmware and the same model of router.</dd></div></dd>";
 
 // ** DDNS.asp **//
 var ddns=new Object();
@@ -1490,11 +1490,11 @@ management.boot_fail_keepip="Keep IP after Bootfail";
 //help container
 var hmanagement=new Object();
 hmanagement.right1="Auto-Refresh:";
-hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables this feature completely.";
+hmanagement.right2="Adjusts the Web GUI automatic refresh interval. Entering a value of <b>0</b> disables this feature.";
 
 //help page
 hmanagement.page1="<dd>The Management screen allows you to change the router's settings. On this page you will find most of the configurable items of the DD-WRT router code.</dd>";
-hmanagement.page2="<dd>The new password must not exceed 32 characters in length and must not include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note</h4><div>Default username is <tt>root</tt><br />It is strongly recommended that you change the factory default password of the router, which is <tt>admin</tt>. All users who try to access the router's web-based utility or Setup Wizard will be prompted for the router's password.</div></div></dd>";
+hmanagement.page2="<dd>The new password must not exceed 32 characters in length or include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note</h4><div>Default SSH username is <tt>root</tt><br />It is strongly recommended that you change the factory default password of the router, which is <tt>admin</tt>. All users who try to access the router's web-based utility or Setup Wizard will be prompted for the router's password.</div></div></dd>";
 hmanagement.page3="<dd>This feature allows you to manage the router from a remote location, via the Internet. To disable this feature, keep the default setting, <em>Disable</em>. To enable this feature, select <em>Enable</em>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />To remotely manage the router, enter <tt>http:\/\/xxx.xxx.xxx.xxx:8080</tt> (the x's represent the router's Internet IP address, and 8080 represents the specified port) in your web browser's address field. You will be asked for the router's password.<br /><br />If you use HTTPS you need to specify the URL as <tt>https:\/\/xxx.xxx.xxx.xxx:8080</tt> (not all DD-WRT firmwares does support this without rebuilding with SSL support).<br /><br />You can also enable <em>SSH</em>&nbsp; to remotely access the router by Secure Shell. Note that SSH daemon needs to be enable in <a href=\"HServices.asp\">";
 hmanagement.page4="</a> page.<br /><br /><div class=\"note\"><h4>Note</h4><div>If the Remote Router Access feature is enabled, anyone who knows the router's Internet IP address and password will be able to alter the router's settings.</div></div></dd>";
 hmanagement.page5="<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol. If you choose to disable this feature, a manual reboot will be required.<br />You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above).<br />MAC Masking allows you to truncate MAC addresses in the web interface.<br /><br /><div class=\"note\"><h4>Note</h4><div>If MAC Masking is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masking only applies to the Sys-Info page.</div></div></dd>";
