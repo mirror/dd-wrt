@@ -14,6 +14,7 @@
  "dhcp_authentication" "DHCP authentication"  "NAME"  "127"  "TRUE" "3"
  "wan_dualaccess"  "dual-access mode" "CHOICE" "2" "1" "0" "FALSE" "0"
  "ntp_server"  "NTP Server" "NULL" "TRUE" "0"
+ "ntp_timer"  "NTP update interval" "NULL" "TRUE" "0"
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"  
  "time_zone"  "Time Zone"  "NULL" "TRUE" "0"
  "ppp_username"  "Username"  "NAME"  "63"  "FALSE" "0"  
