@@ -882,7 +882,7 @@ nas.drivemanager="Drive Manager";
 nas.drive="Napęd";
 nas.compression="Kompresja";
 
-hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through FTP or Samba.<br /><p><b>Minidlna Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
+hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through FTP or Samba.<br /><p><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
 
 //help page
 hnas.page1="<dd>Serwer FTP umożliwia udostępnianie plików : <br /><ul><li>Przez Internet -  sieć WAN</li><li>W sieci lokalnej</li></ul></dd>";

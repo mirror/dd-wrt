@@ -885,7 +885,7 @@ nas.drivemanager="Správa disku";
 nas.drive="Jednotka";
 nas.compression="Komprese";
 //
-hnas.right2="V případě potřeby sdílení zdrojů přidejte nové sdílení po vložení cesty a názvu sdílení. Určete uživatele, kteří mohou přistupovat ke sdíleným datům přes ftp, nebo sambu.<br /><p><b>Minidlna Varování:</b>Pokud připojíte oddíl do /jffs, index databáze se uloží do RAM. Toto může vypnit celou ram paměť a po každém startu zařízení bude chtít reindexovat databázi!";
+hnas.right2="V případě potřeby sdílení zdrojů přidejte nové sdílení po vložení cesty a názvu sdílení. Určete uživatele, kteří mohou přistupovat ke sdíleným datům přes ftp, nebo sambu.<br /><p><b>MiniDLNA Varování:</b>Pokud připojíte oddíl do /jffs, index databáze se uloží do RAM. Toto může vypnit celou ram paměť a po každém startu zařízení bude chtít reindexovat databázi!";
 
 //help page
 hnas.page1="<dd>FTP Server umožňuje sdílení souborů: <br /><ul><li>Přes internet - WAN</li><li>V místní síti</li></ul></dd>";
