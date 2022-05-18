@@ -33,6 +33,8 @@
  "wan_dualaccess"  "dual-access mode" "CHOICE" "2" "1" "0" "FALSE" "0"
  "wan_roaming" "Roaming" "NULL" "TRUE" "0"
  "ntp_server"  "NTP Server" "NULL" "TRUE" "0"
+ "ntp_timer"  "NTP update interval" "NULL" "TRUE" "0"
+ "ntp_timer"  "NTP update interval" "NULL" "TRUE" "0"
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"
  "time_zone"  "Time Zone"  "NULL" "TRUE" "0"
  "ppp_username"  "Username"  "NAME"  "63"  "TRUE" "0"
