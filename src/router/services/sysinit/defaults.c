@@ -2298,6 +2298,7 @@ struct nvram_param srouter_defaults[] = {
 	// {"ntp_enable", "0"},
 	// #else
 	{ "ntp_enable", "1" },
+	{ "ntp_timer", "3600" },
 	// #endif
 	{ "pptpd_enable", "0" },
 	{ "pptpd_forcemppe", "1" },

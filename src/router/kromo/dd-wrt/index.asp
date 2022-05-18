@@ -478,16 +478,20 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="ntp_enable" value="0" <% nvc("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
 								</div>
 								<div id="idntp">
-								<div class="setting">
-									<div class="label"><% tran("idx.timeset"); %></div>
-									<select name="time_zone">
-										<% show_timeoptions(); %>
-									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.srvipname"); %></div>
-									<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" />
-								</div>
+									<div class="setting">
+										<div class="label"><% tran("idx.timeset"); %></div>
+										<select name="time_zone">
+											<% show_timeoptions(); %>
+										</select>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("share.srvipname"); %></div>
+										<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" />
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("idx.ntp_timer"); %></div>
+										<input class="num" maxlength="6" size="6" name="ntp_timer" onblur="valid_range(this,3600,604800,idx.ntp_timer)" value="<% nvg("ntp_timer"); %>" />
+									</div>
 								</div>
 							</fieldset><br />
 							
