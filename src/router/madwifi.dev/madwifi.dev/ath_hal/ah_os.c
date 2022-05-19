@@ -588,7 +588,7 @@ MODULE_SUPPORTED_DEVICE("Atheros WLAN devices");
 MODULE_VERSION(TARGET ": " ATH_HAL_VERSION);
 #endif
 #ifdef MODULE_LICENSE
-MODULE_LICENSE("Proprietary");
+MODULE_LICENSE("Dual BSD/GPL");
 #endif
 
 EXPORT_SYMBOL(ath_hal_probe);
