@@ -3398,6 +3398,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(dualband, "%s_dualband", prefix);
 		nvram_default_get(dualband,"0");
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.bghz2 + \"</option>\");\n", nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.bghz5 + \"</option>\");\n", nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
@@ -4071,6 +4072,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(dualband, "%s_dualband", prefix);
 		nvram_default_get(dualband,"0");
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.bghz2 + \"</option>\");\n", nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.bghz5 + \"</option>\");\n", nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
