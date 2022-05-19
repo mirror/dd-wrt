@@ -934,7 +934,7 @@ int mtd_set_ecc_mode(struct mtd_data *md, int ecc)
 void dump(const void *data, int size)
 {
 	int i, j;
-	const uint8_t *s;
+	const unsigned char *s;
 
 	s = data;
 	for (i = j = 0; i < size; i += 16) {
@@ -2589,14 +2589,14 @@ int v0_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags)
 static void dbbt_checksum(struct mtd_data *md, BCB_ROM_BootBlockStruct_t *dbbt)
 {
 	uint32_t  accumulator = 0;
-	uint8_t   *p, *q;
+	unsigned char   *p, *q;
 
 	/*
 	 * The checksum should do 508 bytes. But if the rest of the buffer is
 	 * zero. We can only add the non-zero data for the checksum.
 	 */
-	p = ((uint8_t *) dbbt) + 4;
-	q = (uint8_t *) (dbbt + 1);
+	p = ((unsigned char *) dbbt) + 4;
+	q = (unsigned char *) (dbbt + 1);
 	vp(md, "DBBT checksum length : %d\n", q - p);
 
 	for (; p < q; p++)
