@@ -146,6 +146,11 @@ zpl_bdi_destroy(struct super_block *sb)
 #define	clear_inode(ip)		end_writeback(ip)
 #endif /* HAVE_EVICT_INODE && !HAVE_CLEAR_INODE */
 
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
+#endif
+
 #if defined(SEEK_HOLE) && defined(SEEK_DATA) && !defined(HAVE_LSEEK_EXECUTE)
 static inline loff_t
 lseek_execute(
