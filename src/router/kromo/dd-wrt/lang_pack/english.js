@@ -3013,6 +3013,7 @@ wl_basic.nitroqam="NitroQAM (QAM1024) support";
 wl_basic.dwds="Dynamic WDS Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
+wl_basic.dualband="Dualband";
 wl_basic.parent="Parent IP";
 wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";
