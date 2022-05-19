@@ -364,6 +364,7 @@ void configure_single_ath9k(int count)
 		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt") || !nvram_default_match(dualband, nvram_default_get(dualband_use, "0"), "0")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
 			nvram_set(dualband_use, nvram_safe_get(dualband));
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dualband", nvram_safe_get(dualband), wif);
 			if (nvram_match(fwtype, "vanilla"))
 				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
 			else
