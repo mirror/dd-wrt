@@ -356,7 +356,7 @@ void configure_single_ath9k(int count)
 		char fwtype[32];
 		char fwtype_use[32];
 		char dualband[32];
-		char fualband_use[32];
+		char dualband_use[32];
 		sprintf(fwtype, "%s_fwtype", dev);
 		sprintf(fwtype_use, "%s_fwtype_use", dev);
 		sprintf(dualband, "%s_dualband", dev);
