@@ -321,10 +321,10 @@ static void detect_wireless_devices(int mask)
 			nvram_set("wlan5_fwtype_use", "ddwrt");
 			nvram_set("wlan6_fwtype_use", "ddwrt");
 			nvram_set("wlan7_fwtype_use", "ddwrt");
-			nvram_set("wlan0_dualband_use", "0");
-			nvram_set("wlan1_dualband_use", "0");
-			nvram_set("wlan2_dualband_use", "0");
-			nvram_set("wlan3_dualband_use", "0");
+			nvram_set("wlan0_dualband_use", nvram_default_get("wlan0_dualband","0"));
+			nvram_set("wlan1_dualband_use", nvram_default_get("wlan1_dualband","0"));
+			nvram_set("wlan2_dualband_use", nvram_default_get("wlan2_dualband","0"));
+			nvram_set("wlan3_dualband_use", nvram_default_get("wlan3_dualband","0"));
 			unsigned int dual = 0;
 			int v = nvram_geti("wlan0_dualband");
 			if (v == 2 || v == 5)
