@@ -321,10 +321,10 @@ static void detect_wireless_devices(int mask)
 			nvram_set("wlan5_fwtype_use", "ddwrt");
 			nvram_set("wlan6_fwtype_use", "ddwrt");
 			nvram_set("wlan7_fwtype_use", "ddwrt");
-			nvram_set("wlan0_dualband_use", nvram_default_get("wlan0_dualband","0"));
-			nvram_set("wlan1_dualband_use", nvram_default_get("wlan1_dualband","0"));
-			nvram_set("wlan2_dualband_use", nvram_default_get("wlan2_dualband","0"));
-			nvram_set("wlan3_dualband_use", nvram_default_get("wlan3_dualband","0"));
+			nvram_set("wlan0_dualband_use", "0");
+			nvram_set("wlan1_dualband_use", "0");
+			nvram_set("wlan2_dualband_use", "0");
+			nvram_set("wlan3_dualband_use", "0");
 			if (nvram_match("ath10k_encap", "1"))
 				eval("insmod", "ath10k", "ethernetmode=1");
 			else
