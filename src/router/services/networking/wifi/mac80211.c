@@ -354,12 +354,16 @@ void configure_single_ath9k(int count)
 	MAC80211DEBUG();
 	if (is_ath10k(dev) && has_fwswitch(dev) ) {
 		char fwtype[32];
-		sprintf(fwtype, "%s_fwtype", dev);
 		char fwtype_use[32];
+		char dualband[32];
+		char fualband_use[32];
+		sprintf(fwtype, "%s_fwtype", dev);
 		sprintf(fwtype_use, "%s_fwtype_use", dev);
-
-		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
+		sprintf(dualband, "%s_dualband", dev);
+		sprintf(dualband_use, "%s_dualband_use", dev);
+		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt") || !nvram_default_match(dualband, nvram_default_get(dualband_use, "0"), "0")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
+			nvram_set(dualband_use, nvram_safe_get(dualband));
 			if (nvram_match(fwtype, "vanilla"))
 				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
 			else
