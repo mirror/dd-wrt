@@ -719,7 +719,7 @@ static int ddxrcopystr(char *dest, char *src, int maxlen)
 	int len = strlen(src);
 	if (len > maxlen)
 		len = maxlen;
-	strncpy(dest, src, len);
+	strlcpy(dest, src, len);
 	return len;
 }
 
@@ -920,7 +920,7 @@ int madwifi_getwirelessnetmode(char *iface)
 	char m[32];
 	enum WLA_NETMODES nm;
 
-	strncpy(m, iface, 4);
+	strlcpy(m, iface, 4);
 	m[4] = 0;
 	sprintf(mode, "%s_net_mode", m);
 
@@ -958,7 +958,7 @@ int madwifi_getwirelessmode(char *iface)
 
 	enum WLA_MODES nm;
 
-	strncpy(m, iface, 4);
+	strlcpy(m, iface, 4);
 	m[4] = 0;
 	sprintf(mode, "%s_mode", m);
 
@@ -993,7 +993,7 @@ int madwifi_getapsta(char *iface)
 
 	enum WLA_MODES nm;
 
-	strncpy(m, iface, 4);
+	strlcpy(m, iface, 4);
 	m[4] = 0;
 	sprintf(mode, "%s_mode", m);
 
@@ -1496,7 +1496,7 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 		return;
 	}
 	(void)memset(&iwr, 0, sizeof(struct iwreq));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	unsigned char *buf = (unsigned char *)malloc(24 * 1024);
 
 	iwr.u.data.pointer = (void *)buf;
@@ -1700,7 +1700,7 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 			}
 			// STA / WDSSTA
 			if (madwifi_getapsta(ifname) == 1) {
-				strncpy(m, ifname, 4);
+				strlcpy(m, ifname, 4);
 				m[4] = 0;
 				sprintf(mode, "%s_mode", m);
 				if (nvram_match(mode, "wdssta"))
