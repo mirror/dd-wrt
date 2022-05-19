@@ -293,7 +293,7 @@ static void detect_wireless_devices(int mask)
 #endif
 				if (!detectchange(NULL))
 					rmmod("ath9k");
-					
+
 				eval("insmod", "ath9k_htc");
 				if (!detectchange(NULL))
 					rmmod("ath9k_htc");
@@ -325,10 +325,27 @@ static void detect_wireless_devices(int mask)
 			nvram_set("wlan1_dualband_use", "0");
 			nvram_set("wlan2_dualband_use", "0");
 			nvram_set("wlan3_dualband_use", "0");
+			unsigned int dual = 0;
+			int v = nvram_geti("wlan0_dualband");
+			if (v == 2 || v == 5)
+				dual |= v;
+			v = nvram_geti("wlan1_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 8;
+			v = nvram_geti("wlan2_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 16;
+			v = nvram_geti("wlan3_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 24;
+			if (!dual)
+				dual = 0x05050505;
+			char dualband[32];
+			sprintf(dualband, "dual_band=0x%08x", dual);
 			if (nvram_match("ath10k_encap", "1"))
-				eval("insmod", "ath10k", "ethernetmode=1");
+				eval("insmod", "ath10k", "ethernetmode=1", dualband);
 			else
-				insmod("ath10k");
+				eval("insmod", "ath10k", dualband);
 			if (!detectchange(NULL)) {
 				rmmod("ath10k");
 				rmmod("ath");
