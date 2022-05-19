@@ -53,10 +53,10 @@
 //! rom_nand_hal_GpmiSetNandTiming to setup the GPMI hardware registers.
 
 typedef struct _NAND_Timing {
-	uint8_t m_u8DataSetup;
-	uint8_t m_u8DataHold;
-	uint8_t m_u8AddressSetup;
-	uint8_t m_u8DSAMPLE_TIME;
+	unsigned char m_u8DataSetup;
+	unsigned char m_u8DataHold;
+	unsigned char m_u8AddressSetup;
+	unsigned char m_u8DSAMPLE_TIME;
 } NCB_NAND_Timing_t;
 
 //==============================================================================
@@ -225,15 +225,15 @@ typedef struct _BadBlockTableNand_t {
 //! This structure holds the timing for the NAND.  This data is used by
 //! rom_nand_hal_GpmiSetNandTiming to setup the GPMI hardware registers.
 typedef struct {
-	uint8_t m_u8DataSetup;
-	uint8_t m_u8DataHold;
-	uint8_t m_u8AddressSetup;
-	uint8_t m_u8DSAMPLE_TIME;
+	unsigned char m_u8DataSetup;
+	unsigned char m_u8DataHold;
+	unsigned char m_u8AddressSetup;
+	unsigned char m_u8DSAMPLE_TIME;
 	/* These are for application use only and not for ROM. */
-	uint8_t m_u8NandTimingState;
-	uint8_t m_u8REA;
-	uint8_t m_u8RLOH;
-	uint8_t m_u8RHOH;
+	unsigned char m_u8NandTimingState;
+	unsigned char m_u8REA;
+	unsigned char m_u8RLOH;
+	unsigned char m_u8RHOH;
 } FCB_ROM_NAND_Timing_t;
 
 typedef struct {
