@@ -3393,8 +3393,19 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	websWrite(wp,
-		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width, prefix);
+	if (is_mac80211(prefix) && has_dualband(prefix)) {
+		char dualband[32];
+		sprintf(dualband, "%s_dualband", prefix);
+		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.bghz2 + \"</option>\");\n", nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.bghz5 + \"</option>\");\n", nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+	}
+
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 	int canht40 = can_ht40(prefix);
@@ -4054,6 +4065,17 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #if 0
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
+	if (is_mac80211(prefix) && has_dualband(prefix)) {
+		char dualband[32];
+		sprintf(dualband, "%s_dualband", prefix);
+		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.bghz2 + \"</option>\");\n", nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.bghz5 + \"</option>\");\n", nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+	}
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 	if (!has_ad(prefix)) {
 		websWrite(wp,
