@@ -1,4 +1,4 @@
-zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl
+zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl util-linux
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -10,10 +10,16 @@ zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl
 		CFLAGS="-I$(TOP)/zlib -I$(TOP)/util-linux/include  -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src -I$(TOP)/curl/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include  -I$(TOP)/libudev/src/libudev -D_GNU_SOURCE" \
 		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/util-linux/.libs -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(TOP)/openssl -L$(TOP)/libudev/src/libudev/.libs" \
 		--with-linux=$(LINUXDIR)
-#	cd zfs && find .libs -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
-#	cd zfs && find .libs -name "*.la" -exec touch {} +
+	cd zfs && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
+	cd zfs && find . -name "*.la" -exec touch {} +
+	touch $(TOP)/util-linux/libblkid/src/blkid.h
+	touch $(TOP)/openssl/include/openssl/opensslconf.h
 
-zfs: libtirpc libudev openssl zlib
+zfs: libtirpc libudev openssl zlib util-linux
+	cd zfs && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
+	cd zfs && find . -name "*.la" -exec touch {} +
+	touch $(TOP)/util-linux/libblkid/src/blkid.h
+	touch $(TOP)/openssl/include/openssl/opensslconf.h
 	$(MAKE) -j 4 -C zfs
 
 zfs-clean:
@@ -24,8 +30,6 @@ zfs-distclean:
 	
 
 zfs-install:
-	cd zfs && find .libs -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
-	cd zfs && find .libs -name "*.la" -exec touch {} +
 	make -C zfs install DESTDIR=$(INSTALLDIR)/zfs
 	rm -rf $(INSTALLDIR)/zfs/usr/include
 	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
