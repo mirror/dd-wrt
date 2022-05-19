@@ -11,7 +11,7 @@
 #endif
 
 int
-get_personality_from_syscall_info(const struct ptrace_syscall_info *sci)
+get_personality_from_syscall_info(const struct __ptrace_syscall_info *sci)
 {
 	return sci->arch == AUDIT_ARCH_ARM;
 }
