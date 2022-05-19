@@ -17,7 +17,7 @@
 			</dl>
 		</div>
 		<div id="also">
-			<b>See also:</b><br />
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
 				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>

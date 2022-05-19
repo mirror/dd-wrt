@@ -12,10 +12,11 @@
 				<% tran("hpppoesrv.page2"); %>
 			</dl>
 		</div>
+		<!--
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
-			<ul>
-			</ul>
+			<ul></ul>
 		</div>
+		-->
 	</body>
 </html>
