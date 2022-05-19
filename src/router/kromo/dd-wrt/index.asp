@@ -491,16 +491,23 @@ addEvent(window, "unload", function() {
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
 										<input class="num" maxlength="6" size="6" name="ntp_timer" onblur="valid_range(this,3600,604800,idx.ntp_timer)" value="<% nvg("ntp_timer"); %>" />
+										<span class="default">
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("(" + share.deflt + ": 3600, " + share.range + ": 3600 - 604800)");
+											//]]>
+											</script>
+										</span>
 									</div>
 								</div>
 							</fieldset><br />
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-					//<![CDATA[
-					submitFooterButton(1,1);
-					//]]>
-					</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
