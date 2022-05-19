@@ -30,6 +30,8 @@ zfs-distclean:
 	
 
 zfs-install:
+	cd zfs && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
+	cd zfs && find . -name "*.la" -exec touch {} +
 	make -C zfs install DESTDIR=$(INSTALLDIR)/zfs
 	rm -rf $(INSTALLDIR)/zfs/usr/include
 	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
