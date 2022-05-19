@@ -3319,10 +3319,24 @@ FLAGCHECK(qboost, QBOOST, 0);
 FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(qam256, QAM256, 0);
 FLAGCHECK(wave2, WAVE2, 0);
-FLAGCHECK(dualband, DUALBAND, 0);
+FLAGCHECK(dualband_cap, DUALBAND, 0);
 FLAGCHECK(beacon_limit, BEACONVAP100, 0);
 FLAGCHECK(fwswitch, FWSWITCH, 0);
 FLAGCHECK(spectral_support, SPECTRAL, 0);
+
+int has_dualband(const char *prefix)
+{
+	if (!has_dualband_cap(prefix))
+		return 0;
+	int phy = mac80211_get_phyidx_by_vifname(prefix);
+	char str[64];
+	sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/bmi_board_id", phy);
+	FILE *fp = fopen(str, "rb");
+	int bmi;
+	fscanf(fp, "%d", &bmi);
+	fclose(fp);
+	return bmi == 11;
+}
 
 int has_quarter(const char *prefix)
 {
