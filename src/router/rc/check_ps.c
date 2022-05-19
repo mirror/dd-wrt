@@ -319,9 +319,21 @@ static void checkupgrade(void)
 		}
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
 		eval("write", "/tmp/firmware.bin", "rootfs");
+#elif defined(HAVE_NEWPORT)
+		eval("mkdir", "-p", "/tmp/new_root");
+		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
+		eval("mkdir", "-p", "/tmp/new_root/tmp");
+		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #elif defined(HAVE_VENTANA)
-		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile");
+		eval("mkdir", "-p", "/tmp/new_root");
+		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
+		eval("mkdir", "-p", "/tmp/new_root/tmp");
+		eval("mv","/tmp/firmware.bin", "/tmp/new_root/tmp");
+		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile", "reboot");
 #elif defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+		eval("mkdir", "-p", "/tmp/new_root");
+		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
+		eval("mkdir", "-p", "/tmp/new_root/tmp");
 		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #else
 		eval("fischecksum");
