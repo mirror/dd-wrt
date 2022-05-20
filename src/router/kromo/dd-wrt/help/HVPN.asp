@@ -16,7 +16,7 @@
 				<% tran("hvpn.page4"); %>
 			</dl>
 		</div>
-		<div id="also">
+		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>

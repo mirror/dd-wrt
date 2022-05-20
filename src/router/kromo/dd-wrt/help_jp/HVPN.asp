@@ -21,7 +21,7 @@
 				<dd>設定値を保存する場合は「設定」ボタンをクリックしてください。設定内容を破棄する場合は「キャンセル」ボタンをクリックしてください。</dd>
 			</dl>
 		</div>
-		<div id="also">
+		<div class="also">
 			<b>See also:</b><br />
 			<ul>
 				<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
