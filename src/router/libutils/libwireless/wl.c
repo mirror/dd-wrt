@@ -3326,16 +3326,23 @@ FLAGCHECK(spectral_support, SPECTRAL, 0);
 
 int has_dualband(const char *prefix)
 {
+	INITVALUECACHE();
 	if (!has_dualband_cap(prefix))
-		return 0;
+		RETURNVALUE(0);
 	int phy = mac80211_get_phyidx_by_vifname(prefix);
 	char str[64];
 	sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/bmi_board_id", phy);
 	FILE *fp = fopen(str, "rb");
-	int bmi;
-	fscanf(fp, "%d", &bmi);
-	fclose(fp);
-	return bmi == 11;
+	if (!fp)
+		RETURNVALUE(0);
+	else {		
+		int bmi;
+		fscanf(fp, "%d", &bmi);
+		fclose(fp);
+		RETURNVALUE(bmi == 11);
+	}
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_quarter(const char *prefix)
