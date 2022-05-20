@@ -41,7 +41,7 @@ div.note {
   background: #380c55 !important;
   border-color: #8030b5 !important;
 }
-div.also, div#also {
+div.also {
   background: #222 !important;
   border: 1px solid #333 !important;
 }
