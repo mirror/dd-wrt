@@ -6553,13 +6553,14 @@ void start_sysinit(void)
 		}
 
 	}
+	if (swap != port - 1 || first > last)
+		swap = 0;
+
 	if (getRouterBrand() == ROUTER_NETGEAR_R8000) {
 		port = 5;
 		nvram_unset("sw_lan6");
 		nvram_unset("sw_lan5");
 	}
-	if (swap != port - 1 || first > last)
-		swap = 0;
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
 		for (i = 1; i < (port / 2) + 1; i++) {
