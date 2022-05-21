@@ -7,7 +7,7 @@
 		<div id="content">
 			<h2><% tran("upgrad.titl"); %></h2>
 			<dl>
-				<dd><% tran("hupgrad.page1"); %></dd>
+				<% tran("hupgrad.page1"); %>
 			</dl>
 		</div>
 	</body>
