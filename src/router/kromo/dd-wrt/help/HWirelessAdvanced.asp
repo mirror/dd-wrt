@@ -66,7 +66,7 @@
 				<% tran("hwl_adv.page26"); %>
 				<dt><% tran("wl_adv.col3"); %></dt>
 				<% tran("hwl_adv.page27"); %>
-				<dt><% tran("wl_adv.col4"); %> &amp; <% tran("wl_adv.col5"); %></dt>
+				<dt><% tran("wl_adv.col4"); %> &amp; <% tran("wl_adv.col5"); %></dt><br />
 			</dl>
 		</div>
 		<div class="also">
