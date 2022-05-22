@@ -5,7 +5,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2>Advanced Wireless Settings</h2>
+			<h2><% tran("wl_adv.h2"); %></h2>
 			<dl>
 				<% tran("hwl_adv.page1"); %>
 				<dt><% tran("wl_adv.label"); %></dt>
@@ -72,8 +72,8 @@
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HWireless.asp">Wireless Settings</a></li>
-				<li><a href="HWPA.asp">Wireless Security</a></li>
+				<li><a href="HWireless.asp"><% tran("sas.wireless_settings"); %></a></li>
+				<li><a href="HWPA.asp"><% tran("wpa.titl"); %></a></li>
 			</ul>
 		</div>
 	</body>

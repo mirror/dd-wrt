@@ -15,25 +15,25 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_pf_len"); %></div>
-			<input size="2" maxlength="2" class="text" name="ipv6_pf_len" value="<% nvg("ipv6_pf_len"); %>" />
+			<input class="text" size="2" maxlength="2" name="ipv6_pf_len" value="<% nvg("ipv6_pf_len"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dns"); %> 1</div>
-			<input size="40" maxlength="40" class="text" name="ipv6_dns1" value="<% nvg("ipv6_dns1"); %>" />
+			<input class="text" size="40" maxlength="40" name="ipv6_dns1" value="<% nvg("ipv6_dns1"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dns"); %> 2</div>
-			<input size="40" maxlength="40" class="text" name="ipv6_dns2" value="<% nvg("ipv6_dns2"); %>" />
+			<input class="text" size="40" maxlength="40" name="ipv6_dns2" value="<% nvg("ipv6_dns2"); %>" />
 		</div>
 		<!-- only if native is selected-->
 		<div id="idipv6_native">
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_prefix"); %></div>
-				<input size="40" maxlength="40" class="text" name="ipv6_prefix" value="<% nvg("ipv6_prefix"); %>" />
+				<input class="text" size="40" maxlength="40" name="ipv6_prefix" value="<% nvg("ipv6_prefix"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_addr"); %></div>
-				<input size="40" maxlength="40" class="text" name="ipv6_addr" value="<% nvg("ipv6_addr"); %>" />
+				<input class="text" size="40" maxlength="40" name="ipv6_addr" value="<% nvg("ipv6_addr"); %>" />
 			</div>
 		</div>
 		<!-- end only native selected-->
@@ -41,22 +41,22 @@
 		<div id="idipv6_6in4">
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_end_ipv4"); %></div>
-				<input size="20" maxlength="20" class="text" name="ipv6_tun_end_ipv4" value="<% nvg("ipv6_tun_end_ipv4"); %>" />
+				<input class="text" size="20" maxlength="20" name="ipv6_tun_end_ipv4" value="<% nvg("ipv6_tun_end_ipv4"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_client_addr"); %></div>
-				<input size="40" maxlength="40" class="text" name="ipv6_tun_client_addr" value="<% nvg("ipv6_tun_client_addr"); %>" />/
-				<input size="2" maxlength="2" class="text" name="ipv6_tun_client_addr_pref" value="<% nvg("ipv6_tun_client_addr_pref"); %>" />
+				<input class="text" size="40" maxlength="40" name="ipv6_tun_client_addr" value="<% nvg("ipv6_tun_client_addr"); %>" />/
+				<input class="text" size="2" maxlength="2" name="ipv6_tun_client_addr_pref" value="<% nvg("ipv6_tun_client_addr_pref"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_upd_url"); %></div>
-				<input size="46" maxlength="150" class="text" name="ipv6_tun_upd_url" value="<% nvg("ipv6_tun_upd_url"); %>" />
+				<input class="text" size="46" maxlength="150" name="ipv6_tun_upd_url" value="<% nvg("ipv6_tun_upd_url"); %>" />
 			</div>
 		</div>
 		<!-- end only 6in4 selected-->
 		<div class="setting">
 				<div class="label"><% tran("idx.mtu"); %></div>
-				<input size="4" maxlength="4" type="number" min="1280" max="1480" class="text" name="ipv6_mtu" value="<% nvg("ipv6_mtu"); %>" />
+				<input class="text" size="5" maxlength="4" type="number" min="1280" max="1480" name="ipv6_mtu" value="<% nvg("ipv6_mtu"); %>" />
 		</div>
 		<br><hr><br>
 		<div class="setting">

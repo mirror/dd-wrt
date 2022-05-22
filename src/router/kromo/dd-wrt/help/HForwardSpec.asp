@@ -8,7 +8,8 @@
 			<h2><% tran("pforward.h2"); %></h2>
 			<dl>
 				<% tran("hpforward.page1"); %>
-				<% tran("bmenu.applicationsprforwarding"); %>				<% tran("hpforward.page2"); %>
+				<% tran("bmenu.applicationsprforwarding"); %>
+				<% tran("hpforward.page2"); %>
 				<dt><% tran("pforward.app"); %></dt>
 				<% tran("hpforward.page3"); %>
 				<dt><% tran("share.proto"); %></dt>

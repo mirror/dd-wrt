@@ -1076,6 +1076,7 @@ portserv.h2="Poort Services";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Cre&euml;er Bridge";
 networking.legend3="Toewijzen aan Bridge";
 networking.legend4="Huidige Bridging Tabel";

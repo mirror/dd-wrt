@@ -1102,6 +1102,7 @@ portserv.h2="Службы портов";
 networking.h2="Тегирование VLAN";
 networking.legend="Тегирование";
 networking.h22="Мосты";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Создать мост";
 networking.legend3="Присоединить к мосту";
 networking.legend4="Текущая таблица мостов";

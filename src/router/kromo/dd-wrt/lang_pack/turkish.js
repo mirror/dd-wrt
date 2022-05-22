@@ -1058,6 +1058,7 @@ portserv.h2="Port Servisleri";
 networking.h2="VLAN Etiketleme";
 networking.legend="Etiketleme";
 networking.h22="Köprüleme";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Köprü Oluştur";
 networking.legend3="Köprüye Ata";
 networking.legend4="Geçerli Köprüleme Tablosu";

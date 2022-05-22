@@ -1004,6 +1004,7 @@ portserv.h2="埠服務";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="建立 Bridge";
 networking.legend3="分配給 Bridge";
 networking.legend4="目前 Bridging 設定表";

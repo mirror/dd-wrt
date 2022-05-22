@@ -1316,6 +1316,7 @@ portserv.h2="Port-Dienste";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Erstelle Bridge";
 networking.legend3="Weise Bridge zu";
 networking.legend4="Aktuelle Bridging Tabelle";

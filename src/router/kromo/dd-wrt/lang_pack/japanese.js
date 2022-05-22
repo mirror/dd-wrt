@@ -1071,6 +1071,7 @@ portserv.h2="Port Services";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Bridgeの作成";
 networking.legend3="Bridgeの割り当て";
 networking.legend4="現在のBridge";
