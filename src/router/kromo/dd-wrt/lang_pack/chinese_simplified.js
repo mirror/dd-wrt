@@ -665,6 +665,7 @@ hfilter.right10="输入您希望您的策略被应用的时间。";
 hfilter.right12="您可以选择封禁某些服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
 hfilter.right14="您可以通过输入的URL来封锁对部分网站的访问。";
 hfilter.right16="您可以通过包含在Web页面中的关键字来封锁对其的访问。";
+hfilter.pageintro="<dd>This screen allows you to block or allow specific kinds of Internet usage. You can set up Internet access policies for specific computers and set up filters by using network port numbers.</dd>";
 hfilter.page1="<dd>此功能使您可以为特定PC最多自定义十种不同的Internet访问策略, 使用其IP或MAC地址标识. 为每个策略指定PC,日期和时间.<br /><br />创建或编辑策略, 遵循这些指示:<ol class=\"wide\"><li>在下拉菜单选择策略编号(1-10).</li><li>输入一个名字.</li><li>点击 <i>PC列表的编辑</i> 按钮.</li><li>在 <i>PC列表</i> 页面, 通过IP地址或MAC地址指定PC. 输入正确的IP地址到 <i>IP</i> 栏. 如果你有一个IP地址需要过滤, 输入正确的IP范围到 <i>IP范围</i> 栏. 输入正确的MAC地址到 <i>MAC</i> 栏.</li><li>点击 <i>应用</i> 按钮保存你的配置. 点击 <i>取消</i> 按钮取消没有保存的配置. 点击 <i>关闭</i> 按钮关闭过滤页面.</li><li>如果要在指定的日期和时间内阻止列出的PC进行Internet访问, 保持默认配置, <i>拒绝</i>. 如果您希望列出的PC在指定的日期和时间进行Internet过滤, 点击选项按钮 <i>过滤</i>.</li><li>设置访问过滤的日期. 选择 <i>每天</i> 或者每周想要的日期.</li><li>来设置访问过滤的日期. 选择 <i>24小时</i>, 或者到 <i>开始于</i> 使用下拉菜单指定特定时间段.</li><li>点击 <i>添加到策略</i>按钮保存你的配置并激活.</li><li>创建或编辑剩余的策略, 重复步骤1-9.</li></ol><br />要删除一个策略, 选择策略号, 然后点击 <i>删除</i> 按钮.</dd>";
 hfilter.page2="<dd>查看所有策略的摘要, 点击 <i>摘要</i> 按钮. Internet策略摘要页面将显示每个策略的编号, 策略名称, 天数和时间. 要删除一个策略, 选择对应的选项, 然后点击 <i>删除</i> 按钮. 点击 <i>关闭</i> 按钮返回过滤页面.</dd>";
 
@@ -1382,6 +1383,7 @@ portserv.h2="端口服务";
 networking.h2="VLAN标记";
 networking.legend="标记";
 networking.h22="桥接中";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="创建网桥";
 networking.legend3="指派到网桥";
 networking.legend4="当前桥接列表";

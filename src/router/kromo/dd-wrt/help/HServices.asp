@@ -5,7 +5,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2>Services</h2>
+			<h2><% tran("service.titl"); %></h2>
 			<dl>
 				<dt><% tran("service.dhcp_legend2"); %></dt>
 				<% tran("hservice.page1"); %>

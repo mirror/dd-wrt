@@ -8,7 +8,7 @@
 			<h2><% tran("lighttpd.titl"); %></h2>
 			<dl>
 				<dt><% tran("lighttpd.server"); %></dt>
-				<dd>Lighttpd webserver with PHP5 support. <br/>
+				<dd>Lighttpd is a webserver with PHP5 support.<br/>
 					<ul>
 					<br/>
 					</ul>

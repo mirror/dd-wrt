@@ -925,6 +925,7 @@ portserv.h2="Gestion des Protocoles";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Cr&eacute;er un Pont";
 networking.legend3="Assigner &agrave; un Pont";
 networking.legend4="Table des Ponts";

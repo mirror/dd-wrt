@@ -1116,6 +1116,7 @@ portserv.h2="Servicii pe port";
 networking.h2="Etichetare VLAN";
 networking.legend="Etichetare";
 networking.h22="Creare punte";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Creează o punte";
 networking.legend3="Atribuie unei punți";
 networking.legend4="Tabel de punți curente";

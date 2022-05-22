@@ -1135,6 +1135,7 @@ portserv.h2="Usluge Vrata";
 networking.h2="VLAN Označavanje";
 networking.legend="Označavanje";
 networking.h22="Premošćivanje";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Stvori Premosnik";
 networking.legend3="Dodijeli u Premosnik";
 networking.legend4="Tablica Trenutnih Premošćivanja";

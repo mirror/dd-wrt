@@ -1061,6 +1061,7 @@ portserv.h2="Puertos de Servicio";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Crear puente";
 networking.legend3="Asignar a un puente";
 networking.legend4="Lista de puentes actuales";
