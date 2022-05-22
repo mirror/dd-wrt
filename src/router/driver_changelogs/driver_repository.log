@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6572 | brainslayer | 2022-05-22 16:32:40 +0700 (Sun, 22 May 2022) | 1 line
+
+disable dualband switch for now. seem to cause power issues
+------------------------------------------------------------------------
 r6571 | brainslayer | 2022-05-20 04:43:38 +0700 (Fri, 20 May 2022) | 1 line
 
 update channel list
