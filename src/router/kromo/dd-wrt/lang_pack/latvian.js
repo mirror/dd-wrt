@@ -1044,6 +1044,7 @@ portserv.h2="Port Services";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Create Bridge";
 networking.legend3="Assign to Bridge";
 networking.legend4="Current Bridging Table";

@@ -1159,6 +1159,7 @@ portserv.h2="Порт Сервиси";
 networking.h2="VLAN Таговање";
 networking.legend="Таговање";
 networking.h22="Bridge-овање";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Креирај Bridge";
 networking.legend3="Додели Bridge-у";
 networking.legend4="Тренутна Bridging табела";

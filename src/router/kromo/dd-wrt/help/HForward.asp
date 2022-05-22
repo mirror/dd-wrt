@@ -7,7 +7,6 @@
 		<div id="content">
 			<h2><% tran("prforward.h2"); %></h2>
 			<dl>
-				<dd>To add a new Port Range Forwarding rule, click <i>Add</i> and fill in the fields below. To remove the last rule, click <i>Remove</i>.</dd>
 				<% tran("hprforward.page1"); %>
 				<dt><% tran("prforward.app"); %></dt>
 				<% tran("hprforward.page2"); %>

@@ -1150,6 +1150,7 @@ portserv.h2="Storitve vrat";
 networking.h2="VLAN označevanje";
 networking.legend="Označevanje";
 networking.h22="Premoščanje";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Ustvari most";
 networking.legend3="Dodeli k mostu";
 networking.legend4="Trenutna tabela mostov";

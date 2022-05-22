@@ -1029,6 +1029,7 @@ portserv.h2="Port Tj&auml;nst";
 networking.h2="VLAN Taggning";
 networking.legend="Taggning";
 networking.h22="Bryggning";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Skapa Brygga";
 networking.legend3="Koppla Brygga";
 networking.legend4="Aktuell Bryggtabell";

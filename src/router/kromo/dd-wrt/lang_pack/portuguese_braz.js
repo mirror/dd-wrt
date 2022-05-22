@@ -1163,6 +1163,7 @@ portserv.h2="Portas dos Serviços";
 networking.h2="Rotulagem VLAN";
 networking.legend="Rotulagem";
 networking.h22="Pontes";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Criar Ponte";
 networking.legend3="Atribuir à Ponte";
 networking.legend4="Tabela de Pontes Atuais";

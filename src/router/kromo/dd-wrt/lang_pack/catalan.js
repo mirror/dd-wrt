@@ -1107,6 +1107,7 @@ portserv.h2="Serveis de Port";
 networking.h2="Etiquetatge VLAN";
 networking.legend="Etiquetatge";
 networking.h22="Ponts";
+networking.h2h="Generic Networking and VLAN";
 networking.legend2="Crea Pont";
 networking.legend3="Assigna a un Pont";
 networking.legend4="Taula de Ponts Actual";
