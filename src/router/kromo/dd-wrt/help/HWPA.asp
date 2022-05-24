@@ -14,7 +14,7 @@
 				<% tran("hwpa.page3"); %>
 				<dt><% tran("wpa.psk2"); %></dt>
 				<% tran("hwpa.page4"); %>
-				<dt>WPA2 Personal Mixed</dt>
+				<dt>WPA2-PSK/WPA-PSK</dt>
 				<% tran("hwpa.page5"); %>
 				<dt><% tran("wpa.radius"); %></dt>
 				<% tran("hwpa.page6"); %>
