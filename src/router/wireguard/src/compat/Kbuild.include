@@ -18,7 +18,7 @@ endif
 
 ifeq ($(wildcard $(srctree)/include/linux/siphash.h),)
 ccflags-y += -I$(kbuild-dir)/compat/siphash/include
-#wireguard-y += compat/siphash/siphash.o
+wireguard-y += compat/siphash/siphash.o
 endif
 
 ifeq ($(wildcard $(srctree)/include/net/dst_cache.h),)

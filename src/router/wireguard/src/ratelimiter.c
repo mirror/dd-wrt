@@ -16,7 +16,7 @@
 #endif
 
 #include "ratelimiter.h"
-#include <linux/siphash.h>
+#include "compat/siphash/include/linux/siphash.h"
 #include <linux/mm.h>
 #include <linux/slab.h>
 #include <net/ip.h>

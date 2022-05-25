@@ -18,7 +18,7 @@
 #include "crypto/zinc/poly1305/poly1305.c" 
 #include "crypto/zinc/chacha20poly1305.c" 
 #include "crypto/zinc/blake2s/blake2s.c"
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0)
+#ifndef CONFIG_SIPHASH
 #include "compat/siphash/siphash.c"
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)

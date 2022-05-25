@@ -129,7 +129,7 @@ static inline void skb_reset_tc(struct sk_buff *skb)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 #include <linux/random.h>
-#include <linux/siphash.h>
+#include "siphash/include/linux/siphash.h"
 static inline u32 __compat_get_random_u32(void)
 {
 	static siphash_key_t key;
@@ -1169,7 +1169,7 @@ static inline void dst_cache_reset_now(struct dst_cache *dst_cache)
 #endif
 
 #if defined(ISUBUNTU1604) || defined(ISRHEL7)
-#include <linux/siphash.h>
+#include "siphash/include/linux/siphash.h"
 #ifndef _WG_LINUX_SIPHASH_H
 #define hsiphash_1u32 siphash_1u32
 #define hsiphash_2u32 siphash_2u32
