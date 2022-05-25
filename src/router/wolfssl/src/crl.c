@@ -1,6 +1,6 @@
 /* crl.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -345,6 +345,13 @@ int CheckCertCRL(WOLFSSL_CRL* crl, DecodedCert* cert)
 
     WOLFSSL_ENTER("CheckCertCRL");
 
+#ifdef WOLFSSL_CRL_ALLOW_MISSING_CDP
+    /* Skip CRL verification in case no CDP in peer cert */
+    if (!cert->extCrlInfo) {
+        return ret;
+    }
+#endif
+
     ret = CheckCertCRLList(crl, cert, &foundEntry);
 
 #ifdef HAVE_CRL_IO
@@ -354,7 +361,7 @@ int CheckCertCRL(WOLFSSL_CRL* crl, DecodedCert* cert)
             ret = crl->crlIOCb(crl, (const char*)cert->extCrlInfo,
                                                         cert->extCrlInfoSz);
             if (ret == WOLFSSL_CBIO_ERR_WANT_READ) {
-                ret = WANT_READ;
+                ret = OCSP_WANT_READ;
             }
             else if (ret >= 0) {
                 /* try again */
@@ -364,9 +371,30 @@ int CheckCertCRL(WOLFSSL_CRL* crl, DecodedCert* cert)
     }
 #endif
 
+#if defined(OPENSSL_ALL) && defined(WOLFSSL_CERT_GEN) && \
+    (defined(WOLFSSL_CERT_REQ) || defined(WOLFSSL_CERT_EXT)) && \
+    !defined(NO_FILESYSTEM) && !defined(NO_WOLFSSL_DIR)
+    /* if not find entry in the CRL list, it looks at the folder that sets  */
+    /* by LOOKUP_ctrl because user would want to use hash_dir.              */
+    /* Loading <issuer-hash>.rN form CRL file if find at the folder,        */
+    /* and try again checking Cert in the CRL list.                         */
+    /* When not set the folder or not use hash_dir, do nothing.             */
+    if ((foundEntry == 0) && (ret != OCSP_WANT_READ)) {
+        if (crl->cm->x509_store_p != NULL) {
+            ret = LoadCertByIssuer(crl->cm->x509_store_p,
+                          (WOLFSSL_X509_NAME*)cert->issuerName, X509_LU_CRL);
+            if (ret == WOLFSSL_SUCCESS) {
+                /* try again */
+                ret = CheckCertCRLList(crl, cert, &foundEntry);
+            }
+        }
+    }
+#endif
     if (foundEntry == 0) {
         WOLFSSL_MSG("Couldn't find CRL for status check");
-        ret = CRL_MISSING;
+        if (ret != CRL_CERT_DATE_ERR) {
+            ret = CRL_MISSING;
+        }
 
         if (crl->cm->cbMissingCRL) {
             char url[256];
@@ -633,6 +661,7 @@ static CRL_Entry* DupCRL_list(CRL_Entry* crl, void* heap)
                 current = head;
                 head = head->next;
                 FreeCRL_Entry(current, heap);
+                XFREE(current, heap, DYNAMIC_TYPE_CRL_ENTRY);
             }
 
             return NULL;
@@ -701,7 +730,8 @@ int wolfSSL_X509_STORE_add_crl(WOLFSSL_X509_STORE *store, WOLFSSL_X509_CRL *newc
     if (store->cm->crl == NULL) {
         crl = wolfSSL_X509_crl_new(store->cm);
         if (DupX509_CRL(crl, newcrl) != 0) {
-            FreeCRL(crl, 1);
+            if (crl != NULL)
+                FreeCRL(crl, 1);
             return WOLFSSL_FAILURE;
         }
         store->crl = store->cm->crl = crl;
@@ -911,7 +941,7 @@ static void* DoMonitor(void* arg)
     if (kevent(crl->mfd, &change, 1, NULL, 0, NULL) < 0) {
         WOLFSSL_MSG("kevent monitor customer event failed");
         SignalSetup(crl, MONITOR_SETUP_E);
-        close(crl->mfd);
+        (void)close(crl->mfd);
         return NULL;
     }
 
@@ -923,7 +953,7 @@ static void* DoMonitor(void* arg)
         if (fPEM == -1) {
             WOLFSSL_MSG("PEM event dir open failed");
             SignalSetup(crl, MONITOR_SETUP_E);
-            close(crl->mfd);
+            (void)close(crl->mfd);
             return NULL;
         }
     }
@@ -933,8 +963,8 @@ static void* DoMonitor(void* arg)
         if (fDER == -1) {
             WOLFSSL_MSG("DER event dir open failed");
             if (fPEM != -1)
-                close(fPEM);
-            close(crl->mfd);
+                (void)close(fPEM);
+            (void)close(crl->mfd);
             SignalSetup(crl, MONITOR_SETUP_E);
             return NULL;
         }
@@ -951,10 +981,10 @@ static void* DoMonitor(void* arg)
     /* signal to calling thread we're setup */
     if (SignalSetup(crl, 1) != 0) {
         if (fPEM != -1)
-            close(fPEM);
+            (void)close(fPEM);
         if (fDER != -1)
-            close(fDER);
-        close(crl->mfd);
+            (void)close(fDER);
+        (void)close(crl->mfd);
         return NULL;
     }
 
@@ -980,11 +1010,11 @@ static void* DoMonitor(void* arg)
     }
 
     if (fPEM != -1)
-        close(fPEM);
+        (void)close(fPEM);
     if (fDER != -1)
-        close(fDER);
+        (void)close(fDER);
 
-    close(crl->mfd);
+    (void)close(crl->mfd);
 
     return NULL;
 }
@@ -1045,7 +1075,7 @@ static void* DoMonitor(void* arg)
     notifyFd = inotify_init();
     if (notifyFd < 0) {
         WOLFSSL_MSG("inotify failed");
-        close(crl->mfd);
+        (void)close(crl->mfd);
         SignalSetup(crl, MONITOR_SETUP_E);
         return NULL;
     }
@@ -1055,8 +1085,8 @@ static void* DoMonitor(void* arg)
                                                                 IN_DELETE);
         if (wd < 0) {
             WOLFSSL_MSG("PEM notify add watch failed");
-            close(crl->mfd);
-            close(notifyFd);
+            (void)close(crl->mfd);
+            (void)close(notifyFd);
             SignalSetup(crl, MONITOR_SETUP_E);
             return NULL;
         }
@@ -1067,8 +1097,8 @@ static void* DoMonitor(void* arg)
                                                                 IN_DELETE);
         if (wd < 0) {
             WOLFSSL_MSG("DER notify add watch failed");
-            close(crl->mfd);
-            close(notifyFd);
+            (void)close(crl->mfd);
+            (void)close(notifyFd);
             SignalSetup(crl, MONITOR_SETUP_E);
             return NULL;
         }
@@ -1088,8 +1118,8 @@ static void* DoMonitor(void* arg)
 
         if (wd > 0)
             inotify_rm_watch(notifyFd, wd);
-        close(crl->mfd);
-        close(notifyFd);
+        (void)close(crl->mfd);
+        (void)close(notifyFd);
         return NULL;
     }
 
@@ -1143,8 +1173,8 @@ static void* DoMonitor(void* arg)
 
     if (wd > 0)
         inotify_rm_watch(notifyFd, wd);
-    close(crl->mfd);
-    close(notifyFd);
+    (void)close(crl->mfd);
+    (void)close(notifyFd);
 
     return NULL;
 }
@@ -1320,10 +1350,10 @@ int LoadCRL(WOLFSSL_CRL* crl, const char* path, int type, int monitor)
 #else
 int LoadCRL(WOLFSSL_CRL* crl, const char* path, int type, int monitor)
 {
-	(void)crl;
-	(void)path;
-	(void)type;
-	(void)monitor;
+    (void)crl;
+    (void)path;
+    (void)type;
+    (void)monitor;
 
     /* stub for scenario where file system is not supported */
     return NOT_COMPILED_IN;

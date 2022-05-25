@@ -14,7 +14,7 @@ extern "C" {
 #define INTIME_RTOS
 
 #undef  WOLF_EXAMPLES_STACK
-#define WOLF_EXAMPLES_STACK         65536
+#define WOLF_EXAMPLES_STACK         (1<<17)
 
 #undef  WOLFSSL_GENERAL_ALIGNMENT
 #define WOLFSSL_GENERAL_ALIGNMENT   4
@@ -27,7 +27,7 @@ extern "C" {
 
 /* disable directory support */
 #undef  NO_WOLFSSL_DIR
-#define NO_WOLFSSL_DIR
+//#define NO_WOLFSSL_DIR
 
 /* disable writev */
 #undef  NO_WRITEV
@@ -417,12 +417,6 @@ extern "C" {
 
 #undef  NO_RC4
 #define NO_RC4
-
-#undef  NO_HC128
-#define NO_HC128
-
-#undef  NO_RABBIT
-#define NO_RABBIT
 
 #undef  NO_MD4
 #define NO_MD4

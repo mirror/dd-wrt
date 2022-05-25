@@ -1,6 +1,6 @@
 /* misc.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -81,6 +81,30 @@ masking and clearing memory logic.
         return y ? _lrotr(x, y) : x;
     }
 
+#elif defined(__CCRX__)
+
+    #include <builtin.h>      /* get intrinsic definitions */
+
+    #if !defined(NO_INLINE)
+
+    #define rotlFixed(x, y) _builtin_rotl(x, y)
+
+    #define rotrFixed(x, y) _builtin_rotr(x, y)
+
+    #else /* create real function */
+
+    WC_STATIC WC_INLINE word32 rotlFixed(word32 x, word32 y)
+    {
+        return _builtin_rotl(x, y);
+    }
+
+    WC_STATIC WC_INLINE word32 rotrFixed(word32 x, word32 y)
+    {
+        return _builtin_rotr(x, y);
+    }
+
+    #endif
+
 #else /* generic */
 /* This routine performs a left circular arithmetic shift of <x> by <y> value. */
 
@@ -115,6 +139,9 @@ WC_STATIC WC_INLINE word16 rotrFixed16(word16 x, word16 y)
 #endif /* WC_RC2 */
 
 /* This routine performs a byte swap of 32-bit word value. */
+#if defined(__CCRX__) && !defined(NO_INLINE) /* shortest version for CC-RX */
+    #define ByteReverseWord32(value) _builtin_revl(value)
+#else
 WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
 {
 #ifdef PPC_INTRINSICS
@@ -124,6 +151,8 @@ WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
     return (word32)__REV(value);
 #elif defined(KEIL_INTRINSICS)
     return (word32)__rev(value);
+#elif defined(__CCRX__)
+    return (word32)_builtin_revl(value);
 #elif defined(WOLF_ALLOW_BUILTIN) && \
         defined(__GNUC_PREREQ) && __GNUC_PREREQ(4, 3)
     return (word32)__builtin_bswap32(value);
@@ -153,6 +182,7 @@ WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
     return rotlFixed(value, 16U);
 #endif
 }
+#endif /* __CCRX__ */
 /* This routine performs a byte swap of words array of a given count. */
 WC_STATIC WC_INLINE void ByteReverseWords(word32* out, const word32* in,
                                     word32 byteCount)
@@ -184,14 +214,14 @@ WC_STATIC WC_INLINE word64 ByteReverseWord64(word64 value)
 #if defined(WOLF_ALLOW_BUILTIN) && defined(__GNUC_PREREQ) && __GNUC_PREREQ(4, 3)
     return (word64)__builtin_bswap64(value);
 #elif defined(WOLFCRYPT_SLOW_WORD64)
-	return (word64)((word64)ByteReverseWord32((word32) value)) << 32 |
-                    (word64)ByteReverseWord32((word32)(value   >> 32));
+    return (word64)((word64)ByteReverseWord32((word32) value)) << 32 |
+        (word64)ByteReverseWord32((word32)(value   >> 32));
 #else
-	value = ((value & W64LIT(0xFF00FF00FF00FF00)) >> 8) |
-            ((value & W64LIT(0x00FF00FF00FF00FF)) << 8);
-	value = ((value & W64LIT(0xFFFF0000FFFF0000)) >> 16) |
-            ((value & W64LIT(0x0000FFFF0000FFFF)) << 16);
-	return rotlFixed64(value, 32U);
+    value = ((value & W64LIT(0xFF00FF00FF00FF00)) >> 8) |
+        ((value & W64LIT(0x00FF00FF00FF00FF)) << 8);
+    value = ((value & W64LIT(0xFFFF0000FFFF0000)) >> 16) |
+        ((value & W64LIT(0x0000FFFF0000FFFF)) << 16);
+    return rotlFixed64(value, 32U);
 #endif
 }
 
@@ -225,7 +255,7 @@ counts, placing the result in <*buf>. */
 WC_STATIC WC_INLINE void xorbufout(void*out, const void* buf, const void* mask,
                                    word32 count)
 {
-    if (((wolfssl_word)out | (wolfssl_word)buf | (wolfssl_word)mask | count) % \
+    if (((wc_ptr_t)out | (wc_ptr_t)buf | (wc_ptr_t)mask | count) %
                                                          WOLFSSL_WORD_SIZE == 0)
         XorWordsOut( (wolfssl_word*)out, (wolfssl_word*)buf,
                      (const wolfssl_word*)mask, count / WOLFSSL_WORD_SIZE);
@@ -253,7 +283,7 @@ counts, placing the result in <*buf>. */
 
 WC_STATIC WC_INLINE void xorbuf(void* buf, const void* mask, word32 count)
 {
-    if (((wolfssl_word)buf | (wolfssl_word)mask | count) % WOLFSSL_WORD_SIZE == 0)
+    if (((wc_ptr_t)buf | (wc_ptr_t)mask | count) % WOLFSSL_WORD_SIZE == 0)
         XorWords( (wolfssl_word*)buf,
                   (const wolfssl_word*)mask, count / WOLFSSL_WORD_SIZE);
     else {
@@ -269,7 +299,7 @@ WC_STATIC WC_INLINE void xorbuf(void* buf, const void* mask, word32 count)
 #ifndef WOLFSSL_NO_FORCE_ZERO
 /* This routine fills the first len bytes of the memory area pointed by mem
    with zeros. It ensures compiler optimizations doesn't skip it  */
-WC_STATIC WC_INLINE void ForceZero(const void* mem, word32 len)
+WC_STATIC WC_INLINE void ForceZero(void* mem, word32 len)
 {
     volatile byte* z = (volatile byte*)mem;
 
@@ -392,6 +422,36 @@ WC_STATIC WC_INLINE word32 btoi(byte b)
 }
 #endif
 
+WC_STATIC WC_INLINE signed char HexCharToByte(char ch)
+{
+    signed char ret = (signed char)ch;
+    if (ret >= '0' && ret <= '9')
+        ret -= '0';
+    else if (ret >= 'A' && ret <= 'F')
+        ret -= 'A' - 10;
+    else if (ret >= 'a' && ret <= 'f')
+        ret -= 'a' - 10;
+    else
+        ret = -1; /* error case - return code must be signed */
+    return ret;
+}
+
+WC_STATIC WC_INLINE char ByteToHex(byte in)
+{
+    static const char kHexChar[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    return (char)(kHexChar[in & 0xF]);
+}
+
+WC_STATIC WC_INLINE int ByteToHexStr(byte in, char* out)
+{
+    if (out == NULL)
+        return -1;
+
+    out[0] = ByteToHex(in >> 4);
+    out[1] = ByteToHex(in & 0xf);
+    return 0;
+}
 
 #ifndef WOLFSSL_NO_CT_OPS
 /* Constant time - mask set when a > b. */
@@ -485,7 +545,6 @@ WC_STATIC WC_INLINE byte ctSetLTE(int a, int b)
     return (byte)(((word32)a - b - 1) >> 31);
 }
 #endif
-
 
 #undef WC_STATIC
 

@@ -105,6 +105,9 @@ emailAddress                    = Email Address
 emailAddress_default            = info@wolfssl.com
 emailAddress_max                = 64
 
+userId                          = User ID
+userId_default                  = wolfSSL
+
 #default req_attr
 [ req_attributes ]
 challengePassword               = A challenge password
@@ -210,6 +213,13 @@ subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer:always
 basicConstraints=CA:false
 
+[ entity_no_CA_BOOL ]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+basicConstraints=pathlen:0
+keyUsage=digitalSignature
+extendedKeyUsage=clientAuth,serverAuth
+
 # Extensions to add to a certificate request
 [ v3_req ]
 basicConstraints = CA:FALSE
@@ -271,6 +281,14 @@ keyUsage=critical, digitalSignature, keyEncipherment, keyAgreement
 extendedKeyUsage=serverAuth
 nsCertType=server
 
+# client-ecc extensions
+[ client_ecc ]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always
+basicConstraints=critical, CA:FALSE
+keyUsage=critical, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage=clientAuth
+
 # test parsing URI
 [ uri ]
 subjectKeyIdentifier=hash
@@ -284,6 +302,18 @@ subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer:always
 basicConstraints=CA:false
 subjectAltName=URI:../relative/page.html
+
+# client cert ext
+[ client_cert_ext ]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+basicConstraints=CA:true
+subjectAltName=DNS:example.com
+keyUsage=critical, digitalSignature, keyCertSign, cRLSign
+
+# test CRL distribution points
+[ crl_dist_points ]
+crlDistributionPoints=URI:http://www.wolfssl.com/crl.pem
 
 #tsa default
 [ tsa ]

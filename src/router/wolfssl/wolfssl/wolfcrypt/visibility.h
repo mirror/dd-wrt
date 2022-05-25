@@ -1,6 +1,6 @@
 /* visibility.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -33,7 +33,7 @@
     (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
     #include <cyassl/ctaocrypt/visibility.h>
     #define WOLFSSL_API   CYASSL_API
-	#define WOLFSSL_LOCAL CYASSL_LOCAL
+    #define WOLFSSL_LOCAL CYASSL_LOCAL
 #else
 
 /* WOLFSSL_API is used for the public API symbols.
@@ -43,7 +43,8 @@
 */
 
 #if defined(BUILDING_WOLFSSL)
-    #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
+    #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__) || \
+        defined(_WIN32_WCE)
         #if defined(WOLFSSL_DLL)
             #define WOLFSSL_API __declspec(dllexport)
         #else
@@ -61,7 +62,8 @@
         #define WOLFSSL_LOCAL
     #endif /* HAVE_VISIBILITY */
 #else /* BUILDING_WOLFSSL */
-    #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
+    #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__) || \
+        defined(_WIN32_WCE)
         #if defined(WOLFSSL_DLL)
             #define WOLFSSL_API __declspec(dllimport)
         #else
