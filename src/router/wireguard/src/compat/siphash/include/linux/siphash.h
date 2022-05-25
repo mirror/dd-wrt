@@ -10,8 +10,8 @@
  * hashtables.
  */
 
-#ifndef _WG_LINUX_SIPHASH_H
-#define _WG_LINUX_SIPHASH_H
+#ifndef _LINUX_SIPHASH_H
+#define _LINUX_SIPHASH_H
 
 #include <linux/types.h>
 #include <linux/kernel.h>
