@@ -369,6 +369,32 @@ Return Values:
 * -1 if a problem occurred
 
 
+### ssl_SetKeyCallback
+
+This feature is enabled by default and will be called when a key is required for a session using static ephemeral keys with TLS v1.3.
+
+The public key being used will be provided allowing lookup of the corresponding private key.
+
+The `privKey` buffer is a dynamic buffer assigned via a call to setup a static ephemeral key via `ssl_SetNamedEphemeralKey` or `ssl_SetEphemeralKey`.
+
+```c
+typedef int (*SSLKeyCb)(void* vSniffer, int namedGroup,
+    const unsigned char* srvPub, unsigned int srvPubSz,
+    const unsigned char* cliPub, unsigned int cliPubSz,
+    unsigned char* privKey, unsigned int* privKeySz,
+    void* ctx, char* error);
+
+int ssl_SetKeyCallback(SSLKeyCb cb, void* ctx, char* error);
+```
+
+The parameter `vSniffer` is a typeless pointer to the current sniffer session (`SnifferSession`). The `namedGroup` is the TLS defined named groups like `WOLFSSL_ECC_SECP256R1` or `WOLFSSL_FFDHE_2048`. The server and client public key information are provided to lookup the private key to be used for this session. The loaded private key to be used will be passed in `key`. If a different key should be used it can optionally be returned in `privKey` and `privKeySz`.
+
+Return Values:
+
+* 0 on success
+* -1 if a problem occurred, the string error will hold a message describing the problem
+
+
 ## API Usage: SSL Statistics options
 
 For an example on the use of the sniffer stats option, search the source `snifftest.c` for `WOLFSSL_SNIFFER_STATS`.
@@ -378,25 +404,23 @@ See the header file `sniffer.h` for the structure `SSLStats` for the list of sta
 ```c
 typedef struct SSLStats
 {
-    unsigned long int sslStandardConns;
-    unsigned long int sslClientAuthConns;
-    unsigned long int sslResumedConns;
-    unsigned long int sslEphemeralMisses;
-    unsigned long int sslResumeMisses;
-    unsigned long int sslCiphersUnsupported;
-    unsigned long int sslKeysUnmatched;
-    unsigned long int sslKeyFails;
-    unsigned long int sslDecodeFails;
-    unsigned long int sslAlerts;
-    unsigned long int sslDecryptedBytes;
-    unsigned long int sslEncryptedBytes;
-    unsigned long int sslEncryptedPackets;
-    unsigned long int sslDecryptedPackets;
-    unsigned long int sslKeyMatches;
-    unsigned long int sslEncryptedConns;
-
-    unsigned long int sslResumptionValid;
-    unsigned long int sslResumptionInserts;
+    unsigned long int sslStandardConns;      /* server_hello count not including resumed sessions */
+    unsigned long int sslClientAuthConns;    /* client's who have presented certificates (mutual authentication) */
+    unsigned long int sslResumedConns;       /* resumed connections */
+    unsigned long int sslEphemeralMisses;    /* TLS v1.2 and older PFS / ephemeral connections missed (not able to decrypt) */
+    unsigned long int sslResumeMisses;       /* Resumption sessions not found */
+    unsigned long int sslCiphersUnsupported; /* No cipher suite match found when compared to supported */
+    unsigned long int sslKeysUnmatched;      /* Key callback failures (not found). Applies to WOLFSSL_SNIFFER_WATCH only */
+    unsigned long int sslKeyFails;           /* Failures loading or using keys */
+    unsigned long int sslDecodeFails;        /* Dropped packets (not application_data or match protocol version) */
+    unsigned long int sslAlerts;             /* Number of decoded alert messages */
+    unsigned long int sslDecryptedBytes;     /* Number of decrypted bytes */
+    unsigned long int sslEncryptedBytes;     /* Number of encrypted bytes */
+    unsigned long int sslEncryptedPackets;   /* Number of encrypted packets */
+    unsigned long int sslDecryptedPackets;   /* Number of decrypted packets */
+    unsigned long int sslKeyMatches;         /* Key callback successes (failures tracked in sslKeysUnmatched). Applies to WOLFSSL_SNIFFER_WATCH only. */
+    unsigned long int sslEncryptedConns;     /* Number of created sniffer sessions */
+    unsigned long int sslResumptionInserts;  /* Number of sessions reused with resumption */
 } SSLStats;
 ```
 
@@ -460,7 +484,7 @@ typedef int (*SSLWatchCb)(void* vSniffer,
     void* ctx, char* error);
 ```
 
-The parameter `vSniffer` is a typeless pointer to the current sniffer session and is meant to be passed directly to the function `ssl_SetWatchKey`. `certHash` is a SHA-256 hash of the certificate sent by the server, and its size is `certHashSz`. A pointer to certificate message’s payload is provided in the parameter `certChain`, and the certificate chain’s size in `certChainSz`. This will be a list of pairs of 24-bit certificate sizes and raw DER certificates in network order from the wire. The application space callback context data is provided in parameter ctx and is set by the function `ssl_SetWatchKeyCtx`. Any error string is copied into parameter error. Your callback function can use these values to locate the appropriate private key and load it into the sniffer session with the function `ssl_SetWatchKey`.
+The parameter `vSniffer` is a typeless pointer to the current sniffer session and is meant to be passed directly to the function `ssl_SetWatchKey_file` or `ssl_SetWatchKey_buffer`. The `certHash` is a SHA-256 hash of the certificate sent by the server, and its size is `certHashSz`. A pointer to certificate message’s payload is provided in the parameter `certChain`, and the certificate chain’s size in `certChainSz`. This will be a list of pairs of 24-bit certificate sizes and raw DER certificates in network order from the wire. The application space callback context data is provided in parameter ctx and is set by the function `ssl_SetWatchKeyCtx`. Any error string is copied into parameter error. Your callback function can use these values to locate the appropriate private key and load it into the sniffer session with the function `ssl_SetWatchKey_file` or `ssl_SetWatchKey_buffer`.
 
 Return Values:
 

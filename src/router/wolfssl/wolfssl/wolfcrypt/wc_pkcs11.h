@@ -1,6 +1,6 @@
 /* wc_pkcs11.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -39,7 +39,9 @@
 
 
 typedef struct Pkcs11Dev {
+#ifndef HAVE_PKCS11_STATIC
     void*             dlHandle;         /* Handle to library  */
+#endif
     CK_FUNCTION_LIST* func;             /* Array of functions */
     void*             heap;
 } Pkcs11Dev;
@@ -74,6 +76,10 @@ WOLFSSL_API void wc_Pkcs11_Finalize(Pkcs11Dev* dev);
 WOLFSSL_API int wc_Pkcs11Token_Init(Pkcs11Token* token, Pkcs11Dev* dev,
     int slotId, const char* tokenName, const unsigned char *userPin,
     int userPinSz);
+WOLFSSL_API int wc_Pkcs11Token_InitName(Pkcs11Token* token, Pkcs11Dev* dev,
+    const char* tokenName, int tokenSz,
+    const unsigned char* userPin, int userPinSz);
+
 WOLFSSL_API void wc_Pkcs11Token_Final(Pkcs11Token* token);
 WOLFSSL_API int wc_Pkcs11Token_Open(Pkcs11Token* token, int readWrite);
 WOLFSSL_API void wc_Pkcs11Token_Close(Pkcs11Token* token);

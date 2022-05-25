@@ -1,6 +1,6 @@
 /* esp32_mp.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -51,6 +51,8 @@ static const char* const TAG = "wolfssl_mp";
 
 #define MP_NG   -1
 
+#define ESP_TIMEOUT(cnt)         (cnt >= ESP_RSA_TIMEOUT_CNT)
+
 /* mutex */
 static wolfSSL_Mutex mp_mutex;
 static int espmp_CryptHwMutexInit = 0;
@@ -59,11 +61,12 @@ static int espmp_CryptHwMutexInit = 0;
 */
 static int esp_mp_hw_wait_clean()
 {
-    int timeout = 0;
-    while(++timeout < ESP_RSA_TIMEOUT && DPORT_REG_READ(RSA_CLEAN_REG) != 1){}
+    word32 timeout = 0;
+    while(!ESP_TIMEOUT(++timeout) && 
+                DPORT_REG_READ(RSA_CLEAN_REG) != 1) { }
 
-    if(timeout >= ESP_RSA_TIMEOUT) {
-        ESP_LOGE(TAG, "waiting hw ready is time-outed.");
+    if(ESP_TIMEOUT(timeout)) {
+        ESP_LOGE(TAG, "waiting hw ready is timed out.");
         return MP_NG;
     }
     return MP_OKAY; 
@@ -94,6 +97,7 @@ static int esp_mp_hw_lock()
     /* Enable RSA hardware */
     periph_module_enable(PERIPH_RSA_MODULE);
 
+    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
     return ret;
 }
 /*
@@ -145,19 +149,16 @@ static void process_start(word32 reg)
 /* wait until done */
 static int wait_uitil_done(word32 reg)
 {
-    int timeout = 0;
+    word32 timeout = 0;
     /* wait until done && not timeout */
-    while(1) {
-        if(++timeout < ESP_RSA_TIMEOUT && DPORT_REG_READ(reg) == 1){
-            break;
-        }
-    }
+    while(!ESP_TIMEOUT(++timeout) && 
+                DPORT_REG_READ(reg) != 1) { }
 
     /* clear interrupt */
     DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
 
-    if(timeout >= ESP_RSA_TIMEOUT) {
-        ESP_LOGE(TAG, "rsa operation is time-outed.");
+    if(ESP_TIMEOUT(timeout)) {
+        ESP_LOGE(TAG, "rsa operation is timed out.");
         return MP_NG;
     }
 

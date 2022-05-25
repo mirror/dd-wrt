@@ -1,6 +1,6 @@
 /* armv8-chacha.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
- *
  */
 
 /*  The paper NEON crypto by Daniel J. Bernstein and Peter Schwabe was used to optimize for ARM
@@ -125,7 +124,7 @@ int wc_Chacha_SetKey(ChaCha* ctx, const byte* key, word32 keySz)
         return BAD_FUNC_ARG;
 
 #ifdef XSTREAM_ALIGN
-    if ((wolfssl_word)key % 4) {
+    if ((wc_ptr_t)key % 4) {
         WOLFSSL_MSG("wc_ChachaSetKey unaligned key");
         XMEMCPY(alignKey, key, keySz);
         k = (byte*)alignKey;
