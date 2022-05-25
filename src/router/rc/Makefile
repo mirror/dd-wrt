@@ -961,7 +961,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
-LDFLAGS +=  -L$(TOP)/wireless-tools -liw
+LDFLAGS +=  -L$(TOP)/wireless-tools
 endif
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
