@@ -2104,60 +2104,90 @@ enum {
 
 /* Separated out from other enums because of size */
 enum {
-    SSL_OP_MICROSOFT_SESS_ID_BUG                  = 0x00000001,
-    SSL_OP_NETSCAPE_CHALLENGE_BUG                 = 0x00000002,
-    SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG       = 0x00000004,
-    SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG            = 0x00000008,
-    SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER             = 0x00000010,
-    SSL_OP_MSIE_SSLV2_RSA_PADDING                 = 0x00000020,
-    SSL_OP_SSLEAY_080_CLIENT_DH_BUG               = 0x00000040,
-    SSL_OP_TLS_D5_BUG                             = 0x00000080,
-    SSL_OP_TLS_BLOCK_PADDING_BUG                  = 0x00000100,
-    SSL_OP_TLS_ROLLBACK_BUG                       = 0x00000200,
-    SSL_OP_EPHEMERAL_RSA                          = 0x00000800,
-    WOLFSSL_OP_NO_SSLv3                           = 0x00001000,
-    WOLFSSL_OP_NO_TLSv1                           = 0x00002000,
-    SSL_OP_PKCS1_CHECK_1                          = 0x00004000,
-    SSL_OP_PKCS1_CHECK_2                          = 0x00008000,
-    SSL_OP_NETSCAPE_CA_DN_BUG                     = 0x00010000,
-    SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG        = 0x00020000,
-    SSL_OP_SINGLE_DH_USE                          = 0x00040000,
-    SSL_OP_NO_TICKET                              = 0x00080000,
-    SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS            = 0x00100000,
-    SSL_OP_NO_QUERY_MTU                           = 0x00200000,
-    SSL_OP_COOKIE_EXCHANGE                        = 0x00400000,
-    SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION = 0x00800000,
-    SSL_OP_SINGLE_ECDH_USE                        = 0x01000000,
-    SSL_OP_CIPHER_SERVER_PREFERENCE               = 0x02000000,
+    WOLFSSL_OP_MICROSOFT_SESS_ID_BUG                  = 0x00000001,
+    WOLFSSL_OP_NETSCAPE_CHALLENGE_BUG                 = 0x00000002,
+    WOLFSSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG       = 0x00000004,
+    WOLFSSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG            = 0x00000008,
+    WOLFSSL_OP_MICROSOFT_BIG_SSLV3_BUFFER             = 0x00000010,
+    WOLFSSL_OP_MSIE_SSLV2_RSA_PADDING                 = 0x00000020,
+    WOLFSSL_OP_SSLEAY_080_CLIENT_DH_BUG               = 0x00000040,
+    WOLFSSL_OP_TLS_D5_BUG                             = 0x00000080,
+    WOLFSSL_OP_TLS_BLOCK_PADDING_BUG                  = 0x00000100,
+    WOLFSSL_OP_TLS_ROLLBACK_BUG                       = 0x00000200,
+    WOLFSSL_OP_EPHEMERAL_RSA                          = 0x00000800,
+    WOLFSSL_OP_NO_SSLv3                               = 0x00001000,
+    WOLFSSL_OP_NO_TLSv1                               = 0x00002000,
+    WOLFSSL_OP_PKCS1_CHECK_1                          = 0x00004000,
+    WOLFSSL_OP_PKCS1_CHECK_2                          = 0x00008000,
+    WOLFSSL_OP_NETSCAPE_CA_DN_BUG                     = 0x00010000,
+    WOLFSSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG        = 0x00020000,
+    WOLFSSL_OP_SINGLE_DH_USE                          = 0x00040000,
+    WOLFSSL_OP_NO_TICKET                              = 0x00080000,
+    WOLFSSL_OP_DONT_INSERT_EMPTY_FRAGMENTS            = 0x00100000,
+    WOLFSSL_OP_NO_QUERY_MTU                           = 0x00200000,
+    WOLFSSL_OP_COOKIE_EXCHANGE                        = 0x00400000,
+    WOLFSSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION = 0x00800000,
+    WOLFSSL_OP_SINGLE_ECDH_USE                    = 0x01000000,
+    WOLFSSL_OP_CIPHER_SERVER_PREFERENCE           = 0x02000000,
     WOLFSSL_OP_NO_TLSv1_1                         = 0x04000000,
     WOLFSSL_OP_NO_TLSv1_2                         = 0x08000000,
-    SSL_OP_NO_COMPRESSION                         = 0x10000000,
+    WOLFSSL_OP_NO_COMPRESSION                     = 0x10000000,
     WOLFSSL_OP_NO_TLSv1_3                         = 0x20000000,
     WOLFSSL_OP_NO_SSLv2                           = 0x40000000,
-    SSL_OP_ALL   =
-                    (SSL_OP_MICROSOFT_SESS_ID_BUG
-                  | SSL_OP_NETSCAPE_CHALLENGE_BUG
-                  | SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG
-                  | SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
-                  | SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
-                  | SSL_OP_MSIE_SSLV2_RSA_PADDING
-                  | SSL_OP_SSLEAY_080_CLIENT_DH_BUG
-                  | SSL_OP_TLS_D5_BUG
-                  | SSL_OP_TLS_BLOCK_PADDING_BUG
-                  | SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
-                  | SSL_OP_TLS_ROLLBACK_BUG),
+    WOLFSSL_OP_ALL   =
+                   (WOLFSSL_OP_MICROSOFT_SESS_ID_BUG
+                  | WOLFSSL_OP_NETSCAPE_CHALLENGE_BUG
+                  | WOLFSSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG
+                  | WOLFSSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
+                  | WOLFSSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
+                  | WOLFSSL_OP_MSIE_SSLV2_RSA_PADDING
+                  | WOLFSSL_OP_SSLEAY_080_CLIENT_DH_BUG
+                  | WOLFSSL_OP_TLS_D5_BUG
+                  | WOLFSSL_OP_TLS_BLOCK_PADDING_BUG
+                  | WOLFSSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+                  | WOLFSSL_OP_TLS_ROLLBACK_BUG),
 };
 
 #if 1
 
 /* for compatibility these must be macros */
-#define SSL_OP_NO_SSLv2   WOLFSSL_OP_NO_SSLv2
-#define SSL_OP_NO_SSLv3   WOLFSSL_OP_NO_SSLv3
-#define SSL_OP_NO_TLSv1   WOLFSSL_OP_NO_TLSv1
-#define SSL_OP_NO_TLSv1_1 WOLFSSL_OP_NO_TLSv1_1
-#define SSL_OP_NO_TLSv1_2 WOLFSSL_OP_NO_TLSv1_2
-#if !(!defined(WOLFSSL_TLS13) && defined(WOLFSSL_APACHE_HTTPD)) /* apache uses this to determine if TLS 1.3 is enabled */
+
+#define SSL_OP_MICROSOFT_SESS_ID_BUG            WOLFSSL_OP_MICROSOFT_SESS_ID_BUG
+#define SSL_OP_NETSCAPE_CHALLENGE_BUG           WOLFSSL_OP_NETSCAPE_CHALLENGE_BUG
+#define SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG WOLFSSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG
+#define SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG      WOLFSSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
+#define SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER       WOLFSSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
+#define SSL_OP_MSIE_SSLV2_RSA_PADDING           WOLFSSL_OP_MSIE_SSLV2_RSA_PADDING
+#define SSL_OP_SSLEAY_080_CLIENT_DH_BUG         WOLFSSL_OP_SSLEAY_080_CLIENT_DH_BUG
+#define SSL_OP_TLS_D5_BUG                       WOLFSSL_OP_TLS_D5_BUG
+#define SSL_OP_TLS_BLOCK_PADDING_BUG            WOLFSSL_OP_TLS_BLOCK_PADDING_BUG
+#define SSL_OP_TLS_ROLLBACK_BUG                 WOLFSSL_OP_TLS_ROLLBACK_BUG
+#define SSL_OP_EPHEMERAL_RSA                    WOLFSSL_OP_EPHEMERAL_RSA
+#define SSL_OP_PKCS1_CHECK_1                    WOLFSSL_OP_PKCS1_CHECK_1
+#define SSL_OP_PKCS1_CHECK_2                    WOLFSSL_OP_PKCS1_CHECK_2
+#define SSL_OP_NETSCAPE_CA_DN_BUG               WOLFSSL_OP_NETSCAPE_CA_DN_BUG
+#define SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG  WOLFSSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
+#define SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS      WOLFSSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+#define SSL_OP_NO_QUERY_MTU                     WOLFSSL_OP_NO_QUERY_MTU
+#define SSL_OP_COOKIE_EXCHANGE                  WOLFSSL_OP_COOKIE_EXCHANGE
+#define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION \
+                                                WOLFSSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
+#define SSL_OP_ALL                              WOLFSSL_OP_ALL
+
+#define SSL_OP_NO_SSLv2       WOLFSSL_OP_NO_SSLv2
+#define SSL_OP_NO_SSLv3       WOLFSSL_OP_NO_SSLv3
+#define SSL_OP_NO_TLSv1       WOLFSSL_OP_NO_TLSv1
+#define SSL_OP_NO_TLSv1_1     WOLFSSL_OP_NO_TLSv1_1
+#define SSL_OP_NO_TLSv1_2     WOLFSSL_OP_NO_TLSv1_2
+#define SSL_OP_NO_COMPRESSION WOLFSSL_OP_NO_COMPRESSION
+
+/* apache uses SSL_OP_NO_TLSv1_3 to determine if TLS 1.3 is enabled */
+#if !(!defined(WOLFSSL_TLS13) && defined(WOLFSSL_APACHE_HTTPD))
 #define SSL_OP_NO_TLSv1_3 WOLFSSL_OP_NO_TLSv1_3
+#endif
+
+#ifdef HAVE_SESSION_TICKET
+#define SSL_OP_NO_TICKET WOLFSSL_OP_NO_TICKET
 #endif
 
 #define SSL_OP_NO_SSL_MASK (SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | \
