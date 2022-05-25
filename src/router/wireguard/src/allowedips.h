@@ -53,7 +53,7 @@ static struct wg_peer *wg_allowedips_lookup_src(struct allowedips *table,
 bool wg_allowedips_selftest(void);
 #endif
 
-int wg_allowedips_slab_init(void);
-void wg_allowedips_slab_uninit(void);
+static int wg_allowedips_slab_init(void);
+static void wg_allowedips_slab_uninit(void);
 
 #endif /* _WG_ALLOWEDIPS_H */
