@@ -1,6 +1,6 @@
 /* chacha.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -152,7 +152,7 @@ int wc_Chacha_SetKey(ChaCha* ctx, const byte* key, word32 keySz)
         return BAD_FUNC_ARG;
 
 #ifdef XSTREAM_ALIGN
-    if ((wolfssl_word)key % 4) {
+    if ((wc_ptr_t)key % 4) {
         WOLFSSL_MSG("wc_ChachaSetKey unaligned key");
         XMEMCPY(alignKey, key, keySz);
         k = (byte*)alignKey;
@@ -418,14 +418,14 @@ int wc_Chacha_Process(ChaCha* ctx, byte* output, const byte* input,
 
     #ifdef HAVE_INTEL_AVX2
     if (IS_INTEL_AVX2(cpuidFlags)) {
-        SAVE_VECTOR_REGISTERS();
+        SAVE_VECTOR_REGISTERS(return _svr_ret;);
         chacha_encrypt_avx2(ctx, input, output, msglen);
         RESTORE_VECTOR_REGISTERS();
         return 0;
     }
     #endif
     if (IS_INTEL_AVX1(cpuidFlags)) {
-        SAVE_VECTOR_REGISTERS();
+        SAVE_VECTOR_REGISTERS(return _svr_ret;);
         chacha_encrypt_avx1(ctx, input, output, msglen);
         RESTORE_VECTOR_REGISTERS();
         return 0;

@@ -1,6 +1,6 @@
 /* integer.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -151,7 +151,7 @@ extern "C" {
 #define MP_DIGIT_MAX     MP_MASK
 
 /* equalities */
-#define MP_LT        -1   /* less than */
+#define MP_LT       (-1)  /* less than */
 #define MP_EQ         0   /* equal to */
 #define MP_GT         1   /* greater than */
 
@@ -159,9 +159,9 @@ extern "C" {
 #define MP_NEG        1   /* negative */
 
 #define MP_OKAY       0   /* ok result */
-#define MP_MEM        -2  /* out of mem */
-#define MP_VAL        -3  /* invalid input */
-#define MP_NOT_INF    -4  /* point not at infinity */
+#define MP_MEM       (-2) /* out of mem */
+#define MP_VAL       (-3) /* invalid input */
+#define MP_NOT_INF   (-4) /* point not at infinity */
 #define MP_RANGE      MP_NOT_INF
 
 #define MP_YES        1   /* yes response */
@@ -227,14 +227,15 @@ typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 /* ---> Basic Manipulations <--- */
 #define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
 #define mp_isone(a) \
-    (((((a)->used == 1)) && ((a)->dp[0] == 1u)) ? MP_YES : MP_NO)
+    (((((a)->used == 1)) && ((a)->dp[0] == 1u) && ((a)->sign == MP_ZPOS)) \
+                                                               ? MP_YES : MP_NO)
 #define mp_iseven(a) \
     (((a)->used > 0 && (((a)->dp[0] & 1u) == 0u)) ? MP_YES : MP_NO)
 #define mp_isodd(a) \
     (((a)->used > 0 && (((a)->dp[0] & 1u) == 1u)) ? MP_YES : MP_NO)
 #define mp_isneg(a)  (((a)->sign != MP_ZPOS) ? MP_YES : MP_NO)
 #define mp_isword(a, w) \
-    ((((a)->used == 1) && ((a)->dp[0] == w)) || ((w == 0) && ((a)->used == 0)) \
+    ((((a)->used == 1) && ((a)->dp[0] == (w))) || (((w) == 0) && ((a)->used == 0)) \
                                                                ? MP_YES : MP_NO)
 
 /* number of primes */
@@ -253,11 +254,8 @@ typedef int ltm_prime_callback(unsigned char *dst, int len, void *dat);
 #endif
 
 #define mp_prime_random(a, t, size, bbs, cb, dat) \
-   mp_prime_random_ex(a, t, ((size) * 8) + 1, (bbs==1)?LTM_PRIME_BBS:0, cb, dat)
+   mp_prime_random_ex(a, t, ((size) * 8) + 1, ((bbs)==1)?LTM_PRIME_BBS:0, cb, dat)
 
-#define mp_read_raw(mp, str, len) mp_read_signed_bin((mp), (str), (len))
-#define mp_raw_size(mp)           mp_signed_bin_size(mp)
-#define mp_toraw(mp, str)         mp_to_signed_bin((mp), (str))
 #define mp_read_mag(mp, str, len) mp_read_unsigned_bin((mp), (str), (len))
 #define mp_mag_size(mp)           mp_unsigned_bin_size(mp)
 #define mp_tomag(mp, str)         mp_to_unsigned_bin((mp), (str))
@@ -285,7 +283,7 @@ MP_API int  mp_init (mp_int * a);
 MP_API void mp_clear (mp_int * a);
 MP_API void mp_free (mp_int * a);
 MP_API void mp_forcezero(mp_int * a);
-MP_API int  mp_unsigned_bin_size(mp_int * a);
+MP_API int  mp_unsigned_bin_size(const mp_int * a);
 MP_API int  mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c);
 MP_API int  mp_to_unsigned_bin_at_pos(int x, mp_int *t, unsigned char *b);
 MP_API int  mp_to_unsigned_bin (mp_int * a, unsigned char *b);
@@ -296,15 +294,15 @@ MP_API int  mp_exptmod_ex (mp_int * G, mp_int * X, int digits, mp_int * P,
 /* end functions needed by Rsa */
 
 /* functions added to support above needed, removed TOOM and KARATSUBA */
-MP_API int  mp_count_bits (mp_int * a);
+MP_API int  mp_count_bits (const mp_int * a);
 MP_API int  mp_leading_bit (mp_int * a);
 MP_API int  mp_init_copy (mp_int * a, mp_int * b);
-MP_API int  mp_copy (mp_int * a, mp_int * b);
+MP_API int  mp_copy (const mp_int * a, mp_int * b);
 MP_API int  mp_grow (mp_int * a, int size);
 MP_API int  mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d);
 MP_API void mp_zero (mp_int * a);
 MP_API void mp_clamp (mp_int * a);
-MP_API void mp_exch (mp_int * a, mp_int * b);
+MP_API int  mp_exch (mp_int * a, mp_int * b);
 MP_API int  mp_cond_swap_ct (mp_int * a, mp_int * b, int c, int m);
 MP_API void mp_rshd (mp_int * a, int b);
 MP_API void mp_rshb (mp_int * a, int b);
@@ -332,7 +330,7 @@ MP_API int  mp_reduce_is_2k_l(mp_int *a);
 MP_API int  mp_reduce_is_2k(mp_int *a);
 MP_API int  mp_dr_is_modulus(mp_int *a);
 MP_API int  mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y,
-                             int);
+                             int redmode);
 MP_API int  mp_exptmod_base_2 (mp_int * X, mp_int * P, mp_int * Y);
 #define mp_exptmod_nct(G,X,P,Y)    mp_exptmod_fast(G,X,P,Y,0)
 MP_API int  mp_montgomery_setup (mp_int * n, mp_digit * rho);
@@ -395,12 +393,12 @@ MP_API int mp_radix_size (mp_int * a, int radix, int *size);
 
 #if defined(WOLFSSL_KEY_GEN) || !defined(NO_RSA) || !defined(NO_DSA) || !defined(NO_DH)
     MP_API int mp_prime_is_prime (mp_int * a, int t, int *result);
-    MP_API int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG*);
+    MP_API int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG* rng);
 #endif /* WOLFSSL_KEY_GEN NO_RSA NO_DSA NO_DH */
 #ifdef WOLFSSL_KEY_GEN
     MP_API int mp_gcd (mp_int * a, mp_int * b, mp_int * c);
     MP_API int mp_lcm (mp_int * a, mp_int * b, mp_int * c);
-    MP_API int mp_rand_prime(mp_int* N, int len, WC_RNG* rng, void* heap);
+    MP_API int mp_rand_prime(mp_int* a, int len, WC_RNG* rng, void* heap);
 #endif
 
 MP_API int mp_cnt_lsb(mp_int *a);

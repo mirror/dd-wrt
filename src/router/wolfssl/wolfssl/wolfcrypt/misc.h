@@ -1,6 +1,6 @@
 /* misc.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -66,7 +66,7 @@ WOLFSSL_LOCAL
 void xorbuf(void*, const void*, word32);
 
 WOLFSSL_LOCAL
-void ForceZero(const void*, word32);
+void ForceZero(void*, word32);
 
 WOLFSSL_LOCAL
 int ConstantCompare(const byte*, const byte*, int);
@@ -107,6 +107,9 @@ void ato24(const byte* c, word32* u24);
 void ato32(const byte* c, word32* u32);
 word32 btoi(byte b);
 
+WOLFSSL_LOCAL signed char HexCharToByte(char ch);
+WOLFSSL_LOCAL char ByteToHex(byte in);
+WOLFSSL_LOCAL int  ByteToHexStr(byte in, char* out);
 
 WOLFSSL_LOCAL byte ctMaskGT(int a, int b);
 WOLFSSL_LOCAL byte ctMaskGTE(int a, int b);
