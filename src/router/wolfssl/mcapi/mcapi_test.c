@@ -1,6 +1,6 @@
 /* mcapi_test.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,9 +26,9 @@
 
 
 /* mc api header */
-#include <wolfssl/wolfcrypt/settings.h>
-
 #include "crypto.h"
+
+#include <wolfssl/wolfcrypt/settings.h>
 
 /* sanity test against our default implementation, wolfssl headers  */
 #include <wolfssl/wolfcrypt/md5.h>
@@ -238,7 +238,7 @@ static int check_md5(void)
         return -1;
     }
 
-    if (memcmp(mcDigest, defDigest, CRYPT_MD5_DIGEST_SIZE) != 0) {
+    if (ret == 0 && memcmp(mcDigest, defDigest, CRYPT_MD5_DIGEST_SIZE) != 0) {
         printf("md5 final memcmp failed\n");
         return -1;
     }
@@ -562,12 +562,13 @@ static int check_compress(void)
         printf("compress dynamic ret failed\n");
         return -1;
     }
-    outSz = ret1;
 
-    if (memcmp(cBuffer, dBuffer, outSz) != 0) {
+    if (memcmp(cBuffer, dBuffer, ret1) != 0) {
         printf("compress dynamic cmp failed\n");
         return -1;
     }
+
+    outSz = ret1;
 
     ret1 = CRYPT_HUFFMAN_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
 
@@ -577,11 +578,9 @@ static int check_compress(void)
     }
 
     memset(dBuffer, 0, sizeof(dBuffer));
-    ret2 = wc_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
 
-    if (ret1 != ret2 || ret2 < 0) {
-        printf("decompress dynamic ret failed\n");
-    }
+    ret1 = wc_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
+
     if (memcmp(dBuffer, text, inSz) != 0) {
         printf("decompress dynamic cmp failed\n");
         return -1;
@@ -598,13 +597,13 @@ static int check_compress(void)
         printf("compress static ret failed\n");
         return -1;
     }
-    outSz = ret1;
 
-    if (memcmp(cBuffer, dBuffer, outSz) != 0) {
+    if (memcmp(cBuffer, dBuffer, ret1) != 0) {
         printf("compress static cmp failed\n");
         return -1;
     }
 
+    outSz = ret1;
 
     ret1 = CRYPT_HUFFMAN_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
 
@@ -614,10 +613,9 @@ static int check_compress(void)
     }
 
     memset(dBuffer, 0, sizeof(dBuffer));
-    ret2 = wc_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
-    if (ret1 != ret2 || ret2 < 0) {
-        printf("decompress static ret failed\n");
-    }
+
+    ret1 = wc_DeCompress(dBuffer, sizeof(dBuffer), cBuffer, outSz);
+
     if (memcmp(dBuffer, text, inSz) != 0) {
         printf("decompress static cmp failed\n");
         return -1;
@@ -805,7 +803,7 @@ static int check_aescbc(void)
         printf("mcapi aes-128 key set failed\n");
         return -1;
     }
-    ret = wc_AesSetKey(&defAes, key, 16, iv, AES_DECRYPTION);
+    ret = wc_AesSetKey(&defAes, key, 16, iv, DES_DECRYPTION);
     if (ret != 0) {
         printf("default aes-128 key set failed\n");
         return -1;
@@ -1150,7 +1148,7 @@ static int check_aesdirect(void)
         printf("mcapi aes-128 key set failed\n");
         return -1;
     }
-    ret = wc_AesSetKey(&defAes, key, 16, iv, AES_DECRYPTION);
+    ret = wc_AesSetKey(&defAes, key, 16, iv, DES_DECRYPTION);
     if (ret != 0) {
         printf("default aes-128 key set failed\n");
         return -1;

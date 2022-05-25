@@ -1,6 +1,6 @@
 /* chacha.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -60,7 +60,7 @@ int wc_ChaCha20Poly1305_Encrypt(
 
     /* Validate function arguments */
     if (!inKey || !inIV ||
-        (inPlaintextLen > 0 && inPlaintext == NULL) ||
+        !inPlaintext || !inPlaintextLen ||
         !outCiphertext ||
         !outAuthTag)
     {
@@ -93,7 +93,7 @@ int wc_ChaCha20Poly1305_Decrypt(
 
     /* Validate function arguments */
     if (!inKey || !inIV ||
-        (inCiphertextLen > 0 && inCiphertext == NULL) ||
+        !inCiphertext || !inCiphertextLen ||
         !inAuthTag ||
         !outPlaintext)
     {

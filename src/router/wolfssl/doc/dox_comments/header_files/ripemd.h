@@ -23,7 +23,7 @@
     \sa wc_RipeMdUpdate
     \sa wc_RipeMdFinal
 */
-int wc_InitRipeMd(RipeMd*);
+WOLFSSL_API int wc_InitRipeMd(RipeMd*);
 
 /*!
     \ingroup RIPEMD
@@ -59,7 +59,7 @@ int wc_InitRipeMd(RipeMd*);
     \sa wc_InitRipeMd
     \sa wc_RipeMdFinal
 */
-int wc_RipeMdUpdate(RipeMd* ripemd, const byte* data, word32 len);
+WOLFSSL_API int wc_RipeMdUpdate(RipeMd*, const byte*, word32);
 
 /*!
     \ingroup RIPEMD
@@ -100,4 +100,4 @@ int wc_RipeMdUpdate(RipeMd* ripemd, const byte* data, word32 len);
 
     \sa none
 */
-int wc_RipeMdFinal(RipeMd* ripemd, byte* hash);
+WOLFSSL_API int wc_RipeMdFinal(RipeMd*, byte*);

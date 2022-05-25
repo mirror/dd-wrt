@@ -11,8 +11,7 @@
     \param len length of the key passed in
     \param iv pointer to the initialization vector used to initialize the key
     \param dir Cipher direction. Set AES_ENCRYPTION to encrypt,  or
-    AES_DECRYPTION to decrypt. Direction for some modes (CFB and CTR) is
-    always AES_ENCRYPTION.
+    AES_DECRYPTION to decrypt.
 
     _Example_
     \code
@@ -29,7 +28,7 @@
     \sa wc_AesSetKeyDirect
     \sa wc_AesSetIV
 */
-int  wc_AesSetKey(Aes* aes, const byte* key, word32 len,
+WOLFSSL_API int  wc_AesSetKey(Aes* aes, const byte* key, word32 len,
                               const byte* iv, int dir);
 
 /*!
@@ -59,7 +58,7 @@ int  wc_AesSetKey(Aes* aes, const byte* key, word32 len,
     \sa wc_AesSetKeyDirect
     \sa wc_AesSetKey
 */
-int  wc_AesSetIV(Aes* aes, const byte* iv);
+WOLFSSL_API int  wc_AesSetIV(Aes* aes, const byte* iv);
 
 /*!
     \ingroup AES
@@ -67,22 +66,16 @@ int  wc_AesSetIV(Aes* aes, const byte* iv);
     the resulting cipher text in the output buffer out using cipher block
     chaining with AES. This function requires that the AES object has been
     initialized by calling AesSetKey before a message is able to be encrypted.
-    This function assumes that the input message is AES block length aligned,
-    and expects the input length to be a multiple of the block length, which
-    will optionally be checked and enforced if WOLFSSL_AES_CBC_LENGTH_CHECKS
-    is defined in the build configuration.  In order to assure block-multiple
-    input, PKCS#7 style padding should be added beforehand. This differs from
-    the OpenSSL AES-CBC methods which add the padding for you. To make the
-    wolfSSL and corresponding OpenSSL functions interoperate, one should specify
+    This function assumes that the input message is AES block length aligned.
+    PKCS#7 style padding should be added beforehand. This differs from the
+    OpenSSL AES-CBC methods which add the padding for you. To make the wolfSSL
+    function and equivalent OpenSSL functions interoperate, one should specify
     the -nopad option in the OpenSSL command line function so that it behaves
     like the wolfSSL AesCbcEncrypt method and does not add extra padding
     during encryption.
 
     \return 0 On successfully encrypting message.
-    \return BAD_ALIGN_E: may be returned on block align error
-    \return BAD_LENGTH_E will be returned if the input length isn't a
-    multiple of the AES block length, when the library is built with
-    WOLFSSL_AES_CBC_LENGTH_CHECKS.
+    \return BAD_ALIGN_E: Returned on block align error
 
     \param aes pointer to the AES object used to encrypt data
     \param out pointer to the output buffer in which to store the ciphertext
@@ -107,7 +100,7 @@ int  wc_AesSetIV(Aes* aes, const byte* iv);
     \sa wc_AesSetIV
     \sa wc_AesCbcDecrypt
 */
-int  wc_AesCbcEncrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesCbcEncrypt(Aes* aes, byte* out,
                                   const byte* in, word32 sz);
 
 /*!
@@ -117,21 +110,15 @@ int  wc_AesCbcEncrypt(Aes* aes, byte* out,
     with AES. This function requires that the AES structure has been
     initialized by calling AesSetKey before a message is able to be decrypted.
     This function assumes that the original message was AES block length
-    aligned, and expects the input length to be a multiple of the block length,
-    which will optionally be checked and enforced if
-    WOLFSSL_AES_CBC_LENGTH_CHECKS is defined in the build configuration.
-    This differs from the OpenSSL AES-CBC methods, which add PKCS#7 padding
-    automatically, and so do not require block-multiple input. To make the
+    aligned. This differs from the OpenSSL AES-CBC methods which do not
+    require alignment as it adds PKCS#7 padding automatically. To make the
     wolfSSL function and equivalent OpenSSL functions interoperate, one
     should specify the -nopad option in the OpenSSL command line function
     so that it behaves like the wolfSSL AesCbcEncrypt method and does not
     create errors during decryption.
 
     \return 0 On successfully decrypting message.
-    \return BAD_ALIGN_E may be returned on block align error.
-    \return BAD_LENGTH_E will be returned if the input length isn't a
-    multiple of the AES block length, when the library is built with
-    WOLFSSL_AES_CBC_LENGTH_CHECKS.
+    \return BAD_ALIGN_E Returned on block align error.
 
     \param aes pointer to the AES object used to decrypt data.
     \param out pointer to the output buffer in which to store the plain text
@@ -156,7 +143,7 @@ int  wc_AesCbcEncrypt(Aes* aes, byte* out,
     \sa wc_AesSetKey
     \sa wc_AesCbcEncrypt
 */
-int  wc_AesCbcDecrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesCbcDecrypt(Aes* aes, byte* out,
                                   const byte* in, word32 sz);
 
 /*!
@@ -201,21 +188,18 @@ int  wc_AesCbcDecrypt(Aes* aes, byte* out,
 
     \sa wc_AesSetKey
 */
-int wc_AesCtrEncrypt(Aes* aes, byte* out,
+WOLFSSL_API int wc_AesCtrEncrypt(Aes* aes, byte* out,
                                    const byte* in, word32 sz);
 
 /*!
     \ingroup AES
     \brief This function is a one-block encrypt of the input block, in, into
-    the output block, out. It uses the key of the provided AES structure, which
-    should be initialized with wc_AesSetKey before calling this function.
-    wc_AesSetKey should have been called with the iv set to NULL. This is only
-    enabled if the configure option WOLFSSL_AES_DIRECT is enabled. __Warning:__
-    In nearly all use cases ECB mode is considered to be less secure. Please
-    avoid using ECB API’s directly whenever possible.
-
-    \return int integer values corresponding to wolfSSL error or success
-    status
+    the output block, out. It uses the key and iv (initialization vector)
+    of the provided AES structure, which should be initialized with
+    wc_AesSetKey before calling this function. It is only enabled if the
+    configure option WOLFSSL_AES_DIRECT is enabled. __Warning:__ In nearly all
+    use cases ECB mode is considered to be less secure. Please avoid using ECB
+    API’s directly whenever possible
 
     \param aes pointer to the AES object used to encrypt data
     \param out pointer to the output buffer in which to store the cipher
@@ -235,20 +219,20 @@ int wc_AesCtrEncrypt(Aes* aes, byte* out,
     \sa wc_AesDecryptDirect
     \sa wc_AesSetKeyDirect
 */
-int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in);
+WOLFSSL_API void wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in);
 
 /*!
     \ingroup AES
     \brief This function is a one-block decrypt of the input block, in, into
-    the output block, out. It uses the key of the provided AES structure, which
-    should be initialized with wc_AesSetKey before calling this function.
-    wc_AesSetKey should have been called with the iv set to NULL. This is only
-    enabled if the configure option WOLFSSL_AES_DIRECT is enabled. __Warning:__
-    In nearly all use cases ECB mode is considered to be less secure. Please
-    avoid using ECB API’s directly whenever possible.
+    the output block, out. It uses the key and iv (initialization vector) of
+    the provided AES structure, which should be initialized with wc_AesSetKey
+    before calling this function. It is only enabled if the configure option
+    WOLFSSL_AES_DIRECT is enabled, and there is support for direct AES
+    encryption on the system in question. __Warning:__ In nearly all use cases
+    ECB mode is considered to be less secure. Please avoid using ECB API’s
+    directly whenever possible
 
-    \return int integer values corresponding to wolfSSL error or success
-    status
+    \return none
 
     \param aes pointer to the AES object used to encrypt data
     \param out pointer to the output buffer in which to store the plain
@@ -269,7 +253,7 @@ int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in);
     \sa wc_AesEncryptDirect
     \sa wc_AesSetKeyDirect
  */
-int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in);
+WOLFSSL_API void wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in);
 
 /*!
     \ingroup AES
@@ -309,7 +293,7 @@ int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in);
     \sa wc_AesDecryptDirect
     \sa wc_AesSetKey
 */
-int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
+WOLFSSL_API int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
                                 const byte* iv, int dir);
 
 /*!
@@ -339,7 +323,7 @@ int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
     \sa wc_AesGcmEncrypt
     \sa wc_AesGcmDecrypt
 */
-int  wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len);
+WOLFSSL_API int  wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len);
 
 /*!
     \ingroup AES
@@ -384,7 +368,7 @@ int  wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len);
     \sa wc_AesGcmSetKey
     \sa wc_AesGcmDecrypt
 */
-int  wc_AesGcmEncrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesGcmEncrypt(Aes* aes, byte* out,
                                    const byte* in, word32 sz,
                                    const byte* iv, word32 ivSz,
                                    byte* authTag, word32 authTagSz,
@@ -433,7 +417,7 @@ int  wc_AesGcmEncrypt(Aes* aes, byte* out,
     \sa wc_AesGcmSetKey
     \sa wc_AesGcmEncrypt
 */
-int  wc_AesGcmDecrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesGcmDecrypt(Aes* aes, byte* out,
                                    const byte* in, word32 sz,
                                    const byte* iv, word32 ivSz,
                                    const byte* authTag, word32 authTagSz,
@@ -460,7 +444,7 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out,
 
     \sa wc_GmacUpdate
 */
-int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len);
+WOLFSSL_API int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len);
 
 /*!
     \ingroup AES
@@ -496,7 +480,7 @@ int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len);
 
     \sa wc_GmacSetKey
 */
-int wc_GmacUpdate(Gmac* gmac, const byte* iv, word32 ivSz,
+WOLFSSL_API int wc_GmacUpdate(Gmac* gmac, const byte* iv, word32 ivSz,
                                const byte* authIn, word32 authInSz,
                                byte* authTag, word32 authTagSz);
 
@@ -523,7 +507,7 @@ int wc_GmacUpdate(Gmac* gmac, const byte* iv, word32 ivSz,
     \sa wc_AesCcmEncrypt
     \sa wc_AesCcmDecrypt
 */
-int  wc_AesCcmSetKey(Aes* aes, const byte* key, word32 keySz);
+WOLFSSL_API int  wc_AesCcmSetKey(Aes* aes, const byte* key, word32 keySz);
 
 /*!
     \ingroup AES
@@ -568,7 +552,7 @@ int  wc_AesCcmSetKey(Aes* aes, const byte* key, word32 keySz);
     \sa wc_AesCcmSetKey
     \sa wc_AesCcmDecrypt
 */
-int  wc_AesCcmEncrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesCcmEncrypt(Aes* aes, byte* out,
                                    const byte* in, word32 inSz,
                                    const byte* nonce, word32 nonceSz,
                                    byte* authTag, word32 authTagSz,
@@ -623,7 +607,7 @@ int  wc_AesCcmEncrypt(Aes* aes, byte* out,
     \sa wc_AesCcmSetKey
     \sa wc_AesCcmEncrypt
 */
-int  wc_AesCcmDecrypt(Aes* aes, byte* out,
+WOLFSSL_API int  wc_AesCcmDecrypt(Aes* aes, byte* out,
                                    const byte* in, word32 inSz,
                                    const byte* nonce, word32 nonceSz,
                                    const byte* authTag, word32 authTagSz,
@@ -661,7 +645,7 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out,
     \sa wc_AesXtsDecrypt
     \sa wc_AesXtsFree
 */
-int wc_AesXtsSetKey(XtsAes* aes, const byte* key,
+WOLFSSL_API int wc_AesXtsSetKey(XtsAes* aes, const byte* key,
          word32 len, int dir, void* heap, int devId);
 
 /*!
@@ -700,7 +684,7 @@ int wc_AesXtsSetKey(XtsAes* aes, const byte* key,
     \sa wc_AesXtsSetKey
     \sa wc_AesXtsFree
 */
-int wc_AesXtsEncryptSector(XtsAes* aes, byte* out,
+WOLFSSL_API int wc_AesXtsEncryptSector(XtsAes* aes, byte* out,
          const byte* in, word32 sz, word64 sector);
 
 /*!
@@ -739,7 +723,7 @@ int wc_AesXtsEncryptSector(XtsAes* aes, byte* out,
     \sa wc_AesXtsSetKey
     \sa wc_AesXtsFree
 */
-int wc_AesXtsDecryptSector(XtsAes* aes, byte* out,
+WOLFSSL_API int wc_AesXtsDecryptSector(XtsAes* aes, byte* out,
          const byte* in, word32 sz, word64 sector);
 
 /*!
@@ -779,7 +763,7 @@ int wc_AesXtsDecryptSector(XtsAes* aes, byte* out,
     \sa wc_AesXtsSetKey
     \sa wc_AesXtsFree
 */
-int wc_AesXtsEncrypt(XtsAes* aes, byte* out,
+WOLFSSL_API int wc_AesXtsEncrypt(XtsAes* aes, byte* out,
          const byte* in, word32 sz, const byte* i, word32 iSz);
 
 /*!
@@ -818,7 +802,7 @@ int wc_AesXtsEncrypt(XtsAes* aes, byte* out,
     \sa wc_AesXtsSetKey
     \sa wc_AesXtsFree
 */
-int wc_AesXtsDecrypt(XtsAes* aes, byte* out,
+WOLFSSL_API int wc_AesXtsDecrypt(XtsAes* aes, byte* out,
         const byte* in, word32 sz, const byte* i, word32 iSz);
 
 /*!
@@ -845,7 +829,7 @@ int wc_AesXtsDecrypt(XtsAes* aes, byte* out,
     \sa wc_AesXtsDecrypt
     \sa wc_AesXtsSetKey
 */
-int wc_AesXtsFree(XtsAes* aes);
+WOLFSSL_API int wc_AesXtsFree(XtsAes* aes);
 
 
 /*!
@@ -872,162 +856,5 @@ int wc_AesXtsFree(XtsAes* aes);
     \sa wc_AesSetKey
     \sa wc_AesSetIV
 */
-int  wc_AesInit(Aes* aes, void* heap, int devId);
+WOLFSSL_API int  wc_AesInit(Aes*, void*, int);
 
-/*!
-    \ingroup AES
-
-    \brief AES with CFB mode.
-
-    \return 0 Success and negative error values on failure
-
-    \param aes   AES keys to use for block encrypt/decrypt
-    \param out   output buffer to hold cipher text must be at least as large
-    as inputbuffer)
-    \param in    input plain text buffer to encrypt
-    \param sz    size of input buffer
-
-    _Example_
-    \code
-    Aes aes;
-    unsigned char plain[SIZE];
-    unsigned char cipher[SIZE];
-
-    //set up key with AES_ENCRYPTION as dir for both encrypt and decrypt
-
-    if(wc_AesCfbEncrypt(&aes, cipher, plain, SIZE) != 0)
-    {
-        // Handle error
-    }
-    \endcode
-
-    \sa wc_AesCfbDecrypt
-    \sa wc_AesSetKey
-*/
-int wc_AesCfbEncrypt(Aes* aes, byte* out, const byte* in, word32 sz);
-
-/*!
-    \ingroup AES
-
-    \brief AES with CFB mode.
-
-    \return 0 Success and negative error values on failure
-
-    \param aes   AES keys to use for block encrypt/decrypt
-    \param out   output buffer to hold decrypted text must be at least as large
-    as inputbuffer)
-    \param in    input buffer to decrypt
-    \param sz    size of input buffer
-
-    _Example_
-    \code
-    Aes aes;
-    unsigned char plain[SIZE];
-    unsigned char cipher[SIZE];
-
-    //set up key with AES_ENCRYPTION as dir for both encrypt and decrypt
-
-    if(wc_AesCfbDecrypt(&aes, plain, cipher, SIZE) != 0)
-    {
-        // Handle error
-    }
-    \endcode
-
-    \sa wc_AesCfbEncrypt
-    \sa wc_AesSetKey
-*/
-int wc_AesCfbDecrypt(Aes* aes, byte* out, const byte* in, word32 sz);
-
-/*!
-    \ingroup AES
-
-    \brief This function performs SIV (synthetic initialization vector)
-    encryption as described in RFC 5297.
-
-    \return 0 On successful encryption.
-    \return BAD_FUNC_ARG If key, SIV, or output buffer are NULL. Also returned
-    if the key size isn't 32, 48, or 64 bytes.
-    \return Other Other negative error values returned if AES or CMAC operations
-    fail.
-
-    \param key Byte buffer containing the key to use.
-    \param keySz Length of the key buffer in bytes.
-    \param assoc Additional, authenticated associated data (AD).
-    \param assocSz Length of AD buffer in bytes.
-    \param nonce A number used once. Used by the algorithm in the same manner as
-    the AD.
-    \param nonceSz Length of nonce buffer in bytes.
-    \param in Plaintext buffer to encrypt.
-    \param inSz Length of plaintext buffer.
-    \param siv The SIV output by S2V (see RFC 5297 2.4).
-    \param out Buffer to hold the ciphertext. Should be the same length as the
-    plaintext buffer.
-
-    _Example_
-    \code
-    byte key[] = { some 32, 48, or 64 byte key };
-    byte assoc[] = {0x01, 0x2, 0x3};
-    byte nonce[] = {0x04, 0x5, 0x6};
-    byte plainText[] = {0xDE, 0xAD, 0xBE, 0xEF};
-    byte siv[AES_BLOCK_SIZE];
-    byte cipherText[sizeof(plainText)];
-    if (wc_AesSivEncrypt(key, sizeof(key), assoc, sizeof(assoc), nonce,
-        sizeof(nonce), plainText, sizeof(plainText), siv, cipherText) != 0) {
-        // failed to encrypt
-    }
-    \endcode
-
-    \sa wc_AesSivDecrypt
-*/
-
-
-int wc_AesSivEncrypt(const byte* key, word32 keySz, const byte* assoc,
-                     word32 assocSz, const byte* nonce, word32 nonceSz,
-                     const byte* in, word32 inSz, byte* siv, byte* out);
-
-/*!
-    \ingroup AES
-    \brief This function performs SIV (synthetic initialization vector)
-    decryption as described in RFC 5297.
-
-    \return 0 On successful decryption.
-    \return BAD_FUNC_ARG If key, SIV, or output buffer are NULL. Also returned
-    if the key size isn't 32, 48, or 64 bytes.
-    \return AES_SIV_AUTH_E If the SIV derived by S2V doesn't match the input
-    SIV (see RFC 5297 2.7). 
-    \return Other Other negative error values returned if AES or CMAC operations
-    fail.
-
-    \param key Byte buffer containing the key to use.
-    \param keySz Length of the key buffer in bytes.
-    \param assoc Additional, authenticated associated data (AD).
-    \param assocSz Length of AD buffer in bytes.
-    \param nonce A number used once. Used by the underlying algorithm in the
-    same manner as the AD.
-    \param nonceSz Length of nonce buffer in bytes.
-    \param in Ciphertext buffer to decrypt.
-    \param inSz Length of ciphertext buffer.
-    \param siv The SIV that accompanies the ciphertext (see RFC 5297 2.4).
-    \param out Buffer to hold the decrypted plaintext. Should be the same length
-    as the ciphertext buffer.
-
-    _Example_
-    \code
-    byte key[] = { some 32, 48, or 64 byte key };
-    byte assoc[] = {0x01, 0x2, 0x3};
-    byte nonce[] = {0x04, 0x5, 0x6};
-    byte cipherText[] = {0xDE, 0xAD, 0xBE, 0xEF};
-    byte siv[AES_BLOCK_SIZE] = { the SIV that came with the ciphertext };
-    byte plainText[sizeof(cipherText)];
-    if (wc_AesSivDecrypt(key, sizeof(key), assoc, sizeof(assoc), nonce,
-        sizeof(nonce), cipherText, sizeof(cipherText), siv, plainText) != 0) {
-        // failed to decrypt
-    }
-    \endcode
-
-    \sa wc_AesSivEncrypt
-*/
-
-int wc_AesSivDecrypt(const byte* key, word32 keySz, const byte* assoc,
-                     word32 assocSz, const byte* nonce, word32 nonceSz,
-                     const byte* in, word32 inSz, byte* siv, byte* out);

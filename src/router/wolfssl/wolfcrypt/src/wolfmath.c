@@ -1,6 +1,6 @@
 /* wolfmath.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -54,7 +54,7 @@
 
     /* all off / all on pointer addresses for constant calculations */
     /* ecc.c uses same table */
-    const wc_ptr_t wc_off_on_addr[2] =
+    const wolfssl_word wc_off_on_addr[2] =
     {
     #if defined(WC_64BIT_CPU)
         W64LIT(0x0000000000000000),
@@ -71,7 +71,7 @@
 #endif
 
 
-int get_digit_count(const mp_int* a)
+int get_digit_count(mp_int* a)
 {
     if (a == NULL)
         return 0;
@@ -79,7 +79,7 @@ int get_digit_count(const mp_int* a)
     return a->used;
 }
 
-mp_digit get_digit(const mp_int* a, int n)
+mp_digit get_digit(mp_int* a, int n)
 {
     if (a == NULL)
         return 0;
@@ -142,7 +142,7 @@ int get_rand_digit(WC_RNG* rng, mp_digit* d)
     return wc_RNG_GenerateBlock(rng, (byte*)d, sizeof(mp_digit));
 }
 
-#if defined(WC_RSA_BLINDING) || defined(WOLFCRYPT_HAVE_SAKKE)
+#ifdef WC_RSA_BLINDING
 int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 {
     int ret = 0;
@@ -198,7 +198,7 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 
     return ret;
 }
-#endif /* WC_RSA_BLINDING || WOLFCRYPT_HAVE_SAKKE */
+#endif /* WC_RSA_BLINDING */
 #endif
 
 #if defined(HAVE_ECC) || defined(WOLFSSL_EXPORT_INT)
@@ -210,37 +210,26 @@ int wc_export_int(mp_int* mp, byte* buf, word32* len, word32 keySz,
 {
     int err;
 
-    if (mp == NULL || buf == NULL || len == NULL)
+    if (mp == NULL)
         return BAD_FUNC_ARG;
 
+    /* check buffer size */
+    if (*len < keySz) {
+        *len = keySz;
+        return BUFFER_E;
+    }
+
+    *len = keySz;
+    XMEMSET(buf, 0, *len);
+
     if (encType == WC_TYPE_HEX_STR) {
-        /* for WC_TYPE_HEX_STR the keySz is not used.
-         * The size is computed via mp_radix_size and checked with len input */
     #ifdef WC_MP_TO_RADIX
-        int size = 0;
-        err = mp_radix_size(mp, MP_RADIX_HEX, &size);
-        if (err == MP_OKAY) {
-            /* make sure we can fit result */
-            if (*len < (word32)size) {
-                *len = (word32)size;
-                return BUFFER_E;
-            }
-            *len = (word32)size;
-            err = mp_tohex(mp, (char*)buf);
-        }
+        err = mp_tohex(mp, (char*)buf);
     #else
         err = NOT_COMPILED_IN;
     #endif
     }
     else {
-        /* for WC_TYPE_UNSIGNED_BIN keySz is used to zero pad.
-         * The key size is always returned as the size */
-        if (*len < keySz) {
-            *len = keySz;
-            return BUFFER_E;
-        }
-        *len = keySz;
-        XMEMSET(buf, 0, *len);
         err = mp_to_unsigned_bin(mp, buf + (keySz - mp_unsigned_bin_size(mp)));
     }
 
@@ -344,7 +333,7 @@ void wc_bigint_free(WC_BIGINT* a)
 
 /* sz: make sure the buffer is at least that size and zero padded.
  *     A `sz == 0` will use the size of `src`.
- *     The calculates sz is stored into dst->len in `wc_bigint_alloc`.
+ *     The calulcates sz is stored into dst->len in `wc_bigint_alloc`.
  */
 int wc_mp_to_bigint_sz(mp_int* src, WC_BIGINT* dst, word32 sz)
 {

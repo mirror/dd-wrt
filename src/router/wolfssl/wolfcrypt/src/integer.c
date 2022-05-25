@@ -1,6 +1,6 @@
 /* integer.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -183,13 +183,7 @@ void mp_clear (mp_int * a)
       return;
 
   /* only do anything if a hasn't been freed previously */
-#ifndef HAVE_WOLF_BIGINT
-  /* When HAVE_WOLF_BIGINT then mp_free -> wc_bigint_free needs to be called
-   * because a->raw->buf may be allocated even when a->dp == NULL. This is the
-   * case for when a zero is loaded into the mp_int. */
-  if (a->dp != NULL)
-#endif
-  {
+  if (a->dp != NULL) {
     /* first zero the digits */
     for (i = 0; i < a->used; i++) {
         a->dp[i] = 0;
@@ -244,7 +238,7 @@ void mp_forcezero(mp_int * a)
 
 
 /* get the size for an unsigned equivalent */
-int mp_unsigned_bin_size (const mp_int * a)
+int mp_unsigned_bin_size (mp_int * a)
 {
   int     size = mp_count_bits (a);
   return (size / 8 + ((size & 7) != 0 ? 1 : 0));
@@ -252,7 +246,7 @@ int mp_unsigned_bin_size (const mp_int * a)
 
 
 /* returns the number of bits in an int */
-int mp_count_bits (const mp_int * a)
+int mp_count_bits (mp_int * a)
 {
   int     r;
   mp_digit q;
@@ -356,7 +350,7 @@ int mp_init_copy (mp_int * a, mp_int * b)
 
 
 /* copy, b = a */
-int mp_copy (const mp_int * a, mp_int * b)
+int mp_copy (mp_int * a, mp_int * b)
 {
   int     res, n;
 
@@ -511,7 +505,7 @@ void mp_zero (mp_int * a)
   a->used = 0;
 
   tmp = a->dp;
-  for (n = 0; tmp != NULL && n < a->alloc; n++) {
+  for (n = 0; n < a->alloc; n++) {
      *tmp++ = 0;
   }
 }
@@ -543,14 +537,13 @@ void mp_clamp (mp_int * a)
 /* swap the elements of two integers, for cases where you can't simply swap the
  * mp_int pointers around
  */
-int mp_exch (mp_int * a, mp_int * b)
+void mp_exch (mp_int * a, mp_int * b)
 {
   mp_int  t;
 
   t  = *a;
   *a = *b;
   *b = t;
-  return MP_OKAY;
 }
 
 int mp_cond_swap_ct (mp_int * a, mp_int * b, int c, int m)
@@ -667,7 +660,7 @@ void mp_rshd (mp_int * a, int b)
 /* calc a value mod 2**b */
 int mp_mod_2d (mp_int * a, int b, mp_int * c)
 {
-  int     x, res, bmax;
+  int     x, res;
 
   /* if b is <= 0 then zero the int */
   if (b <= 0) {
@@ -676,7 +669,7 @@ int mp_mod_2d (mp_int * a, int b, mp_int * c)
   }
 
   /* if the modulus is larger than the value than return */
-  if (a->sign == MP_ZPOS && b >= (int) (a->used * DIGIT_BIT)) {
+  if (b >= (int) (a->used * DIGIT_BIT)) {
     res = mp_copy (a, c);
     return res;
   }
@@ -686,38 +679,14 @@ int mp_mod_2d (mp_int * a, int b, mp_int * c)
     return res;
   }
 
-  /* calculate number of digits in mod value */
-  bmax = (b / DIGIT_BIT) + ((b % DIGIT_BIT) == 0 ? 0 : 1);
   /* zero digits above the last digit of the modulus */
-  for (x = bmax; x < c->used; x++) {
+  for (x = (b / DIGIT_BIT) + ((b % DIGIT_BIT) == 0 ? 0 : 1); x < c->used; x++) {
     c->dp[x] = 0;
   }
-
-  if (c->sign == MP_NEG) {
-     mp_digit carry = 0;
-
-     /* grow result to size of modulus */
-     if ((res = mp_grow(c, bmax)) != MP_OKAY) {
-         return res;
-     }
-     /* negate value */
-     for (x = 0; x < c->used; x++) {
-         mp_digit next = c->dp[x] > 0;
-         c->dp[x] = ((mp_digit)0 - c->dp[x] - carry) & MP_MASK;
-         carry |= next;
-     }
-     for (; x < bmax; x++) {
-         c->dp[x] = ((mp_digit)0 - carry) & MP_MASK;
-     }
-     c->used = bmax;
-     c->sign = MP_ZPOS;
-  }
-
   /* clear the digit that is not completely outside/inside the modulus */
   x = DIGIT_BIT - (b % DIGIT_BIT);
   if (x != DIGIT_BIT) {
-    c->dp[bmax - 1] &=
-         ((mp_digit)~((mp_digit)0)) >> (x + ((sizeof(mp_digit)*8) - DIGIT_BIT));
+    c->dp[b / DIGIT_BIT] &= ~((mp_digit)0) >> (x + ((sizeof(mp_digit)*8) - DIGIT_BIT));
   }
   mp_clamp (c);
   return MP_OKAY;
@@ -889,7 +858,7 @@ int mp_lshd (mp_int * a, int b)
 #if defined(FREESCALE_LTC_TFM)
 int wolfcrypt_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 #else
-    int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y) // NOLINT(misc-no-recursion)
+int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 #endif
 {
   int dr;
@@ -899,13 +868,16 @@ int wolfcrypt_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
      return MP_VAL;
   }
   if (mp_isone(P)) {
-     return mp_set(Y, 0);
+     mp_set(Y, 0);
+     return MP_OKAY;
   }
   if (mp_iszero(X)) {
-     return mp_set(Y, 1);
+     mp_set(Y, 1);
+     return MP_OKAY;
   }
   if (mp_iszero(G)) {
-     return mp_set(Y, 0);
+     mp_set(Y, 0);
+     return MP_OKAY;
   }
 
   /* if exponent X is negative we have to recurse */
@@ -1227,7 +1199,8 @@ int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c)
     goto LBL_ERR;
   }
   if (mp_isone(&x)) {
-    res = mp_set(c, 1);
+    mp_set(c, 1);
+    res = MP_OKAY;
     goto LBL_ERR;
   }
   if ((res = mp_copy (b, &y)) != MP_OKAY) {
@@ -1390,9 +1363,6 @@ int mp_cmp_mag (mp_int * a, mp_int * b)
     return MP_LT;
   }
 
-  if (a->used == 0)
-      return MP_EQ;
-
   /* alias for a */
   tmpa = a->dp + (a->used - 1);
 
@@ -1479,16 +1449,10 @@ int mp_set (mp_int * a, mp_digit b)
 /* check if a bit is set */
 int mp_is_bit_set (mp_int *a, mp_digit b)
 {
-    mp_digit i = b / DIGIT_BIT;  /* word index */
-    mp_digit s = b % DIGIT_BIT;  /* bit index */
-
-    if ((mp_digit)a->used <= i) {
-        /* no words available at that bit count */
+    if ((mp_digit)a->used < b/DIGIT_BIT)
         return 0;
-    }
 
-    /* get word and shift bit to check down to index 0 */
-    return (int)((a->dp[i] >> s) & (mp_digit)1);
+    return (int)((a->dp[b/DIGIT_BIT] >> b%DIGIT_BIT) & (mp_digit)1);
 }
 
 /* c = a mod b, 0 <= c < b */
@@ -1713,7 +1677,7 @@ int s_mp_add (mp_int * a, mp_int * b, mp_int * c)
   }
 
   /* init result */
-  if (c->dp == NULL || c->alloc < max_ab + 1) {
+  if (c->alloc < max_ab + 1) {
     if ((res = mp_grow (c, max_ab + 1)) != MP_OKAY) {
       return res;
     }
@@ -1757,7 +1721,7 @@ int s_mp_add (mp_int * a, mp_int * b, mp_int * c)
     if (min_ab != max_ab) {
       for (; i < max_ab; i++) {
         /* T[i] = X[i] + U */
-          *tmpc = x->dp[i] + u;
+        *tmpc = x->dp[i] + u;
 
         /* U = carry bit of T[i] */
         u = *tmpc >> ((mp_digit)DIGIT_BIT);
@@ -1996,7 +1960,7 @@ int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y,
    * one of many reduction algorithms without modding the guts of
    * the code with if statements everywhere.
    */
-  int     (*redux)(mp_int*,mp_int*,mp_digit) = NULL; // cppcheck-suppress nullPointerRedundantCheck // cppcheck 2.6.3 false positive
+  int     (*redux)(mp_int*,mp_int*,mp_digit) = NULL;
 
 #ifdef WOLFSSL_SMALL_STACK
   M = (mp_int*) XMALLOC(sizeof(mp_int) * TAB_SIZE, NULL,
@@ -2445,7 +2409,7 @@ int mp_exptmod_base_2(mp_int * X, mp_int * P, mp_int * Y)
   }
 
   /* swap res with Y */
-  err = mp_copy(res, Y);
+  mp_copy(res, Y);
 
 LBL_RES:mp_clear (res);
 LBL_M:
@@ -2962,7 +2926,7 @@ int mp_mul_d (mp_int * a, mp_digit b, mp_int * c)
   int      ix, res, olduse;
 
   /* make sure c is big enough to hold a*b */
-  if (c->dp == NULL || c->alloc < a->used + 1) {
+  if (c->alloc < a->used + 1) {
     if ((res = mp_grow (c, a->used + 1)) != MP_OKAY) {
       return res;
     }
@@ -3480,25 +3444,23 @@ int fast_s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
       int      iy;
       mp_digit *tmpx, *tmpy;
 
-      if ((a->used > 0) && (b->used > 0)) {
-          /* get offsets into the two bignums */
-          ty = MIN(b->used-1, ix);
-          tx = ix - ty;
+      /* get offsets into the two bignums */
+      ty = MIN(b->used-1, ix);
+      tx = ix - ty;
 
-          /* setup temp aliases */
-          tmpx = a->dp + tx;
-          tmpy = b->dp + ty;
+      /* setup temp aliases */
+      tmpx = a->dp + tx;
+      tmpy = b->dp + ty;
 
-          /* this is the number of times the loop will iterate, essentially
-             while (tx++ < a->used && ty-- >= 0) { ... }
-          */
-          iy = MIN(a->used-tx, ty+1);
+      /* this is the number of times the loop will iterate, essentially
+         while (tx++ < a->used && ty-- >= 0) { ... }
+       */
+      iy = MIN(a->used-tx, ty+1);
 
-          /* execute loop */
-          for (iz = 0; iz < iy; ++iz) {
-              _W += ((mp_word)*tmpx++)*((mp_word)*tmpy--);
+      /* execute loop */
+      for (iz = 0; iz < iy; ++iz) {
+         _W += ((mp_word)*tmpx++)*((mp_word)*tmpy--);
 
-          }
       }
 
       /* store term */
@@ -4335,12 +4297,10 @@ int mp_sqrmod (mp_int * a, mp_int * b, mp_int * c)
     (!defined(NO_RSA) && !defined(NO_RSA_BOUNDS_CHECK))
 
 /* single digit addition */
-int mp_add_d (mp_int* a, mp_digit b, mp_int* c) // NOLINT(misc-no-recursion)
+int mp_add_d (mp_int* a, mp_digit b, mp_int* c)
 {
   int     res, ix, oldused;
   mp_digit *tmpa, *tmpc, mu;
-
-  if (b > MP_DIGIT_MAX) return MP_VAL;
 
   /* grow c as required */
   if (c->alloc < a->used + 1) {
@@ -4377,10 +4337,6 @@ int mp_add_d (mp_int* a, mp_digit b, mp_int* c) // NOLINT(misc-no-recursion)
 
   /* destination alias */
   tmpc    = c->dp;
-
-  if (tmpa == NULL || tmpc == NULL) {
-    return MP_MEM;
-  }
 
   /* if a is positive */
   if (a->sign == MP_ZPOS) {
@@ -4433,7 +4389,7 @@ int mp_add_d (mp_int* a, mp_digit b, mp_int* c) // NOLINT(misc-no-recursion)
 
 
 /* single digit subtraction */
-int mp_sub_d (mp_int * a, mp_digit b, mp_int * c) // NOLINT(misc-no-recursion)
+int mp_sub_d (mp_int * a, mp_digit b, mp_int * c)
 {
   mp_digit *tmpa, *tmpc, mu;
   int       res, ix, oldused;
@@ -4465,10 +4421,6 @@ int mp_sub_d (mp_int * a, mp_digit b, mp_int * c) // NOLINT(misc-no-recursion)
   oldused = c->used;
   tmpa    = a->dp;
   tmpc    = c->dp;
-
-  if (tmpa == NULL || tmpc == NULL) {
-    return MP_MEM;
-  }
 
   /* if a <= b simply fix the single digit */
   if ((a->used == 1 && a->dp[0] <= b) || a->used == 0) {
@@ -4513,7 +4465,7 @@ int mp_sub_d (mp_int * a, mp_digit b, mp_int * c) // NOLINT(misc-no-recursion)
 
 #if defined(WOLFSSL_KEY_GEN) || defined(HAVE_COMP_KEY) || defined(HAVE_ECC) || \
     defined(DEBUG_WOLFSSL) || !defined(NO_RSA) || !defined(NO_DSA) || \
-    !defined(NO_DH) || defined(WC_MP_TO_RADIX)
+    !defined(NO_DH)
 
 static const int lnz[16] = {
    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0
@@ -4633,7 +4585,7 @@ static int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
      if (w >= b) {
 #ifdef WOLFSSL_LINUXKM
         t = (mp_digit)w;
-        /* Linux kernel macro for in-place 64 bit integer division. */
+	/* Linux kernel macro for in-place 64 bit integer division. */
         do_div(t, b);
 #else
         t = (mp_digit)(w / b);
@@ -4918,7 +4870,6 @@ int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG *rng)
   mp_int  b, c;
   int     ix, err, res;
   byte*   base = NULL;
-  word32  bitSz = 0;
   word32  baseSz = 0;
 
   /* default to no */
@@ -4926,10 +4877,6 @@ int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG *rng)
 
   /* valid value of t? */
   if (t <= 0 || t > PRIME_SIZE) {
-    return MP_VAL;
-  }
-
-  if (a->sign == MP_NEG) {
     return MP_VAL;
   }
 
@@ -4965,9 +4912,8 @@ int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG *rng)
     return err;
   }
 
-  bitSz = mp_count_bits(a);
-  baseSz = (bitSz / 8) + ((bitSz % 8) ? 1 : 0);
-  bitSz %= 8;
+  baseSz = mp_count_bits(a);
+  baseSz = (baseSz / 8) + ((baseSz % 8) ? 1 : 0);
 
   base = (byte*)XMALLOC(baseSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
   if (base == NULL) {
@@ -4985,11 +4931,6 @@ int mp_prime_is_prime_ex (mp_int * a, int t, int *result, WC_RNG *rng)
     /* Set a test candidate. */
     if ((err = wc_RNG_GenerateBlock(rng, base, baseSz)) != 0) {
         goto LBL_B;
-    }
-
-    /* Clear bits higher than those in a. */
-    if (bitSz > 0) {
-        base[0] &= (1 << bitSz) - 1;
     }
 
     if ((err = mp_read_unsigned_bin(&b, base, baseSz)) != MP_OKAY) {
@@ -5024,12 +4965,12 @@ LBL_B:mp_clear (&b);
 
 static const int USE_BBS = 1;
 
-int mp_rand_prime(mp_int* a, int len, WC_RNG* rng, void* heap)
+int mp_rand_prime(mp_int* N, int len, WC_RNG* rng, void* heap)
 {
     int   err, res, type;
     byte* buf;
 
-    if (a == NULL || rng == NULL)
+    if (N == NULL || rng == NULL)
         return MP_VAL;
 
     /* get type */
@@ -5069,7 +5010,7 @@ int mp_rand_prime(mp_int* a, int len, WC_RNG* rng, void* heap)
         buf[len-1] |= 0x01 | ((type & USE_BBS) ? 0x02 : 0x00);
 
         /* load value */
-        if ((err = mp_read_unsigned_bin(a, buf, len)) != MP_OKAY) {
+        if ((err = mp_read_unsigned_bin(N, buf, len)) != MP_OKAY) {
             XFREE(buf, heap, DYNAMIC_TYPE_RSA);
             return err;
         }
@@ -5079,7 +5020,7 @@ int mp_rand_prime(mp_int* a, int len, WC_RNG* rng, void* heap)
          * of a 1024-bit candidate being a false positive, when it is our
          * prime candidate. (Note 4.49 of Handbook of Applied Cryptography.)
          * Using 8 because we've always used 8. */
-        if ((err = mp_prime_is_prime_ex(a, 8, &res, rng)) != MP_OKAY) {
+        if ((err = mp_prime_is_prime_ex(N, 8, &res, rng)) != MP_OKAY) {
             XFREE(buf, heap, DYNAMIC_TYPE_RSA);
             return err;
         }
@@ -5098,11 +5039,6 @@ int mp_lcm (mp_int * a, mp_int * b, mp_int * c)
   int     res;
   mp_int  t1, t2;
 
-  /* LCM of 0 and any number is undefined as 0 is not in the set of values
-   * being used. */
-  if (mp_iszero (a) == MP_YES || mp_iszero (b) == MP_YES) {
-    return MP_VAL;
-  }
 
   if ((res = mp_init_multi (&t1, &t2, NULL, NULL, NULL, NULL)) != MP_OKAY) {
     return res;
@@ -5147,10 +5083,6 @@ int mp_gcd (mp_int * a, mp_int * b, mp_int * c)
 
     /* either zero than gcd is the largest */
     if (mp_iszero (a) == MP_YES) {
-        /* GCD of 0 and 0 is undefined as all integers divide 0. */
-        if (mp_iszero (b) == MP_YES) {
-           return MP_VAL;
-        }
         return mp_abs (b, c);
     }
     if (mp_iszero (b) == MP_YES) {
@@ -5232,7 +5164,7 @@ LBL_U:mp_clear (&u);
 
 #if !defined(NO_DSA) || defined(HAVE_ECC) || defined(WOLFSSL_KEY_GEN) || \
     defined(HAVE_COMP_KEY) || defined(WOLFSSL_DEBUG_MATH) || \
-    defined(DEBUG_WOLFSSL) || defined(OPENSSL_EXTRA) || defined(WC_MP_TO_RADIX)
+    defined(DEBUG_WOLFSSL) || defined(OPENSSL_EXTRA)
 
 /* chars used in radix conversions */
 const char *mp_s_rmap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -5286,11 +5218,9 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
      */
     if (y < radix) {
       if ((res = mp_mul_d (a, (mp_digit) radix, a)) != MP_OKAY) {
-         mp_zero(a);
          return res;
       }
       if ((res = mp_add_d (a, (mp_digit) y, a)) != MP_OKAY) {
-         mp_zero(a);
          return res;
       }
     } else {

@@ -24,7 +24,7 @@
     \sa wc_ShaUpdate
     \sa wc_ShaFinal
 */
-int wc_InitSha(wc_Sha*);
+WOLFSSL_API int wc_InitSha(wc_Sha*);
 
 /*!
     \ingroup SHA
@@ -57,7 +57,7 @@ int wc_InitSha(wc_Sha*);
     \sa wc_ShaFinal
     \sa wc_InitSha
 */
-int wc_ShaUpdate(wc_Sha* sha, const byte* data, word32 len);
+WOLFSSL_API int wc_ShaUpdate(wc_Sha*, const byte*, word32);
 
 /*!
     \ingroup SHA
@@ -89,7 +89,7 @@ int wc_ShaUpdate(wc_Sha* sha, const byte* data, word32 len);
     \sa wc_InitSha
     \sa wc_ShaGetHash
 */
-int wc_ShaFinal(wc_Sha* sha, byte* hash);
+WOLFSSL_API int wc_ShaFinal(wc_Sha*, byte*);
 
 /*!
     \ingroup SHA
@@ -113,7 +113,7 @@ int wc_ShaFinal(wc_Sha* sha, byte* hash);
     \sa wc_ShaUpdate
     \sa wc_ShaFinal
 */
-void wc_ShaFree(wc_Sha*);
+WOLFSSL_API void wc_ShaFree(wc_Sha*);
 
 /*!
     \ingroup SHA
@@ -142,4 +142,4 @@ void wc_ShaFree(wc_Sha*);
     \sa wc_ShaFinal
     \sa wc_InitSha
 */
-int wc_ShaGetHash(wc_Sha* sha, byte* hash);
+WOLFSSL_API int wc_ShaGetHash(wc_Sha*, byte*);

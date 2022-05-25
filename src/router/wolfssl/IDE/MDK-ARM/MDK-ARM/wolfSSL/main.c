@@ -1,6 +1,6 @@
 /* main.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -74,7 +74,7 @@ __task void tcp_tick (void)
 
 __task void tcp_poll (void)
 {
-    WOLFSSL_MSG("TCP polling started.") ;
+    WOLFSSL_MSG("TCP polling started.\n") ;
     while (1) {
         main_TcpNet ();
         #if defined (HAVE_KEIL_RTX)
@@ -128,7 +128,7 @@ void main_task (void)
     #endif
 
     #ifdef   HAVE_KEIL_RTX
-    WOLFSSL_MSG("Terminating tcp_main") ;
+    WOLFSSL_MSG("Terminating tcp_main\n") ;
     os_tsk_delete_self ();
     #endif
 

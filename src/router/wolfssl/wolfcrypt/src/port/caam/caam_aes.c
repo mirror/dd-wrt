@@ -1,6 +1,6 @@
 /* caam_aes.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,9 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
 
 #include <wolfssl/wolfcrypt/settings.h>
 
@@ -120,8 +117,8 @@ int  wc_AesCbcEncrypt(Aes* aes, byte* out,
         word32 keySz;
         int ret;
 
-        if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-           return ret;
+        if (wc_AesGetKeySize(aes, &keySz) != 0) {
+           return BAD_FUNC_ARG;
         }
 
         /* Set buffers for key, cipher text, and plain text */
@@ -145,7 +142,7 @@ int  wc_AesCbcEncrypt(Aes* aes, byte* out,
         arg[1] = keySz;
         arg[2] = blocks * AES_BLOCK_SIZE;
 
-        if ((ret = wc_caamAddAndWait(buf, 4, arg, CAAM_AESCBC)) != 0) {
+        if ((ret = wc_caamAddAndWait(buf, arg, CAAM_AESCBC)) != 0) {
             WOLFSSL_MSG("Error with CAAM AES CBC encrypt");
             return ret;
         }
@@ -173,8 +170,8 @@ int  wc_AesCbcDecrypt(Aes* aes, byte* out,
         word32 keySz;
         int ret;
 
-        if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-            return ret;
+        if (wc_AesGetKeySize(aes, &keySz) != 0) {
+            return BAD_FUNC_ARG;
         }
 
         /* Set buffers for key, cipher text, and plain text */
@@ -224,8 +221,8 @@ int wc_AesEcbEncrypt(Aes* aes, byte* out,
 
     blocks = sz / AES_BLOCK_SIZE;
 
-    if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-        return ret;
+    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+        return BAD_FUNC_ARG;
     }
 
     /* Set buffers for key, cipher text, and plain text */
@@ -269,8 +266,8 @@ int wc_AesEcbDecrypt(Aes* aes, byte* out,
 
     blocks = sz / AES_BLOCK_SIZE;
 
-    if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-        return ret;
+    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+        return BAD_FUNC_ARG;
     }
 
     /* Set buffers for key, cipher text, and plain text */
@@ -326,8 +323,8 @@ int wc_AesCtrEncrypt(Aes* aes, byte* out,
         return BAD_FUNC_ARG;
     }
 
-    if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-        return ret;
+    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+        return BAD_FUNC_ARG;
     }
 
     /* consume any unused bytes left in aes->tmp */
@@ -373,8 +370,7 @@ int wc_AesCtrEncrypt(Aes* aes, byte* out,
     }
 
     if (sz) {
-        if ((ret = wc_AesEncryptDirect(aes, (byte*)aes->tmp, (byte*)aes->reg)) != 0)
-            return ret;
+        wc_AesEncryptDirect(aes, (byte*)aes->tmp, (byte*)aes->reg);
         IncrementAesCounter((byte*)aes->reg);
 
         aes->left = AES_BLOCK_SIZE;
@@ -393,19 +389,20 @@ int wc_AesCtrEncrypt(Aes* aes, byte* out,
 
 /* AES-DIRECT */
 #if defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER)
-int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
+void wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
 {
      Buffer buf[3];
      word32 arg[4];
      word32 keySz;
-     int ret;
 
      if (aes == NULL || out == NULL || in == NULL) {
-         return BAD_FUNC_ARG;
+         /* return BAD_FUNC_ARG; */
+         return;
      }
 
-     if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-         return ret;
+     if (wc_AesGetKeySize(aes, &keySz) != 0) {
+         /* return BAD_FUNC_ARG; */
+        return;
      }
 
      /* Set buffers for key, cipher text, and plain text */
@@ -425,28 +422,26 @@ int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
      arg[1] = keySz;
      arg[2] = AES_BLOCK_SIZE;
 
-     if ((ret = wc_caamAddAndWait(buf, arg, CAAM_AESECB)) != 0) {
+     if (wc_caamAddAndWait(buf, arg, CAAM_AESECB) != 0) {
          WOLFSSL_MSG("Error with CAAM AES direct encrypt");
-         return ret;
      }
-
-     return ret;
 }
 
 
-int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
+void wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
 {
      Buffer buf[3];
      word32 arg[4];
      word32 keySz;
-     int ret;
 
      if (aes == NULL || out == NULL || in == NULL) {
-         return BAD_FUNC_ARG;
+         /* return BAD_FUNC_ARG; */
+         return;
      }
 
-     if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-         return ret;
+     if (wc_AesGetKeySize(aes, &keySz) != 0) {
+          /* return BAD_FUNC_ARG; */
+          return;
      }
 
      /* Set buffers for key, cipher text, and plain text */
@@ -466,12 +461,9 @@ int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
      arg[1] = keySz;
      arg[2] = AES_BLOCK_SIZE;
 
-     if ((ret = wc_caamAddAndWait(buf, arg, CAAM_AESECB)) != 0) {
+     if (wc_caamAddAndWait(buf, arg, CAAM_AESECB) != 0) {
          WOLFSSL_MSG("Error with CAAM AES direct decrypt");
-         return ret;
      }
-
-     return 0;
 }
 
 
@@ -505,12 +497,12 @@ int  wc_AesCcmEncrypt(Aes* aes, byte* out,
         authTagSz > AES_BLOCK_SIZE)
         return BAD_FUNC_ARG;
 
-    if ((ret = wc_AesCcmCheckTagSize(authTagSz)) != 0) {
-        return ret;
+    if (wc_AesCcmCheckTagSize(authTagSz) != 0) {
+        return BAD_FUNC_ARG;
     }
 
-    if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-         return ret;
+    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+         return BAD_FUNC_ARG;
     }
 
     /* set up B0 and CTR0 similar to how wolfcrypt/src/aes.c does */
@@ -588,12 +580,12 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out,
         authTagSz > AES_BLOCK_SIZE)
         return BAD_FUNC_ARG;
 
-    if ((ret = wc_AesCcmCheckTagSize(authTagSz)) != 0) {
-        return ret;
+    if (wc_AesCcmCheckTagSize(authTagSz) != 0) {
+        return BAD_FUNC_ARG;
     }
 
-    if ((ret = wc_AesGetKeySize(aes, &keySz)) != 0) {
-         return ret;
+    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+         return BAD_FUNC_ARG;
     }
 
     /* set up B0 and CTR0 similar to how wolfcrypt/src/aes.c does */
@@ -610,8 +602,7 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out,
         B0Ctr0[AES_BLOCK_SIZE + AES_BLOCK_SIZE - 1 - i] = 0;
     }
     B0Ctr0[AES_BLOCK_SIZE] = lenSz - 1;
-    if ((ret = wc_AesEncryptDirect(aes, tag, B0Ctr0 + AES_BLOCK_SIZE)) != 0)
-        return ret;
+    wc_AesEncryptDirect(aes, tag, B0Ctr0 + AES_BLOCK_SIZE);
 
     /* Set buffers for key, cipher text, and plain text */
     buf[0].BufferType = DataBuffer;

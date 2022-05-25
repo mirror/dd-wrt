@@ -1,6 +1,6 @@
 /* md4.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -41,10 +41,9 @@ typedef struct WOLFSSL_MD4_CTX {
 } WOLFSSL_MD4_CTX;
 
 
-WOLFSSL_API void wolfSSL_MD4_Init(WOLFSSL_MD4_CTX* md4);
-WOLFSSL_API void wolfSSL_MD4_Update(WOLFSSL_MD4_CTX* md4, const void* data,
-                       unsigned long len);
-WOLFSSL_API void wolfSSL_MD4_Final(unsigned char* digest, WOLFSSL_MD4_CTX* md4);
+WOLFSSL_API void wolfSSL_MD4_Init(WOLFSSL_MD4_CTX*);
+WOLFSSL_API void wolfSSL_MD4_Update(WOLFSSL_MD4_CTX*, const void*, unsigned long);
+WOLFSSL_API void wolfSSL_MD4_Final(unsigned char*, WOLFSSL_MD4_CTX*);
 
 
 typedef WOLFSSL_MD4_CTX MD4_CTX;

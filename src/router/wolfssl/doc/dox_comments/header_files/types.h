@@ -33,10 +33,11 @@
 	
 	_Example_
 	\code
-	int* tenInts = XMALLOC(sizeof(int)*10, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    if (tenInts == NULL) {
-	    // error allocating space
-	    return MEMORY_E;
+	int* 10 ints = XMALLOC(10 * sizeof(int), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+
+    if ( ints == NULL) {
+	// error allocating space
+	return MEMORY_E;
     }
 	\endcode
 	
@@ -45,7 +46,7 @@
 	\sa wolfSSL_Free
 	\sa wolfSSL_SetAllocators
 */
-void* XMALLOC(size_t n, void* heap, int type);
+WOLFSSL_API void* XMALLOC(size_t n, void* heap, int type);
 
 /*!
     \ingroup Memory
@@ -83,9 +84,7 @@ void* XMALLOC(size_t n, void* heap, int type);
 	
 	_Example_
 	\code
-	int* tenInts = (int*)XMALLOC(sizeof(int)*10, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    int* twentyInts = (int*)XREALLOC(tenInts, sizeof(int)*20, NULL,
-        DYNAMIC_TYPE_TMP_BUFFER);
+	none
 	\endcode
 	
 	\sa wolfSSL_Malloc
@@ -93,7 +92,7 @@ void* XMALLOC(size_t n, void* heap, int type);
 	\sa wolfSSL_Free
 	\sa wolfSSL_SetAllocators
 */
-void* XREALLOC(void *p, size_t n, void* heap, int type);
+WOLFSSL_API void* XREALLOC(void *p, size_t n, void* heap, int type);
 
 /*!
     \ingroup Memory
@@ -128,8 +127,9 @@ void* XREALLOC(void *p, size_t n, void* heap, int type);
 	
 	_Example_
 	\code
-	int* tenInts = XMALLOC(sizeof(int) * 10, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    if (tenInts == NULL) {
+	int* 10 ints = XMALLOC(10 * sizeof(int), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+
+    if ( ints == NULL) {
 	    // error allocating space
 	    return MEMORY_E;
     }
@@ -140,7 +140,7 @@ void* XREALLOC(void *p, size_t n, void* heap, int type);
 	\sa wolfSSL_Free
 	\sa wolfSSL_SetAllocators
 */
-void XFREE(void *p, void* heap, int type);
+WOLFSSL_API void XFREE(void *p, void* heap, int type);
 
 /*!
     \ingroup Math
@@ -169,4 +169,4 @@ void XFREE(void *p, void* heap, int type);
 
     \sa CheckRunTimeFastMath
 */
-word32 CheckRunTimeSettings(void);
+WOLFSSL_API word32 CheckRunTimeSettings(void);

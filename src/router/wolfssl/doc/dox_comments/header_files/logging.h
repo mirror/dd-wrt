@@ -32,7 +32,7 @@
     \sa wolfSSL_Debugging_ON
     \sa wolfSSL_Debugging_OFF
 */
-int wolfSSL_SetLoggingCb(wolfSSL_Logging_cb log_function);
+WOLFSSL_API int wolfSSL_SetLoggingCb(wolfSSL_Logging_cb log_function);
 
 /*!
     \ingroup Debug
@@ -55,7 +55,7 @@ int wolfSSL_SetLoggingCb(wolfSSL_Logging_cb log_function);
     \sa wolfSSL_Debugging_OFF
     \sa wolfSSL_SetLoggingCb
 */
-int  wolfSSL_Debugging_ON(void);
+WOLFSSL_API int  wolfSSL_Debugging_ON(void);
 
 /*!
     \ingroup Debug
@@ -75,4 +75,4 @@ int  wolfSSL_Debugging_ON(void);
     \sa wolfSSL_Debugging_ON
     \sa wolfSSL_SetLoggingCb
 */
-void wolfSSL_Debugging_OFF(void);
+WOLFSSL_API void wolfSSL_Debugging_OFF(void);

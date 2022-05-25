@@ -1,6 +1,6 @@
 /* echoclient.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,10 +26,8 @@
 
 #include <cyassl/ctaocrypt/settings.h>
 /* let's use cyassl layer AND cyassl openssl layer */
-#undef TEST_OPENSSL_COEXIST /* can't use this option with this example */
 #include <cyassl/ssl.h>
-
-/* Force enable the compatibility macros for this example */
+#include <cyassl/openssl/ssl.h>
 #ifdef CYASSL_DTLS
     #include <cyassl/error-ssl.h>
 #endif
@@ -44,11 +42,6 @@
 #endif
 
 #include <cyassl/test.h>
-
-#ifndef OPENSSL_EXTRA_X509_SMALL
-#define OPENSSL_EXTRA_X509_SMALL
-#endif
-#include <cyassl/openssl/ssl.h>
 
 #include <examples/echoclient/echoclient.h>
 
@@ -96,7 +89,7 @@ void echoclient_test(void* args)
     int argc    = 0;
     char** argv = 0;
 #endif
-    word16 port;
+    word16 port = yasslPort;
     char buffer[CYASSL_MAX_ERROR_SZ];
 
     ((func_args*)args)->return_code = -1; /* error state */
@@ -133,8 +126,6 @@ void echoclient_test(void* args)
 
 #if defined(NO_MAIN_DRIVER) && !defined(USE_WINDOWS_API) && !defined(WOLFSSL_MDK_SHELL)
     port = ((func_args*)args)->signal->port;
-#else
-    port = yasslPort;
 #endif
 
 #if defined(CYASSL_DTLS)
@@ -226,7 +217,7 @@ void echoclient_test(void* args)
     if (ret < 0) {
         printf("Async device open failed\nRunning without async\n");
     }
-    wolfSSL_CTX_SetDevId(ctx, devId);
+    wolfSSL_CTX_UseAsync(ctx, devId);
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
     ssl = SSL_new(ctx);
@@ -325,6 +316,10 @@ void echoclient_test(void* args)
                 printf("SSL_read msg error %d, %s\n", err,
                     ERR_error_string(err, buffer));
                 err_sys("SSL_read failed");
+
+            #ifndef WOLFSSL_MDK_SHELL
+                break;
+            #endif
             }
         }
     }

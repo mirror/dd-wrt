@@ -1,6 +1,6 @@
 /* wolfio.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -47,7 +47,7 @@ Possible IO enable options:
  * WOLFSSL_USER_IO:     Disables default Embed* callbacks and     default: off
                         allows user to define their own using
                         wolfSSL_CTX_SetIORecv and wolfSSL_CTX_SetIOSend
- * USE_WOLFSSL_IO:      Enables the wolfSSL IO functions          default: on
+ * USE_WOLFSSL_IO:      Enables the wolfSSL IO functions          default: off
  * HAVE_HTTP_CLIENT:    Enables HTTP client API's                 default: off
                                      (unless HAVE_OCSP or HAVE_CRL_IO defined)
  * HAVE_IO_TIMEOUT:     Enables support for connect timeout       default: off
@@ -106,42 +106,8 @@ static WC_INLINE int wolfSSL_LastError(int err)
 #endif
 }
 
-static int TranslateIoError(int err)
-{
-    if (err > 0)
-        return err;
-
-    err = wolfSSL_LastError(err);
-#if SOCKET_EWOULDBLOCK != SOCKET_EAGAIN
-    if ((err == SOCKET_EWOULDBLOCK) || (err == SOCKET_EAGAIN))
-#else
-    if (err == SOCKET_EWOULDBLOCK)
-#endif
-    {
-        WOLFSSL_MSG("\tWould block");
-        return WOLFSSL_CBIO_ERR_WANT_READ;
-    }
-    else if (err == SOCKET_ECONNRESET) {
-        WOLFSSL_MSG("\tConnection reset");
-        return WOLFSSL_CBIO_ERR_CONN_RST;
-    }
-    else if (err == SOCKET_EINTR) {
-        WOLFSSL_MSG("\tSocket interrupted");
-        return WOLFSSL_CBIO_ERR_ISR;
-    }
-    else if (err == SOCKET_EPIPE) {
-        WOLFSSL_MSG("\tBroken pipe");
-        return WOLFSSL_CBIO_ERR_CONN_CLOSE;
-    }
-    else if (err == SOCKET_ECONNABORTED) {
-        WOLFSSL_MSG("\tConnection aborted");
-        return WOLFSSL_CBIO_ERR_CONN_CLOSE;
-    }
-
-    WOLFSSL_MSG("\tGeneral error");
-    return WOLFSSL_CBIO_ERR_GENERAL;
-}
 #endif /* USE_WOLFSSL_IO || HAVE_HTTP_CLIENT */
+
 
 #ifdef OPENSSL_EXTRA
 #ifndef NO_BIO
@@ -167,39 +133,31 @@ int BioReceive(WOLFSSL* ssl, char* buf, int sz, void* ctx)
         return WOLFSSL_CBIO_ERR_GENERAL;
     }
 
-    recvd = wolfSSL_BIO_read(ssl->biord, buf, sz);
-    if (recvd <= 0) {
-        if (/* ssl->biowr->wrIdx is checked for Bind9 */
-            wolfSSL_BIO_method_type(ssl->biowr) == WOLFSSL_BIO_BIO &&
-            wolfSSL_BIO_wpending(ssl->biowr) != 0 &&
-            /* Not sure this pending check is necessary but let's double
-             * check that the read BIO is empty before we signal a write
-             * need */
-            wolfSSL_BIO_supports_pending(ssl->biord) &&
-            wolfSSL_BIO_ctrl_pending(ssl->biord) == 0) {
-            /* Let's signal to the app layer that we have
-             * data pending that needs to be sent. */
-            return WOLFSSL_CBIO_ERR_WANT_WRITE;
-        }
-        else if (ssl->biord->type == WOLFSSL_BIO_SOCKET) {
-            if (recvd == 0) {
-                WOLFSSL_MSG("BioReceive connection closed");
-                return WOLFSSL_CBIO_ERR_CONN_CLOSE;
+    if (ssl->biord->method && ssl->biord->method->readCb) {
+        WOLFSSL_MSG("Calling custom biord");
+        recvd = ssl->biord->method->readCb(ssl->biord, buf, sz);
+        if (recvd < 0 && recvd != WOLFSSL_CBIO_ERR_WANT_READ)
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        return recvd;
+    }
+
+    switch (ssl->biord->type) {
+        case WOLFSSL_BIO_MEMORY:
+        case WOLFSSL_BIO_BIO:
+            if (wolfSSL_BIO_ctrl_pending(ssl->biord) == 0) {
+                WOLFSSL_MSG("BIO want read");
+               return WOLFSSL_CBIO_ERR_WANT_READ;
             }
-        #ifdef USE_WOLFSSL_IO
-            recvd = TranslateIoError(recvd);
-        #endif
-            return recvd;
-        }
+            recvd = wolfSSL_BIO_read(ssl->biord, buf, sz);
+            if (recvd <= 0) {
+                WOLFSSL_MSG("BIO general error");
+                return WOLFSSL_CBIO_ERR_GENERAL;
+            }
+            break;
 
-        /* If retry and read flags are set, return WANT_READ */
-        if ((ssl->biord->flags & WOLFSSL_BIO_FLAG_READ) &&
-            (ssl->biord->flags & WOLFSSL_BIO_FLAG_RETRY)) {
-            return WOLFSSL_CBIO_ERR_WANT_READ;
-        }
-
-        WOLFSSL_MSG("BIO general error");
-        return WOLFSSL_CBIO_ERR_GENERAL;
+       default:
+            WOLFSSL_MSG("This BIO type is unknown / unsupported");
+            return WOLFSSL_CBIO_ERR_GENERAL;
     }
 
     (void)ctx;
@@ -228,28 +186,27 @@ int BioSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
         return WOLFSSL_CBIO_ERR_GENERAL;
     }
 
-    sent = wolfSSL_BIO_write(ssl->biowr, buf, sz);
-    if (sent <= 0) {
-        if (ssl->biowr->type == WOLFSSL_BIO_SOCKET) {
-        #ifdef USE_WOLFSSL_IO
-            sent = TranslateIoError(sent);
-        #endif
-            return sent;
+    if (ssl->biowr->method && ssl->biowr->method->writeCb) {
+        WOLFSSL_MSG("Calling custom biowr");
+        sent = ssl->biowr->method->writeCb(ssl->biowr, buf, sz);
+        if ((sent < 0) && (sent != WOLFSSL_CBIO_ERR_WANT_WRITE)) {
+            return WOLFSSL_CBIO_ERR_GENERAL;
         }
-        else if (ssl->biowr->type == WOLFSSL_BIO_BIO) {
-            if (sent == WOLFSSL_BIO_ERROR) {
-                WOLFSSL_MSG("\tWould Block");
-                return WOLFSSL_CBIO_ERR_WANT_WRITE;
+        return sent;
+    }
+
+    switch (ssl->biowr->type) {
+        case WOLFSSL_BIO_MEMORY:
+        case WOLFSSL_BIO_BIO:
+            sent = wolfSSL_BIO_write(ssl->biowr, buf, sz);
+            if (sent < 0) {
+                return WOLFSSL_CBIO_ERR_GENERAL;
             }
-        }
+            break;
 
-        /* If retry and write flags are set, return WANT_WRITE */
-        if ((ssl->biord->flags & WOLFSSL_BIO_FLAG_WRITE) &&
-            (ssl->biord->flags & WOLFSSL_BIO_FLAG_RETRY)) {
-            return WOLFSSL_CBIO_ERR_WANT_WRITE;
-        }
-
-        return WOLFSSL_CBIO_ERR_GENERAL;
+        default:
+            WOLFSSL_MSG("This BIO type is unknown / unsupported");
+            return WOLFSSL_CBIO_ERR_GENERAL;
     }
     (void)ctx;
 
@@ -275,8 +232,29 @@ int EmbedReceive(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 
     recvd = wolfIO_Recv(sd, buf, sz, ssl->rflags);
     if (recvd < 0) {
+        int err = wolfSSL_LastError(recvd);
         WOLFSSL_MSG("Embed Receive error");
-        return TranslateIoError(recvd);
+
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            WOLFSSL_MSG("\tWould block");
+            return WOLFSSL_CBIO_ERR_WANT_READ;
+        }
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_ECONNABORTED) {
+            WOLFSSL_MSG("\tConnection aborted");
+            return WOLFSSL_CBIO_ERR_CONN_CLOSE;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
     }
     else if (recvd == 0) {
         WOLFSSL_MSG("Embed receive connection closed");
@@ -305,8 +283,29 @@ int EmbedSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 
     sent = wolfIO_Send(sd, buf, sz, ssl->wflags);
     if (sent < 0) {
+        int err = wolfSSL_LastError(sent);
         WOLFSSL_MSG("Embed Send error");
-        return TranslateIoError(sent);
+
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            WOLFSSL_MSG("\tWould Block");
+            return WOLFSSL_CBIO_ERR_WANT_WRITE;
+        }
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_EPIPE) {
+            WOLFSSL_MSG("\tSocket EPIPE");
+            return WOLFSSL_CBIO_ERR_CONN_CLOSE;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
     }
 
     return sent;
@@ -328,6 +327,7 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 {
     WOLFSSL_DTLS_CTX* dtlsCtx = (WOLFSSL_DTLS_CTX*)ctx;
     int recvd;
+    int err;
     int sd = dtlsCtx->rfd;
     int dtls_timeout = wolfSSL_dtls_get_current_timeout(ssl);
     SOCKADDR_S peer;
@@ -372,13 +372,35 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
     recvd = TranslateReturnCode(recvd, sd);
 
     if (recvd < 0) {
+        err = wolfSSL_LastError(recvd);
         WOLFSSL_MSG("Embed Receive From error");
-        recvd = TranslateIoError(recvd);
-        if (recvd == WOLFSSL_CBIO_ERR_WANT_READ &&
-            !wolfSSL_dtls_get_using_nonblock(ssl)) {
-            recvd = WOLFSSL_CBIO_ERR_TIMEOUT;
+
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            if (wolfSSL_dtls_get_using_nonblock(ssl)) {
+                WOLFSSL_MSG("\tWould block");
+                return WOLFSSL_CBIO_ERR_WANT_READ;
+            }
+            else {
+                WOLFSSL_MSG("\tSocket timeout");
+                return WOLFSSL_CBIO_ERR_TIMEOUT;
+            }
         }
-        return recvd;
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_ECONNREFUSED) {
+            WOLFSSL_MSG("\tConnection refused");
+            return WOLFSSL_CBIO_ERR_WANT_READ;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
     }
     else {
         if (dtlsCtx->peer.sz > 0
@@ -404,6 +426,7 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     WOLFSSL_DTLS_CTX* dtlsCtx = (WOLFSSL_DTLS_CTX*)ctx;
     int sd = dtlsCtx->wfd;
     int sent;
+    int err;
 
     WOLFSSL_ENTER("EmbedSendTo()");
 
@@ -414,8 +437,29 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     sent = TranslateReturnCode(sent, sd);
 
     if (sent < 0) {
+        err = wolfSSL_LastError(sent);
         WOLFSSL_MSG("Embed Send To error");
-        return TranslateIoError(sent);
+
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            WOLFSSL_MSG("\tWould Block");
+            return WOLFSSL_CBIO_ERR_WANT_WRITE;
+        }
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_EPIPE) {
+            WOLFSSL_MSG("\tSocket EPIPE");
+            return WOLFSSL_CBIO_ERR_CONN_CLOSE;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
     }
 
     return sent;
@@ -431,6 +475,7 @@ int EmbedReceiveFromMcast(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 {
     WOLFSSL_DTLS_CTX* dtlsCtx = (WOLFSSL_DTLS_CTX*)ctx;
     int recvd;
+    int err;
     int sd = dtlsCtx->rfd;
 
     WOLFSSL_ENTER("EmbedReceiveFromMcast()");
@@ -440,13 +485,35 @@ int EmbedReceiveFromMcast(WOLFSSL *ssl, char *buf, int sz, void *ctx)
     recvd = TranslateReturnCode(recvd, sd);
 
     if (recvd < 0) {
+        err = wolfSSL_LastError(recvd);
         WOLFSSL_MSG("Embed Receive From error");
-        recvd = TranslateIoError(recvd);
-        if (recvd == WOLFSSL_CBIO_ERR_WANT_READ &&
-            !wolfSSL_dtls_get_using_nonblock(ssl)) {
-            recvd = WOLFSSL_CBIO_ERR_TIMEOUT;
+
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            if (wolfSSL_dtls_get_using_nonblock(ssl)) {
+                WOLFSSL_MSG("\tWould block");
+                return WOLFSSL_CBIO_ERR_WANT_READ;
+            }
+            else {
+                WOLFSSL_MSG("\tSocket timeout");
+                return WOLFSSL_CBIO_ERR_TIMEOUT;
+            }
         }
-        return recvd;
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_ECONNREFUSED) {
+            WOLFSSL_MSG("\tConnection refused");
+            return WOLFSSL_CBIO_ERR_WANT_READ;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
     }
 
     return recvd;
@@ -483,17 +550,24 @@ int EmbedGenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *ctx)
 
     return sz;
 }
-#endif /* WOLFSSL_DTLS */
 
 #ifdef WOLFSSL_SESSION_EXPORT
 
-#ifdef WOLFSSL_DTLS
-    static int EmbedGetPeerDTLS(WOLFSSL* ssl, char* ip, int* ipSz,
+    /* get the peer information in human readable form (ip, port, family)
+     * default function assumes BSD sockets
+     * can be overridden with wolfSSL_CTX_SetIOGetPeer
+     */
+    int EmbedGetPeer(WOLFSSL* ssl, char* ip, int* ipSz,
                                                  unsigned short* port, int* fam)
     {
         SOCKADDR_S peer;
         word32     peerSz;
         int        ret;
+
+        if (ssl == NULL || ip == NULL || ipSz == NULL ||
+                                                  port == NULL || fam == NULL) {
+            return BAD_FUNC_ARG;
+        }
 
         /* get peer information stored in ssl struct */
         peerSz = sizeof(SOCKADDR_S);
@@ -535,14 +609,18 @@ int EmbedGenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *ctx)
         return WOLFSSL_SUCCESS;
     }
 
-    static int EmbedSetPeerDTLS(WOLFSSL* ssl, char* ip, int ipSz,
+    /* set the peer information in human readable form (ip, port, family)
+     * default function assumes BSD sockets
+     * can be overridden with wolfSSL_CTX_SetIOSetPeer
+     */
+    int EmbedSetPeer(WOLFSSL* ssl, char* ip, int ipSz,
                                                    unsigned short port, int fam)
     {
         int    ret;
         SOCKADDR_S addr;
 
         /* sanity checks on arguments */
-        if (ssl == NULL || ip == NULL || ipSz < 0 || ipSz > MAX_EXPORT_IP) {
+        if (ssl == NULL || ip == NULL || ipSz < 0 || ipSz > DTLS_EXPORT_IP) {
             return BAD_FUNC_ARG;
         }
 
@@ -589,62 +667,8 @@ int EmbedGenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *ctx)
 
         return WOLFSSL_SUCCESS;
     }
-#endif
-
-    /* get the peer information in human readable form (ip, port, family)
-     * default function assumes BSD sockets
-     * can be overridden with wolfSSL_CTX_SetIOGetPeer
-     */
-    int EmbedGetPeer(WOLFSSL* ssl, char* ip, int* ipSz,
-                                                 unsigned short* port, int* fam)
-    {
-        if (ssl == NULL || ip == NULL || ipSz == NULL ||
-                                                  port == NULL || fam == NULL) {
-            return BAD_FUNC_ARG;
-        }
-
-        if (ssl->options.dtls) {
-        #ifdef WOLFSSL_DTLS
-            return EmbedGetPeerDTLS(ssl, ip, ipSz, port, fam);
-        #else
-            return NOT_COMPILED_IN;
-        #endif
-        }
-        else {
-            *port = wolfSSL_get_fd(ssl);
-            ip[0] = '\0';
-            *ipSz = 0;
-            *fam  = 0;
-            return WOLFSSL_SUCCESS;
-        }
-    }
-
-    /* set the peer information in human readable form (ip, port, family)
-     * default function assumes BSD sockets
-     * can be overridden with wolfSSL_CTX_SetIOSetPeer
-     */
-    int EmbedSetPeer(WOLFSSL* ssl, char* ip, int ipSz,
-                                                   unsigned short port, int fam)
-    {
-        /* sanity checks on arguments */
-        if (ssl == NULL || ip == NULL || ipSz < 0 || ipSz > MAX_EXPORT_IP) {
-            return BAD_FUNC_ARG;
-        }
-
-        if (ssl->options.dtls) {
-        #ifdef WOLFSSL_DTLS
-            return EmbedSetPeerDTLS(ssl, ip, ipSz, port, fam);
-        #else
-            return NOT_COMPILED_IN;
-        #endif
-        }
-        else {
-            wolfSSL_set_fd(ssl, port);
-            (void)fam;
-            return WOLFSSL_SUCCESS;
-        }
-    }
 #endif /* WOLFSSL_SESSION_EXPORT */
+#endif /* WOLFSSL_DTLS */
 
 #ifdef WOLFSSL_LINUXKM
 static int linuxkm_send(struct socket *socket, void *buf, int size,
@@ -746,11 +770,6 @@ int wolfIO_Send(SOCKET_T sd, char *buf, int sz, int wrFlags)
         nfds = (int)sockfd + 1;
     #endif
 
-        if ((sockfd < 0) || (sockfd >= FD_SETSIZE)) {
-            WOLFSSL_MSG("socket fd out of FDSET range");
-            return -1;
-        }
-
         FD_ZERO(&rfds);
         FD_SET(sockfd, &rfds);
         wfds = rfds;
@@ -807,42 +826,21 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
 #ifdef HAVE_SOCKADDR
     int ret = 0;
     SOCKADDR_S addr;
-    int sockaddr_len;
-#if defined(HAVE_GETADDRINFO)
-    /* use getaddrinfo */
+    int sockaddr_len = sizeof(SOCKADDR_IN);
+    /* use gethostbyname for c99 */
+#if defined(HAVE_GETADDRINFO) && !defined(WOLF_C99)
     ADDRINFO hints;
     ADDRINFO* answer = NULL;
     char strPort[6];
 #else
-    /* use gethostbyname */
-#if !defined(WOLFSSL_USE_POPEN_HOST)
-#if defined(__GLIBC__) && (__GLIBC__ >= 2) && defined(__USE_MISC) && \
-    !defined(SINGLE_THREADED)
-    HOSTENT entry_buf, *entry = NULL;
-    char *ghbn_r_buf = NULL;
-    int ghbn_r_errno;
-#else
-    HOSTENT *entry;
-#endif
-#endif
-#ifdef WOLFSSL_IPV6
-    SOCKADDR_IN6 *sin;
-#else
+    HOSTENT* entry;
     SOCKADDR_IN *sin;
 #endif
-#endif /* HAVE_SOCKADDR */
 
     if (sockfd == NULL || ip == NULL) {
         return -1;
     }
 
-#if !defined(HAVE_GETADDRINFO)
-#ifdef WOLFSSL_IPV6
-    sockaddr_len = sizeof(SOCKADDR_IN6);
-#else
-    sockaddr_len = sizeof(SOCKADDR_IN);
-#endif
-#endif
     XMEMSET(&addr, 0, sizeof(addr));
 
 #ifdef WOLFIO_DEBUG
@@ -850,9 +848,9 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
 #endif
 
     /* use gethostbyname for c99 */
-#if defined(HAVE_GETADDRINFO)
+#if defined(HAVE_GETADDRINFO) && !defined(WOLF_C99)
     XMEMSET(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC; /* detect IPv4 or IPv6 */
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
@@ -869,103 +867,16 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     sockaddr_len = answer->ai_addrlen;
     XMEMCPY(&addr, answer->ai_addr, sockaddr_len);
     freeaddrinfo(answer);
-#elif defined(WOLFSSL_USE_POPEN_HOST) && !defined(WOLFSSL_IPV6)
-    {
-        char host_ipaddr[4] = { 127, 0, 0, 1 };
-        int found = 1;
-
-        if ((XSTRNCMP(ip, "localhost", 10) != 0) &&
-            (XSTRNCMP(ip, "127.0.0.1", 10) != 0)) {
-            FILE* fp;
-            char host_out[100];
-            char cmd[100];
-
-            XSTRNCPY(cmd, "host ", 6);
-            XSTRNCAT(cmd, ip, 99 - XSTRLEN(cmd));
-            found = 0;
-            fp = popen(cmd, "r");
-            if (fp != NULL) {
-                while (fgets(host_out, sizeof(host_out), fp) != NULL) {
-                    int i;
-                    int j = 0;
-                    for (j = 0; host_out[j] != '\0'; j++) {
-                        if ((host_out[j] >= '0') && (host_out[j] <= '9')) {
-                            break;
-                        }
-                    }
-                    found = (host_out[j] >= '0') && (host_out[j] <= '9');
-                    if (!found) {
-                        continue;
-                    }
-
-                    for (i = 0; i < 4; i++) {
-                        host_ipaddr[i] = atoi(host_out + j);
-                        while ((host_out[j] >= '0') && (host_out[j] <= '9')) {
-                            j++;
-                        }
-                        if (host_out[j] == '.') {
-                            j++;
-                            found &= (i != 3);
-                        }
-                        else {
-                            found &= (i == 3);
-                            break;
-                        }
-                    }
-                    if (found) {
-                        break;
-                    }
-                }
-                pclose(fp);
-            }
-        }
-        if (found) {
-            sin = (SOCKADDR_IN *)&addr;
-            sin->sin_family = AF_INET;
-            sin->sin_port = XHTONS(port);
-            XMEMCPY(&sin->sin_addr.s_addr, host_ipaddr, sizeof(host_ipaddr));
-        }
-        else {
-            WOLFSSL_MSG("no addr info for responder");
-            return -1;
-        }
-    }
-#else
-#if defined(__GLIBC__) && (__GLIBC__ >= 2) && defined(__USE_MISC) && \
-    !defined(SINGLE_THREADED)
-    /* 2048 is a magic number that empirically works.  the header and
-     * documentation provide no guidance on appropriate buffer size other than
-     * "if buf is too small, the functions will return ERANGE, and the call
-     * should be retried with a larger buffer."
-     */
-    ghbn_r_buf = (char *)XMALLOC(2048, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    if (ghbn_r_buf != NULL) {
-        gethostbyname_r(ip, &entry_buf, ghbn_r_buf, 2048, &entry, &ghbn_r_errno);
-    }
 #else
     entry = gethostbyname(ip);
-#endif
+    sin = (SOCKADDR_IN *)&addr;
 
     if (entry) {
-    #ifdef WOLFSSL_IPV6
-        sin = (SOCKADDR_IN6 *)&addr;
-        sin->sin6_family = AF_INET6;
-        sin->sin6_port = XHTONS(port);
-        XMEMCPY(&sin->sin6_addr, entry->h_addr_list[0], entry->h_length);
-    #else
-        sin = (SOCKADDR_IN *)&addr;
         sin->sin_family = AF_INET;
         sin->sin_port = XHTONS(port);
         XMEMCPY(&sin->sin_addr.s_addr, entry->h_addr_list[0], entry->h_length);
-    #endif
     }
-
-#if defined(__GLIBC__) && (__GLIBC__ >= 2) && defined(__USE_MISC) && \
-    !defined(SINGLE_THREADED)
-    XFREE(ghbn_r_buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
-
-    if (entry == NULL) {
+    else {
         WOLFSSL_MSG("no addr info for responder");
         return -1;
     }
@@ -1018,67 +929,6 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     return -1;
 #endif /* HAVE_SOCKADDR */
 }
-
-int wolfIO_TcpBind(SOCKET_T* sockfd, word16 port)
-{
-#ifdef HAVE_SOCKADDR
-    int ret = 0;
-    SOCKADDR_S addr;
-    int sockaddr_len = sizeof(SOCKADDR_IN);
-    SOCKADDR_IN *sin = (SOCKADDR_IN *)&addr;
-
-    if (sockfd == NULL || port < 1) {
-        return -1;
-    }
-
-    XMEMSET(&addr, 0, sizeof(addr));
-
-    sin->sin_family = AF_INET;
-    sin->sin_addr.s_addr = INADDR_ANY;
-    sin->sin_port = XHTONS(port);
-    *sockfd = (SOCKET_T)socket(AF_INET, SOCK_STREAM, 0);
-
-    if (*sockfd < 0) {
-        WOLFSSL_MSG("socket failed");
-        *sockfd = SOCKET_INVALID;
-        return -1;
-    }
-
-#if !defined(USE_WINDOWS_API) && !defined(WOLFSSL_MDK_ARM)\
-                   && !defined(WOLFSSL_KEIL_TCP_NET) && !defined(WOLFSSL_ZEPHYR)
-    {
-        int optval  = 1;
-        XSOCKLENT optlen = sizeof(optval);
-        ret = setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
-    }
-#endif
-
-    if (ret == 0)
-        ret = bind(*sockfd, (SOCKADDR *)sin, sockaddr_len);
-    if (ret == 0)
-        ret = listen(*sockfd, SOMAXCONN);
-
-    if (ret != 0) {
-        WOLFSSL_MSG("wolfIO_TcpBind failed");
-        CloseSocket(*sockfd);
-        *sockfd = SOCKET_INVALID;
-        ret = -1;
-    }
-
-    return ret;
-#else
-    (void)sockfd;
-    (void)port;
-    return -1;
-#endif /* HAVE_SOCKADDR */
-}
-
-#ifdef HAVE_SOCKADDR
-int wolfIO_TcpAccept(SOCKET_T sockfd, SOCKADDR* peer_addr, XSOCKLENT* peer_len)
-{
-    return (int)accept(sockfd, peer_addr, peer_len);
-}
-#endif /* HAVE_SOCKADDR */
 
 #ifndef HTTP_SCRATCH_BUFFER_SIZE
     #define HTTP_SCRATCH_BUFFER_SIZE 512
@@ -1252,8 +1102,6 @@ static int wolfIO_HttpProcessResponseBuf(int sfd, byte **recvBuf,
 int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
     byte** respBuf, byte* httpBuf, int httpBufSz, int dynType, void* heap)
 {
-    static const char HTTP_PROTO[] = "HTTP/1.";
-    static const char HTTP_STATUS_200[] = "200";
     int result = 0;
     int len = 0;
     char *start, *end;
@@ -1263,8 +1111,6 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                      phr_wait_end, phr_get_chunk_len, phr_get_chunk_data,
                      phr_http_end
     } state = phr_init;
-
-    WOLFSSL_ENTER("wolfIO_HttpProcessResponse");
 
     *respBuf = NULL;
     start = end = NULL;
@@ -1280,7 +1126,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
         }
 
         /* read data if no \r\n or first time */
-        if ((start == NULL) || (end == NULL)) {
+        if (end == NULL) {
             result = wolfIO_Recv(sfd, (char*)httpBuf+len, httpBufSz-len-1, 0);
             if (result > 0) {
                 len += result;
@@ -1295,7 +1141,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                 }
 
                 WOLFSSL_MSG("wolfIO_HttpProcessResponse recv http from peer failed");
-                return HTTP_RECV_ERR;
+                return -1;
             }
         }
         end = XSTRSTR(start, "\r\n"); /* locate end */
@@ -1315,7 +1161,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
              }
              else {
                 WOLFSSL_MSG("wolfIO_HttpProcessResponse header ended early");
-                return HTTP_HEADER_ERR;
+                return -1;
              }
         }
         else {
@@ -1329,28 +1175,20 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
 
             switch (state) {
                 case phr_init:
-                    /* length of "HTTP/1.x 200" == 12*/
-                    if (XSTRLEN(start) < 12) {
-                        WOLFSSL_MSG("wolfIO_HttpProcessResponse HTTP header "
-                            "too short.");
-                        return HTTP_HEADER_ERR;
+                    if (XSTRLEN(start) < 15) { /* 15 is the length of the two
+                                          constant strings we're about to
+                                          compare against. */
+                        WOLFSSL_MSG("wolfIO_HttpProcessResponse HTTP header too short.");
+                        return -1;
                     }
-                    if (XSTRNCASECMP(start, HTTP_PROTO,
-                                     sizeof(HTTP_PROTO) - 1) != 0) {
-                        WOLFSSL_MSG("wolfIO_HttpProcessResponse HTTP header "
-                            "doesn't start with HTTP/1.");
-                        return HTTP_PROTO_ERR;
+                    if (XSTRNCASECMP(start, "HTTP/1", 6) == 0) {
+                        start += 9;
+                        if (XSTRNCASECMP(start, "200 OK", 6) != 0) {
+                            WOLFSSL_MSG("wolfIO_HttpProcessResponse not OK");
+                            return -1;
+                        }
+                        state = phr_http_start;
                     }
-                    /* +2 for HTTP minor version and space between version and
-                     * status code. */
-                    start += sizeof(HTTP_PROTO) - 1 + 2 ;
-                    if (XSTRNCASECMP(start, HTTP_STATUS_200,
-                                     sizeof(HTTP_STATUS_200) - 1) != 0) {
-                        WOLFSSL_MSG("wolfIO_HttpProcessResponse HTTP header "
-                            "doesn't have status code 200.");
-                        return HTTP_STATUS_ERR;
-                    }
-                    state = phr_http_start;
                     break;
                 case phr_http_start:
                 case phr_have_length:
@@ -1358,7 +1196,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                     if (XSTRLEN(start) < 13) { /* 13 is the shortest of the following
                                           next lines we're checking for. */
                         WOLFSSL_MSG("wolfIO_HttpProcessResponse content type is too short.");
-                        return HTTP_VERSION_ERR;
+                        return -1;
                     }
 
                     if (XSTRNCASECMP(start, "Content-Type:", 13) == 0) {
@@ -1378,7 +1216,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                         }
                         if (appStrList[i] == NULL) {
                             WOLFSSL_MSG("wolfIO_HttpProcessResponse appstr mismatch");
-                            return HTTP_APPSTR_ERR;
+                            return -1;
                         }
                         state = (state == phr_http_start) ? phr_have_type : phr_wait_end;
                     }
@@ -1667,7 +1505,7 @@ int wolfIO_HttpBuildRequestCrl(const char* url, int urlSz,
 int wolfIO_HttpProcessResponseCrl(WOLFSSL_CRL* crl, int sfd, byte* httpBuf,
     int httpBufSz)
 {
-    int ret;
+    int result;
     byte *respBuf = NULL;
 
     const char* appStrList[] = {
@@ -1676,15 +1514,14 @@ int wolfIO_HttpProcessResponseCrl(WOLFSSL_CRL* crl, int sfd, byte* httpBuf,
         NULL
     };
 
-
-    ret = wolfIO_HttpProcessResponse(sfd, appStrList,
+    result = wolfIO_HttpProcessResponse(sfd, appStrList,
         &respBuf, httpBuf, httpBufSz, DYNAMIC_TYPE_CRL, crl->heap);
-    if (ret >= 0) {
-        ret = BufferLoadCRL(crl, respBuf, ret, WOLFSSL_FILETYPE_ASN1, 0);
+    if (result >= 0) {
+        result = BufferLoadCRL(crl, respBuf, result, WOLFSSL_FILETYPE_ASN1, 0);
     }
     XFREE(respBuf, crl->heap, DYNAMIC_TYPE_CRL);
 
-    return ret;
+    return result;
 }
 
 int EmbedCrlLookup(WOLFSSL_CRL* crl, const char* url, int urlSz)
@@ -1865,7 +1702,6 @@ void* wolfSSL_GetCookieCtx(WOLFSSL* ssl)
 
     return NULL;
 }
-#endif /* WOLFSSL_DTLS */
 
 #ifdef WOLFSSL_SESSION_EXPORT
 
@@ -1883,6 +1719,7 @@ void wolfSSL_CTX_SetIOSetPeer(WOLFSSL_CTX* ctx, CallbackSetPeer cb)
 }
 
 #endif /* WOLFSSL_SESSION_EXPORT */
+#endif /* WOLFSSL_DTLS */
 
 
 #ifdef HAVE_NETX
@@ -2416,7 +2253,7 @@ void wolfSSL_SetIO_Mynewt(WOLFSSL* ssl, struct mn_socket* mnSocket, struct mn_so
     if (ssl && ssl->mnCtx) {
         Mynewt_Ctx *mynewt_ctx = (Mynewt_Ctx *)ssl->mnCtx;
         mynewt_ctx->mnSocket = mnSocket;
-        XMEMCPY(&mynewt_ctx->mnSockAddrIn, mnSockAddrIn, sizeof(struct mn_sockaddr_in));
+        memcpy(&mynewt_ctx->mnSockAddrIn, mnSockAddrIn, sizeof(struct mn_sockaddr_in));
         mn_socket_set_cbs(mynewt_ctx->mnSocket, mnSocket, &mynewt_sock_cbs);
     }
 }
@@ -2602,546 +2439,4 @@ int GNRC_GenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *_ctx)
 
 #endif /* WOLFSSL_GNRC */
 
-#ifdef WOLFSSL_LWIP_NATIVE
-int LwIPNativeSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
-{
-    err_t ret;
-    WOLFSSL_LWIP_NATIVE_STATE* nlwip = (WOLFSSL_LWIP_NATIVE_STATE*)ctx;
-
-    ret = tcp_write(nlwip->pcb, buf, sz, TCP_WRITE_FLAG_COPY);
-    if (ret != ERR_OK) {
-        sz = -1;
-    }
-
-    return sz;
-}
-
-
-int LwIPNativeReceive(WOLFSSL* ssl, char* buf, int sz, void* ctx)
-{
-    struct pbuf *current, *head;
-    WOLFSSL_LWIP_NATIVE_STATE* nlwip;
-    int ret = 0;
-
-    if (ctx == NULL) {
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    nlwip = (WOLFSSL_LWIP_NATIVE_STATE*)ctx;
-
-    current = nlwip->pbuf;
-    if (current == NULL || sz > current->tot_len) {
-        WOLFSSL_MSG("LwIP native pbuf list is null or not enough data, want read");
-        ret = WOLFSSL_CBIO_ERR_WANT_READ;
-    }
-    else {
-        int read = 0; /* total amount read */
-        head = nlwip->pbuf; /* save pointer to current head */
-
-        /* loop through buffers reading data */
-        while (current != NULL) {
-            int len; /* current amount to be read */
-
-            len = (current->len - nlwip->pulled < sz) ?
-                                            (current->len - nlwip->pulled) : sz;
-
-            if (read + len > sz) {
-                /* should never be hit but have sanity check before use */
-                return WOLFSSL_CBIO_ERR_GENERAL;
-            }
-
-            /* check if is a partial read from before */
-            XMEMCPY(&buf[read],
-                   (const char *)&(((char *)(current->payload))[nlwip->pulled]),
-
-                    len);
-            nlwip->pulled = nlwip->pulled + len;
-            if (nlwip->pulled >= current->len) {
-                WOLFSSL_MSG("Native LwIP read full pbuf");
-                nlwip->pbuf = current->next;
-                current = nlwip->pbuf;
-                nlwip->pulled = 0;
-            }
-            read = read + len;
-            ret  = read;
-
-            /* read enough break out */
-            if (read >= sz) {
-                /* if more pbuf's are left in the chain then increment the
-                 * ref count for next in chain and free all from begining till
-                 * next */
-                if (current != NULL) {
-                    pbuf_ref(current);
-                }
-
-                /* ack and start free'ing from the current head of the chain */
-                pbuf_free(head);
-                break;
-            }
-        }
-    }
-    WOLFSSL_LEAVE("LwIPNativeReceive", ret);
-    return ret;
-}
-
-
-static err_t LwIPNativeReceiveCB(void* cb, struct tcp_pcb* pcb,
-                                struct pbuf* pbuf, err_t err)
-{
-    WOLFSSL_LWIP_NATIVE_STATE* nlwip;
-
-    if (cb == NULL || pcb == NULL) {
-        WOLFSSL_MSG("Expected callback was null, abort");
-        return ERR_ABRT;
-    }
-
-    nlwip = (WOLFSSL_LWIP_NATIVE_STATE*)cb;
-    if (pbuf == NULL && err == ERR_OK) {
-        return ERR_OK;
-    }
-
-    if (nlwip->pbuf == NULL) {
-        nlwip->pbuf = pbuf;
-    }
-    else {
-        if (nlwip->pbuf != pbuf) {
-            tcp_recved(nlwip->pcb, pbuf->tot_len);
-            pbuf_cat(nlwip->pbuf, pbuf); /* add chain to head */
-        }
-    }
-
-    if (nlwip->recv_fn) {
-        return nlwip->recv_fn(nlwip->arg, pcb, pbuf, err);
-    }
-
-    WOLFSSL_LEAVE("LwIPNativeReceiveCB", nlwip->pbuf->tot_len);
-    return ERR_OK;
-}
-
-
-static err_t LwIPNativeSentCB(void* cb, struct tcp_pcb* pcb, u16_t len)
-{
-    WOLFSSL_LWIP_NATIVE_STATE* nlwip;
-
-    if (cb == NULL || pcb == NULL) {
-        WOLFSSL_MSG("Expected callback was null, abort");
-        return ERR_ABRT;
-    }
-
-    nlwip = (WOLFSSL_LWIP_NATIVE_STATE*)cb;
-    if (nlwip->sent_fn) {
-        return nlwip->sent_fn(nlwip->arg, pcb, len);
-    }
-    return ERR_OK;
-}
-
-
-int wolfSSL_SetIO_LwIP(WOLFSSL* ssl, void* pcb,
-                          tcp_recv_fn recv_fn, tcp_sent_fn sent_fn, void *arg)
-{
-    if (ssl == NULL || pcb == NULL)
-        return BAD_FUNC_ARG;
-
-    ssl->lwipCtx.pcb = (struct tcp_pcb *)pcb;
-    ssl->lwipCtx.recv_fn = recv_fn; /*  recv user callback */
-    ssl->lwipCtx.sent_fn = sent_fn; /*  sent user callback */
-    ssl->lwipCtx.arg  = arg;
-    ssl->lwipCtx.pbuf = 0;
-    ssl->lwipCtx.pulled = 0;
-    ssl->lwipCtx.wait   = 0;
-
-    /* wolfSSL_LwIP_recv/sent_cb invokes recv/sent user callback in them. */
-    tcp_recv(pcb, LwIPNativeReceiveCB);
-    tcp_sent(pcb, LwIPNativeSentCB);
-    tcp_arg (pcb, (void *)&ssl->lwipCtx);
-    wolfSSL_SetIOReadCtx(ssl, &ssl->lwipCtx);
-    wolfSSL_SetIOWriteCtx(ssl, &ssl->lwipCtx);
-
-    return ERR_OK;
-}
-#endif
-
-#ifdef WOLFSSL_ISOTP
-static int isotp_send_single_frame(struct isotp_wolfssl_ctx *ctx, char *buf,
-        word16 length)
-{
-    /* Length will be at most 7 bytes to get here. Packet is length and type
-     * for the first byte, then up to 7 bytes of data */
-    ctx->frame.data[0] = ((byte)length) | (ISOTP_FRAME_TYPE_SINGLE << 4);
-    XMEMCPY(&ctx->frame.data[1], buf, length);
-    ctx->frame.length = length + 1;
-    return ctx->send_fn(&ctx->frame, ctx->arg);
-}
-
-static int isotp_send_flow_control(struct isotp_wolfssl_ctx *ctx,
-        byte overflow)
-{
-    int ret;
-    /* Overflow is set it if we have been asked to receive more data than the
-     * user allocated a buffer for */
-    if (overflow) {
-        ctx->frame.data[0] = ISOTP_FLOW_CONTROL_ABORT |
-            (ISOTP_FRAME_TYPE_CONTROL << 4);
-    } else {
-        ctx->frame.data[0] = ISOTP_FLOW_CONTROL_CTS |
-            (ISOTP_FRAME_TYPE_CONTROL << 4);
-    }
-    /* Set the number of frames between flow control to infinite */
-    ctx->frame.data[1] = ISOTP_FLOW_CONTROL_FRAMES;
-    /* User specified frame delay */
-    ctx->frame.data[2] = ctx->receive_delay;
-    ctx->frame.length = ISOTP_FLOW_CONTROL_PACKET_SIZE;
-    ret = ctx->send_fn(&ctx->frame, ctx->arg);
-    return ret;
-}
-
-static int isotp_receive_flow_control(struct isotp_wolfssl_ctx *ctx)
-{
-    int ret;
-    enum isotp_frame_type type;
-    enum isotp_flow_control flow_control;
-    ret = ctx->recv_fn(&ctx->frame, ctx->arg, ISOTP_DEFAULT_TIMEOUT);
-    if (ret == 0) {
-        return WOLFSSL_CBIO_ERR_TIMEOUT;
-    } else if (ret < 0) {
-        WOLFSSL_MSG("ISO-TP error receiving flow control packet");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    /* Flow control is the frame type and flow response for the first byte,
-     * number of frames until the next flow control packet for the second
-     * byte, time between frames for the third byte */
-    type = ctx->frame.data[0] >> 4;
-
-    if (type != ISOTP_FRAME_TYPE_CONTROL) {
-        WOLFSSL_MSG("ISO-TP frames out of sequence");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-
-    flow_control = ctx->frame.data[0] & 0xf;
-
-    ctx->flow_counter = 0;
-    ctx->flow_packets = ctx->frame.data[1];
-    ctx->frame_delay = ctx->frame.data[2];
-
-    return flow_control;
-}
-
-static int isotp_send_consecutive_frame(struct isotp_wolfssl_ctx *ctx)
-{
-    /* Sequence is 0 - 15 and then starts again, the first frame has an
-     * implied sequence of '0' */
-    ctx->sequence += 1;
-    if (ctx->sequence > ISOTP_MAX_SEQUENCE_COUNTER) {
-        ctx->sequence = 0;
-    }
-    ctx->flow_counter++;
-    /* First byte it type and sequence number, up to 7 bytes of data */
-    ctx->frame.data[0] = ctx->sequence | (ISOTP_FRAME_TYPE_CONSECUTIVE << 4);
-    if (ctx->buf_length > ISOTP_MAX_CONSECUTIVE_FRAME_DATA_SIZE) {
-        XMEMCPY(&ctx->frame.data[1], ctx->buf_ptr,
-                ISOTP_MAX_CONSECUTIVE_FRAME_DATA_SIZE);
-        ctx->buf_ptr += ISOTP_MAX_CONSECUTIVE_FRAME_DATA_SIZE;
-        ctx->buf_length -= ISOTP_MAX_CONSECUTIVE_FRAME_DATA_SIZE;
-        ctx->frame.length = ISOTP_CAN_BUS_PAYLOAD_SIZE;
-    } else {
-        XMEMCPY(&ctx->frame.data[1], ctx->buf_ptr, ctx->buf_length);
-        ctx->frame.length = ctx->buf_length + 1;
-        ctx->buf_length = 0;
-    }
-    return ctx->send_fn(&ctx->frame, ctx->arg);
-
-}
-
-static int isotp_send_first_frame(struct isotp_wolfssl_ctx *ctx, char *buf,
-        word16 length)
-{
-    int ret;
-    ctx->sequence = 0;
-    /* Set to 1 to trigger a flow control straight away, the flow control
-     * packet will set these properly */
-    ctx->flow_packets = ctx->flow_counter = 1;
-    /* First frame has 1 nibble for type, 3 nibbles for length followed by
-     * 6 bytes for data*/
-    ctx->frame.data[0] = (length >> 8) | (ISOTP_FRAME_TYPE_FIRST << 4);
-    ctx->frame.data[1] = length & 0xff;
-    XMEMCPY(&ctx->frame.data[2], buf, ISOTP_FIRST_FRAME_DATA_SIZE);
-    ctx->buf_ptr = buf + ISOTP_FIRST_FRAME_DATA_SIZE;
-    ctx->buf_length = length - ISOTP_FIRST_FRAME_DATA_SIZE;
-    ctx->frame.length = ISOTP_CAN_BUS_PAYLOAD_SIZE;
-    ret = ctx->send_fn(&ctx->frame, ctx->arg);
-    if (ret <= 0) {
-        WOLFSSL_MSG("ISO-TP error sending first frame");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    while(ctx->buf_length) {
-        /* The receiver can set how often to get a flow control packet. If it
-         * is time, then get the packet. Note that this will always happen
-         * after the first packet */
-        if ((ctx->flow_packets > 0) &&
-                (ctx->flow_counter == ctx->flow_packets)) {
-            ret = isotp_receive_flow_control(ctx);
-        }
-        /* Frame delay <= 0x7f is in ms, 0xfX is X * 100 us */
-        if (ctx->frame_delay) {
-            if (ctx->frame_delay <= ISOTP_MAX_MS_FRAME_DELAY) {
-                ctx->delay_fn(ctx->frame_delay * 1000);
-            } else {
-                ctx->delay_fn((ctx->frame_delay & 0xf) * 100);
-            }
-        }
-        switch (ret) {
-            /* Clear to send */
-            case ISOTP_FLOW_CONTROL_CTS:
-                if (isotp_send_consecutive_frame(ctx) < 0) {
-                    WOLFSSL_MSG("ISO-TP error sending consecutive frame");
-                    return WOLFSSL_CBIO_ERR_GENERAL;
-                }
-                break;
-            /* Receiver says "WAIT", so we wait for another flow control
-             * packet, or abort if we have waited too long */
-            case ISOTP_FLOW_CONTROL_WAIT:
-                ctx->wait_counter += 1;
-                if (ctx->wait_counter > ISOTP_DEFAULT_WAIT_COUNT) {
-                    WOLFSSL_MSG("ISO-TP receiver told us to wait too many"
-                            " times");
-                    return WOLFSSL_CBIO_ERR_WANT_WRITE;
-                }
-                break;
-            /* Receiver is not ready to receive packet, so abort */
-            case ISOTP_FLOW_CONTROL_ABORT:
-                WOLFSSL_MSG("ISO-TP receiver aborted transmission");
-                return WOLFSSL_CBIO_ERR_WANT_WRITE;
-            default:
-                WOLFSSL_MSG("ISO-TP got unexpected flow control packet");
-                return WOLFSSL_CBIO_ERR_GENERAL;
-        }
-    }
-    return 0;
-}
-
-int ISOTP_Send(WOLFSSL* ssl, char* buf, int sz, void* ctx)
-{
-    int ret;
-    struct isotp_wolfssl_ctx *isotp_ctx;
-    (void) ssl;
-
-    if (!ctx) {
-        WOLFSSL_MSG("ISO-TP requires wolfSSL_SetIO_ISOTP to be called first");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    isotp_ctx = (struct isotp_wolfssl_ctx*) ctx;
-
-    /* ISO-TP cannot send more than 4095 bytes, this limits the packet size
-     * and wolfSSL will try again with the remaining data */
-    if (sz > ISOTP_MAX_DATA_SIZE) {
-        sz = ISOTP_MAX_DATA_SIZE;
-    }
-    /* Can't send whilst we are receiving */
-    if (isotp_ctx->state != ISOTP_CONN_STATE_IDLE) {
-        return WOLFSSL_ERROR_WANT_WRITE;
-    }
-    isotp_ctx->state = ISOTP_CONN_STATE_SENDING;
-
-    /* Assuming normal addressing */
-    if (sz <= ISOTP_SINGLE_FRAME_DATA_SIZE) {
-        ret = isotp_send_single_frame(isotp_ctx, buf, (word16)sz);
-    } else {
-        ret = isotp_send_first_frame(isotp_ctx, buf, (word16)sz);
-    }
-    isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-
-    if (ret == 0) {
-        return sz;
-    }
-    return ret;
-}
-
-static int isotp_receive_single_frame(struct isotp_wolfssl_ctx *ctx)
-{
-    byte data_size;
-
-    /* 1 nibble for data size which will be 1 - 7 in a regular 8 byte CAN
-     * packet */
-    data_size = (byte)ctx->frame.data[0] & 0xf;
-    if (ctx->receive_buffer_size < (int)data_size) {
-        WOLFSSL_MSG("ISO-TP buffer is too small to receive data");
-        return BUFFER_E;
-    }
-    XMEMCPY(ctx->receive_buffer, &ctx->frame.data[1], data_size);
-    return data_size;
-}
-
-static int isotp_receive_multi_frame(struct isotp_wolfssl_ctx *ctx)
-{
-    int ret;
-    word16 data_size;
-    byte delay = 0;
-
-    /* Increase receive timeout for enforced ms delay */
-    if (ctx->receive_delay <= ISOTP_MAX_MS_FRAME_DELAY) {
-        delay = ctx->receive_delay;
-    }
-    /* Still processing first frame.
-     * Full data size is lower nibble of first byte for the most significant
-     * followed by the second byte for the rest. Last 6 bytes are data */
-    data_size = ((ctx->frame.data[0] & 0xf) << 8) + ctx->frame.data[1];
-    XMEMCPY(ctx->receive_buffer, &ctx->frame.data[2], ISOTP_FIRST_FRAME_DATA_SIZE);
-    /* Need to send a flow control packet to either cancel or continue
-     * transmission of data */
-    if (ctx->receive_buffer_size < data_size) {
-        isotp_send_flow_control(ctx, TRUE);
-        WOLFSSL_MSG("ISO-TP buffer is too small to receive data");
-        return BUFFER_E;
-    }
-    isotp_send_flow_control(ctx, FALSE);
-
-    ctx->buf_length = ISOTP_FIRST_FRAME_DATA_SIZE;
-    ctx->buf_ptr = ctx->receive_buffer + ISOTP_FIRST_FRAME_DATA_SIZE;
-    data_size -= ISOTP_FIRST_FRAME_DATA_SIZE;
-    ctx->sequence = 1;
-
-    while(data_size) {
-        enum isotp_frame_type type;
-        byte sequence;
-        byte frame_len;
-        ret = ctx->recv_fn(&ctx->frame, ctx->arg, ISOTP_DEFAULT_TIMEOUT +
-                (delay / 1000));
-        if (ret == 0) {
-            return WOLFSSL_CBIO_ERR_TIMEOUT;
-        }
-        type = ctx->frame.data[0] >> 4;
-        /* Consecutive frames have sequence number as lower nibble */
-        sequence = ctx->frame.data[0] & 0xf;
-        if (type != ISOTP_FRAME_TYPE_CONSECUTIVE) {
-            WOLFSSL_MSG("ISO-TP frames out of sequence");
-            return WOLFSSL_CBIO_ERR_GENERAL;
-        }
-        if (sequence != ctx->sequence) {
-            WOLFSSL_MSG("ISO-TP frames out of sequence");
-            return WOLFSSL_CBIO_ERR_GENERAL;
-        }
-        /* Last 7 bytes or whatever we got after the first byte is data */
-        frame_len = ctx->frame.length - 1;
-        XMEMCPY(ctx->buf_ptr, &ctx->frame.data[1], frame_len);
-        ctx->buf_ptr += frame_len;
-        ctx->buf_length += frame_len;
-        data_size -= frame_len;
-
-        /* Sequence is 0 - 15 (first 0 is implied for first packet */
-        ctx->sequence++;
-        if (ctx->sequence > ISOTP_MAX_SEQUENCE_COUNTER) {
-            ctx->sequence = 0;
-        }
-    }
-    return ctx->buf_length;
-
-}
-
-/* The wolfSSL receive callback, needs to buffer because we need to grab all
- * incoming data, even if wolfSSL doesn't want it all yet */
-int ISOTP_Receive(WOLFSSL* ssl, char* buf, int sz, void* ctx)
-{
-    enum isotp_frame_type type;
-    int ret;
-    struct isotp_wolfssl_ctx *isotp_ctx;
-    (void) ssl;
-
-    if (!ctx) {
-        WOLFSSL_MSG("ISO-TP requires wolfSSL_SetIO_ISOTP to be called first");
-        return WOLFSSL_CBIO_ERR_TIMEOUT;
-    }
-    isotp_ctx = (struct isotp_wolfssl_ctx*)ctx;
-
-    /* Is buffer empty? If so, fill it */
-    if (!isotp_ctx->receive_buffer_len) {
-        /* Can't send whilst we are receiving */
-        if (isotp_ctx->state != ISOTP_CONN_STATE_IDLE) {
-            return WOLFSSL_ERROR_WANT_READ;
-        }
-        isotp_ctx->state = ISOTP_CONN_STATE_RECEIVING;
-        do {
-            ret = isotp_ctx->recv_fn(&isotp_ctx->frame, isotp_ctx->arg,
-                    ISOTP_DEFAULT_TIMEOUT);
-        } while (ret == 0);
-        if (ret == 0) {
-            isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-            return WOLFSSL_CBIO_ERR_TIMEOUT;
-        } else if (ret < 0) {
-            isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-            WOLFSSL_MSG("ISO-TP receive error");
-            return WOLFSSL_CBIO_ERR_GENERAL;
-        }
-
-        type = (enum isotp_frame_type) isotp_ctx->frame.data[0] >> 4;
-
-        if (type == ISOTP_FRAME_TYPE_SINGLE) {
-            isotp_ctx->receive_buffer_len =
-                isotp_receive_single_frame(isotp_ctx);
-        } else if (type == ISOTP_FRAME_TYPE_FIRST) {
-            isotp_ctx->receive_buffer_len =
-                isotp_receive_multi_frame(isotp_ctx);
-        } else {
-            /* Should never get here */
-            isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-            WOLFSSL_MSG("ISO-TP frames out of sequence");
-            return WOLFSSL_CBIO_ERR_GENERAL;
-        }
-        if (isotp_ctx->receive_buffer_len <= 1) {
-            isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-            return isotp_ctx->receive_buffer_len;
-        } else {
-            isotp_ctx->receive_buffer_ptr = isotp_ctx->receive_buffer;
-        }
-        isotp_ctx->state = ISOTP_CONN_STATE_IDLE;
-    }
-
-    /* Return from the buffer */
-    if (isotp_ctx->receive_buffer_len >= sz) {
-        XMEMCPY(buf, isotp_ctx->receive_buffer_ptr, sz);
-        isotp_ctx->receive_buffer_ptr+= sz;
-        isotp_ctx->receive_buffer_len-= sz;
-        return sz;
-    } else {
-        XMEMCPY(buf, isotp_ctx->receive_buffer_ptr,
-                isotp_ctx->receive_buffer_len);
-        sz = isotp_ctx->receive_buffer_len;
-        isotp_ctx->receive_buffer_len = 0;
-        return sz;
-    }
-}
-
-int wolfSSL_SetIO_ISOTP(WOLFSSL *ssl, isotp_wolfssl_ctx *ctx,
-        can_recv_fn recv_fn, can_send_fn send_fn, can_delay_fn delay_fn,
-        word32 receive_delay, char *receive_buffer, int receive_buffer_size,
-        void *arg)
-{
-    if (!ctx || !recv_fn || !send_fn || !delay_fn || !receive_buffer) {
-        WOLFSSL_MSG("ISO-TP has missing required parameter");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    ctx->recv_fn = recv_fn;
-    ctx->send_fn = send_fn;
-    ctx->arg = arg;
-    ctx->delay_fn = delay_fn;
-    ctx->frame_delay = 0;
-    ctx->receive_buffer = receive_buffer;
-    ctx->receive_buffer_size = receive_buffer_size;
-    ctx->receive_buffer_len = 0;
-    ctx->state = ISOTP_CONN_STATE_IDLE;
-
-    wolfSSL_SetIOReadCtx(ssl, ctx);
-    wolfSSL_SetIOWriteCtx(ssl, ctx);
-
-    /* Delay of 100 - 900us is 0xfX where X is value / 100. Delay of
-     * >= 1000 is divided by 1000. > 127ms is invalid */
-    if (receive_delay < 1000) {
-        ctx->receive_delay = 0xf0 + (receive_delay / 100);
-    } else if (receive_delay <= ISOTP_MAX_MS_FRAME_DELAY * 1000) {
-        ctx->receive_delay = receive_delay / 1000;
-    } else {
-        WOLFSSL_MSG("ISO-TP delay parameter out of bounds");
-        return WOLFSSL_CBIO_ERR_GENERAL;
-    }
-    return 0;
-}
-#endif
 #endif /* WOLFCRYPT_ONLY */

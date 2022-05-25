@@ -1,6 +1,6 @@
 /* helper.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/types.h>
 #include <wolfcrypt/benchmark/benchmark.h>
 
 #include "sdkconfig.h"
@@ -119,7 +118,7 @@ int construct_argv()
 
     __argv[cnt] = malloc(10);
     sprintf(__argv[cnt], "benchmark");
-    __argv[cnt][9] = '\0';
+    __argv[9] = '\0';
     cnt = 1;
 
     while (*ch != '\0')

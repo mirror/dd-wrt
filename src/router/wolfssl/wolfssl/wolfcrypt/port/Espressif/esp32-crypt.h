@@ -1,6 +1,6 @@
 /* esp32-crypt.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -37,20 +37,12 @@
 #include <freertos/FreeRTOS.h>
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
-#if ESP_IDF_VERSION_MAJOR < 5
 #include "soc/cpu.h"
-#endif
-
-#if ESP_IDF_VERSION_MAJOR >= 5
- #include "esp_private/periph_ctrl.h"
-#else
- #include "driver/periph_ctrl.h"
-#endif
-
+#include "driver/periph_ctrl.h"
 #if ESP_IDF_VERSION_MAJOR >= 4
- #include <esp32/rom/ets_sys.h>
+#include <esp32/rom/ets_sys.h>
 #else
- #include <rom/ets_sys.h>
+#include <rom/ets_sys.h>
 #endif
 
 #ifdef __cplusplus
@@ -97,13 +89,11 @@ uint64_t  wc_esp32elapsedTime();
 
 /* RAW hash function APIs are not implemented with esp32 hardware acceleration*/
 #define WOLFSSL_NO_HASH_RAW
-#define SHA_CTX ETS_SHAContext
 #if ESP_IDF_VERSION_MAJOR >= 4
 #include "esp32/rom/sha.h"
 #else
 #include "rom/sha.h"
 #endif
-#undef SHA_CTX
 
 typedef enum {
     ESP32_SHA_INIT = 0,
@@ -142,8 +132,8 @@ int esp_sha_process(struct wc_Sha* sha, const byte* data);
 
 #if !defined(NO_RSA) || defined(HAVE_ECC)
 
-#if !defined(ESP_RSA_TIMEOUT_CNT)
-    #define ESP_RSA_TIMEOUT_CNT     0x249F00
+#ifndef ESP_RSA_TIMEOUT
+    #define ESP_RSA_TIMEOUT 0xFFFFF
 #endif
 
 struct fp_int;

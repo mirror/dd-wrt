@@ -1,6 +1,6 @@
 /* curve25519.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -43,7 +43,6 @@
 #endif
 
 #define CURVE25519_KEYSIZE 32
-#define CURVE25519_PUB_KEY_SIZE 32
 
 #ifdef WOLFSSL_NAMES_STATIC
 typedef char curve25519_str[12];
@@ -60,44 +59,27 @@ typedef struct {
 
 /* ECC point, the internal structure is Little endian
  * the mathematical functions used the endianness */
-typedef struct ECPoint {
+typedef struct {
     byte point[CURVE25519_KEYSIZE];
-#ifdef FREESCALE_LTC_ECC
-    byte pointY[CURVE25519_KEYSIZE];
-#endif
-    byte pointSz;
+    #ifdef FREESCALE_LTC_ECC
+        byte pointY[CURVE25519_KEYSIZE];
+    #endif
 } ECPoint;
 
-#ifndef WC_CURVE25519KEY_TYPE_DEFINED
-    typedef struct curve25519_key curve25519_key;
-    #define WC_CURVE25519KEY_TYPE_DEFINED
-#endif
-
 /* A CURVE25519 Key */
-struct curve25519_key {
+typedef struct curve25519_key {
     int idx;            /* Index into the ecc_sets[] for the parameters of
                            this curve if -1, this key is using user supplied
                            curve in dp */
     const curve25519_set_type* dp;   /* domain parameters, either points to
                                    curves (idx >= 0) or user supplied */
-    ECPoint   p;                     /* public point for key  */
-    byte      k[CURVE25519_KEYSIZE]; /* private scaler for key */
+    ECPoint   p;        /* public key  */
+    ECPoint   k;        /* private key */
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif
-#if defined(WOLF_CRYPTO_CB)
-    int devId;
-#endif
-
-#ifdef WOLFSSL_SE050
-    int keyId;
-#endif
-
-    /* bit fields */
-    byte pubSet:1;
-    byte privSet:1;
-};
+} curve25519_key;
 
 enum {
     EC25519_LITTLE_ENDIAN=0,
@@ -131,8 +113,6 @@ int wc_curve25519_shared_secret_ex(curve25519_key* private_key,
 
 WOLFSSL_API
 int wc_curve25519_init(curve25519_key* key);
-WOLFSSL_API
-int wc_curve25519_init_ex(curve25519_key* key, void* heap, int devId);
 
 WOLFSSL_API
 void wc_curve25519_free(curve25519_key* key);
@@ -194,3 +174,4 @@ int wc_curve25519_size(curve25519_key* key);
 
 #endif /* HAVE_CURVE25519 */
 #endif /* WOLF_CRYPT_CURVE25519_H */
+
