@@ -139,13 +139,13 @@ static inline int wg_cpumask_next_online(int *next)
 	return cpu;
 }
 
-void wg_prev_queue_init(struct prev_queue *queue);
+static void wg_prev_queue_init(struct prev_queue *queue);
 
 /* Multi producer */
-bool wg_prev_queue_enqueue(struct prev_queue *queue, struct sk_buff *skb);
+static bool wg_prev_queue_enqueue(struct prev_queue *queue, struct sk_buff *skb);
 
 /* Single consumer */
-struct sk_buff *wg_prev_queue_dequeue(struct prev_queue *queue);
+static struct sk_buff *wg_prev_queue_dequeue(struct prev_queue *queue);
 
 /* Single consumer */
 static inline struct sk_buff *wg_prev_queue_peek(struct prev_queue *queue)
