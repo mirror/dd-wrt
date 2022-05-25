@@ -36,7 +36,7 @@
 
     \sa wc_DeCompress
 */
-int wc_Compress(byte* out, word32 outSz, const byte* in, word32 inSz, word32 flags);
+WOLFSSL_API int wc_Compress(byte*, word32, const byte*, word32, word32);
 
 /*!
     \ingroup Compression
@@ -69,4 +69,4 @@ int wc_Compress(byte* out, word32 outSz, const byte* in, word32 inSz, word32 fla
 
     \sa wc_Compress
 */
-int wc_DeCompress(byte* out, word32 outSz, const byte* in, word32 inSz);
+WOLFSSL_API int wc_DeCompress(byte*, word32, const byte*, word32);

@@ -1,6 +1,6 @@
 /* snifftest.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -27,8 +27,6 @@
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/wolfcrypt/types.h>
 #include <wolfssl/wolfcrypt/logging.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/version.h>
 
 #ifdef WOLFSSL_SNIFFER_STORE_DATA_CB
     #include <wolfssl/wolfcrypt/memory.h>
@@ -99,27 +97,20 @@ enum {
     #define STORE_DATA_BLOCK_SZ 1024
 #endif
 
-#if defined(HAVE_ECC) && !defined(NO_ECC_SECP) && (!defined(NO_ECC256) || defined(HAVE_ALL_CURVES))
-    #define DEFAULT_SERVER_EPH_KEY_ECC "../../certs/statickeys/ecc-secp256r1.pem"
-#else
-    #define DEFAULT_SERVER_EPH_KEY_ECC ""
-#endif
-#ifndef NO_DH
-    #define DEFAULT_SERVER_EPH_KEY_DH "../../certs/statickeys/dh-ffdhe2048.pem"
-#else
-    #define DEFAULT_SERVER_EPH_KEY_DH ""
-#endif
-#ifdef HAVE_CURVE25519
-    #define DEFAULT_SERVER_EPH_KEY_X25519 "../../certs/statickeys/x25519.pem"
-#else
-    #define DEFAULT_SERVER_EPH_KEY_X25519 ""
-#endif
 
+#define DEFAULT_SERVER_EPH_KEY_ECC "../../certs/statickeys/ecc-secp256r1.pem"
+#define DEFAULT_SERVER_EPH_KEY_DH  "../../certs/statickeys/dh-ffdhe2048.pem"
 #ifndef DEFAULT_SERVER_EPH_KEY
-    #define DEFAULT_SERVER_EPH_KEY \
-                DEFAULT_SERVER_EPH_KEY_ECC "," \
-                DEFAULT_SERVER_EPH_KEY_DH "," \
-                DEFAULT_SERVER_EPH_KEY_X25519
+    #if defined(HAVE_ECC) && !defined(NO_ECC_SECP) && \
+        (!defined(NO_ECC256) || defined(HAVE_ALL_CURVES))
+        #if !defined(NO_DH)
+            #define DEFAULT_SERVER_EPH_KEY DEFAULT_SERVER_EPH_KEY_ECC "," DEFAULT_SERVER_EPH_KEY_DH
+        #else
+            #define DEFAULT_SERVER_EPH_KEY DEFAULT_SERVER_EPH_KEY_ECC
+        #endif
+    #elif !defined(NO_DH)
+        #define DEFAULT_SERVER_EPH_KEY DEFAULT_SERVER_EPH_KEY_DH
+    #endif
 #endif
 
 #define DEFAULT_SERVER_KEY_RSA "../../certs/server-key.pem"
@@ -131,34 +122,32 @@ enum {
         #define DEFAULT_SERVER_KEY DEFAULT_SERVER_KEY_ECC
     #endif
 #endif
-
+     
 
 #ifdef WOLFSSL_SNIFFER_WATCH
 static const byte rsaHash[] = {
-    0x3d, 0x4a, 0x60, 0xfc, 0xbf, 0xe5, 0x4d, 0x3e,
-    0x85, 0x62, 0xf2, 0xfc, 0xdb, 0x0d, 0x51, 0xdd,
-    0xcd, 0xc2, 0x53, 0x81, 0x1a, 0x67, 0x31, 0xa0,
-    0x7f, 0xd2, 0x11, 0x74, 0xbf, 0xea, 0xc9, 0xc5
+    0x4e, 0xa8, 0x55, 0x02, 0xe1, 0x84, 0x7e, 0xe1, 
+    0xb5, 0x97, 0xd2, 0xf0, 0x92, 0x3a, 0xfd, 0x0d, 
+    0x98, 0x26, 0x06, 0x85, 0x8d, 0xa4, 0xc7, 0x35, 
+    0xd4, 0x74, 0x8f, 0xd0, 0xe7, 0xa8, 0x27, 0xaa
 };
 static const byte eccHash[] = {
-    0x9e, 0x45, 0xb6, 0xf8, 0xc6, 0x5d, 0x60, 0x90,
-    0x40, 0x8f, 0xd2, 0x0e, 0xb1, 0x59, 0xe7, 0xbd,
-    0xb0, 0x9b, 0x3c, 0x7a, 0x3a, 0xbe, 0x13, 0x52,
-    0x07, 0x4f, 0x1a, 0x64, 0x45, 0xe0, 0x13, 0x34
+    0x80, 0x3d, 0xff, 0xca, 0x2e, 0x20, 0xd9, 0xdf, 
+    0xfe, 0x64, 0x4e, 0x25, 0x6a, 0xee, 0xee, 0x60, 
+    0xc1, 0x48, 0x7b, 0xff, 0xa0, 0xfb, 0xeb, 0xac, 
+    0xe2, 0xa4, 0xdd, 0xb5, 0x18, 0x38, 0x78, 0x38
 };
 #endif
 
 
-static pcap_t* pcap = NULL;
-static pcap_if_t* alldevs = NULL;
-static struct bpf_program pcap_fp;
+pcap_t* pcap = NULL;
+pcap_if_t* alldevs = NULL;
+
 
 static void FreeAll(void)
 {
-    if (pcap) {
-        pcap_freecode(&pcap_fp);
+    if (pcap)
         pcap_close(pcap);
-    }
     if (alldevs)
         pcap_freealldevs(alldevs);
 #ifndef _WIN32
@@ -181,8 +170,6 @@ static void DumpStats(void)
             sslStats.sslResumedConns);
     printf("SSL Stats (sslEphemeralMisses):%lu\n",
             sslStats.sslEphemeralMisses);
-    printf("SSL Stats (sslResumptionInserts):%lu\n",
-            sslStats.sslResumptionInserts);
     printf("SSL Stats (sslResumeMisses):%lu\n",
             sslStats.sslResumeMisses);
     printf("SSL Stats (sslCiphersUnsupported):%lu\n",
@@ -331,7 +318,7 @@ static int myStoreDataCb(const unsigned char* decryptBuf,
 /* try and load as both static ephemeral and private key */
 /* only fail if no key is loaded */
 /* Allow comma seperated list of files */
-static int load_key(const char* name, const char* server, int port,
+static int load_key(const char* name, const char* server, int port, 
     const char* keyFiles, const char* passwd, char* err)
 {
     int ret = -1;
@@ -360,7 +347,7 @@ static int load_key(const char* name, const char* server, int port,
     #endif
         if (ret == 0)
             loadCount++;
-
+        
         if (loadCount == 0) {
             printf("Failed loading private key %s: ret %d\n", keyFile, ret);
             printf("Please run directly from sslSniffer/sslSnifferTest dir\n");
@@ -375,98 +362,6 @@ static int load_key(const char* name, const char* server, int port,
 
     (void)name;
     return ret;
-}
-
-static void TrimNewLine(char* str)
-{
-    word32 strSz = 0;
-    if (str)
-        strSz = (word32)XSTRLEN(str);
-    if (strSz > 0 && (str[strSz-1] == '\n' || str[strSz-1] == '\r'))
-        str[strSz-1] = '\0';
-}
-
-static void show_appinfo(void)
-{
-    printf("snifftest %s\n", LIBWOLFSSL_VERSION_STRING);
-
-    /* list enabled sniffer features */
-    printf("sniffer features: "
-    #ifdef WOLFSSL_SNIFFER_STATS
-        "stats, "
-    #endif
-    #ifdef WOLFSSL_SNIFFER_WATCH
-        "watch, "
-    #endif
-    #ifdef WOLFSSL_SNIFFER_STORE_DATA_CB
-        "store_data_cb "
-    #endif
-    #ifdef WOLFSSL_SNIFFER_CHAIN_INPUT
-        "chain_input "
-    #endif
-    #ifdef WOLFSSL_SNIFFER_KEY_CALLBACK
-        "key_callback "
-    #endif
-    #ifdef DEBUG_SNIFFER
-        "debug "
-    #endif
-    #ifdef WOLFSSL_TLS13
-        "tls_v13 "
-    #endif
-    #ifndef WOLFSSL_NO_TLS12
-        "tls_v12 "
-    #endif
-    #ifdef HAVE_SESSION_TICKET
-        "session_ticket "
-    #endif
-    #ifdef WOLFSSL_STATIC_EPHEMERAL
-        "static_ephemeral "
-    #endif
-    #ifdef WOLFSSL_ENCRYPTED_KEYS
-        "encrypted_keys "
-    #endif
-    #ifdef HAVE_SNI
-        "sni "
-    #endif
-    #ifdef HAVE_EXTENDED_MASTER
-        "extended_master "
-    #endif
-    #ifdef HAVE_MAX_FRAGMENT
-        "max fragment "
-    #endif
-    #ifdef WOLFSSL_ASYNC_CRYPT
-        "async_crypt "
-    #endif
-    #ifndef NO_RSA
-        "rsa "
-    #endif
-    #if !defined(NO_DH) && defined(WOLFSSL_DH_EXTRA)
-        "dh "
-    #endif
-    #ifdef HAVE_ECC
-        "ecc "
-    #endif
-    #ifdef HAVE_CURVE448
-        "x448 "
-    #endif
-    #ifdef HAVE_CURVE22519
-        "x22519 "
-    #endif
-    #ifdef WOLFSSL_STATIC_RSA
-        "rsa_static "
-    #endif
-    #ifdef WOLFSSL_STATIC_DH
-        "dh_static "
-    #endif
-    "\n\n"
-    );
-}
-static void show_usage(void)
-{
-    printf("usage:\n");
-    printf("\t./snifftest\n");
-    printf("\t\tprompts for options\n");
-    printf("\t./snifftest dump pemKey [server] [port] [password]\n");
 }
 
 int main(int argc, char** argv)
@@ -485,21 +380,21 @@ int main(int argc, char** argv)
     char         keyFilesUser[MAX_FILENAME_SZ];
     const char  *server = NULL;
     const char  *sniName = NULL;
+    struct       bpf_program fp;
     pcap_if_t   *d;
     pcap_addr_t *a;
-    int          isChain = 0;
-    int          j;
 #ifdef WOLFSSL_SNIFFER_CHAIN_INPUT
-    struct iovec chains[CHAIN_INPUT_COUNT];
-    unsigned int remainder;
+    struct iovec chain[CHAIN_INPUT_COUNT];
+    int          chainSz;
 #endif
-
-    show_appinfo();
 
     signal(SIGINT, sig_handler);
 
 #ifndef _WIN32
     ssl_InitSniffer();   /* dll load on Windows */
+#endif
+#ifdef DEBUG_WOLFSSL
+    //wolfSSL_Debugging_ON();
 #endif
     ssl_Trace("./tracefile.txt", err);
     ssl_EnableRecovery(1, -1, err);
@@ -591,10 +486,10 @@ int main(int argc, char** argv)
 
         SNPRINTF(filter, sizeof(filter), "tcp and port %d", port);
 
-        ret = pcap_compile(pcap, &pcap_fp, filter, 0, 0);
+        ret = pcap_compile(pcap, &fp, filter, 0, 0);
         if (ret != 0) printf("pcap_compile failed %s\n", pcap_geterr(pcap));
 
-        ret = pcap_setfilter(pcap, &pcap_fp);
+        ret = pcap_setfilter(pcap, &fp);
         if (ret != 0) printf("pcap_setfilter failed %s\n", pcap_geterr(pcap));
 
         /* optionally enter the private key to use */
@@ -607,10 +502,13 @@ int main(int argc, char** argv)
         XMEMSET(keyFilesBuf, 0, sizeof(keyFilesBuf));
         XMEMSET(keyFilesUser, 0, sizeof(keyFilesUser));
         if (XFGETS(keyFilesUser, sizeof(keyFilesUser), stdin)) {
-            TrimNewLine(keyFilesUser);
-            if (XSTRLEN(keyFilesUser) > 0) {
+            word32 strSz;
+            if (keyFilesUser[0] != '\r' && keyFilesUser[0] != '\n') {
                 keyFilesSrc = keyFilesUser;
             }
+            strSz = (word32)XSTRLEN(keyFilesUser);
+            if (keyFilesUser[strSz-1] == '\n')
+                keyFilesUser[strSz-1] = '\0';
         }
         XSTRNCPY(keyFilesBuf, keyFilesSrc, sizeof(keyFilesBuf));
 
@@ -619,7 +517,6 @@ int main(int argc, char** argv)
         printf("Enter alternate SNI [default: none]: ");
         XMEMSET(cmdLineArg, 0, sizeof(cmdLineArg));
         if (XFGETS(cmdLineArg, sizeof(cmdLineArg), stdin)) {
-            TrimNewLine(cmdLineArg);
             if (XSTRLEN(cmdLineArg) > 0) {
                 sniName = cmdLineArg;
             }
@@ -677,13 +574,13 @@ int main(int argc, char** argv)
             }
 
             /* Only let through TCP/IP packets */
-            ret = pcap_compile(pcap, &pcap_fp, "(ip6 or ip) and tcp", 0, 0);
+            ret = pcap_compile(pcap, &fp, "(ip6 or ip) and tcp", 0, 0);
             if (ret != 0) {
                 printf("pcap_compile failed %s\n", pcap_geterr(pcap));
                 exit(EXIT_FAILURE);
             }
 
-            ret = pcap_setfilter(pcap, &pcap_fp);
+            ret = pcap_setfilter(pcap, &fp);
             if (ret != 0) {
                 printf("pcap_setfilter failed %s\n", pcap_geterr(pcap));
                 exit(EXIT_FAILURE);
@@ -691,7 +588,9 @@ int main(int argc, char** argv)
         }
     }
     else {
-        show_usage();
+        /* usage error */
+        printf( "usage: ./snifftest or ./snifftest dump pemKey"
+                " [server] [port] [password]\n");
         exit(EXIT_FAILURE);
     }
 
@@ -706,11 +605,9 @@ int main(int argc, char** argv)
         struct pcap_pkthdr header;
         const unsigned char* packet = pcap_next(pcap, &header);
         SSLInfo sslInfo;
-        void* chain = NULL;
-        int   chainSz = 0;
-
         packetNumber++;
         if (packet) {
+
             byte* data = NULL;
 
             if (header.caplen > 40)  { /* min ip(20) + min tcp(20) */
@@ -719,68 +616,45 @@ int main(int argc, char** argv)
             }
             else
                 continue;
-
 #ifdef WOLFSSL_SNIFFER_CHAIN_INPUT
-            isChain = 1;
-            j = 0;
-            remainder = header.caplen;
-            chainSz = 0;
-            do {
-                unsigned int chunkSz = min(remainder, CHAIN_INPUT_CHUNK_SIZE);
-                chains[chainSz].iov_base = (void*)(packet + j);
-                chains[chainSz].iov_len = chunkSz;
-                j += chunkSz;
-                remainder -= chunkSz;
-                chainSz++;
-            } while (j < (int)header.caplen);
-            chain = (void*)chains;
-#else
-            chain = (void*)packet;
-            chainSz = header.caplen;
+            {
+                unsigned int j = 0;
+                unsigned int remainder = header.caplen;
+
+                chainSz = 0;
+                do {
+                    unsigned int chunkSz;
+
+                    chunkSz = min(remainder, CHAIN_INPUT_CHUNK_SIZE);
+                    chain[chainSz].iov_base = (void*)(packet + j);
+                    chain[chainSz].iov_len = chunkSz;
+                    j += chunkSz;
+                    remainder -= chunkSz;
+                    chainSz++;
+                } while (j < header.caplen);
+            }
 #endif
 
-#ifdef WOLFSSL_ASYNC_CRYPT
-            do {
-                WOLF_EVENT* events[WOLF_ASYNC_MAX_PENDING];
-                int eventCount = 0;
-
-                /* For async call the original API again with same data,
-                 * or call with different sessions for multiple concurrent
-                 * stream processing */
-                ret = ssl_DecodePacketAsync(chain, chainSz, isChain, &data, err,
-                    &sslInfo, NULL);
-
-                if (ret == WC_PENDING_E) {
-                    if (ssl_PollSniffer(events, 1, WOLF_POLL_FLAG_CHECK_HW,
-                        &eventCount) != 0) {
-                        break;
-                    }
-                }
-            } while (ret == WC_PENDING_E);
-#elif defined(WOLFSSL_SNIFFER_CHAIN_INPUT) && \
-      defined(WOLFSSL_SNIFFER_STORE_DATA_CB)
+#if defined(WOLFSSL_SNIFFER_CHAIN_INPUT) && \
+    defined(WOLFSSL_SNIFFER_STORE_DATA_CB)
             ret = ssl_DecodePacketWithChainSessionInfoStoreData(chain, chainSz,
                     &data, &sslInfo, err);
 #elif defined(WOLFSSL_SNIFFER_CHAIN_INPUT)
             (void)sslInfo;
             ret = ssl_DecodePacketWithChain(chain, chainSz, &data, err);
-#else
-    #if defined(WOLFSSL_SNIFFER_STORE_DATA_CB)
+#elif defined(WOLFSSL_SNIFFER_STORE_DATA_CB)
             ret = ssl_DecodePacketWithSessionInfoStoreData(packet,
                     header.caplen, &data, &sslInfo, err);
-    #else
+#else
             ret = ssl_DecodePacketWithSessionInfo(packet, header.caplen, &data,
                                                   &sslInfo, err);
-    #endif
-            (void)chain;
-            (void)chainSz;
 #endif
-
             if (ret < 0) {
                 printf("ssl_Decode ret = %d, %s\n", ret, err);
                 hadBadPacket = 1;
             }
             if (ret > 0) {
+                int j;
                 /* Convert non-printable data to periods. */
                 for (j = 0; j < ret; j++) {
                     if (isprint(data[j]) || isspace(data[j])) continue;
@@ -795,7 +669,6 @@ int main(int argc, char** argv)
             break;      /* we're done reading file */
     }
     FreeAll();
-    (void)isChain;
 
     return hadBadPacket ? EXIT_FAILURE : EXIT_SUCCESS;
 }

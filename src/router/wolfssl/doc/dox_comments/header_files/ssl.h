@@ -18,7 +18,7 @@
     \sa wolfSSL_Init
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfDTLSv1_2_client_method_ex(void* heap);
+WOLFSSL_API WOLFSSL_METHOD *wolfDTLSv1_2_client_method_ex(void* heap);
 
 /*!
     \ingroup Setup
@@ -43,7 +43,7 @@ WOLFSSL_METHOD *wolfDTLSv1_2_client_method_ex(void* heap);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-WOLFSSL_METHOD *wolfSSLv23_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfSSLv23_method(void);
 
 /*!
     \ingroup Setup
@@ -87,7 +87,7 @@ WOLFSSL_METHOD *wolfSSLv23_method(void);
     \sa wolfSSL_CTX_new
 
 */
-WOLFSSL_METHOD *wolfSSLv3_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfSSLv3_server_method(void);
 
 /*!
     \ingroup Setup
@@ -130,7 +130,7 @@ WOLFSSL_METHOD *wolfSSLv3_server_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfSSLv3_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfSSLv3_client_method(void);
 
 /*!
     \ingroup Setup
@@ -173,7 +173,7 @@ WOLFSSL_METHOD *wolfSSLv3_client_method(void);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_server_method(void);
 
 /*!
     \ingroup Setup
@@ -216,7 +216,7 @@ WOLFSSL_METHOD *wolfTLSv1_server_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_client_method(void);
 
 /*!
     \ingroup Setup
@@ -259,7 +259,7 @@ WOLFSSL_METHOD *wolfTLSv1_client_method(void);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_1_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_1_server_method(void);
 
 /*!
     \ingroup Setup
@@ -302,7 +302,7 @@ WOLFSSL_METHOD *wolfTLSv1_1_server_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_1_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_1_client_method(void);
 
 /*!
     \ingroup Setup
@@ -345,7 +345,7 @@ WOLFSSL_METHOD *wolfTLSv1_1_client_method(void);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_2_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_2_server_method(void);
 
 /*!
     \ingroup Setup
@@ -388,7 +388,7 @@ WOLFSSL_METHOD *wolfTLSv1_2_server_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_2_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_2_client_method(void);
 
 /*!
     \ingroup Setup
@@ -431,7 +431,7 @@ WOLFSSL_METHOD *wolfTLSv1_2_client_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfDTLSv1_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfDTLSv1_client_method(void);
 
 /*!
     \ingroup Setup
@@ -474,7 +474,7 @@ WOLFSSL_METHOD *wolfDTLSv1_client_method(void);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfDTLSv1_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfDTLSv1_server_method(void);
 
 /*!
     \brief This function creates and initializes a WOLFSSL_METHOD for the
@@ -493,7 +493,7 @@ WOLFSSL_METHOD *wolfDTLSv1_server_method(void);
 
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfDTLSv1_2_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfDTLSv1_2_server_method(void);
 
 /*!
     \ingroup Setup
@@ -525,7 +525,7 @@ WOLFSSL_METHOD *wolfDTLSv1_2_server_method(void);
 
     \sa none
 */
-int wolfSSL_use_old_poly(WOLFSSL* ssl, int value);
+WOLFSSL_API int wolfSSL_use_old_poly(WOLFSSL*, int);
 
 /*!
     \brief The wolfSSL_dtls_import() function is used to parse in a serialized
@@ -565,29 +565,8 @@ int wolfSSL_use_old_poly(WOLFSSL* ssl, int value);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_dtls_set_export
 */
-int wolfSSL_dtls_import(WOLFSSL* ssl, unsigned char* buf,
+WOLFSSL_API int wolfSSL_dtls_import(WOLFSSL* ssl, unsigned char* buf,
                                                                unsigned int sz);
-
-
-/*!
-    \brief Used to import a serialized TLS session. This function is for
-    importing the state of the connection.
-    WARNING: buf contains sensitive information about the state and is best to
-    be encrypted before storing if stored.
-    Additional debug info can be displayed with the macro
-    WOLFSSL_SESSION_EXPORT_DEBUG defined.
-
-    \return the number of bytes read from buffer 'buf'
-
-    \param ssl WOLFSSL structure to import the session into
-    \param buf serialized session
-    \param sz  size of buffer 'buf'
-
-    \sa wolfSSL_dtls_import
-    \sa wolfSSL_tls_export
- */
-int wolfSSL_tls_import(WOLFSSL* ssl, const unsigned char* buf,
-        unsigned int sz);
 
 /*!
     \brief The wolfSSL_CTX_dtls_set_export() function is used to set
@@ -625,7 +604,7 @@ int wolfSSL_tls_import(WOLFSSL* ssl, const unsigned char* buf,
     \sa wolfSSL_dtls_set_export
     \sa Static buffer use
 */
-int wolfSSL_CTX_dtls_set_export(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_dtls_set_export(WOLFSSL_CTX* ctx,
                                                            wc_dtls_export func);
 
 /*!
@@ -661,7 +640,7 @@ int wolfSSL_CTX_dtls_set_export(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_dtls_set_export
 */
-int wolfSSL_dtls_set_export(WOLFSSL* ssl, wc_dtls_export func);
+WOLFSSL_API int wolfSSL_dtls_set_export(WOLFSSL* ssl, wc_dtls_export func);
 
 /*!
     \brief The wolfSSL_dtls_export() function is used to serialize a
@@ -698,30 +677,8 @@ int wolfSSL_dtls_set_export(WOLFSSL* ssl, wc_dtls_export func);
     \sa wolfSSL_CTX_dtls_set_export
     \sa wolfSSL_dtls_import
 */
-int wolfSSL_dtls_export(WOLFSSL* ssl, unsigned char* buf,
+WOLFSSL_API int wolfSSL_dtls_export(WOLFSSL* ssl, unsigned char* buf,
                                                               unsigned int* sz);
-
-/*!
-    \brief Used to export a serialized TLS session. This function is for
-    importing a serialized state of the connection.
-    In most cases wolfSSL_get1_session should be used instead of
-    wolfSSL_tls_export.
-    Additional debug info can be displayed with the macro
-    WOLFSSL_SESSION_EXPORT_DEBUG defined.
-    WARNING: buf contains sensitive information about the state and is best to
-             be encrypted before storing if stored.
-
-    \return the number of bytes written into buffer 'buf'
-
-    \param ssl WOLFSSL structure to export the session from
-    \param buf output of serialized session
-    \param sz  size in bytes set in 'buf'
-
-    \sa wolfSSL_dtls_import
-    \sa wolfSSL_tls_import
- */
-int wolfSSL_tls_export(WOLFSSL* ssl, unsigned char* buf,
-        unsigned int* sz);
 
 /*!
     \brief This function is used to set aside static memory for a CTX. Memory
@@ -782,7 +739,7 @@ int wolfSSL_tls_export(WOLFSSL* ssl, unsigned char* buf,
     \sa wolfSSL_CTX_is_static_memory
     \sa wolfSSL_is_static_memory
 */
-int wolfSSL_CTX_load_static_memory(WOLFSSL_CTX** ctx,
+WOLFSSL_API int wolfSSL_CTX_load_static_memory(WOLFSSL_CTX** ctx,
                                             wolfSSL_method_func method,
                                             unsigned char* buf, unsigned int sz,
                                             int flag, int max);
@@ -820,7 +777,7 @@ int wolfSSL_CTX_load_static_memory(WOLFSSL_CTX** ctx,
     \sa wolfSSL_CTX_load_static_memory
     \sa wolfSSL_is_static_memory
 */
-int wolfSSL_CTX_is_static_memory(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_is_static_memory(WOLFSSL_CTX* ctx,
                                                  WOLFSSL_MEM_STATS* mem_stats);
 
 /*!
@@ -853,7 +810,7 @@ int wolfSSL_CTX_is_static_memory(WOLFSSL_CTX* ctx,
     \sa wolfSSL_new
     \sa wolfSSL_CTX_is_static_memory
 */
-int wolfSSL_is_static_memory(WOLFSSL* ssl,
+WOLFSSL_API int wolfSSL_is_static_memory(WOLFSSL* ssl,
                                             WOLFSSL_MEM_CONN_STATS* mem_stats);
 
 /*!
@@ -896,8 +853,7 @@ int wolfSSL_is_static_memory(WOLFSSL* ssl,
     \sa wolfSSL_use_certificate_file
     \sa wolfSSL_use_certificate_buffer
 */
-int wolfSSL_CTX_use_certificate_file(WOLFSSL_CTX* ctx, const char* file,
-                                     int format);
+WOLFSSL_API int wolfSSL_CTX_use_certificate_file(WOLFSSL_CTX*, const char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -906,14 +862,6 @@ int wolfSSL_CTX_use_certificate_file(WOLFSSL_CTX* ctx, const char* file,
     (WOLFSSL_CTX). The file is provided by the file argument. The format
     argument specifies the format type of the file - SSL_FILETYPE_ASN1or
     SSL_FILETYPE_PEM.  Please see the examples for proper usage.
-
-    If using an external key store and do not have the private key you can 
-    instead provide the public key and register the crypro callback to handle 
-    the signing. For this you can build with either build with crypto callbacks 
-    or PK callbacks. To enable crypto callbacks use --enable-cryptocb
-    or WOLF_CRYPTO_CB and register a crypto callback using 
-    wc_CryptoCb_RegisterDevice and set the associated devId using 
-    wolfSSL_CTX_SetDevId.
 
     \return SSL_SUCCESS upon success.
     \return SSL_FAILURE The file is in the wrong format, or the wrong format
@@ -940,10 +888,8 @@ int wolfSSL_CTX_use_certificate_file(WOLFSSL_CTX* ctx, const char* file,
     \sa wolfSSL_CTX_use_PrivateKey_buffer
     \sa wolfSSL_use_PrivateKey_file
     \sa wolfSSL_use_PrivateKey_buffer
-    \sa wc_CryptoCb_RegisterDevice
-    \sa wolfSSL_CTX_SetDevId
 */
-int wolfSSL_CTX_use_PrivateKey_file(WOLFSSL_CTX* ctx, const char* file, int format);
+WOLFSSL_API int wolfSSL_CTX_use_PrivateKey_file(WOLFSSL_CTX*, const char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -1002,13 +948,14 @@ int wolfSSL_CTX_use_PrivateKey_file(WOLFSSL_CTX* ctx, const char* file, int form
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_file
     \sa wolfSSL_CTX_use_PrivateKey_file
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_file
     \sa wolfSSL_use_certificate_file
     \sa wolfSSL_use_PrivateKey_file
     \sa wolfSSL_use_certificate_chain_file
 */
-int wolfSSL_CTX_load_verify_locations(WOLFSSL_CTX* ctx, const char* file,
-                                                const char* format);
+WOLFSSL_API int wolfSSL_CTX_load_verify_locations(WOLFSSL_CTX*, const char*,
+                                                const char*);
 
 /*!
     \ingroup CertsKeys
@@ -1030,8 +977,7 @@ int wolfSSL_CTX_load_verify_locations(WOLFSSL_CTX* ctx, const char* file,
 
     \return SSL_SUCCESS up success.
     \return SSL_FAILURE will be returned if ctx is NULL, or if both file and
-    path are NULL. This will also be returned if at least one cert is loaded
-    successfully but there is one or more that failed. Check error stack for reason.
+    path are NULL.
     \return SSL_BAD_FILETYPE will be returned if the file is the wrong format.
     \return SSL_BAD_FILE will be returned if the file doesn’t exist, can’t be
     read, or is corrupted.
@@ -1067,13 +1013,14 @@ int wolfSSL_CTX_load_verify_locations(WOLFSSL_CTX* ctx, const char* file,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_file
     \sa wolfSSL_CTX_use_PrivateKey_file
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_file
     \sa wolfSSL_use_certificate_file
     \sa wolfSSL_use_PrivateKey_file
     \sa wolfSSL_use_certificate_chain_file
 */
-int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX* ctx, const char* file,
-                                         const char* path, unsigned int flags);
+WOLFSSL_API int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX*, const char*,
+                                                const char*, unsigned int flags);
 
 /*!
     \ingroup Setup
@@ -1116,6 +1063,7 @@ int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX* ctx, const char* file,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_file
     \sa wolfSSL_CTX_use_PrivateKey_file
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_file
     \sa wolfSSL_CTX_trust_peer_buffer
     \sa wolfSSL_CTX_Unload_trust_peers
@@ -1123,7 +1071,7 @@ int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX* ctx, const char* file,
     \sa wolfSSL_use_PrivateKey_file
     \sa wolfSSL_use_certificate_chain_file
 */
-int wolfSSL_CTX_trust_peer_cert(WOLFSSL_CTX* ctx, const char* file, int type);
+WOLFSSL_API int wolfSSL_CTX_trust_peer_cert(WOLFSSL_CTX*, const char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -1163,7 +1111,7 @@ int wolfSSL_CTX_trust_peer_cert(WOLFSSL_CTX* ctx, const char* file, int type);
     \sa wolfSSL_use_certificate_file
     \sa wolfSSL_use_certificate_buffer
 */
-int wolfSSL_CTX_use_certificate_chain_file(WOLFSSL_CTX *ctx,
+WOLFSSL_API int wolfSSL_CTX_use_certificate_chain_file(WOLFSSL_CTX *,
                                                      const char *file);
 
 /*!
@@ -1210,7 +1158,7 @@ int wolfSSL_CTX_use_certificate_chain_file(WOLFSSL_CTX *ctx,
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_PrivateKey_file
 */
-int wolfSSL_CTX_use_RSAPrivateKey_file(WOLFSSL_CTX* ctx, const char* file, int format);
+WOLFSSL_API int wolfSSL_CTX_use_RSAPrivateKey_file(WOLFSSL_CTX*, const char*, int);
 
 /*!
     \ingroup IO
@@ -1240,7 +1188,7 @@ int wolfSSL_CTX_use_RSAPrivateKey_file(WOLFSSL_CTX* ctx, const char* file, int f
 
     \sa wolfSSL_CTX_get_verify_depth
 */
-long wolfSSL_get_verify_depth(WOLFSSL* ssl);
+WOLFSSL_API long wolfSSL_get_verify_depth(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -1272,7 +1220,7 @@ long wolfSSL_get_verify_depth(WOLFSSL* ssl);
     \sa wolfSSL_CTX_use_certificate_chain_file
     \sa wolfSSL_get_verify_depth
 */
-long wolfSSL_CTX_get_verify_depth(WOLFSSL_CTX* ctx);
+WOLFSSL_API long wolfSSL_CTX_get_verify_depth(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup openSSL
@@ -1312,7 +1260,7 @@ long wolfSSL_CTX_get_verify_depth(WOLFSSL_CTX* ctx);
     \sa wolfSSL_CTX_use_certificate_file
     \sa wolfSSL_use_certificate_buffer
 */
-int wolfSSL_use_certificate_file(WOLFSSL* ssl, const char* file, int format);
+WOLFSSL_API int wolfSSL_use_certificate_file(WOLFSSL*, const char*, int);
 
 /*!
     \ingroup openSSL
@@ -1321,14 +1269,6 @@ int wolfSSL_use_certificate_file(WOLFSSL* ssl, const char* file, int format);
     (WOLFSSL structure).  The key file is provided by the file argument.
     The format argument specifies the format type of the file -
     SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
-
-    If using an external key store and do not have the private key you can 
-    instead provide the public key and register the crypro callback to handle 
-    the signing. For this you can build with either build with crypto callbacks 
-    or PK callbacks. To enable crypto callbacks use --enable-cryptocb or
-    WOLF_CRYPTO_CB and register a crypto callback using 
-    wc_CryptoCb_RegisterDevice and set the associated devId using 
-    wolfSSL_SetDevId.
 
     \return SSL_SUCCESS upon success.
     \return SSL_FAILURE If the function call fails, possible causes might
@@ -1359,10 +1299,8 @@ int wolfSSL_use_certificate_file(WOLFSSL* ssl, const char* file, int format);
     \sa wolfSSL_CTX_use_PrivateKey_buffer
     \sa wolfSSL_CTX_use_PrivateKey_file
     \sa wolfSSL_use_PrivateKey_buffer
-    \sa wc_CryptoCb_RegisterDevice
-    \sa wolfSSL_SetDevId
 */
-int wolfSSL_use_PrivateKey_file(WOLFSSL* ssl, const char* file, int format);
+WOLFSSL_API int wolfSSL_use_PrivateKey_file(WOLFSSL*, const char*, int);
 
 /*!
     \ingroup openSSL
@@ -1401,7 +1339,7 @@ int wolfSSL_use_PrivateKey_file(WOLFSSL* ssl, const char* file, int format);
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_use_certificate_chain_file(WOLFSSL* ssl, const char *file);
+WOLFSSL_API int wolfSSL_use_certificate_chain_file(WOLFSSL*, const char *file);
 
 /*!
     \ingroup openSSL
@@ -1447,7 +1385,7 @@ int wolfSSL_use_certificate_chain_file(WOLFSSL* ssl, const char *file);
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_PrivateKey_file
 */
-int wolfSSL_use_RSAPrivateKey_file(WOLFSSL* ssl, const char* file, int format);
+WOLFSSL_API int wolfSSL_use_RSAPrivateKey_file(WOLFSSL*, const char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -1494,8 +1432,54 @@ int wolfSSL_use_RSAPrivateKey_file(WOLFSSL* ssl, const char* file, int format);
     \sa wolfSSL_CTX_load_verify_locations
     \sa wolfSSL_CTX_load_verify_buffer
 */
-int wolfSSL_CTX_der_load_verify_locations(WOLFSSL_CTX* ctx,
-                                          const char* file, int format);
+WOLFSSL_API int wolfSSL_CTX_der_load_verify_locations(WOLFSSL_CTX*,
+                                                    const char*, int);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief This function loads an NTRU private key file into the WOLFSSL
+    Context.  It behaves like the normal version, only differing in its
+    ability to accept an NTRU raw key file.   This function is needed since
+    the format of the file is different than the normal key file (buffer)
+    functions.  Please see the examples for proper usage.
+
+    \return SSL_SUCCES upon success.
+    \return SSL_BAD_FILE will be returned if the file doesn’t exist, can’t
+    be read, or is corrupted.
+    \return MEMORY_E will be returned if an out of memory condition occurs.
+    \return ASN_INPUT_E will be returned if Base16 decoding fails on the file.
+    \return BUFFER_E will be returned if a chain buffer is bigger than the
+    receiving buffer.
+    \return NO_PASSWORD will be returned if the key file is encrypted but
+    no password is provided.
+
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using
+    wolfSSL_CTX_new()
+    \param file a pointer to the name of the file containing the NTRU
+    private key to be loaded into the wolfSSL SSL context.
+
+    _Example_
+    \code
+    int ret = 0;
+    WOLFSSL_CTX* ctx;
+    ...
+    ret = wolfSSL_CTX_use_NTRUPrivateKey_file(ctx, “./ntru-key.raw”);
+    if (ret != SSL_SUCCESS) {
+    	// error loading NTRU private key
+    }
+    ...
+    \endcode
+
+    \sa wolfSSL_CTX_load_verify_buffer
+    \sa wolfSSL_CTX_use_certificate_buffer
+    \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_certificate_chain_buffer
+    \sa wolfSSL_use_certificate_buffer
+    \sa wolfSSL_use_PrivateKey_buffer
+    \sa wolfSSL_use_certificate_chain_buffer
+*/
+WOLFSSL_API int wolfSSL_CTX_use_NTRUPrivateKey_file(WOLFSSL_CTX*, const char*);
 
 /*!
     \ingroup Setup
@@ -1529,7 +1513,7 @@ int wolfSSL_CTX_der_load_verify_locations(WOLFSSL_CTX* ctx,
 
     \sa wolfSSL_new
 */
-WOLFSSL_CTX* wolfSSL_CTX_new(WOLFSSL_METHOD*);
+WOLFSSL_API WOLFSSL_CTX* wolfSSL_CTX_new(WOLFSSL_METHOD*);
 
 /*!
     \ingroup Setup
@@ -1563,7 +1547,7 @@ WOLFSSL_CTX* wolfSSL_CTX_new(WOLFSSL_METHOD*);
 
     \sa wolfSSL_CTX_new
 */
-WOLFSSL* wolfSSL_new(WOLFSSL_CTX*);
+WOLFSSL_API WOLFSSL* wolfSSL_new(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -1595,7 +1579,7 @@ WOLFSSL* wolfSSL_new(WOLFSSL_CTX*);
     \sa wolfSSL_SetIOReadCtx
     \sa wolfSSL_SetIOWriteCtx
 */
-int  wolfSSL_set_fd (WOLFSSL* ssl, int fd);
+WOLFSSL_API int  wolfSSL_set_fd (WOLFSSL*, int);
 
 /*!
     \ingroup IO
@@ -1615,7 +1599,7 @@ int  wolfSSL_set_fd (WOLFSSL* ssl, int fd);
     \sa wolfSSL_CIPHER_get_name
     \sa wolfSSL_get_current_cipher
 */
-char* wolfSSL_get_cipher_list(int priority);
+WOLFSSL_API char* wolfSSL_get_cipher_list(int priority);
 
 /*!
     \ingroup IO
@@ -1647,7 +1631,7 @@ char* wolfSSL_get_cipher_list(int priority);
     \sa wolfSSL_get_cipher_list
     \sa ShowCiphers
 */
-int  wolfSSL_get_ciphers(char* buf, int len);
+WOLFSSL_API int  wolfSSL_get_ciphers(char*, int);
 
 /*!
     \ingroup IO
@@ -1680,7 +1664,7 @@ int  wolfSSL_get_ciphers(char* buf, int len);
     \sa wolfSSL_get_current_cipher
     \sa wolfSSL_get_cipher_name_internal
 */
-const char* wolfSSL_get_cipher_name(WOLFSSL* ssl);
+WOLFSSL_API const char* wolfSSL_get_cipher_name(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -1705,7 +1689,7 @@ const char* wolfSSL_get_cipher_name(WOLFSSL* ssl);
 
     \sa wolfSSL_set_fd
 */
-int  wolfSSL_get_fd(const WOLFSSL*);
+WOLFSSL_API int  wolfSSL_get_fd(const WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -1734,7 +1718,7 @@ int  wolfSSL_get_fd(const WOLFSSL*);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls_get_current_timeout
 */
-void wolfSSL_set_using_nonblock(WOLFSSL* ssl, int nonblock);
+WOLFSSL_API void wolfSSL_set_using_nonblock(WOLFSSL*, int);
 
 /*!
     \ingroup IO
@@ -1766,7 +1750,7 @@ void wolfSSL_set_using_nonblock(WOLFSSL* ssl, int nonblock);
 
     \sa wolfSSL_set_session
 */
-int  wolfSSL_get_using_nonblock(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_get_using_nonblock(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -1816,7 +1800,7 @@ int  wolfSSL_get_using_nonblock(WOLFSSL*);
     \sa wolfSSL_read
     \sa wolfSSL_recv
 */
-int  wolfSSL_write(WOLFSSL* ssl, const void* data, int sz);
+WOLFSSL_API int  wolfSSL_write(WOLFSSL*, const void*, int);
 
 /*!
     \ingroup IO
@@ -1874,7 +1858,7 @@ int  wolfSSL_write(WOLFSSL* ssl, const void* data, int sz);
     \sa wolfSSL_peek
     \sa wolfSSL_pending
 */
-int  wolfSSL_read(WOLFSSL* ssl, void* data, int sz);
+WOLFSSL_API int  wolfSSL_read(WOLFSSL*, void*, int);
 
 /*!
     \ingroup IO
@@ -1928,7 +1912,7 @@ int  wolfSSL_read(WOLFSSL* ssl, void* data, int sz);
 
     \sa wolfSSL_read
 */
-int  wolfSSL_peek(WOLFSSL* ssl, void* data, int sz);
+WOLFSSL_API int  wolfSSL_peek(WOLFSSL*, void*, int);
 
 /*!
     \ingroup IO
@@ -1972,7 +1956,7 @@ int  wolfSSL_peek(WOLFSSL* ssl, void* data, int sz);
     \sa wolfSSL_get_error
     \sa wolfSSL_connect
 */
-int  wolfSSL_accept(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_accept(WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -1996,7 +1980,7 @@ int  wolfSSL_accept(WOLFSSL*);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-void wolfSSL_CTX_free(WOLFSSL_CTX*);
+WOLFSSL_API void wolfSSL_CTX_free(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -2020,7 +2004,7 @@ void wolfSSL_CTX_free(WOLFSSL_CTX*);
     \sa wolfSSL_new
     \sa wolfSSL_CTX_free
 */
-void wolfSSL_free(WOLFSSL*);
+WOLFSSL_API void wolfSSL_free(WOLFSSL*);
 
 /*!
     \ingroup TLS
@@ -2066,7 +2050,7 @@ void wolfSSL_free(WOLFSSL*);
     \sa wolfSSL_free
     \sa wolfSSL_CTX_free
 */
-int  wolfSSL_shutdown(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_shutdown(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -2117,7 +2101,7 @@ int  wolfSSL_shutdown(WOLFSSL*);
     \sa wolfSSL_read
     \sa wolfSSL_recv
 */
-int  wolfSSL_send(WOLFSSL* ssl, const void* data, int sz, int flags);
+WOLFSSL_API int  wolfSSL_send(WOLFSSL*, const void*, int sz, int flags);
 
 /*!
     \ingroup IO
@@ -2177,7 +2161,7 @@ int  wolfSSL_send(WOLFSSL* ssl, const void* data, int sz, int flags);
     \sa wolfSSL_peek
     \sa wolfSSL_pending
 */
-int  wolfSSL_recv(WOLFSSL* ssl, void* data, int sz, int flags);
+WOLFSSL_API int  wolfSSL_recv(WOLFSSL*, void*, int sz, int flags);
 
 /*!
     \ingroup Debug
@@ -2191,15 +2175,9 @@ int  wolfSSL_recv(WOLFSSL* ssl, void* data, int sz, int flags);
     human-readable error string.  See wolfSSL_ERR_error_string() for more
     information.
 
-    \return On successful completion, this function will return the
+    \return code On successful completion, this function will return the
     unique error code describing why the previous API function failed.
-    \return SSL_ERROR_NONE will be returned if ret > 0. For ret <= 0, there are
-    some cases when this value can also be returned when a previous API appeared
-    to return an error code but no error actually occurred. An example is
-    calling wolfSSL_read() with a zero sz parameter. A 0 return from
-    wolfSSL_read() usually indicates an error but in this case no error
-    occurred. If wolfSSL_get_error() is called afterwards, SSL_ERROR_NONE will
-    be returned.
+    \return SSL_ERROR_NONE will be returned if ret > 0.
 
     \param ssl pointer to the SSL object, created with wolfSSL_new().
     \param ret return value of the previous function that resulted in an error
@@ -2221,7 +2199,7 @@ int  wolfSSL_recv(WOLFSSL* ssl, void* data, int sz, int flags);
     \sa wolfSSL_ERR_print_errors_fp
     \sa wolfSSL_load_error_strings
 */
-int  wolfSSL_get_error(WOLFSSL* ssl, int ret);
+WOLFSSL_API int  wolfSSL_get_error(WOLFSSL*, int);
 
 /*!
     \ingroup IO
@@ -2248,7 +2226,7 @@ int  wolfSSL_get_error(WOLFSSL* ssl, int ret);
 
     \sa wolfSSL_get_error
 */
-int  wolfSSL_get_alert_history(WOLFSSL* ssl, WOLFSSL_ALERT_HISTORY *h);
+WOLFSSL_API int  wolfSSL_get_alert_history(WOLFSSL*, WOLFSSL_ALERT_HISTORY *);
 
 /*!
     \ingroup Setup
@@ -2257,20 +2235,15 @@ int  wolfSSL_get_alert_history(WOLFSSL* ssl, WOLFSSL_ALERT_HISTORY *h);
     ssl, is used to establish a SSL/TLS connection. For session resumption,
     before calling wolfSSL_shutdown() with your session object, an application
     should save the session ID from the object with a call to
-    wolfSSL_get1_session(), which returns a pointer to the session.
+    wolfSSL_get_session(), which returns a pointer to the session.
     Later, the application should create a new WOLFSSL object and assign
     the saved session with wolfSSL_set_session().  At this point, the
     application may call wolfSSL_connect() and wolfSSL will try to resume
     the session.  The wolfSSL server code allows session resumption by default.
-    The object returned by wolfSSL_get1_session() needs to be freed after the
-    application is done with it by calling wolfSSL_SESSION_free() on it.
 
     \return SSL_SUCCESS will be returned upon successfully setting the session.
     \return SSL_FAILURE will be returned on failure.  This could be caused
     by the session cache being disabled, or if the session has timed out.
-
-    \return When OPENSSL_EXTRA and WOLFSSL_ERROR_CODE_OPENSSL are defined,
-    SSL_SUCCESS will be returned even if the session has timed out.
 
     \param ssl pointer to the SSL object, created with wolfSSL_new().
     \param session pointer to the WOLFSSL_SESSION used to set the session
@@ -2278,43 +2251,36 @@ int  wolfSSL_get_alert_history(WOLFSSL* ssl, WOLFSSL_ALERT_HISTORY *h);
 
     _Example_
     \code
-    int ret;
-    WOLFSSL* ssl;
+    int ret = 0;
+    WOLFSSL* ssl = 0;
     WOLFSSL_SESSION* session;
     ...
-    session = wolfSSL_get1_session(ssl);
-    if (session == NULL) {
-        // failed to get session object from ssl object
-    }
-    ...
-    ret = wolfSSL_set_session(ssl, session);
+
+    ret = wolfSSL_get_session(ssl, session);
     if (ret != SSL_SUCCESS) {
     	// failed to set the SSL session
     }
-    wolfSSL_SESSION_free(session);
     ...
     \endcode
 
-    \sa wolfSSL_get1_session
+    \sa wolfSSL_get_session
 */
-int        wolfSSL_set_session(WOLFSSL* ssl, WOLFSSL_SESSION* session);
+WOLFSSL_API int        wolfSSL_set_session(WOLFSSL*, WOLFSSL_SESSION*);
 
 /*!
     \ingroup IO
 
-    \brief When NO_SESSION_CACHE_REF is defined this function returns a pointer
-    to the current session (WOLFSSL_SESSION) used in ssl. This function returns
-    a non-persistent pointer to the WOLFSSL_SESSION object. The pointer returned
-    will be freed when wolfSSL_free is called. This call should only be used to
-    inspect or modify the current session. For session resumption it is
-    recommended to use wolfSSL_get1_session(). For backwards compatibility when
-    NO_SESSION_CACHE_REF is not defined this function returns a persistent
-    session object pointer that is stored in the local cache. The cache size is
-    finite and there is a risk that the session object will be overwritten by
-    another ssl connection by the time the application calls
-    wolfSSL_set_session() on it. It is recommended to define
-    NO_SESSION_CACHE_REF in your application and to use wolfSSL_get1_session()
-    for session resumption.
+    \brief This function returns a pointer to the current session
+    (WOLFSSL_SESSION) used in ssl.  The WOLFSSL_SESSION pointed to
+    contains all the necessary information required to perform a session
+    resumption and reestablish the connection without a new handshake. For
+    session resumption, before calling wolfSSL_shutdown() with your session
+    object, an application should save the session ID from the object with a
+    call to wolfSSL_get_session(), which returns a pointer to the session.
+    Later, the application should create a new WOLFSSL object and assign the
+    saved session with wolfSSL_set_session().  At this point, the application
+    may call wolfSSL_connect() and wolfSSL will try to resume the session.
+    The wolfSSL server code allows session resumption by default.
 
     \return pointer If successful the call will return a pointer to the the
     current SSL session object.
@@ -2326,8 +2292,8 @@ int        wolfSSL_set_session(WOLFSSL* ssl, WOLFSSL_SESSION* session);
 
     _Example_
     \code
-    WOLFSSL* ssl;
-    WOLFSSL_SESSION* session;
+    WOLFSSL* ssl = 0;
+    WOLFSSL_SESSION* session = 0;
     ...
     session = wolfSSL_get_session(ssl);
     if (session == NULL) {
@@ -2336,10 +2302,9 @@ int        wolfSSL_set_session(WOLFSSL* ssl, WOLFSSL_SESSION* session);
     ...
     \endcode
 
-    \sa wolfSSL_get1_session
     \sa wolfSSL_set_session
 */
-WOLFSSL_SESSION* wolfSSL_get_session(WOLFSSL* ssl);
+WOLFSSL_API WOLFSSL_SESSION* wolfSSL_get_session(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -2364,10 +2329,10 @@ WOLFSSL_SESSION* wolfSSL_get_session(WOLFSSL* ssl);
     wolfSSL_flush_sessions(ctx, time(0));
     \endcode
 
-    \sa wolfSSL_get1_session
+    \sa wolfSSL_get_session
     \sa wolfSSL_set_session
 */
-void       wolfSSL_flush_sessions(WOLFSSL_CTX* ctx, long tm);
+WOLFSSL_API void       wolfSSL_flush_sessions(WOLFSSL_CTX*, long);
 
 /*!
     \ingroup TLS
@@ -2401,10 +2366,10 @@ void       wolfSSL_flush_sessions(WOLFSSL_CTX* ctx, long tm);
     }
     \endcode
 
-    \sa wolfSSL_set_session
+    \sa GetSessionClient
 */
-int        wolfSSL_SetServerID(WOLFSSL* ssl, const unsigned char* id,
-                                         int len, int newSession);
+WOLFSSL_API int        wolfSSL_SetServerID(WOLFSSL*, const unsigned char*,
+                                         int, int);
 
 /*!
     \ingroup IO
@@ -2430,7 +2395,7 @@ int        wolfSSL_SetServerID(WOLFSSL* ssl, const unsigned char* id,
 
     \sa wolfSSL_GetSessionAtIndex
 */
-int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -2461,7 +2426,7 @@ int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
     \sa LockMutex
     \sa wolfSSL_GetSessionIndex
 */
-int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
+WOLFSSL_API int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
 
 /*!
     \ingroup IO
@@ -2484,11 +2449,12 @@ int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
     }
     \endcode
 
+    \sa get_locked_session_stats
     \sa wolfSSL_GetSessionAtIndex
     \sa wolfSSL_GetSessionIndex
     \sa AddSession
 */
-
+WOLFSSL_API
     WOLFSSL_X509_CHAIN* wolfSSL_SESSION_get_peer_chain(WOLFSSL_SESSION* session);
 
 /*!
@@ -2530,13 +2496,13 @@ int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
     \code
     WOLFSSL_CTX*    ctx    = 0;
     ...
-    wolfSSL_CTX_set_verify(ctx, (WOLFSSL_VERIFY_PEER |
-                           WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT), NULL);
+    wolfSSL_CTX_set_verify(ctx, SSL_VERIFY_PEER |
+                     SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
     \endcode
 
     \sa wolfSSL_set_verify
 */
-void wolfSSL_CTX_set_verify(WOLFSSL_CTX* ctx, int mode,
+WOLFSSL_API void wolfSSL_CTX_set_verify(WOLFSSL_CTX*, int,
                                       VerifyCallback verify_callback);
 
 /*!
@@ -2583,7 +2549,7 @@ void wolfSSL_CTX_set_verify(WOLFSSL_CTX* ctx, int mode,
 
     \sa wolfSSL_CTX_set_verify
 */
-void wolfSSL_set_verify(WOLFSSL* ssl, int mode, VerifyCallback verify_callback);
+WOLFSSL_API void wolfSSL_set_verify(WOLFSSL*, int, VerifyCallback verify_callback);
 
 /*!
     \ingroup CertsKeys
@@ -2613,36 +2579,7 @@ void wolfSSL_set_verify(WOLFSSL* ssl, int mode, VerifyCallback verify_callback);
     \sa wolfSSL_CTX_restore_cert_cache
     \sa wolfSSL_CTX_set_verify
 */
-void wolfSSL_SetCertCbCtx(WOLFSSL* ssl, void* ctx);
-
-/*!
-    \ingroup CertsKeys
-
-    \brief This function stores user CTX object information for verify callback.
-
-    \return none No return.
-
-    \param ctx a pointer to a WOLFSSL_CTX structure.
-    \param userCtx a void pointer that is used to set WOLFSSL_CTX structure’s
-    verifyCbCtx member’s value.
-
-    _Example_
-    \code
-    WOLFSSL_CTX* ctx = wolfSSL_CTX_new( method );
-    void* userCtx = NULL; // Assign some user defined context
-    ...
-    if(ctx != NULL){
-        wolfSSL_SetCertCbCtx(ctx, userCtx);
-    } else {
-        // Error case, the SSL is not initialized properly.
-    }
-    \endcode
-
-    \sa wolfSSL_CTX_save_cert_cache
-    \sa wolfSSL_CTX_restore_cert_cache
-    \sa wolfSSL_CTX_set_verify
-*/
-void wolfSSL_CTX_SetCertCbCtx(WOLFSSL_CTX* ctx, void* userCtx);
+WOLFSSL_API void wolfSSL_SetCertCbCtx(WOLFSSL*, void*);
 
 /*!
     \ingroup IO
@@ -2668,7 +2605,7 @@ void wolfSSL_CTX_SetCertCbCtx(WOLFSSL_CTX* ctx, void* userCtx);
     \sa wolfSSL_read
     \sa wolfSSL_peek
 */
-int  wolfSSL_pending(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_pending(WOLFSSL*);
 
 /*!
     \ingroup Debug
@@ -2691,7 +2628,7 @@ int  wolfSSL_pending(WOLFSSL*);
     \sa wolfSSL_ERR_print_errors_fp
     \sa wolfSSL_load_error_strings
 */
-void wolfSSL_load_error_strings(void);
+WOLFSSL_API void wolfSSL_load_error_strings(void);
 
 /*!
     \ingroup TLS
@@ -2720,7 +2657,7 @@ void wolfSSL_load_error_strings(void);
     \sa wolfSSL_Init
     \sa wolfSSL_Cleanup
 */
-int  wolfSSL_library_init(void);
+WOLFSSL_API int  wolfSSL_library_init(void);
 
 /*!
     \brief This function sets the Device Id at the WOLFSSL session level.
@@ -2743,7 +2680,7 @@ int  wolfSSL_library_init(void);
     \sa wolfSSL_CTX_SetDevId
     \sa wolfSSL_CTX_GetDevId
 */
-int wolfSSL_SetDevId(WOLFSSL* ssl, int devId);
+WOLFSSL_API int wolfSSL_SetDevId(WOLFSSL* ssl, int devId);
 
 /*!
     \brief This function sets the Device Id at the WOLFSSL_CTX context level.
@@ -2766,7 +2703,7 @@ int wolfSSL_SetDevId(WOLFSSL* ssl, int devId);
     \sa wolfSSL_SetDevId
     \sa wolfSSL_CTX_GetDevId
 */
-int wolfSSL_CTX_SetDevId(WOLFSSL_CTX* ctx, int devId);
+WOLFSSL_API int wolfSSL_CTX_SetDevId(WOLFSSL_CTX* ctx, int devId);
 
 /*!
     \brief This function retrieves the Device Id.
@@ -2789,7 +2726,7 @@ int wolfSSL_CTX_SetDevId(WOLFSSL_CTX* ctx, int devId);
     \sa wolfSSL_CTX_SetDevId
 
 */
-int wolfSSL_CTX_GetDevId(WOLFSSL_CTX* ctx, WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_CTX_GetDevId(WOLFSSL_CTX* ctx, WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -2817,12 +2754,12 @@ int wolfSSL_CTX_GetDevId(WOLFSSL_CTX* ctx, WOLFSSL* ssl);
     \endcode
 
     \sa wolfSSL_flush_sessions
-    \sa wolfSSL_get1_session
+    \sa wolfSSL_get_session
     \sa wolfSSL_set_session
     \sa wolfSSL_get_sessionID
     \sa wolfSSL_CTX_set_timeout
 */
-long wolfSSL_CTX_set_session_cache_mode(WOLFSSL_CTX* ctx, long mode);
+WOLFSSL_API long wolfSSL_CTX_set_session_cache_mode(WOLFSSL_CTX*, long);
 
 /*!
     \brief This function sets the session secret callback function. The
@@ -2853,7 +2790,7 @@ long wolfSSL_CTX_set_session_cache_mode(WOLFSSL_CTX* ctx, long mode);
 
     \sa SessionSecretCb
 */
-int  wolfSSL_set_session_secret_cb(WOLFSSL* ssl, SessionSecretCb cb, void* ctx);
+WOLFSSL_API int  wolfSSL_set_session_secret_cb(WOLFSSL*, SessionSecretCb, void*);
 
 /*!
     \ingroup IO
@@ -2883,7 +2820,7 @@ int  wolfSSL_set_session_secret_cb(WOLFSSL* ssl, SessionSecretCb cb, void* ctx);
     \sa wolfSSL_restore_session_cache
     \sa wolfSSL_memrestore_session_cache
 */
-int  wolfSSL_save_session_cache(const char*);
+WOLFSSL_API int  wolfSSL_save_session_cache(const char*);
 
 /*!
     \ingroup IO
@@ -2913,7 +2850,7 @@ int  wolfSSL_save_session_cache(const char*);
     \sa XFREAD
     \sa XFOPEN
 */
-int  wolfSSL_restore_session_cache(const char*);
+WOLFSSL_API int  wolfSSL_restore_session_cache(const char*);
 
 /*!
     \ingroup IO
@@ -2942,7 +2879,7 @@ int  wolfSSL_restore_session_cache(const char*);
     \sa XMEMCPY
     \sa wolfSSL_get_session_cache_memsize
 */
-int  wolfSSL_memsave_session_cache(void* mem, int sz);
+WOLFSSL_API int  wolfSSL_memsave_session_cache(void*, int);
 
 /*!
     \ingroup IO
@@ -2971,7 +2908,7 @@ int  wolfSSL_memsave_session_cache(void* mem, int sz);
 
     \sa wolfSSL_save_session_cache
 */
-int  wolfSSL_memrestore_session_cache(const void* mem, int sz);
+WOLFSSL_API int  wolfSSL_memrestore_session_cache(const void*, int);
 
 /*!
     \ingroup IO
@@ -2995,7 +2932,7 @@ int  wolfSSL_memrestore_session_cache(const void* mem, int sz);
 
     \sa wolfSSL_memrestore_session_cache
 */
-int  wolfSSL_get_session_cache_memsize(void);
+WOLFSSL_API int  wolfSSL_get_session_cache_memsize(void);
 
 /*!
     \ingroup CertsKeys
@@ -3026,7 +2963,7 @@ int  wolfSSL_get_session_cache_memsize(void);
     \sa CM_SaveCertCache
     \sa DoMemSaveCertCache
 */
-int  wolfSSL_CTX_save_cert_cache(WOLFSSL_CTX* ctx, const char* fname);
+WOLFSSL_API int  wolfSSL_CTX_save_cert_cache(WOLFSSL_CTX*, const char*);
 
 /*!
     \ingroup CertsKeys
@@ -3059,7 +2996,7 @@ int  wolfSSL_CTX_save_cert_cache(WOLFSSL_CTX* ctx, const char* fname);
     \sa CM_RestoreCertCache
     \sa XFOPEN
 */
-int  wolfSSL_CTX_restore_cert_cache(WOLFSSL_CTX* ctx, const char* fname);
+WOLFSSL_API int  wolfSSL_CTX_restore_cert_cache(WOLFSSL_CTX*, const char*);
 
 /*!
     \ingroup CertsKeys
@@ -3097,7 +3034,7 @@ int  wolfSSL_CTX_restore_cert_cache(WOLFSSL_CTX* ctx, const char* fname);
     \sa CM_MemRestoreCertCache
     \sa CM_GetCertCacheMemSize
 */
-int  wolfSSL_CTX_memsave_cert_cache(WOLFSSL_CTX* ctx, void* mem, int sz, int* used);
+WOLFSSL_API int  wolfSSL_CTX_memsave_cert_cache(WOLFSSL_CTX*, void*, int, int*);
 
 /*!
     \ingroup Setup
@@ -3133,7 +3070,7 @@ int  wolfSSL_CTX_memsave_cert_cache(WOLFSSL_CTX* ctx, void* mem, int sz, int* us
 
     \sa CM_MemRestoreCertCache
 */
-int  wolfSSL_CTX_memrestore_cert_cache(WOLFSSL_CTX* ctx, const void* mem, int sz);
+WOLFSSL_API int  wolfSSL_CTX_memrestore_cert_cache(WOLFSSL_CTX*, const void*, int);
 
 /*!
     \ingroup CertsKeys
@@ -3161,7 +3098,7 @@ int  wolfSSL_CTX_memrestore_cert_cache(WOLFSSL_CTX* ctx, const void* mem, int sz
 
     \sa CM_GetCertCacheMemSize
 */
-int  wolfSSL_CTX_get_cert_cache_memsize(WOLFSSL_CTX*);
+WOLFSSL_API int  wolfSSL_CTX_get_cert_cache_memsize(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -3200,7 +3137,7 @@ int  wolfSSL_CTX_get_cert_cache_memsize(WOLFSSL_CTX*);
     \sa wolfSSL_set_cipher_list
     \sa wolfSSL_CTX_new
 */
-int  wolfSSL_CTX_set_cipher_list(WOLFSSL_CTX* ctx, const char* list);
+WOLFSSL_API int  wolfSSL_CTX_set_cipher_list(WOLFSSL_CTX*, const char*);
 
 /*!
     \ingroup Setup
@@ -3239,7 +3176,7 @@ int  wolfSSL_CTX_set_cipher_list(WOLFSSL_CTX* ctx, const char* list);
     \sa wolfSSL_CTX_set_cipher_list
     \sa wolfSSL_new
 */
-int  wolfSSL_set_cipher_list(WOLFSSL* ssl, const char* list);
+WOLFSSL_API int  wolfSSL_set_cipher_list(WOLFSSL*, const char*);
 
 /*!
     \brief This function informs the WOLFSSL DTLS object that the underlying
@@ -3266,7 +3203,7 @@ int  wolfSSL_set_cipher_list(WOLFSSL* ssl, const char* list);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls_get_current_timeout
 */
-void wolfSSL_dtls_set_using_nonblock(WOLFSSL* ssl, int nonblock);
+WOLFSSL_API void wolfSSL_dtls_set_using_nonblock(WOLFSSL*, int);
 /*!
     \brief This function allows the application to determine if wolfSSL is
     using non-blocking I/O with UDP. If wolfSSL is using non-blocking I/O, this
@@ -3298,7 +3235,7 @@ void wolfSSL_dtls_set_using_nonblock(WOLFSSL* ssl, int nonblock);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls_set_using_nonblock
 */
-int  wolfSSL_dtls_get_using_nonblock(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_dtls_get_using_nonblock(WOLFSSL*);
 /*!
     \brief This function returns the current timeout value in seconds for
     the WOLFSSL object. When using non-blocking sockets, something in the user
@@ -3325,7 +3262,7 @@ int  wolfSSL_dtls_get_using_nonblock(WOLFSSL*);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls_set_peer
 */
-int  wolfSSL_dtls_get_current_timeout(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_dtls_get_current_timeout(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -3358,7 +3295,7 @@ int  wolfSSL_dtls_get_current_timeout(WOLFSSL* ssl);
     \sa wolfSSL_dtls_set_timeout_max
     \sa wolfSSL_dtls_got_timeout
 */
-int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int);
+WOLFSSL_API int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int);
 
 /*!
     \brief This function sets the maximum dtls timeout.
@@ -3386,7 +3323,7 @@ int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int);
     \sa wolfSSL_dtls_set_timeout_init
     \sa wolfSSL_dtls_got_timeout
 */
-int  wolfSSL_dtls_set_timeout_max(WOLFSSL* ssl, int);
+WOLFSSL_API int  wolfSSL_dtls_set_timeout_max(WOLFSSL* ssl, int);
 
 /*!
     \brief When using non-blocking sockets with DTLS, this function should
@@ -3415,7 +3352,7 @@ int  wolfSSL_dtls_set_timeout_max(WOLFSSL* ssl, int);
     \sa wolfSSL_dtls_set_peer
     \sa wolfSSL_dtls
 */
-int  wolfSSL_dtls_got_timeout(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_dtls_got_timeout(WOLFSSL* ssl);
 
 /*!
     \brief This function is used to determine if the SSL session has been
@@ -3443,7 +3380,7 @@ int  wolfSSL_dtls_got_timeout(WOLFSSL* ssl);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls_set_peer
 */
-int  wolfSSL_dtls(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_dtls(WOLFSSL* ssl);
 
 /*!
     \brief This function sets the DTLS peer, peer (sockaddr_in) with size of
@@ -3475,7 +3412,7 @@ int  wolfSSL_dtls(WOLFSSL* ssl);
     \sa wolfSSL_dtls_got_timeout
     \sa wolfSSL_dtls
 */
-int  wolfSSL_dtls_set_peer(WOLFSSL* ssl, void* peer, unsigned int peerSz);
+WOLFSSL_API int  wolfSSL_dtls_set_peer(WOLFSSL*, void*, unsigned int);
 
 /*!
     \brief This function gets the sockaddr_in (of size peerSz) of the current
@@ -3512,7 +3449,7 @@ int  wolfSSL_dtls_set_peer(WOLFSSL* ssl, void* peer, unsigned int peerSz);
     \sa wolfSSL_dtls_set_peer
     \sa wolfSSL_dtls
 */
-int  wolfSSL_dtls_get_peer(WOLFSSL* ssl, void* peer, unsigned int* peerSz);
+WOLFSSL_API int  wolfSSL_dtls_get_peer(WOLFSSL*, void*, unsigned int*);
 
 /*!
     \ingroup Debug
@@ -3549,7 +3486,7 @@ int  wolfSSL_dtls_get_peer(WOLFSSL* ssl, void* peer, unsigned int* peerSz);
     \sa wolfSSL_ERR_print_errors_fp
     \sa wolfSSL_load_error_strings
 */
-char* wolfSSL_ERR_error_string(unsigned long,char*);
+WOLFSSL_API char* wolfSSL_ERR_error_string(unsigned long,char*);
 
 /*!
     \ingroup Debug
@@ -3582,7 +3519,7 @@ char* wolfSSL_ERR_error_string(unsigned long,char*);
     \sa wolfSSL_ERR_print_errors_fp
     \sa wolfSSL_load_error_strings
 */
-void  wolfSSL_ERR_error_string_n(unsigned long e, char* buf,
+WOLFSSL_API void  wolfSSL_ERR_error_string_n(unsigned long e, char* buf,
                                            unsigned long sz);
 
 /*!
@@ -3619,7 +3556,7 @@ void  wolfSSL_ERR_error_string_n(unsigned long e, char* buf,
 
     \sa wolfSSL_SESSION_free
 */
-int  wolfSSL_get_shutdown(const WOLFSSL*);
+WOLFSSL_API int  wolfSSL_get_shutdown(const WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -3646,7 +3583,7 @@ int  wolfSSL_get_shutdown(const WOLFSSL*);
     \sa wolfSSL_GetSessionIndex
     \sa wolfSSL_memsave_session_cache
 */
-int  wolfSSL_session_reused(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_session_reused(WOLFSSL*);
 
 /*!
     \ingroup TLS
@@ -3676,7 +3613,7 @@ int  wolfSSL_session_reused(WOLFSSL*);
     \sa wolfSSL_get_keys
     \sa wolfSSL_set_shutdown
 */
-int  wolfSSL_is_init_finished(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_is_init_finished(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -3708,7 +3645,7 @@ int  wolfSSL_is_init_finished(WOLFSSL*);
 
     \sa wolfSSL_lib_version
 */
-const char*  wolfSSL_get_version(WOLFSSL*);
+WOLFSSL_API const char*  wolfSSL_get_version(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -3740,7 +3677,7 @@ const char*  wolfSSL_get_version(WOLFSSL*);
     \sa wolfSSL_get_current_cipher
     \sa wolfSSL_get_cipher_list
 */
-int  wolfSSL_get_current_cipher_suite(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_get_current_cipher_suite(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -3772,7 +3709,7 @@ int  wolfSSL_get_current_cipher_suite(WOLFSSL* ssl);
     \sa wolfSSL_get_cipher_name_internal
     \sa wolfSSL_get_cipher_name
 */
-WOLFSSL_CIPHER*  wolfSSL_get_current_cipher(WOLFSSL*);
+WOLFSSL_API WOLFSSL_CIPHER*  wolfSSL_get_current_cipher(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -3806,7 +3743,7 @@ WOLFSSL_CIPHER*  wolfSSL_get_current_cipher(WOLFSSL*);
     \sa wolfSSL_get_cipher_name_internal
     \sa wolfSSL_get_cipher_name
 */
-const char*  wolfSSL_CIPHER_get_name(const WOLFSSL_CIPHER* cipher);
+WOLFSSL_API const char*  wolfSSL_CIPHER_get_name(const WOLFSSL_CIPHER* cipher);
 
 /*!
     \ingroup IO
@@ -3835,30 +3772,15 @@ const char*  wolfSSL_CIPHER_get_name(const WOLFSSL_CIPHER* cipher);
     \sa wolfSSL_CIPHER_get_name
     \sa wolfSSL_get_current_cipher
 */
-const char*  wolfSSL_get_cipher(WOLFSSL*);
+WOLFSSL_API const char*  wolfSSL_get_cipher(WOLFSSL*);
 
 /*!
     \ingroup Setup
 
-    \brief This function returns the WOLFSSL_SESSION from the WOLFSSL structure
-    as a reference type. This requires calling wolfSSL_SESSION_free to release
-    the session reference. The WOLFSSL_SESSION pointed to contains all the
-    necessary information required to perform a session resumption and
-    reestablish the connection without a new handshake. For
-    session resumption, before calling wolfSSL_shutdown() with your session
-    object, an application should save the session ID from the object with a
-    call to wolfSSL_get1_session(), which returns a pointer to the session.
-    Later, the application should create a new WOLFSSL object and assign the
-    saved session with wolfSSL_set_session().  At this point, the application
-    may call wolfSSL_connect() and wolfSSL will try to resume the session.
-    The wolfSSL server code allows session resumption by default. The object
-    returned by wolfSSL_get1_session() needs to be freed after the application
-    is done with it by calling wolfSSL_SESSION_free() on it.
+    \brief This function returns the WOLFSSL_SESSION from the WOLFSSL structure.
 
     \return WOLFSSL_SESSION On success return session pointer.
-    \return NULL will be returned if ssl is NULL, the SSL session cache is
-    disabled, wolfSSL doesn’t have the Session ID available, or mutex
-    functions fail.
+    \return NULL on failure returns NULL.
 
     \param ssl WOLFSSL structure to get session from.
 
@@ -3867,20 +3789,14 @@ const char*  wolfSSL_get_cipher(WOLFSSL*);
     WOLFSSL* ssl;
     WOLFSSL_SESSION* ses;
     // attempt/complete handshake
-    wolfSSL_connect(ssl);
     ses  = wolfSSL_get1_session(ssl);
     // check ses information
-    // disconnect / setup new SSL instance
-    wolfSSL_set_session(ssl, ses);
-    // attempt/resume handshake
-    wolfSSL_SESSION_free(ses);
     \endcode
 
     \sa wolfSSL_new
     \sa wolfSSL_free
-    \sa wolfSSL_SESSION_free
 */
-WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
+WOLFSSL_API WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -3928,7 +3844,7 @@ WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
     \sa wolfDTLSv1_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD* wolfSSLv23_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD* wolfSSLv23_client_method(void);
 
 /*!
     \ingroup IO
@@ -3957,7 +3873,7 @@ WOLFSSL_METHOD* wolfSSLv23_client_method(void);
     \sa wolfSSL_BIO_set_fp
     \sa wolfSSL_BIO_free
 */
-int wolfSSL_BIO_get_mem_data(WOLFSSL_BIO* bio,void* p);
+WOLFSSL_API int wolfSSL_BIO_get_mem_data(WOLFSSL_BIO* bio,void* p);
 
 /*!
     \ingroup IO
@@ -3981,7 +3897,7 @@ int wolfSSL_BIO_get_mem_data(WOLFSSL_BIO* bio,void* p);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_free
 */
-long wolfSSL_BIO_set_fd(WOLFSSL_BIO* b, int fd, int flag);
+WOLFSSL_API long wolfSSL_BIO_set_fd(WOLFSSL_BIO* b, int fd, int flag);
 
 /*!
     \ingroup IO
@@ -4004,7 +3920,7 @@ long wolfSSL_BIO_set_fd(WOLFSSL_BIO* b, int fd, int flag);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_free
 */
-int wolfSSL_BIO_set_close(WOLFSSL_BIO *b, long flag);
+WOLFSSL_API int wolfSSL_BIO_set_close(WOLFSSL_BIO *b, long flag);
 
 /*!
     \ingroup IO
@@ -4025,7 +3941,7 @@ int wolfSSL_BIO_set_close(WOLFSSL_BIO *b, long flag);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_s_mem
 */
-WOLFSSL_BIO_METHOD *wolfSSL_BIO_s_socket(void);
+WOLFSSL_API WOLFSSL_BIO_METHOD *wolfSSL_BIO_s_socket(void);
 
 /*!
     \ingroup IO
@@ -4054,7 +3970,7 @@ WOLFSSL_BIO_METHOD *wolfSSL_BIO_s_socket(void);
     \sa wolfSSL_BIO_s_mem
     \sa wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_set_write_buf_size(WOLFSSL_BIO *b, long size);
+WOLFSSL_API int  wolfSSL_BIO_set_write_buf_size(WOLFSSL_BIO *b, long size);
 
 /*!
     \ingroup IO
@@ -4088,7 +4004,7 @@ int  wolfSSL_BIO_set_write_buf_size(WOLFSSL_BIO *b, long size);
     \sa wolfSSL_BIO_s_mem
     \sa wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_make_bio_pair(WOLFSSL_BIO *b1, WOLFSSL_BIO *b2);
+WOLFSSL_API int  wolfSSL_BIO_make_bio_pair(WOLFSSL_BIO *b1, WOLFSSL_BIO *b2);
 
 /*!
     \ingroup IO
@@ -4112,7 +4028,7 @@ int  wolfSSL_BIO_make_bio_pair(WOLFSSL_BIO *b1, WOLFSSL_BIO *b2);
     \sa wolfSSL_BIO_new, wolfSSL_BIO_s_mem
     \sa wolfSSL_BIO_new, wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *b);
+WOLFSSL_API int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *b);
 
 /*!
     \ingroup IO
@@ -4141,7 +4057,7 @@ int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *b);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_nwrite0
 */
-int  wolfSSL_BIO_nread0(WOLFSSL_BIO *bio, char **buf);
+WOLFSSL_API int  wolfSSL_BIO_nread0(WOLFSSL_BIO *bio, char **buf);
 
 /*!
     \ingroup IO
@@ -4175,7 +4091,7 @@ int  wolfSSL_BIO_nread0(WOLFSSL_BIO *bio, char **buf);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_nwrite
 */
-int  wolfSSL_BIO_nread(WOLFSSL_BIO *bio, char **buf, int num);
+WOLFSSL_API int  wolfSSL_BIO_nread(WOLFSSL_BIO *bio, char **buf, int num);
 
 /*!
     \ingroup IO
@@ -4209,7 +4125,7 @@ int  wolfSSL_BIO_nread(WOLFSSL_BIO *bio, char **buf, int num);
     \sa wolfSSL_BIO_free
     \sa wolfSSL_BIO_nread
 */
-int  wolfSSL_BIO_nwrite(WOLFSSL_BIO *bio, char **buf, int num);
+WOLFSSL_API int  wolfSSL_BIO_nwrite(WOLFSSL_BIO *bio, char **buf, int num);
 
 /*!
     \ingroup IO
@@ -4233,7 +4149,7 @@ int  wolfSSL_BIO_nwrite(WOLFSSL_BIO *bio, char **buf, int num);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_reset(WOLFSSL_BIO *bio);
+WOLFSSL_API int  wolfSSL_BIO_reset(WOLFSSL_BIO *bio);
 
 /*!
     \ingroup IO
@@ -4264,7 +4180,7 @@ int  wolfSSL_BIO_reset(WOLFSSL_BIO *bio);
     \sa wolfSSL_BIO_set_fp
     \sa wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_seek(WOLFSSL_BIO *bio, int ofs);
+WOLFSSL_API int  wolfSSL_BIO_seek(WOLFSSL_BIO *bio, int ofs);
 
 /*!
     \ingroup IO
@@ -4292,7 +4208,7 @@ int  wolfSSL_BIO_seek(WOLFSSL_BIO *bio, int ofs);
     \sa wolfSSL_BIO_set_fp
     \sa wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_write_filename(WOLFSSL_BIO *bio, char *name);
+WOLFSSL_API int  wolfSSL_BIO_write_filename(WOLFSSL_BIO *bio, char *name);
 
 /*!
     \ingroup IO
@@ -4319,7 +4235,7 @@ int  wolfSSL_BIO_write_filename(WOLFSSL_BIO *bio, char *name);
     \sa wolfSSL_BIO_set_fp
     \sa wolfSSL_BIO_free
 */
-long wolfSSL_BIO_set_mem_eof_return(WOLFSSL_BIO *bio, int v);
+WOLFSSL_API long wolfSSL_BIO_set_mem_eof_return(WOLFSSL_BIO *bio, int v);
 
 /*!
     \ingroup IO
@@ -4347,7 +4263,7 @@ long wolfSSL_BIO_set_mem_eof_return(WOLFSSL_BIO *bio, int v);
     \sa wolfSSL_BIO_new
     \sa wolfSSL_BIO_s_mem
 */
-long wolfSSL_BIO_get_mem_ptr(WOLFSSL_BIO *bio, WOLFSSL_BUF_MEM **m);
+WOLFSSL_API long wolfSSL_BIO_get_mem_ptr(WOLFSSL_BIO *bio, WOLFSSL_BUF_MEM **m);
 
 /*!
     \ingroup CertsKeys
@@ -4380,7 +4296,7 @@ long wolfSSL_BIO_get_mem_ptr(WOLFSSL_BIO *bio, WOLFSSL_BUF_MEM **m);
     \sa wolfSSL_get_peer_certificate
     \sa wolfSSL_X509_version
 */
-char*       wolfSSL_X509_NAME_oneline(WOLFSSL_X509_NAME* name, char* in, int sz);
+WOLFSSL_API char*       wolfSSL_X509_NAME_oneline(WOLFSSL_X509_NAME*, char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -4412,7 +4328,7 @@ char*       wolfSSL_X509_NAME_oneline(WOLFSSL_X509_NAME* name, char* in, int sz)
     \sa wolfSSL_get_peer_certificate
     \sa wolfSSL_X509_NAME_oneline
 */
-WOLFSSL_X509_NAME*  wolfSSL_X509_get_issuer_name(WOLFSSL_X509*);
+WOLFSSL_API WOLFSSL_X509_NAME*  wolfSSL_X509_get_issuer_name(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -4441,7 +4357,7 @@ WOLFSSL_X509_NAME*  wolfSSL_X509_get_issuer_name(WOLFSSL_X509*);
     \sa wolfSSL_X509_get_isCA
     \sa wolfSSL_get_peer_certificate
 */
-WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509*);
+WOLFSSL_API WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -4456,7 +4372,7 @@ WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509*);
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
-    \code
+    /code
     WOLFSSL* ssl;
     ...
     WOLFSSL_CTX* ctx = wolfSSL_CTX_new( method );
@@ -4472,7 +4388,7 @@ WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509*);
     \sa wolfSSL_X509_get_issuer_name
     \sa wolfSSL_X509_get_isCA
 */
-int  wolfSSL_X509_get_isCA(WOLFSSL_X509*);
+WOLFSSL_API int  wolfSSL_X509_get_isCA(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -4501,8 +4417,8 @@ int  wolfSSL_X509_get_isCA(WOLFSSL_X509*);
 
     \sa none
 */
-int wolfSSL_X509_NAME_get_text_by_NID(WOLFSSL_X509_NAME* name, int nid,
-                                      char* buf, int len);
+WOLFSSL_API int wolfSSL_X509_NAME_get_text_by_NID(
+                                            WOLFSSL_X509_NAME*, int, char*, int);
 
 /*!
     \ingroup CertsKeys
@@ -4536,7 +4452,7 @@ int wolfSSL_X509_NAME_get_text_by_NID(WOLFSSL_X509_NAME* name, int nid,
     \sa wolfSSL_X509_notAfter
     \sa wolfSSL_X509_free
 */
-int wolfSSL_X509_get_signature_type(WOLFSSL_X509*);
+WOLFSSL_API int wolfSSL_X509_get_signature_type(WOLFSSL_X509*);
 
 /*!
     \brief This function frees a WOLFSSL_X509 structure.
@@ -4561,7 +4477,7 @@ int wolfSSL_X509_get_signature_type(WOLFSSL_X509*);
     \sa wolfSSL_X509_notAfter
 
 */
-void wolfSSL_X509_free(WOLFSSL_X509* x509);
+WOLFSSL_API void wolfSSL_X509_free(WOLFSSL_X509* x509);
 
 /*!
     \ingroup CertsKeys
@@ -4596,7 +4512,7 @@ void wolfSSL_X509_free(WOLFSSL_X509* x509);
     \sa wolfSSL_X509_get_signature_type
     \sa wolfSSL_X509_get_device_type
 */
-int wolfSSL_X509_get_signature(WOLFSSL_X509* x509, unsigned char* buf, int* bufSz);
+WOLFSSL_API int wolfSSL_X509_get_signature(WOLFSSL_X509*, unsigned char*, int*);
 
 /*!
     \ingroup CertsKeys
@@ -4620,7 +4536,8 @@ int wolfSSL_X509_get_signature(WOLFSSL_X509* x509, unsigned char* buf, int* bufS
 
     \sa wolfSSL_X509_free
 */
-int wolfSSL_X509_STORE_add_cert(WOLFSSL_X509_STORE* store, WOLFSSL_X509* x509);
+WOLFSSL_API int          wolfSSL_X509_STORE_add_cert(
+                                              WOLFSSL_X509_STORE*, WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -4644,7 +4561,7 @@ int wolfSSL_X509_STORE_add_cert(WOLFSSL_X509_STORE* store, WOLFSSL_X509* x509);
 
     \sa wolfSSL_sk_X509_free
 */
-WOLFSSL_STACK* wolfSSL_X509_STORE_CTX_get_chain(
+WOLFSSL_API WOLFSSL_STACK* wolfSSL_X509_STORE_CTX_get_chain(
                                                    WOLFSSL_X509_STORE_CTX* ctx);
 
 /*!
@@ -4674,7 +4591,7 @@ WOLFSSL_STACK* wolfSSL_X509_STORE_CTX_get_chain(
     \sa wolfSSL_X509_STORE_new
     \sa wolfSSL_X509_STORE_free
 */
-int wolfSSL_X509_STORE_set_flags(WOLFSSL_X509_STORE* store,
+WOLFSSL_API int wolfSSL_X509_STORE_set_flags(WOLFSSL_X509_STORE* store,
                                                             unsigned long flag);
 
 /*!
@@ -4706,7 +4623,7 @@ int wolfSSL_X509_STORE_set_flags(WOLFSSL_X509_STORE* store,
     \sa wolfSSL_X509_notAfter
     \sa wolfSSL_X509_free
 */
-const byte* wolfSSL_X509_notBefore(WOLFSSL_X509* x509);
+WOLFSSL_API const byte* wolfSSL_X509_notBefore(WOLFSSL_X509* x509);
 
 /*!
     \ingroup CertsKeys
@@ -4736,7 +4653,7 @@ const byte* wolfSSL_X509_notBefore(WOLFSSL_X509* x509);
     \sa wolfSSL_X509_notBefore
     \sa wolfSSL_X509_free
 */
-const byte* wolfSSL_X509_notAfter(WOLFSSL_X509* x509);
+WOLFSSL_API const byte* wolfSSL_X509_notAfter(WOLFSSL_X509* x509);
 
 /*!
     \ingroup Setup
@@ -4768,7 +4685,7 @@ const byte* wolfSSL_X509_notAfter(WOLFSSL_X509* x509);
 
     \sa none
 */
-WOLFSSL_BIGNUM *wolfSSL_ASN1_INTEGER_to_BN(const WOLFSSL_ASN1_INTEGER *ai,
+WOLFSSL_API WOLFSSL_BIGNUM *wolfSSL_ASN1_INTEGER_to_BN(const WOLFSSL_ASN1_INTEGER *ai,
                                        WOLFSSL_BIGNUM *bn);
 
 /*!
@@ -4796,7 +4713,7 @@ WOLFSSL_BIGNUM *wolfSSL_ASN1_INTEGER_to_BN(const WOLFSSL_ASN1_INTEGER *ai,
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-long wolfSSL_CTX_add_extra_chain_cert(WOLFSSL_CTX* ctx, WOLFSSL_X509* x509);
+WOLFSSL_API long wolfSSL_CTX_add_extra_chain_cert(WOLFSSL_CTX*, WOLFSSL_X509*);
 
 /*!
     \ingroup Setup
@@ -4822,7 +4739,7 @@ long wolfSSL_CTX_add_extra_chain_cert(WOLFSSL_CTX* ctx, WOLFSSL_X509* x509);
     \sa wolfSSL_CTX_free
     \sa wolfSSL_CTX_set_read_ahead
 */
-int  wolfSSL_CTX_get_read_ahead(WOLFSSL_CTX*);
+WOLFSSL_API int  wolfSSL_CTX_get_read_ahead(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -4848,7 +4765,7 @@ int  wolfSSL_CTX_get_read_ahead(WOLFSSL_CTX*);
     \sa wolfSSL_CTX_free
     \sa wolfSSL_CTX_get_read_ahead
 */
-int  wolfSSL_CTX_set_read_ahead(WOLFSSL_CTX* ctx, int v);
+WOLFSSL_API int  wolfSSL_CTX_set_read_ahead(WOLFSSL_CTX*, int v);
 
 /*!
     \ingroup Setup
@@ -4875,7 +4792,7 @@ int  wolfSSL_CTX_set_read_ahead(WOLFSSL_CTX* ctx, int v);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-long wolfSSL_CTX_set_tlsext_status_arg(WOLFSSL_CTX* ctx, void* arg);
+WOLFSSL_API long wolfSSL_CTX_set_tlsext_status_arg(WOLFSSL_CTX*, void* arg);
 
 /*!
     \ingroup Setup
@@ -4902,8 +4819,8 @@ long wolfSSL_CTX_set_tlsext_status_arg(WOLFSSL_CTX* ctx, void* arg);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-long wolfSSL_CTX_set_tlsext_opaque_prf_input_callback_arg(
-        WOLFSSL_CTX* ctx, void* arg);
+WOLFSSL_API long wolfSSL_CTX_set_tlsext_opaque_prf_input_callback_arg(
+        WOLFSSL_CTX*, void* arg);
 
 /*!
     \ingroup Setup
@@ -4940,7 +4857,7 @@ long wolfSSL_CTX_set_tlsext_opaque_prf_input_callback_arg(
     \sa wolfSSL_free
     \sa wolfSSL_get_options
 */
-long wolfSSL_set_options(WOLFSSL *s, long op);
+WOLFSSL_API long wolfSSL_set_options(WOLFSSL *s, long op);
 
 /*!
     \ingroup Setup
@@ -4963,7 +4880,7 @@ long wolfSSL_set_options(WOLFSSL *s, long op);
     \sa wolfSSL_free
     \sa wolfSSL_set_options
 */
-long wolfSSL_get_options(const WOLFSSL *s);
+WOLFSSL_API long wolfSSL_get_options(const WOLFSSL *s);
 
 /*!
     \ingroup Setup
@@ -4989,7 +4906,7 @@ long wolfSSL_get_options(const WOLFSSL *s);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-long wolfSSL_set_tlsext_debug_arg(WOLFSSL *s, void *arg);
+WOLFSSL_API long wolfSSL_set_tlsext_debug_arg(WOLFSSL *s, void *arg);
 
 /*!
     \ingroup openSSL
@@ -5023,7 +4940,7 @@ long wolfSSL_set_tlsext_debug_arg(WOLFSSL *s, void *arg);
     \sa wolfSSL_free
     \sa wolfSSL_CTX_free
 */
-long wolfSSL_set_tlsext_status_type(WOLFSSL *s, int type);
+WOLFSSL_API long wolfSSL_set_tlsext_status_type(WOLFSSL *s, int type);
 
 /*!
     \ingroup Setup
@@ -5048,7 +4965,7 @@ long wolfSSL_set_tlsext_status_type(WOLFSSL *s, int type);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-long wolfSSL_get_verify_result(const WOLFSSL *ssl);
+WOLFSSL_API long wolfSSL_get_verify_result(const WOLFSSL *ssl);
 
 /*!
     \ingroup Debug
@@ -5079,7 +4996,7 @@ long wolfSSL_get_verify_result(const WOLFSSL *ssl);
     \sa wolfSSL_ERR_error_string_n
     \sa wolfSSL_load_error_strings
 */
-void  wolfSSL_ERR_print_errors_fp(XFILE fp, int err);
+WOLFSSL_API void  wolfSSL_ERR_print_errors_fp(FILE*, int err);
 
 /*!
     \ingroup Debug
@@ -5107,7 +5024,7 @@ void  wolfSSL_ERR_print_errors_fp(XFILE fp, int err);
     \sa wolfSSL_ERR_error_string_n
     \sa wolfSSL_load_error_strings
 */
-void  wolfSSL_ERR_print_errors_cb (
+WOLFSSL_API void  wolfSSL_ERR_print_errors_cb (
         int (*cb)(const char *str, size_t len, void *u), void *u);
 
 /*!
@@ -5119,17 +5036,7 @@ void  wolfSSL_ERR_print_errors_cb (
     \param ctx a pointer to a WOLFSSL_CTX structure, created using
     wolfSSL_CTX_new().
     \param cb wc_psk_client_callback is a function pointer that will be
-    stored in the WOLFSSL_CTX structure. Return value is the key length on
-    success or zero on error.
-    unsigned int (*wc_psk_client_callback)
-    PSK client callback parameters:
-    WOLFSSL* ssl - Pointer to the wolfSSL structure
-    const char* hint - A stored string that could be displayed to provide a
-                        hint to the user.
-    char* identity - The ID will be stored here.
-    unsigned int id_max_len - Size of the ID buffer.
-    unsigned char* key - The key will be stored here.
-    unsigned int key_max_len - The max size of the key.
+    stored in the WOLFSSL_CTX structure.
 
     _Example_
     \code
@@ -5147,7 +5054,7 @@ void  wolfSSL_ERR_print_errors_cb (
     \sa wolfSSL_CTX_set_psk_server_callback
     \sa wolfSSL_CTX_set_psk_client_callback
 */
-void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX* ctx,
+WOLFSSL_API void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX*,
                                                     wc_psk_client_callback);
 
 /*!
@@ -5156,27 +5063,19 @@ void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX* ctx,
     \return none No returns.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param cb a function pointer to type wc_psk_client_callback. Return value
-    is the key length on success or zero on error.
-    unsigned int (*wc_psk_client_callback)
-    PSK client callback parameters:
-    WOLFSSL* ssl - Pointer to the wolfSSL structure
-    const char* hint - A stored string that could be displayed to provide a
-                        hint to the user.
-    char* identity - The ID will be stored here.
-    unsigned int id_max_len - Size of the ID buffer.
-    unsigned char* key - The key will be stored here.
-    unsigned int key_max_len - The max size of the key.
+    \param cb a function pointer to type wc_psk_client_callback.
 
     _Example_
     \code
     WOLFSSL* ssl;
-    static WC_INLINE unsigned int my_psk_client_cb(WOLFSSL* ssl, const char* hint,
-    char* identity, unsigned int id_max_len, unsigned char* key,
-    Unsigned int key_max_len){
+    unsigned int cb(WOLFSSL*, const char*, char*) // Header of function*
+    {
+    	// Function body
+    }
     …
+    cb = wc_psk_client_callback;
     if(ssl){
-    wolfSSL_set_psk_client_callback(ssl, my_psk_client_cb);
+    wolfSSL_set_psk_client_callback(ssl, cb);
     } else {
     	// could not set callback
     }
@@ -5186,7 +5085,7 @@ void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_set_psk_server_callback
     \sa wolfSSL_set_psk_server_callback
 */
-void wolfSSL_set_psk_client_callback(WOLFSSL* ssl,
+WOLFSSL_API void wolfSSL_set_psk_client_callback(WOLFSSL*,
                                                     wc_psk_client_callback);
 
 /*!
@@ -5216,7 +5115,7 @@ void wolfSSL_set_psk_client_callback(WOLFSSL* ssl,
 
     \sa wolfSSL_get_psk_identity
 */
-const char* wolfSSL_get_psk_identity_hint(const WOLFSSL*);
+WOLFSSL_API const char* wolfSSL_get_psk_identity_hint(const WOLFSSL*);
 
 /*!
     \ingroup CertsKeys
@@ -5247,7 +5146,7 @@ const char* wolfSSL_get_psk_identity_hint(const WOLFSSL*);
     \sa wolfSSL_get_psk_identity_hint
     \sa wolfSSL_use_psk_identity_hint
 */
-const char* wolfSSL_get_psk_identity(const WOLFSSL*);
+WOLFSSL_API const char* wolfSSL_get_psk_identity(const WOLFSSL*);
 
 /*!
     \ingroup CertsKeys
@@ -5279,7 +5178,7 @@ const char* wolfSSL_get_psk_identity(const WOLFSSL*);
 
     \sa wolfSSL_use_psk_identity_hint
 */
-int wolfSSL_CTX_use_psk_identity_hint(WOLFSSL_CTX* ctx, const char* hint);
+WOLFSSL_API int wolfSSL_CTX_use_psk_identity_hint(WOLFSSL_CTX*, const char*);
 
 /*!
     \ingroup CertsKeys
@@ -5292,7 +5191,7 @@ int wolfSSL_CTX_use_psk_identity_hint(WOLFSSL_CTX* ctx, const char* hint);
     \return SSL_FAILURE returned if the WOLFSSL or Arrays structures are NULL.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param hint a constant character pointer that holds the hint to be saved
+    \para hint a constant character pointer that holds the hint to be saved
     in memory.
 
     _Example_
@@ -5307,7 +5206,7 @@ int wolfSSL_CTX_use_psk_identity_hint(WOLFSSL_CTX* ctx, const char* hint);
 
     \sa wolfSSL_CTX_use_psk_identity_hint
 */
-int wolfSSL_use_psk_identity_hint(WOLFSSL* ssl, const char* hint);
+WOLFSSL_API int wolfSSL_use_psk_identity_hint(WOLFSSL*, const char*);
 
 /*!
     \brief This function sets the psk callback for the server side in
@@ -5317,28 +5216,21 @@ int wolfSSL_use_psk_identity_hint(WOLFSSL* ssl, const char* hint);
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
     \param cb a function pointer for the callback and will be stored in
-    the WOLFSSL_CTX structure. Return value is the key length on success or
-    zero on error.
-    unsigned int (*wc_psk_server_callback)
-    PSK server callback parameters
-    WOLFSSL* ssl - Pointer to the wolfSSL structure
-    char* identity - The ID will be stored here.
-    unsigned char* key - The key will be stored here.
-    unsigned int key_max_len - The max size of the key.
+    the WOLFSSL_CTX structure.
 
     _Example_
     \code
     WOLFSSL_CTX* ctx = wolfSSL_CTX_new( protocol method );
     WOLFSSL* ssl = wolfSSL_new(ctx);
     …
-    static unsigned int my_psk_server_cb(WOLFSSL* ssl, const char* identity,
-                           unsigned char* key, unsigned int key_max_len)
+    unsigned int cb(WOLFSSL*, const char*, unsigned char*, unsigned int)
+        // signature requirement
     {
-        // Function body.
+    	// Function body.
     }
     …
     if(ctx != NULL){
-        wolfSSL_CTX_set_psk_server_callback(ctx, my_psk_server_cb);
+    wolfSSL_CTX_set_psk_server_callback(ctx, cb);
     } else {
     	// The CTX object was not properly initialized.
     }
@@ -5349,8 +5241,8 @@ int wolfSSL_use_psk_identity_hint(WOLFSSL* ssl, const char* hint);
     \sa wolfSSL_set_psk_server_callback
     \sa wolfSSL_CTX_set_psk_client_callback
 */
-void wolfSSL_CTX_set_psk_server_callback(WOLFSSL_CTX* ctx,
-                                                    wc_psk_server_callback cb);
+WOLFSSL_API void wolfSSL_CTX_set_psk_server_callback(WOLFSSL_CTX*,
+                                                    wc_psk_server_callback);
 
 /*!
     \brief Sets the psk callback for the server side by setting the
@@ -5360,29 +5252,20 @@ void wolfSSL_CTX_set_psk_server_callback(WOLFSSL_CTX* ctx,
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
     \param cb a function pointer for the callback and will be stored in
-    the WOLFSSL structure. Return value is the key length on success or  zero
-    on error.
-    unsigned int (*wc_psk_server_callback)
-    PSK server callback parameters
-    WOLFSSL* ssl - Pointer to the wolfSSL structure
-    char* identity - The ID will be stored here.
-    unsigned char* key - The key will be stored here.
-    unsigned int key_max_len - The max size of the key.
-
+    the WOLFSSL structure.
 
     _Example_
     \code
     WOLFSSL_CTX* ctx;
     WOLFSSL* ssl;
     …
-    static unsigned int my_psk_server_cb(WOLFSSL* ssl, const char* identity,
-                           unsigned char* key, unsigned int key_max_len)
+    int cb(WOLFSSL*, const char*, unsigned char*, unsigned int) // Required sig.
     {
-        // Function body.
+    	// Function body.
     }
     …
     if(ssl != NULL && cb != NULL){
-        wolfSSL_set_psk_server_callback(ssl, my_psk_server_cb);
+    	wolfSSL_set_psk_server_callback(ssl, cb);
     }
     \endcode
 
@@ -5393,8 +5276,8 @@ void wolfSSL_CTX_set_psk_server_callback(WOLFSSL_CTX* ctx,
     \sa wc_psk_server_callback
     \sa InitSuites
 */
-void wolfSSL_set_psk_server_callback(WOLFSSL* ssl,
-                                                    wc_psk_server_callback cb);
+WOLFSSL_API void wolfSSL_set_psk_server_callback(WOLFSSL*,
+                                                    wc_psk_server_callback);
 
 
 /*!
@@ -5409,7 +5292,7 @@ void wolfSSL_set_psk_server_callback(WOLFSSL* ssl,
     \sa wolfSSL_CTX_set_psk_callback_ctx
     \sa wolfSSL_CTX_get_psk_callback_ctx
 */
-int wolfSSL_set_psk_callback_ctx(WOLFSSL* ssl, void* psk_ctx);
+WOLFSSL_API int wolfSSL_set_psk_callback_ctx(WOLFSSL* ssl, void* psk_ctx);
 
 /*!
     \brief Sets a PSK user context in the WOLFSSL_CTX structure.
@@ -5423,7 +5306,7 @@ int wolfSSL_set_psk_callback_ctx(WOLFSSL* ssl, void* psk_ctx);
     \sa wolfSSL_get_psk_callback_ctx
     \sa wolfSSL_CTX_get_psk_callback_ctx
 */
-int wolfSSL_CTX_set_psk_callback_ctx(WOLFSSL_CTX* ctx, void* psk_ctx);
+WOLFSSL_API int wolfSSL_CTX_set_psk_callback_ctx(WOLFSSL_CTX* ctx, void* psk_ctx);
 
 /*!
     \brief Get a PSK user context in the WOLFSSL structure options member.
@@ -5436,7 +5319,7 @@ int wolfSSL_CTX_set_psk_callback_ctx(WOLFSSL_CTX* ctx, void* psk_ctx);
     \sa wolfSSL_CTX_set_psk_callback_ctx
     \sa wolfSSL_CTX_get_psk_callback_ctx
 */
-void* wolfSSL_get_psk_callback_ctx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_get_psk_callback_ctx(WOLFSSL* ssl);
 
 /*!
     \brief Get a PSK user context in the WOLFSSL_CTX structure.
@@ -5449,7 +5332,7 @@ void* wolfSSL_get_psk_callback_ctx(WOLFSSL* ssl);
     \sa wolfSSL_set_psk_callback_ctx
     \sa wolfSSL_get_psk_callback_ctx
 */
-void* wolfSSL_CTX_get_psk_callback_ctx(WOLFSSL_CTX* ctx);
+WOLFSSL_API void* wolfSSL_CTX_get_psk_callback_ctx(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -5481,7 +5364,7 @@ void* wolfSSL_CTX_get_psk_callback_ctx(WOLFSSL_CTX* ctx);
 
     \sa none
 */
-int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -5522,7 +5405,7 @@ int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
     \sa wolfDTLSv1_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfSSLv23_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfSSLv23_server_method(void);
 
 /*!
     \ingroup Setup
@@ -5546,7 +5429,7 @@ WOLFSSL_METHOD *wolfSSLv23_server_method(void);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int  wolfSSL_state(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_state(WOLFSSL* ssl);
 
 /*!
     \ingroup CertsKeys
@@ -5575,7 +5458,7 @@ int  wolfSSL_state(WOLFSSL* ssl);
     \sa wolfSSL_X509_get_subject_name
     \sa wolfSSL_X509_get_isCA
 */
-WOLFSSL_X509* wolfSSL_get_peer_certificate(WOLFSSL* ssl);
+WOLFSSL_API WOLFSSL_X509* wolfSSL_get_peer_certificate(WOLFSSL* ssl);
 
 /*!
     \ingroup Debug
@@ -5605,7 +5488,7 @@ WOLFSSL_X509* wolfSSL_get_peer_certificate(WOLFSSL* ssl);
     \sa wolfSSL_want_write
     \sa wolfSSL_get_error
 */
-int wolfSSL_want_read(WOLFSSL*);
+WOLFSSL_API int wolfSSL_want_read(WOLFSSL*);
 
 /*!
     \ingroup Debug
@@ -5635,7 +5518,7 @@ int wolfSSL_want_read(WOLFSSL*);
     \sa wolfSSL_want_read
     \sa wolfSSL_get_error
 */
-int wolfSSL_want_write(WOLFSSL*);
+WOLFSSL_API int wolfSSL_want_write(WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -5667,7 +5550,7 @@ int wolfSSL_want_write(WOLFSSL*);
 
     \sa none
 */
-int wolfSSL_check_domain_name(WOLFSSL* ssl, const char* dn);
+WOLFSSL_API int wolfSSL_check_domain_name(WOLFSSL* ssl, const char* dn);
 
 /*!
     \ingroup TLS
@@ -5691,7 +5574,7 @@ int wolfSSL_check_domain_name(WOLFSSL* ssl, const char* dn);
 
     \sa wolfSSL_Cleanup
 */
-int wolfSSL_Init(void);
+WOLFSSL_API int wolfSSL_Init(void);
 
 /*!
     \ingroup TLS
@@ -5709,7 +5592,7 @@ int wolfSSL_Init(void);
 
     \sa wolfSSL_Init
 */
-int wolfSSL_Cleanup(void);
+WOLFSSL_API int wolfSSL_Cleanup(void);
 
 /*!
     \ingroup IO
@@ -5733,7 +5616,7 @@ int wolfSSL_Cleanup(void);
 
     \sa word32_wolfSSL_lib_version_hex
 */
-const char* wolfSSL_lib_version(void);
+WOLFSSL_API const char* wolfSSL_lib_version(void);
 
 /*!
     \ingroup IO
@@ -5760,7 +5643,7 @@ const char* wolfSSL_lib_version(void);
 
     \sa wolfSSL_lib_version
 */
-word32 wolfSSL_lib_version_hex(void);
+WOLFSSL_API word32 wolfSSL_lib_version_hex(void);
 
 /*!
     \ingroup IO
@@ -5793,7 +5676,7 @@ word32 wolfSSL_lib_version_hex(void);
     \sa SSL_connect
     \sa SSL_accept
 */
-int wolfSSL_negotiate(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_negotiate(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -5826,7 +5709,7 @@ int wolfSSL_negotiate(WOLFSSL* ssl);
 
     \sa none
 */
-int wolfSSL_set_compression(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_set_compression(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -5852,10 +5735,10 @@ int wolfSSL_set_compression(WOLFSSL* ssl);
     ...
     \endcode
 
-    \sa wolfSSL_get1_session
+    \sa wolfSSL_get_session
     \sa wolfSSL_set_session
 */
-int wolfSSL_set_timeout(WOLFSSL* ssl, unsigned int to);
+WOLFSSL_API int wolfSSL_set_timeout(WOLFSSL*, unsigned int);
 
 /*!
     \ingroup Setup
@@ -5863,8 +5746,7 @@ int wolfSSL_set_timeout(WOLFSSL* ssl, unsigned int to);
     \brief This function sets the timeout value for SSL sessions, in seconds,
     for the specified SSL context.
 
-    \return the previous timeout value, if WOLFSSL_ERROR_CODE_OPENSSL is 
-    \return defined on success. If not defined, SSL_SUCCESS will be returned.
+    \return SSL_SUCCESS will be returned upon success.
     \return BAD_FUNC_ARG will be returned when the input context (ctx) is null.
 
     \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
@@ -5881,12 +5763,12 @@ int wolfSSL_set_timeout(WOLFSSL* ssl, unsigned int to);
     \endcode
 
     \sa wolfSSL_flush_sessions
-    \sa wolfSSL_get1_session
+    \sa wolfSSL_get_session
     \sa wolfSSL_set_session
     \sa wolfSSL_get_sessionID
     \sa wolfSSL_CTX_set_session_cache_mode
 */
-int wolfSSL_CTX_set_timeout(WOLFSSL_CTX* ctx, unsigned int to);
+WOLFSSL_API int wolfSSL_CTX_set_timeout(WOLFSSL_CTX*, unsigned int);
 
 /*!
     \ingroup openSSL
@@ -5910,7 +5792,7 @@ int wolfSSL_CTX_set_timeout(WOLFSSL_CTX* ctx, unsigned int to);
     \sa wolfSSL_get_chain_cert
     \sa wolfSSL_get_chain_cert_pem
 */
-WOLFSSL_X509_CHAIN* wolfSSL_get_peer_chain(WOLFSSL* ssl);
+WOLFSSL_API WOLFSSL_X509_CHAIN* wolfSSL_get_peer_chain(WOLFSSL* ssl);
 
 /*!
     \ingroup openSSL
@@ -5934,7 +5816,7 @@ WOLFSSL_X509_CHAIN* wolfSSL_get_peer_chain(WOLFSSL* ssl);
     \sa wolfSSL_get_chain_cert
     \sa wolfSSL_get_chain_cert_pem
 */
-int  wolfSSL_get_chain_count(WOLFSSL_X509_CHAIN* chain);
+WOLFSSL_API int  wolfSSL_get_chain_count(WOLFSSL_X509_CHAIN* chain);
 
 /*!
     \ingroup openSSL
@@ -5960,7 +5842,7 @@ int  wolfSSL_get_chain_count(WOLFSSL_X509_CHAIN* chain);
     \sa wolfSSL_get_chain_cert
     \sa wolfSSL_get_chain_cert_pem
 */
-int  wolfSSL_get_chain_length(WOLFSSL_X509_CHAIN* chain, int idx);
+WOLFSSL_API int  wolfSSL_get_chain_length(WOLFSSL_X509_CHAIN*, int idx);
 
 /*!
     \ingroup openSSL
@@ -5985,7 +5867,7 @@ int  wolfSSL_get_chain_length(WOLFSSL_X509_CHAIN* chain, int idx);
     \sa wolfSSL_get_chain_length
     \sa wolfSSL_get_chain_cert_pem
 */
-unsigned char* wolfSSL_get_chain_cert(WOLFSSL_X509_CHAIN* chain, int idx);
+WOLFSSL_API unsigned char* wolfSSL_get_chain_cert(WOLFSSL_X509_CHAIN*, int idx);
 
 /*!
     \ingroup CertsKeys
@@ -6018,7 +5900,7 @@ unsigned char* wolfSSL_get_chain_cert(WOLFSSL_X509_CHAIN* chain, int idx);
     \sa ParseCertRelative
     \sa CopyDecodedToX509
 */
-WOLFSSL_X509* wolfSSL_get_chain_X509(WOLFSSL_X509_CHAIN* chain, int idx);
+WOLFSSL_API WOLFSSL_X509* wolfSSL_get_chain_X509(WOLFSSL_X509_CHAIN*, int idx);
 
 /*!
     \ingroup openSSL
@@ -6043,7 +5925,7 @@ WOLFSSL_X509* wolfSSL_get_chain_X509(WOLFSSL_X509_CHAIN* chain, int idx);
     \sa wolfSSL_get_chain_length
     \sa wolfSSL_get_chain_cert
 */
-int  wolfSSL_get_chain_cert_pem(WOLFSSL_X509_CHAIN* chain, int idx,
+WOLFSSL_API int  wolfSSL_get_chain_cert_pem(WOLFSSL_X509_CHAIN*, int idx,
                                 unsigned char* buf, int inLen, int* outLen);
 
 /*!
@@ -6062,7 +5944,7 @@ int  wolfSSL_get_chain_cert_pem(WOLFSSL_X509_CHAIN* chain, int idx,
 
     \sa SSL_get_session
 */
-const unsigned char* wolfSSL_get_sessionID(const WOLFSSL_SESSION* s);
+WOLFSSL_API const unsigned char* wolfSSL_get_sessionID(const WOLFSSL_SESSION* s);
 
 /*!
     \ingroup openSSL
@@ -6087,8 +5969,7 @@ const unsigned char* wolfSSL_get_sessionID(const WOLFSSL_SESSION* s);
 
     \sa SSL_get_peer_certificate
 */
-int  wolfSSL_X509_get_serial_number(WOLFSSL_X509* x509, unsigned char* in,
-                                    int* inOutSz);
+WOLFSSL_API int  wolfSSL_X509_get_serial_number(WOLFSSL_X509*,unsigned char*,int*);
 
 /*!
     \ingroup CertsKeys
@@ -6121,7 +6002,7 @@ int  wolfSSL_X509_get_serial_number(WOLFSSL_X509* x509, unsigned char* in,
     \sa wolfSSL_X509_get_subject_name
 
 */
-char*  wolfSSL_X509_get_subjectCN(WOLFSSL_X509*);
+WOLFSSL_API char*  wolfSSL_X509_get_subjectCN(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -6155,7 +6036,7 @@ char*  wolfSSL_X509_get_subjectCN(WOLFSSL_X509*);
     \sa wolfSSL_X509_get_issuer_name
     \sa wolfSSL_X509_get_subject_name
 */
-const unsigned char* wolfSSL_X509_get_der(WOLFSSL_X509* x509, int* outSz);
+WOLFSSL_API const unsigned char* wolfSSL_X509_get_der(WOLFSSL_X509*, int*);
 
 /*!
     \ingroup CertsKeys
@@ -6182,7 +6063,7 @@ const unsigned char* wolfSSL_X509_get_der(WOLFSSL_X509* x509, int* outSz);
 
     \sa wolfSSL_X509_get_notBefore
 */
-WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notAfter(WOLFSSL_X509*);
+WOLFSSL_API WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notAfter(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -6210,7 +6091,7 @@ WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notAfter(WOLFSSL_X509*);
     \sa wolfSSL_X509_get_isCA
     \sa wolfSSL_get_peer_certificate
 */
-int wolfSSL_X509_version(WOLFSSL_X509*);
+WOLFSSL_API int wolfSSL_X509_version(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -6243,7 +6124,7 @@ int wolfSSL_X509_version(WOLFSSL_X509*);
     \sa XREWIND
     \sa XFSEEK
 */
-WOLFSSL_X509*
+WOLFSSL_API WOLFSSL_X509*
         wolfSSL_X509_d2i_fp(WOLFSSL_X509** x509, FILE* file);
 
 /*!
@@ -6273,7 +6154,7 @@ WOLFSSL_X509*
     \sa wolfSSL_get_certificate
     \sa AssertNotNull
 */
-WOLFSSL_X509*
+WOLFSSL_API WOLFSSL_X509*
     wolfSSL_X509_load_certificate_file(const char* fname, int format);
 
 /*!
@@ -6311,9 +6192,8 @@ WOLFSSL_X509*
     \sa wolfSSL_X509_get_hw_serial_number
     \sa wolfSSL_X509_d2i
 */
-unsigned char*
-           wolfSSL_X509_get_device_type(WOLFSSL_X509* x509, unsigned char* in,
-                                        int* inOutSz);
+WOLFSSL_API unsigned char*
+           wolfSSL_X509_get_device_type(WOLFSSL_X509*, unsigned char*, int*);
 
 /*!
     \ingroup CertsKeys
@@ -6346,9 +6226,8 @@ unsigned char*
     \sa wolfSSL_X509_get_hw_serial_number
     \sa wolfSSL_X509_get_device_type
 */
-unsigned char*
-           wolfSSL_X509_get_hw_type(WOLFSSL_X509* x509, unsigned char* in,
-                                    int* inOutSz);
+WOLFSSL_API unsigned char*
+           wolfSSL_X509_get_hw_type(WOLFSSL_X509*, unsigned char*, int*);
 
 /*!
     \ingroup CertsKeys
@@ -6383,9 +6262,8 @@ unsigned char*
     \sa wolfSSL_get_peer_certificate
     \sa wolfSSL_X509_version
 */
-unsigned char*
-           wolfSSL_X509_get_hw_serial_number(WOLFSSL_X509* x509,
-                                             unsigned char* in, int* inOutSz);
+WOLFSSL_API unsigned char*
+           wolfSSL_X509_get_hw_serial_number(WOLFSSL_X509*, unsigned char*, int*);
 
 /*!
     \ingroup IO
@@ -6431,7 +6309,7 @@ unsigned char*
     \sa wolfSSL_connect
     \sa wolfSSL_accept
 */
-int  wolfSSL_connect_cert(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_connect_cert(WOLFSSL* ssl);
 
 /*!
     \ingroup openSSL
@@ -6467,7 +6345,7 @@ int  wolfSSL_connect_cert(WOLFSSL* ssl);
     \sa wolfSSL_PKCS12_parse
     \sa wc_PKCS12_free
 */
-WC_PKCS12* wolfSSL_d2i_PKCS12_bio(WOLFSSL_BIO* bio,
+WOLFSSL_API WC_PKCS12* wolfSSL_d2i_PKCS12_bio(WOLFSSL_BIO* bio,
                                        WC_PKCS12** pkcs12);
 
 /*!
@@ -6506,7 +6384,7 @@ WC_PKCS12* wolfSSL_d2i_PKCS12_bio(WOLFSSL_BIO* bio,
     \sa wolfSSL_PKCS12_parse
     \sa wc_PKCS12_free
 */
-WC_PKCS12* wolfSSL_i2d_PKCS12_bio(WOLFSSL_BIO* bio,
+WOLFSSL_API WC_PKCS12* wolfSSL_i2d_PKCS12_bio(WOLFSSL_BIO* bio,
                                        WC_PKCS12* pkcs12);
 
 /*!
@@ -6559,7 +6437,7 @@ WC_PKCS12* wolfSSL_i2d_PKCS12_bio(WOLFSSL_BIO* bio,
     \sa wolfSSL_d2i_PKCS12_bio
     \sa wc_PKCS12_free
 */
-int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
+WOLFSSL_API int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
      WOLFSSL_EVP_PKEY** pkey, WOLFSSL_X509** cert, WOLF_STACK_OF(WOLFSSL_X509)** ca);
 
 /*!
@@ -6591,7 +6469,7 @@ int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
 
     \sa SSL_accept
 */
-int  wolfSSL_SetTmpDH(WOLFSSL* ssl, const unsigned char* p, int pSz,
+WOLFSSL_API int  wolfSSL_SetTmpDH(WOLFSSL*, const unsigned char* p, int pSz,
                                 const unsigned char* g, int gSz);
 
 /*!
@@ -6642,7 +6520,7 @@ int  wolfSSL_SetTmpDH(WOLFSSL* ssl, const unsigned char* p, int pSz,
     \sa wolfSSL_CTX_SetTmpDH
     \sa wolfSSL_CTX_SetTmpDH_file
 */
-int  wolfSSL_SetTmpDH_buffer(WOLFSSL* ssl, const unsigned char* b, long sz,
+WOLFSSL_API int  wolfSSL_SetTmpDH_buffer(WOLFSSL*, const unsigned char* b, long sz,
                                        int format);
 
 /*!
@@ -6686,7 +6564,7 @@ int  wolfSSL_SetTmpDH_buffer(WOLFSSL* ssl, const unsigned char* b, long sz,
     \sa wolfSSL_SetTmpDH
     \sa wolfSSL_CTX_SetTmpDH
 */
-int  wolfSSL_SetTmpDH_file(WOLFSSL* ssl, const char* f, int format);
+WOLFSSL_API int  wolfSSL_SetTmpDH_file(WOLFSSL*, const char* f, int format);
 
 /*!
     \ingroup CertsKeys
@@ -6732,7 +6610,7 @@ int  wolfSSL_SetTmpDH_file(WOLFSSL* ssl, const char* f, int format);
     \sa wolfSSL_SetTmpDH
     \sa wc_DhParamsLoad
 */
-int  wolfSSL_CTX_SetTmpDH(WOLFSSL_CTX* ctx, const unsigned char* p,
+WOLFSSL_API int  wolfSSL_CTX_SetTmpDH(WOLFSSL_CTX*, const unsigned char* p,
                                     int pSz, const unsigned char* g, int gSz);
 
 /*!
@@ -6777,7 +6655,7 @@ int  wolfSSL_CTX_SetTmpDH(WOLFSSL_CTX* ctx, const unsigned char* p,
     \sa wolfSSL_SetTmpDH_file_wrapper
     \sa wolfSSL_CTX_SetTmpDH_file
 */
-int  wolfSSL_CTX_SetTmpDH_buffer(WOLFSSL_CTX* ctx, const unsigned char* b,
+WOLFSSL_API int  wolfSSL_CTX_SetTmpDH_buffer(WOLFSSL_CTX*, const unsigned char* b,
                                            long sz, int format);
 
 /*!
@@ -6835,28 +6713,28 @@ int  wolfSSL_CTX_SetTmpDH_buffer(WOLFSSL_CTX* ctx, const unsigned char* b,
     \sa AllocDer
     \sa PemToDer
 */
-int  wolfSSL_CTX_SetTmpDH_file(WOLFSSL_CTX* ctx, const char* f,
+WOLFSSL_API int  wolfSSL_CTX_SetTmpDH_file(WOLFSSL_CTX*, const char* f,
                                              int format);
 
 /*!
     \ingroup CertsKeys
 
-    \brief This function sets the minimum size (in bits) of the Diffie Hellman
-    key size by accessing the minDhKeySz member in the WOLFSSL_CTX structure.
+    \brief This function sets the minimum size of the Diffie Hellman key size
+    by accessing the minDhKeySz member in the WOLFSSL_CTX structure.
 
     \return SSL_SUCCESS returned if the function completes successfully.
     \return BAD_FUNC_ARG returned if the WOLFSSL_CTX struct is NULL or if
-    the keySz_bits is greater than 16,000 or not divisible by 8.
+    the keySz is greater than 16,000 or not divisible by 8.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param keySz_bits a word16 type used to set the minimum DH key size in bits.
-    The WOLFSSL_CTX struct holds this information in the minDhKeySz member.
+    \param keySz a word16 type used to set the minimum DH key size. The
+    WOLFSSL_CTX struct holds this information in the minDhKeySz member.
 
     _Example_
     \code
     public static int CTX_SetMinDhKey_Sz(IntPtr ctx, short minDhKey){
     …
-    return wolfSSL_CTX_SetMinDhKey_Sz(local_ctx, minDhKeyBits);
+    return wolfSSL_CTX_SetMinDhKey_Sz(local_ctx, minDhKey);
     \endcode
 
     \sa wolfSSL_SetMinDhKey_Sz
@@ -6865,28 +6743,27 @@ int  wolfSSL_CTX_SetTmpDH_file(WOLFSSL_CTX* ctx, const char* f,
     \sa wolfSSL_GetDhKey_Sz
     \sa wolfSSL_CTX_SetTMpDH_file
 */
-int wolfSSL_CTX_SetMinDhKey_Sz(WOLFSSL_CTX* ctx, word16);
+WOLFSSL_API int wolfSSL_CTX_SetMinDhKey_Sz(WOLFSSL_CTX*, word16);
 
 /*!
     \ingroup CertsKeys
 
-    \brief Sets the minimum size (in bits) for a Diffie-Hellman key in the
-    WOLFSSL structure.
+    \brief Sets the minimum size for a Diffie-Hellman key in the WOLFSSL
+    structure in bytes.
 
     \return SSL_SUCCESS the minimum size was successfully set.
-    \return BAD_FUNC_ARG the WOLFSSL structure was NULL or if the keySz_bits is
-    greater than 16,000 or not divisible by 8.
+    \return BAD_FUNC_ARG the WOLFSSL structure was NULL or the keySz parameter
+    was greater than the allowable size or not divisible by 8.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param keySz_bits a word16 type used to set the minimum DH key size in bits.
-    The WOLFSSL_CTX struct holds this information in the minDhKeySz member.
+    \param keySz a word16 type representing the bit size of the minimum DH key.
 
     _Example_
     \code
     WOLFSSL* ssl = wolfSSL_new(ctx);
-    word16 keySz_bits;
+    word16 keySz;
     ...
-    if(wolfSSL_SetMinDhKey_Sz(ssl, keySz_bits) != SSL_SUCCESS){
+    if(wolfSSL_SetMinDhKey(ssl, keySz) != SSL_SUCCESS){
 	    // Failed to set.
     }
     \endcode
@@ -6894,27 +6771,27 @@ int wolfSSL_CTX_SetMinDhKey_Sz(WOLFSSL_CTX* ctx, word16);
     \sa wolfSSL_CTX_SetMinDhKey_Sz
     \sa wolfSSL_GetDhKey_Sz
 */
-int wolfSSL_SetMinDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
+WOLFSSL_API int wolfSSL_SetMinDhKey_Sz(WOLFSSL*, word16);
 
 /*!
     \ingroup CertsKeys
 
-    \brief This function sets the maximum size (in bits) of the Diffie Hellman
-    key size by accessing the maxDhKeySz member in the WOLFSSL_CTX structure.
+    \brief This function sets the maximum size of the Diffie Hellman key size
+    by accessing the maxDhKeySz member in the WOLFSSL_CTX structure.
 
     \return SSL_SUCCESS returned if the function completes successfully.
     \return BAD_FUNC_ARG returned if the WOLFSSL_CTX struct is NULL or if
-    the keySz_bits is greater than 16,000 or not divisible by 8.
+    the keySz is greater than 16,000 or not divisible by 8.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param keySz_bits a word16 type used to set the maximum DH key size in bits.
-    The WOLFSSL_CTX struct holds this information in the maxDhKeySz member.
+    \param keySz a word16 type used to set the maximum DH key size. The
+    WOLFSSL_CTX struct holds this information in the maxDhKeySz member.
 
     _Example_
     \code
     public static int CTX_SetMaxDhKey_Sz(IntPtr ctx, short maxDhKey){
     …
-    return wolfSSL_CTX_SetMaxDhKey_Sz(local_ctx, keySz_bits);
+    return wolfSSL_CTX_SetMaxDhKey_Sz(local_ctx, maxDhKey);
     \endcode
 
     \sa wolfSSL_SetMinDhKey_Sz
@@ -6923,13 +6800,13 @@ int wolfSSL_SetMinDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
     \sa wolfSSL_GetDhKey_Sz
     \sa wolfSSL_CTX_SetTMpDH_file
 */
-int wolfSSL_CTX_SetMaxDhKey_Sz(WOLFSSL_CTX* ctx, word16 keySz_bits);
+WOLFSSL_API int wolfSSL_CTX_SetMaxDhKey_Sz(WOLFSSL_CTX*, word16);
 
 /*!
     \ingroup CertsKeys
 
-    \brief Sets the maximum size (in bits) for a Diffie-Hellman key in the
-    WOLFSSL structure.
+    \brief Sets the maximum size for a Diffie-Hellman key in the WOLFSSL
+    structure in bytes.
 
     \return SSL_SUCCESS the maximum size was successfully set.
     \return BAD_FUNC_ARG the WOLFSSL structure was NULL or the keySz parameter
@@ -6951,17 +6828,16 @@ int wolfSSL_CTX_SetMaxDhKey_Sz(WOLFSSL_CTX* ctx, word16 keySz_bits);
     \sa wolfSSL_CTX_SetMaxDhKey_Sz
     \sa wolfSSL_GetDhKey_Sz
 */
-int wolfSSL_SetMaxDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
+WOLFSSL_API int wolfSSL_SetMaxDhKey_Sz(WOLFSSL*, word16);
 
 /*!
     \ingroup CertsKeys
 
-    \brief Returns the value of dhKeySz (in bits) that is a member of the
-    options structure. This value represents the Diffie-Hellman key size in
-    bytes.
+    \brief Returns the value of dhKeySz that is a member of the options
+    structure. This value represents the Diffie-Hellman key size in bytes.
 
     \return dhKeySz returns the value held in ssl->options.dhKeySz which is an
-    integer value representing a size in bits.
+    integer value.
     \return BAD_FUNC_ARG returns if the WOLFSSL struct is NULL.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
@@ -6987,7 +6863,7 @@ int wolfSSL_SetMaxDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
     \sa wolfSSL_SetTmpDH
     \sa wolfSSL_CTX_SetTmpDH_file
 */
-int wolfSSL_GetDhKey_Sz(WOLFSSL*);
+WOLFSSL_API int wolfSSL_GetDhKey_Sz(WOLFSSL*);
 
 /*!
     \ingroup CertsKeys
@@ -7018,12 +6894,12 @@ int wolfSSL_GetDhKey_Sz(WOLFSSL*);
 
     \sa wolfSSL_SetMinRsaKey_Sz
 */
-int wolfSSL_CTX_SetMinRsaKey_Sz(WOLFSSL_CTX* ctx, short keySz);
+WOLFSSL_API int wolfSSL_CTX_SetMinRsaKey_Sz(WOLFSSL_CTX*, short);
 
 /*!
     \ingroup CertsKeys
 
-    \brief Sets the minimum allowable key size in bits for RSA located in the
+    \brief Sets the minimum allowable key size in bytes for RSA located in the
     WOLFSSL structure.
 
     \return SSL_SUCCESS the minimum was set successfully.
@@ -7047,12 +6923,12 @@ int wolfSSL_CTX_SetMinRsaKey_Sz(WOLFSSL_CTX* ctx, short keySz);
 
     \sa wolfSSL_CTX_SetMinRsaKey_Sz
 */
-int wolfSSL_SetMinRsaKey_Sz(WOLFSSL* ssl, short keySz);
+WOLFSSL_API int wolfSSL_SetMinRsaKey_Sz(WOLFSSL*, short);
 
 /*!
     \ingroup CertsKeys
 
-    \brief Sets the minimum size in bits for the ECC key in the WOLF_CTX
+    \brief Sets the minimum size in bytes for the ECC key in the WOLF_CTX
     structure and the WOLFSSL_CERT_MANAGER structure.
 
     \return SSL_SUCCESS returned for a successful execution and the minEccKeySz
@@ -7077,7 +6953,7 @@ int wolfSSL_SetMinRsaKey_Sz(WOLFSSL* ssl, short keySz);
 
     \sa wolfSSL_SetMinEccKey_Sz
 */
-int wolfSSL_CTX_SetMinEccKey_Sz(WOLFSSL_CTX* ssl, short keySz);
+WOLFSSL_API int wolfSSL_CTX_SetMinEccKey_Sz(WOLFSSL_CTX*, short);
 
 /*!
     \ingroup CertsKeys
@@ -7109,7 +6985,7 @@ int wolfSSL_CTX_SetMinEccKey_Sz(WOLFSSL_CTX* ssl, short keySz);
     \sa wolfSSL_CTX_SetMinRsaKey_Sz
     \sa wolfSSL_SetMinRsaKey_Sz
 */
-int wolfSSL_SetMinEccKey_Sz(WOLFSSL* ssl, short keySz);
+WOLFSSL_API int wolfSSL_SetMinEccKey_Sz(WOLFSSL*, short);
 
 /*!
     \ingroup CertsKeys
@@ -7142,7 +7018,7 @@ int wolfSSL_SetMinEccKey_Sz(WOLFSSL* ssl, short keySz);
     \sa wc_HmacFinal
     \sa wc_HmacUpdate
 */
-int wolfSSL_make_eap_keys(WOLFSSL* ssl, void* key, unsigned int len,
+WOLFSSL_API int wolfSSL_make_eap_keys(WOLFSSL*, void* key, unsigned int len,
                                                              const char* label);
 
 /*!
@@ -7186,7 +7062,7 @@ int wolfSSL_make_eap_keys(WOLFSSL* ssl, void* key, unsigned int len,
 
     \sa wolfSSL_write
 */
-int wolfSSL_writev(WOLFSSL* ssl, const struct iovec* iov,
+WOLFSSL_API int wolfSSL_writev(WOLFSSL* ssl, const struct iovec* iov,
                                      int iovcnt);
 
 /*!
@@ -7219,7 +7095,7 @@ int wolfSSL_writev(WOLFSSL* ssl, const struct iovec* iov,
     \sa FreeSignerTable
     \sa UnlockMutex
 */
-int wolfSSL_CTX_UnloadCAs(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_UnloadCAs(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -7251,7 +7127,7 @@ int wolfSSL_CTX_UnloadCAs(WOLFSSL_CTX*);
     \sa wolfSSL_CTX_trust_peer_buffer
     \sa wolfSSL_CTX_trust_peer_cert
 */
-int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -7296,6 +7172,7 @@ int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX*);
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_file
     \sa wolfSSL_CTX_use_PrivateKey_file
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_file
     \sa wolfSSL_CTX_trust_peer_cert
     \sa wolfSSL_CTX_Unload_trust_peers
@@ -7303,8 +7180,8 @@ int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX*);
     \sa wolfSSL_use_PrivateKey_file
     \sa wolfSSL_use_certificate_chain_file
 */
-int wolfSSL_CTX_trust_peer_buffer(WOLFSSL_CTX* ctx, const unsigned char* in,
-                                  long sz, int format);
+WOLFSSL_API int wolfSSL_CTX_trust_peer_buffer(WOLFSSL_CTX*,
+                                               const unsigned char*, long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7350,74 +7227,14 @@ int wolfSSL_CTX_trust_peer_buffer(WOLFSSL_CTX* ctx, const unsigned char* in,
     \sa wolfSSL_CTX_load_verify_locations
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_CTX_load_verify_buffer(WOLFSSL_CTX* ctx, const unsigned char* in,
-                                   long sz, int format);
-
-
-/*!
-    \ingroup CertsKeys
-
-    \brief This function loads a CA certificate buffer into the WOLFSSL
-    Context. It behaves like the non-buffered version, only differing in
-    its ability to be called with a buffer as input instead of a file.
-    The buffer is provided by the in argument of size sz. format specifies
-    the format type of the buffer; SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
-    More than one CA certificate may be loaded per buffer as long as the
-    format is in PEM.  The _ex version was added in PR 2413 and supports 
-    additional arguments for userChain and flags.
-
-    \return SSL_SUCCESS upon success
-    \return SSL_BAD_FILETYPE will be returned if the file is the wrong format.
-    \return SSL_BAD_FILE will be returned if the file doesn’t exist,
-    can’t be read, or is corrupted.
-    \return MEMORY_E will be returned if an out of memory condition occurs.
-    \return ASN_INPUT_E will be returned if Base16 decoding fails on the file.
-    \return BUFFER_E will be returned if a chain buffer is bigger than
-    the receiving buffer.
-
-    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
-    \param in pointer to the CA certificate buffer.
-    \param sz size of the input CA certificate buffer, in.
-    \param format format of the buffer certificate, either SSL_FILETYPE_ASN1
-    or SSL_FILETYPE_PEM.
-    \param userChain If using format WOLFSSL_FILETYPE_ASN1 this set to non-zero
-    indicates a chain of DER's is being presented.
-    \param flags: See ssl.h around WOLFSSL_LOAD_VERIFY_DEFAULT_FLAGS.
-
-    _Example_
-    \code
-    int ret = 0;
-    int sz = 0;
-    WOLFSSL_CTX* ctx;
-    byte certBuff[...];
-    ...
-
-    // Example for force loading an expired certificate
-    ret = wolfSSL_CTX_load_verify_buffer_ex(ctx, certBuff, sz, SSL_FILETYPE_PEM,
-        0, (WOLFSSL_LOAD_FLAG_DATE_ERR_OKAY));
-    if (ret != SSL_SUCCESS) {
-    	// error loading CA certs from buffer
-    }
-    ...
-    \endcode
-
-    \sa wolfSSL_CTX_load_verify_buffer
-    \sa wolfSSL_CTX_load_verify_locations
-    \sa wolfSSL_CTX_use_certificate_buffer
-    \sa wolfSSL_CTX_use_PrivateKey_buffer
-    \sa wolfSSL_CTX_use_certificate_chain_buffer
-    \sa wolfSSL_use_certificate_buffer
-    \sa wolfSSL_use_PrivateKey_buffer
-    \sa wolfSSL_use_certificate_chain_buffer
-*/
-int wolfSSL_CTX_load_verify_buffer_ex(WOLFSSL_CTX* ctx,
-                                      const unsigned char* in, long sz,
-                                      int format, int userChain, word32 flags);
+WOLFSSL_API int wolfSSL_CTX_load_verify_buffer(WOLFSSL_CTX*,
+                                               const unsigned char*, long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7464,14 +7281,14 @@ int wolfSSL_CTX_load_verify_buffer_ex(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_load_verify_locations
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_CTX_load_verify_chain_buffer_format(WOLFSSL_CTX* ctx,
-                                               const unsigned char* in,
-                                               long sz, int format);
+WOLFSSL_API int wolfSSL_CTX_load_verify_chain_buffer_format(WOLFSSL_CTX*,
+                                               const unsigned char*, long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7512,14 +7329,14 @@ int wolfSSL_CTX_load_verify_chain_buffer_format(WOLFSSL_CTX* ctx,
 
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_CTX_use_certificate_buffer(WOLFSSL_CTX* ctx,
-                                       const unsigned char* in, long sz,
-                                       int format);
+WOLFSSL_API int wolfSSL_CTX_use_certificate_buffer(WOLFSSL_CTX*,
+                                               const unsigned char*, long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7562,14 +7379,14 @@ int wolfSSL_CTX_use_certificate_buffer(WOLFSSL_CTX* ctx,
 
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_CTX_use_PrivateKey_buffer(WOLFSSL_CTX* ctx,
-                                      const unsigned char* in, long sz,
-                                      int format);
+WOLFSSL_API int wolfSSL_CTX_use_PrivateKey_buffer(WOLFSSL_CTX*,
+                                               const unsigned char*, long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7612,12 +7429,13 @@ int wolfSSL_CTX_use_PrivateKey_buffer(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_CTX_use_certificate_chain_buffer(WOLFSSL_CTX* ctx,
-                                             const unsigned char* in, long sz);
+WOLFSSL_API int wolfSSL_CTX_use_certificate_chain_buffer(WOLFSSL_CTX*,
+                                                    const unsigned char*, long);
 
 /*!
     \ingroup CertsKeys
@@ -7659,12 +7477,13 @@ int wolfSSL_CTX_use_certificate_chain_buffer(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_PrivateKey_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_use_certificate_buffer(WOLFSSL* ssl, const unsigned char* in,
-                                               long sz, int format);
+WOLFSSL_API int wolfSSL_use_certificate_buffer(WOLFSSL*, const unsigned char*,
+                                               long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7708,12 +7527,13 @@ int wolfSSL_use_certificate_buffer(WOLFSSL* ssl, const unsigned char* in,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_certificate_chain_buffer
 */
-int wolfSSL_use_PrivateKey_buffer(WOLFSSL* ssl, const unsigned char* in,
-                                               long sz, int format);
+WOLFSSL_API int wolfSSL_use_PrivateKey_buffer(WOLFSSL*, const unsigned char*,
+                                               long, int);
 
 /*!
     \ingroup CertsKeys
@@ -7754,12 +7574,13 @@ int wolfSSL_use_PrivateKey_buffer(WOLFSSL* ssl, const unsigned char* in,
     \sa wolfSSL_CTX_load_verify_buffer
     \sa wolfSSL_CTX_use_certificate_buffer
     \sa wolfSSL_CTX_use_PrivateKey_buffer
+    \sa wolfSSL_CTX_use_NTRUPrivateKey_file
     \sa wolfSSL_CTX_use_certificate_chain_buffer
     \sa wolfSSL_use_certificate_buffer
     \sa wolfSSL_use_PrivateKey_buffer
 */
-int wolfSSL_use_certificate_chain_buffer(WOLFSSL* ssl,
-                                         const unsigned char* in, long sz);
+WOLFSSL_API int wolfSSL_use_certificate_chain_buffer(WOLFSSL*,
+                                               const unsigned char*, long);
 
 /*!
     \ingroup CertsKeys
@@ -7783,7 +7604,7 @@ int wolfSSL_use_certificate_chain_buffer(WOLFSSL* ssl,
 
     \sa wolfSSL_CTX_UnloadCAs
 */
-int wolfSSL_UnloadCertsKeys(WOLFSSL*);
+WOLFSSL_API int wolfSSL_UnloadCertsKeys(WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -7808,7 +7629,7 @@ int wolfSSL_UnloadCertsKeys(WOLFSSL*);
     \sa wolfSSL_set_group_messages
     \sa wolfSSL_CTX_new
 */
-int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX*);
 
 /*!
     \ingroup Setup
@@ -7833,7 +7654,7 @@ int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX*);
     \sa wolfSSL_CTX_set_group_messages
     \sa wolfSSL_new
 */
-int wolfSSL_set_group_messages(WOLFSSL*);
+WOLFSSL_API int wolfSSL_set_group_messages(WOLFSSL*);
 
 /*!
     \brief This function sets the fuzzer callback.
@@ -7863,7 +7684,7 @@ int wolfSSL_set_group_messages(WOLFSSL*);
 
     \sa CallbackFuzzer
 */
-void wolfSSL_SetFuzzerCb(WOLFSSL* ssl, CallbackFuzzer cbf, void* fCtx);
+WOLFSSL_API void wolfSSL_SetFuzzerCb(WOLFSSL* ssl, CallbackFuzzer cbf, void* fCtx);
 
 /*!
     \brief This function sets a new dtls cookie secret.
@@ -7895,10 +7716,11 @@ void wolfSSL_SetFuzzerCb(WOLFSSL* ssl, CallbackFuzzer cbf, void* fCtx);
 
     \sa ForceZero
     \sa wc_RNG_GenerateBlock
+    \sa XMEMCPY
 */
-int   wolfSSL_DTLS_SetCookieSecret(WOLFSSL* ssl,
-                                               const unsigned char* secret,
-                                               unsigned int secretSz);
+WOLFSSL_API int   wolfSSL_DTLS_SetCookieSecret(WOLFSSL*,
+                                               const unsigned char*,
+                                               unsigned int);
 
 /*!
     \brief This function retrieves the random number.
@@ -7919,7 +7741,7 @@ int   wolfSSL_DTLS_SetCookieSecret(WOLFSSL* ssl,
     \sa  wolfSSL_CTX_new_rng
 
 */
-WC_RNG* wolfSSL_GetRNG(WOLFSSL* ssl);
+WOLFSSL_API WC_RNG* wolfSSL_GetRNG(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -7952,7 +7774,7 @@ WC_RNG* wolfSSL_GetRNG(WOLFSSL* ssl);
 
     \sa SetMinVersionHelper
 */
-int wolfSSL_CTX_SetMinVersion(WOLFSSL_CTX* ctx, int version);
+WOLFSSL_API int wolfSSL_CTX_SetMinVersion(WOLFSSL_CTX* ctx, int version);
 
 /*!
     \ingroup TLS
@@ -7984,7 +7806,7 @@ int wolfSSL_CTX_SetMinVersion(WOLFSSL_CTX* ctx, int version);
 
     \sa SetMinVersionHelper
 */
-int wolfSSL_SetMinVersion(WOLFSSL* ssl, int version);
+WOLFSSL_API int wolfSSL_SetMinVersion(WOLFSSL* ssl, int version);
 
 /*!
     \brief This function returns the size of the WOLFSSL object and will be
@@ -8005,7 +7827,7 @@ int wolfSSL_SetMinVersion(WOLFSSL* ssl, int version);
 
     \sa wolfSSL_new
 */
-int wolfSSL_GetObjectSize(void);  /* object size based on build */
+WOLFSSL_API int wolfSSL_GetObjectSize(void);  /* object size based on build */
 /*!
     \brief Returns the record layer size of the plaintext input. This is helpful
     when an application wants to know how many bytes will be sent across the
@@ -8028,7 +7850,7 @@ int wolfSSL_GetObjectSize(void);  /* object size based on build */
 
     \sa wolfSSL_GetMaxOutputSize
 */
-int wolfSSL_GetOutputSize(WOLFSSL* ssl, int inSz);
+WOLFSSL_API int wolfSSL_GetOutputSize(WOLFSSL*, int);
 
 /*!
     \brief Returns the maximum record layer size for plaintext data.  This
@@ -8052,7 +7874,7 @@ int wolfSSL_GetOutputSize(WOLFSSL* ssl, int inSz);
 
     \sa wolfSSL_GetOutputSize
 */
-int wolfSSL_GetMaxOutputSize(WOLFSSL*);
+WOLFSSL_API int wolfSSL_GetMaxOutputSize(WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -8085,7 +7907,7 @@ int wolfSSL_GetMaxOutputSize(WOLFSSL*);
 
     \sa wolfSSL_CTX_new
 */
-int wolfSSL_SetVersion(WOLFSSL* ssl, int version);
+WOLFSSL_API int wolfSSL_SetVersion(WOLFSSL* ssl, int version);
 
 /*!
     \brief Allows caller to set the Atomic User Record Processing
@@ -8112,7 +7934,7 @@ int wolfSSL_SetVersion(WOLFSSL* ssl, int version);
     \sa wolfSSL_SetMacEncryptCtx
     \sa wolfSSL_GetMacEncryptCtx
 */
-void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX* ctx, CallbackMacEncrypti cb);
+WOLFSSL_API void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX*, CallbackMacEncrypt);
 
 /*!
     \brief Allows caller to set the Atomic User Record Processing Mac/Encrypt
@@ -8130,7 +7952,7 @@ void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX* ctx, CallbackMacEncrypti cb);
     \sa wolfSSL_CTX_SetMacEncryptCb
     \sa wolfSSL_GetMacEncryptCtx
 */
-void  wolfSSL_SetMacEncryptCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetMacEncryptCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Atomic User Record Processing
@@ -8151,7 +7973,7 @@ void  wolfSSL_SetMacEncryptCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetMacEncryptCb
     \sa wolfSSL_SetMacEncryptCtx
 */
-void* wolfSSL_GetMacEncryptCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetMacEncryptCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Atomic User Record Processing
@@ -8177,8 +7999,8 @@ void* wolfSSL_GetMacEncryptCtx(WOLFSSL* ssl);
     \sa wolfSSL_SetMacEncryptCtx
     \sa wolfSSL_GetMacEncryptCtx
 */
-void  wolfSSL_CTX_SetDecryptVerifyCb(WOLFSSL_CTX* ctx,
-                                               CallbackDecryptVerify cb);
+WOLFSSL_API void  wolfSSL_CTX_SetDecryptVerifyCb(WOLFSSL_CTX*,
+                                               CallbackDecryptVerify);
 
 /*!
     \brief Allows caller to set the Atomic User Record Processing
@@ -8196,7 +8018,7 @@ void  wolfSSL_CTX_SetDecryptVerifyCb(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_SetDecryptVerifyCb
     \sa wolfSSL_GetDecryptVerifyCtx
 */
-void  wolfSSL_SetDecryptVerifyCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetDecryptVerifyCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Atomic User Record Processing
@@ -8217,7 +8039,7 @@ void  wolfSSL_SetDecryptVerifyCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetDecryptVerifyCb
     \sa wolfSSL_SetDecryptVerifyCtx
 */
-void* wolfSSL_GetDecryptVerifyCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetDecryptVerifyCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows retrieval of the Hmac/Mac secret from the handshake process.
@@ -8238,7 +8060,7 @@ void* wolfSSL_GetDecryptVerifyCtx(WOLFSSL* ssl);
 
     \sa wolfSSL_GetHmacSize
 */
-const unsigned char* wolfSSL_GetMacSecret(WOLFSSL* ssl, int verify);
+WOLFSSL_API const unsigned char* wolfSSL_GetMacSecret(WOLFSSL*, int);
 
 /*!
     \brief Allows retrieval of the client write key from the handshake process.
@@ -8257,7 +8079,7 @@ const unsigned char* wolfSSL_GetMacSecret(WOLFSSL* ssl, int verify);
     \sa wolfSSL_GetKeySize
     \sa wolfSSL_GetClientWriteIV
 */
-const unsigned char* wolfSSL_GetClientWriteKey(WOLFSSL*);
+WOLFSSL_API const unsigned char* wolfSSL_GetClientWriteKey(WOLFSSL*);
 
 /*!
     \brief Allows retrieval of the client write IV (initialization vector)
@@ -8277,7 +8099,7 @@ const unsigned char* wolfSSL_GetClientWriteKey(WOLFSSL*);
     \sa wolfSSL_GetCipherBlockSize()
     \sa wolfSSL_GetClientWriteKey()
 */
-const unsigned char* wolfSSL_GetClientWriteIV(WOLFSSL*);
+WOLFSSL_API const unsigned char* wolfSSL_GetClientWriteIV(WOLFSSL*);
 
 /*!
     \brief Allows retrieval of the server write key from the handshake process.
@@ -8296,7 +8118,7 @@ const unsigned char* wolfSSL_GetClientWriteIV(WOLFSSL*);
     \sa wolfSSL_GetKeySize
     \sa wolfSSL_GetServerWriteIV
 */
-const unsigned char* wolfSSL_GetServerWriteKey(WOLFSSL*);
+WOLFSSL_API const unsigned char* wolfSSL_GetServerWriteKey(WOLFSSL*);
 
 /*!
     \brief Allows retrieval of the server write IV (initialization vector)
@@ -8311,7 +8133,7 @@ const unsigned char* wolfSSL_GetServerWriteKey(WOLFSSL*);
     \sa wolfSSL_GetCipherBlockSize
     \sa wolfSSL_GetClientWriteKey
 */
-const unsigned char* wolfSSL_GetServerWriteIV(WOLFSSL*);
+WOLFSSL_API const unsigned char* wolfSSL_GetServerWriteIV(WOLFSSL*);
 
 /*!
     \brief Allows retrieval of the key size from the handshake process.
@@ -8329,7 +8151,7 @@ const unsigned char* wolfSSL_GetServerWriteIV(WOLFSSL*);
     \sa wolfSSL_GetClientWriteKey
     \sa wolfSSL_GetServerWriteKey
 */
-int                  wolfSSL_GetKeySize(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetKeySize(WOLFSSL*);
 
 /*!
     \ingroup CertsKeys
@@ -8359,7 +8181,7 @@ int                  wolfSSL_GetKeySize(WOLFSSL*);
     \sa wolfSSL_GetClientWriteIV
     \sa wolfSSL_GetServerWriteIV
 */
-int                  wolfSSL_GetIVSize(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetIVSize(WOLFSSL*);
 
 /*!
     \brief Allows retrieval of the side of this WOLFSSL connection.
@@ -8379,7 +8201,7 @@ int                  wolfSSL_GetIVSize(WOLFSSL*);
     \sa wolfSSL_GetClientWriteKey
     \sa wolfSSL_GetServerWriteKey
 */
-int                  wolfSSL_GetSide(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetSide(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine if the negotiated protocol version
@@ -8398,7 +8220,7 @@ int                  wolfSSL_GetSide(WOLFSSL*);
 
     \sa wolfSSL_GetSide
 */
-int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated bulk cipher algorithm
@@ -8406,7 +8228,8 @@ int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
 
     \return If successful the call will return one of the following:
     wolfssl_cipher_null, wolfssl_des, wolfssl_triple_des, wolfssl_aes,
-    wolfssl_aes_gcm, wolfssl_aes_ccm, wolfssl_camellia.
+    wolfssl_aes_gcm, wolfssl_aes_ccm, wolfssl_camellia, wolfssl_hc128,
+    wolfssl_rabbit.
     \return BAD_FUNC_ARG will be returned for an error state.
 
     \param ssl a pointer to a WOLFSSL object, created using wolfSSL_new().
@@ -8419,7 +8242,7 @@ int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
     \sa wolfSSL_GetCipherBlockSize
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetBulkCipher(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetBulkCipher(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated cipher block size from
@@ -8439,7 +8262,7 @@ int                  wolfSSL_GetBulkCipher(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetCipherBlockSize(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetCipherBlockSize(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated aead mac size from the
@@ -8459,7 +8282,7 @@ int                  wolfSSL_GetCipherBlockSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetAeadMacSize(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetAeadMacSize(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated (h)mac size from the
@@ -8479,7 +8302,7 @@ int                  wolfSSL_GetAeadMacSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacType
 */
-int                  wolfSSL_GetHmacSize(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetHmacSize(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated (h)mac type from the
@@ -8500,7 +8323,7 @@ int                  wolfSSL_GetHmacSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacSize
 */
-int                  wolfSSL_GetHmacType(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetHmacType(WOLFSSL*);
 
 /*!
     \brief Allows caller to determine the negotiated cipher type
@@ -8520,7 +8343,7 @@ int                  wolfSSL_GetHmacType(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacType
 */
-int                  wolfSSL_GetCipherType(WOLFSSL*);
+WOLFSSL_API int                  wolfSSL_GetCipherType(WOLFSSL*);
 
 /*!
     \brief Allows caller to set the Hmac Inner vector for message
@@ -8543,8 +8366,8 @@ int                  wolfSSL_GetCipherType(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacType
 */
-int wolfSSL_SetTlsHmacInner(WOLFSSL* ssl, byte* inner,
-                            word32 sz, int content, int verify);
+WOLFSSL_API int                  wolfSSL_SetTlsHmacInner(WOLFSSL*, unsigned char*,
+                                                       word32, int, int);
 
 /*!
     \brief Allows caller to set the Public Key Callback for ECC Signing.
@@ -8570,7 +8393,7 @@ int wolfSSL_SetTlsHmacInner(WOLFSSL* ssl, byte* inner,
     \sa wolfSSL_SetEccSignCtx
     \sa wolfSSL_GetEccSignCtx
 */
-void  wolfSSL_CTX_SetEccSignCb(WOLFSSL_CTX* ctx, CallbackEccSign cb);
+WOLFSSL_API void  wolfSSL_CTX_SetEccSignCb(WOLFSSL_CTX*, CallbackEccSign);
 
 /*!
     \brief Allows caller to set the Public Key Ecc Signing Callback
@@ -8578,8 +8401,7 @@ void  wolfSSL_CTX_SetEccSignCb(WOLFSSL_CTX* ctx, CallbackEccSign cb);
 
     \return none No returns.
 
-    \param ssl a pointer to a WOLFSSL object, created using wolfSSL_new().
-    \param ctx a pointer to the user context to be stored
+    \param none No parameters.
 
     _Example_
     \code
@@ -8589,7 +8411,7 @@ void  wolfSSL_CTX_SetEccSignCb(WOLFSSL_CTX* ctx, CallbackEccSign cb);
     \sa wolfSSL_CTX_SetEccSignCb
     \sa wolfSSL_GetEccSignCtx
 */
-void  wolfSSL_SetEccSignCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetEccSignCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key Ecc Signing Callback
@@ -8599,7 +8421,7 @@ void  wolfSSL_SetEccSignCtx(WOLFSSL* ssl, void *ctx);
     to the context.
     \return NULL will be returned for a blank context.
 
-    \param ssl a pointer to a WOLFSSL object, created using wolfSSL_new().
+    \param none No parameters.
 
     _Example_
     \code
@@ -8609,48 +8431,7 @@ void  wolfSSL_SetEccSignCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetEccSignCb
     \sa wolfSSL_SetEccSignCtx
 */
-void* wolfSSL_GetEccSignCtx(WOLFSSL* ssl);
-
-/*!
-    \brief Allows caller to set the Public Key Ecc Signing Callback
-    Context to ctx.
-
-    \return none No returns.
-
-    \param ctx a pointer to a WOLFSSL_CTX structure, created
-    with wolfSSL_CTX_new().
-    \param ctx a pointer to the user context to be stored
-
-    _Example_
-    \code
-    none
-    \endcode
-
-    \sa wolfSSL_CTX_SetEccSignCb
-    \sa wolfSSL_CTX_GetEccSignCtx
-*/
-void  wolfSSL_CTX_SetEccSignCtx(WOLFSSL_CTX* ctx, void *userCtx);
-
-/*!
-    \brief Allows caller to retrieve the Public Key Ecc Signing Callback
-    Context previously stored with wolfSSL_SetEccSignCtx().
-
-    \return pointer If successful the call will return a valid pointer
-    to the context.
-    \return NULL will be returned for a blank context.
-
-    \param ctx a pointer to a WOLFSSL_CTX structure, created
-    with wolfSSL_CTX_new().
-
-    _Example_
-    \code
-    none
-    \endcode
-
-    \sa wolfSSL_CTX_SetEccSignCb
-    \sa wolfSSL_CTX_SetEccSignCtx
-*/
-void* wolfSSL_CTX_GetEccSignCtx(WOLFSSL_CTX* ctx);
+WOLFSSL_API void* wolfSSL_GetEccSignCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Public Key Callback for ECC Verification.
@@ -8676,7 +8457,7 @@ void* wolfSSL_CTX_GetEccSignCtx(WOLFSSL_CTX* ctx);
     \sa wolfSSL_SetEccVerifyCtx
     \sa wolfSSL_GetEccVerifyCtx
 */
-void  wolfSSL_CTX_SetEccVerifyCb(WOLFSSL_CTX* ctx, CallbackEccVerify cb);
+WOLFSSL_API void  wolfSSL_CTX_SetEccVerifyCb(WOLFSSL_CTX*, CallbackEccVerify);
 
 /*!
     \brief Allows caller to set the Public Key Ecc Verification Callback
@@ -8694,7 +8475,7 @@ void  wolfSSL_CTX_SetEccVerifyCb(WOLFSSL_CTX* ctx, CallbackEccVerify cb);
     \sa wolfSSL_CTX_SetEccVerifyCb
     \sa wolfSSL_GetEccVerifyCtx
 */
-void  wolfSSL_SetEccVerifyCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetEccVerifyCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key Ecc Verification Callback
@@ -8714,7 +8495,7 @@ void  wolfSSL_SetEccVerifyCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetEccVerifyCb
     \sa wolfSSL_SetEccVerifyCtx
 */
-void* wolfSSL_GetEccVerifyCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetEccVerifyCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Public Key Callback for RSA Signing.
@@ -8740,7 +8521,7 @@ void* wolfSSL_GetEccVerifyCtx(WOLFSSL* ssl);
     \sa wolfSSL_SetRsaSignCtx
     \sa wolfSSL_GetRsaSignCtx
 */
-void  wolfSSL_CTX_SetRsaSignCb(WOLFSSL_CTX* ctx, CallbackRsaSign cb);
+WOLFSSL_API void  wolfSSL_CTX_SetRsaSignCb(WOLFSSL_CTX*, CallbackRsaSign);
 
 /*!
     \brief Allows caller to set the Public Key RSA Signing Callback Context
@@ -8758,7 +8539,7 @@ void  wolfSSL_CTX_SetRsaSignCb(WOLFSSL_CTX* ctx, CallbackRsaSign cb);
     \sa wolfSSL_CTX_SetRsaSignCb
     \sa wolfSSL_GetRsaSignCtx
 */
-void  wolfSSL_SetRsaSignCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetRsaSignCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key RSA Signing Callback
@@ -8779,7 +8560,7 @@ void  wolfSSL_SetRsaSignCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetRsaSignCb
     \sa wolfSSL_SetRsaSignCtx
 */
-void* wolfSSL_GetRsaSignCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetRsaSignCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Public Key Callback for RSA Verification.
@@ -8798,7 +8579,7 @@ void* wolfSSL_GetRsaSignCtx(WOLFSSL* ssl);
     \sa wolfSSL_SetRsaVerifyCtx
     \sa wolfSSL_GetRsaVerifyCtx
 */
-void  wolfSSL_CTX_SetRsaVerifyCb(WOLFSSL_CTX* ctx, CallbackRsaVerify cb);
+WOLFSSL_API void  wolfSSL_CTX_SetRsaVerifyCb(WOLFSSL_CTX*, CallbackRsaVerify);
 
 /*!
     \brief Allows caller to set the Public Key RSA Verification Callback
@@ -8816,7 +8597,7 @@ void  wolfSSL_CTX_SetRsaVerifyCb(WOLFSSL_CTX* ctx, CallbackRsaVerify cb);
     \sa wolfSSL_CTX_SetRsaVerifyCb
     \sa wolfSSL_GetRsaVerifyCtx
 */
-void  wolfSSL_SetRsaVerifyCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetRsaVerifyCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key RSA Verification Callback
@@ -8836,7 +8617,7 @@ void  wolfSSL_SetRsaVerifyCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetRsaVerifyCb
     \sa wolfSSL_SetRsaVerifyCtx
 */
-void* wolfSSL_GetRsaVerifyCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetRsaVerifyCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Public Key Callback for RSA Public
@@ -8862,7 +8643,7 @@ void* wolfSSL_GetRsaVerifyCtx(WOLFSSL* ssl);
     \sa wolfSSL_SetRsaEncCtx
     \sa wolfSSL_GetRsaEncCtx
 */
-void  wolfSSL_CTX_SetRsaEncCb(WOLFSSL_CTX* ctx, CallbackRsaEnc cb);
+WOLFSSL_API void  wolfSSL_CTX_SetRsaEncCb(WOLFSSL_CTX*, CallbackRsaEnc);
 
 /*!
     \brief Allows caller to set the Public Key RSA Public Encrypt
@@ -8880,7 +8661,7 @@ void  wolfSSL_CTX_SetRsaEncCb(WOLFSSL_CTX* ctx, CallbackRsaEnc cb);
     \sa wolfSSL_CTX_SetRsaEncCb
     \sa wolfSSL_GetRsaEncCtx
 */
-void  wolfSSL_SetRsaEncCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetRsaEncCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key RSA Public Encrypt
@@ -8900,7 +8681,7 @@ void  wolfSSL_SetRsaEncCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetRsaEncCb
     \sa wolfSSL_SetRsaEncCtx
 */
-void* wolfSSL_GetRsaEncCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetRsaEncCtx(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Public Key Callback for RSA Private
@@ -8925,7 +8706,7 @@ void* wolfSSL_GetRsaEncCtx(WOLFSSL* ssl);
     \sa wolfSSL_SetRsaDecCtx
     \sa wolfSSL_GetRsaDecCtx
 */
-void  wolfSSL_CTX_SetRsaDecCb(WOLFSSL_CTX* ctx, CallbackRsaDec cb);
+WOLFSSL_API void  wolfSSL_CTX_SetRsaDecCb(WOLFSSL_CTX*, CallbackRsaDec);
 
 /*!
     \brief Allows caller to set the Public Key RSA Private Decrypt
@@ -8943,7 +8724,7 @@ void  wolfSSL_CTX_SetRsaDecCb(WOLFSSL_CTX* ctx, CallbackRsaDec cb);
     \sa wolfSSL_CTX_SetRsaDecCb
     \sa wolfSSL_GetRsaDecCtx
 */
-void  wolfSSL_SetRsaDecCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void  wolfSSL_SetRsaDecCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief Allows caller to retrieve the Public Key RSA Private Decrypt
@@ -8963,7 +8744,7 @@ void  wolfSSL_SetRsaDecCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetRsaDecCb
     \sa wolfSSL_SetRsaDecCtx
 */
-void* wolfSSL_GetRsaDecCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetRsaDecCtx(WOLFSSL* ssl);
 
 /*!
     \brief This function registers a callback with the SSL context
@@ -8997,7 +8778,7 @@ void* wolfSSL_GetRsaDecCtx(WOLFSSL* ssl);
 
     \sa wolfSSL_CTX_load_verify_locations
 */
-void wolfSSL_CTX_SetCACb(WOLFSSL_CTX* ctx, CallbackCACache cb);
+WOLFSSL_API void wolfSSL_CTX_SetCACb(WOLFSSL_CTX*, CallbackCACache);
 
 /*!
     \ingroup CertManager
@@ -9013,7 +8794,7 @@ void wolfSSL_CTX_SetCACb(WOLFSSL_CTX* ctx, CallbackCACache cb);
 
     \sa wolfSSL_CertManagerFree
 */
-WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew_ex(void* heap);
+WOLFSSL_API WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew_ex(void* heap);
 
 /*!
     \ingroup CertManager
@@ -9040,7 +8821,7 @@ WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew_ex(void* heap);
 
     \sa wolfSSL_CertManagerFree
 */
-WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew(void);
+WOLFSSL_API WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew(void);
 
 /*!
     \ingroup CertManager
@@ -9063,7 +8844,7 @@ WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew(void);
 
     \sa wolfSSL_CertManagerNew
 */
-void wolfSSL_CertManagerFree(WOLFSSL_CERT_MANAGER*);
+WOLFSSL_API void wolfSSL_CertManagerFree(WOLFSSL_CERT_MANAGER*);
 
 /*!
     \ingroup CertManager
@@ -9105,7 +8886,7 @@ void wolfSSL_CertManagerFree(WOLFSSL_CERT_MANAGER*);
 
     \sa wolfSSL_CertManagerVerify
 */
-int wolfSSL_CertManagerLoadCA(WOLFSSL_CERT_MANAGER* cm, const char* f,
+WOLFSSL_API int wolfSSL_CertManagerLoadCA(WOLFSSL_CERT_MANAGER*, const char* f,
                                                                  const char* d);
 
 /*!
@@ -9142,7 +8923,7 @@ int wolfSSL_CertManagerLoadCA(WOLFSSL_CERT_MANAGER* cm, const char* f,
     \sa ProcessBuffer
     \sa cm_pick_method
 */
-int wolfSSL_CertManagerLoadCABuffer(WOLFSSL_CERT_MANAGER* cm,
+WOLFSSL_API int wolfSSL_CertManagerLoadCABuffer(WOLFSSL_CERT_MANAGER*,
                                   const unsigned char* in, long sz, int format);
 
 /*!
@@ -9171,7 +8952,7 @@ int wolfSSL_CertManagerLoadCABuffer(WOLFSSL_CERT_MANAGER* cm,
     \sa FreeSignerTable
     \sa UnlockMutex
 */
-int wolfSSL_CertManagerUnloadCAs(WOLFSSL_CERT_MANAGER* cm);
+WOLFSSL_API int wolfSSL_CertManagerUnloadCAs(WOLFSSL_CERT_MANAGER* cm);
 
 /*!
     \ingroup CertManager
@@ -9200,7 +8981,7 @@ int wolfSSL_CertManagerUnloadCAs(WOLFSSL_CERT_MANAGER* cm);
 
     \sa UnLockMutex
 */
-int wolfSSL_CertManagerUnload_trust_peers(WOLFSSL_CERT_MANAGER* cm);
+WOLFSSL_API int wolfSSL_CertManagerUnload_trust_peers(WOLFSSL_CERT_MANAGER* cm);
 
 /*!
     \ingroup CertManager
@@ -9251,7 +9032,7 @@ int wolfSSL_CertManagerUnload_trust_peers(WOLFSSL_CERT_MANAGER* cm);
     \sa wolfSSL_CertManagerLoadCA
     \sa wolfSSL_CertManagerVerifyBuffer
 */
-int wolfSSL_CertManagerVerify(WOLFSSL_CERT_MANAGER* cm, const char* f,
+WOLFSSL_API int wolfSSL_CertManagerVerify(WOLFSSL_CERT_MANAGER*, const char* f,
                                                                     int format);
 
 /*!
@@ -9307,7 +9088,7 @@ int wolfSSL_CertManagerVerify(WOLFSSL_CERT_MANAGER* cm, const char* f,
     \sa wolfSSL_CertManagerLoadCA
     \sa wolfSSL_CertManagerVerify
 */
-int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
+WOLFSSL_API int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
                                 const unsigned char* buff, long sz, int format);
 
 /*!
@@ -9339,7 +9120,7 @@ int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_CertManagerVerify
 */
-void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
+WOLFSSL_API void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
                                                              VerifyCallback vc);
 
 /*!
@@ -9371,8 +9152,8 @@ void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
     \sa wolfSSL_CertManagerSetCRL_CB
     \sa InitDecodedCert
 */
-int wolfSSL_CertManagerCheckCRL(WOLFSSL_CERT_MANAGER* cm,
-                                unsigned char* der, int sz);
+WOLFSSL_API int wolfSSL_CertManagerCheckCRL(WOLFSSL_CERT_MANAGER*,
+                                                        unsigned char*, int sz);
 
 /*!
     \ingroup CertManager
@@ -9413,7 +9194,7 @@ int wolfSSL_CertManagerCheckCRL(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_CertManagerDisableCRL
 */
-int wolfSSL_CertManagerEnableCRL(WOLFSSL_CERT_MANAGER* cm,
+WOLFSSL_API int wolfSSL_CertManagerEnableCRL(WOLFSSL_CERT_MANAGER*,
                                                                    int options);
 
 /*!
@@ -9447,7 +9228,7 @@ int wolfSSL_CertManagerEnableCRL(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_CertManagerEnableCRL
 */
-int wolfSSL_CertManagerDisableCRL(WOLFSSL_CERT_MANAGER*);
+WOLFSSL_API int wolfSSL_CertManagerDisableCRL(WOLFSSL_CERT_MANAGER*);
 
 /*!
     \ingroup CertManager
@@ -9475,14 +9256,14 @@ int wolfSSL_CertManagerDisableCRL(WOLFSSL_CERT_MANAGER*);
     int wolfSSL_LoadCRL(WOLFSSL* ssl, const char* path, int type,
     int monitor);
     …
-    wolfSSL_CertManagerLoadCRL(SSL_CM(ssl), path, type, monitor);
+    wolfSSL_CertManagerLoadCRL(ssl->ctx->cm, path, type, monitor);
     \endcode
 
     \sa wolfSSL_CertManagerEnableCRL
     \sa wolfSSL_LoadCRL
 */
-int wolfSSL_CertManagerLoadCRL(WOLFSSL_CERT_MANAGER* cm,
-                               const char* path, int type, int monitor);
+WOLFSSL_API int wolfSSL_CertManagerLoadCRL(WOLFSSL_CERT_MANAGER*,
+                                                         const char*, int, int);
 
 /*!
     \ingroup CertManager
@@ -9518,9 +9299,8 @@ int wolfSSL_CertManagerLoadCRL(WOLFSSL_CERT_MANAGER* cm,
     \sa BufferLoadCRL
     \sa wolfSSL_CertManagerEnableCRL
 */
-int wolfSSL_CertManagerLoadCRLBuffer(WOLFSSL_CERT_MANAGER* cm,
-                                     const unsigned char* buff, long sz,
-                                     int type);
+WOLFSSL_API int wolfSSL_CertManagerLoadCRLBuffer(WOLFSSL_CERT_MANAGER*,
+                                            const unsigned char*, long sz, int);
 
 /*!
     \ingroup CertManager
@@ -9552,15 +9332,15 @@ int wolfSSL_CertManagerLoadCRLBuffer(WOLFSSL_CERT_MANAGER* cm,
     CbMissingCRL cb = CbMissingCRL;
     …
     if(ctx){
-        return wolfSSL_CertManagerSetCRL_Cb(SSL_CM(ssl), cb);
+        return wolfSSL_CertManagerSetCRL_Cb(ssl->ctx->cm, cb);
     }
     \endcode
 
     \sa CbMissingCRL
     \sa wolfSSL_SetCRL_Cb
 */
-int wolfSSL_CertManagerSetCRL_Cb(WOLFSSL_CERT_MANAGER* cm,
-                                 CbMissingCRL cb);
+WOLFSSL_API int wolfSSL_CertManagerSetCRL_Cb(WOLFSSL_CERT_MANAGER*,
+                                                                  CbMissingCRL);
 
 /*!
     \ingroup CertManager
@@ -9595,8 +9375,8 @@ int wolfSSL_CertManagerSetCRL_Cb(WOLFSSL_CERT_MANAGER* cm,
     \sa ParseCertRelative
     \sa CheckCertOCSP
 */
-int wolfSSL_CertManagerCheckOCSP(WOLFSSL_CERT_MANAGER* cm,
-                                 unsigned char* der, int sz);
+WOLFSSL_API int wolfSSL_CertManagerCheckOCSP(WOLFSSL_CERT_MANAGER*,
+                                                        unsigned char*, int sz);
 
 /*!
     \ingroup CertManager
@@ -9623,14 +9403,14 @@ int wolfSSL_CertManagerCheckOCSP(WOLFSSL_CERT_MANAGER* cm,
     WOLFSSL_CERT_MANAGER* cm = wolfSSL_CertManagerNew();
     int options;
     …
-    if(wolfSSL_CertManagerEnableOCSP(SSL_CM(ssl), options) != SSL_SUCCESS){
+    if(wolfSSL_CertManagerEnableOCSP(ssl->ctx->cm, options) != SSL_SUCCESS){
 	    Failure case.
     }
     \endcode
 
     \sa wolfSSL_CertManagerNew
 */
-int wolfSSL_CertManagerEnableOCSP(WOLFSSL_CERT_MANAGER* cm,
+WOLFSSL_API int wolfSSL_CertManagerEnableOCSP(WOLFSSL_CERT_MANAGER*,
                                                                    int options);
 
 /*!
@@ -9657,7 +9437,7 @@ int wolfSSL_CertManagerEnableOCSP(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_DisableCRL
 */
-int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER*);
+WOLFSSL_API int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER*);
 
 /*!
     \ingroup CertManager
@@ -9679,7 +9459,7 @@ int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER*);
     …
     int wolfSSL_SetOCSP_OverrideURL(WOLFSSL* ssl, const char* url)
     …
-    if(wolfSSL_CertManagerSetOCSPOverrideURL(SSL_CM(ssl), url) != SSL_SUCCESS){
+    if(wolfSSL_CertManagerSetOCSPOverrideURL(ssl->ctx->cm, url) != SSL_SUCCESS){
 	    Failure case.
     }
     \endcode
@@ -9687,8 +9467,8 @@ int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER*);
     \sa ocspOverrideURL
     \sa wolfSSL_SetOCSP_OverrideURL
 */
-int wolfSSL_CertManagerSetOCSPOverrideURL(WOLFSSL_CERT_MANAGER* cm,
-                                          const char* url);
+WOLFSSL_API int wolfSSL_CertManagerSetOCSPOverrideURL(WOLFSSL_CERT_MANAGER*,
+                                                                   const char*);
 
 /*!
     \ingroup CertManager
@@ -9711,7 +9491,7 @@ int wolfSSL_CertManagerSetOCSPOverrideURL(WOLFSSL_CERT_MANAGER* cm,
     wolfSSL_SetOCSP_Cb(WOLFSSL* ssl, CbOCSPIO ioCb,
     CbOCSPRespFree respFreeCb, void* ioCbCtx){
     …
-    return wolfSSL_CertManagerSetOCSP_Cb(SSL_CM(ssl), ioCb, respFreeCb, ioCbCtx);
+    return wolfSSL_CertManagerSetOCSP_Cb(ssl->ctx->cm, ioCb, respFreeCb, ioCbCtx);
     \endcode
 
     \sa wolfSSL_CertManagerSetOCSPOverrideURL
@@ -9721,9 +9501,8 @@ int wolfSSL_CertManagerSetOCSPOverrideURL(WOLFSSL_CERT_MANAGER* cm,
     \sa wolfSSL_DisableOCSP
     \sa wolfSSL_SetOCSP_Cb
 */
-int wolfSSL_CertManagerSetOCSP_Cb(WOLFSSL_CERT_MANAGER* cm,
-                                  CbOCSPIO ioCb, CbOCSPRespFree respFreeCb,
-                                  void* ioCbCtx);
+WOLFSSL_API int wolfSSL_CertManagerSetOCSP_Cb(WOLFSSL_CERT_MANAGER*,
+                                               CbOCSPIO, CbOCSPRespFree, void*);
 
 /*!
     \ingroup CertManager
@@ -9753,7 +9532,7 @@ int wolfSSL_CertManagerSetOCSP_Cb(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_CTX_EnableOCSPStapling
 */
-int wolfSSL_CertManagerEnableOCSPStapling(
+WOLFSSL_API int wolfSSL_CertManagerEnableOCSPStapling(
                                                       WOLFSSL_CERT_MANAGER* cm);
 
 /*!
@@ -9783,7 +9562,7 @@ int wolfSSL_CertManagerEnableOCSPStapling(
     \sa wolfSSL_CertManagerEnableCRL
     \sa InitCRL
 */
-int wolfSSL_EnableCRL(WOLFSSL* ssl, int options);
+WOLFSSL_API int wolfSSL_EnableCRL(WOLFSSL* ssl, int options);
 
 /*!
     \brief Disables CRL certificate revocation.
@@ -9807,7 +9586,7 @@ int wolfSSL_EnableCRL(WOLFSSL* ssl, int options);
     \sa wolfSSL_CertManagerDisableCRL
     \sa wolfSSL_CertManagerDisableOCSP
 */
-int wolfSSL_DisableCRL(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_DisableCRL(WOLFSSL* ssl);
 
 /*!
     \brief A wrapper function that ends up calling LoadCRL to load the
@@ -9841,7 +9620,7 @@ int wolfSSL_DisableCRL(WOLFSSL* ssl);
     \sa wolfSSL_CertManagerEnableCRL
     \sa LoadCRL
 */
-int wolfSSL_LoadCRL(WOLFSSL* ssl, const char* path, int type, int monitor);
+WOLFSSL_API int wolfSSL_LoadCRL(WOLFSSL*, const char*, int, int);
 
 /*!
     \brief Sets the CRL callback in the WOLFSSL_CERT_MANAGER structure.
@@ -9873,7 +9652,7 @@ int wolfSSL_LoadCRL(WOLFSSL* ssl, const char* path, int type, int monitor);
     \sa CbMissingCRL
     \sa wolfSSL_CertManagerSetCRL_Cb
 */
-int wolfSSL_SetCRL_Cb(WOLFSSL* ssl, CbMissingCRL cb);
+WOLFSSL_API int wolfSSL_SetCRL_Cb(WOLFSSL*, CbMissingCRL);
 
 /*!
     \brief This function enables OCSP certificate verification.
@@ -9905,7 +9684,7 @@ int wolfSSL_SetCRL_Cb(WOLFSSL* ssl, CbMissingCRL cb);
 
     \sa wolfSSL_CertManagerEnableOCSP
 */
-int wolfSSL_EnableOCSP(WOLFSSL* ssl, int options);
+WOLFSSL_API int wolfSSL_EnableOCSP(WOLFSSL*, int options);
 
 /*!
     \brief Disables the OCSP certificate revocation option.
@@ -9928,7 +9707,7 @@ int wolfSSL_EnableOCSP(WOLFSSL* ssl, int options);
 
     \sa wolfSSL_CertManagerDisableOCSP
 */
-int wolfSSL_DisableOCSP(WOLFSSL*);
+WOLFSSL_API int wolfSSL_DisableOCSP(WOLFSSL*);
 
 /*!
     \brief This function sets the ocspOverrideURL member in the
@@ -9957,7 +9736,7 @@ int wolfSSL_DisableOCSP(WOLFSSL*);
 
     \sa wolfSSL_CertManagerSetOCSPOverrideURL
 */
-int wolfSSL_SetOCSP_OverrideURL(WOLFSSL* ssl, const char* url);
+WOLFSSL_API int wolfSSL_SetOCSP_OverrideURL(WOLFSSL*, const char*);
 
 /*!
     \brief This function sets the OCSP callback in the
@@ -10001,8 +9780,7 @@ int wolfSSL_SetOCSP_OverrideURL(WOLFSSL* ssl, const char* url);
     \sa CbOCSPIO
     \sa CbOCSPRespFree
 */
-int wolfSSL_SetOCSP_Cb(WOLFSSL* ssl, CbOCSPIO ioCb, CbOCSPRespFree respFreeCb,
-                       void* ioCbCtx);
+WOLFSSL_API int wolfSSL_SetOCSP_Cb(WOLFSSL*, CbOCSPIO, CbOCSPRespFree, void*);
 
 /*!
     \brief Enables CRL certificate verification through the CTX.
@@ -10033,7 +9811,7 @@ int wolfSSL_SetOCSP_Cb(WOLFSSL* ssl, CbOCSPIO ioCb, CbOCSPRespFree respFreeCb,
     \sa InitCRL
     \sa wolfSSL_CTX_DisableCRL
 */
-int wolfSSL_CTX_EnableCRL(WOLFSSL_CTX* ctx, int options);
+WOLFSSL_API int wolfSSL_CTX_EnableCRL(WOLFSSL_CTX* ctx, int options);
 
 /*!
     \brief This function disables CRL verification in the CTX structure.
@@ -10058,7 +9836,7 @@ int wolfSSL_CTX_EnableCRL(WOLFSSL_CTX* ctx, int options);
 
     \sa wolfSSL_CertManagerDisableCRL
 */
-int wolfSSL_CTX_DisableCRL(WOLFSSL_CTX* ctx);
+WOLFSSL_API int wolfSSL_CTX_DisableCRL(WOLFSSL_CTX* ctx);
 
 /*!
     \brief This function loads CRL into the WOLFSSL_CTX structure through
@@ -10089,7 +9867,7 @@ int wolfSSL_CTX_DisableCRL(WOLFSSL_CTX* ctx);
     \sa wolfSSL_CertManagerLoadCRL
     \sa LoadCRL
 */
-int wolfSSL_CTX_LoadCRL(WOLFSSL_CTX* ctx, const char* path, int type, int monitor);
+WOLFSSL_API int wolfSSL_CTX_LoadCRL(WOLFSSL_CTX*, const char*, int, int);
 
 /*!
     \brief This function will set the callback argument to the cbMissingCRL
@@ -10125,7 +9903,7 @@ int wolfSSL_CTX_LoadCRL(WOLFSSL_CTX* ctx, const char* path, int type, int monito
     \sa wolfSSL_CertManagerSetCRL_Cb
     \sa CbMissingCRL
 */
-int wolfSSL_CTX_SetCRL_Cb(WOLFSSL_CTX* ctx, CbMissingCRL cb);
+WOLFSSL_API int wolfSSL_CTX_SetCRL_Cb(WOLFSSL_CTX*, CbMissingCRL);
 
 /*!
     \brief This function sets options to configure behavior of OCSP
@@ -10154,7 +9932,7 @@ int wolfSSL_CTX_SetCRL_Cb(WOLFSSL_CTX* ctx, CbMissingCRL cb);
 
     \sa wolfSSL_CTX_OCSP_set_override_url
 */
-int wolfSSL_CTX_EnableOCSP(WOLFSSL_CTX* ctx, int options);
+WOLFSSL_API int wolfSSL_CTX_EnableOCSP(WOLFSSL_CTX*, int options);
 
 /*!
     \brief This function disables OCSP certificate revocation checking by
@@ -10180,7 +9958,7 @@ int wolfSSL_CTX_EnableOCSP(WOLFSSL_CTX* ctx, int options);
     \sa wolfSSL_DisableOCSP
     \sa wolfSSL_CertManagerDisableOCSP
 */
-int wolfSSL_CTX_DisableOCSP(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_DisableOCSP(WOLFSSL_CTX*);
 
 /*!
     \brief This function manually sets the URL for OCSP to use. By default,
@@ -10204,7 +9982,7 @@ int wolfSSL_CTX_DisableOCSP(WOLFSSL_CTX*);
 
     \sa wolfSSL_CTX_OCSP_set_options
 */
-int wolfSSL_CTX_SetOCSP_OverrideURL(WOLFSSL_CTX* ctx, const char* url);
+WOLFSSL_API int wolfSSL_CTX_SetOCSP_OverrideURL(WOLFSSL_CTX*, const char*);
 
 /*!
     \brief Sets the callback for the OCSP in the WOLFSSL_CTX structure.
@@ -10241,9 +10019,8 @@ int wolfSSL_CTX_SetOCSP_OverrideURL(WOLFSSL_CTX* ctx, const char* url);
     \sa CbOCSPIO
     \sa CbOCSPRespFree
 */
-int wolfSSL_CTX_SetOCSP_Cb(WOLFSSL_CTX* ctx,
-                           CbOCSPIO ioCb, CbOCSPRespFree respFreeCb,
-                           void* ioCbCtx);
+WOLFSSL_API int wolfSSL_CTX_SetOCSP_Cb(WOLFSSL_CTX*,
+                                               CbOCSPIO, CbOCSPRespFree, void*);
 
 /*!
     \brief This function enables OCSP stapling by calling
@@ -10275,7 +10052,7 @@ int wolfSSL_CTX_SetOCSP_Cb(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CertManagerEnableOCSPStapling
     \sa InitOCSP
 */
-int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX*);
+WOLFSSL_API int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX*);
 
 /*!
     \ingroup CertsKeys
@@ -10301,7 +10078,7 @@ int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX*);
 
     \sa wolfSSL_FreeArrays
 */
-void wolfSSL_KeepArrays(WOLFSSL*);
+WOLFSSL_API void wolfSSL_KeepArrays(WOLFSSL*);
 
 /*!
     \ingroup CertsKeys
@@ -10326,7 +10103,7 @@ void wolfSSL_KeepArrays(WOLFSSL*);
 
     \sa wolfSSL_KeepArrays
 */
-void wolfSSL_FreeArrays(WOLFSSL*);
+WOLFSSL_API void wolfSSL_FreeArrays(WOLFSSL*);
 
 /*!
     \brief This function enables the use of Server Name Indication in the SSL
@@ -10369,7 +10146,7 @@ void wolfSSL_FreeArrays(WOLFSSL*);
     \sa wolfSSL_new
     \sa wolfSSL_CTX_UseSNI
 */
-int wolfSSL_UseSNI(WOLFSSL* ssl, unsigned char type,
+WOLFSSL_API int wolfSSL_UseSNI(WOLFSSL* ssl, unsigned char type,
                                          const void* data, unsigned short size);
 
 /*!
@@ -10408,7 +10185,7 @@ int wolfSSL_UseSNI(WOLFSSL* ssl, unsigned char type,
     \sa wolfSSL_CTX_new
     \sa wolfSSL_UseSNI
 */
-int wolfSSL_CTX_UseSNI(WOLFSSL_CTX* ctx, unsigned char type,
+WOLFSSL_API int wolfSSL_CTX_UseSNI(WOLFSSL_CTX* ctx, unsigned char type,
                                          const void* data, unsigned short size);
 
 /*!
@@ -10457,7 +10234,7 @@ int wolfSSL_CTX_UseSNI(WOLFSSL_CTX* ctx, unsigned char type,
     \sa wolfSSL_UseSNI
     \sa wolfSSL_CTX_SNI_SetOptions
 */
-void wolfSSL_SNI_SetOptions(WOLFSSL* ssl, unsigned char type,
+WOLFSSL_API void wolfSSL_SNI_SetOptions(WOLFSSL* ssl, unsigned char type,
                                                          unsigned char options);
 
 /*!
@@ -10502,7 +10279,7 @@ void wolfSSL_SNI_SetOptions(WOLFSSL* ssl, unsigned char type,
     \sa wolfSSL_CTX_UseSNI
     \sa wolfSSL_SNI_SetOptions
 */
-void wolfSSL_CTX_SNI_SetOptions(WOLFSSL_CTX* ctx,
+WOLFSSL_API void wolfSSL_CTX_SNI_SetOptions(WOLFSSL_CTX* ctx,
                                      unsigned char type, unsigned char options);
 
 /*!
@@ -10543,7 +10320,7 @@ void wolfSSL_CTX_SNI_SetOptions(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_UseSNI
     \sa wolfSSL_SNI_GetRequest
 */
-int wolfSSL_SNI_GetFromBuffer(
+WOLFSSL_API int wolfSSL_SNI_GetFromBuffer(
                  const unsigned char* clientHello, unsigned int helloSz,
                  unsigned char type, unsigned char* sni, unsigned int* inOutSz);
 
@@ -10576,7 +10353,7 @@ int wolfSSL_SNI_GetFromBuffer(
     \sa TLSX_SNI_find
     \sa TLSX_Find
 */
-unsigned char wolfSSL_SNI_Status(WOLFSSL* ssl, unsigned char type);
+WOLFSSL_API unsigned char wolfSSL_SNI_Status(WOLFSSL* ssl, unsigned char type);
 
 /*!
     \brief This function is called on the server side to retrieve the
@@ -10615,7 +10392,7 @@ unsigned char wolfSSL_SNI_Status(WOLFSSL* ssl, unsigned char type);
     \sa wolfSSL_UseSNI
     \sa wolfSSL_CTX_UseSNI
 */
-unsigned short wolfSSL_SNI_GetRequest(WOLFSSL *ssl,
+WOLFSSL_API unsigned short wolfSSL_SNI_GetRequest(WOLFSSL *ssl,
                                                unsigned char type, void** data);
 
 /*!
@@ -10657,7 +10434,7 @@ unsigned short wolfSSL_SNI_GetRequest(WOLFSSL *ssl,
 
     \sa TLSX_UseALPN
 */
-int wolfSSL_UseALPN(WOLFSSL* ssl, char *protocol_name_list,
+WOLFSSL_API int wolfSSL_UseALPN(WOLFSSL* ssl, char *protocol_name_list,
                                 unsigned int protocol_name_listSz,
                                 unsigned char options);
 
@@ -10699,7 +10476,7 @@ int wolfSSL_UseALPN(WOLFSSL* ssl, char *protocol_name_list,
     \sa TLSX_ALPN_GetRequest
     \sa TLSX_Find
 */
-int wolfSSL_ALPN_GetProtocol(WOLFSSL* ssl, char **protocol_name,
+WOLFSSL_API int wolfSSL_ALPN_GetProtocol(WOLFSSL* ssl, char **protocol_name,
                                          unsigned short *size);
 
 /*!
@@ -10742,7 +10519,7 @@ int wolfSSL_ALPN_GetProtocol(WOLFSSL* ssl, char **protocol_name,
 
     \sa wolfSSL_UseALPN
 */
-int wolfSSL_ALPN_GetPeerProtocol(WOLFSSL* ssl, char **list,
+WOLFSSL_API int wolfSSL_ALPN_GetPeerProtocol(WOLFSSL* ssl, char **list,
                                              unsigned short *listSz);
 
 /*!
@@ -10785,7 +10562,7 @@ int wolfSSL_ALPN_GetPeerProtocol(WOLFSSL* ssl, char **list,
     \sa wolfSSL_new
     \sa wolfSSL_CTX_UseMaxFragment
 */
-int wolfSSL_UseMaxFragment(WOLFSSL* ssl, unsigned char mfl);
+WOLFSSL_API int wolfSSL_UseMaxFragment(WOLFSSL* ssl, unsigned char mfl);
 
 /*!
     \brief This function is called on the client side to enable the use
@@ -10824,7 +10601,7 @@ int wolfSSL_UseMaxFragment(WOLFSSL* ssl, unsigned char mfl);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_UseMaxFragment
 */
-int wolfSSL_CTX_UseMaxFragment(WOLFSSL_CTX* ctx, unsigned char mfl);
+WOLFSSL_API int wolfSSL_CTX_UseMaxFragment(WOLFSSL_CTX* ctx, unsigned char mfl);
 
 /*!
     \brief This function is called on the client side to enable the use of
@@ -10861,7 +10638,7 @@ int wolfSSL_CTX_UseMaxFragment(WOLFSSL_CTX* ctx, unsigned char mfl);
     \sa wolfSSL_new
     \sa wolfSSL_CTX_UseMaxFragment
 */
-int wolfSSL_UseTruncatedHMAC(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_UseTruncatedHMAC(WOLFSSL* ssl);
 
 /*!
     \brief This function is called on the client side to enable the use of
@@ -10893,7 +10670,7 @@ int wolfSSL_UseTruncatedHMAC(WOLFSSL* ssl);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_UseMaxFragment
 */
-int wolfSSL_CTX_UseTruncatedHMAC(WOLFSSL_CTX* ctx);
+WOLFSSL_API int wolfSSL_CTX_UseTruncatedHMAC(WOLFSSL_CTX* ctx);
 
 /*!
     \brief Stapling eliminates the need to contact the CA. Stapling
@@ -10927,7 +10704,7 @@ int wolfSSL_CTX_UseTruncatedHMAC(WOLFSSL_CTX* ctx);
     \sa TLSX_UseCertificateStatusRequest
     \sa wolfSSL_CTX_UseOCSPStapling
 */
-int wolfSSL_UseOCSPStapling(WOLFSSL* ssl,
+WOLFSSL_API int wolfSSL_UseOCSPStapling(WOLFSSL* ssl,
                               unsigned char status_type, unsigned char options);
 
 /*!
@@ -10968,7 +10745,7 @@ int wolfSSL_UseOCSPStapling(WOLFSSL* ssl,
     \sa wolfSSL_UseOCSPStapling
     \sa TLSX_UseCertificateStatusRequest
 */
-int wolfSSL_CTX_UseOCSPStapling(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_UseOCSPStapling(WOLFSSL_CTX* ctx,
                               unsigned char status_type, unsigned char options);
 
 /*!
@@ -10998,7 +10775,7 @@ int wolfSSL_CTX_UseOCSPStapling(WOLFSSL_CTX* ctx,
     \sa wolfSSL_SNI_SetOptions
     \sa wolfSSL_CTX_SNI_SetOptions
 */
-int wolfSSL_UseOCSPStaplingV2(WOLFSSL* ssl,
+WOLFSSL_API int wolfSSL_UseOCSPStaplingV2(WOLFSSL* ssl,
                               unsigned char status_type, unsigned char options);
 
 /*!
@@ -11033,7 +10810,7 @@ int wolfSSL_UseOCSPStaplingV2(WOLFSSL* ssl,
     \sa wc_RNG_GenerateBlock
     \sa TLSX_Push
 */
-int wolfSSL_CTX_UseOCSPStaplingV2(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_UseOCSPStaplingV2(WOLFSSL_CTX* ctx,
                               unsigned char status_type, unsigned char options);
 
 /*!
@@ -11077,7 +10854,7 @@ int wolfSSL_CTX_UseOCSPStaplingV2(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_UseSupportedCurve
 */
-int wolfSSL_UseSupportedCurve(WOLFSSL* ssl, word16 name);
+WOLFSSL_API int wolfSSL_UseSupportedCurve(WOLFSSL* ssl, word16 name);
 
 /*!
     \brief This function is called on the client side to enable the use of
@@ -11115,7 +10892,7 @@ int wolfSSL_UseSupportedCurve(WOLFSSL* ssl, word16 name);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_UseSupportedCurve
 */
-int wolfSSL_CTX_UseSupportedCurve(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_UseSupportedCurve(WOLFSSL_CTX* ctx,
                                                            word16 name);
 
 /*!
@@ -11149,7 +10926,7 @@ int wolfSSL_CTX_UseSupportedCurve(WOLFSSL_CTX* ctx,
     \sa TLSX_Find
     \sa TLSX_UseSecureRenegotiation
 */
-int wolfSSL_UseSecureRenegotiation(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_UseSecureRenegotiation(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -11184,7 +10961,7 @@ int wolfSSL_UseSecureRenegotiation(WOLFSSL* ssl);
     \sa wc_InitSha
     \sa wc_InitMd5
 */
-int wolfSSL_Rehandshake(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_Rehandshake(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -11216,7 +10993,7 @@ int wolfSSL_Rehandshake(WOLFSSL* ssl);
 
     \sa TLSX_UseSessionTicket
 */
-int wolfSSL_UseSessionTicket(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_UseSessionTicket(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -11244,7 +11021,7 @@ int wolfSSL_UseSessionTicket(WOLFSSL* ssl);
 
     \sa TLSX_UseSessionTicket
 */
-int wolfSSL_CTX_UseSessionTicket(WOLFSSL_CTX* ctx);
+WOLFSSL_API int wolfSSL_CTX_UseSessionTicket(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup IO
@@ -11270,14 +11047,14 @@ int wolfSSL_CTX_UseSessionTicket(WOLFSSL_CTX* ctx);
     if(wolfSSL_get_SessionTicket(ssl, buf, bufSz) <= 0){
 	    // Nothing was written to the buffer
     } else {
-	    // the buffer holds the content from ssl->session->ticket
+	    // the buffer holds the content from ssl->session.ticket
     }
     \endcode
 
     \sa wolfSSL_UseSessionTicket
     \sa wolfSSL_set_SessionTicket
 */
-int wolfSSL_get_SessionTicket(WOLFSSL* ssl, unsigned char* buf, word32* bufSz);
+WOLFSSL_API int wolfSSL_get_SessionTicket(WOLFSSL*, unsigned char*, word32*);
 
 /*!
     \ingroup IO
@@ -11311,8 +11088,7 @@ int wolfSSL_get_SessionTicket(WOLFSSL* ssl, unsigned char* buf, word32* bufSz);
 
     \sa wolfSSL_set_SessionTicket_cb
 */
-int wolfSSL_set_SessionTicket(WOLFSSL* ssl, const unsigned char* buf,
-                              word32 bufSz);
+WOLFSSL_API int wolfSSL_set_SessionTicket(WOLFSSL*, const unsigned char*, word32);
 
 /*!
     \brief This function sets the session ticket callback. The type
@@ -11341,8 +11117,8 @@ int wolfSSL_set_SessionTicket(WOLFSSL* ssl, const unsigned char* buf,
     \sa CallbackSessionTicket
     \sa sessionTicketCB
 */
-int wolfSSL_set_SessionTicket_cb(WOLFSSL* ssl,
-                                 CallbackSessionTicket cb, void* ctx);
+WOLFSSL_API int wolfSSL_set_SessionTicket_cb(WOLFSSL*,
+                                                  CallbackSessionTicket, void*);
 
 /*!
     \brief This function sets the session ticket key encrypt callback function
@@ -11394,7 +11170,7 @@ int wolfSSL_set_SessionTicket_cb(WOLFSSL* ssl,
     \sa wolfSSL_CTX_set_TicketHint
     \sa wolfSSL_CTX_set_TicketEncCtx
 */
-int wolfSSL_CTX_set_TicketEncCb(WOLFSSL_CTX* ctx,
+WOLFSSL_API int wolfSSL_CTX_set_TicketEncCb(WOLFSSL_CTX* ctx,
                                             SessionTicketEncCb);
 
 /*!
@@ -11415,7 +11191,7 @@ int wolfSSL_CTX_set_TicketEncCb(WOLFSSL_CTX* ctx,
 
     \sa wolfSSL_CTX_set_TicketEncCb
 */
-int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int);
+WOLFSSL_API int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int);
 
 /*!
     \brief This function sets the session ticket encrypt user context for the
@@ -11436,28 +11212,100 @@ int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int);
 
     \sa wolfSSL_CTX_set_TicketEncCb
 */
-int wolfSSL_CTX_set_TicketEncCtx(WOLFSSL_CTX* ctx, void*);
+WOLFSSL_API int wolfSSL_CTX_set_TicketEncCtx(WOLFSSL_CTX* ctx, void*);
 
 /*!
-    \brief This function gets the session ticket encrypt user context for the
-    callback.  For server side use.
+    \ingroup IO
 
-    \return userCtx will be returned upon successfully getting the session.
-    \return NULL will be returned on failure.  This is caused by
-    passing invalid arguments to the function, or when the user context has
-    not been set.
+    \brief Checks if QSH is used in the supplied SSL session.
 
-    \param ctx pointer to the WOLFSSL_CTX object, created
-    with wolfSSL_CTX_new().
+    \return 0 Not used
+    \return 1 Is used
+
+    \param ssl Pointer to the SSL session to check.
 
     _Example_
     \code
-    none
+    wolfSSL_Init();
+    WOLFSSL_CTX* ctx;
+    WOLFSSL* ssl;
+    WOLFSSL_METHOD method = // Some wolfSSL method
+    ctx = wolfSSL_CTX_new(method);
+    ssl = wolfSSL_new(ctx);
+
+    if(wolfSSL_isQSH(ssl) == 1)
+    {
+        // SSL is using QSH.
+    }
     \endcode
 
-    \sa wolfSSL_CTX_set_TicketEncCtx
+    \sa wolfSSL_UseSupportedQSH
 */
-void* wolfSSL_CTX_get_TicketEncCtx(WOLFSSL_CTX* ctx);
+WOLFSSL_API int wolfSSL_isQSH(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the ssl session to use supported QSH provided by
+    name.
+
+    \return SSL_SUCCESS Successfully set supported QSH.
+    \return BAD_FUNC_ARG ssl is null or name is invalid.
+    \return MEMORY_E Error allocating memory for operation.
+
+    \param ssl Pointer to ssl session to use.
+    \param name Name of a supported QSH.  Valid names are WOLFSSL_NTRU_EESS439,
+    WOLFSSL_NTRU_EESS593, or WOLFSSL_NTRU_EESS743.
+
+    _Example_
+    \code
+    wolfSSL_Init();
+    WOLFSSL_CTX* ctx;
+    WOLFSSL* ssl;
+    WOLFSSL_METHOD method = // Some wolfSSL method ;
+    ctx = wolfSSL_CTX_new(method);
+    ssl = wolfSSL_new(ctx);
+
+    word16 qsh_name = WOLFSSL_NTRU_EESS439;
+
+    if(wolfSSL_UseSupportedQSH(ssl,qsh_name) != SSL_SUCCESS)
+    {
+        // Error setting QSH
+    }
+    \endcode
+
+    \sa TLSX_UseQSHScheme
+*/
+WOLFSSL_API int wolfSSL_UseSupportedQSH(WOLFSSL* ssl, unsigned short name);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief If the flag is 1 keys will be sent in hello. If flag is 0 then the
+    keys will not be sent during hello.
+
+    \return 0 on success.
+    \return BAD_FUNC_ARG if the WOLFSSL structure is NULL.
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param flag an unsigned char input to determine if the keys will be sent
+    during hello.
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    unsigned char flag = 1; // send keys
+    ...
+    if(!wolfSSL_UseClientQSHKeys(ssl, flag)){
+    	// The keys will be sent during hello.
+    }
+    \endcode
+
+    \sa wolfSSL_UseALPN
+    \sa wolfSSL_UseSupportedQSH
+    \sa wolfSSL_isQSH
+*/
+WOLFSSL_API int wolfSSL_UseClientQSHKeys(WOLFSSL* ssl, unsigned char flag);
 
 /*!
     \brief This function sets the handshake done callback. The hsDoneCb and
@@ -11486,7 +11334,7 @@ void* wolfSSL_CTX_get_TicketEncCtx(WOLFSSL_CTX* ctx);
 
     \sa HandShakeDoneCb
 */
-int wolfSSL_SetHsDoneCb(WOLFSSL* ssl, HandShakeDoneCb cb, void* user_ctx);
+WOLFSSL_API int wolfSSL_SetHsDoneCb(WOLFSSL*, HandShakeDoneCb, void*);
 
 /*!
     \ingroup IO
@@ -11512,7 +11360,7 @@ int wolfSSL_SetHsDoneCb(WOLFSSL* ssl, HandShakeDoneCb cb, void* user_ctx);
 
     \sa wolfSSL_get_session_stats
 */
-int wolfSSL_PrintSessionStats(void);
+WOLFSSL_API int wolfSSL_PrintSessionStats(void);
 
 /*!
     \ingroup IO
@@ -11540,9 +11388,10 @@ int wolfSSL_PrintSessionStats(void);
     return ret;
     \endcode
 
+    \sa get_locked_session_stats
     \sa wolfSSL_PrintSessionStats
 */
-int wolfSSL_get_session_stats(unsigned int* active,
+WOLFSSL_API int wolfSSL_get_session_stats(unsigned int* active,
                                           unsigned int* total,
                                           unsigned int* peak,
                                           unsigned int* maxSessions);
@@ -11590,7 +11439,7 @@ int wolfSSL_get_session_stats(unsigned int* active,
     \sa wc_PRF
     \sa MakeTlsMasterSecret
 */
-
+WOLFSSL_API
 int wolfSSL_MakeTlsMasterSecret(unsigned char* ms, word32 msLen,
                                const unsigned char* pms, word32 pmsLen,
                                const unsigned char* cr, const unsigned char* sr,
@@ -11637,7 +11486,7 @@ int wolfSSL_MakeTlsMasterSecret(unsigned char* ms, word32 msLen,
     \sa DeriveTlsKeys
     \sa IsAtLeastTLSv1_2
 */
-
+WOLFSSL_API
 int wolfSSL_DeriveTlsKeys(unsigned char* key_data, word32 keyLen,
                                const unsigned char* ms, word32 msLen,
                                const unsigned char* sr, const unsigned char* cr,
@@ -11674,8 +11523,8 @@ int wolfSSL_DeriveTlsKeys(unsigned char* key_data, word32 keyLen,
 
     \sa wolfSSL_accept_ex
 */
-int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
-                       TimeoutCallBack toCb, WOLFSSL_TIMEVAL timeout);
+WOLFSSL_API int wolfSSL_connect_ex(WOLFSSL*, HandShakeCallBack, TimeoutCallBack,
+                                 WOLFSSL_TIMEVAL);
 
 /*!
     \brief wolfSSL_accept_ex() is an extension that allows a HandShake Callback
@@ -11706,8 +11555,8 @@ int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
 
     \sa wolfSSL_connect_ex
 */
-int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBacki hsCb,
-                      TimeoutCallBack toCb, WOLFSSL_TIMEVAL timeout);
+WOLFSSL_API int wolfSSL_accept_ex(WOLFSSL*, HandShakeCallBack, TimeoutCallBack,
+                                WOLFSSL_TIMEVAL);
 
 /*!
     \ingroup IO
@@ -11736,7 +11585,7 @@ int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBacki hsCb,
     \sa wolfSSL_BIO_get_fp
     \sa wolfSSL_BIO_free
 */
-long wolfSSL_BIO_set_fp(WOLFSSL_BIO *bio, XFILE fp, int c);
+WOLFSSL_API long wolfSSL_BIO_set_fp(WOLFSSL_BIO *bio, XFILE fp, int c);
 
 /*!
     \ingroup IO
@@ -11764,7 +11613,7 @@ long wolfSSL_BIO_set_fp(WOLFSSL_BIO *bio, XFILE fp, int c);
     \sa wolfSSL_BIO_set_fp
     \sa wolfSSL_BIO_free
 */
-long wolfSSL_BIO_get_fp(WOLFSSL_BIO *bio, XFILE* fp);
+WOLFSSL_API long wolfSSL_BIO_get_fp(WOLFSSL_BIO *bio, XFILE* fp);
 
 /*!
     \ingroup Setup
@@ -11790,7 +11639,7 @@ long wolfSSL_BIO_get_fp(WOLFSSL_BIO *bio, XFILE* fp);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_check_private_key(const WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_check_private_key(const WOLFSSL* ssl);
 
 /*!
     \ingroup CertsKeys
@@ -11816,7 +11665,7 @@ int wolfSSL_check_private_key(const WOLFSSL* ssl);
     \endcode
 
 */
-int wolfSSL_X509_get_ext_by_NID(const WOLFSSL_X509* x509,
+WOLFSSL_API int wolfSSL_X509_get_ext_by_NID(const WOLFSSL_X509* x509,
                                              int nid, int lastPos);
 
 /*!
@@ -11849,7 +11698,7 @@ int wolfSSL_X509_get_ext_by_NID(const WOLFSSL_X509* x509,
 
     \sa wolfSSL_sk_ASN1_OBJECT_free
 */
-void* wolfSSL_X509_get_ext_d2i(const WOLFSSL_X509* x509,
+WOLFSSL_API void* wolfSSL_X509_get_ext_d2i(const WOLFSSL_X509* x509,
                                                      int nid, int* c, int* idx);
 
 /*!
@@ -11878,7 +11727,7 @@ void* wolfSSL_X509_get_ext_d2i(const WOLFSSL_X509* x509,
 
     \sa none
 */
-int wolfSSL_X509_digest(const WOLFSSL_X509* x509,
+WOLFSSL_API int wolfSSL_X509_digest(const WOLFSSL_X509* x509,
         const WOLFSSL_EVP_MD* digest, unsigned char* buf, unsigned int* len);
 
 /*!
@@ -11905,7 +11754,7 @@ int wolfSSL_X509_digest(const WOLFSSL_X509* x509,
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_use_certificate(WOLFSSL* ssl, WOLFSSL_X509* x509);
+WOLFSSL_API int wolfSSL_use_certificate(WOLFSSL* ssl, WOLFSSL_X509* x509);
 
 /*!
     \ingroup Setup
@@ -11934,7 +11783,7 @@ int wolfSSL_use_certificate(WOLFSSL* ssl, WOLFSSL_X509* x509);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_use_certificate_ASN1(WOLFSSL* ssl, unsigned char* der,
+WOLFSSL_API int wolfSSL_use_certificate_ASN1(WOLFSSL* ssl, unsigned char* der,
                                                                      int derSz);
 
 /*!
@@ -11962,7 +11811,7 @@ int wolfSSL_use_certificate_ASN1(WOLFSSL* ssl, unsigned char* der,
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_use_PrivateKey(WOLFSSL* ssl, WOLFSSL_EVP_PKEY* pkey);
+WOLFSSL_API int wolfSSL_use_PrivateKey(WOLFSSL* ssl, WOLFSSL_EVP_PKEY* pkey);
 
 /*!
     \ingroup CertsKeys
@@ -11995,7 +11844,7 @@ int wolfSSL_use_PrivateKey(WOLFSSL* ssl, WOLFSSL_EVP_PKEY* pkey);
     \sa wolfSSL_free
     \sa wolfSSL_use_PrivateKey
 */
-int wolfSSL_use_PrivateKey_ASN1(int pri, WOLFSSL* ssl,
+WOLFSSL_API int wolfSSL_use_PrivateKey_ASN1(int pri, WOLFSSL* ssl,
                                             unsigned char* der, long derSz);
 
 /*!
@@ -12028,7 +11877,7 @@ int wolfSSL_use_PrivateKey_ASN1(int pri, WOLFSSL* ssl,
     \sa wolfSSL_free
     \sa wolfSSL_use_PrivateKey
 */
-int wolfSSL_use_RSAPrivateKey_ASN1(WOLFSSL* ssl, unsigned char* der,
+WOLFSSL_API int wolfSSL_use_RSAPrivateKey_ASN1(WOLFSSL* ssl, unsigned char* der,
                                                                 long derSz);
 
 /*!
@@ -12054,7 +11903,7 @@ int wolfSSL_use_RSAPrivateKey_ASN1(WOLFSSL* ssl, unsigned char* der,
 
     \sa none
 */
-WOLFSSL_DH *wolfSSL_DSA_dup_DH(const WOLFSSL_DSA *r);
+WOLFSSL_API WOLFSSL_DH *wolfSSL_DSA_dup_DH(const WOLFSSL_DSA *r);
 
 /*!
     \ingroup Setup
@@ -12087,7 +11936,7 @@ WOLFSSL_DH *wolfSSL_DSA_dup_DH(const WOLFSSL_DSA *r);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_SESSION_get_master_key(const WOLFSSL_SESSION* ses,
+WOLFSSL_API int wolfSSL_SESSION_get_master_key(const WOLFSSL_SESSION* ses,
         unsigned char* out, int outSz);
 
 /*!
@@ -12114,7 +11963,7 @@ int wolfSSL_SESSION_get_master_key(const WOLFSSL_SESSION* ses,
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_SESSION_get_master_key_length(const WOLFSSL_SESSION* ses);
+WOLFSSL_API int wolfSSL_SESSION_get_master_key_length(const WOLFSSL_SESSION* ses);
 
 /*!
     \ingroup Setup
@@ -12140,7 +11989,7 @@ int wolfSSL_SESSION_get_master_key_length(const WOLFSSL_SESSION* ses);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-void wolfSSL_CTX_set_cert_store(WOLFSSL_CTX* ctx,
+WOLFSSL_API void wolfSSL_CTX_set_cert_store(WOLFSSL_CTX* ctx,
                                                        WOLFSSL_X509_STORE* str);
 
 /*!
@@ -12196,7 +12045,7 @@ WOLFSSL_X509* wolfSSL_d2i_X509_bio(WOLFSSL_BIO* bio, WOLFSSL_X509** x509);
     \sa wolfSSL_CTX_free
     \sa wolfSSL_CTX_set_cert_store
 */
-WOLFSSL_X509_STORE* wolfSSL_CTX_get_cert_store(WOLFSSL_CTX* ctx);
+WOLFSSL_API WOLFSSL_X509_STORE* wolfSSL_CTX_get_cert_store(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup IO
@@ -12223,7 +12072,7 @@ WOLFSSL_X509_STORE* wolfSSL_CTX_get_cert_store(WOLFSSL_CTX* ctx);
     \sa wolfSSL_BIO_make_bio_pair
     \sa wolfSSL_BIO_new
 */
-size_t wolfSSL_BIO_ctrl_pending(WOLFSSL_BIO *b);
+WOLFSSL_API size_t wolfSSL_BIO_ctrl_pending(WOLFSSL_BIO *b);
 
 /*!
     \ingroup Setup
@@ -12256,7 +12105,7 @@ size_t wolfSSL_BIO_ctrl_pending(WOLFSSL_BIO *b);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-size_t wolfSSL_get_server_random(const WOLFSSL *ssl,
+WOLFSSL_API size_t wolfSSL_get_server_random(const WOLFSSL *ssl,
                                              unsigned char *out, size_t outlen);
 
 /*!
@@ -12290,7 +12139,7 @@ size_t wolfSSL_get_server_random(const WOLFSSL *ssl,
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-size_t wolfSSL_get_client_random(const WOLFSSL* ssl,
+WOLFSSL_API size_t wolfSSL_get_client_random(const WOLFSSL* ssl,
                                               unsigned char* out, size_t outSz);
 
 /*!
@@ -12306,7 +12155,7 @@ size_t wolfSSL_get_client_random(const WOLFSSL* ssl,
     _Example_
     \code
     WOLFSSL_CTX* ctx;
-    wc_pem_password_cb cb;
+    pem_password_cb cb;
     // setup ctx
     cb = wolfSSL_CTX_get_default_passwd_cb(ctx);
     //use cb
@@ -12315,8 +12164,7 @@ size_t wolfSSL_get_client_random(const WOLFSSL* ssl,
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-wc_pem_password_cb* wolfSSL_CTX_get_default_passwd_cb(WOLFSSL_CTX*
-                                                                  ctx);
+WOLFSSL_API pem_password_cb* wolfSSL_CTX_get_default_passwd_cb(WOLFSSL_CTX *ctx);
 
 /*!
     \ingroup Setup
@@ -12341,7 +12189,7 @@ wc_pem_password_cb* wolfSSL_CTX_get_default_passwd_cb(WOLFSSL_CTX*
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_free
 */
-void *wolfSSL_CTX_get_default_passwd_cb_userdata(WOLFSSL_CTX *ctx);
+WOLFSSL_API void *wolfSSL_CTX_get_default_passwd_cb_userdata(WOLFSSL_CTX *ctx);
 
 /*!
     \ingroup CertsKeys
@@ -12370,8 +12218,8 @@ void *wolfSSL_CTX_get_default_passwd_cb_userdata(WOLFSSL_CTX *ctx);
 
     \sa wolfSSL_PEM_read_bio_X509
 */
-WOLFSSL_X509 *wolfSSL_PEM_read_bio_X509_AUX
-        (WOLFSSL_BIO *bp, WOLFSSL_X509 **x, wc_pem_password_cb *cb, void *u);
+WOLFSSL_API WOLFSSL_X509 *wolfSSL_PEM_read_bio_X509_AUX
+        (WOLFSSL_BIO *bp, WOLFSSL_X509 **x, pem_password_cb *cb, void *u);
 
 /*!
     \ingroup CertsKeys
@@ -12399,7 +12247,7 @@ WOLFSSL_X509 *wolfSSL_PEM_read_bio_X509_AUX
 
     \sa wolfSSL_BN_bn2bin
 */
-long wolfSSL_CTX_set_tmp_dh(WOLFSSL_CTX* ctx, WOLFSSL_DH* dh);
+WOLFSSL_API long wolfSSL_CTX_set_tmp_dh(WOLFSSL_CTX*, WOLFSSL_DH*);
 
 /*!
     \ingroup CertsKeys
@@ -12428,8 +12276,8 @@ long wolfSSL_CTX_set_tmp_dh(WOLFSSL_CTX* ctx, WOLFSSL_DH* dh);
 
     \sa none
 */
-WOLFSSL_DSA *wolfSSL_PEM_read_bio_DSAparams(WOLFSSL_BIO *bp,
-    WOLFSSL_DSA **x, wc_pem_password_cb *cb, void *u);
+WOLFSSL_API WOLFSSL_DSA *wolfSSL_PEM_read_bio_DSAparams(WOLFSSL_BIO *bp,
+    WOLFSSL_DSA **x, pem_password_cb *cb, void *u);
 
 /*!
     \ingroup Debug
@@ -12451,7 +12299,7 @@ WOLFSSL_DSA *wolfSSL_PEM_read_bio_DSAparams(WOLFSSL_BIO *bp,
 
     \sa wolfSSL_ERR_print_errors_fp
 */
-unsigned long wolfSSL_ERR_peek_last_error(void);
+WOLFSSL_API unsigned long wolfSSL_ERR_peek_last_error(void);
 
 /*!
     \ingroup CertsKeys
@@ -12479,7 +12327,7 @@ unsigned long wolfSSL_ERR_peek_last_error(void);
     \sa wolfSSL_X509_get_subject_name
     \sa wolfSSL_X509_get_isCA
 */
-WOLF_STACK_OF(WOLFSSL_X509)* wolfSSL_get_peer_cert_chain(const WOLFSSL*);
+WOLFSSL_API WOLF_STACK_OF(WOLFSSL_X509)* wolfSSL_get_peer_cert_chain(const WOLFSSL*);
 
 /*!
     \ingroup Setup
@@ -12501,7 +12349,7 @@ WOLF_STACK_OF(WOLFSSL_X509)* wolfSSL_get_peer_cert_chain(const WOLFSSL*);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-long wolfSSL_CTX_clear_options(WOLFSSL_CTX* ctx, long opt);
+WOLFSSL_API long wolfSSL_CTX_clear_options(WOLFSSL_CTX*, long);
 
 /*!
     \ingroup IO
@@ -12528,7 +12376,7 @@ long wolfSSL_CTX_clear_options(WOLFSSL_CTX* ctx, long opt);
 
     \sa wolfSSL_get_jobject
 */
-int wolfSSL_set_jobject(WOLFSSL* ssl, void* objPtr);
+WOLFSSL_API int wolfSSL_set_jobject(WOLFSSL* ssl, void* objPtr);
 
 /*!
     \ingroup IO
@@ -12555,7 +12403,7 @@ int wolfSSL_set_jobject(WOLFSSL* ssl, void* objPtr);
 
     \sa wolfSSL_set_jobject
 */
-void* wolfSSL_get_jobject(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_get_jobject(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -12580,7 +12428,7 @@ void* wolfSSL_get_jobject(WOLFSSL* ssl);
 
     \sa wolfSSL_set_msg_callback_arg
 */
-int wolfSSL_set_msg_callback(WOLFSSL *ssl, SSL_Msg_Cb cb);
+WOLFSSL_API int wolfSSL_set_msg_callback(WOLFSSL *ssl, SSL_Msg_Cb cb);
 
 /*!
     \ingroup Setup
@@ -12605,7 +12453,7 @@ int wolfSSL_set_msg_callback(WOLFSSL *ssl, SSL_Msg_Cb cb);
 
     \sa wolfSSL_set_msg_callback
 */
-int wolfSSL_set_msg_callback_arg(WOLFSSL *ssl, void* arg);
+WOLFSSL_API int wolfSSL_set_msg_callback_arg(WOLFSSL *ssl, void* arg);
 
 /*!
     \ingroup CertsKeys
@@ -12632,7 +12480,7 @@ int wolfSSL_set_msg_callback_arg(WOLFSSL *ssl, void* arg);
     \sa wolfSSL_X509_get_issuer_name
     \sa wolfSSL_X509_get_subject_name
 */
-char* wolfSSL_X509_get_next_altname(WOLFSSL_X509*);
+WOLFSSL_API char* wolfSSL_X509_get_next_altname(WOLFSSL_X509*);
 
 /*!
     \ingroup CertsKeys
@@ -12659,37 +12507,18 @@ char* wolfSSL_X509_get_next_altname(WOLFSSL_X509*);
 
     \sa wolfSSL_X509_get_notAfter
 */
-WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notBefore(WOLFSSL_X509*);
+WOLFSSL_API WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notBefore(WOLFSSL_X509*);
 
 /*!
     \ingroup IO
 
-    \brief This function is called on the client side and initiates an SSL/TLS
-    handshake with a server.  When this function is called, the underlying
-    communication channel has already been set up.
-    wolfSSL_connect() works with both blocking and non-blocking I/O.  When the
-    underlying I/O is non-blocking, wolfSSL_connect() will return when the
-    underlying I/O could not satisfy the needs of wolfSSL_connect to continue
-    the handshake.  In this case, a call to wolfSSL_get_error() will yield
-    either SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.  The calling process
-    must then repeat the call to wolfSSL_connect() when the underlying I/O is
-    ready and wolfSSL will pick up where it left off. When using a non-blocking
-    socket, nothing needs to be done, but select() can be used to check for the
-    required condition.
-    If the underlying I/O is blocking, wolfSSL_connect() will only return once
-    the handshake has been finished or an error occurred.
-    wolfSSL takes a different approach to certificate verification than OpenSSL
-    does.  The default policy for the client is to verify the server, this
-    means that if you don't load CAs to verify the server you'll get a connect
-    error, unable to verify (-155).  It you want to mimic OpenSSL behavior of
-    having SSL_connect succeed even if verifying the server fails and reducing
-    security you can do this by calling:
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0); before calling SSL_new();
-    Though it's not recommended.
+    \brief This function is called on the client side and initiates an SSL/TLS handshake with a server.  When this function is called, the underlying communication channel has already been set up.
+wolfSSL_connect() works with both blocking and non-blocking I/O.  When the underlying I/O is non-blocking, wolfSSL_connect() will return when the underlying I/O could not satisfy the needs of wolfSSL_connect to continue the handshake.  In this case, a call to wolfSSL_get_error() will yield either SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.  The calling process must then repeat the call to wolfSSL_connect() when the underlying I/O is ready and wolfSSL will pick up where it left off. When using a non-blocking socket, nothing needs to be done, but select() can be used to check for the required condition.
+If the underlying I/O is blocking, wolfSSL_connect() will only return once the handshake has been finished or an error occurred.
+wolfSSL takes a different approach to certificate verification than OpenSSL does.  The default policy for the client is to verify the server, this means that if you don't load CAs to verify the server you'll get a connect error, unable to verify (-155).  It you want to mimic OpenSSL behavior of having SSL_connect succeed even if verifying the server fails and reducing security you can do this by calling: SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0); before calling SSL_new();  Though it's not recommended.
 
     \return SSL_SUCCESS If successful.
-    \return SSL_FATAL_ERROR will be returned if an error occurred.  To get a
-    more detailed error code, call wolfSSL_get_error().
+    \return SSL_FATAL_ERROR will be returned if an error occurred.  To get a more detailed error code, call wolfSSL_get_error().
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
 
@@ -12747,7 +12576,7 @@ int  wolfSSL_connect(WOLFSSL* ssl);
 
     \sa wolfSSL_new
 */
-int  wolfSSL_send_hrr_cookie(WOLFSSL* ssl,
+WOLFSSL_API int  wolfSSL_send_hrr_cookie(WOLFSSL* ssl,
     const unsigned char* secret, unsigned int secretSz);
 
 /*!
@@ -12776,7 +12605,7 @@ int  wolfSSL_send_hrr_cookie(WOLFSSL* ssl,
 
     \sa wolfSSL_no_ticket_TLSv13
 */
-int  wolfSSL_CTX_no_ticket_TLSv13(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_CTX_no_ticket_TLSv13(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -12803,7 +12632,7 @@ int  wolfSSL_CTX_no_ticket_TLSv13(WOLFSSL_CTX* ctx);
 
     \sa wolfSSL_CTX_no_ticket_TLSv13
 */
-int  wolfSSL_no_ticket_TLSv13(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_no_ticket_TLSv13(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -12831,7 +12660,7 @@ int  wolfSSL_no_ticket_TLSv13(WOLFSSL* ssl);
 
     \sa wolfSSL_no_dhe_psk
 */
-int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -12858,7 +12687,7 @@ int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);
 
     \sa wolfSSL_CTX_no_dhe_psk
 */
-int  wolfSSL_no_dhe_psk(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_no_dhe_psk(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -12891,41 +12720,7 @@ int  wolfSSL_no_dhe_psk(WOLFSSL* ssl);
 
     \sa wolfSSL_write
 */
-int  wolfSSL_update_keys(WOLFSSL* ssl);
-
-/*!
-    \ingroup IO
-
-    \brief This function is called on a TLS v1.3 client or server wolfSSL to
-    determine whether a rollover of keys is in progress. When
-    wolfSSL_update_keys() is called, a KeyUpdate message is sent and the
-    encryption key is updated. The decryption key is updated when the response
-    is received.
-
-    \param [in] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param [out] required   0 when no key update response required. 1 when no key update response required.
-
-    \return 0 on successful.
-    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
-
-    _Example_
-    \code
-    int ret;
-    WOLFSSL* ssl;
-    int required;
-    ...
-    ret = wolfSSL_key_update_response(ssl, &required);
-    if (ret != 0) {
-        // bad parameters
-    }
-    if (required) {
-        // encrypt Key updated, awaiting response to change decrypt key
-    }
-    \endcode
-
-    \sa wolfSSL_update_keys
-*/
-int  wolfSSL_key_update_response(WOLFSSL* ssl, int* required);
+WOLFSSL_API int  wolfSSL_update_keys(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -12956,7 +12751,7 @@ int  wolfSSL_key_update_response(WOLFSSL* ssl, int* required);
     \sa wolfSSL_allow_post_handshake_auth
     \sa wolfSSL_request_certificate
 */
-int  wolfSSL_CTX_allow_post_handshake_auth(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_CTX_allow_post_handshake_auth(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -12987,7 +12782,7 @@ int  wolfSSL_CTX_allow_post_handshake_auth(WOLFSSL_CTX* ctx);
     \sa wolfSSL_CTX_allow_post_handshake_auth
     \sa wolfSSL_request_certificate
 */
-int  wolfSSL_allow_post_handshake_auth(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_allow_post_handshake_auth(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -13024,7 +12819,7 @@ int  wolfSSL_allow_post_handshake_auth(WOLFSSL* ssl);
     \sa wolfSSL_allow_post_handshake_auth
     \sa wolfSSL_write
 */
-int  wolfSSL_request_certificate(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_request_certificate(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -13063,7 +12858,7 @@ int  wolfSSL_request_certificate(WOLFSSL* ssl);
     \sa wolfSSL_UseKeyShare
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
+WOLFSSL_API int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
 
 /*!
     \ingroup Setup
@@ -13101,7 +12896,7 @@ int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
     \sa wolfSSL_UseKeyShare
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_set1_groups_list(WOLFSSL *ssl, char *list);
+WOLFSSL_API int  wolfSSL_set1_groups_list(WOLFSSL *ssl, char *list);
 
 /*!
     \ingroup TLS
@@ -13138,7 +12933,7 @@ int  wolfSSL_set1_groups_list(WOLFSSL *ssl, char *list);
     \sa wolfSSL_CTX_set1_groups_list
     \sa wolfSSL_set1_groups_list
 */
-int  wolfSSL_preferred_group(WOLFSSL* ssl);
+WOLFSSL_API int  wolfSSL_preferred_group(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -13180,7 +12975,7 @@ int  wolfSSL_preferred_group(WOLFSSL* ssl);
     \sa wolfSSL_set1_groups_list
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
+WOLFSSL_API int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
     int count);
 
 /*!
@@ -13198,8 +12993,7 @@ int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
     \param [in] count the number of key exchange groups in groups.
 
     \return BAD_FUNC_ARG if a pointer parameter is null, the number of groups
-    exceeds WOLFSSL_MAX_GROUP_COUNT, any of the identifiers are unrecognized or
-    not using TLS v1.3.
+    exceeds WOLFSSL_MAX_GROUP_COUNT or not using TLS v1.3.
     \return WOLFSSL_SUCCESS if successful.
 
     _Example_
@@ -13209,7 +13003,7 @@ int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
     int* groups = { WOLFSSL_ECC_X25519, WOLFSSL_ECC_SECP256R1 };
     int count = 2;
     ...
-    ret = wolfSSL_set_groups(ssl, groups, count);
+    ret = wolfSSL_set1_groups_list(ssl, groups, count);
     if (ret != WOLFSSL_SUCCESS) {
         // failed to set group list
     }
@@ -13223,7 +13017,7 @@ int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
     \sa wolfSSL_set1_groups_list
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_set_groups(WOLFSSL* ssl, int* groups, int count);
+WOLFSSL_API int  wolfSSL_set_groups(WOLFSSL* ssl, int* groups, int count);
 
 /*!
     \ingroup IO
@@ -13276,7 +13070,7 @@ int  wolfSSL_set_groups(WOLFSSL* ssl, int* groups, int count);
     \sa wolfSSL_accept_TLSv13
     \sa wolfSSL_accept
 */
-int  wolfSSL_connect_TLSv13(WOLFSSL*);
+WOLFSSL_API int  wolfSSL_connect_TLSv13(WOLFSSL*);
 
 /*!
     \ingroup IO
@@ -13325,7 +13119,7 @@ int  wolfSSL_connect_TLSv13(WOLFSSL*);
     \sa wolfSSL_accept_TLSv13
     \sa wolfSSL_accept
 */
-wolfSSL_accept_TLSv13(WOLFSSL* ssl);
+WOLFSSL_API wolfSSL_accept_TLSv13(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -13365,7 +13159,7 @@ wolfSSL_accept_TLSv13(WOLFSSL* ssl);
     \sa wolfSSL_write_early_data
     \sa wolfSSL_read_early_data
 */
-int  wolfSSL_CTX_set_max_early_data(WOLFSSL_CTX* ctx,
+WOLFSSL_API int  wolfSSL_CTX_set_max_early_data(WOLFSSL_CTX* ctx,
     unsigned int sz);
 
 /*!
@@ -13405,7 +13199,7 @@ int  wolfSSL_CTX_set_max_early_data(WOLFSSL_CTX* ctx,
     \sa wolfSSL_write_early_data
     \sa wolfSSL_read_early_data
 */
-int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
+WOLFSSL_API int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
 
 /*!
     \ingroup IO
@@ -13456,7 +13250,7 @@ int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
     \sa wolfSSL_connect
     \sa wolfSSL_connect_TLSv13
 */
-int  wolfSSL_write_early_data(OLFSSL* ssl, const void* data,
+WOLFSSL_API int  wolfSSL_write_early_data(OLFSSL* ssl, const void* data,
     int sz, int* outSz);
 
 /*!
@@ -13508,7 +13302,7 @@ int  wolfSSL_write_early_data(OLFSSL* ssl, const void* data,
     \sa wolfSSL_accept
     \sa wolfSSL_accept_TLSv13
 */
-int  wolfSSL_read_early_data(WOLFSSL* ssl, void* data, int sz,
+WOLFSSL_API int  wolfSSL_read_early_data(WOLFSSL* ssl, void* data, int sz,
     int* outSz);
 
 /*!
@@ -13536,7 +13330,7 @@ int  wolfSSL_read_early_data(WOLFSSL* ssl, void* data, int sz,
     \sa wolfSSL_CTX_set_psk_server_tls13_callback
     \sa wolfSSL_set_psk_server_tls13_callback
 */
-void wolfSSL_CTX_set_psk_client_tls13_callback(WOLFSSL_CTX* ctx,
+WOLFSSL_API void wolfSSL_CTX_set_psk_client_tls13_callback(WOLFSSL_CTX* ctx,
     wc_psk_client_tls13_callback cb);
 
 /*!
@@ -13563,7 +13357,7 @@ void wolfSSL_CTX_set_psk_client_tls13_callback(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CTX_set_psk_server_tls13_callback
     \sa wolfSSL_set_psk_server_tls13_callback
 */
-void wolfSSL_set_psk_client_tls13_callback(WOLFSSL* ssl,
+WOLFSSL_API void wolfSSL_set_psk_client_tls13_callback(WOLFSSL* ssl,
     wc_psk_client_tls13_callback cb);
 
 /*!
@@ -13591,7 +13385,7 @@ void wolfSSL_set_psk_client_tls13_callback(WOLFSSL* ssl,
     \sa wolfSSL_set_psk_client_tls13_callback
     \sa wolfSSL_set_psk_server_tls13_callback
 */
-void wolfSSL_CTX_set_psk_server_tls13_callback(WOLFSSL_CTX* ctx,
+WOLFSSL_API void wolfSSL_CTX_set_psk_server_tls13_callback(WOLFSSL_CTX* ctx,
     wc_psk_server_tls13_callback cb);
 
 /*!
@@ -13618,7 +13412,7 @@ void wolfSSL_CTX_set_psk_server_tls13_callback(WOLFSSL_CTX* ctx,
     \sa wolfSSL_set_psk_client_tls13_callback
     \sa wolfSSL_CTX_set_psk_server_tls13_callback
 */
-void wolfSSL_set_psk_server_tls13_callback(WOLFSSL* ssl,
+WOLFSSL_API void wolfSSL_set_psk_server_tls13_callback(WOLFSSL* ssl,
     wc_psk_server_tls13_callback cb);
 
 /*!
@@ -13657,7 +13451,7 @@ void wolfSSL_set_psk_server_tls13_callback(WOLFSSL* ssl,
     \sa wolfSSL_set_groups
     \sa wolfSSL_NoKeyShares
 */
-int wolfSSL_UseKeyShare(WOLFSSL* ssl, word16 group);
+WOLFSSL_API int wolfSSL_UseKeyShare(WOLFSSL* ssl, word16 group);
 
 /*!
     \ingroup Setup
@@ -13689,7 +13483,7 @@ int wolfSSL_UseKeyShare(WOLFSSL* ssl, word16 group);
 
     \sa wolfSSL_UseKeyShare
 */
-int wolfSSL_NoKeyShares(WOLFSSL* ssl);
+WOLFSSL_API int wolfSSL_NoKeyShares(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -13733,7 +13527,7 @@ int wolfSSL_NoKeyShares(WOLFSSL* ssl);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_3_server_method_ex(void* heap);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_server_method_ex(void* heap);
 
 /*!
     \ingroup Setup
@@ -13777,7 +13571,7 @@ WOLFSSL_METHOD *wolfTLSv1_3_server_method_ex(void* heap);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_3_client_method_ex(void* heap);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_client_method_ex(void* heap);
 
 /*!
     \ingroup Setup
@@ -13819,7 +13613,7 @@ WOLFSSL_METHOD *wolfTLSv1_3_client_method_ex(void* heap);
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_3_server_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_server_method(void);
 
 /*!
     \ingroup Setup
@@ -13861,7 +13655,7 @@ WOLFSSL_METHOD *wolfTLSv1_3_server_method(void);
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
-WOLFSSL_METHOD *wolfTLSv1_3_client_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_client_method(void);
 
 /*!
     \ingroup Setup
@@ -13886,7 +13680,7 @@ WOLFSSL_METHOD *wolfTLSv1_3_client_method(void);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-WOLFSSL_METHOD *wolfTLSv1_3_method_ex(void* heap);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_method_ex(void* heap);
 
 /*!
     \ingroup Setup
@@ -13909,7 +13703,7 @@ WOLFSSL_METHOD *wolfTLSv1_3_method_ex(void* heap);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-WOLFSSL_METHOD *wolfTLSv1_3_method(void);
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_method(void);
 
 /*!
  \ingroup SSL
@@ -13920,9 +13714,8 @@ WOLFSSL_METHOD *wolfTLSv1_3_method(void);
  \param key key file path (if keySz == 0) or actual key buffer (PEM or ASN.1)
  \param keySz key size (should be 0 for "key" arg is file path)
  \param format WOLFSSL_FILETYPE_ASN1 or WOLFSSL_FILETYPE_PEM
- \sa wolfSSL_CTX_get_ephemeral_key
  */
-int wolfSSL_CTX_set_ephemeral_key(WOLFSSL_CTX* ctx, int keyAlgo, const char* key, unsigned int keySz, int format);
+WOLFSSL_API int wolfSSL_CTX_set_ephemeral_key(WOLFSSL_CTX* ctx, int keyAlgo, const char* key, unsigned int keySz, int format);
 
 /*!
  \ingroup SSL
@@ -13933,35 +13726,8 @@ int wolfSSL_CTX_set_ephemeral_key(WOLFSSL_CTX* ctx, int keyAlgo, const char* key
  \param key key file path (if keySz == 0) or actual key buffer (PEM or ASN.1)
  \param keySz key size (should be 0 for "key" arg is file path)
  \param format WOLFSSL_FILETYPE_ASN1 or WOLFSSL_FILETYPE_PEM
- \sa wolfSSL_get_ephemeral_key
  */
-int wolfSSL_set_ephemeral_key(WOLFSSL* ssl, int keyAlgo, const char* key, unsigned int keySz, int format);
-
-/*!
- \ingroup SSL
- \brief This function returns pointer to loaded key as ASN.1/DER
- \return 0 Key returned successfully
- \param ctx A WOLFSSL_CTX context pointer
- \param keyAlgo enum wc_PkType like WC_PK_TYPE_DH and WC_PK_TYPE_ECDH
- \param key key buffer pointer
- \param keySz key size pointer
- \sa wolfSSL_CTX_set_ephemeral_key
- */
-int wolfSSL_CTX_get_ephemeral_key(WOLFSSL_CTX* ctx, int keyAlgo, 
-    const unsigned char** key, unsigned int* keySz);
-
-/*!
- \ingroup SSL
- \brief This function returns pointer to loaded key as ASN.1/DER
- \return 0 Key returned successfully
- \param ssl A WOLFSSL object pointer
- \param keyAlgo enum wc_PkType like WC_PK_TYPE_DH and WC_PK_TYPE_ECDH
- \param key key buffer pointer
- \param keySz key size pointer
- \sa wolfSSL_set_ephemeral_key
- */
-int wolfSSL_get_ephemeral_key(WOLFSSL* ssl, int keyAlgo, 
-    const unsigned char** key, unsigned int* keySz);
+WOLFSSL_API int wolfSSL_set_ephemeral_key(WOLFSSL* ssl, int keyAlgo, const char* key, unsigned int keySz, int format);
 
 /*!
  \ingroup SSL
@@ -13983,7 +13749,6 @@ int wolfSSL_get_ephemeral_key(WOLFSSL* ssl, int keyAlgo,
  \param padding   Padding to use. Only RSA_PKCS1_PSS_PADDING and
                   RSA_PKCS1_PADDING are currently supported for signing.
  */
-int wolfSSL_RSA_sign_generic_padding(int type, const unsigned char* m,
+WOLFSSL_API int wolfSSL_RSA_sign_generic_padding(int type, const unsigned char* m,
                                unsigned int mLen, unsigned char* sigRet,
-                               unsigned int* sigLen, WOLFSSL_RSA* rsa,
-                               int flag, int padding);
+                               unsigned int* sigLen, WOLFSSL_RSA*, int, int);

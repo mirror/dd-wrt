@@ -1,6 +1,6 @@
 /* user_settings_min_ecc.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -59,7 +59,7 @@ extern "C" {
 #define WOLFSSL_SP_MATH
 #define WOLFSSL_HAVE_SP_ECC
 
-/* Enable Timing Resistance */
+/* Enable Timing Resistanace */
 #define TFM_TIMING_RESISTANT
 #define ECC_TIMING_RESISTANT
 
@@ -70,7 +70,7 @@ extern "C" {
 
 /* Optional Feature Disables */
 #define NO_SIG_WRAPPER
-//#define NO_ECC_KEY_EXPORT
+//#define NO_ECC_KEY_EXPORT 
 //#define NO_ECC_DHE
 //#define NO_ECC_SIGN
 //#define NO_ECC_VERIFY
@@ -86,6 +86,8 @@ extern "C" {
 #define NO_MD4
 #define NO_MD5
 #define NO_SHA
+#define NO_HC128
+#define NO_RABBIT
 #define NO_PWDBASED
 #define NO_PKCS12
 #define NO_PKCS8
@@ -98,8 +100,8 @@ extern "C" {
 #define WOLFSSL_NO_PEM
 //#define NO_CODING
 #define NO_PSK
-#ifndef DEBUG_WOLFSSL
-    #define DEBUG_WOLFSSL
+#ifndef DEBUG
+    #define DEBGUG_WOLFSSL
     #define NO_ERROR_STRINGS
 #endif
 

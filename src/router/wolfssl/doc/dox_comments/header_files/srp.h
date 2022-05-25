@@ -30,7 +30,7 @@
     \sa wc_SrpTerm
     \sa wc_SrpSetUsername
 */
-int wc_SrpInit(Srp* srp, SrpType type, SrpSide side);
+WOLFSSL_API int wc_SrpInit(Srp* srp, SrpType type, SrpSide side);
 
 /*!
     \ingroup SRP
@@ -51,7 +51,7 @@ int wc_SrpInit(Srp* srp, SrpType type, SrpSide side);
 
     \sa wc_SrpInit
 */
-void wc_SrpTerm(Srp* srp);
+WOLFSSL_API void wc_SrpTerm(Srp* srp);
 
 /*!
     \ingroup SRP
@@ -86,7 +86,7 @@ void wc_SrpTerm(Srp* srp);
     \sa wc_SrpSetParams
     \sa wc_SrpTerm
 */
-int wc_SrpSetUsername(Srp* srp, const byte* username, word32 size);
+WOLFSSL_API int wc_SrpSetUsername(Srp* srp, const byte* username, word32 size);
 
 /*!
     \ingroup SRP
@@ -97,7 +97,7 @@ int wc_SrpSetUsername(Srp* srp, const byte* username, word32 size);
     \return 0 Success
     \return BAD_FUNC_ARG Returns if srp, N, g, or salt is null or if nSz < gSz.
     \return SRP_CALL_ORDER_E Returns if wc_SrpSetParams is called before
-    wc_SrpSetUsername.
+wc_SrpSetUsername.
     \return <0 Error
 
     \param srp the Srp structure.
@@ -133,7 +133,7 @@ int wc_SrpSetUsername(Srp* srp, const byte* username, word32 size);
     \sa wc_SrpSetUsername
     \sa wc_SrpTerm
 */
-int wc_SrpSetParams(Srp* srp, const byte* N,    word32 nSz,
+WOLFSSL_API int wc_SrpSetParams(Srp* srp, const byte* N,    word32 nSz,
                                           const byte* g,    word32 gSz,
                                           const byte* salt, word32 saltSz);
 
@@ -184,7 +184,7 @@ int wc_SrpSetParams(Srp* srp, const byte* N,    word32 nSz,
     \sa wc_SrpSetUsername
     \sa wc_SrpSetParams
 */
-int wc_SrpSetPassword(Srp* srp, const byte* password, word32 size);
+WOLFSSL_API int wc_SrpSetPassword(Srp* srp, const byte* password, word32 size);
 
 /*!
     \ingroup SRP
@@ -227,7 +227,7 @@ int wc_SrpSetPassword(Srp* srp, const byte* password, word32 size);
     \sa wc_SrpSetParams
     \sa wc_SrpGetVerifier
 */
-int wc_SrpSetVerifier(Srp* srp, const byte* verifier, word32 size);
+WOLFSSL_API int wc_SrpSetVerifier(Srp* srp, const byte* verifier, word32 size);
 
 /*!
     \ingroup SRP
@@ -278,7 +278,7 @@ int wc_SrpSetVerifier(Srp* srp, const byte* verifier, word32 size);
     \sa wc_SrpSetVerifier
     \sa wc_SrpSetPassword
 */
-int wc_SrpGetVerifier(Srp* srp, byte* verifier, word32* size);
+WOLFSSL_API int wc_SrpGetVerifier(Srp* srp, byte* verifier, word32* size);
 
 /*!
     \ingroup SRP
@@ -328,7 +328,7 @@ int wc_SrpGetVerifier(Srp* srp, byte* verifier, word32* size);
 
     \sa wc_SrpGetPublic
 */
-int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
+WOLFSSL_API int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
 
 /*!
     \ingroup SRP
@@ -383,7 +383,7 @@ int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
     \sa wc_SrpSetPassword
     \sa wc_SrpSetVerifier
 */
-int wc_SrpGetPublic(Srp* srp, byte* pub, word32* size);
+WOLFSSL_API int wc_SrpGetPublic(Srp* srp, byte* pub, word32* size);
 
 /*!
     \ingroup SRP
@@ -434,7 +434,7 @@ int wc_SrpGetPublic(Srp* srp, byte* pub, word32* size);
 
     \sa wc_SrpGetPublic
 */
-int wc_SrpComputeKey(Srp* srp,
+WOLFSSL_API int wc_SrpComputeKey(Srp* srp,
                                  byte* clientPubKey, word32 clientPubKeySz,
                                  byte* serverPubKey, word32 serverPubKeySz);
 
@@ -468,7 +468,7 @@ int wc_SrpComputeKey(Srp* srp,
 
     \sa wc_SrpComputeKey
 */
-int wc_SrpGetProof(Srp* srp, byte* proof, word32* size);
+WOLFSSL_API int wc_SrpGetProof(Srp* srp, byte* proof, word32* size);
 
 /*!
     \ingroup SRP
@@ -504,4 +504,4 @@ int wc_SrpGetProof(Srp* srp, byte* proof, word32* size);
     \sa wc_SrpGetProof
     \sa wc_SrpTerm
 */
-int wc_SrpVerifyPeersProof(Srp* srp, byte* proof, word32 size);
+WOLFSSL_API int wc_SrpVerifyPeersProof(Srp* srp, byte* proof, word32 size);

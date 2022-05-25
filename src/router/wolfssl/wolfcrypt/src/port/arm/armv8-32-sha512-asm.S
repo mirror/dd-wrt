@@ -1,6 +1,6 @@
 /* armv8-32-sha512-asm
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -23,12 +23,8 @@
  *   cd ../scripts
  *   ruby ./sha2/sha512.rb arm32 ../wolfssl/wolfcrypt/src/port/arm/armv8-32-sha512-asm.S
  */
-
-#include <wolfssl/wolfcrypt/settings.h>
-
 #ifdef WOLFSSL_ARMASM
 #ifndef __aarch64__
-#ifdef WOLFSSL_SHA512
 #ifdef WOLFSSL_ARMASM_NO_NEON
 	.text
 	.type	L_SHA512_transform_len_k, %object
@@ -5334,7 +5330,6 @@ L_sha512_len_neon_start:
 	bx	lr
 	.size	Transform_Sha512_Len,.-Transform_Sha512_Len
 #endif /* !WOLFSSL_ARMASM_NO_NEON */
-#endif /* WOLFSSL_SHA512 */
 #endif /* !__aarch64__ */
 #endif /* WOLFSSL_ARMASM */
 

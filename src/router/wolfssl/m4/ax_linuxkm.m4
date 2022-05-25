@@ -1,6 +1,6 @@
 # ax_linuxkm.m4 -- macros for getting attributes of default configured kernel
 #
-# Copyright (C) 2006-2021 wolfSSL Inc.
+# Copyright (C) 2006-2020 wolfSSL Inc.
 #
 # This file is part of wolfSSL.
 #
@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
-#/
 
 AC_DEFUN([AC_PATH_DEFAULT_KERNEL_SOURCE],
 [
@@ -136,19 +135,12 @@ AC_DEFUN([AX_SIMD_CC_COMPILER_FLAGS], [
         fi
 
         if test "$ASFLAGS_FPUSIMD_ENABLE" = ""; then
-            AX_APPEND_COMPILE_FLAGS([-Wa,-march="${BASE_TARGET_ARCH}+fpu+simd"],[ASFLAGS_FPUSIMD_ENABLE])
+            AX_APPEND_COMPILE_FLAGS([-Wa,-march="${BASE_TARGET_ARCH}+fpu+simd"],[$ASFLAGS_FPUSIMD_ENABLE])
         fi
 
         ;;
     *)
-        # fall back to defining only $ASFLAGS_FPUSIMD_DISABLE
-        if test "$BASE_TARGET_ARCH" = ""; then
-            BASE_TARGET_ARCH=all
-        fi
-
-        if test "$ASFLAGS_FPUSIMD_DISABLE" = ""; then
-            AX_APPEND_COMPILE_FLAGS([-Wa,-march="${BASE_TARGET_ARCH}+nofpu+nosimd"],[ASFLAGS_FPUSIMD_DISABLE])
-        fi
+        AC_MSG_ERROR(["Don\'t know how to construct assembler flags for target \"${host_cpu}\"."])
         ;;
     esac
 

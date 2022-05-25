@@ -42,7 +42,7 @@
     \sa wc_AesCbcEncrypt
     \sa wc_AesCbcDecrypt
 */
-int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
+WOLFSSL_API int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
                                          const byte* key, word32 keySz,
                                          const byte* iv);
 
@@ -84,7 +84,7 @@ int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
 
     \sa wc_Des_CbcDecrypt
 */
-int  wc_Des_CbcDecryptWithKey(byte* out,
+WOLFSSL_API int  wc_Des_CbcDecryptWithKey(byte* out,
                                           const byte* in, word32 sz,
                                           const byte* key, const byte* iv);
 
@@ -123,7 +123,7 @@ int  wc_Des_CbcDecryptWithKey(byte* out,
     \sa wc_Des_CbcDecryptWithKey
     \sa wc_Des_CbcEncrypt
 */
-int  wc_Des_CbcEncryptWithKey(byte* out,
+WOLFSSL_API int  wc_Des_CbcEncryptWithKey(byte* out,
                                           const byte* in, word32 sz,
                                           const byte* key, const byte* iv);
 
@@ -141,7 +141,7 @@ int  wc_Des_CbcEncryptWithKey(byte* out,
     a Des structure.
     \return <0 Returned on any error during encryption.
 
-    \param out Final encrypted data
+    \parma out Final encrypted data
     \param in Data to be encrypted, must be padded to Des block size.
     \param sz Size of input buffer.
     \param key Pointer to the key to use for encryption.
@@ -165,7 +165,7 @@ int  wc_Des_CbcEncryptWithKey(byte* out,
     \sa wc_Des_CbcEncryptWithKey
     \sa wc_Des_CbcDecryptWithKey
 */
-int  wc_Des3_CbcEncryptWithKey(byte* out,
+WOLFSSL_API int  wc_Des3_CbcEncryptWithKey(byte* out,
                                            const byte* in, word32 sz,
                                            const byte* key, const byte* iv);
 
@@ -207,6 +207,6 @@ int  wc_Des3_CbcEncryptWithKey(byte* out,
 
     \sa wc_Des3_CbcDecrypt
 */
-int  wc_Des3_CbcDecryptWithKey(byte* out,
+WOLFSSL_API int  wc_Des3_CbcDecryptWithKey(byte* out,
                                            const byte* in, word32 sz,
                                            const byte* key, const byte* iv);

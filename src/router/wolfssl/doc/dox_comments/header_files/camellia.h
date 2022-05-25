@@ -35,7 +35,7 @@
     \sa wc_CamelliaCbcEncrypt
     \sa wc_CamelliaCbcDecrypt
 */
-int  wc_CamelliaSetKey(Camellia* cam,
+WOLFSSL_API int  wc_CamelliaSetKey(Camellia* cam,
                                    const byte* key, word32 len, const byte* iv);
 
 /*!
@@ -64,7 +64,7 @@ int  wc_CamelliaSetKey(Camellia* cam,
 
     \sa wc_CamelliaSetKey
 */
-int  wc_CamelliaSetIV(Camellia* cam, const byte* iv);
+WOLFSSL_API int  wc_CamelliaSetIV(Camellia* cam, const byte* iv);
 
 /*!
     \ingroup Camellia
@@ -92,7 +92,7 @@ int  wc_CamelliaSetIV(Camellia* cam, const byte* iv);
 
     \sa wc_CamelliaDecryptDirect
 */
-int  wc_CamelliaEncryptDirect(Camellia* cam, byte* out,
+WOLFSSL_API int  wc_CamelliaEncryptDirect(Camellia* cam, byte* out,
                                                                 const byte* in);
 
 /*!
@@ -122,7 +122,7 @@ int  wc_CamelliaEncryptDirect(Camellia* cam, byte* out,
 
     \sa wc_CamelliaEncryptDirect
 */
-int  wc_CamelliaDecryptDirect(Camellia* cam, byte* out,
+WOLFSSL_API int  wc_CamelliaDecryptDirect(Camellia* cam, byte* out,
                                                                 const byte* in);
 
 /*!
@@ -151,7 +151,7 @@ int  wc_CamelliaDecryptDirect(Camellia* cam, byte* out,
 
     \sa wc_CamelliaCbcDecrypt
 */
-int wc_CamelliaCbcEncrypt(Camellia* cam,
+WOLFSSL_API int wc_CamelliaCbcEncrypt(Camellia* cam,
                                           byte* out, const byte* in, word32 sz);
 
 /*!
@@ -180,5 +180,5 @@ int wc_CamelliaCbcEncrypt(Camellia* cam,
 
     \sa wc_CamelliaCbcEncrypt
 */
-int wc_CamelliaCbcDecrypt(Camellia* cam,
+WOLFSSL_API int wc_CamelliaCbcDecrypt(Camellia* cam,
                                           byte* out, const byte* in, word32 sz);

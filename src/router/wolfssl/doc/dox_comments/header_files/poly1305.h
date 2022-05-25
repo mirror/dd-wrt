@@ -24,7 +24,7 @@
     \sa wc_Poly1305Update
     \sa wc_Poly1305Final
 */
-int wc_Poly1305SetKey(Poly1305* poly1305, const byte* key,
+WOLFSSL_API int wc_Poly1305SetKey(Poly1305* poly1305, const byte* key,
                                   word32 kySz);
 
 /*!
@@ -58,7 +58,7 @@ int wc_Poly1305SetKey(Poly1305* poly1305, const byte* key,
     \sa wc_Poly1305SetKey
     \sa wc_Poly1305Final
 */
-int wc_Poly1305Update(Poly1305* poly1305, const byte* m, word32 bytes);
+WOLFSSL_API int wc_Poly1305Update(Poly1305* poly1305, const byte*, word32);
 
 /*!
     \ingroup Poly1305
@@ -93,7 +93,7 @@ int wc_Poly1305Update(Poly1305* poly1305, const byte* m, word32 bytes);
     \sa wc_Poly1305SetKey
     \sa wc_Poly1305Update
 */
-int wc_Poly1305Final(Poly1305* poly1305, byte* tag);
+WOLFSSL_API int wc_Poly1305Final(Poly1305* poly1305, byte* tag);
 
 /*!
     \ingroup Poly1305
@@ -135,5 +135,5 @@ int wc_Poly1305Final(Poly1305* poly1305, byte* tag);
     \sa wc_Poly1305Update
     \sa wcPoly1305Final
 */
-int wc_Poly1305_MAC(Poly1305* ctx, byte* additional, word32 addSz,
+WOLFSSL_API int wc_Poly1305_MAC(Poly1305* ctx, byte* additional, word32 addSz,
                                byte* input, word32 sz, byte* tag, word32 tagSz);

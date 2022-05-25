@@ -1,6 +1,6 @@
 /* unit.c API unit tests driver
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -53,15 +53,15 @@
 #define AssertFalse(x)   Assert(!(x), ("%s is false",    #x), (#x " => TRUE"))
 #define AssertNotNull(x) Assert( (x), ("%s is not null", #x), (#x " => NULL"))
 
-#define AssertNull(x) do {                              \
-    PEDANTIC_EXTENSION void* _x = (void *) (x);         \
-                                                        \
-    Assert(!_x, ("%s is null", #x), (#x " => %p", _x)); \
+#define AssertNull(x) do {                                                     \
+    void* _x = (void *) (x);                                                   \
+                                                                               \
+    Assert(!_x, ("%s is null", #x), (#x " => %p", _x));                        \
 } while(0)
 
 #define AssertInt(x, y, op, er) do {                                           \
-    int _x = (int)(x);                                                         \
-    int _y = (int)(y);                                                         \
+    int _x = (int)x;                                                                \
+    int _y = (int)y;                                                                \
                                                                                \
     Assert(_x op _y, ("%s " #op " %s", #x, #y), ("%d " #er " %d", _x, _y));    \
 } while(0)
@@ -90,8 +90,8 @@
 #define AssertStrLE(x, y) AssertStr(x, y, <=,  >)
 
 #define AssertPtr(x, y, op, er) do {                                           \
-    void* _x = (void*)(x);                                                     \
-    void* _y = (void*)(y);                                                     \
+    void* _x = (void*)x;                                                       \
+    void* _y = (void*)y;                                                       \
     Assert(_x op _y, ("%s " #op " %s", #x, #y), ("%p " #er " %p", _x, _y));    \
 } while(0)
 

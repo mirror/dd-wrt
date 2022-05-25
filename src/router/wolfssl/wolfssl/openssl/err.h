@@ -1,6 +1,6 @@
 /* err.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -24,9 +24,7 @@
 
 #include <wolfssl/wolfcrypt/logging.h>
 
-#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
 /* err.h for openssl */
-#define ERR_load_ERR_strings             wolfSSL_ERR_load_ERR_strings
 #define ERR_load_crypto_strings          wolfSSL_ERR_load_crypto_strings
 #define ERR_load_CRYPTO_strings          wolfSSL_ERR_load_crypto_strings
 #define ERR_peek_last_error              wolfSSL_ERR_peek_last_error
@@ -38,8 +36,6 @@
 #define ERR_R_PASSED_INVALID_ARGUMENT           BAD_FUNC_ARG
 #define RSA_R_UNKNOWN_PADDING_TYPE              RSA_PAD_E
 #define EC_R_BUFFER_TOO_SMALL                   BUFFER_E
-
-#define ERR_TXT_MALLOCED                        1
 
 /* SSL function codes */
 #define RSA_F_RSA_OSSL_PRIVATE_ENCRYPT          1
@@ -54,8 +50,6 @@
 #define RSAerr(f,r)  ERR_put_error(0,(f),(r),__FILE__,__LINE__)
 #define SSLerr(f,r)  ERR_put_error(0,(f),(r),__FILE__,__LINE__)
 #define ECerr(f,r)   ERR_put_error(0,(f),(r),__FILE__,__LINE__)
-
-#endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
 
 #endif /* WOLFSSL_OPENSSL_ERR_ */
 

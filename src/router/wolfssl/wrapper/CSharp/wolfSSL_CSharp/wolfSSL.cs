@@ -1,6 +1,6 @@
 /* wolfSSL.cs
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -397,8 +397,7 @@ namespace wolfSSL.CSharp {
         public static readonly int SSL_VERIFY_PEER = 1;
         public static readonly int SSL_VERIFY_FAIL_IF_NO_PEER_CERT = 2;
         public static readonly int SSL_VERIFY_CLIENT_ONCE = 4;
-        public static readonly int SSL_VERIFY_POST_HANDSHAKE = 8;
-        public static readonly int SSL_VERIFY_FAIL_EXCEPT_PSK = 16;
+        public static readonly int SSL_VERIFY_FAIL_EXCEPT_PSK = 8;
 
         public static readonly int CBIO_ERR_GENERAL = -1;
         public static readonly int CBIO_ERR_WANT_READ = -2;
