@@ -600,6 +600,7 @@ static void handle_hotspot(void)
 //      start_service("wlconf");
 #endif
 	start_service("lan");
+	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
@@ -962,6 +963,7 @@ static void handle_pppoe(void)
 	start_service("bridging");
 #endif
 	start_service("lan");
+	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
@@ -1256,6 +1258,7 @@ static void handle_wireless(void)
 //      start_service("wlconf");
 #endif
 	start_service_force("lan");
+	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
@@ -1377,6 +1380,7 @@ static void handle_wireless_2(void)
 	start_service("bridging");
 #endif
 	start_service_force("lan");
+	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
