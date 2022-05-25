@@ -24,7 +24,11 @@ noinst_DATA =
 SUBDIRS_OPT =
 DIST_SUBDIRS_OPT =
 
-DISTCLEANFILES+= aminclude.am
+# allow supplementary or override flags to be passed at make time:
+AM_CFLAGS += $(EXTRA_CFLAGS)
+
+DISTCLEANFILES+= aminclude.am \
+             .build_params
 
 CLEANFILES+= ecc-key.der \
              ecc-public-key.der \
