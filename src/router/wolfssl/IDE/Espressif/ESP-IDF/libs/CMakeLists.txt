@@ -16,22 +16,12 @@ set(COMPONENT_SRCDIRS "./src/"
 
 set(COMPONENT_REQUIRES lwip)
 
-if(IS_DIRECTORY ${IDF_PATH}/components/freertos/FreeRTOS-Kernel/)
-    set(COMPONENT_ADD_INCLUDEDIRS
-        "."
-        "./include"
-        "../freertos/FreeRTOS-Kernel/include/freertos"
-       "${WOLFSSL_ROOT}"
-       )
-else()
-
-   set(COMPONENT_ADD_INCLUDEDIRS
-       "."
-       "./include"
-       "../freertos/include/freertos"
-       "${WOLFSSL_ROOT}"
-      )
-endif()
+set(COMPONENT_ADD_INCLUDEDIRS
+    "."
+    "./include"
+    "../freertos/include/freertos" 
+    "${WOLFSSL_ROOT}"
+    )
 
 if(IS_DIRECTORY ${IDF_PATH}/components/cryptoauthlib)
     list(APPEND COMPONENT_ADD_INCLUDEDIRS "../cryptoauthlib/lib")

@@ -1,6 +1,6 @@
 BUILD_DIR = ./Build
 
-all: WolfSSLStaticLib WolfCryptTest WolfCryptBench WolfSSLClient WolfSSLServer
+all: WolfSSLStaticLib WolfCryptTest WolfCryptBench WolfSSLClient
 
 WolfCryptTest:
 	$(MAKE) -f Makefile.test
@@ -8,8 +8,6 @@ WolfCryptBench:
 	$(MAKE) -f Makefile.bench
 WolfSSLClient:
 	$(MAKE) -f Makefile.client
-WolfSSLServer:
-	$(MAKE) -f Makefile.server
 WolfSSLStaticLib:
 	$(MAKE) -f Makefile.static
 

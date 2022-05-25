@@ -1,6 +1,6 @@
 /* sha3.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,7 +29,9 @@
 #if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_XILINX_CRYPT) && \
    !defined(WOLFSSL_AFALG_XILINX_SHA3)
 
-#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+#if defined(HAVE_FIPS) && \
+	defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+
     /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
     #define FIPS_NO_WRAPPERS
 
@@ -51,7 +53,6 @@
 #endif
 
 
-#if !defined(WOLFSSL_ARMASM) || !defined(WOLFSSL_ARMASM_CRYPTO_SHA3)
 #ifdef WOLFSSL_SHA3_SMALL
 /* Rotate a 64-bit value left.
  *
@@ -138,7 +139,8 @@ static const word64 hash_keccak_r[24] =
  * i   The index of the loop.
  */
 #define SWAP_ROTL(s, t1, t2, i)                                         \
-do {                                                                    \
+do                                                                      \
+{                                                                       \
     t2 = s[K_I_##i]; s[K_I_##i] = ROTL64(t1, K_R_##i);                  \
 }                                                                       \
 while (0)
@@ -151,10 +153,12 @@ while (0)
  * t  Temporary variable.
  */
 #define COL_MIX(s, b, x, t)                                             \
-do {                                                                    \
+do                                                                      \
+{                                                                       \
     for (x = 0; x < 5; x++)                                             \
         b[x] = s[x + 0] ^ s[x + 5] ^ s[x + 10] ^ s[x + 15] ^ s[x + 20]; \
-    for (x = 0; x < 5; x++) {                                           \
+    for (x = 0; x < 5; x++)                                             \
+    {                                                                   \
         t = b[(x + 4) % 5] ^ ROTL64(b[(x + 1) % 5], 1);                 \
         s[x +  0] ^= t;                                                 \
         s[x +  5] ^= t;                                                 \
@@ -177,12 +181,14 @@ while (0)
  * t1  Temporary variable.
  */
 #define ROW_MIX(s, b, y, x, t0, t1)                                     \
-do {                                                                    \
-    for (y = 0; y < 5; y++) {                                           \
+do                                                                      \
+{                                                                       \
+    for (y = 0; y < 5; y++)                                             \
+    {                                                                   \
         for (x = 0; x < 5; x++)                                         \
             b[x] = s[y * 5 + x];                                        \
         for (x = 0; x < 5; x++)                                         \
-            s[y * 5 + x] = b[x] ^ (~b[(x + 1) % 5] & b[(x + 2) % 5]);   \
+           s[y * 5 + x] = b[x] ^ (~b[(x + 1) % 5] & b[(x + 2) % 5]);    \
     }                                                                   \
 }                                                                       \
 while (0)
@@ -198,8 +204,10 @@ while (0)
  * t1  Temporary variable.
  */
 #define ROW_MIX(s, b, y, x, t12, t34)                                   \
-do {                                                                    \
-    for (y = 0; y < 5; y++) {                                           \
+do                                                                      \
+{                                                                       \
+    for (y = 0; y < 5; y++)                                             \
+    {                                                                   \
         for (x = 0; x < 5; x++)                                         \
             b[x] = s[y * 5 + x];                                        \
         t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]);                       \
@@ -267,22 +275,21 @@ static void BlockSha3(word64 *s)
  */
 #define ROTL64(a, n)    (((a)<<(n))|((a)>>(64-(n))))
 
-
 /* An array of values to XOR for block operation. */
 static const word64 hash_keccak_r[24] =
 {
-    W64LIT(0x0000000000000001), W64LIT(0x0000000000008082),
-    W64LIT(0x800000000000808a), W64LIT(0x8000000080008000),
-    W64LIT(0x000000000000808b), W64LIT(0x0000000080000001),
-    W64LIT(0x8000000080008081), W64LIT(0x8000000000008009),
-    W64LIT(0x000000000000008a), W64LIT(0x0000000000000088),
-    W64LIT(0x0000000080008009), W64LIT(0x000000008000000a),
-    W64LIT(0x000000008000808b), W64LIT(0x800000000000008b),
-    W64LIT(0x8000000000008089), W64LIT(0x8000000000008003),
-    W64LIT(0x8000000000008002), W64LIT(0x8000000000000080),
-    W64LIT(0x000000000000800a), W64LIT(0x800000008000000a),
-    W64LIT(0x8000000080008081), W64LIT(0x8000000000008080),
-    W64LIT(0x0000000080000001), W64LIT(0x8000000080008008)
+    0x0000000000000001UL, 0x0000000000008082UL,
+    0x800000000000808aUL, 0x8000000080008000UL,
+    0x000000000000808bUL, 0x0000000080000001UL,
+    0x8000000080008081UL, 0x8000000000008009UL,
+    0x000000000000008aUL, 0x0000000000000088UL,
+    0x0000000080008009UL, 0x000000008000000aUL,
+    0x000000008000808bUL, 0x800000000000008bUL,
+    0x8000000000008089UL, 0x8000000000008003UL,
+    0x8000000000008002UL, 0x8000000000000080UL,
+    0x000000000000800aUL, 0x800000008000000aUL,
+    0x8000000080008081UL, 0x8000000000008080UL,
+    0x0000000080000001UL, 0x8000000080008008UL
 };
 
 /* Indices used in swap and rotate operation. */
@@ -344,27 +351,28 @@ static const word64 hash_keccak_r[24] =
  * x  The index of the column.
  * t  Temporary variable.
  */
-#define COL_MIX(s, b, x, t)                                                         \
-do {                                                                                \
-    (b)[0] = (s)[0] ^ (s)[5] ^ (s)[10] ^ (s)[15] ^ (s)[20];                         \
-    (b)[1] = (s)[1] ^ (s)[6] ^ (s)[11] ^ (s)[16] ^ (s)[21];                         \
-    (b)[2] = (s)[2] ^ (s)[7] ^ (s)[12] ^ (s)[17] ^ (s)[22];                         \
-    (b)[3] = (s)[3] ^ (s)[8] ^ (s)[13] ^ (s)[18] ^ (s)[23];                         \
-    (b)[4] = (s)[4] ^ (s)[9] ^ (s)[14] ^ (s)[19] ^ (s)[24];                         \
-    (t) = (b)[(0 + 4) % 5] ^ ROTL64((b)[(0 + 1) % 5], 1);                           \
-    (s)[ 0] ^= (t); (s)[ 5] ^= (t); (s)[10] ^= (t); (s)[15] ^= (t); (s)[20] ^= (t); \
-    (t) = (b)[(1 + 4) % 5] ^ ROTL64((b)[(1 + 1) % 5], 1);                           \
-    (s)[ 1] ^= (t); (s)[ 6] ^= (t); (s)[11] ^= (t); (s)[16] ^= (t); (s)[21] ^= (t); \
-    (t) = (b)[(2 + 4) % 5] ^ ROTL64((b)[(2 + 1) % 5], 1);                           \
-    (s)[ 2] ^= (t); (s)[ 7] ^= (t); (s)[12] ^= (t); (s)[17] ^= (t); (s)[22] ^= (t); \
-    (t) = (b)[(3 + 4) % 5] ^ ROTL64((b)[(3 + 1) % 5], 1);                           \
-    (s)[ 3] ^= (t); (s)[ 8] ^= (t); (s)[13] ^= (t); (s)[18] ^= (t); (s)[23] ^= (t); \
-    (t) = (b)[(4 + 4) % 5] ^ ROTL64((b)[(4 + 1) % 5], 1);                           \
-    (s)[ 4] ^= (t); (s)[ 9] ^= (t); (s)[14] ^= (t); (s)[19] ^= (t); (s)[24] ^= (t); \
-}                                                                                   \
+#define COL_MIX(s, b, x, t)                                     \
+do                                                              \
+{                                                               \
+    b[0] = s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20];                 \
+    b[1] = s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21];                 \
+    b[2] = s[2] ^ s[7] ^ s[12] ^ s[17] ^ s[22];                 \
+    b[3] = s[3] ^ s[8] ^ s[13] ^ s[18] ^ s[23];                 \
+    b[4] = s[4] ^ s[9] ^ s[14] ^ s[19] ^ s[24];                 \
+    t = b[(0 + 4) % 5] ^ ROTL64(b[(0 + 1) % 5], 1);             \
+    s[ 0] ^= t; s[ 5] ^= t; s[10] ^= t; s[15] ^= t; s[20] ^= t; \
+    t = b[(1 + 4) % 5] ^ ROTL64(b[(1 + 1) % 5], 1);             \
+    s[ 1] ^= t; s[ 6] ^= t; s[11] ^= t; s[16] ^= t; s[21] ^= t; \
+    t = b[(2 + 4) % 5] ^ ROTL64(b[(2 + 1) % 5], 1);             \
+    s[ 2] ^= t; s[ 7] ^= t; s[12] ^= t; s[17] ^= t; s[22] ^= t; \
+    t = b[(3 + 4) % 5] ^ ROTL64(b[(3 + 1) % 5], 1);             \
+    s[ 3] ^= t; s[ 8] ^= t; s[13] ^= t; s[18] ^= t; s[23] ^= t; \
+    t = b[(4 + 4) % 5] ^ ROTL64(b[(4 + 1) % 5], 1);             \
+    s[ 4] ^= t; s[ 9] ^= t; s[14] ^= t; s[19] ^= t; s[24] ^= t; \
+}                                                               \
 while (0)
 
-#define S(s1, i) ROTL64((s1)[KI_##i], KR_##i)
+#define S(s1, i) ROTL64(s1[KI_##i], KR_##i)
 
 #ifdef SHA3_BY_SPEC
 /* Mix the row values.
@@ -376,59 +384,60 @@ while (0)
  * t0  Temporary variable. (Unused)
  * t1  Temporary variable. (Unused)
  */
-#define ROW_MIX(s2, s1, b, t0, t1)                    \
-do {                                                  \
-    (b)[0] = (s1)[0];                                 \
-    (b)[1] = S((s1), 0);                              \
-    (b)[2] = S((s1), 1);                              \
-    (b)[3] = S((s1), 2);                              \
-    (b)[4] = S((s1), 3);                              \
-    (s2)[0] = (b)[0] ^ (~(b)[1] & (b)[2]);            \
-    (s2)[1] = (b)[1] ^ (~(b)[2] & (b)[3]);            \
-    (s2)[2] = (b)[2] ^ (~(b)[3] & (b)[4]);            \
-    (s2)[3] = (b)[3] ^ (~(b)[4] & (b)[0]);            \
-    (s2)[4] = (b)[4] ^ (~(b)[0] & (b)[1]);            \
-    (b)[0] = S((s1), 4);                              \
-    (b)[1] = S((s1), 5);                              \
-    (b)[2] = S((s1), 6);                              \
-    (b)[3] = S((s1), 7);                              \
-    (b)[4] = S((s1), 8);                              \
-    (s2)[5] = (b)[0] ^ (~(b)[1] & (b)[2]);            \
-    (s2)[6] = (b)[1] ^ (~(b)[2] & (b)[3]);            \
-    (s2)[7] = (b)[2] ^ (~(b)[3] & (b)[4]);            \
-    (s2)[8] = (b)[3] ^ (~(b)[4] & (b)[0]);            \
-    (s2)[9] = (b)[4] ^ (~(b)[0] & (b)[1]);            \
-    (b)[0] = S((s1), 9);                              \
-    (b)[1] = S((s1), 10);                             \
-    (b)[2] = S((s1), 11);                             \
-    (b)[3] = S((s1), 12);                             \
-    (b)[4] = S((s1), 13);                             \
-    (s2)[10] = (b)[0] ^ (~(b)[1] & (b)[2]);           \
-    (s2)[11] = (b)[1] ^ (~(b)[2] & (b)[3]);           \
-    (s2)[12] = (b)[2] ^ (~(b)[3] & (b)[4]);           \
-    (s2)[13] = (b)[3] ^ (~(b)[4] & (b)[0]);           \
-    (s2)[14] = (b)[4] ^ (~(b)[0] & (b)[1]);           \
-    (b)[0] = S((s1), 14);                             \
-    (b)[1] = S((s1), 15);                             \
-    (b)[2] = S((s1), 16);                             \
-    (b)[3] = S((s1), 17);                             \
-    (b)[4] = S((s1), 18);                             \
-    (s2)[15] = (b)[0] ^ (~(b)[1] & (b)[2]);           \
-    (s2)[16] = (b)[1] ^ (~(b)[2] & (b)[3]);           \
-    (s2)[17] = (b)[2] ^ (~(b)[3] & (b)[4]);           \
-    (s2)[18] = (b)[3] ^ (~(b)[4] & (b)[0]);           \
-    (s2)[19] = (b)[4] ^ (~(b)[0] & (b)[1]);           \
-    (b)[0] = S((s1), 19);                             \
-    (b)[1] = S((s1), 20);                             \
-    (b)[2] = S((s1), 21);                             \
-    (b)[3] = S((s1), 22);                             \
-    (b)[4] = S((s1), 23);                             \
-    (s2)[20] = (b)[0] ^ (~(b)[1] & (b)[2]);           \
-    (s2)[21] = (b)[1] ^ (~(b)[2] & (b)[3]);           \
-    (s2)[22] = (b)[2] ^ (~(b)[3] & (b)[4]);           \
-    (s2)[23] = (b)[3] ^ (~(b)[4] & (b)[0]);           \
-    (s2)[24] = (b)[4] ^ (~(b)[0] & (b)[1]);           \
-}                                                     \
+#define ROW_MIX(s2, s1, b, t0, t1)            \
+do                                            \
+{                                             \
+    b[0] = s1[0];                             \
+    b[1] = S(s1, 0);                          \
+    b[2] = S(s1, 1);                          \
+    b[3] = S(s1, 2);                          \
+    b[4] = S(s1, 3);                          \
+    s2[0] = b[0] ^ (~b[1] & b[2]);            \
+    s2[1] = b[1] ^ (~b[2] & b[3]);            \
+    s2[2] = b[2] ^ (~b[3] & b[4]);            \
+    s2[3] = b[3] ^ (~b[4] & b[0]);            \
+    s2[4] = b[4] ^ (~b[0] & b[1]);            \
+    b[0] = S(s1, 4);                          \
+    b[1] = S(s1, 5);                          \
+    b[2] = S(s1, 6);                          \
+    b[3] = S(s1, 7);                          \
+    b[4] = S(s1, 8);                          \
+    s2[5] = b[0] ^ (~b[1] & b[2]);            \
+    s2[6] = b[1] ^ (~b[2] & b[3]);            \
+    s2[7] = b[2] ^ (~b[3] & b[4]);            \
+    s2[8] = b[3] ^ (~b[4] & b[0]);            \
+    s2[9] = b[4] ^ (~b[0] & b[1]);            \
+    b[0] = S(s1, 9);                          \
+    b[1] = S(s1, 10);                         \
+    b[2] = S(s1, 11);                         \
+    b[3] = S(s1, 12);                         \
+    b[4] = S(s1, 13);                         \
+    s2[10] = b[0] ^ (~b[1] & b[2]);           \
+    s2[11] = b[1] ^ (~b[2] & b[3]);           \
+    s2[12] = b[2] ^ (~b[3] & b[4]);           \
+    s2[13] = b[3] ^ (~b[4] & b[0]);           \
+    s2[14] = b[4] ^ (~b[0] & b[1]);           \
+    b[0] = S(s1, 14);                         \
+    b[1] = S(s1, 15);                         \
+    b[2] = S(s1, 16);                         \
+    b[3] = S(s1, 17);                         \
+    b[4] = S(s1, 18);                         \
+    s2[15] = b[0] ^ (~b[1] & b[2]);           \
+    s2[16] = b[1] ^ (~b[2] & b[3]);           \
+    s2[17] = b[2] ^ (~b[3] & b[4]);           \
+    s2[18] = b[3] ^ (~b[4] & b[0]);           \
+    s2[19] = b[4] ^ (~b[0] & b[1]);           \
+    b[0] = S(s1, 19);                         \
+    b[1] = S(s1, 20);                         \
+    b[2] = S(s1, 21);                         \
+    b[3] = S(s1, 22);                         \
+    b[4] = S(s1, 23);                         \
+    s2[20] = b[0] ^ (~b[1] & b[2]);           \
+    s2[21] = b[1] ^ (~b[2] & b[3]);           \
+    s2[22] = b[2] ^ (~b[3] & b[4]);           \
+    s2[23] = b[3] ^ (~b[4] & b[0]);           \
+    s2[24] = b[4] ^ (~b[0] & b[1]);           \
+}                                             \
 while (0)
 #else
 /* Mix the row values.
@@ -440,64 +449,65 @@ while (0)
  * t12 Temporary variable.
  * t34 Temporary variable.
  */
-#define ROW_MIX(s2, s1, b, t12, t34)                      \
-do {                                                      \
-    (b)[0] = (s1)[0];                                     \
-    (b)[1] = S((s1), 0);                                  \
-    (b)[2] = S((s1), 1);                                  \
-    (b)[3] = S((s1), 2);                                  \
-    (b)[4] = S((s1), 3);                                  \
-    (t12) = ((b)[1] ^ (b)[2]); (t34) = ((b)[3] ^ (b)[4]); \
-    (s2)[0] = (b)[0] ^ ((b)[2] &  (t12));                 \
-    (s2)[1] =  (t12) ^ ((b)[2] | (b)[3]);                 \
-    (s2)[2] = (b)[2] ^ ((b)[4] &  (t34));                 \
-    (s2)[3] =  (t34) ^ ((b)[4] | (b)[0]);                 \
-    (s2)[4] = (b)[4] ^ ((b)[1] & ((b)[0] ^ (b)[1]));      \
-    (b)[0] = S((s1), 4);                                  \
-    (b)[1] = S((s1), 5);                                  \
-    (b)[2] = S((s1), 6);                                  \
-    (b)[3] = S((s1), 7);                                  \
-    (b)[4] = S((s1), 8);                                  \
-    (t12) = ((b)[1] ^ (b)[2]); (t34) = ((b)[3] ^ (b)[4]); \
-    (s2)[5] = (b)[0] ^ ((b)[2] &  (t12));                 \
-    (s2)[6] =  (t12) ^ ((b)[2] | (b)[3]);                 \
-    (s2)[7] = (b)[2] ^ ((b)[4] &  (t34));                 \
-    (s2)[8] =  (t34) ^ ((b)[4] | (b)[0]);                 \
-    (s2)[9] = (b)[4] ^ ((b)[1] & ((b)[0] ^ (b)[1]));      \
-    (b)[0] = S((s1), 9);                                  \
-    (b)[1] = S((s1), 10);                                 \
-    (b)[2] = S((s1), 11);                                 \
-    (b)[3] = S((s1), 12);                                 \
-    (b)[4] = S((s1), 13);                                 \
-    (t12) = ((b)[1] ^ (b)[2]); (t34) = ((b)[3] ^ (b)[4]); \
-    (s2)[10] = (b)[0] ^ ((b)[2] &  (t12));                \
-    (s2)[11] =  (t12) ^ ((b)[2] | (b)[3]);                \
-    (s2)[12] = (b)[2] ^ ((b)[4] &  (t34));                \
-    (s2)[13] =  (t34) ^ ((b)[4] | (b)[0]);                \
-    (s2)[14] = (b)[4] ^ ((b)[1] & ((b)[0] ^ (b)[1]));     \
-    (b)[0] = S((s1), 14);                                 \
-    (b)[1] = S((s1), 15);                                 \
-    (b)[2] = S((s1), 16);                                 \
-    (b)[3] = S((s1), 17);                                 \
-    (b)[4] = S((s1), 18);                                 \
-    (t12) = ((b)[1] ^ (b)[2]); (t34) = ((b)[3] ^ (b)[4]); \
-    (s2)[15] = (b)[0] ^ ((b)[2] &  (t12));                \
-    (s2)[16] =  (t12) ^ ((b)[2] | (b)[3]);                \
-    (s2)[17] = (b)[2] ^ ((b)[4] &  (t34));                \
-    (s2)[18] =  (t34) ^ ((b)[4] | (b)[0]);                \
-    (s2)[19] = (b)[4] ^ ((b)[1] & ((b)[0] ^ (b)[1]));     \
-    (b)[0] = S((s1), 19);                                 \
-    (b)[1] = S((s1), 20);                                 \
-    (b)[2] = S((s1), 21);                                 \
-    (b)[3] = S((s1), 22);                                 \
-    (b)[4] = S((s1), 23);                                 \
-    (t12) = ((b)[1] ^ (b)[2]); (t34) = ((b)[3] ^ (b)[4]); \
-    (s2)[20] = (b)[0] ^ ((b)[2] &  (t12));                \
-    (s2)[21] =  (t12) ^ ((b)[2] | (b)[3]);                \
-    (s2)[22] = (b)[2] ^ ((b)[4] &  (t34));                \
-    (s2)[23] =  (t34) ^ ((b)[4] | (b)[0]);                \
-    (s2)[24] = (b)[4] ^ ((b)[1] & ((b)[0] ^ (b)[1]));     \
-}                                                         \
+#define ROW_MIX(s2, s1, b, t12, t34)          \
+do                                            \
+{                                             \
+    b[0] = s1[0];                             \
+    b[1] = S(s1, 0);                          \
+    b[2] = S(s1, 1);                          \
+    b[3] = S(s1, 2);                          \
+    b[4] = S(s1, 3);                          \
+    t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]); \
+    s2[0] = b[0] ^ (b[2] &  t12);             \
+    s2[1] =  t12 ^ (b[2] | b[3]);             \
+    s2[2] = b[2] ^ (b[4] &  t34);             \
+    s2[3] =  t34 ^ (b[4] | b[0]);             \
+    s2[4] = b[4] ^ (b[1] & (b[0] ^ b[1]));    \
+    b[0] = S(s1, 4);                          \
+    b[1] = S(s1, 5);                          \
+    b[2] = S(s1, 6);                          \
+    b[3] = S(s1, 7);                          \
+    b[4] = S(s1, 8);                          \
+    t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]); \
+    s2[5] = b[0] ^ (b[2] &  t12);             \
+    s2[6] =  t12 ^ (b[2] | b[3]);             \
+    s2[7] = b[2] ^ (b[4] &  t34);             \
+    s2[8] =  t34 ^ (b[4] | b[0]);             \
+    s2[9] = b[4] ^ (b[1] & (b[0] ^ b[1]));    \
+    b[0] = S(s1, 9);                          \
+    b[1] = S(s1, 10);                         \
+    b[2] = S(s1, 11);                         \
+    b[3] = S(s1, 12);                         \
+    b[4] = S(s1, 13);                         \
+    t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]); \
+    s2[10] = b[0] ^ (b[2] &  t12);            \
+    s2[11] =  t12 ^ (b[2] | b[3]);            \
+    s2[12] = b[2] ^ (b[4] &  t34);            \
+    s2[13] =  t34 ^ (b[4] | b[0]);            \
+    s2[14] = b[4] ^ (b[1] & (b[0] ^ b[1]));   \
+    b[0] = S(s1, 14);                         \
+    b[1] = S(s1, 15);                         \
+    b[2] = S(s1, 16);                         \
+    b[3] = S(s1, 17);                         \
+    b[4] = S(s1, 18);                         \
+    t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]); \
+    s2[15] = b[0] ^ (b[2] &  t12);            \
+    s2[16] =  t12 ^ (b[2] | b[3]);            \
+    s2[17] = b[2] ^ (b[4] &  t34);            \
+    s2[18] =  t34 ^ (b[4] | b[0]);            \
+    s2[19] = b[4] ^ (b[1] & (b[0] ^ b[1]));   \
+    b[0] = S(s1, 19);                         \
+    b[1] = S(s1, 20);                         \
+    b[2] = S(s1, 21);                         \
+    b[3] = S(s1, 22);                         \
+    b[4] = S(s1, 23);                         \
+    t12 = (b[1] ^ b[2]); t34 = (b[3] ^ b[4]); \
+    s2[20] = b[0] ^ (b[2] &  t12);            \
+    s2[21] =  t12 ^ (b[2] | b[3]);            \
+    s2[22] = b[2] ^ (b[4] &  t34);            \
+    s2[23] =  t34 ^ (b[4] | b[0]);            \
+    s2[24] = b[4] ^ (b[1] & (b[0] ^ b[1]));   \
+}                                             \
 while (0)
 #endif /* SHA3_BY_SPEC */
 
@@ -527,19 +537,6 @@ static void BlockSha3(word64 *s)
     }
 }
 #endif /* WOLFSSL_SHA3_SMALL */
-#endif /* !WOLFSSL_ARMASM */
-
-static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
-{
-    return ((word64)a[0] <<  0) |
-           ((word64)a[1] <<  8) |
-           ((word64)a[2] << 16) |
-           ((word64)a[3] << 24) |
-           ((word64)a[4] << 32) |
-           ((word64)a[5] << 40) |
-           ((word64)a[6] << 48) |
-           ((word64)a[7] << 56);
-}
 
 /* Convert the array of bytes, in little-endian order, to a 64-bit integer.
  *
@@ -548,7 +545,7 @@ static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
  */
 static word64 Load64BitBigEndian(const byte* a)
 {
-#if defined(BIG_ENDIAN_ORDER) || (WOLFSSL_GENERAL_ALIGNMENT == 1)
+#ifdef BIG_ENDIAN_ORDER
     word64 n = 0;
     int i;
 
@@ -556,24 +553,8 @@ static word64 Load64BitBigEndian(const byte* a)
         n |= (word64)a[i] << (8 * i);
 
     return n;
-#elif ((WOLFSSL_GENERAL_ALIGNMENT > 0) && (WOLFSSL_GENERAL_ALIGNMENT == 4))
-    word64 n;
-
-    n  =          *(word32*) a;
-    n |= ((word64)*(word32*)(a + 4)) << 32;
-
-    return n;
-#elif ((WOLFSSL_GENERAL_ALIGNMENT > 0) && (WOLFSSL_GENERAL_ALIGNMENT == 2))
-    word64 n;
-
-    n  =          *(word16*) a;
-    n |= ((word64)*(word16*)(a + 2)) << 16;
-    n |= ((word64)*(word16*)(a + 4)) << 32;
-    n |= ((word64)*(word16*)(a + 6)) << 48;
-
-    return n;
 #else
-    return *(const word64*)a;
+    return *(word64*)a;
 #endif
 }
 
@@ -589,7 +570,7 @@ static int InitSha3(wc_Sha3* sha3)
     for (i = 0; i < 25; i++)
         sha3->s[i] = 0;
     sha3->i = 0;
-#ifdef WOLFSSL_HASH_FLAGS
+#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
     sha3->flags = 0;
 #endif
 
@@ -606,11 +587,12 @@ static int InitSha3(wc_Sha3* sha3)
  */
 static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
 {
-    word32 i;
+    byte i;
     byte l;
     byte *t;
 
-    if (sha3->i > 0) {
+    if (sha3->i > 0)
+    {
         l = p * 8 - sha3->i;
         if (l > len) {
             l = (byte)len;
@@ -623,16 +605,18 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
         len -= i;
         sha3->i += i;
 
-        if (sha3->i == p * 8) {
+        if (sha3->i == p * 8)
+        {
             for (i = 0; i < p; i++)
                 sha3->s[i] ^= Load64BitBigEndian(sha3->t + 8 * i);
             BlockSha3(sha3->s);
             sha3->i = 0;
         }
     }
-    while (len >= ((word32)(p * 8))) {
+    while (len >= ((word32)(p * 8)))
+    {
         for (i = 0; i < p; i++)
-            sha3->s[i] ^= Load64Unaligned(data + 8 * i);
+            sha3->s[i] ^= Load64BitBigEndian(data + 8 * i);
         BlockSha3(sha3->s);
         len -= p * 8;
         data += p * 8;
@@ -652,38 +636,30 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
  * len   Number of bytes in output.
  * returns 0 on success.
  */
-static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, word32 l)
+static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, byte l)
 {
-    word32 rate = p * 8;
-    word32 j;
-    word32 i;
+    byte i;
+    byte *state = (byte *)sha3->s;
 
-    sha3->t[rate - 1]  = 0x00;
+    sha3->t[p * 8 - 1]  = 0x00;
 #ifdef WOLFSSL_HASH_FLAGS
-    if (p == WC_SHA3_256_COUNT && sha3->flags & WC_HASH_SHA3_KECCAK256)
+    if (p == WC_SHA3_256_COUNT && sha3->flags & WC_HASH_SHA3_KECCAK256) {
         padChar = 0x01;
+    }
 #endif
-    sha3->t[sha3->i ]  = padChar;
-    sha3->t[rate - 1] |= 0x80;
-    for (i=sha3->i + 1; i < rate - 1; i++)
+    sha3->t[  sha3->i]  = padChar;
+    sha3->t[p * 8 - 1] |= 0x80;
+    for (i=sha3->i + 1; i < p * 8 - 1; i++)
         sha3->t[i] = 0;
     for (i = 0; i < p; i++)
         sha3->s[i] ^= Load64BitBigEndian(sha3->t + 8 * i);
-    for (j = 0; l - j >= rate; j += rate) {
-        BlockSha3(sha3->s);
-    #if defined(BIG_ENDIAN_ORDER)
-        ByteReverseWords64((word64*)(hash + j), sha3->s, rate);
-    #else
-        XMEMCPY(hash + j, sha3->s, rate);
-    #endif
-    }
-    if (j != l) {
-        BlockSha3(sha3->s);
-    #if defined(BIG_ENDIAN_ORDER)
-        ByteReverseWords64(sha3->s, sha3->s, rate);
-    #endif
-        XMEMCPY(hash + j, sha3->s, l - j);
-    }
+    BlockSha3(sha3->s);
+#if defined(BIG_ENDIAN_ORDER)
+    ByteReverseWords64(sha3->s, sha3->s, ((l+7)/8)*8);
+#endif
+    for (i = 0; i < l; i++)
+        hash[i] = state[i];
+
     return 0;
 }
 
@@ -787,7 +763,7 @@ static int wc_Sha3Final(wc_Sha3* sha3, byte* hash, byte p, byte len)
     }
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
-    ret = Sha3Final(sha3, 0x06, hash, p, (word32)len);
+    ret = Sha3Final(sha3, 0x06, hash, p, len);
     if (ret != 0)
         return ret;
 
@@ -828,10 +804,10 @@ static int wc_Sha3Copy(wc_Sha3* src, wc_Sha3* dst)
 
     XMEMCPY(dst, src, sizeof(wc_Sha3));
 
-#if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA3)
+#ifdef WOLFSSL_ASYNC_CRYPT
     ret = wolfAsync_DevCopy(&src->asyncDev, &dst->asyncDev);
 #endif
-#ifdef WOLFSSL_HASH_FLAGS
+#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
      dst->flags |= WC_HASH_FLAG_ISCOPY;
 #endif
 
@@ -1151,7 +1127,7 @@ int wc_Sha3_512_Copy(wc_Sha3* src, wc_Sha3* dst)
     return wc_Sha3Copy(src, dst);
 }
 
-#ifdef WOLFSSL_HASH_FLAGS
+#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
 int wc_Sha3_SetFlags(wc_Sha3* sha3, word32 flags)
 {
     if (sha3) {
@@ -1168,7 +1144,7 @@ int wc_Sha3_GetFlags(wc_Sha3* sha3, word32* flags)
 }
 #endif
 
-#ifdef WOLFSSL_SHAKE256
+#if defined(WOLFSSL_SHAKE256)
 /* Initialize the state for a Shake256 hash operation.
  *
  * shake  wc_Shake object holding state.

@@ -1,6 +1,6 @@
 /* random.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -132,7 +132,7 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
     #include <wnr.h>
     #include <wolfssl/wolfcrypt/logging.h>
     wolfSSL_Mutex wnr_mutex;    /* global netRandom mutex */
-    int wnr_timeout     = 0;    /* entropy timeout, milliseconds */
+    int wnr_timeout     = 0;    /* entropy timeout, mililseconds */
     int wnr_mutex_init  = 0;    /* flag for mutex init */
     wnr_context*  wnr_ctx;      /* global netRandom context */
 #elif defined(FREESCALE_KSDK_2_0_TRNG)
@@ -173,23 +173,14 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 #include <wolfssl/wolfcrypt/port/silabs/silabs_random.h>
 #endif
 
-#if defined(WOLFSSL_IOTSAFE) && defined(HAVE_IOTSAFE_HWRNG)
-#include <wolfssl/wolfcrypt/port/iotsafe/iotsafe.h>
-#endif
 
-#if defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_RNG)
-#include <wolfssl/wolfcrypt/port/psa/psa.h>
-#endif
-
-#if defined(HAVE_INTEL_RDRAND) || defined(HAVE_INTEL_RDSEED) || \
-    defined(HAVE_AMD_RDSEED)
+#if defined(HAVE_INTEL_RDRAND) || defined(HAVE_INTEL_RDSEED)
     static word32 intel_flags = 0;
     static void wc_InitRng_IntelRD(void)
     {
         intel_flags = cpuid_get_flags();
     }
-    #if (defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)) && \
-        !defined(WOLFSSL_LINUXKM)
+    #if defined(HAVE_INTEL_RDSEED) && !defined(WOLFSSL_LINUXKM)
     static int wc_GenerateSeed_IntelRD(OS_Seed* os, byte* output, word32 sz);
     #endif
     #ifdef HAVE_INTEL_RDRAND
@@ -234,51 +225,50 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 #define RESEED_INTERVAL   WC_RESEED_INTERVAL
 
 
+/* For FIPS builds, the user should not be adjusting the values. */
+#if defined(HAVE_FIPS) && \
+    defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+    #if defined(RNG_SECURITY_STRENGTH) \
+            || defined(ENTROPY_SCALE_FACTOR) \
+            || defined(SEED_BLOCK_SZ)
+
+        #error "Do not change the RNG parameters for FIPS builds."
+    #endif
+#endif
+
+
 /* The security strength for the RNG is the target number of bits of
  * entropy you are looking for in a seed. */
 #ifndef RNG_SECURITY_STRENGTH
-    /* SHA-256 requires a minimum of 256-bits of entropy. */
-    #define RNG_SECURITY_STRENGTH (256)
+    #if defined(HAVE_FIPS) && \
+        defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+        /* SHA-256 requires a minimum of 256-bits of entropy. The goal
+         * of 1024 will provide 4 times that. */
+        #define RNG_SECURITY_STRENGTH (1024)
+    #else
+        /* If not using FIPS or using old FIPS, set the number down a bit.
+         * More is better, but more is also slower. */
+        #define RNG_SECURITY_STRENGTH (256)
+    #endif
 #endif
 
 #ifndef ENTROPY_SCALE_FACTOR
     /* The entropy scale factor should be the whole number inverse of the
      * minimum bits of entropy per bit of NDRNG output. */
-    #if defined(HAVE_AMD_RDSEED)
-        /* This will yield a SEED_SZ of 16kb. Since nonceSz will be 0,
-         * we'll add an additional 8kb on top. */
-        #define ENTROPY_SCALE_FACTOR  (512)
-    #elif defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
+    #if defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
         /* The value of 2 applies to Intel's RDSEED which provides about
-         * 0.5 bits minimum of entropy per bit. The value of 4 gives a
-         * conservative margin for FIPS. */
-        #if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && \
-            (HAVE_FIPS_VERSION >= 2)
-            #define ENTROPY_SCALE_FACTOR (2*4)
-        #else
-            /* Not FIPS, but Intel RDSEED, only double. */
-            #define ENTROPY_SCALE_FACTOR (2)
-        #endif
-    #elif defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && \
-        (HAVE_FIPS_VERSION >= 2)
-        /* If doing a FIPS build without a specific scale factor, default
-         * to 4. This will give 1024 bits of entropy. More is better, but
-         * more is also slower. */
-        #define ENTROPY_SCALE_FACTOR (4)
+         * 0.5 bits minimum of entropy per bit. */
+        #define ENTROPY_SCALE_FACTOR 2
     #else
         /* Setting the default to 1. */
-        #define ENTROPY_SCALE_FACTOR (1)
+        #define ENTROPY_SCALE_FACTOR 1
     #endif
 #endif
 
 #ifndef SEED_BLOCK_SZ
     /* The seed block size, is the size of the output of the underlying NDRNG.
      * This value is used for testing the output of the NDRNG. */
-    #if defined(HAVE_AMD_RDSEED)
-        /* AMD's RDSEED instruction works in 128-bit blocks read 64-bits
-        * at a time. */
-        #define SEED_BLOCK_SZ (sizeof(word64)*2)
-    #elif defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
+    #if defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
         /* RDSEED outputs in blocks of 64-bits. */
         #define SEED_BLOCK_SZ sizeof(word64)
     #else
@@ -296,25 +286,11 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 #define MAX_SEED_SZ    (SEED_SZ + SEED_SZ/2 + SEED_BLOCK_SZ)
 
 
-#ifdef WC_RNG_SEED_CB
-
-static wc_RngSeed_Cb seedCb = NULL;
-
-int wc_SetSeed_Cb(wc_RngSeed_Cb cb)
-{
-    seedCb = cb;
-    return 0;
-}
-
-#endif
-
-
 /* Internal return codes */
 #define DRBG_SUCCESS      0
 #define DRBG_FAILURE      1
 #define DRBG_NEED_RESEED  2
 #define DRBG_CONT_FAILURE 3
-#define DRBG_NO_SEED_CB   4
 
 /* RNG health states */
 #define DRBG_NOT_INIT     0
@@ -334,7 +310,7 @@ enum {
     drbgReseed    = 1,
     drbgGenerateW = 2,
     drbgGenerateH = 3,
-    drbgInitV     = 4
+    drbgInitV
 };
 
 typedef struct DRBG_internal DRBG_internal;
@@ -358,7 +334,7 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
     wc_Sha256 sha[1];
 #endif
 #ifdef WC_ASYNC_ENABLE_SHA256
-    WC_DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
+    DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
     if (digest == NULL)
         return MEMORY_E;
 #else
@@ -377,8 +353,7 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
     len = (outSz / OUTPUT_BLOCK_LEN)
         + ((outSz % OUTPUT_BLOCK_LEN) ? 1 : 0);
 
-    ctr = 1;
-    for (i = 0; i < len; i++) {
+    for (i = 0, ctr = 1; i < len; i++, ctr++) {
 #ifndef WOLFSSL_SMALL_STACK_CACHE
     #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
         ret = wc_InitSha256_ex(sha, drbg->heap, drbg->devId);
@@ -387,12 +362,12 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
     #endif
         if (ret != 0)
             break;
+
+        if (ret == 0)
 #endif
-        ret = wc_Sha256Update(sha, &ctr, sizeof(ctr));
-        if (ret == 0) {
-            ctr++;
+            ret = wc_Sha256Update(sha, &ctr, sizeof(ctr));
+        if (ret == 0)
             ret = wc_Sha256Update(sha, (byte*)&bits, sizeof(bits));
-        }
 
         if (ret == 0) {
             /* churning V is the only string that doesn't have the type added */
@@ -426,7 +401,7 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
     ForceZero(digest, WC_SHA256_DIGEST_SIZE);
 
 #ifdef WC_ASYNC_ENABLE_SHA256
-    WC_FREE_VAR(digest, drbg->heap);
+    FREE_VAR(digest, drbg->heap);
 #endif
 
     return (ret == 0) ? DRBG_SUCCESS : DRBG_FAILURE;
@@ -436,10 +411,6 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
 static int Hash_DRBG_Reseed(DRBG_internal* drbg, const byte* seed, word32 seedSz)
 {
     byte newV[DRBG_SEED_LEN];
-
-    if (drbg == NULL) {
-        return DRBG_FAILURE;
-    }
 
     XMEMSET(newV, 0, DRBG_SEED_LEN);
 
@@ -467,16 +438,6 @@ int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* seed, word32 seedSz)
 {
     if (rng == NULL || seed == NULL) {
         return BAD_FUNC_ARG;
-    }
-
-    if (rng->drbg == NULL) {
-    #if defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
-        if (IS_INTEL_RDRAND(intel_flags)) {
-            /* using RDRAND not DRBG, so return success */
-            return 0;
-        }
-        return BAD_FUNC_ARG;
-    #endif
     }
 
     return Hash_DRBG_Reseed((DRBG_internal *)rng->drbg, seed, seedSz);
@@ -507,7 +468,7 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
     wc_Sha256 sha[1];
 #endif
 #ifdef WC_ASYNC_ENABLE_SHA256
-    WC_DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
+    DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
     if (digest == NULL)
         return MEMORY_E;
 #else
@@ -577,7 +538,7 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
     ForceZero(data, sizeof(data));
 
 #ifdef WC_ASYNC_ENABLE_SHA256
-    WC_FREE_VAR(digest, drbg->heap);
+    FREE_VAR(digest, drbg->heap);
 #endif
 
     return (ret == 0) ? DRBG_SUCCESS : DRBG_FAILURE;
@@ -590,12 +551,10 @@ static WC_INLINE void array_add(byte* d, word32 dLen, const byte* s, word32 sLen
     if (dLen > 0 && sLen > 0 && dLen >= sLen) {
         int sIdx, dIdx;
 
-        dIdx = dLen - 1;
-        for (sIdx = sLen - 1; sIdx >= 0; sIdx--) {
+        for (sIdx = sLen - 1, dIdx = dLen - 1; sIdx >= 0; dIdx--, sIdx--) {
             carry += (word16)d[dIdx] + (word16)s[sIdx];
             d[dIdx] = (byte)carry;
             carry >>= 8;
-            dIdx--;
         }
 
         for (; carry != 0 && dIdx >= 0; dIdx--) {
@@ -618,15 +577,11 @@ static int Hash_DRBG_Generate(DRBG_internal* drbg, byte* out, word32 outSz)
     byte type;
     word32 reseedCtr;
 
-    if (drbg == NULL) {
-        return DRBG_FAILURE;
-    }
-
     if (drbg->reseedCtr == RESEED_INTERVAL) {
         return DRBG_NEED_RESEED;
     } else {
     #ifdef WC_ASYNC_ENABLE_SHA256
-        WC_DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
+        DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
         if (digest == NULL)
             return MEMORY_E;
     #else
@@ -669,7 +624,7 @@ static int Hash_DRBG_Generate(DRBG_internal* drbg, byte* out, word32 outSz)
         }
         ForceZero(digest, WC_SHA256_DIGEST_SIZE);
     #ifdef WC_ASYNC_ENABLE_SHA256
-        WC_FREE_VAR(digest, drbg->heap);
+        FREE_VAR(digest, drbg->heap);
     #endif
     }
 
@@ -798,8 +753,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     rng->status = DRBG_NOT_INIT;
 #endif
 
-#if defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND) || \
-    defined(HAVE_AMD_RDSEED)
+#if defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)
     /* init the intel RD seed and/or rand */
     wc_InitRng_IntelRD();
 #endif
@@ -827,7 +781,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 
     if (wc_RNG_HealthTestLocal(0) == 0) {
     #ifdef WC_ASYNC_ENABLE_SHA256
-        WC_DECLARE_VAR(seed, byte, MAX_SEED_SZ, rng->heap);
+        DECLARE_VAR(seed, byte, MAX_SEED_SZ, rng->heap);
         if (seed == NULL)
             return MEMORY_E;
     #else
@@ -846,19 +800,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
         rng->drbg = (struct DRBG*)&rng->drbg_data;
 #endif
         if (ret == 0) {
-#ifdef WC_RNG_SEED_CB
-            if (seedCb == NULL) {
-                ret = DRBG_NO_SEED_CB;
-            }
-            else {
-                ret = seedCb(&rng->seed, seed, seedSz);
-                if (ret != 0) {
-                    ret = DRBG_FAILURE;
-                }
-            }
-#else
             ret = wc_GenerateSeed(&rng->seed, seed, seedSz);
-#endif
             if (ret == 0)
                 ret = wc_RNG_TestSeed(seed, seedSz);
             else {
@@ -867,7 +809,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
             }
 
             if (ret == DRBG_SUCCESS)
-                ret = Hash_DRBG_Instantiate((DRBG_internal *)rng->drbg,
+	      ret = Hash_DRBG_Instantiate((DRBG_internal *)rng->drbg,
                             seed + SEED_BLOCK_SZ, seedSz - SEED_BLOCK_SZ,
                             nonce, nonceSz, rng->heap, devId);
 
@@ -881,7 +823,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 
         ForceZero(seed, seedSz);
     #ifdef WC_ASYNC_ENABLE_SHA256
-        WC_FREE_VAR(seed, rng->heap);
+        FREE_VAR(seed, rng->heap);
     #endif
     }
     else
@@ -976,7 +918,7 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
         return BAD_FUNC_ARG;
 
     if (sz == 0)
-        return 0;
+        return 0; 
 
 #ifdef WOLF_CRYPTO_CB
     if (rng->devId != INVALID_DEVID) {
@@ -1034,10 +976,10 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
                 ret = wc_RNG_TestSeed(newSeed, SEED_SZ + SEED_BLOCK_SZ);
 
             if (ret == DRBG_SUCCESS)
-                ret = Hash_DRBG_Reseed((DRBG_internal *)rng->drbg,
-                                       newSeed + SEED_BLOCK_SZ, SEED_SZ);
+	      ret = Hash_DRBG_Reseed((DRBG_internal *)rng->drbg, newSeed + SEED_BLOCK_SZ,
+                                       SEED_SZ);
             if (ret == DRBG_SUCCESS)
-                ret = Hash_DRBG_Generate((DRBG_internal *)rng->drbg, output, sz);
+	      ret = Hash_DRBG_Generate((DRBG_internal *)rng->drbg, output, sz);
 
             ForceZero(newSeed, sizeof(newSeed));
         }
@@ -1456,8 +1398,7 @@ int wc_FreeNetRandom(void)
 #endif /* HAVE_WNR */
 
 
-#if defined(HAVE_INTEL_RDRAND) || defined(HAVE_INTEL_RDSEED) || \
-    defined(HAVE_AMD_RDSEED)
+#if defined(HAVE_INTEL_RDRAND) || defined(HAVE_INTEL_RDSEED)
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     /* need more retries if multiple cores */
@@ -1466,7 +1407,7 @@ int wc_FreeNetRandom(void)
     #define INTELRD_RETRY 32
 #endif
 
-#if defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)
+#ifdef HAVE_INTEL_RDSEED
 
 #ifndef USE_INTEL_INTRINSICS
 
@@ -1541,7 +1482,7 @@ static int wc_GenerateSeed_IntelRD(OS_Seed* os, byte* output, word32 sz)
 }
 #endif
 
-#endif /* HAVE_INTEL_RDSEED || HAVE_AMD_RDSEED */
+#endif /* HAVE_INTEL_RDSEED */
 
 #ifdef HAVE_INTEL_RDRAND
 
@@ -1618,7 +1559,7 @@ static int wc_GenerateRand_IntelRD(OS_Seed* os, byte* output, word32 sz)
 }
 
 #endif /* HAVE_INTEL_RDRAND */
-#endif /* HAVE_INTEL_RDRAND || HAVE_INTEL_RDSEED || HAVE_AMD_RDSEED */
+#endif /* HAVE_INTEL_RDRAND || HAVE_INTEL_RDSEED */
 
 
 /* Begin wc_GenerateSeed Implementations */
@@ -1664,7 +1605,7 @@ static int wc_GenerateRand_IntelRD(OS_Seed* os, byte* output, word32 sz)
         {
             /* If not aligned or there is odd/remainder */
             if( (i + sizeof(CUSTOM_RAND_TYPE)) > sz ||
-                ((wc_ptr_t)&output[i] % sizeof(CUSTOM_RAND_TYPE)) != 0
+                ((wolfssl_word)&output[i] % sizeof(CUSTOM_RAND_TYPE)) != 0
             ) {
                 /* Single byte at a time */
                 output[i++] = (byte)CUSTOM_RAND_GENERATE();
@@ -1684,14 +1625,14 @@ static int wc_GenerateRand_IntelRD(OS_Seed* os, byte* output, word32 sz)
 int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 {
     int ret = !SGX_SUCCESS;
-    int i, read_max = 10;
+	int i, read_max = 10;
 
-    for (i = 0; i < read_max && ret != SGX_SUCCESS; i++) {
-        ret = sgx_read_rand(output, sz);
-    }
+	for (i = 0; i < read_max && ret != SGX_SUCCESS; i++) {
+		ret = sgx_read_rand(output, sz);
+	}
 
-    (void)os;
-    return (ret == SGX_SUCCESS) ? 0 : 1;
+	(void)os;
+	return (ret == SGX_SUCCESS) ? 0 : 1;
 }
 
 #elif defined(USE_WINDOWS_API)
@@ -1804,7 +1745,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
             RNGPOLY2 = _CP0_GET_COUNT();
             RNGNUMGEN2 = _CP0_GET_COUNT();
 #else
-            /* All others can be seeded from the TRNG */
+            // All others can be seeded from the TRNG
             RNGCONbits.TRNGMODE = 1;
             RNGCONbits.TRNGEN = 1;
             while (RNGCNT < 64);
@@ -1852,137 +1793,131 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         }
     #endif /* WOLFSSL_PIC32MZ_RNG */
 
-#elif defined(FREESCALE_K70_RNGA) || defined(FREESCALE_RNGA)
-    /*
-     * wc_Generates a RNG seed using the Random Number Generator Accelerator
-     * on the Kinetis K70. Documentation located in Chapter 37 of
-     * K70 Sub-Family Reference Manual (see Note 3 in the README for link).
-     */
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        word32 i;
-
-        /* turn on RNGA module */
-        #if defined(SIM_SCGC3_RNGA_MASK)
-            SIM_SCGC3 |= SIM_SCGC3_RNGA_MASK;
-        #endif
-        #if defined(SIM_SCGC6_RNGA_MASK)
-            /* additionally needed for at least K64F */
-            SIM_SCGC6 |= SIM_SCGC6_RNGA_MASK;
-        #endif
-
-        /* set SLP bit to 0 - "RNGA is not in sleep mode" */
-        RNG_CR &= ~RNG_CR_SLP_MASK;
-
-        /* set HA bit to 1 - "security violations masked" */
-        RNG_CR |= RNG_CR_HA_MASK;
-
-        /* set GO bit to 1 - "output register loaded with data" */
-        RNG_CR |= RNG_CR_GO_MASK;
-
-        for (i = 0; i < sz; i++) {
-
-            /* wait for RNG FIFO to be full */
-            while((RNG_SR & RNG_SR_OREG_LVL(0xF)) == 0) {}
-
-            /* get value */
-            output[i] = RNG_OR;
-        }
-
-        return 0;
-    }
-
-#elif defined(FREESCALE_K53_RNGB) || defined(FREESCALE_RNGB)
-    /*
-     * wc_Generates a RNG seed using the Random Number Generator (RNGB)
-     * on the Kinetis K53. Documentation located in Chapter 33 of
-     * K53 Sub-Family Reference Manual (see note in the README for link).
-     */
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        int i;
-
-        /* turn on RNGB module */
-        SIM_SCGC3 |= SIM_SCGC3_RNGB_MASK;
-
-        /* reset RNGB */
-        RNG_CMD |= RNG_CMD_SR_MASK;
-
-        /* FIFO generate interrupt, return all zeros on underflow,
-         * set auto reseed */
-        RNG_CR |= (RNG_CR_FUFMOD_MASK | RNG_CR_AR_MASK);
-
-        /* gen seed, clear interrupts, clear errors */
-        RNG_CMD |= (RNG_CMD_GS_MASK | RNG_CMD_CI_MASK | RNG_CMD_CE_MASK);
-
-        /* wait for seeding to complete */
-        while ((RNG_SR & RNG_SR_SDN_MASK) == 0) {}
-
-        for (i = 0; i < sz; i++) {
-
-            /* wait for a word to be available from FIFO */
-            while((RNG_SR & RNG_SR_FIFO_LVL_MASK) == 0) {}
-
-            /* get value */
-            output[i] = RNG_OUT;
-        }
-
-        return 0;
-    }
-
-#elif defined(FREESCALE_KSDK_2_0_TRNG)
-    #ifndef TRNG0
-    #define TRNG0 TRNG
-    #endif
-
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        status_t status;
-        status = TRNG_GetRandomData(TRNG0, output, sz);
-        (void)os;
-        if (status == kStatus_Success)
-        {
-            return(0);
-        }
-        return RAN_BLOCK_E;
-    }
-
-#elif defined(FREESCALE_KSDK_2_0_RNGA)
-
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        status_t status;
-        status = RNGA_GetRandomData(RNG, output, sz);
-        (void)os;
-        if (status == kStatus_Success)
-        {
-            return(0);
-        }
-        return RAN_BLOCK_E;
-    }
-
-
-#elif defined(FREESCALE_RNGA)
-
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        status_t status;
-        status = RNGA_GetRandomData(RNG, output, sz);
-        (void)os;
-        if (status == kStatus_Success)
-        {
-            return(0);
-        }
-        return RAN_BLOCK_E;
-    }
-
 #elif defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX) || \
-    defined(FREESCALE_KSDK_BM) || defined(FREESCALE_FREE_RTOS)
-    /*
-     * Fallback to USE_TEST_GENSEED if a FREESCALE platform did not match any
-     * of the TRNG/RNGA/RNGB support
-     */
-    #define USE_TEST_GENSEED
+      defined(FREESCALE_KSDK_BM) || defined(FREESCALE_FREE_RTOS)
+
+    #if defined(FREESCALE_K70_RNGA) || defined(FREESCALE_RNGA)
+        /*
+         * wc_Generates a RNG seed using the Random Number Generator Accelerator
+         * on the Kinetis K70. Documentation located in Chapter 37 of
+         * K70 Sub-Family Reference Manual (see Note 3 in the README for link).
+         */
+        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+        {
+            word32 i;
+
+            /* turn on RNGA module */
+            #if defined(SIM_SCGC3_RNGA_MASK)
+                SIM_SCGC3 |= SIM_SCGC3_RNGA_MASK;
+            #endif
+            #if defined(SIM_SCGC6_RNGA_MASK)
+                /* additionally needed for at least K64F */
+                SIM_SCGC6 |= SIM_SCGC6_RNGA_MASK;
+            #endif
+
+            /* set SLP bit to 0 - "RNGA is not in sleep mode" */
+            RNG_CR &= ~RNG_CR_SLP_MASK;
+
+            /* set HA bit to 1 - "security violations masked" */
+            RNG_CR |= RNG_CR_HA_MASK;
+
+            /* set GO bit to 1 - "output register loaded with data" */
+            RNG_CR |= RNG_CR_GO_MASK;
+
+            for (i = 0; i < sz; i++) {
+
+                /* wait for RNG FIFO to be full */
+                while((RNG_SR & RNG_SR_OREG_LVL(0xF)) == 0) {}
+
+                /* get value */
+                output[i] = RNG_OR;
+            }
+
+            return 0;
+        }
+
+    #elif defined(FREESCALE_K53_RNGB) || defined(FREESCALE_RNGB)
+        /*
+         * wc_Generates a RNG seed using the Random Number Generator (RNGB)
+         * on the Kinetis K53. Documentation located in Chapter 33 of
+         * K53 Sub-Family Reference Manual (see note in the README for link).
+         */
+        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+        {
+            int i;
+
+            /* turn on RNGB module */
+            SIM_SCGC3 |= SIM_SCGC3_RNGB_MASK;
+
+            /* reset RNGB */
+            RNG_CMD |= RNG_CMD_SR_MASK;
+
+            /* FIFO generate interrupt, return all zeros on underflow,
+             * set auto reseed */
+            RNG_CR |= (RNG_CR_FUFMOD_MASK | RNG_CR_AR_MASK);
+
+            /* gen seed, clear interrupts, clear errors */
+            RNG_CMD |= (RNG_CMD_GS_MASK | RNG_CMD_CI_MASK | RNG_CMD_CE_MASK);
+
+            /* wait for seeding to complete */
+            while ((RNG_SR & RNG_SR_SDN_MASK) == 0) {}
+
+            for (i = 0; i < sz; i++) {
+
+                /* wait for a word to be available from FIFO */
+                while((RNG_SR & RNG_SR_FIFO_LVL_MASK) == 0) {}
+
+                /* get value */
+                output[i] = RNG_OUT;
+            }
+
+            return 0;
+        }
+
+    #elif defined(FREESCALE_KSDK_2_0_TRNG)
+
+        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+        {
+            status_t status;
+            status = TRNG_GetRandomData(TRNG0, output, sz);
+            if (status == kStatus_Success)
+            {
+                return(0);
+            }
+            else
+            {
+                return RAN_BLOCK_E;
+            }
+        }
+
+    #elif defined(FREESCALE_KSDK_2_0_RNGA)
+
+        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+        {
+            status_t status;
+            status = RNGA_GetRandomData(RNG, output, sz);
+            if (status == kStatus_Success)
+            {
+                return(0);
+            }
+            else
+            {
+                return RAN_BLOCK_E;
+            }
+        }
+
+
+    #elif defined(FREESCALE_RNGA)
+
+        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+        {
+            RNGA_DRV_GetRandomData(RNGA_INSTANCE, output, sz);
+            return 0;
+        }
+
+    #else
+        #define USE_TEST_GENSEED
+    #endif /* FREESCALE_K70_RNGA */
 
 #elif defined(WOLFSSL_SILABS_SE_ACCEL)
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
@@ -2019,10 +1954,10 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         while (i < sz) {
             /* If not aligned or there is odd/remainder */
             if( (i + sizeof(word32)) > sz ||
-                ((wc_ptr_t)&output[i] % sizeof(word32)) != 0
+                ((wolfssl_word)&output[i] % sizeof(word32)) != 0
             ) {
                 /* Single byte at a time */
-                uint32_t tmpRng = 0;
+                word32 tmpRng = 0;
                 if (HAL_RNG_GenerateRandomNumber(&hrng, &tmpRng) != HAL_OK) {
                     wolfSSL_CryptHwMutexUnLock();
                     return RAN_BLOCK_E;
@@ -2031,7 +1966,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
             }
             else {
                 /* Use native 32 instruction */
-                if (HAL_RNG_GenerateRandomNumber(&hrng, (uint32_t*)&output[i]) != HAL_OK) {
+                if (HAL_RNG_GenerateRandomNumber(&hrng, (word32*)&output[i]) != HAL_OK) {
                     wolfSSL_CryptHwMutexUnLock();
                     return RAN_BLOCK_E;
                 }
@@ -2133,7 +2068,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     #endif /* WOLFSSL_STM32_CUBEMX */
 
 #elif defined(WOLFSSL_TIRTOS)
-    #warning "potential for not enough entropy, currently being used for testing"
+
     #include <xdc/runtime/Timestamp.h>
     #include <stdlib.h>
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
@@ -2285,7 +2220,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         }
 
         if (wc_LockMutex(&wnr_mutex) != 0) {
-            WOLFSSL_MSG("Bad Lock Mutex wnr_mutex");
+            WOLFSSL_MSG("Bad Lock Mutex wnr_mutex\n");
             return BAD_MUTEX_E;
         }
 
@@ -2301,35 +2236,19 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 #elif defined(INTIME_RTOS)
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
-        uint32_t randval;
-        word32 len;
+        int ret = 0;
+
+        (void)os;
 
         if (output == NULL) {
             return BUFFER_E;
         }
 
-    #ifdef INTIMEVER
-        /* If INTIMEVER exists then it is INTIME RTOS v6 or later */
-        #define INTIME_RAND_FUNC arc4random
-        len = 4;
-    #else
-        /* v5 and older */
-        #define INTIME_RAND_FUNC rand
-        srand(time(0));
-        len = 2; /* don't use all 31 returned bits */
-    #endif
+        /* Note: Investigate better solution */
+        /* no return to check */
+        arc4random_buf(output, sz);
 
-        while (sz > 0) {
-            if (sz < len)
-                len = sz;
-            randval = INTIME_RAND_FUNC();
-            XMEMCPY(output, &randval, len);
-            output += len;
-            sz -= len;
-        }
-        (void)os;
-
-        return 0;
+        return ret;
     }
 
 #elif defined(WOLFSSL_WICED)
@@ -2384,18 +2303,16 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         return 0;
     }
 
-#elif (defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
-       defined(WOLFSSL_SECO_CAAM))
+#elif (defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG))
 
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
+    #include <wolfssl/wolfcrypt/port/caam/caam_driver.h>
 
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
-        unsigned int args[4] = {0};
-        CAAM_BUFFER buf[1];
-        int ret    = 0;
-        int times  = 1000, i; /* 1000 is an arbitrary number chosen */
-        word32 idx = 0;
+        Buffer buf[1];
+        int ret  = 0;
+        int times = 1000, i;
 
         (void)os;
 
@@ -2403,29 +2320,25 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
             return BUFFER_E;
         }
 
+        buf[0].BufferType = DataBuffer | LastBuffer;
+        buf[0].TheAddress = (Address)output;
+        buf[0].Length     = sz;
+
         /* Check Waiting to make sure entropy is ready */
         for (i = 0; i < times; i++) {
-            buf[0].BufferType = DataBuffer | LastBuffer;
-            buf[0].TheAddress = (CAAM_ADDRESS)(output + idx);
-            buf[0].Length     = ((sz - idx) < WC_CAAM_MAX_ENTROPY)?
-                                sz - idx : WC_CAAM_MAX_ENTROPY;
-
-            args[0] = buf[0].Length;
-            ret = wc_caamAddAndWait(buf, 1, args, CAAM_ENTROPY);
-            if (ret == 0) {
-                idx += buf[0].Length;
-                if (idx == sz)
-                    break;
+            ret = wc_caamAddAndWait(buf, NULL, CAAM_ENTROPY);
+            if (ret == Success) {
+                break;
             }
 
             /* driver could be waiting for entropy */
-            if (ret != RAN_BLOCK_E && ret != 0) {
+            if (ret != RAN_BLOCK_E) {
                 return ret;
             }
             usleep(100);
         }
 
-        if (i == times && ret != 0) {
+        if (i == times && ret != Success) {
              return RNG_FAILURE_E;
         }
         else { /* Success case */
@@ -2496,7 +2409,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
-        int ret = 0;
+        int ret;
         word32 buffer[4];
 
         while (sz > 0) {
@@ -2506,33 +2419,8 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
                 len = sz;
             }
             /* return 4 words random number*/
-            ret = R_TSIP_GenerateRandomNumber((uint32_t*)buffer);
+            ret = R_TSIP_GenerateRandomNumber(buffer);
             if(ret == TSIP_SUCCESS) {
-                XMEMCPY(output, &buffer, len);
-                output += len;
-                sz -= len;
-            } else
-                return ret;
-        }
-        return ret;
-    }
-#elif defined(WOLFSSL_RENESAS_SCEPROTECT)
-    #include "r_sce.h"
-
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-    {
-        int ret = 0;
-        word32 buffer[4];
-
-        while (sz > 0) {
-            word32 len = sizeof(buffer);
-
-            if (sz < len) {
-                len = sz;
-            }
-            /* return 4 words random number*/
-            ret = R_SCE_RandomNumberGenerate(buffer);
-            if(ret == FSP_SUCCESS) {
                 XMEMCPY(output, &buffer, len);
                 output += len;
                 sz -= len;
@@ -2579,7 +2467,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
                 return -1;
             }
             ret = WOLFSSL_SCE_TRNG_HANDLE.p_api->read(WOLFSSL_SCE_TRNG_HANDLE.p_ctrl,
-                                                      (word32*)&tmp, 1);
+                                                      (word32*)tmp, 1);
             if (ret != SSP_SUCCESS) {
                 return -1;
             }
@@ -2601,7 +2489,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 #elif defined(WOLFSSL_SAFERTOS) || defined(WOLFSSL_LEANPSK) || \
       defined(WOLFSSL_IAR_ARM)  || defined(WOLFSSL_MDK_ARM) || \
       defined(WOLFSSL_uITRON4)  || defined(WOLFSSL_uTKERNEL2) || \
-      defined(WOLFSSL_LPC43xx)  || defined(NO_STM32_RNG) || \
+      defined(WOLFSSL_LPC43xx)  || defined(WOLFSSL_STM32F2xx) || \
       defined(MBED)             || defined(WOLFSSL_EMBOS) || \
       defined(WOLFSSL_GENSEED_FORTEST) || defined(WOLFSSL_CHIBIOS) || \
       defined(WOLFSSL_CONTIKI)  || defined(WOLFSSL_AZSPHERE)
@@ -2614,7 +2502,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
 #elif defined(WOLFSSL_ZEPHYR)
 
-        #include <random/rand32.h>
+        #include <entropy.h>
     #ifndef _POSIX_C_SOURCE
         #include <posix/time.h>
     #else
@@ -2623,8 +2511,19 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
         int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         {
-            sys_rand_get(output, sz);
-            return 0;
+            int ret = 0;
+            word32 rand;
+            while (sz > 0) {
+                word32 len = sizeof(rand);
+                if (sz < len)
+                    len = sz;
+                rand = sys_rand32_get();
+                XMEMCPY(output, &rand, len);
+                output += len;
+                sz -= len;
+            }
+
+            return ret;
         }
 
 #elif defined(WOLFSSL_TELIT_M2MB)
@@ -2651,36 +2550,6 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
                     srand(get_timestamp());
                 }
             }
-            return 0;
-        }
-#elif defined(WOLFSSL_SE050)
-     #include <wolfssl/wolfcrypt/port/nxp/se050_port.h>
-
-    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz){
-        int ret = 0;
-
-        (void)os;
-
-        if (output == NULL) {
-            return BUFFER_E;
-        }
-        ret = wolfSSL_CryptHwMutexLock();
-        if (ret == 0) {
-            ret = se050_get_random_number(sz, output);
-            wolfSSL_CryptHwMutexUnLock();
-        }
-        return ret;
-    }
-
-#elif defined(DOLPHIN_EMULATOR)
-
-        int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
-        {
-            word32 i;
-            (void)os;
-            srand(time(NULL));
-            for (i = 0; i < sz; i++)
-                output[i] = (byte)rand();
             return 0;
         }
 
@@ -2716,7 +2585,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         }
     #endif
 
-    #if defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)
+    #ifdef HAVE_INTEL_RDSEED
         if (IS_INTEL_RDSEED(intel_flags)) {
              ret = wc_GenerateSeed_IntelRD(NULL, output, sz);
              if (ret == 0) {
@@ -2731,7 +2600,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
              ret = 0;
         #endif
         }
-    #endif /* HAVE_INTEL_RDSEED || HAVE_AMD_RDSEED */
+    #endif /* HAVE_INTEL_RDSEED */
 
     #ifndef NO_DEV_URANDOM /* way to disable use of /dev/urandom */
         os->fd = open("/dev/urandom", O_RDONLY);
@@ -2787,33 +2656,8 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         return 0;
     }
 #endif
+
+
 /* End wc_GenerateSeed */
-
-#if defined(CUSTOM_RAND_GENERATE_BLOCK) && defined(WOLFSSL_KCAPI)
-#include <fcntl.h>
-int wc_hwrng_generate_block(byte *output, word32 sz)
-{
-    int fd;
-    int len;
-    int ret = 0;
-    fd = open("/dev/hwrng", O_RDONLY);
-    if (fd == -1)
-        return OPEN_RAN_E;
-    while(sz)
-    {
-        len = (int)read(fd, output, sz);
-        if (len == -1)
-        {
-            ret = READ_RAN_E;
-            break;
-        }
-        sz -= len;
-        output += len;
-    }
-    close(fd);
-    return ret;
-}
-#endif
-
 #endif /* WC_NO_RNG */
 #endif /* HAVE_FIPS */

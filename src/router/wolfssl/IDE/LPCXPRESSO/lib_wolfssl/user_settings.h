@@ -45,6 +45,8 @@
 #define NO_WOLFSSL_MEMORY
 #define NO_DEV_RANDOM
 #define NO_MD4
+#define NO_RABBIT
+#define NO_HC128
 #define NO_DSA
 #define NO_PWDBASED
 #define NO_PSK

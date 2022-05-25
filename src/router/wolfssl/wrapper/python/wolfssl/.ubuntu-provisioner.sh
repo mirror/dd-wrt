@@ -1,5 +1,3 @@
-#!/bin/bash
-
 [ "$(whoami)" != "root" ] && echo "Sorry, you are not root." && exit 1
 
 apt-get update

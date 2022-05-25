@@ -264,6 +264,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\wolfcrypt\src\hc128.c"
+				>
+			</File>
+			<File
 				RelativePath=".\wolfcrypt\src\hmac.c"
 				>
 			</File>
@@ -308,6 +312,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\wolfcrypt\src\rabbit.c"
+				>
+			</File>
+			<File
 				RelativePath=".\wolfcrypt\src\random.c"
 				>
 			</File>
@@ -349,10 +357,6 @@
 			</File>
 			<File
 				RelativePath=".\wolfcrypt\src\sp_x86_64.c"
-				>
-			</File>
-			<File
-				RelativePath=".\wolfcrypt\src\sp_x86_64_asm.asm"
 				>
 			</File>
 			<File

@@ -1,6 +1,6 @@
 /* crypto.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,6 +26,7 @@
 
 #ifndef MC_CRYPTO_API_H
 #define MC_CRYPTO_API_H
+
 
 #ifdef __cplusplus
     extern "C" {
@@ -106,12 +107,7 @@ enum {
 
 /* HMAC */
 typedef struct CRYPT_HMAC_CTX {
-    /* big enough to hold internal, but check on init */
-    #ifdef WOLF_PRIVATE_KEY_ID
-    long long holder[108];
-    #else
-    long long holder[98];
-    #endif
+    long long holder[98];   /* big enough to hold internal, but check on init */
 } CRYPT_HMAC_CTX;
 
 int CRYPT_HMAC_SetKey(CRYPT_HMAC_CTX*, int, const unsigned char*, unsigned int);
@@ -171,12 +167,7 @@ enum {
 
 /* AES */
 typedef struct CRYPT_AES_CTX {
-    /* big enough to hold internal, but check on init */
-    #ifdef WOLF_PRIVATE_KEY_ID
-    int holder[108];
-    #else
-    int holder[90];
-    #endif
+    int holder[90];   /* big enough to hold internal, but check on init */
 } CRYPT_AES_CTX;
 
 /* key */

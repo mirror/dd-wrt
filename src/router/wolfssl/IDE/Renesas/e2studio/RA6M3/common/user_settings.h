@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -30,9 +30,7 @@
 #define WOLFSSL_TLS13
 #define HAVE_HKDF
 #define WC_RSA_PSS
-#if defined(WOLFSSL_TLS13)
-    #include <sys/time.h>
-#endif
+
 /* Operating Environment and Threading */
 #define FREERTOS
 #define FREERTOS_TCP
@@ -75,6 +73,7 @@
 #define NO_PWDBASED
 #define NO_DSA
 #define NO_DES3
+#define NO_RABBIT
 #define NO_RC4
 #define NO_MD4
 

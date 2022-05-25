@@ -35,11 +35,11 @@
     }
     \endcode
 
-    \sa EmbedSend
-    \sa wolfSSL_CTX_SetIORecv
-    \sa wolfSSL_SSLSetIORecv
+    \sa wolfSSL_dtls_get_current_timeout
+    \sa TranslateReturnCode
+    \sa RECV_FUNCTION
 */
-int EmbedReceive(WOLFSSL* ssl, char* buf, int sz, void* ctx);
+WOLFSSL_API int EmbedReceive(WOLFSSL* ssl, char* buf, int sz, void* ctx);
 
 /*!
     \brief This function is the send embedded callback.
@@ -73,11 +73,13 @@ int EmbedReceive(WOLFSSL* ssl, char* buf, int sz, void* ctx);
     }
     \endcode
 
-    \sa EmbedReceive
-    \sa wolfSSL_CTX_SetIOSend
-    \sa wolfSSL_SSLSetIOSend
+    \sa TranslateReturnCode
+    \sa SEND_FUNCTION
+    \sa LastError
+    \sa InitSSL_Ctx
+    \sa LastError
 */
-int EmbedSend(WOLFSSL* ssl, char* buf, int sz, void* ctx);
+WOLFSSL_API int EmbedSend(WOLFSSL* ssl, char* buf, int sz, void* ctx);
 
 /*!
     \brief This function is the receive embedded callback.
@@ -110,12 +112,11 @@ int EmbedSend(WOLFSSL* ssl, char* buf, int sz, void* ctx);
     }
     \endcode
 
-    \sa EmbedSendTo
-    \sa wolfSSL_CTX_SetIORecv
-    \sa wolfSSL_SSLSetIORecv
-    \sa wolfSSL_dtls_get_current_timeout
+    \sa TranslateReturnCode
+    \sa RECVFROM_FUNCTION
+    \sa Setsockopt
 */
-int EmbedReceiveFrom(WOLFSSL* ssl, char* buf, int sz, void*);
+WOLFSSL_API int EmbedReceiveFrom(WOLFSSL* ssl, char* buf, int sz, void*);
 
 /*!
     \brief This function is the send embedded callback.
@@ -152,11 +153,11 @@ int EmbedReceiveFrom(WOLFSSL* ssl, char* buf, int sz, void*);
     }
     \endcode
 
-    \sa EmbedReceiveFrom
-    \sa wolfSSL_CTX_SetIOSend
-    \sa wolfSSL_SSLSetIOSend
+    \sa LastError
+    \sa EmbedSend
+    \sa EmbedReceive
 */
-int EmbedSendTo(WOLFSSL* ssl, char* buf, int sz, void* ctx);
+WOLFSSL_API int EmbedSendTo(WOLFSSL* ssl, char* buf, int sz, void* ctx);
 
 /*!
     \brief This function is the DTLS Generate Cookie callback.
@@ -187,9 +188,12 @@ int EmbedSendTo(WOLFSSL* ssl, char* buf, int sz, void* ctx);
     }
     \endcode
 
-    \sa wolfSSL_CTX_SetGenCookie
+    \sa wc_ShaHash
+    \sa EmbedGenerateCookie
+    \sa XMEMCPY
+    \sa XMEMSET
 */
-int EmbedGenerateCookie(WOLFSSL* ssl, unsigned char* buf,
+WOLFSSL_API int EmbedGenerateCookie(WOLFSSL* ssl, unsigned char* buf,
                                            int sz, void*);
 
 /*!
@@ -208,11 +212,9 @@ int EmbedGenerateCookie(WOLFSSL* ssl, unsigned char* buf,
     EmbedOcspRespFree(ctx, resp);
     \endcode
 
-    \sa wolfSSL_CertManagerSetOCSP_Cb
-    \sa wolfSSL_CertManagerEnableOCSPStapling
-    \sa wolfSSL_CertManagerEnableOCSP
+    \sa XFREE
 */
-void EmbedOcspRespFree(void* ctx, byte* resp);
+WOLFSSL_API void EmbedOcspRespFree(void*, unsigned char*);
 
 /*!
     \brief This function registers a receive callback for wolfSSL to get input
@@ -247,7 +249,7 @@ void EmbedOcspRespFree(void* ctx, byte* resp);
     \sa wolfSSL_SetIOReadCtx
     \sa wolfSSL_SetIOWriteCtx
 */
-void wolfSSL_CTX_SetIORecv(WOLFSSL_CTX* ctx, CallbackIORecv CBIORecv);
+WOLFSSL_API void wolfSSL_CTX_SetIORecv(WOLFSSL_CTX*, CallbackIORecv);
 
 /*!
     \brief This function registers a context for the SSL session’s receive
@@ -278,7 +280,7 @@ void wolfSSL_CTX_SetIORecv(WOLFSSL_CTX* ctx, CallbackIORecv CBIORecv);
     \sa wolfSSL_CTX_SetIOSend
     \sa wolfSSL_SetIOWriteCtx
 */
-void wolfSSL_SetIOReadCtx( WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void wolfSSL_SetIOReadCtx( WOLFSSL* ssl, void *ctx);
 
 /*!
     \brief This function registers a context for the SSL session’s send
@@ -309,7 +311,7 @@ void wolfSSL_SetIOReadCtx( WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_CTX_SetIOSend
     \sa wolfSSL_SetIOReadCtx
 */
-void wolfSSL_SetIOWriteCtx(WOLFSSL* ssl, void *ctx);
+WOLFSSL_API void wolfSSL_SetIOWriteCtx(WOLFSSL* ssl, void *ctx);
 
 /*!
     \ingroup IO
@@ -339,7 +341,7 @@ void wolfSSL_SetIOWriteCtx(WOLFSSL* ssl, void *ctx);
     \sa wolfSSL_SetIOReadCtx
     \sa wolfSSL_CTX_SetIOSend
 */
-void* wolfSSL_GetIOReadCtx( WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetIOReadCtx( WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -368,7 +370,7 @@ void* wolfSSL_GetIOReadCtx( WOLFSSL* ssl);
     \sa wolfSSL_SetIOReadCtx
     \sa wolfSSL_CTX_SetIOSend
 */
-void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl);
+WOLFSSL_API void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl);
 
 /*!
     \brief This function sets the flags for the receive callback to use for
@@ -410,7 +412,7 @@ void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl);
     \sa wolfSSL_CTX_SetIOSend
     \sa wolfSSL_SetIOReadCtx
 */
-void wolfSSL_SetIOReadFlags( WOLFSSL* ssl, int flags);
+WOLFSSL_API void wolfSSL_SetIOReadFlags( WOLFSSL* ssl, int flags);
 
 /*!
     \brief This function sets the flags for the send callback to use for the
@@ -445,7 +447,7 @@ void wolfSSL_SetIOReadFlags( WOLFSSL* ssl, int flags);
     \sa wolfSSL_CTX_SetIOSend
     \sa wolfSSL_SetIOReadCtx
 */
-void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags);
+WOLFSSL_API void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags);
 
 /*!
     \ingroup IO
@@ -478,7 +480,7 @@ void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags);
     \sa NetX_Send
     \sa NetX_Receive
 */
-void wolfSSL_SetIO_NetX(WOLFSSL* ssl, NX_TCP_SOCKET* nxsocket,
+WOLFSSL_API void wolfSSL_SetIO_NetX(WOLFSSL* ssl, NX_TCP_SOCKET* nxsocket,
                                       ULONG waitoption);
 
 /*!
@@ -507,7 +509,7 @@ void wolfSSL_SetIO_NetX(WOLFSSL* ssl, NX_TCP_SOCKET* nxsocket,
 
     \sa CallbackGenCookie
 */
-void  wolfSSL_CTX_SetGenCookie(WOLFSSL_CTX* ctx, CallbackGenCookie cb);
+WOLFSSL_API void  wolfSSL_CTX_SetGenCookie(WOLFSSL_CTX*, CallbackGenCookie);
 
 /*!
     \ingroup Setup
@@ -536,42 +538,4 @@ void  wolfSSL_CTX_SetGenCookie(WOLFSSL_CTX* ctx, CallbackGenCookie cb);
     \sa wolfSSL_SetCookieCtx
     \sa wolfSSL_CTX_SetGenCookie
 */
-void* wolfSSL_GetCookieCtx(WOLFSSL* ssl);
-
-
-/*!
-    \ingroup Setup
-
-    \brief This function sets up the ISO-TP context if wolfSSL, for use when
-    wolfSSL is compiled with WOLFSSL_ISOTP
-
-    \return 0 on success, WOLFSSL_CBIO_ERR_GENERAL on failure
-
-    \param ssl the wolfSSL context
-    \param ctx a user created ISOTP context which this function initializes
-    \param recv_fn a user CAN bus receive callback
-    \param send_fn a user CAN bus send callback
-    \param delay_fn a user microsecond granularity delay function
-    \param receive_delay a set amount of microseconds to delay each CAN bus
-    packet
-    \param receive_buffer a user supplied buffer to receive data, recommended
-    that is allocated to ISOTP_DEFAULT_BUFFER_SIZE bytes
-    \param receive_buffer_size - The size of receive_buffer
-    \param arg an arbitrary pointer sent to recv_fn and send_fn
-
-    _Example_
-    \code
-    struct can_info can_con_info;
-    isotp_wolfssl_ctx isotp_ctx;
-    char *receive_buffer = malloc(ISOTP_DEFAULT_BUFFER_SIZE);
-    WOLFSSL_CTX* ctx = wolfSSL_CTX_new(method);
-    WOLFSSL* ssl = wolfSSL_new(ctx);
-    ...
-    wolfSSL_SetIO_ISOTP(ssl, &isotp_ctx, can_receive, can_send, can_delay, 0,
-            receive_buffer, ISOTP_DEFAULT_BUFFER_SIZE, &can_con_info);
-    \endcode
- */
-int wolfSSL_SetIO_ISOTP(WOLFSSL *ssl, isotp_wolfssl_ctx *ctx,
-        can_recv_fn recv_fn, can_send_fn send_fn, can_delay_fn delay_fn,
-        word32 receive_delay, char *receive_buffer, int receive_buffer_size,
-        void *arg);
+WOLFSSL_API void* wolfSSL_GetCookieCtx(WOLFSSL* ssl);

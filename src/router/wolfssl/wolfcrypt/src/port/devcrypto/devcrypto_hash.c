@@ -1,6 +1,6 @@
 /* devcrypto_hash.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -86,8 +86,7 @@ static int HashUpdate(void* ctx, int type, const byte* input, word32 inputSz)
         return BAD_FUNC_ARG;
     }
 
-    wc_SetupCrypt(&crt, dev, (byte*)input, inputSz, NULL, digest,
-        COP_FLAG_UPDATE, COP_ENCRYPT);
+    wc_SetupCrypt(&crt, dev, (byte*)input, inputSz, NULL, digest, COP_FLAG_UPDATE);
     if (ioctl(dev->cfd, CIOCCRYPT, &crt)) {
         WOLFSSL_MSG("Error with call to ioctl");
         return WC_DEVCRYPTO_E;
@@ -108,7 +107,7 @@ static int GetDigest(void* ctx, int type, byte* out)
         return BAD_FUNC_ARG;
     }
 
-    wc_SetupCrypt(&crt, dev, NULL, 0, NULL, out, COP_FLAG_FINAL, COP_ENCRYPT);
+    wc_SetupCrypt(&crt, dev, NULL, 0, NULL, out, COP_FLAG_FINAL);
     if (ioctl(dev->cfd, CIOCCRYPT, &crt)) {
         WOLFSSL_MSG("Error with call to ioctl");
         return WC_DEVCRYPTO_E;

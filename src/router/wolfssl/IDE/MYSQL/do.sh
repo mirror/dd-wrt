@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # Place CMakeList in needed directories
 
 cp CMakeLists_wolfSSL.txt ../../CMakeLists.txt

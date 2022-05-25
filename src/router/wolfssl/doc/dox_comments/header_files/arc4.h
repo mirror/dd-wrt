@@ -32,7 +32,7 @@
 
     \sa wc_Arc4SetKey
 */
-int wc_Arc4Process(Arc4* arc4, byte* out, const byte* in, word32 length);
+WOLFSSL_API int wc_Arc4Process(Arc4*, byte*, const byte*, word32);
 
 /*!
     \ingroup ARC4
@@ -56,4 +56,4 @@ int wc_Arc4Process(Arc4* arc4, byte* out, const byte* in, word32 length);
 
     \sa wc_Arc4Process
 */
-int wc_Arc4SetKey(Arc4* arc4, const byte* key, word32 length);
+WOLFSSL_API int wc_Arc4SetKey(Arc4*, const byte*, word32);
