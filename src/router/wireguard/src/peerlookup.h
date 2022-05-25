@@ -10,7 +10,7 @@
 
 #include <linux/hashtable.h>
 #include <linux/mutex.h>
-#include <linux/siphash.h>
+#include "compat/siphash/include/linux/siphash.h"
 
 static struct wg_peer;
 
