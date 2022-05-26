@@ -383,7 +383,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   border-radius: 6px;
   max-width: 72.464em;
   margin: 0 auto;
-  padding: 1.812em;
+  padding: 1.812em .906em .906em;
   font-weight: bold;
   text-align: center;
 }

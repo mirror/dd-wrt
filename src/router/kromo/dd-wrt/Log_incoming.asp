@@ -5,6 +5,8 @@
 		<div class="popup">
 			<form>
 				<h2><% tran("log_in.h2"); %></h2>
+				<fieldset>
+				<legend><% tran("log.legend"); %></legend>
 				<table class="table">
 					<tr>
 						<th><% tran("log_in.th_ip"); %></th>
@@ -13,7 +15,8 @@
 						<th><% tran("share.rule"); %></th>
 					</tr>
 					<% dumplog("incoming"); %>
-				</table><br />
+				</table>
+				</fieldset><br />
 				<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
