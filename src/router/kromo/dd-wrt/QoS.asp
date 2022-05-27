@@ -302,24 +302,22 @@ addEvent(window, "unload", function() {
                                 <% show_qos_aqd(); %>
 								<div class="setting">
 									<div class="label"><% tran("qos.dnlink"); %></div>
-									<input type="number" min="0" max="1000000" step="10" class="num" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
+									<input class="num" type="number" size="10" min="0" max="1000000" step="10" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("qos.uplink"); %></div>
-									<input type="number" min="100" max="1000000" step="10" class="num" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
+									<input class="num" type="number" size="10" min="100" max="1000000" step="10" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
 								</div>
 							</fieldset><br />
-
-                            <fieldset>
-                                <legend><% tran("qos.legend7"); %></legend>
-                                <table class="table" summary="packet-type priority table">
-                                    <tr>
-                                        <td colspan="5"><% tran("qos.pktdesc"); %></td>
-                                    </tr>
-                                    <% get_qospkts(); %>
-                                </table>
-                            </fieldset><br />
-
+								<fieldset>
+								<legend><% tran("qos.legend7"); %></legend>
+								<table class="table" summary="packet-type priority table">
+										<tr>
+												<td colspan="5"><% tran("qos.pktdesc"); %></td>
+										</tr>
+										<% get_qospkts(); %>
+								</table>
+								</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
@@ -366,7 +364,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>&nbsp;&nbsp;&nbsp;
 								</div>
-
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend8"); %></legend>
@@ -388,7 +385,6 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-
 							<fieldset>
 								<legend><% tran("qos.legend3"); %></legend>
 								<table class="table" summary="IP addresses priority table">
@@ -407,7 +403,6 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-
 							<fieldset>
 								<legend><% tran("qos.legend4"); %></legend>
 								<table class="table" summary="MAC priority table">

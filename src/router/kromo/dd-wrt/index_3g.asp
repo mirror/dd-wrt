@@ -170,7 +170,7 @@
 </div>
 <div><hr></div> 
 <div class="setting">
-	<div class="label">SIMcard</div>
+	<div class="label">SIM card</div>
 	<select name="wan_select" >
 		<option value="1" <% nvsm("wan_select", "1", "selected"); %> >SIM A</option>
 		<option value="2" <% nvsm("wan_select", "2", "selected"); %> >SIM B</option>
