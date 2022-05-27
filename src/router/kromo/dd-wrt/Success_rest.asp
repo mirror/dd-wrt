@@ -46,7 +46,6 @@ addEvent(window, "unload", function() {
 	
 	<body>
 		<div class="message">
-			<div>
 				<form name="success">
 					<% tran("success.restore"); %><br /><br />
 					<div class="center">
@@ -77,6 +76,5 @@ addEvent(window, "unload", function() {
 			</div>
 		</form>
 		</div>
-	</div>
 	</body>
 </html>
