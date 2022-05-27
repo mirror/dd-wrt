@@ -4550,9 +4550,6 @@ brcmf_vndr_ie(u8 *iebuf, s32 pktflag, u8 *ie_ptr, u32 ie_len, s8 *add_del_cmd)
 
 static u8* add_mtik(u8 *buf, u32 *len)
 {
-	u8 *oldbuf = buf;
-	buf = kmalloc(*len + sizeof(struct ieee80211_mtik_ie), GFP_KERNEL);
-	memcpy(buf, oldbuf, *len);
 	ieee80211_add_mtik_ie(buf + *len, 0);
 	*len += sizeof(struct ieee80211_mtik_ie);
 	return buf;
@@ -4624,7 +4621,6 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 		bphy_err(drvr, "not suitable type\n");
 		goto exit;
 	}
-	mgmt_ie_buf = add_mtik(mgmt_ie_buf, mgmt_ie_len);
 
 	if (vndr_ie_len > mgmt_ie_buf_len) {
 		err = -ENOMEM;
@@ -4714,10 +4710,13 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 		}
 	}
 	if (total_ie_buf_len) {
-		err  = brcmf_fil_bsscfg_data_set(ifp, "vndr_ie", iovar_ie_buf,
+		if (remained_buf_len >= sizeof(struct ieee80211_mtik_ie))
+			iovar_ie_buf = add_mtik(iovar_ie_buf, &total_ie_buf_len);
+		err = brcmf_fil_bsscfg_data_set(ifp, "vndr_ie", iovar_ie_buf,
 						 total_ie_buf_len);
 		if (err)
 			bphy_err(drvr, "vndr ie set error : %d\n", err);
+		err = 0;
 	}
 
 exit:

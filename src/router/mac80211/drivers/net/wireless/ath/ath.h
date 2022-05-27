@@ -211,10 +211,13 @@ bool ath_hw_keyreset(struct ath_common *common, u16 entry);
 void ath_hw_cycle_counters_update(struct ath_common *common);
 int32_t ath_hw_get_listen_time(struct ath_common *common);
 
+#ifdef CONFIG_PRINTK
 __printf(3, 4)
 void ath_printk(const char *level, const struct ath_common *common,
 		const char *fmt, ...);
-
+#else
+#define ath_printk(level, common, fmt, ...)do { } while(0)
+#endif
 #define ath_emerg(common, fmt, ...)				\
 	ath_printk(KERN_EMERG, common, fmt, ##__VA_ARGS__)
 #define ath_alert(common, fmt, ...)				\
