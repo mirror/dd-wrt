@@ -587,7 +587,7 @@ static int ieee80211n_check_40mhz(struct hostapd_iface *iface)
 		wpa_printf(MSG_ERROR,
 			   "Failed to request a scan of neighboring BSSes ret=%d (%s)",
 			   ret, strerror(-ret));
-		return -1;
+		return 0;
 	}
 
 	iface->scan_cb = ieee80211n_check_scan;
@@ -780,7 +780,9 @@ static int hostapd_is_usable_chan(struct hostapd_iface *iface,
 	if (!iface->current_mode)
 		return 0;
 
+	wpa_printf(MSG_INFO, "is_usable_chan  %d\n", channel);
 	chan = hw_get_channel_chan(iface->current_mode, channel, NULL);
+	wpa_printf(MSG_INFO, "%s\n", chan?"yes":"no");
 	if (!chan)
 		return 0;
 
@@ -805,15 +807,18 @@ static int hostapd_is_usable_chans(struct hostapd_iface *iface)
 
 	pri_chan = hw_get_channel_chan(iface->current_mode,
 				       iface->conf->channel, NULL);
+	wpa_printf(MSG_INFO, "pri_chan %d\n", pri_chan);
 	if (!pri_chan)
 		return 0;
 
 	if (!hostapd_is_usable_chan(iface, iface->conf->channel, 1))
 		return 0;
 
+	wpa_printf(MSG_INFO, "iface->conf->secondary_channel %d\n", iface->conf->secondary_channel);
 	if (!iface->conf->secondary_channel)
 		return 1;
 
+	wpa_printf(MSG_INFO, "iface->conf->ht40_plus_minus_allowed %d\n", iface->conf->ht40_plus_minus_allowed);
 	if (!iface->conf->ht40_plus_minus_allowed)
 		return hostapd_is_usable_chan(
 			iface, iface->conf->channel +
