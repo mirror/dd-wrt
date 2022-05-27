@@ -113,10 +113,10 @@ brcmf_fil_cmd_data(struct brcmf_if *ifp, u32 cmd, void *data, u32 len, bool set)
 					     data, len, &fwerr);
 
 	if (err) {
-		brcmf_dbg(FIL, "Failed: error=%d\n", err);
+		bphy_err(drvr, "Failed: error=%d\n", err);
 	} else if (fwerr < 0) {
-		brcmf_dbg(FIL, "Firmware error: %s (%d)\n",
-			  brcmf_fil_get_errstr((u32)(-fwerr)), fwerr);
+		bphy_err(drvr, "Firmware error: %s (%d) cmd %d\n",
+			  brcmf_fil_get_errstr((u32)(-fwerr)), fwerr, cmd);
 		err = -EBADE;
 	}
 	if (ifp->fwil_fwerr)

@@ -221,9 +221,11 @@ ieee80211_vht_cap_ie_to_sta_vht_cap(struct ieee80211_sub_if_data *sdata,
 	       sizeof(struct ieee80211_vht_mcs_info));
 
 	/* copy EXT_NSS_BW Support value or remove the capability */
-	if (ieee80211_hw_check(&sdata->local->hw, SUPPORTS_VHT_EXT_NSS_BW))
+	if (ieee80211_hw_check(&sdata->local->hw, SUPPORTS_VHT_EXT_NSS_BW)) {
+		vht_cap->cap |= cap_info &
+			IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
 		vht_cap->cap |= (cap_info & IEEE80211_VHT_CAP_EXT_NSS_BW_MASK);
-	else
+	} else
 		vht_cap->vht_mcs.tx_highest &=
 			~cpu_to_le16(IEEE80211_VHT_EXT_NSS_BW_CAPABLE);
 
