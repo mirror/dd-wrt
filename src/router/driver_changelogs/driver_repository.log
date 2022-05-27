@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6575 | brainslayer | 2022-05-27 17:06:29 +0700 (Fri, 27 May 2022) | 1 line
+
+show better errors
+------------------------------------------------------------------------
+r6574 | brainslayer | 2022-05-27 17:00:35 +0700 (Fri, 27 May 2022) | 1 line
+
+ignore vndr ie to avoid scanning problems in ap mode
+------------------------------------------------------------------------
 r6573 | brainslayer | 2022-05-25 03:31:36 +0700 (Wed, 25 May 2022) | 1 line
 
 do not include messages if printk is disabled anyway
