@@ -103,7 +103,7 @@ function to_apply(F) {
 					<input class="num" size="3" maxlength="3" name="ip_range0_7" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_7",6); %>" />
 				</div>
 				<div class="setting">
-					<div class="label" style="width:8em;"><% tran("filterIP.ip_range"); %> 02</div>
+					<div class="label" style="width: 8em;"><% tran("filterIP.ip_range"); %> 02</div>
 					<input class="num" size="3" maxlength="3" name="ip_range1_0" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_0",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_1" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_1",7); %>" />.
 					<input class="num" size="3" maxlength="3" name="ip_range1_2" onblur="valid_range(this,0,255,'IP')" value="<% filter_ip_get("ip_range1_2",7); %>" />.

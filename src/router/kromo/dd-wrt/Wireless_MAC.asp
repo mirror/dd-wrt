@@ -60,7 +60,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div><br />
+						<div><h2><% tran("share.help"); %></h2></div>
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWirelessMAC.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>

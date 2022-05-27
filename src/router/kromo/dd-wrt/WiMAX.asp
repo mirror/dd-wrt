@@ -112,8 +112,10 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div><br />
+						<div><h2><% tran("share.help"); %></h2></div>
+						<!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWiMAX.asp')"><% tran("share.more"); %></a>
+						-->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
