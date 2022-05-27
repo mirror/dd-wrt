@@ -249,7 +249,6 @@ addEvent(window, "unload", function() {
 		<input type="hidden" name="services_length5" />
 		<input type="hidden" name="services_length6" />
 		<input type="hidden" name="services_length7" />
-		<div>
 			<h2><% tran("portserv.h2"); %></h2>
 			<fieldset>
 			<div class="setting">
@@ -293,8 +292,7 @@ addEvent(window, "unload", function() {
 							</script>
 					</select>
 				</div>
-			</fieldset>
-		</div><br />
+			</fieldset><br />
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[

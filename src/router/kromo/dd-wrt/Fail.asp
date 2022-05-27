@@ -20,7 +20,6 @@ function to_submit() {
 
 	<body>
 		<div class="message">
-			<div>
 				<form>
 				<% tran("fail.mess1"); %><br />
 				<script type="text/javascript">
@@ -29,7 +28,6 @@ function to_submit() {
 				//]]>
 				</script>
 			</form>
-			</div>
 		</div>
 	</body>
 </html>

@@ -83,7 +83,6 @@ addEvent(window, "unload", function() {
 			   	<input type="hidden" name="submit_type" />
 			   	<input type="hidden" name="commit" value="1" />
 			   	<h2><%% tran("wds.h2"); %%></h2>
-				 <div>
 				  <fieldset>
 				    <legend><%% tran("wds.legend"); %%></legend>
 				    <div class="setting">
@@ -408,7 +407,6 @@ document.write("<option value='<%% nvsm("%s_br1_nat", "2", "selected"); %%>'>" +
 					<input type="hidden" name="%s_br1_netmask" value="4" /><input class="num" name="%s_br1_netmask0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("0","%s"); %%>" />.<input class="num" name="%s_br1_netmask1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("1","%s"); %%>" />.<input class="num" name="%s_br1_netmask2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("2","%s"); %%>" />.<input class="num" name="%s_br1_netmask3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("3","%s"); %%>" />
 				</div>
 				</fieldset>
-				</div>
 				<br/>
 				<div class="submitFooter">
 					<script type="text/javascript">

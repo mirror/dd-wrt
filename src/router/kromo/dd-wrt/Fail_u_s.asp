@@ -12,7 +12,6 @@
 
 	<body>
 		<div class="message">
-			<div>
 			<form>
 				<% tran("fail.mess2"); %><br />
 					<script type="text/javascript">
@@ -20,8 +19,7 @@
 					document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
 					//]]>
 					</script>
-				</form>
-			</div>
+			</form>
 		</div>
 	</body>
 </html>
