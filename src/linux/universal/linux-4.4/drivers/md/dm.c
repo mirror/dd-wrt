@@ -3022,6 +3022,8 @@ static int dm_wait_for_completion(struct mapped_device *md, int interruptible)
 
 	remove_wait_queue(&md->wait, &wait);
 
+	smp_rmb(); /* paired with atomic_dec_return in end_io_acct */
+
 	return r;
 }
 

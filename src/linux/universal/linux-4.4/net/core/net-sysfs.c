@@ -198,7 +198,7 @@ static ssize_t speed_show(struct device *dev,
 	if (!rtnl_trylock())
 		return restart_syscall();
 
-	if (netif_running(netdev)) {
+	if (netif_running(netdev) && netif_device_present(netdev)) {	  
 		struct ethtool_cmd cmd;
 		if (!__ethtool_get_settings(netdev, &cmd))
 			ret = sprintf(buf, fmt_dec, ethtool_cmd_speed(&cmd));

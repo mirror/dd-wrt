@@ -6507,8 +6507,8 @@ struct mlx5_ifc_bufferx_reg_bits {
 	u8         reserved_0[0x6];
 	u8         lossy[0x1];
 	u8         epsb[0x1];
-	u8         reserved_1[0xc];
-	u8         size[0xc];
+	u8         reserved_1[0x8];
+	u8         size[0x10];
 
 	u8         xoff_threshold[0x10];
 	u8         xon_threshold[0x10];
