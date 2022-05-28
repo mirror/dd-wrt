@@ -47,7 +47,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
 							
-						<% show_modules(".webserver"); %>
+							<% show_modules(".webservices"); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">

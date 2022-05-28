@@ -427,7 +427,7 @@ errmsg.err57="Delete the Entry?";
 errmsg.err103=" must be lower than ";
 
 // Status_Lan.asp error messages
-errmsg.err58="Click to delete lease";
+errmsg.err58="Click to remove static lease entry";
 errmsg.err581="Click to disconnect PPTP client";
 errmsg.err582="Click to add entry to static leases";
 
@@ -977,7 +977,7 @@ lighttpd.wan="WAN Access";
 lighttpd.url="URL";
 
 var hlighttpd=new Object();
-hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports where lighttpd will listen for a request. The default web server root is found at /jffs/www where you can place your websites.";
+hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports where lighttpd will listen for a request.<br /><br />The default web server root is located at /jffs/www where you can place your website's files.";
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
