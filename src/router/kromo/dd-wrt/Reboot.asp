@@ -55,7 +55,7 @@ addEvent(window, "unload", function() {
 			<form>
 				<% tran("success.success_reboot"); %><br /><br />
 				<!-- centering progressbar via CSS margin: 0 auto -->
-				<div>
+				<div><br />
 					<script type="text/javascript">
 					//<![CDATA[
 						var bar1 = createBar(500,15,100,15,<% getboottime(); %> / 5 - 3,"to_submit()");
@@ -70,7 +70,7 @@ addEvent(window, "unload", function() {
 					<li><% tran("success.alert3"); %></li>
 				</ul>
 			</div>
-			</div><br />
+			</div><br /><br />
 			<div class="submitFooter">
 			<script type="text/javascript">
 			//<![CDATA[

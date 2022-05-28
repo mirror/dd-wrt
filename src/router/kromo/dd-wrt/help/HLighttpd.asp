@@ -8,18 +8,17 @@
 			<h2><% tran("lighttpd.titl"); %></h2>
 			<dl>
 				<dt><% tran("lighttpd.server"); %></dt>
-				<dd>Lighttpd is a webserver with PHP5 support.<br/>
-					<ul>
-					<br/>
-					</ul>
+				<dd>Is a secure, fast, compliant, and very flexible web server that has been optimized for high-performance environments.<br/>
+					lighttpd uses memory and CPU efficiently and has lower resource use than other popular web servers.<br/>
+					It's advanced feature-set (FastCGI, CGI, Auth, Output-Compression, URL-Rewriting and much more) make lighttpd the perfect web server for all systems, small and large.<br/>
 				</dd>
 				<dt><% tran("lighttpd.wan"); %></dt>
-				<dd>If enabled allows access to the webserver from the internet. <br/>
-					If disabled only clients from your internal network can access the webserver.
+				<dd>When enabled allows access to the webserver from the Internet.<br/>
+					When disabled only clients from your internal network can access the Webserver.
 				</dd>
 				<dt><% tran("privoxy.custom"); %></dt>
-				<dd>To override the default configuration for lighttpd and php you can store a custom <br/>
-				lighttpd.conf and php.ini in directory /jffs/etc .
+				<dd>To override the default configuration for lighttpd and PHP you can store a custom <br/>
+				lighttpd.conf and php.ini in the <b>/jffs/etc</b> directory which you will need to create.
 				</dd>
 			</dl>
 		</div>
