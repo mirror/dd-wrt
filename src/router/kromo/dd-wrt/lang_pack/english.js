@@ -977,7 +977,7 @@ lighttpd.wan="WAN Access";
 lighttpd.url="URL";
 
 var hlighttpd=new Object();
-hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports where lighttpd will listen for a request. The default web server root is found at /jffs/www where you can place your websites.";
+hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports where lighttpd will listen for a request.<br /><br />The default web server root is located at /jffs/www where you can place your website's files.";
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
