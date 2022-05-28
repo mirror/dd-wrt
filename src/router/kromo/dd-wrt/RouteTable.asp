@@ -2,10 +2,11 @@
 
 	</head>
 
-	<body>
+	<body class="popup_bg">
 		<form>
 			<h2><% tran("routetbl.h2"); %></h2>
 			<fieldset>
+			<legend><% tran("route.titl"); %></legend>
 			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
 				<tr>
 					<th sortdir="up"> <% tran("routetbl.th1"); %></th>
