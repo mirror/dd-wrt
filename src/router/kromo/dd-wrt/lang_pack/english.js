@@ -427,7 +427,7 @@ errmsg.err57="Delete the Entry?";
 errmsg.err103=" must be lower than ";
 
 // Status_Lan.asp error messages
-errmsg.err58="Click to delete lease";
+errmsg.err58="Click to remove static lease entry";
 errmsg.err581="Click to disconnect PPTP client";
 errmsg.err582="Click to add entry to static leases";
 

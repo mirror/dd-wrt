@@ -347,8 +347,9 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
-											<th sortdir="up" width="5%"><% tran("share.del"); %></th>
-											<th sortdir="up" width="10%"><% tran("share.static_lease"); %></th>
+											<!-- Try to display both delete/add icons under static lease th
+											<th sortdir="up" width="5%"><% tran("share.del"); %></th> -->
+											<th sortdir="up" width="15%" colspan="2"><% tran("share.static_lease"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
