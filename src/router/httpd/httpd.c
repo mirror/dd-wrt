@@ -536,12 +536,14 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
-	websWrite(conn_fp, "<HTML>\n");
+	websWrite(conn_fp, "<html>\n");
 	do_error_style(conn_fp, status, title, text);
-	websWrite(conn_fp, "<HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
+	websWrite(conn_fp, "\t<head>\n");
+	websWrite(conn_fp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate(conn_fp, "lang_charset.set"));
+	websWrite(conn_fp, "\t\t<title>%d %s</title></head>\n<body bgcolor=\"#cc9999\"><h4>%d %s</h4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
-	websWrite(conn_fp, "</BODY>");
-	websWrite(conn_fp, "</HTML>\n");
+	websWrite(conn_fp, "</body>");
+	websWrite(conn_fp, "</html>\n");
 
 	(void)wfflush(conn_fp);
 	debug_free(text);
