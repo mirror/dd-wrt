@@ -175,6 +175,8 @@ struct nlmsghdr
 
 /** @} */
 
+#define NLA_F_NESTED		(1 << 15)
+
 /**
  * Netlink error message
  * @ingroup msg

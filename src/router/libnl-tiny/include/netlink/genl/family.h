@@ -82,6 +82,7 @@ static inline char *genl_family_get_name(struct genl_family *family)
 static inline void genl_family_set_name(struct genl_family *family, const char *name)
 {
 	strncpy(family->gf_name, name, GENL_NAMSIZ-1);
+	family->gf_name[GENL_NAMSIZ - 1] = '\0';
 	family->ce_mask |= FAMILY_ATTR_NAME;
 }
 
