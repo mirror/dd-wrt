@@ -21,7 +21,6 @@ function openGeotool(IP) {
 </script>
 	</head>
 	<body class="iplookup">
-		<div class="popup">
 			<form>
 				<div id="bulle" class="bulle"></div>
 				<h2><% tran("status_conn.h2"); %></h2>
@@ -30,6 +29,7 @@ function openGeotool(IP) {
 					<% dumpip_conntrack(); %>
 				</div><br />
 				<fieldset>
+			  <legend><% tran("status_lan.concount"); %></legend>
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
 					<tr>
 						<th sortdir="up">  <% tran("filterSum.polnum"); %></th>
@@ -56,6 +56,5 @@ function openGeotool(IP) {
 					</script>
 				</div>
 			</form>
-		</div>
 	</body>
 </html>
