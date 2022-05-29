@@ -536,16 +536,16 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
-	websWrite(conn_fp, "<html>\n");
-	do_error_style(conn_fp, status, title, text);
-
-	char *charset = live_translate(wp, "lang_charset.set");
 	char *translate = "";
 	if (!nvram_match("language", "english"))
 		translate = " translate=\"no\"";
-	websWrite(conn_fp,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		  translate, charset);
+	websWrite(conn_fp, "<html%s>\n",translate);
+	do_error_style(conn_fp, status, title, text);
+
+	char *charset = live_translate(wp, "lang_charset.set");
+	websWrite(conn_fp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" //
+			   "<head>\n" //
+			   "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
 	websWrite(conn_fp, "<title>%d %s</title></head>\n<body BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</body>");
