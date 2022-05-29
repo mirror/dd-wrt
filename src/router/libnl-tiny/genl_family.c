@@ -146,6 +146,7 @@ int genl_family_add_grp(struct genl_family *family, uint32_t id,
 
 	grp->id = id;
 	strncpy(grp->name, name, GENL_NAMSIZ - 1);
+	grp->name[GENL_NAMSIZ - 1] = '\0';
 
 	nl_list_add_tail(&grp->list, &family->gf_mc_grps);
 
