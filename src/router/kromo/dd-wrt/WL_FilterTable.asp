@@ -62,4 +62,4 @@ function to_apply(F) {
 			</div>
 		</form>
 	</body>
-<%% footer(); %%></html>
+</html>
