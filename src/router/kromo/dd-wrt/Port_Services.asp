@@ -224,7 +224,7 @@ addEvent(window, "unload", function() {
 		//]]>
 		</script>
 	</head>
-	<body>
+	<body class="popup_bg">
 		<form name="PortServices" action="apply.cgi" method="post" >
 		<input type="hidden" name="submit_button" />
 		<input type="hidden" name="action" />
@@ -251,6 +251,7 @@ addEvent(window, "unload", function() {
 		<input type="hidden" name="services_length7" />
 			<h2><% tran("portserv.h2"); %></h2>
 			<fieldset>
+			<legend><% tran("share.option"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("share.srv"); %></div>
 				<input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,share.srv)" />

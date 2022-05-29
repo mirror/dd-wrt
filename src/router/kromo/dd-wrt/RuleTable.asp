@@ -2,10 +2,11 @@
 
 	</head>
 
-	<body>
+	<body class="popup_bg">
 		<form>
 			<h2><% tran("routetbl.h3"); %></h2>
 			<fieldset>
+			<legend><% tran("filter.pol"); %></legend>
 			<table class="table" cellspacing="4" id="pbr_table" summary="pbr table">
 				<tr>
 					<th sortdir="up"><% tran("routetbl.priority"); %></th>
