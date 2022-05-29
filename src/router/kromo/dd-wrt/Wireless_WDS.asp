@@ -86,17 +86,13 @@ addEvent(window, "unload", function() {
 					<fieldset>
 						<legend><%% tran("wds.legend"); %%></legend>
 						<div class="setting">
-						<div class="label"><%% tran("wds.wl_mac"); %%></div><%% nvg("%s_hwaddr"); %%>&nbsp;
+							<div class="label"><%% tran("wds.wl_mac"); %%></div><%% nvg("%s_hwaddr"); %%>&nbsp;
 						</div>
 				<div class="setting center">
 					<select name="%s_wds1_enable" size="1" onchange="SelWDS(1,this.form.%s_wds1_enable.selectedIndex,this.form)">
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds1_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds1_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -117,10 +113,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds2_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds2_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -141,10 +133,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds3_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds3_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -165,10 +153,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds4_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds4_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -189,10 +173,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds5_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds5_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -213,10 +193,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds6_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds6_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -237,10 +213,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds7_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds7_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -261,10 +233,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds8_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds8_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -285,10 +253,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds9_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds9_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -309,10 +273,6 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value=\"0\" <%% nvsm("%s_wds10_enable", "0", "selected"); %%>>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value=\"1\" <%% nvsm("%s_wds10_enable", "1", "selected"); %%>>" + share.point2point + "</option>");
 					//]]>
 					</script>
@@ -354,15 +314,7 @@ addEvent(window, "unload", function() {
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<option value='<%% nvsm("%s_br1_nat", "0", "selected"); %%>'>" + share.disable + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value='<%% nvsm("%s_br1_nat", "1", "selected"); %%>'>" + wds.nat1 + "</option>");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
 					document.write("<option value='<%% nvsm("%s_br1_nat", "2", "selected"); %%>'>" + wds.nat2 + "</option>");
 					//]]>
 					</script>
@@ -379,10 +331,10 @@ addEvent(window, "unload", function() {
 				</div>
 				</fieldset><br/>
 				 <div class="submitFooter">
-				 <script type="text/javascript">
-				 //<![CDATA[
-				 submitFooterButton(1,1);
-				 //]]>
+					<script type="text/javascript">
+					//<![CDATA[
+					submitFooterButton(1,1);
+					//]]>
 				 </script>
 				</div>
 				 </form>
@@ -391,21 +343,20 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><%% tran("share.help"); %%></h2></div>
-						<br />
 						<a href="javascript:openHelpWindow<%% ifdef("EXTHELP","Ext"); %%>('HWDS.asp')"><%% tran("share.more"); %%></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><%% tran("share.firmware"); %%>:
+					<div class="info"><%% tran("share.firmware"); %%>:
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><%% get_firmware_version(); %%></a>");
 					//]]>
 					</script>
-				</div>
-				<div class="info"><%% tran("share.time"); %%>:	<span id="uptime"><%% get_uptime(); %%></span></div>
-				<div class="info">WAN<span id="ipinfo"><%% show_wanipinfo(); %%></span></div>
+					</div>
+					<div class="info"><%% tran("share.time"); %%>:	<span id="uptime"><%% get_uptime(); %%></span></div>
+					<div class="info">WAN<span id="ipinfo"><%% show_wanipinfo(); %%></span></div>
 				</div>
 			</div>
 		</div>
