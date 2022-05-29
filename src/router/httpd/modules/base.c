@@ -2504,28 +2504,28 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
-		  "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
+		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
+		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
 #ifdef HAVE_LANGUAGE
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
+		  "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
 #endif
 		  , charset);
-	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
+	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
 		  style);
 #ifdef HAVE_MICRO
-	websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 #else
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
-		websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(stream, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
+			websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	} else {
 	    style_dark = NULL;
 	}
 #endif
 	websWrite(stream,	//
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
+		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "%s"		//
 		  "</head>\n<body class=\"syslog_bd\">\n"	//
 		  "<fieldset class=\"syslog_bg\">"	//
@@ -2533,7 +2533,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "%s"		//
 		  "</legend>",	//
 		  (style_dark != NULL && !strcmp(style_dark, "1")) ?	//
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
+		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
 		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
