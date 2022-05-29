@@ -367,12 +367,12 @@ static struct nl_cache_ops genl_ctrl_ops = {
 	.co_obj_ops		= &genl_family_ops,
 };
 
-void __init ctrl_init(void)
+static void __init ctrl_init(void)
 {
 	genl_register(&genl_ctrl_ops);
 }
 
-void __exit ctrl_exit(void)
+static void __exit ctrl_exit(void)
 {
 	genl_unregister(&genl_ctrl_ops);
 }
