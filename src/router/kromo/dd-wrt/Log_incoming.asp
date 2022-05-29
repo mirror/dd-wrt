@@ -1,8 +1,7 @@
 <% do_pagehead("log_in.titl"); %>
 
 	</head>
-	<body>
-		<div class="popup">
+	<body class="popup_bg">
 			<form>
 				<h2><% tran("log_in.h2"); %></h2>
 				<fieldset>
@@ -25,6 +24,5 @@
 					</script>
 				</div>
 			</form>
-		</div>
 	</body>
 </html>
