@@ -362,7 +362,7 @@ errmsg.err31=" ist ungültig.";
 errmsg.err32="IP-Adresse und Gateway sind nicht im selben Netzbereich.";
 errmsg.err33="IP-Adresse und Gateway können nicht die selben sein.";
 errmsg.err34=" darf keine Leerzeichen enthalten.";
-errmsg.err110="Die snd Nummer muß größer als die start Nummer sein";
+errmsg.err110="Die Endnummer muß größer als die Startnummer sein";
 errmsg.err111="Ungültige IP Adresse";
 errmsg.err112="Ungültige Zeichen \"<invchars>\" in Feld \"<fieldname>\"";
 errmsg.err113="Die Mobility Domain muss ein 4 Stelliger Hexadezimalwert sein";
@@ -557,7 +557,7 @@ halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erla
 config.titl="Backup & Wiederherstellung";
 config.h2="Backup Konfiguration";
 config.legend="Backup-Einstellungen";
-config.mess1="Klickem Sie den \"" + sbutton.backup + "\" Button um die Backup-Datei zu downloaden.";
+config.mess1="Klicken Sie den \"" + sbutton.backup + "\" Button um die Backup-Datei zu downloaden.";
 config.h22="Konfiguration wiederherstellen";
 config.legend2="Einstellungen wiederherstellen";
 config.mess2="Datei zur Wiederherstellung";
@@ -567,7 +567,7 @@ config.mess4="Laden Sie nur Dateien hoch, welche mit der selben Firmware auf dem
 //help container
 
 hconfig.right2="Sie können hier Ihre aktuelle Konfiguration sichern für den Fall, dass Sie Ihren Router einmal zurücksetzen müssen.<br /><br />Klicken Sie den <em>Backup</em>-Button, um Ihre Konfiguration zu sichern.";
-hconfig.right4="Klicken Sie den <em>Durchsuchen...</em>-Button, um eine Konfigurations Datei auszuwählen, die auf Ihrem PC gespeichert ist.<br /><br />Klicken Sie den <em>" + sbutton.restore + "</em>-Button, um alle aktuellen Konfigurationseinträge mit Ihrer neuen Konfiguration zu überschreiben.";
+hconfig.right4="Klicken Sie den <em>Durchsuchen...</em>-Button, um eine Konfigurationsdatei auszuwählen, die auf Ihrem PC gespeichert ist.<br /><br />Klicken Sie den <em>" + sbutton.restore + "</em>-Button, um alle aktuellen Konfigurationseinträge mit Ihrer neuen Konfiguration zu überschreiben.";
 
 
 
@@ -584,7 +584,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS-Status";
 ddns.system="DYNDNS Server";
 ddns.options="Erweiterte DDNS Optionen";
-ddns.forceupd="Erzwinge Update Interval";
+ddns.forceupd="Erzwinge Update Intervall";
 ddns.wanip="Externer IP Check";
 
 
@@ -598,10 +598,10 @@ ddnsm.all_noip="Keine WAN-Verbindung";
 
 //help container
 
-hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
+hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme eines Domainnamens anstatt einer IP-Adresse. \
 	Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
-hddns.right4="Geben Sie eine Zahl in der Box an um den Interval für das erzwungene Update anzugeben (in Tagen). Updates sollten nur Automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst Sperren könnte.";
+hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -631,7 +631,7 @@ dmz.host="IP-Adresse des DMZ-Hosts";
 
 //help container
 
-hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebende Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
+hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebene Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
 
 
@@ -677,13 +677,13 @@ filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
 filter.mess1="Löschen der Richtlinie?";
 filter.mess2="Sie müssen mindestens einen Tag angeben.";
 filter.mess3="Die Endzeit muss nach der Startzeit liegen.";
-filter.packetcount="Gefilterte Packete";
+filter.packetcount="Gefilterte Pakete";
 
 //help container
 
 hfilter.right2="Sie können bis zu 10 Zugriffsregeln definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu löschen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
-hfilter.right4="Hier könnnen Sie eine Richtlinie ein- oder ausschalten.";
-hfilter.right6="Hier können Sie ihrer Richtlinie einen Namen zuweisen.";
+hfilter.right4="Hier können Sie eine Richtlinie ein- oder ausschalten.";
+hfilter.right6="Hier können Sie Ihrer Richtlinie einen Namen zuweisen.";
 hfilter.right8="Hier können Sie ein oder mehrere Tage auswählen, an denen die Richtlinie gelten soll.";
 hfilter.right10="Hier können Sie die Tageszeit angeben, zu der die Richtlinie gelten soll.";
 hfilter.right12="Hier können Sie Dienste auswählen, welche blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu ändern.";
@@ -715,10 +715,10 @@ firewall.legend3="WAN-Zugriffe blockieren";
 firewall.legend4="Verhindere WAN DoS/Bruteforce Attacken";
 firewall.ping="Anonyme WAN-Zugriffsversuche blockieren";
 firewall.muticast="Multicast filtern";
-firewall.ssh="SSH Access Zugriff Limitieren";
-firewall.telnet=" Telnet Zugriff Limitieren";
-firewall.pptp="PPTP Server Zugriff Limitieren";
-firewall.ftp="FTP Server Zugriff Limitieren";
+firewall.ssh="SSH Zugriff limitieren";
+firewall.telnet="Telnet Zugriff limitieren";
+firewall.pptp="PPTP Server Zugriff limitieren";
+firewall.ftp="FTP Server Zugriff limitieren";
 firewall.arp_spoofing="ARP Spoofing Schutz";
 firewall.filter_tos="Filtere TOS/DSCP";
 
@@ -815,13 +815,13 @@ nas.samba3="Samba Server";
 // ** DLNA **//
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_merge="Verzeichnisse Zusammenführen";
+nas.dlna_merge="Verzeichnisse zusammenführen";
 nas.dlna_no_art="Ignoriere Album Grafik";
 nas.dlna_thumb="Titelbilder einbinden";
 nas.dlna_subtitles="Verwende Untertitel";
 nas.dlna_dir="DLNA Verzeichnis";
 nas.dlna_cleandb="Datenbank jetzt leeren";
-nas.dlna_metadata="Metadatan Behalten";
+nas.dlna_metadata="Metadaten behalten";
 nas.dlna_rescan="Zyklisches neu Scannen";
 nas.format="Formatieren";
 nas.raidmember="Raid Mitglied";
