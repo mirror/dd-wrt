@@ -264,8 +264,8 @@ sbutton.preview="Previsualizar";
 sbutton.allways_on="Siempre ON";
 sbutton.allways_off="Siempre Off";
 sbutton.download="Descargar";
-sbutton.next="Siguiente &raquo;";
-sbutton.prev="&laquo; Anterior";
+sbutton.next="Siguiente »";
+sbutton.prev="« Anterior";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -310,7 +310,7 @@ errmsg.err31=" valor es incorrecto.";
 errmsg.err32="La dirección IP y la puerta de enlace no están en la misma máscara de subred.";
 errmsg.err33="La dirección IP y la puerta de enlace no pueden ser iguales.";
 errmsg.err34=" no está permitido el uso de espacios.";
-errmsg.err110="El número final debe de ser mayor que el n&uacute;mero inicial";
+errmsg.err110="El número final debe de ser mayor que el número inicial";
 errmsg.err111="Dirección IP incorrecta";
 
 //Wol.asp error messages
@@ -336,7 +336,7 @@ errmsg.err44="La comprobación total excede los 256";
 errmsg.err47="SSID incorrecta.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS no es compatible con la configuración actual del router. Por favor compruebe los siguientes puntos :\n * El modo inalámbrico debe ser AP (Punto Acceso) \n * WPA2 no está soportado bajo WDS \n * La Red Inal&aacute;mbrica en modo Sólo-B no est&aacute; soportada bajo WDS";
+errmsg.err48="WDS no es compatible con la configuración actual del router. Por favor compruebe los siguientes puntos :\n * El modo inalámbrico debe ser AP (Punto Acceso) \n * WPA2 no está soportado bajo WDS \n * La Red Inalámbrica en modo Sólo-B no está soportada bajo WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="RADIUS solo está disponible en modo AP.";
@@ -345,7 +345,7 @@ errmsg.err49="RADIUS solo está disponible en modo AP.";
 errmsg.err50="Debes introducir una SSID.";
 
 // Management.asp error messages
-errmsg.err51="La clave del Router actual es la clave por defecto. Como medida de seguridad, debe cambiar la clave antes de habilitar la Administración Remota. Haga clic en el botón OK para cambiar la clave. Clic en el botón Cancelar para dejar deshabilitada la Administraci&oacute;n Remota.";
+errmsg.err51="La clave del Router actual es la clave por defecto. Como medida de seguridad, debe cambiar la clave antes de habilitar la Administración Remota. Haga clic en el botón OK para cambiar la clave. Clic en el botón Cancelar para dejar deshabilitada la Administración Remota.";
 errmsg.err52="Las claves no coinciden.";
 
 // Port_Services.asp error messages
@@ -501,7 +501,7 @@ config.mess4="Subir solo aquellos archivos de backup creados por este firmware y
 
 //help container
 hconfig.right2="Deberías hacer un backup de tu configuración actual por si tuvieses que reinicar el router a sus valores originales.<br /><br />Clic en el botón <em>Backup</em> para hacer un backup de tu configuración.";
-hconfig.right4="Clic en el botón <em>explorar...</em> botón para buscar el archivo de configuración que está actualmente guardado en su PC.<br /><br />Clic en <em>" + sbutton.restore + "</em> bott&oacute;n para sobreescribir toda la configuraci&oacute;n actual con la que se encuentra en el archivo.";
+hconfig.right4="Clic en el botón <em>explorar...</em> botón para buscar el archivo de configuración que está actualmente guardado en su PC.<br /><br />Clic en <em>" + sbutton.restore + "</em> bottón para sobreescribir toda la configuración actual con la que se encuentra en el archivo.";
 
 
 // ** DDNS.asp **//
@@ -532,7 +532,7 @@ ddnsm.all_noip="No hay conexión a Internet";
 //help container
 
 hddns.right2="DDNS te permite acceder a tu red usando nombres de dominio en lugar de direcciones IP. El servicio administra las direcciones IP dinámicas, actualizando tu información de dominio. Debes de haberte registrado para usar el servicio a travès de DynDNS.org, TZO.com ó ZoneEdit.com.";
-hddns.right4="Introduce un número entero en la caja para establecer el intervalo de actualización (en días). La actualización deber&iacute;a ser realizada tan solo cuando su dirección IP cambiado. Tenga cuidado de la pol&iacute;tica de abuso sobre actualizaciones de su proveedor DDNS para evitar qye su dominio o host sea bloqueado.";
+hddns.right4="Introduce un número entero en la caja para establecer el intervalo de actualización (en días). La actualización debería ser realizada tan solo cuando su dirección IP cambiado. Tenga cuidado de la política de abuso sobre actualizaciones de su proveedor DDNS para evitar qye su dominio o host sea bloqueado.";
 
 
 // ** Diagnostics.asp **//
@@ -569,10 +569,10 @@ factdef.titl="Valores de Fábrica";
 factdef.h2="Valores de Fábrica";
 factdef.legend="Resetear la configuración del router";
 factdef.restore="Restaurar Valores de Fábrica";
-factdef.mess1="¡Peligro! Si haces click en OK, el dispositivo se reseteará a los valores de fábrica. La configuración anterior ser&aacute; eliminada.";
+factdef.mess1="¡Peligro! Si haces click en OK, el dispositivo se reseteará a los valores de fábrica. La configuración anterior será eliminada.";
 
 //help container
-hfactdef.right1="Esto reseteará todos los datos de la configuración a sus valores de fábrica. Tu configuración actual ser&aacute; borrada.";
+hfactdef.right1="Esto reseteará todos los datos de la configuración a sus valores de fábrica. Tu configuración actual será borrada.";
 
 
 // ** FilterIPMAC.asp **//
@@ -606,11 +606,11 @@ filter.mess2="Debes elegir al menos un día.";
 filter.mess3="La hora final debe ser posterior a la hora de inicio.";
 
 //help container
-hfilter.right2="Puedes definir hasta 10 políticas de acceso. Haz clic <em>" + sbutton.del + "</em> para borrar una pol&iacute;tica ó <em>" + sbutton.summary + "</em> para ver un sumario de la misma.";
+hfilter.right2="Puedes definir hasta 10 políticas de acceso. Haz clic <em>" + sbutton.del + "</em> para borrar una política ó <em>" + sbutton.summary + "</em> para ver un sumario de la misma.";
 hfilter.right4="Activar o desactivar política.";
 hfilter.right6="Puedes asignar un nombre a tu política.";
-hfilter.right8="Elige el día de la semana en el que te gustar&iacute;a aplicar tu pol&iacute;tica.";
-hfilter.right10="Introducir la hora del día en el que te gustar&iacute;a aplicar tu pol&iacute;tica.";
+hfilter.right8="Elige el día de la semana en el que te gustaría aplicar tu política.";
+hfilter.right10="Introducir la hora del día en el que te gustaría aplicar tu política.";
 hfilter.right12="Puedes elegir bloqueos de acceso a ciertos servicios. Clic en <em>" + sbutton.filterSer + "</em> para modificar la configuración.";
 hfilter.right14="Puedes bloquear ciertos sitios introduciendo su URL.";
 hfilter.right16="Puedes bloquear el acceso a ciertos sitios web según las palabras contenidas en dichas páginas web.";
@@ -650,7 +650,7 @@ prforward.legend="Redirecciones";
 prforward.app="Aplicación";
 
 //help container
-hprforward.right2="En ocasiones, ciertas aplicaciones requieren que determinados puertos estèn abiertos para funcionar correctamente. Ejemplos de estas aplicaciones son los servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, &eacute;ste dispositivo se encargará de encaminar la información al ordenador que se especifique. Por cuestiones de seguridad, deberías limitar la redirección de puertos a tan solo aquellos que est&eacute;s usando, y desmarcar la casilla de verificaci&oacute;n <em>" + share.enable +"</em> despu&eacute;s de haber finalizado.";
+hprforward.right2="En ocasiones, ciertas aplicaciones requieren que determinados puertos estèn abiertos para funcionar correctamente. Ejemplos de estas aplicaciones son los servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de encaminar la información al ordenador que se especifique. Por cuestiones de seguridad, deberías limitar la redirección de puertos a tan solo aquellos que estés usando, y desmarcar la casilla de verificación <em>" + share.enable +"</em> después de haber finalizado.";
 
 // ** P2P.asp **//
 p2p.titl="Aplicaciones Peer-to-Peer";
@@ -673,7 +673,7 @@ pforward.from="Puerto Desde";
 pforward.to="Puerto Hasta";
 
 //help container
-hpforward.right2="En ocasiones ciertas aplicaciones requieren que determinados puertos estèn abiertos para funcionar correctamente. Ejemplos de estas aplicaciones incluye servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, &eacute;ste dispositivo se encargará de rutear la información al ordenador que tú especifiques. Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que est&eacute;s usando, y desmarcar la casilla de verificaci&oacute;n <em>Enable</em> despu&eacute;s de haber finalizado.";
+hpforward.right2="En ocasiones ciertas aplicaciones requieren que determinados puertos estèn abiertos para funcionar correctamente. Ejemplos de estas aplicaciones incluye servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de rutear la información al ordenador que tú especifiques. Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que estés usando, y desmarcar la casilla de verificación <em>Enable</em> después de haber finalizado.";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -700,7 +700,7 @@ nas.proftpd_writeen="Permitir escritura";
 nas.proftpd_anon="Permitir Inicio anónimo (Solo-lectura)";
 nas.proftpd_anon_subdir="Subcarpeta de inicio para accesos anónimos";
 
-hnas.right2="Lista de contraseñas de los Usuarios: Introduzca una contrase&ntilde;a de usuario por línea. La contrase&ntilde;a puede ser en texto plano o cifrada por MD5.";
+hnas.right2="Lista de contraseñas de los Usuarios: Introduzca una contraseña de usuario por línea. La contraseña puede ser en texto plano o cifrada por MD5.";
 
 
 // ** Hotspot.asp **//
@@ -821,7 +821,7 @@ hotspotsys.customsplash="Página Splash personalizada (Walled Garden)";
 //hanchorfree.right1="Unirse a la red de hotspot publicitarios de AnchorFree";
 //hanchorfree.right2="AnchorFree opera como una red de hotspot publicitarios, permitiendo a los usuarios de DD-WRT generarle beneficios.";
 //hanchorfree.right3="Genera beneficios con la publicidad de AnchorFree";
-//hanchorfree.right4="Activando esta función y creando una cuenta con AnchorFree (es gratuito y fácil), un frame publicitario y persistente será insertado directamente en los navegadores de los usuarios, que permitir&aacute; recibir un pago mensual. Gana un mínimo de $25, y AnchorFree ingresar&aacute; en su cuenta de forma autom&aacute;tica los ingresos en su cuenta.";
+//hanchorfree.right4="Activando esta función y creando una cuenta con AnchorFree (es gratuito y fácil), un frame publicitario y persistente será insertado directamente en los navegadores de los usuarios, que permitirá recibir un pago mensual. Gana un mínimo de $25, y AnchorFree ingresará en su cuenta de forma automática los ingresos en su cuenta.";
 //hanchorfree.right5="Para más información, por favor visite www.anchorfree.com";
 //hanchorfree.right6="La activación es fácil";
 //hanchorfree.right7="Una vez activado, AnchorFree le enviará un email a la cuenta registrada con instrucciones sencillas para optimizar su hotspot, FAQs, y otra información pertinente sobre como ganar dinero con su router. Desde esta pantalla de configuración, AnchorFree insertará un pequeño frame de publicidad no intrusivo directamente en los navegadores web que accedan a internet desde este router.";
@@ -898,11 +898,11 @@ idx.dns_dnsmasq="Usar DNSMasq para DNS";
 idx.auth_dnsmasq="DHCP-Autorizativo";
 idx.summt_opt1="nada";
 idx.summt_opt2="Primer Dom Abr - último Dom Oct";
-idx.summt_opt3="&Uacute;ltimo Dom Mar - último Dom Oct";
-idx.summt_opt4="&Uacute;ltimo Dom Oct - último Dom Mar";
-idx.summt_opt5="2&ordm; Dom Mar - 1er Dom Nov";
+idx.summt_opt3="Último Dom Mar - último Dom Oct";
+idx.summt_opt4="Último Dom Oct - último Dom Mar";
+idx.summt_opt5="2º Dom Mar - 1er Dom Nov";
 idx.summt_opt6="Primer Dom Oct - Tercer Dom Mar";
-idx.summt_opt7="&Uacute;ltimo Dom Sep - Primer Dom Abr";
+idx.summt_opt7="Último Dom Sep - Primer Dom Abr";
 idx.summt_opt8="Tercer Dom Oct - Tercer Dom Mar";
 idx.summt_opt9="Primer Dom Oct - Primer Dom Abr";
 idx.summt_opt10="Tercer Dom Oct - Tercer Dom Feb";
@@ -1161,7 +1161,7 @@ route.static_ip="IP LAN de Destino";
 
 //help container
 hroute.right2="Si el router está hospedando tu conexión de Internet, elegir el modo <em>Puerta de Enlace</em> (en inglès Gateway). Si hay otro router en tu red, entonces selecciona el modo <em>Router</em>.";
-hroute.right4="Este es el número de ruteo &uacute;nico, puedes establecer hasta 50 rutas.";
+hroute.right4="Este es el número de ruteo único, puedes establecer hasta 50 rutas.";
 hroute.right6="Introduce el nombre que te gustaría asignar a este ruteo.";
 hroute.right8="Este es el host remoto al cual querrías asignar el ruteo estático.";
 hroute.right10="Determina el host y la segmento de red.";
@@ -1390,7 +1390,7 @@ service.hmilkfish_right8="Aquí especifica su usuario en los foros de la comunid
 service.hmilkfish_right10="Aquí especifica su contraseña en los foros de la comunidad Milkfish  - El registro aloja su nombre.homesip.net";
 service.hmilkfish_right12="Activa/Desactiva el rastreo básico SIP en su router";
 service.hmilkfish_right14="Las cuentas de los suscriptores locales SIP son administradas localmente";
-service.hmilkfish_right16="Alias locales SIP son redirigidos mediante SIP de forma similar a como sucede en el email. Puede ser usado para redirigir cuentas de usuario alfanumèricas a números de tel&eacute;fono o viceversa";
+service.hmilkfish_right16="Alias locales SIP son redirigidos mediante SIP de forma similar a como sucede en el email. Puede ser usado para redirigir cuentas de usuario alfanumèricas a números de teléfono o viceversa";
 service.hmilkfish_right18="Activa/Desactiva SIP dinámico (ej. el servicio Homesip.net) - Usuario y contraseña se debe de especificar";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
@@ -1432,15 +1432,15 @@ status_lan.legend3="Clientes DHCP";
 status_lan.legend4="Clientes Activos";
 status_lan.legend5="Clientes PPTP conectados";
 status_lan.legend6="Clientes PPPoE conectados";
-status_lan.concount="N&ordm; Conex.";
+status_lan.concount="Nº Conex.";
 status_lan.conratio="Ratio";
 
 //help container
 hstatus_lan.right2="Esta es la dirección MAC del Router, como es vista en tu red Ethernet Local.";
 hstatus_lan.right4="Esto muestra la Dirección IP del Router, como aparece en tu Red Ethernet Local.";
-hstatus_lan.right6="Cuando el router está usando una Máscara de Subred concreta, èsta se muestrar&aacute; en este apartado.";
+hstatus_lan.right6="Cuando el router está usando una Máscara de Subred concreta, èsta se muestrará en este apartado.";
 hstatus_lan.right8="Si estás usando el Router como servidor DHCP, èsto se mostrará en este apartado.";
-hstatus_lan.right10="Haciendo clic en cualquier dirección MAC, obtendrás el Identiticador &Uacute;nico Organizacional (Organizationally Unique Identifier) del interfaz (la tarjeta) de red (Standards IEEE de búsqueda en bases de datos OUI).";
+hstatus_lan.right10="Haciendo clic en cualquier dirección MAC, obtendrás el Identiticador Único Organizacional (Organizationally Unique Identifier) del interfaz (la tarjeta) de red (Standards IEEE de búsqueda en bases de datos OUI).";
 
 
 // ** Status_Bandwidth.asp **//
@@ -1494,7 +1494,7 @@ hstatus_router.right4="Esta es la dirección MAC del router, tal y como es vista
 hstatus_router.right6="Este es el firmware actual de tu router.";
 hstatus_router.right8="Esta es la hora, que puedes establecer en la pestaña <em>Setup</em>.";
 hstatus_router.right10="Aquí podemos ver el tiempo que el router lleva encendido \"up\" y funcionando.";
-hstatus_router.right12="Esto viene a ser 3 números que representan la carga de sistema durante los &uacute;ltimos períodos de 1, 5 ó 15 minutos.";
+hstatus_router.right12="Esto viene a ser 3 números que representan la carga de sistema durante los últimos períodos de 1, 5 ó 15 minutos.";
 
 // ** Status_Internet.asp **//
 status_inet.titl="Estado WAN";
@@ -1514,7 +1514,7 @@ status_inet.dataadmin="Datos de Administración";
 status_inet.delete_confirm="¡AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
 
 //help container
-hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> &oacute; <em>desconectar</em> tu conexi&oacute;n aquí haciendo clic en ese bot&oacute;n.";
+hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo clic en ese botón.";
 hstatus_inet.right4="Esto muestra el tráfico de Internet en tu router.";
 hstatus_inet.right6="Esto muestra tu tráfico de Internet en tu router por meses. Arrastre el ratón sobre el gráfico para ver los datos diarios. Los datos son almacenados en la nvram.";
 
@@ -1526,7 +1526,7 @@ status_conn.h2="Conexiones Activas IP";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Estado del Agente Sputnik";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Administrado Por";
 status_sputnik.license="Licencia SCC No.";
 
@@ -1563,7 +1563,7 @@ status_gpsi.sat="Satèlites visibles";
 
 //help container
 hstatus_wireless.right2="Esta es la dirección MAC del Router, tal y como puede ser vista en tu red local inalámbrica.";
-hstatus_wireless.right4="Como hemos seleccionado en la pestaña WIFI, esto mostrará el modo de operación del Wi-Fi (Mixto, Sólo-G, Sólo-B &oacute; Desactivado) usado por la red.";
+hstatus_wireless.right4="Como hemos seleccionado en la pestaña WIFI, esto mostrará el modo de operación del Wi-Fi (Mixto, Sólo-G, Sólo-B ó Desactivado) usado por la red.";
 
 
 
@@ -1599,7 +1599,7 @@ upgrad.warning="¡ P E L I G R O !";
 upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />¡No quites la corriente ni pulses el botón reset!";
 
 //help container
-hupgrad.right2="Haz clic en el botón <em>Explorar...</em> para elegir el archivo de firmware que deseas subir al router.<br /><br /> Haz clic en el botón <em>Actualizar</em> para comenzar el proceso de actualización. La actualizaci&oacute;n NO DEBE SER INTERRUMPIDA.";
+hupgrad.right2="Haz clic en el botón <em>Explorar...</em> para elegir el archivo de firmware que deseas subir al router.<br /><br /> Haz clic en el botón <em>Actualizar</em> para comenzar el proceso de actualización. La actualización NO DEBE SER INTERRUMPIDA.";
 
 
 // ** UPnP.asp **//
@@ -1634,7 +1634,7 @@ hvpn.right1="Puedes activar el passthrough (paso a travès) IPSec, PPTP y/o L2TP
 
 // ** Vlan.asp **//
 vlan.titl="LAN Virtual";
-vlan.h2="Red de &Aacute;rea Local Virtual (VLAN)";
+vlan.h2="Red de Área Local Virtual (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Asignados al<br />Puente";
 vlan.tagged="Etiquetado";
@@ -2030,7 +2030,7 @@ sas.hwan="Configuración de Internet (WAN)";
 
 hsas.wan="La interfaz WAN conecta su router a Internet u otras redes. Si su red está conectada a Internett y solo necesita de un punto de Acceso, entonces seleccione el modo WAN a \"Deshabilitado\".";
 hsas.h_routerip="IP del Router";
-hsas.routerip="Esta es la dirección IP asignada al router en su red local. Si cambia esta dirección, tambièn cambiará la dirección con la que accede a esta configuraci&oacute;n.";
+hsas.routerip="Esta es la dirección IP asignada al router en su red local. Si cambia esta dirección, tambièn cambiará la dirección con la que accede a esta configuración.";
 hsas.h_dhcp="DHCP";
 hsas.dhcp="PCs y otros dispositivos de red pueden automáticamente obtener una dirección IP mediante DHCP en su red local sin que sea necesario una configuración manual. En caso de que ya exista un servidor DHCP en su red local, por favor, deshabilite esta opción para evitar conflictos.";
 hsas.h_wireless_physical="Interfaz de radio WIFI";
@@ -2045,7 +2045,7 @@ hsas.other="Otros ajustes de los textos de ayuda";
 
 // ** AOSS **//
 haoss.basic="La \"AirStation One-Touch Secure System\" (AOSS) le permite conectar clientes AOSS capable clients al punto de acceso sin requerir una configuración manual.";
-haoss.securitymodes="El modo de seguridad de AOSS define que modo de seguridad deberán de usar los clientes para que estos puedan realizar  la negociación. Si un cliente atn solo soporta modos de seguridad que no están habilitados, no se podr&aacute; conectar.";
+haoss.securitymodes="El modo de seguridad de AOSS define que modo de seguridad deberán de usar los clientes para que estos puedan realizar  la negociación. Si un cliente atn solo soporta modos de seguridad que no están habilitados, no se podrá conectar.";
 
 
 // *****************************************************		OLD PAGES	       ************************************************************************//

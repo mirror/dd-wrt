@@ -277,8 +277,8 @@ sbutton.preview="Предварительный просмотр";
 sbutton.allways_on="Всегда включено";
 sbutton.allways_off="Всегда выключено";
 sbutton.download="Скачать";
-sbutton.next="Далее &raquo;";
-sbutton.prev="&laquo; Назад";
+sbutton.next="Далее »";
+sbutton.prev="« Назад";
 
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Вы должны ввести имя пользователя.";
@@ -1672,7 +1672,7 @@ status_conn.h2="Активные IP-соединения";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Статус агента Sputnik";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Управляется";
 status_sputnik.license="Нр.лицензии SCC.";
 //help container

@@ -268,8 +268,8 @@ sbutton.preview="미리보기";
 sbutton.allways_on="항상 켬";
 sbutton.allways_off="항상 끔";
 sbutton.download="다운로드";
-sbutton.next="다음 &raquo;";
-sbutton.prev="&laquo; 이전";
+sbutton.next="다음 »";
+sbutton.prev="« 이전";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1968,7 +1968,7 @@ status_conn.h2="활성 IP 연결";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Sputnik 에이전트 상태";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="관리자";
 status_sputnik.license="SCC 라이센스 No.";
 
