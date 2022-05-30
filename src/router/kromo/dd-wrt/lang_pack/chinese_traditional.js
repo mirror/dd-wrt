@@ -2,7 +2,7 @@
 //Chinese (Traditional) translation file - DD-WRT V23/V24 2008/11/08 UTF-8    //
 ////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
-lang_charset.set="UTF-8"; 
+lang_charset.set="utf-8"; 
 
 
 

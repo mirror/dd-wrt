@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 //		update to svn 44321. - by paldier 08/09/2020
 // ** COMMON SHARE LABEL **//
-lang_charset.set="UTF-8";
+lang_charset.set="utf-8";
 share.packets="数据包数";
 share.annex="Annex 类型";
 share.apn="APN";
