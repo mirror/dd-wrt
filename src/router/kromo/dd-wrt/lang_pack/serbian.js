@@ -1447,7 +1447,7 @@ service.vpn_route="Рутирање на основу Полиса";
 
 //help container
 hstatus_vpn.right1="Рутирање на основу Полиса:<br /><i>Додај IP-ове/NET-ове у облику 0.0.0.0/0 како би натерали клијента да користи тунел као подразумевани гејтвеј. Једна линија по IP/NET.<br /><i>IP Адреса/Мрежна маска:</i><br />Мора се поставити када се користи DHCP-Proxy мод а локални TAP НИЈЕ bridge-ован</i>";
-hstatus_vpn.right2="Додатна Конфиг.:<br /><i>Да би потерали руте до клијената додајте \'push \"route IP mask gateway\"\', да би потерали DNS/WINS додајте \'push \"dhcp-option DNS (or WINS) IP\"\' у config.</i><br />клијент директоријум:<br /><i>Када је USB или JFFS маунтован у /jffs, скрипте ће се позивати из /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Додатна Конфиг.:<br /><i>Да би потерали руте до клијената додајте 'push \"route IP mask gateway\"', да би потерали DNS/WINS додајте 'push \"dhcp-option DNS (or WINS) IP\"' у config.</i><br />клијент директоријум:<br /><i>Када је USB или JFFS маунтован у /jffs, скрипте ће се позивати из /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="Уопштено:<br /><i>Подржане су 3 методе провере: pkcs12 (+dh на серверу), статичка, стандардна сертификација. Омогућите MSS само на једном крају, а фрагментацију на оба.</i>";
 
 //vnc.repeater
