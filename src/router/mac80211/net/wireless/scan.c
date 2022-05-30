@@ -2671,7 +2671,7 @@ cfg80211_get_dev_from_ifindex(struct net *net, int ifindex)
 	return rdev;
 }
 
-int cfg80211_wext_siwscan(struct net_device *dev,
+static int cfg80211_wext_siwscan(struct net_device *dev,
 			  struct iw_request_info *info,
 			  union iwreq_data *wrqu, char *extra)
 {
@@ -3149,7 +3149,7 @@ static int ieee80211_scan_results(struct cfg80211_registered_device *rdev,
 }
 
 
-int cfg80211_wext_giwscan(struct net_device *dev,
+static int cfg80211_wext_giwscan(struct net_device *dev,
 			  struct iw_request_info *info,
 			  struct iw_point *data, char *extra)
 {

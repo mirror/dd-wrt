@@ -21,7 +21,7 @@
 #define AAD_LEN 20
 
 
-void gf_mulx(u8 *pad)
+static void aes_gf_mulx(u8 *pad)
 {
 	int i, carry;
 
@@ -33,7 +33,7 @@ void gf_mulx(u8 *pad)
 		pad[AES_BLOCK_SIZE - 1] ^= 0x87;
 }
 
-void aes_cmac_vector(struct crypto_cipher *tfm, size_t num_elem,
+static void aes_cmac_vector(struct crypto_cipher *tfm, size_t num_elem,
 		     const u8 *addr[], const size_t *len, u8 *mac,
 		     size_t mac_len)
 {
@@ -68,7 +68,7 @@ void aes_cmac_vector(struct crypto_cipher *tfm, size_t num_elem,
 
 	memset(pad, 0, AES_BLOCK_SIZE);
 	crypto_cipher_encrypt_one(tfm, pad, pad);
-	gf_mulx(pad);
+	aes_gf_mulx(pad);
 
 	if (left || total_len == 0) {
 		for (i = 0; i < left; i++) {
@@ -80,7 +80,7 @@ void aes_cmac_vector(struct crypto_cipher *tfm, size_t num_elem,
 			}
 		}
 		cbc[left] ^= 0x80;
-		gf_mulx(pad);
+		aes_gf_mulx(pad);
 	}
 
 	for (i = 0; i < AES_BLOCK_SIZE; i++)

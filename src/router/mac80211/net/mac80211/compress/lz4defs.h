@@ -11,6 +11,9 @@
 /*
  * Detects 64 bits mode
  */
+#ifndef LZ4DEFS_H
+#define LZ4DEFS_H
+
 #if defined(CONFIG_64BIT)
 #define LZ4_ARCH64 1
 #else
@@ -163,3 +166,4 @@ typedef struct _U64_S {
 		LZ4_WILDCOPY(s, d, e);	\
 		d = e;	\
 	} while (0)
+#endif

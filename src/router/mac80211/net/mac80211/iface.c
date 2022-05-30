@@ -621,8 +621,7 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 	sdata->bss = NULL;
 
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
-	if (mac80211_compress_uninit)
-		mac80211_compress_uninit(sdata);
+	mac80211_compress_uninit(sdata);
 #endif
 
 	if (local->open_count == 0)
@@ -813,9 +812,9 @@ ieee80211_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 }
 #if LINUX_VERSION_IS_LESS(4,11,0)
 /* Just declare it here to keep sparse happy */
-struct rtnl_link_stats64 *bp_ieee80211_get_stats64(struct net_device *dev,
+static struct rtnl_link_stats64 *bp_ieee80211_get_stats64(struct net_device *dev,
 						   struct rtnl_link_stats64 *stats);
-struct rtnl_link_stats64 *
+static struct rtnl_link_stats64 *
 bp_ieee80211_get_stats64(struct net_device *dev,
 			 struct rtnl_link_stats64 *stats){
 	ieee80211_get_stats64(dev, stats);

@@ -1,8 +1,6 @@
 #include "pnwext.h"
 #include "mesh.h"
 
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 #define TDMA_MESH_ENERGY_TIME_INTERVAL	5000
 #define TDMA_MESH_ENERGY_POWER_INTERVAL	5
@@ -27,7 +25,6 @@ void mm_update_route_rval_only(struct p_originator *o, u16 rval)
 	o->enqueued = TDMA_MESH_GET_ENQUEUED(rval);
 }
 
-EXPORT_SYMBOL(mm_update_route_rval_only);
 
 void mm_update_route_energy(struct p_originator *o, int signal)
 {
@@ -35,7 +32,6 @@ void mm_update_route_energy(struct p_originator *o, int signal)
 	o->energy = mm_update_energy_first(signal);
 }
 
-EXPORT_SYMBOL(mm_update_route_energy);
 
 void mm_update_route_complete(struct p_originator *o, u16 rval, int signal)
 {
@@ -44,7 +40,6 @@ void mm_update_route_complete(struct p_originator *o, u16 rval, int signal)
 	mm_update_route_rval_only(o, rval);
 }
 
-EXPORT_SYMBOL(mm_update_route_complete);
 
 u16 mm_update_rval(struct p_originator *o, size_t len, unsigned intval)
 {
@@ -66,7 +61,6 @@ u16 mm_update_rval(struct p_originator *o, size_t len, unsigned intval)
 	return rval;
 }
 
-EXPORT_SYMBOL(mm_update_rval);
 
 u16 mm_calc_reachability(struct p_originator *o, unsigned intval)
 {
@@ -99,4 +93,3 @@ u16 mm_calc_reachability(struct p_originator *o, unsigned intval)
 	return reachval;
 }
 
-EXPORT_SYMBOL(mm_calc_reachability);

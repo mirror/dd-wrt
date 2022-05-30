@@ -355,16 +355,16 @@ struct tdma_neighbour {
 
 struct ieee80211_sub_if_data;
 
-extern unsigned long ptdma_tx_slot_duration(struct ieee80211_if_tdma *);
-extern unsigned long ptdma_calc_ideal_interval(struct ieee80211_if_tdma *, int);
-extern unsigned long ptdma_tu_adjust(unsigned long, int, int, bool);
-extern int pamsdu_limit(struct ieee80211_supported_band *, struct ieee80211_sta *);
-extern int ptdma_adjust_rates(struct ieee80211_supported_band *, struct ieee80211_tx_rate *, int *, bool);
-extern void ptdma_update_hdr_counter(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *);
-extern void ptdma_update_hdr_info(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *, bool);
-extern bool ptdma_update_hdr_ttl(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *);
-extern struct ieee80211_tx_info *ptdma_skb_fill_info(struct ieee80211_sub_if_data *, struct sk_buff *);
-extern bool ptdma_skb_priority(struct sk_buff *);
-extern bool ptdma_do_msdu(struct ieee80211_if_tdma *);
+static unsigned long ptdma_tx_slot_duration(struct ieee80211_if_tdma *);
+static unsigned long ptdma_calc_ideal_interval(struct ieee80211_if_tdma *, int);
+static unsigned long ptdma_tu_adjust(unsigned long, int, int, bool);
+static int pamsdu_limit(struct ieee80211_supported_band *, struct ieee80211_sta *);
+static int ptdma_adjust_rates(struct ieee80211_supported_band *, struct ieee80211_tx_rate *, int *, bool);
+static void ptdma_update_hdr_counter(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *);
+static void ptdma_update_hdr_info(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *, bool);
+static bool ptdma_update_hdr_ttl(struct ieee80211_if_tdma *, struct sk_buff *, struct ieee80211_hdr *);
+static struct ieee80211_tx_info *ptdma_skb_fill_info(struct ieee80211_sub_if_data *, struct sk_buff *);
+static bool ptdma_skb_priority(struct sk_buff *);
+static bool ptdma_do_msdu(struct ieee80211_if_tdma *);
 
 #endif

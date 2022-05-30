@@ -4,8 +4,6 @@
 
 #include "pdwext.h"
 #include "mesh.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 bool tdma_originator_update_rx(struct ieee80211_if_tdma *tdma, const u8 *mac, const u8 *relay, size_t len, int signal)
 {
@@ -44,7 +42,6 @@ bool tdma_originator_update_rx(struct ieee80211_if_tdma *tdma, const u8 *mac, co
 	return res;
 }
 
-EXPORT_SYMBOL(tdma_originator_update_rx);
 
 bool tdma_originator_get(struct ieee80211_if_tdma * tdma, const u8 *mac, u8 *relay)
 {
@@ -75,7 +72,6 @@ bool tdma_originator_get(struct ieee80211_if_tdma * tdma, const u8 *mac, u8 *rel
 	return broadcast;
 }
 
-EXPORT_SYMBOL(tdma_originator_get);
 
 int tdma_originator_expire(struct ieee80211_if_tdma *tdma, long timeout)
 {
@@ -98,4 +94,3 @@ int tdma_originator_expire(struct ieee80211_if_tdma *tdma, long timeout)
 	return expired;
 }
 
-EXPORT_SYMBOL(tdma_originator_expire);

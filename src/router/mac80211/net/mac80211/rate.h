@@ -21,16 +21,16 @@ struct rate_control_ref {
 	void *priv;
 };
 
-void rate_control_get_rate(struct ieee80211_sub_if_data *sdata,
+static void rate_control_get_rate(struct ieee80211_sub_if_data *sdata,
 			   struct sta_info *sta,
 			   struct ieee80211_tx_rate_control *txrc);
 
-void rate_control_tx_status(struct ieee80211_local *local,
+static void rate_control_tx_status(struct ieee80211_local *local,
 			    struct ieee80211_supported_band *sband,
 			    struct ieee80211_tx_status *st);
 
-void rate_control_rate_init(struct sta_info *sta);
-void rate_control_rate_update(struct ieee80211_local *local,
+static void rate_control_rate_init(struct sta_info *sta);
+static void rate_control_rate_update(struct ieee80211_local *local,
 				    struct ieee80211_supported_band *sband,
 				    struct sta_info *sta, u32 changed);
 
@@ -83,19 +83,19 @@ static inline void rate_control_add_debugfs(struct ieee80211_local *local)
 #endif
 }
 
-void ieee80211_check_rate_mask(struct ieee80211_sub_if_data *sdata);
+static void ieee80211_check_rate_mask(struct ieee80211_sub_if_data *sdata);
 
 /* Get a reference to the rate control algorithm. If `name' is NULL, get the
  * first available algorithm. */
-int ieee80211_init_rate_ctrl_alg(struct ieee80211_local *local,
+static int ieee80211_init_rate_ctrl_alg(struct ieee80211_local *local,
 				 const char *name);
-void rate_control_deinitialize(struct ieee80211_local *local);
+static void rate_control_deinitialize(struct ieee80211_local *local);
 
 
 /* Rate control algorithms */
 #ifdef CPTCFG_MAC80211_RC_MINSTREL
-int rc80211_minstrel_init(void);
-void rc80211_minstrel_exit(void);
+static int rc80211_minstrel_init(void);
+static void rc80211_minstrel_exit(void);
 #else
 static inline int rc80211_minstrel_init(void)
 {

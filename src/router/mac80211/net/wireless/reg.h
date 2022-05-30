@@ -28,12 +28,12 @@ enum ieee80211_regd_source {
 
 extern const struct ieee80211_regdomain __rcu *cfg80211_regdomain;
 
-bool reg_is_valid_request(const char *alpha2);
-bool is_world_regdom(const char *alpha2);
-bool reg_supported_dfs_region(enum nl80211_dfs_regions dfs_region);
-enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy);
+static bool reg_is_valid_request(const char *alpha2);
+static bool is_world_regdom(const char *alpha2);
+static bool reg_supported_dfs_region(enum nl80211_dfs_regions dfs_region);
+static enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy);
 
-int regulatory_hint_user(const char *alpha2,
+static int regulatory_hint_user(const char *alpha2,
 			 enum nl80211_user_reg_hint_type user_reg_hint_type);
 
 /**
@@ -42,27 +42,27 @@ int regulatory_hint_user(const char *alpha2,
  * device is operating in an indoor environment.
  * @portid: the netlink port ID on which the hint was given.
  */
-int regulatory_hint_indoor(bool is_indoor, u32 portid);
+static int regulatory_hint_indoor(bool is_indoor, u32 portid);
 
 /**
  * regulatory_netlink_notify - notify on released netlink socket
  * @portid: the netlink socket port ID
  */
-void regulatory_netlink_notify(u32 portid);
+static void regulatory_netlink_notify(u32 portid);
 
-void wiphy_regulatory_register(struct wiphy *wiphy);
-void wiphy_regulatory_deregister(struct wiphy *wiphy);
+static void wiphy_regulatory_register(struct wiphy *wiphy);
+static void wiphy_regulatory_deregister(struct wiphy *wiphy);
 
-int __init regulatory_init(void);
-void regulatory_exit(void);
+static int __init regulatory_init(void);
+static void regulatory_exit(void);
 
-int set_regdom(const struct ieee80211_regdomain *rd,
+static int set_regdom(const struct ieee80211_regdomain *rd,
 	       enum ieee80211_regd_source regd_src);
 
-unsigned int reg_get_max_bandwidth(const struct ieee80211_regdomain *rd,
+static unsigned int reg_get_max_bandwidth(const struct ieee80211_regdomain *rd,
 				   const struct ieee80211_reg_rule *rule);
 
-bool reg_last_request_cell_base(void);
+static bool reg_last_request_cell_base(void);
 
 /**
  * regulatory_hint_found_beacon - hints a beacon was found on a channel
@@ -82,7 +82,7 @@ bool reg_last_request_cell_base(void);
  * on a newly found BSS. If you cannot make use of this feature you can
  * set the wiphy->disable_beacon_hints to true.
  */
-int regulatory_hint_found_beacon(struct wiphy *wiphy,
+static int regulatory_hint_found_beacon(struct wiphy *wiphy,
 				 struct ieee80211_channel *beacon_chan,
 				 gfp_t gfp);
 
@@ -107,7 +107,7 @@ int regulatory_hint_found_beacon(struct wiphy *wiphy,
  * not observed. For this reason if a triplet is seen with channel
  * information for a band the BSS is not present in it will be ignored.
  */
-void regulatory_hint_country_ie(struct wiphy *wiphy,
+static void regulatory_hint_country_ie(struct wiphy *wiphy,
 			 enum nl80211_band band,
 			 const u8 *country_ie,
 			 u8 country_ie_len);
@@ -128,7 +128,7 @@ void regulatory_hint_country_ie(struct wiphy *wiphy,
  *
  * Must be called from process context.
  */
-void regulatory_hint_disconnect(void);
+static void regulatory_hint_disconnect(void);
 
 /**
  * cfg80211_get_unii - get the U-NII band for the frequency
@@ -140,12 +140,12 @@ void regulatory_hint_disconnect(void);
  * Returns -EINVAL if freq is invalid, 0 for UNII-1, 1 for UNII-2A,
  * 2 for UNII-2B, 3 for UNII-2C and 4 for UNII-3.
  */
-int cfg80211_get_unii(int freq);
+static int cfg80211_get_unii(int freq);
 
 /**
  * regulatory_indoor_allowed - is indoor operation allowed
  */
-bool regulatory_indoor_allowed(void);
+static bool regulatory_indoor_allowed(void);
 
 /*
  * Grace period to timeout pre-CAC results on the dfs channels. This timeout
@@ -164,7 +164,7 @@ bool regulatory_indoor_allowed(void);
  *
  * This function should be called with rtnl lock held.
  */
-void regulatory_propagate_dfs_state(struct wiphy *wiphy,
+static void regulatory_propagate_dfs_state(struct wiphy *wiphy,
 				    struct cfg80211_chan_def *chandef,
 				    enum nl80211_dfs_state dfs_state,
 				    enum nl80211_radar_event event);
@@ -174,12 +174,12 @@ void regulatory_propagate_dfs_state(struct wiphy *wiphy,
  * @wiphy1 - wiphy it's dfs_region to be checked against that of wiphy2
  * @wiphy2 - wiphy it's dfs_region to be checked against that of wiphy1
  */
-bool reg_dfs_domain_same(struct wiphy *wiphy1, struct wiphy *wiphy2);
+static bool reg_dfs_domain_same(struct wiphy *wiphy1, struct wiphy *wiphy2);
 
 /**
  * reg_reload_regdb - reload the regulatory.db firmware file
  */
-int reg_reload_regdb(void);
+static int reg_reload_regdb(void);
 
 extern const u8 shipped_regdb_certs[];
 extern unsigned int shipped_regdb_certs_len;
