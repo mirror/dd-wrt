@@ -519,7 +519,7 @@ ddnsm.all_noip="Geen WAN verbinding";
 
 //help container
 
-hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP-adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent. Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op &eacute;&eacute;n van de volgende site&apos;s: DynDNS.org, TZO.com of ZoneEdit.com.";
+hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP-adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent. Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op è&eacute;n van de volgende site&apos;s: DynDNS.org, TZO.com of ZoneEdit.com.";
 hddns.right4="Typ een integer nummer in het veld voor een geforceerde update interval (in dagen). Updates zouden alleen automatisch plaats moeten vinden indien uw IP-adres is veranderd. Let op uw DDNS provider voor hun update abuse policy om te voorkomen dat uw hostnaam of domeinnaam wordt geblokkeerd.";
 
 
@@ -550,7 +550,7 @@ dmz.host="DMZ Host IP-Adres";
 
 //help container
 
-hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken, zoals onlinegames of videoconferenties etc. DMZ-hosting wijst alle poorten op hetzelfde moment aan &eacute;&eacute;n computer toe. De functie voor het forwarden van poortbereiken is veiliger, omdat hierbij alleen poorten worden geopend die u wilt openen, terwijl bij DMZ-hosting alle poorten op een computer worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
+hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken, zoals onlinegames of videoconferenties etc. DMZ-hosting wijst alle poorten op hetzelfde moment aan è&eacute;n computer toe. De functie voor het forwarden van poortbereiken is veiliger, omdat hierbij alleen poorten worden geopend die u wilt openen, terwijl bij DMZ-hosting alle poorten op een computer worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
@@ -594,7 +594,7 @@ filter.catchall="Blokkeer alle P2P Protocollen";
 filter.legend4="Website&apos;s Verbieden Per URL";
 filter.legend5="Website&apos;s Verbieden Per Sleutelwoorden";
 filter.mess1="Verwijder het Beleid?";
-filter.mess2="U dient tenminste &eacute;&eacute;n dag te selecteren.";
+filter.mess2="U dient tenminste è&eacute;n dag te selecteren.";
 filter.mess3="De eindtijd dient later te zijn dan de starttijd."; 
 
 //help container
@@ -651,7 +651,7 @@ prforward.app="Applicatie";
 
 //help container
 
-hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie&apos;s zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van &eacute;&eacute;n van deze ingestelde poorten, vink deze dan ook weer uit.";
+hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie&apos;s zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van è&eacute;n van deze ingestelde poorten, vink deze dan ook weer uit.";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -711,7 +711,7 @@ nas.proftpd_anon="Anonieme Inlog (Alleen-Lezen)";
 nas.proftpd_anon_subdir="Anonieme Home Sub-directory";
 
 
-hnas.right2="Gebruikerswachtwoorden Lijst: Gebruik &eacute;&eacute;n Gebruikerswachtwoord per regel. Wachtwoorden mogen gewoon platte text zijn of met MD5 encryptie."; 
+hnas.right2="Gebruikerswachtwoorden Lijst: Gebruik è&eacute;n Gebruikerswachtwoord per regel. Wachtwoorden mogen gewoon platte text zijn of met MD5 encryptie."; 
 
 
 // ******************************************* Hotspot.asp *******************************************//
@@ -1503,7 +1503,7 @@ hstatus_router.right4="Dit is het MAC-Adres van de router, zoals uw internetprov
 hstatus_router.right6="Dit is de huidige firmware van de router.";
 hstatus_router.right8="Dit is de tijd verkregen van de NTP server ingesteld op de <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> pagina.";
 hstatus_router.right10="Dit is een berekening van de tijd dat de router \"Aan en in Werking\" is.";
-hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste &eacute;&eacute;n, vijf of vijftien minuten."; 
+hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste è&eacute;n, vijf of vijftien minuten."; 
 
 // ** Status_Internet.asp **//
 
