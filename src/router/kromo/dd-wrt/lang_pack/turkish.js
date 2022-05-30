@@ -272,7 +272,7 @@ sbutton.prev="« Önceki";
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Bir kullanıcı adı girmelisiniz.";
 errmsg.err1="Bir Yönlendirici Adı girmelisiniz.";
-errmsg.err2="Aralık dışı, lütfen başlangıç IP adresini veya kullanıcı&#39;s sayısını ayarlayın.";
+errmsg.err2="Aralık dışı, lütfen başlangıç IP adresini veya kullanıcı's sayısını ayarlayın.";
 errmsg.err3="En azından bir gün seçmelisiniz.";
 errmsg.err4="Bitiş zamanı başlangıç zamanından büyük olmalıdır.";
 errmsg.err5="MAC Adresi uzunluğu doğru değil.";
@@ -1167,7 +1167,7 @@ hroute.right10="Ana bilgisayar ve ağ kısmını belirler.";
 
 // ** Site_Survey.asp **//
 survey.titl="Site Anketi";
-survey.h2="Komşu&#39;s Kablosuz Ağlar";
+survey.h2="Komşu's Kablosuz Ağlar";
 survey.thjoin="Siteyi Birleştir";
 
 
@@ -2077,7 +2077,7 @@ success.success_reboot=success.success_noreboot + "<br />Ünite şimdi yeniden y
 
 success.alert_reset="Tüm yapılandırma ayarları varsayılan ayarlarına geri yüklenmiştir.<br /><br />";
 success.alert1="Tekrar bağlanmadan önce lütfen aşağıdakileri kontrol edin:";
-success.alert2="Yönlendirici&#39;s IP adresinizi değiştirdiyseniz, lütfen ağdaki istemci adresinizi (adreslerinizi) bırakmanız/yenilmeniz gerektiğini unutmayın.";
+success.alert2="Yönlendirici's IP adresinizi değiştirdiyseniz, lütfen ağdaki istemci adresinizi (adreslerinizi) bırakmanız/yenilmeniz gerektiğini unutmayın.";
 success.alert3="WLAN ile bağlanıyorsanız, lütfen ağa katılın ve ardından <em>Devam Et</em> öğesine tıklayın.";
 
 // ** Logout.asp  **//

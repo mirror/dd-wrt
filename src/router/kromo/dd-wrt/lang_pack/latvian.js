@@ -1145,7 +1145,7 @@ hroute.right10="Determines the host and the network portion.";
 // ** Site_Survey.asp **//
 
 survey.titl="Site Survey";
-survey.h2="Neighbor&#39;s Wireless Networks";
+survey.h2="Neighbor's Wireless Networks";
 survey.thjoin="Join Site";
 
 
@@ -1917,7 +1917,7 @@ success.success_reboot=success.success_noreboot + "<br />Unit is rebooting now. 
 
 success.alert_reset="All configuration settings have been restored to their default values.<br /><br />";
 success.alert1="Please check the following before connecting again:";
-success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
+success.alert2="If you have changed your router's IP address, please note that you must release/renew your client(s) address(s) on the network.";
 success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
 
 // ** Logout.asp  **//

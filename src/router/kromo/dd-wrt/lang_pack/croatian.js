@@ -282,7 +282,7 @@ sbutton.prev="« Prethodno";
 
 errmsg.err0="Morate postaviti korisničko ime.";
 errmsg.err1="Morate postaviti ime usmjerivača.";
-errmsg.err2="Van raspona, uskladite početnu IP adresu ili user&#39;s brojeve.";
+errmsg.err2="Van raspona, uskladite početnu IP adresu ili user's brojeve.";
 errmsg.err3="Morate barem odabrati dan.";
 errmsg.err4="Završno vrijeme mora biti veće od početnog vremena.";
 errmsg.err5="Neispravna Duljina MAC Adrese.";
