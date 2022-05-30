@@ -3,7 +3,7 @@
 //	Language update for DD-WRT V3 02/12/2015
 //	UTF-8 version for DD-WRT v3 02/11/2015
 //////////////////////////////////////////////////////////////////////////////////////////////
-lang_charset.set="UTF-8";
+lang_charset.set="utf-8";
 
 // ** COMON SHARE LABEL **//
 share.annex="Тип Annex";
