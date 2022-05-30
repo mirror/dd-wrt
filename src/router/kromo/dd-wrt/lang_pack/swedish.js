@@ -5,7 +5,7 @@
 
 // ** COMMON SHARE LABEL **//
 
-lang_charset.set="iso-8859-1";
+lang_charset.set="utf-8";
 
 //lang_charset.set="x-IA5-Swedish";
 
@@ -114,7 +114,7 @@ share.point2point="Punkt till Punkt";
 share.nat="NAT";
 share.subnet="Subn&auml;t Mask";
 share.unmask="Avmaskera";
-share.deflt="Standard";  //don&apos;t use share.default!!!
+share.deflt="Standard";  //don't use share.default!!!
 share.all="Alla";
 share.auto="Auto";
 share.right="H&ouml;ger";
@@ -125,7 +125,7 @@ share.srv="Service Namn";
 share.port_range="Port Omr&aring;de";
 share.priority="Prioritet";
 share.gateway="Gateway";
-share.intrface="Interface";  //don&apos;t use share.interface, Mozilla problem!!!
+share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="Fysiskt Interface";
 share.vintrface="Virtuella Interface";
@@ -735,7 +735,7 @@ hotspot.sputnik_learn="L&auml;s mer";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog Demon";
 hotspot.wifidog_id="Gateway ID";
-hotspot.wifidog_url="Portal&apos;s URL";
+hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web Server namn";
 hotspot.wifidog_httpdconn="Max Anv&auml;ndare";
@@ -793,7 +793,7 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //anchorfree.validcountry="V&auml;lj land f&ouml;r din hotspot";
 //anchorfree.validterms="Du m&aring;ste acceptera avtal och villkor!";
 //
-//hanchorfree.right1="Anslut AnchorFree&apos;s hotspot reklam n&auml;tverk";
+//hanchorfree.right1="Anslut AnchorFree's hotspot reklam n&auml;tverk";
 //hanchorfree.right2="AnchorFree skapar hotspot reklam n&auml;tverk till&aring;ter DD-WRT kunder att generera extra inkomster.";
 //hanchorfree.right3="Generera inkomster fr&aring;n AnchorFree";
 //hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis och enkelt), en best&aring;ende reklam sida startas i klientens web browser, som sen genererar pengar p&aring; ditt konto. Tj&auml;na minst 25 dollar s&aring; kommer AnchorFree automatiskt betala ut p&aring; ditt konto.";
@@ -1830,8 +1830,8 @@ wl_adv.row2="B&auml;sta Kostnad";
 wl_adv.row3="Video";
 wl_adv.row4="R&ouml;st";
 wl_adv.table2="EDCA STA Parametrar (Klient till AP)";
-wl_adv.lng="L&aring;ng"; 					//************* don&apos;t use .long! *************
-wl_adv.shrt="Kort"; 				//************* don&apos;t use .short! **************
+wl_adv.lng="L&aring;ng"; 					//************* don't use .long! *************
+wl_adv.shrt="Kort"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Du kan v&auml;lja mellan Auto eller delad nyckel. Delad nyckel &auml;r s&auml;krare, Men d&aring; m&aring;ste alla apparater st&ouml;dja detta.";

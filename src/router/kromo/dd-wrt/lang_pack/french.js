@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-lang_charset.set="iso-8859-1";
+lang_charset.set="utf-8";
 
 share.firmware="Micrologiciel";
 share.time="Heure";
@@ -14,9 +14,9 @@ share.enable="Activer";
 share.enabled="Actif";
 share.disable="Dèsactiver";
 share.disabled="Dèsactiv&eacute;";
-share.usrname="Nom d&apos;utilisateur";
+share.usrname="Nom d'utilisateur";
 share.passwd="Mot de passe";
-share.hostname="Nom d&apos;h&ocirc;te";
+share.hostname="Nom d'h&ocirc;te";
 share.vdsl="DTAG VDSL Vlan Tagging";
 share.wan_vlantag="Vlan Tag ID";
 share.compression="Compression PPP";
@@ -123,7 +123,7 @@ share.intrface="Interface";
 share.pintrface="Interface physique";
 share.vintrface="Interface virtuelle";
 share.router="Routeur";
-share.static_lease="Rèservation d&apos;adresse";
+share.static_lease="Rèservation d'adresse";
 share.srvip="IP Serveur";
 share.srvipname="IP Serveur/Nom";
 share.localdns="DNS local";
@@ -229,7 +229,7 @@ sbutton.log_in="Connexions entrantes";
 sbutton.log_out="Connexions sortantes";
 sbutton.edit_srv="Ajouter/&Eacute;diter Service";
 sbutton.routingtab="Table de routage";
-sbutton.wanmac="Obtenir l&apos;adresse MAC du PC";
+sbutton.wanmac="Obtenir l'adresse MAC du PC";
 sbutton.dhcprel="Libèrer DHCP";
 sbutton.dhcpren="Renouveler DHCP";
 sbutton.survey="Rèseaux sans fil &agrave; port&eacute;e";
@@ -239,36 +239,36 @@ sbutton.preview="Visualiser";
 sbutton.allways_on="Toujours activè";
 sbutton.allways_off="Toujours dèsactiv&eacute;";
 
-// ** MESSAGES D&apos;ERREUR COMMUNS  **//
-errmsg.err0="Vous devez saisir un nom d&apos;utilisateur.";
+// ** MESSAGES D'ERREUR COMMUNS  **//
+errmsg.err0="Vous devez saisir un nom d'utilisateur.";
 errmsg.err1="Vous devez saisir un nom de Routeur.";
-errmsg.err2="Hors de l\&apos;intervalle, merci d\&apos;ajuster l\&apos;adresse IP de dèbut ou le nombre d\&apos;utilisateurs.";
+errmsg.err2="Hors de l\'intervalle, merci d\&apos;ajuster l\&apos;adresse IP de dèbut ou le nombre d\&apos;utilisateurs.";
 errmsg.err3="Vous devez sèlectionner au moins un jour.";
-errmsg.err4="L\&apos;heure de fin doit &ecirc;tre supèrieure &agrave; l\&apos;heure de d&eacute;part.";
-errmsg.err5="La longueur de l\&apos;adresse MAC est incorrecte.";
+errmsg.err4="L\'heure de fin doit &ecirc;tre supèrieure &agrave; l\&apos;heure de d&eacute;part.";
+errmsg.err5="La longueur de l\'adresse MAC est incorrecte.";
 errmsg.err6="Vous devez saisir un mot de passe.";
-errmsg.err7="Vous devez saisir un nom d\&apos;h&ocirc;te.";
+errmsg.err7="Vous devez saisir un nom d\'h&ocirc;te.";
 errmsg.err8="Vous devez saisir une adresse IP ou un nom de domaine.";
 errmsg.err9="Adresse IP invalide.";
 errmsg.err10="La confirmation du mot de passe ne correspond pas. Merci de saisir &agrave; nouveau le mot de passe.";
-errmsg.err11="Aucun espace n\&apos;est permis dans le mot de passe";
+errmsg.err11="Aucun espace n\'est permis dans le mot de passe";
 errmsg.err12="Vous devez saisir une commande &agrave; exècuter.";
 errmsg.err13="La mise &agrave; jour a èchou&eacute;.";
 errmsg.err45="Non disponible en HTTPS! Merci de vous connecter en mode HTTP.";
 errmsg.err46="Non disponible en HTTPS.";
 
 //common.js error messages
-errmsg.err14=" la valeur est en dehors de l\&apos;intervalle [";
-errmsg.err15="L\&apos;adresse MAC WAN est en dehors de l\&apos;intervalle [00 - ff].";
-errmsg.err16="Le deuxi&egrave;me caract&egrave;re de l\&apos;adresse MAC doit &ecirc;tre un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="L\&apos;adresse MAC est incorrecte.";
-errmsg.err18="La longueur de l\&apos;adresse MAC est incorrecte.";
-errmsg.err19="L\&apos;adresse MAC ne peut pas &ecirc;tre identique &agrave; l\&apos;adresse de diffusion.";
-errmsg.err20="Sairir l\&apos;adresse MAC au format (xx:xx:xx:xx:xx:xx).";
-errmsg.err21="Format d\&apos;adresse MAC invalide.";
-errmsg.err22="L\&apos;adresse MAC WAN est incorrecte.";
+errmsg.err14=" la valeur est en dehors de l\'intervalle [";
+errmsg.err15="L\'adresse MAC WAN est en dehors de l\&apos;intervalle [00 - ff].";
+errmsg.err16="Le deuxi&egrave;me caract&egrave;re de l\'adresse MAC doit &ecirc;tre un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="L\'adresse MAC est incorrecte.";
+errmsg.err18="La longueur de l\'adresse MAC est incorrecte.";
+errmsg.err19="L\'adresse MAC ne peut pas &ecirc;tre identique &agrave; l\&apos;adresse de diffusion.";
+errmsg.err20="Sairir l\'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
+errmsg.err21="Format d\'adresse MAC invalide.";
+errmsg.err22="L\'adresse MAC WAN est incorrecte.";
 errmsg.err23="Valeur hexadècimale invalide ";
-errmsg.err24=" trouvèe dans l\&apos;adresse MAC ";
+errmsg.err24=" trouvèe dans l\'adresse MAC ";
 errmsg.err25="La valeur de la clè est incorrecte.";
 errmsg.err26="La longueur de la clè est incorrecte.";
 errmsg.err27="Masque de sous rèseau incorrect.";
@@ -276,8 +276,8 @@ errmsg.err28=" a un caract&egrave;re illègal, doit &ecirc;tre [ 0 - 9 ].";
 errmsg.err29=" a un code ASCII illègal.";
 errmsg.err30=" a des nombres hexadècimaux ill&eacute;gaux.";
 errmsg.err31=" a une valeur illègale.";
-errmsg.err32="L\&apos;adresse IP et la passerelle n\&apos;utilisent pas le m&ecirc;me masque de sous rèseau.";
-errmsg.err33="L\&apos;adresse IP et la passerelle ne peuvent pas &ecirc;tre identiques.";
+errmsg.err32="L\'adresse IP et la passerelle n\&apos;utilisent pas le m&ecirc;me masque de sous rèseau.";
+errmsg.err33="L\'adresse IP et la passerelle ne peuvent pas &ecirc;tre identiques.";
 errmsg.err34=" ne doit pas contenir un espace.";
 
 //Wol.asp error messages
@@ -291,22 +291,22 @@ errmsg.err38="Merci de saisir une clè partag&eacute;e!";
 errmsg.err39="Clè invalide, doit contenir entre 8 et 63 caract&egrave;res ASCII ou 64 nombres hexad&eacute;cimaux";
 errmsg.err40="Vous devez saisir une clè pour la Cl&eacute; ";
 errmsg.err41="Longueur de clè invalide ";
-errmsg.err43="Saisissez de nouveau l\&apos;intervalle.";
+errmsg.err43="Saisissez de nouveau l\'intervalle.";
 
 //config.asp error messages
 errmsg.err42="Merci de sèlectionner un fichier de configuration &agrave; restaurer.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Le nombre total d\&apos;adresses MAC filtrèes ne peut pas d&eacute;passer 256.";
+errmsg.err44="Le nombre total d\'adresses MAC filtrèes ne peut pas d&eacute;passer 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID invalide.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS n\&apos;est pas compatible avec la configuration courante du routeur. Merci de vèrifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\&apos;est pas support&eacute; sous WDS \n * Le mode sans fil B-Only n\&apos;est pas support&eacute; sous WDS";
+errmsg.err48="WDS n\'est pas compatible avec la configuration courante du routeur. Merci de vèrifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\&apos;est pas support&eacute; sous WDS \n * Le mode sans fil B-Only n\&apos;est pas support&eacute; sous WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS n\&apos;est seulement disponible qu\&apos;en mode AP.";
+errmsg.err49="RADIUS n\'est seulement disponible qu\&apos;en mode AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Vous devez saisir un SSID.";
@@ -321,7 +321,7 @@ errmsg.err54="Vous devez saisir un nom de service.";
 errmsg.err55="Ce nom de service existe dèj&agrave;.";
 
 // QoS.asp error messages
-errmsg.err56="La valeur du port est en dehors de l\&apos;intervalle [0 - 65535].";
+errmsg.err56="La valeur du port est en dehors de l\'intervalle [0 - 65535].";
 
 // Routing.asp error messages
 errmsg.err57="Effacer cette entrèe ?";
@@ -331,7 +331,7 @@ errmsg.err103=" doit &ecirc;tre infèrieur &agrave; ";
 errmsg.err58="Cliquez pour effacer le bail.";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Non disponible! Merci d\&apos;activer le rèseau sans fil.";
+errmsg.err59="Non disponible! Merci d\'activer le rèseau sans fil.";
 
 //Upgrade.asp error messages
 errmsg.err60="Veuillez sèlectionner le fichier de mise &agrave; jour du routeur.";
@@ -377,7 +377,7 @@ bmenu.security="Sècurit&eacute;";
 bmenu.firwall="Pare-feu";
 bmenu.vpn="Intercommunication VPN";
 
-bmenu.accrestriction="Restrictions d&apos;acc&egrave;s";
+bmenu.accrestriction="Restrictions d'acc&egrave;s";
 bmenu.webaccess="Acc&egrave;s Internet";
 
 bmenu.applications="NAT / QoS";
@@ -390,8 +390,8 @@ bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="Vue d&apos;ensemble";
-bmenu.sipathphone="Carnet d&apos;adresses";
+bmenu.sipathoverview="Vue d'ensemble";
+bmenu.sipathphone="Carnet d'adresses";
 bmenu.sipathstatus="&Eacute;tat";
 
 bmenu.admin="Administration";
@@ -439,7 +439,7 @@ alive.IP2="Adresse IP du proxy";
 alive.port="Port du proxy";
 
 //help container
-halive.right2="Choisissez quand le routeur doit redèmarrer. <em>Cron</em> doit &ecirc;tre activ&eacute; dans l&apos;onglet gestion.";
+halive.right2="Choisissez quand le routeur doit redèmarrer. <em>Cron</em> doit &ecirc;tre activ&eacute; dans l'onglet gestion.";
 halive.right4="Un maximum de 3 IPs sèpar&eacute;es par un <em>ESPACE</em> est autoris&eacute;.<br />Le format des IPs est xxx.xxx.xxx.xxx.";
 
 // ** config.asp **//
@@ -451,7 +451,7 @@ config.h22="Restauration";
 config.legend2="Restaurer les Règlages";
 config.mess2="Veuillez sèlectionner un fichier de sauvegarde &agrave; restaurer";
 config.mess3="A T T E N T I O N";
-config.mess4="Ne restaurer que des fichiers sauvegardès par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n&apos;aurait pas &eacute;t&eacute; cr&eacute;&eacute; par cette interface!";
+config.mess4="Ne restaurer que des fichiers sauvegardès par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n'aurait pas &eacute;t&eacute; cr&eacute;&eacute; par cette interface!";
 
 //help container
 hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas o&ugrave; vous auriez besoin de rèinitialiser votre routeur &agrave; ses param&egrave;tres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
@@ -481,8 +481,8 @@ ddnsm.all_disabled="DDNS est dèsactiv&eacute;e";
 ddnsm.all_noip="Connexion WAN non dètect&eacute;";
 
 //help container
-hddns.right2="DDNS vous permet d&apos;attribuer un nom de domaine et d&apos;h&ocirc;te fixe &agrave; une adresse IP Internet dynamique. Cela peut s&apos;avèrer utile si vous h&eacute;bergez votre propre site Web, un serveur FTP ou tout autre type de serveur derri&egrave;re le routeur. <br /><br />Avant d&apos;opter pour cette fonctionnalit&eacute;, vous devez souscrire &agrave; un service DDNS aupr&egrave;s de fournisseurs sp&eacute;cialis&eacute;s, tel que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalis&eacute;</em> si vous connaissez tous les param&egrave;tres.";
-hddns.right4="Saisir un nombre de jours apr&egrave;s lequel la mise &agrave; jour sera forcèe m&ecirc;me si l&apos;adresse IP reste inchang&eacute;e. Les mises &agrave; jour doivent se faire automatiquement quand votre adresse IP change. Renseignez-vous aupr&egrave;s de votre fournisseur DDNS pour conna&icirc;tre sa politique contre les abus ; vous &eacute;viterez ainsi d&apos;avoir votre compte bloqu&eacute;.";
+hddns.right2="DDNS vous permet d'attribuer un nom de domaine et d&apos;h&ocirc;te fixe &agrave; une adresse IP Internet dynamique. Cela peut s&apos;avèrer utile si vous h&eacute;bergez votre propre site Web, un serveur FTP ou tout autre type de serveur derri&egrave;re le routeur. <br /><br />Avant d&apos;opter pour cette fonctionnalit&eacute;, vous devez souscrire &agrave; un service DDNS aupr&egrave;s de fournisseurs sp&eacute;cialis&eacute;s, tel que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalis&eacute;</em> si vous connaissez tous les param&egrave;tres.";
+hddns.right4="Saisir un nombre de jours apr&egrave;s lequel la mise &agrave; jour sera forcèe m&ecirc;me si l'adresse IP reste inchang&eacute;e. Les mises &agrave; jour doivent se faire automatiquement quand votre adresse IP change. Renseignez-vous aupr&egrave;s de votre fournisseur DDNS pour conna&icirc;tre sa politique contre les abus ; vous &eacute;viterez ainsi d&apos;avoir votre compte bloqu&eacute;.";
 
 // ** Diagnostics.asp **//
 diag.titl="Shell";
@@ -494,17 +494,17 @@ diag.firewall="Pare-feu";
 diag.custom="Script personnalisè";
 
 //help container
-hdiag.right2="Vous pouvez lancer des lignes de commandes gr&acirc;ce &agrave; la console d&apos;administration. Saisissez dans la zone de texte la commande &agrave; exècuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour la soumettre.";
+hdiag.right2="Vous pouvez lancer des lignes de commandes gr&acirc;ce &agrave; la console d'administration. Saisissez dans la zone de texte la commande &agrave; exècuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour la soumettre.";
 
 // ** DMZ.asp **//
 dmz.titl="DMZ";
 dmz.h2="Zone dèmilitaris&eacute;e (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="DMZ";
-dmz.host="Adresse IP de l&apos;h&ocirc;te de la DMZ";
+dmz.host="Adresse IP de l'h&ocirc;te de la DMZ";
 
 //help container
-hdmz.right2="L&apos;activation de cette option va exposer l&apos;h&ocirc;te &agrave; Internet. Tous les ports vont &ecirc;tre accessibles depuis Internet et redirigès vers cette adresse IP (non recommand&eacute;).";
+hdmz.right2="L'activation de cette option va exposer l&apos;h&ocirc;te &agrave; Internet. Tous les ports vont &ecirc;tre accessibles depuis Internet et redirigès vers cette adresse IP (non recommand&eacute;).";
 
 // ** Factory_Defaults.asp **//
 factdef.titl="Param&egrave;tres usine";
@@ -519,15 +519,15 @@ hfactdef.right1="Cliquez sur <em>Oui</em> pour rètablir les valeurs par d&eacut
 // ** FilterIPMAC.asp **//
 filterIP.titl="Liste des ordinateurs";
 filterIP.h2="Liste des ordinateurs";
-filterIP.legend1="Saisissez l&apos;adresse MAC des ordinateurs au format : xx:xx:xx:xx:xx:xx";
-filterIP.legend2="Saisissez l&apos;adresse IP des ordinateurs";
-filterIP.legend3="Saisissez l&apos;intervalle d&apos;adresses IP des ordinateurs";
+filterIP.legend1="Saisissez l'adresse MAC des ordinateurs au format : xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Saisissez l'adresse IP des ordinateurs";
+filterIP.legend3="Saisissez l'intervalle d&apos;adresses IP des ordinateurs";
 filterIP.ip_range="Intervalle IP";
 
 // ** Filter.asp **//
-filter.titl="Restrictions d&apos;acc&egrave;s";
+filter.titl="Restrictions d'acc&egrave;s";
 filter.h2="Acc&egrave;s Internet";
-filter.legend="Stratègie d&apos;acc&egrave;s &agrave; Internet";
+filter.legend="Stratègie d'acc&egrave;s &agrave; Internet";
 filter.pol="Stratègie";
 filter.polname="Nom de la stratègie";
 filter.pcs="Ordinateurs";
@@ -541,21 +541,21 @@ filter.legend4="Blocage de site Web par adresse URL";
 filter.legend5="Blocage de site Web par mot clè";
 filter.mess1="Effacer la stratègie ?";
 filter.mess2="Veuillez sèlectionner au moins un jour du calendrier.";
-filter.mess3="L&apos;heure de fin doit &ecirc;tre postèrieure &agrave; l&apos;heure de d&eacute;but.";
+filter.mess3="L'heure de fin doit &ecirc;tre postèrieure &agrave; l&apos;heure de d&eacute;but.";
 
 //help container
-hfilter.right2="Vous pouvez contr&ocirc;ler l&apos;acc&egrave;s &agrave; Internet &agrave; l&apos;aide d&apos;une stratègie. Pour supprimer une strat&eacute;gie, s&eacute;lectionnez son num&eacute;ro, puis cliquez sur le bouton <em>" + sbutton.del + "</em>. Pour afficher l&apos;ensemble des strat&eacute;gies, cliquez sur le bouton <em>" + sbutton.summary + "</em>.";
-hfilter.right4="Par dèfaut, les strat&eacute;gies sont activ&eacute;es. Pour activer une strat&eacute;gie, s&eacute;lectionnez son num&eacute;ro dans le menu d&eacute;roulant, puis cliquez sur le bouton radio en regard de l&apos;option <em>Activer</em>.";
+hfilter.right2="Vous pouvez contr&ocirc;ler l'acc&egrave;s &agrave; Internet &agrave; l&apos;aide d&apos;une stratègie. Pour supprimer une strat&eacute;gie, s&eacute;lectionnez son num&eacute;ro, puis cliquez sur le bouton <em>" + sbutton.del + "</em>. Pour afficher l&apos;ensemble des strat&eacute;gies, cliquez sur le bouton <em>" + sbutton.summary + "</em>.";
+hfilter.right4="Par dèfaut, les strat&eacute;gies sont activ&eacute;es. Pour activer une strat&eacute;gie, s&eacute;lectionnez son num&eacute;ro dans le menu d&eacute;roulant, puis cliquez sur le bouton radio en regard de l'option <em>Activer</em>.";
 hfilter.right6="Saisissez le nom de la stratègie.";
-hfilter.right8="Dèfinissez les jours pendant lesquels vous souhaitez appliquer cette strat&eacute;gie. S&eacute;lectionnez individuellement les jours pendant lesquels la strat&eacute;gie doit &ecirc;tre en vigueur ou bien s&eacute;lectionnez l&apos;option <em>Tous les jours</em>.";
-hfilter.right10="Saisissez une plage d&apos;heures et de minutes pendant laquelle la stratègie sera appliqu&eacute;e ou bien s&eacute;lectionnez l&apos;option <em>24 heures</em>.";
-hfilter.right12="Vous pouvez filtrer l&apos;acc&egrave;s &agrave; divers services accessibles par Internet, notamment FTP ou Telnet, en choisissant ces services dans les menus dèroulants en regard de l&apos;option <em>Services bloqu&eacute;s</em>. Vous pouvez bloquer jusqu&apos;&agrave; 20 services. Saisissez ensuite l&apos;intervalle des ports &agrave; filtrer.";
-hfilter.right14="Si vous souhaitez bloquer des sites Web dotès d&apos;adresses URL sp&eacute;cifiques, saisissez chaque URL dans un champ distinct en regard de la section <em>Blocage de site Web par adresse URL</em>.";
-hfilter.right16="Si vous souhaitez bloquer des sites Web &agrave; l&apos;aide de mots clès sp&eacute;cifiques, saisissez chaque mot cl&eacute; dans un champ distinct en regard de la section <em>Blocage de site Web par mot cl&eacute;</em>.";
+hfilter.right8="Dèfinissez les jours pendant lesquels vous souhaitez appliquer cette strat&eacute;gie. S&eacute;lectionnez individuellement les jours pendant lesquels la strat&eacute;gie doit &ecirc;tre en vigueur ou bien s&eacute;lectionnez l'option <em>Tous les jours</em>.";
+hfilter.right10="Saisissez une plage d'heures et de minutes pendant laquelle la stratègie sera appliqu&eacute;e ou bien s&eacute;lectionnez l&apos;option <em>24 heures</em>.";
+hfilter.right12="Vous pouvez filtrer l'acc&egrave;s &agrave; divers services accessibles par Internet, notamment FTP ou Telnet, en choisissant ces services dans les menus dèroulants en regard de l&apos;option <em>Services bloqu&eacute;s</em>. Vous pouvez bloquer jusqu&apos;&agrave; 20 services. Saisissez ensuite l&apos;intervalle des ports &agrave; filtrer.";
+hfilter.right14="Si vous souhaitez bloquer des sites Web dotès d'adresses URL sp&eacute;cifiques, saisissez chaque URL dans un champ distinct en regard de la section <em>Blocage de site Web par adresse URL</em>.";
+hfilter.right16="Si vous souhaitez bloquer des sites Web &agrave; l'aide de mots clès sp&eacute;cifiques, saisissez chaque mot cl&eacute; dans un champ distinct en regard de la section <em>Blocage de site Web par mot cl&eacute;</em>.";
 
 // ** FilterSummary.asp **//
-filterSum.titl="Rècapitulatif des Restrictions d&apos;acc&egrave;s";
-filterSum.h2="Rècapitulatif de la Strat&eacute;gie d&apos;acc&egrave;s &agrave; Internet";
+filterSum.titl="Rècapitulatif des Restrictions d'acc&egrave;s";
+filterSum.h2="Rècapitulatif de la Strat&eacute;gie d'acc&egrave;s &agrave; Internet";
 filterSum.polnum="N&deg;";
 filterSum.polday="Plage horaire";
 
@@ -585,7 +585,7 @@ prforward.legend="Transfert de connexion";
 prforward.app="Application";
 
 //help container
-hprforward.right2="Certaines applications nècessitent d&apos;ouvrir des ports sp&eacute;cifiques pour fonctionner correctement. Il peut s&apos;agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc ... Certaines applications Internet peuvent n&apos;exiger aucun transfert. Quand une demande sur un port bien pr&eacute;cis venant d&apos;Internet se pr&eacute;sente au niveau du routeur, celui-ci transfert les donn&eacute;es vers l&apos;ordinateur ad&eacute;quat. En raison des probl&eacute;matiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce &agrave; la case &agrave; cocher <em>" + share.enable +"</em>.";
+hprforward.right2="Certaines applications nècessitent d'ouvrir des ports sp&eacute;cifiques pour fonctionner correctement. Il peut s&apos;agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc ... Certaines applications Internet peuvent n&apos;exiger aucun transfert. Quand une demande sur un port bien pr&eacute;cis venant d&apos;Internet se pr&eacute;sente au niveau du routeur, celui-ci transfert les donn&eacute;es vers l&apos;ordinateur ad&eacute;quat. En raison des probl&eacute;matiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce &agrave; la case &agrave; cocher <em>" + share.enable +"</em>.";
 
 // ** P2P.asp **//
 p2p.titl="Appications Peer-to-Peer";
@@ -606,7 +606,7 @@ pforward.from="du Port";
 pforward.to="vers le Port";
 
 //help container
-hpforward.right2="Certaines applications nècessitent d&apos;ouvrir des ports sp&eacute;cifiques pour fonctionner correctement. Il peut s&apos;agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n&apos;exiger aucun transfert. Quand une demande sur un port bien pr&eacute;cis venant d&apos;Internet se pr&eacute;sente au niveau du routeur, celui-ci transfert les donn&eacute;es vers l&apos;ordinateur ad&eacute;quat. En raison des probl&eacute;matiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce &agrave; la case &agrave; cocher <em>" + share.enable +"</em>.";
+hpforward.right2="Certaines applications nècessitent d'ouvrir des ports sp&eacute;cifiques pour fonctionner correctement. Il peut s&apos;agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n&apos;exiger aucun transfert. Quand une demande sur un port bien pr&eacute;cis venant d&apos;Internet se pr&eacute;sente au niveau du routeur, celui-ci transfert les donn&eacute;es vers l&apos;ordinateur ad&eacute;quat. En raison des probl&eacute;matiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce &agrave; la case &agrave; cocher <em>" + share.enable +"</em>.";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -646,7 +646,7 @@ hotspot.http_net="Rèseau HTTP de d&eacute;part";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Nom de la Passerelle";
-hotspot.nocat_home="Page d&apos;accueil";
+hotspot.nocat_home="Page d'accueil";
 hotspot.nocat_allowweb="Sites Web autorisès";
 hotspot.nocat_docroot="Racine fichier";
 hotspot.nocat_splash="Splash URL";
@@ -679,18 +679,18 @@ hotspot.wifidog_httpdname="Nom du serveur Web";
 hotspot.wifidog_httpdconn="Utilisateurs Max.";
 hotspot.wifidog_checkinter="Intervalle de vèrification (s)";
 hotspot.wifidog_checktimeout="Dèlai client";
-hotspot.wifidog_tmaclist="Liste d&apos;approbation MAC";
-hotspot.wifidog_authsrv="Serveur d&apos;authentification";
+hotspot.wifidog_tmaclist="Liste d'approbation MAC";
+hotspot.wifidog_authsrv="Serveur d'authentification";
 hotspot.wifidog_authsrvssl="Authentification SSL disponible";
-hotspot.wifidog_authsrvsslport="Port SSL du serveur d&apos;authentification";
-hotspot.wifidog_authsrvhttpport="Port HTTP du serveur d&apos;authentification";
-hotspot.wifidog_authsrvpath="Chemin du serveur d&apos;authentification";
+hotspot.wifidog_authsrvsslport="Port SSL du serveur d'authentification";
+hotspot.wifidog_authsrvhttpport="Port HTTP du serveur d'authentification";
+hotspot.wifidog_authsrvpath="Chemin du serveur d'authentification";
 
 // AnchorFree
 //anchorfree.anchorfree="AnchorFree";
 //anchorfree.titl="Mon rèseau publicitaire";
 //anchorfree.h2="Rèseau publicitaire AnchorFree";
-//anchorfree.anchorfree_revenue="Gagnez de l&apos;argent en crèant un support publicitaire AnchorFree Hotspot";
+//anchorfree.anchorfree_revenue="Gagnez de l'argent en crèant un support publicitaire AnchorFree Hotspot";
 //anchorfree.email="Votre courriel pour recevoir des rapports de revenus";
 //anchorfree.ssid="Utilisez un SSID diffèrent";
 //anchorfree.ssid_name="SSID";
@@ -705,21 +705,21 @@ hotspot.wifidog_authsrvpath="Chemin du serveur d&apos;authentification";
 //anchorfree.serviceid="ID Service";
 //anchorfree.servicestatus="Etat du service";
 //anchorfree.agreement="Conditions gèn&eacute;rales de vente";
-//anchorfree.agree="Je suis d&apos;accord et j&apos;accepte";
-//anchorfree.validaddr="champ d&apos;adresse non valide pour &ecirc;tre place sur la carte des rèseaux sans fil gratuits!";
+//anchorfree.agree="Je suis d'accord et j&apos;accepte";
+//anchorfree.validaddr="champ d'adresse non valide pour &ecirc;tre place sur la carte des rèseaux sans fil gratuits!";
 //anchorfree.validcity="champ du code poste ou ville invalide pour &ecirc;tre place sur la carte des rèseaux sans fil gratuits!";
-//anchorfree.validcat="Choisissez s&apos;il vous pla&icirc;t une catègorie publicitaire pour votre Hotspot";
-//anchorfree.validcountry="Choisissez s&apos;il vous pla&icirc;t un pays pour votre Hotspot";
-//anchorfree.validterms="Vous devez &ecirc;tre d&apos;accord avec les conditions gèn&eacute;rales!";
+//anchorfree.validcat="Choisissez s'il vous pla&icirc;t une catègorie publicitaire pour votre Hotspot";
+//anchorfree.validcountry="Choisissez s'il vous pla&icirc;t un pays pour votre Hotspot";
+//anchorfree.validterms="Vous devez &ecirc;tre d'accord avec les conditions gèn&eacute;rales!";
 //
 //
-//hanchorfree.right1="S&apos;inscrire au rèseau publicitaire AnchorFree&apos;s Hotspot";
+//hanchorfree.right1="S'inscrire au rèseau publicitaire AnchorFree&apos;s Hotspot";
 //hanchorfree.right2="AnchorFree utilise le rèseau publicitaire des hotspots permettant au client DD-WRT de produire des revenus progressifs.";
-//hanchorfree.right3="Produisez des revenus progressifs avec la publicitè d&apos;AnchorFree";
-//hanchorfree.right4="En activant, cette fonction et en crèant un compte aupr&egrave;s de AnchorFree (gratuit et facile), un cadre publicitaire sera ins&eacute;r&eacute; directement sur le navigateur Web de l&apos;utilisateur, qui vous fera gagner un paiement chaque mois. Gagnez pour un seuil minimum mensuel de 25$ et AnchorFree cr&eacute;ditera automatiquement votre compte de ces fonds.";
-//hanchorfree.right5="Pour plus d&apos;informations : www.anchorfree.com";
-//hanchorfree.right6="L&apos;activation est facile";
-//hanchorfree.right7="Une fois activè, AnchorFree enverra un courriel au propri&eacute;taire du compte enregistr&eacute; avec des instructions simples sur l&apos;optimisation de votre Hotspot, FAQ et d&apos;autres informations pertinentes sur gain de l&apos;argent avec votre routeur. Gr&acirc;ce &agrave; cet &eacute;cran de configuration, AnchorFree ins&egrave;re un petit cadre publicitaire, non importun, directement dans le navigateur Web &agrave; l&apos;acc&egrave;s &agrave; Internet du routeur.";
+//hanchorfree.right3="Produisez des revenus progressifs avec la publicitè d'AnchorFree";
+//hanchorfree.right4="En activant, cette fonction et en crèant un compte aupr&egrave;s de AnchorFree (gratuit et facile), un cadre publicitaire sera ins&eacute;r&eacute; directement sur le navigateur Web de l'utilisateur, qui vous fera gagner un paiement chaque mois. Gagnez pour un seuil minimum mensuel de 25$ et AnchorFree cr&eacute;ditera automatiquement votre compte de ces fonds.";
+//hanchorfree.right5="Pour plus d'informations : www.anchorfree.com";
+//hanchorfree.right6="L'activation est facile";
+//hanchorfree.right7="Une fois activè, AnchorFree enverra un courriel au propri&eacute;taire du compte enregistr&eacute; avec des instructions simples sur l'optimisation de votre Hotspot, FAQ et d&apos;autres informations pertinentes sur gain de l&apos;argent avec votre routeur. Gr&acirc;ce &agrave; cet &eacute;cran de configuration, AnchorFree ins&egrave;re un petit cadre publicitaire, non importun, directement dans le navigateur Web &agrave; l&apos;acc&egrave;s &agrave; Internet du routeur.";
 //hanchorfree.right8="Support client";
 //hanchorfree.right9="Des questions ? Entrez en contact avec nous &agrave; boxhelp@anchorfree.com";
 
@@ -729,12 +729,12 @@ info.titl="Information";
 info.h2="Information du Syst&egrave;me";
 info.wlanmac="WLAN MAC";
 info.srv="Services";
-info.ap="Points d&apos;Acc&egrave;s";
+info.ap="Points d'Acc&egrave;s";
 
 // ** index_heartbeat.asp **//
 idx_h.srv="Serveur Heart Beat";
 idx_h.con_strgy="Stratègie de connexion";
-idx_h.max_idle="Connexion &agrave; la demande : dèlai d&apos;inactivit&eacute; maximal";
+idx_h.max_idle="Connexion &agrave; la demande : dèlai d'inactivit&eacute; maximal";
 idx_h.alive="Maintenir la connexion : rappel apr&egrave;s";
 idx_h.reconnect="Forcer la reconnexion";
 
@@ -768,11 +768,11 @@ idx.routerip="Adresse IP du routeur";
 idx.lanip="Adresse IP";
 idx.legend2="Port WAN";
 idx.wantoswitch="Ajouter le port WAN au Switch";
-idx.legend3="Règlage de l&apos;heure";
+idx.legend3="Règlage de l'heure";
 idx.timeset="Fuseau horaire";
 idx.static_ip="Adresse IP statique";
 idx.dhcp="Configuration automatique - DHCP";
-idx.dhcp_legend="Param&egrave;tres du serveur d&apos;adresse de rèseau (DHCP)";
+idx.dhcp_legend="Param&egrave;tres du serveur d'adresse de rèseau (DHCP)";
 idx.dhcp_type="Type de DHCP";
 idx.dhcp_srv="Serveur DHCP";
 idx.dhcp_fwd="Transfert de DHCP";
@@ -797,14 +797,14 @@ idx.ntp_client="Client NTP";
 
 //help container
 hidx.right2="Vous devez conserver cette option uniquement si votre FAI prend en charge le protocole DHCP ou si vous vous connectez via une adresse IP dynamique (cas des c&acirc;blo-opèrateurs).";
-hidx.right4="Saisissez le nom d&apos;h&ocirc;te du routeur qui vous est fourni pour votre FAI. Dans la plupart des cas, vous pourrez laisser ce champ vide.";
+hidx.right4="Saisissez le nom d'h&ocirc;te du routeur qui vous est fourni pour votre FAI. Dans la plupart des cas, vous pourrez laisser ce champ vide.";
 hidx.right6="Saisissez le nom de domaine du routeur qui vous est fourni pour votre FAI. Dans la plupart des cas, vous pourrez laisser ce champ vide.";
-hidx.right8="Saisissez l&apos;adresse IP du routeur.";
+hidx.right8="Saisissez l'adresse IP du routeur.";
 hidx.right10="Saisissez le masque de sous-rèseau du routeur.";
-hidx.right12="Vous pouvez utiliser le routeur en tant que serveur DHCP de votre rèseau. Un serveur DHCP permet d&apos;attribuer automatiquement une adresse IP &agrave; chaque ordinateur de votre r&eacute;seau.";
-hidx.right14="Saisissez une valeur de dèbut pour la publication d&apos;adresses IP sur le serveur DHCP.";
-hidx.right16="Saisissez le nombre maximal d&apos;ordinateurs auxquels le serveur DHCP doit attribuer des adresses IP. Ce nombre ne peut &ecirc;tre supèrieur &agrave; 253. 0 permet d&apos;accepter uniquement les baux statiques.";
-hidx.right18="Changez le fuseau horaire de votre rèseau &agrave; partir du menu d&eacute;roulant. Le routeur peut utiliser l&apos;heure UTC ou l&apos;heure locale.";
+hidx.right12="Vous pouvez utiliser le routeur en tant que serveur DHCP de votre rèseau. Un serveur DHCP permet d'attribuer automatiquement une adresse IP &agrave; chaque ordinateur de votre r&eacute;seau.";
+hidx.right14="Saisissez une valeur de dèbut pour la publication d'adresses IP sur le serveur DHCP.";
+hidx.right16="Saisissez le nombre maximal d'ordinateurs auxquels le serveur DHCP doit attribuer des adresses IP. Ce nombre ne peut &ecirc;tre supèrieur &agrave; 253. 0 permet d&apos;accepter uniquement les baux statiques.";
+hidx.right18="Changez le fuseau horaire de votre rèseau &agrave; partir du menu d&eacute;roulant. Le routeur peut utiliser l'heure UTC ou l&apos;heure locale.";
 
 // ** Join.asp **//
 join.titl="Rejoindre";
@@ -837,7 +837,7 @@ management.titl="Administration";
 management.h2="Administration du Routeur";
 management.changepassword="Votre routeur utilise actuellement le couple utilisateur/mot de passe par dèfaut ce qui le rend particuli&egrave;rement vuln&eacute;rable. Modifier le SVP.";
 management.psswd_legend="Administrateur";
-management.psswd_user="Nom d&apos;utilisateur";
+management.psswd_user="Nom d'utilisateur";
 management.psswd_pass="Mot de passe";
 management.pass_conf="Confirmation du mot de passe";
 management.remote_legend="Acc&egrave;s distant au Routeur";
@@ -848,7 +848,7 @@ management.remote_ssh="Acc&egrave;s SSH";
 management.remote_sshport="Port SSH";
 management.remote_telnet="Acc&egrave;s Telnet";
 management.remote_telnetport="Port Telnet";
-management.web_legend="Console d&apos;Administration";
+management.web_legend="Console d'Administration";
 management.web_refresh="Rafra&icirc;chissement auto (en sec.)";
 management.web_sysinfo="Activer la page de dèmarrage";
 management.web_sysinfopass="Page de dèmarrage prot&eacute;g&eacute;e";
@@ -862,8 +862,8 @@ management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-management.rst_legend="Bouton d&apos;initialisation";
-management.rst_srv="Bouton d&apos;initialisation";
+management.rst_legend="Bouton d'initialisation";
+management.rst_srv="Bouton d'initialisation";
 management.routing_legend="Routage";
 management.routing_srv="Routage";
 management.ipv6_legend="Support IPv6";
@@ -915,7 +915,7 @@ management.gui_style="Skin de la console";
 
 //help container
 hmanagement.right1="Rafra&icirc;chissement auto:";
-hmanagement.right2="Saisissez l&apos;intervalle de rafraichissement automatique de la console d&apos;administration (seules certaines pages bèn&eacute;ficient de cette fonction). La valeur 0 d&eacute;sactive cette fonctionnalit&eacute; et bascule le rafraichissement en mode manuel.";
+hmanagement.right2="Saisissez l'intervalle de rafraichissement automatique de la console d&apos;administration (seules certaines pages bèn&eacute;ficient de cette fonction). La valeur 0 d&eacute;sactive cette fonctionnalit&eacute; et bascule le rafraichissement en mode manuel.";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) ******************************//
 portserv.titl="Gestion des Protocoles";
@@ -966,9 +966,9 @@ hqos.right1="Dèbit montant :";
 hqos.right2="Doit &ecirc;tre entre 80% et 95% (max) du dèbit montant maximum de la connexion.";
 hqos.right3="Dèbit descendant :";
 hqos.right4="Doit &ecirc;tre entre 80% et 100% du dèbit descendant maximum de la connexion.";
-hqos.right6="Vous pouvez contr&ocirc;ler la prioritè de plusieurs types d&apos;applications pour optimiser la bande passante.";
-hqos.right8="Vous pouvez contr&ocirc;ler la prioritè du trafic pour les adresses IP sp&eacute;cifi&eacute;es ou une plage d&apos;adresses.";
-hqos.right10="Vous pouvez contr&ocirc;ler la prioritè du trafic en fonction de l&apos;adresse MAC des clients.";
+hqos.right6="Vous pouvez contr&ocirc;ler la prioritè de plusieurs types d'applications pour optimiser la bande passante.";
+hqos.right8="Vous pouvez contr&ocirc;ler la prioritè du trafic pour les adresses IP sp&eacute;cifi&eacute;es ou une plage d'adresses.";
+hqos.right10="Vous pouvez contr&ocirc;ler la prioritè du trafic en fonction de l'adresse MAC des clients.";
 hqos.right12="Vous pouvez contr&ocirc;ler la prioritè du trafic en fonction du port Ethernet auquel sont connect&eacute;s les clients.";
 
 
@@ -1005,16 +1005,16 @@ route.ospf_legend="Routage OSPF";
 route.ospf_conf="Configuration OSPF";
 route.gateway_legend="Routage dynamique";
 route.static_legend="Routage statique";
-route.static_setno="Choisir l&apos;itinèraire";
+route.static_setno="Choisir l'itinèraire";
 route.static_name="Nom de la route";
 route.static_ip="IP de Destination sur le LAN";
 
 //help container
-hroute.right2="Sèlectionnez le mode sous lequel le routeur doit op&eacute;rer. Si le routeur concern&eacute; h&eacute;berge la connexion de votre r&eacute;seau &agrave; Internet, s&eacute;lectionnez l&apos;option <em>" + share.gateway + "</em>. Si un autre routeur existe sur le r&eacute;seau, s&eacute;lectionnez <em>Routeur</em>. Si vous choisissez l&apos;option <em>Routeur</em>, la section <em>" + route.gateway_legend + "</em> est activ&eacute;e.";
+hroute.right2="Sèlectionnez le mode sous lequel le routeur doit op&eacute;rer. Si le routeur concern&eacute; h&eacute;berge la connexion de votre r&eacute;seau &agrave; Internet, s&eacute;lectionnez l'option <em>" + share.gateway + "</em>. Si un autre routeur existe sur le r&eacute;seau, s&eacute;lectionnez <em>Routeur</em>. Si vous choisissez l&apos;option <em>Routeur</em>, la section <em>" + route.gateway_legend + "</em> est activ&eacute;e.";
 hroute.right4="Pour dèfinir un itin&eacute;raire statique entre le routeur et un autre r&eacute;seau, choisissez un nombre dans la liste d&eacute;roulante de la section <em>" + route.static_legend + "</em>. Un itin&eacute;raire statique identifie un chemin pr&eacute;d&eacute;fini que les informations du r&eacute;seau doivent emprunter pour atteindre un h&ocirc;te ou un r&eacute;seau sp&eacute;cifique. Saisissez les informations d&eacute;crites ci-dessous pour d&eacute;finir un nouvel itin&eacute;raire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> pour supprimer un itin&eacute;raire statique.";
-hroute.right6="Saisissez dans ce champ le nom de l&apos;itinèraire.";
-hroute.right8="Cette option identifie l&apos;adresse du rèseau distant, ou h&ocirc;te, auxquels vous souhaitez attribuer un itin&eacute;raire statique.";
-hroute.right10="Cette option dètermine quelle portion de l&apos;adresse IP du r&eacute;seau local (LAN) de destination correspond au r&eacute;seau et quelle portion correspond &agrave; l&apos;h&ocirc;te.";
+hroute.right6="Saisissez dans ce champ le nom de l'itinèraire.";
+hroute.right8="Cette option identifie l'adresse du rèseau distant, ou h&ocirc;te, auxquels vous souhaitez attribuer un itin&eacute;raire statique.";
+hroute.right10="Cette option dètermine quelle portion de l'adresse IP du r&eacute;seau local (LAN) de destination correspond au r&eacute;seau et quelle portion correspond &agrave; l&apos;h&ocirc;te.";
 
 // ** Site_Survey.asp **//
 survey.titl="Rèseaux sans fil &agrave; Port&eacute;e";
@@ -1092,11 +1092,11 @@ service.pppoesrv_remoteaddr="Dèbut du r&eacute;seau IP &agrave; distance";
 service.pppoesrv_remotenet="Adresses IP du rèseau &agrave; distance";
 service.pppoesrv_remotemask="Masque de rèseau &agrave; distance";
 service.pppoesrv_lcpei="LPC Intervalle de rèp&eacute;tition";
-service.pppoesrv_lcpef="LCP Rèp&eacute;tition d&apos;erreur";
+service.pppoesrv_lcpef="LCP Rèp&eacute;tition d'erreur";
 service.pppoesrv_idlet="Temps inoccupè";
 service.pppoesrv_auth="Authentification";
 service.pppoesrv_radip="Serveur IP RADIUS";
-service.pppoesrv_radauthport="Port d&apos;authentification RADIUS";
+service.pppoesrv_radauthport="Port d'authentification RADIUS";
 service.pppoesrv_radaccport="Port de comptabilitè RADIUS";
 service.pppoesrv_radkey="Clè Partag&eacute;e RADIUS";
 service.pppoesrv_chaps="Gestion locale des utilisateurs (CHAP Secrets)";
@@ -1133,7 +1133,7 @@ service.ssh_forwarding="Transmission SSH TCP";
 
 //radiooff.webservices
 service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP / WPS";
-service.radiooff_srv="Gèrer l&apos;&eacute;mission radio";
+service.radiooff_srv="Gèrer l'&eacute;mission radio";
 service.radiooff_bootoff="Dèsactiver le Wifi au d&eacute;marrage";
 
 //ses.webservices
@@ -1171,7 +1171,7 @@ service.milkfish_uri="URI SIP";
 service.milkfish_mainswitch="Commutateur principal";
 service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Nom d&apos;utilisateur Milkfish";
+service.milkfish_username="Nom d'utilisateur Milkfish";
 service.milkfish_password="Mot de passe Milkfish";
 service.milkfish_audit="Vèrification Milkfish";
 service.milkfish_siptrace="SIP Trace";
@@ -1183,24 +1183,24 @@ service.milkfish_database="Base de donnèes SIP";
 service.milkfish_messaging="Messagerie SIP";
 service.milkfish_phonebook="Annuaire tèl&eacute;phonique SIP";
 service.milkfish_dynsipdomain="Domaine DynSIP";
-service.milkfish_dynsipurl="Mettre &agrave; jour l&apos;URL DynSIP";
-service.milkfish_dsusername="Nom d&apos;utilisateur DynSIP";
+service.milkfish_dynsipurl="Mettre &agrave; jour l'URL DynSIP";
+service.milkfish_dsusername="Nom d'utilisateur DynSIP";
 service.milkfish_dspassword="Mot de passe DynSIP";
 service.milkfish_sipmessage="Messagerie SIP";
 service.milkfish_destination="Destination SIP";
 service.milkfish_contact="Contact";
-service.milkfish_agent="Agent d&apos;utilisateur";
+service.milkfish_agent="Agent d'utilisateur";
 service.milkfish_registrations="Enregistrements actifs";
 
 service.hmilkfish_right2="Activer/dèsactiver votre routeur Milkfish SIP.";
 service.hmilkfish_right4="Activer/dèsactiver From:-Headerfield substitution de votre WAN IP dans les messages SIP sortants. Ce param&egrave;tre doit &ecirc;tre activ&eacute;, si vous voulez permettre aux interlocuteurs de vous rappeler si votre WAN IP a chang&eacute;.";
-service.hmilkfish_right6="L&apos;interlocuteur rappelle ce Domaine (au lieu de votre IP WAN) quand vous l&apos;envoyez comme votre From:-Domain au lieu de votre IP WAN. From-Substitution doit &ecirc;tre activè pour que le r&eacute;glage prenne effet.";
-service.hmilkfish_right8="Entrez ici, le nom d&apos;utilisateur de votre forum communautaire Milkfish - Votre enregistrement est assignè de cette fa&ccedil;on : yourname.homesip.net";
+service.hmilkfish_right6="L'interlocuteur rappelle ce Domaine (au lieu de votre IP WAN) quand vous l&apos;envoyez comme votre From:-Domain au lieu de votre IP WAN. From-Substitution doit &ecirc;tre activè pour que le r&eacute;glage prenne effet.";
+service.hmilkfish_right8="Entrez ici, le nom d'utilisateur de votre forum communautaire Milkfish - Votre enregistrement est assignè de cette fa&ccedil;on : yourname.homesip.net";
 service.hmilkfish_right10="Entrez ici, le mot de passe de votre forum communautaire Milkfish - Votre enregistrement est assignè de cette fa&ccedil;on : yourname.homesip.net";
 service.hmilkfish_right12="Activer/dèsactiver la recherche de base SIP sur votre routeur";
 service.hmilkfish_right14="Les abonnès SIP Local sont localement g&eacute;r&eacute;s comptes SIP";
-service.hmilkfish_right16="Les alias SIP locaux sont des transferts de SIP similaires aux transferts de courriel. Peut &ecirc;tre utilisè pour exp&eacute;dier en alphanum&eacute;rique aux comptes d&apos;utilisateur de t&eacute;l&eacute;phone num&eacute;rique ou vice versa";
-service.hmilkfish_right18="Activer/dèsactiver Dynamic SIP (c&apos;est-&agrave;-dire le Service Homesip.net) - Nom d&apos;utilisateur et votre mot de passe doivent &ecirc;tre d&eacute;finis";
+service.hmilkfish_right16="Les alias SIP locaux sont des transferts de SIP similaires aux transferts de courriel. Peut &ecirc;tre utilisè pour exp&eacute;dier en alphanum&eacute;rique aux comptes d'utilisateur de t&eacute;l&eacute;phone num&eacute;rique ou vice versa";
+service.hmilkfish_right18="Activer/dèsactiver Dynamic SIP (c'est-&agrave;-dire le Service Homesip.net) - Nom d&apos;utilisateur et votre mot de passe doivent &ecirc;tre d&eacute;finis";
 service.hmilkfish_right20="pas encore implèment&eacute; - laisser vide";
 service.hmilkfish_right22="pas encore implèment&eacute; - laisser vide";
 service.hmilkfish_right24="pas encore implèment&eacute; - laisser vide";
@@ -1237,18 +1237,18 @@ status_lan.concount="Connexions";
 status_lan.conratio="Proportion";
 
 //help container
-hstatus_lan.right2="C&apos;est l&apos;adresse MAC de l&apos;interface Ethernet du routeur.";
+hstatus_lan.right2="C'est l&apos;adresse MAC de l&apos;interface Ethernet du routeur.";
 hstatus_lan.right4="Adresse IP du routeur sur le rèseau local.";
 hstatus_lan.right6="Masque de sous rèseau utilis&eacute; par le routeur";
-hstatus_lan.right8="Si vous utilisez le routeur comme serveur DHCP, c&apos;est indiquè ici";
-hstatus_lan.right10="En cliquant sur n&apos;importe quelle adresse Mac, vous obtiendrez l&apos;Identifient Unique du Constructeur (Organizationally Unique Identifier) de la carte rèseau (recherche dans la base IEEE Standards OUI).";
+hstatus_lan.right8="Si vous utilisez le routeur comme serveur DHCP, c'est indiquè ici";
+hstatus_lan.right10="En cliquant sur n'importe quelle adresse Mac, vous obtiendrez l&apos;Identifient Unique du Constructeur (Organizationally Unique Identifier) de la carte rèseau (recherche dans la base IEEE Standards OUI).";
 
 // ** Status_Bandwidth.asp **//
 status_band.titl="&Eacute;tat de la Bande Passante";
 status_band.h2="&Eacute;tat de la Bande Passante";
 status_band.chg_unit="Basculer en ";
 status_band.chg_scale="&Eacute;chelle auto";
-status_band.chg_error="Impossible d&apos;obtenir les interfaces rèseaux";
+status_band.chg_error="Impossible d'obtenir les interfaces rèseaux";
 status_band.chg_collect_initial="Mise en cache des donnèes, veuillez patienter SVP...";
 status_band.strin="Entrant";
 status_band.strout="Sortant";
@@ -1257,8 +1257,8 @@ status_band.up="Haut";
 
 //help container
 hstatus_band.svg="Le plugin Adobe SVG est nècessaire pour afficher les graphiques de bande passante.";
-hstatus_band.right1="Cliquez sur l&apos;ètiquette \"<em>"+status_band.chg_unit+" ...</em>\" pour changer d&apos;unit&eacute; ("+share.bytes+"/s ou bit/s).";
-hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d&apos;èchelle (<em>"+status_band.follow+"</em> ajuste l&apos;&eacute;chelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l&apos;&eacute;chelle sur le pic maximum constat&eacute;).";
+hstatus_band.right1="Cliquez sur l'ètiquette \"<em>"+status_band.chg_unit+" ...</em>\" pour changer d&apos;unit&eacute; ("+share.bytes+"/s ou bit/s).";
+hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d'èchelle (<em>"+status_band.follow+"</em> ajuste l&apos;&eacute;chelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l&apos;&eacute;chelle sur le pic maximum constat&eacute;).";
 
 // ** Status_Router.asp **//
 status_router.titl="&Eacute;tat du Routeur";
@@ -1290,10 +1290,10 @@ status_router.inpvolt="Tension";
 status_router.cputemp="Tempèrature CPU";
 
 //help container
-hstatus_router.right2="Nom du routeur que vous avez configurè dans l&apos;onglet <em>Configuration</em>.";
+hstatus_router.right2="Nom du routeur que vous avez configurè dans l'onglet <em>Configuration</em>.";
 hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Micrologiciel utilisè sur votre routeur";
-hstatus_router.right8="Ceci est la date re&ccedil;ue depuis le serveur NTP configurable dans l&apos;onglet <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
+hstatus_router.right8="Ceci est la date re&ccedil;ue depuis le serveur NTP configurable dans l'onglet <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="Temps ècoul&eacute; depuis le dernier arr&ecirc;t/relance du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une pèriode de 1, 5 et 15 minutes.";
 
@@ -1313,7 +1313,7 @@ status_inet.previous="Mois prèc&eacute;dent";
 status_inet.next="Mois suivant";
 
 //help container
-hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter &agrave; Internet et qui sont configurèes dans l&apos;onglet <em>Configuration</em>. Vous pouvez connecter votre routeur &agrave; Internet en cliquant sur <em>Connect</em> ou le d&eacute;connecter en cliquant sur <em>Disconnect</em>.";
+hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter &agrave; Internet et qui sont configurèes dans l'onglet <em>Configuration</em>. Vous pouvez connecter votre routeur &agrave; Internet en cliquant sur <em>Connect</em> ou le d&eacute;connecter en cliquant sur <em>Disconnect</em>.";
 hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier dèmarrage du routeur.";
 hstatus_inet.right6="Trafic Internet ventilè par mois. Par d&eacute;faut, le mois courant est affich&eacute;. D&eacute;placez la souris sur le graphique pour afficher les donn&eacute;es des autres mois (les donn&eacute;es sont stock&eacute;es dans la m&eacute;moire flash du routeur).";
 
@@ -1323,16 +1323,16 @@ status_conn.titl="Table des connexions";
 status_conn.h2="Connexions IP actives";
 
 // ** Status_SputnikAPD.asp **//
-status_sputnik.titl="&Eacute;tat de l&apos;agent Sputnik";
+status_sputnik.titl="&Eacute;tat de l'agent Sputnik";
 status_sputnik.h2="Agent&trade; Sputnik&reg;";
 status_sputnik.manage="Gèr&eacute; Par";
 status_sputnik.license="Numèro de License SCC";
 
 //help container
-hstatus_sputnik.right1="&Eacute;tat de l&apos;agent Sputnik";
-hstatus_sputnik.right2="Cette partie affiche l&apos;ètat du processus de l&apos;Agent Sputnik.";
-hstatus_sputnik.right4="Le centre de contr&ocirc;le Sputnik auquel ce point d&apos;acc&egrave;s est connectè.";
-hstatus_sputnik.right6="&Eacute;tat actuel de l&apos;agent Sputnik";
+hstatus_sputnik.right1="&Eacute;tat de l'agent Sputnik";
+hstatus_sputnik.right2="Cette partie affiche l'ètat du processus de l&apos;Agent Sputnik.";
+hstatus_sputnik.right4="Le centre de contr&ocirc;le Sputnik auquel ce point d'acc&egrave;s est connectè.";
+hstatus_sputnik.right6="&Eacute;tat actuel de l'agent Sputnik";
 hstatus_sputnik.right8="Le numèro de licence de votre centre de contr&ocirc;le Sputnik.";
 
 // ** Status_Wireless.asp **//
@@ -1358,8 +1358,8 @@ status_gpsi.alt="Altitude";
 status_gpsi.sat="Satellites visibles";
 
 //help container
-hstatus_wireless.right2="Ceci est l&apos;adresse MAC de votre routeur vue depuis votre rèseau local (filaire et sans-fil)";
-hstatus_wireless.right4="Comme configurè dans l&apos;onglet Wireless, ce sont les normes de connexions accept&eacute;es pour votre r&eacute;seau sans fil (Mixed, G-Only, or Disabled).";
+hstatus_wireless.right2="Ceci est l'adresse MAC de votre routeur vue depuis votre rèseau local (filaire et sans-fil)";
+hstatus_wireless.right4="Comme configurè dans l'onglet Wireless, ce sont les normes de connexions accept&eacute;es pour votre r&eacute;seau sans fil (Mixed, G-Only, or Disabled).";
 
 // ** Status_OpenVPN.asp **//
 status_openvpn.titl="&Eacute;tat OpenVPN";
@@ -1373,9 +1373,9 @@ trforward.fwdrange="Gamme de Ports expèdi&eacute;s";
 trforward.app="Application";
 
 //help container
-htrforward.right2="Entrez au nom d&apos;application du dèclenchement.";
-htrforward.right4="Pour chaque application, inscrivez une gamme de nombres pour le port dèclench&eacute;. V&eacute;rifiez aupr&egrave;s de l&apos;application Internet la documentation pour les num&eacute;ros de port.";
-htrforward.right6="Pour chaque application, inscrivez une gamme de nombres pour le port expèdi&eacute;. V&eacute;rifiez aupr&egrave;s de l&apos;application Internet la documentation pour les num&eacute;ros de port.";
+htrforward.right2="Entrez au nom d'application du dèclenchement.";
+htrforward.right4="Pour chaque application, inscrivez une gamme de nombres pour le port dèclench&eacute;. V&eacute;rifiez aupr&egrave;s de l'application Internet la documentation pour les num&eacute;ros de port.";
+htrforward.right6="Pour chaque application, inscrivez une gamme de nombres pour le port expèdi&eacute;. V&eacute;rifiez aupr&egrave;s de l'application Internet la documentation pour les num&eacute;ros de port.";
 htrforward.right8="Entrez le nombre de ports de dèpart de la gamme &agrave; d&eacute;clencher et &agrave; exp&eacute;dier.";
 htrforward.right10="Entrez le nombre de ports de fin de la gamme &agrave; dèclencher et &agrave; exp&eacute;dier.";
 
@@ -1388,7 +1388,7 @@ upgrad.resetOff="Pas de rèinitialisation";
 upgrad.resetOn="Rèinitialisation usine";
 upgrad.file="Sèlectionner le fichier de mise &agrave; jour";
 upgrad.warning="A T T E N T I O N";
-upgrad.mess1="La mise &agrave; jour du Micrologiciel peut prendre quelques minutes.<br />N&apos;èteignez/red&eacute;marrez surtout pas votre routeur pendant la mise &agrave; jour!";
+upgrad.mess1="La mise &agrave; jour du Micrologiciel peut prendre quelques minutes.<br />N'èteignez/red&eacute;marrez surtout pas votre routeur pendant la mise &agrave; jour!";
 
 //help container
 hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour sèlectionner le Micrologiciel &agrave; charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre &agrave; jour</em> pour commencer la mise &agrave; jour. La mise &agrave; jour NE DOIT SURTOUT PAS &ecirc;tre interrompue.";
@@ -1444,7 +1444,7 @@ wol.enable="Activer WOL ?";
 wol.mac="Adresse(s) MAC";
 wol.broadcast="Net Broadcast";
 wol.udp="Port UDP";
-wol.msg1="Cliquer pour supprimer l&apos;h&ocirc;te";
+wol.msg1="Cliquer pour supprimer l'h&ocirc;te";
 
 wol.h22="Wake-On-LAN automatique";
 wol.legend5="Dèmon Wake-On-LAN";
@@ -1454,17 +1454,17 @@ wol.pass="Mot de passe SecureOn";
 //help container
 hwol.right2="Cette fonctionnalitè permet de <em>r&eacute;veiller</em> &agrave; distance une machine de votre r&eacute;seau local sans avoir &agrave; se d&eacute;placer. Vous pouvez r&eacute;veiller un h&ocirc;te manuellement en cliquant sur le bouton <em>"+sbutton.wol+"</em> ou programmer des r&eacute;veils automatiques gr&acirc;ce au d&eacute;mon.";
 hwol.right4="Les adresses MAC doivent &ecirc;tre saisies dans le format xx:xx:xx:xx:xxx:xx (ex. 01:23:45:67:89:AB) et sèpar&eacute;(es) par un <em>espace</em>.";
-hwol.right6="L&apos;adresse IP dèsigne g&eacute;n&eacute;ralement l&apos;adresse de broadcast du r&eacute;seau local, mais peut &eacute;galement d&eacute;signer une adresse IP si l&apos;h&ocirc;te n&apos;est pas sur le r&eacute;seau local connect&eacute; au routeur.";
+hwol.right6="L'adresse IP dèsigne g&eacute;n&eacute;ralement l&apos;adresse de broadcast du r&eacute;seau local, mais peut &eacute;galement d&eacute;signer une adresse IP si l&apos;h&ocirc;te n&apos;est pas sur le r&eacute;seau local connect&eacute; au routeur.";
 
 // ** WanMAC.asp **//
 wanmac.titl="Adresse MAC dupliquèe";
 wanmac.h2="Adresse MAC dupliquèe";
 wanmac.legend="MAC dupliquè";
-wanmac.wan="Dupliquer l&apos;adresse MAC WAN";
-wanmac.wlan="Dupliquer l&apos;adresse MAC WLAN";
+wanmac.wan="Dupliquer l'adresse MAC WAN";
+wanmac.wlan="Dupliquer l'adresse MAC WLAN";
 
 //help container
-hwanmac.right2="Une adresse MAC dèsigne un code &agrave; 12 chiffres attribu&eacute; &agrave; un composant mat&eacute;riel unique en vue de son identification. Certains fournisseurs d&apos;acc&egrave;s Internet (FAI) exigent l&apos;enregistrement d&apos;une adresse MAC pour l&apos;acc&egrave;s &agrave; Internet. Si vous ne souhaitez pas r&eacute;enregistrer l&apos;adresse MAC aupr&egrave;s de votre FAI, vous pouvez attribuer l&apos;adresse MAC actuellement enregistr&eacute;e aupr&egrave;s de votre FAI au routeur via la fonctionnalit&eacute; d&apos;<em>Adresse MAC dupliqu&eacute;e</em>.";
+hwanmac.right2="Une adresse MAC dèsigne un code &agrave; 12 chiffres attribu&eacute; &agrave; un composant mat&eacute;riel unique en vue de son identification. Certains fournisseurs d'acc&egrave;s Internet (FAI) exigent l&apos;enregistrement d&apos;une adresse MAC pour l&apos;acc&egrave;s &agrave; Internet. Si vous ne souhaitez pas r&eacute;enregistrer l&apos;adresse MAC aupr&egrave;s de votre FAI, vous pouvez attribuer l&apos;adresse MAC actuellement enregistr&eacute;e aupr&egrave;s de votre FAI au routeur via la fonctionnalit&eacute; d&apos;<em>Adresse MAC dupliqu&eacute;e</em>.";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 wpa.titl="Sècurit&eacute; sans fil";
@@ -1525,7 +1525,7 @@ radius.label4="Port du serveur RADIUS";
 radius.label5="Utilisateurs non identifiès Max.";
 radius.label6="Format du mot de passe";
 radius.label7="Secret partagè RADIUS";
-radius.label8="Outrepasser l&apos;identification en cas d&apos;indisponibilitè du serveur RADIUS";
+radius.label8="Outrepasser l'identification en cas d&apos;indisponibilitè du serveur RADIUS";
 
 // ** Wireless_MAC.asp **//
 wl_mac.titl="Filtre MAC sans fil";
@@ -1533,15 +1533,15 @@ wl_mac.h2="Filtre MAC sans fil";
 wl_mac.legend="Filtrage par Adresse MAC";
 wl_mac.label="Filtre";
 wl_mac.label2="Mode de Filtrage";
-wl_mac.deny="Bloquer l&apos;acc&egrave;s au rèseau sans fil pour les ordinateurs r&eacute;f&eacute;renc&eacute;s";
-wl_mac.allow="Autoriser l&apos;acc&egrave;s au rèseau sans fil pour les ordinateurs r&eacute;f&eacute;renc&eacute;s";
+wl_mac.deny="Bloquer l'acc&egrave;s au rèseau sans fil pour les ordinateurs r&eacute;f&eacute;renc&eacute;s";
+wl_mac.allow="Autoriser l'acc&egrave;s au rèseau sans fil pour les ordinateurs r&eacute;f&eacute;renc&eacute;s";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Param&egrave;tres sans fil avancès";
 wl_adv.h2="Param&egrave;tres sans fil avancès";
 wl_adv.legend="Param&egrave;tres Avancès";
 wl_adv.legend2="Param&egrave;tres sans fil multimèdia (WMM)";
-wl_adv.label="Type d&apos;authentification";
+wl_adv.label="Type d'authentification";
 wl_adv.label2="Taux de base";
 wl_adv.label3="Taux de transmission";
 wl_adv.label4="Mode de protection CTS";
@@ -1564,7 +1564,7 @@ wl_adv.label20="Ignorer le Shortslot";
 wl_adv.label21="Vitesse maximum de transmission";
 wl_adv.label23="Vitesse minimum de transmission";
 wl_adv.label22="Mode de coexistence Bluetooth";
-wl_adv.label24="Alignement de l&apos;antenne";
+wl_adv.label24="Alignement de l'antenne";
 wl_adv.table1="Param&egrave;tres EDCA AP (AP vers Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
@@ -1582,7 +1582,7 @@ wl_adv.shrt="Court";
 
 //help container
 
-hwl_adv.right2="La valeur <em>Auto</em> dèfinie par d&eacute;faut vous permet de choisir entre une authentification <em>Syst&egrave;me ouvert</em> ou <em>Cl&eacute; partag&eacute;e</em>. En mode d&apos;authentification <em>Syst&egrave;me ouvert</em>, l&apos;exp&eacute;diteur et le destinataire n&apos;utilisent pas de cl&eacute; WEP pour l&apos;authentification. En revanche, ils utilisent ce type de cl&eacute; en mode <em>Cl&eacute; partag&eacute;e</em>.";
+hwl_adv.right2="La valeur <em>Auto</em> dèfinie par d&eacute;faut vous permet de choisir entre une authentification <em>Syst&egrave;me ouvert</em> ou <em>Cl&eacute; partag&eacute;e</em>. En mode d'authentification <em>Syst&egrave;me ouvert</em>, l&apos;exp&eacute;diteur et le destinataire n&apos;utilisent pas de cl&eacute; WEP pour l&apos;authentification. En revanche, ils utilisent ce type de cl&eacute; en mode <em>Cl&eacute; partag&eacute;e</em>.";
 
 // ** Wireless_Basic.asp **//
 wl_basic.titl="Sans Fil";
@@ -1602,7 +1602,7 @@ wl_basic.repeaterbridge="Repeater Bridge";
 wl_basic.clientBridge="Pont Client";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Station WDS";
-wl_basic.wdsap="Point d&apos;acc&egrave;s WDS";
+wl_basic.wdsap="Point d'acc&egrave;s WDS";
 wl_basic.mixed="Mixte";
 wl_basic.preamble="Short Preamble";
 wl_basic.b="B-uniquement";
@@ -1651,11 +1651,11 @@ wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 wl_basic.multicast="Transmission Multicast";
 wl_basic.intmit="Immunitè au bruit";
-wl_basic.noise_immunity="Niveau d&apos;immunitè au bruit";
+wl_basic.noise_immunity="Niveau d'immunitè au bruit";
 wl_basic.ofdm_weak_det="Faiblesse de dètection OFDM";
 
 //help container
-hwl_basic.right2="Si vous disposez &agrave; la fois des pèriph&eacute;riques 802.11g et 802.11b sur votre r&eacute;seau, conservez le param&egrave;tre par d&eacute;faut <em>Mixte</em>. Si vous utilisez uniquement des p&eacute;riph&eacute;riques 802.11g, s&eacute;lectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des p&eacute;riph&eacute;riques 802.11b, s&eacute;lectionnez <em>B-uniquement</em>. Si votre r&eacute;seau n&apos;est muni d&apos;aucun p&eacute;riph&eacute;rique sans fil, s&eacute;lectionnez l&apos;option <em>D&eacute;sactiver</em>.<br /><b>Remarque :</b> quand vous changez de mode, certains param&egrave;tres avanc&eacute;s sont susceptibles d&apos;&ecirc;tre modifi&eacute;s (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
+hwl_basic.right2="Si vous disposez &agrave; la fois des pèriph&eacute;riques 802.11g et 802.11b sur votre r&eacute;seau, conservez le param&egrave;tre par d&eacute;faut <em>Mixte</em>. Si vous utilisez uniquement des p&eacute;riph&eacute;riques 802.11g, s&eacute;lectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des p&eacute;riph&eacute;riques 802.11b, s&eacute;lectionnez <em>B-uniquement</em>. Si votre r&eacute;seau n'est muni d&apos;aucun p&eacute;riph&eacute;rique sans fil, s&eacute;lectionnez l&apos;option <em>D&eacute;sactiver</em>.<br /><b>Remarque :</b> quand vous changez de mode, certains param&egrave;tres avanc&eacute;s sont susceptibles d&apos;&ecirc;tre modifi&eacute;s (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
 hwl_basic.right3="Sensibilitè :";
 hwl_basic.right4="Permet de règler le <em>ack timing</em>. 0 d&eacute;sactive compl&egrave;tement cette fonctionnalit&eacute; pour les Micrologiciels Broadcom. Pour ceux bas&eacute;s sur un chipset Atheros cela bascule en mode ack timing automatique";
 hwl_basic.right6="Sèlectionnez les heures pendant lesquelles le signal radio sans fil sera activ&eacute; (<em>vert</em> indique que le signal sans fil est activ&eacute;, et <em>rouge</em> indique que le signal est d&eacute;sactiv&eacute;).";
@@ -1673,11 +1673,11 @@ success.success_reboot=success.success_noreboot + "<br />Le routeur redèmarre. 
 
 success.alert_reset="Tous les param&egrave;tres ont èt&eacute; initialis&eacute;s &agrave; leur valeur par d&eacute;faut.<br /><br />";
 success.alert1="Veuillez vèrifier les points suivants avant de vous connecter de nouveau :";
-success.alert2="Si l&apos;adresse IP du routeur a changè, veuillez SVP renouveler les adresses IP de tous les clients connect&eacute;s.";
+success.alert2="Si l'adresse IP du routeur a changè, veuillez SVP renouveler les adresses IP de tous les clients connect&eacute;s.";
 success.alert3="Si vous &ecirc;tes connectè au routeur par une connexion sans fil, veuillez SVP vous connecter de nouveau avant de cliquer sur le bouton <em>Continuer</em>.";
 
 // ** Logout.asp  **//
-logout.message="Vous vous &ecirc;tes dèconnect&eacute; avec succ&egrave;s.<br />Merci d&apos;avoir utilis&eacute; DD-WRT!";
+logout.message="Vous vous &ecirc;tes dèconnect&eacute; avec succ&egrave;s.<br />Merci d'avoir utilis&eacute; DD-WRT!";
 
 
 // ************		OLD PAGES 		*******************************//
@@ -1685,6 +1685,6 @@ logout.message="Vous vous &ecirc;tes dèconnect&eacute; avec succ&egrave;s.<br /
 dhcp.titl="Table IP DHCP Actif";
 dhcp.h2="Table IP DHCP Actif";
 dhcp.server="Adresse IP du serveur DHCP :";
-dhcp.tclient="Nom de l&apos;h&ocirc;te client";
+dhcp.tclient="Nom de l'h&ocirc;te client";
 
 donate.mb="Vous pouvez ègalement faire un don sur le compte Moneybookers : mb@dd-wrt.com"; 
