@@ -307,7 +307,7 @@ errmsg.err28=" tiene caracteres incorrectos, deben ser [ 0 - 9 ].";
 errmsg.err29=" tiene un código ASCII no válido.";
 errmsg.err30=" tiene d&iacute;gitos hexadecimales no válido.";
 errmsg.err31=" valor es incorrecto.";
-errmsg.err32="La dirección IP y la puerta de enlace no están en la misma m&aacute;scara de subred.";
+errmsg.err32="La dirección IP y la puerta de enlace no están en la misma máscara de subred.";
 errmsg.err33="La dirección IP y la puerta de enlace no pueden ser iguales.";
 errmsg.err34=" no está permitido el uso de espacios.";
 errmsg.err110="El n&uacute;mero final debe de ser mayor que el n&uacute;mero inicial";
@@ -336,7 +336,7 @@ errmsg.err44="La comprobación total excede los 256";
 errmsg.err47="SSID incorrecta.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS no es compatible con la configuración actual del router. Por favor compruebe los siguientes puntos :\n * El modo inalámbrico debe ser AP (Punto Acceso) \n * WPA2 no est&aacute; soportado bajo WDS \n * La Red Inal&aacute;mbrica en modo S&oacute;lo-B no est&aacute; soportada bajo WDS";
+errmsg.err48="WDS no es compatible con la configuración actual del router. Por favor compruebe los siguientes puntos :\n * El modo inalámbrico debe ser AP (Punto Acceso) \n * WPA2 no está soportado bajo WDS \n * La Red Inal&aacute;mbrica en modo S&oacute;lo-B no est&aacute; soportada bajo WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="RADIUS solo está disponible en modo AP.";
@@ -372,7 +372,7 @@ errmsg.err60="Por favor, selecciona un archivo para actualizar.";
 errmsg.err61="El archivo de imagen no es correcto.";
 
 //Services.asp error messages
-errmsg.err62=" está ya definada como un lease est&aacute;tico.";
+errmsg.err62=" está ya definada como un lease estático.";
 
 //Saving message
 errmsg.err100="Procesando...<br />Por favor, espere.";
@@ -561,7 +561,7 @@ dmz.host="Dirección IP del host DMZ";
 
 
 //help container
-hdmz.right2="Activando esta opción expondrá el host especificado a Internet. Todos los puertos ser&aacute;n accesibles desde Internet.";
+hdmz.right2="Activando esta opción expondrá el host especificado a Internet. Todos los puertos serán accesibles desde Internet.";
 
 
 // ** Factory_Defaults.asp **//
@@ -569,10 +569,10 @@ factdef.titl="Valores de Fábrica";
 factdef.h2="Valores de Fábrica";
 factdef.legend="Resetear la configuración del router";
 factdef.restore="Restaurar Valores de Fábrica";
-factdef.mess1="&iexcl;Peligro! Si haces click en OK, el dispositivo se reseteará a los valores de f&aacute;brica. La configuración anterior ser&aacute; eliminada.";
+factdef.mess1="&iexcl;Peligro! Si haces click en OK, el dispositivo se reseteará a los valores de fábrica. La configuración anterior ser&aacute; eliminada.";
 
 //help container
-hfactdef.right1="Esto reseteará todos los datos de la configuración a sus valores de f&aacute;brica. Tu configuraci&oacute;n actual ser&aacute; borrada.";
+hfactdef.right1="Esto reseteará todos los datos de la configuración a sus valores de fábrica. Tu configuraci&oacute;n actual ser&aacute; borrada.";
 
 
 // ** FilterIPMAC.asp **//
@@ -821,10 +821,10 @@ hotspotsys.customsplash="Página Splash personalizada (Walled Garden)";
 //hanchorfree.right1="Unirse a la red de hotspot publicitarios de AnchorFree";
 //hanchorfree.right2="AnchorFree opera como una red de hotspot publicitarios, permitiendo a los usuarios de DD-WRT generarle beneficios.";
 //hanchorfree.right3="Genera beneficios con la publicidad de AnchorFree";
-//hanchorfree.right4="Activando esta función y creando una cuenta con AnchorFree (es gratuito y fácil), un frame publicitario y persistente ser&aacute; insertado directamente en los navegadores de los usuarios, que permitir&aacute; recibir un pago mensual. Gana un m&iacute;nimo de $25, y AnchorFree ingresar&aacute; en su cuenta de forma autom&aacute;tica los ingresos en su cuenta.";
+//hanchorfree.right4="Activando esta función y creando una cuenta con AnchorFree (es gratuito y fácil), un frame publicitario y persistente será insertado directamente en los navegadores de los usuarios, que permitir&aacute; recibir un pago mensual. Gana un m&iacute;nimo de $25, y AnchorFree ingresar&aacute; en su cuenta de forma autom&aacute;tica los ingresos en su cuenta.";
 //hanchorfree.right5="Para más información, por favor visite www.anchorfree.com";
 //hanchorfree.right6="La activación es fácil";
-//hanchorfree.right7="Una vez activado, AnchorFree le enviará un email a la cuenta registrada con instrucciones sencillas para optimizar su hotspot, FAQs, y otra información pertinente sobre como ganar dinero con su router. Desde esta pantalla de configuraci&oacute;n, AnchorFree insertar&aacute; un peque&ntilde;o frame de publicidad no intrusivo directamente en los navegadores web que accedan a internet desde este router.";
+//hanchorfree.right7="Una vez activado, AnchorFree le enviará un email a la cuenta registrada con instrucciones sencillas para optimizar su hotspot, FAQs, y otra información pertinente sobre como ganar dinero con su router. Desde esta pantalla de configuraci&oacute;n, AnchorFree insertará un peque&ntilde;o frame de publicidad no intrusivo directamente en los navegadores web que accedan a internet desde este router.";
 //hanchorfree.right8="Soporte del cliente";
 //hanchorfree.right9="&iquest;Tiene alguna pregunta? Contacte con nosotros en boxhelp@anchorfree.com";
 
@@ -960,7 +960,7 @@ log.accept="Aceptado";
 // ** Management.asp **//
 management.titl="Administración";
 management.h2="Administración Router";
-management.changepassword="&iexcl;Su router está actualmente desprotegido, y usa un nombre de usuario y contrase&ntilde;a por defecto no seguro, por favor cambielos usando los siguientes di&aacute;logos!";
+management.changepassword="&iexcl;Su router está actualmente desprotegido, y usa un nombre de usuario y contrase&ntilde;a por defecto no seguro, por favor cambielos usando los siguientes diálogos!";
 management.psswd_legend="Clave del Router";
 management.psswd_user="Usuario del Router";
 management.psswd_pass="Clave del Router";
@@ -1049,7 +1049,7 @@ management.gui_style="Estilo GUI Router";
 //help container
 
 hmanagement.right1="Auto-Refresco:";
-hmanagement.right2="Ajusta el intervalo de actualización automática de la interfaz gr&aacute;fica de la web (Web GUI). El valor 0 deshabilita esta funci&oacute;n por completo.";
+hmanagement.right2="Ajusta el intervalo de actualización automática de la interfaz gráfica de la web (Web GUI). El valor 0 deshabilita esta funci&oacute;n por completo.";
 
 
 // ** Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) **//
@@ -1104,7 +1104,7 @@ hqos.right3="Enlace Bajada (Downlink):";
 hqos.right4="Establecer esto entre 80%-100% (max) de tu l&iacute;mite total de bajada.";
 hqos.right6="Puedes controlar la tasa de transferencia de datos con respecto a la apliación que está consumiendo ancho de banda.";
 hqos.right8="Puedes especificar prioridades para todo el tráfico procedente desde una IP concreta o desde un rango de IPs.";
-hqos.right10="Puedes especificar prioridades para todo el tráfico de un dispositivo conectado a tu red d&aacute;ndole un Nombre de Dispositivo, especificando prioridad y metiendo su dirección MAC.";
+hqos.right10="Puedes especificar prioridades para todo el tráfico de un dispositivo conectado a tu red dándole un Nombre de Dispositivo, especificando prioridad y metiendo su dirección MAC.";
 hqos.right12="Puedes controlar tu tasa de transferencia de datos con respecto a qu&eacute; puerto LAN f&iacute;sico está conectado el dispositivo. Puedes asignar prioridades dependiendo del tipo de dispositivos conectados a los puertos LAN 1 a 4 del router.";
 
 
@@ -1438,8 +1438,8 @@ status_lan.conratio="Ratio";
 //help container
 hstatus_lan.right2="Esta es la dirección MAC del Router, como es vista en tu red Ethernet Local.";
 hstatus_lan.right4="Esto muestra la Dirección IP del Router, como aparece en tu Red Ethernet Local.";
-hstatus_lan.right6="Cuando el router está usando una M&aacute;scara de Subred concreta, &eacute;sta se muestrar&aacute; en este apartado.";
-hstatus_lan.right8="Si estás usando el Router como servidor DHCP, &eacute;sto se mostrar&aacute; en este apartado.";
+hstatus_lan.right6="Cuando el router está usando una Máscara de Subred concreta, &eacute;sta se muestrar&aacute; en este apartado.";
+hstatus_lan.right8="Si estás usando el Router como servidor DHCP, &eacute;sto se mostrará en este apartado.";
 hstatus_lan.right10="Haciendo clic en cualquier dirección MAC, obtendrás el Identiticador &Uacute;nico Organizacional (Organizationally Unique Identifier) del interfaz (la tarjeta) de red (Standards IEEE de b&uacute;squeda en bases de datos OUI).";
 
 
@@ -1511,12 +1511,12 @@ status_inet.traffout="Salida";
 status_inet.previous="Mes Anterior";
 status_inet.next="Mes Siguiente";
 status_inet.dataadmin="Datos de Administración";
-status_inet.delete_confirm="&iexcl;AVISO! Esto eliminará todos los datos sobre el tr&aacute;fico. &iquest;Proceder?";
+status_inet.delete_confirm="&iexcl;AVISO! Esto eliminará todos los datos sobre el tráfico. &iquest;Proceder?";
 
 //help container
 hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexi&oacute;n a internet. Esta informaci&oacute;n fue introducida en la Pesta&ntilde;a Setup. Puedes <em>Conectar</em> &oacute; <em>desconectar</em> tu conexi&oacute;n aqu&iacute; haciendo clic en ese bot&oacute;n.";
 hstatus_inet.right4="Esto muestra el tráfico de Internet en tu router.";
-hstatus_inet.right6="Esto muestra tu tráfico de Internet en tu router por meses. Arrastre el ratón sobre el gr&aacute;fico para ver los datos diarios. Los datos son almacenados en la nvram.";
+hstatus_inet.right6="Esto muestra tu tráfico de Internet en tu router por meses. Arrastre el ratón sobre el gráfico para ver los datos diarios. Los datos son almacenados en la nvram.";
 
 
 // ** Status_Conntrack.asp **//
@@ -1682,7 +1682,7 @@ wanmac.wan="Clonar MAC de la WAN";
 wanmac.wlan="Clonar la MAC Inalámbrica";
 
 //help container
-hwanmac.right2="Algunos ISP necesitarán que registres tu dirección MAC. Si no deseas re-registrar tu direcc&oacute;n MAC, puedes clonar la MAC que ya est&aacute; registrada en tu ISP.";
+hwanmac.right2="Algunos ISP necesitarán que registres tu dirección MAC. Si no deseas re-registrar tu direcc&oacute;n MAC, puedes clonar la MAC que ya está registrada en tu ISP.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -1896,7 +1896,7 @@ wl_adv.lng="Largo";				     //************* don&apos;t use .long! *************
 wl_adv.shrt="Corto";			    //************* don&apos;t use .short! **************
     
 //help container
-hwl_adv.right2="Deber&iacute;as escoger entre <em>Auto</em> ó <em>Clave Compartida</em>. La autenticaci&oacute;n por clave compartida es más segura, pero todos los dispositivos en tu red deber&aacute;n soportar <em>Autenticaci&oacute;n por Clave Compartida</em>.";
+hwl_adv.right2="Deber&iacute;as escoger entre <em>Auto</em> ó <em>Clave Compartida</em>. La autenticaci&oacute;n por clave compartida es más segura, pero todos los dispositivos en tu red deberán soportar <em>Autenticaci&oacute;n por Clave Compartida</em>.";
 
 
 // ** Wireless_Basic.asp **//
@@ -2007,7 +2007,7 @@ fail.mess2="Actualización fallida.";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Configuración Grabada.";
-success.restore="Configuración Restaurada.<br />La unidad está se est&aacute; reiniciando. Por favor, espera un momento...";
+success.restore="Configuración Restaurada.<br />La unidad está se está reiniciando. Por favor, espera un momento...";
 success.upgrade="Actualización exitosa.<br />La unidad se está reiniciando. Por favor, espera un momento...";
 success.success_noreboot="Configurado con &eacute;xito.";
 success.success_reboot=success.success_noreboot + "<br />La unidad se está reiniciando. Por favor, espera un momento...";
@@ -2034,9 +2034,9 @@ hsas.routerip="Esta es la dirección IP asignada al router en su red local. Si c
 hsas.h_dhcp="DHCP";
 hsas.dhcp="PCs y otros dispositivos de red pueden automáticamente obtener una dirección IP mediante DHCP en su red local sin que sea necesario una configuraci&oacute;n manual. En caso de que ya exista un servidor DHCP en su red local, por favor, deshabilite esta opci&oacute;n para evitar conflictos.";
 hsas.h_wireless_physical="Interfaz de radio WIFI";
-hsas.wireless_physical="La configuración de la interfaz le permite definir el comportamiento inalámbrico del router. Puede definir el modo de operaci&oacute;n (AP, cliente o repetidor), cambie el nombre de la red inal&aacute;mbrica y los ajustes avanzados como el ancho del canal. Eb caso de que cambiase la anchura de canal (por defecto en 20MHz), por favor, tenga en consideraci&oacute;n esto, ya que los clientes deben de soportar tambi&eacute;n el cambio a la nueva anchura canal.";
+hsas.wireless_physical="La configuración de la interfaz le permite definir el comportamiento inalámbrico del router. Puede definir el modo de operaci&oacute;n (AP, cliente o repetidor), cambie el nombre de la red inalámbrica y los ajustes avanzados como el ancho del canal. Eb caso de que cambiase la anchura de canal (por defecto en 20MHz), por favor, tenga en consideraci&oacute;n esto, ya que los clientes deben de soportar tambi&eacute;n el cambio a la nueva anchura canal.";
 hsas.h_wireless_security="Seguridad WIFI";
-hsas.wireless_security="Para que sea más f&aacute;cil para usted configurar los dispositivos clientes, puede cambiar la contrase&ntilde;a de paso de la red. Deshabilitar la encriptación o cambiarla a WEP no es recomendable debido a cuestiones de seguridad.";
+hsas.wireless_security="Para que sea más fácil para usted configurar los dispositivos clientes, puede cambiar la contrase&ntilde;a de paso de la red. Deshabilitar la encriptación o cambiarla a WEP no es recomendable debido a cuestiones de seguridad.";
 hsas.h_routername="Nombre dele router";
 hsas.routername="Este nombre es comunicado a otros dispositivos en su red y permite una fácil identificación.";
 hsas.networking="Texto de ayuda de la red";
@@ -2045,7 +2045,7 @@ hsas.other="Otros ajustes de los textos de ayuda";
 
 // ** AOSS **//
 haoss.basic="La \"AirStation One-Touch Secure System\" (AOSS) le permite conectar clientes AOSS capable clients al punto de acceso sin requerir una configuración manual.";
-haoss.securitymodes="El modo de seguridad de AOSS define que modo de seguridad deberán de usar los clientes para que estos puedan realizar  la negociación. Si un cliente atn solo soporta modos de seguridad que no est&aacute;n habilitados, no se podr&aacute; conectar.";
+haoss.securitymodes="El modo de seguridad de AOSS define que modo de seguridad deberán de usar los clientes para que estos puedan realizar  la negociación. Si un cliente atn solo soporta modos de seguridad que no están habilitados, no se podr&aacute; conectar.";
 
 
 // *****************************************************		OLD PAGES	       ************************************************************************//
