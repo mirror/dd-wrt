@@ -988,7 +988,7 @@ idx.dhcp_fwd="Encaminhador DHCP";
 idx.dhcp_start="Endereço IP Inicial";
 idx.dhcp_end="Endereço IP Final";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Número Máximo de Usuários DHCP";
-idx.dhcp_lease="Tempo de Concessão ao Cliente";
+idx.dhcp_lease="Tempo de Concessão";
 idx.dhcp_dnsmasq="Usar DNSMasq para o DHCP";
 idx.dns_dnsmasq="Usar DNSMasq para o DNS";
 idx.auth_dnsmasq="DHCP-Autoritário";
@@ -1691,7 +1691,7 @@ status_router.cputemp="Temperatura";
 hstatus_router.right2="Este é o nome específico do roteador, que pode ser configurado na aba <i>Configurações</i>.";
 hstatus_router.right4="Este é o Endereço MAC do roteador, visível para o seu ISP.";
 hstatus_router.right6="Este é o firmware atual do roteador.";
-hstatus_router.right8="Este é o horário recebido do servidor ntp configurado na aba <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> .";
+hstatus_router.right8="Este é o horário recebido do servidor NTP configurado na aba <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> .";
 hstatus_router.right10="Esta é a medida de tempo que o roteador está \"ligado\" e operacional.";
 hstatus_router.right12="É dado por 3 números que representam a carga do sistema durante o último minuto, os 5 e os 15 minutos passados, respectivamente.";
 

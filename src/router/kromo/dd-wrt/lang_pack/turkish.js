@@ -1537,7 +1537,7 @@ status_router.cputemp="CPU Sıcaklığı";
 hstatus_router.right2="Bu, <i>Kurulum</i> sekmesinde ayarladığınız yönlendiriciye özgü addır.";
 hstatus_router.right4="Bu, ISP'niz ile görüldüğü gibi yönlendirici MAC Adresidir.";
 hstatus_router.right6="Bu, yönlendiricinin geçerli ürün yazılımıdır.";
-hstatus_router.right8="Bu, <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> sekmesinde ayarlı ntp sunucusundan alınan süredir.";
+hstatus_router.right8="Bu, <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> sekmesinde ayarlı NTP sunucusundan alınan süredir.";
 hstatus_router.right10="Bu, yönlendiricinin \"up\" olduğu ve çalıştırıldığı zaman birimidir.";
 hstatus_router.right12="Bu, son bir, beş ve on beş dakikalık sürelerde sistemin yüklendiğini gösteren üç sayı olarak verilir.";
 

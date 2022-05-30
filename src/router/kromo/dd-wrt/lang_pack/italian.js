@@ -848,7 +848,7 @@ hnas.right2="Al fine di condividere le risorse, aggiungere nuove condivisioni fo
 hnas.page1="<dd>Il server FTP consente di condividere i file: <br /><ul><li>Attraverso Internet - WAN</li><li>Nella rete locale</li></ul></dd>";
 hnas.page2="<dd>Il server DLNA consente di condividere contenuti multimediali : <br /><ul><li>C&apos;&egrave; bisogno di un client DLNA, ad esempio una TV, per poter visualizzare i file messi a disposizione dal router.</li></ul></dd>";
 hnas.page3="<dd>Il server SAMBA permette di accedere ai files : <br /><ul><li>Presenti nel tuo router, da parte di dispositivi locali, attraverso un file explorer</li></ul></dd>";
-hnas.page4="<dd><br /><ul><li>Percorso: &egrave; il percorso della partizione montata. Vedere i dischi attualmente montati su <a href=\"../USB.asp\">Disk Info</a> </li><li>Sottocartella: Nome della cartella presente sulla partizione inserita prima ad esempio public o cartella/sotto_cartella/sotto_sotto_cartella </li><li>Nome: Nome di condivisione visualizzato quando si naviga tra le condivisioni di rete ad esempio \\nome_router </li><li>Pubblica: Questa condivisione pu&ograve; essere vista e aperta da chiunque. Non &egrave; richiesto nessun account utente per accedervi.</li></ul></dd><dt>Note</dt><dd><br />Per gli utenti Windows: un dispositivo di memoria USB collegato viene visualizzato in Windows sotto D: e contiene due directory <i>public, secret</i>.<br />Ora vuoi condividere <i>D:\public</i>. Per fare questo collegare il dispositivo di memoria USB e ricercare o specificare un punto di montaggio sulla pagina <a href=\"../USB.asp\">USB Settings</a>.<br />D: equivale ad un punto di montaggio in ambiente linux. Per condividere <i>D:\public</i>, selezionare il punto di montaggio corrente e la sottocartella <i>public</i><br />dargli un nome, ad esempio Ospiti, ed impostare i permessi di accesso.</dd>";
+hnas.page4="<dd><br /><ul><li>Percorso: &egrave; il percorso della partizione montata. Vedere i dischi attualmente montati su <a href=\"../USB.asp\">Disk Info</a> </li><li>Sottocartella: Nome della cartella presente sulla partizione inserita prima ad esempio public o cartella/sotto_cartella/sotto_sotto_cartella </li><li>Nome: Nome di condivisione visualizzato quando si naviga tra le condivisioni di rete ad esempio \\nome_router </li><li>Pubblica: Questa condivisione pu&ograve; essere vista e aperta da chiunque. Non &egrave; richiesto nessun account utente per accedervi.</li></ul></dd><dt>Note</dt><dd><br />Per gli utenti Windows: un dispositivo di memoria USB collegato viene visualizzato in Windows sotto D: e contiene due directory <i>public, secret</i>.<br />Ora vuoi condividere <i>D:\public</i>. Per fare questo collegare il dispositivo di memoria USB e ricercare o specificare un punto di montaggio sulla pagina <a href=\"../USB.asp\">USB Settings</a>.<br />D: equivale ad un punto di montaggio in ambiente Linux. Per condividere <i>D:\public</i>, selezionare il punto di montaggio corrente e la sottocartella <i>public</i><br />dargli un nome, ad esempio Ospiti, ed impostare i permessi di accesso.</dd>";
 
 //** Privoxy.asp **//
 //var privoxy=new Object();
@@ -1127,7 +1127,7 @@ idx.dhcp_fwd="DHCP Forwarder";
 idx.dhcp_start="Primo Indirizzo IP";
 idx.dhcp_end="Ultimo Indirizzo IP";
 idx.dhcp_maxusers="Massimi Utenti DHCP";
-idx.dhcp_lease="Tempo Di Scadenza Per Il Client";
+idx.dhcp_lease="Scadenza del Leasing";
 idx.dhcp_dnsmasq="Usa DNSMasq per il DHCP";
 idx.dns_dnsmasq="Usa DNSMasq per il DNS";
 idx.auth_dnsmasq="DHCP-Autoritario";

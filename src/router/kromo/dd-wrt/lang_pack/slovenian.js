@@ -1675,7 +1675,7 @@ status_router.cputemp="Temperatura";
 hstatus_router.right2="To je ime usmerjevalnika, kot ste ga določili v zavihku <i>Nemestitev</i>.";
 hstatus_router.right4="To je usmerjevalnikov MAC naslov, kot ga vidi vaš ponudnik interneta.";
 hstatus_router.right6="To je usmerjevalnikova trenutna verzija strojne programske opreme.";
-hstatus_router.right8="To je trenutni čas prejet z ntp strežnika nastavljenega v zavihku <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
+hstatus_router.right8="To je trenutni čas prejet z NTP strežnika nastavljenega v zavihku <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="To je čas neprekinjenega delovanja.";
 hstatus_router.right12="To so povprečne obremenitve v zadnji 1, 5 in 15 minutah.";
 
