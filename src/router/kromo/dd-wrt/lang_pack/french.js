@@ -454,7 +454,7 @@ config.mess3="A T T E N T I O N";
 config.mess4="Ne restaurer que des fichiers sauvegardès par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n'aurait pas été créé par cette interface!";
 
 //help container
-hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas o&ugrave; vous auriez besoin de rèinitialiser votre routeur &agrave; ses param&egrave;tres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
+hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de rèinitialiser votre routeur &agrave; ses param&egrave;tres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
 hconfig.right4="Cliquez sur le bouton <em>\"Parcourir...\"</em> pour sèlectionner le fichier de configuration &agrave; restaurer.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.restore + "\"</em> pour écraser la configuration courante par celle du fichier de configuration.";
 
 // ** DDNS.asp **//
