@@ -329,8 +329,8 @@ sbutton.preview="Preview";
 sbutton.allways_on="Always On";
 sbutton.allways_off="Always Off";
 sbutton.download="Download";
-sbutton.next="Next &raquo;";
-sbutton.prev="&laquo; Previous";
+sbutton.next="Next »";
+sbutton.prev="« Previous";
 
 // ** COMMON ERROR MESSAGES  **//
 var errmsg=new Object();
@@ -2390,7 +2390,7 @@ status_conn.h2="Active IP Connections";
 // ** Status_SputnikAPD.asp **//
 var status_sputnik=new Object();
 status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC License No.";
 

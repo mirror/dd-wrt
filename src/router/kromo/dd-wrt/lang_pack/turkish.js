@@ -265,8 +265,8 @@ sbutton.preview="Önizle";
 sbutton.allways_on="Her Zaman Açık";
 sbutton.allways_off="Her Zaman Kapalı";
 sbutton.download="İndir";
-sbutton.next="Sonraki &raquo;";
-sbutton.prev="&laquo; Önceki";
+sbutton.next="Sonraki »";
+sbutton.prev="« Önceki";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1572,7 +1572,7 @@ status_conn.h2="Etkin IP Bağlantıları";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Sputnik Araç Durumu";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Yürüten";
 status_sputnik.license="SCC Lisans No.";
 

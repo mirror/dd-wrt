@@ -275,8 +275,8 @@ sbutton.preview="Predogled";
 sbutton.allways_on="Vedno vključeno";
 sbutton.allways_off="Vedno izključeno";
 sbutton.download="Prenos";
-sbutton.next="Naslednji &raquo;";
-sbutton.prev="&laquo; Prejšnji";
+sbutton.next="Naslednji »";
+sbutton.prev="« Prejšnji";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1714,7 +1714,7 @@ status_conn.h2="Aktivne IP povezave";
 // ** Status_SputnikAPD.asp **//
 
 status_sputnik.titl="Status Sputnik agenta";
-status_sputnik.h2="Sputnik&reg; agent&trade;";
+status_sputnik.h2="Sputnik® agent™";
 status_sputnik.manage="Upravljan od";
 status_sputnik.license="SCC št. licence";
 

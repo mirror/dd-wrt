@@ -296,8 +296,8 @@ sbutton.preview="Náhled";
 sbutton.allways_on="Vždy zapnuto";
 sbutton.allways_off="Vždy vypnuto";
 sbutton.download="Stahování";
-sbutton.next="Další &raquo;";
-sbutton.prev="&laquo; Předchozí";
+sbutton.next="Další »";
+sbutton.prev="« Předchozí";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -2299,7 +2299,7 @@ status_conn.h2="Aktivní IP spojení";
 // ** Status_SputnikAPD.asp **//
 //
 status_sputnik.titl="Stav Agenta Sputnik";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Řízeno kým";
 status_sputnik.license="SCC licence číslo.";
 

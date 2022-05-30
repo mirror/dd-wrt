@@ -290,8 +290,8 @@ sbutton.preview="预览";
 sbutton.allways_on="总是打开";
 sbutton.allways_off="总是关闭";
 sbutton.download="下载";
-sbutton.next="下一步 &raquo;";
-sbutton.prev="&laquo; 上一步";
+sbutton.next="下一步 »";
+sbutton.prev="« 上一步";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -2152,7 +2152,7 @@ status_conn.h2="活动的IP连接";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Sputnik代理状态";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC授权编号";
 

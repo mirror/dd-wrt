@@ -275,8 +275,8 @@ sbutton.preview="Pré-Visualizar";
 sbutton.allways_on="Sempre Ligado";
 sbutton.allways_off="Sempre Desligado";
 sbutton.download="Baixar";
-sbutton.next="Próximo &raquo;";
-sbutton.prev="&laquo; Anterior";
+sbutton.next="Próximo »";
+sbutton.prev="« Anterior";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1726,7 +1726,7 @@ status_conn.h2="Conexões IP Ativas";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Status do Agente Sputnik";
-status_sputnik.h2="Agente Sputnik&reg;&trade;";
+status_sputnik.h2="Agente Sputnik®™";
 status_sputnik.manage="Gerenciado Por";
 status_sputnik.license="Licença SCC Nº.";
 

@@ -272,8 +272,8 @@ sbutton.preview="Previzualizează";
 sbutton.allways_on="Întotdeauna pornit";
 sbutton.allways_off="Întotdeauna oprit";
 sbutton.download="Descarcă";
-sbutton.next="Înainte &raquo;";
-sbutton.prev="&laquo; Înapoi";
+sbutton.next="Înainte »";
+sbutton.prev="« Înapoi";
 
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Trebuie să introduceți un nume de utilizator.";
@@ -1663,7 +1663,7 @@ status_conn.h2="Conexiuni IP active";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Stare agent Sputnik";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Administrat de";
 status_sputnik.license="Nr. licență SCC";
 

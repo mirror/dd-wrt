@@ -256,8 +256,8 @@ sbutton.preview="プレビュー";
 sbutton.allways_on="常時有効";
 sbutton.allways_off="常時無効";
 sbutton.download="ダウンロード";
-sbutton.next="次へ &raquo;";
-sbutton.prev="&laquo; 戻る";
+sbutton.next="次へ »";
+sbutton.prev="« 戻る";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1539,7 +1539,7 @@ status_conn.h2="Firewall学習テーブル";
 // ** Status_SputnikAPD.asp **//
 
 status_sputnik.titl="Sputnik エージェント情報";
-status_sputnik.h2="Sputnik&reg; エージェント&trade;";
+status_sputnik.h2="Sputnik® エージェント™";
 status_sputnik.manage="管理者：";
 status_sputnik.license="SCC ライセンス番号";
 
