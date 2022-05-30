@@ -469,7 +469,7 @@ alive.port="Proxy Poort";
 //help container
 
 halive.right2="Selecteer uit de opties, wanneer u de router wilt laten herstarten. Cron dient geactiveerd te zijn op de Beheer pagina.";
-halive.right4="Maximaal drie verschillende IP's scheiden door een <em>SPATIE</em> is toegestaan.<br />Het IP&apos;s Formaat is xxx.xxx.xxx.xxx.";
+halive.right4="Maximaal drie verschillende IP's scheiden door een <em>SPATIE</em> is toegestaan.<br />Het IP's Formaat is xxx.xxx.xxx.xxx.";
 
 
 
@@ -2014,7 +2014,7 @@ wl_basic.csma="Carrier Sense";
 
 hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, selecteer dan de <em>alleen-B</em> modus. Indien u de draadloze toegang in zijn geheel wilt verbieden, kies dan voor de keuze <em>Gedeactiveerd</em>.<br /><b>Noteer :</b> bij het wisselen van de draadloze mode, enkele geavanceerd parameters zullen worden gewijzigd (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Gevoeligheids Bereik: ";
-hwl_basic.right4="De(ACK Timing)past het gevoeligheidsbereik aan. Een 0 ingevuld schakelt het gevoeligheidsbereik volledig uit voor broadcom firmware's. Op Atheros gebasseerde firmware&apos;s zal het naar de automatische ack timing mode worden gezet";
+hwl_basic.right4="De(ACK Timing)past het gevoeligheidsbereik aan. Een 0 ingevuld schakelt het gevoeligheidsbereik volledig uit voor broadcom firmware's. Op Atheros gebasseerde firmware's zal het naar de automatische ack timing mode worden gezet";
 hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft de toegestane draadloze toegang aan, <em>rood</em> de geblokkeerde draadloze toegang)"; 
 
 
