@@ -272,8 +272,8 @@ sbutton.preview="Previsualitza";
 sbutton.allways_on="Sempre Actiu";
 sbutton.allways_off="Sempre Inactiu";
 sbutton.download="Descarrega";
-sbutton.next="Proper &raquo;";
-sbutton.prev="&laquo; Anterior";
+sbutton.next="Proper »";
+sbutton.prev="« Anterior";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -1650,7 +1650,7 @@ status_conn.h2="Connexions IP Actives";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Estatus de l'Agent Sputnik";
-status_sputnik.h2="Agent&trade; Sputnik&reg;";
+status_sputnik.h2="Agent™ Sputnik®";
 status_sputnik.manage="Administrat Per";
 status_sputnik.license="Nombre de Llicència SCC";
 

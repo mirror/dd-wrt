@@ -1220,7 +1220,7 @@ hstatus_inet.right4="This shows your router's Internet traffic.";
 //
 //************************************************************************************************************************************************************
 status_sputnik.titl="Sputnik-Agent státusz";
-status_sputnik.h2="Sputnik&reg;-Agent&trade;";
+status_sputnik.h2="SputnikÂ®-Agentâ„¢";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC Licensz szám.";
 

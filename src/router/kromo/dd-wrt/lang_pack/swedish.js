@@ -252,8 +252,8 @@ sbutton.preview="Förhandsgranska";
 sbutton.allways_on="Alltid P&aring;";
 sbutton.allways_off="Alltid Av";
 sbutton.download="Ladda Ner";
-sbutton.next="Nästa &raquo;";
-sbutton.prev="&laquo; Föreg&aring;ende";
+sbutton.next="Nästa »";
+sbutton.prev="« Föreg&aring;ende";
 
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Du m&aring;ste ange Användarnamn.";
@@ -1483,7 +1483,7 @@ status_conn.h2="Aktiva IP Kopplingar";
 
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Hanterad av";
 status_sputnik.license="SCC Licens Num.";
 

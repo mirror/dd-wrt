@@ -293,8 +293,8 @@ sbutton.preview="Podgląd";
 sbutton.allways_on="Zawsze włączone";
 sbutton.allways_off="Zawsze wyłączone";
 sbutton.download="Pobierz";
-sbutton.next="Następny &raquo;";
-sbutton.prev="&laquo; Poprzedni";
+sbutton.next="Następny »";
+sbutton.prev="« Poprzedni";
 // ** COMMON ERROR MESSAGES  **//
 
 errmsg.err0="Musisz wprowadzić nazwę użytkownika.";
@@ -2285,7 +2285,7 @@ status_conn.h2="Aktywne połączenia IP";
 // ** Status_SputnikAPD.asp **//
 
 status_sputnik.titl="Status agenta Sputnik";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Zarządzany przez";
 status_sputnik.license="Numer licencji SCC";
 

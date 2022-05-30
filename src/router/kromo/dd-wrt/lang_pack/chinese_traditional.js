@@ -1434,7 +1434,7 @@ status_conn.h2="使用中的IP連接";
 // ** Status_SputnikAPD.asp **//
 //
 status_sputnik.titl="Sputnik 代理資訊";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="管理器";
 status_sputnik.license="SCC 授權編號";
 

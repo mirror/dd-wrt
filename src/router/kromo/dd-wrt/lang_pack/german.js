@@ -2075,7 +2075,7 @@ status_conn.h2="Aktive IP Verbindungen";
 // ** Status_SputnikAPD.asp **//
 
 status_sputnik.titl="Status Sputnik-Agent";
-status_sputnik.h2="Sputnik&reg;-Agent&trade;";
+status_sputnik.h2="Sputnik®-Agent™";
 status_sputnik.manage="Verwaltet von";
 status_sputnik.license="SCC-Lizenz-Nr.";
 

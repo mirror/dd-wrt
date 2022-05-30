@@ -1478,7 +1478,7 @@ status_conn.h2="Active IP Connections";
 // ** Status_SputnikAPD.asp **//
 
 status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.h2="Sputnik® Agent™";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC License No.";
 
