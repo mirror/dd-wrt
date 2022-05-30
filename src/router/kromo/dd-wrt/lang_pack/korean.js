@@ -1675,7 +1675,7 @@ hservice.page9="<dd>Enable a telnet server to connect to the router with telnet.
 
 //help container
 hstatus_vpn.right1="정의 기반 라우팅:<br /><i>0.0.0.0/0 형식의 IPs/NETs를 추가해 강제로 클라이언트가 터널을 기본 게이트웨이로써 사용하게 합니다. IP/NET 당 한 줄.<br /><i>IP 주소/넷마스크:</i><br />DHCP-Proxy 모드를 사용할 경우 반드시 설정이 되어야 하며, local TAP은 브리지 되어 있어서는 안 됩니다.</i>";
-hstatus_vpn.right2="추가설정:<br /><i>클라이언트에 라우트를 푸시하기 위해 \'push \"route IP mask gateway\"\'를 추가하고, DNS/WINS를 푸시하기 위해 \'push \"dhcp-option DNS (또는 WINS) IP\"\'를 설정에 추가합니다.</i><br />디렉터리에 클라이언트 연결:<br /><i>USB 또는 JFFS가 /jffs에 마운트 되어 있을 경우, 스크립트는 /jffs/etc/openvpn/ccd/에서 호출되어야 합니다</i>";
+hstatus_vpn.right2="추가설정:<br /><i>클라이언트에 라우트를 푸시하기 위해 'push \"route IP mask gateway\"'를 추가하고, DNS/WINS를 푸시하기 위해 'push \"dhcp-option DNS (또는 WINS) IP\"'를 설정에 추가합니다.</i><br />디렉터리에 클라이언트 연결:<br /><i>USB 또는 JFFS가 /jffs에 마운트 되어 있을 경우, 스크립트는 /jffs/etc/openvpn/ccd/에서 호출되어야 합니다</i>";
 hstatus_vpn.right3="일반적:<br /><i> pkcs12 (+dh on server), 고정, 표준 인증 등의 세 가지 인증방법을 지원합니다, 링크의 한쪽 만에서 MSS를 사용 해 주시고, 프래그먼트는 링크 양쪽에서 사용 해 주세요.</i>";
 
 //help page

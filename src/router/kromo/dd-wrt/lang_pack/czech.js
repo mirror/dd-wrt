@@ -1930,7 +1930,7 @@ hservice.page9="<dd>Povolí telnet serveru připojit se k Routeru pomocí protok
 //help container
 //
 hstatus_vpn.right1="Routování založené na zásadách:<br /><i>Přidejte IP/NET ve tvaru 0.0.0.0/0, abyste donutili klienty používat tunel jako výchozí bránu. Jeden řádek na IP NET.<br /><i>IP adresa/maska ​​sítě:</i><br />Musí být nastaveno, když používáte režim DHCP-Proxy a místní TAP NENÍ přemostěn </i>";
-hstatus_vpn.right2="Přídavná konfigurace:<br /><i>Pro přidání trasování na klienta přidejte \'push \"route IP mask gateway\"\', k přidání DNS/WINS přidejte \'push \"dhcp-option DNS (or WINS) IP\"\' do konfigurace.</i><br />Přípojný adresář klienta:<br /><i>Pokud je USB nebo JFFS připojen na /jffs, script bude volán z /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Přídavná konfigurace:<br /><i>Pro přidání trasování na klienta přidejte 'push \"route IP mask gateway\"', k přidání DNS/WINS přidejte 'push \"dhcp-option DNS (or WINS) IP\"' do konfigurace.</i><br />Přípojný adresář klienta:<br /><i>Pokud je USB nebo JFFS připojen na /jffs, script bude volán z /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="Obecné:<br /><i>Jsou podporovány 3 autentizační metody: pkcs12 (+dh na serveru), statické a standardní certifikáty. Povolte MSS pouze na jedné straně odkazu, fragment na obou. </i>";
 
 //help page
