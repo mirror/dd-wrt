@@ -546,7 +546,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	websWrite(conn_fp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" //
 			   "<head>\n" //
 			   "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
-	websWrite(conn_fp, "<title>%d %s</title></head>\n<body BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
+	websWrite(conn_fp, "<title>%d %s</title></head>\n<body bgcolor=\"#cc9999\"><h4>%d %s</h4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</body>");
 	websWrite(conn_fp, "</html>\n");
