@@ -69,19 +69,19 @@ share.everyday="Ogni Giorno";
 share.sun="Domenica";
 share.sun_s="Dom";
 share.sun_s1="D";
-share.mon="Luned&igrave;";
+share.mon="Lunedì";
 share.mon_s="Lun";
 share.mon_s1="L";
-share.tue="Marted&igrave;";
+share.tue="Martedì";
 share.tue_s="Mar";
 share.tue_s1="M";
-share.wed="Mercoled&igrave;";
+share.wed="Mercoledì";
 share.wed_s="Mer";
 share.wed_s1="M";
-share.thu="Gioved&igrave;";
+share.thu="Giovedì";
 share.thu_s="Gio";
 share.thu_s1="G";
-share.fri="Venerd&igrave;";
+share.fri="Venerdì";
 share.fri_s="Ven";
 share.fri_s1="V";
 share.sat="Sabato";
@@ -609,7 +609,7 @@ dmz.host="Indirizzo IP dell'host DMZ";
 hdmz.right2="Abilitando questa opzione esporrai l'host specificato a internet. Tutte le sue porte saranno accessibili da internet.";
 
 //help page
-hdmz.page1="<dd>Il DMZ (DeMilitarized Zone) è una funzione di hosting che consente ad un utente della rete locale di accedere a Internet per l'utilizzo di uno specifico servizio, ad esempio giochi online o videoconferenze. Hosting DMZ inoltra tutte le porte contemporaneamente ad un PC. La funzione Port Forwarding è più sicura in quanto apre solo le porte che si desidera tenere aperte, mentre l'hosting DMZ apre tutte le porte di un computer, esponendolo in modo tale che Internet possa vederlo.<br /><br /><div class=\"note\"><h4>Note</h4><div>Qualsiasi PC la cui porta viene inoltrata (forwardata) dovrebbe avere un indirizzo IP statico assegnato perchè, altrimenti, l'indirizzo IP potrebbe cambiare quando si utilizza la funzione DHCP, rendendo cos&igrave; inutilizzabile il forwarding fatto.</div></div></dd>";
+hdmz.page1="<dd>Il DMZ (DeMilitarized Zone) è una funzione di hosting che consente ad un utente della rete locale di accedere a Internet per l'utilizzo di uno specifico servizio, ad esempio giochi online o videoconferenze. Hosting DMZ inoltra tutte le porte contemporaneamente ad un PC. La funzione Port Forwarding è più sicura in quanto apre solo le porte che si desidera tenere aperte, mentre l'hosting DMZ apre tutte le porte di un computer, esponendolo in modo tale che Internet possa vederlo.<br /><br /><div class=\"note\"><h4>Note</h4><div>Qualsiasi PC la cui porta viene inoltrata (forwardata) dovrebbe avere un indirizzo IP statico assegnato perchè, altrimenti, l'indirizzo IP potrebbe cambiare quando si utilizza la funzione DHCP, rendendo così inutilizzabile il forwarding fatto.</div></div></dd>";
 hdmz.page2="<dd>Per esporre un PC a Internet, selezionare <i>Abilita</i> ed immettere l'indirizzo IP del computer nell campo <i>Indirizzo IP dell'host DMZ</i>.<br /><br />Per disattivare la DMZ, mantenere l'impostazione predefinita, <i>Disabilita</i>.</dd><dd>Fare click su <i>Salva Impostazioni</i> per salvare le impostazioni o fare click su <i>Annulla Modifiche</i> per annullare le modifiche non salvate.</dd>";
 
 // ** Factory_Defaults.asp **//
@@ -712,7 +712,7 @@ hfirewall.right2="Abilita o disabilita il firewall SPI.";
 
  // help page
 hfirewall.page1="<dd>Blocca le richieste HTTP che contengono la stringa &amp;quot;<i>Host:</i>&amp;quot;.</dd>";
-hfirewall.page2="<dd>Identifica le richieste HTTP che contengono la stinga &amp;quot;<i>Cookie:</i>&amp;quot; e altera il cookie. Cos&igrave; si cerca di prevenire l'uso del cookie.</dd>";
+hfirewall.page2="<dd>Identifica le richieste HTTP che contengono la stinga &amp;quot;<i>Cookie:</i>&amp;quot; e altera il cookie. Così si cerca di prevenire l'uso del cookie.</dd>";
 hfirewall.page3="<dd>Blocca le richieste HTTP che contengono un URL che termina in &amp;quot;<i>.js</i>&amp;quot; o &amp;quot;<i>.class</i>&amp;quot;.</dd>";
 hfirewall.page4="<dd>Blocca le richieste HTTP che contengono un URL che termina in &amp;quot;<i>.ocx</i>&amp;quot; o &amp;quot;<i>.cab</i>&amp;quot;.</dd>";
 hfirewall.page5="<dd>Impedisci al router di rispondere ai &amp;quot;pings&amp;quot; provenienti dalla WAN.</dd>";
@@ -734,7 +734,7 @@ prforward.app="Applicazione";
 
 //help container
 //var hprforward=new Object();
-hprforward.right2="Alcune applicazioni possono richiedere l'apertura di specifiche porte per il loro corretto funzionamento. Esempi di queste applicazioni includono i server e certi giochi online. Cos&igrave; quando la richiesta di una certa porta viene da internet, il router inoltrerà i dati al computer specificato. Per ciò che riguarda la sicurezza, è desiderabile limitare il forwarding solo alle porte in uso, e appena finito deselezionare la casella <em>" + share.enable +"</em>.";
+hprforward.right2="Alcune applicazioni possono richiedere l'apertura di specifiche porte per il loro corretto funzionamento. Esempi di queste applicazioni includono i server e certi giochi online. Così quando la richiesta di una certa porta viene da internet, il router inoltrerà i dati al computer specificato. Per ciò che riguarda la sicurezza, è desiderabile limitare il forwarding solo alle porte in uso, e appena finito deselezionare la casella <em>" + share.enable +"</em>.";
 
 //help page
 hprforward.page1="<dd>Il Port Forwarding consente di impostare dei servizi pubblici in rete, quali server WEB, server FTP, server di posta o altre applicazioni Internet specifiche. Le applicazioni Internet specifiche sono tutte le applicazioni che utilizzano l'accesso a Internet per eseguire funzioni quali la videoconferenza o giochi online. Quando gli utenti inviano questo tipo di richieste alla rete interna (LAN) via Internet, il router inoltrerà tali richieste al computer appropriato.<br /><br />Se si desidera inoltrare tutta una serie di porte, vedere <a href=\"HForward.asp\">Port Forwarding</a>.<br /><br /><div class=\"note\"><h4>Note</h4><div>Qualsiasi PC, la cui porta viene inoltrata, deve avere un indirizzo IP statico assegnato perchè l'indirizzo IP può cambiare quando si utilizza la funzione DHCP.</div></div></dd><dd>Per aggiungere una nuova regola di Port Forwarding, fare click su <i>Aggiungi</i> e compilare i campi richiesti. Per rimuovere l'ultima regola, fare click su <i>Rimuovi</i>.</dd>";
@@ -1453,7 +1453,7 @@ hqos.right12="Puoi controllare il tasso di dati relativamente alla porta fisica 
 //help page
 hqos.page1="<dd>La gestione della banda imposta delle priorità sul traffico sul tuo router. Traffico interattivo (telefonia, navigazione, telnet, ecc) riceve alta priorità e il traffico di massa (trasferimento di file, P2P) ottiene bassa priorità. L'obiettivo principale è quello di permettere ad entrambi i tipi di traffico di coesistere fianco a fianco senza che del trafico di cose irrilevanti disturbi quello delle cose più importanti. Questa gestione è più o meno automatica.<br /><br />QoS consente di controllare l'allocazione della larghezza di banda per i diversi servizi, le maschere di rete, gli indirizzi MAC e le quattro porte LAN, la disponibilità del controllo per le porte LAN varia da router a router, se non viene visualizzata significa che l'hardware non la supporta. QoS è suddiviso in cinque classi di priorità per la larghezza di banda chiamati Maximum, Premium, Express, Standard, and Bulk. I servizi non classificati utilizzeranno la classe di priorità Standard.</dd>";
 hqos.page2="<dd>&Egrave; necessario scegliere se applicare QoS alla rete WAN o LAN &amp; WLAN. (LAN e WLAN sono raggruppati internamente in un unico dispositivo virtuale). Nella maggior parte dei casi si dovrebbe selezionare WAN per questa opzione.</dd>";
-hqos.page3="<dd><ul class=\"wide\"><li>HFSC - Hierarchical Fair Service Curve. Collega le code di pacchetti in modo tale da formare degli alberi, cos&igrave; ogni coda può avere ulteriori code figlie. Ogni coda può avere una priorità e una larghezza di banda assegnata. La priorità controlla il tempo che ci impiegano i pacchetti per essere inviati, mentre la larghezza di banda ne controlla la velocità di trasmissione. HFSC impegnerà più risorse rispetto all'HTB. </li><li>HTB - Hierarchical Token Bucket, si tratta di un sostituto più rapido della CBQ qdisc per Linux ed impegna meno risorse del HFSC. HTB aiuta a controllare l'utilizzo della banda in uscita su un determinato collegamento. HTB consente di utilizzare un collegamento fisico per simulare diversi collegamenti più lenti e consente di inviare diversi tipi di traffico su diversi collegamenti simulati. HTB è utile per limitare la banda di download / upload concessa ad ogni cliente, impedendo loro monopolizzazione della larghezza di banda disponibile.</li></ul></dd>";
+hqos.page3="<dd><ul class=\"wide\"><li>HFSC - Hierarchical Fair Service Curve. Collega le code di pacchetti in modo tale da formare degli alberi, così ogni coda può avere ulteriori code figlie. Ogni coda può avere una priorità e una larghezza di banda assegnata. La priorità controlla il tempo che ci impiegano i pacchetti per essere inviati, mentre la larghezza di banda ne controlla la velocità di trasmissione. HFSC impegnerà più risorse rispetto all'HTB. </li><li>HTB - Hierarchical Token Bucket, si tratta di un sostituto più rapido della CBQ qdisc per Linux ed impegna meno risorse del HFSC. HTB aiuta a controllare l'utilizzo della banda in uscita su un determinato collegamento. HTB consente di utilizzare un collegamento fisico per simulare diversi collegamenti più lenti e consente di inviare diversi tipi di traffico su diversi collegamenti simulati. HTB è utile per limitare la banda di download / upload concessa ad ogni cliente, impedendo loro monopolizzazione della larghezza di banda disponibile.</li></ul></dd>";
 hqos.page4="<dd>Per poter utilizzare QoS è necessario inserire i valori di larghezza di banda del vostro uplink e downlink. Questi sono generalmente l'80% - 95% della larghezza di banda massima della vostra connessione. Se si desidera appplicare il QoS solo alla larghezza di banda di uplink, immettere 0 (nessun limite) per il downlink. Non immettere 0 per l'uplink. </dd>";
 hqos.page5="<dd>La classificazione della larghezza di banda in base alle quattro categorie sarà attivata prima sulle porte hardware, poi sugli indirizzi MAC, poi sulle maschere di rete ed infine sui servizi. Ad esempio, se si attiva classificazione basata su un indirizzo MAC, questo sovrascriverà le classificazioni basate sulla maschera di rete e sui servizi. Tuttavia, la classifica basata sulle porte LAN collaborerà con quella basata sui MAC, maschera di rete e servizi, e non avrà la precedenza.<ul class=\"wide\"><li>Maximum - (60% - 100%) Questa classe offre la massima priorità e dovrebbe essere usata con moderazione.</li><li>Premium - (25% - 100%) Seconda classe più alta di larghezza di banda, di default handshaking e i pacchetti ICMP rientrano in questa classe. La maggior parte dei servizi VoIP e video funzioneranno bene in questa classe se la classe Express per loro è insufficiente.</li><li>Express - (10% - 100%) La classe Express è per le applicazioni interattive che richiedono una larghezza di banda sopra ai servizi standard in modo che le applicazioni funzionino senza intoppi.</li><li>Standard - (5% - 100%) Tutti i servizi che non sono specificatamente stati classificati diversamente rientreranno nella classe standard.</li><li>Bulk - (1% - 100%) Alla classe di massa è allocata solo la larghezza di banda rimanente quando le altre classi usano la banda. Se la linea è satura di traffico proveniente da altre classi, a questa classe sarà assegnato solo l'1% del limite complessivo settato. Utilizzare questa classe per i servizi P2P e il download come FTP.</li></ul></dd><dd>Controllare tutti i valori e fare click su <i>Salva</i> per salvare le impostazioni senza che abbiano effetto immediato, o fare click su <i>Applica Modifiche</i>  per salvare in modo permanente le modifiche che entreranno in vigore immediatamente. Facendo click su <i>Annulla Modifiche</i> verranno annullate tutte le modifiche non salvate.<br /><br /><div class=\"note\"><h4>Note</h4><div>Ricordarsi di salvare le modifiche prima di aggiungere un'altra regola QoS.</div></div></dd>";
 
