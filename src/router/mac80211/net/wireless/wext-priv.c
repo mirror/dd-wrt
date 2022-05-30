@@ -13,6 +13,64 @@
 #include <net/iw_handler.h>
 #include <net/wext.h>
 
+
+/* IW handlers */
+
+struct iw_statistics *get_wireless_stats(struct net_device *dev)
+{
+#ifdef CONFIG_WIRELESS_EXT
+	if ((dev->wireless_handlers != NULL) &&
+	   (dev->wireless_handlers->get_wireless_stats != NULL))
+		return dev->wireless_handlers->get_wireless_stats(dev);
+#endif
+
+#ifdef CPTCFG_CFG80211_WEXT
+	if (dev->ieee80211_ptr &&
+	    dev->ieee80211_ptr->wiphy &&
+	    dev->ieee80211_ptr->wiphy->wext &&
+	    dev->ieee80211_ptr->wiphy->wext->get_wireless_stats)
+		return dev->ieee80211_ptr->wiphy->wext->get_wireless_stats(dev);
+#endif
+
+	/* not found */
+	return NULL;
+}
+
+/*
+ * Call the commit handler in the driver
+ * (if exist and if conditions are right)
+ *
+ * Note : our current commit strategy is currently pretty dumb,
+ * but we will be able to improve on that...
+ * The goal is to try to agreagate as many changes as possible
+ * before doing the commit. Drivers that will define a commit handler
+ * are usually those that need a reset after changing parameters, so
+ * we want to minimise the number of reset.
+ * A cool idea is to use a timer : at each "set" command, we re-set the
+ * timer, when the timer eventually fires, we call the driver.
+ * Hopefully, more on that later.
+ *
+ * Also, I'm waiting to see how many people will complain about the
+ * netif_running(dev) test. I'm open on that one...
+ * Hopefully, the driver will remember to do a commit in "open()" ;-)
+ */
+int call_commit_handler(struct net_device *dev)
+{
+#ifdef CONFIG_WIRELESS_EXT
+	if (netif_running(dev) &&
+	    dev->wireless_handlers &&
+	    dev->wireless_handlers->standard[0])
+		/* Call the commit handler on the driver */
+		return dev->wireless_handlers->standard[0](dev, NULL,
+							   NULL, NULL);
+	else
+		return 0;		/* Command completed successfully */
+#else
+	/* cfg80211 has no commit */
+	return 0;
+#endif
+}
+
 int iw_handler_get_private(struct net_device *		dev,
 			   struct iw_request_info *	info,
 			   union iwreq_data *		wrqu,

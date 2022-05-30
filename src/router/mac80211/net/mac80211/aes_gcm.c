@@ -15,6 +15,19 @@
 #include "key.h"
 #include "aes_gcm.h"
 
+
+static struct crypto_aead *
+ieee80211_aes_gcm_key_setup_encrypt(const u8 key[], size_t key_len)
+{
+	return aead_key_setup_encrypt("gcm(aes)", key,
+				      key_len, IEEE80211_GCMP_MIC_LEN);
+}
+
+static void ieee80211_aes_gcm_key_free(struct crypto_aead *tfm)
+{
+	return aead_key_free(tfm);
+}
+
 int ieee80211_aes_gcm_encrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
 			      u8 *data, size_t data_len, u8 *mic)
 {

@@ -4,15 +4,12 @@
 #include <linux/export.h>
 
 #include "pdwext.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 unsigned long tdma_tx_slot_duration(struct ieee80211_if_tdma *tdma)
 {
 	return ptdma_tx_slot_duration(tdma);
 }
 
-EXPORT_SYMBOL(tdma_tx_slot_duration);
 
 bool tdma_is_tx_slot(struct ieee80211_if_tdma * tdma)
 {
@@ -27,7 +24,6 @@ bool tdma_is_tx_slot(struct ieee80211_if_tdma * tdma)
 	return ! !(((now - tdma->last_tx_start) < ptdma_tx_slot_duration(tdma)));
 }
 
-EXPORT_SYMBOL(tdma_is_tx_slot);
 
 static bool tdma_can_tx(struct ieee80211_if_tdma * tdma, u16 duration)
 {
@@ -41,7 +37,6 @@ static bool tdma_can_tx(struct ieee80211_if_tdma * tdma, u16 duration)
 	return ! !((now - tdma->last_tx_start + duration) < txs);
 }
 
-EXPORT_SYMBOL(tdma_can_tx);
 
 void ieee80211_tdma_tx_notify(struct ieee80211_vif *vif, bool force)
 {
@@ -58,14 +53,12 @@ void ieee80211_tdma_tx_notify(struct ieee80211_vif *vif, bool force)
 	}
 }
 
-EXPORT_SYMBOL(ieee80211_tdma_tx_notify);
 
 bool tdma_do_msdu(struct ieee80211_if_tdma *tdma)
 {
 	return ptdma_do_msdu(tdma);
 }
 
-EXPORT_SYMBOL(tdma_do_msdu);
 
 void tdma_plan_next_tx(struct ieee80211_if_tdma *tdma, unsigned long msecs)
 {
@@ -73,7 +66,6 @@ void tdma_plan_next_tx(struct ieee80211_if_tdma *tdma, unsigned long msecs)
 	hrtimer_start(&tdma->hk, ns_to_ktime(msecs * 1000), HRTIMER_MODE_REL);
 }
 
-EXPORT_SYMBOL(tdma_plan_next_tx);
 
 bool tdma_store_pending_frame(struct tdma_neighbour *n, struct sk_buff *skb)
 {
@@ -87,7 +79,6 @@ bool tdma_store_pending_frame(struct tdma_neighbour *n, struct sk_buff *skb)
 	return false;
 }
 
-EXPORT_SYMBOL(tdma_store_pending_frame);
 
 void tdma_remove_ack_frame(struct ieee80211_sub_if_data *sdata, u16 ack_frame_id)
 {
@@ -106,7 +97,6 @@ void tdma_remove_ack_frame(struct ieee80211_sub_if_data *sdata, u16 ack_frame_id
 	}
 }
 
-EXPORT_SYMBOL(tdma_remove_ack_frame);
 
 unsigned long tdma_get_tx_window(struct ieee80211_if_tdma *tdma)
 {
@@ -118,7 +108,6 @@ unsigned long tdma_get_tx_window(struct ieee80211_if_tdma *tdma)
 	return (unsigned long)(tdma->last_tx_call - tdma->last_tx_start);
 }
 
-EXPORT_SYMBOL(tdma_get_tx_window);
 
 void tdma_process_pending_frames(struct sta_info *sta, u8 ver, struct sk_buff_head *skbs, struct sk_buff_head *txskbs)
 {
@@ -170,7 +159,6 @@ void tdma_process_pending_frames(struct sta_info *sta, u8 ver, struct sk_buff_he
 	spin_unlock(&sta->n.pending.lock);
 }
 
-EXPORT_SYMBOL(tdma_process_pending_frames);
 
 bool tdma_tx_can_aggregate(struct ieee80211_sub_if_data *sdata, struct sta_info *sta, struct sk_buff *orig, struct sk_buff *skb)
 {
@@ -185,7 +173,6 @@ bool tdma_tx_can_aggregate(struct ieee80211_sub_if_data *sdata, struct sta_info 
 	return true;
 }
 
-EXPORT_SYMBOL(tdma_tx_can_aggregate);
 
 bool tdma_tx_aggr_skb(struct ieee80211_sub_if_data * sdata, struct sk_buff * orig, struct sk_buff * skb, struct sk_buff_head * txlist)
 {
@@ -254,7 +241,6 @@ bool tdma_tx_aggr_skb(struct ieee80211_sub_if_data * sdata, struct sk_buff * ori
 	return true;
 }
 
-EXPORT_SYMBOL(tdma_tx_aggr_skb);
 
 void tdma_sched_tx(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb, enum nl80211_band band)
 {
@@ -267,8 +253,7 @@ void tdma_sched_tx(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb, enu
 	if (!TDMA_JOINED(tdma) || (TDMA_STATE(tdma) != TDMA_STATUS_ASSOCIATED))
 		return;
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
-	if (mac80211_tx_compress)
-		mac80211_tx_compress(sdata, skb);
+	mac80211_tx_compress(sdata, skb);
 #endif
 	info->hw_queue = IEEE80211_AC_BE;
 	info->band = band;
@@ -305,7 +290,6 @@ void tdma_sched_tx(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb, enu
 		ieee80211_tdma_tx_notify(&sdata->vif, true);
 }
 
-EXPORT_SYMBOL(tdma_sched_tx);
 
 struct sk_buff *tdma_close_frame(struct ieee80211_sub_if_data *sdata, struct ieee80211_tx_control *control)
 {
@@ -371,7 +355,6 @@ struct sk_buff *tdma_close_frame(struct ieee80211_sub_if_data *sdata, struct iee
 	return skb;
 }
 
-EXPORT_SYMBOL(tdma_close_frame);
 
 int tdma_check_break_tx(struct ieee80211_if_tdma *tdma, struct sk_buff_head *txlist, u8 ver, unsigned long tx, unsigned long usedtime)
 {
@@ -396,7 +379,6 @@ int tdma_check_break_tx(struct ieee80211_if_tdma *tdma, struct sk_buff_head *txl
 	return idx;
 }
 
-EXPORT_SYMBOL(tdma_check_break_tx);
 
 void tdma_poll_timer(unsigned long data)
 {
@@ -409,7 +391,6 @@ void tdma_poll_timer(unsigned long data)
 	}
 }
 
-EXPORT_SYMBOL(tdma_poll_timer);
 
 unsigned long tdma_get_frame_duration_prognose(struct ieee80211_if_tdma *tdma, int len, struct ieee80211_tx_rate *txrate, struct sk_buff *skb, struct sta_info **sta)
 {
@@ -444,4 +425,3 @@ unsigned long tdma_get_frame_duration_prognose(struct ieee80211_if_tdma *tdma, i
 	return duration;
 }
 
-EXPORT_SYMBOL(tdma_get_frame_duration_prognose);

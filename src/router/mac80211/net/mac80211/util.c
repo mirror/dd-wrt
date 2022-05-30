@@ -2332,7 +2332,7 @@ static int ieee80211_reconfig_nan(struct ieee80211_sub_if_data *sdata)
 	return 0;
 }
 
-int ieee80211_reconfig(struct ieee80211_local *local)
+static int ieee80211_reconfig(struct ieee80211_local *local)
 {
 	struct ieee80211_hw *hw = &local->hw;
 	struct ieee80211_sub_if_data *sdata;
@@ -2748,6 +2748,18 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 #endif
 
 	return 0;
+}
+
+int __ieee80211_resume(struct ieee80211_hw *hw)
+{
+	struct ieee80211_local *local = hw_to_local(hw);
+
+	WARN(test_bit(SCAN_HW_SCANNING, &local->scanning) &&
+	     !test_bit(SCAN_COMPLETED, &local->scanning),
+		"%s: resume with hardware scan still in progress\n",
+		wiphy_name(hw->wiphy));
+
+	return ieee80211_reconfig(hw_to_local(hw));
 }
 
 void ieee80211_resume_disconnect(struct ieee80211_vif *vif)

@@ -7,8 +7,6 @@
 #include <linux/lz4.h>
 
 #include "compress.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 #define COMPR_TYPE_LZO	1
 #define COMPR_TYPE_LZMA	2
@@ -124,7 +122,6 @@ void mac80211_compress_uninit(struct ieee80211_sub_if_data *sdata)
 #endif
 }
 
-EXPORT_SYMBOL(mac80211_compress_uninit);
 
 void mac80211_compress_init(struct ieee80211_sub_if_data *sdata)
 {
@@ -172,7 +169,6 @@ void mac80211_compress_init(struct ieee80211_sub_if_data *sdata)
 #endif
 }
 
-EXPORT_SYMBOL(mac80211_compress_init);
 
 bool mac80211_tx_compress(struct ieee80211_sub_if_data * sdata, struct sk_buff * skb)
 {
@@ -247,15 +243,14 @@ bool mac80211_tx_compress(struct ieee80211_sub_if_data * sdata, struct sk_buff *
 	return true;
 }
 
-EXPORT_SYMBOL(mac80211_tx_compress);
 
-ieee80211_tx_result ieee80211_tx_h_compress(struct ieee80211_tx_data * tx)
+static ieee80211_tx_result ieee80211_tx_h_compress(struct ieee80211_tx_data * tx)
 {
 	mac80211_tx_compress(tx->sdata, tx->skb);
 	return TX_CONTINUE;
 }
 
-ieee80211_rx_result ieee80211_rx_h_decompress(struct ieee80211_rx_data * rx)
+static ieee80211_rx_result ieee80211_rx_h_decompress(struct ieee80211_rx_data * rx)
 {
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)rx->skb->data;
 	u8 *in;

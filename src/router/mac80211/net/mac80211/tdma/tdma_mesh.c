@@ -4,8 +4,6 @@
 
 #include "pdwext.h"
 #include "mesh.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 void tdma_originator_get_processing(struct ieee80211_if_tdma *tdma, const u8 *mac, const u8 *relay, bool * retr, bool * local)
 {
@@ -33,7 +31,6 @@ void tdma_originator_get_processing(struct ieee80211_if_tdma *tdma, const u8 *ma
 	}
 }
 
-EXPORT_SYMBOL(tdma_originator_get_processing);
 
 u8 tdma_originator_put(struct ieee80211_if_tdma *tdma, u8 *ptr, const u8 *mac, size_t len)
 {
@@ -71,7 +68,6 @@ u8 tdma_originator_put(struct ieee80211_if_tdma *tdma, u8 *ptr, const u8 *mac, s
 	return (res + 2);
 }
 
-EXPORT_SYMBOL(tdma_originator_put);
 
 void tdma_originator_update_tx(struct ieee80211_if_tdma *tdma, const u8 *relay, u16 duration)
 {
@@ -90,7 +86,6 @@ void tdma_originator_update_tx(struct ieee80211_if_tdma *tdma, const u8 *relay, 
 	}
 }
 
-EXPORT_SYMBOL(tdma_originator_update_tx);
 
 void tdma_originator_update_ack(struct ieee80211_if_tdma *tdma, const u8 *relay, bool acked, size_t len, int signal)
 {
@@ -114,7 +109,6 @@ void tdma_originator_update_ack(struct ieee80211_if_tdma *tdma, const u8 *relay,
 	}
 }
 
-EXPORT_SYMBOL(tdma_originator_update_ack);
 
 void tdma_originator_install_record(struct ieee80211_if_tdma *tdma, const u8 *mac, const u8 *relay, u16 reachval, int signal)
 {
@@ -139,4 +133,3 @@ void tdma_originator_install_record(struct ieee80211_if_tdma *tdma, const u8 *ma
 		__tdma_route_new_complete(tdma, mac, relay, reachval, signal);
 }
 
-EXPORT_SYMBOL(tdma_originator_install_record);

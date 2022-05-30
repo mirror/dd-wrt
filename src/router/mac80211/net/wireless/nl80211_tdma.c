@@ -23,8 +23,9 @@
 #include "nl80211.h"
 #include "reg.h"
 
-extern struct cfg80211_cached_keys *nl80211_parse_connkeys(struct cfg80211_registered_device *rdev,
-		       struct nlattr *keys, bool *no_ht);
+static struct cfg80211_cached_keys * nl80211_parse_connkeys(struct cfg80211_registered_device *rdev,
+		       struct genl_info *info, bool *no_ht);
+
 extern int nl80211_parse_chandef(struct cfg80211_registered_device *rdev,
 				 struct genl_info *info,
 				 struct cfg80211_chan_def *chandef);
@@ -33,8 +34,8 @@ extern bool nl80211_parse_mcast_rate(struct cfg80211_registered_device *rdev,
 			 int mcast_rate[NUM_NL80211_BANDS],
 			 int rateval);
 
-static const unsigned ht20_mcs_rates[] = { 65, 130, 195, 260, 390, 520, 585, 650, 130, 260, 390, 520, 780, 1040, 1170, 1300, 195, 390, 585, 780, 1170, 1560, 1755, 1950, 260, 520, 780, 1040, 1560, 2080, 2340, 2600 };
-static const unsigned ht40_mcs_rates[] = { 135, 270, 405, 540, 810, 1080, 1215, 1350, 270, 540, 810, 1080, 1620, 2160, 2430, 2700 };
+//static const unsigned ht20_mcs_rates[] = { 65, 130, 195, 260, 390, 520, 585, 650, 130, 260, 390, 520, 780, 1040, 1170, 1300, 195, 390, 585, 780, 1170, 1560, 1755, 1950, 260, 520, 780, 1040, 1560, 2080, 2340, 2600 };
+//static const unsigned ht40_mcs_rates[] = { 135, 270, 405, 540, 810, 1080, 1215, 1350, 270, 540, 810, 1080, 1620, 2160, 2430, 2700 };
 
 static const struct nla_policy nl80211_txattr_policy_tdma[NL80211_TXRATE_MAX + 1] = {
 	[NL80211_TXRATE_LEGACY] = { .type = NLA_BINARY,
@@ -43,7 +44,7 @@ static const struct nla_policy nl80211_txattr_policy_tdma[NL80211_TXRATE_MAX + 1
 				 .len = NL80211_MAX_SUPP_HT_RATES },
 };
 
-int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
+static int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
 	struct net_device *dev = info->user_ptr[1];
@@ -170,7 +171,7 @@ int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
 	if (tdma.privacy && info->attrs[NL80211_ATTR_KEYS]) {
 		bool no_ht = false;
 		connkeys = nl80211_parse_connkeys(rdev,
-					info->attrs[NL80211_ATTR_KEYS], &no_ht);
+					info, &no_ht);
 		if (IS_ERR(connkeys))
 			return PTR_ERR(connkeys);
 	}
@@ -224,7 +225,7 @@ int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
 	return err;
 }
 
-int nl80211_leave_tdma(struct sk_buff *skb, struct genl_info *info)
+static int nl80211_leave_tdma(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
 	struct net_device *dev = info->user_ptr[1];

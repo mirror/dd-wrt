@@ -2,8 +2,6 @@
 #include "pnwext.h"
 #include "../ieee80211_i.h"
 
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 static const unsigned ht20_mcs_rates[] = { 65, 130, 195, 260, 390, 520, 585, 650,
 	130, 260, 390, 520, 780, 1040, 1170, 1300,
@@ -58,7 +56,6 @@ unsigned long ptdma_tx_slot_duration(struct ieee80211_if_tdma *tdma)
 	return (tdma->tx_slot_duration - tdma->max_clock_drift);
 }
 
-EXPORT_SYMBOL(ptdma_tx_slot_duration);
 
 unsigned long ptdma_calc_ideal_interval(struct ieee80211_if_tdma *tdma, int node)
 {
@@ -90,7 +87,6 @@ unsigned long ptdma_calc_ideal_interval(struct ieee80211_if_tdma *tdma, int node
 	return 0;
 }
 
-EXPORT_SYMBOL(ptdma_calc_ideal_interval);
 
 int pamsdu_limit(struct ieee80211_supported_band *sband, struct ieee80211_sta *sta)
 {
@@ -102,7 +98,6 @@ int pamsdu_limit(struct ieee80211_supported_band *sband, struct ieee80211_sta *s
 	return IEEE80211_MAX_FRAME_LEN_NONSTD;
 }
 
-EXPORT_SYMBOL(pamsdu_limit);
 
 int ptdma_adjust_rates(struct ieee80211_supported_band *sband, struct ieee80211_tx_rate *irate, int *erp, bool ack)
 {
@@ -146,7 +141,6 @@ int ptdma_adjust_rates(struct ieee80211_supported_band *sband, struct ieee80211_
 	return bitrate;
 }
 
-EXPORT_SYMBOL(ptdma_adjust_rates);
 
 static unsigned long ss_ack_table[4][5] = {
 	{45, 45, 45, 45, 130},
@@ -177,7 +171,6 @@ unsigned long ptdma_tu_adjust(unsigned long val, int slotsize, int shift, bool n
 	return tmp << 10;
 }
 
-EXPORT_SYMBOL(ptdma_tu_adjust);
 
 void ptdma_update_hdr_counter(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, struct ieee80211_hdr *hdr)
 {
@@ -190,7 +183,6 @@ void ptdma_update_hdr_counter(struct ieee80211_if_tdma *tdma, struct sk_buff *sk
 	TDMA_HDR_SET_COUNTER(thdr, count);
 }
 
-EXPORT_SYMBOL(ptdma_update_hdr_counter);
 
 bool ptdma_update_hdr_ttl(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, struct ieee80211_hdr *hdr)
 {
@@ -205,7 +197,6 @@ bool ptdma_update_hdr_ttl(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, s
 	return ! !(count == 0);
 }
 
-EXPORT_SYMBOL(ptdma_update_hdr_ttl);
 
 void ptdma_update_hdr_info(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, struct ieee80211_hdr *hdr, bool info)
 {
@@ -215,7 +206,6 @@ void ptdma_update_hdr_info(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, 
 	TDMA_HDR_SET_INFO(thdr, info);
 }
 
-EXPORT_SYMBOL(ptdma_update_hdr_info);
 
 struct ieee80211_tx_info *ptdma_skb_fill_info(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 {
@@ -235,7 +225,6 @@ struct ieee80211_tx_info *ptdma_skb_fill_info(struct ieee80211_sub_if_data *sdat
 	return info;
 }
 
-EXPORT_SYMBOL(ptdma_skb_fill_info);
 
 bool ptdma_skb_priority(struct sk_buff * skb)
 {
@@ -251,11 +240,9 @@ bool ptdma_skb_priority(struct sk_buff * skb)
 	return priority;
 }
 
-EXPORT_SYMBOL(ptdma_skb_priority);
 
 bool ptdma_do_msdu(struct ieee80211_if_tdma * tdma)
 {
 	return ! !(TDMA_CFG_NO_MSDU(tdma) == 0);
 }
 
-EXPORT_SYMBOL(ptdma_do_msdu);

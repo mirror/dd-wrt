@@ -652,10 +652,10 @@ struct fwdb_header {
 	struct fwdb_country country[];
 } __packed __aligned(4);
 
-static int ecw2cw(int ecw)
+/*static int ecw2cw(int ecw)
 {
 	return (1 << ecw) - 1;
-}
+}*/
 
 static bool valid_wmm(struct fwdb_wmm_rule *rule)
 {

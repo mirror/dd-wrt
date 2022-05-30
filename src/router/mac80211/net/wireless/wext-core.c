@@ -876,41 +876,6 @@ out:
 }
 
 /*
- * Call the commit handler in the driver
- * (if exist and if conditions are right)
- *
- * Note : our current commit strategy is currently pretty dumb,
- * but we will be able to improve on that...
- * The goal is to try to agreagate as many changes as possible
- * before doing the commit. Drivers that will define a commit handler
- * are usually those that need a reset after changing parameters, so
- * we want to minimise the number of reset.
- * A cool idea is to use a timer : at each "set" command, we re-set the
- * timer, when the timer eventually fires, we call the driver.
- * Hopefully, more on that later.
- *
- * Also, I'm waiting to see how many people will complain about the
- * netif_running(dev) test. I'm open on that one...
- * Hopefully, the driver will remember to do a commit in "open()" ;-)
- */
-int call_commit_handler(struct net_device *dev)
-{
-#ifdef CONFIG_WIRELESS_EXT
-	if (netif_running(dev) &&
-	    dev->wireless_handlers &&
-	    dev->wireless_handlers->standard[0])
-		/* Call the commit handler on the driver */
-		return dev->wireless_handlers->standard[0](dev, NULL,
-							   NULL, NULL);
-	else
-		return 0;		/* Command completed successfully */
-#else
-	/* cfg80211 has no commit */
-	return 0;
-#endif
-}
-
-/*
  * Main IOCTl dispatcher.
  * Check the type of IOCTL and call the appropriate wrapper...
  */

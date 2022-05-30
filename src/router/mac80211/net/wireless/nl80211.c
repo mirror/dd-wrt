@@ -33,8 +33,8 @@
 #include "rdev-ops.h"
 
 #ifdef CPTCFG_MAC80211_TDMA
-extern int nl80211_join_tdma(struct sk_buff *, struct genl_info *);
-extern int nl80211_leave_tdma(struct sk_buff *, struct genl_info *);
+static int nl80211_join_tdma(struct sk_buff *, struct genl_info *);
+static int nl80211_leave_tdma(struct sk_buff *, struct genl_info *);
 #endif
 
 static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
@@ -1422,7 +1422,7 @@ static int nl80211_parse_key(struct genl_info *info, struct key_parse *k)
 	return 0;
 }
 
-struct cfg80211_cached_keys *
+static struct cfg80211_cached_keys *
 nl80211_parse_connkeys(struct cfg80211_registered_device *rdev,
 		       struct genl_info *info, bool *no_ht)
 {

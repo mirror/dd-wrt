@@ -4,8 +4,6 @@
 #include <linux/export.h>
 
 #include "pdwext.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 #ifdef CPTCFG_MAC80211_TDMA_MESH
 #include "mesh.h"
@@ -26,7 +24,7 @@ static ssize_t __fmt_path(const struct tmd_record *o, char *buf, int buflen)
 	return scnprintf(buf, buflen, "%pM %pM %d\n", o->da, o->ra, (int)o->reach_val);
 }
 
-ssize_t tdma_mesh_fmt_path(const struct ieee80211_if_tdma *tdma, char *buf, int buflen)
+static ssize_t tdma_mesh_fmt_path(const struct ieee80211_if_tdma *tdma, char *buf, int buflen)
 {
 	char *p = buf;
 	ssize_t sz = 0, sz1;
@@ -49,13 +47,11 @@ ssize_t tdma_mesh_fmt_path(const struct ieee80211_if_tdma *tdma, char *buf, int 
 	return sz;
 }
 
-EXPORT_SYMBOL(tdma_mesh_fmt_path);
 
-u16 tdma_mesh_calc_reachability(struct p_originator *o, unsigned intval)
+static u16 tdma_mesh_calc_reachability(struct p_originator *o, unsigned intval)
 {
 	return mm_calc_reachability(o, intval);
 }
 
-EXPORT_SYMBOL(tdma_mesh_calc_reachability);
 
 #endif
