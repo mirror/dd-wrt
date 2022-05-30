@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V3           21/MAY/2022				//
+//		English reference translation file - DD-WRT V3           30/MAY/2022				//
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -332,7 +332,6 @@ sbutton.download="Download";
 sbutton.next="Next &raquo;";
 sbutton.prev="&laquo; Previous";
 
-
 // ** COMMON ERROR MESSAGES  **//
 var errmsg=new Object();
 errmsg.err0="You must input a username.";
@@ -355,7 +354,7 @@ errmsg.err46="Not available in HTTPS";
 //common.js error messages
 errmsg.err14=" value is out of range [";
 errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
-errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err16="The second character of MAC must be even number: [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="The MAC Address is not correct.";
 errmsg.err18="The MAC Address length is not correct.";
 errmsg.err19="The MAC Address cannot be the broadcast address.";
@@ -542,10 +541,10 @@ bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
 bmenu.statuGpio="GPIO I/O";
 bmenu.statuSyslog="Syslog";
-
 bmenu.setupnetw="Network";
 bmenu.adminman="Management";
 
+// sysctl.asp
 var sysctl=new Object();
 sysctl.titl="Sysctl Configuration";
 
@@ -566,6 +565,7 @@ alive.port="Proxy Port";
 alive.mode0="Any dropped IP's for reboot";
 alive.mode1="All dropped IP's for reboot";
 alive.timeout="Ping timeout in seconds";
+
 //help container
 var halive=new Object();
 halive.right2="Choose when reboot to the router. Cron must be enabled in the management tab.";
@@ -574,7 +574,6 @@ halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<
 //help page
 halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after xxx seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
 halive.page2="<dd></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot +"</em> button to reboot the router immediately.</dd>";
-
 
 // ** config.asp **//
 var config=new Object();
@@ -703,7 +702,6 @@ filterIP.legend2="Enter the IP Address of the clients";
 filterIP.legend3="Enter the IP Range of the clients";
 filterIP.ip_range="IP Range";
 
-
 // ** Filter.asp **//
 var filter=new Object();
 filter.titl="Access Restrictions";
@@ -743,15 +741,12 @@ hfilter.pageintro="<dd>This screen allows you to block or allow specific kinds o
 hfilter.page1="<dd>This feature allows you to customize up to ten different Internet Access Policies for particular PCs, which are identified by their IP or MAC addresses. For each policy designated PCs, during the days and time periods specified.<br /><br />To create or edit a policy, follow these instructions:<ol class=\"wide\"><li>Select the policy number (1-20) from the dropdown menu.</li><li>Enter a name into the Enter Profile Name field.</li><li>Click the <em>" + sbutton.filterIP + "</em> button.</li><li>On the <i>List of clients</i> screen, specify computers by IP address or MAC address. Enter the appropriate IP addresses into the <i>IP</i> fields. If you have a range of IP addresses to filter, complete the appropriate <i>IP Range</i> fields. Enter the appropriate MAC addresses into the <i>MAC</i> fields.</li><li>Click the <em>" + sbutton.apply + "</em> button to apply your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.clos + "</em> button to return to the <b>"+ bmenu.accrestriction + "</b> screen.</li><li>If you want to block the listed computers from Internet access during the designated days and time, then keep the default setting, <i>" + share.deny+ "</i>. If you want the listed computers to have Internet filtered during the designated days and time, then click the radio button next to <i>Filter</i>.</li><li>Set the days when access will be filtered. Select <i>Everyday</i> or the appropriate days of the week.</li><li>Set the time when access will be filtered. Select <i>24 Hours</i>, or check the box next to <i>From</i> and use the dropdown menus to designate a specific time period.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes and activate it.</li><li>To create or edit additional policies, repeat steps 1-9.</li></ol><br />To delete an Internet Access Policy, select the policy number, and click the <em>" + share.del + "</em> button.</dd>";
 hfilter.page2="<dd>To see a summary of all the policies, click the <em>" + sbutton.summary + "</em> button. The Internet Policy Summary screen will show each policy's in a ordered list, Policy Number, Name, Days, and Time of Day. To delete a policy, select it's checkbox, and then click the <em>" + share.del + "</em> button. Click the <em>" + sbutton.clos + "</em> button to return to the <b>"+ bmenu.accrestriction + "</b> screen.</dd>";
 
-
-
 // ** FilterSummary.asp **//
 var filterSum=new Object();
 filterSum.titl="Access Restrictions Summary";
 filterSum.h2="Internet Policy Summary";
 filterSum.polnum="No.";
 filterSum.polday="Time of Day";
-
 
 // ** Firewall.asp **//
 var firewall=new Object();
@@ -821,11 +816,9 @@ p2p.h2="BitTorrent Client";
 p2p.legend="CTorrent";
 p2p.ctorrent_srv="Ctorrent Service";
 
-
 //help container
 //var hp2p=new Object();
 //hpp2p.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
-
 
 // ** ForwardSpec.asp **//
 var pforward=new Object();
@@ -881,6 +874,7 @@ usb.usb_mntjffs="Mount this Partition to /jffs";
 usb.usb_mntopt="Mount this Partition to /opt";
 usb.usb_ses_umount="Use SES Button to remove drives";
 usb.drive_ra="Drive Read-Ahead buffer in sectors";
+
 //help page
 var husb=new Object();
 husb.page1="<dd><ul><li>Enable USB Support</li></ul></dd>";
@@ -905,6 +899,7 @@ nas.samba3_legend="File Sharing";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
+
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
@@ -916,6 +911,7 @@ nas.dlna_dir="Files Directory";
 nas.dlna_cleandb="Clean Database now";
 nas.dlna_metadata="Keep Metadata on Storage";
 nas.dlna_rescan="Cyclic Rescan of Folders";
+
 // ** Common **
 nas.shareadd="Add Share";
 nas.sharedel="Remove";
@@ -936,6 +932,8 @@ nas.fs="File System";
 nas.drivemanager="Drive Manager";
 nas.drive="Drive";
 nas.compression="Compression";
+
+// Help container
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
 
@@ -943,7 +941,7 @@ hnas.right2="In order to share resources add new shares by supplying path and sh
 hnas.page1="<dd>FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network</li></ul></dd>";
 hnas.page2="<dd>DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. TV to view files served by the router.</li></ul></dd>";
 hnas.page3="<dd>SAMBA Server enables you to access files: <br /><ul><li>On router from local network through file explorer</li></ul></dd>";
-hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under D: and contains two directories <i>public, secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the usb drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br />D: equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
+hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under D: and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br />D: equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
 var privoxy=new Object();
@@ -963,8 +961,8 @@ hprivoxy.right2="Enable Privoxy and configure your clients proxy settings. <br /
 //help page
 hprivoxy.page1="<dd><br />Enables you to filter common ads.<br /></dd>";
 hprivoxy.page2="<dd><br /><ul><li>Publishes a WPAD/PAC file that clients use to automatically setup proxy details.</li><li>On some clients you need to set the option to use automatic proxy config</li><li>If your client is part of a domain you need to setup dnsmasq to send the local domain via DHCP to the client</li></ul></dd>";
-hprivoxy.page3="<dd><br /><ul><li>Traffic to Port is 80 is intercepted by Privoxy even if client did not configure any proxy settings.</li><li>Thus you can enforce ad filtering.</li></ul></br /><div class=\"note\"><h4>Note:</h4>Transparent mode cannot intercept HTTPS connections. All HTTPS traffic will still bypass Privoxy unless the client uses the <b>proxy autoconfig</b> which pipes said HTTPS connections through the proxy</div></dd>";
-hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and paths to filters on external media e.g. a usb disk</li></dd>";
+hprivoxy.page3="<dd><br /><ul><li>Traffic to Port 80 is intercepted by Privoxy even if the client did not configure any proxy settings.</li><li>Thus you can enforce ad filtering.</li></ul></br /><div class=\"note\"><h4>Note:</h4>Transparent mode cannot intercept HTTPS connections. All HTTPS traffic will still bypass Privoxy unless the client uses the <b>proxy autoconfig</b> which pipes said HTTPS connections through the proxy</div></dd>";
+hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and paths to filters on external media e.g. a USB disk</li></dd>";
 
 //** Lighttpd.asp **//
 var lighttpd=new Object();
@@ -1152,7 +1150,6 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //hanchorfree.right8="Customer support";
 //hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
-
 // ** Info.htm **//
 var info=new Object();
 info.titl="Info";
@@ -1161,7 +1158,6 @@ info.wlanmac="Wireless MAC";
 info.srv="Services";
 info.ap="Access Point";
 
-
 // ** index_heartbeat.asp **//
 var idx_h=new Object();
 idx_h.srv="Heart Beat Server";
@@ -1169,7 +1165,6 @@ idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
 idx_h.alive="Keep Alive: Redial Period";
 idx_h.reconnect="Force Reconnect";
-
 
 // ** index_l2tp.asp **//
 var idx_l=new Object();
@@ -1182,7 +1177,6 @@ idx_l.iptv="Receive IPTV";
 // ** index_pppoe.asp **//
 var idx_pppoe=new Object();
 idx_pppoe.use_rp="Use RP PPPoE";
-
 
 // ** index_pptp.asp **//
 var idx_pptp=new Object();
@@ -1197,7 +1191,6 @@ idx_pptp.iptv="Receive IPTV";
 // ** index_static.asp **//
 var idx_static=new Object();
 idx_static.dns="Static DNS";
-
 
 // ** index.asp **//
 var idx=new Object();
@@ -1236,7 +1229,7 @@ idx.dhcp_fwd="DHCP Forwarder";
 idx.dhcp_start="Start IP Address";
 idx.dhcp_end="End IP Address";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximum DHCP Users";
-idx.dhcp_lease="Client Lease Expiration";
+idx.dhcp_lease="Lease Expiration";
 idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
 idx.dns_dnsmasq="Use DNSMasq for DNS";
 idx.wan_priority="Use VLAN Priority";
@@ -1295,9 +1288,9 @@ hidx.page18="<dd>Enter the maximum number of computers that you want the DHCP se
 hidx.page19="<dd>The Client Lease Expiration is the amount of time a network user will be allowed connection to the router with their current dynamic IP address. Enter the amount of time, in minutes, that the user will be \"leased\" this dynamic IP address.</dd>";
 hidx.page20="<dd>The Domain Name System (DNS) is how the Internet translates domain or website names into Internet addresses or URLs. Your ISP will provide you with at least one DNS Server IP address. If you wish to utilize another, enter that IP address in one of these fields. You can enter up to three DNS Server IP addresses here. The router will utilize these for quicker access to functioning DNS servers. Additionally you can enable the <em>" + idx.ignore_wan_dns + "</em> checkbox to ensure the ISP's DNS is ignored.</dd>";
 hidx.page21="<dd>The Windows Internet Naming Service (WINS) manages each PC's interaction with the Internet. If you use a WINS server, enter that server's IP address here. Otherwise, leave this blank.</dd>";
-hidx.dns_dnsmasq="<dd>Dnsmasq's local DNS server resolves all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Enabling DNSMasq for DNS enables DHCP clients on the LAN to resolve local hostnames, including static and dynamic IP assignments.</dd>";
+hidx.dns_dnsmasq="<dd>dnsmasq's local DNS server resolves all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Enabling dnsmasq for DNS enables DHCP clients on the LAN to resolve local hostnames, including static and dynamic IP assignments.</dd>";
 hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only DHCP server on it's network segment (as in most common setups). The DHCP server will return a NAK response to clients that try to register using IPs from another netblock.</dd>";
-hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal DNSmasq server.</dd>";
+hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal dnsmasq server.</dd>";
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
@@ -1318,14 +1311,12 @@ var join=new Object();
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
 
-
 // ** Log_incoming.asp **//
 var log_in=new Object();
 log_in.titl="Incoming Log Table";
 log_in.h2="Incoming Log Table";
 log_in.th_ip="Source IP";
 log_in.th_port="Destination Port Number";
-
 
 // ** Log_outgoing.asp **//
 var log_out=new Object();
@@ -1334,7 +1325,6 @@ log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Destination URL/IP";
 log_out.th_port="Service/Port Number";
-
 
 // ** Log.asp **//
 var log=new Object();
@@ -1345,7 +1335,6 @@ log.lvl="Log Level";
 log.drop="Dropped";
 log.reject="Rejected";
 log.accept="Accepted";
-
 
 // ** Management.asp **//
 var management=new Object();
@@ -1489,6 +1478,7 @@ management.bootfail_handling="Bootfail Handling";
 management.bootfail="Reset after 5 Bootfails";
 management.boot_fail_open="Open Wifi after Bootfail";
 management.boot_fail_keepip="Keep IP after Bootfail";
+
 //help container
 var hmanagement=new Object();
 hmanagement.right1="Auto-Refresh:";
@@ -1512,7 +1502,6 @@ hmanagement.page12="<dd>If you have any peer-to-peer (P2P) applications running 
 var portserv=new Object();
 portserv.titl="Port Services";
 portserv.h2="Port Services";
-
 
 // ** Networking.asp **//
 var networking=new Object();
@@ -1765,7 +1754,6 @@ survey.h2="Neighbor&#39;s Wireless Networks";
 survey.h3="Channel Survey and Qualities";
 survey.thjoin="Join Site";
 
-
 // ** Services.asp **//
 var service=new Object();
 service.titl="Services";
@@ -1809,7 +1797,7 @@ service.dnsmasq_dnssec_cu="Check unsigned DNS replies";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_strict="Query DNS in Strict Order";
 service.dnsmasq_add_mac="Add Requestor MAC to DNS Query";
-service.dnsmasq_opt="Additional Dnsmasq Options";
+service.dnsmasq_opt="Additional dnsmasq Options";
 service.dnsmasq_rc="RFC4039 Rapid Commit support";
 service.dnsmasq_cachesize="Maximum Cached Entries";
 service.tor_legend="The Onion Router Project";
@@ -1822,7 +1810,6 @@ service.tor_bridge="Tor Bridge Mode";
 service.tor_transparent="Transparent Proxy";
 service.tor_bwrate="Bandwidth Rate";
 service.tor_bwburst="Bandwidth Burst";
-
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1983,7 +1970,7 @@ service.vpn_randomsrv="Choose random Server";
 //help page
 var hservice=new Object();
 hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain &ndash; You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain &ndash; You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases &ndash; If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.</dd>";
-hservice.page2="<dd>Dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use DNSMasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example:<br /><br /><ul><li>static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>max lease number: dhcp-lease-max=2</li><li>DHCP server IP range : dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
+hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use DNSMasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
 hservice.dnsmasq_dnssec="<dd>Requests and validates DNSSEC records for domains that provide them, if supported on your router model.</dd>";
 hservice.dnsmasq_dnssec_proxy="<dd>Copies the DNSSEC status bit from the upstream server. This option is available on some routers that don't support direct DNSSEC validation, but should only be used when the upstream server is trustworthy. Cache size 0 is recommended when using this option.</dd>";
 hservice.dnsmasq_dnssec_cu="<dd>When DNSSEC validation is enabled, also check that unsigned DNS replies are legitimate (they belong to domains that actually do not publish DNSSEC records).</dd>";
@@ -1991,7 +1978,7 @@ hservice.dnsmasq_no_dns_rebind="<dd>Ignore responses in private IP address range
 hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered manually or supplied by the WAN connection (i.e. Static DNS 1 first). If disabled, queries can go to any upstream server.</dd>";
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
-hservice.dnsmasq_cachesize="<dd>How many names DNSmasq stores in it's cache (default 150).</dd>";
+hservice.dnsmasq_cachesize="<dd>How many names the dnsmasq stores in it's cache (default 150).</dd>";
 hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add XBox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
 hservice.page4=" &ndash; How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
 hservice.page5=" &ndash; Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2070,51 +2057,51 @@ service.warn_user="SMTP Auth Username";
 service.warn_pass="SMTP Auth Password";
 
 //milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Router";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-service.milkfish_localsubscr="Local Subscribers";
-service.milkfish_localalias="Local Aliases";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_advdynsip="Advanced DynSIP Settings";
+//service.milkfish_siprouter="Milkfish SIP Router";
+//service.milkfish_alias="Alias";
+//service.milkfish_uri="SIP URI";
+//service.milkfish_mainswitch="SIP Router";
+//service.milkfish_fromswitch="From-Substitution";
+//service.milkfish_fromdomain="From-Domain";
+//service.milkfish_username="Milkfish Username";
+//service.milkfish_password="Milkfish Password";
+//service.milkfish_audit="Milkfish Audit";
+//service.milkfish_siptrace="SIP Trace";
+//service.milkfish_subscribers="Local Subscribers";
+//service.milkfish_aliases="Local Aliases";
+//service.milkfish_dynsip="Dynamic SIP";
+//service.milkfish_status="SIP Status";
+//service.milkfish_database="SIP Database";
+//service.milkfish_messaging="SIP Messaging";
+//service.milkfish_phonebook="SIP Phonebook";
+//service.milkfish_dynsipdomain="DynSIP Domain";
+//service.milkfish_dynsipurl="DynSIP Update URL";
+//service.milkfish_dsusername="DynSIP Username";
+//service.milkfish_dspassword="DynSIP Password";
+//service.milkfish_sipmessage="SIP Message";
+//service.milkfish_destination="SIP Destination";
+//service.milkfish_contact="Contact";
+//service.milkfish_agent="User Agent";
+//service.milkfish_registrations="Active Registrations";
+//service.milkfish_localsubscr="Local Subscribers";
+//service.milkfish_localalias="Local Aliases";
+//service.milkfish_messaging="SIP Messaging";
+//service.milkfish_siptrace="SIP Trace";
+//service.milkfish_advdynsip="Advanced DynSIP Settings";
 //service.milkfish_="";//
-service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
-service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
-service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
-service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
-service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
-service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
-service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
-service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
+//service.milkfish_right2="Enable or disable your Milkfish SIP router.";
+//service.milkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
+//service.milkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
+//service.milkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
+//service.milkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
+//service.milkfish_right12="Enable or disable basic SIP tracing on your router.";
+//service.milkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
+//service.milkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
+//service.milkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
+//service.milkfish_right20="not implemented yet - leave empty";
+//service.milkfish_right22="not implemented yet - leave empty";
+//service.milkfish_right24="not implemented yet - leave empty";
+//service.milkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
 
 //service.chronyd
@@ -2123,8 +2110,8 @@ service.chronyd_srv="Chronyd";
 service.chronyd_conf="Custom config";
 
 //help page
-service.hmilkfish_page1="<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</dt><ul class=\"wide\"> <br /><b>Welcome to the Milkfish on DD-WRT...</b><br />The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br /><br /><u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br />All other settings should be set according to the providers recommendation.<br /><br /><u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br /><br />Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br /></ul><br /><div class=\"note\"><h4>Get support...</h4><div>Find the documentation of this embedded software at <a href=\"http:\/\/wiki.milkfish.org\" target=\"new\">wiki.milkfish.org</a>.<br />Any questions can go to the user forum being available at <a href=\"http:\/\/forum.milkfish.org\" target=\"new\">forum.milkfish.org</a>.</div></div><br /><div class=\"note\"><h4>Give support...</h4><div><br />You like the Milkfish? - Then support us through <b>donations@milkfish.org</b>:&nbsp;&nbsp;<br />";
-service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright &copy; 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. All rights reserved.<br />Logos and trademarks are the property of their respective owners.<br />The Milkfish software is licensed under the <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish is developed by...<br /><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\" /></a><br /></div><br /></div><br /></dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+//service.milkfish_page1="<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</dt><ul class=\"wide\"> <br /><b>Welcome to the Milkfish on DD-WRT...</b><br />The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br /><br /><u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br />All other settings should be set according to the providers recommendation.<br /><br /><u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br /><br />Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br /></ul><br /><div class=\"note\"><h4>Get support...</h4><div>Find the documentation of this embedded software at <a href=\"http:\/\/wiki.milkfish.org\" target=\"new\">wiki.milkfish.org</a>.<br />Any questions can go to the user forum being available at <a href=\"http:\/\/forum.milkfish.org\" target=\"new\">forum.milkfish.org</a>.</div></div><br /><div class=\"note\"><h4>Give support...</h4><div><br />You like the Milkfish? - Then support us through <b>donations@milkfish.org</b>:&nbsp;&nbsp;<br />";
+//service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright &copy; 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. All rights reserved.<br />Logos and trademarks are the property of their respective owners.<br />The Milkfish software is licensed under the <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish is developed by...<br /><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\" /></a><br /></div><br /></div><br /></dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";
@@ -2281,7 +2268,6 @@ sipath.titl="SiPath Overview";
 sipath.phone_titl="Phonebook";
 sipath.status_titl="Status";
 
-
 // ** Status_Lan.asp **//
 var status_lan=new Object();
 status_lan.titl="LAN Status";
@@ -2361,7 +2347,7 @@ status_router.cputemp="Temperatures";
 
 //help container
 var hstatus_router=new Object();
-hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
+hstatus_router.right2="This is the specific name for the router, you had input on the <i>Setup</i> tab under the <i>" + share.routername + "</i> field.";
 hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
 hstatus_router.right6="This is the router's current firmware.";
 hstatus_router.right8="This is time received from the NTP server set on the <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
@@ -2390,19 +2376,16 @@ status_inet.next="Next Month";
 status_inet.dataadmin="Data Administration";
 status_inet.delete_confirm="WARNING! This will delete all traffic data. Proceed?";
 
-
 //help container
 var hstatus_inet=new Object();
 hstatus_inet.right2="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
 hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
 hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in NVRAM.";
 
-
 // ** Status_Conntrack.asp **//
 var status_conn=new Object();
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
-
 
 // ** Status_SputnikAPD.asp **//
 var status_sputnik=new Object();
@@ -2690,7 +2673,7 @@ aoss.connectivity="Connectivity";
 aoss.clients="AOSS Clients";
 aoss.notice="NOTICE";
 aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
-aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
+aoss.wep_notice="WEP security mode is not secure, therefore the use of WEP is not recommended.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 aoss.wps="WPS Setup";
 aoss.wps_ap_pin="WPS Gateway PIN (Label)";
@@ -2759,7 +2742,6 @@ wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
 wl_active.active="Active clients";
 wl_active.inactive="Inactive clients";
-
 
 // ** Wireless_WDS.asp **//
 var wds=new Object();
@@ -2871,6 +2853,7 @@ freeradius.email="Email Address";
 freeradius.common="Common Certificate Name";
 freeradius.expiration="Expires (Days)";
 freeradius.passphrase="Passphrase";
+
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.port="RADIUS Port";
@@ -3219,7 +3202,6 @@ var fail=new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
 
-
 // ** Success*.asp / Reboot.asp  **//
 var success=new Object();
 success.saved="Settings saved.";
@@ -3292,6 +3274,7 @@ speedchecker.legend="Speedchecker";
 speedchecker.server="Speedchecker Service";
 speedchecker.regtitle="Please share information with us:";
 speedchecker.savemessage="Please save or apply";
+
 // ** feature display boxes **//
 speedchecker.nfeath4title="Wi-Fi Speedchecker";
 speedchecker.nfeath4txt="Is your Wi-Fi slowing you down? One-click speed test for both Internet and Wi-Fi speed.";
