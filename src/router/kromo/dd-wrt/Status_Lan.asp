@@ -120,11 +120,11 @@ function setDHCPTable() {
 		
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err58;
-		cell.align = "center";
+		cell.align = "right";
 		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deleteLease('" + val[i+1] + "', '" + val[i+2] + "')\" />";
 		var cellbutton = row.insertCell(-1);
 		cellbutton.title = errmsg.err582;
-		cellbutton.align = "center";
+		cellbutton.align = "left";
 		cellbutton.innerHTML = "<input class=\"add\" type=\"button\" aria-label=\"" + share.add + "\" onclick=\"staticLease('" + val[i] + "', '" + val[i+1] + "', '" + val[i+2] + "')\" />";
 	}
 }
@@ -349,7 +349,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<!-- Try to display both delete/add icons under static lease th
 											<th sortdir="up" width="5%"><% tran("share.del"); %></th> -->
-											<th sortdir="up" width="15%" colspan="2"><% tran("share.static_lease"); %></th>
+											<th sortdir="up" width="12%" class="center" colspan="2"><% tran("share.static_lease"); %></th>
 										</tr>
 									</table>
 									<script type="text/javascript">
