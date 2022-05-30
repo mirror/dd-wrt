@@ -25,7 +25,7 @@ share.vdsl="DTAG VDSL Vlan Taggning";
 share.vdslvlan8="VLAN 8 support";
 share.wan_vlantag="Vlan Tag ID";
 share.compression="PPP Kompression";
-share.mlppp="Multi L&Auml;nk";
+share.mlppp="Multi LÄnk";
 share.domainname="Domän Namn";
 share.wandomainname="WAN Domän Namn";
 share.landomainname="LAN Domän Namn";
@@ -98,7 +98,7 @@ share.rssi="RSSI";
 share.signal="Signal";
 share.noise="Brus";
 share.beacon="Beacon";
-share.openn="&Ouml;ppen";
+share.openn="Öppen";
 share.dtim="DTIM";
 share.rates="Rate";
 share.rate="Rate";
@@ -202,11 +202,11 @@ share.secondcharacter="s";
 share.change="User Password Change";
 sbutton.save="Spara";
 sbutton.savetitle="Spara utan att aktivera";
-sbutton.apply="Aktivera &Auml;ndringar";
+sbutton.apply="Aktivera Ändringar";
 sbutton.applytitle="Spara &amp; Aktivera direkt";
 sbutton.saving="Sparat";
 sbutton.cmd="Starta";
-sbutton.cancel="&Aring;ngra &Auml;ndringar";
+sbutton.cancel="&Aring;ngra Ändringar";
 sbutton.canceltitle="&Aring;ngra ändring i detta formulär endast";
 sbutton.refres="Uppdatera";
 sbutton.clos="Stäng";
@@ -230,8 +230,8 @@ sbutton.wol="Väck Upp";
 sbutton.add_wol="Lägg till Enhet";
 sbutton.manual_wol="Manuell Upväckning";
 sbutton.summary="Summering";
-sbutton.filterIP="&Auml;ndra Klientlistan";
-sbutton.filterMac="&Auml;ndra MAC Filter Listan";
+sbutton.filterIP="Ändra Klientlistan";
+sbutton.filterMac="Ändra MAC Filter Listan";
 sbutton.filterSer="Lägg till/Editera Tjänst";
 sbutton.reboot="Starta om Routern";
 sbutton.help="   Hjälp  ";
@@ -240,7 +240,7 @@ sbutton.update_filter="Uppdatera Filter Listan";
 sbutton.join="G&aring; med";
 sbutton.log_in="Inkommande Logg";
 sbutton.log_out="Utg&aring;ende Logg";
-sbutton.edit_srv="Lägg till/&Auml;ndra Tjänst";
+sbutton.edit_srv="Lägg till/Ändra Tjänst";
 sbutton.routingtab="Visa Routingtabellen";
 sbutton.wanmac="Sök aktuell PC MAC Adress";
 sbutton.dhcprel="DHCP Frisläpp";
@@ -258,7 +258,7 @@ sbutton.prev="&laquo; Föreg&aring;ende";
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Du m&aring;ste ange Användarnamn.";
 errmsg.err1="Du m&aring;ste ange Routerns Namn.";
-errmsg.err2="Felaktigt intervall, Vv &Auml;ndra start IP Adress eller user&amp;#39;s nummer.";
+errmsg.err2="Felaktigt intervall, Vv Ändra start IP Adress eller user&amp;#39;s nummer.";
 errmsg.err3="Du m&aring;ste välja dag.";
 errmsg.err4="Sluttid m&aring;ste vara efter starttiden.";
 errmsg.err5="MAC Adressens längd är inte korrekt.";
@@ -266,7 +266,7 @@ errmsg.err6="Du m&aring;ste ange ett lösenord.";
 errmsg.err7="Du m&aring;ste ange enhetens namn.";
 errmsg.err8="Du m&aring;ste ange IP Adress eller Domännamn.";
 errmsg.err9="Ogiltig DMZ IP Adress.";
-errmsg.err10="Verifierat lösenord matchar inte inskrivet lösenord. F&ouml;rs&ouml;k igen.";
+errmsg.err10="Verifierat lösenord matchar inte inskrivet lösenord. Försök igen.";
 errmsg.err11="Mellanslag är inte till&aring;tna i lösenord";
 errmsg.err12="Du m&aring;ste ange ett kommando.";
 errmsg.err13="Uppgraderingen Misslyckades.";
@@ -321,7 +321,7 @@ errmsg.err44="Totala testen överskrider 256 g&aring;nger.";
 errmsg.err47="Felaktigt SSID.";
 
 //wireless_WDS.asp error messages
-errmsg.err48="WDS är inte kompatibel med aktuell konfiguration av routern. Kontrollera följande punkter :\n * Tr&aring;dlöst Läge satt till AP \n * WPA2 st&ouml;ds inte i WDS \n * Tr&aring;dl&ouml;st Network B-Only l&auml;ge ej supporterat i WDS";
+errmsg.err48="WDS är inte kompatibel med aktuell konfiguration av routern. Kontrollera följande punkter :\n * Tr&aring;dlöst Läge satt till AP \n * WPA2 stöds inte i WDS \n * Tr&aring;dlöst Network B-Only läge ej supporterat i WDS";
 
 //wireless_radauth.asp error messages
 errmsg.err49="RADIUS endast tillgängligt i AP mode.";
@@ -330,7 +330,7 @@ errmsg.err49="RADIUS endast tillgängligt i AP mode.";
 errmsg.err50="Ange SSID.";
 
 // Management.asp error messages
-errmsg.err51="Router uppsatt med default Lösenord. som säkerhets&aring;tgärd, du m&aring;ste &auml;ndra lösenord innan fj&auml;rr Administration kan aktiveras. Klicka OK f&ouml;r att byta L&ouml;senord. Klicka Cancel f&ouml;r att l&auml;mna fj&auml;rr Administrationen avaktiverad.";
+errmsg.err51="Router uppsatt med default Lösenord. som säkerhets&aring;tgärd, du m&aring;ste ändra lösenord innan fjärr Administration kan aktiveras. Klicka OK för att byta Lösenord. Klicka Cancel för att lämna fjärr Administrationen avaktiverad.";
 errmsg.err52="Lösenords verifikationen misslyckades.";
 
 // Port_Services.asp error messages
@@ -361,7 +361,7 @@ errmsg.err62=" finns redan som fast l&aring;n.";
 
 //Saving message
 errmsg.err100="Arbetar...<br />Var vänlig, vänta.";
-errmsg.err101="&Aring;terställer konfigurationsfil...<br />Var vänlig, v&auml;nta.";
+errmsg.err101="&Aring;terställer konfigurationsfil...<br />Var vänlig, vänta.";
 errmsg.err102="Uppgraderar firmware...<br />Var vänlig, vänta.";
 //Setup assistant
 sas.title="Inställningsguiden";
@@ -418,7 +418,7 @@ bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="&Ouml;verblick";
+bmenu.sipathoverview="Överblick";
 bmenu.sipathphone="Telefonbok";
 bmenu.sipathstatus="Status";
 
@@ -486,8 +486,8 @@ config.mess3="V A R N I N G";
 config.mess4="&Aring;terställ endast med backuper gjorda med samma version och router.<br />&Aring;terställ inte med n&aring;gon annan routers konfiguration!";
 
 //help container
-hconfig.right2="Ta en backup av routerns inställningar ifall du tvingas &aring;terställa den till fabriksinst&auml;llningen.<br /><br />Klicka p&aring; <em>Backup</em> knappen för att ta backup.";
-hconfig.right4="Klicka p&aring; <em>Bläddra...</em> knappen för att ange din konfigurationsfil.<br /><br />Klicka p&aring; <em>" + sbutton.restore + "</em> knappen för att &aring;terställa dina inst&auml;llningar fr&aring;n backupfilen.";
+hconfig.right2="Ta en backup av routerns inställningar ifall du tvingas &aring;terställa den till fabriksinställningen.<br /><br />Klicka p&aring; <em>Backup</em> knappen för att ta backup.";
+hconfig.right4="Klicka p&aring; <em>Bläddra...</em> knappen för att ange din konfigurationsfil.<br /><br />Klicka p&aring; <em>" + sbutton.restore + "</em> knappen för att &aring;terställa dina inställningar fr&aring;n backupfilen.";
 
 
 // ** DDNS.asp **//
@@ -504,7 +504,7 @@ ddns.system="DYNDNS Server";
 ddns.options="Extra DDNS val";
 ddns.forceupd="Tvinga uppdateringsintervall";
 ddns.wanip="Använd extern IP kontroll";
-ddnsm.all_closed="DDNS servern är för närvarande st&auml;ngd";
+ddnsm.all_closed="DDNS servern är för närvarande stängd";
 ddnsm.all_resolving="Letar upp domän namn";
 ddnsm.all_errresolv="Domän namn hittades inte";
 ddnsm.all_connecting="Kopplar till servern";
@@ -513,8 +513,8 @@ ddnsm.all_disabled="DDNS funktionen avaktiverad";
 ddnsm.all_noip="Ingen WAN förbindelse";
 
 //help container
-hddns.right2="DDNS till&aring;ter dig använda DNS-namn i stället för IP-adresser. Tj&auml;nsten hanterar IP Adresser, &auml;ndrar och uppdaterar din dom&auml;n information dynamiskt. Du m&aring;ste registrera dig hos DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com eller annan DNS-tj&auml;nst.";
-hddns.right4="Skriv in en siffra ( i dagar ). Uppdateringar skall endast behövas d&aring; din IP-adress ändras. Kolla med din DDNS leverantör vad gäller deras policy f&ouml;r uppdateringar.";
+hddns.right2="DDNS till&aring;ter dig använda DNS-namn i stället för IP-adresser. Tjänsten hanterar IP Adresser, ändrar och uppdaterar din domän information dynamiskt. Du m&aring;ste registrera dig hos DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com eller annan DNS-tjänst.";
+hddns.right4="Skriv in en siffra ( i dagar ). Uppdateringar skall endast behövas d&aring; din IP-adress ändras. Kolla med din DDNS leverantör vad gäller deras policy för uppdateringar.";
 
 // ** Diagnostics.asp **//
 diag.titl="Diagnostik";
@@ -527,7 +527,7 @@ diag.firewall="Brandvägg";
 diag.custom="Eget Script";
 
 //help container
-hdiag.right2="Du kan köra kommandon via webinterfacet. Fyll i kommandot i textrutan och klicka <em>" + sbutton.runcmd + "</em> för att k&ouml;ra det.";
+hdiag.right2="Du kan köra kommandon via webinterfacet. Fyll i kommandot i textrutan och klicka <em>" + sbutton.runcmd + "</em> för att köra det.";
 
 
 // ** DMZ.asp **//
@@ -586,7 +586,7 @@ hfilter.right4="Aktivera eller avaktivera en policy.";
 hfilter.right6="Namnge din policy.";
 hfilter.right8="Välj en veckodag som din policy skall gälla.";
 hfilter.right10="Välj en tid som din policy skall gälla.";
-hfilter.right12="Du kan välja att blockera vissa tjänster. Klicka <em>" + sbutton.filterSer + "</em> för att &auml;ndra detta.";
+hfilter.right12="Du kan välja att blockera vissa tjänster. Klicka <em>" + sbutton.filterSer + "</em> för att ändra detta.";
 hfilter.right14="Du kan välja att blockera vissa hemsidor genom att ange deras URL.";
 hfilter.right16="Du kan välja att blockera vissa hemsidor genom att ange nyckelord i deras sidor.";
 
@@ -625,7 +625,7 @@ prforward.legend="Forwards";
 prforward.app="Applikationer";
 
 //help container
-hprforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar och onlinespel. N&auml;r en förfr&aring;gan kommer fr&aring;n internet kommer d&aring; routern sl&auml;ppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen beh&ouml;ver och avmarkera <em>" + share.enable +"</em> rutan efter du &auml;r klar med applikationen, att ha &ouml;ppna portar inneb&auml;r en s&auml;kerhetsrisk!";
+hprforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar och onlinespel. När en förfr&aring;gan kommer fr&aring;n internet kommer d&aring; routern släppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen behöver och avmarkera <em>" + share.enable +"</em> rutan efter du är klar med applikationen, att ha öppna portar innebär en säkerhetsrisk!";
 
 
 // ** P2P.asp **//
@@ -636,7 +636,7 @@ p2p.ctorrent_srv="Ctorrent Tjänst";
 
 
 //help container
-//hpp2p.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar o online spel. N&auml;r ett förfr&aring;gan kommer fr&aring;n internet, routern kommer d&aring; sl&auml;ppa in den trafiken till sen dator du anger . beroende p&aring; s&auml;kerhetsaspekter, du skall bara forwarda portar du verkligen beh&ouml;ver, och avmarkera <em>" + share.enable +"</em> kryssrutan efter du &auml;r klar med onlinespelet osv...";
+//hpp2p.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar o online spel. När ett förfr&aring;gan kommer fr&aring;n internet, routern kommer d&aring; släppa in den trafiken till sen dator du anger . beroende p&aring; säkerhetsaspekter, du skall bara forwarda portar du verkligen behöver, och avmarkera <em>" + share.enable +"</em> kryssrutan efter du är klar med onlinespelet osv...";
 
 // ** ForwardSpec.asp **//
 pforward.titl="Port Forwarding";
@@ -647,7 +647,7 @@ pforward.from="Port fr&aring;n";
 pforward.to="Port till";
 
 //help container
-hpforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar och onlinespel. N&auml;r en förfr&aring;gan kommer fr&aring;n internet kommer d&aring; routern sl&auml;ppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen beh&ouml;ver och avmarkera <em>" + share.enable +"</em> rutan efter du &auml;r klar med applikationen, att ha &ouml;ppna portar inneb&auml;r en s&auml;kerhetsrisk!";
+hpforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel p&aring; dessa är servrar och onlinespel. När en förfr&aring;gan kommer fr&aring;n internet kommer d&aring; routern släppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen behöver och avmarkera <em>" + share.enable +"</em> rutan efter du är klar med applikationen, att ha öppna portar innebär en säkerhetsrisk!";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -675,7 +675,7 @@ nas.proftpd_anon="Anonym Inloggning (Skrivskyddat)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 
 
-hnas.right2="Användarnamn och Lösenords lista: Skriv in ett Användarnamn och Lösenord per rad, m&aring;ste separeras med ett mellanslag. L&ouml;senorden kan vara i textformat eller MD5 krypterat.";
+hnas.right2="Användarnamn och Lösenords lista: Skriv in ett Användarnamn och Lösenord per rad, m&aring;ste separeras med ett mellanslag. Lösenorden kan vara i textformat eller MD5 krypterat.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -799,7 +799,7 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis och enkelt), en best&aring;ende reklam sida startas i klientens web browser, som sen genererar pengar p&aring; ditt konto. Tjäna minst 25 dollar s&aring; kommer AnchorFree automatiskt betala ut p&aring; ditt konto.";
 //hanchorfree.right5="För mer information besök www.anchorfree.com";
 //hanchorfree.right6="Aktiveringen är enkel";
-//hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information om hur man kan tj&auml;na pengar p&aring; din router. Genom denna bild, AnchorFree s&auml;tter in en tunn, reklam bild direkt in i web browsern n&auml;r man surfar fr&aring;n denna router.";
+//hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information om hur man kan tjäna pengar p&aring; din router. Genom denna bild, AnchorFree sätter in en tunn, reklam bild direkt in i web browsern när man surfar fr&aring;n denna router.";
 //hanchorfree.right8="Kund support";
 //hanchorfree.right9="Fr&aring;gor? Kontakta oss p&aring; boxhelp@anchorfree.com";
 //
@@ -849,7 +849,7 @@ idx.legend="WAN Kopplingstyp";
 idx.conn_type="Kopplingstyp";
 idx.stp="Spanning Tree Kontroll";
 idx.stp_mess="(Inaktivera för COMCAST ISP)";
-idx.optional="&Ouml;vriga inställningar";
+idx.optional="Övriga inställningar";
 idx.mtu="MTU";
 idx.h23="Nätverksinställningar";
 idx.routerip="Router IP";
@@ -872,14 +872,14 @@ idx.dhcp_dnsmasq="Använd DNSMasq för DHCP";
 idx.dns_dnsmasq="Använd DNSMasq för DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.summt_opt1="ingen";
-idx.summt_opt2="första Sön Apr - sista S&ouml;n Okt";
+idx.summt_opt2="första Sön Apr - sista Sön Okt";
 idx.summt_opt3="sista Sön Mar - sista Sön Okt";
 idx.summt_opt4="sista Sön Okt - sista Sön Mar";
-idx.summt_opt5="2:a Sön Mar - första S&ouml;n Nov";
-idx.summt_opt6="första Sön Okt - 3:e S&ouml;n Mar";
-idx.summt_opt7="sista Sön Sep - första S&ouml;n Apr";
+idx.summt_opt5="2:a Sön Mar - första Sön Nov";
+idx.summt_opt6="första Sön Okt - 3:e Sön Mar";
+idx.summt_opt7="sista Sön Sep - första Sön Apr";
 idx.summt_opt8="3:e Sön Oct - 3:e Sön Mar";
-idx.summt_opt9="första Sön Oct - f&ouml;rsta S&ouml;n Apr";
+idx.summt_opt9="första Sön Oct - första Sön Apr";
 idx.summt_opt10="3:e Sun Oct - 3:e Sun Feb";
 idx.portsetup="Port Inställning";
 idx.wanport="WAN Port Tilldelning";
@@ -895,7 +895,7 @@ hidx.right12="Till&aring;ter routern att hantera dina IP Adresser.";
 hidx.right14="Adressen du vill starta med att dela ut.";
 hidx.right16="Du bör begränsa adresser som routern delar ut. 0 delar bara ut fasta adresser.";
 hidx.right18="Välj tidzon som du har p&aring; sommartid, DST period. Routern kan hantera lokal tid eller UTC tid.";
-hidx.sas="Inställningsguiden kan guida dig genom de mest grundläggande inst&auml;llningarna för din router.";
+hidx.sas="Inställningsguiden kan guida dig genom de mest grundläggande inställningarna för din router.";
 
 // ** Join.asp **//
 
@@ -932,7 +932,7 @@ log.accept="Accepterade";
 // ** Management.asp **//
 management.titl="Administration";
 management.h2="Router Administration";
-management.changepassword="Din Router är för närvarande inte skyddad och anv&auml;nder sig utav ett os&auml;kert anv&auml;ndarnamn och lösenord, var god &auml;ndra detta!";
+management.changepassword="Din Router är för närvarande inte skyddad och använder sig utav ett osäkert användarnamn och lösenord, var god ändra detta!";
 management.psswd_legend="Router Lösenord";
 management.psswd_user="Router Användarnamn";
 management.psswd_pass="Router Lösenord";
@@ -999,7 +999,7 @@ management.net_legend="IP Filter Inställning (Justera för Peer-2-Peer)";
 management.net_port="Max Portar";
 management.net_tcptimeout="TCP Timeout ( i sek )";
 management.net_udptimeout="UDP Timeout ( i sek )";
-management.clock_legend="&Ouml;verklockning";
+management.clock_legend="Överklockning";
 management.clock_frq="Frekvens";
 management.clock_support="Stöds Ej";
 management.mmc_legend="MMC/SD Kort Stöd";
@@ -1125,7 +1125,7 @@ route.static_name="Route namn";
 route.static_ip="Destinations Nät";
 
 //help container
-hroute.right2="Om routern sköter din internetkoppling, välj <em>Gateway</em> läge. Om en annan router finns i ditt n&auml;t, v&auml;lj <em>Router</em> l&auml;ge.";
+hroute.right2="Om routern sköter din internetkoppling, välj <em>Gateway</em> läge. Om en annan router finns i ditt nät, välj <em>Router</em> läge.";
 hroute.right4="Detta är ett unikt route nummer, du kan ha upp till 50 routes.";
 hroute.right6="Namn för denna route.";
 hroute.right8="Fjärrdatorn du vill ange denna route till.";
@@ -1342,12 +1342,12 @@ service.milkfish_registrations="Aktiva Registreringar";
 //service.milkfish_="";//
 service.hmilkfish_right2="Aktivera/Inaktivera din Milkfish SIP Router.";
 service.hmilkfish_right4="Aktivera/Inaktivera Fr&aring;n:-Huvudfält anknytning av din WAN IP p&aring; utg&aring;ende SIP meddelanden. Detta bör vara aktiverat, om du vill att dina samtal ska kunna ringa tillbaka om din WAN IP ändras";
-service.hmilkfish_right6="Samtal ringer &aring;ter denna domän (istället för WAN IP) n&auml;r du s&auml;nder det som din Fr&aring;n:-Dom&auml;n Ist&auml;llet för WAN IP. Fr&aring;n-Anknytning beh&ouml;ver vara aktiverad f&ouml;r att detta skall ha effekt";
+service.hmilkfish_right6="Samtal ringer &aring;ter denna domän (istället för WAN IP) när du sänder det som din Fr&aring;n:-Domän Istället för WAN IP. Fr&aring;n-Anknytning behöver vara aktiverad för att detta skall ha effekt";
 service.hmilkfish_right8="Skriv in ditt Milkfish Community Forum User - Registrering reserverar yournamn.homesip.net";
 service.hmilkfish_right10="Skriv in ditt Milkfish Community Forum Lösenord - Registrering reserverar yournamn.homesip.net";
 service.hmilkfish_right12="Aktivera/Inaktivera grundlig SIP Sp&aring;rning p&aring; din router";
 service.hmilkfish_right14="Lokala SIP Anknytningar är lokalt hanterade SIP Konton";
-service.hmilkfish_right16="Lokala SIP Alias är SIP Forwards liknande Email Forwards. kan användas för  alphanumerisk till numerisk telefon konton eller tv&auml;rsom";
+service.hmilkfish_right16="Lokala SIP Alias är SIP Forwards liknande Email Forwards. kan användas för  alphanumerisk till numerisk telefon konton eller tvärsom";
 service.hmilkfish_right18="Aktivera/Inaktivera Dynamisk SIP (e.x. Homesip.net Tjänst) - Användarnamn och Lösenord m&aring;ste vara uppsatta";
 service.hmilkfish_right20="Ej implementerad än - lämna tomt";
 service.hmilkfish_right22="Ej implementerad än - lämna tomt";
@@ -1359,7 +1359,7 @@ service.hmilkfish_right26="Ej implementerad än - lämna tomt";
 // ** eop-tunnel.asp **//
 eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
-eoip.legend="Ethernet &Ouml;ver IP Tunnel";
+eoip.legend="Ethernet Över IP Tunnel";
 eoip.srv="EoIP Tunnel";
 eoip.remoteIP="Fjärr IP Adress";
 eoip.tunnelID="Tunnel ID";
@@ -1372,7 +1372,7 @@ eoip.bridging="Bryggning";
 
 
 // ** Sipath.asp + cgi **//
-sipath.titl="SiPath &Ouml;verblick";
+sipath.titl="SiPath Överblick";
 sipath.phone_titl="Telefonbok";
 sipath.status_titl="Status";
 
@@ -1393,7 +1393,7 @@ status_lan.conratio="Ratio";
 //help container
 hstatus_lan.right2="Detta är Routerns MAC adress, s&aring; som den ses fr&aring;n ditt lokala nät.";
 hstatus_lan.right4="Detta visar Routerns MAC adress, s&aring; som den ses fr&aring;n ditt lokala nät.";
-hstatus_lan.right6="När routern använder en subnetmask visas den h&auml;r.";
+hstatus_lan.right6="När routern använder en subnetmask visas den här.";
 hstatus_lan.right8="om du använder routerns DHCP visas det här.";
 hstatus_lan.right10="Om du klickar p&aring; en MAC adress, s&aring; letar routern reda p&aring; Organizationally Unique Identifier (IEEE Standard OUI databas sökning).";
 
@@ -1471,9 +1471,9 @@ status_inet.delete_confirm="VARNING! Detta kommer att ta bort all trafik data, f
 
 
 //help container
-hstatus_inet.right2="Detta visar info som behövs för din ISP f&ouml;r att koppla upp internet. Denna info var inskriven p&aring; Setup fliken. Du kan <em>Koppla </em> eller <em>Fr&aring;nkoppla </em> ditt internet genom att klicka detta.";
+hstatus_inet.right2="Detta visar info som behövs för din ISP för att koppla upp internet. Denna info var inskriven p&aring; Setup fliken. Du kan <em>Koppla </em> eller <em>Fr&aring;nkoppla </em> ditt internet genom att klicka detta.";
 hstatus_inet.right4="Detta visar din internettrafik sedan sista omstart.";
-hstatus_inet.right6="Detta visar din internettrafik per m&aring;nad. För musen över grafen f&ouml;r att se daglig data. Trafikdata sparas i nvram.";
+hstatus_inet.right6="Detta visar din internettrafik per m&aring;nad. För musen över grafen för att se daglig data. Trafikdata sparas i nvram.";
 
 
 // ** Status_Conntrack.asp **//
@@ -1519,7 +1519,7 @@ status_gpsi.sat="Synliga Sateliter";
 
 //help container
 hstatus_wireless.right2="Detta är den MAC Adress, som ses p&aring; ditt lokala, Tr&aring;dlösa nätverk.";
-hstatus_wireless.right4="Som du valt p&aring; den Tr&aring;dlösa fliken, detta visar det tr&aring;dlösa läget du k&ouml;r (Mixed, G-Endast, B-Endast eller avstängt).";
+hstatus_wireless.right4="Som du valt p&aring; den Tr&aring;dlösa fliken, detta visar det tr&aring;dlösa läget du kör (Mixed, G-Endast, B-Endast eller avstängt).";
 
 
 // ** Status_OpenVPN.asp **//
@@ -1618,9 +1618,9 @@ wol.srv="WOL tjänst";
 wol.pass="SecureOn Lösenord";
 
 //help container
-hwol.right2="Denna sida till&aring;ter dig att <em>starta upp</em> apparater du har p&aring; ditt nätverk (ex. saker lokalt p&aring; din router). Du kan manuellt väcka apparater genom att klicka <em>"+sbutton.wol+"</em> eller automatiskt v&auml;cka upp genom en schemalagd "+wol.srv+".";
+hwol.right2="Denna sida till&aring;ter dig att <em>starta upp</em> apparater du har p&aring; ditt nätverk (ex. saker lokalt p&aring; din router). Du kan manuellt väcka apparater genom att klicka <em>"+sbutton.wol+"</em> eller automatiskt väcka upp genom en schemalagd "+wol.srv+".";
 hwol.right4="MAC Adress(er) skrivs xx:xx:xx:xx:xx:xx (ex. 01:23:45:67:89:AB) m&aring;ste separeras med <em>MELLANSLAG</em>";
-hwol.right6="IP-adress är normalt broadcast-adressen för det lokala nätverket, men kan vara en avl&auml;gsen adress om apparaten inte &auml;r ansluten till routerns lokala n&auml;tverk";
+hwol.right6="IP-adress är normalt broadcast-adressen för det lokala nätverket, men kan vara en avlägsen adress om apparaten inte är ansluten till routerns lokala nätverk";
 
 
 // ** WanMAC.asp **//
@@ -1705,7 +1705,7 @@ wds.legend2="Extra Alternativ";
 
 // ** Tr&aring;dlöst_radauth.asp **//
 radius.titl="RADIUS";
-radius.h2="Fjärrverifikation Ring-In Användar Tj&auml;nst";
+radius.h2="Fjärrverifikation Ring-In Användar Tjänst";
 radius.legend="RADIUS";
 radius.label="MAC RADIUS Klient";
 radius.label2="MAC Format";
@@ -1780,7 +1780,7 @@ wl_adv.legend="Avancerade Inställningar";
 wl_adv.legend2="Tr&aring;dlös Multimedia Stöd Inställningar";
 wl_adv.label="Authentiseringstyp";
 wl_adv.label2="Bashastighet";
-wl_adv.label3="&Ouml;verförings Hastighet";
+wl_adv.label3="Överförings Hastighet";
 wl_adv.label4="CTS Skyddsläge";
 wl_adv.label5="Frame Burst";
 wl_adv.label6="Beacon Intervall";
@@ -1798,8 +1798,8 @@ wl_adv.label17="Tr&aring;dlöst GUI Access";
 wl_adv.label18="WMM Stöd";
 wl_adv.label19="Ingen-Acknowledgement";
 wl_adv.label20="Shortslot Ignorera";
-wl_adv.label21="&Ouml;verföring Max Hastighet";
-wl_adv.label23="&Ouml;verföring Min Hastighet";
+wl_adv.label21="Överföring Max Hastighet";
+wl_adv.label23="Överföring Min Hastighet";
 wl_adv.label22="Bluetooth Samexistens Läge";
 wl_adv.label24="Antenn Inställning";
 wl_adv.label25="Antenn Output";
@@ -1834,7 +1834,7 @@ wl_adv.lng="L&aring;ng"; 					//************* don't use .long! *************
 wl_adv.shrt="Kort"; 				//************* don't use .short! **************
 
 //help container
-hwl_adv.right2="Du kan välja mellan Auto eller delad nyckel. Delad nyckel är s&auml;krare, Men d&aring; m&aring;ste alla apparater stödja detta.";
+hwl_adv.right2="Du kan välja mellan Auto eller delad nyckel. Delad nyckel är säkrare, Men d&aring; m&aring;ste alla apparater stödja detta.";
 
 // ** Tr&aring;dlöst_Basic.asp **//
 wl_basic.titl="Tr&aring;dlöst";
@@ -1847,7 +1847,7 @@ wl_basic.label3="Tr&aring;dlöst Nätverks namn (SSID)";
 wl_basic.label4="Tr&aring;dlöst Kanal";
 wl_basic.label5="Tr&aring;dlöst SSID Broadcast";
 wl_basic.label6="Känslighets intervall (ACK Tid)";
-wl_basic.label7="802.11n &Ouml;verföringsläge";
+wl_basic.label7="802.11n Överföringsläge";
 wl_basic.scanlist="ScanLista";
 wl_basic.duallink="Dubbel Länk";
 wl_basic.parent="Parent IP";
@@ -1921,10 +1921,10 @@ wl_basic.radar="Radar Detection";
 wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 //help container
-hwl_basic.right2="Om du vill exkludera Tr&aring;dlösa-G Klienter, Välj <em>B-Only</em>. Om du vill stänga av Tr&aring;dlöst, v&auml;lj <em>Inaktivera</em>.<br /><b>Notera :</b> N&auml;r du &auml;ndrar Tr&aring;dl&ouml;st mode, blir vissa avancerade funktioner &auml;ndrade (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Om du vill exkludera Tr&aring;dlösa-G Klienter, Välj <em>B-Only</em>. Om du vill stänga av Tr&aring;dlöst, välj <em>Inaktivera</em>.<br /><b>Notera :</b> När du ändrar Tr&aring;dlöst mode, blir vissa avancerade funktioner ändrade (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Känslighets intervall: ";
 hwl_basic.right4="Justerar ack tiderna. 0 inaktiverar ack tider helt för broadcom enheter. P&aring; Atheros baserade firmwares s&aring; sätts automatisk ack";
-hwl_basic.right6="Klicka valfri tid för aktivering eller inaktivering av radio signalen (<em>grön</em> indikerar Tr&aring;dl&ouml;s access, och <em>r&ouml;d</em> indikerar blockerad Tr&aring;dl&ouml;s access)";
+hwl_basic.right6="Klicka valfri tid för aktivering eller inaktivering av radio signalen (<em>grön</em> indikerar Tr&aring;dlös access, och <em>röd</em> indikerar blockerad Tr&aring;dlös access)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 fail.mess1="Värde felaktigt. Försök igen.";
@@ -1933,20 +1933,20 @@ fail.mess2="Upgradering Misslyckades.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Inställningar Sparade.";
-success.restore="Inställningar &Aring;terställda.<br />Enheten startas nu om. V&auml;nligen V&auml;nta...";
+success.restore="Inställningar &Aring;terställda.<br />Enheten startas nu om. Vänligen Vänta...";
 success.upgrade="Uppgradering Lyckades.<br />Enheten startas nu om. Vänligen Vänta...";
 success.success_noreboot="Inställningar Lyckades.";
 success.success_reboot=success.success_noreboot + "<br />Enheten startas nu om. Vänligen Vänta...";
-success.alert_reset="Alla inställningar &aring;terställda till fabriksinst&auml;llningen.<br /><br />";
+success.alert_reset="Alla inställningar &aring;terställda till fabriksinställningen.<br /><br />";
 success.alert1="Kontrollera följande innan du kopplar upp igen:";
 success.alert2="Om du ändrat din router&amp;#39;s IP Adress, s&aring; m&aring;ste du förnya klienterna(s) Adress(er) p&aring; nätverket.";
-success.alert3="Om du är kopplad via WLAN, Anslut nätet först sen klicka <em>Forts&auml;tt</em>.";
+success.alert3="Om du är kopplad via WLAN, Anslut nätet först sen klicka <em>Fortsätt</em>.";
 
 // ** Logout.asp  **//
 logout.message="Utloggning Lyckades.<br />Tack för att du använder DD-WRT!";
 
 // ** Setup Assistant **//
-hsas.wan="WAN-porten ansluter routern till internet eller andra nätverk. Om ditt nätverk redan &auml;r anslutet till internet samt endast anv&auml;nder routern som en AP st&auml;ll in WAN som \"disabled\".";
+hsas.wan="WAN-porten ansluter routern till internet eller andra nätverk. Om ditt nätverk redan är anslutet till internet samt endast använder routern som en AP ställ in WAN som \"disabled\".";
 
 // ** AOSS **//
 haoss.basic=" \"AirStation One-Touch Secure System\" (AOSS) Med AOSS kan du ansluta apparater som har stöd för AOSS till ditt nätverk utan manuell konfiguration.";
