@@ -23,7 +23,7 @@ share.compression="Compression PPP";
 share.domainname="Nom de domaine";
 share.wandomainname="Nom de domaine WAN";
 share.landomainname="Nom de domaine LAN";
-share.statu="&Eacute;tat";
+share.statu="État";
 share.start="Dèbut";
 share.end="Fin";
 share.proto="Protocole";
@@ -137,7 +137,7 @@ share.connected="Connectè";
 share.disconnect="Dèconnecter";
 share.disconnected="Dèconnecté";
 share.info="Information";
-share.state="&Eacute;tat";
+share.state="État";
 share.mode="Mode";
 share.encrypt="Cryptage";
 share.key="Clè";
@@ -208,7 +208,7 @@ sbutton.delall="Supprimer tout";
 sbutton.autorefresh="Autoactualisation activèe";
 sbutton.backup="Sauvegarder";
 sbutton.restore="Restaurer";
-sbutton.cptotext="&Eacute;diter";
+sbutton.cptotext="Éditer";
 sbutton.runcmd="Exècutez la commande";
 sbutton.startup="Sauver le Dèmarrage";
 sbutton.firewall="Sauver le Pare-feu";
@@ -219,7 +219,7 @@ sbutton.manual_wol="Rèveil manuel";
 sbutton.summary="Rècapitulatif";
 sbutton.filterIP="Modifier la liste de clients";
 sbutton.filterMac="Modifier liste de filtrage MAC";
-sbutton.filterSer="Ajouter/&Eacute;diter Service";
+sbutton.filterSer="Ajouter/Éditer Service";
 sbutton.reboot="Redèmarrer";
 sbutton.help="Aide";
 sbutton.wl_client_mac="Liste des adresses MAC client";
@@ -227,7 +227,7 @@ sbutton.update_filter="Mise à jour des filtres";
 sbutton.join="Rejoindre";
 sbutton.log_in="Connexions entrantes";
 sbutton.log_out="Connexions sortantes";
-sbutton.edit_srv="Ajouter/&Eacute;diter Service";
+sbutton.edit_srv="Ajouter/Éditer Service";
 sbutton.routingtab="Table de routage";
 sbutton.wanmac="Obtenir l'adresse MAC du PC";
 sbutton.dhcprel="Libèrer DHCP";
@@ -345,7 +345,7 @@ errmsg.err100="Veuillez patienter SVP...";
 errmsg.err101="Restauration des paramètres en cours...<br />Veuillez patienter SVP.";
 errmsg.err102="La mise à jour est en cours...<br />Veuillez patienter SVP";
 
-// **  ENTR&Eacute;ES DE MENU COMMUNES  **//
+// **  ENTRÉES DE MENU COMMUNES  **//
 bmenu.setup="Configuration";
 bmenu.setupbasic="Paramètres de base";
 bmenu.setupddns="DDNS";
@@ -392,7 +392,7 @@ bmenu.applicationsP2P="P2P";
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Vue d'ensemble";
 bmenu.sipathphone="Carnet d'adresses";
-bmenu.sipathstatus="&Eacute;tat";
+bmenu.sipathstatus="État";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Gestion";
@@ -414,7 +414,7 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Routeur SIP Milkfish";
 //bmenu.servicesAnchorFree="Mon rèseau publicitaire";
 
-bmenu.statu="&Eacute;tat";
+bmenu.statu="État";
 bmenu.statuRouter="Routeur";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
@@ -514,7 +514,7 @@ factdef.restore="Rèinitialiser les paramètres par défaut";
 factdef.mess1="Attention! Si vous cliquez sur OK, le routeur va rèinitialiser les paramètres usine et tous les réglages seront effacés.";
 
 //help container
-hfactdef.right1="Cliquez sur <em>Oui</em> pour rètablir les valeurs par défaut de tous les paramètres de configuration, puis cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalit&eacute; est d&eacute;sactiv&eacute;e.";
+hfactdef.right1="Cliquez sur <em>Oui</em> pour rètablir les valeurs par défaut de tous les paramètres de configuration, puis cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
 
 // ** FilterIPMAC.asp **//
 filterIP.titl="Liste des ordinateurs";
@@ -585,7 +585,7 @@ prforward.legend="Transfert de connexion";
 prforward.app="Application";
 
 //help container
-hprforward.right2="Certaines applications nècessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc ... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce à la case à cocher <em>" + share.enable +"</em>.";
+hprforward.right2="Certaines applications nècessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc ... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires gr&acirc;ce à la case à cocher <em>" + share.enable +"</em>.";
 
 // ** P2P.asp **//
 p2p.titl="Appications Peer-to-Peer";
@@ -606,7 +606,7 @@ pforward.from="du Port";
 pforward.to="vers le Port";
 
 //help container
-hpforward.right2="Certaines applications nècessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de s&eacute;curit&eacute;, vous pouvez activer ou d&eacute;sactiver les transferts de connexion quand ils ne sont pas n&eacute;cessaires gr&acirc;ce à la case à cocher <em>" + share.enable +"</em>.";
+hpforward.right2="Certaines applications nècessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires gr&acirc;ce à la case à cocher <em>" + share.enable +"</em>.";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -1010,8 +1010,8 @@ route.static_name="Nom de la route";
 route.static_ip="IP de Destination sur le LAN";
 
 //help container
-hroute.right2="Sèlectionnez le mode sous lequel le routeur doit opérer. Si le routeur concerné héberge la connexion de votre réseau à Internet, sélectionnez l'option <em>" + share.gateway + "</em>. Si un autre routeur existe sur le réseau, s&eacute;lectionnez <em>Routeur</em>. Si vous choisissez l'option <em>Routeur</em>, la section <em>" + route.gateway_legend + "</em> est activ&eacute;e.";
-hroute.right4="Pour dèfinir un itinéraire statique entre le routeur et un autre réseau, choisissez un nombre dans la liste déroulante de la section <em>" + route.static_legend + "</em>. Un itinéraire statique identifie un chemin prédéfini que les informations du r&eacute;seau doivent emprunter pour atteindre un h&ocirc;te ou un r&eacute;seau sp&eacute;cifique. Saisissez les informations d&eacute;crites ci-dessous pour d&eacute;finir un nouvel itin&eacute;raire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> pour supprimer un itin&eacute;raire statique.";
+hroute.right2="Sèlectionnez le mode sous lequel le routeur doit opérer. Si le routeur concerné héberge la connexion de votre réseau à Internet, sélectionnez l'option <em>" + share.gateway + "</em>. Si un autre routeur existe sur le réseau, sélectionnez <em>Routeur</em>. Si vous choisissez l'option <em>Routeur</em>, la section <em>" + route.gateway_legend + "</em> est activée.";
+hroute.right4="Pour dèfinir un itinéraire statique entre le routeur et un autre réseau, choisissez un nombre dans la liste déroulante de la section <em>" + route.static_legend + "</em>. Un itinéraire statique identifie un chemin prédéfini que les informations du réseau doivent emprunter pour atteindre un h&ocirc;te ou un réseau spécifique. Saisissez les informations décrites ci-dessous pour définir un nouvel itinéraire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> pour supprimer un itinéraire statique.";
 hroute.right6="Saisissez dans ce champ le nom de l'itinèraire.";
 hroute.right8="Cette option identifie l'adresse du rèseau distant, ou h&ocirc;te, auxquels vous souhaitez attribuer un itinéraire statique.";
 hroute.right10="Cette option dètermine quelle portion de l'adresse IP du réseau local (LAN) de destination correspond au réseau et quelle portion correspond à l'h&ocirc;te.";
@@ -1178,7 +1178,7 @@ service.milkfish_siptrace="SIP Trace";
 service.milkfish_subscribers="Abonnès locaux";
 service.milkfish_aliases="Alias locaux";
 service.milkfish_dynsip="SIP dynamique";
-service.milkfish_status="&Eacute;tat SIP";
+service.milkfish_status="État SIP";
 service.milkfish_database="Base de donnèes SIP";
 service.milkfish_messaging="Messagerie SIP";
 service.milkfish_phonebook="Annuaire tèléphonique SIP";
@@ -1223,14 +1223,14 @@ eoip.bridging="Bridging";
 // ** Sipath.asp + cgi **//
 sipath.titl="Gènéralités SiPath";
 sipath.phone_titl="Rèpertoire";
-sipath.status_titl="&Eacute;tat";
+sipath.status_titl="État";
 
 // ** Status_Lan.asp **//
-status_lan.titl="&Eacute;tat LAN";
+status_lan.titl="État LAN";
 status_lan.h2="Rèseau local";
-status_lan.legend="&Eacute;tat LAN";
+status_lan.legend="État LAN";
 status_lan.h22="Dynamic Host Configuration Protocol (DHCP)";
-status_lan.legend2="&Eacute;tat DHCP";
+status_lan.legend2="État DHCP";
 status_lan.legend3="Clients DHCP";
 status_lan.legend4="Clients connectès";
 status_lan.concount="Connexions";
@@ -1244,10 +1244,10 @@ hstatus_lan.right8="Si vous utilisez le routeur comme serveur DHCP, c'est indiqu
 hstatus_lan.right10="En cliquant sur n'importe quelle adresse Mac, vous obtiendrez l'Identifient Unique du Constructeur (Organizationally Unique Identifier) de la carte rèseau (recherche dans la base IEEE Standards OUI).";
 
 // ** Status_Bandwidth.asp **//
-status_band.titl="&Eacute;tat de la Bande Passante";
-status_band.h2="&Eacute;tat de la Bande Passante";
+status_band.titl="État de la Bande Passante";
+status_band.h2="État de la Bande Passante";
 status_band.chg_unit="Basculer en ";
-status_band.chg_scale="&Eacute;chelle auto";
+status_band.chg_scale="Échelle auto";
 status_band.chg_error="Impossible d'obtenir les interfaces rèseaux";
 status_band.chg_collect_initial="Mise en cache des donnèes, veuillez patienter SVP...";
 status_band.strin="Entrant";
@@ -1261,7 +1261,7 @@ hstatus_band.right1="Cliquez sur l'ètiquette \"<em>"+status_band.chg_unit+" ...
 hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d'èchelle (<em>"+status_band.follow+"</em> ajuste l'échelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l'échelle sur le pic maximum constaté).";
 
 // ** Status_Router.asp **//
-status_router.titl="&Eacute;tat du Routeur";
+status_router.titl="État du Routeur";
 status_router.h2="Informations Routeur";
 status_router.legend="Système";
 status_router.sys_model="Modèle du Routeur";
@@ -1298,10 +1298,10 @@ hstatus_router.right10="Temps ècoulé depuis le dernier arr&ecirc;t/relance du 
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une pèriode de 1, 5 et 15 minutes.";
 
 // ** Status_Internet.asp **//
-status_inet.titl="&Eacute;tat WAN";
+status_inet.titl="État WAN";
 status_inet.h11="WAN";
 status_inet.conft="Type de configuration";
-status_inet.www_loginstatus="&Eacute;tat de la connexion";
+status_inet.www_loginstatus="État de la connexion";
 status_inet.wanuptime="Connexion dèmarrée depuis";
 status_inet.leasetime="Renouvellement du bail dans";
 status_inet.traff="Trafic";
@@ -1315,7 +1315,7 @@ status_inet.next="Mois suivant";
 //help container
 hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurèes dans l'onglet <em>Configuration</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
 hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier dèmarrage du routeur.";
-hstatus_inet.right6="Trafic Internet ventilè par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graphique pour afficher les données des autres mois (les données sont stockées dans la m&eacute;moire flash du routeur).";
+hstatus_inet.right6="Trafic Internet ventilè par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graphique pour afficher les données des autres mois (les données sont stockées dans la mémoire flash du routeur).";
 
 
 // ** Status_Conntrack.asp **//
@@ -1323,24 +1323,24 @@ status_conn.titl="Table des connexions";
 status_conn.h2="Connexions IP actives";
 
 // ** Status_SputnikAPD.asp **//
-status_sputnik.titl="&Eacute;tat de l'agent Sputnik";
+status_sputnik.titl="État de l'agent Sputnik";
 status_sputnik.h2="Agent™ Sputnik®";
 status_sputnik.manage="Gèré Par";
 status_sputnik.license="Numèro de License SCC";
 
 //help container
-hstatus_sputnik.right1="&Eacute;tat de l'agent Sputnik";
+hstatus_sputnik.right1="État de l'agent Sputnik";
 hstatus_sputnik.right2="Cette partie affiche l'ètat du processus de l'Agent Sputnik.";
 hstatus_sputnik.right4="Le centre de contr&ocirc;le Sputnik auquel ce point d'accès est connectè.";
-hstatus_sputnik.right6="&Eacute;tat actuel de l'agent Sputnik";
+hstatus_sputnik.right6="État actuel de l'agent Sputnik";
 hstatus_sputnik.right8="Le numèro de licence de votre centre de contr&ocirc;le Sputnik.";
 
 // ** Status_Wireless.asp **//
-status_wireless.titl="&Eacute;tat sans fil";
+status_wireless.titl="État sans fil";
 status_wireless.h2="Informations sans fil";
 status_wireless.legend="Wifi";
 status_wireless.net="Rèseau";
-status_wireless.pptp="&Eacute;tat PPTP";
+status_wireless.pptp="État PPTP";
 status_wireless.legend2="Information Paquet (sans fil)";
 status_wireless.rx="Re&ccedil;us (RX)";
 status_wireless.tx="Transmis (TX)";
@@ -1351,7 +1351,7 @@ status_wireless.wds="Noeuds WDS";
 
 // ** GPS info **//
 status_gpsi.legend="Informations GPS";
-status_gpsi.status="&Eacute;tat";
+status_gpsi.status="État";
 status_gpsi.lon="Longitude";
 status_gpsi.lat="Latitude";
 status_gpsi.alt="Altitude";
@@ -1362,7 +1362,7 @@ hstatus_wireless.right2="Ceci est l'adresse MAC de votre routeur vue depuis votr
 hstatus_wireless.right4="Comme configurè dans l'onglet Wireless, ce sont les normes de connexions acceptées pour votre réseau sans fil (Mixed, G-Only, or Disabled).";
 
 // ** Status_OpenVPN.asp **//
-status_openvpn.titl="&Eacute;tat OpenVPN";
+status_openvpn.titl="État OpenVPN";
 
 // ** Triggering.asp **//
 trforward.titl="Dèclenchement de Port";
@@ -1424,7 +1424,7 @@ vlan.titl="LAN virtuel";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Assignè au<br />pont";
-vlan.tagged="&Eacute;tiquetè";
+vlan.tagged="Étiquetè";
 vlan.negociate="Autonègocier";
 vlan.aggregation="Regroupement de liens<br />des Ports 3 &amp; 4";
 vlan.trunk="Trunk";
@@ -1454,7 +1454,7 @@ wol.pass="Mot de passe SecureOn";
 //help container
 hwol.right2="Cette fonctionnalitè permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer. Vous pouvez réveiller un h&ocirc;te manuellement en cliquant sur le bouton <em>"+sbutton.wol+"</em> ou programmer des réveils automatiques gr&acirc;ce au démon.";
 hwol.right4="Les adresses MAC doivent &ecirc;tre saisies dans le format xx:xx:xx:xx:xxx:xx (ex. 01:23:45:67:89:AB) et sèparé(es) par un <em>espace</em>.";
-hwol.right6="L'adresse IP dèsigne généralement l'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l'h&ocirc;te n'est pas sur le réseau local connect&eacute; au routeur.";
+hwol.right6="L'adresse IP dèsigne généralement l'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l'h&ocirc;te n'est pas sur le réseau local connecté au routeur.";
 
 // ** WanMAC.asp **//
 wanmac.titl="Adresse MAC dupliquèe";
@@ -1487,7 +1487,7 @@ sec80211x.servercertif="Certificat Public Serveur";
 sec80211x.clientcertif="Certificat Public Client";
 
 //help container
-hwpa.right2="Choisissez le mode de sècurité du réseau sans fil. Tous les périphériques du réseau doivent &ecirc;tre compatibles avec le mode sélectionn&eacute;.";
+hwpa.right2="Choisissez le mode de sècurité du réseau sans fil. Tous les périphériques du réseau doivent &ecirc;tre compatibles avec le mode sélectionné.";
 
 // ** WL_FilterTable.asp **//
 wl_filter.titl="Liste des Adresses MAC filtrèes";
@@ -1582,7 +1582,7 @@ wl_adv.shrt="Court";
 
 //help container
 
-hwl_adv.right2="La valeur <em>Auto</em> dèfinie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d'authentification <em>Système ouvert</em>, l'expéditeur et le destinataire n'utilisent pas de clé WEP pour l'authentification. En revanche, ils utilisent ce type de clé en mode <em>Cl&eacute; partag&eacute;e</em>.";
+hwl_adv.right2="La valeur <em>Auto</em> dèfinie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d'authentification <em>Système ouvert</em>, l'expéditeur et le destinataire n'utilisent pas de clé WEP pour l'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
 
 // ** Wireless_Basic.asp **//
 wl_basic.titl="Sans Fil";
@@ -1655,7 +1655,7 @@ wl_basic.noise_immunity="Niveau d'immunitè au bruit";
 wl_basic.ofdm_weak_det="Faiblesse de dètection OFDM";
 
 //help container
-hwl_basic.right2="Si vous disposez à la fois des pèriphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des p&eacute;riph&eacute;riques 802.11b, s&eacute;lectionnez <em>B-uniquement</em>. Si votre r&eacute;seau n'est muni d'aucun p&eacute;riph&eacute;rique sans fil, s&eacute;lectionnez l'option <em>D&eacute;sactiver</em>.<br /><b>Remarque :</b> quand vous changez de mode, certains paramètres avanc&eacute;s sont susceptibles d'&ecirc;tre modifi&eacute;s (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
+hwl_basic.right2="Si vous disposez à la fois des pèriphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.<br /><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés sont susceptibles d'&ecirc;tre modifiés (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
 hwl_basic.right3="Sensibilitè :";
 hwl_basic.right4="Permet de règler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité pour les Micrologiciels Broadcom. Pour ceux basés sur un chipset Atheros cela bascule en mode ack timing automatique";
 hwl_basic.right6="Sèlectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
