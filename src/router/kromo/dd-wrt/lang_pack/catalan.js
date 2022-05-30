@@ -1384,7 +1384,7 @@ service.vpn_route="Enrutament basat en Política";
 
 //help container
 hstatus_vpn.right1="Enrutament basat en Política:<br /><i>Afegiu els IP/NET en la forma 0.0.0.0/0 per forçar que els clients utilitzin el túnel com gateway per defecte. Una línia per IP/NET.<br /><i>Adreça IP/Màscara de xarxa:</i><br />Ha de ser establert quan s'utilitza el mode DHCP-Proxy i el TAP local NO s'extén</i>";
-hstatus_vpn.right2="Configuració Adicional:<br /><i>Per empenyar les rutes als clients afegiu \'push \"ruta IP màscara gateway\"\', per empenyar DNS/WINS afegiu \'push \"opció-DHCP DNS (o WINS) IP\"\' a la configuració.</i><br />directori de connexió de client:<br /><i>Quan USB o JFFS està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Configuració Adicional:<br /><i>Per empenyar les rutes als clients afegiu 'push \"ruta IP màscara gateway\"', per empenyar DNS/WINS afegiu 'push \"opció-DHCP DNS (o WINS) IP\"' a la configuració.</i><br />directori de connexió de client:<br /><i>Quan USB o JFFS està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 mètodes d'autenticació es soportan: pkcs12 (+dh en el servidor), estàtica, i certificats estàndards. Habiliteu el MSS en només un costat de l'enllaç, fragmenteu en ambdós.</i>";
 
 //vnc.repeater

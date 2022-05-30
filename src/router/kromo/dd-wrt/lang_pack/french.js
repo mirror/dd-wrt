@@ -242,33 +242,33 @@ sbutton.allways_off="Toujours dèsactivé";
 // ** MESSAGES D'ERREUR COMMUNS  **//
 errmsg.err0="Vous devez saisir un nom d'utilisateur.";
 errmsg.err1="Vous devez saisir un nom de Routeur.";
-errmsg.err2="Hors de l\'intervalle, merci d\'ajuster l\'adresse IP de dèbut ou le nombre d\'utilisateurs.";
+errmsg.err2="Hors de l'intervalle, merci d'ajuster l'adresse IP de dèbut ou le nombre d'utilisateurs.";
 errmsg.err3="Vous devez sèlectionner au moins un jour.";
-errmsg.err4="L\'heure de fin doit &ecirc;tre supèrieure à l\'heure de départ.";
-errmsg.err5="La longueur de l\'adresse MAC est incorrecte.";
+errmsg.err4="L'heure de fin doit &ecirc;tre supèrieure à l'heure de départ.";
+errmsg.err5="La longueur de l'adresse MAC est incorrecte.";
 errmsg.err6="Vous devez saisir un mot de passe.";
-errmsg.err7="Vous devez saisir un nom d\'h&ocirc;te.";
+errmsg.err7="Vous devez saisir un nom d'h&ocirc;te.";
 errmsg.err8="Vous devez saisir une adresse IP ou un nom de domaine.";
 errmsg.err9="Adresse IP invalide.";
 errmsg.err10="La confirmation du mot de passe ne correspond pas. Merci de saisir à nouveau le mot de passe.";
-errmsg.err11="Aucun espace n\'est permis dans le mot de passe";
+errmsg.err11="Aucun espace n'est permis dans le mot de passe";
 errmsg.err12="Vous devez saisir une commande à exècuter.";
 errmsg.err13="La mise à jour a èchoué.";
 errmsg.err45="Non disponible en HTTPS! Merci de vous connecter en mode HTTP.";
 errmsg.err46="Non disponible en HTTPS.";
 
 //common.js error messages
-errmsg.err14=" la valeur est en dehors de l\'intervalle [";
-errmsg.err15="L\'adresse MAC WAN est en dehors de l\'intervalle [00 - ff].";
-errmsg.err16="Le deuxième caractère de l\'adresse MAC doit &ecirc;tre un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="L\'adresse MAC est incorrecte.";
-errmsg.err18="La longueur de l\'adresse MAC est incorrecte.";
-errmsg.err19="L\'adresse MAC ne peut pas &ecirc;tre identique à l\'adresse de diffusion.";
-errmsg.err20="Sairir l\'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
-errmsg.err21="Format d\'adresse MAC invalide.";
-errmsg.err22="L\'adresse MAC WAN est incorrecte.";
+errmsg.err14=" la valeur est en dehors de l'intervalle [";
+errmsg.err15="L'adresse MAC WAN est en dehors de l'intervalle [00 - ff].";
+errmsg.err16="Le deuxième caractère de l'adresse MAC doit &ecirc;tre un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="L'adresse MAC est incorrecte.";
+errmsg.err18="La longueur de l'adresse MAC est incorrecte.";
+errmsg.err19="L'adresse MAC ne peut pas &ecirc;tre identique à l'adresse de diffusion.";
+errmsg.err20="Sairir l'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
+errmsg.err21="Format d'adresse MAC invalide.";
+errmsg.err22="L'adresse MAC WAN est incorrecte.";
 errmsg.err23="Valeur hexadècimale invalide ";
-errmsg.err24=" trouvèe dans l\'adresse MAC ";
+errmsg.err24=" trouvèe dans l'adresse MAC ";
 errmsg.err25="La valeur de la clè est incorrecte.";
 errmsg.err26="La longueur de la clè est incorrecte.";
 errmsg.err27="Masque de sous rèseau incorrect.";
@@ -276,8 +276,8 @@ errmsg.err28=" a un caractère illègal, doit &ecirc;tre [ 0 - 9 ].";
 errmsg.err29=" a un code ASCII illègal.";
 errmsg.err30=" a des nombres hexadècimaux illégaux.";
 errmsg.err31=" a une valeur illègale.";
-errmsg.err32="L\'adresse IP et la passerelle n\'utilisent pas le m&ecirc;me masque de sous rèseau.";
-errmsg.err33="L\'adresse IP et la passerelle ne peuvent pas &ecirc;tre identiques.";
+errmsg.err32="L'adresse IP et la passerelle n'utilisent pas le m&ecirc;me masque de sous rèseau.";
+errmsg.err33="L'adresse IP et la passerelle ne peuvent pas &ecirc;tre identiques.";
 errmsg.err34=" ne doit pas contenir un espace.";
 
 //Wol.asp error messages
@@ -291,22 +291,22 @@ errmsg.err38="Merci de saisir une clè partagée!";
 errmsg.err39="Clè invalide, doit contenir entre 8 et 63 caractères ASCII ou 64 nombres hexadécimaux";
 errmsg.err40="Vous devez saisir une clè pour la Clé ";
 errmsg.err41="Longueur de clè invalide ";
-errmsg.err43="Saisissez de nouveau l\'intervalle.";
+errmsg.err43="Saisissez de nouveau l'intervalle.";
 
 //config.asp error messages
 errmsg.err42="Merci de sèlectionner un fichier de configuration à restaurer.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Le nombre total d\'adresses MAC filtrèes ne peut pas dépasser 256.";
+errmsg.err44="Le nombre total d'adresses MAC filtrèes ne peut pas dépasser 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID invalide.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS n\'est pas compatible avec la configuration courante du routeur. Merci de vèrifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\'est pas supporté sous WDS \n * Le mode sans fil B-Only n\'est pas supporté sous WDS";
+errmsg.err48="WDS n'est pas compatible avec la configuration courante du routeur. Merci de vèrifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n'est pas supporté sous WDS \n * Le mode sans fil B-Only n'est pas supporté sous WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS n\'est seulement disponible qu\'en mode AP.";
+errmsg.err49="RADIUS n'est seulement disponible qu'en mode AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Vous devez saisir un SSID.";
@@ -321,7 +321,7 @@ errmsg.err54="Vous devez saisir un nom de service.";
 errmsg.err55="Ce nom de service existe dèjà.";
 
 // QoS.asp error messages
-errmsg.err56="La valeur du port est en dehors de l\'intervalle [0 - 65535].";
+errmsg.err56="La valeur du port est en dehors de l'intervalle [0 - 65535].";
 
 // Routing.asp error messages
 errmsg.err57="Effacer cette entrèe ?";
@@ -331,7 +331,7 @@ errmsg.err103=" doit &ecirc;tre infèrieur à ";
 errmsg.err58="Cliquez pour effacer le bail.";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Non disponible! Merci d\'activer le rèseau sans fil.";
+errmsg.err59="Non disponible! Merci d'activer le rèseau sans fil.";
 
 //Upgrade.asp error messages
 errmsg.err60="Veuillez sèlectionner le fichier de mise à jour du routeur.";

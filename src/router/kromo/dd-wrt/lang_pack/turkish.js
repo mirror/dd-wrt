@@ -1318,7 +1318,7 @@ service.vpn_route="İlke bazlı Yönlendirme";
 
 //help container
 hstatus_vpn.right1="İstemcilerin tüneli varsayılan ağ geçidi olarak kullanması için IP'leri 0.0.0.0/0 biçiminde ekleyin. IP başına bir satır. Yeniden yönlendirme Ağ Geçidi kapalı OLMALIDIR.";
-hstatus_vpn.right2="Yolları istemcilere göndermek için, yapılandırmaya \'push \"route 0.0.0.0\"\' ekleyin, DNS/WINS göndermek için, \'push \"dhcp-option DNS (veya WINS) 0.0.0.0\"\' ekleyin.";
+hstatus_vpn.right2="Yolları istemcilere göndermek için, yapılandırmaya 'push \"route 0.0.0.0\"' ekleyin, DNS/WINS göndermek için, 'push \"dhcp-option DNS (veya WINS) 0.0.0.0\"' ekleyin.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";

@@ -1437,7 +1437,7 @@ service.vpn_route="Usmerjanje po politiki";
 //help container
 
 hstatus_vpn.right1="Usmerjanje po politiki:<br /><i>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.</i>";
-hstatus_vpn.right2="Dodatne nastavitve:<br /><i>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.</i>";
+hstatus_vpn.right2="Dodatne nastavitve:<br /><i>Da prisiliš poti odjemalcem dodaj 'push \"route 0.0.0.0\"', da prisiliš DNS/WINS dodaj 'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"' k konfiguraciji.</i>";
 status_vpn.right3="Splošno:<br /><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";
 
 //vnc.repeater

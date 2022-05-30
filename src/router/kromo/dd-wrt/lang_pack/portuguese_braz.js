@@ -1454,7 +1454,7 @@ service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
 hstatus_vpn.right1="Roteamento Baseado em Políticas:<br />Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o túnel como gateway padrão. Uma linha por IP/REDE.<br />Endereço IP/Máscara de Sub-Rede:<br />Deve ser configurado quando se está usando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
-hstatus_vpn.right2="Configurações Adicionais:<br />Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\'. Para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.<br />Diretório de conexão do cliente:<br />Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
+hstatus_vpn.right2="Configurações Adicionais:<br />Para entregar rotas a clientes adicione 'push \"route IP mask gateway\"'. Para entregar DNS/WINS adicione 'push \"dhcp-option DNS (ou WINS) IP\"' à configuração.<br />Diretório de conexão do cliente:<br />Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
 hstatus_vpn.right3="Geral:<br />São suportados 3 métodos de autenticação: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS só num dos lados do link fragmentará em ambos.";
 
 //vnc.repeater

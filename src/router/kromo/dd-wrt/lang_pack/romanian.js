@@ -1391,7 +1391,7 @@ service.vpn_route="Rutare bazată pe politici";
 
 //help container
 hstatus_vpn.right1="Rutare bazată pe politici:<br /><i>Adăugați IP-uri/Rețele de forma 0.0.0.0/0 pentru a forța clienții să folosească tunelul ca gateway implicit. O linie per IP/Rețea.<br /><i>Adresă IP/Mască de rețea:</i><br />Trebuie setată când este folosit modul DHCP-Proxy și TAP-ul local NU este în modul bridge</i>";
-hstatus_vpn.right2="Configurare adițională:<br /><i>Pentru a trimite rute la clienți adăugați \'push \"rută mască IP gateway\"\', pentru a trimite DNS/WINS adăugați \'push \"opțiune-DHCP DNS (sau WINS) IP\"\' la configurație.</i><br />Director de conectare clienți:<br /><i>Când USB sau JFFS este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Configurare adițională:<br /><i>Pentru a trimite rute la clienți adăugați 'push \"rută mască IP gateway\"', pentru a trimite DNS/WINS adăugați 'push \"opțiune-DHCP DNS (sau WINS) IP\"' la configurație.</i><br />Director de conectare clienți:<br /><i>Când USB sau JFFS este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 metode de autentificare sunt suportate: pkcs12 (+dh pe server), statică, certificate standard. Activați MSS doar pe o parte a legăturii, pe un fragment sau pe ambele.</i>";
 
 //vnc.repeater
