@@ -1679,8 +1679,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 				int i;
 				for (i = 0; i < sizeof(ms_telemetry) / sizeof(ms_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d/%d -j %s", seq, ms_telemetry[i].ip1, ms_telemetry[i].ip2, ms_telemetry[i].ip3, ms_telemetry[i].ip4, ms_telemetry[i].mask, log_drop);
-			}
-			if (!strcmp(realname, "ubnt-telemetry")) {
+			} else if (!strcmp(realname, "ubnt-telemetry")) {
 				nvram_seti("dnsmasq_ubnt_telemetry", 1);
 				int i;
 				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
