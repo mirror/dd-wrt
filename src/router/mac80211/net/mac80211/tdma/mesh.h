@@ -14,15 +14,15 @@
 #define TDMA_MESH_ENERGY_SCALE(val)	(((u16)((val) << 3)) - (u16)val)
 #define TDMA_MESH_CHECK_PENALTY(a, b)	(((u32)a > (u32)b) ? (u32)b : (u32)a)
 
-extern void mm_update_route_complete(struct p_originator *, u16, int);
-extern void mm_update_route_energy(struct p_originator *, int);
-extern u16 mm_update_rval(struct p_originator *, size_t, unsigned);
-extern void mm_update_route_rval_only(struct p_originator *, u16);
-extern u16 mm_calc_reachability(struct p_originator *, unsigned);
+static void mm_update_route_complete(struct p_originator *, u16, int);
+static void mm_update_route_energy(struct p_originator *, int);
+static u16 mm_update_rval(struct p_originator *, size_t, unsigned);
+static void mm_update_route_rval_only(struct p_originator *, u16);
+static u16 mm_calc_reachability(struct p_originator *, unsigned);
 
-extern struct p_originator *__tdma_originator_find_best(struct ieee80211_if_tdma *, const u8 *, u16 *);
-extern struct p_originator *__tdma_originator_find(struct ieee80211_if_tdma *, const u8 *, const u8 *);
-extern bool __tdma_originator_new(struct ieee80211_if_tdma *, const u8 *, const u8 *);
-extern bool __tdma_route_new_complete(struct ieee80211_if_tdma *, const u8 *, const u8 *, u16, int);
+static struct p_originator *__tdma_originator_find_best(struct ieee80211_if_tdma *, const u8 *, u16 *);
+static struct p_originator *__tdma_originator_find(struct ieee80211_if_tdma *, const u8 *, const u8 *);
+static bool __tdma_originator_new(struct ieee80211_if_tdma *, const u8 *, const u8 *);
+static bool __tdma_route_new_complete(struct ieee80211_if_tdma *, const u8 *, const u8 *, u16, int);
 
 #endif

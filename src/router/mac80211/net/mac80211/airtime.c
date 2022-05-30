@@ -208,12 +208,12 @@
 #define HE_GROUP(_streams, _gi, _bw)					\
 	__HE_GROUP(_streams, _gi, _bw,				\
 		   HE_GROUP_SHIFT(_streams, _gi, _bw))
-struct mcs_group {
+struct airtime_mcs_group {
 	u8 shift;
 	u16 duration[MCS_GROUP_RATES];
 };
 
-static const struct mcs_group airtime_mcs_groups[] = {
+static const struct airtime_mcs_group airtime_mcs_groups[] = {
 	MCS_GROUP(1, 0, BW_20),
 	MCS_GROUP(2, 0, BW_20),
 	MCS_GROUP(3, 0, BW_20),

@@ -8,36 +8,30 @@
 #include "../rate.h"
 #include "pdwext.h"
 
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 int tdma_adjust_rates(struct ieee80211_supported_band *sband, struct ieee80211_tx_rate *irate, int *erp, bool ack)
 {
 	return ptdma_adjust_rates(sband, irate, erp, ack);
 }
 
-EXPORT_SYMBOL(tdma_adjust_rates);
 
 struct ieee80211_tx_info *tdma_skb_fill_info(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 {
 	return ptdma_skb_fill_info(sdata, skb);
 }
 
-EXPORT_SYMBOL(tdma_skb_fill_info);
 
 unsigned long tdma_tu_adjust(unsigned long val, int slotsize, int shift, bool noack)
 {
 	return ptdma_tu_adjust(val, slotsize, shift, noack);
 }
 
-EXPORT_SYMBOL(tdma_tu_adjust);
 
 unsigned long tdma_calc_ideal_interval(struct ieee80211_if_tdma *tdma, int node)
 {
 	return ptdma_calc_ideal_interval(tdma, node);
 }
 
-EXPORT_SYMBOL(tdma_calc_ideal_interval);
 
 u8 tdma_get_avail_slot(struct ieee80211_if_tdma *tdma)
 {
@@ -63,7 +57,6 @@ u8 tdma_get_avail_slot(struct ieee80211_if_tdma *tdma)
 	return slot;
 }
 
-EXPORT_SYMBOL(tdma_get_avail_slot);
 
 bool tdma_sta_init(struct sta_info * sta)
 {
@@ -72,7 +65,6 @@ bool tdma_sta_init(struct sta_info * sta)
 	return false;
 }
 
-EXPORT_SYMBOL(tdma_sta_init);
 
 void tdma_update_skb_hdr(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, struct sta_info *sta, int meshhdrlen)
 {
@@ -97,7 +89,6 @@ void tdma_update_skb_hdr(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, st
 	}
 }
 
-EXPORT_SYMBOL(tdma_update_skb_hdr);
 
 unsigned long tdma_max_clock_drift(struct ieee80211_sub_if_data *sdata)
 {
@@ -122,7 +113,6 @@ unsigned long tdma_max_clock_drift(struct ieee80211_sub_if_data *sdata)
 	return (unsigned long)tdma->tdma_frame_duration(sband->band, bmtu, tdma->rate, erp, sdata->vif.bss_conf.use_short_preamble, shift) + TDMA_TX_TAIL_SPACE;
 }
 
-EXPORT_SYMBOL(tdma_max_clock_drift);
 
 unsigned long tdma_tx_slot_calc(struct ieee80211_sub_if_data *sdata, unsigned int mtu)
 {
@@ -156,7 +146,6 @@ unsigned long tdma_tx_slot_calc(struct ieee80211_sub_if_data *sdata, unsigned in
 	return rounded_msecs;
 }
 
-EXPORT_SYMBOL(tdma_tx_slot_calc);
 
 u32 tdma_adjust_basic_rates(struct ieee80211_sub_if_data *sdata, int shift, u32 supp_rates)
 {
@@ -173,7 +162,6 @@ u32 tdma_adjust_basic_rates(struct ieee80211_sub_if_data *sdata, int shift, u32 
 	return supp_rates;
 }
 
-EXPORT_SYMBOL(tdma_adjust_basic_rates);
 
 void tdma_setup_polling(struct ieee80211_if_tdma *tdma)
 {
@@ -209,7 +197,6 @@ void tdma_setup_polling(struct ieee80211_if_tdma *tdma)
 	}
 }
 
-EXPORT_SYMBOL(tdma_setup_polling);
 
 
 void tdma_reset_state(struct ieee80211_if_tdma *tdma)

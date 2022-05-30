@@ -212,7 +212,7 @@ static inline u16 _S_(u16 v)
 
 #define PHASE1_LOOP_COUNT 8
 
-static void tkip_mixing_phase1(u16 * TTAK, const u8 * TK, const u8 * TA,
+static void ieee80211_tkip_mixing_phase1(u16 * TTAK, const u8 * TK, const u8 * TA,
 			       u32 IV32)
 {
 	int i, j;
@@ -234,7 +234,7 @@ static void tkip_mixing_phase1(u16 * TTAK, const u8 * TK, const u8 * TA,
 	}
 }
 
-static void tkip_mixing_phase2(u8 * WEPSeed, const u8 * TK, const u16 * TTAK,
+static void ieee80211_tkip_mixing_phase2(u8 * WEPSeed, const u8 * TK, const u16 * TTAK,
 			       u16 IV16)
 {
 	/* Make temporary area overlap WEP seed so that the final copy can be
@@ -296,11 +296,11 @@ static int lib80211_tkip_hdr(struct sk_buff *skb, int hdr_len,
 		return -1;
 
 	if (!tkey->tx_phase1_done) {
-		tkip_mixing_phase1(tkey->tx_ttak, tkey->key, hdr->addr2,
+		ieee80211_tkip_mixing_phase1(tkey->tx_ttak, tkey->key, hdr->addr2,
 				   tkey->tx_iv32);
 		tkey->tx_phase1_done = 1;
 	}
-	tkip_mixing_phase2(rc4key, tkey->key, tkey->tx_ttak, tkey->tx_iv16);
+	ieee80211_tkip_mixing_phase2(rc4key, tkey->key, tkey->tx_ttak, tkey->tx_iv16);
 
 	pos = skb_push(skb, TKIP_HDR_LEN);
 	memmove(pos, pos + TKIP_HDR_LEN, hdr_len);
@@ -429,10 +429,10 @@ static int lib80211_tkip_decrypt(struct sk_buff *skb, int hdr_len, void *priv)
 	}
 
 	if (iv32 != tkey->rx_iv32 || !tkey->rx_phase1_done) {
-		tkip_mixing_phase1(tkey->rx_ttak, tkey->key, hdr->addr2, iv32);
+		ieee80211_tkip_mixing_phase1(tkey->rx_ttak, tkey->key, hdr->addr2, iv32);
 		tkey->rx_phase1_done = 1;
 	}
-	tkip_mixing_phase2(rc4key, tkey->key, tkey->rx_ttak, iv16);
+	ieee80211_tkip_mixing_phase2(rc4key, tkey->key, tkey->rx_ttak, iv16);
 
 	plen = skb->len - hdr_len - 12;
 
@@ -471,7 +471,7 @@ static int lib80211_tkip_decrypt(struct sk_buff *skb, int hdr_len, void *priv)
 	return keyidx;
 }
 
-static int michael_mic(struct crypto_shash *tfm_michael, u8 *key, u8 *hdr,
+static int ieee80211_michael_mic(struct crypto_shash *tfm_michael, u8 *key, u8 *hdr,
 		       u8 *data, size_t data_len, u8 *mic)
 {
 	SHASH_DESC_ON_STACK(desc, tfm_michael);
@@ -503,7 +503,7 @@ out:
 	return err;
 }
 
-static void michael_mic_hdr(struct sk_buff *skb, u8 * hdr)
+static void ieee80211_michael_mic_hdr(struct sk_buff *skb, u8 * hdr)
 {
 	struct ieee80211_hdr *hdr11;
 
@@ -551,9 +551,9 @@ static int lib80211_michael_mic_add(struct sk_buff *skb, int hdr_len,
 		return -1;
 	}
 
-	michael_mic_hdr(skb, tkey->tx_hdr);
+	ieee80211_michael_mic_hdr(skb, tkey->tx_hdr);
 	pos = skb_put(skb, 8);
-	if (michael_mic(tkey->tx_tfm_michael, &tkey->key[16], tkey->tx_hdr,
+	if (ieee80211_michael_mic(tkey->tx_tfm_michael, &tkey->key[16], tkey->tx_hdr,
 			skb->data + hdr_len, skb->len - 8 - hdr_len, pos))
 		return -1;
 
@@ -590,8 +590,8 @@ static int lib80211_michael_mic_verify(struct sk_buff *skb, int keyidx,
 	if (!tkey->key_set)
 		return -1;
 
-	michael_mic_hdr(skb, tkey->rx_hdr);
-	if (michael_mic(tkey->rx_tfm_michael, &tkey->key[24], tkey->rx_hdr,
+	ieee80211_michael_mic_hdr(skb, tkey->rx_hdr);
+	if (ieee80211_michael_mic(tkey->rx_tfm_michael, &tkey->key[24], tkey->rx_hdr,
 			skb->data + hdr_len, skb->len - 8 - hdr_len, mic))
 		return -1;
 	if (memcmp(mic, skb->data + skb->len - 8, 8) != 0) {

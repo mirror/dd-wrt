@@ -5,8 +5,8 @@
 #include "sta_info.h"
 
 #ifdef CPTCFG_MAC80211_DEBUGFS
-void ieee80211_sta_debugfs_add(struct sta_info *sta);
-void ieee80211_sta_debugfs_remove(struct sta_info *sta);
+static void ieee80211_sta_debugfs_add(struct sta_info *sta);
+static void ieee80211_sta_debugfs_remove(struct sta_info *sta);
 #else
 static inline void ieee80211_sta_debugfs_add(struct sta_info *sta) {}
 static inline void ieee80211_sta_debugfs_remove(struct sta_info *sta) {}

@@ -1,7 +1,5 @@
 #include "pdwext.h"
-#ifdef CPTCFG_MAC80211_TDMA_MESH
 #include "mesh.h"
-#endif
 
 struct p_originator *__tdma_originator_find_best(struct ieee80211_if_tdma *tdma, const u8 *mac, u16 *rval)
 {

@@ -138,11 +138,14 @@ enum ieee80211_agg_stop_reason {
 #define AIRTIME_USE_TX		BIT(0)
 #define AIRTIME_USE_RX		BIT(1)
 
+DECLARE_SKIPLIST_TYPE(airtime_sched, 5);
 
 struct airtime_info {
+	struct airtime_sched_node schedule_order;
+	struct ieee80211_txq *txq[3];
 	u64 rx_airtime;
 	u64 tx_airtime;
-	u64 v_t;
+	u64 v_t, v_t_cur;
 	u64 last_scheduled;
 	struct list_head list;
 	atomic_t aql_tx_pending; /* Estimated airtime for frames pending */
@@ -150,6 +153,7 @@ struct airtime_info {
 	u32 aql_limit_high;
 	u32 weight_reciprocal;
 	u16 weight;
+	u8 txq_idx;
 };
 
 void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
@@ -737,7 +741,7 @@ static inline int test_and_set_sta_flag(struct sta_info *sta,
 	return test_and_set_bit(flag, &sta->_flags);
 }
 
-int sta_info_move_state(struct sta_info *sta,
+static int sta_info_move_state(struct sta_info *sta,
 			enum ieee80211_sta_state new_state);
 
 static inline void sta_info_pre_move_state(struct sta_info *sta,
@@ -752,7 +756,7 @@ static inline void sta_info_pre_move_state(struct sta_info *sta,
 }
 
 
-void ieee80211_assign_tid_tx(struct sta_info *sta, int tid,
+static void ieee80211_assign_tid_tx(struct sta_info *sta, int tid,
 			     struct tid_ampdu_tx *tid_tx);
 
 static inline struct tid_ampdu_tx *
@@ -774,20 +778,20 @@ rcu_dereference_protected_tid_tx(struct sta_info *sta, int tid)
  */
 #define STA_INFO_CLEANUP_INTERVAL (10 * HZ)
 
-struct rhlist_head *sta_info_hash_lookup(struct ieee80211_local *local,
+static struct rhlist_head *sta_info_hash_lookup(struct ieee80211_local *local,
 					 const u8 *addr);
 
 /*
  * Get a STA info, must be under RCU read lock.
  */
-struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
+static struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
 			      const u8 *addr);
 
-struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
+static struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
 				  const u8 *addr);
 
 /* user must hold sta_mtx or be in RCU critical section */
-struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,
+static struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,
 				       const u8 *sta_addr, const u8 *vif_addr);
 
 #define for_each_sta_info(local, _addr, _sta, _tmp)			\
@@ -797,18 +801,18 @@ struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,
 /*
  * Get STA info by index, BROKEN!
  */
-struct sta_info *sta_info_get_by_idx(struct ieee80211_sub_if_data *sdata,
+static struct sta_info *sta_info_get_by_idx(struct ieee80211_sub_if_data *sdata,
 				     int idx);
 
-int sta_count(struct ieee80211_sub_if_data *sdata);
+static int sta_count(struct ieee80211_sub_if_data *sdata);
 /*
  * Create a new STA info, caller owns returned structure
  * until sta_info_insert().
  */
-struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
+static struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 				const u8 *addr, gfp_t gfp);
 
-void sta_info_free(struct ieee80211_local *local, struct sta_info *sta);
+static void sta_info_free(struct ieee80211_local *local, struct sta_info *sta);
 
 /*
  * Insert STA info into hash table/list, returns zero or a
@@ -818,19 +822,19 @@ void sta_info_free(struct ieee80211_local *local, struct sta_info *sta);
  * the _rcu version calls read_lock_rcu() and must be called
  * without it held.
  */
-int sta_info_insert(struct sta_info *sta);
-int sta_info_insert_rcu(struct sta_info *sta) __acquires(RCU);
+static int sta_info_insert(struct sta_info *sta);
+static int sta_info_insert_rcu(struct sta_info *sta) __acquires(RCU);
 
-int __must_check __sta_info_destroy(struct sta_info *sta);
-int sta_info_destroy_addr(struct ieee80211_sub_if_data *sdata,
+static int __must_check __sta_info_destroy(struct sta_info *sta);
+static int sta_info_destroy_addr(struct ieee80211_sub_if_data *sdata,
 			  const u8 *addr);
-int sta_info_destroy_addr_bss(struct ieee80211_sub_if_data *sdata,
+static int sta_info_destroy_addr_bss(struct ieee80211_sub_if_data *sdata,
 			      const u8 *addr);
 
-void sta_info_recalc_tim(struct sta_info *sta);
+static void sta_info_recalc_tim(struct sta_info *sta);
 
-int sta_info_init(struct ieee80211_local *local);
-void sta_info_stop(struct ieee80211_local *local);
+static int sta_info_init(struct ieee80211_local *local);
+static void sta_info_stop(struct ieee80211_local *local);
 
 /**
  * __sta_info_flush - flush matching STA entries from the STA table
@@ -840,7 +844,7 @@ void sta_info_stop(struct ieee80211_local *local);
  * @sdata: sdata to remove all stations from
  * @vlans: if the given interface is an AP interface, also flush VLANs
  */
-int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans);
+static int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans);
 
 /**
  * sta_info_flush - flush matching STA entries from the STA table
@@ -854,23 +858,23 @@ static inline int sta_info_flush(struct ieee80211_sub_if_data *sdata)
 	return __sta_info_flush(sdata, false);
 }
 
-void sta_set_rate_info_tx(struct sta_info *sta,
+static void sta_set_rate_info_tx(struct sta_info *sta,
 			  const struct ieee80211_tx_rate *rate,
 			  struct rate_info *rinfo);
-void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
+static void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 		   bool tidstats);
 
-u32 sta_get_expected_throughput(struct sta_info *sta);
+static u32 sta_get_expected_throughput(struct sta_info *sta);
 
-void ieee80211_sta_expire(struct ieee80211_sub_if_data *sdata,
+static void ieee80211_sta_expire(struct ieee80211_sub_if_data *sdata,
 			  unsigned long exp_time);
-u8 sta_info_tx_streams(struct sta_info *sta);
+static u8 sta_info_tx_streams(struct sta_info *sta);
 
-void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta);
-void ieee80211_sta_ps_deliver_poll_response(struct sta_info *sta);
-void ieee80211_sta_ps_deliver_uapsd(struct sta_info *sta);
+static void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta);
+static void ieee80211_sta_ps_deliver_poll_response(struct sta_info *sta);
+static void ieee80211_sta_ps_deliver_uapsd(struct sta_info *sta);
 
-unsigned long ieee80211_sta_last_active(struct sta_info *sta);
+static unsigned long ieee80211_sta_last_active(struct sta_info *sta);
 
 enum sta_stats_type {
 	STA_STATS_RATE_TYPE_INVALID = 0,

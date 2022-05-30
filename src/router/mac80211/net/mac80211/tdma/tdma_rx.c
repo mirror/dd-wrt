@@ -11,8 +11,6 @@
 #include "../aes_ccm.h"
 
 #include "pdwext.h"
-#undef EXPORT_SYMBOL
-#define EXPORT_SYMBOL(a)
 
 #define COMPR_TYPE_LZO	1
 #define COMPR_TYPE_LZMA	2
@@ -82,8 +80,7 @@ void tdma_amsdu_to_8023s(struct ieee80211_sub_if_data *sdata, struct sk_buff *sk
 #ifdef ZSTD
 			case COMPR_TYPE_ZSTD:
 #endif
-				if (decompress_wrapper)
-					outlen = decompress_wrapper(sdata, in, inlen, compression);
+				outlen = decompress_wrapper(sdata, in, inlen, compression);
 			default:
 				goto purge;
 			}
@@ -179,7 +176,6 @@ out:
 	dev_kfree_skb(skb);
 }
 
-EXPORT_SYMBOL(tdma_amsdu_to_8023s);
 
 #ifdef CPTCFG_MAC80211_TDMA_MESH
 int tdma_retr_expire(struct ieee80211_if_tdma *tdma, long timeout)
@@ -207,7 +203,6 @@ int tdma_retr_expire(struct ieee80211_if_tdma *tdma, long timeout)
 	return expired;
 }
 
-EXPORT_SYMBOL(tdma_retr_expire);
 
 static bool tdma_check_retr(struct ieee80211_if_tdma *tdma, u16 len, struct ieee80211_hdr *hdr)
 {
@@ -356,7 +351,6 @@ bool tdma_process_hdr(struct ieee80211_rx_data * rx, struct ieee80211_hdr * hdr,
 	return res;
 }
 
-EXPORT_SYMBOL(tdma_process_hdr);
 
 static void tdma_close_timeslot(struct ieee80211_sub_if_data *sdata, u8 data)
 {

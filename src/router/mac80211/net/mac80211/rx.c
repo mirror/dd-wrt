@@ -3193,7 +3193,7 @@ void ieee80211_free_radionames(struct ieee80211_sub_if_data *sdata)
 	}
 }
 
-char *add_radioname(struct ieee80211_sub_if_data *sdata, char *mac, char *radioname, int wds)
+static char *add_radioname(struct ieee80211_sub_if_data *sdata, char *mac, char *radioname, int wds)
 {
 	char *temp = NULL;
 	struct radioname_data *current_radio = sdata->radionames;
@@ -4134,9 +4134,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx,
 		CALL_RXH(ieee80211_rx_h_defragment);
 		CALL_RXH(ieee80211_rx_h_michael_mic_verify);
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
-		if (ieee80211_rx_h_decompress) {
-			CALL_RXH(ieee80211_rx_h_decompress);
-		}
+		CALL_RXH(ieee80211_rx_h_decompress);
 #endif
 		/* must be after MMIC verify so header is counted in MPDU mic */
 #ifdef CPTCFG_MAC80211_MESH

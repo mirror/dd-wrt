@@ -2,6 +2,8 @@
 /*
  * Copyright 2006, Johannes Berg <johannes@sipsolutions.net>
  */
+#ifndef LED_H
+#define LED_H
 
 #include <linux/list.h>
 #include <linux/spinlock.h>
@@ -102,3 +104,4 @@ ieee80211_tpt_led_trig_rx(struct ieee80211_local *local, int bytes)
 		local->tpt_led_trigger->rx_bytes += bytes;
 #endif
 }
+#endif

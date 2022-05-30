@@ -43,7 +43,7 @@
 #define IEEE80211_ASSOC_TIMEOUT_SHORT	(HZ / 10)
 #define IEEE80211_ASSOC_MAX_TRIES	3
 
-char *add_radioname(struct ieee80211_sub_if_data *sdata, char *mac, char *radioname, int wds);
+static char *add_radioname(struct ieee80211_sub_if_data *sdata, char *mac, char *radioname, int wds);
 
 static int max_nullfunc_tries = 2;
 module_param(max_nullfunc_tries, int, 0644);
@@ -2782,7 +2782,7 @@ static void ieee80211_beacon_connection_loss_work(struct work_struct *work)
 	}
 }
 
-static void ieee80211_csa_connection_drop_work(struct work_struct *work)
+static void mlme_ieee80211_csa_connection_drop_work(struct work_struct *work)
 {
 	struct ieee80211_sub_if_data *sdata =
 		container_of(work, struct ieee80211_sub_if_data,
@@ -3850,7 +3850,7 @@ notify_driver:
 	drv_mgd_complete_tx(sdata->local, sdata, &info);
 }
 
-static void ieee80211_rx_bss_info(struct ieee80211_sub_if_data *sdata,
+static void mlme_ieee80211_rx_bss_info(struct ieee80211_sub_if_data *sdata,
 				  struct ieee80211_mgmt *mgmt, size_t len,
 				  struct ieee80211_rx_status *rx_status)
 {
@@ -3919,7 +3919,7 @@ static void ieee80211_rx_mgmt_probe_resp(struct ieee80211_sub_if_data *sdata,
 	if (elems.aironet) {
 		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
 	}
-	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
+	mlme_ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
 	if (ifmgd->associated &&
 	    ether_addr_equal(mgmt->bssid, ifmgd->associated->bssid))
@@ -4131,7 +4131,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 			radio = add_radioname(sdata, &mgmt->sa[0], NULL, -1);
 		}
 
-		ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
+		mlme_ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
 		if (elems.dtim_period)
 			ifmgd->dtim_period = elems.dtim_period;
@@ -4277,7 +4277,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 	ifmgd->beacon_crc = ncrc;
 	ifmgd->beacon_crc_valid = true;
 
-	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
+	mlme_ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
 	ieee80211_sta_process_chanswitch(sdata, rx_status->mactime,
 					 rx_status->device_timestamp,
@@ -4509,7 +4509,7 @@ void ieee80211_sta_connection_lost(struct ieee80211_sub_if_data *sdata,
 				    reason, false);
 }
 
-static int ieee80211_auth(struct ieee80211_sub_if_data *sdata)
+static int mlme_ieee80211_auth(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
@@ -4691,7 +4691,7 @@ void ieee80211_sta_work(struct ieee80211_sub_if_data *sdata)
 			 * userspace didn't do it, so kill the auth data
 			 */
 			ieee80211_destroy_auth_data(sdata, false);
-		} else if (ieee80211_auth(sdata)) {
+		} else if (mlme_ieee80211_auth(sdata)) {
 			u8 bssid[ETH_ALEN];
 			struct ieee80211_event event = {
 				.type = MLME_EVENT,
@@ -4955,7 +4955,7 @@ void ieee80211_sta_setup_sdata(struct ieee80211_sub_if_data *sdata)
 	INIT_WORK(&ifmgd->beacon_connection_loss_work,
 		  ieee80211_beacon_connection_loss_work);
 	INIT_WORK(&ifmgd->csa_connection_drop_work,
-		  ieee80211_csa_connection_drop_work);
+		  mlme_ieee80211_csa_connection_drop_work);
 	INIT_WORK(&ifmgd->request_smps_work, ieee80211_request_smps_mgd_work);
 	INIT_DELAYED_WORK(&ifmgd->tdls_peer_del_work,
 			  ieee80211_tdls_peer_del_work);
@@ -5607,7 +5607,7 @@ int ieee80211_mgd_auth(struct ieee80211_sub_if_data *sdata,
 	if (err)
 		goto err_clear;
 
-	err = ieee80211_auth(sdata);
+	err = mlme_ieee80211_auth(sdata);
 	if (err) {
 		sta_info_destroy_addr(sdata, req->bss->bssid);
 		goto err_clear;
