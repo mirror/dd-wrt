@@ -1471,20 +1471,20 @@ void ieee80211_free_hw(struct ieee80211_hw *hw)
 }
 EXPORT_SYMBOL(ieee80211_free_hw);
 
-int __init cfg80211_init(void);
-void __exit cfg80211_exit(void);
+static int __init cfg80211_init(void);
+static void __exit cfg80211_exit(void);
 
-int __init lib80211_init(void);
-void __exit lib80211_exit(void);
+static int __init lib80211_init(void);
+static void __exit lib80211_exit(void);
 
-int __init lib80211_crypto_ccmp_init(void);
-void __exit lib80211_crypto_ccmp_exit(void);
+static int __init lib80211_crypto_ccmp_init(void);
+static void __exit lib80211_crypto_ccmp_exit(void);
 
-int __init lib80211_crypto_tkip_init(void);
-void __exit lib80211_crypto_tkip_exit(void);
+static int __init lib80211_crypto_tkip_init(void);
+static void __exit lib80211_crypto_tkip_exit(void);
 
-int __init lib80211_crypto_wep_init(void);
-void __exit lib80211_crypto_wep_exit(void);
+static int __init lib80211_crypto_wep_init(void);
+static void __exit lib80211_crypto_wep_exit(void);
 
 static int __init ieee80211_init(void)
 {

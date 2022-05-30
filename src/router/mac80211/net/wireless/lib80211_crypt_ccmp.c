@@ -434,12 +434,12 @@ static struct lib80211_crypto_ops lib80211_crypt_ccmp = {
 	.owner = THIS_MODULE,
 };
 
-int __init lib80211_crypto_ccmp_init(void)
+static int __init lib80211_crypto_ccmp_init(void)
 {
 	return lib80211_register_crypto_ops(&lib80211_crypt_ccmp);
 }
 
-void __exit lib80211_crypto_ccmp_exit(void)
+static void __exit lib80211_crypto_ccmp_exit(void)
 {
 	lib80211_unregister_crypto_ops(&lib80211_crypt_ccmp);
 }
