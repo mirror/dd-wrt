@@ -4,46 +4,46 @@
 
 // ***COMMON SHARE LABEL *******//
 
-lang_charset.set="iso-8859-2";
+lang_charset.set="utf-8";
 
 share.firmware="Firmware";
-share.time="Idõ";
-share.interipaddr="WAN-IP-cím";
-share.more="Több...";
-share.help="Segítség";
-share.enable="Engedélyez";
-share.enabled="Engedélyezve";
+share.time="IdÅ‘";
+share.interipaddr="WAN-IP-cÃ­m";
+share.more="TÃ¶bb...";
+share.help="SegÃ­tsÃ©g";
+share.enable="EngedÃ©lyez";
+share.enabled="EngedÃ©lyezve";
 share.disable="Tilt";
 share.disabled="Tiltva";
-share.usrname="Felhasználónév";
-share.passwd="Jelszó";
-share.hostname="Állomásnév";
-share.domainname="Domain név";
-share.wandomainname="WAN Domain Név";
-share.landomainname="LAN Domain Név";
-share.statu="Státusz";
-share.start="Indítás";
-share.end="Befejezés";
+share.usrname="FelhasznÃ¡lÃ³nÃ©v";
+share.passwd="JelszÃ³";
+share.hostname="ÃllomÃ¡snÃ©v";
+share.domainname="Domain nÃ©v";
+share.wandomainname="WAN Domain NÃ©v";
+share.landomainname="LAN Domain NÃ©v";
+share.statu="StÃ¡tusz";
+share.start="IndÃ­tÃ¡s";
+share.end="BefejezÃ©s";
 share.proto="Protokoll";
-share.ip="IP-cím";
-share.ipv4="IPv4-cím";
-share.ipv6="IPv6-cím";
-share.mac="MAC-cím";
+share.ip="IP-cÃ­m";
+share.ipv4="IPv4-cÃ­m";
+share.ipv6="IPv6-cÃ­m";
+share.mac="MAC-cÃ­m";
 share.none="Semmit";
 share.none2="Nem";
-share.both="Mindkettõ";
-share.del="Törlés";
-share.remove="Eltávolít";
-share.descr="Leírás";
-share.from="Tól";
+share.both="MindkettÅ‘";
+share.del="TÃ¶rlÃ©s";
+share.remove="EltÃ¡volÃ­t";
+share.descr="LeÃ­rÃ¡s";
+share.from="TÃ³l";
 share.to="Ig";
-share.about="Névjegy";
+share.about="NÃ©vjegy";
 share.everyday="Minden nap";
-share.sun="Vasárnap";
+share.sun="VasÃ¡rnap";
 share.sun_s="Vas";
 share.sun_s1="V";
-share.mon="Hétfõ";
-share.mon_s="Hfõ";
+share.mon="HÃ©tfÅ‘";
+share.mon_s="HfÅ‘";
 share.mon_s1="H";
 share.tue="Kedd";
 share.tue_s="Ked";
@@ -51,26 +51,26 @@ share.tue_s1="K";
 share.wed="Szerda";
 share.wed_s="Sze";
 share.wed_s1="Se";
-share.thu="Csütörtök";
-share.thu_s="Csü";
+share.thu="CsÃ¼tÃ¶rtÃ¶k";
+share.thu_s="CsÃ¼";
 share.thu_s1="Cs";
-share.fri="Péntek";
-share.fri_s="Pén";
+share.fri="PÃ©ntek";
+share.fri_s="PÃ©n";
 share.fri_s1="P";
 share.sat="Szombat";
 share.sat_s="Szo";
 share.sat_s1="Sz";
-share.expires="Lejár";
+share.expires="LejÃ¡r";
 share.yes="Igen";
 share.no="Nem";
 share.filter="Filter";
 share.deny="Megtilt";
-share.range="Tartomány";
-share.use="Használat";
+share.range="TartomÃ¡ny";
+share.use="HasznÃ¡lat";
 share.mins="min";
 share.secs="s";
-share.routername="Router Név";
-share.manual="Manuális";
+share.routername="Router NÃ©v";
+share.manual="ManuÃ¡lis";
 share.port="Port";
 share.ssid="SSID";
 share.channel="Csatorna";
@@ -80,110 +80,110 @@ share.noise="Zaj";
 share.beacon="Beacon";
 share.openn="Nyitva";
 share.dtim="DTIM";
-share.rates="Arány";
+share.rates="ArÃ¡ny";
 share.low="Alacsony";
-share.medium="Közepes";
+share.medium="KÃ¶zepes";
 share.high="Magas";
-share.option="Beállítások";
-share.rule="Szabály";
+share.option="BeÃ¡llÃ­tÃ¡sok";
+share.rule="SzabÃ¡ly";
 share.lan="LAN";
 share.point2point="Pont a Ponthoz (P2P)";
 share.nat="NAT";
-share.subnet="Alhálózati maszk";
+share.subnet="AlhÃ¡lÃ³zati maszk";
 share.unmask="Unmask";
-share.deflt="Alapértelmezett";  //don't use share.default!!!
+share.deflt="AlapÃ©rtelmezett";  //don't use share.default!!!
 share.all="Minden";
 share.auto="Automatikus";
 share.right="Jobb";
 share.left="Bal";
 share.share_key="Osztott kulcs";
-share.inter="Intervallum (másodpercekben)";
-share.srv="Szolgáltatás név";
-share.port_range="Port tartomány";
-share.priority="Prioritás";
-share.gateway="Átjáró";
-share.intrface="Interfész";  //don't use share.interface, Mozilla problem!!!
-share.pintrface="Fizikai Interfész";
-share.vintrface="Virtuális Interfész";
-share.router="Forgalomirányító";
-share.static_lease="Statikus bérlet";
+share.inter="Intervallum (mÃ¡sodpercekben)";
+share.srv="SzolgÃ¡ltatÃ¡s nÃ©v";
+share.port_range="Port tartomÃ¡ny";
+share.priority="PrioritÃ¡s";
+share.gateway="ÃtjÃ¡rÃ³";
+share.intrface="InterfÃ©sz";  //don't use share.interface, Mozilla problem!!!
+share.pintrface="Fizikai InterfÃ©sz";
+share.vintrface="VirtuÃ¡lis InterfÃ©sz";
+share.router="ForgalomirÃ¡nyÃ­tÃ³";
+share.static_lease="Statikus bÃ©rlet";
 share.srvip="Szerver IP";
 share.srvipname="Szerver IP";
 share.localdns="Helyi DNS";
 share.minutes="Percek";
-share.oui="OUI Keresés";
+share.oui="OUI KeresÃ©s";
 share.sttic="Statikus";
 share.dynamic="Dinamikus";
 share.connecting="Csatlakozik";
-share.connect="Csatlakozás";
+share.connect="CsatlakozÃ¡s";
 share.connected="Csatlakozva";
-share.disconnect="Bontás";
+share.disconnect="BontÃ¡s";
 share.disconnected="Bontva";
-share.info="Információ";
-share.state="Állapot";
-share.mode="Mód";
-share.encrypt="Titkosítás";
+share.info="InformÃ¡ciÃ³";
+share.state="Ãllapot";
+share.mode="MÃ³d";
+share.encrypt="TitkosÃ­tÃ¡s";
 share.key="Kulcs";
 share.wireless="WLAN";
 share.dhcp="DHCP";
-share.styl="Stílus";
+share.styl="StÃ­lus";
 share.err="hiba";
-share.errs="hibák";
-share.meters="méter";
+share.errs="hibÃ¡k";
+share.meters="mÃ©ter";
 share.full="Teljes (20 MHz)";
-share.half="Fél (10 MHz)";
+share.half="FÃ©l (10 MHz)";
 share.quarter="Negyed (5 MHz)";
-share.seealso="Lásd még";
+share.seealso="LÃ¡sd mÃ©g";
 share.never="soha";
 share.unknown="Ismeretlen";
-share.expired="lejárt";
+share.expired="lejÃ¡rt";
 share.standard="Standard";
-share.user="Felhasználó";
+share.user="FelhasznÃ¡lÃ³";
 
-sbutton.save="Mentés";
+sbutton.save="MentÃ©s";
 sbutton.apply="Alkalmaz";
 sbutton.saving="Mentve";
-sbutton.cmd="Futtatás";
-sbutton.cancel="Változtatások visszavonása";
-sbutton.refres="Frissítés";
-sbutton.clos="Bezár";
-sbutton.del="Törlés";
-sbutton.continu="Folytatás";
-sbutton.add="Hozzáad";
-sbutton.remove="Eltávolít";
-sbutton.modify="Módosít";
-sbutton.deleted="Törölve";
-sbutton.delall="Mindent töröl";
-sbutton.autorefresh="Automatikus-frissítés fut";
-sbutton.backup="Biztonsági másolat kiírása";
-sbutton.restore="Visszaállít";
-sbutton.cptotext="Szerkesztés";
-sbutton.runcmd="Parancs futtatása";
-sbutton.startup="Startup mentése";
-sbutton.firewall="Tûzfal mentése";
-sbutton.wol="Felébresztés";
-sbutton.add_wol="Állomás hozzáadása";
-sbutton.manual_wol="Manuális felébresztés";
-sbutton.summary="Összefoglalás";
-sbutton.filterIP="Kliensek listájának szerkesztése";
-sbutton.filterMac="MAC filterek listájának szerkesztése";
-sbutton.filterSer="Szolgáltatás hozzáadása/szerkesztése";
-sbutton.reboot="Router újraindítás";
-sbutton.help="   Segítség  ";
-sbutton.wl_client_mac="Vezetéknélküli kliensek MAC listája";
-sbutton.update_filter="Filter listák frissítése";
-sbutton.join="Csatlakozás";
-sbutton.log_in="Bejövõ naplózás";
-sbutton.log_out="Kimenõ naplózás";
-sbutton.edit_srv="Szolgáltatás hozzáadása/szerkesztése";
-sbutton.routingtab="Forgalomirányítási tábla mutatása";
-sbutton.wanmac="Aktuális PC MAC cím lekérése";
-sbutton.dhcprel="DHCP szabadon bocsátása";
-sbutton.dhcpren="DHCP megújítása";
-sbutton.survey="WLAN Keresés";
+sbutton.cmd="FuttatÃ¡s";
+sbutton.cancel="VÃ¡ltoztatÃ¡sok visszavonÃ¡sa";
+sbutton.refres="FrissÃ­tÃ©s";
+sbutton.clos="BezÃ¡r";
+sbutton.del="TÃ¶rlÃ©s";
+sbutton.continu="FolytatÃ¡s";
+sbutton.add="HozzÃ¡ad";
+sbutton.remove="EltÃ¡volÃ­t";
+sbutton.modify="MÃ³dosÃ­t";
+sbutton.deleted="TÃ¶rÃ¶lve";
+sbutton.delall="Mindent tÃ¶rÃ¶l";
+sbutton.autorefresh="Automatikus-frissÃ­tÃ©s fut";
+sbutton.backup="BiztonsÃ¡gi mÃ¡solat kiÃ­rÃ¡sa";
+sbutton.restore="VisszaÃ¡llÃ­t";
+sbutton.cptotext="SzerkesztÃ©s";
+sbutton.runcmd="Parancs futtatÃ¡sa";
+sbutton.startup="Startup mentÃ©se";
+sbutton.firewall="TÅ±zfal mentÃ©se";
+sbutton.wol="FelÃ©bresztÃ©s";
+sbutton.add_wol="ÃllomÃ¡s hozzÃ¡adÃ¡sa";
+sbutton.manual_wol="ManuÃ¡lis felÃ©bresztÃ©s";
+sbutton.summary="Ã–sszefoglalÃ¡s";
+sbutton.filterIP="Kliensek listÃ¡jÃ¡nak szerkesztÃ©se";
+sbutton.filterMac="MAC filterek listÃ¡jÃ¡nak szerkesztÃ©se";
+sbutton.filterSer="SzolgÃ¡ltatÃ¡s hozzÃ¡adÃ¡sa/szerkesztÃ©se";
+sbutton.reboot="Router ÃºjraindÃ­tÃ¡s";
+sbutton.help="   SegÃ­tsÃ©g  ";
+sbutton.wl_client_mac="VezetÃ©knÃ©lkÃ¼li kliensek MAC listÃ¡ja";
+sbutton.update_filter="Filter listÃ¡k frissÃ­tÃ©se";
+sbutton.join="CsatlakozÃ¡s";
+sbutton.log_in="BejÃ¶vÅ‘ naplÃ³zÃ¡s";
+sbutton.log_out="KimenÅ‘ naplÃ³zÃ¡s";
+sbutton.edit_srv="SzolgÃ¡ltatÃ¡s hozzÃ¡adÃ¡sa/szerkesztÃ©se";
+sbutton.routingtab="ForgalomirÃ¡nyÃ­tÃ¡si tÃ¡bla mutatÃ¡sa";
+sbutton.wanmac="AktuÃ¡lis PC MAC cÃ­m lekÃ©rÃ©se";
+sbutton.dhcprel="DHCP szabadon bocsÃ¡tÃ¡sa";
+sbutton.dhcpren="DHCP megÃºjÃ­tÃ¡sa";
+sbutton.survey="WLAN KeresÃ©s";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
-sbutton.preview="Villámnézet";
+sbutton.preview="VillÃ¡mnÃ©zet";
 sbutton.allways_on="Mindig Bekapcsolva";
 sbutton.allways_off="Mindig Kikapcsolva";
 
@@ -192,165 +192,165 @@ sbutton.allways_off="Mindig Kikapcsolva";
 
 // ************ COMMON ERROR MESSAGES  *********************//
 
-errmsg.err0="Adjon meg egy felhasznánevet!";
+errmsg.err0="Adjon meg egy felhasznÃ¡nevet!";
 errmsg.err1="Adjon meg egy Router nevet!";
-errmsg.err2="Tartományon kívül, kérem állítsa be a kezdõ IP címet vagy a felhasználók számát.";
-errmsg.err3="Legalább egy napot ki kell választania.";
-errmsg.err4="A befejezés idõpontjának nagyobbnak kell lennie a kezdés idejénél";
-errmsg.err5="A MAC cím hossza nem megfelelõ";
-errmsg.err6="Adjon meg egy jelszót!";
+errmsg.err2="TartomÃ¡nyon kÃ­vÃ¼l, kÃ©rem Ã¡llÃ­tsa be a kezdÅ‘ IP cÃ­met vagy a felhasznÃ¡lÃ³k szÃ¡mÃ¡t.";
+errmsg.err3="LegalÃ¡bb egy napot ki kell vÃ¡lasztania.";
+errmsg.err4="A befejezÃ©s idÅ‘pontjÃ¡nak nagyobbnak kell lennie a kezdÃ©s idejÃ©nÃ©l";
+errmsg.err5="A MAC cÃ­m hossza nem megfelelÅ‘";
+errmsg.err6="Adjon meg egy jelszÃ³t!";
 errmsg.err7="Adjon meg egy hoszt nevet!";
-errmsg.err8="Adjon meg egy IP címét vagy Domain nevet!";
-errmsg.err9="Illegális DMZ IP cím.";
-errmsg.err10="Az elfogadott jelszó nem egyezik a begépelt jelszóval. Kérem adja meg újra a jelszót.";
-errmsg.err11="A jelszó nem tartalmazhat Szóköz karaktereket.";
+errmsg.err8="Adjon meg egy IP cÃ­mÃ©t vagy Domain nevet!";
+errmsg.err9="IllegÃ¡lis DMZ IP cÃ­m.";
+errmsg.err10="Az elfogadott jelszÃ³ nem egyezik a begÃ©pelt jelszÃ³val. KÃ©rem adja meg Ãºjra a jelszÃ³t.";
+errmsg.err11="A jelszÃ³ nem tartalmazhat SzÃ³kÃ¶z karaktereket.";
 errmsg.err12="Adjon meg egy parancsot, amelyet futtatni szeretne!";
 errmsg.err13="Upgrade sikertelen.";
-errmsg.err45="Ez a funkció HTTPS alatt nem elérhetõ! Kérem csatlakozzon HTTP módban.";
-errmsg.err46="HTTPS alatt nem elérhetõ";
+errmsg.err45="Ez a funkciÃ³ HTTPS alatt nem elÃ©rhetÅ‘! KÃ©rem csatlakozzon HTTP mÃ³dban.";
+errmsg.err46="HTTPS alatt nem elÃ©rhetÅ‘";
 
 
 //common.js error messages
-errmsg.err14=" az érték tartományon kívül van [";
-errmsg.err15="A WAN MAC cím a megengedett tartományon kívül van [00 - ff].";
-errmsg.err16="A MAC cím második karakterének számnak kell lennie : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="A MAC cím helytelen.";
-errmsg.err18="A MAC cím hossza helytelen.";
-errmsg.err19="A MAC cím nem lehet a szórási cím.";
-errmsg.err20="A MAC címet az alábbi formában (xx:xx:xx:xx:xx:xx) adja meg.";
-errmsg.err21="Helytelen MAC cím formátum.";
-errmsg.err22="A WAN MAC címe helytelen.";
-errmsg.err23="Helytelen HEXA érték.";
-errmsg.err24=" MAC címben megtaláltva ";
-errmsg.err25="A kulcs értéke nem megfelelõ.";
-errmsg.err26="A kulcs hossza nem megfelelõ.";
-errmsg.err27="Érvénytelen alhálózati maszk.";
-errmsg.err28=" érvénytelen karaktereket tartalmaz, [ 0 - 9 ] intervallumon belül kell lennie.";
-errmsg.err29=" érvénytelen ascii kódot tartalmaz.";
-errmsg.err30=" érvénytelen hexadecimális számjegyeket tartalmaz.";
-errmsg.err31=" érték érvénytelen.";
-errmsg.err32="Az IP cím és az átjáró alhálózati maszkja különbözik.";
-errmsg.err33="Az IP cím és az átjáró nem lehet azonos.";
-errmsg.err34=" nem tarlalmazhat Szóköz karaktereket.";
+errmsg.err14=" az Ã©rtÃ©k tartomÃ¡nyon kÃ­vÃ¼l van [";
+errmsg.err15="A WAN MAC cÃ­m a megengedett tartomÃ¡nyon kÃ­vÃ¼l van [00 - ff].";
+errmsg.err16="A MAC cÃ­m mÃ¡sodik karakterÃ©nek szÃ¡mnak kell lennie : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="A MAC cÃ­m helytelen.";
+errmsg.err18="A MAC cÃ­m hossza helytelen.";
+errmsg.err19="A MAC cÃ­m nem lehet a szÃ³rÃ¡si cÃ­m.";
+errmsg.err20="A MAC cÃ­met az alÃ¡bbi formÃ¡ban (xx:xx:xx:xx:xx:xx) adja meg.";
+errmsg.err21="Helytelen MAC cÃ­m formÃ¡tum.";
+errmsg.err22="A WAN MAC cÃ­me helytelen.";
+errmsg.err23="Helytelen HEXA Ã©rtÃ©k.";
+errmsg.err24=" MAC cÃ­mben megtalÃ¡ltva ";
+errmsg.err25="A kulcs Ã©rtÃ©ke nem megfelelÅ‘.";
+errmsg.err26="A kulcs hossza nem megfelelÅ‘.";
+errmsg.err27="Ã‰rvÃ©nytelen alhÃ¡lÃ³zati maszk.";
+errmsg.err28=" Ã©rvÃ©nytelen karaktereket tartalmaz, [ 0 - 9 ] intervallumon belÃ¼l kell lennie.";
+errmsg.err29=" Ã©rvÃ©nytelen ascii kÃ³dot tartalmaz.";
+errmsg.err30=" Ã©rvÃ©nytelen hexadecimÃ¡lis szÃ¡mjegyeket tartalmaz.";
+errmsg.err31=" Ã©rtÃ©k Ã©rvÃ©nytelen.";
+errmsg.err32="Az IP cÃ­m Ã©s az Ã¡tjÃ¡rÃ³ alhÃ¡lÃ³zati maszkja kÃ¼lÃ¶nbÃ¶zik.";
+errmsg.err33="Az IP cÃ­m Ã©s az Ã¡tjÃ¡rÃ³ nem lehet azonos.";
+errmsg.err34=" nem tarlalmazhat SzÃ³kÃ¶z karaktereket.";
 
 //Wol.asp error messages
-errmsg.err35="Egy MAC címet kell megadnia a futtatáshoz.";
-errmsg.err36="Meg kell adnia egy hálózati szórási címet a futtatáshoz.";
-errmsg.err37="Meg kell adnia egy UDP portot a futtatáshoz.";
+errmsg.err35="Egy MAC cÃ­met kell megadnia a futtatÃ¡shoz.";
+errmsg.err36="Meg kell adnia egy hÃ¡lÃ³zati szÃ³rÃ¡si cÃ­met a futtatÃ¡shoz.";
+errmsg.err37="Meg kell adnia egy UDP portot a futtatÃ¡shoz.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Kérem, adjon meg egy Osztott kulcsot!";
-errmsg.err39="Érvénytelen kulcs, 8 és 63 ASCII karakterek között kell lennie vagy 64 hexadecimális jegy.";
+errmsg.err38="KÃ©rem, adjon meg egy Osztott kulcsot!";
+errmsg.err39="Ã‰rvÃ©nytelen kulcs, 8 Ã©s 63 ASCII karakterek kÃ¶zÃ¶tt kell lennie vagy 64 hexadecimÃ¡lis jegy.";
 errmsg.err40="Egy kulcsot kell megadnia a Kulcs-nak";
-errmsg.err41="Érvénytelen hossz a kulcsban ";
+errmsg.err41="Ã‰rvÃ©nytelen hossz a kulcsban ";
 errmsg.err43="Rekey Intervallum";
 
 //config.asp error messages
-errmsg.err42="Kérem válasszon egy konfigurációs fájlt a visszaállításhoz.";
+errmsg.err42="KÃ©rem vÃ¡lasszon egy konfigurÃ¡ciÃ³s fÃ¡jlt a visszaÃ¡llÃ­tÃ¡shoz.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Az összes ellenõrzés száma meghaladja a 256-at.";
+errmsg.err44="Az Ã¶sszes ellenÅ‘rzÃ©s szÃ¡ma meghaladja a 256-at.";
 
 //Site_Survey.asp error messages
-errmsg.err47="érvénytelen SSID.";
+errmsg.err47="Ã©rvÃ©nytelen SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="A WDS nem kompatibilis a router jelenlegi konfigurációjával. Kérem ellenõrizze a következõ pontokat: \n  * WLAN-módnak AP kell lennie \n * WPA2 nem támogatott WDS alatt \n * WLAN hálózat B-only (csak B mód) nem támogatott WDS alatt";
+errmsg.err48="A WDS nem kompatibilis a router jelenlegi konfigurÃ¡ciÃ³jÃ¡val. KÃ©rem ellenÅ‘rizze a kÃ¶vetkezÅ‘ pontokat: \n  * WLAN-mÃ³dnak AP kell lennie \n * WPA2 nem tÃ¡mogatott WDS alatt \n * WLAN hÃ¡lÃ³zat B-only (csak B mÃ³d) nem tÃ¡mogatott WDS alatt";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="A RADIUS csak AP módban érhetõ el.";
+errmsg.err49="A RADIUS csak AP mÃ³dban Ã©rhetÅ‘ el.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="Kérem adjon meg egy SSID-t.";
+errmsg.err50="KÃ©rem adjon meg egy SSID-t.";
 
 // Management.asp error messages
-errmsg.err51="A Router jelenleg az alapértelmezett jelszavával van beállítva. \
-			Biztonság növelése érdekében meg kell változtatnia a jelszót mielõtt a Remote-Management funkciót engedélyezné. \
-			Kattintson az OK gombra a jelszó megváltoztatásához. Kattintson a Mégse gombra a Remote Management funkció tiltásához.";
-errmsg.err52="A jelszó visszaigazolás nem felel meg.";
+errmsg.err51="A Router jelenleg az alapÃ©rtelmezett jelszavÃ¡val van beÃ¡llÃ­tva. \
+			BiztonsÃ¡g nÃ¶velÃ©se Ã©rdekÃ©ben meg kell vÃ¡ltoztatnia a jelszÃ³t mielÅ‘tt a Remote-Management funkciÃ³t engedÃ©lyeznÃ©. \
+			Kattintson az OK gombra a jelszÃ³ megvÃ¡ltoztatÃ¡sÃ¡hoz. Kattintson a MÃ©gse gombra a Remote Management funkciÃ³ tiltÃ¡sÃ¡hoz.";
+errmsg.err52="A jelszÃ³ visszaigazolÃ¡s nem felel meg.";
 
 // Port_Services.asp error messages
-errmsg.err53="Ha minden beavatkozást befejezett, kattintson az Alkalmaz gombra a beállítások elmentéséhez.";
-errmsg.err54="Kérem adjon meg egy Szolgáltatás nevet.";
-errmsg.err55="A szolgáltalás neve létezik.";
+errmsg.err53="Ha minden beavatkozÃ¡st befejezett, kattintson az Alkalmaz gombra a beÃ¡llÃ­tÃ¡sok elmentÃ©sÃ©hez.";
+errmsg.err54="KÃ©rem adjon meg egy SzolgÃ¡ltatÃ¡s nevet.";
+errmsg.err55="A szolgÃ¡ltalÃ¡s neve lÃ©tezik.";
 
 // QoS.asp error messages
-errmsg.err56="A port értéke a megfelelõ tartományom kívül esik [0 - 65535]";
+errmsg.err56="A port Ã©rtÃ©ke a megfelelÅ‘ tartomÃ¡nyom kÃ­vÃ¼l esik [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="Bejegyzés törlése?";
+errmsg.err57="BejegyzÃ©s tÃ¶rlÃ©se?";
 
 // Status_Lan.asp error messages
-errmsg.err58="A bérlet törléséhez kattintson";
+errmsg.err58="A bÃ©rlet tÃ¶rlÃ©sÃ©hez kattintson";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Nem elérhetõ!  Kérem engedélyezze a Vezetéknélküli hálózatot.";
+errmsg.err59="Nem elÃ©rhetÅ‘!  KÃ©rem engedÃ©lyezze a VezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zatot.";
 
 //Upgrade.asp error messages
-errmsg.err60="Kérem válasszon egy fájl, amelyet fel szeretne tölteni a routerre.";
-errmsg.err61="Érvénytelen Image formátum.";
+errmsg.err60="KÃ©rem vÃ¡lasszon egy fÃ¡jl, amelyet fel szeretne tÃ¶lteni a routerre.";
+errmsg.err61="Ã‰rvÃ©nytelen Image formÃ¡tum.";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 
-bmenu.setup="Beálltás";
-bmenu.setupbasic="Alap beálltások";
+bmenu.setup="BeÃ¡lltÃ¡s";
+bmenu.setupbasic="Alap beÃ¡lltÃ¡sok";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="MAC cím klónozás";
-bmenu.setuprouting="Haladó forgalomirányítás";
+bmenu.setupmacclone="MAC cÃ­m klÃ³nozÃ¡s";
+bmenu.setuprouting="HaladÃ³ forgalomirÃ¡nyÃ­tÃ¡s";
 bmenu.setupvlan="VLANok";
 bmenu.setupeop="EoIP Tunnel";
-bmenu.networking="Hálózatok";
+bmenu.networking="HÃ¡lÃ³zatok";
 
-bmenu.wireless="Vezetéknélküli ";
-bmenu.wirelessBasic="Alap beálltások";
+bmenu.wireless="VezetÃ©knÃ©lkÃ¼li ";
+bmenu.wirelessBasic="Alap beÃ¡lltÃ¡sok";
 bmenu.wirelessRadius="RADIUS";
-bmenu.wirelessSecurity="Vezetéknélküli biztonság";
+bmenu.wirelessSecurity="VezetÃ©knÃ©lkÃ¼li biztonsÃ¡g";
 bmenu.wirelessMac="MAC filter";
-bmenu.wirelessAdvanced="Haladó beállítások";
+bmenu.wirelessAdvanced="HaladÃ³ beÃ¡llÃ­tÃ¡sok";
 bmenu.wirelessAdvancedwl0="wl0-Advanced";
 bmenu.wirelessAdvancedwl1="wl1-Advanced";
 bmenu.wirelessAdvancedwl2="wl2-Advanced";
 bmenu.wirelessWds="WDS";
 
-bmenu.security="Biztonság";
-bmenu.firwall="Tûzfal";
+bmenu.security="BiztonsÃ¡g";
+bmenu.firwall="TÅ±zfal";
 bmenu.vpn="VPN Passthrough";
 
-bmenu.accrestriction="Hozzáférés-korlátozás";
-bmenu.webaccess="WAN hozzáférés";
+bmenu.accrestriction="HozzÃ¡fÃ©rÃ©s-korlÃ¡tozÃ¡s";
+bmenu.webaccess="WAN hozzÃ¡fÃ©rÃ©s";
 
 
 bmenu.applications="NAT / QoS";
-bmenu.applicationsprforwarding="Porttartomány továbbitás";
-bmenu.applicationspforwarding="Port továbbitás (forwarding)";
-bmenu.applicationsptriggering="Port triggerelés";
+bmenu.applicationsprforwarding="PorttartomÃ¡ny tovÃ¡bbitÃ¡s";
+bmenu.applicationspforwarding="Port tovÃ¡bbitÃ¡s (forwarding)";
+bmenu.applicationsptriggering="Port triggerelÃ©s";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="Áttekintés";
-bmenu.sipathphone="Telefonkönyv";
-bmenu.sipathstatus="Státusz";
+bmenu.sipathoverview="ÃttekintÃ©s";
+bmenu.sipathphone="TelefonkÃ¶nyv";
+bmenu.sipathstatus="StÃ¡tusz";
 
 
 
-bmenu.admin="Adminisztráció";
-bmenu.adminManagement="Kezelés";
+bmenu.admin="AdminisztrÃ¡ciÃ³";
+bmenu.adminManagement="KezelÃ©s";
 bmenu.adminHotspot="Hotspot";
-bmenu.adminServices="Szolgáltatások";
+bmenu.adminServices="SzolgÃ¡ltatÃ¡sok";
 bmenu.adminAlive="Keep Alive";
-bmenu.adminLog="Napló";
+bmenu.adminLog="NaplÃ³";
 bmenu.adminDiag="Parancsok";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Gyári beállítások";
-bmenu.adminUpgrade="Firmware frissítés";
+bmenu.adminFactory="GyÃ¡ri beÃ¡llÃ­tÃ¡sok";
+bmenu.adminUpgrade="Firmware frissÃ­tÃ©s";
 bmenu.adminBackup="Backup";
 
 
-bmenu.statu="Státusz";
+bmenu.statu="StÃ¡tusz";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
@@ -363,299 +363,299 @@ bmenu.statuSysInfo="Sys-Info";
 
 alive.titl="Keep Alive";
 alive.h2="Keep Alive";
-alive.legend="Tervezett újraindítás";
-alive.sevr1="Tervezett újraindítás";
-alive.hour="Egy beállított idõponthoz";
+alive.legend="Tervezett ÃºjraindÃ­tÃ¡s";
+alive.sevr1="Tervezett ÃºjraindÃ­tÃ¡s";
+alive.hour="Egy beÃ¡llÃ­tott idÅ‘ponthoz";
 alive.legend2="WDS/Connection Watchdog";
-alive.sevr2="Watchdog engedélyezése";
-alive.IP="IP címek";
+alive.sevr2="Watchdog engedÃ©lyezÃ©se";
+alive.IP="IP cÃ­mek";
 alive.legend3="Proxy/Connection Watchdog";
-alive.sevr3="Proxy Watchdog engedélyezése";
-alive.IP2="Proxy IP cím";
+alive.sevr3="Proxy Watchdog engedÃ©lyezÃ©se";
+alive.IP2="Proxy IP cÃ­m";
 alive.port="Proxy Port";
 
 //help container
 
-halive.right2="Válassza ki, hogy mikor induljon újra a router. A Cronnak engedélyezettnek kell lennie a kezelés fülön.";
-halive.right4="Maximum 3 IP cím (egy <em>SZÓKÖZ</em> karakterrel elválasztva) megengedett.<br />IP formátum a következõ: xxx.xxx.xxx.xxx.";
+halive.right2="VÃ¡lassza ki, hogy mikor induljon Ãºjra a router. A Cronnak engedÃ©lyezettnek kell lennie a kezelÃ©s fÃ¼lÃ¶n.";
+halive.right4="Maximum 3 IP cÃ­m (egy <em>SZÃ“KÃ–Z</em> karakterrel elvÃ¡lasztva) megengedett.<br />IP formÃ¡tum a kÃ¶vetkezÅ‘: xxx.xxx.xxx.xxx.";
 
 // **************************************************************** config.asp **********************************************************************//
 
-config.titl="Biztonsági másolat és Visszaállítás";
-config.h2="Biztonsági másolat konfigurációja";
-config.legend="Biztonsági másolat beállításai";
-config.mess1="Kattintson a  \"" + sbutton.backup + "\" gombra a biztonsági másolat számítógépre történõ letöltéséhez";
-config.h22="Konfiguráció visszaállítása";
-config.legend2="Beállítások visszaállítása";
-config.mess2="Kérem válasszon egy fájlt a visszatöltéshez";
-config.mess3="V I G Y Á Z A T";
-config.mess4="Csak olyan adatokat töltsön fel,amelyek ezzel a Firmware-rel és Routermodellel készültek.";
+config.titl="BiztonsÃ¡gi mÃ¡solat Ã©s VisszaÃ¡llÃ­tÃ¡s";
+config.h2="BiztonsÃ¡gi mÃ¡solat konfigurÃ¡ciÃ³ja";
+config.legend="BiztonsÃ¡gi mÃ¡solat beÃ¡llÃ­tÃ¡sai";
+config.mess1="Kattintson a  \"" + sbutton.backup + "\" gombra a biztonsÃ¡gi mÃ¡solat szÃ¡mÃ­tÃ³gÃ©pre tÃ¶rtÃ©nÅ‘ letÃ¶ltÃ©sÃ©hez";
+config.h22="KonfigurÃ¡ciÃ³ visszaÃ¡llÃ­tÃ¡sa";
+config.legend2="BeÃ¡llÃ­tÃ¡sok visszaÃ¡llÃ­tÃ¡sa";
+config.mess2="KÃ©rem vÃ¡lasszon egy fÃ¡jlt a visszatÃ¶ltÃ©shez";
+config.mess3="V I G Y Ã Z A T";
+config.mess4="Csak olyan adatokat tÃ¶ltsÃ¶n fel,amelyek ezzel a Firmware-rel Ã©s Routermodellel kÃ©szÃ¼ltek.";
 
 //help container
 
-hconfig.right2="Akkor lehet tanácsos a visszatöltés, ha routerét a gyári beállításokra kívánja visszaállítani.<br /><br />Kattintson a <em>Biztonsági másolat kiírása</em> gombra a konfiguráció biztonsági másolatba való kiírására.";
-hconfig.right4="Kattintson a  <em>Tallózás...</em> gombra számítógépén lévõ konfigurációs fájl megkereséséhez.<br /><br />Kattintson a <em>" + sbutton.restore + "</em> gombra a jelenlegi konfiguráció felülírására az új konfigurációjára.";
+hconfig.right2="Akkor lehet tanÃ¡csos a visszatÃ¶ltÃ©s, ha routerÃ©t a gyÃ¡ri beÃ¡llÃ­tÃ¡sokra kÃ­vÃ¡nja visszaÃ¡llÃ­tani.<br /><br />Kattintson a <em>BiztonsÃ¡gi mÃ¡solat kiÃ­rÃ¡sa</em> gombra a konfigurÃ¡ciÃ³ biztonsÃ¡gi mÃ¡solatba valÃ³ kiÃ­rÃ¡sÃ¡ra.";
+hconfig.right4="Kattintson a  <em>TallÃ³zÃ¡s...</em> gombra szÃ¡mÃ­tÃ³gÃ©pÃ©n lÃ©vÅ‘ konfigurÃ¡ciÃ³s fÃ¡jl megkeresÃ©sÃ©hez.<br /><br />Kattintson a <em>" + sbutton.restore + "</em> gombra a jelenlegi konfigurÃ¡ciÃ³ felÃ¼lÃ­rÃ¡sÃ¡ra az Ãºj konfigurÃ¡ciÃ³jÃ¡ra.";
 
 
 // **************************************************************** DDNS.asp **********************************************************************//
 
 ddns.titl="Dinamikus DNS";
-ddns.h2="Dinamikus Domain Név Rendszer (DDNS)";
+ddns.h2="Dinamikus Domain NÃ©v Rendszer (DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS szolgáltatás";
-ddns.emailaddr="E-Mail cím";
-ddns.typ="Típus";
+ddns.srv="DDNS szolgÃ¡ltatÃ¡s";
+ddns.emailaddr="E-Mail cÃ­m";
+ddns.typ="TÃ­pus";
 // ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Specifikus";
 ddns.wildcard="Wildcard";
-ddns.statu="DDNS Státusz";
+ddns.statu="DDNS StÃ¡tusz";
 
 
-ddnsm.all_closed="DDNS Szerver jelenleg zárolva";
-ddnsm.all_resolving="Domain név feloldása";
-ddnsm.all_errresolv="Domain név feloldása sikertelen";
-ddnsm.all_connecting="Csatlakozás a szerverhez";
-ddnsm.all_connectfail="A szerverhez való csatlakozás sikertelen";
-ddnsm.all_disabled="DDNS funkció kikapcsolva";
-ddnsm.all_noip="Nincs WAN összeköttetés";
+ddnsm.all_closed="DDNS Szerver jelenleg zÃ¡rolva";
+ddnsm.all_resolving="Domain nÃ©v feloldÃ¡sa";
+ddnsm.all_errresolv="Domain nÃ©v feloldÃ¡sa sikertelen";
+ddnsm.all_connecting="CsatlakozÃ¡s a szerverhez";
+ddnsm.all_connectfail="A szerverhez valÃ³ csatlakozÃ¡s sikertelen";
+ddnsm.all_disabled="DDNS funkciÃ³ kikapcsolva";
+ddnsm.all_noip="Nincs WAN Ã¶sszekÃ¶ttetÃ©s";
 
 //help container
 
-hddns.right2="DDNS lehetõvé teszi, hogy elérje hálózatát domain neveket használva IP címek helyett. A szolgáltatás \
-	kezeli a változó IP címeket, és a domain információkat automatikusan frissííti. \
-	A TZO.com, ZoneEdit.com vagy DynNS.ORG címeken igényelheti ezt a szolgáltatást.";
+hddns.right2="DDNS lehetÅ‘vÃ© teszi, hogy elÃ©rje hÃ¡lÃ³zatÃ¡t domain neveket hasznÃ¡lva IP cÃ­mek helyett. A szolgÃ¡ltatÃ¡s \
+	kezeli a vÃ¡ltozÃ³ IP cÃ­meket, Ã©s a domain informÃ¡ciÃ³kat automatikusan frissÃ­Ã­ti. \
+	A TZO.com, ZoneEdit.com vagy DynNS.ORG cÃ­meken igÃ©nyelheti ezt a szolgÃ¡ltatÃ¡st.";
 
 
 
 
 // **************************************************************** Diagnostics.asp **********************************************************************//
 
-diag.titl="Diagnosztizálás";
-diag.h2="Diagnosztizálás";
+diag.titl="DiagnosztizÃ¡lÃ¡s";
+diag.h2="DiagnosztizÃ¡lÃ¡s";
 diag.legend="Parancssor";
-diag.cmd="Futtatandó parancsok";
+diag.cmd="FuttatandÃ³ parancsok";
 diag.startup="Startup";
-diag.firewall="Tûzfal";
+diag.firewall="TÅ±zfal";
 
 //help container
 
-hdiag.right2="A Web felhasználói felület segítségével parancsokat futtathat. Gépelje be a futtatni kívánt parancsot a szövegmezõbe és kattintson a <em>" + sbutton.runcmd + "</em> gombra az elfogadáshoz";
+hdiag.right2="A Web felhasznÃ¡lÃ³i felÃ¼let segÃ­tsÃ©gÃ©vel parancsokat futtathat. GÃ©pelje be a futtatni kÃ­vÃ¡nt parancsot a szÃ¶vegmezÅ‘be Ã©s kattintson a <em>" + sbutton.runcmd + "</em> gombra az elfogadÃ¡shoz";
 
 
 
 // **************************************************************** DMZ.asp **********************************************************************//
 
 dmz.titl="DMZ";
-dmz.h2="Demilitarizált zóna (DMZ)";
+dmz.h2="DemilitarizÃ¡lt zÃ³na (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="DMZ használat";
-dmz.host="DMZ hoszt IP címe";
+dmz.serv="DMZ hasznÃ¡lat";
+dmz.host="DMZ hoszt IP cÃ­me";
 
 
 //help container
 
-hdmz.right2="Az opció engedélyezése a kijelölt állomásokat az internet felöl elérhetõvé teszi.Az internet felõl minden port engedélyezve lesz";
+hdmz.right2="Az opciÃ³ engedÃ©lyezÃ©se a kijelÃ¶lt Ã¡llomÃ¡sokat az internet felÃ¶l elÃ©rhetÅ‘vÃ© teszi.Az internet felÅ‘l minden port engedÃ©lyezve lesz";
 
 
 
 // **************************************************************** Factory_Defaults.asp **********************************************************************//
 
-factdef.titl="Gyári beállítások";
-factdef.h2="Gyári beállítások";
-factdef.legend="Router beállítások törlése";
-factdef.restore="Router beállítások visszaállítása";
+factdef.titl="GyÃ¡ri beÃ¡llÃ­tÃ¡sok";
+factdef.h2="GyÃ¡ri beÃ¡llÃ­tÃ¡sok";
+factdef.legend="Router beÃ¡llÃ­tÃ¡sok tÃ¶rlÃ©se";
+factdef.restore="Router beÃ¡llÃ­tÃ¡sok visszaÃ¡llÃ­tÃ¡sa";
 
-factdef.mess1="Vigyázat! Ha az OK gombra kattint, akkor minden beállítás törlõdni fog és a gyári beállítások lesznek érvényesek.";
+factdef.mess1="VigyÃ¡zat! Ha az OK gombra kattint, akkor minden beÃ¡llÃ­tÃ¡s tÃ¶rlÅ‘dni fog Ã©s a gyÃ¡ri beÃ¡llÃ­tÃ¡sok lesznek Ã©rvÃ©nyesek.";
 
 //help container
 
-hfactdef.right1="Ez a funkció minden beállítást visszaállít a gyári beállításokra. Minden jelenlegi beállítás törlõdik.";
+hfactdef.right1="Ez a funkciÃ³ minden beÃ¡llÃ­tÃ¡st visszaÃ¡llÃ­t a gyÃ¡ri beÃ¡llÃ­tÃ¡sokra. Minden jelenlegi beÃ¡llÃ­tÃ¡s tÃ¶rlÅ‘dik.";
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
 
-filterIP.titl="PC-k listája";
-filterIP.h2="PC-k listája";
-filterIP.legend1="Adja meg a klienesk MAC címét az alábbi formátumban: xx:xx:xx:xx:xx:xx";
-filterIP.legend2="Adja meg a kliensek IP címét";
-filterIP.legend3="Adja meg a kliensek IP tartományát";
-filterIP.ip_range="IP tartomány";
+filterIP.titl="PC-k listÃ¡ja";
+filterIP.h2="PC-k listÃ¡ja";
+filterIP.legend1="Adja meg a klienesk MAC cÃ­mÃ©t az alÃ¡bbi formÃ¡tumban: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Adja meg a kliensek IP cÃ­mÃ©t";
+filterIP.legend3="Adja meg a kliensek IP tartomÃ¡nyÃ¡t";
+filterIP.ip_range="IP tartomÃ¡ny";
 
 
 // **************************************************************** Filter.asp **********************************************************************//
 
-filter.titl="Hozzáférés-korlátozás";
-filter.h2="WAN hozzáférés";
-filter.legend="Hozzáférés házirend szabályok";
-filter.pol="Házirend";
-filter.polname="Házirend név";
+filter.titl="HozzÃ¡fÃ©rÃ©s-korlÃ¡tozÃ¡s";
+filter.h2="WAN hozzÃ¡fÃ©rÃ©s";
+filter.legend="HozzÃ¡fÃ©rÃ©s hÃ¡zirend szabÃ¡lyok";
+filter.pol="HÃ¡zirend";
+filter.polname="HÃ¡zirend nÃ©v";
 filter.pcs="PC-k";
-filter.polallow="Internet hozzáférés a kiválasztott napok és órák alatt.";
+filter.polallow="Internet hozzÃ¡fÃ©rÃ©s a kivÃ¡lasztott napok Ã©s Ã³rÃ¡k alatt.";
 filter.legend2="Napok";
-filter.time="Idõpontok";
-filter.h24="24 órás";
-filter.legend3="Blokkolt szolgáltatások";
-filter.catchall="Minden P2p protokoll megakadályozása";
-filter.legend4="Websoldal blokkolás URL címszûrés segítségével";
-filter.legend5="Weboldal blokkolás kulcsszavak segítségével";
+filter.time="IdÅ‘pontok";
+filter.h24="24 Ã³rÃ¡s";
+filter.legend3="Blokkolt szolgÃ¡ltatÃ¡sok";
+filter.catchall="Minden P2p protokoll megakadÃ¡lyozÃ¡sa";
+filter.legend4="Websoldal blokkolÃ¡s URL cÃ­mszÅ±rÃ©s segÃ­tsÃ©gÃ©vel";
+filter.legend5="Weboldal blokkolÃ¡s kulcsszavak segÃ­tsÃ©gÃ©vel";
 
-filter.mess1="Házirend törlése?";
-filter.mess2="Legalább egy napot ki kell választania.";
-filter.mess3="A befejezés idõpontjának nagyobbnak kell lennie a kezdés idöpontjánál.";
+filter.mess1="HÃ¡zirend tÃ¶rlÃ©se?";
+filter.mess2="LegalÃ¡bb egy napot ki kell vÃ¡lasztania.";
+filter.mess3="A befejezÃ©s idÅ‘pontjÃ¡nak nagyobbnak kell lennie a kezdÃ©s idÃ¶pontjÃ¡nÃ¡l.";
 
 //help container
 
-hfilter.right2="Maximum 10 házirend szabályt tud felvenni. Kattintson a  <em>" + sbutton.del + "</em> gombra házirend szabály törlésére, vagy a <em>" + sbutton.summary + "</em> gombra a házirendrõl készített összefoglaló megtekintéséhez.";
-hfilter.right4="Házirend érvénybe léptetése/kiiktatása.";
-hfilter.right6="Tanácsos lenne egy nevet a házirendhez rendelni.";
-hfilter.right8="Válassza ki a hétnek azon napját, amikor a házirendet alkalmazni szeretné.";
-hfilter.right10="Kérem adja meg azt az idõpontot, amikor a házirendet alkalmazni szeretné.";
-hfilter.right12="Választhatja bizonyos szolgáltatásokhoz való hozzáférés korlátozását is. Kattintson a <em>" + sbutton.filterSer + "</em> gombra a beállítás módosításához.";
-hfilter.right14="Egyes weboldalak blokkolását URL-jük megadásával érheti el.";
-hfilter.right16="Egyes weboldalak blokkolását a weboldalban található kulcsszó megadásával érheti el.";
+hfilter.right2="Maximum 10 hÃ¡zirend szabÃ¡lyt tud felvenni. Kattintson a  <em>" + sbutton.del + "</em> gombra hÃ¡zirend szabÃ¡ly tÃ¶rlÃ©sÃ©re, vagy a <em>" + sbutton.summary + "</em> gombra a hÃ¡zirendrÅ‘l kÃ©szÃ­tett Ã¶sszefoglalÃ³ megtekintÃ©sÃ©hez.";
+hfilter.right4="HÃ¡zirend Ã©rvÃ©nybe lÃ©ptetÃ©se/kiiktatÃ¡sa.";
+hfilter.right6="TanÃ¡csos lenne egy nevet a hÃ¡zirendhez rendelni.";
+hfilter.right8="VÃ¡lassza ki a hÃ©tnek azon napjÃ¡t, amikor a hÃ¡zirendet alkalmazni szeretnÃ©.";
+hfilter.right10="KÃ©rem adja meg azt az idÅ‘pontot, amikor a hÃ¡zirendet alkalmazni szeretnÃ©.";
+hfilter.right12="VÃ¡laszthatja bizonyos szolgÃ¡ltatÃ¡sokhoz valÃ³ hozzÃ¡fÃ©rÃ©s korlÃ¡tozÃ¡sÃ¡t is. Kattintson a <em>" + sbutton.filterSer + "</em> gombra a beÃ¡llÃ­tÃ¡s mÃ³dosÃ­tÃ¡sÃ¡hoz.";
+hfilter.right14="Egyes weboldalak blokkolÃ¡sÃ¡t URL-jÃ¼k megadÃ¡sÃ¡val Ã©rheti el.";
+hfilter.right16="Egyes weboldalak blokkolÃ¡sÃ¡t a weboldalban talÃ¡lhatÃ³ kulcsszÃ³ megadÃ¡sÃ¡val Ã©rheti el.";
 
 
 
 
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
-filterSum.titl="Hozzáférés-korlátozás összefoglalója";
-filterSum.h2="Internet házirend összefoglalója ";
-filterSum.polnum="Sorszám";
-filterSum.polday="Nap idõpontja";
+filterSum.titl="HozzÃ¡fÃ©rÃ©s-korlÃ¡tozÃ¡s Ã¶sszefoglalÃ³ja";
+filterSum.h2="Internet hÃ¡zirend Ã¶sszefoglalÃ³ja ";
+filterSum.polnum="SorszÃ¡m";
+filterSum.polday="Nap idÅ‘pontja";
 
 
 
 // **************************************************************** Firewall.asp **********************************************************************//
 
-firewall.titl="Tûzfal";
-firewall.h2="Biztonság";
-firewall.legend="Tûzfal védelem";
-firewall.firewall="SPI tûzfal";
-firewall.legend2="További filterek";
-firewall.proxy="Proxy szûrés" ;
-firewall.cookies="Süti (Cookie) szûrés";
-firewall.applet="Java Appletek szûrése";
-firewall.activex="ActiveX szûrés";
-firewall.legend3="WAN kérések blokkolása";
-firewall.ping="Anonymous WAN kérések (ping) blokkolása";
-firewall.muticast="Multicast szûrés";
-filter.nat="WAN NAT átirányítás szûrés";
-filter.port113="IDENT (Port 113) szûrés";
+firewall.titl="TÅ±zfal";
+firewall.h2="BiztonsÃ¡g";
+firewall.legend="TÅ±zfal vÃ©delem";
+firewall.firewall="SPI tÅ±zfal";
+firewall.legend2="TovÃ¡bbi filterek";
+firewall.proxy="Proxy szÅ±rÃ©s" ;
+firewall.cookies="SÃ¼ti (Cookie) szÅ±rÃ©s";
+firewall.applet="Java Appletek szÅ±rÃ©se";
+firewall.activex="ActiveX szÅ±rÃ©s";
+firewall.legend3="WAN kÃ©rÃ©sek blokkolÃ¡sa";
+firewall.ping="Anonymous WAN kÃ©rÃ©sek (ping) blokkolÃ¡sa";
+firewall.muticast="Multicast szÅ±rÃ©s";
+filter.nat="WAN NAT Ã¡tirÃ¡nyÃ­tÃ¡s szÅ±rÃ©s";
+filter.port113="IDENT (Port 113) szÅ±rÃ©s";
 
 //help container
 
-hfirewall.right2="Kapcsolja be vagy ki az SPI tûzfalat.";
+hfirewall.right2="Kapcsolja be vagy ki az SPI tÅ±zfalat.";
 
 
 
 // **************************************************************** Forward.asp **********************************************************************//
 
-prforward.titl="Porttartomány továbbitás (Forwarding)";
-prforward.h2="Porttartomány továbbitás (Forwarding)";
-prforward.legend="Továbbítások";
-prforward.app="Alkalmazás";
+prforward.titl="PorttartomÃ¡ny tovÃ¡bbitÃ¡s (Forwarding)";
+prforward.h2="PorttartomÃ¡ny tovÃ¡bbitÃ¡s (Forwarding)";
+prforward.legend="TovÃ¡bbÃ­tÃ¡sok";
+prforward.app="AlkalmazÃ¡s";
 
 //help container
 
-hprforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy\
-	helyesen mûködjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. \
-	Ha egy kérés érkezik a kiválasztott portra az internet felõl, a router továbbirányítja az adatot a megadott számítógépnek. \
-	Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölõpipát:  <em>" + share.enable +"</em> .";
+hprforward.right2="Egyes alkalmazÃ¡soknak szÃ¼ksÃ©gÃ¼k van bizonyos portok megnyitÃ¡sÃ¡ra, azÃ©rt hogy\
+	helyesen mÅ±kÃ¶djenek. Ilyen alkalmazÃ¡sok kÃ¶rÃ©be tartoznak szerverek Ã©s egyes online jÃ¡tÃ©kok. \
+	Ha egy kÃ©rÃ©s Ã©rkezik a kivÃ¡lasztott portra az internet felÅ‘l, a router tovÃ¡bbirÃ¡nyÃ­tja az adatot a megadott szÃ¡mÃ­tÃ³gÃ©pnek. \
+	BiztonsÃ¡gi megfontolÃ¡sok miatt javasolt a port tovÃ¡bbÃ­tÃ¡sok korlÃ¡tozÃ¡sa csak azokra a portokra, amelyeket hasznÃ¡l, Ã©s miutÃ¡n vÃ©gzett szedje ki a jelÃ¶lÅ‘pipÃ¡t:  <em>" + share.enable +"</em> .";
 	
 
 
 // **************************************************************** ForwardSpec.asp **********************************************************************//
 
-pforward.titl="Port továbbítás (Forwarding)";
-pforward.h2="Port továbbítás (Forwarding)";
-pforward.legend="Továbbítások";
-pforward.app="Alkalmazás";
-pforward.from="Forrás port";
-pforward.to="Cél port";
+pforward.titl="Port tovÃ¡bbÃ­tÃ¡s (Forwarding)";
+pforward.h2="Port tovÃ¡bbÃ­tÃ¡s (Forwarding)";
+pforward.legend="TovÃ¡bbÃ­tÃ¡sok";
+pforward.app="AlkalmazÃ¡s";
+pforward.from="ForrÃ¡s port";
+pforward.to="CÃ©l port";
 
 //help container
 
-hpforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy\
-	helyesen mûködjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. \
-	Ha egy kérés érkezik a kiválasztott portra az internet felõl, a router továbbirányítja az adatot a megadott számítógépnek. \
-	Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölõpipát az <em>Enable</em> jelölõnégyzetbõl";
+hpforward.right2="Egyes alkalmazÃ¡soknak szÃ¼ksÃ©gÃ¼k van bizonyos portok megnyitÃ¡sÃ¡ra, azÃ©rt hogy\
+	helyesen mÅ±kÃ¶djenek. Ilyen alkalmazÃ¡sok kÃ¶rÃ©be tartoznak szerverek Ã©s egyes online jÃ¡tÃ©kok. \
+	Ha egy kÃ©rÃ©s Ã©rkezik a kivÃ¡lasztott portra az internet felÅ‘l, a router tovÃ¡bbirÃ¡nyÃ­tja az adatot a megadott szÃ¡mÃ­tÃ³gÃ©pnek. \
+	BiztonsÃ¡gi megfontolÃ¡sok miatt javasolt a port tovÃ¡bbÃ­tÃ¡sok korlÃ¡tozÃ¡sa csak azokra a portokra, amelyeket hasznÃ¡l, Ã©s miutÃ¡n vÃ©gzett szedje ki a jelÃ¶lÅ‘pipÃ¡t az <em>Enable</em> jelÃ¶lÅ‘nÃ©gyzetbÅ‘l";
 
 
 
 // **************************************************************** Hotspot.asp **********************************************************************//
 
 hotspot.titl="Hotspot";
-hotspot.h2="Hotspot portál";
+hotspot.h2="Hotspot portÃ¡l";
 hotspot.legend="CoovaChilli";
 hotspot.hotspot="CoovaChilli";
-hotspot.nowifibridge="Wifi szétválasztása a LAN Bridgetõl";
-hotspot.pserver="Elsõdleges RADIUS-szerver IP/DNS";
-hotspot.bserver="Másodlagos RADIUS-szerver IP/DNS";
+hotspot.nowifibridge="Wifi szÃ©tvÃ¡lasztÃ¡sa a LAN BridgetÅ‘l";
+hotspot.pserver="ElsÅ‘dleges RADIUS-szerver IP/DNS";
+hotspot.bserver="MÃ¡sodlagos RADIUS-szerver IP/DNS";
 hotspot.dns="DNS IP";
-hotspot.url="URL átirányítás";
-hotspot.dhcp="DHCP interfész";
+hotspot.url="URL Ã¡tirÃ¡nyÃ­tÃ¡s";
+hotspot.dhcp="DHCP interfÃ©sz";
 hotspot.radnas="RADIUS NAS ID";
 hotspot.uam="UAM Titok ";
 hotspot.uamdns="UAM any DNS";
-hotspot.allowuam="UAM engedélyezve";
+hotspot.allowuam="UAM engedÃ©lyezve";
 hotspot.macauth="MACauth";
-hotspot.option="További CoovaChilli beállítások";
-hotspot.fon_chilli="CoovaChilli helyi felhasználók kezelése";
-hotspot.fon_user="Felhasználók listája";
-hotspot.http_legend="HTTP átirányítás";
-hotspot.http_srv="HTTP átirányítás";
-hotspot.http_ip="HTTP cél IP";
-hotspot.http_port="HTTP cél port";
-hotspot.http_net="HTTP forrás hálózat";
+hotspot.option="TovÃ¡bbi CoovaChilli beÃ¡llÃ­tÃ¡sok";
+hotspot.fon_chilli="CoovaChilli helyi felhasznÃ¡lÃ³k kezelÃ©se";
+hotspot.fon_user="FelhasznÃ¡lÃ³k listÃ¡ja";
+hotspot.http_legend="HTTP Ã¡tirÃ¡nyÃ­tÃ¡s";
+hotspot.http_srv="HTTP Ã¡tirÃ¡nyÃ­tÃ¡s";
+hotspot.http_ip="HTTP cÃ©l IP";
+hotspot.http_port="HTTP cÃ©l port";
+hotspot.http_net="HTTP forrÃ¡s hÃ¡lÃ³zat";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
-hotspot.nocat_gateway="Átjáró név";
+hotspot.nocat_gateway="ÃtjÃ¡rÃ³ nÃ©v";
 hotspot.nocat_home="Homepage";
-hotspot.nocat_allowweb="Engedélyezett web hosztok";
-hotspot.nocat_docroot="Dokumentum gyökér (Doc. root)";
+hotspot.nocat_allowweb="EngedÃ©lyezett web hosztok";
+hotspot.nocat_docroot="Dokumentum gyÃ¶kÃ©r (Doc. root)";
 hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="Portok kizárása";
-hotspot.nocat_timeout="Bejelentkezés idõtúllépése";
+hotspot.nocat_port="Portok kizÃ¡rÃ¡sa";
+hotspot.nocat_timeout="BejelentkezÃ©s idÅ‘tÃºllÃ©pÃ©se";
 hotspot.nocat_verbose="Verbosity";
-hotspot.nocat_route="Csak Routolás";
-hotspot.nocat_MAClist="MAC fehér lista";
-hotspot.smtp_legend="SMTP átirányítás";
-hotspot.smtp_srv="SMTP átirányítás";
-hotspot.smtp_ip="SMTP cél IP";
-hotspot.smtp_net="SMTP forrás hálózat";
-hotspot.shat_legend="Zéró IP beállítás";
-hotspot.shat_srv="Zéró IP beállítás";
-hotspot.shat_srv2="Zéró IP beállítás engedélyezve";
+hotspot.nocat_route="Csak RoutolÃ¡s";
+hotspot.nocat_MAClist="MAC fehÃ©r lista";
+hotspot.smtp_legend="SMTP Ã¡tirÃ¡nyÃ­tÃ¡s";
+hotspot.smtp_srv="SMTP Ã¡tirÃ¡nyÃ­tÃ¡s";
+hotspot.smtp_ip="SMTP cÃ©l IP";
+hotspot.smtp_net="SMTP forrÃ¡s hÃ¡lÃ³zat";
+hotspot.shat_legend="ZÃ©rÃ³ IP beÃ¡llÃ­tÃ¡s";
+hotspot.shat_srv="ZÃ©rÃ³ IP beÃ¡llÃ­tÃ¡s";
+hotspot.shat_srv2="ZÃ©rÃ³ IP beÃ¡llÃ­tÃ¡s engedÃ©lyezve";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_id="Sputnik szerver azonosító (ID)";
-hotspot.sputnik_instant="Sputnik Instant Setup használata";
-hotspot.sputnik_express="SputnikNet Express használata";
-hotspot.sputnik_about="A Sputnikról";
+hotspot.sputnik_id="Sputnik szerver azonosÃ­tÃ³ (ID)";
+hotspot.sputnik_instant="Sputnik Instant Setup hasznÃ¡lata";
+hotspot.sputnik_express="SputnikNet Express hasznÃ¡lata";
+hotspot.sputnik_about="A SputnikrÃ³l";
 
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
-hotspot.wifidog_id="Átjáró azonosító (ID)";
-hotspot.wifidog_url="Portál URLje";
+hotspot.wifidog_id="ÃtjÃ¡rÃ³ azonosÃ­tÃ³ (ID)";
+hotspot.wifidog_url="PortÃ¡l URLje";
 hotspot.wifidog_port="Port";
-hotspot.wifidog_httpdname="Web szerver név";
-hotspot.wifidog_httpdconn="Maximális felhasználók";
-hotspot.wifidog_checkinter="Intervallum ellenõrzés (s)";
-hotspot.wifidog_checktimeout="Kliens idõtúllépés";
-hotspot.wifidog_tmaclist="Megbízható MAC lista";
-hotspot.wifidog_authsrv="AuthServer állomásnév";
-hotspot.wifidog_authsrvssl="AuthServer SSL elérhetõség";
+hotspot.wifidog_httpdname="Web szerver nÃ©v";
+hotspot.wifidog_httpdconn="MaximÃ¡lis felhasznÃ¡lÃ³k";
+hotspot.wifidog_checkinter="Intervallum ellenÅ‘rzÃ©s (s)";
+hotspot.wifidog_checktimeout="Kliens idÅ‘tÃºllÃ©pÃ©s";
+hotspot.wifidog_tmaclist="MegbÃ­zhatÃ³ MAC lista";
+hotspot.wifidog_authsrv="AuthServer Ã¡llomÃ¡snÃ©v";
+hotspot.wifidog_authsrvssl="AuthServer SSL elÃ©rhetÅ‘sÃ©g";
 hotspot.wifidog_authsrvsslport="AuthServer SSL port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP port";
-hotspot.wifidog_authsrvpath="AuthServer útvonal";
+hotspot.wifidog_authsrvpath="AuthServer Ãºtvonal";
 
 
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
 
 idx_h.srv="Heart beat szerver";
-idx_h.con_strgy="Kapcsolat stratégia";
-idx_h.max_idle="Kapcsolódás igény szerint: maximum holt idõ";
+idx_h.con_strgy="Kapcsolat stratÃ©gia";
+idx_h.max_idle="KapcsolÃ³dÃ¡s igÃ©ny szerint: maximum holt idÅ‘";
 idx_h.alive="Keep Alive: Redial Period";
 idx_h.reconnect="Force reconnect";
 
@@ -669,16 +669,16 @@ idx_l.srv="L2TP szerver";
 
 // **************************************************************** index_pppoe.asp *********************************************************//
 
-idx_pppoe.use_rp="RP PPPoE használat";
+idx_pppoe.use_rp="RP PPPoE hasznÃ¡lat";
 
 
 
 // **************************************************************** index_pptp.asp *********************************************************//
 
-idx_pptp.srv="DHCP használat";
-idx_pptp.wan_ip="WAN IP cím";
-idx_pptp.gateway="Átjáró (PPTP szerver)";
-idx_pptp.encrypt="PPTP titkosítás";
+idx_pptp.srv="DHCP hasznÃ¡lat";
+idx_pptp.wan_ip="WAN IP cÃ­m";
+idx_pptp.gateway="ÃtjÃ¡rÃ³ (PPTP szerver)";
+idx_pptp.encrypt="PPTP titkosÃ­tÃ¡s";
 
 
 
@@ -690,125 +690,125 @@ idx_static.dns="Statikus DNS";
 
 // **************************************************************** index.asp *********************************************************//
 
-idx.titl="Beállítások";
-idx.h2="WAN beállítások";
-idx.h22="WAN beállítások";
-idx.legend="WAN kapcsolat típus";
-idx.conn_type="Kapcsolat típus";
+idx.titl="BeÃ¡llÃ­tÃ¡sok";
+idx.h2="WAN beÃ¡llÃ­tÃ¡sok";
+idx.h22="WAN beÃ¡llÃ­tÃ¡sok";
+idx.legend="WAN kapcsolat tÃ­pus";
+idx.conn_type="Kapcsolat tÃ­pus";
 idx.stp="STP";
-idx.stp_mess="(COMCAST ISP kikapcsolása)";
-idx.optional="Opcionális beállítások";
+idx.stp_mess="(COMCAST ISP kikapcsolÃ¡sa)";
+idx.optional="OpcionÃ¡lis beÃ¡llÃ­tÃ¡sok";
 idx.mtu="MTU";
-idx.h23="Hálózati beállítások";
+idx.h23="HÃ¡lÃ³zati beÃ¡llÃ­tÃ¡sok";
 idx.routerip="Router IP";
-idx.lanip="Helyi IP cím";
+idx.lanip="Helyi IP cÃ­m";
 idx.legend2="WAN port";
-idx.wantoswitch="WAN port hozzárendelése a kapcsoláshoz";
-idx.legend3="Idõ beállítások";
-idx.timeset="Idõzóna";
+idx.wantoswitch="WAN port hozzÃ¡rendelÃ©se a kapcsolÃ¡shoz";
+idx.legend3="IdÅ‘ beÃ¡llÃ­tÃ¡sok";
+idx.timeset="IdÅ‘zÃ³na";
 idx.static_ip="Statikus IP";
-idx.dhcp="Automatikus konfiguráció - DHCP";
-idx.dhcp_legend="Hálózati címszolgáltató szerver (DHCP) beállítások";
-idx.dhcp_type="DHCP-típus";
+idx.dhcp="Automatikus konfigurÃ¡ciÃ³ - DHCP";
+idx.dhcp_legend="HÃ¡lÃ³zati cÃ­mszolgÃ¡ltatÃ³ szerver (DHCP) beÃ¡llÃ­tÃ¡sok";
+idx.dhcp_type="DHCP-tÃ­pus";
 idx.dhcp_srv="DHCP szerver";
-idx.dhcp_fwd="DHCP továbbító";
-idx.dhcp_start="Kezdõ IP cím";
-idx.dhcp_end="Záró IP cím";		//used in Status_Lan.asp
-idx.dhcp_maxusers="Maximális DHCP felhasználók";
-idx.dhcp_lease="Kliens bérleti idõ";
-idx.dhcp_dnsmasq="DNSMasq használata a DHCPhez";
-idx.dns_dnsmasq="DNSMasq használata a DNShez";
-idx.auth_dnsmasq="DHCP-Autoritativitás";
+idx.dhcp_fwd="DHCP tovÃ¡bbÃ­tÃ³";
+idx.dhcp_start="KezdÅ‘ IP cÃ­m";
+idx.dhcp_end="ZÃ¡rÃ³ IP cÃ­m";		//used in Status_Lan.asp
+idx.dhcp_maxusers="MaximÃ¡lis DHCP felhasznÃ¡lÃ³k";
+idx.dhcp_lease="Kliens bÃ©rleti idÅ‘";
+idx.dhcp_dnsmasq="DNSMasq hasznÃ¡lata a DHCPhez";
+idx.dns_dnsmasq="DNSMasq hasznÃ¡lata a DNShez";
+idx.auth_dnsmasq="DHCP-AutoritativitÃ¡s";
 idx.summt_opt1="semmi";
-idx.summt_opt2="Ápr elsõ Vas - Okt utolsó Vas";
-idx.summt_opt3="Márc utolsó Vas - Okt utolsó Vas";
-idx.summt_opt4="Okt utolsó Vas - Márc utolsó Vas";
-idx.summt_opt5="Márc második Vas - Nov elsp Vas";
-idx.summt_opt6="Okt elsõ Vas - Márc harmadik Vas?";
+idx.summt_opt2="Ãpr elsÅ‘ Vas - Okt utolsÃ³ Vas";
+idx.summt_opt3="MÃ¡rc utolsÃ³ Vas - Okt utolsÃ³ Vas";
+idx.summt_opt4="Okt utolsÃ³ Vas - MÃ¡rc utolsÃ³ Vas";
+idx.summt_opt5="MÃ¡rc mÃ¡sodik Vas - Nov elsp Vas";
+idx.summt_opt6="Okt elsÅ‘ Vas - MÃ¡rc harmadik Vas?";
 idx.ntp_client="NTP kliens";
 
 //help container
 
-hidx.right2="Ezek a beállítások szolgáltatóknak lehetnek hasznosak.";
-hidx.right4="Kérem adja meg az ISP által szolgáltatott hoszt nevét.";
-hidx.right6="Kérem adja meg az ISP által szolgáltatott domain nevet.";
+hidx.right2="Ezek a beÃ¡llÃ­tÃ¡sok szolgÃ¡ltatÃ³knak lehetnek hasznosak.";
+hidx.right4="KÃ©rem adja meg az ISP Ã¡ltal szolgÃ¡ltatott hoszt nevÃ©t.";
+hidx.right6="KÃ©rem adja meg az ISP Ã¡ltal szolgÃ¡ltatott domain nevet.";
 hidx.right8="Ez a router cime.";
-hidx.right10="Ez a router alhálózati maszkja.";
-hidx.right12="Megengedi a routernek, hogy kezelje az IP címeket.";
-hidx.right14="Az a cím, amellyel kezdeni szeretne.";
-hidx.right16="Javasolt a router által szolgáltatott IP címek korlátozása.";
-hidx.right18="Válassza ki azt az idõzónát, amelyben él és a nyári idõszámítást. A router helyi idõt vagy UTC-t is használhat";
+hidx.right10="Ez a router alhÃ¡lÃ³zati maszkja.";
+hidx.right12="Megengedi a routernek, hogy kezelje az IP cÃ­meket.";
+hidx.right14="Az a cÃ­m, amellyel kezdeni szeretne.";
+hidx.right16="Javasolt a router Ã¡ltal szolgÃ¡ltatott IP cÃ­mek korlÃ¡tozÃ¡sa.";
+hidx.right18="VÃ¡lassza ki azt az idÅ‘zÃ³nÃ¡t, amelyben Ã©l Ã©s a nyÃ¡ri idÅ‘szÃ¡mÃ­tÃ¡st. A router helyi idÅ‘t vagy UTC-t is hasznÃ¡lhat";
 
 
 
 // **************************************************************** Join.asp **********************************************************************//
 
 //sshd.webservices
-join.titl="Csatlakozás";
-join.mess1="Sikeresen csatlakozott a következõ hálózathoz mint kliens: ";
+join.titl="CsatlakozÃ¡s";
+join.mess1="Sikeresen csatlakozott a kÃ¶vetkezÅ‘ hÃ¡lÃ³zathoz mint kliens: ";
 
 
 
 // **************************************************************** Log_incoming.asp **********************************************************************//
 
-log_in.titl="Bejövõ naplózási táblák";
-log_in.h2="Bejövõ naplózási táblák";
-log_in.th_ip="Forrás IP";
-log_in.th_port="Cél port szám";
+log_in.titl="BejÃ¶vÅ‘ naplÃ³zÃ¡si tÃ¡blÃ¡k";
+log_in.h2="BejÃ¶vÅ‘ naplÃ³zÃ¡si tÃ¡blÃ¡k";
+log_in.th_ip="ForrÃ¡s IP";
+log_in.th_port="CÃ©l port szÃ¡m";
 
 
 
 // **************************************************************** Log_outgoing.asp **********************************************************************//
 
-log_out.titl="Kimenõ naplózási táblák";
-log_out.h2="Kimenõ naplózási táblák";
+log_out.titl="KimenÅ‘ naplÃ³zÃ¡si tÃ¡blÃ¡k";
+log_out.h2="KimenÅ‘ naplÃ³zÃ¡si tÃ¡blÃ¡k";
 log_out.th_lanip="LAN IP";
-log_out.th_wanip="Cél URL/IP";
-log_out.th_port="Szolgáltatás/Port szám";
+log_out.th_wanip="CÃ©l URL/IP";
+log_out.th_port="SzolgÃ¡ltatÃ¡s/Port szÃ¡m";
 
 
 
 // **************************************************************** Log.asp **********************************************************************//
 
-log.titl="Naplózás";
-log.h2="Naplózás kezelése";
-log.legend="Naplózás";
-log.lvl="Naplózási szint";
+log.titl="NaplÃ³zÃ¡s";
+log.h2="NaplÃ³zÃ¡s kezelÃ©se";
+log.legend="NaplÃ³zÃ¡s";
+log.lvl="NaplÃ³zÃ¡si szint";
 log.drop="Eldobva";
-log.reject="Elutasítva";
+log.reject="ElutasÃ­tva";
 log.accept="Elfogadva";
 
 
 
 // **************************************************************** Management.asp **********************************************************************//
 
-management.titl="Adminisztráció";
-management.h2="Router kezelés";
+management.titl="AdminisztrÃ¡ciÃ³";
+management.h2="Router kezelÃ©s";
 
-management.psswd_legend="Router jelszó";
-management.psswd_user="Router felhasználónév";
-management.psswd_pass="Router jelszó";
-management.pass_conf="Ismét a megerõsítéshez";
+management.psswd_legend="Router jelszÃ³";
+management.psswd_user="Router felhasznÃ¡lÃ³nÃ©v";
+management.psswd_pass="Router jelszÃ³";
+management.pass_conf="IsmÃ©t a megerÅ‘sÃ­tÃ©shez";
 
-management.remote_legend="Távoli elérés";
-management.remote_gui="Web GUI kezelés";
-management.remote_https="HTTPS használat";
+management.remote_legend="TÃ¡voli elÃ©rÃ©s";
+management.remote_gui="Web GUI kezelÃ©s";
+management.remote_https="HTTPS hasznÃ¡lat";
 management.remote_guiport="Web GUI port";
-management.remote_ssh="SSH vezérlés";
+management.remote_ssh="SSH vezÃ©rlÃ©s";
 management.remote_sshport="SSH port";
 
-management.web_legend="Web használat";
-management.web_refresh="Automatikus frissítés (másodpercben)";
-management.web_sysinfo="Info/nyitó oldal elérése";
-management.web_sysinfopass="Info/nyitó oldal jelszó védelme ";
-management.web_sysinfomasq="Info/nyitó oldal MAC maszkolás";
+management.web_legend="Web hasznÃ¡lat";
+management.web_refresh="Automatikus frissÃ­tÃ©s (mÃ¡sodpercben)";
+management.web_sysinfo="Info/nyitÃ³ oldal elÃ©rÃ©se";
+management.web_sysinfopass="Info/nyitÃ³ oldal jelszÃ³ vÃ©delme ";
+management.web_sysinfomasq="Info/nyitÃ³ oldal MAC maszkolÃ¡s";
 
-management.boot_legend="Boot várakozás";
-management.boot_srv="Boot várakozás";
+management.boot_legend="Boot vÃ¡rakozÃ¡s";
+management.boot_srv="Boot vÃ¡rakozÃ¡s";
 
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-management.cron_jobs="További Cron feladatok (Jobs)";
+management.cron_jobs="TovÃ¡bbi Cron feladatok (Jobs)";
 
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
@@ -819,180 +819,180 @@ management.wifi_srv="802.1x";
 management.rst_legend="Reset gomb";
 management.rst_srv="Reset gomb";
 
-management.routing_legend="Routolás";
-management.routing_srv="Routolás";
+management.routing_legend="RoutolÃ¡s";
+management.routing_srv="RoutolÃ¡s";
 
-management.ipv6_legend="IPv6 Támogatás";
+management.ipv6_legend="IPv6 TÃ¡mogatÃ¡s";
 management.ipv6_srv="IPv6";
-management.ipv6_rad="Radvd engedélyezve";
-management.ipv6_radconf="Radvd konfiguráció";
+management.ipv6_rad="Radvd engedÃ©lyezve";
+management.ipv6_radconf="Radvd konfigurÃ¡ciÃ³";
 
-management.jffs_legend="JFFS2 Támogatás";
+management.jffs_legend="JFFS2 TÃ¡mogatÃ¡s";
 management.jffs_srv="JFFS2";
-management.jffs_clean="JFFS2 takarítás";
+management.jffs_clean="JFFS2 takarÃ­tÃ¡s";
 
-management.lang_legend="Nyelv kiválasztása";
+management.lang_legend="Nyelv kivÃ¡lasztÃ¡sa";
 management.lang_srv="Nyelv";
-management.lang_bulgarian="Bulgár";
-management.lang_chinese_traditional="Kínai (tradicionális)";
-management.lang_chinese_simplified="Kínai (egyszerûsített)";
-management.lang_croatian="Horvát";
+management.lang_bulgarian="BulgÃ¡r";
+management.lang_chinese_traditional="KÃ­nai (tradicionÃ¡lis)";
+management.lang_chinese_simplified="KÃ­nai (egyszerÅ±sÃ­tett)";
+management.lang_croatian="HorvÃ¡t";
 management.lang_czech="Cseh";
 management.lang_dutch="Magyar";
 management.lang_english="Angol";
-management.lang_portuguese_braz="Portugál (Brazil)";
+management.lang_portuguese_braz="PortugÃ¡l (Brazil)";
 management.lang_french="Francia";
-management.lang_german="Német";
+management.lang_german="NÃ©met";
 management.lang_polish="Lengyel";
 management.lang_italian="Olasz";
 management.lang_brazilian="Brazil";
-management.lang_slovenian="Szlovén";
+management.lang_slovenian="SzlovÃ©n";
 management.lang_spanish="Spanyol";
-management.lang_swedish="Svéd";
-management.lang_japanese="Japán";
+management.lang_swedish="SvÃ©d";
+management.lang_japanese="JapÃ¡n";
 management.lang_hungarian="Magyar";
-management.net_legend="IP szûrés beállításai (állítsa be P2Phez)";
+management.net_legend="IP szÅ±rÃ©s beÃ¡llÃ­tÃ¡sai (Ã¡llÃ­tsa be P2Phez)";
 management.net_port="Maximum portok";
-management.net_tcptimeout="TCP Timeout (másodpercben)";
-management.net_udptimeout="UDP Timeout (másodpercben)";
+management.net_tcptimeout="TCP Timeout (mÃ¡sodpercben)";
+management.net_udptimeout="UDP Timeout (mÃ¡sodpercben)";
 
-management.clock_legend="Frekvenciahúzás (Overclocking)";
+management.clock_legend="FrekvenciahÃºzÃ¡s (Overclocking)";
 management.clock_frq="Frekvencia";
-management.clock_support="Nem támogatott";
+management.clock_support="Nem tÃ¡mogatott";
 
-management.mmc_legend="MMC/SD kártya támogatás";
-management.mmc_srv="MMC eszköz";
+management.mmc_legend="MMC/SD kÃ¡rtya tÃ¡mogatÃ¡s";
+management.mmc_srv="MMC eszkÃ¶z";
 
 management.samba_legend="CIFS Automount";
 management.samba_srv="Common Internet File System";
-management.samba_share="Megosztás";
+management.samba_share="MegosztÃ¡s";
 management.samba_stscript="Startscript";
 
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP port";
 management.SIPatH_domain="SIP domain";
 
-management.gui_style="Router GUI stílusa";
+management.gui_style="Router GUI stÃ­lusa";
 
 //help container
 
-hmanagement.right1="Automatikus frissítés:";
-hmanagement.right2="Ha azt szeretné, hogy ez a funkció le legyen tiltva, akkor a Web GUI automatikus frissítés intervallumának 0 -t állítson be.";
+hmanagement.right1="Automatikus frissÃ­tÃ©s:";
+hmanagement.right2="Ha azt szeretnÃ©, hogy ez a funkciÃ³ le legyen tiltva, akkor a Web GUI automatikus frissÃ­tÃ©s intervallumÃ¡nak 0 -t Ã¡llÃ­tson be.";
 
 
 // **************************************************************** Port_Services.asp **********************************************************************//
 
-portserv.titl="Port-szolgáltatások";
-portserv.h2="Port-szolgáltatások";
+portserv.titl="Port-szolgÃ¡ltatÃ¡sok";
+portserv.h2="Port-szolgÃ¡ltatÃ¡sok";
 
 
 
 // **************************************************************** QoS.asp **********************************************************************//
 
-qos.titl="Szolgáltatás minõsége (QoS)";
-qos.h2="Szolgáltatás minõsége (QoS)";
-qos.legend="QoS beállítások";
-qos.srv="QoS engedélyezése";
-qos.type="Csomag ütemezõ (Scheduler)";
+qos.titl="SzolgÃ¡ltatÃ¡s minÅ‘sÃ©ge (QoS)";
+qos.h2="SzolgÃ¡ltatÃ¡s minÅ‘sÃ©ge (QoS)";
+qos.legend="QoS beÃ¡llÃ­tÃ¡sok";
+qos.srv="QoS engedÃ©lyezÃ©se";
+qos.type="Csomag Ã¼temezÅ‘ (Scheduler)";
 qos.uplink="Uplink (kbit/s)";
 qos.dnlink="Downlink (kbit/s)";
-qos.gaming="Optimizálás játékokhoz";
-qos.legend2="Szolgáltatás prioritások";
-qos.prio_x="Mentesített";
-qos.prio_p="Prémium";
+qos.gaming="OptimizÃ¡lÃ¡s jÃ¡tÃ©kokhoz";
+qos.legend2="SzolgÃ¡ltatÃ¡s prioritÃ¡sok";
+qos.prio_x="MentesÃ­tett";
+qos.prio_p="PrÃ©mium";
 qos.prio_e="Express";
-qos.prio_b="Ömlesztett";
-qos.legend3="Hálózati maszk prioritás";
+qos.prio_b="Ã–mlesztett";
+qos.legend3="HÃ¡lÃ³zati maszk prioritÃ¡s";
 qos.ipmask="IP/Maszk";
 qos.maxrate_b="Max kbit/s-ek";
-qos.maxrate_o="Max arány";
-qos.legend4="MAC-prioritás";
-qos.legend5="Ethernet Port-prioritás";
-qos.legend6="Alapértelmezett sávszélesség szint";
-qos.bandwidth="Sávszélesség kbit/s-ekben";
+qos.maxrate_o="Max arÃ¡ny";
+qos.legend4="MAC-prioritÃ¡s";
+qos.legend5="Ethernet Port-prioritÃ¡s";
+qos.legend6="AlapÃ©rtelmezett sÃ¡vszÃ©lessÃ©g szint";
+qos.bandwidth="SÃ¡vszÃ©lessÃ©g kbit/s-ekben";
 
 //help container
 
 hqos.right1="Uplink:";
-hqos.right2="Állítsa maximális feltöltési sebességének 80-95 százelékára.";
+hqos.right2="ÃllÃ­tsa maximÃ¡lis feltÃ¶ltÃ©si sebessÃ©gÃ©nek 80-95 szÃ¡zelÃ©kÃ¡ra.";
 hqos.right3="Downlink:";
-hqos.right4="Állítsa a maximum DOWN-sávszélességének 80%-100%-ára.";
-hqos.right6="Elsõbbséget adhat alkalmazásainak, ezzel is tiszteletben tartva a sávszélesség igényüket.";
-hqos.right8="Elsõbbséget adhat egyes IP-címeknek vagy IP-tartományoknak a sávszélességbõl.";
-hqos.right10="Elsõbbséget adhat az összes eszközének forgalmára a hálózaton, úgy hogy Eszköz Nevet (Device Name) ad nekik, továbbá beállítja a prioritásukat és a MAC címüket.";
-hqos.right12="Elsõbbséget adhat a forgalomnak, attól függõen, hogy melyik LAN porthoz van csatlakoztatva az eszköze. Prioritásokat rendelhet az egyes LAN portokhoz 1-4-ig.";
+hqos.right4="ÃllÃ­tsa a maximum DOWN-sÃ¡vszÃ©lessÃ©gÃ©nek 80%-100%-Ã¡ra.";
+hqos.right6="ElsÅ‘bbsÃ©get adhat alkalmazÃ¡sainak, ezzel is tiszteletben tartva a sÃ¡vszÃ©lessÃ©g igÃ©nyÃ¼ket.";
+hqos.right8="ElsÅ‘bbsÃ©get adhat egyes IP-cÃ­meknek vagy IP-tartomÃ¡nyoknak a sÃ¡vszÃ©lessÃ©gbÅ‘l.";
+hqos.right10="ElsÅ‘bbsÃ©get adhat az Ã¶sszes eszkÃ¶zÃ©nek forgalmÃ¡ra a hÃ¡lÃ³zaton, Ãºgy hogy EszkÃ¶z Nevet (Device Name) ad nekik, tovÃ¡bbÃ¡ beÃ¡llÃ­tja a prioritÃ¡sukat Ã©s a MAC cÃ­mÃ¼ket.";
+hqos.right12="ElsÅ‘bbsÃ©get adhat a forgalomnak, attÃ³l fÃ¼ggÅ‘en, hogy melyik LAN porthoz van csatlakoztatva az eszkÃ¶ze. PrioritÃ¡sokat rendelhet az egyes LAN portokhoz 1-4-ig.";
 
 
 
 // **************************************************************** RouteTable.asp **********************************************************************//
 
-routetbl.titl="Forgalomirányító tábla";
-routetbl.h2="Irányító tábla elemei";
-routetbl.th1="Cél LAN IP-je";
+routetbl.titl="ForgalomirÃ¡nyÃ­tÃ³ tÃ¡bla";
+routetbl.h2="IrÃ¡nyÃ­tÃ³ tÃ¡bla elemei";
+routetbl.th1="CÃ©l LAN IP-je";
 
 
 
 // **************************************************************** Routing.asp **********************************************************************//
 
 route.titl="Routing";
-route.h2="Haladó Routing";
-route.mod="Üzemmódok";
-route.bgp_legend="BGP-beállítások";
+route.h2="HaladÃ³ Routing";
+route.mod="ÃœzemmÃ³dok";
+route.bgp_legend="BGP-beÃ¡llÃ­tÃ¡sok";
 route.bgp_own_as="BGP tulajdonosa AS#";
-route.bgp_ip="Szomszéd IP";
-route.bgp_as="Szomszéd AS#";
+route.bgp_ip="SzomszÃ©d IP";
+route.bgp_as="SzomszÃ©d AS#";
 route.rip2_mod="RIP2-Router";
 route.ospf_mod="OSPF-Router";
-route.gateway_legend="Dinamikus útválasztás";
-route.static_legend="Statikus útválasztás";
-route.static_setno="Válasszon összeállítást";
-route.static_name="Útvonal neve";
-route.static_ip="Cél-LAN IP";
+route.gateway_legend="Dinamikus ÃºtvÃ¡lasztÃ¡s";
+route.static_legend="Statikus ÃºtvÃ¡lasztÃ¡s";
+route.static_setno="VÃ¡lasszon Ã¶sszeÃ¡llÃ­tÃ¡st";
+route.static_name="Ãštvonal neve";
+route.static_ip="CÃ©l-LAN IP";
 
 //help container
 
-hroute.right2="Amennyiben ez a router biztosítja Önnek az Internet-szolgáltatást válassza a <em>Gateway</em>-módot. Ha van másik router is a hálózatában, válassza a <em>Router</em>-módot.";
-hroute.right4="Ez egy egyedi útvonal azonosító szám, összesen 50 útvonalat definiálhat.";
-hroute.right6="Adjon meg egy nevet, ami alapján azonosítani tudja az útvonalat.";
-hroute.right8="Ez a távoli állomás, amihez hozzá szeretné rendelni a statikus útvonalat.";
-hroute.right10="Érzékeli az állomás és a hálózat kiosztásait.";
+hroute.right2="Amennyiben ez a router biztosÃ­tja Ã–nnek az Internet-szolgÃ¡ltatÃ¡st vÃ¡lassza a <em>Gateway</em>-mÃ³dot. Ha van mÃ¡sik router is a hÃ¡lÃ³zatÃ¡ban, vÃ¡lassza a <em>Router</em>-mÃ³dot.";
+hroute.right4="Ez egy egyedi Ãºtvonal azonosÃ­tÃ³ szÃ¡m, Ã¶sszesen 50 Ãºtvonalat definiÃ¡lhat.";
+hroute.right6="Adjon meg egy nevet, ami alapjÃ¡n azonosÃ­tani tudja az Ãºtvonalat.";
+hroute.right8="Ez a tÃ¡voli Ã¡llomÃ¡s, amihez hozzÃ¡ szeretnÃ© rendelni a statikus Ãºtvonalat.";
+hroute.right10="Ã‰rzÃ©keli az Ã¡llomÃ¡s Ã©s a hÃ¡lÃ³zat kiosztÃ¡sait.";
 
 
 
 
 // **************************************************************** Site_Survey.asp **********************************************************************//
 
-survey.titl="Vezeték nélküli hálózat keresés (Site Survey)";
-survey.h2="Szomszéd WLAN-ok";
-survey.thjoin="Csatlakozás";
+survey.titl="VezetÃ©k nÃ©lkÃ¼li hÃ¡lÃ³zat keresÃ©s (Site Survey)";
+survey.h2="SzomszÃ©d WLAN-ok";
+survey.thjoin="CsatlakozÃ¡s";
 
 
 
 // **************************************************************** Services.asp **********************************************************************//
 
-service.titl="Szolgáltatások";
-service.h2="Szolgáltatások kezelése";
+service.titl="SzolgÃ¡ltatÃ¡sok";
+service.h2="SzolgÃ¡ltatÃ¡sok kezelÃ©se";
 
 //kaid
 service.kaid_legend="XBOX-Kaid";
-service.kaid_srv="Kaid indítása";
-service.kaid_locdevnum="Helyi eszközök száma";
+service.kaid_srv="Kaid indÃ­tÃ¡sa";
+service.kaid_locdevnum="Helyi eszkÃ¶zÃ¶k szÃ¡ma";
 service.kaid_uibind="UI Port";
 
 //DHCPd
 service.dhcp_legend="DHCP kliens";
-service.dhcp_vendor="Vendorclass beállítás";
-service.dhcp_reqip="IP kérés";
-service.dhcp_legend2="DHCP kiszolgáló";
+service.dhcp_vendor="Vendorclass beÃ¡llÃ­tÃ¡s";
+service.dhcp_reqip="IP kÃ©rÃ©s";
+service.dhcp_legend2="DHCP kiszolgÃ¡lÃ³";
 service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="JFFS2 használata a kiosztott IP-k tárolására)";
-service.dhcp_nvramlease="NVRAM használata a kiosztott IP-k tárolására";
-service.dhcp_domain="Használt tartomány-név";
-service.dhcp_landomain="LAN tartomány";
-service.dhcp_option="Egyéb DHCPd beállítások";
+service.dhcp_jffs2="JFFS2 hasznÃ¡lata a kiosztott IP-k tÃ¡rolÃ¡sÃ¡ra)";
+service.dhcp_nvramlease="NVRAM hasznÃ¡lata a kiosztott IP-k tÃ¡rolÃ¡sÃ¡ra";
+service.dhcp_domain="HasznÃ¡lt tartomÃ¡ny-nÃ©v";
+service.dhcp_landomain="LAN tartomÃ¡ny";
+service.dhcp_option="EgyÃ©b DHCPd beÃ¡llÃ­tÃ¡sok";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_opt="Egyéb DNSMasq beállítások";
+service.dnsmasq_opt="EgyÃ©b DNSMasq beÃ¡llÃ­tÃ¡sok";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1001,9 +1001,9 @@ service.pptp_client="Klines IP(k)";
 service.pptp_chap="CHAP jelszavak";
 
 //syslog.webservices
-service.syslog_legend="Rendszer naplózás";
+service.syslog_legend="Rendszer naplÃ³zÃ¡s";
 service.syslog_srv="Syslogd";
-service.syslog_ip="Távoli kiszolgáló";
+service.syslog_ip="TÃ¡voli kiszolgÃ¡lÃ³";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
@@ -1011,11 +1011,11 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Kliens";
-service.pptpd_option="PPTP Kliens beállítások";
-service.pptpd_ipdns="Szerver IP vagy DNS-név";
-service.pptpd_subnet="Távoli alhálózat";
-service.pptpd_subnetmask="Távoli alhálózati maszk";
-service.pptpd_encry="MPPE-Titkosítás";
+service.pptpd_option="PPTP Kliens beÃ¡llÃ­tÃ¡sok";
+service.pptpd_ipdns="Szerver IP vagy DNS-nÃ©v";
+service.pptpd_subnet="TÃ¡voli alhÃ¡lÃ³zat";
+service.pptpd_subnetmask="TÃ¡voli alhÃ¡lÃ³zati maszk";
+service.pptpd_encry="MPPE-TitkosÃ­tÃ¡s";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
@@ -1032,64 +1032,64 @@ service.pppoe_srv="Relay";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Szerver";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
-service.pppoesrv_compr="Tömörítés";
-service.pppoesrv_remoteaddr="Távoli start IP";
-service.pppoesrv_remotenet="Távoli hálózat IP";
-service.pppoesrv_remotemask="Távoli hálózati maszk";
-service.pppoesrv_lcpei="LCP Echo Idõtartom";
-service.pppoesrv_lcpef="LCP Echo Hibák";
-service.pppoesrv_idlet="Tétlen idõ";
-service.pppoesrv_radauth="Azonosítás";
+service.pppoesrv_compr="TÃ¶mÃ¶rÃ­tÃ©s";
+service.pppoesrv_remoteaddr="TÃ¡voli start IP";
+service.pppoesrv_remotenet="TÃ¡voli hÃ¡lÃ³zat IP";
+service.pppoesrv_remotemask="TÃ¡voli hÃ¡lÃ³zati maszk";
+service.pppoesrv_lcpei="LCP Echo IdÅ‘tartom";
+service.pppoesrv_lcpef="LCP Echo HibÃ¡k";
+service.pppoesrv_idlet="TÃ©tlen idÅ‘";
+service.pppoesrv_radauth="AzonosÃ­tÃ¡s";
 service.pppoesrv_radip="RADIUS Szerver IP";
-service.pppoesrv_radauthport="RADIUS azonosítási Port";
-service.pppoesrv_radaccport="RADIUS felhasználókezelési Port";
+service.pppoesrv_radauthport="RADIUS azonosÃ­tÃ¡si Port";
+service.pppoesrv_radaccport="RADIUS felhasznÃ¡lÃ³kezelÃ©si Port";
 service.pppoesrv_radkey="RADIUS megosztott kulcs";
-service.pppoesrv_chaps="Helyi felhasználó menedzselés (CHAP Secrets)";
+service.pppoesrv_chaps="Helyi felhasznÃ¡lÃ³ menedzselÃ©s (CHAP Secrets)";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
 service.snmp_loc="Hely";
 service.snmp_contact="Kapcsolat";
-service.snmp_name="Név";
-service.snmp_read="RO-közösség";
-service.snmp_write="RW-közösség";
+service.snmp_name="NÃ©v";
+service.snmp_read="RO-kÃ¶zÃ¶ssÃ©g";
+service.snmp_write="RW-kÃ¶zÃ¶ssÃ©g";
 
 //openvpn.webservices
 service.vpn_legend="OpenVPN-Kliens";
 service.vpn_srv="Start OpenVPN";
-service.vpn_ipname="Szerver-IP/név";
-service.vpn_mtu="TUN-MTU beállítások";
+service.vpn_ipname="Szerver-IP/nÃ©v";
+service.vpn_mtu="TUN-MTU beÃ¡llÃ­tÃ¡sok";
 service.vpn_mru="TUN-MTU-Extra";
 service.vpn_mss="TCP-MSS";
-service.vpn_compress="LZO-tömörítés használata";
+service.vpn_compress="LZO-tÃ¶mÃ¶rÃ­tÃ©s hasznÃ¡lata";
 service.vpn_tunnel="Tunnel Protokoll";
-service.vpn_srvcert="Publikus szerver azonosító";
-service.vpn_clicert="Publikus kliens azonosító";
-service.vpn_clikey="Privát kliens kulcs";
+service.vpn_srvcert="Publikus szerver azonosÃ­tÃ³";
+service.vpn_clicert="Publikus kliens azonosÃ­tÃ³";
+service.vpn_clikey="PrivÃ¡t kliens kulcs";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Gomb";
-service.radiooff_srv="SES gomb használata a wifi ki-be kapcsolásához";
-service.radiooff_bootoff="Rádió indításkori alapértelmezett kikapcsolása";
+service.radiooff_srv="SES gomb hasznÃ¡lata a wifi ki-be kapcsolÃ¡sÃ¡hoz";
+service.radiooff_bootoff="RÃ¡diÃ³ indÃ­tÃ¡skori alapÃ©rtelmezett kikapcsolÃ¡sa";
 
 //sshd.webservices
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
-service.ssh_password="Jelszó-Login";
-service.ssh_key="Azonosító kulcsok";
+service.ssh_password="JelszÃ³-Login";
+service.ssh_key="AzonosÃ­tÃ³ kulcsok";
 
 //hwmon.webservices
-service.hwmon_legend="Hardware figyelés";
-service.hwmon_critemp="Kritikus hõmérséklet (Ventillátor be)";
-service.hwmon_hystemp="Hiszterézis hõmérséklet (Ventillátor ki)";
+service.hwmon_legend="Hardware figyelÃ©s";
+service.hwmon_critemp="Kritikus hÅ‘mÃ©rsÃ©klet (VentillÃ¡tor be)";
+service.hwmon_hystemp="HiszterÃ©zis hÅ‘mÃ©rsÃ©klet (VentillÃ¡tor ki)";
 
 //rstat.webservices
-service.rstats_legend="Sávszélesség figyelés";
+service.rstats_legend="SÃ¡vszÃ©lessÃ©g figyelÃ©s";
 service.rstats_srv="rstats Daemon";
-service.rstats_path="Mentse a sávszélességi adatokat a";
-service.rstats_time="Mentési idõköz";
-service.rstats_usrdir="Felhasználói mappa";
+service.rstats_path="Mentse a sÃ¡vszÃ©lessÃ©gi adatokat a";
+service.rstats_time="MentÃ©si idÅ‘kÃ¶z";
+service.rstats_usrdir="FelhasznÃ¡lÃ³i mappa";
 
 
 
@@ -1099,9 +1099,9 @@ eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet over IP Tunneling";
 eoip.srv="EoIP Tunnel";
-eoip.remoteIP="Távoli IP cím";
-eoip.tunnelID="Tunnel szám";
-eoip.passtos="TOS keresztül";
+eoip.remoteIP="TÃ¡voli IP cÃ­m";
+eoip.tunnelID="Tunnel szÃ¡m";
+eoip.passtos="TOS keresztÃ¼l";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
@@ -1111,93 +1111,93 @@ eoip.bridging="Bridging";
 
 // **************************************************************** Sipath.asp + cgi **********************************************************************//
 
-sipath.titl="SiPath áttekintés";
-sipath.phone_titl="Telefonkönyv";
-sipath.status_titl="Állapot";
+sipath.titl="SiPath Ã¡ttekintÃ©s";
+sipath.phone_titl="TelefonkÃ¶nyv";
+sipath.status_titl="Ãllapot";
 
 
 
 // **************************************************************** Status_Lan.asp **********************************************************************//
 
-status_lan.titl="LAN állapot";
-status_lan.h2="Helyi hálózatok";
-status_lan.legend="LAN állapot";
+status_lan.titl="LAN Ã¡llapot";
+status_lan.h2="Helyi hÃ¡lÃ³zatok";
+status_lan.legend="LAN Ã¡llapot";
 status_lan.h22="Dynamic Host Configuration Protokoll";
-status_lan.legend2="DHCP-állapot";
+status_lan.legend2="DHCP-Ã¡llapot";
 status_lan.legend3="DHCP-kliens";
-status_lan.legend4="Aktív kliensek";
+status_lan.legend4="AktÃ­v kliensek";
 
 //help container
 
-hstatus_lan.right2="Ez a router MAC-címe, amelyet .";
-hstatus_lan.right4="Ez a router IP-címe, melyet Ön a helyi hálózatból érhet el.";
-hstatus_lan.right6="Ha a router használ alhálózati maszkot, akkor azt itt találja.";
-hstatus_lan.right8="Ha a router DHCP-kiszolgálóként mûködik, akkor itt láthatja.";
-hstatus_lan.right10="Amennyiben bármelyik MAC-címre kattint, megkaphatja az IEEE szabvány szerinti OUI azonosítóját.";
+hstatus_lan.right2="Ez a router MAC-cÃ­me, amelyet .";
+hstatus_lan.right4="Ez a router IP-cÃ­me, melyet Ã–n a helyi hÃ¡lÃ³zatbÃ³l Ã©rhet el.";
+hstatus_lan.right6="Ha a router hasznÃ¡l alhÃ¡lÃ³zati maszkot, akkor azt itt talÃ¡lja.";
+hstatus_lan.right8="Ha a router DHCP-kiszolgÃ¡lÃ³kÃ©nt mÅ±kÃ¶dik, akkor itt lÃ¡thatja.";
+hstatus_lan.right10="Amennyiben bÃ¡rmelyik MAC-cÃ­mre kattint, megkaphatja az IEEE szabvÃ¡ny szerinti OUI azonosÃ­tÃ³jÃ¡t.";
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
 
-status_band.titl="Szávszélesség monitor";
-status_band.h2="Sávszélesség monitor";
-status_band.chg_unit="Kiválaszt ";
-status_band.chg_scale="Automatikus mértékben";
-status_band.chg_error="Az interfészrõl nem találhatóak adatok";
-status_band.chg_collect_initial="Inicializálási adatok gyûjtése...";
+status_band.titl="SzÃ¡vszÃ©lessÃ©g monitor";
+status_band.h2="SÃ¡vszÃ©lessÃ©g monitor";
+status_band.chg_unit="KivÃ¡laszt ";
+status_band.chg_scale="Automatikus mÃ©rtÃ©kben";
+status_band.chg_error="Az interfÃ©szrÅ‘l nem talÃ¡lhatÃ³ak adatok";
+status_band.chg_collect_initial="InicializÃ¡lÃ¡si adatok gyÅ±jtÃ©se...";
 status_band.strin="Be";
 status_band.strout="Ki";
-status_band.follow="követ";
+status_band.follow="kÃ¶vet";
 status_band.up="fel";
 
 //help container
 hstatus_band.svg="The A browser that supports SVG is required to display bandwidth graphs.";
-hstatus_band.right1="Kattintson a szövegre mérték változtatáshoz (B/s vagy bit/s).";
-hstatus_band.right2="Kattintson a szövegre a grafikus skála változtatásához.";
+hstatus_band.right1="Kattintson a szÃ¶vegre mÃ©rtÃ©k vÃ¡ltoztatÃ¡shoz (B/s vagy bit/s).";
+hstatus_band.right2="Kattintson a szÃ¶vegre a grafikus skÃ¡la vÃ¡ltoztatÃ¡sÃ¡hoz.";
 
 // **************************************************************** Status_Router.asp **********************************************************************//
 
-status_router.titl="Router státusz";
-status_router.h2="Router információk";
+status_router.titl="Router stÃ¡tusz";
+status_router.h2="Router informÃ¡ciÃ³k";
 status_router.legend="Rendszer";
-status_router.sys_model="Router típusa";
-status_router.sys_firmver="Firmware-verzió";
-status_router.sys_time="Aktuális idõ";
-status_router.sys_up="Mûködési idõ:";
-status_router.sys_load="Kihasználtsági átlag";
+status_router.sys_model="Router tÃ­pusa";
+status_router.sys_firmver="Firmware-verziÃ³";
+status_router.sys_time="AktuÃ¡lis idÅ‘";
+status_router.sys_up="MÅ±kÃ¶dÃ©si idÅ‘:";
+status_router.sys_load="KihasznÃ¡ltsÃ¡gi Ã¡tlag";
 status_router.legend2="CPU";
-status_router.cpu="CPU-típusa";
-status_router.clock="Órajel";
-status_router.legend3="Memória";
-status_router.mem_tot="Összes rendelkezésre álló";
+status_router.cpu="CPU-tÃ­pusa";
+status_router.clock="Ã“rajel";
+status_router.legend3="MemÃ³ria";
+status_router.mem_tot="Ã–sszes rendelkezÃ©sre Ã¡llÃ³";
 status_router.mem_free="Szabad";
-status_router.mem_used="Használt";
-status_router.mem_buf="Tároló";
+status_router.mem_used="HasznÃ¡lt";
+status_router.mem_buf="TÃ¡rolÃ³";
 status_router.mem_cached="Cache-elt";
-status_router.mem_active="Aktív";
-status_router.mem_inactive="Inaktív";
-status_router.legend4="Hálózat";
-status_router.net_maxports="IP-szûrõ maximális portjai";
-status_router.net_conntrack="Aktíve IP kapcsolatok";
-status_router.notavail="Nem elérhetõ";
-status_router.inpvolt="Alaplapi bemenõ feszültség";
-status_router.cputemp="CPU hõmérséklete";
+status_router.mem_active="AktÃ­v";
+status_router.mem_inactive="InaktÃ­v";
+status_router.legend4="HÃ¡lÃ³zat";
+status_router.net_maxports="IP-szÅ±rÅ‘ maximÃ¡lis portjai";
+status_router.net_conntrack="AktÃ­ve IP kapcsolatok";
+status_router.notavail="Nem elÃ©rhetÅ‘";
+status_router.inpvolt="Alaplapi bemenÅ‘ feszÃ¼ltsÃ©g";
+status_router.cputemp="CPU hÅ‘mÃ©rsÃ©klete";
 
 //help container
 
-hstatus_router.right2="Ez a router neve, amit a  <i>Beállítások</i>-ban beállított.";
-hstatus_router.right4="Ez a router MAC-címe, amit az Ön szolgáltatójs lát.";
-hstatus_router.right6="Ez az aktuális firmware.";
-hstatus_router.right8="Ez a pontos idõ, amit a <i>Beállítások</i>-ban beállított.";
-hstatus_router.right10="Ez az az idõtartam, amióta a router-t bekapcsolták.";
-hstatus_router.right12="Ez itt 3 szám, amelyek a rendszer terheltségét jelzik az elmúlt 1,5,15 perces idõszakokban.";
+hstatus_router.right2="Ez a router neve, amit a  <i>BeÃ¡llÃ­tÃ¡sok</i>-ban beÃ¡llÃ­tott.";
+hstatus_router.right4="Ez a router MAC-cÃ­me, amit az Ã–n szolgÃ¡ltatÃ³js lÃ¡t.";
+hstatus_router.right6="Ez az aktuÃ¡lis firmware.";
+hstatus_router.right8="Ez a pontos idÅ‘, amit a <i>BeÃ¡llÃ­tÃ¡sok</i>-ban beÃ¡llÃ­tott.";
+hstatus_router.right10="Ez az az idÅ‘tartam, amiÃ³ta a router-t bekapcsoltÃ¡k.";
+hstatus_router.right12="Ez itt 3 szÃ¡m, amelyek a rendszer terheltsÃ©gÃ©t jelzik az elmÃºlt 1,5,15 perces idÅ‘szakokban.";
 
 // ** Status_Internet.asp **//
 
 status_inet.titl="WAN Status";
 status_inet.h11="WAN";
-status_inet.conft="Konfiguráció típusa";
-status_inet.www_loginstatus="Bejelentkezési-állapot";
+status_inet.conft="KonfigurÃ¡ciÃ³ tÃ­pusa";
+status_inet.www_loginstatus="BejelentkezÃ©si-Ã¡llapot";
 status_inet.wanuptime="Kapcsolat ideje";
-status_inet.leasetime="Hátralévõ lease idõ";
+status_inet.leasetime="HÃ¡tralÃ©vÅ‘ lease idÅ‘";
 status_inet.traff="Traffic";
 status_inet.traff_tot="Total Traffic";
 status_inet.traff_mon="Traffic by Month";
@@ -1208,92 +1208,92 @@ status_inet.next="Next Month";
 
 //help container
 
-hstatus_inet.right2="Ezek azok az adatok, amelyek szükségesek az internet szolgáltatónak, hogy csatlakozhasson az internethez. Ezeket az adatokat a <em>Beállítások</em> fülön adta meg. Itt lehetõsége van csatlakozni a <em>Csatlakozás</em> vagy lecsatlakozni a <em>Disconnect</em> gombokkal.";
+hstatus_inet.right2="Ezek azok az adatok, amelyek szÃ¼ksÃ©gesek az internet szolgÃ¡ltatÃ³nak, hogy csatlakozhasson az internethez. Ezeket az adatokat a <em>BeÃ¡llÃ­tÃ¡sok</em> fÃ¼lÃ¶n adta meg. Itt lehetÅ‘sÃ©ge van csatlakozni a <em>CsatlakozÃ¡s</em> vagy lecsatlakozni a <em>Disconnect</em> gombokkal.";
 hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
 //    
-//                    itt kezhetnéld Karesz, a szövegen kívül a formátumot ne változtasd meg, semmi pontot és beágyazásokat sem, csak a szöveget
-//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt 
+//                    itt kezhetnÃ©ld Karesz, a szÃ¶vegen kÃ­vÃ¼l a formÃ¡tumot ne vÃ¡ltoztasd meg, semmi pontot Ã©s beÃ¡gyazÃ¡sokat sem, csak a szÃ¶veget
+//                       nem muszÃ¡ly vÃ©gig lefordÃ­tani, ha nincs kedved, ameddig eljutsz. Ha vÃ©geztÃ©l akkor kÃ¼ld el vissza lÃ©cci a fÃ¡jlt 
 //
 //
 //
 //************************************************************************************************************************************************************
-status_sputnik.titl="Sputnik-Agent státusz";
-status_sputnik.h2="SputnikÂ®-Agentâ„¢";
+status_sputnik.titl="Sputnik-Agent stÃ¡tusz";
+status_sputnik.h2="SputnikÃ‚Å½-AgentÃ¢Â„Ë˜";
 status_sputnik.manage="Managed By";
-status_sputnik.license="SCC Licensz szám.";
+status_sputnik.license="SCC Licensz szÃ¡m.";
 
 //help container
 
-hstatus_sputnik.right1="Sputnik-Agent státusz";
-hstatus_sputnik.right2="A Sputnik Agent státuszának megjelenítése";
-hstatus_sputnik.right4="Az The Sputnik Control Center-hez csatlakozott hozzáférési pont.";
-hstatus_sputnik.right6="A Sputnik-Agent aktuális státusza";
-hstatus_sputnik.right8="A Sputnik Control Center license száma.";
+hstatus_sputnik.right1="Sputnik-Agent stÃ¡tusz";
+hstatus_sputnik.right2="A Sputnik Agent stÃ¡tuszÃ¡nak megjelenÃ­tÃ©se";
+hstatus_sputnik.right4="Az The Sputnik Control Center-hez csatlakozott hozzÃ¡fÃ©rÃ©si pont.";
+hstatus_sputnik.right6="A Sputnik-Agent aktuÃ¡lis stÃ¡tusza";
+hstatus_sputnik.right8="A Sputnik Control Center license szÃ¡ma.";
 
 
 
 // **************************************************************** Status_Wireless.asp **********************************************************************//
 
-status_wireless.titl="Wireless LAN státusz";
+status_wireless.titl="Wireless LAN stÃ¡tusz";
 status_wireless.h2="Wireless LAN";
-status_wireless.legend="WLAN-státusz";
-status_wireless.net="Hálózat";
-status_wireless.pptp="PPTP-státusz";
-status_wireless.legend2="Csomag-információ";
+status_wireless.legend="WLAN-stÃ¡tusz";
+status_wireless.net="HÃ¡lÃ³zat";
+status_wireless.pptp="PPTP-stÃ¡tusz";
+status_wireless.legend2="Csomag-informÃ¡ciÃ³";
 status_wireless.rx="Fogadott (RX)";
-status_wireless.tx="Küldött (TX)";
-status_wireless.h22="Vezetéknélküli csomópontok";
+status_wireless.tx="KÃ¼ldÃ¶tt (TX)";
+status_wireless.h22="VezetÃ©knÃ©lkÃ¼li csomÃ³pontok";
 status_wireless.legend3="Kliensek";
-status_wireless.signal_qual="Jelerõsség";
-status_wireless.wds="WDS-csomópontok";
+status_wireless.signal_qual="JelerÅ‘ssÃ©g";
+status_wireless.wds="WDS-csomÃ³pontok";
 
 //help container
 
-hstatus_wireless.right2="A router MAC címe a helyi vezetéknélküli hálózaton.";
-hstatus_wireless.right4="A vezetéknélküli fül kiválasztása után megjelenik a használt vezetéknélküli üzemmód: mixelt, csak G, csak B, vagy letilva.";
+hstatus_wireless.right2="A router MAC cÃ­me a helyi vezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zaton.";
+hstatus_wireless.right4="A vezetÃ©knÃ©lkÃ¼li fÃ¼l kivÃ¡lasztÃ¡sa utÃ¡n megjelenik a hasznÃ¡lt vezetÃ©knÃ©lkÃ¼li Ã¼zemmÃ³d: mixelt, csak G, csak B, vagy letilva.";
 
 
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl="OpenVPN státusz";
+status_openvpn.titl="OpenVPN stÃ¡tusz";
 
 
 // **************************************************************** Triggering.asp **********************************************************************//
 
-trforward.titl="Port-fordítás";
-trforward.h2="Port-fordítás";
-trforward.legend="Továbbítások";
-trforward.trrange="Fordított portok tartománya";
-trforward.fwdrange="Továbbított portok tartománya";
-trforward.app="Alkalmazás";
+trforward.titl="Port-fordÃ­tÃ¡s";
+trforward.h2="Port-fordÃ­tÃ¡s";
+trforward.legend="TovÃ¡bbÃ­tÃ¡sok";
+trforward.trrange="FordÃ­tott portok tartomÃ¡nya";
+trforward.fwdrange="TovÃ¡bbÃ­tott portok tartomÃ¡nya";
+trforward.app="AlkalmazÃ¡s";
 
 //help container
 
-htrforward.right2="Írja be a trigger nevét!";
-htrforward.right4="Minden egyes alkalmazáshoz, kilistázza a átfordított portok tartományát. Ellenõrizze az internetes alkalmazás dokumentációját, hogy mely portok szükségesek.";
-htrforward.right6="Minden egyes alkalmazáshoz, kilistázza a továbbított portok tartományát. Ellenõrizze az internetes alkalmazás dokumentációját, hogy mely portok szükségesek.";
-htrforward.right8="Adja meg fordított és továbbított tartománynak az alsó határát.";
-htrforward.right10="Adja meg fordított és továbbított tartománynak a felsõ határát.";
+htrforward.right2="Ãrja be a trigger nevÃ©t!";
+htrforward.right4="Minden egyes alkalmazÃ¡shoz, kilistÃ¡zza a Ã¡tfordÃ­tott portok tartomÃ¡nyÃ¡t. EllenÅ‘rizze az internetes alkalmazÃ¡s dokumentÃ¡ciÃ³jÃ¡t, hogy mely portok szÃ¼ksÃ©gesek.";
+htrforward.right6="Minden egyes alkalmazÃ¡shoz, kilistÃ¡zza a tovÃ¡bbÃ­tott portok tartomÃ¡nyÃ¡t. EllenÅ‘rizze az internetes alkalmazÃ¡s dokumentÃ¡ciÃ³jÃ¡t, hogy mely portok szÃ¼ksÃ©gesek.";
+htrforward.right8="Adja meg fordÃ­tott Ã©s tovÃ¡bbÃ­tott tartomÃ¡nynak az alsÃ³ hatÃ¡rÃ¡t.";
+htrforward.right10="Adja meg fordÃ­tott Ã©s tovÃ¡bbÃ­tott tartomÃ¡nynak a felsÅ‘ hatÃ¡rÃ¡t.";
 
 
 // **************************************************************** Upgrade.asp **********************************************************************//
 
-upgrad.titl="Firmware Frissítés";
-upgrad.h2="Firmwarekezelés";
-upgrad.legend="Firmware Frissítés";
-upgrad.info1="Firmware frissítés után a router újraindul";
-upgrad.resetOff="Ne indítsa újra!";
-upgrad.resetOn="Gyári beállítások visszaállítása";
-upgrad.file="Kérem válassza ki a fájlt a frissítéshez!";
-upgrad.warning="F I G Y E L M E Z T E T É S";
-upgrad.mess1="A firmware frissítése pár percet igénybe vesz.<br />Ne kapcsolja ki a készüléket és ne nyomja meg a reset gombot!";
+upgrad.titl="Firmware FrissÃ­tÃ©s";
+upgrad.h2="FirmwarekezelÃ©s";
+upgrad.legend="Firmware FrissÃ­tÃ©s";
+upgrad.info1="Firmware frissÃ­tÃ©s utÃ¡n a router Ãºjraindul";
+upgrad.resetOff="Ne indÃ­tsa Ãºjra!";
+upgrad.resetOn="GyÃ¡ri beÃ¡llÃ­tÃ¡sok visszaÃ¡llÃ­tÃ¡sa";
+upgrad.file="KÃ©rem vÃ¡lassza ki a fÃ¡jlt a frissÃ­tÃ©shez!";
+upgrad.warning="F I G Y E L M E Z T E T Ã‰ S";
+upgrad.mess1="A firmware frissÃ­tÃ©se pÃ¡r percet igÃ©nybe vesz.<br />Ne kapcsolja ki a kÃ©szÃ¼lÃ©ket Ã©s ne nyomja meg a reset gombot!";
 
 //help container
 
-hupgrad.right2="Kattintson a <em>Tallózás...</em> gombra, a firmware-fájl kiválasztásához.<br /><br /> Kattintson a <em>Frissítés</em> gombra a frissítés elkezdéséhez. A frissítést ne szakítsa meg!";
+hupgrad.right2="Kattintson a <em>TallÃ³zÃ¡s...</em> gombra, a firmware-fÃ¡jl kivÃ¡lasztÃ¡sÃ¡hoz.<br /><br /> Kattintson a <em>FrissÃ­tÃ©s</em> gombra a frissÃ­tÃ©s elkezdÃ©sÃ©hez. A frissÃ­tÃ©st ne szakÃ­tsa meg!";
 			
 
 
@@ -1301,26 +1301,26 @@ hupgrad.right2="Kattintson a <em>Tallózás...</em> gombra, a firmware-fájl kivála
 // **************************************************************** UPnP.asp **********************************************************************//
 
 upnp.titl="UPnP";
-upnp.h2="Univerzális Plug and Play (UPnP)";
-upnp.legend="Továbbítások";
-upnp.legend2="UPnP beállítása";
-upnp.serv="UPnP szolgáltatás";
-upnp.clear="Indításkor a port fordítások törlése";
-upnp.url="Bemutató (Presentation) URL küldése";
-upnp.msg1="Kattintson ide a bejegyzés törléséhez!";
-upnp.msg2="Törli az összes bejegyzést?";
+upnp.h2="UniverzÃ¡lis Plug and Play (UPnP)";
+upnp.legend="TovÃ¡bbÃ­tÃ¡sok";
+upnp.legend2="UPnP beÃ¡llÃ­tÃ¡sa";
+upnp.serv="UPnP szolgÃ¡ltatÃ¡s";
+upnp.clear="IndÃ­tÃ¡skor a port fordÃ­tÃ¡sok tÃ¶rlÃ©se";
+upnp.url="BemutatÃ³ (Presentation) URL kÃ¼ldÃ©se";
+upnp.msg1="Kattintson ide a bejegyzÃ©s tÃ¶rlÃ©sÃ©hez!";
+upnp.msg2="TÃ¶rli az Ã¶sszes bejegyzÃ©st?";
 
 
 //help container
 
-hupnp.right2="A törlésre kattintva törlõdnek a bejegyzések.";
-hupnp.right4="Engedélyezi, hogy az alkalmazások automatikusan beállítsák a port fordítást";
+hupnp.right2="A tÃ¶rlÃ©sre kattintva tÃ¶rlÅ‘dnek a bejegyzÃ©sek.";
+hupnp.right4="EngedÃ©lyezi, hogy az alkalmazÃ¡sok automatikusan beÃ¡llÃ­tsÃ¡k a port fordÃ­tÃ¡st";
 
 
 // ******************************************* VPN.asp *******************************************//
 
 vpn.titl="VPN Passthrough";
-vpn.h2="Virtuális Privát Hálózat (VPN)";
+vpn.h2="VirtuÃ¡lis PrivÃ¡t HÃ¡lÃ³zat (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
 vpn.pptp="PPTP Passthrough";
@@ -1328,25 +1328,25 @@ vpn.l2tp="L2TP Passthrough";
 
 //help container
 
-hvpn.right1="Javasolt az IPSec, PPTP és/vagy L2TP passthrough engedélyezése , hogy a hálózati készülékek VPN-en kerszetül kommunikálhassanak.";
+hvpn.right1="Javasolt az IPSec, PPTP Ã©s/vagy L2TP passthrough engedÃ©lyezÃ©se , hogy a hÃ¡lÃ³zati kÃ©szÃ¼lÃ©kek VPN-en kerszetÃ¼l kommunikÃ¡lhassanak.";
 
 
 
 // **************************************************************** Vlan.asp **********************************************************************//
 
-vlan.titl="Virtuális LAN";
-vlan.h2="Virtuális Helyi Hálózat (VLAN)";
+vlan.titl="VirtuÃ¡lis LAN";
+vlan.h2="VirtuÃ¡lis Helyi HÃ¡lÃ³zat (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="A Bridge csatlakoztatva";
-vlan.tagged="Címkézett";
-vlan.negociate="Auto Negotiáció";
-vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />"; 
-vlan.trunk="Trönk";
+vlan.tagged="CÃ­mkÃ©zett";
+vlan.negociate="Auto NegotiÃ¡ciÃ³";
+vlan.aggregation="Kapcsolat egyesÃ­tÃ©se a 3-as Ã©s 4es portokon (Link Aggregation<br />"; 
+vlan.trunk="TrÃ¶nk";
 
 
 // **************************************************************** WEP.asp **********************************************************************//
 
-wep.defkey="Alapértelmezett átviteli kulcs";
+wep.defkey="AlapÃ©rtelmezett Ã¡tviteli kulcs";
 wep.passphrase="Passphrase";
 
 
@@ -1354,53 +1354,53 @@ wep.passphrase="Passphrase";
 
 wol.titl="WOL";
 wol.h2="Wake-On-LAN";
-wol.legend="Elérhetõ hostok";
-wol.legend2="WOL-címek";
+wol.legend="ElÃ©rhetÅ‘ hostok";
+wol.legend2="WOL-cÃ­mek";
 wol.legend3="Kimenet";
-wol.legend4="Manuális WOL";
-wol.enable="Engedélyezi a WOL-t?";
-wol.mac="MAC-cím(ek)";
-wol.broadcast="Üzenetszórás";
+wol.legend4="ManuÃ¡lis WOL";
+wol.enable="EngedÃ©lyezi a WOL-t?";
+wol.mac="MAC-cÃ­m(ek)";
+wol.broadcast="ÃœzenetszÃ³rÃ¡s";
 wol.udp="UDP-Port";
-wol.msg1="Kattintson, a Wol host eltávolításához";
+wol.msg1="Kattintson, a Wol host eltÃ¡volÃ­tÃ¡sÃ¡hoz";
 
 wol.h22="Automatikus Wake-On-LAN";
-wol.legend5="Wake-On-LAN kiszolgáló";
-wol.srv="WOL kiszolgáló";
-wol.pass="SecureOn jelszó";
+wol.legend5="Wake-On-LAN kiszolgÃ¡lÃ³";
+wol.srv="WOL kiszolgÃ¡lÃ³";
+wol.pass="SecureOn jelszÃ³";
 
 //help container
 
-hwol.right2="Ezen az oldalon elindíthatja állomásait a helyi hálózatról (pl. melyek közvetlenül kapcsolódnak a routerhez.) Manuálisan elindíthatja az állomásokat, ha rákattint a <em>"+sbutton.wol+"</em> gombra, illetve automatikusan ütemezheti az indításukat.";
-hwol.right4="A MAC címet/címeket a következõ formátumban adja meg: xx:xx:xx:xx:xx:xx (p.l. 01:23:45:67:89:AB) (szóközzel tudja a címeket elválasztani)";
-hwol.right6="Az IP cím általában egy üzenetszórási cím a helyi hálózatban, de egy távoli kiszolgáló címe is lehet, amely nem kapcsolódik a helyi hálózathoz.";
+hwol.right2="Ezen az oldalon elindÃ­thatja Ã¡llomÃ¡sait a helyi hÃ¡lÃ³zatrÃ³l (pl. melyek kÃ¶zvetlenÃ¼l kapcsolÃ³dnak a routerhez.) ManuÃ¡lisan elindÃ­thatja az Ã¡llomÃ¡sokat, ha rÃ¡kattint a <em>"+sbutton.wol+"</em> gombra, illetve automatikusan Ã¼temezheti az indÃ­tÃ¡sukat.";
+hwol.right4="A MAC cÃ­met/cÃ­meket a kÃ¶vetkezÅ‘ formÃ¡tumban adja meg: xx:xx:xx:xx:xx:xx (p.l. 01:23:45:67:89:AB) (szÃ³kÃ¶zzel tudja a cÃ­meket elvÃ¡lasztani)";
+hwol.right6="Az IP cÃ­m Ã¡ltalÃ¡ban egy Ã¼zenetszÃ³rÃ¡si cÃ­m a helyi hÃ¡lÃ³zatban, de egy tÃ¡voli kiszolgÃ¡lÃ³ cÃ­me is lehet, amely nem kapcsolÃ³dik a helyi hÃ¡lÃ³zathoz.";
 
 
 // **************************************************************** WanMAC.asp **********************************************************************//
 
-wanmac.titl="MAC-cím klónozás";
-wanmac.h2="MAC-cím klónozás";
-wanmac.legend="MAC-klónozás";
-wanmac.wan="WAN MAC klónozása";
+wanmac.titl="MAC-cÃ­m klÃ³nozÃ¡s";
+wanmac.h2="MAC-cÃ­m klÃ³nozÃ¡s";
+wanmac.legend="MAC-klÃ³nozÃ¡s";
+wanmac.wan="WAN MAC klÃ³nozÃ¡sa";
 wanmac.wlan="WLAN MAC";
 
 //help container
 
-hwanmac.right2="Bizonyos ISP szolgáltatók használatához regisztrálnia kell a MAC címét. Ha nem kívánja újraregisztrálni a MAC címét, akkor az ISP-hez regisztrált MAC címet klónozni tudja a routerrel.";
+hwanmac.right2="Bizonyos ISP szolgÃ¡ltatÃ³k hasznÃ¡latÃ¡hoz regisztrÃ¡lnia kell a MAC cÃ­mÃ©t. Ha nem kÃ­vÃ¡nja ÃºjraregisztrÃ¡lni a MAC cÃ­mÃ©t, akkor az ISP-hez regisztrÃ¡lt MAC cÃ­met klÃ³nozni tudja a routerrel.";
 			
 
 
 // **************************************************************** WL_WPATable.asp **************************************************************//
 // **************************************************************** WPA.asp **********************************************************************//
 
-wpa.titl="Vezetéknélküli biztonság";
-wpa.h2="Vezetéknélküli biztonság";
-wpa.secmode="Biztonság";
-wpa.legend="Vezetéknélküli titkosítás";
-wpa.auth_mode="Hálózati hitelesítés";
+wpa.titl="VezetÃ©knÃ©lkÃ¼li biztonsÃ¡g";
+wpa.h2="VezetÃ©knÃ©lkÃ¼li biztonsÃ¡g";
+wpa.secmode="BiztonsÃ¡g";
+wpa.legend="VezetÃ©knÃ©lkÃ¼li titkosÃ­tÃ¡s";
+wpa.auth_mode="HÃ¡lÃ³zati hitelesÃ­tÃ©s";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
-wpa.rekey="Key Renewal Interval (másodpercben)";
+wpa.rekey="Key Renewal Interval (mÃ¡sodpercben)";
 wpa.radius_ipaddr="RADIUS-Szerver IP";
 wpa.radius_port="RADIUS-Szerver Port";
 wpa.radius_key="RADIUS-kulcs";
@@ -1409,102 +1409,102 @@ wpa.shared_key="WPA megosztott kulcs";
 wpa.rekeyInt="Rekey-Interval";
 
 
-sec80211x.xsuptype="XSupplicant típus";
-sec80211x.servercertif="Publikus szerver tanusítvány";
-sec80211x.clientcertif="Kliens tanusítvány";
+sec80211x.xsuptype="XSupplicant tÃ­pus";
+sec80211x.servercertif="Publikus szerver tanusÃ­tvÃ¡ny";
+sec80211x.clientcertif="Kliens tanusÃ­tvÃ¡ny";
 
 //help container
 
-hwpa.right1="Biztonsági mód";
-hwpa.right2="A következõ lehetõségek közül választhat: letiltva, WEP, WPA Personal, WPA Enterpreise vagy RADIUS. A hálózat összes eszközén ugyanazokat a beállításokat kell alkalmaznia!";
+hwpa.right1="BiztonsÃ¡gi mÃ³d";
+hwpa.right2="A kÃ¶vetkezÅ‘ lehetÅ‘sÃ©gek kÃ¶zÃ¼l vÃ¡laszthat: letiltva, WEP, WPA Personal, WPA Enterpreise vagy RADIUS. A hÃ¡lÃ³zat Ã¶sszes eszkÃ¶zÃ©n ugyanazokat a beÃ¡llÃ­tÃ¡sokat kell alkalmaznia!";
 
 
 
 // **************************************************************** WL_FilterTable.asp **************************************************************//
 
-wl_filter.titl="MAC-cím szûrõ tábla";
-wl_filter.h2="MAC-cím szûrõ tábla";
-wl_filter.h3="Írja be a MAC címet a következõ formátumban&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl="MAC-cÃ­m szÅ±rÅ‘ tÃ¡bla";
+wl_filter.h2="MAC-cÃ­m szÅ±rÅ‘ tÃ¡bla";
+wl_filter.h3="Ãrja be a MAC cÃ­met a kÃ¶vetkezÅ‘ formÃ¡tumban&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // **************************************************************** WL_ActiveTable.asp **************************************************************//
 
-wl_active.titl="Az aktív WLAN-kliensek MAC-címei";
-wl_active.h2="A WLAN-kliensek MAC-címei:";
-wl_active.h3="Mac szûrés engedélyezése";
-wl_active.active="Aktíve PC-k";
-wl_active.inactive="Inaktív PC-k";
+wl_active.titl="Az aktÃ­v WLAN-kliensek MAC-cÃ­mei";
+wl_active.h2="A WLAN-kliensek MAC-cÃ­mei:";
+wl_active.h3="Mac szÅ±rÃ©s engedÃ©lyezÃ©se";
+wl_active.active="AktÃ­ve PC-k";
+wl_active.inactive="InaktÃ­v PC-k";
 
 
 
 // **************************************************************** Wireless_WDS.asp ***************************************************************//
 
 wds.titl="WDS";
-wds.h2="Vezetéknélküli disztribúciós rendszer";
-wds.legend="WDS-beállítások";
+wds.h2="VezetÃ©knÃ©lkÃ¼li disztribÃºciÃ³s rendszer";
+wds.legend="WDS-beÃ¡llÃ­tÃ¡sok";
 wds.label="Lazy WDS";
-wds.label2="WDS-alhálózatok";
+wds.label2="WDS-alhÃ¡lÃ³zatok";
 wds.wl_mac="WLAN-MAC";
 wds.nat1="WLAN->WDS";
 wds.nat2="WDS->WLAN";
-wds.subnet="Alhálózatok";
-wds.legend2="További beállítások";
+wds.subnet="AlhÃ¡lÃ³zatok";
+wds.legend2="TovÃ¡bbi beÃ¡llÃ­tÃ¡sok";
 
 
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
 radius.titl="RADIUS"; 
-radius.h2="Távoli hitelesítés Dial-In szolgáltatás";
+radius.h2="TÃ¡voli hitelesÃ­tÃ©s Dial-In szolgÃ¡ltatÃ¡s";
 radius.legend="RADIUS";
 radius.label="RADIUS-kliens-MAC";
-radius.label2="MAC-formátuma";
+radius.label2="MAC-formÃ¡tuma";
 radius.label3="RADIUS-Szerver IP";
 radius.label4="RADIUS-Szerver Port";
-radius.label5="Nem hitelesített felhasználók maximális száma";
-radius.label6="Jelszó-formátuma";
+radius.label5="Nem hitelesÃ­tett felhasznÃ¡lÃ³k maximÃ¡lis szÃ¡ma";
+radius.label6="JelszÃ³-formÃ¡tuma";
 radius.label7="RADIUS megosztott kulcs";
-radius.label8="RADIUS felülbírálása, ha a szerver elérhetetlen";
+radius.label8="RADIUS felÃ¼lbÃ­rÃ¡lÃ¡sa, ha a szerver elÃ©rhetetlen";
 
 
 
 // **************************************************************** Wireless_MAC.asp ***************************************************************//
 
-wl_mac.titl="MAC-szûrés";
-wl_mac.h2="WLAN MAC-szûrés";
-wl_mac.legend="MAC-szûrés";
-wl_mac.label="Szûrés engedélyezése";
-wl_mac.label2="Szûrés típusa";
-wl_mac.deny="Tiltja a felsorolt kliensek kapcsolódását a vezetéknélküli hálózathoz";
-wl_mac.allow="Csak a felsorolt kliensek kapcsolódhatnak a vezetéknélküli hálózathoz";
+wl_mac.titl="MAC-szÅ±rÃ©s";
+wl_mac.h2="WLAN MAC-szÅ±rÃ©s";
+wl_mac.legend="MAC-szÅ±rÃ©s";
+wl_mac.label="SzÅ±rÃ©s engedÃ©lyezÃ©se";
+wl_mac.label2="SzÅ±rÃ©s tÃ­pusa";
+wl_mac.deny="Tiltja a felsorolt kliensek kapcsolÃ³dÃ¡sÃ¡t a vezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zathoz";
+wl_mac.allow="Csak a felsorolt kliensek kapcsolÃ³dhatnak a vezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zathoz";
 
 
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
 
-wl_adv.titl="Speciális WLAN-beállítások";
-wl_adv.h2="Speciális WLAN-beállítások";
-wl_adv.legend="Speciális beállítások";
-wl_adv.legend2="WLAN speciális beállítások";
-wl_adv.label="Hitelesítés-típusa";
+wl_adv.titl="SpeciÃ¡lis WLAN-beÃ¡llÃ­tÃ¡sok";
+wl_adv.h2="SpeciÃ¡lis WLAN-beÃ¡llÃ­tÃ¡sok";
+wl_adv.legend="SpeciÃ¡lis beÃ¡llÃ­tÃ¡sok";
+wl_adv.legend2="WLAN speciÃ¡lis beÃ¡llÃ­tÃ¡sok";
+wl_adv.label="HitelesÃ­tÃ©s-tÃ­pusa";
 wl_adv.label2="Basis Rate";
 wl_adv.label3="Transmission Fixed Rate";
 wl_adv.label4="CTS Protection Mode";
 wl_adv.label5="Frame Burst";
 wl_adv.label6="Beacon intervallum";
 wl_adv.label7="DTIM intervallum";
-wl_adv.label8="Tördelés küszöbérték";
-wl_adv.label9="RTS küszöbérték";
-wl_adv.label10="Maximálisan csatlakoztatható kliensek száma";
-wl_adv.label11="AP Izoláció";
+wl_adv.label8="TÃ¶rdelÃ©s kÃ¼szÃ¶bÃ©rtÃ©k";
+wl_adv.label9="RTS kÃ¼szÃ¶bÃ©rtÃ©k";
+wl_adv.label10="MaximÃ¡lisan csatlakoztathatÃ³ kliensek szÃ¡ma";
+wl_adv.label11="AP IzolÃ¡ciÃ³";
 wl_adv.label12="TX Antenna";
 wl_adv.label13="RX Antenna";
 wl_adv.label14="Preamble";
 wl_adv.reference="Zaj referencia (Noise Reference)";
 wl_adv.label16="Afterburner";
-wl_adv.label17="Vezetéknélküli felhasználói felület hozzáférés";
-wl_adv.label18="WMM-támogatás";
-wl_adv.label19="Nyugtázás nélkül";
+wl_adv.label17="VezetÃ©knÃ©lkÃ¼li felhasznÃ¡lÃ³i felÃ¼let hozzÃ¡fÃ©rÃ©s";
+wl_adv.label18="WMM-tÃ¡mogatÃ¡s";
+wl_adv.label19="NyugtÃ¡zÃ¡s nÃ©lkÃ¼l";
 wl_adv.label21="Transmission Maximum Rate";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
 wl_adv.col1="CWmin";
@@ -1515,15 +1515,15 @@ wl_adv.col5="TXOP(a/g)";
 wl_adv.col6="Admin Forced";
 wl_adv.row1="Background";
 wl_adv.row2="Best Effort";
-wl_adv.row3="Videó";
+wl_adv.row3="VideÃ³";
 wl_adv.row4="Hang";
 wl_adv.table2="EDCA STA Parameter (Client nach AP)";
-wl_adv.lng="Hosszú"; 					//************* don't use .long! *************
-wl_adv.shrt="Rövid"; 				//************* don't use .short! **************
+wl_adv.lng="HosszÃº"; 					//************* don't use .long! *************
+wl_adv.shrt="RÃ¶vid"; 				//************* don't use .short! **************
 
 //help container
 
-hwl_adv.right2="Automatikus kulcs vagy megosztott kulcs lehetõségek közül válaszhat. A megosztott kulcs hitelesítés biztonságosabb, viszont az összes hálózati eszköznek támogatnia kell a megosztott kulcs hitelesítést.";
+hwl_adv.right2="Automatikus kulcs vagy megosztott kulcs lehetÅ‘sÃ©gek kÃ¶zÃ¼l vÃ¡laszhat. A megosztott kulcs hitelesÃ­tÃ©s biztonsÃ¡gosabb, viszont az Ã¶sszes hÃ¡lÃ³zati eszkÃ¶znek tÃ¡mogatnia kell a megosztott kulcs hitelesÃ­tÃ©st.";
 
 
 
@@ -1531,12 +1531,12 @@ hwl_adv.right2="Automatikus kulcs vagy megosztott kulcs lehetõségek közül válasz
 
 wl_basic.titl="Wifi";
 wl_basic.h2="Wifi";
-wl_basic.legend="Alapbeállítások";
-wl_basic.label="Vezetéknélküli üzemmód";
-wl_basic.label2="Vezetéknélküli hálózat üzemmód";
-wl_basic.label3="Vezetéknélküli hálózat neve (SSID)";
-wl_basic.label4="Vezetéknélküli csatorna";
-wl_basic.label5="WLAN-SSID terjesztés";
+wl_basic.legend="AlapbeÃ¡llÃ­tÃ¡sok";
+wl_basic.label="VezetÃ©knÃ©lkÃ¼li Ã¼zemmÃ³d";
+wl_basic.label2="VezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zat Ã¼zemmÃ³d";
+wl_basic.label3="VezetÃ©knÃ©lkÃ¼li hÃ¡lÃ³zat neve (SSID)";
+wl_basic.label4="VezetÃ©knÃ©lkÃ¼li csatorna";
+wl_basic.label5="WLAN-SSID terjesztÃ©s";
 wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
@@ -1553,53 +1553,53 @@ wl_basic.n2="Csak-N (2.4 GHz)";
 wl_basic.g="Csak-G";
 wl_basic.bg="BG-Mixelt";
 wl_basic.n="Csak-N";
-wl_basic.legend2="WLAN-idõkorlátozás";
-wl_basic.radio="WLAN rádió";
+wl_basic.legend2="WLAN-idÅ‘korlÃ¡tozÃ¡s";
+wl_basic.radio="WLAN rÃ¡diÃ³";
 wl_basic.radio_on="WLAN bekapcsolva";
 wl_basic.radio_off="WLAN kikapcsolva";
 
-wl_basic.h2_v24="Vezetéknélküli interfész";
-wl_basic.regdom="Felügyeleti tartomány";
+wl_basic.h2_v24="VezetÃ©knÃ©lkÃ¼li interfÃ©sz";
+wl_basic.regdom="FelÃ¼gyeleti tartomÃ¡ny";
 wl_basic.TXpower="TX Power";
-wl_basic.diversity="Kétantennás adatátvitel (diversity)";
-wl_basic.primary="Elsõdleges?";
-wl_basic.secondary="Másodlagos?";
-wl_basic.network="Hálózati beállítások";
+wl_basic.diversity="KÃ©tantennÃ¡s adatÃ¡tvitel (diversity)";
+wl_basic.primary="ElsÅ‘dleges?";
+wl_basic.secondary="MÃ¡sodlagos?";
+wl_basic.network="HÃ¡lÃ³zati beÃ¡llÃ­tÃ¡sok";
 wl_basic.unbridged="Unbridged";
 wl_basic.bridged="Bridged";
-wl_basic.turbo="Turbo üzemmód";
-wl_basic.extrange="Kiterjesztett hatótávolság (Extended Range (XR))";
-wl_basic.extchannel="Kiterjesztett csatorna üzemmód (Extended Channel Mode)";
+wl_basic.turbo="Turbo Ã¼zemmÃ³d";
+wl_basic.extrange="Kiterjesztett hatÃ³tÃ¡volsÃ¡g (Extended Range (XR))";
+wl_basic.extchannel="Kiterjesztett csatorna Ã¼zemmÃ³d (Extended Channel Mode)";
 wl_basic.outband="Outdoor Band";
-wl_basic.channel_width="Csatorna szélesség";
+wl_basic.channel_width="Csatorna szÃ©lessÃ©g";
 wl_basic.regulatory="SuperKanal";
 
 
 //help container
 
-hwl_basic.right2="Wireless-G kliensek kizárásához, válassza a <em>Csak B</em> módot. A vezetéknélküli hozzáférés kikapcsolásához válassza a <em>Letiltást</em>.<br /><b>Megjegyzés :</b> a vezetéknélküli üzemmód változtatásakor, néhány speciális paramétert szükséges módosítani: (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" vagy \"" + wl_adv.label5 + "\").";
-hwl_basic.right3="Érzékenységi tartomány: ";
-hwl_basic.right4="Ack idõzítés beállítása. 0 letiltja az ack idõzítést.";
+hwl_basic.right2="Wireless-G kliensek kizÃ¡rÃ¡sÃ¡hoz, vÃ¡lassza a <em>Csak B</em> mÃ³dot. A vezetÃ©knÃ©lkÃ¼li hozzÃ¡fÃ©rÃ©s kikapcsolÃ¡sÃ¡hoz vÃ¡lassza a <em>LetiltÃ¡st</em>.<br /><b>MegjegyzÃ©s :</b> a vezetÃ©knÃ©lkÃ¼li Ã¼zemmÃ³d vÃ¡ltoztatÃ¡sakor, nÃ©hÃ¡ny speciÃ¡lis paramÃ©tert szÃ¼ksÃ©ges mÃ³dosÃ­tani: (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" vagy \"" + wl_adv.label5 + "\").";
+hwl_basic.right3="Ã‰rzÃ©kenysÃ©gi tartomÃ¡ny: ";
+hwl_basic.right4="Ack idÅ‘zÃ­tÃ©s beÃ¡llÃ­tÃ¡sa. 0 letiltja az ack idÅ‘zÃ­tÃ©st.";
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
-fail.mess1="A megadott érték érvénytelen. Kérem próbálja meg újra.";
-fail.mess2="A frissítés sikertelen!";
+fail.mess1="A megadott Ã©rtÃ©k Ã©rvÃ©nytelen. KÃ©rem prÃ³bÃ¡lja meg Ãºjra.";
+fail.mess2="A frissÃ­tÃ©s sikertelen!";
 
 
 
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
-success.saved="A beállítások mentése sikeres";
-success.restore="Beállítások visszaállítva.<br />A router újraindul. Kérem várjon......";
-success.upgrade="A frissítés sikerült!<br />A router újraindul. Kérem várjon......";
-success.success_noreboot="A beállítások mentése sikeres.";
-success.success_reboot=success.success_noreboot + "<br />A router újraindul. Kérem várjon...";
+success.saved="A beÃ¡llÃ­tÃ¡sok mentÃ©se sikeres";
+success.restore="BeÃ¡llÃ­tÃ¡sok visszaÃ¡llÃ­tva.<br />A router Ãºjraindul. KÃ©rem vÃ¡rjon......";
+success.upgrade="A frissÃ­tÃ©s sikerÃ¼lt!<br />A router Ãºjraindul. KÃ©rem vÃ¡rjon......";
+success.success_noreboot="A beÃ¡llÃ­tÃ¡sok mentÃ©se sikeres.";
+success.success_reboot=success.success_noreboot + "<br />A router Ãºjraindul. KÃ©rem vÃ¡rjon...";
 
-success.alert_reset="Az összes konfigurációs érték az eredeti értékükre visszaállt.<br /><br />";
-success.alert1="Kérem ellenõrizze a következõket, mielõtt újra csatlakozna:";
-success.alert2="Ha Ön megváltoztatta a router IP-címét, kérem szabadítsa fel, és újítsa meg a kliens/kliensek IP-címeit.";
-success.alert3="Amennyiben Wlan-on keresztül csatlakozik, kérem válassza ki a hálózatot, és kattintson a <em> 	Csatlakozásra</em>.";
+success.alert_reset="Az Ã¶sszes konfigurÃ¡ciÃ³s Ã©rtÃ©k az eredeti Ã©rtÃ©kÃ¼kre visszaÃ¡llt.<br /><br />";
+success.alert1="KÃ©rem ellenÅ‘rizze a kÃ¶vetkezÅ‘ket, mielÅ‘tt Ãºjra csatlakozna:";
+success.alert2="Ha Ã–n megvÃ¡ltoztatta a router IP-cÃ­mÃ©t, kÃ©rem szabadÃ­tsa fel, Ã©s ÃºjÃ­tsa meg a kliens/kliensek IP-cÃ­meit.";
+success.alert3="Amennyiben Wlan-on keresztÃ¼l csatlakozik, kÃ©rem vÃ¡lassza ki a hÃ¡lÃ³zatot, Ã©s kattintson a <em> 	CsatlakozÃ¡sra</em>.";
 
 
 
@@ -1609,9 +1609,9 @@ success.alert3="Amennyiben Wlan-on keresztül csatlakozik, kérem válassza ki a há
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
 
-dhcp.titl="DHCP aktív IP-tábla";
-dhcp.h2="DHCP aktív IP-tábla";
-dhcp.server="DHCP Server-IP-címe :";
-dhcp.tclient="Kliens-hostnév";
+dhcp.titl="DHCP aktÃ­v IP-tÃ¡bla";
+dhcp.h2="DHCP aktÃ­v IP-tÃ¡bla";
+dhcp.server="DHCP Server-IP-cÃ­me :";
+dhcp.tclient="Kliens-hostnÃ©v";
 
-donate.mb="Ön a Moneybrookers-Account-on keresztül is tudja a mb@dd-wrt.com-ot támogatni.";
+donate.mb="Ã–n a Moneybrookers-Account-on keresztÃ¼l is tudja a mb@dd-wrt.com-ot tÃ¡mogatni.";
