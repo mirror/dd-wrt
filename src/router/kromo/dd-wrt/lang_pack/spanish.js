@@ -357,7 +357,7 @@ errmsg.err55="El Nombre del Servicio ya existe.";
 errmsg.err56="El puerto está fuera de rango [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="&iquest; Borrar la Entrada ?";
+errmsg.err57="¿ Borrar la Entrada ?";
 errmsg.err103=" debe de ser menor que ";
 
 // Status_Lan.asp error messages
@@ -601,7 +601,7 @@ filter.legend3="Servicios Bloquedos";
 filter.catchall="Capturar todos los protocolos P2P";
 filter.legend4="Bloqueo Web mediante direción URL";
 filter.legend5="Bloqueo Web mediante palabra clave";
-filter.mess1="&iquest;Borrar la política?";
+filter.mess1="¿Borrar la política?";
 filter.mess2="Debes elegir al menos un día.";
 filter.mess3="La hora final debe ser posterior a la hora de inicio.";
 
@@ -826,7 +826,7 @@ hotspotsys.customsplash="Página Splash personalizada (Walled Garden)";
 //hanchorfree.right6="La activación es fácil";
 //hanchorfree.right7="Una vez activado, AnchorFree le enviará un email a la cuenta registrada con instrucciones sencillas para optimizar su hotspot, FAQs, y otra información pertinente sobre como ganar dinero con su router. Desde esta pantalla de configuración, AnchorFree insertará un pequeño frame de publicidad no intrusivo directamente en los navegadores web que accedan a internet desde este router.";
 //hanchorfree.right8="Soporte del cliente";
-//hanchorfree.right9="&iquest;Tiene alguna pregunta? Contacte con nosotros en boxhelp@anchorfree.com";
+//hanchorfree.right9="¿Tiene alguna pregunta? Contacte con nosotros en boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
@@ -1511,7 +1511,7 @@ status_inet.traffout="Salida";
 status_inet.previous="Mes Anterior";
 status_inet.next="Mes Siguiente";
 status_inet.dataadmin="Datos de Administración";
-status_inet.delete_confirm="¡AVISO! Esto eliminará todos los datos sobre el tráfico. &iquest;Proceder?";
+status_inet.delete_confirm="¡AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
 
 //help container
 hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> &oacute; <em>desconectar</em> tu conexi&oacute;n aquí haciendo clic en ese bot&oacute;n.";
@@ -1611,7 +1611,7 @@ upnp.serv="Servicio UPnP";
 upnp.clear="Limpiar puertos redireccionados al arrancar";
 upnp.url="Enviar URL de Presentación";
 upnp.msg1="Clic para borrar Lease";
-upnp.msg2="&iquest;Borrar Entradas?";
+upnp.msg2="¿Borrar Entradas?";
 
 
 //help container
@@ -1657,7 +1657,7 @@ wol.legend="Hosts Disponibles";
 wol.legend2="Direcciónes WOL";
 wol.legend3="Salida";
 wol.legend4="WOL Manual";
-wol.enable="&iquest;Activar WOL";
+wol.enable="¿Activar WOL";
 wol.mac="Dirección(es) MAC Address";
 wol.broadcast="Broadcast de Red";
 wol.udp="Puerto UDP";
