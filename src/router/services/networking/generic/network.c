@@ -5267,24 +5267,6 @@ static void writenet(char *path, int cpumask, char *ifname)
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_MAC80211_COMPRESS
-static void load_compressor(void)
-{
-	insmod("xxhash");
-	insmod("zstd_compress");
-	insmod("zstd_decompress");
-	insmod("lzo_compress");
-	insmod("lzo_decompress");
-	insmod("lz4_compress");
-	insmod("lz4_decompress");
-	insmod("lzma_compress");
-	insmod("lzma_decompress");
-	/* this module uses weak symbols, which allows to run the whole mac80211 code 
-	 * without any bindings to external libraries which arent in use. this will reduce
-	 * resource usage since we dont need to load all the libraries all the time
-	 * specially with zstd this is neccessary right now
-	 */
-	insmod("mac80211_compress");
-}
 
 static void set_frame_compression(char *prefix, char *interface)
 {
@@ -5294,16 +5276,12 @@ static void set_frame_compression(char *prefix, char *interface)
 	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 	sprintf(compr, "%s_fc", prefix);
 	if (nvram_default_matchi(compr, 1, 0)) {
-		load_compressor();
 		eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
 	} else if (nvram_default_matchi(compr, 2, 0)) {
-		load_compressor();
 		eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
 	} else if (nvram_default_matchi(compr, 3, 0)) {
-		load_compressor();
 		eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
 	} else if (nvram_default_matchi(compr, 4, 0)) {
-		load_compressor();
 		eval("iw", "dev", interface, "set", "compr", "zstd", threshold);
 	} else {
 		eval("iw", "dev", interface, "set", "compr", "off");
@@ -5311,10 +5289,6 @@ static void set_frame_compression(char *prefix, char *interface)
 
 }
 #else
-static void load_compressor(void)
-{
-}
-
 static void set_frame_compression(char *prefix, char *interface)
 {
 }
