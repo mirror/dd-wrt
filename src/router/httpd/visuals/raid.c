@@ -589,7 +589,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"apfs\\\" %s >APFS</option>\");\n", !strcmp(fs, "APFS") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td>\n");
+			websWrite(wp, "<td class=\"center\">\n");
 			int dis = 1;
 			if (!strcmp(fs, "XFS") && xfs)
 				dis = 0;
