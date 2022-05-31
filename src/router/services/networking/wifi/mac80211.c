@@ -131,25 +131,6 @@ static const char *gethtmode(char *prefix)
 	return ht;
 }
 
-static void load_compressor(void)
-{
-	insmod("xxhash");
-	insmod("zstd_compress");
-	insmod("zstd_decompress");
-	insmod("lzo_compress");
-	insmod("lzo_decompress");
-	insmod("lz4_compress");
-	insmod("lz4_decompress");
-	insmod("lzma_compress");
-	insmod("lzma_decompress");
-	/* this module uses weak symbols, which allows to run the whole mac80211 code 
-	 * without any bindings to external libraries which arent in use. this will reduce
-	 * resource usage since we dont need to load all the libraries all the time
-	 * specially with zstd this is neccessary right now
-	 */
-	insmod("mac80211_compress");
-}
-
 static void setRTS(char *use)
 {
 	ENTER;
@@ -637,16 +618,12 @@ void configure_single_ath9k(int count)
 			sprintf(compr, "%s_fc", var);
 
 			if (nvram_default_matchi(compr, 1, 0)) {
-				load_compressor();
 				eval("iw", "dev", var, "set", "compr", "lzo", threshold);
 			} else if (nvram_default_matchi(compr, 2, 0)) {
-				load_compressor();
 				eval("iw", "dev", var, "set", "compr", "lzma", threshold);
 			} else if (nvram_default_matchi(compr, 3, 0)) {
-				load_compressor();
 				eval("iw", "dev", var, "set", "compr", "lz4", threshold);
 			} else if (nvram_default_matchi(compr, 4, 0)) {
-				load_compressor();
 				eval("iw", "dev", var, "set", "compr", "zstd", threshold);
 			} else {
 				eval("iw", "dev", var, "set", "compr", "off");
@@ -669,16 +646,12 @@ void configure_single_ath9k(int count)
 	MAC80211DEBUG();
 
 	if (nvram_default_matchi(compr, 1, 0)) {
-		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
 	} else if (nvram_default_matchi(compr, 2, 0)) {
-		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
 	} else if (nvram_default_matchi(compr, 3, 0)) {
-		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
 	} else if (nvram_default_matchi(compr, 4, 0)) {
-		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "zstd", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
