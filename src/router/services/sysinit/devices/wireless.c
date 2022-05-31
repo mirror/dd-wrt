@@ -115,6 +115,15 @@ int detectchange(char *mod)
 
 static void load_mac80211(void)
 {
+	insmod("xxhash");
+	insmod("zstd_compress");
+	insmod("zstd_decompress");
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("lz4_compress");
+	insmod("lz4_decompress");
+	insmod("lzma_compress");
+	insmod("lzma_decompress");
 	insmod("compat");
 	insmod("compat_firmware_class");
 	insmod("cfg80211");
