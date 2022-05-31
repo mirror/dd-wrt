@@ -1436,7 +1436,7 @@ routetbl.tos="Tos/Dsfield";
 routetbl.fwmark="Fwmark";
 routetbl.realms="Bereich";
 routetbl.table="Tabelle";
-routetbl.suppress_prefixlength="Prefixlänge Ausblenden";
+routetbl.suppress_prefixlength="Prefixlänge ausblenden";
 routetbl.iif="Eingehendes Interface";
 routetbl.oif="Ausgehendes Interface";
 routetbl.nat="Nat Adresse";
@@ -1616,7 +1616,7 @@ service.pppoesrv_srv="RP-PPPoE Server Daemon";
 service.pppoesrv_interface="RP-PPPoE Server Schnittstelle";
 service.pppoesrv_srvopt="RP-PPPoE Server Optionen";
 service.pppoesrv_compr="Kompression";
-service.pppoesrv_lcpei="LCP Echo Interval";
+service.pppoesrv_lcpei="LCP Echo Intervall";
 service.pppoesrv_lcpef="LCP Echo Fehler";
 service.pppoesrv_limit="Verbindungs Limit pro MAC";
 service.pppoesrv_idlet="Idle Time";
@@ -1673,7 +1673,7 @@ service.vpnd_dhcpbl="Blockiere DHCP über den Tunnel";
 service.vpnd_blockmulticast="Blockiere multicast über den Tunnel";
 service.vpnd_dh="Benutze ECDH anstelle von DH.PEM";
 service.vpnd_static="Statischer Schlüssel";
-service.vpn_redirgate="Push Client route";
+service.vpn_redirgate="Push Client Route";
 service.vpn_defgateway="Standardgateway";
 service.vpn_srvroute="Servers subnet";
 service.vpn_legend="OpenVPN-Client";
@@ -1688,7 +1688,7 @@ service.vpn_tunnel="Tunnelprotokoll";
 service.vpn_tuntap="Tunnel-Typ";
 service.vpn_srvcert="Öffentliches CA-Zertifikat";
 service.vpn_clicert="Öffentliches Client-Zertifikat";
-service.vpn_certtype="Üverprüfe Server Zert.";
+service.vpn_certtype="Überprüfe Server Zert.";
 service.vpn_certtype="nsCertType Verifikation";
 service.vpn_clikey="Privater Client-Schlüssel";
 service.vpn_nat="NAT";
@@ -1715,8 +1715,8 @@ service.vpn_wdog="Watchdog";
 
 
 //help container
-hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standardgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
-hstatus_vpn.right2="Zusätzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: 'push \"route IP mask gateway\"'. Analog kann mit 'push \"dhcp-option DNS (or WINS) IP\"' DNS/WINS Server weitergegeben werden.</i><br />Ordner für Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingehängt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgeführt.</i>";
+hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden des Standardgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
+hstatus_vpn.right2="Zusätzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: 'push \"route IP mask gateway\"'. Analog kann mit 'push \"dhcp-option DNS (or WINS) IP\"' DNS/WINS Server weitergegeben werden.</i><br />Ordner für Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingehängt sind, werden Skripte aus /jffs/etc/openvpn/ccd/ ausgeführt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verfügbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
 //vnc.repeater
@@ -1728,7 +1728,7 @@ service.vncrepeater="VNC Repeater";
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Kennwortanmeldung";
-service.ssh_key="Authorisierte Schlüssel";
+service.ssh_key="Autorisierte Schlüssel";
 service.ssh_forwarding="SSH TCP Weiterleitung";
 
 //radiooff.webservices
@@ -1789,7 +1789,7 @@ service.milkfish_fromdomain="Von-Domain";
 service.milkfish_username="Milkfish Benutzername";
 service.milkfish_password="Milkfish Kennwort";
 service.milkfish_audit="Milkfish Kontrolle";
-service.milkfish_siptrace="SIP Verfolgen";
+service.milkfish_siptrace="SIP verfolgen";
 service.milkfish_subscribers="Lokale Clients";
 service.milkfish_aliases="Lokale Aliase";
 service.milkfish_dynsip="Dynamisches SIP";
