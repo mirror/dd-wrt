@@ -20,7 +20,7 @@
 <% ifndef("USBADV", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("usb.drive_ra"); %></div>
-			<input class="num" maxlength="8" size=="6" name="drive_ra" value="<% nvg("drive_ra"); %>" />
+			<input class="num" maxlength="8" size="6" name="drive_ra" value="<% nvg("drive_ra"); %>" />
 		</div>
 <% ifndef("USBADV", "-->"); %>
 <% ifndef("USBIP", "<!--"); %>
