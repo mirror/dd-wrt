@@ -102,12 +102,12 @@ body input.focus {
 body input[disabled] {
   background-color: var(--bg-0) !important;
   border-color: var(--bg-2);
-  color: var(--v9-4);
+  color: var(--v9-6);
 }
 body input[disabled]:hover {
-  color: var(--v9-9);
   border-color: var(--bg-2) !important;
   background-color: var(--bg-0) !important;
+  color: var(--v9-6);
 }
 body input.button {
   background: var(--v0-4);
@@ -511,6 +511,9 @@ textarea:focus-visible {
 }
 .syslog_bd {
   background: var(--bg-1);
+}
+.dark_fs_bg {
+  background: var(--syslog-bd);
 }
 .syslog_bg {
   background: var(--syslog-bd);
