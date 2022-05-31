@@ -848,8 +848,8 @@ hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn für ihre Clients.<br
 
 //help page
 hprivoxy.page1="<dd>Privoxy ermöglicht das Entfernen von Werbung. <br /><ul><br /></ul></dd>";
-hprivoxy.page2="<dd><br /><ul><br /><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es nötig die Automatische Proxykonfiguratio zu aktivieren</li><li>Falls ihr Klient Mitglied einer Domäne ist, müssen sie das Senden der lokalen Domäne aktivieren</li></ul></dd>";
-hprivoxy.page3="<dd><br /><ul><li>Verbindungen ins Internet zu Port 80 werden über den Werbefilter geleitet</li><li>Dadurch kann das Filtern für jeden Klient erzwungen werden</li><li>Im Transparenten Modus können keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen über den Werbefilter zu leiten</li></ul></dd>";
+hprivoxy.page2="<dd><br /><ul><br /><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es nötig die automatische Proxykonfiguration zu aktivieren</li><li>Falls ihr Klient Mitglied einer Domäne ist, müssen sie das Senden der lokalen Domäne aktivieren</li></ul></dd>";
+hprivoxy.page3="<dd><br /><ul><li>Verbindungen ins Internet zu Port 80 werden über den Werbefilter geleitet</li><li>Dadurch kann das Filtern für jeden Klient erzwungen werden</li><li>Im transparenten Modus können keine HTTPS Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Auto-Config um die Verbindungen über den Werbefilter zu leiten</li></ul></dd>";
 hprivoxy.page4="<dd><br /><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li></ul></dd>";
 
 
@@ -878,7 +878,7 @@ hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
 hotspot.uamport="UAM Port";
 hotspot.uamdns="UAM Any DNS";
-hotspot.allowuam="UAM Erlaubt (getrennt durch Beistrich)";
+hotspot.allowuam="UAM erlaubt (getrennt durch Beistrich)";
 hotspot.allowuad="UAM Domänen (getrennt durch Leerzeichen)";
 hotspot.macauth="MAC Authentifizierung";
 hotspot.macpasswd="MAC Kennwort";
@@ -929,11 +929,11 @@ hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web Server Name";
 hotspot.wifidog_httpdconn="Maximale Benutzeranzahl";
-hotspot.wifidog_checkinter="Check Interval (s)";
+hotspot.wifidog_checkinter="Prüfintervall (s)";
 hotspot.wifidog_checktimeout="Client Timeout";
 hotspot.wifidog_tmaclist="Trusted MAC Liste";
 hotspot.wifidog_authsrv="AuthServer Hostname";
-hotspot.wifidog_authsrvssl="AuthServer SSL Verfügbar";
+hotspot.wifidog_authsrvssl="AuthServer SSL verfügbar";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
@@ -946,7 +946,7 @@ hotspot.wifidog_auth="HTTP Authentication Unterstützung";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>Wenn USB or JFFS als /jffs eingebungen ist, können Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Locale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der primäre RADIUSserver auf 127.0.0.1 gesetzt werden.</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Wenn USB oder JFFS als /jffs eingebunden ist, können Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Lokale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der primäre RADIUSserver auf 127.0.0.1 gesetzt werden.</i>";
 
 // ** Hotspotsystem **//
 
@@ -954,7 +954,7 @@ hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Entferne WLAN aus der LAN-Bridge";
 hotspotsys.uamenable="Spezielle Einstellungen";
 hotspotsys.loginonsplash="Login auf Splash Seite";
-hotspotsys.allowuam="UAM Erlaubt";
+hotspotsys.allowuam="UAM erlaubt";
 hotspotsys.allowuad="UAM Domänen (getrennt mit Leerzeichen)";
 hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";
@@ -987,18 +987,18 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 //anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Adresse angegeben werden!";
 //anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Stadt oder Postleitzahl angegeben werden!";
 //anchorfree.validcat="Bitte wählen Sie eine Kategorie für ihren Hotspot aus!";
-//anchorfree.validcountry="Bitte geben Sie ihr Land an";
+//anchorfree.validcountry="Bitte geben Sie Ihr Land an";
 //anchorfree.validterms="Sie müssen den Nutzungsbestimmungen zustimmen!";
 //
 
 //hanchorfree.right1="Tritt dem AnchorFree Hotspot Werbenetzwerk bei";
 //hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Benutzern wachsende Gewinnmöglichkeiten bietet";
 //hanchorfree.right3="Generiere wachsende Gewinne durch die Nutzung von AnchorFree";
-//hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das erstellen des dazugehörigen Benutzerkontos (kostenlos und einfach), wird ein permantenter Werbebereich in die Aufgerufenen Webseiten eingefügt, welches zu einer Monatlichen Gewinnausschüttung führt.  Beginnend von einem Monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
+//hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das Erstellen des dazugehörigen Benutzerkontos (kostenlos und einfach), wird ein permanenter Werbebereich in die aufgerufenen Webseiten eingefügt, welches zu einer monatlichen Gewinnausschüttung führt.  Beginnend von einem monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
 //hanchorfree.right5="Für weitere Informationen besuchen sie bitte www.anchorfree.com";
-//hanchorfree.right6="Das Einschalten ist Einfach";
-//hanchorfree.right7="Einmal eingeschaltet, wird ihnen von AnchorFRee automatisch eine Email an Ihre registrierte email Adresse geschickt, welche einfache Anweisungen über die Optimierung ihres Hotspots, FAQs und andere wichtige Informationen über das Geld verdienen mit ihrem Router enthält. Durch dieses Konfigurationsmenü wird von AnchorFree ein kleines, nicht zu aufdringliches Werbebanner in die aufgerufenen Webseiten eingefügt.";
-//hanchorfree.right8="Kunden unterstützung";
+//hanchorfree.right6="Das Einschalten ist einfach";
+//hanchorfree.right7="Einmal eingeschaltet, wird ihnen von AnchorFree automatisch eine Email an ihre registrierte E-Mail Adresse geschickt, welche einfache Anweisungen über die Optimierung ihres Hotspots, FAQs und andere wichtige Informationen über das Geld verdienen mit ihrem Router enthält. Durch dieses Konfigurationsmenü wird von AnchorFree ein kleines, nicht zu aufdringliches Werbebanner in die aufgerufenen Webseiten eingefügt.";
+//hanchorfree.right8="Kunden Unterstützung";
 //hanchorfree.right9="Haben Sie Fragen? Kontaktieren Sie uns durch boxhelp@anchorfree.com";
 
 
@@ -1114,7 +1114,7 @@ hidx.right10="Dies ist die Netzmaske Ihres Routers.";
 hidx.right12="Erlaubt dem Router, Ihre IP-Adressen zu verwalten.";
 hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
 hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken, die der Router maximal vergeben kann. 0 bedeutet das nur vordefinierte statische Leases zur Vergabe verwendet werden.";
-hidx.right18="Wählen Sie hier die Zeitzone in der Sie sich befinden. Wenn das Server IP/Name Feld nicht gesetzt ist, wird die interne Adresse fuer den Zeitserver verwendet (Empfohlen)";
+hidx.right18="Wählen Sie hier die Zeitzone in der Sie sich befinden. Wenn das Server IP/Name Feld nicht gesetzt ist, wird die interne Adresse für den Zeitserver verwendet (empfohlen)";
 hidx.sas="Der Setup Assistent leitet Sie durch die Vereinfachten Einstellungen um ihren Router einzurichten.";
 
 // ** DSL ** //
@@ -1130,7 +1130,7 @@ dsl.snr="DSL Signal (up/down)";
 
 //sshd.webservices
 join.titl="Verbinden";
-join.mess1="Sie sind nun erfolgreich dem folgenden Netzerk als Client verbunden: ";
+join.mess1="Sie sind nun erfolgreich mit dem folgenden Netzwerk als Client verbunden: ";
 
 
 // ** Log_incoming.asp **//
@@ -1204,7 +1204,7 @@ management.ipv6_srv="IPv6";
 management.ipv6_typ="IPv6 Type";
 management.ipv6_pf_len="Prefix Länge";
 management.ipv6_rad_enable="Radvd";
-management.ipv6_rad="Indivuelle Konfiguration";
+management.ipv6_rad="Individuelle Konfiguration";
 management.ipv6_radconf="Radvd-Konfiguration";
 management.ipv6_dns="Statischer DNS";
 management.ipv6_prefix="Zugewiesener / Routed Prefix";
@@ -1284,23 +1284,23 @@ management.very_strong="Sehr Sicher";
 management.score="Punkte:";
 management.complexity="Sicherheit:";
 management.bootconfig="Startkonfiguration (Grub)";
-management.disable_msi="MSI Interrupt behandlung abschalten.";
-management.pci_tuning="PCI/PCI-E Bus Anpassen";
+management.disable_msi="MSI Interrupt Behandlung abschalten.";
+management.pci_tuning="PCI/PCI-E Bus anpassen";
 management.pcie_aer="PCI-E Erweitertes Error Reporting (AER)";
-management.pcie_ari="PCI-E Alternative Routen Interpretatoin (ARI)";
-management.pci_noacpi="ACPI Irq Routing Abschalten";
+management.pcie_ari="PCI-E Alternative Routen Interpretation (ARI)";
+management.pci_noacpi="ACPI Irq Routing abschalten";
 management.bus_tune_off="Kein Bus Tuning";
 management.bus_safe="Sicheres Bus Tuning";
 management.bus_perf="Schnelles Bus Tuning";
 management.bus_peer2peer="Peer2Peer Bus Tuning";
-management.nospectre_v1="Spectre V1 Entschärfen";
-management.nospectre_v2="Spectre V2 Entschärfen";
-management.mds="MDS Entschärfen";
-management.srbds="SRBDS Entschärfen";
-management.l1tf="L1TF Entschärfen";
-management.nospec_store_bypass_disable="Speculative Store Bypass Entschärfen";
-management.tsx_async_abort="TSX Async Abort Entschärfen";
-management.nopti="Seitentabelle Isolieren";
+management.nospectre_v1="Spectre V1 entschärfen";
+management.nospectre_v2="Spectre V2 entschärfen";
+management.mds="MDS entschärfen";
+management.srbds="SRBDS entschärfen";
+management.l1tf="L1TF entschärfen";
+management.nospec_store_bypass_disable="Speculative Store Bypass entschärfen";
+management.tsx_async_abort="TSX Async Abort entschärfen";
+management.nopti="Seitentabelle isolieren";
 
 //help container
 
