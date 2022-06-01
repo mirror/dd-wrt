@@ -44,8 +44,7 @@ int http_stats(const char *url)
 	char **cur;
 	char *secrets[] = { "os_server", "stats_server", "http_passwd", NULL };
 	char *files[] = { "/proc/version", "/proc/meminfo", "/proc/cpuinfo",
-		"/proc/interrupts",
-		"/proc/net/dev", "/proc/net/pppoe", "/proc/net/snmp", NULL
+		"/proc/interrupts", "/proc/net/dev", "/proc/net/pppoe", "/proc/net/snmp", NULL
 	};
 	char *contents;
 	int NVRAMSPACE = nvram_size();
