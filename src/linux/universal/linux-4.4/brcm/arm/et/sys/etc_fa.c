@@ -1342,7 +1342,7 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 {
 	fa_info_t *fai = NULL;
 	bool fa_capable = FA_CAPABLE(fa_chip_rev(sih), sih->chip);
-	printk(KERN_INFO "CHIPID %d, rev %d\n", CHIPID(sih->chip), fa_chip_rev(sih));
+
 	if (!fa_capable) {
 		printk(KERN_INFO "not FA capable\n");
 		return NULL;
@@ -1355,7 +1355,6 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 
 	/* By pass fa attach if FA configuration is not enabled or invalid */
 	if (!FA_ON_MODE_VALID()) {
-		printk(KERN_INFO "no valid FA Mode.\n");
 		return NULL;
 	}
 
