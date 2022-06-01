@@ -5,7 +5,7 @@
 		<script type="text/javascript" src="js/wiviz2.js"></script>
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
-		<meta http-equiv="refresh" content="1800" charset="utf-8">
+		<meta http-equiv="refresh" content="1800" charset="UTF-8">
 	</head>
 
 <body class="bg_color">
