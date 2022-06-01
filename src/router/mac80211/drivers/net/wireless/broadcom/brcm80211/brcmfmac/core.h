@@ -205,6 +205,7 @@ struct brcmf_if {
 	struct in6_addr ipv6_addr_tbl[NDOL_MAX_ENTRIES];
 	u8 ipv6addr_idx;
 	bool fwil_fwerr;
+	bool disable_cca;
 };
 
 int brcmf_netdev_wait_pend8021x(struct brcmf_if *ifp);
