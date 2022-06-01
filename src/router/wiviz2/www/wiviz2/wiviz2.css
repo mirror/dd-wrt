@@ -1,5 +1,4 @@
 body {
-	background-color: #e2e2e2;
 	font-family: sans-serif;
 	font-size: 10pt;
 }
@@ -18,20 +17,25 @@ div.expando {
 	z-index: 150;
 }
 div.slidingheader {
-	border: 1px solid black;
-	background-image: url(../images/wiviz/slidingheader.gif);
-	background-repeat: repeat-x;
-	background-position: 0 0;
 	width: 100%;
-	background-color: white;
 	text-align: center;
 	font-weight: bold;
 	padding: 1px 0px 1px 0px;
 	cursor: pointer;
+	border-radius: 4px;
+}
+div.slidingheader {
+	background: #30519c;
+	border: 1px solid #30519c;
+	color: #fff;
+}
+div.slidingheader:hover {
+	background: #6384cf;
+	border: 1px solid #6384cf;
+	color: #fff;
 }
 div.slidingbody, div.slidingbodyshow {
 	border-top: none;
-	background-color: white;
 	width: 100%;
 	overflow: hidden;
 	clip: auto;
@@ -47,8 +51,6 @@ div.slidingbodyshow center {
 	font-size: 10pt;
 	margin-top: 5px;
 	margin-bottom: 5px;
-	border-top: 1px solid black;
-	border-bottom: 1px solid black;
 }
 div.controls {
 	position: absolute;
@@ -82,7 +84,6 @@ div.div3d {
 	text-align: center;
 }
 div.gridpoint {
-	background-color: black;
 	width: 3px;
 	height: 3px;
 	position: absolute;
@@ -108,11 +109,7 @@ select {
 iframe.wiviz {
 	display: none;
 }
-span.title3d {
-	background-color: #e2e2e2;
-}
 a.action {
-	color: black;
 	display: block;
 	margin-bottom: 3px;
 	text-align: center;
@@ -130,4 +127,81 @@ div#debugger {
 }
 img {
 	border: none;
+}
+@media (prefers-color-scheme: light) {
+	.bg_color, span.title3d {
+		background-color: #f6f6f6;
+		color: #000;
+	}
+	a.action {
+		color: black;
+  }
+	div.slidingbodyshow center {
+		border-top: 1px solid #444;
+		border-bottom: 1px solid #444;
+	}
+	div.gridpoint {black
+		background-color: #000;
+	}
+	div.slidingbody, div.slidingbodyshow {
+		background-color: white;
+	}
+  [src*='wiviz'] {
+    filter: contrast(1.6) opacity(.7);
+    mix-blend-mode: lighten;
+		border-radius: 4px;
+  }
+  [src*='up']:hover,
+  [src*='down']:hover,
+  [src*='zoom']:hover,
+  [src*='reset']:hover,
+  [src*='up']:focus-within,
+  [src*='down']:focus-within,
+  [src*='zoom']:focus-within,
+  [src*='reset']:focus-within {
+    background-color: transparent;
+    filter: contrast(1.6) opacity(1);
+    mix-blend-mode: lighten;
+  }
+}
+@media (prefers-color-scheme: dark) {
+	.bg_color, span.title3d {
+		background-color: #1a1a1a;
+		color: #fff;
+	}
+	a.action {
+		color: #fff;
+  }
+	div.slidingbodyshow center {
+		border-top: 1px solid #444;
+		border-bottom: 1px solid #444;
+	}
+	div.gridpoint {
+		background-color: #fff;
+	}
+	div.slidingbody, div.slidingbodyshow {
+		background-color: #222;
+    color: #fff;
+	}
+  img.logo {
+    filter: invert(.95) hue-rotate(180deg) contrast(1.6);
+    mix-blend-mode: lighten;
+  }
+  [src*='wiviz'] {
+    filter: invert(0.95) hue-rotate(180deg) contrast(1.6) opacity(.7);
+    mix-blend-mode: lighten;
+		border-radius: 4px;
+  }
+  [src*='up']:hover,
+  [src*='down']:hover,
+  [src*='zoom']:hover,
+  [src*='reset']:hover,
+  [src*='up']:focus-within,
+  [src*='down']:focus-within,
+  [src*='zoom']:focus-within,
+  [src*='reset']:focus-within {
+    background-color: transparent;
+    filter: invert(0.95) hue-rotate(180deg) contrast(1.6) opacity(1);
+    mix-blend-mode: lighten;
+  }
 }
