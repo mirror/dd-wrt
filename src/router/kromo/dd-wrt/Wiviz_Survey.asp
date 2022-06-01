@@ -8,7 +8,7 @@
 		<meta http-equiv="refresh" content="1800" charset="UTF-8">
 	</head>
 
-<body class="bg_color">
+<body class="popup_bg">
 
 <img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
 
