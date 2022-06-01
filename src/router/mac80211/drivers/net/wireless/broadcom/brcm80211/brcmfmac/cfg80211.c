@@ -2926,8 +2926,11 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 		survey->filled = SURVEY_INFO_NOISE_DBM | SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
 		survey->channel = ieee80211_get_channel(wiphy, cfg->pub->chan_stats[idx].freq);
 		survey->noise = cfg->pub->chan_stats[idx].noise;
-		survey->time = cfg->pub->chan_stats[idx].time;
-		survey->time_busy = cfg->pub->chan_stats[idx].time_busy;
+		if (!ifp->disable_cca) {
+			survey->filled = SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME
+			survey->time = cfg->pub->chan_stats[idx].time;
+			survey->time_busy = cfg->pub->chan_stats[idx].time_busy;
+		}
 		if (!survey->noise)
 		    survey->noise = -95;
 		return 0;
@@ -2940,9 +2943,12 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 	}
 	req.chanspec = cpu_to_le32(chanspec);
 	req.num_secs = 1;
-	err = brcmf_fil_iovar_data_get(ifp, "cca_get_stats", &req, sizeof(req));
-	if (err) {
-		brcmf_err("cca_get_stats failed (%d)\n", err);
+	if (!ifp->disable_cca) {
+		err = brcmf_fil_iovar_data_get(ifp, "cca_get_stats", &req, sizeof(req));
+		if (err) {
+			ifp->disable_cca = true;
+			brcmf_err("cca_get_stats failed (%d), disable cca feature due lack of firmware support\n", err);
+		}
 	}
 
 #if 0
@@ -2979,13 +2985,15 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 			    break;
 			if (cfg->pub->chan_stats[i].freq == 0)
 			    break;
-		}	
-		if (i < cfg->pub->num_chan_stats) {
-			survey->filled |= SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
-			cfg->pub->chan_stats[i].time += req.secs[0].duration;
-			cfg->pub->chan_stats[i].time_busy += req.secs[0].congest_ibss +  req.secs[0].congest_obss +  req.secs[0].interference;
-			survey->time = cfg->pub->chan_stats[i].time;
-			survey->time_busy = cfg->pub->chan_stats[i].time_busy;
+		}
+		if (!ifp->disable_cca) {
+			if (i < cfg->pub->num_chan_stats) {
+				survey->filled |= SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
+				cfg->pub->chan_stats[i].time += req.secs[0].duration;
+				cfg->pub->chan_stats[i].time_busy += req.secs[0].congest_ibss +  req.secs[0].congest_obss +  req.secs[0].interference;
+				survey->time = cfg->pub->chan_stats[i].time;
+				survey->time_busy = cfg->pub->chan_stats[i].time_busy;
+			}
 		}
 		survey->noise = le32_to_cpu(noise);
 		if (!survey->noise)
