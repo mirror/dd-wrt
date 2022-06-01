@@ -1,13 +1,14 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<title><% nvg("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
 		<script type="text/javascript" src="js/wiviz2.js"></script>
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
-		<meta http-equiv="refresh" content="1800">
+		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
 
-<body>
+<body class="bg_color">
 
 <img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
 
@@ -32,11 +33,11 @@
 			Monitoring<br>
 			<center>Channel setting</center> 
 			<form name="channelform" action="apply.cgi" method="post" />
-				   	<input type="hidden" name="action" value="Apply" />
-					<input type="hidden" name="change_action" value="gozila_cgi" />
-					<input type="hidden" name="submit_button" value="Wiviz_Survey" />
-						<input type="hidden" name="submit_type" value="Set" />
-						<input type="hidden" name="commit" value="1" />
+				<input type="hidden" name="action" value="Apply" />
+				<input type="hidden" name="change_action" value="gozila_cgi" />
+				<input type="hidden" name="submit_button" value="Wiviz_Survey" />
+				<input type="hidden" name="submit_type" value="Set" />
+				<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
 				<option value='0' <% nvs("hopseq","0"); %> >All</option>
 				<option value='1' <% nvs("hopseq","1"); %> >1</option>
@@ -61,7 +62,6 @@
 				<option value='100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >100 to 173</option>
 				<option value='32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >32 to 173</option>
 			</select>
-			
 			<center>Hopdwell (ms)</center> 
 			<select name='hopdwell' onChange='this.form.submit()'>
 				<option value='250' <% nvs("hopdwell","250"); %> >250</option>
@@ -72,12 +72,9 @@
 				<option value='5000' <% nvs("hopdwell","5000"); %> >5000</option>
 				<option value='10000' <% nvs("hopdwell","10000"); %> >10000</option>
 			</select>
-
-
 			</form>
 		</div>
 	</div>
-
 	<div class='expando'>
 		<div class='slidingheader' id='displayoptions' onClick='toggleExpando(this)'>
 			Display options
@@ -95,7 +92,6 @@
 			<input type='checkbox' id='blend' onClick='updatePrefs(this)'> Blending effects<br>
 			<input type='checkbox' id='scale' onClick='updatePrefs(this)'> Scaling<br>
 			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'> Fly in on click<br>
-
 		</div>
 	</div>
 	<div class='expando'>
