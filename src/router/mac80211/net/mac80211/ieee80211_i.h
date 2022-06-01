@@ -25,8 +25,7 @@
 #include <linux/leds.h>
 #include <linux/idr.h>
 #include <linux/rhashtable.h>
-#include <linux/random.h>
-#include <linux/skiplist.h>
+#include <linux/rbtree.h>
 #include <net/ieee80211_radiotap.h>
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
 #include <linux/lzma/LzmaDec.h>
@@ -868,7 +867,6 @@ enum txq_info_flags {
 	IEEE80211_TXQ_AMPDU,
 	IEEE80211_TXQ_NO_AMSDU,
 	IEEE80211_TXQ_STOP_NETIF_TX,
-	IEEE80211_TXQ_FORCE_ACTIVE,
 };
 
 /**
@@ -885,6 +883,7 @@ struct txq_info {
 	struct fq_tin tin;
 	struct codel_vars def_cvars;
 	struct codel_stats cstats;
+	struct rb_node schedule_order;
 
 	struct sk_buff_head frags;
 	unsigned long flags;
@@ -1239,7 +1238,8 @@ enum mac80211_scan_state {
  *
  * @lock: spinlock that protects all the fields in this struct
  * @active_txqs: rbtree of currently backlogged queues, sorted by virtual time
- * @schedule_pos: last used airtime_info node while a driver walks the tree
+ * @schedule_pos: the current position maintained while a driver walks the tree
+ *                with ieee80211_next_txq()
  * @active_list: list of struct airtime_info structs that were active within
  *               the last AIRTIME_ACTIVE_DURATION (100 ms), used to compute
  *               weight_sum
@@ -1260,8 +1260,8 @@ enum mac80211_scan_state {
  */
 struct airtime_sched_info {
 	spinlock_t lock;
-	struct airtime_sched_list active_txqs;
-	struct airtime_sched_node *schedule_pos;
+	struct rb_root_cached active_txqs;
+	struct rb_node *schedule_pos;
 	struct list_head active_list;
 	u64 last_weight_update;
 	u64 last_schedule_activity;
@@ -1725,57 +1725,53 @@ static inline struct airtime_info *to_airtime_info(struct ieee80211_txq *txq)
 	return &sdata->airtime[txq->ac];
 }
 
-static inline int
-airtime_sched_cmp(struct airtime_sched_list *list,
-		  struct airtime_sched_node *n1, struct airtime_sched_node *n2)
-{
-	struct airtime_info *a1, *a2;
-
-	a1 = container_of(n1, struct airtime_info, schedule_order);
-	a2 = container_of(n2, struct airtime_info, schedule_order);
-
-	return a1->v_t_cur - a2->v_t_cur;
-}
-
-static inline unsigned int
-airtime_sched_seed(struct airtime_sched_list *list)
-{
-	return prandom_u32();
-}
-
-DECLARE_SKIPLIST_IMPL(airtime_sched, airtime_sched_cmp, airtime_sched_seed);
-
 /* To avoid divisions in the fast path, we keep pre-computed reciprocals for
  * airtime weight calculations. There are two different weights to keep track
  * of: The per-station weight and the sum of weights per phy.
- * The per-sta shift value supports weight values of 1-4096
+ *
+ * For the per-station weights (kept in airtime_info below), we use 32-bit
+ * reciprocals with a devisor of 2^19. This lets us keep the multiplications and
+ * divisions for the station weights as 32-bit operations at the cost of a bit
+ * of rounding error for high weights; but the choice of divisor keeps rounding
+ * errors <10% for weights <2^15, assuming no more than 8ms of airtime is
+ * reported at a time.
+ *
+ * For the per-phy sum of weights the values can get higher, so we use 64-bit
+ * operations for those with a 32-bit divisor, which should avoid any
+ * significant rounding errors.
  */
-#define IEEE80211_RECIPROCAL_SHIFT_SUM	24
-#define IEEE80211_RECIPROCAL_SHIFT_STA	12
-#define IEEE80211_WEIGHT_SHIFT		8
+#define IEEE80211_RECIPROCAL_DIVISOR_64 0x100000000ULL
+#define IEEE80211_RECIPROCAL_SHIFT_64 32
+#define IEEE80211_RECIPROCAL_DIVISOR_32 0x80000U
+#define IEEE80211_RECIPROCAL_SHIFT_32 19
 
-static inline void airtime_weight_set(struct airtime_info *air_info, u32 weight)
+static inline void airtime_weight_set(struct airtime_info *air_info, u16 weight)
 {
-	weight = min_t(u32, weight, BIT(IEEE80211_RECIPROCAL_SHIFT_STA));
 	if (air_info->weight == weight)
 		return;
 
 	air_info->weight = weight;
-	if (weight)
-		weight = BIT(IEEE80211_RECIPROCAL_SHIFT_STA) / weight;
-	air_info->weight_reciprocal = weight;
+	if (weight) {
+		air_info->weight_reciprocal =
+			IEEE80211_RECIPROCAL_DIVISOR_32 / weight;
+	} else {
+		air_info->weight_reciprocal = 0;
+	}
 }
 
 static inline void airtime_weight_sum_set(struct airtime_sched_info *air_sched,
-					  u32 weight_sum)
+					  int weight_sum)
 {
 	if (air_sched->weight_sum == weight_sum)
 		return;
 
 	air_sched->weight_sum = weight_sum;
-	if (weight_sum)
-		weight_sum = BIT(IEEE80211_RECIPROCAL_SHIFT_SUM) / weight_sum;
-	air_sched->weight_sum_reciprocal = weight_sum;
+	if (air_sched->weight_sum) {
+		air_sched->weight_sum_reciprocal = IEEE80211_RECIPROCAL_DIVISOR_64;
+		do_div(air_sched->weight_sum_reciprocal, air_sched->weight_sum);
+	} else {
+		air_sched->weight_sum_reciprocal = 0;
+	}
 }
 
 /* A problem when trying to enforce airtime fairness is that we want to divide
@@ -1832,7 +1828,6 @@ static inline void init_airtime_info(struct airtime_info *air_info,
 	air_info->aql_limit_high = air_sched->aql_txq_limit_high;
 	airtime_weight_set(air_info, IEEE80211_DEFAULT_AIRTIME_WEIGHT);
 	INIT_LIST_HEAD(&air_info->list);
-	airtime_sched_node_init(&air_info->schedule_order);
 }
 
 static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
