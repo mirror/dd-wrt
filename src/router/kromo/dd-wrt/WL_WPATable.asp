@@ -63,7 +63,7 @@ function check_form(F) {
 							if(result == false) return result;
 						}
 					}
-				   }
+				 }
 				}
 			}
 		}	
@@ -295,7 +295,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-	
 		<div id="wrapper">
 		<div id="content">
 		<div id="header">
@@ -309,31 +308,31 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="action" value="Apply" />
 				<input type="hidden" name="change_action" value="gozila_cgi" />
 				<input type="hidden" name="submit_type" value="save" />
-				
+
 				<input type="hidden" name="security_varname" />
 				<input type="hidden" name="ifname" />
 				<input type="hidden" name="security_mode_last" />
 				<input type="hidden" name="wl_wep_last" />
 				<input type="hidden" name="filter_mac_value" />
-				
+
 				<% show_security(); %>
-				
+
 				<div class="submitFooter">
 					<script type="text/javascript">
-									//<![CDATA[
-									submitFooterButton(1);
-									//]]>
-									</script>
-								</div>
-							</form>
-					</div>
+					//<![CDATA[
+					submitFooterButton(1);
+					//]]>
+					</script>
 				</div>
-				<div id="helpContainer">
-			<div id="help">
-			   <div><h2><% tran("share.help"); %></h2></div>
-			   <dl>
-				 <dt class="term"><% tran("wpa.secmode"); %>:</dt>
-				 <dd class="definition"><% tran("hwpa.right2"); %></dd>
+			</form>
+			</div>
+		</div>
+			<div id="helpContainer">
+				<div id="help">
+			  	<div><h2><% tran("share.help"); %></h2></div>
+			   	<dl>
+				 		<dt class="term"><% tran("wpa.secmode"); %>:</dt>
+				 		<dd class="definition"><% tran("hwpa.right2"); %></dd>
 			   </dl><br />
 			   <a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a>
 			</div>
@@ -349,8 +348,8 @@ addEvent(window, "unload", function() {
 				</div>
 				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
 				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
-				</div>
 			</div>
+		</div>
 		</div>
 	</body>
 </html>
