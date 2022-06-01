@@ -1934,33 +1934,40 @@ void ieee80211_register_airtime(struct ieee80211_txq *txq,
 {
 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(txq->vif);
 	struct ieee80211_local *local = sdata->local;
+	u64 weight_sum, weight_sum_reciprocal;
 	struct airtime_sched_info *air_sched;
 	struct airtime_info *air_info;
-	u64 weight_sum_reciprocal;
 	u32 airtime = 0;
 
 	air_sched = &local->airtime[txq->ac];
 	air_info = to_airtime_info(txq);
 
-	airtime += tx_airtime;
+	if (local->airtime_flags & AIRTIME_USE_TX)
+		airtime += tx_airtime;
 	if (local->airtime_flags & AIRTIME_USE_RX)
 		airtime += rx_airtime;
+
+	/* Weights scale so the unit weight is 256 */
+	airtime <<= 8;
 
 	spin_lock_bh(&air_sched->lock);
 
 	air_info->tx_airtime += tx_airtime;
 	air_info->rx_airtime += rx_airtime;
 
-	if (air_sched->weight_sum)
+	if (air_sched->weight_sum) {
+		weight_sum = air_sched->weight_sum;
 		weight_sum_reciprocal = air_sched->weight_sum_reciprocal;
-	else
+	} else {
+		weight_sum = air_info->weight;
 		weight_sum_reciprocal = air_info->weight_reciprocal;
+	}
 
 	/* Round the calculation of global vt */
-	air_sched->v_t += ((u64)airtime * weight_sum_reciprocal) >>
-			  (IEEE80211_RECIPROCAL_SHIFT_SUM - IEEE80211_WEIGHT_SHIFT);
-	air_info->v_t += (airtime * air_info->weight_reciprocal) >>
-			 (IEEE80211_RECIPROCAL_SHIFT_STA - IEEE80211_WEIGHT_SHIFT);
+	air_sched->v_t += (u64)((airtime + (weight_sum >> 1)) *
+				weight_sum_reciprocal) >> IEEE80211_RECIPROCAL_SHIFT_64;
+	air_info->v_t += (u32)((airtime + (air_info->weight >> 1)) *
+			       air_info->weight_reciprocal) >> IEEE80211_RECIPROCAL_SHIFT_32;
 	ieee80211_resort_txq(&local->hw, txq);
 
 	spin_unlock_bh(&air_sched->lock);
