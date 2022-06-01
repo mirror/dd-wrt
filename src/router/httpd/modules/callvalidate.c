@@ -137,13 +137,13 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp);
 
 	snprintf(service, sizeof(service), "%s", name);
-	dd_logdebug("httpd", "start gozila %s\n", service);
+	dd_logdebug("httpd", "Start gozila %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
 	else
-		dd_logdebug("httpd", "function %s not found \n", service);
+		dd_logdebug("httpd", "Function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -167,14 +167,14 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	int (*fptr)(webs_t wp, char *value, struct variable * v);
 
 	snprintf(service, sizeof(service), "%s", name);
-	dd_logdebug("httpd", "start validator %s\n", service);
+	dd_logdebug("httpd", "Start validator %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
 	else
-		dd_logdebug("httpd", "function %s not found \n", service);
+		dd_logdebug("httpd", "Function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -206,7 +206,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	if (fptr)
 		(*fptr) (wp, value, v);
 	else
-		dd_logdebug("httpd", "function %s not found \n", service);
+		dd_logdebug("httpd", "Function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }

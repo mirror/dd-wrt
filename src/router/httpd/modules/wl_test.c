@@ -58,7 +58,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	info.tx_pks = info.tx_errs = info.tx_drops = info.tx_colls = 0;
 
 	if ((fp = fopen(PROC_DEV, "r")) == NULL) {
-		websError(wp, 400, "Cann't open %s\n", PROC_DEV);
+		websError(wp, 400, "Can't open %s\n", PROC_DEV);
 		return;
 	} else {
 		/*
