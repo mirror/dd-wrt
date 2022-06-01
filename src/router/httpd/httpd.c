@@ -169,7 +169,12 @@ static int my_ciphers[] = {
 static char *dhm_P =
     "E4004C1F94182000103D883A448B3F80"
     "2CE4B44A83301270002C20D0321CFD00"
-    "11CCEF784C26A400F43DFB901BCA7538" "F2C6B176001CF5A0FD16D2C48B1D0C1C" "F6AC8E1DA6BCC3B4E1F96B0564965300" "FFA1D0B601EB2800F489AA512C4B248C" "01F76949A60BB7F00A40B1EAB64BDD48" "E8A700D60B7F1200FA8E77B0A979DABF";
+    "11CCEF784C26A400F43DFB901BCA7538"
+		"F2C6B176001CF5A0FD16D2C48B1D0C1C"
+		"F6AC8E1DA6BCC3B4E1F96B0564965300"
+		"FFA1D0B601EB2800F489AA512C4B248C"
+		"01F76949A60BB7F00A40B1EAB64BDD48"
+		"E8A700D60B7F1200FA8E77B0A979DABF";
 
 static char *dhm_G = "4";
 //unsigned char session_table[SSL_SESSION_TBL_LEN];
@@ -773,13 +778,11 @@ static int
 //do_file(char *path, FILE *stream)
 do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
-
 	return do_file_2(handler, path, stream, NULL);
 }
 
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
 {
-
 	return do_file_2(handler, path, stream, attachment);
 }
 
@@ -833,7 +836,6 @@ static int check_connect_type(webs_t wp)
 				return -1;
 		}
 	}
-
 	return 0;
 }
 
@@ -1205,10 +1207,8 @@ static void *handle_request(void *arg)
 						}
 					}
 				}
-
 				pclose(fp);
 			}
-
 		}
 	}
 #endif
@@ -1397,7 +1397,6 @@ static void settimeouts(webs_t wp, int secs)
 		perror("setsockopt(SO_SNDTIMEO)");
 	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
-
 }
 
 static void handle_sigchld(int sig)
@@ -1451,7 +1450,6 @@ static int sslbufferpeek(struct sslbuffer *buffer, char *data, size_t datalen)
 
 static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datalen)
 {
-
 	int targetsize = SSLBUFFERSIZE - buffer->count;
 	while (datalen >= targetsize) {
 		memcpy(&buffer->sslbuffer[buffer->count], data, targetsize);
@@ -1562,9 +1560,9 @@ int main(int argc, char **argv)
 #endif
 				"	-n : Support HTTP (port 80)\n" "	-p port : Which port to listen?\n" "	-t secs : How many seconds to wait before timing out?\n"
 #ifdef DEBUG_CIPHER
-				"	-s ciphers: set cipher lists\n" "	-g: get cipher lists\n"
+				"	-s ciphers: Set cipher lists\n" "	-g: Get cipher lists\n"
 #endif
-				"	-h: home directory: use directory\n", argv[0]);
+				"	-h: home directory: Use directory\n", argv[0]);
 			exit(0);
 			break;
 		default:
@@ -1726,7 +1724,7 @@ int main(int argc, char **argv)
 
 	/* If we didn't get any valid sockets, fail. */
 	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 && ssl_listen6_fd == -1) {
-		dd_logerror("httpd", "can't bind to any address");
+		dd_logerror("httpd", "Can't bind to any address");
 		exit(1);
 	}
 #if !defined(DEBUG)
@@ -1845,7 +1843,7 @@ int main(int argc, char **argv)
 
 		if (SSL_ENABLED() && DO_SSL(conn_fp)) {
 			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
-				fprintf(stderr, "httpsd: nothing to do...\n");
+				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
@@ -2065,7 +2063,7 @@ int wfputs(char *buf, webs_t wp)
 
 #elif defined(HAVE_POLARSSL)
 		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
-		fprintf(stderr, "ssl write str %d\n", strlen(buf));
+		fprintf(stderr, "SSL write str %d\n", strlen(buf));
 
 #endif
 	} else {
@@ -2091,7 +2089,7 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_printf(fp, "%s", buf);
 #elif defined(HAVE_POLARSSL)
-		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
+		fprintf(stderr, "SSL write buf %d\n", strlen(buf));
 		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
 #endif
 	} else
@@ -2127,7 +2125,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 		ret = matrixssl_write(fp, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
 		{
-			fprintf(stderr, "ssl write buf %d\n", n * size);
+			fprintf(stderr, "SSL write buf %d\n", n * size);
 			ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
 		}
 #endif
@@ -2141,7 +2139,6 @@ static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 {
 	off_t lo = offset;
 	return sendfile(wp->conn_fd, fd, &lo, nbytes);
-
 }
 
 static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
@@ -2207,7 +2204,6 @@ static int wfflush(webs_t wp)
 	} else {
 		ret = fflush(fp);
 	}
-
 	return ret;
 }
 
@@ -2232,7 +2228,6 @@ static int wfclose(webs_t wp)
 		int ret = fclose(fp);
 		wp->fp = NULL;
 	}
-
 	return ret;
 }
 
