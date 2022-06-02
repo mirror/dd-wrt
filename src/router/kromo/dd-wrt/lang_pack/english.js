@@ -953,7 +953,7 @@ privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
 privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
-privoxy.maxclient="Max Client Connection";
+privoxy.maxclient="Max Client Connections";
 
 var hprivoxy=new Object();
 hprivoxy.right2="Enable Privoxy and configure your clients proxy settings. <br /><br />Proxy IP = <b>Router IP</b> <br />Proxy Port = <b>8118</b>";
@@ -994,7 +994,7 @@ hotspot.net="Hotspot Network";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
 hotspot.uamport="UAM Port";
-hotspot.uamdns="UAM Any DNS";
+hotspot.uamdns="UAM any DNS";
 hotspot.allowuam="UAM Allowed (comma separated)";
 hotspot.allowuad="UAM Domains (space separated)";
 hotspot.macauth="MAC Authentication";
