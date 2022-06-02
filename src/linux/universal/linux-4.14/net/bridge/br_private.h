@@ -184,7 +184,13 @@ struct net_bridge_fdb_entry {
 	unsigned long			updated ____cacheline_aligned_in_smp;
 	unsigned long			used;
 
-	struct rcu_head			rcu;
+	union {
+		struct {
+			struct hlist_head		offload_in;
+			struct hlist_head		offload_out;
+		};
+		struct rcu_head			rcu;
+	};
 };
 
 #define MDB_PG_FLAGS_PERMANENT		BIT(0)
@@ -222,6 +228,12 @@ struct net_bridge_mdb_htable
 	u32				max;
 	u32				secret;
 	u32				ver;
+};
+
+struct net_bridge_port_offload {
+	struct rhashtable		rht;
+	struct work_struct		gc_work;
+	bool				enabled;
 };
 
 struct net_bridge_port {
@@ -276,6 +288,7 @@ struct net_bridge_port {
 #ifdef CONFIG_NET_SWITCHDEV
 	int				offload_fwd_mark;
 #endif
+	struct net_bridge_port_offload	offload;
 };
 
 #define br_auto_port(p) ((p)->flags & BR_AUTO_MASK)
@@ -402,6 +415,9 @@ struct net_bridge {
 	struct kobject			*ifobj;
 	u32				auto_cnt;
 
+	u32				offload_cache_size;
+	u32				offload_cache_reserved;
+
 #ifdef CONFIG_NET_SWITCHDEV
 	int offload_fwd_mark;
 #endif
@@ -426,6 +442,10 @@ struct br_input_skb_cb {
 #ifdef CONFIG_BRIDGE_VLAN_FILTERING
 	bool vlan_filtered;
 #endif
+	u8 offload:1;
+	u8 input_vlan_present:1;
+	u16 input_vlan_tag;
+	int input_ifindex;
 
 #ifdef CONFIG_NET_SWITCHDEV
 	int offload_fwd_mark;

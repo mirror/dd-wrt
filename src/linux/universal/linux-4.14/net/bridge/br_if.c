@@ -28,6 +28,7 @@
 #include <net/switchdev.h>
 
 #include "br_private.h"
+#include "br_private_offload.h"
 
 /*
  * Determine initial path cost based on speed.
@@ -364,7 +365,7 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br,
 	p->path_cost = port_cost(dev);
 	p->priority = 0x8000 >> BR_PORT_BITS;
 	p->port_no = index;
-	p->flags = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD;
+	p->flags = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD | BR_OFFLOAD;
 	br_init_port(p);
 	br_set_state(p, BR_STATE_DISABLED);
 	br_stp_port_timer_init(p);
@@ -672,6 +673,9 @@ void br_port_flags_change(struct net_bridge_port *p, unsigned long mask)
 
 	if (mask & BR_AUTO_MASK)
 		nbp_update_port_count(br);
+
+	if (mask & BR_OFFLOAD)
+		br_offload_port_state(p);
 }
 
 /* Update bridge statistics for bridge packets processed by offload engines */
