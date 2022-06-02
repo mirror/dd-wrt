@@ -1871,12 +1871,12 @@ service.zabbix_usrpara="User Parameter";
 
 // mdns
 service.mdns_legend="mDNS/Avahi";
-service.mdns_domain="Domainname [lockal]";
+service.mdns_domain="Domainname [lokal]";
 service.mdns_reflector="Reflektor";
 service.mdns_interfaces="Schnittstellen";
 
-service.transmission_dir="Transmission Konfigurationsverzeichniss";
-service.transmission_download="Transmission Download Verzeichniss";
+service.transmission_dir="Transmission Konfigurationsverzeichnis";
+service.transmission_download="Transmission Download Verzeichnis";
 service.transmission_style="Webinterface Stil";
 service.transmission_rpc="Webinterface Port";
 service.transmission_whitelist="Erlaubte IP's";
@@ -1886,9 +1886,9 @@ service.plex_srv="Plex Medien Server";
 
 // ** eop-tunnel.asp **//
 
-eoip.titl="Tunnels";
+eoip.titl="Tunnel";
 eoip.tunnel="Tunnel";
-eoip.legend="Ethernet Über IP Tunneln";
+eoip.legend="Ethernet Über IP tunneln";
 eoip.srv="EoIP Tunnel";
 eoip.genkey="Erzeuge Schlüssel";
 eoip.wireguard_oet_natout ="NAT über Tunnel";
@@ -1899,20 +1899,20 @@ eoip.wireguard_fwmark="Firewall Markierung";
 eoip.wireguard_route_allowedip="Route erlaubte IP's über Tunnel";
 eoip.wireguard_oet_spbr_ip="Quelle für PBR";
 eoip.wireguard_oet_dpbr_ip="Ziel für PBR";
-eoip.wireguard_oet_dns="DNS Server via tunnel";
+eoip.wireguard_oet_dns="DNS Server via Tunnel";
 eoip.wireguard_localport="Lokaler Port";
 eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_endpoint="Endpunkt";
 eoip.wireguard_peer="Endpunkt Adresse";
 eoip.wireguard_peerport="Entfernter Port";
-eoip.wireguard_peerkey="Entfernter Öffentlicher Schlüssel";
+eoip.wireguard_peerkey="Entfernter öffentlicher Schlüssel";
 eoip.wireguard_cllegend="Client Config File";
 eoip.wireguard_peerip="Peer Tunnel IP";
 eoip.wireguard_peerdns="Peer Tunnel DNS";
 eoip.wireguard_clend="Peer Tunnel Endpoint";
 eoip.wireguard_clka="Peer Keepalive";
-eoip.wireguard_localkey="Lokaler Öffentlicher Schlüssel";
-eoip.wireguard_localprivatekey="Lokaler Privater Schlüssel";
+eoip.wireguard_localkey="Lokaler öffentlicher Schlüssel";
+eoip.wireguard_localprivatekey="Lokaler privater Schlüssel";
 eoip.wireguard_firewallin="Eingehende Firewall";
 eoip.wireguard_killswitch="Notschalter";
 eoip.wireguard_dnspbr="Teile DNS Tunnel";
@@ -1945,7 +1945,7 @@ eoip.tunnelID="Tunnel Nummer";
 eoip.comp="Kompression";
 eoip.passtos="TOS Durchleitung";
 eoip.frag="Fragment";
-eoip.mssfix="mssfix";
+eoip.mssfix="MSS Fix";
 eoip.shaper="shaper";
 eoip.bridging="Brücken";
 eoip.add="Tunnel Hinzufügen";
@@ -2051,7 +2051,7 @@ status_inet.www_loginstatus="Login-Status";
 status_inet.wanuptime="Verbindungszeit";
 status_inet.leasetime="Verbleibende Lease Zeit";
 status_inet.traff="Traffic";
-status_inet.traff_tot="Gesammter Traffic";
+status_inet.traff_tot="Gesamter Traffic";
 status_inet.traff_mon="Traffic pro Monat";
 status_inet.traffin="Eingehend";
 status_inet.traffout="Ausgehend";
@@ -2065,7 +2065,7 @@ status_inet.delete_confirm="WARNUNG! Dies löscht alle ihre Traffic Daten. Fortf
 
 hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
 				Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
-hstatus_inet.right4="Dies zeigt den Internet Verkehr ihres Routers seit dem letzen Neustart an.";
+hstatus_inet.right4="Dies zeigt den Internet Verkehr ihres Routers seit dem letzten Neustart an.";
 hstatus_inet.right6="Hier wird die Datenmenge der Routers ins und vom Internet pro Monat angezeigt. Bewegen Sie die Maus über die Grafik um die tägliche Nutzung zu sehen. Die Daten sind im nvram gespeichert.";
 
 // ** Status_Conntrack.asp **//
@@ -2197,7 +2197,7 @@ vpn.l2tp="L2TP-Durchleitung";
 
 //help container
 
-hvpn.right1="Sie können hier die IPsec-, PPTP- und/oder L2TP-Durchleitung aktivieren um Ihren Netzwerkgeräten die Kommuniktation via VPN zu ermöglichen.";
+hvpn.right1="Sie können hier die IPsec-, PPTP- und/oder L2TP-Durchleitung aktivieren um Ihren Netzwerkgeräten die Kommunikation via VPN zu ermöglichen.";
 
 
 
