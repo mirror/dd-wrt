@@ -1715,7 +1715,7 @@ service.vpn_wdog="Watchdog";
 
 
 //help container
-hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden des Tunnels als Standardgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
+hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden des Tunnels als Standardgateway durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
 hstatus_vpn.right2="Zusätzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: 'push \"route IP mask gateway\"'. Analog kann mit 'push \"dhcp-option DNS (or WINS) IP\"' DNS/WINS Server weitergegeben werden.</i><br />Ordner für Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingehängt sind, werden Skripte aus /jffs/etc/openvpn/ccd/ ausgeführt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verfügbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
