@@ -992,7 +992,7 @@ log_out.th_wanip="URL/IP назначения";
 log_out.th_port="Служба/номер порта";
 
 // ** Log.asp **//
-log.titl="Журнал";
+log.label="Журнал";
 log.h2="Журнал соединений";
 log.legend="Журнал";
 log.lvl="Уровень журнала";

@@ -994,7 +994,7 @@ log_out.th_port="Nombre de Servei/Port";
 
 
 // ** Log.asp **//
-log.titl="Registre";
+log.label="Registre";
 log.h2="Administració de Registre";
 log.legend="Registre";
 log.lvl="Nivell de Registre";
