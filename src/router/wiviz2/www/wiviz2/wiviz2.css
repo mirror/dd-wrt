@@ -129,7 +129,7 @@ img {
   border: none;
 }
 @media (prefers-color-scheme: light) {
-  .bg_color, span.title3d {
+  .popup_bg, span.title3d {
     background-color: #f6f6f6;
     color: #000;
   }
@@ -165,7 +165,7 @@ img {
   }
 }
 @media (prefers-color-scheme: dark) {
-  .bg_color, span.title3d {
+  .popup_bg, span.title3d {
     background-color: #1a1a1a;
     color: #fff;
   }
