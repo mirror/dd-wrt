@@ -962,7 +962,7 @@ log_out.th_port="Service/Poort Nummer";
 
 // ******************************************* Log.asp *******************************************//
 
-log.titl="Log";
+log.label="Log";
 log.h2="Log Beheer";
 log.legend="Log";
 log.lvl="Log Niveau";

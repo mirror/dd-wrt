@@ -260,7 +260,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("log.legend"); %></div>
+									<div class="label"><% tran("log.label"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvc("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvc("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
 								</div>

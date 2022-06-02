@@ -920,7 +920,7 @@ log_out.th_port="Tjänst/Port Number";
 
 
 // ** Log.asp **//
-log.titl="Logg";
+log.label="Logg";
 log.h2="Logg Administration";
 log.legend="Logg";
 log.lvl="Logg Nivå";

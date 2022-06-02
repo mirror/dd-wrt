@@ -1212,7 +1212,7 @@ log_out.th_port="服务/端口号";
 
 
 // ** Log.asp **//
-log.titl="日志";
+log.label="日志";
 log.h2="日志管理";
 log.legend="日志";
 log.lvl="日志等级";

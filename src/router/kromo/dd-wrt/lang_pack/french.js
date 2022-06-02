@@ -824,7 +824,7 @@ log_out.th_wanip="URL/IP destination";
 log_out.th_port="Service/Port";
 
 // ** Log.asp **//
-log.titl="Journal";
+log.label="Journal";
 log.h2="Gestion du journal";
 log.legend="Journal";
 log.lvl="Niveau de dètail";

@@ -1048,7 +1048,7 @@ log_out.th_port="Número do Serviço/Porta";
 
 
 // ** Log.asp **//
-log.titl="Log";
+log.label="Log";
 log.h2="Gerenciamento do Log";
 log.legend="Log";
 log.lvl="Nível do Log";

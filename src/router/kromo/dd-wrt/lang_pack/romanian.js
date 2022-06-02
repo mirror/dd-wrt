@@ -1003,7 +1003,7 @@ log_out.th_port="Număr serviciu / port";
 
 
 // ** Log.asp **//
-log.titl="Istoric";
+log.label="Istoric";
 log.h2="Administrare istoric";
 log.legend="Istoric";
 log.lvl="Nivel istoric";

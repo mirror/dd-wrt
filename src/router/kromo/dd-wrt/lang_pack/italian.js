@@ -1217,7 +1217,7 @@ log_out.th_port="Servizio/Numero Di Porta";
 
 // ** Log.asp **//
 //var log=new Object();
-log.titl="Log";
+log.label="Log";
 log.h2="Gestione Log";
 log.legend="Log";
 log.lvl="Livello Log";

@@ -896,7 +896,7 @@ log_out.th_port="服務/埠號";
 
 // ** Log.asp **//
 //
-log.titl="日誌";
+log.label="日誌";
 log.h2="日誌管理";
 log.legend="日誌";
 log.lvl="日誌等級";

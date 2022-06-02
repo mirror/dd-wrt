@@ -959,7 +959,7 @@ log_out.th_port="ポート番号";
 
 // ** Log.asp **//
 
-log.titl="Log";
+log.label="Log";
 log.h2="Firewall Log 設定";
 log.legend="Log";
 log.lvl="Log 出力レベル";
