@@ -2827,7 +2827,7 @@ dnscrypt.nfeath4title="DNSCrypt";
 dnscrypt.nfeath4txt="<a href=\"https:\/\/www.dnscrypt.org\">DNSCrypt</a> Authentifiziert die Kommunikation mit ihrem DNS Client und einem DNS Resolver. Dies Verhindert DNS Spoofing.";
 dnscrypt.nfeatbutton="&nbsp;&nbsp;Gehen Sie auf den Services Reiter&nbsp;&nbsp;";
 
-featureshead.h2title="Efahren Sie mehr über unsere neuen Features!&nbsp;&nbsp;";
+featureshead.h2title="Erfahren Sie mehr über unsere neuen Features!&nbsp;&nbsp;";
 featureshead.hidebtn="Diese Feld verstecken";
 
 
