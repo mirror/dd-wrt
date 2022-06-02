@@ -271,7 +271,7 @@ static int ismember(char *name)
 EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
-	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(nas.drivemanager)</script></legend>\n");
 	int i = 0;
 	int xfs = checkfs("xfs");
 	int ext2 = checkfs("ext2");
@@ -498,7 +498,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 		websWrite(wp, "</table>\n<br/>");
-		websWrite(wp, "<fieldset>\n");
+		websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script></legend>\n");
 		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"
 			  "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
