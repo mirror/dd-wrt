@@ -27,7 +27,7 @@ function openGeotool(IP) {
 				<div class="setting">
 					<div class="label"><% tran("status_router.net_conntrack"); %></div>
 					<% dumpip_conntrack(); %>
-				</div><br />
+				</div>
 				<fieldset>
 			  <legend><% tran("status_lan.concount"); %></legend>
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
