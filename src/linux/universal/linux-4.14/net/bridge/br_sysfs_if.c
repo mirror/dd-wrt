@@ -179,6 +179,7 @@ BRPORT_ATTR_FLAG(multicast_flood, BR_MCAST_FLOOD);
 BRPORT_ATTR_FLAG(broadcast_flood, BR_BCAST_FLOOD);
 BRPORT_ATTR_FLAG(isolate_mode, BR_ISOLATE_MODE);
 BRPORT_ATTR_FLAG(block_bpdu, BR_BLOCK_BPDU);
+BRPORT_ATTR_FLAG(offload, BR_OFFLOAD);
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
@@ -230,6 +231,7 @@ static const struct brport_attribute *brport_attrs[] = {
 	&brport_attr_broadcast_flood,
 	&brport_attr_isolate_mode,
 	&brport_attr_block_bpdu,
+	&brport_attr_offload,
 	NULL
 };
 

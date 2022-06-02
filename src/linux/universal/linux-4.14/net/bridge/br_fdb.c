@@ -27,6 +27,7 @@
 #include <net/switchdev.h>
 #include <trace/events/bridge.h>
 #include "br_private.h"
+#include "br_private_offload.h"
 
 static struct kmem_cache *br_fdb_cache __read_mostly;
 static int fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
@@ -499,6 +500,8 @@ static struct net_bridge_fdb_entry *fdb_create(struct hlist_head *head,
 		fdb->offloaded = 0;
 		fdb->updated = fdb->used = jiffies;
 		hlist_add_head_rcu(&fdb->hlist, head);
+		INIT_HLIST_HEAD(&fdb->offload_in);
+		INIT_HLIST_HEAD(&fdb->offload_out);
 	}
 	return fdb;
 }
@@ -683,6 +686,8 @@ static void fdb_notify(struct net_bridge *br,
 	struct net *net = dev_net(br->dev);
 	struct sk_buff *skb;
 	int err = -ENOBUFS;
+
+	br_offload_fdb_update(fdb);
 
 	br_switchdev_fdb_notify(fdb, type);
 
