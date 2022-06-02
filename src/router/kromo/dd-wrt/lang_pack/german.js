@@ -2266,7 +2266,7 @@ wpa.legend="WLAN-Verschlüsselung";
 wpa.auth_mode="Netzwerk-Authentifizierung";
 wpa.mfp="802.11w Management Frame Schutz";
 wpa.radius="RADIUS";
-wpa.gtk_rekey="WPA Group Rekey Interval";
+wpa.gtk_rekey="WPA Group Rekey Intervall";
 wpa.rekey="Schlüssel erneuern";
 wpa.radius_ipaddr="RADIUS-Server-IP";
 wpa.radius_port="RADIUS-Server-Port";
@@ -2313,7 +2313,7 @@ aoss.security="Sicherheit";
 aoss.connectivity="Verbindungen";
 aoss.clients="AOSS Clients";
 aoss.notice="Mitteilung";
-aoss.ap_mode_notice="Mitteilung: AOSS kann nur genutzt werden, wenn die Primäre WLAN Schnittstelle sich im AP oder WDS-AP Modus befindet.";
+aoss.ap_mode_notice="Mitteilung: AOSS kann nur genutzt werden, wenn sich die primäre WLAN Schnittstelle im AP oder WDS-AP Modus befindet.";
 aoss.wep_notice="Der WEP Modus ist unsicher! Aus dem Grunde empfehlen wir Ihnen, diesen nicht zu benutzen.";
 aoss.wep_info="(wird für einige Spielkonsolen die AOSS unterstützen, in Verbindung mit AOSS benötigt)";
 aoss.wps="WPS Einstellungen";
@@ -2472,11 +2472,11 @@ freeradius.countrycode="Ländercode";
 freeradius.state="Staat oder Provinz";
 freeradius.locality="Lokalität";
 freeradius.organisation="Organisation / Firma";
-freeradius.email="Email Adresse";
+freeradius.email="E-Mail Adresse";
 freeradius.common="Zertifikats Name";
 freeradius.expiration="Verfall in Tagen";
 freeradius.passphrase="Kennwort";
-freeradius.generate="Erzeuge Certificate";
+freeradius.generate="Erzeuge Zertifikate";
 freeradius.cert_status="Zertifikat Status";
 freeradius.port="RADIUS Port";
 freeradius.certtbl="Zertifikat";
@@ -2498,8 +2498,8 @@ wl_adv.label2="Basis-Rate";
 wl_adv.label3="Übertragungsrate (Fix)";
 wl_adv.label4="CTS Protection Mode";
 wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
+wl_adv.label6="Beacon Intervall";
+wl_adv.label7="DTIM Intervall";
 wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS Threshold";
 wl_adv.label10="Max Associated Clients";
@@ -2554,16 +2554,16 @@ wl_adv.shrt="Kurz"; 				//************* don't use .short! **************
 wl_adv.droplowsignal="Clients mit niedrigem Signal verwerfen";
 wl_adv.connect="Minimum Signal für Authentifizierung"; 
 wl_adv.stay="Minimum Signal für Verbindung"; 
-wl_adv.poll_time="Interval für Analyse";
+wl_adv.poll_time="Intervall für Analyse";
 wl_adv.strikes="Anzahl erlaubter niedriger Signale";
 
 wl_adv.bgscan="Hintergrund Scan";
 wl_adv.bgscan_mode="Modus";
 wl_adv.bgscan_simple="Einfach";
 wl_adv.bgscan_learn="Lernen";
-wl_adv.bgscan_short_int="Kurzer Interval";
+wl_adv.bgscan_short_int="Kurzer Intervall";
 wl_adv.bgscan_threshold="Signal Schwellenwert";
-wl_adv.bgscan_long_int="Langer Interval";
+wl_adv.bgscan_long_int="Langer Intervall";
 
 //help container
 
@@ -2643,7 +2643,7 @@ wl_basic.internal="Intern";
 wl_basic.external="Extern";
 wl_basic.ghz24="2.4 GHz Ausgang";
 wl_basic.ghz5="5 GHz Ausgang";
-wl_basic.network="Network Konfiguration";
+wl_basic.network="Netzwerk Konfiguration";
 wl_basic.unbridged="Getrennt";
 wl_basic.bridged="Überbrückt";
 wl_basic.turbo="Turbo Modus";
@@ -2660,7 +2660,7 @@ wl_basic.specialmode="2.3 GHz Modus";
 wl_basic.wifi_bonding="Wifi Bündelung";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
-wl_basic.multicast="Multicast weiterleitung";
+wl_basic.multicast="Multicast Weiterleitung";
 wl_basic.intmit="Rausch Unempfindlichkeit";
 wl_basic.noise_immunity="Rausch Unempfindlichkeits Level";
 wl_basic.ofdm_weak_det="OFDM Problemerkennung";
@@ -2685,7 +2685,7 @@ wl_basic.airtime_policy="Airtime Stategie";
 wl_basic.airtime_dynamic="Dynamischer Modus";
 wl_basic.airtime_limit="Limit Modus";
 wl_basic.airtime_weight="Airtime Wichtung";
-wl_basic.airtime_dolimit="Airtime Limitiere";
+wl_basic.airtime_dolimit="Airtime limitieren";	// oder Limit
 wl_basic.mesh_settings="802.11s Mesh Einstellungen";
 wl_basic.mesh_fwding="Layer 2 Weiterleitung";
 wl_basic.mesh_retry_timeout="Retry Timeout";
@@ -2700,16 +2700,16 @@ wl_basic.mesh_hwmp_max_preq_retries="HWMP Maximum Preq Retries";
 wl_basic.mesh_path_refresh_time="Path Refresh Time";
 wl_basic.mesh_min_discovery_timeout="Minimum Discovery Timeout";
 wl_basic.mesh_hwmp_active_path_timeout="HWMP Active Path Timeout";
-wl_basic.mesh_hwmp_preq_min_interval="HWMP Preq Minimum Interval";
+wl_basic.mesh_hwmp_preq_min_interval="HWMP Preq Minimum Intervall";
 wl_basic.mesh_hwmp_net_diameter_traversal_time="HWMP Net Diameter Traversal Time";
 wl_basic.mesh_hwmp_rootmode="HWMP Rootmode";
-wl_basic.mesh_hwmp_rann_interval="HWMP Rann Interval";
+wl_basic.mesh_hwmp_rann_interval="HWMP Rann Intervall";
 wl_basic.mesh_gate_announcements="Gate Announcements";
 wl_basic.mesh_sync_offset_max_neighor="Sync Offset Max Neighbor";
 wl_basic.mesh_rssi_threshold="Rssi Threshold";
 wl_basic.mesh_hwmp_active_path_to_root_timeout="HWMP Active Path To Root Timeout";
-wl_basic.mesh_hwmp_root_interval="HWMP Root Interval";
-wl_basic.mesh_hwmp_confirmation_interval="HWMP Confirmation Interval";
+wl_basic.mesh_hwmp_root_interval="HWMP Root Intervall";
+wl_basic.mesh_hwmp_confirmation_interval="HWMP Confirmation Intervall";
 wl_basic.mesh_power_mode="Leistungseinstellungen";
 wl_basic.mesh_awake_window="Awake Window";
 wl_basic.mesh_plink_timeout="Plink Timeout";
@@ -2773,13 +2773,13 @@ sas.other_settings="Andere Einstellungen";
 sas.hwan="Internet (WAN) Einstellungen";
 
 
-hsas.wan="Das WAN Interface verbindet ihren Router mit dem Internet oder anderen Netzwerken. Wenn Ihr Netzwerk bereits mit dem Internet verbunden ist und Sie nur einen Accesspoint benöigen, setzen Sie den WAN Modus auf \"Ausgeschaltet\".";
+hsas.wan="Das WAN Interface verbindet ihren Router mit dem Internet oder anderen Netzwerken. Wenn Ihr Netzwerk bereits mit dem Internet verbunden ist und Sie nur einen Accesspoint benötigen, setzen Sie den WAN Modus auf \"Ausgeschaltet\".";
 hsas.h_routerip="Router IP";
-hsas.routerip="Dies ist die IP Adresse die dem Router in ihrem Internen Netzwerk zugewiesen ist. Wenn Sie diese Adresse ändern, müssen Sie auch diese Verwenden wenn Sie auf die Weboberfläche des Routers zugreifen wollen ";
+hsas.routerip="Dies ist die IP Adresse die dem Router in ihrem internen Netzwerk zugewiesen ist. Wenn Sie diese Adresse ändern, müssen Sie auch diese Verwenden wenn Sie auf die Weboberfläche des Routers zugreifen wollen ";
 hsas.h_dhcp="DHCP";
 hsas.dhcp="Computer und andere Netzwerk Geräte können mittels DHCP deren IP-Adressen automatisch beziehen ohne das eine manuelle Konfiguration notwendig ist. Für den Fall, dass bereits ein DHCP Server in ihrem Netzwerk läuft, schalten Sie bitte diese Option ab um Konflikte zu vermeiden.";
 hsas.h_wireless_physical="WLAN Schnittstelle";
-hsas.wireless_physical="Die Schnittstellen Einstellungen erlaubt es Ihnen das Verhalten der WLAN Schnittstelle einzustellen. Sie können den Hauptbetriebsmodus einstellen (Access Point, Client or Repeater), den WLAN Netzwerk Namen ändern und  erweiterte Einstellungen vornhemen, wie z.B. die Kanalbreite anpassen. In dem Fall das Sie die Kanalbreite von 20 Mhz auf einen anderen Wert ändern, achten Sie bitte darauf, dass ihre Geräte diese Kanalbreite auch tatsächlich unterstützten.";
+hsas.wireless_physical="Die Schnittstellen Einstellungen erlaubt es Ihnen das Verhalten der WLAN Schnittstelle einzustellen. Sie können den Hauptbetriebsmodus einstellen (Access Point, Client or Repeater), den WLAN Netzwerk Namen ändern und erweiterte Einstellungen vornehmen, wie z.B. die Kanalbreite anpassen. In dem Fall das Sie die Kanalbreite von 20 Mhz auf einen anderen Wert ändern, achten Sie bitte darauf, dass Ihre Geräte diese Kanalbreite auch tatsächlich unterstützten.";
 hsas.h_wireless_security="WLAN Sicherheit";
 hsas.wireless_security="Damit es ihnen leichter fällt ihren Client zu konfigurieren, können Sie hier ihr Netzwerkkennwort ändern. Die Verschlüsselung abzuschalten oder auf WEP zu setzen wird nicht empfohlen, da dies ihre Sicherheit erheblich beeinträchtigt.";
 hsas.h_routername="Router Name";
@@ -2789,9 +2789,9 @@ hsas.wireless="WLAN Hilfe Text";
 hsas.other="Andere Einstellungen Hilfe Text";
 
 // ** AOSS **//
-haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
-haoss.securitymodes="Die AOSS Sicherheits Modi definieren welche Sicherheiteinstellungen von Geräten akzeptiert werden. Wenn ein Geräten nur Sicherheitseinstellungen unterstützt die nicht erlaubt sind, kann es sich nicht verbinden.";
-haoss.wps="WPS aktiviert die Unterstützung für Wifi Protected Setup unter Zuhilfenahme des WPS / AOSS Knopfes an ihrem Router oder durch Nutzung der PIN die auf ihrem Gerät oder in ihrer Client Anwendung abgebilded ist.";
+haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
+haoss.securitymodes="Die AOSS Sicherheits Modi definieren welche Sicherheitseinstellungen von Geräten akzeptiert werden. Wenn ein Geräte nur Sicherheitseinstellungen unterstützt die nicht erlaubt sind, kann es sich nicht verbinden.";
+haoss.wps="WPS aktiviert die Unterstützung für Wifi Protected Setup unter Zuhilfenahme des WPS / AOSS Knopfes an ihrem Router oder durch Nutzung der PIN die auf ihrem Gerät oder in ihrer Client Anwendung abgebildet ist.";
 
 
 
@@ -2827,7 +2827,7 @@ dnscrypt.nfeath4title="DNSCrypt";
 dnscrypt.nfeath4txt="<a href=\"https:\/\/www.dnscrypt.org\">DNSCrypt</a> Authentifiziert die Kommunikation mit ihrem DNS Client und einem DNS Resolver. Dies Verhindert DNS Spoofing.";
 dnscrypt.nfeatbutton="&nbsp;&nbsp;Gehen Sie auf den Services Reiter&nbsp;&nbsp;";
 
-featureshead.h2title="Efahren Sie mehr über unseren neuen Features!&nbsp;&nbsp;";
+featureshead.h2title="Efahren Sie mehr über unsere neuen Features!&nbsp;&nbsp;";
 featureshead.hidebtn="Diese Feld verstecken";
 
 
