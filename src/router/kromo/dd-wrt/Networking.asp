@@ -140,7 +140,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -157,13 +156,11 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="portsetup" value="1" />
 							<input type="hidden" name="commit" value="1" />
-
 							<h2><% tran("networking.h2"); %></h2>
 							<fieldset>
 							   <legend><% tran("networking.legend"); %></legend>
 							   <% show_vlantagging(); %>
 							</fieldset><br />
-
 							<h2><% tran("networking.h22"); %></h2>
 							<fieldset>
 							   <legend><% tran("networking.legend2"); %></legend>
@@ -175,15 +172,14 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<fieldset>
 							   <legend><% tran("networking.legend4"); %></legend>
-							   	<table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
+							   <table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
 								<tr>
 								<th width="15%"><% tran("networking.brname"); %></th>
 								<th width="15%"><% tran("networking.stp"); %></th>
 								<th width="70%"><% tran("networking.iface"); %></th>
 								</tr>
 								</table><br />
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<% show_mrp(); %>
 							<% show_ipvs(); %>
 							<% show_bondings(); %>

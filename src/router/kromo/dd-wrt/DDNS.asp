@@ -114,7 +114,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -128,9 +127,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
-							
 							<h2><% tran("ddns.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("ddns.legend"); %></legend>
 								<div class="setting">
@@ -158,17 +155,17 @@ addEvent(window, "unload", function() {
 										</script>
 									</select>
 								</div>
-					<% nvsm("ddns_enable","0","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","0","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username"); %>" />
@@ -203,160 +200,156 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_2" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_2"); %>" />
+									<input name="ddns_username_2" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_2"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_2" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_2" name="ddns_passwd_2" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_2', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_2" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_2"); %>" />
+									<input name="ddns_hostname_2" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_2"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
-							<div class="setting">
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
+								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_3" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_3"); %>" />
+									<input name="ddns_username_3" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_3"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_3" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_3" name="ddns_passwd_3" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_3', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_3" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_3"); %>" />
+									<input name="ddns_hostname_3" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_3"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_4" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_4"); %>" />
+									<input name="ddns_username_4" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_4"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_4" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_4" name="ddns_passwd_4" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_4"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_4', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_4" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_4"); %>" />
+									<input name="ddns_hostname_4" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_4"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_6" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_6"); %>" />
+									<input name="ddns_username_6" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_6"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_6" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_6" name="ddns_passwd_6" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_6"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_6', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_6" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_6"); %>" />
+									<input name="ddns_hostname_6" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_6"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
@@ -377,40 +370,39 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_7" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_7"); %>" />
+									<input name="ddns_username_7" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_7"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_7" name="ddns_passwd_7" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_7"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_7" name="ddns_passwd_7" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_7"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_7', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_7" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_7"); %>" />
+									<input name="ddns_hostname_7" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_7"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
@@ -421,113 +413,112 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_8" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_8"); %>" />
+									<input name="ddns_username_8" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_8"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_8" name="ddns_passwd_8" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_8"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_8" name="ddns_passwd_8" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_8"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_8', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_8" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_8"); %>" />
+									<input name="ddns_hostname_8" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_8"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_9" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_9"); %>" />
+									<input name="ddns_username_9" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_9"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_9" name="ddns_passwd_9" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_9"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_9" name="ddns_passwd_9" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_9"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_9', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_9" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_9"); %>" />
+									<input name="ddns_hostname_9" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_9"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_username_10" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_10"); %>" />
+									<input name="ddns_username_10" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_10"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_10" name="ddns_passwd_10" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_10"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_10" name="ddns_passwd_10" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_10"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_10', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
@@ -535,84 +526,82 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","5","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_11" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_11"); %>" />
+									<input name="ddns_username_11" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_11"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_11" name="ddns_passwd_11" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_11"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_11" name="ddns_passwd_11" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_11"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_11', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_11" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_11"); %>" />
+									<input name="ddns_hostname_11" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_11"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","5","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","5","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
 
-
-					<% nvsm("ddns_enable","1","<!--"); %>
-					<% nvsm("ddns_enable","2","<!--"); %>
-					<% nvsm("ddns_enable","3","<!--"); %>
-					<% nvsm("ddns_enable","4","<!--"); %>
-					<% nvsm("ddns_enable","6","<!--"); %>
-					<% nvsm("ddns_enable","7","<!--"); %>
-					<% nvsm("ddns_enable","8","<!--"); %>
-					<% nvsm("ddns_enable","9","<!--"); %>
-					<% nvsm("ddns_enable","10","<!--"); %>
-					<% nvsm("ddns_enable","11","<!--"); %>
+								<% nvsm("ddns_enable","1","<!--"); %>
+								<% nvsm("ddns_enable","2","<!--"); %>
+								<% nvsm("ddns_enable","3","<!--"); %>
+								<% nvsm("ddns_enable","4","<!--"); %>
+								<% nvsm("ddns_enable","6","<!--"); %>
+								<% nvsm("ddns_enable","7","<!--"); %>
+								<% nvsm("ddns_enable","8","<!--"); %>
+								<% nvsm("ddns_enable","9","<!--"); %>
+								<% nvsm("ddns_enable","10","<!--"); %>
+								<% nvsm("ddns_enable","11","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
-									<input name="ddns_custom_5" size="30" maxlength="32" value="<% nvg("ddns_custom_5"); %>" />
+									<input name="ddns_custom_5" size="35" maxlength="32" value="<% nvg("ddns_custom_5"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_5" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_5"); %>" />
+									<input name="ddns_username_5" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username_5"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd_5" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_5"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd_5" name="ddns_passwd_5" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd_5"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_5', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_5" size="42" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_5"); %>" />
+									<input name="ddns_hostname_5" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_5"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label">URL</div>
@@ -639,18 +628,17 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
-					<% nvsm("ddns_enable","1","-->"); %>
-					<% nvsm("ddns_enable","2","-->"); %>
-					<% nvsm("ddns_enable","3","-->"); %>
-					<% nvsm("ddns_enable","4","-->"); %>
-					<% nvsm("ddns_enable","6","-->"); %>
-					<% nvsm("ddns_enable","7","-->"); %>
-					<% nvsm("ddns_enable","8","-->"); %>
-					<% nvsm("ddns_enable","9","-->"); %>
-					<% nvsm("ddns_enable","10","-->"); %>
-					<% nvsm("ddns_enable","11","-->"); %>
+								<% nvsm("ddns_enable","1","-->"); %>
+								<% nvsm("ddns_enable","2","-->"); %>
+								<% nvsm("ddns_enable","3","-->"); %>
+								<% nvsm("ddns_enable","4","-->"); %>
+								<% nvsm("ddns_enable","6","-->"); %>
+								<% nvsm("ddns_enable","7","-->"); %>
+								<% nvsm("ddns_enable","8","-->"); %>
+								<% nvsm("ddns_enable","9","-->"); %>
+								<% nvsm("ddns_enable","10","-->"); %>
+								<% nvsm("ddns_enable","11","-->"); %>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("share.option"); %></legend>
 								<div class="setting">
@@ -664,7 +652,6 @@ addEvent(window, "unload", function() {
 									</script></span>
 								</div>
 							</fieldset><br />
-
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
@@ -672,7 +659,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 							 <script type="text/javascript">
 							 //<![CDATA[

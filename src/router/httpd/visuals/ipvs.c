@@ -42,7 +42,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\">", "</th>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
 
@@ -120,7 +120,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 				  i);
 			totalcount++;
 		}
-		websWrite(wp, "</table>");
+		websWrite(wp, "</table><br/>");
 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
