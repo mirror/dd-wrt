@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<script type="text/javascript">
@@ -5,7 +6,7 @@
 		<% dump_wiviz_data(""); %>
 		//]]>
 		</script>
+		<meta charset="UTF-8">
 	</head>
-	<body>
-	</body>
+	<body></body>
 </html>

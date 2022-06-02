@@ -134,7 +134,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpleasetime%d", totalcount);
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, "1440");
-		websWrite(wp, "</td>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
 			  i);

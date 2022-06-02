@@ -16,8 +16,8 @@ function do_join (F,SSID) {
 		</script>
 	</head>
 
-	<body>
-		<div id="bulle" class="bulle"></div>
+	<body class="popup_bg">
+		<!--<div id="bulle" class="bulle"></div> -->
 		<form name="Join" action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="Join" />
 			<input type="hidden" name="submit_type" value="Join" />
@@ -28,6 +28,7 @@ function do_join (F,SSID) {
 			<input type="hidden" name="wl_ssid" />
 			<h2><%% tran("survey.h2"); %%></h2>
 			<fieldset>
+			<legend><%% tran("status_wireless.legend"); %%></legend>
 			<table class="table" cellspacing="5" id="survey_table">
 				<tr>
 				   <th sortdir="up" width="25%"><%% tran("share.ssid"); %%></th>
