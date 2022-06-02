@@ -2790,7 +2790,7 @@ hsas.other="Andere Einstellungen Hilfe Text";
 
 // ** AOSS **//
 haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
-haoss.securitymodes="Die AOSS Sicherheits Modi definieren welche Sicherheitseinstellungen von Geräten akzeptiert werden. Wenn ein Geräte nur Sicherheitseinstellungen unterstützt die nicht erlaubt sind, kann es sich nicht verbinden.";
+haoss.securitymodes="Die AOSS Sicherheits Modi definieren welche Sicherheitseinstellungen von Geräten akzeptiert werden. Wenn ein Gerät nur Sicherheitseinstellungen unterstützt die nicht erlaubt sind, kann es sich nicht verbinden.";
 haoss.wps="WPS aktiviert die Unterstützung für Wifi Protected Setup unter Zuhilfenahme des WPS / AOSS Knopfes an ihrem Router oder durch Nutzung der PIN die auf ihrem Gerät oder in ihrer Client Anwendung abgebildet ist.";
 
 
