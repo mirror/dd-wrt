@@ -271,7 +271,7 @@ static int ismember(char *name)
 EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
-	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script>\n");
 	int i = 0;
 	int xfs = checkfs("xfs");
 	int ext2 = checkfs("ext2");
@@ -548,7 +548,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
-	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script></legend>\n");
 	websWrite(wp, "<table id=\"drives\" class=\"table\" summary=\"Drive List\">\n");
 	websWrite(wp,
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
