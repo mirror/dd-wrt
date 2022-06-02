@@ -1362,7 +1362,7 @@ networking.ipvs_config="Konfiguration";
 //help container
 
 hnetworking.right1="Mehrfach-DHCP";
-hnetworking.right2="Aktiviere DNSMasq als DHCP Server Um Mehrfach-DHCP zu nutzen.";
+hnetworking.right2="Aktiviere DNSMasq als DHCP Server um Mehrfach-DHCP zu nutzen.";
 
 // ** QoS.asp **//
 
