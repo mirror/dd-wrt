@@ -1158,7 +1158,7 @@ log_out.th_port="서비스/포트 번호";
 
 
 // ** Log.asp **//
-log.titl="로그";
+log.label="로그";
 log.h2="로그 관리";
 log.legend="로그";
 log.lvl="로그 레벨";

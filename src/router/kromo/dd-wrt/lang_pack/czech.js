@@ -1281,7 +1281,7 @@ log_out.th_port="Číslo Služby/Portu";
 
 // ** Log.asp **//
 //
-log.titl="Záznam";
+log.label="Záznam";
 log.h2="Správa záznamu";
 log.legend="Záznam";
 log.lvl="Úroveň záznamu";

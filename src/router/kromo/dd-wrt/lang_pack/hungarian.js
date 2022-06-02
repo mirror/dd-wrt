@@ -770,7 +770,7 @@ log_out.th_port="Szolgáltatás/Port szám";
 
 // **************************************************************** Log.asp **********************************************************************//
 
-log.titl="Naplózás";
+log.label="Naplózás";
 log.h2="Naplózás kezelése";
 log.legend="Naplózás";
 log.lvl="Naplózási szint";

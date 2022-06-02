@@ -947,7 +947,7 @@ log_out.th_port="Servis/Port Numarası";
 
 
 // ** Log.asp **//
-log.titl="Günlük";
+log.label="Günlük";
 log.h2="Günlük Yönetimi";
 log.legend="Günlük";
 log.lvl="Günlük Düzeyi";

@@ -1020,7 +1020,7 @@ log_out.th_port="Broj Usluge / Vrata";
 
 // ** Log.asp **//
 
-log.titl="Zapis";
+log.label="Zapis";
 log.h2="Upravljanje Zapisom";
 log.legend="Zapis";
 log.lvl="Razina Zapisa";
