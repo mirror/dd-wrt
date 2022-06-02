@@ -1152,7 +1152,7 @@ log_out.th_port="Dienst-/Port-Nummer";
 
 // ** Log.asp **//
 
-log.titl="Log";
+log.label="Log";
 log.h2="Log-Verwaltung";
 log.legend="Log";
 log.lvl="Log-Level";

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V3           30/MAY/2022				//
+//		English reference translation file - DD-WRT V3           02/JUNE/2022				//
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -303,7 +303,7 @@ sbutton.wol="Wake Up";
 sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
 sbutton.summary="Summary";
-sbutton.filterIP="Edit List of Clients";
+sbutton.filterIP="Edit Filter List";
 sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
@@ -872,8 +872,8 @@ usb.usb_diskinfo="Disk Info";
 usb.usb_diskspace="Disk space";
 usb.usb_mntjffs="Mount this Partition to /jffs";
 usb.usb_mntopt="Mount this Partition to /opt";
-usb.usb_ses_umount="Use SES Button to remove drives";
-usb.drive_ra="Drive Read-Ahead buffer in sectors";
+usb.usb_ses_umount="Use SES Button to Remove Drives";
+usb.drive_ra="Drive Read-Ahead Buffer (in sectors)";
 
 //help page
 var husb=new Object();
@@ -953,7 +953,7 @@ privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
 privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
-privoxy.maxclient="Max Client Connection";
+privoxy.maxclient="Max Client Connections";
 
 var hprivoxy=new Object();
 hprivoxy.right2="Enable Privoxy and configure your clients proxy settings. <br /><br />Proxy IP = <b>Router IP</b> <br />Proxy Port = <b>8118</b>";
@@ -994,7 +994,7 @@ hotspot.net="Hotspot Network";
 hotspot.uam="UAM Secret";
 hotspot.uamserver="UAM Server";
 hotspot.uamport="UAM Port";
-hotspot.uamdns="UAM Any DNS";
+hotspot.uamdns="UAM any DNS";
 hotspot.allowuam="UAM Allowed (comma separated)";
 hotspot.allowuad="UAM Domains (space separated)";
 hotspot.macauth="MAC Authentication";
@@ -1328,7 +1328,7 @@ log_out.th_port="Service/Port Number";
 
 // ** Log.asp **//
 var log=new Object();
-log.titl="Log";
+log.label="Firewall Log";
 log.h2="Log Management";
 log.legend="Log";
 log.lvl="Log Level";
@@ -1660,7 +1660,7 @@ routetbl.table="Table";
 routetbl.suppress_prefixlength="Suppress Prefixlength";
 routetbl.iif="Incoming IF";
 routetbl.oif="Outgoing IF";
-routetbl.nat="Nat Address";
+routetbl.nat="NAT Address";
 routetbl.type="Type";
 routetbl.sport="Source Port Range";
 routetbl.dport="Destination Port Range";
@@ -1678,7 +1678,7 @@ route.unicast="Unicast";
 route.blackhole="Blackhole";
 route.unreachable="Unreachable";
 route.prohibit="Prohibit";
-route.nat="Nat";
+route.nat="NAT";
 route.titl="Routing";
 route.h2="Advanced Routing";
 route.metric="Metric";
@@ -1936,8 +1936,8 @@ service.vpn_cl2cl="Allow Client to Client";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_tuntap="Tunnel Device";
 service.vpn_srvcert="CA Certificate";
-service.vpn_clicert="Public Client Cert";
-service.vpn_certtype="Verify Server Cert.";
+service.vpn_clicert="Public Client Certificate";
+service.vpn_certtype="Verify Server Certificate";
 service.vpn_clikey="Private Client Key";
 service.vpn_nat="NAT";
 service.vpn_cipher="Encryption Cipher";
@@ -2993,8 +2993,8 @@ wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.label7="802.11n Transmission Mode";
 wl_basic.igmpsnooping="Optimize Multicast Traffic";
 wl_basic.overlap="Allow Channel Overlapping";
-wl_basic.turboqam="TurboQAM (QAM256) support";
-wl_basic.nitroqam="NitroQAM (QAM1024) support";
+wl_basic.turboqam="TurboQAM (QAM256) Support";
+wl_basic.nitroqam="NitroQAM (QAM1024) Support";
 wl_basic.dwds="Dynamic WDS Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";

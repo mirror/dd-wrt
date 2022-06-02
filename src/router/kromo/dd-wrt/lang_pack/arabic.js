@@ -875,7 +875,7 @@ log_out.th_port="Service/Port Number";
 
 // ** Log.asp **//
 
-log.titl="Log";
+log.label="Log";
 log.h2="Log Management";
 log.legend="Log";
 log.lvl="Log Level";

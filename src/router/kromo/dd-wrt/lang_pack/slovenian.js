@@ -1034,7 +1034,7 @@ log_out.th_port="Storitev/št. vrat";
 
 // ** Log.asp **//
 
-log.titl="Dnevnik";
+log.label="Dnevnik";
 log.h2="Upravljanje dnevnika";
 log.legend="Dnevnik";
 log.lvl="Nivo dnevnika";
