@@ -871,10 +871,11 @@ usb.usb_mntpoint="Disk Mount Point";
 usb.usb_runonmount="Run on Mount Script Name";
 usb.usb_diskinfo="Disk Info";
 usb.usb_diskspace="Disk space";
-usb.usb_mntjffs="Mount this Partition to /jffs";
-usb.usb_mntopt="Mount this Partition to /opt";
+usb.usb_mntjffs="Mount Partition to /jffs";
+usb.usb_mntopt="Mount Partition to /opt";
 usb.usb_ses_umount="Use SES Button to Remove Drives";
-usb.drive_ra="Drive Read-Ahead Buffer (in sectors)";
+usb.drive_ra="Drive Read-Ahead Buffer";
+usb.drive_ra_sectors="sectors";
 
 //help page
 var husb=new Object();
