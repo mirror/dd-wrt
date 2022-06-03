@@ -490,7 +490,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
-										<input class="num" maxlength="6" size="6" name="ntp_timer" onblur="valid_range(this,3600,604800,idx.ntp_timer)" value="<% nvg("ntp_timer"); %>" />
+										<input class="num" maxlength="6" size="6" name="ntp_timer" onblur="valid_range(this,3600,604800,idx.ntp_timer)" value="<% nvg("ntp_timer"); %>" />&nbsp;<% tran("share.seconds"); %>
 										<span class="default">
 											<script type="text/javascript">
 											//<![CDATA[
