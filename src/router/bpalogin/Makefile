@@ -2,13 +2,13 @@ SBINPATH = /usr/sbin
 ETCPATH = /etc
 INITPATH = /etc/rc.d/init.d
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS = $(COPTS) -Wall -I$(SRCBASE)/include.v24 -I. -I$(TOP)/shared
+CFLAGS = $(COPTS) $(MIPS16_OPT) $(LTO) -Wall -I$(SRCBASE)/include.v24 -I. -I$(TOP)/shared
 else
-CFLAGS = $(COPTS) -Wall -I$(SRCBASE)/include.v23 -I. -I$(TOP)/shared
+CFLAGS = $(COPTS) $(MIPS16_OPT) $(LTO) -Wall -I$(SRCBASE)/include.v23 -I. -I$(TOP)/shared
 endif
 CFLAGS += -fPIC
 LIBS = -lcrypt -lnvram
-LFLAGS = -L$(TOP)/nvram
+LFLAGS = $(LDLTO) -L$(TOP)/nvram
 
 OBJS = bpalogin.o protocol.o transaction.o gen_md5.o unixmain.o libddns3.a
 
