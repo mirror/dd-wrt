@@ -3494,7 +3494,7 @@ int internal_getRouterBrand()
 			}
 			if (!strncmp(modelstr, R6200, strlen(R6200))) {
 				setRouter("Netgear R6200");
-				return ROUTER_NETGEAR_WNDR4000;
+				return ROUTER_NETGEAR_R6200;
 			}
 		}
 		setRouter("Netgear WNDR4000");
