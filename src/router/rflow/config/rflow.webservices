@@ -51,6 +51,6 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.inter"); %></div>
-		<input size="5" maxlength="5" class="num" name="macupd_interval" value="<% nvg("macupd_interval"); %>" />
+		<input size="5" maxlength="5" class="num" name="macupd_interval" value="<% nvg("macupd_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
 	</div>
 </fieldset><br/>

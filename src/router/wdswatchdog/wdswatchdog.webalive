@@ -9,11 +9,11 @@
 	<div id="idwds_watchdog">
 		<div class="setting">
 			<div class="label"><% tran("share.inter"); %></div>
-			<input size="4" maxLength="4" class="num" name="wds_watchdog_interval_sec" onblur="valid_range(this,0,9999,share.inter)" value="<% nvg("wds_watchdog_interval_sec"); %>" />
+			<input size="4" maxLength="4" class="num" name="wds_watchdog_interval_sec" onblur="valid_range(this,0,9999,share.inter)" value="<% nvg("wds_watchdog_interval_sec"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.timeout"); %></div>
-			<input size="4" maxLength="4" class="num" name="wds_watchdog_timeout" onblur="valid_range(this,1,10,alive.timeout)" value="<% nvg("wds_watchdog_timeout"); %>" />
+			<input size="4" maxLength="4" class="num" name="wds_watchdog_timeout" onblur="valid_range(this,1,10,alive.timeout)" value="<% nvg("wds_watchdog_timeout"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.IP"); %></div>

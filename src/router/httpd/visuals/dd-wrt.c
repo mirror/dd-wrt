@@ -1496,7 +1496,7 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<span id=\"usage\">");
 					websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
 					websWrite(wp, "<div class=\"text\">%s</div></div>", per);
-					websWrite(wp, "%s / %s </span></div><br />", used, avail);
+					websWrite(wp, "%s / %s </span></div>", used, avail);
 				}
 			}
 		}

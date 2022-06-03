@@ -58,7 +58,7 @@
 				<div class="label"><% tran("idx.mtu"); %></div>
 				<input class="text" size="5" maxlength="4" type="number" min="1280" max="1480" name="ipv6_mtu" value="<% nvg("ipv6_mtu"); %>" />
 		</div>
-		<br><hr><br>
+		<hr>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dhcp6c_norelease"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="dhcp6c_norelease" <% nvc("dhcp6c_norelease","1"); %>/><% tran("share.enable"); %>&nbsp;
@@ -79,7 +79,7 @@
 			//]]>
 			</script>
 		</div>
-		<br><hr><br>
+		<hr>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dhcp6s"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="dhcp6s_enable" <% nvc("dhcp6s_enable","1"); %> onclick="show_layer_ext(this, 'iddhcp6s_enabled', true)" /><% tran("share.enable"); %>&nbsp;
@@ -117,7 +117,7 @@
 				</script>
 			</div>
 		</div>
-		<br><hr><br>
+		<hr>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_rad_enable"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="radvd_enable" <% nvc("radvd_enable","1"); %> onclick="show_layer_ext(this, 'idradvd', true)" /><% tran("share.enable"); %>&nbsp;
