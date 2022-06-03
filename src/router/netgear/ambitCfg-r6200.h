@@ -47,15 +47,15 @@
 #define FW_REGION            WW_VERSION   /* true f/w region */
 
 /*formal version control*/
-#define AMBIT_HARDWARE_VERSION     "U12H19400"
-#define AMBIT_SOFTWARE_VERSION     "V1.0.0.22"
-#define AMBIT_UI_VERSION           "1.0.17"
-#define STRING_TBL_VERSION         "1.0.0.22_2.1.17.1"
+#define AMBIT_HARDWARE_VERSION     "U12H19200"
+#define AMBIT_SOFTWARE_VERSION     "V1.0.1.56"
+#define AMBIT_UI_VERSION           "1.0.43"
+#define STRING_TBL_VERSION         "1.0.1.56_2.1.17.1"
 
-#define AMBIT_PRODUCT_NAME          "WNDR3700v3"
-#define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router WNDR3700v3"
-#define UPnP_MODEL_URL              "WNDR3700.aspx"
-#define UPnP_MODEL_DESCRIPTION      "NETGEAR WNDR3700v3 N600 Wireless Dual Band Gigabit Router"
+#define AMBIT_PRODUCT_NAME          "R6200"
+#define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router R6200"
+#define UPnP_MODEL_URL              "R6200.aspx"
+#define UPnP_MODEL_DESCRIPTION      "NETGEAR R6200 N1200 Wireless Dual Band Gigabit Router"
 
 #define AMBIT_NVRAM_VERSION  "1" /* digital only */
 
@@ -92,15 +92,21 @@
 #define RATE_STR_2G_HT20            "145Mbps"
 #define RATE_STR_2G_HT40            "300Mbps"
 #define RATE_STR_5G_BG              "54Mbps"
-#define RATE_STR_5G_HT20            "145Mbps"
-#define RATE_STR_5G_HT40            "300Mbps"
+/* Foxconn modified start by Kent, 11/14/2012 */
+#define RATE_STR_5G_HT20            "173Mbps"
+#define RATE_STR_5G_HT40            "400Mbps"
+#define RATE_STR_5G_HT80            "867Mbps"
+/* Foxconn modified end by Kent, 11/14/2012 */
 
 #define OPMODE_STR_2G_BG            "wlan_mode_54"
 #define OPMODE_STR_2G_HT20          "wlan_mode_145"
 #define OPMODE_STR_2G_HT40          "wlan_mode_300"
 #define OPMODE_STR_5G_BG            "wlan_mode_54"
-#define OPMODE_STR_5G_HT20          "wlan_mode_145"
-#define OPMODE_STR_5G_HT40          "wlan_mode_300"
+/* Foxconn modified start by Kent, 11/14/2012 */
+#define OPMODE_STR_5G_HT20          "wlan_mode_173"
+#define OPMODE_STR_5G_HT40          "wlan_mode_400"
+#define OPMODE_STR_5G_HT80          "wlan_mode_866"
+/* Foxconn modified end by Kent, 11/14/2012 */
 
 /* GPIO definitions */
 /* Ctrl mode mask, bit[11:8] */
@@ -224,11 +230,11 @@
 #define BACKUP_FILE_KEY         "NtgrBak"
 
 /* Foxconn Perry added start, 2011/04/13, for document URL */
-#define DOCUMENT_URL        "http://documentation.netgear.com/wndr3700/enu/202-10845-01/index.htm"
+#define DOCUMENT_URL        "http://documentation.netgear.com/wndr4000/enu/202-10781-01/index.htm"
 /* Foxconn Perry added end, 2011/04/13, for document URL */
 
 /* Foxconn Perry added start, 2011/08/17, for USB Support level */
-#define USB_support_level        "1"    /* pling changed 0->1 for WNDR4000 */
+#define USB_support_level        "5"    /* Kent changed 5->7 to support ReadyShare cloud */
 /* Foxconn Perry added end, 2011/08/17, for USB Support level */
 
 #endif /*_AMBITCFG_H*/
