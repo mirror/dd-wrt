@@ -10,7 +10,7 @@
 		<div class="setting">
 			<div class="label"><% tran("share.inter"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="schedule_hour_time" <% nvc("schedule_hour_time","1"); %> onclick="setAlive()" />&nbsp;
-			<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvg("schedule_time"); %>" />
+			<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvg("schedule_time"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.hour"); %></div>

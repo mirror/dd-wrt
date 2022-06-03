@@ -740,7 +740,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		show_caption(wp, "label", "wpa.rekey", NULL);
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 		char sta[80];
 		sprintf(sta, "%s_mode", prefix);
 		if (is_ap(prefix)) {
@@ -820,7 +820,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		show_caption(wp, "label", "wpa.rekey", NULL);
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa2-sha256") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192")
 		   || strstr(security_mode, "wpa3-128")) {
 		show_wparadius(wp, prefix);
@@ -828,7 +828,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		show_caption(wp, "label", "wpa.rekey", NULL);
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 	} else if (strstr(security_mode, "wep")) {
 		show_wep(wp, prefix);
 	} else if (strstr(security_mode, "radius")) {

@@ -138,7 +138,7 @@ function updatePrefs(what) {
 	  if (el) {
 	  	el.checked = eval("prefs." + i);
 	  }
-		document.cookie = i + "=" + eval("prefs." + i) + "; expires=01-Jan-9999 00:00:00 GMT" + "; flavor=choco; SameSite=None";
+		document.cookie = i + "=" + eval("prefs." + i) + "; expires=01-Jan-9999 00:00:00 GMT" + "; SameSite=Lax";
 	}
 	globalRedraw = true;
 }
@@ -921,4 +921,3 @@ function commit() {
 }
 setTimeout("init_3d()", 100);
 window.onresize = init_3d;
-
