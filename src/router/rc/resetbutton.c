@@ -1489,6 +1489,7 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_NETGEAR_R6200:
 		sesgpio = 0x102;
 		break;
 	case ROUTER_ASUS_WL500G_PRE:

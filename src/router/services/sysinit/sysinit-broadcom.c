@@ -298,6 +298,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_NETGEAR_R6200:
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_NETCORE_NW715P:
 	case ROUTER_NETGEAR_WNDR4500:
@@ -1626,6 +1627,14 @@ void start_sysinit(void)
 		};
 		restore_set("pci/1/1", wndr3400_pci_1_1_params);
 		break;
+	case ROUTER_NETGEAR_R6200:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
+		if (nvram_match("vlan2ports", "4 8u")) {
+			nvram_set("vlan2ports", "4 8");
+			need_reboot = 1;
+		}
+		break;
 
 	case ROUTER_NETGEAR_WNDR4000:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
@@ -2860,6 +2869,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
+			case ROUTER_NETGEAR_R6200:
 				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
@@ -2956,6 +2966,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
+			case ROUTER_NETGEAR_R6200:
 				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
