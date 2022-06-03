@@ -3484,14 +3484,18 @@ int internal_getRouterBrand()
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define WNDR3700V3 "U12H194T00_NETGEAR"
+#define R6200 "U12H192T00_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(WNDR3700V3), model);
-			if (!strncmp(modelstr, WNDR3700V3, strlen(WNDR3700V3))) {
 				fclose(model);
+			if (!strncmp(modelstr, WNDR3700V3, strlen(WNDR3700V3))) {
 				setRouter("Netgear WNDR3700v3");
 				return ROUTER_NETGEAR_WNDR4000;
 			}
-			fclose(model);
+			if (!strncmp(modelstr, R6200, strlen(R6200))) {
+				setRouter("Netgear R6200");
+				return ROUTER_NETGEAR_WNDR4000;
+			}
 		}
 		setRouter("Netgear WNDR4000");
 		return ROUTER_NETGEAR_WNDR4000;
