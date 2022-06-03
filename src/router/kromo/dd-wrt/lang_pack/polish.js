@@ -524,7 +524,7 @@ alive.IP2="Adres IP Proxy";
 alive.port="Port Proxy";
 alive.mode0="Porzucone połączenie z dowolnym adresem IP do ponownego uruchomienia";
 alive.mode1="Porzucone połączenia z wszystkimi adresami IP do ponownego uruchomienia";
-alive.timeout="Limit czasu pingu w sekundach";
+alive.timeout="Limit czasu pingu";
 //help container
 
 halive.right2="Wybierz, kiedy restartować router. Cron musi być włączony w karcie zarządzania.";

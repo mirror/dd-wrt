@@ -565,7 +565,7 @@ alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
 alive.mode0="Any Dropped IPs for Reboot";
 alive.mode1="All Dropped IPs for Reboot";
-alive.timeout="Ping Timeout (in seconds)";
+alive.timeout="Ping Timeout";
 
 //help container
 var halive=new Object();
