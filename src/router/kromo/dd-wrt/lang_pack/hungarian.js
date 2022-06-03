@@ -799,7 +799,7 @@ management.remote_ssh="SSH vezérlés";
 management.remote_sshport="SSH port";
 
 management.web_legend="Web használat";
-management.web_refresh="Automatikus frissítés (másodpercben)";
+management.web_refresh="Automatikus frissítés";
 management.web_sysinfo="Info/nyitó oldal elérése";
 management.web_sysinfopass="Info/nyitó oldal jelszó védelme ";
 management.web_sysinfomasq="Info/nyitó oldal MAC maszkolás";
