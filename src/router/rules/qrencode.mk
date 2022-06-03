@@ -1,6 +1,6 @@
 qrencode-configure:
 	cd qrencode && ./autogen.sh
-	cd qrencode && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" --prefix=/usr --without-png
+	cd qrencode && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" --prefix=/usr --without-png
 
 qrencode:
 	$(MAKE) -C qrencode
