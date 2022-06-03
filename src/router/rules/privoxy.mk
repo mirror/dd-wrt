@@ -2,9 +2,9 @@
 privoxy: pcre zlib
 	install -D privoxy/configs/privoxy.webproxy httpd/ej_temp/privoxy.webproxy
 	CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/pcre/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -lz -fPIC" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(TOP)/zlib -L$(TOP)/pcre/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -lz -fPIC" \
 	$(MAKE) -C privoxy
 
 privoxy-install:
