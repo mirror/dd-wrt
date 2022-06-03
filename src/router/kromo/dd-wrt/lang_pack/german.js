@@ -545,13 +545,13 @@ alive.sevr3="Proxy-Überwachung einschalten";
 alive.IP2="Proxy-IP-Adresse";
 alive.port="Proxy-Port";
 alive.mode0="Reboot bei einer fehlgeschlagenen IP";
-alive.mode1="Reboot wenn alle IP's fehlschlagen";
+alive.mode1="Reboot wenn alle IPs fehlschlagen";
 alive.timeout="Ping timeout in Sekunden";
 
 //help container
 
 halive.right2="Wählen Sie aus, wann der Router neu starten soll. Cron muss hierfür auf dem Management-Tab, eingeschaltet sein.";
-halive.right4="Maximal 3 IP's (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
+halive.right4="Maximal 3 IP-Adressen (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -1178,7 +1178,7 @@ management.remote_ssh="SSH-Management";
 management.remote_sshport="SSH-Port";
 management.remote_telnet="Telnet-Management";
 management.remote_telnetport="Telnet-Port";
-management.remote_allowanyip="Erlaube alle Remote-IP's";
+management.remote_allowanyip="Erlaube alle Remote-IPs";
 management.remote_ip="Erlaubter Remote-IP-Bereich";
 management.web_legend="Web-Zugriff";
 management.web_refresh="Auffrischen (in Sekunden)";
@@ -1213,7 +1213,7 @@ management.ipv6_dhcp6c_norelease="DHCP6 nicht freigeben";
 management.ipv6_dhcp6c_cust="Dhcp6c Individuell";
 management.ipv6_dhcp6c_conf="Dhcp6c Konfiguration";
 management.ipv6_dhcp6s="Dhcp6s";
-management.ipv6_dhcp6s_seq_ips="Aufeinanderfolgende IP's";
+management.ipv6_dhcp6s_seq_ips="Aufeinanderfolgende IPs";
 management.ipv6_dhcp6s_hosts="Individuelle Hosts";
 management.ipv6_dhcp6s_cust="Dhcp6s Individuell";
 management.ipv6_dhcp6s_conf="Dhcp6s Konfiguration";
@@ -1412,7 +1412,7 @@ hqos.right2="Setzen Sie dies auf 80%-95% (max) Ihrer gesamten Upload-Bandbreite.
 hqos.right3="Downlink:";
 hqos.right4="Setzen Sie dies auf 80%-100% Ihrer gesamten Download-Bandbreite.";
 hqos.right6="Hier können sie die Datenrate unter anwendungsspezifisch kontrollieren.";
-hqos.right8="Hier können sie die Priorität des gesamten Datenverkehrs IP's oder IP-Bereichen zuweisen.";
+hqos.right8="Hier können sie die Priorität des gesamten Datenverkehrs IP-Adressen oder IP-Bereichen zuweisen.";
 hqos.right10="Hier können Sie die Priorität für den gesamten Datenverkehr eines Gerätes in Ihrem Netzwerk angeben, indem Sie von dem Gerät die MAC-Adresse, die Priorität und einen Namen angeben";
 hqos.right12="Hier können Sie die Datenrate der physischen LAN-Ports an Ihrem Router angeben. Sie können hier Prioritäten für die Geräte angeben die an den Ports 1 - 4 angeschlossen sind";
 
@@ -1879,7 +1879,7 @@ service.transmission_dir="Transmission Konfigurationsverzeichnis";
 service.transmission_download="Transmission Download Verzeichnis";
 service.transmission_style="Webinterface Stil";
 service.transmission_rpc="Webinterface Port";
-service.transmission_whitelist="Erlaubte IP's";
+service.transmission_whitelist="Erlaubte IPs";
 
 service.plex_legend="Medien Server";
 service.plex_srv="Plex Medien Server";
@@ -1896,7 +1896,7 @@ eoip.wireguard_showadvanced="Erweiterte Einstellungen";
 eoip.wireguard_rtupscript="Route up Skript";
 eoip.wireguard_rtdownscript="Route down Skript";
 eoip.wireguard_fwmark="Firewall Markierung";
-eoip.wireguard_route_allowedip="Route erlaubte IP's über Tunnel";
+eoip.wireguard_route_allowedip="Route erlaubte IPs über Tunnel";
 eoip.wireguard_oet_spbr_ip="Quelle für PBR";
 eoip.wireguard_oet_dpbr_ip="Ziel für PBR";
 eoip.wireguard_oet_dns="DNS Server via Tunnel";
@@ -1931,7 +1931,7 @@ eoip.wireguard_addpeer="Partner Hinzufügen";
 eoip.wireguard_cleanqr="Entferne Peer Konfig";
 eoip.wireguard_makeclient="Erstelle Peer Konfig";
 eoip.wireguard_delpeer="Partner Entfernen";
-eoip.wireguard_allowedips="Erlaubte IP's";
+eoip.wireguard_allowedips="Erlaubte IPs";
 eoip.wireguard_failgrp="Failover Mitglied";
 eoip.wireguard_failstate="Fehlerstatus (auto)";
 eoip.wireguard_standby="In Bereitschaft";
