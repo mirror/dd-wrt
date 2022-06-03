@@ -1463,7 +1463,8 @@ void set_gpio_normal(int pin, int value)
 
 void set_gpio(int pin, int value)
 {
-	if (getRouterBrand() == ROUTER_NETGEAR_WNDR4000) {
+	int brand = getRouterBrand();
+	if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_R6200) {
 		gpio_control_clk_data(pin, value, WNDR4000_GPIO_EXT_CTRL_CLK, WNDR4000_GPIO_EXT_CTRL_DATA, WNDR4000_EXT_LED_MAX_SHIFTS);
 	} else {
 		set_gpio_normal(pin, value);

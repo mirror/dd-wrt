@@ -1319,6 +1319,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->wlan1_gpio = 0x0;	// radio 1 led blue
 		break;
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_NETGEAR_R6200:
 		cfg->power_gpio = 0x0;	//power led green
 		cfg->diag_gpio = 0x1;	// power led amber
 		cfg->connected_gpio = 0x2;	//wan led green
