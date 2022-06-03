@@ -1,8 +1,25 @@
-DROPBEAR_OPTS = $(MIPS16_OPT) -DDISABLE_X11FWD
+DROPBEAR_OPTS = $(MIPS16_OPT) $(LTO) -DDISABLE_X11FWD
 
 dropbear-configure: nvram libutils zlib
 	cd dropbear && autoconf
-	cd dropbear && ./configure --host=$(ARCH)-linux --disable-pam --disable-harden --disable-lastlog --disable-utmp --disable-zlib --disable-utmpx --disable-wtmp --disable-wtmpx --enable-bundled-libtom --disable-pututxline CC="$(CC)" CPPFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(MIPS16_OPT) $(DROPBEAR_OPTS) -DARGTYPE=3 -DXFREE=free -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram" host_alias=$(ARCH)-linux ac_cv_func_getpass=yes
+	cd dropbear && ./configure \
+				--host=$(ARCH)-linux \
+				--disable-pam \
+				--disable-harden \
+				--disable-lastlog \
+				--disable-utmp \
+				--disable-zlib \
+				--disable-utmpx \
+				--disable-wtmp \
+				--disable-wtmpx \
+				--enable-bundled-libtom \
+				--disable-pututxline \
+				CC="$(CC)" \
+				CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -I../zlib $(COPTS) $(MIPS16_OPT) $(DROPBEAR_OPTS) -DARGTYPE=3 -DXFREE=free -L../zlib" \
+				LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram" \
+				host_alias=$(ARCH)-linux ac_cv_func_getpass=yes \
+				AR_FLAGS="cru $(LTOPLUGIN)" \
+				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 dropbear: zlib
 	install -D dropbear/config/sshd.webservices httpd/ej_temp/sshd.webservices
