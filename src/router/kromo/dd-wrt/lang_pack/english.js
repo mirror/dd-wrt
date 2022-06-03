@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V3           02/JUNE/2022				//
+//		English reference translation file - DD-WRT V3           03/JUNE/2022       //
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -111,6 +111,7 @@ share.range="Range";
 share.use="Use";
 share.mins="min";
 share.secs="s";
+share.seconds="seconds";
 share.routername="Router Name";
 share.manual="Manual";
 share.port="Port";
@@ -148,7 +149,7 @@ share.required="Required";
 share.right="Right";
 share.left="Left";
 share.share_key="Shared Key";
-share.inter="Interval (in seconds)";
+share.inter="Interval";
 share.srv="Service Name";
 share.port_range="Port Range";
 share.priority="Priority";
@@ -186,7 +187,7 @@ share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
 share.styl="Style";
-share.theme="Theme";
+share.theme="Select a Theme";
 share.styl_dark="Use Dark Styles";
 share.err="error";
 share.errs="errors";
@@ -234,7 +235,7 @@ share.execscript="Execute script";
 share.user="User";
 share.privatekey="Private Key";
 share.bytes="B";
-share.kbytes="kB";
+share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
@@ -371,7 +372,7 @@ errmsg.err29=" contained illegal ASCII code.";
 errmsg.err30=" contained illegal hexadecimal digits.";
 errmsg.err31=" value is illegal.";
 errmsg.err32="IP address and gateway is not at same subnet mask.";
-errmsg.err33="IP address and gateway can't be same.";
+errmsg.err33="IP address and gateway cannot be same.";
 errmsg.err34=" is not allowed to contain a space.";
 errmsg.err110="End number must be greater than the start number";
 errmsg.err111="Invalid IP address";
@@ -411,7 +412,7 @@ errmsg.err50="You must input a SSID.";
 
 // Management.asp error messages
 errmsg.err51="The router is currently set to the default username and password. As a security precaution, you must enter a new username and password before the Remote Management feature can be enabled. Click the <em>OK</em> button to change your username/password. Click the <em>Cancel</em> button to leave the Remote Management feature disabled.";
-errmsg.err52="Password confirmation doesn't match.";
+errmsg.err52="Password confirmation does not match.";
 
 // Port_Services.asp error messages
 errmsg.err53="After completing all actions, click the <em>" + sbutton.apply + "</em> button to save the settings.";
@@ -562,14 +563,14 @@ alive.legend3="Proxy/Connection Watchdog";
 alive.sevr3="Enable Proxy Watchdog";
 alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
-alive.mode0="Any Dropped IP's for Reboot";
-alive.mode1="All Dropped IP's for Reboot";
-alive.timeout="Ping Timeout (in seconds)";
+alive.mode0="Any Dropped IPs for Reboot";
+alive.mode1="All Dropped IPs for Reboot";
+alive.timeout="Ping Timeout";
 
 //help container
 var halive=new Object();
 halive.right2="Choose when to reboot the router. Cron must be enabled in the management tab.";
-halive.right4="A maximum of three IP's separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
+halive.right4="A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
 
 //help page
 halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after xxx seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
@@ -870,10 +871,11 @@ usb.usb_mntpoint="Disk Mount Point";
 usb.usb_runonmount="Run on Mount Script Name";
 usb.usb_diskinfo="Disk Info";
 usb.usb_diskspace="Disk space";
-usb.usb_mntjffs="Mount this Partition to /jffs";
-usb.usb_mntopt="Mount this Partition to /opt";
+usb.usb_mntjffs="Mount Partition to /jffs";
+usb.usb_mntopt="Mount Partition to /opt";
 usb.usb_ses_umount="Use SES Button to Remove Drives";
-usb.drive_ra="Drive Read-Ahead Buffer (in sectors)";
+usb.drive_ra="Drive Read-Ahead Buffer";
+usb.drive_ra_sectors="sectors";
 
 //help page
 var husb=new Object();
@@ -908,7 +910,7 @@ nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
-nas.dlna_cleandb="Clean Database now";
+nas.dlna_cleandb="Clean Database";
 nas.dlna_metadata="Keep Metadata on Storage";
 nas.dlna_rescan="Cyclic Rescan of Folders";
 
@@ -935,7 +937,7 @@ nas.compression="Compression";
 
 // Help container
 var hnas=new Object();
-hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
+hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
 
 //help page
 hnas.page1="<dd>FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network</li></ul></dd>";
@@ -1084,18 +1086,18 @@ hstatus_hots.page15="<dd>Shared secret between uamserver and chilli. This secret
 hstatus_hots.page16="<dd>Allow any DNS server. Normally unauthenticated clients are only allowed to communicate with the DNS servers specified by the dns1 and dns2 options. This option will allow the client to use all DNS servers. This is convenient for clients which are configured to use a fixed set of DNS servers.<br /><br /><div class=\"note\"><h4>Note:</h4><div>For security reasons this option should be combined with a destination NAT firewall rule which forwards all DNS requests to a given DNS server.</div></div></dd>";
 hstatus_hots.page17="<dd>IP addresses or network segments the client can access without first authenticating (Comma separated list of domain names). Example: www.chillispot.info,10.11.12.0/24 </dd>";
 hstatus_hots.page18="<dd>If this option is given CoovaChilli will try to authenticate all users based on their MAC address alone.</dd>";
-hstatus_hots.page19="<dd>You can specify here additional Options.<br /><br /><div class=\"note\"><h4>Note:</h4><div>For more informations about the different options : <a href=\"https:\/\/coova.github.io\">coova.github.io</a>.</div></div></dd>";
+hstatus_hots.page19="<dd>You can specify here additional options.<br /><br /><div class=\"note\"><h4>Note:</h4><div>For more informations about the different options : <a href=\"https:\/\/coova.github.io\">coova.github.io</a>.</div></div></dd>";
 hstatus_hots.page20="<dd>Enabling the use of NoCatSplash allows you to redirect a client to a specific web page when connecting via wireless or wired.</dd>";
 hstatus_hots.page21="<dd>The name of the gateway. Whatever you want to call it. \"Joe's Pizza Shop and free DSL Cafe\" for example. Use the variable $GatewayName in your splash.html page to display this.</dd>";
 hstatus_hots.page22="<dd>Configures the Redirection URL after splash login</dd>";
 hstatus_hots.page23="<dd>Enables the redirection to a specific Homepage after splash login, see above</dd>";
-hstatus_hots.page24="<dd>Space separated list of hostnames. List any hosts (for example, the web server with the splash page, or other websites) that you would like to allow clients to have web access to (TCP port 80 (HTTP) and 443 (HTTPS)) before they \"log in\" (before they click on \"I Accept\" in your splash page), however actual authentication is not supported. List any web servers, that you would like connecting clients to be able to access, before clicking on I Agree on the initial nocatsplash screen. Such as the web server hosting your EULA or Welcome Page, if it isn't the router itself.</dd>";
+hstatus_hots.page24="<dd>Space separated list of hostnames. List any hosts (for example, the web server with the splash page, or other websites) that you would like to allow clients to have web access to (TCP port 80 (HTTP) and 443 (HTTPS)) before they \"log in\" (before they click on \"I Accept\" in your splash page), however actual authentication is not supported. List any web servers, that you would like connecting clients to be able to access, before clicking on I Agree on the initial nocatsplash screen. Such as the web server hosting your EULA or Welcome Page, if it is not the router itself.</dd>";
 hstatus_hots.page25="<dd>Where all of the application templates (including SplashForm) are hiding (splash.html is the form displayed to users on capture).</dd>";
 hstatus_hots.page26="<dd>Optional URL to fetch dynamic remote splash page from. This should end with the /splash.html, or the name of your splash page.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Leave empty if using a page stored on the router.</div></div></dd>";
-hstatus_hots.page27="<dd>Space separated list of ports. Specify TCP ports to denied access to when public class users login. All others will be allowed. If nothing is specified, access is granted to all ports to public class users.<br /><br /><div class=\"note\"><h4>Note:</h4><div>You should *always* exclude port 25 (SMTP), unless you want to run a portal for wanton spam sending. Users should have their own way of sending mail. It sucks, but that's the way it is.</div></div></dd>";
+hstatus_hots.page27="<dd>Space separated list of ports. Specify TCP ports to denied access to when public class users login. All others will be allowed. If nothing is specified, access is granted to all ports to public class users.<br /><br /><div class=\"note\"><h4>Note:</h4><div>You should <b>always</b> exclude port 25 (SMTP), unless you want to run a portal for wanton spam sending. Users should have their own way of sending mail.</div></div></dd>";
 hstatus_hots.page28="<dd>How much time, in seconds, elapses before the client has to see the splash screen again, and click on 'I Agree'. How often a client is shown the EULA or other designated splash page.</dd>";
 hstatus_hots.page29="<dd>Log verbosity (to syslogd and /tmp/nocat.log). Syslogd service must be enabled.<ul><li>0 is (almost) no logging.</li><li>10 is log everything.</li><li>5 is probably a safe middle road.</li></ul></dd>";
-hstatus_hots.page30="<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you're running a strictly routed network, and do not need the gateway to enable NAT for you. You would not normally use this option. So if you do not understand it, leave it Disabled</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
+hstatus_hots.page30="<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you are running a strictly routed network, and do not need the gateway to enable NAT for you. You would not normally use this option. So if you do not understand it, leave it Disabled</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ** Hotspotsystem **//
 var hotspotsys=new Object();
@@ -1230,8 +1232,8 @@ idx.dhcp_start="Start IP Address";
 idx.dhcp_end="End IP Address";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximum DHCP Users";
 idx.dhcp_lease="Lease Expiration";
-idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
-idx.dns_dnsmasq="Use DNSMasq for DNS";
+idx.dhcp_dnsmasq="Use dnsmasq for DHCP";
+idx.dns_dnsmasq="Use dnsmasq for DNS";
 idx.wan_priority="Use VLAN Priority";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Forced DNS Redirection";
@@ -1251,7 +1253,7 @@ idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.ntp_client="NTP Client";
-idx.ntp_timer="Update Interval (sec)";
+idx.ntp_timer="Update Interval";
 idx.ignore_wan_dns="Ignore WAN DNS";
 //help container
 var hidx=new Object();
@@ -1289,7 +1291,7 @@ hidx.page19="<dd>The Client Lease Expiration is the amount of time a network use
 hidx.page20="<dd>The Domain Name System (DNS) is how the Internet translates domain or website names into Internet addresses or URLs. Your ISP will provide you with at least one DNS Server IP address. If you wish to utilize another, enter that IP address in one of these fields. You can enter up to three DNS Server IP addresses here. The router will utilize these for quicker access to functioning DNS servers. Additionally you can enable the <em>" + idx.ignore_wan_dns + "</em> checkbox to ensure the ISP's DNS is ignored.</dd>";
 hidx.page21="<dd>The Windows Internet Naming Service (WINS) manages each PC's interaction with the Internet. If you use a WINS server, enter that server's IP address here. Otherwise, leave this blank.</dd>";
 hidx.dns_dnsmasq="<dd>dnsmasq's local DNS server resolves all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Enabling dnsmasq for DNS enables DHCP clients on the LAN to resolve local hostnames, including static and dynamic IP assignments.</dd>";
-hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only DHCP server on the network segment (as in most common setups). The DHCP server will return a NAK response to clients that try to register using IP's from another netblock.</dd>";
+hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only DHCP server on the network segment (as in most common setups). The DHCP server will return a NAK response to clients that try to register using IP addresses from another netblock.</dd>";
 hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal dnsmasq server.</dd>";
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
@@ -1356,7 +1358,7 @@ management.remote_telnetport="Telnet Remote Port";
 management.remote_allowanyip="Allow Any Remote IP";
 management.remote_ip="Allowed Remote IP Range";
 management.web_legend="Web Access";
-management.web_refresh="Auto-Refresh (in seconds)";
+management.web_refresh="Auto-Refresh";
 management.web_authlimit="Reauthentication Limit (in seconds)";
 management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";
@@ -1380,25 +1382,25 @@ management.ipv6_srv="IPv6";
 management.ipv6_typ="IPv6 Type";
 management.ipv6_pf_len="Prefix Length";
 management.ipv6_rad_enable="Radvd";
-management.ipv6_rad="Radvd custom";
-management.ipv6_radconf="Radvd config";
+management.ipv6_rad="Custom radvd Config";
+management.ipv6_radconf="Config";
 management.ipv6_dns="Static DNS";
 management.ipv6_prefix="Assigned / Routed Prefix";
 management.ipv6_addr="Router IPv6 Address";
-management.ipv6_dhcp6c_norelease="No release on reconnect";
-management.ipv6_dhcp6c_cust="Dhcp6c custom";
-management.ipv6_dhcp6c_conf="Dhcp6c config";
+management.ipv6_dhcp6c_norelease="No Release on Reconnect";
+management.ipv6_dhcp6c_cust="Custom dhcp6c Config";
+management.ipv6_dhcp6c_conf="Config";
 management.ipv6_dhcp6s="Dhcp6s";
-management.ipv6_dhcp6s_seq_ips="Sequential IP's";
-management.ipv6_dhcp6s_hosts="Custom hosts";
-management.ipv6_dhcp6s_cust="Dhcp6s custom";
-management.ipv6_dhcp6s_conf="Dhcp6s config";
+management.ipv6_dhcp6s_seq_ips="Sequential IPs";
+management.ipv6_dhcp6s_hosts="Custom Hosts";
+management.ipv6_dhcp6s_cust="Custom dhcp6s Config";
+management.ipv6_dhcp6s_conf="Config";
 management.ipv6_tun_end_ipv4="Tunnel Endpoint IPv4 Address";
 management.ipv6_tun_client_addr="Tunnel Client IPv6 Address";
 management.ipv6_tun_upd_url="Tunnel Update URL";
 management.jffs_legend="JFFS2 Support";
-management.jffs_srv="Internal Flash Storage";
-management.jffs_clean="Clean Internal Flash Storage";
+management.jffs_srv="Flash Storage";
+management.jffs_clean="Format Flash Storage";
 management.lang_legend="Language Selection";
 management.lang_srv="Language";
 management.lang_bulgarian="Bulgarian";
@@ -1429,8 +1431,8 @@ management.lang_latvian="Latvian";
 management.net_legend="IP Filter Settings (adjust these for P2P)";
 management.net_conctrl="TCP Congestion Control";
 management.net_port="Maximum Ports";
-management.net_tcptimeout="TCP Timeout (in seconds)";
-management.net_udptimeout="UDP Timeout (in seconds)";
+management.net_tcptimeout="TCP Timeout";
+management.net_udptimeout="UDP Timeout";
 management.clock_legend="Overclocking";
 management.clock_frq="Frequency";
 management.clock_support="Not Supported";
@@ -1446,7 +1448,7 @@ management.samba_stscript="Startscript";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domain";
-management.gui_style="Router GUI Style";
+management.gui_style="GUI Styles";
 management.inspired_themes="DD-WRT Inspired Themes";
 management.too_short="Too Short";
 management.very_weak="Very Weak";
@@ -1491,7 +1493,7 @@ hmanagement.page3="<dd>This feature allows you to manage the router from a remot
 hmanagement.page4="</a> page.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If the router remote access feature is enabled, anyone who knows the router's Internet IP address and password will be able to alter the router's settings.</div></div></dd>";
 hmanagement.page5="<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol. If you choose to disable this feature, a manual reboot will be required.<br />You can also activate or not the router information web page. It is now possible to password protect this page (same username and password than above).<br />MAC Masking allows you to truncate MAC addresses in the web interface.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If MAC Masking is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masking only applies to the Sys-Info page.</div></div></dd>";
 hmanagement.page6="<dd>Boot Wait is a feature you will hopefully never need. It introduces a short delay while booting (5s). During this delay you can initiate the download of a new firmware if the one in the flash rom is not broken. Obviously this is only necessary if you can no longer reflash using the web interface because the installed firmware will not boot. See the DD-WRT documentation for more information.<br /><br /><div class=\"note\"><h4>Note:</h4><div>It is recommended that you enable the Boot Wait feature. This will help you recover in the future should you flash your router improperly.</div></div></dd>";
-hmanagement.page7="<dd>The cron subsystem schedules execution of Linux commands. You'll need to use the command line or startup scripts to actually use this.</dd>";
+hmanagement.page7="<dd>The cron subsystem schedules execution of Linux commands. You will need to use the command line or startup scripts to actually use this.</dd>";
 hmanagement.page8="<dd>Enable / disable the loopback interface. The loopback interface makes your internal clients appear as if they are external. This is useful for testing things like DynDNS names. The loopback is an option because enabling it will break PPTP and Windows machine browsing by wireless clients.</dd>";
 hmanagement.page9="<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>";
 hmanagement.page10="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press – Reset the router (reboot)</li><li>Long press (&gt;5s) – Reboot and restore the factory default configuration.</li></ul></dd>";
@@ -1516,7 +1518,7 @@ networking.brname="Bridge Name";
 networking.stp="STP enabled";
 networking.iface="Interfaces";
 networking.h5="DHCPD";
-networking.legend5="Multiple DHCP Server";
+networking.legend5="Multiple DHCP Servers";
 networking.vlan="VLAN";
 networking.iface="Interface";
 networking.tg_number="Tag Number";
@@ -1570,7 +1572,7 @@ hnetworking.right2="To use multiple DHCPD, enable DNSMasq as a DHCP server.";
 //help page
 hnetworking.page1="<dd>Allows you to transfer different independent network streams by using just one interface. This is done by inserting a small TAG within the Ethernet header. By identifying this tag these Ethernet packets can be split up again on the other side to create new interface out of it. Using this option together with the bridging option allows you to create different transfer networks which can be bridged to a Wireless Interface to separate the Router Management network from the network accessible by the User. This is useful for large ISP networks.</dd>";
 hnetworking.page2="<dd>Allows you to create a new VLAN interface out of a standard interface by filtering the interface using a defined TAG number.</dd>";
-hnetworking.page3="<dd>Creates a new empty network bridge for later use. STP means Spanning Tree Protocol and with PRIO you're able to set the bridge priority order. The lowest number has the highest priority.</dd>";
+hnetworking.page3="<dd>Creates a new empty network bridge for later use. STP means Spanning Tree Protocol and with PRIO you are able to set the bridge priority order. The lowest number has the highest priority.</dd>";
 hnetworking.page4="<dd>Allows you to assign any valid interface to a network bridge. Consider setting the Wireless Interface options to Bridged if you want to assign any Wireless Interface here. Any system specific bridge setting can be overridden here in this field. </dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** QoS.asp **//
@@ -1653,7 +1655,7 @@ routetbl.not="Not";
 routetbl.from="From";
 routetbl.to="To";
 routetbl.priority="Priority";
-routetbl.tos="ToS/DS field";
+routetbl.tos="ToS/DS Field";
 routetbl.fwmark="Fwmark";
 routetbl.realms="Realms";
 routetbl.table="Table";
@@ -1741,7 +1743,7 @@ hroute.right10="Determines the host and the network portion.";
 
 //help page
 hroute.page1="<dd>On the Routing screen, you can set the routing mode and settings of the router. <i>Gateway</i> mode is recommended for most users.</dd>";
-hroute.page2="<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network's connection to the Internet. Select router if the router exists on a network with other routers. In Gateway mode the router performs NAT, while in other modes it doesn't.</dd>";
+hroute.page2="<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network's connection to the Internet. Select router if the router exists on a network with other routers. In Gateway mode the router performs NAT, while in other modes it does not.</dd>";
 hroute.page3="<dd>Dynamic Routing enables the router to automatically adjust to physical changes in the network's layout and exchange routing tables with other routers. The router determines the network packets&#8217; route based on the fewest number of hops between the source and destination.<br /><br />To enable the Dynamic Routing feature for the WAN side, select <i>WAN</i>. To enable this feature for the LAN and wireless side, select <i>LAN &amp; WLAN</i>. To enable the feature for both the WAN and LAN, select <i>Both</i>. To disable the Dynamic Routing feature for all data transmissions, keep the default setting, <em>" + share.disable + "</em>.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Dynamic Routing is not available in Gateway mode.</div></div></dd>";
 hroute.page4="<dd>A static route is a pre-determined pathway that network information must travel to reach a specific host or network.<br /><br />To set up a static route between the router and another network:<ol class=\"wide\"><li>Select a number from the Static Routing drop-down list.</li><li>Enter the following data:<ul><li>Destination IP Address – The Destination IP Address is the address of the network or host to which you want to assign a static route.</li><li>Subnet Mask – The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway – This is the IP address of the gateway device that allows for contact between the router and the network or host.</li></ul></li><li>Depending on where the Destination IP Address is located, select <i>LAN &amp; WLAN</i> or <i>WAN</i> from the Interface drop-down menu. </li><li>Click the <em>" + sbutton.apply + "</em> button to save your changes. To cancel your unsaved changes, click the <em>" + sbutton.cancel + "</em> button. For additional static routes, repeat steps 1-4.</li></ol><br />To delete a static route entry:<ol class=\"wide\"><li>From the Static Routing drop-down list, select the entry number of the static route.</li><li>Click the <i>Delete This Entry</i> button.</li><li>To save a deletion, click the <em>" + sbutton.apply + "</em> button. To cancel a deletion, click the <em>" + sbutton.cancel + "</em> button.</li></ol></dd>";
 hroute.page5="<dd>Click the <i>Show Routing Table</i> button to view all of the valid route entries in use. The following data will be displayed for each entry.<ul class=\"wide\"><li>Destination IP Address – The Destination IP Address is the address of the network or host to which the static route is assigned.</li><li>Subnet Mask – The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway – This is the IP address of the gateway device that allows for contact between the router and the network or host.</li><li>Interface – This interface tells you whether the Destination IP Address is on the LAN &amp; WLAN (internal wired and wireless networks), the WAN (Internet), or Loopback (a dummy network in which one PC acts like a network, necessary for certain software programs).</li></ul><br />Click the <i>Refresh</i> button to refresh the data displayed. Click the <em>" + sbutton.clos + "</em> button to return to the Routing screen.</dd>";
@@ -1781,7 +1783,7 @@ service.dhcp_jffs2="Use JFFS2 for Client Lease DB";
 service.dhcp_nvramlease="Use NVRAM for Client Lease DB";
 service.dhcp_domain="Used Domain";
 service.dhcp_landomain="LAN Domain";
-service.dhcp_option="Additional DHCPd Options";
+service.dhcp_option="Additional Options";
 service.dnsmasq_legend="Dnsmasq";
 service.dnsmasq_srv="Dnsmasq";
 service.dns_crypt="Encrypt DNS";
@@ -1789,7 +1791,7 @@ service.dns_smartdns="SmartDNS Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";
 service.dns_smartdns_serve_expired="Serve Expired";
-service.dns_smartdns_option="Additional SmartDNS Options";
+service.dns_smartdns_option="Additional Options";
 service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
 service.dnsmasq_dnssec_proxy="Cache DNSSEC data";
@@ -1797,8 +1799,8 @@ service.dnsmasq_dnssec_cu="Check Unsigned DNS Replies";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_strict="Query DNS in Strict Order";
 service.dnsmasq_add_mac="Add Requestor MAC to DNS Query";
-service.dnsmasq_opt="Additional dnsmasq Options";
-service.dnsmasq_rc="RFC4039 Rapid Commit support";
+service.dnsmasq_opt="Additional Options";
+service.dnsmasq_rc="RFC4039 Rapid Commit Support";
 service.dnsmasq_cachesize="Maximum Cached Entries";
 service.tor_legend="The Onion Router Project";
 service.tor_srv="Tor";
@@ -1873,7 +1875,7 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
 var hpppoesrv=new Object();
-hpppoesrv.right2="IP: 0.0.0.0 -> You'll serve IP's from the pool";
+hpppoesrv.right2="IP: 0.0.0.0 -> You will serve IP addresses from the pool";
 hpppoesrv.right3="You <em><b>must</b></em> set the correct amount of associated clients according to your IP range";
 
 //help page
@@ -1969,8 +1971,8 @@ service.vpn_randomsrv="Choose random Server";
 
 //help page
 var hservice=new Object();
-hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.</dd>";
-hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use DNSMasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
+hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional Options</em>.</dd>";
+hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use dnsmasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional Options</em>. For example:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
 hservice.dnsmasq_dnssec="<dd>Requests and validates DNSSEC records for domains that provide them, if supported on your router model.</dd>";
 hservice.dnsmasq_dnssec_proxy="<dd>Copies the DNSSEC status bit from the upstream server. This option is available on some routers that do not support direct DNSSEC validation, but should only be used when the upstream server is trustworthy. Cache size 0 is recommended when using this option.</dd>";
 hservice.dnsmasq_dnssec_cu="<dd>When DNSSEC validation is enabled, also check that unsigned DNS replies are legitimate (they belong to domains that actually do not publish DNSSEC records).</dd>";
@@ -1978,9 +1980,9 @@ hservice.dnsmasq_no_dns_rebind="<dd>Ignore responses in private IP address range
 hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered manually or supplied by the WAN connection (i.e. Static DNS 1 first). If disabled, queries can go to any upstream server.</dd>";
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
-hservice.dnsmasq_cachesize="<dd>How many cached entries dnsmasq stores (default 150).</dd>";
+hservice.dnsmasq_cachesize="<dd>How many cached entries dnsmasq stores (default 1500).</dd>";
 hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add Xbox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
-hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
+hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that is why it defaults to 1 - because most people have just 1 console.</li><li>";
 hservice.page5=" – Specifies which IP/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
 hservice.page6="<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br /><ul class=\"wide\"><li>RFlow Default port is 2055</li><li>MACupd Default port is 2056</li><li>Interval = 10 seems messages will be sent to server each 10 seconds</li><li>Interface : choose which interface to monitor</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div></div></dd>";
 hservice.page7="<dd>Enabling SSHd allows you to access your router's Linux OS with an SSH client (Putty works well on Windows, for example).<ul class=\"wide\"><li>Password login – allow login with the router password (username is <tt>root</tt>)</li><li>SSHd Port – the port number for SSHd (default is 22)</li><li>Authorized Keys – here you paste your public keys to enable key-based login (more secure than a simple password)</li></ul></dd>";
@@ -2180,7 +2182,7 @@ service.transmission_dir="Transmission Config Directory";
 service.transmission_download="Transmission Download Directory";
 service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
-service.transmission_whitelist="Whitelist IP's";
+service.transmission_whitelist="Whitelist IPs";
 
 service.plex_legend="Media Server";
 service.plex_srv="Plex Media Server";
@@ -2203,7 +2205,7 @@ eoip.wireguard_showadvanced="Advanced Settings";
 eoip.wireguard_rtupscript="Route up Script";
 eoip.wireguard_rtdownscript="Route down Script";
 eoip.wireguard_fwmark="Firewall Mark";
-eoip.wireguard_route_allowedip="Route Allowed IP's via Tunnel";
+eoip.wireguard_route_allowedip="Route Allowed IPs via Tunnel";
 eoip.wireguard_localport="Listen Port";
 eoip.wireguard_ka="Persistent Keepalive";
 eoip.wireguard_endpoint="Endpoint";
@@ -2235,7 +2237,7 @@ eoip.wireguard_addpeer="Add Peer";
 eoip.wireguard_delpeer="Remove Peer";
 eoip.wireguard_makeclient="Make Peer Config";
 eoip.wireguard_cleanqr="Delete Peer Config";
-eoip.wireguard_allowedips="Allowed IP's";
+eoip.wireguard_allowedips="Allowed IPs";
 eoip.wireguard_failgrp="Failover Member";
 eoip.wireguard_failstate="Fail State (auto)";
 eoip.wireguard_standby="Standby";
@@ -2255,8 +2257,8 @@ eoip.shaper="shaper";
 eoip.bridging="Bridging";
 eoip.add=" Add Tunnel ";
 eoip.del="Delete Tunnel";
-eoip.importt="Import Config";
-eoip.filepicker="Upload configuration, adapt and Apply";
+eoip.importt="Import Configuration";
+eoip.filepicker="Upload, adapt and Apply";
 
 // help page
 var heoip=new Object();
@@ -2482,12 +2484,12 @@ var upgrad=new Object();
 upgrad.titl="Firmware Upgrade";
 upgrad.h2="Firmware Management";
 upgrad.legend="Firmware Upgrade";
-upgrad.info1="After flashing";
-upgrad.resetOff="Do not reset";
-upgrad.resetOn="Reset to Default settings";
-upgrad.file="Please select a file to upgrade";
+upgrad.info1="After Flashing";
+upgrad.resetOff="Do not Reset";
+upgrad.resetOn="Reset to Default Settings";
+upgrad.file="Select a Firmware File";
 upgrad.warning="W A R N I N G";
-upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
+upgrad.mess1="Upgrading the firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
 
 //help container
 var hupgrad=new Object();
@@ -2499,11 +2501,11 @@ hupgrad.page1="<dd>New firmware versions are posted at <a href=\"https:\/\/dd-wr
 // ** UPnP.asp **//
 var upnp=new Object();
 upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.h2="Universal Plug and Play";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
-upnp.clear="Clear port forwards at startup";
+upnp.clear="Clear Port Forwards at Startup";
 upnp.url="Send presentation URL";
 upnp.msg1="Click to delete entry";
 upnp.msg2="Delete all entries?";
@@ -2536,8 +2538,8 @@ hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to all
 //help page
 hvpn.page1="<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec, PPTP and L2TP Passthrough.</dd>";
 hvpn.page2="<dd>Internet Protocol Security (IPSec) is a suite of protocols used to implement secure exchange of packets at the IP layer. To allow IPSec tunnels to passthrough the router, IPSec Passthrough is enabled by default. To disable IPSec Passthrough, select <em>" + share.disable + "</em>.</dd>";
-hvpn.page3="<dd>Point-to-Point Tunneling Protocol is the method used to enable VPN sessions to PPTP VPN servers. To allow PPTP tunnels to pass through the router, PPTP Passthrough is enabled by default. To disable PPTP Passthrough, select <em>" + share.disable + "</em>.</dd>";
-hvpn.page4="<dd>Layer 2 Tunneling Protocol, an extension to the PPP protocol that enables ISPs to operate VPNs. L2TP merges the best features of two other tunneling protocols: PPTP from Microsoft and L2F from Cisco Systems. To allow L2TP tunnels to pass through the router, L2TP Passthrough is enabled by default. To disable L2TP Passthrough, select <em>" + share.disable + "</em>.</dd>";
+hvpn.page3="<dd>Point-to-Point Tunneling Protocol is the method used to enable VPN sessions to PPTP VPN servers. To allow PPTP tunnels to passthrough the router, PPTP Passthrough is enabled by default. To disable PPTP Passthrough, select <em>" + share.disable + "</em>.</dd>";
+hvpn.page4="<dd>Layer 2 Tunneling Protocol, an extension to the PPP protocol that enables ISPs to operate VPNs. L2TP merges the best features of two other tunneling protocols: PPTP from Microsoft and L2F from Cisco Systems. To allow L2TP tunnels to passthrough the router, L2TP Passthrough is enabled by default. To disable L2TP Passthrough, select <em>" + share.disable + "</em>.</dd>";
 
 // ** Vlan.asp **//
 var vlan=new Object();
@@ -2622,7 +2624,7 @@ wpa.mfp="802.11w Management Frame Protection";
 wpa.radius="RADIUS";
 wpa.wpa_strict_rekey="WPA Strict Rekeying";
 wpa.gtk_rekey="WPA Group Rekey Interval";
-wpa.rekey="Key Renewal Interval (in seconds)";
+wpa.rekey="Key Renewal Interval";
 wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
@@ -2718,7 +2720,7 @@ sec80211x.tls="EAP-TLS Settings";
 sec80211x.ttls="EAP-TTLS Settings";
 //help container
 var hwpa=new Object();
-hwpa.right2="You may choose from Disabled, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES.";
+hwpa.right2="You may choose from; Disabled, WEP, WPA Personal, WPA Enterprise or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES.";
 
 //help page
 hwpa.page1="<dd>The router supports different types of security settings for your network. WiFi Protected Access (WPA), WiFi Protected Access 2 (WPA2), Remote Access Dial In User Service (RADIUS), and Wired Equivalent Privacy (WEP), which can be selected from the list next to Security Mode. To disable security settings, keep the default setting, <i>Disabled</i>.</dd>";
@@ -2804,11 +2806,11 @@ wl_mac.legend="MAC Filter";
 wl_mac.label="Use Filter";
 wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent clients listed from accessing the wireless network";
-wl_mac.allow="Permit only clients listed to access the wireless network";
+wl_mac.allow="Permit clients listed to access the wireless network";
 
 //help page
 var hwl_mac=new Object();
-hwl_mac.page1="<dd>The Wireless MAC Filter allows you to control which wireless-equipped computers may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from Windows-PCs, see <a href=\"HWanMAC.asp\">MAC Address Cloning</a> for detailed instructions.</dd><dd>To set up a filter, click <em>" + share.enable + "</em>, and follow these example instructions:<ol class=\"wide\"><li>If you want to block specific wireless-equipped devices from communicating with the router, then keep the default setting, <i>" + wl_mac.deny + "</i>. If you want to allow specific wireless-equipped devices to communicate with the router, then click the radio button next to <i>" + wl_mac.allow + "</i>.</li><li>Click the <em>" + sbutton.filterMac + "</em> button. Enter the appropriate MAC addresses into the MAC fields.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The MAC address should be entered in this format: xx:xx:xx:xx:xx:xx (the x's represent the actual characters of the target MAC address).</div></div></li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.clos + "</em> button to return to the previous screen without saving changes.</li></ol><br />To disable the Wireless MAC Filter, keep the default setting, <em>" + share.disable + "</em>.</dd>";
+hwl_mac.page1="<dd>The Wireless MAC Filter allows you to control which wireless-equipped computers may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from computers, see <a href=\"HWanMAC.asp\">MAC Address Cloning</a> for detailed instructions.</dd><dd>To set up a filter, click <em>" + share.enable + "</em>, and follow these example instructions:<ol class=\"wide\"><li>If you want to block specific wireless-equipped devices from communicating with the router, then keep the default setting, <i>" + wl_mac.deny + "</i>. If you want to allow specific wireless-equipped devices to communicate with the router, then click the radio button next to <i>" + wl_mac.allow + "</i>.</li><li>Click the <em>" + sbutton.filterMac + "</em> button. Enter the appropriate MAC addresses into the MAC fields.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The MAC address should be entered in this format: xx:xx:xx:xx:xx:xx (the x's represent the actual characters of the target MAC address).</div></div></li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.clos + "</em> button to return to the previous screen without saving changes.</li></ol><br />To disable the Wireless MAC Filter, keep the default setting, <em>" + share.disable + "</em>.</dd>";
 
 // ** WiMAX
 var wl_wimax=new Object();
@@ -2993,8 +2995,8 @@ wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.label7="802.11n Transmission Mode";
 wl_basic.igmpsnooping="Optimize Multicast Traffic";
 wl_basic.overlap="Allow Channel Overlapping";
-wl_basic.turboqam="TurboQAM (QAM256) Support";
-wl_basic.nitroqam="NitroQAM (QAM1024) Support";
+wl_basic.turboqam="TurboQAM (QAM256)";
+wl_basic.nitroqam="NitroQAM (QAM1024)";
 wl_basic.dwds="Dynamic WDS Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
@@ -3082,7 +3084,7 @@ wl_basic.specialmode="2.3 GHz Mode";
 wl_basic.wifi_bonding="WiFi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
-wl_basic.multicast="Multicast forwarding";
+wl_basic.multicast="Multicast Forwarding";
 wl_basic.intmit="Noise Immunity";
 wl_basic.qboost_tdma="QCA Q-Boost / TDMA";
 wl_basic.qboost="QCA Q-Boost";
@@ -3152,7 +3154,7 @@ wl_basic.mesh_hwmp_rann_interval="HWMP Rann Interval";
 wl_basic.mesh_gate_announcements="Gate Announcements";
 wl_basic.mesh_sync_offset_max_neighor="Sync Offset Max Neighbor";
 wl_basic.mesh_rssi_threshold="Rssi Threshold";
-wl_basic.mesh_hwmp_active_path_to_root_timeout="HWMP Active Path To Root Timeout";
+wl_basic.mesh_hwmp_active_path_to_root_timeout="HWMP Active Path to Root Timeout";
 wl_basic.mesh_hwmp_root_interval="HWMP Root Interval";
 wl_basic.mesh_hwmp_confirmation_interval="HWMP Confirmation Interval";
 wl_basic.mesh_power_mode="Power Mode";
@@ -3166,8 +3168,8 @@ wl_basic.mesh_active="Active";
 wl_basic.mesh_deep="Deep Sleep";
 wl_basic.mesh_light="Light Sleep";
 wl_basic.mesh_nolearn="Avoid Multi-Hop Path Discovery";
-wl_basic.mesh_connected_to_gate="Announce Connected To Gate";
-wl_basic.mesh_connected_to_as="Announce Connected To Auth-Server";
+wl_basic.mesh_connected_to_gate="Announce Connected to Gate";
+wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 
 //help container
 var hwl_basic=new Object();

@@ -13,7 +13,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.rekey"); %></div>
-	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvg("wl_wpa_gtk_rekey"); %>" />
+	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvg("wl_wpa_gtk_rekey"); %>" />&nbsp;<% tran("share.seconds"); %>
 	<span class="default"><script type="text/javascript">
 	//<![CDATA[
 	document.write("(" + share.deflt + ": 3600, " + share.range + ": 1 - 99999)");

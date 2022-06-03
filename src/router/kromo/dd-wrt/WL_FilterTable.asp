@@ -25,7 +25,7 @@ function to_apply(F) {
 			<div id="main">
 				<div id="contentsInfo" style="padding-top: 0px;">
 					<h2><%% tran("wl_filter.h2"); %%></h2>
-					<table width="100%" >
+					<table width="100%" style="padding-bottom: 5px;">
 						<tr>
 							<td align="left"><%% tran("wl_filter.h3"); %%></td>
 							<td align="right"><script type="text/javascript">
@@ -34,7 +34,7 @@ function to_apply(F) {
 							//]]>
 							</script></td>
 						</tr>
-					</table><br/>
+					</table>
 					<%% wireless_filter_table("input","%s"); %%>
 					<div id="submit_footer" class="submitFooter">
 						<script type="text/javascript">

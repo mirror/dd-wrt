@@ -112,6 +112,7 @@ share.range="Von";
 share.use="Nutze";
 share.mins="min";
 share.secs="s";
+share.seconds="Sekunden";
 share.routername="Router Name";
 share.manual="Manuell";
 share.port="Port";
@@ -546,7 +547,7 @@ alive.IP2="Proxy-IP-Adresse";
 alive.port="Proxy-Port";
 alive.mode0="Reboot bei einer fehlgeschlagenen IP";
 alive.mode1="Reboot wenn alle IPs fehlschlagen";
-alive.timeout="Ping timeout in Sekunden";
+alive.timeout="Ping timeout";
 
 //help container
 
@@ -1101,7 +1102,7 @@ idx.summt_opt10="dritter Son Okt - dritter Son Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Zuweisung";
 idx.ntp_client="NTP-Client";
-idx.ntp_timer="NTP Updateintervall (sek)";
+idx.ntp_timer="Updateintervall";
 idx.ignore_wan_dns="Ignoriere WAN DNS";
 
 //help container
@@ -1181,7 +1182,7 @@ management.remote_telnetport="Telnet-Port";
 management.remote_allowanyip="Erlaube alle Remote-IPs";
 management.remote_ip="Erlaubter Remote-IP-Bereich";
 management.web_legend="Web-Zugriff";
-management.web_refresh="Auffrischen (in Sekunden)";
+management.web_refresh="Auffrischen";
 management.web_sysinfo="Infoseite einschalten";
 management.web_sysinfopass="Kennwortschutz Infoseite";
 management.web_sysinfomasq="MAC-Maskierung Infoseite";
@@ -1257,8 +1258,8 @@ management.lang_latvian="Lettisch";
 management.net_legend="IP-Filter-Einstellungen (für P2P bitte anpassen)";
 management.net_conctrl="TCP Staukontroll-Mechanismus";
 management.net_port="Maximale Ports";
-management.net_tcptimeout="TCP-Timeout (in Sekunden)";
-management.net_udptimeout="UDP-Timeout (in Sekunden)";
+management.net_tcptimeout="TCP-Timeout";
+management.net_udptimeout="UDP-Timeout";
 management.clock_legend="Übertakten";
 management.clock_frq="Frequenz";
 management.clock_support="Nicht unterstützt";
