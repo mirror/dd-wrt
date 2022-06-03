@@ -9,7 +9,7 @@
 	<div id="idsquid_watchdog">
 		<div class="setting">
 			<div class="label"><% tran("share.inter"); %></div>
-			<input size="4" maxLength="4" class="num" name="squid_watchdog_interval_sec" onblur="valid_range(this,0,9999,share.inter)" value="<% nvg("squid_watchdog_interval_sec"); %>" />
+			<input size="4" maxLength="4" class="num" name="squid_watchdog_interval_sec" onblur="valid_range(this,0,9999,share.inter)" value="<% nvg("squid_watchdog_interval_sec"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.IP2"); %></div>
