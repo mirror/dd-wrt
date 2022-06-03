@@ -17,7 +17,7 @@ function do_join (F,SSID) {
 	</head>
 
 	<body class="popup_bg">
-		<!--<div id="bulle" class="bulle"></div> -->
+		<div id="bulle" class="bulle"></div>
 		<form name="Join" action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="Join" />
 			<input type="hidden" name="submit_type" value="Join" />
