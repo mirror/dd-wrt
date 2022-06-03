@@ -789,6 +789,8 @@
 
 #define ROUTER_TPLINK_ARCHERC8_V4 0x10e103
 
+#define ROUTER_NETGEAR_R6200 0x10f103
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
