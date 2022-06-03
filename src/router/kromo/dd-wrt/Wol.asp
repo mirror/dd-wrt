@@ -362,7 +362,7 @@ addEvent(window, "unload", function() {
 								<div id="idwol">
 									<div class="setting">
 										<div class="label"><% tran("share.inter"); %></div>
-										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvg("wol_interval"); %>" />
+										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvg("wol_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
 										<span class="default"><script type="text/javascript">
 										//<![CDATA[
 											document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)");

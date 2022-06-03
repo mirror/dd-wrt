@@ -149,7 +149,7 @@ share.required="Required";
 share.right="Right";
 share.left="Left";
 share.share_key="Shared Key";
-share.inter="Interval (in seconds)";
+share.inter="Interval";
 share.srv="Service Name";
 share.port_range="Port Range";
 share.priority="Priority";
@@ -2501,11 +2501,11 @@ hupgrad.page1="<dd>New firmware versions are posted at <a href=\"https:\/\/dd-wr
 // ** UPnP.asp **//
 var upnp=new Object();
 upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.h2="Universal Plug and Play";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
-upnp.clear="Clear port forwards at startup";
+upnp.clear="Clear Port Forwards at Startup";
 upnp.url="Send presentation URL";
 upnp.msg1="Click to delete entry";
 upnp.msg2="Delete all entries?";
