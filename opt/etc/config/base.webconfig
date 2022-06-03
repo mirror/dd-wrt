@@ -14,7 +14,6 @@
 			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="new-password" name="http_passwdConfirm" onblur="valid_name(this,management.pass_conf,SPACE_NO|CHECK)" />
 		</div>
 	</fieldset><br />
-	
 	<fieldset>
 		<legend><% tran("management.web_legend"); %></legend>
 		<div class="setting">
@@ -24,7 +23,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.web_refresh"); %></div>
-			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
+			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
 	<!--	<div class="setting">
 			<div class="label"><% tran("management.web_authlimit"); %></div>
@@ -47,7 +46,6 @@
 			</div>
 		</div>
 	</fieldset><br />
-	
 	<fieldset>
 		<legend><% tran("management.remote_legend"); %></legend>
 		<div class="setting">
@@ -63,11 +61,13 @@
 			<div class="setting">
 				<div class="label"><% tran("management.remote_guiport"); %></div>
 				<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,management.remote_guiport)" value="<% nvram_get("http_wanport"); %>" />
-				<span class="default"><script type="text/javascript">
+				<span class="default">
+				<script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 8080, " + share.range + ": 1 - 65535)");
 				//]]>
-				</script></span>
+				</script>
+				</span>
 			</div>
 		</div>
 		<% ifndef("SSHD","<!--"); %>
@@ -83,7 +83,8 @@
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 22, " + share.range + ": 1 - 65535)");
 			//]]>
-			</script></span>
+			</script>
+			</span>
 		</div>
 		<% ifndef("SSHD","-->"); %>
 		<div class="setting">
@@ -108,14 +109,13 @@
 		<div class="setting" id="idremip">
 			<div class="label"><% tran("management.remote_ip"); %></div>
 			<input type="hidden" name="remote_ip" value="4" />
-			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,223,'IP')" value="<% get_single_ip("remote_ip","0"); %>" name="remote_ip_0" /> .
-            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","1"); %>" name="remote_ip_1" /> .
-            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","2"); %>" name="remote_ip_2" /> .
-            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% get_single_ip("remote_ip","3"); %>" name="remote_ip_3" /> <% tran("share.to"); %>
-            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% nvram_list("remote_ip", "1"); %>" name="remote_ip_4" />	
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,223,'IP')" value="<% get_single_ip("remote_ip","0"); %>" name="remote_ip_0" />.
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","1"); %>" name="remote_ip_1" />.
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","2"); %>" name="remote_ip_2" />.
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% get_single_ip("remote_ip","3"); %>" name="remote_ip_3" /> <% tran("share.to"); %>
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% nvram_list("remote_ip", "1"); %>" name="remote_ip_4" />
 		</div>
 	</fieldset><br />
-
 <% ifndef("POESWITCH", "<!--"); %>
 	<fieldset>
 		<legend><% tran("management.poeswitch"); %></legend>
@@ -125,8 +125,8 @@
 			<input class="spaceradio" type="radio" value="0" name="ubnt_power" <% nvram_checked("ubnt_power","0"); %> /><% tran("share.disable"); %>
 		</div>
 	</fieldset><br />
-<% ifndef("POESWITCH", "-->"); %>
-	
+	<% ifndef("POESWITCH", "-->"); %>
+
 	<% nvram_match("boot_wait_web","0","<!--"); %>
 	<fieldset>
 		<legend><% tran("management.boot_legend"); %></legend>
@@ -137,7 +137,6 @@
 		</div>
 	</fieldset><br />
 	<% nvram_match("boot_wait_web","0","-->"); %>
-	
 	<fieldset>
 		<legend><% tran("management.cron_legend"); %></legend>
 		<div class="setting">
@@ -150,8 +149,8 @@
 					<textarea cols="80" rows="4" id="cron_jobs" name="cron_jobs"></textarea>
 					<script type="text/javascript">
 					//<![CDATA[
-						var cron_jobs = fix_cr( '<% nvram_get("cron_jobs"); %>' );
-						document.getElementById("cron_jobs").value = cron_jobs;
+					var cron_jobs = fix_cr( '<% nvram_get("cron_jobs"); %>' );
+					document.getElementById("cron_jobs").value = cron_jobs;
 					//]]>
 					</script>
 		</div>
@@ -164,7 +163,6 @@
 			<input class="spaceradio" type="radio" name="nas_enable" value="0" <% nvram_checked("nas_enable", "0"); %> /><% tran("share.disable"); %>
 		</div>
 	</fieldset><br />
-	
 	<fieldset>
 		<legend><% tran("management.rst_legend"); %></legend>
 		<div class="setting">
@@ -191,7 +189,6 @@
 			<input class="spaceradio" type="radio" name="boot_fail_keepip" value="0" <% nvram_checked("boot_fail_keepip", "0"); %> /><% tran("share.disable"); %>
 		</div>
 	</fieldset><br />
-	
 	<fieldset>
 		<legend><% tran("management.routing_legend"); %></legend>
 		<div class="setting">
