@@ -564,16 +564,10 @@ table tr td[style='color:#000'] {
 table tr td[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
 }
-#ip_count,
-[title*='Search'],
-[title*='Monitoring'] {
-  text-decoration: none !important;
-}
 #ip_count:hover,
 [title*='Search']:hover,
 [title*='Monitoring']:hover {
   color: var(--v0-9);
-  text-decoration: underline !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 [summary='week days table'] {
@@ -615,7 +609,9 @@ table tr[bgcolor='#7CFC00'] {
   color: var(--v0-8);
 }
 table .bulle {
+  background-color: var(--bg-4);
   border-color: var(--bg-5);
+  color: var(--v9-8);
 }
 .value_error {
   border: 1px solid var(--v1-6) !important;
@@ -669,9 +665,10 @@ div.also {
   border-color: var(--bg-4) !important;
   border-radius: 4px;
 }
-div .bulle {
-  background-color: var(--bg-5);
-  color: var(--v9-9);
+div.bulle {
+  background-color: var(--bg-4);
+  border-color: var(--bg-5);
+  color: var(--v9-8);
 }
 div.note {
   background: var(--v7-1) !important;
@@ -731,7 +728,7 @@ h2 {
   padding-bottom: 0.3rem;
 }
 .submitFooter {
-  background: var(--bg-0);
+  background: var(--bg-2);
   border: 1px solid var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
@@ -1032,9 +1029,6 @@ input[type='checkbox']:hover {
   border-color: var(--v0-8) !important;
   background-color: var(--v0-3) !important;
   box-shadow: 0 0 8px 0 var(--v0-4);
-}
-input.num[name*='lease'][size='10'] {
-  margin-right: 4px;
 }
 input[type='file'] {
   margin-top: -0.3rem;

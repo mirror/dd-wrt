@@ -13,7 +13,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("management.net_tcptimeout"); %></div>
-		<input class="num" size="5" maxlength="5" name="ip_conntrack_tcp_timeouts" onblur="valid_range(this,1,86400,management.net_tcptimeout)" value="<% nvg("ip_conntrack_tcp_timeouts"); %>" />&nbsp;
+		<input class="num" size="5" maxlength="5" name="ip_conntrack_tcp_timeouts" onblur="valid_range(this,1,86400,management.net_tcptimeout)" value="<% nvg("ip_conntrack_tcp_timeouts"); %>" />&nbsp;<% tran("share.seconds"); %>
 		<span class="default"><script type="text/javascript">
 		//<![CDATA[
 		document.write("(" + share.deflt + ": 3600, " + share.range + ": 1 - 86400)");
@@ -22,7 +22,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("management.net_udptimeout"); %></div>
-		<input class="num" size="5" maxlength="5" name="ip_conntrack_udp_timeouts" onblur="valid_range(this,1,86400,management.net_udptimeout)" value="<% nvg("ip_conntrack_udp_timeouts"); %>" />&nbsp;
+		<input class="num" size="5" maxlength="5" name="ip_conntrack_udp_timeouts" onblur="valid_range(this,1,86400,management.net_udptimeout)" value="<% nvg("ip_conntrack_udp_timeouts"); %>" />&nbsp;<% tran("share.seconds"); %>
 		<span class="default"><script type="text/javascript">
 		//<![CDATA[
 		document.write("(" + share.deflt + ": 120, " + share.range + ": 1 - 86400)");

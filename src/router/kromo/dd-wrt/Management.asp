@@ -235,8 +235,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="info_passwd" />
 							<input type="hidden" name="https_enable" />
 							<h2><% tran("management.h2"); %></h2>
-				<% show_modules(".webconfig"); %>
-				<% show_modules(".webconfig_release"); %>
+							<% show_modules(".webconfig"); %>
+							<% show_modules(".webconfig_release"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
