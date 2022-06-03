@@ -59,7 +59,7 @@ body fieldset legend {
 body #help dd.definition {
   border-bottom: 1px dotted #ccc;
 }
-body hr {
+hr {
   background: #333;
   color: #333;
 }
