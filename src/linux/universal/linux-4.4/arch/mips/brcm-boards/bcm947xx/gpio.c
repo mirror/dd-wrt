@@ -402,7 +402,7 @@ if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
 if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101"))
 {
-		printk(KERN_EMERG "WNDR4000 GPIO Init\n");
+		printk(KERN_EMERG "WNDR4000 / R6200 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 6 | 1 << 7;
 }
 if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
