@@ -250,7 +250,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("hmanagement.right1"); %></dt>
 							<dd class="definition"><% tran("hmanagement.right2"); %></dd>
 							<dt class="term"><% tran("hmanagement.right3"); %></dt>
-							<dd class="definition"><% tran("hmanagement.right3"); %></dd>
+							<dd class="definition"><% tran("hmanagement.right4"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HManagement.asp');"><% tran("share.more"); %></a>
 					</div>
