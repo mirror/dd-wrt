@@ -186,7 +186,7 @@ share.encrypt="Encryption";
 share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
-share.styl="Style";
+share.styl="Select a Style";
 share.theme="Select a Theme";
 share.styl_dark="Use Dark Styles";
 share.err="error";
@@ -1350,12 +1350,12 @@ management.pass_conf="Re-enter to confirm";
 management.remote_legend="Remote Access";
 management.remote_gui="Web GUI Management";
 management.remote_https="Use HTTPS";
-management.remote_guiport="Web GUI Port";
+management.remote_guiport="Port";
 management.remote_ssh="SSH Management";
-management.remote_sshport="SSH Remote Port";
+management.remote_sshport="Remote Port";
 management.remote_telnet="Telnet Management";
-management.remote_telnetport="Telnet Remote Port";
-management.remote_allowanyip="Allow Any Remote IP";
+management.remote_telnetport="Remote Port";
+management.remote_allowanyip="Allow any Remote IP";
 management.remote_ip="Allowed Remote IP Range";
 management.web_legend="Web Access";
 management.web_refresh="Auto-Refresh";
@@ -1368,7 +1368,7 @@ management.poeswitch="POE Switch";
 management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-management.cron_jobs="Additional Cron Jobs";
+management.cron_jobs="Additional Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
@@ -1484,11 +1484,12 @@ management.boot_fail_keepip="Keep IP after Bootfail";
 //help container
 var hmanagement=new Object();
 hmanagement.right1="Auto-Refresh:";
-hmanagement.right2="Adjusts the Web GUI automatic refresh interval. Entering a value of <b>0</b> disables this feature.";
-
+hmanagement.right2="Adjust the web interface refresh interval. Enter a value of <b>0</b> to disable this feature.<br/>The default value is <b>3</b> seconds.";
+hmanagement.right3=management.jffs_legend;
+hmanagement.right4="When you first enable <b>" + management.jffs_srv + "</b>, it is necessary to enable <b>" + management.jffs_clean + " in order to prepare the flash file system for usage.";
 //help page
-hmanagement.page1="<dd>The Management screen allows you to change the router's settings. On this page you will find most of the configurable items of the DD-WRT router code.</dd>";
-hmanagement.page2="<dd>The new password must not exceed 32 characters in length or include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Default SSH username is <tt>root</tt><br />It is strongly recommended that you change the factory default password of the router, which is <tt>admin</tt>. All users who try to access the router's web-based utility or Setup Wizard will be prompted for the router's password.</div></div></dd>";
+hmanagement.page1="<dd>On this page the router's secure and remote access can be configured as well as other base functions.</dd>";
+hmanagement.page2="<dd>The new password must not exceed 63 characters in length or include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The default SSH/Telnet username is <tt>root</tt><br />It is strongly recommended that you change the factory default username and password of the router, which is <tt>admin</tt>. At each new session the router's web interface or the <i>Setup Wizard</i> is accessed, you will be prompted to enter the router's credentials you have previously setup.</div></div></dd>";
 hmanagement.page3="<dd>This feature allows you to manage the router from a remote location, via the Internet. To disable this feature, keep the default setting, <em>Disable</em>. To enable this feature, select <em>Enable</em>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />To remotely manage the router, enter <tt>http:\/\/xxx.xxx.xxx.xxx:8080</tt> (the x's represent the router's Internet IP address, and 8080 represents the specified port) in your web browser's address field. You will be asked for the router's password.<br /><br />If you use HTTPS you need to specify the URL as <tt>https:\/\/xxx.xxx.xxx.xxx:8080</tt> (not all DD-WRT firmwares does support this without rebuilding with SSL support).<br /><br />You can also enable <em>SSH</em>&nbsp; to remotely access the router by Secure Shell. Note that SSH daemon needs to be enable in <a href=\"HServices.asp\">";
 hmanagement.page4="</a> page.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If the router remote access feature is enabled, anyone who knows the router's Internet IP address and password will be able to alter the router's settings.</div></div></dd>";
 hmanagement.page5="<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol. If you choose to disable this feature, a manual reboot will be required.<br />You can also activate or not the router information web page. It is now possible to password protect this page (same username and password than above).<br />MAC Masking allows you to truncate MAC addresses in the web interface.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If MAC Masking is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masking only applies to the Sys-Info page.</div></div></dd>";
@@ -1897,7 +1898,7 @@ service.vpnd_srv="OpenVPN";
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="System";
-service.vpnd_gui="GUI(server)";
+service.vpnd_gui="GUI (server)";
 service.vpnd_text="Text";
 service.vpnd_crl="Certificate Revocation List";
 service.vpnd_config="Additional Config";
@@ -2964,7 +2965,7 @@ hwl_adv.page12="<dd>Values are <i>Auto</i>, <i>Left</i>, <i>Right</i>, default v
 hwl_adv.page13="<dd>Values are <i>Long</i> and <i>Short</i>, default value is <i>Long</i>. If your wireless device supports the short preamble and you are having trouble getting it to communicate with other 802.11b devices, make sure that it is set to use the long preamble.</dd>";
 hwl_adv.page14="<dd>This value ranges from 1 - 1000 mW. Default txpwr is chosen in order to comply with regulation domains as well as wireless stability. Higher power settings are not recommended for users due to excess heat generated by the radio chipset, which can affect the life of the router.</dd>";
 hwl_adv.page15="<dd>The default value is <i>Off</i>. This should only be used with WRT54GS Models and only in conjunction with other Linksys \"GS\" wireless clients that also support Linksys \"Speedbooster\" technology.</dd>";
-hwl_adv.page16="<dd>The default value is <i>Enabled</i>. The setting allows access to the routers setup (GUI) from wireless clients. Disable this if you wish to block all wireless clients from accessing the setup pages.</dd>";
+hwl_adv.page16="<dd>The default value is <i>Enabled</i>. The setting allows access to the routers setup web interface from wireless clients. Disable this if you wish to block all wireless clients from accessing the setup pages.</dd>";
 hwl_adv.page17="<dd>The <em>Radio Times Restriction</em> facility constitutes a time switch for the radio. By default, the time switch is not active and the WLAN is permanently on. Enable the time switch, if you want to turn off the WLAN during some hours of the day. Hours during which the WLAN is on are marked in green, while red indicates that the radio is off. Clicking on the respective hour toggles between on and off.</dd>";
 hwl_adv.page18="<dd>Enable support of WiFi Multimedia feature. Configuring QoS options consists of setting parameters on existing queues for different types of wireless traffic. You can configure different minimum and maximum wait times for the transmission of packets in each queue based on the requirements of the media being sent. Queues automatically provide minimum transmission delay for Voice, Video, multimedia, and mission critical applications, and rely on best-effort parameters for traditional IP data.<br /><br /><div class=\"note\"><h4>Note:</h4><div>As an Example, time-sensitive Voice & Video, and multimedia are given effectively higher priority for transmission (lower wait times for channel access), while other applications and traditional IP data which are less time-sensitive but often more data-intensive are expected to tolerate longer wait times.</div></div></dd>";
 hwl_adv.page19="<dd>This refers to the acknowledge policy used at the MAC level. Enabling no-acknowledgement can result in more efficient throughput but higher error rates in a noisy Radio Frequency (RF) environment.</dd>";
@@ -3287,9 +3288,13 @@ dnscrypt.nfeath4title="DNSCrypt";
 dnscrypt.nfeath4txt="<a href=\"https:\/\/www.dnscrypt.org\">DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.";
 dnscrypt.nfeatbutton="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;";
 
+var features=new Object();
+features.legend="Display New Features";
+features.label="Show Features";
+
 var featureshead=new Object();
 featureshead.h2title="Please check out our new Features!&nbsp;&nbsp;";
-featureshead.hidebtn="Hide This Box";
+featureshead.hidebtn="Hide this Box";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 var dhcp=new Object();

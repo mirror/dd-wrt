@@ -26,12 +26,12 @@
 <div class='rightmenu'>
 	<div class='expando'>
 		<div class='slidingheader' id='scanoptions' onClick='toggleExpando(this)'>
-			Scanning options
+			Scanning Options
 		</div>
 		<div class='slidingbodyshow'>
 			<center>Status</center>
 			Monitoring<br>
-			<center>Channel setting</center> 
+			<center>Channel Setting</center>
 			<form name="channelform" action="apply.cgi" method="post" />
 				<input type="hidden" name="action" value="Apply" />
 				<input type="hidden" name="change_action" value="gozila_cgi" />
@@ -62,7 +62,7 @@
 				<option value='100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >100 to 173</option>
 				<option value='32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >32 to 173</option>
 			</select>
-			<center>Hopdwell (ms)</center> 
+			<center>Hopdwell (ms)</center>
 			<select name='hopdwell' onChange='this.form.submit()'>
 				<option value='250' <% nvs("hopdwell","250"); %> >250</option>
 				<option value='500' <% nvs("hopdwell","500"); %> >500</option>
@@ -77,7 +77,7 @@
 	</div>
 	<div class='expando'>
 		<div class='slidingheader' id='displayoptions' onClick='toggleExpando(this)'>
-			Display options
+			Display Options
 		</div>
 		<div class='slidingbody'>
 			<center>Show/Hide</center>
@@ -104,34 +104,33 @@
 			<i>Please select a host to view details.</i>
 			</span>
 			<span id='detail_network_actions' class='actionlist'>
-<!--			<center>Network Actions</center>
-			<a class='action' href='javascript:ap_join(this)'>Join this network</a> 
--->			</span>
+			<!--			<center>Network Actions</center>
+			<a class='action' href='javascript:ap_join(this)'>Join this network</a> -->
+			</span>
 			<span id='detail_ap_actions' class='actionlist'>
-<!--			<center>AP Actions</center>
+			<!--			<center>AP Actions</center>
 			<a class='action' href='javascript:ap_wds(this)'>Join via WDS</a>
-			<a class='action' href='javascript:ap_copy(this)'>Copy this AP's settings</a>
--->			</span>
+			<a class='action' href='javascript:ap_copy(this)'>Copy this AP's settings</a> -->
+			</span>
 			<span id='detail_sta_actions' class='actionlist'>
-<!--			<center>Foreign-client actions</center>
-			<a class='action' href='javascript:sta_spy(this)'>Spy on this client</a> 
-			<a class='action' href='javascript:sta_unblock(this)'>Unblock this MAC</a>
--->			</span>
+			<!--			<center>Foreign-client actions</center>
+			<a class='action' href='javascript:sta_spy(this)'>Spy on this client</a>
+			<a class='action' href='javascript:sta_unblock(this)'>Unblock this MAC</a> -->
+			</span>
 			<span id='detail_sta_assoc_actions' class='actionlist'>
-<!--			<center>Local-client actions</center>
+			<!--	<center>Local-client actions</center>
 			<a class='action' href='javascript:sta_disassoc(this)'>Disconnect this client</a>
 			<a class='action' href='javascript:sta_block(this)'>Block this MAC</a>
-			<a class='action' href='javascript:sta_static(this)'>Set DHCP static IP</a>
--->			</span>
+			<a class='action' href='javascript:sta_static(this)'>Set DHCP static IP</a> -->
+			</span>
 			<span id='detail_local_actions' class='actionlist'>
-<!--			<center>DD-WRT actions</center>
+			<!--			<center>DD-WRT actions</center>
 			<a class='action' href='javascript:ap_join_box(this)'>Join a network</a>
-			<a class='action' href='javascript:ap_setup(this)'>AP settings</a>
--->			</span>
-		</div> 
-
+			<a class='action' href='javascript:ap_setup(this)'>AP settings</a> -->
+			</span>
+		</div>
 	</div>
-<!--	<div class='expando' style='display:none'>
+	<!--	<div class='expando' style='display:none'>
 		<div class='slidingheader' id='clientspy' onClick='toggleExpando(this)'>
 			Client spy
 		</div>
@@ -140,15 +139,14 @@
 		</div>
 	</div> -->
 		<div class='expando'>
-		<div class='slidingheader' id='configuration' onClick="self.close()">
-			Close
+			<div class='slidingheader' id='configuration' onClick="self.close()">
+				Close
+			</div>
 		</div>
-		</div>
-	
-</div> 
+</div>
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
 <div class='debugger' id='debugger'></div>
-<iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
-<iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
+	<iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
+	<iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
 </body>
 </html>
