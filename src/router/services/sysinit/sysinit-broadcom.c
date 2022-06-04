@@ -1634,6 +1634,59 @@ void start_sysinit(void)
 			nvram_set("vlan2ports", "4 8");
 			need_reboot = 1;
 		}
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr"))
+		    || startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
+			char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("sb/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			need_reboot = 1;
+		}
+
+		struct nvram_param r6200_pci_1_1_params[] = {
+			{ "sromrev", "11" },
+			{ "boardrev", "0x1303" },
+			{ "boardflags", "0x10000000" },
+			{ "boardflags2", "0x300000" },
+			{ "boardtype", "0x621" },
+			{ "boardflags3", "0x300030" },
+			{ "boardnum", "21059" },
+			{ "agbg0", "71" },
+			{ "agbg2", "133" },
+			{ "rawtempsense", "0x1ff" },
+			{ "measpower", "0x7f" },
+			{ "tempsense_slope", "0xff" },
+			{ "tempcorrx", "0x3f" },
+			{ "tempsense_option", "0x3" },
+			{ "temps_period", "15" },
+			{ "subband5gver", "0x4" },
+			{ "mcsbw205gmpo", "3999678464" },
+			{ "noiselvl2ga0", "31" },
+			{ "rxgainerr2g", "0xffff" },
+			{ "rxgainerr5g", "0xffff,0xffff,0xffff,0xffff" },
+			{ "maxp2ga0", "76" },
+			{ "pa2ga0", "0xfe72,0x14c0,0xfac7" },
+			{ "pa5ga0", "0xff39,0x1a55,0xfcc7,0xff38,0x1a7f,0xfcc3,0xff33,0x1a66,0xfcc4,0xff36,0x1a7b,0xfcc2" },
+			{ "pa2ga1", "0xfe80,0x1472,0xfabc" },
+			{ "maxp5ga1", "96,100,100,100" },
+			{ "pa5ga1", "0xff3a,0x1a0b,0xfcd3,0xff38,0x1a37,0xfccd,0xff37,0x1aa1,0xfcc0,0xff37,0x1a6f,0xfcc4" },
+			{ "pa2ga2", "0xfe82,0x14bf,0xfad9" },
+			{ "pa5ga2", "0xff3a,0x1a28,0xfccd,0xff38,0x1a2a,0xfcce,0xff35,0x1a93,0xfcc1,0xff38,0x1aab,0xfcbe" },
+			{ "venid", "0x14e4" },
+			{ "devid", "0x43a0" },
+			{ "maxp5ga0", "74,90,90,90" },
+			{ "mcsbw205ghpo", "0x11110000" },
+			{ "mcsbw405ghpo", "0x33330000" },
+			{ "mcsbw805ghpo", "0x99552222" },
+
+			{ 0, 0 }
+		};
+		restore_set("pci/1/1", r6200_pci_1_1_params);
 		break;
 
 	case ROUTER_NETGEAR_WNDR4000:
