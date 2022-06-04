@@ -1556,8 +1556,8 @@ wl_basic.bg="BG-Mixelt";
 wl_basic.n="Csak-N";
 wl_basic.legend2="WLAN-időkorlátozás";
 wl_basic.radio="WLAN rádió";
-wl_basic.radio_on="WLAN bekapcsolva";
-wl_basic.radio_off="WLAN kikapcsolva";
+wl_basic.radio_on="bekapcsolva";
+wl_basic.radio_off="kikapcsolva";
 
 wl_basic.h2_v24="Vezetéknélküli interfész";
 wl_basic.regdom="Felügyeleti tartomány";
