@@ -776,8 +776,6 @@ ifeq ($(CONFIG_NOAC),y)
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR3400_CVNA.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4000.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4000.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-r6200.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6200.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6200.chk
 # end Netgear
 
 # Linksys
@@ -820,6 +818,7 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500V2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wnr3500Lv2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500lv2.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500Lv2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-r6200.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6200.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6200.chk
 	cp $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500Lv2.bin
 
 
