@@ -1619,8 +1619,8 @@ wl_basic.n="N-uniquement";
 wl_basic.legend2="Plages horaires de fonctionnement";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Programmation sans fil";
-wl_basic.radio_on="Sans fil activè";
-wl_basic.radio_off="Sans fil dèsactivé";
+wl_basic.radio_on="fil activè";
+wl_basic.radio_off="fil dèsactivé";
 
 wl_basic.h2_v24="Interface sans fil";
 wl_basic.h2_vi="Interfaces virtuelles";
