@@ -32,6 +32,7 @@ function port_enable_disable(F,I) {
 	if(F._http_enable.checked == true && F._https_enable.checked == false)
 		choose_disable(F._remote_mgt_https);
 }
+
 function ChangePasswd(F) {
 	if((F.PasswdModify.value==1 && F.http_passwd.value == "d6nw5v1x2pc7st9m") || F.http_passwd.value == "admin") {
 		if(confirm(errmsg.err51)) {
@@ -44,7 +45,6 @@ function ChangePasswd(F) {
 	}
 	return true;
 }
-
 
 function valid_password(F) {
 	if (F.http_passwd.value != F.http_passwdConfirm.value) {
@@ -74,7 +74,6 @@ function handle_https(F)
 		choose_disable(F._remote_mgt_https);
 	}
 }
-
 
 function selSSH(val, load) {
 	if (load == 1) {
@@ -185,7 +184,6 @@ addEvent(window, "load", function() {
 		selSSH("<% nvg("sshd_enable"); %>", 1);
 	if (document.setup.remote_mgt_telnet)
 		selTelnet("<% nvg("telnetd_enable"); %>", 1);
-
 	
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvem("remote_mgt_ssh", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvem("remote_mgt_telnet", "1", "1", "0"); %> == 1);
@@ -211,9 +209,7 @@ addEvent(window, "unload", function() {
 		//]]>
 		</script>
 	</head>
-
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -253,6 +249,8 @@ addEvent(window, "unload", function() {
 						<dl>
 							<dt class="term"><% tran("hmanagement.right1"); %></dt>
 							<dd class="definition"><% tran("hmanagement.right2"); %></dd>
+							<dt class="term"><% tran("hmanagement.right3"); %></dt>
+							<dd class="definition"><% tran("hmanagement.right3"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HManagement.asp');"><% tran("share.more"); %></a>
 					</div>
