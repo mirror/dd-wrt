@@ -1590,6 +1590,19 @@ service.syslog_ip="Remote Server";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
+//tor
+
+service.tor_legend="The Onion Router Project";
+service.tor_srv="Tor";
+service.tor_address="DNS Name oder externe IP";
+service.tor_nickname="Nickname / ID";
+service.tor_relay="Weiterleitungs Modus";
+service.tor_dir="Verzeichnisse spiegeln";
+service.tor_bridge="Brücken Modus";
+service.tor_transparent="Transparenter Proxy";
+service.tor_bwrate="Bandbreiten Rate";
+service.tor_bwburst="Bandbreitenüberschreitung";
+
 //pptpd_client.webservices
 service.pptpd_legend="PPTP-Client";
 service.pptpd_option="PPTP-Client-Optionen";
