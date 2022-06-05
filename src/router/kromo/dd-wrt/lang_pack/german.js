@@ -605,6 +605,7 @@ hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme
 	Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
 hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
+
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -617,6 +618,8 @@ diag.shutdown="Runterfahren";
 diag.firewall="Firewall";
 diag.custom="Benutzerdefiniertes Skript";
 diag.usb="USB Skript";
+diag.running="läuft";
+diag.stopped="gestoppt";
 
 //help container
 
