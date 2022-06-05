@@ -393,7 +393,7 @@ function refresh(F)
 									<% ifndef("RFLOW", "-->"); %>
 									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("nas.samba3"); %></div>
+										<div class="label"><% tran("management.samba_legend"); %></div>
 										<% nvm("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SAMBA", "-->"); %>
@@ -534,7 +534,7 @@ function refresh(F)
 										<th sortdir="up" width="7%"><% tran("status_router.sys_up"); %></th>
 										<th sortdir="up" width="7%"><% tran("share.txrate"); %></th>
 										<th sortdir="up" width="7%"><% tran("share.rxrate"); %></th>
-										<th sortdir="up" width="15%">Info</th>
+										<th sortdir="up" width="15%"><% tran("share.infotbl"); %></th>
 										<th sortdir="up" width="8%"><% tran("share.signal"); %></th>
 										<th sortdir="up" width="8%"><% tran("share.noise"); %></th>
 										<th sortdir="up" width="8%">SNR</th>
