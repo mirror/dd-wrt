@@ -566,6 +566,7 @@ table tr td[bgcolor='#FFFFFF'] {
 }
 #ip_count:hover,
 [title*='Search']:hover,
+[title*='Chain']:hover,
 [title*='Monitoring']:hover {
   color: var(--v0-9);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
