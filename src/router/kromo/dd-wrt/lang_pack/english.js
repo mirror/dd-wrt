@@ -889,9 +889,9 @@ husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if s
 // ** NAS.asp **//
 var nas=new Object();
 nas.titl="NAS";
-nas.proftpd_legend="FTP Server";
-nas.proftpd_srv="Use Server";
-nas.proftpd_srv_label="ProFTPD Server";
+nas.proftpd_legend="FTP Access";
+nas.proftpd_srv="ProFTPD Server";
+nas.proftpd_srv_label="Use Server";
 nas.proftpd_port="Server Port";
 nas.proftpd_dir="Files Directory";
 nas.proftpd_passw="User Password List";
@@ -900,6 +900,7 @@ nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
 nas.samba3_legend2="Configuration";
+nas.samba3_srv_label="Use Server";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
@@ -1444,8 +1445,8 @@ management.mmc_srv="MMC Device";
 management.mmc_gpiosel="GPIO pins select";
 management.mmc_gpiopins="GPIO pins";
 management.mmc_cardinfo="Card Info";
-management.samba_legend="CIFS Automount";
-management.samba_srv="Common Internet File System";
+management.samba_legend="Common Internet File System";
+management.samba_srv="CIFS Automount";
 management.samba_share="Share";
 management.samba_stscript="Startscript";
 management.SIPatH_srv="SIPatH";
@@ -1488,8 +1489,8 @@ management.boot_fail_keepip="Keep IP after Bootfail";
 var hmanagement=new Object();
 hmanagement.right1="Auto-Refresh:";
 hmanagement.right2="Adjust the web interface refresh interval. Enter a value of <b>0</b> to disable this feature.<br/>The default value is <b>3</b> seconds.";
-hmanagement.right3=management.jffs_legend;
-hmanagement.right4="When you first enable <b>" + management.jffs_srv + "</b>, it is necessary to enable <b>" + management.jffs_clean + " in order to prepare the flash file system for usage.";
+hmanagement.right3=management.jffs_legend + ":";
+hmanagement.right4="When you first enable <b>" + management.jffs_srv + "</b>, it is necessary to enable <b>" + management.jffs_clean + "</b> in order to prepare the flash file system for usage.";
 //help page
 hmanagement.page1="<dd>On this page the router's secure and remote access can be configured as well as other base functions.</dd>";
 hmanagement.page2="<dd>The new password must not exceed 63 characters in length or include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The default SSH/Telnet username is <tt>root</tt><br />It is strongly recommended that you change the factory default username and password of the router, which is <tt>admin</tt>. At each new session the router's web interface or the <i>Setup Wizard</i> is accessed, you will be prompted to enter the router's credentials you have previously setup.</div></div></dd>";
@@ -3177,7 +3178,7 @@ wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 
 //help container
 var hwl_basic=new Object();
-hwl_basic.right2="<b>Attention</b>: It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
+hwl_basic.right2="<b>Attention:</b> It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ACK timing. 0 disables ACK timing completely on Broadcom based firmware. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
