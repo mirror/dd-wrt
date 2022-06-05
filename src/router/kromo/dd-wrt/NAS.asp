@@ -842,7 +842,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -861,8 +860,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="raid_member_del_value" />
 							<input type="hidden" name="raid_member_add_value" />
 							<input type="hidden" name="commit" value="1"/>
-							
-						<% show_modules(".webnas"); %>
+
+							<% show_modules(".webnas"); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
