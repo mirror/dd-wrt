@@ -946,7 +946,7 @@ hotspot.wifidog_messagefile="HTML Nachrichten Datei für Wifidog";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Benutzername";
 hotspot.wifidog_password="HTTP Server Kennwort";
-hotspot.wifidog_auth="HTTP Authentication Unterstützung";
+hotspot.wifidog_auth="HTTP Authentifizierung Unterstützung";
 
 //help container
 
@@ -1664,7 +1664,7 @@ service.vpnd_srv="Starte OpenVPN Daemon";
 service.vpnd_starttype="Start Typ";
 service.vpnd_startWanup="Mit WAN-Aktivierung starten";
 service.vpnd_startSystem="Beim Systemstart";
-service.vpnd_gui="GUI(server)";
+service.vpnd_gui="GUI(Server)";
 service.vpnd_text="Text";
 service.vpnd_crl="Zertifikatssperrliste";
 service.vpnd_config="OpenVPN Konfiguration";
