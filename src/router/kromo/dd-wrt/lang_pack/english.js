@@ -890,7 +890,8 @@ husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if s
 var nas=new Object();
 nas.titl="NAS";
 nas.proftpd_legend="FTP Server";
-nas.proftpd_srv="ProFTPD";
+nas.proftpd_srv="Use Server";
+nas.proftpd_srv_label="ProFTPD Server";
 nas.proftpd_port="Server Port";
 nas.proftpd_dir="Files Directory";
 nas.proftpd_passw="User Password List";
@@ -898,6 +899,7 @@ nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
+nas.samba3_legend2=networking.ipvs_config;
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
@@ -905,6 +907,7 @@ nas.rsync="Remote Synchronisation";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
+nas.dlna_label="Server";
 nas.dlna_merge="Merge Media Dirs";
 nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
@@ -919,7 +922,7 @@ nas.shareadd="Add Share";
 nas.sharedel="Remove";
 nas.useradd="Add User";
 nas.userdel="Remove";
-nas.perm_rw="Read/Write";
+nas.perm_rw="Read / Write";
 nas.perm_ro="Read Only";
 nas.uname="User Name";
 nas.pwd="Password";
@@ -940,10 +943,10 @@ var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
 
 //help page
-hnas.page1="<dd>FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network</li></ul></dd>";
-hnas.page2="<dd>DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. TV to view files served by the router.</li></ul></dd>";
-hnas.page3="<dd>SAMBA Server enables you to access files: <br /><ul><li>On router from local network through file explorer</li></ul></dd>";
-hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under D: and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br />D: equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
+hnas.page1="<dd>A FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
+hnas.page2="<dd>A DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
+hnas.page3="<dd>A SAMBA Server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
+hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br />/dev/sdX equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
 var privoxy=new Object();
@@ -1224,7 +1227,7 @@ idx.dhcp_userclass="DHCP Userclass";
 idx.dhcp6c_userclass="DHCP IPv6 Userclass";
 idx.dhcp_clientid="DHCP Client ID";
 idx.dhcp6c_clientid="DHCP IPv6 Client ID";
-idx.dhcp_legend="Network Address Server Settings (DHCP)";
+idx.dhcp_legend="Network Server Settings (DHCP)";
 idx.dhcp_type="DHCP Type";
 idx.dhcp_srv="DHCP Server";
 idx.dhcp_fwd="DHCP Forwarder";
@@ -1400,7 +1403,7 @@ management.ipv6_tun_client_addr="Tunnel Client IPv6 Address";
 management.ipv6_tun_upd_url="Tunnel Update URL";
 management.jffs_legend="JFFS2 Support";
 management.jffs_srv="Flash Storage";
-management.jffs_clean="Format Flash Storage";
+management.jffs_clean="Wipe Flash Storage";
 management.lang_legend="Language Selection";
 management.lang_srv="Language";
 management.lang_bulgarian="Bulgarian";
@@ -1567,8 +1570,8 @@ networking.ipvs_role="Role";
 networking.ipvs_config="Configuration";
 //help container
 var hnetworking=new Object();
-hnetworking.right1="Multi DHCPD";
-hnetworking.right2="To use multiple DHCPD, enable DNSMasq as a DHCP server.";
+hnetworking.right1=networking.legend5;
+hnetworking.right2="To use multiple DHCP servers, first enable dnsmasq as a DHCP server.";
 
 //help page
 hnetworking.page1="<dd>Allows you to transfer different independent network streams by using just one interface. This is done by inserting a small TAG within the Ethernet header. By identifying this tag these Ethernet packets can be split up again on the other side to create new interface out of it. Using this option together with the bridging option allows you to create different transfer networks which can be bridged to a Wireless Interface to separate the Router Management network from the network accessible by the User. This is useful for large ISP networks.</dd>";
@@ -1778,7 +1781,7 @@ service.dhcp_legend="DHCP Client";
 service.dhcp_vendor="DHCP Vendorclass";
 service.dhcp6c_vendor="DHCP IPv6 Vendorclass";
 service.dhcp_reqip="Request IP";
-service.dhcp_legend2="DHCP Server";
+service.dhcp_legend2="DHCP Server Setup";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="Use JFFS2 for Client Lease DB";
 service.dhcp_nvramlease="Use NVRAM for Client Lease DB";
@@ -2326,13 +2329,13 @@ status_router.sys_time="Current Time";
 status_router.sys_up="Uptime";
 status_router.sys_load="Load Average";
 status_router.sys_kernel="Kernel Version";
-status_router.legend2="CPU";
+status_router.legend2="System Details";
 status_router.cpu="CPU Model";
 status_router.cores="CPU Cores";
 status_router.features="CPU Features";
 status_router.clock="CPU Clock";
 status_router.legend3="Memory";
-status_router.mem_tot="Total Available";
+status_router.mem_tot="Total / Available";
 status_router.mem_free="Free";
 status_router.mem_used="Used";
 status_router.mem_buf="Buffers";
@@ -3174,9 +3177,9 @@ wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 
 //help container
 var hwl_basic=new Object();
-hwl_basic.right2="Attention: It is recommended that you press <em>" + sbutton.apply + "</em> after you change a value in order to update the fields with the corresponding parameters.";
+hwl_basic.right2="<b>Attention:</b> It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ACK timing. 0 disables ACK timing completely for Broadcom firmwares. On Atheros based firmware, 0 enables auto ACK timing mode.";
+hwl_basic.right4="Adjusts the ACK timing. 0 disables ACK timing completely on Broadcom based firmware. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 //help page

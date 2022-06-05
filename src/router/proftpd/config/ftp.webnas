@@ -2,7 +2,7 @@
 		<fieldset>
 			<legend><% tran("nas.proftpd_srv"); %></legend>
 				<div class="setting">
-				<div class="label"><% tran("nas.proftpd_srv"); %></div>
+				<div class="label"><% tran("nas.proftpd_srv_label"); %></div>
 					<input class="spaceradio" type="radio" name="proftpd_enable" value="1" <% nvc("proftpd_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true);show_layer_ext(this, 'ftpenext', true)" /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="proftpd_enable" value="0" <% nvc("proftpd_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false);show_layer_ext(this, 'ftpenext', false)" /><% tran("share.disable"); %>
 				</div>

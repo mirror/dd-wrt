@@ -378,22 +378,22 @@ function refresh(F)
 									</div>
 							-->
 									<div class="setting">
-										<div class="label">WRT-radauth</div>
+										<div class="label"><% tran("radius.titl"); %></div>
 									<% nvim("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvm("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvim("wl0_mode", "ap", "-->"); %>&nbsp;
 									</div>
 									<% ifndef("RFLOW", "<!--"); %>
 									<div class="setting">
-										<div class="label">WRT-rflow</div>
+										<div class="label"><% tran("service.rflow_srv1"); %></div>
 										<% nvm("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">MAC-upd</div>
+										<div class="label"><% tran("service.rflow_srv2"); %></div>
 										<% nvm("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("RFLOW", "-->"); %>
 									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("management.samba_legend"); %></div>
+										<div class="label"><% tran("nas.samba3"); %></div>
 										<% nvm("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SAMBA", "-->"); %>

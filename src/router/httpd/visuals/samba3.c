@@ -202,8 +202,8 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.samba3_users", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
-	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:180px;\">", "</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:200px;\">", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th width=\"20%%\>", "</th>\n");
 	websWrite(wp, "			<th>Samba</th>\n");
 	websWrite(wp, "			<th>FTP</th>\n");
 
@@ -229,7 +229,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "			</td>\n");
 
 		websWrite(wp, "			<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
-		websWrite(wp, "				<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number,
+		websWrite(wp, "				<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"20\">&nbsp;\n", number, number,
 			  cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
