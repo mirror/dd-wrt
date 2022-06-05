@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.1
+ * style-name: DD-WRT Inspired Themes v6.0.4
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -26,7 +26,7 @@
   text-align: right;
   vertical-align: middle;
 }
-body, .popup_bg, .iplookup {
+body {
   background: var(--bg-1);
   color: var(--v9-7);
   text-rendering: optimizeLegibility;
@@ -244,6 +244,10 @@ body div.message {
   border-color: var(--bg-3);
   border-radius: 4px;
 }
+.popup_bg, .iplookup {
+  background: var(--bg-1);
+  color: var(--v9-7);
+}
 form[name='wds'] .label {
   width: 19.444em;
 }
@@ -339,7 +343,7 @@ input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -34.5%;
 }
 input.button[onclick*='previewStyle'] {
-  vertical-align: middle;
+  vertical-align: -0.1rem;
   height: 1.56rem;
   margin-left: 0.362em;
 }
@@ -609,13 +613,20 @@ table tr[bgcolor='#7CFC00'] {
 #conntrack_table a:link:hover {
   color: var(--v0-8);
 }
-table .bulle {
+table.bulle {
   background-color: var(--bg-4);
-  border-color: var(--bg-5);
-  color: var(--v9-8);
+  border: 1px solid var(--bg-5);
+  color: var(--v9-9);
+  border-radius: 4px;
+}
+td.bulle {
+  background-color: var(--bg-4);
+  border: 1px solid var(--bg-5);
+  color: var(--v9-9);
+  border-radius: 4px;
 }
 .value_error {
-  border: 1px solid var(--v1-6) !important;
+  border: 1px solid var(--v1-6);
 }
 .value_error:hover {
   border-color: var(--v1-9) !important;
@@ -668,8 +679,9 @@ div.also {
 }
 div.bulle {
   background-color: var(--bg-4);
-  border-color: var(--bg-5);
-  color: var(--v9-8);
+  border: 1px solid var(--bg-5);
+  color: var(--v9-9);
+  border-radius: 4px;
 }
 div.note {
   background: var(--v7-1) !important;
