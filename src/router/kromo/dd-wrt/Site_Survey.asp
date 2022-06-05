@@ -31,7 +31,7 @@ function do_join (F,SSID) {
 			<legend><%% tran("status_wireless.legend"); %%></legend>
 			<table class="table" cellspacing="5" id="survey_table">
 				<tr>
-				   <th sortdir="up" width="25%"><%% tran("share.ssid"); %%></th>
+				   <th sortdir="up" width="20%"><%% tran("share.ssid"); %%></th>
 				   <th sortdir="up" width="7%"><%% tran("share.mode"); %%></th>
 				   <th sortdir="up" width="19%"><%% tran("share.mac"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.channel"); %%></th>
@@ -45,7 +45,7 @@ function do_join (F,SSID) {
 				   <th sortdir="up" width="5%"><%% tran("share.openn"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.dtim"); %%></th>
 				   <th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
-				   <th sortdir="up" width="7%" class="center"><%% tran("share.actiontbl"); %%></th>
+				   <th sortdir="up" width="10%" class="center"><%% tran("share.actiontbl"); %%></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[
@@ -74,7 +74,7 @@ function do_join (F,SSID) {
 							document.write("<td align=\"right\" style=\"cursor:pointer; text-decoration:underline;\" onmouseover='DisplayDiv(this, event, 15, 15,\"" + table[i+12] + "\")' onmouseout=\"unDisplayDiv()\">"+table[i+11]+"</td>");
 							document.write("<td align=\"right\">"+table[i+13]+"</td>");
 							document.write("<td align=\"right\">"+table[i+14]+"</td>");
-							document.write("<td align=\"right\"><input class=\"button\" type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
+							document.write("<td align=\"right\" class=\"center\"><input class=\"button\" type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
 							document.write("<\/tr>");
 						}
 					}
