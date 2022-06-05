@@ -899,7 +899,7 @@ nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
-nas.samba3_legend2=networking.ipvs_config;
+nas.samba3_legend2="Configuration";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
@@ -907,7 +907,7 @@ nas.rsync="Remote Synchronisation";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_label="Server";
+nas.dlna_label="Use Server";
 nas.dlna_merge="Merge Media Dirs";
 nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
@@ -946,7 +946,7 @@ hnas.right2="In order to share resources add new shares by supplying a path and 
 hnas.page1="<dd>A FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
 hnas.page2="<dd>A DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
 hnas.page3="<dd>A SAMBA Server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
-hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br />/dev/sdX equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
+hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
 var privoxy=new Object();
@@ -3049,8 +3049,8 @@ wl_basic.protmode="Protection Mode";
 wl_basic.legend2="Radio Time Restrictions";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Is ON";
-wl_basic.radio_off="Is OFF";
+wl_basic.radio_on="Is Active";
+wl_basic.radio_off="Is Inactive";
 wl_basic.h2_v24="Wireless Interface";
 wl_basic.h2_vi="Virtual Interfaces";
 wl_basic.regdom="Regulatory Domain";
@@ -3177,7 +3177,7 @@ wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 
 //help container
 var hwl_basic=new Object();
-hwl_basic.right2="<b>Attention:</b> It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
+hwl_basic.right2="<b>Attention</b>: It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ACK timing. 0 disables ACK timing completely on Broadcom based firmware. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
