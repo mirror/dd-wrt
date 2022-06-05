@@ -946,7 +946,7 @@ hotspot.wifidog_messagefile="HTML Nachrichten Datei für Wifidog";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Benutzername";
 hotspot.wifidog_password="HTTP Server Kennwort";
-hotspot.wifidog_auth="HTTP Authentifizierung Unterstützung";
+hotspot.wifidog_auth="HTTP Authentifizierungs Unterstützung";
 
 //help container
 
