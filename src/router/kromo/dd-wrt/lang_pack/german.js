@@ -1637,11 +1637,11 @@ service.pppoesrv_lcpei="LCP Echo Intervall";
 service.pppoesrv_lcpef="LCP Echo Fehler";
 service.pppoesrv_limit="Verbindungs Limit pro MAC";
 service.pppoesrv_idlet="Idle Time";
-service.pppoesrv_radauth="Authentication";
+service.pppoesrv_radauth="Authentifizierung";
 service.pppoesrv_radip="RADIUS Server IP";
-service.pppoesrv_radauthport="RADIUS Authentication Port";
+service.pppoesrv_radauthport="RADIUS Authentifizierung Port";
 service.pppoesrv_radaccport="RADIUS Accounting Port";
-service.pppoesrv_radkey="RADIUS Shared Key";
+service.pppoesrv_radkey="RADIUS gemeinsamer Schlüssel";
 service.pppoesrv_chaps="Lokale Benutzer Verwaltung (CHAP Secrets)";
 
 //help container
@@ -2519,7 +2519,7 @@ wl_adv.label6="Beacon Intervall";
 wl_adv.label7="DTIM Intervall";
 wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
+wl_adv.label10="Maximal verbundene Clients";
 wl_adv.label11="AP Isolation";
 wl_adv.label12="TX Antenne";
 wl_adv.label13="RX Antenne";
