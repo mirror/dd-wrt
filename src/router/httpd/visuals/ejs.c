@@ -2545,7 +2545,7 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
 	websWrite(wp, "<div class=\"setting\">");
-	show_caption(wp, "label", "service.dhcp_legend2", NULL);
+	show_caption(wp, "label", "idx.dhcp_srv", NULL);
 	if (nvram_match("lan_proto", "dhcp")) {
 		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
 		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {
@@ -2559,7 +2559,7 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "&nbsp;</div>");
 
 #ifdef HAVE_SAMBA_SERVER
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, sizeof(buf), "service.samba3_srv"));
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, sizeof(buf), "nas.samba3"));
 	if (nvram_matchi("samba3_enable", 1)) {
 		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
 #ifdef HAVE_SMBD
