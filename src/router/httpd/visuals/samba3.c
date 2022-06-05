@@ -203,7 +203,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
 	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:200px;\">", "</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th width=\"20%%\>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th width=\"20%%\">", "</th>\n");
 	websWrite(wp, "			<th>Samba</th>\n");
 	websWrite(wp, "			<th>FTP</th>\n");
 
