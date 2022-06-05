@@ -1085,8 +1085,8 @@ idx.dhcp_start="Start-IP-Adresse";
 idx.dhcp_end="End-IP-Adresse";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximale DHCP-Nutzeranzahl";
 idx.dhcp_lease="Lease-Ablauf";
-idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
-idx.dns_dnsmasq="Nutze DNSMasq für DNS";
+idx.dhcp_dnsmasq="Nutze dnsmasq für DHCP";
+idx.dns_dnsmasq="Nutze dnsmasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
 idx.force_dnsmasqdot="Erzwungene DoT DNS Umleitung";
@@ -1366,7 +1366,7 @@ networking.ipvs_config="Konfiguration";
 //help container
 
 hnetworking.right1="Mehrfach-DHCP";
-hnetworking.right2="Aktiviere DNSMasq als DHCP Server um Mehrfach-DHCP zu nutzen.";
+hnetworking.right2="Aktiviere dnsmasq als DHCP Server um Mehrfach-DHCP zu nutzen.";
 
 // ** QoS.asp **//
 
@@ -1567,12 +1567,12 @@ service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";
 service.dnsmasq_dnssec_proxy="DNSSEC Daten Cachen";
 service.dnsmasq_dnssec_cu="Prüfe unsignierte DNS Antworten";
 
-service.dnsmasq_legend="DNSMasq";
-service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_legend="Dnsmasq";
+service.dnsmasq_srv="Dnsmasq";
 service.dnsmasq_no_dns_rebind="Kein DNS Rebind";
 service.dnsmasq_strict="DNS in fester Reihenfolge abfragen";
 service.dnsmasq_add_mac="DNS Abfrage mit Anfrage MAC";
-service.dnsmasq_opt="Zusätzliche DNSMasq-Optionen";
+service.dnsmasq_opt="Zusätzliche Dnsmasq-Optionen";
 service.dnsmasq_cachesize="Maximal gepufferte Einträge";
 
 //pptp.webservices
