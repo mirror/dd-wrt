@@ -900,6 +900,7 @@ nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
 nas.samba3_legend2="Configuration";
+nas.samba3_src_label="Use Server";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
