@@ -393,7 +393,7 @@ function refresh(F)
 									<% ifndef("RFLOW", "-->"); %>
 									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("management.samba_legend"); %></div>
+										<div class="label"><% tran("management.samba_srv"); %></div>
 										<% nvm("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SAMBA", "-->"); %>
