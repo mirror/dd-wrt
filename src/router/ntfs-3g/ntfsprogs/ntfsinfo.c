@@ -8,7 +8,7 @@
  * Copyright (c) 2004-2005 Yuval Fledel
  * Copyright (c) 2004-2007 Yura Pakhuchiy
  * Copyright (c)      2005 Cristian Klein
- * Copyright (c) 2011-2018 Jean-Pierre Andre
+ * Copyright (c) 2011-2020 Jean-Pierre Andre
  *
  * This utility will dump a file's attributes.
  *
@@ -331,7 +331,7 @@ static char *ntfsinfo_time_to_str(const sle64 sle_ntfs_clock)
 		    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" } ;
 	static const char *wdays[]
 		= { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } ;
-	static char str[30];
+	static char str[50];
 	long long stamp;
 	u32 days;
 	u32 seconds;
@@ -371,7 +371,7 @@ static char *ntfsinfo_time_to_str(const sle64 sle_ntfs_clock)
 		mon = days/31 + 1;
 		days -= 31*(mon - 1) - 1;
 	}
-	sprintf(str,"%3s %3s %2u %02u:%02u:%02u %4u UTC\n",
+	snprintf(str, sizeof(str), "%3s %3s %2u %02u:%02u:%02u %4u UTC\n",
 		wdays[wday],
 		months[mon-1],(unsigned int)days,
 		(unsigned int)(seconds/3600),
@@ -438,6 +438,21 @@ static const char *reparse_type_name(le32 tag)
 		break;
 	case IO_REPARSE_TAG_LX_SYMLINK :
 		name = " (Linux symlink)";
+		break;
+	case IO_REPARSE_TAG_LX_FIFO :
+		name = " (Linux fifo)";
+		break;
+	case IO_REPARSE_TAG_LX_CHR :
+		name = " (Linux character device)";
+		break;
+	case IO_REPARSE_TAG_LX_BLK :
+		name = " (Linux block device)";
+		break;
+	case IO_REPARSE_TAG_AF_UNIX :
+		name = " (Unix socket)";
+		break;
+	case IO_REPARSE_TAG_APPEXECLINK :
+		name = " (Exec link)";
 		break;
 	default :
 		name = "";
@@ -618,6 +633,10 @@ static void ntfs_dump_flags(const char *indent, ATTR_TYPES type, le32 flags)
 	if (flags & FILE_ATTR_VIEW_INDEX_PRESENT) {
 		printf(" VIEW_INDEX");
 		flags &= ~FILE_ATTR_VIEW_INDEX_PRESENT;
+	}
+	if (flags & FILE_ATTRIBUTE_RECALL_ON_OPEN) {
+		printf(" RECALL_ON_OPEN");
+		flags &= ~FILE_ATTRIBUTE_RECALL_ON_OPEN;
 	}
 	if (flags)
 		printf(" UNKNOWN: 0x%08x", (unsigned int)le32_to_cpu(flags));
