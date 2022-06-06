@@ -2015,6 +2015,7 @@ wl_basic.radio_off="Kapalı";
 wl_basic.h2_v24="Kablosuz Arayüz";
 wl_basic.h2_vi="Sanal Arayüzler";
 wl_basic.regdom="Düzenleyici Etki Alanı";
+wl_basic.regdom_label="Alanı";
 wl_basic.TXpower="TX Gücü";
 wl_basic.TXpowerFcc="TX Pik Gücü (FCC)";
 wl_basic.AntGain="Anten Kazancı";
