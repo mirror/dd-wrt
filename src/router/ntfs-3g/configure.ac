@@ -334,30 +334,7 @@ fi
 compile_crypto=false
 if test "$enable_crypto" != "no"; then
 	have_libgcrypt=false
-	AM_PATH_LIBGCRYPT(1.2.2, [ have_libgcrypt=true ],
-	[
-		if test "$enable_crypto" = "yes"; then
-			AC_MSG_ERROR([ntfsprogs crypto code requires the gcrypt library.])
-		else
-			AC_MSG_WARN([ntfsprogs crypto code requires the gcrypt library.])
-		fi
-	])
 	have_libgnutls=false
-	PKG_CHECK_MODULES(GNUTLS, gnutls >= 1.4.4, [ have_libgnutls=true ],
-		if test "$enable_crypto" = "yes"; then
-			AC_MSG_ERROR([ntfsprogs crypto code requires the gnutls library.])
-		else
-			AC_MSG_WARN([ntfsprogs crypto code requires the gnutls library.])
-		fi
-	)
-	if test "$have_libgcrypt" = "true"; then
-		if test "$have_libgnutls" = "true"; then
-			compile_crypto=true
-			AC_DEFINE([ENABLE_CRYPTO], 1,
-			[Define this to 1 if you want to enable support of
-			 encrypted files in libntfs and utilities.])
-		fi
-	fi
 fi
 AM_CONDITIONAL(ENABLE_CRYPTO, $compile_crypto)
 
