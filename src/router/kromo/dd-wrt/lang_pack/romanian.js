@@ -2108,6 +2108,7 @@ wl_basic.radio_off="este oprit";
 wl_basic.h2_v24="Interfață fără fir";
 wl_basic.h2_vi="Interfețe virtuale";
 wl_basic.regdom="Domeniu de reglementare";
+wl_basic.regdom_label="Domeniu";
 wl_basic.TXpower="Putere TX";
 wl_basic.TXpowerFcc="Putere maximă TX (FCC)";
 wl_basic.AntGain="Câștig antenă";

@@ -5,20 +5,22 @@ body {
 }
 select {
   border-radius: 4px;
-  height: 1.7em
+  height: 1.7em;
+}
+#detail_info {
+  width: 185px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 div.rightmenu {
   float: right;
-  margin-top: 5px;
-  margin-right: 5px;
-  text-align: center;
-  width: 180px;
+  right: 20px;
+  top: 5px;
+  position: relative;
+  width: 177px;
 }
 div.expando {
-  cursor: pointer;
-  width: 176px;
-  text-align: center;
-  margin: 2px -20px;
   position: relative;
   z-index: 150;
 }
@@ -29,7 +31,6 @@ div.slidingheader {
   width: 180px;
   padding: .2em .6em;
   text-align: center;
-  font-weight: bold;
   cursor: pointer;
   border-radius: 4px;
 }
@@ -39,16 +40,13 @@ div.slidingheader:hover {
   color: #fff;
 }
 div.slidingbody {
-  height: 1px;
-  border-top: none;
-  width: 100%;
+  width: 197px;
   overflow: hidden;
-  clip: auto;
 }
 div.slidingbodyshow {
   text-align: left;
   width: 100%;
-  padding: 10px
+  padding: 10px;
 }
 div.slidingbodyshow center {
   font-weight: bold;
@@ -75,7 +73,7 @@ div.mainarea {
 div.poweredby {
   position: absolute;
   bottom: 5px;
-  right: 5px;
+  right: 10px;
   font-size: 8pt;
   font-style: italic;
   text-align: right;
@@ -88,10 +86,10 @@ div.div3d {
   text-align: center;
 }
 div.gridpoint {
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   position: absolute;
-  font-size: 0;
+  border-radius: 1px;
 }
 .glow {
   position: absolute;
@@ -130,6 +128,9 @@ img {
   border: none;
 }
 @media (prefers-color-scheme: light) {
+  a[href] {
+    color: #30519c;
+  }
   select {
     background-color: #fff;
     border: 1px solid #ccc;
@@ -147,7 +148,7 @@ img {
     border-bottom: 1px solid #444;
   }
   div.gridpoint {
-    background-color: #000;
+    background-color: #111;
   }
   div.slidingbody, div.slidingbodyshow {
     background-color: #f6f6f6;
@@ -171,6 +172,9 @@ img {
   }
 }
 @media (prefers-color-scheme: dark) {
+  a[href] {
+    color: #6384cf;
+  }
   select {
     background-color: #333;
     border: 1px solid #454545;
@@ -188,7 +192,7 @@ img {
     border-bottom: 1px solid #444;
   }
   div.gridpoint {
-    background-color: #fff;
+    background-color: #eee;
   }
   div.slidingbody, div.slidingbodyshow {
     background-color: #1a1a1a;
