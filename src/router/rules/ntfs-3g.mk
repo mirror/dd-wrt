@@ -26,17 +26,23 @@ ntfs-3g-configure:
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
 			CC="$(CC)" \
-			CXXFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
+			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			AR_FLAGS="cru $(LTOPLUGIN)" \
+			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C ntfs-3g/fuse
+	cd ntfs-3g && autoreconf --install
 	cd ntfs-3g && ./configure --prefix=/usr \
 			--with-fuse=external \
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
+			--disable-crypto \
 			CC="$(CC)" \
 			FUSE_MODULE_CFLAGS="-D_FILE_OFFSET_BITS=64 -I$(TOP)/ntfs-3g/fuse/include" \
 			FUSE_MODULE_LIBS="-pthread -L$(TOP)/ntfs-3g/fuse/lib/.libs -lfuse -lrt -ldl" \
-			CXXFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
+			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			AR_FLAGS="cru $(LTOPLUGIN)" \
+			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
