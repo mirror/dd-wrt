@@ -135,6 +135,17 @@ This indicates that an error has occurred in the script, and it should be skippe
 (further processing to continue)
 
 .TP
+.B --migrateval, -e <val>
+Specify a minimum migration ratio to trigger a rebalancing
+Normally any improvement in load distribution will trigger the migration of an
+irq, as long as preforming the migration will not simply move the load to a new
+cpu.  By specifying a migration value, the load balance improvement is subject
+to hysteresis defined by this value, which is inversely propotional to the
+value.  For example, a value of 2 in this option tells irqbalance that the
+improvement in load distribution must be at least 50%, a value of 4 indicates
+the load distribution improvement must be at least 25%, etc
+
+.TP
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when
@@ -155,6 +166,21 @@ Same as --debug.
 .TP
 .B IRQBALANCE_BANNED_CPUS
 Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to.
+If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
+system as the default value.
+This is a hexmask without the leading ’0x’. On systems with large numbers of
+processors, each group of eight hex digits is separated by a comma ’,’. i.e.
+‘export IRQBALANCE_BANNED_CPUS=fc0‘ would prevent irqbalance from assigning irqs
+to the 7th-12th cpus (cpu6-cpu11) or ‘export IRQBALANCE_BANNED_CPUS=ff000000,00000001‘
+would prevent irqbalance from assigning irqs to the 1st (cpu0) and 57th-64th cpus
+(cpu56-cpu63).
+Notes: This environment variable will be discarded, please use IRQBALANCE_BANNED_CPULIST
+instead. Before deleting this environment variable, Introduce a deprecation period first
+for the consider of compatibility.
+
+.TP
+.B IRQBALANCE_BANNED_CPULIST
+Provides a cpulist which irqbalance should ignore and never assign interrupts to.
 If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
 system as the default value.
 

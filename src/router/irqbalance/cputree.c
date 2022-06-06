@@ -33,12 +33,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <inttypes.h>
 
 #include <glib.h>
 
 #include "irqbalance.h"
 
+#ifdef HAVE_IRQBALANCEUI
 extern char *banned_cpumask_from_ui;
+#endif
 extern char *cpu_ban_string;
 
 GList *cpus;
@@ -102,7 +105,7 @@ static void get_mask_from_cpulist(char *line, void *mask)
 /*
  * By default do not place IRQs on CPUs the kernel keeps isolated or
  * nohz_full, as specified through the boot commandline. Users can
- * override this with the IRQBALANCE_BANNED_CPUS environment variable.
+ * override this with the IRQBALANCE_BANNED_CPULIST environment variable.
  */
 static void setup_banned_cpus(void)
 {
@@ -112,20 +115,39 @@ static void setup_banned_cpus(void)
 	cpumask_t isolated_cpus;
 	char *env = NULL;
 
-	cpus_clear(isolated_cpus);
-	cpus_clear(nohz_full);
-
+#ifdef HAVE_IRQBALANCEUI
 	/* A manually specified cpumask overrides auto-detection. */
 	if (cpu_ban_string != NULL && banned_cpumask_from_ui != NULL) {
 		cpulist_parse(banned_cpumask_from_ui,
 			strlen(banned_cpumask_from_ui), banned_cpus);
 		goto out;
 	}
+#endif
+
+	/*
+	 * Notes:
+	 * The IRQBALANCE_BANNED_CPUS will be discarded, please use
+	 * IRQBALANCE_BANNED_CPULIST instead.
+	 *
+	 * Before deleting this environment variable, Introduce a
+	 * deprecation period first for the consider of compatibility.
+	 */
 	env = getenv("IRQBALANCE_BANNED_CPUS");
 	if (env && strlen(env))  {
 		cpumask_parse_user(env, strlen(env), banned_cpus);
+		log(TO_ALL, LOG_WARNING,
+			"IRQBALANCE_BANNED_CPUS is discarded, Use IRQBALANCE_BANNED_CPULIST instead\n");
 		goto out;
 	}
+
+	env = getenv("IRQBALANCE_BANNED_CPULIST");
+	if (env && strlen(env)) {
+		cpulist_parse(env, strlen(env), banned_cpus);
+		goto out;
+	}
+
+	cpus_clear(isolated_cpus);
+	cpus_clear(nohz_full);
 
 	path = "/sys/devices/system/cpu/isolated";
 	process_one_line(path, get_mask_from_cpulist, &isolated_cpus);
@@ -135,11 +157,11 @@ static void setup_banned_cpus(void)
 
 	cpus_or(banned_cpus, nohz_full, isolated_cpus);
 
-out:
 	cpumask_scnprintf(buffer, 4096, isolated_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
 	cpumask_scnprintf(buffer, 4096, nohz_full);
 	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
+out:
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
 }
@@ -257,6 +279,7 @@ static void do_one_cpu(char *path)
 {
 	struct topo_obj *cpu;
 	char new_path[PATH_MAX];
+	char *online_path ="/sys/devices/system/cpu/online";
 	cpumask_t cache_mask, package_mask;
 	struct topo_obj *cache;
 	DIR *dir;
@@ -264,12 +287,18 @@ static void do_one_cpu(char *path)
 	int nodeid;
 	int packageid = 0;
 	unsigned int max_cache_index, cache_index, cache_stat;
-	int online_status = 1;
+	cpumask_t online_cpus;
+	char *cpunrptr = NULL;
+	int cpunr = -1;
 
 	/* skip offline cpus */
-	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
-	process_one_line(new_path, get_int, &online_status);
-	if (!online_status)
+	cpus_clear(online_cpus);
+	process_one_line(online_path, get_mask_from_cpulist, &online_cpus);
+	/* Get the current cpu number from the path */
+	cpunrptr = rindex(path, '/');
+	cpunrptr += 4;
+	cpunr = atoi(cpunrptr);
+	if (!cpu_isset(cpunr, online_cpus))
 		return;
 
 	cpu = calloc(1, sizeof(struct topo_obj));
@@ -341,7 +370,7 @@ static void do_one_cpu(char *path)
 		struct topo_obj *node;
 
 		dir = opendir(path);
-		do {
+		while (dir) {
 			entry = readdir(dir);
 			if (!entry)
 				break;
@@ -354,8 +383,9 @@ static void do_one_cpu(char *path)
 					break;
 				}
 			}
-		} while (entry);
-		closedir(dir);
+		}
+		if (dir)
+			closedir(dir);
 
 		/*
 		 * In case of multiple NUMA nodes within a CPU package,
@@ -393,7 +423,7 @@ static void dump_irq(struct irq_info *info, void *data)
 		indent[i] = log_indent[0];
 
 	indent[i] = '\0';
-	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%llu:%llu) \n", indent,
+	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%" PRIu64 ":%" PRIu64 ") \n", indent,
 	    info->irq, irq_numa_node(info)->number, classes[info->class], info->load, (info->irq_count - info->last_irq_count));
 	free(indent);
 }

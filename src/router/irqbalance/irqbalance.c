@@ -31,21 +31,21 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif
-
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
+#endif
+#ifdef HAVE_IRQBALANCEUI
+#include <sys/un.h>
+#include <sys/socket.h>
 #endif
 #include "irqbalance.h"
 
 volatile int keep_going = 1;
-int socket_fd;
-char socket_name[64];
 int one_shot_mode;
 int debug_mode;
 int foreground_mode;
@@ -66,8 +66,13 @@ int last_interval;
 GMainLoop *main_loop;
 
 char *cpu_ban_string = NULL;
-char *banned_cpumask_from_ui = NULL;
 unsigned long migrate_ratio = 0;
+
+#ifdef HAVE_IRQBALANCEUI
+int socket_fd;
+char socket_name[64];
+char *banned_cpumask_from_ui = NULL;
+#endif
 
 static void sleep_approx(int seconds)
 {
@@ -195,7 +200,23 @@ static void parse_command_line(int argc, char **argv)
 		}
 	}
 }
-#endif
+#else /* ! HAVE_GETOPT_LONG */
+static void parse_command_line(int argc, char **argv)
+{
+	if (argc>1 && strstr(argv[1],"--debug")) {
+		debug_mode=1;
+		foreground_mode=1;
+	}
+	if (argc>1 && strstr(argv[1],"--foreground"))
+		foreground_mode=1;
+	if (argc>1 && strstr(argv[1],"--oneshot"))
+		one_shot_mode=1;
+	if (argc>1 && strstr(argv[1],"--journal")) {
+		journal_logging=1;
+		foreground_mode=1;
+	}
+}
+#endif /* HAVE_GETOPT_LONG */
 
 /*
  * This builds our object tree.  The Hierarchy is typically pretty
@@ -233,7 +254,7 @@ static void dump_object_tree(void)
 	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }
 
-static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
 	if (info->level == BALANCE_NONE)
 		return;
@@ -268,7 +289,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 
 
 	/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-	if (need_rescan || need_rebuild) {
+	while (need_rescan || need_rebuild) {
 		int try_times = 0;
 
 		need_rescan = 0;
@@ -341,7 +362,7 @@ void get_irq_data(struct irq_info *irq, void *data)
 	*irqdata = newptr;
 
 	sprintf(*irqdata + strlen(*irqdata),
-			"IRQ %d LOAD %llu DIFF %llu CLASS %d ", irq->irq, irq->load,
+			"IRQ %d LOAD %" PRIu64 " DIFF %" PRIu64 " CLASS %d ", irq->irq, irq->load,
 			(irq->irq_count - irq->last_irq_count), irq->class);
 }
 
@@ -379,7 +400,7 @@ void get_object_stat(struct topo_obj *object, void *data)
 
 	*stats = newptr;
 
-	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %llu SAVE_MODE %d %s",
+	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %" PRIu64 " SAVE_MODE %d %s",
 			object->obj_type, object->number, object->load,
 			object->powersave_mode, irq_data ? irq_data : "");
 	free(irq_data);
@@ -388,6 +409,7 @@ void get_object_stat(struct topo_obj *object, void *data)
 	}
 }
 
+#ifdef HAVE_IRQBALANCEUI
 gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attribute__((unused)))
 {
 	char buff[500];
@@ -441,12 +463,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			if (!(strncmp(buff + strlen("settings "), "sleep ",
 							strlen("sleep ")))) {
 				char *sleep_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings sleep ")));
+						sizeof(char) * (recv_size - strlen("settings sleep ") + 1));
 
 				if (!sleep_string)
 					goto out_close;
 				strncpy(sleep_string, buff + strlen("settings sleep "),
 						recv_size - strlen("settings sleep "));
+				sleep_string[recv_size - strlen("settings sleep ")] = '\0';
 				int new_iterval = strtoul(sleep_string, NULL, 10);
 				if (new_iterval >= 1) {
 					sleep_interval = new_iterval;
@@ -456,12 +479,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 							strlen("ban irqs ")))) {
 				char *end;
 				char *irq_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings ban irqs ")));
+						sizeof(char) * (recv_size - strlen("settings ban irqs ") + 1));
 
 				if (!irq_string)
 					goto out_close;
 				strncpy(irq_string, buff + strlen("settings ban irqs "),
 						recv_size - strlen("settings ban irqs "));
+				irq_string[recv_size - strlen("settings ban irqs ")] = '\0';
 				g_list_free_full(cl_banned_irqs, free);
 				cl_banned_irqs = NULL;
 				need_rescan = 1;
@@ -481,12 +505,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				cpu_ban_string = NULL;
 
 				cpu_ban_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings cpus ")));
+						sizeof(char) * (recv_size - strlen("settings cpus ") + 1));
 
 				if (!cpu_ban_string)
 					goto out_close;
 				strncpy(cpu_ban_string, buff + strlen("settings cpus "),
 						recv_size - strlen("settings cpus "));
+				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
 				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
@@ -568,6 +593,7 @@ int init_socket()
 	g_unix_fd_add(socket_fd, G_IO_IN, sock_handle, NULL);
 	return 0;
 }
+#endif
 
 int main(int argc, char** argv)
 {
@@ -581,22 +607,8 @@ int main(int argc, char** argv)
 	sigaddset(&sigset,SIGUSR1);
 	sigaddset(&sigset,SIGUSR2);
 	sigprocmask(SIG_BLOCK, &sigset, &old_sigset);
-#ifdef HAVE_GETOPT_LONG
+
 	parse_command_line(argc, argv);
-#else /* ! HAVE_GETOPT_LONG */
-	if (argc>1 && strstr(argv[1],"--debug")) {
-		debug_mode=1;
-		foreground_mode=1;
-	}
-	if (argc>1 && strstr(argv[1],"--foreground"))
-		foreground_mode=1;
-	if (argc>1 && strstr(argv[1],"--oneshot"))
-		one_shot_mode=1;
-	if (argc>1 && strstr(argv[1],"--journal")) {
-		journal_logging=1;
-		foreground_mode=1;
-	}
-#endif /* HAVE_GETOPT_LONG */
 
 	/*
  	 * Open the syslog connection
@@ -685,10 +697,12 @@ int main(int argc, char** argv)
 	parse_proc_interrupts();
 	parse_proc_stat();
 
+#ifdef HAVE_IRQBALANCEUI
 	if (init_socket()) {
 		ret = EXIT_FAILURE;
 		goto out;
 	}
+#endif
 	main_loop = g_main_loop_new(NULL, FALSE);
 	last_interval = sleep_interval;
 	g_timeout_add_seconds(sleep_interval, scan, NULL);
@@ -704,11 +718,12 @@ out:
 	/* Remove pidfile */
 	if (!foreground_mode && pidfile)
 		unlink(pidfile);
+#ifdef HAVE_IRQBALANCEUI
 	/* Remove socket */
 	if (socket_fd > 0)
 		close(socket_fd);
 	if (socket_name[0])
 		unlink(socket_name);
-
+#endif
 	return ret;
 }
