@@ -68,8 +68,10 @@
 #endif
 
 #ifdef CPTCFG_MAC80211_DEBUGFS
+#include "debugfs.c"
 #include "debugfs_sta.c"
 #include "debugfs_netdev.c"
+#include "debugfs_key.c"
 #endif
 #ifdef CPTCFG_MAC80211_MESH
 #include "mesh.c"

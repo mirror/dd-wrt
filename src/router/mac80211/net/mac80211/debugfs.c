@@ -31,7 +31,7 @@ int mac80211_format_buffer(char __user *userbuf, size_t count,
 	return simple_read_from_buffer(userbuf, count, ppos, buf, res);
 }
 
-#define DEBUGFS_READONLY_FILE_FN(name, fmt, value...)			\
+#define MAC80211_DEBUGFS_READONLY_FILE_FN(name, fmt, value...)			\
 static ssize_t name## _read(struct file *file, char __user *userbuf,	\
 			    size_t count, loff_t *ppos)			\
 {									\
@@ -41,35 +41,39 @@ static ssize_t name## _read(struct file *file, char __user *userbuf,	\
 				      fmt "\n", ##value);		\
 }
 
-#define DEBUGFS_READONLY_FILE_OPS(name)			\
+#define MAC80211_DEBUGFS_READONLY_FILE_OPS(name)			\
 static const struct file_operations name## _ops = {			\
 	.read = name## _read,						\
 	.open = simple_open,						\
 	.llseek = generic_file_llseek,					\
 };
 
-#define DEBUGFS_READONLY_FILE(name, fmt, value...)		\
-	DEBUGFS_READONLY_FILE_FN(name, fmt, value)		\
-	DEBUGFS_READONLY_FILE_OPS(name)
+#define MAC80211_DEBUGFS_READONLY_FILE(name, fmt, value...)		\
+	MAC80211_DEBUGFS_READONLY_FILE_FN(name, fmt, value)		\
+	MAC80211_DEBUGFS_READONLY_FILE_OPS(name)
 
+#undef DEBUGFS_ADD
 #define DEBUGFS_ADD(name)						\
 	debugfs_create_file(#name, 0400, phyd, local, &name## _ops)
 
 #define DEBUGFS_ADD_MODE(name, mode)					\
 	debugfs_create_file(#name, mode, phyd, local, &name## _ops);
 
+#define DEBUGFS_ADD_MODE_MAC80211(name, mode)					\
+	debugfs_create_file(#name, mode, phyd, local, &name## _ops_mac80211);
 
-DEBUGFS_READONLY_FILE(hw_conf, "%x",
+
+MAC80211_DEBUGFS_READONLY_FILE(hw_conf, "%x",
 		      local->hw.conf.flags);
-DEBUGFS_READONLY_FILE(user_power, "%d",
+MAC80211_DEBUGFS_READONLY_FILE(user_power, "%d",
 		      local->user_power_level);
-DEBUGFS_READONLY_FILE(power, "%d",
+MAC80211_DEBUGFS_READONLY_FILE(power, "%d",
 		      local->hw.conf.power_level);
-DEBUGFS_READONLY_FILE(total_ps_buffered, "%d",
+MAC80211_DEBUGFS_READONLY_FILE(total_ps_buffered, "%d",
 		      local->total_ps_buffered);
-DEBUGFS_READONLY_FILE(wep_iv, "%#08x",
+MAC80211_DEBUGFS_READONLY_FILE(wep_iv, "%#08x",
 		      local->wep_iv & 0xffffff);
-DEBUGFS_READONLY_FILE(rate_ctrl_alg, "%s",
+MAC80211_DEBUGFS_READONLY_FILE(rate_ctrl_alg, "%s",
 	local->rate_ctrl ? local->rate_ctrl->ops->name : "hw/driver");
 
 static ssize_t aqm_read(struct file *file,
@@ -142,7 +146,7 @@ static ssize_t aqm_write(struct file *file,
 	return -EINVAL;
 }
 
-static const struct file_operations aqm_ops = {
+static const struct file_operations aqm_ops_mac80211 = {
 	.write = aqm_write,
 	.read = aqm_read,
 	.open = simple_open,
@@ -472,7 +476,7 @@ static ssize_t airtime_read(struct file *file,
 				       buf, len);
 }
 
-static const struct file_operations airtime_ops = {
+static const struct file_operations airtime_ops_mac80211 = {
 	.read = airtime_read,
 	.open = simple_open,
 	.llseek = default_llseek,
@@ -642,9 +646,9 @@ static ssize_t queues_read(struct file *file, char __user *user_buf,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, res);
 }
 
-DEBUGFS_READONLY_FILE_OPS(hwflags);
-DEBUGFS_READONLY_FILE_OPS(queues);
-DEBUGFS_READONLY_FILE_OPS(misc);
+MAC80211_DEBUGFS_READONLY_FILE_OPS(hwflags);
+MAC80211_DEBUGFS_READONLY_FILE_OPS(queues);
+MAC80211_DEBUGFS_READONLY_FILE_OPS(misc);
 
 /* statistics stuff */
 
@@ -726,11 +730,11 @@ void debugfs_hw_add(struct ieee80211_local *local)
 	DEBUGFS_ADD_MODE(aql_enable, 0600);
 
 	if (local->ops->wake_tx_queue)
-		DEBUGFS_ADD_MODE(aqm, 0600);
+		DEBUGFS_ADD_MODE_MAC80211(aqm, 0600);
 
 	if (wiphy_ext_feature_isset(local->hw.wiphy,
 				    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS)) {
-		DEBUGFS_ADD_MODE(airtime, 0600);
+		DEBUGFS_ADD_MODE_MAC80211(airtime, 0600);
 		DEBUGFS_ADD_MODE(airtime_flags, 0600);
 	}
 	DEBUGFS_ADD_MODE(turboqam, 0600);

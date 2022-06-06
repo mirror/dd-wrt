@@ -722,7 +722,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
 		struct airtime_sched_info *air_sched = &local->airtime[i];
 
-		air_sched->active_txqs = RB_ROOT_CACHED;
+		airtime_sched_list_init(&air_sched->active_txqs);
 		INIT_LIST_HEAD(&air_sched->active_list);
 		spin_lock_init(&air_sched->lock);
 		air_sched->aql_txq_limit_low = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_L;

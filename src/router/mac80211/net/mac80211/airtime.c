@@ -7,31 +7,31 @@
 #include "ieee80211_i.h"
 #include "sta_info.h"
 
-#define AVG_PKT_SIZE	1024
+#define AIRTIME_AVG_PKT_SIZE	1024
 
 /* Number of bits for an average sized packet */
-#define MCS_NBITS (AVG_PKT_SIZE << 3)
+#define AIRTIME_MCS_NBITS (AIRTIME_AVG_PKT_SIZE << 3)
 
 /* Number of kilo-symbols (symbols * 1024) for a packet with (bps) bits per
  * symbol. We use k-symbols to avoid rounding in the _TIME macros below.
  */
-#define MCS_N_KSYMS(bps) DIV_ROUND_UP(MCS_NBITS << 10, (bps))
+#define MCS_N_KSYMS(bps) DIV_ROUND_UP(AIRTIME_MCS_NBITS << 10, (bps))
 
 /* Transmission time (in 1024 * usec) for a packet containing (ksyms) * 1024
  * symbols.
  */
-#define MCS_SYMBOL_TIME(sgi, ksyms)					\
+#define AIRTIME_MCS_SYMBOL_TIME(sgi, ksyms)					\
 	(sgi ?								\
 	  ((ksyms) * 4 * 18) / 20 :		/* 3.6 us per sym */	\
 	  ((ksyms) * 4)			/* 4.0 us per sym */	\
 	)
 
 /* Transmit duration for the raw data part of an average sized packet */
-#define MCS_DURATION(streams, sgi, bps) \
-	((u32)MCS_SYMBOL_TIME(sgi, MCS_N_KSYMS((streams) * (bps))))
+#define AIRTIME_MCS_DURATION(streams, sgi, bps) \
+	((u32)AIRTIME_MCS_SYMBOL_TIME(sgi, MCS_N_KSYMS((streams) * (bps))))
 
-#define MCS_DURATION_S(shift, streams, sgi, bps)		\
-	((u16)((MCS_DURATION(streams, sgi, bps) >> shift)))
+#define AIRTIME_MCS_DURATION_S(shift, streams, sgi, bps)		\
+	((u16)((AIRTIME_MCS_DURATION(streams, sgi, bps) >> shift)))
 
 /* These should match the values in enum nl80211_he_gi */
 #define HE_GI_08 0
@@ -71,19 +71,19 @@
 
 #define IEEE80211_HT_GROUPS_NB	(IEEE80211_MAX_STREAMS *	\
 				 IEEE80211_HT_STREAM_GROUPS)
-#define IEEE80211_VHT_GROUPS_NB	(IEEE80211_MAX_STREAMS *	\
+#define IEEE80211_AIRTIME_VHT_GROUPS_NB	(IEEE80211_MAX_STREAMS *	\
 					 IEEE80211_VHT_STREAM_GROUPS)
 #define IEEE80211_HE_GROUPS_NB	(IEEE80211_HE_MAX_STREAMS *	\
 				 IEEE80211_HE_STREAM_GROUPS)
 #define IEEE80211_GROUPS_NB	(IEEE80211_HT_GROUPS_NB +	\
-				 IEEE80211_VHT_GROUPS_NB +	\
+				 IEEE80211_AIRTIME_VHT_GROUPS_NB +	\
 				 IEEE80211_HE_GROUPS_NB)
 
 #define IEEE80211_HT_GROUP_0	0
-#define IEEE80211_VHT_GROUP_0	(IEEE80211_HT_GROUP_0 + IEEE80211_HT_GROUPS_NB)
-#define IEEE80211_HE_GROUP_0	(IEEE80211_VHT_GROUP_0 + IEEE80211_VHT_GROUPS_NB)
+#define IEEE80211_AIRTIME_VHT_GROUP_0	(IEEE80211_HT_GROUP_0 + IEEE80211_HT_GROUPS_NB)
+#define IEEE80211_HE_GROUP_0	(IEEE80211_AIRTIME_VHT_GROUP_0 + IEEE80211_AIRTIME_VHT_GROUPS_NB)
 
-#define MCS_GROUP_RATES		12
+#define AIRTIME_MCS_GROUP_RATES		12
 
 #define HT_GROUP_IDX(_streams, _sgi, _ht40)	\
 	IEEE80211_HT_GROUP_0 +			\
@@ -97,71 +97,71 @@
 	_MAX(0, 16 - __builtin_clz(duration))
 
 /* MCS rate information for an MCS group */
-#define __MCS_GROUP(_streams, _sgi, _ht40, _s)				\
+#define AIRTIME___MCS_GROUP(_streams, _sgi, _ht40, _s)				\
 	[HT_GROUP_IDX(_streams, _sgi, _ht40)] = {			\
 	.shift = _s,							\
 	.duration = {							\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 54 : 26),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 108 : 52),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 162 : 78),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 216 : 104),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 324 : 156),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 432 : 208),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 486 : 234),	\
-		MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 540 : 260)	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 54 : 26),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 108 : 52),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 162 : 78),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 216 : 104),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 324 : 156),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 432 : 208),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 486 : 234),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi, _ht40 ? 540 : 260)	\
 	}								\
 }
 
-#define MCS_GROUP_SHIFT(_streams, _sgi, _ht40)				\
-	GROUP_SHIFT(MCS_DURATION(_streams, _sgi, _ht40 ? 54 : 26))
+#define AIRTIME_MCS_GROUP_SHIFT(_streams, _sgi, _ht40)				\
+	GROUP_SHIFT(AIRTIME_MCS_DURATION(_streams, _sgi, _ht40 ? 54 : 26))
 
-#define MCS_GROUP(_streams, _sgi, _ht40)				\
-	__MCS_GROUP(_streams, _sgi, _ht40,				\
-		    MCS_GROUP_SHIFT(_streams, _sgi, _ht40))
+#define AIRTIME_MCS_GROUP(_streams, _sgi, _ht40)				\
+	AIRTIME___MCS_GROUP(_streams, _sgi, _ht40,				\
+		    AIRTIME_MCS_GROUP_SHIFT(_streams, _sgi, _ht40))
 
-#define VHT_GROUP_IDX(_streams, _sgi, _bw)				\
-	(IEEE80211_VHT_GROUP_0 +					\
+#define AIRTIME_VHT_GROUP_IDX(_streams, _sgi, _bw)				\
+	(IEEE80211_AIRTIME_VHT_GROUP_0 +					\
 	 IEEE80211_MAX_STREAMS * 2 * (_bw) +				\
 	 IEEE80211_MAX_STREAMS * (_sgi) +				\
 	 (_streams) - 1)
 
-#define BW2VBPS(_bw, r4, r3, r2, r1)					\
+#define AIRTIME_BW2VBPS(_bw, r4, r3, r2, r1)					\
 	(_bw == BW_160 ? r4 : _bw == BW_80 ? r3 : _bw == BW_40 ? r2 : r1)
 
-#define __VHT_GROUP(_streams, _sgi, _bw, _s)				\
-	[VHT_GROUP_IDX(_streams, _sgi, _bw)] = {			\
+#define AIRTIME___AIRTIME_VHT_GROUP(_streams, _sgi, _bw, _s)				\
+	[AIRTIME_VHT_GROUP_IDX(_streams, _sgi, _bw)] = {			\
 	.shift = _s,							\
 	.duration = {							\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw,  234,  117,  54,  26)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw,  468,  234, 108,  52)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw,  702,  351, 162,  78)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw,  936,  468, 216, 104)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 1404,  702, 324, 156)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 1872,  936, 432, 208)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 2106, 1053, 486, 234)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 2340, 1170, 540, 260)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 2808, 1404, 648, 312)),	\
-		MCS_DURATION_S(_s, _streams, _sgi,			\
-			       BW2VBPS(_bw, 3120, 1560, 720, 346))	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw,  234,  117,  54,  26)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw,  468,  234, 108,  52)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw,  702,  351, 162,  78)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw,  936,  468, 216, 104)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 1404,  702, 324, 156)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 1872,  936, 432, 208)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 2106, 1053, 486, 234)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 2340, 1170, 540, 260)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 2808, 1404, 648, 312)),	\
+		AIRTIME_MCS_DURATION_S(_s, _streams, _sgi,			\
+			       AIRTIME_BW2VBPS(_bw, 3120, 1560, 720, 346))	\
         }								\
 }
 
-#define VHT_GROUP_SHIFT(_streams, _sgi, _bw)				\
-	GROUP_SHIFT(MCS_DURATION(_streams, _sgi,			\
-				 BW2VBPS(_bw, 243, 117,  54,  26)))
+#define AIRTIME_AIRTIME_VHT_GROUP_SHIFT(_streams, _sgi, _bw)				\
+	GROUP_SHIFT(AIRTIME_MCS_DURATION(_streams, _sgi,			\
+				 AIRTIME_BW2VBPS(_bw, 243, 117,  54,  26)))
 
-#define VHT_GROUP(_streams, _sgi, _bw)					\
-	__VHT_GROUP(_streams, _sgi, _bw,				\
-		    VHT_GROUP_SHIFT(_streams, _sgi, _bw))
+#define AIRTIME_VHT_GROUP(_streams, _sgi, _bw)					\
+	AIRTIME___AIRTIME_VHT_GROUP(_streams, _sgi, _bw,				\
+		    AIRTIME_AIRTIME_VHT_GROUP_SHIFT(_streams, _sgi, _bw))
 
 
 #define HE_GROUP_IDX(_streams, _gi, _bw)				\
@@ -175,104 +175,104 @@
 	.shift = _s,							\
 	.duration = {							\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,   979,  489,  230,  115)),	\
+			      AIRTIME_BW2VBPS(_bw,   979,  489,  230,  115)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  1958,  979,  475,  230)),	\
+			      AIRTIME_BW2VBPS(_bw,  1958,  979,  475,  230)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  2937, 1468,  705,  345)),	\
+			      AIRTIME_BW2VBPS(_bw,  2937, 1468,  705,  345)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  3916, 1958,  936,  475)),	\
+			      AIRTIME_BW2VBPS(_bw,  3916, 1958,  936,  475)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  5875, 2937, 1411,  705)),	\
+			      AIRTIME_BW2VBPS(_bw,  5875, 2937, 1411,  705)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  7833, 3916, 1872,  936)),	\
+			      AIRTIME_BW2VBPS(_bw,  7833, 3916, 1872,  936)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  8827, 4406, 2102, 1051)),	\
+			      AIRTIME_BW2VBPS(_bw,  8827, 4406, 2102, 1051)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw,  9806, 4896, 2347, 1166)),	\
+			      AIRTIME_BW2VBPS(_bw,  9806, 4896, 2347, 1166)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw, 11764, 5875, 2808, 1411)),	\
+			      AIRTIME_BW2VBPS(_bw, 11764, 5875, 2808, 1411)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw, 13060, 6523, 3124, 1555)),	\
+			      AIRTIME_BW2VBPS(_bw, 13060, 6523, 3124, 1555)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw, 14702, 7344, 3513, 1756)),	\
+			      AIRTIME_BW2VBPS(_bw, 14702, 7344, 3513, 1756)),	\
 		HE_DURATION_S(_s, _streams, _gi,			\
-			      BW2VBPS(_bw, 16329, 8164, 3902, 1944))	\
+			      AIRTIME_BW2VBPS(_bw, 16329, 8164, 3902, 1944))	\
         }								\
 }
 
 #define HE_GROUP_SHIFT(_streams, _gi, _bw)				\
 	GROUP_SHIFT(HE_DURATION(_streams, _gi,			\
-				BW2VBPS(_bw,   979,  489,  230,  115)))
+				AIRTIME_BW2VBPS(_bw,   979,  489,  230,  115)))
 
 #define HE_GROUP(_streams, _gi, _bw)					\
 	__HE_GROUP(_streams, _gi, _bw,				\
 		   HE_GROUP_SHIFT(_streams, _gi, _bw))
 struct airtime_mcs_group {
 	u8 shift;
-	u16 duration[MCS_GROUP_RATES];
+	u16 duration[AIRTIME_MCS_GROUP_RATES];
 };
 
 static const struct airtime_mcs_group airtime_mcs_groups[] = {
-	MCS_GROUP(1, 0, BW_20),
-	MCS_GROUP(2, 0, BW_20),
-	MCS_GROUP(3, 0, BW_20),
-	MCS_GROUP(4, 0, BW_20),
+	AIRTIME_MCS_GROUP(1, 0, BW_20),
+	AIRTIME_MCS_GROUP(2, 0, BW_20),
+	AIRTIME_MCS_GROUP(3, 0, BW_20),
+	AIRTIME_MCS_GROUP(4, 0, BW_20),
 
-	MCS_GROUP(1, 1, BW_20),
-	MCS_GROUP(2, 1, BW_20),
-	MCS_GROUP(3, 1, BW_20),
-	MCS_GROUP(4, 1, BW_20),
+	AIRTIME_MCS_GROUP(1, 1, BW_20),
+	AIRTIME_MCS_GROUP(2, 1, BW_20),
+	AIRTIME_MCS_GROUP(3, 1, BW_20),
+	AIRTIME_MCS_GROUP(4, 1, BW_20),
 
-	MCS_GROUP(1, 0, BW_40),
-	MCS_GROUP(2, 0, BW_40),
-	MCS_GROUP(3, 0, BW_40),
-	MCS_GROUP(4, 0, BW_40),
+	AIRTIME_MCS_GROUP(1, 0, BW_40),
+	AIRTIME_MCS_GROUP(2, 0, BW_40),
+	AIRTIME_MCS_GROUP(3, 0, BW_40),
+	AIRTIME_MCS_GROUP(4, 0, BW_40),
 
-	MCS_GROUP(1, 1, BW_40),
-	MCS_GROUP(2, 1, BW_40),
-	MCS_GROUP(3, 1, BW_40),
-	MCS_GROUP(4, 1, BW_40),
+	AIRTIME_MCS_GROUP(1, 1, BW_40),
+	AIRTIME_MCS_GROUP(2, 1, BW_40),
+	AIRTIME_MCS_GROUP(3, 1, BW_40),
+	AIRTIME_MCS_GROUP(4, 1, BW_40),
 
-	VHT_GROUP(1, 0, BW_20),
-	VHT_GROUP(2, 0, BW_20),
-	VHT_GROUP(3, 0, BW_20),
-	VHT_GROUP(4, 0, BW_20),
+	AIRTIME_VHT_GROUP(1, 0, BW_20),
+	AIRTIME_VHT_GROUP(2, 0, BW_20),
+	AIRTIME_VHT_GROUP(3, 0, BW_20),
+	AIRTIME_VHT_GROUP(4, 0, BW_20),
 
-	VHT_GROUP(1, 1, BW_20),
-	VHT_GROUP(2, 1, BW_20),
-	VHT_GROUP(3, 1, BW_20),
-	VHT_GROUP(4, 1, BW_20),
+	AIRTIME_VHT_GROUP(1, 1, BW_20),
+	AIRTIME_VHT_GROUP(2, 1, BW_20),
+	AIRTIME_VHT_GROUP(3, 1, BW_20),
+	AIRTIME_VHT_GROUP(4, 1, BW_20),
 
-	VHT_GROUP(1, 0, BW_40),
-	VHT_GROUP(2, 0, BW_40),
-	VHT_GROUP(3, 0, BW_40),
-	VHT_GROUP(4, 0, BW_40),
+	AIRTIME_VHT_GROUP(1, 0, BW_40),
+	AIRTIME_VHT_GROUP(2, 0, BW_40),
+	AIRTIME_VHT_GROUP(3, 0, BW_40),
+	AIRTIME_VHT_GROUP(4, 0, BW_40),
 
-	VHT_GROUP(1, 1, BW_40),
-	VHT_GROUP(2, 1, BW_40),
-	VHT_GROUP(3, 1, BW_40),
-	VHT_GROUP(4, 1, BW_40),
+	AIRTIME_VHT_GROUP(1, 1, BW_40),
+	AIRTIME_VHT_GROUP(2, 1, BW_40),
+	AIRTIME_VHT_GROUP(3, 1, BW_40),
+	AIRTIME_VHT_GROUP(4, 1, BW_40),
 
-	VHT_GROUP(1, 0, BW_80),
-	VHT_GROUP(2, 0, BW_80),
-	VHT_GROUP(3, 0, BW_80),
-	VHT_GROUP(4, 0, BW_80),
+	AIRTIME_VHT_GROUP(1, 0, BW_80),
+	AIRTIME_VHT_GROUP(2, 0, BW_80),
+	AIRTIME_VHT_GROUP(3, 0, BW_80),
+	AIRTIME_VHT_GROUP(4, 0, BW_80),
 
-	VHT_GROUP(1, 1, BW_80),
-	VHT_GROUP(2, 1, BW_80),
-	VHT_GROUP(3, 1, BW_80),
-	VHT_GROUP(4, 1, BW_80),
+	AIRTIME_VHT_GROUP(1, 1, BW_80),
+	AIRTIME_VHT_GROUP(2, 1, BW_80),
+	AIRTIME_VHT_GROUP(3, 1, BW_80),
+	AIRTIME_VHT_GROUP(4, 1, BW_80),
 
-	VHT_GROUP(1, 0, BW_160),
-	VHT_GROUP(2, 0, BW_160),
-	VHT_GROUP(3, 0, BW_160),
-	VHT_GROUP(4, 0, BW_160),
+	AIRTIME_VHT_GROUP(1, 0, BW_160),
+	AIRTIME_VHT_GROUP(2, 0, BW_160),
+	AIRTIME_VHT_GROUP(3, 0, BW_160),
+	AIRTIME_VHT_GROUP(4, 0, BW_160),
 
-	VHT_GROUP(1, 1, BW_160),
-	VHT_GROUP(2, 1, BW_160),
-	VHT_GROUP(3, 1, BW_160),
-	VHT_GROUP(4, 1, BW_160),
+	AIRTIME_VHT_GROUP(1, 1, BW_160),
+	AIRTIME_VHT_GROUP(2, 1, BW_160),
+	AIRTIME_VHT_GROUP(3, 1, BW_160),
+	AIRTIME_VHT_GROUP(4, 1, BW_160),
 
 	HE_GROUP(1, HE_GI_08, BW_20),
 	HE_GROUP(2, HE_GI_08, BW_20),
@@ -436,7 +436,7 @@ static u32 ieee80211_get_rate_duration(struct ieee80211_hw *hw,
 	case RX_ENC_VHT:
 		streams = status->nss;
 		idx = status->rate_idx;
-		group = VHT_GROUP_IDX(streams, sgi, bw);
+		group = AIRTIME_VHT_GROUP_IDX(streams, sgi, bw);
 		break;
 	case RX_ENC_HT:
 		streams = ((status->rate_idx >> 3) & 3) + 1;
@@ -496,7 +496,7 @@ u32 ieee80211_calc_rx_airtime(struct ieee80211_hw *hw,
 		return 0;
 
 	duration *= len;
-	duration /= AVG_PKT_SIZE;
+	duration /= AIRTIME_AVG_PKT_SIZE;
 	duration /= 1024;
 
 	return duration + overhead;
@@ -685,7 +685,7 @@ u32 ieee80211_calc_expected_tx_airtime(struct ieee80211_hw *hw,
 			agg_shift = 6;
 
 		duration *= len;
-		duration /= AVG_PKT_SIZE;
+		duration /= AIRTIME_AVG_PKT_SIZE;
 		duration /= 1024;
 		duration += (overhead >> agg_shift);
 

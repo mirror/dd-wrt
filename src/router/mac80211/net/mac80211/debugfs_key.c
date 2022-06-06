@@ -317,6 +317,7 @@ static ssize_t key_key_read(struct file *file, char __user *userbuf,
 }
 KEY_OPS(key);
 
+#undef DEBUGFS_ADD
 #define DEBUGFS_ADD(name) \
 	debugfs_create_file(#name, 0400, key->debugfs.dir, \
 			    key, &key_##name##_ops)
