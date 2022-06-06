@@ -1949,6 +1949,7 @@ wl_basic.radio_off="está apagado";
 wl_basic.h2_v24="Interfaz WIFI";
 wl_basic.h2_vi="Interfaz virtual";
 wl_basic.regdom="Dominio de regulación";
+wl_basic.regdom_label="Dominio";
 wl_basic.TXpower="Potencia TX";
 wl_basic.AntGain="Ganancia de la Antena";
 wl_basic.diversity="Diversidad";

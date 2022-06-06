@@ -4449,7 +4449,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			sprintf(wl_regdomain, "%s_regdomain", prefix);
 			if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				char *list = getCountryList(COUNTRYLIST);
-				showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
+				showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 			}
 		}
 	}
@@ -4942,7 +4942,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
 		char *list = getCountryList(COUNTRYLIST);
-		showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
+		showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regmode)</script></div>\n");
 		char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
 		websWrite(wp, "<select name=\"wl_reg_mode\">\n");

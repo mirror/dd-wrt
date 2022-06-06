@@ -2198,6 +2198,7 @@ wl_basic.radio_off="je izključen";
 wl_basic.h2_v24="Brezžični vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
+wl_basic.regdom_label="Domena";
 wl_basic.TXpower="Oddajna (TX) moč";
 wl_basic.TXpowerFcc="Oddajna (TX) konična moč (FCC)";
 wl_basic.AntGain="Ojačanje antene";

@@ -1962,6 +1962,7 @@ wl_basic.radio_off="無線LAN無効";
 wl_basic.h2_v24="無線LAN 物理インターフェース設定";
 wl_basic.h2_vi="無線LAN 仮想インターフェース設定";
 wl_basic.regdom="Regulatory Domain";
+wl_basic.regdom_label="Domain";
 wl_basic.TXpower="送信出力";
 wl_basic.AntGain="アンテナゲイン";
 wl_basic.diversity="ダイバーシティ";

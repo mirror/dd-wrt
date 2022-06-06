@@ -1885,6 +1885,7 @@ wl_basic.radio_off="Avaktiverad";
 wl_basic.h2_v24="Trådlöst Interface";
 wl_basic.h2_vi="Virtuella Interface";
 wl_basic.regdom="Styrande Domän";
+wl_basic.regdom_label="Domän";
 wl_basic.TXpower="TX Power";
 wl_basic.AntGain="Antenna Gain";
 wl_basic.diversity="Diversity";
