@@ -1,4 +1,4 @@
-AC_INIT(irqbalance,1.7.0)
+AC_INIT(irqbalance,1.9.0)
 AC_PREREQ(2.12)dnl
 AM_CONFIG_HEADER(config.h)
 
@@ -23,7 +23,7 @@ AC_CHECK_HEADERS([numa.h])
 
 AC_CHECK_FUNCS(getopt_long)
 
-AC_CHECK_LIB(numa, numa_available)
+PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
 AC_CHECK_LIB(m, floor)
 
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
@@ -41,10 +41,13 @@ AC_C_INLINE
 AM_PROG_CC_C_O
 
 AC_ARG_WITH([irqbalance-ui],
-	[AC_HELP_STRING([--without-irqbalance-ui],
-			[Dont build the irqbalance ui component])],
-			[with_irqbalanceui=$withval], [with_irqbalanceui=yes])
-
+  [AS_HELP_STRING([--without-irqbalance-ui],
+    [Dont build the irqbalance ui component])],
+    [with_irqbalanceui=$withval], [with_irqbalanceui=yes])
+AS_IF(
+  [test "x$with_irqbalanceui" = "xyes"], [
+    AC_DEFINE([HAVE_IRQBALANCEUI], 1, [Build irqbalance ui component.])
+])
 AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],
