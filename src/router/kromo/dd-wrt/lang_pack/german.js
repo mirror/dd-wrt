@@ -605,6 +605,7 @@ hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme
 	Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
 hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
+
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -617,6 +618,8 @@ diag.shutdown="Runterfahren";
 diag.firewall="Firewall";
 diag.custom="Benutzerdefiniertes Skript";
 diag.usb="USB Skript";
+diag.running="läuft";
+diag.stopped="gestoppt";
 
 //help container
 
@@ -943,7 +946,7 @@ hotspot.wifidog_messagefile="HTML Nachrichten Datei für Wifidog";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Benutzername";
 hotspot.wifidog_password="HTTP Server Kennwort";
-hotspot.wifidog_auth="HTTP Authentication Unterstützung";
+hotspot.wifidog_auth="HTTP Authentifizierungs Unterstützung";
 
 //help container
 
@@ -1082,8 +1085,8 @@ idx.dhcp_start="Start-IP-Adresse";
 idx.dhcp_end="End-IP-Adresse";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximale DHCP-Nutzeranzahl";
 idx.dhcp_lease="Lease-Ablauf";
-idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
-idx.dns_dnsmasq="Nutze DNSMasq für DNS";
+idx.dhcp_dnsmasq="Nutze dnsmasq für DHCP";
+idx.dns_dnsmasq="Nutze dnsmasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
 idx.force_dnsmasqdot="Erzwungene DoT DNS Umleitung";
@@ -1324,7 +1327,7 @@ networking.legend2="Erstelle Bridge";
 networking.legend3="Weise Bridge zu";
 networking.legend4="Aktuelle Bridging Tabelle";
 networking.brname="Bridge Name";
-networking.stp="STP eingeschaltet";
+networking.stp="STP";
 networking.iface="Schnittstelle";
 networking.h5="DHCPD";
 networking.legend5="Mehrere DHCP Server";
@@ -1363,7 +1366,7 @@ networking.ipvs_config="Konfiguration";
 //help container
 
 hnetworking.right1="Mehrfach-DHCP";
-hnetworking.right2="Aktiviere DNSMasq als DHCP Server um Mehrfach-DHCP zu nutzen.";
+hnetworking.right2="Aktiviere dnsmasq als DHCP Server um Mehrfach-DHCP zu nutzen.";
 
 // ** QoS.asp **//
 
@@ -1564,12 +1567,12 @@ service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";
 service.dnsmasq_dnssec_proxy="DNSSEC Daten Cachen";
 service.dnsmasq_dnssec_cu="Prüfe unsignierte DNS Antworten";
 
-service.dnsmasq_legend="DNSMasq";
-service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_legend="Dnsmasq";
+service.dnsmasq_srv="Dnsmasq";
 service.dnsmasq_no_dns_rebind="Kein DNS Rebind";
 service.dnsmasq_strict="DNS in fester Reihenfolge abfragen";
 service.dnsmasq_add_mac="DNS Abfrage mit Anfrage MAC";
-service.dnsmasq_opt="Zusätzliche DNSMasq-Optionen";
+service.dnsmasq_opt="Zusätzliche Dnsmasq-Optionen";
 service.dnsmasq_cachesize="Maximal gepufferte Einträge";
 
 //pptp.webservices
@@ -1586,6 +1589,19 @@ service.syslog_ip="Remote Server";
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
+
+//tor
+
+service.tor_legend="The Onion Router Project";
+service.tor_srv="Tor";
+service.tor_address="DNS Name oder externe IP";
+service.tor_nickname="Nickname / ID";
+service.tor_relay="Weiterleitungs Modus";
+service.tor_dir="Verzeichnisse spiegeln";
+service.tor_bridge="Brücken Modus";
+service.tor_transparent="Transparenter Proxy";
+service.tor_bwrate="Bandbreiten Rate";
+service.tor_bwburst="Bandbreitenüberschreitung";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP-Client";
@@ -1621,11 +1637,11 @@ service.pppoesrv_lcpei="LCP Echo Intervall";
 service.pppoesrv_lcpef="LCP Echo Fehler";
 service.pppoesrv_limit="Verbindungs Limit pro MAC";
 service.pppoesrv_idlet="Idle Time";
-service.pppoesrv_radauth="Authentication";
+service.pppoesrv_radauth="Authentifizierung";
 service.pppoesrv_radip="RADIUS Server IP";
-service.pppoesrv_radauthport="RADIUS Authentication Port";
+service.pppoesrv_radauthport="RADIUS Authentifizierungs Port";
 service.pppoesrv_radaccport="RADIUS Accounting Port";
-service.pppoesrv_radkey="RADIUS Shared Key";
+service.pppoesrv_radkey="RADIUS gemeinsamer Schlüssel";
 service.pppoesrv_chaps="Lokale Benutzer Verwaltung (CHAP Secrets)";
 
 //help container
@@ -1648,7 +1664,7 @@ service.vpnd_srv="Starte OpenVPN Daemon";
 service.vpnd_starttype="Start Typ";
 service.vpnd_startWanup="Mit WAN-Aktivierung starten";
 service.vpnd_startSystem="Beim Systemstart";
-service.vpnd_gui="GUI(server)";
+service.vpnd_gui="GUI(Server)";
 service.vpnd_text="Text";
 service.vpnd_crl="Zertifikatssperrliste";
 service.vpnd_config="OpenVPN Konfiguration";
@@ -2268,7 +2284,7 @@ wpa.auth_mode="Netzwerk-Authentifizierung";
 wpa.mfp="802.11w Management Frame Schutz";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Intervall";
-wpa.rekey="Schlüssel erneuern";
+wpa.rekey="Schlüssel Erneuerungsintervall";
 wpa.radius_ipaddr="RADIUS-Server-IP";
 wpa.radius_port="RADIUS-Server-Port";
 wpa.radius_key="RADIUS-Key";
@@ -2503,7 +2519,7 @@ wl_adv.label6="Beacon Intervall";
 wl_adv.label7="DTIM Intervall";
 wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
+wl_adv.label10="Maximal verbundene Clients";
 wl_adv.label11="AP Isolation";
 wl_adv.label12="TX Antenne";
 wl_adv.label13="RX Antenne";
