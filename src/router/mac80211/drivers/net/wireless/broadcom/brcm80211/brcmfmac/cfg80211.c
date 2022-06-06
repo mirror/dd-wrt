@@ -969,7 +969,7 @@ brcmf_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	s32 ap = 0;
 	s32 err = 0;
 
-	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d, type=%d\n", ifp->bsscfgidx,
+	brcmf_info("brcmf_cfg80211_change_iface bsscfgidx=%d, type=%d\n", ifp->bsscfgidx,
 		  type);
 
 	/* WAR: There are a number of p2p interface related problems which
@@ -2927,7 +2927,7 @@ brcmf_cfg80211_dump_survey(struct wiphy *wiphy, struct net_device *ndev,
 		survey->channel = ieee80211_get_channel(wiphy, cfg->pub->chan_stats[idx].freq);
 		survey->noise = cfg->pub->chan_stats[idx].noise;
 		if (!ifp->disable_cca) {
-			survey->filled = SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME
+			survey->filled = SURVEY_INFO_TIME_BUSY | SURVEY_INFO_TIME;
 			survey->time = cfg->pub->chan_stats[idx].time;
 			survey->time_busy = cfg->pub->chan_stats[idx].time_busy;
 		}

@@ -3245,7 +3245,7 @@ struct cfg80211_mgmt_tx_params {
 	struct ieee80211_channel *chan;
 	bool offchan;
 	unsigned int wait;
-	const u8 *buf;
+	u8 *buf;
 	size_t len;
 	bool no_cck;
 	bool dont_wait_for_ack;

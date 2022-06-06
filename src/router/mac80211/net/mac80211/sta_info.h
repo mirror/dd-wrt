@@ -138,11 +138,14 @@ enum ieee80211_agg_stop_reason {
 #define AIRTIME_USE_TX		BIT(0)
 #define AIRTIME_USE_RX		BIT(1)
 
+DECLARE_SKIPLIST_TYPE(airtime_sched, 5);
 
 struct airtime_info {
+	struct airtime_sched_node schedule_order;
+	struct ieee80211_txq *txq[3];
 	u64 rx_airtime;
 	u64 tx_airtime;
-	u64 v_t;
+	u64 v_t, v_t_cur;
 	u64 last_scheduled;
 	struct list_head list;
 	atomic_t aql_tx_pending; /* Estimated airtime for frames pending */
@@ -150,6 +153,7 @@ struct airtime_info {
 	u32 aql_limit_high;
 	u32 weight_reciprocal;
 	u16 weight;
+	u8 txq_idx;
 };
 
 void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,

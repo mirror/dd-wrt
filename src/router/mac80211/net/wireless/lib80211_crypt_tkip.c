@@ -6,6 +6,7 @@
  * Copyright (c) 2008, John W. Linville <linville@tuxdriver.com>
  */
 
+#undef pr_fmt
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/err.h>

@@ -1,10 +1,11 @@
-EXTRA_CFLAGS += -g3 -w
-ccflags-y := -g3 -w
-ccflags-m := -g3 -w
+EXTRA_CFLAGS += -g3 -Wno-unused-function -Wno-unused-variable
+ccflags-y := -g3 -Wno-unused-function -Wno-unused-variable
+ccflags-m := -g3 -Wno-unused-function -Wno-unused-variable
+
 
 obj-$(CPTCFG_MAC80211) += mac80211.o
 
-mac80211-y := combine.o debugfs.o debugfs_key.o
+mac80211-y := combine.o
 
 CFLAGS_trace.o := -I$(src)
 

@@ -239,6 +239,7 @@ static const struct file_operations chandata_ops = {
 
 
 
+#undef DEBUGFS_ADD
 #define DEBUGFS_ADD(name)						\
 	debugfs_create_file(#name, 0444, phyd, &rdev->wiphy, &name## _ops)
 

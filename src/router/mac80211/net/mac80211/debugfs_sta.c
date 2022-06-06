@@ -1008,7 +1008,7 @@ out:
 	return ret;
 }
 STA_OPS(he_capa);
-
+#undef DEBUGFS_ADD
 #define DEBUGFS_ADD(name) \
 	debugfs_create_file(#name, 0400, \
 		sta->debugfs_dir, sta, &sta_ ##name## _ops)
