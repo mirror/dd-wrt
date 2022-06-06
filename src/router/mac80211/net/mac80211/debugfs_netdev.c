@@ -707,11 +707,12 @@ IEEE80211_IF_FILE(dot11MeshConnectedToAuthServer,
 		  u.mesh.mshcfg.dot11MeshConnectedToAuthServer, DEC);
 #endif
 
-#define DEBUGFS_ADD_MODE(name, mode) \
+#undef DEBUGFS_ADD
+#define NETDEV_DEBUGFS_ADD_MODE(name, mode) \
 	debugfs_create_file(#name, mode, sdata->vif.debugfs_dir, \
 			    sdata, &name##_ops)
 
-#define DEBUGFS_ADD(name) DEBUGFS_ADD_MODE(name, 0400)
+#define DEBUGFS_ADD(name) NETDEV_DEBUGFS_ADD_MODE(name, 0400)
 
 static void add_common_files(struct ieee80211_sub_if_data *sdata)
 {
@@ -742,23 +743,23 @@ static void add_sta_files(struct ieee80211_sub_if_data *sdata)
 	DEBUGFS_ADD(bssid);
 	DEBUGFS_ADD(aid);
 	DEBUGFS_ADD(beacon_timeout);
-	DEBUGFS_ADD_MODE(smps, 0600);
-	DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
-	DEBUGFS_ADD_MODE(beacon_loss, 0200);
-	DEBUGFS_ADD_MODE(uapsd_queues, 0600);
-	DEBUGFS_ADD_MODE(uapsd_max_sp_len, 0600);
-	DEBUGFS_ADD_MODE(tdls_wider_bw, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(smps, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
+	NETDEV_DEBUGFS_ADD_MODE(beacon_loss, 0200);
+	NETDEV_DEBUGFS_ADD_MODE(uapsd_queues, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(uapsd_max_sp_len, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(tdls_wider_bw, 0600);
 }
 
 static void add_ap_files(struct ieee80211_sub_if_data *sdata)
 {
 	DEBUGFS_ADD(num_mcast_sta);
-	DEBUGFS_ADD_MODE(smps, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(smps, 0600);
 	DEBUGFS_ADD(num_sta_ps);
 	DEBUGFS_ADD(dtim_count);
 	DEBUGFS_ADD(num_buffered_multicast);
-	DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
-	DEBUGFS_ADD_MODE(multicast_to_unicast, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
+	NETDEV_DEBUGFS_ADD_MODE(multicast_to_unicast, 0600);
 }
 
 static void add_vlan_files(struct ieee80211_sub_if_data *sdata)
@@ -770,7 +771,7 @@ static void add_vlan_files(struct ieee80211_sub_if_data *sdata)
 
 static void add_ibss_files(struct ieee80211_sub_if_data *sdata)
 {
-	DEBUGFS_ADD_MODE(tsf, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(tsf, 0600);
 }
 
 static void add_wds_files(struct ieee80211_sub_if_data *sdata)
@@ -782,8 +783,8 @@ static void add_wds_files(struct ieee80211_sub_if_data *sdata)
 
 static void add_mesh_files(struct ieee80211_sub_if_data *sdata)
 {
-	DEBUGFS_ADD_MODE(tsf, 0600);
-	DEBUGFS_ADD_MODE(estab_plinks, 0400);
+	NETDEV_DEBUGFS_ADD_MODE(tsf, 0600);
+	NETDEV_DEBUGFS_ADD_MODE(estab_plinks, 0400);
 }
 
 static void add_mesh_stats(struct ieee80211_sub_if_data *sdata)

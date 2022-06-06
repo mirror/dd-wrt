@@ -8,6 +8,7 @@
  * Copyright (C) 2018-2022 Intel Corporation
  */
 
+#undef pr_fmt
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/if.h>
