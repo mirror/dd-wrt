@@ -9,22 +9,17 @@
 	</head>
 
 <body class="popup_bg">
-
-<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
-
-<div class='mainarea' id='mainarea'>
-</div>
-
-<div class='controls'>
-	<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.gif' alt='Up'></a>
-	<a href='javascript:cameraElevation(-0.2)'><img src='images/wiviz/down.gif' alt='Down'></a>
-	<a href='javascript:cameraZoom(1.2)'><img src='images/wiviz/zoomin.gif' alt='Zoom in'></a>
-	<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.gif' alt='Zoom out'></a>
-	<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.gif' alt='Reset view'></a>
-</div>
-
-<div class='rightmenu'>
-	<div class='expando'>
+	<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
+	<div class='mainarea' id='mainarea'></div>
+	<div class='controls'>
+		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.gif' alt='Up'></a>
+		<a href='javascript:cameraElevation(-0.2)'><img src='images/wiviz/down.gif' alt='Down'></a>
+		<a href='javascript:cameraZoom(1.2)'><img src='images/wiviz/zoomin.gif' alt='Zoom in'></a>
+		<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.gif' alt='Zoom out'></a>
+		<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.gif' alt='Reset view'></a>
+	</div>
+	<div class='rightmenu'>
+		<div class='expando'>
 		<div class='slidingheader' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning Options
 		</div>
@@ -33,11 +28,11 @@
 			Monitoring<br>
 			<center>Channel Setting</center>
 			<form name="channelform" action="apply.cgi" method="post" />
-				<input type="hidden" name="action" value="Apply" />
-				<input type="hidden" name="change_action" value="gozila_cgi" />
-				<input type="hidden" name="submit_button" value="Wiviz_Survey" />
-				<input type="hidden" name="submit_type" value="Set" />
-				<input type="hidden" name="commit" value="1" />
+			<input type="hidden" name="action" value="Apply" />
+			<input type="hidden" name="change_action" value="gozila_cgi" />
+			<input type="hidden" name="submit_button" value="Wiviz_Survey" />
+			<input type="hidden" name="submit_type" value="Set" />
+			<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
 				<option value='0' <% nvs("hopseq","0"); %> >All</option>
 				<option value='1' <% nvs("hopseq","1"); %> >1</option>
@@ -62,7 +57,7 @@
 				<option value='100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >100 to 173</option>
 				<option value='32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173' <% nvs("hopseq","32,36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,148,149,153,157,161,165,169,173"); %> >32 to 173</option>
 			</select>
-			<center>Hopdwell (ms)</center>
+			<center>Hop Dwell (in ms)</center>
 			<select name='hopdwell' onChange='this.form.submit()'>
 				<option value='250' <% nvs("hopdwell","250"); %> >250</option>
 				<option value='500' <% nvs("hopdwell","500"); %> >500</option>
@@ -80,18 +75,18 @@
 			Display Options
 		</div>
 		<div class='slidingbody'>
-			<center>Show/Hide</center>
-			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'> AP - Unsecured<br>
-			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'> AP - Encrypted<br>
-			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients - Conn'd<br>
-			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'> Clients - Searching<br>
+			<center>Show / Hide</center>
+			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'> Unsecured AP<br>
+			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'> Encrypted AP<br>
+			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients Connected<br>
+			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'> Clients Searching<br>
 			<center>Effects</center>
-			<input type='checkbox' id='rotate' onClick='updatePrefs(this)'> Rotate slowly<br>
-			<input type='checkbox' id='grid' onClick='updatePrefs(this)'> Show grid<br>
-			<input type='checkbox' id='animation' onClick='updatePrefs(this)'> Smooth animation<br>
-			<input type='checkbox' id='blend' onClick='updatePrefs(this)'> Blending effects<br>
+			<input type='checkbox' id='rotate' onClick='updatePrefs(this)'> Rotate Slowly<br>
+			<input type='checkbox' id='grid' onClick='updatePrefs(this)'> Show Grid<br>
+			<input type='checkbox' id='animation' onClick='updatePrefs(this)'> Smooth Animation<br>
+			<input type='checkbox' id='blend' onClick='updatePrefs(this)'> Blending Effects<br>
 			<input type='checkbox' id='scale' onClick='updatePrefs(this)'> Scaling<br>
-			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'> Fly in on click<br>
+			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'> Fly in on Click<br>
 		</div>
 	</div>
 	<div class='expando'>
@@ -101,7 +96,7 @@
 		<div class='slidingbody'>
 			<center><span id='detail_type'>Nothing here yet</span></center>
 			<span id='detail_info'>
-			<i>Please select a host to view details.</i>
+				<i>Click a host to view details.</i>
 			</span>
 			<span id='detail_network_actions' class='actionlist'>
 			<!--			<center>Network Actions</center>
