@@ -714,7 +714,7 @@ function initChannelProperties() {
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
 				  	<input type="hidden" name="submit_type" value="save" />
-					<% gen_timer_fields(); %>
+				  	<% gen_timer_fields(); %>
 				  	<input type="hidden" name="wl0_nctrlsb" />
 				  	<input type="hidden" name="wl1_nctrlsb" /> 
 				  	<input type="hidden" name="wl2_nctrlsb" /> 
@@ -722,10 +722,10 @@ function initChannelProperties() {
 				  	<input type="hidden" name="vap" />
 				  	
 				  	<% show_wireless(); %>
-					<% show_wireless_advanced(); %>
+				  	<% show_wireless_advanced(); %>
 				  	
 				  	<div class="submitFooter">
-				  		<script type="text/javascript">
+							<script type="text/javascript">
 				  		//<![CDATA[
 				  		submitFooterButton(1,1);
 				  		//]]>

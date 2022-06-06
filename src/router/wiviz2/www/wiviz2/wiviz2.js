@@ -136,7 +136,8 @@ function updatePrefs(what) {
 			el.checked = eval("prefs." + i);
 		}
 		document.cookie = i + "=" + eval("prefs." + i) +
-			"; expires=01-Jan-9999 00:00:00 GMT" + "; SameSite=Lax";
+			"; sessionId=w1viZ2ow1f1dDwr7" + "; SameSite=Lax";
+//			"; expires=01-Jan-9999 00:00:00 GMT" + "; SameSite=Lax";
 	}
 	globalRedraw = true;
 }
@@ -799,7 +800,7 @@ function updateCenteredInfo() {
 			s += "Radioname: " + h.radioname + "<br>";
 		h.realage = Math.floor((h.age + (now - h.agestart) / 1000));
 		s += "Signal: " + h.rssi + " dBm<br>";
-		s += "Seen " + h.realage + " seconds ago<br>";
+		s += "Seen: " + h.realage + " seconds ago<br>";
 		if (h.type == 'sta') {
 			s += "State: ";
 			if (h.sta_state == 'assoc') {

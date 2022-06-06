@@ -1807,6 +1807,7 @@ wl_basic.radio_off="無線網路 關閉";
 wl_basic.h2_v24="Physical無線實體介面";
 wl_basic.h2_vi="Virtual 虛擬介面";
 wl_basic.regdom="管理網域";
+wl_basic.regdom="域";
 wl_basic.TXpower="發射功率";
 wl_basic.AntGain="天線增益";
 wl_basic.diversity="差異";
