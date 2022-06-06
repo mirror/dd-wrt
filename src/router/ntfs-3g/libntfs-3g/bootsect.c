@@ -86,7 +86,7 @@ BOOL ntfs_boot_sector_is_ntfs(NTFS_BOOT_SECTOR *b)
 		break;
 	default:
 		if ((b->bpb.sectors_per_cluster < 240)
-		    || (b->bpb.sectors_per_cluster > 249)) {
+		    || (b->bpb.sectors_per_cluster > 253)) {
 			if (b->bpb.sectors_per_cluster > 128)
 				ntfs_log_error("Unexpected sectors"
 					" per cluster value (code 0x%x)\n",
@@ -152,6 +152,14 @@ BOOL ntfs_boot_sector_is_ntfs(NTFS_BOOT_SECTOR *b)
 				       "(%d).\n", b->clusters_per_index_record);
 			goto not_ntfs;
 		}
+	}
+
+	/* MFT and MFTMirr may not overlap the boot sector or be the same */
+	if (((s64)sle64_to_cpu(b->mft_lcn) <= 0)
+	    || ((s64)sle64_to_cpu(b->mftmirr_lcn) <= 0)
+	    || (b->mft_lcn == b->mftmirr_lcn)) {
+		ntfs_log_error("Invalid location of MFT or MFTMirr.\n");
+		goto not_ntfs;
 	}
 
 	if (b->end_of_sector_marker != const_cpu_to_le16(0xaa55))
