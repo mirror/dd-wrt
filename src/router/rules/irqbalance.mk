@@ -3,6 +3,7 @@ irqbalance-configure:
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
 		--with-systemd=no \
+		--disable-numa \
 		--without-irqbalance-ui \
 		--enable-static=glib2 \
 		--host=$(ARCH)-linux \
